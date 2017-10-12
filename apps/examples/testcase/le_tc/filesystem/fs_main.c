@@ -197,14 +197,14 @@ static int make_long_file(void)
 }
 
 /**
-* @testcase         fs_vfs_fs_mount_tc
+* @testcase         tc_fs_vfs_mount
 * @brief            Mount file system
 * @scenario         Mount initialized file system
 * @apicovered       mount
 * @precondition     File system should be initialized. For smartfs, smart_initialize & mksmartfs should be excuted.
 * @postcondition    NA
 */
-static void fs_vfs_mount_tc(void)
+static void tc_fs_vfs_mount(void)
 {
 	int ret;
 	ret = mount(MOUNT_DEV_DIR, CONFIG_MOUNT_POINT, TARGET_FS_NAME, 0, NULL);
@@ -213,14 +213,14 @@ static void fs_vfs_mount_tc(void)
 }
 
 /**
-* @testcase         fs_vfs_fs_umount_tc
+* @testcase         tc_fs_vfs_umount
 * @brief            Unmount file system
 * @scenario         Unmount mounted file system
 * @apicovered       umount
 * @precondition     File system should be mounted.
 * @postcondition    NA
 */
-static void fs_vfs_umount_tc(void)
+static void tc_fs_vfs_umount(void)
 {
 	int ret;
 	ret = umount(CONFIG_MOUNT_POINT);
@@ -229,14 +229,14 @@ static void fs_vfs_umount_tc(void)
 }
 
 /**
-* @testcase         fs_vfs_open_tc
+* @testcase         tc_fs_vfs_open
 * @brief            Open file to do file operation
 * @scenario         Open specific file
 * @apicovered       open
 * @precondition     NA
 * @postcondition    NA
 */
-static void fs_vfs_open_tc(void)
+static void tc_fs_vfs_open(void)
 {
 	int fd;
 	fd = open(VFS_FILE_PATH, O_WROK | O_CREAT);
@@ -251,14 +251,14 @@ static void fs_vfs_open_tc(void)
 }
 
 /**
-* @testcase         fs_vfs_write_tc
+* @testcase         tc_fs_vfs_write
 * @brief            Write data into specific file
 * @scenario         Open file and then write data, if writing finished, close file
 * @apicovered       open, write
 * @precondition     NA
 * @postcondition    NA
 */
-static void fs_vfs_write_tc(void)
+static void tc_fs_vfs_write(void)
 {
 	int fd, ret;
 	char *buf = VFS_TEST_CONTENTS_1;
@@ -284,14 +284,14 @@ static void fs_vfs_write_tc(void)
 }
 
 /**
-* @testcase         fs_vfs_read_tc
+* @testcase         tc_fs_vfs_read
 * @brief            Read data from specific file
 * @scenario         Open file and then read data, if reading finished, close file
 * @apicovered       open, read
 * @precondition	    NA
 * @postcondition    NA
 */
-static void fs_vfs_read_tc(void)
+static void tc_fs_vfs_read(void)
 {
 	int fd, ret;
 	char buf[20];
@@ -320,14 +320,14 @@ static void fs_vfs_read_tc(void)
 }
 
 /**
-* @testcase         fs_vfs_close_tc
+* @testcase         tc_fs_vfs_close
 * @brief            Close file
 * @scenario         Open and close
 * @apicovered       open, close
 * @precondition     NA
 * @postcondition    NA
 */
-static void fs_vfs_close_tc(void)
+static void tc_fs_vfs_close(void)
 {
 	int fd, ret;
 	fd = open(VFS_FILE_PATH, O_RDONLY);
@@ -338,7 +338,7 @@ static void fs_vfs_close_tc(void)
 }
 
 /**
-* @testcase         fs_vfs_dup_tc
+* @testcase         tc_fs_vfs_dup
 * @brief            Clone a file descriptor to an arbitray descriptor number
 * @scenario         Open and write data. and then Clone descriptor to fd2, write data with fd2.
 *                   After write, check it writes properly or not.
@@ -346,7 +346,7 @@ static void fs_vfs_close_tc(void)
 * @precondition	    NA
 * @postcondition    NA
 */
-static void fs_vfs_dup_tc(void)
+static void tc_fs_vfs_dup(void)
 {
 	char *filename = VFS_DUP_FILE_PATH;
 	char *str1 = VFS_TEST_CONTENTS_1;
@@ -404,7 +404,7 @@ static void fs_vfs_dup_tc(void)
 }
 
 /**
-* @testcase         fs_vfs_dup2_tc
+* @testcase         tc_fs_vfs_dup2
 * @brief            Clone a file descriptor  to a specific descriptor number
 * @scenario         Open and write data. and then Clone fd1 to fd2, write data with fd1.
 *                   After write, check it writes properly or not by read data with fd2.
@@ -412,7 +412,7 @@ static void fs_vfs_dup_tc(void)
 * @precondition	    NA
 * @postcondition    NA
 */
-static void fs_vfs_dup2_tc(void)
+static void tc_fs_vfs_dup2(void)
 {
 	char *filename1 = VFS_DUP_FILE_PATH;
 	char *filename2 = VFS_DUP2_FILE_PATH;
@@ -460,14 +460,14 @@ static void fs_vfs_dup2_tc(void)
 }
 
 /**
-* @testcase         fs_vfs_fsync_tc
+* @testcase         tc_fs_vfs_fsync
 * @brief            Synchronize the file state on disk to match internal, in-memory state.
 * @scenario         Open and write data. and then check fsync works properly.
 * @apicovered       open, write, fsync, read
 * @precondition     NA
 * @postcondition    NA
 */
-static void fs_vfs_fsync_tc(void)
+static void tc_fs_vfs_fsync(void)
 {
 	int ret, fd, len;
 	char *filename = VFS_FILE_PATH;
@@ -500,14 +500,14 @@ static void fs_vfs_fsync_tc(void)
 }
 
 /**
-* @testcase         fs_vfs_lseek_tc
+* @testcase         tc_fs_vfs_lseek
 * @brief            Move current file position to specific position
 * @scenario         Open file and move position, and then read data to check lseek works properly or not.
 * @apicovered       open, lseek, read
 * @precondition     Data(VFS_TEST_CONTENTS_2) should be written in file(VFS_FILE_PATH)
 * @postcondition    NA
 */
-static void fs_vfs_lseek_tc(void)
+static void tc_fs_vfs_lseek(void)
 {
 	int ret, fd;
 	char *filename = VFS_FILE_PATH;
@@ -534,14 +534,14 @@ static void fs_vfs_lseek_tc(void)
 }
 
 /**
-* @testcase         fs_vfs_pwrite_tc
+* @testcase         tc_fs_vfs_pwrite
 * @brief            Write data at specific position of file
 * @scenario         Open and write data at specific position. And then check file written on disk.
 * @apicovered       open, pwrite, read
 * @precondition     Data(VFS_TEST_CONTENTS_2) should be written in file(VFS_FILE_PATH)
 * @postcondition    NA
 */
-static void fs_vfs_pwrite_tc(void)
+static void tc_fs_vfs_pwrite(void)
 {
 	int ret, fd;
 	char *filename = VFS_FILE_PATH;
@@ -562,14 +562,14 @@ static void fs_vfs_pwrite_tc(void)
 }
 
 /**
-* @testcase         fs_vfs_pread_tc
+* @testcase         tc_fs_vfs_pread
 * @brief            Read data at specific position of file
 * @scenario         Open and read data from specific position.
 * @apicovered       open, pread
-* @precondition     fs_vfs_pwrite_tc should be passed
+* @precondition     tc_fs_vfs_pwrite should be passed
 * @postcondition    NA
 */
-static void fs_vfs_pread_tc(void)
+static void tc_fs_vfs_pread(void)
 {
 	int ret, fd;
 	char *filename = VFS_FILE_PATH;
@@ -593,14 +593,14 @@ static void fs_vfs_pread_tc(void)
 }
 
 /**
-* @testcase         fs_vfs_mkdir_tc
+* @testcase         tc_fs_vfs_mkdir
 * @brief            Create folders
 * @scenario         Create folder(VFS_FOLDER_PATH) and create 5 sub-folders
 * @apicovered       mkdir
 * @precondition     NA
 * @postcondition    NA
 */
-static void fs_vfs_mkdir_tc(void)
+static void tc_fs_vfs_mkdir(void)
 {
 	char filename[14];
 	int i;
@@ -623,14 +623,14 @@ static void fs_vfs_mkdir_tc(void)
 }
 
 /**
-* @testcase         fs_vfs_opendir_tc
+* @testcase         tc_fs_vfs_opendir
 * @brief            Open specific directory to use APIs defined in dirent.h
 * @scenario         Open specific directory
 * @apicovered       opendir
-* @precondition     fs_vfs_mkdir_tc should be passed
+* @precondition     tc_fs_vfs_mkdir should be passed
 * @postcondition    NA
 */
-static void fs_vfs_opendir_tc(void)
+static void tc_fs_vfs_opendir(void)
 {
 	DIR *dirp;
 
@@ -641,14 +641,14 @@ static void fs_vfs_opendir_tc(void)
 }
 
 /**
-* @testcase         fs_vfs_readdir_tc
+* @testcase         tc_fs_vfs_readdir
 * @brief            Read contents in specific directory sequentially
 * @scenario         Read contents in specific folder(VFS_FOLDER_PATH)
 * @apicovered       opendir, readdir, closedir
-* @precondition     fs_vfs_mkdir_tc should be passed
+* @precondition     tc_fs_vfs_mkdir should be passed
 * @postcondition    NA
 */
-static void fs_vfs_readdir_tc(void)
+static void tc_fs_vfs_readdir(void)
 {
 	int ret, count;
 	DIR *dirp;
@@ -672,14 +672,14 @@ static void fs_vfs_readdir_tc(void)
 }
 
 /**
-* @testcase         fs_vfs_rewinddir_tc
+* @testcase         tc_fs_vfs_rewinddir
 * @brief            Reset current position of directory
 * @scenario         Read contents in specific folder(VFS_FOLDER_PATH), and it reachs end of contents, reset & read again
 * @apicovered       opendir, rewinddir, closedir
-* @precondition     fs_vfs_mkdir_tc should be passed
+* @precondition     tc_fs_vfs_mkdir should be passed
 * @postcondition    NA
 */
-static void fs_vfs_rewinddir_tc(void)
+static void tc_fs_vfs_rewinddir(void)
 {
 	int ret, count;
 	DIR *dirp;
@@ -707,14 +707,14 @@ static void fs_vfs_rewinddir_tc(void)
 }
 
 /**
-* @testcase         fs_vfs_seekdir_tc
+* @testcase         tc_fs_vfs_seekdir
 * @brief            Move current position of directory to specific position
 * @scenario         Change position of directory and read contents
 * @apicovered       opendir, seekdir, readdir, closedir
-* @precondition     fs_vfs_mkdir_tc should be passed
+* @precondition     tc_fs_vfs_mkdir should be passed
 * @postcondition    NA
 */
-static void fs_vfs_seekdir_tc(void)
+static void tc_fs_vfs_seekdir(void)
 {
 	int ret;
 	DIR *dirp;
@@ -742,14 +742,14 @@ static void fs_vfs_seekdir_tc(void)
 }
 
 /**
-* @testcase         fs_libc_dirent_readdir_r_tc
+* @testcase         fs_libc_dirent_readdir_r
 * @brief            Get position of next contents in specific directory
 * @scenario         Get next contents's position until it reachs end of contents, and check count of contents
 * @apicovered       opendir, readdir_r, closedir
-* @precondition     fs_vfs_mkdir_tc should be passed
+* @precondition     tc_fs_vfs_mkdir should be passed
 * @postcondition    NA
 */
-static void fs_libc_dirent_readdir_r_tc(void)
+static void fs_libc_dirent_readdir_r(void)
 {
 	int ret, count;
 	DIR *dirp;
@@ -774,14 +774,14 @@ static void fs_libc_dirent_readdir_r_tc(void)
 }
 
 /**
-* @testcase         fs_libc_dirent_telldir_tc
+* @testcase         fs_libc_dirent_telldir
 * @brief            Get position of current contents in specific directory
 * @scenario         Get specific position by seekdir and check telldir returns position properly
 * @apicovered       opendir, seekdir, telldir, closedir
-* @precondition     fs_vfs_mkdir_tc should be passed
+* @precondition     tc_fs_vfs_mkdir should be passed
 * @postcondition    NA
 */
-static void fs_libc_dirent_telldir_tc(void)
+static void fs_libc_dirent_telldir(void)
 {
 	DIR *dirp;
 	off_t offset, res;
@@ -806,14 +806,14 @@ static void fs_libc_dirent_telldir_tc(void)
 }
 
 /**
-* @testcase         fs_vfs_closedir_tc
+* @testcase         tc_fs_vfs_closedir
 * @brief            Close opened directory
 * @scenario         Open and close directory
 * @apicovered       opendir, closedir
 * @precondition     NA
 * @postcondition    NA
 */
-static void fs_vfs_closedir_tc(void)
+static void tc_fs_vfs_closedir(void)
 {
 	int ret;
 	DIR *dirp;
@@ -834,14 +834,14 @@ static void fs_vfs_closedir_tc(void)
 }
 
 /**
-* @testcase         fs_vfs_rmdir_tc
+* @testcase         tc_fs_vfs_rmdir
 * @brief            Remove each of directory
 * @scenario         Remove all exist directory
 * @apicovered       rmdir
-* @precondition     fs_vfs_mkdir_tc should be passed
+* @precondition     tc_fs_vfs_mkdir should be passed
 * @postcondition    NA
 */
-static void fs_vfs_rmdir_tc(void)
+static void tc_fs_vfs_rmdir(void)
 {
 	char filename[14];
 	size_t len;
@@ -869,14 +869,14 @@ static void fs_vfs_rmdir_tc(void)
 }
 
 /**
-* @testcase         fs_vfs_unlink_tc
+* @testcase         tc_fs_vfs_unlink
 * @brief            Unlink specific file
 * @scenario         Unlink specific file(VFS_DUP_FILE_PATH)
 * @apicovered       unlink
-* @precondition     fs_vfs_dup_tc should be passed
+* @precondition     tc_fs_vfs_dup should be passed
 * @postcondition    NA
 */
-static void fs_vfs_unlink_tc(void)
+static void tc_fs_vfs_unlink(void)
 {
 	char *filename = VFS_DUP_FILE_PATH;
 	int ret;
@@ -892,14 +892,14 @@ static void fs_vfs_unlink_tc(void)
 }
 
 /**
-* @testcase         fs_vfs_stat_tc
+* @testcase         tc_fs_vfs_stat
 * @brief            Get status of specific file
 * @scenario         Get status of specific file(VFS_FILE_PATH) by stat
 * @apicovered       stat
 * @precondition     File VFS_FILE_PATH should be existed
 * @postcondition    NA
 */
-static void fs_vfs_stat_tc(void)
+static void tc_fs_vfs_stat(void)
 {
 	char *filename = VFS_FILE_PATH;
 	struct stat st;
@@ -924,14 +924,14 @@ static void fs_vfs_stat_tc(void)
 }
 
 /**
-* @testcase         fs_vfs_statfs_tc
+* @testcase         tc_fs_vfs_statfs
 * @brief            Get status of mounted file system
 * @scenario         Get status of mounted file system by statfs and check type of file system
 * @apicovered       statfs
 * @precondition     File system should be mounted
 * @postcondition    NA
 */
-static void fs_vfs_statfs_tc(void)
+static void tc_fs_vfs_statfs(void)
 {
 	struct statfs fs;
 	int ret;
@@ -951,14 +951,14 @@ static void fs_vfs_statfs_tc(void)
 
 #if defined(CONFIG_PIPES) && (CONFIG_DEV_PIPE_SIZE > 11)
 /**
-* @testcase         fs_vfs_mkfifo_tc
+* @testcase         tc_fs_vfs_mkfifo
 * @brief            Get data thorugh the pipe which create by mkfifo
 * @scenario         Create fifo and check data between main task and its sub-thread
 * @apicovered       mkfifo, open, pthread_create, write, read
 * @precondition     CONFIG_PIPES should be enabled & CONFIG_DEV_PIPE_SIZE must greater than 11
 * @postcondition    NA
 */
-static void fs_vfs_mkfifo_tc(void)
+static void tc_fs_vfs_mkfifo(void)
 {
 	int fd, ret;
 	pthread_t tid;
@@ -1001,14 +1001,14 @@ errout:
 #endif
 
 /**
-* @testcase         fs_vfs_sendfile_tc
+* @testcase         tc_fs_vfs_sendfile
 * @brief            Send file data to specific descriptor from another descriptor
 * @scenario         Create new file and send data from exist file
 * @apicovered       open, stat, sendfile
 * @precondition     File VFS_FILE_PATH should be existed
 * @postcondition    NA
 */
-static void fs_vfs_sendfile_tc(void)
+static void tc_fs_vfs_sendfile(void)
 {
 	char *src_file = VFS_FILE_PATH;
 	char dest_file[16];
@@ -1093,14 +1093,14 @@ static void fs_vfs_sendfile_tc(void)
 }
 
 /**
-* @testcase         fs_vfs_fcntl_tc
+* @testcase         tc_fs_vfs_fcntl
 * @brief            Access & control opened file with fcntl
 * @scenario         Open file with specific flag and get access mode with fcntl
 * @apicovered       open, fcntl
 * @precondition     File VFS_FILE_PATH should be existed
 * @postcondition    NA
 */
-static void fs_vfs_fcntl_tc(void)
+static void tc_fs_vfs_fcntl(void)
 {
 	int fd, mode;
 	char *filename = VFS_FILE_PATH;
@@ -1115,14 +1115,14 @@ static void fs_vfs_fcntl_tc(void)
 
 #ifndef CONFIG_DISABLE_POLL
 /**
-* @testcase         fs_vfs_poll_tc
+* @testcase         tc_fs_vfs_poll
 * @brief            Polling for I/O
 * @scenario         Check poll works properly or not(STDIN, STDOUT)
 * @apicovered       poll
 * @precondition     CONFIG_DISABLE_POLL should be disabled
 * @postcondition    NA
 */
-static void fs_vfs_poll_tc(void)
+static void tc_fs_vfs_poll(void)
 {
 	struct pollfd fds[2];
 	int ret;
@@ -1154,14 +1154,14 @@ static void fs_vfs_poll_tc(void)
 }
 
 /**
-* @testcase         fs_vfs_select_tc
+* @testcase         tc_fs_vfs_select
 * @brief            To monitor multiple I/O
 * @scenario         Input text within 5 sec and check select works properly(check change of STDIN)
 * @apicovered       select
 * @precondition     CONFIG_DISABLE_POLL should be disabled
 * @postcondition    NA
 */
-static void fs_vfs_select_tc(void)
+static void tc_fs_vfs_select(void)
 {
 	struct timeval tv;
 	fd_set readfds;
@@ -1202,14 +1202,14 @@ static void fs_vfs_select_tc(void)
 #endif
 
 /**
-* @testcase         fs_vfs_rename_tc
+* @testcase         tc_fs_vfs_rename
 * @brief            Rename file to specific name
 * @scenario         Rename exist file to specific name
 * @apicovered       rename
 * @precondition     File VFS_FILE_PATH should be existed
 * @postcondition    NA
 */
-static void fs_vfs_rename_tc(void)
+static void tc_fs_vfs_rename(void)
 {
 	int fd;
 	int ret;
@@ -1243,14 +1243,14 @@ static void fs_vfs_rename_tc(void)
 }
 
 /**
-* @testcase         fs_vfs_ioctl_tc
+* @testcase         tc_fs_vfs_ioctl
 * @brief            ioctl with opened file
 * @scenario         Get #byte of data from /dev/console by ioctl
 * @apicovered       open, ioctl
 * @precondition     NA
 * @postcondition    NA
 */
-static void fs_vfs_ioctl_tc(void)
+static void tc_fs_vfs_ioctl(void)
 {
 	int fd, ret;
 	long size;
@@ -1264,14 +1264,14 @@ static void fs_vfs_ioctl_tc(void)
 }
 
 /**
-* @testcase         libc_stdio_dprintf_tc
+* @testcase         tc_libc_stdio_dprintf
 * @brief            Exact analogs of fprintf and vfprintf, except that they output to a file descriptor fd instead of to a stdio stream.
 * @scenario         Exact analogs of fprintf and vfprintf, except that they output to a file descriptor fd instead of to a stdio stream.
 * @apicovered       dprintf
 * @precondition     NA
 * @postcondition    NA
 */
-static void libc_stdio_dprintf_tc(void)
+static void tc_libc_stdio_dprintf(void)
 {
 	char *filename = VFS_FILE_PATH;
 	char *str = VFS_TEST_CONTENTS_1;
@@ -1289,14 +1289,14 @@ static void libc_stdio_dprintf_tc(void)
 }
 
 /**
-* @testcase         libc_stdio_fdopen_tc
+* @testcase         tc_libc_stdio_fdopen
 * @brief            fdopen with available fd value
 * @scenario         Open file with specific flags, and then fdopen with diffrent flag. Then check flag is changed properly
 * @apicovered       open, fdopen
 * @precondition     File VFS_FILE_PATH should be existed
 * @postcondition    NA
 */
-static void libc_stdio_fdopen_tc(void)
+static void tc_libc_stdio_fdopen(void)
 {
 	int fd;
 	FILE *fp;
@@ -1319,14 +1319,14 @@ static void libc_stdio_fdopen_tc(void)
 }
 
 /**
-* @testcase         libc_stdio_fopen_tc
+* @testcase         tc_libc_stdio_fopen
 * @brief            Open file by fopen
 * @scenario         Open file
 * @apicovered       fopen
 * @precondition     NA
 * @postcondition    NA
 */
-static void libc_stdio_fopen_tc(void)
+static void tc_libc_stdio_fopen(void)
 {
 	FILE *fp;
 	char *filename = VFS_FILE_PATH;
@@ -1373,14 +1373,14 @@ static void libc_stdio_fopen_tc(void)
 }
 
 /**
-* @testcase         libc_stdio_fclose_tc
+* @testcase         tc_libc_stdio_fclose
 * @brief            Close file by fopen
 * @scenario         Open and Close file
 * @apicovered       fopen, fclose
 * @precondition     NA
 * @postcondition    NA
 */
-static void libc_stdio_fclose_tc(void)
+static void tc_libc_stdio_fclose(void)
 {
 	FILE *fp;
 	int ret;
@@ -1394,14 +1394,14 @@ static void libc_stdio_fclose_tc(void)
 }
 
 /**
-* @testcase         libc_stdio_fputs_tc
+* @testcase         tc_libc_stdio_fputs
 * @brief            Write contents through the fputs
 * @scenario         Write contents through the fputs, and check it works properly or not
 * @apicovered       fopen, fputs
 * @precondition     File VFS_FILE_PATH should be existed
 * @postcondition    NA
 */
-static void libc_stdio_fputs_tc(void)
+static void tc_libc_stdio_fputs(void)
 {
 	FILE *fp;
 	char *filename = VFS_FILE_PATH;
@@ -1419,14 +1419,14 @@ static void libc_stdio_fputs_tc(void)
 }
 
 /**
-* @testcase         libc_stdio_fgets_tc
+* @testcase         tc_libc_stdio_fgets
 * @brief            Read cntents through the fgets
-* @scenario         Read contents through the fgets, and check it is same contents as written by libc_stdio_fgets_tc
+* @scenario         Read contents through the fgets, and check it is same contents as written by tc_libc_stdio_fgets
 * @apicovered       fopen, fgets
-* @precondition     libc_stdio_fputs_tc  should be passed
+* @precondition     tc_libc_stdio_fputs  should be passed
 * @postcondition    NA
 */
-static void libc_stdio_fgets_tc(void)
+static void tc_libc_stdio_fgets(void)
 {
 	FILE *fp;
 	char *filename = VFS_FILE_PATH;
@@ -1446,14 +1446,14 @@ static void libc_stdio_fgets_tc(void)
 }
 
 /**
-* @testcase         libc_stdio_fseek_tc
+* @testcase         tc_libc_stdio_fseek
 * @brief            Move current file position to specific position
 * @scenario         Open file and move position, and then read data to check lseek works properly or not.
 * @apicovered       fopen, fseek, fgets
-* @precondition     libc_stdio_fputs_tc  should be passed
+* @precondition     tc_libc_stdio_fputs  should be passed
 * @postcondition    NA
 */
-static void libc_stdio_fseek_tc(void)
+static void tc_libc_stdio_fseek(void)
 {
 	FILE *fp;
 	int ret;
@@ -1479,14 +1479,14 @@ static void libc_stdio_fseek_tc(void)
 }
 
 /**
-* @testcase         libc_stdio_ftell_tc
+* @testcase         tc_libc_stdio_ftell
 * @brief            Get current file position
 * @scenario         Open file and move position, and get current position by ftell
 * @apicovered       fopen, fseek, ftell
-* @precondition     libc_stdio_fputs_tc  should be passed
+* @precondition     tc_libc_stdio_fputs  should be passed
 * @postcondition    NA
 */
-static void libc_stdio_ftell_tc(void)
+static void tc_libc_stdio_ftell(void)
 {
 	FILE *fp;
 	int ret;
@@ -1510,14 +1510,14 @@ static void libc_stdio_ftell_tc(void)
 }
 
 /**
-* @testcase         libc_stdio_feof_tc
+* @testcase         tc_libc_stdio_feof
 * @brief            Check file pointer is positioned at the end of file
 * @scenario         Make long size file and print contents until it reaches at the end of file
 * @apicovered       fopen, feof
 * @precondition     NA
 * @postcondition    NA
 */
-static void libc_stdio_feof_tc(void)
+static void tc_libc_stdio_feof(void)
 {
 	FILE *fp;
 	char *filename = LONG_FILE_PATH;
@@ -1540,14 +1540,14 @@ static void libc_stdio_feof_tc(void)
 }
 
 /**
-* @testcase         libc_stdio_fprintf_tc
+* @testcase         tc_libc_stdio_fprintf
 * @brief            Write contents.
 * @scenario         Write contents through the fprintf.
 * @apicovered       fopen, fprintf
 * @precondition     NA
 * @postcondition    NA
 */
-static void libc_stdio_fprintf_tc(void)
+static void tc_libc_stdio_fprintf(void)
 {
 	FILE *fp;
 	char *filename = VFS_FILE_PATH;
@@ -1564,14 +1564,14 @@ static void libc_stdio_fprintf_tc(void)
 }
 
 /**
-* @testcase         libc_stdio_fsetpos_tc
+* @testcase         tc_libc_stdio_fsetpos
 * @brief            Set current file pointer to specific position
 * @scenario         Set new position of file pointer & check read contents to check it works properly
 * @apicovered       fopen, fsetpos, fgetc
-* @precondition     libc_stdio_fprintf_tc should be passed
+* @precondition     tc_libc_stdio_fprintf should be passed
 * @postcondition    NA
 */
-static void libc_stdio_fsetpos_tc(void)
+static void tc_libc_stdio_fsetpos(void)
 {
 	FILE *fp;
 	char *filename = VFS_FILE_PATH;
@@ -1599,14 +1599,14 @@ static void libc_stdio_fsetpos_tc(void)
 }
 
 /**
-* @testcase         libc_stdio_fgetpos_tc
+* @testcase         tc_libc_stdio_fgetpos
 * @brief            Get current file pointer
 * @scenario         Set new position of file pointer & check current position by fgetpos
 * @apicovered       fopen, fsetpos, fgetpos
-* @precondition     libc_stdio_fprintf_tc should be passed
+* @precondition     tc_libc_stdio_fprintf should be passed
 * @postcondition    NA
 */
-static void libc_stdio_fgetpos_tc(void)
+static void tc_libc_stdio_fgetpos(void)
 {
 	FILE *fp;
 	char *filename = VFS_FILE_PATH;
@@ -1631,14 +1631,14 @@ static void libc_stdio_fgetpos_tc(void)
 }
 
 /**
-* @testcase         libc_stdio_fputc_tc
+* @testcase         tc_libc_stdio_fputc
 * @brief            Put character to file
 * @scenario         Put character 'S' to file
 * @apicovered       fopen, fputc
 * @precondition     NA
 * @postcondition    NA
 */
-static void libc_stdio_fputc_tc(void)
+static void tc_libc_stdio_fputc(void)
 {
 	FILE *fp;
 	char *filename = VFS_FILE_PATH;
@@ -1654,14 +1654,14 @@ static void libc_stdio_fputc_tc(void)
 }
 
 /**
-* @testcase         libc_stdio_fgetc_tc
+* @testcase         tc_libc_stdio_fgetc
 * @brief            get character from file
-* @scenario         get character from file and check it is same as which it put in libc_stdio_fputc_tc
+* @scenario         get character from file and check it is same as which it put in tc_libc_stdio_fputc
 * @apicovered       fopen, fgetc
-* @precondition     libc_stdio_fputc_tc should pass
+* @precondition     tc_libc_stdio_fputc should pass
 * @postcondition    NA
 */
-static void libc_stdio_fgetc_tc(void)
+static void tc_libc_stdio_fgetc(void)
 {
 	FILE *fp;
 	char *filename = VFS_FILE_PATH;
@@ -1678,14 +1678,14 @@ static void libc_stdio_fgetc_tc(void)
 }
 
 /**
-* @testcase         libc_stdio_fwrite_tc
+* @testcase         tc_libc_stdio_fwrite
 * @brief            Write 1 line of contents
 * @scenario         Write 3 lines of contents and check its return value
 * @apicovered       fopen, fprintf
 * @precondition     NA
 * @postcondition    NA
 */
-static void libc_stdio_fwrite_tc(void)
+static void tc_libc_stdio_fwrite(void)
 {
 	FILE *fp;
 	char *filename = VFS_FILE_PATH;
@@ -1711,14 +1711,14 @@ static void libc_stdio_fwrite_tc(void)
 }
 
 /**
-* @testcase         libc_stdio_fread_tc
+* @testcase         tc_libc_stdio_fread
 * @brief            Read 1 line of contents
-* @scenario         Read 3 lines of contents and check its same as contents which written in libc_stdio_fwrite_tc
+* @scenario         Read 3 lines of contents and check its same as contents which written in tc_libc_stdio_fwrite
 * @apicovered       fopen, fread
-* @precondition     libc_stdio_fwrite_tc should be passed
+* @precondition     tc_libc_stdio_fwrite should be passed
 * @postcondition    NA
 */
-static void libc_stdio_fread_tc(void)
+static void tc_libc_stdio_fread(void)
 {
 	FILE *fp;
 	char *filename = VFS_FILE_PATH;
@@ -1751,14 +1751,14 @@ static void libc_stdio_fread_tc(void)
 }
 
 /**
-* @testcase         libc_stdio_freopen_tc
+* @testcase         tc_libc_stdio_freopen
 * @brief            Open file by freopen
 * @scenario         Open file
 * @apicovered       freopen
 * @precondition     NA
 * @postcondition    NA
 */
-static void libc_stdio_freopen_tc(void)
+static void tc_libc_stdio_freopen(void)
 {
 	FILE *fp;
 	char *filename = VFS_FILE_PATH;
@@ -1787,14 +1787,14 @@ static void libc_stdio_freopen_tc(void)
 }
 
 /**
-* @testcase         libc_stdio_ferror_tc
+* @testcase         tc_libc_stdio_ferror
 * @brief            Check error occured during operation
 * @scenario         Write data to file which opened with read only flag to make an error forcely and check ferror works properly
 * @apicovered       fopen, fputc, ferror
 * @precondition     File VFS_FILE_PATH should be existed
 * @postcondition    NA
 */
-static void libc_stdio_ferror_tc(void)
+static void tc_libc_stdio_ferror(void)
 {
 	FILE *fp;
 	int ret;
@@ -1814,7 +1814,7 @@ static void libc_stdio_ferror_tc(void)
 }
 
 /**
-* @testcase         libc_stdio_clearerr_tc
+* @testcase         tc_libc_stdio_clearerr
 * @brief            Check error cleared by clearerr after error occured during operation
 * @scenario         Write data to file which opened with read only flag to make an error forcely and
 *                   check ferror works properly and then check error disappeared by clearerr
@@ -1822,7 +1822,7 @@ static void libc_stdio_ferror_tc(void)
 * @precondition     File VFS_FILE_PATH should be existed
 * @postcondition    NA
 */
-static void libc_stdio_clearerr_tc(void)
+static void tc_libc_stdio_clearerr(void)
 {
 	FILE *fp;
 	int ret;
@@ -1846,14 +1846,14 @@ static void libc_stdio_clearerr_tc(void)
 }
 
 /**
-* @testcase         libc_stdio_gets_tc
+* @testcase         tc_libc_stdio_gets
 * @brief            get string by user input
 * @scenario         get string by user input and check it is NULL or not
 * @apicovered       gets
 * @precondition     NA
 * @postcondition    NA
 */
-static void libc_stdio_gets_tc(void)
+static void tc_libc_stdio_gets(void)
 {
 	char input_str[64];
 
@@ -1864,14 +1864,14 @@ static void libc_stdio_gets_tc(void)
 }
 
 /**
-* @testcase         libc_stdio_gets_s_tc
+* @testcase         tc_libc_stdio_gets_s
 * @brief            get string by user input
 * @scenario         get string by user input and check it is NULL or not
 * @apicovered       gets
 * @precondition     NA
 * @postcondition    NA
 */
-static void libc_stdio_gets_s_tc(void)
+static void tc_libc_stdio_gets_s(void)
 {
 	char input_str[64];
 
@@ -1882,14 +1882,14 @@ static void libc_stdio_gets_s_tc(void)
 }
 
 /**
-* @testcase         libc_stdio_fileno_tc
+* @testcase         tc_libc_stdio_fileno
 * @brief            Get fd value related to file stream
 * @scenario         Open file with fopen and get fd value through the fileno
 * @apicovered       fopen, fileno
 * @precondition     NA
 * @postcondition    NA
 */
-static void libc_stdio_fileno_tc(void)
+static void tc_libc_stdio_fileno(void)
 {
 	FILE *fp;
 	char *filename = VFS_FILE_PATH;
@@ -1911,14 +1911,14 @@ static void libc_stdio_fileno_tc(void)
 
 #if CONFIG_STDIO_BUFFER_SIZE > 0
 /**
-* @testcase         libc_stdio_lib_rdflush_tc
+* @testcase         tc_libc_stdio_lib_rdflush
 * @brief            Flush read data from the I/O buffer and adjust the file pointer to account for the unread data.
 * @scenario         Flush read data from the I/O buffer and adjust the file pointer to account for the unread data.
 * @apicovered       lib_rdflush
 * @precondition     NA
 * @postcondition    NA
 */
-static void libc_stdio_lib_rdflush_tc(void)
+static void tc_libc_stdio_lib_rdflush(void)
 {
 	char *filename = VFS_FILE_PATH;
 	FILE *stream;
@@ -1937,14 +1937,14 @@ static void libc_stdio_lib_rdflush_tc(void)
 
 #ifdef CONFIG_STDIO_LINEBUFFER
 /**
-* @testcase         libc_stdio_lib_snoflush_tc
+* @testcase         tc_libc_stdio_lib_snoflush
 * @brief            provides a common, dummy flush method for seekable output streams that are not flushable.
 * @scenario         Only used if CONFIG_STDIO_LINEBUFFER is selected.
 * @apicovered       lib_snoflush
 * @precondition     NA
 * @postcondition    NA
 */
-static void libc_stdio_lib_snoflush_tc(void)
+static void tc_libc_stdio_lib_snoflush(void)
 {
 	int ret;
 
@@ -1956,7 +1956,7 @@ static void libc_stdio_lib_snoflush_tc(void)
 #endif
 
 /**
-* @testcase         libc_stdio_lib_sprintf_tc
+* @testcase         tc_libc_stdio_lib_sprintf
 * @brief            Composes a string with the same text that would be printed if format was used on printf
 *                   But instead of being printed the content is stored as a C string in the buffer pointed by str
 * @scenario         A terminating null character is automatically appended after the content.
@@ -1964,7 +1964,7 @@ static void libc_stdio_lib_snoflush_tc(void)
 * @precondition     The size of the buffer should be large enough to contain the entire resulting string
 * @postcondition    NA
 */
-static void libc_stdio_lib_sprintf_tc(void)
+static void tc_libc_stdio_lib_sprintf(void)
 {
 	struct lib_memoutstream_s memoutstream;
 	char *str = VFS_TEST_CONTENTS_1;
@@ -1981,14 +1981,14 @@ static void libc_stdio_lib_sprintf_tc(void)
 }
 
 /**
-* @testcase         libc_stdio_remove_tc
+* @testcase         tc_libc_stdio_remove
 * @brief            Deletes the file whose name is specified in filename.
 * @scenario         Open file
 * @apicovered       remove
 * @precondition     NA
 * @postcondition    NA
 */
-static void libc_stdio_remove_tc(void)
+static void tc_libc_stdio_remove(void)
 {
 	char *filename = VFS_FILE_PATH;
 	int ret = NULL;
@@ -2000,7 +2000,7 @@ static void libc_stdio_remove_tc(void)
 }
 
 /**
-* @testcase         libc_stdio_setbuf_tc
+* @testcase         tc_libc_stdio_setbuf
 * @brief            Set stream buffer
 * @scenario         Open file
 * @apicovered       setbuf, setvbuf
@@ -2008,7 +2008,7 @@ static void libc_stdio_remove_tc(void)
 * @postcondition    NA
 */
 #if CONFIG_STDIO_BUFFER_SIZE > 0
-static void libc_stdio_setbuf_tc(void)
+static void tc_libc_stdio_setbuf(void)
 {
 	FILE *fp;
 	char buffer[64];
@@ -2038,7 +2038,7 @@ static void libc_stdio_setbuf_tc(void)
 #endif
 
 /**
-* @testcase         libc_stdio_setvbuf_tc
+* @testcase         tc_libc_stdio_setvbuf
 * @brief            Change stream buffering
 * @scenario         Open file
 * @apicovered       setbuf, setvbuf
@@ -2046,7 +2046,7 @@ static void libc_stdio_setbuf_tc(void)
 * @postcondition    NA
 */
 #if CONFIG_STDIO_BUFFER_SIZE > 0
-static void libc_stdio_setvbuf_tc(void)
+static void tc_libc_stdio_setvbuf(void)
 {
 	FILE *fp;
 	char buffer[64];
@@ -2090,14 +2090,14 @@ static void libc_stdio_setvbuf_tc(void)
 #endif
 
 /**
-* @testcase         libc_stdio_meminstream_tc
+* @testcase         tc_libc_stdio_meminstream
 * @brief            Initializes a stream for use with a fixed-size memory buffer
 * @scenario         Initializes a stream for use with a fixed-size memory buffer
 * @apicovered       lib_meminstream
 * @precondition     NA
 * @postcondition    NA
 */
-static void libc_stdio_meminstream_tc(void)
+static void tc_libc_stdio_meminstream(void)
 {
 	FAR char buf[STDIO_BUFLEN];
 
@@ -2111,14 +2111,14 @@ static void libc_stdio_meminstream_tc(void)
 }
 
 /**
-* @testcase         libc_stdio_memoutstream_tc
+* @testcase         tc_libc_stdio_memoutstream
 * @brief            Initializes a stream for use with a fixed-size memory buffer
 * @scenario         Initializes a stream for use with a fixed-size memory buffer
 * @apicovered       lib_memoutstream
 * @precondition     NA
 * @postcondition    NA
 */
-static void libc_stdio_memoutstream_tc(void)
+static void tc_libc_stdio_memoutstream(void)
 {
 	FAR char buf[STDIO_BUFLEN];
 
@@ -2132,14 +2132,14 @@ static void libc_stdio_memoutstream_tc(void)
 }
 
 /**
-* @testcase         libc_stdio_memsistream_tc
+* @testcase         tc_libc_stdio_memsistream
 * @brief            Initializes a stream for use with a fixed-size memory buffer
 * @scenario         Initializes a stream for use with a fixed-size memory buffer
 * @apicovered       lib_memsistream
 * @precondition     NA
 * @postcondition    NA
 */
-static void libc_stdio_memsistream_tc(void)
+static void tc_libc_stdio_memsistream(void)
 {
 	FAR char buf[STDIO_BUFLEN];
 
@@ -2156,14 +2156,14 @@ static void libc_stdio_memsistream_tc(void)
 }
 
 /**
-* @testcase         libc_stdio_memsostream_tc
+* @testcase         tc_libc_stdio_memsostream
 * @brief            Initializes a stream for use with a fixed-size memory buffer
 * @scenario         Initializes a stream for use with a fixed-size memory buffer
 * @apicovered       lib_memsostream
 * @precondition     NA
 * @postcondition    NA
 */
-static void libc_stdio_memsostream_tc(void)
+static void tc_libc_stdio_memsostream(void)
 {
 	FAR char buf[STDIO_BUFLEN];
 
@@ -2180,14 +2180,14 @@ static void libc_stdio_memsostream_tc(void)
 }
 
 /**
-* @testcase         libc_stdio_nullinstream_tc
+* @testcase         tc_libc_stdio_nullinstream
 * @brief            Initializes a NULL stream. The initialized stream will return only EOF
 * @scenario         Initializes a NULL stream. The initialized stream will return only EOF
 * @apicovered       lib_nullinstream
 * @precondition     NA
 * @postcondition    NA
 */
-static void libc_stdio_nullinstream_tc(void)
+static void tc_libc_stdio_nullinstream(void)
 {
 	struct lib_instream_s nullinstream;
 
@@ -2198,14 +2198,14 @@ static void libc_stdio_nullinstream_tc(void)
 }
 
 /**
-* @testcase         libc_stdio_nulloutstream_tc
+* @testcase         tc_libc_stdio_nulloutstream
 * @brief            Initializes a NULL stream. The initialized stream will write all data to the bit-bucket
 * @scenario         Initializes a NULL stream. The initialized stream will write all data to the bit-bucket
 * @apicovered       lib_nulloutstream
 * @precondition     NA
 * @postcondition    NA
 */
-static void libc_stdio_nulloutstream_tc(void)
+static void tc_libc_stdio_nulloutstream(void)
 {
 	struct lib_outstream_s nulloutstream;
 
@@ -2216,14 +2216,14 @@ static void libc_stdio_nulloutstream_tc(void)
 }
 
 /**
-* @testcase         libc_stdio_rawinstream_tc
+* @testcase         tc_libc_stdio_rawinstream
 * @brief            Initializes a stream for use with a file descriptor
 * @scenario         Initializes a stream for use with a file descriptor
 * @apicovered       lib_rawinstream
 * @precondition     NA
 * @postcondition    NA
 */
-static void libc_stdio_rawinstream_tc(void)
+static void tc_libc_stdio_rawinstream(void)
 {
 	int fd;
 	char *filename = VFS_FILE_PATH;
@@ -2242,14 +2242,14 @@ static void libc_stdio_rawinstream_tc(void)
 }
 
 /**
-* @testcase         libc_stdio_rawoutstream_tc
+* @testcase         tc_libc_stdio_rawoutstream
 * @brief            Initializes a stream for use with a file descriptor
 * @scenario         Initializes a stream for use with a file descriptor
 * @apicovered       lib_rawoutstream
 * @precondition     NA
 * @postcondition    NA
 */
-static void libc_stdio_rawoutstream_tc(void)
+static void tc_libc_stdio_rawoutstream(void)
 {
 	int fd;
 	char *filename = VFS_FILE_PATH;
@@ -2268,14 +2268,14 @@ static void libc_stdio_rawoutstream_tc(void)
 }
 
 /**
-* @testcase         libc_stdio_rawsistream_tc
+* @testcase         tc_libc_stdio_rawsistream
 * @brief            Initializes a stream for use with a file descriptor
 * @scenario         Initializes a stream for use with a file descriptor
 * @apicovered       lib_rawsistream
 * @precondition     NA
 * @postcondition    NA
 */
-static void libc_stdio_rawsistream_tc(void)
+static void tc_libc_stdio_rawsistream(void)
 {
 	int fd;
 	char *filename = VFS_FILE_PATH;
@@ -2294,14 +2294,14 @@ static void libc_stdio_rawsistream_tc(void)
 }
 
 /**
-* @testcase         libc_stdio_rawsostream_tc
+* @testcase         tc_libc_stdio_rawsostream
 * @brief            Initializes a stream for use with a file descriptor
 * @scenario         Initializes a stream for use with a file descriptor
 * @apicovered       lib_rawsostream
 * @precondition     NA
 * @postcondition    NA
 */
-static void libc_stdio_rawsostream_tc(void)
+static void tc_libc_stdio_rawsostream(void)
 {
 	int fd;
 	char *filename = VFS_FILE_PATH;
@@ -2320,7 +2320,7 @@ static void libc_stdio_rawsostream_tc(void)
 }
 
 /**
-* @testcase         libc_stdio_sprintf_tc
+* @testcase         tc_libc_stdio_sprintf
 * @brief            Composes a string with the same text that would be printed if format was used on printf
 *                   But instead of being printed the content is stored as a C string in the buffer pointed by str
 * @scenario         A terminating null character is automatically appended after the content.
@@ -2328,7 +2328,7 @@ static void libc_stdio_rawsostream_tc(void)
 * @precondition     The size of the buffer should be large enough to contain the entire resulting string
 * @postcondition    NA
 */
-static void libc_stdio_sprintf_tc(void)
+static void tc_libc_stdio_sprintf(void)
 {
 	char buf[STDIO_BUFLEN];
 	char *str = VFS_TEST_CONTENTS_1;
@@ -2341,14 +2341,14 @@ static void libc_stdio_sprintf_tc(void)
 }
 
 /**
-* @testcase         libc_stdio_stdinstream_tc
+* @testcase         tc_libc_stdio_stdinstream
 * @brief            Initializes a stream for use with a FILE instance
 * @scenario         Initializes a stream for use with a FILE instance
 * @apicovered       lib_stdinstream
 * @precondition     NA
 * @postcondition    NA
 */
-static void libc_stdio_stdinstream_tc(void)
+static void tc_libc_stdio_stdinstream(void)
 {
 	FILE *stream;
 	char *filename = VFS_FILE_PATH;
@@ -2367,14 +2367,14 @@ static void libc_stdio_stdinstream_tc(void)
 }
 
 /**
-* @testcase         libc_stdio_stdoutstream_tc
+* @testcase         tc_libc_stdio_stdoutstream
 * @brief            Initializes a stream for use with a FILE instance
 * @scenario         Initializes a stream for use with a FILE instance
 * @apicovered       lib_stdoutstream
 * @precondition     NA
 * @postcondition    NA
 */
-static void libc_stdio_stdoutstream_tc(void)
+static void tc_libc_stdio_stdoutstream(void)
 {
 	FILE *stream;
 	char *filename = VFS_FILE_PATH;
@@ -2393,14 +2393,14 @@ static void libc_stdio_stdoutstream_tc(void)
 }
 
 /**
-* @testcase         libc_stdio_stdsistream_tc
+* @testcase         tc_libc_stdio_stdsistream
 * @brief            Initializes a stream for use with a FILE instance
 * @scenario         Initializes a stream for use with a FILE instance
 * @apicovered       lib_stdsistream
 * @precondition     NA
 * @postcondition    NA
 */
-static void libc_stdio_stdsistream_tc(void)
+static void tc_libc_stdio_stdsistream(void)
 {
 	FILE *stream;
 	char *filename = VFS_FILE_PATH;
@@ -2419,14 +2419,14 @@ static void libc_stdio_stdsistream_tc(void)
 }
 
 /**
-* @testcase         libc_stdio_stdsostream_tc
+* @testcase         tc_libc_stdio_stdsostream
 * @brief            Initializes a stream for use with a FILE instance
 * @scenario         Initializes a stream for use with a FILE instance
 * @apicovered       lib_stdsostream
 * @precondition     NA
 * @postcondition    NA
 */
-static void libc_stdio_stdsostream_tc(void)
+static void tc_libc_stdio_stdsostream(void)
 {
 	FILE *stream;
 	char *filename = VFS_FILE_PATH;
@@ -2445,14 +2445,14 @@ static void libc_stdio_stdsostream_tc(void)
 }
 
 /**
-* @testcase         libc_stdio_zeroinstream_tc
+* @testcase         tc_libc_stdio_zeroinstream
 * @brief            Initializes a NULL stream.  The initialized stream will return an infinitely long stream of zeroes.
 * @scenario         Initializes a NULL stream.  The initialized stream will return an infinitely long stream of zeroes.
 * @apicovered       lib_zeroinstream
 * @precondition     NA
 * @postcondition    NA
 */
-static void libc_stdio_zeroinstream_tc(void)
+static void tc_libc_stdio_zeroinstream(void)
 {
 	struct lib_instream_s zeroinstream;
 
@@ -2463,14 +2463,14 @@ static void libc_stdio_zeroinstream_tc(void)
 }
 
 /**
-* @testcase         libc_stdio_ungetc_tc
+* @testcase         tc_libc_stdio_ungetc
 * @brief            Input character into file stream
 * @scenario         Get character by fgets and then input again with ungetc. after that compare both of characters
 * @apicovered       fopen, fputc, fgetc, ungetc
 * @precondition     NA
 * @postcondition    NA
 */
-static void libc_stdio_ungetc_tc(void)
+static void tc_libc_stdio_ungetc(void)
 {
 	FILE *fp;
 	char *filename = VFS_FILE_PATH;
@@ -2523,95 +2523,95 @@ static int fs_sample_launcher(int argc, char **args)
 	total_pass = 0;
 	total_fail = 0;
 
-	fs_vfs_umount_tc();
-	fs_vfs_mount_tc();
-	fs_vfs_open_tc();
-	fs_vfs_write_tc();
-	fs_vfs_read_tc();
-	fs_vfs_close_tc();
-	fs_vfs_dup_tc();
-	fs_vfs_dup2_tc();
-	fs_vfs_fsync_tc();
-	fs_vfs_lseek_tc();
-	fs_vfs_pwrite_tc();
-	fs_vfs_pread_tc();
-	fs_vfs_mkdir_tc();
-	fs_vfs_opendir_tc();
-	fs_vfs_readdir_tc();
-	fs_vfs_rewinddir_tc();
-	fs_vfs_seekdir_tc();
-	fs_vfs_closedir_tc();
-	fs_libc_dirent_readdir_r_tc();
-	fs_libc_dirent_telldir_tc();
-	fs_vfs_rmdir_tc();
-	fs_vfs_unlink_tc();
-	fs_vfs_stat_tc();
-	fs_vfs_statfs_tc();
+	tc_fs_vfs_umount();
+	tc_fs_vfs_mount();
+	tc_fs_vfs_open();
+	tc_fs_vfs_write();
+	tc_fs_vfs_read();
+	tc_fs_vfs_close();
+	tc_fs_vfs_dup();
+	tc_fs_vfs_dup2();
+	tc_fs_vfs_fsync();
+	tc_fs_vfs_lseek();
+	tc_fs_vfs_pwrite();
+	tc_fs_vfs_pread();
+	tc_fs_vfs_mkdir();
+	tc_fs_vfs_opendir();
+	tc_fs_vfs_readdir();
+	tc_fs_vfs_rewinddir();
+	tc_fs_vfs_seekdir();
+	tc_fs_vfs_closedir();
+	fs_libc_dirent_readdir_r();
+	fs_libc_dirent_telldir();
+	tc_fs_vfs_rmdir();
+	tc_fs_vfs_unlink();
+	tc_fs_vfs_stat();
+	tc_fs_vfs_statfs();
 #if defined(CONFIG_PIPES) && (CONFIG_DEV_PIPE_SIZE > 11)
-	fs_vfs_mkfifo_tc();
+	tc_fs_vfs_mkfifo();
 #endif
-	fs_vfs_sendfile_tc();
-	fs_vfs_fcntl_tc();
+	tc_fs_vfs_sendfile();
+	tc_fs_vfs_fcntl();
 #ifndef CONFIG_DISABLE_POLL
-	fs_vfs_poll_tc();
-	fs_vfs_select_tc();
+	tc_fs_vfs_poll();
+	tc_fs_vfs_select();
 #endif
-	fs_vfs_rename_tc();
-	fs_vfs_ioctl_tc();
+	tc_fs_vfs_rename();
+	tc_fs_vfs_ioctl();
 #ifdef CONFIG_TC_FS_PROCFS
 	tc_fs_procfs_main();
 #endif
-	libc_stdio_dprintf_tc();
-	libc_stdio_fdopen_tc();
-	libc_stdio_fopen_tc();
-	libc_stdio_fclose_tc();
-	libc_stdio_fputs_tc();
-	libc_stdio_fgets_tc();
-	libc_stdio_fseek_tc();
-	libc_stdio_ftell_tc();
-	libc_stdio_feof_tc();
-	libc_stdio_fprintf_tc();
-	libc_stdio_fsetpos_tc();
-	libc_stdio_fgetpos_tc();
-	libc_stdio_fputc_tc();
-	libc_stdio_fgetc_tc();
-	libc_stdio_fwrite_tc();
-	libc_stdio_fread_tc();
-	libc_stdio_freopen_tc();
-	libc_stdio_ferror_tc();
-	libc_stdio_clearerr_tc();
-	libc_stdio_gets_tc();
-	libc_stdio_gets_s_tc();
-	libc_stdio_fileno_tc();
+	tc_libc_stdio_dprintf();
+	tc_libc_stdio_fdopen();
+	tc_libc_stdio_fopen();
+	tc_libc_stdio_fclose();
+	tc_libc_stdio_fputs();
+	tc_libc_stdio_fgets();
+	tc_libc_stdio_fseek();
+	tc_libc_stdio_ftell();
+	tc_libc_stdio_feof();
+	tc_libc_stdio_fprintf();
+	tc_libc_stdio_fsetpos();
+	tc_libc_stdio_fgetpos();
+	tc_libc_stdio_fputc();
+	tc_libc_stdio_fgetc();
+	tc_libc_stdio_fwrite();
+	tc_libc_stdio_fread();
+	tc_libc_stdio_freopen();
+	tc_libc_stdio_ferror();
+	tc_libc_stdio_clearerr();
+	tc_libc_stdio_gets();
+	tc_libc_stdio_gets_s();
+	tc_libc_stdio_fileno();
 #if CONFIG_STDIO_BUFFER_SIZE > 0
-	libc_stdio_lib_rdflush_tc();
+	tc_libc_stdio_lib_rdflush();
 #endif
 #ifdef CONFIG_STDIO_LINEBUFFER
-	libc_stdio_lib_snoflush_tc();
+	tc_libc_stdio_lib_snoflush();
 #endif
-	libc_stdio_lib_sprintf_tc();
-	libc_stdio_remove_tc();
+	tc_libc_stdio_lib_sprintf();
+	tc_libc_stdio_remove();
 #if CONFIG_STDIO_BUFFER_SIZE > 0
-	libc_stdio_setbuf_tc();
-	libc_stdio_setvbuf_tc();
+	tc_libc_stdio_setbuf();
+	tc_libc_stdio_setvbuf();
 #endif
-	libc_stdio_meminstream_tc();
-	libc_stdio_memoutstream_tc();
-	libc_stdio_memsistream_tc();
-	libc_stdio_memsostream_tc();
-	libc_stdio_nullinstream_tc();
-	libc_stdio_nulloutstream_tc();
-	libc_stdio_rawinstream_tc();
-	libc_stdio_rawoutstream_tc();
-	libc_stdio_rawsistream_tc();
-	libc_stdio_rawsostream_tc();
-	libc_stdio_sprintf_tc();
-	libc_stdio_stdinstream_tc();
-	libc_stdio_stdoutstream_tc();
-	libc_stdio_stdsistream_tc();
-	libc_stdio_stdsostream_tc();
-	libc_stdio_ungetc_tc();
-	libc_stdio_zeroinstream_tc();
+	tc_libc_stdio_meminstream();
+	tc_libc_stdio_memoutstream();
+	tc_libc_stdio_memsistream();
+	tc_libc_stdio_memsostream();
+	tc_libc_stdio_nullinstream();
+	tc_libc_stdio_nulloutstream();
+	tc_libc_stdio_rawinstream();
+	tc_libc_stdio_rawoutstream();
+	tc_libc_stdio_rawsistream();
+	tc_libc_stdio_rawsostream();
+	tc_libc_stdio_sprintf();
+	tc_libc_stdio_stdinstream();
+	tc_libc_stdio_stdoutstream();
+	tc_libc_stdio_stdsistream();
+	tc_libc_stdio_stdsostream();
+	tc_libc_stdio_ungetc();
+	tc_libc_stdio_zeroinstream();
 
 	printf("#########################################\n");
 	printf("           FS TC Result               \n");
