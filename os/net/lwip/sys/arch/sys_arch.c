@@ -654,7 +654,7 @@ sys_thread_t sys_thread_new(const char *name, lwip_thread_fn entry_function, voi
 
 	if (s_nextthread < SYS_THREAD_MAX) {
 		sys_thread_t new_thread;
-		new_thread = task_create(name, priority, stacksize, (main_t)entry_function, (char * const *)NULL);
+		new_thread = kernel_thread(name, priority, stacksize, (main_t)entry_function, (char * const *)NULL);
 		if (new_thread < 0) {
 			int errval = errno;
 			LWIP_DEBUGF(SYS_DEBUG, ("Failed to create new_thread: %d", errval));

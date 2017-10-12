@@ -68,7 +68,7 @@ romfs()
 		pushd ${OPENOCD_DIR_PATH}
 		${OPENOCD_BIN_PATH}/openocd -c "${OPENOCD_ROMFS}" -f artik053.cfg -c ' 	\
 		flash_write rom ../../../../output/bin/romfs.img; \
-		exit'
+		exit' || finish_download 1
 		popd
 	fi
 }
@@ -111,7 +111,7 @@ main()
 			flash_write sssfw ../../bin/sssfw.bin; 		\
 			flash_write wlanfw ../../bin/wlanfw.bin;	\
 			flash_write os ../../../../output/bin/tinyara_head.bin;	\
-			exit'
+			exit' || finish_download 1
 			popd
 
 			# check romfs and download it
@@ -124,7 +124,7 @@ main()
 			pushd ${OPENOCD_DIR_PATH}
 			${OPENOCD_BIN_PATH}/openocd -c "${OPENOCD_ROMFS}" -f artik053.cfg -c ' 	\
 			flash_erase_part user;	\
-			exit'
+			exit' || finish_download 1
 			popd
 			;;
 
