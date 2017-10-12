@@ -222,10 +222,14 @@ static size_t coap_serialize_multi_option(unsigned int number, unsigned int curr
 
 /*-----------------------------------------------------------------------------------*/
 static
-void coap_merge_multi_option(uint8_t **dst, size_t *dst_len, uint8_t *option, size_t option_len, char separator)
+int coap_merge_multi_option(uint8_t **dst, size_t *dst_len, uint8_t *option, size_t option_len, char separator, uint8_t *buffer_boundary)
 {
 	/* Merge multiple options. */
 	if (*dst_len > 0) {
+		/* Destination isn't large enough to contain option bytes */
+		if (*dst + *dst_len + option_len > buffer_boundary) {
+			return -1;
+		}
 		/* dst already contains an option: concatenate */
 		(*dst)[*dst_len] = separator;
 		*dst_len += 1;
@@ -235,10 +239,15 @@ void coap_merge_multi_option(uint8_t **dst, size_t *dst_len, uint8_t *option, si
 
 		*dst_len += option_len;
 	} else {
+		/* Option bytes exceeds boundary, cannot fit into destination */
+		if (option + option_len > buffer_boundary) {
+			return -1;
+		}
 		/* dst is empty: set to option */
 		*dst = option;
 		*dst_len = option_len;
 	}
+	return 1;
 }
 
 void coap_add_multi_option(multi_option_t **dst, uint8_t *option, size_t option_len, uint8_t is_static)
@@ -805,6 +814,10 @@ coap_status_t coap_parse_message(void *packet, coap_protocol_t protocol, uint8_t
 	size_t option_length = 0;
 	unsigned int *x;
 
+	if (data_len < COAP_HEADER_LEN) {
+		return NOT_ACCEPTABLE_4_06;
+	}
+
 	/* Initialize packet */
 	memset(coap_pkt, 0, sizeof(coap_packet_t));
 
@@ -898,7 +911,6 @@ coap_status_t coap_parse_message(void *packet, coap_protocol_t protocol, uint8_t
 		option_number += option_delta;
 
 		PRINTF("OPTION %u (delta %u, len %u): ", option_number, option_delta, option_length);
-
 		SET_OPTION(coap_pkt, option_number);
 
 		switch (option_number) {
@@ -962,7 +974,9 @@ coap_status_t coap_parse_message(void *packet, coap_protocol_t protocol, uint8_t
 			break;
 		case COAP_OPTION_LOCATION_QUERY:
 			/* coap_merge_multi_option() operates in-place on the IPBUF, but final packet field should be const string -> cast to string */
-			coap_merge_multi_option(&(coap_pkt->location_query), &(coap_pkt->location_query_len), current_option, option_length, '&');
+			if (coap_merge_multi_option(&(coap_pkt->location_query), &(coap_pkt->location_query_len), current_option, option_length, '&', (uint8_t *)data + data_len) == -1) {
+				return NOT_ACCEPTABLE_4_06;
+			}
 			PRINTF("Location-Query [%.*s]\n", option_length, current_option);
 			break;
 
