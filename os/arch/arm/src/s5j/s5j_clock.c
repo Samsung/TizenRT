@@ -226,6 +226,12 @@ void s5j_clk_set_rate(unsigned int id, unsigned long rate)
 	case CLK_SPL_SPI1:
 	case CLK_SPL_SPI2:
 	case CLK_SPL_SPI3:
+		/* Exynos T200 provides an SPI with various kinds of clock sources.
+		 * SPI uses the SCLK_SPI clock from an external Clock Controller Module (CMU).
+		 * You can also select an SCLK_SPI from various clock sources.
+		 * An SPI contains an internal 1/2 clock divider.
+		 * Configure the SCLK_SPI value to the double of an SPI operating clock frequency.
+		 */
 		clk_spi_set_rate(id, rate * 2);
 		break;
 
