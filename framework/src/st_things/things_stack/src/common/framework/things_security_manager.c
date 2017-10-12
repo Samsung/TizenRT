@@ -37,6 +37,7 @@
 #include "utlist.h"
 #include "aclresource.h"
 #include "srmutility.h"
+#include "mbedtls/see_api.h"
 
 #include <wifi_manager/wifi_manager.h>
 
@@ -529,7 +530,7 @@ int sm_init_things_security(int auth_type, const char *db_path)
 		THINGS_LOG_ERROR(THINGS_ERROR, TAG, "Failed to create SVR DB.");
 		return res;
 	}
-
+	
 	static OCPersistentStorage ps = { server_fopen, server_fread, server_fwrite, server_fclose, unlink };
 	THINGS_LOG(THINGS_INFO, TAG, "******* WARNING : SVR DB will be used without encryption *******");
 	
