@@ -95,6 +95,11 @@ static void errorCallback(void *arg, int errCode, const char *errMsg)
     OIC_LOG_V(ERROR, TAG, "SQLLite Error: %s : %d", errMsg, errCode);
 }
 
+static bool stringArgumentNonNullAndWithinBounds(const char* argument)
+{
+    return ((NULL != argument) && (strlen(argument) <= INT_MAX));
+}
+
 static bool stringArgumentWithinBounds(const char* argument)
 {
     return ((NULL == argument) || (strlen(argument) <= INT_MAX));
@@ -115,7 +120,7 @@ static bool stringArgumentsWithinBounds(const char** arguments, size_t count)
 
 static int storeResourceTypes(const char **resourceTypes, size_t size, sqlite3_int64 rowid)
 {
-    int res = 1;
+    int res = SQLITE_ERROR;
     sqlite3_stmt *stmt = NULL;
     if (!stringArgumentsWithinBounds(resourceTypes, size))
     {
@@ -128,7 +133,6 @@ static int storeResourceTypes(const char **resourceTypes, size_t size, sqlite3_i
     static const char insertRT[] = "INSERT INTO RD_LINK_RT VALUES(@resourceType, @id)";
     int deleteRTSize = (int)sizeof(deleteRT);
     int insertRTSize = (int)sizeof(insertRT);
-
 
     VERIFY_SQLITE(sqlite3_prepare_v2(gRDDB, deleteRT, deleteRTSize, &stmt, NULL));
     VERIFY_SQLITE(sqlite3_bind_int64(stmt, sqlite3_bind_parameter_index(stmt, "@id"), rowid));
@@ -172,7 +176,7 @@ exit:
 
 static int storeInterfaces(const char **interfaces, size_t size, sqlite3_int64 rowid)
 {
-    int res = 1;
+    int res = SQLITE_ERROR;
     sqlite3_stmt *stmt = NULL;
     if (!stringArgumentsWithinBounds(interfaces, size))
     {
@@ -288,182 +292,188 @@ exit:
     return res;
 }
 
-static int storeLinkPayload(const OCRepPayload *rdPayload, sqlite3_int64 rowid)
+static OCRepPayloadValue *getLinks(const OCRepPayload *rdPayload)
 {
-    int res = SQLITE_OK;
-
     /*
      * Iterate over the properties manually rather than OCRepPayloadGetPropObjectArray to avoid
      * the clone since we want to insert the 'ins' values into the payload.
      */
-    OCRepPayloadValue *links;
-    for (links = rdPayload->values; links; links = links->next)
+    OCRepPayloadValue *links = NULL;
+    if (rdPayload)
     {
-        if (0 == strcmp(links->name, OC_RSRVD_LINKS))
+        for (links = rdPayload->values; links; links = links->next)
         {
-            if (links->type != OCREP_PROP_ARRAY || links->arr.type != OCREP_PROP_OBJECT)
+            if (0 == strcmp(links->name, OC_RSRVD_LINKS))
             {
-                links = NULL;
+                if (links->type != OCREP_PROP_ARRAY || links->arr.type != OCREP_PROP_OBJECT)
+                {
+                    links = NULL;
+                }
+                break;
             }
-            break;
         }
     }
-    if (links != NULL)
+    return links;
+}
+
+static int storeLinkPayload(OCRepPayloadValue *links, sqlite3_int64 rowid)
+{
+    int res = SQLITE_OK;
+
+    sqlite3_stmt *stmt = NULL;
+    char *uri = NULL;
+    char *anchor = NULL;
+    OCRepPayload *p = NULL;
+    char **rt = NULL;
+    size_t rtDim[MAX_REP_ARRAY_DEPTH] = {0};
+    char **itf = NULL;
+    size_t itfDim[MAX_REP_ARRAY_DEPTH] = {0};
+    OCRepPayload** eps = NULL;
+    size_t epsDim[MAX_REP_ARRAY_DEPTH] = {0};
+
+    static const char insertDeviceLLList[] = "INSERT OR IGNORE INTO RD_DEVICE_LINK_LIST (ins, href, DEVICE_ID) "
+        "VALUES((SELECT ins FROM RD_DEVICE_LINK_LIST WHERE DEVICE_ID=@id AND href=@uri),@uri,@id)";
+    static const char updateDeviceLLList[] = "UPDATE RD_DEVICE_LINK_LIST SET anchor=@anchor,bm=@bm "
+        "WHERE DEVICE_ID=@id AND href=@uri";
+    int insertDeviceLLListSize = (int)sizeof(insertDeviceLLList);
+    int updateDeviceLLListSize = (int)sizeof(updateDeviceLLList);
+
+    assert(links);
+    for (size_t i = 0; (SQLITE_OK == res) && (i < links->arr.dimensions[0]); i++)
     {
-        sqlite3_stmt *stmt = NULL;
-        char *uri = NULL;
-        char *anchor = NULL;
-        OCRepPayload *p = NULL;
-        char **rt = NULL;
-        size_t rtDim[MAX_REP_ARRAY_DEPTH] = {0};
-        char **itf = NULL;
-        size_t itfDim[MAX_REP_ARRAY_DEPTH] = {0};
-        OCRepPayload** eps = NULL;
-        size_t epsDim[MAX_REP_ARRAY_DEPTH] = {0};
+        VERIFY_SQLITE(sqlite3_exec(gRDDB, "SAVEPOINT storeLinkPayload", NULL, NULL, NULL));
 
-        static const char insertDeviceLLList[] = "INSERT OR IGNORE INTO RD_DEVICE_LINK_LIST (ins, href, DEVICE_ID) "
-            "VALUES((SELECT ins FROM RD_DEVICE_LINK_LIST WHERE DEVICE_ID=@id AND href=@uri),@uri,@id)";
-        static const char updateDeviceLLList[] = "UPDATE RD_DEVICE_LINK_LIST SET anchor=@anchor,bm=@bm "
-            "WHERE DEVICE_ID=@id AND href=@uri";
-        int insertDeviceLLListSize = (int)sizeof(insertDeviceLLList);
-        int updateDeviceLLListSize = (int)sizeof(updateDeviceLLList);
+        VERIFY_SQLITE(sqlite3_prepare_v2(gRDDB, insertDeviceLLList,
+                        insertDeviceLLListSize, &stmt, NULL));
 
-        for (size_t i = 0; (SQLITE_OK == res) && (i < links->arr.dimensions[0]); i++)
+        OCRepPayload *link = links->arr.objArray[i];
+        VERIFY_SQLITE(sqlite3_bind_int64(stmt, sqlite3_bind_parameter_index(stmt, "@id"), rowid));
+        if (OCRepPayloadGetPropString(link, OC_RSRVD_HREF, &uri))
         {
-            VERIFY_SQLITE(sqlite3_exec(gRDDB, "SAVEPOINT storeLinkPayload", NULL, NULL, NULL));
-
-            VERIFY_SQLITE(sqlite3_prepare_v2(gRDDB, insertDeviceLLList,
-                            insertDeviceLLListSize, &stmt, NULL));
-
-            OCRepPayload *link = links->arr.objArray[i];
-            VERIFY_SQLITE(sqlite3_bind_int64(stmt, sqlite3_bind_parameter_index(stmt, "@id"), rowid));
-            if (OCRepPayloadGetPropString(link, OC_RSRVD_HREF, &uri))
+            if (!stringArgumentWithinBounds(uri))
             {
-                if (!stringArgumentWithinBounds(uri))
-                {
-                    return res;
-                }
-                VERIFY_SQLITE(sqlite3_bind_text(stmt, sqlite3_bind_parameter_index(stmt, "@uri"),
-                                uri, (int)strlen(uri), SQLITE_STATIC));
+                return SQLITE_ERROR;
             }
-            res = sqlite3_step(stmt);
-            if (SQLITE_DONE != res)
+            VERIFY_SQLITE(sqlite3_bind_text(stmt, sqlite3_bind_parameter_index(stmt, "@uri"),
+                            uri, (int)strlen(uri), SQLITE_STATIC));
+        }
+        res = sqlite3_step(stmt);
+        if (SQLITE_DONE != res)
+        {
+            goto exit;
+        }
+        VERIFY_SQLITE(sqlite3_finalize(stmt));
+        stmt = NULL;
+
+        VERIFY_SQLITE(sqlite3_prepare_v2(gRDDB, updateDeviceLLList,
+                        updateDeviceLLListSize, &stmt, NULL));
+        VERIFY_SQLITE(sqlite3_bind_int64(stmt, sqlite3_bind_parameter_index(stmt, "@id"), rowid));
+        if (uri)
+        {
+            VERIFY_SQLITE(sqlite3_bind_text(stmt, sqlite3_bind_parameter_index(stmt, "@uri"),
+                            uri, (int)strlen(uri), SQLITE_STATIC));
+        }
+        if (OCRepPayloadGetPropString(link, OC_RSRVD_URI, &anchor))
+        {
+            if (!stringArgumentWithinBounds(anchor))
             {
                 goto exit;
             }
+            VERIFY_SQLITE(sqlite3_bind_text(stmt, sqlite3_bind_parameter_index(stmt, "@anchor"),
+                            anchor, (int)strlen(anchor), SQLITE_STATIC));
+        }
+        if (OCRepPayloadGetPropObject(link, OC_RSRVD_POLICY, &p))
+        {
+            sqlite3_int64 bm = 0;
+            if (OCRepPayloadGetPropInt(p, OC_RSRVD_BITMAP, (int64_t *) &bm))
+            {
+                VERIFY_SQLITE(sqlite3_bind_int64(stmt, sqlite3_bind_parameter_index(stmt, "@bm"), bm));
+            }
+        }
+        res = sqlite3_step(stmt);
+        if (SQLITE_DONE != res)
+        {
+            goto exit;
+        }
+        VERIFY_SQLITE(sqlite3_finalize(stmt));
+        stmt = NULL;
+
+        static const char input[] = "SELECT ins FROM RD_DEVICE_LINK_LIST WHERE DEVICE_ID=@id AND href=@uri";
+        int inputSize = (int)sizeof(input);
+
+        VERIFY_SQLITE(sqlite3_prepare_v2(gRDDB, input, inputSize, &stmt, NULL));
+        VERIFY_SQLITE(sqlite3_bind_int64(stmt, sqlite3_bind_parameter_index(stmt, "@id"), rowid));
+        if (uri)
+        {
+            VERIFY_SQLITE(sqlite3_bind_text(stmt, sqlite3_bind_parameter_index(stmt, "@uri"),
+                            uri, (int)strlen(uri), SQLITE_STATIC));
+        }
+        res = sqlite3_step(stmt);
+        if (res == SQLITE_ROW || res == SQLITE_DONE)
+        {
+            sqlite3_int64 ins = sqlite3_column_int64(stmt, 0);
             VERIFY_SQLITE(sqlite3_finalize(stmt));
             stmt = NULL;
-
-            VERIFY_SQLITE(sqlite3_prepare_v2(gRDDB, updateDeviceLLList,
-                            updateDeviceLLListSize, &stmt, NULL));
-            VERIFY_SQLITE(sqlite3_bind_int64(stmt, sqlite3_bind_parameter_index(stmt, "@id"), rowid));
-            if (uri)
+            if (!OCRepPayloadSetPropInt(link, OC_RSRVD_INS, ins))
             {
-                VERIFY_SQLITE(sqlite3_bind_text(stmt, sqlite3_bind_parameter_index(stmt, "@uri"),
-                                uri, (int)strlen(uri), SQLITE_STATIC));
+                OIC_LOG_V(ERROR, TAG, "Error setting 'ins' value");
+                return SQLITE_ERROR;
             }
-            if (OCRepPayloadGetPropString(link, OC_RSRVD_URI, &anchor))
-            {
-                if (!stringArgumentWithinBounds(anchor))
-                {
-                    goto exit;
-                }
-                VERIFY_SQLITE(sqlite3_bind_text(stmt, sqlite3_bind_parameter_index(stmt, "@anchor"),
-                                anchor, (int)strlen(anchor), SQLITE_STATIC));
-            }
-            if (OCRepPayloadGetPropObject(link, OC_RSRVD_POLICY, &p))
-            {
-                sqlite3_int64 bm = 0;
-                if (OCRepPayloadGetPropInt(p, OC_RSRVD_BITMAP, (int64_t *) &bm))
-                {
-                    VERIFY_SQLITE(sqlite3_bind_int64(stmt, sqlite3_bind_parameter_index(stmt, "@bm"), bm));
-                }
-            }
-            res = sqlite3_step(stmt);
-            if (SQLITE_DONE != res)
-            {
-                goto exit;
-            }
+            OCRepPayloadGetStringArray(link, OC_RSRVD_RESOURCE_TYPE, &rt, rtDim);
+            OCRepPayloadGetStringArray(link, OC_RSRVD_INTERFACE, &itf, itfDim);
+            OCRepPayloadGetPropObjectArray(link, OC_RSRVD_ENDPOINTS, &eps, epsDim);
+            VERIFY_SQLITE(storeResourceTypes((const char **) rt, rtDim[0], ins));
+            VERIFY_SQLITE(storeInterfaces((const char **) itf, itfDim[0], ins));
+            VERIFY_SQLITE(storeEndpoints(eps, epsDim[0], ins));
+        }
+        else
+        {
             VERIFY_SQLITE(sqlite3_finalize(stmt));
             stmt = NULL;
+        }
 
-            static const char input[] = "SELECT ins FROM RD_DEVICE_LINK_LIST WHERE DEVICE_ID=@id AND href=@uri";
-            int inputSize = (int)sizeof(input);
+        VERIFY_SQLITE(sqlite3_exec(gRDDB, "RELEASE storeLinkPayload", NULL, NULL, NULL));
+        res = SQLITE_OK;
 
-            VERIFY_SQLITE(sqlite3_prepare_v2(gRDDB, input, inputSize, &stmt, NULL));
-            VERIFY_SQLITE(sqlite3_bind_int64(stmt, sqlite3_bind_parameter_index(stmt, "@id"), rowid));
-            if (uri)
+    exit:
+        if (eps)
+        {
+            for (size_t j = 0; j < epsDim[0]; j++)
             {
-                VERIFY_SQLITE(sqlite3_bind_text(stmt, sqlite3_bind_parameter_index(stmt, "@uri"),
-                                uri, (int)strlen(uri), SQLITE_STATIC));
+                OCRepPayloadDestroy(eps[j]);
             }
-            res = sqlite3_step(stmt);
-            if (res == SQLITE_ROW || res == SQLITE_DONE)
+            OICFree(eps);
+            eps = NULL;
+        }
+        if (itf)
+        {
+            for (size_t j = 0; j < itfDim[0]; j++)
             {
-                sqlite3_int64 ins = sqlite3_column_int64(stmt, 0);
-                VERIFY_SQLITE(sqlite3_finalize(stmt));
-                stmt = NULL;
-                if (!OCRepPayloadSetPropInt(link, OC_RSRVD_INS, ins))
-                {
-                    OIC_LOG_V(ERROR, TAG, "Error setting 'ins' value");
-                    return OC_STACK_ERROR;
-                }
-                OCRepPayloadGetStringArray(link, OC_RSRVD_RESOURCE_TYPE, &rt, rtDim);
-                OCRepPayloadGetStringArray(link, OC_RSRVD_INTERFACE, &itf, itfDim);
-                OCRepPayloadGetPropObjectArray(link, OC_RSRVD_ENDPOINTS, &eps, epsDim);
-                VERIFY_SQLITE(storeResourceTypes((const char **) rt, rtDim[0], ins));
-                VERIFY_SQLITE(storeInterfaces((const char **) itf, itfDim[0], ins));
-                VERIFY_SQLITE(storeEndpoints(eps, epsDim[0], ins));
+                OICFree(itf[j]);
             }
-            else
+            OICFree(itf);
+            itf = NULL;
+        }
+        if (rt)
+        {
+            for (size_t j = 0; j < rtDim[0]; j++)
             {
-                VERIFY_SQLITE(sqlite3_finalize(stmt));
-                stmt = NULL;
+                OICFree(rt[j]);
             }
-
-            VERIFY_SQLITE(sqlite3_exec(gRDDB, "RELEASE storeLinkPayload", NULL, NULL, NULL));
-            res = SQLITE_OK;
-
-        exit:
-            if (eps)
-            {
-                for (size_t j = 0; j < epsDim[0]; j++)
-                {
-                    OCRepPayloadDestroy(eps[j]);
-                }
-                OICFree(eps);
-                eps = NULL;
-            }
-            if (itf)
-            {
-                for (size_t j = 0; j < itfDim[0]; j++)
-                {
-                    OICFree(itf[j]);
-                }
-                OICFree(itf);
-                itf = NULL;
-            }
-            if (rt)
-            {
-                for (size_t j = 0; j < rtDim[0]; j++)
-                {
-                    OICFree(rt[j]);
-                }
-                OICFree(rt);
-                rt = NULL;
-            }
-            OCPayloadDestroy((OCPayload *)p);
-            p = NULL;
-            OICFree(anchor);
-            anchor = NULL;
-            OICFree(uri);
-            uri = NULL;
-            sqlite3_finalize(stmt);
-            stmt = NULL;
-            if (SQLITE_OK != res)
-            {
-                sqlite3_exec(gRDDB, "ROLLBACK TO storeLinkPayload", NULL, NULL, NULL);
-            }
+            OICFree(rt);
+            rt = NULL;
+        }
+        OCPayloadDestroy((OCPayload *)p);
+        p = NULL;
+        OICFree(anchor);
+        anchor = NULL;
+        OICFree(uri);
+        uri = NULL;
+        sqlite3_finalize(stmt);
+        stmt = NULL;
+        if (SQLITE_OK != res)
+        {
+            sqlite3_exec(gRDDB, "ROLLBACK TO storeLinkPayload", NULL, NULL, NULL);
         }
     }
 
@@ -472,17 +482,30 @@ static int storeLinkPayload(const OCRepPayload *rdPayload, sqlite3_int64 rowid)
 
 static int storeResources(const OCRepPayload *payload, bool externalHost)
 {
-    char *deviceId = NULL;
     sqlite3_stmt *stmt = NULL;
+
+    /* di is a required property */
+    char *deviceId = NULL;
     OCRepPayloadGetPropString(payload, OC_RSRVD_DEVICE_ID, &deviceId);
-    if (!stringArgumentWithinBounds(deviceId))
+    if (!stringArgumentNonNullAndWithinBounds(deviceId))
     {
-        return OC_STACK_ERROR;
+        return SQLITE_ERROR;
     }
 
+    /* ttl is a required property */
     int64_t tmp = 0;
-    OCRepPayloadGetPropInt(payload, OC_RSRVD_DEVICE_TTL, &tmp);
+    if (!OCRepPayloadGetPropInt(payload, OC_RSRVD_DEVICE_TTL, &tmp))
+    {
+        return SQLITE_ERROR;
+    }
     sqlite3_int64 ttl = tmp;
+
+    /* links is a required property */
+    OCRepPayloadValue *links = getLinks(payload);
+    if (!links)
+    {
+        return SQLITE_ERROR;
+    }
 
     int res;
     VERIFY_SQLITE(sqlite3_exec(gRDDB, "BEGIN TRANSACTION", NULL, NULL, NULL));
@@ -549,7 +572,7 @@ static int storeResources(const OCRepPayload *payload, bool externalHost)
         sqlite3_int64 rowid = sqlite3_column_int64(stmt, 0);
         VERIFY_SQLITE(sqlite3_finalize(stmt));
         stmt = NULL;
-        VERIFY_SQLITE(storeLinkPayload(payload, rowid));
+        VERIFY_SQLITE(storeLinkPayload(links, rowid));
     }
     else
     {
@@ -577,7 +600,7 @@ static int deleteResources(const char *deviceId, const int64_t *instanceIds, uin
     if (!stringArgumentWithinBounds(deviceId))
     {
         OIC_LOG_V(ERROR, TAG, "Query longer than %d: \n%s", INT_MAX, deviceId);
-        return OC_STACK_ERROR;
+        return SQLITE_ERROR;
     }
 
     int res;

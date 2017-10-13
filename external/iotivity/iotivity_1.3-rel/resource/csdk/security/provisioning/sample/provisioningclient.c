@@ -98,10 +98,6 @@ static const char* ACL_PEMISN[5] = {"CREATE", "READ", "WRITE", "DELETE", "NOTIFY
 static const char* SVR_DB_FILE_NAME = "oic_svr_db_client.dat";
         // '_' for separaing from the same constant variable in |srmresourcestrings.c|
 static const char* PRVN_DB_FILE_NAME = "oic_prvn_mng.db";
-static const OicSecPrm_t  SUPPORTED_PRMS[1] =
-{
-    PRM_PRE_CONFIGURED,
-};
 
 static char* TEST_CERT_NOT_BEFORE = "20170101000000"; // Not before field for certificates, in format YYYYMMDDhhmmss
 static char* TEST_CERT_NOT_AFTER = "20270101000000";  // + ten years

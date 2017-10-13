@@ -74,9 +74,6 @@ namespace itst = iotivity::test;
 char gDeviceUUID[] = "fe3f9a68-4931-4cb0-9ea4-81702b43116c";
 char gDevicePIID[] = "32684bf3-4c44-47b0-99fe-6a9a59b73a8d";
 char gManufacturerName[] = "myName";
-static OCPrm_t pmSel;
-static char pinNumber;
-static OCDPDev_t peer;
 
 std::chrono::seconds const SHORT_TEST_TIMEOUT = std::chrono::seconds(5);
 std::chrono::seconds const LONG_TEST_TIMEOUT = std::chrono::seconds(450);

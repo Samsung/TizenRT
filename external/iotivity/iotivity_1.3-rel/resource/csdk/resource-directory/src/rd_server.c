@@ -149,7 +149,7 @@ static bool isRequestFromThisHost(const OCEntityHandlerRequest *ehRequest)
  */
 static OCEntityHandlerResult handlePublishRequest(const OCEntityHandlerRequest *ehRequest)
 {
-    OCEntityHandlerResult ehResult = OC_EH_OK;
+    OCEntityHandlerResult ehResult;
 
     if (!ehRequest)
     {
@@ -161,48 +161,46 @@ static OCEntityHandlerResult handlePublishRequest(const OCEntityHandlerRequest *
 
     OCRepPayload *payload = (OCRepPayload *)ehRequest->payload;
     OCRepPayload *resPayload = NULL;
-    if (payload)
+    OCStackResult result;
+    OIC_LOG_PAYLOAD(DEBUG, (OCPayload *) payload);
+    result = OCRDDatabaseInit();
+    if (OC_STACK_OK == result)
     {
-        OIC_LOG_PAYLOAD(DEBUG, (OCPayload *) payload);
-        if (OC_STACK_OK == OCRDDatabaseInit())
+        if (isRequestFromThisHost(ehRequest))
         {
-            OCStackResult result;
-            if (isRequestFromThisHost(ehRequest))
-            {
-                result = OCRDDatabaseStoreResourcesFromThisHost(payload);
-            }
-            else
-            {
-                result = OCRDDatabaseStoreResources(payload);
-            }
-            if (OC_STACK_OK == result)
-            {
-                OIC_LOG_V(DEBUG, TAG, "Stored resources.");
-                resPayload = payload;
-                ehResult = OC_EH_OK;
-            }
-            else
-            {
-                resPayload = (OCRepPayload *)OCRepPayloadCreate();
-                ehResult = OC_EH_ERROR;
-            }
+            result = OCRDDatabaseStoreResourcesFromThisHost(payload);
         }
-
-        // Send Response
-        if (OC_STACK_OK != sendResponse(ehRequest, resPayload, ehResult))
+        else
         {
-            OIC_LOG(ERROR, TAG, "Sending response failed.");
+            result = OCRDDatabaseStoreResources(payload);
         }
+    }
+    if (OC_STACK_OK == result)
+    {
+        OIC_LOG_V(DEBUG, TAG, "Stored resources.");
+        resPayload = payload;
+        ehResult = OC_EH_OK;
+    }
+    else
+    {
+        resPayload = (OCRepPayload *)OCRepPayloadCreate();
+        ehResult = OC_EH_ERROR;
+    }
 
-        if (OC_EH_OK == ehResult)
+    // Send Response
+    if (OC_STACK_OK != sendResponse(ehRequest, resPayload, ehResult))
+    {
+        OIC_LOG(ERROR, TAG, "Sending response failed.");
+    }
+
+    if (OC_EH_OK == ehResult)
+    {
+        OCResourceHandle handle = OCGetResourceHandleAtUri(OC_RSRVD_WELL_KNOWN_URI);
+        assert(handle);
+        result = OCNotifyAllObservers(handle, OC_NA_QOS);
+        if (OC_STACK_NO_OBSERVERS != result && OC_STACK_OK != result)
         {
-            OCResourceHandle handle = OCGetResourceHandleAtUri(OC_RSRVD_WELL_KNOWN_URI);
-            assert(handle);
-            OCStackResult result = OCNotifyAllObservers(handle, OC_NA_QOS);
-            if (OC_STACK_NO_OBSERVERS != result && OC_STACK_OK != result)
-            {
-                OIC_LOG(ERROR, TAG, "Notifying observers failed.");
-            }
+            OIC_LOG(ERROR, TAG, "Notifying observers failed.");
         }
     }
 

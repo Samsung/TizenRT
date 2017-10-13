@@ -86,7 +86,6 @@ static bool observeThreadStarted = false;
 char *gResourceUri = (char *)"/a/light";
 static const char *gDateOfManufacture = "2016-01-15";
 static const char *gDeviceName = "myDeviceName";
-static const char *gDeviceUUID = "51b55ddc-ccbb-4cb3-a57f-494eeca13a21";
 static const char *gFirmwareVersion = "myFirmwareVersion";
 static const char *gManufacturerName = "myName";
 static const char *gOperatingSystemVersion = "myOS";

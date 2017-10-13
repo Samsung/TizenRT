@@ -298,6 +298,35 @@ TEST_F(RDTests, RDDeleteSpecificResource)
     EXPECT_EQ(OC_STACK_OK, OCRDDelete(NULL, "127.0.0.1", CT_ADAPTER_IP, &handle,
                                       1, &cbData, OC_LOW_QOS));
 }
+
+#endif
+
+#ifdef RD_SERVER
+
+static OCStackApplicationResult UpdateSelValueVerify(__attribute__((unused))void *ctx,
+                                                     __attribute__((unused)) OCDoHandle handle,
+                                                     OCClientResponse *clientResponse)
+{
+    EXPECT_GT(clientResponse->result, OC_STACK_RESOURCE_CHANGED);
+    return OC_STACK_DELETE_TRANSACTION;
+}
+
+TEST_F(RDTests, UpdateSelValue)
+{
+    itst::DeadmanTimer killSwitch(SHORT_TEST_TIMEOUT);
+    EXPECT_EQ(OC_STACK_OK, OCRDStart());
+
+    itst::Callback postCB(&UpdateSelValueVerify);
+    OCRepPayload *payload = OCRepPayloadCreate();
+    EXPECT_TRUE(payload != NULL);
+    EXPECT_TRUE(OCRepPayloadSetPropInt(payload, "sel", 90));
+    EXPECT_EQ(OC_STACK_OK, OCDoResource(NULL, OC_REST_POST, "127.0.0.1/oic/rd?if=oic.if.baseline", NULL,
+            (OCPayload*) payload, CT_DEFAULT, OC_HIGH_QOS, postCB, NULL, 0));
+    EXPECT_EQ(OC_STACK_OK, postCB.Wait(100));
+
+    EXPECT_EQ(OC_STACK_OK, OCRDStop());
+}
+
 #endif
 
 #if (defined(RD_SERVER) && defined(RD_CLIENT))

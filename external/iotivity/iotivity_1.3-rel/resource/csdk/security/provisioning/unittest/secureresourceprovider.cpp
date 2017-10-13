@@ -24,7 +24,6 @@ static OicSecAcl_t acl;
 static OCProvisionDev_t pDev1;
 static OCProvisionDev_t pDev2;
 static OicSecCredType_t credType = SYMMETRIC_PAIR_WISE_KEY;
-static OCProvisionDev_t selectedDeviceInfo;
 static OicSecOxm_t oicSecDoxmJustWorks = OIC_JUST_WORKS;
 static OicSecOxm_t oicSecDoxmRandomPin = OIC_RANDOM_DEVICE_PIN;
 static unsigned short timeout = 60;

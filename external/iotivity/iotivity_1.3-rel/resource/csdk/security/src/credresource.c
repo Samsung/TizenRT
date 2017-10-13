@@ -87,7 +87,6 @@ static const uint16_t CBOR_SIZE = 2048;
 
 /** CRED size - Number of mandatory items. */
 static const uint8_t CRED_ROOT_MAP_SIZE = 4;
-static const uint8_t CRED_EMPTY_ROOT_MAP_SIZE = 2;
 static const uint8_t CRED_MAP_SIZE = 3;
 static const uint8_t ROLEID_MAP_SIZE = 1;
 
