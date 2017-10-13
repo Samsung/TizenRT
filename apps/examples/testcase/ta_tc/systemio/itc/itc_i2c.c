@@ -124,7 +124,7 @@ void itc_iotbus_i2c_write_read_p(void)
 	TC_ASSERT_EQ_CLEANUP("iotbus_i2c_write", (ret < 0), false, iotbus_i2c_stop(h_i2c));
 
 	ret = iotbus_i2c_read(h_i2c, szReadBuf, 10);
-	TC_ASSERT_EQ_CLEANUP("iotbus_i2c_read", ret, IOTBUS_ERROR_NONE, iotbus_i2c_stop(h_i2c));
+	TC_ASSERT_GT_CLEANUP("iotbus_i2c_read", ret, IOTBUS_ERROR_NONE, iotbus_i2c_stop(h_i2c));
 
 	ret = iotbus_i2c_stop(h_i2c);
 	TC_ASSERT_EQ("iotbus_i2c_stop", ret, IOTBUS_ERROR_NONE);
