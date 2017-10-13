@@ -6,6 +6,7 @@
 config EXAMPLES_TESTCASE_TTRACE
 	bool "T-trace TestCase Example"
 	default n
+	select TTRACE
 	---help---
 		Enable the T-trace TestCase example
 
