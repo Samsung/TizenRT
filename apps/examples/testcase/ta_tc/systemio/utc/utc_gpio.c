@@ -152,12 +152,6 @@ static void utc_gpio_get_edge_mode_n(void)
 	TC_SUCCESS_RESULT();
 }
 
-static void utc_gpio_set_drive_mode_p_IOTBUS_GPIO_DRIVE_NONE(void)
-{
-	TC_ASSERT_EQ("iotbus_gpio_set_drive_mode", iotbus_gpio_set_drive_mode(gpio, IOTBUS_GPIO_DRIVE_NONE), IOTBUS_ERROR_NONE);
-	TC_SUCCESS_RESULT();
-}
-
 static void utc_gpio_set_drive_mode_p_IOTBUS_GPIO_DRIVE_PULLUP(void)
 {
 	TC_ASSERT_EQ("iotbus_gpio_set_drive_mode", iotbus_gpio_set_drive_mode(gpio, IOTBUS_GPIO_DRIVE_PULLUP), IOTBUS_ERROR_NONE);
@@ -176,23 +170,9 @@ static void utc_gpio_set_drive_mode_p_IOTBUS_GPIO_DRIVE_FLOAT(void)
 	TC_SUCCESS_RESULT();
 }
 
-static void utc_gpio_set_drive_mode_p_IOTBUS_GPIO_DRIVE_PUSHPULL(void)
-{
-	TC_ASSERT_EQ("iotbus_gpio_set_drive_mode", iotbus_gpio_set_drive_mode(gpio, IOTBUS_GPIO_DRIVE_PUSHPULL), IOTBUS_ERROR_NONE);
-	TC_SUCCESS_RESULT();
-}
-
 static void utc_gpio_set_drive_mode_n(void)
 {
 	TC_ASSERT_EQ("iotbus_gpio_set_drive_mode", iotbus_gpio_set_drive_mode(NULL, -1), IOTBUS_ERROR_INVALID_PARAMETER);
-	TC_SUCCESS_RESULT();
-}
-
-static void utc_gpio_get_drive_mode_p(void)
-{
-	iotbus_gpio_drive_e drivemode;
-	iotbus_gpio_get_drive_mode(gpio, &drivemode);
-	TC_ASSERT_EQ("iotbus_gpio_get_drive_mode", drivemode, IOTBUS_GPIO_DRIVE_PUSHPULL);
 	TC_SUCCESS_RESULT();
 }
 
@@ -200,6 +180,14 @@ static void utc_gpio_get_drive_mode_n(void)
 {
 	iotbus_gpio_drive_e drivemode;
 	TC_ASSERT_EQ("iotbus_gpio_get_drive_mode", iotbus_gpio_get_drive_mode(NULL, &drivemode), IOTBUS_ERROR_INVALID_PARAMETER);
+	TC_SUCCESS_RESULT();
+}
+
+static void utc_gpio_get_drive_mode_p(void)
+{
+	iotbus_gpio_drive_e drivemode;
+	iotbus_gpio_get_drive_mode(gpio, &drivemode);
+	TC_ASSERT_EQ("iotbus_gpio_get_drive_mode", drivemode, IOTBUS_GPIO_DRIVE_FLOAT);
 	TC_SUCCESS_RESULT();
 }
 
@@ -337,11 +325,9 @@ int utc_gpio_main(void)
 	iotbus_gpio_set_direction(gpio, IOTBUS_GPIO_DIRECTION_OUT);	// for stm
 	iotbus_gpio_set_direction(gpio2, IOTBUS_GPIO_DIRECTION_IN);	// for stm
 
-	utc_gpio_set_drive_mode_p_IOTBUS_GPIO_DRIVE_NONE();
 	utc_gpio_set_drive_mode_p_IOTBUS_GPIO_DRIVE_PULLUP();
 	utc_gpio_set_drive_mode_p_IOTBUS_GPIO_DRIVE_PULLDOWN();
 	utc_gpio_set_drive_mode_p_IOTBUS_GPIO_DRIVE_FLOAT();
-	utc_gpio_set_drive_mode_p_IOTBUS_GPIO_DRIVE_PUSHPULL();
 	utc_gpio_set_drive_mode_n();
 	utc_gpio_get_drive_mode_p();
 	utc_gpio_get_drive_mode_n();
