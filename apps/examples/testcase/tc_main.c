@@ -50,8 +50,8 @@
 #if defined(CONFIG_EXAMPLES_TESTCASE_DM_UTC) || defined(CONFIG_EXAMPLES_TESTCASE_DM_ITC)
 #define TC_DM_STACK  2048
 #endif
-#ifdef CONFIG_EXAMPLES_TESTCASE_WIFI_MANAGER_UTC
-#define TC_WIFI_MANAGER_STACK  2048
+#if defined(CONFIG_EXAMPLES_TESTCASE_WIFI_MANAGER_UTC) || defined(CONFIG_EXAMPLES_TESTCASE_WIFI_MANAGER_ITC)
+#define TC_WIFI_MANAGER_STACK  4096
 #endif
 #if defined(CONFIG_EXAMPLES_TESTCASE_MQTT_UTC)
 #define TC_MQTT_STACK 4096
@@ -77,6 +77,7 @@ extern int itc_sysio_main(int argc, char *argv[]);
 extern int utc_dm_main(int argc, char *argv[]);
 extern int itc_dm_main(int argc, char *argv[]);
 extern int utc_wifi_manager_main(int argc, char *argv[]);
+extern int itc_wifi_manager_main(int argc, char *argv[]);
 extern int utc_mqtt_main(int argc, char *argv[]);
 extern int utc_audio_main(int argc, char *argv[]);
 
@@ -164,6 +165,12 @@ int tc_main(int argc, char *argv[])
 	pid = task_create("wifimgrutc", SCHED_PRIORITY_DEFAULT, TC_WIFI_MANAGER_STACK, utc_wifi_manager_main, argv);
 	if (pid < 0) {
 		printf("Wi-Fi Manager utc is not started, err = %d\n", pid);
+	}
+#endif
+#ifdef CONFIG_EXAMPLES_TESTCASE_WIFI_MANAGER_ITC
+	pid = task_create("wifimgritc", SCHED_PRIORITY_DEFAULT, TC_WIFI_MANAGER_STACK, itc_wifi_manager_main, argv);
+	if (pid < 0) {
+		printf("Wi-Fi Manager itc is not started, err = %d\n", pid);
 	}
 #endif
 #ifdef CONFIG_EXAMPLES_TESTCASE_MQTT_UTC
