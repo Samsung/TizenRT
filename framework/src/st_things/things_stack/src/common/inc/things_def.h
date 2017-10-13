@@ -27,9 +27,6 @@
 
 #define OIC_STACK_FIRMWARE_VERSION      "OIC_0.9.1.D.17.03.31_1_30dbca2"
 
-#define MANUFACTURER_NAME               "Samsung Electronics"
-#define MANUFACTURER_URL                "http://www.samsung.com"
-
 /* Resource Types */
 #define OIC_INTERFACE_BASELINE          "oic.if.baseline"
 #define OIC_INTERFACE_LINKEDLIST        "oic.if.ll"
@@ -45,32 +42,9 @@
 #define OIC_RTYPE_TEMPERATURE           "oic.r.temperature"
 #define OIC_RTYPE_LIGHT_DIMMING         "oic.r.light.dimming"
 
-#define SEC_RTYPE_ALARM                 "x.com.samsung.da.alarms"
 #define SEC_RTYPE_THINGS_DEVICE         "x.com.samsung.devcol"
 #define SEC_RTYPE_TEMPERATURE           "x.com.samsung.da.temperatures"
-#define SEC_RTYPE_BIXBY                 "x.com.samsung.bixby"
-#define SEC_RTYPE_FILE_LIST             "x.com.samsung.file.list"
-#define SEC_RTYPE_FILE_TRANSFER         "x.com.samsung.file.transfer"
-#define SEC_RTYPE_CONTENTS_PROVIDER     "x.com.samsung.contents.provider"
-#define SEC_RTYPE_CONTENTS_RENDERER     "x.com.samsung.contents.renderer"
-#define SEC_RTYPE_DISHWASHER            "x.com.samsung.da.dishwasher"
 #define SEC_RTYPE_PROV_INFO             "x.com.samsung.provisioninginfo"
-
-/* Atrribute Keys */
-#define SEC_ATTRIBUTE_LENGTH                      "x.com.samsung.da.length"
-#define SEC_ATTRIBUTE_TYPE                        "x.com.samsung.da.type"
-#define SEC_ATTRIBUTE_ID                          "x.com.samsung.da.id"
-#define SEC_ATTRIBUTE_NUMBER                      "x.com.samsung.da.number"
-#define SEC_ATTRIBUTE_DESCRIPTION                 "x.com.samsung.da.description"
-
-#define SEC_ATTRIBUTE_THINGS_NAME                 "x.com.samsung.da.name"
-#define SEC_ATTRIBUTE_MODEL_NUM                   "x.com.samsung.da.model_num"
-#define SEC_ATTRIBUTE_DESCRIPTION                 "x.com.samsung.da.description"
-#define SEC_ATTRIBUTE_SERIAL_NUM                  "x.com.samsung.da.serialNum"
-#define SEC_ATTRIBUTE_VERSION_ID                  "x.com.samsung.da.versionId"
-#define SEC_ATTRIBUTE_APPROVED_STATE              "x.com.samsung.da.approvedState"
-#define SEC_ATTRIBUTE_VERSION_AVAILABLE           "x.com.samsung.da.newVersionAvailable"
-#define SEC_ATTRIBUTE_ITEMS                     "x.com.samsung.da.items"
 
 // Common Attribute Keys
 #define SEC_ATTRIBUTE_COMMON_ITEMS          "x.com.samsung.items"

@@ -384,7 +384,7 @@ void set_device_info(things_server_builder_s *builder, char *device_name, char *
 	THINGS_LOG_D(THINGS_DEBUG, TAG, THINGS_FUNC_EXIT);
 }
 
-void set_platform_info(things_server_builder_s *builder, char *model_num, char *pver, char *osver, char *hwver, char *fwver, char *venderid)
+void set_platform_info(things_server_builder_s *builder, char *model_num, char *pver, char *osver, char *hwver, char *fwver, char *venderid, char *mnmn, char *mn_url)
 {
 	THINGS_LOG_D(THINGS_DEBUG, TAG, THINGS_FUNC_ENTRY);
 
@@ -393,7 +393,7 @@ void set_platform_info(things_server_builder_s *builder, char *model_num, char *
 		return;
 	}
 
-	THINGS_LOG_D(THINGS_DEBUG, TAG, "[/oic/p] Manufacturer :%s", MANUFACTURER_NAME);
+	THINGS_LOG_D(THINGS_DEBUG, TAG, "[/oic/p] Manufacturer :%s", mnmn);
 	THINGS_LOG_D(THINGS_DEBUG, TAG, "[/oic/p] Model Name :%s", model_num);
 	THINGS_LOG_D(THINGS_DEBUG, TAG, "[/oic/p] Ver. Plaform :%s", pver);
 	THINGS_LOG_D(THINGS_DEBUG, TAG, "[/oic/p] Ver. OS :%s", osver);
@@ -404,14 +404,14 @@ void set_platform_info(things_server_builder_s *builder, char *model_num, char *
 	OCPlatformInfo platform_info;
 
 	platform_info.platformID = (char *)OCGetServerInstanceIDString();
-	platform_info.manufacturerName = MANUFACTURER_NAME;
+	platform_info.manufacturerName = mnmn;
 	platform_info.modelNumber = model_num;
 	platform_info.platformVersion = pver;
 	platform_info.operatingSystemVersion = osver;
 	platform_info.hardwareVersion = hwver;
 	platform_info.firmwareVersion = fwver;
 
-	platform_info.manufacturerUrl = MANUFACTURER_URL;
+	platform_info.manufacturerUrl = mn_url;
 	platform_info.dateOfManufacture = NULL;
 	platform_info.supportUrl = NULL;
 	platform_info.systemTime = NULL;
