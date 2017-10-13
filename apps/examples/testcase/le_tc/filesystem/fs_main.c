@@ -53,7 +53,7 @@
 /****************************************************************************
  * Definitions
  ****************************************************************************/
-#define STDIO_BUFLEN 		64
+#define STDIO_BUFLEN		64
 #define VFS_CONTENTS_LEN	20
 
 #define MOUNT_DIR CONFIG_MOUNT_POINT
