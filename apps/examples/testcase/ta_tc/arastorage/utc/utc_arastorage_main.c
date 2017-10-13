@@ -94,6 +94,23 @@ static void check_query_result(char * query)
  * Public Functions
  ****************************************************************************/
 
+/* Clean up all components used in these TCs */
+static void cleanup(void)
+{
+	char query[QUERY_LENGTH];
+	db_result_t res;
+
+	memset(query, 0, QUERY_LENGTH);
+	snprintf(query, QUERY_LENGTH, "REMOVE RELATION %s;", RELATION_NAME1);
+	res = db_exec(query);
+	TC_ASSERT_EQ("db_exec", DB_SUCCESS(res), true);
+
+	memset(query, 0, QUERY_LENGTH);
+	snprintf(query, QUERY_LENGTH, "REMOVE RELATION %s;", RELATION_NAME2);
+	res = db_exec(query);
+	TC_ASSERT_EQ("db_exec", DB_SUCCESS(res), true);
+}
+
 /**
 * @testcase         utc_arastorage_db_init_tc_p
 * @brief            Initialize database resources
@@ -143,6 +160,9 @@ static void utc_arastorage_db_exec_tc_p(void)
 	db_result_t res;
 	char query[QUERY_LENGTH];
 	int i;
+
+	/* cleanup called for cleaning all undeleted resources */
+	cleanup();
 
 	snprintf(query, QUERY_LENGTH, "CREATE RELATION %s;", RELATION_NAME1);
 	res = db_exec(query);
@@ -1419,22 +1439,6 @@ static void utc_arastorage_cursor_get_string_value_tc_n(void)
 	TC_ASSERT_EQ("cursor_get_string_value", value, NULL);
 
 	TC_SUCCESS_RESULT();
-}
-
-static void cleanup(void)
-{
-	char query[QUERY_LENGTH];
-	db_result_t res;
-
-	memset(query, 0, QUERY_LENGTH);
-	snprintf(query, QUERY_LENGTH, "REMOVE RELATION %s;", RELATION_NAME1);
-	res = db_exec(query);
-	TC_ASSERT_EQ("db_exec", DB_SUCCESS(res), true);
-
-	memset(query, 0, QUERY_LENGTH);
-	snprintf(query, QUERY_LENGTH, "REMOVE RELATION %s;", RELATION_NAME2);
-	res = db_exec(query);
-	TC_ASSERT_EQ("db_exec", DB_SUCCESS(res), true);
 }
 
 #ifdef CONFIG_BUILD_KERNEL
