@@ -511,7 +511,7 @@ static int netdev_ifrioctl(FAR struct socket *sock, int cmd, FAR struct ifreq *r
 			gw = dev->gw;
 			netifapi_netif_set_addr(dev, &ipaddr, &netmask, &gw);
 			netifapi_netif_set_up(dev);
-			
+
 			ret = OK;
 #endif
 		}
@@ -622,7 +622,7 @@ static int netdev_ifrioctl(FAR struct socket *sock, int cmd, FAR struct ifreq *r
 			if (req->ifr_flags & IFF_UP) {
 				/* Yes.. bring the interface up */
 
-				netdev_ifup(dev);
+				netifapi_netif_set_up(dev);
 			}
 
 			/* Is this a request to take the interface down? */
@@ -630,7 +630,7 @@ static int netdev_ifrioctl(FAR struct socket *sock, int cmd, FAR struct ifreq *r
 			else if (req->ifr_flags & IFF_DOWN) {
 				/* Yes.. take the interface down */
 
-				netdev_ifdown(dev);
+				netifapi_netif_set_down(dev);
 			}
 		}
 
@@ -641,7 +641,7 @@ static int netdev_ifrioctl(FAR struct socket *sock, int cmd, FAR struct ifreq *r
 	case SIOCGIFFLAGS: {		/* Gets the interface flags */
 		dev = netdev_ifrdev(req);
 		if (dev) {
-			req->ifr_flags = dev->d_flags;
+			req->ifr_flags = dev->flags;
 		}
 
 		ret = OK;

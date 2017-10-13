@@ -82,6 +82,7 @@
 #include "tiva_ethernet.h"
 #include "chip/tiva_pinmap.h"
 
+
 /****************************************************************************
  * Pre-processor Definitions
  ****************************************************************************/
@@ -259,6 +260,7 @@ static void tiva_ethreset(struct tiva_driver_s *priv);
 /* Common TX logic */
 
 static int tiva_transmit(struct tiva_driver_s *priv);
+static int tiva_txpoll(struct netif *dev);
 
 /* Interrupt handling */
 
@@ -276,7 +278,10 @@ static void tiva_txtimeout(int argc, uint32_t arg, ...);
 static int tiva_ifup(struct netif *dev);
 static int tiva_ifdown(struct netif *dev);
 static int tiva_txavail(struct netif *dev);
-
+#ifdef CONFIG_NET_IGMP
+static int  tiva_addmac(struct net_driver_s dev, FAR const uint8_t *mac);
+static int  tiva_rmmac(struct net_driver_s dev, FAR const uint8_t *mac);
+#endif
 /****************************************************************************
  * Private Functions
  ****************************************************************************/
@@ -369,6 +374,16 @@ static void tiva_ethreset(struct tiva_driver_s *priv)
 	putreg32(regval, TIVA_SYSCON_RCGC2);
 	nllvdbg("RCGC2: %08x\n", regval);
 
+	/* Put the Ethernet controller into the reset state */
+
+	regval = getreg32(TIVA_SYSCON_SRCR2);
+	regval |= (SYSCON_SRCR2_EMAC0 | SYSCON_SRCR2_EPHY0);
+	putreg32(regval, TIVA_SYSCON_SRCR2);
+
+	/* Wait just a bit.  This is a much longer delay than necessary */
+
+	up_mdelay(2);
+
 	/* Then take the Ethernet controller out of the reset state */
 
 	regval &= ~(SYSCON_SRCR2_EMAC0 | SYSCON_SRCR2_EPHY0);
@@ -379,10 +394,10 @@ static void tiva_ethreset(struct tiva_driver_s *priv)
 
 	up_mdelay(2);
 
-	/* Enable Port F for Ethernet LEDs: LED0=Bit 3; LED1=Bit 2 */
+  /* Enable Port F for Ethernet LEDs: LED0=Bit 3; LED1=Bit 2 */
 
 #ifdef CONFIG_TIVA_ETHLEDS
-	/* Configure the pins for the peripheral function */
+  /* Configure the pins for the peripheral function */
 
 	tiva_configgpio(GPIO_ETHPHY_LED0 | GPIO_STRENGTH_2MA | GPIO_PADTYPE_STD);
 	tiva_configgpio(GPIO_ETHPHY_LED1 | GPIO_STRENGTH_2MA | GPIO_PADTYPE_STD);
@@ -399,6 +414,43 @@ static void tiva_ethreset(struct tiva_driver_s *priv)
 	regval = tiva_ethin(priv, TIVA_MAC_RIS_OFFSET);
 	tiva_ethout(priv, TIVA_MAC_IACK_OFFSET, regval);
 	irqrestore(flags);
+}
+
+/****************************************************************************
+ * Function: tiva_phyread
+ *
+ * Description:
+ *   Write a 16-bit word to a PHY register
+ *
+ * Parameters:
+ *   priv    - Reference to the driver state structure
+ *   regaddr - Address of the PHY register to write
+ *   value   - The value to write to the register
+ *
+ * Returned Value:
+ *   None
+ *
+ ****************************************************************************/
+
+static uint16_t tiva_phyread(struct tiva_driver_s *priv, int regaddr)
+{
+	/* Wait for any MII transactions in progress to complete */
+
+	while ((tiva_ethin(priv, TIVA_MAC_MCTL_OFFSET) & MAC_MCTL_START) != 0) ;
+
+	/* Set up the PHY register address and start the read operation */
+
+	regaddr <<= MAC_MCTL_REGADR_SHIFT;
+	DEBUGASSERT((regaddr & MAC_MTXD_MASK) == regaddr);
+	tiva_ethout(priv, TIVA_MAC_MCTL_OFFSET, regaddr | MAC_MCTL_START);
+
+	/* Wait for the write transaction to complete */
+
+	while ((tiva_ethin(priv, TIVA_MAC_MCTL_OFFSET) & MAC_MCTL_START) != 0) ;
+
+	/* Read and return the PHY data */
+
+	return (uint16_t)(tiva_ethin(priv, TIVA_MAC_MRXD_OFFSET) & MAC_MTRD_MASK);
 }
 
 /****************************************************************************
@@ -426,13 +478,12 @@ static int tiva_transmit(struct tiva_driver_s *priv)
 	int ret = -EBUSY;
 
 	/* Verify that the hardware is ready to send another packet */
-
 	flags = irqsave();
 	if ((tiva_ethin(priv, TIVA_MAC_TR_OFFSET) & MAC_TR_NEWTX) == 0) {
 		/* Increment statistics */
-
 		EMAC_STAT(priv, tx_packets);
 		tiva_dumppacket("Transmit packet", priv->ld_dev.d_buf, priv->ld_dev.d_len);
+
 		/* Transfer the packet into the Tx FIFO.  The LS 16-bits of the first
 		 * 32-bit word written to the Tx FIFO contains the Ethernet payload
 		 * data length.  That is the full length of the message (d_len) minus
@@ -463,13 +514,11 @@ static int tiva_transmit(struct tiva_driver_s *priv)
 
 		if (bytesleft > 0) {
 			/* Write the last word */
-
 			regval = 0;
 			switch (bytesleft) {
 			case 0:
 			default:
 				break;
-
 			case 3:
 				regval |= ((uint32_t)dbuf[2] << 16);
 			case 2:
@@ -496,6 +545,64 @@ static int tiva_transmit(struct tiva_driver_s *priv)
 	return ret;
 }
 
+/****************************************************************************
+ * Function: tiva_txpoll
+ *
+ * Description:
+ *   The transmitter is available, check if uIP has any outgoing packets ready
+ *   to send.  This is a callback from tiva_txpoll().  devif_poll() may be called:
+ *
+ *   1. When the preceding TX packet send is complete,
+ *   2. When the preceding TX packet send timesout and the interface is reset
+ *   3. During normal TX polling
+ *
+ * Parameters:
+ *   dev  - Reference to the NuttX driver state structure
+ *
+ * Returned Value:
+ *   OK on success; a negated errno on failure
+ *
+ * Assumptions:
+ *
+ ****************************************************************************/
+
+static int tiva_txpoll(struct netif *dev)
+{
+	struct tiva_driver_s *priv = (struct tiva_driver_s *)dev->d_private;
+	int ret = OK;
+
+	/* If the polling resulted in data that should be sent out on the network,
+	 * the field d_len is set to a value > 0.
+	 */
+
+	nllvdbg("Poll result: d_len=%d\n", priv->ld_dev.d_len);
+	if (priv->ld_dev.d_len > 0) {
+		DEBUGASSERT((tiva_ethin(priv, TIVA_MAC_TR_OFFSET) & MAC_TR_NEWTX) == 0)
+
+		/* Look up the destination MAC address and add it to the Ethernet
+		 * header.
+		 */
+
+#ifdef CONFIG_NET_IPv6
+#ifdef CONFIG_NET_IPv4
+		{
+			neighbor_out(&priv->ld_dev);
+		}
+#endif							/* CONFIG_NET_IPv6 */
+#endif
+		/* Send the packet.  tiva_transmit() will return zero if the
+		 * packet was successfully handled.
+		 */
+
+		ret = tiva_transmit(priv);
+	}
+
+	/* If zero is returned, the polling will continue until all connections have
+	 * been examined.
+	 */
+
+	return ret;
+}
 
 /****************************************************************************
  * Function: tiva_receive
@@ -548,7 +655,7 @@ static void tiva_receive(struct tiva_driver_s *priv)
 		/* Check if the pktlen is valid.  It should be large enough to hold
 		 * an Ethernet header and small enough to fit entirely in the I/O
 		 * buffer.Six is subtracted to acount for the 2-byte length/type
-		 * and 4 byte FCS that are not copied into the uIP packet.
+		 * and 4 byte FCS that are not copied into the packet.
 		 */
 
 		if (pktlen > (CONFIG_NET_ETH_MTU + 6) || pktlen <= (ETH_HDRLEN + 6)) {
@@ -607,7 +714,6 @@ static void tiva_receive(struct tiva_driver_s *priv)
 			switch (bytesleft) {
 			default:
 				break;
-
 			case 7:
 				dbuf[2] = (regval >> 16) & 0xff;
 			case 6:
@@ -692,8 +798,6 @@ static void tiva_receive(struct tiva_driver_s *priv)
 					nllvdbg("ARP packet received (%02x)\n", ETHBUF->type);
 					EMAC_STAT(priv, rx_arp);
 
-					arp_arpin(&priv->ld_dev);
-
 					/* If the above function invocation resulted in data that should be
 					 * sent out on the network, the field  d_len will set to a value > 0.
 					 */
@@ -741,6 +845,9 @@ static void tiva_txdone(struct tiva_driver_s *priv)
 	 */
 
 	DEBUGASSERT((tiva_ethin(priv, TIVA_MAC_TR_OFFSET) & MAC_TR_NEWTX) == 0)
+
+	/* Then poll for new XMIT data */
+	(void)tiva_txpoll(&priv->ld_dev);
 }
 
 /****************************************************************************
@@ -856,121 +963,9 @@ static void tiva_txtimeout(int argc, uint32_t arg, ...)
 	DEBUGASSERT(priv->ld_bifup);
 	tiva_ifdown(&priv->ld_dev);
 	tiva_ifup(&priv->ld_dev);
-}
 
-/****************************************************************************
- * Function: tiva_txpoll
- *
- * Description:
- *   The transmitter is available, check if uIP has any outgoing packets ready
- *   to send.  This is a callback from devif_poll().  devif_poll() may be called:
- *
- *   1. When the preceding TX packet send is complete,
- *   2. When the preceding TX packet send timesout and the interface is reset
- *   3. During normal TX polling
- *
- * Parameters:
- *   dev  - Reference to the NuttX driver state structure
- *
- * Returned Value:
- *   OK on success; a negated errno on failure
- *
- * Assumptions:
- *   May or may not be called from an interrupt handler.  In either case,
- *   global interrupts are disabled, either explicitly or indirectly through
- *   interrupt handling logic.
- *
- ****************************************************************************/
-
-static int tiva_txpoll(struct netif dev)
-{
-	FAR struct tiva_driver_s *priv;
-	priv->ld_dev = (struct netif)dev;
-
-	DEBUGASSERT(priv->dev.d_buf != NULL);
-
-	/* If the polling resulted in data that should be sent out on the network,
-	 * the field d_len is set to a value > 0.
-	 */
-
-	if (priv->ld_dev.d_len > 0) {
-		/* Look up the destination MAC address and add it to the Ethernet
-		 * header.
-		 */
-
-#ifdef CONFIG_NET_IPv4
-#ifdef CONFIG_NET_IPv6
-		if (IFF_IS_IPv4(priv->dev.d_flags))
-#endif
-		{
-			//arp_out(&priv->ld_dev);
-		}
-#endif							/* CONFIG_NET_IPv4 */
-
-#ifdef CONFIG_NET_IPv6
-#ifdef CONFIG_NET_IPv4
-		else
-#endif
-		{
-			neighbor_out(&priv->ld_dev);
-		}
-#endif							/* CONFIG_NET_IPv6 */
-
-		/* Send the packet */
-
-		tiva_transmit(priv);
-	}
-
-	/* If zero is returned, the polling will continue until all connections have
-	 * been examined.
-	 */
-
-	return 0;
-}
-
-
-
-/****************************************************************************
- * Function: tiva_txavail
- *
- * Description:
- *   Driver callback invoked when new TX data is available.  This is a
- *   stimulus perform an out-of-cycle poll and, thereby, reduce the TX
- *   latency.
- *
- * Parameters:
- *   dev  - Reference to the NuttX driver state structure
- *
- * Returned Value:
- *   None
- *
- * Assumptions:
- *   Called in normal user mode
- *
- ****************************************************************************/
-
-static int tiva_txavail(struct netif *dev)
-{
-	struct tiva_driver_s *priv = (struct tiva_driver_s *)dev->d_private;
-	irqstate_t flags;
-
-	/* Ignore the notification if the interface is not yet up or if the Tx FIFO
-	 * hardware is not available at this time.  The NEWTX bit initiates an
-	 * Ethernet transmission once the packet has been placed in the TX FIFO.
-	 * This bit is cleared once the transmission has been completed.  When the
-	 * transmission completes, tiva_txdone() will be called and the Tx polling
-	 * will occur at that time.
-	 */
-
-	flags = irqsave();
-	if (priv->ld_bifup && (tiva_ethin(priv, TIVA_MAC_TR_OFFSET) & MAC_TR_NEWTX) == 0) {
-		/* If the interface is up and we can use the Tx FIFO, then poll uIP
-		 * for new Tx data
-		 */
-		tiva_txpoll(priv->ld_dev);
-	}
-	irqrestore(flags);
-	return OK;
+	/* Then poll for new XMIT data */
+	(void)tiva_txpoll(&priv->ld_dev);
 }
 
 /****************************************************************************
@@ -1004,7 +999,6 @@ static void tiva_polltimer(int argc, uint32_t arg, ...)
 
 	if ((tiva_ethin(priv, TIVA_MAC_TR_OFFSET) & MAC_TR_NEWTX) == 0) {
 		/* Setup the watchdog poll timer again */
-
 		(void)wd_start(priv->ld_txpoll, TIVA_WDDELAY, tiva_polltimer, 1, arg);
 	}
 }
@@ -1032,6 +1026,7 @@ static int tiva_ifup(struct netif *dev)
 	irqstate_t flags;
 	uint32_t regval;
 	uint32_t div;
+	uint16_t phyreg;
 
 	nlldbg("Bringing up: %d.%d.%d.%d\n", dev->d_ipaddr & 0xff, (dev->d_ipaddr >> 8) & 0xff, (dev->d_ipaddr >> 16) & 0xff, dev->d_ipaddr >> 24);
 
@@ -1096,7 +1091,9 @@ static int tiva_ifup(struct netif *dev)
 	 */
 
 	nlldbg("Waiting for link\n");
-
+	do {
+		phyreg = tiva_phyread(priv, MII_MSR);
+	} while ((phyreg & MII_MSR_LINKSTATUS) == 0);
 	nlldbg("Link established\n");
 
 	/* Reset the receive FIFO */
@@ -1235,6 +1232,108 @@ static int tiva_ifdown(struct netif *dev)
 	return OK;
 }
 
+/****************************************************************************
+ * Function: tiva_txavail
+ *
+ * Description:
+ *   Driver callback invoked when new TX data is available.  This is a
+ *   stimulus perform an out-of-cycle poll and, thereby, reduce the TX
+ *   latency.
+ *
+ * Parameters:
+ *   dev  - Reference to the NuttX driver state structure
+ *
+ * Returned Value:
+ *   None
+ *
+ * Assumptions:
+ *   Called in normal user mode
+ *
+ ****************************************************************************/
+
+static int tiva_txavail(struct netif *dev)
+{
+	struct tiva_driver_s *priv = (struct tiva_driver_s *)dev->d_private;
+	irqstate_t flags;
+
+    /* Ignore the notification if the interface is not yet up or if the Tx FIFO
+     * hardware is not available at this time.  The NEWTX bit initiates an
+     * Ethernet transmission once the packet has been placed in the TX FIFO.
+     * This bit is cleared once the transmission has been completed.  When the
+     * transmission completes, tiva_txdone() will be called and the Tx polling
+     * will occur at that time.
+     */
+
+	flags = irqsave();
+	if (priv->ld_bifup && (tiva_ethin(priv, TIVA_MAC_TR_OFFSET) & MAC_TR_NEWTX) == 0) {
+        /* If the interface is up and we can use the Tx FIFO, then poll uIP
+         * for new Tx data
+         */
+		(void)tiva_txpoll(&priv->ld_dev);
+	}
+	irqrestore(flags);
+	return OK;
+}
+
+/****************************************************************************
+ * Function: tiva_addmac
+ *
+ * Description:
+ *   NuttX Callback: Add the specified MAC address to the hardware multicast
+ *   address filtering
+ *
+ * Parameters:
+ *   dev  - Reference to the NuttX driver state structure
+ *   mac  - The MAC address to be added
+ *
+ * Returned Value:
+ *   None
+ *
+ * Assumptions:
+ *
+ ****************************************************************************/
+
+#ifdef CONFIG_NET_IGMP
+static int tiva_addmac(struct net_driver_s dev, FAR const uint8_t *mac)
+{
+	FAR struct tiva_driver_s *priv = (FAR struct tiva_driver_s *)dev->d_private;
+
+  /* Add the MAC address to the hardware multicast routing table */
+
+#warning "Multicast MAC support not implemented"
+	return OK;
+}
+#endif
+
+/****************************************************************************
+ * Function: tiva_rmmac
+ *
+ * Description:
+ *   NuttX Callback: Remove the specified MAC address from the hardware multicast
+ *   address filtering
+ *
+ * Parameters:
+ *   dev  - Reference to the NuttX driver state structure
+ *   mac  - The MAC address to be removed
+ *
+ * Returned Value:
+ *   None
+ *
+ * Assumptions:
+ *
+ ****************************************************************************/
+
+#ifdef CONFIG_NET_IGMP
+static int tiva_rmmac(struct net_driver_s dev, FAR const uint8_t *mac)
+{
+	FAR struct tiva_driver_s *priv = (FAR struct tiva_driver_s *)dev->d_private;
+
+  /* Add the MAC address to the hardware multicast routing table */
+
+#warning "Multicast MAC support not implemented"
+	return OK;
+}
+#endif
 
 /****************************************************************************
  * Public Functions
@@ -1281,8 +1380,12 @@ static inline int tiva_ethinitialize(int intf)
 	memset(priv, 0, sizeof(struct tiva_driver_s));
 	priv->ld_dev.d_ifup = tiva_ifup;	/* I/F down callback */
 	priv->ld_dev.d_ifdown = tiva_ifdown;	/* I/F up (new IP address) callback */
+	priv->ld_dev.d_txavail = tiva_txavail;	/* New TX data callback */
+#ifdef CONFIG_NET_IGMP
+	priv->ld_dev.d_addmac = tiva_addmac;	/* Add multicast MAC address */
+	priv->ld_dev.d_rmmac = tiva_rmmac;	/* Remove multicast MAC address */
+#endif
 	priv->ld_dev.d_private = (void *)priv;	/* Used to recover private state from dev */
-	priv->ld_dev.d_txavail = tiva_txavail;
 
 	/* Create a watchdog for timing polling for and timing of transmissions */
 

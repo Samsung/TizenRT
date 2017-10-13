@@ -107,7 +107,7 @@ static void nic_display_state(void)
 	for (; i < num_nic; ifr++, i++) {
 		printf("%s\t", ifr->ifr_name);
 		sin = (struct sockaddr_in *)&ifr->ifr_addr;
-		if ((sin->sin_addr.s_addr) == INADDR_LOOPBACK) {
+		if ((sin->sin_addr.s_addr) == htonl(INADDR_LOOPBACK)) {
 			printf("Loop Back\t");
 		} else {
 			struct ifreq tmp;
@@ -117,7 +117,7 @@ static void nic_display_state(void)
 			printf("Link encap: %s\t", ether_ntoa((struct ether_addr *)sa->sa_data));
 
 			ioctl(fd, SIOCGIFFLAGS, (void *)ifr);
-			printf("RUNNING: %s\n", (ifr->ifr_flags & IFF_UP) ? "UP" : "DOWN");
+			printf("RUNNING: %s\n", (ifr->ifr_flags & NETIF_FLAG_UP) ? "UP" : "DOWN");
 		}
 		printf("\tinet addr: %s\t", inet_ntoa(sin->sin_addr));
 
