@@ -58,7 +58,7 @@
 
 static int rand_initialized = false;
 
-lwm2m_context_t * lwm2m_init(void * userData)
+lwm2m_context_t * lwm2m_init(void * userData, const char * token)
 {
     lwm2m_context_t * contextP;
 
@@ -67,6 +67,12 @@ lwm2m_context_t * lwm2m_init(void * userData)
     {
         memset(contextP, 0, sizeof(lwm2m_context_t));
         contextP->userData = userData;
+        contextP->token = strdup(token);
+        if (!contextP->token) {
+            free(contextP);
+            return NULL;
+        }
+
         if (!rand_initialized) {
             srand(time(NULL));
             rand_initialized = true;
@@ -165,7 +171,10 @@ void lwm2m_close(lwm2m_context_t * contextP)
     {
         lwm2m_free(contextP->altPath);
     }
-
+    if (contextP->token != NULL)
+    {
+        lwm2m_free(contextP->token);
+    }
 #endif
 
 #ifdef LWM2M_SERVER_MODE

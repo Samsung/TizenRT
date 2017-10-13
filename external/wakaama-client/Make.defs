@@ -46,7 +46,8 @@ CSRCS += lwm2mclient.c
 CSRCS += commandline.c
 CSRCS += platform.c
 CSRCS += memtrace.c
-CSRCS += connection.c
+CSRCS += mbedtls_connection.c
+CSRCS += mbedtls_utils.c
 
 CFLAGS+=-I$(TOPDIR)/../external/wakaama-client/core
 CFLAGS+=-I$(TOPDIR)/../external/wakaama-client/core/er-coap-13

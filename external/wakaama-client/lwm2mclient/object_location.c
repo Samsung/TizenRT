@@ -1,5 +1,5 @@
 /*******************************************************************************
- * 
+ *
  * Copyright (c) 2014 Bosch Software Innovations GmbH, Germany.
  *
  * All rights reserved. This program and the accompanying materials
@@ -14,7 +14,7 @@
  * Contributors:
  *    Bosch Software Innovations GmbH - Please refer to git log
  *    Pascal Rieux - Please refer to git log
- *    
+ *
  ******************************************************************************/
 /*! \file
   LWM2M object "Location" implementation
@@ -84,7 +84,7 @@ static uint8_t prv_res2tlv(lwm2m_data_t* dataP,
                            location_data_t* locDataP)
 {
     //-------------------------------------------------------------------- JH --
-    uint8_t ret = COAP_205_CONTENT;  
+    uint8_t ret = COAP_205_CONTENT;
     switch (dataP->id)     // location resourceId
     {
     case RES_M_LATITUDE:
@@ -109,7 +109,7 @@ static uint8_t prv_res2tlv(lwm2m_data_t* dataP,
         ret = COAP_404_NOT_FOUND;
         break;
     }
-  
+
     return ret;
 }
 
@@ -129,7 +129,7 @@ static uint8_t prv_location_read(uint16_t objInstId,
                                  int*  numDataP,
                                  lwm2m_data_t** tlvArrayP,
                                  lwm2m_object_t*  objectP)
-{   
+{
     //-------------------------------------------------------------------- JH --
     int     i;
     uint8_t result = COAP_500_INTERNAL_SERVER_ERROR;
@@ -148,24 +148,24 @@ static uint8_t prv_location_read(uint16_t objInstId,
                 RES_O_VELOCITY,
                 RES_M_TIMESTAMP
         }; // readable resources!
-        
+
         *numDataP  = sizeof(readResIds)/sizeof(uint16_t);
         *tlvArrayP = lwm2m_data_new(*numDataP);
         if (*tlvArrayP == NULL) return COAP_500_INTERNAL_SERVER_ERROR;
-        
+
         // init readable resource id's
         for (i = 0 ; i < *numDataP ; i++)
         {
             (*tlvArrayP)[i].id = readResIds[i];
         }
     }
-    
+
     for (i = 0 ; i < *numDataP ; i++)
     {
         result = prv_res2tlv ((*tlvArrayP)+i, locDataP);
         if (result!=COAP_205_CONTENT) break;
     }
-    
+
     return result;
 }
 
@@ -238,8 +238,8 @@ void location_setLocationAtTime(lwm2m_object_t* locationObj,
 }
 
 /**
-  * This function creates the LWM2M Location. 
-  * @return gives back allocated LWM2M data object structure pointer. On error, 
+  * This function creates the LWM2M Location.
+  * @return gives back allocated LWM2M data object structure pointer. On error,
   * NULL value is returned.
   */
 lwm2m_object_t * get_object_location(object_location_t *default_value)
@@ -255,7 +255,7 @@ lwm2m_object_t * get_object_location(object_location_t *default_value)
         // It assigns its unique ID
         // The 6 is the standard ID for the optional object "Location".
         locationObj->objID = LWM2M_LOCATION_OBJECT_ID;
-        
+
         // and its unique instance
         locationObj->instanceList = (lwm2m_list_t *)lwm2m_malloc(sizeof(lwm2m_list_t));
         if (NULL != locationObj->instanceList)
@@ -279,10 +279,10 @@ lwm2m_object_t * get_object_location(object_location_t *default_value)
         if (NULL != locationObj->userData)
         {
             location_data_t* data = (location_data_t*)locationObj->userData;
-            strcpy (data->latitude,     default_value->latitude);  // Mount Everest :)
-            strcpy (data->longitude,    default_value->longitude);
-            strcpy (data->altitude,     default_value->altidude);
-            strcpy (data->uncertainty,  default_value->uncertainty);
+            strncpy (data->latitude,     default_value->latitude, LOCATION_STR_MAX_LEN);
+            strncpy (data->longitude,    default_value->longitude, LOCATION_STR_MAX_LEN);
+            strncpy (data->altitude,     default_value->altidude, LOCATION_STR_MAX_LEN);
+            strncpy (data->uncertainty,  default_value->uncertainty, LOCATION_STR_MAX_LEN);
             location_setVelocity(locationObj, 0, 0, 255); // 255: speedUncertainty not supported!
             data->timestamp   = time(NULL);
         }
@@ -292,7 +292,7 @@ lwm2m_object_t * get_object_location(object_location_t *default_value)
             locationObj = NULL;
         }
     }
-    
+
     return locationObj;
 }
 

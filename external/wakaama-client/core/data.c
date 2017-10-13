@@ -54,14 +54,8 @@ static int prv_setBuffer(lwm2m_data_t * dataP,
                          uint8_t * buffer,
                          size_t bufferLen)
 {
-    dataP->value.asBuffer.buffer = (uint8_t *)lwm2m_malloc(bufferLen);
-    if (dataP->value.asBuffer.buffer == NULL)
-    {
-        lwm2m_data_free(1, dataP);
-        return 0;
-    }
     dataP->value.asBuffer.length = bufferLen;
-    memcpy(dataP->value.asBuffer.buffer, buffer, bufferLen);
+    dataP->value.asBuffer.buffer = buffer;
 
     return 1;
 }
@@ -101,11 +95,6 @@ void lwm2m_data_free(int size,
 
         case LWM2M_TYPE_STRING:
         case LWM2M_TYPE_OPAQUE:
-            if (dataP[i].value.asBuffer.buffer != NULL)
-            {
-                lwm2m_free(dataP[i].value.asBuffer.buffer);
-            }
-
         default:
             // do nothing
             break;

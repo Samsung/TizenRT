@@ -189,13 +189,13 @@ static uint8_t prv_write_resources(uint16_t instanceId, int numData,
                lwm2m_data_t* tlvArray, lwm2m_object_t* objectP, bool doCreate)
 {
     int i;
-    uint8_t result;
+    uint8_t result = COAP_404_NOT_FOUND;
     int64_t value;
 
     acc_ctrl_oi_t* accCtrlOiP = (acc_ctrl_oi_t *)
             lwm2m_list_find(objectP->instanceList, instanceId);
     if (NULL == accCtrlOiP)
-        return COAP_404_NOT_FOUND ;
+        return COAP_404_NOT_FOUND;
 
     i = 0;
     do

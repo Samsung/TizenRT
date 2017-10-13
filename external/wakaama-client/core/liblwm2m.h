@@ -446,6 +446,7 @@ typedef struct _lwm2m_server_
     char *            location;
     bool              dirty;
     coap_protocol_t	  protocol;
+    char *token;
 } lwm2m_server_t;
 
 
@@ -651,12 +652,13 @@ typedef struct
 #endif
     uint16_t                nextMID;
     lwm2m_transaction_t *   transactionList;
+    char *token;
     void *                  userData;
 } lwm2m_context_t;
 
 
 // initialize a liblwm2m context.
-lwm2m_context_t * lwm2m_init(void * userData);
+lwm2m_context_t * lwm2m_init(void * userData, const char * token);
 // close a liblwm2m context.
 void lwm2m_close(lwm2m_context_t * contextP);
 

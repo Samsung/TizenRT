@@ -37,7 +37,7 @@
 #include "artik_onboarding.h"
 
 #define AKC_DEFAULT_DTID    "dt2d93bdb9c8fa446eb4a35544e66150f7"
-#define LED_ID              ARTIK_A053_XGPIO20
+#define LED_ID              ARTIK_A05x_XGPIO20
 
 #define RESP_ERROR_TPL      RESP_ERROR("%d", "%s")
 #define RESP_INVALID_TPL    RESP_ERROR(API_ERROR_COMMUNICATION, "Device Communication Error")

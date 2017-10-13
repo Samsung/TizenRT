@@ -31,14 +31,14 @@
 
 static int security_cert(int argc, char *argv[]);
 static int security_pk(int argc, char *argv[]);
-static int security_root(int argc, char *argv[]);
+static int security_chain(int argc, char *argv[]);
 static int security_rand(int argc, char *argv[]);
 static int security_serial(int argc, char *argv[]);
 
 const struct command security_commands[] = {
 	{ "cert", "Display certificate stored in SE", security_cert },
 	{ "pk", "Display public key extracted from the certificate stored in SE", security_pk },
-	{ "root", " Display root CA extracted from the certificate stored in SE", security_root },
+	{ "chain", " Display root CA extracted and intermediate certificates from the certificate stored in SE", security_chain },
 	{ "rand", "rand <num> - Generate <num> random bytes from the SE", security_rand },
 	{ "serial", "Return the Serial Number contained in the certificate stored in SE", security_serial },
 	{ "", "", NULL }
@@ -135,13 +135,13 @@ exit:
 	return ret;
 }
 
-static int security_root(int argc, char *argv[])
+static int security_chain(int argc, char *argv[])
 {
 	artik_security_module *security = NULL;
 	int ret = 0;
 	artik_security_handle handle;
 	artik_error err = S_OK;
-	char *root_ca = NULL;
+	char *chain = NULL;
 
 	security = (artik_security_module *)artik_request_api_module("security");
 
@@ -157,16 +157,16 @@ static int security_root(int argc, char *argv[])
 		goto exit;
 	}
 
-	err = security->get_root_ca(handle, &root_ca);
-	if (err != S_OK || !root_ca) {
+	err = security->get_ca_chain(handle, &chain);
+	if (err != S_OK || !chain) {
 		fprintf(stderr, "Failed to get root CA (err=%d)\n", err);
 		err = -1;
 		goto exit;
 	}
 
-	fprintf(stdout, root_ca);
+	fprintf(stdout, "%s\n", chain);
 
-	free(root_ca);
+	free(chain);
 	security->release(handle);
 
 exit:

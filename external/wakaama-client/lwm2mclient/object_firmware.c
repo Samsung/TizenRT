@@ -102,7 +102,10 @@ static uint8_t prv_firmware_read(uint16_t instanceId,
     if (*numDataP == 0)
     {
         *dataArrayP = lwm2m_data_new(5);
-        if (*dataArrayP == NULL) return COAP_500_INTERNAL_SERVER_ERROR;
+        if (*dataArrayP == NULL) {
+            result = COAP_500_INTERNAL_SERVER_ERROR;
+            goto exit;
+        }
         *numDataP = 5;
         (*dataArrayP)[0].id = RES_M_STATE;
         (*dataArrayP)[1].id = RES_O_UPDATE_SUPPORTED_OBJECTS;
@@ -154,6 +157,7 @@ static uint8_t prv_firmware_read(uint16_t instanceId,
         i++;
     } while (i < *numDataP && result == COAP_205_CONTENT);
 
+exit:
     return result;
 }
 
@@ -162,8 +166,9 @@ static uint8_t prv_firmware_write(uint16_t instanceId,
                                   lwm2m_data_t * dataArray,
                                   lwm2m_object_t * objectP)
 {
-    int i;
-    uint8_t result;
+    int i = 0;
+    int ret = 0;
+    uint8_t result = 0;
     firmware_data_t *data = (firmware_data_t*)(objectP->userData);
 
     // this is a single instance object
@@ -171,8 +176,6 @@ static uint8_t prv_firmware_write(uint16_t instanceId,
     {
         return COAP_404_NOT_FOUND;
     }
-
-    i = 0;
 
     do
     {
@@ -191,7 +194,8 @@ static uint8_t prv_firmware_write(uint16_t instanceId,
             break;
 
         case RES_O_UPDATE_SUPPORTED_OBJECTS:
-            if (lwm2m_data_decode_bool(&dataArray[i], &data->supported) == 1)
+            ret = lwm2m_data_decode_bool(&dataArray[i], &data->supported);
+            if (ret == 1)
             {
                 prv_notify_resource_changed(data, LWM2M_URI_FIRMWARE_UPD_SUPP_OBJ, &dataArray[i]);
                 result = COAP_204_CHANGED;
@@ -226,7 +230,10 @@ static uint8_t prv_firmware_execute(uint16_t instanceId,
         return COAP_404_NOT_FOUND;
     }
 
-    if (length != 0) return COAP_400_BAD_REQUEST;
+    if (length != 0)
+    {
+        return COAP_400_BAD_REQUEST;
+    }
 
     // for execute callback, resId is always set.
     switch (resourceId)

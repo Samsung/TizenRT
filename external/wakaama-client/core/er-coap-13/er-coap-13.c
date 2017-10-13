@@ -524,19 +524,19 @@ size_t coap_serialize_get_size(void *packet)
             int len = coap_pkt->options_len + coap_pkt->payload_len;
             if (len < 13)
             {
-                length += 1;
+                length += 2;
             }
             else if (len < ((1 << 8) + 13))
             {
-                length += 2;
+                length += 3;
             }
             else if (len < ((1 << 16) + 269))
             {
-                length += 3;
+                length += 4;
             }
             else
             {
-                length += 5;
+                length += 6;
             }
 
             length += coap_pkt->token_len + coap_pkt->options_len;
@@ -1262,7 +1262,7 @@ coap_set_header_uri_path(void *packet, const char *path)
       int i = 0;
 
       while (path[i] != 0 && path[i] != '/') i++;
-      coap_add_multi_option(&(coap_pkt->uri_path), (uint8_t *)path, i, 0);
+      coap_add_multi_option(&(coap_pkt->uri_path), (uint8_t *)path, i, 1);
 
       if (path[i] == '/') i++;
       path += i;
@@ -1287,7 +1287,7 @@ coap_set_header_uri_path_segment(void *packet, const char *segment)
   else
   {
       length = strlen(segment);
-      coap_add_multi_option(&(coap_pkt->uri_path), (uint8_t *)segment, length, 0);
+      coap_add_multi_option(&(coap_pkt->uri_path), (uint8_t *)segment, length, 1);
   }
 
   SET_OPTION(coap_pkt, COAP_OPTION_URI_PATH);

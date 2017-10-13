@@ -12,7 +12,7 @@
  *
  * Contributors:
  *    David Navarro, Intel Corporation - initial API and implementation
- *    
+ *
  *******************************************************************************/
 
 #ifndef CONNECTION_H_
@@ -35,11 +35,8 @@
 #include <openssl/x509.h>
 #include <openssl/x509_vfy.h>
 #else
-//#include <tls/ssl.h>
 #include <tls/easy_tls.h>
 #include <tls/certs.h>
-//#define LWM2M_CIPHERSUIT "TLS-PSK-WITH-AES-128-CBC-SHA"
-#define LWM2M_CIPHERSUIT "ECDHE-ECDSA-AES256-GCM-SHA384"
 #endif
 
 #define LWM2M_STANDARD_PORT_STR "5683"
@@ -48,6 +45,21 @@
 #define LWM2M_DTLS_PORT          5684
 #define LWM2M_BSSERVER_PORT_STR "5685"
 #define LWM2M_BSSERVER_PORT      5685
+
+#ifdef WITH_MBEDTLS
+typedef struct
+{
+    mbedtls_ssl_config config;
+    mbedtls_entropy_context entropy;
+    mbedtls_ctr_drbg_context ctr_drbg;
+    mbedtls_net_context net;
+    mbedtls_ssl_context session;
+    mbedtls_timing_delay_context *timer;
+    mbedtls_x509_crt *clicert;
+    mbedtls_x509_crt *device_cert;
+    mbedtls_pk_context *pkey;
+} context_ssl_t;
+#endif
 
 typedef struct _connection_t
 {
@@ -60,11 +72,10 @@ typedef struct _connection_t
     SSL_CTX               * ssl_ctx;
     SSL                   * ssl;
 #else
-    tls_session				*session;
-	tls_ctx	*	tls_context;
-	tls_opt *	tls_opt;
+    context_ssl_t          * ssl;
 #endif
     char                  * host;
+    char                  * root_ca;
     bool                    verify_cert;
     char                    local_port[16];
     char                    remote_port[16];
@@ -72,6 +83,7 @@ typedef struct _connection_t
     lwm2m_object_t        * sec_obj;
     int                     sec_inst;
     bool                    connected;
+    bool                    use_se;
 } connection_t;
 
 #define MAX_DTLS_INFO_LEN    128
@@ -90,8 +102,8 @@ int create_socket(coap_protocol_t protocol, const char * portStr, int ai_family)
 connection_t *connection_find(connection_t *connList, struct sockaddr_storage *addr,
         size_t addrLen);
 
-connection_t *connection_create(coap_protocol_t protocol, bool verify_cert, int sock,
-        char *host, char *local_port, char *remote_port, int addressFamily,
+connection_t *connection_create(coap_protocol_t protocol, char *root_ca, bool verify_cert,
+        bool use_se, int sock, char *host, char *local_port, char *remote_port, int addressFamily,
         lwm2m_object_t * obj, int instanceId);
 
 int connection_restart(connection_t *conn);
@@ -100,4 +112,5 @@ void connection_free(connection_t * connList);
 
 int connection_send(connection_t *connP, uint8_t * buffer, size_t length);
 
+int connection_read(connection_t *connP, uint8_t * buffer, size_t length);
 #endif

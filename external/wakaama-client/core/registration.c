@@ -87,49 +87,17 @@ static int prv_getRegistrationQuery(lwm2m_context_t * contextP,
         index += res;
     }
 
-    if (server->protocol == COAP_TCP)
+    if (server->protocol == COAP_TCP && server->token)
     {
         /*
          * We need to append the token to the parameters list
-         * The token is stored in the security object.
          */
-        lwm2m_object_t *obj = (lwm2m_object_t *)lwm2m_list_find(
-                (lwm2m_list_t *)contextP->objectList, LWM2M_SECURITY_OBJECT_ID);
-
-        if (obj && obj->readFunc)
-        {
-            int size = 1;
-            lwm2m_data_t * dataP = lwm2m_data_new(size);
-            dataP->id = LWM2M_SECURITY_SECRET_KEY_ID;
-
-            obj->readFunc(0, &size, &dataP, obj);
-            if (dataP != NULL && dataP->type == LWM2M_TYPE_OPAQUE)
-            {
-                int i;
-                int len = dataP->value.asBuffer.length * 2;
-                char *secret = lwm2m_malloc(len + 1);
-                if (!secret) return 0;
-
-                for (i=0; i<(len/2); i++)
-                {
-                    int low = dataP->value.asBuffer.buffer[i] % 16;
-                    int high = (dataP->value.asBuffer.buffer[i] / 16) % 16;
-
-                    secret[i*2] = (high > 9)? (high-10) + 'a' : high + '0';
-                    secret[i*2 + 1] = (low > 9)? (low-10) + 'a' : low + '0';
-                }
-
-                secret[len] = '\0';
-
-                res = utils_stringCopy(buffer + index, len - index, "&token=");
-                if (res < 0) return 0;
-                index += res;
-                res = utils_stringCopy(buffer + index, len - index, secret);
-                if (res < 0) return 0;
-                index += res;
-                lwm2m_free(secret);
-            }
-        }
+        res = utils_stringCopy(buffer + index, length - index, "&token=");
+        if (res < 0) return 0;
+        index += res;
+        res = utils_stringCopy(buffer + index, length - index, server->token);
+        if (res < 0) return 0;
+        index += res;
     }
 
     switch (server->binding)

@@ -382,7 +382,6 @@ uint8_t connectivity_moni_change(lwm2m_data_t *dataArray, lwm2m_object_t *object
 
             memset(data->ipAddresses[i], 0, IPV46_MAX_ADDR_LEN);
             memcpy(data->ipAddresses[i], parsed[i].value.asBuffer.buffer, parsed[i].value.asBuffer.length);
-            lwm2m_free(parsed[i].value.asBuffer.buffer);
             result = COAP_204_CHANGED;
         }
         lwm2m_free(parsed);

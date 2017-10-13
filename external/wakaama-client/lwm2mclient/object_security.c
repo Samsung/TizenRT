@@ -42,6 +42,8 @@
 
 #include "liblwm2m.h"
 
+#include "pem_utils.h"
+
 #include <stdlib.h>
 #include <string.h>
 #include <stdio.h>
@@ -64,7 +66,7 @@ typedef struct _security_instance_
     struct _security_instance_ * next;        // matches lwm2m_list_t::next
     uint16_t                     instanceId;  // matches lwm2m_list_t::id
     char *                       uri;
-    bool                         isBootstrap;    
+    bool                         isBootstrap;
     uint8_t                      securityMode;
     char *                       publicIdentity;
     uint16_t                     publicIdLen;
@@ -481,10 +483,23 @@ void clean_security_object(lwm2m_object_t * objectP)
         {
             lwm2m_free(securityInstance->uri);
         }
-        if (securityInstance->securityMode == LWM2M_SECURITY_MODE_PRE_SHARED_KEY)
+
+        if (securityInstance->securityMode == LWM2M_SECURITY_MODE_PRE_SHARED_KEY || securityInstance->securityMode == LWM2M_SECURITY_MODE_CERTIFICATE)
         {
-            lwm2m_free(securityInstance->publicIdentity);
-            lwm2m_free(securityInstance->secretKey);
+            if (securityInstance->publicIdentity) {
+                lwm2m_free(securityInstance->publicIdentity);
+            }
+
+            if (securityInstance->secretKey) {
+                lwm2m_free(securityInstance->secretKey);
+            }
+        }
+
+        if (securityInstance->securityMode == LWM2M_SECURITY_MODE_CERTIFICATE)
+        {
+            if (securityInstance->serverPublicKey) {
+                lwm2m_free(securityInstance->serverPublicKey);
+            }
         }
         lwm2m_free(securityInstance);
     }
@@ -492,7 +507,9 @@ void clean_security_object(lwm2m_object_t * objectP)
 
 lwm2m_object_t * get_security_object(int serverId,
                                      const char* serverUri,
-                                     char * bsPskId,
+                                     uint8_t securityMode,
+                                     char * serverCertificate,
+                                     char * clientCertificateOrPskId,
                                      char * psk,
                                      uint16_t pskLen,
                                      bool isBootstrap)
@@ -513,40 +530,83 @@ lwm2m_object_t * get_security_object(int serverId,
         targetP = (security_instance_t *)lwm2m_malloc(sizeof(security_instance_t));
         if (NULL == targetP)
         {
+#ifdef WITH_LOGS
+            fprintf(stderr, "Failed to allocate security instance.\r\n");
+#endif
             lwm2m_free(securityObj);
             return NULL;
         }
 
         memset(targetP, 0, sizeof(security_instance_t));
-        targetP->instanceId = 0;
-        targetP->uri = (char*)lwm2m_malloc(strlen(serverUri)+1); 
+        targetP->uri = (char*)lwm2m_malloc(strlen(serverUri)+1);
         strcpy(targetP->uri, serverUri);
+        targetP->securityMode = securityMode;
 
-        targetP->securityMode = LWM2M_SECURITY_MODE_NONE;
-        targetP->publicIdentity = NULL;
-        targetP->publicIdLen = 0;
-        targetP->secretKey = NULL;
-        targetP->secretKeyLen = 0;
-        if (bsPskId != NULL || psk != NULL)
+        if (securityMode == LWM2M_SECURITY_MODE_PRE_SHARED_KEY)
         {
-            targetP->securityMode = LWM2M_SECURITY_MODE_PRE_SHARED_KEY;
-            if (bsPskId)
+            if (psk == NULL || clientCertificateOrPskId == NULL || pskLen < 1)
             {
-                targetP->publicIdentity = strdup(bsPskId);
-                targetP->publicIdLen = strlen(bsPskId);
+#ifdef WITH_LOGS
+                fprintf(stderr, "Bad parameters for PSK mode.\r\n");
+#endif
+                clean_security_object(securityObj);
+                return NULL;
             }
-            if (psk && (pskLen > 0))
+
+            targetP->publicIdentity = strdup(clientCertificateOrPskId);
+            targetP->publicIdLen = strlen(clientCertificateOrPskId);
+            targetP->secretKey = (char *)lwm2m_malloc(pskLen);
+            if (!targetP->secretKey)
             {
-                targetP->secretKey = (char*)lwm2m_malloc(pskLen);
-                if (targetP->secretKey == NULL)
-                {
-                    clean_security_object(securityObj);
-                    return NULL;
-                }
-                memcpy(targetP->secretKey, psk, pskLen);
-                targetP->secretKeyLen = pskLen;
+#ifdef WITH_LOGS
+                fprintf(stderr, "Failed to allocate secretKey.\r\n");
+#endif
+                clean_security_object(securityObj);
+                return NULL;
+            }
+
+            memcpy(targetP->secretKey, psk, pskLen);
+            targetP->secretKeyLen = pskLen;
+        }
+
+        if (securityMode == LWM2M_SECURITY_MODE_CERTIFICATE)
+        {
+            if (!convert_pem_x509_to_der(serverCertificate, &targetP->serverPublicKey, &targetP->serverPublicKeyLen))
+            {
+#ifdef WITH_LOGS
+                fprintf(stderr, "Failed to parse server certificate\r\n");
+#endif
+            }
+
+            if (!convert_pem_x509_to_der(clientCertificateOrPskId, &targetP->publicIdentity, &targetP->publicIdLen))
+            {
+#ifdef WITH_LOGS
+                fprintf(stderr, "Failed to parse client certificate\r\n");
+#endif
+                clean_security_object(securityObj);
+                return NULL;
+            }
+
+            if (!convert_pem_privatekey_to_der(psk, &targetP->secretKey, &targetP->secretKeyLen))
+            {
+#ifdef WITH_LOGS
+                fprintf(stderr, "Failed to parse private key (Certificate mode)\r\n");
+#endif
+                clean_security_object(securityObj);
+                return NULL;
             }
         }
+
+        // ARTIK Cloud does not support NoSec mode
+        if (securityMode == LWM2M_SECURITY_MODE_NONE)
+        {
+            clean_security_object(securityObj);
+#ifdef WITH_LOGS
+            fprintf(stderr, "NoSec is not supported.\r\n");
+#endif
+            return NULL;
+        }
+
         targetP->isBootstrap = isBootstrap;
         targetP->shortID = serverId;
         targetP->clientHoldOffTime = 10;

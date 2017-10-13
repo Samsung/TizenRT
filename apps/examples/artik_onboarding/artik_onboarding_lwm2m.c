@@ -31,6 +31,37 @@
 
 #include "artik_onboarding.h"
 
+static const char akc_root_ca[] =
+	"-----BEGIN CERTIFICATE-----\r\n"
+	"MIIE0zCCA7ugAwIBAgIQGNrRniZ96LtKIVjNzGs7SjANBgkqhkiG9w0BAQUFADCB\r\n"
+	"yjELMAkGA1UEBhMCVVMxFzAVBgNVBAoTDlZlcmlTaWduLCBJbmMuMR8wHQYDVQQL\r\n"
+	"ExZWZXJpU2lnbiBUcnVzdCBOZXR3b3JrMTowOAYDVQQLEzEoYykgMjAwNiBWZXJp\r\n"
+	"U2lnbiwgSW5jLiAtIEZvciBhdXRob3JpemVkIHVzZSBvbmx5MUUwQwYDVQQDEzxW\r\n"
+	"ZXJpU2lnbiBDbGFzcyAzIFB1YmxpYyBQcmltYXJ5IENlcnRpZmljYXRpb24gQXV0\r\n"
+	"aG9yaXR5IC0gRzUwHhcNMDYxMTA4MDAwMDAwWhcNMzYwNzE2MjM1OTU5WjCByjEL\r\n"
+	"MAkGA1UEBhMCVVMxFzAVBgNVBAoTDlZlcmlTaWduLCBJbmMuMR8wHQYDVQQLExZW\r\n"
+	"ZXJpU2lnbiBUcnVzdCBOZXR3b3JrMTowOAYDVQQLEzEoYykgMjAwNiBWZXJpU2ln\r\n"
+	"biwgSW5jLiAtIEZvciBhdXRob3JpemVkIHVzZSBvbmx5MUUwQwYDVQQDEzxWZXJp\r\n"
+	"U2lnbiBDbGFzcyAzIFB1YmxpYyBQcmltYXJ5IENlcnRpZmljYXRpb24gQXV0aG9y\r\n"
+	"aXR5IC0gRzUwggEiMA0GCSqGSIb3DQEBAQUAA4IBDwAwggEKAoIBAQCvJAgIKXo1\r\n"
+	"nmAMqudLO07cfLw8RRy7K+D+KQL5VwijZIUVJ/XxrcgxiV0i6CqqpkKzj/i5Vbex\r\n"
+	"t0uz/o9+B1fs70PbZmIVYc9gDaTY3vjgw2IIPVQT60nKWVSFJuUrjxuf6/WhkcIz\r\n"
+	"SdhDY2pSS9KP6HBRTdGJaXvHcPaz3BJ023tdS1bTlr8Vd6Gw9KIl8q8ckmcY5fQG\r\n"
+	"BO+QueQA5N06tRn/Arr0PO7gi+s3i+z016zy9vA9r911kTMZHRxAy3QkGSGT2RT+\r\n"
+	"rCpSx4/VBEnkjWNHiDxpg8v+R70rfk/Fla4OndTRQ8Bnc+MUCH7lP59zuDMKz10/\r\n"
+	"NIeWiu5T6CUVAgMBAAGjgbIwga8wDwYDVR0TAQH/BAUwAwEB/zAOBgNVHQ8BAf8E\r\n"
+	"BAMCAQYwbQYIKwYBBQUHAQwEYTBfoV2gWzBZMFcwVRYJaW1hZ2UvZ2lmMCEwHzAH\r\n"
+	"BgUrDgMCGgQUj+XTGoasjY5rw8+AatRIGCx7GS4wJRYjaHR0cDovL2xvZ28udmVy\r\n"
+	"aXNpZ24uY29tL3ZzbG9nby5naWYwHQYDVR0OBBYEFH/TZafC3ey78DAJ80M5+gKv\r\n"
+	"MzEzMA0GCSqGSIb3DQEBBQUAA4IBAQCTJEowX2LP2BqYLz3q3JktvXf2pXkiOOzE\r\n"
+	"p6B4Eq1iDkVwZMXnl2YtmAl+X6/WzChl8gGqCBpH3vn5fJJaCGkgDdk+bW48DW7Y\r\n"
+	"5gaRQBi5+MHt39tBquCWIMnNZBU4gcmU7qKEKQsTb47bDN0lAtukixlE0kF6BWlK\r\n"
+	"WE9gyn6CagsCqiUXObXbf+eEZSqVir2G3l6BFoMtEMze/aiCKm0oHw0LxOXnGiYZ\r\n"
+	"4fQRbxC1lfznQgUy286dUV4otp6F01vvpX1FQHKOtw5rDgb7MzVIcbidJ4vEZV8N\r\n"
+	"hnacRHr2lVz2XTIIM6RUthg/aFzyQkqFOFSDX9HoLPKsEdao7WNq\r\n"
+	"-----END CERTIFICATE-----\r\n";
+
+
 #define OTA_FIRMWARE_HEADER_SIZE		4096
 #define UUID_MAX_LEN					64
 #define LWM2M_RES_DEVICE_REBOOT		"/3/0/4"
@@ -312,6 +343,7 @@ static pthread_addr_t lwm2m_start_cb(void *arg)
 	artik_error ret = S_OK;
 	artik_lwm2m_config config;
 	artik_lwm2m_module *lwm2m = (artik_lwm2m_module *)artik_request_api_module("lwm2m");
+	artik_ssl_config ssl_config;
 
 	if (!lwm2m) {
 		printf("Failed to request lwm2m module\n");
@@ -323,6 +355,7 @@ static pthread_addr_t lwm2m_start_cb(void *arg)
 	printf("Start LWM2M connection to ARTIK Cloud\n");
 
 	memset(&config, 0, sizeof(artik_lwm2m_config));
+	memset(&ssl_config, 0, sizeof(artik_ssl_config));
 	config.server_id = 123;
 	config.server_uri = "coaps+tcp://coaps-api.artik.cloud:5689";
 	config.lifetime = 30;
@@ -330,9 +363,15 @@ static pthread_addr_t lwm2m_start_cb(void *arg)
 	config.tls_psk_identity = config.name;
 	config.tls_psk_key = strndup(cloud_config.device_token, UUID_MAX_LEN);
 	config.objects[ARTIK_LWM2M_OBJECT_DEVICE] =
-		lwm2m->create_device_object("Samsung", "ARTIK053", "1234567890", ONBOARDING_VERSION,
-			"1.0", "1.0", "A053", 0, 5000, 1500, 100, 1000000, 200000,
+		lwm2m->create_device_object("Samsung", "ARTIK05x", "1234567890", ONBOARDING_VERSION,
+			"1.0", "1.0", "A05x", 0, 5000, 1500, 100, 1000000, 200000,
 			"Europe/Paris", "+01:00", "U");
+
+	ssl_config.use_se = cloud_secure_dt;
+	ssl_config.ca_cert.data = (char *)akc_root_ca;
+	ssl_config.ca_cert.len = sizeof(akc_root_ca);
+	ssl_config.verify_cert = ARTIK_SSL_VERIFY_REQUIRED;
+	config.ssl_config = &ssl_config;
 	if (!config.objects[ARTIK_LWM2M_OBJECT_DEVICE]) {
 		fprintf(stderr, "Failed to allocate memory for object device.");
 		ret = E_NO_MEM;
@@ -346,7 +385,14 @@ static pthread_addr_t lwm2m_start_cb(void *arg)
 		ret = E_NO_MEM;
 		goto exit;
 	}
-	ret = lwm2m->client_connect(&g_lwm2m_handle, &config);
+
+	ret = lwm2m->client_request(&g_lwm2m_handle, &config);
+	if (ret != S_OK) {
+		fprintf(stderr, "Failed to request LWM2M client handle (%d)\n", ret);
+		goto exit;
+	}
+
+	ret = lwm2m->client_connect(g_lwm2m_handle);
 	if (ret != S_OK) {
 		fprintf(stderr, "Failed to connect to the DM server (%d)\n", ret);
 		goto exit;
@@ -376,6 +422,11 @@ exit:
 	if (config.tls_psk_key)
 		free(config.tls_psk_key);
 
+	if (g_lwm2m_handle && ret != S_OK) {
+		lwm2m->client_release(g_lwm2m_handle);
+		g_lwm2m_handle = NULL;
+	}
+
 	pthread_exit((void *)ret);
 
 	return NULL;
@@ -394,6 +445,7 @@ static pthread_addr_t lwm2m_stop_cb(void *arg)
 	}
 
 	lwm2m->client_disconnect(g_lwm2m_handle);
+	lwm2m->client_release(g_lwm2m_handle);
 	g_lwm2m_handle = NULL;
 	pthread_exit((void *)ret);
 

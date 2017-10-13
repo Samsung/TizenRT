@@ -189,8 +189,8 @@ void output_buffer(FILE * stream,
 
         print_indent(stream, indent);
         size_t size = 16;
-        if (size > length - i)
-            size = length - i;
+        if ( size > length - i)
+            size = length - i ;
 
         memcpy(array, buffer+i, size);
         for (j = 0 ; j < 16 && i+j < length; j++)

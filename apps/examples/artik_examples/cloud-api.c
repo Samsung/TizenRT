@@ -29,6 +29,7 @@
 
 #include <artik_module.h>
 #include <artik_cloud.h>
+#include <artik_websocket.h>
 #include <artik_http.h>
 #include <artik_lwm2m.h>
 
@@ -111,7 +112,7 @@ const struct command cloud_commands[] = {
 	{ "disconnect", "", disconnect_command },
 	{ "send", "<message>", send_command },
 	{ "sdr", "start|status|complete <dtid> <vdid>|<regid>|<regid> <nonce>", sdr_command },
-	{ "dm", "connect|read|change|disconnect <token> <did>|<uri>|<uri> <value>", dm_command },
+	{ "dm", "connect|read|change|disconnect <token> <did>|<uri>|<uri> [<use_se>]|<value>", dm_command },
 	{ "", "", NULL }
 };
 
@@ -136,6 +137,21 @@ static void websocket_rx_callback(void *user_data, void *result)
 		}
 
 		free(result);
+	}
+}
+
+static void websocket_connection_callback(void *user_data, void *result)
+{
+	fprintf(stdout, "Call websocket_connection_callback\n");
+	if (result) {
+		artik_websocket_connection_state state = (artik_websocket_connection_state)result;
+
+		fprintf(stdout, "Connection state change (%d)\n", state);
+
+		if (state == ARTIK_WEBSOCKET_CLOSED && ws_handle) {
+			fprintf(stderr, "Connectivity error. Close connection. %p\n", ws_handle);
+			task_create("cloud_disconnect", SCHED_PRIORITY_DEFAULT, 4096, disconnect_command, NULL);
+		}
 	}
 }
 
@@ -312,9 +328,21 @@ static int connect_command(int argc, char *argv[])
 		goto exit;
 	}
 
+	ssl.verify_cert = ARTIK_SSL_VERIFY_REQUIRED;
+	ssl.ca_cert.data = (char *)akc_root_ca;
+	ssl.ca_cert.len = sizeof(akc_root_ca);
+
 	err = cloud->websocket_open_stream(&ws_handle, argv[3], argv[4], &ssl);
 	if (err != S_OK) {
 		fprintf(stderr, "Failed to connect websocket\n");
+		ws_handle = NULL;
+		ret = -1;
+		goto exit;
+	}
+
+	err = cloud->websocket_set_connection_callback(ws_handle, websocket_connection_callback, NULL);
+	if (err != S_OK) {
+		fprintf(stderr, "Failed to set websocket connection callback\n");
 		ws_handle = NULL;
 		ret = -1;
 		goto exit;
@@ -327,6 +355,7 @@ static int connect_command(int argc, char *argv[])
 		ret = -1;
 		goto exit;
 	}
+
 
 exit:
 	if (cloud)
@@ -477,8 +506,18 @@ exit:
 static void dm_on_error(void *data, void *user_data)
 {
 	artik_error err = (artik_error)data;
+	artik_lwm2m_module *lwm2m = NULL;
 
 	fprintf(stderr, "LWM2M error: %s\n", error_msg(err));
+	lwm2m = (artik_lwm2m_module *)artik_request_api_module("lwm2m");
+	if (!lwm2m) {
+		fprintf(stderr, "Failed to request LWM2M module\n");
+		return;
+	}
+
+	lwm2m->client_disconnect(g_dm_client);
+	lwm2m->client_release(g_dm_client);
+	g_dm_client = NULL;
 }
 
 static pthread_addr_t delayed_reboot(pthread_addr_t arg)
@@ -705,6 +744,7 @@ static int dm_command(int argc, char *argv[])
 {
 	int ret = 0;
 	artik_lwm2m_module *lwm2m = NULL;
+	artik_ssl_config *ssl_config = NULL;
 
 	if (!strcmp(argv[3], "connect")) {
 
@@ -725,30 +765,36 @@ static int dm_command(int argc, char *argv[])
 			goto exit;
 		}
 
-				    g_dm_config = zalloc(sizeof(artik_lwm2m_config));
+		g_dm_config = zalloc(sizeof(artik_lwm2m_config));
 		if (!g_dm_config) {
 			fprintf(stderr, "Failed to allocate memory for DM config\n");
 			ret = -1;
 			goto exit;
 		}
 
-		lwm2m = (artik_lwm2m_module *)artik_request_api_module("lwm2m");
-		if (!lwm2m) {
-			fprintf(stderr, "Failed to request LWM2M module\n");
-			free(g_dm_config);
+		ssl_config = zalloc(sizeof(artik_ssl_config));
+		if (!ssl_config) {
+			fprintf(stderr, "Failed to allocate memory for DM SSL config\n");
 			ret = -1;
 			goto exit;
 		}
 
+		ssl_config->use_se = (argc == 7) && !strncmp(argv[6], "use_se", strlen("use_se"));
+		ssl_config->ca_cert.data = (char *)akc_root_ca;
+		ssl_config->ca_cert.len = sizeof(akc_root_ca);
+		ssl_config->verify_cert = ARTIK_SSL_VERIFY_REQUIRED;
+		g_dm_config->ssl_config = ssl_config;
+
 		g_dm_config->server_id = 123;
-		g_dm_config->server_uri = "coaps+tcp://coaps-api.artik.cloud:5689";
+		g_dm_config->server_uri = ssl_config->use_se ? "coaps+tcp://coaps-api.artik.cloud:5689" :
+				"coaps://coaps-api.artik.cloud:5686";
 		g_dm_config->lifetime = 30;
 		g_dm_config->name = strndup(argv[5], UUID_MAX_LEN);
 		g_dm_config->tls_psk_identity = g_dm_config->name;
 		g_dm_config->tls_psk_key = strndup(argv[4], UUID_MAX_LEN);
 		g_dm_config->objects[ARTIK_LWM2M_OBJECT_DEVICE] =
-			lwm2m->create_device_object("Samsung", "ARTIK053", "1234567890", "1.0",
-						    "1.0", "1.0", "A053", 0, 5000, 1500, 100, 1000000, 200000,
+			lwm2m->create_device_object("Samsung", "ARTIK05x", "1234567890", "1.0",
+						    "1.0", "1.0", "A05x", 0, 5000, 1500, 100, 1000000, 200000,
 						    "Europe/Paris", "+01:00", "U");
 		if (!g_dm_config->objects[ARTIK_LWM2M_OBJECT_DEVICE]) {
 			fprintf(stderr, "Failed to allocate memory for object device.");
@@ -765,9 +811,9 @@ static int dm_command(int argc, char *argv[])
 			ret = -1;
 			goto exit;
 		}
-		ret = lwm2m->client_connect(&g_dm_client, g_dm_config);
+		ret = lwm2m->client_request(&g_dm_client, g_dm_config);
 		if (ret != S_OK) {
-			fprintf(stderr, "Failed to connect to the DM server (%d)\n", ret);
+			fprintf(stderr, "Failed to request lwm2m handle (%d)\n", ret);
 			lwm2m->free_object(g_dm_config->objects[ARTIK_LWM2M_OBJECT_DEVICE]);
 			free(g_dm_config);
 			ret = -1;
@@ -781,6 +827,22 @@ static int dm_command(int argc, char *argv[])
 		lwm2m->set_callback(g_dm_client, ARTIK_LWM2M_EVENT_RESOURCE_CHANGED,
 				    dm_on_changed_resource, (void *)g_dm_client);
 
+		ret = lwm2m->client_connect(g_dm_client);
+		if (ret != S_OK) {
+			fprintf(stderr, "Failed to connect to the DM server (%d)\n", ret);
+			lwm2m->client_release(g_dm_client);
+			g_dm_client = NULL;
+			lwm2m->free_object(g_dm_config->objects[ARTIK_LWM2M_OBJECT_DEVICE]);
+			free(g_dm_config);
+			ret = -1;
+			goto exit;
+		}
+
+		lwm2m->free_object(g_dm_config->objects[ARTIK_LWM2M_OBJECT_DEVICE]);
+		free(g_dm_config->name);
+		free(g_dm_config->tls_psk_key);
+		free(g_dm_config->ssl_config);
+		free(g_dm_config);
 	} else if (!strcmp(argv[3], "disconnect")) {
 
 		if (!g_dm_client) {
@@ -796,14 +858,8 @@ static int dm_command(int argc, char *argv[])
 		}
 
 		lwm2m->client_disconnect(g_dm_client);
-		lwm2m->free_object(g_dm_config->objects[ARTIK_LWM2M_OBJECT_DEVICE]);
-		free(g_dm_config->name);
-		free(g_dm_config->tls_psk_key);
-		free(g_dm_config);
-
+		lwm2m->client_release(g_dm_client);
 		g_dm_client = NULL;
-		g_dm_config = NULL;
-
 	} else if (!strcmp(argv[3], "read")) {
 		char value[256] = {0};
 		int len = 256;
