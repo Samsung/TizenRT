@@ -101,7 +101,7 @@ do {										\
 	pthread_mutex_unlock(&g_wifi_mutex);			\
 } while (0)
 
-static bool b_reset_continue_flag = false;
+bool b_reset_continue_flag = false;
 static bool b_thread_things_reset = false;
 static pthread_t h_thread_things_reset = NULL;
 static pthread_t h_thread_things_wifi_join = NULL;

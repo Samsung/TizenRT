@@ -1063,7 +1063,6 @@ GOTO_OUT:
 static bool things_ping_destroy_thread(things_ping_s *ping)
 {
 	THINGS_LOG(THINGS_DEBUG, TAG, "Enter.");
-
 	bool res = false;
 
 	if (ping == NULL || ping->addr == NULL) {
@@ -1076,14 +1075,13 @@ static bool things_ping_destroy_thread(things_ping_s *ping)
 #ifdef __ST_THINGS_RTOS__
 		ping->continue_thread = false;
 		sleep(2);				/* wait till thread exit */
-		pthread_detach(ping->handle_thread);
+		pthread_join(ping->handle_thread, NULL);
 #else							/* there is problem in artik during thread_cancel hence avoiding it */
 		pthread_cancel(ping->handle_thread);
 		pthread_detach(ping->handle_thread);
 #endif
 		ping->handle_thread = 0;
 		ping->continue_thread = false;
-		set_def_interval(ping);
 
 		unset_mask(ping, PING_ST_STARTTHREAD | PING_ST_DISCOVERY | PING_ST_REQUEST | PING_ST_INTUPDATE | PING_ST_TIMEOUT);
 		res = true;
