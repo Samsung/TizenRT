@@ -5,6 +5,13 @@ config TLS_WITH_SSS
 	depends on S5J_SSS
 	default n
 
+config SUPPORT_FULL_SECURITY
+	bool "Enable full security features"
+	depends on S5J_SSS && (ARCH_BOARD_ARTIK053 || ARCH_BOARD_ARTIK053S)
+	default n
+	---help---
+		Supports security features with secure storage.
+
 if TLS_WITH_SSS
 
 menu "HW Selection"
@@ -48,6 +55,13 @@ config HW_ECDSA_VERIFICATION
 		 . SECP 192, 224, 256, 384, 512
 		 . Brainpool 256
 
+config HW_RSA_ENC
+	bool "HW rsa encryption"
+	default n
+	---help---
+		Encrypts a data based on hardware.
+		Supporting key size : 1024, 2048
+		
 endmenu
 
 endif
