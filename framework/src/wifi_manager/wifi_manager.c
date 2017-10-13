@@ -94,6 +94,9 @@ static wifi_utils_result_e start_dhcp_client(void)
 	netlib_set_ipv4netmask(CTRL_IFNAME, &state.netmask);
 	netlib_set_dripv4addr(CTRL_IFNAME, &state.default_router);
 
+#ifdef CONFIG_ENABLE_IOTIVITY
+	__tizenrt_manual_linkset("gen");
+#endif
 	nvdbg("IP address : %s ----\n", inet_ntoa(state.ipaddr));
 
 	return WIFI_UTILS_SUCCESS;
@@ -124,7 +127,9 @@ static wifi_utils_result_e start_dhcp_server(void)
 		ndbg("DHCP Server - started fail\n");
 		return WIFI_UTILS_FAIL;
 	}
-
+#ifdef CONFIG_ENABLE_IOTIVITY
+	__tizenrt_manual_linkset("gen");
+#endif
 	nvdbg("DHCP Server - started success\n");
 	return WIFI_UTILS_SUCCESS;
 }
@@ -138,6 +143,9 @@ static wifi_utils_result_e stop_dhcp_server(void)
 
 	dhcpd_stop();
 
+#ifdef CONFIG_ENABLE_IOTIVITY
+	__tizenrt_manual_linkset("del");
+#endif
 	return WIFI_UTILS_SUCCESS;
 }
 
@@ -214,9 +222,7 @@ static void wifi_linkup_event_func(void)
 		wifi_mutex_release(w_info_mutex);
 	}
 
-#ifdef CONFIG_ENABLE_IOTIVITY
-	__tizenrt_manual_linkset("gen");
-#endif
+
 	/* TODO: Import files from source
 	 * sendStatusTrigger (TRIGGER_NETWORK_CHANGED, DAWIT_NW_CHANGED_UP);
 	 */
@@ -261,9 +267,7 @@ static void wifi_linkdown_event_func(void)
 		wifi_mutex_release(w_info_mutex);
 	}
 
-#ifdef CONFIG_ENABLE_IOTIVITY
-	__tizenrt_manual_linkset("del");
-#endif
+
 
 	/* TODO: Import files from source
 	 * sendStatusTrigger(TRIGGER_NETWORK_CHANGED, DAWIT_NW_CHANGED_DOWN);
@@ -416,6 +420,12 @@ wifi_manager_result_e wifi_manager_disconnect_ap(void)
 	wifi_mutex_acquire(w_mutex, WIFI_UTILS_FOREVER);
 	result = wifi_utils_disconnect_ap();
 	wifi_mutex_release(w_mutex);
+
+#ifdef CONFIG_ENABLE_IOTIVITY
+	if (result == WIFI_UTILS_SUCCESS) {
+		__tizenrt_manual_linkset("del");
+	}
+#endif
 
 	return result;
 }
