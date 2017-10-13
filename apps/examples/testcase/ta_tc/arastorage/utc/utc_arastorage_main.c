@@ -98,17 +98,14 @@ static void check_query_result(char * query)
 static void cleanup(void)
 {
 	char query[QUERY_LENGTH];
-	db_result_t res;
 
 	memset(query, 0, QUERY_LENGTH);
 	snprintf(query, QUERY_LENGTH, "REMOVE RELATION %s;", RELATION_NAME1);
-	res = db_exec(query);
-	TC_ASSERT_EQ("db_exec", DB_SUCCESS(res), true);
+	db_exec(query);
 
 	memset(query, 0, QUERY_LENGTH);
 	snprintf(query, QUERY_LENGTH, "REMOVE RELATION %s;", RELATION_NAME2);
-	res = db_exec(query);
-	TC_ASSERT_EQ("db_exec", DB_SUCCESS(res), true);
+	db_exec(query);
 }
 
 /**
