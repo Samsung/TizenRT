@@ -13,6 +13,7 @@ if EXAMPLES_TESTCASE
 source "$APPSDIR/examples/testcase/ta_tc/arastorage/utc/Kconfig"
 source "$APPSDIR/examples/testcase/ta_tc/arastorage/itc/Kconfig"
 source "$APPSDIR/examples/testcase/ta_tc/audio/utc/Kconfig"
+source "$APPSDIR/examples/testcase/ta_tc/audio/itc/Kconfig"
 source "$APPSDIR/examples/testcase/le_tc/filesystem/Kconfig"
 source "$APPSDIR/examples/testcase/le_tc/kernel/Kconfig"
 source "$APPSDIR/examples/testcase/le_tc/network/Kconfig"
