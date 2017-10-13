@@ -367,7 +367,7 @@ errout_with_mask:
 	sigprocmask(SIG_SETMASK, &saved, NULL);
 errout:
 
-	RETURN_ERR;
+	return;
 }
 
 /**

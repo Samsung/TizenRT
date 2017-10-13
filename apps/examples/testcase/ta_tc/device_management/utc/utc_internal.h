@@ -19,12 +19,10 @@
 /// @file tc_internal.h
 
 /// @brief Header file for Kernel TestCase Example
-#ifndef __EXAMPLES_TESTCASE_DM_TC_INTERNAL_H
-#define __EXAMPLES_TESTCASE_DM_TC_INTERNAL_H
+#ifndef __EXAMPLES_TESTCASE_DM_UTC_INTERNAL_H
+#define __EXAMPLES_TESTCASE_DM_UTC_INTERNAL_H
 
-#include "../../../tc_common.h"
-
-#define RETURN_ERR return
+#include "tc_common.h"
 
 #define DM_TC_PRINT printf
 
@@ -89,5 +87,5 @@ int	dm_conn_unregi_linkup_main(void);
 int	dm_conn_unregi_linkdown_main(void);
 #endif
 
-#endif /* __EXAMPLES_TESTCASE_KERNEL_TC_INTERNAL_H */
+#endif /* __EXAMPLES_TESTCASE_DM_UTC_INTERNAL_H */
 

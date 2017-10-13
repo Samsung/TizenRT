@@ -73,8 +73,6 @@ static void show_usage(FAR const char *progname)
 
 int sysio_utc(int argc, FAR char *argv[])
 {
-	total_pass = 0;
-	total_fail = 0;
 	int cmdtype = 0;
 
 	sem_wait(&tc_sem);
