@@ -84,6 +84,7 @@ static void board_gpio_initialize(void)
 		uint8_t  minor;
 		uint16_t pincfg;
 	} pins[] = {
+		{ 29, GPIO_XGPIO0 }, /* ARTIK_A053_XGPIO0 */
 		{ 30, GPIO_XGPIO1 }, /* ARTIK_A053_XGPIO1 */
 		{ 31, GPIO_XGPIO2 }, /* ARTIK_A053_XGPIO2 */
 		{ 32, GPIO_XGPIO3 }, /* ARTIK_A053_XGPIO3 */
@@ -111,6 +112,7 @@ static void board_gpio_initialize(void)
 		{ 54, GPIO_XGPIO25 }, /* ARTIK_A053_XGPIO25 */
 		{ 55, GPIO_XGPIO26 }, /* ARTIK_A053_XGPIO26 */
 		{ 56, GPIO_XGPIO27 }, /* ARTIK_A053_XGPIO27 */
+		{ 20, GPIO_XGPIO28 }, /* ARTIK_A053_XGPIO28 */
 		{ 57, GPIO_XEINT0 }, /* ARTIK_A053_XEINT0 */
 		{ 58, GPIO_XEINT1 }, /* ARTIK_A053_XEINT1 */
 		{ 59, GPIO_XEINT2 }, /* ARTIK_A053_XEINT2 */
