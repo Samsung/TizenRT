@@ -1,0 +1,3 @@
+config ENTRY_MEDIAPLAYER_TASH
+	bool "\"MediaPlayer\" example in tash"
+	depends on EXAMPLES_MEDIAPLAYER_TASH
