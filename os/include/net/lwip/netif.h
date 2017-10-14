@@ -77,6 +77,7 @@
 
 #include <net/lwip/def.h>
 #include <net/lwip/pbuf.h>
+#include <net/if.h>
 #if LWIP_DHCP
 struct dhcp;
 #endif
@@ -467,7 +468,7 @@ void netif_set_down(struct netif *netif);
 /// @cond
 
 /** Ask if an interface is up */
-#define netif_is_up(netif) (((netif)->flags & NETIF_FLAG_UP) ? (u8_t)1 : (u8_t)0)
+#define netif_is_up(netif) (((netif)->d_flags & IFF_UP) ? (u8_t)1 : (u8_t)0)
 
 #if LWIP_NETIF_STATUS_CALLBACK
 void netif_set_status_callback(struct netif *netif, netif_status_callback_fn status_callback);

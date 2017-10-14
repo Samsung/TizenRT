@@ -117,7 +117,7 @@ static void nic_display_state(void)
 			printf("Link encap: %s\t", ether_ntoa((struct ether_addr *)sa->sa_data));
 
 			ioctl(fd, SIOCGIFFLAGS, (void *)ifr);
-			printf("RUNNING: %s\n", (ifr->ifr_flags & NETIF_FLAG_UP) ? "UP" : "DOWN");
+			printf("RUNNING: %s\n", (ifr->ifr_flags & IFF_UP) ? "UP" : "DOWN");
 		}
 		printf("\tinet addr: %s\t", inet_ntoa(sin->sin_addr));
 
@@ -137,7 +137,6 @@ int cmd_ifup(int argc, char **argv)
 {
 	FAR char *intf = NULL;
 	int ret;
-
 	if (argc != 2) {
 		printf("Please select nic_name:\n");
 		nic_display_state();

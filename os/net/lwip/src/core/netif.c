@@ -505,8 +505,7 @@ void netif_set_up(struct netif *netif)
 {
 	//LWIP_DEBUGF(NETIF_DEBUG, ("Entry"));
 	if (!(netif->flags & NETIF_FLAG_UP)) {
-		netif->flags |= NETIF_FLAG_UP;
-
+		netif->d_flags |= IFF_UP;
 #if LWIP_SNMP
 		snmp_get_sysuptime(&netif->ts);
 #endif							/* LWIP_SNMP */
