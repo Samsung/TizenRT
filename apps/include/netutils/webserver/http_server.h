@@ -184,7 +184,7 @@ struct http_server_t {
 	struct http_query_handler_t
 	*query_handlers[HTTP_CONF_MAX_QUERY_HANDLER_COUNT];
 #ifdef CONFIG_NETUTILS_WEBSOCKET
-	websocket_cb_t ws_cb;
+	struct websocket_cb_t ws_cb;
 #endif
 };
 

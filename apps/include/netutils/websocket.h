@@ -165,10 +165,28 @@
  */
 #define websocket_context_ptr                        wslay_event_context_ptr
 
+enum websocket_connection_state {
+	WEBSOCKET_CLOSED,
+	WEBSOCKET_CONNECTED
+};
+
+typedef void (*websocket_event_on_connectivity_change_callback)(wslay_event_context_ptr ctx,
+																enum websocket_connection_state state,
+																void *user_data);
+
 /**
  * @brief Websocket structure wrapper to carry call back pointers.
  */
-#define websocket_cb_t                               struct wslay_event_callbacks
+struct websocket_cb_t {
+	wslay_event_recv_callback recv_callback;
+	wslay_event_send_callback send_callback;
+	wslay_event_genmask_callback genmask_callback;
+	wslay_event_on_frame_recv_start_callback on_frame_recv_start_callback;
+	wslay_event_on_frame_recv_chunk_callback on_frame_recv_chunk_callback;
+	wslay_event_on_frame_recv_end_callback on_frame_recv_end_callback;
+	wslay_event_on_msg_recv_callback on_msg_recv_callback;
+	websocket_event_on_connectivity_change_callback on_connectivity_change_callback;
+};
 
 /**
  * @brief Websocket structure wrapper to send a frame.
@@ -368,7 +386,7 @@ typedef struct {
 ///< Counter for ping message without receiving pong
 	websocket_context_ptr ctx;
 ///< Websocket context to manage event queue, errors and configurations
-	websocket_cb_t *cb;
+	struct websocket_cb_t *cb;
 ///< Each server of client should define callbacks to use websocket functions
 	mbedtls_net_context tls_net;
 ///< User data set by the calling application
@@ -491,7 +509,7 @@ websocket_return_t websocket_server_init(websocket_t *server);
  * @return none
  * @since Tizen RT v1.0
  */
-void websocket_register_cb(websocket_t *websocket, websocket_cb_t *cb);
+void websocket_register_cb(websocket_t *websocket, struct websocket_cb_t *cb);
 
 /*
  * @brief websocket_queue_msg() queues a message into websocket context.

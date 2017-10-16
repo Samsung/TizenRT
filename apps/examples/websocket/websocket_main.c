@@ -357,8 +357,6 @@ void print_on_msg_cb(websocket_context_ptr ctx, const websocket_on_msg_arg *arg,
 	if (WEBSOCKET_CHECK_NOT_CTRL_FRAME(arg->opcode)) {
 		received_cnt++;			//to check communication is done.
 		printf("on_msg length : %d print : %s, [#%d]\n", msgarg.msg_length, msgarg.msg, received_cnt);
-	} else if (WEBSOCKET_CHECK_CTRL_CLOSE(arg->opcode)) {
-		printf("print_on_msg received close message\n");
 	} else if (WEBSOCKET_CHECK_CTRL_PING(arg->opcode)) {
 		printf("cli got ping\n");
 	} else if (WEBSOCKET_CHECK_CTRL_PONG(arg->opcode)) {
@@ -423,6 +421,19 @@ void recv_end_cb(websocket_context_ptr ctx, void *user_data)
 	//receive done.
 }
 
+void on_connectivity_changes(websocket_context_ptr ctx, enum websocket_connection_state state, void *user_data)
+{
+	switch (state) {
+	case WEBSOCKET_CLOSED:
+		printf("Websocket closed\n");
+		break;
+	case WEBSOCKET_CONNECTED:
+		printf("Websocket connected\n");
+		break;
+	}
+
+}
+
 /* websocket client prints received messages from a server using recv message cb */
 int websocket_client(void *arg)
 {
@@ -438,14 +449,15 @@ int websocket_client(void *arg)
 	websocket_frame_t *tx_frame = NULL;
 	websocket_t *websocket_cli = NULL;
 	char *test_message = NULL;
-	static websocket_cb_t cb = {
+	static struct websocket_cb_t cb = {
 		recv_cb,				/* recv callback */
 		send_cb,				/* send callback */
 		genmask_cb,				/* gen mask callback */
 		NULL,					/* recv frame start callback */
 		NULL,					/* recv frame chunk callback */
 		NULL,					/* recv frame end callback */
-		print_on_msg_cb			/* recv message callback */
+		print_on_msg_cb,			/* recv message callback */
+		on_connectivity_changes			/* connectivity changes callback */
 	};
 
 	mbedtls_ssl_config conf;
@@ -618,7 +630,7 @@ int websocket_server(void *arg)
 	int r;
 	char **argv = arg;
 	int tls = atoi(argv[0]);
-	static websocket_cb_t cb = {
+	static struct websocket_cb_t cb = {
 		recv_cb,				/* recv callback */
 		send_cb,				/* send callback */
 		NULL,					/* gen mask callback */

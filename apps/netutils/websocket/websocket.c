@@ -148,6 +148,24 @@ void websocket_wait_state(websocket_t *websocket, int state, int utime)
 	}
 }
 
+static void websocket_on_msg_recv_callback(websocket_context_ptr ctx, const websocket_on_msg_arg *arg, void *user_data)
+{
+	struct websocket_info_t *info = user_data;
+	websocket_t *websocket = info->data;
+
+	if (!info)
+		return;
+
+	if (WEBSOCKET_CHECK_CTRL_CLOSE(arg->opcode)) {
+		if (websocket->cb->on_connectivity_change_callback) {
+			websocket->cb->on_connectivity_change_callback(ctx, WEBSOCKET_CLOSED, user_data);
+		}
+		return;
+	}
+
+	websocket->cb->on_msg_recv_callback(ctx, arg, user_data);
+}
+
 void websocket_ping_timer(FAR void *arg)
 {
 	websocket_t *websocket = arg;
@@ -157,6 +175,13 @@ void websocket_ping_timer(FAR void *arg)
 		if (websocket->ping_cnt >= WEBSOCKET_MAX_PING_IGNORE) {
 			WEBSOCKET_DEBUG("ping messages couldn't receive pong messages for %d times, closing.\n", WEBSOCKET_MAX_PING_IGNORE);
 			websocket_update_state(websocket, WEBSOCKET_STOP);
+
+			if (websocket->cb->on_connectivity_change_callback) {
+				struct websocket_info_t data = { .data = websocket };
+
+				websocket->cb->on_connectivity_change_callback(websocket->ctx, WEBSOCKET_CLOSED, &data);
+			}
+
 			return;
 		} else {
 			websocket_queue_ping(websocket);
@@ -194,6 +219,14 @@ int websocket_handler(websocket_t *websocket)
 			if (errno == EINVAL) {
 				WEBSOCKET_DEBUG("socket fd is not exist, fd == %d\n", fd);
 				websocket_update_state(websocket, WEBSOCKET_STOP);
+				if (websocket->cb->on_connectivity_change_callback) {
+					struct websocket_info_t data = { .data = websocket };
+
+					websocket->cb->on_connectivity_change_callback(websocket->ctx,
+																   WEBSOCKET_CLOSED,
+																   &data);
+				}
+
 				return WEBSOCKET_SOCKET_ERROR;
 			}
 			if (errno == EAGAIN || errno == EBUSY || errno == EINTR) {
@@ -216,6 +249,12 @@ int websocket_handler(websocket_t *websocket)
 				if (wslay_event_recv(ctx) != WEBSOCKET_SUCCESS) {
 					WEBSOCKET_DEBUG("fail to process recv event\n");
 					websocket_update_state(websocket, WEBSOCKET_STOP);
+					if (websocket->cb->on_connectivity_change_callback) {
+						struct websocket_info_t data = { .data = websocket };
+
+						websocket->cb->on_connectivity_change_callback(websocket->ctx, WEBSOCKET_CLOSED, &data);
+					}
+
 					return WEBSOCKET_SOCKET_ERROR;
 				}
 			}
@@ -223,6 +262,12 @@ int websocket_handler(websocket_t *websocket)
 				if (wslay_event_send(ctx) != WEBSOCKET_SUCCESS) {
 					WEBSOCKET_DEBUG("fail to process send event\n");
 					websocket_update_state(websocket, WEBSOCKET_STOP);
+					if (websocket->cb->on_connectivity_change_callback) {
+						struct websocket_info_t data = { .data = websocket };
+
+						websocket->cb->on_connectivity_change_callback(websocket->ctx, WEBSOCKET_CLOSED, &data);
+					}
+
 					return WEBSOCKET_SOCKET_ERROR;
 				}
 			}
@@ -790,7 +835,17 @@ websocket_return_t websocket_client_open(websocket_t *client, char *host, char *
 	memset(socket_data, 0, sizeof(struct websocket_info_t));
 	socket_data->data = client;
 
-	if (wslay_event_context_client_init(&client->ctx, client->cb, socket_data) != WEBSOCKET_SUCCESS) {
+	struct wslay_event_callbacks wslay_callbacks = {
+		client->cb->recv_callback,
+		client->cb->send_callback,
+		client->cb->genmask_callback,
+		client->cb->on_frame_recv_start_callback,
+		client->cb->on_frame_recv_chunk_callback,
+		client->cb->on_frame_recv_end_callback,
+		websocket_on_msg_recv_callback
+	};
+
+	if (wslay_event_context_client_init(&client->ctx, &wslay_callbacks, socket_data) != WEBSOCKET_SUCCESS) {
 		WEBSOCKET_DEBUG("fail to init websocket client context\n");
 		free(socket_data);
 		r = WEBSOCKET_INIT_ERROR;
@@ -799,6 +854,9 @@ websocket_return_t websocket_client_open(websocket_t *client, char *host, char *
 
 	WEBSOCKET_DEBUG("start websocket client handling thread\n");
 	websocket_update_state(client, WEBSOCKET_RUNNING);
+	if (client->cb->on_connectivity_change_callback) {
+		client->cb->on_connectivity_change_callback(client->ctx, WEBSOCKET_CONNECTED, socket_data);
+	}
 
 	pthread_attr_init(&client->thread_attr);
 	pthread_attr_setstacksize(&client->thread_attr, WEBSOCKET_STACKSIZE);
@@ -820,6 +878,11 @@ EXIT_CLIENT_OPEN:
 		close(fd);
 		fd = -1;
 	}
+
+	if (client->cb->on_connectivity_change_callback && socket_data) {
+		client->cb->on_connectivity_change_callback(client->ctx, WEBSOCKET_CLOSED, socket_data);
+	}
+
 	if (client->ctx) {
 		wslay_event_context_free(client->ctx);
 		client->ctx = NULL;
@@ -874,7 +937,17 @@ websocket_return_t websocket_server_init(websocket_t *server)
 	memset(socket_data, 0, sizeof(struct websocket_info_t));
 	socket_data->data = server;
 
-	if (wslay_event_context_server_init(&(server->ctx), server->cb, socket_data) != WEBSOCKET_SUCCESS) {
+	struct wslay_event_callbacks wslay_callbacks = {
+		server->cb->recv_callback,
+		server->cb->send_callback,
+		server->cb->genmask_callback,
+		server->cb->on_frame_recv_start_callback,
+		server->cb->on_frame_recv_chunk_callback,
+		server->cb->on_frame_recv_end_callback,
+		server->cb->on_msg_recv_callback
+	};
+
+	if (wslay_event_context_server_init(&(server->ctx), &wslay_callbacks, socket_data) != WEBSOCKET_SUCCESS) {
 		WEBSOCKET_DEBUG("fail to initiate websocket server\n");
 		r = WEBSOCKET_INIT_ERROR;
 		goto EXIT_SERVER_INIT;
@@ -906,12 +979,23 @@ EXIT_SERVER_INIT:
 	return r;
 }
 
-void websocket_register_cb(websocket_t *websocket, websocket_cb_t *cb)
+void websocket_register_cb(websocket_t *websocket, struct websocket_cb_t *cb)
 {
 	if (websocket == NULL) {
 		WEBSOCKET_DEBUG("function returned for null parameter\n");
 	} else {
-		wslay_event_config_set_callbacks(websocket->ctx, cb);
+		websocket->cb = cb;
+		struct wslay_event_callbacks wslay_callbacks = {
+			cb->recv_callback,
+			cb->send_callback,
+			cb->genmask_callback,
+			cb->on_frame_recv_start_callback,
+			cb->on_frame_recv_chunk_callback,
+			cb->on_frame_recv_end_callback,
+			websocket_on_msg_recv_callback
+		};
+
+		wslay_event_config_set_callbacks(websocket->ctx, &wslay_callbacks);
 	}
 }
 
