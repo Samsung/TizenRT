@@ -155,7 +155,7 @@ static int os_daemon(int nochdir, int noclose)
 		exit(EXIT_SUCCESS);
 	}
 
-	if (((nochdir == 0) && (chdir("/"))) < 0) {
+	if ((nochdir == 0) && (chdir("/") < 0)) {
 		exit(EXIT_FAILURE);
 	}
 
