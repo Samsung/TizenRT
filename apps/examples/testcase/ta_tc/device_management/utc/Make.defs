@@ -57,7 +57,6 @@ CSRCS += utc_dm_main.c utc_dm_lwm2m.c utc_dm_conn.c
 CFLAGS+=-I$(TOPDIR)/../external/wakaama/examples/shared
 CFLAGS+=-I$(TOPDIR)/../external/wakaama/examples/client
 CFLAGS+=-I$(TOPDIR)/../external/wakaama/core
-CFLAGS+=-I$(TOPDIR)/../framework/include/dm
 
 # Include kernel build support
 
