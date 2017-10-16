@@ -296,30 +296,6 @@ static void itc_audio_pcm_get_subdevice_tc_p(void)
 }
 
 /**
-* @testcase         audio_pcm_set_config_p
-* @brief            set config values of pcm
-* @scenario         set config values with pcm_config
-* @apicovered       pcm_set_config
-* @precondition     pcm should be opened before.
-* @postcondition    NA
-*/
-static void itc_audio_pcm_set_config_tc_p(void)
-{
-	struct pcm_config config;
-	config.channels = 1;
-	config.rate = CONFIG_RATE;
-	config.format = PCM_FORMAT_S8;
-	g_pcm = pcm_open(0, 0, PCM_IN, NULL);
-	TC_ASSERT_GT("pcm_open", pcm_get_file_descriptor(g_pcm), 0);
-	pcm_set_config(g_pcm, &config);
-	TC_ASSERT_EQ_CLEANUP("pcm_set_config", pcm_get_channels(g_pcm), 1, pcm_close(g_pcm));
-	TC_ASSERT_EQ_CLEANUP("pcm_set_config", pcm_get_rate(g_pcm), CONFIG_RATE, pcm_close(g_pcm));
-	TC_ASSERT_EQ_CLEANUP("pcm_set_config", pcm_get_format(g_pcm), PCM_FORMAT_S8, pcm_close(g_pcm));
-	TC_ASSERT_EQ("pcm_close", pcm_close(g_pcm), 0);
-	TC_SUCCESS_RESULT();
-}
-
-/**
 * @testcase         audio_pcm_frame_to_bytes_p
 * @brief            convert frames to bytes
 * @scenario         get configuration value of pcm and calculate frame to byte
@@ -337,7 +313,6 @@ static void itc_audio_pcm_frames_to_bytes_tc_p(void)
 	TC_ASSERT_GT("pcm_open", pcm_get_file_descriptor(g_pcm), 0);
 
 	/* set basic configuration values for next test */
-	pcm_set_config(g_pcm, NULL);
 	size = pcm_get_buffer_size(g_pcm);
 	TC_ASSERT_GT_CLEANUP("pcm_get_buffer_size", size, 0, pcm_close(g_pcm));
 
@@ -366,7 +341,6 @@ static void itc_audio_pcm_bytes_to_frames_tc_p(void)
 	g_pcm = pcm_open(0, 0, PCM_IN, NULL);
 	TC_ASSERT_GT("pcm_open", pcm_get_file_descriptor(g_pcm), 0);
 
-	pcm_set_config(g_pcm, NULL);
 	size = pcm_get_buffer_size(g_pcm);
 	TC_ASSERT_GT_CLEANUP("pcm_get_buffer_size", size, 0, pcm_close(g_pcm));
 
@@ -513,7 +487,6 @@ static int audio_tc_launcher(int argc, char **args)
 	itc_audio_pcm_get_error_tc_p();
 	itc_audio_pcm_get_buffer_size_tc_p();
 	itc_audio_pcm_get_subdevice_tc_p();
-	itc_audio_pcm_set_config_tc_p();
 	itc_audio_pcm_frames_to_bytes_tc_p();
 	itc_audio_pcm_bytes_to_frames_tc_p();
 	itc_audio_pcm_format_to_bits_tc_p();

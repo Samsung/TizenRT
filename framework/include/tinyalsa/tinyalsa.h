@@ -339,16 +339,6 @@ int pcm_get_file_descriptor(const struct pcm *pcm);
 const char *pcm_get_error(const struct pcm *pcm);
 
 /**
-* @brief Sets the PCM configuration parameters
-*
-* @param[out] A PCM handle.
-* @param[in] The configuration to use for the PCM
-* @returns On success, 0 returned. On failure, a negative errno value returned
-* @since Tizen RT v1.1
-*/
-int pcm_set_config(struct pcm *pcm, const struct pcm_config *config);
-
-/**
 * @brief Gets the buffer size of the PCM.
 *
 * @param[in] A PCM handle.
