@@ -54,23 +54,23 @@ static void tc_environ_setenv_getenv_unsetenv(void)
 	char *psz_getvalue = NULL;
 
 	ret_chk = setenv(psz_name, psz_value, 1);
-	TC_ASSERT_EQ_CLEANUP("setenv", ret_chk, OK, clearenv());
+	TC_ASSERT_EQ("setenv", ret_chk, OK);
 
 	psz_getvalue = getenv(psz_name);
-	TC_ASSERT_NEQ_CLEANUP("getenv", psz_getvalue, NULL, clearenv());
-	TC_ASSERT_EQ_CLEANUP("getenv", strcmp(psz_getvalue, psz_value), 0, clearenv());
+	TC_ASSERT_NEQ_CLEANUP("getenv", psz_getvalue, NULL, unsetenv(psz_name));
+	TC_ASSERT_EQ_CLEANUP("getenv", strcmp(psz_getvalue, psz_value), 0, unsetenv(psz_name));
 
 	/* with overwrite_num = 0, psz_value should not be updated */
 
 	psz_value = "pqr";
 	ret_chk = setenv(psz_name, psz_value, 0);
-	TC_ASSERT_EQ_CLEANUP("setenv", ret_chk, OK, clearenv());
+	TC_ASSERT_EQ_CLEANUP("setenv", ret_chk, OK, unsetenv(psz_name));
 
 	/* set and get value should not be equal as overwrite is 0 */
 
 	psz_getvalue = getenv(psz_name);
-	TC_ASSERT_NEQ_CLEANUP("getenv", psz_getvalue, NULL, clearenv());
-	TC_ASSERT_NEQ_CLEANUP("getenv", strcmp(psz_getvalue, psz_value), 0, clearenv());
+	TC_ASSERT_NEQ_CLEANUP("getenv", psz_getvalue, NULL, unsetenv(psz_name));
+	TC_ASSERT_NEQ_CLEANUP("getenv", strcmp(psz_getvalue, psz_value), 0, unsetenv(psz_name));
 
 	/* random value, getenv should fail */
 
@@ -96,7 +96,7 @@ static void tc_environ_setenv_getenv_unsetenv(void)
 	ret_chk = setenv(psz_name, NULL, 0);
 	TC_ASSERT_EQ("setenv", ret_chk, OK);
 
-	clearenv();
+	unsetenv(psz_name);
 	TC_SUCCESS_RESULT();
 }
 
@@ -150,21 +150,21 @@ static void tc_environ_putenv(void)
 	TC_ASSERT_EQ("putenv", ret_chk, OK);
 
 	psz_getvalue = getenv("PATH");
-	TC_ASSERT_NEQ_CLEANUP("getenv", psz_getvalue, NULL, clearenv());
-	TC_ASSERT_EQ_CLEANUP("getenv", strcmp(psz_getvalue, "C:"), 0, clearenv());
+	TC_ASSERT_NEQ_CLEANUP("getenv", psz_getvalue, NULL, unsetenv("PATH"));
+	TC_ASSERT_EQ_CLEANUP("getenv", strcmp(psz_getvalue, "C:"), 0, unsetenv("PATH"));
 
 	/* Changing the value of already existing PATH variable */
 	ret_chk = putenv("PATH=D:");
 	TC_ASSERT_EQ("putenv", ret_chk, OK);
 
 	psz_getvalue = getenv("PATH");
-	TC_ASSERT_NEQ_CLEANUP("getenv", psz_getvalue, NULL, clearenv());	
-	TC_ASSERT_EQ_CLEANUP("getenv", strcmp(psz_getvalue, "D:"), 0, clearenv());
+	TC_ASSERT_NEQ_CLEANUP("getenv", psz_getvalue, NULL, unsetenv("PATH"));	
+	TC_ASSERT_EQ_CLEANUP("getenv", strcmp(psz_getvalue, "D:"), 0, unsetenv("PATH"));
 
 	ret_chk = putenv(NULL);
 	TC_ASSERT_EQ("putenv", ret_chk, ERROR);
 
-	clearenv();
+	unsetenv("PATH");
 	TC_SUCCESS_RESULT();
 }
 
@@ -208,7 +208,11 @@ static void tc_environ_get_environ_ptr(void)
 		env_ptr += strlen(env_ptr) + 1;
 	}
 
-	clearenv();
+	for (env_idx = 0; env_idx < ENV_TEST_MAX_NUM; env_idx++) {
+		snprintf(env_name, ENV_TEST_LEN, "%s%d", "ENV", env_idx);
+		unsetenv(env_name);
+	}
+
 	TC_SUCCESS_RESULT();
 }
 
