@@ -30,7 +30,7 @@ static const char *PROPERTY_VALUE_SWITCH = "power";
 static const char *PROPERTY_VALUE_DIMMING = "dimmingSetting";
 static const char *PROPERTY_VALUE_COLOR_TEMPERATURE = "ct";
 
-static char *power_status[] = {"on", "off"};
+static char *power_status[] = { "on", "off" };
 
 static bool g_switch_value = false;
 static int64_t g_dimming_setting = 50;
@@ -54,9 +54,9 @@ bool handle_set_request_on_switch(st_things_set_request_message_s *req_msg, st_t
 	printf("[%s]IN-handle_set_request_on_switch() called..\n", TAG);
 
 	char *power;
-	if (req_msg->rep->get_str_value(req_msg->rep, PROPERTY_VALUE_SWITCH, &power)) {	
+	if (req_msg->rep->get_str_value(req_msg->rep, PROPERTY_VALUE_SWITCH, &power)) {
 		printf("[%s] power : %s\n", TAG, power);
-		if(strcmp(power, "off") == 0) {
+		if (strcmp(power, "off") == 0) {
 			g_switch_value = false;
 		} else {
 			g_switch_value = true;
@@ -89,7 +89,7 @@ bool handle_set_request_on_dimming(st_things_set_request_message_s *req_msg, st_
 		printf("dimming : %lld\n", g_dimming_setting);
 		resp_rep->set_int_value(resp_rep, PROPERTY_VALUE_DIMMING, g_dimming_setting);
 		st_things_notify_observers(req_msg->resource_uri);
-	}	
+	}
 
 	printf("[%s]OUT-handle_set_request_on_dimming() called..\n", TAG);
 	return true;
