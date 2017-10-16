@@ -292,7 +292,7 @@ const char *pcm_get_error(const struct pcm *pcm)
  *  on failure.
  * @ingroup libtinyalsa-pcm
  * */
-int pcm_set_config(struct pcm *pcm, const struct pcm_config *config)
+static int pcm_set_config(struct pcm *pcm, const struct pcm_config *config)
 {
 	struct audio_caps_desc_s cap_desc;
 	int ret;
