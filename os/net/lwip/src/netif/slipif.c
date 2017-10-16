@@ -297,7 +297,7 @@ static void slipif_rxbyte_input(struct netif *netif, u8_t c)
  *
  * @param nf the lwip network interface structure for this slipif
  */
-static void slipif_loop_thread(void *nf)
+static void *slipif_loop_thread(void *nf)
 {
 	u8_t c;
 	struct netif *netif = (struct netif *)nf;
@@ -308,6 +308,8 @@ static void slipif_loop_thread(void *nf)
 			slipif_rxbyte_input(netif, c);
 		}
 	}
+
+	return NULL;
 }
 #endif							/* SLIP_USE_RX_THREAD */
 

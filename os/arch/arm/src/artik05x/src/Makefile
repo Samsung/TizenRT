@@ -77,6 +77,10 @@ ifeq ($(CONFIG_SCSC_WLAN),y)
 CSRCS += artik05x_wlan.c
 endif
 
+ifeq ($(CONFIG_NET_SLIP),y)
+CSRCS += artik05x_slip.c
+endif
+
 # boardctl support
 ifeq ($(CONFIG_LIB_BOARDCTL),y)
 DEPPATH += --dep-path $(TOPDIR)/arch
