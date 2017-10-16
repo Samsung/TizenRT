@@ -55,6 +55,8 @@ extern "C" {
  *            support input capability and for all other unknown cases).
  *            To use a new json file after initialization, stack should be deinitialized
  *            and stopped(if its started already).
+
+ * @details @b #include <st_things/st_things.h>
  * @param[in] json_path Path to Json file which defines a thing. Definition includes the device information,
  *                                       resources and their properties, configuration info for connectivity and easy-setup, etc.
  * @param[out] easysetup_complete Indicates whether easysetup is completed already or not.
@@ -74,6 +76,8 @@ int st_things_initialize(const char *json_path, bool *easysetup_complete);
 /**
  * @brief Deinitializes things stack.
  *        Stack should have been initialized before calling this API.
+ *
+ * @details @b #include <st_things/st_things.h>
  * @return @c 0 on success, otherwise a negative error value
  * @retval #ST_THINGS_ERROR_NONE Successful
  * @retval #ST_THINGS_ERROR_OPERATION_FAILED Operation failed
@@ -87,6 +91,8 @@ int st_things_deinitialize(void);
 
 /**
  * @brief Callback for handling GET request.
+ *
+ * @details @b #include <st_things/st_things.h>
  * @param[in]  req_msg GET request message.
  * @param[out] resp_rep Representation that will be set to payload of response.
  * @return @c true in case of success, otherwise @c false
@@ -96,6 +102,8 @@ typedef bool (*st_things_get_request_cb)(st_things_get_request_message_s *req_ms
 
 /**
  * @brief Callback for handling SET(POST) request.
+ *
+ * @details @b #include <st_things/st_things.h>
  * @param[in]  req_msg SET request message.
  * @param[out] resp_rep Representation that will be set to payload of response.
  * @return @c true in case of success, otherwise @c false
@@ -105,7 +113,9 @@ typedef bool (*st_things_set_request_cb)(st_things_set_request_message_s *req_ms
 
 /**
  * @brief Callback registration function for handling request messages.
- * @details The callbacks ensure that a request message will be carried with one of the resource uris from json file of st_things_start().
+ *
+ * @details @b #include <st_things/st_things.h>\n
+ *                      The callbacks ensure that a request message will be carried with one of the resource uris from json file of st_things_start().
  * @remarks Only one callback function can be set with this API.\n
  *          If multiple callbacks are set, the last one is registered only.\n
  *          And the callbacks are called in the internal thread, which is not detached,\n
@@ -129,6 +139,8 @@ int st_things_register_request_cb(st_things_get_request_cb get_cb, st_things_set
  *            If easy-setup is already done, thing will be connected with the cloud.
  *            Application can know whether easy-setup is done or not through st_things_initialize API.
  *            Stack should have been initialized before calling this API.
+ *
+ * @details @b #include <st_things/st_things.h>
  * @return @c 0 on success, otherwise a negative error value
  * @retval #ST_THINGS_ERROR_NONE Successful.
  *         It is also used for the case that the stack is started already.
@@ -141,6 +153,8 @@ int st_things_start(void);
 
 /**
  * @brief Callback for getting user's opinion regarding device reset.
+ *
+ * @details @b #include <st_things/st_things.h>
  * @return @c true to confirm, otherwise @c to deny
  * @since Tizen RT v1.1
  */
@@ -148,6 +162,8 @@ typedef bool(*st_things_reset_confirm_cb) (void);
 
 /**
  * @brief Callback for carrying the result of reset.
+ *
+ * @details @b #include <st_things/st_things.h>
  * @param[in] is_success Result of Stack-reset. (true : success, false : failure)
  * @since Tizen RT v1.1
  */
@@ -155,6 +171,8 @@ typedef void (*st_things_reset_result_cb) (bool is_success);
 
 /**
  * @brief Callback registration function for Reset-Confirmation and Reset-Result functions.
+ *
+ * @details @b #include <st_things/st_things.h>
  * @remarks Only one callback function can be set with this API.\n
  *          If multiple callbacks are set, the last one is registered only.\n
  *          And the callbacks are called in the internal thread, which is not detached,\n
@@ -173,6 +191,8 @@ int st_things_register_reset_cb(st_things_reset_confirm_cb confirm_cb, st_things
 /**
  * @brief Reset all the data related to security and cloud being used in the stack.
  *        Stack should have been initialized and started before calling this API.
+ *
+ * @details @b #include <st_things/st_things.h>
  * @return @c 0 on success, otherwise a negative error value
  * @retval #ST_THINGS_ERROR_NONE Successful
  * @retval #ST_THINGS_ERROR_OPERATION_FAILED Operation failed
@@ -186,6 +206,8 @@ int st_things_reset(void);
 
 /**
  * @brief Callback for carrying the randomly generated PIN info.
+ *
+ * @details @b #include <st_things/st_things.h>
  * @details Device should show the PIN on display.
  * @param[in] pin_data PIN data in string format.
  * @param[in] pin_size Length of the PIN String.
@@ -195,12 +217,16 @@ typedef void (*st_things_pin_generated_cb) (const char *pin_data, const size_t p
 
 /**
  * @brief Callback for informing the application to close the PIN display.
+ *
+ * @details @b #include <st_things/st_things.h>
  * @since Tizen RT v1.1
  */
 typedef void (*st_things_pin_display_close_cb) (void);
 
 /**
  * @brief Callback registration function for getting randomly generated PIN for the PIN-Based Ownership Transfer Request.
+ *
+ * @details @b #include <st_things/st_things.h>
  * @remarks Only one callback function can be set with this API.\n
  *          If multiple callbacks are set, the last one is registered only.\n
  *          And the callbacks are called in the internal thread, which is not detached,\n
@@ -218,6 +244,8 @@ int st_things_register_pin_handling_cb(st_things_pin_generated_cb generated_cb, 
 
 /**
  * @brief Callback for getting user's input regarding mutual verification.
+ *
+ * @details @b #include <st_things/st_things.h>
  * @return @c true true in cse of confirmed, otherwise @c false
  * @since Tizen RT v1.1
  */
@@ -225,6 +253,8 @@ typedef bool(*st_things_user_confirm_cb) (void);
 
 /**
  * @brief Callback registration function for getting user confirmation for MUTUAL VERIFICATION BASED JUST WORK Ownership transfer.
+ *
+ * @details @b #include <st_things/st_things.h>
  * @remarks Only one callback function can be set with this API.\n
  *          If multiple callbacks are set, the last one is registered only.\n
  *          And the callbacks are called in the internal thread, which is not detached,\n
@@ -240,6 +270,8 @@ int st_things_register_user_confirm_cb(st_things_user_confirm_cb confirm_cb);
 
 /**
  * @brief Callback for getting the current state of ST Things.
+ *
+ * @details @b #include <st_things/st_things.h>
  * @param[in]  things_status ST Things State
  * @since Tizen RT v1.1
  */
@@ -247,6 +279,8 @@ typedef void (*st_things_status_change_cb) (st_things_status_e things_status);
 
 /**
  * @brief Callback registration function for getting notified when ST Things state changes.
+ *
+ * @details @b #include <st_things/st_things.h>
  * @remarks Only one callback function can be set with this API.\n
  *          If multiple callbacks are set, the last one is registered only.\n
  *          And the callbacks are called in the internal thread, which is not detached,\n
@@ -263,12 +297,14 @@ int st_things_register_things_status_change_cb(st_things_status_change_cb status
 /**
  * @brief Notify the observers of a specific resource.
  *        Stack should have been initialized and started before calling this API.
+ *
+ * @details @b #include <st_things/st_things.h>
  * @param[in]  resource_uri Resource URI of the resource which will be notified to observers.
  * @return @c 0 on success, otherwise a negative error value
  * @retval #ST_THINGS_ERROR_NONE Successful
  * @retval #ST_THINGS_ERROR_INVALID_PARAMETER Invalid parameter
  * @retval #ST_THINGS_ERROR_OPERATION_FAILED Operation failed
-  * @retval #ST_THINGS_ERROR_STACK_NOT_INITIALIZED Stack is not intialized.
+ * @retval #ST_THINGS_ERROR_STACK_NOT_INITIALIZED Stack is not intialized.
  *         Initialize the stack by calling st_things_initialize().
  * @retval #ST_THINGS_ERROR_STACK_NOT_STARTED Stack is not started.
  *         Start the stack by calling st_things_start().
@@ -278,6 +314,8 @@ int st_things_notify_observers(const char *resource_uri);
 
 /**
  * @brief Create an instance of representation.
+ *
+ * @details @b #include <st_things/st_things.h>
  * @remarks To destroy an instance, st_things_destroy_representation_inst() should be used.
  * @return a pointer of the created representation, otherwise a null pointer if the memory is insufficient.
  * @since Tizen RT v1.1
@@ -286,6 +324,8 @@ st_things_representation_s *st_things_create_representation_inst(void);
 
 /**
  * @brief Destroy an instance of representation.
+ *
+ * @details @b #include <st_things/st_things.h>
  * @param[in]  rep Representation that will be destroyed.
  * @since Tizen RT v1.1
  */
