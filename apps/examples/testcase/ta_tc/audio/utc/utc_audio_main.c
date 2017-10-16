@@ -488,41 +488,6 @@ static void utc_audio_pcm_get_subdevice_tc_n(void)
 }
 
 /**
-* @testcase         audio_pcm_set_config_p
-* @brief            set config values of pcm
-* @scenario         set config values with pcm_config
-* @apicovered       pcm_set_config
-* @precondition     pcm should be opened before.
-* @postcondition    NA
-*/
-static void utc_audio_pcm_set_config_tc_p(void)
-{
-	struct pcm_config config;
-	config.channels = 1;
-	config.rate = 4000;
-	config.format = PCM_FORMAT_S8;
-	pcm_set_config(g_pcm, &config);
-	TC_ASSERT_EQ("pcm_set_config", pcm_get_channels(g_pcm), 1);
-	TC_ASSERT_EQ("pcm_set_config", pcm_get_rate(g_pcm), 4000);
-	TC_ASSERT_EQ("pcm_set_config", pcm_get_format(g_pcm), PCM_FORMAT_S8);
-	TC_SUCCESS_RESULT();
-}
-
-/**
-* @testcase         audio_pcm_set_config_n
-* @brief            set config values of pcm
-* @scenario         set config values with NULL pcm
-* @apicovered       pcm_set_config
-* @precondition     NA
-* @postcondition    NA
-*/
-static void utc_audio_pcm_set_config_tc_n(void)
-{
-	TC_ASSERT_LT("pcm_set_config", pcm_set_config(NULL, NULL), 0);
-	TC_SUCCESS_RESULT();
-}
-
-/**
 * @testcase         audio_pcm_frame_to_bytes_p
 * @brief            convert frames to bytes
 * @scenario         get configuration value of pcm and calculate frame to byte
@@ -537,7 +502,6 @@ static void utc_audio_pcm_frames_to_bytes_p(void)
 	unsigned int frame_size;
 
 	/* set basic configuration values for next test */
-	pcm_set_config(g_pcm, NULL);
 	size = pcm_get_buffer_size(g_pcm);
 	TC_ASSERT_GT("pcm_get_buffer_size", size, 0);
 
@@ -578,7 +542,6 @@ static void utc_audio_pcm_bytes_to_frames_p(void)
 	ssize_t size;
 	unsigned int frame_size;
 
-	pcm_set_config(g_pcm, NULL);
 	size = pcm_get_buffer_size(g_pcm);
 	TC_ASSERT_GT("pcm_get_buffer_size", size, 0);
 
@@ -670,6 +633,9 @@ static void utc_audio_pcm_readi_p(void)
 
 	while (remain > 0) {
 		frames_read = pcm_readi(g_pcm, buffer, remain);
+		if (frames_read < 0) {
+			break;
+		}
 		remain -= frames_read;
 		ret = write(fd, buffer, bytes_per_frame * frames_read);
 		TC_ASSERT_EQ_CLEANUP("pcm_readi", ret, (bytes_per_frame * frames_read), clean_all_data(fd, buffer));
@@ -828,8 +794,6 @@ static int audio_tc_launcher(int argc, char **args)
 	utc_audio_pcm_get_buffer_size_tc_n();
 	utc_audio_pcm_get_subdevice_tc_p();
 	utc_audio_pcm_get_subdevice_tc_n();
-	utc_audio_pcm_set_config_tc_p();
-	utc_audio_pcm_set_config_tc_n();
 	utc_audio_pcm_frames_to_bytes_p();
 	utc_audio_pcm_frames_to_bytes_n();
 	utc_audio_pcm_bytes_to_frames_p();
