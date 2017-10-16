@@ -128,50 +128,62 @@ extern "C" {
 
 /**
  * @ingroup DIRENT_KERNEL
- * @brief  POSIX API (refer to : http://pubs.opengroup.org/onlinepubs/9699919799/)
- * @details SYSTEM CALL API
+ * @brief close a directory stream
+ * @details @b #include <dirent.h> \n
+ * SYSTEM CALL API \n
+ * POSIX API (refer to : http://pubs.opengroup.org/onlinepubs/9699919799/)
  * @since Tizen RT v1.0
  */
 int closedir(FAR DIR *dirp);
 /**
  * @ingroup DIRENT_KERNEL
- * @brief  POSIX API (refer to : http://pubs.opengroup.org/onlinepubs/9699919799/)
- * @details SYSTEM CALL API
+ * @brief open directory associated with file descriptor
+ * @details @b #include <dirent.h> \n
+ * SYSTEM CALL API \n
+ * POSIX API (refer to : http://pubs.opengroup.org/onlinepubs/9699919799/)
  * @since Tizen RT v1.0
  */
 FAR DIR *opendir(FAR const char *path);
 /**
  * @ingroup DIRENT_KERNEL
- * @brief  POSIX API (refer to : http://pubs.opengroup.org/onlinepubs/9699919799/)
- * @details SYSTEM CALL API
+ * @brief read a directory
+ * @details @b #include <dirent.h> \n
+ * SYSTEM CALL API \n
+ * POSIX API (refer to : http://pubs.opengroup.org/onlinepubs/9699919799/)
  * @since Tizen RT v1.0
  */
 FAR struct dirent *readdir(FAR DIR *dirp);
 /**
  * @ingroup DIRENT_KERNEL
- * @brief  POSIX API (refer to : http://pubs.opengroup.org/onlinepubs/9699919799/)
+ * @brief read a directory
+ * @details @b #include <dirent.h> \n
+ * POSIX API (refer to : http://pubs.opengroup.org/onlinepubs/9699919799/)
  * @since Tizen RT v1.0
  */
 int readdir_r(FAR DIR *dirp, FAR struct dirent *entry, FAR struct dirent **result);
 /**
  * @ingroup DIRENT_KERNEL
- * @brief  POSIX API (refer to : http://pubs.opengroup.org/onlinepubs/9699919799/)
- * @details SYSTEM CALL API
+ * @brief reset the position of a directory stream to the beginning of a directory
+ * @details @b #include <dirent.h> \n
+ * SYSTEM CALL API \n
+ * POSIX API (refer to : http://pubs.opengroup.org/onlinepubs/9699919799/)
  * @since Tizen RT v1.0
  */
 void rewinddir(FAR DIR *dirp);
 /**
  * @ingroup DIRENT_KERNEL
  * @brief sets the location in the directory stream from which the next readdir() call will start.
- * @param[in] An instance of type DIR.
- * @param[in] offset to seek.
+ * @details @b #include <dirent.h>
+ * @param[in] dirp An instance of type DIR.
+ * @param[in] loc offset to seek.
  * @since Tizen RT v1.0
  */
 void seekdir(FAR DIR *dirp, off_t loc);
 /**
  * @ingroup DIRENT_KERNEL
  * @brief gets the current location associated with the directory stream
- * @param[in] An instance of type DIR
+ * @details @b #include <dirent.h>
+ * @param[in] dirp An instance of type DIR
  * @return On success, the current location in the directory stream is returned. On failure, -1 is returned and errno is set appropriately.
  * @since Tizen RT v1.0
  */

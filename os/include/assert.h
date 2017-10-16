@@ -117,7 +117,8 @@
 /**
  * @brief Assert if the condition is not true
  *
- * @param[in] assertion condition which shall have a scalar type
+ * @details @b #include <assert.h>
+ * @param[in] f assertion condition which shall have a scalar type
  * @return none
  * @since Tizen RT v1.0
  */
@@ -125,7 +126,8 @@
 /**
  * @brief Assert if a function returns a negative value
  *
- * @param[in] assertion condition which shall have a scalar type
+ * @details @b #include <assert.h>
+ * @param[in] f assertion condition which shall have a scalar type
  * @return none
  * @since Tizen RT v1.0
  */
@@ -133,6 +135,7 @@
 /**
  * @brief Unconditional abort
  *
+ * @details @b #include <assert.h>
  * @return none
  * @since Tizen RT v1.0
  */
@@ -143,7 +146,8 @@
 /**
  * @brief Like ASSERT, but only if CONFIG_DEBUG is defined
  *
- * @param[in] assertion condition which shall have a scalar type
+ * @details @b #include <assert.h>
+ * @param[in] f assertion condition which shall have a scalar type
  * @return none
  * @since Tizen RT v1.0
  */
@@ -151,7 +155,8 @@
 /**
  * @brief Like VERIFY, but only if CONFIG_DEBUG is defined
  *
- * @param[in] assertion condition which shall have a scalar type
+ * @details @b #include <assert.h>
+ * @param[in] f assertion condition which shall have a scalar type
  * @return none
  * @since Tizen RT v1.0
  */
@@ -159,6 +164,7 @@
 /**
  * @brief Like PANIC, but only if CONFIG_DEBUG is defined
  *
+ * @details @b #include <assert.h>
  * @return none
  * @since Tizen RT v1.0
  */

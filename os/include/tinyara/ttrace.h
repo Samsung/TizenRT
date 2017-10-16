@@ -113,8 +113,9 @@ extern "C" {
 /**
  * @ingroup TTRACE_LIBC
  * @brief writes a trace log with string to indicate that a event has begun
- * @param[in] number for tag
- * @param[in] unique strings like function name for distinguishing events
+ * @details @b #include <tinyara/ttrace.h>
+ * @param[in] tag number for tag
+ * @param[in] str unique strings like function name for distinguishing events
  * @return On success, TTRACE_VALID is returned. On failure, ERROR is returned and errno is set appropriately.
  * @since Tizen RT v1.1
  */
@@ -123,8 +124,9 @@ int trace_begin(int tag, char *str, ...);
 /**
  * @ingroup TTRACE_LIBC
  * @brief writes a trace log with unique id to indicate that a event has begun
- * @param[in] number for tag
- * @param[in] unique id for distinguishing events
+ * @details @b #include <tinyara/ttrace.h>
+ * @param[in] tag number for tag
+ * @param[in] uniqueid unique id for distinguishing events
  * @return On success, TTRACE_VALID is returned. On failure, TTRACE_INVALID is returned and errno is set appropriately.
  * @since Tizen RT v1.1
  */
@@ -133,7 +135,8 @@ int trace_begin_uid(int tag, int8_t uniqueid);
 /**
  * @ingroup TTRACE_LIBC
  * @brief writes a trace log to indicate that the event has ended
- * @param[in] number for tag
+ * @details @b #include <tinyara/ttrace.h>
+ * @param[in] tag number for tag
  * @return On success, TTRACE_VALID is returned. On failure, TTRACE_INVALID is returned and errno is set appropriately.
  * @since Tizen RT v1.1
  */
@@ -142,7 +145,8 @@ int trace_end(int tag);
 /**
  * @ingroup TTRACE_LIBC
  * @brief writes a trace log to indicate that a event has ended
- * @param[in] number for tag
+ * @details @b #include <tinyara/ttrace.h>
+ * @param[in] tag number for tag
  * @return On success, TTRACE_VALID is returned. On failure, TTRACE_INVALID is returned and errno is set appropriately.
  * @since Tizen RT v1.1
  */
@@ -151,8 +155,9 @@ int trace_end_uid(int tag);
 /**
  * @ingroup TTRACE_LIBC
  * @brief writes a trace log for scheduler events
- * @param[in] tcb of current task
- * @param[in] tcb of next task which will be switched
+ * @details @b #include <tinyara/ttrace.h>
+ * @param[in] prev tcb of current task
+ * @param[in] next tcb of next task which will be switched
  * @return On success, TTRACE_VALID is returned. On failure, TTRACE_INVALID is returned and errno is set appropriately.
  * @since Tizen RT v1.1
  */
