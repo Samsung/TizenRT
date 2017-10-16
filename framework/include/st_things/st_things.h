@@ -18,6 +18,8 @@
 /**
  * @defgroup SmartThings SmartThings
  * @brief Provides APIs for SmartThings Things SDK
+ *
+ * @details @b #include <st_things/st_things.h>
  * @ingroup SmartThings
  * @{
  */
