@@ -45,10 +45,12 @@
 */
 
 /**
-* @defgroup TinyAlsa TinyAlsa
-* @ingroup TinyAlsa
-* @brief Provides APIs for Audio Framework
-* @{
+ * @defgroup TinyAlsa TinyAlsa
+ * @ingroup TinyAlsa
+ * @brief Provides APIs for Audio Framework
+ *
+ * @details @b #include <tinyalsa/tinyalsa.h>
+ * @{
  */
 
 /**
