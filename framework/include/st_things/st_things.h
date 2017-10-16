@@ -45,20 +45,20 @@ extern "C" {
 
 /**
  * @brief Initializes things stack and returns whether easy-setup is completed or not.
- *            Easy-setup enable users to acquire the ownership of things and to connect the things with the cloud.
- *            After performing easy-setup, users can access things from anywhere through the cloud.
- *            In things stack, easy-setup is a primary and the first operation to be performed on the thing.
- *            Application running on the thing can know whether easy-setup is done already or not.
- *            If easy-setup is done, app can start the things stack by calling st_things_start().
- *            If easy-setup is not done, app can either wait for the user interaction before starting the things stack or
- *            start the things stack directly without waiting for any events(This case is for those things which doesn't
- *            support input capability and for all other unknown cases).
- *            To use a new json file after initialization, stack should be deinitialized
- *            and stopped(if its started already).
+ *        Easy-setup enable users to acquire the ownership of things and to connect the things with the cloud.
+ *        After performing easy-setup, users can access things from anywhere through the cloud.
+ *        In things stack, easy-setup is a primary and the first operation to be performed on the thing.
+ *        Application running on the thing can know whether easy-setup is done already or not.
+ *        If easy-setup is done, app can start the things stack by calling st_things_start().
+ *        If easy-setup is not done, app can either wait for the user interaction before starting the things stack or
+ *        start the things stack directly without waiting for any events(This case is for those things which doesn't
+ *        support input capability and for all other unknown cases).
+ *        To use a new json file after initialization, stack should be deinitialized
+ *        and stopped(if its started already).
 
  * @details @b #include <st_things/st_things.h>
  * @param[in] json_path Path to Json file which defines a thing. Definition includes the device information,
- *                                       resources and their properties, configuration info for connectivity and easy-setup, etc.
+ *                      resources and their properties, configuration info for connectivity and easy-setup, etc.
  * @param[out] easysetup_complete Indicates whether easysetup is completed already or not.
  * @return @c 0 on success, otherwise a negative error value
  * @retval #ST_THINGS_ERROR_NONE Successful
@@ -93,7 +93,7 @@ int st_things_deinitialize(void);
  * @brief Callback for handling GET request.
  *
  * @details @b #include <st_things/st_things.h>
- * @param[in]  req_msg GET request message.
+ * @param[in]  req_msg  GET request message.
  * @param[out] resp_rep Representation that will be set to payload of response.
  * @return @c true in case of success, otherwise @c false
  * @since Tizen RT v1.1
@@ -104,7 +104,7 @@ typedef bool (*st_things_get_request_cb)(st_things_get_request_message_s *req_ms
  * @brief Callback for handling SET(POST) request.
  *
  * @details @b #include <st_things/st_things.h>
- * @param[in]  req_msg SET request message.
+ * @param[in]  req_msg  SET request message.
  * @param[out] resp_rep Representation that will be set to payload of response.
  * @return @c true in case of success, otherwise @c false
  * @since Tizen RT v1.1
@@ -115,7 +115,7 @@ typedef bool (*st_things_set_request_cb)(st_things_set_request_message_s *req_ms
  * @brief Callback registration function for handling request messages.
  *
  * @details @b #include <st_things/st_things.h>\n
- *                      The callbacks ensure that a request message will be carried with one of the resource uris from json file of st_things_start().
+ *          The callbacks ensure that a request message will be carried with one of the resource uris from json file of st_things_start().
  * @remarks Only one callback function can be set with this API.\n
  *          If multiple callbacks are set, the last one is registered only.\n
  *          And the callbacks are called in the internal thread, which is not detached,\n
@@ -132,13 +132,13 @@ int st_things_register_request_cb(st_things_get_request_cb get_cb, st_things_set
 
 /**
  * @brief Starts things stack.
- *            Parses the thing definition(whose path is passed to st_things_initialize(), configures the thing,
- *            creates the resources and prepares it for easy-setup.
- *            If easy-setup is not done yet, onboarding will be started using either SoftAP or BLE connection.
- *                Onboarding creates an ad-hoc network between the thing and the client for performing easy-setup.
- *            If easy-setup is already done, thing will be connected with the cloud.
- *            Application can know whether easy-setup is done or not through st_things_initialize API.
- *            Stack should have been initialized before calling this API.
+ *        Parses the thing definition(whose path is passed to st_things_initialize(), configures the thing,
+ *        creates the resources and prepares it for easy-setup.
+ *        If easy-setup is not done yet, onboarding will be started using either SoftAP or BLE connection.
+ *        Onboarding creates an ad-hoc network between the thing and the client for performing easy-setup.
+ *        If easy-setup is already done, thing will be connected with the cloud.
+ *        Application can know whether easy-setup is done or not through st_things_initialize API.
+ *        Stack should have been initialized before calling this API.
  *
  * @details @b #include <st_things/st_things.h>
  * @return @c 0 on success, otherwise a negative error value
@@ -178,8 +178,8 @@ typedef void (*st_things_reset_result_cb) (bool is_success);
  *          And the callbacks are called in the internal thread, which is not detached,\n
  *          so application should return it to get the next callbacks.
  * @param[in] confirm_cb Callback function that will be called to get the user's input when reset is triggered.
- * @param[in] result_cb Callback function that will be called after the reset process is done.
- *                      This parameter can be NULL if notification for result of reset is not needed.
+ * @param[in] result_cb  Callback function that will be called after the reset process is done.
+ *            This parameter can be NULL if notification for result of reset is not needed.
  * @return @c 0 on success, otherwise a negative error value
  * @retval #ST_THINGS_ERROR_NONE Successful
  * @retval #ST_THINGS_ERROR_INVALID_PARAMETER Invalid parameter
@@ -232,7 +232,7 @@ typedef void (*st_things_pin_display_close_cb) (void);
  *          And the callbacks are called in the internal thread, which is not detached,\n
  *          so application should return it to get the next callbacks.
  * @param[in] generated_cb Callback function that will be called when device receives a Ownership Transfer request from client.
- * @param[in] close_cb Callback function that will be called when Ownership Transfer is done so device can stop showing PIN on display.
+ * @param[in] close_cb     Callback function that will be called when Ownership Transfer is done so device can stop showing PIN on display.
  *                     This parameter can be NULL if stop triggering is not needed.
  * @return @c 0 on success, otherwise a negative error value
  * @retval #ST_THINGS_ERROR_NONE Successful
@@ -272,7 +272,7 @@ int st_things_register_user_confirm_cb(st_things_user_confirm_cb confirm_cb);
  * @brief Callback for getting the current state of ST Things.
  *
  * @details @b #include <st_things/st_things.h>
- * @param[in]  things_status ST Things State
+ * @param[in] things_status ST Things State
  * @since Tizen RT v1.1
  */
 typedef void (*st_things_status_change_cb) (st_things_status_e things_status);
@@ -299,7 +299,7 @@ int st_things_register_things_status_change_cb(st_things_status_change_cb status
  *        Stack should have been initialized and started before calling this API.
  *
  * @details @b #include <st_things/st_things.h>
- * @param[in]  resource_uri Resource URI of the resource which will be notified to observers.
+ * @param[in] resource_uri Resource URI of the resource which will be notified to observers.
  * @return @c 0 on success, otherwise a negative error value
  * @retval #ST_THINGS_ERROR_NONE Successful
  * @retval #ST_THINGS_ERROR_INVALID_PARAMETER Invalid parameter
@@ -326,7 +326,7 @@ st_things_representation_s *st_things_create_representation_inst(void);
  * @brief Destroy an instance of representation.
  *
  * @details @b #include <st_things/st_things.h>
- * @param[in]  rep Representation that will be destroyed.
+ * @param[in] rep Representation that will be destroyed.
  * @since Tizen RT v1.1
  */
 void st_things_destroy_representation_inst(st_things_representation_s *rep);
