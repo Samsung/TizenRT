@@ -193,7 +193,9 @@ void closelog(void);
  *
  ****************************************************************************/
 /**
- * @brief  POSIX API (refer to : http://pubs.opengroup.org/onlinepubs/9699919799/)
+ * @brief control system log
+ * @details @b #include <syslog.h> \n
+ * POSIX API (refer to : http://pubs.opengroup.org/onlinepubs/9699919799/)
  * @since Tizen RT v1.0
  */
 int syslog(int priority, FAR const char *format, ...);
@@ -201,8 +203,9 @@ int syslog(int priority, FAR const char *format, ...);
  * @brief performs the same task as syslog() with
  *        the difference that it takes a set of arguments which have been
  *        obtained using the stdarg variable argument list macros
+ * @details @b #include <syslog.h>
  * @param[in] priority priority of vsyslog
- * @param[in] format output format
+ * @param[in] src output format
  * @param[in] ap stdarg variable argument list macros
  * @return On success, number of characters written is returned. On failure, ERROR is returned.
  * @since Tizen RT v1.0
@@ -239,6 +242,7 @@ int vsyslog(int priority, FAR const char *src, va_list ap);
 /**
  * @brief a non-standard, low-level system logging interface.
  *
+ * @details @b #include <syslog.h>
  * @param[in] priority priority of lowsyslog
  * @param[in] format output format
  * @return On success, number of characters written is returned. On failure, ERROR is returned.
@@ -249,6 +253,7 @@ int lowsyslog(int priority, FAR const char *format, ...);
  * @brief performs the same task as lowsyslog() with
  *        the difference that it takes a set of arguments which have been
  *        obtained using the stdarg variable argument list macros
+ * @details @b #include <syslog.h>
  * @param[in] priority priority of lowvsyslog
  * @param[in] format output format
  * @param[in] ap stdarg variable argument list macros
@@ -294,7 +299,9 @@ int lowvsyslog(int priority, FAR const char *format, va_list ap);
  *
  ****************************************************************************/
 /**
- * @brief  POSIX API (refer to : http://pubs.opengroup.org/onlinepubs/9699919799/)
+ * @brief set the log priority mask
+ * @details @b #include <syslog.h> \n
+ * POSIX API (refer to : http://pubs.opengroup.org/onlinepubs/9699919799/)
  * @since Tizen RT v1.0
  */
 int setlogmask(int mask);

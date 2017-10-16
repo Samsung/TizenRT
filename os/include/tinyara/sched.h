@@ -686,7 +686,8 @@ extern "C" {
  * @ingroup SCHED_KERNEL
  * @brief returns the TCB of the currently running task (i.e., the
  * caller)
- * @details  Basically, this function just wraps the
+ * @details @b #include <tinyara/sched.h> \n
+ *  Basically, this function just wraps the
  *   head of the ready-to-run list and manages access to the TCB from outside
  *   of the sched/ sub-directory.
  * @return TCB structure
@@ -702,8 +703,9 @@ FAR struct tcb_s *sched_self(void);
  * or thread to a callback function.  Interrupts will be disabled throughout
  * this enumeration!
  *
- * @param[in] The function to be called with the TCB of each task
- * @param[in] param
+ * @details @b #include <tinyara/sched.h>
+ * @param[in] handler The function to be called with the TCB of each task
+ * @param[in] arg param
  * @return none
  * @since Tizen RT v1.0
  */
@@ -712,10 +714,11 @@ void sched_foreach(sched_foreach_t handler, FAR void *arg);
 /**
  * @ingroup SCHED_KERNEL
  * @brief Give a task ID, look up the corresponding TCB
- * @details  Given a task ID, this function will return
+ * @details @b #include <tinyara/sched.h> \n
+ *   Given a task ID, this function will return
  *   the a pointer to the corresponding TCB (or NULL if there
  *   is no such task ID).
- * @param[in] Pid for tcb
+ * @param[in] pid Pid for tcb
  * @return TCB structure about pid
  * @since Tizen RT v1.0
  */
@@ -739,6 +742,7 @@ FAR struct filelist *sched_getfiles(void);
 /**
  * @ingroup SCEHD_KERNEL
  * @brief Return a pointer to the streams list for this thread
+ * @details @b #include <tinyara/sched.h>
  * @return A pointer to the errno
  * @since Tizen RT v1.0
  */

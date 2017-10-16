@@ -149,8 +149,9 @@ extern "C" {
  * @ingroup SPAWN_LIBC
  * @brief Add the file action to the end for the file action list.
  *
- * @param[in] The head of the file action list.
- * @param[in] The file action to be added
+ * @details @b #include <tinyara/spawn.h>
+ * @param[in] file_action The head of the file action list.
+ * @param[in] entry The file action to be added
  * @return none
  * @since Tizen RT v1.0
  */
