@@ -434,6 +434,9 @@ static void itc_audio_pcm_readi_tc_p(void)
 
 	while (remain > 0) {
 		frames_read = pcm_readi(g_pcm, buffer, remain);
+		if (frames_read < 0) {
+			break;
+		}
 		remain -= frames_read;
 		ret = write(fd, buffer, bytes_per_frame * frames_read);
 		TC_ASSERT_EQ_CLEANUP("pcm_readi", ret, (bytes_per_frame * frames_read), clean_all_data(fd, buffer));
