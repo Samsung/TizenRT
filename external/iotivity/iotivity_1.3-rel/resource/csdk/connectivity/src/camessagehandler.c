@@ -1473,7 +1473,7 @@ static void CALogPDUInfo(const CAData_t *data, const coap_pdu_t *pdu)
 
     if (pdu->transport_hdr)
     {
-        OIC_LOG_V(DEBUG, ANALYZER_TAG, "Msg ID = [%u]", 
+        OIC_LOG_V(DEBUG, ANALYZER_TAG, "Msg ID = [%u]",
             (uint32_t)ntohs(pdu->transport_hdr->udp.id));
     }
 
@@ -1503,7 +1503,7 @@ static void CALogPDUInfo(const CAData_t *data, const coap_pdu_t *pdu)
 #ifdef TB_LOG
     size_t payloadLen = (pdu->data) ? (unsigned char *)pdu->hdr + pdu->length - pdu->data : 0;
 #endif
-    OIC_LOG_V(DEBUG, ANALYZER_TAG, "CoAP Message Full Size = [%lu]", pdu->length);
+    OIC_LOG_V(DEBUG, ANALYZER_TAG, "CoAP Message Full Size = [%u]", pdu->length);
     OIC_LOG(DEBUG, ANALYZER_TAG, "CoAP Header (+ 0xFF)");
     OIC_LOG_BUFFER(DEBUG, ANALYZER_TAG,  (const uint8_t *) pdu->transport_hdr,
                    pdu->length - payloadLen);

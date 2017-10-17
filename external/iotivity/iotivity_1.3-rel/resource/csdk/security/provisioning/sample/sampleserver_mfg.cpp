@@ -33,6 +33,7 @@
 #include <signal.h>
 #include "ocstack.h"
 #include "ocpayload.h"
+#include "ocprovisioningmanager.h"
 
 #ifdef HAVE_WINDOWS_H
 #include <windows.h>
@@ -416,6 +417,20 @@ FILE* server_fopen(const char *path, const char *mode)
     }
 }
 
+static CAResult_t peerCNVerifyCallback(const unsigned char *cn, size_t cnLen)
+{
+    if (NULL != cn && 0 != cnLen)
+    {
+        OIC_LOG(INFO, TAG, "peer certificate CN: ");
+        OIC_LOG_BUFFER(INFO, TAG, cn, cnLen);
+        return CA_STATUS_OK;
+    }
+    else
+    {
+        return CA_STATUS_FAILED;
+    }
+}
+
 int main()
 {
     struct timespec timeout;
@@ -426,6 +441,9 @@ int main()
     OCPersistentStorage ps = {server_fopen, fread, fwrite, fclose, remove};
 
     OCRegisterPersistentStorageHandler(&ps);
+
+    // set callback for checking peer certificate information
+    OCSetPeerCNVerifyCallback(peerCNVerifyCallback);
 
     if (OCInit(NULL, 0, OC_SERVER) != OC_STACK_OK)
     {

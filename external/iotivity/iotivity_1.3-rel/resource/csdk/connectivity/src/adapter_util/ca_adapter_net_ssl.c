@@ -28,6 +28,7 @@
 #include <stddef.h>
 #include <stdbool.h>
 #include <assert.h>
+#include <inttypes.h>
 #include "ca_adapter_net_ssl.h"
 #include "cacommon.h"
 #include "caipinterface.h"
@@ -461,6 +462,13 @@ static oc_mutex g_sslContextMutex = NULL;
 static CAHandshakeErrorCallback g_sslCallback = NULL;
 
 /**
+ * @var g_peerCNVerifyCallback
+ *
+ * @brief callback to utilize peer certificate information
+ */
+static PeerCNVerifyCallback g_peerCNVerifyCallback = NULL;
+
+/**
  * Data structure for holding the data to be received.
  */
 typedef struct SslRecBuf
@@ -500,11 +508,23 @@ void CAsetPkixInfoCallback(CAgetPkixInfoHandler infoCallback)
     g_getPkixInfoCallback = infoCallback;
     OIC_LOG_V(DEBUG, NET_SSL_TAG, "Out %s", __func__);
 }
+
 void CAsetCredentialTypesCallback(CAgetCredentialTypesHandler credTypesCallback)
 {
     OIC_LOG_V(DEBUG, NET_SSL_TAG, "In %s", __func__);
     g_getCredentialTypesCallback = credTypesCallback;
     OIC_LOG_V(DEBUG, NET_SSL_TAG, "Out %s", __func__);
+}
+
+void CAsetPeerCNVerifyCallback(PeerCNVerifyCallback cb)
+{
+    OIC_LOG_V(DEBUG, NET_SSL_TAG, "IN %s", __func__);
+    if (NULL == cb)
+    {
+        OIC_LOG(DEBUG, NET_SSL_TAG, "UNSET peerCNVerifyCallback");
+    }
+    g_peerCNVerifyCallback = cb;
+    OIC_LOG_V(DEBUG, NET_SSL_TAG, "OUT %s", __func__);
 }
 
 /**
@@ -523,6 +543,43 @@ static CAResult_t notifySubscriber(SslEndPoint_t* peer, CAResult_t status)
         result = g_sslCallback(&peer->sep.endpoint, &errorInfo);
     }
     return result;
+}
+
+static CAResult_t PeerCertExtractCN(const mbedtls_x509_crt *peerCert)
+{
+    OIC_LOG_V(DEBUG, NET_SSL_TAG, "IN %s", __func__);
+
+    CAResult_t res = CA_STATUS_OK;
+
+    mbedtls_asn1_named_data *subject = (mbedtls_asn1_named_data *)&(peerCert->subject);
+    while (NULL != subject)
+    {
+        if (0 == MBEDTLS_OID_CMP(MBEDTLS_OID_AT_CN, &(subject->oid)))
+        {
+            break;
+        }
+        subject = subject->next;
+    }
+
+    if (NULL != g_peerCNVerifyCallback)
+    {
+        if (NULL != subject)
+        {
+            res = g_peerCNVerifyCallback(subject->val.p, subject->val.len);
+        }
+        else
+        {
+            OIC_LOG(DEBUG, NET_SSL_TAG, "Common Name not found");
+            res = g_peerCNVerifyCallback(NULL, 0);
+        }
+    }
+    else
+    {
+        OIC_LOG(DEBUG, NET_SSL_TAG, "g_peerCNVerifyCallback is not set");
+    }
+
+    OIC_LOG_V(DEBUG, NET_SSL_TAG, "OUT %s", __func__);
+    return res;
 }
 
 static int GetAdapterIndex(CATransportAdapter_t adapter)
@@ -574,7 +631,7 @@ static int SendCallBack(void * tep, const unsigned char * data, size_t dataLen)
         else if ((size_t)sentLen != dataLen)
         {
             OIC_LOG_V(DEBUG, NET_SSL_TAG,
-                      "Packet was partially sent - sent/total/remained bytes : %d/%" PRIuPTR "/%" PRIuPTR,
+                      "Packet was partially sent - sent/total/remained bytes : %" PRIdPTR "/%" PRIuPTR "/%" PRIuPTR,
                       sentLen, dataLen, (dataLen - sentLen));
         }
     }
@@ -2080,7 +2137,6 @@ CAResult_t CAdecryptSsl(const CASecureEndpoint_t *sep, uint8_t *data, size_t dat
         return CA_STATUS_FAILED;
     }
 
-
     SslEndPoint_t * peer = GetSslPeer(&sep->endpoint);
     if (NULL == peer)
     {
@@ -2151,6 +2207,23 @@ CAResult_t CAdecryptSsl(const CASecureEndpoint_t *sep, uint8_t *data, size_t dat
             OIC_LOG_V(DEBUG, NET_SSL_TAG, "Out %s", __func__);
             return CA_STATUS_FAILED;
         }
+
+        if (MBEDTLS_SSL_CERTIFICATE_VERIFY == peer->ssl.state)
+        {
+            mbedtls_x509_crt *peerCert = peer->ssl.session_negotiate->peer_cert;
+            if (NULL != peerCert)
+            {
+                ret = PeerCertExtractCN(peerCert);
+                if (CA_STATUS_OK != ret)
+                {
+                    oc_mutex_unlock(g_sslContextMutex);
+                    OIC_LOG_V(ERROR, NET_SSL_TAG, "ProcessPeerCert failed with %d", ret);
+                    OIC_LOG_V(DEBUG, NET_SSL_TAG, "Out %s", __func__);
+                    return CA_STATUS_FAILED;
+                }
+            }
+        }
+
         if (MBEDTLS_SSL_CLIENT_CHANGE_CIPHER_SPEC == peer->ssl.state)
         {
             memcpy(peer->master, peer->ssl.session_negotiate->master, sizeof(peer->master));

@@ -94,7 +94,7 @@ static OCStackResult StoreKeyPair(mbedtls_pk_context *keyPair, const OicUuid_t *
     privateData.len = ret;
     privateData.encoding = OIC_ENCODING_DER;
 
-    cred = GenerateCredential(myUuid, ASYMMETRIC_KEY, &publicData, &privateData, myUuid, NULL);
+    cred = GenerateCredential(myUuid, ASYMMETRIC_KEY, &publicData, &privateData,  NULL);
     VERIFY_NOT_NULL(TAG, cred, ERROR);
     cred->credUsage = OICStrdup(PRIMARY_CERT);
     VERIFY_NOT_NULL(TAG, cred->credUsage, ERROR);

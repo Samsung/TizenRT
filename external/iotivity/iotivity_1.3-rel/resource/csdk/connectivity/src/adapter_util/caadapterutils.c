@@ -26,6 +26,7 @@
 #include "oic_string.h"
 #include "oic_malloc.h"
 #include <errno.h>
+#include <inttypes.h>
 
 #ifdef HAVE_WS2TCPIP_H
 #include <ws2tcpip.h>
@@ -387,7 +388,7 @@ void CALogSendStateInfo(CATransportAdapter_t adapter,
 
     if (true == isSuccess)
     {
-        OIC_LOG_V(DEBUG, ANALYZER_TAG, "Send Success, sent length = [%d]", sentLen);
+        OIC_LOG_V(DEBUG, ANALYZER_TAG, "Send Success, sent length = [%" PRIdPTR "]", sentLen);
     }
     else
     {

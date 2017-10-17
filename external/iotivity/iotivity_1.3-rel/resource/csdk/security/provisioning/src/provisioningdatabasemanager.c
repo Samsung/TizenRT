@@ -833,7 +833,11 @@ OCStackResult PDMClose()
 
     CHECK_PDM_INIT(TAG);
     int res = 0;
-    res = sqlite3_close(g_db);
+    if (g_db)
+    {
+        res = sqlite3_close(g_db);
+        g_db = NULL;
+    }
     PDM_VERIFY_SQLITE_OK(TAG, res, ERROR, OC_STACK_ERROR);
     OIC_LOG_V(DEBUG, TAG, "OUT %s", __func__);
     return OC_STACK_OK;

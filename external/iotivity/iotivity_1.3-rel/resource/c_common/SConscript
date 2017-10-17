@@ -36,7 +36,7 @@ config_h_file_path = os.path.join(src_dir, 'resource', 'c_common',
 if (os.path.exists(config_h_file_path)):
     os.remove(config_h_file_path)
 
-if (not os.path.isfile(config_h_file_path)) and (not env.GetOption('clean')):
+if not os.path.isfile(config_h_file_path) and env.GetOption not in ('clean', 'help'):
     conf = Configure(env.Clone(LIBS=[]))
 
     config_h_header = '''

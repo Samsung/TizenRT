@@ -23,6 +23,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <stdint.h>
+#include <inttypes.h>
 
 #ifndef __STDC_FORMAT_MACROS
 #define __STDC_FORMAT_MACROS
@@ -211,7 +212,7 @@ void CATCPPacketReceivedCB(const CASecureEndpoint_t *sep, const void *data,
         }
         else
         {
-            OIC_LOG_V(DEBUG, TAG, "%u bytes required for complete CoAP",
+            OIC_LOG_V(DEBUG, TAG, "%" PRIuPTR " bytes required for complete CoAP",
                                 svritem->totalLen - svritem->len);
         }
     }
@@ -230,7 +231,7 @@ static ssize_t CATCPPacketSendCB(CAEndpoint_t *endpoint, const void *data, size_
 
     ssize_t ret = CATCPSendData(endpoint, data, dataLength);
 
-    OIC_LOG_V(DEBUG, TAG, "Out %s : %d bytes sent", __func__, ret);
+    OIC_LOG_V(DEBUG, TAG, "Out %s : %" PRIdPTR " bytes sent", __func__, ret);
     return ret;
 }
 #endif

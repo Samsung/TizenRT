@@ -174,7 +174,7 @@ TEST(CredResourceTest, CredEntityHandlerDeleteTest)
     OicSecKey_t key = {privateKey, sizeof(privateKey), OIC_ENCODING_RAW};
 
     OicSecCred_t* subjectCred1 = GenerateCredential(&subjectId, SYMMETRIC_PAIR_WISE_KEY, NULL,
-                                                    &key, &rownerId, NULL);
+                                                    &key, NULL);
 
     EXPECT_EQ(OC_STACK_OK, AddCredential(subjectCred1));
     subjectCred1 = GetCredResourceData(&subjectCred1->subject);
@@ -329,7 +329,7 @@ TEST(CredResourceTest, GenerateCredentialValidInput)
 
     OicSecCred_t * cred  = NULL;
     cred = GenerateCredential(&subject, SYMMETRIC_PAIR_WISE_KEY, NULL,
-                              &key, &rownerID, NULL);
+                              &key, NULL);
     printCred(cred);
 
     ASSERT_TRUE(NULL != cred);
@@ -351,7 +351,7 @@ TEST(CredResourceTest, GenerateAndAddCredentialValidInput)
     OicSecCred_t *headCred = NULL;
 
     cred1 = GenerateCredential(&subject, SYMMETRIC_PAIR_WISE_KEY, NULL,
-                               &key, &rownerID, NULL);
+                               &key, NULL);
 
     EXPECT_EQ(OC_STACK_OK, AddCredential(cred1));
     headCred = cred1;
@@ -359,13 +359,13 @@ TEST(CredResourceTest, GenerateAndAddCredentialValidInput)
     OICStrcpy((char *)rownerID.id, sizeof(rownerID.id), "ownersId22");
     OICStrcpy((char *)subject.id, sizeof(subject.id), "subject22");
     cred1 = GenerateCredential(&subject, SYMMETRIC_PAIR_WISE_KEY, NULL,
-                               &key, &rownerID, NULL);
+                               &key, NULL);
     EXPECT_EQ(OC_STACK_OK, AddCredential(cred1));
 
     OICStrcpy((char *)rownerID.id, sizeof(rownerID.id), "ownersId33");
     OICStrcpy((char *)subject.id, sizeof(subject.id), "subject33");
     cred1 = GenerateCredential(&subject, SYMMETRIC_PAIR_WISE_KEY, NULL,
-                               &key, &rownerID, NULL);
+                               &key, NULL);
     EXPECT_EQ(OC_STACK_OK, AddCredential(cred1));
 
     const OicSecCred_t* credList = GetCredResourceData(&headCred->subject);

@@ -1581,5 +1581,15 @@ void OC_CALL OCRemoveTrustCertChainNotifier()
 {
     SRPRemoveTrustCertChainNotifier();
 }
+
+/**
+ * Function to set the callback to utilize peer certificate Common Name field
+ */
+void OC_CALL OCSetPeerCNVerifyCallback(PeerCNVerifyCallback cb)
+{
+    OIC_LOG_V(DEBUG, TAG, "IN %s", __func__);
+    CAsetPeerCNVerifyCallback(cb);
+    OIC_LOG_V(DEBUG, TAG, "OUT %s", __func__);
+}
 #endif // __WITH_DTLS__ || __WITH_TLS__
 

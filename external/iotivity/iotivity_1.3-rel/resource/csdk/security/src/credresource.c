@@ -1333,7 +1333,7 @@ exit:
 
 OicSecCred_t * GenerateCredential(const OicUuid_t * subject, OicSecCredType_t credType,
                                   const OicSecKey_t * publicData, const OicSecKey_t* privateData,
-                                  const OicUuid_t * rownerID, const OicUuid_t * eownerID)
+                                  const OicUuid_t * eownerID)
 {
     OIC_LOG(DEBUG, TAG, "IN GenerateCredential");
 
@@ -1374,9 +1374,6 @@ OicSecCred_t * GenerateCredential(const OicUuid_t * subject, OicSecCredType_t cr
         cred->privateData.len = privateData->len;
         cred->privateData.encoding = privateData->encoding;
     }
-
-    VERIFY_NOT_NULL(TAG, rownerID, ERROR);
-    memcpy(&cred->rownerID, rownerID, sizeof(OicUuid_t));
 
 #ifdef MULTIPLE_OWNER
     if(eownerID)
@@ -1743,15 +1740,7 @@ OCStackResult AddCredential(OicSecCred_t * newCred)
     OIC_LOG(DEBUG, TAG, "Adding New Cred");
     LL_APPEND(gCred, newCred);
 
-
-    OicUuid_t emptyOwner = { .id = {0} };
-    if (memcmp(&(newCred->rownerID), &emptyOwner, sizeof(OicUuid_t)) != 0)
-    {
-        memcpy(&(gRownerId), &(newCred->rownerID), sizeof(OicUuid_t));
-    }
-
 saveToDB:
-
     if (UpdatePersistentStorage(gCred))
     {
         result = OC_STACK_OK;
@@ -3126,7 +3115,7 @@ OCStackResult AddTmpPskWithPIN(const OicUuid_t* tmpSubject, OicSecCredType_t cre
     VERIFY_SUCCESS(TAG, (0 == dtlsRes) , ERROR);
 
     cred = GenerateCredential(tmpSubject, credType, NULL,
-                              &privKey, rownerID, NULL);
+                              &privKey, NULL);
     OICClearMemory(privData, sizeof(privData));
     if(NULL == cred)
     {

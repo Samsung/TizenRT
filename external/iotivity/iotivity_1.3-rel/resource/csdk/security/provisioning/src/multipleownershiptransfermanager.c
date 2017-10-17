@@ -877,7 +877,7 @@ static OCStackResult SaveSubOwnerPSK(OCProvisionDev_t *selectedDeviceInfo)
         //Generating new credential for provisioning tool
         OicSecCred_t *cred = GenerateCredential(&selectedDeviceInfo->doxm->deviceID,
                                                 SYMMETRIC_PAIR_WISE_KEY, NULL,
-                                                &ownerKey, &ownerDeviceID, &ownerDeviceID);
+                                                &ownerKey, &ownerDeviceID);
         VERIFY_NOT_NULL(TAG, cred, ERROR);
 
         size_t outSize = 0;

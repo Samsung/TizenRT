@@ -51,6 +51,7 @@ OCSelectOwnershipTransferMethod
 OCSaveOwnRoleCert
 OCSetOwnerTransferCallbackData
 OCSetOxmAllowStatus
+OCSetPeerCNVerifyCallback
 OCUnlinkDevices
 OCVerifyCSRSignature
 

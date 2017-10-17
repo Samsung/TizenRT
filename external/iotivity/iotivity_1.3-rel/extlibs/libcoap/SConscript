@@ -121,7 +121,9 @@ if target_os == 'arduino':
 
 # Build flags
 if target_os not in ['arduino', 'windows', 'winrt', 'msys_nt']:
-    libcoap_env.AppendUnique(CPPDEFINES=['WITH_POSIX', '_DEFAULT_SOURCE'])
+    # libcoap uses ipv6 features from <netinet/in.h> which only
+    # turn on if __GNU_SOURCE is defined
+    libcoap_env.AppendUnique(CPPDEFINES=['WITH_POSIX', '_GNU_SOURCE'])
     libcoap_env.AppendUnique(CFLAGS=['-std=gnu99','-fPIC'])
 
 if target_os not in ['windows', 'winrt']:
@@ -162,7 +164,7 @@ if with_upstream_libcoap == '1':
     target_arch = env.get('TARGET_ARCH')
     lib_prefix = '' + str(libcoap_env.get('PREFIX'))
 
-    if not os.path.isfile(config_h_file_path) and not env.GetOption('clean'):
+    if not os.path.isfile(config_h_file_path) and env.GetOption not in ('clean', 'help'):
         conf = Configure(libcoap_env.Clone(LIBS=[]))
 
         config_h_header = '''
@@ -259,7 +261,9 @@ if with_upstream_libcoap == '1':
                 'malloc',
                 'snprintf',
                 'strnlen',
-                'vprintf'
+                'vprintf',
+                'fls',
+                'flsll',
             ]
 
             if target_os == 'arduino':

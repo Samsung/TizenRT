@@ -24,14 +24,10 @@
 #include "svrdbeditorcommon.h"
 #include "experimental/securevirtualresourcetypes.h"
 
-#ifdef MULTIPLE_OWNER
-void PrintMom(const OicSecMom_t *mom);
-#endif
-
-void DeInitDoxm();
+void DeInitDoxm(void);
 int GetDoxmDevID(OicUuid_t *deviceuuid);
-void RefreshDoxm();
-void PrintDoxm();
+void RefreshDoxm(void);
+void PrintDoxm(void);
 void HandleDoxmOperation(const SubOperationType_t cmd);
 
 #endif /* SVRDBEDITOR_DOXM_H_ */

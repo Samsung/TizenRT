@@ -104,7 +104,6 @@ bool IsValidCredentialAccessForSubOwner(const OicUuid_t* uuid, const uint8_t *cb
  * @param credType credential type.
  * @param publicData public data such as public key.
  * @param privateData private data such as private key.
- * @param rownerID Resource owner's UUID.
  * @param eownerID Entry owner's UUID.
  *
  * @return pointer to instance of @ref OicSecCred_t if successful. else NULL in case of error.
@@ -112,7 +111,7 @@ bool IsValidCredentialAccessForSubOwner(const OicUuid_t* uuid, const uint8_t *cb
  */
 OicSecCred_t * GenerateCredential(const OicUuid_t* subject, OicSecCredType_t credType,
                      const OicSecKey_t * publicData, const OicSecKey_t * privateData,
-                     const OicUuid_t * rownerID, const OicUuid_t * eownerID);
+                     const OicUuid_t * eownerID);
 
 /**
  * This function adds the new cred to the credential list.

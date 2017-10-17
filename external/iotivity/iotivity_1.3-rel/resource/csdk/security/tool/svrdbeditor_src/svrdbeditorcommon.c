@@ -17,6 +17,8 @@
  * limitations under the License.
  *
  * *****************************************************************/
+
+#include <stdio.h>
 #include <string.h>
 
 #include "utlist.h"
@@ -28,6 +30,9 @@
 #include "srmutility.h"
 
 #include "svrdbeditorcommon.h"
+
+#define STR_UUID_LENGTH (UUID_LENGTH * 2 + 4 + 1) // length + dash length  + '\0'
+#define STR_UUID_ZERO "0"
 
 void PrintUuid(const OicUuid_t *uuid)
 {
@@ -120,30 +125,39 @@ char *InputString(const char *infoText)
 
 int InputUuid(OicUuid_t *uuid)
 {
-    char strSubject[UUID_LENGTH * 2 + 4 + 1] = {0};
     OCStackResult ocResult = OC_STACK_ERROR;
+    char strUuid[STR_UUID_LENGTH] = {0};
+    size_t strLen = 0;
 
     if (NULL == uuid)
     {
-        PRINT_ERR("Failed InputUuid");
+        PRINT_ERR("Invalid parameter");
         return -1;
     }
 
-    for (int ret = 0; 1 != ret; )
+    if (NULL == fgets(strUuid, STR_UUID_LENGTH, stdin))
     {
-        ret = scanf("%37s", strSubject);
-        for ( ; 0x20 <= getchar(); ); // for removing overflow garbages
-        // '0x20<=code' is character region
+        PRINT_ERR("Failed fgets");
+        return -1;
+    }
+    strLen = strlen(strUuid);
+    if ('\n' == strUuid[strLen - 1])
+    {
+        strUuid[strLen - 1] = '\0';
     }
 
-    if (0 == strncmp(strSubject, (char *)WILDCARD_SUBJECT_ID.id, sizeof(OicUuid_t)))
+    if (0 == strncmp(strUuid, STR_UUID_ZERO, sizeof(STR_UUID_ZERO)))
+    {
+        memset(uuid->id, 0x00, sizeof(uuid->id));
+    }
+    else if (0 == strncmp(strUuid, (char *)WILDCARD_SUBJECT_ID.id, sizeof(WILDCARD_SUBJECT_ID.id)))
     {
         memset(uuid->id, 0x00, sizeof(uuid->id));
         memcpy(uuid->id, WILDCARD_SUBJECT_ID.id, WILDCARD_SUBJECT_ID_LEN);
     }
     else
     {
-        ocResult = ConvertStrToUuid(strSubject, uuid);
+        ocResult = ConvertStrToUuid(strUuid, uuid);
         if (OC_STACK_OK != ocResult)
         {
             PRINT_ERR("Failed ConvertStrToUuid");

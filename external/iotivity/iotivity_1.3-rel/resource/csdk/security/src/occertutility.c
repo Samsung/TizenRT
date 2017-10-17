@@ -26,6 +26,7 @@
 #include <stddef.h>
 #include <string.h>
 #include <assert.h>
+#include <inttypes.h>
 #include "oic_malloc.h"
 #include "oic_string.h"
 #include "cacommon.h"
@@ -100,7 +101,7 @@ OCStackResult OC_CALL OCGenerateRandomSerialNumber(char **serial, size_t *serial
     VERIFY_SUCCESS(TAG, OCGetRandomBytes(random, sizeof(random)), ERROR);
 
     /* Per RFC 5280, 20 octets is the maximum length of a serial number. In ASN.1, if the highest-order
-     * bit is set it causes a padding octet to be written, which would be 21 and non-compliant. 
+     * bit is set it causes a padding octet to be written, which would be 21 and non-compliant.
      * Therefore, always clear the highest-order bit. Integers in ASN.1 are always big-Endian.
      */
     random[0] &= 0x7F;
@@ -324,7 +325,7 @@ static OCStackResult GenerateCertificate(
     {
         ret = mbedtls_x509write_crt_set_basic_constraints(&outCertCtx, 1, -1);
         VERIFY_SUCCESS(TAG, 0 == ret, ERROR);
-        ret = mbedtls_x509write_crt_set_key_usage(&outCertCtx, 
+        ret = mbedtls_x509write_crt_set_key_usage(&outCertCtx,
             MBEDTLS_X509_KU_DIGITAL_SIGNATURE | MBEDTLS_X509_KU_KEY_CERT_SIGN);
         VERIFY_SUCCESS(TAG, 0 == ret, ERROR);
     }
@@ -339,7 +340,7 @@ static OCStackResult GenerateCertificate(
             MBEDTLS_X509_KU_KEY_AGREEMENT);
         VERIFY_SUCCESS(TAG, 0 == ret, ERROR);
     }
-    
+
     switch (certType)
     {
     case CERT_TYPE_ROLE:
@@ -426,7 +427,7 @@ OCStackResult OC_CALL OCGenerateCACertificate(
 {
     OCStackResult res = OC_STACK_OK;
     OCByteString byteStr = { 0 };
-    
+
     res = GenerateCertificate(
         CERT_TYPE_CA,
         subject,
@@ -677,7 +678,7 @@ OCStackResult OC_CALL OCGetUuidFromCSR(const char* csr, OicUuid_t* uuid)
     ret = mbedtls_x509_dn_gets(uuidStr, sizeof(uuidStr), &csrObj.subject);
     if (ret != (sizeof(uuidStr) - 1))
     {
-        OIC_LOG_V(ERROR, TAG, "mbedtls_x509_dn_gets returned length or error: %d, expected %d", ret, sizeof(uuidStr) - 1);
+        OIC_LOG_V(ERROR, TAG, "mbedtls_x509_dn_gets returned length or error: %d, expected %" PRIuPTR, ret, sizeof(uuidStr) - 1);
         mbedtls_x509_csr_free(&csrObj);
         return OC_STACK_ERROR;
     }

@@ -32,12 +32,12 @@
 #define TAG "OIC_SRPAPI_CG"
 
 OCStackResult PMGeneratePairWiseCredentials(OicSecCredType_t type, size_t keySize,
-        const OicUuid_t *ptDeviceId, const OicUuid_t *firstDeviceId,
+        const OicUuid_t *firstDeviceId,
         const OicUuid_t *secondDeviceId, 
         const OicSecRole_t *firstRole, const OicSecRole_t *secondRole,
         OicSecCred_t **firstCred, OicSecCred_t **secondCred)
 {
-    if (NULL == ptDeviceId || NULL == firstDeviceId || NULL == firstCred || NULL != *firstCred || \
+    if (NULL == firstDeviceId || NULL == firstCred || NULL != *firstCred || \
         NULL == secondDeviceId || NULL == secondCred || NULL != *secondCred)
     {
         OIC_LOG(INFO, TAG, "Invalid params");
@@ -71,11 +71,11 @@ OCStackResult PMGeneratePairWiseCredentials(OicSecCredType_t type, size_t keySiz
     }
 
     // TODO: currently owner array is 1. only provisioning tool's id.
-    tempFirstCred =  GenerateCredential(secondDeviceId, type, NULL, &privKey, ptDeviceId, NULL);
+    tempFirstCred =  GenerateCredential(secondDeviceId, type, NULL, &privKey, NULL);
     VERIFY_NOT_NULL(TAG, tempFirstCred, ERROR);
 
     // TODO: currently owner array is 1. only provisioning tool's id.
-    tempSecondCred =  GenerateCredential(firstDeviceId, type, NULL, &privKey, ptDeviceId, NULL);
+    tempSecondCred =  GenerateCredential(firstDeviceId, type, NULL, &privKey, NULL);
     VERIFY_NOT_NULL(TAG, tempSecondCred, ERROR);
 
     // firstRole and secondRole are the roles granted to the client when authenticating with this credential;

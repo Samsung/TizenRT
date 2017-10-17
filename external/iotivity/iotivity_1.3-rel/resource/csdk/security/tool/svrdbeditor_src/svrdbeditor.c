@@ -177,9 +177,31 @@ static int MainOperation(const char *svrpath)
                 }
                 break;
             case SVR_EDIT_DOXM:
-                PRINT_INFO("NOT SUPPORTED YET");
-                //PrintEditMenu("Doxm Resource", false, false, true);
-                //T.B.D
+                for (;;)
+                {
+                    PrintEditMenu("Doxm Resource", true, true, true, true);
+                    editMenu = (SubOperationType_t)InputNumber("Select the menu : ");
+                    if (0 < editMenu && editMenu < SVR_EDIT_IDX_SIZE)
+                    {
+                        if (!g_allowedEditMenu[editMenu])
+                        {
+                            PRINT_ERR("Disabled menu");
+                            continue;
+                        }
+                    }
+                    else if (BACK == editMenu)
+                    {
+                        PRINT_INFO("Back to the previous menu.");
+                        break;
+                    }
+                    else
+                    {
+                        PRINT_ERR("Invalid menu");
+                        continue;
+                    }
+                    HandleDoxmOperation(editMenu);
+                    RefreshDoxm();
+                }
                 break;
             case SVR_EDIT_PSTAT:
                 for (;;)
@@ -298,7 +320,7 @@ static void PrintMainMenu(void)
     PRINT_DATA("\t%2d. Print All Security Resource.\n", SVR_PRINT_ALL);
     PRINT_DATA("\t%2d. Edit Credential Resource.\n", SVR_EDIT_CRED);
     PRINT_DATA("\t%2d. Edit ACL Resource.\n", SVR_EDIT_ACL);
-    PRINT_PROG("\t%2d. Edit Doxm Resource. (T.B.D)\n", SVR_EDIT_DOXM);
+    PRINT_DATA("\t%2d. Edit Doxm Resource.\n", SVR_EDIT_DOXM);
     PRINT_DATA("\t%2d. Edit Pstat Resource.\n", SVR_EDIT_PSTAT);
     PRINT_DATA("\t%2d. Exit.\n", EXIT);
 }

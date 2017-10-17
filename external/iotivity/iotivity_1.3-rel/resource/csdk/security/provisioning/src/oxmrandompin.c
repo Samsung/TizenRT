@@ -132,7 +132,7 @@ OCStackResult InputPinCodeCallback(OTMContext_t *otmCtx)
 
 OCStackResult CreateSecureSessionRandomPinCallback(OTMContext_t* otmCtx)
 {
-    OIC_LOG(INFO, TAG, "IN CreateSecureSessionRandomPinCallbak");
+    OIC_LOG(INFO, TAG, "IN CreateSecureSessionRandomPinCallback");
 
     if (!otmCtx || !otmCtx->selectedDeviceInfo)
     {
@@ -155,7 +155,29 @@ OCStackResult CreateSecureSessionRandomPinCallback(OTMContext_t* otmCtx)
     }
     OIC_LOG(INFO, TAG, "TLS_ECDHE_PSK_WITH_AES_128_CBC_SHA256 cipher suite selected.");
 
-    OIC_LOG(INFO, TAG, "OUT CreateSecureSessionRandomPinCallbak");
+    CAEndpoint_t endpoint;
+    OCProvisionDev_t* selDevInfo = otmCtx->selectedDeviceInfo;
+    CopyDevAddrToEndpoint(&selDevInfo->endpoint, &endpoint);
+
+    if (CA_ADAPTER_IP == endpoint.adapter)
+    {
+        endpoint.port = selDevInfo->securePort;
+    }
+#ifdef WITH_TCP
+    else if (CA_ADAPTER_TCP == endpoint.adapter)
+    {
+        endpoint.port = selDevInfo->tcpSecurePort;
+    }
+#endif
+
+    caresult = CAInitiateHandshake(&endpoint);
+    if (CA_STATUS_OK != caresult)
+    {
+        OIC_LOG_V(ERROR, TAG, "DTLS handshake failure.");
+        return OC_STACK_ERROR;
+    }
+
+    OIC_LOG(INFO, TAG, "OUT CreateSecureSessionRandomPinCallback");
 
     return OC_STACK_OK;
 }

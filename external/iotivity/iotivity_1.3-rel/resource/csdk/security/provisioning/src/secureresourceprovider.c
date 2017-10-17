@@ -1488,7 +1488,7 @@ OCStackResult SRPProvisionCertificate(void *ctx,
     deviceCert.encoding = OIC_ENCODING_PEM;
 
     OicSecCred_t *cred = GenerateCredential(&pDev->doxm->deviceID, SIGNED_ASYMMETRIC_KEY,
-        &deviceCert, NULL, &provTooldeviceID, NULL);
+        &deviceCert, NULL, NULL);
     VERIFY_NOT_NULL(TAG, cred, ERROR);
     certData->credInfo = cred;
 
@@ -1582,7 +1582,7 @@ OCStackResult SRPProvisionCredentials(void *ctx, OicSecCredType_t type, size_t k
 
             OicSecCred_t *firstCred = NULL;
             OicSecCred_t *secondCred = NULL;
-            OCStackResult res = PMGeneratePairWiseCredentials(type, keySize, &provTooldeviceID,
+            OCStackResult res = PMGeneratePairWiseCredentials(type, keySize, 
                     &firstDevice->doxm->deviceID, (NULL != secondDevice) ? &secondDevice->doxm->deviceID : &provTooldeviceID,
                     role1, role2,
                     &firstCred, &secondCred);
@@ -1645,7 +1645,7 @@ OCStackResult SRPProvisionCredentials(void *ctx, OicSecCredType_t type, size_t k
             /* Create a credential object */
             OicSecCred_t* cred =  GenerateCredential(&pDev1->doxm->deviceID, SIGNED_ASYMMETRIC_KEY,
                     &deviceCert, NULL, // oic.sec.cred.publicdata = deviceCert, .privatedata = NULL
-                    &provTooldeviceID, NULL); // rowner is the provisioning tool and no eowner
+                    NULL); // no eowner
             VERIFY_NOT_NULL_RETURN(TAG, cred, ERROR, OC_STACK_ERROR);
 
             cred->publicData.encoding = OIC_ENCODING_PEM;
@@ -1769,7 +1769,7 @@ OCStackResult SRPProvisionCredentialsDos(void *ctx, OicSecCredType_t type, size_
             data->type = PSK_TYPE;
             OicSecCred_t *firstCred = NULL;
             OicSecCred_t *secondCred = NULL;
-            OCStackResult res = PMGeneratePairWiseCredentials(type, keySize, &provTooldeviceID,
+            OCStackResult res = PMGeneratePairWiseCredentials(type, keySize,
                                 &pDev1->doxm->deviceID, (NULL != pDev2) ? &pDev2->doxm->deviceID :
                                 &provTooldeviceID,
                                 role1, role2,

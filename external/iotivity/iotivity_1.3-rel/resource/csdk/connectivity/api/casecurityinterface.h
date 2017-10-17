@@ -124,6 +124,28 @@ typedef struct
     ByteArray_t crl;    /**< trusted CRLs as binary-encoded DER */
 } PkiInfo_t;
 
+#if defined(__WITH_DTLS__) || defined(__WITH_TLS__)
+/**
+ * Callback is used by application layer to check peer's certificate CN field.
+ * If set, this callback will be invoked during handshake after certificate verification.
+ *
+ * @param[out] cn     peer's certificate Common Name field.
+ *                    If common name was not found, cn will be set to NULL.
+ * @param[out] cnLen  peer's certificate Common Name field length.
+ *                    If CN was not found, cnLen will be set to 0.
+ *
+ * @return  CA_STATUS_OK or CA_STATUS_FAIL. In case CA_STATUS_FAIL is returned,
+ *          handshake will be dropped.
+ */
+typedef CAResult_t (*PeerCNVerifyCallback)(const unsigned char *cn, size_t cnLen);
+
+/**
+ * API to set callback that checks peer's certificate Common Name field
+ * @param[in] cb callback to utilize certificate Common Name field
+ */
+void CAsetPeerCNVerifyCallback(PeerCNVerifyCallback cb);
+#endif
+
 /**
  * Register callback to get types of TLS suites.
  * @param[in]   getCredTypesHandler    Get types of TLS suites callback.

@@ -33,7 +33,6 @@ extern "C" {
  *
  * @param[in]  type           Type of credential.
  * @param[in]  keySize        size of key.
- * @param[in]  ptDeviceId     Device ID of provisioning tool.
  * @param[in]  firstDeviceId  DeviceID of the first device.
  * @param[in]  secondDeviceId DeviceID of the second device.
  * @param[in]  firstRole      Role to grant firstDeviceId when communicating with secondDeviceId; NULL for none
@@ -43,7 +42,6 @@ extern "C" {
  * @return  OC_STACK_OK on success
  */
 OCStackResult PMGeneratePairWiseCredentials(OicSecCredType_t type, size_t keySize,
-                                       const OicUuid_t *ptDeviceId,
                                        const OicUuid_t *firstDeviceId,
                                        const OicUuid_t *secondDeviceId,
                                        const OicSecRole_t *firstRole,

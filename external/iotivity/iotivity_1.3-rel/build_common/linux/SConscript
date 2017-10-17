@@ -4,6 +4,9 @@
 #
 ##
 import os
+import subprocess
+from distutils.version import StrictVersion
+
 Import('env')
 
 # Add the default lib directory
@@ -19,13 +22,29 @@ else:
 
 # Test Coverage Flags and Library (if RELEASE=0)
 if not env.get('RELEASE'):
-    env.AppendUnique(LIBS=['gcov'])
     env.AppendUnique(CCFLAGS=['--coverage', '-fPIC', '-O0'])
+    env.AppendUnique(LINKFLAGS=['--coverage'])
 
 env.AppendUnique(CPPDEFINES=['WITH_POSIX', '__linux__'])
 env.AppendUnique(CFLAGS=['-std=gnu99'])
 env.AppendUnique(CCFLAGS=['-Wall', '-Wextra', '-fPIC'])
 env.AppendUnique(LIBS=['dl', 'pthread', 'uuid'])
+
+# The -Wno-error=missing-field-initializers is used due to a bug in versions
+# of gcc older than 5.0 see https://gcc.gnu.org/bugzilla/show_bug.cgi?id=36750
+# this bug causes structs initialized with {0} to generate missing-field-initializers
+# warning. This is a valid way to initialize a struct and was fixed in later versions.
+# since gcc versions older than 5.0 are still used to build the code we do not
+# want to consider the missing-field-initializer warning.
+# The -Wno-missing-braces is also due to a bug using bracket initializers
+# https://gcc.gnu.org/bugzilla/show_bug.cgi?id=25137
+# it was also fixed in later versions of gcc.
+gcc_ver = subprocess.check_output([env['CC'], '-dumpversion'], stderr=subprocess.STDOUT)
+if StrictVersion(gcc_ver) < StrictVersion('5.0'):
+    env.AppendUnique(CFLAGS=['-Wno-missing-field-initializers'])
+    env.AppendUnique(CCFLAGS=['-Wno-missing-braces'])
+# TODO: IOT-2539 enable -Werror once a compiler warnings are cleaned up
+# env.AppendUnique(CFLAGS=['-Werror'])
 
 # Set arch flags that match best TARGET_ARCH variable
 if not env.get('WITH_ENV'):

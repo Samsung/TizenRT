@@ -471,7 +471,7 @@ CAResult_t CAGetNetworkInfo(CAEndpoint_t **info, size_t *size)
 
             OIC_LOG_V(DEBUG,
                       TAG,
-                      "%" PRIu32 " adapter network info size is %" PRIu32 " res:%d",
+                      "%" PRIuPTR " adapter network info size is %" PRIuPTR " res:%u",
                       index,
                       tempSize[index],
                       res);
@@ -864,4 +864,3 @@ CAResult_t CAReadData()
     return CA_STATUS_OK;
 }
 #endif
-

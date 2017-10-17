@@ -23,6 +23,7 @@
 
 #include "octypes.h"
 #include "pmtypes.h"
+#include "casecurityinterface.h"
 #include "ownershiptransfermanager.h"
 #ifdef MULTIPLE_OWNER
 #include "experimental/securevirtualresourcetypes.h"
@@ -689,6 +690,18 @@ OCStackResult OC_CALL OCReadTrustCertChain(uint16_t credId, uint8_t **trustCertC
  */
 OCStackResult OC_CALL OCSelectOwnershipTransferMethod(const OicSecOxm_t *supportedMethods,
         size_t numberOfMethods, OicSecOxm_t *selectedMethod, OwnerType_t ownerType);
+
+/**
+ * Function to set callback to check peer's Common Name field.
+ *
+ * @param[in] cb callback to utilize peer's certificate Common Name information.
+ *            If set, callback is invoked during handshake after certificate
+ *            verification. It takes peer's certificate CN field and provides
+ *            it to application level. Application is to decide whether CN is
+ *            valid or not. In case CA_STATUS_FAIL is returned, handshake will
+ *            be dropped.
+ */
+void OC_CALL OCSetPeerCNVerifyCallback(PeerCNVerifyCallback cb);
 
 #endif // __WITH_DTLS__ || __WITH_TLS__
 

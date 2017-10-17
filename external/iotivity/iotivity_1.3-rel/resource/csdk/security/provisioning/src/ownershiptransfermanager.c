@@ -478,18 +478,17 @@ static void SetResult(OTMContext_t* otmCtx, const OCStackResult res)
 {
     OIC_LOG_V(DEBUG, TAG, "IN SetResult : %d ", res);
 
-    if(NULL == otmCtx || NULL == otmCtx->selectedDeviceInfo)
-    {
-        OIC_LOG(WARNING, TAG, "OTMContext is NULL");
-        return;
-    }
+    VERIFY_NOT_NULL(TAG, otmCtx, ERROR);
+    VERIFY_NOT_NULL(TAG, otmCtx->selectedDeviceInfo, ERROR);
 
     //If OTM Context was removed from previous response handler, just exit the current OTM process.
-    if(NULL == GetOTMContext(otmCtx->selectedDeviceInfo->endpoint.addr,
+    if(NULL != GetOTMContext(otmCtx->selectedDeviceInfo->endpoint.addr,
                              getSecurePort(otmCtx->selectedDeviceInfo)))
     {
         OIC_LOG(WARNING, TAG, "Current OTM Process has already ended.");
     }
+
+    VERIFY_NOT_NULL(TAG, otmCtx->selectedDeviceInfo->doxm, ERROR);
 
     //Revert psk_info callback and new deivce uuid in case of random PIN OxM
     if(OIC_RANDOM_DEVICE_PIN == otmCtx->selectedDeviceInfo->doxm->oxmSel)
@@ -574,7 +573,7 @@ static void SetResult(OTMContext_t* otmCtx, const OCStackResult res)
             OIC_LOG(ERROR, TAG, "Failed to StartOwnershipTransfer");
         }
     }
-
+exit:
     OIC_LOG(DEBUG, TAG, "OUT SetResult");
 }
 
@@ -831,7 +830,7 @@ static OCStackResult SaveOwnerPSK(OCProvisionDev_t *selectedDeviceInfo)
         //Generating new credential for provisioning tool
         OicSecCred_t *cred = GenerateCredential(&selectedDeviceInfo->doxm->deviceID,
                                   SYMMETRIC_PAIR_WISE_KEY, NULL,
-                                  &ownerKey, &ownerDeviceID, NULL);
+                                  &ownerKey, NULL);
         OICClearMemory(ownerPSK, sizeof(ownerPSK));
         VERIFY_NOT_NULL(TAG, cred, ERROR);
 

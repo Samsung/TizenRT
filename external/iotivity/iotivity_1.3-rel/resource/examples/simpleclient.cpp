@@ -40,6 +40,8 @@
 
 using namespace OC;
 
+#define CA_OPTION_CONTENT_VERSION 2053
+#define COAP_OPTION_CONTENT_FORMAT 12
 static const char* SVR_DB_FILE_NAME = "./oic_svr_db_client.dat";
 typedef std::map<OCResourceIdentifier, std::shared_ptr<OCResource>> DiscoveredResourceMap;
 
@@ -296,7 +298,7 @@ void putLightRepresentation(std::shared_ptr<OCResource> resource)
 }
 
 // Callback handler on GET request
-void onGet(const HeaderOptions& /*headerOptions*/, const OCRepresentation& rep, const int eCode)
+void onGet(const HeaderOptions& headerOptions, const OCRepresentation& rep, const int eCode)
 {
     try
     {
@@ -305,6 +307,35 @@ void onGet(const HeaderOptions& /*headerOptions*/, const OCRepresentation& rep, 
             std::cout << "GET request was successful" << std::endl;
             std::cout << "Resource URI: " << rep.getUri() << std::endl;
 
+            // Get resource header options
+            if ( headerOptions.size() == 0)
+            {
+                std::cout << "No header option exists" << std::endl;
+            }
+            else
+            {
+                for (auto it = headerOptions.begin(); it != headerOptions.end(); ++it)
+                {
+                    if (it->getOptionID() == COAP_OPTION_CONTENT_FORMAT)
+                    {
+                        size_t dataLength = it->getOptionData().length();
+                        char* optionData = new char[dataLength];
+                        strncpy(optionData, it->getOptionData().c_str(), dataLength);
+                        int format = optionData[0] * 256 + optionData[1];
+                        std::cout << "Server format in GET response:" << format << std::endl;
+                        delete[] optionData;
+                    }
+                    if (it->getOptionID() == CA_OPTION_CONTENT_VERSION)
+                    {
+                        size_t dataLength = it->getOptionData().length();
+                        char* optionData = new char[dataLength];
+                        strncpy(optionData, it->getOptionData().c_str(), dataLength);
+                        int version = optionData[0] * 256;
+                        std::cout << "Server version in GET response:" << version << std::endl;
+                        delete[] optionData;
+                    }
+                }
+            }
             rep.getValue("state", mylight.m_state);
             rep.getValue("power", mylight.m_power);
             rep.getValue("name", mylight.m_name);
@@ -446,7 +477,7 @@ void foundResource(std::shared_ptr<OCResource> resource)
                 {
                     for (auto it = headerOptions.begin(); it != headerOptions.end(); ++it)
                     {
-                        if (it->getOptionID() == 12)  // COAP_OPTION_CONTENT_FORMAT
+                        if (it->getOptionID() == COAP_OPTION_CONTENT_FORMAT)
                         {
                             size_t dataLength = it->getOptionData().length();
                             char* optionData = new char[dataLength];
@@ -456,7 +487,7 @@ void foundResource(std::shared_ptr<OCResource> resource)
                                     << std::endl;
                             delete[] optionData;
                         }
-                        if (it->getOptionID() == 2053) // CA_OPTION_CONTENT_VERSION
+                        if (it->getOptionID() == CA_OPTION_CONTENT_VERSION)
                         {
                             size_t dataLength = it->getOptionData().length();
                             char* optionData = new char[dataLength];

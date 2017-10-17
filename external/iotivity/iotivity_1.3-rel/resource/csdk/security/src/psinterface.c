@@ -576,6 +576,7 @@ OCStackResult ResetSecureResourceInPS(void)
         }
 
         // Gets each secure virtual resource from the reset profile
+        if (NULL != resetPfCbor)
         {
             CborParser parser;  // will be initialized in |cbor_parser_init|
             CborValue cbor;     // will be initialized in |cbor_parser_init|

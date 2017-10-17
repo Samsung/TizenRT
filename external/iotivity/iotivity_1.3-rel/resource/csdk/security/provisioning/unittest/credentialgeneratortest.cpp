@@ -22,27 +22,6 @@
 #include "oic_malloc.h"
 
 
-TEST(PMGeneratePairWiseCredentialsTest, InvalidProvisioningtoolDevID)
-{
-    OicUuid_t *firstDevID = (OicUuid_t*)OICMalloc(sizeof(OicUuid_t));
-    if(firstDevID)
-    {
-        firstDevID->id[0] = 1;
-    }
-    OicUuid_t *SecondDevID = (OicUuid_t*)OICMalloc(sizeof(OicUuid_t));
-    if(SecondDevID)
-    {
-        SecondDevID->id[0] = 2;
-    }
-    OicSecCred_t *cred1 = NULL;
-    OicSecCred_t *cred2 = NULL;
-    size_t keySize = OWNER_PSK_LENGTH_128;
-    EXPECT_EQ(OC_STACK_INVALID_PARAM, PMGeneratePairWiseCredentials(NO_SECURITY_MODE,
-             keySize, NULL, firstDevID, SecondDevID, NULL, NULL, &cred1, &cred2));
-    OICFree(firstDevID);
-    OICFree(SecondDevID);
-}
-
 TEST(PMGeneratePairWiseCredentialsTest, InvalidFirstDevID)
 {
     OicUuid_t *SecondDevID = (OicUuid_t*)OICMalloc(sizeof(OicUuid_t));
@@ -50,18 +29,12 @@ TEST(PMGeneratePairWiseCredentialsTest, InvalidFirstDevID)
     {
         SecondDevID->id[0] = 2;
     }
-    OicUuid_t *provisioningDevID = (OicUuid_t*)OICMalloc(sizeof(OicUuid_t));
-    if(provisioningDevID)
-    {
-        provisioningDevID->id[0] = 1;
-    }
     OicSecCred_t *cred1 = NULL;
     OicSecCred_t *cred2 = NULL;
     size_t keySize = OWNER_PSK_LENGTH_128;
     EXPECT_EQ(OC_STACK_INVALID_PARAM, PMGeneratePairWiseCredentials(NO_SECURITY_MODE,
-              keySize, provisioningDevID, NULL, SecondDevID, NULL, NULL, &cred1, &cred2));
+              keySize, NULL, SecondDevID, NULL, NULL, &cred1, &cred2));
     OICFree(SecondDevID);
-    OICFree(provisioningDevID);
 }
 
 TEST(PMGeneratePairWiseCredentialsTest, InvalidSecondDevID)
@@ -80,7 +53,7 @@ TEST(PMGeneratePairWiseCredentialsTest, InvalidSecondDevID)
     OicSecCred_t *cred2 = NULL;
     size_t keySize = OWNER_PSK_LENGTH_128;
     EXPECT_EQ(OC_STACK_INVALID_PARAM, PMGeneratePairWiseCredentials(NO_SECURITY_MODE, keySize,
-              provisioningDevID, firstDevID, NULL, NULL, NULL, &cred1, &cred2));
+              firstDevID, NULL, NULL, NULL, &cred1, &cred2));
     OICFree(firstDevID);
     OICFree(provisioningDevID);
 }
@@ -104,7 +77,7 @@ TEST(PMGeneratePairWiseCredentialsTest, InvalidCred)
     }
     size_t keySize = OWNER_PSK_LENGTH_128;
     EXPECT_EQ(OC_STACK_INVALID_PARAM, PMGeneratePairWiseCredentials(NO_SECURITY_MODE, keySize,
-              provisioningDevID, firstDevID, SecondDevID, NULL, NULL, NULL, NULL));
+              firstDevID, SecondDevID, NULL, NULL, NULL, NULL));
     OICFree(firstDevID);
     OICFree(SecondDevID);
     OICFree(provisioningDevID);

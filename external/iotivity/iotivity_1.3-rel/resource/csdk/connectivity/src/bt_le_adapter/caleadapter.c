@@ -21,6 +21,7 @@
 
 #include <stdio.h>
 #include <stdlib.h>
+#include <inttypes.h>
 
 #include "cafragmentation.h"
 
@@ -1367,7 +1368,7 @@ static void CALEServerSendDataThread(void *threadData)
 
         OIC_LOG_V(DEBUG,
                   CALEADAPTER_TAG,
-                  "Server Sent Unicast First Data - data length [%zu]",
+                  "Server Sent Unicast First Data - data length [%u]",
                   length);
 
         result = CAGenerateHeader(dataHeader,
@@ -1780,7 +1781,7 @@ static void CALEClientSendDataThread(void *threadData)
         }
         OIC_LOG_V(DEBUG,
                   CALEADAPTER_TAG,
-                  "Client Sent Unicast First Data - data length [%zu]",
+                  "Client Sent Unicast First Data - data length [%u]",
                   length);
 
         result = CAGenerateHeader(dataHeader,
@@ -1842,7 +1843,7 @@ static void CALEClientSendDataThread(void *threadData)
             }
             OIC_LOG_V(DEBUG,
                       CALEADAPTER_TAG,
-                      "Client Sent Unicast %d Data - data(mtu) length [%zu]",
+                      "Client Sent Unicast %d Data - data(mtu) length [%u]",
                       index + 1,
                       g_mtuSize);
         }
@@ -2827,7 +2828,7 @@ static ssize_t CALESecureSendDataCB(CAEndpoint_t *endpoint,
     VERIFY_NON_NULL_RET(endpoint, CALEADAPTER_TAG, "endpoint is NULL", -1);
     VERIFY_NON_NULL_RET(data, CALEADAPTER_TAG, "data is NULL", -1);
 
-    OIC_LOG_V(DEBUG, CALEADAPTER_TAG, "Secure Data Send - encrypted datalen = %d", dataLen);
+    OIC_LOG_V(DEBUG, CALEADAPTER_TAG, "Secure Data Send - encrypted datalen = %" PRIuPTR, dataLen);
 
     CAResult_t result;
     CADataType_t dataType = g_dataType;
@@ -2881,7 +2882,7 @@ static void CALESecureReceiveDataCB(const CASecureEndpoint_t *sep,
     VERIFY_NON_NULL_VOID(sep, CALEADAPTER_TAG, "sep is NULL");
     VERIFY_NON_NULL_VOID(data, CALEADAPTER_TAG, "data is NULL");
 
-    OIC_LOG_V(DEBUG, CALEADAPTER_TAG, "Secure Data Receive - decrypted datalen = %d", dataLen);
+    OIC_LOG_V(DEBUG, CALEADAPTER_TAG, "Secure Data Receive - decrypted datalen = %" PRIuPTR, dataLen);
 
     if (dataLen == 0)
     {
@@ -3782,7 +3783,7 @@ static CAResult_t CALEAdapterClientReceivedData(const char *remoteAddress,
     // Create bleData to add to queue
     OIC_LOG_V(DEBUG,
               CALEADAPTER_TAG,
-              "Data received from LE Client layer [%zu]",
+              "Data received from LE Client layer [%u]",
               dataLength);
 
     CALEData_t * const bleData =
