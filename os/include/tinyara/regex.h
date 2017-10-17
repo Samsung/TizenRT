@@ -85,6 +85,7 @@ extern "C" {
 /**
  * @ingroup REGEX_KERNEL
  * @brief  Simple shell-style filename pattern matcher
+ * @details @b #include <tinyara/regex.h>
  * @param[in] pattern, only '?', '*' and '**', and multiple patterns separated by '|'.
  * @param[in] string to match pattern
  * @return Returns 1 (match) or 0 (no-match)

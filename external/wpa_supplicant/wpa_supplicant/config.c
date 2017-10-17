@@ -395,6 +395,10 @@ static int wpa_config_parse_psk(const struct parse_data *data, struct wpa_ssid *
 			return -1;
 		}
 		wpa_hexdump_ascii_key(MSG_MSGDUMP, "PSK (ASCII passphrase)", (u8 *)value, len);
+		if (has_ctrl_char((u8 *) value, len)) {
+			wpa_printf(MSG_ERROR, "Line %d: Invalid passphrase character", line);
+			return -1;
+		}
 		if (ssid->passphrase && os_strlen(ssid->passphrase) == len && os_memcmp(ssid->passphrase, value, len) == 0) {
 			return 0;
 		}
@@ -2431,7 +2435,16 @@ char *wpa_config_get(struct wpa_ssid *ssid, const char *var)
 	for (i = 0; i < NUM_SSID_FIELDS; i++) {
 		const struct parse_data *field = &ssid_fields[i];
 		if (os_strcmp(var, field->name) == 0) {
-			return field->writer(field, ssid);
+			char *ret = field->writer(field, ssid);
+
+			if (ret && has_newline(ret)) {
+				wpa_printf(MSG_ERROR,
+					"Found newline in value for %s; not returning it", var);
+				os_free(ret);
+				ret = NULL;
+			}
+
+			return ret;
 		}
 	}
 
@@ -2610,6 +2623,8 @@ int wpa_config_set_cred(struct wpa_cred *cred, const char *var, const char *valu
 	}
 
 	if (os_strcmp(var, "password") == 0 && os_strncmp(value, "ext:", 4) == 0) {
+		if (has_newline(value))
+			return -1;
 		str_clear_free(cred->password);
 		cred->password = os_strdup(value);
 		cred->ext_password = 1;
@@ -2661,8 +2676,13 @@ int wpa_config_set_cred(struct wpa_cred *cred, const char *var, const char *valu
 	}
 
 	val = wpa_config_parse_string(value, &len);
-	if (val == NULL) {
+	if (val == NULL ||
+		(os_strcmp(var, "excluded_ssid") != 0 &&
+		os_strcmp(var, "roaming_consortium") != 0 &&
+		os_strcmp(var, "required_roaming_consortium") != 0 &&
+		has_newline(val))) {
 		wpa_printf(MSG_ERROR, "Line %d: invalid field '%s' string " "value '%s'.", line, var, value);
+		os_free(val);
 		return -1;
 	}
 
@@ -3453,6 +3473,11 @@ static int wpa_global_config_parse_str(const struct global_parse_data *data, str
 
 	if (data->param3 && len > (size_t)data->param3) {
 		wpa_printf(MSG_ERROR, "Line %d: too long %s (len=%lu " "max_len=%ld)", line, data->name, (unsigned long)len, (long)data->param3);
+		return -1;
+	}
+
+	if (has_newline(pos)) {
+		wpa_printf(MSG_ERROR, "Line %d: invalid %s value with newline", line, data->name);
 		return -1;
 	}
 

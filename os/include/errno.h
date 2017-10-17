@@ -435,6 +435,7 @@ extern "C" {
 
 /**
  * @brief Return a pointer to the thread specific errno.
+ * @details @b #include <errno.h>
  * @return A pointer to the per-thread errno variable is returned.
  * @since Tizen RT v1.0
  */
@@ -443,7 +444,8 @@ FAR int *get_errno_ptr(void);
 #ifndef __DIRECT_ERRNO_ACCESS
 /**
  * @brief Set the value of the thread specific errno.
- * @details SYSTEM CALL API
+ * @details @b #include <errno.h> \n
+ * SYSTEM CALL API
  * @param[in] errcode The thread specific errno will be set to this error code value.
  * @return none
  * @since Tizen RT v1.0
@@ -452,7 +454,8 @@ void set_errno(int errcode);
 
 /**
  * @brief Return the value of the thread specific errno.
- * @details SYSTEM CALL API
+ * @details @b #include <errno.h> \n
+ * SYSTEM CALL API
  * @return The current value of the thread specific errno is returned.
  * @since Tizen RT v1.0
  */

@@ -45,10 +45,10 @@
 */
 
 /**
-* @defgroup TinyAlsa TinyAlsa
-* @ingroup TinyAlsa
-* @brief Provides APIs for Audio Framework
-* @{
+ * @defgroup TinyAlsa TinyAlsa
+ * @ingroup TinyAlsa
+ * @brief Provides APIs for Audio Framework
+ * @{
  */
 
 /**
@@ -244,176 +244,194 @@ enum pcm_param {
 struct pcm;
 
 /**
-* @brief Opens a PCM for playback or recording.
-*
-* @param[in] The card that the pcm belongs to.
-* @param[in] The device that the pcm belongs to.
-* @param[in] flags Specify characteristics and functionality about the pcm.
-* @param[in] config The hardware and software parameters to open the PCM with.
-* @returns On success, A PCM structure returned. On failure, invalid PCM structure returned.
-* @since Tizen RT v1.1
-*/
+ * @brief Opens a PCM for playback or recording.
+ *
+ * @details @b #include <tinyalsa/tinyalsa.h>
+ * @param[in] card   The card that the pcm belongs to.
+ * @param[in] device The device that the pcm belongs to.
+ * @param[in] flags  Specify characteristics and functionality about the pcm.
+ * @param[in] config The hardware and software parameters to open the PCM with.
+ * @returns On success, A PCM structure returned. On failure, invalid PCM structure returned.
+ * @since Tizen RT v1.1
+ */
 struct pcm *pcm_open(unsigned int card, unsigned int device, unsigned int flags, const struct pcm_config *config);
 
 /**
-* @brief Opens a PCM by it's name.
-*
-* @param[in] The name of the PCM.
-* @param[in] flags Specify characteristics and functionality about the pcm.
-* @param[in] config The hardware and software parameters to open the PCM with.
-* @returns On success, A PCM structure returned. On failure, NULL or invalid PCM structure returned.
-* @since Tizen RT v1.1
-*/
+ * @brief Opens a PCM by it's name.
+ *
+ * @details @b #include <tinyalsa/tinyalsa.h>
+ * @param[in] name   The name of the PCM.
+ * @param[in] flags  Specify characteristics and functionality about the pcm.
+ * @param[in] config The hardware and software parameters to open the PCM with.
+ * @returns On success, A PCM structure returned. On failure, NULL or invalid PCM structure returned.
+ * @since Tizen RT v1.1
+ */
 struct pcm *pcm_open_by_name(const char *name, unsigned int flags, const struct pcm_config *config);
 
 /**
-* @brief Closes a PCM returned by @ref pcm_open.
-*
-* @param[in] A PCM returned by pcm_open.
-* @return Always returns 0.
-* @since Tizen RT v1.1
-*/
+ * @brief Closes a PCM returned by @ref pcm_open.
+ *
+ * @details @b #include <tinyalsa/tinyalsa.h>
+ * @param[in] pcm A PCM returned by pcm_open.
+ * @return Always returns 0.
+ * @since Tizen RT v1.1
+ */
 int pcm_close(struct pcm *pcm);
 
 /**
-* @brief Checks if a PCM file has been opened without error.
-*
-* @param[in] A PCM handle.
-* @return On success, 0 returned. On failure, 1 returned
-* @since Tizen RT v1.1
-*/
+ * @brief Checks if a PCM file has been opened without error.
+ *
+ * @details @b #include <tinyalsa/tinyalsa.h>
+ * @param[in] pcm A PCM handle.
+ * @return On success, 0 returned. On failure, 1 returned
+ * @since Tizen RT v1.1
+ */
 int pcm_is_ready(const struct pcm *pcm);
 
 /**
-* @brief Gets the channel count of the PCM.
-*
-* @param[in] A PCM handle.
-* @return The channel count of the PCM.
-* @since Tizen RT v1.1
-*/
+ * @brief Gets the channel count of the PCM.
+ *
+ * @details @b #include <tinyalsa/tinyalsa.h>
+ * @param[in] pcm A PCM handle.
+ * @return The channel count of the PCM.
+ * @since Tizen RT v1.1
+ */
 unsigned int pcm_get_channels(const struct pcm *pcm);
 
 /**
-* @brief Gets the PCM configuration.
-*
-* @param[in] A PCM handle.
-* @return On success, The PCM configuration returned. On failure, NULL returned.
-* @since Tizen RT v1.1
-*/
+ * @brief Gets the PCM configuration.
+ *
+ * @details @b #include <tinyalsa/tinyalsa.h>
+ * @param[in] pcm A PCM handle.
+ * @return On success, The PCM configuration returned. On failure, NULL returned.
+ * @since Tizen RT v1.1
+ */
 const struct pcm_config *pcm_get_config(const struct pcm *pcm);
 
 /**
-* @brief Gets the sample rate of the PCM.
-*
-* @param[in] A PCM handle.
-* @return The rate of the PCM.
-* @since Tizen RT v1.1
-*/
+ * @brief Gets the sample rate of the PCM.
+ *
+ * @details @b #include <tinyalsa/tinyalsa.h>
+ * @param[in] pcm A PCM handle.
+ * @return The rate of the PCM.
+ * @since Tizen RT v1.1
+ */
 unsigned int pcm_get_rate(const struct pcm *pcm);
 
 /**
-* @brief Gets the format of the PCM.
-*
-* @param[in] A PCM handle.
-* @return The format of the PCM.
-* @since Tizen RT v1.1
-*/
+ * @brief Gets the format of the PCM.
+ *
+ * @details @b #include <tinyalsa/tinyalsa.h>
+ * @param[in] pcm A PCM handle.
+ * @return The format of the PCM.
+ * @since Tizen RT v1.1
+ */
 enum pcm_format pcm_get_format(const struct pcm *pcm);
 
 /**
-* @brief Gets the file descriptor of the PCM.
-*
-* @param[in] A PCM handle.
-* @return The file descriptor of the PCM.
-* @since Tizen RT v1.1
-*/
+ * @brief Gets the file descriptor of the PCM.
+ *
+ * @details @b #include <tinyalsa/tinyalsa.h>
+ * @param[in] pcm A PCM handle.
+ * @return The file descriptor of the PCM.
+ * @since Tizen RT v1.1
+ */
 int pcm_get_file_descriptor(const struct pcm *pcm);
 
 /**
-* @brief Gets the error message for the last error that occured.
-*
-* @param[in] A PCM handle.
-* @return The error message of the last error that occured.
-* @since Tizen RT v1.1
-*/
+ * @brief Gets the error message for the last error that occured.
+ *
+ * @details @b #include <tinyalsa/tinyalsa.h>
+ * @param[in] pcm A PCM handle.
+ * @return The error message of the last error that occured.
+ * @since Tizen RT v1.1
+ */
 const char *pcm_get_error(const struct pcm *pcm);
 
 /**
-* @brief Gets the buffer size of the PCM.
-*
-* @param[in] A PCM handle.
-* @return The buffer size of the PCM.
-* @since Tizen RT v1.1
-*/
+ * @brief Gets the buffer size of the PCM.
+ *
+ * @details @b #include <tinyalsa/tinyalsa.h>
+ * @param[in] pcm A PCM handle.
+ * @return The buffer size of the PCM.
+ * @since Tizen RT v1.1
+ */
 unsigned int pcm_get_buffer_size(const struct pcm *pcm);
 
 /**
-* @brief Determines how many bytes are occupied by a number of frames of a PCM.
-*
-* @param[in] A PCM handle.
-* @param[i] The number of frames of a PCM.
-* @return The bytes occupied by frames.
-* @since Tizen RT v1.1
-*/
+ * @brief Determines how many bytes are occupied by a number of frames of a PCM.
+ *
+ * @details @b #include <tinyalsa/tinyalsa.h>
+ * @param[in] pcm    A PCM handle.
+ * @param[in] frames The number of frames of a PCM.
+ * @return The bytes occupied by frames.
+ * @since Tizen RT v1.1
+ */
 unsigned int pcm_frames_to_bytes(const struct pcm *pcm, unsigned int frames);
 
 /**
-* @brief Determines how many frames of a PCM can fit into a number of bytes.
-*
-* @param[in] A PCM handle.
-* @param[in] The number of bytes.
-* @return The number of frames that may fit into @p bytes
-* @since Tizen RT v1.1
-*/
+ * @brief Determines how many frames of a PCM can fit into a number of bytes.
+ *
+ * @details @b #include <tinyalsa/tinyalsa.h>
+ * @param[in] pcm   A PCM handle.
+ * @param[in] bytes The number of bytes.
+ * @return The number of frames that may fit into @p bytes
+ * @since Tizen RT v1.1
+ */
 unsigned int pcm_bytes_to_frames(const struct pcm *pcm, unsigned int bytes);
 
 /**
-* @brief Gets the subdevice on which the pcm has been opened.
-*
-* @param[in] A PCM handle.
-* @return The subdevice on which the pcm has been opened.
-* @since Tizen RT v1.1
-*/
+ * @brief Gets the subdevice on which the pcm has been opened.
+ *
+ * @details @b #include <tinyalsa/tinyalsa.h>
+ * @param[in] A PCM handle.
+ * @return The subdevice on which the pcm has been opened.
+ * @since Tizen RT v1.1
+ */
 unsigned int pcm_get_subdevice(const struct pcm *pcm);
 
 /**
-* @brief Writes audio samples to PCM.
-*
-* @param[out] A PCM handle.
-* @param[in] The audio sample array
-* @param[in] The number of frames occupied by the sample array.
-* @return On success,  written number of frames returned. On failure, a negative number returned.
-* @since Tizen RT v1.1
-*/
+ * @brief Writes audio samples to PCM.
+ *
+ * @details @b #include <tinyalsa/tinyalsa.h>
+ * @param[out] pcm         A PCM handle.
+ * @param[in]  data        The audio sample array
+ * @param[in]  frame_count The number of frames occupied by the sample array.
+ * @return On success,  written number of frames returned. On failure, a negative number returned.
+ * @since Tizen RT v1.1
+ */
 int pcm_writei(struct pcm *pcm, const void *data, unsigned int frame_count);
 
 /**
-* @brief Reads audio samples from PCM.
-*
-* @param[out] A PCM handle.
-* @param[out] The audio sample array which will contain the audio data recieved from the input stream
-* @param[in] The number of frames that the user wants to read
-* @return On success, number of frames read returned. On failure, a negative number returned.
-* @since Tizen RT v1.1
-*/
+ * @brief Reads audio samples from PCM.
+ *
+ * @details @b #include <tinyalsa/tinyalsa.h>
+ * @param[out] pcm         A PCM handle.
+ * @param[out] data        The audio sample array which will contain the audio data recieved from the input stream
+ * @param[in]  frame_count The number of frames that the user wants to read
+ * @return On success, number of frames read returned. On failure, a negative number returned.
+ * @since Tizen RT v1.1
+ */
 int pcm_readi(struct pcm *pcm, void *data, unsigned int frame_count);
 
 /**
-* @brief Prepares a PCM, if it has not been prepared already.
-*
-* @param[in] A PCM handle.
-* @return On success, 0 returned. On failure, a negative number returned.
-* @since Tizen RT v1.1
-*/
+ * @brief Prepares a PCM, if it has not been prepared already.
+ *
+ * @details @b #include <tinyalsa/tinyalsa.h>
+ * @param[in] pcm A PCM handle.
+ * @return On success, 0 returned. On failure, a negative number returned.
+ * @since Tizen RT v1.1
+ */
 int pcm_prepare(struct pcm *pcm);
 
 /**
-* @brief Determines the number of bits occupied by a @ref pcm_format.
-*
-* @param[in] format A PCM format
-* @return The number of bits associated with @p format
-* @since Tizen RT v1.1
-*/
+ * @brief Determines the number of bits occupied by a @ref pcm_format.
+ *
+ * @details @b #include <tinyalsa/tinyalsa.h>
+ * @param[in] format A PCM format
+ * @return The number of bits associated with @p format
+ * @since Tizen RT v1.1
+ */
 unsigned int pcm_format_to_bits(enum pcm_format format);
 
 #if defined(__cplusplus)
