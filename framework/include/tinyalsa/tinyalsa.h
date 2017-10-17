@@ -256,6 +256,24 @@ struct pcm;
 struct pcm *pcm_open(unsigned int card, unsigned int device, unsigned int flags, const struct pcm_config *config);
 
 /**
+* @brief Stops a PCM. Any data present in the buffers will be dropped.
+*
+* @param[in] A PCM handle.
+* @returns On success, zero; on failure, a negative number.
+* @since Tizen RT v1.1
+*/
+int pcm_drop(struct pcm *pcm);
+
+/**
+* @brief Stop a PCM preserving pending frames.
+*
+* @param[in] A PCM handle.
+* @returns On success, zero; on failure, a negative number.
+* @since Tizen RT v1.1
+*/
+int pcm_drain(struct pcm *pcm);
+
+/**
 * @brief Opens a PCM by it's name.
 *
 * @param[in] The name of the PCM.
