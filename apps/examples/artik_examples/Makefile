@@ -113,6 +113,7 @@ ifeq ($(CONFIG_EXAMPLES_ARTIK_WIFI), y)
   MAINSRC += wifi-api.c
 endif
 ifeq ($(CONFIG_EXAMPLES_ARTIK_MQTT), y)
+  THREADEXEC_mqtt = TASH_EXECMD_SYNC
   TASH_APPS += mqtt
   MAINSRC += mqtt-api.c
 endif
@@ -179,7 +180,7 @@ $(BUILTIN)$(DELIM)$2.bdat: $(DEFCONFIG) Makefile
 	$(call REGISTER,$1,$2,$3)
 endef
 
-$(foreach var,$(TASH_APPS),$(eval $(call REGISTER_FOREACH,$(var),$(var)_main,$(THREADEXEC))))
+$(foreach var,$(TASH_APPS),$(eval $(call REGISTER_FOREACH,$(var),$(var)_main,$(if $(THREADEXEC_$(var)), $(THREADEXEC_$(var)), $(THREADEXEC)))))
 
 TASH_APPS_TARGET=$(addprefix $(BUILTIN)$(DELIM),$(addsuffix _main.bdat,$(TASH_APPS)))
 context: $(TASH_APPS_TARGET)
