@@ -17,8 +17,6 @@ struct media_s {
 	dq_entry_t q;
 
 	int fd;
-	char *payload;
-	uint32_t size;
 	media_op_e op;
 	media_state_e state;
 	media_type_e type;
