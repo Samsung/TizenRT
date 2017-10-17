@@ -138,58 +138,65 @@ extern "C" {
 
 /**
  * @brief places the 'node' at the head of the 'queue'
- * @param[in] node to be added
- * @param[in] queue
+ * @details @b #include <queue.h>
+ * @param[in] node node to be added
+ * @param[in] queue queue
  * @return none
  * @since Tizen RT v1.0
  */
 void sq_addfirst(FAR sq_entry_t *node, FAR sq_queue_t *queue);
 /**
  * @brief adds 'node' at the beginning of 'queue'
- * @param[in] node to be added
- * @param[in] queue
+ * @details @b #include <queue.h>
+ * @param[in] node node to be added
+ * @param[in] queue queue
  * @return none
  * @since Tizen RT v1.0
  */
 void dq_addfirst(FAR dq_entry_t *node, FAR dq_queue_t *queue);
 /**
  * @brief places the 'node' at the tail of the 'queue'
- * @param[in] node to be added
- * @param[in] queue
+ * @details @b #include <queue.h>
+ * @param[in] node node to be added
+ * @param[in] queue queue
  * @return none
  * @since Tizen RT v1.0
  */
 void sq_addlast(FAR sq_entry_t *node, FAR sq_queue_t *queue);
 /**
  * @brief adds 'node' to the end of 'queue'
- * @param[in] node to be added
- * @param[in] queue
+ * @details @b #include <queue.h>
+ * @param[in] node node to be added
+ * @param[in] queue queue
  * @return none
  * @since Tizen RT v1.0
  */
 void dq_addlast(FAR dq_entry_t *node, FAR dq_queue_t *queue);
 /**
- * @brief adds 'node' after 'prev' in the 'queue.'
- * @param[in] node to be added
- * @param[in] queue
+ * @brief adds 'node' fter 'prev' in the 'queue.'
+ * @details @b #include <queue.h>
+ * @param[in] node node to be added
+ * @param[in] queue queue
  * @return none
  * @since Tizen RT v1.0
  */
 void sq_addafter(FAR sq_entry_t *prev, FAR sq_entry_t *node, FAR sq_queue_t *queue);
 /**
  * @brief adds 'node' after 'prev' in the 'queue.'
- * @param[in] node to be added
- * @param[in] prev node
- * @param[in] queue
+ * @details @b #include <queue.h>
+ * @param[in] prev prev node
+ * @param[in] node node to be added
+ * @param[in] queue queue
  * @return none
  * @since Tizen RT v1.0
  */
 void dq_addafter(FAR dq_entry_t *prev, FAR dq_entry_t *node, FAR dq_queue_t *queue);
 /**
  * @brief adds 'node' before 'next' in 'queue'
- * @param[in] next node
- * @param[in] node to be added
- * @param[in] queue
+ * @details @b #include <queue.h>
+ * @param[in] next next node
+ * @param[in] node node to be added
+ * @param[in] queue queue
  * @return none
  * @since Tizen RT v1.0
  */
@@ -197,52 +204,59 @@ void dq_addbefore(FAR dq_entry_t *next, FAR dq_entry_t *node, FAR dq_queue_t *qu
 
 /**
  * @brief  removes the entry following 'node
- * @param[in] node to be removed
- * @param[in] queue
+ * @details @b #include <queue.h>
+ * @param[in] node node to be removed
+ * @param[in] queue queue
  * @return a reference to the removed entry
  * @since Tizen RT v1.0
  */
 FAR sq_entry_t *sq_remafter(FAR sq_entry_t *node, FAR sq_queue_t *queue);
 /**
  * @brief  removes a 'node' for 'queue.'
- * @param[in] node to be removed
- * @param[in] queue
+ * @details @b #include <queue.h>
+ * @param[in] node node to be removed
+ * @param[in] queue queue
  * @return void
  * @since Tizen RT v1.0
  */
 void sq_rem(FAR sq_entry_t *node, FAR sq_queue_t *queue);
 /**
  * @brief  removes 'node' from 'queue'
- * @param[in] node to be removed
- * @param[in] queue
+ * @details @b #include <queue.h>
+ * @param[in] node node to be removed
+ * @param[in] queue queue
  * @return void
  * @since Tizen RT v1.0
  */
 void dq_rem(FAR dq_entry_t *node, FAR dq_queue_t *queue);
 /**
  * @brief  Removes the last entry in a singly-linked queue.
- * @param[in] singly-linked queue
+ * @details @b #include <queue.h>
+ * @param[in] queue singly-linked queue
  * @return node to be removed
  * @since Tizen RT v1.0
  */
 FAR sq_entry_t *sq_remlast(FAR sq_queue_t *queue);
 /**
  * @brief  removes the last entry from 'queue'
- * @param[in] singly-linked queue
+ * @details @b #include <queue.h>
+ * @param[in] queue singly-linked queue
  * @return node to be removed
  * @since Tizen RT v1.0
  */
 FAR dq_entry_t *dq_remlast(FAR dq_queue_t *queue);
 /**
  * @brief  removes the first entry from 'queue'
- * @param[in] singly-linked queue
+ * @details @b #include <queue.h>
+ * @param[in] queue singly-linked queue
  * @return node to be removed
  * @since Tizen RT v1.0
  */
 FAR sq_entry_t *sq_remfirst(FAR sq_queue_t *queue);
 /**
  * @brief  removes 'node' from the head of 'queue'
- * @param[in] singly-linked queue
+ * @details @b #include <queue.h>
+ * @param[in] queue singly-linked queue
  * @return node to be removed
  * @since Tizen RT v1.0
  */

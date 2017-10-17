@@ -84,9 +84,10 @@ extern "C" {
 /**
  * @brief  Continue CRC calculation on a part of the buffer.
  *
- * @param[in] source number for crc8
- * @param[in] length for calculation
- * @param[in] value for calculation
+ * @details @b #include <crc8.h>
+ * @param[in] src source number for crc8
+ * @param[in] len length for calculation
+ * @param[in] crc8val value for calculation
  * @return On success, calculated 8-bit CRC is returned.
  * @since Tizen RT v1.0
  */
@@ -96,8 +97,9 @@ uint8_t crc8part(FAR const uint8_t *src, size_t len, uint8_t crc8val);
  * @brief  Return an 8-bit CRC of the contents of the 'src' buffer, length 'len'
  *   using the polynomial x^8+x^6+x^3+x^2+1 (Koopman, et al. "0xA6" poly).
  *
- * @param[in] source number for crc8
- * @param[in] length for calculation
+ * @details @b #include <crc8.h>
+ * @param[in] src source number for crc8
+ * @param[in] len length for calculation
  * @return On success, calculated 8-bit CRC is returned.
  * @since Tizen RT v1.0
  */

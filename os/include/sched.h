@@ -153,18 +153,19 @@ int task_activate(FAR struct tcb_s *tcb);
  * @ingroup SCHED_KERNEL
  * @brief  creates and activates a new task with a specified
  *   priority and returns its system-assigned ID.
- * @details SYSTEM CALL API
+ * @details @b #include <sched.h> \n
+ * SYSTEM CALL API
  *       The entry address entry is the address of the "main" function of the
  *   task.  This function will be called once the C environment has been
  *   set up.  The specified function will be called with four arguments.
  *   Should the specified routine return, a call to exit() will
  *   automatically be made.
  *
- * @param[in] Name of the new task
- * @param[in] Priority of the new task
- * @param[in] size (in bytes) of the stack needed
- * @param[in] Entry point of a new task
- * @param[in]  A pointer to an array of input parameters. Up to
+ * @param[in] name Name of the new task
+ * @param[in] priority Priority of the new task
+ * @param[in] stack_size size (in bytes) of the stack needed
+ * @param[in] entry Entry point of a new task
+ * @param[in] argv[] A pointer to an array of input parameters. Up to
  *                CONFIG_MAX_TASK_ARG parameters may be provided.  If fewer
  *                than CONFIG_MAX_TASK_ARG parameters are passed, the list
  *                should be terminated with a NULL argv[] value. If no
@@ -179,7 +180,8 @@ int task_create(FAR const char *name, int priority, int stack_size, main_t entry
 /**
  * @ingroup SCHED_KERNEL
  * @brief  causes a specified task to cease to exist.
- * @details SYSTEM CALL API
+ * @details @b #include <sched.h> \n
+ * SYSTEM CALL API
  *      Its  stack and TCB will be deallocated.  This function is
  *   the companion to task_create().
  *   This is the version of the function exposed to the user; it is simply
@@ -201,7 +203,7 @@ int task_create(FAR const char *name, int priority, int stack_size, main_t entry
  *   Other exit paths (exit(), _eixt(), and pthread_exit()) will go through
  *   task_terminate()
  *
- * @param[in] The task ID of the task to delete.  A pid of zero
+ * @param[in] pid The task ID of the task to delete.  A pid of zero
  *         signifies the calling task.
  * @return OK on success; or ERROR on failure
  * @since Tizen RT v1.0
@@ -211,7 +213,8 @@ int task_delete(pid_t pid);
 /**
  * @ingroup SCHED_KERNEL
  * @brief  restart a task.
- * @details SYSTEM CALL API
+ * @details @b #include <sched.h> \n
+ * SYSTEM CALL API
  *     The task is first terminated and then
  *   reinitialized with same ID, priority, original entry point, stack size,
  *   and parameters it had when it was first started.
@@ -221,7 +224,7 @@ int task_delete(pid_t pid);
  *      (functionality not implemented)
  *   (2) The pid is not associated with any task known to the system.
  *
- * @param[in] The task ID of the task to delete.  An ID of zero signifies the
+ * @param[in] pid The task ID of the task to delete.  An ID of zero signifies the
  *         calling task.
  * @return OK on success; or ERROR on failure
  * @since Tizen RT v1.0
@@ -235,62 +238,80 @@ void   task_testcancel(void);
 /* Task Scheduling Interfaces (based on POSIX APIs) */
 /**
  * @ingroup SCHED_KERNEL
- * @brief  POSIX API (refer to : http://pubs.opengroup.org/onlinepubs/9699919799/)
- * @details SYSTEM CALL API
+ * @brief set scheduling parameters
+ * @details @b #include <sched.h> \n
+ * SYSTEM CALL API \n
+ * POSIX API (refer to : http://pubs.opengroup.org/onlinepubs/9699919799/)
  * @since Tizen RT v1.0
  */
 int sched_setparam(pid_t pid, const struct sched_param *param);
 /**
  * @ingroup SCHED_KERNEL
- * @brief  POSIX API (refer to : http://pubs.opengroup.org/onlinepubs/9699919799/)
- * @details SYSTEM CALL API
+ * @brief get scheduling parameters
+ * @details @b #include <sched.h> \n
+ * SYSTEM CALL API \n
+ * POSIX API (refer to : http://pubs.opengroup.org/onlinepubs/9699919799/)
  * @since Tizen RT v1.0
  */
 int sched_getparam(pid_t pid, struct sched_param *param);
 /**
  * @ingroup SCHED_KERNEL
- * @brief  POSIX API (refer to : http://pubs.opengroup.org/onlinepubs/9699919799/)
- * @details SYSTEM CALL API
+ * @brief set scheduling policy and parameters
+ * @details @b #include <sched.h> \n
+ * SYSTEM CALL API \n
+ * POSIX API (refer to : http://pubs.opengroup.org/onlinepubs/9699919799/)
  * @since Tizen RT v1.0
  */
 int sched_setscheduler(pid_t pid, int policy, FAR const struct sched_param *param);
 /**
  * @ingroup SCHED_KERNEL
- * @brief  POSIX API (refer to : http://pubs.opengroup.org/onlinepubs/9699919799/)
- * @details SYSTEM CALL API
+ * @brief get scheduling policy and parameters
+ * @details @b #include <sched.h> \n
+ * SYSTEM CALL API \n
+ * POSIX API (refer to : http://pubs.opengroup.org/onlinepubs/9699919799/)
  * @since Tizen RT v1.0
  */
 int sched_getscheduler(pid_t pid);
 /**
  * @ingroup SCHED_KERNEL
- * @details SYSTEM CALL API
- * @brief  POSIX API (refer to : http://pubs.opengroup.org/onlinepubs/9699919799/)
+ * @brief yield the processor
+ * @details @b #include <sched.h> \n
+ * SYSTEM CALL API \n
+ * POSIX API (refer to : http://pubs.opengroup.org/onlinepubs/9699919799/)
  * @since Tizen RT v1.0
  */
 int sched_yield(void);
 /**
-		  * @} *///end for SCHED_KERNEL
+ * @}
+ *///end for SCHED_KERNEL
 
 /**
  * @addtogroup SCHED_KERNEL
  * @{
  */
 /**
- * @brief  POSIX API (refer to : http://pubs.opengroup.org/onlinepubs/9699919799/)
+ * @brief get priority limits
+ * @details @b #include <sched.h> \n
+ * POSIX API (refer to : http://pubs.opengroup.org/onlinepubs/9699919799/)
  * @since Tizen RT v1.0
  */
 int sched_get_priority_max(int policy);
 /**
- * @brief  POSIX API (refer to : http://pubs.opengroup.org/onlinepubs/9699919799/)
+ * @brief get priority limits
+ * @details @b #include <sched.h> \n
+ * POSIX API (refer to : http://pubs.opengroup.org/onlinepubs/9699919799/)
  * @since Tizen RT v1.0
  */
 int sched_get_priority_min(int policy);
 /**
-* @} */
+ * @}
+ */
 /**
  * @ingroup SCHED_KERNEL
- * @brief  POSIX API (refer to : http://pubs.opengroup.org/onlinepubs/9699919799/)
- * @details SYSTEM CALL API
+ * @brief get execution time limits
+ * @details @b #include <sched.h> \n
+ * SYSTEM CALL API \n
+ * POSIX API (refer to : http://pubs.opengroup.org/onlinepubs/9699919799/)
  * @since Tizen RT v1.0
  */
 int sched_rr_get_interval(pid_t pid, FAR struct timespec *interval);
@@ -299,7 +320,8 @@ int sched_rr_get_interval(pid_t pid, FAR struct timespec *interval);
 /**
  * @ingroup SCHED_KERNEL
  * @brief disable context switching
- * @details SYSTEM CALL API
+ * @details @b #include <sched.h> \n
+ * SYSTEM CALL API
  * @return On success, OK is returned. On failure, ERROR is returned.
  * @since Tizen RT v1.0
  */
@@ -307,7 +329,8 @@ int sched_lock(void);
 /**
  * @ingroup SCHED_KERNEL
  * @brief re-enable the context switching which blocked from sched_lock()
- * @details SYSTEM CALL API
+ * @details @b #include <sched.h> \n
+ * SYSTEM CALL API
  *     This function decrements the preemption lock count.  Typically this
  *   is paired with sched_lock() and concludes a critical section of
  *   code.  Preemption will not be unlocked until sched_unlock() has
@@ -321,7 +344,8 @@ int sched_unlock(void);
 /**
  * @ingroup SCHED_KERNEL
  * @brief returns the current value of the lockcount
- * @details SYSTEM CALL API
+ * @details @b #include <sched.h> \n
+ * SYSTEM CALL API
  *      This function returns the current value of the lockcount. If zero,
  *   pre-emption is enabled; if non-zero, this value indicates the number
  *   of times that sched_lock() has been called on this thread of
@@ -344,11 +368,11 @@ int sched_lockcount(void);
  */
 void sched_note_start(FAR struct tcb_s *tcb);
 /**
- *@ internal
+ *@internal
  */
 void sched_note_stop(FAR struct tcb_s *tcb);
 /**
- *@ internal
+ *@internal
  */
 void sched_note_switch(FAR struct tcb_s *pFromTcb, FAR struct tcb_s *pToTcb);
 

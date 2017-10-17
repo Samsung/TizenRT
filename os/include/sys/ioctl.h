@@ -128,8 +128,10 @@ extern "C" {
 
 /**
  * @ingroup IOCTL_KERNEL
- * @brief  POSIX API (refer to : http://pubs.opengroup.org/onlinepubs/9699919799/)
- * @details SYSTEM CALL API
+ * @brief control a STREAMS device
+ * @details @b #include <sys/ioctl.h> \n
+ * SYSTEM CALL API \n
+ * POSIX API (refer to : http://pubs.opengroup.org/onlinepubs/9699919799/)
  * @since Tizen RT v1.0
  */
 #ifdef CONFIG_LIBC_IOCTL_VARIADIC
