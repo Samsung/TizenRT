@@ -16,7 +16,7 @@
  *
  ****************************************************************************/
 /****************************************************************************
- * drivers/power/pm_initialize.c
+ * pm/pm_initialize.c
  *
  *   Copyright (C) 2011-2012 Gregory Nutt. All rights reserved.
  *   Author: Gregory Nutt <gnutt@nuttx.org>
