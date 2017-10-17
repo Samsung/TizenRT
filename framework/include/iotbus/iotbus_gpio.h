@@ -91,6 +91,7 @@ typedef void (*gpio_isr_cb)(void *user_data);
 /**
  * @brief initializes gpio_context based on gpio pin.
  *
+ * @details @b #include <iotbus/iotbus_gpio.h>
  * @param[in] gpiopin gpio pin number
  * @return On success, handle of gpio_context is returned. On failure, NULL is returned.
  * @since Tizen RT v1.0
@@ -100,6 +101,7 @@ iotbus_gpio_context_h iotbus_gpio_open(int gpiopin);
 /**
  * @brief closes the gpio_context.
  *
+ * @details @b #include <iotbus/iotbus_gpio.h>
  * @param[in] dev handle of gpio_context
  * @return On success, 0 is returned. On failure, a negative value is returned.
  * @since Tizen RT v1.0
@@ -109,6 +111,7 @@ int iotbus_gpio_close(iotbus_gpio_context_h dev);
 /**
  * @brief sets gpio direction.
  *
+ * @details @b #include <iotbus/iotbus_gpio.h>
  * @param[in] dev handle of gpio_context
  * @param[in] dir gpio direction type
  * @return On success, 0 is returned. On failure, a negative value is returned.
@@ -119,6 +122,7 @@ int iotbus_gpio_set_direction(iotbus_gpio_context_h dev, iotbus_gpio_direction_e
 /**
  * @brief sets the edge mode on the gpio.
  *
+ * @details @b #include <iotbus/iotbus_gpio.h>
  * @param[in] dev handle of gpio_context
  * @param[in] edge gpio edge type
  * @return On success, 0 is returned. On failure, a negative value is returned.
@@ -129,6 +133,7 @@ int iotbus_gpio_set_edge_mode(iotbus_gpio_context_h dev, iotbus_gpio_edge_e edge
 /**
  * @brief sets gpio output mode.
  *
+ * @details @b #include <iotbus/iotbus_gpio.h>
  * @param[in] dev handle of gpio_context
  * @param[in] drive gpio drive type
  * @return On success, 0 is returned. On failure, a negative value is returned.
@@ -138,7 +143,8 @@ int iotbus_gpio_set_drive_mode(iotbus_gpio_context_h dev, iotbus_gpio_drive_e dr
 
 /**
  * @brief registers event handler callback for interrupt.
- * @details
+ *
+ * @details @b #include <iotbus/iotbus_gpio.h>\n
  * isr_cb is called when following situation occured.\n
  * the gpio value is changed from 0 to 1 on IOTBUS_GPIO_EDGE_RISING mode.\n
  * the gpio value is changed from 1 to 0 on IOTBUS_GPIO_EDGE_FALLING mode.
@@ -155,6 +161,7 @@ int iotbus_gpio_register_cb(iotbus_gpio_context_h dev, iotbus_gpio_edge_e edge, 
 /**
  * @brief unregisters event handler callback for interrupt.
  *
+ * @details @b #include <iotbus/iotbus_gpio.h>
  * @param[in] dev handle of gpio_context
  * @return On success, 0 is returned. On failure, a negative value is returned.
  * @since Tizen RT v1.0
@@ -164,6 +171,7 @@ int iotbus_gpio_unregister_cb(iotbus_gpio_context_h dev);
 /**
  * @brief reads the gpio value.
  *
+ * @details @b #include <iotbus/iotbus_gpio.h>
  * @param[in] dev handle of gpio_context
  * @return On success, 0 or 1 is returned. (0: signal low, 1: signal high)
  *             On failure, a nagative value is returned.
@@ -174,6 +182,7 @@ int iotbus_gpio_read(iotbus_gpio_context_h dev);
 /**
  * @brief writes to the gpio value.
  *
+ * @details @b #include <iotbus/iotbus_gpio.h>
  * @param[in] dev handle of gpio_context
  * @param[in] value signal value
  * @return On success, 0 is returned. On failure, a negative value is returned.
@@ -184,6 +193,7 @@ int iotbus_gpio_write(iotbus_gpio_context_h dev, int value);
 /**
  * @brief gets a direction of the gpio.
  *
+ * @details @b #include <iotbus/iotbus_gpio.h>
  * @param[in] dev handle of gpio_context
  * @param[out] dir current gpio direction
  * @return On success, 0 is returned. On failure, a negative value is returned.
@@ -194,6 +204,7 @@ int iotbus_gpio_get_direction(iotbus_gpio_context_h dev, iotbus_gpio_direction_e
 /**
  * @brief gets a pin number of the gpio.
  *
+ * @details @b #include <iotbus/iotbus_gpio.h>
  * @param[in] dev handle of gpio_context
  * @return On success, gpio pin number is returned. On failure, a negative value is returned.
  * @since Tizen RT v1.0
@@ -203,6 +214,7 @@ int iotbus_gpio_get_pin(iotbus_gpio_context_h dev);
 /**
  * @brief gets a edge mode of the gpio.
  *
+ * @details @b #include <iotbus/iotbus_gpio.h>
  * @param[in] dev handle of gpio_context
  * @param[out] edge current gpio edge type
  * @return On success, 0 is returned. On failure, a negative value is returned.
@@ -213,6 +225,7 @@ int iotbus_gpio_get_edge_mode(iotbus_gpio_context_h dev, iotbus_gpio_edge_e *edg
 /**
  * @brief gets a drive mode of the gpio.
  *
+ * @details @b #include <iotbus/iotbus_gpio.h>
  * @param[in] dev handle of gpio_context
  * @param[out] drive current drive type
  * @return On success, 0 is returned. On failure, a negative value is returned.
