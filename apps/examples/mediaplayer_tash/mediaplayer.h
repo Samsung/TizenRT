@@ -43,16 +43,7 @@ typedef enum {
 /***
  * Structures
  */
-struct media_s {
-	dq_entry_t q;
-
-	int fd;
-	char *payload;
-	uint32_t size;
-	media_op_e op;
-	media_state_e state;
-	media_type_e type;
-};
+struct media_s;
 typedef struct media_s media_t;
 
 struct media_cb_s {

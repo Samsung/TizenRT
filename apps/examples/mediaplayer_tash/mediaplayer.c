@@ -11,6 +11,20 @@
 #include "mediaplayer.h"
 
 /***
+ * Structure
+ */
+struct media_s {
+	dq_entry_t q;
+
+	int fd;
+	char *payload;
+	uint32_t size;
+	media_op_e op;
+	media_state_e state;
+	media_type_e type;
+};
+
+/***
  * Static variables
  */
 static pthread_t g_pth_playing;
@@ -208,42 +222,6 @@ static int read_wav_header(media_t *m)
 	return MEDIA_OK;
 }
 
-int on_media_state_created(media_t *m)
-{
-	if (m->type == MEDIA_TYPE_WAV || m->type == MEDIA_TYPE_PCM) {
-
-		if (m->op == MEDIA_OP_PLAYBACK) {
-			m->fd = open(m->payload, O_RDONLY);
-			if (m->fd < 0) {
-				free(m->payload);
-				m->payload = NULL;
-				return -MEDIA_ERROR_CREATE;
-			}
-
-			if (m->type == MEDIA_TYPE_WAV) {
-				read_wav_header(m);
-			}
-			m->state = MEDIA_STATE_PLAYING;
-		} else if (m->op == MEDIA_OP_RECORD) {
-			m->fd = open(m->payload, O_RDWR | O_CREAT | O_TRUNC);
-			if (m->fd < 0) {
-				free(m->payload);
-				m->payload = NULL;
-				return -MEDIA_ERROR;
-			}
-			m->state = MEDIA_STATE_RECORDING;
-		}
-		free(m->payload);
-		m->payload = NULL;
-
-	} else if (m->type == MEDIA_TYPE_WAV_STREAM) {
-		// Todo: Supports network streaming
-		return -MEDIA_ERROR;
-	}
-
-	return MEDIA_OK;
-}
-
 media_t *media_open(char *path, media_op_e op, media_type_e type)
 {
 	media_t *m = (media_t *)malloc(sizeof(media_t));
@@ -255,14 +233,32 @@ media_t *media_open(char *path, media_op_e op, media_type_e type)
 	m->op = op;
 	m->state = MEDIA_STATE_CREATED;
 	m->type = type;
+	m->payload = NULL;
 
 	if (type == MEDIA_TYPE_WAV || type == MEDIA_TYPE_PCM) {
-		m->payload = (char *)malloc(strlen(path) + 1);
-		strcpy(m->payload, path);
+		if (op == MEDIA_OP_PLAYBACK) {
+			m->fd = open(path, O_RDONLY);
+			if (m->fd < 0) {
+				return NULL;
+			}
+
+			if (m->type == MEDIA_TYPE_WAV) {
+				read_wav_header(m);
+			}
+			m->state = MEDIA_STATE_PLAYING;
+
+		} else if (op == MEDIA_OP_RECORD) {
+			m->fd = open(path, O_RDWR | O_CREAT | O_TRUNC);
+			if (m->fd < 0) {
+				return NULL;
+			}
+			m->state = MEDIA_STATE_RECORDING;
+		}
 	} else if (type == MEDIA_TYPE_WAV_STREAM) {
-		m->payload = NULL;
+		// Todo: Supports network streaming
+		return NULL;
 	}
-	on_media_state_created(m);
+
 	return m;
 }
 
