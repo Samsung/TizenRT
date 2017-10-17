@@ -237,6 +237,9 @@ FAR char *ftpc_dequote(FAR const char *str)
 				if (str[0] == '%') {
 					/* Extract the hex value */
 
+					if (!str[1] || !str[2]) {
+						break;
+					}
 					ms = ftpc_nibble(str[1]);
 					if (ms >= 0) {
 						ls = ftpc_nibble(str[2]);
