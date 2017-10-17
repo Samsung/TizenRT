@@ -50,6 +50,7 @@
  */
 
 #include <net/lwip/opt.h>
+#include <net/lwip/debug.h>
 
 #if LWIP_SNMP					/* don't build if not configured for use in lwipopts.h */
 
