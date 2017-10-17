@@ -27,7 +27,6 @@
  * @brief device management APIs for DM
  */
 
-#include "dm_lwm2m.h"
 #include "lwm2mclient.h"
 #include "connectivity_interface.h"
 #include "internals.h"
@@ -35,8 +34,8 @@
 #include <sched.h>
 #include <sys/types.h>
 
-#include "dm_lwm2m.h"
-#include "dm_error.h"
+#include <dm/dm_lwm2m.h>
+#include <dm/dm_error.h>
 
 static pthread_t wakaama_thread;
 static pthread_attr_t wakaama_attr;
