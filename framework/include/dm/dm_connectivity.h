@@ -49,6 +49,7 @@ typedef void (*conn_cb)(void);
 /**
  * @brief get the rssi of network
  *
+ * @details @b #include <dm/dm_connectivity.h>
  * @param[out] rssi current rssi. (the rssi is a negative value)
  * @return On success, 0 is returned. On failure, a negative value is returned.
  * @since Tizen RT v1.0
@@ -58,6 +59,7 @@ int dm_conn_get_rssi(int *rssi);
 /**
  * @brief get the ip address of network
  *
+ * @details @b #include <dm/dm_connectivity.h>
  * @param[out] ipAddr current ip address. (the form is XXX.XXX.XXX.XXX)
  * @return On success, 0 is returned. On failure, a negative value is returned.
  * @since Tizen RT v1.0
@@ -67,6 +69,7 @@ int dm_conn_get_address(char *ipAddr);
 /**
  * @brief get the current interface of network
  *
+ * @details @b #include <dm/dm_connectivity.h>
  * @param[out] interface current interface of network. (the value is a string)
  * @return On success, 0 is returned. On failure, a negative value is returned.
  * @since Tizen RT v1.0
@@ -76,6 +79,7 @@ int dm_conn_get_interface(char *interface);
 /**
  * @brief get the channel of network
  *
+ * @details @b #include <dm/dm_connectivity.h>
  * @param[out] channel current channel of network.
  * @return On success, 0 is returned. On failure, a negative value is returned.
  * @since Tizen RT v1.0
@@ -85,6 +89,7 @@ int dm_conn_get_channel(int *channel);
 /**
  * @brief get the tx power of network
  *
+ * @details @b #include <dm/dm_connectivity.h>
  * @param[out] dbm current tx power of network. (the value is between 0 ~ 30 dbm)
  * @return On success, 0 is returned. On failure, a negative value is returned.
  * @since Tizen RT v1.0
@@ -94,6 +99,7 @@ int dm_conn_get_tx_power(int *dbm);
 /**
  * @brief set the tx power of network
  *
+ * @details @b #include <dm/dm_connectivity.h>
  * @param[in] dbm the power value to set up. (the value is between 0 ~ 30 dbm)
  * @return On success, 0 is returned. On failure, a negative value is returned.
  * @since Tizen RT v1.0
@@ -103,6 +109,7 @@ int dm_conn_set_tx_power(const int *dbm);
 /**
  * @brief register link up callback function for connectivity event.
  *
+ * @details @b #include <dm/dm_connectivity.h>
  * @param[in] cb A pointer to call when a network link up event occurs.
  * @return On success, 0 is returned. On failure, a negative value is returned.
  * @since Tizen RT v1.0
@@ -112,6 +119,7 @@ int dm_conn_register_linkup_cb(conn_cb cb);
 /**
  * @brief register link down callback function for connectivity event.
  *
+ * @details @b #include <dm/dm_connectivity.h>
  * @param[in] cb A pointer to call when a network link down event occurs.
  * @return On success, 0 is returned. On failure, a negative value is returned.
  * @since Tizen RT v1.0
@@ -121,6 +129,7 @@ int dm_conn_register_linkdown_cb(conn_cb cb);
 /**
  * @brief unregister link up callback function for connectivity event.
  *
+ * @details @b #include <dm/dm_connectivity.h>
  * @param[in] cb A pointer to call when a network link up event occurs.
  * @return On success, 0 is returned. On failure, a negative value is returned.
  * @since Tizen RT v1.0
@@ -130,6 +139,7 @@ int dm_conn_unregister_linkup_cb(conn_cb cb);
 /**
  * @brief unregister link down callback function for connectivity event.
  *
+ * @details @b #include <dm/dm_connectivity.h>
  * @param[in] cb A pointer to call when a network link down event occurs.
  * @return On success, 0 is returned. On failure, a negative value is returned.
  * @since Tizen RT v1.0
@@ -140,7 +150,7 @@ int dm_conn_unregister_linkdown_cb(conn_cb cb);
 /**
  * @brief Perform a WiFi scan over all channels
  *
- * @param[in] None.
+ * @details @b #include <dm/dm_connectivity.h>
  * @return On success, 0 is returned. On failure, a negative value is returned.
  * @internal
  */
@@ -149,7 +159,8 @@ int dm_conn_wifi_scan(void);
 /**
  * @brief Fetch WiFi scan result
  *
- * @param[out] pointer to WiFi scan structure to hold result.
+ * @details @b #include <dm/dm_connectivity.h>
+ * @param[out] result pointer to WiFi scan structure to hold result.
  * @return On success, 0 is returned. On failure, a negative value is returned.
  * @internal
  */
@@ -158,7 +169,8 @@ int dm_conn_get_scan_result(dm_scan_info_t **result);
 /**
  * @brief Free WiFi scan result
  *
- * @param[out] pointer to WiFi scan structure that holds result.
+ * @details @b #include <dm/dm_connectivity.h>
+ * @param[out] result pointer to WiFi scan structure that holds result.
  * @return On completion, 0 is returned.
  * @internal
  */
@@ -167,7 +179,9 @@ int dm_conn_free_scan_result(dm_scan_info_t **result);
 /**
  * @brief Start device as WiFi station and connect to designated Access Point
  *
- * @param[in] callback functions to handle WiFi link being up and down.
+ * @details @b #include <dm/dm_connectivity.h>
+ * @param[in] linkUpEvent callback functions to handle WiFi link being up.
+ * @param[in] linkDownEvent callback functions to handle WiFi link being down.
  * @return On completion, 0 is returned. On failure, a negative value is returned.
  * @internal
  */
@@ -176,7 +190,7 @@ int dm_conn_wifi_connect(conn_cb linkUpEvent, conn_cb linkDownEvent);
 /**
  * @brief Perform DHCP client routine to obtain IP address for WiFi interface
  *
- * @param None
+ * @details @b #include <dm/dm_connectivity.h>
  * @return On completion, 0 is returned. On failure, a negative value is returned.
  * @internal
  */
@@ -185,7 +199,7 @@ int dm_conn_dhcp_init(void);
 /**
  * @brief Mark WiFi state as disconnected
  *
- * @param None
+ * @details @b #include <dm/dm_connectivity.h>
  * @return On completion, 0 is returned. On failure, a negative value is returned.
  * @internal
  */
