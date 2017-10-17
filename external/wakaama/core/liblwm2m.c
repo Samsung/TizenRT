@@ -105,9 +105,13 @@ void lwm2m_deregister(lwm2m_context_t * context)
     }
 }
 
-static void prv_deleteServer(lwm2m_server_t * serverP)
+static void prv_deleteServer(lwm2m_server_t * serverP, void *userData)
 {
     // TODO parse transaction and observation to remove the ones related to this server
+    if (serverP->sessionH != NULL)
+    {
+        lwm2m_close_connection(serverP->sessionH, userData);
+    }
     if (NULL != serverP->location)
     {
         lwm2m_free(serverP->location);
@@ -123,14 +127,18 @@ static void prv_deleteServerList(lwm2m_context_t * context)
         lwm2m_server_t * server;
         server = context->serverList;
         context->serverList = server->next;
-        prv_deleteServer(server);
+        prv_deleteServer(server, context->userData);
     }
 }
 
-static void prv_deleteBootstrapServer(lwm2m_server_t * serverP)
+static void prv_deleteBootstrapServer(lwm2m_server_t * serverP, void *userData)
 {
     // TODO should we free location as in prv_deleteServer ?
     // TODO should we parse transaction and observation to remove the ones related to this server ?
+    if (serverP->sessionH != NULL)
+    {
+        lwm2m_close_connection(serverP->sessionH, userData);
+    }
     free_block1_buffer(serverP->block1Data);
     lwm2m_free(serverP);
 }
@@ -142,7 +150,7 @@ static void prv_deleteBootstrapServerList(lwm2m_context_t * context)
         lwm2m_server_t * server;
         server = context->bootstrapServerList;
         context->bootstrapServerList = server->next;
-        prv_deleteBootstrapServer(server);
+        prv_deleteBootstrapServer(server, context->userData);
     }
 }
 
@@ -236,7 +244,7 @@ static int prv_refreshServerList(lwm2m_context_t * contextP)
         }
         else
         {
-            prv_deleteServer(targetP);
+            prv_deleteServer(targetP, contextP->userData);
         }
         targetP = nextP;
     }
@@ -253,7 +261,7 @@ static int prv_refreshServerList(lwm2m_context_t * contextP)
         }
         else
         {
-            prv_deleteServer(targetP);
+            prv_deleteServer(targetP, contextP->userData);
         }
         targetP = nextP;
     }
