@@ -151,7 +151,7 @@ static void on_unsubscribe(void *client, int msg_id)
  * pre-initialization functions
  ****************************************************************************************/
 
-static mqtt_client_config_t g_mqtt_client_config= {
+static mqtt_client_config_t g_mqtt_client_config = {
 	ITC_SUB_PUB_ID,
 	"", "", 1, 3, 0, 0,
 	on_connect,
