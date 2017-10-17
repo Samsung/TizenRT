@@ -65,8 +65,8 @@ static int media_player_tash_cb(int argc, char **argv)
 		case 'r':
 			music = media_open(argv[2], MEDIA_OP_RECORD, MEDIA_TYPE_PCM);
 			media_record(music);
-			printf("Recording 10secs started [%s]\n", argv[2]);
-			sleep(10);
+			printf("Recording 7secs started [%s]\n", argv[2]);
+			sleep(7);
 			printf("Done\n");
 			media_stop(music);
 			break;

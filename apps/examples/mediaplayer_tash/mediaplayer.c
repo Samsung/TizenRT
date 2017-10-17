@@ -1,3 +1,4 @@
+#include <tinyara/config.h>
 #include <tinyara/audio/audio.h>
 #include <tinyara/audio/pcm.h>
 #include <tinyalsa/tinyalsa.h>
@@ -13,7 +14,9 @@
  * Static variables
  */
 static pthread_t g_pth_playing;
+#ifdef CONFIG_AUDIO_MULTI_CARD
 static pthread_t g_pth_recording;
+#endif
 static sem_t g_sem_playing;
 static sem_t g_sem_recording;
 static pthread_mutex_t g_mutex_playing_q;
@@ -39,18 +42,23 @@ int media_init(struct media_cb_s *cbs)
 
 	// Init queue
 	dq_init(&g_playing_q);
+#ifdef CONFIG_AUDIO_MULTI_CARD
 	dq_init(&g_recording_q);
+#endif
 
 	// Init semaphores
 	sem_init(&g_sem_playing, 0, 0);
+#ifdef CONFIG_AUDIO_MULTI_CARD
 	sem_init(&g_sem_recording, 0, 0);
+#endif
 
 	// Init mutices
 	pthread_mutexattr_init(&mutexAttr);
 	pthread_mutexattr_settype(&mutexAttr, PTHREAD_MUTEX_NORMAL);
 	pthread_mutex_init(&g_mutex_playing_q, &mutexAttr);
+#ifdef CONFIG_AUDIO_MULTI_CARD
 	pthread_mutex_init(&g_mutex_recording_q, &mutexAttr);
-
+#endif
 	// Init threads
 	if (pthread_attr_init(&attr) != 0) {
 		return -MEDIA_ERROR_THREAD_INIT;
@@ -72,30 +80,40 @@ int media_init(struct media_cb_s *cbs)
 	if (pthread_create(&g_pth_playing, &attr, (pthread_startroutine_t)threadfunc_audio_playing, (void *)NULL) != 0) {
 		return -MEDIA_ERROR_THREAD_INIT;
 	}
-
+#ifdef CONFIG_AUDIO_MULTI_CARD
 	if (pthread_create(&g_pth_recording, &attr, (pthread_startroutine_t)threadfunc_audio_recording, (void *)NULL) != 0) {
 		return -MEDIA_ERROR_THREAD_INIT;
 	}
-
+#endif
 	return MEDIA_OK;
 }
 
 void media_shutdown(void)
 {
 	g_playing_live = false;
+#ifdef CONFIG_AUDIO_MULTI_CARD
 	g_recording_live = false;
-
+#endif
 	sem_post(&g_sem_playing);
+#ifdef CONFIG_AUDIO_MULTI_CARD
 	sem_post(&g_sem_recording);
+#endif
 
 	pthread_join(g_pth_playing, NULL);
+#ifdef CONFIG_AUDIO_MULTI_CARD
 	pthread_join(g_pth_recording, NULL);
+#endif
 
 	pthread_mutex_destroy(&g_mutex_playing_q);
+#ifdef CONFIG_AUDIO_MULTI_CARD
 	pthread_mutex_destroy(&g_mutex_recording_q);
+#endif
 
 	sem_destroy(&g_sem_playing);
+
+#ifdef CONFIG_AUDIO_MULTI_CARD
 	sem_destroy(&g_sem_recording);
+#endif
 }
 
 media_t *media_open(char *path, media_op_e op, media_type_e type)
@@ -136,16 +154,24 @@ int media_play(media_t *m, bool loop)
 
 int media_record(media_t *m)
 {
+#ifdef CONFIG_AUDIO_MULTI_CARD
 	pthread_mutex_lock(&g_mutex_recording_q);
 	dq_addlast((dq_entry_t *)m, &g_recording_q);
 	pthread_mutex_unlock(&g_mutex_recording_q);
 	sem_post(&g_sem_recording);
+#else
+	pthread_mutex_lock(&g_mutex_playing_q);
+	dq_addlast((dq_entry_t *)m, &g_playing_q);
+	pthread_mutex_unlock(&g_mutex_playing_q);
+	sem_post(&g_sem_playing);
+	
+#endif
 	return MEDIA_OK;
 }
 
 int media_stop(media_t *m)
 {
-	if (m->state == MEDIA_STATE_PLAYING) {
+	if (m->state == MEDIA_STATE_PLAYING || m->state == MEDIA_STATE_RECORDING) {
 		m->state = MEDIA_STATE_STOPPING;
 		return MEDIA_OK;
 	} else {
@@ -224,31 +250,38 @@ static int read_wav_header(media_t *m)
 	return MEDIA_OK;
 }
 
-int on_media_state_created(struct pcm *pcm, media_t *m)
+int on_media_state_created(media_t *m)
 {
 	if (m->type == MEDIA_TYPE_WAV || m->type == MEDIA_TYPE_PCM) {
 
 		if (m->op == MEDIA_OP_PLAYBACK) {
 			m->fd = open(m->payload, O_RDONLY);
 			if (m->fd < 0) {
+				free(m->payload);
+				m->payload = NULL;
 				return -MEDIA_ERROR_CREATE;
 			}
 
 			if (m->type == MEDIA_TYPE_WAV) {
 				read_wav_header(m);
 			}
+			m->state = MEDIA_STATE_PLAYING;
 		} else if (m->op == MEDIA_OP_RECORD) {
 			m->fd = open(m->payload, O_RDWR | O_CREAT | O_TRUNC);
-		}
+			if (m->fd < 0) {
+				free(m->payload);
+				m->payload = NULL;
+				return -MEDIA_ERROR;
+			}
+			m->state = MEDIA_STATE_RECORDING;
+		}	
 
 		free(m->payload);
 		m->payload = NULL;
 
-		if (m->fd < 0) {
-			return -MEDIA_ERROR;
-		}
 	} else if (m->type == MEDIA_TYPE_WAV_STREAM) {
 		// Todo: Supports network streaming
+		return -MEDIA_ERROR;
 	}
 
 	return MEDIA_OK;
@@ -293,7 +326,6 @@ int on_media_state_recording(struct pcm *pcmin, media_t *m, char *buffer, unsign
 			}
 		}
 	}
-
 	return readed;
 }
 
@@ -308,12 +340,16 @@ int threadfunc_audio_playing(void *args)
 	struct pcm_config config;
 	dq_entry_t *node;
 	int ret;
-
-	pcmout = pcm_open(0, 0, PCM_OUT, NULL);
-	buffer_size = pcm_get_buffer_size(pcmout);
-	buffer = (char *)malloc(buffer_size);
-
-	// Configuration
+#ifndef CONFIG_AUDIO_MULTI_CARD
+	struct pcm *pcmin;
+	int playing = 0;
+	int recording = 0;
+	buffer = NULL;
+	buffer_size = 0;
+	pcmout = NULL;
+	pcmin = NULL;
+#endif
+		// Configuration
 	config.channels = 2;
 	config.rate = 16000;
 	config.period_size = CONFIG_AUDIO_BUFFER_NUMBYTES;
@@ -322,9 +358,18 @@ int threadfunc_audio_playing(void *args)
 	config.start_threshold = 0;
 	config.stop_threshold = 0;
 	config.silence_threshold = 0;
-	pcm_set_config(pcmout, &config);
 
+#ifdef CONFIG_AUDIO_MULTI_CARD
+	pcmout = pcm_open(0, 0, PCM_OUT, &config);
+	buffer_size = pcm_get_buffer_size(pcmout);
+	buffer = (char *)malloc(buffer_size);
+#endif
+
+#ifdef CONFIG_AUDIO_MULTI_CARD
 	printf("audio_playing thread started. Buffer size: %d\n", buffer_size);
+#else
+	printf("audio thread started.\n");
+#endif
 
 	g_playing_live = true;
 
@@ -334,26 +379,62 @@ int threadfunc_audio_playing(void *args)
 		for (node = (dq_entry_t *)dq_peek(&g_playing_q); node && g_playing_live;) {
 			switch (((media_t *)node)->state) {
 			case MEDIA_STATE_CREATED:
-				if (on_media_state_created(pcmout, (media_t *)node) == MEDIA_OK) {
-					((media_t *)node)->state = MEDIA_STATE_PLAYING;
-				} else {
+				if (on_media_state_created((media_t *)node) != MEDIA_OK) {
 					printf("Media creation error!\n");
 					((media_t *)node)->state = MEDIA_STATE_STOPPING;
 				}
 				break;
 
 			case MEDIA_STATE_PLAYING:
+#ifndef CONFIG_AUDIO_MULTI_CARD
+				if (recording) {
+					continue;
+				}
+				if (!playing) {
+					pcmout = pcm_open(0, 0, PCM_OUT, &config);
+					buffer_size = pcm_get_buffer_size(pcmout);
+					buffer = (char *)malloc(buffer_size);
+					playing = 1;
+				}
+
+#endif
 				ret = on_media_state_playing(pcmout, (media_t *)node, buffer, buffer_size);
 				if (ret == 0) {
 					// If playing is done,
+#ifndef CONFIG_AUDIO_MULTI_CARD
+					playing = 0;
+					pcm_close(pcmout);
+					pcmout = NULL;
+#endif
 					dq_rem(node, &g_playing_q);
 					sem_wait(&g_sem_playing);
-					continue;
 				} else if (ret < 0) {
 					// Todo: Error handling
 					printf("Playing error!\n");
 				}
+				// Need pcm_drain api to ensure correctness 
 				break;
+#ifndef CONFIG_AUDIO_MULTI_CARD
+			case MEDIA_STATE_RECORDING:
+				if (playing) {
+					continue;
+				}
+				if (!recording) {
+					pcmin = pcm_open(0, 0, PCM_IN, &config);
+					buffer_size = pcm_get_buffer_size(pcmin);
+					buffer = (char *)malloc(buffer_size);
+					recording = 1;
+				}
+				if (on_media_state_recording(pcmin, (media_t *)node, buffer, buffer_size) < 0) {
+					// Todo: Error handling
+					recording = 0;
+					pcm_close(pcmin);
+					pcmin = NULL;
+					printf("Recording error!\n");
+				}
+
+				break;
+#endif
 
 			case MEDIA_STATE_PAUSING:
 				((media_t *)node)->state = MEDIA_STATE_PAUSED;
@@ -364,11 +445,35 @@ int threadfunc_audio_playing(void *args)
 				break;
 
 			case MEDIA_STATE_STOPPING:
+#ifndef CONFIG_AUDIO_MULTI_CARD
+				if (playing) {
+					pcm_close(pcmout);
+					pcmout = NULL;
+					playing = 0;
+				}
+				if (recording) {
+					pcm_close(pcmin);
+					pcmin = NULL;
+					recording = 0;
+				}
+#endif
 				dq_rem(node, &g_playing_q);
 				sem_wait(&g_sem_playing);
 				continue;
 
 			case MEDIA_STATE_CLOSING:
+#ifndef CONFIG_AUDIO_MULTI_CARD
+				if (playing) {
+					pcm_close(pcmout);
+					pcmout = NULL;
+					playing = 0;
+				}
+				if (recording) {
+					pcm_close(pcmin);
+					pcmin = NULL;
+					recording = 0;
+				}
+#endif
 				close(((media_t *)node)->fd);
 				dq_rem(node, &g_playing_q);
 				free(node);
@@ -387,7 +492,13 @@ int threadfunc_audio_playing(void *args)
 	}
 
 	sem_post(&g_sem_playing);
+
 	pcm_close(pcmout);
+	pcmout = NULL;
+#ifndef CONFIG_AUDIO_MULTI_CARD
+	pcm_close(pcmin);
+	pcmin = NULL;
+#endif
 
 	printf("audio_playing thread terminated.\n");
 	return MEDIA_OK;
@@ -401,10 +512,6 @@ int threadfunc_audio_recording(void *args)
 	struct pcm_config config;
 	dq_entry_t *node;
 
-	pcmin = pcm_open(0, 0, PCM_IN, NULL);
-	buffer_size = pcm_get_buffer_size(pcmin);
-	buffer = (char *)malloc(buffer_size);
-
 	// Configuration
 	config.channels = 2;
 	config.rate = 16000;
@@ -414,7 +521,11 @@ int threadfunc_audio_recording(void *args)
 	config.start_threshold = 0;
 	config.stop_threshold = 0;
 	config.silence_threshold = 0;
-	pcm_set_config(pcmin, &config);
+
+	pcmin = pcm_open(0, 0, PCM_IN, &config);
+	buffer_size = pcm_get_buffer_size(pcmin);
+	buffer = (char *)malloc(buffer_size);
+
 
 	printf("audio_recording thread started. Buffer size: %d\n", buffer_size);
 
@@ -426,9 +537,7 @@ int threadfunc_audio_recording(void *args)
 		for (node = (dq_entry_t *)dq_peek(&g_recording_q); node && g_recording_live;) {
 			switch (((media_t *)node)->state) {
 			case MEDIA_STATE_CREATED:
-				if (on_media_state_created(pcmin, (media_t *)node) == MEDIA_OK) {
-					((media_t *)node)->state = MEDIA_STATE_RECORDING;
-				} else {
+				if (on_media_state_created((media_t *)node) != MEDIA_OK) {
 					printf("Media creation error!\n");
 					((media_t *)node)->state = MEDIA_STATE_STOPPING;
 				}
@@ -474,7 +583,7 @@ int threadfunc_audio_recording(void *args)
 
 	sem_post(&g_sem_recording);
 	pcm_close(pcmin);
-
+	pcmin = NULL;
 	printf("audio_recording thread terminated.\n");
 	return MEDIA_OK;
 }
