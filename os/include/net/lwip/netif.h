@@ -372,6 +372,7 @@ void netif_register_with_initial_ip(struct netif *netif, netif_init_fn netif_ini
 /**
  * @brief Change IP address configuration for a network interface (including netmask and default gateway).
  *
+ * @details @b #include <net/lwip/netif.h>
  * @param[in] netif the network interface to change
  * @param[in] ipaddr the new IP address
  * @param[in] netmask the new netmask
@@ -395,6 +396,7 @@ void netif_remove(struct netif *netif);
 /**
  * @brief Find a network interface by searching for its name
  *
+ * @details @b #include <net/lwip/netif.h>
  * @param name the name of the netif (like netif->name) plus concatenated number
  * in ascii representation (e.g. 'en0')
  * @return netif the network interface
@@ -449,6 +451,7 @@ void netif_set_gw(struct netif *netif, ip_addr_t *gw);
 /**
  * @brief Bring an interface up, available for processing traffic.
  *
+ * @details @b #include <net/lwip/netif.h>
  * @param[in] netif the network interface to change
  * @return none
  * @since Tizen RT v1.0
@@ -458,6 +461,7 @@ void netif_set_up(struct netif *netif);
 /**
  * @brief Bring an interface down, disabling any traffic processing.
  *
+ * @details @b #include <net/lwip/netif.h>
  * @param[in] netif the network interface to change
  * @return none
  * @since Tizen RT v1.0
