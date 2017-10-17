@@ -71,6 +71,7 @@ extern "C" {
  */
 int st_things_initialize(const char *json_path, bool *easysetup_complete);
 
+//@cond
 /**
  * @brief Deinitializes things stack.
  *        Stack should have been initialized before calling this API.
@@ -81,9 +82,9 @@ int st_things_initialize(const char *json_path, bool *easysetup_complete);
  *         Initialize the stack by calling st_things_initialize().
  * @retval #ST_THINGS_ERROR_STACK_RUNNING Stack is currently running.
  *         Before deinitialize, stack needs to be stopped by calling st_things_stop().
- * @since Tizen RT v1.1
  */
 int st_things_deinitialize(void);
+//@endcond
 
 /**
  * @brief Callback for handling GET request.
@@ -199,6 +200,7 @@ typedef void (*st_things_pin_generated_cb) (const char *pin_data, const size_t p
  */
 typedef void (*st_things_pin_display_close_cb) (void);
 
+//@cond
 /**
  * @brief Callback registration function for getting randomly generated PIN for the PIN-Based Ownership Transfer Request.
  * @remarks Only one callback function can be set with this API.\n
@@ -212,9 +214,9 @@ typedef void (*st_things_pin_display_close_cb) (void);
  * @retval #ST_THINGS_ERROR_NONE Successful
  * @retval #ST_THINGS_ERROR_INVALID_PARAMETER Invalid parameter
  * @retval #ST_THINGS_ERROR_OPERATION_FAILED Operation failed
- * @since Tizen RT v1.1
  */
 int st_things_register_pin_handling_cb(st_things_pin_generated_cb generated_cb, st_things_pin_display_close_cb close_cb);
+//@endcond
 
 /**
  * @brief Callback for getting user's input regarding mutual verification.
