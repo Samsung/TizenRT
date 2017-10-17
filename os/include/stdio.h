@@ -401,7 +401,8 @@ int ungetc(int c, FAR FILE *stream);
 int printf(FAR const char *format, ...);
 /**
  * @brief put a string on standard output
- * @details POSIX API (refer to : http://pubs.opengroup.org/onlinepubs/9699919799/)
+ * @details @b #include <stdio.h> \n
+ * POSIX API (refer to : http://pubs.opengroup.org/onlinepubs/9699919799/)
  * @since Tizen RT v1.0
  */
 int puts(FAR const char *s);
