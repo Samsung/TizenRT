@@ -21,13 +21,11 @@
 #include <tinyara/config.h>
 #include <stdio.h>
 #include <errno.h>
-
 #include <sys/stat.h>
 #include <net/if.h>
 #include <arpa/inet.h>
 #include <netinet/in.h>
 #include <netutils/netlib.h>
-
 #include <sys/socket.h>
 
 #include "tc_internal.h"
@@ -96,7 +94,6 @@ static void tc_net_socket_pf_inet_sock_dgram_p(void)
 */
 static void tc_net_socket_pf_inet_sock_stream_p(void)
 {
-
 	int fd = -1;
 	fd = socket(PF_INET, SOCK_STREAM, 0);
 	TC_ASSERT_GEQ("socket", fd, 0)
@@ -115,7 +112,6 @@ static void tc_net_socket_pf_inet_sock_stream_p(void)
 */
 static void tc_net_socket_af_inet_sock_dgram_tcp_n(void)
 {
-
 	int fd = -1;
 	fd = socket(AF_INET, SOCK_DGRAM, IPPROTO_TCP);
 	TC_ASSERT_EQ("socket", fd, -1)
@@ -134,7 +130,6 @@ static void tc_net_socket_af_inet_sock_dgram_tcp_n(void)
 */
 static void tc_net_socket_af_inet_sock_dgram_udp_p(void)
 {
-
 	int fd = -1;
 	fd = socket(AF_INET, SOCK_DGRAM, IPPROTO_UDP);
 	TC_ASSERT_GEQ("socket", fd, 0)
@@ -153,14 +148,12 @@ static void tc_net_socket_af_inet_sock_dgram_udp_p(void)
 */
 static void tc_net_socket_af_inet_soc_dgram_icmp_p(void)
 {
-
 	int fd = -1;
 	fd = socket(AF_INET, SOCK_DGRAM, IPPROTO_ICMP);
 	TC_ASSERT_GEQ("socket", fd, 0)
 	TC_SUCCESS_RESULT()
 
 	close(fd);
-
 }
 
 /**
@@ -173,14 +166,12 @@ static void tc_net_socket_af_inet_soc_dgram_icmp_p(void)
 */
 static void tc_net_socket_af_inet_sock_dgram_igmp_p(void)
 {
-
 	int fd = -1;
 	fd = socket(AF_INET, SOCK_DGRAM, IPPROTO_IGMP);
 	TC_ASSERT_GEQ("socket", fd, 0)
 	TC_SUCCESS_RESULT()
 
 	close(fd);
-
 }
 
 /**
@@ -193,7 +184,6 @@ static void tc_net_socket_af_inet_sock_dgram_igmp_p(void)
 */
 static void tc_net_socket_af_inet_sock_dgram_ipv6_n(void)
 {
-
 	int fd = -1;
 	fd = socket(AF_INET, SOCK_DGRAM, IPPROTO_IPV6);
 	TC_ASSERT_EQ("socket", fd, -1)
@@ -212,7 +202,6 @@ static void tc_net_socket_af_inet_sock_dgram_ipv6_n(void)
 */
 static void tc_net_socket_af_inet_sock_dgram_routing_p(void)
 {
-
 	int fd = -1;
 	fd = socket(AF_INET, SOCK_DGRAM, IPPROTO_ROUTING);
 	TC_ASSERT_GEQ("socket", fd, 0)
@@ -231,7 +220,6 @@ static void tc_net_socket_af_inet_sock_dgram_routing_p(void)
 */
 static void tc_net_socket_af_inet_sock_dgram_fragment_p(void)
 {
-
 	int fd = -1;
 	fd = socket(AF_INET, SOCK_DGRAM, IPPROTO_FRAGMENT);
 	TC_ASSERT_GEQ("socket", fd, 0)
@@ -250,7 +238,6 @@ static void tc_net_socket_af_inet_sock_dgram_fragment_p(void)
 */
 static void tc_net_socket_af_inet_sock_dgram_icmpv6_n(void)
 {
-
 	int fd = -1;
 	fd = socket(AF_INET, SOCK_DGRAM, IPPROTO_ICMPV6);
 	TC_ASSERT_EQ("socket", fd, -1)
@@ -269,7 +256,6 @@ static void tc_net_socket_af_inet_sock_dgram_icmpv6_n(void)
 */
 static void tc_net_socket_af_unix_sock_dgram_tcp_n(void)
 {
-
 	int fd = -1;
 	fd = socket(AF_UNIX, SOCK_DGRAM, IPPROTO_TCP);
 	TC_ASSERT_EQ("socket", fd, -1)
@@ -288,7 +274,6 @@ static void tc_net_socket_af_unix_sock_dgram_tcp_n(void)
 */
 static void tc_net_socket_af_unix_sock_dgram_udp_p(void)
 {
-
 	int fd = -1;
 	fd = socket(AF_UNIX, SOCK_DGRAM, IPPROTO_UDP);
 	TC_ASSERT_GEQ("socket", fd, 0)
@@ -307,7 +292,6 @@ static void tc_net_socket_af_unix_sock_dgram_udp_p(void)
 */
 static void tc_net_socket_af_unix_sock_dgram_icmp_n(void)
 {
-
 	int fd = -1;
 	fd = socket(AF_UNIX, SOCK_DGRAM, IPPROTO_ICMP);
 	TC_ASSERT_EQ("socket", fd, -1)
@@ -326,7 +310,6 @@ static void tc_net_socket_af_unix_sock_dgram_icmp_n(void)
 */
 static void tc_net_socket_af_unix_sock_dgram_igmp_n(void)
 {
-
 	int fd = -1;
 	fd = socket(AF_UNIX, SOCK_DGRAM, IPPROTO_IGMP);
 	TC_ASSERT_EQ("socket", fd, -1)
@@ -452,7 +435,6 @@ static void tc_net_socket_af_unix_sock_stream_udp_n(void)
 */
 static void tc_net_socket_af_unix_sock_stream_icmp_n(void)
 {
-
 	int fd = -1;
 	fd = socket(AF_UNIX, SOCK_STREAM, IPPROTO_ICMP);
 	TC_ASSERT_EQ("socket", fd, -1)
@@ -471,7 +453,6 @@ static void tc_net_socket_af_unix_sock_stream_icmp_n(void)
 */
 static void tc_net_socket_af_unix_sock_stream_igmp_n(void)
 {
-
 	int fd = -1;
 	fd = socket(AF_UNIX, SOCK_STREAM, IPPROTO_IGMP);
 	TC_ASSERT_EQ("socket", fd, -1)
@@ -490,7 +471,6 @@ static void tc_net_socket_af_unix_sock_stream_igmp_n(void)
 */
 static void tc_net_socket_af_unix_sock_stream_ipv6_n(void)
 {
-
 	int fd = -1;
 	fd = socket(AF_UNIX, SOCK_STREAM, IPPROTO_IPV6);
 	TC_ASSERT_EQ("socket", fd, -1)
@@ -509,7 +489,6 @@ static void tc_net_socket_af_unix_sock_stream_ipv6_n(void)
 */
 static void tc_net_socket_af_unixsock_stream_routing_n(void)
 {
-
 	int fd = -1;
 	fd = socket(AF_UNIX, SOCK_STREAM, IPPROTO_ROUTING);
 	TC_ASSERT_EQ("socket", fd, -1)
@@ -528,7 +507,6 @@ static void tc_net_socket_af_unixsock_stream_routing_n(void)
 */
 static void tc_net_socket_af_unix_sock_stream_icmpv6_n(void)
 {
-
 	int fd = -1;
 	fd = socket(AF_UNIX, SOCK_STREAM, IPPROTO_ICMPV6);
 	TC_ASSERT_EQ("socket", fd, -1)
@@ -619,7 +597,6 @@ static void tc_net_socket_af_inet_sock_stream_protocol_n(void)
 */
 static void tc_net_socket_domain_sock_stream_protocol_n(void)
 {
-
 	int fd = -1;
 	fd = socket(30, SOCK_STREAM, 256);
 	TC_ASSERT_EQ("socket", fd, -1)
@@ -1214,7 +1191,6 @@ static void tc_net_socket_af_inet_sock_raw_igmp_p(void)
 */
 static void tc_net_socket_af_inet_sock_raw_ipv6_n(void)
 {
-
 	int fd = -1;
 	fd = socket(AF_INET, SOCK_RAW, IPPROTO_IPV6);
 	TC_ASSERT_EQ("socket", fd, -1)
@@ -1233,7 +1209,6 @@ static void tc_net_socket_af_inet_sock_raw_ipv6_n(void)
 */
 static void tc_net_socket_af_inet_sock_raw_routing_p(void)
 {
-
 	int fd = -1;
 	fd = socket(AF_INET, SOCK_RAW, IPPROTO_ROUTING);
 	TC_ASSERT_GEQ("socket", fd, 0)
@@ -1252,7 +1227,6 @@ static void tc_net_socket_af_inet_sock_raw_routing_p(void)
 */
 static void tc_net_socket_af_inet_sock_raw_fragment_p(void)
 {
-
 	int fd = -1;
 	fd = socket(AF_INET, SOCK_RAW, IPPROTO_FRAGMENT);
 	TC_ASSERT_GEQ("socket", fd, 0)
@@ -1271,7 +1245,6 @@ static void tc_net_socket_af_inet_sock_raw_fragment_p(void)
 */
 static void tc_net_socket_af_inet_sock_raw_icmpv6_n(void)
 {
-
 	int fd = -1;
 	fd = socket(AF_INET, SOCK_RAW, IPPROTO_ICMPV6);
 	TC_ASSERT_EQ("socket", fd, -1)
@@ -1290,7 +1263,6 @@ static void tc_net_socket_af_inet_sock_raw_icmpv6_n(void)
 */
 static void tc_net_socket_af_unix_sock_raw_n(void)
 {
-
 	int fd = -1;
 	fd = socket(AF_UNIX, SOCK_RAW, 0);
 	TC_ASSERT_EQ("socket", fd, -1)
@@ -1309,7 +1281,6 @@ static void tc_net_socket_af_unix_sock_raw_n(void)
 */
 static void tc_net_socket_af_unix_sock_raw_tcp_n(void)
 {
-
 	int fd = -1;
 	fd = socket(AF_UNIX, SOCK_RAW, IPPROTO_TCP);
 	TC_ASSERT_EQ("socket", fd, -1)
@@ -1328,7 +1299,6 @@ static void tc_net_socket_af_unix_sock_raw_tcp_n(void)
 */
 static void tc_net_socket_af_unix_sock_raw_udp_n(void)
 {
-
 	int fd = -1;
 	fd = socket(AF_UNIX, SOCK_RAW, IPPROTO_UDP);
 	TC_ASSERT_EQ("socket", fd, -1)
@@ -1347,7 +1317,6 @@ static void tc_net_socket_af_unix_sock_raw_udp_n(void)
 */
 static void tc_net_socket_af_unix_sock_raw_icmp_n(void)
 {
-
 	int fd = -1;
 	fd = socket(AF_UNIX, SOCK_RAW, IPPROTO_ICMP);
 	TC_ASSERT_EQ("socket", fd, -1)
@@ -1366,7 +1335,6 @@ static void tc_net_socket_af_unix_sock_raw_icmp_n(void)
 */
 static void tc_net_socket_af_unix_sock_raw_igmp_n(void)
 {
-
 	int fd = -1;
 	fd = socket(AF_UNIX, SOCK_RAW, IPPROTO_IGMP);
 	TC_ASSERT_EQ("socket", fd, -1)
@@ -1385,7 +1353,6 @@ static void tc_net_socket_af_unix_sock_raw_igmp_n(void)
 */
 static void tc_net_socket_af_unix_sock_raw_ipv6_n(void)
 {
-
 	int fd = -1;
 	fd = socket(AF_UNIX, SOCK_RAW, IPPROTO_IPV6);
 	TC_ASSERT_EQ("socket", fd, -1)
@@ -1404,7 +1371,6 @@ static void tc_net_socket_af_unix_sock_raw_ipv6_n(void)
 */
 static void tc_net_socket_af_unix_sock_raw_routing_n(void)
 {
-
 	int fd = -1;
 	fd = socket(AF_UNIX, SOCK_RAW, IPPROTO_ROUTING);
 	TC_ASSERT_EQ("socket", fd, -1)
@@ -1423,7 +1389,6 @@ static void tc_net_socket_af_unix_sock_raw_routing_n(void)
 */
 static void tc_net_socket_af_unix_sock_raw_fragment_n(void)
 {
-
 	int fd = -1;
 	fd = socket(AF_UNIX, SOCK_RAW, IPPROTO_FRAGMENT);
 	TC_ASSERT_EQ("socket", fd, -1)
@@ -1442,7 +1407,6 @@ static void tc_net_socket_af_unix_sock_raw_fragment_n(void)
 */
 static void tc_net_socket_af_unix_sock_raw_icmpv6_n(void)
 {
-
 	int fd = -1;
 	fd = socket(AF_UNIX, SOCK_RAW, IPPROTO_ICMPV6);
 	TC_ASSERT_EQ("socket", fd, -1)
@@ -1454,7 +1418,6 @@ static void tc_net_socket_af_unix_sock_raw_icmpv6_n(void)
 /****************************************************************************
  * Name: socket()
  ****************************************************************************/
-
 int net_socket_main(void)
 {
 	tc_net_socket_af_inet_sock_stream_p();

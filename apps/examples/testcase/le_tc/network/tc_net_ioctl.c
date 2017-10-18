@@ -21,14 +21,12 @@
 #include <tinyara/config.h>
 #include <stdio.h>
 #include <errno.h>
-
 #include <sys/stat.h>
 #include <net/if.h>
 #include <arpa/inet.h>
 #include <netinet/in.h>
 //#include <arch/board/board.h>
 #include <netutils/netlib.h>
-
 #include <sys/socket.h>
 
 #include "tc_internal.h"
@@ -45,7 +43,6 @@ extern int ioctlsocket(int s, long cmd, void *argp);
    */
 static void tc_net_ioctl_p(void)
 {
-
 	int fd = -1;
 	fd = socket(AF_INET, SOCK_DGRAM, 0);
 	long a = 0;
@@ -55,7 +52,6 @@ static void tc_net_ioctl_p(void)
 
 	TC_ASSERT_NEQ("ioctl", ret, -1);
 	TC_SUCCESS_RESULT();
-
 }
 
 /**
@@ -68,7 +64,6 @@ static void tc_net_ioctl_p(void)
    */
 static void tc_net_ioctl_fionread_n(void)
 {
-
 	int fd = -1;
 	fd = socket(AF_INET, SOCK_DGRAM, 0);
 	long a = 10;
@@ -78,7 +73,6 @@ static void tc_net_ioctl_fionread_n(void)
 
 	TC_ASSERT_NEQ("ioctl", ret, 0);
 	TC_SUCCESS_RESULT();
-
 }
 
 /**
@@ -91,25 +85,20 @@ static void tc_net_ioctl_fionread_n(void)
    */
 static void tc_net_ioctl_n(void)
 {
-
 	int fd = -1;
 	int ret = ioctlsocket(fd, FIONBIO, 0);
 
 	TC_ASSERT_NEQ("ioctl", ret, 0);
 	TC_SUCCESS_RESULT();
-
 }
 
 /****************************************************************************
  * Name: ioctl()
  ****************************************************************************/
-
 int net_ioctl_main(void)
 {
-
 	tc_net_ioctl_p();
 	tc_net_ioctl_fionread_n();
-
 	tc_net_ioctl_n();
 
 	return 0;

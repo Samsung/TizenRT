@@ -23,7 +23,6 @@
 #include <sys/stat.h>
 #include <net/if.h>
 #include <netutils/netlib.h>
-#include "tc_internal.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -34,9 +33,12 @@
 #include <sys/socket.h>
 #include <pthread.h>
 
+#include "tc_internal.h"
+
 #define PORTNUM 1112
 #define MAXRCVLEN 20
 int mut = 0;
+
 /**
    * @fn                   :shutdown_wait
    * @brief                :function to wait on semaphore
@@ -83,7 +85,6 @@ void tc_net_shutdown_recv_p(int fd)
 
 	TC_ASSERT_NEQ("shutdown", ret, -1);
 	TC_SUCCESS_RESULT();
-
 }
 
 /**
@@ -100,7 +101,6 @@ void tc_net_shutdown_send_p(int fd)
 
 	TC_ASSERT_NEQ("shutdown", ret, -1);
 	TC_SUCCESS_RESULT();
-
 }
 
 /**
@@ -117,7 +117,6 @@ void tc_net_shutdown_sendrecv_p(int fd)
 
 	TC_ASSERT_NEQ("shutdown", ret, -1);
 	TC_SUCCESS_RESULT();
-
 }
 
 /**
@@ -134,7 +133,6 @@ void tc_net_shutdown_n(void)
 
 	TC_ASSERT_EQ("shutdown", ret, -1);
 	TC_SUCCESS_RESULT();
-
 }
 
 /**
@@ -151,7 +149,6 @@ void tc_net_shutdown_sock_n(int fd)
 
 	TC_ASSERT_EQ("shutdown", ret, -1);
 	TC_SUCCESS_RESULT();
-
 }
 
 /**
@@ -196,7 +193,6 @@ void *shutdown_server(void *args)
 	close(SocketFD);
 
 	return 0;
-
 }
 
 /**
@@ -240,7 +236,6 @@ void *shutdown_client(void *args)
 	tc_net_shutdown_n();
 	close(mysocket);
 	return 0;
-
 }
 
 /****************************************************************************
@@ -248,14 +243,13 @@ void *shutdown_client(void *args)
  ****************************************************************************/
 int net_shutdown_main(void)
 {
-
-	pthread_t Server, Client;
+	pthread_t Server;
+	pthread_t Client;
 
 	pthread_create(&Server, NULL, shutdown_server, NULL);
 	pthread_create(&Client, NULL, shutdown_client, NULL);
 
 	pthread_join(Server, NULL);
-
 	pthread_join(Client, NULL);
 
 	return 0;

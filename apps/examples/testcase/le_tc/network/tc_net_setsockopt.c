@@ -21,14 +21,12 @@
 #include <tinyara/config.h>
 #include <stdio.h>
 #include <errno.h>
-
 #include <sys/stat.h>
 #include <net/if.h>
 #include <arpa/inet.h>
 #include <netinet/in.h>
 //#include <arch/board/board.h>
 #include <netutils/netlib.h>
-
 #include <sys/socket.h>
 
 #include "tc_internal.h"
@@ -213,7 +211,6 @@ static void tc_net_setsockopt_multicast_tcp_nodelay_p(int s)
 
 	TC_ASSERT_GEQ("setsockopt", ret, 0);
 	TC_SUCCESS_RESULT();
-
 }
 
 /**
@@ -233,7 +230,6 @@ static void tc_net_setsockopt_multicast_tcp_keepalive_p(int s)
 
 	TC_ASSERT_GEQ("setsockopt", ret, 0);
 	TC_SUCCESS_RESULT();
-
 }
 
 /**
@@ -253,7 +249,6 @@ static void tc_net_setsockopt_multicast_tcp_keepidle_p(int s)
 
 	TC_ASSERT_GEQ("setsockopt", ret, 0);
 	TC_SUCCESS_RESULT();
-
 }
 
 /**
@@ -273,7 +268,6 @@ static void tc_net_setsockopt_multicast_tcp_keepintvl_p(int s)
 
 	TC_ASSERT_GEQ("setsockopt", ret, 0);
 	TC_SUCCESS_RESULT();
-
 }
 
 /**
@@ -293,7 +287,6 @@ static void tc_net_setsockopt_multicast_tcp_keepcnt_p(int s)
 
 	TC_ASSERT_GEQ("setsockopt", ret, 0);
 	TC_SUCCESS_RESULT();
-
 }
 
 /**
@@ -313,7 +306,6 @@ static void tc_net_setsockopt_ip_tos_p(int s)
 
 	TC_ASSERT_GEQ("setsockopt", ret, 0);
 	TC_SUCCESS_RESULT();
-
 }
 
 /**
@@ -386,7 +378,6 @@ static void tc_net_setsockopt_broadcast_p(int s)
 
 	TC_ASSERT_GEQ("setsockopt", ret, 0);
 	TC_SUCCESS_RESULT();
-
 }
 
 /**
@@ -437,7 +428,6 @@ static void tc_net_setsockopt_rcvtimo_p(int s)
 
 	TC_ASSERT_GEQ("setsockopt", ret, 0);
 	TC_SUCCESS_RESULT();
-
 }
 
 /**
@@ -457,7 +447,6 @@ static void tc_net_setsockopt_reuseaddr_p(int s)
 
 	TC_ASSERT_GEQ("setsockopt", ret, 0);
 	TC_SUCCESS_RESULT();
-
 }
 
 /**
@@ -477,7 +466,6 @@ static void tc_net_setsockopt_reuseport_p(int s)
 
 	TC_ASSERT_GEQ("setsockopt", ret, 0);
 	TC_SUCCESS_RESULT();
-
 }
 
 /**
@@ -524,7 +512,6 @@ static void tc_net_setsockopt_keepalive_p(int s)
 
 	TC_ASSERT_GEQ("setsockopt", ret, 0);
 	TC_SUCCESS_RESULT();
-
 }
 
 /**
@@ -594,7 +581,6 @@ static void tc_net_setsockopt_bad_filedesc_n(void)
 
 	TC_ASSERT_EQ("setsockopt", ret, -1);
 	TC_SUCCESS_RESULT();
-
 }
 
 /**
@@ -614,7 +600,6 @@ static void tc_net_setsockopt_invalid_filedesc_n(void)
 
 	TC_ASSERT_EQ("setsockopt", ret, -1);
 	TC_SUCCESS_RESULT();
-
 }
 
 /**
@@ -634,7 +619,6 @@ static void tc_net_setsockopt_invalid_level_n(int s)
 
 	TC_ASSERT_EQ("setsockopt", ret, -1);
 	TC_SUCCESS_RESULT();
-
 }
 
 /**

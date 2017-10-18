@@ -29,7 +29,6 @@
 
 #include <net/lwip/netif.h>
 #include <net/lwip/opt.h>
-#include <net/lwip/debug.h>
 #include <net/lwip/def.h>
 #include <net/lwip/mem.h>
 #include <net/lwip/pbuf.h>
@@ -93,7 +92,6 @@ void ethernetif_status_callback(struct netif *netif)
  *       to become availale since the stack doesn't retry to send a packet
  *       dropped because of memory failure (except for the TCP timers).
  */
-
 static err_t ethernetif_output(struct netif *netif, struct pbuf *p)
 {
 	struct pbuf *q;

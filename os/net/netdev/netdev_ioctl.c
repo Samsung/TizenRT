@@ -416,7 +416,6 @@ static int netdev_ifrioctl(FAR struct socket *sock, int cmd, FAR struct ifreq *r
 	//nvdbg("cmd: %d\n", cmd);
 
 	/* Execute the command */
-
 	switch (cmd) {
 #ifdef CONFIG_NET_IPv4
 	case SIOCGIFADDR: {			/* Get IP address */
@@ -511,7 +510,7 @@ static int netdev_ifrioctl(FAR struct socket *sock, int cmd, FAR struct ifreq *r
 			gw = dev->gw;
 			netifapi_netif_set_addr(dev, &ipaddr, &netmask, &gw);
 			netifapi_netif_set_up(dev);
-			
+
 			ret = OK;
 #endif
 		}
@@ -621,7 +620,6 @@ static int netdev_ifrioctl(FAR struct socket *sock, int cmd, FAR struct ifreq *r
 		if (dev) {
 			if (req->ifr_flags & IFF_UP) {
 				/* Yes.. bring the interface up */
-
 				netdev_ifup(dev);
 			}
 
@@ -629,7 +627,6 @@ static int netdev_ifrioctl(FAR struct socket *sock, int cmd, FAR struct ifreq *r
 
 			else if (req->ifr_flags & IFF_DOWN) {
 				/* Yes.. take the interface down */
-
 				netdev_ifdown(dev);
 			}
 		}
@@ -997,7 +994,6 @@ errout:
  *   Bring the interface up/down
  *
  ****************************************************************************/
-
 void netdev_ifup(FAR struct netif *dev)
 {
 	/* Make sure that the device supports the d_ifup() method */

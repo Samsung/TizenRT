@@ -295,7 +295,6 @@ nu_ping_process(int count, const char *taddr)
 
 	while (1) {
 		if (nu_ping_send(s, &to) == ERR_OK) {
-			// printf("ping : send %d\n", ping_send_counter);
 			clock_gettime(CLOCK_REALTIME, &ping_time);
 			nu_ping_recv(s, &ping_time);
 		} else {

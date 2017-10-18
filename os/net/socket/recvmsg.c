@@ -96,7 +96,6 @@ ssize_t recvmsg(int sockfd, struct msghdr *msg, int flags)
 	struct sockaddr *from = (struct sockaddr *)msg->msg_name;
 	int *addrlen = &(msg->msg_namelen);
 
-	//printf("\n[Received IOTIVITY Packet][%s:%d] \n", __FUNCTION__, __LINE__);
 
 	return recvfrom(sockfd, buf, len, flags, from, (socklen_t *) addrlen);
 }

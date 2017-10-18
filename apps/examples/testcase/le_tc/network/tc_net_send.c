@@ -23,7 +23,6 @@
 #include <sys/stat.h>
 #include <net/if.h>
 #include <netutils/netlib.h>
-#include "tc_internal.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -33,6 +32,8 @@
 #include <netinet/in.h>
 #include <sys/socket.h>
 #include <pthread.h>
+
+#include "tc_internal.h"
 
 #define PORTNUM 1110
 #define MAXRCVLEN 20
@@ -79,7 +80,6 @@ void signal1(void)
    */
 void tc_net_send_p(int fd)
 {
-
 	char *msg = "Hello World !\n";
 	int ConnectFD = accept(fd, NULL, NULL);
 	int ret = send(ConnectFD, msg, strlen(msg), 0);
@@ -88,7 +88,6 @@ void tc_net_send_p(int fd)
 	TC_SUCCESS_RESULT();
 
 	close(ConnectFD);
-
 }
 
 /**
@@ -102,7 +101,6 @@ void tc_net_send_p(int fd)
    */
 void *server(void *args)
 {
-
 	struct sockaddr_in sa;
 	int SocketFD = socket(PF_INET, SOCK_STREAM, IPPROTO_TCP);
 
@@ -134,7 +132,6 @@ void *server(void *args)
    */
 void *client(void *args)
 {
-
 	char buffer[MAXRCVLEN];
 	int len, mysocket;
 	struct sockaddr_in dest;
@@ -154,7 +151,6 @@ void *client(void *args)
 
 	close(mysocket);
 	return 0;
-
 }
 
 /****************************************************************************
@@ -162,14 +158,13 @@ void *client(void *args)
  ****************************************************************************/
 int net_send_main(void)
 {
-
-	pthread_t Server, Client;
+	pthread_t Server;
+	pthread_t Client;
 
 	pthread_create(&Server, NULL, server, NULL);
 	pthread_create(&Client, NULL, client, NULL);
 
 	pthread_join(Server, NULL);
-
 	pthread_join(Client, NULL);
 
 	return 0;

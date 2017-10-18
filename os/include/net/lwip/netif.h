@@ -77,6 +77,7 @@
 
 #include <net/lwip/def.h>
 #include <net/lwip/pbuf.h>
+#include <net/if.h>
 #if LWIP_DHCP
 struct dhcp;
 #endif
@@ -89,7 +90,7 @@ struct autoip;
 /* Static IP ADDRESS */
 #define IP_ADDR0   192
 #define IP_ADDR1   168
-#define IP_ADDR2   2
+#define IP_ADDR2   0
 #define IP_ADDR3   10
 
 /* NETMASK */
@@ -101,7 +102,7 @@ struct autoip;
 /* Gateway Address */
 #define GW_ADDR0   192
 #define GW_ADDR1   168
-#define GW_ADDR2   2
+#define GW_ADDR2   0
 #define GW_ADDR3   1
 
 #ifdef __cplusplus
@@ -467,7 +468,7 @@ void netif_set_down(struct netif *netif);
 /// @cond
 
 /** Ask if an interface is up */
-#define netif_is_up(netif) (((netif)->flags & NETIF_FLAG_UP) ? (u8_t)1 : (u8_t)0)
+#define netif_is_up(netif) (((netif)->d_flags & IFF_UP) ? (u8_t)1 : (u8_t)0)
 
 #if LWIP_NETIF_STATUS_CALLBACK
 void netif_set_status_callback(struct netif *netif, netif_status_callback_fn status_callback);

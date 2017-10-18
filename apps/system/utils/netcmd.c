@@ -107,7 +107,7 @@ static void nic_display_state(void)
 	for (; i < num_nic; ifr++, i++) {
 		printf("%s\t", ifr->ifr_name);
 		sin = (struct sockaddr_in *)&ifr->ifr_addr;
-		if ((sin->sin_addr.s_addr) == INADDR_LOOPBACK) {
+		if ((sin->sin_addr.s_addr) == htonl(INADDR_LOOPBACK)) {
 			printf("Loop Back\t");
 		} else {
 			struct ifreq tmp;
@@ -137,7 +137,6 @@ int cmd_ifup(int argc, char **argv)
 {
 	FAR char *intf = NULL;
 	int ret;
-
 	if (argc != 2) {
 		printf("Please select nic_name:\n");
 		nic_display_state();

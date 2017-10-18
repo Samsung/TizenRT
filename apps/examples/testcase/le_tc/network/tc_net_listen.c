@@ -21,14 +21,12 @@
 #include <tinyara/config.h>
 #include <stdio.h>
 #include <errno.h>
-
 #include <sys/stat.h>
 #include <net/if.h>
 #include <arpa/inet.h>
 #include <netinet/in.h>
 //#include <arch/board/board.h>
 #include <netutils/netlib.h>
-
 #include <sys/socket.h>
 
 #include "tc_internal.h"
@@ -58,7 +56,6 @@ static void tc_net_listen_p(void)
 
 	TC_ASSERT_NEQ("listen", ret, -1);
 	TC_SUCCESS_RESULT();
-
 }
 
 /**
@@ -85,7 +82,6 @@ static void tc_net_listen_fd_n(void)
 	TC_ASSERT_NEQ("listen", ret, 0);
 	TC_SUCCESS_RESULT();
 	close(fd);
-
 }
 
 /**
@@ -113,7 +109,6 @@ static void tc_net_listen_backlog_p(void)
 
 	TC_ASSERT_NEQ("listen", ret, -1);
 	TC_SUCCESS_RESULT();
-
 }
 
 /**

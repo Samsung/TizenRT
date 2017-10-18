@@ -23,7 +23,6 @@
 #include <sys/stat.h>
 #include <net/if.h>
 #include <netutils/netlib.h>
-#include "tc_internal.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -33,6 +32,8 @@
 #include <netinet/in.h>
 #include <sys/socket.h>
 #include <pthread.h>
+
+#include "tc_internal.h"
 
 #define PORTNUM 7891
 #define TCPPORT 7890
@@ -64,7 +65,6 @@ void tc_net_sendto_p(int fd)
 
 	TC_ASSERT_NEQ("sendto", ret, -1);
 	TC_SUCCESS_RESULT();
-
 }
 
 /**
@@ -90,7 +90,6 @@ void tc_net_sendto_n(void)
 
 	TC_ASSERT_EQ("sendto", ret, -1);
 	TC_SUCCESS_RESULT();
-
 }
 
 /**
@@ -116,7 +115,6 @@ void tc_net_sendto_af_unix_n(int fd)
 
 	TC_ASSERT_EQ("sendto", ret, -1);
 	TC_SUCCESS_RESULT();
-
 }
 
 /**
@@ -143,7 +141,6 @@ void tc_net_sendto_shutdown_n(int fd)
 
 	TC_ASSERT_EQ("sendto", ret, -1);
 	TC_SUCCESS_RESULT();
-
 }
 
 /**
@@ -155,7 +152,6 @@ void tc_net_sendto_shutdown_n(int fd)
    * Postconditions        :
    * @return               :void *
    */
-
 void *sendto_udpserver(void *args)
 {
 	struct sockaddr_in sa;
@@ -176,7 +172,6 @@ void *sendto_udpserver(void *args)
 	close(SocketFD);
 
 	return 0;
-
 }
 
 /**
@@ -199,7 +194,6 @@ void *sendto_udpclient(void *args)
 	close(mysocket);
 
 	return 0;
-
 }
 
 /**
@@ -244,7 +238,6 @@ void sendto_signal(void)
    */
 void tc_net_sendto_tcp_p(int fd)
 {
-
 	char *msg = "Hello World !\n";
 	socklen_t fromlen = 0;
 	int ConnectFD = accept(fd, NULL, NULL);
@@ -255,7 +248,6 @@ void tc_net_sendto_tcp_p(int fd)
 
 	tc_net_sendto_tcp_n(ConnectFD);
 	tc_net_sendto_tcp_shutdown_n(ConnectFD);
-
 }
 
 /**
@@ -268,7 +260,6 @@ void tc_net_sendto_tcp_p(int fd)
    */
 void tc_net_sendto_tcp_n(int ConnectFD)
 {
-
 	char *msg = "Hello World !\n";
 	socklen_t fromlen = 0;
 
@@ -278,7 +269,6 @@ void tc_net_sendto_tcp_n(int ConnectFD)
 	TC_SUCCESS_RESULT();
 
 	close(ConnectFD);
-
 }
 
 /**
@@ -291,7 +281,6 @@ void tc_net_sendto_tcp_n(int ConnectFD)
    */
 void tc_net_sendto_tcp_shutdown_n(int ConnectFD)
 {
-
 	char *msg = "Hello World !\n";
 	socklen_t fromlen = 0;
 	shutdown(ConnectFD, SHUT_WR);
@@ -301,7 +290,6 @@ void tc_net_sendto_tcp_shutdown_n(int ConnectFD)
 	TC_SUCCESS_RESULT();
 
 	close(ConnectFD);
-
 }
 
 /**
@@ -316,7 +304,6 @@ void tc_net_sendto_tcp_shutdown_n(int ConnectFD)
 
 void *sendto_tcpserver(void *args)
 {
-
 	struct sockaddr_in sa;
 	int SocketFD = socket(PF_INET, SOCK_STREAM, IPPROTO_TCP);
 
@@ -335,7 +322,6 @@ void *sendto_tcpserver(void *args)
 
 	close(SocketFD);
 	pthread_exit(NULL);
-
 }
 
 /**
@@ -349,7 +335,6 @@ void *sendto_tcpserver(void *args)
    */
 void *sendto_tcpclient(void *args)
 {
-
 	char buffer[MAXRCVLEN];
 	int len, mysocket;
 	struct sockaddr_in dest;
@@ -370,17 +355,17 @@ void *sendto_tcpclient(void *args)
 
 	close(mysocket);
 	pthread_exit(NULL);
-
 }
 
 /****************************************************************************
  * Name: sendto()
  ****************************************************************************/
-
 int net_sendto_main(void)
 {
-
-	pthread_t Server, Client, tcpserver, tcpclient;
+	pthread_t Server;
+	pthread_t Client;
+	pthread_t tcpserver;
+	pthread_t tcpclient;
 
 	pthread_create(&Server, NULL, sendto_udpserver, NULL);
 	pthread_create(&Client, NULL, sendto_udpclient, NULL);
@@ -388,10 +373,8 @@ int net_sendto_main(void)
 	pthread_create(&tcpclient, NULL, sendto_tcpclient, NULL);
 
 	pthread_join(Server, NULL);
-
 	pthread_join(Client, NULL);
 	pthread_join(tcpserver, NULL);
-
 	pthread_join(tcpclient, NULL);
 	return 0;
 }
