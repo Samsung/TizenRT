@@ -8,7 +8,7 @@ config DM
 if DM
 choice
 	prompt "Choose the default implementation of LWM2M"
-	default LWM2M_WAKAAMA
+	default LWM2M_WAKAAMA_CLIENT
 config LWM2M_WAKAAMA
 	bool "LWM2M_WAKAAMA"
 	---help---
@@ -207,6 +207,7 @@ config ARTIK_SDK
 	select NETUTILS_MQTT
 	select NETUTILS_MQTT_SECURITY
 	select TLS_WITH_SSS
-	depends on LWM2M_WAKAAMA_CLIENT
+	select DM
+	select LWM2M_WAKAAMA_CLIENT
 	---help---
 		include the ARTIK SDK
