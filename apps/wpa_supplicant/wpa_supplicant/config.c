@@ -3477,6 +3477,11 @@ static int wpa_global_config_parse_str(const struct global_parse_data *data, str
 		return -1;
 	}
 
+	if (has_newline(pos)) {
+		wpa_printf(MSG_ERROR, "Line %d: invalid %s value with newline", line, data->name);
+		return -1;
+	}
+
 	tmp = os_strdup(pos);
 	if (tmp == NULL) {
 		return -1;
