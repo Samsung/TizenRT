@@ -62,6 +62,7 @@
 #include "aql.h"
 #include "db_debug.h"
 #include "lvm.h"
+#include "db_options.h"
 
 /****************************************************************************
 * Pre-processor Definitions
@@ -338,10 +339,17 @@ lvm_ip_t lvm_set_end(lvm_instance_t *p, lvm_ip_t end)
 	return old_end;
 }
 
-void lvm_set_type(lvm_instance_t *p, node_type_t type)
+lvm_status_t lvm_set_type(lvm_instance_t *p, node_type_t type)
 {
+	if (p->end >= DB_VM_BYTECODE_SIZE) {
+		DB_LOG_E("lvm_set_type failed because of overflow\n");
+		return STACK_OVERFLOW;
+	}
+
 	*(node_type_t *)(p->code + p->end) = type;
 	p->end += sizeof(type);
+
+	return LVM_TRUE;
 }
 
 lvm_status_t lvm_execute(lvm_instance_t *p)
@@ -370,28 +378,58 @@ lvm_status_t lvm_execute(lvm_instance_t *p)
 	return status;
 }
 
-void lvm_set_op(lvm_instance_t *p, operator_t op)
+lvm_status_t lvm_set_op(lvm_instance_t *p, operator_t op)
 {
-	lvm_set_type(p, LVM_ARITH_OP);
+	lvm_status_t result;
+
+	result = lvm_set_type(p, LVM_ARITH_OP);
+
+	if (LVM_ERROR(result) || p->end + sizeof(op) >= DB_VM_BYTECODE_SIZE) {
+		DB_LOG_E("lvm_set_op failed because of overflow\n");
+		return STACK_OVERFLOW;
+	}
+
 	memcpy(&p->code[p->end], &op, sizeof(op));
 	p->end += sizeof(op);
+
+	return LVM_TRUE;
 }
 
-void lvm_set_relation(lvm_instance_t *p, operator_t op)
+lvm_status_t lvm_set_relation(lvm_instance_t *p, operator_t op)
 {
-	lvm_set_type(p, LVM_CMP_OP);
+	lvm_status_t result;
+
+	result = lvm_set_type(p, LVM_CMP_OP);
+
+	if (LVM_ERROR(result) || p->end + sizeof(op) >= DB_VM_BYTECODE_SIZE) {
+		DB_LOG_E("lvm_set_relation failed because of overflow\n");
+		return STACK_OVERFLOW;
+	}
+
 	memcpy(&p->code[p->end], &op, sizeof(op));
 	p->end += sizeof(op);
+
+	return LVM_TRUE;
 }
 
-void lvm_set_operand(lvm_instance_t *p, operand_t *op)
+lvm_status_t lvm_set_operand(lvm_instance_t *p, operand_t *op)
 {
-	lvm_set_type(p, LVM_OPERAND);
+	lvm_status_t result;
+
+	result = lvm_set_type(p, LVM_OPERAND);
+
+	if (LVM_ERROR(result) || p->end + sizeof(*op) >= DB_VM_BYTECODE_SIZE) {
+		DB_LOG_E("lvm_set_operand failed because of overflow\n");
+		return STACK_OVERFLOW;
+	}
+
 	memcpy(&p->code[p->end], op, sizeof(*op));
 	p->end += sizeof(*op);
+
+	return LVM_TRUE;
 }
 
-void lvm_set_operand_value(lvm_instance_t *p, attribute_t *attr, unsigned char *value)
+lvm_status_t lvm_set_operand_value(lvm_instance_t *p, attribute_t *attr, unsigned char *value)
 {
 	operand_value_t operand_value;
 
@@ -402,17 +440,17 @@ void lvm_set_operand_value(lvm_instance_t *p, attribute_t *attr, unsigned char *
 		operand_value.l = (uint32_t)value[0] << 24 | (uint32_t)value[1] << 16 | (uint32_t)value[2] << 8 | value[3];
 	}
 
-	lvm_set_variable_value(p, attr->name, operand_value);
+	return lvm_set_variable_value(p, attr->name, operand_value);
 }
 
-void lvm_set_long(lvm_instance_t *p, long l)
+lvm_status_t lvm_set_long(lvm_instance_t *p, long l)
 {
 	operand_t op;
 
 	op.type = LVM_LONG;
 	op.value.l = l;
 
-	lvm_set_operand(p, &op);
+	return lvm_set_operand(p, &op);
 }
 
 lvm_status_t lvm_register_variable(lvm_instance_t *p, char *name, operand_type_t type)
@@ -422,7 +460,7 @@ lvm_status_t lvm_register_variable(lvm_instance_t *p, char *name, operand_type_t
 
 	id = lookup(p, name);
 	if (id == LVM_MAX_VARIABLE_ID) {
-		return VARIABLE_LIMIT_REACHED;
+		return INVALID_IDENTIFIER;
 	}
 
 	var = &p->variables[id];
@@ -447,18 +485,21 @@ lvm_status_t lvm_set_variable_value(lvm_instance_t *p, char *name, operand_value
 	return LVM_TRUE;
 }
 
-void lvm_set_variable(lvm_instance_t *p, char *name)
+lvm_status_t lvm_set_variable(lvm_instance_t *p, char *name)
 {
 	operand_t op;
 	variable_id_t id;
 
 	id = lookup(p, name);
-	if (id < LVM_MAX_VARIABLE_ID) {
-		DB_LOG_D("var id = %d\n", id);
-		op.type = LVM_VARIABLE;
-		op.value.id = id;
-		lvm_set_operand(p, &op);
+	if (id == LVM_MAX_VARIABLE_ID) {
+		return INVALID_IDENTIFIER;
 	}
+
+	DB_LOG_D("var id = %d\n", id);
+	op.type = LVM_VARIABLE;
+	op.value.id = id;
+
+	return lvm_set_operand(p, &op);
 }
 
 static void create_intersection(derivation_t *result, derivation_t *d1, derivation_t *d2)

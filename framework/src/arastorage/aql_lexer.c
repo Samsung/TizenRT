@@ -62,6 +62,7 @@
 #include <string.h>
 #include <sys/types.h>
 #include "aql.h"
+#include "db_options.h"
 
 /****************************************************************************
  * Private Types
@@ -217,6 +218,11 @@ static int next_string(lexer_t *lexer, const char *s)
 	*lexer->token = STRING_VALUE;
 	lexer->input = end + 1;		/* Skip the closing delimiter. */
 
+	/* The size of value is DB_MAX_ELEMENT_SIZE defined in db_options.h */
+	if (length >= DB_MAX_ELEMENT_SIZE) {
+		return -1;
+	}
+
 	memcpy(lexer->value, s, length);
 	(*lexer->value)[length] = '\0';
 
@@ -244,6 +250,11 @@ static int next_token(lexer_t *lexer, const char *s)
 	   so we regard it as an identifier. */
 
 	*lexer->token = IDENTIFIER;
+
+	/* The size of value is DB_MAX_ELEMENT_SIZE defined in db_options.h */
+	if (length >= DB_MAX_ELEMENT_SIZE) {
+		return -1;
+	}
 
 	memcpy(lexer->value, s, length);
 	(*lexer->value)[length] = '\0';
