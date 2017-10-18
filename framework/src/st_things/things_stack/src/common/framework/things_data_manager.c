@@ -480,7 +480,7 @@ static int init_things_info_file(cJSON *cjson, char *origin_json_str)
 		THINGS_LOG_V_ERROR(THINGS_ERROR, TAG, "%s is empty.", g_things_info_file_path);
 		is_valid = 0;
 	}
-	
+
 	if (is_valid == 0) {
 		THINGS_LOG_V_ERROR(THINGS_ERROR, TAG, "Try to reset the info file.");
 		if (set_json_string_into_file(g_things_info_file_path, origin_json_str) == 0) {
@@ -660,18 +660,22 @@ wifi_manager_softap_config_s *dm_get_softap_wifi_config(void)
 {
 	st_device_s *device = (st_device_s *) hashmap_get(g_device_hmap, (unsigned long)(0));
 	int ssid_type = (is_artik == true ? 1 : 0);
-	unsigned char mac_id[16] = {0, };
+	unsigned char mac_id[16] = { 0, };
+	char ssid_device_name[17];
+
+	snprintf(ssid_device_name, sizeof(ssid_device_name), "%s", device->name);
+	THINGS_LOG_V(THINGS_INFO, TAG, "DeviceName : %s", ssid_device_name);
 
 	wifi_manager_info_s st_wifi_info;
 	wifi_manager_get_info(&st_wifi_info);
 
 	snprintf(mac_id, sizeof(mac_id), "%02X%02X", st_wifi_info.mac_address[4], st_wifi_info.mac_address[5]);
 
-	snprintf(g_easysetup_softap_ssid, sizeof(g_easysetup_softap_ssid), "%s_%s%s%s%d%s", device->name, g_easysetup_tag, g_manufacturer_name, g_setup_id, 0, mac_id);
+	snprintf(g_easysetup_softap_ssid, sizeof(g_easysetup_softap_ssid), "%s_%s%s%s%d%s", ssid_device_name, g_easysetup_tag, g_manufacturer_name, g_setup_id, 0, mac_id);
 	THINGS_LOG_V(THINGS_INFO, TAG, "SoftAP SSID : %s", g_easysetup_softap_ssid);
 
-	strncpy(ap_config.ssid, g_easysetup_softap_ssid, strlen(g_easysetup_softap_ssid) + 1);
-	strncpy(ap_config.passphrase, g_easysetup_softap_passphrase, strlen(g_easysetup_softap_passphrase) + 1);
+	snprintf(ap_config.ssid, sizeof(ap_config.ssid), "%s", g_easysetup_softap_ssid);
+	snprintf(ap_config.passphrase, sizeof(ap_config.passphrase), "%s", g_easysetup_softap_passphrase);
 	ap_config.channel = g_easysetup_softap_channel;
 
 	return &ap_config;
@@ -872,10 +876,10 @@ static int parse_things_info_json(const char *filename)
 					}
 					if (NULL != manufacturer_url) {
 						memcpy(node->manufacturer_url, manufacturer_url->valuestring, strlen(manufacturer_url->valuestring) + 1);
-					}	
+					}
 					if (NULL != manufacturing_date) {
 						memcpy(node->manufacturing_date, manufacturing_date->valuestring, strlen(manufacturing_date->valuestring) + 1);
-					}						
+					}
 					if (NULL != model_number) {
 						memcpy(node->model_num, model_number->valuestring, strlen(model_number->valuestring) + 1);
 					}
@@ -927,7 +931,7 @@ static int parse_things_info_json(const char *filename)
 								node->collection[iter].rt_cnt = type_cnt;
 								for (int typeiter = 0; typeiter < type_cnt; typeiter++) {
 									cJSON *type = cJSON_GetArrayItem(types, typeiter);
-									node->collection[iter].resource_types[typeiter] = things_malloc(sizeof(char *) *strlen(type->valuestring) + 1);
+									node->collection[iter].resource_types[typeiter] = things_malloc(sizeof(char *) * strlen(type->valuestring) + 1);
 									memcpy(node->collection[iter].resource_types[typeiter], type->valuestring, strlen(type->valuestring) + 1);
 									THINGS_LOG_D(THINGS_INFO, TAG, "[COLLECTION] collection[iter].resource_types[typeiter] : %s", (node->collection[iter].resource_types[typeiter]));
 								}
@@ -941,7 +945,7 @@ static int parse_things_info_json(const char *filename)
 								node->collection[iter].if_cnt = if_cnt;
 								for (int ifiter = 0; ifiter < if_cnt; ifiter++) {
 									cJSON *interface = cJSON_GetArrayItem(interfaces, ifiter);
-									node->collection[iter].interface_types[ifiter] = things_malloc(sizeof(char *) *strlen(interface->valuestring) + 1);
+									node->collection[iter].interface_types[ifiter] = things_malloc(sizeof(char *) * strlen(interface->valuestring) + 1);
 									memcpy(node->collection[iter].interface_types[ifiter], interface->valuestring, strlen(interface->valuestring) + 1);
 								}
 							} else {
@@ -972,7 +976,7 @@ static int parse_things_info_json(const char *filename)
 										link_resource->rt_cnt = type_cnt;
 										for (int typeiter = 0; typeiter < type_cnt; typeiter++) {
 											cJSON *type = cJSON_GetArrayItem(types, typeiter);
-											link_resource->resource_types[typeiter] = things_malloc(sizeof(char *) *strlen(type->valuestring) + 1);
+											link_resource->resource_types[typeiter] = things_malloc(sizeof(char *) * strlen(type->valuestring) + 1);
 											memcpy(link_resource->resource_types[typeiter], type->valuestring, strlen(type->valuestring) + 1);
 										}
 									} else {
@@ -984,7 +988,7 @@ static int parse_things_info_json(const char *filename)
 										link_resource->if_cnt = if_cnt;
 										for (int ifiter = 0; ifiter < if_cnt; ifiter++) {
 											cJSON *interface = cJSON_GetArrayItem(interfaces, ifiter);
-											link_resource->interface_types[ifiter] = things_malloc(sizeof(char *) *strlen(interface->valuestring) + 1);
+											link_resource->interface_types[ifiter] = things_malloc(sizeof(char *) * strlen(interface->valuestring) + 1);
 											memcpy(link_resource->interface_types[ifiter], interface->valuestring, strlen(interface->valuestring) + 1);
 										}
 									} else {
@@ -1039,7 +1043,7 @@ static int parse_things_info_json(const char *filename)
 								node->single[iter].rt_cnt = type_cnt;
 								for (int typeiter = 0; typeiter < type_cnt; typeiter++) {
 									cJSON *type = cJSON_GetArrayItem(types, typeiter);
-									node->single[iter].resource_types[typeiter] = things_malloc(sizeof(char *) *strlen(type->valuestring) + 1);
+									node->single[iter].resource_types[typeiter] = things_malloc(sizeof(char *) * strlen(type->valuestring) + 1);
 									memcpy(node->single[iter].resource_types[typeiter], type->valuestring, strlen(type->valuestring) + 1);
 								}
 							} else {
@@ -1051,7 +1055,7 @@ static int parse_things_info_json(const char *filename)
 								node->single[iter].if_cnt = if_cnt;
 								for (int ifiter = 0; ifiter < if_cnt; ifiter++) {
 									cJSON *interface = cJSON_GetArrayItem(interfaces, ifiter);
-									node->single[iter].interface_types[ifiter] = things_malloc(sizeof(char *) *strlen(interface->valuestring) + 1);
+									node->single[iter].interface_types[ifiter] = things_malloc(sizeof(char *) * strlen(interface->valuestring) + 1);
 									memcpy(node->single[iter].interface_types[ifiter], interface->valuestring, strlen(interface->valuestring) + 1);
 								}
 							} else {
@@ -1188,10 +1192,10 @@ static int parse_things_info_json(const char *filename)
 
 								THINGS_LOG_D(THINGS_INFO, TAG, "[configuration] manufature_id : %s / setup_id : %s / artik : %d", manufature_id->valuestring, setup_id->valuestring, is_artik);
 
-								g_manufacturer_name = things_malloc(sizeof(char *) *strlen(manufature_id->valuestring) + 1);
+								g_manufacturer_name = things_malloc(sizeof(char *) * strlen(manufature_id->valuestring) + 1);
 								strncpy(g_manufacturer_name, manufature_id->valuestring, strlen(manufature_id->valuestring) + 1);
 
-								g_setup_id = things_malloc(sizeof(char *) *strlen(setup_id->valuestring) + 1);
+								g_setup_id = things_malloc(sizeof(char *) * strlen(setup_id->valuestring) + 1);
 								strncpy(g_setup_id, setup_id->valuestring, strlen(setup_id->valuestring) + 1);
 							} else {
 								return 0;
@@ -1713,7 +1717,7 @@ bool dm_register_device_id(void)
 		return false;
 	}
 
-	if ((dev_list = (st_device_s **) things_malloc(sizeof(st_device_s *) *device_cnt)) == NULL) {
+	if ((dev_list = (st_device_s **) things_malloc(sizeof(st_device_s *) * device_cnt)) == NULL) {
 		THINGS_LOG_ERROR(THINGS_ERROR, TAG, "st_device_s mem allocation is failed.");
 		return false;
 	}
@@ -1932,7 +1936,7 @@ int dm_get_device_information(int *cnt, st_device_s ***list)
 	int device_cnt = (int)hashmap_count(g_device_hmap);
 	if (device_cnt > 0) {
 		st_device_s **devices = NULL;
-		if ((devices = (st_device_s **) things_malloc(sizeof(st_device_s *) *device_cnt)) == NULL) {
+		if ((devices = (st_device_s **) things_malloc(sizeof(st_device_s *) * device_cnt)) == NULL) {
 			THINGS_LOG_ERROR(THINGS_ERROR, TAG, "st_device_s memory allocation is failed.");
 			return ret;
 		}
