@@ -41,8 +41,19 @@ bool handle_get_request_on_switch(st_things_get_request_message_s *req_msg, st_t
 	printf("[%s]IN-handle_get_request_on_switch() called..\n", TAG);
 
 	if (req_msg->has_property_key(req_msg, PROPERTY_VALUE_SWITCH)) {
+		st_things_representation_s *temp_rep = st_things_create_representation_inst();
+		if (temp_rep == NULL) {
+			printf("Create representation inst Failed\n");
+			return false;
+		}
+		temp_rep->set_str_value(temp_rep, "company", "Samsung");
+		temp_rep->set_str_value(temp_rep, "sdk", "ST Things SDK");
+
 		printf("[%s]current switch value: %d\n", TAG, g_switch_value);
+
 		resp_rep->set_str_value(resp_rep, PROPERTY_VALUE_SWITCH, g_switch_value ? power_status[0] : power_status[1]);
+		resp_rep->set_object_value(resp_rep, "userInfo", temp_rep);
+		st_things_destroy_representation_inst(temp_rep);
 	}
 
 	printf("[%s]OUT-handle_get_request_on_switch() called..\n", TAG);
