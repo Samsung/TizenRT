@@ -703,6 +703,27 @@ int is_hex(const u8 *data, size_t len)
 	return 0;
 }
 
+int has_ctrl_char(const u8 *data, size_t len)
+{
+	size_t i;
+
+	for (i = 0; i < len; i++) {
+		if (data[i] < 32 || data[i] == 127)
+			return 1;
+	}
+	return 0;
+}
+
+int has_newline(const char *str)
+{
+	while (*str) {
+		if (*str == '\n' || *str == '\r')
+			return 1;
+		str++;
+	}
+	return 0;
+}
+
 size_t merge_byte_arrays(u8 *res, size_t res_len, const u8 *src1, size_t src1_len, const u8 *src2, size_t src2_len)
 {
 	size_t len = 0;

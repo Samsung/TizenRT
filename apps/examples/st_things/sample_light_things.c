@@ -27,10 +27,16 @@
 
 #define TAG		"LIGHT_THINGS"
 
-static const char *g_res_switch = "/switch";
+static const char *g_res_switch = "/switch/main/0";
+static const char *g_res_dimming = "/switchLevel/main/0";
+static const char *g_res_temp = "/colorTemperature/main/0";
 
-extern bool handle_get_request_on_switch(st_things_get_request_message_s * req_msg, st_things_representation_s * resp_rep);
-extern bool handle_set_request_on_switch(st_things_set_request_message_s * req_msg, st_things_representation_s * resp_rep);
+extern bool handle_get_request_on_switch(st_things_get_request_message_s *req_msg, st_things_representation_s *resp_rep);
+extern bool handle_set_request_on_switch(st_things_set_request_message_s *req_msg, st_things_representation_s *resp_rep);
+extern bool handle_get_request_on_dimming(st_things_get_request_message_s *req_msg, st_things_representation_s *resp_rep);
+extern bool handle_set_request_on_dimming(st_things_set_request_message_s *req_msg, st_things_representation_s *resp_rep);
+extern bool handle_get_request_on_ct(st_things_get_request_message_s *req_msg, st_things_representation_s *resp_rep);
+extern bool handle_set_request_on_ct(st_things_set_request_message_s *req_msg, st_things_representation_s *resp_rep);
 
 #ifdef CONFIG_RESET_BUTTON
 static bool check_reset_button_pin_number(void)
@@ -68,33 +74,36 @@ static bool handle_ownership_transfer_request(void)
 	return true;
 }
 
-static bool handle_get_request(st_things_get_request_message_s * req_msg, st_things_representation_s * resp_rep)
+static bool handle_get_request(st_things_get_request_message_s *req_msg, st_things_representation_s *resp_rep)
 {
-	bool ret = false;
-
 	printf("Received a GET request on %s\n", req_msg->resource_uri);
 
 	if (0 == strncmp(req_msg->resource_uri, g_res_switch, strlen(g_res_switch))) {
-		ret = handle_get_request_on_switch(req_msg, resp_rep);
+		return handle_get_request_on_switch(req_msg, resp_rep);
+	} else if (0 == strncmp(req_msg->resource_uri, g_res_dimming, strlen(g_res_dimming))) {
+		return handle_get_request_on_dimming(req_msg, resp_rep);
+	} else if (0 == strncmp(req_msg->resource_uri, g_res_temp, strlen(g_res_temp))) {
+		return handle_get_request_on_ct(req_msg, resp_rep);
 	} else {
 		printf("Not supported uri.\n");
 	}
 
-	return ret;
+	return false;
 }
 
-static bool handle_set_request(st_things_set_request_message_s * req_msg, st_things_representation_s * resp_rep)
+static bool handle_set_request(st_things_set_request_message_s *req_msg, st_things_representation_s *resp_rep)
 {
 	printf("Received a SET request on %s\n", req_msg->resource_uri);
 
 	if (0 == strncmp(req_msg->resource_uri, g_res_switch, strlen(g_res_switch))) {
-		handle_set_request_on_switch(req_msg, resp_rep);
-		return true;
-	} else {
-		return false;
+		return handle_set_request_on_switch(req_msg, resp_rep);
+	} else if (0 == strncmp(req_msg->resource_uri, g_res_dimming, strlen(g_res_dimming))) {
+		return handle_set_request_on_dimming(req_msg, resp_rep);
+	} else if (0 == strncmp(req_msg->resource_uri, g_res_temp, strlen(g_res_temp))) {
+		return handle_set_request_on_ct(req_msg, resp_rep);
 	}
 
-	return true;
+	return false;
 }
 
 int ess_process(void)

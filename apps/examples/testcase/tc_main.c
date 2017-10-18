@@ -50,13 +50,13 @@
 #if defined(CONFIG_EXAMPLES_TESTCASE_DM_UTC) || defined(CONFIG_EXAMPLES_TESTCASE_DM_ITC)
 #define TC_DM_STACK  2048
 #endif
-#ifdef CONFIG_EXAMPLES_TESTCASE_WIFI_MANAGER_UTC
-#define TC_WIFI_MANAGER_STACK  2048
+#if defined(CONFIG_EXAMPLES_TESTCASE_WIFI_MANAGER_UTC) || defined(CONFIG_EXAMPLES_TESTCASE_WIFI_MANAGER_ITC)
+#define TC_WIFI_MANAGER_STACK  4096
 #endif
-#if defined(CONFIG_EXAMPLES_TESTCASE_MQTT_UTC)
+#if defined(CONFIG_EXAMPLES_TESTCASE_MQTT_UTC) || defined(CONFIG_EXAMPLES_TESTCASE_MQTT_ITC)
 #define TC_MQTT_STACK 4096
 #endif
-#ifdef CONFIG_EXAMPLES_TESTCASE_AUDIO_UTC
+#if defined(CONFIG_EXAMPLES_TESTCASE_AUDIO_UTC) || defined(CONFIG_EXAMPLES_TESTCASE_AUDIO_ITC)
 #define TC_AUDIO_STACK  2048
 #endif
 
@@ -77,8 +77,11 @@ extern int itc_sysio_main(int argc, char *argv[]);
 extern int utc_dm_main(int argc, char *argv[]);
 extern int itc_dm_main(int argc, char *argv[]);
 extern int utc_wifi_manager_main(int argc, char *argv[]);
+extern int itc_wifi_manager_main(int argc, char *argv[]);
 extern int utc_mqtt_main(int argc, char *argv[]);
+extern int itc_mqtt_main(int argc, char *argv[]);
 extern int utc_audio_main(int argc, char *argv[]);
+extern int itc_audio_main(int argc, char *argv[]);
 
 /* Not yet */
 extern int mpu_tc_main(int argc, char *argv[]);
@@ -166,16 +169,34 @@ int tc_main(int argc, char *argv[])
 		printf("Wi-Fi Manager utc is not started, err = %d\n", pid);
 	}
 #endif
+#ifdef CONFIG_EXAMPLES_TESTCASE_WIFI_MANAGER_ITC
+	pid = task_create("wifimgritc", SCHED_PRIORITY_DEFAULT, TC_WIFI_MANAGER_STACK, itc_wifi_manager_main, argv);
+	if (pid < 0) {
+		printf("Wi-Fi Manager itc is not started, err = %d\n", pid);
+	}
+#endif
 #ifdef CONFIG_EXAMPLES_TESTCASE_MQTT_UTC
 	pid = task_create("mqttutc", SCHED_PRIORITY_DEFAULT, TC_MQTT_STACK, utc_mqtt_main, argv);
 	if (pid < 0) {
 		printf("MQTT utc is not started, err = %d\n", pid);
 	}
 #endif
+#ifdef CONFIG_EXAMPLES_TESTCASE_MQTT_ITC
+	pid = task_create("mqttitc", SCHED_PRIORITY_DEFAULT, TC_MQTT_STACK, itc_mqtt_main, argv);
+	if (pid < 0) {
+		printf("MQTT itc is not started, err = %d\n", pid);
+	}
+#endif
 #ifdef CONFIG_EXAMPLES_TESTCASE_AUDIO_UTC
 	pid = task_create("audioutc", SCHED_PRIORITY_DEFAULT, TC_AUDIO_STACK, utc_audio_main, argv);
 	if (pid < 0) {
 		printf("Audio utc is not started, err = %d\n", pid);
+	}
+#endif
+#ifdef CONFIG_EXAMPLES_TESTCASE_AUDIO_ITC
+	pid = task_create("audioitc", SCHED_PRIORITY_DEFAULT, TC_AUDIO_STACK, itc_audio_main, argv);
+	if (pid < 0) {
+		printf("Audio itc is not started, err = %d\n", pid);
 	}
 #endif
 	do {

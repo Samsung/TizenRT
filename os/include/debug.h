@@ -150,6 +150,7 @@ Once LOGM is approved, each module should have its own index
 #else
 /**
  * @brief  Error debug
+ * @details @b #include <debug.h>
  * @since Tizen RT v1.0
  */
 #define dbg(format, ...) \
@@ -160,6 +161,7 @@ Once LOGM is approved, each module should have its own index
 #ifdef CONFIG_ARCH_LOWPUTC
 /**
  * @brief  Error debug for low-level
+ * @details @b #include <debug.h>
  * @since Tizen RT v1.0
  */
 #define lldbg(format, ...) \
@@ -185,6 +187,7 @@ Once LOGM is approved, each module should have its own index
 #else
 /**
  * @brief  Warning debug
+ * @details @b #include <debug.h>
  * @since Tizen RT v1.0
  */
 #define wdbg(format, ...) \
@@ -193,6 +196,7 @@ Once LOGM is approved, each module should have its own index
 #ifdef CONFIG_ARCH_LOWPUTC
 /**
  * @brief  Warning debug for low-level
+ * @details @b #include <debug.h>
  * @since Tizen RT v1.0
  */
 #define llwdbg(format, ...) \
@@ -218,6 +222,7 @@ Once LOGM is approved, each module should have its own index
 #else
 /**
  * @brief  Informational(Verbose) debug
+ * @details @b #include <debug.h>
  * @since Tizen RT v1.0
  */
 #define vdbg(format, ...) \
@@ -226,6 +231,7 @@ Once LOGM is approved, each module should have its own index
 #ifdef CONFIG_ARCH_LOWPUTC
 /**
  * @brief  Informational(Verbose) debug for low-level
+ * @details @b #include <debug.h>
  * @since Tizen RT v1.0
  */
 #define llvdbg(format, ...) \
@@ -1133,9 +1139,10 @@ extern "C" {
  * @ingroup DEBUG_KERNEL
  * @brief  Dump a buffer of data
  *
- * @param[in] message for buffer dump
- * @param[in] buffer
- * @param[in] length for buffer
+ * @details @b #include <debug.h>
+ * @param[in] msg message for buffer dump
+ * @param[in] buffer buffer
+ * @param[in] buflen length for buffer
  * @return void
  * @since Tizen RT v1.1
  */

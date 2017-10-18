@@ -24,7 +24,7 @@
 #include <arastorage/arastorage.h>
 #include <apps/shell/tash.h>
 #include <tinyara/fs/fs_utils.h>
-#include "../../../tc_common.h"
+#include "tc_common.h"
 
 /****************************************************************************
  * Definitions

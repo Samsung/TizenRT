@@ -87,8 +87,11 @@ include ta_tc/arastorage/itc/Make.defs
 include ta_tc/device_management/utc/Make.defs
 include ta_tc/device_management/itc/Make.defs
 include ta_tc/wifi_manager/utc/Make.defs
+include ta_tc/wifi_manager/itc/Make.defs
 include ta_tc/mqtt/utc/Make.defs
+include ta_tc/mqtt/itc/Make.defs
 include ta_tc/audio/utc/Make.defs
+include ta_tc/audio/itc/Make.defs
 
 endif
 

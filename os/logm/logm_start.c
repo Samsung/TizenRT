@@ -15,14 +15,14 @@
  * language governing permissions and limitations under the License.
  *
  ****************************************************************************/
-#include <sched.h>
+#include <tinyara/kthread.h>
 #include "logm.h"
 
 void logm_start(void)
 {
 	int pid;
 
-	pid = task_create("logm", LOGM_TASK_PRORITY, LOGM_TASK_STACKSIZE, logm_task, NULL);
+	pid = kernel_thread("logm", LOGM_TASK_PRORITY, LOGM_TASK_STACKSIZE, logm_task, NULL);
 
 	if (pid < 0) {
 		return;

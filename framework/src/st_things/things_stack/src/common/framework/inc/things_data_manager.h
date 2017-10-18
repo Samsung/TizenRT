@@ -36,6 +36,9 @@
 #define MAX_DEVICE_DESCRIPTION_LENGTH  (255)
 #define MAX_DEVICE_CAPABILTY_CNT       (50)
 #define MAX_DEVICE_MODEL_ID_LENGTH     (64)
+#define MAX_DEVICE_MANUFACTURER_NAME_LENGTH     (255)
+#define MAX_DEVICE_MANUFACTURER_URL_LENGTH      (255)
+#define MAX_DEVICE_MANUFACTURER_DATE_LENGTH     (32)
 #define MAX_FILE_ACCESS_CNT             (10)
 #define MAX_URI_LENGTH_OCF              (128)
 #define MAX_PROPERTY_CNT                (20)
@@ -64,6 +67,9 @@ typedef struct st_device_s {
 	int no;
 	char type[MAX_DEVICE_TYPE_LENGTH];
 	char name[MAX_DEVICE_NAME_LENGTH];
+	char manufacturer_name[MAX_DEVICE_MANUFACTURER_NAME_LENGTH];
+	char manufacturer_url[MAX_DEVICE_MANUFACTURER_URL_LENGTH];
+	char manufacturing_date[MAX_DEVICE_MANUFACTURER_DATE_LENGTH];
 	char model_num[MAX_DEVICE_MODEL_ID_LENGTH];
 	char ver_p[MAX_DEVICE_VER_P];	// mnpv
 	char ver_os[MAX_DEVICE_VER_OS];	// mnhw
@@ -92,12 +98,10 @@ const char *dm_get_certificate_file_path(void);
 const char *dm_get_privatekey_file_path(void);
 const char *dm_get_filename(int filenum);
 const char *dm_get_things_device_type(int device_id);
-const char *dm_get_resource_uri(int device_num, int index);
 const char *dm_get_things_cloud_address(char *customized_ci_server);
 
 const int dm_get_file_id(int filenum);
 const int dm_get_num_of_files(void);
-const int dm_get_num_of_children(int device_num);
 const int dm_get_wifi_property_interface();
 const int dm_get_ownership_transfer_method();
 const wifi_freq_e dm_get_wifi_property_freq();

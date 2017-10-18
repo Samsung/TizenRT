@@ -62,6 +62,7 @@ extern "C" {
 /**
  * @brief initializes i2c_context.
  *
+ * @details @b #include <iotbus/iotbus_i2c.h>
  * @param[in] bus i2c bus number
  * @return On success, handle of i2c_context is returned. On failure, NULL is returned.
  * @since Tizen RT v1.0
@@ -71,6 +72,7 @@ iotbus_i2c_context_h iotbus_i2c_init(int bus);
 /**
  * @brief closes i2c_context.
  *
+ * @details @b #include <iotbus/iotbus_i2c.h>
  * @param[in] hnd handle of i2c_context
  * @return On success, 0 is returned. On failure, a negative value is returned.
  * @since Tizen RT v1.0
@@ -80,6 +82,7 @@ int iotbus_i2c_stop(iotbus_i2c_context_h hnd);
 /**
  * @brief sets the i2c frequency.
  *
+ * @details @b #include <iotbus/iotbus_i2c.h>
  * @param[in] hnd handle of i2c_context
  * @param[in] mode i2c frequency mode
  * @return On success, 0 is returned. On failure, a negative value is returned.
@@ -90,6 +93,7 @@ int iotbus_i2c_set_frequency(iotbus_i2c_context_h hnd, iotbus_i2c_mode_e mode);
 /**
  * @brief sets the i2c slave address.
  *
+ * @details @b #include <iotbus/iotbus_i2c.h>
  * @param[in] hnd handle of i2c_context
  * @param[in] address i2c address
  * @return On success, 0 is returned. On failure, a negative value is returned.
@@ -100,6 +104,7 @@ int iotbus_i2c_set_address(iotbus_i2c_context_h hnd, uint8_t address);
 /**
  * @brief reads from i2c device.
  *
+ * @details @b #include <iotbus/iotbus_i2c.h>
  * @param[in] hnd handle of i2c_context
  * @param[in] data the pointer of data buffer
  * @param[in] length size to read
@@ -111,6 +116,7 @@ int iotbus_i2c_read(iotbus_i2c_context_h hnd, uint8_t *data, size_t length);
 /**
  * @brief writes to i2c device.
  *
+ * @details @b #include <iotbus/iotbus_i2c.h>
  * @param[in] hnd handle of i2c_context
  * @param[in] data the pointer of data buffer
  * @param[in] length size to write

@@ -23,8 +23,8 @@
 #include <tinyara/config.h>
 #include <stdio.h>
 #include <string.h>
+#include <semaphore.h>
 #include <arastorage/arastorage.h>
-#include <apps/shell/tash.h>
 #include <tinyara/fs/fs_utils.h>
 #include "tc_common.h"
 
@@ -35,17 +35,20 @@
 #define CONFIG_MOUNT_POINT "/mnt"
 #endif
 
-#define RELATION_NAME1 "rel1"
-#define RELATION_NAME2 "rel2"
-#define INDEX_BPLUS "bplustree"
-#define INDEX_INLINE "inline"
-#define QUERY_LENGTH 128
+#define RELATION_NAME1  "rel1"
+#define RELATION_NAME2  "rel2"
+#define INDEX_BPLUS     "bplustree"
+#define INDEX_INLINE    "inline"
+#define QUERY_LENGTH    128
 
-#define DATA_SET_NUM 10
+#define DATA_SET_NUM    10
 #define DATA_SET_MULTIPLIER 80
+
 /****************************************************************************
  *  Global Variables
  ****************************************************************************/
+extern sem_t tc_sem;
+extern int working_tc;
 
 static db_cursor_t *g_cursor;
 
@@ -70,7 +73,7 @@ const static struct arastorage_data_type_s g_arastorage_data_set[DATA_SET_NUM] =
 	{20160110,       "watermelon", 10.0}
 };
 
-void check_query_result(char * query)
+static void check_query_result(char * query)
 {
 	db_result_t res;
 	g_cursor = db_query(query);
@@ -91,6 +94,20 @@ void check_query_result(char * query)
  * Public Functions
  ****************************************************************************/
 
+/* Clean up all components used in these TCs */
+static void cleanup(void)
+{
+	char query[QUERY_LENGTH];
+
+	memset(query, 0, QUERY_LENGTH);
+	snprintf(query, QUERY_LENGTH, "REMOVE RELATION %s;", RELATION_NAME1);
+	db_exec(query);
+
+	memset(query, 0, QUERY_LENGTH);
+	snprintf(query, QUERY_LENGTH, "REMOVE RELATION %s;", RELATION_NAME2);
+	db_exec(query);
+}
+
 /**
 * @testcase         utc_arastorage_db_init_tc_p
 * @brief            Initialize database resources
@@ -99,7 +116,7 @@ void check_query_result(char * query)
 * @precondition     none
 * @postcondition    none
 */
-void utc_arastorage_db_init_tc_p(void)
+static void utc_arastorage_db_init_tc_p(void)
 {
 	db_result_t res;
 
@@ -117,7 +134,7 @@ void utc_arastorage_db_init_tc_p(void)
 * @precondition     none
 * @postcondition    none
 */
-void utc_arastorage_db_deinit_tc_p(void)
+static void utc_arastorage_db_deinit_tc_p(void)
 {
 	db_result_t res;
 
@@ -135,11 +152,14 @@ void utc_arastorage_db_deinit_tc_p(void)
 * @precondition     none
 * @postcondition    none
 */
-void utc_arastorage_db_exec_tc_p(void)
+static void utc_arastorage_db_exec_tc_p(void)
 {
 	db_result_t res;
 	char query[QUERY_LENGTH];
 	int i;
+
+	/* cleanup called for cleaning all undeleted resources */
+	cleanup();
 
 	snprintf(query, QUERY_LENGTH, "CREATE RELATION %s;", RELATION_NAME1);
 	res = db_exec(query);
@@ -305,7 +325,7 @@ void utc_arastorage_db_exec_tc_p(void)
 * @precondition     none
 * @postcondition    none
 */
-void utc_arastorage_db_exec_tc_n(void)
+static void utc_arastorage_db_exec_tc_n(void)
 {
 	db_result_t res;
 	char query[QUERY_LENGTH];
@@ -362,7 +382,7 @@ void utc_arastorage_db_exec_tc_n(void)
 * @precondition     utc_arastorage_db_exec_tc_p should be passed
 * @postcondition    none
 */
-void utc_arastorage_db_query_tc_p(void)
+static void utc_arastorage_db_query_tc_p(void)
 {
 	db_result_t res;
 	char query[QUERY_LENGTH];
@@ -431,7 +451,7 @@ void utc_arastorage_db_query_tc_p(void)
 * @precondition     none
 * @postcondition    none
 */
-void utc_arastorage_db_query_tc_n(void)
+static void utc_arastorage_db_query_tc_n(void)
 {
 	char query[QUERY_LENGTH];
 	char *name = "BAD_RELATION";
@@ -455,7 +475,7 @@ void utc_arastorage_db_query_tc_n(void)
 * @precondition     none
 * @postcondition    none
 */
-void utc_arastorage_db_get_result_message_tc_p(void)
+static void utc_arastorage_db_get_result_message_tc_p(void)
 {
 	TC_ASSERT_EQ("db_get_result_message", strcmp(DB_FINISHED_MSG, db_get_result_message(DB_FINISHED)), 0);
 	TC_ASSERT_EQ("db_get_result_message", strcmp(DB_OK_MSG, db_get_result_message(DB_OK)), 0);
@@ -486,7 +506,7 @@ void utc_arastorage_db_get_result_message_tc_p(void)
 * @precondition     none
 * @postcondition    none
 */
-void utc_arastorage_db_get_result_message_tc_n(void)
+static void utc_arastorage_db_get_result_message_tc_n(void)
 {
 	int num;
 
@@ -505,7 +525,7 @@ void utc_arastorage_db_get_result_message_tc_n(void)
 * @precondition     utc_arastorage_db_exec_tc_p, utc_arastorage_db_query_tc_p should be passed
 * @postcondition    none
 */
-void utc_arastorage_db_print_header_tc_p(void)
+static void utc_arastorage_db_print_header_tc_p(void)
 {
 	db_result_t res;
 
@@ -523,7 +543,7 @@ void utc_arastorage_db_print_header_tc_p(void)
 * @precondition     none
 * @postcondition    none
 */
-void utc_arastorage_db_print_header_tc_n(void)
+static void utc_arastorage_db_print_header_tc_n(void)
 {
 	db_result_t res;
 
@@ -541,7 +561,7 @@ void utc_arastorage_db_print_header_tc_n(void)
 * @precondition     utc_arastorage_db_exec_tc_p, utc_arastorage_db_query_tc_p should be passed
 * @postcondition    none
 */
-void utc_arastorage_db_print_tuple_tc_p(void)
+static void utc_arastorage_db_print_tuple_tc_p(void)
 {
 	db_result_t res;
 
@@ -563,7 +583,7 @@ void utc_arastorage_db_print_tuple_tc_p(void)
 * @precondition	    none
 * @postcondition    none
 */
-void utc_arastorage_db_print_tuple_tc_n(void)
+static void utc_arastorage_db_print_tuple_tc_n(void)
 {
 	db_result_t res;
 
@@ -581,7 +601,7 @@ void utc_arastorage_db_print_tuple_tc_n(void)
 * @precondition     utc_arastorage_db_exec_tc_p, utc_arastorage_db_query_tc_p should be passed
 * @postcondition    none
 */
-void utc_arastorage_db_print_value_tc_p(void)
+static void utc_arastorage_db_print_value_tc_p(void)
 {
 	db_result_t res;
 
@@ -605,7 +625,7 @@ void utc_arastorage_db_print_value_tc_p(void)
 * @precondition     none
 * @postcondition    none
 */
-void utc_arastorage_db_print_value_tc_n(void)
+static void utc_arastorage_db_print_value_tc_n(void)
 {
 	db_result_t res;
 
@@ -626,7 +646,7 @@ void utc_arastorage_db_print_value_tc_n(void)
 * @precondition     utc_arastorage_db_exec_tc_p, utc_arastorage_db_query_tc_p should be passed
 * @postcondition    none
 */
-void utc_arastorage_db_cursor_free_tc_p(void)
+static void utc_arastorage_db_cursor_free_tc_p(void)
 {
 	db_result_t res;
 
@@ -645,7 +665,7 @@ void utc_arastorage_db_cursor_free_tc_p(void)
 * @precondition     none
 * @postcondition    none
 */
-void utc_arastorage_db_cursor_free_tc_n(void)
+static void utc_arastorage_db_cursor_free_tc_n(void)
 {
 	db_result_t res;
 
@@ -668,7 +688,7 @@ void utc_arastorage_db_cursor_free_tc_n(void)
 * @precondition     utc_arastorage_db_exec_tc_p, utc_arastorage_db_query_tc_p should be passed
 * @postcondition    none
 */
-void utc_arastorage_cursor_get_count_tc_p(void)
+static void utc_arastorage_cursor_get_count_tc_p(void)
 {
 	tuple_id_t count;
 
@@ -687,7 +707,7 @@ void utc_arastorage_cursor_get_count_tc_p(void)
 * @precondition     none
 * @postcondition    none
 */
-void utc_arastorage_cursor_get_count_tc_n(void)
+static void utc_arastorage_cursor_get_count_tc_n(void)
 {
 	tuple_id_t count;
 
@@ -706,7 +726,7 @@ void utc_arastorage_cursor_get_count_tc_n(void)
 * @precondition     utc_arastorage_db_exec_tc_p, utc_arastorage_db_query_tc_p should be passed
 * @postcondition    none
 */
-void utc_arastorage_cursor_move_first_tc_p(void)
+static void utc_arastorage_cursor_move_first_tc_p(void)
 {
 	db_result_t res;
 
@@ -726,7 +746,7 @@ void utc_arastorage_cursor_move_first_tc_p(void)
 * @precondition     none
 * @postcondition    none
 */
-void utc_arastorage_cursor_move_first_tc_n(void)
+static void utc_arastorage_cursor_move_first_tc_n(void)
 {
 	db_result_t res;
 
@@ -745,7 +765,7 @@ void utc_arastorage_cursor_move_first_tc_n(void)
 * @precondition     utc_arastorage_db_exec_tc_p, utc_arastorage_db_query_tc_p should be passed
 * @postcondition    none
 */
-void utc_arastorage_cursor_move_next_tc_p(void)
+static void utc_arastorage_cursor_move_next_tc_p(void)
 {
 	db_result_t res;
 
@@ -765,7 +785,7 @@ void utc_arastorage_cursor_move_next_tc_p(void)
 * @precondition     none
 * @postcondition    none
 */
-void utc_arastorage_cursor_move_next_tc_n(void)
+static void utc_arastorage_cursor_move_next_tc_n(void)
 {
 	db_result_t res;
 
@@ -784,7 +804,7 @@ void utc_arastorage_cursor_move_next_tc_n(void)
 * @precondition     utc_arastorage_db_exec_tc_p, utc_arastorage_db_query_tc_p should be passed
 * @postcondition    none
 */
-void utc_arastorage_cursor_move_prev_tc_p(void)
+static void utc_arastorage_cursor_move_prev_tc_p(void)
 {
 	db_result_t res;
 
@@ -804,7 +824,7 @@ void utc_arastorage_cursor_move_prev_tc_p(void)
 * @precondition     none
 * @postcondition    none
 */
-void utc_arastorage_cursor_move_prev_tc_n(void)
+static void utc_arastorage_cursor_move_prev_tc_n(void)
 {
 	db_result_t res;
 
@@ -823,7 +843,7 @@ void utc_arastorage_cursor_move_prev_tc_n(void)
 * @precondition     utc_arastorage_db_exec_tc_p, utc_arastorage_db_query_tc_p should be passed
 * @postcondition    none
 */
-void utc_arastorage_cursor_move_last_tc_p(void)
+static void utc_arastorage_cursor_move_last_tc_p(void)
 {
 	db_result_t res;
 
@@ -843,7 +863,7 @@ void utc_arastorage_cursor_move_last_tc_p(void)
 * @precondition	    none
 * @postcondition    none
 */
-void utc_arastorage_cursor_move_last_tc_n(void)
+static void utc_arastorage_cursor_move_last_tc_n(void)
 {
 	db_result_t res;
 
@@ -862,7 +882,7 @@ void utc_arastorage_cursor_move_last_tc_n(void)
 * @precondition     utc_arastorage_db_exec_tc_p, utc_arastorage_db_query_tc_p should be passed
 * @postcondition    none
 */
-void utc_arastorage_cursor_move_to_tc_p(void)
+static void utc_arastorage_cursor_move_to_tc_p(void)
 {
 	db_result_t res;
 	tuple_id_t row = 3;
@@ -883,7 +903,7 @@ void utc_arastorage_cursor_move_to_tc_p(void)
 * @precondition     none
 * @postcondition    none
 */
-void utc_arastorage_cursor_move_to_tc_n(void)
+static void utc_arastorage_cursor_move_to_tc_n(void)
 {
 	db_result_t res;
 	tuple_id_t row = 3;
@@ -908,7 +928,7 @@ void utc_arastorage_cursor_move_to_tc_n(void)
 * @precondition     utc_arastorage_db_exec_tc_p, utc_arastorage_db_query_tc_p should be passed
 * @postcondition    none
 */
-void utc_arastorage_cursor_get_row_tc_p(void)
+static void utc_arastorage_cursor_get_row_tc_p(void)
 {
 	cursor_row_t row;
 	tuple_id_t id = 3;
@@ -927,7 +947,7 @@ void utc_arastorage_cursor_get_row_tc_p(void)
 * @precondition     none
 * @postcondition    none
 */
-void utc_arastorage_cursor_get_row_tc_n(void)
+static void utc_arastorage_cursor_get_row_tc_n(void)
 {
 	cursor_row_t row;
 	tuple_id_t id = 3;
@@ -946,7 +966,7 @@ void utc_arastorage_cursor_get_row_tc_n(void)
 * @precondition	    utc_arastorage_db_exec_tc_p, utc_arastorage_db_query_tc_p should be passed
 * @postcondition    none
 */
-void utc_arastorage_cursor_is_first_row_tc_p(void)
+static void utc_arastorage_cursor_is_first_row_tc_p(void)
 {
 	db_result_t res;
 
@@ -966,7 +986,7 @@ void utc_arastorage_cursor_is_first_row_tc_p(void)
 * @precondition     none
 * @postcondition    none
 */
-void utc_arastorage_cursor_is_first_row_tc_n(void)
+static void utc_arastorage_cursor_is_first_row_tc_n(void)
 {
 	db_result_t res;
 	char query[QUERY_LENGTH];
@@ -994,7 +1014,7 @@ void utc_arastorage_cursor_is_first_row_tc_n(void)
 * @precondition     utc_arastorage_db_exec_tc_p, utc_arastorage_db_query_tc_p should be passed
 * @postcondition    none
 */
-void utc_arastorage_cursor_is_last_row_tc_p(void)
+static void utc_arastorage_cursor_is_last_row_tc_p(void)
 {
 	db_result_t res;
 
@@ -1014,7 +1034,7 @@ void utc_arastorage_cursor_is_last_row_tc_p(void)
 * @precondition	    none
 * @postcondition    none
 */
-void utc_arastorage_cursor_is_last_row_tc_n(void)
+static void utc_arastorage_cursor_is_last_row_tc_n(void)
 {
 	db_result_t res;
 	char query[QUERY_LENGTH];
@@ -1042,7 +1062,7 @@ void utc_arastorage_cursor_is_last_row_tc_n(void)
 * @precondition     utc_arastorage_db_exec_tc_p, utc_arastorage_db_query_tc_p should be passed
 * @postcondition    none
 */
-void utc_arastorage_cursor_get_attr_type_tc_p(void)
+static void utc_arastorage_cursor_get_attr_type_tc_p(void)
 {
 	domain_t domain;
 
@@ -1072,7 +1092,7 @@ void utc_arastorage_cursor_get_attr_type_tc_p(void)
 * @precondition     none
 * @postcondition    none
 */
-void utc_arastorage_cursor_get_attr_type_tc_n(void)
+static void utc_arastorage_cursor_get_attr_type_tc_n(void)
 {
 	domain_t domain;
 
@@ -1103,7 +1123,7 @@ void utc_arastorage_cursor_get_attr_type_tc_n(void)
 * @precondition     utc_arastorage_db_exec_tc_p, utc_arastorage_db_query_tc_p should be passed
 * @postcondition    none
 */
-void utc_arastorage_cursor_get_attr_name_tc_p(void)
+static void utc_arastorage_cursor_get_attr_name_tc_p(void)
 {
 	char *attr_name;
 
@@ -1137,7 +1157,7 @@ void utc_arastorage_cursor_get_attr_name_tc_p(void)
 * @precondition     none
 * @postcondition    none
 */
-void utc_arastorage_cursor_get_attr_name_tc_n(void)
+static void utc_arastorage_cursor_get_attr_name_tc_n(void)
 {
 	char *attr_name;
 
@@ -1178,7 +1198,7 @@ void utc_arastorage_cursor_get_attr_name_tc_n(void)
 * @precondition     utc_arastorage_db_exec_tc_p, utc_arastorage_db_query_tc_p should be passed
 * @postcondition    none
 */
-void utc_arastorage_cursor_get_attr_index_tc_p(void)
+static void utc_arastorage_cursor_get_attr_index_tc_p(void)
 {
 	attribute_id_t index;
 
@@ -1211,7 +1231,7 @@ void utc_arastorage_cursor_get_attr_index_tc_p(void)
 * @precondition     none
 * @postcondition    none
 */
-void utc_arastorage_cursor_get_attr_index_tc_n(void)
+static void utc_arastorage_cursor_get_attr_index_tc_n(void)
 {
 	attribute_id_t index;
 
@@ -1244,7 +1264,7 @@ void utc_arastorage_cursor_get_attr_index_tc_n(void)
 * @precondition     utc_arastorage_db_exec_tc_p, utc_arastorage_db_query_tc_p should be passed
 * @postcondition    none
 */
-void utc_arastorage_cursor_get_int_value_tc_p(void)
+static void utc_arastorage_cursor_get_int_value_tc_p(void)
 {
 	int value;
 
@@ -1267,7 +1287,7 @@ void utc_arastorage_cursor_get_int_value_tc_p(void)
 * @precondition     none
 * @postcondition    none
 */
-void utc_arastorage_cursor_get_int_value_tc_n(void)
+static void utc_arastorage_cursor_get_int_value_tc_n(void)
 {
 	int value;
 
@@ -1289,7 +1309,7 @@ void utc_arastorage_cursor_get_int_value_tc_n(void)
 * @precondition     utc_arastorage_db_exec_tc_p, utc_arastorage_db_query_tc_p should be passed
 * @postcondition    none
 */
-void utc_arastorage_cursor_get_long_value_tc_p(void)
+static void utc_arastorage_cursor_get_long_value_tc_p(void)
 {
 	long value;
 
@@ -1312,7 +1332,7 @@ void utc_arastorage_cursor_get_long_value_tc_p(void)
 * @precondition     none
 * @postcondition    none
 */
-void utc_arastorage_cursor_get_long_value_tc_n(void)
+static void utc_arastorage_cursor_get_long_value_tc_n(void)
 {
 	long value;
 
@@ -1335,7 +1355,7 @@ void utc_arastorage_cursor_get_long_value_tc_n(void)
 * @precondition     utc_arastorage_db_exec_tc_p, utc_arastorage_db_query_tc_p should be passed
 * @postcondition    none
 */
-void utc_arastorage_cursor_get_double_value_tc_p(void)
+static void utc_arastorage_cursor_get_double_value_tc_p(void)
 {
 	double value;
 
@@ -1358,7 +1378,7 @@ void utc_arastorage_cursor_get_double_value_tc_p(void)
 * @precondition     none
 * @postcondition    none
 */
-void utc_arastorage_cursor_get_double_value_tc_n(void)
+static void utc_arastorage_cursor_get_double_value_tc_n(void)
 {
 	double value;
 
@@ -1381,7 +1401,7 @@ void utc_arastorage_cursor_get_double_value_tc_n(void)
 * @precondition     utc_arastorage_db_exec_tc_p, utc_arastorage_db_query_tc_p should be passed
 * @postcondition    none
 */
-void utc_arastorage_cursor_get_string_value_tc_p(void)
+static void utc_arastorage_cursor_get_string_value_tc_p(void)
 {
 	unsigned char *value;
 
@@ -1404,7 +1424,7 @@ void utc_arastorage_cursor_get_string_value_tc_p(void)
 * @precondition	    none
 * @postcondition    none
 */
-void utc_arastorage_cursor_get_string_value_tc_n(void)
+static void utc_arastorage_cursor_get_string_value_tc_n(void)
 {
 	unsigned char *value;
 
@@ -1418,26 +1438,19 @@ void utc_arastorage_cursor_get_string_value_tc_n(void)
 	TC_SUCCESS_RESULT();
 }
 
-void cleanup(void)
+#ifdef CONFIG_BUILD_KERNEL
+int main(int argc, FAR char *argv[])
+#else
+int utc_arastorage_main(int argc, char *argv[])
+#endif
 {
-	char query[QUERY_LENGTH];
-	db_result_t res;
+	sem_wait(&tc_sem);
+	working_tc++;
 
-	memset(query, 0, QUERY_LENGTH);
-	snprintf(query, QUERY_LENGTH, "REMOVE RELATION %s;", RELATION_NAME1);
-	res = db_exec(query);
-	TC_ASSERT_EQ("db_exec", DB_SUCCESS(res), true);
-
-	memset(query, 0, QUERY_LENGTH);
-	snprintf(query, QUERY_LENGTH, "REMOVE RELATION %s;", RELATION_NAME2);
-	res = db_exec(query);
-	TC_ASSERT_EQ("db_exec", DB_SUCCESS(res), true);
-}
-
-int arastorage_sample_launcher(int argc, FAR char *argv[])
-{
 	total_pass = 0;
 	total_fail = 0;
+
+	printf("=== TINYARA Arastorage TC START! ===\n");
 
 	utc_arastorage_db_init_tc_p();
 	utc_arastorage_db_exec_tc_p();
@@ -1504,27 +1517,14 @@ int arastorage_sample_launcher(int argc, FAR char *argv[])
 	cleanup();
 	db_deinit();
 
-
 	printf("#########################################\n");
 	printf("         Arastorage Negative TC Result            \n");
 	printf("         Total TC : %d              \n", (total_pass + total_fail));
 	printf("         PASS : %d FAIL : %d        \n", total_pass, total_fail);
 	printf("#########################################\n");
 
-	return 0;
-}
+	working_tc--;
+	sem_post(&tc_sem);
 
-#ifdef CONFIG_BUILD_KERNEL
-int main(int argc, FAR char *argv[])
-#else
-int utc_arastorage_main(int argc, char *argv[])
-#endif
-{
-#ifdef CONFIG_TASH
-	tash_cmd_install("arastorage_utc", arastorage_sample_launcher, TASH_EXECMD_SYNC);
-#else
-	arastorage_sample_launcher(argc, argv);
-#endif
 	return 0;
-
 }

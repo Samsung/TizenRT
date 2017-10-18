@@ -201,7 +201,9 @@ extern "C" {
  */
 
 /**
- * @brief  POSIX API (refer to : http://pubs.opengroup.org/onlinepubs/9699919799/)
+ * @brief return absolute value
+ * @details @b #include <inttypes.h> \n
+ * POSIX API (refer to : http://pubs.opengroup.org/onlinepubs/9699919799/)
  * @since Tizen RT v1.0
  */
 intmax_t imaxabs(intmax_t);

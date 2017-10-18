@@ -61,6 +61,7 @@ extern "C" {
 /**
  * @brief initializes uart_context.
  *
+ * @details @b #include <iotbus/iotbus_uart.h>
  * @param[in] path uart device node path
  * @return On success, handle of uart_context is returned. On failure, NULL is returned.
  * @since Tizen RT v1.0
@@ -70,6 +71,7 @@ iotbus_uart_context_h iotbus_uart_init(const char *path);
 /**
  * @brief closes uart_context.
  *
+ * @details @b #include <iotbus/iotbus_uart.h>
  * @param[in] hnd handle of uart_context
  * @return On success, 0 is returned. On failure, a negative value is returned.
  * @since Tizen RT v1.0
@@ -79,6 +81,7 @@ int iotbus_uart_stop(iotbus_uart_context_h hnd);
 /**
  * @brief flushes uart buffer.
  *
+ * @details @b #include <iotbus/iotbus_uart.h>
  * @param[in] hnd handle of uart_context
  * @return On success, 0 is returned. On failure, a negative value is returned.
  * @since Tizen RT v1.0
@@ -88,6 +91,7 @@ int iotbus_uart_flush(iotbus_uart_context_h hnd);
 /**
  * @brief sets uart baud rate.
  *
+ * @details @b #include <iotbus/iotbus_uart.h>
  * @param[in] hnd handle of uart_context
  * @param[in] baud uart baud rate
  * @return On success, 0 is returned. On failure, a negative value is returned.
@@ -98,6 +102,7 @@ int iotbus_uart_set_baudrate(iotbus_uart_context_h hnd, unsigned int baud);
 /**
  * @brief sets byte size, parity bit and stop bits.
  *
+ * @details @b #include <iotbus/iotbus_uart.h>
  * @param[in] hnd handle of uart_context
  * @param[in] bytesize uart byte size
  * @param[in] parity uart parity type
@@ -110,6 +115,7 @@ int iotbus_uart_set_mode(iotbus_uart_context_h hnd, int bytesize, iotbus_uart_pa
 /**
  * @brief set flow control settings.
  *
+ * @details @b #include <iotbus/iotbus_uart.h>
  * @param[in] hnd handle of uart_context
  * @param[in] xonxoff ixon/ixoff
  * @param[in] rtscts rts/cts
@@ -121,6 +127,7 @@ int iotbus_uart_set_flowcontrol(iotbus_uart_context_h hnd, int xonxoff, int rtsc
 /**
  * @brief reads data over uart bus.
  *
+ * @details @b #include <iotbus/iotbus_uart.h>
  * @param[in] hnd handle of uart_context
  * @param[in] buf the pointer of data buffer
  * @param[in] length size to read
@@ -132,6 +139,7 @@ int iotbus_uart_read(iotbus_uart_context_h hnd, char *buf, unsigned int length);
 /**
  * @brief writes data over uart bus.
  *
+ * @details @b #include <iotbus/iotbus_uart.h>
  * @param[in] hnd handle of uart_context
  * @param[in] buf the pointer of data buffer
  * @param[in] length size to write

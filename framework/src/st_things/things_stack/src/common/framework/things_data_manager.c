@@ -65,7 +65,7 @@
 #define KEY_DEVICE_SPECIFICATION_DEVICE_DATAMODELVERSION    "dataModelVersion"
 #define KEY_DEVICE_SPECIFICATION_PLATFORM   "platform"
 #define KEY_DEVICE_SPECIFICATION_PLATFORM_MANUFACTURERNAME  "manufacturerName"
-#define KEY_DEVICE_SPECIFICATION_PLATFORM_MANUFACTURERURI   "manufacturerUrl"
+#define KEY_DEVICE_SPECIFICATION_PLATFORM_MANUFACTURERURL   "manufacturerUrl"
 #define KEY_DEVICE_SPECIFICATION_PLATFORM_MANUFACTURINGDATE "manufacturingDate"
 #define KEY_DEVICE_SPECIFICATION_PLATFORM_MODELNUMBER   "modelNumber"
 #define KEY_DEVICE_SPECIFICATION_PLATFORM_PLATFORMVERSION   "platformVersion"
@@ -270,12 +270,6 @@ static const struct things_resource_info_s const gstResources[] = {
 		.policy = 3
 	}
 };
-
-bool update_and_save_device_info(st_device_s **dev_list, int dev_cnt)
-{
-	assert(1);
-	return false;
-}
 
 /**
  *	@fn get_cloud_server_address
@@ -864,7 +858,7 @@ static int parse_things_info_json(const char *filename)
 				cJSON *spec_platform = cJSON_GetObjectItem(specification, KEY_DEVICE_SPECIFICATION_PLATFORM);
 				if (NULL != spec_platform) {
 					cJSON *manufacturer_name = cJSON_GetObjectItem(spec_platform, KEY_DEVICE_SPECIFICATION_PLATFORM_MANUFACTURERNAME);
-					cJSON *manufacturer_uri = cJSON_GetObjectItem(spec_platform, KEY_DEVICE_SPECIFICATION_PLATFORM_MANUFACTURERURI);
+					cJSON *manufacturer_url = cJSON_GetObjectItem(spec_platform, KEY_DEVICE_SPECIFICATION_PLATFORM_MANUFACTURERURL);
 					cJSON *manufacturing_date = cJSON_GetObjectItem(spec_platform, KEY_DEVICE_SPECIFICATION_PLATFORM_MANUFACTURINGDATE);
 					cJSON *model_number = cJSON_GetObjectItem(spec_platform, KEY_DEVICE_SPECIFICATION_PLATFORM_MODELNUMBER);
 					cJSON *platform_version = cJSON_GetObjectItem(spec_platform, KEY_DEVICE_SPECIFICATION_PLATFORM_PLATFORMVERSION);
@@ -873,6 +867,15 @@ static int parse_things_info_json(const char *filename)
 					cJSON *firmware_version = cJSON_GetObjectItem(spec_platform, KEY_DEVICE_SPECIFICATION_PLATFORM_FIRMWAREVERSION);
 					cJSON *vendor_id = cJSON_GetObjectItem(spec_platform, KEY_DEVICE_SPECIFICATION_PLATFORM_VENDORID);
 
+					if (NULL != manufacturer_name) {
+						memcpy(node->manufacturer_name, manufacturer_name->valuestring, strlen(manufacturer_name->valuestring) + 1);
+					}
+					if (NULL != manufacturer_url) {
+						memcpy(node->manufacturer_url, manufacturer_url->valuestring, strlen(manufacturer_url->valuestring) + 1);
+					}	
+					if (NULL != manufacturing_date) {
+						memcpy(node->manufacturing_date, manufacturing_date->valuestring, strlen(manufacturing_date->valuestring) + 1);
+					}						
 					if (NULL != model_number) {
 						memcpy(node->model_num, model_number->valuestring, strlen(model_number->valuestring) + 1);
 					}
@@ -1643,7 +1646,7 @@ static things_resource_s *register_platform_resource(things_server_builder_s *p_
 
 		ret->rep = things_create_representation_inst(NULL);
 		if (ret->rep) {
-			THINGS_LOG_D(THINGS_DEBUG, TAG, "[/oic/p] Manufacturer :%s", MANUFACTURER_NAME);
+			THINGS_LOG_D(THINGS_DEBUG, TAG, "[/oic/p] Manufacturer :%s", device->manufacturer_name);
 			THINGS_LOG_D(THINGS_DEBUG, TAG, "[/oic/p] Model Name :%s", device->model_num);
 			THINGS_LOG_D(THINGS_DEBUG, TAG, "[/oic/p] Ver. Plaform :%s", device->ver_p);
 			THINGS_LOG_D(THINGS_DEBUG, TAG, "[/oic/p] Ver. OS :%s", device->ver_os);
@@ -1653,7 +1656,7 @@ static things_resource_s *register_platform_resource(things_server_builder_s *p_
 
 			ret->rep->things_set_value(ret->rep, OC_RSRVD_PLATFORM_ID, device->device_id);
 
-			ret->rep->things_set_value(ret->rep, OC_RSRVD_MFG_NAME, MANUFACTURER_NAME);
+			ret->rep->things_set_value(ret->rep, OC_RSRVD_MFG_NAME, device->manufacturer_name);
 
 			ret->rep->things_set_value(ret->rep, OC_RSRVD_MODEL_NUM, device->model_num);
 
@@ -1665,7 +1668,7 @@ static things_resource_s *register_platform_resource(things_server_builder_s *p_
 
 			ret->rep->things_set_value(ret->rep, OC_RSRVD_FIRMWARE_VERSION, device->ver_fw);
 
-			ret->rep->things_set_value(ret->rep, OC_RSRVD_MFG_URL, MANUFACTURER_URL);
+			ret->rep->things_set_value(ret->rep, OC_RSRVD_MFG_URL, device->manufacturer_url);
 
 			ret->rep->things_set_value(ret->rep, OC_RSRVD_VID, device->vender_id);
 		} else {
@@ -1687,30 +1690,6 @@ long dm_get_num_of_dev_cnt(void)
 st_device_s *dm_get_info_of_dev(unsigned long number)
 {
 	return (st_device_s *) hashmap_get(g_device_hmap, number);
-}
-
-bool dm_register_user_define_device_id(const int seq_thing_info, const char *dev_id)
-{
-	if (is_support_user_def_dev_list == false) {
-		THINGS_LOG_V_ERROR(THINGS_ERROR, TAG, "No More Support User define Device ID.");
-		return false;
-	}
-
-	if (seq_thing_info < 1 || seq_thing_info > MAX_SUBDEVICE_EA || dev_id == NULL || strlen(dev_id) == 0) {
-		THINGS_LOG_V(THINGS_INFO, TAG, "It Support Max %d EA for device ID", MAX_SUBDEVICE_EA);
-		THINGS_LOG_V_ERROR(THINGS_ERROR, TAG, "Invalid arguments.(seq_thing_info=%d, dev_id=0x%X)", seq_thing_info, dev_id);
-		return false;
-	}
-
-	THINGS_LOG_D(THINGS_DEBUG, TAG, "seq_thing_info=%d, dev_id=%s", seq_thing_info, dev_id);
-
-	if (strlen(dev_id) >= MAX_DEVICE_ID_LENGTH) {
-		THINGS_LOG_V_ERROR(THINGS_ERROR, TAG, "Overflow device ID length.(It Support Max length: %d)", MAX_DEVICE_ID_LENGTH);
-		return false;
-	}
-	user_def_dev_list[seq_thing_info] = strdup(dev_id);
-
-	return true;
 }
 
 static void dm_delete_user_define_device_id(void)
@@ -1884,7 +1863,9 @@ int dm_register_resource(things_server_builder_s *p_builder)
 											 device->ver_os,	// gOSVersion,
 											 device->ver_hw,	// gHWVersions,
 											 device->ver_fw,	// gFWVersions,
-											 device->vender_id);	// gVenderId);
+											 device->vender_id,	// gVenderId
+											 device->manufacturer_name,	// manufacturer_name
+											 device->manufacturer_url);	// manufacturer_url
 			} else {
 				if (device->is_physical == 1) {
 					THINGS_LOG_V(THINGS_INFO, TAG, "It's Physically Separated Device : %s", device->device_id);
@@ -1965,44 +1946,6 @@ int dm_get_device_information(int *cnt, st_device_s ***list)
 		ret = 1;
 	}
 
-	return ret;
-}
-
-const int dm_get_num_of_children(int device_num)
-{
-	int ret = 0;
-
-	st_device_s *device = (st_device_s *) hashmap_get(g_device_hmap, (unsigned long)device_num);
-	if (NULL != device) {
-		THINGS_LOG_D(THINGS_DEBUG, TAG, "DEVICE CHILDREN RESOURCE(S) : %d", device->col_cnt);
-		ret = device->col_cnt;
-	}
-
-	return ret;
-}
-
-const char *dm_get_resource_uri(int device_num, int index)
-{
-	st_device_s *device = (st_device_s *) hashmap_get(g_device_hmap, (unsigned long)device_num);
-	if (NULL != device) {
-		THINGS_LOG_D(THINGS_DEBUG, TAG, "DEVICE CHILDREN RESOURCE(S) : %d", device->col_cnt);
-		if ((index) >= device->col_cnt) {
-			THINGS_LOG_V_ERROR(THINGS_ERROR, TAG, "Invalid Index : %d", index);
-		} else {
-
-			return device->collection[0].links[index]->uri;
-		}
-	} else {
-		THINGS_LOG_V_ERROR(THINGS_ERROR, TAG, "Invalid Device Num to Search : %d", device_num);
-	}
-
-	return NULL;
-}
-
-int dm_update_device_iInfo_list(st_device_s **dev_list, int devCnt)
-{
-	int ret = 1;
-	update_and_save_device_info(dev_list, devCnt);
 	return ret;
 }
 

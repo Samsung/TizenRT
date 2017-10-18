@@ -27,6 +27,7 @@
  ****************************************************************************/
 
 #include "mbedtls/see_api.h"
+#include "mbedtls/pk.h"
 
 /****************************************************************************
  * Pre-processor Definitions
@@ -67,12 +68,22 @@ int see_compute_dhm_param_internal(struct sDH_PARAM *d_param, unsigned char *key
                                    unsigned char *output, unsigned int *olen);
 #endif /* CONFIG_HW_DH_PARAM */
 
-#if defined(CONFIG_HW_ECDSA_VERIFICATION)
 int see_setup_key_internal(unsigned char *key_der, unsigned int key_len,
                            unsigned int key_type, unsigned char *key_buf);
 
+#if defined(CONFIG_HW_ECDSA_VERIFICATION)
 int see_verify_ecdsa_signature_internal(struct sECC_SIGN *ecc_sign,
                                         unsigned char *hash, unsigned int hash_len,
                                         unsigned char *key_buf);
 #endif /* CONFIG_HW_ECDSA_VERIFICATION */
+#if defined(CONFIG_HW_RSA_VERIFICATION)
+int see_verify_rsa_signature_internal(struct sRSA_SIGN *rsa_sign,
+				unsigned char *hash, unsigned int hash_len,
+				unsigned char *key_buf);
+#endif /* CONFIG_HW_RSA_VERIFICATION */
+#if defined(CONFIG_HW_RSA_ENC)
+int see_rsa_encryption_internal(unsigned char *key_buf, unsigned int pad_type,
+				unsigned char *output, unsigned int *outlen,
+				unsigned char *input, unsigned int inlen);
+#endif /* CONFIG_HW_RSA_ENC */
 #endif /* __SEE_INTERNAL_H */

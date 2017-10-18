@@ -32,9 +32,6 @@
 
 #define NET_DEVNAME "wl1"
 
-int total_pass = 0;
-int total_fail = 0;
-
 extern sem_t tc_sem;
 extern int working_tc;
 
@@ -158,6 +155,10 @@ int utc_dm_main(int argc, char *argv[])
 {
 	sem_wait(&tc_sem);
 	working_tc++;
+
+	total_pass = 0;
+	total_fail = 0;
+
 #ifndef CONFIG_DM_WIFI
 	printf("=== Please Setup WiFi Info ===\n");
 	return 0;

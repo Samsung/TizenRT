@@ -119,7 +119,7 @@ int netlib_parsehttpurl(const char *url, uint16_t *port, char *hostname, int hos
 			*dest++ = *src++;
 			bytesleft--;
 		} else {
-			ret = -E2BIG;
+			return -E2BIG;
 		}
 	}
 	*dest = '\0';
@@ -140,7 +140,7 @@ int netlib_parsehttpurl(const char *url, uint16_t *port, char *hostname, int hos
 	/* The rest of the line is the file name */
 
 	if (*src == '\0' || *src == ' ') {
-		ret = -ENOENT;
+		return -ENOENT;
 	}
 
 	/* Make sure the file name starts with exactly one '/' */

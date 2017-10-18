@@ -1,6 +1,7 @@
 menuconfig SCSC_WLAN
 	bool "SCSC Wireless Module support"
 	default n
+	depends on LIBM && SCHED_WORKQUEUE && !DISABLE_PTHREAD && WPA_SUPPLICANT
 	select SPI
 
 if SCSC_WLAN

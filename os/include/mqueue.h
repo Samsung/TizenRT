@@ -110,61 +110,81 @@ extern "C" {
  * Public Function Prototypes
  ********************************************************************************/
 /**
- * @brief  POSIX API (refer to : http://pubs.opengroup.org/onlinepubs/9699919799/)
- * @details SYSTEM CALL API
+ * @brief open a message queue
+ * @details @b #include <mqueue.h> \n
+ * SYSTEM CALL API \n
+ * POSIX API (refer to : http://pubs.opengroup.org/onlinepubs/9699919799/)
  * @since Tizen RT v1.0
  */
 mqd_t mq_open(FAR const char *mq_name, int oflags, ...);
 /**
- * @brief  POSIX API (refer to : http://pubs.opengroup.org/onlinepubs/9699919799/)
- * @details SYSTEM CALL API
+ * @brief close a message queue
+ * @details @b #include <mqueue.h> \n
+ * SYSTEM CALL API \n
+ * POSIX API (refer to : http://pubs.opengroup.org/onlinepubs/9699919799/)
  * @since Tizen RT v1.0
  */
 int mq_close(mqd_t mqdes);
 /**
- * @brief  POSIX API (refer to : http://pubs.opengroup.org/onlinepubs/9699919799/)
- * @details SYSTEM CALL API
+ * @brief remove a message queue
+ * @details @b #include <mqueue.h> \n
+ * SYSTEM CALL API \n
+ * POSIX API (refer to : http://pubs.opengroup.org/onlinepubs/9699919799/)
  * @since Tizen RT v1.0
  */
 int mq_unlink(FAR const char *mq_name);
 /**
- * @brief  POSIX API (refer to : http://pubs.opengroup.org/onlinepubs/9699919799/)
- * @details SYSTEM CALL API
+ * @brief send a message to a message queue
+ * @details @b #include <mqueue.h> \n
+ * SYSTEM CALL API \n
+ * POSIX API (refer to : http://pubs.opengroup.org/onlinepubs/9699919799/)
  * @since Tizen RT v1.0
  */
 int mq_send(mqd_t mqdes, FAR const char *msg, size_t msglen, int prio);
 /**
- * @brief  POSIX API (refer to : http://pubs.opengroup.org/onlinepubs/9699919799/)
- * @details SYSTEM CALL API
+ * @brief send a message to a message queue
+ * @details @b #include <mqueue.h> \n
+ * SYSTEM CALL API \n
+ * POSIX API (refer to : http://pubs.opengroup.org/onlinepubs/9699919799/)
  * @since Tizen RT v1.0
  */
 int mq_timedsend(mqd_t mqdes, FAR const char *msg, size_t msglen, int prio, FAR const struct timespec *abstime);
 /**
- * @brief  POSIX API (refer to : http://pubs.opengroup.org/onlinepubs/9699919799/)
- * @details SYSTEM CALL API
+ * @brief receive a message from a message queue
+ * @details @b #include <mqueue.h> \n
+ * SYSTEM CALL API \n
+ * POSIX API (refer to : http://pubs.opengroup.org/onlinepubs/9699919799/)
  * @since Tizen RT v1.0
  */
 ssize_t mq_receive(mqd_t mqdes, FAR char *msg, size_t msglen, FAR int *prio);
 /**
- * @brief  POSIX API (refer to : http://pubs.opengroup.org/onlinepubs/9699919799/)
- * @details SYSTEM CALL API
+ * @brief receive a message from a message queue
+ * @details @b #include <mqueue.h> \n
+ * SYSTEM CALL API \n
+ * POSIX API (refer to : http://pubs.opengroup.org/onlinepubs/9699919799/)
  * @since Tizen RT v1.0
  */
 ssize_t mq_timedreceive(mqd_t mqdes, FAR char *msg, size_t msglen, FAR int *prio, FAR const struct timespec *abstime);
 /**
- * @brief  POSIX API (refer to : http://pubs.opengroup.org/onlinepubs/9699919799/)
- * @details SYSTEM CALL API
+ * @brief notify process that a message is available
+ * @details @b #include <mqueue.h> \n
+ * SYSTEM CALL API \n
+ * POSIX API (refer to : http://pubs.opengroup.org/onlinepubs/9699919799/)
  * @since Tizen RT v1.0
  */
 int mq_notify(mqd_t mqdes, const struct sigevent *notification);
 
 /**
- * @brief  POSIX API (refer to : http://pubs.opengroup.org/onlinepubs/9699919799/)
+ * @brief set message queue attributes
+ * @details @b #include <mqueue.h> \n
+ * POSIX API (refer to : http://pubs.opengroup.org/onlinepubs/9699919799/)
  * @since Tizen RT v1.0
  */
 int mq_setattr(mqd_t mqdes, FAR const struct mq_attr *mq_stat, FAR struct mq_attr *oldstat);
 /**
- * @brief  POSIX API (refer to : http://pubs.opengroup.org/onlinepubs/9699919799/)
+ * @brief get message queue attributes
+ * @details @b #include <mqueue.h> \n
+ * POSIX API (refer to : http://pubs.opengroup.org/onlinepubs/9699919799/)
  * @since Tizen RT v1.0
  */
 int mq_getattr(mqd_t mqdes, FAR struct mq_attr *mq_stat);

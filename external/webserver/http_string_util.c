@@ -81,13 +81,21 @@ int http_separate_header(const char *src, int *method, char *url, int *httpver)
 		*method = HTTP_METHOD_POST;
 	} else if (strncmp(src, "DELETE", 6) == 0) {
 		*method = HTTP_METHOD_DELETE;
+	} else {
+		HTTP_LOGE("Error: Invalid request method!!\n");
+		return HTTP_ERROR;
 	}
 
 	/* Get url */
 	url_start = divide[0] + 1;
 	url_length = divide[1] - url_start;
 
+	if (url_length <= 0 || url_length > HTTP_CONF_MAX_REQUEST_HEADER_URL_LENGTH) {
+		HTTP_LOGE("Error: Invalid url length!!\n");
+		return HTTP_ERROR;
+	}
 	strncpy(url, src + url_start, url_length);
+	url[url_length] = '\0';
 
 	/* Get http version */
 	httpver_start = divide[1] + 1;
@@ -162,6 +170,10 @@ int http_separate_keyvalue(const char *src, char *key, char *value)
 	int src_len = strlen(src);
 
 	for (i = 0; i < src_len; i++) {
+		if (i >= HTTP_CONF_MAX_KEY_LENGTH) {
+			HTTP_LOGE("Error: The key length is over the value buffer size.\n");
+			return HTTP_ERROR;
+		}
 		if (src[i] != ':') {
 			key[i] = src[i];
 		} else {
@@ -172,6 +184,10 @@ int http_separate_keyvalue(const char *src, char *key, char *value)
 	}
 
 	for (i = value_position; i < src_len; i++) {
+		if ((i - value_position) >= HTTP_CONF_MAX_VALUE_LENGTH) {
+			HTTP_LOGE("Error: The value length is over the value buffer size.\n");
+			return HTTP_ERROR;
+		}
 		value[i - value_position] = src[i];
 	}
 	value[i - value_position] = '\0';

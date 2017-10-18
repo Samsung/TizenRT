@@ -19,14 +19,12 @@
 /// @file tc_internal.h
 
 /// @brief Header file for Kernel TestCase Example
-#include "../../../tc_common.h"
-#ifndef __EXAMPLES_TESTCASE_DM_TC_INTERNAL_H
-#define __EXAMPLES_TESTCASE_DM_TC_INTERNAL_H
+#ifndef __EXAMPLES_TESTCASE_DM_ITC_INTERNAL_H
+#define __EXAMPLES_TESTCASE_DM_ITC_INTERNAL_H
 
-#define RETURN_ERR return
+#include "tc_common.h"
 
 #define DM_ITC_PRINT printf
-
 
 /**********************************************************
 * ITC Function Declarations
@@ -83,5 +81,5 @@ int  itc_dm_conn_regi_unreg_linkdown_main(void);
 #endif
 #endif
 
-#endif /* __EXAMPLES_TESTCASE_KERNEL_TC_INTERNAL_H */
+#endif /* __EXAMPLES_TESTCASE_DM_ITC_INTERNAL_H */
 

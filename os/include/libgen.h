@@ -82,12 +82,16 @@ extern "C" {
 #define EXTERN extern
 #endif
 /**
- * @brief  POSIX API (refer to : http://pubs.opengroup.org/onlinepubs/9699919799/)
+ * @brief return the last component of a pathname
+ * @details @b #include <libgen.h> \n
+ * POSIX API (refer to : http://pubs.opengroup.org/onlinepubs/9699919799/)
  * @since Tizen RT v1.0
  */
 FAR char *basename(FAR char *path);
 /**
- * @brief  POSIX API (refer to : http://pubs.opengroup.org/onlinepubs/9699919799/)
+ * @brief return the directory portion of a pathname
+ * @details @b #include <libgen.h> \n
+ * POSIX API (refer to : http://pubs.opengroup.org/onlinepubs/9699919799/)
  * @since Tizen RT v1.0
  */
 FAR char *dirname(FAR char *path);

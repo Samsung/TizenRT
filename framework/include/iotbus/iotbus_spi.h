@@ -74,6 +74,7 @@ extern "C" {
 /**
  * @brief initializes spi_context.
  *
+ * @details @b #include <iotbus/iotbus_spi.h>
  * @param[in] bus spi bus number
  * @param[in] config spi config
  *                   - config->bits_per_word : bits per word
@@ -88,6 +89,7 @@ iotbus_spi_context_h iotbus_spi_open(unsigned int bus, const struct iotbus_spi_c
 /**
  * @brief writes data over spi bus.
  *
+ * @details @b #include <iotbus/iotbus_spi.h>
  * @param[in] hnd handle of spi_context
  * @param[in] txbuf the pointer of tx data buffer
  * @param[in] length size to write
@@ -99,6 +101,7 @@ int iotbus_spi_write(iotbus_spi_context_h hnd, uint8_t *txbuf, size_t length);
 /**
  * @brief reads data over spi bus.
  *
+ * @details @b #include <iotbus/iotbus_spi.h>
  * @param[in] hnd handle of spi_context
  * @param[in] rxbuf the pointer of rx data buffer
  * @param[in] length size to read
@@ -110,6 +113,7 @@ int iotbus_spi_recv(iotbus_spi_context_h hnd, uint8_t *rxbuf, size_t length);
 /**
  * @brief transfers rx and tx data over spi bus.
  *
+ * @details @b #include <iotbus/iotbus_spi.h>
  * @param[in] hnd handle of spi_context
  * @param[in] txbuf the pointer of tx data buffer
  * @param[in] rxbuf the pointer of rx data buffer
@@ -122,6 +126,7 @@ int iotbus_spi_transfer_buf(iotbus_spi_context_h hnd, uint8_t *txbuf, uint8_t *r
 /**
  * @brief closes spi_context.
  *
+ * @details @b #include <iotbus/iotbus_spi.h>
  * @param[in] hnd handle of spi_context
  * @return On success, 0 is returned. On failure, a negative value is returned.
  * @since Tizen RT v1.0
