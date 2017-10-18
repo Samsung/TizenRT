@@ -89,7 +89,6 @@
 
 #include "../webserver/http_string_util.h"
 #include "../webserver/http_client.h"
-#include <protocols/webserver/http_err.h>
 #include <protocols/webclient.h>
 #if defined(CONFIG_NETUTILS_CODECS)
 #  if defined(CONFIG_CODECS_URLCODE)
@@ -1060,11 +1059,6 @@ retry:
 						 &encoding, &state, &mlen,
 						 param->response->headers,
 						 NULL, param->response, NULL);
-
-		if (read_finish == HTTP_ERROR) {
-			ndbg("Error: Parse message Fail\n");
-			goto errout;
-		}
 	}
 
 	param->response->method = param->method;
@@ -1209,11 +1203,6 @@ static pthread_addr_t wget_base(void *arg)
 						 &encoding, &state, &mlen,
 						 param->response->headers,
 						 NULL, param->response, NULL);
-
-		if (read_finish == HTTP_ERROR) {
-			ndbg("Error: Parse message Fail\n");
-			goto errout;
-		}
 	}
 
 	param->response->method = param->method;
