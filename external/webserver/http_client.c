@@ -215,7 +215,12 @@ int http_parse_message(char *buf, int buf_len, int *method, char *url,
 				buf[sentence_end] = '\0';
 				if (strlen(buf + len->sentence_start) > 0) {
 					/* Read parameters */
-					http_separate_keyvalue(buf + len->sentence_start, key, value);
+					int result = http_separate_keyvalue(buf + len->sentence_start, key, value);
+					if (result == HTTP_ERROR) {
+						HTTP_LOGE("Error: Fail to separate keyvalue\n");
+						http_keyvalue_list_release(params);
+						return HTTP_ERROR;
+					}
 					HTTP_LOGD("[HTTP Parameter] Key: %s / Value: %s\n", key, value);
 
 					http_keyvalue_list_add(params, key, value);
@@ -242,6 +247,7 @@ int http_parse_message(char *buf, int buf_len, int *method, char *url,
 							entity = HTTP_MALLOC(HTTP_CONF_MAX_ENTITY_LENGTH);
 							if (entity == NULL) {
 								HTTP_LOGE("Error: Fail to alloc memory\n");
+								http_keyvalue_list_release(params);
 								return HTTP_ERROR;
 							}
 							*enc = HTTP_CHUNKED_ENCODING;
@@ -252,6 +258,8 @@ int http_parse_message(char *buf, int buf_len, int *method, char *url,
 							HTTP_LOGD("Weblient cannot support chunked encoding.\n");
 						}
 					}
+					HTTP_MEMSET(key, 0, HTTP_CONF_MAX_KEY_LENGTH);
+					HTTP_MEMSET(value, 0, HTTP_CONF_MAX_VALUE_LENGTH);
 				} else {
 					*state = HTTP_REQUEST_BODY;
 				}
