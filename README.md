@@ -89,3 +89,16 @@ To customize your application with specific configuration settings, using the me
 ```
 Please keep in mind that we are actively working on board configurations, and will be posting our updates on the README files under each config
 
+## How to enable the ARTIK SDK
+
+If you want to use the ARTIK SDK, you need the following settings in menuconfig.
+ * External Functions > Enable "ARTIK SDK"
+ * Save and exit
+ * Launch the build
+
+If you enable ARTIK-SDK and then build it, it will automatically download the ARTIK SDK
+sources from github and build it. You do not need to download additional files.
+
+In addition, to enable the ARTIK SDK examples, set the following in menuconfig:
+ * Application Configuration > Examples > Enable "ARTIK SDK examples"
+ * Press Enter then select all the examples you want to include in the image
