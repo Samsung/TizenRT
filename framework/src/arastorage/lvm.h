@@ -172,17 +172,16 @@ lvm_status_t lvm_get_derived_range(lvm_instance_t *p, char *name, operand_value_
 void lvm_print_derivations(lvm_instance_t *p);
 lvm_status_t lvm_execute(lvm_instance_t *p);
 lvm_status_t lvm_register_variable(lvm_instance_t *p, char *name, operand_type_t type);
-lvm_status_t lvm_set_variable_value(lvm_instance_t *p, char *name, operand_value_t value);
 void lvm_print_code(lvm_instance_t *p);
 lvm_ip_t lvm_jump_to_operand(lvm_instance_t *p);
 lvm_ip_t lvm_shift_for_operator(lvm_instance_t *p, lvm_ip_t end);
 lvm_ip_t lvm_get_end(lvm_instance_t *p);
 lvm_ip_t lvm_set_end(lvm_instance_t *p, lvm_ip_t end);
-void lvm_set_op(lvm_instance_t *p, operator_t op);
-void lvm_set_relation(lvm_instance_t *p, operator_t op);
-void lvm_set_operand(lvm_instance_t *p, operand_t *op);
-void lvm_set_operand_value(lvm_instance_t *p, attribute_t *attr, unsigned char *value);
-void lvm_set_long(lvm_instance_t *p, long l);
-void lvm_set_variable(lvm_instance_t *p, char *name);
-
+lvm_status_t lvm_set_op(lvm_instance_t *p, operator_t op);
+lvm_status_t lvm_set_relation(lvm_instance_t *p, operator_t op);
+lvm_status_t lvm_set_operand(lvm_instance_t *p, operand_t *op);
+lvm_status_t lvm_set_operand_value(lvm_instance_t *p, attribute_t *attr, unsigned char *value);
+lvm_status_t lvm_set_long(lvm_instance_t *p, long l);
+lvm_status_t lvm_set_variable(lvm_instance_t *p, char *name);
+lvm_status_t lvm_set_variable_value(lvm_instance_t *p, char *name, operand_value_t value);
 #endif							/* LVM_H */
