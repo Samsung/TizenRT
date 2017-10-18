@@ -34,6 +34,7 @@
 #include "logger.h"
 #include "ocendpoint.h"
 #include "cacommon.h"
+#include "ocstack.h"
 
 #define TAG "OIC_RI_PAYLOAD"
 #define CSV_SEPARATOR ','
@@ -2262,16 +2263,13 @@ OCRepPayload** OC_CALL OCLinksPayloadArrayCreate(const char* resourceUri,
     OCRepPayload** linksRepPayloadArray = NULL;
     if ((resourceUri != NULL) && (ehRequest != NULL))
     {
-        bool isOCFContentFormat = false;
-        if (!OCRequestIsOCFContentFormat(ehRequest, &isOCFContentFormat))
-        {
+        OCPayloadFormat contentFormat = OC_FORMAT_UNDEFINED;
+        if ((OC_STACK_OK != OCGetRequestPayloadVersion(ehRequest, &contentFormat, NULL)) &&
+            (contentFormat == OC_FORMAT_VND_OCF_CBOR || contentFormat == OC_FORMAT_CBOR))
             return NULL;
-        }
 
-        linksRepPayloadArray = BuildCollectionLinksPayloadArray(resourceUri,
-                                                                isOCFContentFormat,
-                                                                &ehRequest->devAddr,
-                                                                createdArraySize);
+        if (linksRepPayloadArray = BuildCollectionLinksPayloadArray(resourceUri,
+            contentFormat, &ehRequest->devAddr, createdArraySize))
 
         OIC_LOG_V(DEBUG, TAG, "return value of BuildCollectionLinksPayloadArray() = %s",
                  (linksRepPayloadArray != NULL) ? "true" : "false");
@@ -2279,28 +2277,51 @@ OCRepPayload** OC_CALL OCLinksPayloadArrayCreate(const char* resourceUri,
     return linksRepPayloadArray;
 }
 
-// Check on Content Version option whether request has vnd.ocf+cbor format instead of cbor
-bool OCRequestIsOCFContentFormat(OCEntityHandlerRequest *ehRequest, bool* isOCFContentFormat)
+OCStackResult OC_CALL OCGetRequestPayloadVersion(OCEntityHandlerRequest *ehRequest,
+                                  OCPayloadFormat* pContentFormat, uint16_t* pAcceptVersion)
 {
-    if ((ehRequest == NULL)||(isOCFContentFormat == NULL))
-        return false;
+    if ((ehRequest == NULL)||(pContentFormat == NULL))
+        return OC_STACK_ERROR;
 
     OCServerRequest* serverRequest = (OCServerRequest*) ehRequest->requestHandle;
+    switch (serverRequest->acceptFormat)
+    {
+        case OC_FORMAT_CBOR:
+        case OC_FORMAT_VND_OCF_CBOR:
+        case OC_FORMAT_JSON:
+        case OC_FORMAT_UNDEFINED:
+        case OC_FORMAT_UNSUPPORTED:
+            *pContentFormat = serverRequest->acceptFormat;
+            OIC_LOG_V(INFO, TAG, 
+                      "Content format is %d, application/cbor = 0, application/vnd.ocf+cbor = 1", 
+                      (int) *pContentFormat);
+            break;
+        default:
+            return OC_STACK_INVALID_OPTION;
+    }
 
-    if (OC_FORMAT_VND_OCF_CBOR == serverRequest->acceptFormat)
+    // accepting NULL input parameter in case version is not required  
+    if (pAcceptVersion == NULL)
     {
-        *isOCFContentFormat = true;
-        OIC_LOG_V(INFO, TAG, "Content format is application/vnd.ocf+cbor");
+        return OC_STACK_OK;
     }
-    else if (OC_FORMAT_CBOR == serverRequest->acceptFormat)
+
+    uint8_t vOptionData[MAX_HEADER_OPTION_DATA_LENGTH];
+    size_t vOptionDataSize = sizeof(vOptionData);
+    uint16_t actualDataSize = 0;
+
+    OCGetHeaderOption(ehRequest->rcvdVendorSpecificHeaderOptions,
+                      ehRequest->numRcvdVendorSpecificHeaderOptions,
+                      COAP_OPTION_ACCEPT_VERSION, vOptionData, vOptionDataSize, &actualDataSize);
+
+    // Check if "OCF-Accept-Content-Format-Version" is present,
+    // and size of its value is as expected (2 bytes).
+    if (actualDataSize != 2)
     {
-        *isOCFContentFormat = false;
-        OIC_LOG_V(INFO, TAG, "Content format is application/cbor");
+        return OC_STACK_INVALID_OPTION;
     }
-    else
-    {
-        OIC_LOG_V(ERROR, TAG, "Content format is neither application/vnd.ocf+cbor nor /cbor");
-        return false;
-    }
-    return true;
+
+    *pAcceptVersion = vOptionData[0] * 256 + vOptionData[1];
+
+    return OC_STACK_OK;
 }

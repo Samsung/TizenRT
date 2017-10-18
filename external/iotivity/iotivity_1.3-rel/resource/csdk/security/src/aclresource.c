@@ -1589,7 +1589,11 @@ static OicSecAcl_t* CBORPayloadToAclVersionOpt(const uint8_t *cborPayload, const
                                 // subjectuuid
                                 if (0 == strcmp(name, OIC_JSON_SUBJECTID_NAME)) // ace v1
                                 {
-                                    if (cbor_value_is_text_string(&aceMap))
+                                    if (OIC_SEC_ACL_V2 == aclistVersion)
+                                    {
+                                        OIC_LOG_V(WARNING, TAG, "%s v1 ACE subject tag found in v2 aclist2, skipping!", __func__);
+                                    }
+                                    else if (cbor_value_is_text_string(&aceMap))
                                     {
                                         char *subject = NULL;
                                         cborFindResult = cbor_value_dup_text_string(&aceMap, &subject, &tempLen, NULL);
@@ -1622,7 +1626,11 @@ static OicSecAcl_t* CBORPayloadToAclVersionOpt(const uint8_t *cborPayload, const
                                     memset(&subjectMap, 0, sizeof(subjectMap));
                                     size_t unusedLen = 0;
 
-                                    if (cbor_value_is_container(&aceMap))
+                                    if (OIC_SEC_ACL_V1 == aclistVersion)
+                                    {
+                                        OIC_LOG_V(WARNING, TAG, "%s v2 ACE subject tag found in v1 aclist, skipping!", __func__);
+                                    }
+                                    else if (cbor_value_is_container(&aceMap))
                                     {
                                         // next container within subject is either didtype, roletype, or conntype
                                         cborFindResult = cbor_value_enter_container(&aceMap, &subjectMap);

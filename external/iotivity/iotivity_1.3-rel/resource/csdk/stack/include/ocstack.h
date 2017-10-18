@@ -903,6 +903,18 @@ OCStackResult OC_CALL OCSelectCipherSuite(uint16_t cipher, OCTransportAdapter ad
  */
 OCStackResult OC_CALL OCGetIpv6AddrScope(const char *addr, OCTransportFlags *scope);
 
+/**
+* Return the Content Format from Entity Handler Request.
+*
+* @param[in] ehRequest          client request on entity handler
+* @param[out] pContentFormat    media content format enum OCPayloadFormat
+* @param[out] pAcceptVersion    accept version (e.g: 2048 for "1.0.0", NULL input is accepted)
+*
+* @return ::OC_STACK_OK if successful.
+*/
+OCStackResult OC_CALL OCGetRequestPayloadVersion(OCEntityHandlerRequest *ehRequest,
+                                  OCPayloadFormat* pContentFormat, uint16_t* pAcceptVersion);
+
 #ifdef __cplusplus
 }
 #endif // __cplusplus

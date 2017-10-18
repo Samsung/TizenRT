@@ -2195,7 +2195,7 @@ static OCEntityHandlerResult HandleNewCredential(OCEntityHandlerRequest *ehReque
                         OIC_LOG(WARNING, TAG, "The credential with the same subject ID was detected!");
                     }
 
-                    OIC_LOG(ERROR, TAG, "OwnerPSK was generated successfully.");
+                    OIC_LOG(INFO, TAG, "OwnerPSK was generated successfully.");
                     if(OC_STACK_OK == AddCredential(cred))
                     {
                         ret = OC_EH_CHANGED;
@@ -2208,7 +2208,7 @@ static OCEntityHandlerResult HandleNewCredential(OCEntityHandlerRequest *ehReque
                 }
                 else
                 {
-                    OIC_LOG(ERROR, TAG, "Failed to verify receviced OwnerPKS.");
+                    OIC_LOG(ERROR, TAG, "Failed to verify receviced OwnerPSK.");
                     ret = OC_EH_ERROR;
                 }
 #ifdef __TIZENRT__

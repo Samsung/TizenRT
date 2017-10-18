@@ -134,7 +134,7 @@ static OCStackResult HandleLinkedListInterface(OCEntityHandlerRequest *ehRequest
     uint8_t size = GetNumOfResourcesInCollection(collResource);
     OCRepPayload *colPayload = NULL;
     OCEntityHandlerResult ehResult = OC_EH_ERROR;
-    OCStackResult ret = OC_STACK_OK;
+    OCStackResult ret = OC_STACK_ERROR;
     size_t dim[MAX_REP_ARRAY_DEPTH] = {size, 0, 0};
     OCRepPayload **linkArr = NULL;
 
@@ -151,10 +151,10 @@ static OCStackResult HandleLinkedListInterface(OCEntityHandlerRequest *ehRequest
         goto exit;
     }
 
-    bool isOCFContentFormat = true;
-    OCRequestIsOCFContentFormat(ehRequest, &isOCFContentFormat);
+    OCPayloadFormat contentFormat = OC_FORMAT_UNDEFINED;
+    OCGetRequestPayloadVersion(ehRequest, &contentFormat, NULL);
     // from the OCF1.0 linklist specification, ll has array of links
-    if ((0 == strcmp(ifQueryParam, OC_RSRVD_INTERFACE_LL) && isOCFContentFormat))
+    if ((0 == strcmp(ifQueryParam, OC_RSRVD_INTERFACE_LL)) && (contentFormat == OC_FORMAT_VND_OCF_CBOR))
     {
         for (int n = 0; n < (int)size - 1; n++)
         {
@@ -162,9 +162,10 @@ static OCStackResult HandleLinkedListInterface(OCEntityHandlerRequest *ehRequest
         }
         colPayload = linkArr[0];
         OICFree(linkArr);
+        ret = OC_STACK_OK;
         goto exit;
     }
-    else
+    else if ((contentFormat == OC_FORMAT_VND_OCF_CBOR || contentFormat == OC_FORMAT_CBOR))
     {
         colPayload = OCRepPayloadCreate();
         VERIFY_PARAM_NON_NULL(TAG, linkArr, "Failed creating LinksPayloadArray");
@@ -187,6 +188,7 @@ static OCStackResult HandleLinkedListInterface(OCEntityHandlerRequest *ehRequest
             AddRTSBaselinePayload(linkArr, size, &colPayload);
         }
         OCRepPayloadSetPropObjectArrayAsOwner(colPayload, OC_RSRVD_LINKS, linkArr, dim);
+        ret = OC_STACK_OK;
     }
 exit:
     if (ret == OC_STACK_OK)

@@ -390,9 +390,6 @@ OCEndpointPayload* CreateEndpointPayloadList(const OCResource *resource,
 */
 void OC_CALL OCEndpointPayloadDestroy(OCEndpointPayload* payload);
 
-// Check on Accept Version option.
-bool OCRequestIsOCFContentFormat(OCEntityHandlerRequest *ehRequest, bool* isOCFContentFormat);
-
 #ifdef __cplusplus
 }
 #endif // __cplusplus

@@ -419,8 +419,7 @@ TEST(CborEmptyArrayTest, EmptyArrayArraySetGetTest)
     size_t dimensions_out[MAX_REP_ARRAY_DEPTH] = {0};
 
     ///TODO: Change Assert to true after fixing OCRepPayloadGetIntArray behaviour
-    ASSERT_EQ(false, OCRepPayloadGetIntArray(payload_in, "quakedata",
-                &quakedata_out, dimensions_out));
+    ASSERT_FALSE(OCRepPayloadGetIntArray(payload_in, "quakedata", &quakedata_out, dimensions_out));
 
     ASSERT_TRUE(quakedata_out == NULL);
 

@@ -166,13 +166,13 @@ namespace OCProvisioningTest
     TEST(isMOTEnabledTest, isMOTEnabledWithoutDeviceInst)
     {
         OCSecureResource device;
-        EXPECT_EQ(false, device.isMOTEnabled());
+        EXPECT_FALSE(device.isMOTEnabled());
     }
 
     TEST(isMOTSupportedTest, isMOTSupportedWithoutDeviceInst)
     {
         OCSecureResource device;
-        EXPECT_EQ(false, device.isMOTSupported());
+        EXPECT_FALSE(device.isMOTSupported());
     }
 
     TEST(getMOTMethodTest, getMOTMethodNullOxM)

@@ -580,6 +580,7 @@ static OCStackResult CBORPayloadToPstatBin(const uint8_t *cborPayload,
 
         cborFindResult = cbor_value_get_int(&pstatMap, &tm);
         VERIFY_CBOR_SUCCESS_OR_OUT_OF_MEMORY(TAG, cborFindResult, "Failed Finding TM.");
+        OIC_LOG_V(INFO, TAG, "%s parsed pstat->tm = %u", __func__, (OicSecDpm_t)tm);
         pstat->tm = (OicSecDpm_t)tm;
 
         if (roParsed)
@@ -593,6 +594,8 @@ static OCStackResult CBORPayloadToPstatBin(const uint8_t *cborPayload,
     }
     else
     {
+        OIC_LOG_V(INFO, TAG, "%s no pstat->tm found in payload, using existing value of %u",
+            __func__, gPstat->tm);
         pstat->tm = gPstat->tm;
         cborFindResult = CborNoError;
     }
@@ -818,7 +821,7 @@ static OCEntityHandlerResult HandlePstatPostRequest(OCEntityHandlerRequest *ehRe
             {
                 if(gPstat->sm[i] == pstat->om)
                 {
-                    OIC_LOG_V(ERROR, TAG, "%s: %d is a supported Operation Mode",
+                    OIC_LOG_V(DEBUG, TAG, "%s: %d is a supported Operation Mode",
                         __func__, (int) pstat->om);
                     supportedOm = true;
                 }
@@ -843,6 +846,19 @@ static OCEntityHandlerResult HandlePstatPostRequest(OCEntityHandlerRequest *ehRe
                 pstat->cm &= ~UPDATE_SOFTWARE; // Unset the cm bit, per spec
             }
 
+            // update om
+            gPstat->om = pstat->om;
+
+            // update tm
+            OIC_LOG_V(INFO, TAG, "%s setting gPstat->tm = %u", __func__, pstat->tm);
+            gPstat->tm = pstat->tm;
+
+            // update rownerID
+            gPstat->rownerID = pstat->rownerID;
+
+            // update dos LAST of all Properties, as changing dos can also
+            // change other Properties and we want the dos-asserted values
+            // to "stick" rather than being over-written by prior values.
             if (pstat->dos.state != gPstat->dos.state)
             {
                 OCStackResult stateChangeResult = OC_STACK_ERROR;
@@ -872,15 +888,6 @@ static OCEntityHandlerResult HandlePstatPostRequest(OCEntityHandlerRequest *ehRe
                     break;
                 }
             }
-
-            // update om
-            gPstat->om = pstat->om;
-
-            // update tm
-            gPstat->tm = pstat->tm;
-
-            // update rownerID
-            gPstat->rownerID = pstat->rownerID;
 
             // Convert pstat data into CBOR for update to persistent storage
             if (UpdatePersistentStorage(gPstat))
@@ -1064,6 +1071,8 @@ void RestorePstatToInitState()
         gPstat->dos.state = DOS_RFOTM;
         gPstat->dos.pending = false;
         gPstat->cm = (OicSecDpm_t)(gPstat->cm | TAKE_OWNER);
+        OIC_LOG_V(INFO, TAG, "%s setting gPstat->tm = %u",
+            __func__, (OicSecDpm_t)(gPstat->tm & (~TAKE_OWNER)));
         gPstat->tm = (OicSecDpm_t)(gPstat->tm & (~TAKE_OWNER));
         gPstat->om = SINGLE_SERVICE_CLIENT_DRIVEN;
         if(gPstat->sm && 0 < gPstat->smLen)
@@ -1220,6 +1229,7 @@ OCStackResult SetPstatTm(const OicSecDpm_t tm)
 {
     if (gPstat)
     {
+        OIC_LOG_V(INFO, TAG, "%s setting gPstat->tm = %u", __func__, tm);
         gPstat->tm = tm;
         return OC_STACK_OK;
     }

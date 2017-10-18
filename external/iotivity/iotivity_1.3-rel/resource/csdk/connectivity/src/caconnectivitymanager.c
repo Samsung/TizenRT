@@ -527,7 +527,7 @@ CAResult_t CASelectCipherSuite(const uint16_t cipher, CATransportAdapter_t adapt
 
 CAResult_t CAEnableAnonECDHCipherSuite(const bool enable)
 {
-    OIC_LOG(DEBUG, TAG, "CAEnableAnonECDHCipherSuite");
+    OIC_LOG_V(DEBUG, TAG, "IN %s", __func__);
     CAResult_t res = CA_STATUS_FAILED;
 #if defined(__WITH_DTLS__) || defined(__WITH_TLS__)
     // TLS_ECDH_ANON_WITH_AES_128_CBC_SHA256    0xFF00 replaces 0xC018
@@ -540,7 +540,7 @@ CAResult_t CAEnableAnonECDHCipherSuite(const bool enable)
     (void)(enable); // prevent unused-parameter compiler warning
     OIC_LOG(ERROR, TAG, "Method not supported");
 #endif
-    OIC_LOG_V(ERROR, TAG, "Out %s", __func__);
+    OIC_LOG_V(DEBUG, TAG, "Out %s", __func__);
     return res;
 }
 
