@@ -315,10 +315,11 @@ bool OC_CALL OCByteStringCopy(OCByteString *dest, const OCByteString *source);
  * This function creates the payloadArray for links parameter of collection resource.
  * @param[in] resourceUri Resource uri (this should be a collection resource)
  * @param[in] ehRequest parameter received from Entity Handler for client request
+ * @param[in] insertSelfLink flag to specify whether links array can contain a self link
  * @param[out] createdArraySize return value array size, Null is allowed if no need to know size
  *
  * @note: API usage
- *   OCRepPayload **linkArr = OCLinksPayloadArrayCreate(uri, ehRequest, &ArraySize);
+ *   OCRepPayload **linkArr = OCLinksPayloadArrayCreate(uri, ehRequest, false, &ArraySize);
  *   For links parameter setting  (baseline interface response)
  *    OCRepPayloadSetPropObjectArrayAsOwner(payload, OC_RSRVD_LINKS, linkArr, {ArraySize, 0,0});
  *   For arrayPayload setting (linklist interface response)
@@ -330,7 +331,7 @@ bool OC_CALL OCByteStringCopy(OCByteString *dest, const OCByteString *source);
  * @return linksRepPayloadArray The *RepPayload Array pointer for links parameter of collection.
  **/
 OCRepPayload** OC_CALL OCLinksPayloadArrayCreate(const char *resourceUri,
-                       OCEntityHandlerRequest *ehRequest, size_t* createdArraySize);
+                       OCEntityHandlerRequest *ehRequest, bool insertSelfLink, size_t* createdArraySize);
 
 #ifdef __cplusplus
 }

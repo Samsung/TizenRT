@@ -90,7 +90,7 @@
       "if": ["oic.if.baseline"]
    },
    "doxm": {
-      "oxms": [0, 1, 2],
+      "oxms": [2],
       "oxmsel": 2,
       "sct": 9,
       "owned": false,

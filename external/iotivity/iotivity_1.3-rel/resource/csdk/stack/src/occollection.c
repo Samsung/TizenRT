@@ -138,7 +138,7 @@ static OCStackResult HandleLinkedListInterface(OCEntityHandlerRequest *ehRequest
     size_t dim[MAX_REP_ARRAY_DEPTH] = {size, 0, 0};
     OCRepPayload **linkArr = NULL;
 
-    if (!(linkArr = OCLinksPayloadArrayCreate(collResource->uri, ehRequest, NULL)))
+    if (!(linkArr = OCLinksPayloadArrayCreate(collResource->uri, ehRequest, false, NULL)))
     {
         OIC_LOG_V(ERROR, TAG, "Failed getting LinksPayloadArray");
         ret = OC_STACK_ERROR;
@@ -449,7 +449,7 @@ exit:
 }
 
 OCRepPayload** BuildCollectionLinksPayloadArray(const char* resourceUri,
-    bool isOCFContentFormat, OCDevAddr* devAddr, size_t* createdArraySize)
+    bool isOCFContentFormat, OCDevAddr* devAddr, bool insertSelfLink, size_t* createdArraySize)
 {
     bool result = false;
     OCRepPayload** arrayPayload = NULL;
@@ -467,6 +467,12 @@ OCRepPayload** BuildCollectionLinksPayloadArray(const char* resourceUri,
         childCount++;
         childCountResource = childCountResource->next;
     } while (childCountResource);
+
+    if (insertSelfLink)
+    {
+        childCount++;
+    }
+
     arrayPayload = (OCRepPayload**)OICMalloc(sizeof(OCRepPayload*) * (childCount));
     VERIFY_PARAM_NON_NULL(TAG, arrayPayload, "Failed creating arrayPayload");
 
@@ -555,10 +561,29 @@ OCRepPayload** BuildCollectionLinksPayloadArray(const char* resourceUri,
             }
         }
 
-        childResource = childResource->next;
-        if (childResource)
+        if (iterResource != colResourceHandle)
         {
-            iterResource = childResource->rsrcResource;
+            childResource = childResource->next;
+            if (childResource)
+            {
+                iterResource = childResource->rsrcResource;
+            }
+            else if (insertSelfLink)
+            {
+                iterResource = colResourceHandle;
+            }
+        }
+        else // handling selfLink case
+        {
+            OIC_LOG(INFO, TAG, "adding rel for self link");
+            const char* relArray[2] = { "self", "item" };
+            size_t dimensions[MAX_REP_ARRAY_DEPTH] = { 2, 0, 0 };
+            if (!OCRepPayloadSetStringArray(arrayPayload[i], OC_RSRVD_REL, relArray, dimensions))
+            {
+                OIC_LOG(ERROR, TAG, "Failed setting rel property");
+                result = false;
+                goto exit;
+            } 
         }
         result = true;
     }

@@ -35,6 +35,7 @@ OCStackResult DefaultCollectionEntityHandler (OCEntityHandlerFlag flag,
  * @param[in] devAddr Structure pointing to the address. (from OCEntityHandlerRequest)
  * @param[in] isOCFVer true if AcceptedVersion is OCF1.0 or higher
  *            otherwise false in case OIC1.1 (from OCEntityHandlerRequest)
+ * @param[in] insertSelfLink true if links array must contain a self link
  * @param[out] createdArraySize return value array size, Null is allowed if no need to know size
  * @note: The destroy of OCRepPayloadValue is not supported. Instead, use
  *        OCRepPayloadDestroy(...) to destroy RepPayload of the collection Resource
@@ -43,6 +44,7 @@ OCStackResult DefaultCollectionEntityHandler (OCEntityHandlerFlag flag,
  * @see OCLinksPayloadArrayCreate API doxygen for API usage
  */
 OCRepPayload** BuildCollectionLinksPayloadArray(const char* resourceUri,
-                    bool isOCFContentFormat, OCDevAddr* devAddr, size_t* createdArraySize);
+                    bool isOCFContentFormat, OCDevAddr* devAddr, bool insertSelfLink,
+                    size_t* createdArraySize);
 
 #endif //OC_COLLECTION_H

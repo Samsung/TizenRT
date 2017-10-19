@@ -3021,8 +3021,8 @@ TEST(LinksPayloadArray, BuildCollectionLinksPayloadArray)
 
     //check for OIC1.1 logic
     size_t arraySize = 0;
-    linksRepPayloadArray = BuildCollectionLinksPayloadArray("/a/kitchen", false, 
-                                                            devAddr, &arraySize);
+    linksRepPayloadArray = BuildCollectionLinksPayloadArray("/a/kitchen", false,
+                                                            devAddr, false, &arraySize);
     ASSERT_TRUE(NULL != linksRepPayloadArray);
 
     collectionPayload = OCRepPayloadCreate();
@@ -3090,7 +3090,9 @@ TEST(LinksPayloadArray, BuildCollectionLinksPayloadArray)
     OCRepPayloadDestroy(collectionPayload);
 
     //check for OCF1.0 logic
-    linksRepPayloadArray = BuildCollectionLinksPayloadArray("/a/kitchen", true, devAddr, &arraySize);
+    linksRepPayloadArray = BuildCollectionLinksPayloadArray("/a/kitchen", true, devAddr, false,
+        &arraySize);
+
     ASSERT_TRUE(NULL != linksRepPayloadArray);
 
     collectionPayload = OCRepPayloadCreate();

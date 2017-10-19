@@ -2257,7 +2257,7 @@ void OC_CALL OCEndpointPayloadDestroy(OCEndpointPayload* payload)
 }
 
 OCRepPayload** OC_CALL OCLinksPayloadArrayCreate(const char* resourceUri,
-                       OCEntityHandlerRequest *ehRequest, size_t* createdArraySize)
+                       OCEntityHandlerRequest *ehRequest, bool insertSelfLink, size_t* createdArraySize)
 {
     OIC_LOG(DEBUG, TAG, "OCLinksPayloadValueCreate");
     OCRepPayload** linksRepPayloadArray = NULL;
@@ -2268,8 +2268,8 @@ OCRepPayload** OC_CALL OCLinksPayloadArrayCreate(const char* resourceUri,
             (contentFormat == OC_FORMAT_VND_OCF_CBOR || contentFormat == OC_FORMAT_CBOR))
             return NULL;
 
-        if (linksRepPayloadArray = BuildCollectionLinksPayloadArray(resourceUri,
-            contentFormat, &ehRequest->devAddr, createdArraySize))
+        linksRepPayloadArray = BuildCollectionLinksPayloadArray(resourceUri, contentFormat, &ehRequest->devAddr,
+            insertSelfLink, createdArraySize);
 
         OIC_LOG_V(DEBUG, TAG, "return value of BuildCollectionLinksPayloadArray() = %s",
                  (linksRepPayloadArray != NULL) ? "true" : "false");
@@ -2292,15 +2292,15 @@ OCStackResult OC_CALL OCGetRequestPayloadVersion(OCEntityHandlerRequest *ehReque
         case OC_FORMAT_UNDEFINED:
         case OC_FORMAT_UNSUPPORTED:
             *pContentFormat = serverRequest->acceptFormat;
-            OIC_LOG_V(INFO, TAG, 
-                      "Content format is %d, application/cbor = 0, application/vnd.ocf+cbor = 1", 
+            OIC_LOG_V(INFO, TAG,
+                      "Content format is %d, application/cbor = 0, application/vnd.ocf+cbor = 1",
                       (int) *pContentFormat);
             break;
         default:
             return OC_STACK_INVALID_OPTION;
     }
 
-    // accepting NULL input parameter in case version is not required  
+    // accepting NULL input parameter in case version is not required
     if (pAcceptVersion == NULL)
     {
         return OC_STACK_OK;

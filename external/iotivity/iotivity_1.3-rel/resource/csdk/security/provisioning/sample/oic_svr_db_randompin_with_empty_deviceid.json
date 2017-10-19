@@ -51,8 +51,8 @@
         "rowneruuid": ""
     },
     "doxm": {
-        "oxms": [0, 1],
-        "oxmsel": 0,
+        "oxms": [1],
+        "oxmsel": 1,
         "sct": 9,
         "owned": false,
         "deviceuuid": "",
