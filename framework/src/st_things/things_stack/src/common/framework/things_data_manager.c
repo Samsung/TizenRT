@@ -963,8 +963,10 @@ static int parse_things_info_json(const char *filename)
 									struct things_resource_info_s *link_resource = create_resource();
 
 									cJSON *uri = cJSON_GetObjectItem(link, KEY_DEVICE_RESOURCE_URI);
-									memcpy(link_resource->uri, uri->valuestring, strlen(uri->valuestring) + 1);
-									THINGS_LOG_D(THINGS_INFO, TAG, "[COLLECTION] link_resource->uri : %s", (link_resource->uri));
+									if (uri) {
+										memcpy(link_resource->uri, uri->valuestring, strlen(uri->valuestring) + 1);
+										THINGS_LOG_D(THINGS_INFO, TAG, "[COLLECTION] link_resource->uri : %s", (link_resource->uri));
+									}
 
 									cJSON *types = cJSON_GetObjectItem(link, KEY_DEVICE_RESOURCE_TYPES);
 									if (types) {
