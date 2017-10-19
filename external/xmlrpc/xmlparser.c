@@ -140,6 +140,10 @@ static int xmlrpc_getelement(struct parsebuf_s *pbuf, char *data, int dataSize)
 		return XMLRPC_PARSE_ERROR;
 	}
 
+	if (pbuf->len < 0 || pbuf->index < 0) {
+		return XMLRPC_PARSE_ERROR;
+	}
+
 	while ((pbuf->index < pbuf->len) && !isprint(pbuf->buf[pbuf->index])) {
 		pbuf->index++;
 	}
