@@ -511,6 +511,11 @@ static int wpa_supplicant_install_ptk(struct wpa_sm *sm, const struct wpa_eapol_
 	const u8 *key_rsc;
 	u8 null_rsc[8] = { 0, 0, 0, 0, 0, 0, 0, 0 };
 
+	if (sm->ptk.installed) {
+		wpa_dbg(sm->ctx->msg_ctx, MSG_DEBUG, "WPA: Do not re-install same PTK to the driver");
+		return 0;
+	}
+
 	wpa_dbg(sm->ctx->msg_ctx, MSG_DEBUG, "WPA: Installing PTK to the driver");
 
 	if (sm->pairwise_cipher == WPA_CIPHER_NONE) {
@@ -541,6 +546,7 @@ static int wpa_supplicant_install_ptk(struct wpa_sm *sm, const struct wpa_eapol_
 
 	/* TK is not needed anymore in supplicant */
 	os_memset(sm->ptk.tk, 0, WPA_TK_MAX_LEN);
+	sm->ptk.installed = 1;
 
 	if (sm->wpa_ptk_rekey) {
 		eloop_cancel_timeout(wpa_sm_rekey_ptk, sm, NULL);
