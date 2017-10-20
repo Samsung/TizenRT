@@ -2091,7 +2091,7 @@ static OCStackResult PostUpdateOperationMode(OTMContext_t* otmCtx)
     propertiesToInclude[PSTAT_OM] = true;
 
     OCStackResult res = PstatToCBORPayloadPartial(deviceInfo->pstat, &secPayload->securityData,
-                                           &secPayload->payloadSize, propertiesToInclude);
+                                           &secPayload->payloadSize, propertiesToInclude, false);
    if (OC_STACK_OK != res)
     {
         OCPayloadDestroy((OCPayload *)secPayload);
@@ -2475,7 +2475,7 @@ OCStackResult PostProvisioningStatus(OTMContext_t* otmCtx)
     propertiesToInclude[PSTAT_TM] = true;
 
     if (OC_STACK_OK != PstatToCBORPayloadPartial(otmCtx->selectedDeviceInfo->pstat,
-            &secPayload->securityData, &secPayload->payloadSize, propertiesToInclude))
+            &secPayload->securityData, &secPayload->payloadSize, propertiesToInclude, false))
     {
         OCPayloadDestroy((OCPayload *)secPayload);
         return OC_STACK_INVALID_JSON;
@@ -2540,7 +2540,7 @@ OCStackResult PostNormalOperationStatus(OTMContext_t* otmCtx)
     propertiesToInclude[PSTAT_DOS] = true;
 
     if (OC_STACK_OK != PstatToCBORPayloadPartial(otmCtx->selectedDeviceInfo->pstat,
-            &secPayload->securityData, &secPayload->payloadSize, propertiesToInclude))
+            &secPayload->securityData, &secPayload->payloadSize, propertiesToInclude, false))
     {
         OCPayloadDestroy((OCPayload *)secPayload);
         return OC_STACK_INVALID_JSON;

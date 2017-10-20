@@ -124,17 +124,6 @@ static void DeleteCredIdList(CredIdList_t** list)
     }
 }
 
-static bool ValueWithinBounds(uint64_t value, uint64_t maxValue)
-{
-    if (value > maxValue)
-    {
-        OIC_LOG_V(ERROR, TAG, "The value (%" PRId64 ") is greater than allowed maximum of %" PRId64 ".", value, maxValue);
-        return false;
-    }
-
-    return true;
-}
-
 /**
  * Internal function to check a subject of SIGNED_ASYMMETRIC_KEY(Certificate).
  * If that subject is NULL or wildcard, set it to own deviceID.
@@ -255,6 +244,7 @@ exit:
     return false;
 }
 
+#if defined(__WITH_DTLS__) || defined(__WITH_TLS__)
 static bool IsEmptyCred(const OicSecCred_t* cred)
 {
     OicUuid_t emptyUuid = {.id={0}};
@@ -263,16 +253,15 @@ static bool IsEmptyCred(const OicSecCred_t* cred)
     VERIFY_SUCCESS(TAG, !IsNonEmptyRole(&cred->roleId), ERROR);
     VERIFY_SUCCESS(TAG, (0 == cred->credId), ERROR);
     VERIFY_SUCCESS(TAG, (0 == cred->credType), ERROR);
-#if defined(__WITH_DTLS__) || defined(__WITH_TLS__)
     VERIFY_SUCCESS(TAG, (NULL == cred->privateData.data), ERROR);
     VERIFY_SUCCESS(TAG, (NULL == cred->publicData.data), ERROR);
     VERIFY_SUCCESS(TAG, (NULL == cred->optionalData.data), ERROR);
     VERIFY_SUCCESS(TAG, (NULL == cred->credUsage), ERROR);
-#endif
     return true;
 exit:
     return false;
 }
+#endif // __WITH_DTLS__ or __WITH_TLS__
 
 /**
  * This function frees OicSecCred_t object's fields and object itself.
@@ -2389,7 +2378,7 @@ static OCEntityHandlerResult HandleNewCredential(OCEntityHandlerRequest *ehReque
             ret = (OC_STACK_OK == AddCredential(cred))? OC_EH_CHANGED : OC_EH_ERROR;
         }
     }
-#else //not __WITH_DTLS__
+#else //not __WITH_DTLS__ or __WITH_TLS__
     /*
         * If the post request credential has credId, it will be
         * discarded and the next available credId will be assigned
@@ -2399,7 +2388,7 @@ static OCEntityHandlerResult HandleNewCredential(OCEntityHandlerRequest *ehReque
     ret = (OC_STACK_OK == AddCredential(cred))? OC_EH_CHANGED : OC_EH_ERROR;
     OC_UNUSED(previousMsgId);
     OC_UNUSED(ehRequest);
-#endif//__WITH_DTLS__
+#endif//__WITH_DTLS__ or __WITH_TLS__
 
     return ret;
 }
@@ -2855,6 +2844,17 @@ exit:
 }
 
 #if defined(__WITH_DTLS__) || defined(__WITH_TLS__)
+static bool ValueWithinBounds(uint64_t value, uint64_t maxValue)
+{
+    if (value > maxValue)
+    {
+        OIC_LOG_V(ERROR, TAG, "The value (%" PRId64 ") is greater than allowed maximum of %" PRId64 ".", value, maxValue);
+        return false;
+    }
+
+    return true;
+}
+
 int32_t GetDtlsPskCredentials(CADtlsPskCredType_t type,
               const uint8_t *desc, size_t desc_len,
               uint8_t *result, size_t result_length)

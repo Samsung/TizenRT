@@ -961,82 +961,67 @@ static OCEntityHandlerResult HandleDoxmGetRequest (const OCEntityHandlerRequest 
     return ehRet;
 }
 
+void printDoxm(const OicSecDoxm_t* doxm)
+{
+    char uuidString[UUID_STRING_SIZE] = { 0 };
+
+    if (OCConvertUuidToString(doxm->owner.id, uuidString))
+    {
+        OIC_LOG_V(DEBUG, TAG, "%s: doxm.devowneruuid = %s", __func__, uuidString);
+    }
+    if (OCConvertUuidToString(doxm->rownerID.id, uuidString))
+    {
+        OIC_LOG_V(DEBUG, TAG, "%s: doxm.rowneruuid = %s", __func__, uuidString);
+    }
+    if (OCConvertUuidToString(doxm->deviceID.id, uuidString))
+    {
+        OIC_LOG_V(DEBUG, TAG, "%s: doxm.deviceuuid = %s", __func__, uuidString);
+    }
+}
+
 OCStackResult DoxmUpdateWriteableProperty(const OicSecDoxm_t* src, OicSecDoxm_t* dst)
 {
+    OIC_LOG_V(DEBUG, TAG, "IN: %s", __func__);
     OCStackResult result = OC_STACK_OK;
 
-    if(src && dst)
-    {
-        // Update oxmsel
-        dst->oxmSel = src->oxmSel;
-        OIC_LOG_V(DEBUG, TAG, "%s: updated doxm.oxmsel = %d", __func__,
-            (int)dst->oxmSel);
+    VERIFY_NOT_NULL_RETURN(TAG, src, ERROR, OC_STACK_INVALID_PARAM);
+    VERIFY_NOT_NULL_RETURN(TAG, dst, ERROR, OC_STACK_INVALID_PARAM);
 
-        // Update devowneruuid
-        memcpy(&(dst->owner), &(src->owner), sizeof(OicUuid_t));
-#ifndef NDEBUG // if debug build, log the new uuid
-        char uuidString[UUID_STRING_SIZE] = { 0 };
-        bool convertedUUID = OCConvertUuidToString(dst->owner.id, uuidString);
-        if (convertedUUID)
-        {
-            OIC_LOG_V(DEBUG, TAG, "%s: updated doxm.devowneruuid = %s", __func__,
-                uuidString);
-        }
-#endif
+    // Update oxmsel
+    dst->oxmSel = src->oxmSel;
+    OIC_LOG_V(DEBUG, TAG, "%s: updated doxm.oxmsel = %d", __func__, (int)dst->oxmSel);
 
-        // Update rowneruuid
-        memcpy(&(dst->rownerID), &(src->rownerID), sizeof(OicUuid_t));
-#ifndef NDEBUG // if debug build, log the new uuid
-        convertedUUID = OCConvertUuidToString(dst->rownerID.id, uuidString);
-        if (convertedUUID)
-        {
-            OIC_LOG_V(DEBUG, TAG, "%s: updated doxm.rowneruuid = %s", __func__,
-                uuidString);
-        }
-#endif
-
-        // Update deviceuuid
-        memcpy(&(dst->deviceID), &(src->deviceID), sizeof(OicUuid_t));
-#ifndef NDEBUG // if debug build, log the new uuid
-        convertedUUID = OCConvertUuidToString(dst->deviceID.id, uuidString);
-        if (convertedUUID)
-        {
-            OIC_LOG_V(DEBUG, TAG, "%s: updated doxm.deviceuuid = %s", __func__,
-                uuidString);
-        }
-#endif
-
-        // Update owned status
-        if(dst->owned != src->owned)
-        {
-            dst->owned = src->owned;
-            OIC_LOG_V(DEBUG, TAG, "%s: updated owned = %s", __func__,
-                dst->owned?"true":"false");
-        }
+    // Update deviceuuid
+    memcpy(&(dst->deviceID), &(src->deviceID), sizeof(OicUuid_t));
+    // Update rowneruuid
+    memcpy(&(dst->rownerID), &(src->rownerID), sizeof(OicUuid_t));
+    // Update devowneruuid
+    memcpy(&(dst->owner), &(src->owner), sizeof(OicUuid_t));
 
 #ifdef MULTIPLE_OWNER
-        if(src->mom)
+    if(src->mom)
+    {
+        OIC_LOG(DEBUG, TAG, "Detected 'mom' property");
+        if(NULL == dst->mom)
         {
-            OIC_LOG(DEBUG, TAG, "Detected 'mom' property");
-            if(NULL == dst->mom)
-            {
-                dst->mom = (OicSecMom_t*)OICCalloc(1, sizeof(OicSecMom_t));
-                if (NULL == dst->mom)
-                {
-                    result = OC_STACK_NO_MEMORY;
-                }
-            }
-
-            if (NULL != dst->mom)
-            {
-                dst->mom->mode = src->mom->mode;
-                OIC_LOG_V(DEBUG, TAG, "%s: updated mom->mode = %d", __func__,
-                    (int)dst->mom->mode);
-            }
+            result = OC_STACK_NO_MEMORY;
+            dst->mom = (OicSecMom_t*)OICCalloc(1, sizeof(OicSecMom_t));
+            VERIFY_NOT_NULL(TAG, dst->mom, ERROR);
+            result = OC_STACK_OK;
         }
-#endif //MULTIPLE_OWNER
-    }
 
+        dst->mom->mode = src->mom->mode;
+        OIC_LOG_V(DEBUG, TAG, "%s: updated mom->mode = %d", __func__, (int)dst->mom->mode);
+    }
+#endif //MULTIPLE_OWNER
+
+#ifndef NDEBUG // if debug build, log the new uuid
+    printDoxm(dst);
+#endif
+#ifdef MULTIPLE_OWNER
+exit:
+#endif
+    OIC_LOG_V(DEBUG, TAG, "OUT: %s", __func__);
     return result;
 }
 
@@ -1262,27 +1247,27 @@ exit:
 #endif //MULTIPLE_OWNER
 #endif // __WITH_DTLS__ or __WITH_TLS__
 
-int HandleDoxmPostRequestSVR()
+OCEntityHandlerResult HandleDoxmPostRequestSetROwnerId()
 {
-    OCStackResult ownerRes = SetAclRownerId(&gDoxm->owner);
+    OCStackResult ownerRes = SetAclRownerId(&gDoxm->rownerID);
     if (OC_STACK_OK != ownerRes && OC_STACK_NO_RESOURCE != ownerRes)
     {
         OIC_LOG_V(ERROR, TAG, "%s: set acl RownerId", __func__);
-        return 1;
+        return OC_EH_ERROR;
     }
-    ownerRes = SetCredRownerId(&gDoxm->owner);
+    ownerRes = SetCredRownerId(&gDoxm->rownerID);
     if (OC_STACK_OK != ownerRes && OC_STACK_NO_RESOURCE != ownerRes)
     {
         OIC_LOG_V(ERROR, TAG, "%s: set cred RownerId", __func__);
-        return 1;
+        return OC_EH_ERROR;
     }
-    ownerRes = SetPstatRownerId(&gDoxm->owner);
+    ownerRes = SetPstatRownerId(&gDoxm->rownerID);
     if (OC_STACK_OK != ownerRes && OC_STACK_NO_RESOURCE != ownerRes)
     {
         OIC_LOG_V(ERROR, TAG, "%s: set pstat RownerId", __func__);
-        return 1;
+        return OC_EH_ERROR;
     }
-    return 0;
+    return OC_EH_OK;
 }
 
 OCEntityHandlerResult HandleDoxmPostRequestUpdatePS(bool fACE)
@@ -1566,6 +1551,7 @@ static OCEntityHandlerResult HandleDoxmPostRequest(OCEntityHandlerRequest *ehReq
     OCEntityHandlerResult ehRet = OC_EH_INTERNAL_SERVER_ERROR;
     static uint16_t previousMsgId = 0;
     bool isDuplicatedMsg = false;
+    bool fACE = false;
 
     /*
      * Convert CBOR Doxm data into binary. This will also validate
@@ -1610,7 +1596,7 @@ static OCEntityHandlerResult HandleDoxmPostRequest(OCEntityHandlerRequest *ehReq
     VERIFY_NOT_NULL(TAG, gDoxm, ERROR);
 
     // in owned state
-    if (true == gDoxm->owned)
+    if (true == gDoxm->owned && !UuidCmp(&gDoxm->owner, &newDoxm->owner))
     {
         if (false == ValidateOxmsel(gDoxm->oxm, gDoxm->oxmLen, &newDoxm->oxmSel))
         {
@@ -1634,79 +1620,69 @@ static OCEntityHandlerResult HandleDoxmPostRequest(OCEntityHandlerRequest *ehReq
         HandleDoxmPostRequestMom(newDoxm, ehRequest);
 #endif //MULTIPLE_OWNER
 #endif // defined(__WITH_DTLS__) || defined (__WITH_TLS__)
-
-        //Update new state in persistent storage
-        ehRet = HandleDoxmPostRequestUpdatePS(false);
-        goto exit;
     }
-
-    // in unowned state
-    // TODO [IOT-2107] this logic assumes that the only POST to /doxm in
-    // unowned state is either a) changing to owned or b) setting oxmsel and
-    // therefore (in case b) should enable the proper cipher for OTM.  But it's
-    // allowable for Client to be posting other things such as /doxm.rowneruuid
-    // when owned == false, too.  Added a workaround (see 'workaround' below)
-    // but this POST handler needs to be fixed per IOT-2107.
-    if ((false == gDoxm->owned) && (false == newDoxm->owned))
+    else // unowned: false == gDoxm->owned
     {
-        if (false == ValidateOxmsel(gDoxm->oxm, gDoxm->oxmLen, &newDoxm->oxmSel))
+        OicSecDostype_t dos;
+
+        VERIFY_SUCCESS(TAG, OC_STACK_OK == GetDos(&dos), ERROR);
+
+        if (DOS_RESET == dos.state ||
+            DOS_RFNOP == dos.state)
         {
-            OIC_LOG(ERROR, TAG, "Not acceptable request because oxmsel does not support on Server");
+            OIC_LOG_V(ERROR, TAG, "%s /doxm resource is read-only in RESET or RFNOP", __func__);
             ehRet = OC_EH_NOT_ACCEPTABLE;
             goto exit;
         }
 
-        // workaround
-        // We wouldn't be at this point in the
-        // code if the POST contained R-only Properties for the current /pstat.dos.s
-        // state, so we want to update writeable properties now that we've validated
-        // oxmsel is a valid oxm for this device.
-        res = DoxmUpdateWriteableProperty(newDoxm, gDoxm);
-        if (OC_STACK_OK != res)
+        OIC_LOG_V(WARNING, TAG, "%s: OTM %s", __func__, newDoxm->owned ? "stop" : "start");
+
+        if (false == newDoxm->owned && !UuidCmp(&gDoxm->owner, &newDoxm->owner))
         {
-            OIC_LOG(ERROR, TAG,
+            if (false == ValidateOxmsel(gDoxm->oxm, gDoxm->oxmLen, &newDoxm->oxmSel))
+            {
+                OIC_LOG(ERROR, TAG, "Not acceptable request because oxmsel does not support on Server");
+                ehRet = OC_EH_NOT_ACCEPTABLE;
+                goto exit;
+            }
+
+            res = DoxmUpdateWriteableProperty(newDoxm, gDoxm);
+            if (OC_STACK_OK != res)
+            {
+                OIC_LOG(ERROR, TAG,
                     "gDoxm properties were not able to be updated so we cannot handle the request.");
-            ehRet = OC_EH_ERROR;
-            goto exit;
+                ehRet = OC_EH_ERROR;
+                goto exit;
+            }
+
+            ehRet = HandleDoxmPostRequestSrv(newDoxm, ehRequest, isDuplicatedMsg);
+            VERIFY_SUCCESS(TAG, OC_EH_OK == ehRet, ERROR);
         }
-
-        ehRet = HandleDoxmPostRequestSrv(newDoxm, ehRequest, isDuplicatedMsg);
-        VERIFY_SUCCESS(TAG, OC_EH_OK == ehRet, ERROR);
-
-        // Update new state in persistent storage
-        ehRet = HandleDoxmPostRequestUpdatePS(false);
-    }
-
-    /*
-     * When current state of the device is un-owned and Provisioning
-     * Tool is attempting to change the state to 'Owned' with a
-     * qualified value for the field 'Owner'
-     */
-    // TODO [IOT-2107] reconcile POST handler behavior with Specification
-    if ((false == gDoxm->owned) && (true == newDoxm->owned) &&
-            UuidCmp(&gDoxm->owner, &newDoxm->owner))
-    {
-        if (HandleDoxmPostRequestSVR())
+        else // finish OTM
         {
-            ehRet = OC_EH_ERROR;
-            goto exit;
+            if (!gDoxm->owned &&
+                !IsNilUuid(&gDoxm->owner) &&
+                !UuidCmp(&gDoxm->owner, &gDoxm->rownerID))
+            {
+                memcpy(&gDoxm->rownerID, &gDoxm->owner, sizeof(OicUuid_t));
+
+                gDoxm->owned = true;
+                fACE = true;
+            }
         }
 
-        gDoxm->owned = true;
-        memcpy(&gDoxm->rownerID, &gDoxm->owner, sizeof(OicUuid_t));
-
-        // Update new state in persistent storage
-        ehRet = HandleDoxmPostRequestUpdatePS(true);
-
-#if defined(__WITH_DTLS__) || defined (__WITH_TLS__)
-        if (OIC_MANUFACTURER_CERTIFICATE == gDoxm->oxmSel ||
+ #if defined(__WITH_DTLS__) || defined (__WITH_TLS__)
+       if (OIC_MANUFACTURER_CERTIFICATE == gDoxm->oxmSel ||
             OIC_CON_MFG_CERT == gDoxm->oxmSel)
         {
             CAregisterPkixInfoHandler(GetPkixInfo);
             CAregisterGetCredentialTypesHandler(InitCipherSuiteList);
         }
 #endif // __WITH_DTLS__ or __WITH_TLS__
-    }
+
+        // Update new state in persistent storage
+        ehRet = HandleDoxmPostRequestUpdatePS(fACE);
+   }//true == gDoxm->owned
 exit:
     if (OC_EH_OK != ehRet)
     {

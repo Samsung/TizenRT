@@ -1206,10 +1206,14 @@ void CATCPStopServer()
         caglobals.tcp.connectionFds[1] = OC_INVALID_SOCKET;
     }
 #else
-    // receive thread will stop immediately.
-    if (!WSASetEvent(caglobals.tcp.updateEvent))
+    // unit tests sometimes stop the TCP Server after starting just the UDP Server.
+    if (caglobals.tcp.updateEvent != NULL)
     {
-        OIC_LOG_V(DEBUG, TAG, "set shutdown event failed: %u", GetLastError());
+        // receive thread will stop immediately.
+        if (!WSASetEvent(caglobals.tcp.updateEvent))
+        {
+            OIC_LOG_V(DEBUG, TAG, "set shutdown event failed: %u", GetLastError());
+        }
     }
 #endif
 

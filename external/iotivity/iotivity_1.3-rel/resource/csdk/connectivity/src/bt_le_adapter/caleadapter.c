@@ -411,6 +411,7 @@ static void CAStopLEQueues();
  */
 static void CATerminateLEQueues();
 
+#ifndef SINGLE_THREAD
 /**
  * This function will initalize the Receiver and Sender queues for
  * GattServer. This function will in turn call the functions
@@ -423,6 +424,7 @@ static void CATerminateLEQueues();
  * @retval ::CA_STATUS_FAILED Operation failed.
  */
 static CAResult_t CAInitLEServerQueues();
+#endif // not SINGLE_THREAD
 
 /**
  * This function will initalize the Receiver and Sender queues for
@@ -577,6 +579,7 @@ static CAResult_t CALEGetPortsFromSenderInfo(const char *leAddress,
                                             u_arraylist_t *portList);
 #endif
 
+#ifndef SINGLE_THREAD
 static CAResult_t CAInitLEServerQueues()
 {
     oc_mutex_lock(g_bleAdapterThreadPoolMutex);
@@ -611,6 +614,7 @@ static CAResult_t CAInitLEServerQueues()
     oc_mutex_unlock(g_bleAdapterThreadPoolMutex);
     return CA_STATUS_OK;
 }
+#endif // not SINGLE_THREAD
 
 static CAResult_t CAInitLEClientQueues()
 {
@@ -3095,7 +3099,7 @@ static CAResult_t CAStartLEListeningServer()
         OIC_LOG(ERROR, CALEADAPTER_TAG, "CAInitLEServerQueues failed");
         return result;
     }
-#endif
+#endif // not SINGLE_THREAD
 
     oc_mutex_lock(g_bleIsServerMutex);
     switch (g_adapterType)
@@ -3128,11 +3132,11 @@ static CAResult_t CAStartLEListeningServer()
 
     OIC_LOG(DEBUG, CALEADAPTER_TAG, "OUT");
     return result;
-#else
+#else // not ROUTING_GATEWAY
     // Routing Gateway only supports BLE client mode.
     OIC_LOG(ERROR, CALEADAPTER_TAG, "LE server not supported in Routing Gateway");
     return CA_NOT_SUPPORTED;
-#endif
+#endif // not ROUTING_GATEWAY
 }
 
 static CAResult_t CAStopLEListeningServer()

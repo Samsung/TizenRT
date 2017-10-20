@@ -3821,6 +3821,14 @@ OCStackResult OC_CALL OCCancel(OCDoHandle handle, OCQualityOfService qos, OCHead
             FindAndDeleteClientCB(clientCB);
             break;
 #endif
+        case OC_REST_GET:
+        case OC_REST_PUT:
+        case OC_REST_POST:
+        case OC_REST_DELETE:
+            OIC_LOG_V(INFO, TAG, "Cancelling request callback for resource %s",
+                                           clientCB->requestUri);
+            FindAndDeleteClientCB(clientCB);
+            break;
 
         default:
             ret = OC_STACK_INVALID_METHOD;

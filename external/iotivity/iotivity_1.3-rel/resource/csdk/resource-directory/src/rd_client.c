@@ -307,6 +307,7 @@ static OCRepPayload *RDPublishPayloadCreate(const unsigned char *id,
                 dim[0] = k;
                 OCRepPayloadSetPropObjectArrayAsOwner(links[j], OC_RSRVD_ENDPOINTS, eps, dim);
             }
+            OICFreeAndSetToNull((void*) &caEps);
         }
     }
 
@@ -314,7 +315,7 @@ static OCRepPayload *RDPublishPayloadCreate(const unsigned char *id,
     result = OC_STACK_OK;
 
 exit:
-    OICFree(caEps);
+    OICFreeAndSetToNull((void*) &caEps);
     if (OC_STACK_OK != result)
     {
         OCRepPayloadDestroy(rdPayload);

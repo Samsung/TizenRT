@@ -2943,29 +2943,16 @@ static OCEntityHandlerResult HandleACLPostRequest(const OCEntityHandlerRequest *
                     }
                 }
             }
-            memcpy(&(gAcl->rownerID), &(newAcl->rownerID), sizeof(OicUuid_t));
+
+            // set acl rowner id and save
+            OCStackResult ownerRes = SetAclRownerId(&newAcl->rownerID);
+            if (OC_STACK_OK != ownerRes && OC_STACK_NO_RESOURCE != ownerRes)
+            {
+                OIC_LOG_V(ERROR, TAG, "%s: set acl RownerId", __func__);
+                ehRet = OC_EH_ERROR;
+            }
 
             DeleteACLList(newAcl);
-
-            if(OC_EH_OK == ehRet)
-            {
-                size_t cborSize = 0;
-                uint8_t *cborPayload = NULL;
-
-                if (OC_STACK_OK == AclToCBORPayload(gAcl, OIC_SEC_ACL_V2, &cborPayload, &cborSize))
-                {
-                    if (UpdateSecureResourceInPS(OIC_JSON_ACL_NAME, cborPayload, cborSize) == OC_STACK_OK)
-                    {
-                        ehRet = OC_EH_CHANGED;
-                    }
-                    OICFree(cborPayload);
-                }
-
-                if(OC_EH_CHANGED != ehRet)
-                {
-                    ehRet = OC_EH_ERROR;
-                }
-            }
         }
         else
         {
@@ -3076,29 +3063,16 @@ static OCEntityHandlerResult HandleACL2PostRequest(const OCEntityHandlerRequest 
                     ehRet = OC_EH_ERROR;
                 }
             }
-            memcpy(&(gAcl->rownerID), &(newAcl->rownerID), sizeof(OicUuid_t));
+
+            // set acl rowner id and save
+            OCStackResult ownerRes = SetAclRownerId(&newAcl->rownerID);
+            if (OC_STACK_OK != ownerRes && OC_STACK_NO_RESOURCE != ownerRes)
+            {
+                OIC_LOG_V(ERROR, TAG, "%s: set acl RownerId", __func__);
+                ehRet = OC_EH_ERROR;
+            }
 
             DeleteACLList(newAcl);
-
-            if(OC_EH_OK == ehRet)
-            {
-                size_t cborSize = 0;
-                uint8_t *cborPayload = NULL;
-
-                if (OC_STACK_OK == AclToCBORPayload(gAcl, OIC_SEC_ACL_V2, &cborPayload, &cborSize))
-                {
-                    if (UpdateSecureResourceInPS(OIC_JSON_ACL_NAME, cborPayload, cborSize) == OC_STACK_OK)
-                    {
-                        ehRet = OC_EH_CHANGED;
-                    }
-                    OICFree(cborPayload);
-                }
-
-                if(OC_EH_CHANGED != ehRet)
-                {
-                    ehRet = OC_EH_ERROR;
-                }
-            }
         }
         else
         {

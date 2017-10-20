@@ -307,6 +307,198 @@ exit:
 }
 
 /**
+ * Compare the request's subject to doxm.rownerID.
+ *
+ * @return true if context->subjectId equals doxm.rownerID, else return false
+ */
+bool IsRequestFromDoxs(SRMRequestContext_t *context)
+{
+    bool retVal = false;
+
+    if (NULL == context)
+    {
+        retVal = false;
+        goto exit;
+    }
+
+    if (SUBJECT_ID_TYPE_UUID != context->subjectIdType)
+    {
+        OIC_LOG_V(DEBUG, TAG, "%s: Non-UUID subject type cannot be DOXS.", __func__);
+        retVal = false;
+        goto exit;
+    }
+
+    if (IsNilUuid(&context->subjectUuid))
+    {
+        OIC_LOG_V(DEBUG, TAG, "%s: Nil UUID cannot be DOXS.", __func__);
+        retVal = false;
+        goto exit;
+    }
+
+    OCStackResult res = OC_STACK_ERROR;
+    OicUuid_t doxsUuid;
+
+    res = GetDoxmRownerId(&doxsUuid);
+
+#ifndef NDEBUG // if debug build, log the IDs being used for matching
+    char strUuid[UUID_STRING_SIZE] = "UUID_ERROR";
+    if (OCConvertUuidToString(context->subjectUuid.id, strUuid))
+    {
+        OIC_LOG_V(DEBUG, TAG, "context->subjectUuid for request: %s.", strUuid);
+    }
+    else
+    {
+        OIC_LOG(ERROR, TAG, "failed to convert context->subjectUuid to str.");
+    }
+    if (OCConvertUuidToString(doxsUuid.id, strUuid))
+    {
+        OIC_LOG_V(DEBUG, TAG, "DOXS UUID: %s.", strUuid);
+    }
+    else
+    {
+        OIC_LOG(ERROR, TAG, "failed to convert DOXS UUID to str.");
+    }
+#endif
+
+    if(OC_STACK_OK == res)
+    {
+        retVal = UuidCmp(&context->subjectUuid, &doxsUuid);
+    }
+
+exit:
+    OIC_LOG_V(INFO, TAG, "%s: returning %s", __func__, retVal ? "true" : "false");
+    return retVal;
+}
+
+/**
+ * Compare the request's subject to acl2.rownerID.
+ *
+ * @return true if context->subjectId equals acl2.rownerID, else return false
+ */
+bool IsRequestFromAms(SRMRequestContext_t *context)
+{
+    bool retVal = false;
+
+    if (NULL == context)
+    {
+        retVal = false;
+        goto exit;
+    }
+
+    if (SUBJECT_ID_TYPE_UUID != context->subjectIdType)
+    {
+        OIC_LOG_V(DEBUG, TAG, "%s: Non-UUID subject type cannot be AMS.", __func__);
+        retVal = false;
+        goto exit;
+    }
+
+    if (IsNilUuid(&context->subjectUuid))
+    {
+        OIC_LOG_V(DEBUG, TAG, "%s: Nil UUID cannot be AMS.", __func__);
+        retVal = false;
+        goto exit;
+    }
+
+    OCStackResult res = OC_STACK_ERROR;
+    OicUuid_t amsUuid;
+
+    res = GetAclRownerId(&amsUuid);
+
+#ifndef NDEBUG // if debug build, log the IDs being used for matching
+    char strUuid[UUID_STRING_SIZE] = "UUID_ERROR";
+    if (OCConvertUuidToString(context->subjectUuid.id, strUuid))
+    {
+        OIC_LOG_V(DEBUG, TAG, "context->subjectUuid for request: %s.", strUuid);
+    }
+    else
+    {
+        OIC_LOG(ERROR, TAG, "failed to convert context->subjectUuid to str.");
+    }
+    if (OCConvertUuidToString(amsUuid.id, strUuid))
+    {
+        OIC_LOG_V(DEBUG, TAG, "AMS UUID: %s.", strUuid);
+    }
+    else
+    {
+        OIC_LOG(ERROR, TAG, "failed to convert AMS UUID to str.");
+    }
+#endif
+
+    if(OC_STACK_OK == res)
+    {
+        retVal = UuidCmp(&context->subjectUuid, &amsUuid);
+    }
+
+exit:
+    OIC_LOG_V(INFO, TAG, "%s: returning %s", __func__, retVal ? "true" : "false");
+    return retVal;
+}
+
+/**
+ * Compare the request's subject to cred.rownerID.
+ *
+ * @return true if context->subjectId equals cred.rownerID, else return false
+ */
+bool IsRequestFromCms(SRMRequestContext_t *context)
+{
+    bool retVal = false;
+
+    if (NULL == context)
+    {
+        retVal = false;
+        goto exit;
+    }
+
+    if (SUBJECT_ID_TYPE_UUID != context->subjectIdType)
+    {
+        OIC_LOG_V(DEBUG, TAG, "%s: Non-UUID subject type cannot be CMS.", __func__);
+        retVal = false;
+        goto exit;
+    }
+
+    if (IsNilUuid(&context->subjectUuid))
+    {
+        OIC_LOG_V(DEBUG, TAG, "%s: Nil UUID cannot be CMS.", __func__);
+        retVal = false;
+        goto exit;
+    }
+
+    OCStackResult res = OC_STACK_ERROR;
+    OicUuid_t cmsUuid;
+
+    res = GetCredRownerId(&cmsUuid);
+
+#ifndef NDEBUG // if debug build, log the IDs being used for matching
+    char strUuid[UUID_STRING_SIZE] = "UUID_ERROR";
+    if (OCConvertUuidToString(context->subjectUuid.id, strUuid))
+    {
+        OIC_LOG_V(DEBUG, TAG, "context->subjectUuid for request: %s.", strUuid);
+    }
+    else
+    {
+        OIC_LOG(ERROR, TAG, "failed to convert context->subjectUuid to str.");
+    }
+    if (OCConvertUuidToString(cmsUuid.id, strUuid))
+    {
+        OIC_LOG_V(DEBUG, TAG, "CMS UUID: %s.", strUuid);
+    }
+    else
+    {
+        OIC_LOG(ERROR, TAG, "failed to convert CMS UUID to str.");
+    }
+#endif
+
+    if(OC_STACK_OK == res)
+    {
+        retVal = UuidCmp(&context->subjectUuid, &cmsUuid);
+    }
+
+exit:
+    OIC_LOG_V(INFO, TAG, "%s: returning %s", __func__, retVal ? "true" : "false");
+    return retVal;
+}
+
+/**
  * Bitwise check to see if 'permission' contains 'request'.
  *
  * @param permission is the allowed CRUDN permission.
@@ -620,6 +812,22 @@ void CheckPermission(SRMRequestContext_t *context)
              IsRequestFromOwnershipTransferSession(context))
     {
         OIC_LOG_V(INFO, TAG, "%s: granting implicit access to OT session request", __func__);
+        context->responseVal = ACCESS_GRANTED;
+    }
+    else if (((OIC_R_ACL_TYPE <= context->resourceType) &&
+        (OIC_SEC_SVR_TYPE_COUNT > context->resourceType)) && IsRequestFromDoxs(context))
+    {
+        OIC_LOG_V(INFO, TAG, "%s: granting DOXS implicit access to SVR.", __func__);
+        context->responseVal = ACCESS_GRANTED;
+    }
+    else if ((OIC_R_PSTAT_TYPE == context->resourceType) && IsRequestFromAms(context))
+    {
+        OIC_LOG_V(INFO, TAG, "%s: granting AMS implicit access to /pstat.", __func__);
+        context->responseVal = ACCESS_GRANTED;
+    }
+    else if ((OIC_R_PSTAT_TYPE == context->resourceType) && IsRequestFromCms(context))
+    {
+        OIC_LOG_V(INFO, TAG, "%s: granting CMS implicit access to /pstat.", __func__);
         context->responseVal = ACCESS_GRANTED;
     }
     // Else request is a "normal" request that must be tested against ACL.

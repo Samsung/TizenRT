@@ -304,7 +304,7 @@ OCStringLL* OC_CALL OCCreateOCStringLL(const char* text);
 char* OC_CALL OCCreateString(const OCStringLL* ll);
 
 /**
- * This function copies contents (and allocates if necessary)
+ * This function copies contents
  * @param dest existing bytestring.  The existing contents will be OICFree()'d.
  * @param source existing bytestring
  * @return true of success false on any errors

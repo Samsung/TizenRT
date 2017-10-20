@@ -71,11 +71,14 @@ OCStackResult DeInitPstatResource();
  * @param propertiesToInclude Array of bools, size "PSTAT_PROPERTY_COUNT",
  * where "true" indicates the corresponding property should be
  * included in the CBOR representation that is created.
+ * @param includeDosP boolean value indicating whether to include
+ * the "dos" Property "p" Parameter (read-only) in the representation.
  *
  * @return ::OC_STACK_OK for Success, otherwise some error value.
  */
  OCStackResult PstatToCBORPayloadPartial(const OicSecPstat_t *pstat,
- 	uint8_t **payload, size_t *size, const bool *propertiesToInclude);
+ 	uint8_t **payload, size_t *size, const bool *propertiesToInclude,
+    const bool includeDosP);
 
 
 /**

@@ -391,9 +391,9 @@ def generate( env ) :
             toolset["EXTRACTOR"]["TARBZ"]["RUN"]           = "7z"
             toolset["EXTRACTOR"]["TARBZ"]["LISTEXTRACTOR"] = __fileextractor_win_7zip
             toolset["EXTRACTOR"]["TARBZ"]["LISTFLAGS"]     = "x"
-            toolset["EXTRACTOR"]["TARBZ"]["LISTSUFFIX"]    = "-so -y | ${UNPACK['EXTRACTOR']['TARGZ']['RUN']} l -sii -ttar -y -so"
+            toolset["EXTRACTOR"]["TARBZ"]["LISTSUFFIX"]    = "-so -y | ${UNPACK['EXTRACTOR']['TARBZ']['RUN']} l -sii -ttar -y -so"
             toolset["EXTRACTOR"]["TARBZ"]["EXTRACTFLAGS"]  = "x"
-            toolset["EXTRACTOR"]["TARBZ"]["EXTRACTSUFFIX"] = "-so -y | ${UNPACK['EXTRACTOR']['TARGZ']['RUN']} x -sii -ttar -y -o${UNPACK['EXTRACTDIR']}"
+            toolset["EXTRACTOR"]["TARBZ"]["EXTRACTSUFFIX"] = "-so -y | ${UNPACK['EXTRACTOR']['TARBZ']['RUN']} x -sii -ttar -y -o${UNPACK['EXTRACTDIR']}"
 
             toolset["EXTRACTOR"]["BZIP"]["RUN"]            = "7z"
             toolset["EXTRACTOR"]["BZIP"]["LISTEXTRACTOR"]  = __fileextractor_win_7zip
