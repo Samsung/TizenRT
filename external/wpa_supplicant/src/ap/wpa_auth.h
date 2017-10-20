@@ -227,7 +227,7 @@ void wpa_auth_sta_deinit(struct wpa_state_machine *sm);
 void wpa_receive(struct wpa_authenticator *wpa_auth, struct wpa_state_machine *sm, u8 *data, size_t data_len);
 typedef enum {
 	WPA_AUTH, WPA_ASSOC, WPA_DISASSOC, WPA_DEAUTH, WPA_REAUTH,
-	WPA_REAUTH_EAPOL, WPA_ASSOC_FT
+	WPA_REAUTH_EAPOL, WPA_ASSOC_FT, WPA_DRV_STA_REMOVED
 } wpa_event;
 void wpa_remove_ptk(struct wpa_state_machine *sm);
 int wpa_auth_sm_event(struct wpa_state_machine *sm, wpa_event event);
@@ -240,6 +240,7 @@ int wpa_auth_pairwise_set(struct wpa_state_machine *sm);
 int wpa_auth_get_pairwise(struct wpa_state_machine *sm);
 int wpa_auth_sta_key_mgmt(struct wpa_state_machine *sm);
 int wpa_auth_sta_wpa_version(struct wpa_state_machine *sm);
+int wpa_auth_sta_ft_tk_already_set(struct wpa_state_machine *sm);
 int wpa_auth_sta_clear_pmksa(struct wpa_state_machine *sm, struct rsn_pmksa_cache_entry *entry);
 struct rsn_pmksa_cache_entry *wpa_auth_sta_get_pmksa(struct wpa_state_machine *sm);
 void wpa_auth_sta_local_mic_failure_report(struct wpa_state_machine *sm);
