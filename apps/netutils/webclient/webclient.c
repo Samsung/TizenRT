@@ -187,11 +187,6 @@ static const char g_httppost[] = "POST ";
 static const char g_httpput[] = "PUT ";
 static const char g_httpdelete[] = "DELETE ";
 
-static const char g_httpuseragentfields[] = "Connection: close\r\n"
-		"User-Agent: "
-		CONFIG_WGET_USERAGENT
-		"\r\n\r\n";
-
 static const char g_http200[] = "200 ";
 static const char g_http301[] = "301 ";
 static const char g_http302[] = "302 ";
