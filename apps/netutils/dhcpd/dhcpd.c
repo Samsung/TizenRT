@@ -297,7 +297,9 @@ struct dhcpd_state_s {
  ****************************************************************************/
 
 static const uint8_t g_magiccookie[4] = { 99, 130, 83, 99 };
+#ifndef CONFIG_NETUTILS_DHCPD_IGNOREBROADCAST
 static const uint8_t g_anyipaddr[4] = { 0, 0, 0, 0 };
+#endif
 
 static struct dhcpd_state_s g_state;
 
