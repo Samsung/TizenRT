@@ -194,7 +194,7 @@
 
 #define MKLVM(l, v, m) ((uint8_t)(l) << 6 | (uint8_t)(v) << 3 | (uint8_t)(m))
 #define GETLI(lvm)   ((uint8_t)(lvm) >> 6)
-#define GETVN(lvm)   ((uint8_t)(lvm) >> 3) & 7)
+#define GETVN(lvm)   (((uint8_t)(lvm) >> 3) & 7)
 #define GETMODE(lvm) ((uint8_t)(lvm) & 7)
 
 /****************************************************************************

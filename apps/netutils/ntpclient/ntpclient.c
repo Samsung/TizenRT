@@ -89,6 +89,8 @@
 #define CONFIG_NETUTILS_NTPCLIENT_DEBUG        0
 #endif
 
+#define NTP_DEBUG_PACKET_DATA		0
+
 /****************************************************************************
  * Private Types
  ****************************************************************************/
@@ -130,6 +132,7 @@ static void ntpc_destroy_server_info(void);
 /****************************************************************************
  * Private Functions
  ****************************************************************************/
+
 /****************************************************************************
  * Name: ntpc_getuint32
  *
@@ -294,6 +297,82 @@ static void ntpc_settime(FAR uint8_t *timestamp)
 	ndbg("Set time to %lu seconds\n", (unsigned long)tp.tv_sec);
 }
 
+#if NTP_DEBUG_PACKET_DATA
+/****************************************************************************
+ * Name: ntpc_show_packet_dump
+ *
+ * Description:
+ *   Show ntp packet dump
+ *
+ ****************************************************************************/
+static void ntpc_show_packet_data(struct ntp_datagram_s * recv, int nbytes)
+{
+	int loop_idx;
+	uint8_t * pdata = (uint8_t *)&recv;
+	uint32_t reftimestamp_seconds =  ntpc_getuint32( &recv->reftimestamp[0] );
+	uint32_t origtimestamp_seconds = ntpc_getuint32( &recv->origtimestamp[0] );
+	uint32_t recvtimestamp_seconds = ntpc_getuint32( &recv->recvtimestamp[0] );
+	uint32_t xmittimestamp_seconds = ntpc_getuint32( &recv->xmittimestamp[0] );
+
+	if (reftimestamp_seconds > NTP2UNIX_TRANLSLATION) {
+		reftimestamp_seconds -= NTP2UNIX_TRANLSLATION;
+	}
+	if (origtimestamp_seconds > NTP2UNIX_TRANLSLATION) {
+		origtimestamp_seconds -= NTP2UNIX_TRANLSLATION;
+	}
+	if (recvtimestamp_seconds > NTP2UNIX_TRANLSLATION) {
+		recvtimestamp_seconds -= NTP2UNIX_TRANLSLATION;
+	}
+	if (xmittimestamp_seconds > NTP2UNIX_TRANLSLATION) {
+		xmittimestamp_seconds -= NTP2UNIX_TRANLSLATION;
+	}
+
+	printf("\n");
+	printf("========= NTP PACKET DUMP ===========================================\n");
+	printf(" - received packet nbytes = %u\n", nbytes);
+	printf(" - lvm = %02x , (LI=%d, VN=%d, Mode=%d)\n",
+		recv->lvm, GETLI(recv->lvm), GETVN(recv->lvm), GETMODE(recv->lvm));
+	printf(" - stratum = %02x\n", recv->stratum);
+	printf(" - poll = %02x\n", recv->poll);
+	printf(" - precision = %02x\n", recv->precision);
+	printf(" - rootdelay = %02x %02x %02x %02x\n", recv->rootdelay[0], recv->rootdelay[1], recv->rootdelay[2], recv->rootdelay[3]);
+	printf(" - rootdispersion = %02x %02x %02x %02x\n", recv->rootdispersion[0], recv->rootdispersion[1], recv->rootdispersion[2], recv->rootdispersion[3]);
+	if (recv->stratum == 0){
+		printf(" - refid = %02x %02x %02x %02x (%c%c%c%c)\n",
+					recv->refid[0], recv->refid[1], recv->refid[2], recv->refid[3], recv->refid[0], recv->refid[1], recv->refid[2], recv->refid[3]);
+	} else {
+		printf(" - refid = %02x %02x %02x %02x (%d.%d.%d.%d)\n",
+					recv->refid[0], recv->refid[1], recv->refid[2], recv->refid[3], recv->refid[0], recv->refid[1], recv->refid[2], recv->refid[3]);
+	}
+	printf(" - reftimestamp = %02x %02x %02x %02x %02x %02x %02x %02x (secs=%u)\n",
+				recv->reftimestamp[0], recv->reftimestamp[1], recv->reftimestamp[2], recv->reftimestamp[3],
+				recv->reftimestamp[4], recv->reftimestamp[5], recv->reftimestamp[6], recv->reftimestamp[7], reftimestamp_seconds);
+	printf(" - origtimestamp = %02x %02x %02x %02x %02x %02x %02x %02x (secs=%u)\n",
+				recv->origtimestamp[0], recv->origtimestamp[1], recv->origtimestamp[2], recv->origtimestamp[3],
+				recv->origtimestamp[4], recv->origtimestamp[5], recv->origtimestamp[6], recv->origtimestamp[7], origtimestamp_seconds);
+	printf(" - recvtimestamp = %02x %02x %02x %02x %02x %02x %02x %02x (secs=%u)\n",
+				recv->recvtimestamp[0], recv->recvtimestamp[1], recv->recvtimestamp[2], recv->recvtimestamp[3],
+				recv->recvtimestamp[4], recv->recvtimestamp[5], recv->recvtimestamp[6], recv->recvtimestamp[7], recvtimestamp_seconds);
+	printf(" - xmittimestamp = %02x %02x %02x %02x %02x %02x %02x %02x (secs=%u)\n",
+				recv->xmittimestamp[0], recv->xmittimestamp[1], recv->xmittimestamp[2], recv->xmittimestamp[3],
+				recv->xmittimestamp[4], recv->xmittimestamp[5], recv->xmittimestamp[6], recv->xmittimestamp[7], xmittimestamp_seconds);
+	for (loop_idx=0; loop_idx<nbytes; loop_idx++) {
+		if(loop_idx % 16 == 0) {
+			printf("\n");
+		}
+		else if(loop_idx % 4 == 0) {
+			printf("   ");
+		}
+		printf("%02x ", pdata[loop_idx]);
+	}
+	printf("\n");
+	printf("=====================================================================\n");
+	printf("\n");
+
+}
+#endif
+
+
 /****************************************************************************
  * Name: ntpc_daemon
  *
@@ -431,6 +510,9 @@ static int ntpc_daemon(int argc, char **argv)
 		 */
 
 		if (nbytes >= (ssize_t)NTP_DATAGRAM_MINSIZE) {
+#if NTP_DEBUG_PACKET_DATA
+			ntpc_show_packet_data(&recv, nbytes);
+#endif
 			g_ntps.server[srv_index].link = NTP_LINK_UP;
 
 			/* check Kiss of Death message */
