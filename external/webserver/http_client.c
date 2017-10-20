@@ -215,7 +215,11 @@ int http_parse_message(char *buf, int buf_len, int *method, char *url,
 				buf[sentence_end] = '\0';
 				if (strlen(buf + len->sentence_start) > 0) {
 					/* Read parameters */
-					http_separate_keyvalue(buf + len->sentence_start, key, value);
+					int result = http_separate_keyvalue(buf + len->sentence_start, key, value);
+					if (result == HTTP_ERROR) {
+						HTTP_LOGE("Error: Fail to separate keyvalue\n");
+						return HTTP_ERROR;
+					}
 					HTTP_LOGD("[HTTP Parameter] Key: %s / Value: %s\n", key, value);
 
 					http_keyvalue_list_add(params, key, value);

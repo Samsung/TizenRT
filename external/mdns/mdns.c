@@ -255,7 +255,7 @@ static uint8_t *uncompress_nlabel(uint8_t *pkt_buf, size_t pkt_len, size_t off)
 		return NULL;
 	}
 	// calculate length of uncompressed label
-	for (p = pkt_buf + off; *p && p < e; p++) {
+	for (p = pkt_buf + off; p + 1 < e && *p; p++) {
 		size_t llen = 0;
 		if (cycle++ >= DETECT_CYCLE) {
 			DEBUG_PRINTF("malformed packet: DoS (loop in compressed labels)\n");
@@ -286,7 +286,7 @@ static uint8_t *uncompress_nlabel(uint8_t *pkt_buf, size_t pkt_len, size_t off)
 		return NULL;
 	}
 	// FIXME: must merge this with above code
-	for (p = pkt_buf + off; *p && p < e; p++) {
+	for (p = pkt_buf + off; p + 1 < e && *p; p++) {
 		size_t llen = 0;
 		if ((*p & 0xC0) == 0xC0) {
 			uint8_t *p2 = pkt_buf + (((p[0] & ~0xC0) << 8) | p[1]);

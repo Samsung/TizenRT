@@ -302,6 +302,7 @@ void wpa_supplicant_mark_disassoc(struct wpa_supplicant *wpa_s)
 	wpa_s->key_mgmt = 0;
 
 	wpas_rrm_reset(wpa_s);
+	wpa_s->wnmsleep_used = 0;
 }
 
 static void wpa_find_assoc_pmkid(struct wpa_supplicant *wpa_s)

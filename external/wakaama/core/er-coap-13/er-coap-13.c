@@ -227,7 +227,7 @@ int coap_merge_multi_option(uint8_t **dst, size_t *dst_len, uint8_t *option, siz
 	/* Merge multiple options. */
 	if (*dst_len > 0) {
 		/* Destination isn't large enough to contain option bytes */
-		if (*dst + *dst_len + option_len > buffer_boundary) {
+		if (*dst + *dst_len + option_len >= buffer_boundary) {
 			return -1;
 		}
 		/* dst already contains an option: concatenate */
@@ -240,7 +240,7 @@ int coap_merge_multi_option(uint8_t **dst, size_t *dst_len, uint8_t *option, siz
 		*dst_len += option_len;
 	} else {
 		/* Option bytes exceeds boundary, cannot fit into destination */
-		if (option + option_len > buffer_boundary) {
+		if (option + option_len >= buffer_boundary) {
 			return -1;
 		}
 		/* dst is empty: set to option */
@@ -913,6 +913,9 @@ coap_status_t coap_parse_message(void *packet, coap_protocol_t protocol, uint8_t
 		PRINTF("OPTION %u (delta %u, len %u): ", option_number, option_delta, option_length);
 		SET_OPTION(coap_pkt, option_number);
 
+		if (current_option + option_length >= (uint8_t *)data + data_len) {
+			return NOT_ACCEPTABLE_4_06;
+		}
 		switch (option_number) {
 		case COAP_OPTION_CONTENT_TYPE:
 			coap_pkt->content_type = coap_parse_int_option(current_option, option_length);

@@ -30,7 +30,6 @@ CFLAGS += -I$(TOPDIR)/../framework/include/iotbus
 include src$(DELIM)iotbus$(DELIM)Make.defs
 
 ifeq ($(CONFIG_DM), y)
-CFLAGS += -I$(TOPDIR)/../framework/include/dm
 include src$(DELIM)dm$(DELIM)Make.defs
 endif
 

@@ -3647,21 +3647,24 @@ dtls_handle_message(dtls_context_t *ctx,
     switch (msg[0]) {
 
     case DTLS_CT_CHANGE_CIPHER_SPEC:
-      if (peer) {
-        dtls_stop_retransmission(ctx, peer);
-      }
-      err = handle_ccs(ctx, peer, msg, data, data_length);
-      if (err < 0) {
-	dtls_warn("error while handling ChangeCipherSpec message\n");
-	dtls_alert_send_from_err(ctx, peer, session, err);
+		if (peer) {
+			dtls_stop_retransmission(ctx, peer);
+		}
+		if (!peer || !peer->handshake_params) {
+			break;
+		}
+		err = handle_ccs(ctx, peer, msg, data, data_length);
+		if (err < 0) {
+			dtls_warn("error while handling ChangeCipherSpec message\n");
+			dtls_alert_send_from_err(ctx, peer, session, err);
 
-	/* invalidate peer */
-	dtls_destroy_peer(ctx, peer, 1);
-	peer = NULL;
+			/* invalidate peer */
+			dtls_destroy_peer(ctx, peer, 1);
+			peer = NULL;
 
-	return err;
-      }
-      break;
+			return err;
+		}
+		break;
 
     case DTLS_CT_ALERT:
       if (peer) {

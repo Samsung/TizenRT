@@ -162,6 +162,8 @@ extern "C"
 /**
  * @brief Convert the unsigned integer netlong from network byte order to host byte order
  *
+ * @details @b #include <arpa/inet.h>\n
+ * POSIX API (refer to : http://pubs.opengroup.org/onlinepubs/9699919799/)
  * @param[in] nl netlong
  *
  * @return On success, the host byte-ordered netlong is returned. On failure, -1 is returned.
@@ -171,6 +173,8 @@ uint32_t ntohl(uint32_t nl);
 /**
  * @brief Convert the unsigned short integer netshort from network byte order to host byte order
  *
+ * @details @b #include <arpa/inet.h>\n
+ * POSIX API (refer to : http://pubs.opengroup.org/onlinepubs/9699919799/)
  * @param[in] ns netshort
  *
  * @return On success, the host byte-ordered netshort is returned. On failure, -1 is returned.
@@ -180,6 +184,8 @@ uint16_t ntohs(uint16_t ns);
 /**
  * @brief Convert the unsigned integer hostlong from host byte order to network byte order
  *
+ * @details @b #include <arpa/inet.h>\n
+ * POSIX API (refer to : http://pubs.opengroup.org/onlinepubs/9699919799/)
  * @param[in] hl hostlong
  *
  * @return On success, the network byte-ordered hostlong is returned. On failure, -1 is returned.
@@ -189,6 +195,8 @@ uint32_t htonl(uint32_t hl);
 /**
  * @brief Convert the unsigned short integer hostshort from host byte order to network byte order
  *
+ * @details @b #include <arpa/inet.h>\n
+ * POSIX API (refer to : http://pubs.opengroup.org/onlinepubs/9699919799/)
  * @param[in] hs hostshort
  *
  * @return On success, the network byte-ordered hostshort is returned. On failure, -1 is returned.
@@ -199,6 +207,7 @@ uint16_t htons(uint16_t hs);
 /**
  * @brief Convert the Internet host address from the IPv4 numbers-and-dots notation into binary form
  *
+ * @details @b #include <arpa/inet.h>
  * @param[in] cp the Internet host address
  * @param[in] inp structure that will store the converted value (IPv4 numbers-and-dots notation)
  *
@@ -209,6 +218,8 @@ int         inet_aton(FAR const char *cp, FAR struct in_addr *inp);
 /**
  * @brief Convert the Internet host address from the IPv4 numbers-and-dots notation into binary data in network byte order.
  *
+ * @details @b #include <arpa/inet.h>\n
+ * POSIX API (refer to : http://pubs.opengroup.org/onlinepubs/9699919799/)
  * @param[in] cp the Internet host address
  *
  * @return On success, binary data in network byte order is returned. On failure, INADDR_NONE(usually -1) is returned.
@@ -223,6 +234,8 @@ in_addr_t   inet_network(FAR const char *cp);
 /**
  * @brief Convert the Internet host address to a string in IPv4 dotted-decimal notation.
  *
+ * @details @b #include <arpa/inet.h>\n
+ * POSIX API (refer to : http://pubs.opengroup.org/onlinepubs/9699919799/)
  * @param[in] in the Internet host address in network byte order
  *
  * @return On success, a string in IPv4 dotted-decimal notation is returned. On failure, -1 is returned.

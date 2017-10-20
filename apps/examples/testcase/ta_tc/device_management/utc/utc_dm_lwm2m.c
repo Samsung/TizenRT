@@ -27,8 +27,8 @@
 #include <sys/socket.h>
 
 #include "utc_internal.h"
-#include "dm_lwm2m.h"
-#include "dm_error.h"
+#include <dm/dm_lwm2m.h>
+#include <dm/dm_error.h>
 #include "tc_common.h"
 
 #define UTC_DM_IPADDR_LEN 20

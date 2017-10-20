@@ -993,6 +993,7 @@ void wpa_supplicant_rsn_supp_set_config(struct wpa_supplicant *wpa_s, struct wpa
 			}
 		}
 #endif							/* CONFIG_P2P */
+		conf.wpa_rsc_relaxation = wpa_s->conf->wpa_rsc_relaxation;
 	}
 	wpa_sm_set_config(wpa_s->wpa, ssid ? &conf : NULL);
 }
