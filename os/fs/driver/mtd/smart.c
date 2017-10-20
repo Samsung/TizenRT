@@ -180,6 +180,8 @@
 
 #define SET_TO_TRUE(v, n) v[n/8] |= (1<<(7-(n%8)))
 #define GET_VAL(v, n) (v[n/8] & 1<<(7-(n%8)))
+
+#ifdef CONFIG_MTD_SMART_WEAR_LEVEL
 /* Bit mapping for wear level bits */
 /* These are defined to allow updating the wear leveling with the minimum
  * number of sector relocations / maximum use of 1 --> 0 transitions when
@@ -210,6 +212,7 @@ static const uint8_t gWearBitToLevelMap4[] = {
 	7, 13, 10, 14, 6, 15, 5, 4,
 	3, 12, 9, 8, 2, 11, 1, 0
 };
+#endif
 
 /****************************************************************************
  * Private Types
