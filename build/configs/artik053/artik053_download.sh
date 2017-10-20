@@ -118,6 +118,26 @@ main()
 			romfs
 			;;
 
+		OS|os)
+			echo "OS :"
+
+			# check existence of os binary
+			if [ ! -f "${OUTPUT_BINARY_PATH}/tinyara_head.bin" ]; then
+				echo "TinyAra binary is not existed, build first"
+				finish_download 1
+			fi
+
+			# Download all binaries using openocd script
+			pushd ${OPENOCD_DIR_PATH}
+			${OPENOCD_BIN_PATH}/openocd -f artik053.cfg -c ' 	\
+			flash_write os ../../../../output/bin/tinyara_head.bin;	\
+			exit'
+			popd
+
+			# check romfs and download it
+			romfs
+			;;
+
 		ERASE_USERFS|erase_userfs)
 			echo "USERFS :"
 
@@ -130,7 +150,7 @@ main()
 
 		*)
 			echo "${arg} is not suppported in artik053"
-			echo "Usage : make download [ ALL | ERASE_USERFS ]"
+			echo "Usage : make download [ ALL | OS | ERASE_USERFS ]"
 			finish_download 1
 			;;
 		esac

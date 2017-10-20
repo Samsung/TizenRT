@@ -21,6 +21,7 @@
     </executors>
     <options>
         <option>ALL</option>
+        <option>OS</option>
         <option>ERASE_USERFS</option>
     </options>
 </flash>
