@@ -317,6 +317,7 @@ static int ntpc_daemon(int argc, char **argv)
 	int sd;
 	fd_set sockfd_set;
 	int srv_index;
+	int denied_by_server = 0;
 
 	/* Indicate that we have started */
 
@@ -430,9 +431,67 @@ static int ntpc_daemon(int argc, char **argv)
 		 */
 
 		if (nbytes >= (ssize_t)NTP_DATAGRAM_MINSIZE) {
-			svdbg("Setting time\n");
-			ntpc_settime(recv.recvtimestamp);
 			g_ntps.server[srv_index].link = NTP_LINK_UP;
+
+			/* check Kiss of Death message */
+			if ((GETLI(recv.lvm) == 3) && (recv.stratum == 0)) {
+				char kod_message[5];
+				memcpy(kod_message, &recv.refid[0], 4);
+				kod_message[4] = '\0';
+
+				if (g_debug) {
+					ndbg("Received KoD message : %s\n", kod_message);
+				}
+
+				/* check if ntp server has denied because of rate threshold */
+				if (strncmp(kod_message, "RATE", 4) == 0) {
+					if (g_debug) {
+						ndbg("NTP server has denied access because the client exceeded the rate threshold.\n");
+					}
+
+					if (denied_by_server == 1) {
+						/* consecutively denied by server */
+						int prev_interval_secs = g_ntps.interval_secs;
+
+						g_ntps.interval_secs *= 2;
+						if (g_ntps.interval_secs > prev_interval_secs) {
+							if (g_debug) {
+								ndbg("Increase interval seconds : %d -> %d\n", prev_interval_secs, g_ntps.interval_secs);
+							}
+						} else {
+							g_ntps.interval_secs = prev_interval_secs;
+						}
+					} else {
+						denied_by_server = 1;
+					}
+
+					/* change ntp server if there are 2 or more servers */
+					if (g_ntps.num_of_servers > 1) {
+						g_ntps.server[srv_index].link = NTP_LINK_DOWN;
+						srv_index = (srv_index + 1) % g_ntps.num_of_servers;
+					}
+
+					if (g_debug) {
+						ndbg("Waiting for %d seconds\n", g_ntps.interval_secs);
+					}
+					(void)sleep(g_ntps.interval_secs);
+
+					continue;
+				}
+			}
+
+			/* clear denied_by_server flag */
+			denied_by_server = 0;
+
+			/* set time information from ntp server */
+			if (recv.recvtimestamp != 0) {
+				svdbg("Setting time\n");
+				ntpc_settime(recv.recvtimestamp);
+			} else {
+				if (g_debug) {
+					ndbg("Cannot set time because recvtimestamp is 0\n");
+				}
+			}
 		}
 
 		/* Check for errors.  Note that properly received, short datagrams
