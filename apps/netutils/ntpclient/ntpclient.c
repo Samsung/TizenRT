@@ -85,8 +85,10 @@
 #define NTP2UNIX_TRANLSLATION 2208988800u
 #define NTP_VERSION           3
 
-#ifndef CONFIG_NETUTILS_NTPCLIENT_DEBUG
-#define CONFIG_NETUTILS_NTPCLIENT_DEBUG        0
+#ifdef CONFIG_NETUTILS_NTPCLIENT_DEBUG
+#define NTP_DEBUG_MSG(format, ...)		ndbg(format, ##__VA_ARGS__)
+#else
+#define NTP_DEBUG_MSG(format, ...)
 #endif
 
 #define NTP_DEBUG_PACKET_DATA		0
@@ -122,7 +124,6 @@ void (*ntp_link_err_cb)(void);
 
 static struct ntpc_daemon_s g_ntpc_daemon;
 static struct ntpc_server_info_s g_ntps;
-static int g_debug = CONFIG_NETUTILS_NTPCLIENT_DEBUG;
 
 /****************************************************************************
  * Private Functions Prototype
@@ -451,9 +452,7 @@ static int ntpc_daemon(int argc, char **argv)
 
 		svdbg("Sending a NTP packet\n");
 
-		if (g_debug) {
-			ndbg("server : %s (%d.%d.%d.%d:%d)\n", g_ntps.server[srv_index].conn.hostname, (g_ntps.server[srv_index].ipaddr >> 0) & 0xFF, (g_ntps.server[srv_index].ipaddr >> 8) & 0xFF, (g_ntps.server[srv_index].ipaddr >> 16) & 0xFF, (g_ntps.server[srv_index].ipaddr >> 24) & 0xFF, g_ntps.server[srv_index].conn.port);
-		}
+		NTP_DEBUG_MSG("server : %s (%d.%d.%d.%d:%d)\n", g_ntps.server[srv_index].conn.hostname, (g_ntps.server[srv_index].ipaddr >> 0) & 0xFF, (g_ntps.server[srv_index].ipaddr >> 8) & 0xFF, (g_ntps.server[srv_index].ipaddr >> 16) & 0xFF, (g_ntps.server[srv_index].ipaddr >> 24) & 0xFF, g_ntps.server[srv_index].conn.port);
 
 		/* Setup or sockaddr_in struct with information about the server we are
 		 * going to ask the the time from.
@@ -521,15 +520,11 @@ static int ntpc_daemon(int argc, char **argv)
 				memcpy(kod_message, &recv.refid[0], 4);
 				kod_message[4] = '\0';
 
-				if (g_debug) {
-					ndbg("Received KoD message : %s\n", kod_message);
-				}
+				NTP_DEBUG_MSG("Received KoD message : %s\n", kod_message);
 
 				/* check if ntp server has denied because of rate threshold */
 				if (strncmp(kod_message, "RATE", 4) == 0) {
-					if (g_debug) {
-						ndbg("NTP server has denied access because the client exceeded the rate threshold.\n");
-					}
+					NTP_DEBUG_MSG("NTP server has denied access because the client exceeded the rate threshold.\n");
 
 					if (denied_by_server == 1) {
 						/* consecutively denied by server */
@@ -537,9 +532,7 @@ static int ntpc_daemon(int argc, char **argv)
 
 						g_ntps.interval_secs *= 2;
 						if (g_ntps.interval_secs > prev_interval_secs) {
-							if (g_debug) {
-								ndbg("Increase interval seconds : %d -> %d\n", prev_interval_secs, g_ntps.interval_secs);
-							}
+							NTP_DEBUG_MSG("Increase interval seconds : %d -> %d\n", prev_interval_secs, g_ntps.interval_secs);
 						} else {
 							g_ntps.interval_secs = prev_interval_secs;
 						}
@@ -553,9 +546,7 @@ static int ntpc_daemon(int argc, char **argv)
 						srv_index = (srv_index + 1) % g_ntps.num_of_servers;
 					}
 
-					if (g_debug) {
-						ndbg("Waiting for %d seconds\n", g_ntps.interval_secs);
-					}
+					NTP_DEBUG_MSG("Waiting for %d seconds\n", g_ntps.interval_secs);
 					(void)sleep(g_ntps.interval_secs);
 
 					continue;
@@ -570,9 +561,7 @@ static int ntpc_daemon(int argc, char **argv)
 				svdbg("Setting time\n");
 				ntpc_settime(recv.recvtimestamp);
 			} else {
-				if (g_debug) {
-					ndbg("Cannot set time because recvtimestamp is 0\n");
-				}
+				NTP_DEBUG_MSG("Cannot set time because recvtimestamp is 0\n");
 			}
 		}
 
@@ -588,10 +577,7 @@ static int ntpc_daemon(int argc, char **argv)
 			int errval = errno;
 			if (errval != EINTR) {
 				ndbg("ERROR: recvfrom() failed (errno: %d)\n", errval);
-				if (g_debug) {
-					ndbg("ntp client cannot receive time information from ntp server.\n");
-					ndbg("maybe, ntp server is not connected.\n");
-				}
+				NTP_DEBUG_MSG("ntp client cannot receive time information from ntp server.\n");
 			}
 
 			g_ntps.server[srv_index].link = NTP_LINK_DOWN;	/* current server's link is down */
@@ -612,9 +598,7 @@ static int ntpc_daemon(int argc, char **argv)
 
 		if (g_ntpc_daemon.state == NTP_RUNNING) {
 
-			if (g_debug) {
-				ndbg("Waiting for %d seconds\n", g_ntps.interval_secs);
-			}
+			NTP_DEBUG_MSG("Waiting for %d seconds\n", g_ntps.interval_secs);
 
 			(void)sleep(g_ntps.interval_secs);
 		}
@@ -622,9 +606,7 @@ static int ntpc_daemon(int argc, char **argv)
 
 	/* The NTP client is terminating */
 
-	if (g_debug) {
-		ndbg("daemon stop\n");
-	}
+	NTP_DEBUG_MSG("daemon stop\n");
 
 	close(sd);
 
