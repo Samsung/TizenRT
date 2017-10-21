@@ -61,14 +61,20 @@ static bool readOptional(const char* description)
 
     while(1)
     {
-        scanf("%c", &choice);
-        getchar();
-
-        switch (choice)
+        if (scanf("%c", &choice))
         {
-            case 'y': return true;
-            case 'n': return false;
-            default: printf("Wrong value entered. Please press 'y' or 'n'\n");
+            getchar();
+
+            switch (choice)
+            {
+                case 'y': return true;
+                case 'n': return false;
+                default: printf("Wrong value entered. Please press 'y' or 'n'\n");
+            }
+        }
+        else
+        {
+            printf("Failed to read input. Please press 'y' or 'n'\n");
         }
     }
     return false;
@@ -87,8 +93,10 @@ void readString(char* item, int length, const char* description, const char* exa
     printf("Enter %s (f.e. %s):\n", description, example);
     char temp[8] = { 0 };
     snprintf(temp, sizeof(temp), "%%%ds", length - 1);
-    scanf(temp, item);
-    getchar();
+    if (scanf(temp, item) )
+    {
+        getchar();
+    }
 }
 
 /**
@@ -117,8 +125,10 @@ static void readOptionalString(char* item, int length, const char* description, 
 void readInteger(int* item, const char* description, const char* example)
 {
     printf("Enter %s (f.e. %s):\n", description, example);
-    scanf("%d", item);
-    getchar();
+    if (scanf("%d", item))
+    {
+        getchar();
+    }
 }
 
 /**

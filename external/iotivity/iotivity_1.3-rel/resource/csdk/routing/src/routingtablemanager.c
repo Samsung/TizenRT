@@ -36,8 +36,6 @@
  */
 #define RM_TAG "OIC_RM_RAP"
 
-static const uint64_t USECS_PER_SEC = 1000000;
-
 OCStackResult RTMInitialize(u_linklist_t **gatewayTable, u_linklist_t **endpointTable)
 {
     OIC_LOG(DEBUG, TAG, "RTMInitialize IN");

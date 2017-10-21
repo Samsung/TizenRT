@@ -71,14 +71,20 @@ static bool readOptional(const char* description)
 
     while(1)
     {
-        scanf("%c", &choice);
-        skipSpecialCharacters();
-
-        switch (choice)
+        if(scanf("%c", &choice))
         {
-            case 'y': return true;
-            case 'n': return false;
-            default: printf("Wrong value entered. Please press 'y' or 'n'\n");
+            skipSpecialCharacters();
+
+            switch (choice)
+            {
+                case 'y': return true;
+                case 'n': return false;
+                default: printf("Wrong value entered. Please press 'y' or 'n'\n");
+            }
+        }
+        else
+        {
+            printf("Failed to read input. Please press 'y' or 'n'\n");
         }
     }
     return false;
@@ -89,8 +95,10 @@ void readString(char* item, int length, const char* description, const char* exa
     printf("Enter %s (f.e. %s):\n", description, example);
     char template[8] = { 0 };
     snprintf(template, sizeof(template), "%%%ds", length - 1);
-    scanf(template, item);
-    skipSpecialCharacters();
+    if (scanf(template, item))
+    {
+        skipSpecialCharacters();
+    }
 }
 
 /**
@@ -112,15 +120,19 @@ static void readOptionalString(char* item, int length, const char* description, 
 void readInteger(int* item, const char* description, const char* example)
 {
     printf("Enter %s (f.e. %s):\n", description, example);
-    scanf("%d", item);
-    skipSpecialCharacters();
+    if(scanf("%d", item))
+    {
+        skipSpecialCharacters();
+    }
 }
 
 void readUInt16(uint16_t* item, const char* description, const char* example)
 {
     printf("Enter %s (f.e. %s):\n", description, example);
-    scanf("%hu", item);
-    skipSpecialCharacters();
+    if (scanf("%hu", item))
+    {
+        skipSpecialCharacters();
+    }
 }
 
 /**

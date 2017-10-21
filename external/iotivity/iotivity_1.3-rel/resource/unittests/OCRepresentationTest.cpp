@@ -609,7 +609,7 @@ namespace OCRepresentationTest
 
     //Disabled this test due to older GCC v4.6 fails for this test.
     //We will enable it when we have a fix for it.
-    TEST(OCRepresentationSubscript, DISABLED_Boolean)
+    TEST(OCRepresentationSubscript, Boolean)
     {
         static const std::string AttrName = "BooleanTest";
         OCRepresentation rep;

@@ -20,6 +20,7 @@
 
 #include <stdio.h>
 #include <string.h>
+#include <inttypes.h>
 #include "routingmanager.h"
 #include "routingmanagerinterface.h"
 #include "routingtablemanager.h"
@@ -788,7 +789,7 @@ void RMProcess()
 
     if (!g_isValidated && ROUTINGTABLE_REFRESH_TIMEOUT <= (currentTime - g_refreshTableTime))
     {
-        OIC_LOG_V(DEBUG, TAG, "Refreshing the routing table: %llu", currentTime);
+        OIC_LOG_V(DEBUG, TAG, "Refreshing the routing table: %" PRIu64, currentTime);
         u_linklist_t* invalidInterfaces = NULL;
         RTMUpdateDestAddrValidity(&invalidInterfaces, &g_routingGatewayTable);
         if (0 < u_linklist_length(invalidInterfaces))

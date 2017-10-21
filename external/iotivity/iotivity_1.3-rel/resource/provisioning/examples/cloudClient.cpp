@@ -271,7 +271,10 @@ static void userRequests(void *data)
         printMenu();
 
         int request = 0;
-        scanf("%d", &request);
+        if (!scanf("%d", &request))
+        {
+            continue;
+        }
         getchar();
 
         switch (request)
