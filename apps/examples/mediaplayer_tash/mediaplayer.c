@@ -231,7 +231,6 @@ media_t *media_open(char *path, media_op_e op, media_type_e type)
 	m->op = op;
 	m->state = MEDIA_STATE_CREATED;
 	m->type = type;
-	m->payload = NULL;
 
 	if (type == MEDIA_TYPE_WAV || type == MEDIA_TYPE_PCM) {
 		if (op == MEDIA_OP_PLAYBACK) {
