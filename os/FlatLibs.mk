@@ -84,6 +84,12 @@ ifneq ($(APPDIR),)
 TINYARALIBS += $(LIBRARIES_DIR)$(DELIM)libapps$(LIBEXT)
 endif
 
+# Add libraries for crypto module
+
+ifeq ($(CONFIG_CRYPTO),y)
+TINYARALIBS += $(LIBRARIES_DIR)$(DELIM)libcrypto$(LIBEXT)
+endif
+
 # Add library for external support.
 
 TINYARALIBS += $(LIBRARIES_DIR)$(DELIM)libexternal$(LIBEXT)

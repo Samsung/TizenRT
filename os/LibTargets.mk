@@ -105,6 +105,12 @@ fs$(DELIM)libfs$(LIBEXT): context
 $(LIBRARIES_DIR)$(DELIM)libfs$(LIBEXT): fs$(DELIM)libfs$(LIBEXT)
 	$(Q) install fs$(DELIM)libfs$(LIBEXT) $(LIBRARIES_DIR)$(DELIM)libfs$(LIBEXT)
 
+crypto$(DELIM)libcrypto$(LIBEXT): context
+	$(Q) $(MAKE) -C crypto TOPDIR="$(TOPDIR)" libcrypto$(LIBEXT) KERNEL=y EXTRADEFINES=$(KDEFINE)
+
+$(LIBRARIES_DIR)$(DELIM)libcrypto$(LIBEXT): crypto$(DELIM)libcrypto$(LIBEXT)
+	$(Q) install crypto$(DELIM)libcrypto$(LIBEXT) $(LIBRARIES_DIR)$(DELIM)libcrypto$(LIBEXT)
+
 audio$(DELIM)libaudio$(LIBEXT): context
 	$(Q) $(MAKE) -C audio TOPDIR="$(TOPDIR)" libaudio$(LIBEXT) KERNEL=y EXTRADEFINES=$(KDEFINE)
 

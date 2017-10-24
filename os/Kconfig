@@ -468,6 +468,10 @@ menu "File Systems"
 source fs/Kconfig
 endmenu
 
+menu "Crypto"
+source crypto/Kconfig
+endmenu
+
 menu "Database"
 source "$FRAMEWORK_DIR/src/arastorage/Kconfig"
 endmenu

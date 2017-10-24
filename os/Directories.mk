@@ -194,6 +194,13 @@ KERNDEPDIRS += audio
 endif
 CLEANDIRS += audio
 
+# Add Crypto Module
+
+ifeq ($(CONFIG_CRYPTO),y)
+KERNDEPDIRS += crypto
+endif
+CLEANDIRS += crypto
+
 # Add networking directories to KERNDEPDIRS and CLEANDIRS
 
 ifeq ($(CONFIG_NET),y)

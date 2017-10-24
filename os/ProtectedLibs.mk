@@ -120,6 +120,12 @@ ifeq ($(CONFIG_AUDIO),y)
 TINYARALIBS += $(LIBRARIES_DIR)$(DELIM)libaudio$(LIBEXT)
 endif
 
+# Add libraries for crypto support
+
+ifeq ($(CONFIG_CRYPTO),y)
+TINYARALIBS += $(LIBRARIES_DIR)$(DELIM)libcrypto$(LIBEXT)
+endif
+
 # Add libraries for power management module
 
 ifeq ($(CONFIG_PM),y)

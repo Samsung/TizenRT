@@ -1,0 +1,38 @@
+#
+# For a description of the syntax of this configuration file,
+# see kconfig-language at https://www.kernel.org/doc/Documentation/kbuild/kconfig-language.txt
+#
+
+config CRYPTO
+	bool "Crypto API support"
+	default n
+	---help---
+		Enable or disable Crypto API features
+
+if CRYPTO
+
+config CRYPTO_ALGTEST
+	bool "Perform automatic crypto algorithms test on startup"
+	default n
+
+if CRYPTO_ALGTEST
+
+config CRYPTO_AES128_DISABLE
+	bool "Omit 128-bit AES tests"
+	default n
+
+config CRYPTO_AES192_DISABLE
+	bool "Omit 192-bit AES tests"
+	default n
+
+config CRYPTO_AES256_DISABLE
+	bool "Omit 256-bit AES tests"
+	default n
+
+endif # CRYPTO_ALGTEST
+
+config CRYPTO_SW_AES
+	bool "Software AES library"
+	default n
+
+endif # CRYPTO
