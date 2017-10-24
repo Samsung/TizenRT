@@ -1,6 +1,6 @@
 /****************************************************************************
  *
- * Copyright 2016 Samsung Electronics All Rights Reserved.
+ * Copyright 2017 Samsung Electronics All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,153 +15,36 @@
  * language governing permissions and limitations under the License.
  *
  ****************************************************************************/
-///////////////////////////////////////////////////////////////////////
-//NOTE :  This sample server is generated based on ocserverbasicops.cpp
-///////////////////////////////////////////////////////////////////////
-
-#include <stdio.h>
-#include <string.h>
-#include <stdlib.h>
-#include <unistd.h>
-#include <signal.h>
 #include <pthread.h>
+#include <ocstack.h>
+#include "iotivity_common.h"
+
 #include "ocstack.h"
 #include "logger.h"
 #include "ocpayload.h"
 #include "ocserver.h"
 
-#include "file_data.c"
 #include "iotivity_common.h"
 
-#if defined(CONFIG_TLS_WITH_SSS)
-#include "tls/see_api.h"
+#define TAG "LIGHT RESOURCE"
+
+#if ! defined(__TIZENRT__)
+#define PTHREAD_DEFAULT_PRIORITY		100
+#define PTHREAD_STACK_DEFAULT			(16 * 1024)
 #endif
 
-#define TAG "SECURESERVER_JUSTWORKS"
-#define STORAGE_MOUNT_POINT "/mnt/"
-#define DB_NAME data_oic_svr_db_server_dat
-
-static int gObserveNotifyType = 3;
-
-int gQuitFlag;
-int gLightUnderObservation;
-
-Observers interestedObservers[SAMPLE_MAX_NUM_OBSERVATIONS];
-
-pthread_t threadId_observe;
-pthread_t threadId_presence;
-
-static bool observeThreadStarted;
-
-/* Structure to represent a LED resource */
-typedef struct LEDRESOURCE {
-	OCResourceHandle handle;
-	bool state;
-	int power;
-} LEDResource;
-
-#ifdef WITH_PRESENCE
-#define numPresenceResources (2)
-#endif
-
-static LEDResource LED;
-// This variable determines instance number of the LED resource.
-// Used by POST method to create a new instance of LED resource.
-static int gCurrLedInstance = 0;
 #define SAMPLE_MAX_NUM_POST_INSTANCE  2
 static LEDResource gLedInstance[SAMPLE_MAX_NUM_POST_INSTANCE];
 
-//Secure Virtual Resource database for Iotivity Server
-//It contains Server's Identity and the PSK credentials
-//of other devices which the server trusts
-static char *CRED_FILE = "/mnt/oic_svr_db.dat";
-static char *PROP_FILE = "/mnt/device_properties.dat";
+// This variable determines instance number of the LED resource.
+// Used by POST method to create a new instance of LED resource.
+static int gCurrLedInstance;
 
-/* Function that creates a new LED resource by calling the
- * OCCreateResource() method.
- */
-int createLEDResource(char *uri, LEDResource *ledResource, bool resourceState, int resourcePower);
+static int gObserveNotifyType = 3;
 
-/* This method converts the payload to JSON format */
-OCRepPayload *sec_constructResponse(OCEntityHandlerRequest *ehRequest);
+Observers interestedObservers[SAMPLE_MAX_NUM_OBSERVATIONS];
 
-/* Following methods process the PUT, GET, POST
- * requests
- */
-OCEntityHandlerResult sec_ProcessGetRequest(OCEntityHandlerRequest *ehRequest, OCRepPayload **payload);
-OCEntityHandlerResult sec_ProcessPutRequest(OCEntityHandlerRequest *ehRequest, OCRepPayload **payload);
-OCEntityHandlerResult sec_ProcessPostRequest(OCEntityHandlerRequest *ehRequest, OCEntityHandlerResponse *response, OCRepPayload **payload);
-
-/* Entity Handler callback functions */
-OCEntityHandlerResult sec_OCEntityHandlerCb(OCEntityHandlerFlag flag, OCEntityHandlerRequest *entityHandlerRequest, void *callbackParam);
-
-#if defined(LWIP_HAVE_LOOPIF) && LWIP_HAVE_LOOPIF == 1
-#define NET_DEVNUM 1
-#else
-#define NET_DEVNUM 0
-#endif
-
-#if defined(CONFIG_ENC28J60) || defined(CONFIG_WICED)
-#define NET_DEVNAME "en"
-#elif defined(CONFIG_ARCH_BOARD_SIDK_S5JT200)
-#define NET_DEVNAME "wl"
-#elif defined(CONFIG_ARCH_BOARD_ARTIK053)
-#define NET_DEVNAME "wl"
-#else
-#error "undefined CONFIG_NET_<type>, check your .config"
-#endif
-
-#define IOTIVITY_TEST_STACKSIZE   16384
-#define IOTIVITY_TEST_PRI   100
-#define IOTIVITY_TEST_SCHED_POLICIY SCHED_RR
-
-const char *sec_getResult(OCStackResult result)
-{
-	switch (result) {
-	case OC_STACK_OK:
-		return "OC_STACK_OK";
-	case OC_STACK_RESOURCE_CREATED:
-		return "OC_STACK_RESOURCE_CREATED";
-	case OC_STACK_RESOURCE_DELETED:
-		return "OC_STACK_RESOURCE_DELETED";
-	case OC_STACK_INVALID_URI:
-		return "OC_STACK_INVALID_URI";
-	case OC_STACK_INVALID_QUERY:
-		return "OC_STACK_INVALID_QUERY";
-	case OC_STACK_INVALID_IP:
-		return "OC_STACK_INVALID_IP";
-	case OC_STACK_INVALID_PORT:
-		return "OC_STACK_INVALID_PORT";
-	case OC_STACK_INVALID_CALLBACK:
-		return "OC_STACK_INVALID_CALLBACK";
-	case OC_STACK_INVALID_METHOD:
-		return "OC_STACK_INVALID_METHOD";
-	case OC_STACK_NO_MEMORY:
-		return "OC_STACK_NO_MEMORY";
-	case OC_STACK_COMM_ERROR:
-		return "OC_STACK_COMM_ERROR";
-	case OC_STACK_INVALID_PARAM:
-		return "OC_STACK_INVALID_PARAM";
-	case OC_STACK_NOTIMPL:
-		return "OC_STACK_NOTIMPL";
-	case OC_STACK_NO_RESOURCE:
-		return "OC_STACK_NO_RESOURCE";
-	case OC_STACK_RESOURCE_ERROR:
-		return "OC_STACK_RESOURCE_ERROR";
-	case OC_STACK_SLOW_RESOURCE:
-		return "OC_STACK_SLOW_RESOURCE";
-	case OC_STACK_NO_OBSERVERS:
-		return "OC_STACK_NO_OBSERVERS";
-#ifdef WITH_PRESENCE
-	case OC_STACK_PRESENCE_STOPPED:
-		return "OC_STACK_PRESENCE_STOPPED";
-#endif
-	case OC_STACK_ERROR:
-		return "OC_STACK_ERROR";
-	default:
-		return "UNKNOWN";
-	}
-}
+int gLightUnderObservation;
 
 OCRepPayload *sec_getPayload(const char *uri, int64_t power, bool state)
 {
@@ -178,6 +61,40 @@ OCRepPayload *sec_getPayload(const char *uri, int64_t power, bool state)
 	return payload;
 }
 
+OCRepPayload *sec_get_current_value(OCRepPayload *payload, unsigned int id){
+	//TODO
+	//Should make URL based on id.
+	if(id = 0){
+		OCRepPayloadSetUri(payload, (char *)"/a/light/0");
+	}else{
+		OCRepPayloadSetUri(payload, (char *)"/a/light/1");
+	}
+	OCRepPayloadSetPropBool(payload, "state", gLedInstance[id].state);
+	OCRepPayloadSetPropInt(payload, "power", gLedInstance[id].power);
+
+	return payload;
+}
+
+int sec_get_current_hadle(unsigned int id, OCResourceHandle *handle){
+	if(!handle)
+		return -1;
+
+	*handle = gLedInstance[id].handle;
+	return 0;
+}
+
+int sec_get_power(unsigned int id){
+	if(id < 0)
+		return -1;
+
+	return gLedInstance[id].power;
+}
+
+int sec_set_power(unsigned int id, int power){
+	gLedInstance[id].power = power;
+	return	ocf_mylight_notify_emit(id);
+}
+
 //This function takes the request as an input and returns the response
 OCRepPayload *sec_constructResponse(OCEntityHandlerRequest *ehRequest)
 {
@@ -192,10 +109,10 @@ OCRepPayload *sec_constructResponse(OCEntityHandlerRequest *ehRequest)
 
 	if (ehRequest->resource == gLedInstance[0].handle) {
 		currLEDResource = &gLedInstance[0];
-		gResourceUri = (char *)"/a/led/0";
+		gResourceUri = (char *)"/a/light/0";
 	} else if (ehRequest->resource == gLedInstance[1].handle) {
 		currLEDResource = &gLedInstance[1];
-		gResourceUri = (char *)"/a/led/1";
+		gResourceUri = (char *)"/a/light/1";
 	}
 
 	if (OC_REST_PUT == ehRequest->method) {
@@ -265,7 +182,7 @@ OCEntityHandlerResult sec_ProcessPostRequest(OCEntityHandlerRequest *ehRequest, 
 	if (ehRequest->resource == LED.handle) {
 		if (gCurrLedInstance < SAMPLE_MAX_NUM_POST_INSTANCE) {
 			// Create new LED instance
-			char newLedUri[15] = "/a/led/";
+			char newLedUri[15] = "/a/light/";
 			int newLedUriLength = strlen(newLedUri);
 			snprintf(newLedUri + newLedUriLength, sizeof(newLedUri) - newLedUriLength, "%d", gCurrLedInstance);
 
@@ -273,7 +190,7 @@ OCEntityHandlerResult sec_ProcessPostRequest(OCEntityHandlerRequest *ehRequest, 
 			OCRepPayloadSetUri(respPLPost_led, gResourceUri);
 			OCRepPayloadSetPropString(respPLPost_led, "createduri", newLedUri);
 
-			if (0 == createLEDResource(newLedUri, &gLedInstance[gCurrLedInstance], false, 0)) {
+			if (0 == initLightResource(newLedUri, &gLedInstance[gCurrLedInstance], false, 0)) {
 				printf("Created new LED instance\n");
 				gLedInstance[gCurrLedInstance].state = 0;
 				gLedInstance[gCurrLedInstance].power = 0;
@@ -316,13 +233,13 @@ OCEntityHandlerResult sec_ProcessDeleteRequest(OCEntityHandlerRequest *ehRequest
 	}
 	OCEntityHandlerResult ehResult = OC_EH_OK;
 
-	OIC_LOG_V(INFO, TAG, "\n\nExecuting %s for resource %p ", __func__, ehRequest->resource);
+	printf("\n\nExecuting %s for resource %p ", __func__, ehRequest->resource);
 
 	/*
 	 * In the sample below, the application will:
 	 * 1a. pass the delete request to the c stack
 	 * 1b. internally, the c stack figures out what needs to be done and does it accordingly
-	 *    (e.g. send observers notification, remove observers...)
+	 *	  (e.g. send observers notification, remove observers...)
 	 * 1c. the c stack returns with the result whether the request is fullfilled.
 	 * 2. optionally, app removes observers out of its array 'interestedObservers'
 	 */
@@ -553,7 +470,7 @@ void *ChangeLightRepresentation(void *param)
 		sleep(3);
 		LED.power += 5;
 		if (gLightUnderObservation) {
-			OIC_LOG_V(INFO, TAG, " =====> Notifying stack of new power level %d\n", Light.power);
+			OIC_LOG_V(INFO, TAG, " =====> Notifying stack of new power level %d\n", LED.power);
 			if (gObserveNotifyType == 1) {
 				// Notify list of observers. Alternate observers on the list will be notified.
 				j = 0;
@@ -564,7 +481,7 @@ void *ChangeLightRepresentation(void *param)
 					}
 				}
 
-				OCRepPayload *payload = getPayload(gResourceUri, LED.power, LED.state);
+				OCRepPayload *payload = sec_getPayload(gResourceUri, LED.power, LED.state);
 				result = OCNotifyListOfObservers(LED.handle, obsNotify, j, payload, OC_NA_QOS);
 				OCRepPayloadDestroy(payload);
 			} else if (gObserveNotifyType == 0) {
@@ -582,244 +499,29 @@ void *ChangeLightRepresentation(void *param)
 	return NULL;
 }
 
-#ifdef WITH_PRESENCE
-void *presenceNotificationGenerator(void *param)
-{
-	uint8_t secondsBeforePresence = 10;
-	OIC_LOG_V(INFO, TAG, "Will send out presence in %u seconds", secondsBeforePresence);
-	sleep(secondsBeforePresence);
-	(void)param;
-	OCDoHandle presenceNotificationHandles[numPresenceResources];
-	OCStackResult res = OC_STACK_OK;
-
-	char *presenceNotificationResources[numPresenceResources] = { "oic.r.switch.binary" };
-	char *presenceNotificationUris[numPresenceResources] = { gResourceUri };
-
-	for (int i = 0; i < numPresenceResources; i++) {
-		if (res == OC_STACK_OK) {
-			sleep(1);
-			res = OCCreateResource(&presenceNotificationHandles[i], presenceNotificationResources[i], OC_RSRVD_INTERFACE_DEFAULT, presenceNotificationUris[i], OCNOPEntityHandlerCb, NULL, OC_DISCOVERABLE | OC_OBSERVABLE);
-		}
-		if (res != OC_STACK_OK) {
-			OIC_LOG_V(ERROR, TAG, "\"Presence Notification Generator\" failed to create resource " "%s with result %s.", presenceNotificationResources[i], getResult(res));
-			break;
-		}
-		OIC_LOG_V(INFO, TAG, PCF("Created %s for presence notification"), presenceNotificationUris[i]);
-	}
-	sleep(5);
-	for (int i = 0; i < numPresenceResources; i++) {
-		if (res == OC_STACK_OK) {
-			res = OCDeleteResource(presenceNotificationHandles[i]);
-		}
-		if (res != OC_STACK_OK) {
-			OIC_LOG_V(ERROR, TAG, "\"Presence Notification Generator\" failed to delete " "resource %s.", presenceNotificationResources[i]);
-			break;
-		}
-		OIC_LOG_V(INFO, TAG, PCF("Deleted %s for presence notification"), presenceNotificationUris[i]);
-	}
-
-	OIC_LOG(INFO, TAG, "================ stopping presence");
-	OCStopPresence();
-
-	return NULL;
-}
-#endif
-
-/* Initialize oic_svr_db_server_justworks.dat file
-*  Current implementation:  CRED_FILE data is loaded/hardcoded in byte_array(data_oic_svr_db_server_dat)
-*/
-int init_oic_svr_db_server_justworks_file()
-{
-	int ret = -1;
-	FILE *mfile = NULL;
-	printf("[%s] Init %s file called\n", TAG, CRED_FILE);
-
-	unlink(PROP_FILE);
-	unlink(CRED_FILE);
-	printf("removed db file\n");
-	mfile = fopen(CRED_FILE, 'r');
-	if (NULL == mfile) {
-		/* This will happen during first boot */
-		printf("[%s] creating file %s \n", TAG, CRED_FILE);
-		mfile = fopen(CRED_FILE, "wb");
-		if (!mfile) {
-			printf("[%s] ERROR creating a file\n", TAG);
-			return -1;
-		}
-		/* write to new file from byte array: data_oic_svr_db_server_dat */
-		printf("[%s] Writing: oic_svr_db_server_justworks_dat size =%d\n", TAG, sizeof(DB_NAME));
-		ret = fwrite(DB_NAME, sizeof(char), sizeof(DB_NAME), mfile);
-		if (ret != sizeof(DB_NAME)) {
-			printf("[%s] Write failed %d returning NULL\n", TAG, ret);
-			return -1;
-		}
-	}
-	ret = fclose(mfile);
-	if (ret != 0) {
-		printf("[%s] Close failed %d returning NULL\n", TAG, ret);
-		return -1;
-	}
-	return 0;
-}
-
-FILE *secureserver_fopen(const char *path, const char *mode)
-{
-	char path_buf[CONFIG_SMARTFS_MAXNAMLEN + sizeof(STORAGE_MOUNT_POINT)];
-	memset(path_buf, 0, sizeof(path_buf));
-	strcat(path_buf, STORAGE_MOUNT_POINT);
-	strcat(path_buf, path);
-	(void)path;
-	printf("fopen : %s\n", path_buf);
-	return fopen(path_buf, mode);
-}
-
-OCStackResult initSecureServerPersistentStorage()
-{
-	//Initialize Persistent Storage for SVR database
-	static OCPersistentStorage ps = { secureserver_fopen, fread, fwrite, fclose, unlink };
-
-	return OCRegisterPersistentStorageHandler(&ps);
-}
-
-int secureServer_main_cb(int argc, char *argv[])
-{
-	struct timespec timeout;
-
-	observeThreadStarted = false;
-#if defined(CONFIG_TLS_WITH_SSS)
-	see_init();
-#endif
-	printf("[%s] OCServer is starting...\n", TAG);
-	/* Intialize Persistent Storage */
-	if (OC_STACK_OK != initSecureServerPersistentStorage()) {
-		printf("[%s] initSecureServerPersistentStorage failed \n", TAG);
-		return -2;
-	}
-	/* Intialize Required Files */
-	if (init_oic_svr_db_server_justworks_file() != 0) {
-		printf("[%s] init_oic_svr_db_server_justworks_file failed \n", TAG);
-		return -1;
-	}
-	/* Intialize OCStack */
-
-#ifdef RA_ADAPTER
-	OCSetRAInfo(&rainfo);
-#endif
-	if (OCInit(NULL, 0, OC_SERVER) != OC_STACK_OK) {
-		printf("[%s] OCStack init error \n", TAG);
-		return -1;
-	}
-#ifdef WITH_PRESENCE
-	if (OCStartPresence(0) != OC_STACK_OK) {
-		OIC_LOG(ERROR, TAG, "OCStack presence/discovery error");
-		return 0;
-	}
-#endif
-
-	/* Set Platform and device information */
-	OCSetDefaultDeviceEntityHandler(OCDeviceEntityHandlerCb, NULL);
-	OCStackResult registrationResult = SetPlatformInfo(platformID, manufacturerName, manufacturerLink, modelNumber,
-									   dateOfManufacture, platformVersion, operatingSystemVersion, hardwareVersion,
-									   firmwareVersion, supportLink, systemTime);
-	if (registrationResult != OC_STACK_OK) {
-		printf("Platform info setting failed locally!\n");
-		exit(EXIT_FAILURE);
-	}
-
-	registrationResult = OCSetPlatformInfo(platformInfo);
-
-	if (registrationResult != OC_STACK_OK) {
-		printf("Platform Registration failed!");
-		exit(EXIT_FAILURE);
-	}
-
-	registrationResult = SetDeviceInfoLocal(deviceName, specVersion, dataModelVersions, deviceType);
-
-	if (registrationResult != OC_STACK_OK) {
-		printf("Device info setting failed locally!");
-		exit(EXIT_FAILURE);
-	}
-
-	registrationResult = OCSetDeviceInfo(deviceInfo);
-
-	if (registrationResult != OC_STACK_OK) {
-		printf("Device Registration failed!");
-		exit(EXIT_FAILURE);
-	}
-
-	/*
-	 * Declare and create the example resource: LED
-	 */
-	createLEDResource(gResourceUri, &LED, false, 0);
-
-	for (uint8_t i = 0; i < SAMPLE_MAX_NUM_OBSERVATIONS; i++) {
-		interestedObservers[i].valid = false;
-	}
-
-	timeout.tv_sec = 0;
-	timeout.tv_nsec = 100000000L;
-
-	// Break from loop with Ctrl-C
-	printf("[%s] Entering ocserver main loop \n", TAG);
-	// signal(SIGINT, handleSigInt);
-	DeletePlatformInfoLocal();
-	DeleteDeviceInfoLocal();
-
-	while (!gQuitFlag) {
-		if (OCProcess() != OC_STACK_OK) {
-			printf("[%s] OCStack process error \n", TAG);
-			return -1;
-		}
-		nanosleep(&timeout, NULL);
-	}
-
-	printf("[%s] Exiting ocserver main loop \n", TAG);
-
-	if (observeThreadStarted) {
-		pthread_cancel(threadId_observe);
-		pthread_join(threadId_observe, NULL);
-	}
-
-	pthread_cancel(threadId_presence);
-	pthread_join(threadId_presence, NULL);
-
-	if (OCStop() != OC_STACK_OK) {
-		printf("[%s] OCStack process error \n", TAG);
-	}
-#if defined(CONFIG_TLS_WITH_SSS)
-	see_free();
-#endif
-
-	return 0;
-}
-
-int createLEDResource(char *uri, LEDResource *ledResource, bool resourceState, int resourcePower)
+int initLightResource(char *uri, LEDResource *resource, bool resourceState, int resourcePower)
 {
 	if (!uri) {
 		printf("[%s] Resource URI cannot be NULL \n", TAG);
 		return -1;
 	}
 
-	ledResource->state = resourceState;
-	ledResource->power = resourcePower;
-	OCStackResult res = OCCreateResource(&(ledResource->handle),
+	resource->state = resourceState;
+	resource->power = resourcePower;
+	OCStackResult res = OCCreateResource(&(resource->handle),
 										 "oic.r.switch.binary",
-										 OC_RSRVD_INTERFACE_DEFAULT,
+										 OC_RSRVD_INTERFACE_ACTUATOR,
 										 uri,
 										 sec_OCEntityHandlerCb,
 										 NULL,
 										 OC_DISCOVERABLE | OC_OBSERVABLE | OC_SECURE);
-	printf("[%s] Created LED resource with result: %s \n", TAG, sec_getResult(res));
+
+	for (uint8_t i = 0; i < SAMPLE_MAX_NUM_OBSERVATIONS; i++) {
+		interestedObservers[i].valid = false;
+	}
+
+	printf("[%s] Created LED resource with result: %s \n", TAG, getResult(res));
 
 	return 0;
 }
 
-#ifdef CONFIG_BUILD_KERNEL
-int main(int argc, FAR char *argv[])
-#else
-int secureServer_main(int argc, char *argv[])
-#endif
-{
-	task_create("iotivity_secureServer", IOTIVITY_TEST_PRI, IOTIVITY_TEST_STACKSIZE, secureServer_main_cb, (FAR char *const *)NULL);
-	return 0;
-}

@@ -29,16 +29,16 @@
 #include "ocstack.h"
 #include "ocpayload.h"
 #include "logger.h"
-#include "tls/ssl_ciphersuites.h"
+#include "mbedtls/ssl_ciphersuites.h"
 #include "rd_client.h"
 
 /* This definition is only for testing Cloud authentication */
 /* Releated code will be removed */
 
 #ifdef CONFIG_TLS_WITH_SSS
-#include "tls/see_api.h"
-#include "tls/x509_crt.h"
-#include "tls/pem.h"
+#include "mbedtls/see_api.h"
+#include "mbedtls/x509_crt.h"
+#include "mbedtls/pem.h"
 unsigned int g_iotivity_key_index;
 unsigned int g_iotivity_key_curve;
 unsigned int g_iotivity_cert_index;
@@ -46,7 +46,7 @@ unsigned int g_iotivity_cacert_index;
 #endif
 
 #ifdef CONFIG_IOTIVITY_SSS_STORAGE
-#include "tls/sss_storage.h"
+#include "mbedtls/sss_storage.h"
 #endif
 
 #ifdef CONFIG_ENABLE_IOTIVITY_SECURED

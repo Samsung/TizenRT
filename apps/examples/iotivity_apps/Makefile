@@ -62,14 +62,28 @@ THREADEXEC = TASH_EXECMD_ASYNC
 IOTIVITY_RELEASE=${shell echo $(CONFIG_IOTIVITY_RELEASE_VERSION) | sed 's/"//g'}
 IOTIVITY_BASE_DIR = $(APPDIR)/../external/iotivity/iotivity_$(IOTIVITY_RELEASE)
 
+ifeq ($(CONFIG_EXAMPLES_IOTIVITY_SIMPLESERVER),y)
 CSRCS += simpleServer.c
-ifeq ($(CONFIG_ENABLE_IOTIVITY_SECURED),y)
+else
+ifeq ($(CONFIG_EXAMPLES_IOTIVITY_SECURESERVER),y)
 CSRCS += secureServer.c
-endif
-ifeq ($(CONFIG_ENABLE_IOTIVITY_CLOUD),y)
+else
+ifeq ($(CONFIG_EXAMPLES_IOTIVITY_CLOUDSERVER),y)
 CSRCS += cloudServer.c
+else
+ifeq ($(CONFIG_EXAMPLES_IOTIVITY_CTT_LIGHT),y)
+CSRCS += ctt_light.c \
+		ctt_light_resource.c \
+		ocf_mylight_notify.c \
+		ocf_mylight_userinput.c \
+		ocf_mylight_security.c \
+		ocf_mylight_default_db.c
+endif
+endif
+endif
 endif
 
+CSRCS += iotivity_common.c
 
 CFLAGS += -I$(IOTIVITY_BASE_DIR)/resource/c_common
 CFLAGS += -I$(IOTIVITY_BASE_DIR)/resource/csdk
@@ -80,10 +94,23 @@ CFLAGS += -I$(IOTIVITY_BASE_DIR)/resource/csdk/connectivity/common/inc
 CFLAGS += -I$(IOTIVITY_BASE_DIR)/resource/csdk/logger/include
 CFLAGS += -I$(IOTIVITY_BASE_DIR)/resource/csdk/security/include
 CFLAGS += -I$(IOTIVITY_BASE_DIR)/resource/csdk/stack/include
-CFLAGS += -I$(IOTIVITY_BASE_DIR)/extlibs/mbedtls/mbedtls/include
-ifneq ($(CONFIG_IOTIVITY_RELEASE_VERSION),1.2-rel)
 CFLAGS += -I$(IOTIVITY_BASE_DIR)/build_common/tizenrt/compatibility
-endif
+CFLAGS += -I$(APPDIR)/../external/mbedtls/include
+
+
+# json2cbor
+CSRCS += json2cbor.c
+CSRCS += $(IOTIVITY_BASE_DIR)/extlibs/cjson/cJSON.c
+CFLAGS += -I$(IOTIVITY_BASE_DIR)/extlibs/cjson
+CFLAGS += -I$(IOTIVITY_BASE_DIR)/extlibs/tinycbor/tinycbor/src
+CFLAGS += -I$(IOTIVITY_BASE_DIR)/resource/c_common/oic_malloc/include
+CFLAGS += -I$(IOTIVITY_BASE_DIR)/resource/c_common/oic_string/include
+CFLAGS += -I$(IOTIVITY_BASE_DIR)/resource/c_common/ocrandom/include
+CFLAGS += -I$(IOTIVITY_BASE_DIR)/resource/csdk/stack/include/internal
+CFLAGS += -I$(IOTIVITY_BASE_DIR)/resource/csdk/security/include/internal
+CFLAGS += -I$(IOTIVITY_BASE_DIR)/resource/csdk/connectivity/lib/libcoap-4.1.1/include
+CFLAGS += -DTB_LOG -DMULTIPLE_OWNER -DINLINE_API=inline
+CFLAGS += -DPRIi64=\"lld\"
 
 CFLAGS += -DWITH_POSIX -DIP_ADAPTER
 CFLAGS += -DWITH_BWT
@@ -97,11 +124,6 @@ CFLAGS += -std=c99
 CFLAGS += -w
 CFLAGS += -D__WITH_DTLS__
 
-ifneq ($(CONFIG_IOTIVITY_RELEASE_VERSION),1.2-rel)
-CSRCS += iotivity_common.c
-else
-CSRCS += port_tinyara.c
-endif
 
 AOBJS = $(ASRCS:.S=$(OBJEXT))
 COBJS = $(CSRCS:.c=$(OBJEXT))
@@ -167,23 +189,33 @@ install:
 endif
 
 ifeq ($(CONFIG_BUILTIN_APPS)$(CONFIG_EXAMPLES_IOTIVITY),yy)
+
 # simpleServer
+ifeq ($(CONFIG_EXAMPLES_IOTIVITY_SIMPLESERVER),y)
 $(BUILTIN_REGISTRY)$(DELIM)simpleServer_main.bdat: $(DEPCONFIG) Makefile
 	$(Q) $(call REGISTER,simpleServer,simpleServer_main,$(THREADEXEC),$(PRIORITY),$(STACKSIZE))
 context: $(BUILTIN_REGISTRY)$(DELIM)simpleServer_main.bdat
+endif
 
 # secureServer
-ifeq ($(CONFIG_ENABLE_IOTIVITY_SECURED),y)
+ifeq ($(CONFIG_EXAMPLES_IOTIVITY_SECURESERVER),y)
 $(BUILTIN_REGISTRY)$(DELIM)secureServer_main.bdat: $(DEPCONFIG) Makefile
 	$(Q) $(call REGISTER,secureServer,secureServer_main,$(THREADEXEC),$(PRIORITY),$(STACKSIZE))
 context: $(BUILTIN_REGISTRY)$(DELIM)secureServer_main.bdat
 endif
 
 # cloudServer
-ifeq ($(CONFIG_ENABLE_IOTIVITY_CLOUD),y)
+ifeq ($(CONFIG_EXAMPLES_IOTIVITY_CLOUDSERVER),y)
 $(BUILTIN_REGISTRY)$(DELIM)cloudServer_main.bdat: $(DEPCONFIG) Makefile
 	$(Q) $(call REGISTER,cloudServer,cloudServer_main,$(THREADEXEC),$(PRIORITY),$(STACKSIZE))
 context: $(BUILTIN_REGISTRY)$(DELIM)cloudServer_main.bdat
+endif
+
+# ctt light
+ifeq ($(CONFIG_EXAMPLES_IOTIVITY_CTT_LIGHT),y)
+$(BUILTIN_REGISTRY)$(DELIM)ctt_light_main.bdat: $(DEPCONFIG) Makefile
+	$(Q) $(call REGISTER,ctt_light,ctt_light_main,$(THREADEXEC),$(PRIORITY),$(STACKSIZE))
+context: $(BUILTIN_REGISTRY)$(DELIM)ctt_light_main.bdat
 endif
 
 else
@@ -191,8 +223,12 @@ context:
 
 endif
 
-.depend: Makefile $(SRCS)
+file_data.c: mkfsdata.pl
+ifneq ($(CONFIG_EXAMPLES_IOTIVITY_CTT_LIGHT),y)
 	$(Q) ./mkfsdata.pl
+endif
+
+.depend: Makefile $(SRCS) file_data.c
 	@$(MKDEP) $(ROOTDEPPATH) "$(CC)" -- $(CFLAGS) -- $(SRCS) >Make.dep
 	@touch $@
 
