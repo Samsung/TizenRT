@@ -406,6 +406,7 @@ static bool EnterRESET()
 
     // Set acl, doxm, cred and pstat rowneruuids = Nil UUID
     VERIFY_SUCCESS(TAG, OC_STACK_OK == SetAclRownerId(&THE_NIL_UUID), ERROR);
+    VERIFY_SUCCESS(TAG, OC_STACK_OK == SetCredRownerId(&THE_NIL_UUID), ERROR);
     VERIFY_SUCCESS(TAG, OC_STACK_OK == SetDoxmRownerId(&THE_NIL_UUID), ERROR);
     VERIFY_SUCCESS(TAG, OC_STACK_OK == SetPstatRownerId(&THE_NIL_UUID), ERROR);
 

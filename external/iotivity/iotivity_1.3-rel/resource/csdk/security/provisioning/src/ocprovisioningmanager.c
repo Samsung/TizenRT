@@ -363,7 +363,7 @@ void OC_CALL OCDeleteDiscoveredDevices(OCProvisionDev_t *pList)
 OCStackResult OC_CALL OCProvisionACL(void* ctx, const OCProvisionDev_t *selectedDeviceInfo, OicSecAcl_t *acl,
                                      OCProvisionResultCB resultCallback)
 {
-    if (NULL == acl)
+    if (NULL == acl || NULL == selectedDeviceInfo)
     {
         return OC_STACK_INVALID_PARAM;
     }
