@@ -1,6 +1,7 @@
 # Tizen RT
 
 [![License](https://img.shields.io/badge/licence-Apache%202.0-brightgreen.svg?style=flat)](LICENSE)
+[![Build Status](https://travis-ci.org/SamsungARTIK/TizenRT.svg?branch=artik)](https://travis-ci.org/SamsungARTIK/TizenRT)
 
 lightweight RTOS-based platform to support low-end IoT devices.
 
