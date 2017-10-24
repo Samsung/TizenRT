@@ -2445,6 +2445,109 @@ static void tc_libc_stdio_stdsostream(void)
 }
 
 /**
+* @testcase         tc_libc_stdio_tempnam
+* @brief            Returns a pointer to a string that is a valid filename
+* @scenario         The tempnam() function returns a pointer to a unique temporary filename, or NULL if a unique name cannot be generated.
+* @apicovered       tempnam(), mkstemp(), mktemp()
+* @precondition     NA
+* @postcondition    NA
+*/
+
+static void tc_libc_stdio_tempnam(void)
+{
+	const char filename[] = "tempnam_tc_test";
+	char *ret1 = NULL;
+	char *ret2 = NULL;
+	int ret_check = 0;
+	FILE *fp;
+
+	/* TC 1 with valid prefix */
+
+	ret_check = mount(MOUNT_DEV_DIR, CONFIG_LIBC_TMPDIR, "smartfs", 0, NULL);
+	TC_ASSERT_EQ("mount", ret_check, OK);
+
+	ret1 = tempnam(CONFIG_LIBC_TMPDIR, filename);
+	TC_ASSERT_NEQ_CLEANUP("tempnam", ret1, NULL, goto errout);
+
+	fp = fopen(ret1, "w");
+	TC_ASSERT_NEQ_CLEANUP("fopen", fp, NULL, goto errout1);
+	fclose(fp);
+
+	/* TC 2 with NULL prefix */
+
+	ret2 = tempnam(CONFIG_LIBC_TMPDIR, NULL);
+	TC_ASSERT_NEQ_CLEANUP("tempnam", ret2, NULL, goto errout1);
+
+	fp = fopen(ret2, "w");
+	TC_ASSERT_NEQ_CLEANUP("fopen", fp, NULL, goto errout2);
+	fclose(fp);
+
+	unlink(ret1);
+	unlink(ret2);
+	umount(CONFIG_LIBC_TMPDIR);
+
+	TC_SUCCESS_RESULT();
+
+errout2:
+	unlink(ret2);
+errout1:
+	unlink(ret1);
+errout:
+	umount(CONFIG_LIBC_TMPDIR);
+}
+
+/**
+* @testcase         tc_libc_stdio_tmpnam
+* @brief            Returns a pointer to a string that is a valid filename
+* @scenario         The tmpnam() function returns a pointer to a unique temporary filename, or NULL if a unique name cannot be generated.
+* @apicovered       tmpnam(), mkstemp(), mktemp()
+* @precondition     NA
+* @postcondition    NA
+*/
+static void tc_libc_stdio_tmpnam(void)
+{
+	char filename[] = "tmpnam_tc_test";
+	char *ret1 = NULL;
+	char *ret2 = NULL;
+	int ret_check;
+	FILE *fp;
+
+	/* TC 1 with NULL string */
+
+	ret_check = mount(MOUNT_DEV_DIR, CONFIG_LIBC_TMPDIR, "smartfs", 0, NULL);
+	TC_ASSERT_EQ("mount", ret_check, OK);
+
+	ret1 = tmpnam(NULL);
+	TC_ASSERT_NEQ_CLEANUP("tmpnam", ret1, NULL, goto errout);
+
+	fp = fopen(ret1, "w");
+	TC_ASSERT_NEQ_CLEANUP("fopen", fp, NULL, goto errout1);
+	fclose(fp);
+
+	/* TC 2 with valid string */
+
+	ret2 = tmpnam(filename);
+	TC_ASSERT_NEQ_CLEANUP("tmpnam", ret2, NULL, goto errout1);
+
+	fp = fopen(ret2, "w");
+	TC_ASSERT_NEQ_CLEANUP("fopen", fp, NULL, goto errout2);
+	fclose(fp);
+
+	unlink(ret1);
+	unlink(ret2);
+	umount(CONFIG_LIBC_TMPDIR);
+
+	TC_SUCCESS_RESULT();
+
+errout2:
+	unlink(ret2);
+errout1:
+	unlink(ret1);
+errout:
+	umount(CONFIG_LIBC_TMPDIR);
+}
+
+/**
 * @testcase         tc_libc_stdio_zeroinstream
 * @brief            Initializes a NULL stream.  The initialized stream will return an infinitely long stream of zeroes.
 * @scenario         Initializes a NULL stream.  The initialized stream will return an infinitely long stream of zeroes.
@@ -2610,6 +2713,8 @@ static int fs_sample_launcher(int argc, char **args)
 	tc_libc_stdio_stdoutstream();
 	tc_libc_stdio_stdsistream();
 	tc_libc_stdio_stdsostream();
+	tc_libc_stdio_tempnam();
+	tc_libc_stdio_tmpnam();
 	tc_libc_stdio_ungetc();
 	tc_libc_stdio_zeroinstream();
 
