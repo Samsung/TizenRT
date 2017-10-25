@@ -129,3 +129,27 @@ Actually, BL1, OS and WiFi firmware are operated in iRAM.
                       |     (4KB)     |
            0x02020000 +---------------+
 ```
+
+# Configure USB Drivers
+
+Install and configure USB drivers, so OpenOCD is able to communicate with JTAG interface on ARTIK05x board as well as with UART interface used to upload application for flash. Follow steps below specific to your operating system.
+
+### Windows
+
+ * Using standard micro USB B cable connect ARTIK05x Starter Kit to the computer.
+ * Wait until ARTIK05x Board is recognized by Windows and drives are installed. If it do not install automatically, then then download Zadig tool (Zadig_X.X.exe) from http://zadig.akeo.ie/ and run it.
+ * In Zadig tool go to "Options" and check "List All Devices".
+ * Check the list of devices that should contain two ARTIK05x specific USB entries: "Dual RS232-HS (Interface 0)" and "Dual RS232-HS (Interface 1)". The driver name would be "FTDIBUS (vxxxx)" and USB ID: 0403 6010.
+
+### Linux
+
+ * Using standard micro USB B cable connect ARTIK05x Starter Kit to the computer.
+ * Open a terminal, enter `ls -l /dev/ttyUSB*` command and check, if board's USB ports are recognized by the OS. You are looking for similar result:
+
+```bash
+    root@ubuntu:~$ ls -l /dev/ttyUSB*
+    crw-rw---- 1 root dialout 188, 0 Oct 25 13:42 /dev/ttyUSB0
+    crw-rw---- 1 root dialout 188, 1 Oct 25 13:42 /dev/ttyUSB1
+```
+
+ * The /dev/ttyUSBn interface with lower number is used for JTAG communication. The other interface is routed to ARTIK05x's serial port (UART) used for upload of application to ARTIK05x's flash.
