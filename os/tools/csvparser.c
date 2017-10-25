@@ -209,7 +209,7 @@ int parse_csvline(char *ptr)
 	 */
 
 	do {
-		if (nparms >= MAX_FIELDS) {
+		if (nparams >= MAX_FIELDS) {
 			fprintf(stderr, "%d: too many Parameters: \"%s\"\n", g_lineno, g_line);
 			exit(8);
 		}
