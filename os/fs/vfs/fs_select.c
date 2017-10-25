@@ -56,7 +56,9 @@
 
 #include <tinyara/config.h>
 
+#ifndef CONFIG_DISABLE_POLL
 #include <sys/select.h>
+#endif
 #include <sys/time.h>
 
 #include <string.h>
