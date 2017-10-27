@@ -241,12 +241,18 @@ OCStackResult GetAllRoleCerts(RoleCertChain_t** roleCerts);
  */
 void GetPemOwnCert(ByteArray_t * crt, const char * usage);
 /**
- * Used by mbedTLS to retrieve owm private key
+ * Used by mbedTLS to retrieve own private key
  *
  * @param[out] key key to be filled.
  * @param[in] usage credential usage string.
  */
 void GetDerKey(ByteArray_t * key, const char * usage);
+/**
+ * Used by mbedTLS to retrieve own primary cert private key
+ *
+ * @param[out] key key to be filled.
+ */
+void GetPrimaryCertKey(ByteArray_t * key);
 /**
  * Used by CA to retrieve credential types
  *

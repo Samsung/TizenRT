@@ -42,7 +42,7 @@ void GetPkixInfo(PkiInfo_t * inf)
         OIC_LOG_V(WARNING, TAG, "%s: empty certificate", __func__);
     }
 
-    GetDerKey(&inf->key, PRIMARY_CERT);
+    GetPrimaryCertKey(&inf->key);
     if (inf->key.len == 0)
     {
         OIC_LOG_V(WARNING, TAG, "%s: empty key", __func__);

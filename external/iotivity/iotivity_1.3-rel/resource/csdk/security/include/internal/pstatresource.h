@@ -114,12 +114,6 @@ OCStackResult CBORPayloadToPstat(const uint8_t *cborPayload, const size_t cborSi
 void DeletePstatBinData(OicSecPstat_t* pstat);
 
 /**
- * Function to restore pstat resurce to initial status.
- * This function will use in case of error while ownership transfer
- */
-void RestorePstatToInitState();
-
-/**
  * Get the pstat.rowneruuid value for this device.
  *
  * @param[out] rowneruuid ptr to contain a copy of pstat.rowneruuid value.

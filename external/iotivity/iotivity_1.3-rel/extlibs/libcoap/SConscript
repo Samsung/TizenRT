@@ -146,6 +146,10 @@ if target_os in ['linux', 'tizen', 'android', 'arduino', 'tizenrt']:
 if target_os == 'arduino':
     libcoap_env.AppendUnique(CPPDEFINES=['NDEBUG', 'WITH_ARDUINO'])
 
+# Remove -Werror build flag when building the 'coap' library  it
+# is external code. see IOT-2539
+while '-Werror' in libcoap_env['CFLAGS']: libcoap_env['CFLAGS'].remove('-Werror')
+
 ######################################################################
 # Source files and Target(s)
 ######################################################################

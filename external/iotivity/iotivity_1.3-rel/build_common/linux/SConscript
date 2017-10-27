@@ -43,8 +43,9 @@ gcc_ver = subprocess.check_output([env['CC'], '-dumpversion'], stderr=subprocess
 if StrictVersion(gcc_ver) < StrictVersion('5.0'):
     env.AppendUnique(CFLAGS=['-Wno-missing-field-initializers'])
     env.AppendUnique(CCFLAGS=['-Wno-missing-braces'])
-# TODO: IOT-2539 enable -Werror once a compiler warnings are cleaned up
-# env.AppendUnique(CFLAGS=['-Werror'])
+
+if env.get('ERROR_ON_WARN'):
+    env.AppendUnique(CFLAGS=['-Werror'])
 
 # Set arch flags that match best TARGET_ARCH variable
 if not env.get('WITH_ENV'):

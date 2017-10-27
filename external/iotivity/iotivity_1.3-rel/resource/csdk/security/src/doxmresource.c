@@ -1333,14 +1333,12 @@ OCEntityHandlerResult HandleDoxmPostRequestUpdatePS(bool fACE)
     }
 }
 
-OCEntityHandlerResult StartOTMJustWorks(OCEntityHandlerRequest *ehRequest,
-        bool isDuplicatedMsg)
+OCEntityHandlerResult StartOTMJustWorks(OCEntityHandlerRequest *ehRequest)
 {
     OIC_LOG_V(DEBUG, TAG, "%s: IN", __func__);
     OCEntityHandlerResult ehRet = OC_EH_OK;
 
 #if !(defined(__WITH_DTLS__) || defined(__WITH_TLS__))
-    OC_UNUSED(isDuplicatedMsg);
     OC_UNUSED(ehRequest);
 #endif // not __WITH_DTLS__ and not __WITH_TLS__
 
@@ -1368,8 +1366,7 @@ OCEntityHandlerResult StartOTMJustWorks(OCEntityHandlerRequest *ehRequest,
         OIC_LOG_V(INFO, TAG, "%s: ECDH_ANON CipherSuite is DISABLED", __func__);
 
         //In case of Mutual Verified Just-Works, verify mutualVerifNum
-        if (OIC_MV_JUST_WORKS == gDoxm->oxmSel && false == gDoxm->owned &&
-            false == isDuplicatedMsg)
+        if (OIC_MV_JUST_WORKS == gDoxm->oxmSel && false == gDoxm->owned)
         {
             uint8_t preMutualVerifNum[OWNER_PSK_LENGTH_128] = {0};
             uint8_t mutualVerifNum[MUTUAL_VERIF_NUM_LEN] = {0};
@@ -1423,14 +1420,12 @@ exit:
 }
 
 OCEntityHandlerResult HandleDoxmPostRequestRandomPin(OicSecDoxm_t *newDoxm,
-        OCEntityHandlerRequest *ehRequest,
-        bool isDuplicatedMsg)
+        OCEntityHandlerRequest *ehRequest)
 {
     OIC_LOG_V(DEBUG, TAG, "%s: IN", __func__);
     OCEntityHandlerResult ehRet = OC_EH_OK;
 
 #if !(defined(__WITH_DTLS__) || defined(__WITH_TLS__))
-    OC_UNUSED(isDuplicatedMsg);
     OC_UNUSED(ehRequest);
 #endif // not __WITH_DTLS__ and not __WITH_TLS__
 
@@ -1452,28 +1447,25 @@ OCEntityHandlerResult HandleDoxmPostRequestRandomPin(OicSecDoxm_t *newDoxm,
                                     (CATransportAdapter_t)ehRequest->devAddr.adapter);
         VERIFY_SUCCESS(TAG, caRes == CA_STATUS_OK, ERROR);
 
-        if (!isDuplicatedMsg)
+        char ranPin[OXM_RANDOM_PIN_MAX_SIZE + 1] = {0};
+        if (OC_STACK_OK == GeneratePin(ranPin, sizeof(ranPin)))
         {
-            char ranPin[OXM_RANDOM_PIN_MAX_SIZE + 1] = {0};
-            if (OC_STACK_OK == GeneratePin(ranPin, sizeof(ranPin)))
-            {
-                //Set the device id to derive temporal PSK
-                SetUuidForPinBasedOxm(&gDoxm->deviceID);
+            //Set the device id to derive temporal PSK
+            SetUuidForPinBasedOxm(&gDoxm->deviceID);
 
-                /**
-                 * Since PSK will be used directly by DTLS layer while PIN based ownership transfer,
-                 * Credential should not be saved into SVR.
-                 * For this reason, use a temporary get_psk_info callback to random PIN OxM.
-                 */
-                caRes = CAregisterPskCredentialsHandler(GetDtlsPskForRandomPinOxm);
-                VERIFY_SUCCESS(TAG, caRes == CA_STATUS_OK, ERROR);
-                ehRet = OC_EH_OK;
-            }
-            else
-            {
-                OIC_LOG(ERROR, TAG, "Failed to generate random PIN");
-                ehRet = OC_EH_ERROR;
-            }
+            /**
+             * Since PSK will be used directly by DTLS layer while PIN based ownership transfer,
+             * Credential should not be saved into SVR.
+             * For this reason, use a temporary get_psk_info callback to random PIN OxM.
+             */
+            caRes = CAregisterPskCredentialsHandler(GetDtlsPskForRandomPinOxm);
+            VERIFY_SUCCESS(TAG, caRes == CA_STATUS_OK, ERROR);
+            ehRet = OC_EH_OK;
+        }
+        else
+        {
+            OIC_LOG(ERROR, TAG, "Failed to generate random PIN");
+            ehRet = OC_EH_ERROR;
         }
 #endif // __WITH_DTLS__ or __WITH_TLS__
     }
@@ -1484,10 +1476,8 @@ OCEntityHandlerResult HandleDoxmPostRequestRandomPin(OicSecDoxm_t *newDoxm,
         memcpy(&(gDoxm->owner), &(newDoxm->owner), sizeof(OicUuid_t));
 
         // In case of random-pin based OTM, close the PIN display if callback is registered.
-        if (!isDuplicatedMsg)
-        {
-            ClosePinDisplay();
-        }
+        ClosePinDisplay();
+
     }
 #endif // __WITH_DTLS__ or __WITH_TLS__
     goto exit;
@@ -1498,16 +1488,14 @@ exit:
 
 #if defined(__WITH_DTLS__) || defined (__WITH_TLS__)
 OCEntityHandlerResult HandleDoxmPostRequestMfg(OicSecDoxm_t *newDoxm,
-        OCEntityHandlerRequest *ehRequest,
-        bool isDuplicatedMsg)
+        OCEntityHandlerRequest *ehRequest)
 {
     OIC_LOG_V(DEBUG, TAG, "%s: IN", __func__);
     OCEntityHandlerResult ehRet = OC_EH_OK;
 
-
         //In case of Confirm Manufacturer Cert, get user confirmation
         if (OIC_CON_MFG_CERT == newDoxm->oxmSel && false == newDoxm->owned &&
-            false == isDuplicatedMsg && !IsNilUuid(&newDoxm->owner))
+            !IsNilUuid(&newDoxm->owner))
         {
             if (OC_STACK_OK != VerifyOwnershipTransfer(NULL, USER_CONFIRM))
             {
@@ -1545,8 +1533,7 @@ exit:
 
 // Do OTM specific initiation steps
 OCEntityHandlerResult StartOwnershipTransfer(OicSecDoxm_t *newDoxm,
-        OCEntityHandlerRequest *ehRequest,
-        bool isDuplicatedMsg)
+        OCEntityHandlerRequest *ehRequest)
 {
     OIC_LOG_V(DEBUG, TAG, "%s: IN", __func__);
     OCEntityHandlerResult ehRet = OC_EH_OK;
@@ -1555,15 +1542,15 @@ OCEntityHandlerResult StartOwnershipTransfer(OicSecDoxm_t *newDoxm,
     {
         case OIC_JUST_WORKS:
         case OIC_MV_JUST_WORKS:
-            ehRet = StartOTMJustWorks(ehRequest, isDuplicatedMsg);
+            ehRet = StartOTMJustWorks(ehRequest);
             break;
         case OIC_RANDOM_DEVICE_PIN:
-            ehRet = HandleDoxmPostRequestRandomPin(newDoxm, ehRequest, isDuplicatedMsg);
+            ehRet = HandleDoxmPostRequestRandomPin(newDoxm, ehRequest);
             break;
 #if defined(__WITH_DTLS__) || defined (__WITH_TLS__)
         case OIC_MANUFACTURER_CERTIFICATE:
         case OIC_CON_MFG_CERT:
-            ehRet = HandleDoxmPostRequestMfg(newDoxm, ehRequest, isDuplicatedMsg);
+            ehRet = HandleDoxmPostRequestMfg(newDoxm, ehRequest);
             break;
 #endif // __WITH_DTLS__ or __WITH_TLS__
         default:
@@ -1579,8 +1566,6 @@ static OCEntityHandlerResult HandleDoxmPostRequest(OCEntityHandlerRequest *ehReq
 {
     OIC_LOG_V(DEBUG, TAG, "%s: IN", __func__);
     OCEntityHandlerResult ehRet = OC_EH_INTERNAL_SERVER_ERROR;
-    static uint16_t previousMsgId = 0;
-    bool isDuplicatedMsg = false;
     bool fACE = false;
     OicSecDoxm_t *newDoxm = NULL;
     bool roParsed = false;
@@ -1618,17 +1603,6 @@ static OCEntityHandlerResult HandleDoxmPostRequest(OCEntityHandlerRequest *ehReq
         goto exit;
     }
 
-    /*
-     * message ID is supported for CoAP over UDP only according to RFC 7252
-     * So we should check message ID to prevent duplicate request handling in case of OC_ADAPTER_IP.
-     * In case of other transport adapter, duplicate message check is not required.
-     */
-    if (OC_ADAPTER_IP == ehRequest->devAddr.adapter &&
-        previousMsgId == ehRequest->messageID)
-    {
-        isDuplicatedMsg = true;
-    }
-
     // Validate newDoxm->oxmsel first
     if (false == ValidateOxmsel(gDoxm->oxm, gDoxm->oxmLen, &newDoxm->oxmSel))
     {
@@ -1652,7 +1626,7 @@ static OCEntityHandlerResult HandleDoxmPostRequest(OCEntityHandlerRequest *ehReq
     if (oxmselParsed && (false == gDoxm->owned))
     {
         OIC_LOG_V(INFO, TAG, "%s: Device not owned and oxmsel Updated... starting OTM!", __func__);
-        ehRet = StartOwnershipTransfer(newDoxm, ehRequest, isDuplicatedMsg);
+        ehRet = StartOwnershipTransfer(newDoxm, ehRequest);
         VERIFY_SUCCESS(TAG, OC_EH_OK == ehRet, ERROR);
     }
 
@@ -1675,29 +1649,6 @@ static OCEntityHandlerResult HandleDoxmPostRequest(OCEntityHandlerRequest *ehReq
     ehRet = HandleDoxmPostRequestUpdatePS(fACE);
 
 exit:
-    if (OC_EH_OK != ehRet)
-    {
-        // If some error is occured during Update handler,
-        // revert /doxm and /pstat back to initial status.
-
-        if (gDoxm)
-        {
-            if (!isDuplicatedMsg)
-            {
-                RestoreDoxmToInitState();
-                RestorePstatToInitState();
-                OIC_LOG(WARNING, TAG, "DOXM will be reverted.");
-            }
-        }
-        else
-        {
-            OIC_LOG(ERROR, TAG, "Invalid DOXM resource.");
-        }
-    }
-    else
-    {
-        previousMsgId = ehRequest->messageID;
-    }
 
     //Send payload to request originator
     ehRet = ((SendSRMResponse(ehRequest, ehRet, NULL, 0)) == OC_STACK_OK) ?
@@ -2268,28 +2219,6 @@ exit:
 }
 
 #endif //MULTIPLE_OWNER
-
-/**
- * Function to restore doxm resurce to initial status.
- * This function will use in case of error while ownership transfer
- */
-void RestoreDoxmToInitState()
-{
-    if(gDoxm)
-    {
-        OIC_LOG(INFO, TAG, "DOXM resource will revert back to initial status.");
-
-        OicUuid_t emptyUuid = {.id={0}};
-        memcpy(&(gDoxm->owner), &emptyUuid, sizeof(OicUuid_t));
-        gDoxm->owned = false;
-        gDoxm->oxmSel = OIC_JUST_WORKS;
-
-        if(!UpdatePersistentStorage(gDoxm))
-        {
-            OIC_LOG(ERROR, TAG, "Failed to revert DOXM in persistent storage");
-        }
-    }
-}
 
 OCStackResult SetDoxmSelfOwnership(const OicUuid_t* newROwner)
 {

@@ -19,7 +19,8 @@
 TOPDIR="../.."
 BASE_PATH="${TOPDIR}/java/common/src/main/java/"
 BASE_PKG="org.iotivity.base"
-CA_SRCS="$(find ${TOPDIR}/java/iotivity-android/src/ -name 'Ca*Interface.java')"
+CA_PKG="org.iotivity.ca"
+ANDROID_PATH="${TOPDIR}/java/iotivity-android/src/main/java/"
 
 RE_PATH="${TOPDIR}/service/resource-encapsulation/android/service/src/main/java/"
 RE_COMMON_PKG=org.iotivity.service
@@ -43,7 +44,7 @@ CLASSPATH=$(find ${TOPDIR}/extlibs/android/sdk/android-sdk-linux/platforms/ \
 export CLASSPATH
 
 javadoc -public -splitindex -d ./Java_API -sourcepath \
-    $BASE_PATH:$RE_PATH:$EASYSETUP_PATH:$RESOURCECONTAINER_PATH:$NS_PATH \
-    $BASE_PKG $CA_SRCS $RE_COMMON_PKG $RE_CLINET_PKG $RE_SERVER_PKG $EASYSETUP_PKG \
+    $BASE_PATH:$ANDROID_PATH:$RE_PATH:$EASYSETUP_PATH:$RESOURCECONTAINER_PATH:$NS_PATH \
+    $BASE_PKG $CA_PKG $RE_COMMON_PKG $RE_CLINET_PKG $RE_SERVER_PKG $EASYSETUP_PKG \
     $RESOURCECONTAINER_PKG $NS_PKG_1 $NS_PKG_2 $NS_PKG_3
 

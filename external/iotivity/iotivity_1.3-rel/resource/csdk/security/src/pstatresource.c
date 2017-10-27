@@ -788,8 +788,6 @@ static OCEntityHandlerResult HandlePstatPostRequest(OCEntityHandlerRequest *ehRe
     OCEntityHandlerResult ehRet = OC_EH_ERROR;
     OIC_LOG(INFO, TAG, "HandlePstatPostRequest  processing POST request");
     OicSecPstat_t *pstat = NULL;
-    static uint16_t previousMsgId = 0;
-    bool isDuplicatedMsg = false;
 
     if (ehRequest->payload && NULL != gPstat)
     {
@@ -805,17 +803,6 @@ static OCEntityHandlerResult HandlePstatPostRequest(OCEntityHandlerRequest *ehRe
         // if CBOR parsing OK
         if (OC_STACK_OK == ret)
         {
-            /*
-             * message ID is supported for CoAP over UDP only according to RFC 7252
-             * So we should check message ID to prevent duplicate request handling in case of OC_ADAPTER_IP.
-             * In case of other transport adapter, duplicate message check is not required.
-             */
-            if (OC_ADAPTER_IP == ehRequest->devAddr.adapter &&
-                 previousMsgId == ehRequest->messageID)
-            {
-                isDuplicatedMsg = true;
-            }
-
             if (true == roParsed)
             {
                     OIC_LOG(ERROR, TAG, "Not acceptable request because of read-only properties");
@@ -905,42 +892,7 @@ static OCEntityHandlerResult HandlePstatPostRequest(OCEntityHandlerRequest *ehRe
         }
     }
 
-    exit:
-
-    // TODO [IOT-1796] This is another place error code returns need to be
-    // cleaned up.
-    if (OC_EH_OK != ehRet)
-    {
-        /*
-         * If some error is occured while ownership transfer,
-         * ownership transfer related resource should be revert back to initial status.
-         */
-        OIC_LOG(WARNING, TAG, "The operation failed during handle pstat POST request");
-        const OicSecDoxm_t* doxm = GetDoxmResourceData();
-        if (doxm)
-        {
-            if (!doxm->owned)
-            {
-                if (!isDuplicatedMsg)
-                {
-                    OIC_LOG(WARNING, TAG, "DOXM and PSTAT will be reverted.");
-                    RestoreDoxmToInitState();
-                    RestorePstatToInitState();
-                }
-            }
-        }
-        else
-        {
-           OIC_LOG(ERROR, TAG, "Invalid DOXM resource.");
-        }
-    }
-    else
-    {
-        if (ehRequest->devAddr.adapter == OC_ADAPTER_IP)
-        {
-            previousMsgId = ehRequest->messageID;
-        }
-    }
+exit:
 
     // Send response payload to request originator
     ehRet = ((SendSRMResponse(ehRequest, ehRet, NULL, 0)) == OC_STACK_OK) ?
@@ -1065,34 +1017,6 @@ OCStackResult DeInitPstatResource()
         gPstat = NULL;
     }
     return OCDeleteResource(gPstatHandle);
-}
-
-/**
- * Function to restore pstat resurce to initial status.
- * This function will use in case of error while ownership transfer
- */
-void RestorePstatToInitState()
-{
-    if(gPstat)
-    {
-        OIC_LOG(INFO, TAG, "PSTAT resource will revert back to initial status.");
-        gPstat->dos.state = DOS_RFOTM;
-        gPstat->dos.pending = false;
-        gPstat->cm = (OicSecDpm_t)(gPstat->cm | TAKE_OWNER);
-        OIC_LOG_V(INFO, TAG, "%s setting gPstat->tm = %u",
-            __func__, (OicSecDpm_t)(gPstat->tm & (~TAKE_OWNER)));
-        gPstat->tm = (OicSecDpm_t)(gPstat->tm & (~TAKE_OWNER));
-        gPstat->om = SINGLE_SERVICE_CLIENT_DRIVEN;
-        if(gPstat->sm && 0 < gPstat->smLen)
-        {
-            gPstat->sm[0] = SINGLE_SERVICE_CLIENT_DRIVEN;
-        }
-
-        if (!UpdatePersistentStorage(gPstat))
-        {
-            OIC_LOG(ERROR, TAG, "Failed to revert PSTAT in persistent storage");
-        }
-    }
 }
 
 OCStackResult GetPstatRownerId(OicUuid_t *rowneruuid)

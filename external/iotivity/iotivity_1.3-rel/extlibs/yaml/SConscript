@@ -43,6 +43,11 @@ yaml_env.AppendUnique(CXXFLAGS=['-std=c++0x', '-Wall', '-pthread'])
 yaml_env.AppendUnique(CPPDEFINES=['LINUX'])
 yaml_env.AppendUnique(LIBS=['pthread'])
 
+# Remove -Werror build flag when building the 'YamlParser' library  it
+# is external code. see IOT-2539
+while '-Werror' in yaml_env['CFLAGS']: yaml_env['CFLAGS'].remove('-Werror')
+
+
 yaml_env.AppendUnique(
     CXXFLAGS=['-O2', '-g', '-Wall', '-fmessage-length=0', '-std=c++0x'])
 

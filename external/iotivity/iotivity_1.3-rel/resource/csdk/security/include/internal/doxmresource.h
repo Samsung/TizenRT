@@ -238,12 +238,6 @@ void DeleteDoxmBinData(OicSecDoxm_t* doxm);
  */
 bool AreDoxmBinPropertyValuesEqual(OicSecDoxm_t* doxm1, OicSecDoxm_t* doxm2);
 
-/**
- * Function to restore doxm resurce to initial status.
- * This function will use in case of error while ownership transfer
- */
-void RestoreDoxmToInitState();
-
 #if defined(__WITH_DTLS__) && defined(MULTIPLE_OWNER)
 /**
  * Callback function to handle MOT DTLS handshake result.

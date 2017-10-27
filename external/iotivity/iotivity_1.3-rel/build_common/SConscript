@@ -20,7 +20,8 @@ host_target_map = {
 os_arch_map = {
     'linux': [
         'x86', 'x86_64', 'arm', 'arm-v7a', 'armeabi-v7a', 'arm64', 'mips',
-        'mipsel', 'mips64', 'mips64el', 'i386', 'powerpc', 'sparc', 'aarch64'
+        'mipsel', 'mips64', 'mips64el', 'i386', 'powerpc', 'sparc', 'aarch64',
+        'armv6l', 'armv7l'
     ],
     'tizen': ['x86', 'x86_64', 'arm', 'arm-v7a', 'armeabi-v7a', 'arm64'],
     'android': [
@@ -237,6 +238,15 @@ else:
                      'Build with DTLS',
                      default='1',
                      allowed_values=('0', '1')))
+
+if target_os in ['linux']:
+    # This build option is provided for temporary use when upgrading to newer
+    # compilers or to temporarily bypass build warnings. It should default to True
+    # for all code submitted to upstream.
+    help_vars.Add(
+        BoolVariable('ERROR_ON_WARN',
+                     'Make all compiler warnings into errors.',
+                      default=True))
 
 if target_os == 'windows':
     # Builds differ based on Visual Studio version
