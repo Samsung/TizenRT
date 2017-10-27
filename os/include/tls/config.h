@@ -2735,6 +2735,12 @@
 #include MBEDTLS_USER_CONFIG_FILE
 #endif
 
+#if defined(MBEDTLS_OCF_PATCH)
+#ifndef MBEDTLS_SSL_ALL_ALERT_MESSAGES
+#define MBEDTLS_SSL_ALL_ALERT_MESSAGES
+#endif
+#endif
+
 #include "check_config.h"
 
 #endif							/* MBEDTLS_CONFIG_H */
