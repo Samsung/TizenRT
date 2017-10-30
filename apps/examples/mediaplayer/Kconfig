@@ -4,11 +4,11 @@
 #
 
 config EXAMPLES_MEDIAPLAYER
-	bool "\"MediaPlayer\" example in tash"
+	bool "MediaPlayer example in tash"
 	default n
 	depends on TASH
 	---help---
-		Enable the \"MediaPlayer\" example in tash
+		Enable the MediaPlayer example in tash
 
 if EXAMPLES_MEDIAPLAYER
 

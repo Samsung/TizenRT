@@ -25,17 +25,15 @@
 
 static void usage(char *cmd)
 {
-	printf("Usage: %s [option] [filename1] [filename2]\n", cmd);
+	printf("Usage: %s [option] [filename1]\n", cmd);
 	printf("\t-p: Playing\n");
 	printf("\t-r: Recording\n");
-	printf("\t-x: Playing 2 files(Mixing)\n");
 	printf("\n");
 }
 
 static int media_player_tash_cb(int argc, char **argv)
 {
 	media_t *music = NULL;
-	media_t *music_ = NULL;
 	int option;
 
 	if (argc < 3) {
@@ -48,7 +46,7 @@ static int media_player_tash_cb(int argc, char **argv)
 	while ((option = getopt(argc, argv, "prx")) != ERROR) {
 		switch (option) {
 		case 'p':
-			music = media_open(argv[2], MEDIA_OP_PLAYBACK, MEDIA_TYPE_PCM);
+			music = media_open(argv[2], MEDIA_OP_PLAYBACK, MEDIA_TYPE_PCM, MEDIA_PLAY_TYPE_FILE);
 			media_play(music, false);
 			printf("Playing started(with Pause/Resume) [%s]\n", argv[2]);
 			sleep(5);
@@ -63,24 +61,12 @@ static int media_player_tash_cb(int argc, char **argv)
 			break;
 
 		case 'r':
-			music = media_open(argv[2], MEDIA_OP_RECORD, MEDIA_TYPE_PCM);
+			music = media_open(argv[2], MEDIA_OP_RECORD, MEDIA_TYPE_PCM, MEDIA_PLAY_TYPE_FILE);
 			media_record(music);
 			printf("Recording 7secs started [%s]\n", argv[2]);
 			sleep(7);
 			printf("Done\n");
 			media_stop(music);
-			break;
-
-		case 'x':
-			music = media_open(argv[2], MEDIA_OP_PLAYBACK, MEDIA_TYPE_PCM);
-			media_play(music, false);
-			music_ = media_open(argv[3], MEDIA_OP_PLAYBACK, MEDIA_TYPE_PCM);
-			media_play(music_, false);
-			sleep(6);
-			printf("Done\n");
-			media_stop(music);
-			media_stop(music_);
-			media_close(music_);
 			break;
 
 		default:

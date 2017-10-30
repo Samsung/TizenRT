@@ -4,26 +4,34 @@
 #include <queue.h>
 #include <sys/types.h>
 
-/***
- * Errors
- */
-#define MEDIA_OK					0
-#define MEDIA_ERROR					1
-#define MEDIA_ERROR_THREAD_INIT		2
-#define MEDIA_ERROR_PCM_WRITE		3
-#define MEDIA_ERROR_WRITE_TO_FILE	4
-#define MEDIA_ERROR_CREATE			5
-#define MEDIA_ERROR_UNKNOWN_FILE	6
+
 
 /***
  * Enumerations
  */
+
+typedef enum {
+	MEDIA_OK,		
+	MEDIA_ERROR,
+	MEDIA_ERROR_THREAD_INIT,
+	MEDIA_ERROR_PCM_WRITE,
+	MEDIA_ERROR_WRITE_TO_FILE,
+	MEDIA_ERROR_CREATE,
+	MEDIA_ERROR_UNKNOWN_FILE
+} media_result_e;
+
+
+
 typedef enum {
 	MEDIA_TYPE_PCM,
-	MEDIA_TYPE_PCM_STREAM,
-	MEDIA_TYPE_WAV,
-	MEDIA_TYPE_WAV_STREAM
+	MEDIA_TYPE_WAV
 } media_type_e;
+
+
+typedef enum {
+	MEDIA_PLAY_TYPE_FILE,
+	MEDIA_PLAY_TYPE_NETWORK,
+} media_play_type_e;
 
 typedef enum {
 	MEDIA_OP_RECORD,
@@ -83,12 +91,13 @@ void media_shutdown(void);
  * @param[in] path Path can be a filename or a URL.
  * @param[in] op Media type. It can be playback mode or recording mode.
  * @param[in] type Media format. It can be WAV or something else.
+ * @param[in] play_type Media play type. It can be file or network stream.
  * @return On success, media_t structure pointer is returned.
  *         On failure, NULL pointer is returned.
  * @since Tizen RT v2.0
  */
 
-media_t *media_open(char *path, media_op_e op, media_type_e type);
+media_t *media_open(char *path, media_op_e op, media_type_e type, media_play_type_e play_type);
 
 /**
  * @brief media_close() Close opened media.

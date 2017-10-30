@@ -20,6 +20,7 @@ struct media_s {
 	media_op_e op;
 	media_state_e state;
 	media_type_e type;
+	media_play_type_e play_type;
 };
 
 /***
@@ -68,28 +69,28 @@ int media_init(struct media_cb_s *cbs)
 #endif
 	// Init threads
 	if (pthread_attr_init(&attr) != 0) {
-		return -MEDIA_ERROR_THREAD_INIT;
+		return MEDIA_ERROR_THREAD_INIT;
 	}
 
 	sparam.sched_priority = 150;
 	if (pthread_attr_setschedparam(&attr, &sparam) != 0) {
-		return -MEDIA_ERROR_THREAD_INIT;
+		return MEDIA_ERROR_THREAD_INIT;
 	}
 
 	if (pthread_attr_setschedpolicy(&attr, SCHED_RR) != 0) {
-		return -MEDIA_ERROR_THREAD_INIT;
+		return MEDIA_ERROR_THREAD_INIT;
 	}
 
 	if (pthread_attr_setstacksize(&attr, 8192) != 0) {
-		return -MEDIA_ERROR_THREAD_INIT;
+		return MEDIA_ERROR_THREAD_INIT;
 	}
 
 	if (pthread_create(&g_pth_playing, &attr, (pthread_startroutine_t)threadfunc_audio_playing, (void *)NULL) != 0) {
-		return -MEDIA_ERROR_THREAD_INIT;
+		return MEDIA_ERROR_THREAD_INIT;
 	}
 #ifdef CONFIG_AUDIO_MULTI_CARD
 	if (pthread_create(&g_pth_recording, &attr, (pthread_startroutine_t)threadfunc_audio_recording, (void *)NULL) != 0) {
-		return -MEDIA_ERROR_THREAD_INIT;
+		return MEDIA_ERROR_THREAD_INIT;
 	}
 #endif
 	return MEDIA_OK;
@@ -144,9 +145,8 @@ int media_stop(media_t *m)
 	if (m->state == MEDIA_STATE_PLAYING || m->state == MEDIA_STATE_RECORDING) {
 		m->state = MEDIA_STATE_STOPPING;
 		return MEDIA_OK;
-	} else {
-		return -MEDIA_ERROR;
-	}
+	}  
+	return MEDIA_ERROR;
 }
 
 int media_pause(media_t *m)
@@ -154,9 +154,8 @@ int media_pause(media_t *m)
 	if (m->state == MEDIA_STATE_PLAYING) {
 		m->state = MEDIA_STATE_PAUSING;
 		return MEDIA_OK;
-	} else {
-		return -MEDIA_ERROR;
 	}
+	return MEDIA_ERROR;
 }
 
 int media_resume(media_t *m)
@@ -165,9 +164,8 @@ int media_resume(media_t *m)
 		m->state = MEDIA_STATE_PLAYING;
 		sem_post(&g_sem_playing);
 		return MEDIA_OK;
-	} else {
-		return -MEDIA_ERROR;
 	}
+	return MEDIA_ERROR;
 }
 
 void media_setvol(media_t *m, unsigned char vol)
@@ -212,7 +210,7 @@ static int read_wav_header(media_t *m)
 
 	ret = read(m->fd, &header, sizeof(header));
 	if (ret != sizeof(header)) {
-		return -MEDIA_ERROR_UNKNOWN_FILE;
+		return MEDIA_ERROR_UNKNOWN_FILE;
 	}
 
 	// Todo: Add header information to media_t
@@ -220,7 +218,7 @@ static int read_wav_header(media_t *m)
 	return MEDIA_OK;
 }
 
-media_t *media_open(char *path, media_op_e op, media_type_e type)
+media_t *media_open(char *path, media_op_e op, media_type_e type, media_play_type_e play_type)
 {
 	media_t *m = (media_t *)malloc(sizeof(media_t));
 	if (m == NULL) {
@@ -231,32 +229,42 @@ media_t *media_open(char *path, media_op_e op, media_type_e type)
 	m->op = op;
 	m->state = MEDIA_STATE_CREATED;
 	m->type = type;
+	m->play_type = play_type;
 
 	if (type == MEDIA_TYPE_WAV || type == MEDIA_TYPE_PCM) {
 		if (op == MEDIA_OP_PLAYBACK) {
-			m->fd = open(path, O_RDONLY);
-			if (m->fd < 0) {
+			if (play_type == MEDIA_PLAY_TYPE_FILE) {
+				m->fd = open(path, O_RDONLY);
+				if (m->fd < 0) {
+					return NULL;
+				}
+
+				if (m->type == MEDIA_TYPE_WAV) {
+					read_wav_header(m);
+				}
+				m->state = MEDIA_STATE_PLAYING;
+				return m;
+			} else if (play_type == MEDIA_PLAY_TYPE_NETWORK) {
+				// TODO: Network streaming support
 				return NULL;
 			}
-
-			if (m->type == MEDIA_TYPE_WAV) {
-				read_wav_header(m);
-			}
-			m->state = MEDIA_STATE_PLAYING;
+			return NULL;
 
 		} else if (op == MEDIA_OP_RECORD) {
-			m->fd = open(path, O_RDWR | O_CREAT | O_TRUNC);
-			if (m->fd < 0) {
-				return NULL;
+			if (play_type == MEDIA_PLAY_TYPE_FILE) {
+				m->fd = open(path, O_RDWR | O_CREAT | O_TRUNC);
+				if (m->fd < 0) {
+					return NULL;
+				}
+				m->state = MEDIA_STATE_RECORDING;
+				return m;
+			} else if (play_type == MEDIA_PLAY_TYPE_NETWORK) {
+				// TODO: Network streaming support
 			}
-			m->state = MEDIA_STATE_RECORDING;
+			return NULL;
 		}
-	} else if (type == MEDIA_TYPE_WAV_STREAM) {
-		// Todo: Supports network streaming
-		return NULL;
 	}
-
-	return m;
+	return NULL;
 }
 
 void media_close(media_t *m)
@@ -283,7 +291,7 @@ int on_media_state_playing(struct pcm *pcmout, media_t *m, char *buffer, unsigne
 		while (remain > 0) {
 			ret = pcm_writei(pcmout, buffer + readed - pcm_frames_to_bytes(pcmout, remain), remain);
 			if (ret <= 0) {
-				return -MEDIA_ERROR_PCM_WRITE;
+				return MEDIA_ERROR_PCM_WRITE;
 			} else {
 				remain -= ret;
 			}
@@ -305,7 +313,7 @@ int on_media_state_recording(struct pcm *pcmin, media_t *m, char *buffer, unsign
 		while (remain > 0) {
 			ret = write(m->fd, buffer + pcm_frames_to_bytes(pcmin, readed) - remain, remain);
 			if (ret < 0) {
-				return -MEDIA_ERROR_WRITE_TO_FILE;
+				return MEDIA_ERROR_WRITE_TO_FILE;
 			} else {
 				remain -= ret;
 			}
@@ -327,8 +335,8 @@ int threadfunc_audio_playing(void *args)
 	int ret;
 #ifndef CONFIG_AUDIO_MULTI_CARD
 	struct pcm *pcmin;
-	int playing = 0;
-	int recording = 0;
+	bool playing = false;
+	bool recording = false;
 	buffer = NULL;
 	buffer_size = 0;
 	pcmout = NULL;
@@ -373,7 +381,7 @@ int threadfunc_audio_playing(void *args)
 					pcmout = pcm_open(0, 0, PCM_OUT, &config);
 					buffer_size = pcm_get_buffer_size(pcmout);
 					buffer = (char *)malloc(buffer_size);
-					playing = 1;
+					playing = true;
 				}
 
 #endif
@@ -397,7 +405,7 @@ int threadfunc_audio_playing(void *args)
 					pcmin = pcm_open(0, 0, PCM_IN, &config);
 					buffer_size = pcm_get_buffer_size(pcmin);
 					buffer = (char *)malloc(buffer_size);
-					recording = 1;
+					recording = true;
 				}
 				if (on_media_state_recording(pcmin, (media_t *)node, buffer, buffer_size) < 0) {
 					// Todo: Error handling
@@ -421,12 +429,12 @@ int threadfunc_audio_playing(void *args)
 				if (playing) {
 					pcm_close(pcmout);
 					pcmout = NULL;
-					playing = 0;
+					playing = false;
 				}
 				if (recording) {
 					pcm_close(pcmin);
 					pcmin = NULL;
-					recording = 0;
+					recording = false;
 				}
 				if (buffer != NULL) {
 					free(buffer);
