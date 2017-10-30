@@ -1,0 +1,4 @@
+
+ifeq ($(CONFIG_EXAMPLES_TESTCASE_STACKGUARD),y)
+CONFIGURED_APPS += examples/stack_guard
+endif

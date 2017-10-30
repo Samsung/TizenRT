@@ -1,6 +1,6 @@
 /****************************************************************************
  *
- * Copyright 2016 Samsung Electronics All Rights Reserved.
+ * Copyright 2017 Samsung Electronics All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,10 +16,11 @@
  *
  ****************************************************************************/
 /****************************************************************************
- * libc/stdio/lib_lowoutstream.c
+ * configs/sidk_s5jt200/scripts/kernel-space.ld
  *
- *   Copyright (C) 2007-2009, 2011-2012 Gregory Nutt. All rights reserved.
+ *   Copyright (C) 2011-2013 Gregory Nutt. All rights reserved.
  *   Author: Gregory Nutt <gnutt@nuttx.org>
+ *           Laurent Latil <laurent@latil.nom.fr>
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -50,67 +51,94 @@
  *
  ****************************************************************************/
 
-/****************************************************************************
- * Included Files
- ****************************************************************************/
+/* The S5JT200 has FLASH beginning at address 0x0400:0000 and
+ * SRAM beginning at address 0x0202:0000. SRAM 0x02020000 mapped to 0xFFFF:0000
+ * for Vector handling. The bootloader change program counter to flash _stext area
+ * but it checks program header before jump.
+ */
+ /* Refer memory.ld for allocated kernel space FLASH and SRAM region's */
 
-#include <tinyara/config.h>
-
-#ifdef CONFIG_ARCH_LOWPUTC
-
-#include <stdio.h>
-#include <assert.h>
-#include <errno.h>
-#include <tinyara/arch.h>
-
-#include "lib_internal.h"
-
-/****************************************************************************
- * Private Functions
- ****************************************************************************/
-
-/****************************************************************************
- * Name: lowoutstream_putc
- ****************************************************************************/
-
-static void lowoutstream_putc(FAR struct lib_outstream_s *this, int ch)
+OUTPUT_FORMAT("elf32-littlearm", "elf32-littlearm", "elf32-littlearm")
+OUTPUT_ARCH(arm)
+ENTRY(_stext)
+SECTIONS
 {
-	DEBUGASSERT(this);
+	.header : {
+		_start = .;
+		LONG((_end - _start) / 512);
+		LONG(0);
+		LONG(0x656d6264);
+		. = ALIGN(0x20);
+	} > kflash =0x0
 
-#if defined(__KERNEL__)
-	if (up_putc(ch) != EOF)
-	{
-		this->nput++;
-	}
-#endif
+	.text : {
+		_stext = ABSOLUTE(.);
+		*(.vectors)
+		*(.text .text.*)
+		*(.fixup)
+		*(.gnu.warning)
+		*(.rodata .rodata.*)
+		*(.gnu.linkonce.t.*)
+		*(.glue_7)
+		*(.glue_7t)
+		*(.got)
+		*(.gcc_except_table)
+		*(.gnu.linkonce.r.*)
+		_etext = ABSOLUTE(.);
+	} > kflash
+
+	.init_section : {
+		_sinit = ABSOLUTE(.);
+		*(.init_array .init_array.*)
+		_einit = ABSOLUTE(.);
+	} > kflash
+
+	.ARM.extab : {
+		*(.ARM.extab*)
+	} > kflash
+
+	__exidx_start = ABSOLUTE(.);
+	.ARM.exidx : {
+		*(.ARM.exidx*)
+	} > kflash
+	__exidx_end = ABSOLUTE(.);
+
+	_eronly = ABSOLUTE(.);
+
+	.data : {
+		_sdata = ABSOLUTE(.);
+		*(.data .data.*)
+		*(.gnu.linkonce.d.*)
+	     CONSTRUCTORS
+		_edata = ABSOLUTE(.);
+	} > ksram AT > kflash
+	.bss : {
+		_sbss = ABSOLUTE(.);
+		*(.bss .bss.*)
+		*(.gnu.linkonce.b.*)
+		*(COMMON)
+		. = ALIGN(4);
+		_ebss = ABSOLUTE(.);
+	} > ksram
+
+	/* Stabs debugging sections. */
+	.stab 0 : { *(.stab) }
+	.stabstr 0 : { *(.stabstr) }
+	.stab.excl 0 : { *(.stab.excl) }
+	.stab.exclstr 0 : { *(.stab.exclstr) }
+	.stab.index 0 : { *(.stab.index) }
+	.stab.indexstr 0 : { *(.stab.indexstr) }
+	.comment 0 : { *(.comment) }
+	.debug_abbrev 0 : { *(.debug_abbrev) }
+	.debug_info 0 : { *(.debug_info) }
+	.debug_line 0 : { *(.debug_line) }
+	.debug_pubnames 0 : { *(.debug_pubnames) }
+	.debug_aranges 0 : { *(.debug_aranges) }
+
+	.padding : {
+		. = ALIGN(512);
+		. = . + 1020;
+		LONG(0);
+		_end = .;
+	} > kflash
 }
-
-/****************************************************************************
- * Public Functions
- ****************************************************************************/
-
-/****************************************************************************
- * Name: lib_lowoutstream
- *
- * Description:
- *   Initializes a stream for use with low-level, architecture-specific I/O.
- *
- * Input parameters:
- *   lowoutstream - User allocated, uninitialized instance of struct
- *                  lib_lowoutstream_s to be initialized.
- *
- * Returned Value:
- *   None (User allocated instance initialized).
- *
- ****************************************************************************/
-
-void lib_lowoutstream(FAR struct lib_outstream_s *stream)
-{
-	stream->put = lowoutstream_putc;
-#ifdef CONFIG_STDIO_LINEBUFFER
-	stream->flush = lib_noflush;
-#endif
-	stream->nput = 0;
-}
-
-#endif							/* CONFIG_ARCH_LOWPUTC */

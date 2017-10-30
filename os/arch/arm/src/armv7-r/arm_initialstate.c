@@ -60,6 +60,8 @@
 #include <string.h>
 
 #include <tinyara/arch.h>
+#include <arch/irq.h>
+#include <chip/mpu-reg.h>
 
 #include "arm.h"
 #include "up_internal.h"
@@ -111,6 +113,10 @@ void up_initial_state(struct tcb_s *tcb)
 	/* Save the task entry point */
 
 	xcp->regs[REG_PC] = (uint32_t)tcb->start;
+
+#ifdef CONFIG_MPU_STACKGUARD
+	up_setup_guard_region(tcb, tcb->flags);
+#endif
 
 #if defined(CONFIG_BUILD_PROTECTED)
 	up_setup_regions(tcb, tcb->flags);

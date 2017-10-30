@@ -79,6 +79,32 @@
 extern uint32_t _vector_start;
 extern uint32_t _vector_end;
 
+#if defined(CONFIG_BUILD_PROTECTED)
+const struct mpu_region_info regions_info[] = {
+	{
+		&mpu_user_intsram_wb, 0x0, 0x80000000, MPU_REG_ENTIRE_MAP,
+	},
+	{
+		&mpu_user_intsram_wb, 0x02060000, 0x2000, MPU_REG_USER_DATA,
+	},
+	{
+		&mpu_priv_noncache, 0x02100000, 0x80000, MPU_REG_KERN_REG0,
+	},
+	{
+		&mpu_priv_flash, S5J_FLASH_MIRROR_PADDR, S5J_FLASH_MIRROR_SIZE, MPU_REG_KERN_REG1,
+	},
+	{
+		&mpu_peripheral, S5J_PERIPHERAL_PADDR, S5J_PERIPHERAL_SIZE, MPU_REG_KERN_PERI,
+	},
+	{
+		&mpu_user_flash, (unsigned int)__uflash_segment_start__, (size_t)__uflash_segment_size__, MPU_REG_KERN_CODE,
+	},
+	{
+		&mpu_priv_flash, S5J_IRAM_MIRROR_PADDR, S5J_IRAM_MIRROR_SIZE, MPU_REG_KERN_VEC,
+	}
+};
+#endif
+
 /****************************************************************************
  * Private Functions
  ****************************************************************************/
@@ -117,6 +143,23 @@ static inline void up_idlestack_color(void *pv, unsigned int nbytes)
 }
 #endif
 
+#ifdef CONFIG_ARMV7M_MPU
+static inline unsigned int arm_is_highvec(void)
+{
+	unsigned int vec = 0;
+	__asm__ __volatile__
+		(
+		 "\tmrc p15, 0, %0, c1, c0, 0"
+		 : "=r"(vec)
+		 :
+		 : "memory"
+		);
+
+	return (vec & SCTLR_V);
+}
+#endif
+
+
 /****************************************************************************
  * Public Functions
  ****************************************************************************/
@@ -134,7 +177,13 @@ void up_copyvectorblock(void)
 #ifdef CONFIG_ARMV7M_MPU
 int s5j_mpu_initialize(void)
 {
-#ifdef CONFIG_ARCH_CHIP_S5JT200
+#if defined(CONFIG_BUILD_PROTECTED)
+	int i;
+
+	for (i = 0; i < (sizeof(regions_info) / sizeof(struct mpu_region_info)); i++) {
+		regions_info[i].call(regions_info[i].base, regions_info[i].size);
+	}
+#elif CONFIG_ARCH_CHIP_S5JT200
 	/*
 	 * Vector Table 0x02020000  0x02020FFF  4
 	 * Reserved     0x02021000  0x020217FF  2
@@ -168,9 +217,10 @@ int s5j_mpu_initialize(void)
 	 * set the entire high vector region as read-only.
 	 */
 	mpu_priv_flash(S5J_IRAM_MIRROR_PADDR, S5J_IRAM_MIRROR_SIZE);
+#endif
 
 	mpu_control(true);
-#endif
+
 	return 0;
 }
 #endif

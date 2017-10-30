@@ -56,6 +56,7 @@
 
 #include <tinyara/config.h>
 #include <tinyara/irq.h>
+#include <chip/mpu-reg.h>
 #include "up_internal.h"
 #include "svcall.h"
 
@@ -103,6 +104,12 @@
 
 up_fullcontextrestore:
 
+#ifdef CONFIG_MPU_STACKGUARD
+	push	{lr}
+	bl		up_mpuguardrestore
+	pop		{lr}
+#endif
+
 	/* On entry, a1 (r0) holds address of the register save area.  All other
 	 * registers are available for use.
 	 */
@@ -134,12 +141,11 @@ up_fullcontextrestore:
 	 * to either user or kernel mode.
 	 */
 
-	sub	sp, #4
+	push	{lr}
 	/* restore the MPU context information */
-	str	lr,	[sp]
-	bl up_mpucontextrestore
-	ldr	lr,	[sp]
-	add	sp, #4
+	bl		up_mpucontextrestore
+	/* restore the above saved return address before context switch */
+	pop		{lr}
 	/* Perform the System call with R0=SYS_context_restore, R1=restoreregs */
 	mov		r1, r0					/* R1: restoreregs */
 	mov		r0, #SYS_context_restore	/* R0: SYS_context_restore syscall */
@@ -184,4 +190,4 @@ up_fullcontextrestore:
 
 #endif
 
-	.size up_fullcontextrestore, . - up_fullcontextrestore
+	.size	up_fullcontextrestore, . - up_fullcontextrestore

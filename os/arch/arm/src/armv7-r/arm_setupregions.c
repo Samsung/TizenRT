@@ -99,43 +99,42 @@ FAR int up_setup_regions(FAR struct tcb_s *tcb, uint8_t ttype)
 
 	/* Allocate regions for the user requested configurations */
 	for (idx = 0; idx < MPU_TOTAL_USER_REG; idx++) {
-		offset = REG_USR_CFG1 + idx * 4;
-		regs[offset] = idx + 2;	/* start of user configuration till stack region */
+		offset = REG_USR_CFG + idx * 4;
+		regs[offset] = idx + MPU_REG_USER_CONFIG0;	/* start of user configuration till stack region */
 		regs[offset + 1] = 0;
 		regs[offset + 2] = 0;
 		regs[offset + 3] = 0;
 	}
-	if (ttype == TCB_FLAG_TTYPE_KERNEL) {
-		if (tcb->adj_stack_size >= 32) {
-			regs[REG_RNUM_STK] = MPU_REG_TASK_STACK;
-		}
+
+	if (!tcb->stack_alloc_ptr) {
+		return OK;
+	}
+
+	if (is_tasktype_kernel(ttype)) {
+		regs[REG_RNUM_STK] = MPU_REG_TASK_STACK;
 		regs[REG_RBASE_STK] = ((uint32_t)tcb->stack_alloc_ptr & MPU_RBAR_ADDR_MASK);
 		regs[REG_RSIZE_STK] = MPU_RASR_RSIZE_LOG2(mpu_log2regionceil(tcb->adj_stack_size)) | MPU_RASR_ENABLE;
 		regs[REG_RATTR_STK] = MPU_RACR_B | MPU_RACR_TEX(5) | MPU_RACR_AP_RWNO | MPU_RACR_XN;
-	} else if (ttype == TCB_FLAG_TTYPE_TASK) {
-		if (tcb->adj_stack_size >= 32) {
-			regs[REG_RNUM_STK] = MPU_REG_TASK_STACK;
-		}
+	} else if (is_tasktype_utask(ttype)) {
+		regs[REG_RNUM_STK] = MPU_REG_TASK_STACK;
 		regs[REG_RBASE_STK] = ((uint32_t)tcb->stack_alloc_ptr & MPU_RBAR_ADDR_MASK);
 		regs[REG_RSIZE_STK] = MPU_RASR_RSIZE_LOG2(mpu_log2regionceil(tcb->adj_stack_size)) | MPU_RASR_ENABLE;
 		regs[REG_RATTR_STK] = MPU_RACR_B | MPU_RACR_TEX(5) | MPU_RACR_AP_RWRW | MPU_RACR_XN;
-	} else if (ttype == TCB_FLAG_TTYPE_PTHREAD) {
+	} else if (is_tasktype_pthread(ttype)) {
 		ptcb = (FAR struct pthread_tcb_s *)tcb;
 		struct pthread_region_s *regn = (struct pthread_region_s *)ptcb->region;
 		/*
 		 * Allocate region for the task stack, the stack is adjusted during allocation,
 		 * so use that instead of the size requested by the user space
 		 */
-		if (tcb->adj_stack_size >= 32) {
-			regs[REG_RNUM_STK] = MPU_REG_TASK_STACK;
-			regs[REG_RBASE_STK] = ((uint32_t)tcb->stack_alloc_ptr & MPU_RBAR_ADDR_MASK);
-			regs[REG_RSIZE_STK] = MPU_RASR_RSIZE_LOG2(mpu_log2regionceil(tcb->adj_stack_size)) | MPU_RASR_ENABLE;
-			regs[REG_RATTR_STK] = MPU_RACR_B | MPU_RACR_TEX(5) | MPU_RACR_AP_RWRW | MPU_RACR_XN;
-		}
+		regs[REG_RNUM_STK] = MPU_REG_TASK_STACK;
+		regs[REG_RBASE_STK] = ((uint32_t)tcb->stack_alloc_ptr & MPU_RBAR_ADDR_MASK);
+		regs[REG_RSIZE_STK] = MPU_RASR_RSIZE_LOG2(mpu_log2regionceil(tcb->adj_stack_size)) | MPU_RASR_ENABLE;
+		regs[REG_RATTR_STK] = MPU_RACR_B | MPU_RACR_TEX(5) | MPU_RACR_AP_RWRW | MPU_RACR_XN;
 
 		/* Allocate regions for the user requested configurations */
 		for (idx = 0; idx < MPU_TOTAL_USER_REG - 1; idx++) {
-			offset = REG_USR_CFG0 - idx * 4;
+			offset = REG_USR_CFG - idx * 4;
 			if (regn[idx].size >= 32) {
 				regs[offset] = (MPU_REG_USER_CONFIG0 - idx);
 				regs[offset + 1] = ((uint32_t)regn[idx].address & MPU_RBAR_ADDR_MASK);
@@ -147,3 +146,21 @@ FAR int up_setup_regions(FAR struct tcb_s *tcb, uint8_t ttype)
 	}
 	return OK;
 }
+
+#ifdef CONFIG_MPU_STACKGUARD
+FAR int up_setup_guard_region(FAR struct tcb_s *tcb, uint8_t ttype)
+{
+	uint32_t *regs = tcb->xcp.regs;
+
+	if (!tcb->stack_alloc_ptr) {
+		return OK;
+	}
+
+	regs[REG_RNUM_STKGUARD] = MPU_REG_STK_GUARD;
+	regs[REG_RBASE_STKGUARD] = ((uint32_t)tcb->stack_alloc_ptr & MPU_RBAR_ADDR_MASK);
+	regs[REG_RSIZE_STKGUARD] = MPU_RASR_RSIZE_LOG2(mpu_log2regionceil(tcb->guard_size)) | MPU_RASR_ENABLE;
+	regs[REG_RATTR_STKGUARD] = MPU_RACR_B | MPU_RACR_TEX(5) | MPU_RACR_AP_RONO | MPU_RACR_XN;
+
+	return OK;
+}
+#endif

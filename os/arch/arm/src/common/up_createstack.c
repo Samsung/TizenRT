@@ -185,6 +185,12 @@ int up_create_stack(FAR struct tcb_s *tcb, size_t stack_size, uint8_t ttype)
 			tcb->stack_alloc_ptr = (uint32_t *)kumm_memalign(stack_size, stack_size);
 		}
 
+#ifdef CONFIG_MPU_STACKGUARD
+		/* stack guard region overlaps with the task stack's 32 bytes at the end */
+		tcb->stack_guard = (uint32_t *)tcb->stack_alloc_ptr;
+		tcb->guard_size = ARCH_STACKGUARD_MINSIZE;
+#endif
+
 #ifdef CONFIG_DEBUG
 		/* Was the allocation successful? */
 
@@ -226,7 +232,12 @@ int up_create_stack(FAR struct tcb_s *tcb, size_t stack_size, uint8_t ttype)
 		/* Save the adjusted stack values in the struct tcb_s */
 
 		tcb->adj_stack_ptr = (uint32_t *)top_of_stack;
+#ifdef CONFIG_MPU_STACKGUARD
+		/* reduced stack size to accomodate the gaurd region */
+		tcb->adj_stack_size = size_of_stack - tcb->guard_size;
+#else
 		tcb->adj_stack_size = size_of_stack;
+#endif
 
 		/* If stack debug is enabled, then fill the stack with a
 		 * recognizable value that we can use later to test for high
@@ -263,8 +274,11 @@ void up_stack_color(FAR void *stackbase, size_t nbytes)
 	uintptr_t stkend = (((uintptr_t)stackbase + nbytes) & ~3);
 	size_t nwords = (stkend - (uintptr_t)stackbase) >> 2;
 
-	/* Set the entire stack to the coloration value */
+#ifdef CONFIG_MPU_STACKGUARD
+	stkptr = (uint32_t *)((uint32_t)stkptr + ARCH_STACKGUARD_MINSIZE);
+#endif
 
+	/* Set the entire stack to the coloration value */
 	while (nwords-- > 0) {
 		*stkptr++ = STACK_COLOR;
 	}

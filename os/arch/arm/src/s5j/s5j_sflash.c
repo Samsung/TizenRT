@@ -226,5 +226,7 @@ void s5j_sflash_init(void)
 	s5j_sflash_enable_wp();
 
 	/* Set FLASH clk 80Mhz for Max performance */
+#ifdef CONFIG_S5J_PWR
 	s5j_clk_set_rate(CLK_SPL_SFLASH, 80000000);
+#endif
 }

@@ -1,6 +1,6 @@
 /****************************************************************************
  *
- * Copyright 2016 Samsung Electronics All Rights Reserved.
+ * Copyright 2017 Samsung Electronics All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,9 +16,9 @@
  *
  ****************************************************************************/
 /****************************************************************************
- * libc/stdio/lib_lowoutstream.c
+ * arch/arm/src/s5j/s5j_userspace.c
  *
- *   Copyright (C) 2007-2009, 2011-2012 Gregory Nutt. All rights reserved.
+ *   Copyright (C) 2013 Gregory Nutt. All rights reserved.
  *   Author: Gregory Nutt <gnutt@nuttx.org>
  *
  * Redistribution and use in source and binary forms, with or without
@@ -56,61 +56,73 @@
 
 #include <tinyara/config.h>
 
-#ifdef CONFIG_ARCH_LOWPUTC
-
-#include <stdio.h>
+#include <stdint.h>
 #include <assert.h>
-#include <errno.h>
-#include <tinyara/arch.h>
 
-#include "lib_internal.h"
+#include <tinyara/userspace.h>
+
+#ifdef CONFIG_BUILD_PROTECTED
+
+/****************************************************************************
+ * Pre-processor Definitions
+ ****************************************************************************/
+
+/****************************************************************************
+ * Private Data
+ ****************************************************************************/
 
 /****************************************************************************
  * Private Functions
  ****************************************************************************/
 
 /****************************************************************************
- * Name: lowoutstream_putc
- ****************************************************************************/
-
-static void lowoutstream_putc(FAR struct lib_outstream_s *this, int ch)
-{
-	DEBUGASSERT(this);
-
-#if defined(__KERNEL__)
-	if (up_putc(ch) != EOF)
-	{
-		this->nput++;
-	}
-#endif
-}
-
-/****************************************************************************
  * Public Functions
  ****************************************************************************/
 
 /****************************************************************************
- * Name: lib_lowoutstream
+ * Name: s5j_userspace
  *
  * Description:
- *   Initializes a stream for use with low-level, architecture-specific I/O.
- *
- * Input parameters:
- *   lowoutstream - User allocated, uninitialized instance of struct
- *                  lib_lowoutstream_s to be initialized.
- *
- * Returned Value:
- *   None (User allocated instance initialized).
+ *   For the case of the separate user-/kernel-space build, perform whatever
+ *   platform specific initialization of the user memory is required.
+ *   Normally this just means initializing the user space .data and .bss
+ *   segments.
  *
  ****************************************************************************/
 
-void lib_lowoutstream(FAR struct lib_outstream_s *stream)
+void s5j_userspace(void)
 {
-	stream->put = lowoutstream_putc;
-#ifdef CONFIG_STDIO_LINEBUFFER
-	stream->flush = lib_noflush;
-#endif
-	stream->nput = 0;
-}
+  uint8_t *src;
+  uint8_t *dest;
+  uint8_t *end;
 
-#endif							/* CONFIG_ARCH_LOWPUTC */
+  /* Clear all of user-space .bss */
+
+  DEBUGASSERT(USERSPACE->us_bssstart != 0 && USERSPACE->us_bssend != 0 &&
+              USERSPACE->us_bssstart <= USERSPACE->us_bssend);
+
+  dest = (uint8_t *)USERSPACE->us_bssstart;
+  end  = (uint8_t *)USERSPACE->us_bssend;
+
+  while (dest != end)
+  {
+    *dest++ = 0;
+  }
+
+  /* Initialize all of user-space .data */
+
+  DEBUGASSERT(USERSPACE->us_datasource != 0 &&
+              USERSPACE->us_datastart != 0 && USERSPACE->us_dataend != 0 &&
+              USERSPACE->us_datastart <= USERSPACE->us_dataend);
+
+  src  = (uint8_t *)USERSPACE->us_datasource;
+  dest = (uint8_t *)USERSPACE->us_datastart;
+  end  = (uint8_t *)USERSPACE->us_dataend;
+
+  while (dest != end)
+  {
+    *dest++ = *src++;
+  }
+
+}
+#endif /* CONFIG_BUILD_PROTECTED */

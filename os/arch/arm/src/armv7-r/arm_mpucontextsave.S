@@ -21,6 +21,7 @@
 
 #include <tinyara/config.h>
 #include <tinyara/irq.h>
+#include <chip/mpu-reg.h>
 #include "up_internal.h"
 #include "svcall.h"
 #include "mpu.h"
@@ -62,36 +63,37 @@
 	.type	up_mpucontextsave, function
 
 up_mpucontextsave:
-
 	/* On entry, a1 (r0) holds address of the register save area.  All other
 	 * registers are available for use.
 	 *
 	 * save the MPU context information 
 	 */
-	mov		r6, #0
-	mov 	r5, #MPU_REG_USER_CONFIG1
+	push	{r1 - r3, r7, lr}
+	mov     r2, #0
+	mov     r3, #MPU_REG_USER_CONFIG0
 1:
-	mcr     p15, 0, r5, c6, c2, 0
+	mcr     p15, 0, r3, c6, c2, 0
 	add     r1,  r0, #(4*REG_RNUM)
-	str     r5, [r1, r6]
+	str     r3, [r1, r2]
 
-	mrc 	p15, 0, r7, c6, c1, 0
+	mrc     p15, 0, r7, c6, c1, 0
 	add     r1, r0, #(4*REG_RBASE)
-	str     r7, [r1, r6]
+	str     r7, [r1, r2]
 
-	mrc 	p15, 0, r7, c6, c1, 2
+	mrc     p15, 0, r7, c6, c1, 2
 	add     r1, r0, #(4*REG_RSIZE)
-	str     r7, [r1, r6]
+	str     r7, [r1, r2]
 
-	mrc 	p15, 0, r7, c6, c1, 4
+	mrc     p15, 0, r7, c6, c1, 4
 	add     r1, r0, #(4*REG_RATTR)
-	str     r7, [r1, r6]
+	str     r7, [r1, r2]
 
-	add		r6, #16
-	add 	r5, #1
-	cmp		r6, #MPU_CONTEXT_SIZE
-	bne		1b
-	mov		pc, lr
+	add     r2, #16
+	add     r3, #1
+	cmp     r2, #MPU_CONTEXT_SIZE
+	bne     1b
+	pop		{r1 - r3, r7, lr}
+	mov     pc, lr
 
-	.size up_mpucontextsave, . - up_mpucontextsave
+	.size	up_mpucontextsave, . - up_mpucontextsave
 	.end

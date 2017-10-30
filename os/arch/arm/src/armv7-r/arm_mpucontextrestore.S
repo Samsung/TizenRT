@@ -21,6 +21,7 @@
 
 #include <tinyara/config.h>
 #include <tinyara/irq.h>
+#include <chip/mpu-reg.h>
 #include "up_internal.h"
 #include "svcall.h"
 #include "mpu.h"
@@ -62,36 +63,35 @@
 	.type	up_mpucontextrestore, function
 
 up_mpucontextrestore:
-
 	/* On entry, a1 (r0) holds address of the register save area.  All other
 	 * registers are available for use.
 	 *
 	 * restore the MPU context information 
 	 */
-	mov		r3, #0
-	mov 	r5, #MPU_REG_USER_CONFIG1
+	push	{r1 - r3, r7, lr}
+	mov     r7, #0
 1:
-	mcr     p15, 0, r5, c6, c2, 0
-	add     r6,  r0, #(4*REG_RNUM)
-	str     r5, [r6, r3]
-	mcr 	p15, 0, r6, c6, c1, 2
+	add     r3,  r0, #(4*REG_RNUM)
+	ldr     r1, [r3, r7]
+	mcr     p15, 0, r1, c6, c2, 0
 
-	add     r6, r0, #(4*REG_RBASE)
-	ldr     r2, [r6, r3]
-	mcr 	p15, 0, r2, c6, c1, 0
+	add     r3, r0, #(4*REG_RBASE)
+	ldr     r2, [r3, r7]
+	mcr     p15, 0, r2, c6, c1, 0
 
-	add     r6, r0, #(4*REG_RSIZE)
-	ldr     r2, [r6, r3]
-	mcr 	p15, 0, r2, c6, c1, 2
+	add     r3, r0, #(4*REG_RSIZE)
+	ldr     r2, [r3, r7]
+	mcr     p15, 0, r2, c6, c1, 2
 
-	add     r6, r0, #(4*REG_RATTR)
-	ldr     r2, [r6, r3]
-	mcr 	p15, 0, r2, c6, c1, 4
+	add     r3, r0, #(4*REG_RATTR)
+	ldr     r2, [r3, r7]
+	mcr     p15, 0, r2, c6, c1, 4
 
-	add		r3, #16 /* offset to next mpu region context */
-	add 	r5, #1
-	cmp		r3, #MPU_CONTEXT_SIZE
-	bne		1b
-	mov		pc, lr
-	.size up_mpucontextrestore, . - up_mpucontextrestore
+	add     r7, #16 /* offset to next mpu region context */
+	add     r1, #1
+	cmp     r7, #MPU_CONTEXT_SIZE
+	bne     1b
+	pop		{r1 - r3, r7, lr}
+	mov     pc, lr
+	.size 	up_mpucontextrestore, . - up_mpucontextrestore
 	.end

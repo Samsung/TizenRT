@@ -1,6 +1,6 @@
 /****************************************************************************
  *
- * Copyright 2016 Samsung Electronics All Rights Reserved.
+ * Copyright 2017 Samsung Electronics All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,9 +16,9 @@
  *
  ****************************************************************************/
 /****************************************************************************
- * libc/stdio/lib_lowoutstream.c
+ * configs/artik050/scripts/memory.ld
  *
- *   Copyright (C) 2007-2009, 2011-2012 Gregory Nutt. All rights reserved.
+ *   Copyright (C) 2013 Gregory Nutt. All rights reserved.
  *   Author: Gregory Nutt <gnutt@nuttx.org>
  *
  * Redistribution and use in source and binary forms, with or without
@@ -50,67 +50,23 @@
  *
  ****************************************************************************/
 
-/****************************************************************************
- * Included Files
- ****************************************************************************/
-
-#include <tinyara/config.h>
-
-#ifdef CONFIG_ARCH_LOWPUTC
-
-#include <stdio.h>
-#include <assert.h>
-#include <errno.h>
-#include <tinyara/arch.h>
-
-#include "lib_internal.h"
-
-/****************************************************************************
- * Private Functions
- ****************************************************************************/
-
-/****************************************************************************
- * Name: lowoutstream_putc
- ****************************************************************************/
-
-static void lowoutstream_putc(FAR struct lib_outstream_s *this, int ch)
+MEMORY
 {
-	DEBUGASSERT(this);
+    /* 2MB FLASH */
 
-#if defined(__KERNEL__)
-	if (up_putc(ch) != EOF)
-	{
-		this->nput++;
-	}
-#endif
+    kflash (rx)      : ORIGIN = 0x040c8000, LENGTH = 736K
+    uflash (rx)      : ORIGIN = 0x04180000, LENGTH = 512K
+
+    /* 112Kb of contiguous SRAM */
+
+    ksram (rwx)      : ORIGIN = 0x02023800, LENGTH = 242K
+    usram (rwx)      : ORIGIN = 0x02060000, LENGTH = 480K
 }
-
-/****************************************************************************
- * Public Functions
- ****************************************************************************/
-
-/****************************************************************************
- * Name: lib_lowoutstream
- *
- * Description:
- *   Initializes a stream for use with low-level, architecture-specific I/O.
- *
- * Input parameters:
- *   lowoutstream - User allocated, uninitialized instance of struct
- *                  lib_lowoutstream_s to be initialized.
- *
- * Returned Value:
- *   None (User allocated instance initialized).
- *
- ****************************************************************************/
-
-void lib_lowoutstream(FAR struct lib_outstream_s *stream)
-{
-	stream->put = lowoutstream_putc;
-#ifdef CONFIG_STDIO_LINEBUFFER
-	stream->flush = lib_noflush;
-#endif
-	stream->nput = 0;
-}
-
-#endif							/* CONFIG_ARCH_LOWPUTC */
+__kflash_segment_start__  = ORIGIN(kflash);
+__kflash_segment_size__   = LENGTH(kflash);
+__uflash_segment_start__  = ORIGIN(uflash);
+__uflash_segment_size__   = LENGTH(uflash);
+__ksram_segment_start__   = ORIGIN(ksram);
+__ksram_segment_size__    = LENGTH(ksram);
+__usram_segment_start__   = ORIGIN(usram);
+__usram_segment_size__    = LENGTH(usram);

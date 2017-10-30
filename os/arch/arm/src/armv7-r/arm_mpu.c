@@ -55,6 +55,7 @@
  ****************************************************************************/
 
 #include <tinyara/config.h>
+#include <chip/mpu-reg.h>
 
 #include <stdint.h>
 #include <assert.h>
@@ -222,7 +223,11 @@ static inline uint32_t mpu_subregion_ls(size_t offset, uint8_t l2size)
 unsigned int mpu_allocregion(void)
 {
 	DEBUGASSERT(g_region < CONFIG_ARMV7M_MPU_NREGIONS);
+#if defined(CONFIG_BUILD_PROTECTED)
+	return (unsigned int)regions_info[g_region++].rgno;
+#else
 	return (unsigned int)g_region++;
+#endif
 }
 
 /****************************************************************************

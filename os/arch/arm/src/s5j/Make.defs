@@ -55,7 +55,7 @@
 
 HEAD_ASRC  = arm_vectortab.S
 
-ifeq ($(CONFIG_BUILD_KERNEL),y)
+ifeq ($(CONFIG_BUILD_PROTECTED),y)
 STARTUP_OBJS = crt0$(OBJEXT)
 endif
 
@@ -75,6 +75,14 @@ CMN_ASRCS += arm_saveusercontext.S arm_vectoraddrexcptn.S arm_vfork.S
 CMN_ASRCS += cp15_coherent_dcache.S cp15_invalidate_dcache.S
 CMN_ASRCS += cp15_clean_dcache.S cp15_flush_dcache.S cp15_invalidate_dcache_all.S
 CMN_ASRCS += arm_savefpu.S arm_restorefpu.S setjmp.S
+
+ifeq ($(CONFIG_MPU_STACKGUARD),y)
+CMN_ASRCS += arm_mpuguardrestore.S arm_mpuguardsave.S
+endif
+
+ifeq ($(CONFIG_BUILD_PROTECTED),y)
+CMN_ASRCS += arm_mpucontextsave.S arm_mpucontextrestore.S
+endif
 
 # Configuration dependent assembly language files
 
@@ -109,6 +117,14 @@ ifeq ($(CONFIG_BUILD_KERNEL),y)
 CMN_CSRCS += up_task_start.c up_pthread_start.c arm_signal_dispatch.c
 endif
 
+ifeq ($(CONFIG_BUILD_PROTECTED),y)
+CMN_CSRCS += up_task_start.c up_pthread_start.c arm_setupregions.c
+ifneq ($(CONFIG_DISABLE_SIGNALS),y)
+CMN_CSRCS += arm_signal_dispatch.c
+CMN_UASRCS += arm_signal_handler.S
+endif
+endif
+
 ifneq ($(CONFIG_SCHED_TICKLESS),y)
 CHIP_CSRCS += s5j_timerisr.c
 endif
@@ -118,6 +134,10 @@ CHIP_CSRCS += s5j_boot.c s5j_irq.c
 CHIP_CSRCS += s5j_serial.c
 CHIP_CSRCS += s5j_mac.c
 CHIP_CSRCS += s5j_systemreset.c
+
+ifeq ($(CONFIG_BUILD_PROTECTED),y)
+CHIP_CSRCS += s5j_userspace.c
+endif
 
 ifeq ($(CONFIG_S5J_WATCHDOG),y)
 CHIP_CSRCS += s5j_watchdog.c

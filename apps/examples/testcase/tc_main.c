@@ -44,6 +44,9 @@
 #ifdef CONFIG_EXAMPLES_TESTCASE_TTRACE
 #define TC_TTRACE_STACK  2048
 #endif
+#ifdef CONFIG_EXAMPLES_TESTCASE_STACKGUARD
+#define TC_STACKGUARD_STACK  2048
+#endif
 #if defined(CONFIG_EXAMPLES_TESTCASE_SYSTEMIO_UTC) || defined(CONFIG_EXAMPLES_TESTCASE_SYSTEMIO_ITC)
 #define TC_SYSTEMIO_STACK 2048
 #endif
@@ -83,8 +86,8 @@ extern int itc_mqtt_main(int argc, char *argv[]);
 extern int utc_audio_main(int argc, char *argv[]);
 extern int itc_audio_main(int argc, char *argv[]);
 
-/* Not yet */
 extern int mpu_tc_main(int argc, char *argv[]);
+extern int sg_tc_main(int argc, char *argv[]);
 
 #ifdef CONFIG_BUILD_KERNEL
 int main(int argc, FAR char *argv[])
@@ -149,6 +152,12 @@ int tc_main(int argc, char *argv[])
 	pid = task_create("dmapi", SCHED_PRIORITY_DEFAULT, TC_DM_STACK, itc_dm_main, argv);
 	if (pid < 0) {
 		printf("DM itc is not started, err = %d\n", pid);
+	}
+#endif
+#ifdef CONFIG_EXAMPLES_TESTCASE_STACKGUARD
+	pid = task_create("stackguard", SCHED_PRIORITY_DEFAULT, TC_STACKGUARD_STACK, sg_tc_main, argv);
+	if (pid < 0) {
+		printf("stack guard tc is not started, err = %d\n", pid);
 	}
 #endif
 #ifdef CONFIG_EXAMPLES_TESTCASE_SYSTEMIO_UTC

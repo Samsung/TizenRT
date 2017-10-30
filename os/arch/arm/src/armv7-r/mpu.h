@@ -65,6 +65,7 @@
 #include <stdbool.h>
 #include <debug.h>
 #include <arch/irq.h>
+#include <chip/mpu-reg.h>
 
 #include "up_arch.h"
 #include "cache.h"

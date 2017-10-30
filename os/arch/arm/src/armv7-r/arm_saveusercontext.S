@@ -55,6 +55,7 @@
  ****************************************************************************/
 
 #include <tinyara/irq.h>
+#include <chip/mpu-reg.h>
 #include "up_internal.h"
 
 /****************************************************************************
@@ -123,6 +124,11 @@ up_saveusercontext:
 	 * But right now, I can't find the definitive list of the volatile
 	 * floating point registers.
 	 */
+#ifdef CONFIG_MPU_STACKGUARD
+	push	{lr}
+	bl		up_mpuguardsave
+	pop		{lr}
+#endif
 
 #ifdef CONFIG_ARCH_FPU
 	add		r1, r0, #(4*REG_S0)		/* R1=Address of FP register storage */
@@ -143,11 +149,9 @@ up_saveusercontext:
 	/* Save the MPU register information into the context structure */
 
 #if defined(CONFIG_BUILD_PROTECTED)
-	sub	sp, #4
-	str	lr,	[sp]
-	bl	up_mpucontextsave
-	ldr	lr,	[sp]
-	add	sp, #4
+	push	{lr}
+	bl		up_mpucontextsave
+	pop		{lr}
 #endif
 
 	/* Return 0 now indicating that this return is not a context switch */
