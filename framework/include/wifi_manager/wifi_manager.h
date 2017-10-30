@@ -31,6 +31,9 @@
 #ifndef WIFI_MANAGER_H
 #define WIFI_MANAGER_H
 
+/**
+ * @brief Status of Wi-Fi interface such as connected or disconnected
+ */
 typedef enum {
 	// STA mode status
 	AP_DISCONNECTED,
@@ -45,7 +48,7 @@ typedef enum {
 } connect_status_e;
 
 /**
- * @brief <b> wifi result type FAIL, SUCCESS, INVALID ARGS</b>
+ * @brief Result types of Wi-Fi Manager APIs such as FAIL, SUCCESS, or INVALID ARGS
  */
 typedef enum {
 	WIFI_MANAGER_FAIL = -1,
@@ -57,6 +60,9 @@ typedef enum {
 	WIFI_MANAGER_BUSY,
 } wifi_manager_result_e;
 
+/**
+ * @brief Mode of Wi-Fi interface such as station mode or ap mode
+ */
 typedef enum {
 	WIFI_NONE = -1,
 	STA_MODE,
@@ -67,11 +73,17 @@ typedef enum {
 	WIFI_FAILURE
 } wifi_manager_mode_e;
 
+/**
+ * @brief Result types of nearby access point scanning
+ */
 typedef enum {
 	WIFI_SCAN_FAIL = -1,
 	WIFI_SCAN_SUCCESS,
 } wifi_manager_scan_result_e;
 
+/**
+ * @brief Keep information of nearby access points as scan results
+ */
 struct wifi_manager_scan_info_s {
 	char ssid[33];	// 802.11 spec defined unspecified or uint8
 	char bssid[18];	// char string e.g. xx:xx:xx:xx:xx:xx
@@ -83,6 +95,9 @@ struct wifi_manager_scan_info_s {
 
 typedef struct wifi_manager_scan_info_s wifi_manager_scan_info_s;
 
+/**
+ * @brief Include callback functions which are asynchronously called after Wi-Fi Manager APIs are called
+ */
 typedef struct {
 	void (*sta_connected)(void);		// in station mode, connected to ap
 	void (*sta_disconnected)(void);		// in station mode, disconnected from ap
@@ -91,6 +106,9 @@ typedef struct {
 	void (*scan_ap_done)(wifi_manager_scan_info_s **, wifi_manager_scan_result_e); // scanning ap is done
 } wifi_manager_cb_s;
 
+/**
+ * @brief Keep Wi-Fi Manager information including ip/mac address, ssid, rssi, etc.
+ */
 typedef struct {
 	char ip4_address[18];
 	char ssid[32];
@@ -102,6 +120,9 @@ typedef struct {
 	wifi_manager_mode_e next_mode;
 } wifi_manager_info_s;
 
+/**
+ * @brief Specify information of soft access point (softAP) such as ssid and channel number
+ */
 typedef struct {
 	char ssid[32];
 	uint16_t channel;
@@ -109,7 +130,7 @@ typedef struct {
 } wifi_manager_softap_config_s;
 
 /**
- * @brief <b> wifi authentication type WPA, WPA2, WPS</b>
+ * @brief Wi-Fi authentication type such as WPA, WPA2, or WPS
  */
 typedef enum {
 	WIFI_MANAGER_AUTH_OPEN,					   /**<  open mode                      */
@@ -121,7 +142,7 @@ typedef enum {
 } wifi_manager_ap_auth_type_e;
 
 /**
- * @brief wifi encryption type WEP, AES, TKIP
+ * @brief Wi-Fi encryption type such as WEP, AES, or TKIP
  */
 typedef enum {
 	WIFI_MANAGER_CRYPTO_NONE,				   /**<  none encryption                */
@@ -134,7 +155,7 @@ typedef enum {
 } wifi_manager_ap_crypto_type_e;
 
 /**
- * @brief wifi ap connect config
+ * @brief Specify which access point (AP) a client connects to
  */
 typedef struct {
 	char ssid[32];							 /**<  Service Set Identification         */
