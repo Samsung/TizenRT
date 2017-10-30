@@ -54,6 +54,7 @@
 EXTDIR = ${shell pwd}
 -include $(TOPDIR)/Make.defs
 
+TOOLDIR := $(TOPDIR)/../tools
 DELIM ?= $(strip /)
 
 DEPPATH = --dep-path .
@@ -79,8 +80,6 @@ endef
 
 $(foreach BDIR, $(BUILDIRS), $(eval $(call Add_EXTLIB,$(BDIR))))
 
-BIN	= libexternal$(LIBEXT)
-
 AOBJS = $(ASRCS:.S=$(OBJEXT))
 COBJS = $(CSRCS:.c=$(OBJEXT))
 CXXOBJS = $(CXXSRCS:.cpp=$(OBJEXT))
@@ -90,8 +89,11 @@ OBJS = $(AOBJS) $(COBJS) $(CXXOBJS)
 
 # Build targets
 
-all: $(BIN)
-.PHONY: context .depdirs depend clean distclean
+LIBBUNDLED  := libbundled$(LIBEXT)
+LIBEXTERNAL := libexternal$(LIBEXT)
+
+all: $(LIBEXTERNAL)
+.PHONY: context .depdirs depend clean distclean custom_clean iotivity_build iotivity_clean iotjs_build iotivity_clean
 
 $(AOBJS): %$(OBJEXT): %.S
 	$(call ASSEMBLE, $<, $@)
@@ -113,8 +115,17 @@ $(foreach SDIR, $(CONFIGURED_EXT), $(eval $(call SDIR_template,$(SDIR),depend)))
 $(foreach SDIR, $(BUILDIRS), $(eval $(call SDIR_template,$(SDIR),clean)))
 $(foreach SDIR, $(BUILDIRS), $(eval $(call SDIR_template,$(SDIR),distclean)))
 
-$(BIN): $(OBJS) $(foreach SDIR, $(CONFIGURED_EXT), $(SDIR)_all) iotivity_build iotjs_build
+$(LIBBUNDLED): $(OBJS)
+	@echo "Making $@ out of $(OBJS)"
 	$(call ARCHIVE, $@, $(OBJS))
+
+export CROSSDEV
+EXTLIBS = $(wildcard extlibs/*.[oa])
+$(LIBEXTERNAL): $(LIBBUNDLED) $(EXTLIBS) $(foreach SDIR, $(CONFIGURED_EXT), $(SDIR)_all) iotivity_build iotjs_build
+	@echo "Creating library (solid archive) $@ out of $(LIBBUNDLED) $(EXTLIBS)"
+	@echo "CROSSDEV is $(CROSSDEV)"
+	$(TOOLDIR)/create_archive.sh $(LIBEXTERNAL) $(LIBBUNDLED) $(EXTLIBS)
+	@ls -l $(LIBEXTERNAL) $(LIBBUNDLED)
 
 .depdirs: $(foreach SDIR, $(CONFIGURED_EXT), $(SDIR)_depend)
 
@@ -126,15 +137,12 @@ $(BIN): $(OBJS) $(foreach SDIR, $(CONFIGURED_EXT), $(SDIR)_all) iotivity_build i
 
 depend: .depend
 
-clean: $(foreach SDIR, $(BUILDIRS), $(SDIR)_clean) iotivity_clean iotjs_clean
-	$(call DELFILE, $(BIN))
+clean: $(foreach SDIR, $(BUILDIRS), $(SDIR)_clean) iotivity_clean iotjs_clean custom_clean
 	$(call CLEAN)
 
-distclean: $(foreach SDIR, $(BUILDIRS), $(SDIR)_distclean)
+distclean: clean $(foreach SDIR, $(BUILDIRS), $(SDIR)_distclean)
 	$(call DELFILE, .depend)
 	$(call DELFILE, Make.dep)
-	$(call DELFILE, $(BIN))
-	$(call CLEAN)
 
 ifeq ($(CONFIG_ENABLE_IOTIVITY),y)
 IOTIVITY_RELEASE=${shell echo $(CONFIG_IOTIVITY_RELEASE_VERSION) | sed 's/"//g'}
@@ -187,7 +195,10 @@ endif
 
 iotjs_clean:
 ifeq ($(CONFIG_ENABLE_IOTJS),y)
-	$(Q) rm -rf $(IOTJS_ROOT_DIR)/build
+	$(Q) rm -rf $(IOTJS_ROOT_DIR)/build/arm-tizenrt
 endif
+
+custom_clean:
+	$(foreach OBJFILE, $(OBJS) $(LIBBUNDLED) $(LIBEXTERNAL), rm -f $(OBJFILE))
 
 -include Make.dep
