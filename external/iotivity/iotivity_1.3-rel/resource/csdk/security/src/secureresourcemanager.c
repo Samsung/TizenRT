@@ -312,6 +312,25 @@ void SRMRequestHandler(const CAEndpoint_t *endPoint, const CARequestInfo_t *requ
     // Set secure channel boolean.
     ctx->secureChannel = isRequestOverSecureChannel(ctx);
 
+#if defined( __WITH_TLS__) || defined(__WITH_DTLS__)
+
+    // [IOT-2858]
+    // If request is over Secure Channel but requester ID is Nil UUID
+    // it means that this request arrived over DTLS established via anon
+    // cipher suite.  This may be an opportunity to disable anon cipher
+    // suite, but for now, just log the event.
+#ifndef NDEBUG
+    if (SUBJECT_ID_TYPE_UUID == ctx->subjectIdType)
+    {
+        if (ctx->secureChannel &&
+            IsNilUuid(&(ctx->subjectUuid)))
+        {
+            OIC_LOG_V(INFO, TAG, "%s: request received over Secure Channel from Nil UUID client.", __func__);
+        }
+    }
+#endif // NDEBUG
+#endif // DTLS
+
     // Set resource URI and type.
     SetResourceUriAndType(ctx);
 

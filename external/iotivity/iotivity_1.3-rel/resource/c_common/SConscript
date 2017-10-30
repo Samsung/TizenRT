@@ -25,12 +25,13 @@ import datetime
 target_os = env.get('TARGET_OS')
 target_arch = env.get('TARGET_ARCH')
 src_dir = env.get('SRC_DIR')
+cur_dir = Dir('.').abspath
 
 ######################################################################
 # Generate iotivity_config.h using presence of headers
 ######################################################################
-config_h_file_path = os.path.join(src_dir, 'resource', 'c_common',
-                                  'iotivity_config.h')
+
+config_h_file_path = os.path.join(cur_dir, 'iotivity_config.h')
 
 # __TIZENRT__ modification : if (os.path.exists(config_h_file_path)) and (env.GetOption('clean')):
 if (os.path.exists(config_h_file_path)):
@@ -127,29 +128,31 @@ if not os.path.isfile(config_h_file_path) and env.GetOption not in ('clean', 'he
             config_h_body += "#define %s 1\n\n" % get_define_from_string(
                 function_name)
     conf.Finish()
-
     # Autoconf feature doesn't work with Jenkins' arduino toolchain, so hardcode it here.
     if target_os == 'arduino':
         config_h_body += "#define HAVE_ARDUINO_TIME_H\n\n"
 
     # Generate the file
+    if not os.path.exists(cur_dir):
+        os.makedirs(cur_dir)
     if os.path.exists(config_h_file_path):
         os.remove(config_h_file_path)
     config_h_file = open(config_h_file_path, "w")
     config_h_file.write(config_h_header + config_h_body + config_h_footer)
     config_h_file.close()
 
+
 # Sanity check to ensure that the above block created the file.
 if (not os.path.exists(config_h_file_path)) and (not env.GetOption('clean')):
     print "Error: iotivity_config.h file not created!"
     Exit(1)
 
-# iotivity_config.h should be copied to the build dir
+# iotivity_config.h should be copied to installation dir
 env.UserInstallTargetHeader(
     config_h_file_path, 'c_common', 'iotivity_config.h')
 
 # Use the generated file internally
-env.AppendUnique(CPPPATH=[os.path.join(src_dir, 'resource', 'c_common')])
+env.AppendUnique(CPPPATH=[cur_dir])
 
 if target_os == 'tizenrt':
     compat_h_file_path = os.path.join(src_dir, 'build_common', 'tizenrt', 'compatibility', 'tizenrt_compat.h')

@@ -119,7 +119,7 @@ cp resource/oc_logger/include/targets/oc_ostream_logger.h %{DEST_INC_DIR}
 cp resource/csdk/stack/include/ocpresence.h %{DEST_INC_DIR}
 cp resource/csdk/stack/include/ocpayload.h %{DEST_INC_DIR}
 cp resource/c_common/platform_features.h %{DEST_INC_DIR}
-cp resource/c_common/iotivity_config.h %{DEST_INC_DIR}
+cp %{BUILD_DIR}/resource/c_common/iotivity_config.h %{DEST_INC_DIR}
 cp resource/c_common/*/include/*.h %{DEST_INC_DIR}
 cp resource/c_common/experimental/*.h* %{DEST_INC_DIR}/experimental/
 cp resource/csdk/stack/include/payload_logging.h %{DEST_INC_DIR}

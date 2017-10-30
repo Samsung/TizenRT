@@ -64,7 +64,7 @@ INLINE_API void OCPayloadLogRepValues(LogLevel level, OCRepPayloadValue* val)
                 OIC_LOG_V(level, PL_TAG, "\t\t%s: NULL", val->name);
                 break;
             case OCREP_PROP_INT:
-                OIC_LOG_V(level, PL_TAG, "\t\t%s(int):%zd", val->name, val->i);
+                OIC_LOG_V(level, PL_TAG, "\t\t%s(int):%" PRId64, val->name, val->i);
                 break;
             case OCREP_PROP_DOUBLE:
                 OIC_LOG_V(level, PL_TAG, "\t\t%s(double):%f", val->name, val->d);
@@ -96,7 +96,7 @@ INLINE_API void OCPayloadLogRepValues(LogLevel level, OCRepPayloadValue* val)
                         OIC_LOG(level, PL_TAG, "\t\t Values:");
                         for (size_t i = 0; i < val->arr.dimensions[0]; i++)
                         {
-                            OIC_LOG_V(level, PL_TAG, "\t\t\t %zd", val->arr.iArray[i]);
+                            OIC_LOG_V(level, PL_TAG, "\t\t\t %" PRId64, val->arr.iArray[i]);
                         }
                         break;
                     case OCREP_PROP_DOUBLE:

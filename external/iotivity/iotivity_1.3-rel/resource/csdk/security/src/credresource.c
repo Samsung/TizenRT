@@ -655,7 +655,7 @@ static void logCredMetadata()
 #endif
 }
 
-OCStackResult CredToCBORPayload(const OicSecCred_t *credS, uint8_t **cborPayload,
+OCStackResult CredToCBORPayloadWithRowner(const OicSecCred_t *credS, const OicUuid_t *rownerId, uint8_t **cborPayload,
                                 size_t *cborSize, int secureFlag)
 {
     OIC_LOG_V(DEBUG, TAG, "IN %s:", __func__);
@@ -890,7 +890,7 @@ OCStackResult CredToCBORPayload(const OicSecCred_t *credS, uint8_t **cborPayload
         cborEncoderResult = cbor_encode_text_string(&credRootMap, OIC_JSON_ROWNERID_NAME,
             strlen(OIC_JSON_ROWNERID_NAME));
         VERIFY_CBOR_SUCCESS_OR_OUT_OF_MEMORY(TAG, cborEncoderResult, "Failed Adding rownerid Name.");
-        ret = ConvertUuidToStr(&gRownerId, &rowner);
+        ret = ConvertUuidToStr(rownerId, &rowner);
         VERIFY_SUCCESS(TAG, ret == OC_STACK_OK, ERROR);
         cborEncoderResult = cbor_encode_text_string(&credRootMap, rowner, strlen(rowner));
         VERIFY_CBOR_SUCCESS_OR_OUT_OF_MEMORY(TAG, cborEncoderResult, "Failed Addding rownerid Value.");
@@ -970,6 +970,13 @@ exit:
 
     return ret;
 }
+
+OCStackResult CredToCBORPayload(const OicSecCred_t *credS, uint8_t **cborPayload,
+                                size_t *cborSize, int secureFlag)
+{
+    return CredToCBORPayloadWithRowner(credS, &gRownerId, cborPayload, cborSize, secureFlag);
+}
+
 
 OCStackResult CBORPayloadToCred(const uint8_t *cborPayload, size_t size,
                                 OicSecCred_t **secCred, OicUuid_t **rownerid)
@@ -1467,7 +1474,7 @@ static bool UpdatePersistentStorage(const OicSecCred_t *cred)
         OIC_LOG_V(DEBUG, TAG, "cred size: %zu", size);
 
         int secureFlag = 0;
-        OCStackResult res = CredToCBORPayload(cred, &payload, &size, secureFlag);
+        OCStackResult res = CredToCBORPayloadWithRowner(cred, &gRownerId, &payload, &size, secureFlag);
 #ifdef HAVE_WINDOWS_H
         /* On Windows, keep the credential resource encrypted on disk to protect symmetric and private keys. Only the
          * current user on this system will be able to decrypt it later, to help prevent credential theft.
@@ -2460,7 +2467,7 @@ static OCEntityHandlerResult HandleGetRequest (const OCEntityHandlerRequest * eh
     // This added '256' is arbitrary value that is added to cover the name of the resource, map addition and ending
     size = GetCredKeyDataSize(cred);
     size += (256 * OicSecCredCount(cred));
-    OCStackResult res = CredToCBORPayload(cred, &payload, &size, secureFlag);
+    OCStackResult res = CredToCBORPayloadWithRowner(cred, &gRownerId, &payload, &size, secureFlag);
 
     // A device should always have a default cred. Therefore, payload should never be NULL.
     OCEntityHandlerResult ehRet = (res == OC_STACK_OK) ? OC_EH_OK : OC_EH_ERROR;

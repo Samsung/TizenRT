@@ -1354,17 +1354,9 @@ OCEntityHandlerResult StartOTMJustWorks(OCEntityHandlerRequest *ehRequest)
 #endif // __WITH_DTLS__ or __WITH_TLS__
         goto exit;
     }
-    // else if /doxm.devowneruuid != Nil UUID, disable Anon CipherSuite
     else
     {
 #if defined(__WITH_DTLS__) || defined(__WITH_TLS__)
-        // Disable anonymous ECDH cipher since OTM is underway
-        RegisterOTMSslHandshakeCallback(NULL);
-        CAResult_t caRes = CA_STATUS_OK;
-        caRes = CAEnableAnonECDHCipherSuite(false);
-        VERIFY_SUCCESS(TAG, caRes == CA_STATUS_OK, ERROR);
-        OIC_LOG_V(INFO, TAG, "%s: ECDH_ANON CipherSuite is DISABLED", __func__);
-
         //In case of Mutual Verified Just-Works, verify mutualVerifNum
         if (OIC_MV_JUST_WORKS == gDoxm->oxmSel && false == gDoxm->owned)
         {
@@ -1621,11 +1613,11 @@ static OCEntityHandlerResult HandleDoxmPostRequest(OCEntityHandlerRequest *ehReq
         goto exit;
     }
 
-    // If oxmsel was in Update payload, and the device is not owned,
-    // do the OTM-specific aspect of owner-transfer
-    if (oxmselParsed && (false == gDoxm->owned))
+    // If oxmsel was in Update payload, and the device is in RFOTM,
+    // start the OTM-specific aspect of owner-transfer.
+    if (oxmselParsed && (DOS_RFOTM == dos.state))
     {
-        OIC_LOG_V(INFO, TAG, "%s: Device not owned and oxmsel Updated... starting OTM!", __func__);
+        OIC_LOG_V(INFO, TAG, "%s: Device in RFOTM, and oxmsel Updated... starting OTM!", __func__);
         ehRet = StartOwnershipTransfer(newDoxm, ehRequest);
         VERIFY_SUCCESS(TAG, OC_EH_OK == ehRet, ERROR);
     }

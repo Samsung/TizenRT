@@ -54,7 +54,7 @@ static OicSecDoxm_t *JSONToDoxmBin(const char *jsonStr);
 static OicSecAcl_t *JSONToAclBin(OicSecAclVersion_t *aclVersion,
                                  const char *jsonStr);
 static OicSecAmacl_t *JSONToAmaclBin(const char *jsonStr);
-static OicSecCred_t *JSONToCredBin(const char *jsonStr);
+static OicSecCred_t *JSONToCredBinWithRowner(const char *jsonStr,OicUuid_t *rownerId);
 static OCDeviceProperties *JSONToDPBin(const char *jsonStr);
 
 static size_t GetJSONFileSize(const char *jsonFileName)
@@ -419,7 +419,8 @@ static OCStackResult ConvertOCJSONStringToCBORFile(const char *jsonStr, const ch
     int secureFlag = 0;
     if (NULL != value)
     {
-        OicSecCred_t *cred = JSONToCredBin(jsonStr);
+        OicUuid_t rownerId;
+        OicSecCred_t *cred = JSONToCredBinWithRowner(jsonStr,&rownerId);
         VERIFY_NOT_NULL(TAG, cred, FATAL);
         // The source code line below is just a workaround for IOT-2407.
         // It should be deleted when IOT-2407 gets fixed. There is no clear
@@ -427,7 +428,7 @@ static OCStackResult ConvertOCJSONStringToCBORFile(const char *jsonStr, const ch
         // CredToCBORPayload happens to work better when initializing
         // credCborSize this way.
         credCborSize = strlen(jsonStr);
-        ret = CredToCBORPayload(cred, &credCbor, &credCborSize, secureFlag);
+        ret = CredToCBORPayloadWithRowner(cred, &rownerId,&credCbor, &credCborSize, secureFlag);
         if (OC_STACK_OK != ret)
         {
             OIC_LOG (ERROR, TAG, "Failed converting Cred to Cbor Payload");
@@ -1165,7 +1166,7 @@ static OicEncodingType_t GetEncodingTypeFromStr(const char *encodingType)
     return OIC_ENCODING_RAW;
 }
 
-OicSecCred_t *JSONToCredBin(const char *jsonStr)
+static OicSecCred_t *JSONToCredBinWithRowner(const char *jsonStr,OicUuid_t *rownerId)
 {
     if (NULL == jsonStr)
     {
@@ -1357,13 +1358,13 @@ OicSecCred_t *JSONToCredBin(const char *jsonStr)
     }
 
     // rownerid
-/*    cJSON *jsonCredObj = cJSON_GetObjectItem(jsonCredMap, OIC_JSON_ROWNERID_NAME);
+    cJSON *jsonCredObj = cJSON_GetObjectItem(jsonCredMap, OIC_JSON_ROWNERID_NAME);
     VERIFY_NOT_NULL(TAG, jsonCredObj, ERROR);
     VERIFY_SUCCESS(TAG, cJSON_String == jsonCredObj->type, ERROR);
-    ret = ConvertStrToUuid(jsonCredObj->valuestring, &headCred->rownerID);
+    ret = ConvertStrToUuid(jsonCredObj->valuestring, rownerId);
     VERIFY_SUCCESS(TAG, OC_STACK_OK == ret, ERROR);
     ret = OC_STACK_OK;
-*/  
+
 exit:
     cJSON_Delete(jsonRoot);
     if (OC_STACK_OK != ret)

@@ -188,9 +188,13 @@ static OCEntityHandlerResult handlePublishRequest(const OCEntityHandlerRequest *
     }
 
     // Send Response
-    if (OC_STACK_OK != sendResponse(ehRequest, resPayload, ehResult))
+    if (OC_EH_OK == ehResult)
     {
-        OIC_LOG(ERROR, TAG, "Sending response failed.");
+        if (OC_STACK_OK != sendResponse(ehRequest, resPayload, ehResult))
+        {
+            OIC_LOG(ERROR, TAG, "Sending response failed.");
+            ehResult = OC_EH_ERROR;
+        }
     }
 
     if (OC_EH_OK == ehResult)
@@ -263,6 +267,7 @@ static OCEntityHandlerResult handleDeleteRequest(const OCEntityHandlerRequest *e
         if (!key || !value)
         {
             OIC_LOG_V(ERROR, TAG, "Invalid query parameter!");
+            ehResult = OC_EH_BAD_REQ;
             goto exit;
         }
         else if (0 == strncasecmp(key, OC_RSRVD_DEVICE_ID, sizeof(OC_RSRVD_DEVICE_ID) - 1))
@@ -277,6 +282,7 @@ static OCEntityHandlerResult handleDeleteRequest(const OCEntityHandlerRequest *e
             if (0 == matchedItems)
             {
                 OIC_LOG_V(ERROR, TAG, "Invalid ins query parameter: %s", value);
+                ehResult = OC_EH_BAD_REQ;
                 goto exit;
             }
 
@@ -288,6 +294,7 @@ static OCEntityHandlerResult handleDeleteRequest(const OCEntityHandlerRequest *e
     if (!di && !nIns)
     {
         OIC_LOG_V(ERROR, TAG, "Missing required query parameters!");
+        ehResult = OC_EH_BAD_REQ;
         goto exit;
     }
 
@@ -295,6 +302,15 @@ static OCEntityHandlerResult handleDeleteRequest(const OCEntityHandlerRequest *e
     {
         OIC_LOG_V(DEBUG, TAG, "Deleted resource(s).");
         ehResult = OC_EH_OK;
+    }
+
+    if (OC_EH_OK == ehResult)
+    {
+        if (OC_STACK_OK != sendResponse(ehRequest, NULL, ehResult))
+        {
+            OIC_LOG(ERROR, TAG, "Sending response failed.");
+            ehResult = OC_EH_ERROR;
+        }
     }
 
     if (OC_EH_OK == ehResult)
@@ -311,10 +327,6 @@ static OCEntityHandlerResult handleDeleteRequest(const OCEntityHandlerRequest *e
 exit:
     OICFree(ins);
     OICFree(queryDup);
-    if (OC_STACK_OK != sendResponse(ehRequest, NULL, ehResult))
-    {
-        OIC_LOG(ERROR, TAG, "Sending response failed.");
-    }
     return ehResult;
 }
 
