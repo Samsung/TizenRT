@@ -213,29 +213,40 @@
 /* ---------- IP options ---------- */
 
 #ifdef CONFIG_NET_IP_FORWARD
-#define IP_FORWARD                      CONFIG_NET_IP_FORWARD
+#define IP_FORWARD                      1
+#else
+#define IP_FORWARD                      0
 #endif
 
 #ifdef CONFIG_NET_IP_OPTIONS_ALLOWED
-#define IP_OPTIONS_ALLOWED              CONFIG_NET_IP_OPTIONS_ALLOWED
+#define IP_OPTIONS_ALLOWED              1
+#else
+#define IP_OPTIONS_ALLOWED              0
 #endif
 
 #ifdef CONFIG_NET_IP_FRAG
-#define IP_FRAG	                       CONFIG_NET_IP_FRAG
+#define IP_FRAG	                       1
+#else
+#define IP_FRAG	                       0
 #endif
 
 #ifdef CONFIG_NET_IP_REASSEMBLY
-#define IP_REASSEMBLY                  CONFIG_NET_IP_REASSEMBLY
+#define IP_REASSEMBLY                  1
+#else
+#define IP_REASSEMBLY                  0
 #endif
 
+/* if undefined, the value set in the lwip/opts.h */
 #ifdef CONFIG_NET_IPV4_REASS_MAX_PBUFS
 #define IP_REASS_MAX_PBUFS	           CONFIG_NET_IPV4_REASS_MAX_PBUFS
 #endif
 
+/* if undefined, the value set in the lwip/opts.h */
 #ifdef CONFIG_NET_IPV4_REASS_MAXAGE
 #define IP_REASS_MAXAGE	               CONFIG_NET_IPV4_REASS_MAXAGE
 #endif
 
+/* if undefined, the value set in the lwip/opts.h */
 #ifdef CONFIG_NET_IP_DEFAULT_TTL
 #define IP_DEFAULT_TTL                 CONFIG_NET_IP_DEFAULT_TTL
 #endif
