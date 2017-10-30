@@ -16,6 +16,6 @@
 #
 ###########################################################################
 
-ifeq ($(CONFIG_EXAMPLES_MEDIAPLAYER_TASH),y)
-CONFIGURED_APPS += examples/mediaplayer_tash
+ifeq ($(CONFIG_EXAMPLES_MEDIAPLAYER),y)
+CONFIGURED_APPS += examples/mediaplayer
 endif

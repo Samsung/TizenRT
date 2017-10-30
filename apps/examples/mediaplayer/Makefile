@@ -58,7 +58,7 @@ include $(APPDIR)/Make.defs
 
 ASRCS =
 CSRCS =
-MAINSRC = mediaplayer_main.c mediaplayer.c
+MAINSRC = mediaplayer_main.c
 
 AOBJS = $(ASRCS:.S=$(OBJEXT))
 COBJS = $(CSRCS:.c=$(OBJEXT))
@@ -87,7 +87,7 @@ else
   INSTALL_DIR = $(BIN_DIR)
 endif
 
-CONFIG_EXAMPLES_MEDIAPLAYER_PROGNAME ?= mediaplayer_tash$(EXEEXT)
+CONFIG_EXAMPLES_MEDIAPLAYER_PROGNAME ?= mediaplayer$(EXEEXT)
 PROGNAME = $(CONFIG_EXAMPLES_MEDIAPLAYER_PROGNAME)
 
 ROOTDEPPATH = --dep-path .

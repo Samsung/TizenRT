@@ -21,7 +21,7 @@
 #include <dirent.h>
 #include <string.h>
 #include <apps/shell/tash.h>
-#include "mediaplayer.h"
+#include <mediaplayer/mediaplayer.h>
 
 static void usage(char *cmd)
 {
@@ -102,10 +102,10 @@ static int media_player_tash_cb(int argc, char **argv)
 #ifdef CONFIG_BUILD_KERNEL
 int main(int argc, FAR char *argv[])
 #else
-int mediaplayer_tash_main(int argc, char **argv)
+int mediaplayer_main(int argc, char **argv)
 #endif
 {
-	tash_cmd_install("mediaplayer_tash", media_player_tash_cb, TASH_EXECMD_ASYNC);
+	tash_cmd_install("mediaplayer", media_player_tash_cb, TASH_EXECMD_ASYNC);
 
 	return 0;
 }

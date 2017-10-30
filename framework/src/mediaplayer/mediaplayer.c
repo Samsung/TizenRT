@@ -8,7 +8,7 @@
 #include <errno.h>
 #include <sched.h>
 
-#include "mediaplayer.h"
+#include <mediaplayer/mediaplayer.h>
 
 /***
  * Structure
