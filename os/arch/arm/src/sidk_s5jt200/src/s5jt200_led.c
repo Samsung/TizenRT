@@ -69,11 +69,12 @@ FAR struct pwm_lowerhalf_s    *ledr;
 FAR struct pwm_lowerhalf_s    *ledg;
 FAR struct pwm_lowerhalf_s    *ledb;
 
-int s5jt200_rgbled_state_task(void)
+int s5jt200_rgbled_state_task(int argc, char *argv[])
 {
 	char freq;
 	struct pwm_info_s info;
-
+	UNUSED(argv);
+	UNUSED(argc);
 	info.duty = 30;
 
 	while (1) {
