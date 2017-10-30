@@ -399,16 +399,6 @@ if POWER
 source drivers/power/Kconfig
 endif # POWER
 
-menuconfig SERCOMM_CONSOLE
-	bool "Osmocom-bb Sercomm Driver Support"
-	default n
-	---help---
-		Sercomm is the transport used by osmocom-bb that runs on top of serial.
-
-if SERCOMM_CONSOLE
-source drivers/sercomm/Kconfig
-endif # SERCOMM_CONSOLE
-
 menuconfig SERIAL
 	bool "Serial Driver Support"
 	default y
