@@ -22,11 +22,13 @@
 vid=0403
 pid=6010
 
-WD=`dirname $0`
 if [ "${0:0:1}" == "." ]; then
-  WD=`pwd`/$srcRoot
+  WD=`pwd`/`dirname $0`
+else
+  WD=`dirname $0`
 fi
 
+config_path=$WD/..
 HOST=`gcc -dumpmachine`
 
 if [ -z ${HOST##x86_64*} ]; then
@@ -37,16 +39,16 @@ fi
 
 case $OSTYPE in
   linux*)
-    EEPROMEXE=$WD/linux$ARCH/ftdi_eeprom
-    OPENOCDEXE=$WD/linux$ARCH/openocd
+    EEPROMEXE=$config_path/../tools/openocd/linux$ARCH/ftdi_eeprom
+    OPENOCDEXE=$config_path/../tools/openocd/linux$ARCH/openocd
     ;;
   darwin*)
-    EEPROMEXE=$WD/macos/ftdi_eeprom
-    OPENOCDEXE=$WD/macos/openocd
+    EEPROMEXE=$config_path/../tools/openocd/macos/ftdi_eeprom
+    OPENOCDEXE=$config_path/../tools/openocd/macos/openocd
     ;;
   msys*)
-    EEPROMEXE=$WD/win$ARCH/ftdi_eeprom
-    OPENOCDEXE=$WD/win$ARCH/openocd
+    EEPROMEXE=$config_path/../tools/openocd/win$ARCH/ftdi_eeprom
+    OPENOCDEXE=$config_path/../tools/openocd/win$ARCH/openocd
     ;;
   *)
     die "Not support Host OS: $OSTYPE"
@@ -73,24 +75,35 @@ Usage: `basename $0` [OPTIONS]
 Options:
 	[--write]
 	[--flash]
+    [--dev[=serial]]
 	[--list[=file]]
         [--set[="partition file"]]
-    [--board[=<board-name>]
+    [--board[=<board-name>]]
+    [--exec-path[=<path>]]
+    [--config-path[=<path>]]
 
 For examples:
     `basename $0` --write
-    `basename $0` --board=artik053 --write \
-                  --set= "bl1 ../bl1.bin" --set="os tinyara_head.bin" \
+    `basename $0` --board=artik05x --write \\
+                  --set="bl1 ../bl1.bin" --set="os tinyara_head.bin" \\
                   --flash
-    `basename $0` --board=artik053s --list=serial.txt --set="os tinyara_head.bin" --flash
+    `basename $0` --board=artik05x --list=serial.txt --set="os tinyara_head.bin" --flash
 
 Options:
-   --write                Write FTDI serial into EEPROM.
-   --flash                Start download the each binary file to target
-                          devices.
-   --list[=file]          Read the list of target devices from input file.
-   --set[=partition file] Choose the partition what do you want.
-   --board[=<board-name>] Choose the config of target board what do you want.
+   --write                  Write FTDI serial into EEPROM.
+   --flash                  Start download the each binary file to target
+                            devices.
+   --dev[=serial]           Choose the device corresponding to 'serial'.
+   --list[=file]            Read the list of target devices from input file.
+   --set[=partition file]   Choose the partition what do you want.
+   --board[=<board-name>]   Choose the config of target board what do you want.
+   --exec-path[=<path..>]   Specifies the path to the executables. If you don't use this
+                            option, the default path is specified.
+                            <default-path := `dirname $OPENOCDEXE`
+   --config-path[=<path..>] Specifies the path to the openocd script files. Also, If you don't
+                            use this option, the default path is specified.
+                            <default-path := `dirname $config_path`
+
 
 EOF
   exit $1
@@ -158,8 +171,8 @@ __EOF__
 
 download() {
   CFGFILE=$BOARD_NAME.cfg
-  SCRIPTPATH=$WD/../$BOARD_NAME/scripts
-  if [ ! -e $CFGFILE ]; then
+  SCRIPTPATH=$config_path/$BOARD_NAME/scripts
+  if [ ! -e $SCRIPTPATH/$CFGFILE ]; then
     echo "No such as board name: $BOARD_NAME" 1>&2
     exit 1
   fi
@@ -167,7 +180,7 @@ download() {
     echo "DOWNLOAD: $_dev($opt)"
     $OPENOCDEXE -f $CFGFILE -s $SCRIPTPATH \
         -c "ftdi_serial $_dev" \
-        -c "$opt;reset;exit" | error "FAILURE FLASHING By Openocd"
+        -c "$opt;reset;exit" || error "FAILURE FLASHING By Openocd"
   done
 }
 
@@ -222,6 +235,16 @@ while test $# -gt 0; do
       ;;
     --set=*)
       append_option "$optarg"
+      ;;
+    --dev=*)
+      seriallist=("${seriallist[@]}" "$optarg")
+      ;;
+    --exec-path=*)
+      EEPROMEXE=$optarg/ftdi_eeprom
+      OPENOCDEXE=$optarg/openocd
+      ;;
+    --config-path=*)
+      config_path=$optarg
       ;;
     *)
       usage 1 1>&2
