@@ -64,6 +64,8 @@ ARTIK053S [[details]](build/configs/artik053s/README.md)
 
 ARTIK055S [[details]](build/configs/artik055s/README.md)
 
+QEMU [[details]](build/configs/qemu/README.md)
+
 sidk_s5jt200 [[details]](build/configs/sidk_s5jt200/README.md)
 
 ## Configuration Sets
