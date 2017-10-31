@@ -27,6 +27,7 @@ if [ "${0:0:1}" == "." ]; then
   WD=`pwd`/$srcRoot
 fi
 
+config_path=$WD/..
 HOST=`gcc -dumpmachine`
 
 if [ -z ${HOST##x86_64*} ]; then
@@ -37,16 +38,16 @@ fi
 
 case $OSTYPE in
   linux*)
-    EEPROMEXE=$WD/linux$ARCH/ftdi_eeprom
-    OPENOCDEXE=$WD/linux$ARCH/openocd
+    EEPROMEXE=$config_path/../tools/openocd/linux$ARCH/ftdi_eeprom
+    OPENOCDEXE=$config_path/../tools/openocd/linux$ARCH/openocd
     ;;
   darwin*)
-    EEPROMEXE=$WD/macos/ftdi_eeprom
-    OPENOCDEXE=$WD/macos/openocd
+    EEPROMEXE=$config_path/../tools/openocd/macos/ftdi_eeprom
+    OPENOCDEXE=$config_path/../tools/openocd/macos/openocd
     ;;
   msys*)
-    EEPROMEXE=$WD/win$ARCH/ftdi_eeprom
-    OPENOCDEXE=$WD/win$ARCH/openocd
+    EEPROMEXE=$config_path/../tools/openocd/win$ARCH/ftdi_eeprom
+    OPENOCDEXE=$config_path/../tools/openocd/win$ARCH/openocd
     ;;
   *)
     die "Not support Host OS: $OSTYPE"
@@ -159,7 +160,7 @@ __EOF__
 download() {
   CFGFILE=$BOARD_NAME.cfg
   SCRIPTPATH=$WD/../$BOARD_NAME/scripts
-  if [ ! -e $CFGFILE ]; then
+  if [ ! -e $SCRIPTPATH/$CFGFILE ]; then
     echo "No such as board name: $BOARD_NAME" 1>&2
     exit 1
   fi
@@ -167,7 +168,7 @@ download() {
     echo "DOWNLOAD: $_dev($opt)"
     $OPENOCDEXE -f $CFGFILE -s $SCRIPTPATH \
         -c "ftdi_serial $_dev" \
-        -c "$opt;reset;exit" | error "FAILURE FLASHING By Openocd"
+        -c "$opt;reset;exit" || error "FAILURE FLASHING By Openocd"
   done
 }
 
