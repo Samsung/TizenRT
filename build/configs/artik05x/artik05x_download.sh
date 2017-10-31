@@ -22,6 +22,7 @@
 
 # Remember, make is invoked from "os" directory
 
+source .config
 OS_DIR_PATH=${PWD}
 BUILD_DIR_PATH=${OS_DIR_PATH}/../build
 CONFIGS_PATH=${BUILD_DIR_PATH}/configs
@@ -78,17 +79,33 @@ download()
         exit 1
     fi
 
+    # check existence of romfs.img if romfs is enabled
+    if [ "${CONFIG_FS_ROMFS}" == "y" ]; then
+        pushd ${OS_DIR_PATH} > /dev/null
+        sh ../tools/fs/mkromfsimg.sh
+        if [ ! -f "${FW_DIR_PATH}/romfs.img" ]; then
+            echo "ROMFS image is not present"
+        fi
+        popd > /dev/null
+    fi
+
     # Download all binaries using openocd script
+    OPENOCD_CMD="flash_protect off; \
+                 flash_write bl1 ${FW_DIR_PATH}/bl1.bin; \
+                 flash_protect on; \
+                 flash_write bl2 ${FW_DIR_PATH}/bl2.bin; \
+                 flash_write sssfw ${FW_DIR_PATH}/sssfw.bin; \
+                 flash_write wlanfw ${FW_DIR_PATH}/wlanfw.bin; \
+                 flash_write os ${TIZENRT_BIN}; "
+    if [ "${CONFIG_FS_ROMFS}" == "y" ]; then
+        if [ -f "${FW_DIR_PATH}/romfs.img" ]; then
+        OPENOCD_CMD=${OPENOCD_CMD}"set romfs_partition_enable 1; \
+                     flash_write rom ${OUTPUT_BINARY_PATH}/romfs.img; "
+        fi
+    fi
+    OPENOCD_CMD=${OPENOCD_CMD}"exit"
     pushd ${OPENOCD_DIR_PATH} > /dev/null
-    ${OPENOCD_BIN_PATH}/openocd -f artik05x.cfg -s "$BOARD_DIR_PATH/../artik05x/scripts" -c " 	\
-        flash_protect off;\
-        flash_write bl1 ${FW_DIR_PATH}/bl1.bin; 		\
-        flash_protect on; \
-        flash_write bl2 ${FW_DIR_PATH}/bl2.bin; 		\
-        flash_write sssfw ${FW_DIR_PATH}/sssfw.bin; 		\
-        flash_write wlanfw ${FW_DIR_PATH}/wlanfw.bin;	\
-        flash_write os ${TIZENRT_BIN};	\
-        exit"
+    ${OPENOCD_BIN_PATH}/openocd -f artik05x.cfg -s "$BOARD_DIR_PATH/../artik05x/scripts" -c "${OPENOCD_CMD}" || exit 1
     popd > /dev/null
 }
 
