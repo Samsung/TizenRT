@@ -15,7 +15,8 @@
  * language governing permissions and limitations under the License.
  *
  ****************************************************************************/
-
+#ifndef __ARCH_ARM_SRC_ARTIK05X_INCLUDE_ARTIK055_ALC5658_I2C_H
+#define __ARCH_ARM_SRC_ARTIK05X_INCLUDE_ARTIK055_ALC5658_I2C_H
 typedef int (*alc_write)(uint16_t addr, uint16_t data);
 typedef int (*alc_read)(uint16_t addr, uint16_t *data);
 typedef int (*alc_modify)(uint16_t addr, uint16_t set, uint16_t clear);
@@ -27,3 +28,5 @@ typedef struct {
 } i2c_alc;
 
 i2c_alc *alc5658_i2c_initialize(void);
+#endif /* __ARCH_ARM_SRC_ARTIK05X_INCLUDE_ARTIK055_ALC5658_I2C_H */
+
