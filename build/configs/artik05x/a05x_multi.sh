@@ -75,9 +75,12 @@ Usage: `basename $0` [OPTIONS]
 Options:
 	[--write]
 	[--flash]
+    [--dev[=serial]]
 	[--list[=file]]
         [--set[="partition file"]]
-    [--board[=<board-name>]
+    [--board[=<board-name>]]
+    [--exec-path[=<path>]]
+    [--config-path[=<path>]]
 
 For examples:
     `basename $0` --write
@@ -87,12 +90,20 @@ For examples:
     `basename $0` --board=artik05x --list=serial.txt --set="os tinyara_head.bin" --flash
 
 Options:
-   --write                Write FTDI serial into EEPROM.
-   --flash                Start download the each binary file to target
-                          devices.
-   --list[=file]          Read the list of target devices from input file.
-   --set[=partition file] Choose the partition what do you want.
-   --board[=<board-name>] Choose the config of target board what do you want.
+   --write                  Write FTDI serial into EEPROM.
+   --flash                  Start download the each binary file to target
+                            devices.
+   --dev[=serial]           Choose the device corresponding to 'serial'.
+   --list[=file]            Read the list of target devices from input file.
+   --set[=partition file]   Choose the partition what do you want.
+   --board[=<board-name>]   Choose the config of target board what do you want.
+   --exec-path[=<path..>]   Specifies the path to the executables. If you don't use this
+                            option, the default path is specified.
+                            <default-path := `dirname $OPENOCDEXE`
+   --config-path[=<path..>] Specifies the path to the openocd script files. Also, If you don't
+                            use this option, the default path is specified.
+                            <default-path := `dirname $config_path`
+
 
 EOF
   exit $1
@@ -224,6 +235,16 @@ while test $# -gt 0; do
       ;;
     --set=*)
       append_option "$optarg"
+      ;;
+    --dev=*)
+      seriallist=("${seriallist[@]}" "$optarg")
+      ;;
+    --exec-path=*)
+      EEPROMEXE=$optarg/ftdi_eeprom
+      OPENOCDEXE=$optarg/openocd
+      ;;
+    --config-path=*)
+      config_path=$optarg
       ;;
     *)
       usage 1 1>&2
