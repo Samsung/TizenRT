@@ -181,6 +181,36 @@ config IOTIVITY_NS_PROVIDER
         ---help---
                 select to enable iotivity Notification Provider Service
 
+choice
+	prompt "iotivity log level"
+	default IOTIVITY_LOG_LEVEL_ERROR
+
+config IOTIVITY_LOG_LEVEL_DEBUG
+        bool "DEBUG"
+	---help---
+		All logs including DEBUG, INFO, WARNING, ERROR, FATAL level is printed.
+
+config IOTIVITY_LOG_LEVEL_INFO
+        bool "INFO"
+	---help---
+		The logs including INFO, WARNING, ERROR, FATAL level is printed.
+
+config IOTIVITY_LOG_LEVEL_WARNING
+        bool "WARNING"
+	---help---
+		The logs including WARNING, ERROR, FATAL level is printed.
+
+config IOTIVITY_LOG_LEVEL_ERROR
+        bool "ERROR"
+	---help---
+		The logs including ERROR, FATAL level is printed.
+
+config IOTIVITY_LOG_LEVEL_FATAL
+        bool "FATAL"
+	---help---
+		FATAL level is printed.
+endchoice
+
 endmenu #IOTIVITY Config Parameters
 
 config LIBTUV
