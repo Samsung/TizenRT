@@ -16,7 +16,7 @@
 #
 ###########################################################################
 ############################################################################
-# configs/artik053/audio/Make.defs
+# configs/artik055s/audio/Make.defs
 #
 #   Copyright (C) 2011, 2012-2013 Gregory Nutt. All rights reserved.
 #   Author: Gregory Nutt <gnutt@nuttx.org>
@@ -151,6 +151,6 @@ HOSTCFLAGS = -Wall -Wstrict-prototypes -Wshadow -Wundef -g -pipe
 HOSTLDFLAGS =
 
 define DOWNLOAD
-  @$(TOPDIR)/../build/configs/artik05x/artik05x_download.sh --board=artik053 $(1)
+  @$(TOPDIR)/../build/configs/artik05x/artik05x_download.sh --board=artik055s --secure $(1)
 endef
 

@@ -84,6 +84,15 @@ Aimed especially at power-sensitive devices needing Wi-Fi®, the ARTIK055S Modul
 
 ## Configuration Sets
 
+#### audio
+
+To use audio functionality, belows can be used.
+
+```bash
+cd os/tools
+./configure.sh artik055s/audio
+```
+
 #### nettest
 
 This is the basic configuration of ARTIK055S products. If you have an ARTIK055S product, use this config.
