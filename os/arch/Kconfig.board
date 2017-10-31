@@ -22,12 +22,14 @@ config ARCH_BOARD_ARTIK053
 config ARCH_BOARD_ARTIK053S
 	bool "Samsung ARTIK-053S Starter Kit"
 	depends on ARCH_CHIP_S5JT200
+	select SAMSUNG_NS2
 	---help---
 		Samsung ARTIK-053S Starter Kit based on S5JT200 IoT WiFi MCU
 
 config ARCH_BOARD_ARTIK055S
 	bool "Samsung ARTIK-055S Starter Kit"
 	depends on ARCH_CHIP_S5JT200
+	select SAMSUNG_NS2
 	---help---
 		Samsung ARTIK-055S Starter Kit based on S5JT200 IoT WiFi MCU
 
