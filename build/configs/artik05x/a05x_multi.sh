@@ -22,9 +22,10 @@
 vid=0403
 pid=6010
 
-WD=`dirname $0`
 if [ "${0:0:1}" == "." ]; then
-  WD=`pwd`/$srcRoot
+  WD=`pwd`/`dirname $0`
+else
+  WD=`dirname $0`
 fi
 
 config_path=$WD/..
@@ -80,10 +81,10 @@ Options:
 
 For examples:
     `basename $0` --write
-    `basename $0` --board=artik053 --write \
-                  --set= "bl1 ../bl1.bin" --set="os tinyara_head.bin" \
+    `basename $0` --board=artik05x --write \\
+                  --set="bl1 ../bl1.bin" --set="os tinyara_head.bin" \\
                   --flash
-    `basename $0` --board=artik053s --list=serial.txt --set="os tinyara_head.bin" --flash
+    `basename $0` --board=artik05x --list=serial.txt --set="os tinyara_head.bin" --flash
 
 Options:
    --write                Write FTDI serial into EEPROM.
@@ -159,7 +160,7 @@ __EOF__
 
 download() {
   CFGFILE=$BOARD_NAME.cfg
-  SCRIPTPATH=$WD/../$BOARD_NAME/scripts
+  SCRIPTPATH=$config_path/$BOARD_NAME/scripts
   if [ ! -e $SCRIPTPATH/$CFGFILE ]; then
     echo "No such as board name: $BOARD_NAME" 1>&2
     exit 1
