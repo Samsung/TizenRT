@@ -53,9 +53,14 @@
 
 /**
  * @defgroup ARASTORAGE ARASTORAGE
- * @brief Provides APIs for Lightweight Database
+ * @brief Provides APIs for Lightweight Database, Arastorage
  * @ingroup ARASTORAGE
  * @{
+ */
+
+/**
+ * @file arastorage/arastorage.h
+ * @brief APIs for Lightweight Database, Arastorage
  */
 
 #ifndef __ARASTORAGE_ARA_STORAGE_H
