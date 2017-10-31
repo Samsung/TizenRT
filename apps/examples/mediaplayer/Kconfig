@@ -1,0 +1,27 @@
+#
+# For a description of the syntax of this configuration file,
+# see kconfig-language at https://www.kernel.org/doc/Documentation/kbuild/kconfig-language.txt
+#
+
+config EXAMPLES_MEDIAPLAYER
+	bool "MediaPlayer example in tash"
+	default n
+	depends on TASH
+	---help---
+		Enable the MediaPlayer example in tash
+
+if EXAMPLES_MEDIAPLAYER
+
+config EXAMPLES_MEDIAPLAYER_PROGNAME
+	string "Program name"
+	default "mediaplayer"
+	depends on BUILD_KERNEL
+	---help---
+		This is the name of the program that will be use when the NSH ELF
+		program is installed.
+
+endif
+
+config USER_ENTRYPOINT
+	string
+	default "mediaplayer_main" if ENTRY_MEDIAPLAYER

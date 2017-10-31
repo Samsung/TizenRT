@@ -64,6 +64,10 @@ config AUDIO_MULTI_CARD
 	bool "Registering audio device as different devices for capture and playback"
 	default n
 
+config AUDIO_MEDIAPLAYER
+	bool "Enable mediaplayer"
+	default n
+
 menu "Supported Audio Formats"
 
 config AUDIO_FORMAT_AC3
