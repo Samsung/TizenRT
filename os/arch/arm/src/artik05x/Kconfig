@@ -137,7 +137,7 @@ config ARTIK05X_AUTOMOUNT_SSSRW
 	bool "Automount secure storage partiton"
 	default n
 	depends on ARTIK05X_AUTOMOUNT
-	depends on (ARCH_BOARD_ARTIK053S || ARCH_BOARD_ARTIK055S)
+	depends on S5J_SSS
 	---help---
 		If enabled, secure storage partition will be mounted
 		automatically at boot.
