@@ -140,7 +140,6 @@ endif
 IOTIVITY_RELEASE=${shell echo $(CONFIG_IOTIVITY_RELEASE_VERSION) | sed 's/"//g'}
 IOTIVITY_TARGET_ARCH := ${shell echo $(CONFIG_ARCH_FAMILY) | sed 's/"//g'}
 IOTIVITY_LIBS_DIR=$(EXTDIR)/iotivity/iotivity_$(IOTIVITY_RELEASE)/out/tizenrt/$(IOTIVITY_TARGET_ARCH)/$(IOTIVITY_LIBS)
-IOTIVITY_CONFIG_DIR=$(EXTDIR)/iotivity/iotivity_$(IOTIVITY_RELEASE)/resource/c_common
 endif
 
 # Add-on directories.  These may or may not be in place in the
@@ -321,17 +320,6 @@ tools/mkconfig$(HOSTEXEEXT):
 include/tinyara/config.h: $(TOPDIR)/.config tools/mkconfig$(HOSTEXEEXT)
 	$(Q) tools/mkconfig $(TOPDIR) > include/tinyara/config.h
 
-ifeq ($(CONFIG_ENABLE_IOTIVITY),y)
-# Temporariry workaround for build error "iotivity_config.h" not found
-# The error is due to build sequence (apps being built before external)
-# Workaround is creating an empty file "iotivity_config.h" which will be
-# later replced by proper file by scons build for iotivity.
-iotivity_context:
-	$(Q) touch $(IOTIVITY_CONFIG_DIR)/iotivity_config.h
-else
-iotivity_context:
-endif
-
 submodules_check:
 ifeq ($(CONFIG_ARTIK_SDK),y)
 	$(Q) if [ ! -f $(ARTIKSDKDIR)/.git ]; then git submodule init; fi
@@ -402,7 +390,7 @@ dirlinks: include/arch include/arch/board include/arch/chip $(ARCH_SRC)/board $(
 # the config.h and version.h header files in the include/tinyara directory and
 # the establishment of symbolic links to configured directories.
 
-context: check_context iotivity_context submodules_check include/tinyara/config.h include/tinyara/version.h include/math.h include/float.h include/stdarg.h dirlinks
+context: check_context submodules_check include/tinyara/config.h include/tinyara/version.h include/math.h include/float.h include/stdarg.h dirlinks
 	$(Q)if [ -e ${BIN} ]; then \
 		echo "Previous Build Outputs - $(BIN_DIR) - are deleted"; \
 		rm -rf ${BIN_DIR}/*; \
@@ -418,7 +406,6 @@ context: check_context iotivity_context submodules_check include/tinyara/config.
 # and symbolic links created by the context target.
 
 clean_context:
-	$(call DELFILE, $(IOTIVITY_CONFIG_DIR)/iotivity_config.h)
 	$(call DELFILE, include/tinyara/config.h)
 	$(call DELFILE, include/tinyara/version.h)
 	$(call DELFILE, include/math.h)

@@ -61,6 +61,13 @@ THREADEXEC = TASH_EXECMD_ASYNC
 # iotivitySimServ example
 IOTIVITY_RELEASE=${shell echo $(CONFIG_IOTIVITY_RELEASE_VERSION) | sed 's/"//g'}
 IOTIVITY_BASE_DIR = $(APPDIR)/../external/iotivity/iotivity_$(IOTIVITY_RELEASE)
+IOTIVITY_TARGET_ARCH=${shell echo $(CONFIG_ARCH_FAMILY) | sed 's/"//g'}
+ifeq ($(CONFIG_IOTIVITY_RELEASE),y)
+IOTIVITY_OUT_DIR=$(IOTIVITY_BASE_DIR)/out/tizenrt/$(IOTIVITY_TARGET_ARCH)/release
+else
+IOTIVITY_OUT_DIR=$(IOTIVITY_BASE_DIR)/out/tizenrt/$(IOTIVITY_TARGET_ARCH)/debug
+endif
+IOTIVITY_CONFIG_DIR=$(IOTIVITY_OUT_DIR)/resource/c_common
 
 ifeq ($(CONFIG_EXAMPLES_IOTIVITY_SIMPLESERVER),y)
 CSRCS += simpleServer.c
@@ -96,6 +103,7 @@ CFLAGS += -I$(IOTIVITY_BASE_DIR)/resource/csdk/security/include
 CFLAGS += -I$(IOTIVITY_BASE_DIR)/resource/csdk/stack/include
 CFLAGS += -I$(IOTIVITY_BASE_DIR)/build_common/tizenrt/compatibility
 CFLAGS += -I$(APPDIR)/../external/mbedtls/include
+CFLAGS += -I$(IOTIVITY_CONFIG_DIR)
 
 
 # json2cbor
@@ -228,6 +236,15 @@ else
 context:
 
 endif
+
+IOTIVITY_CONFIG_FILE=$(IOTIVITY_CONFIG_DIR)/iotivity_config.h
+EXTRA_FILES += $(IOTIVITY_CONFIG_FILE)
+
+$(IOTIVITY_CONFIG_FILE):
+	$(Q) if [ ! -e $(IOTIVITY_CONFIG_DIR) ]; then \
+		mkdir -p $(IOTIVITY_CONFIG_DIR); \
+	fi;
+	$(Q) touch $(IOTIVITY_CONFIG_FILE)
 
 file_data.c: mkfsdata.pl
 	$(Q) ./mkfsdata.pl

@@ -102,8 +102,6 @@ if not os.path.isfile(config_h_file_path) and env.GetOption not in ('clean', 'he
         cxx_headers = []
 
     if target_os in ['tizenrt']:
-	env.AppendUnique(CCFLAGS = ['-std=c99'])
-	env.AppendUnique(CCFLAGS = ['-w'])
 	config_h_body += "#include <tinyara/config.h>\n"
 	config_h_body += "#include <tizenrt_compat.h>\n\n"
 
@@ -157,6 +155,8 @@ env.AppendUnique(CPPPATH=[cur_dir])
 if target_os == 'tizenrt':
     compat_h_file_path = os.path.join(src_dir, 'build_common', 'tizenrt', 'compatibility', 'tizenrt_compat.h')
     env.UserInstallTargetHeader(compat_h_file_path, 'c_common', 'tizenrt_compat.h')
+    env.AppendUnique(CCFLAGS = ['-std=c99'])
+    env.AppendUnique(CCFLAGS = ['-w'])
 
 ######################################################################
 

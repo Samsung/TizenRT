@@ -21,30 +21,6 @@ export IOTIVITY_PATCH_DIR="${IOTIVITY_BASE}/patches/${IOTIVITY_RELEASE_VERSION}"
 
 echo "iotivity BUILD DIR : ${IOTIVITY_BUILD_DIR}"
 
-#if [ ! -d ${IOTIVITY_BUILD_DIR} ]; then
-#	git clone https://gerrit.iotivity.org/gerrit/iotivity ${IOTIVITY_BUILD_DIR}
-#fi
-
-#if [ ! -d ${IOTIVITY_BUILD_DIR}/extlibs/tinycbor/tinycbor ]; then
-#	git clone https://github.com/01org/tinycbor.git ${IOTIVITY_BUILD_DIR}/extlibs/tinycbor/tinycbor
-#fi
-
-if [ ! -d ${IOTIVITY_BUILD_DIR}/extlibs/mbedtls/mbedtls ]; then
-	mkdir -p ${IOTIVITY_BUILD_DIR}/extlibs/mbedtls/mbedtls/include
-	ln -s ${TINYARA_BUILD_DIR}/include/tls ${IOTIVITY_BUILD_DIR}/extlibs/mbedtls/mbedtls/include/mbedtls
-fi
-
-#if [ ! -f ${IOTIVITY_BUILD_DIR}/tinyara_patch.lock ]; then
-#	cd ${IOTIVITY_BUILD_DIR}
-#	touch ${IOTIVITY_BUILD_DIR}/tinyara_patch.lock
-#	git checkout ${IOTIVITY_RELEASE_VERSION}
-
-	#Apply the Patch
-#	git am ${IOTIVITY_PATCH_DIR}/0001-tinyara-iotivity-${IOTIVITY_RELEASE_VERSION}.patch
-
-	cd ${TINYARA_BUILD_DIR}
-#fi
-
 # Set build parameters
 CONFIG_ENABLE_IOTIVITY=`extract_flags "CONFIG_ENABLE_IOTIVITY"`
 if [ -z ${CONFIG_ENABLE_IOTIVITY} ]; then CONFIG_ENABLE_IOTIVITY=0; fi
@@ -104,6 +80,14 @@ fi
 
 RESULT=1
 if [ ${CONFIG_ENABLE_IOTIVITY} -eq 1 ]; then
+
+	if [ ${PLATFORM_TLS} -eq 1 ]; then
+		if [ ! -d ${IOTIVITY_BUILD_DIR}/extlibs/mbedtls/mbedtls ]; then
+			mkdir -p ${IOTIVITY_BUILD_DIR}/extlibs/mbedtls/mbedtls/include
+			ln -s ${TINYARA_BUILD_DIR}/include/tls ${IOTIVITY_BUILD_DIR}/extlibs/mbedtls/mbedtls/include/mbedtls
+		fi
+	fi
+
 	cd ${IOTIVITY_BUILD_DIR}
 
 	OPTIONS="TARGET_OS=tizenrt TARGET_ARCH=${IOTIVITY_TARGET_ARCH} TARGET_TRANSPORT=IP ROUTING=${IOTIVITY_ROUTING} TC_PREFIX=arm-none-eabi- VERBOSE=no TIZENRT_OS_DIR=${TOPDIR} PLATFORM_TLS=${PLATFORM_TLS} ARCH_BOARD=${ARCH_BOARD} -j 8"

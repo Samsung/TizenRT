@@ -21,25 +21,6 @@ export IOTIVITY_PATCH_DIR="${IOTIVITY_BASE}/patches/${IOTIVITY_RELEASE_VERSION}"
 
 echo "iotivity BUILD DIR : ${IOTIVITY_BUILD_DIR}"
 
-#if [ ! -d ${IOTIVITY_BUILD_DIR} ]; then
-#	git clone https://gerrit.iotivity.org/gerrit/iotivity ${IOTIVITY_BUILD_DIR}
-#fi
-
-#if [ ! -d ${IOTIVITY_BUILD_DIR}/extlibs/tinycbor/tinycbor ]; then
-#	git clone https://github.com/01org/tinycbor.git ${IOTIVITY_BUILD_DIR}/extlibs/tinycbor/tinycbor
-#fi
-
-#if [ ! -f ${IOTIVITY_BUILD_DIR}/tinyara_patch.lock ]; then
-#	cd ${IOTIVITY_BUILD_DIR}
-#	touch ${IOTIVITY_BUILD_DIR}/tinyara_patch.lock
-#	git checkout ${IOTIVITY_RELEASE_VERSION}
-
-	#Apply the Patch
-#	git am ${IOTIVITY_PATCH_DIR}/0001-tinyara-iotivity-${IOTIVITY_RELEASE_VERSION}.patch
-
-	cd ${TINYARA_BUILD_DIR}
-#fi
-
 # Set build parameters
 CONFIG_ENABLE_IOTIVITY=`extract_flags "CONFIG_ENABLE_IOTIVITY"`
 if [ -z ${CONFIG_ENABLE_IOTIVITY} ]; then CONFIG_ENABLE_IOTIVITY=0; fi
@@ -135,6 +116,20 @@ if [ ${CONFIG_ENABLE_IOTIVITY} -eq 1 ]; then
 		scons -c WITH_CLOUD=yes WITH_TCP=yes RD_MODE=CLIENT SECURED=1 ${OPTIONS}
 	fi
 	RESULT=$?
+
+	if [ ${RESULT} -eq 0 ]; then
+		# delete mbedtls directory if PLATFORM_TLS=1
+		if [ ${PLATFORM_TLS} -eq 1 ]; then
+			rm -rf ${IOTIVITY_BUILD_DIR}/extlibs/mbedtls/mbedtls
+		fi
+
+		# delete remaining output files
+		rm -f ${IOTIVITY_BUILD_DIR}/config.log
+		rm -f ${IOTIVITY_BUILD_DIR}/.sconsign.dblite
+		rm -rf ${IOTIVITY_BUILD_DIR}/.sconf_temp
+		rm -rf ${IOTIVITY_BUILD_DIR}/out
+		find ${IOTIVITY_BUILD_DIR} -name "*.pyc" -exec rm -f {} \;
+	fi
 
 	cd ${TINYARA_BUILD_DIR}
 fi
