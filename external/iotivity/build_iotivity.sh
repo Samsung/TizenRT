@@ -4,7 +4,9 @@
 #   2. Patch the code using the additional changes
 #   3. Build the code with the necessary flags
 
-set -x
+if [ "${Q}" != "@" ]; then
+	set -x
+fi
 
 extract_flags() {
 	if [ -e ${TOPDIR}/include/tinyara/config.h ]; then
@@ -17,7 +19,6 @@ CONFIG_IOTIVITY_RELEASE_VERSION=`extract_flags "CONFIG_IOTIVITY_RELEASE_VERSION"
 IOTIVITY_RELEASE_VERSION=$(echo "$CONFIG_IOTIVITY_RELEASE_VERSION" | sed 's/"//g')
 export TINYARA_BUILD_DIR="${TOPDIR}"
 export IOTIVITY_BUILD_DIR="${IOTIVITY_BASE}/iotivity_${IOTIVITY_RELEASE_VERSION}"
-export IOTIVITY_PATCH_DIR="${IOTIVITY_BASE}/patches/${IOTIVITY_RELEASE_VERSION}"
 
 echo "iotivity BUILD DIR : ${IOTIVITY_BUILD_DIR}"
 
@@ -37,14 +38,8 @@ if [ -z ${CONFIG_ENABLE_IOTIVITY_SECURED} ]; then CONFIG_ENABLE_IOTIVITY_SECURED
 CONFIG_ENABLE_IOTIVITY_CLOUD=`extract_flags "CONFIG_ENABLE_IOTIVITY_CLOUD"`
 if [ -z ${CONFIG_ENABLE_IOTIVITY_CLOUD} ]; then CONFIG_ENABLE_IOTIVITY_CLOUD=0; fi
 
-CONFIG_EXAMPLES_IOTIVITY=`extract_flags "CONFIG_EXAMPLES_IOTIVITY"`
-if [ -z ${CONFIG_EXAMPLES_IOTIVITY} ]; then CONFIG_EXAMPLES_IOTIVITY=0; fi
-
 CONFIG_DEBUG_SYMBOLS=`extract_flags "CONFIG_DEBUG_SYMBOLS"`
 if [ -z ${CONFIG_DEBUG_SYMBOLS} ]; then CONFIG_DEBUG_SYMBOLS=0; fi
-
-CONFIG_IOTIVITY_NS_PROVIDER=`extract_flags "CONFIG_IOTIVITY_NS_PROVIDER"`
-if [ -z ${CONFIG_IOTIVITY_NS_PROVIDER} ]; then CONFIG_IOTIVITY_NS_PROVIDER=0; fi
 
 CONFIG_IOTIVITY_LOG_LEVEL_DEBUG=`extract_flags "CONFIG_IOTIVITY_LOG_LEVEL_DEBUG"`
 CONFIG_IOTIVITY_LOG_LEVEL_INFO=`extract_flags "CONFIG_IOTIVITY_LOG_LEVEL_INFO"`
@@ -94,35 +89,33 @@ if [ ${CONFIG_ENABLE_IOTIVITY} -eq 1 ]; then
 
 	if [ ${CONFIG_IOTIVITY_RELEASE} -eq 0 ]; then OPTIONS="${OPTIONS} RELEASE=false LOGGING=true" ; fi
 
-	if [ ${CONFIG_IOTIVITY_NS_PROVIDER} -eq 1 ]; then OPTIONS="${OPTIONS} NOTI_SRV=True " ; fi
-
-	if [ ${CONFIG_IOTIVITY_LOGGING} -eq 1 ]; then OPTIONS="${OPTIONS} LOGGING=true " ; fi
+	if [ ${CONFIG_IOTIVITY_LOGGING} -eq 1 ]; then OPTIONS="${OPTIONS} LOGGING=true" ; fi
 
 	if [ ${CONFIG_DEBUG_SYMBOLS} -eq 1 ]; then OPTIONS="${OPTIONS} DEBUGSYM=True" ; fi
 
-	if [ ${CONFIG_EXAMPLES_IOTIVITY} -eq 1 ]; then OPTIONS="${OPTIONS} BUILD_SAMPLE=ON" ; fi
-
 	if [ "${IOTIVITY_LOG_LEVEL}" != "" ]; then OPTIONS="${OPTIONS} LOG_LEVEL=${IOTIVITY_LOG_LEVEL}" ; fi
-
-	echo "IoTivity Build Options = ${OPTIONS}"
 
 	if [ ${CONFIG_ENABLE_IOTIVITY_SECURED} -eq 0 -a ${CONFIG_ENABLE_IOTIVITY_CLOUD} -eq 0 ]; then
 		#IoTivity - D2D - No Security
-		echo "*********** Iotivity Build for TinyARA (D2D - No Security) *************"
-		scons SECURED=0 ${OPTIONS}
+		echo "*********** Iotivity Build for Tizen RT (D2D - No Security) *************"
+		OPTIONS="SECURED=0 ${OPTIONS}"
 	elif [ ${CONFIG_ENABLE_IOTIVITY_SECURED} -eq 0 -a ${CONFIG_ENABLE_IOTIVITY_CLOUD} -eq 1 ]; then
 		#IoTivity - D2C - No Security
-		echo "*********** Iotivity Build for TinyARA (D2C - No Security *************"
-		scons SECURED=0 WITH_CLOUD=yes WITH_TCP=yes RD_MODE=CLIENT ${OPTIONS}
+		echo "*********** Iotivity Build for Tizen RT (D2C - No Security) *************"
+		OPTIONS="SECURED=0 WITH_CLOUD=yes WITH_TCP=yes RD_MODE=CLIENT ${OPTIONS}"
 	elif [ ${CONFIG_ENABLE_IOTIVITY_SECURED} -eq 1 -a ${CONFIG_ENABLE_IOTIVITY_CLOUD} -eq 0 ]; then
 		#IoTivity - D2D - Security
-		echo "*********** Iotivity Build for TinyARA (D2D - Security *************"
-		scons SECURED=1 ${OPTIONS}
+		echo "*********** Iotivity Build for Tizen RT (D2D - Security) *************"
+		OPTIONS="SECURED=1 ${OPTIONS}"
 	elif [ ${CONFIG_ENABLE_IOTIVITY_SECURED} -eq 1 -a ${CONFIG_ENABLE_IOTIVITY_CLOUD} -eq 1 ]; then
 		#IoTivity - D2C - Security
-		echo "*********** Iotivity Build for TinyARA (D2C - Security *************"
-		scons WITH_CLOUD=yes WITH_TCP=yes RD_MODE=CLIENT SECURED=1 ${OPTIONS}
+		echo "*********** Iotivity Build for Tizen RT (D2C - Security) *************"
+		OPTIONS="SECURED=1 WITH_CLOUD=yes WITH_TCP=yes RD_MODE=CLIENT ${OPTIONS}"
 	fi
+
+	echo "Build IoTivity : Options = ${OPTIONS}"
+
+	scons ${OPTIONS}
 	RESULT=$?
 
 	cd ${TINYARA_BUILD_DIR}
