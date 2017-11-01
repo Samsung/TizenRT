@@ -1,11 +1,48 @@
-# Assumed to run from tinyara/os directory
-# TODO:
-#   1. Get the code from the git repo
-#   2. Patch the code using the additional changes
-#   3. Build the code with the necessary flags
+#!/bin/bash
+###########################################################################
+#
+# Copyright 2016-2017 Samsung Electronics All Rights Reserved.
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+# http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing,
+# software distributed under the License is distributed on an
+# "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND,
+# either express or implied. See the License for the specific
+# language governing permissions and limitations under the License.
+#
+###########################################################################
 
+# Enable a mode of the shell where all executed commands are printed
+# when verbose option is enabled. (make V=1 or make V=2)
 if [ "${Q}" != "@" ]; then
 	set -x
+fi
+
+# check clean option
+if [ "$1" != "" ]; then
+	if [ "$1" = "clean" ]; then
+		CLEAN_IOTIVITY=1
+	else
+		echo "*** invalid command: \"`basename $0` $1\". Please execute \"`basename $0`\" or \"`basename $0` clean\"."
+		exit 1
+	fi
+else
+	 CLEAN_IOTIVITY=0
+fi
+
+# check if "tinyara/config.h" exist
+if [ ! -e ${TOPDIR}/include/tinyara/config.h ]; then
+	if [ "${CLEAN_IOTIVITY}" = "1" ]; then
+		echo "Nothing to be done for 'Iotivity Clean'"
+	else
+		echo "Nothing to be done for 'Iotivity Build'"
+	fi
+	exit 0
 fi
 
 extract_flags() {
@@ -54,7 +91,7 @@ else if [ "${CONFIG_IOTIVITY_LOG_LEVEL_WARNING}" = "1" ]; then
    IOTIVITY_LOG_LEVEL=WARNING;
 else if [ "${CONFIG_IOTIVITY_LOG_LEVEL_ERROR}" = "1" ]; then
    IOTIVITY_LOG_LEVEL=ERROR;
-else if [ ${CONFIG_IOTIVITY_LOG_LEVEL_FATAL} = "1" ]; then
+else if [ "${CONFIG_IOTIVITY_LOG_LEVEL_FATAL}" = "1" ]; then
    IOTIVITY_LOG_LEVEL=FATAL;
 fi; fi; fi; fi; fi
 
@@ -76,10 +113,18 @@ fi
 RESULT=1
 if [ ${CONFIG_ENABLE_IOTIVITY} -eq 1 ]; then
 
-	if [ ${PLATFORM_TLS} -eq 1 ]; then
-		if [ ! -d ${IOTIVITY_BUILD_DIR}/extlibs/mbedtls/mbedtls ]; then
-			mkdir -p ${IOTIVITY_BUILD_DIR}/extlibs/mbedtls/mbedtls/include
-			ln -s ${TINYARA_BUILD_DIR}/include/tls ${IOTIVITY_BUILD_DIR}/extlibs/mbedtls/mbedtls/include/mbedtls
+	# create some files and directory before building iotivity
+	if [ ${CLEAN_IOTIVITY} -eq 0 ]; then
+		if [ ${PLATFORM_TLS} -eq 1 ]; then
+			# delete extlibs/mbedtls/mbedtls directory if the symbolic link that refer to platform mbedtls doesn't exist
+			if [ ! -L ${IOTIVITY_BUILD_DIR}/extlibs/mbedtls/mbedtls/include/mbedtls ]; then
+				rm -rf ${IOTIVITY_BUILD_DIR}/extlibs/mbedtls/mbedtls
+			fi
+
+			if [ ! -d ${IOTIVITY_BUILD_DIR}/extlibs/mbedtls/mbedtls ]; then
+				mkdir -p ${IOTIVITY_BUILD_DIR}/extlibs/mbedtls/mbedtls/include
+				ln -s ${TINYARA_BUILD_DIR}/include/tls ${IOTIVITY_BUILD_DIR}/extlibs/mbedtls/mbedtls/include/mbedtls
+			fi
 		fi
 	fi
 
@@ -113,10 +158,33 @@ if [ ${CONFIG_ENABLE_IOTIVITY} -eq 1 ]; then
 		OPTIONS="SECURED=1 WITH_CLOUD=yes WITH_TCP=yes RD_MODE=CLIENT ${OPTIONS}"
 	fi
 
-	echo "Build IoTivity : Options = ${OPTIONS}"
+	if [ ${CLEAN_IOTIVITY} -eq 1 ]; then
+		OPTIONS="-c ${OPTIONS}"
+		echo "Clean Iotivity - scons Options : ${OPTIONS}"
 
+	else
+		echo "Build Iotivity - scons Options : ${OPTIONS}"
+	fi
+
+	# scons build
 	scons ${OPTIONS}
 	RESULT=$?
+
+	# delete some files and directories after cleaning iotivity
+	if [ ${CLEAN_IOTIVITY} -eq 1 ]; then
+		# delete extlibs/mbedtls/mbedtls directory if PLATFORM_TLS=1
+		# or there is symbolic link that refer to platform mbedtls
+		if [ ${PLATFORM_TLS} -eq 1 -o -L ${IOTIVITY_BUILD_DIR}/extlibs/mbedtls/mbedtls/include/mbedtls ]; then
+			rm -rf ${IOTIVITY_BUILD_DIR}/extlibs/mbedtls/mbedtls
+		fi
+
+		# delete remaining output files
+		rm -f ${IOTIVITY_BUILD_DIR}/config.log
+		rm -f ${IOTIVITY_BUILD_DIR}/.sconsign.dblite
+		rm -rf ${IOTIVITY_BUILD_DIR}/.sconf_temp
+		rm -rf ${IOTIVITY_BUILD_DIR}/out
+		find ${IOTIVITY_BUILD_DIR} -name "*.pyc" -exec rm -f {} \;
+	fi
 
 	cd ${TINYARA_BUILD_DIR}
 fi

@@ -120,7 +120,7 @@ depend: .depend
 iotivity_clean:
 ifeq ($(CONFIG_ENABLE_IOTIVITY),y)
 	$(Q) echo "Cleaning IoTivity Build"
-	$(Q) TOPDIR="$(TOPDIR)" $(TOPDIR)/../external/iotivity/clean_iotivity.sh
+	$(Q) TOPDIR="$(TOPDIR)" $(TOPDIR)/../external/iotivity/build_iotivity.sh clean
 endif
 
 artiksdk_clean:
