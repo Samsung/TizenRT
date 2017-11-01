@@ -138,8 +138,9 @@ extern "C" {
  */
 #define	PCM_STATE_DISCONNECTED 0x08
 
-/** Audio sample format of a PCM.
- * The first letter specifiers whether the sample is signed or unsigned.
+/** 
+ * @brief Audio sample format of a PCM.
+ * @details The first letter specifiers whether the sample is signed or unsigned.
  * The letter 'S' means signed. The letter 'U' means unsigned.
  * The following number is the amount of bits that the sample occupies in memory.
  * Following the underscore, specifiers whether the sample is big endian or little endian.
@@ -173,13 +174,16 @@ enum pcm_format {
 	PCM_FORMAT_MAX
 };
 
-/** A bit mask of 256 bits (32 bytes) that describes some hardware parameters of a PCM */
+/** 
+ * @brief A bit mask of 256 bits (32 bytes) that describes some hardware parameters of a PCM 
+ */
 struct pcm_mask {
 	/** bits of the bit mask */
 	unsigned int bits[32 / sizeof(unsigned int)];
 };
 
-/** Encapsulates the hardware and software parameters of a PCM.
+/** 
+ * @brief Encapsulates the hardware and software parameters of a PCM.
  * @ingroup libtinyalsa-pcm
  */
 struct pcm_config {
@@ -209,8 +213,9 @@ struct pcm_config {
 	unsigned int silence_threshold;
 };
 
-/** Enumeration of a PCM's hardware parameters.
- * Each of these parameters is either a mask or an interval.
+/** 
+ * @brief Enumeration of a PCM's hardware parameters.
+ * @details Each of these parameters is either a mask or an interval.
  * @ingroup libtinyalsa-pcm
  */
 enum pcm_param {
