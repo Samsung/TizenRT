@@ -51,9 +51,13 @@ if env.get('RELEASE') == 1:
 	env.AppendUnique(CCFLAGS = ['-Os'])
 	env.AppendUnique(CPPDEFINES = ['NDEBUG'])
 
-#Set debug Symbols
+# Set debug Symbols
 if env.get('DEBUGSYM') == 'True':
 	env.AppendUnique(CCFLAGS = ['-g'])
+
+# set CCFLAGS to -std=c99 and -w
+env.AppendUnique(CCFLAGS = ['-std=c99'])
+env.AppendUnique(CCFLAGS = ['-w'])
 
 arch_board = ARGUMENTS.get('ARCH_BOARD')
 if arch_board in ['sidk_s5jt200', 'artik053']:

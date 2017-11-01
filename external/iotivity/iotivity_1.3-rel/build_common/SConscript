@@ -270,6 +270,7 @@ if target_os == 'tizenrt':
     help_vars.Add(EnumVariable('WITH_MBEDTLS_STATIC_LIB', 'Build mbedTLS library as static library', '0', allowed_values=('0', '1')))
     help_vars.Add(PathVariable('TIZENRT_OS_DIR', 'Absolute Path to TizenRT OS directory', None, PathVariable.PathAccept))
     help_vars.Add(EnumVariable('PLATFORM_TLS', 'Use platform tls instead of local mbedtls', '0', allowed_values=('0', '1')))
+    help_vars.Add(EnumVariable('DEBUGSYM', 'Enable/Disable Debug Symbols', 'False', allowed_values=('True', 'False')))
 
 AddOption(
     '--prefix',
