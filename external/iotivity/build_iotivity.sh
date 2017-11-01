@@ -102,6 +102,7 @@ else
 	ARCH_BOARD=$(echo "$CONFIG_ARCH_BOARD" | sed 's/"//g')
 fi
 
+RESULT=1
 if [ ${CONFIG_ENABLE_IOTIVITY} -eq 1 ]; then
 	cd ${IOTIVITY_BUILD_DIR}
 
@@ -138,7 +139,9 @@ if [ ${CONFIG_ENABLE_IOTIVITY} -eq 1 ]; then
 		echo "*********** Iotivity Build for TinyARA (D2C - Security *************"
 		scons WITH_CLOUD=yes WITH_TCP=yes RD_MODE=CLIENT SECURED=1 ${OPTIONS}
 	fi
+	RESULT=$?
 
 	cd ${TINYARA_BUILD_DIR}
 fi
 
+exit $RESULT
