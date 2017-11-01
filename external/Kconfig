@@ -174,13 +174,6 @@ config IOTIVITY_LOGGING
         ---help---
                 select to enable all iotivity stack logs (DEBUG / INFO etc.)
 
-config IOTIVITY_NS_PROVIDER
-        bool "enable iotivity notification service(provider only)"
-        default n
-        depends on ENABLE_IOTIVITY
-        ---help---
-                select to enable iotivity Notification Provider Service
-
 choice
 	prompt "iotivity log level"
 	default IOTIVITY_LOG_LEVEL_ERROR
