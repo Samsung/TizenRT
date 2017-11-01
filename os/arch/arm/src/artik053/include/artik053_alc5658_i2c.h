@@ -22,11 +22,13 @@ typedef int (*alc_write)(uint16_t addr, uint16_t data);
 typedef int (*alc_read)(uint16_t addr, uint16_t *data);
 typedef int (*alc_modify)(uint16_t addr, uint16_t set, uint16_t clear);
 
-typedef struct {
+struct alc_i2c_s {
 	alc_write write;
 	alc_read read;
 	alc_modify modify;
-} i2c_alc;
+};
 
-i2c_alc *alc5658_i2c_initialize(void);
+typedef struct alc_i2c_s alc_i2c_t;
+
+alc_i2c_t *alc5658_i2c_initialize(void);
 #endif /* __ARCH_ARM_SRC_ARTIK053_INCLUDE_ARTIK053_ALC5658_I2C_H */
