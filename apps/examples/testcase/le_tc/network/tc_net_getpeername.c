@@ -130,7 +130,7 @@ static void tc_net_getpeername_close_n(void)
 	TC_ASSERT_EQ("getpeername", ret, -1);
 	TC_SUCCESS_RESULT();
 }
-
+#ifdef AF_UNIX
 /**
    * @testcase		   :tc_net_getpeername_unix_p
    * @brief		   :
@@ -153,7 +153,7 @@ static void tc_net_getpeername_unix_p(void)
 	TC_ASSERT_NEQ("getpeername", ret, -1);
 	TC_SUCCESS_RESULT();
 }
-
+#endif
 /**
    * @testcase		   :tc_net_getpeername_udp_p
    * @brief		   :
@@ -298,7 +298,9 @@ int net_getpeername_main(void)
 	tc_net_getpeername_p1();
 	tc_net_getpeername_sock_n();
 	tc_net_getpeername_close_n();
+#ifdef AF_UNIX
 	tc_net_getpeername_unix_p();
+#endif
 	tc_net_getpeername_udp_p();
 	return 0;
 }

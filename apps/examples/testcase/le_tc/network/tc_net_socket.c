@@ -258,6 +258,7 @@ static void tc_net_socket_af_inet_sock_dgram_icmpv6_n(void)
 	close(fd);
 }
 
+#ifdef AF_UNIX
 /**
 * @testcase		tc_net_socket_af_unix_sock_dgram_tcp_n
 * @brief
@@ -333,6 +334,7 @@ static void tc_net_socket_af_unix_sock_dgram_igmp_n(void)
 
 	close(fd);
 }
+#endif
 
 /**
 * @testcase		tc_net_socket_af_x25_sock_stream_n
@@ -388,6 +390,7 @@ static void tc_net_socket_af_packet_sock_stream_n(void)
 	close(fd);
 }
 
+#ifdef AF_UNIX
 /**
 * @testcase		tc_net_socket_af_unix_sock_stream_p
 * @brief
@@ -535,6 +538,7 @@ static void tc_net_socket_af_unix_sock_stream_icmpv6_n(void)
 
 	close(fd);
 }
+#endif
 
 /**
 * @testcase		tc_net_socket_af_netlink_sock_stream_n
@@ -933,6 +937,7 @@ static void tc_net_socket_invalid_domain_sock_stream_n(void)
 	close(fd);
 }
 
+#ifdef AF_UNIX
 /**
 * @testcase		tc_net_socket_af_unix_sock_dgram_ipv6_n
 * @brief
@@ -1004,6 +1009,7 @@ static void tc_net_socket_af_unix_sock_dgram_icmpv6_n(void)
 
 	close(fd);
 }
+#endif
 
 /**
 * @testcase		tc_net_socket_af_netlink_sock_dgram_p
@@ -1279,6 +1285,7 @@ static void tc_net_socket_af_inet_sock_raw_icmpv6_n(void)
 	close(fd);
 }
 
+#ifdef AF_UNIX
 /**
 * @testcase		tc_net_socket_af_unix_sock_raw_n
 * @brief
@@ -1449,7 +1456,7 @@ static void tc_net_socket_af_unix_sock_raw_icmpv6_n(void)
 
 	close(fd);
 }
-
+#endif
 /****************************************************************************
  * Name: socket()
  ****************************************************************************/
@@ -1470,13 +1477,16 @@ int net_socket_main(void)
 	tc_net_socket_af_inet_sock_dgram_fragment_p();
 	tc_net_socket_invalid_domain_sock_stream_n();
 	tc_net_socket_af_inet_sock_dgram_icmpv6_n();
+#ifdef AF_UNIX
 	tc_net_socket_af_unix_sock_dgram_tcp_n();
 	tc_net_socket_af_unix_sock_dgram_udp_p();
 	tc_net_socket_af_unix_sock_dgram_icmp_n();
 	tc_net_socket_af_unix_sock_dgram_igmp_n();
+#endif
 	tc_net_socket_af_x25_sock_stream_n();
 	tc_net_socket_af_ax25_sock_stream_n();
 	tc_net_socket_af_packet_sock_stream_n();
+#ifdef AF_UNIX
 	tc_net_socket_af_unix_sock_stream_p();
 	tc_net_socket_af_unix_sock_stream_udp_n();
 	tc_net_socket_af_unix_sock_stream_icmp_n();
@@ -1484,9 +1494,13 @@ int net_socket_main(void)
 	tc_net_socket_af_unix_sock_stream_ipv6_n();
 	tc_net_socket_af_unixsock_stream_routing_n();
 	tc_net_socket_af_unix_sock_stream_icmpv6_n();
+#endif
 	tc_net_socket_af_netlink_sock_stream_n();
+
 	tc_net_socket_af_unspec_sock_stream_p();
+#ifdef AF_UNIX
 	tc_net_socket_af_unix_sock_stream_tcp_p();
+#endif
 	tc_net_socket_af_inet_sock_stream_protocol_n();
 	tc_net_socket_domain_sock_stream_protocol_n();
 	tc_net_socket_af_inet_sock_stream_tcp_p();
@@ -1505,10 +1519,12 @@ int net_socket_main(void)
 	tc_net_socket_af_inet_sock_stream_domain_n();
 	tc_net_socket_af_inet_sock_stream_domain_protocol_n();
 	tc_net_socket_af_inet_sock_stream_type_protocol_n();
+#ifdef AF_UNIX
 	tc_net_socket_af_unix_sock_dgram_ipv6_n();
 	tc_net_socket_af_unix_sock_dgram_routing_n();
 	tc_net_socket_af_unix_sock_dgram_fragment_p();
 	tc_net_socket_af_unix_sock_dgram_icmpv6_n();
+#endif
 	tc_net_socket_af_netlink_sock_dgram_p();
 	tc_net_socket_af_unspec_sock_dgram_p();
 	tc_net_socket_af_local_sock_dgram_p();
@@ -1524,6 +1540,7 @@ int net_socket_main(void)
 	tc_net_socket_af_inet_sock_raw_routing_p();
 	tc_net_socket_af_inet_sock_raw_fragment_p();
 	tc_net_socket_af_inet_sock_raw_icmpv6_n();
+#ifdef AF_UNIX
 	tc_net_socket_af_unix_sock_raw_n();
 	tc_net_socket_af_unix_sock_raw_tcp_n();
 	tc_net_socket_af_unix_sock_raw_udp_n();
@@ -1533,6 +1550,6 @@ int net_socket_main(void)
 	tc_net_socket_af_unix_sock_raw_routing_n();
 	tc_net_socket_af_unix_sock_raw_fragment_n();
 	tc_net_socket_af_unix_sock_raw_icmpv6_n();
-
+#endif
 	return 0;
 }
