@@ -60,16 +60,14 @@ Built binaries are in *$TIZENRT_BASEDIR/build/output/bin*.
 
 ARTIK053 [[details]](build/configs/artik053/README.md)
 
-sidk_s5jt200 [[details]](build/configs/sidk_s5jt200/README.md)
+QEMU [[details]](build/configs/qemu/README.md)
 
-Tizen RT currently supports only two boards called artik053 and sidk_s5jt200.
-However, those are not available in public markets till now.
-sidk_s5jt200 or other boards for Tizen RT will be coming soon.
+SIDK_S5JT200 [[details]](build/configs/sidk_s5jt200/README.md)
 
 ## Configuration Sets
 
 To build a Tizen RT application, use the default configuration files named *defconfig* under *build/configs/\<board\>/\<configuration_set\>* folder.  
-To customize your application with specific configuration settings, using the menuconfig tool is recommended  at *os* folder as shown:
+To customize your application with specific configuration settings, using the menuconfig tool is recommended at *os* folder as shown:
 ```bash
 make menuconfig
 ```
