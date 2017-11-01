@@ -71,10 +71,6 @@ config ALC5658_NUM_BUFFERS
 	default 4
 	depends on AUDIO_DRIVER_SPECIFIC_BUFFERS
 
-config ALC5658_MSG_PRIO
-	int "ALC5658 message priority"
-	default 1
-
 config ALC5658_REGDUMP
 	bool "ALC5658 register dump"
 	default n

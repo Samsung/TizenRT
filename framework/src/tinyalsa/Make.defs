@@ -15,8 +15,8 @@
  # language governing permissions and limitations under the License. 
  # 
  ########################################################################### 
-CSRCS += tinyalsa.c 
- 
+
+CSRCS += tinyalsa.c
 
 DEPPATH += --dep-path src/tinyalsa 
 VPATH += :src/tinyalsa 
