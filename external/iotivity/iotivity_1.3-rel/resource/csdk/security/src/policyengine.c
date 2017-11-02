@@ -814,10 +814,13 @@ void CheckPermission(SRMRequestContext_t *context)
         OIC_LOG_V(INFO, TAG, "%s: granting implicit access to OT session request", __func__);
         context->responseVal = ACCESS_GRANTED;
     }
-    else if (((OIC_R_ACL_TYPE <= context->resourceType) &&
-        (OIC_SEC_SVR_TYPE_COUNT > context->resourceType)) && IsRequestFromDoxs(context))
+    else if (((OIC_R_DOXM_TYPE == context->resourceType) ||
+              (OIC_R_PSTAT_TYPE == context->resourceType) ||
+              (OIC_R_CRED_TYPE == context->resourceType) ||
+              (OIC_R_ACL_TYPE == context->resourceType)) && 
+             (IsRequestFromDoxs(context)))
     {
-        OIC_LOG_V(INFO, TAG, "%s: granting DOXS implicit access to SVR.", __func__);
+        OIC_LOG_V(INFO, TAG, "%s: granting DOXS implicit access to /acl2, /cred, /doxm or /pstat.", __func__);
         context->responseVal = ACCESS_GRANTED;
     }
     else if ((OIC_R_PSTAT_TYPE == context->resourceType) && IsRequestFromAms(context))
