@@ -17,6 +17,7 @@
  ****************************************************************************/
 /**
  * @defgroup MQTT MQTT Client
+ * @brief Provides APIs for MQTT Client
  * @ingroup NETWORK
  * @{
  */
