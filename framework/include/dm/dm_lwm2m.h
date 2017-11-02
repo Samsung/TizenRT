@@ -55,18 +55,27 @@ typedef enum {
 } dm_lwm2m_client_state_e;
 
 /**
- * @brief Struct definition of DM context for a LWM2M session
+ * @brief Specify LWM2M server information such as ipaddress and port
  */
+struct server_info_s {
+	char ipAddress[IPADDRLEN_MAX];
+	char port[PORTLEN];
+	bool isBootstrap;
+};
 
+/**
+ * @brief Specify LWM2M client information such as session lifetime
+ */
+struct client_info_s {
+	int lifetime;
+};
+
+/**
+ * @brief Specify DM context structure for a LWM2M session.
+ */
 struct dm_lwm2m_context_s {
-	struct server_info_s {
-		char ipAddress[IPADDRLEN_MAX];
-		char port[PORTLEN];
-		bool isBootstrap;
-	} server_info;
-	struct client_info_s {
-		int lifetime;
-	} client_info;
+	struct server_info_s server_info;
+	struct client_info_s client_info;
 };
 
 /**
