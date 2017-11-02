@@ -35,7 +35,11 @@
 extern "C"
 {
 #endif
-
+/**
+ * @brief Specify the data structure to hold WiFi scanning information.
+ * @details The information comprises SSID and BSSID of nearby Access Points (APs),
+ * as well as RSSI (wireless received signal strength indicator).
+ */
 struct dm_scan_info_s {
 	char ssid[33];               // 802.11 spec defined unspecified or uint8
 	char bssid[18];                 // char string e.g. xx:xx:xx:xx:xx:xx
