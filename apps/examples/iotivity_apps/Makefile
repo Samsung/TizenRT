@@ -100,7 +100,7 @@ CFLAGS += -I$(APPDIR)/../external/mbedtls/include
 
 # json2cbor
 CSRCS += json2cbor.c
-CSRCS += $(IOTIVITY_BASE_DIR)/extlibs/cjson/cJSON.c
+CSRCS += cJSON.c # $(IOTIVITY_BASE_DIR)/extlibs/cjson
 CFLAGS += -I$(IOTIVITY_BASE_DIR)/extlibs/cjson
 CFLAGS += -I$(IOTIVITY_BASE_DIR)/extlibs/tinycbor/tinycbor/src
 CFLAGS += -I$(IOTIVITY_BASE_DIR)/resource/c_common/oic_malloc/include
@@ -160,7 +160,7 @@ ROOTDEPPATH = --dep-path .
 
 # Common build
 
-VPATH =
+VPATH = $(IOTIVITY_BASE_DIR)/extlibs/cjson
 
 all: .built
 .PHONY: clean depend distclean preconfig
@@ -199,6 +199,9 @@ endif
 
 # secureServer
 ifeq ($(CONFIG_EXAMPLES_IOTIVITY_SECURESERVER),y)
+ifeq ($(findstring $(EXTRA_FILES),file_data.c),)
+  EXTRA_FILES += file_data.c
+endif
 $(BUILTIN_REGISTRY)$(DELIM)secureServer_main.bdat: $(DEPCONFIG) Makefile
 	$(Q) $(call REGISTER,secureServer,secureServer_main,$(THREADEXEC),$(PRIORITY),$(STACKSIZE))
 context: $(BUILTIN_REGISTRY)$(DELIM)secureServer_main.bdat
@@ -206,6 +209,9 @@ endif
 
 # cloudServer
 ifeq ($(CONFIG_EXAMPLES_IOTIVITY_CLOUDSERVER),y)
+ifeq ($(findstring $(EXTRA_FILES),file_data.c),)
+  EXTRA_FILES += file_data.c
+endif
 $(BUILTIN_REGISTRY)$(DELIM)cloudServer_main.bdat: $(DEPCONFIG) Makefile
 	$(Q) $(call REGISTER,cloudServer,cloudServer_main,$(THREADEXEC),$(PRIORITY),$(STACKSIZE))
 context: $(BUILTIN_REGISTRY)$(DELIM)cloudServer_main.bdat
@@ -224,12 +230,11 @@ context:
 endif
 
 file_data.c: mkfsdata.pl
-ifneq ($(CONFIG_EXAMPLES_IOTIVITY_CTT_LIGHT),y)
 	$(Q) ./mkfsdata.pl
-endif
 
-.depend: Makefile $(SRCS) file_data.c
-	@$(MKDEP) $(ROOTDEPPATH) "$(CC)" -- $(CFLAGS) -- $(SRCS) >Make.dep
+.depend: Makefile $(SRCS) $(EXTRA_FILES)
+	@$(MKDEP) $(ROOTDEPPATH) $(patsubst %,--dep-path %,$(subst :, ,$(VPATH))) \
+	"$(CC)" -- $(CFLAGS) -- $(SRCS) >Make.dep
 	@touch $@
 
 depend: .depend
