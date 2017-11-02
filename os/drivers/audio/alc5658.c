@@ -85,7 +85,13 @@
 /****************************************************************************
  * Pre-processor Definitions
  ****************************************************************************/
+#define DMA_BUFFER_MAX_SIZE 65536 /* 64K */
 
+#define DMA_BUFFER_MIN_SIZE 4096 /* 4K */
+
+#define AUDIO_BUFFER_MAX_NUM 16
+
+#define AUDIO_BUFFER_MIN_NUM 2
 /****************************************************************************
  * Private Data
  ****************************************************************************/
@@ -896,9 +902,9 @@ static int alc5658_enqueuebuffer(FAR struct audio_lowerhalf_s *dev, FAR struct a
 	}
 
 	if (priv->inout) {		/* record */
-		ret = I2S_RECEIVE(priv->i2s, apb, alc5658_rxtxcallback, priv, 100);
+		ret = I2S_RECEIVE(priv->i2s, apb, alc5658_rxtxcallback, priv, CONFIG_ALC5658_I2S_TIMEOUT);
 	} else {					/* playback */
-		ret = I2S_SEND(priv->i2s, apb, alc5658_rxtxcallback, priv, 100);
+		ret = I2S_SEND(priv->i2s, apb, alc5658_rxtxcallback, priv, CONFIG_ALC5658_I2S_TIMEOUT);
 	}
 
 	audvdbg("I2s  returned 0x%x\n", ret);
@@ -927,9 +933,9 @@ static int alc5658_cancelbuffer(FAR struct audio_lowerhalf_s *dev, FAR struct ap
  ****************************************************************************/
 static int alc5658_ioctl(FAR struct audio_lowerhalf_s *dev, int cmd, unsigned long arg)
 {
-#ifdef CONFIG_AUDIO_DRIVER_SPECIFIC_BUFFERS
 	FAR struct ap_buffer_info_s *bufinfo;
-#endif
+	apb_samp_t buf_size;
+	FAR struct alc5658_dev_s *priv = (FAR struct alc5658_dev_s *)dev;
 
 	/* Deal with ioctls passed from the upper-half driver */
 
@@ -950,15 +956,27 @@ static int alc5658_ioctl(FAR struct audio_lowerhalf_s *dev, int cmd, unsigned lo
 
 		/* Report our preferred buffer size and quantity */
 
-#ifdef CONFIG_AUDIO_DRIVER_SPECIFIC_BUFFERS
 	case AUDIOIOC_GETBUFFERINFO: {
 		audvdbg("AUDIOIOC_GETBUFFERINFO:\n");
 		bufinfo = (FAR struct ap_buffer_info_s *)arg;
+#ifdef CONFIG_AUDIO_DRIVER_SPECIFIC_BUFFERS
 		bufinfo->buffer_size = CONFIG_ALC5658_BUFFER_SIZE;
 		bufinfo->nbuffers = CONFIG_ALC5658_NUM_BUFFERS;
+#else
+		buf_size = bufinfo->buffer_size * (priv->bpsamp >> 3) * priv->nchannels;
+		
+		if (buf_size > DMA_BUFFER_MAX_SIZE || buf_size < DMA_BUFFER_MIN_SIZE) {
+			bufinfo->buffer_size = CONFIG_ALC5658_BUFFER_SIZE;
+		}
+		
+		if (bufinfo->nbuffers < AUDIO_BUFFER_MIN_NUM || bufinfo->nbuffers > AUDIO_BUFFER_MAX_NUM) {
+			bufinfo->nbuffers = CONFIG_ALC5658_NUM_BUFFERS;
+		}
+		audvdbg("buffer_size : %d nbuffers : %d buf_size : %d\n", bufinfo->buffer_size, bufinfo->nbuffers, buf_size);
+#endif
 	}
 	break;
-#endif
+
 
 	default:
 		audvdbg("Ignored\n");

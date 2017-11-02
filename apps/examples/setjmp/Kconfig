@@ -1,0 +1,14 @@
+#
+# For a description of the syntax of this configuration file,
+# see kconfig-language at https://www.kernel.org/doc/Documentation/kbuild/kconfig-language.txt
+#
+
+config EXAMPLES_SETJMP_TEST
+	bool "setjmp/longjmp test"
+	default n
+	---help---
+        setjmp/longjmp pair of functions facilitate execution context management in plain C.
+        You can think of them as exception handling/coroutine facilitating mechanism.
+
+        This option enables test application of this feature. In order to have it
+         accessible out of the box, enable BUILTIN_APPS.
