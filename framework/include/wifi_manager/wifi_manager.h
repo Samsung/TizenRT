@@ -168,6 +168,7 @@ typedef struct {
 
 /**
  * @brief Initialize Wi-Fi Manager including starting Wi-Fi interface.
+ * @details @b #include <wifi_manager/wifi_manager.h>
  * @param[in] callback functions called when wi-fi events happen
  * @return On success, WIFI_MANAGER_SUCCESS (i.e., 0) is returned. On failure, non-zero value is returned.
  * @since Tizen RT v1.1
@@ -176,6 +177,7 @@ wifi_manager_result_e wifi_manager_init(wifi_manager_cb_s *wmcb);
 
 /**
  * @brief Deinitialize Wi-Fi Manager including stoping Wi-Fi interface.
+ * @details @b #include <wifi_manager/wifi_manager.h>
  * @param[in] none
  * @return On success, WIFI_MANAGER_SUCCESS (i.e., 0) is returned. On failure, non-zero value is returned.
  * @since Tizen RT v1.1
@@ -184,6 +186,7 @@ wifi_manager_result_e wifi_manager_deinit(void);
 
 /**
  * @brief Change the Wi-Fi mode to station or AP.
+ * @details @b #include <wifi_manager/wifi_manager.h>
  * @param[in] Wi-Fi mode (station or AP)
  * @param[in] In case of AP mode, AP configuration infomation should be given including ssid, channel, and passphrase.
  * @return On success, WIFI_MANAGER_SUCCESS (i.e., 0) is returned. On failure, non-zero value is returned.
@@ -193,6 +196,7 @@ wifi_manager_result_e wifi_manager_set_mode(wifi_manager_mode_e mode, wifi_manag
 
 /**
  * @brief Retrieve current status of Wi-Fi interface including mode, connection status, ssid, received signal strengh indication, and ip address.
+ * @details @b #include <wifi_manager/wifi_manager.h>
  * @param[out] retrieved information including  mode, connection status, ssid, received signal strengh indication, and ip address.
  * @return On success, WIFI_MANAGER_SUCCESS (i.e., 0) is returned. On failure, non-zero value is returned.
  * @since Tizen RT v1.1
@@ -201,6 +205,7 @@ wifi_manager_result_e wifi_manager_get_info(wifi_manager_info_s *info);
 
 /**
  * @brief Connect to an access point.
+ * @details @b #include <wifi_manager/wifi_manager.h>
  * @param[in] ssid, passphrase, authentication type, and cryto type of the access point which the wi-fi interface connect to.
  * @return On success, WIFI_MANAGER_SUCCESS (i.e., 0) is returned. On failure, non-zero value is returned.
  * @since Tizen RT v1.1
@@ -209,6 +214,7 @@ wifi_manager_result_e wifi_manager_connect_ap(wifi_manager_ap_config_s *config);
 
 /**
  * @brief Disconnect from the connected access point
+ * @details @b #include <wifi_manager/wifi_manager.h>
  * @param[in] none
  * @return On success, WIFI_MANAGER_SUCCESS (i.e., 0) is returned. On failure, non-zero value is returned.
  * @since Tizen RT v1.1
@@ -217,6 +223,7 @@ wifi_manager_result_e wifi_manager_disconnect_ap(void);
 
 /**
  * @brief Scan nearby access points
+ * @details @b #include <wifi_manager/wifi_manager.h>
  * @param[in] none
  * @return On success, WIFI_MANAGER_SUCCESS (i.e., 0) is returned. On failure, non-zero value is returned.
  * @since Tizen RT v1.1
