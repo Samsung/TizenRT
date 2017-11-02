@@ -15,6 +15,7 @@
  * language governing permissions and limitations under the License.
  *
  ****************************************************************************/
+///@cond
 /**
  * @defgroup TASH SHELL
  * @brief Provides APIs for shell (TASH - TinyAra SHell)
@@ -88,7 +89,6 @@ int tash_cmd_install(const char *str, TASH_CMD_CALLBACK cb, int thread_exec);
 void tash_cmdlist_install(const tash_cmdlist_t list[]);
 
 /**
- * @cond
  * @internal
  */
 /**
@@ -97,9 +97,6 @@ void tash_cmdlist_install(const tash_cmdlist_t list[]);
  * @return  On success, 0 is returned. On failure, negative value is returned.
  */
 int tash_start(void);
-/**
- * @endcond
- */
 
 #if defined(CONFIG_TASH_COMMAND_INTERFACE)
 /**
@@ -129,3 +126,4 @@ int tash_get_cmdpair(char *str, TASH_CMD_CALLBACK *cb, int index);
 #endif							/*CONFIG_TASH_COMMAND_INTERFACE */
 
 #endif /*__APPS_INCLUDE_SHELL_TASH_H*/
+///@endcond
