@@ -81,31 +81,35 @@ enum mqtt_connection_result_e {
 /**
  * @brief Structure of MQTT message
  */
-typedef struct _mqtt_msg_t {
+struct _mqtt_msg_s {
 	int msg_id;	/**< message identification */
 	char *topic; /**< message topic */
 	void *payload; /**< message payload content */
 	int payload_len; /**< message pay load length */
 	int qos; /**< message qos flag */
 	int retain;	/**< message retain flag */
-} mqtt_msg_t;
+};
+
+typedef struct _mqtt_msg_s mqtt_msg_t;
 
 /**
  * @brief Structure of MQTT security information
  */
-typedef struct _mqtt_tls_param_t {
+struct _mqtt_tls_param_s {
 	const unsigned char *ca_cert;	/* CA certificate, common between client and MQTT Broker */
 	const unsigned char *cert;	/* Client certificate */
 	const unsigned char *key;	/* Client private key */
 	int ca_cert_len;			/* the length of CA certificate  */
 	int cert_len;				/* the length of Client certificate */
 	int key_len;				/* the length of key */
-} mqtt_tls_param_t;
+};
+
+typedef struct _mqtt_tls_param_s mqtt_tls_param_t;
 
 /**
  * @brief Structure of MQTT client configuration
  */
-typedef struct _mqtt_client_config_t {
+struct _mqtt_client_config_s {
 	char *client_id; /**< client identification */
 	char *user_name; /**< client user name */
 	char *password;	/**< password corresponding to the user name */
@@ -128,17 +132,21 @@ typedef struct _mqtt_client_config_t {
 	/**< on_unsubscribe call back function */
 
 	void *user_data; /**< user defined data */
-} mqtt_client_config_t;
+};
+
+typedef struct _mqtt_client_config_s mqtt_client_config_t;
 
 /**
  * @brief Structure of MQTT client object
  */
-typedef struct _mqtt_client_t {
+struct _mqtt_client_s {
 	int lib_version; /**< mqtt library version */
 	void *mosq;	/**< mqtt library client pointer */
 	mqtt_client_config_t *config; /**< mqtt config */
 	int state; /**< mqtt client state */
-} mqtt_client_t;
+};
+
+typedef struct _mqtt_client_s mqtt_client_t;
 
 /****************************************************************************
  * Public Function Prototypes
