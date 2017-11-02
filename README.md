@@ -4,7 +4,7 @@
 [![Build Status](https://travis-ci.org/Samsung/TizenRT.svg?branch=master)](https://travis-ci.org/Samsung/TizenRT)
 
 lightweight RTOS-based platform to support low-end IoT devices.  
-Please find project details like **APIs**, **Specification** and **Long-term Goals** on our [Tizen Site](https://source.tizen.org/documentation/tizen-rt).
+Please find project details like APIs reference at [docs](docs/) folder. Wiki will be provided.
 
 ## Contents
 
