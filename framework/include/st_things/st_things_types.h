@@ -67,7 +67,7 @@ typedef enum {
  * @brief Structure for Representation.
  * @since Tizen RT v1.1
  */
-typedef struct _st_things_representation {
+struct _st_things_representation_s {
 	void *payload;	 /**< Payload of representation */
 
 	/**
@@ -297,12 +297,13 @@ typedef struct _st_things_representation {
 	 bool(*set_object_array_value) (struct _st_things_representation *rep, const char *key, const struct _st_things_representation **array, size_t length);
 
 } st_things_representation_s;
+typedef struct _st_things_representation_s st_things_representation_t;
 
 /**
  * @brief Structure for representing the Get Request Message.
  * @since Tizen RT v1.1
  */
-typedef struct _st_things_get_request_message {
+struct _st_things_get_request_message_s {
 	char *resource_uri;									/**< Resource URI */
 	char *query;										/**< One or more query parameters of the request message. Ex: key1=value1;key2=value2;... */
 	char *property_key;									/**< One or more property key that application needs to set a value for response. Ex: key1;key2;... */
@@ -327,12 +328,13 @@ typedef struct _st_things_get_request_message {
 	 bool(*has_property_key) (struct _st_things_get_request_message *req_msg, const char *key);
 
 } st_things_get_request_message_s;
+typedef struct _st_things_get_request_message_s st_things_get_request_message_t;
 
 /**
  * @brief Structure for representing the Set Request Message.
  * @since Tizen RT v1.1
  */
-typedef struct _st_things_set_request_message {
+struct _st_things_set_request_message_s {
 	char *resource_uri;									/**< Resource URI */
 	char *query;										/**< One or more query parameters of the request message. Ex: key1=value1?key2=value2?... */
 	struct _st_things_representation *rep;				/**< Representation of the set request message */
@@ -348,6 +350,7 @@ typedef struct _st_things_set_request_message {
 	 bool(*get_query_value) (struct _st_things_set_request_message *req_msg, const char *key, char **value);
 
 } st_things_set_request_message_s;
+typedef struct _st_things_set_request_message_s st_things_set_request_message_t;
 
 #endif							/* __ST_THINGS_TYPES_H__ */
 /** @} */// end of SmartThings group
