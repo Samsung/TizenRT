@@ -35,27 +35,34 @@ function write_config(){
 		sed -i '/CONFIG_ENTRY_MANUAL/{ s/# //g ; s/ is not set/=y/g }' $config_path
 	fi
 
-	# update .config use config from metafile;
-	# if OLD_CONFIG_USE is not updated => maintain origin CONFIG_USE;
-	# else OLD_CONFIG and NEW_CONFIG are not equal => change CONFIG_USE;
+	# update .config with reference to metafile.
+	# .config will be updated only if config is newly created or config value is changed.
 
 	UPDATED_APP_LIST=`sed -n '/{.*}/p' $file_path | sed -n 's/ //pg'`
 	for UPDATED_APP in $UPDATED_APP_LIST
 	do
 		CONFIG_NAME=`echo "$UPDATED_APP" | awk 'BEGIN {FS=","} {print$3}'`
-		OLD_CONFIG=`sed -n "/# $CONFIG_NAME is not set/p" $config_path`
-		if [ "$OLD_CONFIG" = "" ]
-			then OLD_USE_CONFIG="y"
+		NEW_CONFIG_VALUE=`echo "$UPDATED_APP" | awk 'BEGIN {FS=","} {print$4}'`
+
+		if [ "`sed -n "/^$CONFIG_NAME=y/p" $config_path`" ]
+		then
+			OLD_CONFIG_VALUE="y"
+		elif [ "`sed -n "/^\# $CONFIG_NAME is not set/p" $config_path`" ]
+		then
+			OLD_CONFIG_VALUE="n"
 		else
-			OLD_USE_CONFIG="n"
+			OLD_CONFIG_VALUE="x"
 		fi
-		NEW_USE_CONFIG=`echo "$UPDATED_APP" | awk 'BEGIN {FS=","} {print$4}'`
-		if [ "$OLD_USE_CONFIG" != "$NEW_USE_CONFIG" ]
-			then if [ "$NEW_USE_CONFIG" = "y" ]
-				 	then sed -i "s/# $CONFIG_NAME is not set/$CONFIG_NAME=y/" $config_path
-				 else
-					sed -i "s/$CONFIG_NAME=./# $CONFIG_NAME is not set/" $config_path
-			fi
+
+		if [ "$OLD_CONFIG_VALUE" == "y" ] && [ "$NEW_CONFIG_VALUE" == "n" ]
+		then
+			sed -i "s/^$CONFIG_NAME=y/# $CONFIG_NAME is not set/" $config_path
+		elif [ "$OLD_CONFIG_VALUE" == "n" ] && [ "$NEW_CONFIG_VALUE" == "y" ]
+		then
+			sed -i "s/^# $CONFIG_NAME is not set/$CONFIG_NAME=y/" $config_path
+		elif [ "$OLD_CONFIG_VALUE" == "x" ] && [ "$NEW_CONFIG_VALUE" == "y" ]
+		then
+			echo "$CONFIG_NAME=y" >> $config_path
 		fi
 	done
 }
