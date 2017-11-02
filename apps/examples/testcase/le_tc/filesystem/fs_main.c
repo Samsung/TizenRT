@@ -55,6 +55,8 @@
  ****************************************************************************/
 #define STDIO_BUFLEN		64
 #define VFS_CONTENTS_LEN	20
+#define SEEK_DEF		3
+#define SEEK_OFFSET		6
 
 #define MOUNT_DIR CONFIG_MOUNT_POINT
 
@@ -89,6 +91,8 @@
 #define VFS_LOOP_COUNT 5
 
 #define LONG_FILE_PATH MOUNT_DIR"long"
+
+#define STREAM_TEST_CONTENTS "THIS IS STREAM TEST"
 
 #define VFS_TEST_CONTENTS_1 "THIS IS VFS TEST 1"
 
@@ -2099,13 +2103,29 @@ static void tc_libc_stdio_setvbuf(void)
 */
 static void tc_libc_stdio_meminstream(void)
 {
-	FAR char buf[STDIO_BUFLEN];
+	const char *str = STREAM_TEST_CONTENTS;
+	int getch;
 
 	struct lib_meminstream_s meminstream;
 
-	lib_meminstream((FAR struct lib_meminstream_s *)&meminstream, buf, STDIO_BUFLEN);
-	TC_ASSERT_EQ("lib_meminstream", meminstream.buffer, (FAR char *)(buf));
+	/* Check with 0 length */
+
+	lib_meminstream((FAR struct lib_meminstream_s *)&meminstream, str, 0);
+	TC_ASSERT_EQ("lib_meminstream", meminstream.buffer, (FAR char *)(str));
+
+	getch = meminstream.public.get((FAR struct lib_instream_s *)&meminstream.public);
+	TC_ASSERT_EQ("meminstream_getc", meminstream.public.nget, 0);
+	TC_ASSERT_EQ("meminstream_getc", getch, EOF);
+
+	/* Check with valid length */
+
+	lib_meminstream((FAR struct lib_meminstream_s *)&meminstream, str, STDIO_BUFLEN);
+	TC_ASSERT_EQ("lib_meminstream", meminstream.buffer, (FAR char *)(str));
 	TC_ASSERT_EQ("lib_meminstream", meminstream.buflen, STDIO_BUFLEN);
+
+	getch = meminstream.public.get((FAR struct lib_instream_s *)&meminstream.public);
+	TC_ASSERT_EQ("meminstream_getc", meminstream.public.nget, 1);
+	TC_ASSERT_EQ("meminstream_getc", getch, str[0]);
 
 	TC_SUCCESS_RESULT();
 }
@@ -2120,13 +2140,20 @@ static void tc_libc_stdio_meminstream(void)
 */
 static void tc_libc_stdio_memoutstream(void)
 {
-	FAR char buf[STDIO_BUFLEN];
+	char buffer[STDIO_BUFLEN];
+	char *str = STREAM_TEST_CONTENTS;
 
 	struct lib_memoutstream_s memoutstream;
 
-	lib_memoutstream((FAR struct lib_memoutstream_s *)&memoutstream, buf, STDIO_BUFLEN);
-	TC_ASSERT_EQ("lib_memoutstream", memoutstream.buffer, (FAR char *)(buf));
-	TC_ASSERT_EQ("lib_memoutstream", memoutstream.buflen, (STDIO_BUFLEN - 1));	/* Save space for null terminator, hence checing with (STDIO_BUFLEN-1)*/
+	/* Check with valid length */
+
+	lib_memoutstream((FAR struct lib_memoutstream_s *)&memoutstream, buffer, STDIO_BUFLEN);
+	TC_ASSERT_EQ("lib_memoutstream", memoutstream.buffer, (FAR char *)(buffer));
+	TC_ASSERT_EQ("lib_memoutstream", memoutstream.buflen, (STDIO_BUFLEN - 1));	/* Save space for null terminator, hence checking with (STDIO_BUFLEN-1)*/
+
+	memoutstream.public.put((FAR struct lib_outstream_s *)&memoutstream.public, str[0]);
+	TC_ASSERT_EQ("memoutstream_putc", memoutstream.public.nput, 1);
+	TC_ASSERT_EQ("lib_memoutstream", memoutstream.buffer[0], str[0]);
 
 	TC_SUCCESS_RESULT();
 }
@@ -2141,16 +2168,46 @@ static void tc_libc_stdio_memoutstream(void)
 */
 static void tc_libc_stdio_memsistream(void)
 {
-	FAR char buf[STDIO_BUFLEN];
-
+	const char *str = STREAM_TEST_CONTENTS;
+	int getch;
+	off_t offset;
 	struct lib_memsistream_s memsistream;
 
-	lib_memsistream((FAR struct lib_memsistream_s *)&memsistream, buf, STDIO_BUFLEN);
-	TC_ASSERT_EQ("lib_memsistream", memsistream.buffer, (FAR char *)(buf));
+	/* Check with 0 length */
 
-	lib_memsistream((FAR struct lib_memsistream_s *)&memsistream, buf + 2, STDIO_BUFLEN);
-	TC_ASSERT_EQ("lib_memsistream", (memsistream.buffer - (FAR char *)(buf)), 2);
-	TC_ASSERT_EQ("lib_memsistream", memsistream.buflen, STDIO_BUFLEN);
+	lib_memsistream((FAR struct lib_memsistream_s *)&memsistream, str, 0);
+	TC_ASSERT_EQ("lib_memsistream", memsistream.buffer, (FAR char *)(str));
+
+	getch = memsistream.public.get((FAR struct lib_sistream_s *)&memsistream.public);
+	TC_ASSERT_EQ("memsistream_getc", memsistream.public.nget, 0);
+	TC_ASSERT_EQ("memsistream_getc", getch, EOF);
+
+	/* Check with valid length */
+
+	lib_memsistream((FAR struct lib_memsistream_s *)&memsistream, str, STDIO_BUFLEN);
+	TC_ASSERT_EQ("lib_memsistream", memsistream.buffer, (FAR char *)(str));
+
+	getch = memsistream.public.get((FAR struct lib_sistream_s *)&memsistream.public);
+	TC_ASSERT_EQ("memsistream_getc", memsistream.public.nget, 1);
+	TC_ASSERT_EQ("meminstream_getc", getch, str[0]);
+
+	/* Check seek operation */
+
+	offset = memsistream.public.seek((FAR struct lib_sistream_s *)&memsistream.public, SEEK_OFFSET, SEEK_SET);	/* Seek from the start of the file */
+	TC_ASSERT_EQ("memsistream_seek", memsistream.offset, SEEK_OFFSET);
+	TC_ASSERT_EQ("memsistream_seek", offset, (off_t)SEEK_OFFSET);
+
+	offset = memsistream.public.seek((FAR struct lib_sistream_s *)&memsistream.public, SEEK_OFFSET, SEEK_CUR);	/* Seek from the current file offset */
+	TC_ASSERT_EQ("memsistream_seek", memsistream.offset, SEEK_OFFSET * 2);
+	TC_ASSERT_EQ("memsistream_seek", offset, (off_t)(SEEK_OFFSET + SEEK_OFFSET));
+
+	offset = memsistream.public.seek((FAR struct lib_sistream_s *)&memsistream.public, SEEK_OFFSET, SEEK_END);	/* Seek from the end of the file */
+	TC_ASSERT_EQ("memsistream_seek", memsistream.offset, SEEK_OFFSET * 2);
+	TC_ASSERT_EQ("memsistream_seek", offset, (off_t)ERROR);
+
+	offset = memsistream.public.seek((FAR struct lib_sistream_s *)&memsistream.public, SEEK_OFFSET, SEEK_DEF);	/* Seek none */
+	TC_ASSERT_EQ("memsistream_seek", memsistream.offset, SEEK_OFFSET * 2);
+	TC_ASSERT_EQ("memsistream_seek", offset, (off_t)ERROR);
 
 	TC_SUCCESS_RESULT();
 }
@@ -2165,16 +2222,38 @@ static void tc_libc_stdio_memsistream(void)
 */
 static void tc_libc_stdio_memsostream(void)
 {
-	FAR char buf[STDIO_BUFLEN];
+	char buffer[STDIO_BUFLEN];
+	char *str = STREAM_TEST_CONTENTS;
+	off_t offset;
 
 	struct lib_memsostream_s memsostream;
 
-	lib_memsostream((FAR struct lib_memsostream_s *)&memsostream, buf, STDIO_BUFLEN);
-	TC_ASSERT_EQ("lib_memsostream", memsostream.buffer, (FAR char *)(buf));
+	/* Check with valid length */
 
-	lib_memsostream((FAR struct lib_memsostream_s *)&memsostream, buf + 4, STDIO_BUFLEN);
-	TC_ASSERT_EQ("lib_memsostream", (memsostream.buffer - (FAR char *)(buf)), 4);
-	TC_ASSERT_EQ("lib_memsostream", memsostream.buflen, (STDIO_BUFLEN - 1));	/* Save space for null terminator, hence checing with (STDIO_BUFLEN-1)*/
+	lib_memsostream((FAR struct lib_memsostream_s *)&memsostream, buffer, STDIO_BUFLEN);
+	TC_ASSERT_EQ("lib_memsostream", memsostream.buffer, (FAR char *)(buffer));
+
+	memsostream.public.put((FAR struct lib_sostream_s *)&memsostream.public, str[0]);
+	TC_ASSERT_EQ("memsostream_putc", memsostream.public.nput, 1);
+	TC_ASSERT_EQ("lib_memsostream", memsostream.buffer[0], str[0]);
+
+	/* Check seek operation */
+
+	offset = memsostream.public.seek((FAR struct lib_sostream_s *)&memsostream.public, SEEK_OFFSET, SEEK_SET);	/* Seek from the start of the file */
+	TC_ASSERT_EQ("memsostream_seek", memsostream.offset, SEEK_OFFSET);
+	TC_ASSERT_EQ("memsostream_seek", offset, (off_t)SEEK_OFFSET);
+
+	offset = memsostream.public.seek((FAR struct lib_sostream_s *)&memsostream.public, SEEK_OFFSET, SEEK_CUR);	/* Seek from the current file offset */
+	TC_ASSERT_EQ("memsostream_seek", memsostream.offset, SEEK_OFFSET * 2);
+	TC_ASSERT_EQ("memsostream_seek", offset, (off_t)(SEEK_OFFSET + SEEK_OFFSET));
+
+	offset = memsostream.public.seek((FAR struct lib_sostream_s *)&memsostream.public, SEEK_OFFSET, SEEK_END);	/* Seek from the end of the file */
+	TC_ASSERT_EQ("memsostream_seek", memsostream.offset, SEEK_OFFSET * 2);
+	TC_ASSERT_EQ("memsostream_seek", offset, (off_t)ERROR);
+
+	offset = memsostream.public.seek((FAR struct lib_sostream_s *)&memsostream.public, SEEK_OFFSET, SEEK_DEF);	/* Seek none */
+	TC_ASSERT_EQ("memsostream_seek", memsostream.offset, SEEK_OFFSET * 2);
+	TC_ASSERT_EQ("memsostream_seek", offset, (off_t)ERROR);
 
 	TC_SUCCESS_RESULT();
 }
@@ -2190,9 +2269,13 @@ static void tc_libc_stdio_memsostream(void)
 static void tc_libc_stdio_nullinstream(void)
 {
 	struct lib_instream_s nullinstream;
+	int getch;
 
 	lib_nullinstream((FAR struct lib_instream_s *)&nullinstream);
 	TC_ASSERT_EQ("lib_nullinstream", nullinstream.nget, 0);
+
+	getch = nullinstream.get((FAR struct lib_instream_s *)&nullinstream);
+	TC_ASSERT_EQ("lib_nullinstream", getch, EOF);
 
 	TC_SUCCESS_RESULT();
 }
@@ -2212,6 +2295,9 @@ static void tc_libc_stdio_nulloutstream(void)
 	lib_nulloutstream((FAR struct lib_outstream_s *)&nulloutstream);
 	TC_ASSERT_EQ("lib_nulloutstream", nulloutstream.nput, 0);
 
+	nulloutstream.put((FAR struct lib_outstream_s *)&nulloutstream, 1);
+	TC_ASSERT_EQ("nulloutstream_putc", nulloutstream.nput, 1);
+
 	TC_SUCCESS_RESULT();
 }
 
@@ -2226,17 +2312,44 @@ static void tc_libc_stdio_nulloutstream(void)
 static void tc_libc_stdio_rawinstream(void)
 {
 	int fd;
-	char *filename = VFS_FILE_PATH;
+	int ret;
+	int getch;
+	char *str = STREAM_TEST_CONTENTS;
 
 	struct lib_rawinstream_s rawinstream;
 
-	fd = open(filename, O_RDONLY);
+	/* Negative case, invalid file permission: no character is read from the rawinstream */
+
+	fd = open(VFS_FILE_PATH, O_WRONLY);
 	TC_ASSERT_GEQ("open", fd, 0);
 
 	lib_rawinstream((FAR struct lib_rawinstream_s *)&rawinstream, fd);
+	TC_ASSERT_EQ_CLEANUP("lib_rawinstream", rawinstream.fd, fd, close(fd));
+
+	getch = rawinstream.public.get((FAR struct lib_instream_s *)&rawinstream.public);
 	close(fd);
-	TC_ASSERT_EQ("lib_rawinstream", rawinstream.fd, fd);
-	TC_ASSERT_EQ("lib_rawinstream", rawinstream.public.nget, 0);
+	TC_ASSERT_EQ("rawinstream_getc", rawinstream.public.nget, 0);
+	TC_ASSERT_EQ("rawinstream_getc", getch, EOF);
+
+	/* Positive case, one character is read from the rawinstream*/
+
+	fd = open(VFS_FILE_PATH, O_WRONLY | O_TRUNC);
+	TC_ASSERT_GEQ("open", fd, 0);
+
+	ret = write(fd, str, strlen(str));
+	close(fd);
+	TC_ASSERT_EQ("write", ret, strlen(str));
+
+	fd = open(VFS_FILE_PATH, O_RDONLY);
+	TC_ASSERT_GEQ("open", fd, 0);
+
+	lib_rawinstream((FAR struct lib_rawinstream_s *)&rawinstream, fd);
+	TC_ASSERT_EQ_CLEANUP("lib_rawinstream", rawinstream.fd, fd, close(fd));
+
+	getch = rawinstream.public.get((FAR struct lib_instream_s *)&rawinstream.public);
+	close(fd);
+	TC_ASSERT_EQ("rawinstream_getc", rawinstream.public.nget, 1);
+	TC_ASSERT_EQ("rawinstream_getc", getch, str[0]);
 
 	TC_SUCCESS_RESULT();
 }
@@ -2252,17 +2365,44 @@ static void tc_libc_stdio_rawinstream(void)
 static void tc_libc_stdio_rawoutstream(void)
 {
 	int fd;
-	char *filename = VFS_FILE_PATH;
+	char buffer[STDIO_BUFLEN];
+	char *str = STREAM_TEST_CONTENTS;
+	int ret;
 
 	struct lib_rawoutstream_s rawoutstream;
 
-	fd = open(filename, O_RDONLY);
+	/* Negative case, invalid file permission: no character is written to the rawoutstream */
+
+	fd = open(VFS_FILE_PATH, O_RDONLY);
 	TC_ASSERT_GEQ("open", fd, 0);
 
 	lib_rawoutstream((FAR struct lib_rawoutstream_s *)&rawoutstream, fd);
+	TC_ASSERT_EQ_CLEANUP("lib_rawoutstream", rawoutstream.fd, fd, close(fd));
+
+	rawoutstream.public.put((FAR struct lib_outstream_s *)&rawoutstream.public, 1);
 	close(fd);
-	TC_ASSERT_EQ("lib_rawoutstream", rawoutstream.fd, fd);
-	TC_ASSERT_EQ("lib_rawoutstream", rawoutstream.public.nput, 0);
+	TC_ASSERT_EQ("rawoutstream_putc", rawoutstream.public.nput, 0);
+
+	/* Positive case, one character is put to the rawoutstream */
+
+	fd = open(VFS_FILE_PATH, O_WRONLY | O_TRUNC);
+	TC_ASSERT_GEQ("open", fd, 0);
+
+	lib_rawoutstream((FAR struct lib_rawoutstream_s *)&rawoutstream, fd);
+	TC_ASSERT_EQ_CLEANUP("lib_rawoutstream", rawoutstream.fd, fd, close(fd));
+
+	rawoutstream.public.put((FAR struct lib_outstream_s *)&rawoutstream.public, str[0]);
+	close(fd);
+	TC_ASSERT_EQ("rawoutstream_putc", rawoutstream.public.nput, 1);
+
+	fd = open(VFS_FILE_PATH, O_RDONLY);
+	TC_ASSERT_GEQ("open", fd, 0);
+
+	memset(buffer, 0, sizeof(buffer));
+	ret = read(fd, buffer, sizeof(buffer));
+	close(fd);
+	TC_ASSERT_GEQ("read", ret, 0);
+	TC_ASSERT_EQ("read", buffer[0], str[0]);
 
 	TC_SUCCESS_RESULT();
 }
@@ -2278,17 +2418,50 @@ static void tc_libc_stdio_rawoutstream(void)
 static void tc_libc_stdio_rawsistream(void)
 {
 	int fd;
-	char *filename = VFS_FILE_PATH;
+	int ret;
+	int getch;
+	off_t offset;
+	char *str = STREAM_TEST_CONTENTS;
 
 	struct lib_rawsistream_s rawsistream;
 
-	fd = open(filename, O_RDONLY);
+	/* Negative case, invalid file permission: no character is read from the rawsistream */
+
+	fd = open(VFS_FILE_PATH, O_WRONLY);
 	TC_ASSERT_GEQ("open", fd, 0);
 
 	lib_rawsistream((FAR struct lib_rawsistream_s *)&rawsistream, fd);
+	TC_ASSERT_EQ_CLEANUP("lib_rawsistream", rawsistream.fd, fd, close(fd));
+
+	getch = rawsistream.public.get((FAR struct lib_sistream_s *)&rawsistream.public);
 	close(fd);
-	TC_ASSERT_EQ("lib_rawsistream", rawsistream.fd, fd);
-	TC_ASSERT_EQ("lib_rawsistream", rawsistream.public.nget, 0);
+	TC_ASSERT_EQ("rawsistream_getc", rawsistream.public.nget, 0);
+	TC_ASSERT_EQ("rawsistream_getc", getch, EOF);
+
+	/* Positive case, one character is read from the rawsistream */
+
+	fd = open(VFS_FILE_PATH, O_WRONLY | O_TRUNC);
+	TC_ASSERT_GEQ("open", fd, 0);
+
+	ret = write(fd, str, strlen(str));
+	close(fd);
+	TC_ASSERT_EQ("write", ret, strlen(str));
+
+	fd = open(VFS_FILE_PATH, O_RDONLY);
+	TC_ASSERT_GEQ("open", fd, 0);
+
+	lib_rawsistream((FAR struct lib_rawsistream_s *)&rawsistream, fd);
+	TC_ASSERT_EQ_CLEANUP("lib_rawsistream", rawsistream.fd, fd, close(fd));
+
+	getch = rawsistream.public.get((FAR struct lib_sistream_s *)&rawsistream.public);
+	TC_ASSERT_EQ_CLEANUP("rawsistream_getc", rawsistream.public.nget, 1, close(fd));
+	TC_ASSERT_EQ_CLEANUP("rawsistream_getc", getch, str[0], close(fd));
+
+	/* Check seek operation */
+
+	offset = rawsistream.public.seek((FAR struct lib_sistream_s *)&rawsistream.public, SEEK_OFFSET, SEEK_SET);
+	close(fd);
+	TC_ASSERT_EQ("rawsistream_seek", offset, (off_t)SEEK_OFFSET);
 
 	TC_SUCCESS_RESULT();
 }
@@ -2304,17 +2477,53 @@ static void tc_libc_stdio_rawsistream(void)
 static void tc_libc_stdio_rawsostream(void)
 {
 	int fd;
-	char *filename = VFS_FILE_PATH;
+	off_t offset;
+	char buffer[STDIO_BUFLEN];
+	char *str = STREAM_TEST_CONTENTS;
+	int ret;
 
 	struct lib_rawsostream_s rawsostream;
 
-	fd = open(filename, O_RDONLY);
+	/* Negative case, invalid file permission: no character is written to the rawsostream */
+
+	fd = open(VFS_FILE_PATH, O_RDONLY);
 	TC_ASSERT_GEQ("open", fd, 0);
 
 	lib_rawsostream((FAR struct lib_rawsostream_s *)&rawsostream, fd);
+	TC_ASSERT_EQ_CLEANUP("lib_rawsostream", rawsostream.fd, fd, close(fd));
+
+	rawsostream.public.put((FAR struct lib_sostream_s *)&rawsostream.public, str[0]);
 	close(fd);
-	TC_ASSERT_EQ("lib_rawsostream", rawsostream.fd, fd);
-	TC_ASSERT_EQ("lib_rawsostream", rawsostream.public.nput, 0);
+	TC_ASSERT_EQ("rawsostream_putc", rawsostream.public.nput, 0);
+
+	/* Positive case, two characters are put to the rawsostream */
+
+	fd = open(VFS_FILE_PATH, O_WRONLY | O_TRUNC);
+	TC_ASSERT_GEQ("open", fd, 0);
+
+	lib_rawsostream((FAR struct lib_rawsostream_s *)&rawsostream, fd);
+	TC_ASSERT_EQ_CLEANUP("lib_rawsostream", rawsostream.fd, fd, close(fd));
+
+	rawsostream.public.put((FAR struct lib_sostream_s *)&rawsostream.public, str[0]);
+	TC_ASSERT_EQ_CLEANUP("rawsostream_putc", rawsostream.public.nput, 1, close(fd));
+	rawsostream.public.put((FAR struct lib_sostream_s *)&rawsostream.public, str[1]);
+	close(fd);
+	TC_ASSERT_EQ("rawsostream_putc", rawsostream.public.nput, 2);
+
+	fd = open(VFS_FILE_PATH, O_RDONLY);
+	TC_ASSERT_GEQ("open", fd, 0);
+
+	memset(buffer, 0, sizeof(buffer));
+	ret = read(fd, buffer, sizeof(buffer));
+	TC_ASSERT_GEQ_CLEANUP("read", ret, 0, close(fd));
+	TC_ASSERT_EQ_CLEANUP("read", buffer[0], str[0], close(fd));
+	TC_ASSERT_EQ_CLEANUP("read", buffer[1], str[1], close(fd));
+
+	/* Check seek operation */
+
+	offset = rawsostream.public.seek((FAR struct lib_sostream_s *)&rawsostream.public, SEEK_OFFSET, SEEK_SET);
+	close(fd);
+	TC_ASSERT_EQ("rawsostream_seek", offset, (off_t)2);
 
 	TC_SUCCESS_RESULT();
 }
@@ -2351,17 +2560,41 @@ static void tc_libc_stdio_sprintf(void)
 static void tc_libc_stdio_stdinstream(void)
 {
 	FILE *stream;
-	char *filename = VFS_FILE_PATH;
+	int getch;
+	char *str = STREAM_TEST_CONTENTS;
 
 	struct lib_stdinstream_s stdinstream;
 
-	stream = fopen(filename, "w");
+	/* Negative case, file opened with inappropriate permission */
+
+	stream = fopen(VFS_FILE_PATH, "w");
 	TC_ASSERT_NEQ("fopen", stream, NULL);
 
 	lib_stdinstream((FAR struct lib_stdinstream_s *)&stdinstream, stream);
+	TC_ASSERT_EQ_CLEANUP("lib_stdinstream", stdinstream.stream, stream, fclose(stream));
+
+	getch = stdinstream.public.get((FAR struct lib_instream_s *)&stdinstream.public);
 	fclose(stream);
-	TC_ASSERT_EQ("lib_stdinstream", stdinstream.stream, stream);
-	TC_ASSERT_EQ("lib_stdinstream", stdinstream.public.nget, 0);
+	TC_ASSERT_EQ("stdinstream_getc", stdinstream.public.nget, 0);
+	TC_ASSERT_EQ("stdinstream_getc", getch, EOF);
+
+	/* Positive case, one character is read from the stdinstream */
+
+	stream = fopen(VFS_FILE_PATH, "w+");
+	TC_ASSERT_NEQ("fopen", stream, NULL);
+	TC_ASSERT_EQ_CLEANUP("fputs", fputs(str, stream), strlen(str), fclose(stream));
+	fclose(stream);
+
+	stream = fopen(VFS_FILE_PATH, "r+");
+	TC_ASSERT_NEQ("fopen", stream, NULL);
+
+	lib_stdinstream((FAR struct lib_stdinstream_s *)&stdinstream, stream);
+	TC_ASSERT_EQ_CLEANUP("lib_stdinstream", stdinstream.stream, stream, fclose(stream));
+
+	getch = stdinstream.public.get((FAR struct lib_instream_s *)&stdinstream.public);
+	fclose(stream);
+	TC_ASSERT_EQ("stdinstream_getc", stdinstream.public.nget, 1);
+	TC_ASSERT_EQ("stdinstream_getc", getch, str[0]);
 
 	TC_SUCCESS_RESULT();
 }
@@ -2377,17 +2610,50 @@ static void tc_libc_stdio_stdinstream(void)
 static void tc_libc_stdio_stdoutstream(void)
 {
 	FILE *stream;
-	char *filename = VFS_FILE_PATH;
+	char buffer[STDIO_BUFLEN];
+	char *str = STREAM_TEST_CONTENTS;
+	int ret;
 
 	struct lib_stdoutstream_s stdoutstream;
 
-	stream = fopen(filename, "w");
+	/* Negative case, file opened with inappropriate permission */
+
+	stream = fopen(VFS_FILE_PATH, "r");
 	TC_ASSERT_NEQ("fopen", stream, NULL);
 
 	lib_stdoutstream((FAR struct lib_stdoutstream_s *)&stdoutstream, stream);
+	TC_ASSERT_EQ_CLEANUP("lib_stdoutstream", stdoutstream.stream, stream, fclose(stream));
+
+	stdoutstream.public.put((FAR struct lib_outstream_s *)&stdoutstream.public, str[0]);
 	fclose(stream);
-	TC_ASSERT_EQ("lib_stdoutstream", stdoutstream.stream, stream);
-	TC_ASSERT_EQ("lib_stdoutstream", stdoutstream.public.nput, 0);
+	TC_ASSERT_EQ("stdoutstream_putc", stdoutstream.public.nput, 0);
+
+	/* Positive case, one character is put to the stdoutstream */
+
+	stream = fopen(VFS_FILE_PATH, "w+");
+	TC_ASSERT_NEQ("fopen", stream, NULL);
+
+	lib_stdoutstream((FAR struct lib_stdoutstream_s *)&stdoutstream, stream);
+	TC_ASSERT_EQ_CLEANUP("lib_stdoutstream", stdoutstream.stream, stream, fclose(stream));
+
+	stdoutstream.public.put((FAR struct lib_outstream_s *)&stdoutstream.public, str[0]);
+	TC_ASSERT_EQ_CLEANUP("stdoutstream_putc", stdoutstream.public.nput, 1, fclose(stream));
+
+	/* Check flush operation */
+
+#if defined(CONFIG_STDIO_LINEBUFFER) && CONFIG_STDIO_BUFFER_SIZE > 0
+	stdoutstream.public.flush((FAR struct lib_outstream_s *)&stdoutstream.public);
+#endif
+	fclose(stream);
+
+	stream = fopen(VFS_FILE_PATH, "r+");
+	TC_ASSERT_NEQ("fopen", stream, NULL);
+
+	memset(buffer, 0, sizeof(buffer));
+	ret = fread(buffer, 1, 1, stream);
+	fclose(stream);
+	TC_ASSERT_EQ("fread", ret, 1);
+	TC_ASSERT_EQ("fread", buffer[0], str[0]);
 
 	TC_SUCCESS_RESULT();
 }
@@ -2403,17 +2669,49 @@ static void tc_libc_stdio_stdoutstream(void)
 static void tc_libc_stdio_stdsistream(void)
 {
 	FILE *stream;
-	char *filename = VFS_FILE_PATH;
+	int getch;
+	off_t offset;
+	char *str = STREAM_TEST_CONTENTS;
 
 	struct lib_stdsistream_s stdsistream;
 
-	stream = fopen(filename, "w");
+	/* Negative case, file opened with inappropriate permission */
+
+	stream = fopen(VFS_FILE_PATH, "w");
 	TC_ASSERT_NEQ("fopen", stream, NULL);
 
 	lib_stdsistream((FAR struct lib_stdsistream_s *)&stdsistream, stream);
+	TC_ASSERT_EQ_CLEANUP("lib_stdsistream", stdsistream.stream, stream, fclose(stream));
+
+	getch = stdsistream.public.get((FAR struct lib_sistream_s *)&stdsistream.public);
 	fclose(stream);
-	TC_ASSERT_EQ("lib_stdsistream", stdsistream.stream, stream);
-	TC_ASSERT_EQ("lib_stdsistream", stdsistream.public.nget, 0);
+	TC_ASSERT_EQ("stdsistream_getc", stdsistream.public.nget, 0);
+	TC_ASSERT_EQ("stdsistream_getc", getch, EOF);
+
+	/* Positive case, one character is read from the stdsistream */
+
+	stream = fopen(VFS_FILE_PATH, "w+");
+	TC_ASSERT_NEQ("fopen", stream, NULL);
+	TC_ASSERT_EQ_CLEANUP("fputs", fputs(str, stream), strlen(str), fclose(stream));
+
+	fclose(stream);
+
+	stream = fopen(VFS_FILE_PATH, "r+");
+	TC_ASSERT_NEQ("fopen", stream, NULL);
+
+	lib_stdsistream((FAR struct lib_stdsistream_s *)&stdsistream, stream);
+	TC_ASSERT_EQ_CLEANUP("lib_stdsistream", stdsistream.stream, stream, fclose(stream));
+
+	getch = stdsistream.public.get((FAR struct lib_sistream_s *)&stdsistream.public);
+	TC_ASSERT_EQ_CLEANUP("stdsistream_getc", stdsistream.public.nget, 1, fclose(stream));
+	TC_ASSERT_EQ_CLEANUP("stdsistream_getc", getch, str[0], fclose(stream));
+
+	/* Check seek operation */
+
+	offset = stdsistream.public.seek((FAR struct lib_sistream_s *)&stdsistream.public, SEEK_OFFSET, SEEK_SET);
+	TC_ASSERT_EQ_CLEANUP("stdsistream_seek", offset, (off_t)OK, fclose(stream));
+
+	fclose(stream);
 
 	TC_SUCCESS_RESULT();
 }
@@ -2429,17 +2727,56 @@ static void tc_libc_stdio_stdsistream(void)
 static void tc_libc_stdio_stdsostream(void)
 {
 	FILE *stream;
-	char *filename = VFS_FILE_PATH;
+	off_t offset;
+	char buffer[STDIO_BUFLEN];
+	char *str = STREAM_TEST_CONTENTS;
+	int ret;
 
 	struct lib_stdsostream_s stdsostream;
 
-	stream = fopen(filename, "w");
+	/* Negative case, file opened with inappropriate permission */
+
+	stream = fopen(VFS_FILE_PATH, "r");
 	TC_ASSERT_NEQ("fopen", stream, NULL);
 
 	lib_stdsostream((FAR struct lib_stdsostream_s *)&stdsostream, stream);
+	TC_ASSERT_EQ_CLEANUP("lib_stdsostream", stdsostream.stream, stream, fclose(stream));
+
+	stdsostream.public.put((FAR struct lib_sostream_s *)&stdsostream.public, str[0]);
 	fclose(stream);
-	TC_ASSERT_EQ("lib_stdsostream", stdsostream.stream, stream);
-	TC_ASSERT_EQ("lib_stdsostream", stdsostream.public.nput, 0);
+	TC_ASSERT_EQ("stdsostream_putc", stdsostream.public.nput, 0);
+
+	/* Positive case, one character is put to the stdsostream */
+
+	stream = fopen(VFS_FILE_PATH, "w+");
+	TC_ASSERT_NEQ("fopen", stream, NULL);
+
+	lib_stdsostream((FAR struct lib_stdsostream_s *)&stdsostream, stream);
+	TC_ASSERT_EQ_CLEANUP("lib_stdsostream", stdsostream.stream, stream, fclose(stream));
+
+	stdsostream.public.put((FAR struct lib_sostream_s *)&stdsostream.public, str[0]);
+	TC_ASSERT_EQ_CLEANUP("stdsostream_putc", stdsostream.public.nput, 1, fclose(stream));
+
+	/* Check seek operation */
+
+	offset = stdsostream.public.seek(&stdsostream.public, SEEK_OFFSET, SEEK_SET);
+	TC_ASSERT_EQ_CLEANUP("stdsostream_seek", offset, (off_t)OK, fclose(stream));
+
+	/* Check flush operation */
+
+#if defined(CONFIG_STDIO_LINEBUFFER) && CONFIG_STDIO_BUFFER_SIZE > 0
+	stdsostream.public.flush((FAR struct lib_sostream_s *)&stdsostream.public);
+#endif
+	fclose(stream);
+
+	stream = fopen(VFS_FILE_PATH, "r+");
+	TC_ASSERT_NEQ("fopen", stream, NULL);
+
+	memset(buffer, 0, sizeof(buffer));
+	ret = fread(buffer, 1, 1, stream);
+	fclose(stream);
+	TC_ASSERT_EQ("fread", ret, 1);
+	TC_ASSERT_EQ("fread", buffer[0], str[0]);
 
 	TC_SUCCESS_RESULT();
 }
@@ -2455,9 +2792,14 @@ static void tc_libc_stdio_stdsostream(void)
 static void tc_libc_stdio_zeroinstream(void)
 {
 	struct lib_instream_s zeroinstream;
+	int getch;
 
 	lib_zeroinstream((FAR struct lib_instream_s *)&zeroinstream);
 	TC_ASSERT_EQ("lib_zeroinstream", zeroinstream.nget, 0);
+
+	getch = zeroinstream.get((FAR struct lib_instream_s *)&zeroinstream);
+	TC_ASSERT_EQ("zeroinstream_getc", zeroinstream.nget, 1);
+	TC_ASSERT_EQ("zeroinstream_getc", getch, 0);
 
 	TC_SUCCESS_RESULT();
 }
