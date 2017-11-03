@@ -18,12 +18,10 @@
 /****************************************************************************
  * include/tinyara/audio/alc5658.h
  *
- *   Copyright (C) 2014 Gregory Nutt. All rights reserved.
- *   Author:  Gregory Nutt <gnutt@nuttx.org>
+ * Audio device driver for REALTEK ALC5658 Audio codec.
  *
- * Reference:
- *   "ALC5658 Ultra Low Power CODEC for Portable Audio Applications, Pre-
- *    Production", September 2012, Rev 3.3, Wolfson Microelectronics
+ *   Copyright (C) 2014, 2016 Gregory Nutt. All rights reserved.
+ *   Author:  Gregory Nutt <gnutt@nuttx.org>
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions

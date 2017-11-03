@@ -18,16 +18,10 @@
 /****************************************************************************
  * drivers/audio/alc5658.c
  *
- * Audio device driver for Wolfson Microelectronics ALC5658 Audio codec.
+ * Audio device driver for REALTEK ALC5658 Audio codec.
  *
  *   Copyright (C) 2014, 2016 Gregory Nutt. All rights reserved.
  *   Author:  Gregory Nutt <gnutt@nuttx.org>
- *
- * References:
- * - "ALC5658 Ultra Low Power CODEC for Portable Audio Applications, Pre-
- *    Production", September 2012, Rev 3.3, Wolfson Microelectronics
- *
- * -  The framework for this driver is based on Ken Pettit's VS1053 driver.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
