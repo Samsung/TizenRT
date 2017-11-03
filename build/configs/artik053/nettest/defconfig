@@ -1019,6 +1019,7 @@ CONFIG_NETDB_DNSSERVER_BY_DHCP=y
 #
 # CONFIG_ENABLE_IOTIVITY is not set
 # CONFIG_LIBTUV is not set
+# CONFIG_ARTIK_SDK is not set
 
 #
 # Application Configuration
