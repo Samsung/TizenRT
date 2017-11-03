@@ -37,10 +37,17 @@ int http_tls_init(struct http_server_t *server, struct ssl_config_t *ssl_config)
 	int result = 0;
 
 	/*
-	 * 1. Check and Initialize input parameter
+	 * 1-1 Check input parameters
 	 */
-	if (!ssl_config) {
+	if (!server || (!server->tls_init && !ssl_config)) {
 		return HTTP_ERROR;
+	}
+
+	/*
+	 * 1-2 If the caller already did TLS intialization, bypass it
+	 */
+	if (server->tls_init) {
+		return 0;
 	}
 
 	mbedtls_ssl_config_init(&(server->tls_conf));
