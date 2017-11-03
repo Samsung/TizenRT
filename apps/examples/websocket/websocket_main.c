@@ -66,7 +66,7 @@
 * @scenario		1. Start websocket server at TASH using the command "websocket server 0"
 *			2. Start websocket client at TASH using the command "websocket client [serverip] 80 \ 0 128 10".
 * @apicovered
-* @precondition		Connect to Wi-Fi. Both ARTIK051 server and ARTIK051 client should be in the same network.
+* @precondition		Connect to Wi-Fi. Both ARTIK05x server and ARTIK05x client should be in the same network.
 * @postcondition
 */
 
@@ -74,7 +74,7 @@
 * @testcase		websocket_wss_01
 * @brief		To run websocket example with TLS enabled. Test packet size and number can be modified as parameters.
 *			parameters:
-*			serverip: ARTIK051 websocket server IP address
+*			serverip: ARTIK05x websocket server IP address
 *			443: port number. Web Secure Socket(WSS) uses 443 port.
 *			NULL: URI address. Websocket doesn't have regulation for URI.
 *			0: TLS disabled
@@ -83,7 +83,7 @@
 * @scenario		1. Start websocket server at TASH using the command "websocket server 1"
 *			2. Start websocket client at TASH using the command "websocket client [serverip] 443 \ 1 128 10".
 * @apicovered
-* @precondition		Connect to Wi-Fi. Both ARTIK051 server and ARTIK051 client should be in the same network.
+* @precondition		Connect to Wi-Fi. Both ARTIK05x server and ARTIK05x client should be in the same network.
 * @postcondition
 */
 
@@ -93,7 +93,7 @@
 * @scenario		1. Start webserver at TASH using the command "webserver start".  Refer to webserver_main.c to run HTTP server.
 *			2. Start websocket client at TASH using this command "websocket client [serverip] 80 \ 0 128 10".
 * @apicovered
-* @precondition		Connect to Wi-Fi. Both ARTIK051 server and ARTIK051 client should be in the same network.
+* @precondition		Connect to Wi-Fi. Both ARTIK05x server and ARTIK05x client should be in the same network.
 * @postcondition
 */
 
@@ -103,7 +103,7 @@
 * @scenario		1. Start webserver at TASH using the command "webserver start".  Refer to webserver_main.c to run HTTP server.
 *			2. Start websocket client at TASH using this command "websocket client [serverip] 443 \ 1 128 10".
 * @apicovered
-* @precondition		Connect to Wi-Fi. Both ARTIK051 server and ARTIK051 client should be in the same network.
+* @precondition		Connect to Wi-Fi. Both ARTIK05x server and ARTIK05x client should be in the same network.
 * @postcondition
 */
 
