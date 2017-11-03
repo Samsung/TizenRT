@@ -2522,7 +2522,7 @@ int slsi_mlme_send_frame_data(struct slsi_dev *sdev, struct netif *dev, struct m
 {
 	struct netdev_vif *ndev_vif = netdev_priv(dev);
 	u16 host_tag = slsi_tx_host_tag(sdev);
-	u16 len = mbuf->len;
+	u16 len = mbuf->data_len;
 	int ret;
 
 #ifdef CONFIG_SCSC_ENABLE_PORT_CONTROL
@@ -2557,7 +2557,7 @@ int slsi_mlme_send_frame_data(struct slsi_dev *sdev, struct netif *dev, struct m
 	}
 #endif
 
-	len = mbuf->len;
+	len = mbuf->data_len;
 	(void)mbuf_push(mbuf, (fapi_sig_size(mlme_send_frame_req)));
 
 	/* fill the signal header */

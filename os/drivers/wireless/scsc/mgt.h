@@ -235,7 +235,7 @@ static inline struct slsi_peer *slsi_get_peer_from_qs(struct slsi_dev *sdev, str
 
 static inline bool slsi_is_proxy_arp_supported_on_ap(struct max_buff *assoc_resp_ie)
 {
-	const u8 *ie = slsi_80211_find_ie(SLSI_WLAN_EID_EXT_CAPABILITY, assoc_resp_ie->data, assoc_resp_ie->len);
+	const u8 *ie = slsi_80211_find_ie(SLSI_WLAN_EID_EXT_CAPABILITY, slsi_mbuf_get_data(assoc_resp_ie), assoc_resp_ie->data_len);
 
 	if ((ie) && (ie[1] > 1)) {
 		return ie[3] & 0x10;    /*0: eid, 1: len; 3: proxy arp is 12th bit */
