@@ -29,9 +29,11 @@
 #include <pthread.h>
 #include <cJSON.h>
 #include <artik_error.h>
+#include <artik_security.h>
 
 #include <apps/netutils/webserver/http_server.h>
 #include <apps/netutils/webserver/http_keyvalue_list.h>
+#include <tls/see_api.h>
 
 #include "artik_onboarding.h"
 
@@ -56,51 +58,6 @@
  * air.
  */
 //#define WEBSERVER_DISABLE_HTTPS
-
-#ifndef WEBSERVER_DISABLE_HTTPS
-/*
- * Self-signed certificate used when HTTPs webserver is enabled
- */
-const char artik_srv_crt_rsa[] =
-	"-----BEGIN CERTIFICATE-----\r\n"
-	"MIICUzCCAbwCCQDhLm/KWqdqXzANBgkqhkiG9w0BAQUFADBuMQswCQYDVQQGEwJV\r\n"
-	"UzETMBEGA1UECBMKQ2FsaWZvcm5pYTERMA8GA1UEBxMIU2FuIEpvc2UxEDAOBgNV\r\n"
-	"BAoTB1NhbXN1bmcxDTALBgNVBAsTBFNTSUMxFjAUBgNVBAMTDVNhbXN1bmcgQVJU\r\n"
-	"SUswHhcNMTcwMjI0MTczOTU3WhcNMTgwMjI0MTczOTU3WjBuMQswCQYDVQQGEwJV\r\n"
-	"UzETMBEGA1UECBMKQ2FsaWZvcm5pYTERMA8GA1UEBxMIU2FuIEpvc2UxEDAOBgNV\r\n"
-	"BAoTB1NhbXN1bmcxDTALBgNVBAsTBFNTSUMxFjAUBgNVBAMTDVNhbXN1bmcgQVJU\r\n"
-	"SUswgZ8wDQYJKoZIhvcNAQEBBQADgY0AMIGJAoGBAPbypbbwrZ4+KZ79JjIHZOBW\r\n"
-	"oxK5+0Cq+zsXdo09Ru1PYU7mGcJtfRsRNgg2TUhkMy6isK6YP+pINnkcPDW548iS\r\n"
-	"0x1NsjF4oIocmRR0c/iKqnT3BALQYES3Av9vMnkK8Psee/T+kN8J2g4crIA/Oy6A\r\n"
-	"b03g7jDpVgQQ8dDSpDTxAgMBAAEwDQYJKoZIhvcNAQEFBQADgYEAoFjdYkrRESsr\r\n"
-	"YHNHSxu7xRY22dIpJ1s6cKGU8vVuxtR3iw0Rfb2oNZYvAFALm16wc9Q3BW5YICuD\r\n"
-	"WRInSvLo3T8HXdSAh9EqBUlAWYcSu5+7859jAyfKXPX2kMIpr6FdZ/+YNaGhe2R+\r\n"
-	"L1uHzH4cRPDdToa/wBN6POuFr2Uha88=\r\n"
-	"-----END CERTIFICATE-----\r\n";
-
-const char artik_srv_key_rsa[] =
-	"-----BEGIN RSA PRIVATE KEY-----\r\n"
-	"MIICXQIBAAKBgQD28qW28K2ePime/SYyB2TgVqMSuftAqvs7F3aNPUbtT2FO5hnC\r\n"
-	"bX0bETYINk1IZDMuorCumD/qSDZ5HDw1uePIktMdTbIxeKCKHJkUdHP4iqp09wQC\r\n"
-	"0GBEtwL/bzJ5CvD7Hnv0/pDfCdoOHKyAPzsugG9N4O4w6VYEEPHQ0qQ08QIDAQAB\r\n"
-	"AoGBAKeAfODyrYEpfwfFhDPpCgaVHXWlSwRZNaGmT5aL2uE6t7FRqGVV6McETJcT\r\n"
-	"ZiZVONZIKfmzcZ8TLkfF3B1BInvj6gcTbNHY3ThD2+SscV2UM7Kffg0fvRb45Bvo\r\n"
-	"CN11N9dNhzrksFbHM/ugwM2W9kDIoDFT0/5f4XhlHTZ41O7FAkEA/NqsTR4IsQSf\r\n"
-	"w6VIyjJaYmPOKezOLFUo82JBSPJ5JcJ7Jqs1se4g57pjDWS3MY6rspPfk4NlnxYx\r\n"
-	"3Fkz2T778wJBAPoFKbFsYwbnliVxosNzhLqCig6yo+vKzPK2TiNduWIFazAVHUjx\r\n"
-	"Y6KMYTiABNrnhhZfjTdNGZ+KFJcwzM6q+IsCQFoscf4ek+LtTzyqmUbipjEofsGc\r\n"
-	"3foZdL03cSjesC2zKdAkhsWpsrpxUhnYrSxTQRAyhC1LUtZlR+rZNRBo0dkCQQD2\r\n"
-	"FkLVabOGxkeZD2J/MqK/2WD92oNRwMk9VIdQdB3WBzNbnky20TGaesXukMM2m4/1\r\n"
-	"UZNzjSXdTFG8BsJv4QTFAkBVuqG/aRs3yu0YEqP1WLmWLYeQPlCR851CZdcixafu\r\n"
-	"LJq+FUtKgkzb7qctTd0eS3yL2hEQN1vZrYEolSJqC7EI\r\n"
-	"-----END RSA PRIVATE KEY-----\r\n";
-
-/*
- * Public key hash for SSL pinning:
- *
- * "sha256//w1qMo+N6/Njby2tpIc/5tG4CIMiAeC4hH/X9jgOEFMM"
- */
-#endif
 
 static struct http_server_t *https_server;
 
@@ -448,11 +405,170 @@ static void put_akc_registration_callback(struct http_client_t *client, struct h
 	}
 }
 
+#ifndef WEBSERVER_DISABLE_HTTPS
+
+#define PEM_END_CRT             "-----END CERTIFICATE-----\n"
+
+static void http_tls_debug(void *ctx, int level, const char *file, int line,
+		const char *str)
+{
+	printf("%s:%04d: %s", file, line, str);
+}
+
+static artik_error ssl_init_context(struct http_server_t *server)
+{
+	char *server_cert = NULL;
+	char *ca_chain = NULL;
+	char *index = NULL;
+	const mbedtls_pk_info_t *pk_info;
+	artik_security_handle handle = NULL;
+	artik_security_module *security = NULL;
+	artik_error ret = S_OK;
+	int err = 0;
+
+	mbedtls_ssl_config_init(&server->tls_conf);
+	mbedtls_x509_crt_init(&server->tls_srvcert);
+	mbedtls_pk_init(&server->tls_pkey);
+	mbedtls_entropy_init(&server->tls_entropy);
+	mbedtls_ctr_drbg_init(&server->tls_ctr_drbg);
+	mbedtls_net_init(&server->tls_ctx);
+	mbedtls_ssl_cache_init(&server->tls_cache);
+
+#ifdef MBEDTLS_DEBUG_C
+	mbedtls_debug_set_threshold(0);
+#endif
+
+	/* Seed the Random Number Generator */
+	err = mbedtls_ctr_drbg_seed(&server->tls_ctr_drbg,
+			mbedtls_entropy_func, &server->tls_entropy, NULL, 0);
+	if (err) {
+		ret = E_BAD_ARGS;
+		goto exit;
+	}
+
+	/* Setup default config */
+	err = mbedtls_ssl_config_defaults(&server->tls_conf, MBEDTLS_SSL_IS_SERVER,
+			MBEDTLS_SSL_TRANSPORT_STREAM, MBEDTLS_SSL_PRESET_DEFAULT);
+	if (err) {
+		ret = E_BAD_ARGS;
+		goto exit;
+	}
+
+	mbedtls_ssl_conf_dbg(&server->tls_conf, http_tls_debug, stdout);
+	mbedtls_ssl_conf_rng(&server->tls_conf, mbedtls_ctr_drbg_random,
+			&server->tls_ctr_drbg);
+	mbedtls_ssl_conf_session_cache(&server->tls_conf, &server->tls_cache,
+			mbedtls_ssl_cache_get, mbedtls_ssl_cache_set);
+
+	security = (artik_security_module *)
+			artik_request_api_module("security");
+	if (!security) {
+		printf("Failed to request security module\n");
+		ret = E_BUSY;
+		goto exit;
+	}
+
+	ret = security->request(&handle);
+	if (ret != S_OK) {
+		printf("Failed to initialize security module (err=%d)\n", ret);
+		goto exit;
+	}
+
+	ret = security->get_certificate(handle, &server_cert);
+	if ((ret != S_OK) || !server_cert) {
+		printf("Failed to get certificate from SE (err=%d)\n", ret);
+		goto exit;
+	}
+
+	err = mbedtls_x509_crt_parse(&server->tls_srvcert,
+			(const unsigned char *)server_cert, strlen(server_cert) + 1);
+	if (err) {
+		printf("Failed to parse server certificate (err=%d)\n", err);
+		ret = E_BAD_ARGS;
+		goto exit;
+	}
+
+	ret = security->get_ca_chain(handle, &ca_chain);
+	if ((ret != S_OK) || !ca_chain) {
+		printf("Failed to get CA chain from SE (err=%d)\n", ret);
+		ret = E_BAD_ARGS;
+		goto exit;
+	}
+
+	/* Split after the first certificate to only keep the intermediate */
+	index = strstr(ca_chain, PEM_END_CRT);
+	if (!index) {
+		printf("Wrong certificate format\n");
+		ret = E_BAD_ARGS;
+		goto exit;
+	}
+
+	index += strlen(PEM_END_CRT);
+	*index = '\0';
+
+	err = mbedtls_x509_crt_parse(&server->tls_srvcert,
+			(const unsigned char *)ca_chain, strlen(ca_chain) + 1);
+	if (err) {
+		printf("Failed to parse server certificate (err=%d)\n", err);
+		ret = E_BAD_ARGS;
+		goto exit;
+	}
+
+	pk_info = mbedtls_pk_info_from_type(MBEDTLS_PK_ECKEY);
+	if (!pk_info) {
+		ret = E_BAD_ARGS;
+		goto exit;
+	}
+
+	err = mbedtls_pk_setup(&server->tls_pkey, pk_info);
+	if (err) {
+		printf("Failed to setup private key (err=%d)\n", err);
+		ret = E_BAD_ARGS;
+		goto exit;
+	}
+
+	((mbedtls_ecdsa_context *)(server->tls_pkey.pk_ctx))->grp.id =
+			MBEDTLS_ECP_DP_SECP256R1;
+	((mbedtls_ecdsa_context *)(server->tls_pkey.pk_ctx))->key_index =
+			FACTORYKEY_ARTIK_DEVICE;
+
+	err = mbedtls_ssl_conf_own_cert(&server->tls_conf, &server->tls_srvcert,
+			&server->tls_pkey);
+	if (err) {
+		printf("Failed to configure server certificate (err=%d)\n", err);
+		ret = E_BAD_ARGS;
+		goto exit;
+	}
+
+	mbedtls_ssl_conf_authmode(&server->tls_conf, MBEDTLS_SSL_VERIFY_NONE);
+	server->tls_init = 1;
+
+	if (http_tls_init(server, NULL)) {
+		printf("Failed to initialize SSL configuration\n");
+		http_server_release(&server);
+		ret = E_BUSY;
+		goto exit;
+	}
+
+exit:
+	if (handle)
+		security->release(handle);
+	if (security)
+		artik_release_api_module(security);
+	if (server_cert)
+		free(server_cert);
+	if (ca_chain)
+		free(ca_chain);
+
+	return S_OK;
+}
+#endif
+
 artik_error StartWebServer(bool start, enum ApiSet api_set)
 {
 	if (start) {
 #ifndef WEBSERVER_DISABLE_HTTPS
-		struct ssl_config_t ssl_config;
+		artik_error ret = S_OK;
 
 		https_server = http_server_init(443);
 #else
@@ -464,17 +580,11 @@ artik_error StartWebServer(bool start, enum ApiSet api_set)
 		}
 
 #ifndef WEBSERVER_DISABLE_HTTPS
-		memset(&ssl_config, 0, sizeof(ssl_config));
-		ssl_config.auth_mode = MBEDTLS_SSL_VERIFY_NONE;
-		ssl_config.dev_cert = (char *)artik_srv_crt_rsa;
-		ssl_config.dev_cert_len  = sizeof(artik_srv_crt_rsa);
-		ssl_config.private_key = (char *)artik_srv_key_rsa;
-		ssl_config.private_key_len = sizeof(artik_srv_key_rsa);
-
-		if (http_tls_init(https_server, &ssl_config)) {
-			printf("Failed to initialize SSL configuration\n");
+		ret = ssl_init_context(https_server);
+		if (ret != S_OK) {
+			printf("Failed to initialize SSL context\n");
 			http_server_release(&https_server);
-			return E_BUSY;
+			return ret;
 		}
 #endif
 		if (api_set & API_SET_WIFI) {
