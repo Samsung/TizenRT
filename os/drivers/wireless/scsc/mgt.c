@@ -663,7 +663,7 @@ void slsi_peer_update_assoc_req(struct slsi_dev *sdev, struct netif *dev, struct
 		mbuf_pull(mbuf, mgmt_hdr_len);
 
 		peer->assoc_ie = mbuf;
-		peer->qos_enabled = slsi_search_ies_for_qos_indicators(sdev, mbuf->data, mbuf->len);
+		peer->qos_enabled = slsi_search_ies_for_qos_indicators(sdev, slsi_mbuf_get_data(mbuf), mbuf->data_len);
 	}
 }
 
@@ -1138,13 +1138,13 @@ int slsi_send_gratuitous_arp(struct slsi_dev *sdev, struct netif *dev)
 
 	SLSI_NET_DBG2(dev, SLSI_T20_80211, "IP:%pI4\n", &ndev_vif->ipaddress);
 
-	arp = slsi_alloc_mbuf(sizeof(struct ethhdr) + arp_size);
+	arp = slsi_mbuf_alloc(sizeof(struct ethhdr) + arp_size);
 	if (WARN_ON(!arp)) {
 		return -ENOMEM;
 	}
 
 	/* The Ethernet header is accessed in the stack. */
-	mbuf_reset_mac_header(arp);
+	mbuf_set_mac_header(arp, 0);
 
 	/* Ethernet Header */
 	ehdr = (struct ethhdr *)mbuf_put(arp, sizeof(struct ethhdr));
@@ -1158,11 +1158,7 @@ int slsi_send_gratuitous_arp(struct slsi_dev *sdev, struct netif *dev)
 	memcpy(mbuf_put(arp, sizeof(ndev_vif->ipaddress)), &ndev_vif->ipaddress, sizeof(ndev_vif->ipaddress));
 	memset(mbuf_put(arp, ETH_ALEN), 0xFF, ETH_ALEN);
 	memcpy(mbuf_put(arp, sizeof(ndev_vif->ipaddress)), &ndev_vif->ipaddress, sizeof(ndev_vif->ipaddress));
-
-	//arp->dev = dev;
-	arp->protocol = ETH_P_ARP;
-//  arp->ip_summed = CHECKSUM_UNNECESSARY;
-	arp->queue_mapping = slsi_netif_get_peer_queue(0, 0);	/* Queueset 0 AC 0 */
+	arp->ac_queue = slsi_netif_get_peer_queue(0, 0); /* Queueset 0 AC 0 */
 
 	ret = slsi_tx_data(sdev, dev, arp);
 	slsi_kfree_mbuf(arp);

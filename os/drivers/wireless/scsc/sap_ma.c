@@ -84,21 +84,23 @@ static int slsi_rx_amsdu_deaggregate(struct netif *dev, struct max_buff *mbuf)
 	unsigned int msdu_len;
 	unsigned int subframe_len;
 	int padding;
+	u8 *mbuf_data;
 
 #ifdef CONFIG_SLSI_WLAN_STATS
 	struct netdev_vif *ndev_vif = netdev_priv(dev);
 	struct slsi_dev *sdev = ndev_vif->sdev;
 #endif
 
-	SLSI_NET_DBG3(dev, SLSI_RX, "A-MSDU received, length = %d\n", mbuf->len);
+	SLSI_NET_DBG3(dev, SLSI_RX, "A-MSDU received, length = %d\n", mbuf->data_len);
 
 	mbuf_pull(mbuf, fapi_get_siglen(mbuf));
 
-	while (mbuf->len > 0) {
-		msdu_len = (mbuf->data[ETH_ALEN * 2] << 8) | mbuf->data[(ETH_ALEN * 2) + 1];
+	mbuf_data = slsi_mbuf_get_data(mbuf);
+	while (mbuf->data_len > 0) {
+		msdu_len = (mbuf_data[ETH_ALEN * 2] << 8) | mbuf_data[(ETH_ALEN * 2) + 1];
 
-		if ((msdu_len > (ETH_DATA_LEN + LLC_SNAP_HDR_LEN)) || (msdu_len > mbuf->len) || (msdu_len < (ETH_ZLEN - (ETH_HLEN - LLC_SNAP_HDR_LEN))) || (mbuf->len < (ETH_ZLEN + LLC_SNAP_HDR_LEN))) {
-			SLSI_NET_ERR(dev, "Wrong MSDU length %d, mbuf length = %d\n", msdu_len, mbuf->len);
+		if ((msdu_len > (ETH_DATA_LEN + LLC_SNAP_HDR_LEN)) || (msdu_len > mbuf->data_len) || (msdu_len < (ETH_ZLEN - (ETH_HLEN - LLC_SNAP_HDR_LEN))) || (mbuf->data_len < (ETH_ZLEN + LLC_SNAP_HDR_LEN))) {
+			SLSI_NET_ERR(dev, "Wrong MSDU length %d, mbuf length = %d\n", msdu_len, mbuf->data_len);
 			slsi_kfree_mbuf(mbuf);
 			return -EINVAL;
 		}
@@ -106,7 +108,7 @@ static int slsi_rx_amsdu_deaggregate(struct netif *dev, struct max_buff *mbuf)
 		subframe_len = msdu_len + (2 * ETH_ALEN) + 2;
 
 		/* For the last subframe mbuf length and subframe length will be same */
-		if (mbuf->len == subframe_len) {
+		if (mbuf->data_len == subframe_len) {
 			/* There is no padding for last subframe */
 			padding = 0;
 		} else {
@@ -114,8 +116,8 @@ static int slsi_rx_amsdu_deaggregate(struct netif *dev, struct max_buff *mbuf)
 		}
 
 		/* Overwrite LLC+SNAP header with src & dest addr */
-		SLSI_ETHER_COPY(&mbuf->data[14], &mbuf->data[6]);
-		SLSI_ETHER_COPY(&mbuf->data[8], &mbuf->data[0]);
+		SLSI_ETHER_COPY(&mbuf_data[14], &mbuf_data[6]);
+		SLSI_ETHER_COPY(&mbuf_data[8], &mbuf_data[0]);
 
 		/* Remove 8 bytes of LLC+SNAP header */
 		mbuf_pull(mbuf, LLC_SNAP_HDR_LEN);
@@ -124,12 +126,12 @@ static int slsi_rx_amsdu_deaggregate(struct netif *dev, struct max_buff *mbuf)
 		SLSI_NET_DBG3(dev, SLSI_RX, "msdu_len = %d, subframe_len = %d, padding = %d\n", msdu_len, subframe_len, padding);
 
 		SLSI_INCR_DATA_PATH_STATS(sdev->dp_stats.rx_num_msdu_in_amsdu);
-		slsi_ethernetif_input(dev, mbuf->data, subframe_len);
+		slsi_ethernetif_input(dev, mbuf_data, subframe_len);
 
 		/* Move to the next subframe */
 		mbuf_pull(mbuf, (subframe_len + padding));
 
-		SLSI_NET_DBG3(dev, SLSI_RX, "mbuf->len = %d\n", mbuf->len);
+		SLSI_NET_DBG3(dev, SLSI_RX, "mbuf->data_len = %d\n", mbuf->data_len);
 	}
 
 	slsi_kfree_mbuf(mbuf);
@@ -194,7 +196,7 @@ static int slsi_rx_data_process_mbuf(struct slsi_dev *sdev, struct netif *dev, s
 	 * locally generated and should not be accounted in reception.
 	 */
 	if (ndev_vif->vif_type == FAPI_VIFTYPE_STATION) {
-		ehdr = (struct ethhdr *)(mbuf->data);
+		ehdr = (struct ethhdr *)(slsi_mbuf_get_data(mbuf));
 
 		if (is_multicast_ether_addr(ehdr->h_dest) && !compare_ether_addr(ehdr->h_source, dev->d_mac.ether_addr_octet)) {
 			SLSI_NET_DBG2(dev, SLSI_RX, "drop locally generated multicast frame relayed back by AP\n");
@@ -279,13 +281,13 @@ static void slsi_rx_performance_test(struct slsi_dev *sdev, struct netif *dev, s
 		slsi_rx_start_performance_test_timer(sdev);
 	}
 
-	if (mbuf->len < SLSI_RX_PERFORMANCE_PKT_LEN_THRESHOLD) {
-		slsi_ethernetif_input(dev, mbuf->data, mbuf->len);
+	if (mbuf->data_len < SLSI_RX_PERFORMANCE_PKT_LEN_THRESHOLD) {
+		slsi_ethernetif_input(dev, slsi_mbuf_get_data(mbuf), mbuf->data_len);
 	}
 
 	pthread_mutex_lock(&sdev->rx_perf.rx_perf_lock);
 	/* Update number of bits received */
-	sdev->rx_perf.num_bits_received += ((mbuf->len - ETH_HDRLEN - IPv4_HDRLEN - UDP_HDRLEN) * 8);
+	sdev->rx_perf.num_bits_received += ((mbuf->data_len - ETH_HDRLEN - IPv4_HDRLEN - UDP_HDRLEN) * 8);
 	pthread_mutex_unlock(&sdev->rx_perf.rx_perf_lock);
 }
 #endif
@@ -296,7 +298,7 @@ int slsi_rx_data(struct slsi_dev *sdev, struct netif *dev, struct max_buff *mbuf
 #ifdef CONFIG_SLSI_RX_PERFORMANCE_TEST
 		slsi_rx_performance_test(sdev, dev, mbuf);
 #else
-		slsi_ethernetif_input(dev, mbuf->data, mbuf->len);
+		slsi_ethernetif_input(dev, slsi_mbuf_get_data(mbuf), mbuf->data_len);
 #endif
 		slsi_kfree_mbuf(mbuf);
 	}
@@ -345,8 +347,8 @@ void slsi_rx_netdev_data_work(FAR void *arg)
 	SLSI_MUTEX_LOCK(ndev_vif->vif_mutex);
 
 #ifdef CONFIG_SLSI_WLAN_STATS
-	if (mbuf_queue_len(&w->queue) > sdev->dp_stats.rx_mbuf_q_max_len) {
-		sdev->dp_stats.rx_mbuf_q_max_len = mbuf_queue_len(&w->queue);
+	if (w->queue.queue_len > sdev->dp_stats.rx_mbuf_q_max_len) {
+		sdev->dp_stats.rx_mbuf_q_max_len = w->queue.queue_len;
 	}
 #endif
 
@@ -394,7 +396,7 @@ static int slsi_rx_queue_data(struct slsi_dev *sdev, struct max_buff *mbuf)
 	ndev_vif = netdev_priv(dev);
 
 	/* If the mbuf queue length has already reached maximum limit then drop the received packets */
-	if (mbuf_queue_len(&ndev_vif->rx_data.queue) >= SCSC_MAX_RX_MBUF_QUEUE_LEN) {
+	if (ndev_vif->rx_data.queue.queue_len >= SCSC_MAX_RX_MBUF_QUEUE_LEN) {
 		slsi_kfree_mbuf(mbuf);
 		SLSI_INCR_DATA_PATH_STATS(ndev_vif->sdev->dp_stats.rx_drop_mbuf_q_full);
 		return 0;

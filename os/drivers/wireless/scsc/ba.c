@@ -413,7 +413,7 @@ static void __slsi_rx_ba_stop(struct netif *dev, struct slsi_ba_session_rx *ba_s
 		if (ba_session_rx->buffer[i].active) {
 			if (flush) {
 				/* Drop the pending packet if the BA stop is triggered because of disconnection */
-				SLSI_NET_DBG1(dev, SLSI_RX_BA, "Drop pending reorder frame, len = %d\n", ba_session_rx->buffer[i].signal->len);
+				SLSI_NET_DBG1(dev, SLSI_RX_BA, "Drop pending reorder frame, len = %d\n", ba_session_rx->buffer[i].signal->data_len);
 				slsi_kfree_mbuf(ba_session_rx->buffer[i].signal);
 				SLSI_INCR_DATA_PATH_STATS(sdev->dp_stats.rx_drop_ba_stop);
 			} else {

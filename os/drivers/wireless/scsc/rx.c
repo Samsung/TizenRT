@@ -281,7 +281,7 @@ void slsi_rx_connected_ind(struct slsi_dev *sdev, struct netif *dev, struct max_
 			SLSI_NET_ERR(dev, "Peer (aid:%d) Not Found - Disconnect peer\n", aid);
 			goto exit_with_lock;
 		}
-		slsi_connect_indication(ndev_vif, peer->assoc_ie->data, peer->assoc_ie->len, NULL, 0, 0, ndev_vif->vif_type, peer->address);
+		slsi_connect_indication(ndev_vif, slsi_mbuf_get_data(peer->assoc_ie), peer->assoc_ie->data_len, NULL, 0, 0, ndev_vif->vif_type, peer->address);
 
 		if (ndev_vif->ap.privacy) {
 			peer->connected_state = SLSI_STA_CONN_STATE_DOING_KEY_CONFIG;
@@ -342,8 +342,8 @@ void slsi_rx_connect_ind(struct slsi_dev *sdev, struct netif *dev, struct max_bu
 		peer = slsi_get_peer_from_qs(sdev, dev, SLSI_STA_PEER_QUEUESET);
 		if (peer) {
 			if (peer->assoc_ie) {
-				assoc_ie = peer->assoc_ie->data;
-				assoc_ie_len = peer->assoc_ie->len;
+				assoc_ie = slsi_mbuf_get_data(peer->assoc_ie);
+				assoc_ie_len = peer->assoc_ie->data_len;
 			}
 
 			slsi_peer_update_assoc_rsp(sdev, dev, peer, mbuf);
@@ -351,8 +351,8 @@ void slsi_rx_connect_ind(struct slsi_dev *sdev, struct netif *dev, struct max_bu
 			mbuf = NULL;
 
 			if (peer->assoc_resp_ie) {
-				assoc_rsp_ie = peer->assoc_resp_ie->data;
-				assoc_rsp_ie_len = peer->assoc_resp_ie->len;
+				assoc_rsp_ie = slsi_mbuf_get_data(peer->assoc_resp_ie);
+				assoc_rsp_ie_len = peer->assoc_resp_ie->data_len;
 				ssid_ie = slsi_80211_find_ie(WLAN_EID_SSID, assoc_ie, assoc_ie_len);
 				if (ssid_ie != NULL) {
 					peer->ssid_len = ssid_ie[1];
@@ -762,41 +762,40 @@ else
 		mbuf_pull(mbuf, fapi_get_siglen(mbuf));
 
 		/* test for an overlength frame */
-		if (mbuf->len > (dev->mtu + ETH_HLEN)) {
+		if (mbuf->data_len > (dev->mtu + ETH_HLEN)) {
 			/* A bogus length ethfrm has been encap'd. */
 			/* Is someone trying an oflow attack? */
-			SLSI_WARN(sdev, "oversize frame (%d > %d)\n", mbuf->len, dev->mtu + ETH_HLEN);
+			SLSI_WARN(sdev, "oversize frame (%d > %d)\n", mbuf->data_len, dev->mtu + ETH_HLEN);
 			SLSI_INCR_DATA_PATH_STATS(sdev->dp_stats.rx_drop_large_frame);
 			goto exit;
 		}
 
 		SLSI_MUTEX_UNLOCK(ndev_vif->vif_mutex);
-		/*SLSI_DBG2(sdev, SLSI_MLME, "pass %u bytes up (proto:%d)\n", mbuf->len, ntohs(mbuf->protocol)); */
-		SLSI_DBG3(sdev, SLSI_RX, "pass %u bytes to local stack\n", mbuf->len);
-		dev->d_buf = mbuf->data;
-		dev->d_len = mbuf->len;
+		SLSI_DBG3(sdev, SLSI_RX, "pass %u bytes to local stack\n", mbuf->data_len);
+		dev->d_buf = slsi_mbuf_get_data(mbuf);
+		dev->d_len = mbuf->data_len;
 
 		if (ntohs(ehdr->h_proto) == ETH_P_PAE) {
 			SLSI_INCR_DATA_PATH_STATS(sdev->dp_stats.rx_num_eapol);
 			if (ndev_vif->vif_type == FAPI_VIFTYPE_STATION) {
 				SLSI_NET_DBG2(dev, SLSI_MLME, "Received eapol from AP\n");
 				mbuf_pull(mbuf, sizeof(*ehdr));
-				l2_packet_receive(ndev_vif->sdev->drv->ctx, ehdr->h_source, mbuf->data, mbuf->len);
+				l2_packet_receive(ndev_vif->sdev->drv->ctx, ehdr->h_source, slsi_mbuf_get_data(mbuf), mbuf->data_len);
 			}
 			if (ndev_vif->vif_type == FAPI_VIFTYPE_AP) {
 				union wpa_event_data event;
 				memset(&event, 0, sizeof(event));
 				SLSI_NET_DBG2(dev, SLSI_MLME, "Received eapol from STA\n");
 				mbuf_pull(mbuf, sizeof(*ehdr));
-				event.eapol_rx.data = mbuf->data;
-				event.eapol_rx.data_len = mbuf->len;
+				event.eapol_rx.data = slsi_mbuf_get_data(mbuf);
+				event.eapol_rx.data_len = mbuf->data_len;
 				event.eapol_rx.src = ehdr->h_source;
 				wpa_supplicant_event_send(ndev_vif->sdev->drv->ctx, EVENT_EAPOL_RX, &event);
 			}
 		} else {
 			SLSI_NET_DBG2(dev, SLSI_MLME, "sending non eapol\n");
 			SLSI_INCR_DATA_PATH_STATS(sdev->dp_stats.rx_num_mlme_dhcp);
-			slsi_ethernetif_input(dev, mbuf->data, mbuf->len);
+			slsi_ethernetif_input(dev, slsi_mbuf_get_data(mbuf), mbuf->data_len);
 		}
 		slsi_kfree_mbuf(mbuf);
 
