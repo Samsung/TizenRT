@@ -3,20 +3,20 @@
 # see misc/tools/kconfig-language.txt.
 #
 
-config EXAMPLES_SECURITY_API_TC
-	bool "Security API Test case"
+config EXAMPLES_SECURITY_TEST
+	bool "Security Test"
 	depends on TLS_WITH_SSS && SUPPORT_FULL_SECURITY && (ARCH_BOARD_ARTIK053S || ARCH_BOARD_ARTIK055S)
 	default n
 
-if EXAMPLES_SECURITY_API_TC
+if EXAMPLES_SECURITY_TEST
 
-config EXAMPLES_SECURITY_API_PROGNAME
+config EXAMPLES_SECURITY_TEST_PROGNAME
 	string "Program name"
-	default "security api selftest"
+	default "security selftest"
 	depends on BUILD_KERNEL
 
-endif # EXAMPLES_SECURITY_API_TC
+endif # EXAMPLES_SECURITY_TEST
 
 config USER_ENTRYPOINT
 	string
-	default "security_api_tc_main" if ENTRY_SECURITY_API_TC
+	default "security_test_main" if ENTRY_SECURITY_TEST

@@ -1,0 +1,3 @@
+config ENTRY_SECURITY_TEST
+	bool "Security Test"
+	depends on EXAMPLES_SECURITY_TEST

@@ -16,7 +16,7 @@
  *
  ****************************************************************************/
 /****************************************************************************
- * examples/security_api/security_api_tc_main.c
+ * examples/security_test/security_test_main.c
  *
  *   Copyright (C) 2016 SAMSUNG ELECTRONICS CO., LTD. All rights reserved.
  *   Author: Jisuu Kim <jisuu.kim@samsung.com>
@@ -70,9 +70,9 @@
 /*
  * Definition for handling pthread
  */
-#define SECURITY_API_TC_PRIORITY     100
-#define SECURITY_API_TC_STACK_SIZE   51200
-#define SECURITY_API_TC_SCHED_POLICY SCHED_RR
+#define SECURITY_TEST_PRIORITY     100
+#define SECURITY_TEST_STACK_SIZE   51200
+#define SECURITY_TEST_SCHED_POLICY SCHED_RR
 
 struct pthread_arg {
 	int argc;
@@ -1099,13 +1099,13 @@ exit:
 	return ret;
 }
 
-unsigned int g_cert_existance[1][2] = { {FACTORYKEY_ARTIK_CERT, 0}
+unsigned int g_cert_existence[1][2] = { {FACTORYKEY_ARTIK_CERT, 0}
 };
 
-unsigned int g_key_existance[1][2] = { {FACTORYKEY_ARTIK_DEVICE, 0}
+unsigned int g_key_existence[1][2] = { {FACTORYKEY_ARTIK_DEVICE, 0}
 };
 
-void print_existance(void)
+void print_existence(void)
 {
 	unsigned char cert[1][20] = { "ARTIK CERT" };
 
@@ -1114,7 +1114,7 @@ void print_existance(void)
 	int i;
 
 	for (i = 0; i < 1; i++) {
-		if (g_cert_existance[i][1]) {
+		if (g_cert_existence[i][1]) {
 			printf("%s", "[ O ]");
 		} else {
 			printf("%s", "[ X ]");
@@ -1122,7 +1122,7 @@ void print_existance(void)
 		printf(" %s\n", cert[i]);
 	}
 	for (i = 0; i < 1; i++) {
-		if (g_key_existance[i][1]) {
+		if (g_key_existence[i][1]) {
 			printf("%s", "[ O ]");
 		} else {
 			printf("%s", "[ X ]");
@@ -1131,31 +1131,31 @@ void print_existance(void)
 	}
 }
 
-void init_existance(void)
+void init_existence(void)
 {
 	int i;
 
 	for (i = 0; i < 1; i++) {
-		g_cert_existance[i][1] = 0;
+		g_cert_existence[i][1] = 0;
 	}
 	for (i = 0; i < 1; i++) {
-		g_key_existance[i][1] = 0;
+		g_key_existence[i][1] = 0;
 	}
 }
 
-void set_existance(unsigned int id)
+void set_existence(unsigned int id)
 {
 	int i;
 
 	for (i = 0; i < 1; i++) {
-		if (g_cert_existance[i][0] == id) {
-			g_cert_existance[i][1] = 1;
+		if (g_cert_existence[i][0] == id) {
+			g_cert_existence[i][1] = 1;
 			return;
 		}
 	}
 	for (i = 0; i < 1; i++) {
-		if (g_key_existance[i][0] == id) {
-			g_key_existance[i][1] = 1;
+		if (g_key_existence[i][0] == id) {
+			g_key_existence[i][1] = 1;
 			return;
 		}
 	}
@@ -1186,7 +1186,7 @@ void TC_see_factory_getcert(int debug_mode)
 			i++;
 			continue;
 		}
-		set_existance(cert[i].id);
+		set_existence(cert[i].id);
 		i++;
 		printf("success\n");
 	}
@@ -1272,7 +1272,7 @@ void TC_see_factory_ecctest(int debug_mode, unsigned int index, unsigned int cur
 	if (ret) {
 		printf("failed : %d\n", ret);
 	} else {
-		set_existance(index);
+		set_existence(index);
 	}
 }
 
@@ -1295,7 +1295,7 @@ void TC_see_factory_key_test(int debug_mode)
 	TC_see_factory_ecctest(debug_mode, FACTORYKEY_ARTIK_DEVICE, ARTIK_CURVE);
 }
 
-pthread_addr_t security_api_cb(void *args)
+pthread_addr_t security_test_cb(void *args)
 {
 	int i;
 	int test_result = 0;
@@ -1334,13 +1334,13 @@ pthread_addr_t security_api_cb(void *args)
 	}
 
 	if (factory_test) {
-		init_existance();
+		init_existence();
 		TC_see_factory_key_test(debug_mode);
 
 		printf("\n\n-----------------\n");
-		printf("Key existance\n");
+		printf("Key existence\n");
 		printf("-----------------\n");
-		print_existance();
+		print_existence();
 		printf("\n");
 		return 0;
 	}
@@ -1421,7 +1421,7 @@ pthread_addr_t security_api_cb(void *args)
 	return NULL;
 }
 
-int security_api_main(int argc, char **argv)
+int security_test_main(int argc, char **argv)
 {
 	pthread_t tid;
 	pthread_attr_t attr;
@@ -1440,25 +1440,25 @@ int security_api_main(int argc, char **argv)
 	}
 
 	/* 1. set a priority */
-	sparam.sched_priority = SECURITY_API_TC_PRIORITY;
+	sparam.sched_priority = SECURITY_TEST_PRIORITY;
 	r = pthread_attr_setschedparam(&attr, &sparam);
 	if (r != 0) {
 		printf("%s: pthread_attr_setschedparam failed, status=%d\n", __func__, r);
 	}
 
-	r = pthread_attr_setschedpolicy(&attr, SECURITY_API_TC_SCHED_POLICY);
+	r = pthread_attr_setschedpolicy(&attr, SECURITY_TEST_SCHED_POLICY);
 	if (r != 0) {
 		printf("%s: pthread_attr_setschedpolicy failed, status=%d\n", __func__, r);
 	}
 
 	/* 2. set a stacksize */
-	r = pthread_attr_setstacksize(&attr, SECURITY_API_TC_STACK_SIZE);
+	r = pthread_attr_setstacksize(&attr, SECURITY_TEST_STACK_SIZE);
 	if (r != 0) {
 		printf("%s: pthread_attr_setstacksize failed, status=%d\n", __func__, r);
 	}
 
 	/* 3. create pthread with entry function */
-	r = pthread_create(&tid, &attr, security_api_cb, (void *)&args);
+	r = pthread_create(&tid, &attr, security_test_cb, (void *)&args);
 	if (r != 0) {
 		printf("%s: pthread_create failed, status=%d\n", __func__, r);
 	}

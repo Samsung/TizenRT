@@ -22,12 +22,12 @@ include $(APPDIR)/Make.defs
 
 # built-in application info
 
-APPNAME = security_api
+APPNAME = security_test
 THREADEXEC = TASH_EXECMD_ASYNC
 
 ASRCS =
 CSRCS =
-MAINSRC = security_api_tc_main.c
+MAINSRC = security_test_main.c
 
 AOBJS = $(ASRCS:.S=$(OBJEXT))
 COBJS = $(CSRCS:.c=$(OBJEXT))
@@ -56,8 +56,8 @@ else
   INSTALL_DIR = $(BIN_DIR)
 endif
 
-CONFIG_EXAMPLES_SECURITY_API_PROGNAME ?= security_api$(EXEEXT)
-PROGNAME = $(CONFIG_EXAMPLES_SECURITY_API_PROGNAME)
+CONFIG_EXAMPLES_SECURITY_TEST_PROGNAME ?= security_test$(EXEEXT)
+PROGNAME = $(CONFIG_EXAMPLES_SECURITY_TEST_PROGNAME)
 
 ROOTDEPPATH = --dep-path .
 
@@ -91,7 +91,7 @@ install:
 
 endif
 
-ifeq ($(CONFIG_BUILTIN_APPS)$(CONFIG_EXAMPLES_SECURITY_API_TC),yy)
+ifeq ($(CONFIG_BUILTIN_APPS)$(CONFIG_EXAMPLES_SECURITY_TEST),yy)
 $(BUILTIN_REGISTRY)$(DELIM)$(APPNAME)_main.bdat: $(DEPCONFIG) Makefile
 	$(call REGISTER,$(APPNAME),$(APPNAME)_main,$(THREADEXEC))
 

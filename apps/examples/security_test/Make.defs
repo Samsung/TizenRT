@@ -16,6 +16,6 @@
 #
 ###########################################################################
 
-ifeq ($(CONFIG_EXAMPLES_SECURITY_API_TC),y)
-CONFIGURED_APPS += examples/security_api
+ifeq ($(CONFIG_EXAMPLES_SECURITY_TEST),y)
+CONFIGURED_APPS += examples/security_test
 endif
