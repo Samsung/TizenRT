@@ -20,6 +20,6 @@
         <execute name="flash" path="${PROJECT_PATH}/os" command="make download" os="linux" bit="all"></execute>
     </executors>
     <options>
-        <option>ALL</option>
+        <option desc="Flash all binaries and images">ALL</option>
     </options>
 </flash>
