@@ -78,12 +78,8 @@
  * CONFIG_ALC5658_INITVOLUME - The initial volume level in the range {0..1000}
  * CONFIG_ALC5658_INFLIGHT - Maximum number of buffers that the ALC5658 driver
  *   will send to the I2S driver before any have completed.
- * CONFIG_ALC5658_MSG_PRIO - Priority of messages sent to the ALC5658 worker
- *   thread.
  * CONFIG_ALC5658_BUFFER_SIZE - Preferred buffer size
  * CONFIG_ALC5658_NUM_BUFFERS - Preferred number of buffers
- * CONFIG_ALC5658_WORKER_STACKSIZE - Stack size to use when creating the the
- *   ALC5658 worker thread.
  * CONFIG_ALC5658_REGDUMP - Enable logic to dump all ALC5658 registers to
  *   the SYSLOG device.
  */
@@ -120,20 +116,12 @@
 #error CONFIG_ALC5658_INFLIGHT must fit in a uint8_t
 #endif
 
-#ifndef CONFIG_ALC5658_MSG_PRIO
-#define CONFIG_ALC5658_MSG_PRIO          1
-#endif
-
 #ifndef CONFIG_ALC5658_BUFFER_SIZE
 #define CONFIG_ALC5658_BUFFER_SIZE       2048
 #endif
 
 #ifndef CONFIG_ALC5658_NUM_BUFFERS
 #define CONFIG_ALC5658_NUM_BUFFERS       4
-#endif
-
-#ifndef CONFIG_ALC5658_WORKER_STACKSIZE
-#define CONFIG_ALC5658_WORKER_STACKSIZE  768
 #endif
 
 /* Helper macros ************************************************************/

@@ -63,21 +63,14 @@ config ALC5658_INITVOLUME
 config ALC5658_INFLIGHT
 	int "ALC5658 maximum in-flight audio buffers"
 	default 2
-	depends on AUDIO_DRIVER_SPECIFIC_BUFFERS
 
 config ALC5658_BUFFER_SIZE
 	int "ALC5658 preferred buffer size"
 	default 2048
-	depends on AUDIO_DRIVER_SPECIFIC_BUFFERS
 
 config ALC5658_NUM_BUFFERS
 	int "ALC5658 preferred number of buffers"
 	default 4
-	depends on AUDIO_DRIVER_SPECIFIC_BUFFERS
-
-config ALC5658_MSG_PRIO
-	int "ALC5658 message priority"
-	default 1
 
 config ALC5658_REGDUMP
 	bool "ALC5658 register dump"
