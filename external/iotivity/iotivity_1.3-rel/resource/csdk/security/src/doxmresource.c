@@ -1628,15 +1628,6 @@ static OCEntityHandlerResult HandleDoxmPostRequest(OCEntityHandlerRequest *ehReq
 #endif //MULTIPLE_OWNER
 #endif // defined(__WITH_DTLS__) || defined (__WITH_TLS__)
 
- #if defined(__WITH_DTLS__) || defined (__WITH_TLS__)
-    if (OIC_MANUFACTURER_CERTIFICATE == gDoxm->oxmSel ||
-        OIC_CON_MFG_CERT == gDoxm->oxmSel)
-    {
-        CAregisterPkixInfoHandler(GetPkixInfo);
-        CAregisterGetCredentialTypesHandler(InitCipherSuiteList);
-    }
-#endif // __WITH_DTLS__ or __WITH_TLS__
-
     // Update new state in persistent storage
     ehRet = HandleDoxmPostRequestUpdatePS(fACE);
 

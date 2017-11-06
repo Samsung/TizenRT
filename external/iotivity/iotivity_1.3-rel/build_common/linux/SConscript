@@ -5,7 +5,7 @@
 ##
 import os
 import subprocess
-from distutils.version import StrictVersion
+from distutils.version import LooseVersion
 
 Import('env')
 
@@ -32,15 +32,28 @@ env.AppendUnique(LIBS=['dl', 'pthread', 'uuid'])
 
 # The -Wno-error=missing-field-initializers is used due to a bug in versions
 # of gcc older than 5.0 see https://gcc.gnu.org/bugzilla/show_bug.cgi?id=36750
-# this bug causes structs initialized with {0} to generate missing-field-initializers
-# warning. This is a valid way to initialize a struct and was fixed in later versions.
+# this bug causes structs initialized with {0} to generate a
+# missing-field-initializers warning. This is a valid way to initialize
+# a struct and was fixed in later versions.
 # since gcc versions older than 5.0 are still used to build the code we do not
 # want to consider the missing-field-initializer warning.
 # The -Wno-missing-braces is also due to a bug using bracket initializers
 # https://gcc.gnu.org/bugzilla/show_bug.cgi?id=25137
 # it was also fixed in later versions of gcc.
-gcc_ver = subprocess.check_output([env['CC'], '-dumpversion'], stderr=subprocess.STDOUT)
-if StrictVersion(gcc_ver) < StrictVersion('5.0'):
+#
+# Note: starting with gcc7, -dumpversion returns a non-dotted version (just
+# the major), and this is invalid for distutils.version.StrictVersion. Use
+# LooseVersion for the check instead as it accepts a version like '7'
+# (bug IOT-2862).
+# Additionally, for Python 3, check_output() returns a binary string
+# which is a pain. To avoid decoding, use the new getoutput() method if
+# available. Since this does not exist in Py 2.X, use a try block.
+
+try:
+    gcc_ver = subprocess.getoutput('gcc -dumpversion').rstrip()
+except AttributeError:
+    gcc_ver = subprocess.check_output(['gcc', '-dumpversion'], stderr=subprocess.STDOUT).rstrip()
+if LooseVersion(gcc_ver) < LooseVersion('5.0'):
     env.AppendUnique(CFLAGS=['-Wno-missing-field-initializers'])
     env.AppendUnique(CCFLAGS=['-Wno-missing-braces'])
 
