@@ -42,10 +42,12 @@ static int logm_change_bufsize(int buflen)
 	}
 
 	/* Realloc new buffer with new length */
-	g_logm_rsvbuf = (char *)realloc(g_logm_rsvbuf, buflen);
-	if (!g_logm_rsvbuf) {
+	char *new_g_logm_rsvbuf = (char *)realloc(g_logm_rsvbuf, buflen);
+	if (new_g_logm_rsvbuf == NULL) {
+		wdbg("Realloc Fail\n");
 		return ERROR;
 	}
+	g_logm_rsvbuf = new_g_logm_rsvbuf;
 	memset(g_logm_rsvbuf, 0, buflen);
 
 	/* Reinitialize all  */
