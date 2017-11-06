@@ -198,9 +198,29 @@ you must modify partition_map.cfg matching the sizes in ARTIK053_FLASH_PART_LIST
 
 ## Configuration Sets
 
-will be updated
-
-#### nettest
-
-#### tash
-
+#### [audio](audio/README.md)
+This can be used to test audio functionality.
+#### [extra](extra/README.md)
+This can be used to use full functionality of Tizen RT on ARTIK053.
+#### [hello](hello/README.md)
+This provides simple hello world application including kernel.
+#### [iotivity](iotivity/README.md)
+This can be used to use Iotivity (OCF).
+#### [iotjs](iotjs/README.md)
+This can be used to use IoT.js
+#### [kernel_sample](kernel_sample/README.md)
+This can be used to test kernel functionality.
+#### [minimal](minimal/README.md)
+This can be used to use the minimal functionality of Tizen RT on ARTIK053.
+#### [nettest](nettest/README.md)
+This can be used to test network functionality.
+#### [st_things](st_things/README.md)
+This can be used to test Smart Things Things SDK functionality.
+#### [tash](tash/README.md)
+This can be used to use Tizen RT Shell(TASH).
+#### [tc](tc/README.md)
+This can be used to test database, file system, kernel, network functionality of Tizen RT on ARTIK053.
+#### [typical](typical/README.md)
+This can be used to use typical functionality of Tizen RT on ARTIK053.
+#### [wifi_test](wifi_test/README.md)
+This can be used to test wifi functionality of Tizen RT on ARTIK053.
