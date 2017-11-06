@@ -116,8 +116,6 @@ typedef struct {
 	int rssi;
 	connect_status_e status;
 	wifi_manager_mode_e mode;
-	wifi_manager_mode_e pre_mode;
-	wifi_manager_mode_e next_mode;
 } wifi_manager_info_s;
 
 /**
