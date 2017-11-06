@@ -99,6 +99,7 @@ static int smartfs_ioctl(FAR struct file *filep, int cmd, unsigned long arg);
 
 static int smartfs_sync(FAR struct file *filep);
 static int smartfs_dup(FAR const struct file *oldp, FAR struct file *newp);
+static int smartfs_fstat(FAR const struct file *filep, FAR struct stat *buf);
 
 static int smartfs_opendir(struct inode *mountpt, const char *relpath, struct fs_dirent_s *dir);
 static int smartfs_readdir(struct inode *mountpt, struct fs_dirent_s *dir);
@@ -112,6 +113,7 @@ static int smartfs_unlink(struct inode *mountpt, const char *relpath);
 static int smartfs_mkdir(struct inode *mountpt, const char *relpath, mode_t mode);
 static int smartfs_rmdir(struct inode *mountpt, const char *relpath);
 static int smartfs_rename(struct inode *mountpt, const char *oldrelpath, const char *newrelpath);
+static void smartfs_stat_common(FAR struct smartfs_mountpt_s *fs, FAR struct smartfs_entry_s *entry, FAR struct stat *buf);
 static int smartfs_stat(struct inode *mountpt, const char *relpath, struct stat *buf);
 
 static off_t smartfs_seek_internal(struct smartfs_mountpt_s *fs, struct smartfs_ofile_s *sf, off_t offset, int whence);
@@ -142,6 +144,7 @@ const struct mountpt_operations smartfs_operations = {
 
 	smartfs_sync,				/* sync */
 	smartfs_dup,				/* dup */
+	smartfs_fstat,				/* fstat */
 
 	smartfs_opendir,			/* opendir */
 	NULL,						/* closedir */
@@ -1283,6 +1286,40 @@ static int smartfs_dup(FAR const struct file *oldp, FAR struct file *newp)
 }
 
 /****************************************************************************
+ * Name: smartfs_fstat
+ *
+ * Description:
+ *   Obtain information about an open file associated with the file
+ *   descriptor 'fd', and will write it to the area pointed to by 'buf'.
+ *
+ ****************************************************************************/
+
+static int smartfs_fstat(FAR const struct file *filep, FAR struct stat *buf)
+{
+	FAR struct inode *inode;
+	FAR struct smartfs_mountpt_s *fs;
+	FAR struct smartfs_ofile_s *sf;
+
+	DEBUGASSERT(filep != NULL);
+	DEBUGASSERT(filep->f_priv != NULL && filep->f_inode != NULL);
+	DEBUGASSERT(buf != NULL);
+
+	/* Recover our private data from the struct file instance */
+	sf = filep->f_priv;
+	inode = filep->f_inode;
+
+	fs = inode->i_private;
+
+	/* Take the semaphore */
+	smartfs_semtake(fs);
+
+	/* Return information about the directory entry in the stat structure */
+	smartfs_stat_common(fs, &sf->entry, buf);
+	smartfs_semgive(fs);
+	return OK;
+}
+
+/****************************************************************************
  * Name: smartfs_opendir
  *
  * Description: Open a directory for read access
@@ -2127,6 +2164,38 @@ errout_with_semaphore:
 }
 
 /****************************************************************************
+ * Name: smartfs_stat_common
+ *
+ * Description:
+ *   Return information about a directory entry
+ *
+ ****************************************************************************/
+
+static void smartfs_stat_common(FAR struct smartfs_mountpt_s *fs,
+								FAR struct smartfs_entry_s *entry,
+								FAR struct stat *buf)
+{
+	/* Initialize the stat structure */
+	memset(buf, 0, sizeof(struct stat));
+	if (entry->firstsector == fs->fs_rootsector) {
+		/* It's directory name of the mount point */
+		buf->st_mode = S_IFDIR | S_IROTH | S_IRGRP | S_IRUSR | S_IWOTH |
+					   S_IWGRP | S_IWUSR;
+	} else {
+		buf->st_mode = entry->flags & 0xFFF;
+		if ((entry->flags & SMARTFS_DIRENT_TYPE) == SMARTFS_DIRENT_TYPE_DIR) {
+			buf->st_mode |= S_IFDIR;
+		} else {
+			buf->st_mode |= S_IFREG;
+		}
+
+		buf->st_size = entry->datlen;
+		buf->st_blksize = fs->fs_llformat.availbytes;
+		buf->st_blocks = (buf->st_size + buf->st_blksize - 1) / buf->st_blksize;
+	}
+}
+
+/****************************************************************************
  * Name: smartfs_stat
  *
  * Description: Return information about a file or directory
@@ -2144,6 +2213,7 @@ static int smartfs_stat(struct inode *mountpt, const char *relpath, struct stat 
 	/* Sanity checks */
 
 	DEBUGASSERT(mountpt && mountpt->i_private);
+	DEBUGASSERT(buf != NULL);
 
 	/* Get the mountpoint private data from the inode structure */
 
@@ -2160,26 +2230,7 @@ static int smartfs_stat(struct inode *mountpt, const char *relpath, struct stat 
 	}
 
 	/* Initialize the stat structure */
-
-	memset(buf, 0, sizeof(struct stat));
-	if (entry.firstsector == fs->fs_rootsector) {
-		/* It's directory name of the mount point */
-
-		buf->st_mode = S_IFDIR | S_IROTH | S_IRGRP | S_IRUSR | S_IWOTH | S_IWGRP | S_IWUSR;
-	} else {
-
-		buf->st_mode = entry.flags & 0xFFF;
-		if ((entry.flags & SMARTFS_DIRENT_TYPE) == SMARTFS_DIRENT_TYPE_DIR) {
-			buf->st_mode |= S_IFDIR;
-		} else {
-			buf->st_mode |= S_IFREG;
-		}
-	}
-	buf->st_size = entry.datlen;
-	buf->st_blksize = fs->fs_llformat.availbytes;
-	buf->st_blocks = (buf->st_size + buf->st_blksize - 1) / buf->st_blksize;
-	buf->st_atime = 0;
-	buf->st_ctime = 0;
+	smartfs_stat_common(fs, &entry, buf);
 
 	ret = OK;
 

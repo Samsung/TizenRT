@@ -68,68 +68,6 @@
  ****************************************************************************/
 
 /****************************************************************************
- * Name: statpseudo
- ****************************************************************************/
-
-static inline int statpseudo(FAR struct inode *inode, FAR struct stat *buf)
-{
-	/* Most of the stat entries just do not apply */
-
-	memset(buf, 0, sizeof(struct stat));
-
-	if (INODE_IS_SPECIAL(inode)) {
-#if defined(CONFIG_FS_NAMED_SEMAPHORES)
-		if (INODE_IS_NAMEDSEM(inode)) {
-			buf->st_mode = S_IFSEM;
-		} else
-#endif
-#if !defined(CONFIG_DISABLE_MQUEUE)
-		if (INODE_IS_MQUEUE(inode)) {
-			buf->st_mode = S_IFMQ;
-		} else
-#endif
-#if defined(CONFIG_FS_SHM)
-		if (INODE_IS_SHM(inode)) {
-			buf->st_mode | S_IFSHM;
-		} else
-#endif
-		{
-		}
-	} else if (inode->u.i_ops) {
-		if (inode->u.i_ops->read) {
-			buf->st_mode = S_IROTH | S_IRGRP | S_IRUSR;
-		}
-
-		if (inode->u.i_ops->write) {
-			buf->st_mode |= S_IWOTH | S_IWGRP | S_IWUSR;
-		}
-
-		if (INODE_IS_MOUNTPT(inode)) {
-			buf->st_mode |= S_IFDIR;
-		} else if (INODE_IS_BLOCK(inode)) {
-			/* What is it also has child inodes? */
-
-			buf->st_mode |= S_IFBLK;
-		} else {				/* if (INODE_IS_DRIVER(inode)) */
-
-			/* What is it if it also has child inodes? */
-
-			buf->st_mode |= S_IFCHR;
-		}
-	} else {
-		/* If it has no operations, then it must just be a intermediate
-		 * node in the inode tree.  It is something like a directory.
-		 * We'll say that all pseudo-directories are read-able but not
-		 * write-able.
-		 */
-
-		buf->st_mode |= S_IFDIR | S_IROTH | S_IRGRP | S_IRUSR;
-	}
-
-	return OK;
-}
-
-/****************************************************************************
  * Name: statroot
  ****************************************************************************/
 
@@ -218,7 +156,7 @@ int stat(FAR const char *path, FAR struct stat *buf)
 	{
 		/* The node is part of the root pseudo file system */
 
-		ret = statpseudo(inode, buf);
+		ret = inode_stat(inode, buf);
 	}
 
 	/* Check if the stat operation was successful */
@@ -240,4 +178,76 @@ errout_with_inode:
 errout:
 	set_errno(ret);
 	return ERROR;
+}
+
+/****************************************************************************
+ * Name: inode_stat
+ *
+ * Description:
+ *   The inode_stat() function will obtain information about an 'inode' in
+ *   the pseudo file system and will write it to the area pointed to by 'buf'.
+ *
+ *   The 'buf' argument is a pointer to a stat structure, as defined in
+ *   <sys/stat.h>, into which information is placed concerning the file.
+ *
+ * Input Parameters:
+ *   inode - The inode of interest
+ *   buf   - The caller provide location in which to return information about
+ *           the inode.
+ *
+ * Returned Value:
+ *   Zero (OK) returned on success.  Otherwise, a negated errno value is
+ *   returned to indicate the nature of the failure.
+ *
+ ****************************************************************************/
+
+int inode_stat(FAR struct inode *inode, FAR struct stat *buf)
+{
+	DEBUGASSERT(inode != NULL && buf != NULL);
+
+	memset(&buf, 0, sizeof(*buf));
+
+	if (INODE_IS_SPECIAL(inode)) {
+#if defined(CONFIG_FS_NAMED_SEMAPHORES)
+		if (INODE_IS_NAMEDSEM(inode)) {
+			buf->st_mode = S_IFSEM;
+		} else
+#endif
+#if !defined(CONFIG_DISABLE_MQUEUE)
+		if (INODE_IS_MQUEUE(inode)) {
+			buf->st_mode = S_IFMQ;
+		} else
+#endif
+		{
+		}
+	} else if (inode->u.i_ops != NULL) {
+		/* Determine read/write privileges based on the existence of read
+		 * and write methods.
+		 */
+		if (inode->u.i_ops->read) {
+			buf->st_mode = S_IROTH | S_IRGRP | S_IRUSR;
+		}
+		if (inode->u.i_ops->write) {
+			buf->st_mode |= S_IWOTH | S_IWGRP | S_IWUSR;
+		}
+		/* Determine the type of the inode */
+		if (INODE_IS_MOUNTPT(inode)) {
+			buf->st_mode |= S_IFDIR;
+		} else if (INODE_IS_BLOCK(inode)) {
+			/* What is if also has child inodes? */
+			buf->st_mode |= S_IFBLK;
+		} else /* if (INODE_IS_DRIVER(inode)) */ {
+			/* What is it if it also has child inodes? */
+			buf->st_mode |= S_IFCHR;
+		}
+	} else {
+		/* If it has no operations, then it must just be a intermediate
+		 * node in the inode tree. It is something like a directory.
+		 * We'll say that all pseudo-directories are read-able but not
+		 * write-able.
+		 */
+		buf->st_mode |= S_IFDIR | S_IROTH | S_IRGRP | S_IRUSR;
+	}
+
+	return OK;
 }
