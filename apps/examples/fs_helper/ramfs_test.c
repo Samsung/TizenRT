@@ -111,6 +111,7 @@ static int make_file(char *filename)
 
 	if (fwrite(in_string, BUFFER_SIZE, 1, fp) < 0) {
 		printf("Cannot write file %s\n", filename);
+		fclose(fp);
 		return -1;
 	}
 
