@@ -61,7 +61,6 @@ if [ ! -f tools/mkromfsimg.sh ]; then
   fi
 fi
 
-echo "Making romfs.img..."
 
 # Environmental stuff
 
@@ -70,10 +69,13 @@ buildpath=${topdir}/../build
 contentsdir=${topdir}/../tools/fs/contents
 romfsimg=${buildpath}/output/bin/romfs.img
 
-# Sanity checks
+if [ $# -gt 0 ]; then
+  contentsdir=${1}; shift
+fi
 
+# Sanity checks
 if [ ! -d "${contentsdir}" ]; then
-  echo "ERROR: Directory ${contentsdir} does not exist"
+  echo "$0 ERROR: Directory ${contentsdir} does not exist"
   exit 1
 fi
 
