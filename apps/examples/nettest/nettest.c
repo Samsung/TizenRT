@@ -145,12 +145,14 @@ uint32_t total_data;
 #define NETTEST_CLIENT_MODE 2
 #define NETTEST_PROTO_TCP "tcp"
 #define NETTEST_PROTO_UDP "udp"
+#define NETTEST_PROTO_BROADCAST "brc"
 #define NETTEST_PROTO_MULTICAST "mtc"
 
 typedef enum {
 	NT_NONE,
 	NT_TCP,
 	NT_UDP,
+	NT_BROADCAST,
 	NT_MULTICAST,
 } nettest_proto_e;
 
@@ -170,6 +172,7 @@ static void show_usage(void)
 	printf("\ttcp: TCP\n");
 	printf("\tudp: UDP\n");
 	printf("\tmtc: MULTICAST\n");
+	printf("\tbrc: BROADCAST\n");
 
 	printf("ADDRESS\n");
 	printf("\tAddress to bind if mode is server\n");
@@ -207,10 +210,56 @@ static void show_usage(void)
 	printf("\n\n");
 }
 
+
 /****************************************************************************
  * Public Functions
  ****************************************************************************/
 
+/* ------------------------------------------------------------ */
+/*                                                              */
+/* Send Broadcast example.                        */
+/*                                                              */
+/* ------------------------------------------------------------ */
+void broadcast_send(uint32_t num_packets, uint32_t sleep_time)
+{
+	int sock;
+	int is_broadcast = 1;
+	int res = -1;
+	struct sockaddr_in dest_addr;
+	const char databuf[] = "broadcast msg from TizenRT";
+
+	sock = socket(AF_INET, SOCK_DGRAM, 0);
+	if (sock == -1) {
+		printf("[BRCLIENT] socket create fail err(%d)\n", errno);
+		return;
+	}
+
+	res = setsockopt(sock, SOL_SOCKET, SO_BROADCAST, &is_broadcast, sizeof(is_broadcast));
+	if (res == -1) {
+		printf("[BRCLIENT] set socket option fail err(%d)\n", errno);
+		goto return_with_close;
+	}
+
+	dest_addr.sin_family = AF_INET;
+	dest_addr.sin_port = htons(g_app_target_port);
+	dest_addr.sin_addr.s_addr = inet_addr(g_app_target_addr);
+	int i = 1;
+	for (; i <= num_packets; i++) {
+		res = sendto(sock, databuf, sizeof(databuf), 0, (struct sockaddr *)&dest_addr, sizeof(dest_addr));
+		if (res <= 0) {
+			printf("[BRCLIENT] [ERR] sending datagram message (%d)", errno);
+			goto return_with_close;
+		}
+		printf("[BRCLIENT] sending broadcast message length (%d) number (%d)\n", sizeof(databuf), i);
+		if (sleep_time != 0) {
+			usleep(sleep_time);
+		}
+	}
+	printf("[BRCLIENT] Terminate broadcast sender after sending sufficient messages (%d)\n", num_packets);
+
+return_with_close:
+	close(sock);
+}
 
 /* ------------------------------------------------------------ */
 /*                                                              */
@@ -737,6 +786,8 @@ int nettest_main(int argc, char *argv[])
 		proto = NT_TCP;
 	} else if (!strncmp(argv[2], NETTEST_PROTO_UDP, strlen(NETTEST_PROTO_UDP) + 1)) {
 		proto = NT_UDP;
+	} else if (!strncmp(argv[2], NETTEST_PROTO_BROADCAST, strlen(NETTEST_PROTO_BROADCAST) + 1)) {
+		proto = NT_BROADCAST;
 	} else if (!strncmp(argv[2], NETTEST_PROTO_MULTICAST, strlen(NETTEST_PROTO_MULTICAST) + 1)) {
 		proto = NT_MULTICAST;
 	} else {
@@ -776,6 +827,8 @@ int nettest_main(int argc, char *argv[])
 			tcp_client_thread(num_packets_to_process, interval);
 		} else if (proto == NT_UDP) {
 			udp_client_thread(num_packets_to_process, interval);
+		} else if (proto == NT_BROADCAST) {
+			broadcast_send(num_packets_to_process, interval);
 		} else if (proto == NT_MULTICAST) {
 			if (argc != 8) {
 				goto err_with_input;
