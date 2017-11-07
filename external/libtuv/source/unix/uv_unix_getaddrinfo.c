@@ -220,10 +220,12 @@ int uv_getaddrinfo(uv_loop_t *loop, uv_getaddrinfo_t *req, uv_getaddrinfo_cb cb,
 
 	if (cb) {
 		uv__work_submit(loop, &req->work_req, uv__getaddrinfo_work, uv__getaddrinfo_done);
+		free(buf);
 		return 0;
 	} else {
 		uv__getaddrinfo_work(&req->work_req);
 		uv__getaddrinfo_done(&req->work_req, 0);
+		free(buf);
 		return req->retcode;
 	}
 }
