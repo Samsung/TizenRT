@@ -15,7 +15,7 @@ Don't call architecture codes from application directly. When protected build en
 ## Kernel & System
 1. [How to add new board](HowToAddnewBoard.md)
 2. How to use peripheral (will be updated)
-3. How to add static library (will be updated)
+3. [How to add static library](HowToAddStaticLibrary.md)
 
 ## File System
 Will be updated
