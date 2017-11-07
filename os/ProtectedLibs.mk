@@ -78,12 +78,6 @@ ifeq ($(CONFIG_HAVE_CXX),y)
 USERLIBS += $(LIBRARIES_DIR)$(DELIM)libcxx$(LIBEXT)
 endif
 
-# Add library for application support.
-
-ifneq ($(APPDIR),)
-USERLIBS += $(LIBRARIES_DIR)$(DELIM)libapps$(LIBEXT)
-endif
-
 # Add libraries for network support
 
 ifeq ($(CONFIG_NET),y)
@@ -138,6 +132,12 @@ TINYARALIBS += $(LIBRARIES_DIR)$(DELIM)libdrivers$(LIBEXT)
 endif
 else
 TINYARALIBS += $(LIBRARIES_DIR)$(DELIM)libfs$(LIBEXT) $(LIBRARIES_DIR)$(DELIM)libdrivers$(LIBEXT)
+endif
+
+# Add library for application support.
+
+ifneq ($(APPDIR),)
+USERLIBS += $(LIBRARIES_DIR)$(DELIM)libapps$(LIBEXT)
 endif
 
 EXPORTLIBS = $(USERLIBS)
