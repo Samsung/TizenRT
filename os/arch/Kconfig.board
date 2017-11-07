@@ -162,6 +162,11 @@ config BOARD_RAMDUMP_UART
 	---help---
 		If selected it will send the RAM dump via UART.
 
+config ROMFS_SOURCE_DIR
+    string "Source directory for ROMFS filesystem image"
+	---help---
+        ROMFS image would be built off this directory.
+        Useful together wit FS_ROMFS and *_AUTOMOUNT_ROMFS options.
 
 comment "Board-Specific Options"
 
