@@ -205,7 +205,7 @@ int inode_stat(FAR struct inode *inode, FAR struct stat *buf)
 {
 	DEBUGASSERT(inode != NULL && buf != NULL);
 
-	memset(&buf, 0, sizeof(*buf));
+	memset(buf, 0, sizeof(*buf));
 
 	if (INODE_IS_SPECIAL(inode)) {
 #if defined(CONFIG_FS_NAMED_SEMAPHORES)
