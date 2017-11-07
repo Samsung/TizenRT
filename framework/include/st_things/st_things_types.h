@@ -72,6 +72,8 @@ typedef struct _st_things_representation {
 
 	/**
      * @brief API for getting the value of string type property with a key.
+	 *
+	 * @details @b #include <st_things/st_things_types.h>
      * @remarks This API will return deep-copied string value as out parameter, so application must free it after use.
      * @param[in]  rep Instance of Representation.
      * @param[in]  key Property Name which represents the value.
@@ -83,6 +85,8 @@ typedef struct _st_things_representation {
 
 	/**
      * @brief API for getting the value of boolean type property with a key.
+	 *
+	 * @details @b #include <st_things/st_things_types.h>
      * @param[in]  rep Instance of Representation.
      * @param[in]  key Property Name which represents the value.
      * @param[out] value Bool value
@@ -93,6 +97,8 @@ typedef struct _st_things_representation {
 
 	/**
      * @brief API for getting the value of integer type property with a key.
+	 *
+	 * @details @b #include <st_things/st_things_types.h>
      * @param[in]  rep Instance of Representation.
      * @param[in]  key Property Name which represents the value.
      * @param[out] value Integer value
@@ -103,6 +109,8 @@ typedef struct _st_things_representation {
 
 	/**
      * @brief API for getting the value of double type property with a key.
+	 *
+	 * @details @b #include <st_things/st_things_types.h>
      * @param[in]  rep Instance of Representation.
      * @param[in]  key Property Name which represents the value.
      * @param[out] value Double value
@@ -113,6 +121,8 @@ typedef struct _st_things_representation {
 
 	/**
      * @brief API for getting the value of byte array type property with a key.
+	 *
+	 * @details @b #include <st_things/st_things_types.h>
      * @remarks This API will return deep-copied byte value as out parameter, so application must free it after use.
      * @param[in]  rep Instance of Representation.
      * @param[in]  key Property Name which represents the value.
@@ -125,6 +135,8 @@ typedef struct _st_things_representation {
 
 	/**
      * @brief API for getting the value of object type property with a key.
+	 *
+	 * @details @b #include <st_things/st_things_types.h>
      * @remarks This API will return deep-copied object value as out parameter, so application must free it after use.\n
      *          To free an object, st_things_destroy_representation_inst() in st_things.h should be used.
      * @param[in]  rep Instance of Representation.
@@ -137,6 +149,8 @@ typedef struct _st_things_representation {
 
 	/**
      * @brief API for setting the value of string type property with a key.
+	 *
+	 * @details @b #include <st_things/st_things_types.h>
      * @remarks This API will deep-copy the string value inside, so application still has an ownership of memory for the string value.
      * @param[in]  rep Instance of Representation.
      * @param[in]  key Property Name which will represent the value.
@@ -148,6 +162,8 @@ typedef struct _st_things_representation {
 
 	/**
      * @brief API for setting the value of boolean type property with a key.
+	 *
+	 * @details @b #include <st_things/st_things_types.h>
      * @param[in]  rep Instance of Representation.
      * @param[in]  key Property Name which will represent the value.
      * @param[in]  value Bool value.
@@ -158,6 +174,8 @@ typedef struct _st_things_representation {
 
 	/**
      * @brief API for setting the value of integer type property with a key.
+	 *
+	 * @details @b #include <st_things/st_things_types.h>
      * @param[in]  rep Instance of Representation.
      * @param[in]  key Property Name which will represent the value.
      * @param[in]  value Integer value.
@@ -168,6 +186,8 @@ typedef struct _st_things_representation {
 
 	/**
      * @brief API for setting the value of double type property with a key.
+	 *
+	 * @details @b #include <st_things/st_things_types.h>
      * @param[in]  rep Instance of Representation.
      * @param[in]  key Property Name which will represent the value.
      * @param[in]  value Double value.
@@ -178,6 +198,8 @@ typedef struct _st_things_representation {
 
 	/**
      * @brief API for setting the value of byte array type property with a key.
+	 *
+	 * @details @b #include <st_things/st_things_types.h>
      * @remarks This API will deep-copy the byte value inside, so application still has an ownership of memory for the byte value.
      * @param[in]  rep Instance of Representation.
      * @param[in]  key Property Name which will represent the value.
@@ -190,6 +212,8 @@ typedef struct _st_things_representation {
 
 	/**
      * @brief API for setting the value of object type property with a key.
+	 *
+	 * @details @b #include <st_things/st_things_types.h>
      * @remarks This API will deep-copy the object value inside, so application still has an ownership of memory for the object value.
      * @param[in]  rep Instance of Representation.
      * @param[in]  key Property Name which will represent the value.
@@ -201,6 +225,8 @@ typedef struct _st_things_representation {
 
 	/**
      * @brief API for getting the value of string array type property with a key.
+	 *
+	 * @details @b #include <st_things/st_things_types.h>
      * @remarks This API will return deep-copied array value as out parameter, so application must free it after use.
      * @param[in]  rep Instance of Representation.
      * @param[in]  key Property Name which will represent the array type of value.
@@ -213,6 +239,8 @@ typedef struct _st_things_representation {
 
 	/**
      * @brief API for getting the value of integer array type property with a key.
+	 *
+	 * @details @b #include <st_things/st_things_types.h>
      * @remarks This API will return deep-copied array value as out parameter, so application must free it after use.
      * @param[in]  rep Instance of Representation.
      * @param[in]  key Property Name which will represent the array type of value.
@@ -225,6 +253,8 @@ typedef struct _st_things_representation {
 
 	/**
      * @brief API for getting the value of double array type property with a key.
+	 *
+	 * @details @b #include <st_things/st_things_types.h>
      * @remarks This API will return deep-copied array value as out parameter, so application must free it after use.
      * @param[in]  rep Instance of Representation.
      * @param[in]  key Property Name which will represent the array type of value.
@@ -237,6 +267,8 @@ typedef struct _st_things_representation {
 
 	/**
      * @brief API for getting the value of object array type property with a key.
+	 *
+	 * @details @b #include <st_things/st_things_types.h>
      * @remarks This API will return deep-copied array value as out parameter, so application must free it after use.\n
      *          To free each object in array, st_things_destroy_representation_inst() in st_things.h should be used.
      * @param[in]  rep Instance of Representation.
@@ -250,6 +282,8 @@ typedef struct _st_things_representation {
 
 	/**
      * @brief API for setting the value of string array type property with a key.
+	 *
+	 * @details @b #include <st_things/st_things_types.h>
      * @remarks This API will deep-copy the array value inside, so application still has an ownership of memory for the array value.
      * @param[in]  rep Instance of Representation.
      * @param[in]  key Property Name which represents the value.
@@ -262,6 +296,8 @@ typedef struct _st_things_representation {
 
 	/**
      * @brief API for setting the value of integer array type property with a key.
+	 *
+	 * @details @b #include <st_things/st_things_types.h>
      * @remarks This API will deep-copy the array value inside, so application still has an ownership of memory for the array value.
      * @param[in]  rep Instance of Representation.
      * @param[in]  key Property Name which represents the value.
@@ -274,6 +310,8 @@ typedef struct _st_things_representation {
 
 	/**
      * @brief API for setting the value of double array type property with a key.
+	 *
+	 * @details @b #include <st_things/st_things_types.h>
      * @remarks This API will deep-copy the array value inside, so application still has an ownership of memory for the array value.
      * @param[in]  rep Instance of Representation.
      * @param[in]  key Property Name which represents the value.
@@ -286,6 +324,8 @@ typedef struct _st_things_representation {
 
 	/**
      * @brief API for setting the value of object array type property with a key.
+	 *
+	 * @details @b #include <st_things/st_things_types.h>
      * @remarks This API will deep-copy the array value inside, so application still has an ownership of memory for the array value.
      * @param[in]  rep Instance of Representation.
      * @param[in]  key Property Name which represents the value.
@@ -309,6 +349,8 @@ typedef struct _st_things_get_request_message {
 
 	/**
      * @brief API for getting the value of a specific query from the query parameters of the request.
+	 *
+	 * @details @b #include <st_things/st_things_types.h>
      * @param[in]  req_msg Instance of get request message.
      * @param[in]  key Name of the query.(ex: key1, key2, etc)
      * @param[out] value Value of the query.(value1, value2, etc)
@@ -319,6 +361,8 @@ typedef struct _st_things_get_request_message {
 
 	/**
      * @brief API for checking whether the request has a specific property key or not.
+	 *
+	 * @details @b #include <st_things/st_things_types.h>
      * @param[in]  req_msg Instance of get request message.
      * @param[in]  key Name of the property.
      * @return @c true if the property key exists, otherwise @c false
@@ -339,6 +383,8 @@ typedef struct _st_things_set_request_message {
 
 	/**
      * @brief API for getting the value of a specific query from the query parameters of the request.
+	 *
+	 * @details @b #include <st_things/st_things_types.h>
      * @param[in]  req_msg Instance of request message.
      * @param[in]  key Name of the query.(ex: key1, key2, etc)
      * @param[out] value Value of the query.(value1, value2, etc)
