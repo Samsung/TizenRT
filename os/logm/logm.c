@@ -88,6 +88,18 @@ int logm_internal(int flag, int indx, int priority, const char *fmt, va_list ap)
 		&& flag == LOGM_NORMAL && !up_interrupt_context()) {
 
 		flags = irqsave();
+#if defined(CONFIG_LOGM_SYNCHRONOUS) && (CONFIG_LOGM_TIMEOUT_MS != 0)
+#if CONFIG_LOGM_TIMEOUT_MS > 0
+		int count = (CONFIG_LOGM_TIMEOUT_MS + 9) / 10;
+#else
+		int count = -1;
+#endif
+		while (LOGM_STATUS(LOGM_BUFFER_OVERFLOW) && count--) {
+			irqrestore(flags);
+			usleep(10000);
+			flags = irqsave();
+		}
+#endif /* CONFIG_LOGM_SYNCHRONOUS */
 
 		if (LOGM_STATUS(LOGM_BUFFER_OVERFLOW)) {
 			g_logm_dropmsg_count++;

@@ -24,6 +24,23 @@ config LOGM_TIMESTAMP
 	bool "Prepend timestamp to message"
 	default n
 
+config LOGM_SYNCHRONOUS
+	bool "Stall logging thread instead of dropping log messages"
+	default n
+	---help---
+		When LOGM_SYNCHRONOUS is enabled, logm would wait for space in log
+		buffer before discarding an overflowing log message.
+
+config LOGM_TIMEOUT_MS
+	int "Max delay logging thread would wait before dropping a message"
+	default -1
+	depends on LOGM_SYNCHRONOUS
+	---help---
+		When LOGM_SYNCHRONOUS is enabled, this option defines how
+		long (in ms) a thread would wait for space in logging buffer.
+		0 is equivalent to no wait, <0 waits (almost) indefinitely.
+		See also LOGM_PRINT_INTERVAL.
+
 config LOGM_BUFFER_SIZE
 	int "Logm Buffer size"
 	default 10240
