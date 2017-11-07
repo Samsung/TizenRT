@@ -246,8 +246,9 @@ void broadcast_send(uint32_t num_packets, uint32_t sleep_time)
 	int i = 1;
 	for (; i <= num_packets; i++) {
 		res = sendto(sock, databuf, sizeof(databuf), 0, (struct sockaddr *)&dest_addr, sizeof(dest_addr));
-		if (res < 0) {
+		if (res <= 0) {
 			printf("[BRCLIENT] [ERR] sending datagram message (%d)", errno);
+			goto return_with_close;
 		}
 		printf("[BRCLIENT] sending broadcast message length (%d) number (%d)\n", sizeof(databuf), i);
 		if (sleep_time != 0) {
