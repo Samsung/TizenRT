@@ -105,6 +105,9 @@ coap_free_subscription(coap_subscription_t *subscription)
     }                                   \
   }
 
+#ifdef __TIZENRT__
+static
+#endif
 int match(const str *text, const str *pattern, int match_prefix, int match_substring)
 {
     assert(text);
