@@ -60,6 +60,8 @@ config AUDIO_DRIVER_SPECIFIC_BUFFERS
 
 endmenu # Audio Buffer Configuration
 
+source "$FRAMEWORK_DIR/src/mediaplayer/Kconfig"
+
 config AUDIO_MULTI_CARD
 	bool "Registering audio device as different devices for capture and playback"
 	default n

@@ -51,6 +51,9 @@ endif
 
 ifeq ($(CONFIG_AUDIO), y)
 include src$(DELIM)tinyalsa$(DELIM)Make.defs
+ifeq ($(CONFIG_AUDIO_MEDIAPLAYER), y)
+include src$(DELIM)mediaplayer$(DELIM)Make.defs
+endif
 endif
 
 AOBJS = $(ASRCS:.S=$(OBJEXT))
