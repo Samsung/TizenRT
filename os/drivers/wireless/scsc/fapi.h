@@ -2335,7 +2335,7 @@ struct fapi_signal {
 
 static inline struct max_buff *fapi_alloc_f(size_t sig_size, size_t data_size, u16 id, u16 vif, const char *file, int line)
 {
-	struct max_buff *mbuf = slsi_alloc_mbuf_f(sig_size + data_size, file, line);
+	struct max_buff *mbuf = slsi_mbuf_alloc(sig_size + data_size);
 	struct fapi_vif_signal_header *header;
 
 	WARN_ON(sig_size < sizeof(struct fapi_signal_header));
@@ -2343,9 +2343,8 @@ static inline struct max_buff *fapi_alloc_f(size_t sig_size, size_t data_size, u
 		return NULL;
 	}
 
-	slsi_mbuf_cb_init(mbuf)->sig_length = sig_size;
-	slsi_mbuf_cb_get(mbuf)->data_length = sig_size;
-
+	mbuf->fapi.sig_length = sig_size;
+	mbuf->fapi.data_length = sig_size;
 	header = (struct fapi_vif_signal_header *)mbuf_put(mbuf, sig_size);
 	header->id = cpu_to_le16(id);
 	header->receiver_pid = 0;
@@ -2356,28 +2355,28 @@ static inline struct max_buff *fapi_alloc_f(size_t sig_size, size_t data_size, u
 }
 #define fapi_sig_size(mp_name)                  ((u16)offsetof(struct fapi_signal, u.mp_name.dr))
 #define fapi_alloc(mp_name, mp_id, mp_vif, mp_datalen) fapi_alloc_f(fapi_sig_size(mp_name), mp_datalen, mp_id, mp_vif, __FILE__, __LINE__)
-#define fapi_get_buff(mp_mbuf, mp_name) (((struct fapi_signal *)(mp_mbuf)->data)->mp_name)
-#define fapi_get_u16(mp_mbuf, mp_name) le16_to_cpu(((struct fapi_signal *)(mp_mbuf)->data)->mp_name)
-#define fapi_get_u32(mp_mbuf, mp_name) le32_to_cpu(((struct fapi_signal *)(mp_mbuf)->data)->mp_name)
-#define fapi_set_u16(mp_mbuf, mp_name, mp_value) (((struct fapi_signal *)(mp_mbuf)->data)->mp_name = cpu_to_le16(mp_value))
-#define fapi_set_u32(mp_mbuf, mp_name, mp_value) (((struct fapi_signal *)(mp_mbuf)->data)->mp_name = cpu_to_le32(mp_value))
-#define fapi_get_s16(mp_mbuf, mp_name) ((s16)le16_to_cpu(((struct fapi_signal *)(mp_mbuf)->data)->mp_name))
-#define fapi_get_s32(mp_mbuf, mp_name) ((s32)le32_to_cpu(((struct fapi_signal *)(mp_mbuf)->data)->mp_name))
-#define fapi_set_s16(mp_mbuf, mp_name, mp_value) (((struct fapi_signal *)(mp_mbuf)->data)->mp_name = cpu_to_le16((u16)mp_value))
-#define fapi_set_s32(mp_mbuf, mp_name, mp_value) (((struct fapi_signal *)(mp_mbuf)->data)->mp_name = cpu_to_le32((u32)mp_value))
-#define fapi_set_memcpy(mp_mbuf, mp_name, mp_value) memcpy(((struct fapi_signal *)(mp_mbuf)->data)->mp_name, mp_value, sizeof(((struct fapi_signal *)(mp_mbuf)->data)->mp_name))
-#define fapi_set_memset(mp_mbuf, mp_name, mp_value) memset(((struct fapi_signal *)(mp_mbuf)->data)->mp_name, mp_value, sizeof(((struct fapi_signal *)(mp_mbuf)->data)->mp_name))
+#define fapi_get_buff(mp_mbuf, mp_name) (((struct fapi_signal *)slsi_mbuf_get_data(mp_mbuf))->mp_name)
+#define fapi_get_u16(mp_mbuf, mp_name) le16_to_cpu(((struct fapi_signal *)slsi_mbuf_get_data(mp_mbuf))->mp_name)
+#define fapi_get_u32(mp_mbuf, mp_name) le32_to_cpu(((struct fapi_signal *)slsi_mbuf_get_data(mp_mbuf))->mp_name)
+#define fapi_set_u16(mp_mbuf, mp_name, mp_value) (((struct fapi_signal *)slsi_mbuf_get_data(mp_mbuf))->mp_name = cpu_to_le16(mp_value))
+#define fapi_set_u32(mp_mbuf, mp_name, mp_value) (((struct fapi_signal *)slsi_mbuf_get_data(mp_mbuf))->mp_name = cpu_to_le32(mp_value))
+#define fapi_get_s16(mp_mbuf, mp_name) ((s16)le16_to_cpu(((struct fapi_signal *)slsi_mbuf_get_data(mp_mbuf))->mp_name))
+#define fapi_get_s32(mp_mbuf, mp_name) ((s32)le32_to_cpu(((struct fapi_signal *)slsi_mbuf_get_data(mp_mbuf))->mp_name))
+#define fapi_set_s16(mp_mbuf, mp_name, mp_value) (((struct fapi_signal *)slsi_mbuf_get_data(mp_mbuf))->mp_name = cpu_to_le16((u16)mp_value))
+#define fapi_set_s32(mp_mbuf, mp_name, mp_value) (((struct fapi_signal *)slsi_mbuf_get_data(mp_mbuf))->mp_name = cpu_to_le32((u32)mp_value))
+#define fapi_set_memcpy(mp_mbuf, mp_name, mp_value) memcpy(((struct fapi_signal *)slsi_mbuf_get_data(mp_mbuf))->mp_name, mp_value, sizeof(((struct fapi_signal *)slsi_mbuf_get_data(mp_mbuf))->mp_name))
+#define fapi_set_memset(mp_mbuf, mp_name, mp_value) memset(((struct fapi_signal *)slsi_mbuf_get_data(mp_mbuf))->mp_name, mp_value, sizeof(((struct fapi_signal *)slsi_mbuf_get_data(mp_mbuf))->mp_name))
 /* Helper to get and set high/low 16 bits from u32 signals */
 #define fapi_get_high16_u32(mp_mbuf, mp_name) ((fapi_get_u32((mp_mbuf), mp_name) & 0xffff0000) >> 16)
 #define fapi_set_high16_u32(mp_mbuf, mp_name, mp_value) fapi_set_u32((mp_mbuf), mp_name, (fapi_get_u32((mp_mbuf), mp_name) & 0xffff) | ((mp_value) << 16))
 #define fapi_get_low16_u32(mp_mbuf, mp_name) (fapi_get_u32((mp_mbuf), mp_name) & 0xffff)
 #define fapi_set_low16_u32(mp_mbuf, mp_name, mp_value) fapi_set_u32((mp_mbuf), mp_name, (fapi_get_u32((mp_mbuf), mp_name) & 0xffff0000) | (mp_value))
 /* Helper to get signal and data */
-#define fapi_get_sigid(mp_mbuf) le16_to_cpu(((struct fapi_signal *)(mp_mbuf)->data)->id)
-#define fapi_get_siglen(mp_mbuf) (slsi_mbuf_cb_get(mp_mbuf)->sig_length)
-#define fapi_get_datalen(mp_mbuf) (slsi_mbuf_cb_get(mp_mbuf)->data_length - slsi_mbuf_cb_get(mp_mbuf)->sig_length)
-#define fapi_get_data(mp_mbuf) (mp_mbuf->data + fapi_get_siglen(mp_mbuf))
-#define fapi_get_vif(mp_mbuf) le16_to_cpu(((struct fapi_vif_signal_header *)(mp_mbuf)->data)->vif)
+#define fapi_get_sigid(mp_mbuf) le16_to_cpu(((struct fapi_signal *)slsi_mbuf_get_data(mp_mbuf))->id)
+#define fapi_get_siglen(mp_mbuf) (mp_mbuf->fapi.sig_length)
+#define fapi_get_datalen(mp_mbuf) (mp_mbuf->fapi.data_length - mp_mbuf->fapi.sig_length)
+#define fapi_get_data(mp_mbuf) (slsi_mbuf_get_data(mp_mbuf) + fapi_get_siglen(mp_mbuf))
+#define fapi_get_vif(mp_mbuf) le16_to_cpu(((struct fapi_vif_signal_header *)slsi_mbuf_get_data(mp_mbuf))->vif)
 /* Helper to get the struct slsi_80211_mgmt from the data */
 #define fapi_get_mgmt(mp_mbuf) ((struct slsi_80211_mgmt *)fapi_get_data(mp_mbuf))
 #define fapi_get_mgmtlen(mp_mbuf) fapi_get_datalen(mp_mbuf)
@@ -2385,12 +2384,13 @@ static inline u8 *fapi_append_data(struct max_buff *mbuf, const u8 *data, size_t
 {
 	u8 *p;
 
-	if (WARN_ON(mbuf_tailroom(mbuf) < data_len)) {
+	/* Check if enough space is available at the tail of mbuf */
+	if (WARN_ON((mbuf->buffer_len - (mbuf->data_offset + mbuf->data_len)) < data_len)) {
 		return NULL;
 	}
 
 	p = mbuf_put(mbuf, data_len);
-	slsi_mbuf_cb_get(mbuf)->data_length += data_len;
+	mbuf->fapi.data_length += data_len;
 	if (data) {
 		memcpy(p, data, data_len);
 	}

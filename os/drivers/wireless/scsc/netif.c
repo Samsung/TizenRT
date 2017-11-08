@@ -169,18 +169,18 @@ static bool slsi_net_downgrade_ac(struct netif *dev, struct max_buff *mbuf)
 {
 	SLSI_UNUSED_PARAMETER(dev);
 
-	switch (mbuf->priority) {
+	switch (mbuf->user_priority) {
 	case 6:
 	case 7:
-		mbuf->priority = FAPI_PRIORITY_QOS_UP5;	/* VO -> VI */
+		mbuf->user_priority = FAPI_PRIORITY_QOS_UP5; /* VO -> VI */
 		return true;
 	case 4:
 	case 5:
-		mbuf->priority = FAPI_PRIORITY_QOS_UP3;	/* VI -> BE */
+		mbuf->user_priority = FAPI_PRIORITY_QOS_UP3; /* VI -> BE */
 		return true;
 	case 0:
 	case 3:
-		mbuf->priority = FAPI_PRIORITY_QOS_UP2;	/* BE -> BK */
+		mbuf->user_priority = FAPI_PRIORITY_QOS_UP2; /* BE -> BK */
 		return true;
 	default:
 		return false;
@@ -256,13 +256,13 @@ static void slsi_net_downgrade_pri(struct netif *dev, struct slsi_peer *peer, st
 	/* in case we are a client downgrade the ac if acm is
 	 * set and tspec is not established
 	 */
-	while ((peer->wmm_acm & BIT(mbuf->priority)) && !(peer->tspec_established & slsi_net_up_to_ac_mapping(mbuf->priority))) {
-		SLSI_NET_DBG3(dev, SLSI_TX, "Downgrading from UP:%d\n", mbuf->priority);
+	while ((peer->wmm_acm & BIT(mbuf->user_priority)) && !(peer->tspec_established & slsi_net_up_to_ac_mapping(mbuf->user_priority))) {
+		SLSI_NET_DBG3(dev, SLSI_TX, "Downgrading from UP:%d\n", mbuf->user_priority);
 		if (!slsi_net_downgrade_ac(dev, mbuf)) {
 			break;
 		}
 	}
-	SLSI_NET_DBG3(dev, SLSI_TX, "To UP:%d\n", mbuf->priority);
+	SLSI_NET_DBG3(dev, SLSI_TX, "To UP:%d\n", mbuf->user_priority);
 }
 
 static u16 slsi_net_select_queue(struct netif *dev, struct max_buff *mbuf)
@@ -270,7 +270,7 @@ static u16 slsi_net_select_queue(struct netif *dev, struct max_buff *mbuf)
 	struct netdev_vif *ndev_vif = netdev_priv(dev);
 	struct slsi_dev *sdev = ndev_vif->sdev;
 	u16 netif_q = 0;
-	struct ethhdr *ehdr = (struct ethhdr *)mbuf->data;
+	struct ethhdr *ehdr = (struct ethhdr *)slsi_mbuf_get_data(mbuf);
 	int proto = 0;
 	struct slsi_peer *peer;
 
@@ -287,7 +287,7 @@ static u16 slsi_net_select_queue(struct netif *dev, struct max_buff *mbuf)
 		SLSI_NET_DBG3(dev, SLSI_TX, "ARP frame. Priority Queue Selected\n");
 		return SLSI_NETIF_Q_PRIORITY;
 	case ETH_P_IP:
-		if (slsi_is_dhcp_packet(mbuf->data) == SLSI_TX_IS_NOT_DHCP) {
+		if (slsi_is_dhcp_packet(slsi_mbuf_get_data(mbuf)) == SLSI_TX_IS_NOT_DHCP) {
 			break;
 		}
 		SLSI_NET_DBG3(dev, SLSI_TX, "DHCP packet. Priority Queue Selected\n");
@@ -298,8 +298,8 @@ static u16 slsi_net_select_queue(struct netif *dev, struct max_buff *mbuf)
 		/* MULTICAST/BROADCAST Queue is only used for AP */
 		if (is_multicast_ether_addr(ehdr->h_dest)) {
 			SLSI_NET_DBG3(dev, SLSI_TX, "Multicast AC queue will be selected\n");
-			mbuf->priority = slsi_get_priority_from_tos(mbuf->data + ETH_HLEN, proto);
-			return slsi_netif_get_multicast_queue(slsi_frame_priority_to_ac_queue(mbuf->priority));
+			mbuf->user_priority = slsi_get_priority_from_tos(slsi_mbuf_get_data(mbuf) + ETH_HLEN, proto);
+			return slsi_netif_get_multicast_queue(slsi_frame_priority_to_ac_queue(mbuf->user_priority));
 		}
 
 	SLSI_MUTEX_LOCK(ndev_vif->peer_lock);
@@ -311,15 +311,15 @@ static u16 slsi_net_select_queue(struct netif *dev, struct max_buff *mbuf)
 	}
 
 	if (peer->qos_enabled) {
-		mbuf->priority = slsi_get_priority_from_tos(mbuf->data + ETH_HLEN, proto);
+		mbuf->user_priority = slsi_get_priority_from_tos(slsi_mbuf_get_data(mbuf) + ETH_HLEN, proto);
 	} else {
-		mbuf->priority = FAPI_PRIORITY_QOS_UP0;
+		mbuf->user_priority = FAPI_PRIORITY_QOS_UP0;
 	}
 
 	/* Downgrade the priority if acm bit is set and tspec is not established */
 	slsi_net_downgrade_pri(dev, peer, mbuf);
 
-	netif_q = slsi_netif_get_peer_queue(peer->queueset, slsi_frame_priority_to_ac_queue(mbuf->priority));
+	netif_q = slsi_netif_get_peer_queue(peer->queueset, slsi_frame_priority_to_ac_queue(mbuf->user_priority));
 	SLSI_NET_DBG3(dev, SLSI_TX, "%u Queue Selected\n", netif_q);
 	SLSI_MUTEX_UNLOCK(ndev_vif->peer_lock);
 	return netif_q;
@@ -349,20 +349,20 @@ int eth_send_eapol(const u8 *src, const u8 *dst, const u8 *buf, u16 len, u16 pro
 	ndev_vif = netdev_priv(dev);
 	alloc_size = len + (fapi_sig_size(ma_unitdata_req) + 160) + sizeof(struct ethhdr);
 
-	mbuf = alloc_mbuf(alloc_size);
+	mbuf = mbuf_alloc(alloc_size);
 	if (!mbuf) {
 		SLSI_NET_ERR(dev, "Failed to allocate memory, alloc_size = %d\n", alloc_size);
 		return -ENOMEM;
 	}
 
-	mbuf_reserve(mbuf, (fapi_sig_size(ma_unitdata_req) + 160));
+	mbuf_reserve_headroom(mbuf, (fapi_sig_size(ma_unitdata_req) + 160));
 	fapi_append_data(mbuf, dst, ETH_ALEN);
 	fapi_append_data(mbuf, src, ETH_ALEN);
-	mbuf->protocol = htons(proto);
-	fapi_append_data(mbuf, (u8 *)&mbuf->protocol, 2);
+	proto = htons(proto);
+	fapi_append_data(mbuf, (u8 *)&proto, 2);
 	fapi_append_data(mbuf, buf, len);
 
-	mbuf->queue_mapping = SLSI_NETIF_Q_PRIORITY;
+	mbuf->ac_queue = SLSI_NETIF_Q_PRIORITY;
 	mbuf_set_mac_header(mbuf, 0);
 	slsi_tx_data(sdev, dev, mbuf);
 	slsi_kfree_mbuf(mbuf);
@@ -394,6 +394,7 @@ static err_t slsi_linkoutput(struct netif *dev, struct pbuf *buf)
 	struct pbuf *next_buf;
 	int offset = 0;
 	int ret = ERR_OK;
+	u8 *mbuf_data;
 
 	SLSI_INCR_DATA_PATH_STATS(sdev->dp_stats.tx_linkoutput_packets);
 
@@ -433,9 +434,10 @@ static err_t slsi_linkoutput(struct netif *dev, struct pbuf *buf)
 
 	mbuf = sdev->tx_mbuf;
 	mbuf_reset(mbuf);
-	mbuf_reserve(mbuf, (fapi_sig_size(ma_unitdata_req) + 160));
+	mbuf_reserve_headroom(mbuf, (fapi_sig_size(ma_unitdata_req) + 160));
 	mbuf_put(mbuf, buf->tot_len);
 
+	mbuf_data = slsi_mbuf_get_data(mbuf);
 	/* Copy the data from multiple buffer */
 	next_buf = buf;
 	while (next_buf) {
@@ -446,16 +448,15 @@ static err_t slsi_linkoutput(struct netif *dev, struct pbuf *buf)
 			ret = ERR_VAL;
 			goto exit;
 		}
-		memcpy(&mbuf->data[offset], next_buf->payload, next_buf->len);
+		memcpy(&mbuf_data[offset], next_buf->payload, next_buf->len);
 		offset += next_buf->len;
 		next_buf = next_buf->next;
 	}
 
 	mbuf_set_mac_header(mbuf, 0);
-	mbuf->protocol = eth_hdr(mbuf)->h_proto;
-	mbuf->queue_mapping = slsi_net_select_queue(dev, mbuf);
+	mbuf->ac_queue = slsi_net_select_queue(dev, mbuf);
 
-	if (mbuf->queue_mapping == SLSI_NETIF_Q_DISCARD) {
+	if (mbuf->ac_queue == SLSI_NETIF_Q_DISCARD) {
 		SLSI_INCR_DATA_PATH_STATS(sdev->dp_stats.tx_drop_discard_queue);
 
 		ret = ERR_CONN;

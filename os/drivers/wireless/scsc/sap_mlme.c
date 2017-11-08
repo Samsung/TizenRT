@@ -95,7 +95,7 @@ static int slsi_rx_netdev_mlme(struct slsi_dev *sdev, struct netif *dev, struct 
 {
 	u16 id = fapi_get_u16(mbuf, id);
 
-	mbuf_reset_mac_header(mbuf);
+	mbuf_set_mac_header(mbuf, 0);
 
 	/* The mbuf is consumed by the functions called */
 	switch (id) {
