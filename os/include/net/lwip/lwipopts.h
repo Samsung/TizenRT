@@ -994,6 +994,12 @@
 #define IP6_DEBUG	LWIP_DBG_OFF
 #endif
 
+#ifdef CONFIG_NET_ND6_DEBUG
+#define ND6_DEBUG	LWIP_DBG_ON
+#else
+#define ND6_DEBUG	LWIP_DBG_OFF
+#endif
+
 #endif /* CONFIG_NET_LWIP_DEBUG */
 /* ---------- Debug options ---------- */
 
