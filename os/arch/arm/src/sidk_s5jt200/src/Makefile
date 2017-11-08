@@ -113,6 +113,8 @@ endif
 
 all: libboard$(LIBEXT)
 
+context:
+
 $(AOBJS): %$(OBJEXT): %.S
 	$(call ASSEMBLE, $<, $@)
 

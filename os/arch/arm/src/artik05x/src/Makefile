@@ -100,7 +100,28 @@ else
   CFLAGS += -I$(ARCH_SRCDIR)/armv7-r
 endif
 
+ifeq ($(CONFIG_ARTIK05X_SECURE),y)
+CODESIGNEREXE := $(TOPDIR)/$(CONFIG_ARTIK05X_CODESIGNER_PATH)
+else
+CODESIGNEREXE :=
+endif
+
 all: libboard$(LIBEXT)
+
+context:
+ifeq ($(CONFIG_ARTIK05X_SECURE),y)
+	$(Q) if [ ! -x $(CODESIGNEREXE) ]; then \
+		echo ""; \
+		echo "ERROR: cannot find codesigner ${CONFIG_ARTIK05X_CODESIGNER_PATH}"; \
+		echo "Build process has been terminated since the mandatory security binaries do not exist in your source code."; \
+		echo "Please download those files from artik.io with SLA agreement to continue to build."; \
+		echo "Once you download those files, please locate them to the following path."; \
+		echo ""; \
+		echo "copy to ${CODESIGNEREXE}"; \
+		echo ""; \
+		exit 1; \
+	fi
+endif
 
 $(AOBJS): %$(OBJEXT): %.S
 	$(call ASSEMBLE, $<, $@)

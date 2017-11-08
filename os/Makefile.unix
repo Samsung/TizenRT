@@ -408,7 +408,7 @@ context: check_context iotivity_context submodules_check include/tinyara/config.
 		rm -rf ${BIN_DIR}/*; \
 	fi
 	$(Q) for dir in $(CONTEXTDIRS) ; do \
-		$(MAKE) -C $$dir TOPDIR="$(TOPDIR)" context; \
+		$(MAKE) -C $$dir TOPDIR="$(TOPDIR)" context || exit 1; \
 	done
 	$(call DELFILE, $(APPDIR)/builtin/registry/*.?dat)
 

@@ -150,3 +150,15 @@ config ARTIK05X_RAMMTD_MOUNT_POINT
 	string "Mountpoint of the partition for ramfs r/w file system"
 	default "/ramfs"
 endif
+
+config ARTIK05X_SECURE
+    bool
+    default n
+
+if ARTIK05X_SECURE
+config ARTIK05X_CODESIGNER_PATH
+	string "codesigner tool path"
+	default "../build/configs/artik05x/tools/codesigner/artik05x_codesigner"
+    ---help---
+
+endif

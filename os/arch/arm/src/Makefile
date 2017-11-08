@@ -208,6 +208,9 @@ ifneq ($(STARTUP_OBJS),)
 	fi
 endif
 
+context:
+	$(Q) $(MAKE) -C board $(@) TOPDIR="$(TOPDIR)"
+
 # Dependencies
 
 .depend: Makefile chip/Make.defs $(SRCS)
