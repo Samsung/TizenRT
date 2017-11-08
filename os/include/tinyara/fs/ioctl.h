@@ -93,6 +93,7 @@
 #define _RTCBASE        (0x1800)	/* RTC ioctl commands */
 #define _FOTABASE       (0x1900)	/* FOTA ioctl commands */
 #define _GPIOBASE       (0x2000)	/* GPIO ioctl commands */
+#define _TESTIOCBASE (0xfe00)	/* KERNEL TEST DRV module ioctl commands */
 
 /* boardctl() commands share the same number space */
 #define _BOARDBASE      (0xff00)	/* boardctl commands */
@@ -343,6 +344,13 @@
 /* boardctl() command definitions *******************************************/
 #define _BOARDIOCVALID(c)  (_IOC_TYPE(c) == _BOARDBASE)
 #define _BOARDIOC(nr)      _IOC(_BOARDBASE, nr)
+
+
+/* Kernel_tc driver ioctl definitions *************************************/
+/* (see tinyara/testcase_drv.h) */
+
+#define _TESTIOCVALID(c) (_IOC_TYPE(c) == _TESTIOCBASE)
+#define _TESTIOC(nr)     _IOC(_TESTIOCBASE, nr)
 
 /****************************************************************************
  * Public Type Definitions

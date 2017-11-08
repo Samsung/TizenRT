@@ -6,6 +6,7 @@
 menuconfig EXAMPLES_TESTCASE_DRIVERS
 	bool "Drivers TestCase Example"
 	default n
+	select KERNEL_TEST_DRV
 	---help---
 		Enable the Drivers TestCase Example
 
