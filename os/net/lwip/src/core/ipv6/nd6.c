@@ -140,6 +140,10 @@ static void nd6_free_q(struct nd6_q_entry *q);
 #endif							/* LWIP_ND6_QUEUEING */
 static void nd6_send_q(s8_t i);
 
+#if ND6_DEBUG
+void nd6_cache_debug_print(void);
+#endif
+
 /**
  * Process an incoming neighbor discovery message
  *
@@ -2064,5 +2068,37 @@ void nd6_adjust_mld_membership(struct netif *netif, s8_t addr_idx, u8_t new_stat
 	}
 }
 #endif							/* LWIP_IPV6_MLD */
+
+#if ND6_DEBUG
+/**
+ * Print all neighbor cache entities and destination cache entities
+ */
+void nd6_cache_debug_print(void)
+{
+	int i;
+
+	LWIP_DEBUGF(ND6_DEBUG, ("+--------------------------------------------------------+\n"));
+	LWIP_DEBUGF(ND6_DEBUG, ("+ neighbor_cache\n"));
+	LWIP_DEBUGF(ND6_DEBUG, ("+--------------------------------------------------------+\n"));
+
+	for (i = 0; i < LWIP_ND6_NUM_NEIGHBORS; i++) {
+		LWIP_DEBUGF(ND6_DEBUG, ("next-hop addr   %4x %4x %4x %4x %4x %4x %4x %4x\n", IP6_ADDR_BLOCK1(&neighbor_cache[i].next_hop_address), IP6_ADDR_BLOCK2(&neighbor_cache[i].next_hop_address), IP6_ADDR_BLOCK3(&neighbor_cache[i].next_hop_address), IP6_ADDR_BLOCK4(&neighbor_cache[i].next_hop_address), IP6_ADDR_BLOCK5(&neighbor_cache[i].next_hop_address), IP6_ADDR_BLOCK6(&neighbor_cache[i].next_hop_address), IP6_ADDR_BLOCK7(&neighbor_cache[i].next_hop_address), IP6_ADDR_BLOCK8(&neighbor_cache[i].next_hop_address)));
+		LWIP_DEBUGF(ND6_DEBUG, ("lladdr %2x:%2x:%2x:%2x:%2x:%2x | state %2u | isrouter %2u\n",  neighbor_cache[i].lladdr[0], neighbor_cache[i].lladdr[1], neighbor_cache[i].lladdr[2], neighbor_cache[i].lladdr[3], neighbor_cache[i].lladdr[4], neighbor_cache[i].lladdr[5], neighbor_cache[i].state, neighbor_cache[i].isrouter));
+		LWIP_DEBUGF(ND6_DEBUG, ("reachable time %lu | delay time %lu | probes_sent %lu | stale_time %lu\n", neighbor_cache[i].counter.reachable_time, neighbor_cache[i].counter.delay_time, neighbor_cache[i].counter.probes_sent, neighbor_cache[i].counter.stale_time));
+		LWIP_DEBUGF(ND6_DEBUG, ("+--------------------------------------------------------+\n"));
+	}
+
+	LWIP_DEBUGF(ND6_DEBUG, ("+--------------------------------------------------------+\n"));
+	LWIP_DEBUGF(ND6_DEBUG, ("+ destination_cache\n"));
+	LWIP_DEBUGF(ND6_DEBUG, ("+--------------------------------------------------------+\n"));
+
+	for (i = 0; i < LWIP_ND6_NUM_DESTINATIONS; i++) {
+		LWIP_DEBUGF(ND6_DEBUG, ("desination_addr %4x %4x %4x %4x %4x %4x %4x %4x\n", IP6_ADDR_BLOCK1(&destination_cache[i].destination_addr), IP6_ADDR_BLOCK2(&destination_cache[i].destination_addr), IP6_ADDR_BLOCK3(&destination_cache[i].destination_addr), IP6_ADDR_BLOCK4(&destination_cache[i].destination_addr), IP6_ADDR_BLOCK5(&destination_cache[i].destination_addr), IP6_ADDR_BLOCK6(&destination_cache[i].destination_addr), IP6_ADDR_BLOCK7(&destination_cache[i].destination_addr), IP6_ADDR_BLOCK8(&destination_cache[i].destination_addr)));
+		LWIP_DEBUGF(ND6_DEBUG, ("next-hop addr   %4x %4x %4x %4x %4x %4x %4x %4x\n", IP6_ADDR_BLOCK1(&destination_cache[i].next_hop_addr), IP6_ADDR_BLOCK2(&destination_cache[i].next_hop_addr), IP6_ADDR_BLOCK3(&destination_cache[i].next_hop_addr), IP6_ADDR_BLOCK4(&destination_cache[i].next_hop_addr), IP6_ADDR_BLOCK5(&destination_cache[i].next_hop_addr), IP6_ADDR_BLOCK6(&destination_cache[i].next_hop_addr), IP6_ADDR_BLOCK7(&destination_cache[i].next_hop_addr), IP6_ADDR_BLOCK8(&destination_cache[i].next_hop_addr)));
+		LWIP_DEBUGF(ND6_DEBUG, ("pmtu %2u | age %4lu\n", destination_cache[i].pmtu, destination_cache[i].age));
+		LWIP_DEBUGF(ND6_DEBUG, ("+--------------------------------------------------------+\n"));
+	}
+}
+#endif /* ND6_DEBUG */
 
 #endif							/* LWIP_IPV6 */

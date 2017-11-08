@@ -194,6 +194,13 @@ config NET_IPv6_DEBUG
 	---help---
 		Enable debugging for IPv6.
 
+config NET_ND6_DEBUG
+	bool "Enable ND6 Debugging"
+	depends on NET_IPv6
+	default n
+	---help---
+		Enable debugging for ND6.
+
 endif #LWIP_DEBUG
 
 endmenu #"Debug Options for Network"

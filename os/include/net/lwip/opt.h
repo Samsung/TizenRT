@@ -2840,6 +2840,14 @@
 #ifndef IP6_DEBUG
 #define IP6_DEBUG                       LWIP_DBG_OFF
 #endif
+
+
+/**
+ * ND6_DEBUG: Enable debugging for ND6.
+ */
+#ifndef ND6_DEBUG
+#define ND6_DEBUG                       LWIP_DBG_OFF
+#endif
 /**
  * @}
  */

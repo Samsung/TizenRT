@@ -118,11 +118,13 @@ err_t ethip6_output(struct netif *netif, struct pbuf *q, const ip6_addr_t *ip6ad
 	/* Ask ND6 what to do with the packet. */
 	result = nd6_get_next_hop_addr_or_queue(netif, q, ip6addr, &hwaddr);
 	if (result != ERR_OK) {
+		LWIP_DEBUGF(ND6_DEBUG, ("failed to send packet, result %d\n", result));
 		return result;
 	}
 
 	/* If no hardware address is returned, nd6 has queued the packet for later. */
 	if (hwaddr == NULL) {
+		LWIP_DEBUGF(ND6_DEBUG, ("hwaddr is null, nd6 has queued the packet for later\n", result));
 		return ERR_OK;
 	}
 
