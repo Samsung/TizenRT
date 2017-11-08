@@ -97,6 +97,48 @@ This is the configuration for the production phase of ARTIK053S product. If you 
 ~/TizenRT/os/tools$ ./configure.sh artik053s/onboard
 ```
 
+#### using ARTIK-IDE
+
+These configurations are intended for use in the ARTIK-IDE. The detailed functions are as follows.
+
+* minimal
+  * OS kernel
+  * Customized C Library
+  * Security(TLS)
+  * BSP(boot loader)
+  * Power
+  * Networking support (LWIP, DHCP Client, Wi-Fi)
+
+* typical
+  * OS kernel
+  * Customized C Library
+  * Security(TLS)
+  * BSP(boot loader)
+  * Power
+  * Networking support(LWIP, DHCP Client, DHCP Server, Wi-Fi)
+  * Watchdog
+  * ARTIK-SDK
+  * JSON
+  * Tash
+  * System IO(I2C, UART, GPIO, PWM, SPI)
+  * Network Utilities(FTP Client, Websock, Webclient, Webserver, NTP Client)
+
+* extra
+  * OS kernel
+  * Customized C Library
+  * Security(TLS)
+  * BSP(boot loader)
+  * Power
+  * Networking support (LWIP, DHCP Client, DHCP Server, Wi-Fi)
+  * Watchdog
+  * ARTIK-SDK
+  * JSON
+  * Tash
+  * I2S
+  * DMA
+  * System IO(I2C, UART, GPIO, PWM, SPI)
+  * Network Utilities(FTP Client, Websock, Webclient, Webserver, NTP Client, CoAP, MQTT)
+
 ## Environment Set-up
 ### On Chip Debugger installation
 
