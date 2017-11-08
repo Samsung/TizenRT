@@ -117,6 +117,14 @@ config SMARTFS_SECTOR_RECOVERY
 		sectors are the sectors which are allocated but not reachable
 		from root directory.
 
+config SMARTFS_SECURE
+	bool "Secure File System"
+	default n
+	select CRYPTO
+	select CRYPTO_SW_AES
+	---help---
+		Provides encryption & decryption support using AES algorithm.
+
 endmenu
 
 endif

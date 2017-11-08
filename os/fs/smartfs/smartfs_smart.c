@@ -68,6 +68,7 @@
 #include <fcntl.h>
 #include <errno.h>
 #include <debug.h>
+#include <stdint.h>
 
 #include <tinyara/kmalloc.h>
 #include <tinyara/fs/fs.h>
@@ -461,6 +462,9 @@ okout:
  * Name: smartfs_read
  ****************************************************************************/
 
+#ifdef CONFIG_SMARTFS_SECURE
+static unsigned char output[MAXBUFSIZE];
+#endif
 static ssize_t smartfs_read(FAR struct file *filep, char *buffer, size_t buflen)
 {
 	struct inode *inode;
@@ -567,10 +571,20 @@ static ssize_t smartfs_read(FAR struct file *filep, char *buffer, size_t buflen)
 		}
 	}
 
-	/* Return the number of bytes we read */
-
+#ifdef CONFIG_SMARTFS_SECURE
+	char *final_output;
 	ret = bytesread;
+	final_output = (char *)kmm_zalloc(buflen + 1);
+	/*Smartfs function for decryption*/
 
+	smartfs_decrypt(buffer, ret, final_output);
+	memset(buffer, '\0', MAXBUFSIZE);
+	/*Copying the decrypted data into original buffer */
+
+	memcpy(buffer, (const char *)final_output, ret);
+	kmm_free(final_output);
+#endif
+	/* Return the number of bytes we read */
 errout_with_semaphore:
 	smartfs_semgive(fs);
 	return ret;
@@ -721,6 +735,10 @@ static ssize_t smartfs_write(FAR struct file *filep, const char *buffer, size_t 
 	struct smartfs_chain_header_s *header;
 	size_t byteswritten;
 	int ret;
+#ifdef CONFIG_SMARTFS_SECURE
+	size_t writelength;
+	size_t origlength;
+#endif
 
 #ifdef CONFIG_SMARTFS_JOURNALING
 	int retj;
@@ -762,6 +780,20 @@ static ssize_t smartfs_write(FAR struct file *filep, const char *buffer, size_t 
 		goto errout_with_semaphore;
 	}
 
+#ifdef CONFIG_SMARTFS_SECURE
+	memset(output, '\0', sizeof(output));
+	/*Smartfs function for encryption */
+
+	smartfs_encrypt(buffer, buflen, output);
+	/*Origlength variable contains the original length of data*/
+	/*Writelength variable contains the length of encrypted data*/
+
+	origlength = buflen;
+	if (buflen % CRYPTSIZE != 0) {
+		buflen = ((buflen / CRYPTSIZE) + 1) * CRYPTSIZE;
+	}
+	writelength = buflen;
+#endif
 	/* First test if we are overwriting an existing location or writing to
 	 * a new one. */
 
@@ -777,7 +809,11 @@ static ssize_t smartfs_write(FAR struct file *filep, const char *buffer, size_t 
 
 		readwrite.offset = sf->curroffset;
 		readwrite.logsector = sf->currsector;
+#ifdef CONFIG_SMARTFS_SECURE
+		readwrite.buffer = (uint8_t *)&output[byteswritten];
+#else
 		readwrite.buffer = (uint8_t *)&buffer[byteswritten];
+#endif	
 		readwrite.count = fs->fs_llformat.availbytes - sf->curroffset;
 
 		/* Limit the write based on available data to write */
@@ -864,13 +900,21 @@ static ssize_t smartfs_write(FAR struct file *filep, const char *buffer, size_t 
 			readwrite.count = buflen;
 		}
 
+#ifdef CONFIG_SMARTFS_SECURE
+		memcpy(&sf->buffer[sf->curroffset], &output[byteswritten], readwrite.count);
+#else
 		memcpy(&sf->buffer[sf->curroffset], &buffer[byteswritten], readwrite.count);
+#endif	
 		sf->bflags |= SMARTFS_BFLAG_DIRTY;
 
 #else							/* CONFIG_SMARTFS_USE_SECTOR_BUFFER */
 		readwrite.offset = sf->curroffset;
 		readwrite.logsector = sf->currsector;
+#ifdef CONFIG_SMARTFS_SECURE
+		readwrite.buffer = (uint8_t *)&output[byteswritten];
+#else
 		readwrite.buffer = (uint8_t *)&buffer[byteswritten];
+#endif		
 		readwrite.count = fs->fs_llformat.availbytes - sf->curroffset;
 		if (readwrite.count > buflen) {
 			/* Limit the write base on remaining bytes to write */
@@ -1015,7 +1059,15 @@ static ssize_t smartfs_write(FAR struct file *filep, const char *buffer, size_t 
 #endif							/* CONFIG_SMARTFS_USE_SECTOR_BUFFER */
 	}
 
+#ifdef CONFIG_SMARTFS_SECURE
+	if (byteswritten == writelength) {
+		ret = origlength;
+	} else {
+		ret = byteswritten;
+	}
+#else
 	ret = byteswritten;
+#endif
 
 errout_with_semaphore:
 	smartfs_semgive(fs);

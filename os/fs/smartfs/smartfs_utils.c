@@ -3506,3 +3506,95 @@ int smartfs_finish_journalentry(struct smartfs_mountpt_s *fs, uint16_t curr_sect
 	return smartfs_set_transaction(fs, sector, offset, TRANS_FINISHED);
 }
 #endif /* END OF CONFIG_SMARTFS_JOURNALING */
+
+#ifdef CONFIG_SMARTFS_SECURE
+/****************************************************************************
+ * Name: smartfs_decrypt
+ *
+ * Description: Decrypts the given buffer using AES128 decryption technique
+ *		and stores the result in final_output variable.
+ ****************************************************************************/
+int smartfs_decrypt(char *buffer, int ret, char *final_output)
+{
+	int byteread;
+	int bytepointer;
+	int bufferpointer;
+	int loopcounter;
+	char temp[CRYPTSIZE];
+
+	/* Generating round keys for decryption */
+
+	byteread = 0;
+	bytepointer = 0;
+	bufferpointer = 0;
+	/*Looping for entire buffer length */
+	/*Ret variable contains the number of bytes read from the given file */
+
+	while (byteread < ret) {
+		strncpy((char *)temp, (const char *)buffer + bytepointer, CRYPTSIZE);
+		bytepointer += CRYPTSIZE;
+		loopcounter = 0;
+		if (temp[0] == '\0') {
+			break;
+		}
+		/* Decrypting the buffer data */
+
+		crypto_aes_decrypt((uint8_t *)temp, (const uint8_t *)CRYPT_KEY);
+		/*Copying the decrypted data into the Output buffer*/
+
+		while (loopcounter < CRYPTSIZE && temp[loopcounter] != '\0') {
+			final_output[bufferpointer] = temp[loopcounter];
+			loopcounter++;
+			bufferpointer++;
+		}
+		byteread += CRYPTSIZE;
+	}
+	return 0;
+}
+
+/****************************************************************************
+ * Name: smartfs_encrypt
+ *
+ * Description: Encrypts the given buffer using AES-128 encryption and
+ *              stores it in output variable
+ *
+ ****************************************************************************/
+int smartfs_encrypt(const char *buffer, size_t buflen, unsigned char output[])
+{
+	int bytesread;
+	int bytepointer;
+	int nbytes;
+	int loopcounter;
+	char temp[CRYPTSIZE];
+
+	bytesread = 0;
+	nbytes = buflen;
+	bytepointer = 0;
+
+	/*Encryption loop for entire input data*/
+
+	while (bytesread < nbytes) {
+		memset(temp, '\0', CRYPTSIZE);
+		/* Considering only 16 bytes of the input data*/
+
+		if (nbytes - bytesread <= CRYPTSIZE) {
+			strncpy((char *)temp, (const char *)buffer + bytepointer, nbytes - bytesread);
+		} else {
+			strncpy((char *)temp, (const char *)buffer + bytepointer, CRYPTSIZE);
+			bytepointer += CRYPTSIZE;
+		}
+		loopcounter = 0;
+		/*Encrypting the data */
+
+		crypto_aes_encrypt((uint8_t *)temp, (const uint8_t *)CRYPT_KEY);
+		/*Copying the encrypted data into output buffer */
+
+		while (loopcounter < CRYPTSIZE && temp[loopcounter] != '\0') {
+			output[loopcounter + bytesread] = temp[loopcounter];
+			loopcounter++;
+		}
+		bytesread += CRYPTSIZE;
+	}
+	return 0;
+}
+#endif /*END OF CONFIG_SMARTFS_SECURE*/

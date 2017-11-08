@@ -171,6 +171,13 @@
  * bits from the erased to non-erased state.
  */
 
+#ifdef CONFIG_SMARTFS_SECURE
+#define MAXBUFSIZE 256
+#define CRYPTSIZE 16
+#define KEYSIZE 128
+#define CRYPT_KEY "12345678"
+#endif
+
 #define INODE_STATE_FILE          (CONFIG_NXFFS_ERASEDSTATE ^ 0x22)
 #define INODE_STATE_DELETED       (CONFIG_NXFFS_ERASEDSTATE ^ 0xaa)
 
@@ -549,6 +556,11 @@ struct stat;
 int smartfs_journal_init(struct smartfs_mountpt_s *fs);
 int smartfs_create_journalentry(struct smartfs_mountpt_s *fs, enum logging_transaction_type_e type, uint16_t curr_sector, uint16_t offset, uint16_t datalen, uint16_t genericdata, uint8_t needsync, const uint8_t *data, uint16_t *t_sector, uint16_t *t_offset);
 int smartfs_finish_journalentry(struct smartfs_mountpt_s *fs, uint16_t curr_sector, uint16_t sector, uint16_t offset, enum logging_transaction_type_e type);
+#endif
+
+#ifdef CONFIG_SMARTFS_SECURE
+int smartfs_encrypt(const char *buffer, size_t buflen, unsigned char *output);
+int smartfs_decrypt(char *buffer, int ret, char *final_output);
 #endif
 
 #endif							/* __FS_SMARTFS_SMARTFS_H */
