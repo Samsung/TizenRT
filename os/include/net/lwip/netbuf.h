@@ -46,12 +46,19 @@
  * Author: Adam Dunkels <adam@sics.se>
  *
  */
-#ifndef __LWIP_NETBUF_H__
-#define __LWIP_NETBUF_H__
+#ifndef LWIP_HDR_NETBUF_H
+#define LWIP_HDR_NETBUF_H
 
 #include <net/lwip/opt.h>
+
+#if LWIP_NETCONN || LWIP_SOCKET	/* don't build if not configured for use in lwipopts.h */
+/* Note: Netconn API is always available when sockets are enabled -
+ * sockets are implemented on top of them
+ */
+
 #include <net/lwip/pbuf.h>
-#include <net/lwip/ipv4/ip_addr.h>
+#include <net/lwip/ip_addr.h>
+#include <net/lwip/ip6_addr.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -62,6 +69,7 @@ extern "C" {
 /** This netbuf includes a checksum */
 #define NETBUF_FLAG_CHKSUM      0x02
 
+/** "Network buffer" - contains data and addressing info */
 struct netbuf {
 	struct pbuf *p, *ptr;
 	ip_addr_t addr;
@@ -95,22 +103,25 @@ void netbuf_first(struct netbuf *buf);
 #define netbuf_take(buf, dataptr, len) pbuf_take((buf)->p, dataptr, len)
 #define netbuf_len(buf)              ((buf)->p->tot_len)
 #define netbuf_fromaddr(buf)         (&((buf)->addr))
-#define netbuf_set_fromaddr(buf, fromaddr) ip_addr_set((&(buf)->addr), fromaddr)
+#define netbuf_set_fromaddr(buf, fromaddr) ip_addr_set(&((buf)->addr), fromaddr)
 #define netbuf_fromport(buf)         ((buf)->port)
 #if LWIP_NETBUF_RECVINFO
 #define netbuf_destaddr(buf)         (&((buf)->toaddr))
-#define netbuf_set_destaddr(buf, destaddr) ip_addr_set((&(buf)->addr), destaddr)
+#define netbuf_set_destaddr(buf, destaddr) ip_addr_set(&((buf)->toaddr), destaddr)
+#if LWIP_CHECKSUM_ON_COPY
 #define netbuf_destport(buf)         (((buf)->flags & NETBUF_FLAG_DESTADDR) ? (buf)->toport_chksum : 0)
+#else							/* LWIP_CHECKSUM_ON_COPY */
+#define netbuf_destport(buf)         ((buf)->toport_chksum)
+#endif							/* LWIP_CHECKSUM_ON_COPY */
 #endif							/* LWIP_NETBUF_RECVINFO */
 #if LWIP_CHECKSUM_ON_COPY
-#define netbuf_set_chksum(buf, chksum) \
-	do { \
-		(buf)->flags = NETBUF_FLAG_CHKSUM; \
-		(buf)->toport_chksum = chksum; \
-	} while (0)
+#define netbuf_set_chksum(buf, chksum) do { (buf)->flags = NETBUF_FLAG_CHKSUM; \
+											(buf)->toport_chksum = chksum; \
+										} while (0)
 #endif							/* LWIP_CHECKSUM_ON_COPY */
 
 #ifdef __cplusplus
 }
 #endif
-#endif							/* __LWIP_NETBUF_H__ */
+#endif							/* LWIP_NETCONN || LWIP_SOCKET */
+#endif							/* LWIP_HDR_NETBUF_H */

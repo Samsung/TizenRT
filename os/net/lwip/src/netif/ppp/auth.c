@@ -100,7 +100,8 @@
 #include "cbcp.h"
 #endif							/* CBCP_SUPPORT */
 
-#include <net/lwip/ipv4/inet.h>
+#include <net/lwip/inet.h>
+#include <net/lwip/netif/ppp/ppp_opts.h>
 
 #include <string.h>
 
@@ -1161,11 +1162,11 @@ static void set_allowed_addrs(int unit, struct wordlist *addrs)
 		if (wo->hisaddr == 0 && *p != '!' && *p != '-' && strchr(p, '/') == NULL) {
 			hp = gethostbyname(p);
 			if (hp != NULL && hp->h_addrtype == AF_INET) {
-				a = *(u32_t *)hp->h_addr;
+				a = *(u32_t *) hp->h_addr;
 			} else {
 				a = inet_addr(p);
 			}
-			if (a != (u32_t)-1) {
+			if (a != (u32_t) -1) {
 				wo->hisaddr = a;
 			}
 		}

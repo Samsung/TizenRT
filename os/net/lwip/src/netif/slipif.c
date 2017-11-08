@@ -128,7 +128,7 @@ struct slipif_priv {
  * @param ipaddr the ip address to send the packet to (not used for slipif)
  * @return always returns ERR_OK since the serial layer does not provide return values
  */
-err_t slipif_output(struct netif *netif, struct pbuf *p, ip_addr_t *ipaddr)
+err_t slipif_output(struct netif *netif, struct pbuf *p, const ip4_addr_t *ipaddr)
 {
 	struct slipif_priv *priv;
 	struct pbuf *q;
@@ -141,7 +141,7 @@ err_t slipif_output(struct netif *netif, struct pbuf *p, ip_addr_t *ipaddr)
 
 	LWIP_UNUSED_ARG(ipaddr);
 
-	LWIP_DEBUGF(SLIP_DEBUG, ("slipif_output(%" U16_F "): sending %" U16_F " bytes\n", (u16_t)netif->num, p->tot_len));
+	LWIP_DEBUGF(SLIP_DEBUG, ("slipif_output(%" U16_F "): sending %" U16_F " bytes\n", (u16_t) netif->num, p->tot_len));
 	priv = netif->state;
 
 	/* Send pbuf out on the serial I/O device. */
@@ -150,7 +150,7 @@ err_t slipif_output(struct netif *netif, struct pbuf *p, ip_addr_t *ipaddr)
 
 	for (q = p; q != NULL; q = q->next) {
 		for (i = 0; i < q->len; i++) {
-			c = ((u8_t *)q->payload)[i];
+			c = ((u8_t *) q->payload)[i];
 			switch (c) {
 			case SLIP_END:
 				/* need to escape this byte (0xC0 -> 0xDB, 0xDC) */
@@ -254,7 +254,7 @@ static struct pbuf *slipif_rxbyte(struct netif *netif, u8_t c)
 
 	/* this automatically drops bytes if > SLIP_MAX_SIZE */
 	if ((priv->p != NULL) && (priv->recved <= SLIP_MAX_SIZE)) {
-		((u8_t *)priv->p->payload)[priv->i] = c;
+		((u8_t *) priv->p->payload)[priv->i] = c;
 		priv->recved++;
 		priv->i++;
 		if (priv->i >= priv->p->len) {
@@ -332,7 +332,7 @@ err_t slipif_init(struct netif *netif)
 	struct slipif_priv *priv;
 	u8_t sio_num;
 
-	LWIP_DEBUGF(SLIP_DEBUG, ("slipif_init: netif->num=%" U16_F "\n", (u16_t)netif->num));
+	LWIP_DEBUGF(SLIP_DEBUG, ("slipif_init: netif->num=%" U16_F "\n", (u16_t) netif->num));
 
 	/* Allocate private data */
 	priv = (struct slipif_priv *)mem_malloc(sizeof(struct slipif_priv));
@@ -350,7 +350,7 @@ err_t slipif_init(struct netif *netif)
 
 	/* netif->state or netif->num contain the port number */
 	if (netif->state != NULL) {
-		sio_num = *(u8_t *)netif->state;
+		sio_num = *(u8_t *) netif->state;
 	} else {
 		sio_num = netif->num;
 	}

@@ -102,9 +102,9 @@ void avChurnRand(char *randData, u32_t randLen)
 
 	/* LWIP_DEBUGF(LOG_INFO, ("churnRand: %u@%P\n", randLen, randData)); */
 	MD5Init(&md5);
-	MD5Update(&md5, (u_char *)randPool, sizeof(randPool));
+	MD5Update(&md5, (u_char *) randPool, sizeof(randPool));
 	if (randData) {
-		MD5Update(&md5, (u_char *)randData, randLen);
+		MD5Update(&md5, (u_char *) randData, randLen);
 	} else {
 		struct {
 			/* INCLUDE fields for any system sources of randomness */
@@ -114,7 +114,7 @@ void avChurnRand(char *randData, u32_t randLen)
 		/* Load sysData fields here. */
 		MD5Update(&md5, (u_char *)&sysData, sizeof(sysData));
 	}
-	MD5Final((u_char *)randPool, &md5);
+	MD5Final((u_char *) randPool, &md5);
 	/*  LWIP_DEBUGF(LOG_INFO, ("churnRand: -> 0\n")); */
 }
 
@@ -143,7 +143,7 @@ void avGenRand(char *buf, u32_t bufLen)
 	while (bufLen > 0) {
 		n = LWIP_MIN(bufLen, RANDPOOLSZ);
 		MD5Init(&md5);
-		MD5Update(&md5, (u_char *)randPool, sizeof(randPool));
+		MD5Update(&md5, (u_char *) randPool, sizeof(randPool));
 		MD5Update(&md5, (u_char *)&randCount, sizeof(randCount));
 		MD5Final(tmp, &md5);
 		randCount++;
@@ -207,7 +207,7 @@ void avRandomInit()
 	 * randomize the lower 16 bits of the seed.
 	 */
 	readClk();
-	avRandomSeed += *(u32_t *)clockBuf + *lptr1 + OSIdleCtr + ppp_mtime() + ((u32_t)TM1 << 16) + TM1;
+	avRandomSeed += *(u32_t *) clockBuf + *lptr1 + OSIdleCtr + ppp_mtime() + ((u32_t) TM1 << 16) + TM1;
 #else
 	avRandomSeed += sys_jiffies();	/* XXX */
 #endif
@@ -249,7 +249,7 @@ void avRandomize(void)
  */
 u32_t avRandom()
 {
-	return ((((u32_t)rand() << 16) + rand()) + avRandomSeed);
+	return ((((u32_t) rand() << 16) + rand()) + avRandomSeed);
 }
 
 #endif							/* MD5_SUPPORT */

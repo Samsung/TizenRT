@@ -70,7 +70,7 @@
 #include <sys/socket.h>
 
 #ifdef CONFIG_NET_LWIP
-#include <net/lwip/ipv4/inet.h>
+#include <net/lwip/inet.h>
 #else
 #include <arpa/inet.h>
 #endif

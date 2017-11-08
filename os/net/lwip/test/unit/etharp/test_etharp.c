@@ -31,10 +31,10 @@
 
 static struct netif test_netif;
 static ip_addr_t test_ipaddr, test_netmask, test_gw;
-struct eth_addr test_ethaddr = { 1, 1, 1, 1, 1, 1 };
-struct eth_addr test_ethaddr2 = { 1, 1, 1, 1, 1, 2 };
-struct eth_addr test_ethaddr3 = { 1, 1, 1, 1, 1, 3 };
-struct eth_addr test_ethaddr4 = { 1, 1, 1, 1, 1, 4 };
+static struct eth_addr test_ethaddr = { 1, 1, 1, 1, 1, 1 };
+static struct eth_addr test_ethaddr2 = { 1, 1, 1, 1, 1, 2 };
+static struct eth_addr test_ethaddr3 = { 1, 1, 1, 1, 1, 3 };
+static struct eth_addr test_ethaddr4 = { 1, 1, 1, 1, 1, 4 };
 
 static int linkoutput_ctr;
 
@@ -121,6 +121,7 @@ static void create_arp_response(ip_addr_t *adr)
 		ethhdr->src.addr[k] = test_ethaddr2.addr[k];
 	}
 
+	//etharp_input(p, &test_netif);
 	ethernet_input(p, &test_netif);
 }
 

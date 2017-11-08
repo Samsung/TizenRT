@@ -159,9 +159,9 @@ void *up_wlan_get_firmware(void)
 
 void up_wlan_init(struct netif *dev)
 {
-	struct ip_addr ipaddr;
-	struct ip_addr netmask;
-	struct ip_addr gw;
+	struct ip4_addr ipaddr;
+	struct ip4_addr netmask;
+	struct ip4_addr gw;
 
 	/* Start LWIP network thread */
 	ipaddr.addr = inet_addr("0.0.0.0");

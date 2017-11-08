@@ -94,8 +94,7 @@
 #ifdef PACK_STRUCT_USE_INCLUDES
 #include <net/lwip/arch/bpstruct.h>
 #endif
-PACK_STRUCT_BEGIN
-struct pppoehdr {
+PACK_STRUCT_BEGIN struct pppoehdr {
 	PACK_STRUCT_FIELD(u8_t vertype);
 	PACK_STRUCT_FIELD(u8_t code);
 	PACK_STRUCT_FIELD(u16_t session);
@@ -108,8 +107,7 @@ PACK_STRUCT_END
 #ifdef PACK_STRUCT_USE_INCLUDES
 #include <net/lwip/arch/bpstruct.h>
 #endif
-PACK_STRUCT_BEGIN
-struct pppoetag {
+	PACK_STRUCT_BEGIN struct pppoetag {
 	PACK_STRUCT_FIELD(u16_t tag);
 	PACK_STRUCT_FIELD(u16_t len);
 } PACK_STRUCT_STRUCT;
@@ -149,7 +147,7 @@ PACK_STRUCT_END
 #ifndef PPPOE_MAX_AC_COOKIE_LEN
 #define PPPOE_MAX_AC_COOKIE_LEN   64
 #endif
-struct pppoe_softc {
+	struct pppoe_softc {
 	struct pppoe_softc *next;
 	struct netif *sc_ethif;		/* ethernet interface we are using */
 	int sc_pd;					/* ppp unit number */
@@ -175,7 +173,7 @@ struct pppoe_softc {
 
 #define pppoe_init()			/* compatibility define, no initialization needed */
 
-err_t pppoe_create(struct netif *ethif, int pd, void (*linkStatusCB)(int pd, int up), struct pppoe_softc **scptr);
+err_t pppoe_create(struct netif *ethif, int pd, void (*linkStatusCB) (int pd, int up), struct pppoe_softc **scptr);
 err_t pppoe_destroy(struct netif *ifp);
 
 int pppoe_connect(struct pppoe_softc *sc);

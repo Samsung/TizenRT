@@ -22,7 +22,7 @@
 ############################################################################
 
 
-LWIP_CSRCS += etharp.c slipif.c
+LWIP_CSRCS += ethernet.c slipif.c
 
 # Include netif build support
 

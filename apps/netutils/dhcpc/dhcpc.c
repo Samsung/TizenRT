@@ -445,7 +445,7 @@ void dhcpc_close(void *handle)
 }
 
 static struct dhcpc_state *g_pResult;
-int g_dhcpc_state;
+static int g_dhcpc_state;
 
 /****************************************************************************
  * Name: dhcpc_request
@@ -589,10 +589,15 @@ int dhcpc_request(void *handle, struct dhcpc_state *presult)
 		 */
 
 		else if (msgtype == DHCPOFFER) {
-			ndbg("Received another OFFER, send DECLINE\n");
-			result = dhcpc_sendmsg(pdhcpc, presult, DHCPDECLINE);
-			if (result <= 0) {
-				ndbg("recv request error(%d)(%d)\n", result, errno);
+			/* If we get OFFERs from same dhcp server, do not send DECLINE */
+			if (pdhcpc->serverid.s_addr == presult->serverid.s_addr) {
+				ndbg("Received duplicated OFFER from %08x\n", ntohl(presult->serverid.s_addr));
+			} else {
+				ndbg("Received another OFFER from %08x, send DECLINE\n", ntohl(presult->serverid.s_addr));
+				result = dhcpc_sendmsg(pdhcpc, presult, DHCPDECLINE);
+				if (result <= 0) {
+					ndbg("recv request error(%d)(%d)\n", result, errno);
+				}
 			}
 		}
 
@@ -616,15 +621,17 @@ int dhcpc_request(void *handle, struct dhcpc_state *presult)
 	ndbg("Got default router %d.%d.%d.%d\n", (presult->default_router.s_addr) & 0xff, (presult->default_router.s_addr >> 8) & 0xff, (presult->default_router.s_addr >> 16) & 0xff, (presult->default_router.s_addr >> 24) & 0xff);
 	ndbg("Lease expires in %d seconds\n", presult->lease_time);
 
-#if defined(CONFIG_NETDB_DNSCLIENT) && defined(CONFIG_NETDB_DNSSERVER_BY_DHCP)
-	struct sockaddr_in dns;
-	if (presult->dnsaddr.s_addr != 0) {
-		ndbg("Set DNS IP address via dns_add_nameserver\n");
-		dns.sin_addr.s_addr = presult->dnsaddr.s_addr;
-		dns.sin_family = AF_INET;
-		dns.sin_port  = htons(DNS_DEFAULT_PORT);
-		dns_add_nameserver((FAR struct sockaddr *)&dns, sizeof(struct sockaddr_in));
-	}
+#ifdef CONFIG_NET_LWIP
+	ip_addr_t dns_addr;
+
+	IP_SET_TYPE_VAL(dns_addr, IPADDR_TYPE_V4);
+#ifdef CONFIG_NET_IPv6
+	dns_addr.u_addr.ip4.addr = presult->dnsaddr.s_addr;
+#else
+	dns_addr.addr = presult->dnsaddr.s_addr;
+	ndbg("Set DNS server %d.%d.%d.%d\n", (dns_addr.addr) & 0xff, (dns_addr.addr >> 8) & 0xff, (dns_addr.addr >> 16) & 0xff, (dns_addr.addr >> 24) & 0xff);
+#endif /* CONFIG_NET_IPv6 */
+	dns_setserver(0, &dns_addr);
 #endif
 
 	return OK;

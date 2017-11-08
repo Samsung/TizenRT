@@ -41,9 +41,6 @@
 #include <net/lwip/memp.h>
 #include <net/lwip/pbuf.h>
 #include <net/lwip/arch/cc.h>
-#ifdef CONFIG_SCSC_WLAN_UDP_FLOWCONTROL
-#include <net/lwip/tcpip.h>
-#endif
 
 /* TinyAra RTOS implementation of the lwip operating system abstraction */
 #include <net/lwip/arch/sys_arch.h>
@@ -131,8 +128,12 @@ void sys_mbox_post(sys_mbox_t *mbox, void *msg)
 {
 	u8_t first_msg = 0;
 	u32_t tmp = 0;
-	sys_arch_sem_wait(&(mbox->mutex), 0);
+	u32_t status = OK;
 
+	status = sys_arch_sem_wait(&(mbox->mutex), 0);
+	if (status == SYS_ARCH_CANCELED) {
+		return;
+	}
 	LWIP_DEBUGF(SYS_DEBUG, ("mbox %p msg %p\n", (void *)mbox, (void *)msg));
 	/* Wait while the queue is full */
 	tmp = (mbox->rear + 1) % mbox->queue_size;
@@ -143,8 +144,11 @@ void sys_mbox_post(sys_mbox_t *mbox, void *msg)
 		mbox->wait_send++;
 		sys_sem_signal(&(mbox->mutex));
 		sys_arch_sem_wait(&(mbox->mail), 0);
-		sys_arch_sem_wait(&(mbox->mutex), 0);
+		status = sys_arch_sem_wait(&(mbox->mutex), 0);
 		mbox->wait_send--;
+		if (status == SYS_ARCH_CANCELED) {
+			return;
+		}
 	}
 
 	mbox->msgs[mbox->rear] = msg;
@@ -166,51 +170,6 @@ void sys_mbox_post(sys_mbox_t *mbox, void *msg)
 	sys_sem_signal(&(mbox->mutex));
 	return;
 }
-
-#if defined(CONFIG_SCSC_WLAN_UDP_FLOWCONTROL) && defined(CONFIG_PRIORITY_INHERITANCE)
-
-/*---------------------------------------------------------------------------*
- * Routine:  sys_mbox_setprio_lpwork
- *---------------------------------------------------------------------------*
- * Description:
- *
- *
- * Inputs:
- *      sys_mbox_t mbox         -- Handle of mailbox
- *
- * Outputs:
- *      err_t                   -- ERR_OK if message posted, else void
- *
- *---------------------------------------------------------------------------*/
-
-#define LWIP_TCPIP_MBOX_MIN_AVAIL_SIZE      (TCPIP_MBOX_SIZE / 2)
-#define LWIP_SCHED_LPWORKPRIORITY           80
-
-int sys_mbox_setprio_lpwork(sys_mbox_t *mbox, void *msg)
-{
-	u32_t left_mbox_size = (mbox->rear >= mbox->front) ? mbox->queue_size - (mbox->rear - mbox->front + 1) : (mbox->front - mbox->rear + 1);
-
-	struct tcpip_msg *m = (struct tcpip_msg *)msg;
-
-	if (m->type != TCPIP_MSG_INPKT) {
-		return ERR_OK;
-	}
-
-	if (left_mbox_size < LWIP_TCPIP_MBOX_MIN_AVAIL_SIZE) {
-		/* set lpwork priority to low */
-		lpwork_setpriority(0, LWIP_SCHED_LPWORKPRIORITY);
-
-	} else if (left_mbox_size >= (TCPIP_MBOX_SIZE - LWIP_TCPIP_MBOX_MIN_AVAIL_SIZE)) {
-		/* set lpwork priority to original */
-		lpwork_setpriority(0, CONFIG_SCHED_LPWORKPRIORITY);
-
-	} else {
-		/* do nothing */
-	}
-
-	return ERR_OK;
-}
-#endif
 
 /*---------------------------------------------------------------------------*
  * Routine:  sys_mbox_trypost
@@ -256,9 +215,6 @@ err_t sys_mbox_trypost(sys_mbox_t *mbox, void *msg)
 	if (first_msg && mbox->wait_fetch) {
 		sys_sem_signal(&(mbox->mail));
 	}
-#if defined(CONFIG_SCSC_WLAN_UDP_FLOWCONTROL) && defined(CONFIG_PRIORITY_INHERITANCE)
-	(void)sys_mbox_setprio_lpwork(mbox, msg);
-#endif
 
 errout_with_mutex:
 	sys_sem_signal(&(mbox->mutex));
@@ -294,10 +250,15 @@ errout_with_mutex:
 u32_t sys_arch_mbox_fetch(sys_mbox_t *mbox, void **msg, u32_t timeout)
 {
 	u32_t time = 0;
+	u32_t status = OK;
 
 	/* The mutex lock is quick so we don't bother with the timeout
 	   stuff here. */
-	sys_arch_sem_wait(&(mbox->mutex), 0);
+
+	status = sys_arch_sem_wait(&(mbox->mutex), 0);
+	if (status == SYS_ARCH_CANCELED) {
+		return SYS_ARCH_CANCELED;
+	}
 
 	/* wait while the queue is empty */
 	while (mbox->front == mbox->rear) {
@@ -307,6 +268,10 @@ u32_t sys_arch_mbox_fetch(sys_mbox_t *mbox, void **msg, u32_t timeout)
 		/* We block while waiting for a mail to arrive in the mailbox. We
 		   must be prepared to timeout. */
 		if (timeout != 0) {
+
+			if (timeout < MSEC_PER_TICK)
+				timeout = MSEC_PER_TICK;
+
 			time = sys_arch_sem_wait(&(mbox->mail), timeout);
 
 			if (time == SYS_ARCH_TIMEOUT) {
@@ -319,8 +284,11 @@ u32_t sys_arch_mbox_fetch(sys_mbox_t *mbox, void **msg, u32_t timeout)
 			sys_arch_sem_wait(&(mbox->mail), 0);
 		}
 
-		sys_arch_sem_wait(&(mbox->mutex), 0);
+		status = sys_arch_sem_wait(&(mbox->mutex), 0);
 		mbox->wait_fetch--;
+		if (status == SYS_ARCH_CANCELED) {
+			return SYS_ARCH_CANCELED;
+		}
 	}
 
 	if (msg != NULL) {
@@ -489,6 +457,7 @@ u32_t sys_arch_sem_wait(sys_sem_t *sem, u32_t timeout)
 {
 	systime_t start = clock_systimer();
 	int status = OK;
+	int remaining_time;
 
 	if (timeout == 0) {
 
@@ -498,26 +467,32 @@ u32_t sys_arch_sem_wait(sys_sem_t *sem, u32_t timeout)
 			 * Restart If signal is EINTR else crash on Assert as we can't receive ETIMEDOUT
 			 */
 			status = get_errno();
+			if (status == ECANCELED) {
+				return SYS_ARCH_CANCELED;
+			}
 			LWIP_ASSERT("status == EINTR", status == EINTR);
 		}
 		status = OK;
 	} else {
-		while ((status = sem_tickwait(sem, clock_systimer(), MSEC2TICK(timeout))) != OK) {
+		remaining_time = timeout;
+		while ((status = sem_tickwait(sem, clock_systimer(), MSEC2TICK(remaining_time))) != OK) {
 			/* Handle the special case where the semaphore wait was
 			 * awakened by the receipt of a signal.
 			 * Restart If signal is EINTR else break if ETIMEDOUT
 			 */
-			if (status == -ETIMEDOUT) {
-				break;
+			if (status == -ECANCELED) {
+				return SYS_ARCH_CANCELED;
+			} else if (status == -ETIMEDOUT) {
+				return SYS_ARCH_TIMEOUT;
 			} else {
 				/* calculate remaining timeout */
-				timeout -= TICK2MSEC(clock_systimer() - start);
+				remaining_time -= TICK2MSEC(clock_systimer() - start);
+				if (remaining_time < MSEC_PER_TICK) {
+					return SYS_ARCH_TIMEOUT;
+				}
 			}
 		}
 
-	}
-	if (status == -ETIMEDOUT) {
-		return SYS_ARCH_TIMEOUT;
 	}
 
 	systime_t end = clock_systimer();
@@ -662,7 +637,7 @@ void sys_mutex_unlock(sys_mutex_t *mutex)
 #endif							/*LWIP_COMPAT_MUTEX */
 /*-----------------------------------------------------------------------------------*/
 
-systime_t sys_now(void)
+u32_t sys_now(void)
 {
 	return TICK2MSEC(clock_systimer());
 }
@@ -690,7 +665,7 @@ sys_thread_t sys_thread_new(const char *name, lwip_thread_fn entry_function, voi
 
 	if (s_nextthread < SYS_THREAD_MAX) {
 		sys_thread_t new_thread;
-		new_thread = task_create(name, priority, stacksize, (main_t)entry_function, (char * const *)NULL);
+		new_thread = task_create(name, priority, stacksize, (main_t) entry_function, (char *const *)NULL);
 		if (new_thread < 0) {
 			int errval = errno;
 			LWIP_DEBUGF(SYS_DEBUG, ("Failed to create new_thread: %d", errval));
@@ -727,7 +702,7 @@ sys_thread_t sys_kernel_thread_new(const char *name, lwip_thread_fn entry_functi
 
 	if (s_nextthread < SYS_THREAD_MAX) {
 		sys_thread_t new_thread;
-		new_thread = kernel_thread(name, priority, stacksize, (main_t)entry_function, (char * const *)NULL);
+		new_thread = kernel_thread(name, priority, stacksize, (main_t) entry_function, (char *const *)NULL);
 		if (new_thread < 0) {
 			int errval = errno;
 			LWIP_DEBUGF(SYS_DEBUG, ("Failed to create new_thread: %d", errval));
@@ -744,7 +719,7 @@ sys_thread_t sys_kernel_thread_new(const char *name, lwip_thread_fn entry_functi
 sys_prot_t sys_arch_protect(void)
 {
 	sched_lock();
-	return (sys_prot_t)1;
+	return (sys_prot_t) 1;
 }
 
 void sys_arch_unprotect(sys_prot_t p)

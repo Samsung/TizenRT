@@ -13,6 +13,14 @@ menuconfig NET_IPv4
 
 source "net/lwip/configs/ipv4/Kconfig"
 
+menuconfig NET_IPv6
+	bool "IPv6 support"
+	default n
+	---help---
+		Build in support for IPv6.
+
+source "net/lwip/configs/ipv6/Kconfig"
+
 source "net/lwip/configs/socket/Kconfig"
 
 menuconfig NET_ARP
@@ -24,10 +32,18 @@ menuconfig NET_ARP
 
 source "net/lwip/configs/arp/Kconfig"
 
+menuconfig NET_IPv6_ND
+	bool "ND support"
+	depends on NET_IPv6
+	default y
+	---help---
+		Build in support for IPv6 Neighbor Discovery.
+
+source "net/lwip/configs/nd/Kconfig"
 
 menuconfig NET_UDP
 	bool "UDP Support"
-	depends on NET_IPv4
+	depends on NET_IPv4 || NET_IPv6
 	default y
 	---help---
 		UDP support on or off
@@ -37,7 +53,7 @@ source "net/lwip/configs/udp/Kconfig"
 
 menuconfig NET_TCP
 	bool "TCP Support"
-	depends on NET_IPv4
+	depends on NET_IPv4 || NET_IPv6
 	default y
 	---help---
 		TCP support on or off
@@ -47,12 +63,24 @@ source "net/lwip/configs/tcp/Kconfig"
 
 menuconfig NET_ICMP
 	bool "ICMP Support"
+	depends on NET_IPv4
 	default n
 	---help---
 		Enable minimal ICMP support. Includes built-in support
 		for sending replies to received ECHO (ping) requests.
 
+if NET_ICMP
 source "net/lwip/configs/icmp/Kconfig"
+endif
+
+menuconfig NET_IPv6_ICMP
+	bool "ICMP6 support"
+	depends on NET_IPv6
+	default y
+	---help---
+		Build in support icmp for IPv6.
+
+source net/lwip/configs/icmp6/Kconfig
 
 
 menuconfig NET_LWIP_IGMP
@@ -69,6 +97,22 @@ config NET_LWIP_MEMP_NUM_IGMP_GROUP
 		Number of multicast groups whose network interfaces
 		can be members at the same time
 endif #NET_LWIP_IGMP
+
+menuconfig NET_IPv6_MLD
+	bool "MLD Support"
+	depends on NET_IPv6
+	default y
+
+if NET_IPv6_MLD
+source "net/lwip/configs/mld/Kconfig"
+endif
+
+config NET_IPv6_DHCP
+	bool "DHCPv6 Support"
+	depends on NET_IPv6
+	default n
+	---help---
+		Enable DHCPv6 stateful address autoconfiguration.
 
 
 source "net/lwip/configs/mbox/Kconfig"
@@ -212,5 +256,12 @@ config NET_LWIP_SNMP_MAX_TREE_DEPTH
 		this depends on your MIB! This affects the size of MEMP_SNMP_VALUE elements.
 
 endif #NET_LWIP_SNMP
+
+menuconfig NET_LWIP_NETDB
+	bool "Enable LWIP NETDB Library"
+	default y
+	depends on (NET_IPv4 || NET_IPv6) && NET_UDP
+
+source "net/lwip/configs/netdb/Kconfig"
 
 endmenu #LwIP options

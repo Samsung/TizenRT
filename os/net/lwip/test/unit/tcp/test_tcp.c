@@ -342,7 +342,7 @@ START_TEST(test_tcp_fast_rexmit_wraparound)
 	LWIP_UNUSED_ARG(_i);
 
 	for (i = 0; i < sizeof(tx_data); i++) {
-		tx_data[i] = (u8_t)i;
+		tx_data[i] = (u8_t) i;
 	}
 
 	/* initialize local vars */
@@ -440,7 +440,7 @@ START_TEST(test_tcp_rto_rexmit_wraparound)
 	LWIP_UNUSED_ARG(_i);
 
 	for (i = 0; i < sizeof(tx_data); i++) {
-		tx_data[i] = (u8_t)i;
+		tx_data[i] = (u8_t) i;
 	}
 
 	/* initialize local vars */
@@ -521,7 +521,7 @@ static void test_tcp_tx_full_window_lost(u8_t zero_window_probe_from_unsent)
 	u8_t expected = 0xFE;
 
 	for (i = 0; i < sizeof(tx_data); i++) {
-		u8_t d = (u8_t)i;
+		u8_t d = (u8_t) i;
 		if (d == 0xFE) {
 			d = 0xF0;
 		}

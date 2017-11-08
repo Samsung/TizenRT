@@ -46,8 +46,8 @@
  * Author: Adam Dunkels <adam@sics.se>
  *
  */
-#ifndef __LWIP_DEBUG_H__
-#define __LWIP_DEBUG_H__
+#ifndef LWIP_HDR_DEBUG_H
+#define LWIP_HDR_DEBUG_H
 
 #include <net/lwip/arch.h>
 #include <net/lwip/opt.h>
@@ -58,12 +58,21 @@
  * - 2 serious
  * - 3 severe
  */
+/** Debug level: ALL messages*/
 #define LWIP_DBG_LEVEL_ALL     0x00
-#define LWIP_DBG_LEVEL_OFF     LWIP_DBG_LEVEL_ALL	/* compatibility define only */
-#define LWIP_DBG_LEVEL_WARNING 0x01	/* bad checksums, dropped packets, ... */
-#define LWIP_DBG_LEVEL_SERIOUS 0x02	/* memory allocation failures, ... */
+/** Debug level: Warnings. bad checksums, dropped packets, ... */
+#define LWIP_DBG_LEVEL_WARNING 0x01
+/** Debug level: Serious. memory allocation failures, ... */
+#define LWIP_DBG_LEVEL_SERIOUS 0x02
+/** Debug level: Severe */
 #define LWIP_DBG_LEVEL_SEVERE  0x03
+/**
+ * @}
+ */
+
 #define LWIP_DBG_MASK_LEVEL    0x03
+/* compatibility define only */
+#define LWIP_DBG_LEVEL_OFF     LWIP_DBG_LEVEL_ALL
 
 /** flag for LWIP_DEBUGF to enable that debug message */
 #define LWIP_DBG_ON            0x80U
@@ -79,44 +88,50 @@
 /** flag for LWIP_DEBUGF to halt after printing this debug message */
 #define LWIP_DBG_HALT          0x08U
 
+#ifdef __DOXYGEN__
+#define LWIP_NOASSERT
+#undef LWIP_NOASSERT
+#endif
+
 #ifndef LWIP_NOASSERT
-#define LWIP_ASSERT(message, assertion) \
-	do { \
-		if (!(assertion)) { \
-			LWIP_PLATFORM_DIAG((message)); \
-			LWIP_PLATFORM_ASSERT(assertion);\
-		} \
-	} while (0)
+#define LWIP_ASSERT(message, assertion) do { if (!(assertion)) { \
+	LWIP_PLATFORM_ASSERT(message); } \
+} while (0)
+#ifndef LWIP_PLATFORM_ASSERT
+#error "If you want to use LWIP_ASSERT, LWIP_PLATFORM_ASSERT(message) needs to be defined in your arch/cc.h"
+#endif
 #else							/* LWIP_NOASSERT */
 #define LWIP_ASSERT(message, assertion)
 #endif							/* LWIP_NOASSERT */
 
-/** if "expression" isn't true, then print "message" and execute "handler" expression */
 #ifndef LWIP_ERROR
-#define LWIP_ERROR(message, expression, handler) \
-	do { \
-		if (!(expression)) { \
-			LWIP_PLATFORM_DIAG(("LWIP_ERROR"));\
-			LWIP_PLATFORM_DIAG((message)); \
-			handler;\
-		} \
-	} while (0)
+#ifndef LWIP_NOASSERT
+#define LWIP_PLATFORM_ERROR(message) LWIP_PLATFORM_ASSERT(message)
+#elif defined LWIP_DEBUG
+#define LWIP_PLATFORM_ERROR(message) LWIP_PLATFORM_DIAG((message))
+#else
+#define LWIP_PLATFORM_ERROR(message)
+#endif
+
+/* if "expression" isn't true, then print "message" and execute "handler" expression */
+#define LWIP_ERROR(message, expression, handler) do { if (!(expression)) { \
+	LWIP_PLATFORM_ERROR(message); handler; } \
+} while (0)
 #endif							/* LWIP_ERROR */
 
-#define LWIP_DEBUG      1
 #ifdef LWIP_DEBUG
-/** print debug message only if debug message type is enabled...
- *  AND is of correct type AND is at least LWIP_DBG_LEVEL
- */
+#ifndef LWIP_PLATFORM_DIAG
+#error "If you want to use LWIP_DEBUG, LWIP_PLATFORM_DIAG(message) needs to be defined in your arch/cc.h"
+#endif
 #define LWIP_DEBUGF(debug, message) \
 	do { \
 		if (((debug) & LWIP_DBG_ON) && \
 			((debug) & LWIP_DBG_TYPES_ON) && \
 			((s16_t)((debug) & LWIP_DBG_MASK_LEVEL) >= LWIP_DBG_MIN_LEVEL)) { \
-			LWIP_PLATFORM_DIAG(message); \
-			if ((debug) & LWIP_DBG_HALT) { \
-				while (1) ; \
-			} \
+				LWIP_PLATFORM_DIAG(message); \
+				if ((debug) & LWIP_DBG_HALT) { \
+					while (1); \
+				} \
 		} \
 	} while (0)
 
@@ -124,4 +139,4 @@
 #define LWIP_DEBUGF(debug, message)
 #endif							/* LWIP_DEBUG */
 
-#endif							/* __LWIP_DEBUG_H__ */
+#endif							/* LWIP_HDR_DEBUG_H */

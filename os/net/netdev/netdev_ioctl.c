@@ -76,11 +76,11 @@
 
 #include <net/lwip/netif.h>
 #include <net/lwip/netifapi.h>
-#include <net/lwip/ipv4/igmp.h>
+#include <net/lwip/igmp.h>
 
 #ifdef CONFIG_NET_IGMP
 #include "sys/sockio.h"
-#endif
+#endif							/* CONFIG_NET_IGMP */
 
 #include "socket/socket.h"
 #include "netdev/netdev.h"
@@ -99,9 +99,9 @@
 
 #ifdef CONFIG_NET_IPv6
 #define AF_INETX AF_INET6
-#else
+#else							/* CONFIG_NET_IPv6 */
 #define AF_INETX AF_INET
-#endif
+#endif							/* CONFIG_NET_IPv6 */
 
 /****************************************************************************
  * Private Functions
@@ -127,16 +127,28 @@ static int ioctl_addipv4route(FAR struct rtentry *rtentry)
 	in_addr_t router;
 
 	addr = (FAR struct sockaddr_in *)rtentry->rt_target;
+#if CONFIG_NET_LWIP
+	target = (in_addr_t)ip_2_ip4(addr->sin_addr);
+#else							/* CONFIG_NET_LWIP */
 	target = (in_addr_t)addr->sin_addr.s_addr;
+#endif							/* CONFIG_NET_LWIP */
 
 	addr = (FAR struct sockaddr_in *)rtentry->rt_netmask;
+#if CONFIG_NET_LWIP
+	netmask = (in_addr_t)ip_2_ip4(addr->sin_addr);
+#else							/* CONFIG_NET_LWIP */
 	netmask = (in_addr_t)addr->sin_addr.s_addr;
+#endif							/* CONFIG_NET_LWIP */
 
 	/* The router is an optional argument */
 
 	if (rtentry->rt_router) {
 		addr = (FAR struct sockaddr_in *)rtentry->rt_router;
-		router = (in_addr_t)addr->sin_addr.s_addr;
+#if CONFIG_NET_LWIP
+	    router = (in_addr_t)ip_2_ip4(addr->sin_addr);
+#else							/* CONFIG_NET_LWIP */
+	    router = (in_addr_t)addr->sin_addr.s_addr;
+#endif							/* CONFIG_NET_LWIP */
 	} else {
 		router = 0;
 	}
@@ -165,16 +177,28 @@ static int ioctl_addipv6route(FAR struct rtentry *rtentry)
 	net_ipv6addr_t router;
 
 	addr = (FAR struct sockaddr_in6 *)rtentry->rt_target;
+#if CONFIG_NET_LWIP
+	target = (net_ipv6addr_t)ip_2_ip6(addr->sin6_addr);
+#else							/* CONFIG_NET_LWIP */
 	target = (net_ipv6addr_t)addr->sin6_addr.u6_addr16;
+#endif							/* CONFIG_NET_LWIP */
 
 	addr = (FAR struct sockaddr_in6 *)rtentry->rt_netmask;
+#if CONFIG_NET_LWIP
+	netmask = (net_ipv6addr_t)ip_2_ip6(addr->sin6_addr);
+#else							/* CONFIG_NET_LWIP */
 	netmask = (net_ipv6addr_t)addr->sin6_addr.u6_addr16;
+#endif							/* CONFIG_NET_LWIP */
 
 	/* The router is an optional argument */
 
 	if (rtentry->rt_router) {
 		addr = (FAR struct sockaddr_in6 *)rtentry->rt_router;
-		router = (net_ipv6addr_t)addr->sin6_addr.u6_addr16;
+#if CONFIG_NET_LWIP
+	    router = (net_ipv6addr_t)ip_2_ip6(addr->sin6_addr);
+#else							/* CONFIG_NET_LWIP */
+	    router = (net_ipv6addr_t)addr->sin6_addr.u6_addr16;
+#endif							/* CONFIG_NET_LWIP */
 	} else {
 		router = NULL;
 	}
@@ -202,10 +226,18 @@ static int ioctl_delipv4route(FAR struct rtentry *rtentry)
 	in_addr_t netmask;
 
 	addr = (FAR struct sockaddr_in *)rtentry->rt_target;
+#if CONFIG_NET_LWIP
+	target = (in_addr_t)ip_2_ip4(addr->sin_addr);
+#else							/* CONFIG_NET_LWIP */
 	target = (in_addr_t)addr->sin_addr.s_addr;
+#endif							/* CONFIG_NET_LWIP */
 
 	addr = (FAR struct sockaddr_in *)rtentry->rt_netmask;
+#if CONFIG_NET_LWIP
+	netmask = (in_addr_t)ip_2_ip4(addr->sin_addr);
+#else							/* CONFIG_NET_LWIP */
 	netmask = (in_addr_t)addr->sin_addr.s_addr;
+#endif							/* CONFIG_NET_LWIP */
 
 	return net_delroute(target, netmask);
 }
@@ -230,10 +262,18 @@ static int ioctl_delipv6route(FAR struct rtentry *rtentry)
 	net_ipv6addr_t netmask;
 
 	addr = (FAR struct sockaddr_in6 *)rtentry->rt_target;
+#if CONFIG_NET_LWIP
+	target = (net_ipv6addr_t)ip_2_ip6(addr->sin6_addr);
+#else							/* CONFIG_NET_LWIP */
 	target = (net_ipv6addr_t)addr->sin6_addr.u6_addr16;
+#endif							/* CONFIG_NET_LWIP */
 
 	addr = (FAR struct sockaddr_in6 *)rtentry->rt_netmask;
+#if CONFIG_NET_LWIP
+	netmask = (net_ipv6addr_t)ip_2_ip6(addr->sin6_addr);
+#else							/* CONFIG_NET_LWIP */
 	netmask = (net_ipv6addr_t)addr->sin6_addr.u6_addr16;
+#endif							/* CONFIG_NET_LWIP */
 
 	return net_delroute(target, netmask);
 }
@@ -259,7 +299,7 @@ static void ioctl_getipv4addr(FAR struct sockaddr *outaddr, in_addr_t inaddr)
 	dest->sin_port = 0;
 	dest->sin_addr.s_addr = inaddr;
 }
-#endif
+#endif							/* CONFIG_NET_IPV4 */
 
 /****************************************************************************
  * Name: ioctl_getipv6addr
@@ -274,14 +314,18 @@ static void ioctl_getipv4addr(FAR struct sockaddr *outaddr, in_addr_t inaddr)
  ****************************************************************************/
 
 #ifdef CONFIG_NET_IPv6
+#ifdef CONFIG_NET_LWIP
+static void ioctl_getipv6addr(FAR struct sockaddr_storage *outaddr, ip6_addr_t *inaddr)
+#else							/* CONFIG_NET_LWIP */
 static void ioctl_getipv6addr(FAR struct sockaddr_storage *outaddr, FAR const net_ipv6addr_t inaddr)
+#endif							/* CONFIG_NET_LWIP */
 {
 	FAR struct sockaddr_in6 *dest = (FAR struct sockaddr_in6 *)outaddr;
 	dest->sin6_family = AF_INET6;
 	dest->sin6_port = 0;
-	memcpy(dest->sin6_addr.in6_u.u6_addr8, inaddr, 16);
+	memcpy(dest->sin6_addr.s6_addr, inaddr, 16);
 }
-#endif
+#endif							/* CONFIG_NET_IPV6 */
 
 /****************************************************************************
  * Name: ioctl_setipv4addr
@@ -302,7 +346,7 @@ static void ioctl_setipv4addr(FAR in_addr_t *outaddr, FAR const struct sockaddr 
 	FAR const struct sockaddr_in *src = (FAR const struct sockaddr_in *)inaddr;
 	*outaddr = src->sin_addr.s_addr;
 }
-#endif
+#endif							/* CONFIG_NET_IPV4 */
 
 /****************************************************************************
  * Name: ioctl_setipv6addr
@@ -318,12 +362,16 @@ static void ioctl_setipv4addr(FAR in_addr_t *outaddr, FAR const struct sockaddr 
  ****************************************************************************/
 
 #ifdef CONFIG_NET_IPv6
+#ifdef CONFIG_NET_LWIP
+static void ioctl_setipv6addr(ip6_addr_t *outaddr, FAR const struct sockaddr_storage *inaddr)
+#else							/* CONFIG_NET_LWIP */
 static void ioctl_setipv6addr(FAR net_ipv6addr_t outaddr, FAR const struct sockaddr_storage *inaddr)
+#endif							/* CONFIG_NET_LWIP */
 {
 	FAR const struct sockaddr_in6 *src = (FAR const struct sockaddr_in6 *)inaddr;
-	memcpy(outaddr, src->sin6_addr.in6_u.u6_addr8, 16);
+	memcpy(outaddr, src->sin6_addr.s6_addr, 16);
 }
-#endif
+#endif							/* CONFIG_NET_IPV6 */
 
 struct ifenum {
 	FAR struct ifconf	*ifc;
@@ -342,7 +390,7 @@ static int netdev_getconf(FAR struct netif *dev, void *arg)
 
 	strncpy(ifr->ifr_name, dev->d_ifname, IFNAMSIZ - 1);
 	struct sockaddr_in *sin = (struct sockaddr_in *)&ifr->ifr_addr;
-	sin->sin_addr.s_addr = dev->ip_addr.addr;
+	sin->sin_addr.s_addr = ip4_addr_get_u32(ip_2_ip4(&dev->ip_addr));
 	ifenum->pos += sizeof(struct ifreq);
 
 	return OK;
@@ -423,188 +471,188 @@ static int netdev_ifrioctl(FAR struct socket *sock, int cmd, FAR struct ifreq *r
 	case SIOCGIFADDR: {			/* Get IP address */
 		dev = netdev_ifrdev(req);
 		if (dev) {
-			ioctl_getipv4addr(&req->ifr_addr, dev->ip_addr.addr);
+			ioctl_getipv4addr(&req->ifr_addr, ip4_addr_get_u32(ip_2_ip4(&dev->ip_addr)));
 			ret = OK;
 		}
 	}
 	break;
-#endif
 
-#ifdef CONFIG_NET_IPv4
 	case SIOCSIFADDR: {			/* Set IP address */
 		dev = netdev_ifrdev(req);
 		if (dev) {
 #ifdef CONFIG_NET_LWIP
 			netifapi_netif_set_down(dev);
 			ip_addr_t ipaddr, netmask, gw;
-			ioctl_setipv4addr(&ipaddr.addr, &req->ifr_addr);
+			ioctl_setipv4addr(&ip4_addr_get_u32(ip_2_ip4(&ipaddr)), &req->ifr_addr);
 			netmask = dev->netmask;
 			gw = dev->gw;
-			netifapi_netif_set_addr(dev, &ipaddr, &netmask, &gw);
+			netifapi_netif_set_addr(dev, ip_2_ip4(&ipaddr), ip_2_ip4(&netmask), ip_2_ip4(&gw));
 			netifapi_netif_set_up(dev);
 
 			ret = OK;
-#endif
+#endif							/* CONFIG_NET_LWIP */
 		}
 	}
 	break;
-#endif
 
-#ifdef CONFIG_NET_IPv4
 	case SIOCGIFDSTADDR: {		/* Get P-to-P address */
 		dev = netdev_ifrdev(req);
 		if (dev) {
-			ioctl_getipv4addr(&req->ifr_dstaddr, dev->gw.addr);
+			ioctl_getipv4addr(&req->ifr_dstaddr, ip4_addr_get_u32(ip_2_ip4(&dev->gw)));
 			ret = OK;
 		}
 	}
 	break;
-#endif
 
-#ifdef CONFIG_NET_IPv4
 	case SIOCSIFDSTADDR: {		/* Set P-to-P address */
 		dev = netdev_ifrdev(req);
 		if (dev) {
 #ifdef CONFIG_NET_LWIP
 			netifapi_netif_set_down(dev);
 			ip_addr_t ipaddr, netmask, gw;
-			ioctl_setipv4addr(&gw.addr, &req->ifr_dstaddr);
+			ioctl_setipv4addr(&ip4_addr_get_u32(ip_2_ip4(&gw)), &req->ifr_dstaddr);
 			ipaddr = dev->ip_addr;
 			netmask = dev->netmask;
-			netifapi_netif_set_addr(dev, &ipaddr, &netmask, &gw);
+			netifapi_netif_set_addr(dev, ip_2_ip4(&ipaddr), ip_2_ip4(&netmask), ip_2_ip4(&gw));
 			netifapi_netif_set_up(dev);
 
 			ret = OK;
-#endif
+#endif							/* CONFIG_NET_LWIP */
 		}
 	}
 	break;
-#endif
 
-#ifdef CONFIG_NET_IPv4
 	case SIOCGIFBRDADDR:		/* Get broadcast IP address */
 	case SIOCSIFBRDADDR: {		/* Set broadcast IP address */
 		ret = -ENOSYS;
 	}
 	break;
-#endif
 
-#ifdef CONFIG_NET_IPv4
 	case SIOCGIFNETMASK: {		/* Get network mask */
 		dev = netdev_ifrdev(req);
 		if (dev) {
-			ioctl_getipv4addr(&req->ifr_addr, dev->netmask.addr);
+			ioctl_getipv4addr(&req->ifr_addr, ip4_addr_get_u32(ip_2_ip4(&dev->netmask)));
 			ret = OK;
 		}
 	}
 	break;
-#endif
 
-#ifdef CONFIG_NET_IPv4
 	case SIOCSIFNETMASK: {		/* Set network mask */
 		dev = netdev_ifrdev(req);
 		if (dev) {
 #ifdef CONFIG_NET_LWIP
 			netifapi_netif_set_down(dev);
 			ip_addr_t ipaddr, netmask, gw;
-			ioctl_setipv4addr(&netmask.addr, &req->ifr_addr);
+			ioctl_setipv4addr(&ip4_addr_get_u32(ip_2_ip4(&netmask)), &req->ifr_addr);
 			ipaddr = dev->ip_addr;
 			gw = dev->gw;
-			netifapi_netif_set_addr(dev, &ipaddr, &netmask, &gw);
+			netifapi_netif_set_addr(dev, ip_2_ip4(&ipaddr), ip_2_ip4(&netmask), ip_2_ip4(&gw));
 			netifapi_netif_set_up(dev);
-			
+
 			ret = OK;
-#endif
+#endif							/* CONFIG_NET_LWIP */
 		}
 	}
 	break;
-#endif
+#endif							/* CONFIG_NET_IPV4 */
 
 	/* TODO: Support IPv6 related IOCTL calls once IPv6 is functional */
-#if 0
 
 #ifdef CONFIG_NET_IPv6
 	case SIOCGLIFADDR: {		/* Get IP address */
 		dev = netdev_ifrdev(req);
 		if (dev) {
 			FAR struct lifreq *lreq = (FAR struct lifreq *)req;
+#ifdef CONFIG_NET_LWIP
+			ioctl_getipv6addr(&lreq->lifr_addr, ip_2_ip6(&dev->ip6_addr[0]));
+#else							/* CONFIG_NET_LWIP */
 			ioctl_getipv6addr(&lreq->lifr_addr, dev->d_ipv6addr);
+#endif							/* CONFIG_NET_LWIP */
 			ret = OK;
 		}
 	}
 	break;
-#endif
 
-#ifdef CONFIG_NET_IPv6
 	case SIOCSLIFADDR: {		/* Set IP address */
 		dev = netdev_ifrdev(req);
 		if (dev) {
 			FAR struct lifreq *lreq = (FAR struct lifreq *)req;
 			netdev_ifdown(dev);
+#ifdef CONFIG_NET_LWIP
+			ioctl_setipv6addr(ip_2_ip6(&dev->ip6_addr[0]), &lreq->lifr_addr);
+#else							/* CONFIG_NET_LWIP */
 			ioctl_setipv6addr(dev->d_ipv6addr, &lreq->lifr_addr);
+#endif							/* CONFIG_NET_LWIP */
 			netdev_ifup(dev);
 			ret = OK;
 		}
 	}
 	break;
-#endif
 
-#ifdef CONFIG_NET_IPv6
 	case SIOCGLIFDSTADDR: {		/* Get P-to-P address */
 		dev = netdev_ifrdev(req);
 		if (dev) {
 			FAR struct lifreq *lreq = (FAR struct lifreq *)req;
+#ifdef CONFIG_NET_LWIP
+			ioctl_getipv6addr(&lreq->lifr_dstaddr, ip_2_ip6(&dev->gw));
+#else							/* CONFIG_NET_LWIP */
 			ioctl_getipv6addr(&lreq->lifr_dstaddr, dev->d_ipv6draddr);
+#endif							/* CONFIG_NET_LWIP */
 			ret = OK;
 		}
 	}
 	break;
-#endif
 
-#ifdef CONFIG_NET_IPv6
 	case SIOCSLIFDSTADDR: {		/* Set P-to-P address */
 		dev = netdev_ifrdev(req);
 		if (dev) {
 			FAR struct lifreq *lreq = (FAR struct lifreq *)req;
+#ifdef CONFIG_NET_LWIP
+			ioctl_setipv6addr(ip_2_ip6(&dev->gw), &lreq->lifr_dstaddr);
+#else							/* CONFIG_NET_LWIP */
 			ioctl_setipv6addr(dev->d_ipv6draddr, &lreq->lifr_dstaddr);
+#endif							/* CONFIG_NET_LWIP */
 			ret = OK;
 		}
 	}
 	break;
-#endif
 
-#ifdef CONFIG_NET_IPv6
 	case SIOCGLIFBRDADDR:		/* Get broadcast IP address */
+
 	case SIOCSLIFBRDADDR: {		/* Set broadcast IP address */
 		ret = -ENOSYS;
 	}
 	break;
-#endif
 
-#ifdef CONFIG_NET_IPv6
 	case SIOCGLIFNETMASK: {		/* Get network mask */
 		dev = netdev_ifrdev(req);
 		if (dev) {
 			FAR struct lifreq *lreq = (FAR struct lifreq *)req;
+#ifdef CONFIG_NET_LWIP
+			ioctl_getipv6addr(&lreq->lifr_addr, ip_2_ip6(&dev->netmask));
+#else							/* CONFIG_NET_LWIP */
 			ioctl_getipv6addr(&lreq->lifr_addr, dev->d_ipv6netmask);
+#endif							/* CONFIG_NET_LWIP */
 			ret = OK;
 		}
 	}
 	break;
-#endif
 
-#ifdef CONFIG_NET_IPv6
 	case SIOCSLIFNETMASK: {		/* Set network mask */
 		dev = netdev_ifrdev(req);
 		if (dev) {
 			FAR struct lifreq *lreq = (FAR struct lifreq *)req;
+#ifdef CONFIG_NET_LWIP
+			ioctl_setipv6addr(ip_2_ip6(&dev->netmask), &lreq->lifr_addr);
+#else							/* CONFIG_NET_LWIP */
 			ioctl_setipv6addr(dev->d_ipv6netmask, &lreq->lifr_addr);
+#endif							/* CONFIG_NET_LWIP */
 			ret = OK;
 		}
 	}
 	break;
-#endif
-#endif
+#endif							/* CONFIG_NET_IPV6 */
+
 	case SIOCGLIFMTU:			/* Get MTU size */
 	case SIOCGIFMTU: {			/* Get MTU size */
 		dev = netdev_ifrdev(req);
@@ -670,7 +718,7 @@ static int netdev_ifrioctl(FAR struct socket *sock, int cmd, FAR struct ifreq *r
 		}
 	}
 	break;
-#endif
+#endif							/* CONFIG_NET_EHTERNET */
 
 	case SIOCDIFADDR: {			/* Delete IP address */
 		dev = netdev_ifrdev(req);
@@ -680,10 +728,14 @@ static int netdev_ifrioctl(FAR struct socket *sock, int cmd, FAR struct ifreq *r
 #endif
 #ifdef CONFIG_NET_IPv4
 			dev->d_ipaddr = 0;
-#endif
+#endif							/* CONFIG_NET_IPV4 */
 #ifdef CONFIG_NET_IPv6
+#ifdef CONFIG_NET_LWIP
+			memset(ip_2_ip6(&dev->ip_addr), 0, sizeof(net_ipv6addr_t));
+#else
 			memset(&dev->d_ipv6addr, 0, sizeof(net_ipv6addr_t));
-#endif
+#endif							/* CONFIG_NET_LWIP */
+#endif							/* CONFIG_NET_IPV6 */
 			ret = OK;
 		}
 	}
@@ -700,7 +752,7 @@ static int netdev_ifrioctl(FAR struct socket *sock, int cmd, FAR struct ifreq *r
 	case SIOCDARP:				/* Delete an ARP mapping */
 	case SIOCGARP:				/* Get an ARP mapping */
 #error "IOCTL Commands not implemented"
-#endif
+#endif							/* CONFIG_NET_ARPIOCTLS */
 
 #ifdef CONFIG_NETDEV_PHY_IOCTL
 #ifdef CONFIG_ARCH_PHY_INTERRUPT
@@ -712,7 +764,7 @@ static int netdev_ifrioctl(FAR struct socket *sock, int cmd, FAR struct ifreq *r
 		}
 	}
 	break;
-#endif
+#endif							/* CONFIG_ARCH_PHY_INTERRUPT */
 
 	case SIOCGMIIPHY:			/* Get address of MII PHY in use */
 	case SIOCGMIIREG:			/* Get MII register via MDIO */
@@ -724,7 +776,7 @@ static int netdev_ifrioctl(FAR struct socket *sock, int cmd, FAR struct ifreq *r
 		}
 	}
 	break;
-#endif
+#endif							/* CONFIG_NETDEV_PHY_IOCTL */
 	case SIOCGIFCONF:
 		ret = ioctl_siocgifconf((FAR struct ifconf *)req);
 		break;
@@ -764,7 +816,7 @@ static FAR struct netif *netdev_imsfdev(FAR struct ip_msfilter *imsf)
 
 	return netdev_findbyname(imsf->imsf_name);
 }
-#endif
+#endif							/* CONFIG_NET_IGMP */
 
 /****************************************************************************
  * Name: netdev_imsfioctl
@@ -816,7 +868,7 @@ static int netdev_imsfioctl(FAR struct socket *sock, int cmd, FAR struct ip_msfi
 
 	return ret;
 }
-#endif
+#endif							/* CONFIG_NET_IGMP */
 
 /****************************************************************************
  * Name: netdev_rtioctl
@@ -853,7 +905,7 @@ static int netdev_rtioctl(FAR struct socket *sock, int cmd, FAR struct rtentry *
 #ifdef CONFIG_NET_IPv4
 #ifdef CONFIG_NET_IPv6
 		if (rtentry->rt_target->ss_family == AF_INET)
-#endif
+#endif							/* CONFIG_NET_IPV6 */
 		{
 			ret = ioctl_addipv4route(rtentry);
 		}
@@ -862,7 +914,7 @@ static int netdev_rtioctl(FAR struct socket *sock, int cmd, FAR struct rtentry *
 #ifdef CONFIG_NET_IPv6
 #ifdef CONFIG_NET_IPv4
 		else
-#endif
+#endif							/* CONFIG_NET_IPV4 */
 		{
 			ret = ioctl_addipv6route(rtentry);
 		}
@@ -879,7 +931,7 @@ static int netdev_rtioctl(FAR struct socket *sock, int cmd, FAR struct rtentry *
 #ifdef CONFIG_NET_IPv4
 #ifdef CONFIG_NET_IPv6
 		if (rtentry->rt_target->ss_family == AF_INET)
-#endif
+#endif							/* CONFIG_NET_IPV6 */
 		{
 			ret = ioctl_delipv4route(rtentry);
 		}
@@ -888,7 +940,7 @@ static int netdev_rtioctl(FAR struct socket *sock, int cmd, FAR struct rtentry *
 #ifdef CONFIG_NET_IPv6
 #ifdef CONFIG_NET_IPv4
 		else
-#endif
+#endif							/* CONFIG_NET_IPV4 */
 		{
 			ret = ioctl_delipv6route(rtentry);
 		}
@@ -903,7 +955,7 @@ static int netdev_rtioctl(FAR struct socket *sock, int cmd, FAR struct rtentry *
 
 	return ret;
 }
-#endif
+#endif							/* CONFIG_NET_ROUTE */
 
 /****************************************************************************
  * Public Functions
@@ -971,12 +1023,12 @@ int netdev_ioctl(int sockfd, int cmd, unsigned long arg)
 	if (ret == -ENOTTY) {
 		ret = netdev_imsfioctl(sock, cmd, (FAR struct ip_msfilter *)((uintptr_t)arg));
 	}
-#endif
+#endif							/* CONFIG_NET_IGMP */
 #ifdef CONFIG_NET_ROUTE
 	if (ret == -ENOTTY) {
 		ret = netdev_rtioctl(sock, cmd, (FAR struct rtentry *)((uintptr_t)arg));
 	}
-#endif
+#endif							/* CONFIG_NET_ROUTE */
 
 	/* Check for success or failure */
 

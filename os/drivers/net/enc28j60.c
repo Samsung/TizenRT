@@ -90,7 +90,7 @@
 #include <net/lwip/opt.h>
 #include <net/lwip/netif.h>
 #include <net/lwip/tcpip.h>
-#include <net/lwip/ipv4/ip.h>
+#include <net/lwip/ip.h>
 #define net_driver_s netif
 #endif
 

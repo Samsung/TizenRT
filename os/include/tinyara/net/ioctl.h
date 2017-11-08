@@ -114,8 +114,8 @@
  * include/net/route.h
  */
 
-#define SIOCADDRT        _SIOC(0x001c)	/* Add an entry to the routing table */
-#define SIOCDELRT        _SIOC(0x001d)	/* Delete an entry from the routing table */
+#define SIOCADDRT        _SIOC(0x001c)	/* Add an entry to the routing table (Not Supported) */
+#define SIOCDELRT        _SIOC(0x001d)	/* Delete an entry from the routing table (Not Supported) */
 
 /* Wireless ioctl commands **************************************************/
 

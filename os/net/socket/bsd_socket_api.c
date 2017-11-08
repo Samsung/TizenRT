@@ -58,6 +58,16 @@
 #ifdef CONFIG_NET
 
 #include <sys/socket.h>
+#include <sys/types.h>
+#include <netinet/in.h>
+#include <net/lwip/netdb.h>
+#include <net/lwip/sockets.h>
+#ifdef CONFIG_NET_IPv4
+#include <net/lwip/ip4_addr.h>
+#endif
+#ifdef CONFIG_NET_IPv6
+#include <net/lwip/ip6_addr.h>
+#endif
 
 int bind(int s, const struct sockaddr *name, socklen_t namelen)
 {
@@ -129,6 +139,16 @@ int sendto(int s, const void *data, size_t size, int flags, const struct sockadd
 	return lwip_sendto(s, data, size, flags, to, tolen);
 }
 
+int recvmsg(int sockfd, struct msghdr *msg, int flags)
+{
+	return lwip_recvmsg(sockfd, msg, flags);
+}
+
+int sendmsg(int sockfd, const struct msghdr *msg, int flags)
+{
+	return lwip_sendmsg(sockfd, msg, flags);
+}
+
 int socket(int domain, int type, int protocol)
 {
 	return lwip_socket(domain, type, protocol);
@@ -145,5 +165,112 @@ int ioctlsocket(int s, long cmd, void *argp)
 {
 	return lwip_ioctl(s, cmd, argp);
 }
+
+uint16_t htons(uint16_t hs)
+{
+#if BYTE_ORDER == BIG_ENDIAN
+	return hs;
+#else
+	return lwip_htons(hs);
+#endif
+}
+
+uint16_t ntohs(uint16_t ns)
+{
+#if BYTE_ORDER == BIG_ENDIAN
+	return ns;
+#else
+	return lwip_htons(ns);
+#endif
+}
+
+uint32_t ntohl(uint32_t nl)
+{
+#if BYTE_ORDER == BIG_ENDIAN
+	return nl;
+#else
+	return lwip_htonl(nl);
+#endif
+}
+
+uint32_t htonl(uint32_t nl)
+{
+#if BYTE_ORDER == BIG_ENDIAN
+	return nl;
+#else
+	return lwip_htonl(nl);
+#endif
+}
+
+FAR char *inet_ntoa(struct in_addr in)
+{
+	return ip4addr_ntoa((const ip4_addr_t *)&(in));
+}
+
+in_addr_t inet_addr(FAR const char *cp)
+{
+	return ipaddr_addr(cp);
+}
+
+int inet_aton(const char *cp, struct in_addr *inp)
+{
+	return ip4addr_aton(cp, (ip4_addr_t *)inp);
+}
+
+FAR const char *inet_ntop(int af, FAR const void *src, FAR char *dest, socklen_t size)
+{
+
+#ifdef CONFIG_NET_IPv4
+	if (af == AF_INET) {
+		return ip4addr_ntoa_r((const ip4_addr_t *)(src), ((char *)(dest)), (size));
+	} else
+#endif
+#ifdef CONFIG_NET_IPv6
+	if (af == AF_INET6) {
+		return ip6addr_ntoa_r((const ip6_addr_t *)(src), ((char *)(dest)), (size));
+	}
+#endif
+	return NULL;
+}
+
+int inet_pton(int af, FAR const char *src, FAR void *dest)
+{
+#ifdef CONFIG_NET_IPv4
+	if (af == AF_INET) {
+		return ip4addr_aton(((const char *)(src)), (ip4_addr_t *)((char *)(dest)));
+	} else
+#endif
+#ifdef CONFIG_NET_IPv6
+	if (af == AF_INET6) {
+		return ip6addr_aton(((const char *)(src)), ((ip6_addr_t *)(dest)));
+	}
+#endif
+	return 0;
+}
+
+#ifdef CONFIG_NET_LWIP_NETDB
+struct hostent *gethostbyname(const char *name)
+{
+	return lwip_gethostbyname(name);
+}
+
+void freeaddrinfo(struct addrinfo *ai)
+{
+	lwip_freeaddrinfo(ai);
+}
+
+int getaddrinfo(const char *nodename, const char *servname, const struct addrinfo *hints, struct addrinfo **res)
+{
+	return lwip_getaddrinfo(nodename, servname, hints, res);
+}
+
+#if LWIP_COMPAT_SOCKETS
+int getnameinfo(const struct sockaddr *sa, size_t salen, char *host, size_t hostlen, char *serv, size_t servlen, int flags)
+{
+	return lwip_getnameinfo(sa, salen, host, hostlen, serv, servlen, flags);
+}
+#endif /* LWIP_COMPAT_SOCKETS */
+
+#endif /* NET_LWIP_NETDB */
 
 #endif

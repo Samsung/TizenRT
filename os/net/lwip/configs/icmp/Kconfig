@@ -3,8 +3,6 @@
 # see kconfig-language at https://www.kernel.org/doc/Documentation/kbuild/kconfig-language.txt
 #
 
-if NET_ICMP
-
 config NET_ICMP_TTL
 	int "ICMP TTL"
 	default 255
@@ -23,4 +21,3 @@ config NET_MULTICAST_PING
 	---help---
 		Respond to multicast pings (default is unicast only)
 
-endif # NET_ICMP

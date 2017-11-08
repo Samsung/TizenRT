@@ -33,8 +33,10 @@
 #include <net/lwip/mem.h>
 #include <net/lwip/pbuf.h>
 #include <net/lwip/stats.h>
+#include <net/lwip/ip_addr.h>
+
 #include <net/lwip/netif/etharp.h>
-#include <net/lwip/ipv4/ip_addr.h>
+#include <net/lwip/ethip6.h>
 
 #define ETHERNET_MTU 1500
 
@@ -71,9 +73,11 @@ struct ethernetif {
 #ifdef LWIP_NETIF_STATUS_CALLBACK
 void ethernetif_status_callback(struct netif *netif)
 {
+#if 0
 	if (netif->flags & NETIF_FLAG_UP) {
-		printf("IP: %d.%d.%d.%d\n", ip4_addr1_16(&netif->ip_addr), ip4_addr2_16(&netif->ip_addr), ip4_addr3_16(&netif->ip_addr), ip4_addr4_16(&netif->ip_addr));
+		printf("IP: %d.%d.%d.%d\n", netif->ip_addr.addr, ip4_addr2_16(&netif->ip_addr), ip4_addr3_16(&netif->ip_addr), ip4_addr4_16(&netif->ip_addr));
 	}
+#endif
 }
 #endif
 
@@ -216,7 +220,14 @@ err_t ethernetif_init(struct netif *netif)
 	 * You can instead declare your own function an call etharp_output()
 	 * from it if you have to do some checks before sending (e.g. if link
 	 * is available...) */
+#if LWIP_IPV4 && LWIP_IPV6
 	netif->output = etharp_output;
+	netif->output_ip6 = ethip6_output;
+#elif LWIP_IPV4
+	netif->output = etharp_output;
+#else
+	netif->output_ip6 = ethip6_output;
+#endif
 	/* netif->linkoutput is set in enc_initialize function */
 	netif->linkoutput = ethernetif_output;
 	netif->mtu = ETHERNET_MTU;
@@ -248,9 +259,15 @@ err_t ethernetif_init(struct netif *netif)
 
 	memcpy(netif->d_mac.ether_addr_octet, netif->hwaddr, IFHWADDRLEN);
 #endif
-	netif->d_ipaddr = netif->ip_addr.addr;
-	netif->d_draddr = netif->gw.addr;
-	netif->d_netmask = netif->netmask.addr;
+#if CONFIG_NET_LWIP
+	netif->d_ipaddr = ip4_addr_get_u3(ip_2_ip4(&netif->ip_addr));
+	netif->d_draddr = ip4_addr_get_u32(ip_2_ip4(&netif->gw));
+	netif->d_netmask = ip4_addr_get_u32(ip_2_ip4(&netif->netmask));
+#else
+	netif->d_ipaddr = netif->ip_addr.s_addr.addr;
+	netif->d_draddr = netif->gw.s_addr.addr;
+	netif->d_netmask = netif->netmask.s_addr.addr;
+#endif
 	//memcpy(netif->d_mac.ether_addr_octet,netif->hwaddr, IFHWADDRLEN);
 	/* Do whatever else is needed to initialize interface. */
 	return ERR_OK;

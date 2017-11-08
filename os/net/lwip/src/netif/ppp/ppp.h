@@ -56,13 +56,14 @@
 
 #if PPP_SUPPORT					/* don't build if not configured for use in lwipopts.h */
 
+#include <net/lwip/netif/ppp/ppp_opts.h>
 #include <net/lwip/def.h>
 #include <net/lwip/sio.h>
 #include <net/lwip/stats.h>
 #include <net/lwip/mem.h>
 #include <net/lwip/netif.h>
 #include <net/lwip/sys.h>
-#include <net/lwip/timers.h>
+#include <net/lwip/timeouts.h>
 
 #ifndef __u_char_defined
 
@@ -100,6 +101,26 @@ typedef unsigned char u_char;
 #define PPPCTLS_ERRCODE  101	/* Set the error code */
 #define PPPCTLG_ERRCODE  102	/* Get the error code */
 #define PPPCTLG_FD       103	/* Get the fd associated with the ppp */
+
+/** PPP_INPROC_MULTITHREADED==1 call pppInput using tcpip_callback().
+ * Set this to 0 if pppInProc is called inside tcpip_thread or with NO_SYS==1.
+ * Default is 1 for NO_SYS==0 (multithreaded) and 0 for NO_SYS==1 (single-threaded).
+ */
+#ifndef PPP_INPROC_MULTITHREADED
+#define PPP_INPROC_MULTITHREADED (NO_SYS == 0)
+#endif
+
+/** PPP_INPROC_OWNTHREAD==1: start a dedicated RX thread per PPP session.
+ * Default is 0: call pppos_input() for received raw characters, charcater
+ * reception is up to the port
+ */
+#ifndef PPP_INPROC_OWNTHREAD
+#define PPP_INPROC_OWNTHREAD      PPP_INPROC_MULTITHREADED
+#endif
+
+#if PPP_INPROC_OWNTHREAD && !PPP_INPROC_MULTITHREADED
+#error "PPP_INPROC_OWNTHREAD needs PPP_INPROC_MULTITHREADED==1"
+#endif
 
 /************************
 *** PUBLIC DATA TYPES ***

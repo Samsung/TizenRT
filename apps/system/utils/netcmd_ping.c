@@ -54,8 +54,8 @@
 #include <stdlib.h>
 #include <sys/socket.h>
 #include <arpa/inet.h>
-#include <net/lwip/ipv4/icmp.h>
-#include <net/lwip/ipv4/ip.h>
+#include <net/lwip/icmp.h>
+#include <net/lwip/ip.h>
 #include "netcmd.h"
 #include "netcmd_ping.h"
 
@@ -71,7 +71,8 @@ static int g_ping_recv_counter;
 static uint16_t g_ping_seq_num;
 static uint16_t g_ping_data_size;
 
-static void dump_usage(void)
+static void
+dump_usage(void)
 {
 	printf("Usage :\n");
 	printf("\tping <IP address>\n");
@@ -83,7 +84,6 @@ static void dump_usage(void)
 	printf("\tsize : ping packet data size (default 32 Bytes)\n");
 	printf("\n");
 }
-
 static int
 nu_ping_options(int argc, char **argv, int *count, uint32_t *dsec, char **staddr)
 {

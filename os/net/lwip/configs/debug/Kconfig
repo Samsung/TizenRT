@@ -187,6 +187,12 @@ config NET_TIMERS_DEBUG
 	---help---
 		Enable debugging in timers.c.
 
+config NET_IPv6_DEBUG
+	bool "Enable IPv6 Debugging"
+	depends on NET_IPv6
+	default n
+	---help---
+		Enable debugging for IPv6.
 
 endif #LWIP_DEBUG
 

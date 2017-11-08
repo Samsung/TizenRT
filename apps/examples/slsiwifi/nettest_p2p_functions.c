@@ -30,7 +30,7 @@
 #include <sys/socket.h>
 #include "net/lwip/mem.h"
 #include "net/lwip/raw.h"
-#include <net/lwip/ipv4/inet.h>		// TODO: ipv4 check
+#include <net/lwip/inet.h>
 #include <net/lwip/dhcp.h>
 #include <net/lwip/sys.h>
 #include <apps/netutils/netlib.h>
@@ -39,9 +39,9 @@
 #include <net/lwip/arch/sys_arch.h>
 #include <net/lwip/dhcp.h>
 #include <tinyara/config.h>
-#include "net/lwip/ipv4/icmp.h"		// TODO: ipv4 check
-#include "net/lwip/ipv4/ip.h"		// TODO: ipv4 check
-#include "net/lwip/ipv4/inet_chksum.h"		// TODO: ipv4 check
+#include "net/lwip/icmp.h"
+#include "net/lwip/ip.h"
+#include "net/lwip/inet_chksum.h"
 #include "net/lwip/err.h"
 #include "net/lwip/opt.h"
 #endif

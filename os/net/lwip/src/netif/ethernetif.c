@@ -69,6 +69,7 @@
 #include <net/lwip/pbuf.h>
 #include <net/lwip/stats.h>
 #include <net/lwip/snmp.h>
+#include <net/lwip/ethip6.h>
 #include <net/lwip/netif/etharp.h>
 #include <net/lwip/netif/ppp_oe.h>
 
@@ -115,6 +116,21 @@ static void low_level_init(struct netif *netif)
 	/* don't set NETIF_FLAG_ETHARP if this device is not an ethernet one */
 	netif->flags = NETIF_FLAG_BROADCAST | NETIF_FLAG_ETHARP | NETIF_FLAG_LINK_UP;
 
+#if LWIP_IPV6 && LWIP_IPV6_MLD
+	/*
+	 * For hardware/netifs that implement MAC filtering.
+	 * All-nodes link-local is handled by default, so we must let the hardware know
+	 * to allow multicast packets in.
+	 * Should set mld_mac_filter previously.
+	 */
+	if (netif->mld_mac_filter != NULL) {
+		ip6_addr_t ip6_allnodes_ll;
+
+		ip6_addr_set_allnodes_linklocal(&ip6_allnodes_ll);
+		netif->mld_mac_filter(netif, &ip6_allnodes_ll, NETIF_ADD_MAC_FILTER);
+	}
+#endif							/* LWIP_IPV6 && LWIP_IPV6_MLD */
+
 	/* Do whatever else is needed to initialize interface. */
 }
 
@@ -153,6 +169,16 @@ static err_t low_level_output(struct netif *netif, struct pbuf *p)
 	}
 
 	signal that packet should be sent();
+
+	MIB2_STATS_NETIF_ADD(netif, ifoutoctets, p->tot_len);
+	if (((u8_t *) p->payload)[0] & 1) {
+		/* broadcast or multicast packet */
+		MIB2_STATS_NETIF_INC(netif, ifoutnucastpkts);
+	} else {
+		/* unicast packet */
+		MIB2_STATS_NETIF_INC(netif, ifoutucastpkts);
+	}
+	/* increase ifoutdiscards or ifouterrors on error */
 
 #if ETH_PAD_SIZE
 	pbuf_header(p, ETH_PAD_SIZE);	/* reclaim the padding word */
@@ -209,6 +235,14 @@ static struct pbuf *low_level_input(struct netif *netif)
 		}
 		acknowledge that packet has been read();
 
+		MIB2_STATS_NETIF_ADD(netif, ifinoctets, p->tot_len);
+		if (((u8_t *) p->payload)[0] & 1) {
+			/* broadcast or multicast packet */
+			MIB2_STATS_NETIF_INC(netif, ifinnucastpkts);
+		} else {
+			/* unicast packet */
+			MIB2_STATS_NETIF_INC(netif, ifinucastpkts);
+		}
 #if ETH_PAD_SIZE
 		pbuf_header(p, ETH_PAD_SIZE);	/* reclaim the padding word */
 #endif
@@ -218,6 +252,7 @@ static struct pbuf *low_level_input(struct netif *netif)
 		drop packet();
 		LINK_STATS_INC(link.memerr);
 		LINK_STATS_INC(link.drop);
+		MIB2_STATS_NETIF_INC(netif, ifindiscards);
 	}
 
 	return p;
@@ -242,34 +277,14 @@ static void ethernetif_input(struct netif *netif)
 
 	/* move received packet into a new pbuf */
 	p = low_level_input(netif);
-	/* no packet could be read, silently ignore this */
-	if (p == NULL) {
-		return;
-	}
-	/* points to packet payload, which starts with an Ethernet header */
-	ethhdr = p->payload;
-
-	switch (htons(ethhdr->type)) {
-		/* IP or ARP packet? */
-	case ETHTYPE_IP:
-	case ETHTYPE_ARP:
-#if PPPOE_SUPPORT
-		/* PPPoE packet? */
-	case ETHTYPE_PPPOEDISC:
-	case ETHTYPE_PPPOE:
-#endif							/* PPPOE_SUPPORT */
-		/* full packet send to tcpip_thread to process */
+	/* if no packet could be read, silently ignore this */
+	if (p != NULL) {
+		/* pass all packets to ethernet_input, which decides what packets it supports */
 		if (netif->input(p, netif) != ERR_OK) {
 			LWIP_DEBUGF(NETIF_DEBUG, ("ethernetif_input: IP input error\n"));
 			pbuf_free(p);
 			p = NULL;
 		}
-		break;
-
-	default:
-		pbuf_free(p);
-		p = NULL;
-		break;
 	}
 }
 
@@ -306,7 +321,7 @@ err_t ethernetif_init(struct netif *netif)
 	 * The last argument should be replaced with your link speed, in units
 	 * of bits per second.
 	 */
-	NETIF_INIT_SNMP(netif, snmp_ifType_ethernet_csmacd, LINK_SPEED_OF_YOUR_NETIF_IN_BPS);
+	MIB2_INIT_NETIF(netif, snmp_ifType_ethernet_csmacd, LINK_SPEED_OF_YOUR_NETIF_IN_BPS);
 
 	netif->state = ethernetif;
 	netif->name[0] = IFNAME0;
@@ -316,6 +331,9 @@ err_t ethernetif_init(struct netif *netif)
 	 * from it if you have to do some checks before sending (e.g. if link
 	 * is available...) */
 	netif->output = etharp_output;
+#if LWIP_IPV6
+	netif->output_ip6 = ethip6_output;
+#endif							/* LWIP_IPV6 */
 	netif->linkoutput = low_level_output;
 
 	ethernetif->ethaddr = (struct eth_addr *)&(netif->hwaddr[0]);

@@ -105,11 +105,11 @@ typedef int sys_prot_t;
 #endif
 
 #ifndef LWIP_PLATFORM_DIAG
-#define LWIP_PLATFORM_DIAG(msg) do { lwipdbg msg; lwipdbg("\n"); } while (0)
+#define LWIP_PLATFORM_DIAG(msg) do { lwipdbg msg; } while (0)
 #endif
 
 #ifndef LWIP_STATS_DIAG
-#define LWIP_STATS_DIAG(msg) do { lwipdbg msg; } while (0)
+#define LWIP_STATS_DIAG(msg) do { lldbg msg; } while (0)
 #endif
 
 #define LWIP_PLATFORM_ASSERT(x) DEBUGASSERT(x)	//do { if(!(x)) while(1); } while(0)

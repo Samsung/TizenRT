@@ -835,8 +835,7 @@ if (go->neg && \
 	 * Add any characters they want to our (receive-side) asyncmap.
 	 */
 	if (go->neg_asyncmap && go->asyncmap != 0xFFFFFFFFl) {
-		NAKCILONG(CI_ASYNCMAP, neg_asyncmap, try.asyncmap = go->asyncmap | cilong;
-				 );
+		NAKCILONG(CI_ASYNCMAP, neg_asyncmap, try.asyncmap = go->asyncmap | cilong;);
 	}
 
 	/*
@@ -910,25 +909,20 @@ if (go->neg && \
 	/*
 	 * Only implementing CBCP...not the rest of the callback options
 	 */
-	NAKCICHAR(CI_CALLBACK, neg_cbcp, try.neg_cbcp = 0;
-			 );
+	NAKCICHAR(CI_CALLBACK, neg_cbcp, try.neg_cbcp = 0;);
 
 	/*
 	 * Check for a looped-back line.
 	 */
-	NAKCILONG(CI_MAGICNUMBER, neg_magicnumber, try.magicnumber = magic();
-			  looped_back = 1;
-			 );
+	NAKCILONG(CI_MAGICNUMBER, neg_magicnumber, try.magicnumber = magic(); looped_back = 1;);
 
 	/*
 	 * Peer shouldn't send Nak for protocol compression or
 	 * address/control compression requests; they should send
 	 * a Reject instead.  If they send a Nak, treat it as a Reject.
 	 */
-	NAKCIVOID(CI_PCOMPRESSION, neg_pcompression, try.neg_pcompression = 0;
-			 );
-	NAKCIVOID(CI_ACCOMPRESSION, neg_accompression, try.neg_accompression = 0;
-			 );
+	NAKCIVOID(CI_PCOMPRESSION, neg_pcompression, try.neg_pcompression = 0;);
+	NAKCIVOID(CI_ACCOMPRESSION, neg_accompression, try.neg_accompression = 0;);
 
 	/*
 	 * There may be remaining CIs, if the peer is requesting negotiation

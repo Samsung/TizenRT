@@ -57,13 +57,14 @@
 #if PPP_SUPPORT					/* don't build if not configured for use in lwipopts.h */
 
 #include "ppp.h"
+#include <net/lwip/netif/ppp/ppp_opts.h>
 #include <net/lwip/def.h>
 #include <net/lwip/sio.h>
 #include <net/lwip/stats.h>
 #include <net/lwip/mem.h>
 #include <net/lwip/netif.h>
 #include <net/lwip/sys.h>
-#include <net/lwip/timers.h>
+#include <net/lwip/timeouts.h>
 
 /** Some defines for code we skip compared to the original pppd.
  *  These are just here to minimise the use of the ugly "#if 0". */
@@ -294,13 +295,13 @@ struct ppp_idle {
 
 struct ppp_settings {
 
-	u_int disable_defaultip : 1;	/* Don't use hostname for default IP addrs */
-	u_int auth_required : 1;		/* Peer is required to authenticate */
-	u_int explicit_remote : 1;	/* remote_name specified with remotename opt */
-	u_int refuse_pap : 1;			/* Don't wanna auth. ourselves with PAP */
-	u_int refuse_chap : 1;		/* Don't wanna auth. ourselves with CHAP */
-	u_int usehostname : 1;		/* Use hostname for our_name */
-	u_int usepeerdns : 1;			/* Ask peer for DNS adds */
+	u_int disable_defaultip: 1;	/* Don't use hostname for default IP addrs */
+	u_int auth_required: 1;		/* Peer is required to authenticate */
+	u_int explicit_remote: 1;	/* remote_name specified with remotename opt */
+	u_int refuse_pap: 1;			/* Don't wanna auth. ourselves with PAP */
+	u_int refuse_chap: 1;		/* Don't wanna auth. ourselves with CHAP */
+	u_int usehostname: 1;		/* Use hostname for our_name */
+	u_int usepeerdns: 1;			/* Ask peer for DNS adds */
 
 	u_short idle_time_limit;	/* Shut down link if idle for this long */
 	int maxconnect;				/* Maximum connect time (seconds) */

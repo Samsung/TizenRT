@@ -58,7 +58,7 @@
 #ifdef CONFIG_HAVE_GETHOSTBYNAME
 #include <netdb.h>
 #endif
-#include <apps/netutils/dhcpc.h>
+
 #ifndef DNS_DEFAULT_PORT
 #define DNS_DEFAULT_PORT   53
 #endif
@@ -264,15 +264,6 @@ int cmd_ifconfig(int argc, char **argv)
 		printf(fmtargrequired, argv[0]);
 		return ERROR;
 	}
-#ifdef CONFIG_NET_ETHERNET
-	/* Set Hardware Ethernet MAC address */
-	/* REVISIT: How will we handle Ethernet and SLIP networks together? */
-
-	if (hw) {
-		ndbg("HW MAC: %s\n", hw);
-		netlib_setmacaddr(intf, mac);
-	}
-#endif
 
 	if (hostip != NULL) {
 		if (!strcmp(hostip, "dhcp")) {
@@ -280,28 +271,124 @@ int cmd_ifconfig(int argc, char **argv)
 
 			ndbg("DHCPC Mode\n");
 			gip = addr.s_addr = 0;
+			netlib_set_ipv4addr(intf, &addr);
+#ifdef CONFIG_NET_IPv6
+		} else if (!strcmp(hostip, "auto")) {
+			/* IPV6 auto configuration : Link-Local address */
+
+			ndbg("IPV6 link local address auto config\n");
+			netif = netif_find(intf);
+
+			if (netif) {
+#ifdef CONFIG_NET_IPv6_AUTOCONFIG
+				/* enable IPv6 address stateless autoconfiguration */
+				netif_set_ip6_autoconfig_enabled(netif, 1);
+#endif
+				/* To auto-config linklocal address, netif should have mac address already */
+				netif_create_ip6_linklocal_address(netif, 1);
+				ndbg("generated IPV6 linklocal address - %X : %X : %X : %X\n", PP_HTONL(ip_2_ip6(&netif->ip6_addr[0])->addr[0]), PP_HTONL(ip_2_ip6(&netif->ip6_addr[0])->addr[1]), PP_HTONL(ip_2_ip6(&netif->ip6_addr[0])->addr[2]), PP_HTONL(ip_2_ip6(&netif->ip6_addr[0])->addr[3]));
+#ifdef CONFIG_NET_IPv6_MLD
+				ip6_addr_t solicit_addr;
+
+				/* set MLD6 group to receive solicit multicast message */
+				ip6_addr_set_solicitednode(&solicit_addr, ip_2_ip6(&netif->ip6_addr[0])->addr[3]);
+				mld6_joingroup_netif(netif, &solicit_addr);
+				ndbg("MLD6 group added - %X : %X : %X : %X\n", PP_HTONL(solicit_addr.addr[0]), PP_HTONL(solicit_addr.addr[1]), PP_HTONL(solicit_addr.addr[2]), PP_HTONL(solicit_addr.addr[3]));
+#endif /* CONFIG_NET_IPv6_MLD */
+			}
+
+			return OK;
+#endif /* CONFIG_NET_IPv6 */
 		} else {
 			/* Set host IP address */
 			ndbg("Host IP: %s\n", hostip);
-			gip = addr.s_addr = inet_addr(hostip);
+
+			if (strstr(hostip, ".") != NULL) {
+				gip = addr.s_addr = inet_addr(hostip);
+				netlib_set_ipv4addr(intf, &addr);
+			}
+#ifdef CONFIG_NET_IPv6
+			else if (strstr(hostip, ":") != NULL) {
+				ip6_addr_t temp;
+				s8_t idx;
+				int result;
+
+				netif = netif_find(intf);
+				if (netif) {
+					inet_pton(AF_INET6, hostip, &temp);
+					idx = netif_get_ip6_addr_match(netif, &temp);
+					if (idx != -1) {
+						/* delete static ipv6 address if the same ip address exists */
+						netif_ip6_addr_set_state(netif, idx, IP6_ADDR_INVALID);
+						return OK;
+					}
+					/* add static ipv6 address */
+					result = netif_add_ip6_address(netif, &temp, &idx);
+				}
+
+				return OK;
+			}
+#endif /* CONFIG_NET_IPv6 */
+			else {
+				ndbg("hostip is not valid\n");
+
+				return ERROR;
+			}
 		}
-
-		netlib_set_ipv4addr(intf, &addr);
-
 	} else {
 		printf("hostip is not provided\n");
+
 		return ERROR;
 	}
 
 	/* Get the MAC address of the NIC */
 	if (!gip) {
-		FAR void *handle;
-		netlib_getmacaddr(intf, mac);
-		struct dhcpc_state ds;
 		int ret;
 
-		/* Set up the DHCPC modules */
+#if 0 /* TODO : LWIP_DHCP */
+#define NET_CMD_DHCP_TIMEOUT 5000000
+#define NET_CMD_DHCP_CHECK_INTERVAL 10000
+		int32_t timeleft = NET_CMD_DHCP_TIMEOUT;
 
+		netlib_getmacaddr(intf, mac);
+
+		netif = netif_find(intf);
+		if (netif == NULL) {
+			return ERROR;
+		}
+
+		ret = dhcp_start(netif);
+		if (ret < 0) {
+			dhcp_release(netif);
+			return ERROR;
+		}
+
+		while (netif->dhcp->state != DHCP_BOUND) {
+			usleep(NET_CMD_DHCP_CHECK_INTERVAL);
+			timeleft -= NET_CMD_DHCP_CHECK_INTERVAL;
+			if (timeleft <= 0) {
+				break;
+			}
+		}
+
+		if (netif->dhcp->state == DHCP_BOUND) {
+			printf("IP address %u.%u.%u.%u\n", (unsigned char)((htonl(netif->ip_addr.addr) >> 24) & 0xff), (unsigned char)((htonl(netif->ip_addr.addr) >> 16) & 0xff), (unsigned char)((htonl(netif->ip_addr.addr) >> 8) & 0xff), (unsigned char)((htonl(netif->ip_addr.addr) >> 0) & 0xff));
+			printf("Netmask address %u.%u.%u.%u\n", (unsigned char)((htonl(netif->netmask.addr) >> 24) & 0xff), (unsigned char)((htonl(netif->netmask.addr) >> 16) & 0xff), (unsigned char)((htonl(netif->netmask.addr) >> 8) & 0xff), (unsigned char)((htonl(netif->netmask.addr) >> 0) & 0xff));
+			printf("Gateway address %u.%u.%u.%u\n", (unsigned char)((htonl(netif->gw.addr) >> 24) & 0xff), (unsigned char)((htonl(netif->gw.addr) >> 16) & 0xff), (unsigned char)((htonl(netif->gw.addr) >> 8) & 0xff), (unsigned char)((htonl(netif->gw.addr) >> 0) & 0xff));
+		} else {
+			if (timeleft <= 0) {
+				printf("DHCP Client - Timeout fail to get ip address\n");
+				return ERROR;
+			}
+		}
+#else							/* LWIP_DHCP */
+
+		FAR void *handle;
+		struct dhcpc_state ds;
+
+		netlib_getmacaddr(intf, mac);
+
+		/* Set up the DHCPC modules */
 		handle = dhcpc_open(intf);
 
 		/* Get an IP address.  Note that there is no logic for renewing the IP
@@ -333,8 +420,9 @@ int cmd_ifconfig(int argc, char **argv)
 		printf("Gateway %s\n", inet_ntoa(ds.default_router));
 #if defined(CONFIG_NETDB_DNSCLIENT) && defined(CONFIG_NETDB_DNSSERVER_BY_DHCP)
 		printf("Default DNS %s\n", inet_ntoa(ds.dnsaddr));
-#endif
+#endif							/* defined(CONFIG_NETDB_DNSCLIENT) && defined(CONFIG_NETDB_DNSSERVER_BY_DHCP) */
 		dhcpc_close(handle);
+#endif							/* LWIP_DHCP */
 
 		return OK;
 	}
@@ -351,7 +439,6 @@ int cmd_ifconfig(int argc, char **argv)
 			gip |= 0x00000001;
 			gip = HTONL(gip);
 		}
-
 		addr.s_addr = gip;
 	}
 	netlib_set_dripv4addr(intf, &addr);
@@ -373,6 +460,15 @@ int cmd_ifconfig(int argc, char **argv)
 		ndbg("DNS: Default\n");
 		addr.s_addr = gip;
 	}
+
+#ifdef CONFIG_NET_ETHERNET
+	/* Set Hardware Ethernet MAC address */
+	/* REVISIT: How will we handle Ethernet and SLIP networks together? */
+	if (hw) {
+		ndbg("HW MAC: %s\n", hw);
+		netlib_setmacaddr(intf, mac);
+	}
+#endif
 
 	return OK;
 }

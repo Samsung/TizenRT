@@ -35,9 +35,7 @@
 #ifdef CONFIG_NET_IPv6
 #include <net/lwip/ethip6.h>
 #endif
-#ifdef CONFIG_NET_LWIP_IGMP
-#include <net/lwip/ipv4/igmp.h>
-#endif
+#include <net/lwip/igmp.h>
 
 #include "debug_scsc.h"
 #include "netif.h"
@@ -501,11 +499,11 @@ exit:
 				  (u8)(ip)[3] \
 }
 #ifdef CONFIG_NET_LWIP_IGMP
-static err_t slsi_set_multicast_list(struct netif *dev, ip_addr_t *group, u8_t action)
+static err_t slsi_set_multicast_list(struct netif *dev, const ip4_addr_t *group, u8_t action)
 {
 	struct netdev_vif *ndev_vif = netdev_priv(dev);
 	struct slsi_dev *sdev = ndev_vif->sdev;
-	u8 addr[ETH_ALEN] = MULTICAST_IP_TO_MAC((u8 *) group);
+	u8 addr[ETH_ALEN] = MULTICAST_IP_TO_MAC((u8 *)group);
 
 	if (ndev_vif->vif_type != FAPI_VIFTYPE_STATION) {
 		return 0;

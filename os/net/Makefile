@@ -95,12 +95,18 @@ ifeq ($(CONFIG_NET_LWIP),y)
 include lwip/src/core/Make.defs
 include lwip/src/api/Make.defs
 include lwip/src/netif/Make.defs
+ifeq ($(CONFIG_NET_LWIP_SNMP),y)
 include lwip/src/core/snmp/Make.defs
+endif
 ifeq ($(CONFIG_NET_IPv4),y)
 include lwip/src/core/ipv4/Make.defs
 endif
-#include lwip/src/core/ipv6/Make.defs
+ifeq ($(CONFIG_NET_IPv6),y)
+include lwip/src/core/ipv6/Make.defs
+endif
+ifeq ($(CONFIG_NET_PPP_SUPPORT),y)
 include lwip/src/netif/ppp/Make.defs
+endif
 include lwip/sys/arch/Make.defs
 endif
 

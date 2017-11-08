@@ -92,6 +92,41 @@ config NET_SYS_STATS
 	---help---
 		Enable system stats (sem and mbox counts, etc).
 
-endif #NET_STATS
+config NET_IPv6_STATS
+	bool "Enable IPv6 Stats"
+	depends on NET_IPv6
+	default n
+	---help---
+		Enable IPv6 stats.
 
+config NET_IPv6_ICMP_STATS
+	bool "Enable ICMP stats for IPv6"
+	depends on NET_IPv6
+	default n
+	---help---
+		Enable ICMP stats for IPv6.
+
+config NET_IPv6_FRAG_STATS
+	bool "Enable IPv6 fragmentation stats"
+	depends on NET_IPv6_FRAG
+	default n
+	---help---
+		Enable IPv6 fragmentation stats.
+
+
+config NET_IPv6_MLD_STATS
+	bool "Enable IPv6 MLD stats"
+	depends on NET_IPv6_MLD
+	default n
+	---help---
+		Enable IPv6 MLD stats.
+
+config NET_IPv6_ND_STATS
+	bool "Enable IPv6 ND stats"
+	depends on NET_IPv6
+	default n
+	---help---
+		Enable IPv6 ND stats.
+
+endif #NET_STATS
 endmenu #"Enable Statistics"
