@@ -553,7 +553,7 @@ static void i2s_buf_rx_initialize(struct s5j_i2s_s *priv)
 	int i;
 
 	priv->freelist_rx = NULL;
-	sem_init(&priv->bufsem_rx, 0, CONFIG_S5J_I2S_MAXINFLIGHT);
+	sem_init(&priv->bufsem_rx, 0, 0);
 
 	for (i = 0; i < CONFIG_S5J_I2S_MAXINFLIGHT; i++) {
 		i2s_buf_rx_free(priv, &priv->containers_rx[i]);
@@ -565,7 +565,7 @@ static void i2s_buf_tx_initialize(struct s5j_i2s_s *priv)
 	int i;
 
 	priv->freelist_tx = NULL;
-	sem_init(&priv->bufsem_tx, 0, CONFIG_S5J_I2S_MAXINFLIGHT);
+	sem_init(&priv->bufsem_tx, 0, 0);
 
 	for (i = 0; i < CONFIG_S5J_I2S_MAXINFLIGHT; i++) {
 		i2s_buf_tx_free(priv, &priv->containers_tx[i]);
