@@ -202,7 +202,8 @@ static CAData_t* CAGenerateHandlerData(const CAEndpoint_t *endpoint,
             goto exit;
         }
 
-        if (CADropSecondMessage(&caglobals.ca.requestHistory, endpoint, reqInfo->info.messageId,
+        if ((reqInfo->info.type != CA_MSG_CONFIRM) &&
+            CADropSecondMessage(&caglobals.ca.requestHistory, endpoint, reqInfo->info.messageId,
                                 reqInfo->info.token, reqInfo->info.tokenLength))
         {
             OIC_LOG(INFO, TAG, "Second Request with same Token, Drop it");

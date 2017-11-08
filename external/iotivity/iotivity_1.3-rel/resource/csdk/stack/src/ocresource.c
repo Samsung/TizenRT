@@ -1936,6 +1936,10 @@ static OCStackResult HandleVirtualResource (OCServerRequest *request, OCResource
     else if (OC_INTROSPECTION_URI == virtualUriInRequest)
     {
         // Received request for introspection
+        discoveryResult = getQueryParamsForFiltering(virtualUriInRequest, request->query,
+                                                     &interfaceQuery, &resourceTypeQuery);
+        VERIFY_SUCCESS(discoveryResult);
+
         OCResource *resourcePtr = FindResourceByUri(OC_RSRVD_INTROSPECTION_URI_PATH);
         bool includeBaselineProps = interfaceQuery
                                     && (0 == strcmp(interfaceQuery, OC_RSRVD_INTERFACE_DEFAULT));
