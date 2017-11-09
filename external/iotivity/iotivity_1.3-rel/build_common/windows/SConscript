@@ -20,7 +20,7 @@ def OpenRegKey(env, key, sub_key, reg_view_64bit=False):
                               sub_key,
                               0, # Reserved
                               reg_access_mask)
-    except WindowsError, err:
+    except WindowsError as err:
         if err.errno != os.errno.ENOENT:
             # Couldn't open Registry Key
             Exit('Error: Could not Open %s Registry Key. Err=%s' % (sub_key, err.errno))
@@ -37,7 +37,7 @@ def ReadRegistryStringValue(env, key, sub_key, value_name, reg_view_64bit=False)
             (value, type) = winreg.QueryValueEx(hkey, value_name)
             if type != winreg.REG_SZ:
                 Exit('Error: Registry Value \'%s\' is not a String' % value_name)
-        except WindowsError, err:
+        except WindowsError as err:
             if err.errno != os.errno.ENOENT:
                 Exit('Error: Could not QueryValueEx for Registry Value \'%s\'. Err=%s' \
                      % (value_name, err.errno))

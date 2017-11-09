@@ -32,7 +32,7 @@ target_os = env.get('TARGET_OS')
 src_dir = env.get('SRC_DIR')
 
 if target_os in ['linux', 'windows']:
-    print '*** Checking for installation of hippomocks ***'
+    print('*** Checking for installation of hippomocks ***')
     hippomocks_version = '5.0'
     hippomocks_revision = 'v' + hippomocks_version
     hippomocks_src_dir = src_dir + '/extlibs/hippomocks/hippomocks-' + hippomocks_version
@@ -44,7 +44,7 @@ if target_os in ['linux', 'windows']:
             hippomocks_zip = env.Download(hippomocks_zip_file, hippomocks_url)
         else:
             hippomocks_zip = hippomocks_zip_file
-        print 'hippomocks: Unzipping %s to %s' % (hippomocks_zip_file,
-                                                  hippomocks_dest_dir)
+        print('hippomocks: Unzipping %s to %s' % (hippomocks_zip_file,
+                                                  hippomocks_dest_dir))
         env.UnpackAll(hippomocks_src_dir, hippomocks_zip)
         os.rename(hippomocks_src_dir, hippomocks_dest_dir)

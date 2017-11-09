@@ -5,7 +5,7 @@ import os
 
 Import('connectivity_env')
 
-print "Reading common folder script"
+print("Reading common folder script")
 
 target_os = connectivity_env.get('TARGET_OS')
 src_dir = os.path.abspath(os.curdir)

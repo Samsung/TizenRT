@@ -66,12 +66,12 @@ def __prepare_lib(ienv, libname, lib=None, path=None, script=None):
 
 # Run configure command (usually done before building a library)
 def __configure(env, cwd, cmd):
-    print "Configuring using [%s/%s] ..." % (cwd, cmd)
+    print("Configuring using [%s/%s] ..." % (cwd, cmd))
     # build it now (we need the shell, because some programs need it)
     devnull = open(os.devnull, "wb")
     handle = subprocess.Popen(cmd, shell=True, cwd=cwd, stdout=devnull)
 
-    if handle.wait() <> 0:
+    if handle.wait() != 0:
         raise SCons.Errors.BuildError("Run configuring script [%s]" % (cmd))
 
 
@@ -81,15 +81,15 @@ def __download(ienv, target, url):
         return target
 
     try:
-        print "Download %s from %s" % (target, url)
-        print "Downloading ..."
+        print("Download %s from %s" % (target, url))
+        print("Downloading ...")
         stream = urllib2.urlopen(url)
         file = open(target, 'wb')
         file.write(stream.read())
         file.close()
-        print "Download %s from %s complete" % (target, url)
+        print("Download %s from %s complete" % (target, url))
         return target
-    except Exception, e:
+    except Exception as e:
         raise SCons.Errors.StopError('%s [%s]' % (e, url))
 
 

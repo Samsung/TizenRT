@@ -57,7 +57,7 @@ libcoap_update_command = 'git fetch --tags && git checkout -f ' + libcoap_versio
 libcoap_change_dir_command = 'cd ' + libcoap_dir
 
 if with_upstream_libcoap == '1':
-    print '*** Checking for installation of libCoAP ***'
+    print('*** Checking for installation of libCoAP ***')
     if not os.path.exists(libcoap_dir):
         msg = '''
 *********************************** Error: ************************************
@@ -70,17 +70,17 @@ if with_upstream_libcoap == '1':
     os.chdir(libcoap_dir)
     out = subprocess.check_output('git log --format=%d -n 1', shell=True)
     if libcoap_version not in out:
-        print '''
+        print('''
 ******************************* Info: *****************************************
 * Your libCoAP repo is not up to date with the latest version we require (%s).
 *******************************************************************************
-''' % (libcoap_version)
+''' % (libcoap_version))
         if libcoap_env.get('AUTOMATIC_UPDATE'):
-            print '''
+            print('''
 ******************************* Info: *****************************************
 * Automatically updating libcoap to version %s.
 *******************************************************************************
-''' % (libcoap_version)
+''' % (libcoap_version))
             subprocess.check_output(libcoap_update_command, shell=True)
         else:
             msg = '''
@@ -93,12 +93,12 @@ if with_upstream_libcoap == '1':
             Exit(msg)
 
 else:
-    print '''
+    print('''
 ******************************* Info: *****************************************
 * Using FORKED copy of libCoap located in:
 * resource/csdk/connectivity/lib/libcoap-4.1.1
 *******************************************************************************
-'''
+''')
 
 ######################################################################
 # Build libCoAP

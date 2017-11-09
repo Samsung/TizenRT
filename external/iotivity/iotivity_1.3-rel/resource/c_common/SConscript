@@ -142,8 +142,8 @@ if not os.path.isfile(config_h_file_path) and env.GetOption not in ('clean', 'he
 
 # Sanity check to ensure that the above block created the file.
 if (not os.path.exists(config_h_file_path)) and (not env.GetOption('clean')):
-    print "Error: iotivity_config.h file not created!"
-    Exit(1)
+    msg = "Error: iotivity_config.h file not created!"
+    Exit(msg)
 
 # iotivity_config.h should be copied to installation dir
 env.UserInstallTargetHeader(

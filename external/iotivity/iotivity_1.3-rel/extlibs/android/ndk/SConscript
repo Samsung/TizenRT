@@ -30,12 +30,12 @@ else:
 ndk_path = os.path.join(Dir('.').abspath, ndk_dir)
 if not os.path.exists(ndk_path):
     if not os.path.exists(ndk_bundle):
-        print "Retrieving Android NDK bundle"
+        print("Retrieving Android NDK bundle")
         env.Download(ndk_bundle, ndk_url)
-    print "Unpacking Android NDK bundle"
+    print("Unpacking Android NDK bundle")
     if host_os.startswith('linux'):
         # scons on Jenkins/android builder does not take 'a+x' mode, use octal
-        Execute(Chmod(ndk_bundle, 0755))
+        Execute(Chmod(ndk_bundle, 0o755))
         if Execute("./" + ndk_bundle):
             Exit("Unpack %s failed" % ndk_bundle)
     elif host_os == 'darwin':

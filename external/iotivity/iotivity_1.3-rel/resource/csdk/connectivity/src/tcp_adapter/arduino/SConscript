@@ -14,7 +14,7 @@ if connectivity_env.get('SHIELD') == 'ETH':
     src_files = [ os.path.join(src_dir, 'catcpserver_eth.cpp') ,
                   os.path.join(src_dir, 'catcpadapterutils_eth.cpp')]
 else:
-    print "\nError: TCP is not supported for WIFI shield"
-    Exit(1)
+    msg = "\nError: TCP is not supported for WIFI shield"
+    Exit(msg)
 
 connectivity_env.AppendUnique(CA_SRC = src_files)

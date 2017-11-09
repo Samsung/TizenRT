@@ -105,7 +105,7 @@ targets_disallow_multitransport = ['arduino']
 
 # generate a list of unique targets: convert to set() for uniqueness,
 # then convert back to a list
-targetlist = list(set(x for l in host_target_map.values() for x in l))
+targetlist = list(set(x for l in list(host_target_map.values()) for x in l))
 
 ######################################################################
 # Common build options
@@ -319,25 +319,25 @@ if env.get('WITH_ENV'):
     env['ENV'] = os.environ
     if 'CC' in os.environ:
         env['CC'] = Split(os.environ['CC'])
-        print "using CC from environment: %s" % env['CC']
+        print("using CC from environment: %s" % env['CC'])
     if 'CXX' in os.environ:
         env['CXX'] = Split(os.environ['CXX'])
-        print "using CXX from environment: %s" % env['CXX']
+        print("using CXX from environment: %s" % env['CXX'])
     if 'CFLAGS' in os.environ:
         env['CFLAGS'] = Split(os.environ['CFLAGS'])
-        print "using CFLAGS from environment: %s" % env['CFLAGS']
+        print("using CFLAGS from environment: %s" % env['CFLAGS'])
     if 'CXXFLAGS' in os.environ:
         env['CXXFLAGS'] = Split(os.environ['CXXFLAGS'])
-        print "using CXXFLAGS from environment: %s" % env['CXXFLAGS']
+        print("using CXXFLAGS from environment: %s" % env['CXXFLAGS'])
     if 'CCFLAGS' in os.environ:
         env['CCFLAGS'] = Split(os.environ['CCFLAGS'])
-        print "using CCFLAGS from environment: %s" % env['CCFLAGS']
+        print("using CCFLAGS from environment: %s" % env['CCFLAGS'])
     if 'CPPFLAGS' in os.environ:
         env['CPPFLAGS'] = Split(os.environ['CPPFLAGS'])
-        print "using CPPFLAGS from environment: %s" % env['CPPFLAGS']
+        print("using CPPFLAGS from environment: %s" % env['CPPFLAGS'])
     if 'LDFLAGS' in os.environ:
         env['LINKFLAGS'] = Split(os.environ['LDFLAGS'])
-        print "using LDFLAGS/LINKFLAGS from environment: %s" % env['LINKFLAGS']
+        print("using LDFLAGS/LINKFLAGS from environment: %s" % env['LINKFLAGS'])
 
 # set quieter build messages unless verbose mode was requested
 if not env.get('VERBOSE'):
@@ -378,7 +378,7 @@ if target_os in targets_support_cc:
         env.PrependENVPath('PATH', os.environ['PATH'])
 
     if prefix or tc_path:
-        print tc_set_msg
+        print(tc_set_msg)
 
 # Import env variables only if reproductibility is ensured
 if target_os in ['yocto']:
@@ -387,7 +387,7 @@ else:
     env['CONFIG_ENVIRONMENT_IMPORT'] = False
 
 if env['CONFIG_ENVIRONMENT_IMPORT']:
-    print "warning: importing some environment variables for OS: %s" % target_os
+    print("warning: importing some environment variables for OS: %s" % target_os)
     for ev in [
         'PATH',
         'PKG_CONFIG',

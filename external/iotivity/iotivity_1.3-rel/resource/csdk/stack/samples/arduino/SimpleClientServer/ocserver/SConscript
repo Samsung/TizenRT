@@ -62,4 +62,4 @@ if (arduino_simplecs_env['UPLOAD'] == True):
         arduino_simplecs_env.Upload(
             arduino_simplecs_env.get('BUILD_DIR') + '/resource/csdk/stack/samples/arduino/SimpleClientServer/ocserver/SimpleClientServer.hex')
     else:
-        print 'Please use appropriate install method for your development machine. Linux is the only supported platform right now.'
+        print('Please use appropriate install method for your development machine. Linux is the only supported platform right now.')

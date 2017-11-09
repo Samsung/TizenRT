@@ -88,11 +88,14 @@ provisiontests_env.PrependUnique(LIBS = [
 ])
 
 if with_ra_ibb:
-    provisiontests_env.AppendUnique(LIBS = provisiontests_env['RALIBS'], LIBPATH = provisiontests_env['RALIBPATH'], RPATH = provisiontests_env['RARPATH'])
-    print "RALIBS = %s" % provisiontests_env['RALIBS']
-    print "RALIBPATH = %s" % provisiontests_env['RALIBPATH']
-    print "RARPATH = %s" % provisiontests_env['RARPATH']
-else :
+    provisiontests_env.AppendUnique(
+        LIBS=provisiontests_env['RALIBS'],
+        LIBPATH=provisiontests_env['RALIBPATH'],
+        RPATH=provisiontests_env['RARPATH'])
+    print("RALIBS = %s" % provisiontests_env['RALIBS'])
+    print("RALIBPATH = %s" % provisiontests_env['RALIBPATH'])
+    print("RARPATH = %s" % provisiontests_env['RARPATH'])
+else:
     if with_ra:
         provisiontests_env.AppendUnique(LIBS = ['ra_xmpp'])
 

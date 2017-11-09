@@ -41,13 +41,13 @@ if not env.get('ANDROID_HOME'):
 
     if not os.path.exists(androidlib_dir):
         if not os.path.exists(androidlib_bundle):
-            print "Retrieving Android SDK bundle"
+            print("Retrieving Android SDK bundle")
             androidlib_zip = env.Download(androidlib_bundle, androidlib_url)
         else:
             androidlib_zip = androidlib_bundle
 
-        print 'Unzipping Android lib...'
+        print('Unzipping Android lib...')
         env.UnpackAll(androidlib_dir, androidlib_zip)
-        print 'Unzipping Android lib complete'
+        print('Unzipping Android lib complete')
     # export the location of the SDK
     env.Replace(ANDROID_HOME=androidlib_dir)

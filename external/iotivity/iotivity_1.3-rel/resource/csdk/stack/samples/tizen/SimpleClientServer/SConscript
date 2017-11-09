@@ -5,7 +5,7 @@
 import os
 import platform
 
-print "Inside the Config SConscript"
+print("Inside the Config SConscript")
 # Map of host os and allowed target os (host: allowed target os)
 host_target_map = {
     'linux': ['linux', 'android', 'arduino', 'yocto', 'tizen'],
@@ -31,8 +31,8 @@ os_arch_map = {
 host = platform.system().lower()
 
 if host not in host_target_map:
-    print "\nError: Current system (%s) isn't supported\n" % host
-    Exit(1)
+    msg = "\nError: Current system (%s) is not supported\n" % host
+    Exit(msg)
 
 ######################################################################
 # Get build options (the optins from command line)
@@ -40,9 +40,9 @@ if host not in host_target_map:
 target_os = ARGUMENTS.get('TARGET_OS', host).lower()  # target os
 
 if target_os not in host_target_map[host]:
-    print "\nError: Unknown target os: %s (Allow values: %s)\n" % (
+    msg = "\nError: Unknown target os: %s (allowed values: %s)\n" % (
         target_os, host_target_map[host])
-    Exit(1)
+    Exit(msg)
 
 default_arch = platform.machine()
 if default_arch not in os_arch_map[target_os]:
@@ -147,7 +147,7 @@ if target_os in targets_support_cc:
         env.AppendUnique(LINKFLAGS=['--sysroot=' + sys_root])
 
     if prefix or tc_path:
-        print tc_set_msg
+        print(tc_set_msg)
 
 # Ensure scons be able to change its working directory
 env.SConscriptChdir(1)
@@ -163,13 +163,13 @@ env.SConscriptChdir(1)
 
 def __set_dir(env, dir):
     if not os.path.exists(dir + '/SConstruct'):
-        print '''
+        msg = '''
 *************************************** Error *********************************
 * The directory(%s) seems isn't a source code directory, no SConstruct file is
 * found. *
 *******************************************************************************
 ''' % dir
-        Exit(1)
+        Exit(msg)
 
     if env.get('RELEASE'):
         build_dir = dir + '/out/' + target_os + '/' + target_arch + '/release/'
@@ -266,8 +266,8 @@ if target_os == "yocto":
                         env[tool] = os.path.join(path, os.environ[tool])
                         break
     except:
-        print "ERROR in Yocto cross-toolchain environment"
-        Exit(1)
+        msg = "ERROR in Yocto cross-toolchain environment"
+        Exit(msg)
     '''
     Now reset TARGET_OS to linux so that all linux specific build configurations
     hereupon apply for the entirety of the build process.

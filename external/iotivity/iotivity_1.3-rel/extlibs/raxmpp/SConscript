@@ -23,7 +23,7 @@
 #
 ######################################################################
 import os
-import commands
+import subprocess
 
 Import('env')
 
@@ -43,9 +43,9 @@ if with_ra and not with_ra_ibb:
 '''
         Exit(msg)
 
-    print 'building with ra_xmpp'
+    print('building with ra_xmpp')
     if env.get('RELEASE'):
-        print src_dir
+        print(src_dir)
         build_dir = os.path.join(src_dir, 'extlibs/raxmpp/raxmpp/out',
                                  target_os, target_arch, 'release/')
     else:
@@ -53,10 +53,10 @@ if with_ra and not with_ra_ibb:
                                  target_os, target_arch, 'debug/')
     os.chdir('raxmpp')
     sconsflags = ' RELEASE=true' if env['RELEASE'] else ' RELEASE=false'
-    foo = commands.getoutput('scons external' + sconsflags)
-    print foo
-    foo = commands.getoutput('scons' + sconsflags)
-    print foo
+    foo = subprocess.getoutput('scons external' + sconsflags)
+    print(foo)
+    foo = subprocess.getoutput('scons' + sconsflags)
+    print(foo)
 
     env.AppendUnique(
         CPPPATH=src_dir + '/extlibs/raxmpp/raxmpp/ra_xmpp/',

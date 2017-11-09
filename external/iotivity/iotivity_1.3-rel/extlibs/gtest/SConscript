@@ -36,26 +36,26 @@ if gtest_env.GetOption('help'):
 # Clean up gtest if 'clean' is specified, and it looks like has been built.
 # Implicity skips the targets which don't "configure" (e.g. windows)
 if gtest_env.GetOption('clean'):
-    print 'Cleaning google unit test'
+    print('Cleaning google unit test')
     if os.path.exists(gtest_configured_sentinel):
         clean = "cd %s && make clean" % gtest_dir
         Execute(clean)
     Return("gtest_env")
 
-print '*** Checking for installation of google unit test %s ***' % GTEST_VERSION
+print('*** Checking for installation of google unit test %s ***' % GTEST_VERSION)
 if not os.path.exists(gtest_unpacked_sentinel):
     # If the gtest zip file is not already present, download it
     if not os.path.exists(gtest_zip_path):
         gtest_zip = gtest_env.Download(gtest_zip_path, gtest_url)
     else:
         gtest_zip = gtest_zip_path
-    print 'Unzipping to : ' + gtest_dir
+    print('Unzipping to : ' + gtest_dir)
     gtest_env.UnpackAll(gtest_dir, gtest_zip)
 
 if target_os in ['linux']:
     if not os.path.exists(gtest_configured_sentinel):
         # Run configure on gtest
-        print 'Configuring google unit test'
+        print('Configuring google unit test')
         reconfigure_ran = gtest_env.Configure(gtest_dir, 'autoreconf -i')
         if env.get('CROSS_COMPILE'):
             configure_ran = env.Configure(
@@ -67,7 +67,7 @@ if target_os in ['linux']:
         gtest_env.Depends(configure_ran, reconfigure_ran)
 
     # Run make on gtest
-    print 'Making google unit test'
+    print('Making google unit test')
     make_ran = gtest_env.Configure(gtest_dir, 'make')
 
 elif target_os in ['darwin', 'msys_nt'] and os.path.exists(gtest_dir):
@@ -77,14 +77,14 @@ elif target_os in ['darwin', 'msys_nt'] and os.path.exists(gtest_dir):
         os.mkdir(gtest_dotlib_dir)
 
         # Run configure on gtest
-        print 'Configuring google unit test for compilation'
+        print('Configuring google unit test for compilation')
         gtest_env.Configure(gtest_dir, 'cmake -G "Unix Makefiles" .')
 
     # Run make on gtest
-    print 'Making google unit test'
+    print('Making google unit test')
     gtest_env.Configure(gtest_dir, 'make')
 
-    print 'Moving libraries to lib folder'
+    print('Moving libraries to lib folder')
     gtest_env.Configure(gtest_dir, 'cp libgtest.a lib')
     gtest_env.Configure(gtest_dir, 'mv libgtest.a lib/.libs')
     gtest_env.Configure(gtest_dir, 'cp libgtest_main.a lib')

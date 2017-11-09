@@ -5,7 +5,7 @@
 ##
 Import('env')
 
-print "Reading linux configuration script"
+print("Reading linux configuration script")
 
 # Set release/debug flags
 if env.get('RELEASE'):

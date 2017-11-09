@@ -30,7 +30,7 @@ root_dir = env.get('ROOT_DIR')
 build_dir = env.get('BUILD_DIR')
 sample_dir = build_dir
 
-print "MQ flag is %s" % with_mq
+print("MQ flag is %s" % with_mq)
 
 env.AppendUnique(CPPFLAGS=[
     '-std=c++0x', '-fPIC', '-D__TIZEN__', '-DWITH_POSIX', '-Wall',
@@ -73,23 +73,23 @@ if 'ALL' in transport:
         'IP_ADAPTER', 'EDR_ADAPTER', 'LE_ADAPTER', 'BT_ADAPTER_TEST',
         'BLE_ADAPTER_TEST'
     ])
-    print "CA Transport is ALL"
+    print("CA Transport is ALL")
 else:
     if 'BT' in transport:
         env.AppendUnique(CPPDEFINES=['EDR_ADAPTER', 'BT_ADAPTER_TEST'])
-        print "CA Transport is BT"
+        print("CA Transport is BT")
     else:
         env.AppendUnique(CPPDEFINES=['NO_EDR_ADAPTER'])
 
     if 'BLE' in transport:
         env.AppendUnique(CPPDEFINES=['LE_ADAPTER', 'BLE_ADAPTER_TEST'])
-        print "CA Transport is BLE"
+        print("CA Transport is BLE")
     else:
         env.AppendUnique(CPPDEFINES=['NO_LE_ADAPTER'])
 
     if 'IP' in transport:
         env.AppendUnique(CPPDEFINES=['IP_ADAPTER'])
-        print "CA Transport is IP"
+        print("CA Transport is IP")
     else:
         env.AppendUnique(CPPDEFINES=['NO_IP_ADAPTER'])
 
@@ -100,15 +100,15 @@ else:
 
 if 'SUB' in with_mq:
     env.AppendUnique(CPPDEFINES=['MQ_SUBSCRIBER', 'WITH_MQ'])
-    print "MQ SUB support"
+    print("MQ SUB support")
 
 if 'PUB' in with_mq:
     env.AppendUnique(CPPDEFINES=['MQ_PUBLISHER', 'WITH_MQ'])
-    print "MQ PUB support"
+    print("MQ PUB support")
 
 if 'BROKER' in with_mq:
     env.AppendUnique(CPPDEFINES=['MQ_BROKER', 'WITH_MQ'])
-    print "MQ Broker support"
+    print("MQ Broker support")
 
 #ri_sample_src = [sample_dir + '/occlient.cpp']
 

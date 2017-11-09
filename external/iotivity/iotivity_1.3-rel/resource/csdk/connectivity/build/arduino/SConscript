@@ -29,7 +29,7 @@ def __parse_config(f):
 
 def __get_boards(dict):
     boards = []
-    keys = dict.keys()
+    keys = list(dict.keys())
     for key in keys:
         idx = key.find('.name')
         if idx > 0:
@@ -40,7 +40,7 @@ def __get_boards(dict):
 
 def __get_cpu(dict, board):
     cpus = []
-    keys = dict.keys()
+    keys = list(dict.keys())
     for key in keys:
         idx = key.find(board + '.menu.cpu.')
         start = len(board + '.menu.cpu.')
@@ -196,14 +196,14 @@ def __upload(env, binary):
         upload_cmd = arduino_home + '/hardware/tools/avr/bin/avrdude -C' + arduino_home +'/hardware/tools/avr/etc/avrdude.conf -v -v -v -v -p' \
         + mcu + ' -c' + protocol + ' -P' + port + ' -b' + speed + ' -D -Uflash:w:' + binary + ':i'
 
-        print "Upload command: %s" % upload_cmd
+        print("Upload command: %s" % upload_cmd)
         install_cmd = env.Command('install_cmd', None, upload_cmd)
         env.Default('install_cmd')
     else:
         uu = __get_board_info(board, '.upload.native_usb')
         port = 'ttyACM0'
         upload_cmd = 'stty -F /dev/' + port + ' speed 1200 cs8 -cstopb -parenb \n' + arduino_home + '/hardware/tools/bossac -i -d --port=' + port + ' -U ' + uu + ' -e -w -v -b ' + binary + ' -R'
-        print "Upload command: %s" % upload_cmd
+        print("Upload command: %s" % upload_cmd)
         install_cmd = env.Command('install_cmd', None, upload_cmd)
         env.Default('install_cmd')
 
@@ -321,11 +321,11 @@ else:
         platform_info = __parse_config(arduino_home +
                                        '/hardware/arduino/sam/platform.txt')
     else:
-        print '''
+        print('''
 ************************************* Error ***********************************
 * CPU arch %s isn't supported currently.
 *******************************************************************************
-''' % target_arch
+''' % target_arch)
 
 #Board option, let user to select the board
 boards = __get_boards(boards_info)

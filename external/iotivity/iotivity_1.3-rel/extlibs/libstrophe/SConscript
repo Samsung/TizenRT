@@ -4,7 +4,7 @@
 ######################################################################
 
 import os
-import commands
+import subprocess
 
 Import('env')
 
@@ -34,7 +34,7 @@ if with_ra_ibb:
             ' && git checkout 527bc0573a52f2af3ecad5b9ef39aeec7b669f77'
         ])
 
-        print 'Downloading xmpp library ...'
+        print('Downloading xmpp library ...')
         if raxmpp_env.Execute(c):
             msg = '''
 *********************************** Error: ************************************
@@ -46,39 +46,39 @@ if with_ra_ibb:
 '''
             Exit(msg)
         else:
-            print 'Download xmpp library complete'
+            print('Download xmpp library complete')
 
     if not env.GetOption('clean'):
-        print 'Building with ' + SRC_NAME
+        print('Building with ' + SRC_NAME)
         #print 'base_dir', base_dir
         #print 'target_os', target_os
         #print 'target_arch', target_arch
 
-        foo = commands.getoutput(
+        foo = subprocess.getoutput(
             'patch -N -p1 -d libstrophe < strophe-xmpp_conn_is_secured.patch')
-        print foo
+        print(foo)
         os.chdir(SRC_NAME)
         #sconsflags = ' RELEASE=true' if  env['RELEASE'] else ' RELEASE=false'
         if not os.path.exists('configure'):
-            foo = commands.getoutput('./bootstrap.sh')
-            print foo
+            foo = subprocess.getoutput('./bootstrap.sh')
+            print(foo)
         if not os.path.exists('config.status'):
-            foo = commands.getoutput('./configure')
-            print foo
+            foo = subprocess.getoutput('./configure')
+            print(foo)
         if not os.path.exists('.libs/libstrophe.a'):
-            foo = commands.getoutput('make libstrophe.la')
-            print foo
+            foo = subprocess.getoutput('make libstrophe.la')
+            print(foo)
         if not os.path.exists('.libs/libstrophe.a'):
             msg = 'Building with ' + SRC_NAME + ' failed.'
             Exit(msg)
         else:
-            foo = commands.getoutput('cp .libs/libstrophe.a ' +
+            foo = subprocess.getoutput('cp .libs/libstrophe.a ' +
                                      env.get('BUILD_DIR'))
-            foo = commands.getoutput('cp .libs/libstrophe.so* ' +
+            foo = subprocess.getoutput('cp .libs/libstrophe.so* ' +
                                      env.get('BUILD_DIR'))
-            print foo
+            print(foo)
 
-        print 'Building with ' + SRC_NAME + ' Completely.'
+        print('Building with ' + SRC_NAME + ' Completely.')
     env.AppendUnique(
         CPPPATH=[INC_PATH],
         RALIBS=LIBSTROPHY_LIBS,

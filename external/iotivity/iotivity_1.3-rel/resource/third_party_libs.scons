@@ -39,12 +39,12 @@ if target_os in ['linux']:
     if not env.GetOption('help') and not env.GetOption('clean'):
         if target_arch != platform.machine() and \
            not (target_arch == 'x86' and platform.machine() in ('i586', 'i686')):
-            print '''
+            print('''
 *********************************** Warning **********************************
 * You are trying cross build, please make sure cross (%s) libraries are
 * installed!
 ******************************************************************************
-''' % target_arch
+''' % target_arch)
 
     conf = Configure(lib_env)
     conf.Finish()
@@ -58,11 +58,11 @@ if target_os == 'android':
 
     if target_arch not in ['x86', 'x86_64', 'armeabi', 'armeabi-v7a']:
         if not env.GetOption('help') and not env.GetOption('clean'):
-            print '''
+            print('''
 *********************************** Warning ***********************************
 * currently only x86, x86_64, armeabi, armeabi-v7a libraries are available!
 *******************************************************************************
-'''
+''')
     else:
         # Boost warnings too noisy, suppress
         lib_env.AppendUnique(CCFLAGS=['-w'])

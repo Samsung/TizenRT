@@ -29,7 +29,7 @@ if not env.get('ANDROID_HOME'):
 msg += "\nANDROID_HOME=" + env.get('ANDROID_HOME')
 
 # show the Android environment we will use:
-print msg
+print(msg)
 
 src_dir = env.get('SRC_DIR')
 
@@ -97,12 +97,12 @@ else:
 if tc_ver:
     cmd.append('NDK_TOOLCHAIN_VERSION=' + tc_ver)
 else:
-    print '''
+    print('''
 *************************************** Warning *******************************
 * To support C++11, the NDK toolchain must support gcc >= 4.7
 * Please make sure your  android NDK is at least r8e
 *******************************************************************************
-'''
+''')
 
 cmd.append('-n')
 

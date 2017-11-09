@@ -60,7 +60,7 @@ if secured == '1':
 	if os.path.exists('.git/HEAD'):
 	    out = subprocess.check_output('git tag -l ' + mbedtls_revision, shell=True)
 	    if mbedtls_revision not in out:
-	        print out
+	        print (out)
 	        msg = '''
 	*********************************** Error: ************************************
 	* Your mbedTLS repo is not up to date with the version required by iotivity.
@@ -98,7 +98,7 @@ if secured == '1':
 	    if not found:
 	        if os.path.exists('.git/HEAD'):
 	            # Apply ocf patch on git revision
-	            print "Syncing/patching mbedtls external project..."
+	            print ("Syncing/patching mbedtls external project...")
 	            cmd = 'git checkout -f development && git reset --hard ' + mbedtls_revision + ' && git clean -f && git apply --whitespace=fix ../ocf.patch'
 	            res = os.system(cmd)
 	        else:
@@ -126,7 +126,7 @@ if secured == '1':
 	        msg += 'error: ' + str(sys.exc_info()[0])
 	        Exit(msg)
 	    else:
-	        print 'Copied IoTivity version of config.h to ' + mbedtls_config
+	        print ('Copied IoTivity version of config.h to ' + mbedtls_config)
 
 	mbedtls_env = env.Clone()
 

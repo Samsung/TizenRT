@@ -40,7 +40,7 @@ def __get_boards(dict):
 
 def __get_cpu(dict, board):
     cpus = []
-    keys = dict.keys()
+    keys = list(dict.keys())
     for key in keys:
         idx = key.find(board + '.menu.cpu.')
         start = len(board + '.menu.cpu.')
@@ -213,13 +213,13 @@ def __upload(env, binary):
         port = '/dev/ttyACM0'
         upload_cmd = arduino_home + '/hardware/tools/avr/bin/avrdude -C' + arduino_home +'/hardware/tools/avr/etc/avrdude.conf -p' \
         + mcu + ' -c' + protocol + ' -P' + port + ' -b' + speed + ' -D -Uflash:w:' + binary + ':i'
-        print "Upload command: %s" % upload_cmd
+        print("Upload command: %s" % upload_cmd)
         install_cmd = env.Command('install_cmd', None, upload_cmd)
         env.Default('install_cmd')
     elif target_arch == 'arm':
         port = 'ttyACM0'
         upload_cmd = 'stty -F /dev/' + port + ' speed 1200 cs8 -cstopb -parenb \n' + arduino_home + '/hardware/tools/bossac -i --port=' + port + ' -U false -e -w -b ' + binary + ' -R'
-        print "Upload command: %s" % upload_cmd
+        print("Upload command: %s" % upload_cmd)
         install_cmd = env.Command('install_cmd', None, upload_cmd)
         env.Default('install_cmd')
 
@@ -262,7 +262,7 @@ target_arch = env.get('TARGET_ARCH')
 # installed.  If not, get them and install them.
 SConscript(os.path.join(env.get('SRC_DIR'), 'extlibs', 'arduino', 'SConscript'))
 arduino_home = env.get('ARDUINO_HOME')
-print 'ARDUINO_HOME = ' + env.get('ARDUINO_HOME')
+print('ARDUINO_HOME = ' + env.get('ARDUINO_HOME'))
 
 # Overwrite suffixes and prefixes
 if env['HOST_OS'] == 'win32':
@@ -296,13 +296,13 @@ if os.path.exists(os.path.join(arduino_home, 'lib', 'version.txt')):
     vf = open(os.path.join(arduino_home, 'lib', 'version.txt'), 'r')
     version = vf.readline().replace('.', '').strip()
 else:
-    print '''
+    msg = '''
 ************************************* Error ***********************************
 * Can't find version file (lib/version.txt), please check if (%s)
 * is arduino root directory.                                                  *
 *******************************************************************************
 ''' % arduino_home
-    Exit(1)
+    Exit(msg)
 
 if version[0:2] == '10':
     is_1_0_x = True
@@ -318,13 +318,13 @@ if version[0:2] == '10':
     env.Replace(LINK='avr-gcc')
     env.Replace(RANLIB='avr-ranlib')
     if target_arch != 'avr':
-        print '''
+        msg = '''
 ************************************* Error ***********************************
 * Arduino 1.0.x IDE only support 'avr', to support other arch at least 1.5.x  *
 * is required.
 *******************************************************************************
-'''
-        Exit(1)
+''')
+        Exit(msg)
 else:
     is_1_0_x = False
     if target_arch == 'avr':
@@ -342,11 +342,11 @@ else:
             os.path.join(arduino_home, 'hardware', 'arduino', 'sam',
                          'platform.txt'))
     else:
-        print '''
+        print('''
 ************************************* Error ***********************************
 * CPU arch %s isn't supported currently.
 *******************************************************************************
-''' % target_arch
+''' % target_arch)
 
 #Board option, let user to select the board
 boards = __get_boards(boards_info)

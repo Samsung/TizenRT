@@ -21,7 +21,7 @@ ca_path = os.curdir
 # Source files and Target(s)
 ######################################################################
 
-print"Reading ca script %s"%ca_transport
+print("Reading ca script %s" % ca_transport)
 
 connectivity_env.PrependUnique(CPPPATH = [ os.path.join(root_dir, 'api') ])
 
@@ -78,7 +78,7 @@ if with_ra_ibb:
     connectivity_env.SConscript('#extlibs/wksxmppxep/SConscript')
 
 if ca_os == 'arduino':
-    print "setting WITH_ARDUINO"
+    print("setting WITH_ARDUINO")
     ca_common_src = [
         'caconnectivitymanager.c',
         'cainterfacecontroller.c',

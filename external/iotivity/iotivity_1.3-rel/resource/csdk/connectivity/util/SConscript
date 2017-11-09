@@ -5,7 +5,7 @@ import os
 
 Import('connectivity_env')
 
-print "Reading util folder script"
+print("Reading util folder script")
 
 ca_transport = connectivity_env.get('TARGET_TRANSPORT')
 target_os = connectivity_env.get('TARGET_OS')

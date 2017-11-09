@@ -107,7 +107,7 @@ if target_os not in ['windows', 'msys_nt']:
         examples_env.AppendUnique(LIBS = ['resource_directory'])
         example_names += ['rdclient']
 
-examples = map(make_single_file_cpp_program, example_names)
+examples = list(map(make_single_file_cpp_program, example_names))
 
 ######################################################################
 # Other examples

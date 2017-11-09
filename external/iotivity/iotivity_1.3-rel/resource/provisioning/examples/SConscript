@@ -70,9 +70,9 @@ if with_ra_ibb:
         LIBS=examples_env['RALIBS'],
         LIBPATH=examples_env['RALIBPATH'],
         RPATH=examples_env['RARPATH'])
-    print "RALIBS = %s" % examples_env['RALIBS']
-    print "RALIBPATH = %s" % examples_env['RALIBPATH']
-    print "RARPATH = %s" % examples_env['RARPATH']
+    print("RALIBS = %s" % examples_env['RALIBS'])
+    print("RALIBPATH = %s" % examples_env['RALIBPATH'])
+    print("RARPATH = %s" % examples_env['RARPATH'])
     examples_env.AppendUnique(LIBS='wksxmppxep')
 else:
     if with_ra:

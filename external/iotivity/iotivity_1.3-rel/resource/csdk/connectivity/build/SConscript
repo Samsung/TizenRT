@@ -191,7 +191,7 @@ if target_os in targets_support_cc:
         env.AppendUnique(LINKFLAGS=['--sysroot=' + sys_root])
 
     if prefix or tc_path:
-        print tc_set_msg
+        print(tc_set_msg)
 
 # Ensure scons be able to change its working directory
 env.SConscriptChdir(1)

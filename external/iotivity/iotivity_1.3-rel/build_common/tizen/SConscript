@@ -7,7 +7,7 @@ import SCons.Util
 
 Import('env')
 
-print "Reading linux configuration script"
+print("Reading linux configuration script")
 
 env['CCFLAGS'] = SCons.Util.CLVar(os.environ.get('CFLAGS', ""))
 env.AppendUnique(CPPDEFINES=['WITH_POSIX', '__linux__'])

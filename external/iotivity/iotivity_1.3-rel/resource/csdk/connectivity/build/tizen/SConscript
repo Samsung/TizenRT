@@ -14,12 +14,12 @@ secured = env.get('SECURED')
 logging = env.get('LOGGING')
 with_tcp = env.get('WITH_TCP')
 
-print "Given Transport is %s" % transport
-print "Given OS is %s" % target_os
+print("Given Transport is %s" % transport)
+print("Given OS is %s" % target_os)
 
 if target_os == 'tizen':
     command = "./resource/csdk/connectivity/build/tizen/gbsbuild.sh %s %s %s %s %s %s" % (
         transport, secured, buildsample, release_mode, logging, with_tcp)
-    print "Created Command is %s" % command
+    print("Created Command is %s" % command)
     gbs_script = env.Command('gbs_build', None, command)
     AlwaysBuild('gbs_script')

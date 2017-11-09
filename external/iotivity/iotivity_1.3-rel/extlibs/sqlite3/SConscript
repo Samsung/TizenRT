@@ -28,7 +28,7 @@ sqlite_c_tmp = os.path.join(sqlite_tmp_dir, 'sqlite3.c')
 sqlite_h_tmp = os.path.join(sqlite_tmp_dir, 'sqlite3.h')
 
 if target_os in targets_need_sqlite:
-    print '*** Checking for presence of %s ***' % sqlite_package
+    print('*** Checking for presence of %s ***' % sqlite_package)
     os.listdir(sqlite_dir)
     if not os.path.exists(sqlite_c) or not os.path.exists(sqlite_h):
         if not os.path.exists(sqlite_zip_file):

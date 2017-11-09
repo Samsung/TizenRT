@@ -9,7 +9,7 @@ src_dir = os.path.abspath(os.curdir)
 
 target_os = connectivity_env.get('TARGET_OS')
 
-print "Reading BLE adapter script for", target_os
+print("Reading BLE adapter script for " + target_os)
 
 # Source files common to all platforms.
 connectivity_env.AppendUnique(CA_SRC = [ os.path.join(src_dir, 'caleadapter.c') ])

@@ -15,7 +15,7 @@ gradle_url = 'https://services.gradle.org/distributions/' + gradle_zip_file
 
 if not os.path.exists(gradle_dir):
     if not os.path.exists(gradle_zip_file):
-        print "Retrieving Android Gradle bundle"
+        print("Retrieving Android Gradle bundle")
         gradle_zip = env.Download(gradle_zip_file, gradle_url)
     gradle_unpacked = env.UnpackAll(gradle_dir, gradle_zip)
 

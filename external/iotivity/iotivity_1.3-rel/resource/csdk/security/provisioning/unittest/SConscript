@@ -61,12 +61,12 @@ unittest_bin = 'unittest' + sptest_env.get('PROGSUFFIX')
 ######################################################################
 def safe_remove(file_name):
     if path.isfile(file_name):
-        print 'Removing: ' + file_name
+        print('Removing: ' + file_name)
         remove(file_name)
 
 
 def clean_config():
-    print 'Clean configs'
+    print('Clean configs')
     safe_remove('oic_svr_db_server1.dat')
     safe_remove('oic_svr_db_server2.dat')
     safe_remove(cfg_client)
@@ -78,7 +78,7 @@ def clean_config():
 
 def start_srv(num):
     if not path.isfile(unittest_build_dir + server_bin):
-        print "no executable file"
+        print("no executable file")
         return
     cfg_srv = 'oic_svr_db_server' + num + '.dat'
     copyfile(sec_provisioning_src_dir + 'oic_svr_db_server_justworks.dat', cfg_srv)
@@ -90,7 +90,7 @@ def start_srv(num):
             stdout=open('srv' + num + '.log', 'w'))
     else:
         po = Popen([unittest_build_dir + server_bin, num, cfg_srv])
-    print "start server ", num, " pid: ", po.pid
+    print("start server " + num + " pid: ", po.pid)
     return po
 
 
@@ -105,12 +105,12 @@ def kill_all():
                     continue
                 try:
                     pid = int(cmd_list[1])
-                    print "killing: ", pid
+                    print("killing: " + pid)
                     kill(pid, SIGTERM)
                 except Exception as ex:
-                    print line
-                    print "Cannot kill: ", cmd_list[1]
-                    print "exception: " + ex.message
+                    print(line)
+                    print("Cannot kill: " + cmd_list[1])
+                    print("exception: " + ex.message)
     else:
         try:
             from psutil import process_iter
@@ -123,7 +123,7 @@ def kill_all():
                 if name == server_bin:
                     proc.kill()
         except ImportError:
-            print "can not process check"
+            print("can not process check")
 
 
 def run_test(target, source, env):
@@ -132,10 +132,10 @@ def run_test(target, source, env):
     copyfile(sec_provisioning_src_dir + 'oic_svr_db_client.dat', cfg_client)
     po_srv1 = start_srv(str(1))
     po_srv2 = start_srv(str(2))
-    print "Waiting for servers start"
+    print("Waiting for servers start")
     sleep(3)
     call([unittest_build_dir + unittest_bin])
-    print "Servers are stopping"
+    print("Servers are stopping")
     sleep(3)
     po_srv1.terminate()
     po_srv2.terminate()
@@ -222,5 +222,5 @@ Alias('build', [tests, server])
 
 if sptest_env.get('TEST') == '1':
     if target_os in ['linux', 'windows']:
-        print "Start tests"
+        print("Start tests")
         sptest_env.Command('start', [server_bin, unittest_bin], Action(run_test))

@@ -48,7 +48,7 @@ os.chdir(cborDir)
 if target_os != 'tizen' and os.path.exists('.git/HEAD'):
     out = subprocess.check_output('git tag -l ' + cborRevision, shell=True)
     if cborRevision not in out:
-        print out
+        print(out)
         msg = '''
 *********************************** Error: ************************************
 * Your TinyCBOR repo is not up to date with the version required by iotivity.
@@ -64,7 +64,7 @@ if os.path.exists('.git/HEAD'):
     cmd = 'git reset --hard ' + cborRevision
     os.system(cmd)
 else:
-    print 'Assume TinyCBOR is on tag ', cborRevision
+    print('Assume TinyCBOR is on tag ' + cborRevision)
 
 os.chdir(start_dir)
 

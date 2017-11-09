@@ -74,12 +74,12 @@ if ANDROID_HOME is not None:
     ANDROID_HOME = os.path.abspath(ANDROID_HOME)
 
 if ANDROID_HOME is None or not os.path.exists(ANDROID_HOME):
-    print '''
+    print('''
 *************************************** Warning *******************************
 * Environment variable ANDROID_HOME is not set properly. It should be the
 * root directory of android sdk. This is required to build Java code.
 *******************************************************************************
-'''
+''')
 
 target_arch = env.get('TARGET_ARCH')
 
@@ -102,12 +102,12 @@ else:
 if tc_ver:
     cmd.append('NDK_TOOLCHAIN_VERSION=' + tc_ver)
 else:
-    print '''
+    print('''
 *************************************** Warning *******************************
 * To support C++11, the NDK toolchain must support gcc >= 4.7
 * Please make sure your  android NDK is at least r8e
 *******************************************************************************
-'''
+''')
 
 cmd.append('-n')
 

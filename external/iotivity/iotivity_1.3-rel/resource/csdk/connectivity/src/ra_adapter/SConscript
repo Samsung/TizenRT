@@ -21,7 +21,7 @@ import os
 
 Import('connectivity_env')
 
-print "Reading RA adapter script"
+print("Reading RA adapter script")
 
 src_dir = os.path.abspath(os.curdir)
 

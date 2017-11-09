@@ -32,7 +32,7 @@ boost_bootstrap = os.path.join(boost_dir, 'bootstrap.bat')
 
 if 'linux' == target_os:
     # Check for Boost libraries in /usr/boost
-    print 'TODO: Perform platform check for linux'
+    print('TODO: Perform platform check for linux')
     msg = "Target platform (%s) is currently not supported for boost builds" % target_os
     raise SCons.Errors.EnvironmentError(msg)
 
@@ -45,11 +45,11 @@ elif target_os in ['windows']:
         if os.path.exists(boost_zip_file):
             boost_zip = boost_zip_file
         else:
-            print '*** Downloading Boost zip file (> 100MB). Please wait... ***'
+            print('*** Downloading Boost zip file (> 100MB). Please wait... ***')
             boost_zip = boost_env.Download(boost_zip_file, boost_url)
 
         # Unzip boost
-        print '*** Unpacking boost %s zip file ... ***' % boost_version
+        print('*** Unpacking boost %s zip file ... ***' % boost_version)
         boost_env.UnpackAll(boost_dir, boost_zip)
 
         # Rename from boost_1_60_0 -> boost
