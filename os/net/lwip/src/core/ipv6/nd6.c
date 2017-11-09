@@ -748,7 +748,7 @@ void nd6_tmr(void)
 				/* Retries exceeded. */
 				nd6_free_neighbor_cache_entry(i);
 			} else {
-				/* Send a NS for this entry. */
+				/* Send a NS for this entry */
 				neighbor_cache[i].counter.probes_sent++;
 				nd6_send_neighbor_cache_probe(&neighbor_cache[i], ND6_SEND_FLAG_MULTICAST_DEST);
 			}
@@ -1484,8 +1484,7 @@ static s8_t nd6_new_router(const ip6_addr_t *router_addr, struct netif *netif)
 		neighbor_cache[neighbor_index].netif = netif;
 		neighbor_cache[neighbor_index].q = NULL;
 		neighbor_cache[neighbor_index].state = ND6_INCOMPLETE;
-		neighbor_cache[neighbor_index].counter.probes_sent = 1;
-		nd6_send_neighbor_cache_probe(&neighbor_cache[neighbor_index], ND6_SEND_FLAG_MULTICAST_DEST);
+		neighbor_cache[neighbor_index].counter.probes_sent = 0;
 	}
 
 	/* Mark neighbor as router. */
@@ -1686,8 +1685,7 @@ static s8_t nd6_get_next_hop_entry(const ip6_addr_t *ip6addr, struct netif *neti
 			neighbor_cache[i].isrouter = 0;
 			neighbor_cache[i].netif = netif;
 			neighbor_cache[i].state = ND6_INCOMPLETE;
-			neighbor_cache[i].counter.probes_sent = 1;
-			nd6_send_neighbor_cache_probe(&neighbor_cache[i], ND6_SEND_FLAG_MULTICAST_DEST);
+			neighbor_cache[i].counter.probes_sent = 0;
 		}
 	}
 
