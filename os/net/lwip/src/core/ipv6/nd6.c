@@ -115,6 +115,7 @@ static s8_t nd6_new_neighbor_cache_entry(void);
 static void nd6_free_neighbor_cache_entry(s8_t i);
 static s8_t nd6_find_destination_cache_entry(const ip6_addr_t *ip6addr);
 static s8_t nd6_new_destination_cache_entry(void);
+static void nd6_free_expired_router_in_destination_cache(const ip6_addr_t *ip6addr);
 static s8_t nd6_is_prefix_in_netif(const ip6_addr_t *ip6addr, struct netif *netif);
 static s8_t nd6_select_router(const ip6_addr_t *ip6addr, struct netif *netif);
 static s8_t nd6_get_router(const ip6_addr_t *router_addr, struct netif *netif);
@@ -123,7 +124,6 @@ static s8_t nd6_get_onlink_prefix(ip6_addr_t *prefix, struct netif *netif);
 static s8_t nd6_new_onlink_prefix(ip6_addr_t *prefix, struct netif *netif);
 static s8_t nd6_get_next_hop_entry(const ip6_addr_t *ip6addr, struct netif *netif);
 static err_t nd6_queue_packet(s8_t neighbor_index, struct pbuf *q);
-
 #define ND6_SEND_FLAG_MULTICAST_DEST 0x01
 #define ND6_SEND_FLAG_ALLNODES_DEST 0x02
 static void nd6_send_ns(struct netif *netif, const ip6_addr_t *target_addr, u8_t flags);
@@ -158,6 +158,9 @@ void nd6_input(struct pbuf *p, struct netif *inp)
 	ND6_STATS_INC(nd6.recv);
 
 	msg_type = *((u8_t *) p->payload);
+
+	LWIP_DEBUGF(ND6_DEBUG, ("Received msg_type : %u\n", msg_type));
+
 	switch (msg_type) {
 	case ICMP6_TYPE_NA: {		/* Neighbor Advertisement. */
 		struct na_header *na_hdr;
@@ -444,13 +447,17 @@ void nd6_input(struct pbuf *p, struct netif *inp)
 		if (i < 0) {
 			/* Create a new router entry. */
 			i = nd6_new_router(ip6_current_src_addr(), inp);
-		}
 
-		if (i < 0) {
-			/* Could not create a new router entry. */
-			pbuf_free(p);
-			ND6_STATS_INC(nd6.memerr);
-			return;
+			/* Failed to create new router */
+			if (i < 0) {
+				/* Could not create a new router entry. */
+				LWIP_DEBUGF(ND6_DEBUG, ("Failed to create new router, ret %d\n", i));
+				pbuf_free(p);
+				ND6_STATS_INC(nd6.memerr);
+				return;
+			}
+
+			LWIP_DEBUGF(ND6_DEBUG, ("Created new router on default_router_list %d\n", i));
 		}
 
 		/* Re-set invalidation timer. */
@@ -810,6 +817,21 @@ void nd6_tmr(void)
 			if (default_router_list[i].invalidation_timer < ND6_TMR_INTERVAL / 1000) {
 				/* Less than 1 second remaining. Clear this entry. */
 				default_router_list[i].neighbor_entry->isrouter = 0;
+
+				/* RFC 4861, 6.3.5.  Timing out Prefixes and Default Routers  */
+				nd6_free_expired_router_in_destination_cache(&(default_router_list[i].neighbor_entry->next_hop_address));
+
+				s8_t j; /* Neighbor cache index */
+
+				j = nd6_find_neighbor_cache_entry(&(default_router_list[i].neighbor_entry->next_hop_address));
+				if (j < 0) {
+					LWIP_DEBUGF(ND6_DEBUG, ("Failed to find matched negighbor entry to default router list\n"));
+					/* @todo should we do initialize NCE manually?*/
+				} else {
+					LWIP_DEBUGF(ND6_DEBUG, ("Neighbor cache entry (index %d) will be freed\n", j));
+					nd6_free_neighbor_cache_entry(j);
+				}
+
 				default_router_list[i].neighbor_entry = NULL;
 				default_router_list[i].invalidation_timer = 0;
 				default_router_list[i].flags = 0;
@@ -1331,6 +1353,24 @@ void nd6_clear_destination_cache(void)
 
 	for (i = 0; i < LWIP_ND6_NUM_DESTINATIONS; i++) {
 		ip6_addr_set_any(&destination_cache[i].destination_addr);
+	}
+}
+
+/**
+ * Free the destination entity of which Lifetime has been expired.
+ *
+ * When the Lifetime of default router is expired, the entiry should be discarded
+ * to prevent sending traffic to the (deleted) router
+ * Accordingly RFC 4861 cluase 6.3.5, the host MUST update the Destination cache ..
+ */
+void nd6_free_expired_router_in_destination_cache(const ip6_addr_t *ip6addr)
+{
+	int i;
+
+	for (i = 0; i < LWIP_ND6_NUM_DESTINATIONS; i++) {
+		if (ip6_addr_cmp(ip6addr, &(destination_cache[i].next_hop_addr))) {
+			ip6_addr_set_any(&destination_cache[i].destination_addr);
+		}
 	}
 }
 
