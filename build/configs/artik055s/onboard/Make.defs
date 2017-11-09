@@ -152,16 +152,16 @@ HOSTCFLAGS = -Wall -Wstrict-prototypes -Wshadow -Wundef -g -pipe
 HOSTLDFLAGS =
 
 define DOWNLOAD
-       @$(TOPDIR)/../build/configs/artik05x/artik05x_download.sh --board=artik055s --secure $(1)
+       @$(TOPDIR)/../build/configs/artik05x/artik05x_download.sh --board=artik055s --secure=$(TOPDIR)/$(CONFIG_ARTIK05X_CODESIGNER_PATH) $(1)
 endef
 
 ifeq ($(WINTOOL),y)
 # Windows-native toolchains
 define PACKAGE
-	${shell cygpath -w $(TOPDIR)/../build/configs/artik05x/artik05x_user_binary.sh --topdir=$(TOPDIR) --board=artik055s --secure}
+	${shell cygpath -w $(TOPDIR)/../build/configs/artik05x/artik05x_user_binary.sh --topdir=$(TOPDIR) --board=artik055s --secure=$(TOPDIR)/$(CONFIG_ARTIK05X_CODESIGNER_PATH)}
 endef
 else
 define PACKAGE
-	$(Q) $(TOPDIR)/../build/configs/artik05x/artik05x_user_binary.sh --topdir=$(TOPDIR) --board=artik055s --secure
+	$(Q) $(TOPDIR)/../build/configs/artik05x/artik05x_user_binary.sh --topdir=$(TOPDIR) --board=artik055s --secure=$(TOPDIR)/$(CONFIG_ARTIK05X_CODESIGNER_PATH)
 endef
 endif

@@ -28,22 +28,23 @@ USAGE: `basename $0` [OPTIONS]
 OPTIONS:
     [--topdir[=<TOPDIR>]]
     [--board[="<board-name>"]]
-    [--secure]
+    [--secure[=<exec-path>]]
 
 For examples:
     `basename $0` --topdir=`pwd` --board=artik053
-    `basename $0`--topdir=../ --board=artik055s --secure
+    `basename $0`--topdir=../ --board=artik055s --secure=./codesigner
 
 Options:
     --topdir[="<TOPDIR>"]         assign the base path of tizenrt
     --board[="<board-name>"]      select target board-name
-    --secure                      Choose select secure mode
+    --secure[=<exec-path>]        choose secure mode, and set the codesinger path
 
 EOF
 }
 
 signing() {
-    $CONFIGS_PATH/artik05x/tools/codesigner/artik05x_codesigner -sign $OUTPUT_PATH/bin/tinyara_head.bin
+    $CODESIGNER -sign $TIZENRT_IMAGE
+    TIZENRT_IMAGE=${TIZENRT_IMAGE}-signed
 }
 
 factory-image() {
@@ -103,8 +104,14 @@ while test $# -gt 0; do
 
     case $1 in
         --topdir=*) TOPDIR=$optarg ;;
-        --secure)
-            SECUREMODE="true" ;;
+        --secure=*)
+            CODESIGNER=$optarg
+            if [ ! -e $CODESIGNER ]; then
+                echo "No Such as codesigner. Please check the path:"
+                echo "   $CODESIGNER"
+                exit 1
+            fi
+            ;;
         --board=*) BOARD_NAME=$optarg ;;
         *)
             usage 1>&2
@@ -135,9 +142,8 @@ if [ ! -e $TIZENRT_IMAGE ]; then
     exit 1;
 fi
 
-if [ ! -z $SECUREMODE ]; then
+if [ ! -z $CODESIGNER ]; then
     signing
-    TIZENRT_IMAGE=${TIZENRT_IMAGE}-signed
 fi
 
 # make factory image

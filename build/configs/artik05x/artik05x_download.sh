@@ -35,16 +35,17 @@ usage() {
 USAGE: `basename $0` [OPTIONS]
 OPTIONS:
     [--board[="<board-name>"]]
-    [--secure]
+    [--secure[=<exec-path>]]
     [ALL | BOOTLOADER | RESOURCE | KERNEL | THIRDPARTY]
 
 For examples:
     `basename $0` --board=artik053 ALL
-    `basename $0` --board=artik055s BOOTLOADER
+    `basename $0` --board=artik055s --secure=../codesigner BOOTLOADER
 
 Options:
     --board[="<board-name>"]      select target board-name
-    --secure                      choose secure mode
+    --secure[=<exec-path>]        choose secure mode, and set the codesinger path
+
     ALL                           write each firmware image into FLASH
     BOOTLOADER                    not supported yet
     RESOURCE                      not supported yet
@@ -93,7 +94,13 @@ download()
 }
 
 signing() {
-    $CONFIGS_PATH/artik05x/tools/codesigner/artik05x_codesigner -sign $TIZENRT_BIN
+    CODESIGNER=$1
+    if [ ! -e $CODESIGNER ]; then
+        echo "No Such as codesigner. Please check the path:"
+        echo "   $CODESIGNER"
+        exit 1
+    fi
+    $CODESIGNER -sign $TIZENRT_BIN
     TIZENRT_BIN=${TIZENRT_BIN}-signed
 }
 
@@ -118,7 +125,8 @@ while test $# -gt 0; do
                 exit 1
             fi
             ;;
-        --secure) signing ;;
+        --secure=*) signing $optarg
+            ;;
         ALL)
             download
             ;;
