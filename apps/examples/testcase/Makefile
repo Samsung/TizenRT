@@ -86,6 +86,7 @@ include ta_tc/arastorage/utc/Make.defs
 include ta_tc/arastorage/itc/Make.defs
 include ta_tc/device_management/utc/Make.defs
 include ta_tc/device_management/itc/Make.defs
+
 include ta_tc/wifi_manager/utc/Make.defs
 include ta_tc/wifi_manager/itc/Make.defs
 include ta_tc/mqtt/utc/Make.defs
@@ -105,9 +106,9 @@ ifeq ($(CONFIG_WINDOWS_NATIVE),y)
   BIN		= ..\..\libapps$(LIBEXT)
 else
 ifeq ($(WINTOOL),y)
-  BIN		= ..\\..\\libapps$(LIBEXT)
+  BIN = ..\\..\\libapps$(LIBEXT)
 else
-  BIN		= ../../libapps$(LIBEXT)
+  BIN = ../../libapps$(LIBEXT)
 endif
 endif
 

@@ -19,9 +19,15 @@
 /// @file network_tc_main.c
 
 /// @brief Main Function for Network TestCase Example
+
 #include <tinyara/config.h>
 #include <stdio.h>
 #include <semaphore.h>
+#include <net/if.h>
+#include <arpa/inet.h>
+#include <netinet/in.h>
+#include <sys/socket.h>
+
 #include "tc_internal.h"
 
 extern sem_t tc_sem;
@@ -42,6 +48,9 @@ int network_tc_main(int argc, char *argv[])
 	total_pass = 0;
 	total_fail = 0;
 
+	int sock_tcp = socket(AF_INET, SOCK_STREAM, 0);
+	int sock_tcp1 = socket(AF_INET, SOCK_STREAM, 0);
+	int sock_udp = socket(AF_INET, SOCK_DGRAM, 0);
 	printf("=== TINYARA Network TC START! ===\n");
 
 #ifdef CONFIG_TC_NET_SOCKET
@@ -111,14 +120,59 @@ int network_tc_main(int argc, char *argv[])
 	net_netdb_main();
 #endif
 #ifdef CONFIG_TC_NET_DUP
-	net_dup_main();
+  net_dup_main();
 #endif
+#ifdef CONFIG_TC_NET_IPV4_NETMASK_VALID
+	net_ipv4_addr_netmask_valid_main();
+#endif
+#ifdef CONFIG_TC_NETDEV_CARRIER
+	netdev_carrier_main();
+#endif
+#ifdef CONFIG_TC_NET_DECISEC_TIME
+	net_decisec_time_main();
+#endif
+#ifdef CONFIG_TC_NET_API
+	net_api_main();
+#endif
+#ifdef CONFIG_TC_NET_TCPIP
+	net_tcpip_main();
+#endif
+#ifdef CONFIG_TC_NET_MAC
+	net_mac_main(sock_tcp, sock_tcp1);
+#endif
+#ifdef CONFIG_TC_NETBUF_ALLOC
+	netbuf_alloc_main();
+#endif
+#ifdef CONFIG_TC_MEM_ALLOC
+	net_mem_allocate_main();
+#endif
+#ifdef CONFIG_TC_NET_NETBUF
+	tc_net_netbuf_main();
+#endif
+#ifdef CONFIG_NET_NETIFAPI
+	net_netifapi_main();
+#endif
+#ifdef CONFIG_TC_NET_RAW
+	net_raw_main();
+#endif
+#ifdef CONFIG_TC_NET_CORE
+	net_core_main(sock_tcp);
+#endif
+#ifdef CONFIG_TC_NET_STATS
+	net_stats_main();
+#endif
+#ifdef CONFIG_TC_NET_IGMP
+	net_igmp_main();
+#endif
+
+	close(sock_tcp);
+	close(sock_tcp1);
+	close(sock_udp);
 
 	printf("\n=== TINYARA Network TC COMPLETE ===\n");
 	printf("\t\tTotal pass : %d\n\t\tTotal fail : %d\n", total_pass, total_fail);
 
 	working_tc--;
 	sem_post(&tc_sem);
-
 	return 0;
 }

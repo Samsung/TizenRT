@@ -21,192 +21,177 @@
 #include <tinyara/config.h>
 #include <stdio.h>
 #include <errno.h>
-
 #include <sys/stat.h>
 #include <net/if.h>
 #include <arpa/inet.h>
 #include <netinet/in.h>
-//#include <arch/board/board.h>
 #include <netutils/netlib.h>
-
 #include <sys/socket.h>
 
 #include "tc_internal.h"
 
 /**
-   * @testcase		   :tc_net_getsockname_p
-   * @brief		   :
-   * @scenario		   :
-   * @apicovered	   :getsockname()
-   * @precondition	   :
-   * @postcondition	   :
-   */
-static void tc_net_getsockname_p(void)
+* @testcase            :tc_net_getsockname_p
+* @brief               :get the socket name.
+* @scenario            :getsockname gives the current address to which the socket is bound.
+* @apicovered          :getsockname
+* @precondition        :socket file descriptor.
+* @postcondition       :none
+* @return              :void
+*/
+static void tc_net_getsockname_p(int sock)
 {
-	int sock;
-	int len = sizeof(struct sockaddr);
+	int ret;
 	struct sockaddr foo;
+	int len = sizeof(struct sockaddr);
 
-	sock = socket(AF_INET, SOCK_STREAM, 0);
+	ret = getsockname(sock, &foo, (socklen_t *)&len);
 
-	int ret = getsockname(sock, &foo, (socklen_t *)&len);
-
-	TC_ASSERT_NEQ("getsockname", ret, -1);
+	TC_ASSERT_NEQ("getsockname", ret, NEG_VAL);
 	TC_SUCCESS_RESULT();
-
-	close(sock);
 }
 
 /**
-   * @testcase		   :tc_net_getsockname_unix_p
-   * @brief		   :
-   * @scenario		   :
-   * @apicovered	   :getsockname()
-   * @precondition	   :
-   * @postcondition	   :
-   */
-static void tc_net_getsockname_unix_p(void)
+* @testcase            :tc_net_getsockname_unix_p
+* @brief               :get the socket name.
+* @scenario            :getsockname gives the current address to which the socket is bound.
+* @apicovered          :getsockname
+* @precondition        :socket file descriptor.
+* @postcondition       :none
+* @return              :void
+*/
+static void tc_net_getsockname_unix_p(int sock)
 {
-	int sock;
-	int len = sizeof(struct sockaddr);
 	struct sockaddr foo;
+	int len = sizeof(struct sockaddr);
 
-	sock = socket(AF_UNIX, SOCK_STREAM, 0);
 	int ret = getsockname(sock, &foo, (socklen_t *)&len);
 
-	TC_ASSERT_NEQ("getsockname", ret, -1);
+	TC_ASSERT_NEQ("getsockname", ret, NEG_VAL);
 	TC_SUCCESS_RESULT();
-
-	close(sock);
 }
 
 /**
-   * @testcase		   :tc_net_getsockname_n
-   * @brief		   :
-   * @scenario		   :
-   * @apicovered	   :getsockname()
-   * @precondition	   :
-   * @postcondition	   :
-   */
+* @testcase            :tc_net_getsockname_n
+* @brief               :get the socket name.
+* @scenario            :getsockname gives the current address to which the socket is bound,
+*                       with invalid socket fd.
+* @apicovered          :getsockname
+* @precondition        :none
+* @postcondition       :none
+* @return              :void
+*/
 static void tc_net_getsockname_n(void)
 {
-	int sock;
-	int len = sizeof(struct sockaddr);
 	struct sockaddr foo;
+	int len = sizeof(struct sockaddr);
 
-	sock = -1;
+	int ret = getsockname(NEG_VAL, &foo, (socklen_t *)&len);
 
-	int ret = getsockname(sock, &foo, (socklen_t *)&len);
-
-	TC_ASSERT_NEQ("getsockname", ret, 0);
+	TC_ASSERT_EQ("getsockname", ret, NEG_VAL);
 	TC_SUCCESS_RESULT();
-
 }
 
 /**
-   * @testcase		   :tc_net_getsockname_close_n
-   * @brief		   :
-   * @scenario		   :
-   * @apicovered	   :getsockname()
-   * @precondition	   :
-   * @postcondition	   :
-   */
+* @testcase            :tc_net_getsockname_close_n
+* @brief               :get the socket name.
+* @scenario            :getsockname gives the current address to which the socket is bound.
+* @apicovered          :getsockname
+* @precondition        :none
+* @postcondition       :none
+* @return              :void
+*/
 static void tc_net_getsockname_close_n(void)
 {
-	int sock;
-	int len = sizeof(struct sockaddr);
 	struct sockaddr foo;
+	int len = sizeof(struct sockaddr);
 
-	sock = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP);
-	close(sock);
-	int ret = getsockname(sock, &foo, (socklen_t *)&len);
+	int ret = getsockname(NEG_VAL, &foo, (socklen_t *)&len);
 
-	TC_ASSERT_NEQ("getsockname", ret, 0);
+	TC_ASSERT_EQ("getsockname", ret, NEG_VAL);
 	TC_SUCCESS_RESULT();
-
 }
 
 /**
-   * @testcase		   :tc_net_getsockname_udp_p
-   * @brief		   :
-   * @scenario		   :
-   * @apicovered	   :getsockname()
-   * @precondition	   :
-   * @postcondition	   :
-   */
-static void tc_net_getsockname_udp_p(void)
+* @testcase            :tc_net_getsockname_udp_p
+* @brief               :get the socket name.
+* @scenario            :getsockname gives the current address to which the socket is bound.
+* @apicovered          :getsockname
+* @precondition        :socket file descriptor.
+* @postcondition       :none
+* @return              :void
+*/
+static void tc_net_getsockname_udp_p(int sock)
 {
-	int sock;
-	int len = sizeof(struct sockaddr);
 	struct sockaddr foo;
+	int len = sizeof(struct sockaddr);
 
-	sock = socket(AF_INET, SOCK_DGRAM, IPPROTO_UDP);
 	int ret = getsockname(sock, &foo, (socklen_t *)&len);
 
-	TC_ASSERT_NEQ("getsockname", ret, -1);
+	TC_ASSERT_NEQ("getsockname", ret, NEG_VAL);
 	TC_SUCCESS_RESULT();
-
-	close(sock);
 }
 
 /**
-   * @testcase		   :tc_net_getsockname_icmp_p
-   * @brief		   :
-   * @scenario		   :
-   * @apicovered	   :getsockname()
-   * @precondition	   :
-   * @postcondition	   :
-   */
-static void tc_net_getsockname_icmp_p(void)
+* @testcase            :tc_net_getsockname_icmp_p
+* @brief               :get the socket name.
+* @scenario            :getsockname gives the current address to which the socket is bound.
+* @apicovered          :getsockname
+* @precondition        :socket file descriptor.
+* @postcondition       :none
+* @return              :void
+*/
+static void tc_net_getsockname_icmp_p(int sock)
 {
-	int sock;
-	int len = sizeof(struct sockaddr);
 	struct sockaddr foo;
+	int len = sizeof(struct sockaddr);
 
-	sock = socket(AF_INET, SOCK_DGRAM, IPPROTO_ICMP);
 	int ret = getsockname(sock, &foo, (socklen_t *)&len);
 
-	TC_ASSERT_NEQ("getsockname", ret, -1);
+	TC_ASSERT_NEQ("getsockname", ret, NEG_VAL);
 	TC_SUCCESS_RESULT();
-
-	close(sock);
 }
 
 /**
-   * @testcase		   :tc_net_getsockname_len_sock_n
-   * @brief		   :
-   * @scenario		   :
-   * @apicovered	   :getsockname()
-   * @precondition	   :
-   * @postcondition	   :
-   */
+* @testcase            :tc_net_getsockname_len_sock_n
+* @brief               :get the socket name.
+* @scenario            :getsockname gives the current address to which the socket is bound,
+*                       with invalid length argument.
+* @apicovered          :getsockname
+* @precondition        :none
+* @postcondition       :none
+* @return              :void
+*/
 static void tc_net_getsockname_len_sock_n(void)
 {
-	int sock;
-	int len = -1;
 	struct sockaddr foo;
+	int fd = -1;
 
-	sock = -1;
-	int ret = getsockname(sock, &foo, (socklen_t *)&len);
+	int ret = getsockname(fd, &foo, NULL);
 
-	TC_ASSERT_NEQ("getsockname", ret, 0);
+	TC_ASSERT_EQ("getsockname", ret, NEG_VAL);
 	TC_SUCCESS_RESULT();
-
 }
 
 /****************************************************************************
- * Name: getsockname()
+ * Name:net_getsockname_main
  ****************************************************************************/
-
 int net_getsockname_main(void)
 {
-	tc_net_getsockname_p();
+	int tcp_sock = socket(AF_INET, SOCK_STREAM, ZERO);
+	int udp_sock = socket(AF_INET, SOCK_DGRAM, ZERO);
+	int unix_sock = socket(AF_UNIX, SOCK_STREAM, ZERO);
+
+	tc_net_getsockname_p(tcp_sock);
 	tc_net_getsockname_n();
 	tc_net_getsockname_len_sock_n();
-	tc_net_getsockname_udp_p();
-	tc_net_getsockname_icmp_p();
+	tc_net_getsockname_udp_p(udp_sock);
+	tc_net_getsockname_icmp_p(tcp_sock);
 	tc_net_getsockname_close_n();
-	tc_net_getsockname_unix_p();
+	tc_net_getsockname_unix_p(unix_sock);
 
+	close(tcp_sock);
+	close(udp_sock);
+	close(unix_sock);
 	return 0;
 }

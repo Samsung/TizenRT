@@ -23,7 +23,6 @@
 #include <sys/stat.h>
 #include <net/if.h>
 #include <netutils/netlib.h>
-#include "tc_internal.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -34,143 +33,152 @@
 #include <sys/socket.h>
 #include <pthread.h>
 
-#define PORTNUM 1110
-#define MAXRCVLEN 20
-int s1 = 0;
-/**
-   * @fn                   :wait1
-   * @brief                :function to wait on semaphore
-   * @scenario             :
-   * API's covered         :
-   * Preconditions         :
-   * Postconditions        :
-   * @return               :void
-   */
-void wait1(void)
-{
-	while (s1 <= 0) {
+#include "tc_internal.h"
 
+#define PORTNUM        5007
+#define MAXRCVLEN      20
+#define BACKLOG        2
+
+static int count_wait;
+
+/**
+* @fn                   :sig_wait
+* @brief                :function to wait on semaphore
+* @scenario             :use wait function to decrement count value.
+* @API's covered        :none
+* @Preconditions        :none
+* @Postconditions       :none
+* @return               :void
+*/
+void sig_wait(void)
+{
+	while (count_wait <= ZERO) {
 		printf("");
 	}
-	s1--;
+	count_wait--;
 }
 
 /**
-   * @fn                   :signal1
-   * @brief                :function to signal semaphore
-   * @scenario             :
-   * API's covered         :
-   * Preconditions         :
-   * Postconditions        :
-   * @return               :void
-   */
-void signal1(void)
+* @fn                   :sig_call
+* @brief                :function to signal semaphore
+* @scenario             :use to increase the count value.
+* @API's covered        :none
+* @Preconditions        :none
+* @Postconditions       :none
+* @return               :void
+*/
+void sig_call(void)
 {
-	s1++;
+	count_wait++;
 }
 
 /**
-   * @testcase		   :tc_net_send_p
-   * @brief		   :
-   * @scenario		   :
-   * @apicovered	   :accept(),send()
-   * @precondition	   :
-   * @postcondition	   :
-   */
+* @testcase             :tc_net_send_p
+* @brief                :send a message on a socket.
+* @scenario             :used to transmit a message to another socket.
+* @apicovered           :accept(),send()
+* @precondition         :socket file descriptor.
+* @postcondition        :none
+* @return               :void
+*/
 void tc_net_send_p(int fd)
 {
-
 	char *msg = "Hello World !\n";
+
 	int ConnectFD = accept(fd, NULL, NULL);
+
 	int ret = send(ConnectFD, msg, strlen(msg), 0);
-
-	TC_ASSERT_NEQ("send", ret, -1);
-	TC_SUCCESS_RESULT();
-
+	TC_ASSERT_NEQ_CLEANUP("send", ret, NEG_VAL, close(ConnectFD));
 	close(ConnectFD);
-
+	TC_SUCCESS_RESULT();
 }
 
 /**
-   * @fn                   :server
-   * @brief                :
-   * @scenario             :
-   * API's covered         :socket,bind,listen,close
-   * Preconditions         :
-   * Postconditions        :
-   * @return               :void *
-   */
-void *server(void *args)
+* @fn                   :server
+* @brief                :create a tcp server.
+* @scenario             :create a tcp server to check send api.
+* API's covered         :socket,bind,listen,close
+* Preconditions         :socket file descriptor.
+* Postconditions        :none
+* @return               :void*
+*/
+void* server(void *args)
 {
-
 	struct sockaddr_in sa;
-	int SocketFD = socket(PF_INET, SOCK_STREAM, IPPROTO_TCP);
+
+	int sock = socket(AF_INET, SOCK_STREAM, 0);
 
 	memset(&sa, 0, sizeof(sa));
-
 	sa.sin_family = PF_INET;
 	sa.sin_port = htons(PORTNUM);
-	sa.sin_addr.s_addr = inet_addr("127.0.0.1");
+	sa.sin_addr.s_addr = INADDR_LOOPBACK;
 
-	bind(SocketFD, (struct sockaddr *)&sa, sizeof(sa));
+	bind(sock, (struct sockaddr *)&sa, sizeof(sa));
+	listen(sock, BACKLOG);
 
-	listen(SocketFD, 2);
-
-	signal1();
-	tc_net_send_p(SocketFD);
-
-	close(SocketFD);
-	return 0;
+	sig_call();
+	tc_net_send_p(sock);
+	close(sock);
+	return NULL;
 }
 
 /**
-   * @fn                   :client
-   * @brief                :
-   * @scenario             :
-   * API's covered         :socket,connect,recv,close
-   * Preconditions         :
-   * Postconditions        :
-   * @return               :void *
-   */
-void *client(void *args)
+* @fn                   :client
+* @brief                :create client.
+* @scenario             :create tcp client.
+* API's covered         :socket,connect,recv,close
+* Preconditions         :socket file descriptor.
+* Postconditions        :none
+* @return               :void*
+*/
+void* client(void *args)
 {
-
+	int len;
+	int ret;
 	char buffer[MAXRCVLEN];
-	int len, mysocket;
 	struct sockaddr_in dest;
 
-	mysocket = socket(PF_INET, SOCK_STREAM, IPPROTO_TCP);
+	int sock = socket(AF_INET, SOCK_STREAM, 0);
 
 	memset(&dest, 0, sizeof(dest));
 	dest.sin_family = PF_INET;
-	dest.sin_addr.s_addr = inet_addr("127.0.0.1");
+	dest.sin_addr.s_addr = INADDR_LOOPBACK;
 	dest.sin_port = htons(PORTNUM);
 
-	wait1();
-
-	connect(mysocket, (struct sockaddr *)&dest, sizeof(struct sockaddr));
-	len = recv(mysocket, buffer, MAXRCVLEN, 0);
+	sig_wait();
+	ret = connect(sock, (struct sockaddr *)&dest, sizeof(struct sockaddr));
+	len = recv(sock, buffer, MAXRCVLEN, 0);
 	buffer[len] = '\0';
-
-	close(mysocket);
-	return 0;
-
+	close(sock);
+	return NULL;
 }
 
-/****************************************************************************
- * Name: send()
- ****************************************************************************/
-int net_send_main(void)
+/**
+* @fn                  :net_send
+* @brief               :create client and server thread.
+* @scenario            :create client and server thread to test send api.
+* API's covered        :none
+* Preconditions        :none
+* Postconditions       :none
+* @return              :void
+*/
+static void net_send(void)
 {
-
-	pthread_t Server, Client;
+	pthread_t Server;
+	pthread_t Client;
 
 	pthread_create(&Server, NULL, server, NULL);
 	pthread_create(&Client, NULL, client, NULL);
 
 	pthread_join(Server, NULL);
-
 	pthread_join(Client, NULL);
+}
 
+/****************************************************************************
+ * Name:net_send_main
+ ****************************************************************************/
+int net_send_main(void)
+{
+	net_send();
 	return 0;
 }

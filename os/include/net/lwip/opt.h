@@ -59,7 +59,7 @@
  * will be set to standard values. Override anything you don't like!
  */
 #include <net/lwip/lwipopts.h>
-
+#include <net/lwip/debug.h>
 /*
    -----------------------------------------------
    ---------- Platform specific locking ----------

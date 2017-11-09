@@ -21,287 +21,220 @@
 #include <tinyara/config.h>
 #include <stdio.h>
 #include <errno.h>
-
 #include <sys/stat.h>
 #include <net/if.h>
 #include <arpa/inet.h>
 #include <netinet/in.h>
-//#include <arch/board/board.h>
 #include <netutils/netlib.h>
-
 #include <sys/socket.h>
-
-#include "tc_internal.h"
 #include <pthread.h>
 
-#define PORTNUM 1115
-#define MAXRCVLEN 20
-int sem = 0;
+#include "tc_internal.h"
+
+#define PORTNUM        5002
+#define MAXRCVLEN      20
+#define BACKLOG        1
+
+static int count_wait;
+
 /**
-   * @fn                   :getpeername_wait
-   * @brief                :function to wait on semaphore
-   * @scenario             :
-   * API's covered         :
-   * Preconditions         :
-   * Postconditions        :
-   * @return               :void
-   */
+* @fn                   :getpeername_wait
+* @brief                :function to wait on semaphore
+* @scenario             :use wait function to decrement sem value.
+* API's covered         :none
+* Preconditions         :none
+* Postconditions        :none
+* @return               :void
+*/
 void getpeername_wait(void)
 {
-	while (sem <= 0)
+	while (count_wait <= ZERO) {
 		printf("");
+	}
 
-	sem--;
+	count_wait--;
 }
 
 /**
-   * @fn                   :getpeername_signal
-   * @brief                :function to signal semaphore
-   * @scenario             :
-   * API's covered         :
-   * Preconditions         :
-   * Postconditions        :
-   * @return               :void
-   */
+* @fn                   :getpeername_signal
+* @brief                :function to signal semaphore
+* @scenario             :use to increase the sem value.
+* API's covered         :none
+* Preconditions         :none
+* Postconditions        :none
+* @return               :void
+*/
 void getpeername_signal(void)
 {
-	sem++;
+	count_wait++;
 }
 
 /**
-   * @testcase		   :tc_net_getpeername_p1
-   * @brief		   :positive test cases without client server model
-   * @scenario		   :
-   * @apicovered	   :getpeername()
-   * @precondition	   :
-   * @postcondition	   :
-   */
-static void tc_net_getpeername_p1(void)
-{
-	int sock;
-	int len = sizeof(struct sockaddr);
-	struct sockaddr foo;
-
-	sock = socket(AF_INET, SOCK_STREAM, 0);
-	int ret = getpeername(sock, &foo, (socklen_t *)&len);
-
-	TC_ASSERT_NEQ("getpeername", ret, -1);
-	TC_SUCCESS_RESULT();
-
-	close(sock);
-}
-
-/**
-   * @testcase		   :tc_net_getpeername_sock_n
-   * @brief		   :negative test case wthout client server model
-   * @scenario		   :
-   * @apicovered	   :getpeername()
-   * @precondition	   :
-   * @postcondition	   :
-   */
-static void tc_net_getpeername_sock_n(void)
-{
-	int len = sizeof(struct sockaddr);
-	struct sockaddr foo;
-	int ret = getpeername(-1, &foo, (socklen_t *)&len);
-
-	TC_ASSERT_EQ("getpeername", ret, -1);
-	TC_SUCCESS_RESULT();
-	
-}
-
-
-/**
-   * @testcase		   :tc_net_getpeername_close_n
-   * @brief		   :negative test case without client server model
-   * @scenario		   :
-   * @apicovered	   :getpeername()
-   * @precondition	   :
-   * @postcondition	   :
-   */
-static void tc_net_getpeername_close_n(void)
-{
-	int sock;
-	sock = socket(AF_INET, SOCK_STREAM, 0);
-	int len = sizeof(struct sockaddr);
-	struct sockaddr foo;
-	close(sock);
-	int ret = getpeername(sock, &foo, (socklen_t *)&len);
-
-	TC_ASSERT_EQ("getpeername", ret, -1);
-	TC_SUCCESS_RESULT();
-	
-}
-
-/**
-   * @testcase		   :tc_net_getpeername_unix_p
-   * @brief		   :
-   * @scenario		   :
-   * @apicovered	   :getpeername()
-   * @precondition	   :
-   * @postcondition	   :
-   */
-static void tc_net_getpeername_unix_p(void)
-{
-	int sock;
-	int len = sizeof(struct sockaddr);
-	struct sockaddr foo;
-
-	sock = socket(AF_UNIX, SOCK_STREAM, 0);
-	int ret = getpeername(sock, &foo, (socklen_t *)&len);
-
-	TC_ASSERT_NEQ("getpeername", ret, -1);
-	TC_SUCCESS_RESULT();
-
-}
-
-/**
-   * @testcase		   :tc_net_getpeername_udp_p
-   * @brief		   :
-   * @scenario		   :
-   * @apicovered	   :getpeername()
-   * @precondition	   :
-   * @postcondition	   :
-   */
-static void tc_net_getpeername_udp_p(void)
-{
-	int sock;
-	int len = sizeof(struct sockaddr);
-	struct sockaddr foo;
-
-	sock = socket(AF_INET, SOCK_DGRAM, IPPROTO_UDP);
-	int ret = getpeername(sock, &foo, (socklen_t *)&len);
-
-	TC_ASSERT_NEQ("getpeername", ret, -1);
-	TC_SUCCESS_RESULT();
-
-}
-
-/**
-   * @testcase		   :tc_net_getpeername_p
-   * @brief		   :positive testcase for  getpeername api with client server model
-   * @scenario		   :
-   * @apicovered	   :getpeername()
-   * @precondition	   :
-   * @postcondition	   :
-   */
+* @testcase            :tc_net_getpeername_p
+* @brief               :get name of connected peer socket.
+* @scenario            :get the peer address of the specified socket.
+* @apicovered          :getpeername
+* @precondition        :socket file descriptor.
+* @postcondition       :none
+* @return              :void
+*/
 static void tc_net_getpeername_p(int fd)
 {
+	int ret;
 	socklen_t len;
 	struct sockaddr_storage addr;
+
 	len = sizeof(addr);
-
-	int ret = getpeername(fd, (struct sockaddr *)&addr, &len);
-
-	TC_ASSERT_NEQ("getpeername", ret, -1);
+	ret = getpeername(fd, (struct sockaddr *)&addr, &len);
+	TC_ASSERT_NEQ("getpeername", ret, NEG_VAL);
 	TC_SUCCESS_RESULT();
-
 }
 
 /**
-   * @testcase		   :tc_net_getpeername_n
-   * @brief		   :negative testcase for  getpeername api with client server model
-   * @scenario		   :
-   * @apicovered	   :getpeername()
-   * @precondition	   :
-   * @postcondition	   :
-   */
+* @testcase            :tc_net_getpeername_n
+* @brief               :get name of connected peer socket.
+* @scenario            :get the peer address of the specified socket, with invalid socket fd.
+* @apicovered          :getpeername()
+* @precondition        :socket file descriptor.
+* @postcondition       :none
+* @return              :void
+*/
 static void tc_net_getpeername_n(int fd)
 {
+	int ret;
 	socklen_t len;
 	struct sockaddr_storage addr;
+
 	len = sizeof(addr);
 
-	int ret = getpeername(-1, (struct sockaddr *)&addr, &len);
-
-	TC_ASSERT_EQ("getpeername", ret, -1);
+	ret = getpeername(NEG_VAL, (struct sockaddr *)&addr, &len);
+	TC_ASSERT_EQ("getpeername", ret, NEG_VAL);
 	TC_SUCCESS_RESULT();
-
 }
 
 /**
-   * @fn                   :getpeername_server
-   * @brief                :
-   * @scenario             :
-   * API's covered         :socket,bind,listen,accept,close
-   * Preconditions         :
-   * Postconditions        :
-   * @return               :void *
-   */
-void *getpeername_server(void *args)
+* @testcase            :net_getpeername_server
+* @brief               :create a tcp server.
+* @scenario            :create a tcp server to test getpeername api.
+* @apicovered          :socket,bind,listen,accept,close,getpeername_signal
+* @precondition        :socket file descriptor.
+* @postcondition       :none
+* @return              :void
+*/
+void net_getpeername_server(void)
 {
-
+	int ConnectFD;
+	int ret;
 	struct sockaddr_in sa;
-	int SocketFD = socket(PF_INET, SOCK_STREAM, IPPROTO_TCP);
+
+	int sock = socket(AF_INET, SOCK_STREAM, 0);
+	TC_ASSERT_NEQ("socket", sock, NEG_VAL);
 
 	memset(&sa, 0, sizeof(sa));
-
 	sa.sin_family = PF_INET;
 	sa.sin_port = htons(PORTNUM);
-	sa.sin_addr.s_addr = inet_addr("127.0.0.1");
+	sa.sin_addr.s_addr = INADDR_LOOPBACK;
 
-	bind(SocketFD, (struct sockaddr *)&sa, sizeof(sa));
+	ret = bind(sock, (struct sockaddr *)&sa, sizeof(sa));
+	TC_ASSERT_NEQ("bind", ret, NEG_VAL);
 
-	listen(SocketFD, 1);
+	ret = listen(sock, BACKLOG);
+	TC_ASSERT_NEQ("listen", ret, NEG_VAL);
+
 	getpeername_signal();
-	int ConnectFD = accept(SocketFD, NULL, NULL);
-
+	ConnectFD = accept(sock, NULL, NULL);
+	close(sock);
+	TC_ASSERT_NEQ("accept", ret, NEG_VAL);
 	close(ConnectFD);
-
-	close(SocketFD);
-	return 0;
 }
 
 /**
-   * @fn                   :getpeername_client
-   * @brief                :
-   * @scenario             :
-   * API's covered         :socket,connect,close
-   * Preconditions         :
-   * Postconditions        :
-   * @return               :void *
-   */
-void *getpeername_client(void *args)
+* @testcase            :net_getpeername_client
+* @brief               :create client.
+* @scenario            :create tcp client.
+* @apicovered          :socket,connect,close,getpeername_wait
+* @precondition        :socket file descriptor.
+* @postcondition       :none
+* @return              :void
+*/
+void net_getpeername_client(void)
 {
-
-	int mysocket;
+	int ret;
 	struct sockaddr_in dest;
-	mysocket = socket(PF_INET, SOCK_STREAM, IPPROTO_TCP);
+
+	int sock = socket(AF_INET, SOCK_STREAM, 0);
+	TC_ASSERT_NEQ("socket", sock, NEG_VAL);
 
 	memset(&dest, 0, sizeof(dest));
 	dest.sin_family = PF_INET;
-	dest.sin_addr.s_addr = inet_addr("127.0.0.1");
+	dest.sin_addr.s_addr = htonl(INADDR_LOOPBACK);
 	dest.sin_port = htons(PORTNUM);
 
 	getpeername_wait();
-	connect(mysocket, (struct sockaddr *)&dest, sizeof(struct sockaddr));
+	ret = connect(sock, (struct sockaddr *)&dest, sizeof(struct sockaddr));
+	TC_ASSERT_NEQ("connect", ret, NEG_VAL);
 
-	tc_net_getpeername_p(mysocket);
-	tc_net_getpeername_n(mysocket);
-
-	close(mysocket);
-	return 0;
-
+	tc_net_getpeername_p(sock);
+	tc_net_getpeername_n(sock);
+	close(sock);
 }
 
-/****************************************************************************
- * Name: getpeername()
- ****************************************************************************/
-int net_getpeername_main(void)
+/**
+* @testcase            :getpeername_server
+* @brief               :invoking getpeername server
+* @scenario            :none
+* @apicovered          :none
+* @precondition        :none
+* @postcondition       :none
+* @return              :void*
+*/
+void* getpeername_server(void *args)
 {
+	net_getpeername_server();
+	return NULL;
+}
 
-	pthread_t Server, Client;
+/**
+* @testcase            :getpeername_client
+* @brief               :invoking getpeername client
+* @scenario            :none
+* @apicovered          :none
+* @precondition        :none
+* @postcondition       :none
+* @return              :void*
+*/
+void* getpeername_client(void *args)
+{
+	net_getpeername_client();
+	return NULL;
+}
+
+/**
+* @testcase            :client_server
+* @brief               :create client and server thread.
+* @scenario            :Create client and server thread to test getpeername api.
+* @apicovered          :none
+* @precondition        :none
+* @postcondition       :none
+* @return              :void
+*/
+static void client_server(void)
+{
+	pthread_t Server;
+	pthread_t Client;
 
 	pthread_create(&Server, NULL, getpeername_server, NULL);
 	pthread_create(&Client, NULL, getpeername_client, NULL);
 
 	pthread_join(Server, NULL);
-
 	pthread_join(Client, NULL);
-	tc_net_getpeername_p1();
-	tc_net_getpeername_sock_n();
-	tc_net_getpeername_close_n();
-	tc_net_getpeername_unix_p();
-	tc_net_getpeername_udp_p();
+}
+
+/****************************************************************************
+ * Name: net_getpeername_main
+ ****************************************************************************/
+int net_getpeername_main(void)
+{
+	client_server();
 	return 0;
 }

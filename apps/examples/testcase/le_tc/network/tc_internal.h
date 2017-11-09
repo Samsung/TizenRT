@@ -24,6 +24,19 @@
 
 #include "tc_common.h"
 
+#define RETURN_ERR       return
+#define FLAGS            0666
+#define ZERO             0
+#define ONE              1
+#define TIME_MS          10
+#define NEG_VAL          -1
+#define NEG_SIX          -6
+#define NET_EBADF        -9
+#define NET_ERR_ABRT     -10
+#define NET_ERR_VAL      -6
+#define NEG_FOURTEEN     -14
+#define NET_ERR_CONN     -13
+
 extern int total_pass;
 extern int total_fail;
 
@@ -85,4 +98,55 @@ int net_shutdown_main(void);
 #ifdef CONFIG_TC_NET_SELECT
 int net_select_main(void);
 #endif
-#endif /* __EXAMPLES_TESTCASE_NETWORK_TC_INTERNAL_H */
+#ifdef CONFIG_TC_NET_IPV4_NETMASK_VALID
+int net_ipv4_addr_netmask_valid_main(void);
+#endif
+#ifdef CONFIG_TC_NETDEV_CARRIER
+int netdev_carrier_main(void);
+#endif
+#ifdef CONFIG_TC_NET_DECISEC_TIME
+int net_decisec_time_main(void);
+#endif
+#ifdef CONFIG_TC_NET_API
+int net_api_main(void);
+#endif
+#ifdef CONFIG_TC_NET_CORE
+int net_core_main(int sock_tcp);
+#endif
+#ifdef CONFIG_TC_NETBUF_ALLOC
+int netbuf_alloc_main(void);
+#endif
+#ifdef CONFIG_TC_MEM_ALLOC
+int mem_allocate_main(void);
+#endif
+#ifdef CONFIG_TC_NET_TCPIP
+int net_tcpip_main(void);
+#endif
+#ifdef CONFIG_TC_NET_MAC
+int net_mac_main(int sock, int sock1);
+#endif
+#ifdef CONFIG_TC_NET_NETDB
+int net_netdb_main(void);
+#endif
+#ifdef CONFIG_TC_NET_ETHER
+int net_ether_main(void);
+#endif
+#ifdef CONFIG_TC_NET_NETBUF
+int tc_net_netbuf_main(void);
+#endif
+#ifdef CONFIG_NET_NETIFAPI
+int net_netifapi_main(void);
+#endif
+#ifdef CONFIG_TC_NET_RAW
+int net_raw_main(void);
+#endif
+#ifdef CONFIG_TC_NET_STATS
+int net_stats_main(void);
+#endif
+#ifdef CONFIG_TC_NET_IGMP
+int net_igmp_main(void);
+#endif
+#ifdef CONFIG_TC_NET_DHCPC
+int net_dhcpc_main(void);
+#endif
+#endif
