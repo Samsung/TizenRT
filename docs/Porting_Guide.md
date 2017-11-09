@@ -22,7 +22,7 @@ Will be updated
 
 ## Network
 1. How to use LWIP (will be updated)
-2. How to use WPA_SUPPLICANT (will be updated)
+2. [How to use WPA_SUPPLICANT](HowToUseWPASupplicant.md)
 
 ## Audio
 Will be updated
