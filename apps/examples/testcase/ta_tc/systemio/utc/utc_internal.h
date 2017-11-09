@@ -35,9 +35,4 @@ extern int total_fail;
 #define SYSIO_UTC_PWM_PRINT   printf
 #define SYSIO_UTC_I2C_PRINT   printf
 
-/**********************************************************
-* TC Function Declarations
-**********************************************************/
-char *Expect_Value(int, int);
-
 #endif							/* __EXAMPLES_TESTCASE_SYSTEMIO_UTC_INTERNAL_H */
