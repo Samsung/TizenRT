@@ -38,16 +38,6 @@ else
 	OPENOCD_BIN_PATH=${OPENOCD_DIR_PATH}/linux32
 fi
 
-prepare_download()
-{
-	# Prepare for ROMFS
-	if [ "${CONFIG_FS_ROMFS}" == "y" ]; then
-		OPENOCD_ROMFS="set romfs_partition_enable 1; echo \"romfs is enabled\""
-	else
-		OPENOCD_ROMFS="set romfs_partition_enable 0; echo \"romfs is disabled\""
-	fi
-}
-
 finish_download()
 {
 	exit $1
@@ -66,7 +56,7 @@ romfs()
 		popd
 
 		pushd ${OPENOCD_DIR_PATH}
-		${OPENOCD_BIN_PATH}/openocd -c "${OPENOCD_ROMFS}" -f artik053.cfg -c ' 	\
+		${OPENOCD_BIN_PATH}/openocd -f artik053.cfg -c ' \
 		flash_write rom ../../../../output/bin/romfs.img; \
 		exit' || finish_download 1
 		popd
@@ -78,8 +68,6 @@ main()
 	echo "openocd is picked from ${OPENOCD_BIN_PATH}"
 	echo "Binaries are picked from ${OUTPUT_BINARY_PATH}"
 	echo "Board path is ${BOARD_DIR_PATH}"
-
-	prepare_download
 
 	# Process arguments
 	for arg in $@
@@ -103,6 +91,11 @@ main()
 				finish_download 1
 			fi
 
+                        # Generate Partition Map
+                        if [ -f "${OPENOCD_DIR_PATH}/partition_gen.sh" ]; then
+                                ${OPENOCD_DIR_PATH}/partition_gen.sh
+                        fi
+
 			# Download all binaries using openocd script
 			pushd ${OPENOCD_DIR_PATH}
 			${OPENOCD_BIN_PATH}/openocd -c "${OPENOCD_ROMFS}" -f artik053.cfg -c ' 	\
@@ -120,6 +113,11 @@ main()
 
 		ERASE_USERFS|erase_userfs)
 			echo "USERFS :"
+
+                        # Generate Partition Map
+                        if [ -f "${OPENOCD_DIR_PATH}/partition_gen.sh" ]; then
+                                ${OPENOCD_DIR_PATH}/partition_gen.sh
+                        fi
 
 			pushd ${OPENOCD_DIR_PATH}
 			${OPENOCD_BIN_PATH}/openocd -c "${OPENOCD_ROMFS}" -f artik053.cfg -c ' 	\
