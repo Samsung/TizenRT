@@ -260,7 +260,7 @@ err_t ethernetif_init(struct netif *netif)
 	memcpy(netif->d_mac.ether_addr_octet, netif->hwaddr, IFHWADDRLEN);
 #endif
 #if CONFIG_NET_LWIP
-	netif->d_ipaddr = ip4_addr_get_u3(ip_2_ip4(&netif->ip_addr));
+	netif->d_ipaddr = ip4_addr_get_u32(ip_2_ip4(&netif->ip_addr));
 	netif->d_draddr = ip4_addr_get_u32(ip_2_ip4(&netif->gw));
 	netif->d_netmask = ip4_addr_get_u32(ip_2_ip4(&netif->netmask));
 #else
