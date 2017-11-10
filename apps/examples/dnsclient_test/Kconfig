@@ -28,3 +28,7 @@ config EXAMPLES_DNSCLIENT_TEST_SERVER_PORT
 		This is the port number of DNS server.
 
 endif
+
+config USER_ENTRYPOINT
+	string
+	default "dnsclient_main" if ENTRY_DNSCLIENT_TEST
