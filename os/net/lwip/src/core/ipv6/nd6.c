@@ -614,7 +614,9 @@ void nd6_input(struct pbuf *p, struct netif *inp)
 	}
 	case ICMP6_TYPE_RD: {		/* Redirect */
 		struct redirect_header *redir_hdr;
-		struct lladdr_option *lladdr_opt;
+		struct lladdr_option *lladdr_opt = NULL;
+		struct redirected_header_option *redirected_opt = NULL;
+
 		ip6_addr_t tmp;
 
 		/* Check that Redir header fits in packet. */
@@ -626,15 +628,54 @@ void nd6_input(struct pbuf *p, struct netif *inp)
 			return;
 		}
 
+		/* RFC 4861, 8.1 Validation of Redirect Message
+		 * IP Source Address is a link-local address
+		 */
+		if (!ip6_addr_islinklocal(ip6_current_src_addr())) {
+			LWIP_DEBUGF(ND6_DEBUG, ("Source address is not linklocal address, dropped sliently\n"));
+			pbuf_free(p);
+			ND6_STATS_INC(nd6.drop);
+			return;
+		}
+
 		redir_hdr = (struct redirect_header *)p->payload;
 
-		if (p->len >= (sizeof(struct redirect_header) + 2)) {
-			lladdr_opt = (struct lladdr_option *)((u8_t *) p->payload + sizeof(struct redirect_header));
-			if (p->len < (sizeof(struct redirect_header) + (lladdr_opt->length << 3))) {
-				lladdr_opt = NULL;
+		/* Processing redirect header's option field
+		 * RFC 4861, 4.5.  Redirect Message Format
+		 * Possible options : Target link-layer address and Redirected Header
+		 */
+
+		u8_t *buffer;
+		size_t redir_optlen;
+		size_t offset;
+
+		redir_optlen = (p->len - sizeof(struct redirect_header));
+
+		if (redir_optlen >= 2) {
+			buffer = ((u8_t *)p->payload + sizeof(struct redirect_header));
+			while (!redirected_opt && redir_optlen >= 2) {
+				switch (buffer[0]) {
+				case ND6_OPTION_TYPE_TARGET_LLADDR:
+					if (buffer[1] == 1) { /* IEEE 802 Link Layer Address */
+						lladdr_opt = (struct lladdr_option *)buffer;
+						offset = sizeof(struct lladdr_option);
+					} else {
+						lladdr_opt = NULL;
+						offset = buffer[1] << 3;
+					}
+					break;
+				case ND6_OPTION_TYPE_REDIR_HDR:
+					redirected_opt = (struct redirected_header_option *)buffer;
+					offset = sizeof(struct redirected_header_option);
+					break;
+				default:
+					/* @todo Considering Link-layer address is not IEEE 802 */
+					offset = sizeof(struct lladdr_option);
+					break;
+				}
+				redir_optlen -= offset;
+				buffer = buffer + offset;
 			}
-		} else {
-			lladdr_opt = NULL;
 		}
 
 		/* Copy original destination address to current source address, to have an aligned copy. */
@@ -652,6 +693,7 @@ void nd6_input(struct pbuf *p, struct netif *inp)
 		ip6_addr_set(&(destination_cache[i].next_hop_addr), &(redir_hdr->target_address));
 
 		/* If Link-layer address of other router is given, try to add to neighbor cache. */
+
 		if (lladdr_opt != NULL) {
 			if (lladdr_opt->type == ND6_OPTION_TYPE_TARGET_LLADDR) {
 				/* Copy target address to current source address, to have an aligned copy. */
@@ -659,6 +701,7 @@ void nd6_input(struct pbuf *p, struct netif *inp)
 
 				i = nd6_find_neighbor_cache_entry(&tmp);
 				if (i < 0) {
+					/* Creates the Neighbor cache entry for the target */
 					i = nd6_new_neighbor_cache_entry();
 					if (i >= 0) {
 						neighbor_cache[i].netif = inp;
@@ -669,19 +712,24 @@ void nd6_input(struct pbuf *p, struct netif *inp)
 						 * Receiving a message does not prove reachability: only in one direction.
 						 * Delay probe in case we get confirmation of reachability from upper layer (TCP).
 						 */
-						neighbor_cache[i].state = ND6_DELAY;
-						neighbor_cache[i].counter.delay_time = LWIP_ND6_DELAY_FIRST_PROBE_TIME / ND6_TMR_INTERVAL;
-					}
-				}
-				if (i >= 0) {
-					if (neighbor_cache[i].state == ND6_INCOMPLETE) {
-						MEMCPY(neighbor_cache[i].lladdr, lladdr_opt->addr, inp->hwaddr_len);
-						/**
-						 * Receiving a message does not prove reachability: only in one direction.
-						 * Delay probe in case we get confirmation of reachability from upper layer (TCP).
+						/* RFC 4861, 8.3.  Host Specification
+						 * Reachability state MUST be set to STALE as specified in Section 7.3.3
 						 */
-						neighbor_cache[i].state = ND6_DELAY;
-						neighbor_cache[i].counter.delay_time = LWIP_ND6_DELAY_FIRST_PROBE_TIME / ND6_TMR_INTERVAL;
+						neighbor_cache[i].state = ND6_STALE;
+					} else {
+						LWIP_DEBUGF(ND6_DEBUG, ("Failed to create a new neighbor cache entry\n"));
+						ND6_STATS_INC(nd6.memerr);
+					}
+				} else {
+					/* Updates the Neighbor cache entry for the target */
+					MEMCPY(neighbor_cache[i].lladdr, lladdr_opt->addr, inp->hwaddr_len);
+					/* Receiving a message does not prove reachability: only in one direction.
+					 * Delay probe in case we get confirmation of reachability from upper layer (TCP).
+					 */
+					/* RFC 4861, 8.3.  Host Specification
+					 * Reachability state MUST be set to STALE as specified in Section 7.3.3
+					 */
+					neighbor_cache[i].state = ND6_STALE;
 					}
 				}
 			}
