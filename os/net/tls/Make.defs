@@ -84,9 +84,32 @@ ifeq ($(CONFIG_TLS_WITH_SSS),y)
 SRC_SEE_CSRCS += see_api.c	see_internal.c	see_misc.c
 endif
 
-TLS_CSRCS += $(SRC_CRYPTO_CSRCS) $(SRC_X509_CSRCS) $(SRC_TLS_CSRCS) $(SRC_SEE_CSRCS)
+ifeq ($(CONFIG_HAP_CRYPTO),y)
+SRC_HAP_CSRCS += \
+					 hap/curve25519/curve25519-donna.c \
+					 hap/ed25519-donna/ed25519.c \
+					 hap/Chacha20/chacha20_simple.c \
+					 hap/rfc6234-master/hmac.c \
+					 hap/rfc6234-master/hkdf.c \
+					 hap/rfc6234-master/sha.c \
+					 hap/srp/t_math.c \
+					 hap/srp/cstr.c \
+					 hap/srp/srp.c \
+					 hap/srp/t_misc.c \
+					 hap/srp/t_pw.c \
+					 hap/srp/t_read.c \
+					 hap/srp/srp6_server.c \
+					 hap/srp/t_conv.c \
+					 hap/srp/t_conf.c \
+					 hap/srp/t_truerand.c \
+					 hap/poly1305-opt-master/poly1305.c
+endif
 
-DEPPATH += --dep-path tls
-VPATH += :tls
+TLS_CSRCS += $(SRC_CRYPTO_CSRCS) $(SRC_X509_CSRCS) $(SRC_TLS_CSRCS) $(SRC_SEE_CSRCS) $(notdir $(SRC_HAP_CSRCS))
+
+#DEPPATH += --dep-path tls
+# --dep-path tls/hap/curve25519 --dep-path tls/hap/ed25519-donna --dep-path tls/hap/rfc6234-mastre --dep-path tls/hap/srp --dep-path tls/hap/poly1305-opt-master
+#VPATH += :tls
+VPATH += :tls $(patsubst %,:tls/%,$(sort $(dir $(SRC_HAP_CSRCS))))
 
 endif

@@ -11,6 +11,12 @@ config SUPPORT_FULL_SECURITY
 	default n
 	---help---
 		Supports security features with secure storage.
+config HAP_CRYPTO
+	bool "Enable Crypto Algotirhm For HAP"
+	default n
+	---help---
+		HAP is Home Accessory Protocol. It includes
+		SRP, Ed25519, curve25519, HKDF-SHA-512 and ChaCha20-Poly1305.
 
 if TLS_WITH_SSS
 

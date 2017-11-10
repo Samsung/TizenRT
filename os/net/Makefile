@@ -63,7 +63,7 @@ NET_CSRCS   = net_initialize.c
 #LWIP stack support
 
 LWIP_ASRCS   =
-LWIP_CSRCS   = 
+LWIP_CSRCS   =
 
 # Socket support
 
@@ -78,7 +78,7 @@ NETDEV_CSRCS =
 #tls support
 
 ifeq ($(CONFIG_NET_SECURITY_TLS),y)
-TLS_ASRCS = 
+TLS_ASRCS =
 TLS_CSRCS =
 endif
 
@@ -137,7 +137,8 @@ $(BIN): $(OBJS)
 
 .depend: Makefile $(SRCS)
 ifeq ($(CONFIG_NET),y)
-	$(Q) $(MKDEP) $(DEPPATH) "$(CC)" -- $(CFLAGS) -- $(SRCS) >Make.dep
+	$(Q) $(MKDEP) $(DEPPATH) $(patsubst %,--dep-path %,$(subst :, ,$(VPATH))) \
+		"$(CC)" -- $(CFLAGS) -- $(SRCS) >Make.dep
 endif
 	$(Q) touch $@
 
