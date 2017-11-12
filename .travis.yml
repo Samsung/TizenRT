@@ -5,8 +5,6 @@ dist: xenial
 
 env:
   - BUILD_CONFIG=artik053/onboard
-  - BUILD_CONFIG=artik053s/onboard
-  - BUILD_CONFIG=artik055s/onboard
 
 before_install:
   - sudo apt-get -qq update
