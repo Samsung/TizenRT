@@ -18,7 +18,7 @@ Don't call architecture codes from application directly. When protected build en
 3. [How to add static library](HowToAddStaticLibrary.md)
 
 ## File System
-Will be updated
+1. [How to use SmartFS](HowToUseSmartFS.md)
 
 ## Network
 1. How to use LWIP (will be updated)
