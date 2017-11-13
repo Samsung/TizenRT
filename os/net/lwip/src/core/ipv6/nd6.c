@@ -888,10 +888,18 @@ void nd6_tmr(void)
 				default_router_list[i].neighbor_entry->isrouter = 0;
 
 				/* RFC 4861, 6.3.5.  Timing out Prefixes and Default Routers  */
-				default_router_list[i].neighbor_entry->state = ND6_INCOMPLETE;
-				default_router_list[i].neighbor_entry->counter.probes_sent = 0;
-				nd6_send_neighbor_cache_probe(default_router_list[i].neighbor_entry, 0);
 				nd6_free_expired_router_in_destination_cache(&(default_router_list[i].neighbor_entry->next_hop_address));
+
+				s8_t j; /* Neighbor cache index */
+
+				j = nd6_find_neighbor_cache_entry(&(default_router_list[i].neighbor_entry->next_hop_address));
+				if (j < 0) {
+					LWIP_DEBUGF(ND6_DEBUG, ("Failed to find matched negighbor entry to default router list\n"));
+					/* @todo should we do initialize NCE manually?*/
+				} else {
+					LWIP_DEBUGF(ND6_DEBUG, ("Neighbor cache entry (index %d) will be freed\n", j));
+					nd6_free_neighbor_cache_entry(j);
+				}
 
 				default_router_list[i].neighbor_entry = NULL;
 				default_router_list[i].invalidation_timer = 0;
