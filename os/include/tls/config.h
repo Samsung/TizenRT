@@ -503,7 +503,9 @@
  *
  * Comment this macro to disable deterministic ECDSA.
  */
+#if defined(MBEDTLS_OCF_PATCH)
 #define MBEDTLS_ECDSA_DETERMINISTIC
+#endif
 
 /**
  * \def MBEDTLS_KEY_EXCHANGE_PSK_ENABLED
