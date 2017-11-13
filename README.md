@@ -39,7 +39,7 @@ TIZENRT_BASEDIR="$PWD"
 
 ```bash
 ~$ sudo apt-get install gperf libncurses5-dev flex bison
-~$ git clone https://patacongo@bitbucket.org/nuttx/tools.git tools
+~$ git clone https://bitbucket.org/nuttx/tools.git tools
 ~$ cd tools/kconfig-frontends
 ~/tools/kconfig-frontends$ ./configure --enable-mconf --disable-gconf --disable-qconf --prefix=/usr
 ~/tools/kconfig-frontends$ make
