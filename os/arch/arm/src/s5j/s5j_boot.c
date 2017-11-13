@@ -114,17 +114,14 @@ int s5j_mpu_initialize(void)
 	/* Region 2, wifi driver needs non-$(0x02110000++320KB, RW-NCNB */
 	mpu_priv_noncache(S5J_IRAM_PADDR + ((4 + 2 + 8 + 946) * 1024), (320 * 1024));
 
-	/* Region 3, for FLASH area, default to set WBWA */
-	mpu_user_intsram_wb(S5J_FLASH_PADDR, S5J_FLASH_SIZE);
+	/* region 3, for Sflash Mirror area to be device type */
+	mpu_device(S5J_FLASH_MIRROR_PADDR, S5J_FLASH_MIRROR_SIZE);
 
-	/* region 4, for Sflash Mirror area to be read only */
-	mpu_priv_flash(S5J_FLASH_MIRROR_PADDR, S5J_FLASH_MIRROR_SIZE);
-
-	/* Region 5, for SFR area read/write, strongly-ordered */
+	/* Region 4, for SFR area read/write, strongly-ordered */
 	mpu_priv_stronglyordered(S5J_PERIPHERAL_PADDR, S5J_PERIPHERAL_SIZE);
 
 	/*
-	 * Region 6, for vector table,
+	 * Region 5, for vector table,
 	 * set the entire high vector region as read-only.
 	 */
 	mpu_priv_flash(S5J_IRAM_MIRROR_PADDR, S5J_IRAM_MIRROR_SIZE);

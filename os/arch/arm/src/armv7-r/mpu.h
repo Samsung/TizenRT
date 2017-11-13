@@ -111,6 +111,8 @@
 #define MPU_RACR_B		(1 << 0) /* Bit 0: Bufferable */
 #define MPU_RACR_C		(1 << 1) /* Bit 1: Cacheable */
 #define MPU_RACR_S		(1 << 2) /* Bit 2: Shareable */
+#define MPU_RACR_NS              (0 << 2)  /* Bit 2: non-Shareable */
+#define MPU_RACR_NB              (0 << 0)  /* Bit 0: non-Bufferable */
 #define MPU_RACR_TEX_SHIFT	(3)      /* Bits 0-2: Memory attributes (with C and B) */
 #define MPU_RACR_TEX_MASK	(7 << MPU_RACR_TEX_SHIFT)
 #define MPU_RACR_TEX(n)		((uint32_t)(n) << MPU_RACR_TEX_SHIFT)
@@ -825,7 +827,48 @@ static inline void mpu_peripheral(uintptr_t base, size_t size)
 		 ((uint32_t)subregions << MPU_RASR_SRD_SHIFT); /* Sub-regions */
 	mpu_set_drsr(regval);
 }
+/****************************************************************************
+ * Name: mpu_device
+ *
+ * Description:
+ *   Configure a region as privileged device-type address space
+ *
+ ****************************************************************************/
 
+static inline void mpu_device(uintptr_t base, size_t size)
+{
+	unsigned int region = mpu_allocregion();
+	uint32_t     regval;
+	uint8_t      l2size;
+	uint8_t      subregions;
+
+	/* Select the region */
+
+	mpu_set_rgnr(region);
+
+	/* Select the region base address */
+
+	mpu_set_drbar(base & MPU_RBAR_ADDR_MASK);
+
+	/* Select the region size and the sub-region map */
+
+	l2size = mpu_log2regionceil(size);
+	subregions = mpu_subregion(base, size, l2size);
+
+	/* Then configure the region */
+
+	regval = MPU_RACR_NS					| /* non-Shareable     */
+			MPU_RACR_NB						| /* non-Bufferable    */
+			MPU_RACR_TEX(2)					| /* TEX */
+			MPU_RACR_AP_RWNO				| /* P:RW   U:None */
+			MPU_RACR_XN;					/* Instruction access disable */
+	mpu_set_dracr(regval);
+
+	regval = MPU_RASR_ENABLE									| /* Enable region */
+				MPU_RASR_RSIZE_LOG2((uint32_t)l2size)			| /* Region size   */
+				((uint32_t)subregions << MPU_RASR_SRD_SHIFT);	/* Sub-regions   */
+	mpu_set_drsr(regval);
+}
 /****************************************************************************
  * Name: mpu_priv_intsram_wb
  *

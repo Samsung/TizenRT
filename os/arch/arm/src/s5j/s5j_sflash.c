@@ -210,7 +210,7 @@ ssize_t up_progmem_write(size_t addr, const void *buf, size_t count)
 		s5j_sflash_disable_wp();
 
 		/* Load and write data */
-		memcpy((void *)addr, buf, tmp);
+		memcpy((void *)(addr-S5J_FLASH_PADDR + S5J_FLASH_MIRROR_PADDR), buf, tmp);
 
 		/* Flush cache */
 		arch_flush_dcache(addr, addr + tmp);
