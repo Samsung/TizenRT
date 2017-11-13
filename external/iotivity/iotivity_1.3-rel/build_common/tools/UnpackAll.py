@@ -58,6 +58,8 @@
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.             #
 ############################################################################
 
+# iotivity note: this is a forked copy of the UnpackBuilder elsewhere
+# in the tree, which instead of defining a Builder, adds a method UnpackAll.
 
 
 # The Unpack Builder can be used for unpacking archives (eg Zip, TGZ, BZ, ... ).
@@ -193,7 +195,7 @@ def __getExtractor( source, env ) :
 # @param source source name
 # @param env environment object
 def __message( s, target, source, env ) :
-    print "extract [%s] ..." % (source[0])
+    print("extract [%s] ..." % (source[0]))
 
 
 # action function for extracting of the data
@@ -220,7 +222,7 @@ def __action( target, source, env ) :
         devnull = open(os.devnull, "wb")
         handle  = subprocess.Popen( cmd, shell=True, stdout=devnull )
 
-    if handle.wait() <> 0 :
+    if handle.wait() != 0 :
         raise SCons.Errors.BuildError( "error running extractor [%s] on the source [%s]" % (cmd, source[0])  )
 
 
@@ -257,7 +259,7 @@ def __emitter( target, source, env ) :
     handle = subprocess.Popen( cmd, shell=True, stdout=subprocess.PIPE )
     target = handle.stdout.readlines()
     handle.communicate()
-    if handle.returncode <> 0 :
+    if handle.returncode != 0 :
         raise SCons.Errors.StopError("error on running list command [%s] of the source file [%s]" % (cmd, source[0]) )
 
     # if the returning output exists and the listseperator is a callable structure
@@ -265,8 +267,8 @@ def __emitter( target, source, env ) :
     # a string we push it back to the target list
     try :
         if callable(extractor["LISTEXTRACTOR"]) :
-            target = filter( lambda s : SCons.Util.is_String(s), [ extractor["LISTEXTRACTOR"]( env, len(target), no, i) for no, i in enumerate(target) ] )
-    except Exception, e :
+            target = filter(lambda s: SCons.Util.is_String(s), [extractor["LISTEXTRACTOR"](env, len(target), no, i) for no, i in enumerate(target)])
+    except Exception as e :
         raise SCons.Errors.StopError( "%s" % (e) )
 
     # the line removes duplicated names - we need this line, otherwise an cyclic dependency error will occured,
@@ -276,7 +278,7 @@ def __emitter( target, source, env ) :
         SCons.Warnings.warn(UnpackWarning, "emitter file list on target [%s] is empty, please check your extractor list function [%s]" % (source[0], cmd) )
 
     # we append the extractdir to each target if is not absolut
-    if env["UNPACK"]["EXTRACTDIR"] <> "." :
+    if env["UNPACK"]["EXTRACTDIR"] != "." :
         target = [i if os.path.isabs(i) else os.path.join(env["UNPACK"]["EXTRACTDIR"], i) for i in target]
 
     return target, source
@@ -285,7 +287,7 @@ def __unpack_all(env, target, source) :
     if os.path.exists(target):
         return
 
-    print "Unpacking %s ..." % source
+    print("Unpacking %s ..." % source)
     __action(target, source, env)
 
 # generate function, that adds the builder to the environment
@@ -378,7 +380,7 @@ def generate( env ) :
     }
 
     # read tools for Windows system
-    if env["PLATFORM"] <> "darwin" and "win" in env["PLATFORM"] :
+    if env["PLATFORM"] != "darwin" and "win" in env["PLATFORM"] :
 
         if env.WhereIs('7z', env.get('PATH')):
             toolset["EXTRACTOR"]["TARGZ"]["RUN"]           = "7z"
@@ -423,12 +425,13 @@ def generate( env ) :
             toolset["EXTRACTOR"]["TAR"]["EXTRACTFLAGS"]    = "x"
             toolset["EXTRACTOR"]["TAR"]["EXTRACTSUFFIX"]   = "-y -ttar -o${UNPACK['EXTRACTDIR']}"
         else:
-            print '''*********************** Error ************************
+            print('''
+*********************** Error ************************
 *                                                    *
 * Please make sure that 7-zip is in your System PATH *
 *                                                    *
 ******************************************************
-'''
+''')
 
         # here can add some other Windows tools, that can handle the archive files
         # but I don't know which ones can handle all file types
@@ -477,11 +480,18 @@ def generate( env ) :
     else :
         raise SCons.Errors.StopError("Unpack tool detection on this platform [%s] unkown" % (env["PLATFORM"]))
 
-    # the target_factory must be a "Entry", because the target list can be files and dirs, so we can not specified the targetfactory explicite
+    # the target_factory must be an "Entry", because the target list can be
+    # files and dirs, so we can not specify the targetfactory explicitly
     env.Replace(UNPACK = toolset)
+    #env["BUILDERS"]["UnpackAll"] = SCons.Builder.Builder(
+    #    action=__action,
+    #    emitter=__emitter,
+    #    target_factory=SCons.Node.FS.Entry,
+    #    source_factory=SCons.Node.FS.File,
+    #    single_source=True,
+    #    PRINT_CMD_LINE_FUNC=__message
+    #)
     env.AddMethod(__unpack_all, 'UnpackAll')
-
-#    env["BUILDERS"]["UnpackAll"] = SCons.Builder.Builder( action = __action,  emitter = __emitter,  target_factory = SCons.Node.FS.Entry,  source_factory = SCons.Node.FS.File,  single_source = True,  PRINT_CMD_LINE_FUNC = __message )
 
 
 # existing function of the builder

@@ -37,9 +37,10 @@ def _check_for_broken_gcc_headers(context, flag):
     context.Result(ret)
 
     if ret:
-        print('Warning: detected pre-C++11 GCC C header bugs.  See:')
-        print('           https://gcc.gnu.org/bugzilla/show_bug.cgi?id=34032')
-        print('         for related details.')
+        print('''
+Warning: detected pre-C++11 GCC C header bugs.
+         See https://gcc.gnu.org/bugzilla/show_bug.cgi?id=34032 for details.
+''')
 
 def _inform_user_of_broken_gcc_headers(context, flag):
     # Informative tests used to inform the user of broken GCC headers.

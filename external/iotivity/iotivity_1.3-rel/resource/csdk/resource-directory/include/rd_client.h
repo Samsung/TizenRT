@@ -30,15 +30,11 @@ extern "C" {
 
 #ifdef RD_CLIENT
 
+/** Default TTL to use when publishing resources. */
 #define OIC_RD_PUBLISH_TTL 86400
-
-#define OIC_RD_DEFAULT_RESOURCE 2
 
 /** JSON media type. */
 #define OC_MEDIA_TYPE_APPLICATION_JSON   "application/json"
-
-/** Platform Model Number.*/
-#define OC_DATA_MODEL_NUMBER            "x.model"
 
 /**
  * Discover Local RD across the network.
@@ -73,6 +69,7 @@ OCStackResult OC_CALL OCRDDiscover(OCDoHandle *handle, OCConnectivityType connec
  * @param connectivityType  Type of connectivity indicating the interface.
  * @param resourceHandles   This is the resource handle which we need to register to RD.
  * @param nHandles          The counts of resource handle.
+ * @param ttl               The time to live, in seconds.
  * @param cbData            Asynchronous callback function that is invoked by the stack when
  *                          response is received. The callback is generated for each response
  *                          received.
@@ -82,7 +79,7 @@ OCStackResult OC_CALL OCRDDiscover(OCDoHandle *handle, OCConnectivityType connec
  */
 OCStackResult OC_CALL OCRDPublish(OCDoHandle *handle, const char *host,
                           OCConnectivityType connectivityType,
-                          OCResourceHandle *resourceHandles, uint8_t nHandles,
+                          OCResourceHandle *resourceHandles, uint8_t nHandles, uint32_t ttl,
                           OCCallbackData *cbData, OCQualityOfService qos);
 
 /**
@@ -99,6 +96,7 @@ OCStackResult OC_CALL OCRDPublish(OCDoHandle *handle, const char *host,
  * @param connectivityType  Type of connectivity indicating the interface.
  * @param resourceHandles   This is the resource handle which we need to register to RD.
  * @param nHandles          The counts of resource handle.
+ * @param ttl               The time to live, in seconds.
  * @param cbData            Asynchronous callback function that is invoked by the stack when
  *                          response is received. The callback is generated for each response
  *                          received.
@@ -109,7 +107,7 @@ OCStackResult OC_CALL OCRDPublish(OCDoHandle *handle, const char *host,
 OCStackResult OC_CALL OCRDPublishWithDeviceId(OCDoHandle *handle, const char *host,
                                       const unsigned char *id,
                                       OCConnectivityType connectivityType,
-                                      OCResourceHandle *resourceHandles, uint8_t nHandles,
+                                      OCResourceHandle *resourceHandles, uint8_t nHandles, uint32_t ttl,
                                       OCCallbackData *cbData, OCQualityOfService qos);
 
 /**

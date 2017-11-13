@@ -96,6 +96,7 @@ typedef struct Resource
 } Resource;
 
 static OCRepPayload *CreateRDPublishPayload(const char *deviceId,
+                                            int64_t ttl,
                                             Resource *resources,
                                             size_t nresources)
 {
@@ -103,7 +104,7 @@ static OCRepPayload *CreateRDPublishPayload(const char *deviceId,
     EXPECT_TRUE(repPayload != NULL);
     EXPECT_TRUE(deviceId != NULL);
     EXPECT_TRUE(OCRepPayloadSetPropString(repPayload, OC_RSRVD_DEVICE_ID, deviceId));
-    EXPECT_TRUE(OCRepPayloadSetPropInt(repPayload, OC_RSRVD_DEVICE_TTL, 86400));
+    EXPECT_TRUE(OCRepPayloadSetPropInt(repPayload, OC_RSRVD_DEVICE_TTL, (ttl == 0 ? 86400: ttl)));
 
     const OCRepPayload *linkArr[nresources];
     size_t dimensions[MAX_REP_ARRAY_DEPTH] = {nresources, 0, 0};
@@ -205,7 +206,7 @@ static OCRepPayload *CreateResources(const char *deviceId)
         { "/a/thermostat", "core.thermostat", OC_RSRVD_INTERFACE_DEFAULT, OC_DISCOVERABLE },
         { "/a/light", "core.light", OC_RSRVD_INTERFACE_DEFAULT, OC_DISCOVERABLE }
     };
-    return CreateRDPublishPayload(deviceId, resources, 2);
+    return CreateRDPublishPayload(deviceId, 0, resources, 2);
 }
 
 TEST_F(RDDatabaseTests, Create)
@@ -252,7 +253,7 @@ TEST_F(RDDatabaseTests, AddResources)
     Resource resources[] = {
         { "/a/light2", "core.light", OC_RSRVD_INTERFACE_DEFAULT, OC_DISCOVERABLE }
     };
-    repPayload = CreateRDPublishPayload(deviceId, resources, 1);
+    repPayload = CreateRDPublishPayload(deviceId, 0, resources, 1);
     EXPECT_EQ(OC_STACK_OK, OCRDDatabaseStoreResources(repPayload));
     OCPayloadDestroy((OCPayload *)repPayload);
 
@@ -299,7 +300,7 @@ TEST_F(RDDatabaseTests, UpdateResources)
         { "/a/thermostat", "x.core.r.thermostat", "x.core.if.thermostat", OC_DISCOVERABLE | OC_OBSERVABLE },
         { "/a/light", "x.core.r.light", "x.core.if.light", OC_DISCOVERABLE | OC_OBSERVABLE }
     };
-    repPayload = CreateRDPublishPayload(deviceId, resources, 2);
+    repPayload = CreateRDPublishPayload(deviceId, 0, resources, 2);
     EXPECT_EQ(OC_STACK_OK, OCRDDatabaseStoreResources(repPayload));
     OCPayloadDestroy((OCPayload *)repPayload);
 
@@ -354,7 +355,7 @@ TEST_F(RDDatabaseTests, AddAndUpdateResources)
         { "/a/light", "x.core.r.light", "x.core.if.light", OC_DISCOVERABLE | OC_OBSERVABLE },
         { "/a/light2", "core.light", OC_RSRVD_INTERFACE_DEFAULT, OC_DISCOVERABLE }
     };
-    repPayload = CreateRDPublishPayload(deviceId, resources, 3);
+    repPayload = CreateRDPublishPayload(deviceId, 0, resources, 3);
     EXPECT_EQ(OC_STACK_OK, OCRDDatabaseStoreResources(repPayload));
     OCPayloadDestroy((OCPayload *)repPayload);
 
@@ -446,4 +447,45 @@ TEST_F(RDDatabaseTests, DeleteResourcesDevice)
 
     OCPayloadDestroy((OCPayload *)payloads[0]);
     OCPayloadDestroy((OCPayload *)payloads[1]);
+}
+
+TEST_F(RDDatabaseTests, TTLLapsedDeleteDevice)
+{
+    itst::DeadmanTimer killSwitch(SHORT_TEST_TIMEOUT);
+
+    const char *deviceIds[2] =
+    {
+        "7a960f46-a52e-4837-bd83-460b1a6dd56b",
+        "983656a7-c7e5-49c2-a201-edbeb7606fb5",
+    };
+    OCRepPayload *repPayload = CreateResources(deviceIds[0]);
+    ASSERT_TRUE(NULL != repPayload) << "CreateResources failed!";
+    EXPECT_EQ(OC_STACK_OK, OCRDDatabaseStoreResources(repPayload));
+    OCPayloadDestroy((OCPayload *)repPayload);
+
+    Resource resources[] = {
+        { "/a/light2", "core.light", OC_RSRVD_INTERFACE_DEFAULT, OC_DISCOVERABLE }
+    };
+    repPayload = CreateRDPublishPayload(deviceIds[0], 1, resources, 1);
+    EXPECT_EQ(OC_STACK_OK, OCRDDatabaseStoreResources(repPayload));
+    OCPayloadDestroy((OCPayload *)repPayload);
+    repPayload = CreateRDPublishPayload(deviceIds[1], OIC_RD_PUBLISH_TTL, resources, 1);
+    EXPECT_EQ(OC_STACK_OK, OCRDDatabaseStoreResources(repPayload));
+    OCPayloadDestroy((OCPayload *)repPayload);
+
+    std::this_thread::sleep_for(std::chrono::seconds(1));
+
+    OCDiscoveryPayload *discPayload = NULL;
+    EXPECT_EQ(OC_STACK_OK, OCRDDatabaseDiscoveryPayloadCreate(OC_RSRVD_INTERFACE_LL, NULL, &discPayload));
+    bool found = false;
+    for (OCDiscoveryPayload *payload = discPayload; payload; payload = payload->next)
+    {
+        if (!strcmp(deviceIds[0], payload->sid))
+        {
+            found = true;
+        }
+    }
+    EXPECT_FALSE(found);
+    OCDiscoveryPayloadDestroy(discPayload);
+    discPayload = NULL;
 }

@@ -21,6 +21,7 @@
 #include "OCRepresentation.h"
 #include "OCApi.h"
 #include "octypes.h"
+#include "rd_client.h"
 
 typedef std::function<void(const OC::OCRepresentation&, const int)> PublishResourceCallback;
 typedef std::function<void(const int)> DeleteResourceCallback;
@@ -77,18 +78,46 @@ public:
     OCStackResult publishResourceToRD(const std::string& host,
                                       OCConnectivityType connectivityType,
                                       OC::ResourceHandles& resourceHandles,
+                                      uint32_t ttl,
                                       PublishResourceCallback callback);
 
     OCStackResult publishResourceToRD(const std::string& host,
                                      OCConnectivityType connectivityType,
+                                     uint32_t ttl,
                                      PublishResourceCallback callback,
                                      QualityOfService qos);
 
     OCStackResult publishResourceToRD(const std::string& host,
                                       OCConnectivityType connectivityType,
                                       OC::ResourceHandles& resourceHandles,
+                                      uint32_t ttl,
                                       PublishResourceCallback callback,
                                       QualityOfService qos);
+
+    OCStackResult publishResourceToRD(const std::string& host,
+                                      OCConnectivityType connectivityType,
+                                      OC::ResourceHandles& resourceHandles,
+                                      PublishResourceCallback callback)
+    {
+        return publishResourceToRD(host, connectivityType, resourceHandles, OIC_RD_PUBLISH_TTL, callback);
+    }
+
+    OCStackResult publishResourceToRD(const std::string& host,
+                                     OCConnectivityType connectivityType,
+                                     PublishResourceCallback callback,
+                                     QualityOfService qos)
+    {
+        return publishResourceToRD(host, connectivityType, OIC_RD_PUBLISH_TTL, callback, qos);
+    }
+
+    OCStackResult publishResourceToRD(const std::string& host,
+                                      OCConnectivityType connectivityType,
+                                      OC::ResourceHandles& resourceHandles,
+                                      PublishResourceCallback callback,
+                                      QualityOfService qos)
+    {
+        return publishResourceToRD(host, connectivityType, resourceHandles, OIC_RD_PUBLISH_TTL, callback, qos);
+    }
 
     /**
      * API for published resource delete from Resource Directory.

@@ -516,7 +516,7 @@ void PublishResources(string host)
         cout << "Publishing device info failed" << endl;
     }
 
-    res = OCRDPublish(nullptr, host.c_str(), CT_ADAPTER_TCP, NULL, 0, &cbData, OC_LOW_QOS);
+    res = OCRDPublish(nullptr, host.c_str(), CT_ADAPTER_TCP, NULL, 0, OIC_RD_PUBLISH_TTL, &cbData, OC_LOW_QOS);
     if (res != OC_STACK_OK)
     {
         cout << "Unable to publish default resources to cloud" << endl;
@@ -524,7 +524,7 @@ void PublishResources(string host)
 
     cout << "Publishing user resources" << endl;
 
-    res = OCRDPublish(nullptr, host.c_str(), CT_ADAPTER_TCP, resourceHandles, 1, &cbData, OC_LOW_QOS);
+    res = OCRDPublish(nullptr, host.c_str(), CT_ADAPTER_TCP, resourceHandles, 1, OIC_RD_PUBLISH_TTL, &cbData, OC_LOW_QOS);
     if (res != OC_STACK_OK)
     {
         cout << "Unable to publish user resources to cloud" << endl;

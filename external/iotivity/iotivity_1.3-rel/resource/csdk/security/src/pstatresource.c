@@ -228,7 +228,14 @@ OCStackResult PstatToCBORPayloadPartial(const OicSecPstat_t *pstat,
 
         // Device Onboarding State Property map
         CborEncoder dosMap;
-        cborEncoderResult = cbor_encoder_create_map(&pstatMap, &dosMap, PSTAT_DOS_MAP_SIZE);
+        uint8_t dosMapSize = PSTAT_DOS_MAP_SIZE;
+
+        if (!includeDosP)
+        {
+            dosMapSize--;
+        }
+
+        cborEncoderResult = cbor_encoder_create_map(&pstatMap, &dosMap, dosMapSize);
         VERIFY_CBOR_SUCCESS_OR_OUT_OF_MEMORY(TAG, cborEncoderResult, "Failed creating pstat.dos map");
 
         cborEncoderResult = cbor_encode_text_string(&dosMap, OIC_JSON_S_NAME,
@@ -462,11 +469,11 @@ static OCStackResult CBORPayloadToPstatBin(const uint8_t *cborPayload,
 
     if (CborInvalidType != pstatMap.type)
     {
-        // found pstat.dos tag "dos" in pstatMap
-        OIC_LOG(DEBUG, TAG, "Found pstat.dos tag in pstatMap.");
+        OIC_LOG_V(DEBUG, TAG, "%s: Found %s tag in pstatMap.", __func__, OIC_JSON_DOS_NAME);
         if (CborNoError == cborFindResult && cbor_value_is_container(&pstatMap))
         {
-            OIC_LOG(DEBUG, TAG, "Found pstat.dos cbor container; entering.");
+            OIC_LOG_V(DEBUG, TAG, "%s: Found pstat %s cbor container; entering.",
+                __func__, OIC_JSON_DOS_NAME);
             cborFindResult = cbor_value_enter_container(&pstatMap, &dosMap);
             VERIFY_CBOR_SUCCESS_OR_OUT_OF_MEMORY(TAG, cborFindResult, "Failed Entering dos map.");
             if (roParsed)
@@ -476,56 +483,61 @@ static OCStackResult CBORPayloadToPstatBin(const uint8_t *cborPayload,
                     *roParsed = true;
                 }
             }
-        }
-        while (cbor_value_is_valid(&dosMap) && cbor_value_is_text_string(&dosMap))
-        {
-            cborFindResult = cbor_value_dup_text_string(&dosMap, &dosTagName, &dosLen, NULL);
-            VERIFY_CBOR_SUCCESS_OR_OUT_OF_MEMORY(TAG, cborFindResult, "Failed getting dos map next tag.");
-            cborFindResult = cbor_value_advance(&dosMap);
-            VERIFY_CBOR_SUCCESS_OR_OUT_OF_MEMORY(TAG, cborFindResult, "Failed advancing dos map.");
-
-            if (NULL != dosTagName)
+            while (cbor_value_is_valid(&dosMap) && cbor_value_is_text_string(&dosMap))
             {
-                if (strcmp(dosTagName, OIC_JSON_S_NAME) == 0)
-                {
-                    OIC_LOG(DEBUG, TAG, "Found pstat.dos.s tag; getting int value.");
-                    int s = -1;
-                    cborFindResult = cbor_value_get_int(&dosMap, &s);
-                    VERIFY_CBOR_SUCCESS_OR_OUT_OF_MEMORY(TAG, cborFindResult, "Failed getting pstat.dos.s value.");
-                    OIC_LOG_V(DEBUG, TAG, "Read pstat.dos.s value = %d.", s);
-                    pstat->dos.state = (OicSecDeviceOnboardingState_t)s;
-                }
-                else if (strcmp(dosTagName, OIC_JSON_P_NAME) == 0)
-                {
-                    if (roParsed)
-                    {
-                        *roParsed = true;
-                    }
-                    OIC_LOG(DEBUG, TAG, "Found pstat.dos.p tag; getting boolean value.");
-                    bool p = false;
-                    cborFindResult = cbor_value_get_boolean(&dosMap, &p);
-                    VERIFY_CBOR_SUCCESS_OR_OUT_OF_MEMORY(TAG, cborFindResult, "Failed getting pstat.dos.p value.");
-                    OIC_LOG_V(DEBUG, TAG, "Read pstat.dos.p value = %s.", p?"true":"false");
-                    pstat->dos.pending = p;
-                }
-                else
-                {
-                    OIC_LOG_V(WARNING, TAG, "Unknown tag name in dos map: %s", dosTagName);
-                }
-                free(dosTagName);
-                dosTagName = NULL;
-            }
-
-            if (cbor_value_is_valid(&dosMap))
-            {
+                cborFindResult = cbor_value_dup_text_string(&dosMap, &dosTagName, &dosLen, NULL);
+                VERIFY_CBOR_SUCCESS_OR_OUT_OF_MEMORY(TAG, cborFindResult, "Failed getting dos map next tag.");
                 cborFindResult = cbor_value_advance(&dosMap);
                 VERIFY_CBOR_SUCCESS_OR_OUT_OF_MEMORY(TAG, cborFindResult, "Failed advancing dos map.");
+
+                if (NULL != dosTagName)
+                {
+                    if (strcmp(dosTagName, OIC_JSON_S_NAME) == 0)
+                    {
+                        OIC_LOG_V(DEBUG, TAG, "%s: Found pstat.dos.%s tag in dos map.",
+                            __func__, OIC_JSON_S_NAME);
+                        int s = -1;
+                        cborFindResult = cbor_value_get_int(&dosMap, &s);
+                        VERIFY_CBOR_SUCCESS_OR_OUT_OF_MEMORY(TAG, cborFindResult, "Failed getting pstat.dos.s value.");
+                        OIC_LOG_V(DEBUG, TAG, "%s: Read pstat.dos.%s value = %d.", __func__, OIC_JSON_S_NAME, s);
+                        pstat->dos.state = (OicSecDeviceOnboardingState_t)s;
+                    }
+                    else if (strcmp(dosTagName, OIC_JSON_P_NAME) == 0)
+                    {
+                        if (roParsed)
+                        {
+                            *roParsed = true;
+                        }
+                        OIC_LOG_V(DEBUG, TAG, "%s: Found pstat.dos.%s tag in dos map.",
+                            __func__, OIC_JSON_P_NAME);
+                        bool p = false;
+                        cborFindResult = cbor_value_get_boolean(&dosMap, &p);
+                        VERIFY_CBOR_SUCCESS_OR_OUT_OF_MEMORY(TAG, cborFindResult, "Failed getting pstat.dos.p value.");
+                        OIC_LOG_V(DEBUG, TAG, "%s: Read pstat.dos.%s value = %s.",
+                            __func__, OIC_JSON_P_NAME, p?"true":"false");
+                        pstat->dos.pending = p;
+                    }
+                    else
+                    {
+                        OIC_LOG_V(WARNING, TAG, "Unknown tag name in dos map: %s", dosTagName);
+                    }
+                    free(dosTagName);
+                    dosTagName = NULL;
+                }
+
+                if (cbor_value_is_valid(&dosMap))
+                {
+                    cborFindResult = cbor_value_advance(&dosMap);
+                    VERIFY_CBOR_SUCCESS_OR_OUT_OF_MEMORY(TAG, cborFindResult, "Failed advancing dos map.");
+                }
             }
+            OIC_LOG_V(DEBUG, TAG, "%s: exiting pstat %s cbor container.",
+                __func__, OIC_JSON_DOS_NAME);
         }
+
     }
     else
     {
-        // didn't find pstat.dos tag "dos" in pstatMap
         OIC_LOG(WARNING, TAG, "Did not find mandatory pstat.dos tag in pstatMap.");
         OIC_LOG(WARNING, TAG, "If this is not an intentionally-partial pstat representation,");
         OIC_LOG(WARNING, TAG, "it may be an outdated .dat file that is missing the \"dos\" Property.");
@@ -539,9 +551,11 @@ static OCStackResult CBORPayloadToPstatBin(const uint8_t *cborPayload,
     cborFindResult = cbor_value_map_find_value(&pstatCbor, OIC_JSON_ISOP_NAME, &pstatMap);
     if (CborNoError == cborFindResult && cbor_value_is_boolean(&pstatMap))
     {
+        OIC_LOG_V(DEBUG, TAG, "%s: Found %s tag in pstatMap.", __func__, OIC_JSON_ISOP_NAME);
         cborFindResult = cbor_value_get_boolean(&pstatMap, &pstat->isOp);
-        VERIFY_CBOR_SUCCESS_OR_OUT_OF_MEMORY(TAG, cborFindResult, "Failed Finding isOp Value.");
-
+        VERIFY_CBOR_SUCCESS_OR_OUT_OF_MEMORY(TAG, cborFindResult, "Failed reading isOp Value.");
+        OIC_LOG_V(DEBUG, TAG, "%s: Read %s value = %s.",
+                            __func__, OIC_JSON_ISOP_NAME, pstat->isOp?"true":"false");
         if (roParsed)
         {
             if (IsPropertyReadOnly(PSTAT_ISOP, stateForReadOnlyCheck))
@@ -560,10 +574,13 @@ static OCStackResult CBORPayloadToPstatBin(const uint8_t *cborPayload,
     cborFindResult = cbor_value_map_find_value(&pstatCbor, OIC_JSON_CM_NAME, &pstatMap);
     if (CborNoError == cborFindResult && cbor_value_is_integer(&pstatMap))
     {
+        OIC_LOG_V(DEBUG, TAG, "%s: Found %s tag in pstatMap.", __func__, OIC_JSON_CM_NAME);
+
         int cm;
 
         cborFindResult = cbor_value_get_int(&pstatMap, &cm);
-        VERIFY_CBOR_SUCCESS_OR_OUT_OF_MEMORY(TAG, cborFindResult, "Failed Finding CM.");
+        VERIFY_CBOR_SUCCESS_OR_OUT_OF_MEMORY(TAG, cborFindResult, "Failed reading cm value.");
+        OIC_LOG_V(DEBUG, TAG, "%s: Read %s value = %d.", __func__, OIC_JSON_CM_NAME, cm);
         pstat->cm = (OicSecDpm_t)cm;
 
         if (roParsed)
@@ -584,11 +601,13 @@ static OCStackResult CBORPayloadToPstatBin(const uint8_t *cborPayload,
     cborFindResult = cbor_value_map_find_value(&pstatCbor, OIC_JSON_TM_NAME, &pstatMap);
     if (CborNoError == cborFindResult && cbor_value_is_integer(&pstatMap))
     {
+        OIC_LOG_V(DEBUG, TAG, "%s: Found %s tag in pstatMap.", __func__, OIC_JSON_TM_NAME);
+
         int tm;
 
         cborFindResult = cbor_value_get_int(&pstatMap, &tm);
-        VERIFY_CBOR_SUCCESS_OR_OUT_OF_MEMORY(TAG, cborFindResult, "Failed Finding TM.");
-        OIC_LOG_V(INFO, TAG, "%s parsed pstat->tm = %u", __func__, (OicSecDpm_t)tm);
+        VERIFY_CBOR_SUCCESS_OR_OUT_OF_MEMORY(TAG, cborFindResult, "Failed reading tm value.");
+        OIC_LOG_V(DEBUG, TAG, "%s: Read %s value = %d.", __func__, OIC_JSON_TM_NAME, tm);
         pstat->tm = (OicSecDpm_t)tm;
 
         if (roParsed)
@@ -602,8 +621,8 @@ static OCStackResult CBORPayloadToPstatBin(const uint8_t *cborPayload,
     }
     else
     {
-        OIC_LOG_V(INFO, TAG, "%s no pstat->tm found in payload, using existing value of %u",
-            __func__, gPstat->tm);
+        OIC_LOG_V(INFO, TAG, "%s: no %s Property found in payload; using existing value of %u",
+            __func__, OIC_JSON_TM_NAME, gPstat->tm);
         pstat->tm = gPstat->tm;
         cborFindResult = CborNoError;
     }
@@ -612,10 +631,13 @@ static OCStackResult CBORPayloadToPstatBin(const uint8_t *cborPayload,
     cborFindResult = cbor_value_map_find_value(&pstatCbor, OIC_JSON_OM_NAME, &pstatMap);
     if (CborNoError == cborFindResult && cbor_value_is_integer(&pstatMap))
     {
+        OIC_LOG_V(DEBUG, TAG, "%s: Found %s tag in pstatMap.", __func__, OIC_JSON_OM_NAME);
+
         int om;
 
         cborFindResult = cbor_value_get_int(&pstatMap, &om);
-        VERIFY_CBOR_SUCCESS_OR_OUT_OF_MEMORY(TAG, cborFindResult, "Failed Finding OM.");
+        VERIFY_CBOR_SUCCESS_OR_OUT_OF_MEMORY(TAG, cborFindResult, "Failed getting om value.");
+        OIC_LOG_V(DEBUG, TAG, "%s: Read %s value = %d.", __func__, OIC_JSON_OM_NAME, om);
         pstat->om = (OicSecDpom_t)om;
 
         if (roParsed)
@@ -636,13 +658,16 @@ static OCStackResult CBORPayloadToPstatBin(const uint8_t *cborPayload,
     cborFindResult = cbor_value_map_find_value(&pstatCbor, OIC_JSON_SM_NAME, &pstatMap);
     if (CborNoError == cborFindResult && cbor_value_is_integer(&pstatMap))
     {
+        OIC_LOG_V(DEBUG, TAG, "%s: Found %s tag in pstatMap.", __func__, OIC_JSON_SM_NAME);
+
         int sm;
 
         pstat->smLen = 1;
         pstat->sm = (OicSecDpom_t*)OICCalloc(pstat->smLen, sizeof(OicSecDpom_t));
         VERIFY_NOT_NULL(TAG, pstat->sm, ERROR);
         cborFindResult = cbor_value_get_int(&pstatMap, &sm);
-        VERIFY_CBOR_SUCCESS_OR_OUT_OF_MEMORY(TAG, cborFindResult, "Failed Finding SM.");
+        VERIFY_CBOR_SUCCESS_OR_OUT_OF_MEMORY(TAG, cborFindResult, "Failed reading sm value.");
+        OIC_LOG_V(DEBUG, TAG, "%s: Read %s value = %d.", __func__, OIC_JSON_SM_NAME, sm);
         pstat->sm[0] = (OicSecDpom_t)sm;
 
         if (roParsed)
@@ -667,8 +692,11 @@ static OCStackResult CBORPayloadToPstatBin(const uint8_t *cborPayload,
     cborFindResult = cbor_value_map_find_value(&pstatCbor, OIC_JSON_ROWNERID_NAME, &pstatMap);
     if (CborNoError == cborFindResult && cbor_value_is_text_string(&pstatMap))
     {
+        OIC_LOG_V(DEBUG, TAG, "%s: Found %s tag in pstatMap.", __func__, OIC_JSON_ROWNERID_NAME);
         cborFindResult = cbor_value_dup_text_string(&pstatMap, &strUuid , &len, NULL);
-        VERIFY_CBOR_SUCCESS_OR_OUT_OF_MEMORY(TAG, cborFindResult, "Failed Finding ROwner Id Value.");
+        VERIFY_CBOR_SUCCESS_OR_OUT_OF_MEMORY(TAG, cborFindResult, "Failed reading rowneruuid value.");
+        OIC_LOG_V(DEBUG, TAG, "%s: Read %s value = %s)", __func__,
+            OIC_JSON_ROWNERID_NAME, strUuid);
         ret = ConvertStrToUuid(strUuid , &pstat->rownerID);
         VERIFY_SUCCESS(TAG, OC_STACK_OK == ret, ERROR);
         OICFree(strUuid );
@@ -786,7 +814,7 @@ static OCEntityHandlerResult HandlePstatGetRequest (const OCEntityHandlerRequest
 static OCEntityHandlerResult HandlePstatPostRequest(OCEntityHandlerRequest *ehRequest)
 {
     OCEntityHandlerResult ehRet = OC_EH_ERROR;
-    OIC_LOG(INFO, TAG, "HandlePstatPostRequest  processing POST request");
+    OIC_LOG_V(DEBUG, TAG, "IN %s", __func__);
     OicSecPstat_t *pstat = NULL;
 
     if (ehRequest->payload && NULL != gPstat)
@@ -805,7 +833,7 @@ static OCEntityHandlerResult HandlePstatPostRequest(OCEntityHandlerRequest *ehRe
         {
             if (true == roParsed)
             {
-                    OIC_LOG(ERROR, TAG, "Not acceptable request because of read-only properties");
+                    OIC_LOG(INFO, TAG, "Not acceptable request because of read-only properties");
                     ehRet = OC_EH_NOT_ACCEPTABLE;
                     goto exit;
             }
@@ -823,7 +851,7 @@ static OCEntityHandlerResult HandlePstatPostRequest(OCEntityHandlerRequest *ehRe
             }
             if (!supportedOm)
             {
-                OIC_LOG_V(ERROR, TAG, "%s: %d is NOT a supported Operation Mode",
+                OIC_LOG_V(WARNING, TAG, "%s: %d is NOT a supported Operation Mode",
                     __func__, (int) pstat->om);
                 ehRet = OC_EH_BAD_REQ;
                 goto exit;
@@ -845,7 +873,7 @@ static OCEntityHandlerResult HandlePstatPostRequest(OCEntityHandlerRequest *ehRe
             gPstat->om = pstat->om;
 
             // update tm
-            OIC_LOG_V(INFO, TAG, "%s setting gPstat->tm = %u", __func__, pstat->tm);
+            OIC_LOG_V(DEBUG, TAG, "%s setting gPstat->tm = %u", __func__, pstat->tm);
             gPstat->tm = pstat->tm;
 
             // update rownerID
@@ -867,7 +895,7 @@ static OCEntityHandlerResult HandlePstatPostRequest(OCEntityHandlerRequest *ehRe
                     break;
 
                     case OC_STACK_FORBIDDEN_REQ:
-                    OIC_LOG_V(WARNING, TAG, "%s: DOS state change change to %d NOT ALLOWED.", \
+                    OIC_LOG_V(WARNING, TAG, "%s: DOS state change to %d NOT ALLOWED.", \
                         __func__, pstat->dos.state);
                     ehRet = OC_EH_NOT_ACCEPTABLE;
                     goto exit;
@@ -875,7 +903,7 @@ static OCEntityHandlerResult HandlePstatPostRequest(OCEntityHandlerRequest *ehRe
 
                     case OC_STACK_INTERNAL_SERVER_ERROR:
                     default:
-                    OIC_LOG_V(ERROR, TAG, "%s: DOS state change change to %d FAILED. \
+                    OIC_LOG_V(ERROR, TAG, "%s: DOS state change to %d FAILED. \
                         Internal error - SVRs may be in bad state.", \
                         __func__, pstat->dos.state);
                     ehRet = OC_EH_INTERNAL_SERVER_ERROR;
@@ -899,6 +927,8 @@ exit:
         OC_EH_OK : OC_EH_ERROR;
 
     DeletePstatBinData(pstat);
+
+    OIC_LOG_V(DEBUG, TAG, "OUT %s", __func__);
 
     return ehRet;
 }

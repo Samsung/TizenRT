@@ -28,6 +28,7 @@
 #include "octypes.h"
 #include "oic_malloc.h"
 #include "oic_string.h"
+#include "oic_time.h"
 #include "ocstackinternal.h"
 
 #ifdef RD_SERVER
@@ -498,7 +499,8 @@ static int storeResources(const OCRepPayload *payload, bool externalHost)
     {
         return SQLITE_ERROR;
     }
-    sqlite3_int64 ttl = tmp;
+    /* Add current time in front of the seconds received from the Publishing Device */
+    sqlite3_int64 ttl = (tmp * US_PER_SEC) + OICGetCurrentTime(TIME_IN_US);
 
     /* links is a required property */
     OCRepPayloadValue *links = getLinks(payload);
@@ -734,6 +736,7 @@ OCStackResult OC_CALL OCRDDatabaseClose()
     int res;
     VERIFY_SQLITE(sqlite3_close(gRDDB));
     gRDDB = NULL;
+
 exit:
     return (SQLITE_OK == res) ? OC_STACK_OK : OC_STACK_ERROR;
 }

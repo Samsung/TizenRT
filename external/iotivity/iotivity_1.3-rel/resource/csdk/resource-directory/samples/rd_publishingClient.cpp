@@ -156,7 +156,7 @@ int main()
                 cbData.context = (void*) DEFAULT_CONTEXT_VALUE;
                 std::string address = rdAddress.str();
                 OCRDPublish(nullptr, address.c_str(), CT_ADAPTER_IP, handles,
-                            2, &cbData, OC_LOW_QOS);
+                            2, OIC_RD_PUBLISH_TTL, &cbData, OC_LOW_QOS);
                 break;
             }
             case 3:

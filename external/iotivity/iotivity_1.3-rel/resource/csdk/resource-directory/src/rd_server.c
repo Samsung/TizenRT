@@ -278,7 +278,7 @@ static OCEntityHandlerResult handleDeleteRequest(const OCEntityHandlerRequest *e
         {
             // Arduino's AVR-GCC doesn't support strtoll().
             int64_t i;
-            int matchedItems = sscanf(value, "%lld", &i);
+            int matchedItems = sscanf(value, "%"PRId64, &i);
             if (0 == matchedItems)
             {
                 OIC_LOG_V(ERROR, TAG, "Invalid ins query parameter: %s", value);

@@ -203,14 +203,14 @@ TEST_F(RDTests, CreateRDResource)
 TEST_F(RDTests, RDPublishResourceNullAddr)
 {
     itst::DeadmanTimer killSwitch(SHORT_TEST_TIMEOUT);
-    EXPECT_EQ(OC_STACK_INVALID_IP, OCRDPublish(NULL, 0, CT_ADAPTER_IP, nullptr, 0, 0, OC_LOW_QOS));
+    EXPECT_EQ(OC_STACK_INVALID_IP, OCRDPublish(NULL, 0, CT_ADAPTER_IP, nullptr, 0, 0, 0, OC_LOW_QOS));
 }
 
 TEST_F(RDTests, RDPublishResourceNullCB)
 {
     itst::DeadmanTimer killSwitch(SHORT_TEST_TIMEOUT);
     EXPECT_EQ(OC_STACK_INVALID_CALLBACK, OCRDPublish(NULL, "127.0.0.1", CT_ADAPTER_IP, nullptr,
-                                                     0, 0, OC_LOW_QOS));
+                                                     0, 0, 0, OC_LOW_QOS));
 }
 
 TEST_F(RDTests, RDPublishResource)
@@ -229,7 +229,7 @@ TEST_F(RDTests, RDPublishResource)
                                             NULL, (OC_DISCOVERABLE | OC_OBSERVABLE)));
 
     EXPECT_EQ(OC_STACK_OK, OCRDPublish(NULL, "127.0.0.1", CT_ADAPTER_IP, &handle,
-                                       1, &cbData, OC_LOW_QOS));
+                                       1, OIC_RD_PUBLISH_TTL, &cbData, OC_LOW_QOS));
 }
 
 TEST_F(RDTests, RDPublishMultipleResources)
@@ -251,7 +251,7 @@ TEST_F(RDTests, RDPublishMultipleResources)
                                             NULL, (OC_DISCOVERABLE | OC_OBSERVABLE)));
 
     EXPECT_EQ(OC_STACK_OK, OCRDPublish(NULL, "127.0.0.1", CT_ADAPTER_IP, handles,
-                                       2, &cbData, OC_LOW_QOS));
+                                       2, OIC_RD_PUBLISH_TTL, &cbData, OC_LOW_QOS));
 }
 
 TEST_F(RDTests, RDDeleteResourceNullAddr)
@@ -424,7 +424,7 @@ TEST_P(RDDiscoverTests, DiscoverAllResources)
                                             NULL, (OC_DISCOVERABLE | OC_OBSERVABLE)));
     itst::Callback publishCB(&handlePublishCB);
     EXPECT_EQ(OC_STACK_OK, OCRDPublishWithDeviceId(NULL, "127.0.0.1", di[0], CT_ADAPTER_IP, handles,
-              2, publishCB, OC_LOW_QOS));
+              2, OIC_RD_PUBLISH_TTL, publishCB, OC_LOW_QOS));
     EXPECT_EQ(OC_STACK_OK, publishCB.Wait(100));
 
     itst::Callback discoverCB(&DiscoverAllResourcesVerify);
@@ -470,7 +470,7 @@ TEST_P(RDDiscoverTests, ResourceQueryMatchesLocalAndRemote)
                                             NULL, (OC_DISCOVERABLE | OC_OBSERVABLE)));
     itst::Callback publishCB(&handlePublishCB);
     EXPECT_EQ(OC_STACK_OK, OCRDPublishWithDeviceId(NULL, "127.0.0.1", di[0], CT_ADAPTER_IP, handles,
-              1, publishCB, OC_LOW_QOS));
+              1, OIC_RD_PUBLISH_TTL, publishCB, OC_LOW_QOS));
     EXPECT_EQ(OC_STACK_OK, publishCB.Wait(100));
 
     itst::Callback discoverCB(&ResourceQueryMatchesLocalAndRemoteVerify);
@@ -510,7 +510,7 @@ TEST_P(RDDiscoverTests, ResourceQueryMatchesLocalOnly)
                                             NULL, (OC_DISCOVERABLE | OC_OBSERVABLE)));
     itst::Callback publishCB(&handlePublishCB);
     EXPECT_EQ(OC_STACK_OK, OCRDPublishWithDeviceId(NULL, "127.0.0.1", di[0], CT_ADAPTER_IP, &handles[1],
-              1, publishCB, OC_LOW_QOS));
+              1, OIC_RD_PUBLISH_TTL, publishCB, OC_LOW_QOS));
     EXPECT_EQ(OC_STACK_OK, publishCB.Wait(100));
 
     OIC_LOG(INFO, TAG, "Published");
@@ -631,15 +631,15 @@ TEST_P(RDDiscoverTests, DatabaseHas0ResourceQueryMatches)
                                             NULL, (OC_DISCOVERABLE | OC_OBSERVABLE)));
     itst::Callback publish0CB(&handlePublishCB);
     EXPECT_EQ(OC_STACK_OK, OCRDPublishWithDeviceId(NULL, "127.0.0.1", di[0], CT_ADAPTER_IP, &handles[1],
-              1, publish0CB, OC_LOW_QOS));
+              1, OIC_RD_PUBLISH_TTL, publish0CB, OC_LOW_QOS));
     EXPECT_EQ(OC_STACK_OK, publish0CB.Wait(100));
     itst::Callback publish1CB(&handlePublishCB);
     EXPECT_EQ(OC_STACK_OK, OCRDPublishWithDeviceId(NULL, "127.0.0.1", di[1], CT_ADAPTER_IP, &handles[2],
-              1, publish1CB, OC_LOW_QOS));
+              1, OIC_RD_PUBLISH_TTL, publish1CB, OC_LOW_QOS));
     EXPECT_EQ(OC_STACK_OK, publish1CB.Wait(100));
     itst::Callback publish2CB(&handlePublishCB);
     EXPECT_EQ(OC_STACK_OK, OCRDPublishWithDeviceId(NULL, "127.0.0.1", di[2], CT_ADAPTER_IP, &handles[3],
-              1, publish2CB, OC_LOW_QOS));
+              1, OIC_RD_PUBLISH_TTL, publish2CB, OC_LOW_QOS));
     EXPECT_EQ(OC_STACK_OK, publish2CB.Wait(100));
 
     itst::Callback discoverCB(&DatabaseHas0ResourceQueryMatchesVerify);
@@ -697,15 +697,15 @@ TEST_P(RDDiscoverTests, DatabaseHas1ResourceQueryMatch)
                                             NULL, (OC_DISCOVERABLE | OC_OBSERVABLE)));
     itst::Callback publish0CB(&handlePublishCB);
     EXPECT_EQ(OC_STACK_OK, OCRDPublishWithDeviceId(NULL, "127.0.0.1", di[0], CT_ADAPTER_IP, &handles[1],
-              1, publish0CB, OC_LOW_QOS));
+              1, OIC_RD_PUBLISH_TTL, publish0CB, OC_LOW_QOS));
     EXPECT_EQ(OC_STACK_OK, publish0CB.Wait(100));
     itst::Callback publish1CB(&handlePublishCB);
     EXPECT_EQ(OC_STACK_OK, OCRDPublishWithDeviceId(NULL, "127.0.0.1", di[1], CT_ADAPTER_IP, &handles[2],
-              1, publish1CB, OC_LOW_QOS));
+              1, OIC_RD_PUBLISH_TTL, publish1CB, OC_LOW_QOS));
     EXPECT_EQ(OC_STACK_OK, publish1CB.Wait(100));
     itst::Callback publish2CB(&handlePublishCB);
     EXPECT_EQ(OC_STACK_OK, OCRDPublishWithDeviceId(NULL, "127.0.0.1", di[2], CT_ADAPTER_IP, &handles[3],
-              1, publish2CB, OC_LOW_QOS));
+              1, OIC_RD_PUBLISH_TTL, publish2CB, OC_LOW_QOS));
     EXPECT_EQ(OC_STACK_OK, publish2CB.Wait(100));
 
     itst::Callback discoverCB(&DatabaseHas1ResourceQueryMatchVerify);
@@ -765,15 +765,15 @@ TEST_P(RDDiscoverTests, DatabaseHasNResourceQueryMatches)
                                             NULL, (OC_DISCOVERABLE | OC_OBSERVABLE)));
     itst::Callback publish0CB(&handlePublishCB);
     EXPECT_EQ(OC_STACK_OK, OCRDPublishWithDeviceId(NULL, "127.0.0.1", di[0], CT_ADAPTER_IP, &handles[1],
-              1, publish0CB, OC_LOW_QOS));
+              1, OIC_RD_PUBLISH_TTL, publish0CB, OC_LOW_QOS));
     EXPECT_EQ(OC_STACK_OK, publish0CB.Wait(100));
     itst::Callback publish1CB(&handlePublishCB);
     EXPECT_EQ(OC_STACK_OK, OCRDPublishWithDeviceId(NULL, "127.0.0.1", di[1], CT_ADAPTER_IP, &handles[2],
-              1, publish1CB, OC_LOW_QOS));
+              1, OIC_RD_PUBLISH_TTL, publish1CB, OC_LOW_QOS));
     EXPECT_EQ(OC_STACK_OK, publish1CB.Wait(100));
     itst::Callback publish2CB(&handlePublishCB);
     EXPECT_EQ(OC_STACK_OK, OCRDPublishWithDeviceId(NULL, "127.0.0.1", di[2], CT_ADAPTER_IP, &handles[3],
-              1, publish2CB, OC_LOW_QOS));
+              1, OIC_RD_PUBLISH_TTL, publish2CB, OC_LOW_QOS));
     EXPECT_EQ(OC_STACK_OK, publish2CB.Wait(100));
 
     itst::Callback discoverCB(&DatabaseHasNResourceQueryMatchesVerify);
@@ -818,15 +818,15 @@ TEST_P(RDDiscoverTests, DatabaseHas0InterfaceQueryMatches)
                                             NULL, (OC_DISCOVERABLE | OC_OBSERVABLE)));
     itst::Callback publish0CB(&handlePublishCB);
     EXPECT_EQ(OC_STACK_OK, OCRDPublishWithDeviceId(NULL, "127.0.0.1", di[0], CT_ADAPTER_IP, &handles[1],
-              1, publish0CB, OC_LOW_QOS));
+              1, OIC_RD_PUBLISH_TTL, publish0CB, OC_LOW_QOS));
     EXPECT_EQ(OC_STACK_OK, publish0CB.Wait(100));
     itst::Callback publish1CB(&handlePublishCB);
     EXPECT_EQ(OC_STACK_OK, OCRDPublishWithDeviceId(NULL, "127.0.0.1", di[1], CT_ADAPTER_IP, &handles[2],
-              1, publish1CB, OC_LOW_QOS));
+              1, OIC_RD_PUBLISH_TTL, publish1CB, OC_LOW_QOS));
     EXPECT_EQ(OC_STACK_OK, publish1CB.Wait(100));
     itst::Callback publish2CB(&handlePublishCB);
     EXPECT_EQ(OC_STACK_OK, OCRDPublishWithDeviceId(NULL, "127.0.0.1", di[2], CT_ADAPTER_IP, &handles[3],
-              1, publish2CB, OC_LOW_QOS));
+              1, OIC_RD_PUBLISH_TTL, publish2CB, OC_LOW_QOS));
     EXPECT_EQ(OC_STACK_OK, publish2CB.Wait(100));
 
     itst::Callback discoverCB(&DatabaseHas0InterfaceQueryMatchesVerify);
@@ -894,15 +894,15 @@ TEST_P(RDDiscoverTests, DatabaseHas1InterfaceQueryMatch)
                                             NULL, (OC_DISCOVERABLE | OC_OBSERVABLE)));
     itst::Callback publish0CB(&handlePublishCB);
     EXPECT_EQ(OC_STACK_OK, OCRDPublishWithDeviceId(NULL, "127.0.0.1", di[0], CT_ADAPTER_IP, &handles[1],
-              1, publish0CB, OC_LOW_QOS));
+              1, OIC_RD_PUBLISH_TTL, publish0CB, OC_LOW_QOS));
     EXPECT_EQ(OC_STACK_OK, publish0CB.Wait(100));
     itst::Callback publish1CB(&handlePublishCB);
     EXPECT_EQ(OC_STACK_OK, OCRDPublishWithDeviceId(NULL, "127.0.0.1", di[1], CT_ADAPTER_IP, &handles[2],
-              1, publish1CB, OC_LOW_QOS));
+              1, OIC_RD_PUBLISH_TTL, publish1CB, OC_LOW_QOS));
     EXPECT_EQ(OC_STACK_OK, publish1CB.Wait(100));
     itst::Callback publish2CB(&handlePublishCB);
     EXPECT_EQ(OC_STACK_OK, OCRDPublishWithDeviceId(NULL, "127.0.0.1", di[2], CT_ADAPTER_IP, &handles[3],
-              1, publish2CB, OC_LOW_QOS));
+              1, OIC_RD_PUBLISH_TTL, publish2CB, OC_LOW_QOS));
     EXPECT_EQ(OC_STACK_OK, publish2CB.Wait(100));
 
     itst::Callback discoverCB(&DatabaseHas1InterfaceQueryMatchVerify);
@@ -969,15 +969,15 @@ TEST_P(RDDiscoverTests, DatabaseHasNInterfaceQueryMatches)
                                             NULL, (OC_DISCOVERABLE | OC_OBSERVABLE)));
     itst::Callback publish0CB(&handlePublishCB);
     EXPECT_EQ(OC_STACK_OK, OCRDPublishWithDeviceId(NULL, "127.0.0.1", di[0], CT_ADAPTER_IP, &handles[1],
-              1, publish0CB, OC_LOW_QOS));
+              1, OIC_RD_PUBLISH_TTL, publish0CB, OC_LOW_QOS));
     EXPECT_EQ(OC_STACK_OK, publish0CB.Wait(100));
     itst::Callback publish1CB(&handlePublishCB);
     EXPECT_EQ(OC_STACK_OK, OCRDPublishWithDeviceId(NULL, "127.0.0.1", di[1], CT_ADAPTER_IP, &handles[2],
-              1, publish1CB, OC_LOW_QOS));
+              1, OIC_RD_PUBLISH_TTL, publish1CB, OC_LOW_QOS));
     EXPECT_EQ(OC_STACK_OK, publish1CB.Wait(100));
     itst::Callback publish2CB(&handlePublishCB);
     EXPECT_EQ(OC_STACK_OK, OCRDPublishWithDeviceId(NULL, "127.0.0.1", di[2], CT_ADAPTER_IP, &handles[3],
-              1, publish2CB, OC_LOW_QOS));
+              1, OIC_RD_PUBLISH_TTL, publish2CB, OC_LOW_QOS));
     EXPECT_EQ(OC_STACK_OK, publish2CB.Wait(100));
 
     itst::Callback discoverCB(&DatabaseHasNInterfaceQueryMatchesVerify);
@@ -1047,7 +1047,7 @@ TEST_P(RDDiscoverTests, ResourceAndInterfaceQueryMatch)
                                             NULL, (OC_DISCOVERABLE | OC_OBSERVABLE)));
     itst::Callback publish0CB(&handlePublishCB);
     EXPECT_EQ(OC_STACK_OK, OCRDPublishWithDeviceId(NULL, "127.0.0.1", di[0], CT_ADAPTER_IP, &handles[1],
-              3, publish0CB, OC_LOW_QOS));
+              3, OIC_RD_PUBLISH_TTL, publish0CB, OC_LOW_QOS));
     EXPECT_EQ(OC_STACK_OK, publish0CB.Wait(100));
 
     itst::Callback discoverCB(&ResourceAndInterfaceQueryMatchVerify);
@@ -1079,7 +1079,7 @@ TEST_P(RDDiscoverTests, Baseline)
                                             NULL, (OC_DISCOVERABLE | OC_OBSERVABLE)));
     itst::Callback publishCB(&handlePublishCB);
     EXPECT_EQ(OC_STACK_OK, OCRDPublishWithDeviceId(NULL, "127.0.0.1", di[0], CT_ADAPTER_IP, handles,
-              1, publishCB, OC_LOW_QOS));
+              1, OIC_RD_PUBLISH_TTL, publishCB, OC_LOW_QOS));
     EXPECT_EQ(OC_STACK_OK, publishCB.Wait(100));
 
     itst::Callback discoverCB(&BaselineVerify);
@@ -1117,7 +1117,7 @@ TEST_P(RDDiscoverTests, DeleteDevice)
                                             NULL, (OC_DISCOVERABLE | OC_OBSERVABLE)));
     itst::Callback publishCB(&handlePublishCB);
     EXPECT_EQ(OC_STACK_OK, OCRDPublishWithDeviceId(NULL, "127.0.0.1", di[0], CT_ADAPTER_IP, handles,
-              1, publishCB, OC_LOW_QOS));
+              1, OIC_RD_PUBLISH_TTL, publishCB, OC_LOW_QOS));
     EXPECT_EQ(OC_STACK_OK, publishCB.Wait(100));
 
     itst::Callback deleteCB(&handleDeleteCB);
@@ -1183,7 +1183,7 @@ TEST_P(RDDiscoverTests, Delete1)
                                             NULL, (OC_DISCOVERABLE | OC_OBSERVABLE)));
     itst::Callback publishCB(&handlePublishCB);
     EXPECT_EQ(OC_STACK_OK, OCRDPublishWithDeviceId(NULL, "127.0.0.1", di[0], CT_ADAPTER_IP, handles,
-              2, publishCB, OC_LOW_QOS));
+              2, OIC_RD_PUBLISH_TTL, publishCB, OC_LOW_QOS));
     EXPECT_EQ(OC_STACK_OK, publishCB.Wait(100));
 
     itst::Callback deleteCB(&handleDeleteCB);
@@ -1258,7 +1258,7 @@ TEST_P(RDDiscoverTests, DeleteN)
                                             NULL, (OC_DISCOVERABLE | OC_OBSERVABLE)));
     itst::Callback publishCB(&handlePublishCB);
     EXPECT_EQ(OC_STACK_OK, OCRDPublishWithDeviceId(NULL, "127.0.0.1", di[0], CT_ADAPTER_IP, handles,
-              3, publishCB, OC_LOW_QOS));
+              3, OIC_RD_PUBLISH_TTL, publishCB, OC_LOW_QOS));
     EXPECT_EQ(OC_STACK_OK, publishCB.Wait(100));
 
     itst::Callback deleteCB(&handleDeleteCB);
@@ -1274,5 +1274,27 @@ TEST_P(RDDiscoverTests, DeleteN)
 
 INSTANTIATE_TEST_CASE_P(ContentFormat, RDDiscoverTests,
         ::testing::Values(COAP_MEDIATYPE_APPLICATION_VND_OCF_CBOR, COAP_MEDIATYPE_APPLICATION_CBOR));
+
+TEST_P(RDDiscoverTests, TTLLapsedDeleteDevice)
+{
+    itst::DeadmanTimer killSwitch(SHORT_TEST_TIMEOUT);
+
+    OCResourceHandle handles[1];
+    EXPECT_EQ(OC_STACK_OK, OCCreateResource(&handles[0], "core.light",
+                                            "oic.if.baseline", "/a/light", rdEntityHandler,
+                                            NULL, (OC_DISCOVERABLE | OC_OBSERVABLE)));
+    itst::Callback publishCB(&handlePublishCB);
+    EXPECT_EQ(OC_STACK_OK, OCRDPublishWithDeviceId(NULL, "127.0.0.1", di[0], CT_ADAPTER_IP, handles,
+              1, 1, publishCB, OC_LOW_QOS));
+    EXPECT_EQ(OC_STACK_OK, publishCB.Wait(100));
+
+    std::this_thread::sleep_for(std::chrono::seconds(1));
+
+    itst::Callback discoverCB(&DeleteDeviceVerify);
+    EXPECT_EQ(OC_STACK_OK, OCDoResource(NULL, OC_REST_DISCOVER, "/oic/res", NULL, 0,
+                    CT_DEFAULT, OC_HIGH_QOS, discoverCB, options, numOptions));
+    EXPECT_EQ(OC_STACK_OK, discoverCB.Wait(100));
+}
+
 #endif
 

@@ -37,6 +37,8 @@
 
 #ifdef RD_CLIENT
 
+#define OIC_RD_DEFAULT_RESOURCE 2
+
 OCStackResult OC_CALL OCRDDiscover(OCDoHandle *handle, OCConnectivityType connectivityType,
                                    OCCallbackData *cbBiasFactor, OCQualityOfService qos)
 {
@@ -122,7 +124,7 @@ exit:
 
 OCStackResult OC_CALL OCRDPublish(OCDoHandle *handle, const char *host,
                                   OCConnectivityType connectivityType,
-                                  OCResourceHandle *resourceHandles, uint8_t nHandles,
+                                  OCResourceHandle *resourceHandles, uint8_t nHandles, uint32_t ttl,
                                   OCCallbackData *cbData, OCQualityOfService qos)
 {
     // Validate input parameters.
@@ -139,12 +141,12 @@ OCStackResult OC_CALL OCRDPublish(OCDoHandle *handle, const char *host,
     // Get Device ID from stack.
     const unsigned char *id = (const unsigned char *) OCGetServerInstanceIDString();
 
-    return OCRDPublishWithDeviceId(handle, host, id, connectivityType, resourceHandles, nHandles,
+    return OCRDPublishWithDeviceId(handle, host, id, connectivityType, resourceHandles, nHandles, ttl,
                                    cbData, qos);
 }
 
 static OCRepPayload *RDPublishPayloadCreate(const unsigned char *id,
-        const OCResourceHandle *resourceHandles, uint8_t nHandles)
+        const OCResourceHandle *resourceHandles, uint8_t nHandles, uint32_t ttl)
 {
     assert(id);
 
@@ -193,7 +195,7 @@ static OCRepPayload *RDPublishPayloadCreate(const unsigned char *id,
 
     // oic.wk.rdpub properties
     OCRepPayloadSetPropString(rdPayload, OC_RSRVD_DEVICE_ID, (const char*) id);
-    OCRepPayloadSetPropInt(rdPayload, OC_RSRVD_DEVICE_TTL, OIC_RD_PUBLISH_TTL);
+    OCRepPayloadSetPropInt(rdPayload, OC_RSRVD_DEVICE_TTL, ttl);
 
     dim[0] = nHandles;
     OCRepPayload **links = (OCRepPayload **)OICCalloc(dim[0], sizeof(OCRepPayload *));
@@ -327,7 +329,7 @@ exit:
 OCStackResult OC_CALL OCRDPublishWithDeviceId(OCDoHandle *handle, const char *host,
                                               const unsigned char *id,
                                               OCConnectivityType connectivityType,
-                                              OCResourceHandle *resourceHandles, uint8_t nHandles,
+                                              OCResourceHandle *resourceHandles, uint8_t nHandles, uint32_t ttl,
                                               OCCallbackData *cbData, OCQualityOfService qos)
 {
     // Validate input parameters.
@@ -383,7 +385,7 @@ OCStackResult OC_CALL OCRDPublishWithDeviceId(OCDoHandle *handle, const char *ho
     snprintf(targetUri, MAX_URI_LENGTH, "%s%s", host, OC_RSRVD_RD_URI);
     OIC_LOG_V(DEBUG, TAG, "Target URI: %s", targetUri);
 
-    OCRepPayload *rdPayload = RDPublishPayloadCreate(id, pubResHandle, nPubResHandles);
+    OCRepPayload *rdPayload = RDPublishPayloadCreate(id, pubResHandle, nPubResHandles, ttl);
     if (!rdPayload)
     {
         return OC_STACK_ERROR;

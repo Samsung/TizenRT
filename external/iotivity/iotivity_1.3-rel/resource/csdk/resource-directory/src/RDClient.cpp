@@ -32,7 +32,6 @@
 #include "ocpayload.h"
 
 #include "RDClient.h"
-#include "rd_client.h"
 
 using namespace OC;
 
@@ -93,23 +92,26 @@ OCStackApplicationResult publishResourceToRDCallback(void* ctx, OCDoHandle /*han
 OCStackResult RDClient::publishResourceToRD(const std::string& host,
                                             OCConnectivityType connectivityType,
                                             ResourceHandles& resourceHandles,
+                                            uint32_t ttl,
                                             PublishResourceCallback callback)
 {
-    return publishResourceToRD(host, connectivityType, resourceHandles, callback, static_cast<QualityOfService>(m_qos));
+    return publishResourceToRD(host, connectivityType, resourceHandles, ttl, callback, static_cast<QualityOfService>(m_qos));
 }
 
 OCStackResult RDClient::publishResourceToRD(const std::string& host,
                                             OCConnectivityType connectivityType,
+                                            uint32_t ttl,
                                             PublishResourceCallback callback,
                                             QualityOfService qos)
 {
     ResourceHandles resourceHandles;
-    return publishResourceToRD(host, connectivityType, resourceHandles, callback, qos);
+    return publishResourceToRD(host, connectivityType, resourceHandles, ttl, callback, qos);
 }
 
 OCStackResult RDClient::publishResourceToRD(const std::string& host,
                                    OCConnectivityType connectivityType,
                                    ResourceHandles& resourceHandles,
+                                   uint32_t ttl,
                                    PublishResourceCallback callback,
                                    QualityOfService qos)
 {
@@ -132,7 +134,7 @@ OCStackResult RDClient::publishResourceToRD(const std::string& host,
             throw OCException(OC::Exception::PUBLISH_RESOURCE_FAILED, result);
         }
         result = OCRDPublish(nullptr, host.c_str(), connectivityType, &resourceHandles[0],
-                             (uint8_t)resourceHandles.size(), &cbdata, static_cast<OCQualityOfService>(qos));
+                             (uint8_t)resourceHandles.size(), ttl, &cbdata, static_cast<OCQualityOfService>(qos));
     }
 
     if (OC_STACK_OK != result)
