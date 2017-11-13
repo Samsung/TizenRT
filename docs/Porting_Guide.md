@@ -1,7 +1,7 @@
 # Porting Guide
 
 ## Contents
-> [Policy & Caution](policy--caution)  
+> [Policy & Caution](#policy--caution)  
 > [Kernel & System](#kernel--system)  
 > [File System](#file-system)  
 > [Network](#network)  
