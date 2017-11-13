@@ -1865,7 +1865,7 @@ int smartfs_rmdir(struct inode *mountpt, const char *relpath)
 			goto errout_with_semaphore;
 		}
 #ifdef CONFIG_SMARTFS_JOURNALING
-		ret = smartfs_create_journalentry(fs, T_DELETE, entry.dsector, entry.doffset, entry.dfirst, 0, 0, NULL, &t_sector, &t_offset);
+		ret = smartfs_create_journalentry(fs, T_DELETE, entry.dsector, entry.doffset, entry.dfirst, entry.firstsector, 0, NULL, &t_sector, &t_offset);
 		if (ret != OK) {
 			fdbg("Journal entry creation failed.\n");
 			goto errout_with_semaphore;
