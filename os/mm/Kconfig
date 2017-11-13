@@ -68,25 +68,25 @@ config MM_REGIONS
 		that the memory manager must handle and enables the API
 		mm_addregion(heap, start, end);
 
-config ARCH_HAVE_HEAP2
+config ARCH_HAVE_HEAPx
 	bool
 	default n
 
-if ARCH_HAVE_HEAP2
+if ARCH_HAVE_HEAPx
 
-config HEAP2_BASE
-	hex "Start address of second user heap region"
-	default 0x00000000
+config HEAPx_BASE
+	string "List of start address for additional heap region"
+	default "0x00000000,"
 	---help---
-		The base address of the second heap region.
+		The base address list of the additional heap region.
 
-config HEAP2_SIZE
-	int "Size of the second user heap region"
-	default 0
+config HEAPx_SIZE
+	string "List of size for additional heap region"
+	default "0,"
 	---help---
-		The size of the second heap region.
+		The size list of additional heap region.
 
-endif # ARCH_HAVE_HEAP2
+endif # ARCH_HAVE_HEAPx
 
 config GRAN
 	bool "Enable Granule Allocator"
