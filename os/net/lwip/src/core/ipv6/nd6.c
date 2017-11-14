@@ -389,6 +389,14 @@ void nd6_input(struct pbuf *p, struct netif *inp)
 			return;
 		}
 
+		if (IP6H_HOPLIM(ip6_current_header()) != 255) {
+			/* @todo debug message */
+			pbuf_free(p);
+			ND6_STATS_INC(nd6.lenerr);
+			ND6_STATS_INC(nd6.drop);
+			return;
+		}
+
 		/* Check for ANY address in src (DAD algorithm). */
 		if (ip6_addr_isany(ip6_current_src_addr())) {
 			if (ip6_addr_ismulticast(ip6_current_dest_addr())) {
