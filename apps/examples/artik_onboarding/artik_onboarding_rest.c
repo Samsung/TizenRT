@@ -474,7 +474,7 @@ static artik_error ssl_init_context(struct http_server_t *server)
 		goto exit;
 	}
 
-	ret = security->get_certificate(handle, &server_cert);
+	ret = security->get_certificate(handle, CERT_ID_ARTIK, &server_cert);
 	if ((ret != S_OK) || !server_cert) {
 		printf("Failed to get certificate from SE (err=%d)\n", ret);
 		goto exit;
@@ -488,7 +488,7 @@ static artik_error ssl_init_context(struct http_server_t *server)
 		goto exit;
 	}
 
-	ret = security->get_ca_chain(handle, &ca_chain);
+	ret = security->get_ca_chain(handle, CERT_ID_ARTIK, &ca_chain);
 	if ((ret != S_OK) || !ca_chain) {
 		printf("Failed to get CA chain from SE (err=%d)\n", ret);
 		ret = E_BAD_ARGS;

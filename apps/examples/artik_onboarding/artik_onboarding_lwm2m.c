@@ -367,7 +367,7 @@ static pthread_addr_t lwm2m_start_cb(void *arg)
 			"1.0", "1.0", "A05x", 0, 5000, 1500, 100, 1000000, 200000,
 			"Europe/Paris", "+01:00", "U");
 
-	ssl_config.use_se = cloud_secure_dt;
+	ssl_config.se_config.use_se = cloud_secure_dt;
 	ssl_config.ca_cert.data = (char *)akc_root_ca;
 	ssl_config.ca_cert.len = sizeof(akc_root_ca);
 	ssl_config.verify_cert = ARTIK_SSL_VERIFY_REQUIRED;

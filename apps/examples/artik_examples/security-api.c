@@ -66,7 +66,7 @@ static int security_cert(int argc, char *argv[])
 		goto exit;
 	}
 
-	err = security->get_certificate(handle, &se_cert);
+	err = security->get_certificate(handle, CERT_ID_ARTIK, &se_cert);
 	if (err != S_OK || !se_cert) {
 		fprintf(stderr, "Failed to get certificate (err=%d)\n", err);
 		ret = -1;
@@ -108,7 +108,7 @@ static int security_pk(int argc, char *argv[])
 		goto exit;
 	}
 
-	err = security->get_certificate(handle, &se_cert);
+	err = security->get_certificate(handle, CERT_ID_ARTIK, &se_cert);
 	if (err != S_OK || !se_cert) {
 		fprintf(stderr, "Failed to get certificate (err=%d)\n", err);
 		err = -1;
@@ -157,7 +157,7 @@ static int security_chain(int argc, char *argv[])
 		goto exit;
 	}
 
-	err = security->get_ca_chain(handle, &chain);
+	err = security->get_ca_chain(handle, CERT_ID_ARTIK, &chain);
 	if (err != S_OK || !chain) {
 		fprintf(stderr, "Failed to get root CA (err=%d)\n", err);
 		err = -1;
@@ -259,7 +259,8 @@ static int security_serial(int argc, char *argv[])
 		goto exit;
 	}
 
-	err = security->get_certificate_sn(handle, serial_number, &len);
+	err = security->get_certificate_sn(handle, CERT_ID_ARTIK, serial_number,
+			&len);
 	if (err != S_OK) {
 		fprintf(stderr, "Failed to get serial number (err=%d)\n", err);
 		ret = -1;
