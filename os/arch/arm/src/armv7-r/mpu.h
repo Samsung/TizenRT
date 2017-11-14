@@ -65,6 +65,9 @@
 #include <stdbool.h>
 #include <debug.h>
 #include <arch/irq.h>
+#ifdef CONFIG_BUILD_PROTECTED
+#include <chip/mpu-reg.h>
+#endif
 
 #include "up_arch.h"
 #include "cache.h"
@@ -561,6 +564,36 @@ static inline void mpu_user_flash(uintptr_t base, size_t size)
 	mpu_set_drsr(regval);
 }
 
+static inline void mpu_user_flash_ro(uintptr_t base, size_t size)
+{
+	unsigned int region = mpu_allocregion();
+	uint32_t regval;
+	uint8_t l2size;
+	uint8_t subregions;
+
+	/* Select the region */
+	mpu_set_rgnr(region);
+
+	/* Select the region base address */
+	mpu_set_drbar(base & MPU_RBAR_ADDR_MASK);
+
+	/* Select the region size and the sub-region map */
+	l2size = mpu_log2regionceil(size);
+	subregions = mpu_subregion(base, size, l2size);
+
+	/* The configure the region */
+
+	regval =                      /* Not Cacheable */
+		MPU_RACR_C              | /* Cacheable     */
+		MPU_RACR_AP_RWRO;             /* P:RW   U:RO   */
+	mpu_set_dracr(regval);
+
+	regval = MPU_RASR_ENABLE            | /* Enable region */
+		MPU_RASR_RSIZE_LOG2((uint32_t)l2size)  | /* Region size   */
+		((uint32_t)subregions << MPU_RASR_SRD_SHIFT); /* Sub-regions */
+	mpu_set_drsr(regval);
+}
+
 /****************************************************************************
  * Name: mpu_priv_noncache
  *
@@ -635,6 +668,34 @@ static inline void mpu_priv_flash(uintptr_t base, size_t size)
 	regval = MPU_RASR_ENABLE			| /* Enable region */
 		 MPU_RASR_RSIZE_LOG2((uint32_t)l2size)	| /* Region size   */
 		 ((uint32_t)subregions << MPU_RASR_SRD_SHIFT); /* Sub-regions */
+	mpu_set_drsr(regval);
+}
+
+static inline void mpu_priv_flash_rw(uintptr_t base, size_t size)
+{
+	unsigned int region = mpu_allocregion();
+	uint32_t regval;
+	uint8_t l2size;
+	uint8_t subregions;
+
+	/* Select the region */
+	mpu_set_rgnr(region);
+
+	/* Select the region base address */
+	mpu_set_drbar(base & MPU_RBAR_ADDR_MASK);
+
+	/* Select the region size and the sub-region map */
+	l2size = mpu_log2regionceil(size);
+	subregions = mpu_subregion(base, size, l2size);
+
+	/* The configure the region */
+	regval = MPU_RACR_C             | /* Cacheable     */
+		MPU_RACR_AP_RWNO;            /* P:RW   U:None */
+	mpu_set_dracr(regval);
+
+	regval = MPU_RASR_ENABLE            | /* Enable region */
+		MPU_RASR_RSIZE_LOG2((uint32_t)l2size)  | /* Region size   */
+		((uint32_t)subregions << MPU_RASR_SRD_SHIFT); /* Sub-regions */
 	mpu_set_drsr(regval);
 }
 

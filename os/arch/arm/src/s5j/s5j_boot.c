@@ -79,6 +79,35 @@
 extern uint32_t _vector_start;
 extern uint32_t _vector_end;
 
+#if defined(CONFIG_BUILD_PROTECTED)
+const struct mpu_region_info regions_info[] = {
+	{
+		&mpu_user_intsram_wb, 0x0, 0x80000000, MPU_REG_ENTIRE_MAP,
+	},
+	{
+		&mpu_priv_intsram_wb, S5J_IRAM_PADDR, 0x40000, MPU_REG_KERN_DATA,
+	},
+	{
+		&mpu_priv_noncache, 0x02100000, 0x80000, MPU_REG_KERN_REG2,
+	},
+	{
+		&mpu_priv_flash, S5J_FLASH_MIRROR_PADDR, S5J_FLASH_MIRROR_SIZE, MPU_REG_KERN_CODE,
+	},
+	{
+		&mpu_priv_flash_rw, S5J_FLASH_PADDR, S5J_FLASH_SIZE, MPU_REG_KERN_REG1,
+	},
+	{
+		&mpu_user_flash_rw, (uintptr_t)__uflash_segment_start__, (size_t)__uflash_segment_size__, MPU_REG_KERN_REG0,
+	},
+	{
+		&mpu_peripheral, S5J_PERIPHERAL_PADDR, S5J_PERIPHERAL_SIZE, MPU_REG_KERN_PERI,
+	},
+	{
+		&mpu_priv_flash, S5J_IRAM_MIRROR_PADDR, S5J_IRAM_MIRROR_SIZE, MPU_REG_KERN_VEC,
+	}
+};
+#endif
+
 /****************************************************************************
  * Private Functions
  ****************************************************************************/
@@ -134,7 +163,13 @@ void up_copyvectorblock(void)
 #ifdef CONFIG_ARMV7M_MPU
 int s5j_mpu_initialize(void)
 {
-#ifdef CONFIG_ARCH_CHIP_S5JT200
+#if defined(CONFIG_BUILD_PROTECTED)
+	int i;
+
+	for (i = 0; i < (sizeof(regions_info) / sizeof(struct mpu_region_info)); i++) {
+		regions_info[i].call(regions_info[i].base, regions_info[i].size);
+	}
+#elif CONFIG_ARCH_CHIP_S5JT200
 	/*
 	 * Vector Table	0x02020000	0x02020FFF	4
 	 * Reserved		0x02021000	0x020217FF	2
@@ -166,9 +201,10 @@ int s5j_mpu_initialize(void)
 	 * set the entire high vector region as read-only.
 	 */
 	mpu_priv_flash(S5J_IRAM_MIRROR_PADDR, S5J_IRAM_MIRROR_SIZE);
+#endif
 
 	mpu_control(true);
-#endif
+
 	return 0;
 }
 #endif
@@ -190,6 +226,11 @@ void arm_boot(void)
 	 * performed after returning from tms570_board_initialize()
 	 */
 	arm_data_initialize();
+#endif
+
+#ifdef CONFIG_BUILD_PROTECTED
+	/* Initialize userspace .data and .bss section */
+	s5j_userspace();
 #endif
 
 #ifdef CONFIG_ARMV7M_MPU

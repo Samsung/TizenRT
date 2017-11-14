@@ -1,6 +1,6 @@
 /****************************************************************************
  *
- * Copyright 2016 Samsung Electronics All Rights Reserved.
+ * Copyright 2017 Samsung Electronics All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,11 +16,10 @@
  *
  ****************************************************************************/
 /****************************************************************************
- * configs/sidk_s5jt200/scripts/ld_s5jt200_flash.script
+ * configs/sidk_s5jt200/scripts/user-space.ld
  *
- *   Copyright (C) 2011-2013 Gregory Nutt. All rights reserved.
+ *   Copyright (C) 2013 Gregory Nutt. All rights reserved.
  *   Author: Gregory Nutt <gnutt@nuttx.org>
- *           Laurent Latil <laurent@latil.nom.fr>
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -51,103 +50,93 @@
  *
  ****************************************************************************/
 
-/* The S5JT200 has FLASH beginning at address 0x0400:0000 and
- * SRAM beginning at address 0x0202:0000. SRAM 0x02020000 mapped to 0xFFFF:0000 
- * for Vector handling. The bootloader change program counter to flash _stext area
- * but it checks program header before jump.
+/* NOTE:  This depends on the memory.ld script having been included prior to
+ * this script.
  */
 
-MEMORY
-{
-    flash   (rx)    : ORIGIN = 0x040C8000, LENGTH = 2400K
-    sram    (rwx)   : ORIGIN = 0x02023800, LENGTH = 722K
-}
+/* Make sure that the critical memory management functions are in user-space.
+ * the user heap memory manager will reside in user-space but be usable both
+ * by kernel- and user-space code
+ */
 
-OUTPUT_FORMAT("elf32-littlearm", "elf32-littlearm", "elf32-littlearm")
+EXTERN(umm_initialize)
+EXTERN(umm_addregion)
+EXTERN(umm_trysemaphore)
+EXTERN(umm_givesemaphore)
+
+EXTERN(malloc)
+EXTERN(realloc)
+EXTERN(zalloc)
+EXTERN(free)
+
 OUTPUT_ARCH(arm)
-ENTRY(_stext)
 SECTIONS
 {
-	.header : {
-		_start = .;
-		LONG((_end - _start) / 512);
-		LONG(0);
-		LONG(0x656d6264);
-		. = ALIGN(0x20);
-	} > flash =0x0
+    .userspace : {
+        *(.userspace)
+    } >uflash
 
-	.text : {
-		_stext = ABSOLUTE(.);
-		*(.vectors)
-		*(.text .text.*)
-		*(.fixup)
-		*(.gnu.warning)
-		*(.rodata .rodata.*)
-		*(.gnu.linkonce.t.*)
-		*(.glue_7)
-		*(.glue_7t)
-		*(.got)
-		*(.gcc_except_table)
-		*(.gnu.linkonce.r.*)
-		_etext = ABSOLUTE(.);
-	} > flash
+    .text : {
+        _stext = ABSOLUTE(.);
+        *(.text .text.*)
+        *(.fixup)
+        *(.gnu.warning)
+        *(.rodata .rodata.*)
+        *(.gnu.linkonce.t.*)
+        *(.glue_7)
+        *(.glue_7t)
+        *(.got)
+        *(.gcc_except_table)
+        *(.gnu.linkonce.r.*)
+        _etext = ABSOLUTE(.);
+    } >uflash
+    .init_section : {
+        _sinit = ABSOLUTE(.);
+        *(.init_array .init_array.*)
+        _einit = ABSOLUTE(.);
+    } > uflash
 
-	.init_section : {
-		_sinit = ABSOLUTE(.);
-		*(.init_array .init_array.*)
-		_einit = ABSOLUTE(.);
-	} > flash
+    .ARM.extab : {
+        *(.ARM.extab*)
+    } > uflash
 
-	.ARM.extab : {
-		*(.ARM.extab*)
-	} > flash
+    __exidx_start = ABSOLUTE(.);
+    .ARM.exidx : {
+        *(.ARM.exidx*)
+    } > uflash
 
-	__exidx_start = ABSOLUTE(.);
-	.ARM.exidx : {
-		*(.ARM.exidx*)
-	} > flash
-	__exidx_end = ABSOLUTE(.);
+    __exidx_end = ABSOLUTE(.);
 
-	_eronly = ABSOLUTE(.);
+    _eronly = ABSOLUTE(.);
 
-	.data : {
-		_sdata = ABSOLUTE(.);
-		*(.data .data.*)
-		*(.gnu.linkonce.d.*)
-		CONSTRUCTORS
-		_edata = ABSOLUTE(.);
-	} > sram AT > flash
+    .data : {
+        _sdata = ABSOLUTE(.);
+        *(.data .data.*)
+        *(.gnu.linkonce.d.*)
+        CONSTRUCTORS
+        _edata = ABSOLUTE(.);
+    } > usram AT > uflash
 
-	.bss : {
-		_sbss = ABSOLUTE(.);
-		*(.bss .bss.*)
-		*(.gnu.linkonce.b.*)
-		*(COMMON)
-		. = ALIGN(4);
-		_ebss = ABSOLUTE(.);
-	} > sram
+    .bss : {
+        _sbss = ABSOLUTE(.);
+        *(.bss .bss.*)
+        *(.gnu.linkonce.b.*)
+        *(COMMON)
+        _ebss = ABSOLUTE(.);
+    } > usram
 
-	/* Stabs debugging sections. */
-	.stab 0 : { *(.stab) }
-	.stabstr 0 : { *(.stabstr) }
-	.stab.excl 0 : { *(.stab.excl) }
-	.stab.exclstr 0 : { *(.stab.exclstr) }
-	.stab.index 0 : { *(.stab.index) }
-	.stab.indexstr 0 : { *(.stab.indexstr) }
-	.comment 0 : { *(.comment) }
-	.debug_abbrev 0 : { *(.debug_abbrev) }
-	.debug_info 0 : { *(.debug_info) }
-	.debug_line 0 : { *(.debug_line) }
-	.debug_pubnames 0 : { *(.debug_pubnames) }
-	.debug_aranges 0 : { *(.debug_aranges) }
+    /* Stabs debugging sections */
 
-	.padding : {
-		. = ALIGN(512);
-		. = . + 1020;
-		LONG(0);
-		_end = .;
-	} > flash
+    .stab 0 : { *(.stab) }
+    .stabstr 0 : { *(.stabstr) }
+    .stab.excl 0 : { *(.stab.excl) }
+    .stab.exclstr 0 : { *(.stab.exclstr) }
+    .stab.index 0 : { *(.stab.index) }
+    .stab.indexstr 0 : { *(.stab.indexstr) }
+    .comment 0 : { *(.comment) }
+    .debug_abbrev 0 : { *(.debug_abbrev) }
+    .debug_info 0 : { *(.debug_info) }
+    .debug_line 0 : { *(.debug_line) }
+    .debug_pubnames 0 : { *(.debug_pubnames) }
+    .debug_aranges 0 : { *(.debug_aranges) }
 }
-
-__ksram_segment_start__   = ORIGIN(sram);
-__ksram_segment_size__    = LENGTH(sram);

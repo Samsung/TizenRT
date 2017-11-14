@@ -1,6 +1,6 @@
 /****************************************************************************
  *
- * Copyright 2016 Samsung Electronics All Rights Reserved.
+ * Copyright 2017 Samsung Electronics All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,11 +16,10 @@
  *
  ****************************************************************************/
 /****************************************************************************
- * configs/sidk_s5jt200/scripts/ld_s5jt200_flash.script
+ * arch/arm/src/s5j/s5j_userspace.c
  *
- *   Copyright (C) 2011-2013 Gregory Nutt. All rights reserved.
+ *   Copyright (C) 2013 Gregory Nutt. All rights reserved.
  *   Author: Gregory Nutt <gnutt@nuttx.org>
- *           Laurent Latil <laurent@latil.nom.fr>
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -51,103 +50,77 @@
  *
  ****************************************************************************/
 
-/* The S5JT200 has FLASH beginning at address 0x0400:0000 and
- * SRAM beginning at address 0x0202:0000. SRAM 0x02020000 mapped to 0xFFFF:0000 
- * for Vector handling. The bootloader change program counter to flash _stext area
- * but it checks program header before jump.
- */
+/****************************************************************************
+ * Included Files
+ ****************************************************************************/
 
-MEMORY
+#include <tinyara/config.h>
+
+#include <stdint.h>
+#include <assert.h>
+
+#include <tinyara/userspace.h>
+
+#ifdef CONFIG_BUILD_PROTECTED
+
+/****************************************************************************
+ * Pre-processor Definitions
+ ****************************************************************************/
+
+/****************************************************************************
+ * Private Data
+ ****************************************************************************/
+
+/****************************************************************************
+ * Private Functions
+ ****************************************************************************/
+
+/****************************************************************************
+ * Public Functions
+ ****************************************************************************/
+
+/****************************************************************************
+ * Name: s5j_userspace
+ *
+ * Description:
+ *   For the case of the separate user-/kernel-space build, perform whatever
+ *   platform specific initialization of the user memory is required.
+ *   Normally this just means initializing the user space .data and .bss
+ *   segments.
+ *
+ ****************************************************************************/
+
+void s5j_userspace(void)
 {
-    flash   (rx)    : ORIGIN = 0x040C8000, LENGTH = 2400K
-    sram    (rwx)   : ORIGIN = 0x02023800, LENGTH = 722K
+	uint8_t	*src;
+	uint8_t	*dest;
+	uint8_t	*end;
+
+	/* Clear all of user-space .bss */
+
+	DEBUGASSERT(USERSPACE->us_bssstart != 0 && USERSPACE->us_bssend != 0 &&
+			USERSPACE->us_bssstart <= USERSPACE->us_bssend);
+
+	dest = (uint8_t *)USERSPACE->us_bssstart;
+	end  = (uint8_t *)USERSPACE->us_bssend;
+
+	while (dest != end) {
+		*dest++ = 0;
+	}
+
+	/* Initialize all of user-space .data */
+
+	DEBUGASSERT(USERSPACE->us_datasource != 0 &&
+			USERSPACE->us_datastart != 0 && USERSPACE->us_dataend != 0 &&
+			USERSPACE->us_datastart <= USERSPACE->us_dataend);
+
+	src  = (uint8_t *)USERSPACE->us_datasource;
+	dest = (uint8_t *)USERSPACE->us_datastart;
+	end  = (uint8_t *)USERSPACE->us_dataend;
+
+	while (dest != end) {
+		*dest++ = *src++;
+	}
+
 }
-
-OUTPUT_FORMAT("elf32-littlearm", "elf32-littlearm", "elf32-littlearm")
-OUTPUT_ARCH(arm)
-ENTRY(_stext)
-SECTIONS
-{
-	.header : {
-		_start = .;
-		LONG((_end - _start) / 512);
-		LONG(0);
-		LONG(0x656d6264);
-		. = ALIGN(0x20);
-	} > flash =0x0
-
-	.text : {
-		_stext = ABSOLUTE(.);
-		*(.vectors)
-		*(.text .text.*)
-		*(.fixup)
-		*(.gnu.warning)
-		*(.rodata .rodata.*)
-		*(.gnu.linkonce.t.*)
-		*(.glue_7)
-		*(.glue_7t)
-		*(.got)
-		*(.gcc_except_table)
-		*(.gnu.linkonce.r.*)
-		_etext = ABSOLUTE(.);
-	} > flash
-
-	.init_section : {
-		_sinit = ABSOLUTE(.);
-		*(.init_array .init_array.*)
-		_einit = ABSOLUTE(.);
-	} > flash
-
-	.ARM.extab : {
-		*(.ARM.extab*)
-	} > flash
-
-	__exidx_start = ABSOLUTE(.);
-	.ARM.exidx : {
-		*(.ARM.exidx*)
-	} > flash
-	__exidx_end = ABSOLUTE(.);
-
-	_eronly = ABSOLUTE(.);
-
-	.data : {
-		_sdata = ABSOLUTE(.);
-		*(.data .data.*)
-		*(.gnu.linkonce.d.*)
-		CONSTRUCTORS
-		_edata = ABSOLUTE(.);
-	} > sram AT > flash
-
-	.bss : {
-		_sbss = ABSOLUTE(.);
-		*(.bss .bss.*)
-		*(.gnu.linkonce.b.*)
-		*(COMMON)
-		. = ALIGN(4);
-		_ebss = ABSOLUTE(.);
-	} > sram
-
-	/* Stabs debugging sections. */
-	.stab 0 : { *(.stab) }
-	.stabstr 0 : { *(.stabstr) }
-	.stab.excl 0 : { *(.stab.excl) }
-	.stab.exclstr 0 : { *(.stab.exclstr) }
-	.stab.index 0 : { *(.stab.index) }
-	.stab.indexstr 0 : { *(.stab.indexstr) }
-	.comment 0 : { *(.comment) }
-	.debug_abbrev 0 : { *(.debug_abbrev) }
-	.debug_info 0 : { *(.debug_info) }
-	.debug_line 0 : { *(.debug_line) }
-	.debug_pubnames 0 : { *(.debug_pubnames) }
-	.debug_aranges 0 : { *(.debug_aranges) }
-
-	.padding : {
-		. = ALIGN(512);
-		. = . + 1020;
-		LONG(0);
-		_end = .;
-	} > flash
-}
-
-__ksram_segment_start__   = ORIGIN(sram);
-__ksram_segment_size__    = LENGTH(sram);
+#endif /* CONFIG_BUILD_PROTECTED */
