@@ -422,6 +422,7 @@ static int smart_relocate_sector(FAR struct smart_struct_s *dev, uint16_t oldsec
 static int smart_validate_crc(FAR struct smart_struct_s *dev);
 static crc_t smart_calc_sector_crc(FAR struct smart_struct_s *dev);
 static int smart_check_sector_erase(FAR struct smart_struct_s *dev, int sector);
+static void smart_check_eraseblock(FAR struct smart_struct_s *dev, off_t eraseblock);
 #endif
 
 /****************************************************************************
@@ -848,6 +849,7 @@ static ssize_t smart_write(FAR struct inode *inode, FAR const unsigned char *buf
 			eraseblock = alignedblock / mtdBlksPerErase;
 			fdbg("eraseblock : %d\n", eraseblock);
 			ret = MTD_ERASE(dev->mtd, eraseblock, 1);
+			smart_check_eraseblock(dev, eraseblock);
 			if (ret < 0) {
 				fdbg("Erase block=%d failed: %d\n", eraseblock, ret);
 
@@ -1697,6 +1699,26 @@ static int smart_set_wear_level(FAR struct smart_struct_s *dev, uint16_t block, 
 
 #ifndef CONFIG_MTD_SMART_ENABLE_CRC
 /****************************************************************************
+ * Name: smart_check_eraseblock
+ *
+ * Description:  Perform bit flip check in erase block
+ *
+ ****************************************************************************/
+
+static void smart_check_eraseblock(FAR struct smart_struct_s *dev, off_t eraseblock)
+{
+	uint16_t s, sector;
+
+	for (s = 0; s < dev->sectorsPerBlk; s++) {
+		sector = eraseblock * dev->sectorsPerBlk + s;
+		if (smart_check_sector_erase(dev, sector) < 0)
+			return;
+	}
+
+}
+
+
+/****************************************************************************
  * Name: smart_check_sector_erase
  *
  * Description:  Perform bit flip check in sector
@@ -1927,6 +1949,7 @@ static int smart_scan(FAR struct smart_struct_s *dev)
 					fdbg("Erase block=%d failed: %d\n", sector / dev->sectorsPerBlk, ret);
 					return ret;
 				}
+				smart_check_eraseblock(dev, sector/dev->sectorsPerBlk);
 				/* All the sectors headers in the erase block are corrupted */
 				/* Move sector index to last sector of the erase block */
 				sector = ((sector / dev->sectorsPerBlk) * dev->sectorsPerBlk) + dev->sectorsPerBlk - 1;
@@ -2463,6 +2486,7 @@ static void smart_erase_block_if_empty(FAR struct smart_struct_s *dev, uint16_t 
 #endif
 		fvdbg("erase block : %d\n", block);
 		MTD_ERASE(dev->mtd, block, 1);
+		smart_check_eraseblock(dev, block);
 
 #ifdef CONFIG_MTD_SMART_SECTOR_ERASE_DEBUG
 		if (dev->erasecounts) {
@@ -2506,6 +2530,7 @@ static void smart_erase_block_if_empty(FAR struct smart_struct_s *dev, uint16_t 
 
 #ifdef CONFIG_MTD_SMART_WEAR_LEVEL
 		if (!forceerase) {
+			fdbg("smart_relocate_static_data %d\n", block);
 			smart_relocate_static_data(dev, block);
 		}
 #endif
@@ -3067,7 +3092,7 @@ static int smart_relocate_sector(FAR struct smart_struct_s *dev, uint16_t oldsec
 	uint8_t newstatus;
 
 	header = (FAR struct smart_sect_header_s *)dev->rwbuffer;
-
+	fdbg("relocate sector %d, %d\n", oldsector, newsector);
 	/* Increment the sequence number and clear the "commit" flag */
 
 #if SMART_STATUS_VERSION == 1
@@ -3160,6 +3185,7 @@ static int smart_relocate_sector(FAR struct smart_struct_s *dev, uint16_t oldsec
 	newstatus = header->status | SMART_STATUS_RELEASED | SMART_STATUS_COMMITTED;
 #endif
 	offset = oldsector * dev->mtdBlksPerSector * dev->geo.blocksize + offsetof(struct smart_sect_header_s, status);
+	fdbg("write %d %d %x\n", oldsector, offset, newstatus);
 	ret = smart_bytewrite(dev, offset, 1, &newstatus);
 	if (ret < 0) {
 		fdbg("Error %d releasing old sector %d\n" - ret, oldsector);
@@ -3346,8 +3372,9 @@ static int smart_relocate_block(FAR struct smart_struct_s *dev, uint16_t block)
 	}
 
 	/* Now erase the erase block */
-
+	fdbg("block : %d\n", block);
 	MTD_ERASE(dev->mtd, block, 1);
+	smart_check_eraseblock(dev, block);
 #if defined(CONFIG_FS_PROCFS) && !defined(CONFIG_FS_PROCFS_EXCLUDE_SMARTFS)
 	dev->unusedsectors += freecount;
 	dev->blockerases++;
@@ -4387,7 +4414,7 @@ relocate_good_sector:
 	header->crc8 = smart_calc_sector_crc(dev);
 
 #endif							/* CONFIG_MTD_SMART_ENABLE_CRC */
-	fvdbg("logical : %d physical : %d\n", req->logsector, physsector);
+	fdbg("logical : %d physical : %d\n", req->logsector, physsector);
 	/* Now write the sector buffer to the device. */
 	if (needsrelocate) {
 		/* Write the entire sector to the new physical location, uncommitted. */
