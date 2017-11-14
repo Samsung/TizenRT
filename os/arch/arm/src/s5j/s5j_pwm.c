@@ -179,6 +179,7 @@ static int s5j_pwm_setup(FAR struct pwm_lowerhalf_s *dev)
  *   Zero on success; a negated errno value on failure
  *
  ****************************************************************************/
+#ifndef CONFIG_PWM_PULSECOUNT
 static int s5j_pwm_start(FAR struct pwm_lowerhalf_s *dev,
 						 FAR const struct pwm_info_s *info)
 {
@@ -205,6 +206,14 @@ static int s5j_pwm_start(FAR struct pwm_lowerhalf_s *dev,
 
 	return OK;
 }
+#else
+static int s5j_pwm_start(FAR struct pwm_lowerhalf_s *dev,
+						 FAR const struct pwm_info_s *info, FAR void *handle)
+{
+	lldbg("Error: s5j pwm driver doesn't support CONFIG_PWM_PULSECOUNT.\n");
+	return -1;
+}
+#endif
 
 /****************************************************************************
  * Name: s5j_pwm_stop
