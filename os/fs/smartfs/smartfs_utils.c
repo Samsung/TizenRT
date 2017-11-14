@@ -111,20 +111,6 @@ extern size_t smart_sect_header_size;
 #define CHUNK_SIZE                              (CONFIG_MTD_SMART_SECTOR_SIZE / (USED_ARRAY_SIZE * (1 << 3)))
 #endif
 
-#ifdef CONFIG_SMARTFS_ALIGNED_ACCESS
-#define ENTRY_VALID(e) ((smartfs_rdle16(&e->flags) & SMARTFS_DIRENT_EMPTY) != \
-						(SMARTFS_ERASEDSTATE_16BIT & SMARTFS_DIRENT_EMPTY)) && \
-						((smartfs_rdle16(&e->flags) & SMARTFS_DIRENT_ACTIVE) == \
-						(SMARTFS_ERASEDSTATE_16BIT & SMARTFS_DIRENT_ACTIVE))
-
-#else
-#define ENTRY_VALID(e) ((e->flags & SMARTFS_DIRENT_EMPTY) != \
-						(SMARTFS_ERASEDSTATE_16BIT & SMARTFS_DIRENT_EMPTY)) && \
-						((e->flags & SMARTFS_DIRENT_ACTIVE) == \
-						(SMARTFS_ERASEDSTATE_16BIT & SMARTFS_DIRENT_ACTIVE))
-
-#endif
-
 #ifdef CONFIG_SMARTFS_SECTOR_RECOVERY
 sq_queue_t g_recovery_queue;
 
@@ -2692,16 +2678,32 @@ static int smartfs_redo_write(struct smartfs_mountpt_s *fs)
  ****************************************************************************/
 static int smartfs_redo_delete(struct smartfs_mountpt_s *fs)
 {
+	int ret;
 	struct smartfs_entry_s direntry;
 	struct smartfs_logging_entry_s *entry;
+	struct smart_read_write_s readwrite;
+	struct smartfs_entry_header_s entryread;
 
 	entry = (struct smartfs_logging_entry_s *)(fs->journal->buffer);
-	direntry.dsector = entry->curr_sector;
-	direntry.doffset = entry->offset;
-	direntry.dfirst = entry->datalen;
-	direntry.firstsector = entry->generic_1;
+	readwrite.logsector = entry->curr_sector;
+	readwrite.offset = entry->offset;
+	readwrite.count = sizeof(struct smartfs_entry_header_s);
+	readwrite.buffer = (uint8_t *)&entryread;
+	ret = FS_IOCTL(fs, BIOC_READSECT, (unsigned long)&readwrite);
+	if (ret < 0) {
+		return OK;
+	}
+	if (ENTRY_VALID((&entryread))) {
+		direntry.dsector = entry->curr_sector;
+		direntry.doffset = entry->offset;
+		direntry.dfirst = entry->datalen;
+		direntry.firstsector = entry->generic_1;
 
-	smartfs_deleteentry(fs, &direntry);
+		smartfs_deleteentry(fs, &direntry);
+	} else {
+		fdbg("No redo delete required\n");
+	}
+
 	return OK;
 }
 
