@@ -173,12 +173,14 @@
 #if CONFIG_SMARTFS_ERASEDSTATE == 0xFF
 #define SECTOR_IS_RELEASED(h) ((h.status & SMART_STATUS_RELEASED) == 0 ? true : false)
 #define SECTOR_IS_COMMITTED(h) ((h.status & SMART_STATUS_COMMITTED) == 0 ? true : false)
+#define SECTOR_IS_VALID(h, t)   ((UINT8TOUINT16(h.logicalsector) < t || UINT8TOUINT16(h.logicalsector) == 0xffff) ? true : false)
 #ifndef CONFIG_MTD_SMART_ENABLE_CRC
 #define SECTOR_IS_CLEAN(h) ((UINT8TOUINT16(h.logicalsector) == 0xFFFF && h.seq == 0xFF && h.crc8 == 0xFF && h.status == 0xFF))
 #endif
 #else
 #define SECTOR_IS_RELEASED(h) ((h.status & SMART_STATUS_RELEASED) == SMART_STATUS_RELEASED ? true : false)
 #define SECTOR_IS_COMMITTED(h) ((h.status & SMART_STATUS_COMMITTED) == SMART_STATUS_COMMITTED ? true : false)
+#define SECTOR_IS_VALID(h, t)   ((UINT8TOUINT16(h.logicalsector) < t || UINT8TOUINT16(h.logicalsector) == 0x0000) ? true : false)
 #ifndef CONFIG_MTD_SMART_ENABLE_CRC
 #define SECTOR_IS_CLEAN(h) ((UINT8TOUINT16(h.logicalsector) == 0x0000 && h.seq == 0x00 && h.crc8 == 0x00 && h.status == 0x00))
 #endif
@@ -1792,7 +1794,7 @@ static int smart_find_failure(FAR struct smart_struct_s *dev, int erase_block)
 #endif
 		ret = smart_validate_crc(dev);
 
-		if (ret != OK && !SECTOR_IS_CLEAN(header)) {
+		if ((ret != OK && !SECTOR_IS_CLEAN(header)) || !SECTOR_IS_VALID(header, dev->totalsectors)) {
 			fdbg("Not match CRC %d header:%d calc_crc :%d\n", start_sector + i, header.crc8, smart_calc_sector_crc(dev));
 			cnt++;
 		} else if (SECTOR_IS_CLEAN(header)) {
@@ -1933,7 +1935,7 @@ static int smart_scan(FAR struct smart_struct_s *dev)
 #ifndef CONFIG_MTD_SMART_ENABLE_CRC
 		memcpy(dev->rwbuffer, &header, sizeof(header));
 		ret = smart_validate_crc(dev);
-		if (ret != OK && !SECTOR_IS_CLEAN(header)) {
+		if ((ret != OK && !SECTOR_IS_CLEAN(header)) || !SECTOR_IS_VALID(header, dev->totalsectors)) {
 			fdbg("It corrupted, physical sector : %d eraseblock : %d\n", sector, sector / dev->sectorsPerBlk);
 #ifdef CONFIG_DEBUG_FS
 			for (i = 0; i < sizeof(struct smart_sect_header_s); i++) {
