@@ -213,13 +213,22 @@
 
 #define I2S_SEND(d, b, c, a, t) ((d)->ops->i2s_send(d, b, c, a, t))
 
+#define I2S_ERR_CB_RX	1
+#define I2S_ERR_CB_TX	2
+#define I2S_ERR_CB_STX	3
+
+#define I2S_ERR_CB_REG(d, b, c) ((d)->ops->i2s_err_cb_register(d, b, c))
+
 /****************************************************************************
  * Public Types
  ****************************************************************************/
-/* Transfer complete callbacks */
+/* Transfer complete and error callbacks */
 
 struct i2s_dev_s;
 typedef CODE void (*i2s_callback_t)(FAR struct i2s_dev_s *dev, FAR struct ap_buffer_s *apb, FAR void *arg, int result);
+
+typedef CODE void (*i2s_err_cb_t)(FAR struct i2s_dev_s *dev, FAR void *arg, int state);
+
 
 /* The I2S vtable */
 
@@ -235,6 +244,8 @@ struct i2s_ops_s {
 	CODE uint32_t(*i2s_txsamplerate)(FAR struct i2s_dev_s *dev, uint32_t rate);
 	CODE uint32_t(*i2s_txdatawidth)(FAR struct i2s_dev_s *dev, int bits);
 	CODE int (*i2s_send)(FAR struct i2s_dev_s *dev, FAR struct ap_buffer_s *apb, i2s_callback_t callback, FAR void *arg, uint32_t timeout);
+
+	CODE int (*i2s_err_cb_register)(FAR struct i2s_dev_s *dev, i2s_err_cb_t cb, FAR void *arg);	
 };
 
 /* I2S private data.  This structure only defines the initial fields of the
