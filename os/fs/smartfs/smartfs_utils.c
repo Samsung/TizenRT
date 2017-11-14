@@ -1958,8 +1958,12 @@ int smartfs_journal_init(struct smartfs_mountpt_s *fs)
 				break;
 			}
 			entry = (struct smartfs_logging_entry_s *)journal->buffer;
-			if (entry->crc16[0] != smartfs_journal_entry_crc(journal)) {
-				fdbg("Journal entry header crc mismatch! sector : %d type : %d entry crc : %d calc-crc : %d\n", journal->sector, GET_TRANS_TYPE(entry->trans_info), entry->crc16[0], smartfs_calc_crc_entry(journal));
+			if (entry->crc16[0] != smartfs_journal_entry_crc(journal) && !T_FINISH_CHECK(entry->trans_info)) {
+				if (smartfs_set_transaction(fs, readsect, readoffset, TRANS_FINISHED) != OK) {
+					break;
+				}
+				fdbg("Journal finished sector : %d offset : %d\n", readsect, readoffset);
+				fdbg("Journal entry header crc mismatch! sector : %d type : %d entry crc : %d calc-crc : %d\n", journal->sector, GET_TRANS_TYPE(entry->trans_info), entry->crc16[0], smartfs_journal_entry_crc(journal));
 				break;
 			}
 			/* Check whether this transaction exists, and logging of transaction has been completed */
@@ -1980,8 +1984,13 @@ int smartfs_journal_init(struct smartfs_mountpt_s *fs)
 						fdbg("Cannot read entry data.\n");
 						break;
 					}
-					if (entry->crc16[1] != smartfs_journal_data_crc(journal)) {
-						fdbg("Journal entry data crc mismatch! sector : %d type : %d entry crc : %d calc-crc : %d\n", journal->sector, GET_TRANS_TYPE(entry->trans_info), entry->crc16[1], smartfs_calc_crc_data(journal));
+					if (entry->crc16[1] != smartfs_journal_data_crc(journal) && !T_FINISH_CHECK(entry->trans_info)) {
+						if (smartfs_set_transaction(fs, readsect, readoffset, TRANS_FINISHED) != OK) {
+							break;
+						}
+
+						fdbg("Journal finished sector : %d offset : %d\n", readsect, readoffset);
+						fdbg("Journal entry data crc mismatch! sector : %d type : %d entry crc : %d calc-crc : %d\n", journal->sector, GET_TRANS_TYPE(entry->trans_info), entry->crc16[1], smartfs_journal_data_crc(journal));
 						break;
 					}
 				}
@@ -2159,6 +2168,7 @@ int print_journal_sectors(struct smartfs_mountpt_s *fs)
 				}
 				if (!T_FINISH_CHECK(entry->trans_info)) {
 					fdbg("*****Entry*****\n");
+					fdbg("Trasaction sector: %d offset: %d\n", readsect, readoffset);
 					fdbg("Transaction Type: %u\n", GET_TRANS_TYPE(entry->trans_info));
 					fdbg("Transaction Started: %s\n", T_START_CHECK(entry->trans_info) ? "yes" : "no");
 					fdbg("Transaction Finished: %s\n", T_FINISH_CHECK(entry->trans_info) ? "yes" : "no");
