@@ -1179,6 +1179,7 @@ int smartfs_createentry(struct smartfs_mountpt_s *fs, uint16_t parentdirsector, 
 			readwrite.offset = offsetof(struct smartfs_chain_header_s, nextsector);
 			readwrite.count = sizeof(uint16_t);
 			readwrite.buffer = chainheader->nextsector;
+			fdbg("writing nextheader %u to sector %u\n", nextsector, readwrite.logsector);
 			ret = FS_IOCTL(fs, BIOC_WRITESECT, (unsigned long)&readwrite);
 			if (ret < 0) {
 				fdbg("Error chaining sector %d\n", nextsector);
@@ -1468,6 +1469,7 @@ int smartfs_deleteentry(struct smartfs_mountpt_s *fs, struct smartfs_entry_s *en
 					readwrite.offset = offsetof(struct smartfs_chain_header_s, nextsector);
 					readwrite.count = sizeof(uint16_t);
 					readwrite.buffer = header->nextsector;
+					fdbg("writing nextheader %u to sector %u\n", nextsector, readwrite.logsector);
 					ret = FS_IOCTL(fs, BIOC_WRITESECT, (unsigned long)&readwrite);
 					if (ret < 0) {
 						fdbg("Error unchaining sector (%d)\n", nextsector);
@@ -1764,6 +1766,7 @@ int smartfs_examine_sector(struct smartfs_mountpt_s *fs, char *validsectors, int
 			/* Point header to the read data to get used byte count */
 			header = (struct smartfs_chain_header_s *)sectordata;
 			nextsector = SMARTFS_NEXTSECTOR(header);
+			fdbg("sector: %u nextsector: %u type: %d\n", logsector, nextsector, type);
 
 			if (type == SMARTFS_SECTOR_TYPE_DIR) {
 				if (smart_validatesector(fs->fs_blkdriver, logsector, validsectors) == OK) {
@@ -1801,6 +1804,7 @@ int smartfs_examine_sector(struct smartfs_mountpt_s *fs, char *validsectors, int
 					}
 					node->sector = firstsector;
 					node->type = entrytype;
+					fdbg("added to queue sector: %u type %d\n", firstsector, entrytype);
 					sq_addlast((FAR sq_entry_t *)node, &g_recovery_queue);
 					offset += entrysize;
 				}
@@ -1949,6 +1953,9 @@ int smartfs_journal_init(struct smartfs_mountpt_s *fs)
 	memset(journal->active_sectors, 0, mapsize);
 
 	if (journal->jarea != -1) {
+#ifdef CONFIG_DEBUG_FS
+		print_journal_sectors(fs);
+#endif
 		startsector = SMARTFS_LOGGING_SECTOR + journal->jarea * CONFIG_SMARTFS_NLOGGING_SECTORS;
 		journal->sector = startsector;
 		readsect = startsector;
@@ -2130,7 +2137,7 @@ static int smartfs_get_journal_area(struct smartfs_mountpt_s *fs)
 	return result[index[0]][index[1]];
 }
 
-#ifdef CONFIG_SMARTFS_JOURNALING_TEST
+#ifdef CONFIG_DEBUG_FS
 int print_journal_sectors(struct smartfs_mountpt_s *fs)
 {
 	int ret;
@@ -2141,7 +2148,7 @@ int print_journal_sectors(struct smartfs_mountpt_s *fs)
 	struct journal_transaction_manager_s *j_mgr;
 	struct smartfs_logging_entry_s *entry;
 
-	fvdbg("Print all Journal sectors\n");
+	fdbg("Print all Journal sectors\n");
 	j_mgr = fs->journal;
 
 	if (!(j_mgr->enabled)) {
@@ -2167,22 +2174,24 @@ int print_journal_sectors(struct smartfs_mountpt_s *fs)
 						break;
 					}
 				}
-				fdbg("*****Entry*****\n");
-				fdbg("Transaction Type: %u\n", GET_TRANS_TYPE(entry->trans_info));
-				fdbg("Transaction Started: %s\n", T_START_CHECK(entry->trans_info) ? "yes" : "no");
-				fdbg("Transaction Finished: %s\n", T_FINISH_CHECK(entry->trans_info) ? "yes" : "no");
-				fdbg("Transaction required a sync: %s\n", T_NEEDSYNC_CHECK(entry->trans_info) ? "yes" : "no");
-				fdbg("sector: %u\n", entry->curr_sector);
-				fdbg("offset: %u\n", entry->offset);
-				fdbg("seq_no: %u\n", entry->seq_no);
-				fdbg("datalen: %u\n", entry->datalen);
-				fdbg("generic_1 %u\n", entry->generic_1);
-				if (entry->datalen > 0 && GET_TRANS_TYPE(entry->trans_info) != T_DELETE) {
-					fdbg("Data: ");
-					for (i = 0; i < entry->datalen; i++) {
-						fsdbg("%02x ", j_mgr->buffer[sizeof(struct smartfs_logging_entry_s) + i]);
+				if (!T_FINISH_CHECK(entry->trans_info)) {
+					fdbg("*****Entry*****\n");
+					fdbg("Transaction Type: %u\n", GET_TRANS_TYPE(entry->trans_info));
+					fdbg("Transaction Started: %s\n", T_START_CHECK(entry->trans_info) ? "yes" : "no");
+					fdbg("Transaction Finished: %s\n", T_FINISH_CHECK(entry->trans_info) ? "yes" : "no");
+					fdbg("Transaction required a sync: %s\n", T_NEEDSYNC_CHECK(entry->trans_info) ? "yes" : "no");
+					fdbg("sector: %u\n", entry->curr_sector);
+					fdbg("offset: %u\n", entry->offset);
+					fdbg("seq_no: %u\n", entry->seq_no);
+					fdbg("datalen: %u\n", entry->datalen);
+					fdbg("generic_1 %u\n", entry->generic_1);
+					if (entry->datalen > 0 && GET_TRANS_TYPE(entry->trans_info) != T_DELETE) {
+						printf("Data: ");
+						for (i = 0; i < entry->datalen; i++) {
+							printf("%02x ", j_mgr->buffer[sizeof(struct smartfs_logging_entry_s) + i]);
+						}
+						printf("\n");
 					}
-					fsdbg("\n");
 				}
 			} else {
 				break;
