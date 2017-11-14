@@ -129,6 +129,9 @@ void up_release_pending(void)
 			/* Switch context to the context of the task at the head of the
 			 * ready to run list.
 			 */
+#ifdef CONFIG_SOFT_LOCKUP_DETECT
+			context_switch_counter++;
+#endif
 
 			struct tcb_s *nexttcb = this_task();
 			up_switchcontext(rtcb->xcp.regs, nexttcb->xcp.regs);

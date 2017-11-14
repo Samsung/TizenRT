@@ -180,7 +180,9 @@ void up_reprioritize_rtr(struct tcb_s *tcb, uint8_t priority)
 				/* Restore the exception context of the rtcb at the (new) head
 				 * of the g_readytorun task list.
 				 */
-
+#ifdef CONFIG_SOFT_LOCKUP_DETECT
+				context_switch_counter++;
+#endif
 				rtcb = this_task();
 
 				/* Then switch contexts */

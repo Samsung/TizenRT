@@ -1041,3 +1041,25 @@ config PTHREAD_STACK_DEFAULT
 		Default pthread stack size
 endmenu # Stack size information
 
+menu "Lockup detector"
+
+config SOFT_LOCKUP_DETECT
+	bool "Monitor the system for soft lockup"
+	default n
+	depends on !DISABLE_SIGNALS
+	---help---
+		This monitors the system in regular intervals and detects the task/thread
+		which causes system lockup
+
+if SOFT_LOCKUP_DETECT
+
+config SOFT_LOCK_MONITOR_PERIOD
+	int "Interval for soft lock up monitor"
+	default 10
+	---help---
+		This is the interval at which soft lockup monitor thread checks for hogging threads in
+		the system. By default it's set as 10 sec
+
+endif
+
+endmenu # Lockup detector

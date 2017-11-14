@@ -77,7 +77,9 @@
 #ifdef CONFIG_PAGING
 #include "paging/paging.h"
 #endif
-
+#ifdef CONFIG_SOFT_LOCKUP_DETECT
+#include "sched/sched.h"
+#endif
 /****************************************************************************
  * Pre-processor Definitions
  ****************************************************************************/
@@ -125,9 +127,87 @@
  * Public Data
  ****************************************************************************/
 
+/*Initialize the context switch counter */
+#ifdef CONFIG_SOFT_LOCKUP_DETECT
+int context_switch_counter = 0;
+#endif
+
 /****************************************************************************
  * Private Functions
  ****************************************************************************/
+
+#ifdef CONFIG_SOFT_LOCKUP_DETECT
+/****************************************************************************
+ * Name: softlockup_monitor_thread
+ *
+ * Description:
+ *   This thread will be called after a regular interval and it will check
+ *   the number of context switch operations occured since it was called the
+ *   last time and whether there are any other thread/thread running except
+ *   idle task and Based on this information the current thread will decide
+ *   whether any other thread/task hogging and call PANIC() if so.
+ *
+ * Input Parameters:
+ *   None
+ *
+ * Returned Value:
+ *   OK
+ *
+ ****************************************************************************/
+
+static int softlockup_monitor_thread(int argc, FAR char **argv)
+{
+	FAR struct tcb_s *rtcb;
+	FAR struct tcb_s *ntcb;
+
+	/* Loop forever to monitor the system lockup */
+	for (;;) {
+		/*Check for the thread next to line in ready to run list */
+		rtcb = (FAR struct tcb_s *)this_task();
+		ntcb = rtcb->flink;
+
+		if (context_switch_counter < 2 && ntcb && ntcb->pid != 0) {
+
+#if (CONFIG_TASK_NAME_SIZE > 0)
+			lldbg("Lockup caused by [%s] and PID is %d\n", ntcb->name, ntcb->pid);
+#endif
+			PANIC();
+		}
+
+		/* Reset the counter to 0*/
+		context_switch_counter = 0;
+
+		/* Sleep for 10 sec */
+		sleep(CONFIG_SOFT_LOCK_MONITOR_PERIOD);
+	}
+	return OK;
+}
+
+/****************************************************************************
+ * Name: start_softlockup_monitor_thread
+ *
+ * Description:
+ *   It starts Soft_lockup_monitor thread with MAX Priority of 255
+ *
+ * Input Parameters:
+ *   None
+ *
+ * Returned Value:
+ *   None
+ *
+ ****************************************************************************/
+
+static void start_softlockup_monitor_thread(void)
+{
+	int pid;
+
+	/*Start the softlockup_check_thread on separate thread of execution */
+
+	pid = kernel_thread("Soft_lockup_monitor", SCHED_PRIORITY_MAX, CONFIG_IDLETHREAD_STACKSIZE, (main_t)softlockup_monitor_thread, (FAR char *const *)NULL);
+
+	ASSERT(pid > 0);
+}
+#endif
 
 /****************************************************************************
  * Name: os_pgworker
@@ -416,5 +496,9 @@ int os_bringup(void)
 	(void)clearenv();
 #endif
 
+#ifdef CONFIG_SOFT_LOCKUP_DETECT
+	/* start monitoring for any lockup in the system */
+	(void)start_softlockup_monitor_thread();
+#endif
 	return OK;
 }

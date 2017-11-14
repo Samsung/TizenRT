@@ -161,7 +161,9 @@ void up_block_task(struct tcb_s *tcb, tstate_t task_state)
 			/* Restore the exception context of the rtcb at the (new) head
 			 * of the g_readytorun task list.
 			 */
-
+#ifdef CONFIG_SOFT_LOCKUP_DETECT
+			context_switch_counter++;
+#endif
 			rtcb = this_task();
 
 #ifdef CONFIG_TASK_SCHED_HISTORY

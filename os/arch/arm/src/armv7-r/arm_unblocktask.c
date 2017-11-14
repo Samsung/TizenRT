@@ -164,7 +164,9 @@ void up_unblock_task(struct tcb_s *tcb)
 			 * run (probably tcb).  This is the new rtcb at the head of the
 			 * g_readytorun task list.
 			 */
-
+#ifdef CONFIG_SOFT_LOCKUP_DETECT
+			context_switch_counter++;
+#endif
 			rtcb = this_task();
 			trace_sched(NULL, rtcb);
 

@@ -161,6 +161,9 @@ void up_block_task(struct tcb_s *tcb, tstate_t task_state)
 			 * ready to run list.
 			 */
 
+#ifdef CONFIG_SOFT_LOCKUP_DETECT
+			context_switch_counter++;
+#endif
 			struct tcb_s *nexttcb = this_task();
 			up_switchcontext(rtcb->xcp.regs, nexttcb->xcp.regs);
 

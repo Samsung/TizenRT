@@ -666,6 +666,9 @@ typedef void (*sched_foreach_t)(FAR struct tcb_s *tcb, FAR void *arg);
 /********************************************************************************
  * Public Data
  ********************************************************************************/
+#ifdef CONFIG_SOFT_LOCKUP_DETECT
+extern int context_switch_counter;
+#endif
 
 #ifndef __ASSEMBLY__
 #undef EXTERN
