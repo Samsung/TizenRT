@@ -421,7 +421,9 @@ static int smart_relocate_sector(FAR struct smart_struct_s *dev, uint16_t oldsec
 #ifndef CONFIG_MTD_SMART_ENABLE_CRC
 static int smart_validate_crc(FAR struct smart_struct_s *dev);
 static crc_t smart_calc_sector_crc(FAR struct smart_struct_s *dev);
+static int smart_check_sector_erase(FAR struct smart_struct_s *dev, int sector);
 #endif
+
 /****************************************************************************
  * Private Data
  ****************************************************************************/
@@ -1689,11 +1691,108 @@ static int smart_set_wear_level(FAR struct smart_struct_s *dev, uint16_t block, 
 			}
 		}
 	}
-
 	return 0;
 }
 #endif
 
+#ifndef CONFIG_MTD_SMART_ENABLE_CRC
+/****************************************************************************
+ * Name: smart_check_sector_erase
+ *
+ * Description:  Perform bit flip check in sector
+ *
+ ****************************************************************************/
+
+static int smart_check_sector_erase(FAR struct smart_struct_s *dev, int sector)
+{
+	int ret;
+	uint8_t *buffer;
+	uint16_t i;
+
+	buffer = (uint8_t *)malloc(dev->sectorsize);
+
+	if (!buffer) {
+		fdbg("Memory Alloc failed\n");
+		return 0;
+	}
+
+	ret = MTD_BREAD(dev->mtd, sector * dev->mtdBlksPerSector, dev->mtdBlksPerSector, buffer);
+	if (ret < 0) {
+		fdbg("reading sector %u failed\n", sector);
+		free(buffer);
+		return 0;
+	}
+
+	for (i = 0; i < dev->sectorsize; i++) {
+		if (buffer[i] != 0xFF) {
+			fdbg("BIT FLIP OCCURRED sector %u, offset %u, %x\n", sector, i, buffer[i]);
+			free(buffer);
+			return -1;
+		}
+	}
+
+	free(buffer);
+	return 0;
+}
+
+/****************************************************************************
+ * Name: smart_find_failure
+ *
+ * Description: Performs a scan of erase block for checking erase or write fail
+ *
+ ****************************************************************************/
+static int smart_find_failure(FAR struct smart_struct_s *dev, int erase_block)
+{
+	uint32_t start_sector;
+	uint32_t read_addr;
+	int i;
+#ifdef CONFIG_DEBUG_FS
+	int j;
+#endif
+	struct  smart_sect_header_s header;
+	int ret;
+	int cnt = 0;
+
+	start_sector = erase_block * dev->sectorsPerBlk;
+
+	for (i = 0; i < dev->sectorsPerBlk; i++) {
+		read_addr = (start_sector + i) * dev->mtdBlksPerSector * dev->geo.blocksize;
+		fdbg("addr 0x%x\n", read_addr);
+
+		MTD_READ(dev->mtd, read_addr, sizeof(struct smart_sect_header_s), (FAR uint8_t *) &header);
+
+		memcpy(dev->rwbuffer, &header, sizeof(struct  smart_sect_header_s));
+#ifdef CONFIG_DEBUG_FS
+		for (j = 0; j < sizeof(struct smart_sect_header_s); j++) {
+			printf("%02x ", dev->rwbuffer[j]);
+		}
+		printf("\n");
+#endif
+		ret = smart_validate_crc(dev);
+
+		if (ret != OK && !SECTOR_IS_CLEAN(header)) {
+			fdbg("Not match CRC %d header:%d calc_crc :%d\n", start_sector + i, header.crc8, smart_calc_sector_crc(dev));
+			cnt++;
+		} else if (SECTOR_IS_CLEAN(header)) {
+			if (smart_check_sector_erase(dev, start_sector + i)) {
+				fdbg("Not Erased!!\n");
+				cnt++;
+			}
+		}
+
+	}
+
+	if (cnt < dev->sectorsPerBlk) {
+		fdbg("Write Fail\n");
+		return 0;
+	}
+
+	fdbg("Erase Fail\n");
+	return -1;
+
+
+}
+#endif
 /****************************************************************************
  * Name: smart_scan
  *
@@ -1728,7 +1827,7 @@ static int smart_scan(FAR struct smart_struct_s *dev)
 	char devname[22];
 	FAR struct smart_multiroot_device_s *rootdirdev;
 #endif
-#ifndef CONFIG_MTD_SMART_ENABLE_CRC
+#ifdef CONFIG_DEBUG_FS
 	int i;
 #endif
 	fvdbg("Entry\n");
@@ -1814,15 +1913,35 @@ static int smart_scan(FAR struct smart_struct_s *dev)
 		ret = smart_validate_crc(dev);
 		if (ret != OK && !SECTOR_IS_CLEAN(header)) {
 			fdbg("It corrupted, physical sector : %d eraseblock : %d\n", sector, sector / dev->sectorsPerBlk);
+#ifdef CONFIG_DEBUG_FS
 			for (i = 0; i < sizeof(struct smart_sect_header_s); i++) {
-				fdbg("%02x ", dev->rwbuffer[i]);
+				printf("%02x ", dev->rwbuffer[i]);
 			}
-			fdbg("\n");
-
-			ret = MTD_ERASE(dev->mtd, sector / dev->sectorsPerBlk, 1);
+			printf("\n");
+#endif
+			ret = smart_find_failure(dev, sector / dev->sectorsPerBlk);
 			if (ret < 0) {
-				fdbg("Erase block=%d failed: %d\n", sector / dev->sectorsPerBlk, ret);
-				return ret;
+				fdbg("Erase Block %d\n", sector / dev->sectorsPerBlk);
+				ret = MTD_ERASE(dev->mtd, sector / dev->sectorsPerBlk, 1);
+				if (ret < 0) {
+					fdbg("Erase block=%d failed: %d\n", sector / dev->sectorsPerBlk, ret);
+					return ret;
+				}
+				/* All the sectors headers in the erase block are corrupted */
+				/* Move sector index to last sector of the erase block */
+				sector = ((sector / dev->sectorsPerBlk) * dev->sectorsPerBlk) + dev->sectorsPerBlk - 1;
+				continue;
+			} else {
+				fdbg("set Released and committed %d\n", sector);
+#if CONFIG_SMARTFS_ERASEDSTATE == 0xFF
+				header.status = header.status & ~(SMART_STATUS_COMMITTED | SMART_STATUS_RELEASED);
+#else
+				header.status = header.status | SMART_STATUS_COMMITTED | SMART_STATUS_RELEASED;
+#endif
+				ret = smart_bytewrite(dev, readaddress + offsetof(struct smart_sect_header_s, status), 1, &header.status);
+				if (ret < 0) {
+					goto err_out;
+				}
 			}
 		}
 #endif /* CONFIG_MTD_SMART_ENABLE_CRC */
@@ -1838,7 +1957,7 @@ static int smart_scan(FAR struct smart_struct_s *dev)
 
 		status_released = SECTOR_IS_RELEASED(header);
 		status_committed = SECTOR_IS_COMMITTED(header);
-		fvdbg("released : %d committed : %d logical : %d physical : %d sta :%d seq :%d\n", status_released, status_committed, logicalsector, sector, header.status, header.seq);
+		fdbg("released : %d committed : %d logical : %d physical : %d sta :%d seq :%d\n", status_released, status_committed, logicalsector, sector, header.status, header.seq);
 		if (logicalsector > 0 && header.status != CONFIG_SMARTFS_ERASEDSTATE && !status_released && status_committed) {
 
 			/* Map the sector and update the free sector counts */
