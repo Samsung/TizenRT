@@ -4,7 +4,13 @@ QEMU is a generic and open source machine emulator and virtualizer.
 
 ## Information
 
-QEMU uses lm3s6963-ek machine.
+Targets Supported:
+
+1. lm3s6963-ek  
+NOTE:  
+Tizen RT supports two memory options for lm3s6963-ek board;
+- 64KB RAM requirement configuration which matches with real memory of lm3s6963-ek board
+- 16MB RAM requirement which can be run on QEMU only with the patch in TizenRT/build/configs/qemu/qemu-2.10.0-rc2_increase_ram_size.patch
 
 ## Environment Set-up
 ### QEMU installation

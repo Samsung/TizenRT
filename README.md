@@ -56,13 +56,13 @@ make
 
 Built binaries are in *$TIZENRT_BASEDIR/build/output/bin*.
 
-## Supported Board
+## Supported Board / Emulator
 
 ARTIK053 [[details]](build/configs/artik053/README.md)
 
-QEMU [[details]](build/configs/qemu/README.md)
-
 SIDK_S5JT200 [[details]](build/configs/sidk_s5jt200/README.md)
+
+QEMU [[details]](build/configs/qemu/README.md)
 
 ## Configuration Sets
 
