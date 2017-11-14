@@ -437,7 +437,7 @@ struct smartfs_logging_entry_s {
 								 *      the previous transaction. Thus, there can be at most 2 unfinished
 								 *      transactions for a sector in case of power failure.
 								 */
-
+	uint16_t crc16;				/*      For CRC value to check validation based on below values. */
 	uint16_t curr_sector;		/*      Transaction type : Use
 								 *        1) T_WRITE  : sector number of sector to be written.
 								 *        2) T_CREATE : sector number of parent sector of new entry.
