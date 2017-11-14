@@ -61,6 +61,13 @@
 #ifdef CONFIG_FS_AIO
 #include "aio/aio.h"
 #endif
+#if defined(CONFIG_FS_SMARTFS) && defined(CONFIG_SMARTFS_SECTOR_RECOVERY)
+#include <debug.h>
+#include <errno.h>
+#include <sys/statfs.h>
+#include <tinyara/fs/fs_utils.h>
+#include "smartfs/smartfs.h"
+#endif
 
 /****************************************************************************
  * Pre-processor Definitions
@@ -81,6 +88,46 @@
 /****************************************************************************
  * Private Functions
  ****************************************************************************/
+
+#if defined(CONFIG_FS_SMARTFS) && defined(CONFIG_SMARTFS_SECTOR_RECOVERY)
+/****************************************************************************
+ * Name: recover_handler
+ *
+ * Description: smart fs recover
+ *
+ ****************************************************************************/
+static int recover_handler(FAR const char *mountpoint,
+						   FAR struct statfs *statbuf, FAR void *arg)
+{
+	struct inode *inode;
+	int ret;
+
+	inode = NULL;
+	ret = -EINVAL;
+	/* Get the file system type */
+	if (statbuf->f_type == SMARTFS_MAGIC) {
+		inode = (struct inode *)inode_find(mountpoint, NULL);
+		if (!inode) {
+			fdbg("ERROR: Couldn't find inode: %d\n", -ret);
+			ret = -EINVAL;
+			goto error_out;
+		}
+#ifndef CONFIG_DISABLE_MOUNTPOINT
+		if (INODE_IS_MOUNTPT(inode)) {
+			ret = smartfs_recover(inode);
+			fdbg("recover!! path : %s ret : %d\n", mountpoint, ret);
+		} else {
+			fdbg("inode is not mount point\n");
+			ret = -EINVAL;
+		}
+#endif
+	}
+error_out:
+	inode_release(inode);
+	set_errno(ret);
+	return OK;
+}
+#endif
 
 /****************************************************************************
  * Public Functions
@@ -108,3 +155,16 @@ void fs_initialize(void)
 
 #endif
 }
+
+#if defined(CONFIG_FS_SMARTFS) && defined(CONFIG_SMARTFS_SECTOR_RECOVERY)
+/****************************************************************************
+ * Name: fs_recover
+ *
+ * Description: smartfs recover each mount point
+ *
+ ****************************************************************************/
+void fs_recover(void)
+{
+	foreach_mountpoint(recover_handler, NULL);
+}
+#endif

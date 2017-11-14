@@ -351,6 +351,10 @@ int board_app_initialize(void)
 	}
 #endif /* CONFIG_RTC_DRIVER */
 
+#if defined(CONFIG_SMARTFS_SECTOR_RECOVERY)
+	fs_recover();
+#endif
+
 #ifdef CONFIG_TIMER
 	{
 		int  i;

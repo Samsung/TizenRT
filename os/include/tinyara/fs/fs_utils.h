@@ -104,7 +104,9 @@ FAR const char *getwd(const char *wd);
  ****************************************************************************/
 FAR char *get_fullpath(FAR const char *relpath);
 char *get_dirpath(const char *dirpath, const char *relpath);
-
+#if defined(CONFIG_SMARTFS_SECTOR_RECOVERY)
+void fs_recover(void);
+#endif
 #undef EXTERN
 #if defined(__cplusplus)
 }
