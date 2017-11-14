@@ -87,7 +87,7 @@
 #include "up_arch.h"
 #include "sched/sched.h"
 #include "up_internal.h"
-#ifdef CONFIG_ARMV7M_MPU
+#ifdef CONFIG_ARMV7R_MPU
 #include "mpu.h"
 #endif
 

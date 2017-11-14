@@ -97,7 +97,7 @@ CMN_CSRCS += arm_copyarmstate.c
 CMN_CSRCS += up_checkstack.c
 
 # Configuration dependent C files
-ifeq ($(CONFIG_ARMV7M_MPU),y)
+ifeq ($(CONFIG_ARMV7R_MPU),y)
 CMN_CSRCS += arm_mpu.c
 endif
 

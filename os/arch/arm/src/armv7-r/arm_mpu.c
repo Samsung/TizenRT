@@ -67,8 +67,8 @@
  ****************************************************************************/
 /* Configuration ************************************************************/
 
-#ifndef CONFIG_ARMV7M_MPU_NREGIONS
-#define CONFIG_ARMV7M_MPU_NREGIONS 8
+#ifndef CONFIG_ARMV7R_MPU_NREGIONS
+#define CONFIG_ARMV7R_MPU_NREGIONS 8
 #endif
 
 /****************************************************************************
@@ -221,7 +221,7 @@ static inline uint32_t mpu_subregion_ls(size_t offset, uint8_t l2size)
 
 unsigned int mpu_allocregion(void)
 {
-	DEBUGASSERT(g_region < CONFIG_ARMV7M_MPU_NREGIONS);
+	DEBUGASSERT(g_region < CONFIG_ARMV7R_MPU_NREGIONS);
 	return (unsigned int)g_region++;
 }
 

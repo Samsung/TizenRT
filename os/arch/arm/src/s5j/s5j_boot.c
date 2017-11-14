@@ -67,7 +67,7 @@
 #include <chip.h>
 #include "s5j_watchdog.h"
 #include "arm.h"
-#ifdef CONFIG_ARMV7M_MPU
+#ifdef CONFIG_ARMV7R_MPU
 #include "mpu.h"
 #endif
 #include "cache.h"
@@ -93,7 +93,7 @@ void up_copyvectorblock(void)
 	}
 }
 
-#ifdef CONFIG_ARMV7M_MPU
+#ifdef CONFIG_ARMV7R_MPU
 int s5j_mpu_initialize(void)
 {
 #ifdef CONFIG_ARCH_CHIP_S5JT200
@@ -152,7 +152,7 @@ void arm_boot(void)
 	arm_data_initialize();
 #endif
 
-#ifdef CONFIG_ARMV7M_MPU
+#ifdef CONFIG_ARMV7R_MPU
 	s5j_mpu_initialize();
 	arch_enable_icache();
 	arch_enable_dcache();
