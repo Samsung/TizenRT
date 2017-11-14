@@ -1796,6 +1796,19 @@ static s8_t nd6_get_next_hop_entry(const ip6_addr_t *ip6addr, struct netif *neti
 		if (i >= 0) {
 			/* found destination entry. make it our new cached index. */
 			nd6_cached_destination_index = i;
+			/* destination address in destination cache can be off-link address */
+			if (!ip6_addr_islinklocal(ip6addr) && !nd6_is_prefix_in_netif(ip6addr, netif)) {
+				/* off-link address - We need to select a router. */
+				i = nd6_select_router(ip6addr, netif);
+				if (i < 0) {
+					/* No router found. */
+					ip6_addr_set_any(&(destination_cache[nd6_cached_destination_index].destination_addr));
+					return ERR_RTE;
+				}
+				LWIP_DEBUGF(ND6_DEBUG, ("Next-hop address of off-link desination address is default router (index = %d)\n", i));
+				destination_cache[nd6_cached_destination_index].pmtu = netif->mtu;      /* Start with netif mtu, correct through ICMPv6 if necessary */
+				ip6_addr_copy(destination_cache[nd6_cached_destination_index].next_hop_addr, default_router_list[i].neighbor_entry->next_hop_address);
+			}
 		} else {
 			/* Not found. Create a new destination entry. */
 			i = nd6_new_destination_cache_entry();
