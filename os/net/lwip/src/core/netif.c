@@ -54,7 +54,7 @@
  */
 
 #include <net/lwip/opt.h>
-
+#include <net/lwip/tcpip.h>
 #include <net/lwip/def.h>
 #include <net/lwip/ipv4/ip_addr.h>
 #include <net/lwip/netif.h>
