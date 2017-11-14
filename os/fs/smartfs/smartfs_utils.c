@@ -163,7 +163,8 @@ int clear_journal_sectors(struct smartfs_mountpt_s *fs, struct journal_transacti
 static int set_area_id_bits(struct smartfs_mountpt_s *fs, uint8_t id_bits);
 static int smartfs_write_transaction(struct smartfs_mountpt_s *fs, struct journal_transaction_manager_s
 									 *j_mgr, uint16_t *sector, uint16_t *offset);
-static uint16_t smartfs_journal_crc(struct journal_transaction_manager_s *j_mgr);
+static uint8_t smartfs_journal_entry_crc(struct journal_transaction_manager_s *j_mgr);
+static uint8_t smartfs_journal_data_crc(struct journal_transaction_manager_s *j_mgr);
 #endif
 /****************************************************************************
  * Public Variables
@@ -1956,6 +1957,10 @@ int smartfs_journal_init(struct smartfs_mountpt_s *fs)
 				break;
 			}
 			entry = (struct smartfs_logging_entry_s *)journal->buffer;
+			if (entry->crc16[0] != smartfs_journal_entry_crc(journal)) {
+				fdbg("Journal entry header crc mismatch! sector : %d type : %d entry crc : %d calc-crc : %d\n", journal->sector, GET_TRANS_TYPE(entry->trans_info), entry->crc16[0], smartfs_calc_crc_entry(journal));
+				break;
+			}
 			/* Check whether this transaction exists, and logging of transaction has been completed */
 			if (T_EXIST_CHECK(entry->trans_info) && T_START_CHECK(entry->trans_info)) {
 				journal->sector = readsect;
@@ -1972,14 +1977,14 @@ int smartfs_journal_init(struct smartfs_mountpt_s *fs)
 					ret = read_logging_data(fs, journal, &readsect, &readoffset);
 					if (ret != OK) {
 						fdbg("Cannot read entry data.\n");
-						goto err_out;
+						break;
+					}
+					if (entry->crc16[1] != smartfs_journal_data_crc(journal)) {
+						fdbg("Journal entry data crc mismatch! sector : %d type : %d entry crc : %d calc-crc : %d\n", journal->sector, GET_TRANS_TYPE(entry->trans_info), entry->crc16[1], smartfs_calc_crc_data(journal));
+						break;
 					}
 				}
 
-				if (entry->crc16 != smartfs_journal_crc(journal)) {
-					fdbg("Journal transaction crc mismatch! sector : %d type : %d entry crc : %d calc-crc : %d\n", journal->sector, GET_TRANS_TYPE(entry->trans_info), entry->crc16, smartfs_journal_crc(journal));
-					continue;
-				}
 
 				/* Restore the transaction. (T_WRITE with sync type transaction will not be
 				 * restored yet */
@@ -3257,10 +3262,15 @@ int smartfs_create_journalentry(struct smartfs_mountpt_s *fs, enum logging_trans
 	entry->datalen = datalen;
 	entry->generic_1 = genericdata;
 	entry->seq_no = 0;
+	entry->crc16[0] = smartfs_journal_entry_crc(j_mgr);
+
 	if (datalen && type != T_DELETE) {
 		memcpy(j_mgr->buffer + sizeof(struct smartfs_logging_entry_s), data, datalen);
+		entry->crc16[1] = smartfs_journal_data_crc(j_mgr);
+	} else {
+		entry->crc16[1] = CONFIG_SMARTFS_ERASEDSTATE;
 	}
-	entry->crc16 = smartfs_journal_crc(j_mgr);
+
 	switch (type) {
 	case T_SYNC:
 	case T_WRITE:
@@ -3304,24 +3314,39 @@ int smartfs_create_journalentry(struct smartfs_mountpt_s *fs, enum logging_trans
 }
 
 /****************************************************************************
- * Name: smartfs_calc_crc
+ * Name: smartfs_journal_entry_crc
  *
- * Description: smartfs journal data crc calcuation
+ * Description: smartfs journal entry crc calcuation
  *
  ****************************************************************************/
-static uint16_t smartfs_journal_crc(struct journal_transaction_manager_s *j_mgr)
+static uint8_t smartfs_journal_entry_crc(struct journal_transaction_manager_s *j_mgr)
 {
-	uint16_t crc = 0;
+	uint8_t crc = 0;
 	uint16_t offset;
 	struct smartfs_logging_entry_s *entry;
 
 	offset = offsetof(struct smartfs_logging_entry_s, crc16) + sizeof(entry->crc16);
 	entry = (struct smartfs_logging_entry_s *)j_mgr->buffer;
-	if (GET_TRANS_TYPE(entry->trans_info) == T_DELETE) {
-		crc = crc16((uint8_t *)&j_mgr->buffer[offset], sizeof(struct smartfs_logging_entry_s) - offset);
-	} else {
-		crc = crc16((uint8_t *)&j_mgr->buffer[offset], entry->datalen + sizeof(struct smartfs_logging_entry_s) - offset);
-	}
+
+	crc = crc8((uint8_t *)&j_mgr->buffer[offset], sizeof(struct smartfs_logging_entry_s) - offset);
+	return crc;
+}
+
+/****************************************************************************
+ * Name: smartfs_journal_entry_crc
+ *
+ * Description: smartfs journal data crc calcuation
+ *
+ ****************************************************************************/
+static uint8_t smartfs_journal_data_crc(struct journal_transaction_manager_s *j_mgr)
+{
+	uint8_t crc = 0;
+	uint16_t offset;
+	struct smartfs_logging_entry_s *entry;
+
+	offset = offsetof(struct smartfs_logging_entry_s, crc16) + sizeof(entry->crc16);
+	entry = (struct smartfs_logging_entry_s *)j_mgr->buffer;
+	crc = crc8((uint8_t *)&j_mgr->buffer[offset], entry->datalen + sizeof(struct smartfs_logging_entry_s) - offset);
 	return crc;
 }
 
