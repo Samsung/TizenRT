@@ -135,6 +135,7 @@ static void after_read(uv_stream_t* handle,
   wr->buf = uv_buf_init(buf->base, nread);
 
   if (uv_write(&wr->req, handle, &wr->buf, 1, after_write)) {
+	free(wr);
     TUV_FATAL("uv_write failed");
   }
 }
