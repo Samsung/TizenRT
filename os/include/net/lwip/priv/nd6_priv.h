@@ -99,13 +99,13 @@ struct nd6_neighbor_cache_entry {
 	u8_t state;
 	u8_t isrouter;
 	union {
-		u32_t incomplete_time;	/* ms */
-		u32_t reachable_time;	/* in ms since value may originate from network packet */
-		u32_t delay_time;		/* ticks (ND6_TMR_INTERVAL) */
-		u32_t stale_time;		/* ticks (ND6_TMR_INTERVAL) */
-		u32_t probe_time;		/* ms */
+		u32_t incomplete_time;	/* in ms */
+		u32_t reachable_time;	/* in ms */
+		u32_t delay_time;		/* in ms */
+		u32_t stale_time;		/* in ms */
+		u32_t probe_time;		/* in ms */
 	} counter;
-	u16_t probes_sent;
+	u16_t probes_sent;			/* probes had been sent */
 };
 
 struct nd6_destination_cache_entry {

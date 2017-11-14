@@ -418,7 +418,7 @@ void nd6_input(struct pbuf *p, struct netif *inp)
 
 					/* Delay probe in case we get confirmation of reachability from upper layer (TCP). */
 					neighbor_cache[i].state = ND6_DELAY;
-					neighbor_cache[i].counter.delay_time = LWIP_ND6_DELAY_FIRST_PROBE_TIME / ND6_TMR_INTERVAL;
+					neighbor_cache[i].counter.delay_time = LWIP_ND6_DELAY_FIRST_PROBE_TIME;
 				}
 			} else {
 				/* Add their IPv6 address and link-layer address to neighbor cache.
@@ -439,7 +439,7 @@ void nd6_input(struct pbuf *p, struct netif *inp)
 				/* Receiving a message does not prove reachability: only in one direction.
 				 * Delay probe in case we get confirmation of reachability from upper layer (TCP). */
 				neighbor_cache[i].state = ND6_DELAY;
-				neighbor_cache[i].counter.delay_time = LWIP_ND6_DELAY_FIRST_PROBE_TIME / ND6_TMR_INTERVAL;
+				neighbor_cache[i].counter.delay_time = LWIP_ND6_DELAY_FIRST_PROBE_TIME;
 			}
 
 			/* Create an aligned copy. */
@@ -848,16 +848,16 @@ void nd6_tmr(void)
 			}
 			break;
 		case ND6_STALE:
-			neighbor_cache[i].counter.stale_time++;
+			neighbor_cache[i].counter.stale_time += ND6_TMR_INTERVAL;
 			break;
 		case ND6_DELAY:
-			if (neighbor_cache[i].counter.delay_time <= 1) {
+			if (neighbor_cache[i].counter.delay_time <= ND6_TMR_INTERVAL) {
 				/* Change to PROBE state. */
 				neighbor_cache[i].state = ND6_PROBE;
 				neighbor_cache[i].counter.probe_time = 0;
 				neighbor_cache[i].probes_sent = 0;
 			} else {
-				neighbor_cache[i].counter.delay_time--;
+				neighbor_cache[i].counter.delay_time -= ND6_TMR_INTERVAL;
 			}
 			break;
 		case ND6_PROBE:
@@ -2018,7 +2018,7 @@ err_t nd6_get_next_hop_addr_or_queue(struct netif *netif, struct pbuf *q, const 
 	if (neighbor_cache[i].state == ND6_STALE) {
 		/* Switch to delay state. */
 		neighbor_cache[i].state = ND6_DELAY;
-		neighbor_cache[i].counter.delay_time = LWIP_ND6_DELAY_FIRST_PROBE_TIME / ND6_TMR_INTERVAL;
+		neighbor_cache[i].counter.delay_time = LWIP_ND6_DELAY_FIRST_PROBE_TIME;
 	}
 	/* @todo should we send or queue if PROBE? send for now, to let unicast NS pass. */
 	if ((neighbor_cache[i].state == ND6_REACHABLE) || (neighbor_cache[i].state == ND6_DELAY) || (neighbor_cache[i].state == ND6_PROBE)) {
