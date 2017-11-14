@@ -510,7 +510,7 @@ void nd6_input(struct pbuf *p, struct netif *inp)
 		}
 
 		/* Re-set invalidation timer. */
-		default_router_list[i].invalidation_timer = lwip_htons(ra_hdr->router_lifetime);
+		default_router_list[i].invalidation_timer = lwip_htons(ra_hdr->router_lifetime) * 1000;
 
 		/* Re-set default timer values. */
 #if LWIP_ND6_ALLOW_RA_UPDATES
@@ -595,7 +595,7 @@ void nd6_input(struct pbuf *p, struct netif *inp)
 						prefix = nd6_new_onlink_prefix(&prefix_addr, inp);
 					}
 					if (prefix >= 0) {
-						prefix_list[prefix].invalidation_timer = lwip_htonl(prefix_opt->valid_lifetime);
+						prefix_list[prefix].invalidation_timer = lwip_htonl(prefix_opt->valid_lifetime) * 1000;
 
 #if LWIP_IPV6_AUTOCONFIG
 						if (prefix_opt->flags & ND6_PREFIX_FLAG_AUTONOMOUS) {
@@ -848,13 +848,18 @@ void nd6_tmr(void)
 	for (i = 0; i < LWIP_ND6_NUM_NEIGHBORS; i++) {
 		switch (neighbor_cache[i].state) {
 		case ND6_INCOMPLETE:
-			if ((neighbor_cache[i].counter.probes_sent >= LWIP_ND6_MAX_MULTICAST_SOLICIT) && (!neighbor_cache[i].isrouter)) {
+			if ((neighbor_cache[i].probes_sent >= LWIP_ND6_MAX_MULTICAST_SOLICIT) && (!neighbor_cache[i].isrouter)) {
 				/* Retries exceeded. */
 				nd6_free_neighbor_cache_entry(i);
 			} else {
-				/* Send a NS for this entry */
-				neighbor_cache[i].counter.probes_sent++;
-				nd6_send_neighbor_cache_probe(&neighbor_cache[i], ND6_SEND_FLAG_MULTICAST_DEST);
+				neighbor_cache[i].counter.incomplete_time += ND6_TMR_INTERVAL;
+				if (retrans_timer <= ND6_TMR_INTERVAL ||
+					neighbor_cache[i].counter.incomplete_time >= retrans_timer) {
+					/* Send a NS for this entry */
+					neighbor_cache[i].counter.incomplete_time = 0;
+					neighbor_cache[i].probes_sent++;
+					nd6_send_neighbor_cache_probe(&neighbor_cache[i], ND6_SEND_FLAG_MULTICAST_DEST);
+				}
 			}
 			break;
 		case ND6_REACHABLE:
@@ -877,19 +882,25 @@ void nd6_tmr(void)
 			if (neighbor_cache[i].counter.delay_time <= 1) {
 				/* Change to PROBE state. */
 				neighbor_cache[i].state = ND6_PROBE;
-				neighbor_cache[i].counter.probes_sent = 0;
+				neighbor_cache[i].counter.probe_time = 0;
+				neighbor_cache[i].probes_sent = 0;
 			} else {
 				neighbor_cache[i].counter.delay_time--;
 			}
 			break;
 		case ND6_PROBE:
-			if ((neighbor_cache[i].counter.probes_sent >= LWIP_ND6_MAX_MULTICAST_SOLICIT) && (!neighbor_cache[i].isrouter)) {
+			if ((neighbor_cache[i].probes_sent >= LWIP_ND6_MAX_MULTICAST_SOLICIT) && (!neighbor_cache[i].isrouter)) {
 				/* Retries exceeded. */
 				nd6_free_neighbor_cache_entry(i);
 			} else {
-				/* Send a NS for this entry. */
-				neighbor_cache[i].counter.probes_sent++;
-				nd6_send_neighbor_cache_probe(&neighbor_cache[i], 0);
+				neighbor_cache[i].counter.probe_time += ND6_TMR_INTERVAL;
+				if (retrans_timer <= ND6_TMR_INTERVAL ||
+					neighbor_cache[i].counter.probe_time >= retrans_timer) {
+					/* Send a NS for this entry. */
+					neighbor_cache[i].counter.probe_time = 0;
+					neighbor_cache[i].probes_sent++;
+					nd6_send_neighbor_cache_probe(&neighbor_cache[i], 0);
+				}
 			}
 			break;
 		case ND6_NO_ENTRY:
@@ -908,10 +919,10 @@ void nd6_tmr(void)
 	for (i = 0; i < LWIP_ND6_NUM_ROUTERS; i++) {
 		if (default_router_list[i].neighbor_entry != NULL) {
 			/* Active entry. */
-			if (default_router_list[i].invalidation_timer > 0) {
-				default_router_list[i].invalidation_timer -= ND6_TMR_INTERVAL / 1000;
+			if (default_router_list[i].invalidation_timer >= ND6_TMR_INTERVAL) {
+				default_router_list[i].invalidation_timer -= ND6_TMR_INTERVAL;
 			}
-			if (default_router_list[i].invalidation_timer < ND6_TMR_INTERVAL / 1000) {
+			if (default_router_list[i].invalidation_timer < ND6_TMR_INTERVAL) {
 				/* Less than 1 second remaining. Clear this entry. */
 				default_router_list[i].neighbor_entry->isrouter = 0;
 
@@ -939,7 +950,7 @@ void nd6_tmr(void)
 	/* Process prefix entries. */
 	for (i = 0; i < LWIP_ND6_NUM_PREFIXES; i++) {
 		if (prefix_list[i].netif != NULL) {
-			if (prefix_list[i].invalidation_timer < ND6_TMR_INTERVAL / 1000) {
+			if (prefix_list[i].invalidation_timer < ND6_TMR_INTERVAL) {
 				/* Entry timed out, remove it */
 				prefix_list[i].invalidation_timer = 0;
 
@@ -963,7 +974,7 @@ void nd6_tmr(void)
 				prefix_list[i].netif = NULL;
 				prefix_list[i].flags = 0;
 			} else {
-				prefix_list[i].invalidation_timer -= ND6_TMR_INTERVAL / 1000;
+				prefix_list[i].invalidation_timer -= ND6_TMR_INTERVAL;
 
 #if LWIP_IPV6_AUTOCONFIG
 				/* Initiate address autoconfiguration for this prefix, if conditions are met. */
@@ -1026,7 +1037,6 @@ void nd6_tmr(void)
 		}
 	}
 #endif							/* LWIP_IPV6_SEND_ROUTER_SOLICIT */
-
 }
 
 /** Send a neighbor solicitation message for a specific neighbor cache entry
@@ -1328,9 +1338,9 @@ static s8_t nd6_new_neighbor_cache_entry(void)
 	j = -1;
 	for (i = 0; i < LWIP_ND6_NUM_NEIGHBORS; i++) {
 		if ((neighbor_cache[i].q == NULL) && (neighbor_cache[i].state == ND6_INCOMPLETE) && (!neighbor_cache[i].isrouter)) {
-			if (neighbor_cache[i].counter.probes_sent >= time) {
+			if (neighbor_cache[i].probes_sent >= time) {
 				j = i;
-				time = neighbor_cache[i].counter.probes_sent;
+				time = neighbor_cache[i].probes_sent;
 			}
 		}
 	}
@@ -1344,9 +1354,9 @@ static s8_t nd6_new_neighbor_cache_entry(void)
 	j = -1;
 	for (i = 0; i < LWIP_ND6_NUM_NEIGHBORS; i++) {
 		if ((neighbor_cache[i].state == ND6_INCOMPLETE) && (!neighbor_cache[i].isrouter)) {
-			if (neighbor_cache[i].counter.probes_sent >= time) {
+			if (neighbor_cache[i].probes_sent >= time) {
 				j = i;
-				time = neighbor_cache[i].counter.probes_sent;
+				time = neighbor_cache[i].probes_sent;
 			}
 		}
 	}
@@ -1621,7 +1631,8 @@ static s8_t nd6_new_router(const ip6_addr_t *router_addr, struct netif *netif)
 		neighbor_cache[neighbor_index].netif = netif;
 		neighbor_cache[neighbor_index].q = NULL;
 		neighbor_cache[neighbor_index].state = ND6_INCOMPLETE;
-		neighbor_cache[neighbor_index].counter.probes_sent = 0;
+		neighbor_cache[neighbor_index].counter.incomplete_time = 0;
+		neighbor_cache[neighbor_index].probes_sent = 0;
 	}
 
 	/* Mark neighbor as router. */
@@ -1822,7 +1833,8 @@ static s8_t nd6_get_next_hop_entry(const ip6_addr_t *ip6addr, struct netif *neti
 			neighbor_cache[i].isrouter = 0;
 			neighbor_cache[i].netif = netif;
 			neighbor_cache[i].state = ND6_INCOMPLETE;
-			neighbor_cache[i].counter.probes_sent = 0;
+			neighbor_cache[i].counter.incomplete_time = 0;
+			neighbor_cache[i].probes_sent = 0;
 		}
 	}
 
@@ -2219,7 +2231,7 @@ void nd6_cache_debug_print(void)
 	for (i = 0; i < LWIP_ND6_NUM_NEIGHBORS; i++) {
 		LWIP_DEBUGF(ND6_DEBUG, ("next-hop addr   %4x %4x %4x %4x %4x %4x %4x %4x\n", IP6_ADDR_BLOCK1(&neighbor_cache[i].next_hop_address), IP6_ADDR_BLOCK2(&neighbor_cache[i].next_hop_address), IP6_ADDR_BLOCK3(&neighbor_cache[i].next_hop_address), IP6_ADDR_BLOCK4(&neighbor_cache[i].next_hop_address), IP6_ADDR_BLOCK5(&neighbor_cache[i].next_hop_address), IP6_ADDR_BLOCK6(&neighbor_cache[i].next_hop_address), IP6_ADDR_BLOCK7(&neighbor_cache[i].next_hop_address), IP6_ADDR_BLOCK8(&neighbor_cache[i].next_hop_address)));
 		LWIP_DEBUGF(ND6_DEBUG, ("lladdr %2x:%2x:%2x:%2x:%2x:%2x | state %2u | isrouter %2u\n",  neighbor_cache[i].lladdr[0], neighbor_cache[i].lladdr[1], neighbor_cache[i].lladdr[2], neighbor_cache[i].lladdr[3], neighbor_cache[i].lladdr[4], neighbor_cache[i].lladdr[5], neighbor_cache[i].state, neighbor_cache[i].isrouter));
-		LWIP_DEBUGF(ND6_DEBUG, ("reachable time %lu | delay time %lu | probes_sent %lu | stale_time %lu\n", neighbor_cache[i].counter.reachable_time, neighbor_cache[i].counter.delay_time, neighbor_cache[i].counter.probes_sent, neighbor_cache[i].counter.stale_time));
+		LWIP_DEBUGF(ND6_DEBUG, ("incomplete time %lu | reachable time %lu | delay time %lu | stale time %lu | probe time %lu\n", neighbor_cache[i].counter.incomplete_time, neighbor_cache[i].counter.reachable_time, neighbor_cache[i].counter.delay_time, neighbor_cache[i].counter.stale_time, neighbor_cache[i].counter.probe_time));
 		LWIP_DEBUGF(ND6_DEBUG, ("+--------------------------------------------------------+\n"));
 	}
 
