@@ -391,14 +391,22 @@ void nd6_input(struct pbuf *p, struct netif *inp)
 
 		/* Check for ANY address in src (DAD algorithm). */
 		if (ip6_addr_isany(ip6_current_src_addr())) {
-			/* Sender is validating this address. */
-			for (i = 0; i < LWIP_IPV6_NUM_ADDRESSES; ++i) {
-				if (!ip6_addr_isinvalid(netif_ip6_addr_state(inp, i)) && ip6_addr_cmp(&(ns_hdr->target_address), netif_ip6_addr(inp, i))) {
-					/* Send a NA back so that the sender does not use this address. */
-					nd6_send_na(inp, netif_ip6_addr(inp, i), ND6_FLAG_OVERRIDE | ND6_SEND_FLAG_ALLNODES_DEST);
-					if (ip6_addr_istentative(netif_ip6_addr_state(inp, i))) {
-						/* We shouldn't use this address either. */
-						netif_ip6_addr_set_state(inp, i, IP6_ADDR_INVALID);
+			if (ip6_addr_ismulticast(ip6_current_dest_addr())) {
+				/* @todo debug message */
+				pbuf_free(p);
+				ND6_STATS_INC(nd6.lenerr);
+				ND6_STATS_INC(nd6.drop);
+				return;
+			} else {
+				/* Sender is validating this address. */
+				for (i = 0; i < LWIP_IPV6_NUM_ADDRESSES; ++i) {
+					if (!ip6_addr_isinvalid(netif_ip6_addr_state(inp, i)) && ip6_addr_cmp(&(ns_hdr->target_address), netif_ip6_addr(inp, i))) {
+						/* Send a NA back so that the sender does not use this address. */
+						nd6_send_na(inp, netif_ip6_addr(inp, i), ND6_FLAG_OVERRIDE | ND6_SEND_FLAG_ALLNODES_DEST);
+						if (ip6_addr_istentative(netif_ip6_addr_state(inp, i))) {
+							/* We shouldn't use this address either. */
+							netif_ip6_addr_set_state(inp, i, IP6_ADDR_INVALID);
+						}
 					}
 				}
 			}
