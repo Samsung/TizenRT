@@ -9,7 +9,8 @@ In this file,
 
 Outside this file,  
 > [**Built-In Applications**](builtin/README.md)  
-> [**Shell (TASH)**](shell/README.md)
+> [**Shell (TASH)**](shell/README.md)  
+> [**How to add new application**](HowtoAddNewApp.md)
 
 ## General
 
