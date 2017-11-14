@@ -3308,14 +3308,14 @@ int smartfs_create_journalentry(struct smartfs_mountpt_s *fs, enum logging_trans
 			fdbg("smartfs_write_transaction failed type : %d ret : %d\n", type, ret);
 			return ret;
 		}
-		if (type == T_RENAME) {
-			fdbg("write transaction %d %d %d\n", type, *t_sector, *t_offset);
-			ret = smartfs_verify_transaction(fs, *t_sector, *t_offset);
+
+		fdbg("write transaction %d %d %d\n", type, *t_sector, *t_offset);
+		ret = smartfs_verify_transaction(fs, *t_sector, *t_offset);
 		if (ret != OK) {
 			fdbg("smartfs_verify_transaction failed: %d ret : %d\n", type, ret);
 			return ret;
-			}
 		}
+
 		break;
 	}
 
@@ -3335,6 +3335,7 @@ static int smartfs_verify_transaction(struct smartfs_mountpt_s *fs, uint16_t sec
 	struct journal_transaction_manager_s *j_mgr;
 	struct smartfs_logging_entry_s *entry;
 	uint8_t *buff;
+	int data_len;
 	int i;
 
 	j_mgr = fs->journal;
@@ -3357,11 +3358,16 @@ static int smartfs_verify_transaction(struct smartfs_mountpt_s *fs, uint16_t sec
 		goto error_with_ret;
 	}
 
+	if (GET_TRANS_TYPE(entry->trans_info) == T_DELETE) {
+		data_len = 0;
+	} else {
+		data_len = entry->datalen;
+	}
 	req.buffer += req.count;
 	req.offset += req.count;
-	req.count = entry->datalen;
+	req.count = data_len;
 
-	if (req.offset + entry->datalen > j_mgr->availbytes) {
+	if (req.offset + data_len > j_mgr->availbytes) {
 		req.count = j_mgr->availbytes - req.offset;
 	}
 
@@ -3376,10 +3382,10 @@ static int smartfs_verify_transaction(struct smartfs_mountpt_s *fs, uint16_t sec
 		req.offset += req.count;
 	}
 
-	if (req.count < entry->datalen) {
+	if (req.count < data_len) {
 		req.logsector++;
 		req.offset = 0;
-		req.count = entry->datalen - req.count;
+		req.count = data_len - req.count;
 		fdbg("read remain data:: sector : %d offset :%d cnt: %d\n", req.logsector, req.offset, req.count);
 		if (FS_IOCTL(fs, BIOC_READSECT, (unsigned long)&req) <= 0) {
 			fdbg("read fail\n");
@@ -3387,7 +3393,7 @@ static int smartfs_verify_transaction(struct smartfs_mountpt_s *fs, uint16_t sec
 		}
 	}
 
-	for (i = 0; i < entry->datalen + sizeof(struct smartfs_logging_entry_s); i++) {
+	for (i = 0; i < data_len + sizeof(struct smartfs_logging_entry_s); i++) {
 		if (buff[i] != j_mgr->buffer[i]) {
 			fdbg("journal data write fail :: offset : %d write : 0x%x read : 0x%x\n", i, j_mgr->buffer[i], buff[i]);
 			goto error_with_dumpret;
