@@ -371,6 +371,7 @@ void nd6_input(struct pbuf *p, struct netif *inp)
 			pbuf_free(p);
 			ND6_STATS_INC(nd6.proterr);
 			ND6_STATS_INC(nd6.drop);
+			return;
 		}
 
 		/* Check if there is a link-layer address provided. Only point to it if in this buffer. */
