@@ -144,7 +144,7 @@ At first, programming the complete set of binaries are needed.
 #### ARTIK053S
 
 ```bash
-../build/configs/artik053s/tools/codesigner/artik053_codesigner -sign ../build/output/bin/tinyara_head.bin
+../build/configs/artik05x/tools/codesigner/artik05x_codesigner -sign ../build/output/bin/tinyara_head.bin
 
 openocd -f artik05x.cfg -s ../build/configs/artik05x/scripts -c ' \
     flash_write bl1    ../build/configs/artik053s/bin/bl1.bin;  \
