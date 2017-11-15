@@ -407,6 +407,17 @@ void nd6_input(struct pbuf *p, struct netif *inp)
 
 		/* Check for ANY address in src (DAD algorithm). */
 		if (ip6_addr_isany(ip6_current_src_addr())) {
+			if (lladdr_opt != NULL) {
+				/* RFC 7.1.1.
+				 * If the IP source address is the unspecified address, there is no
+				 * source link-layer address option in the message.
+				 */
+				pbuf_free(p);
+				ND6_STATS_INC(nd6.proterr);
+				ND6_STATS_INC(nd6.drop);
+				return;
+			}
+
 			if (ip6_addr_issolicitednode(ip6_current_dest_addr())) {
 				/* Sender is validating this address. */
 				for (i = 0; i < LWIP_IPV6_NUM_ADDRESSES; ++i) {
