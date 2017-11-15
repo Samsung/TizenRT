@@ -801,7 +801,6 @@ static int pcm_stop(FAR struct audio_lowerhalf_s *dev, FAR void *session)
 #else
 static int pcm_stop(FAR struct audio_lowerhalf_s *dev)
 #endif
-#endif
 {
 	FAR struct pcm_decode_s *priv = (FAR struct pcm_decode_s *)dev;
 	FAR struct audio_lowerhalf_s *lower;
@@ -824,6 +823,7 @@ static int pcm_stop(FAR struct audio_lowerhalf_s *dev)
 	return lower->ops->stop(lower);
 #endif
 }
+#endif
 
 /****************************************************************************
  * Name: pcm_pause
