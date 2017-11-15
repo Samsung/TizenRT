@@ -200,6 +200,7 @@ int kernel_tc_main(int argc, char *argv[])
 #ifdef CONFIG_TC_KERNEL_UMM_HEAP
 	umm_heap_main();
 #endif
+
 	printf("\n=== TINYARA Kernel TC COMPLETE ===\n");
 	printf("\t\tTotal pass : %d\n\t\tTotal fail : %d\n", total_pass, total_fail);
 

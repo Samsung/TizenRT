@@ -53,7 +53,7 @@
 /****************************************************************************
  * Definitions
  ****************************************************************************/
-#define STDIO_BUFLEN 		64
+#define STDIO_BUFLEN		64
 #define VFS_CONTENTS_LEN	20
 
 #define MOUNT_DIR CONFIG_MOUNT_POINT
@@ -2634,6 +2634,10 @@ int fs_main(int argc, char *argv[])
 	tash_cmd_install("fs_sample", fs_sample_launcher, TASH_EXECMD_SYNC);
 #else
 	fs_sample_launcher(argc, argv);
+#endif
+
+#ifdef CONFIG_TC_FS_SMART_SFS
+	smart_sfs_main();
 #endif
 
 	working_tc--;

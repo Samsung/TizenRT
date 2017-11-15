@@ -16,4 +16,11 @@ config TC_FS_PROCFS
 	default n
 	select FS_PROCFS
 
+config TC_FS_SMART_SFS
+	bool "Secure File System"
+	default n
+	select SMARTFS_SECURE
+	---help---
+		Enables the Secure File System testcases to test SFS feature in Smartfs layer consisting of different API's such as fwrite, fread, fgets, fputs and fprintf.
+
 endif
