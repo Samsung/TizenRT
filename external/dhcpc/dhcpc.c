@@ -501,6 +501,9 @@ int dhcpc_request(void *handle, struct dhcpc_state *presult)
 		result = dhcpc_sendmsg(pdhcpc, g_pResult, DHCPDISCOVER);
 		usleep(100000);
 		if (result < 0) {
+			if (get_errno() == EAGAIN) {
+				continue;
+			}
 			ndbg("sendDiscover Error\n");
 			return -1;
 		}
