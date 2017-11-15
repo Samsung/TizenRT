@@ -102,6 +102,7 @@
 #define TIOCINQ         _TIOC(0x0012)	/* Bytes in input buffer: int */
 #define TIOCOUTQ        _TIOC(0x0013)	/* Bytes in output buffer: int */
 #define TCFLSH          _TIOC(0x0014)	/* Flush: int */
+#define TCDRN           _TIOC(0x0015)	/* Drain: void */
 
 /* Faking input */
 

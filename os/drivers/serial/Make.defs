@@ -57,7 +57,13 @@ ifneq ($(CONFIG_NFILE_DESCRIPTORS),0)
 CSRCS += serial.c serialirq.c lowconsole.c
 
 ifeq ($(CONFIG_16550_UART),y)
-  CSRCS += uart_16550.c
+	CSRCS += uart_16550.c
+endif
+
+# termios support
+
+ifeq ($(CONFIG_SERIAL_TERMIOS),y)
+	CSRCS += tcdrain.c
 endif
 
 # Include serial build support

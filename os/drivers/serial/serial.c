@@ -96,6 +96,8 @@
  * Private Function Prototypes
  ************************************************************************************/
 
+static int uart_tcdrain(FAR uart_dev_t *dev);
+
 static int uart_open(FAR struct file *filep);
 static int uart_close(FAR struct file *filep);
 static ssize_t uart_read(FAR struct file *filep, FAR char *buffer, size_t buflen);
@@ -860,6 +862,11 @@ static int uart_ioctl(FAR struct file *filep, int cmd, unsigned long arg)
 			}
 		}
 		break;
+
+		case TCDRN: {
+			ret = uart_tcdrain(dev);
+		}
+		break;
 #endif							/* CONFIG_SERIAL_TERMIOS */
 		}
 	}
@@ -1116,6 +1123,97 @@ static int uart_close(FAR struct file *filep)
 
 	uart_givesem(&dev->closesem);
 	return OK;
+}
+
+/************************************************************************************
+ * Name: uart_tcdrain
+ *
+ * Description:
+ *   Block further TX input.  Wait until all data has been transferred from the TX
+ *   buffer and until the hardware TX FIFOs are empty.
+ *
+ ************************************************************************************/
+
+static int uart_tcdrain(FAR uart_dev_t *dev)
+{
+	int ret;
+
+	/* Get exclusive access to the to dev->tmit.  We cannot permit new data to be
+	 * written while we are trying to flush the old data.
+	 *
+	 * A signal received while waiting for access to the xmit.head will abort the
+	 * operation with EINTR.
+	 */
+
+	ret = (ssize_t)uart_takesem(&dev->xmit.sem, true);
+	if (ret >= 0) {
+		irqstate_t flags;
+
+		/* Trigger emission to flush the contents of the tx buffer */
+
+		flags = irqsave();
+
+#ifdef CONFIG_SERIAL_REMOVABLE
+		/* Check if the removable device is no longer connected while we have
+		 * interrupts off.  We do not want the transition to occur as a race
+		 * condition before we begin the wait.
+		 */
+
+		if (dev->disconnected) {
+			dev->xmit.head = 0;  /* Drop the buffered TX data */
+			dev->xmit.tail = 0;
+			ret = -ENOTCONN;
+		} else
+#endif
+		{
+			/* Continue waiting while the TX buffer is not empty */
+
+			ret = OK;
+			while (ret >= 0 && dev->xmit.head != dev->xmit.tail) {
+				/* Inform the interrupt level logic that we are waiting. */
+
+				dev->xmitwaiting = true;
+
+				/* Wait for some characters to be sent from the buffer with
+				 * the TX interrupt enabled.  When the TX interrupt is
+				 * enabled, uart_xmitchars() should execute and remove some
+				 * of the data from the TX buffer.  We mayhave to wait several
+				 * times for the TX buffer to be entirely emptied.
+				 *
+				 * NOTE that interrupts will be re-enabled while we wait for
+				 * the semaphore.
+				 */
+
+#ifdef CONFIG_SERIAL_DMA
+				uart_dmatxavail(dev);
+#endif
+				uart_enabletxint(dev);
+				ret = uart_takesem(&dev->xmitsem, true);
+				uart_disabletxint(dev);
+			}
+		}
+
+		irqrestore(flags);
+
+		/* The TX buffer is empty (or an error occurred).  But there still may
+		 * be data in the UART TX FIFO.  We get no asynchronous indication of
+		 * this event, so we have to do a busy wait poll.
+		 */
+
+		if (ret >= 0) {
+			while (!uart_txempty(dev)) {
+#ifndef CONFIG_DISABLE_SIGNALS
+				usleep(HALF_SECOND_USEC);
+#else
+				up_mdelay(HALF_SECOND_MSEC);
+#endif
+			}
+		}
+
+		uart_givesem(&dev->xmit.sem);
+	}
+
+	return ret;
 }
 
 /************************************************************************************
