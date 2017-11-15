@@ -859,7 +859,7 @@ CONFIG_FS_PROCFS=y
 #
 # Block Driver Configurations
 #
-CONFIG_RAMDISK=y
+# CONFIG_RAMDISK is not set
 
 #
 # MTD Configuration
