@@ -31,6 +31,10 @@
 #include <tinyara/ascii.h>
 #include "tash_internal.h"
 
+#if defined(CONFIG_TASH_PASSWORD)
+#include <tls/sha256.h>
+#endif
+
 enum tash_input_state_e {
 	IN_VOID,
 	IN_WORD,
@@ -130,10 +134,22 @@ static char *tash_read_input_line(int fd)
 						buffer[pos] = ASCII_LF;
 					}
 
+#if defined(CONFIG_TASH_PASSWORD)
+					if (!tash_running) {
+						if (buffer[pos] == ASCII_LF) {
+							write(fd, &buffer[pos], 1);
+						} else {
+							if (write(fd, "*", 1) <= 0) {
+								shdbg("TASH: echo failed (errno = %d)\n", get_errno());
+							}
+						}
+					}
+#else
 					/* echo */
 					if (write(fd, &buffer[pos], 1) <= 0) {
 						shdbg("TASH: echo failed (errno = %d)\n", get_errno());
 					}
+#endif
 
 					pos++;
 					if (pos >= TASH_LINEBUFLEN) {
@@ -192,6 +208,48 @@ static int tash_main(int argc, char *argv[])
 	if (fd < 0) {
 		exit(EXIT_FAILURE);
 	}
+
+#if defined(CONFIG_TASH_PASSWORD)
+	int i;
+	int len = 0;
+	char chr[1];
+	unsigned char temp[2];
+	unsigned char sha256[64];
+	unsigned char result[64];
+	unsigned char sha256_hex[64];
+	const char passwd_prompt[] = "PASSWORD>>";
+
+	do {
+		nbytes = write(fd, passwd_prompt, sizeof(passwd_prompt));
+		if (nbytes <= 0) {
+			usleep(20);
+			continue;
+		}
+		line_buff = tash_read_input_line(fd);
+		len = strlen(line_buff);
+
+		sprintf((char *)sha256, "%s", CONFIG_TASH_PASSWORD_SHA256);
+
+		for (i = 0; i < 64;) {
+			strncpy(chr, (char *)&sha256[i], 1);
+			temp[i % 2] = strtoul(chr, NULL, 16);
+
+			if (i % 2) {
+				sha256_hex[i / 2] = (temp[0] << 4) | temp[1];
+			}
+
+			i++;
+		}
+
+		mbedtls_sha256((unsigned char *)line_buff, len, result, 0);
+
+		tash_free(line_buff);
+
+		if (!strncmp((char *)sha256_hex, (char *)result, 32)) {
+			break;
+		}
+	} while (1);
+#endif
 
 	tash_running = TRUE;
 

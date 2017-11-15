@@ -36,5 +36,16 @@ config TASH_CMDTASK_PRIORITY
 	default 100
 	---help---
 		The priority set for TASH command task
+
+config TASH_PASSWORD
+	bool "Enable Secure shell"
+	default n
+
+if TASH_PASSWORD
+config TASH_PASSWORD_SHA256
+	string "SHA256 encrypted password"
+	---help---
+		Enable password to enter tash shell
+endif
 endif
 endmenu
