@@ -356,6 +356,14 @@ void nd6_input(struct pbuf *p, struct netif *inp)
 			return;
 		}
 
+		if (IP6H_HOPLIM(ip6_current_header()) != 255) {
+			/* silently discard a NS messsage with invalid hop limit */
+			pbuf_free(p);
+			ND6_STATS_INC(nd6.proterr);
+			ND6_STATS_INC(nd6.drop);
+			return;
+		}
+
 		ns_hdr = (struct ns_header *)p->payload;
 
 		if (ND6H_CODE(ns_hdr) != 0) {
@@ -387,14 +395,6 @@ void nd6_input(struct pbuf *p, struct netif *inp)
 		/* NS not for us? */
 		if (!accepted) {
 			pbuf_free(p);
-			return;
-		}
-
-		if (IP6H_HOPLIM(ip6_current_header()) != 255) {
-			/* silently discard a NS messsage with invalid hop limit */
-			pbuf_free(p);
-			ND6_STATS_INC(nd6.proterr);
-			ND6_STATS_INC(nd6.drop);
 			return;
 		}
 
