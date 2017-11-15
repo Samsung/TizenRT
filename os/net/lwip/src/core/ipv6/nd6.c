@@ -390,9 +390,9 @@ void nd6_input(struct pbuf *p, struct netif *inp)
 		}
 
 		if (IP6H_HOPLIM(ip6_current_header()) != 255) {
-			/* @todo debug message */
+			/* silently discard a NS message with invalid hop limit */
 			pbuf_free(p);
-			ND6_STATS_INC(nd6.lenerr);
+			ND6_STATS_INC(nd6.proterr);
 			ND6_STATS_INC(nd6.drop);
 			return;
 		}
@@ -400,9 +400,9 @@ void nd6_input(struct pbuf *p, struct netif *inp)
 		/* Check for ANY address in src (DAD algorithm). */
 		if (ip6_addr_isany(ip6_current_src_addr())) {
 			if (ip6_addr_ismulticast(ip6_current_dest_addr())) {
-				/* @todo debug message */
+				/* silentlry discard a multicast NS message with unspecified src addr */
 				pbuf_free(p);
-				ND6_STATS_INC(nd6.lenerr);
+				ND6_STATS_INC(nd6.proterr);
 				ND6_STATS_INC(nd6.drop);
 				return;
 			} else {
