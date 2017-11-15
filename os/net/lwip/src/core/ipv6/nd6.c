@@ -364,6 +364,14 @@ void nd6_input(struct pbuf *p, struct netif *inp)
 
 		ns_hdr = (struct ns_header *)p->payload;
 
+		if (ND6H_CODE(ns_hdr) != 0) {
+			/* silently discard a NS message with invalid code */
+			pbuf_free(p);
+			ND6_STATS_INC(nd6.proterr);
+			ND6_STATS_INC(nd6.drop);
+			return;
+		}
+
 		/* Check if there is a link-layer address provided. Only point to it if in this buffer. */
 		if (p->len >= (sizeof(struct ns_header) + 2)) {
 			lladdr_opt = (struct lladdr_option *)((u8_t *) p->payload + sizeof(struct ns_header));
