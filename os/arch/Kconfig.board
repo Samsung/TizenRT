@@ -15,12 +15,14 @@ choice
 config ARCH_BOARD_ARTIK053
 	bool "Samsung ARTIK-053 Starter Kit"
 	depends on ARCH_CHIP_S5JT200
+	select ARCH_BOARD_ARTIK05X_FAMILY
 	---help---
 		Samsung ARTIK-053 Starter Kit based on S5JT200 IoT WiFi MCU
 
 config ARCH_BOARD_ARTIK053S
 	bool "Samsung ARTIK-053S Starter Kit"
 	depends on ARCH_CHIP_S5JT200
+	select ARCH_BOARD_ARTIK05X_FAMILY
     select ARTIK05X_SECURE
 	---help---
 		Samsung ARTIK-053S Starter Kit based on S5JT200 IoT WiFi MCU
@@ -28,6 +30,7 @@ config ARCH_BOARD_ARTIK053S
 config ARCH_BOARD_ARTIK055S
 	bool "Samsung ARTIK-055S Starter Kit"
 	depends on ARCH_CHIP_S5JT200
+	select ARCH_BOARD_ARTIK05X_FAMILY
     select ARTIK05X_SECURE
 	---help---
 		Samsung ARTIK-055S Starter Kit based on S5JT200 IoT WiFi MCU
@@ -41,9 +44,13 @@ config ARCH_BOARD_SIDK_S5JT200
 		Samsung S5JT200 IoT wifi MCU
 endchoice
 
+config ARCH_BOARD_ARTIK05X_FAMILY
+    bool
+    default n
+
 config ARCH_BOARD
 	string
-	default "artik05x" if ARCH_BOARD_ARTIK053 || ARCH_BOARD_ARTIK053S || ARCH_BOARD_ARTIK055S
+	default "artik05x" if ARCH_BOARD_ARTIK05X_FAMILY
 	default "sidk_s5jt200" if ARCH_BOARD_SIDK_S5JT200
 
 comment "Common Board Options"
@@ -168,7 +175,7 @@ config BOARD_RAMDUMP_UART
 
 comment "Board-Specific Options"
 
-if ARCH_BOARD_ARTIK053 || ARCH_BOARD_ARTIK053S || ARCH_BOARD_ARTIK055S
+if ARCH_BOARD_ARTIK05X_FAMILY
 source arch/arm/src/artik05x/Kconfig
 endif
 
