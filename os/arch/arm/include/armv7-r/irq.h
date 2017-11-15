@@ -377,7 +377,7 @@ struct xcptcontext {
 
 static inline irqstate_t irqstate(void)
 {
-	unsigned int cpsr;
+	irqstate_t cpsr;
 
 	__asm__ __volatile__
 	(
@@ -394,7 +394,7 @@ static inline irqstate_t irqstate(void)
 
 static inline irqstate_t irqsave(void)
 {
-	unsigned int cpsr;
+	irqstate_t cpsr;
 
 	__asm__ __volatile__
 	(
@@ -415,7 +415,7 @@ static inline irqstate_t irqsave(void)
 
 static inline irqstate_t irqenable(void)
 {
-	unsigned int cpsr;
+	irqstate_t cpsr;
 
 	__asm__ __volatile__
 	(
