@@ -715,7 +715,7 @@ void nd6_input(struct pbuf *p, struct netif *inp)
 
 		if (redir_optlen >= 2) {
 			buffer = ((u8_t *)p->payload + sizeof(struct redirect_header));
-			while (redir_optlen >= 2) {
+			while (!redirected_opt && redir_optlen >= 2) {
 				switch (buffer[0]) {
 				case ND6_OPTION_TYPE_TARGET_LLADDR :
 					if (buffer[1] == 1) { /* IEEE 802 Link Layer Address */
