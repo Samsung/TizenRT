@@ -407,13 +407,7 @@ void nd6_input(struct pbuf *p, struct netif *inp)
 
 		/* Check for ANY address in src (DAD algorithm). */
 		if (ip6_addr_isany(ip6_current_src_addr())) {
-			if (ip6_addr_ismulticast(ip6_current_dest_addr())) {
-				/* silentlry discard a multicast NS message with unspecified src addr */
-				pbuf_free(p);
-				ND6_STATS_INC(nd6.proterr);
-				ND6_STATS_INC(nd6.drop);
-				return;
-			} else {
+			if (ip6_addr_issolicitednode(ip6_current_dest_addr())) {
 				/* Sender is validating this address. */
 				for (i = 0; i < LWIP_IPV6_NUM_ADDRESSES; ++i) {
 					if (!ip6_addr_isinvalid(netif_ip6_addr_state(inp, i)) && ip6_addr_cmp(&(ND6H_NS_TARGET_ADDR(ns_hdr)), netif_ip6_addr(inp, i))) {
@@ -425,6 +419,15 @@ void nd6_input(struct pbuf *p, struct netif *inp)
 						}
 					}
 				}
+			} else {
+				/* RFC 7.1.1.
+				 * If the IP source address is the unspecified address, the IP
+				 * destination address is a solicited-node multicast address.
+				 */
+				pbuf_free(p);
+				ND6_STATS_INC(nd6.proterr);
+				ND6_STATS_INC(nd6.drop);
+				return;
 			}
 		} else {
 			ip6_addr_t target_address;
