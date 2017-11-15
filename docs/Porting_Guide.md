@@ -24,11 +24,11 @@ Application must call TizenRT driver interface to talk to underlying driver.
 It is not advised if addition of peripherals, new interfaces, new open source code etc are done by aligning to default board package structure.  
 Understanding the TizenRT code structure and adhering to the structure helps in better architecture desgin and portability.
 
-
 ## Kernel & System
 1. [How to add new board](HowToAddnewBoard.md)
 2. How to use peripheral (will be updated)
 3. [How to add static library](HowToAddStaticLibrary.md)
+4. [How to use multiple memory as a heap](HowToUseMultiHeap.md)
 
 ## File System
 Will be updated
