@@ -185,7 +185,7 @@ int main(int argc, char **argv, char **envp)
 	printf(" * In other words, (2 * (CONFIG_NFILE_DESCRIPTOR + 1)) is the MAX required size.\n");
 	printf(" */\n\n");
 	printf("#ifdef CONFIG_SMARTFS_JOURNALING\n");
-	printf("# define CONFIG_SMARTFS_NLOGGING_SECTORS ((CONFIG_NFILE_DESCRIPTORS + 1) * 2)\n");
+	printf("# define CONFIG_SMARTFS_NLOGGING_SECTORS 16\n");
 	printf("#endif\n\n");
 	printf("/* To enable journaling, this is the minimum required size(in terms of number of sectors)\n");
 	printf(" * of the partition where filesystem is mounted.\n");
