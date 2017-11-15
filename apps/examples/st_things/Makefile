@@ -23,7 +23,7 @@ include $(APPDIR)/Make.defs
 # built-in application info
 
 APPNAME = st_things_sample
-FUNCNAME = st_things_sample_main
+FUNCNAME = $(APPNAME)_main
 THREADEXEC = TASH_EXECMD_SYNC
 
 # SmartThings Things example

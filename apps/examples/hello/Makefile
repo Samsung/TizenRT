@@ -57,7 +57,7 @@ include $(APPDIR)/Make.defs
 # Hello, World! built-in application info
 
 APPNAME = hello
-FUNCNAME = hello_main
+FUNCNAME = $(APPNAME)_main
 THREADEXEC = TASH_EXECMD_ASYNC
 
 # Hello, World! Example

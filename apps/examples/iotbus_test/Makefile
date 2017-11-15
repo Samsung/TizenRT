@@ -57,7 +57,7 @@ include $(APPDIR)/Make.defs
 # Iotbus example built-in application info
 
 APPNAME = iotbus_test
-FUNCNAME = iotbus_test_main
+FUNCNAME = $(APPNAME)_main
 THREADEXEC = TASH_EXECMD_ASYNC
 
 # Iotbus example

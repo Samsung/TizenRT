@@ -60,7 +60,7 @@ ROOTDEPPATH = --dep-path .
 # built-in application info
 
 APPNAME = aws_sample
-FUNCNAME = aws_sample_main
+FUNCNAME = $(APPNAME)_main
 THREADEXEC = TASH_EXECMD_SYNC
 
 # AWS example

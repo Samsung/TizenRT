@@ -58,7 +58,7 @@ include $(APPDIR)/Make.defs
 
 APPNAME = xmlrpc
 THREADEXEC = TASH_EXECMD_ASYNC
-FUNCNAME = xmlrpc_main
+FUNCNAME = $(APPNAME)_main
 
 # xmlrpc server example
 

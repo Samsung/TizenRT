@@ -57,7 +57,7 @@ include $(APPDIR)/Make.defs
 # Websocket built-in application info
 
 APPNAME = websocket
-FUNCNAME = websocket_main
+FUNCNAME = $(APPNAME)_main
 THREADEXEC = TASH_EXECMD_ASYNC
 
 # Websocket Example

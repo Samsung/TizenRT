@@ -23,7 +23,7 @@ include $(APPDIR)/Make.defs
 # built-in application info
 
 APPNAME = wm_test
-FUNCNAME = wm_test_main
+FUNCNAME = $(APPNAME)_main
 THREADEXEC = TASH_EXECMD_ASYNC
 
 # Wi-Fi manager example
