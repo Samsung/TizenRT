@@ -31,7 +31,7 @@ Understanding the TizenRT code structure and adhering to the structure helps in 
 4. [How to use multiple memory as a heap](HowToUseMultiHeap.md)
 
 ## File System
-Will be updated
+1. [How to use SmartFS](HowToUseSmartFS.md)
 
 ## Network
 1. How to use LWIP (will be updated)
