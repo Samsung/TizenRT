@@ -110,7 +110,7 @@ all: libboard$(LIBEXT)
 
 context:
 ifeq ($(CONFIG_ARTIK05X_SECURE),y)
-	$(Q) if [ ! -x $(CODESIGNEREXE) ]; then \
+	$(Q) if [ ! -e $(CODESIGNEREXE) ]; then \
 		echo ""; \
 		echo "ERROR: cannot find codesigner ${CONFIG_ARTIK05X_CODESIGNER_PATH}"; \
 		echo "Build process has been terminated since the mandatory security binaries do not exist in your source code."; \

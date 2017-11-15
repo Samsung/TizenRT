@@ -102,6 +102,7 @@ signing() {
         echo "   $CODESIGNER"
         exit 1
     fi
+    chmod +x $CODESIGNER
     $CODESIGNER -sign $TIZENRT_BIN
     TIZENRT_BIN=${TIZENRT_BIN}-signed
 }
