@@ -6,7 +6,7 @@
 config EXAMPLES_DNSCLIENT_TEST
 	bool "\"DNS Client Test\" example"
 	default n
-	depends on NETDB_DNSCLIENT
+	depends on NET_LWIP_NETDB
 	---help---
 		Enable the \"DNS Client Test\" example
 
@@ -19,5 +19,4 @@ config EXAMPLES_DNSCLIENT_TEST_PROGNAME
 	---help---
 		This is the name of the program that will be use when the NSH ELF
 		program is installed.
-
 endif

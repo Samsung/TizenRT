@@ -82,6 +82,8 @@
 #define DNS_DEFAULT_PORT   53
 #endif
 
+#define DNS_NAME_MAXSIZE 512
+
 /****************************************************************************
  * Enumeration
  ****************************************************************************/
@@ -93,6 +95,7 @@
 /****************************************************************************
  * Private Data
  ****************************************************************************/
+static char hostname[DNS_NAME_MAXSIZE];
 
 /****************************************************************************
  * function prototype
@@ -123,13 +126,11 @@ static void show_usage(FAR const char *progname)
 #ifdef CONFIG_BUILD_KERNEL
 int main(int argc, FAR char *argv[])
 #else
-int dnsclient_main(int argc, char *argv[])
+int dnsclient_main(int argc, FAR char *argv[])
 #endif
 {
-	struct hostent *shost;
-#ifdef CONFIG_NETDB_DNSSERVER_IPv4
-	struct sockaddr_in dns;
-#endif
+	struct hostent *shost = NULL;
+	ip_addr_t dns_addr;
 
 	if (argc < 2) {
 		show_usage(argv[0]);
@@ -137,25 +138,33 @@ int dnsclient_main(int argc, char *argv[])
 	}
 
 	if (argc == 3 && argv[2] != NULL) {
-#ifdef CONFIG_NETDB_DNSSERVER_IPv4
-		printf("dns_add_nameserver : %s\n", argv[2]);
-		dns.sin_family = AF_INET;
-		dns.sin_port = htons(DNS_DEFAULT_PORT);
-		dns.sin_addr.s_addr = inet_addr(argv[2]);
-		dns_add_nameserver((FAR struct sockaddr *)&dns, sizeof(struct sockaddr_in));
-#endif
-#ifdef CONFIG_NETDB_DNSSERVER_BY_DHCP
-		printf("dns server address is set by DHCP\n");
-#endif
+		printf("dnsclient : dns_add_nameserver : %s\n", argv[2]);
+		IP_SET_TYPE_VAL(dns_addr, IPADDR_TYPE_V4);
+#ifdef CONFIG_NET_IPv6
+		dns_addr.u_addr.ip4.addr = inet_addr(argv[2]);
+#else
+		dns_addr.addr = inet_addr(argv[2]);
+#endif /* CONFIG_NET_IPv6 */
+		dns_setserver(0, &dns_addr);
 	}
 
-	if ((shost = gethostbyname(argv[1])) == NULL) {
-		printf("failed to resolve host's IP address\n");
+	memset(hostname, 0x00, DNS_NAME_MAXSIZE);
+
+	if (strlen(argv[1]) > DNS_NAME_MAXSIZE) {
+		printf("dnsclient : length of hostname has to lower than %d\n", DNS_NAME_MAXSIZE);
+		return -1;
+	}
+
+	strncpy(hostname, argv[1], DNS_NAME_MAXSIZE);
+	printf("\nHostname : %s [len %d]\n", hostname, strlen(hostname));
+
+	shost = gethostbyname(hostname);
+	if (shost == NULL || shost->h_addr_list == NULL) {
+		printf("dnsclient : failed to resolve host's IP address, shost %p\n", shost);
 		return -1;
 	} else {
 		printf("DNS results\n");
-		printf(" Official hostname : %s\n", shost->h_name);
-		printf(" IP Address : %s\n", ip_ntoa((ip_addr_t *)shost->h_addr_list[0]));
+		printf("IP Address : %s\n", ip_ntoa((ip_addr_t *)shost->h_addr_list[0]));
 	}
 
 	return 0;
