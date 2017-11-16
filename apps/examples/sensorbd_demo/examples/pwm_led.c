@@ -69,16 +69,22 @@ void ledpwm_main(int argc, char *argv[])
 	}
 	fd2 = open("/dev/pwm3", O_RDWR);
 	if (fd2 < 0) {
+		close(fd1);
 		printf("fd open fail\n");
 		return;
 	}
 	fd3 = open("/dev/pwm4", O_RDWR);
 	if (fd3 < 0) {
+		close(fd1);
+		close(fd2);
 		printf("fd open fail\n");
 		return;
 	}
 	fd4 = open("/dev/pwm5", O_RDWR);
 	if (fd4 < 0) {
+		close(fd1);
+		close(fd2);
+		close(fd3);
 		printf("fd open fail\n");
 		return;
 	}
