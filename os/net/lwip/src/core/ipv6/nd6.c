@@ -263,11 +263,12 @@ void nd6_input(struct pbuf *p, struct netif *inp)
 				return;
 			}
 
+			neighbor_cache[i].netif = inp;
+
 			/* Update cache entry. */
 			if (neighbor_cache[i].state == ND6_INCOMPLETE) {
 				/* Check that link-layer address option also fits in packet. */
 				if (p->len < (sizeof(struct na_header) + 2)) {
-					/* @todo debug message */
 					pbuf_free(p);
 					ND6_STATS_INC(nd6.lenerr);
 					ND6_STATS_INC(nd6.drop);
@@ -276,7 +277,6 @@ void nd6_input(struct pbuf *p, struct netif *inp)
 
 				lladdr_opt = (struct lladdr_option *)((u8_t *) p->payload + sizeof(struct na_header));
 				if (p->len < (sizeof(struct na_header) + (ND6H_LLADDR_OPT_LEN(lladdr_opt) << 3))) {
-					/* @todo debug message */
 					pbuf_free(p);
 					ND6_STATS_INC(nd6.lenerr);
 					ND6_STATS_INC(nd6.drop);
@@ -287,6 +287,7 @@ void nd6_input(struct pbuf *p, struct netif *inp)
 
 				if ((ND6H_NA_FLAG(na_hdr) & ND6_FLAG_SOLICITED)) {
 					neighbor_cache[i].state = ND6_REACHABLE;
+					neighbor_cache[i].counter.reachable_time = reachable_time;
 				} else {
 					neighbor_cache[i].state = ND6_STALE;
 				}
@@ -294,13 +295,45 @@ void nd6_input(struct pbuf *p, struct netif *inp)
 				if ((ND6H_NA_FLAG(na_hdr) & ND6_FLAG_ROUTER)) {
 					neighbor_cache[i].isrouter = 1;
 				} else {
-					/* @todo
-					 * IsRouter flag in the cache MUST be set based on the Router flag
-					 * in the received advertisement
+					/* RFC 7.2.5
 					 * Node MUST remove that router from the Default Router List
-					 * and update Destincation Cache entries for all destinations using that
+					 * and update Destination Cache entries for all destinations using that
 					 * neighbor router as specified in Section 7.3.3
 					 */
+					if (neighbor_cache[i].isrouter) {
+						s8_t tmp;
+
+						neighbor_cache[i].isrouter = 0;
+						tmp = nd6_get_router(&neighbor_cache[i].next_hop_address, inp);
+						if (tmp == 0) {
+							/* TODO: error */
+						}
+
+						/* RFC 4861, 6.3.5.  Timing out Prefixes and Default Routers  */
+						nd6_free_expired_router_in_destination_cache(&(default_router_list[tmp].neighbor_entry->next_hop_address));
+
+						s8_t j; /* Neighbor cache index */
+
+						j = nd6_find_neighbor_cache_entry(&(default_router_list[tmp].neighbor_entry->next_hop_address));
+						if (j < 0) {
+							LWIP_DEBUGF(ND6_DEBUG, ("Failed to find matched negighbor entry to default router list\n"));
+							/* @todo should we do initialize NCE manually?*/
+						} else {
+							LWIP_DEBUGF(ND6_DEBUG, ("Neighbor cache entry (index %d) will be freed\n", j));
+							nd6_free_neighbor_cache_entry(j);
+						}
+
+						default_router_list[tmp].neighbor_entry = NULL;
+						default_router_list[tmp].invalidation_timer = 0;
+						default_router_list[tmp].flags = 0;
+					}
+				}
+
+				/* Send queued packets, if any. */
+				// RFC 7.2.5.
+				if ((neighbor_cache[i].state == ND6_STALE || neighbor_cache[i].state == ND6_REACHABLE)
+					 && neighbor_cache[i].q != NULL) {
+					nd6_send_q(i);
 				}
 			} else {
 				/* neighbor cache entry state is not ND6_INCOMPLETE */
@@ -323,26 +356,26 @@ void nd6_input(struct pbuf *p, struct netif *inp)
 						return;
 					}
 
-					MEMCPY(neighbor_cache[i].lladdr, ND6H_LLADDR_OPT_ADDR(lladdr_opt), inp->hwaddr_len);
-
+					/* RFC 7.2.5. */
 					if ((ND6H_NA_FLAG(na_hdr) & ND6_FLAG_SOLICITED)) {
 						neighbor_cache[i].state = ND6_REACHABLE;
+						neighbor_cache[i].counter.reachable_time = reachable_time;
+						MEMCPY(neighbor_cache[i].lladdr, ND6H_LLADDR_OPT_ADDR(lladdr_opt), inp->hwaddr_len);
 					} else {
-						neighbor_cache[i].state = ND6_STALE;
+						if (memcmp(neighbor_cache[i].lladdr, ND6H_LLADDR_OPT_ADDR(lladdr_opt), inp->hwaddr_len) != 0) {
+							neighbor_cache[i].state = ND6_STALE;
+							MEMCPY(neighbor_cache[i].lladdr, ND6H_LLADDR_OPT_ADDR(lladdr_opt), inp->hwaddr_len);
+						}
+						/* TODO: else entry must not be updated, but is that mean drop the packet? */
 					}
 				} else {
 					if (neighbor_cache[i].state == ND6_REACHABLE) {
 						neighbor_cache[i].state = ND6_STALE;
 					}
+					/* TODO: else the received advertisement should be ignored and MUST NOT update the cache
+					 * so, should I drop the packet?
+					 */
 				}
-			}
-
-			neighbor_cache[i].netif = inp;
-			neighbor_cache[i].counter.reachable_time = reachable_time;
-
-			/* Send queued packets, if any. */
-			if (neighbor_cache[i].state == ND6_REACHABLE && neighbor_cache[i].q != NULL) {
-				nd6_send_q(i);
 			}
 		}
 
