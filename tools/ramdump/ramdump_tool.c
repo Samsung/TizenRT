@@ -119,12 +119,14 @@ static int ramdump_recv(int dev_fd)
 		ret = read(dev_fd, &buf, 1);
 		if (ret != 1) {
 			printf("Receiving ramdump %dTH byte failed, ret = %d\n", count, ret);
+			fclose(bin_fp);
 			return -1;
 		}
 
 		ret = fwrite(&buf, 1, 1, bin_fp);
 		if (ret != 1) {
 			printf("Writing ramdump %dTH byte failed, ret = %d\n", count, ret);
+			fclose(bin_fp);
 			return -1;
 		}
 
