@@ -455,17 +455,16 @@ void nd6_input(struct pbuf *p, struct netif *inp)
 
 			i = nd6_find_neighbor_cache_entry(ip6_current_src_addr());
 			if (i >= 0) {
-				/* We already have a record for the solicitor. */
-				if (neighbor_cache[i].state == ND6_INCOMPLETE) {
-					neighbor_cache[i].netif = inp;
-					if (memcmp(neighbor_cache[i].lladdr, ND6H_LLADDR_OPT_ADDR(lladdr_opt), inp->hwaddr_len) != 0) {
-						MEMCPY(neighbor_cache[i].lladdr, ND6H_LLADDR_OPT_ADDR(lladdr_opt), inp->hwaddr_len);
-						neighbor_cache[i].state = ND6_STALE;
-						neighbor_cache[i].counter.stale_time = 0;
-					} else {
-						neighbor_cache[i].state = ND6_REACHABLE;
-						neighbor_cache[i].counter.reachable_time = reachable_time;
-					}
+				neighbor_cache[i].netif = inp;
+				/* RFC 7.2.3.
+				* If an entry already exists, and the cached link-layer address
+				* differs from the one in the received Source Link-Layer option,
+				* the cached address should be replaced by the received address,
+				* and the entry's reachability state MUST be set to STALE.
+				*/
+				if (memcmp(neighbor_cache[i].lladdr, ND6H_LLADDR_OPT_ADDR(lladdr_opt), inp->hwaddr_len) != 0) {
+					MEMCPY(neighbor_cache[i].lladdr, ND6H_LLADDR_OPT_ADDR(lladdr_opt), inp->hwaddr_len);
+					neighbor_cache[i].state = ND6_STALE;
 				}
 			} else {
 				/**
@@ -483,11 +482,11 @@ void nd6_input(struct pbuf *p, struct netif *inp)
 					ND6_STATS_INC(nd6.memerr);
 					return;
 				}
+
 				neighbor_cache[i].netif = inp;
 				MEMCPY(neighbor_cache[i].lladdr, ND6H_LLADDR_OPT_ADDR(lladdr_opt), inp->hwaddr_len);
 				ip6_addr_set(&(neighbor_cache[i].next_hop_address), ip6_current_src_addr());
 				neighbor_cache[i].state = ND6_STALE;
-				neighbor_cache[i].counter.stale_time = 0;
 			}
 
 			/* Create an aligned copy. */
@@ -905,13 +904,14 @@ void nd6_tmr(void)
 			if (neighbor_cache[i].counter.reachable_time <= ND6_TMR_INTERVAL) {
 				/* Change to stale state. */
 				neighbor_cache[i].state = ND6_STALE;
-				neighbor_cache[i].counter.stale_time = 0;
 			} else {
 				neighbor_cache[i].counter.reachable_time -= ND6_TMR_INTERVAL;
 			}
 			break;
 		case ND6_STALE:
-			neighbor_cache[i].counter.stale_time += ND6_TMR_INTERVAL;
+			/* RFC 7.3.3. */
+			neighbor_cache[i].state = ND6_DELAY;
+			neighbor_cache[i].counter.delay_time = LWIP_ND6_DELAY_FIRST_PROBE_TIME;
 			break;
 		case ND6_DELAY:
 			if (neighbor_cache[i].counter.delay_time <= ND6_TMR_INTERVAL) {
@@ -2110,9 +2110,15 @@ err_t nd6_get_next_hop_addr_or_queue(struct netif *netif, struct pbuf *q, const 
 
 	/* Now that we have a destination record, send or queue the packet. */
 	if (neighbor_cache[i].state == ND6_STALE) {
-		/* Switch to delay state. */
+		/* RFC 7.3.3.
+		 * The first time a node sends a packet to a neighbor whose entry is
+		 * STALE, the sender changes the state to DELAY and sets a timer to
+		 * expire in DELAY_FIRST_PROBE_TIME seconds.
+		 */
+		*hwaddrp = neighbor_cache[i].lladdr;
 		neighbor_cache[i].state = ND6_DELAY;
 		neighbor_cache[i].counter.delay_time = LWIP_ND6_DELAY_FIRST_PROBE_TIME;
+		return ERR_OK;
 	}
 	/* @todo should we send or queue if PROBE? send for now, to let unicast NS pass. */
 	if ((neighbor_cache[i].state == ND6_REACHABLE) || (neighbor_cache[i].state == ND6_DELAY) || (neighbor_cache[i].state == ND6_PROBE)) {
