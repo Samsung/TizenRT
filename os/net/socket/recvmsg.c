@@ -94,7 +94,7 @@ ssize_t recvmsg(int sockfd, struct msghdr *msg, int flags)
 	uint8_t *buf = (uint8_t *)(msg->msg_iov->iov_base);
 	size_t len = msg->msg_iov->iov_len;
 	struct sockaddr *from = (struct sockaddr *)msg->msg_name;
-	int *addrlen = &(msg->msg_namelen);
+	socklen_t *addrlen = &(msg->msg_namelen);
 
 	printf("\n[Received IOTIVITY Packet][%s:%d] \n", __FUNCTION__, __LINE__);
 
