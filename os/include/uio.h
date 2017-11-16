@@ -52,14 +52,12 @@
 #ifndef __OS_INCLUDE_UIO_H
 #define __OS_INCLUDE_UIO_H
 
-#ifdef CONFIG_ENABLE_IOTIVITY
 #include <sys/types.h>
-
+#if !defined(iovec)
 struct iovec {
 	void *iov_base;
 	__kernel_size_t iov_len;
 };
-
 #endif
 
 #endif							/* __OS_INCLUDE_UIO_H */

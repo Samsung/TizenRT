@@ -125,8 +125,6 @@
 
 #ifndef __ASSEMBLY__
 
-#ifdef CONFIG_ENABLE_IOTIVITY
-
 typedef int wint_t;
 typedef unsigned long __kernel_size_t;
 typedef unsigned short __kernel_sa_family_t;
@@ -149,7 +147,6 @@ struct ifinfomsg {
 	unsigned ifi_flags;			/* IFF_* flags  */
 	unsigned ifi_change;		/* IFF_* change mask */
 };
-#endif
 
 typedef unsigned int __u32;
 

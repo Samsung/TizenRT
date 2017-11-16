@@ -69,7 +69,7 @@
 #include <net/lwip/inet.h>
 
 #include <sys/select.h>
-
+#include <uio.h>
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -169,13 +169,6 @@ struct lwip_setgetsockopt_data {
 	void *completed_sem;
 };
 #endif							/* !LWIP_TCPIP_CORE_LOCKING */
-
-#if !defined(iovec)
-struct iovec {
-	void *iov_base;
-	size_t iov_len;
-};
-#endif
 
 struct msghdr {
 	void *msg_name;
