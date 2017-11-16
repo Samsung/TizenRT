@@ -481,6 +481,9 @@ void nd6_input(struct pbuf *p, struct netif *inp)
 
 			/* Send back a NA for us. Allocate the reply pbuf. */
 			nd6_send_na(inp, &target_address, ND6_FLAG_SOLICITED | ND6_FLAG_OVERRIDE);
+			if (neighbor_cache[i].q != NULL) {
+				nd6_send_q(i);
+			}
 		}
 
 		break;				/* ICMP6_TYPE_NS */
@@ -896,7 +899,7 @@ void nd6_tmr(void)
 			}
 			break;
 		case ND6_PROBE:
-			if ((neighbor_cache[i].probes_sent >= LWIP_ND6_MAX_MULTICAST_SOLICIT) && (!neighbor_cache[i].isrouter)) {
+			if ((neighbor_cache[i].probes_sent >= LWIP_ND6_MAX_UNICAST_SOLICIT) && (!neighbor_cache[i].isrouter)) {
 				/* Retries exceeded. */
 				nd6_free_neighbor_cache_entry(i);
 			} else {
@@ -1393,10 +1396,12 @@ static void nd6_free_neighbor_cache_entry(s8_t i)
 		neighbor_cache[i].q = NULL;
 	}
 
+	memset(neighbor_cache[i].lladdr, 0, NETIF_MAX_HWADDR_LEN);
 	neighbor_cache[i].state = ND6_NO_ENTRY;
 	neighbor_cache[i].isrouter = 0;
 	neighbor_cache[i].netif = NULL;
 	neighbor_cache[i].counter.reachable_time = 0;
+	neighbor_cache[i].probes_sent = 0;
 	ip6_addr_set_zero(&(neighbor_cache[i].next_hop_address));
 }
 
