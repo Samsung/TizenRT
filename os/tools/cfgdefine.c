@@ -55,6 +55,7 @@
  ****************************************************************************/
 
 #include <string.h>
+#include <stdlib.h>
 #include <ctype.h>
 #include "cfgdefine.h"
 
@@ -277,6 +278,8 @@ void generate_definitions(FILE * stream)
 	char *varname;
 	char *varval;
 	char *ptr;
+	char **word;
+	int cnt = 0;
 
 	/* Loop until the entire file has been parsed. */
 
@@ -314,6 +317,53 @@ void generate_definitions(FILE * stream)
 
 				else
 					printf("#define %s %s\n", varname, varval);
+			}
+
+			if (strcmp(varname, "CONFIG_ARTIK05X_FLASH_PART_NAME") == 0) {
+				char *tmp;
+				char *copy;
+				int i = 0;
+				int ndx;
+
+				copy = strdup(varval);
+				tmp = strsep(&varval, "\"");
+				while ((tmp = strsep(&varval, ",")) != NULL) {
+					cnt++;
+				}
+				varval = strdup(copy);
+
+				tmp = strsep(&varval, "\"");
+				word = (char **)malloc((sizeof(char *)*cnt));
+				while ((tmp = strsep(&varval, ",")) != NULL) {
+					word[i] = (char *)malloc(20);
+					for (ndx = 0; ndx < strlen(tmp); ndx++) {
+						word[i][ndx] = (char)toupper(tmp[ndx]);
+					}
+					i++;
+				}
+			}
+
+			if (strcmp(varname, "CONFIG_ARTIK05X_FLASH_PART_LIST") == 0) {
+				char *tmp;
+				int step = 0;
+				int temp = 0;
+				int base = 0;
+				int i = 0;
+
+				printf("#define CONFIG_ARTIK05X_%s_BIN_ADDR 0x%08X\n", (char *)word[i], 0);
+
+				tmp = strsep(&varval, "\"");
+				while ((tmp = strsep(&varval, ",")) != NULL) {
+					step = strtoul(tmp, NULL, 10);
+					temp = step;
+					base += step;
+
+					printf("#define CONFIG_ARTIK05X_%s_BIN_SIZE 0x%08X\n", (char *)word[i++], temp * 1024);
+					if (i >= cnt - 1) {
+						break;
+					}
+					printf("#define CONFIG_ARTIK05X_%s_BIN_ADDR 0x%08X\n", (char *)word[i], base * 1024);
+				}
 			}
 		}
 	} while (ptr);

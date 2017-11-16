@@ -28,6 +28,7 @@
 #include <net/lwip/tcpip.h>
 
 #include <tinyara/configdata.h>
+#include <chip/s5j_memorymap.h>
 
 #include "up_arch.h"
 #include "artik05x.h"
@@ -153,7 +154,7 @@ int up_wlan_get_mac_addr(char *macaddr)
 
 void *up_wlan_get_firmware(void)
 {
-	return (void *)0x04048000;
+	return (void *)(S5J_FLASH_PADDR + CONFIG_ARTIK05X_WLANFW_BIN_ADDR);
 }
 
 void up_wlan_init(struct netif *dev)

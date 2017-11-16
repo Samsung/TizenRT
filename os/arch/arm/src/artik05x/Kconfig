@@ -51,6 +51,14 @@ config ARTIK05X_FLASH_MINOR
 		Sets the minor number for /dev node of the external flash
 		device.
 
+config ARTIK05X_FLASH_PART_NAME
+	string "Flash partition name list"
+	default "bl1,sssro,bl2,sssfw,wlanfw,os,factory,ota,user,nvram,sssrw,"
+	depends on MTD_PARTITION_NAMES
+	depends on ARTIK05X_FLASH_PART
+	---help---
+		Comma separated list of partition names.
+
 config ARTIK05X_FLASH_PART_LIST
 	string "Flash partition size list (in KBytes)"
 	default "16,48,192,32,512,2400,1536,1536,1400,8,512,"
@@ -65,14 +73,6 @@ config ARTIK05X_FLASH_PART_TYPE
 	---help---
 		Comma separated list of partition types that can be one of
 		followings: none, smartfs, config
-
-config ARTIK05X_FLASH_PART_NAME
-	string "Flash partition name list"
-	default "bl1,sssro,bl2,sssfw,wlanfw,os,factory,ota,user,nvram,sssrw,"
-	depends on MTD_PARTITION_NAMES
-	depends on ARTIK05X_FLASH_PART
-	---help---
-		Comma separated list of partition names.
 
 config ARTIK05X_AUTOMOUNT
        bool "Automount partitions"
