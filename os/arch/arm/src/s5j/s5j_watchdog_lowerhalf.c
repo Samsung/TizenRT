@@ -88,6 +88,7 @@ struct s5j_lowerhalf_s {
 	unsigned int clk_handle;
 	uint32_t prescaler;
 	uint32_t divider;
+	uint32_t irqno;
 };
 
 /****************************************************************************
@@ -95,7 +96,9 @@ struct s5j_lowerhalf_s {
  ****************************************************************************/
 /* Interrupt hanlding *******************************************************/
 
-static int s5j_wdg_interrupt(int irq, FAR void *context);
+#ifdef CONFIG_S5J_WATCHDOG_INT
+static int s5j_wdg_interrupt(int irq, FAR void *context, FAR void *arg);
+#endif
 
 /* "Lower half" driver methods **********************************************/
 
@@ -130,6 +133,7 @@ FAR struct s5j_lowerhalf_s *wdt_tail;
 /****************************************************************************
  * Private Functions
  ****************************************************************************/
+#ifdef CONFIG_S5J_WATCHDOG_INT
 /****************************************************************************
  * Name: s5j_wdg_interrupt
  *
@@ -144,15 +148,11 @@ FAR struct s5j_lowerhalf_s *wdt_tail;
  *
  ****************************************************************************/
 
-static int s5j_wdg_interrupt(int irq, FAR void *context)
+static int s5j_wdg_interrupt(int irq, FAR void *context, FAR void *arg)
 {
 	FAR struct s5j_lowerhalf_s *priv;
 
-	for (priv = wdt_head; priv; priv = priv->next) {
-		if (irq == IRQ_WDT) {
-			break;
-		}
-	}
+	priv = (FAR struct s5j_lowerhalf_s *)arg;
 
 	DEBUGASSERT(priv);
 
@@ -166,10 +166,21 @@ static int s5j_wdg_interrupt(int irq, FAR void *context)
 	}
 
 	s5j_watchdog_clear_int();
-	lldbg("%s\n", __func__);
+
+#ifdef CONFIG_S5J_WATCHDOG_RESET
+	/* System will be down, but user can be noticed why it would be rebooted */
+	up_puts("WDOG interrupt has been occurred!!\n");
+
+	s5j_watchdog_disable();
+	s5j_watchdog_irq_disable();
+	s5j_watchdog_reset_enable();
+	s5j_wdg_settimeout((FAR struct watchdog_lowerhalf_s *)priv, 1);
+	s5j_watchdog_enable();
+#endif
 
 	return OK;
 }
+#endif
 
 /****************************************************************************
  * Name: s5j_wdg_start
@@ -409,11 +420,11 @@ static xcpt_t s5j_wdg_capture(FAR struct watchdog_lowerhalf_s *lower, xcpt_t han
 	if (handler) {
 		s5j_watchdog_irq_enable();
 
-		up_enable_irq(IRQ_WDT);
+		up_enable_irq(priv->irqno);
 	} else {
 		s5j_watchdog_irq_disable();
 
-		up_disable_irq(IRQ_WDT);
+		up_disable_irq(priv->irqno);
 	}
 
 	return oldhandler;
@@ -515,11 +526,17 @@ int s5j_wdg_initialize(FAR const char *devpath)
 #endif
 
 #ifdef CONFIG_S5J_WATCHDOG_INT
+	priv->irqno = IRQ_WDT;
+
 	s5j_watchdog_irq_enable();
+
+#ifdef CONFIG_S5J_WATCHDOG_RESET
+	s5j_watchdog_reset_disable();
+#endif
 
 	/* Attach our EWI interrupt handler (But don't enable it yet) */
 
-	(void)irq_attach(priv->irqno, s5j_wdg_interrupt);
+	(void)irq_attach(priv->irqno, s5j_wdg_interrupt, (void *)priv);
 	up_enable_irq(priv->irqno);
 #endif
 
