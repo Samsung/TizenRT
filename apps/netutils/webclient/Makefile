@@ -60,7 +60,7 @@ ASRCS		=
 CSRCS		=
 
 ifeq ($(CONFIG_NETUTILS_WEBCLIENT),y)
-CSRCS		= webclient.c
+CSRCS		= webclient.c webclient_common.c webclient_interface.c
 endif
 
 AOBJS		= $(ASRCS:.S=$(OBJEXT))
