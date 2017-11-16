@@ -57,7 +57,7 @@ include $(APPDIR)/Make.defs
 # built-in application info
 
 APPNAME = webserver
-FUNCNAME = webserver_main
+FUNCNAME = $(APPNAME)_main
 THREADEXEC = TASH_EXECMD_ASYNC
 
 # webserver example

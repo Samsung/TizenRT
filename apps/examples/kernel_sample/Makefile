@@ -57,7 +57,7 @@ include $(APPDIR)/Make.defs
 # kernel_sample built-in application info
 
 APPNAME = kernel_sample
-FUNCNAME = kernel_sample_main
+FUNCNAME = $(APPNAME)_main
 THREADEXEC = TASH_EXECMD_ASYNC
 
 # TinyAra OS Test

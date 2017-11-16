@@ -24,7 +24,7 @@ include $(APPDIR)/Make.defs
 
 APPNAME = smtpc
 THREADEXEC = TASH_EXECMD_ASYNC
-FUNCNAME = smtpc_main
+FUNCNAME = $(APPNAME)_main
 
 # smtp client example
 

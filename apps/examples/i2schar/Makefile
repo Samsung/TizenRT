@@ -57,7 +57,7 @@ include $(APPDIR)/Make.defs
 # built-in application info
 
 APPNAME = i2schar
-FUNCNAME = i2schar_main
+FUNCNAME = $(APPNAME)_main
 THREADEXEC = TASH_EXECMD_SYNC
 
 ASRCS =

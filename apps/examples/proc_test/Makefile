@@ -57,7 +57,7 @@ include $(APPDIR)/Make.defs
 # built-in application info
 
 APPNAME = proc_test
-FUNCNAME = proc_test_main
+FUNCNAME = $(APPNAME)_main
 THREADEXEC = TASH_EXECMD_ASYNC
 
 # procfs test Example

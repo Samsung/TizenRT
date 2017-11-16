@@ -60,7 +60,7 @@ include $(APPDIR)/Make.defs
 # built-in application info
 
 APPNAME = wave_gen
-FUNCNAME = wave_gen_main
+FUNCNAME = $(APPNAME)_main
 THREADEXEC = TASH_EXECMD_ASYNC
 
 

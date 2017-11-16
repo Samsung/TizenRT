@@ -57,7 +57,7 @@ include $(APPDIR)/Make.defs
 # built-in application info
 
 APPNAME = nettest
-FUNCNAME = nettest_main
+FUNCNAME = $(APPNAME)_main
 THREADEXEC = TASH_EXECMD_ASYNC
 
 # transport layer (TCP / UDP) / IP multicast functionality test example
