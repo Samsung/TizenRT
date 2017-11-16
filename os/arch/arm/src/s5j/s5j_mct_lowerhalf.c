@@ -338,6 +338,9 @@ int s5j_timer_initialize(FAR const char *devpath, int timer)
 		lower = &g_mct3_lowerhalf;
 		break;
 #endif
+
+	default:
+		break;
 	}
 
 	if (!lower) {

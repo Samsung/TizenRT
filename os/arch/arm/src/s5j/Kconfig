@@ -221,8 +221,8 @@ config S5J_TIMER2
 	select S5J_MCT
 
 config S5J_TIMER3
-	bool "TIMER3"
-	default n
+	bool
+	default y
 	depends on S5J_HAVE_MCT
 	select S5J_MCT
 

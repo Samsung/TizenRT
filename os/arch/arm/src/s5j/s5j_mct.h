@@ -69,7 +69,7 @@
  ****************************************************************************/
 /* Helpers ******************************************************************/
 #ifdef CONFIG_S5J_MCT
-#  define CONFIG_S5J_MCT_NUM    4
+#  define CONFIG_S5J_MCT_NUM    3
 #else
 #  define CONFIG_S5J_MCT_NUM    0
 #endif
@@ -92,7 +92,7 @@ enum s5j_mct_channel_e {
 	S5J_MCT_CHANNEL0,
 	S5J_MCT_CHANNEL1,
 	S5J_MCT_CHANNEL2,
-	S5J_MCT_CHANNEL3,
+	S5J_MCT_CHANNEL3,		/* Used by SYSTICK */
 };
 
 /****************************************************************************

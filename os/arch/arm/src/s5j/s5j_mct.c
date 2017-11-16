@@ -247,8 +247,6 @@ FAR struct s5j_mct_priv_s *s5j_mct_init(int timer)
 {
 	FAR struct s5j_mct_priv_s *priv = NULL;
 
-	DEBUGASSERT(timer < CONFIG_S5J_MCT_NUM);
-
 	switch (timer) {
 #ifdef CONFIG_S5J_TIMER0
 	case S5J_MCT_CHANNEL0:
@@ -273,6 +271,9 @@ FAR struct s5j_mct_priv_s *s5j_mct_init(int timer)
 		priv = &s5j_mct3_priv;
 		break;
 #endif
+
+	default:
+		break;
 	}
 
 	if (!g_mct_initialized && priv) {

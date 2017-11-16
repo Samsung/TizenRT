@@ -57,16 +57,21 @@
 
 #include <stdint.h>
 #include <time.h>
+#include <tinyara/clock.h>
 #include <tinyara/arch.h>
 #include <arch/board/board.h>
 #include "up_arch.h"
 
 #include "chip.h"
-#include "s5j_rtc.h"
+#include "s5j_mct.h"
 
 /****************************************************************************
  * Pre-processor Definitions
  ****************************************************************************/
+#ifndef CONFIG_S5J_MCT
+#  error SYSTICK depends the MCT Driver. Should be enable MCT in chip menu.
+#endif
+
 /*
  * The desired timer interrupt frequency is provided by the definition
  * CLK_TCK (see include/time.h).  CLK_TCK defines the desired number of
@@ -93,7 +98,7 @@
 int up_timerisr(int irq, FAR void *context, FAR void *arg)
 {
 	/* Clear interrupt pending */
-	putreg32(RTC_INTP_TIMETIC0, S5J_RTC_INTP);
+	s5j_mct_ack_irq((FAR struct s5j_mct_priv_s *)arg);
 
 	/* Process timer interrupt */
 	sched_process_timer();
@@ -111,18 +116,29 @@ int up_timerisr(int irq, FAR void *context, FAR void *arg)
  ****************************************************************************/
 void up_timer_initialize(void)
 {
-	/* OSC_CON[16] should be set to 1, so that RTC uses XRTCXTO as srcclk */
-	modifyreg32(0x800A0554, 0x0, 1 << 16);
+#define TICK_INTERVAL (USEC_PER_SEC / CLK_TCK)
+	FAR struct s5j_mct_priv_s *mct =
+			s5j_mct_init(S5J_MCT_CHANNEL3);
+	irqstate_t flags = irqsave();
 
-	/* Configure the RTC timetick to generate periodic interrupts */
-	modifyreg32(S5J_RTC_RTCCON, RTC_RTCCON_TICKEN0_ENABLE, 0);
-	putreg32(SYSTICK_RELOAD, S5J_RTC_TICCNT0);
-	modifyreg32(S5J_RTC_RTCCON, RTC_RTCCON_TICCKSEL0_MASK,
-					RTC_RTCCON_TICKEN0_ENABLE | RTC_RTCCON_TICCKSEL0_32768HZ);
+	if (mct) {
+		s5j_mct_disableint(mct);
 
-	/* Attach the timer interrupt vector */
-	irq_attach(IRQ_TOP_RTC_TIC, up_timerisr, NULL);
+		/* Configure the timetick to generate periodic interrupts */
+		s5j_mct_setperiod(mct, TICK_INTERVAL);
 
-	/* Enable the timer interrupt */
-	up_enable_irq(IRQ_TOP_RTC_TIC);
+		/* use interval mode */
+		s5j_mct_setmode(mct, false);
+
+		/* Attach the timer interrupt vector */
+		s5j_mct_setisr(mct, up_timerisr, mct);
+
+		/* Enable the timer interrupt */
+		s5j_mct_enableint(mct);
+
+		s5j_mct_enable(mct);
+	}
+
+	irqrestore(flags);
+#undef TICK_INTERVAL
 }
