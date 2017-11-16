@@ -171,7 +171,6 @@ static int read_tracebuffer(FILE *file, int bufsize)
 
 	read_len = fread(buffer, sizeof(char), bufsize, file);
 	if (read_len < 0) {
-		free(buffer);
 		return INVALID;
 	}
 
@@ -199,7 +198,6 @@ int main(int argc, char **args)
 
 	filesize = get_dumpsize(file);
 	if (filesize <= 0) {
-		close_dump(file);
 		return INVALID;
 	}
 
