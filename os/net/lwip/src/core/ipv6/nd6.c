@@ -753,17 +753,43 @@ void nd6_input(struct pbuf *p, struct netif *inp)
 			return;
 		}
 
-		/* RFC 4861, 8.1 Validation of Redirect Message
-		 * IP Source Address is a link-local address
-		 */
-		if (!ip6_addr_islinklocal(ip6_current_src_addr())) {
-			LWIP_DEBUGF(ND6_DEBUG, ("Source address is not linklocal address, dropped sliently\n"));
+		redir_hdr = (struct redirect_header *)p->payload;
+
+		/* Processing validition check as per RFC 4861, 8.1 */
+
+		if (IP6H_HOPLIM(ip6_current_header()) != 255) {
 			pbuf_free(p);
 			ND6_STATS_INC(nd6.drop);
 			return;
 		}
 
-		redir_hdr = (struct redirect_header *)p->payload;
+		if (ND6H_CODE(redir_hdr) != 0) {
+			pbuf_free(p);
+			ND6_STATS_INC(nd6.drop);
+			return;
+		}
+
+		if (ip6_addr_ismulticast(&ND6H_RD_DEST_ADDR(redir_hdr))) {
+			pbuf_free(p);
+			ND6_STATS_INC(nd6.drop);
+			return;
+		}
+
+		if (!ip6_addr_islinklocal(ip6_current_src_addr()) || (nd6_find_neighbor_cache_entry(ip6_current_src_addr()) < 0)) {
+			pbuf_free(p);
+			ND6_STATS_INC(nd6.drop);
+			return;
+		}
+
+		if (!ip6_addr_islinklocal(&ND6H_RD_DEST_ADDR(redir_hdr))) {
+			if (!ip6_addr_cmp(&ND6H_RD_DEST_ADDR(redir_hdr), &ND6H_RD_TARGET_ADDR(redir_hdr))) {
+				pbuf_free(p);
+				ND6_STATS_INC(nd6.drop);
+				return;
+			}
+		}
+
+		/* End of validation check for RD message */
 
 		/* Processing redirect header's option field
 		 * RFC 4861, 4.5.  Redirect Message Format
@@ -781,7 +807,11 @@ void nd6_input(struct pbuf *p, struct netif *inp)
 			while (!redirected_opt && redir_optlen >= 2) {
 				switch (buffer[0]) {
 				case ND6_OPTION_TYPE_TARGET_LLADDR:
-					if (buffer[1] == 1) { /* IEEE 802 Link Layer Address */
+					if (buffer[1] == 0) { /* Invalid length */
+						pbuf_free(p);
+						ND6_STATS_INC(nd6.drop);
+						return;
+					} else if (buffer[1] == 1) { /* IEEE 802 Link Layer Address */
 						lladdr_opt = (struct lladdr_option *)buffer;
 						offset = sizeof(struct lladdr_option);
 					} else {
