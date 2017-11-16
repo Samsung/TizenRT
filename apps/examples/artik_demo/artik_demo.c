@@ -747,8 +747,7 @@ int send_data_to_artik(int *data)
 		if (ret < 0) {
 			/* ERROR: Connection Failed */
 			ndbg("ERROR: connect failed: %d\n", ret);
-			free(client_tls);
-			return ERROR;
+			goto error_fd_tls;
 		}
 
 		client_tls->client_fd = sockfd;
@@ -756,12 +755,12 @@ int send_data_to_artik(int *data)
 		if (webclient_tls_init(client_tls, &ssl_config)) {
 			/* ERROR: Fail to client tls init */
 			ndbg("Fail to client tls init\n");
-			return ERROR;
+			goto error_fd_tls;
 		} else {
 			if (wget_tls_handshake(client_tls)) {
 				/* ERROR: Fail to client tls handshake */
 				ndbg("Fail to client tls handshake\n");
-				return ERROR;
+				goto error_fd_tls;
 			}
 		}
 
@@ -880,6 +879,13 @@ int send_data_to_artik(int *data)
 	free(client_tls);
 
 	return 0;
+
+	/* Release memory and close socket if error */
+error_fd_tls:
+	close(sockfd);
+	free(client_tls);
+
+	return ERROR;
 
 	/* Handle Exception */
 errout:
