@@ -284,7 +284,11 @@ int board_app_initialize(void)
 
 #ifdef CONFIG_ARTIK053_AUTOMOUNT_USERFS
 	/* Initialize and mount user partition (if we have) */
+#ifdef CONFIG_SMARTFS_MULTI_ROOT_DIRS
+	ret = mksmartfs(CONFIG_ARTIK053_AUTOMOUNT_USERFS_DEVNAME, 1, false);
+#else
 	ret = mksmartfs(CONFIG_ARTIK053_AUTOMOUNT_USERFS_DEVNAME, false);
+#endif
 	if (ret != OK) {
 		lldbg("ERROR: mksmartfs on %s failed\n", CONFIG_ARTIK053_AUTOMOUNT_USERFS_DEVNAME);
 	} else {
@@ -315,13 +319,20 @@ int board_app_initialize(void)
 			lldbg("ERROR: FAILED TO smart_initialize\n");
 			free(rambuf);
 		} else {
-			(void)mksmartfs(CONFIG_ARTIK053_RAMMTD_DEV_POINT, false);
-
-			ret = mount(CONFIG_ARTIK053_RAMMTD_DEV_POINT, CONFIG_ARTIK053_RAMMTD_MOUNT_POINT,
-						"smartfs", 0, NULL);
-			if (ret < 0) {
-				lldbg("ERROR: Failed to mount the SMART volume: %d\n", errno);
+#ifdef CONFIG_SMARTFS_MULTI_ROOT_DIRS
+			ret = mksmartfs(CONFIG_ARTIK053_RAMMTD_DEV_POINT, 1, false);
+#else
+			ret = mksmartfs(CONFIG_ARTIK053_RAMMTD_DEV_POINT, false);
+#endif
+			if (ret != OK) {
+				lldbg("ERROR: mksmartfs on %s failed\n", CONFIG_ARTIK053_RAMMTD_DEV_POINT);
 				free(rambuf);
+			} else {
+				ret = mount(CONFIG_ARTIK053_RAMMTD_DEV_POINT, CONFIG_ARTIK053_RAMMTD_MOUNT_POINT, "smartfs", 0, NULL);
+				if (ret < 0) {
+					lldbg("ERROR: Failed to mount the SMART volume: %d\n", errno);
+					free(rambuf);
+				}
 			}
 		}
 	}

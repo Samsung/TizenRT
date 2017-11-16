@@ -780,10 +780,12 @@ errout_with_fmt:
 static int tash_mksmartfs(int argc, char **args)
 {
 	const char *src;
+	const char *fmt;
 	bool force = false;
 	int option;
-	int badarg = false;
-
+#ifdef CONFIG_SMARTFS_MULTI_ROOT_DIRS
+	int nrootdirs = 1;
+#endif
 	optind = -1;
 	while ((option = getopt(argc, args, "f")) != ERROR) {
 		switch (option) {
@@ -792,26 +794,46 @@ static int tash_mksmartfs(int argc, char **args)
 			break;
 		case '?':
 		default:
-			badarg = true;
-			break;
+			fmt = INVALID_ARGS;
+			goto errout_with_fmt;
 		}
 	}
-	if (badarg) {
-		FSCMD_OUTPUT(INVALID_ARGS, " : [-f] <source>\n", args[0]);
-		return ERROR;
+
+	if (optind >= argc) {
+		fmt = MISSING_ARGS;
+		goto errout_with_fmt;
 	}
+
+	/* Set path for registered block driver */
+	src = args[optind];
 
 	if (optind + 1 < argc) {
-		FSCMD_OUTPUT(TOO_MANY_ARGS, args[0]);
+#ifdef CONFIG_SMARTFS_MULTI_ROOT_DIRS
+		nrootdirs = atoi(args[optind++]);
+	}
+	if (nrootdirs > 8 || nrootdirs < 1) {
+		FSCMD_OUTPUT(INVALID_ARGS, "Invalid number of root directories specified\n", args[0]);
 		return ERROR;
-	} else if (optind >= argc) {
-		FSCMD_OUTPUT(INVALID_ARGS, " : [-f] <source>\n", args[0]);
-		return ERROR;
-	} else {
-		src = args[optind];
+	}
+	if (optind + 1 < argc) {
+#endif
+		fmt = TOO_MANY_ARGS;
+		goto errout_with_fmt;
 	}
 
+#ifdef CONFIG_SMARTFS_MULTI_ROOT_DIRS
+	return mksmartfs(src, nrootdirs, force);
+#else
 	return mksmartfs(src, force);
+#endif
+
+errout_with_fmt:
+#ifdef CONFIG_SMARTFS_MULTI_ROOT_DIRS
+	FSCMD_OUTPUT(fmt, " : [-f] <source> [<nrootdir>]\n", args[0]);
+#else
+	FSCMD_OUTPUT(fmt, " : [-f] <source>\n", args[0]);
+#endif
+	return ERROR;
 }
 #endif							/* END OF CONFIG FS_SMARTFS */
 
