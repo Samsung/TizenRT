@@ -464,6 +464,13 @@ void nd6_input(struct pbuf *p, struct netif *inp)
 				*/
 				if (memcmp(neighbor_cache[i].lladdr, ND6H_LLADDR_OPT_ADDR(lladdr_opt), inp->hwaddr_len) != 0) {
 					MEMCPY(neighbor_cache[i].lladdr, ND6H_LLADDR_OPT_ADDR(lladdr_opt), inp->hwaddr_len);
+				}
+
+				/* RFC 4861 page 91, appendix c */
+				if ((neighbor_cache[i].state == ND6_INCOMPLETE) && neighbor_cache[i].q != NULL) {
+					neighbor_cache[i].state = ND6_STALE;
+					nd6_send_q(i);
+				} else {
 					neighbor_cache[i].state = ND6_STALE;
 				}
 			} else {
@@ -924,7 +931,7 @@ void nd6_tmr(void)
 			}
 			break;
 		case ND6_PROBE:
-			if ((neighbor_cache[i].probes_sent >= LWIP_ND6_MAX_MULTICAST_SOLICIT) && (!neighbor_cache[i].isrouter)) {
+			if ((neighbor_cache[i].probes_sent >= LWIP_ND6_MAX_UNICAST_SOLICIT) && (!neighbor_cache[i].isrouter)) {
 				/* Retries exceeded. */
 				nd6_free_neighbor_cache_entry(i);
 			} else {
@@ -1426,10 +1433,12 @@ static void nd6_free_neighbor_cache_entry(s8_t i)
 		neighbor_cache[i].q = NULL;
 	}
 
+	memset(neighbor_cache[i].lladdr, 0, NETIF_MAX_HWADDR_LEN);
 	neighbor_cache[i].state = ND6_NO_ENTRY;
 	neighbor_cache[i].isrouter = 0;
 	neighbor_cache[i].netif = NULL;
 	neighbor_cache[i].counter.reachable_time = 0;
+	neighbor_cache[i].probes_sent = 0;
 	ip6_addr_set_zero(&(neighbor_cache[i].next_hop_address));
 }
 
