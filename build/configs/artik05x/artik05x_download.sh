@@ -51,11 +51,13 @@ OPTIONS:
 
 For examples:
     `basename $0` --board=artik053 ALL
-    `basename $0` --board=artik055s BOOTLOADER
+    `basename $0` --board=artik053s --verify
+    `basename $0` --board=artik055s --secure
 
 Options:
     --board[="<board-name>"]      select target board-name
     --secure                      choose secure mode
+    --verify                      verify downloaded image if you need
     ALL                           write each firmware image into FLASH
     BOOTLOADER                    not supported yet
     RESOURCE                      not supported yet
@@ -79,7 +81,7 @@ romfs()
 
         pushd ${OPENOCD_DIR_PATH} > /dev/null
         ${OPENOCD_BIN_PATH}/openocd -f artik05x.cfg -s "$BOARD_DIR_PATH/../artik05x/scripts" -c " 	\
-        flash_write rom ${OUTPUT_BINARY_PATH}/romfs.img; \
+        flash_write rom ${OUTPUT_BINARY_PATH}/romfs.img $VERIFY; \
         exit" || exit 1
         popd > /dev/null
     fi
@@ -107,14 +109,14 @@ download()
 
     # Download all binaries using openocd script
     pushd ${OPENOCD_DIR_PATH} > /dev/null
-    ${OPENOCD_BIN_PATH}/openocd -f artik05x.cfg -s "$BOARD_DIR_PATH/../artik05x/scripts" -c " 	\
-        flash_protect off;\
-        flash_write bl1 ${FW_DIR_PATH}/bl1.bin; 		\
+        ${OPENOCD_BIN_PATH}/openocd -f artik05x.cfg -s $BOARD_DIR_PATH/../artik05x/scripts -c \
+        "flash_protect off; \
+        flash_write bl1 ${FW_DIR_PATH}/bl1.bin $VERIFY;
         flash_protect on; \
-        flash_write bl2 ${FW_DIR_PATH}/bl2.bin; 		\
-        flash_write sssfw ${FW_DIR_PATH}/sssfw.bin; 	\
-        flash_write wlanfw ${FW_DIR_PATH}/wlanfw.bin;	\
-        flash_write os ${TIZENRT_BIN};	\
+        flash_write bl2 ${FW_DIR_PATH}/bl2.bin $VERIFY; 		\
+        flash_write sssfw ${FW_DIR_PATH}/sssfw.bin $VERIFY; 	\
+        flash_write wlanfw ${FW_DIR_PATH}/wlanfw.bin $VERIFY;	\
+        flash_write os ${TIZENRT_BIN} $VERIFY;	\
         exit" || exit 1
     popd > /dev/null
 
@@ -184,6 +186,9 @@ while test $# -gt 0; do
             ;;
         --secure)
             signing
+            ;;
+        --verify)
+            VERIFY=verify
             ;;
         ALL)
             download
