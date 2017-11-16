@@ -458,11 +458,14 @@ void nd6_input(struct pbuf *p, struct netif *inp)
 				/* We already have a record for the solicitor. */
 				if (neighbor_cache[i].state == ND6_INCOMPLETE) {
 					neighbor_cache[i].netif = inp;
-					MEMCPY(neighbor_cache[i].lladdr, ND6H_LLADDR_OPT_ADDR(lladdr_opt), inp->hwaddr_len);
-
-					/* Delay probe in case we get confirmation of reachability from upper layer (TCP). */
-					neighbor_cache[i].state = ND6_DELAY;
-					neighbor_cache[i].counter.delay_time = LWIP_ND6_DELAY_FIRST_PROBE_TIME;
+					if (memcmp(neighbor_cache[i].lladdr, ND6H_LLADDR_OPT_ADDR(lladdr_opt), inp->hwaddr_len) != 0) {
+						MEMCPY(neighbor_cache[i].lladdr, ND6H_LLADDR_OPT_ADDR(lladdr_opt), inp->hwaddr_len);
+						neighbor_cache[i].state = ND6_STALE;
+						neighbor_cache[i].counter.stale_time = 0;
+					} else {
+						neighbor_cache[i].state = ND6_REACHABLE;
+						neighbor_cache[i].counter.reachable_time = reachable_time;
+					}
 				}
 			} else {
 				/**
@@ -483,13 +486,8 @@ void nd6_input(struct pbuf *p, struct netif *inp)
 				neighbor_cache[i].netif = inp;
 				MEMCPY(neighbor_cache[i].lladdr, ND6H_LLADDR_OPT_ADDR(lladdr_opt), inp->hwaddr_len);
 				ip6_addr_set(&(neighbor_cache[i].next_hop_address), ip6_current_src_addr());
-
-				/**
-				 * Receiving a message does not prove reachability: only in one direction.
-				 * Delay probe in case we get confirmation of reachability from upper layer (TCP).
-				 */
-				neighbor_cache[i].state = ND6_DELAY;
-				neighbor_cache[i].counter.delay_time = LWIP_ND6_DELAY_FIRST_PROBE_TIME;
+				neighbor_cache[i].state = ND6_STALE;
+				neighbor_cache[i].counter.stale_time = 0;
 			}
 
 			/* Create an aligned copy. */
