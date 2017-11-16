@@ -292,7 +292,6 @@ static size_t power_states_read(FAR struct file *filep, FAR char *buffer, size_t
 
 	priv = (FAR struct power_file_s *)filep->f_priv;
 
-	copysize = 0;
 	totalsize = 0;
 
 	if (priv->offset == 0) {
