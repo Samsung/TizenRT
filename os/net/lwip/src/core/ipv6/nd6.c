@@ -455,8 +455,14 @@ void nd6_input(struct pbuf *p, struct netif *inp)
 				 * and the entry's reachability state MUST be set to STALE. */
 				if (memcmp(neighbor_cache[i].lladdr, ND6H_LLADDR_OPT_ADDR(lladdr_opt), inp->hwaddr_len) != 0) {
 					MEMCPY(neighbor_cache[i].lladdr, ND6H_LLADDR_OPT_ADDR(lladdr_opt), inp->hwaddr_len);
-					neighbor_cache[i].state = ND6_STALE;
 				}
+
+				/* RFC 4861 page 91, appendix c */
+				if ((neighbor_cache[i].state == ND6_INCOMPLETE) && neighbor_cache[i].q != NULL) {
+					nd6_send_q(i);
+				}
+
+				neighbor_cache[i].state = ND6_STALE;
 			} else {
 				/* Add their IPv6 address and link-layer address to neighbor cache.
 				 * We will need it at least to send a unicast NA message, but most
@@ -481,9 +487,6 @@ void nd6_input(struct pbuf *p, struct netif *inp)
 
 			/* Send back a NA for us. Allocate the reply pbuf. */
 			nd6_send_na(inp, &target_address, ND6_FLAG_SOLICITED | ND6_FLAG_OVERRIDE);
-			if (neighbor_cache[i].q != NULL) {
-				nd6_send_q(i);
-			}
 		}
 
 		break;				/* ICMP6_TYPE_NS */
