@@ -180,6 +180,18 @@ struct msghdr {
 	int msg_flags;
 };
 
+/*
+ *  POSIX 1003.1g - ancillary data object information
+ *  Ancillary data consits of a sequence of pairs of
+ *  (cmsghdr, cmsg_data[])
+ */
+struct cmsghdr {
+	__kernel_size_t cmsg_len; /* data byte count, including hdr */
+	int   cmsg_level; /* originating protocol */
+	int   cmsg_type;  /* protocol-specific type */
+};
+
+
 /* Socket protocol types (TCP/UDP/RAW) */
 #define SOCK_STREAM     1
 #define SOCK_DGRAM      2
@@ -242,10 +254,8 @@ struct linger {
 #define IPPROTO_ICMP    1
 #define IPPROTO_TCP     6
 #define IPPROTO_UDP     17
-#if LWIP_IPV6
 #define IPPROTO_IPV6    41
 #define IPPROTO_ICMPV6  58
-#endif							/* LWIP_IPV6 */
 #define IPPROTO_UDPLITE 136
 #define IPPROTO_RAW     255
 
@@ -309,6 +319,12 @@ typedef struct ip_mreq {
 	struct in_addr imr_multiaddr;	/* IP multicast address of group */
 	struct in_addr imr_interface;	/* local IP address of interface */
 } ip_mreq;
+
+struct ip_mreqn {
+	struct in_addr imr_multiaddr;	/* IP multicast address of group */
+	struct in_addr imr_address;	/* local IP address of interface */
+	int imr_ifindex;			/* Interface index */
+};
 #endif							/* LWIP_IGMP */
 
 /*
@@ -446,6 +462,31 @@ typedef struct ip_mreq {
 #ifndef LWIP_TIMEVAL_PRIVATE
 #define LWIP_TIMEVAL_PRIVATE 1
 #endif
+
+#define CMSG_NXTHDR(mhdr, cmsg) cmsg_nxthdr((mhdr), (cmsg))
+#define CMSG_ALIGN(len) (((len)+sizeof(long)-1) & ~(sizeof(long)-1))
+#define CMSG_DATA(cmsg) ((void *)((char *)(cmsg) + CMSG_ALIGN(sizeof(struct cmsghdr))))
+#define CMSG_SPACE(len) (CMSG_ALIGN(sizeof(struct cmsghdr)) + CMSG_ALIGN(len))
+#define CMSG_LEN(len) (CMSG_ALIGN(sizeof(struct cmsghdr)) + (len))
+#define __CMSG_FIRSTHDR(ctl, len) ((len) >= sizeof(struct cmsghdr) ? (struct cmsghdr *)(ctl) : (struct cmsghdr *)NULL)
+#define CMSG_FIRSTHDR(msg) __CMSG_FIRSTHDR((msg)->msg_control, (msg)->msg_controllen)
+
+static inline struct cmsghdr *__cmsg_nxthdr(void *__ctl, __kernel_size_t __size, struct cmsghdr *__cmsg)
+{
+	struct cmsghdr *__ptr;
+
+	__ptr = (struct cmsghdr *)(((unsigned char *) __cmsg) +  CMSG_ALIGN(__cmsg->cmsg_len));
+	if ((unsigned long)((char *)(__ptr+1) - (char *) __ctl) > __size) {
+		return (struct cmsghdr *)0;
+	}
+
+	return __ptr;
+}
+
+static inline struct cmsghdr *cmsg_nxthdr(struct msghdr *__msg, struct cmsghdr *__cmsg)
+{
+	return __cmsg_nxthdr(__msg->msg_control, __msg->msg_controllen, __cmsg);
+}
 
 #define lwip_socket_init()		/* Compatibility define, no init needed. */
 void lwip_socket_thread_init(void);	/* LWIP_NETCONN_SEM_PER_THREAD==1: initialize thread-local semaphore */
