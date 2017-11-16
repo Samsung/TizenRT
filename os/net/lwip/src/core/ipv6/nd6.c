@@ -815,7 +815,6 @@ void nd6_input(struct pbuf *p, struct netif *inp)
 					 * Reachability state MUST be set to STALE as specified in Section 7.3.3
 					 */
 					neighbor_cache[i].state = ND6_STALE;
-					}
 				}
 			}
 		}
