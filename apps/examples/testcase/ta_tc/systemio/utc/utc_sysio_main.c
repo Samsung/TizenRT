@@ -81,7 +81,6 @@ int sysio_utc(int argc, FAR char *argv[])
 	sem_post(&tc_sem);
 
 	return 0;
-
 }
 
 #ifdef CONFIG_BUILD_KERNEL

@@ -693,5 +693,4 @@ int itc_arastorage_main(int argc, char *argv[])
 	itc_arastorage_launcher(argc, argv);
 #endif
 	return 0;
-
 }
