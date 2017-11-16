@@ -40,12 +40,13 @@ OPTIONS:
 
 For examples:
     `basename $0` --board=artik053 ALL
+    `basename $0` --board=artik053s --verify
     `basename $0` --board=artik055s --secure=../codesigner BOOTLOADER
 
 Options:
     --board[="<board-name>"]      select target board-name
     --secure[=<exec-path>]        choose secure mode, and set the codesinger path
-
+    --verify                      verify downloaded image if you need
     ALL                           write each firmware image into FLASH
     BOOTLOADER                    not supported yet
     RESOURCE                      not supported yet
@@ -81,14 +82,15 @@ download()
 
     # Download all binaries using openocd script
     pushd ${OPENOCD_DIR_PATH} > /dev/null
-    ${OPENOCD_BIN_PATH}/openocd -f artik05x.cfg -s "$BOARD_DIR_PATH/../artik05x/scripts" -c " 	\
-        flash_protect off;\
-        flash_write bl1 ${FW_DIR_PATH}/bl1.bin; 		\
+        ${OPENOCD_BIN_PATH}/openocd -f artik05x.cfg -s $BOARD_DIR_PATH/../artik05x/scripts -c \
+        "flash_protect off; \
+        flash_write bl1 ${FW_DIR_PATH}/bl1.bin $VERIFY;
         flash_protect on; \
-        flash_write bl2 ${FW_DIR_PATH}/bl2.bin; 		\
-        flash_write sssfw ${FW_DIR_PATH}/sssfw.bin; 		\
-        flash_write wlanfw ${FW_DIR_PATH}/wlanfw.bin;	\
-        flash_write os ${TIZENRT_BIN};	\
+        flash_write bl2 ${FW_DIR_PATH}/bl2.bin  $VERIFY; 		\
+        flash_write sssfw ${FW_DIR_PATH}/sssfw.bin  $VERIFY; 		\
+        flash_write wlanfw ${FW_DIR_PATH}/wlanfw.bin  $VERIFY;	\
+        flash_write os ${TIZENRT_BIN} $VERIFY;	\
+
         exit"
     popd > /dev/null
 }
@@ -126,6 +128,9 @@ while test $# -gt 0; do
             fi
             ;;
         --secure=*) signing $optarg
+            ;;
+        --verify)
+            VERIFY=verify
             ;;
         ALL)
             download
