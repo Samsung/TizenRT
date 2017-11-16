@@ -124,7 +124,7 @@ int mbedtls_net_connect(mbedtls_net_context *ctx, const char *host, const char *
 {
 	int ret;
 	struct addrinfo hints, *addr_list, *cur;
-#ifndef CONFIG_LIBC_NETDB
+#ifndef CONFIG_NET_LWIP_NETDB
 	struct sockaddr_in myaddr;
 #endif
 
@@ -138,7 +138,7 @@ int mbedtls_net_connect(mbedtls_net_context *ctx, const char *host, const char *
 	hints.ai_socktype = proto == MBEDTLS_NET_PROTO_UDP ? SOCK_DGRAM : SOCK_STREAM;
 	hints.ai_protocol = proto == MBEDTLS_NET_PROTO_UDP ? IPPROTO_UDP : IPPROTO_TCP;
 
-#ifdef CONFIG_LIBC_NETDB
+#ifdef CONFIG_NET_LWIP_NETDB
 	if (getaddrinfo(host, port, &hints, &addr_list) != 0) {
 		return (MBEDTLS_ERR_NET_UNKNOWN_HOST);
 	}
@@ -169,7 +169,7 @@ int mbedtls_net_connect(mbedtls_net_context *ctx, const char *host, const char *
 		close(ctx->fd);
 		ret = MBEDTLS_ERR_NET_CONNECT_FAILED;
 	}
-#ifdef CONFIG_LIBC_NETDB
+#ifdef CONFIG_NET_LWIP_NETDB
 	freeaddrinfo(addr_list);
 #endif
 	return (ret);
@@ -182,7 +182,7 @@ int mbedtls_net_bind(mbedtls_net_context *ctx, const char *bind_ip, const char *
 {
 	int n, ret;
 	struct addrinfo hints, *addr_list, *cur;
-#ifndef CONFIG_LIBC_NETDB
+#ifndef CONFIG_NET_LWIP_NETDB
 	struct sockaddr_in myaddr;
 #endif
 
@@ -199,7 +199,7 @@ int mbedtls_net_bind(mbedtls_net_context *ctx, const char *bind_ip, const char *
 		hints.ai_flags = AI_PASSIVE;
 	}
 
-#ifdef CONFIG_LIBC_NETDB
+#ifdef CONFIG_NET_LWIP_NETDB
 	if (getaddrinfo(bind_ip, port, &hints, &addr_list) != 0) {
 		return (MBEDTLS_ERR_NET_UNKNOWN_HOST);
 	}
@@ -248,7 +248,7 @@ int mbedtls_net_bind(mbedtls_net_context *ctx, const char *bind_ip, const char *
 		ret = 0;
 		break;
 	}
-#ifdef CONFIG_LIBC_NETDB
+#ifdef CONFIG_NET_LWIP_NETDB
 	freeaddrinfo(addr_list);
 #endif
 	return (ret);
