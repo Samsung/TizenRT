@@ -1,3 +1,0 @@
-config ENTRY_SYSIO_TEST
-	bool "\"System I/O Test (GPIO,PWM,I2C,SPI,UART) \" example"
-	depends on EXAMPLES_SYSIO_TEST
