@@ -18,7 +18,7 @@
 /************************************************************************************
  * fs/driver/mtd/m25px.c
  * Driver for SPI-based M25P1 (128Kbit),  M25P64 (32Mbit), M25P64 (64Mbit), and
- * M25P128 (128Mbit) FLASH (and compatible).
+ * M25L128 (128Mbit) FLASH (and compatible).
  *
  *   Copyright (C) 2009-2011, 2013 Gregory Nutt. All rights reserved.
  *   Author: Gregory Nutt <gnutt@nuttx.org>
@@ -110,7 +110,7 @@
 #define M25P_M25P16_CAPACITY       0x15	/* 16 M-bit */
 #define M25P_M25P32_CAPACITY       0x16	/* 32 M-bit */
 #define M25P_M25P64_CAPACITY       0x17	/* 64 M-bit */
-#define M25P_M25P128_CAPACITY      0x18	/* 128 M-bit */
+#define M25P_M25L128_CAPACITY      0x18	/* 128 M-bit */
 #define M25P_M25P256_CAPACITY      0x19	/* 256 M-bit */
 
 /*  M25P1 capacity is 131,072 bytes:
@@ -166,15 +166,16 @@
 #define M25P_M25P64_NPAGES         32768
 #define M25P_M25P64_SUBSECT_SHIFT  12
 
-/*  M25P128 capacity is 16,777,216 bytes:
- *  (64 sectors) * (262,144 bytes per sector)
+/*  M25L128 capacity is 16,777,216 bytes:
+ *  (256 sectors) * (65,536 bytes per sector)
  *  (65536 pages) * (256 bytes per page)
  */
 
-#define M25P_M25P128_SECTOR_SHIFT  18	/* Sector size 1 << 18 = 262,144 */
-#define M25P_M25P128_NSECTORS      64
-#define M25P_M25P128_PAGE_SHIFT    8	/* Page size 1 << 8 = 256 */
-#define M25P_M25P128_NPAGES        65536
+#define M25P_M25L128_SECTOR_SHIFT  16	/* Sector size 1 << 16 = 65,536 */
+#define M25P_M25L128_NSECTORS      256
+#define M25P_M25L128_PAGE_SHIFT    8	/* Page size 1 << 8 = 256 */
+#define M25P_M25L128_NPAGES        65536
+#define M25P_M25L128_SUBSECT_SHIFT 12
 
 /*  M25P256 capacity is 33,554,432 bytes:
  *  (512 sectors) * (65,536 bytes per sector)
@@ -410,13 +411,16 @@ static inline int m25p_readid(struct m25p_dev_s *priv)
 			priv->subsectorshift = M25P_M25P64_SUBSECT_SHIFT;
 #endif
 			return OK;
-		} else if (capacity == M25P_M25P128_CAPACITY) {
+		} else if (capacity == M25P_M25L128_CAPACITY) {
 			/* Save the FLASH geometry */
 
-			priv->sectorshift = M25P_M25P128_SECTOR_SHIFT;
-			priv->nsectors = M25P_M25P128_NSECTORS;
-			priv->pageshift = M25P_M25P128_PAGE_SHIFT;
-			priv->npages = M25P_M25P128_NPAGES;
+			priv->sectorshift = M25P_M25L128_SECTOR_SHIFT;
+			priv->nsectors = M25P_M25L128_NSECTORS;
+			priv->pageshift = M25P_M25L128_PAGE_SHIFT;
+			priv->npages = M25P_M25L128_NPAGES;
+#if defined(CONFIG_M25P_SUBSECTOR_ERASE)
+			priv->subsectorshift = M25P_M25L128_SUBSECT_SHIFT;
+#endif
 			return OK;
 		} else if (capacity == M25P_M25P256_CAPACITY) {
 			/* Save the FLASH geometry */

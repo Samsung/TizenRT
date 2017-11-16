@@ -262,7 +262,7 @@ int ftl_initialize(int minor, FAR struct mtd_dev_s *mtd);
 *
 * Description:
 *   Initializes the for SPI-based M25P1 (128Kbit),  M25P64 (32Mbit), M25P64
-*   (64Mbit), and M25P128 (128Mbit) FLASH (and compatible).
+*   (64Mbit), and M25L128 (128Mbit) FLASH (and compatible).
 *
 ****************************************************************************/
 
