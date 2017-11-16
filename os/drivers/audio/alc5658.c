@@ -237,18 +237,18 @@ static uint16_t alc5658_modifyreg(FAR struct alc5658_dev_s *priv, uint16_t regad
 
 static void alc5658_setregs(struct alc5658_dev_s *priv)
 {
-	alc5658_writereg(priv, ALC5658_IN1_CTRL, (0 + 16) << 8);
-	alc5658_writereg(priv, ALC5658_HPOUT_MUTE, 0);
-	alc5658_writereg(priv, ALC5658_HPOUT_VLML, 0xd00);
-	alc5658_writereg(priv, ALC5658_HPOUT_VLMR, 0x700);
+	alc5658_writereg(priv, ALC5658_IN1, (0 + 16) << 8);
+	alc5658_writereg(priv, ALC5658_HPOUT, 0);
+	alc5658_writereg(priv, ALC5658_HPOUT_L, 0xd00);
+	alc5658_writereg(priv, ALC5658_HPOUT_R, 0x700);
 }
 
 static void alc5658_getregs(struct alc5658_dev_s *priv)
 {
-	audvdbg("MIC GAIN 0x%x\n", (uint32_t)alc5658_readreg(priv, ALC5658_IN1_CTRL));
-	audvdbg("MUTE HPOUT MUTE %x\n", (uint32_t)alc5658_readreg(priv, ALC5658_HPOUT_MUTE));
-	audvdbg("VOLL 0x%x\n", (uint32_t)alc5658_readreg(priv, ALC5658_HPOUT_VLML));
-	audvdbg("VOLR 0x%x\n", (uint32_t)alc5658_readreg(priv, ALC5658_HPOUT_VLMR));
+	audvdbg("MIC GAIN 0x%x\n", (uint32_t)alc5658_readreg(priv, ALC5658_IN1));
+	audvdbg("MUTE HPOUT MUTE %x\n", (uint32_t)alc5658_readreg(priv, ALC5658_HPOUT));
+	audvdbg("VOLL 0x%x\n", (uint32_t)alc5658_readreg(priv, ALC5658_HPOUT_L));
+	audvdbg("VOLR 0x%x\n", (uint32_t)alc5658_readreg(priv, ALC5658_HPOUT_R));
 }
 
 /************************************************************************************
@@ -1225,8 +1225,8 @@ static void alc5658_hw_reset(FAR struct alc5658_dev_s *priv)
 
 	alc5658_exec_i2c_script(priv, codec_reset_script, sizeof(codec_reset_script) / sizeof(t_codec_init_script_entry));
 
-	alc5658_writereg(priv, ALC5658_IN1_CTRL, (10 + 16) << 8);
-	audvdbg("MIC GAIN 0x%x\n", (uint32_t)alc5658_readreg(priv, ALC5658_IN1_CTRL));
+	alc5658_writereg(priv, ALC5658_IN1, (10 + 16) << 8);
+	audvdbg("MIC GAIN 0x%x\n", (uint32_t)alc5658_readreg(priv, ALC5658_IN1));
 
 	/* Dump some information and return the device instance */
 
@@ -1282,12 +1282,12 @@ FAR struct audio_lowerhalf_s *alc5658_initialize(FAR struct i2c_dev_s *i2c, FAR 
 		 * default state.
 		 */
 
-		alc5658_writereg(priv, ALC5658_RESET, 0);
+		alc5658_writereg(priv, ALC5658_SW_RESET, 0);
 		alc5658_dump_registers(&priv->dev, "After reset");
 
 		/* Verify that ALC5658 is present and available on this I2C */
 
-		regval = alc5658_readreg(priv, ALC5658_RESET);
+		regval = alc5658_readreg(priv, ALC5658_SW_RESET);
 		if (regval != 0) {
 			auddbg("ERROR: ALC5658 not found: ID=%04x\n", regval);
 			goto errout_with_dev;
