@@ -256,6 +256,16 @@ void nd6_input(struct pbuf *p, struct netif *inp)
 #endif							/* LWIP_IPV6_AUTOCONFIG */
 
 					pbuf_free(p);
+
+#ifdef CONFIG_NET_IPv6_AUTOCONFIG
+					/* disable IPv6 address stateless autoconfiguration */
+					netif_set_ip6_autoconfig_enabled(inp, 0);
+#endif
+					/* RFC 4862. 5.4.5
+					 * If DAD fails, IP operation SHOULD be disabled when the address is derived from hardware address.
+					 */
+					netif_set_down(inp);
+
 					return;
 				}
 			}
@@ -434,6 +444,14 @@ void nd6_input(struct pbuf *p, struct netif *inp)
 						if (ip6_addr_istentative(netif_ip6_addr_state(inp, i))) {
 							/* We shouldn't use this address either. */
 							netif_ip6_addr_set_state(inp, i, IP6_ADDR_INVALID);
+#ifdef CONFIG_NET_IPv6_AUTOCONFIG
+							/* disable IPv6 address stateless autoconfiguration */
+							netif_set_ip6_autoconfig_enabled(inp, 0);
+#endif
+							/* RFC 4862. 5.4.5
+							 * If DAD fails, IP operation SHOULD be disabled when the address is derived from hardware address.
+							 */
+							netif_set_down(inp);
 						}
 					}
 				}

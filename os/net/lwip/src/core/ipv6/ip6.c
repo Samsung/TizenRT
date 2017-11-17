@@ -444,36 +444,38 @@ err_t ip6_input(struct pbuf *p, struct netif *inp)
 
 	/* match packet against an interface, i.e. is this packet for us? */
 	if (ip6_addr_ismulticast(ip6_current_dest_addr())) {
-		/* Always joined to multicast if-local and link-local all-nodes group. */
-		if (ip6_addr_isallnodes_iflocal(ip6_current_dest_addr()) || ip6_addr_isallnodes_linklocal(ip6_current_dest_addr())) {
-			netif = inp;
-		}
+		if (netif_is_up(netif)) {
+			/* Always joined to multicast if-local and link-local all-nodes group. */
+			if (ip6_addr_isallnodes_iflocal(ip6_current_dest_addr()) || ip6_addr_isallnodes_linklocal(ip6_current_dest_addr())) {
+				netif = inp;
+			}
 #if LWIP_IPV6_MLD
-		else if (mld6_lookfor_group(inp, ip6_current_dest_addr())) {
-			netif = inp;
-		}
+			else if (mld6_lookfor_group(inp, ip6_current_dest_addr())) {
+				netif = inp;
+			}
 #else							/* LWIP_IPV6_MLD */
-		else if (ip6_addr_issolicitednode(ip6_current_dest_addr())) {
-			/**
-			 * Filter solicited node packets when MLD is not enabled
-			 * (for Neighbor discovery).
-			 */
-			netif = NULL;
-			for (i = 0; i < LWIP_IPV6_NUM_ADDRESSES; i++) {
-				if (ip6_addr_isvalid(netif_ip6_addr_state(inp, i)) && ip6_addr_cmp_solicitednode(ip6_current_dest_addr(), netif_ip6_addr(inp, i))) {
-					netif = inp;
-					LWIP_DEBUGF(IP6_DEBUG, ("ip6_input: solicited node packet accepted on interface %c%c\n", netif->name[0], netif->name[1]));
-					break;
+			else if (ip6_addr_issolicitednode(ip6_current_dest_addr())) {
+				/* Filter solicited node packets when MLD is not enabled
+				 * (for Neighbor discovery).
+				 */
+				netif = NULL;
+				for (i = 0; i < LWIP_IPV6_NUM_ADDRESSES; i++) {
+					if (ip6_addr_isvalid(netif_ip6_addr_state(inp, i)) && ip6_addr_cmp_solicitednode(ip6_current_dest_addr(), netif_ip6_addr(inp, i))) {
+						netif = inp;
+						LWIP_DEBUGF(IP6_DEBUG, ("ip6_input: solicited node packet accepted on interface %c%c\n", netif->name[0], netif->name[1]));
+						break;
+					}
 				}
 			}
-		}
 #endif							/* LWIP_IPV6_MLD */
-		else {
+			else {
+				netif = NULL;
+			}
+		} else {
 			netif = NULL;
 		}
 	} else {
-		/**
-		 * start trying with inp. if that's not acceptable, start walking the
+		/* start trying with inp. if that's not acceptable, start walking the
 		 * list of configured netifs.
 		 * 'first' is used as a boolean to mark whether we started walking the list
 		 */
