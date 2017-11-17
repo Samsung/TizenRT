@@ -491,10 +491,11 @@ void nd6_input(struct pbuf *p, struct netif *inp)
 
 				/* RFC 4861 page 91, appendix c */
 				if ((neighbor_cache[i].state == ND6_INCOMPLETE) && neighbor_cache[i].q != NULL) {
+					neighbor_cache[i].state = ND6_STALE;
 					nd6_send_q(i);
+				} else {
+					neighbor_cache[i].state = ND6_STALE;
 				}
-
-				neighbor_cache[i].state = ND6_STALE;
 			} else {
 				/* Add their IPv6 address and link-layer address to neighbor cache.
 				 * We will need it at least to send a unicast NA message, but most
