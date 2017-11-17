@@ -156,6 +156,24 @@ static int rtc_settime(FAR struct rtc_lowerhalf_s *lower,
 	return up_rtc_setdatetime((FAR struct tm *)rtctime);
 }
 
+/****************************************************************************
+ * Name: rtc_havesettime
+ *
+ * Description:
+ *   checks if RTC's time had been set.
+ *
+ * Input Parameters:
+ *   lower   - A reference to RTC lower half driver state structure
+ *
+ * Returned Value:
+ *   Returns true if RTC date-time have been previously set.
+ *
+ ****************************************************************************/
+static bool rtc_havesettime(FAR struct rtc_lowerhalf_s *lower)
+{
+	return s5j_rtc_havesettime();
+}
+
 #ifdef CONFIG_RTC_ALARM
 static int rtc_setalarm(FAR struct rtc_lowerhalf_s *lower,
 			FAR const struct lower_setalarm_s *alarminfo)
@@ -269,6 +287,7 @@ static int rtc_cancelalarm(FAR struct rtc_lowerhalf_s *lower, int alarmid)
 static const struct rtc_ops_s g_rtc_ops = {
 	.rdtime      = rtc_rdtime,
 	.settime     = rtc_settime,
+	.havesettime = rtc_havesettime,
 #ifdef CONFIG_RTC_ALARM
 	.setalarm    = rtc_setalarm,
 	.setrelative = rtc_setrelative,

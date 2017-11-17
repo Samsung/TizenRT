@@ -162,13 +162,22 @@
 
 #define RTC_SET_TIME       _RTCIOC(0x0002)
 
+
+/* RTC_HAVE_SET_TIME checks if RTC's time had been set
+ *
+ * Argument: A writable reference to a bool to receive true/false return value
+ *           of the check.
+ */
+
+#define RTC_HAVE_SET_TIME  _RTCIOC(0x0003)
+
 /* RTC_SET_ALARM sets the alarm time (for RTCs that support alarms).
  *
  * Argument: A read-only reference to a struct rtc_setalarm_s containing the
  *           new alarm time to be set.
  */
 
-#define RTC_SET_ALARM      _RTCIOC(0x0003)
+#define RTC_SET_ALARM      _RTCIOC(0x0004)
 
 /* RTC_SET_RELATIVE sets the alarm time relative to the current time.
  *
@@ -176,14 +185,14 @@
  *           the new relative alarm time to be set.
  */
 
-#define RTC_SET_RELATIVE   _RTCIOC(0x0004)
+#define RTC_SET_RELATIVE   _RTCIOC(0x0005)
 
-/* RTC_SET_RELATIVE cancel the alarm.
+/* RTC_CANCEL_ALARM cancel the alarm.
  *
  * Argument: An ALARM ID value that indicates which alarm should be canceled.
  */
 
-#define RTC_CANCEL_ALARM   _RTCIOC(0x0005)
+#define RTC_CANCEL_ALARM   _RTCIOC(0x0006)
 
 /* Architecture-specific RTC IOCTLS should begin at RTC_USER_IOCBASE.  For
  * example:
@@ -193,7 +202,7 @@
  *   etc.
  */
 
-#define RTC_USER_IOCBASE   0x0006
+#define RTC_USER_IOCBASE   0x0007
 
 /****************************************************************************
  * Public Types
@@ -309,6 +318,10 @@ struct rtc_ops_s
 
 	CODE int (*settime)(FAR struct rtc_lowerhalf_s *lower,
 			    FAR const struct rtc_time *rtctime);
+
+	/* havesettime checks if RTC time have been set */
+
+	CODE bool (*havesettime)(FAR struct rtc_lowerhalf_s *lower);
 
 #ifdef CONFIG_RTC_ALARM
 	/* setalarm sets up a new alarm. */

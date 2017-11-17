@@ -86,7 +86,10 @@ static alarmcb_t g_alarmcb;
  * Public Data
  ****************************************************************************/
 /* g_rtc_enabled is set true after the RTC has successfully initialized */
-volatile bool g_rtc_enabled = false;
+volatile bool g_rtc_enabled;
+
+/* g_rtc_setted is set true after the RTC has successfully set time */
+volatile bool g_rtc_setted;
 
 /****************************************************************************
  * Private Types
@@ -276,8 +279,9 @@ int up_rtc_setdatetime(FAR struct tm *tm)
 
 	rtc_wprlock();
 
-	irqrestore(flags);
+	g_rtc_setted = true;
 
+	irqrestore(flags);
 	return OK;
 }
 
@@ -303,6 +307,21 @@ int up_rtc_settime(FAR const struct timespec *tp)
 	gmtime_r(&tp->tv_sec, &t);
 
 	return up_rtc_setdatetime(&t);
+}
+
+/****************************************************************************
+ * Name: s5j_rtc_havesettime
+ *
+ * Description:
+ *   checks if RTC's time had been set.
+ *
+ * Returned Value:
+ *   Returns true if RTC date-time have been previously set.
+ *
+ ****************************************************************************/
+bool s5j_rtc_havesettime(void)
+{
+	return g_rtc_setted;
 }
 
 #ifdef CONFIG_RTC_ALARM
