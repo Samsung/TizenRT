@@ -599,10 +599,8 @@ t_verifypw(const char *user, const char *pass)
 	t_closepw(temp_pw);
 	return rval;
 }
-
-/* System password file accessors */
 
-#include <tls/hap/nys_config.h>
+/* System password file accessors */
 
 static int pwinit(void)
 {

@@ -652,10 +652,8 @@ t_checkprime(num)
   return retval;
 }
 */
-
-/* System conf file accessors */
 
-#include <tls/hap/nys_config.h>
+/* System conf file accessors */
 
 static struct t_conf *sysconf = NULL;
 
