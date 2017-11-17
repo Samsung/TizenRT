@@ -61,6 +61,7 @@ all:
 .updated: $(DEPCONFIG)
 	$(call DELFILE, *.bdat)
 	$(call DELFILE, *.pdat)
+	$(call DELFILE, *.tdat)
 	$(Q) touch .updated
 
 # This must run before any other context target
@@ -77,4 +78,5 @@ clean:
 distclean: clean
 	$(call DELFILE, *.bdat)
 	$(call DELFILE, *.pdat)
+	$(call DELFILE, *.tdat)
 	$(call DELFILE, .updated)
