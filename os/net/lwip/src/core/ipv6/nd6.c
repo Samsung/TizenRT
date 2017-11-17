@@ -204,11 +204,14 @@ void nd6_input(struct pbuf *p, struct netif *inp)
 
 		if (p->len >= (sizeof(struct na_header) + 2)) {
 			lladdr_opt = (struct lladdr_option *)((u8_t *) p->payload + sizeof(struct na_header));
-			if (p->len < (sizeof(struct na_header) + (ND6H_LLADDR_OPT_LEN(lladdr_opt) << 3))) {
+			if (ND6H_LLADDR_OPT_LEN(lladdr_opt) == 0) {
 				pbuf_free(p);
 				ND6_STATS_INC(nd6.lenerr);
 				ND6_STATS_INC(nd6.drop);
 				return;
+			}
+			if (p->len < (sizeof(struct na_header) + (ND6H_LLADDR_OPT_LEN(lladdr_opt) << 3))) {
+				lladdr_opt = NULL;
 			}
 		} else {
 			lladdr_opt = NULL;
@@ -301,62 +304,56 @@ void nd6_input(struct pbuf *p, struct netif *inp)
 				nd6_send_q(i);
 			}
 		} else {
-			if (ND6H_NA_FLAG(na_hdr) & ND6_FLAG_OVERRIDE) {
-				if (lladdr_opt) {
-					if (memcmp(neighbor_cache[i].lladdr, ND6H_LLADDR_OPT_ADDR(lladdr_opt), inp->hwaddr_len) != 0) {
-						/* update the neighbor cache lladdr */
-						MEMCPY(neighbor_cache[i].lladdr, ND6H_LLADDR_OPT_ADDR(lladdr_opt), inp->hwaddr_len);
-					}
-				}
+			if (lladdr_opt) {
+				if (memcmp(neighbor_cache[i].lladdr, ND6H_LLADDR_OPT_ADDR(lladdr_opt), inp->hwaddr_len) != 0) {
+					/* update the neighbor cache lladdr */
+					MEMCPY(neighbor_cache[i].lladdr, ND6H_LLADDR_OPT_ADDR(lladdr_opt), inp->hwaddr_len);
 
-				if ((ND6H_NA_FLAG(na_hdr) & ND6_FLAG_SOLICITED)) {
-					neighbor_cache[i].state = ND6_REACHABLE;
-					neighbor_cache[i].counter.reachable_time = reachable_time;
-				} else {
-					neighbor_cache[i].state = ND6_STALE;
-				}
-
-				if ((ND6H_NA_FLAG(na_hdr) & ND6_FLAG_ROUTER)) {
-					neighbor_cache[i].isrouter = 1;
-				} else {
-					/* RFC 7.2.5
-					 * Node MUST remove that router from the Default Router List
-					 * and update Destination Cache entries for all destinations using that
-					 * neighbor router as specified in Section 7.3.3
-					 */
-					if (neighbor_cache[i].isrouter) {
-						s8_t tmp;
-
-						neighbor_cache[i].isrouter = 0;
-						tmp = nd6_get_router(&neighbor_cache[i].next_hop_address, inp);
-						if (tmp == 0) {
-							/* TODO: error */
-						}
-
-						/* RFC 4861, 6.3.5.  Timing out Prefixes and Default Routers  */
-						nd6_free_expired_router_in_destination_cache(&(default_router_list[tmp].neighbor_entry->next_hop_address));
-
-						s8_t j; /* Neighbor cache index */
-						j = nd6_find_neighbor_cache_entry(&(default_router_list[tmp].neighbor_entry->next_hop_address));
-						if (j < 0) {
-							LWIP_DEBUGF(ND6_DEBUG, ("Failed to find matched negighbor entry to default router list\n"));
-							/* @todo should we do initialize NCE manually?*/
-						} else {
-							LWIP_DEBUGF(ND6_DEBUG, ("Neighbor cache entry (index %d) will be freed\n", j));
-							nd6_free_neighbor_cache_entry(j);
-						}
-
-						default_router_list[tmp].neighbor_entry = NULL;
-						default_router_list[tmp].invalidation_timer = 0;
-						default_router_list[tmp].flags = 0;
-					}
-				}
-			} else {
-				/* o flag is clear, but lladdr is different */
-				if (lladdr_opt) {
-					if (memcmp(neighbor_cache[i].lladdr, ND6H_LLADDR_OPT_ADDR(lladdr_opt), inp->hwaddr_len) != 0) {
+					if ((ND6H_NA_FLAG(na_hdr) & ND6_FLAG_SOLICITED) == 0) {
 						neighbor_cache[i].state = ND6_STALE;
 					}
+				}
+			}
+
+			if ((ND6H_NA_FLAG(na_hdr) & ND6_FLAG_SOLICITED)) {
+				neighbor_cache[i].state = ND6_REACHABLE;
+				neighbor_cache[i].counter.reachable_time = reachable_time;
+			}
+
+			if ((ND6H_NA_FLAG(na_hdr) & ND6_FLAG_ROUTER)) {
+				neighbor_cache[i].isrouter = 1;
+			} else {
+				/* RFC 7.2.5
+				 * Node MUST remove that router from the Default Router List
+				 * and update Destination Cache entries for all destinations using that
+				 * neighbor router as specified in Section 7.3.3
+				 */
+				if (neighbor_cache[i].isrouter) {
+					s8_t tmp;
+
+					neighbor_cache[i].isrouter = 0;
+					tmp = nd6_get_router(&neighbor_cache[i].next_hop_address, inp);
+					if (tmp == 0) {
+						/* TODO: error */
+					}
+
+					/* RFC 4861, 6.3.5.  Timing out Prefixes and Default Routers  */
+					nd6_free_expired_router_in_destination_cache(&(default_router_list[tmp].neighbor_entry->next_hop_address));
+
+					s8_t j; /* Neighbor cache index */
+
+					j = nd6_find_neighbor_cache_entry(&(default_router_list[tmp].neighbor_entry->next_hop_address));
+					if (j < 0) {
+						LWIP_DEBUGF(ND6_DEBUG, ("Failed to find matched negighbor entry to default router list\n"));
+						/* @todo should we do initialize NCE manually?*/
+					} else {
+						LWIP_DEBUGF(ND6_DEBUG, ("Neighbor cache entry (index %d) will be freed\n", j));
+						nd6_free_neighbor_cache_entry(j);
+					}
+
+					default_router_list[tmp].neighbor_entry = NULL;
+					default_router_list[tmp].invalidation_timer = 0;
+					default_router_list[tmp].flags = 0;
 				}
 			}
 		}
@@ -398,6 +395,12 @@ void nd6_input(struct pbuf *p, struct netif *inp)
 		/* Check if there is a link-layer address provided. Only point to it if in this buffer. */
 		if (p->len >= (sizeof(struct ns_header) + 2)) {
 			lladdr_opt = (struct lladdr_option *)((u8_t *) p->payload + sizeof(struct ns_header));
+			if (ND6H_LLADDR_OPT_LEN(lladdr_opt) == 0) {
+				pbuf_free(p);
+				ND6_STATS_INC(nd6.lenerr);
+				ND6_STATS_INC(nd6.drop);
+				return;
+			}
 			if (p->len < (sizeof(struct ns_header) + (ND6H_LLADDR_OPT_LEN(lladdr_opt) << 3))) {
 				lladdr_opt = NULL;
 			}
@@ -472,21 +475,21 @@ void nd6_input(struct pbuf *p, struct netif *inp)
 			if (i >= 0) {
 				neighbor_cache[i].netif = inp;
 				/* RFC 7.2.3.
-				* If an entry already exists, and the cached link-layer address
-				* differs from the one in the received Source Link-Layer option,
-				* the cached address should be replaced by the received address,
-				* and the entry's reachability state MUST be set to STALE.
-				*/
+				 * If an entry already exists, and the cached link-layer address
+				 * differs from the one in the received Source Link-Layer option,
+				 * the cached address should be replaced by the received address,
+				 * and the entry's reachability state MUST be set to STALE.
+				 */
 				if (memcmp(neighbor_cache[i].lladdr, ND6H_LLADDR_OPT_ADDR(lladdr_opt), inp->hwaddr_len) != 0) {
 					MEMCPY(neighbor_cache[i].lladdr, ND6H_LLADDR_OPT_ADDR(lladdr_opt), inp->hwaddr_len);
-				}
 
-				/* RFC 4861 page 91, appendix c */
-				if ((neighbor_cache[i].state == ND6_INCOMPLETE) && neighbor_cache[i].q != NULL) {
-					neighbor_cache[i].state = ND6_STALE;
-					nd6_send_q(i);
-				} else {
-					neighbor_cache[i].state = ND6_STALE;
+					/* RFC 4861 page 91, appendix c */
+					if ((neighbor_cache[i].state == ND6_INCOMPLETE) && neighbor_cache[i].q != NULL) {
+						neighbor_cache[i].state = ND6_STALE;
+						nd6_send_q(i);
+					} else {
+						neighbor_cache[i].state = ND6_STALE;
+					}
 				}
 			} else {
 				/**
