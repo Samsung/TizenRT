@@ -59,6 +59,7 @@
 #include <stdint.h>
 #include <stdbool.h>
 #include <errno.h>
+#include <semaphore.h>
 
 #include <tinyara/arch.h>
 #include <tinyara/rtc.h>
@@ -93,6 +94,12 @@ struct s5j_lowerhalf_s {
 	 * operations vtable (which may lie in FLASH or ROM
 	 */
 	FAR const struct rtc_ops_s *ops;
+
+	/* Data following is private to this driver and not visible outside of
+	 * this file.
+	 */
+
+	sem_t devsem;         /* Threads can only exclusively access the RTC */
 
 #ifdef CONFIG_RTC_ALARM
 	/*
@@ -147,13 +154,39 @@ static void s5j_alarm_callback(void)
 static int rtc_rdtime(FAR struct rtc_lowerhalf_s *lower,
 		      FAR struct rtc_time *rtctime)
 {
-	return up_rtc_getdatetime((FAR struct tm *)rtctime);
+	FAR struct s5j_lowerhalf_s *priv;
+	int ret;
+
+	priv = (FAR struct s5j_lowerhalf_s *) lower;
+
+	if (sem_wait(&priv->devsem) != OK) {
+		return -errno;
+	}
+
+	ret = up_rtc_getdatetime((FAR struct tm *)rtctime);
+
+	sem_post(&priv->devsem);
+
+	return ret;
 }
 
 static int rtc_settime(FAR struct rtc_lowerhalf_s *lower,
 		       FAR const struct rtc_time *rtctime)
 {
-	return up_rtc_setdatetime((FAR struct tm *)rtctime);
+	FAR struct s5j_lowerhalf_s *priv;
+	int ret;
+
+	priv = (FAR struct s5j_lowerhalf_s *) lower;
+
+	if (sem_wait(&priv->devsem) != OK) {
+		return -errno;
+	}
+
+	ret = up_rtc_setdatetime((FAR struct tm *)rtctime);
+
+	sem_post(&priv->devsem);
+
+	return ret;
 }
 
 /****************************************************************************
@@ -185,6 +218,10 @@ static int rtc_setalarm(FAR struct rtc_lowerhalf_s *lower,
 	DEBUGASSERT(lower != NULL && alarminfo != NULL && alarminfo->id == 0);
 	priv = (FAR struct s5j_lowerhalf_s *)lower;
 
+	if (sem_wait(&priv->devsem) != OK) {
+		return -errno;
+	}
+
 	if (alarminfo->id == 0) {
 		struct timespec ts;
 
@@ -204,6 +241,8 @@ static int rtc_setalarm(FAR struct rtc_lowerhalf_s *lower,
 			cbinfo->priv = NULL;
 		}
 	}
+
+	sem_post(&priv->devsem);
 
 	return ret;
 }
@@ -266,10 +305,15 @@ static int rtc_cancelalarm(FAR struct rtc_lowerhalf_s *lower, int alarmid)
 {
 	FAR struct s5j_lowerhalf_s *priv;
 	FAR struct s5j_cbinfo_s *cbinfo;
+	int ret;
 
 	DEBUGASSERT(lower != NULL);
 	DEBUGASSERT(alarmid == 0);
 	priv = (FAR struct s5j_lowerhalf_s *)lower;
+
+	if (sem_wait(&priv->devsem) != OK) {
+		return -errno;
+	}
 
 	/* Nullify callback information to reduce window for race conditions */
 	cbinfo       = &priv->cbinfo;
@@ -277,7 +321,10 @@ static int rtc_cancelalarm(FAR struct rtc_lowerhalf_s *lower, int alarmid)
 	cbinfo->priv = NULL;
 
 	/* Then, cancel the alarm */
-	return s5j_rtc_cancelalarm();
+	ret = s5j_rtc_cancelalarm();
+
+	sem_post(&priv->devsem);
+	return ret;
 }
 
 /****************************************************************************
@@ -372,6 +419,8 @@ static struct s5j_lowerhalf_s g_rtc_lowerhalf = {
  ****************************************************************************/
 FAR struct rtc_lowerhalf_s *s5j_rtc_lowerhalf(void)
 {
+	sem_init(&g_rtc_lowerhalf.devsem, 0, 1);
+
 	return (FAR struct rtc_lowerhalf_s *)&g_rtc_lowerhalf;
 }
 #endif /* CONFIG_RTC_DRIVER */
