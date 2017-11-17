@@ -241,6 +241,7 @@ void nd6_input(struct pbuf *p, struct netif *inp)
 			if (i >= 0) {
 				if (ND6H_NA_FLAG(na_hdr) & ND6_FLAG_OVERRIDE) {
 					MEMCPY(neighbor_cache[i].lladdr, ND6H_LLADDR_OPT_ADDR(lladdr_opt), inp->hwaddr_len);
+					neighbor_cache[i].state = ND6_STALE;
 				}
 			}
 		} else {
@@ -922,7 +923,7 @@ void nd6_tmr(void)
 	for (i = 0; i < LWIP_ND6_NUM_NEIGHBORS; i++) {
 		switch (neighbor_cache[i].state) {
 		case ND6_INCOMPLETE:
-			if ((neighbor_cache[i].probes_sent >= LWIP_ND6_MAX_MULTICAST_SOLICIT) && (!neighbor_cache[i].isrouter)) {
+			if (neighbor_cache[i].probes_sent >= LWIP_ND6_MAX_MULTICAST_SOLICIT) {
 				/* Retries exceeded. */
 				nd6_free_neighbor_cache_entry(i);
 			} else {
@@ -964,7 +965,7 @@ void nd6_tmr(void)
 			}
 			break;
 		case ND6_PROBE:
-			if ((neighbor_cache[i].probes_sent >= LWIP_ND6_MAX_UNICAST_SOLICIT) && (!neighbor_cache[i].isrouter)) {
+			if (neighbor_cache[i].probes_sent >= LWIP_ND6_MAX_UNICAST_SOLICIT) {
 				/* Retries exceeded. */
 				nd6_free_neighbor_cache_entry(i);
 			} else {
@@ -1453,10 +1454,6 @@ static s8_t nd6_new_neighbor_cache_entry(void)
 static void nd6_free_neighbor_cache_entry(s8_t i)
 {
 	if ((i < 0) || (i >= LWIP_ND6_NUM_NEIGHBORS)) {
-		return;
-	}
-	if (neighbor_cache[i].isrouter) {
-		/* isrouter needs to be cleared before deleting a neighbor cache entry */
 		return;
 	}
 
