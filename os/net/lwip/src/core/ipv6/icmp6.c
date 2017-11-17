@@ -142,7 +142,7 @@ void icmp6_input(struct pbuf *p, struct netif *inp)
 		break;
 #endif
 	case ICMP6_TYPE_EREQ:
-#if !LWIP_MULTICAST_PING
+#if !LWIP_MULTICAST_PING6
 		/* multicast destination address? */
 		if (ip6_addr_ismulticast(ip6_current_dest_addr())) {
 			/* drop */
@@ -150,7 +150,7 @@ void icmp6_input(struct pbuf *p, struct netif *inp)
 			ICMP6_STATS_INC(icmp6.drop);
 			return;
 		}
-#endif							/* LWIP_MULTICAST_PING */
+#endif							/* LWIP_MULTICAST_PING6 */
 
 		/* Allocate reply. */
 		r = pbuf_alloc(PBUF_IP, p->tot_len, PBUF_RAM);
@@ -171,7 +171,7 @@ void icmp6_input(struct pbuf *p, struct netif *inp)
 		}
 
 		/* Determine reply source IPv6 address. */
-#if LWIP_MULTICAST_PING
+#if LWIP_MULTICAST_PING6
 		if (ip6_addr_ismulticast(ip6_current_dest_addr())) {
 			reply_src = ip_2_ip6(ip6_select_source_address(inp, ip6_current_src_addr()));
 			if (reply_src == NULL) {
@@ -182,7 +182,7 @@ void icmp6_input(struct pbuf *p, struct netif *inp)
 				return;
 			}
 		} else
-#endif							/* LWIP_MULTICAST_PING */
+#endif							/* LWIP_MULTICAST_PING6 */
 		{
 			reply_src = ip6_current_dest_addr();
 		}
