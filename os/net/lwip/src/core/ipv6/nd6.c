@@ -165,6 +165,7 @@ void nd6_input(struct pbuf *p, struct netif *inp)
 	case ICMP6_TYPE_NA: {		/* Neighbor Advertisement. */
 		struct na_header *na_hdr;
 		struct lladdr_option *lladdr_opt;
+		ip6_addr_t target_address;
 
 		/* Check that na header fits in packet. */
 		if (p->len < (sizeof(struct na_header))) {
@@ -175,20 +176,61 @@ void nd6_input(struct pbuf *p, struct netif *inp)
 			return;
 		}
 
+		if (IP6H_HOPLIM(ip6_current_header()) != 255) {
+			pbuf_free(p);
+			ND6_STATS_INC(nd6.proterr);
+			ND6_STATS_INC(nd6.drop);
+			return;
+		}
+
 		na_hdr = (struct na_header *)p->payload;
 
-		/* Unsolicited NA? */
-		if (ip6_addr_ismulticast(ip6_current_dest_addr())) {
-			ip6_addr_t target_address;
+		if (ND6H_CODE(na_hdr) != 0) {
+			pbuf_free(p);
+			ND6_STATS_INC(nd6.proterr);
+			ND6_STATS_INC(nd6.drop);
+			return;
+		}
 
-			/**
-			 * This is an unsolicited NA.
-			 * link-layer changed?
-			 * part of DAD mechanism?
+		ip6_addr_set(&target_address, &(ND6H_NA_TARGET_ADDR(na_hdr)));
+
+		if (ip6_addr_ismulticast(&target_address)) {
+			/* RFC 7.1.2.
+			 * target address must not be multicast
 			 */
+			pbuf_free(p);
+			return;
+		}
 
-			/* Create an aligned copy. */
-			ip6_addr_set(&target_address, &(ND6H_NA_TARGET_ADDR(na_hdr)));
+		if (p->len >= (sizeof(struct na_header) + 2)) {
+			lladdr_opt = (struct lladdr_option *)((u8_t *) p->payload + sizeof(struct na_header));
+			if (p->len < (sizeof(struct na_header) + (ND6H_LLADDR_OPT_LEN(lladdr_opt) << 3))) {
+				pbuf_free(p);
+				ND6_STATS_INC(nd6.lenerr);
+				ND6_STATS_INC(nd6.drop);
+				return;
+			}
+		} else {
+			lladdr_opt = NULL;
+		}
+
+		/* Detect the duplicated NA message */
+		if (ip6_addr_ismulticast(ip6_current_dest_addr())) {
+			if (ND6H_NA_FLAG(na_hdr) & ND6_FLAG_SOLICITED) {
+				/* RFC 7.1.2.
+				 * S flag must be set
+				 */
+				pbuf_free(p);
+				return;
+			}
+
+			if (lladdr_opt == NULL) {
+				/* RFC 7.2.4.
+				 * TLL option must be included
+				 */
+				pbuf_free(p);
+				return;
+			}
 
 #if LWIP_IPV6_DUP_DETECT_ATTEMPTS
 			/* If the target address matches this netif, it is a DAD response. */
@@ -202,8 +244,7 @@ void nd6_input(struct pbuf *p, struct netif *inp)
 					if (!ip6_addr_islinklocal(&target_address)) {
 						i = nd6_get_onlink_prefix(&target_address, inp);
 						if (i >= 0) {
-							/**
-							 * Mark this prefix as duplicate, so that we don't use it
+							/* Mark this prefix as duplicate, so that we don't use it
 							 * to generate this address again.
 							 */
 							prefix_list[i].flags |= ND6_PREFIX_AUTOCONFIG_ADDRESS_DUPLICATE;
@@ -216,75 +257,57 @@ void nd6_input(struct pbuf *p, struct netif *inp)
 				}
 			}
 #endif							/* LWIP_IPV6_DUP_DETECT_ATTEMPTS */
+		}
 
+		i = nd6_find_neighbor_cache_entry(&target_address);
+		if (i < 0) {
+			/* RFC 7.2.5.
+			 * When a valid Neighbor Advertisement is received
+			 * (either solicited or unsolicited), the Neighbor Cache is
+			 * searched for the target's entry. If no entry exists,
+			 * the advertisement SHOULD be silently discarded.
+			 */
+			pbuf_free(p);
+			return;
+		}
+
+		neighbor_cache[i].netif = inp;
+
+		if (neighbor_cache[i].state == ND6_INCOMPLETE) {
 			/* Check that link-layer address option also fits in packet. */
-			if (p->len < (sizeof(struct na_header) + 2)) {
-				/* @todo debug message */
+			if (lladdr_opt == NULL) {
 				pbuf_free(p);
-				ND6_STATS_INC(nd6.lenerr);
+				ND6_STATS_INC(nd6.proterr);
 				ND6_STATS_INC(nd6.drop);
 				return;
 			}
 
-			lladdr_opt = (struct lladdr_option *)((u8_t *) p->payload + sizeof(struct na_header));
+			MEMCPY(neighbor_cache[i].lladdr, ND6H_LLADDR_OPT_ADDR(lladdr_opt), inp->hwaddr_len);
 
-			if (p->len < (sizeof(struct na_header) + (ND6H_LLADDR_OPT_LEN(lladdr_opt) << 3))) {
-				/* @todo debug message */
-				pbuf_free(p);
-				ND6_STATS_INC(nd6.lenerr);
-				ND6_STATS_INC(nd6.drop);
-				return;
+			if ((ND6H_NA_FLAG(na_hdr) & ND6_FLAG_SOLICITED)) {
+				neighbor_cache[i].state = ND6_REACHABLE;
+				neighbor_cache[i].counter.reachable_time = reachable_time;
+			} else {
+				neighbor_cache[i].state = ND6_STALE;
 			}
 
-			/* This is an unsolicited NA, most likely there was a LLADDR change. */
-			i = nd6_find_neighbor_cache_entry(&target_address);
-			if (i >= 0) {
-				if (ND6H_NA_FLAG(na_hdr) & ND6_FLAG_OVERRIDE) {
-					MEMCPY(neighbor_cache[i].lladdr, ND6H_LLADDR_OPT_ADDR(lladdr_opt), inp->hwaddr_len);
-					neighbor_cache[i].state = ND6_STALE;
-				}
+			if ((ND6H_NA_FLAG(na_hdr) & ND6_FLAG_ROUTER)) {
+				neighbor_cache[i].isrouter = 1;
+			} else {
+				neighbor_cache[i].isrouter = 0;
+			}
+
+			if (neighbor_cache[i].q != NULL) {
+				nd6_send_q(i);
 			}
 		} else {
-			ip6_addr_t target_address;
-
-			/**
-			 * This is a solicited NA.
-			 * neighbor address resolution response?
-			 * neighbor unreachability detection response?
-			 */
-
-			/* Create an aligned copy. */
-			ip6_addr_set(&target_address, &(ND6H_NA_TARGET_ADDR(na_hdr)));
-
-			/* Find the cache entry corresponding to this na. */
-			i = nd6_find_neighbor_cache_entry(&target_address);
-			if (i < 0) {
-				/* We no longer care about this target address. drop it. */
-				pbuf_free(p);
-				return;
-			}
-
-			neighbor_cache[i].netif = inp;
-
-			/* Update cache entry. */
-			if (neighbor_cache[i].state == ND6_INCOMPLETE) {
-				/* Check that link-layer address option also fits in packet. */
-				if (p->len < (sizeof(struct na_header) + 2)) {
-					pbuf_free(p);
-					ND6_STATS_INC(nd6.lenerr);
-					ND6_STATS_INC(nd6.drop);
-					return;
+			if (ND6H_NA_FLAG(na_hdr) & ND6_FLAG_OVERRIDE) {
+				if (lladdr_opt) {
+					if (memcmp(neighbor_cache[i].lladdr, ND6H_LLADDR_OPT_ADDR(lladdr_opt), inp->hwaddr_len) != 0) {
+						/* update the neighbor cache lladdr */
+						MEMCPY(neighbor_cache[i].lladdr, ND6H_LLADDR_OPT_ADDR(lladdr_opt), inp->hwaddr_len);
+					}
 				}
-
-				lladdr_opt = (struct lladdr_option *)((u8_t *) p->payload + sizeof(struct na_header));
-				if (p->len < (sizeof(struct na_header) + (ND6H_LLADDR_OPT_LEN(lladdr_opt) << 3))) {
-					pbuf_free(p);
-					ND6_STATS_INC(nd6.lenerr);
-					ND6_STATS_INC(nd6.drop);
-					return;
-				}
-
-				MEMCPY(neighbor_cache[i].lladdr, ND6H_LLADDR_OPT_ADDR(lladdr_opt), inp->hwaddr_len);
 
 				if ((ND6H_NA_FLAG(na_hdr) & ND6_FLAG_SOLICITED)) {
 					neighbor_cache[i].state = ND6_REACHABLE;
@@ -314,7 +337,6 @@ void nd6_input(struct pbuf *p, struct netif *inp)
 						nd6_free_expired_router_in_destination_cache(&(default_router_list[tmp].neighbor_entry->next_hop_address));
 
 						s8_t j; /* Neighbor cache index */
-
 						j = nd6_find_neighbor_cache_entry(&(default_router_list[tmp].neighbor_entry->next_hop_address));
 						if (j < 0) {
 							LWIP_DEBUGF(ND6_DEBUG, ("Failed to find matched negighbor entry to default router list\n"));
@@ -329,53 +351,12 @@ void nd6_input(struct pbuf *p, struct netif *inp)
 						default_router_list[tmp].flags = 0;
 					}
 				}
-
-				/* Send queued packets, if any. */
-				// RFC 7.2.5.
-				if ((neighbor_cache[i].state == ND6_STALE || neighbor_cache[i].state == ND6_REACHABLE)
-					 && neighbor_cache[i].q != NULL) {
-					nd6_send_q(i);
-				}
 			} else {
-				/* neighbor cache entry state is not ND6_INCOMPLETE */
-				if ((ND6H_NA_FLAG(na_hdr) & ND6_FLAG_OVERRIDE)) {
-					/* Check that link-layer address option also fits in packet. */
-					if (p->len < (sizeof(struct na_header) + 2)) {
-						/* @todo debug message */
-						pbuf_free(p);
-						ND6_STATS_INC(nd6.lenerr);
-						ND6_STATS_INC(nd6.drop);
-						return;
-					}
-
-					lladdr_opt = (struct lladdr_option *)((u8_t *) p->payload + sizeof(struct na_header));
-					if (p->len < (sizeof(struct na_header) + (ND6H_LLADDR_OPT_LEN(lladdr_opt) << 3))) {
-						/* @todo debug message */
-						pbuf_free(p);
-						ND6_STATS_INC(nd6.lenerr);
-						ND6_STATS_INC(nd6.drop);
-						return;
-					}
-
-					/* RFC 7.2.5. */
-					if ((ND6H_NA_FLAG(na_hdr) & ND6_FLAG_SOLICITED)) {
-						neighbor_cache[i].state = ND6_REACHABLE;
-						neighbor_cache[i].counter.reachable_time = reachable_time;
-						MEMCPY(neighbor_cache[i].lladdr, ND6H_LLADDR_OPT_ADDR(lladdr_opt), inp->hwaddr_len);
-					} else {
-						if (memcmp(neighbor_cache[i].lladdr, ND6H_LLADDR_OPT_ADDR(lladdr_opt), inp->hwaddr_len) != 0) {
-							neighbor_cache[i].state = ND6_STALE;
-							MEMCPY(neighbor_cache[i].lladdr, ND6H_LLADDR_OPT_ADDR(lladdr_opt), inp->hwaddr_len);
-						}
-						/* TODO: else entry must not be updated, but is that mean drop the packet? */
-					}
-				} else {
-					if (neighbor_cache[i].state == ND6_REACHABLE) {
+				/* o flag is clear, but lladdr is different */
+				if (lladdr_opt) {
+					if (memcmp(neighbor_cache[i].lladdr, ND6H_LLADDR_OPT_ADDR(lladdr_opt), inp->hwaddr_len) != 0) {
 						neighbor_cache[i].state = ND6_STALE;
 					}
-					/* TODO: else the received advertisement should be ignored and MUST NOT update the cache
-					 * so, should I drop the packet?
-					 */
 				}
 			}
 		}
