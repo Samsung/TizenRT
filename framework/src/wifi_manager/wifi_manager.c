@@ -57,6 +57,22 @@ static wifi_manager_cb_s *g_manager_callback = NULL;
 static wifi_mutex *w_mutex = NULL;
 static wifi_mutex *w_info_mutex = NULL;
 
+#define CHECK_WITHOUT_RETURN(msg)			\
+do {										\
+	if (w_info_mutex == NULL || w_mutex == NULL) {	\
+		ndbg("%s: Wi-Fi Manager is not initialized.\n", msg);	\
+		return;	\
+	}	\
+} while (0)
+
+#define CHECK_WITH_RETURN(msg)			\
+	do {										\
+		if (w_info_mutex == NULL || w_mutex == NULL) {	\
+			ndbg("%s: Wi-Fi Manager is not initialized.\n", msg);	\
+			return WIFI_MANAGER_DEINITIALIZED;	\
+		}	\
+	} while (0)
+
 static wifi_utils_result_e start_dhcp_client(void)
 {
 	struct dhcpc_state state;
@@ -78,6 +94,9 @@ static wifi_utils_result_e start_dhcp_client(void)
 	netlib_set_ipv4netmask(CTRL_IFNAME, &state.netmask);
 	netlib_set_dripv4addr(CTRL_IFNAME, &state.default_router);
 
+#ifdef CONFIG_ENABLE_IOTIVITY
+	__tizenrt_manual_linkset("gen");
+#endif
 	nvdbg("IP address : %s ----\n", inet_ntoa(state.ipaddr));
 
 	return WIFI_UTILS_SUCCESS;
@@ -108,7 +127,9 @@ static wifi_utils_result_e start_dhcp_server(void)
 		ndbg("DHCP Server - started fail\n");
 		return WIFI_UTILS_FAIL;
 	}
-
+#ifdef CONFIG_ENABLE_IOTIVITY
+	__tizenrt_manual_linkset("gen");
+#endif
 	nvdbg("DHCP Server - started success\n");
 	return WIFI_UTILS_SUCCESS;
 }
@@ -122,6 +143,9 @@ static wifi_utils_result_e stop_dhcp_server(void)
 
 	dhcpd_stop();
 
+#ifdef CONFIG_ENABLE_IOTIVITY
+	__tizenrt_manual_linkset("del");
+#endif
 	return WIFI_UTILS_SUCCESS;
 }
 
@@ -147,6 +171,8 @@ static void wifi_status_set(connect_status_e status)
 
 static void wifi_linkup_event_func(void)
 {
+	CHECK_WITHOUT_RETURN("linkup");
+
 	wifi_manager_cb_s *wifi_cb = g_manager_callback;
 	wifi_utils_info info;
 
@@ -196,9 +222,7 @@ static void wifi_linkup_event_func(void)
 		wifi_mutex_release(w_info_mutex);
 	}
 
-#ifdef CONFIG_ENABLE_IOTIVITY
-	__tizenrt_manual_linkset("gen");
-#endif
+
 	/* TODO: Import files from source
 	 * sendStatusTrigger (TRIGGER_NETWORK_CHANGED, DAWIT_NW_CHANGED_UP);
 	 */
@@ -208,9 +232,11 @@ static void wifi_linkdown_event_func(void)
 {
 // here, send a message to callback handler and rest of this function should be done by the callback handler.
 // wifi_manager_init() creates the callback handler and deinit() joins the callback handler.
-	wifi_manager_cb_s *wifi_cb = g_manager_callback;
-	wifi_mutex_acquire(w_info_mutex, WIFI_UTILS_FOREVER);
+	CHECK_WITHOUT_RETURN("linkdown");
 
+	wifi_manager_cb_s *wifi_cb = g_manager_callback;
+
+	wifi_mutex_acquire(w_info_mutex, WIFI_UTILS_FOREVER);
 	if (g_manager_info.mode == STA_MODE || (g_manager_info.mode == WIFI_MODE_CHANGING && g_manager_info.pre_mode == STA_MODE) || \
 			(g_manager_info.mode == WIFI_DEINITIALIZING && g_manager_info.pre_mode == STA_MODE)) {
 		nvdbg("WIFI DISCONNECTED AP - STA MODE");
@@ -241,9 +267,7 @@ static void wifi_linkdown_event_func(void)
 		wifi_mutex_release(w_info_mutex);
 	}
 
-#ifdef CONFIG_ENABLE_IOTIVITY
-	__tizenrt_manual_linkset("del");
-#endif
+
 
 	/* TODO: Import files from source
 	 * sendStatusTrigger(TRIGGER_NETWORK_CHANGED, DAWIT_NW_CHANGED_DOWN);
@@ -310,8 +334,11 @@ static wifi_manager_result_e wifi_fetch_scan_results(slsi_scan_info_t **wifi_sca
 
 static wifi_manager_result_e wifi_scan_result_callback(slsi_reason_t *reason)
 {
+	CHECK_WITH_RETURN("scan_result_callback");
+
 	wifi_manager_scan_info_s *wifi_manager_scan_info = 0;
 	wifi_manager_cb_s *wifi_cb = g_manager_callback;
+
 	if (reason->reason_code == 0) {
 		slsi_scan_info_t *wifi_scan_result;
 		WiFiGetScanResults(&wifi_scan_result);
@@ -334,6 +361,8 @@ static wifi_manager_result_e wifi_scan_result_callback(slsi_reason_t *reason)
 
 wifi_manager_result_e wifi_manager_connect_ap(wifi_manager_ap_config_s *config)
 {
+	CHECK_WITH_RETURN("connect_ap");
+
 	if (config == NULL) {
 		return WIFI_MANAGER_INVALID_ARGS;
 	}
@@ -384,11 +413,19 @@ wifi_manager_result_e wifi_manager_connect_ap(wifi_manager_ap_config_s *config)
 
 wifi_manager_result_e wifi_manager_disconnect_ap(void)
 {
+	CHECK_WITH_RETURN("disconnect_ap");
+
 	wifi_utils_result_e result = WIFI_UTILS_SUCCESS;
 
 	wifi_mutex_acquire(w_mutex, WIFI_UTILS_FOREVER);
 	result = wifi_utils_disconnect_ap();
 	wifi_mutex_release(w_mutex);
+
+#ifdef CONFIG_ENABLE_IOTIVITY
+	if (result == WIFI_UTILS_SUCCESS) {
+		__tizenrt_manual_linkset("del");
+	}
+#endif
 
 	return result;
 }
@@ -520,13 +557,10 @@ error_without_mutex_release:
 
 wifi_manager_result_e wifi_manager_deinit()
 {
+	CHECK_WITH_RETURN("deinit");
+
 	wifi_utils_result_e result = WIFI_UTILS_SUCCESS;
 	wifi_manager_result_e ret = WIFI_MANAGER_SUCCESS;
-
-	if ((g_manager_info.mode == WIFI_NONE) || (w_mutex == NULL)) {
-		ndbg("WI-FI is already deinitialized.\n");
-		return WIFI_MANAGER_DEINITIALIZED;
-	}
 
 	wifi_mutex_acquire(w_info_mutex, WIFI_UTILS_FOREVER);
 	/* wifi_manager mode is switched to wifi_deinitializing */
@@ -589,6 +623,8 @@ wifi_manager_result_e wifi_manager_deinit()
 
 wifi_manager_result_e wifi_manager_set_mode(wifi_manager_mode_e mode, wifi_manager_softap_config_s *config)
 {
+	CHECK_WITH_RETURN("set_mode");
+
 	wifi_utils_result_e result = WIFI_UTILS_SUCCESS;
 
 	if (mode != STA_MODE && mode != SOFTAP_MODE) {
@@ -697,6 +733,8 @@ error_with_failure:
 
 wifi_manager_result_e wifi_manager_get_info(wifi_manager_info_s *info)
 {
+	CHECK_WITH_RETURN("get_info");
+
 	if (info == NULL) {
 		ndbg("info is null.");
 		return WIFI_MANAGER_FAIL;
@@ -711,6 +749,8 @@ wifi_manager_result_e wifi_manager_get_info(wifi_manager_info_s *info)
 
 wifi_manager_result_e wifi_manager_scan_ap(void)
 {
+	CHECK_WITH_RETURN("scan_ap");
+
 	wifi_manager_result_e ret = WIFI_MANAGER_FAIL;
 
 	if (g_manager_callback->scan_ap_done == NULL) {

@@ -58,7 +58,7 @@ include $(APPDIR)/Make.defs
 
 APPNAME = ftpc
 THREADEXEC = TASH_EXECMD_ASYNC
-FUNCNAME = ftpc_main
+FUNCNAME = $(APPNAME)_main
 
 # ftp client example
 

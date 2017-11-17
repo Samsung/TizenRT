@@ -1021,8 +1021,13 @@ static err_t snmp_pdu_dec_varbindlist(struct pbuf *p, u16_t ofs, u16_t *ofs_ret,
 			break;
 		case (SNMP_ASN1_UNIV | SNMP_ASN1_PRIMIT | SNMP_ASN1_OC_STR):
 		case (SNMP_ASN1_APPLIC | SNMP_ASN1_PRIMIT | SNMP_ASN1_OPAQUE):
-			LWIP_ASSERT("invalid length", len <= 0xff);
-			vb = snmp_varbind_alloc(&oid, type, (u8_t)len);
+			if (len <= 0xff) {
+				vb = snmp_varbind_alloc(&oid, type, (u8_t)len);
+			} else {
+				LWIP_DEBUGF(SNMP_MSG_DEBUG, ("snmp_pdu_dec_varbindlist: invalid length\n"));
+				vb = NULL;
+			}
+
 			if (vb != NULL) {
 				derr = snmp_asn1_dec_raw(p, ofs + 1 + len_octets, len, vb->value_len, (u8_t *)vb->value);
 				snmp_varbind_tail_add(&m_stat->invb, vb);
@@ -1109,9 +1114,13 @@ struct snmp_varbind *snmp_varbind_alloc(struct snmp_obj_id *oid, u8_t type, u8_t
 		i = oid->len;
 		vb->ident_len = i;
 		if (i > 0) {
-			LWIP_ASSERT("SNMP_MAX_TREE_DEPTH is configured too low", i <= SNMP_MAX_TREE_DEPTH);
-			/* allocate array of s32_t for our object identifier */
-			vb->ident = (s32_t *)memp_malloc(MEMP_SNMP_VALUE);
+			if (i <= SNMP_MAX_TREE_DEPTH) {
+				/* allocate array of s32_t for our object identifier */
+				vb->ident = (s32_t*)memp_malloc(MEMP_SNMP_VALUE);
+			} else {
+				LWIP_DEBUGF(SNMP_MSG_DEBUG, ("snmp_varbind_alloc: SNMP_MAX_TREE_DEPTH is configured too low\n"));
+				vb->ident = NULL;
+			}
 			if (vb->ident == NULL) {
 				LWIP_DEBUGF(SNMP_MSG_DEBUG, ("snmp_varbind_alloc: couldn't allocate ident value space\n"));
 				memp_free(MEMP_SNMP_VARBIND, vb);
@@ -1128,9 +1137,14 @@ struct snmp_varbind *snmp_varbind_alloc(struct snmp_obj_id *oid, u8_t type, u8_t
 		vb->value_type = type;
 		vb->value_len = len;
 		if (len > 0) {
-			LWIP_ASSERT("SNMP_MAX_OCTET_STRING_LEN is configured too low", vb->value_len <= SNMP_MAX_VALUE_SIZE);
-			/* allocate raw bytes for our object value */
-			vb->value = memp_malloc(MEMP_SNMP_VALUE);
+			if (vb->value_len <= SNMP_MAX_VALUE_SIZE) {
+				/* allocate raw bytes for our object value */
+				vb->value = memp_malloc(MEMP_SNMP_VALUE);
+			} else {
+				LWIP_DEBUGF(SNMP_MSG_DEBUG, ("snmp_varbind_alloc: SNMP_MAX_OCTET_STRING_LEN is configured too low\n"));
+				vb->value = NULL;
+			}
+
 			if (vb->value == NULL) {
 				LWIP_DEBUGF(SNMP_MSG_DEBUG, ("snmp_varbind_alloc: couldn't allocate value space\n"));
 				if (vb->ident != NULL) {

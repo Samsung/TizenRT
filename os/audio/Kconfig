@@ -40,11 +40,11 @@ config AUDIO_NUM_BUFFERS
 		low-level drivers will have the opportunity to override this
 		value.
 
-config AUDIO_BUFFER_NUMBYTES
+config AUDIO_BUFSIZE
 	int "Size of each audio buffer for audio processing"
-	default 8192
+	default 2048
 	---help---
-		Specifies the allocation size for each audio buffer
+		Specifies the allocation size of frame for each audio buffer
 		If Driver Specified buffer sizes is enabled (below), then the
 		low-level drivers will have the opportunity to override this
 		value.

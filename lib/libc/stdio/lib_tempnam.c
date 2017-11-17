@@ -105,7 +105,16 @@ FAR char *tempnam(FAR const char *dir, FAR const char *pfx)
 	FAR char *path;
 	int ret;
 
-	(void)asprintf(&path, "%s/%s-XXXXXX.tmp", dir, pfx);
+	if (!dir) {
+		dir = P_tmpdir;
+	}
+
+	if (!pfx) {
+		asprintf(&path, "%s/XXXXXX.tmp", dir);
+	} else {
+		asprintf(&path, "%s/%s-XXXXXX.tmp", dir, pfx);
+	}
+
 	if (path) {
 		ret = mktemp(path);
 		if (ret == OK) {

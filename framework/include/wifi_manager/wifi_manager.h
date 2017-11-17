@@ -31,6 +31,9 @@
 #ifndef WIFI_MANAGER_H
 #define WIFI_MANAGER_H
 
+/**
+ * @brief Status of Wi-Fi interface such as connected or disconnected
+ */
 typedef enum {
 	// STA mode status
 	AP_DISCONNECTED,
@@ -45,7 +48,7 @@ typedef enum {
 } connect_status_e;
 
 /**
- * @brief <b> wifi result type FAIL, SUCCESS, INVALID ARGS</b>
+ * @brief Result types of Wi-Fi Manager APIs such as FAIL, SUCCESS, or INVALID ARGS
  */
 typedef enum {
 	WIFI_MANAGER_FAIL = -1,
@@ -57,6 +60,9 @@ typedef enum {
 	WIFI_MANAGER_BUSY,
 } wifi_manager_result_e;
 
+/**
+ * @brief Mode of Wi-Fi interface such as station mode or ap mode
+ */
 typedef enum {
 	WIFI_NONE = -1,
 	STA_MODE,
@@ -67,11 +73,17 @@ typedef enum {
 	WIFI_FAILURE
 } wifi_manager_mode_e;
 
+/**
+ * @brief Result types of nearby access point scanning
+ */
 typedef enum {
 	WIFI_SCAN_FAIL = -1,
 	WIFI_SCAN_SUCCESS,
 } wifi_manager_scan_result_e;
 
+/**
+ * @brief Keep information of nearby access points as scan results
+ */
 struct wifi_manager_scan_info_s {
 	char ssid[33];	// 802.11 spec defined unspecified or uint8
 	char bssid[18];	// char string e.g. xx:xx:xx:xx:xx:xx
@@ -83,6 +95,9 @@ struct wifi_manager_scan_info_s {
 
 typedef struct wifi_manager_scan_info_s wifi_manager_scan_info_s;
 
+/**
+ * @brief Include callback functions which are asynchronously called after Wi-Fi Manager APIs are called
+ */
 typedef struct {
 	void (*sta_connected)(void);		// in station mode, connected to ap
 	void (*sta_disconnected)(void);		// in station mode, disconnected from ap
@@ -91,6 +106,9 @@ typedef struct {
 	void (*scan_ap_done)(wifi_manager_scan_info_s **, wifi_manager_scan_result_e); // scanning ap is done
 } wifi_manager_cb_s;
 
+/**
+ * @brief Keep Wi-Fi Manager information including ip/mac address, ssid, rssi, etc.
+ */
 typedef struct {
 	char ip4_address[18];
 	char ssid[32];
@@ -102,6 +120,9 @@ typedef struct {
 	wifi_manager_mode_e next_mode;
 } wifi_manager_info_s;
 
+/**
+ * @brief Specify information of soft access point (softAP) such as ssid and channel number
+ */
 typedef struct {
 	char ssid[32];
 	uint16_t channel;
@@ -109,7 +130,7 @@ typedef struct {
 } wifi_manager_softap_config_s;
 
 /**
- * @brief <b> wifi authentication type WPA, WPA2, WPS</b>
+ * @brief Wi-Fi authentication type such as WPA, WPA2, or WPS
  */
 typedef enum {
 	WIFI_MANAGER_AUTH_OPEN,					   /**<  open mode                      */
@@ -121,7 +142,7 @@ typedef enum {
 } wifi_manager_ap_auth_type_e;
 
 /**
- * @brief wifi encryption type WEP, AES, TKIP
+ * @brief Wi-Fi encryption type such as WEP, AES, or TKIP
  */
 typedef enum {
 	WIFI_MANAGER_CRYPTO_NONE,				   /**<  none encryption                */
@@ -134,7 +155,7 @@ typedef enum {
 } wifi_manager_ap_crypto_type_e;
 
 /**
- * @brief wifi ap connect config
+ * @brief Specify which access point (AP) a client connects to
  */
 typedef struct {
 	char ssid[32];							 /**<  Service Set Identification         */
@@ -147,6 +168,7 @@ typedef struct {
 
 /**
  * @brief Initialize Wi-Fi Manager including starting Wi-Fi interface.
+ * @details @b #include <wifi_manager/wifi_manager.h>
  * @param[in] callback functions called when wi-fi events happen
  * @return On success, WIFI_MANAGER_SUCCESS (i.e., 0) is returned. On failure, non-zero value is returned.
  * @since Tizen RT v1.1
@@ -155,6 +177,7 @@ wifi_manager_result_e wifi_manager_init(wifi_manager_cb_s *wmcb);
 
 /**
  * @brief Deinitialize Wi-Fi Manager including stoping Wi-Fi interface.
+ * @details @b #include <wifi_manager/wifi_manager.h>
  * @param[in] none
  * @return On success, WIFI_MANAGER_SUCCESS (i.e., 0) is returned. On failure, non-zero value is returned.
  * @since Tizen RT v1.1
@@ -163,6 +186,7 @@ wifi_manager_result_e wifi_manager_deinit(void);
 
 /**
  * @brief Change the Wi-Fi mode to station or AP.
+ * @details @b #include <wifi_manager/wifi_manager.h>
  * @param[in] Wi-Fi mode (station or AP)
  * @param[in] In case of AP mode, AP configuration infomation should be given including ssid, channel, and passphrase.
  * @return On success, WIFI_MANAGER_SUCCESS (i.e., 0) is returned. On failure, non-zero value is returned.
@@ -172,6 +196,7 @@ wifi_manager_result_e wifi_manager_set_mode(wifi_manager_mode_e mode, wifi_manag
 
 /**
  * @brief Retrieve current status of Wi-Fi interface including mode, connection status, ssid, received signal strengh indication, and ip address.
+ * @details @b #include <wifi_manager/wifi_manager.h>
  * @param[out] retrieved information including  mode, connection status, ssid, received signal strengh indication, and ip address.
  * @return On success, WIFI_MANAGER_SUCCESS (i.e., 0) is returned. On failure, non-zero value is returned.
  * @since Tizen RT v1.1
@@ -180,6 +205,7 @@ wifi_manager_result_e wifi_manager_get_info(wifi_manager_info_s *info);
 
 /**
  * @brief Connect to an access point.
+ * @details @b #include <wifi_manager/wifi_manager.h>
  * @param[in] ssid, passphrase, authentication type, and cryto type of the access point which the wi-fi interface connect to.
  * @return On success, WIFI_MANAGER_SUCCESS (i.e., 0) is returned. On failure, non-zero value is returned.
  * @since Tizen RT v1.1
@@ -188,6 +214,7 @@ wifi_manager_result_e wifi_manager_connect_ap(wifi_manager_ap_config_s *config);
 
 /**
  * @brief Disconnect from the connected access point
+ * @details @b #include <wifi_manager/wifi_manager.h>
  * @param[in] none
  * @return On success, WIFI_MANAGER_SUCCESS (i.e., 0) is returned. On failure, non-zero value is returned.
  * @since Tizen RT v1.1
@@ -196,6 +223,7 @@ wifi_manager_result_e wifi_manager_disconnect_ap(void);
 
 /**
  * @brief Scan nearby access points
+ * @details @b #include <wifi_manager/wifi_manager.h>
  * @param[in] none
  * @return On success, WIFI_MANAGER_SUCCESS (i.e., 0) is returned. On failure, non-zero value is returned.
  * @since Tizen RT v1.1

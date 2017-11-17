@@ -40,6 +40,7 @@ static int app_state = -1;
 static char *app_ap_name = NULL;
 static char *app_ip_addr = NULL;
 volatile static bool is_connected_target_ap = false;
+extern bool b_reset_continue_flag;
 
 #define IP_NULL_VAL     "0.0.0.0"
 
@@ -194,6 +195,10 @@ void things_adapter_state_cb(CATransportAdapter_t adapter, bool enabled)
 void things_tcp_session_state_cb(const CAEndpoint_t *info, bool connected)
 {
 	THINGS_LOG_D(THINGS_DEBUG, TAG, "Enter.");
+
+	if (b_reset_continue_flag == true) {
+		return;
+	}
 
 	if (info == NULL) {
 		THINGS_LOG_V_ERROR(THINGS_ERROR, TAG, "[IoTivity Error] invalid call-back parameter.(info is null.)");

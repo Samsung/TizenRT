@@ -61,16 +61,6 @@ pipes/
 power/
   battery driver interfaces.
 
-sercomm/
-  Sercomm is the transport used by osmocom-bb that runs on top of serial.
-  See http://bb.osmocom.org/trac/wiki/nuttx-bb/run for detailed the usage
-  of tinyara with sercomm.
-
-  drivers/sercomm is only built if CONFIG_SERCOMM_CONSOLE in the TinyAra
-  configuration file.  If you attempt to build this driver without
-  osmocom-bb, you will get compilation errors because of header files
-  that are needed from the osmocom-bb.
-
 serial/
   Front-end character drivers for chip-specific UARTs.  This provide
   some TTY-like functionality and are commonly used (but not required for)

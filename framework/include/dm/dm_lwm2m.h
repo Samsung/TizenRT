@@ -55,23 +55,33 @@ typedef enum {
 } dm_lwm2m_client_state_e;
 
 /**
- * @brief Struct definition of DM context for a LWM2M session
+ * @brief Specify LWM2M server information such as ipaddress and port
  */
+struct server_info_s {
+	char ipAddress[IPADDRLEN_MAX];
+	char port[PORTLEN];
+	bool isBootstrap;
+};
 
+/**
+ * @brief Specify LWM2M client information such as session lifetime
+ */
+struct client_info_s {
+	int lifetime;
+};
+
+/**
+ * @brief Specify DM context structure for a LWM2M session.
+ */
 struct dm_lwm2m_context_s {
-	struct server_info_s {
-		char ipAddress[IPADDRLEN_MAX];
-		char port[PORTLEN];
-		bool isBootstrap;
-	} server_info;
-	struct client_info_s {
-		int lifetime;
-	} client_info;
+	struct server_info_s server_info;
+	struct client_info_s client_info;
 };
 
 /**
  * @brief Start a DM client
  *
+ * @details @b #include <dm/dm_lwm2m.h>
  * @param[in] dm_context pointer to DM context
  * @return On success, 0 is returned.
  *         On failure, a negative value is returned.
@@ -83,7 +93,7 @@ int dm_lwm2m_start_client(struct dm_lwm2m_context_s *dm_context);
 /**
  * @brief Close a DM client
  *
- * @param  None
+ * @details @b #include <dm/dm_lwm2m.h>
  * @return On success, 0 is returned.
  *         On failure, a negative value is returned.
  *         If client is already stopped, return DM_ERROR_ALREADY_STOPPED.
@@ -94,7 +104,8 @@ int dm_lwm2m_stop_client(void);
 /**
  * @brief Get server IP address
  *
- * @param[out] IP address pointer to memory to store server IP address
+ * @details @b #include <dm/dm_lwm2m.h>
+ * @param[out] server_ipAddr pointer to memory to store server IP address
  * @return     On success, 0 is returned.
  *             On failure, a negative value is returned.
  * @since Tizen RT v1.0
@@ -104,7 +115,8 @@ int dm_lwm2m_get_server_address(char *server_ipAddr);
 /**
  * @brief Get server port number
  *
- * @param[out] port pointer to memory to store server port
+ * @details @b #include <dm/dm_lwm2m.h>
+ * @param[out] server_port pointer to memory to store server port
  * @return     On success, 0 is returned.
  *             On failure, a negative value is returned.
  * @since Tizen RT v1.0
@@ -114,6 +126,7 @@ int dm_lwm2m_get_server_port(char *server_port);
 /**
  * @brief Get lifetime for a client
  *
+ * @details @b #include <dm/dm_lwm2m.h>
  * @param[out] lifetime pointer to memory to store client lifetime
  * @return     On success, 0 is returned.
  *             On failure, a negative value is returned.
@@ -124,7 +137,8 @@ int dm_lwm2m_get_client_lifetime(int *lifetime);
 /**
  * @brief Get state of client
  *
- * @param[out] lifetime pointer to memory to store client state
+ * @details @b #include <dm/dm_lwm2m.h>
+ * @param[out] state pointer to memory to store client state
  * @return     On success, 0 is returned.
  *             On failure, a negative value is returned.
  * @since Tizen RT v1.0
@@ -134,6 +148,7 @@ int dm_lwm2m_get_client_state(dm_lwm2m_client_state_e *state);
 /**
  * @brief Get client resource value
  *
+ * @details @b #include <dm/dm_lwm2m.h>
  * @param[in] buffer pointer to resource URI
  *
  * @return     On success, 0 is returned.

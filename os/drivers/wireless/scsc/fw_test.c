@@ -101,8 +101,8 @@ int slsi_fw_test_signal(struct slsi_dev *sdev, struct slsi_fw_test *fwtest, stru
 
 int slsi_fw_test_signal_with_udi_header(struct slsi_dev *sdev, struct slsi_fw_test *fwtest, struct max_buff *mbuf)
 {
-	struct udi_msg_t *udi_msg = (struct udi_msg_t *)mbuf->data;
-	struct fapi_vif_signal_header *fapi_header = (struct fapi_vif_signal_header *)(mbuf->data + sizeof(struct udi_msg_t));
+	struct udi_msg_t *udi_msg = (struct udi_msg_t *)slsi_mbuf_get_data(mbuf);
+	struct fapi_vif_signal_header *fapi_header = (struct fapi_vif_signal_header *)(slsi_mbuf_get_data(mbuf) + sizeof(struct udi_msg_t));
 
 	if (!fwtest->fw_test_enabled) {
 		return 0;

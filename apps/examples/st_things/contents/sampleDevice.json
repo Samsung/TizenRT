@@ -19,38 +19,80 @@
                 "firmwareVersion": "1.0",
                 "vendorId": "SWC-LIGHT-2017"
             }
-          },
- 
+          }, 
           "resources": {
             "single": [
               {
-                  "uri": "/switch",
+                  "uri": "/switch/main/0",
                   "types": [
-                      "oic.r.switch.binary"
+                      "x.com.st.powerswitch"
                   ],
                   "interfaces": [
-                        "oic.if.a",
-                      "oic.if.baseline"                      
+                        "oic.if.a"                    
                   ],
                   "policy": 3
-              }
-            ]
-          }
+              },
+            
+                {
+                    "uri": "/switchLevel/main/0",
+                    "types": [
+                        "oic.r.light.dimming"
+                    ],
+                    "interfaces": [
+                        "oic.if.a"
+                    ],
+                    "policy": 3
+                },
+                {
+                    "uri": "/colorTemperature/main/0",                
+                    "types": [
+                        "x.com.st.color.temperature"
+                    ],
+                    "interfaces": [
+                        "oic.if.a"
+                    ],
+                    "policy": 3
+                }
+                ]
+          
         }
-      ],
-                
+    }        
+    ],          
     "resourceTypes": [
       {
-        "type": "oic.r.switch.binary",
+        "type": "x.com.st.powerswitch",
         "properties": [
             {
-                "key": "value",
-                "type": 0,
+                "key": "power",
+                "type": 3,
                 "mandatory": true,
                 "rw": 3
             }
         ]
-    } ],
+    },
+    {
+        "type": "oic.r.light.dimming",
+        "properties": [
+            {
+                "key": "dimmingSetting",
+                "type": 1,
+                "mandatory": true,
+                "rw": 3
+            }
+        ]
+    },
+    {
+        "type": "x.com.st.color.temperature",
+        "properties": [
+            {
+                "key": "ct",
+                "type": 1,
+                "mandatory": true,
+                "rw": 3
+            }
+        ]
+    }
+ ],
     "configuration": {
         "easySetup": {
             "connectivity": {
@@ -75,4 +117,3 @@
         }
     }
 }
-

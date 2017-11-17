@@ -4,14 +4,13 @@
 [![Build Status](https://travis-ci.org/Samsung/TizenRT.svg?branch=master)](https://travis-ci.org/Samsung/TizenRT)
 
 lightweight RTOS-based platform to support low-end IoT devices.  
-Please find project details like **APIs**, **Specification** and **Long-term Goals** on our [Tizen Site](https://source.tizen.org/documentation/tizen-rt).
+Please find project details like APIs reference at [docs](docs/) folder. Wiki will be provided.
 
 ## Contents
 
 > [Quick Start](#quick-start)  
 > [Supported Board](#supported-board)  
-> [Configuration Sets](#configuration-sets)  
-> [APPENDIX](#appendix)
+> [Configuration Sets](#configuration-sets)
 
 ## Quick Start
 ### Getting the toolchain
@@ -47,7 +46,7 @@ cd ..
 make menuconfig
 ```
 
-Refer kconfig-frontend installation to use *menuconfig* at [APPENDIX](README.md#kconfig-frontends-installation)
+Refer [kconfig-frontend installation](docs/HowtoInstallKconfigFrontend.md) to use *menuconfig*.
 
 Finally, initiate build by make from *$TIZENRT_BASEDIR/os*.
 ```bash
@@ -56,48 +55,19 @@ make
 
 Built binaries are in *$TIZENRT_BASEDIR/build/output/bin*.
 
-## Supported Board
+## Supported Board / Emulator
 
 ARTIK053 [[details]](build/configs/artik053/README.md)
 
-sidk_s5jt200 [[details]](build/configs/sidk_s5jt200/README.md)
+SIDK_S5JT200 [[details]](build/configs/sidk_s5jt200/README.md)
 
-Tizen RT currently supports only two boards called artik053 and sidk_s5jt200.
-However, those are not available in public markets till now.
-sidk_s5jt200 or other boards for Tizen RT will be coming soon.
+QEMU [[details]](build/configs/qemu/README.md)
 
 ## Configuration Sets
 
 To build a Tizen RT application, use the default configuration files named *defconfig* under *build/configs/\<board\>/\<configuration_set\>* folder.  
-To customize your application with specific configuration settings, using the menuconfig tool is recommended  at *os* folder as shown:
+To customize your application with specific configuration settings, using the menuconfig tool is recommended at *os* folder as shown:
 ```bash
 make menuconfig
 ```
-Please keep in mind that we are actively working on board configurations, and will be posting our updates on the README files under each config
-
-## APPENDIX
-### Kconfig-frontends Installation
-
-1. The *bison* (or byacc if supported), *flex*, *gperf*, *libncurses5-dev*, *zlib1g-dev*, *gettext* and *g++* packages should be installed:
-```bash
-sudo apt-get install bison flex gperf libncurses5-dev zlib1g-dev gettext g++
-```
-
-2. Download and untar *kconfig-frontends* package.  
- One of site is [Yann Morin's Project](http://ymorin.is-a-geek.org/projects/kconfig-frontends)
-```bash
-tar -xvf kconfig-frontends-x.xx.x.x.tar.bz2
-```
-
-3. Go to *kconfig-frontends* folder
-```bash
-cd kconfig-frontends-x.xx.x.x
-```
-
-4. Configure and Build
-```bash
-./configure --enable-mconf --disable-gconf --disable-qconf
-make
-sudo make install
-```
-
+Please keep in mind that we are actively working on board configurations, and will be posting our updates on the README files under each config.

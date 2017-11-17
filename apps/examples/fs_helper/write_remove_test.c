@@ -25,6 +25,7 @@
  ****************************************************************************/
 #include <stdio.h>
 #include <stdlib.h>
+#include <errno.h>
 
 #include <tinyara/config.h>
 #include <tinyara/fs/fs_utils.h>
@@ -44,7 +45,7 @@ struct pthread_arg {
 static int make_file(char *filename)
 {
 	FILE *fp;
-	int i, ret;
+	int i;
 
 	fp = fopen(filename, "w+");
 	if (fp == NULL) {
@@ -53,17 +54,16 @@ static int make_file(char *filename)
 	}
 
 	for (i = 0; i < WRITE_DATA_SIZE; i++) {
-		ret = fwrite(&i, 4, 1, fp);
-		if (ret < 0) {
-			printf("fwrite error[%d]\n", ret);
-			return ret;
+		if (fwrite(&i, 4, 1, fp) < 0) {
+			printf("Cannot write file %d\n", errno);
+			fclose(fp);
+			return -1;
 		}
 	}
 
-	ret = fclose(fp);
-	if (ret != 0) {
-		printf("fclose error[%d]\n", ret);
-		return ret;
+	if (fclose(fp) != 0) {
+		printf("Cannot close file %s\n", filename);
+		return -1;
 	}
 	return OK;
 }

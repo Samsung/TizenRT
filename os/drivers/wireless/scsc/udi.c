@@ -306,7 +306,7 @@ static ssize_t slsi_cdev_read(FAR struct file *filp, FAR char *p, size_t len)
 		return -EINVAL;
 	}
 
-	if (!mbuf_queue_len(&client->log_list)) {
+	if (!client->log_list.queue_len) {
 		/* wait until getting a signal */
 		wait_for_completion(&client->log_wq);
 	}
@@ -325,13 +325,13 @@ static ssize_t slsi_cdev_read(FAR struct file *filp, FAR char *p, size_t len)
 
 	slsi_fw_test_signal_with_udi_header(sdev, &client->fw_test, mbuf);
 
-	msglen = mbuf->len;
+	msglen = mbuf->data_len;
 	if (msglen > (s32) len) {
 		SLSI_WARN(sdev, "truncated read to %d actual msg len is %lu\n", msglen, (unsigned long int)len);
 		msglen = len;
 	}
 
-	if (copy_to_user(p, mbuf->data, msglen)) {
+	if (copy_to_user(p, slsi_mbuf_get_data(mbuf), msglen)) {
 		SLSI_ERR(sdev, "Failed to copy UDI log to user\n");
 		slsi_kfree_mbuf(mbuf);
 		return -EFAULT;
@@ -347,7 +347,6 @@ static ssize_t slsi_cdev_write(FAR struct file *filep, FAR const char *p, size_t
 	struct slsi_dev *sdev;
 	struct max_buff *mbuf;
 	u8 *data;
-	struct slsi_mbuf_cb *cb;
 
 	SLSI_INFO_NODEV("\n");
 
@@ -367,13 +366,12 @@ static ssize_t slsi_cdev_write(FAR struct file *filep, FAR const char *p, size_t
 		SLSI_ERR_NODEV("sdev not set\n");
 		return -EINVAL;
 	}
-	mbuf = slsi_alloc_mbuf(len);
+	mbuf = slsi_mbuf_alloc(len);
 	data = mbuf_put(mbuf, len);
 	memcpy(data, p, len);
 
-	cb = slsi_mbuf_cb_init(mbuf);
-	cb->sig_length = fapi_get_expected_size(mbuf);
-	cb->data_length = mbuf->len;
+	mbuf->fapi.sig_length = fapi_get_expected_size(mbuf);
+	mbuf->fapi.data_length = mbuf->data_len;
 	/* colour is defined as: */
 	/* u16 register bits:
 	 * 0      - do not use
@@ -382,13 +380,12 @@ static ssize_t slsi_cdev_write(FAR struct file *filep, FAR const char *p, size_t
 	 * [10:8] - ac queue
 	 */
 	if (fapi_is_ma(mbuf)) {
-		cb->colour = (slsi_frame_priority_to_ac_queue(mbuf->priority) << 8) | (fapi_get_u16(mbuf, u.ma_unitdata_req.peer_index) << 3) | (fapi_get_u16(mbuf, u.ma_unitdata_req.vif) << 1);
+		mbuf->colour = (slsi_frame_priority_to_ac_queue(mbuf->user_priority) << 8) | (fapi_get_u16(mbuf, u.ma_unitdata_req.peer_index) << 3) | (fapi_get_u16(mbuf, u.ma_unitdata_req.vif) << 1);
 	}
 
 	/* F/w will panic if fw_reference is not zero. */
 	fapi_set_u32(mbuf, fw_reference, 0);
-	/* set mac header uses values from above initialized cb */
-	mbuf_set_mac_header(mbuf, fapi_get_data(mbuf) - mbuf->data);
+	mbuf_set_mac_header(mbuf, fapi_get_data(mbuf) - slsi_mbuf_get_data(mbuf));
 
 	SLSI_DBG3_NODEV(SLSI_UDI, "UDI Signal:%.4X  SigLEN:%d  DataLen:%d  MBUF Headroom:%d  bytes:%d\n", fapi_get_sigid(mbuf), fapi_get_siglen(mbuf), fapi_get_datalen(mbuf), mbuf_headroom(mbuf), (int)len);
 
@@ -696,10 +693,10 @@ static int slsi_cdev_poll(FAR struct file *filp, struct pollfd *fds, bool setup)
 {
 	struct slsi_cdev_client *client = (void *)filp->f_priv;
 
-	SLSI_DBG4_NODEV(SLSI_UDI, "Poll(%d), events: %x, revents: %x, setup: %d\n", mbuf_queue_len(&client->log_list), fds->events, fds->revents, setup);
+	SLSI_DBG4_NODEV(SLSI_UDI, "Poll(%d), events: %x, revents: %x, setup: %d\n", client->log_list.queue_len, fds->events, fds->revents, setup);
 
 	if (setup == true) {
-		if (mbuf_queue_len(&client->log_list)) {
+		if (client->log_list.queue_len) {
 			fds->revents |= (fds->events & (POLLIN | POLLOUT));
 			if (fds->revents != 0) {
 				sem_post(fds->sem);
@@ -794,6 +791,7 @@ static int udi_log_event(struct slsi_log_client *log_client, struct max_buff *mb
 	u16 signal_id = fapi_get_sigid(mbuf);
 	struct timespec ts;
 	struct max_buff *mbuf_new;
+	u8 *mbuf_data;
 
 	if (WARN_ON(client == NULL)) {
 		return -EINVAL;
@@ -801,7 +799,7 @@ static int udi_log_event(struct slsi_log_client *log_client, struct max_buff *mb
 	if (WARN_ON(mbuf == NULL)) {
 		return -EINVAL;
 	}
-	if (WARN_ON(mbuf->len == 0)) {
+	if (WARN_ON(mbuf->data_len == 0)) {
 		return -EINVAL;
 	}
 
@@ -896,7 +894,7 @@ allow_frame:
 
 	/* Handle hitting the UDI_MAX_QUEUED_FRAMES Limit */
 	if (client->log_dropped) {
-		if (mbuf_queue_len(&client->log_list) <= UDI_RESTART_QUEUED_FRAMES) {
+		if (client->log_list.queue_len <= UDI_RESTART_QUEUED_FRAMES) {
 			u32 dropped = client->log_dropped;
 
 			SLSI_WARN_NODEV("Stop Dropping UDI Frames : %d frames Dropped\n", dropped);
@@ -908,7 +906,7 @@ allow_frame:
 		client->log_dropped++;
 		sem_post(&client->log_mutex);
 		return -ECANCELED;
-	} else if (!client->log_dropped && mbuf_queue_len(&client->log_list) >= UDI_MAX_QUEUED_FRAMES) {
+	} else if (!client->log_dropped && client->log_list.queue_len >= UDI_MAX_QUEUED_FRAMES) {
 		SLSI_WARN_NODEV("Start Dropping UDI Frames\n");
 		client->log_dropped++;
 		sem_post(&client->log_mutex);
@@ -920,7 +918,7 @@ allow_frame:
 	 * This should allow key frames (mgt, dhcp and eapol etc) to still be in the logs but stop the logging general data frames.
 	 * This occurs when the Transfer rate is higher than we can take the frames out of the UDI list.
 	 */
-	if (client->log_drop_data_packets && mbuf_queue_len(&client->log_list) < UDI_RESTART_QUEUED_DATA_FRAMES) {
+	if (client->log_drop_data_packets && client->log_list.queue_len < UDI_RESTART_QUEUED_DATA_FRAMES) {
 		u32 dropped = client->log_dropped_data;
 
 		SLSI_WARN_NODEV("Stop Dropping UDI Frames : %d Basic Data frames Dropped\n", client->log_dropped_data);
@@ -930,7 +928,7 @@ allow_frame:
 		sem_post(&client->log_mutex);
 		slsi_kernel_to_user_space_event(log_client, UDI_DRV_DROPPED_DATA_FRAMES, sizeof(u32), (u8 *)&dropped);
 		return -ECANCELED;
-	} else if (!client->log_drop_data_packets && mbuf_queue_len(&client->log_list) >= UDI_MAX_QUEUED_DATA_FRAMES && !slsi_cdev_unitdata_filter_allow(client, UDI_MA_UNITDATA_FILTER_ALLOW_MASK)) {
+	} else if (!client->log_drop_data_packets && client->log_list.queue_len >= UDI_MAX_QUEUED_DATA_FRAMES && !slsi_cdev_unitdata_filter_allow(client, UDI_MA_UNITDATA_FILTER_ALLOW_MASK)) {
 		SLSI_WARN_NODEV("Start Dropping UDI Basic Data Frames\n");
 		client->log_drop_data_packets = true;
 		client->ma_unitdata_filter_config = UDI_MA_UNITDATA_FILTER_ALLOW_MGT_ID | UDI_MA_UNITDATA_FILTER_ALLOW_KEY_ID | UDI_MA_UNITDATA_FILTER_ALLOW_CFM_ERROR_ID | UDI_MA_UNITDATA_FILTER_ALLOW_EAPOL_ID;
@@ -939,20 +937,21 @@ allow_frame:
 
 allow_config_frame:
 
-	mbuf_new = alloc_mbuf(mbuf->len + sizeof(msg));
+	mbuf_new = mbuf_alloc(mbuf->data_len + sizeof(msg));
 	if (mbuf_new == NULL) {
 		return -ENOMEM;
 	}
 
-	msg.length = sizeof(msg) + mbuf->len;
+	msg.length = sizeof(msg) + mbuf->data_len;
 	clock_gettime(CLOCK_REALTIME, &ts);
 	msg.timestamp = (ts.tv_sec * 1000) + (ts.tv_nsec / 1000);
 	msg.direction = dir;
 	msg.signal_length = fapi_get_siglen(mbuf);
 
-	mbuf_put(mbuf_new, sizeof(msg) + mbuf->len);
-	memcpy(&mbuf_new->data[0], &msg, sizeof(msg));
-	memcpy(&mbuf_new->data[sizeof(msg)], &mbuf->data[0], mbuf->len);
+	mbuf_put(mbuf_new, sizeof(msg) + mbuf->data_len);
+	mbuf_data = slsi_mbuf_get_data(mbuf_new);
+	memcpy(mbuf_data, &msg, sizeof(msg));
+	memcpy(&mbuf_data[sizeof(msg)], slsi_mbuf_get_data(mbuf), mbuf->data_len);
 
 	slsi_mbuf_queue_tail(&client->log_list, mbuf_new);
 

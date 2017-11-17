@@ -167,6 +167,16 @@ config DEBUG_MM_INFO
 	---help---
 		Enable memory management informational debug SYSLOG output.
 
+config DEBUG_DOUBLE_FREE
+	bool "Debug Double Free Attempt"
+	default n
+	---help---
+		This flag would help to debug following operations
+		Attempt to free Null pointer
+		Attempt to free an Unallocated pointer
+		Attempt to free an abruptly initialized pointer (Security exploitation)
+		Attempt to free an already released pointer ( double free detection )
+
 endif #DEBUG_MM
 
 config DEBUG_SHM

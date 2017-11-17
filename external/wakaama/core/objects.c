@@ -366,6 +366,10 @@ coap_status_t object_delete(lwm2m_context_t * contextP,
     if (LWM2M_URI_IS_SET_INSTANCE(uriP))
     {
         result = objectP->deleteFunc(uriP->instanceId, objectP);
+        if (result == COAP_202_DELETED)
+        {
+             observe_clear(contextP, uriP);
+        }
     }
     else
     {
@@ -377,6 +381,13 @@ coap_status_t object_delete(lwm2m_context_t * contextP,
             && result == COAP_202_DELETED)
         {
             result = objectP->deleteFunc(instanceP->id, objectP);
+            if (result == COAP_202_DELETED)
+            {
+                uriP->flag |= LWM2M_URI_FLAG_INSTANCE_ID;
+                uriP->instanceId = instanceP->id;
+                observe_clear(contextP, uriP);
+                uriP->flag &= ~LWM2M_URI_FLAG_INSTANCE_ID;
+            }
             instanceP = objectP->instanceList;
         }
     }

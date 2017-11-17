@@ -59,7 +59,7 @@ typedef struct {
 static struct i2c_dev_s *i2c_dev;
 static struct i2c_config_s configs;
 
-static i2c_alc i2c_alc5658 = {
+static alc_i2c_t alc5658_i2c = {
 	.write = alc5658_write,
 	.read = alc5658_read,
 	.modify = alc5658_modify,
@@ -208,13 +208,13 @@ static void delay(unsigned int mS)
  *  None
  *
  * Returned Value:
- *   pointer to i2c_alc operations structure, or NULL in case of errors
+ *   pointer to alc_i2c_t operations structure, or NULL in case of errors
  *
  ****************************************************************************/
 
-i2c_alc *alc5658_i2c_initialize(void)
+alc_i2c_t *alc5658_i2c_initialize(void)
 {
-	i2c_alc *i2c;
+	alc_i2c_t *i2c;
 	int i;
 	int ret;
 
@@ -228,7 +228,7 @@ i2c_alc *alc5658_i2c_initialize(void)
 	configs.address = ALC5658_ADDR;
 	configs.addrlen = CONFIG_ALC5658_I2C_ADDRLEN;
 
-	i2c = &i2c_alc5658;
+	i2c = &alc5658_i2c;
 
 	for (i = 0; i < sizeof(codec_init_script) / sizeof(t_codec_init_script_entry); i++) {
 		ret = i2c->modify(codec_init_script[i].addr, codec_init_script[i].val, 0xFFFF);

@@ -1,0 +1,15 @@
+#
+# For a description of the syntax of this configuration file,
+# see kconfig-language at https://www.kernel.org/doc/Documentation/kbuild/kconfig-language.txt
+#
+
+config EXAMPLES_WIFIMANAGER_TEST
+	bool "Wi-Fi Manager Sample"
+	default n
+	depends on WIFI_MANAGER
+	---help---
+		Wi-Fi Manager sample program
+
+config USER_ENTRYPOINT
+	string
+	default "wm_test_main" if ENTRY_WIFIMANAGER_TEST

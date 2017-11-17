@@ -93,23 +93,25 @@ extern "C" {
 
 /**
  * @ingroup MOUNT_KERNEL
- * @brief attaches filesystem to the root filesystem at the target path.
- * @param[in] The name of block device to be attached.
- * @param[in] The root path of filesystem.
- * @param[in] The type of filesystem.
- * @param[in] The flags for mount.
- * @param[in] Mountpoint private data.
+ * @brief attaches filesystem to the root filesystem at the target path
+ * @details @b #include <sys/mount.h> \n
+ * SYSTEM CALL API \n
+ * @param[in] source the name of block device to be attached
+ * @param[in] target the root path of filesystem
+ * @param[in] filesystemtype the type of filesystem
+ * @param[in] mountflags the flags for mount
+ * @param[in] data mountpoint private data
  * @return On success, Zero is returned. On failure, -1 is returned and errno is set appropriately.
- * @details SYSTEM CALL API
  * @since Tizen RT v1.0
  */
 int mount(const char *source, const char *target, const char *filesystemtype, unsigned long mountflags, const void *data);
 /**
  * @ingroup MOUNT_KERNEL
- * @brief detaches the filesystem mounted at the target path.
- * @param[in] The root path of filesystem to be detached.
+ * @brief detaches the filesystem mounted at the target path
+ * @details @b #include <sys/mount.h> \n
+ * SYSTEM CALL API \n
+ * @param[in] target the root path of filesystem to be detached
  * @return On success, Zero is returned. On failure, -1 is returned and errno is set appropriately.
- * @details SYSTEM CALL API
  * @since Tizen RT v1.0
  */
 int umount(const char *target);
@@ -121,4 +123,5 @@ int umount(const char *target);
 
 #endif							/* __INCLUDE_SYS_MOUNT_H */
 /**
- * @} */
+ * @}
+ */

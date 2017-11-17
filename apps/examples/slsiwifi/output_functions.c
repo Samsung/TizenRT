@@ -62,10 +62,10 @@ void sw_printHelp(void)
 	sw_printFooter();
 }
 
-void sw_printJoinHelp(void)
+void sw_printJoinHelp(FAR const char *program)
 {
 
-	printf("artikwifi join <ssid> [<key> <security>]\n");
+	printf("%s join <ssid> [<key> <security>]\n", program);
 	printf("You will as a minimum need to have 1 argument after join\n");
 	printf("  <ssid> : name of Wi-Fi AP (maximum 32 bytes)\n");
 	printf("  <key> : passphrase (format depends on security mode)\n");
@@ -76,10 +76,10 @@ void sw_printJoinHelp(void)
 	printf("If <ssid> or <key> contains a space then encapsulate it with quotes \"\"\n");
 }
 
-void sw_printStartapHelp(void)
+void sw_printStartapHelp(FAR const char *program)
 {
 
-	printf("artikwifi startap <ssid> <key> <security> <channel> \n");
+	printf("%s startap <ssid> <key> <security> <channel> \n", program);
 	printf("  <ssid> : name of Wi-Fi AP (maximum 32 bytes)\n");
 	printf("  <key> : passphrase(format depends on the security mode)\n");
 	printf("  <security> : type of security, Choose between:\n");
@@ -88,30 +88,30 @@ void sw_printStartapHelp(void)
 	printf("  <channel> : channel to use (range depends on country)\n");
 }
 
-void sw_printFullHelp(void)
+void sw_printFullHelp(FAR const char *program)
 {
 	printf("Available commands with full description for each:\n");
 	printf("join\n----\n");
-	sw_printJoinHelp();
+	sw_printJoinHelp(program);
 	printf("\n");
 	printf("leave\n-----\n");
-	printf("artikwifi leave\n  No arguments\n");
+	printf("%s leave\n  No arguments\n", program);
 	printf("\n");
 	printf("scan\n----\n");
-	printf("artikwifi scan\n   No arguments\n");
+	printf("%s scan\n   No arguments\n", program);
 	printf("\n");
 	printf("startsta\n--------\n");
-	printf("artikwifi startsta\n   No arguments\n");
+	printf("%s startsta\n   No arguments\n", program);
 	printf("\n");
 	printf("startap\n-------\n");
-	sw_printStartapHelp();
+	sw_printStartapHelp(program);
 	printf("\n");
 	printf("stop\n----\n");
-	printf("artikwifi stop\n   No arguments\n");
+	printf("%s stop\n   No arguments\n", program);
 	printf("   Stops the running mode (STA or AP)\n");
 	printf("\n");
 	printf("country\n--------\n");
-	printf("artikwifi country [<country code>]\n");
+	printf("%s country [<country code>]\n", program);
 	printf("  <country code> is capital two letters\n");
 	printf("                 if country code is not set, it will return country code from NVdata\n");
 	printf("                 Note that\n");
@@ -119,32 +119,32 @@ void sw_printFullHelp(void)
 	printf("                 to get country code, Wi-Fi should be on\n");
 	printf("\n");
 	printf("opmode\n--------\n");
-	printf("artikwifi opmode\n");
+	printf("%s opmode\n", program);
 	printf("    returns Wi-Fi operation mode (among NONE, STA and SOFTAP)\n");
 	printf("\n");
 	printf("txpower\n--------\n");
-	printf("artikwifi txpower <dbm>\n");
+	printf("%s txpower <dbm>\n", program);
 	printf("    sets the tx power to dbm (value between 12-30).\n");
 	printf("\n");
 	printf("ie\n--------\n");
-	printf("artikwifi ie <oui> <ie-data>\n");
+	printf("%s ie <oui> <ie-data>\n", program);
 	printf("    Sets the vendor specific IE data + OUI for the next time \n");
 	printf("    the AP mode is started.\n");
 	printf("      <oui>     : the Organizational Unique Id in hex (format: xxxxxx)\n");
 	printf("      <ie-data> : the IE data as string representation\n");
 	printf("\n");
 	printf("status\n--------\n");
-	printf("artikwifi status\n");
+	printf("%s status\n", program);
 	printf("    returns Wi-Fi connection status\n");
 	printf("    STA : it returns whether Wi-Fi is connected or not\n");
 	printf("    soft AP : it returns whether connected number of STAs\n");
 	printf("\n");
 	printf("auto\n----\n");
-	printf("artikwifi auto [<testscript>]\n");
+	printf("%s auto [<testscript>]\n", program);
 	printf("  <testscript> is optional and is the full path to a file\n");
 	printf("               containing the command line arguments to\n");
 	printf("               execute sequentially - on command per line\n");
-	printf("               omitting the \"artikwifi\" part\n");
+	printf("               omitting the %s part\n", program);
 	printf("\n");
 	printf("help\n  This help\n");
 	printf("use the command help to get extended help about arguments for the\n");

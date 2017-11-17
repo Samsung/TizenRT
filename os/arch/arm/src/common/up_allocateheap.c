@@ -66,6 +66,10 @@
 
 #include <arch/board/board.h>
 
+#if CONFIG_MM_REGIONS > 1
+#include <tinyara/kmalloc.h>
+#endif
+
 #if defined(CONFIG_BUILD_PROTECTED) && defined(CONFIG_MM_KERNEL_HEAP)
 #include <string.h>
 #endif
@@ -198,5 +202,32 @@ void up_allocate_kheap(FAR void **heap_start, size_t *heap_size)
 
 	*heap_start = (FAR void *)(g_idle_topstack & ~(0x7));
 	*heap_size = (uint32_t)((uintptr_t)__usram_segment_start__) - (uint32_t)(*heap_start);
+}
+#endif
+
+/****************************************************************************
+ * Name: up_addregion
+ ****************************************************************************/
+#if CONFIG_MM_REGIONS > 1
+void up_addregion(void)
+{
+	int region_cnt;
+	char *mem_start = CONFIG_HEAPx_BASE;
+	char *mem_size = CONFIG_HEAPx_SIZE;
+
+	for (region_cnt = 0; region_cnt < CONFIG_MM_REGIONS - 1; region_cnt++) {
+		if (*mem_start || *mem_size) {
+			dbg("CONFIG_HEAPx_BASE and CONFIG_HEAPx_SIZE are not defined properly\n");
+		}
+		kumm_addregion((void *)strtol(mem_start, &mem_start, 16), (size_t)strtol(mem_size, &mem_size, 0));
+
+		if (*mem_start == ',') {
+			mem_start++;
+		}
+
+		if (*mem_size == ',') {
+			mem_size++;
+		}
+	}
 }
 #endif

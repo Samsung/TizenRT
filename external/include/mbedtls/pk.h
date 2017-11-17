@@ -594,9 +594,21 @@ int mbedtls_pk_load_file(const char *path, unsigned char **buf, size_t *n);
 
 #if defined(CONFIG_TLS_WITH_SSS)
 int hw_ecdsa_sign_wrap(void *ctx, mbedtls_md_type_t md_alg, const unsigned char *hash, size_t hash_len, unsigned char *sig, size_t *sig_len, unsigned int key_index);
+#if defined(CONFIG_SUPPORT_FULL_SECURITY)
+int hw_rsa_sign_wrap(mbedtls_rsa_context *ctx, mbedtls_md_type_t md_alg, const unsigned char *hash, size_t hash_len, unsigned char *sig, size_t *sig_len, unsigned int key_index);
+int hw_rsa_decrypt_wrap(mbedtls_rsa_context *ctx, const unsigned char *input, size_t ilen, unsigned char *output, size_t *olen,	size_t osize, unsigned int key_index);
+#endif
 #endif
 #if defined(CONFIG_HW_ECDSA_VERIFICATION)
-int hw_ecdsa_verify_wrap(void *ctx, mbedtls_md_type_t md_alg, const unsigned char *hash, size_t hash_len, const unsigned char *sig, size_t sig_len);
+int hw_eckey_verify_wrap(void *ctx, mbedtls_md_type_t md_alg, const unsigned char *hash, size_t hash_len, const unsigned char *sig, size_t sig_len);
+#endif
+#if defined(CONFIG_HW_RSA_VERIFICATION)
+int hw_rsa_verify_wrap(void *ctx, mbedtls_md_type_t md_alg, const unsigned char *hash, size_t hash_len, const unsigned char *sig, size_t sig_len);
+#endif
+#if defined(CONFIG_HW_RSA_ENC)
+int hw_rsa_encrypt_wrap(void *ctx, const unsigned char *input, size_t ilen,
+		unsigned char *output, size_t *olen, size_t osize,
+		int (*f_rng)(void *, unsigned char *, size_t), void *p_rng);
 #endif
 
 #ifdef __cplusplus

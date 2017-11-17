@@ -85,7 +85,13 @@
 /****************************************************************************
  * Pre-processor Definitions
  ****************************************************************************/
+#define DMA_BUFFER_MAX_SIZE 65536 /* 64K */
 
+#define DMA_BUFFER_MIN_SIZE 4096 /* 4K */
+
+#define AUDIO_BUFFER_MAX_NUM 16
+
+#define AUDIO_BUFFER_MIN_NUM 2
 /****************************************************************************
  * Private Data
  ****************************************************************************/
@@ -231,18 +237,18 @@ static uint16_t alc5658_modifyreg(FAR struct alc5658_dev_s *priv, uint16_t regad
 
 static void alc5658_setregs(struct alc5658_dev_s *priv)
 {
-	alc5658_writereg(priv, ALC5658_IN1_CTRL, (0 + 16) << 8);
-	alc5658_writereg(priv, ALC5658_HPOUT_MUTE, 0);
-	alc5658_writereg(priv, ALC5658_HPOUT_VLML, 0xd00);
-	alc5658_writereg(priv, ALC5658_HPOUT_VLMR, 0x700);
+	alc5658_writereg(priv, ALC5658_IN1, (0 + 16) << 8);
+	alc5658_writereg(priv, ALC5658_HPOUT, 0);
+	alc5658_writereg(priv, ALC5658_HPOUT_L, 0xd00);
+	alc5658_writereg(priv, ALC5658_HPOUT_R, 0x700);
 }
 
 static void alc5658_getregs(struct alc5658_dev_s *priv)
 {
-	audvdbg("MIC GAIN 0x%x\n", (uint32_t)alc5658_readreg(priv, ALC5658_IN1_CTRL));
-	audvdbg("MUTE HPOUT MUTE %x\n", (uint32_t)alc5658_readreg(priv, ALC5658_HPOUT_MUTE));
-	audvdbg("VOLL 0x%x\n", (uint32_t)alc5658_readreg(priv, ALC5658_HPOUT_VLML));
-	audvdbg("VOLR 0x%x\n", (uint32_t)alc5658_readreg(priv, ALC5658_HPOUT_VLMR));
+	audvdbg("MIC GAIN 0x%x\n", (uint32_t)alc5658_readreg(priv, ALC5658_IN1));
+	audvdbg("MUTE HPOUT MUTE %x\n", (uint32_t)alc5658_readreg(priv, ALC5658_HPOUT));
+	audvdbg("VOLL 0x%x\n", (uint32_t)alc5658_readreg(priv, ALC5658_HPOUT_L));
+	audvdbg("VOLR 0x%x\n", (uint32_t)alc5658_readreg(priv, ALC5658_HPOUT_R));
 }
 
 /************************************************************************************
@@ -896,9 +902,9 @@ static int alc5658_enqueuebuffer(FAR struct audio_lowerhalf_s *dev, FAR struct a
 	}
 
 	if (priv->inout) {		/* record */
-		ret = I2S_RECEIVE(priv->i2s, apb, alc5658_rxtxcallback, priv, 100);
+		ret = I2S_RECEIVE(priv->i2s, apb, alc5658_rxtxcallback, priv, CONFIG_ALC5658_I2S_TIMEOUT);
 	} else {					/* playback */
-		ret = I2S_SEND(priv->i2s, apb, alc5658_rxtxcallback, priv, 100);
+		ret = I2S_SEND(priv->i2s, apb, alc5658_rxtxcallback, priv, CONFIG_ALC5658_I2S_TIMEOUT);
 	}
 
 	audvdbg("I2s  returned 0x%x\n", ret);
@@ -927,9 +933,9 @@ static int alc5658_cancelbuffer(FAR struct audio_lowerhalf_s *dev, FAR struct ap
  ****************************************************************************/
 static int alc5658_ioctl(FAR struct audio_lowerhalf_s *dev, int cmd, unsigned long arg)
 {
-#ifdef CONFIG_AUDIO_DRIVER_SPECIFIC_BUFFERS
 	FAR struct ap_buffer_info_s *bufinfo;
-#endif
+	apb_samp_t buf_size;
+	FAR struct alc5658_dev_s *priv = (FAR struct alc5658_dev_s *)dev;
 
 	/* Deal with ioctls passed from the upper-half driver */
 
@@ -950,15 +956,27 @@ static int alc5658_ioctl(FAR struct audio_lowerhalf_s *dev, int cmd, unsigned lo
 
 		/* Report our preferred buffer size and quantity */
 
-#ifdef CONFIG_AUDIO_DRIVER_SPECIFIC_BUFFERS
 	case AUDIOIOC_GETBUFFERINFO: {
 		audvdbg("AUDIOIOC_GETBUFFERINFO:\n");
 		bufinfo = (FAR struct ap_buffer_info_s *)arg;
+#ifdef CONFIG_AUDIO_DRIVER_SPECIFIC_BUFFERS
 		bufinfo->buffer_size = CONFIG_ALC5658_BUFFER_SIZE;
 		bufinfo->nbuffers = CONFIG_ALC5658_NUM_BUFFERS;
+#else
+		buf_size = bufinfo->buffer_size * (priv->bpsamp >> 3) * priv->nchannels;
+		
+		if (buf_size > DMA_BUFFER_MAX_SIZE || buf_size < DMA_BUFFER_MIN_SIZE) {
+			bufinfo->buffer_size = CONFIG_ALC5658_BUFFER_SIZE;
+		}
+		
+		if (bufinfo->nbuffers < AUDIO_BUFFER_MIN_NUM || bufinfo->nbuffers > AUDIO_BUFFER_MAX_NUM) {
+			bufinfo->nbuffers = CONFIG_ALC5658_NUM_BUFFERS;
+		}
+		audvdbg("buffer_size : %d nbuffers : %d buf_size : %d\n", bufinfo->buffer_size, bufinfo->nbuffers, buf_size);
+#endif
 	}
 	break;
-#endif
+
 
 	default:
 		audvdbg("Ignored\n");
@@ -1207,8 +1225,8 @@ static void alc5658_hw_reset(FAR struct alc5658_dev_s *priv)
 
 	alc5658_exec_i2c_script(priv, codec_reset_script, sizeof(codec_reset_script) / sizeof(t_codec_init_script_entry));
 
-	alc5658_writereg(priv, ALC5658_IN1_CTRL, (10 + 16) << 8);
-	audvdbg("MIC GAIN 0x%x\n", (uint32_t)alc5658_readreg(priv, ALC5658_IN1_CTRL));
+	alc5658_writereg(priv, ALC5658_IN1, (10 + 16) << 8);
+	audvdbg("MIC GAIN 0x%x\n", (uint32_t)alc5658_readreg(priv, ALC5658_IN1));
 
 	/* Dump some information and return the device instance */
 
@@ -1264,12 +1282,12 @@ FAR struct audio_lowerhalf_s *alc5658_initialize(FAR struct i2c_dev_s *i2c, FAR 
 		 * default state.
 		 */
 
-		alc5658_writereg(priv, ALC5658_RESET, 0);
+		alc5658_writereg(priv, ALC5658_SW_RESET, 0);
 		alc5658_dump_registers(&priv->dev, "After reset");
 
 		/* Verify that ALC5658 is present and available on this I2C */
 
-		regval = alc5658_readreg(priv, ALC5658_RESET);
+		regval = alc5658_readreg(priv, ALC5658_SW_RESET);
 		if (regval != 0) {
 			auddbg("ERROR: ALC5658 not found: ID=%04x\n", regval);
 			goto errout_with_dev;

@@ -64,11 +64,9 @@ typedef enum {
 } gpio_direciton_t;
 
 typedef enum {
-	GPIO_DRIVE_NONE,
 	GPIO_DRIVE_PULLUP,
 	GPIO_DRIVE_PULLDOWN,
-	GPIO_DRIVE_FLOAT,
-	GPIO_DRIVE_PUSHPULL
+	GPIO_DRIVE_FLOAT
 } gpio_drive_t;
 
 typedef enum {

@@ -24,7 +24,7 @@
 #include <arastorage/arastorage.h>
 #include <apps/shell/tash.h>
 #include <tinyara/fs/fs_utils.h>
-#include "../../../tc_common.h"
+#include "tc_common.h"
 
 /****************************************************************************
  * Definitions
@@ -693,5 +693,4 @@ int itc_arastorage_main(int argc, char *argv[])
 	itc_arastorage_launcher(argc, argv);
 #endif
 	return 0;
-
 }

@@ -67,7 +67,6 @@ static void gpio_write(int port, int value)
 	ioctl(fd, GPIOIOC_SET_DIRECTION, GPIO_DIRECTION_OUT);
 	if (write(fd, str, snprintf(str, 4, "%d", value != 0) + 1) < 0) {
 		printf("write error\n");
-		return;
 	}
 
 	close(fd);

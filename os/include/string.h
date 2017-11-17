@@ -95,157 +95,217 @@ extern "C" {
 #endif
 
 /**
- * @brief  POSIX API (refer to : http://pubs.opengroup.org/onlinepubs/9699919799/)
+ * @brief duplicate a specific number of bytes from a string
+ * @details @b #include <string.h> \n
+ * POSIX API (refer to : http://pubs.opengroup.org/onlinepubs/9699919799/)
  * @since Tizen RT v1.0
  */
 FAR char *strdup(FAR const char *s);
 /**
- * @brief  POSIX API (refer to : http://pubs.opengroup.org/onlinepubs/9699919799/)
+ * @brief duplicate a specific number of bytes from a string
+ * @details @b #include <string.h> \n
+ * POSIX API (refer to : http://pubs.opengroup.org/onlinepubs/9699919799/)
  * @since Tizen RT v1.0
  */
 FAR char *strndup(FAR const char *s, size_t size);
 /**
- * @brief  POSIX API (refer to : http://pubs.opengroup.org/onlinepubs/9699919799/)
+ * @brief get error message string
+ * @details @b #include <string.h> \n
+ * POSIX API (refer to : http://pubs.opengroup.org/onlinepubs/9699919799/)
  * @since Tizen RT v1.0
  */
 FAR const char *strerror(int);
 /**
- * @brief  POSIX API (refer to : http://pubs.opengroup.org/onlinepubs/9699919799/)
+ * @brief get length of fixed size string
+ * @details @b #include <string.h> \n
+ * POSIX API (refer to : http://pubs.opengroup.org/onlinepubs/9699919799/)
  * @since Tizen RT v1.0
  */
 size_t strlen(FAR const char *);
 /**
- * @brief  POSIX API (refer to : http://pubs.opengroup.org/onlinepubs/9699919799/)
+ * @brief get length of fixed size string
+ * @details @b #include <string.h> \n
+ * POSIX API (refer to : http://pubs.opengroup.org/onlinepubs/9699919799/)
  * @since Tizen RT v1.0
  */
 size_t strnlen(FAR const char *, size_t);
 /**
- * @brief  POSIX API (refer to : http://pubs.opengroup.org/onlinepubs/9699919799/)
+ * @brief concatenate two strings
+ * @details @b #include <string.h> \n
+ * POSIX API (refer to : http://pubs.opengroup.org/onlinepubs/9699919799/)
  * @since Tizen RT v1.0
  */
 FAR char *strcat(FAR char *, FAR const char *);
 /**
- * @brief  POSIX API (refer to : http://pubs.opengroup.org/onlinepubs/9699919799/)
+ * @brief concatenate a string with part of another
+ * @details @b #include <string.h> \n
+ * POSIX API (refer to : http://pubs.opengroup.org/onlinepubs/9699919799/)
  * @since Tizen RT v1.0
  */
 FAR char *strncat(FAR char *, FAR const char *, size_t);
 /**
- * @brief  POSIX API (refer to : http://pubs.opengroup.org/onlinepubs/9699919799/)
+ * @brief compare two strings
+ * @details @b #include <string.h> \n
+ * POSIX API (refer to : http://pubs.opengroup.org/onlinepubs/9699919799/)
  * @since Tizen RT v1.0
  */
 int strcmp(FAR const char *, FAR const char *);
 /**
- * @brief  POSIX API (refer to : http://pubs.opengroup.org/onlinepubs/9699919799/)
+ * @brief compare part of two strings
+ * @details @b #include <string.h> \n
+ * POSIX API (refer to : http://pubs.opengroup.org/onlinepubs/9699919799/)
  * @since Tizen RT v1.0
  */
 int strncmp(FAR const char *, FAR const char *, size_t);
 /**
- * @brief  POSIX API (refer to : http://pubs.opengroup.org/onlinepubs/9699919799/)
+ * @brief case-insensitive string comparisons
+ * @details @b #include <string.h> \n
+ * POSIX API (refer to : http://pubs.opengroup.org/onlinepubs/9699919799/)
  * @since Tizen RT v1.0
  */
 int strcasecmp(FAR const char *, FAR const char *);
 /**
- * @brief  POSIX API (refer to : http://pubs.opengroup.org/onlinepubs/9699919799/)
+ * @brief case-insensitive string comparisons
+ * @details @b #include <string.h> \n
+ * POSIX API (refer to : http://pubs.opengroup.org/onlinepubs/9699919799/)
  * @since Tizen RT v1.0
  */
 int strncasecmp(FAR const char *, FAR const char *, size_t);
 /**
- * @brief  POSIX API (refer to : http://pubs.opengroup.org/onlinepubs/9699919799/)
+ * @brief copy a string and return a pointer to the end of the result
+ * @details @b #include <string.h> \n
+ * POSIX API (refer to : http://pubs.opengroup.org/onlinepubs/9699919799/)
  * @since Tizen RT v1.0
  */
 FAR char *strcpy(char *dest, FAR const char *src);
 /**
- * @brief  POSIX API (refer to : http://pubs.opengroup.org/onlinepubs/9699919799/)
+ * @brief copy a string and return a pointer to the end of the result
+ * @details @b #include <string.h> \n
+ * POSIX API (refer to : http://pubs.opengroup.org/onlinepubs/9699919799/)
  * @since Tizen RT v1.0
  */
 FAR char *stpcpy(char *dest, FAR const char *src);
 /**
- * @brief  POSIX API (refer to : http://pubs.opengroup.org/onlinepubs/9699919799/)
+ * @brief copy fixed length string, returning a pointer to the array end
+ * @details @b #include <string.h> \n
+ * POSIX API (refer to : http://pubs.opengroup.org/onlinepubs/9699919799/)
  * @since Tizen RT v1.0
  */
 FAR char *strncpy(char *, FAR const char *, size_t);
 /**
- * @brief  POSIX API (refer to : http://pubs.opengroup.org/onlinepubs/9699919799/)
+ * @brief scan a string for a byte
+ * @details @b #include <string.h> \n
+ * POSIX API (refer to : http://pubs.opengroup.org/onlinepubs/9699919799/)
  * @since Tizen RT v1.0
  */
 FAR char *strpbrk(FAR const char *, FAR const char *);
 /**
- * @brief  POSIX API (refer to : http://pubs.opengroup.org/onlinepubs/9699919799/)
+ * @brief string scanning operation
+ * @details @b #include <string.h> \n
+ * POSIX API (refer to : http://pubs.opengroup.org/onlinepubs/9699919799/)
  * @since Tizen RT v1.0
  */
 FAR char *strchr(FAR const char *s, int c);
 /**
- * @brief  POSIX API (refer to : http://pubs.opengroup.org/onlinepubs/9699919799/)
+ * @brief string scanning operation
+ * @details @b #include <string.h> \n
+ * POSIX API (refer to : http://pubs.opengroup.org/onlinepubs/9699919799/)
  * @since Tizen RT v1.0
  */
 FAR char *strrchr(FAR const char *s, int c);
 /**
- * @brief  POSIX API (refer to : http://pubs.opengroup.org/onlinepubs/9699919799/)
+ * @brief get length of a substring
+ * @details @b #include <string.h> \n
+ * POSIX API (refer to : http://pubs.opengroup.org/onlinepubs/9699919799/)
  * @since Tizen RT v1.0
  */
 size_t strspn(FAR const char *, FAR const char *);
 /**
- * @brief  POSIX API (refer to : http://pubs.opengroup.org/onlinepubs/9699919799/)
+ * @brief get the length of a complementary substring
+ * @details @b #include <string.h> \n
+ * POSIX API (refer to : http://pubs.opengroup.org/onlinepubs/9699919799/)
  * @since Tizen RT v1.0
  */
 size_t strcspn(FAR const char *, FAR const char *);
 /**
- * @brief  POSIX API (refer to : http://pubs.opengroup.org/onlinepubs/9699919799/)
+ * @brief find a substring
+ * @details @b #include <string.h> \n
+ * POSIX API (refer to : http://pubs.opengroup.org/onlinepubs/9699919799/)
  * @since Tizen RT v1.0
  */
 FAR char *strstr(FAR const char *, FAR const char *);
 /**
- * @brief  POSIX API (refer to : http://pubs.opengroup.org/onlinepubs/9699919799/)
+ * @brief locate a substring
+ * @details @b #include <string.h> \n
+ * @param[in] str src string
+ * @param[in] substr substring
  * @since Tizen RT v1.0
  */
 FAR char *strcasestr(FAR const char *, FAR const char *);
 /**
- * @brief  POSIX API (refer to : http://pubs.opengroup.org/onlinepubs/9699919799/)
+ * @brief split string into tokens
+ * @details @b #include <string.h> \n
+ * POSIX API (refer to : http://pubs.opengroup.org/onlinepubs/9699919799/)
  * @since Tizen RT v1.0
  */
 FAR char *strtok(FAR char *, FAR const char *);
 /**
- * @brief  POSIX API (refer to : http://pubs.opengroup.org/onlinepubs/9699919799/)
+ * @brief split string into tokens
+ * @details @b #include <string.h> \n
+ * POSIX API (refer to : http://pubs.opengroup.org/onlinepubs/9699919799/)
  * @since Tizen RT v1.0
  */
 FAR char *strtok_r(FAR char *, FAR const char *, FAR char **);
 
 /**
- * @brief  POSIX API (refer to : http://pubs.opengroup.org/onlinepubs/9699919799/)
+ * @brief find byte in memory
+ * @details @b #include <string.h> \n
+ * POSIX API (refer to : http://pubs.opengroup.org/onlinepubs/9699919799/)
  * @since Tizen RT v1.0
  */
 FAR void *memchr(FAR const void *s, int c, size_t n);
 /**
- * @brief  POSIX API (refer to : http://pubs.opengroup.org/onlinepubs/9699919799/)
+ * @brief copy bytes in memory
+ * @details @b #include <string.h> \n
+ * POSIX API (refer to : http://pubs.opengroup.org/onlinepubs/9699919799/)
  * @since Tizen RT v1.0
  */
 FAR void *memccpy(FAR void *s1, FAR const void *s2, int c, size_t n);
 /**
- * @brief  POSIX API (refer to : http://pubs.opengroup.org/onlinepubs/9699919799/)
+ * @brief compare bytes in memory
+ * @details @b #include <string.h> \n
+ * POSIX API (refer to : http://pubs.opengroup.org/onlinepubs/9699919799/)
  * @since Tizen RT v1.0
  */
 int memcmp(FAR const void *s1, FAR const void *s2, size_t n);
 /**
- * @brief  POSIX API (refer to : http://pubs.opengroup.org/onlinepubs/9699919799/)
+ * @brief copy bytes in memory
+ * @details @b #include <string.h> \n
+ * POSIX API (refer to : http://pubs.opengroup.org/onlinepubs/9699919799/)
  * @since Tizen RT v1.0
  */
 FAR void *memcpy(FAR void *dest, FAR const void *src, size_t n);
 /**
- * @brief  POSIX API (refer to : http://pubs.opengroup.org/onlinepubs/9699919799/)
+ * @brief copy bytes in memory with overlapping areas
+ * @details @b #include <string.h> \n
+ * POSIX API (refer to : http://pubs.opengroup.org/onlinepubs/9699919799/)
  * @since Tizen RT v1.0
  */
 FAR void *memmove(FAR void *dest, FAR const void *src, size_t count);
 /**
- * @brief  POSIX API (refer to : http://pubs.opengroup.org/onlinepubs/9699919799/)
+ * @brief set bytes in memory
+ * @details @b #include <string.h> \n
+ * POSIX API (refer to : http://pubs.opengroup.org/onlinepubs/9699919799/)
  * @since Tizen RT v1.0
  */
 FAR void *memset(FAR void *s, int c, size_t n);
 
 /**
  * @brief Copies up to size - 1 characters from the NUL-terminated string src to dst, NUL-terminating the result.
- * @param[in] A pointer to the destination string.
- * @param[in] A pointer to the source string.
- * @param[in] The size of the destination buffer.
+ * @details @b #include <string.h>
+ * @param[in] dest A pointer to the destination string.
+ * @param[in] src A pointer to the source string.
+ * @param[in] size The size of the destination buffer.
  * @return Total length of the string they tried to create.
  * @since Tizen RT v1.0
  */

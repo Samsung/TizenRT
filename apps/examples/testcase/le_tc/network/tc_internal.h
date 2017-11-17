@@ -22,8 +22,6 @@
 #ifndef __EXAMPLES_TESTCASE_NETWORK_TC_INTERNAL_H
 #define __EXAMPLES_TESTCASE_NETWORK_TC_INTERNAL_H
 
-#define RETURN_ERR return
-
 #include "tc_common.h"
 
 extern int total_pass;

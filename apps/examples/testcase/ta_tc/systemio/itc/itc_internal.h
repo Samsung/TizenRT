@@ -19,11 +19,10 @@
 /// @file itc_internal.h
 
 /// @brief Header file for System IO TestCase Example
-#include "../../../tc_common.h"
-#ifndef __EXAMPLES_TESTCASE_SYSTEMIO_TC_INTERNAL_H
-#define __EXAMPLES_TESTCASE_SYSTEMIO_TC_INTERNAL_H
+#ifndef __EXAMPLES_TESTCASE_SYSTEMIO_ITC_INTERNAL_H
+#define __EXAMPLES_TESTCASE_SYSTEMIO_ITC_INTERNAL_H
 
-#define RETURN_ERR return
+#include "tc_common.h"
 //#define IS_PASS(value) value==1?"PASS":"FAIL"
 
 #define SYSIO_ITC_PRINT   printf
@@ -38,4 +37,4 @@
 **********************************************************/
 char *Expect_Value(int, int);
 
-#endif /* __EXAMPLES_TESTCASE_SYSTEMIO_TC_INTERNAL_H */
+#endif /* __EXAMPLES_TESTCASE_SYSTEMIO_ITC_INTERNAL_H */
