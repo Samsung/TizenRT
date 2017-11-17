@@ -537,10 +537,17 @@ static int rtc_ioctl(FAR struct file *filep, int cmd, unsigned long arg)
 
 	case RTC_CANCEL_ALARM: {
 		int alarmid = (int)arg;
+		FAR struct rtc_alarminfo_s *upperinfo;
 
 		DEBUGASSERT(alarmid >= 0 && alarmid < CONFIG_RTC_NALARMS);
+
+		upperinfo = &upper->alarminfo[alarmid];
+
 		if (ops->cancelalarm) {
 			ret = ops->cancelalarm(upper->lower, alarmid);
+			if (ret == OK) {
+				upperinfo->active = false;
+			}
 		}
 	}
 	break;
