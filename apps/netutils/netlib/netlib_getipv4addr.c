@@ -99,9 +99,6 @@ int netlib_get_ipv4addr(FAR const char *ifname, FAR struct in_addr *addr)
 	if (ifname && addr) {
 		int sockfd = socket(PF_INET, NETLIB_SOCK_IOCTL, 0);
 		if (sockfd >= 0) {
-#ifdef CONFIG_NET_LWIP
-			lwip_ioctl(sockfd, SIOCGIFADDR, addr);
-#else
 			struct ifreq req;
 			strncpy(req.ifr_name, ifname, IFNAMSIZ);
 			ret = ioctl(sockfd, SIOCGIFADDR, (unsigned long)&req);
@@ -111,7 +108,6 @@ int netlib_get_ipv4addr(FAR const char *ifname, FAR struct in_addr *addr)
 				req_addr = (FAR struct sockaddr_in *)&req.ifr_addr;
 				memcpy(addr, &req_addr->sin_addr, sizeof(struct in_addr));
 			}
-#endif
 			close(sockfd);
 		}
 	}
