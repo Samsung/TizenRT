@@ -32,12 +32,15 @@
 #include <netinet/in.h>
 #include <sys/socket.h>
 #include <pthread.h>
-
+#include <net/lwip/udp.h>
+#include <net/lwip/ipv4/ip.h>
 #include "tc_internal.h"
 
 #define PORTNUM        5007
 #define MAXRCVLEN      20
 #define BACKLOG        2
+#define UDP_SRC_PORT   21
+#define UDP_DEST_PORT  5004
 
 static int count_wait;
 
@@ -50,7 +53,7 @@ static int count_wait;
 * @Postconditions       : none
 * @return               : void
 */
-void sig_wait(void)
+static void sig_wait(void)
 {
 	while (count_wait <= ZERO) {
 		printf("");
@@ -67,7 +70,7 @@ void sig_wait(void)
 * @Postconditions       : none
 * @return               : void
 */
-void sig_call(void)
+static void sig_call(void)
 {
 	count_wait++;
 }
@@ -81,11 +84,12 @@ void sig_call(void)
 * @postcondition        : none
 * @return               : void
 */
-void tc_net_send_p(int fd)
+static void tc_net_send_p(int fd)
 {
 	char *msg = "Hello World !\n";
 
 	int ConnectFD = accept(fd, NULL, NULL);
+	TC_ASSERT_NEQ_CLEANUP("accept", ConnectFD, NEG_VAL, close(fd));
 
 	int ret = send(ConnectFD, msg, strlen(msg), 0);
 	TC_ASSERT_NEQ_CLEANUP("send", ret, NEG_VAL, close(ConnectFD));
@@ -93,67 +97,103 @@ void tc_net_send_p(int fd)
 	TC_SUCCESS_RESULT();
 }
 
-/**
-* @fn                   : server
-* @brief                : Create a Tcp server.
-* @scenario             : Create a tcp server for checking send api.
-* API's covered         : socket,bind,listen,close
-* Preconditions         : socket file descriptor.
-* Postconditions        : none
-* @return               : void*
-*/
-void* server(void *args)
+static void tc_net_raw_server(void)
 {
+	int ret;
 	struct sockaddr_in sa;
 
-	int sock = socket(AF_INET, SOCK_STREAM, 0);
+	int sock = socket(AF_INET, SOCK_RAW, 0);
+	TC_ASSERT_NEQ("socket", sock, NEG_VAL);
 
 	memset(&sa, 0, sizeof(sa));
 	sa.sin_family = PF_INET;
 	sa.sin_port = htons(PORTNUM);
 	sa.sin_addr.s_addr = htonl(INADDR_LOOPBACK);
 
-	bind(sock, (struct sockaddr *)&sa, sizeof(sa));
-	listen(sock, BACKLOG);
+	ret = bind(sock, (struct sockaddr *)&sa, sizeof(sa));
+	TC_ASSERT_NEQ_CLEANUP("bind", ret, NEG_VAL, close(sock));
 
+	ret = listen(sock, BACKLOG);
+	TC_ASSERT_NEQ_CLEANUP("listen", ret, NEG_VAL, close(sock));
 	sig_call();
 	tc_net_send_p(sock);
 	close(sock);
+}
+
+static void tc_net_raw_client(void)
+{
+	int len, ret;
+	char buffer[MAXRCVLEN];
+	struct sockaddr_in dest;
+	struct ip_addr dst;
+	struct ip_addr src;
+	struct ip_hdr iphdr;
+	struct udp_hdr udp;
+	int one = 1;
+
+	int sock = socket(AF_INET, SOCK_RAW, 0);
+	TC_ASSERT_NEQ("socket", sock, NEG_VAL);
+
+	len = sizeof(struct ip_hdr) + sizeof(struct udp_hdr);
+
+	IP4_ADDR(&dst, 127, 0, 0, 1);
+	IP4_ADDR(&src, 127, 0, 0, 1);
+
+	memset(&dest, 0, sizeof(dest));
+	dest.sin_family = PF_INET;
+	dest.sin_addr.s_addr = htonl(INADDR_LOOPBACK);
+	dest.sin_port = htons(PORTNUM);
+	IPH_VHL_SET(&iphdr, 4, 0);
+	IPH_TOS_SET(&iphdr, 16);
+	IPH_LEN_SET(&iphdr, sizeof(struct ip_hdr) + sizeof(struct udp_hdr));
+	IPH_ID_SET(&iphdr, htons(54321));
+	IPH_TTL_SET(&iphdr, 64);
+	IPH_PROTO_SET(&iphdr, 17);
+	ip_addr_copy(iphdr.src, src);
+	ip_addr_copy(iphdr.dest, dst);
+	udp.src = htons(UDP_SRC_PORT);
+	udp.dest = htons(UDP_DEST_PORT);
+	udp.len = htons(sizeof(struct udp_hdr));
+
+	ret = setsockopt(sock, IPPROTO_IP, 0, &one, sizeof(one));
+	TC_ASSERT_NEQ_CLEANUP("setsockopt", ret, NEG_VAL, close(sock));
+	ret = recv(sock, buffer, MAXRCVLEN, 0);
+	TC_ASSERT_NEQ_CLEANUP("recv", ret, NEG_VAL, close(sock));
+	close(sock);
+}
+
+/**
+* @fn                   : server
+* @brief                : Create a server.
+* @scenario             : Create a tcp server for checking send api.
+* API's covered         : socket,bind,listen,close
+* Preconditions         : socket file descriptor.
+* Postconditions        : none
+* @return               : void*
+*/
+static void* server(void *args)
+{
+	tc_net_raw_server();
 	return NULL;
 }
 
 /**
 * @fn                   : client
 * @brief                : This api create client.
-* @scenario             : Create tcp client.
+* @scenario             : Create client.
 * API's covered         : socket,connect,recv,close
 * Preconditions         : socket file descriptor.
 * Postconditions        : none
 * @return               : void*
 */
-void* client(void *args)
+static void* client(void *args)
 {
-	int len, ret;
-	char buffer[MAXRCVLEN];
-	struct sockaddr_in dest;
-
-	int sock = socket(AF_INET, SOCK_STREAM, 0);
-
-	memset(&dest, 0, sizeof(dest));
-	dest.sin_family = PF_INET;
-	dest.sin_addr.s_addr = htonl(INADDR_LOOPBACK);
-	dest.sin_port = htons(PORTNUM);
-
-	sig_wait();
-	ret = connect(sock, (struct sockaddr *)&dest, sizeof(struct sockaddr));
-	len = recv(sock, buffer, MAXRCVLEN, 0);
-	buffer[len] = '\0';
-	close(sock);
+	tc_net_raw_client();
 	return NULL;
 }
 
 /**
-* @fn                  : tc_net_send
+* @fn                  : net_raw_client_server
 * @brief               : This api create client and server thread.
 * @scenario            : Create client and server thread to test send api.
 * API's covered        : none
@@ -161,7 +201,7 @@ void* client(void *args)
 * Postconditions       : none
 * @return              : void
 */
-static void net_send(void)
+static void net_raw_client_server(void)
 {
 	pthread_t Server, Client;
 
@@ -173,10 +213,10 @@ static void net_send(void)
 }
 
 /****************************************************************************
- * Name: send()
+ * Name: net_raw_main()
  ****************************************************************************/
-int net_send_main(void)
+int net_raw_main(void)
 {
-	net_send();
+	net_raw_client_server();
 	return 0;
 }

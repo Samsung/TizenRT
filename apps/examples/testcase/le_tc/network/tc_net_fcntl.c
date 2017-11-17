@@ -21,111 +21,94 @@
 #include <tinyara/config.h>
 #include <stdio.h>
 #include <errno.h>
-
 #include <sys/stat.h>
 #include <net/if.h>
 #include <arpa/inet.h>
 #include <netinet/in.h>
-//#include <arch/board/board.h>
 #include <netutils/netlib.h>
-
 #include <sys/socket.h>
 
 #include "tc_internal.h"
 
 /**
-   * @testcase		   :tc_net_fcntl_nonblock_p
-   * @brief		   :
-   * @scenario		   :
-   * @apicovered	   :fcntl()
-   * @precondition	   :
-   * @postcondition	   :
-   */
-static void tc_net_fcntl_nonblock_p(void)
+* @testcase            : tc_net_fcntl_nonblock_p
+* @brief               : This fcntl API manipulate file descriptor.
+* @scenario            : fcntl use setfl command to set the file status flags to the value specified by arg.
+* @apicovered          : fcntl()
+* @precondition        : socket file descriptor.
+* @postcondition       : none
+* @return              : void
+*/
+static void tc_net_fcntl_nonblock_p(int fd)
 {
-
-	int fd = -1;
-	fd = socket(AF_INET, SOCK_STREAM, 0);
 	int ret = fcntl(fd, F_SETFL, O_NONBLOCK);
-	close(fd);
 
-	TC_ASSERT_NEQ("fcntl", ret, -1);
+	TC_ASSERT_NEQ("fcntl", ret, NEG_VAL);
 	TC_SUCCESS_RESULT();
-
 }
 
 /**
-   * @testcase		   :tc_net_fcntl_p
-   * @brief		   :
-   * @scenario		   :
-   * @apicovered	   :fcntl()
-   * @precondition	   :
-   * @postcondition	   :
-   */
-static void tc_net_fcntl_p(void)
+* @testcase            : tc_net_fcntl_p
+* @brief               : This fcntl API manipulate file descriptor.
+* @scenario            : fcntl use setfl command to set the file status flags to the value specified by arg as zero.
+* @apicovered          : fcntl()
+* @precondition        : socket file descriptor.
+* @postcondition       : none
+* @return              : void
+*/
+static void tc_net_fcntl_p(int fd)
 {
-
-	int fd = -1;
-	fd = socket(AF_INET, SOCK_STREAM, 0);
 	int ret = fcntl(fd, F_SETFL, 0);
-	close(fd);
 
-	TC_ASSERT_NEQ("fcntl", ret, -1);
+	TC_ASSERT_NEQ("fcntl", ret, NEG_VAL);
 	TC_SUCCESS_RESULT();
-
 }
 
-
 /**
-   * @testcase		   :tc_net_fcntl_n
-   * @brief		   :
-   * @scenario		   :
-   * @apicovered	   :fcntl()
-   * @precondition	   :
-   * @postcondition	   :
-   */
+* @testcase            : tc_net_fcntl_n
+* @brief               : This fcntl API manipulate file descriptor.
+* @scenario            : fcntl use setfl command to set the file status flags with invalid fd.
+* @apicovered          : fcntl()
+* @precondition        : none
+* @postcondition       : none
+* @return              : void
+*/
 static void tc_net_fcntl_n(void)
 {
+	int ret = fcntl(NEG_VAL, F_SETFL, O_NONBLOCK);
 
-	int fd = -1;
-	int ret = fcntl(fd, F_SETFL, O_NONBLOCK);
-
-	TC_ASSERT_NEQ("fcntl", ret, 0);
+	TC_ASSERT_EQ("fcntl", ret, NEG_VAL);
 	TC_SUCCESS_RESULT();
-
 }
 
 /**
-   * @testcase		   :tc_net_fcntl_ndelay_p
-   * @brief		   :
-   * @scenario		   :
-   * @apicovered	   :fcntl()
-   * @precondition	   :
-   * @postcondition	   :
-   */
-static void tc_net_fcntl_ndelay_p(void)
+* @testcase            : tc_net_fcntl_ndelay_p
+* @brief               : This fcntl API manipulate file descriptor.
+* @scenario            : fcntl use setfl command to set the file status flags to the value specified by arg as ndelay.
+* @apicovered          : fcntl()
+* @precondition        : socket file descriptor.
+* @postcondition       : none
+* @return              : void
+*/
+static void tc_net_fcntl_ndelay_p(int fd)
 {
-
-	int fd = -1;
-	fd = socket(AF_INET, SOCK_STREAM, 0);
 	int ret = fcntl(fd, F_SETFL, O_NDELAY);
-	close(fd);
 
-	TC_ASSERT_NEQ("fcntl", ret, -1);
+	TC_ASSERT_NEQ("fcntl", ret, NEG_VAL);
 	TC_SUCCESS_RESULT();
-
 }
 
 /****************************************************************************
  * Name: fcntl()
  ****************************************************************************/
 
-int net_fcntl_main(void)
+int net_fcntl_main()
 {
-
-	tc_net_fcntl_nonblock_p();
-	tc_net_fcntl_p();
+	int fd = socket(AF_INET, SOCK_STREAM, 0);
+	tc_net_fcntl_nonblock_p(fd);
+	tc_net_fcntl_p(fd);
 	tc_net_fcntl_n();
-	tc_net_fcntl_ndelay_p();
+	tc_net_fcntl_ndelay_p(fd);
+	close(fd);
 	return 0;
 }

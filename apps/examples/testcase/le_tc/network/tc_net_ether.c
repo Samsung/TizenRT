@@ -21,60 +21,54 @@
 #include <tinyara/config.h>
 #include <stdio.h>
 #include <errno.h>
-
 #include <sys/stat.h>
 #include <net/if.h>
 #include <arpa/inet.h>
 #include <netinet/in.h>
 #include <netutils/netlib.h>
-
 #include <sys/socket.h>
 #include <sys/ioctl.h>
 
 #include "tc_internal.h"
 
-/**
-* @testcase		tc_net_ether_ntoa_p
-* @brief
-* @scenario
-* @apicovered		ether_ntoa()
-* @precondition
-* @postcondition
-*/
-static void tc_net_ether_ntoa_p(void)
-{
+#define NUMREQS    3
 
-	struct sockaddr *sa;
-	struct ifreq *ifr;
+/**
+* @testcase            : tc_net_ether_ntoa_p
+* @brief               : Ethernet address manipulation routines.
+* @scenario            : Converts the Ethernet host address addr given in network byte order to a string into dotted decimal.
+* @apicovered          : ether_ntoa(), ioctl()
+* @precondition        : socket file descriptor.
+* @postcondition       : none
+* @return              : void
+*/
+static void tc_net_ether_ntoa_p(int sock_udp)
+{
+	int ret;
+	struct sockaddr *sa = NULL;
+	struct ifreq *ifr = NULL;
 	struct ifreq tmp;
 	struct ifconf ifcfg;
-	int numreqs = 3;
-	int fd = -1;
-	int ret;
 	FAR char *buffer = NULL;
 
 	ifcfg.ifc_buf = NULL;
-	ifcfg.ifc_len = sizeof(struct ifreq) * numreqs;
+	ifcfg.ifc_len = sizeof(struct ifreq) * NUMREQS;
 	ifcfg.ifc_buf = malloc(ifcfg.ifc_len);
+	TC_ASSERT_NEQ("malloc", ifcfg.ifc_buf, NULL);
 	ifr = ifcfg.ifc_req;
 
-	fd = socket(AF_INET, SOCK_DGRAM, 0);
-	TC_ASSERT_NEQ("ether_ntoa", fd, -1)
+	ret = ioctl(sock_udp, SIOCGIFCONF, (unsigned long)&ifcfg);
+	TC_ASSERT_NEQ_CLEANUP("ioctl", ret, NEG_VAL, TC_FREE_MEMORY(ifcfg.ifc_buf));
 
-	ret = ioctl(fd, SIOCGIFCONF, (void *)&ifcfg);
-	TC_ASSERT_GEQ("ether_ntoa", ret, 0)
-
-	strncpy(tmp.ifr_name, ifr->ifr_name, 6);
-	ret = ioctl(fd, SIOCGIFHWADDR, (char *)&tmp);
-	TC_ASSERT_GEQ("ether_ntoa", ret, 0)
+	strncpy(tmp.ifr_name, ifr->ifr_name, sizeof(tmp.ifr_name));
+	ret = ioctl(sock_udp, SIOCGIFHWADDR, (unsigned long)&tmp);
+	TC_ASSERT_NEQ_CLEANUP("ioctl", ret, NEG_VAL, TC_FREE_MEMORY(ifcfg.ifc_buf));
 
 	sa = &tmp.ifr_hwaddr;
 	buffer = (FAR char *)ether_ntoa((struct ether_addr *)sa->sa_data);
-	TC_ASSERT_NEQ("ether_ntoa", buffer, 0)
-
-	TC_SUCCESS_RESULT()
-
-	close(fd);
+	TC_ASSERT_NEQ_CLEANUP("ether_ntoa", buffer, NULL, TC_FREE_MEMORY(ifcfg.ifc_buf););
+	TC_FREE_MEMORY(ifcfg.ifc_buf);
+	TC_SUCCESS_RESULT();
 }
 
 /****************************************************************************
@@ -83,6 +77,8 @@ static void tc_net_ether_ntoa_p(void)
 
 int net_ether_main(void)
 {
-	tc_net_ether_ntoa_p();
+	int sock_udp = socket(AF_INET, SOCK_DGRAM, 0);
+	tc_net_ether_ntoa_p(sock_udp);
+	close(sock_udp);
 	return 0;
 }

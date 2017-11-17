@@ -37,31 +37,31 @@
 
 #ifdef CONFIG_LIBC_NETDB
 /**
-* @testcase		tc_net_netdb_p
-* @brief		freeaddrinfo() has no way to check errors.
-* @scenario
-* @apicovered		getaddrinfo() freeaddrinfo()
-* @precondition
-* @postcondition
+* @testcase            : tc_net_netdb_p
+* @brief               : The freeaddrinfo() API frees the memory.
+* @scenario            : It frees the memory that was allocated for the dynamically allocated linked list res.
+* @apicovered          : getaddrinfo() freeaddrinfo()
+* @precondition        : none
+* @postcondition       : none
+* @return              : void
 */
 static void tc_net_netdb_p(void)
 {
-
+	int ret;
 	struct addrinfo hints;
 	struct addrinfo *res;
-	int ret;
 	char *port = "9099";
 
-	memset(&hints, 0, sizeof hints);
+	memset(&hints, 0, sizeof(hints));
 	hints.ai_family = AF_INET;
 	hints.ai_socktype = SOCK_DGRAM;
 
 	ret = getaddrinfo(NULL, port, &hints, &res);
-	TC_ASSERT_EQ("getaddrinfo", ret, 0)
+	TC_ASSERT_EQ("getaddrinfo", ret, ZERO)
 
 	/*
-	* This API has no way to check errors.
-	*/
+	 * This API has no way to check errors.
+	 */
 	freeaddrinfo(res);
 	TC_SUCCESS_RESULT()
 }

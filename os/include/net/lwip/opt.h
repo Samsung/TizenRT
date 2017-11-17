@@ -59,6 +59,7 @@
  * will be set to standard values. Override anything you don't like!
  */
 #include <net/lwip/lwipopts.h>
+#include <net/lwip/debug.h>
 
 /*
    -----------------------------------------------
@@ -1124,7 +1125,7 @@
  * address equal to the netif IP address, looping them back up the stack.
  */
 #ifndef LWIP_NETIF_LOOPBACK
-#define LWIP_NETIF_LOOPBACK             0
+#define LWIP_NETIF_LOOPBACK             1
 #endif
 
 /**
@@ -1174,7 +1175,7 @@
  * LWIP_HAVE_LOOPIF==1: Support loop interface (127.0.0.1) and loopif.c
  */
 #ifndef LWIP_HAVE_LOOPIF
-#define LWIP_HAVE_LOOPIF                0
+#define LWIP_HAVE_LOOPIF                1
 #endif
 
 /*

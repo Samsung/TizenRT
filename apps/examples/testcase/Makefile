@@ -94,7 +94,7 @@ include ta_tc/audio/utc/Make.defs
 include ta_tc/audio/itc/Make.defs
 
 endif
-
+CFLAGS += -I$(TOPDIR)/../external/include
 AOBJS		= $(ASRCS:.S=$(OBJEXT))
 COBJS		= $(CSRCS:.c=$(OBJEXT))
 
