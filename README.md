@@ -1,6 +1,7 @@
-# Tizen RT
+# TizenRT
 
-[![License](https://img.shields.io/badge/licence-Apache%202.0-brightgreen.svg?style=flat)](LICENSE)
+[![License](https://img.shields.io/github/license/SamsungARTIK/TizenRT.svg)](LICENSE)
+[![Github Release](https://img.shields.io/github/release/SamsungARTIK/TizenRT.svg)](https://github.com/SamsungARTIK/TizenRT/releases)
 [![Build Status](https://travis-ci.org/SamsungARTIK/TizenRT.svg?branch=artik)](https://travis-ci.org/SamsungARTIK/TizenRT)
 
 lightweight RTOS-based platform to support low-end IoT devices.
@@ -82,7 +83,7 @@ sidk_s5jt200 [[details]](build/configs/sidk_s5jt200/README.md)
 
 ## Configuration Sets
 
-To build a Tizen RT application, use the default configuration files named 'defconfig' under 'build/configs/<board>/' folder.
+To build a TizenRT application, use the default configuration files named 'defconfig' under 'build/configs/<board>/' folder.
 
 To customize your application with specific configuration settings, using the menuconfig tool is recommended at os folder as shown:
 ```bash
