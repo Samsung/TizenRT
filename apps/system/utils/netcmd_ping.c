@@ -69,7 +69,7 @@
 #define ICMP_HDR_SIZE sizeof(struct ip_hdr) + sizeof(struct icmp_echo_hdr)
 #if LWIP_IPV6
 #define ICMP6_HDR_SIZE sizeof(struct ip6_hdr) + sizeof(struct icmp6_echo_hdr)
-#define PING_SIZE(proto) ((proto == IPPROTO_ICMPV6) ? ICMP6_HDR_SIZE + 32 : ICMP_HDR_SIZE + 32)
+#define PING_SIZE(proto) ((proto == IPPROTO_ICMPV6) ? ICMP6_HDR_SIZE : ICMP_HDR_SIZE )
 #else
 #define PING_SIZE(proto) (ICMP_HDR_SIZE + 32)
 #endif
@@ -77,7 +77,13 @@
 static int g_ping_recv_counter;
 static uint16_t g_ping_seq_num;
 
-static int nu_ping_options(int argc, char **argv, int *count, uint32_t *dsec, char **staddr)
+static void ping_usage(void)
+{
+	printf("ping -c <count> -s <data size> <destination address> \n");
+	return;
+}
+
+static int nu_ping_options(int argc, char **argv, int *count, int *size, char **staddr)
 {
 	FAR const char *fmt = fmtarginvalid;
 	bool badarg = false;
@@ -87,7 +93,7 @@ static int nu_ping_options(int argc, char **argv, int *count, uint32_t *dsec, ch
 	/* Get the ping options */
 
 	optind = -1;
-	while ((option = getopt(argc, argv, ":c:i:")) != ERROR) {
+	while ((option = getopt(argc, argv, ":c:s:")) != ERROR) {
 		switch (option) {
 		case 'c':
 			tmp = atoi(optarg);
@@ -99,14 +105,9 @@ static int nu_ping_options(int argc, char **argv, int *count, uint32_t *dsec, ch
 			}
 			break;
 
-		case 'i':
+		case 's':
 			tmp = atoi(optarg);
-			if (tmp < 1 || tmp >= 4294) {
-				printf(fmtargrange, argv[0]);
-				badarg = true;
-			} else {
-				*dsec = 10 * tmp;
-			}
+			*size = tmp;
 			break;
 
 		case ':':
@@ -146,6 +147,7 @@ static int nu_ping_options(int argc, char **argv, int *count, uint32_t *dsec, ch
 
 errout:
 	printf(fmt, argv[0]);
+	ping_usage();
 	return ERROR;
 }
 
@@ -315,7 +317,7 @@ static void nu_ping_prepare_echo(int family, struct icmp_echo_hdr *iecho, u16_t 
 	}
 }
 
-static int nu_ping_send(int s, struct sockaddr *to)
+static int nu_ping_send(int s, struct sockaddr *to, int size)
 {
 	int ret;
 	size_t icmplen;
@@ -325,12 +327,12 @@ static int nu_ping_send(int s, struct sockaddr *to)
 #if LWIP_IPV6
 	if (to->sa_family == AF_INET6) {
 		addrlen = sizeof(struct sockaddr_in6);
-		icmplen = sizeof(struct icmp6_echo_hdr) + 32;
+		icmplen = sizeof(struct icmp6_echo_hdr) + size;
 	} else
 #endif
 	if (to->sa_family == AF_INET) {
 		addrlen = sizeof(struct sockaddr_in);
-		icmplen = sizeof(struct icmp_echo_hdr) + 32;
+		icmplen = sizeof(struct icmp_echo_hdr) + size;
 	} else {
 		printf("nu_ping_send: invalid family\n");
 		return ERROR;
@@ -354,7 +356,7 @@ static int nu_ping_send(int s, struct sockaddr *to)
 	return 0;
 }
 
-static int nu_ping_process(int count, const char *taddr)
+static int nu_ping_process(int count, const char *taddr, int size)
 {
 	int s = -1;
 	int ping_send_counter = 0;
@@ -385,7 +387,7 @@ static int nu_ping_process(int count, const char *taddr)
 		return ERROR;
 	}
 
-	printf("PING %s (%s) %d bytes of data. count(%d)\n", taddr, taddr, PING_SIZE(hints.ai_protocol), count);
+	printf("PING %s (%s) %d bytes of data. count(%d)\n", taddr, taddr, size, count);
 
 	/* get address information */
 	if (lwip_getaddrinfo(taddr, NULL, &hints, &result) != 0) {
@@ -420,7 +422,7 @@ static int nu_ping_process(int count, const char *taddr)
 	}
 
 	while (1) {
-		if (nu_ping_send(s, to) == ERR_OK) {
+		if (nu_ping_send(s, to, size) == ERR_OK) {
 			clock_gettime(CLOCK_REALTIME, &ping_time);
 			nu_ping_recv((int)to->sa_family, s, &ping_time);
 		} else {
@@ -456,16 +458,16 @@ err_out:
 int cmd_ping(int argc, char **argv)
 {
 	char *staddr;
-	uint32_t dsec = 10;
+	int size = 0;
 	int count = 10;
 
 	/* Get the ping options */
 
-	int ret = nu_ping_options(argc, argv, &count, &dsec, &staddr);
+	int ret = nu_ping_options(argc, argv, &count, &size, &staddr);
 	if (ret < 0) {
 		return ERROR;
 	}
-	ret = nu_ping_process(count, staddr);
+	ret = nu_ping_process(count, staddr, size);
 	if (ret < 0) {
 		return ERROR;
 	}
