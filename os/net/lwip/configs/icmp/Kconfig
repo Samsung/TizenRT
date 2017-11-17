@@ -15,7 +15,7 @@ config NET_BROADCAST_PING
 	---help---
 		Respond to broadcast pings (default is unicast only)
 
-config NET_MULTICAST_PING
+config NET_MULTICAST_PING4
 	bool "ICMP respond multicast pings"
 	default n
 	---help---

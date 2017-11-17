@@ -768,10 +768,17 @@
 #endif
 
 /**
- * LWIP_MULTICAST_PING==1: respond to multicast pings (default is unicast only)
+ * LWIP_MULTICAST_PING4==1: respond to multicast ipv4 pings (default is unicast only)
  */
-#ifndef LWIP_MULTICAST_PING
-#define LWIP_MULTICAST_PING             0
+#ifndef LWIP_MULTICAST_PING4
+#define LWIP_MULTICAST_PING4            0
+#endif
+
+/**
+ * LWIP_MULTICAST_PING6==1: respond to multicast ipv6 pings (default is unicast only)
+ */
+#ifndef LWIP_MULTICAST_PING6
+#define LWIP_MULTICAST_PING6            0
 #endif
 /**
  * @}

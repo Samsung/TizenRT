@@ -133,13 +133,13 @@ void icmp_input(struct pbuf *p, struct netif *inp)
 		src = ip4_current_dest_addr();
 		/* multicast destination address? */
 		if (ip4_addr_ismulticast(ip4_current_dest_addr())) {
-#if LWIP_MULTICAST_PING
+#if LWIP_MULTICAST_PING4
 			/* For multicast, use address of receiving interface as source address */
 			src = netif_ip4_addr(inp);
-#else							/* LWIP_MULTICAST_PING */
+#else							/* LWIP_MULTICAST_PING4 */
 			LWIP_DEBUGF(ICMP_DEBUG, ("icmp_input: Not echoing to multicast pings\n"));
 			goto icmperr;
-#endif							/* LWIP_MULTICAST_PING */
+#endif							/* LWIP_MULTICAST_PING4 */
 		}
 		/* broadcast destination address? */
 		if (ip4_addr_isbroadcast(ip4_current_dest_addr(), ip_current_netif())) {
@@ -296,13 +296,13 @@ lenerr:
 	ICMP_STATS_INC(icmp.lenerr);
 	MIB2_STATS_INC(mib2.icmpinerrors);
 	return;
-#if LWIP_ICMP_ECHO_CHECK_INPUT_PBUF_LEN || !LWIP_MULTICAST_PING || !LWIP_BROADCAST_PING
+#if LWIP_ICMP_ECHO_CHECK_INPUT_PBUF_LEN || !LWIP_MULTICAST_PING4 || !LWIP_BROADCAST_PING
 icmperr:
 	pbuf_free(p);
 	ICMP_STATS_INC(icmp.err);
 	MIB2_STATS_INC(mib2.icmpinerrors);
 	return;
-#endif							/* LWIP_ICMP_ECHO_CHECK_INPUT_PBUF_LEN || !LWIP_MULTICAST_PING || !LWIP_BROADCAST_PING */
+#endif							/* LWIP_ICMP_ECHO_CHECK_INPUT_PBUF_LEN || !LWIP_MULTICAST_PING4 || !LWIP_BROADCAST_PING */
 }
 
 /**

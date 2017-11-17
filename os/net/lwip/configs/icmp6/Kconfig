@@ -18,4 +18,10 @@ config NET_IPv6_ICMP_HL
 	---help---
 		Default hop limit for ICMPv6 messages.
 
+config NET_MULTICAST_PING6
+	bool "ICMP respond multicast pings"
+	default n
+	---help---
+		Respond to multicast pings (default is unicast only)
+
 endif
