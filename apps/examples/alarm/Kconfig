@@ -1,0 +1,39 @@
+#
+# For a description of the syntax of this configuration file,
+# see kconfig-language at https://www.kernel.org/doc/Documentation/kbuild/kconfig-language.txt
+#
+
+config EXAMPLES_ALARM
+	bool "RTC alarm driver example"
+	default n
+	depends on RTC_DRIVER && RTC_ALARM
+	---help---
+		Enable the RTC driver alarm test
+
+if EXAMPLES_ALARM
+
+config EXAMPLES_ALARM_PROGNAME
+	string "Program name"
+	default "alarm"
+	depends on BUILD_KERNEL
+	---help---
+		This is the name of the program that will be use when the TASH ELF
+		program is installed.
+
+config EXAMPLES_ALARM_PRIORITY
+	int "Alarm task priority"
+	default 100
+
+config EXAMPLES_ALARM_STACKSIZE
+	int "Alarm stack size"
+	default 2048
+
+config EXAMPLES_ALARM_DEVPATH
+	string "RTC device path"
+	default "/dev/rtc0"
+
+config EXAMPLES_ALARM_SIGNO
+	int "Alarm signal"
+	default 1
+
+endif # EXAMPLES_ALARM
