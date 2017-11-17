@@ -194,6 +194,13 @@
 
 #define RTC_CANCEL_ALARM   _RTCIOC(0x0006)
 
+/* RTC_RD_ALARM query the alarm.
+ *
+ * Argument: An ALARM ID value that indicates which alarm should be queried.
+ */
+
+#define RTC_RD_ALARM       _RTCIOC(0x0007)
+
 /* Architecture-specific RTC IOCTLS should begin at RTC_USER_IOCBASE.  For
  * example:
  *
@@ -202,7 +209,7 @@
  *   etc.
  */
 
-#define RTC_USER_IOCBASE   0x0007
+#define RTC_USER_IOCBASE   0x0008
 
 /****************************************************************************
  * Public Types
@@ -293,6 +300,14 @@ struct lower_setrelative_s
 };
 #endif
 
+/* Structure used with the rdalarm method */
+
+struct lower_rdalarm_s {
+	uint8_t id;               /* Indicates the alarm to be set */
+	FAR void *priv;           /* Private argurment to accompany callback */
+	FAR struct rtc_time *time;/* Queried RTC time pointer */
+};
+
 /*
  * The RTC driver is implemented as a common, upper-half character driver
  * that provides the RTC driver structure and a lower-level, hardware
@@ -337,6 +352,11 @@ struct rtc_ops_s
 	/* cancelalarm cancels the current alarm. */
 
 	CODE int (*cancelalarm)(FAR struct rtc_lowerhalf_s *lower, int alarmid);
+
+	/* rdalarm query the current alarm. */
+
+	CODE int (*rdalarm)(FAR struct rtc_lowerhalf_s *lower,
+			FAR struct lower_rdalarm_s *alarminfo);
 #endif
 
 #ifdef CONFIG_RTC_IOCTL

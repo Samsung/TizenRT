@@ -408,6 +408,51 @@ int s5j_rtc_cancelalarm(void)
 
 	return OK;
 }
+
+/****************************************************************************
+ * Name: s5j_rtc_rdalarm
+ *
+ * Description:
+ *   Query an alarm configured in hardware.
+ *
+ * Input Parameters:
+ *  alminfo - Information about the alarm configuration.
+ *
+ * Returned Value:
+ *   Zero (OK) on success; a negated errno on failure
+ *
+ ****************************************************************************/
+int s5j_rtc_rdalarm(FAR struct alm_rdalarm_s *alminfo)
+{
+	irqstate_t flags;
+	struct rtc_regvals_s regvals;
+	FAR struct tm *tp;
+
+	ASSERT(alminfo != NULL);
+	DEBUGASSERT(alminfo->ar_id == 0);
+
+	tp = (struct tm *)alminfo->ar_time;
+
+	flags = irqsave();
+
+	/* read bcd counters */
+
+	regvals.bcdsec  = getreg32(S5J_RTC_ALMSEC);
+	tp->tm_sec      = rtc_bcd2bin(regvals.bcdsec);
+
+	regvals.bcdmin  = getreg32(S5J_RTC_ALMMIN);
+	tp->tm_min      = rtc_bcd2bin(regvals.bcdmin);
+
+	regvals.bcdhour = getreg32(S5J_RTC_ALMHOUR);
+	tp->tm_hour     = rtc_bcd2bin(regvals.bcdhour);
+
+	regvals.bcdday  = getreg32(S5J_RTC_ALMDAY);
+	tp->tm_mday     = rtc_bcd2bin(regvals.bcdday);
+
+	irqrestore(flags);
+
+	return OK;
+}
 #endif /* CONFIG_RTC_ALARM */
 
 /****************************************************************************

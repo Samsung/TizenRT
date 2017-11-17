@@ -80,8 +80,28 @@ extern "C"
 /****************************************************************************
  * Public Types
  ****************************************************************************/
+#ifdef CONFIG_RTC_ALARM
+
 /* The form of an alarm callback */
 typedef void (*alarmcb_t)(void);
+
+/* Structure used to pass parameters to set an alarm */
+
+struct alm_setalarm_s {
+	int as_id;					/* Alarm identifier */
+	struct tm as_time;			/* Alarm expiration time */
+	alarmcb_t as_cb;			/* Callback (if non-NULL) */
+	FAR void *as_arg;			/* Argument for callback */
+};
+
+/* Structure used to pass parameters to query an alarm */
+
+struct alm_rdalarm_s {
+	int ar_id;						/* Alarm identifier */
+	FAR struct rtc_time *ar_time;	/* Argument for storing ALARM RTC time */
+};
+
+#endif /* CONFIG_RTC_ALARM */
 
 /****************************************************************************
  * Public Functions

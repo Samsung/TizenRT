@@ -279,6 +279,45 @@ static int rtc_cancelalarm(FAR struct rtc_lowerhalf_s *lower, int alarmid)
 	/* Then, cancel the alarm */
 	return s5j_rtc_cancelalarm();
 }
+
+/****************************************************************************
+ * Name: rtc_rdalarm
+ *
+ * Description:
+ *   Query the RTC alarm.
+ *
+ * Input Parameters:
+ *   lower - A reference to RTC lower half driver state structure
+ *   alarminfo - Provided information needed to query the alarm
+ *
+ * Returned Value:
+ *   Zero (OK) is returned on success; a negated errno value is returned
+ *   on any failure.
+ *
+ ****************************************************************************/
+
+static int rtc_rdalarm(FAR struct rtc_lowerhalf_s *lower,
+		FAR struct lower_rdalarm_s *alarminfo)
+{
+	struct alm_rdalarm_s lowerinfo;
+	int ret = -EINVAL;
+
+	ASSERT(lower != NULL && alarminfo != NULL && alarminfo->time != NULL);
+	DEBUGASSERT(alarminfo->id == 0);
+
+	/*
+	 * Disable pre-emption while we do this so that we don't have to worry
+	 * about being suspended and working on an old time.
+	 */
+
+	lowerinfo.ar_id = alarminfo->id;
+	lowerinfo.ar_time = alarminfo->time;
+
+	ret = s5j_rtc_rdalarm(&lowerinfo);
+
+	return ret;
+}
+
 #endif /* CONFIG_RTC_ALARM */
 
 /****************************************************************************
@@ -292,6 +331,7 @@ static const struct rtc_ops_s g_rtc_ops = {
 	.setalarm    = rtc_setalarm,
 	.setrelative = rtc_setrelative,
 	.cancelalarm = rtc_cancelalarm,
+	.rdalarm     = rtc_rdalarm,
 #endif
 #ifdef CONFIG_RTC_IOCTL
 	.ioctl       = NULL,
