@@ -53,81 +53,34 @@
  * SUCH DAMAGE.
  ****************************************************************************/
 
-/**
-   * @testcase		   :lwip_nettest_01
-   * @brief		   :To establish a connection between tcp server and tcp client
-   * @scenario		   :
-   * @apicovered	   :
-   * @precondition	   : TCP Server(board1)		        TCP Client(board2)
-   *			   :1. Connect to Wi-Fi		      1. Connect to Wi-Fi
-   *			   :2. Get an IP address	      2. Get an IP address
-   *			   :3. Run TCP Server		      3. Run TCP Client
-   *			   :TASH> nettest <servip> 5001 1   TASH> nettest <servip> 5001 4
-   * @postcondition	   :
-   */
-
-/**
-   * @testcase		   :lwip_nettest_02
-   * @brief		   :To establish a connection between udp server and udp client
-   * @scenario		   :
-   * @apicovered	   :
-   * @precondition	   : UDP Server(board1)		        UDP Client(board2)
-   *			   :1. Connect to Wi-Fi		      1. Connect to Wi-Fi
-   *			   :2. Get an IP address	      2. Get an IP address
-   *			   :3. Run UDP Server		      3. Run UDP Client
-   *			   :TASH> nettest <servip> 5001 2   TASH> nettest <servip> 5001 5
-   * @postcondition	   :
-   */
-
 /****************************************************************************
  * Included Files
  ****************************************************************************/
 
 #include <tinyara/config.h>
 
-#include <unistd.h>
+#include <errno.h>
+#include <netdb.h>
+#include <string.h>
 #include <stdio.h>
 #include <stdlib.h>
-#include <string.h>
-#include <errno.h>
-#include <debug.h>
-#include <sched.h>
+#include <unistd.h>
 
-#include <tinyara/progmem.h>
-#include <tinyara/fs/smart.h>
-#include <tinyara/fs/ioctl.h>
-#include <tinyara/spi/spi.h>
-
-#include <sys/stat.h>
 #include <net/if.h>
 #include <arpa/inet.h>
 #include <netinet/in.h>
-#include <apps/netutils/netlib.h>
 #include <sys/select.h>
 #include <sys/socket.h>
+#include <sys/types.h>
 
-#define AF_INETX AF_INET
-#define PF_INETX PF_INET
-
-/*
- * TCP
- */
 #define BUF_SIZE 256
 
-/*
- * UDP
- */
-#define APP_MSG_SIZE 256
+#define NUM_PACKETS 100
 
-/*
- * NETWORK
- */
+#define NETTEST_IPV(x) ((x) ? "_V6" : "_V4")
 
-#define MCAST_PORT 5555
-#define MCAST_GROUP "225.1.1.1"
-
-#define NUM_PACKETS     50
-#define LOCAL_DEVICE "192.168.2.10"
+#define IPM_ADDR "225.1.2.100"
+#define IPM6_ADDR "FF02:0:0:0:0:0:0:100"
 
 /****************************************************************************
  * Private Data
@@ -136,515 +89,772 @@
 /****************************************************************************
 * Public Data
 ****************************************************************************/
-/* Default localIP, target IP and target port, will be set to appropriate target IP and target Port in netstresstest_main */
-char *g_app_target_addr = "192.168.2.6";
-int g_app_target_port = 5555;
-uint32_t total_data;
+
+static char *g_app_netif_addr;
+static char *g_app_target_addr;
+static char *g_app_target_port;
 
 /****************************************************************************
  * Public Functions
  ****************************************************************************/
 
-void ipmcast_sender_thread(int num_packets, uint32_t sleep_time)
+void ipmcast_sender_thread(int num_packets, int ipver)
 {
-
-	/* ------------------------------------------------------------ */
-	/*                                                              */
-	/* Send Multicast Datagram code example.                        */
-	/*                                                              */
-	/* ------------------------------------------------------------ */
+	char buf[BUF_SIZE];
+	int count = 1;
+	int fd = -1;
 	int ret = 0;
-	int i = 0;
-	int datalen;
-	struct in_addr localInterface;
-	struct sockaddr_in groupSock;
-	int sd;
-	char *databuf = "Test Data: IP Multicast from TinyAra Node to Linux";
+	struct addrinfo *result = NULL;
+	struct addrinfo *rp = NULL;
+	struct addrinfo hints;
 
-	socklen_t addrlen = sizeof(struct sockaddr_in);
-	printf("\n[MCASTCLIENT] start multicast sender\n");
-	/*
-	 * Create a datagram socket on which to send.
-	 */
-	sd = socket(AF_INET, SOCK_DGRAM, 0);
-	if (sd < 0) {
-		printf("[MCASTCLIENT] [ERR] opening datagram socket");
+	/* write information for getaddrinfo() */
+	memset(&hints, 0, sizeof(hints));
+	hints.ai_flags  = AI_NUMERICHOST;
+	hints.ai_socktype = SOCK_DGRAM;
+	hints.ai_protocol = IPPROTO_IP;
+#if LWIP_IPV6
+	if (ipver == 1) {
+		hints.ai_family = AF_INET6;
+	} else
+#endif
+	{
+		hints.ai_family = AF_INET;
+	}
+
+	/* get address information */
+	ret = getaddrinfo((ipver == 1) ? IPM6_ADDR : IPM_ADDR, g_app_target_port, &hints, &result);
+	if (ret != 0) {
+		printf("[IPMSEND%s] getaddrinfo ret: %d\n", NETTEST_IPV(ipver), ret);
 		exit(1);
 	}
-	printf("\n[MCASTCLIENT] created socket successfully\n");
 
-	/*
-	 * Disable loopback so you do not receive your own datagrams.
-	 */
-
-	char loopch = 0;
-
-	if (setsockopt(sd, IPPROTO_IP, IP_MULTICAST_LOOP, (char *)&loopch, sizeof(loopch)) < 0) {
-		printf("\n[MCASTCLIENT] [ERR] Failed setting IP_MULTICAST_LOOP:");
-		goto errout_with_socket;
-	}
-	printf("\n[MCASTCLIENT] setsockopt MULTICAST_LOOP success\n");
-
-	/*
-	 * Initialize the group sockaddr structure with a
-	 * group address of 225.1.1.1 and port 5555.
-	 */
-	memset((char *)&groupSock, 0, sizeof(groupSock));
-	groupSock.sin_family = AF_INET;
-	groupSock.sin_addr.s_addr = inet_addr(g_app_target_addr);
-	groupSock.sin_port = htons(g_app_target_port);
-
-	/*
-	 * Set local interface for outbound multicast datagrams.
-	 * The IP address specified must be associated with a local,
-	 * multicast-capable interface.
-	 */
-	localInterface.s_addr = inet_addr(LOCAL_DEVICE);
-	if (setsockopt(sd, IPPROTO_IP, IP_MULTICAST_IF, (char *)&localInterface, sizeof(localInterface)) < 0) {
-		printf("\n[MCASTCLIENT] [ERR] Failed setting local interface");
-		goto errout_with_socket;
-	}
-	printf("\n[MCASTCLIENT] setsockopt IP_MULTICAST_IF success\n");
-
-	/*
-	 * Send a message to the multicast group specified by the
-	 * groupSock sockaddr structure.
-	 */
-
-	datalen = strlen(databuf);
-	printf("\n[MCASTCLIENT] datalen = %d \n", datalen);
-
-	for (i = 1; i <= num_packets; i++) {
-		printf("\n[MCASTCLIENT] sending mcast message (%s) length (%d) number (%d)\n", databuf, datalen, i);
-		ret = sendto(sd, databuf, datalen, 0, (struct sockaddr *)&groupSock, addrlen);
-		if (ret < 0) {
-			printf("\n[MCASTCLIENT] [ERR] sending datagram message");
+	/* try to find valid socket from the result */
+	for (rp = result; rp != NULL; rp = rp->ai_next) {
+		fd = socket(rp->ai_family, rp->ai_socktype, rp->ai_protocol);
+		if (fd >= 0) {
+			/* success */
+			break;
 		}
+	}
+	if (rp == NULL) {
+		/* opening socket is totally failed */
+		printf("[IPMSEND%s] socket err: %d", NETTEST_IPV(ipver), errno);
+		goto err_out;
+	}
+
+	printf("[IPMSEND%s] addr: %s netif_addr: %s port: %s\n", NETTEST_IPV(ipver), (ipver == 1) ? IPM6_ADDR : IPM_ADDR, g_app_netif_addr, g_app_target_port);
+
+	memset(buf, 0, BUF_SIZE);
+	snprintf(buf, sizeof("hello, IPM_VX"), "hello, IPM%s", NETTEST_IPV(ipver));
+
+	while (1) {
+		ret = sendto(fd, buf, BUF_SIZE, 0, result->ai_addr, result->ai_addrlen);
+		if (ret <= 0) {
+			printf("[IPMSEND%s] sendto err: %d\n", NETTEST_IPV(ipver), errno);
+			goto err_out;
+		}
+
+		if (num_packets == 0) {
+			printf("[IPMSEND%s infinite test #%d] send msg(%s) len(%d)\n", NETTEST_IPV(ipver), count, buf, ret);
+		} else {
+			printf("[IPMSEND%s test #%d] send msg(%s) len(%d)\n", NETTEST_IPV(ipver), count, buf, ret);
+			if (count >= num_packets) {
+				printf("[IPMSEND%s test done #%d]\n", NETTEST_IPV(ipver), count);
+				break;
+			}
+		}
+		count++;
 		sleep(1);
 	}
 
-	printf("\n[MCASTCLIENT] Terminate multicast sender after sending sufficient messages (%d)\n", num_packets);
-	close(sd);
+	close(fd);
+	freeaddrinfo(result);
 	return;
-
-errout_with_socket:
-	close(sd);
+err_out:
+	if (fd >= 0) {
+		close(fd);
+		fd = -1;
+	}
+	if (result != NULL) {
+		freeaddrinfo(result);
+		result = NULL;
+	}
 	exit(1);
 }
 
-void ipmcast_receiver_thread(int num_packets)
+void ipmcast_receiver_thread(int num_packets, int ipver)
 {
+	char buf[BUF_SIZE];
+	int count = 1;
+	int fd = -1;
 	int ret = 0;
-	int count = 0;
-	int datalen;
-	char databuf[256];
-	int sd;
-	struct sockaddr_in localSock;
-	struct ip_mreq group;
-	printf("\n[MCASTSERV] start multicast receiver\n");
-	/* ------------------------------------------------------------ */
-	/*                                                              */
-	/* Receive Multicast Datagram code example.                     */
-	/*                                                              */
-	/* ------------------------------------------------------------ */
+	struct addrinfo *result = NULL;
+	struct addrinfo *rp = NULL;
+	struct addrinfo hints;
+	struct ip_mreq groupaddr;
+	struct timeval tv;
+#if LWIP_IPV6
+	ip6_addr_t ipm6_if;
+	ip6_addr_t groupaddr6;
+#endif
 
-	/*
-	 * Create a datagram socket on which to receive.
-	 */
-	sd = socket(AF_INET, SOCK_DGRAM, 0);
-	if (sd < 0) {
-		printf("\n[MCASTSERV] ERR : opening datagram socket\n");
+	/* write information for getaddrinfo() */
+	memset(&hints, 0, sizeof(hints));
+	hints.ai_flags  = AI_PASSIVE;
+	hints.ai_socktype = SOCK_DGRAM;
+#if LWIP_IPV6
+	if (ipver == 1) {
+		hints.ai_family = AF_INET6;
+	} else
+#endif
+	{
+		hints.ai_family = AF_INET;
+	}
+
+	/* get address information */
+	ret = getaddrinfo(NULL, g_app_target_port, &hints, &result);
+	if (ret != 0) {
+		printf("[IPMRECV%s] getaddrinfo ret: %d\n", NETTEST_IPV(ipver), ret);
 		exit(1);
 	}
-	printf("\n[MCASTSERV] create socket success\n");
-	/*
-	 * Enable SO_REUSEADDR to allow multiple instances of this
-	 * application to receive copies of the multicast datagrams.
-	 */
 
-	int reuse = 1;
-	ret = setsockopt(sd, SOL_SOCKET, SO_REUSEADDR, (char *)&reuse, sizeof(reuse));
-	if (ret < 0) {
-		printf("\n[MCASTSERV] ERR: setting SO_REUSEADDR\n");
-		goto errout_with_socket;
+	/* try to find valid socket from the result */
+	for (rp = result; rp != NULL; rp = rp->ai_next) {
+		fd = socket(rp->ai_family, rp->ai_socktype, rp->ai_protocol);
+		if (fd < 0) {
+			/* continue if open is failed */
+			continue;
+		}
+
+		if (bind(fd, (struct sockaddr *)rp->ai_addr, rp->ai_addrlen) == 0) {
+			/* success */
+			break;
+		}
+		close(fd);
 	}
-	printf("\n[MCASTSERV] set reusable success\n");
-
-	/*
-	 * Bind to the proper port number with the IP address
-	 * specified as INADDR_ANY.
-	 */
-	memset((char *)&localSock, 0, sizeof(localSock));
-	localSock.sin_family = AF_INET;
-	localSock.sin_port = htons(g_app_target_port);;
-	localSock.sin_addr.s_addr = INADDR_ANY;
-
-	if (bind(sd, (struct sockaddr *)&localSock, sizeof(localSock))) {
-		printf("\n[MCASTSERV] ERR: binding datagram socket\n");
-		goto errout_with_socket;
+	if (rp == NULL) {
+		/* opening socket is totally failed */
+		printf("[IPMRECV%s] socket err: %d", NETTEST_IPV(ipver), errno);
+		goto err_out;
 	}
 
-	printf("\n[MCASTSERV] bind socket success\n");
+	tv.tv_sec = 10;
+	tv.tv_usec = 0;
+	ret = setsockopt(fd, SOL_SOCKET, SO_RCVTIMEO, &tv, sizeof(struct timeval));
+	if (ret != 0) {
+		printf("[IPMRECV%s] recvtimeout setsockopt err: %d", NETTEST_IPV(ipver), errno);
+		goto err_out;
+	}
+
 	/*
-	 * Join the multicast group 225.1.1.1 on the local 192.168.2.10
+	 * Join the multicast groupaddr 225.1.2.100 with netif address
 	 * interface.  Note that this IP_ADD_MEMBERSHIP option must be
 	 * called for each local interface over which the multicast
 	 * datagrams are to be received.
 	 */
-	group.imr_multiaddr.s_addr = inet_addr(g_app_target_addr);
-	group.imr_interface.s_addr = inet_addr(LOCAL_DEVICE);
-	if (setsockopt(sd, IPPROTO_IP, IP_ADD_MEMBERSHIP, (char *)&group, sizeof(group)) < 0) {
-		printf("\n[MCASTSERV] ERR: adding multicast group\n");
-		goto errout_with_socket;
+#if LWIP_IPV6
+	if (ipver == 1) {
+		(void)groupaddr;
+		inet_pton(AF_INET6, IPM6_ADDR, &groupaddr6);
+		inet_pton(AF_INET6, g_app_netif_addr, &ipm6_if);
+		ret = mld6_joingroup(&ipm6_if, &groupaddr6);
+	} else
+#endif
+	{
+#if LWIP_IPV6
+		(void)groupaddr6;
+#endif
+		inet_pton(AF_INET, IPM_ADDR, &groupaddr.imr_multiaddr);
+		inet_pton(AF_INET, g_app_netif_addr, &groupaddr.imr_interface);
+		ret = setsockopt(fd, IPPROTO_IP, IP_ADD_MEMBERSHIP, (char *)&groupaddr, sizeof(groupaddr));
 	}
-	printf("\n[MCASTSERV] join multicast success sucess success success success success success success\n");
-	/*
-	 * Read from the socket.
-	 */
-	while (1) {
-		datalen = sizeof(databuf);
-		/* any of the below call read / recv is fine */
-		ret = read(sd, databuf, datalen);
+	if (ret < 0) {
+		printf("[IPMRECV%s] %s err: %d", NETTEST_IPV(ipver), (ipver == 1) ? "mld6" : "igmp", errno);
+		goto err_out;
+	}
 
-		if (ret < 0) {
-			printf("\n[MCASTSERV] ERR: reading datagram message\n");
+	printf("[IPMRECV%s] addr: %s netif_addr: %s port: %s\n", NETTEST_IPV(ipver), (ipver == 1) ? IPM6_ADDR : IPM_ADDR, g_app_netif_addr, g_app_target_port);
+
+	/* Read from the socket. */
+	while (1) {
+		ret = read(fd, buf, BUF_SIZE);
+		if (ret <= 0) {
+			printf("[IPMRECV%s] read err: %d", NETTEST_IPV(ipver), errno);
+			goto err_out;
+		}
+
+		buf[ret] = '\0';
+		if (num_packets == 0) {
+			printf("[IPMRECV%s infinite test #%d] read msg(%s) len(%d)\n", NETTEST_IPV(ipver), count, buf, ret);
 		} else {
-			databuf[ret] = '\0';
-			count++;
-			if (count > num_packets) {
-				printf("\n[MCASTSERV] - Received Msg # %d] read (%s) (%d) bytes, Terminating MCLIENT as received sufficient packets for testing\n", count, databuf, ret);
+			printf("[IPMRECV%s test #%d] read msg(%s) len(%d)\n", NETTEST_IPV(ipver), count, buf, ret);
+			if (count >= num_packets) {
+				printf("[IPMRECV%s test done #%d]\n", NETTEST_IPV(ipver), count);
 				break;
-			} else {
-				printf("\n[MCASTSERV] - Received Msg # %d] read (%s) (%d) bytes\n", count, databuf, ret);
 			}
-		}
-	}
-	close(sd);
-	return;
-
-errout_with_socket:
-	close(sd);
-	exit(1);
-}
-
-int udp_server_thread(int num_packets)
-{
-	struct sockaddr_in servaddr;
-	struct sockaddr_in cliaddr;
-	int s;
-	int nbytes;
-	int count = 0;
-	socklen_t addrlen = sizeof(struct sockaddr_in);
-	char buf[BUF_SIZE];
-	fd_set rfds;
-	fd_set fds;
-	int ret = 0;
-
-	s = socket(PF_INET, SOCK_DGRAM, 0);
-	if (s < 0) {
-		perror("\n[UDPSERV]socket fail");
-		return 0;
-	}
-
-	printf("\n[UDPSERV] socket created\n");
-	printf("\n[UDPSERV] debug %d %d\n", addrlen, sizeof(struct sockaddr));
-	memset(&cliaddr, 0, addrlen);
-	memset(&servaddr, 0, addrlen);
-	servaddr.sin_family = AF_INET;
-	servaddr.sin_addr.s_addr = htonl(INADDR_ANY);
-	servaddr.sin_port = htons(g_app_target_port);
-
-	ret = bind(s, (struct sockaddr *)&servaddr, addrlen);
-	if (ret < 0) {
-		perror("\n[UDPSERV]bind fail\n");
-		goto errout_with_socket;
-	}
-	printf("\n[UDPSERV] socket binded\n");
-	printf("\n[UDPSERV] waiting on port %d\n", g_app_target_port);
-
-	FD_ZERO(&fds);
-	FD_SET(s, &fds);
-
-	int max_fd = s + 1;
-	while (1) {
-		rfds = fds;
-		printf("[UDPSERV] -->select\n");
-		int res = select(max_fd, &rfds, NULL, NULL, NULL);
-		printf("[UDPSERV] <--select(%d)\n", res);
-		if (res < 0) {
-			printf("[UDPSERV] select error(%d)\n", errno);
-			goto errout_with_socket;
-		}
-		if (res > 0) {
-			if (FD_ISSET(s, &rfds)) {
-				nbytes = recvfrom(s, buf, BUF_SIZE, 0, (struct sockaddr *)&cliaddr, &addrlen);
-				if (nbytes < 0) {
-					perror("[UDPSERV] recvfrom fail");
-					break;
-				}
-				if (nbytes == 0) {
-					printf("[UDPSERV] socket closed from remote\n");
-					goto errout_with_socket;
-				}
-				count++;
-				if (count >= num_packets) {
-					printf("[UDPSERV] - Received Msg # %d] Received Msg (%s) data size (%d), Exiting UDPSERV as received sufficient packets for testing\n", count, buf, nbytes);
-					break;
-				} else {
-					printf("[UDPSERV] - Received Msg # %d] Received Msg (%s) data size (%d)\n", count, buf, nbytes);
-				}
-			}
-		} else {
-			assert(0);
-		}
-	}
-	close(s);
-	printf("\n[UDPSERV] Closed socket successfully\n");
-	return 0;
-
-errout_with_socket:
-	close(s);
-	return 0;
-}
-
-void udp_client_thread(int num_packets, uint32_t sleep_time)
-{
-	int sockfd;
-	int clilen;
-	int i = 0;
-	char buf[APP_MSG_SIZE];
-	fd_set wfds;
-	fd_set fds;
-	int max_fd = 0;
-	struct sockaddr_in serveraddr;
-
-	memset(buf, 0, APP_MSG_SIZE);
-
-	sprintf(buf, "Test Data: UDP send from TinyAra Node to Linux");
-
-	clilen = sizeof(serveraddr);
-
-	sockfd = socket(AF_INET, SOCK_DGRAM, 0);
-	if (sockfd < 0) {
-		printf("[UDPCLIENT]socket create error(%d)\n", errno);
-		exit(1);
-	}
-	printf("[UDPCLIENT] socket create(%d)\n", sockfd);
-
-	bzero(&serveraddr, sizeof(serveraddr));
-	serveraddr.sin_family = AF_INET;
-	serveraddr.sin_addr.s_addr = inet_addr(g_app_target_addr);
-	serveraddr.sin_port = htons(g_app_target_port);
-
-	FD_ZERO(&fds);
-	FD_SET(sockfd, &fds);
-
-	max_fd = sockfd + 1;
-	for (i = 1; i <= num_packets; i++) {
-		wfds = fds;
-		printf("[UDPCLIENT] -->select\n");
-		int res = select(max_fd, NULL, &wfds, NULL, 0);
-		printf("[UDPCLIENT] <--select(%d)\n", res);
-
-		if (res < 0) {
-			printf("[UDPCLIENT] select error(%d)\n", errno);
-			close(sockfd);
-			return;
-		}
-		if (res > 0) {
-			if (FD_ISSET(sockfd, &wfds)) {
-				printf("[UDPCLIENT] -->send msg # %d data (%s) nbytes (%d) \n", i, buf, strlen(buf));
-				if (sendto(sockfd, (void *)buf, strlen(buf), 0, (struct sockaddr *)&serveraddr, clilen) < 0) {
-					printf("[UDPCLIENT] sendto failed\n");
-				};
-				printf("[UDPCLIENT] <--sent msg\n");
-			} else {
-				assert(0);
-			}
-		}
-	}
-	sendto(sockfd, 0, 0, 0, (struct sockaddr *)&serveraddr, clilen);
-	printf("[UDPCLIENT] Terminating udpclient after sending sufficient messages (%d)\n", num_packets);
-	close(sockfd);
-	return;
-}
-
-void tcp_server_thread(int num_packets, int infpkt)
-{
-	struct sockaddr_in servaddr;
-	struct sockaddr_in cliaddr;
-	int listenfd = -1;
-	int connfd = -1;
-	socklen_t clilen;
-
-	int ret = 0;
-	int recv_len = 0;
-	int nbytes = 0;
-	int count = 0;
-
-	char msg[BUF_SIZE];
-
-	listenfd = socket(PF_INET, SOCK_STREAM, 0);
-	if (listenfd < 0) {
-		printf("\n[TCPSERV] TCP socket failure %d\n", errno);
-		exit(1);
-	}
-
-	/*
-	 * Enable SO_REUSEADDR to allow multiple instances of this
-	 * application to receive copies of the multicast datagrams.
-	 */
-
-	int reuse = 1;
-	ret = setsockopt(listenfd, SOL_SOCKET, SO_REUSEADDR, (char *)&reuse, sizeof(reuse));
-	if (ret < 0) {
-		printf("\n[TCPSERV] ERR: setting SO_REUSEADDR\n");
-		goto errout_with_socket;
-	}
-	printf("\n[TCPSERV] set reusable success\n");
-
-	/* Connect the socket to the server */
-	memset(&servaddr, 0, sizeof(servaddr));
-	servaddr.sin_family = PF_INET;
-	servaddr.sin_addr.s_addr = htonl(INADDR_ANY);
-	servaddr.sin_port = HTONS(g_app_target_port);
-
-	ret = bind(listenfd, (struct sockaddr *)&servaddr, sizeof(servaddr));
-	if (ret < 0) {
-		perror("\n[TCPSERV] bind fail\n");
-		goto errout_with_socket;
-	}
-
-	printf("\n[TCPSERV] Listening... port %d\n", g_app_target_port);
-
-	ret = listen(listenfd, 1024);
-	if (ret < 0) {
-		perror("\n[TCPSERV] listen fail\n");
-		goto errout_with_socket;
-	}
-
-	clilen = sizeof(cliaddr);
-
-	connfd = accept(listenfd, (struct sockaddr *)&cliaddr, &clilen);
-	if (connfd < 0) {
-		perror("\n[TCPSERV] accept fail\n");
-		goto errout_with_socket;
-	}
-	printf("\n[TCPSERV] Accepted\n");
-
-	recv_len = sizeof(msg);
-	while (1) {
-		nbytes = recv(connfd, msg, recv_len, 0);
-		if (nbytes <= 0) {
-			/* connection closed */
-			printf("\n[TCPSERV] selectserver: socket hung up err\n");
-			break;
 		}
 		count++;
-		if (infpkt == 0) {
-			if (count > num_packets) {
-				printf("\n[TCPSERV] - Received Msg # %d] Received Msg (%s) data size (%d)\n Exiting tcp_server as received sufficient packets for testing\n", count, msg, nbytes);
-				break;
-			} else {
-				printf("[TCPSERV] - Received Msg # %d] Received Msg (%s) data size (%d)\n", count, msg, nbytes);
-			}
-		} else if (infpkt == 1) {
-			if (count >= num_packets) {
-				printf("Count %d\n", count);
-				num_packets += num_packets;
-			} else {
-				printf("[TCPSERV] - Received Msg # %d] Received Msg (%s) data size (%d)\n", count, msg, nbytes);
-			}
-		}
 	}
-	if (connfd > 0) {
-		close(connfd);
-		printf("\n[TCPSERV] Closed connfd successfully \n");
-	}
-	close(listenfd);
-	printf("\n[TCPSERV] Closed listenfd successfully \n");
-	return;
 
-errout_with_socket:
-	close(listenfd);
+	close(fd);
+	freeaddrinfo(result);
+	return;
+err_out:
+	if (fd >= 0) {
+		close(fd);
+		fd = -1;
+	}
+	if (result != NULL) {
+		freeaddrinfo(result);
+		result = NULL;
+	}
 	exit(1);
 }
 
-void tcp_client_thread(int num_packets, uint32_t sleep_time)
+void udp_server_thread(int num_packets, int ipver)
 {
-	struct sockaddr_in myaddr;
-	int sockfd;
-	int ret = 0;
-	int i = 0;
-	uint32_t sbuf_size = 0;
-	uint32_t send_try = 0;
 	char buf[BUF_SIZE];
-	socklen_t addrlen;
+	int count = 1;
+	int fd = -1;
+	int have_received = 0;
+	int maxfd;
+	int ret = 0;
+	fd_set fds;
+	fd_set rfds;
+	fd_set sfds;
+	socklen_t fromlen;
+	struct sockaddr *from = NULL;
+	struct addrinfo *result = NULL;
+	struct addrinfo *rp = NULL;
+	struct addrinfo hints;
+	struct timeval tv;
 
-	sockfd = socket(PF_INET, SOCK_STREAM, 0);
-	if (sockfd < 0) {
-		printf("\n[TCPCLIENT] TCP socket failure %d\n", errno);
+	/* write information for getaddrinfo() */
+	memset(&hints, 0, sizeof(hints));
+	hints.ai_flags = AI_PASSIVE;
+	hints.ai_socktype = SOCK_DGRAM;
+#if LWIP_IPV6
+	if (ipver == 1) {
+		hints.ai_family = AF_INET6;
+		fromlen = sizeof(struct sockaddr_in6);
+	} else
+#endif
+	{
+		hints.ai_family = AF_INET;
+		fromlen = sizeof(struct sockaddr_in);
+	}
+
+	/* recvfrom() function will return target address in this variable */
+	from = malloc(fromlen);
+	if (from == NULL) {
+		printf("[UDPSERV%s] malloc err: %d\n", NETTEST_IPV(ipver), errno);
+		goto err_out;
+	}
+
+	/* get address information */
+	ret = getaddrinfo(NULL, g_app_target_port, &hints, &result);
+	if (ret != 0) {
+		printf("[UDPSERV%s] getaddrinfo ret: %d\n", NETTEST_IPV(ipver), ret);
+		goto err_out;
+	}
+
+	/* try to find a valid socket from the result */
+	for (rp = result; rp != NULL; rp = rp->ai_next) {
+		fd = socket(rp->ai_family, rp->ai_socktype, rp->ai_protocol);
+		if (fd < 0) {
+			/* continue if socket open is failed */
+			continue;
+		}
+
+		if (bind(fd, rp->ai_addr, rp->ai_addrlen) == 0) {
+			/* success */
+			break;
+		}
+		close(fd);
+	}
+	if (rp == NULL) {
+		/* binding socket is totally failed */
+		printf("[UDPSERV%s] bind err: %d\n", NETTEST_IPV(ipver), errno);
+		goto err_out;
+	}
+
+	tv.tv_sec = 10;
+	tv.tv_usec = 0;
+	ret = setsockopt(fd, SOL_SOCKET, SO_RCVTIMEO, &tv, sizeof(struct timeval));
+	if (ret != 0) {
+		printf("[UDPSERV%s] recvtimeout setsockopt err: %d", NETTEST_IPV(ipver), errno);
+		goto err_out;
+	}
+
+	printf("[UDPSERV%s] waiting on port %s\n", NETTEST_IPV(ipver), g_app_target_port);
+
+	/* fds is used to initialize rfds and sfds */
+	FD_ZERO(&fds);
+	FD_SET(fd, &fds);
+
+	maxfd = fd + 1;
+	while (1) {
+		rfds = fds;
+		FD_ZERO(&sfds);
+		if (have_received) {
+			/* sfds should be set when it has something to send */
+			sfds = fds;
+		}
+
+		ret = select(maxfd, &rfds, &sfds, NULL, &tv);
+		if (ret <= 0) {
+			printf("[UDPSERV%s] select err: %d\n", NETTEST_IPV(ipver), errno);
+			goto err_out;
+		}
+		if (ret > 0) {
+			if (FD_ISSET(fd, &sfds)) {
+				ret = sendto(fd, buf, BUF_SIZE, 0, from, fromlen);
+				if (ret <= 0) {
+					printf("[UDPSERV%s] sendto err: %d\n", NETTEST_IPV(ipver), errno);
+					break;
+				}
+
+				if (num_packets == 0) {
+					/* infinite test */
+					if (!(count % 1000)) {
+						printf("[UDPSERV%s infinite test #%d] echoback msg(%s) len(%d)\n", NETTEST_IPV(ipver), count, buf, ret);
+					}
+				} else {
+					printf("[UDPSERV%s test #%d] echoback msg(%s) len(%d)\n", NETTEST_IPV(ipver), count, buf, ret);
+					if (count >= num_packets) {
+						printf("[UDPSERV%s test done #%d]\n", NETTEST_IPV(ipver), count);
+						break;
+					}
+				}
+				count++;
+				have_received--;
+			}
+			if (FD_ISSET(fd, &rfds)) {
+				ret = recvfrom(fd, buf, BUF_SIZE, 0, from, &fromlen);
+				if (ret <= 0) {
+					printf("[UDPSERV%s] recvfrom err: %d\n", NETTEST_IPV(ipver), errno);
+					break;
+				}
+
+				have_received++;
+			}
+		}
+	}
+
+	free(from);
+	close(fd);
+	freeaddrinfo(result);
+	return;
+err_out:
+	if (from != NULL) {
+		free(from);
+		from = NULL;
+	}
+	if (fd >= 0) {
+		close(fd);
+		fd = -1;
+	}
+	if (result != NULL) {
+		freeaddrinfo(result);
+		result = NULL;
+	}
+	exit(1);
+}
+
+void udp_client_thread(int num_packets, int ipver)
+{
+	char sbuf[BUF_SIZE];
+	char rbuf[BUF_SIZE];
+	int count = 1;
+	int fd = -1;
+	int ret = 0;
+	struct addrinfo *result;
+	struct addrinfo *rp;
+	struct addrinfo hints;
+	struct timeval tv;
+
+	/* write information for getaddrinfo() */
+	memset(&hints, 0, sizeof(hints));
+	hints.ai_socktype = SOCK_DGRAM;
+#if LWIP_IPV6
+	if (ipver == 1) {
+		hints.ai_family = AF_INET6;
+	} else
+#endif
+	{
+		hints.ai_family = AF_INET;
+	}
+
+	/* get address information */
+	ret = getaddrinfo(g_app_target_addr, g_app_target_port, &hints, &result);
+	if (ret != 0) {
+		printf("[UDPCLI%s] getaddrinfo ret: %d\n", NETTEST_IPV(ipver), ret);
+		goto err_out;
+	}
+
+	/* try to find valid socket from the result */
+	for (rp = result; rp != NULL; rp = rp->ai_next) {
+		fd = socket(rp->ai_family, rp->ai_socktype, rp->ai_protocol);
+		if (fd >= 0) {
+			/* success */
+			break;
+		}
+	}
+	if (rp == NULL) {
+		printf("[UDPCLI%s] fail to open socket\n", NETTEST_IPV(ipver));
+		goto err_out;
+	}
+
+	tv.tv_sec = 10;
+	tv.tv_usec = 0;
+	ret = setsockopt(fd, SOL_SOCKET, SO_RCVTIMEO, &tv, sizeof(struct timeval));
+	if (ret != 0) {
+		printf("[UDPCLI%s] recvtimeout setsockopt err: %d", NETTEST_IPV(ipver), errno);
+		goto err_out;
+	}
+
+	printf("[UDPCLI%s] addr: %s port: %s\n", NETTEST_IPV(ipver), g_app_target_addr, g_app_target_port);
+
+	memset(rbuf, 0, BUF_SIZE);
+	memset(sbuf, 0, BUF_SIZE);
+	snprintf(sbuf, sizeof("hello, UDP_VX"), "hello, UDP%s", NETTEST_IPV(ipver));
+
+	while (1) {
+		ret = sendto(fd, sbuf, BUF_SIZE, 0, rp->ai_addr, rp->ai_addrlen);
+		if (ret <= 0) {
+			printf("[UDPCLI%s] sendto err: %d\n", NETTEST_IPV(ipver), errno);
+			break;
+		}
+
+		ret = recvfrom(fd, rbuf, BUF_SIZE, 0, NULL, NULL);
+		if (ret <= 0) {
+			printf("[UDPCLI%s] recvfrom err: %d\n", NETTEST_IPV(ipver), errno);
+			break;
+		}
+
+		if (num_packets == 0) {
+			/* infinite test */
+			if (!(count % 1000)) {
+				printf("[UDPCLI%s infinite test #%d] msg(%s) len(%d)\n", NETTEST_IPV(ipver), count, rbuf, ret);
+			}
+		} else {
+			printf("[UDPCLI%s test #%d] msg(%s) len(%d)\n", NETTEST_IPV(ipver), count, rbuf, ret);
+			if (count >= num_packets) {
+				printf("[UDPCLI%s test done #%d]\n", NETTEST_IPV(ipver), count);
+				break;
+			}
+		}
+		count++;
+	}
+
+	close(fd);
+	freeaddrinfo(result);
+	return;
+err_out:
+	if (fd >= 0) {
+		close(fd);
+		fd = -1;
+	}
+	if (result != NULL) {
+		freeaddrinfo(result);
+		result = NULL;
+	}
+	exit(1);
+}
+
+void tcp_server_thread(int num_packets, int ipver)
+{
+	char buf[BUF_SIZE];
+	int connfd = -1;
+	int count = 1;
+	int listenfd = -1;
+	int ret = 0;
+	socklen_t addrlen;
+	struct sockaddr *cliaddr = NULL;
+	struct addrinfo *result = NULL;
+	struct addrinfo *rp = NULL;
+	struct addrinfo hints;
+	struct timeval tv;
+
+	/* write information for getaddrinfo() */
+	memset(&hints, 0, sizeof(hints));
+	hints.ai_flags = AI_PASSIVE;
+	hints.ai_socktype = SOCK_STREAM;
+#if LWIP_IPV6
+	if (ipver == 1) {
+		hints.ai_family = AF_INET6;
+		addrlen = sizeof(struct sockaddr_in6);
+	} else
+#endif
+	{
+		hints.ai_family = AF_INET;
+		addrlen = sizeof(struct sockaddr_in);
+	}
+
+	cliaddr = malloc(addrlen);
+	if (cliaddr == NULL) {
+		printf("[TCPSERV%s] malloc err: %d\n", NETTEST_IPV(ipver), errno);
 		exit(1);
 	}
 
-	/* Connect the socket to the server */
-	myaddr.sin_family = AF_INET;
-	myaddr.sin_port = HTONS(g_app_target_port);
-	inet_pton(AF_INET, g_app_target_addr, &(myaddr.sin_addr));
-
-	addrlen = sizeof(struct sockaddr_in);
-
-	printf("\n[TCPCLIENT] Connecting...\n");
-	if (connect(sockfd, (struct sockaddr *)&myaddr, addrlen) < 0) {
-		printf("\n[TCPCLIENT] connect fail: %d\n", errno);
-		goto errout_with_socket;
+	/* get address information */
+	ret = getaddrinfo(NULL, g_app_target_port, &hints, &result);
+	if (ret != 0) {
+		printf("[TCPSERV%s] getaddrinfo ret: %d\n", NETTEST_IPV(ipver), ret);
+		goto err_out;
 	}
-	printf("\n[TCPCLIENT] Connected\n");
 
-	/* Then send num_packets number of messages */
+	/* try to find a valid socket from the result */
+	for (rp = result; rp != NULL; rp = rp->ai_next) {
+		listenfd = socket(rp->ai_family, rp->ai_socktype, rp->ai_protocol);
+		if (listenfd < 0) {
+			/* continue if socket open is failed */
+			continue;
+		}
 
-	sprintf(buf, "Test Data: TCP send from TinyAra Node to Linux");
-
-	for (i = 1; i <= num_packets; i++) {
-		sbuf_size = strlen(buf);
-		printf("\n\n\n[TCPCLIENT] -->send msg # %d data (%s) nbytes (%d) \n", i, buf, strlen(buf));
-
-		ret = send(sockfd, buf, sbuf_size, 0);
-
-		if (ret <= 0) {
-
-			if (ret == 0) {
-				printf("\n[TCPCLIENT] connection closed\n");
-				break;
-			}
-
-			if (errno == EWOULDBLOCK) {
-				if (send_try++ > 100) {
-					printf("\n[TCPCLIENT] Sending try is more than LIMIT(%d)\n", 100);
-					break;
-				}
-				printf("\n[TCPCLIENT] wouldblock, retry delay 200ms!!\n");
-				usleep(200000);
-				continue;
-			}
-
-			printf("\n[TCPCLIENT] socket error ret(%d) err(%d) EAGAIN(%d)\n", ret, errno, EWOULDBLOCK);
+		if (bind(listenfd, rp->ai_addr, rp->ai_addrlen) == 0) {
+			/* success */
 			break;
 		}
-		send_try = 0;
-		printf("\n[TCPCLIENT] <--send\t%d bytes\n\n", ret);
-		sleep(1);
-
+		close(listenfd);
+	}
+	if (rp == NULL) {
+		printf("[TCPSERV%s] bind err: %d\n", NETTEST_IPV(ipver), errno);
+		goto err_out;
 	}
 
-	printf("\n[TCPCLIENT] Terminating tcpclient after sending sufficient messages (%d)\n", num_packets);
+	/* Enable SO_REUSEADDR to allow multiple instances */
+	int reuse = 1;
 
-	close(sockfd);
+	ret = setsockopt(listenfd, SOL_SOCKET, SO_REUSEADDR, (char *)&reuse, sizeof(reuse));
+	if (ret < 0) {
+		printf("[TCPSERV%s] reuse setsockopt err: %d\n", NETTEST_IPV(ipver), errno);
+		goto err_out;
+	}
+
+	/* start listening socket fd */
+	ret = listen(listenfd, 1024);
+	if (ret < 0) {
+		printf("[TCPSERV%s] listen err: %d\n", NETTEST_IPV(ipver), errno);
+		goto err_out;
+	}
+
+	printf("[TCPSERV%s] waiting on port: %s\n", NETTEST_IPV(ipver), g_app_target_port);
+
+	/* accept socket addrlen specifies ipv4 and ipv6 socket */
+	connfd = accept(listenfd, cliaddr, &addrlen);
+	if (connfd < 0) {
+		printf("[TCPSERV%s] accept err: %d\n", NETTEST_IPV(ipver), errno);
+		goto err_out;
+	}
+
+	tv.tv_sec = 10;
+	tv.tv_usec = 0;
+	ret = setsockopt(connfd, SOL_SOCKET, SO_RCVTIMEO, &tv, sizeof(struct timeval));
+	if (ret != 0) {
+		printf("[TCPSERV%s] recvtimeout setsockopt err: %d", NETTEST_IPV(ipver), errno);
+		goto err_out;
+	}
+
+	while (1) {
+		/* echo back loop */
+		ret = recv(connfd, buf, BUF_SIZE, 0);
+		if (ret <= 0) {
+			printf("[TCPSERV%s] recv err: %d\n", NETTEST_IPV(ipver), errno);
+			break;
+		}
+
+		ret = send(connfd, buf, BUF_SIZE, 0);
+		if (ret <= 0) {
+			printf("[TCPSERV%s] send err: %d\n", NETTEST_IPV(ipver), errno);
+			break;
+		}
+
+		if (num_packets == 0) {
+			/* Infinite echo back */
+			if (!(count % 1000)) {
+				printf("[TCPSERV%s infinite test #%d] echoback msg(%s) len(%d)\n", NETTEST_IPV(ipver), count, buf, ret);
+			}
+		} else {
+			printf("[TCPSERV%s test #%d] echoback msg(%s) len(%d)\n", NETTEST_IPV(ipver), count, buf, ret);
+			if (count >= num_packets) {
+				printf("[TCPSERV%s test done #%d]\n", NETTEST_IPV(ipver), count);
+				break;
+			}
+		}
+		count++;
+	}
+
+	free(cliaddr);
+	close(connfd);
+	close(listenfd);
+	freeaddrinfo(result);
 	return;
-
-errout_with_socket:
-	close(sockfd);
+err_out:
+	if (cliaddr != NULL) {
+		free(cliaddr);
+		cliaddr = NULL;
+	}
+	if (listenfd >= 0) {
+		close(listenfd);
+		listenfd = -1;
+	}
+	if (result != NULL) {
+		freeaddrinfo(result);
+		result = NULL;
+	}
 	exit(1);
+}
+
+void tcp_client_thread(int num_packets, int ipver)
+{
+	char sbuf[BUF_SIZE];
+	char rbuf[BUF_SIZE];
+	int count = 1;
+	int fd = -1;
+	int ret;
+	struct addrinfo *result;
+	struct addrinfo *rp;
+	struct addrinfo hints;
+	struct timeval tv;
+
+	/* write information for getaddrinfo() */
+	memset(&hints, 0, sizeof(hints));
+	hints.ai_socktype = SOCK_STREAM;
+#if LWIP_IPV6
+	if (ipver == 1) {
+		hints.ai_family = AF_INET6;
+	} else
+#endif
+	{
+		hints.ai_family = AF_INET;
+	}
+
+	/* get address information */
+	ret = getaddrinfo(g_app_target_addr, g_app_target_port, &hints, &result);
+	if (ret != 0) {
+		printf("[TCPCLI%s] getaddrinfo ret: %d\n", NETTEST_IPV(ipver), ret);
+		goto err_out;
+	}
+
+	/* try to find a valid socket from the result */
+	for (rp = result; rp != NULL; rp = rp->ai_next) {
+		fd = socket(rp->ai_family, rp->ai_socktype, rp->ai_protocol);
+		if (fd < 0) {
+			/* continue if socket open is failed */
+			continue;
+		}
+
+		if (connect(fd, rp->ai_addr, rp->ai_addrlen) == 0) {
+			/* success */
+			break;
+		}
+		close(fd);
+	}
+	if (rp == NULL) {
+		printf("[TCPCLI%s] connection err\n", NETTEST_IPV(ipver), errno);
+		goto err_out;
+	}
+
+	tv.tv_sec = 10;
+	tv.tv_usec = 0;
+	ret = setsockopt(fd, SOL_SOCKET, SO_RCVTIMEO, &tv, sizeof(struct timeval));
+	if (ret != 0) {
+		printf("[TCPCLI%s] recvtimeout setsockopt err: %d", NETTEST_IPV(ipver), errno);
+		goto err_out;
+	}
+
+	printf("[TCPCLI%s] addr: %s port:%s\n", NETTEST_IPV(ipver), g_app_target_addr, g_app_target_port);
+
+	memset(sbuf, 0, BUF_SIZE);
+	snprintf(sbuf, sizeof("hello, TCP_VX"), "hello, TCP%s", NETTEST_IPV(ipver));
+	memset(rbuf, 0, BUF_SIZE);
+
+	while (1) {
+		ret = send(fd, sbuf, BUF_SIZE, 0);
+		if (ret <= 0) {
+			printf("[TCPCLI%s] send err: %d\n", NETTEST_IPV(ipver), errno);
+			goto err_out;
+		}
+
+		ret = recv(fd, rbuf, BUF_SIZE, 0);
+		if (ret <= 0) {
+			printf("[TCPCLI%s] recv err: %d\n", NETTEST_IPV(ipver), errno);
+			goto err_out;
+		}
+
+		if (num_packets == 0) {
+			if (!(count % 1000)) {
+				printf("[TCPCLI%s infinite test #%d] msg(%s) len(%d)\n", NETTEST_IPV(ipver), count, rbuf, ret);
+			}
+		} else {
+			printf("[TCPCLI%s test #%d] msg(%s) len(%d)\n", NETTEST_IPV(ipver), count, rbuf, ret);
+			if (count >= num_packets) {
+				printf("[TCPCLI%s test done #%d]\n", NETTEST_IPV(ipver), count);
+				break;
+			}
+		}
+		count++;
+	}
+
+	close(fd);
+	freeaddrinfo(result);
+	return;
+err_out:
+	if (fd >= 0) {
+		close(fd);
+		fd = -1;
+	}
+	if (result != NULL) {
+		freeaddrinfo(result);
+		result = NULL;
+	}
+	exit(1);
+}
+
+void nettest_print_usage(int index)
+{
+	switch (index) {
+	case 1:
+		printf("\nUsage1: nettest proto target_port option1\n");
+		printf("\tUsage1 is for echoback SERVER\n");
+		printf("Parameter:\n");
+		printf("\tproto - 0(tcp ipv4 echoback), 1(tcp ipv6 echoback)\n");
+		printf("\t        2(udp ipv4 echoback), 3(udp ipv6 echoback)\n");
+		printf("\ttarget_port - port address to bind\n");
+		printf("\toption1 - number of pakcets to test, default: %d\n", NUM_PACKETS);
+		printf("Sample Command(tcp ipv4 echoback server): nettest 0 8888 1000(option1)\n\n");
+		break;
+	case 2:
+		printf("\nUsage2: nettest proto target_addr target_port option1\n");
+		printf("\tUsage2 is for CLIENT that expects echoing back from the server\n");
+		printf("Parameter:\n");
+		printf("\tproto - 10(tcp ipv4 client), 11(tcp ipv6 client)\n");
+		printf("\t        12(udp ipv4 client), 13(udp ipv6 client)\n");
+		printf("\ttarget_addr - target IP address to send or connect\n");
+		printf("\ttarget_port - target port address to send or connect\n");
+		printf("\toption1 - number of packets to test, default: %d\n", NUM_PACKETS);
+		printf("Sample Command(udp ipv6 client): nettest 13 fe80::dcc3:3084:cb9b:38ce%%wl1 8888 1000(option1)\n\n");
+		break;
+	case 3:
+		printf("\nUsage3: nettest proto netif_addr target_port option1\n");
+		printf("\tUsage3 is for sending and receiving ipmulticast message\n");
+		printf("\tipmulticast address is fixed as definition in source file\n");
+		printf("\tipv4 multicast address: %s\n", IPM_ADDR);
+		printf("\tipv6 multicast address: %s\n", IPM6_ADDR);
+		printf("Parameter:\n");
+		printf("\tproto - 20(ipmulticast ipv4 receiver), 21(ipmulticast ipv6 receiver)\n");
+		printf("\t        22(ipmulticast ipv4 sender), 23(ipmulticast ipv6 sender)\n");
+		printf("\tnetif_addr - network interface address to send or receive ipmulticast message\n");
+		printf("\ttarget_port - target port address for ipmulticast\n");
+		printf("\toption1 - number of packets to test, default: %d\n", NUM_PACKETS);
+		printf("Sample Command(ipmulticast ipv6 sender): nettest 23 fe80::dcc3:3084:cb9b:38ce 8888 1000(option1)\n\n");
+		break;
+	default:
+		printf("invalid parameter\n");
+		break;
+	}
 }
 
 /* Sample App to test Transport Layer (TCP / UDP) / IP Multicast Functionality */
@@ -654,63 +864,136 @@ int main(int argc, FAR char *argv[])
 int nettest_main(int argc, char *argv[])
 #endif
 {
-	nlldbg("Running nettest_main \n");
-	int proto = 0;
-	int num_packets_to_process = NUM_PACKETS;
-	uint32_t sleep_time = 0;
-	/* pps - packet per second, default value 1 */
-	uint32_t pps = 1;
-	if (argc < 4) {
-		printf("\n\nUsage1: nettest target_addr target_port [0(tcpserv -infinite pkt receive), 1(tcpserv), 2(udpserv), 3(ipmulticastreceiver)]\n\n");
-		printf("\n\nSample Command1 (for ipmulticastreceiver): nettest 225.1.1.1 5555 3\n\n");
-		printf("\n\n");
-		printf("\n\nUsage2: nettest target_addr target_port [4(tcpclient), 5(udpclient), 6(ipmulticastsender)] pps(optional, number of packets transmitted per second - default value 1)\n\n");
-		printf("\n\nSample Command2 (for udpclient): nettest 192.168.2.5 5555 5 4\n\n");
-		printf("\n\n");
+	int proto;
+	int num_packets_to_process;
+
+	if (argc == 1) {
+		nettest_print_usage(1);
+		nettest_print_usage(2);
+		nettest_print_usage(3);
 		return 0;
 	}
 
-	g_app_target_addr = argv[1];
-	g_app_target_port = atoi(argv[2]);
-	proto = atoi(argv[3]);
+	proto = atoi(argv[1]);
+	num_packets_to_process = NUM_PACKETS;
 
-	if (argc == 5) {
-		pps = atoi(argv[4]);
+	if (proto >= 0 && proto < 10) {
+		if (argc < 3 || argc > 4) {
+			nettest_print_usage(1);
+			return 0;
+		}
+
+		g_app_target_port = argv[2];
+
+		if (argc == 4) {
+			num_packets_to_process = atoi(argv[3]);
+		}
 	}
 
-	sleep_time = 1000000ul / pps;
+	if (proto >= 10 && proto < 20) {
+		if (argc < 4 || argc > 5) {
+			nettest_print_usage(2);
+			return 0;
+		}
 
-	printf("\n[NETTEST APP]Target addr : %s Target port %d protocol_under_test(%d) pps(%d)\n", g_app_target_addr, g_app_target_port, proto, pps);
+		g_app_target_addr = argv[2];
+		g_app_target_port = argv[3];
+
+		if (argc == 5) {
+			num_packets_to_process = atoi(argv[4]);
+		}
+	}
+
+	if (proto >= 20 && proto < 30) {
+		if (argc < 4 || argc > 5) {
+			nettest_print_usage(3);
+			return 0;
+		}
+
+		g_app_netif_addr = argv[2];
+		g_app_target_port = argv[3];
+
+		if (argc == 5) {
+			num_packets_to_process = atoi(argv[4]);
+		}
+	}
 
 	switch (proto) {
 	case 0:
-		/* TCP Receive infinite pkts */
-		tcp_server_thread(num_packets_to_process, 1);
-		break;
-	case 1:
-		/* TCP receive test */
+		/* IPV4 TCP echo back server test */
 		tcp_server_thread(num_packets_to_process, 0);
 		break;
+	case 1:
+		/* IPV6 TCP echo back server test */
+#if LWIP_IPV6
+		tcp_server_thread(num_packets_to_process, 1);
+#else
+		printf("ipv6 is not supported\n");
+#endif
+		break;
 	case 2:
-		/* UDP receive test */
-		udp_server_thread(num_packets_to_process);
+		/* IPV4 UDP echo back server test */
+		udp_server_thread(num_packets_to_process, 0);
 		break;
 	case 3:
-		/* ipmulticast_receiver */
-		ipmcast_receiver_thread(num_packets_to_process);
+		/* IPV6 UDP echo back server test */
+#if LWIP_IPV6
+		udp_server_thread(num_packets_to_process, 1);
+#else
+		printf("ipv6 is not supported\n");
+#endif
 		break;
-	case 4:
-		/* TCP send test */
-		tcp_client_thread(num_packets_to_process, sleep_time);
+
+	case 10:
+		/* IPV4 TCP client test */
+		tcp_client_thread(num_packets_to_process, 0);
 		break;
-	case 5:
-		/* UDP send test */
-		udp_client_thread(num_packets_to_process, sleep_time);
+	case 11:
+		/* IPV6 TCP client test */
+#if LWIP_IPV6
+		tcp_client_thread(num_packets_to_process, 1);
+#else
+		printf("ipv6 is not supported\n");
+#endif
 		break;
-	case 6:
-		/* ipmulticast_sender */
-		ipmcast_sender_thread(num_packets_to_process, sleep_time);
+	case 12:
+		/* IPV4 UDP client test */
+		udp_client_thread(num_packets_to_process, 0);
 		break;
+	case 13:
+		/* IPV6 UDP client test */
+#if LWIP_IPV6
+		udp_client_thread(num_packets_to_process, 1);
+#else
+		printf("ipv6 is not supported\n");
+#endif
+		break;
+
+	case 20:
+		/* IPV4 ipmulticast receive */
+		ipmcast_receiver_thread(num_packets_to_process, 0);
+		break;
+	case 21:
+		/* IPV6 ipmulticast receive */
+#if LWIP_IPV6
+		ipmcast_receiver_thread(num_packets_to_process, 1);
+#else
+		printf("ipv6 is not supported\n");
+#endif
+		break;
+	case 22:
+		/* IPV4 ipmulticast send */
+		ipmcast_sender_thread(num_packets_to_process, 0);
+		break;
+	case 23:
+		/* IPV6 ipmulticast send */
+#if LWIP_IPV6
+		ipmcast_sender_thread(num_packets_to_process, 1);
+#else
+		printf("ipv6 is not supported\n");
+#endif
+		break;
+
 	default:
 		printf("[NETTEST APP] Invalid proto type\n");
 		break;

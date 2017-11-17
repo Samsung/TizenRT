@@ -4,10 +4,11 @@
 #
 
 config EXAMPLES_NETTEST
-	bool "Sample App for testing network related functionalities like TCP/UDP/IGMP?ICMP etc."
+	bool "TCP/UDP/IP multicast test app."
 	default n
+	depends on NET_LWIP
 	---help---
-		Enable the network test API's
+		IPV4/IPV6 compatible TCP/UDP/IP multicast test application
 
 config USER_ENTRYPOINT
 	string
