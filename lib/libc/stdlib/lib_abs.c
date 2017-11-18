@@ -63,8 +63,9 @@
 
 int abs(int j)
 {
-	if (j < 0) {
-		j = -j;
-	}
-	return j;
+	int mask;
+
+	mask = (j >> ((sizeof(j)*8) - 1));
+
+	return (j + mask) ^ mask;
 }
