@@ -44,7 +44,7 @@
 	"\n get current state:\n"											\
 	"	 wm_test mode\n\n"												\
 	"\n repeat test:\n"													\
-	"	 wm_test auto [ssid] [security mode] [password] [softap ssid] [softap password]\n\n\n"
+	"	 wm_test auto [softap ssid] [softap password] [ssid] [security mode] [password]\n\n\n"
 
 typedef void (*test_func)(void *arg);
 
@@ -645,22 +645,21 @@ wm_parse_commands(struct options *opt, int argc, char *argv[])
 		opt->func = wm_scan;
 	} else if (strcmp(argv[2], "auto") == 0) {
 		opt->func = wm_auto_test;
-		if (argc != 7) {
+		if (argc < 7) {
 			return -1;
 		}
-		opt->func = wm_connect;
-		opt->ssid = argv[3];
-		opt->auth_type = get_auth_type(argv[4]);
+		opt->softap_ssid = argv[3];
+		opt->softap_password = argv[4];
+		opt->ssid = argv[5];
+		opt->auth_type = get_auth_type(argv[6]);
 		if (opt->auth_type == WIFI_MANAGER_AUTH_UNKNOWN) {
 			return -1;
 		}
 		if (opt->auth_type == WIFI_MANAGER_AUTH_OPEN) {
 			return 0;
 		}
-		opt->crypto_type = get_crypto_type(argv[4]);
-		opt->password = argv[5];
-		opt->softap_ssid = argv[6];
-		opt->softap_password = argv[7];
+		opt->crypto_type = get_crypto_type(argv[6]);
+		opt->password = argv[7];
 	} else {
 		return -1;
 	}
