@@ -16,7 +16,7 @@
 #
 ###########################################################################
 
-CSRCS += wifi_manager.c wifi_utils.c wifi_net.c wifi_mutex.c wifi_semaphore.c
+CSRCS += wifi_manager.c wifi_utils.c wifi_net.c
 
 DEPPATH += --dep-path src/wifi_manager
 VPATH += :src/wifi_manager
