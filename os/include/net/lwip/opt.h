@@ -2397,6 +2397,14 @@
 #ifndef LWIP_ND6_RDNSS_MAX_DNS_SERVERS
 #define LWIP_ND6_RDNSS_MAX_DNS_SERVERS  0
 #endif
+
+/**
+ * LWIP_ND6_DEFAULT_ROUTER_VALID_LIFETIME > 0 : Use default valid life time when a new router is identified without ValidLifetime option
+ * This value is used when NA message with IsRouter flags (default 30 days)
+ */
+#ifndef LWIP_ND6_DEFAULT_ROUTER_VALID_LIFETIME
+#define LWIP_ND6_DEFAULT_ROUTER_VALID_LIFETIME  (2592000 * 1000)
+#endif
 /**
  * @}
  */

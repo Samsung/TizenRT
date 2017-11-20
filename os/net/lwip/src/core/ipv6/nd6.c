@@ -305,8 +305,25 @@ void nd6_input(struct pbuf *p, struct netif *inp)
 			}
 
 			if ((ND6H_NA_FLAG(na_hdr) & ND6_FLAG_ROUTER)) {
+				s8_t j;
+
+				if (nd6_get_router(&target_address, inp) < 0) {
+					/* This new neighbor should be added as router */
+					j = nd6_new_router(&target_address, inp);
+					if (j >= 0) {
+						default_router_list[j].neighbor_entry = &(neighbor_cache[i]);
+						default_router_list[j].invalidation_timer = LWIP_ND6_DEFAULT_ROUTER_VALID_LIFETIME;
+						default_router_list[j].flags = 0;
+					} else {
+						pbuf_free(p);
+						ND6_STATS_INC(nd6.drop);
+						ND6_STATS_INC(nd6.memerr);
+						return;
+					}
+				}
 				neighbor_cache[i].isrouter = 1;
 			} else {
+				/* Router flag has been disabled */
 				neighbor_cache[i].isrouter = 0;
 			}
 
@@ -1897,16 +1914,23 @@ static s8_t nd6_get_next_hop_entry(const ip6_addr_t *ip6addr, struct netif *neti
 			nd6_cached_destination_index = i;
 			/* destination address in destination cache can be off-link address */
 			if (!ip6_addr_islinklocal(ip6addr) && !nd6_is_prefix_in_netif(ip6addr, netif)) {
-				/* off-link address - We need to select a router. */
-				i = nd6_select_router(ip6addr, netif);
+				i = nd6_get_router(&destination_cache[nd6_cached_destination_index].next_hop_addr, netif);
 				if (i < 0) {
-					/* No router found. */
-					ip6_addr_set_any(&(destination_cache[nd6_cached_destination_index].destination_addr));
-					return ERR_RTE;
+					/* off-link address - We need to select a router. */
+					i = nd6_select_router(ip6addr, netif);
+					if (i < 0) {
+						/* No router found. */
+						ip6_addr_set_any(&(destination_cache[nd6_cached_destination_index].destination_addr));
+						return ERR_RTE;
+					} else {
+
+						LWIP_DEBUGF(ND6_DEBUG, ("Next-hop address of off-link desination address is default router (index = %d)\n", i));
+						destination_cache[nd6_cached_destination_index].pmtu = netif->mtu;      /* Start with netif mtu, correct through ICMPv6 if necessary */
+						ip6_addr_copy(destination_cache[nd6_cached_destination_index].next_hop_addr, default_router_list[i].neighbor_entry->next_hop_address);
+					}
+				} else {
+					destination_cache[nd6_cached_destination_index].pmtu = netif->mtu;      /* Start with netif mtu, correct through ICMPv6 if necessary */
 				}
-				LWIP_DEBUGF(ND6_DEBUG, ("Next-hop address of off-link desination address is default router (index = %d)\n", i));
-				destination_cache[nd6_cached_destination_index].pmtu = netif->mtu;      /* Start with netif mtu, correct through ICMPv6 if necessary */
-				ip6_addr_copy(destination_cache[nd6_cached_destination_index].next_hop_addr, default_router_list[i].neighbor_entry->next_hop_address);
 			}
 		} else {
 			/* Not found. Create a new destination entry. */
