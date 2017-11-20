@@ -965,8 +965,9 @@ void nd6_tmr(void)
 			break;
 		case ND6_STALE:
 			/* RFC 7.3.3. */
-			neighbor_cache[i].state = ND6_DELAY;
-			neighbor_cache[i].counter.delay_time = LWIP_ND6_DELAY_FIRST_PROBE_TIME;
+			if (neighbor_cache[i].q != NULL) {
+				nd6_send_q(i);
+			}
 			break;
 		case ND6_DELAY:
 			if (neighbor_cache[i].counter.delay_time <= ND6_TMR_INTERVAL) {
