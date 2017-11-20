@@ -546,9 +546,10 @@ void nd6_input(struct pbuf *p, struct netif *inp)
 		/* If we are sending RS messages, stop. */
 #if LWIP_IPV6_SEND_ROUTER_SOLICIT
 		/* ensure at least one solicitation is sent */
-		if ((inp->rs_count < LWIP_ND6_MAX_MULTICAST_SOLICIT) || (nd6_send_rs(inp) == ERR_OK)) {
-			inp->rs_count = 0;
+		if (inp->rs_count == LWIP_ND6_MAX_MULTICAST_SOLICIT) {
+			nd6_send_rs(inp);
 		}
+		inp->rs_count = 0;
 #endif							/* LWIP_IPV6_SEND_ROUTER_SOLICIT */
 
 		/* Offset to options. */
@@ -1151,9 +1152,13 @@ void nd6_tmr(void)
 #if LWIP_IPV6_SEND_ROUTER_SOLICIT
 	/* Send router solicitation messages, if necessary. */
 	for (netif = netif_list; netif != NULL; netif = netif->next) {
-		if ((netif->rs_count > 0) && (netif->flags & NETIF_FLAG_UP) && (!ip6_addr_isinvalid(netif_ip6_addr_state(netif, 0)))) {
-			if (nd6_send_rs(netif) == ERR_OK) {
+		if ((netif->flags & NETIF_FLAG_UP) && (!ip6_addr_isinvalid(netif_ip6_addr_state(netif, 0)))) {
+			if ((netif->rs_count > 0) && (netif->rs_interval >= LWIP_ND6_MAX_SOLICIT_INTERVAL)) {
+				nd6_send_rs(netif);
 				netif->rs_count--;
+				netif->rs_interval = 0;
+			} else if (netif->rs_interval < LWIP_ND6_MAX_SOLICIT_INTERVAL) {
+				netif->rs_interval += ND6_TMR_INTERVAL;
 			}
 		}
 	}

@@ -2327,6 +2327,15 @@
 #endif
 
 /**
+ * LWIP_ND6_MAX_SOLICIT_INTERVAL: max interval mili-second of router solicit to send.
+ * INTERVAL should be bigger than ND6_TMR_INTERVAL and recommend to set it as multiple
+ * values of ND6_TMR_INTERVAL.
+ */
+#ifndef LWIP_ND6_MAX_SOLICIT_INTERVAL
+#define LWIP_ND6_MAX_SOLICIT_INTERVAL	4000
+#endif
+
+/**
  * Unused: See ND RFC (time in milliseconds).
  */
 #ifndef LWIP_ND6_MAX_ANYCAST_DELAY_TIME

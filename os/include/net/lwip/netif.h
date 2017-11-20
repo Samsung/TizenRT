@@ -320,6 +320,7 @@ struct netif {
 #if LWIP_IPV6_SEND_ROUTER_SOLICIT
 	/** Number of Router Solicitation messages that remain to be sent. */
 	u8_t rs_count;
+	u16_t rs_interval;
 #endif							/* LWIP_IPV6_SEND_ROUTER_SOLICIT */
 #if LWIP_NETIF_HOSTNAME
 	/* the hostname for this netif, NULL is a valid value */
