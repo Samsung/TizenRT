@@ -1182,20 +1182,19 @@ static int parse_things_info_json(const char *filename)
 						es_conn_type = es_conn_type_softap;
 						cJSON *softap = cJSON_GetObjectItem(connectivity, KEY_CONFIGURATION_EASYSETUP_CONNECTIVITY_SOFTAP);
 						if (NULL != softap) {
-							cJSON *manufature_id = cJSON_GetObjectItem(softap, KEY_CONFIGURATION_EASYSETUP_CONNECTIVITY_SOFTAP_MANUFACTUREID);
 							cJSON *setup_id = cJSON_GetObjectItem(softap, KEY_CONFIGURATION_EASYSETUP_CONNECTIVITY_SOFTAP_SETUPID);
 							cJSON *artik = cJSON_GetObjectItem(softap, KEY_CONFIGURATION_EASYSETUP_CONNECTIVITY_SOFTAP_ARTIK);
 
-							if (NULL != manufature_id && NULL != setup_id) {
+							if (NULL != device->manufacturer_name && NULL != setup_id) {
 								is_artik = false;
 								if (artik->type == cJSON_True) {
 									is_artik = true;
 								}
 
-								THINGS_LOG_D(THINGS_INFO, TAG, "[configuration] manufature_id : %s / setup_id : %s / artik : %d", manufature_id->valuestring, setup_id->valuestring, is_artik);
+								THINGS_LOG_D(THINGS_INFO, TAG, "[configuration] manufature_name : %s / setup_id : %s / artik : %d", device->manufature_name->valuestring, setup_id->valuestring, is_artik);
 
-								g_manufacturer_name = things_malloc(sizeof(char *) * strlen(manufature_id->valuestring) + 1);
-								strncpy(g_manufacturer_name, manufature_id->valuestring, strlen(manufature_id->valuestring) + 1);
+								g_manufacturer_name = things_malloc(sizeof(char *) * strlen(manufature_name->valuestring) + 1);
+								strncpy(g_manufacturer_name, manufature_name->valuestring, strlen(manufature_name->valuestring) + 1);
 
 								g_setup_id = things_malloc(sizeof(char *) * strlen(setup_id->valuestring) + 1);
 								strncpy(g_setup_id, setup_id->valuestring, strlen(setup_id->valuestring) + 1);
