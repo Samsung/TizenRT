@@ -98,7 +98,6 @@
             "connectivity": {
                 "type": 1,
                 "softAP": {
-                    "manufacturerId": "AAA1",
                     "setupId": "001",
                     "artik": false
                 }
