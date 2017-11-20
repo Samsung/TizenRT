@@ -559,7 +559,27 @@ void nd6_input(struct pbuf *p, struct netif *inp)
 			return;
 		}
 
+		if (!ip6_addr_islinklocal(ip6_current_src_addr())) {
+			pbuf_free(p);
+			ND6_STATS_INC(nd6.lenerr);
+			ND6_STATS_INC(nd6.drop);
+			return;
+		}
+
+		if (IP6H_HOPLIM(ip6_current_header()) != 255) {
+			pbuf_free(p);
+			ND6_STATS_INC(nd6.lenerr);
+			ND6_STATS_INC(nd6.drop);
+			return;
+		}
+
 		ra_hdr = (struct ra_header *)p->payload;
+		if (ND6H_CODE(ra_hdr) != 0) {
+			pbuf_free(p);
+			ND6_STATS_INC(nd6.lenerr);
+			ND6_STATS_INC(nd6.drop);
+			return;
+		}
 
 		/* If we are sending RS messages, stop. */
 #if LWIP_IPV6_SEND_ROUTER_SOLICIT
@@ -1171,12 +1191,13 @@ void nd6_tmr(void)
 	/* Send router solicitation messages, if necessary. */
 	for (netif = netif_list; netif != NULL; netif = netif->next) {
 		if ((netif->flags & NETIF_FLAG_UP) && (!ip6_addr_isinvalid(netif_ip6_addr_state(netif, 0)))) {
+			if (netif->rs_interval < LWIP_ND6_MAX_SOLICIT_INTERVAL) {
+				netif->rs_interval += ND6_TMR_INTERVAL;
+			}
 			if ((netif->rs_count > 0) && (netif->rs_interval >= LWIP_ND6_MAX_SOLICIT_INTERVAL)) {
 				nd6_send_rs(netif);
 				netif->rs_count--;
 				netif->rs_interval = 0;
-			} else if (netif->rs_interval < LWIP_ND6_MAX_SOLICIT_INTERVAL) {
-				netif->rs_interval += ND6_TMR_INTERVAL;
 			}
 		}
 	}
