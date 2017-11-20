@@ -2339,7 +2339,7 @@ void nd6_cache_debug_print(void)
 	for (i = 0; i < LWIP_ND6_NUM_NEIGHBORS; i++) {
 		LWIP_DEBUGF(ND6_DEBUG, ("next-hop addr   %4x %4x %4x %4x %4x %4x %4x %4x\n", IP6_ADDR_BLOCK1(&neighbor_cache[i].next_hop_address), IP6_ADDR_BLOCK2(&neighbor_cache[i].next_hop_address), IP6_ADDR_BLOCK3(&neighbor_cache[i].next_hop_address), IP6_ADDR_BLOCK4(&neighbor_cache[i].next_hop_address), IP6_ADDR_BLOCK5(&neighbor_cache[i].next_hop_address), IP6_ADDR_BLOCK6(&neighbor_cache[i].next_hop_address), IP6_ADDR_BLOCK7(&neighbor_cache[i].next_hop_address), IP6_ADDR_BLOCK8(&neighbor_cache[i].next_hop_address)));
 		LWIP_DEBUGF(ND6_DEBUG, ("lladdr %2x:%2x:%2x:%2x:%2x:%2x | state %2u | isrouter %2u\n",  neighbor_cache[i].lladdr[0], neighbor_cache[i].lladdr[1], neighbor_cache[i].lladdr[2], neighbor_cache[i].lladdr[3], neighbor_cache[i].lladdr[4], neighbor_cache[i].lladdr[5], neighbor_cache[i].state, neighbor_cache[i].isrouter));
-		LWIP_DEBUGF(ND6_DEBUG, ("incomplete time %lu | reachable time %lu | delay time %lu | stale time %lu | probe time %lu\n", neighbor_cache[i].counter.incomplete_time, neighbor_cache[i].counter.reachable_time, neighbor_cache[i].counter.delay_time, neighbor_cache[i].counter.stale_time, neighbor_cache[i].counter.probe_time));
+		LWIP_DEBUGF(ND6_DEBUG, ("incomplete time %lu | reachable time %lu | delay time %lu | probe time %lu\n", neighbor_cache[i].counter.incomplete_time, neighbor_cache[i].counter.reachable_time, neighbor_cache[i].counter.delay_time, neighbor_cache[i].counter.probe_time));
 		LWIP_DEBUGF(ND6_DEBUG, ("+--------------------------------------------------------+\n"));
 	}
 
