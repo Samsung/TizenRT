@@ -16,7 +16,11 @@
 #
 ###########################################################################
 
-CSRCS += wifi_manager.c wifi_utils.c wifi_net.c
+CSRCS += wifi_manager.c wifi_net.c
+
+ifeq ($(CONFIG_WPA_SUPPLICANT), y)
+CSRCS += wpa_wifi_utils.c
+endif
 
 DEPPATH += --dep-path src/wifi_manager
 VPATH += :src/wifi_manager
