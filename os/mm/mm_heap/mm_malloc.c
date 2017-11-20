@@ -118,6 +118,11 @@ FAR void *mm_malloc(FAR struct mm_heap_s *heap, size_t size)
 		return NULL;
 	}
 
+	if (size > MM_ALIGN_DOWN(MMSIZE_MAX) - SIZEOF_MM_ALLOCNODE) {
+		mvdbg("Because of mm_allocnode, %d cannot be allocated. The maximun allocable size is (MM_ALIGN_DOWN(MMSIZE_MAX) - SIZEOF_MM_ALLOCNODE) : %d\n.", size, (MM_ALIGN_DOWN(MMSIZE_MAX) - SIZEOF_MM_ALLOCNODE));
+		return NULL;
+	}
+
 	/* Adjust the size to account for (1) the size of the allocated node and
 	 * (2) to make sure that it is an even multiple of our granule size.
 	 */
