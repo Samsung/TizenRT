@@ -197,6 +197,11 @@ OCStackResult GetAclRownerId(OicUuid_t *rowneruuid);
 OicSecAcl_t* CBORPayloadToCloudAcl(const uint8_t *cborPayload, const size_t size);
 #endif //defined(TCP_ADAPTER) && defined(WITH_CLOUD)
 
+/*
+ * Check acl rowner uuid 
+ */
+bool IsAclRowneruuidTheNilUuid();
+
 #ifdef __cplusplus
 }
 #endif

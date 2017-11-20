@@ -96,21 +96,17 @@ static bool IsReadyToEnterRFNOP()
 {
     bool ret = false;
     bool tempBool = false;
-    OicUuid_t tempUuid = {.id={0}};
 
     // Note: pstat.dos.p asserted by DoStateChange(), so not checked here.
 
     // Verify doxm.owned == TRUE.
-    VERIFY_SUCCESS(TAG, OC_STACK_OK == GetDoxmIsOwned(&tempBool), ERROR);
-    VERIFY_TRUE_OR_EXIT(TAG, tempBool, WARNING);
+    VERIFY_TRUE_OR_EXIT(TAG, IsDoxmOwned(), WARNING);
 
     // Verify doxm.devowneruuid != nil UUID.
-    VERIFY_SUCCESS(TAG, OC_STACK_OK == GetDoxmDevOwnerId(&tempUuid), ERROR);
-    VERIFY_TRUE_OR_EXIT(TAG, !IsNilUuid(&tempUuid), WARNING);
+    VERIFY_TRUE_OR_EXIT(TAG, !IsDoxmDevowneruuidTheNilUuid(), WARNING);
 
     // Verify doxm.deviceuuid != nil UUID.
-    VERIFY_SUCCESS(TAG, OC_STACK_OK == GetDoxmDeviceID(&tempUuid), ERROR);
-    VERIFY_TRUE_OR_EXIT(TAG, !IsNilUuid(&tempUuid), WARNING);
+    VERIFY_TRUE_OR_EXIT(TAG, !IsDoxmDeviceuuidTheNilUuid(), WARNING);
 
     // Verify oxmsel was the actual OTM used (no-op: CTT will verify this during
     // certification testing, as it requires OBT cooperation to verify).
@@ -120,17 +116,13 @@ static bool IsReadyToEnterRFNOP()
     VERIFY_TRUE_OR_EXIT(TAG, !tempBool, WARNING);
 
     // Verify implemented SVRs with rowneruuid Property have non-Nil rowneruuid
-    VERIFY_SUCCESS(TAG, OC_STACK_OK == GetAclRownerId(&tempUuid), ERROR);
-    VERIFY_TRUE_OR_EXIT(TAG, !IsNilUuid(&tempUuid), WARNING);
+    VERIFY_TRUE_OR_EXIT(TAG, !IsAclRowneruuidTheNilUuid(), WARNING);
 
-    VERIFY_SUCCESS(TAG, OC_STACK_OK == GetCredRownerId(&tempUuid), ERROR);
-    VERIFY_TRUE_OR_EXIT(TAG, !IsNilUuid(&tempUuid), WARNING);
+    VERIFY_TRUE_OR_EXIT(TAG, !IsCredRowneruuidTheNilUuid(), WARNING);
 
-    VERIFY_SUCCESS(TAG, OC_STACK_OK == GetDoxmRownerId(&tempUuid), ERROR);
-    VERIFY_TRUE_OR_EXIT(TAG, !IsNilUuid(&tempUuid), WARNING);
+    VERIFY_TRUE_OR_EXIT(TAG, !IsDoxmRowneruuidTheNilUuid(), WARNING);
 
-    VERIFY_SUCCESS(TAG, OC_STACK_OK == GetPstatRownerId(&tempUuid), ERROR);
-    VERIFY_TRUE_OR_EXIT(TAG, !IsNilUuid(&tempUuid), WARNING);
+    VERIFY_TRUE_OR_EXIT(TAG, !IsPstatRowneruuidTheNilUuid(), WARNING);
 
     // Verify each rowneruuid, devowneruuid has a corresponding /cred entry
     // TODO [IOT-2023]
@@ -148,25 +140,19 @@ exit:
 static bool IsReadyToEnterRFOTM()
 {
     bool ret = false;
-    bool tempBool = false;
-    OicUuid_t tempUuid = {.id={0}};
 
     // Note: pstat.dos.p asserted by DoStateChange(), so not checked here.
 
     // Verify doxm.owned == FALSE.
-    VERIFY_SUCCESS(TAG, OC_STACK_OK == GetDoxmIsOwned(&tempBool), ERROR);
-    VERIFY_TRUE_OR_EXIT(TAG, !tempBool, WARNING);
+    VERIFY_TRUE_OR_EXIT(TAG, !IsDoxmOwned(), WARNING);
 
     // Verify doxm.devowneruuid == nil UUID.
-    VERIFY_SUCCESS(TAG, OC_STACK_OK == GetDoxmDevOwnerId(&tempUuid), ERROR);
-    VERIFY_TRUE_OR_EXIT(TAG, IsNilUuid(&tempUuid), WARNING);
+    VERIFY_TRUE_OR_EXIT(TAG, IsDoxmDevowneruuidTheNilUuid(), WARNING);
 
     // Check and log whether doxm.deviceuuid == nil UUID ("may" reqt not "shall")
-    VERIFY_SUCCESS(TAG, OC_STACK_OK == GetDoxmDeviceID(&tempUuid), ERROR);
-    if (!IsNilUuid(&tempUuid))
+    if(!IsDoxmDeviceuuidTheNilUuid())
     {
-        OIC_LOG_V(INFO, TAG, "%s: doxm.deviceuuid != Nil UUID... allowed but noted.",
-            __func__);
+        OIC_LOG_V(INFO, TAG, "%s: doxm.deviceuuid != Nil UUID... allowed but noted.", __func__);
     }
 
     ret = true;
@@ -182,37 +168,28 @@ exit:
 static bool IsReadyToEnterRFPRO()
 {
     bool ret = false;
-    bool tempBool = false;
-    OicUuid_t tempUuid = {.id={0}};
 
     // Note: pstat.dos.p asserted by DoStateChange(), so not checked here.
 
     // Verify doxm.owned == TRUE.
-    VERIFY_SUCCESS(TAG, OC_STACK_OK == GetDoxmIsOwned(&tempBool), ERROR);
-    VERIFY_TRUE_OR_EXIT(TAG, tempBool, WARNING);
+    VERIFY_TRUE_OR_EXIT(TAG, IsDoxmOwned(), WARNING);
 
     // Verify doxm.devowneruuid != nil UUID.
-    VERIFY_SUCCESS(TAG, OC_STACK_OK == GetDoxmDevOwnerId(&tempUuid), ERROR);
-    VERIFY_TRUE_OR_EXIT(TAG, !IsNilUuid(&tempUuid), WARNING);
+    VERIFY_TRUE_OR_EXIT(TAG, !IsDoxmDevowneruuidTheNilUuid(), WARNING);
 
     // Verify doxm.deviceuuid != nil UUID.
-    VERIFY_SUCCESS(TAG, OC_STACK_OK == GetDoxmDeviceID(&tempUuid), ERROR);
-    VERIFY_TRUE_OR_EXIT(TAG, !IsNilUuid(&tempUuid), WARNING);
+    VERIFY_TRUE_OR_EXIT(TAG, !IsDoxmDeviceuuidTheNilUuid(), WARNING);
 
     // doxm.sct and doxm.oxmsel retain previous values (checked by CTT)
 
     // Verify implemented SVRs with rowneruuid Property have non-Nil rowneruuid
-    VERIFY_SUCCESS(TAG, OC_STACK_OK == GetAclRownerId(&tempUuid), ERROR);
-    VERIFY_TRUE_OR_EXIT(TAG, !IsNilUuid(&tempUuid), WARNING);
+    VERIFY_TRUE_OR_EXIT(TAG, !IsAclRowneruuidTheNilUuid(), WARNING);
 
-    VERIFY_SUCCESS(TAG, OC_STACK_OK == GetCredRownerId(&tempUuid), ERROR);
-    VERIFY_TRUE_OR_EXIT(TAG, !IsNilUuid(&tempUuid), WARNING);
+    VERIFY_TRUE_OR_EXIT(TAG, !IsCredRowneruuidTheNilUuid(), WARNING);
 
-    VERIFY_SUCCESS(TAG, OC_STACK_OK == GetDoxmRownerId(&tempUuid), ERROR);
-    VERIFY_TRUE_OR_EXIT(TAG, !IsNilUuid(&tempUuid), WARNING);
+    VERIFY_TRUE_OR_EXIT(TAG, !IsDoxmRowneruuidTheNilUuid(), WARNING);
 
-    VERIFY_SUCCESS(TAG, OC_STACK_OK == GetPstatRownerId(&tempUuid), ERROR);
-    VERIFY_TRUE_OR_EXIT(TAG, !IsNilUuid(&tempUuid), WARNING);
+    VERIFY_TRUE_OR_EXIT(TAG, !IsPstatRowneruuidTheNilUuid(), WARNING);
 
     // Verify each rowneruuid, devowneruuid has a corresponding /cred entry
     // TODO [IOT-2023]
@@ -230,24 +207,19 @@ exit:
 static bool IsReadyToEnterSRESET()
 {
     bool ret = false;
-    bool tempBool = false;
-    OicUuid_t tempUuid = {.id={0}};
 
     // Note: pstat.dos.p set by DoStateChange(), so not checked here.
 
     // TODO [IOT-2023]: sanity check SVRs (optional)
 
     // Verify doxm.owned == TRUE.
-    VERIFY_SUCCESS(TAG, OC_STACK_OK == GetDoxmIsOwned(&tempBool), ERROR);
-    VERIFY_TRUE_OR_EXIT(TAG, tempBool, WARNING);
+    VERIFY_TRUE_OR_EXIT(TAG, IsDoxmOwned(), WARNING);
 
     // Verify doxm.devowneruuid != nil UUID.
-    VERIFY_SUCCESS(TAG, OC_STACK_OK == GetDoxmDevOwnerId(&tempUuid), ERROR);
-    VERIFY_TRUE_OR_EXIT(TAG, !IsNilUuid(&tempUuid), WARNING);
+    VERIFY_TRUE_OR_EXIT(TAG, !IsDoxmDevowneruuidTheNilUuid(), WARNING);
 
     // Verify doxm.deviceuuid != nil UUID.
-    VERIFY_SUCCESS(TAG, OC_STACK_OK == GetDoxmDeviceID(&tempUuid), ERROR);
-    VERIFY_TRUE_OR_EXIT(TAG, !IsNilUuid(&tempUuid), WARNING);
+    VERIFY_TRUE_OR_EXIT(TAG, !IsDoxmDeviceuuidTheNilUuid(), WARNING);
 
     // doxm.sct and doxm.oxmsel retain previous values (checked by CTT)
 

@@ -3152,28 +3152,34 @@ exit:
 
 OCStackResult SetCredRownerId(const OicUuid_t* newROwner)
 {
+    OIC_LOG_V(DEBUG, TAG, "%s IN", __func__);
+
     OCStackResult ret = OC_STACK_ERROR;
-    OicUuid_t prevId = {.id={0}};
 
     if(NULL == newROwner)
     {
         ret = OC_STACK_INVALID_PARAM;
+        goto exit;
     }
 
-    if (newROwner)
+    if (UuidCmp(&gRownerId, newROwner))
     {
-        memcpy(prevId.id, gRownerId.id, sizeof(prevId.id));
-        memcpy(gRownerId.id, newROwner->id, sizeof(newROwner->id));
-
-        VERIFY_SUCCESS(TAG, UpdatePersistentStorage(gCred), ERROR);
-
+        OIC_LOG_V(DEBUG, TAG, "%s: the same uuid, skip update", __func__);
         ret = OC_STACK_OK;
+        goto exit;
     }
 
-    return ret;
+    memcpy(gRownerId.id, newROwner->id, sizeof(newROwner->id));
 
+    VERIFY_SUCCESS(TAG, UpdatePersistentStorage(gCred), ERROR);
+    ret = OC_STACK_OK;
 exit:
-    memcpy(gRownerId.id, prevId.id, sizeof(prevId.id));
+    if (OC_STACK_OK != ret)
+    {
+        OIC_LOG_V(WARNING, TAG, "%s: cannot set cred rowner uuid, revert", __func__);
+    }
+
+    OIC_LOG_V(DEBUG, TAG, "%s OUT", __func__);
     return ret;
 }
 
@@ -3185,6 +3191,11 @@ OCStackResult GetCredRownerId(OicUuid_t *rowneruuid)
         return OC_STACK_OK;
     }
     return OC_STACK_ERROR;
+}
+
+bool IsCredRowneruuidTheNilUuid()
+{
+    return IsNilUuid(&gRownerId);
 }
 
 #if defined (__WITH_TLS__) || defined(__WITH_DTLS__)

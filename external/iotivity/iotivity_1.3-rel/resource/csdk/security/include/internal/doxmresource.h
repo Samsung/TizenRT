@@ -272,4 +272,24 @@ OCStackResult DoxmUpdateWriteableProperty(const OicSecDoxm_t* src, OicSecDoxm_t*
 }
 #endif
 
+/*
+ * Check doxm is owned
+ */
+bool IsDoxmOwned();
+
+/*
+ * Check doxm owner id
+ */
+bool IsDoxmDevowneruuidTheNilUuid();
+
+/*
+ * Check doxm device id
+ */
+bool IsDoxmDeviceuuidTheNilUuid();
+
+/*
+ * Check doxm rowner uuid
+ */
+bool IsDoxmRowneruuidTheNilUuid();
+
 #endif //IOTVT_SRM_DOXMR_H

@@ -173,6 +173,11 @@ bool IsNilUuid(const OicUuid_t *uuid);
 OCStackResult OC_CALL SetDeviceIdSeed(const uint8_t* seed, size_t seedSize);
 #endif
 
+/**
+ * Log OicUuid_t structs.
+ */
+void LogUuid(const OicUuid_t* uuid);
+
 #ifdef __cplusplus
 }
 #endif // __cplusplus

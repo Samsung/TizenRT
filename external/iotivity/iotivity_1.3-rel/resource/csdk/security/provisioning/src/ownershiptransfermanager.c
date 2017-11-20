@@ -446,6 +446,15 @@ static OCStackResult PostOwnershipInformation(OTMContext_t* otmCtx);
 static OCStackResult PostProvisioningStatus(OTMContext_t* otmCtx);
 
 /**
+ * Function set pstat rowner uuid.
+ *
+ * @param[in] ctx   context value passed to callback from calling function.
+ * @param[in] selectedDevice   selected device information to performing provisioning.
+ * @return  OC_STACK_OK on success
+ */
+static OCStackResult PostRownerUuid(OTMContext_t* otmCtx);
+
+/**
  * Function to update pstat as Ready for Normal Operation.
  * This function would update 'dos.s' to DOS_RFNOP.
  *
@@ -1365,6 +1374,13 @@ static OCStackApplicationResult OwnershipInformationHandler(void *ctx, OCDoHandl
             OIC_LOG(INFO, TAG, "Ownership transfer was successfully completed.");
             OIC_LOG(INFO, TAG, "Set Ready for provisioning state .");
 
+            res = PostRownerUuid(otmCtx);
+            if(OC_STACK_OK != res)
+            {
+                OIC_LOG(ERROR, TAG, "Failed to set rowneruuid pstat");
+                SetResult(otmCtx, res);
+            }
+
             res = PostProvisioningStatus(otmCtx);
             if(OC_STACK_OK != res)
             {
@@ -2028,6 +2044,11 @@ static OCStackResult PostOwnershipInformation(OTMContext_t* otmCtx)
     bool propertiesToInclude[DOXM_PROPERTY_COUNT];
     memset(propertiesToInclude, 0, sizeof(propertiesToInclude));
     propertiesToInclude[DOXM_OWNED] = true;
+    //include rowner uuid
+    propertiesToInclude[DOXM_ROWNERUUID] = true; 
+    ///doxm.rowneruuid set to the provisioningclient's /doxm.deviceuuid.
+    GetDoxmDeviceID(&otmCtx->selectedDeviceInfo->doxm->rownerID);
+
     OCStackResult res = DoxmToCBORPayloadPartial(otmCtx->selectedDeviceInfo->doxm,
             &secPayload->securityData, &secPayload->payloadSize,
             propertiesToInclude);
@@ -2473,6 +2494,9 @@ OCStackResult PostProvisioningStatus(OTMContext_t* otmCtx)
     memset(propertiesToInclude, 0, sizeof(propertiesToInclude));
     propertiesToInclude[PSTAT_DOS] = true;
     propertiesToInclude[PSTAT_TM] = true;
+    propertiesToInclude[PSTAT_ROWNERUUID] = true;
+    ///pstat.rowneruuid set to the provisioningclient's /doxm.deviceuuid.
+    GetDoxmDeviceID(&otmCtx->selectedDeviceInfo->pstat->rownerID);
 
     if (OC_STACK_OK != PstatToCBORPayloadPartial(otmCtx->selectedDeviceInfo->pstat,
             &secPayload->securityData, &secPayload->payloadSize, propertiesToInclude, false))
@@ -2662,6 +2686,121 @@ exit:
         */
         ResetSecureResourceInPS();
     }
+
+    return ret;
+}
+
+/**
+ * Response handler of set rowner uuid.
+ *
+ * @param[in] ctx             ctx value passed to callback from calling function.
+ * @param[in] UNUSED          handle to an invocation
+ * @param[in] clientResponse  Response from queries to remote servers.
+ * @return  OC_STACK_DELETE_TRANSACTION to delete the transaction
+ *          and OC_STACK_KEEP_TRANSACTION to keep it.
+ */
+static OCStackApplicationResult RownerUuidHandler(void *ctx, OCDoHandle handle,
+                                                       OCClientResponse *clientResponse)
+{
+    OIC_LOG_V(INFO, TAG, "%s IN", __func__);
+
+    VERIFY_NOT_NULL(TAG, clientResponse, ERROR);
+    VERIFY_NOT_NULL(TAG, ctx, ERROR);
+
+    OTMContext_t* otmCtx = (OTMContext_t*) ctx;
+    OC_UNUSED(handle);
+
+    OIC_LOG_V(INFO, TAG, "%s response got: %d", __func__, clientResponse->result);
+
+    if(OC_STACK_RESOURCE_CHANGED < clientResponse->result)
+    {
+        //Remove the current OTM Context from OTM queue
+        RemoveOTMContext(otmCtx->selectedDeviceInfo->endpoint.addr,
+                         getSecurePort(otmCtx->selectedDeviceInfo));
+
+        //If there is a request being performed, cancel it to prevent retransmission.
+        if(otmCtx->ocDoHandle)
+        {
+            OIC_LOG_V(DEBUG, TAG, "OCCancel - %s : %d",
+                    otmCtx->selectedDeviceInfo->endpoint.addr,
+                    getSecurePort(otmCtx->selectedDeviceInfo));
+            if(OC_STACK_OK != OCCancel(otmCtx->ocDoHandle, OC_HIGH_QOS, NULL, 0))
+            {
+                OIC_LOG(WARNING, TAG, "Failed to remove registered callback");
+            }
+            else
+            {
+                otmCtx->ocDoHandle = NULL;
+            }
+        }
+    }
+exit:
+    OIC_LOG_V(INFO, TAG, "%s OUT", __func__);
+    return OC_STACK_DELETE_TRANSACTION;
+}
+
+
+OCStackResult PostRownerUuid(OTMContext_t* otmCtx)
+{
+    OIC_LOG_V(INFO, TAG, "%s IN", __func__);
+
+    if(!otmCtx || !otmCtx->selectedDeviceInfo)
+    {
+        OIC_LOG_V(ERROR, TAG, "%s: %s is NULL", __func__, !otmCtx ? "OTMContext" : "selectedDeviceInfo" );
+        return OC_STACK_INVALID_PARAM;
+    }
+
+    OCSecurityPayload *secPayload = (OCSecurityPayload *)OICCalloc(1, sizeof(OCSecurityPayload));
+    if (!secPayload)
+    {
+        OIC_LOG_V(ERROR, TAG, "%s: Failed to memory allocation", __func__);
+        return OC_STACK_NO_MEMORY;
+    }
+    secPayload->base.type = PAYLOAD_TYPE_SECURITY;
+
+    bool propertiesToInclude[PSTAT_PROPERTY_COUNT];
+    memset(propertiesToInclude, 0, sizeof(propertiesToInclude));
+    propertiesToInclude[PSTAT_ROWNERUUID] = true;
+    ///pstat.rowneruuid set to the provisioningclient's /doxm.deviceuuid.
+    GetDoxmDeviceID(&otmCtx->selectedDeviceInfo->pstat->rownerID);
+
+    if (OC_STACK_OK != PstatToCBORPayloadPartial(otmCtx->selectedDeviceInfo->pstat,
+            &secPayload->securityData, &secPayload->payloadSize, propertiesToInclude, false))
+    {
+        OCPayloadDestroy((OCPayload *)secPayload);
+        return OC_STACK_INVALID_JSON;
+    }
+    OIC_LOG(DEBUG, TAG, "Created payload for set rowner uuid");
+    OIC_LOG_BUFFER(DEBUG, TAG, secPayload->securityData, secPayload->payloadSize);
+
+    char query[MAX_URI_LENGTH + MAX_QUERY_LENGTH] = {0};
+    assert(otmCtx->selectedDeviceInfo->connType & CT_FLAG_SECURE);
+
+    if(!PMGenerateQuery(true,
+                        otmCtx->selectedDeviceInfo->endpoint.addr,
+                        getSecurePort(otmCtx->selectedDeviceInfo),
+                        otmCtx->selectedDeviceInfo->connType,
+                        query, sizeof(query), OIC_RSRC_PSTAT_URI))
+    {
+        OIC_LOG_V(ERROR, TAG, "%s : Failed to generate query", __func__);
+        return OC_STACK_ERROR;
+    }
+    OIC_LOG_V(DEBUG, TAG, "%s: Query=%s", __func__, query);
+
+    OCCallbackData cbData;
+    memset(&cbData, 0, sizeof(cbData));
+    cbData.cb = &RownerUuidHandler;
+    cbData.context = (void*)otmCtx;
+    cbData.cd = NULL;
+    OCStackResult ret = OCDoResource(&otmCtx->ocDoHandle, OC_REST_POST, query, 0, (OCPayload*)secPayload,
+            otmCtx->selectedDeviceInfo->connType, OC_HIGH_QOS, &cbData, NULL, 0);
+    OIC_LOG_V(INFO, TAG, "%s: OCDoResource returned: %d", __func__, ret);
+    if (ret != OC_STACK_OK)
+    {
+        OIC_LOG(ERROR, TAG, "OCStack resource error");
+    }
+
+    OIC_LOG_V(INFO, TAG, "%s OUT", __func__);
 
     return ret;
 }

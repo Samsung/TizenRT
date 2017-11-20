@@ -877,7 +877,7 @@ static OCEntityHandlerResult HandlePstatPostRequest(OCEntityHandlerRequest *ehRe
             gPstat->tm = pstat->tm;
 
             // update rownerID
-            gPstat->rownerID = pstat->rownerID;
+            memcpy(&gPstat->rownerID, &pstat->rownerID,sizeof(OicUuid_t));
 
             // update dos LAST of all Properties, as changing dos can also
             // change other Properties and we want the dos-asserted values
@@ -1057,6 +1057,15 @@ OCStackResult GetPstatRownerId(OicUuid_t *rowneruuid)
         return OC_STACK_OK;
     }
     return OC_STACK_ERROR;
+}
+
+bool IsPstatRowneruuidTheNilUuid()
+{
+    if (gPstat)
+    {
+        return IsNilUuid(&gPstat->rownerID);
+    }
+    return true;
 }
 
 OCStackResult SetPstatRownerId(const OicUuid_t *rowneruuid)

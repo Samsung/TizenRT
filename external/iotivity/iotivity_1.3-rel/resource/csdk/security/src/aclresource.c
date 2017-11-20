@@ -2043,19 +2043,25 @@ static OicSecAcl_t* CBORPayloadToAclVersionOpt(const uint8_t *cborPayload, const
             }
 
             //rownerID -- Mandatory
-            if (strcmp(tagName, OIC_JSON_ROWNERID_NAME)  == 0)
+            if (IsNilUuid(&acl->rownerID))
             {
-                char *stRowner = NULL;
-                cborFindResult = cbor_value_dup_text_string(&aclMap, &stRowner, &len, NULL);
-                VERIFY_CBOR_SUCCESS_OR_OUT_OF_MEMORY(TAG, cborFindResult, "Failed Finding Rownerid Value.");
-                ret = ConvertStrToUuid(stRowner, &acl->rownerID);
-                free(stRowner);
-                VERIFY_SUCCESS(TAG, ret == OC_STACK_OK, ERROR);
+                if (strcmp(tagName, OIC_JSON_ROWNERID_NAME)  == 0)
+                {
+                    char *stRowner = NULL;
+                    cborFindResult = cbor_value_dup_text_string(&aclMap, &stRowner, &len, NULL);
+                    VERIFY_CBOR_SUCCESS_OR_OUT_OF_MEMORY(TAG, cborFindResult, "Failed Finding Rownerid Value.");
+                    ret = ConvertStrToUuid(stRowner, &acl->rownerID);
+                    OIC_LOG_V(DEBUG, TAG, "%s: rowner uuid: %s", __func__, stRowner);
+                    free(stRowner);
+                    VERIFY_SUCCESS(TAG, ret == OC_STACK_OK, ERROR);
+                }
+                else if (NULL != gAcl)
+                {
+                    memcpy(&(acl->rownerID), &(gAcl->rownerID), sizeof(OicUuid_t));
+                    OIC_LOG_V(DEBUG, TAG, "%s: rowner uuid from gAcl", __func__);
+                }
             }
-            else if (NULL != gAcl)
-            {
-                memcpy(&(acl->rownerID), &(gAcl->rownerID), sizeof(OicUuid_t));
-            }
+
             free(tagName);
             tagName = NULL;
         }
@@ -4020,4 +4026,13 @@ OCStackResult GetAclRownerId(OicUuid_t *rowneruuid)
         return OC_STACK_OK;
     }
     return OC_STACK_ERROR;
+}
+
+bool IsAclRowneruuidTheNilUuid()
+{
+    if (gAcl)
+    {
+        return IsNilUuid(&gAcl->rownerID);
+    }
+    return true;
 }

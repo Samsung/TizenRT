@@ -218,6 +218,11 @@ OCStackResult SetPstatTm(const OicSecDpm_t tm);
  */
 OCStackResult SetPstatSelfOwnership(const OicUuid_t* newROwner);
 
+/*
+ * Check rowner uuid
+ */
+bool IsPstatRowneruuidTheNilUuid();
+
 #ifdef __cplusplus
 }
 #endif

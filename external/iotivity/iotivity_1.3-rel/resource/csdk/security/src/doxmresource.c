@@ -982,6 +982,8 @@ void printDoxm(const OicSecDoxm_t* doxm)
     {
         OIC_LOG_V(DEBUG, TAG, "%s: doxm.deviceuuid = %s", __func__, uuidString);
     }
+
+    OIC_LOG_V(WARNING, TAG, "%s: doxm.owned = %s", __func__, doxm->owned ? "true" : "false");
 }
 
 OCStackResult DoxmUpdateWriteableProperty(const OicSecDoxm_t* src, OicSecDoxm_t* dst)
@@ -1076,6 +1078,7 @@ OCStackResult DoxmUpdateWriteableProperty(const OicSecDoxm_t* src, OicSecDoxm_t*
 #endif //MULTIPLE_OWNER
 
 #ifndef NDEBUG // if debug build, log the new uuid
+    printDoxm(src);
     printDoxm(dst);
 #endif
 #ifdef MULTIPLE_OWNER
@@ -1996,69 +1999,49 @@ OCStackResult GetDoxmDeviceID(OicUuid_t *deviceuuid)
 
 OCStackResult SetDoxmDeviceID(const OicUuid_t *deviceuuid)
 {
-    bool isOwnerUpdated = false;
-    bool isRownerUpdated = false;
+    OIC_LOG_V(DEBUG, TAG, "%s IN", __func__);
+
+    OCStackResult ret = OC_STACK_ERROR;
+
     if (NULL == deviceuuid)
     {
-        return OC_STACK_INVALID_PARAM;
+        OIC_LOG_V(ERROR, TAG, "%s: device uuid id null.", __func__);
+        ret = OC_STACK_INVALID_PARAM;
+        goto exit;
     }
     if (NULL == gDoxm)
     {
         OIC_LOG(ERROR, TAG, "Doxm resource is not initialized.");
-        return OC_STACK_NO_RESOURCE;
+        ret = OC_STACK_NO_RESOURCE;
+        goto exit;
     }
 
 #ifdef __WITH_DTLS__
     //for normal device.
     if (true == gDoxm->owned &&
-        memcmp(gDoxm->deviceID.id, gDoxm->owner.id, sizeof(gDoxm->owner.id)) != 0)
+        !UuidCmp(&gDoxm->deviceID, &gDoxm->owner))
     {
         OIC_LOG(ERROR, TAG, "This device owned by owner's device.");
         OIC_LOG(ERROR, TAG, "Device UUID cannot be changed to guarantee the reliability of the connection.");
-        return OC_STACK_ERROR;
+        ret = OC_STACK_ERROR;
+        goto exit;
     }
 #endif //__WITH_DTLS
-
-    //Save the previous UUID
-    OicUuid_t prevUuid;
-    memcpy(prevUuid.id, gDoxm->deviceID.id, sizeof(prevUuid.id));
 
     //Change the device UUID
     memcpy(gDoxm->deviceID.id, deviceuuid->id, sizeof(gDoxm->deviceID.id));
 
-    //Change the owner ID if necessary
-    if (memcmp(gDoxm->owner.id, prevUuid.id, sizeof(prevUuid.id)) == 0)
-    {
-        memcpy(gDoxm->owner.id, deviceuuid->id, sizeof(gDoxm->owner.id));
-        isOwnerUpdated = true;
-    }
-    //Change the resource owner ID if necessary
-    // TODO [IOT-2023] change this behavior and upate the usage of this function
-    // so that rowneruuid for each resource is set by OBT
-    if (memcmp(gDoxm->rownerID.id, prevUuid.id, sizeof(prevUuid.id)) == 0)
-    {
-        memcpy(gDoxm->rownerID.id, deviceuuid->id, sizeof(gDoxm->rownerID.id));
-        isRownerUpdated = true;
-    }
-
     //Update PS
-    if (!UpdatePersistentStorage(gDoxm))
+    VERIFY_SUCCESS(TAG, UpdatePersistentStorage(gDoxm), ERROR);
+    ret = OC_STACK_OK;
+exit:
+    if (OC_STACK_OK != ret)
     {
-        //revert UUID in case of PSI error
-        memcpy(gDoxm->deviceID.id, prevUuid.id, sizeof(gDoxm->deviceID.id));
-        if (isOwnerUpdated)
-        {
-            memcpy(gDoxm->owner.id, prevUuid.id, sizeof(gDoxm->owner.id));
-        }
-        if (isRownerUpdated)
-        {
-            memcpy(gDoxm->rownerID.id, prevUuid.id, sizeof(gDoxm->rownerID.id));
-        }
-
-        OIC_LOG(ERROR, TAG, "Failed to update persistent storage");
-        return OC_STACK_ERROR;
+        OIC_LOG_V(WARNING, TAG, "%s: cannot set doxm: owner and rowner uuid, revert", __func__);
     }
-    return OC_STACK_OK;
+
+    OIC_LOG_V(DEBUG, TAG, "%s OUT", __func__);
+    return ret;
 }
 
 OCStackResult GetDoxmDevOwnerId(OicUuid_t *devowneruuid)
@@ -2091,6 +2074,33 @@ OCStackResult GetDoxmIsOwned(bool *isowned)
     return OC_STACK_ERROR;
 }
 
+bool IsDoxmOwned()
+{
+    if (gDoxm)
+    {
+        return gDoxm->owned;
+    }
+    return false;
+}
+
+bool IsDoxmDevowneruuidTheNilUuid()
+{
+    if (gDoxm)
+    {
+        return IsNilUuid(&gDoxm->owner);
+    }
+    return true;
+}
+
+bool IsDoxmDeviceuuidTheNilUuid()
+{
+    if (gDoxm)
+    {
+        return IsNilUuid(&gDoxm->deviceID);
+    }
+    return true;
+}
+
 OCStackResult SetDoxmIsOwned(const bool isowned)
 {
     if (gDoxm)
@@ -2109,6 +2119,15 @@ OCStackResult GetDoxmRownerId(OicUuid_t *rowneruuid)
         return OC_STACK_OK;
     }
     return OC_STACK_ERROR;
+}
+
+bool IsDoxmRowneruuidTheNilUuid()
+{
+    if (gDoxm)
+    {
+        return IsNilUuid(&gDoxm->rownerID);
+    }
+    return false;
 }
 
 OCStackResult SetDoxmRownerId(const OicUuid_t *rowneruuid)

@@ -298,4 +298,9 @@ void FreeCred(OicSecCred_t *cred);
 }
 #endif
 
+/*
+ * Check cred rowner uuid
+ */
+bool IsCredRowneruuidTheNilUuid();
+
 #endif //IOTVT_SRM_CREDR_H

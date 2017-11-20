@@ -12,7 +12,7 @@ def helpmsg(script):
 Usage:
     build:
         python %s <targetbuild>
-        Allowed values for <target_build>: all, linux_unsecured, linux_secured, linux_unsecured_with_rd, linux_secured_with_rd,
+        Allowed values for <target_build>: all, linux_unsecured, linux_secured, linux_full, linux_unsecured_with_rd, linux_secured_with_rd,
         android, android_unsecured, android_secured, arduino, tizen, tizen_unsecured, tizen_secured, simulator, darwin, windows, msys
         Note: \"linux\" will build \"linux_unsecured\", \"linux_secured\", \"linux_secured_with_rd\", \"linux_unsecured_with_mq\", \"linux_secured_with_tcp\" & \"linux_unsecured_with_tcp\" & \"linux_unsecured_with_rd\".
         Any selection will build both debug and release versions of all available targets in the scope you've selected.
@@ -133,6 +133,19 @@ def build_linux_secured(flag, extra_option_str):
     print ("*********** Build for linux with Security *************")
     build_options = {
                         'RELEASE':flag,
+                    }
+    call_scons(build_options, extra_option_str)
+
+def build_linux_full(flag, extra_option_str):
+    print ("*********** Build for linux with full features *************")
+    build_options = {
+                        'MULTIPLE_OWNER':1,
+                        'RELEASE':flag,
+                        'SECURED':1,
+                        'WITH_CLOUD':1,
+                        'WITH_RA':1,
+                        'WITH_RA_IBB':1,
+                        'WITH_TCP':1,
                     }
     call_scons(build_options, extra_option_str)
 
@@ -555,6 +568,10 @@ elif arg_num == 2:
     elif str(sys.argv[1]) == "linux_secured":
         build_linux_secured("true", "")
         build_linux_secured("false", "")
+
+    elif str(sys.argv[1]) == "linux_full":
+        build_linux_full("true", "")
+        build_linux_full("false", "")
 
     elif str(sys.argv[1]) == "linux_unsecured_with_rd":
         build_linux_unsecured_with_rd("true", "")

@@ -153,6 +153,30 @@ OCStackResult OC_CALL ConvertStrToUuid(const char* strUuid, OicUuid_t* uuid)
     return OC_STACK_OK;
 }
 
+#ifndef NDEBUG
+/**
+ * Log OicUuid_t structs.
+ */
+void LogUuid(const OicUuid_t* uuid)
+{
+    if(NULL == uuid)
+    {
+        OIC_LOG(ERROR, TAG, "ConvertUuidToStr : Invalid param");
+        return;
+    }
+
+    const size_t urnBufSize = (UUID_LENGTH * 2) + 4 + 1;
+    char* convertedUrn = (char*)OICCalloc(urnBufSize, sizeof(char));
+    VERIFY_NOT_NULL(TAG, convertedUrn, ERROR);
+    if(OCConvertUuidToString(uuid->id,convertedUrn))
+    {
+        OIC_LOG_V(DEBUG, TAG, "uuid: %s", convertedUrn);
+    }
+    OICFree(convertedUrn);
+exit:
+    return;
+}
+#endif
 
 /**
  * Compares two OicUuid_t structs.
@@ -184,6 +208,15 @@ const OicUuid_t THE_NIL_UUID = {.id={0000000000000000}};
  */
 bool IsNilUuid(const OicUuid_t *uuid)
 {
+#if !defined(NDEBUG)
+    char *strUuid = NULL;
+    ConvertUuidToStr(uuid, &strUuid);
+    if (strUuid)
+    {
+        OIC_LOG_V(DEBUG, TAG, "%s: uuid: %s.", __func__, strUuid);
+        OICFree(strUuid);
+    }
+#endif
     return UuidCmp(uuid, &THE_NIL_UUID);
 }
 
