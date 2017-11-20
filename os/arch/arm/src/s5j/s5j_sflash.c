@@ -57,6 +57,7 @@
 
 #include <debug.h>
 #include <errno.h>
+#include <semaphore.h>
 #include <tinyara/irq.h>
 #include <tinyara/progmem.h>
 
@@ -67,6 +68,8 @@
 #include "s5j_clock.h"
 #include "s5j_gpio.h"
 #include "chip/s5jt200_sflash.h"
+
+static sem_t sem_excl;
 
 /****************************************************************************
  * Private Functions
@@ -91,6 +94,23 @@ static uint8_t s5j_sflash_read_status(void)
 	return getreg8(S5J_SFLASH_RDSR);
 }
 
+static inline void s5j_sflash_lock(void)
+{
+	sem_post(&sem_excl);
+}
+
+static inline void s5j_sflash_lock_init(void)
+{
+	sem_init(&sem_excl, 0, 1);
+}
+
+static inline void s5j_sflash_unlock(void)
+{
+	while (sem_wait(&sem_excl) != OK) {
+		ASSERT(errno == EINTR);
+	}
+}
+
 /****************************************************************************
  * Public Functions
  ****************************************************************************/
@@ -108,7 +128,6 @@ ssize_t up_progmem_getpage(size_t addr)
 ssize_t up_progmem_erasepage(size_t page)
 {
 	size_t addr;
-	irqstate_t irqs;
 
 	if (page >= up_progmem_npages()) {
 		return -EFAULT;
@@ -116,8 +135,8 @@ ssize_t up_progmem_erasepage(size_t page)
 
 	addr = up_progmem_getaddress(page);
 
-	/* Disable IRQs while erasing sector */
-	irqs = irqsave();
+	/* lock */
+	s5j_sflash_lock();
 
 	s5j_sflash_disable_wp();
 
@@ -133,8 +152,8 @@ ssize_t up_progmem_erasepage(size_t page)
 	/* Invalidate cache */
 	arch_invalidate_dcache(addr, addr + up_progmem_blocksize());
 
-	/* Restore IRQs */
-	irqrestore(irqs);
+	/* unlock */
+	s5j_sflash_unlock();
 
 	return up_progmem_blocksize();
 }
@@ -176,14 +195,13 @@ ssize_t up_progmem_write(size_t addr, const void *buf, size_t count)
 
 	while (remain) {
 		int tmp = remain;
-		irqstate_t irqs;
 
 		if (tmp > pagesize) {
 			tmp = pagesize;
 		}
 
-		/* Disable IRQs */
-		irqs = irqsave();
+		/* lock */
+		s5j_sflash_lock();
 
 		s5j_sflash_disable_wp();
 
@@ -195,8 +213,8 @@ ssize_t up_progmem_write(size_t addr, const void *buf, size_t count)
 
 		s5j_sflash_enable_wp();
 
-		/* Restore IRQs */
-		irqrestore(irqs);
+		/* unlock */
+		s5j_sflash_unlock();
 
 		buf    += tmp;
 		addr   += tmp;
@@ -226,6 +244,8 @@ void s5j_sflash_init(void)
 	lldbg("FLASH Quad Enabled\n");
 
 	s5j_sflash_enable_wp();
+
+	s5j_sflash_lock_init();
 
 	/* Set FLASH clk 80Mhz for Max performance */
 	s5j_clk_set_rate(CLK_SPL_SFLASH, 80000000);
