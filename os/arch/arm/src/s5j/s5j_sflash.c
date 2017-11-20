@@ -58,6 +58,7 @@
 #include <debug.h>
 #include <errno.h>
 #include <semaphore.h>
+#include <tinyara/semaphore.h>
 #include <tinyara/irq.h>
 #include <tinyara/progmem.h>
 
@@ -102,6 +103,9 @@ static inline void s5j_sflash_lock(void)
 static inline void s5j_sflash_lock_init(void)
 {
 	sem_init(&sem_excl, 0, 1);
+#ifdef CONFIG_PRIORITY_INHERITANCE
+	sem_setprotocol(&sem_excl, SEM_PRIO_NONE);
+#endif
 }
 
 static inline void s5j_sflash_unlock(void)
