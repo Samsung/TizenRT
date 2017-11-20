@@ -94,10 +94,10 @@
 #if defined(CONFIG_NETUTILS_CODECS)
 #  if defined(CONFIG_CODECS_URLCODE)
 #    define WGET_USE_URLENCODE 1
-#    include <protocols/urldecode.h>
+#    include <codecs/urldecode.h>
 #  endif
 #  if defined(CONFIG_CODECS_BASE64)
-#    include <protocols/base64.h>
+#    include <codecs/base64.h>
 #  endif
 #else
 #  undef CONFIG_CODECS_URLCODE
