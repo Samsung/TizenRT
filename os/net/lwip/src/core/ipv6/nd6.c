@@ -681,44 +681,44 @@ void nd6_input(struct pbuf *p, struct netif *inp)
 			offset += 8 * ((u16_t) buffer[1]);
 		}
 
-		if (lladdr_opt != NULL) {
-			/* Get the matching default router entry. */
-			i = nd6_get_router(ip6_current_src_addr(), inp);
+		/* Get the matching default router entry. */
+		i = nd6_get_router(ip6_current_src_addr(), inp);
+		if (i < 0) {
+			/* Create a new router entry. */
+			i = nd6_new_router(ip6_current_src_addr(), inp);
+
+			/* Failed to create new router */
 			if (i < 0) {
-				/* Create a new router entry. */
-				i = nd6_new_router(ip6_current_src_addr(), inp);
-
-				/* Failed to create new router */
-				if (i < 0) {
-					/* Could not create a new router entry. */
-					LWIP_DEBUGF(ND6_DEBUG, ("Failed to create new router, ret %d\n", i));
-					pbuf_free(p);
-					ND6_STATS_INC(nd6.memerr);
-					return;
-				}
-
-				LWIP_DEBUGF(ND6_DEBUG, ("Created new router on default_router_list %d\n", i));
+				/* Could not create a new router entry. */
+				LWIP_DEBUGF(ND6_DEBUG, ("Failed to create new router, ret %d\n", i));
+				pbuf_free(p);
+				ND6_STATS_INC(nd6.memerr);
+				return;
 			}
 
-			/* Re-set invalidation timer. */
-			default_router_list[i].invalidation_timer = lwip_htons(ND6H_RA_ROUT_LIFE(ra_hdr)) * 1000;
+			LWIP_DEBUGF(ND6_DEBUG, ("Created new router on default_router_list %d\n", i));
+		}
 
-			/* Re-set default timer values. */
+		/* Re-set invalidation timer. */
+		default_router_list[i].invalidation_timer = lwip_htons(ND6H_RA_ROUT_LIFE(ra_hdr)) * 1000;
+
+		/* Re-set default timer values. */
 #if LWIP_ND6_ALLOW_RA_UPDATES
-			if (ND6H_RA_RETRANS_TMR(ra_hdr) > 0) {
-				retrans_timer = lwip_htonl(ND6H_RA_RETRANS_TMR(ra_hdr));
-			}
-			if (ND6H_RA_REACH_TIME(ra_hdr) > 0) {
-				reachable_time = lwip_htonl(ND6H_RA_REACH_TIME(ra_hdr));
-			}
+		if (ND6H_RA_RETRANS_TMR(ra_hdr) > 0) {
+			retrans_timer = lwip_htonl(ND6H_RA_RETRANS_TMR(ra_hdr));
+		}
+		if (ND6H_RA_REACH_TIME(ra_hdr) > 0) {
+			reachable_time = lwip_htonl(ND6H_RA_REACH_TIME(ra_hdr));
+		}
 #endif							/* LWIP_ND6_ALLOW_RA_UPDATES */
 
-			/* @todo set default hop limit... */
-			/* ra_hdr->current_hop_limit; */
+		/* @todo set default hop limit... */
+		/* ra_hdr->current_hop_limit; */
 
-			/* Update flags in local entry (incl. preference). */
-			default_router_list[i].flags = ND6H_RA_FLAG(ra_hdr);
+		/* Update flags in local entry (incl. preference). */
+		default_router_list[i].flags = ND6H_RA_FLAG(ra_hdr);
 
+		if (lladdr_opt != NULL) {
 			if (default_router_list[i].neighbor_entry == NULL) {
 				/* default router table has been created but "no entry on neighbor cache" */
 				/* Create new neighbor cache */
