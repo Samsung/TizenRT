@@ -81,6 +81,10 @@ static void on_connect(artik_mqtt_config *client_config, void *data_user,
 		int err)
 {
 	fprintf(stdout, "MQTT connection result: %s\n", error_msg(err));
+	if (err != S_OK) {
+		/* If connection failed, disconnect the client */
+		mqtt_cmd_disconnect(0, NULL);
+	}
 }
 
 static void on_disconnect(artik_mqtt_config *client_config, void *data_user,
