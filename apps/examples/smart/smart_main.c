@@ -602,7 +602,6 @@ static int smart_verifyfs(void)
 static int smart_delfiles(void)
 {
 	FAR struct smart_filedesc_s *file;
-	int ndel;
 	int ret;
 	int i;
 	int j;
@@ -614,13 +613,9 @@ static int smart_delfiles(void)
 		return 0;
 	}
 
-	/* Yes... How many files should we delete? */
-
-	ndel = (rand() % nfiles) + 1;
-
 	/* Now pick which files to delete */
 
-	for (i = 0; i < ndel; i++) {
+	for (i = 0; i < nfiles; i++) {
 		/* Guess a file index */
 
 		int ndx = (rand() % (g_nfiles - g_ndeleted));
