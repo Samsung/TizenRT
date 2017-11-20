@@ -22,5 +22,6 @@
     <options>
         <option desc="Flash all binaries and images">ALL</option>
         <option desc="Erase user file system">ERASE_USERFS</option>
+        <option desc="Erase all of partitions">ERASE_ALL</option>
     </options>
 </flash>
