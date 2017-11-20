@@ -120,6 +120,8 @@ These configurations are intended for use in the ARTIK-IDE. The detailed functio
   * ARTIK-SDK
   * JSON
   * Tash
+  * I2S
+  * DMA
   * System IO(I2C, UART, GPIO, PWM, SPI)
   * Network Utilities(FTP Client, Websock, Webclient, Webserver, NTP Client)
 
