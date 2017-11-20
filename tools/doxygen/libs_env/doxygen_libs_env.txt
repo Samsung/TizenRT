@@ -58,7 +58,7 @@ PROJECT_LOGO           =
 # entered, it will be relative to the location where doxygen was started. If
 # left blank the current directory will be used.
 
-OUTPUT_DIRECTORY       = libs_env
+OUTPUT_DIRECTORY       = libs_env_doc
 
 # If the CREATE_SUBDIRS tag is set to YES then doxygen will create 4096 sub-
 # directories (in 2 levels) under the output directory of each output format and
@@ -781,61 +781,62 @@ WARN_LOGFILE           =
 # spaces. See also FILE_PATTERNS and EXTENSION_MAPPING
 # Note: If this tag is empty the current directory is searched.
 
-INPUT                  = ../../apps/include \
-                         ./../../os/include/crc8.h \
-                         ./../../os/include/crc16.h \
-                         ./../../os/include/crc32.h \
-                         ./../../os/include/debug.h \
-                         ./../../os/include/errno.h \
-                         ./../../os/include/inttypes.h \
-                         ./../../os/include/libgen.h \
-                         ./../../os/include/mqueue.h \
-                         ./../../os/include/pthread.h \
-                         ./../../os/include/queue.h \
-                         ./../../os/include/sched.h \
-                         ./../../os/include/semaphore.h \
-                         ./../../os/include/signal.h \
-                         ./../../os/include/spawn.h \
-                         ./../../os/include/tinyara/spawn.h \
-                         ./../../os/include/stdio.h \
-                         ./../../os/include/stdlib.h \
-                         ./../../os/include/string.h \
-                         ./../../os/include/syslog.h \
-                         ./../../os/include/time.h \
-                         ./../../os/include/unistd.h \
-                         ./../../os/include/sys/prctl.h \
-                         ./../../os/include/sys/time.h \
-                         ./../../os/include/tinyara/time.h \
-                         ./../../os/include/sys/wait.h \
-                         ./../../os/include/tinyara/clock.h \
-                         ./../../os/include/tinyara/sched.h \
-                         ./../../os/include/tinyara/math.h \
-                         ./../../os/include/assert.h \
-                         ./../../os/include/termios.h \
-                         ./../../apps/include/netutils/dhcpc.h \
-                         ./../../apps/include/netutils/ntpclient.h \
-                         ./../../os/include/sys/socket.h \
-                         ./../../os/include/netdb.h \
-                         ./../../os/include/netinet/ether.h \
-                         ./../../os/include/arpa/inet.h \
-                         ./../../apps/include/netutils/webserver/http_server.h \
-                         ./../../apps/include/netutils/webserver/http_keyvalue_list.h \
-                         ./../../apps/include/netutils/webclient.h \
-                         ./../../apps/include/netutils/websocket.h \
-                         ./../../os/include/sys/stat.h \
-                         ./../../os/include/fcntl.h \
-                         ./../../os/include/poll.h \
-                         ./../../os/include/sys/mount.h \
-                         ./../../os/include/dirent.h \
-                         ./../../os/include/sys/ioctl.h \
-                         ./../../os/include/sys/select.h \
-                         ./../../os/include/tinyara/regex.h \
-                         ./../../os/include/tinyara/ttrace.h \
-                         ./../../os/include/tinyara/streams.h \
-                         ./../../os/include/net/lwip/netif.h \
-                         ./../../os/include/fixedmath.h \
-                         ./../../external/iotjs/include/iotjs.h \
-                         ./../../external/include/mbedtls/mbedtls_doxygen.h
+INPUT                  = . \
+                         ../../../os/include/crc8.h \
+                         ../../../os/include/crc16.h \
+                         ../../../os/include/crc32.h \
+                         ../../../os/include/debug.h \
+                         ../../../os/include/errno.h \
+                         ../../../os/include/inttypes.h \
+                         ../../../os/include/libgen.h \
+                         ../../../os/include/mqueue.h \
+                         ../../../os/include/pthread.h \
+                         ../../../os/include/queue.h \
+                         ../../../os/include/sched.h \
+                         ../../../os/include/semaphore.h \
+                         ../../../os/include/signal.h \
+                         ../../../os/include/spawn.h \
+                         ../../../os/include/tinyara/spawn.h \
+                         ../../../os/include/stdio.h \
+                         ../../../os/include/stdlib.h \
+                         ../../../os/include/string.h \
+                         ../../../os/include/syslog.h \
+                         ../../../os/include/time.h \
+                         ../../../os/include/unistd.h \
+                         ../../../os/include/sys/prctl.h \
+                         ../../../os/include/sys/time.h \
+                         ../../../os/include/tinyara/time.h \
+                         ../../../os/include/sys/wait.h \
+                         ../../../os/include/tinyara/clock.h \
+                         ../../../os/include/tinyara/sched.h \
+                         ../../../os/include/tinyara/math.h \
+                         ../../../os/include/assert.h \
+                         ../../../os/include/termios.h \
+                         ../../../apps/include/netutils/dhcpc.h \
+                         ../../../apps/include/netutils/ntpclient.h \
+                         ../../../os/include/sys/socket.h \
+                         ../../../os/include/netdb.h \
+                         ../../../os/include/netinet/ether.h \
+                         ../../../os/include/arpa/inet.h \
+                         ../../../apps/include/netutils/webserver/http_server.h \
+                         ../../../apps/include/netutils/webserver/http_keyvalue_list.h \
+                         ../../../apps/include/netutils/webclient.h \
+                         ../../../apps/include/netutils/websocket.h \
+                         ../../../os/include/sys/stat.h \
+                         ../../../os/include/fcntl.h \
+                         ../../../os/include/poll.h \
+                         ../../../os/include/sys/mount.h \
+                         ../../../os/include/dirent.h \
+                         ../../../os/include/sys/ioctl.h \
+                         ../../../os/include/sys/select.h \
+                         ../../../os/include/tinyara/regex.h \
+                         ../../../os/include/tinyara/ttrace.h \
+                         ../../../os/include/tinyara/streams.h \
+                         ../../../os/include/net/lwip/netif.h \
+                         ../../../os/include/fixedmath.h \
+                         ../../../external/iotjs/include/iotjs.h \
+                         ../../../external/include/mbedtls/mbedtls_doxygen.h \
+                         ../../../apps/include
 
 # This tag can be used to specify the character encoding of the source files
 # that doxygen parses. Internally doxygen uses the UTF-8 encoding. Doxygen uses
