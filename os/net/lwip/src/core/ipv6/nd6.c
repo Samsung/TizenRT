@@ -1955,8 +1955,6 @@ static s8_t nd6_get_next_hop_entry(const ip6_addr_t *ip6addr, struct netif *neti
 						destination_cache[nd6_cached_destination_index].pmtu = netif->mtu;      /* Start with netif mtu, correct through ICMPv6 if necessary */
 						ip6_addr_copy(destination_cache[nd6_cached_destination_index].next_hop_addr, default_router_list[i].neighbor_entry->next_hop_address);
 					}
-				} else {
-					destination_cache[nd6_cached_destination_index].pmtu = netif->mtu;      /* Start with netif mtu, correct through ICMPv6 if necessary */
 				}
 			}
 		} else {
