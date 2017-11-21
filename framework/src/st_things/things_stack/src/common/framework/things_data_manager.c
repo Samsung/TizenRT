@@ -931,7 +931,7 @@ static int parse_things_info_json(const char *filename)
 								node->collection[iter].rt_cnt = type_cnt;
 								for (int typeiter = 0; typeiter < type_cnt; typeiter++) {
 									cJSON *type = cJSON_GetArrayItem(types, typeiter);
-									node->collection[iter].resource_types[typeiter] = things_malloc(sizeof(char *) * strlen(type->valuestring) + 1);
+									node->collection[iter].resource_types[typeiter] = things_malloc(sizeof(char) * strlen(type->valuestring) + 1);
 									memcpy(node->collection[iter].resource_types[typeiter], type->valuestring, strlen(type->valuestring) + 1);
 									THINGS_LOG_D(THINGS_INFO, TAG, "[COLLECTION] collection[iter].resource_types[typeiter] : %s", (node->collection[iter].resource_types[typeiter]));
 								}
@@ -945,7 +945,7 @@ static int parse_things_info_json(const char *filename)
 								node->collection[iter].if_cnt = if_cnt;
 								for (int ifiter = 0; ifiter < if_cnt; ifiter++) {
 									cJSON *interface = cJSON_GetArrayItem(interfaces, ifiter);
-									node->collection[iter].interface_types[ifiter] = things_malloc(sizeof(char *) * strlen(interface->valuestring) + 1);
+									node->collection[iter].interface_types[ifiter] = things_malloc(sizeof(char) * strlen(interface->valuestring) + 1);
 									memcpy(node->collection[iter].interface_types[ifiter], interface->valuestring, strlen(interface->valuestring) + 1);
 								}
 							} else {
@@ -978,7 +978,7 @@ static int parse_things_info_json(const char *filename)
 										link_resource->rt_cnt = type_cnt;
 										for (int typeiter = 0; typeiter < type_cnt; typeiter++) {
 											cJSON *type = cJSON_GetArrayItem(types, typeiter);
-											link_resource->resource_types[typeiter] = things_malloc(sizeof(char *) * strlen(type->valuestring) + 1);
+											link_resource->resource_types[typeiter] = things_malloc(sizeof(char) * strlen(type->valuestring) + 1);
 											memcpy(link_resource->resource_types[typeiter], type->valuestring, strlen(type->valuestring) + 1);
 										}
 									} else {
@@ -990,7 +990,7 @@ static int parse_things_info_json(const char *filename)
 										link_resource->if_cnt = if_cnt;
 										for (int ifiter = 0; ifiter < if_cnt; ifiter++) {
 											cJSON *interface = cJSON_GetArrayItem(interfaces, ifiter);
-											link_resource->interface_types[ifiter] = things_malloc(sizeof(char *) * strlen(interface->valuestring) + 1);
+											link_resource->interface_types[ifiter] = things_malloc(sizeof(char) * strlen(interface->valuestring) + 1);
 											memcpy(link_resource->interface_types[ifiter], interface->valuestring, strlen(interface->valuestring) + 1);
 										}
 									} else {
@@ -1045,7 +1045,7 @@ static int parse_things_info_json(const char *filename)
 								node->single[iter].rt_cnt = type_cnt;
 								for (int typeiter = 0; typeiter < type_cnt; typeiter++) {
 									cJSON *type = cJSON_GetArrayItem(types, typeiter);
-									node->single[iter].resource_types[typeiter] = things_malloc(sizeof(char *) * strlen(type->valuestring) + 1);
+									node->single[iter].resource_types[typeiter] = things_malloc(sizeof(char) * strlen(type->valuestring) + 1);
 									memcpy(node->single[iter].resource_types[typeiter], type->valuestring, strlen(type->valuestring) + 1);
 								}
 							} else {
@@ -1057,7 +1057,7 @@ static int parse_things_info_json(const char *filename)
 								node->single[iter].if_cnt = if_cnt;
 								for (int ifiter = 0; ifiter < if_cnt; ifiter++) {
 									cJSON *interface = cJSON_GetArrayItem(interfaces, ifiter);
-									node->single[iter].interface_types[ifiter] = things_malloc(sizeof(char *) * strlen(interface->valuestring) + 1);
+									node->single[iter].interface_types[ifiter] = things_malloc(sizeof(char) * strlen(interface->valuestring) + 1);
 									memcpy(node->single[iter].interface_types[ifiter], interface->valuestring, strlen(interface->valuestring) + 1);
 								}
 							} else {
@@ -1193,10 +1193,10 @@ static int parse_things_info_json(const char *filename)
 
 								THINGS_LOG_D(THINGS_INFO, TAG, "[configuration] manufature_name : %s / setup_id : %s / artik : %d", node->manufacturer_name, setup_id->valuestring, is_artik);
 
-								g_manufacturer_name = things_malloc(sizeof(char *) * strlen(node->manufacturer_name) + 1);
+								g_manufacturer_name = things_malloc(sizeof(char) * strlen(node->manufacturer_name) + 1);
 								strncpy(g_manufacturer_name, node->manufacturer_name, strlen(node->manufacturer_name) + 1);
 
-								g_setup_id = things_malloc(sizeof(char *) * strlen(setup_id->valuestring) + 1);
+								g_setup_id = things_malloc(sizeof(char) * strlen(setup_id->valuestring) + 1);
 								strncpy(g_setup_id, setup_id->valuestring, strlen(setup_id->valuestring) + 1);
 							} else {
 								return 0;
