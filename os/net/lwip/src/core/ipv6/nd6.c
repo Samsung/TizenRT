@@ -880,7 +880,7 @@ void nd6_input(struct pbuf *p, struct netif *inp)
 			return;
 		}
 
-		if (!ip6_addr_islinklocal(ip6_current_src_addr()) || (nd6_find_neighbor_cache_entry(ip6_current_src_addr()) < 0)) {
+		if (!ip6_addr_islinklocal(ip6_current_src_addr())) {
 			pbuf_free(p);
 			ND6_STATS_INC(nd6.drop);
 			return;
@@ -892,6 +892,27 @@ void nd6_input(struct pbuf *p, struct netif *inp)
 				ND6_STATS_INC(nd6.drop);
 				return;
 			}
+		}
+
+		/* Copy original destination address to current source address, to have an aligned copy. */
+		ip6_addr_set(&tmp, &(ND6H_RD_DEST_ADDR(redir_hdr)));
+
+		/* Find dest address in cache */
+		i = nd6_find_destination_cache_entry(&tmp);
+
+		if (i >= 0) {
+			if ((nd6_get_router(&destination_cache[i].next_hop_addr, inp) >= 0)
+					&& (!ip6_addr_cmp(&destination_cache[i].next_hop_addr, ip6_current_src_addr()))) {
+				LWIP_DEBUGF(ND6_DEBUG, ("Redirect source address is not the current first-hop router, dropped\n"));
+				pbuf_free(p);
+				ND6_STATS_INC(nd6.drop);
+				return;
+			}
+		} else {
+			/* Destination not in cache, drop packet. */
+			pbuf_free(p);
+			ND6_STATS_INC(nd6.drop);
+			return;
 		}
 
 		/* End of validation check for RD message */
@@ -936,17 +957,6 @@ void nd6_input(struct pbuf *p, struct netif *inp)
 				redir_optlen -= offset;
 				buffer = buffer + offset;
 			}
-		}
-
-		/* Copy original destination address to current source address, to have an aligned copy. */
-		ip6_addr_set(&tmp, &(ND6H_RD_DEST_ADDR(redir_hdr)));
-
-		/* Find dest address in cache */
-		i = nd6_find_destination_cache_entry(&tmp);
-		if (i < 0) {
-			/* Destination not in cache, drop packet. */
-			pbuf_free(p);
-			return;
 		}
 
 		/* Set the new target address. */
