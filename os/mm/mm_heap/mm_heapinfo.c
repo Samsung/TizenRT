@@ -84,13 +84,13 @@ void heapinfo_parse(FAR struct mm_heap_s *heap, int mode, pid_t pid)
 	size_t mxordblk = 0;
 	int    ordblks  = 0;		/* Number of non-inuse chunks */
 	size_t fordblks = 0;		/* Total non-inuse space */
-	int stack_resource;
-	int nonsched_resource;
+	size_t stack_resource;
+	size_t nonsched_resource;
 	int nonsched_idx;
 
 	/* This nonsched can be 3 types : group resources, freed when child task finished, leak */
 	pid_t nonsched_list[CONFIG_MAX_TASKS];
-	int nonsched_size[CONFIG_MAX_TASKS];
+	size_t nonsched_size[CONFIG_MAX_TASKS];
 
 #if CONFIG_MM_REGIONS > 1
 	int region;
