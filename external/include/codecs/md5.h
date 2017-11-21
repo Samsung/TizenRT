@@ -16,7 +16,7 @@
  *
  ****************************************************************************/
 /****************************************************************************
- * apps/include/netutils/md5.h
+ * external/include/codecs/md5.h
  *
  * This file is part of the NuttX RTOS:
  *
@@ -71,8 +71,8 @@
  *
  ****************************************************************************/
 
-#ifndef __APPS_INCLUDE_NETUTILS_MD5_H
-#define __APPS_INCLUDE_NETUTILS_MD5_H
+#ifndef __EXTERNAL_INCLUDE_CODECS_MD5_H
+#define __EXTERNAL_INCLUDE_CODECS_MD5_H
 
 /****************************************************************************
  * Included Files
@@ -118,4 +118,4 @@ char *md5_hash(const uint8_t *addr, const size_t len);
 }
 #endif
 #endif							/* CONFIG_CODECS_HASH_MD5 */
-#endif							/* __APPS_INCLUDE_NETUTILS_MD5_H */
+#endif							/* __EXTERNAL_INCLUDE_CODECS_MD5_H */

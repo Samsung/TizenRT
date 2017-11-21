@@ -16,7 +16,7 @@
  *
  ****************************************************************************/
 /****************************************************************************
- * external/json/cJSON.c
+ * external/include/json/cJSON.h
  *
  * This file is a part of NuttX:
  *
@@ -47,8 +47,8 @@
  *
  ****************************************************************************/
 
-#ifndef __APPS_INCLUDE_NETUTILS_JSON_H
-#define __APPS_INCLUDE_NETUTILS_JSON_H
+#ifndef __EXTERNAL_INCLUDE_JSON_CJSON_H
+#define __EXTERNAL_INCLUDE_JSON_CJSON_H
 
 #ifdef __cplusplus
 // *INDENT-OFF*
@@ -297,4 +297,4 @@ CJSON_PUBLIC(void) cJSON_free(void *object);
 }
 // *INDENT-ON*
 #endif
-#endif							/* __APPS_INCLUDE_NETUTILS_JSON_H */
+#endif							/* __EXTERNAL_INCLUDE_JSON_CJSON_H */

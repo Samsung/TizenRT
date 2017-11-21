@@ -16,7 +16,7 @@
  *
  ****************************************************************************/
 /****************************************************************************
- * apps/include/netutils/dhcpc.h
+ * external/include/protocols/dhcpc.h
  *
  *   Copyright (C) 2007, 2009-2011 Gregory Nutt. All rights reserved.
  *   Author: Gregory Nutt <gnutt@nuttx.org>
@@ -63,8 +63,8 @@
  * @brief APIs for DHCP client
  */
 
-#ifndef __APPS_INCLUDE_NETUTILS_DHCPC_H
-#define __APPS_INCLUDE_NETUTILS_DHCPC_H
+#ifndef __EXTERNAL_INCLUDE_PROTOCOLS_DHCPC_H
+#define __EXTERNAL_INCLUDE_PROTOCOLS_DHCPC_H
 
 /****************************************************************************
  * Included Files
@@ -136,5 +136,5 @@ void dhcpc_close(void *handle);
 }
 #endif
 
-#endif							/* __APPS_INCLUDE_NETUTILS_DHCPC_H */
+#endif							/* __EXTERNAL_INCLUDE_PROTOCOLS_DHCPC_H */
 /**@} */

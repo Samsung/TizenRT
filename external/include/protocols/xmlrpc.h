@@ -16,7 +16,7 @@
  *
  ****************************************************************************/
 /****************************************************************************
- * apps/include/netutils/xmlrpc.h
+ * external/include/protocols/xmlrpc.h
  *
  *   Copyright (C) 2012 Max Holtzberg. All rights reserved.
  *   Author: Max Holtzberg <mh@uvc.de>
@@ -64,8 +64,8 @@
  *
  */
 
-#ifndef __APPS_INCLUDE_NETUTILS_XMLRPC_H
-#define __APPS_INCLUDE_NETUTILS_XMLRPC_H
+#ifndef __EXTERNAL_INCLUDE_PROTOCOLS_XMLRPC_H
+#define __EXTERNAL_INCLUDE_PROTOCOLS_XMLRPC_H
 
 /****************************************************************************
  * Included Files
@@ -145,4 +145,4 @@ int xmlrpc_buildresponse(struct xmlrpc_s *, char *, ...);
 }
 #endif
 
-#endif							/* __APPS_INCLUDE_NETUTILS_XMLRPC_H */
+#endif							/* __EXTERNAL_INCLUDE_PROTOCOLS_XMLRPC_H */

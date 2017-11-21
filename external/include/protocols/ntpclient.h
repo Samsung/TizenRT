@@ -16,7 +16,7 @@
  *
  ****************************************************************************/
 /****************************************************************************
- * apps/include/netutils/ntpclient.h
+ * external/include/protocols/ntpclient.h
  *
  *   Copyright (C) 2014 Gregory Nutt. All rights reserved.
  *   Author: Gregory Nutt <gnutt@nuttx.org>
@@ -59,8 +59,8 @@
 /// @file protocols/ntpclient.h
 /// @brief APIs for NTP Client
 
-#ifndef __APPS_INCLUDE_NETUTILS_NTPCLIENT_H
-#define __APPS_INCLUDE_NETUTILS_NTPCLIENT_H 1
+#ifndef __EXTERNAL_INCLUDE_PROTOCOLS_NTPCLIENT_H
+#define __EXTERNAL_INCLUDE_PROTOCOLS_NTPCLIENT_H
 
 /****************************************************************************
  * Included Files
@@ -187,6 +187,6 @@ int ntpc_get_link_status(void);
 }
 #endif
 
-#endif							/* __APPS_INCLUDE_NETUTILS_NTPCLIENT_H */
+#endif							/* __EXTERNAL_INCLUDE_PROTOCOLS_NTPCLIENT_H */
 
 /** @} */// end of NTPC group
