@@ -349,10 +349,7 @@ void nd6_input(struct pbuf *p, struct netif *inp)
 			} else {
 				if (lladdr_diff != 0) {
 					MEMCPY(neighbor_cache[i].lladdr, ND6H_LLADDR_OPT_ADDR(lladdr_opt), inp->hwaddr_len);
-
-					if (nd6_sflag == 0) {
-						neighbor_cache[i].state = ND6_STALE;
-					}
+					neighbor_cache[i].state = ND6_STALE;
 				}
 
 				if (nd6_sflag) {
