@@ -872,6 +872,10 @@ static int parse_things_info_json(const char *filename)
 					cJSON *vendor_id = cJSON_GetObjectItem(spec_platform, KEY_DEVICE_SPECIFICATION_PLATFORM_VENDORID);
 
 					if (NULL != manufacturer_name) {
+						if (strlen(manufacturer_name->valuestring) != 4) {
+							THINGS_LOG_V_ERROR(THINGS_ERROR, TAG, "manufacturer_name exceeds 4 bytes. please check (4 bytes are fixed sizes.)");
+							return 0;
+						}
 						memcpy(node->manufacturer_name, manufacturer_name->valuestring, strlen(manufacturer_name->valuestring) + 1);
 					}
 					if (NULL != manufacturer_url) {
@@ -1186,6 +1190,10 @@ static int parse_things_info_json(const char *filename)
 							cJSON *artik = cJSON_GetObjectItem(softap, KEY_CONFIGURATION_EASYSETUP_CONNECTIVITY_SOFTAP_ARTIK);
 
 							if (NULL != setup_id) {
+								if (strlen(setup_id->valuestring) != 3) {
+							   		THINGS_LOG_V_ERROR(THINGS_ERROR, TAG, "setup_id exceeds 3 bytes. please check (3 bytes are fixed sizes.)");
+									return 0;
+								}
 								is_artik = false;
 								if (artik->type == cJSON_True) {
 									is_artik = true;
