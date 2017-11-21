@@ -35,7 +35,7 @@ Understanding the TizenRT code structure and adhering to the structure helps in 
 
 ## Network
 1. How to use LWIP (will be updated)
-2. [How to use WPA_SUPPLICANT](HowToUseWPASupplicant.md)
+2. [How to port TizenRT on new WiFi chipset](HowToPortTizenRTOnWiFiChipset.md)
 
 ## Audio
 Will be updated
