@@ -163,8 +163,12 @@ void nd6_input(struct pbuf *p, struct netif *inp)
 
 	switch (msg_type) {
 	case ICMP6_TYPE_NA: {		/* Neighbor Advertisement. */
+		s32_t nd6_oflag;
+		s32_t nd6_sflag;
+		s32_t nd6_rflag;
+		s32_t lladdr_diff;
 		struct na_header *na_hdr;
-		struct lladdr_option *lladdr_opt = NULL;
+		struct lladdr_option *lladdr_opt;
 		ip6_addr_t target_address;
 
 		/* Check that na header fits in packet. */
@@ -192,6 +196,9 @@ void nd6_input(struct pbuf *p, struct netif *inp)
 			return;
 		}
 
+		nd6_oflag = ND6H_NA_FLAG(na_hdr) & ND6_FLAG_OVERRIDE;
+		nd6_sflag = ND6H_NA_FLAG(na_hdr) & ND6_FLAG_SOLICITED;
+		nd6_rflag = ND6H_NA_FLAG(na_hdr) & ND6_FLAG_ROUTER;
 		ip6_addr_set(&target_address, &(ND6H_NA_TARGET_ADDR(na_hdr)));
 
 		if (ip6_addr_ismulticast(&target_address)) {
@@ -202,6 +209,7 @@ void nd6_input(struct pbuf *p, struct netif *inp)
 			return;
 		}
 
+		lladdr_opt = NULL;
 		if (p->len >= (sizeof(struct na_header) + 8)) {
 			u32_t offset = sizeof(struct na_header);
 
@@ -227,17 +235,9 @@ void nd6_input(struct pbuf *p, struct netif *inp)
 
 		/* Detect the duplicated NA message */
 		if (ip6_addr_ismulticast(ip6_current_dest_addr())) {
-			if (ND6H_NA_FLAG(na_hdr) & ND6_FLAG_SOLICITED) {
+			if (nd6_sflag) {
 				/* RFC 7.1.2.
-				 * S flag must be set
-				 */
-				pbuf_free(p);
-				return;
-			}
-
-			if (lladdr_opt == NULL) {
-				/* RFC 7.2.4.
-				 * TLL option must be included
+				 * S flag must be clear
 				 */
 				pbuf_free(p);
 				return;
@@ -294,7 +294,12 @@ void nd6_input(struct pbuf *p, struct netif *inp)
 
 		neighbor_cache[i].netif = inp;
 
-		if (neighbor_cache[i].state == ND6_INCOMPLETE) {
+		lladdr_diff = 0;
+		if (lladdr_opt) {
+			lladdr_diff = memcmp(neighbor_cache[i].lladdr, ND6H_LLADDR_OPT_ADDR(lladdr_opt), inp->hwaddr_len);
+		}
+
+		if ((neighbor_cache[i].state == ND6_INCOMPLETE)) {
 			/* Check that link-layer address option also fits in packet. */
 			if (lladdr_opt == NULL) {
 				pbuf_free(p);
@@ -305,14 +310,14 @@ void nd6_input(struct pbuf *p, struct netif *inp)
 
 			MEMCPY(neighbor_cache[i].lladdr, ND6H_LLADDR_OPT_ADDR(lladdr_opt), inp->hwaddr_len);
 
-			if ((ND6H_NA_FLAG(na_hdr) & ND6_FLAG_SOLICITED)) {
+			if (nd6_sflag) {
 				neighbor_cache[i].state = ND6_REACHABLE;
 				neighbor_cache[i].counter.reachable_time = reachable_time;
 			} else {
 				neighbor_cache[i].state = ND6_STALE;
 			}
 
-			if ((ND6H_NA_FLAG(na_hdr) & ND6_FLAG_ROUTER)) {
+			if (nd6_rflag) {
 				s8_t j;
 
 				j = nd6_get_router(&target_address, inp);
@@ -343,15 +348,6 @@ void nd6_input(struct pbuf *p, struct netif *inp)
 				nd6_send_q(i);
 			}
 		} else {
-			s32_t nd6_oflag = ND6H_NA_FLAG(na_hdr) & ND6_FLAG_OVERRIDE;
-			s32_t nd6_sflag = ND6H_NA_FLAG(na_hdr) & ND6_FLAG_SOLICITED;
-			s32_t nd6_rflag = ND6H_NA_FLAG(na_hdr) & ND6_FLAG_ROUTER;
-			s32_t lladdr_diff = 0;
-
-			if (lladdr_opt) {
-				lladdr_diff = memcmp(neighbor_cache[i].lladdr, ND6H_LLADDR_OPT_ADDR(lladdr_opt), inp->hwaddr_len);
-			}
-
 			if (nd6_oflag == 0 && lladdr_diff != 0) {
 				/* O flag is clear and lladdr is different between TLLA and cache entry */
 				if (neighbor_cache[i].state == ND6_REACHABLE) {
