@@ -307,7 +307,9 @@ void nd6_input(struct pbuf *p, struct netif *inp)
 			if ((ND6H_NA_FLAG(na_hdr) & ND6_FLAG_ROUTER)) {
 				s8_t j;
 
-				if (nd6_get_router(&target_address, inp) < 0) {
+				j = nd6_get_router(&target_address, inp);
+
+				if (j < 0) {
 					/* This new neighbor should be added as router */
 					j = nd6_new_router(&target_address, inp);
 					if (j >= 0) {
@@ -320,6 +322,8 @@ void nd6_input(struct pbuf *p, struct netif *inp)
 						ND6_STATS_INC(nd6.memerr);
 						return;
 					}
+				} else {
+					/* @todo need to update neighbor_entry on default router list */
 				}
 				neighbor_cache[i].isrouter = 1;
 			} else {
@@ -1078,7 +1082,17 @@ void nd6_tmr(void)
 			break;
 		case ND6_PROBE:
 			if (neighbor_cache[i].probes_sent >= LWIP_ND6_MAX_UNICAST_SOLICIT) {
+				s8_t j; /* default router list */
 				/* Retries exceeded. */
+				/* Clean-up destination cache */
+				nd6_free_expired_router_in_destination_cache(&(neighbor_cache[i].next_hop_address));
+				/* Clean-up default-router */
+				for (j = 0; j < LWIP_ND6_NUM_ROUTERS; j++) {
+					if (default_router_list[j].neighbor_entry == &(neighbor_cache[i])) {
+						default_router_list[j].neighbor_entry = NULL;
+						default_router_list[j].flags = 0;
+					}
+				}
 				nd6_free_neighbor_cache_entry(i);
 			} else {
 				neighbor_cache[i].counter.probe_time += ND6_TMR_INTERVAL;
