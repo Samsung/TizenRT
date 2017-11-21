@@ -314,56 +314,70 @@ void nd6_input(struct pbuf *p, struct netif *inp)
 				nd6_send_q(i);
 			}
 		} else {
+			s32_t nd6_oflag = ND6H_NA_FLAG(na_hdr) & ND6_FLAG_OVERRIDE;
+			s32_t nd6_sflag = ND6H_NA_FLAG(na_hdr) & ND6_FLAG_SOLICITED;
+			s32_t nd6_rflag = ND6H_NA_FLAG(na_hdr) & ND6_FLAG_ROUTER;
+			s32_t lladdr_diff = 0;
+
 			if (lladdr_opt) {
-				if (memcmp(neighbor_cache[i].lladdr, ND6H_LLADDR_OPT_ADDR(lladdr_opt), inp->hwaddr_len) != 0) {
-					/* update the neighbor cache lladdr */
+				lladdr_diff = memcmp(neighbor_cache[i].lladdr, ND6H_LLADDR_OPT_ADDR(lladdr_opt), inp->hwaddr_len);
+			}
+
+			if (nd6_oflag == 0 && lladdr_diff != 0) {
+				/* O flag is clear and lladdr is different between TLLA and cache entry */
+				if (neighbor_cache[i].state == ND6_REACHABLE) {
+					/* State is REACHABLE */
+					neighbor_cache[i].state = ND6_STALE;
+				}
+			} else {
+				if (lladdr_diff != 0) {
 					MEMCPY(neighbor_cache[i].lladdr, ND6H_LLADDR_OPT_ADDR(lladdr_opt), inp->hwaddr_len);
 
-					if ((ND6H_NA_FLAG(na_hdr) & ND6_FLAG_SOLICITED) == 0) {
+					if (nd6_sflag == 0) {
 						neighbor_cache[i].state = ND6_STALE;
 					}
 				}
-			}
 
-			if ((ND6H_NA_FLAG(na_hdr) & ND6_FLAG_SOLICITED)) {
-				neighbor_cache[i].state = ND6_REACHABLE;
-				neighbor_cache[i].counter.reachable_time = reachable_time;
-			}
+				if (nd6_sflag) {
+					neighbor_cache[i].state = ND6_REACHABLE;
+					neighbor_cache[i].counter.reachable_time = reachable_time;
+				}
 
-			if ((ND6H_NA_FLAG(na_hdr) & ND6_FLAG_ROUTER)) {
-				neighbor_cache[i].isrouter = 1;
-			} else {
-				/* RFC 7.2.5
-				 * Node MUST remove that router from the Default Router List
-				 * and update Destination Cache entries for all destinations using that
-				 * neighbor router as specified in Section 7.3.3
-				 */
-				if (neighbor_cache[i].isrouter) {
-					s8_t tmp;
+				if (nd6_rflag) {
+					neighbor_cache[i].isrouter = 1;
+				} else {
+					/* RFC 7.2.5
+					 * Node MUST remove that router from the Default Router List
+					 * and update Destination Cache entries for all destinations using that
+					 * neighbor router as specified in Section 7.3.3
+					 */
+					if (neighbor_cache[i].isrouter) {
+						s8_t tmp;
 
-					neighbor_cache[i].isrouter = 0;
-					tmp = nd6_get_router(&neighbor_cache[i].next_hop_address, inp);
-					if (tmp == 0) {
-						/* TODO: error */
+						neighbor_cache[i].isrouter = 0;
+						tmp = nd6_get_router(&neighbor_cache[i].next_hop_address, inp);
+						if (tmp == 0) {
+							/* TODO: error */
+						}
+
+						/* RFC 4861, 6.3.5.  Timing out Prefixes and Default Routers  */
+						nd6_free_expired_router_in_destination_cache(&(default_router_list[tmp].neighbor_entry->next_hop_address));
+
+						s8_t j; /* Neighbor cache index */
+
+						j = nd6_find_neighbor_cache_entry(&(default_router_list[tmp].neighbor_entry->next_hop_address));
+						if (j < 0) {
+							LWIP_DEBUGF(ND6_DEBUG, ("Failed to find matched negighbor entry to default router list\n"));
+							/* @todo should we do initialize NCE manually?*/
+						} else {
+							LWIP_DEBUGF(ND6_DEBUG, ("Neighbor cache entry (index %d) will be freed\n", j));
+							nd6_free_neighbor_cache_entry(j);
+						}
+
+						default_router_list[tmp].neighbor_entry = NULL;
+						default_router_list[tmp].invalidation_timer = 0;
+						default_router_list[tmp].flags = 0;
 					}
-
-					/* RFC 4861, 6.3.5.  Timing out Prefixes and Default Routers  */
-					nd6_free_expired_router_in_destination_cache(&(default_router_list[tmp].neighbor_entry->next_hop_address));
-
-					s8_t j; /* Neighbor cache index */
-
-					j = nd6_find_neighbor_cache_entry(&(default_router_list[tmp].neighbor_entry->next_hop_address));
-					if (j < 0) {
-						LWIP_DEBUGF(ND6_DEBUG, ("Failed to find matched negighbor entry to default router list\n"));
-						/* @todo should we do initialize NCE manually?*/
-					} else {
-						LWIP_DEBUGF(ND6_DEBUG, ("Neighbor cache entry (index %d) will be freed\n", j));
-						nd6_free_neighbor_cache_entry(j);
-					}
-
-					default_router_list[tmp].neighbor_entry = NULL;
-					default_router_list[tmp].invalidation_timer = 0;
-					default_router_list[tmp].flags = 0;
 				}
 			}
 		}
