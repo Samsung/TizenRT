@@ -865,7 +865,7 @@ void nd6_input(struct pbuf *p, struct netif *inp)
 			return;
 		}
 
-		if (!ip6_addr_islinklocal(&ND6H_RD_DEST_ADDR(redir_hdr))) {
+		if (!ip6_addr_islinklocal(&ND6H_RD_TARGET_ADDR(redir_hdr))) {
 			if (!ip6_addr_cmp(&ND6H_RD_DEST_ADDR(redir_hdr), &ND6H_RD_TARGET_ADDR(redir_hdr))) {
 				pbuf_free(p);
 				ND6_STATS_INC(nd6.drop);
