@@ -16,7 +16,7 @@
  *
  ****************************************************************************/
 /****************************************************************************
- * apps/include/ftpc.h
+ * external/include/protocols/ftpc.h
  *
  *   Copyright (C) 2011 Gregory Nutt. All rights reserved.
  *   Author: Gregory Nutt <gnutt@nuttx.org>
@@ -50,8 +50,8 @@
  *
  ****************************************************************************/
 
-#ifndef __APPS_INCLUDE_FTPC_H
-#define __APPS_INCLUDE_FTPC_H
+#ifndef __EXTERNAL_INCLUDE_PROTOCOLS_FTPC_H
+#define __EXTERNAL_INCLUDE_PROTOCOLS_FTPC_H
 
 /****************************************************************************
  * Included Files
@@ -237,4 +237,4 @@ EXTERN FAR char *ftpc_response(SESSION handle);
 // *INDENT-ON*
 #endif
 
-#endif							/* __APPS_INCLUDE_FTPC_H */
+#endif							/* __EXTERNAL_INCLUDE_PROTOCOLS_FTPC_H */

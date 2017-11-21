@@ -16,7 +16,7 @@
  *
  ****************************************************************************/
 /****************************************************************************
- * apps/include/netutils/base64.h
+ * external/include/codecs/base64.h
  *
  * This file is part of the NuttX RTOS:
  *
@@ -66,8 +66,8 @@
  *
  ****************************************************************************/
 
-#ifndef __APPS_INCLUDE_NETUTILS_BASE64_H
-#define __APPS_INCLUDE_NETUTILS_BASE64_H
+#ifndef __EXTERNAL_INCLUDE_CODECS_BASE64_H
+#define __EXTERNAL_INCLUDE_CODECS_BASE64_H
 
 /****************************************************************************
  * Included Files
@@ -98,4 +98,4 @@ unsigned char *base64w_decode(const unsigned char *src, size_t len, unsigned cha
 }
 #endif
 
-#endif							/* __APPS_INCLUDE_NETUTILS_BASE64_H */
+#endif							/* __EXTERNAL_INCLUDE_CODECS_BASE64_H */

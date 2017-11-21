@@ -28,8 +28,8 @@
  * @brief websocket header to support WS/WSS server and client.
  */
 
-#ifndef __APPS_INCLUDE_NETUTILS_WEBSOCKET_H
-#define __APPS_INCLUDE_NETUTILS_WEBSOCKET_H
+#ifndef __EXTERNAL_INCLUDE_PROTOCOLS_WEBSOCKET_H
+#define __EXTERNAL_INCLUDE_PROTOCOLS_WEBSOCKET_H
 
 /****************************************************************************
  * Included Files
@@ -558,4 +558,4 @@ websocket_return_t websocket_set_error(websocket_t *websocket, int val);
 
 /** @} */// end of Websocket group
 
-#endif							/* __APPS_INCLUDE_NETUTILS_WEBSOCKET_H */
+#endif							/* __EXTERNAL_INCLUDE_PROTOCOLS_WEBSOCKET_H */

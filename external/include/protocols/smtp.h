@@ -16,7 +16,7 @@
  *
  ****************************************************************************/
 /****************************************************************************
- * apps/include/netutils/smtp.h
+ * external/include/protocols/smtp.h
  * SMTP header file
  *
  *   Copyright (C) 2007, 2009, 2011, 2015 Gregory Nutt. All rights reserved.
@@ -54,8 +54,8 @@
  *
  ****************************************************************************/
 
-#ifndef __APPS_INCLUDE_NETUTILS_SMTP_H
-#define __APPS_INCLUDE_NETUTILS_SMTP_H
+#ifndef __EXTERNAL_INCLUDE_PROTOCOLS_SMTP_H
+#define __EXTERNAL_INCLUDE_PROTOCOLS_SMTP_H
 
 /****************************************************************************
  * Included Files
@@ -92,4 +92,4 @@ void smtp_close(FAR void *handle);
 }
 #endif
 
-#endif							/* __APPS_INCLUDE_NETUTILS_SMTP_H */
+#endif							/* __EXTERNAL_INCLUDE_PROTOCOLS_SMTP_H */

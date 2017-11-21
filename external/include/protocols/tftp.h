@@ -16,7 +16,7 @@
  *
  ****************************************************************************/
 /****************************************************************************
- *  apps/include/netutils/tftp.h
+ *  external/include/protocols/tftp.h
  *
  *   Copyright (C) 2008-2009, 2011 Gregory Nutt. All rights reserved.
  *   Author: Gregory Nutt <gnutt@nuttx.org>
@@ -50,8 +50,8 @@
  *
  ****************************************************************************/
 
-#ifndef __APPS_INCLUDE_NETUTILS_TFTP_H
-#define __APPS_INCLUDE_NETUTILS_TFTP_H
+#ifndef __EXTERNAL_INCLUDE_PROTOCOLS_TFTP_H
+#define __EXTERNAL_INCLUDE_PROTOCOLS_TFTP_H
 
 /****************************************************************************
  * Included Files
@@ -87,4 +87,4 @@ int tftpput(const char *local, const char *remote, in_addr_t addr, bool binary);
 }
 #endif
 
-#endif							/* __APPS_INCLUDE_NETUTILS_TFTP_H */
+#endif							/* __EXTERNAL_INCLUDE_PROTOCOLS_TFTP_H */

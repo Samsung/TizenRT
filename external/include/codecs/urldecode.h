@@ -16,7 +16,7 @@
  *
  ****************************************************************************/
 /****************************************************************************
- * apps/include/netutils/urldecode.h
+ * external/include/codecs/urldecode.h
  *
  * This file is part of the NuttX RTOS:
  *
@@ -50,8 +50,8 @@
  *
  ****************************************************************************/
 
-#ifndef __APPS_INCLUDE_NETUTILS_URLDECODE_H
-#define __APPS_INCLUDE_NETUTILS_URLDECODE_H
+#ifndef __EXTERNAL_INCLUDE_CODECS_URLDECODE_H
+#define __EXTERNAL_INCLUDE_CODECS_URLDECODE_H
 
 /****************************************************************************
  * Included Files
@@ -92,4 +92,4 @@ void urlrawencode(char *str, char *urlbuf);
 }
 #endif
 
-#endif							/* __APPS_INCLUDE_NETUTILS_URLDECODE_H */
+#endif							/* __EXTERNAL_INCLUDE_CODECS_URLDECODE_H */
