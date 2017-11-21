@@ -466,6 +466,17 @@ void nd6_input(struct pbuf *p, struct netif *inp)
 
 		/* Check for ANY address in src (DAD algorithm). */
 		if (ip6_addr_isany(ip6_current_src_addr())) {
+			if ((lladdr_opt != NULL) && (ND6H_LLADDR_OPT_TYPE(lladdr_opt) == ND6_OPTION_TYPE_SOURCE_LLADDR)) {
+				/* RFC 7.1.1.
+				 * If the IP source address is the unspecified address, there is no
+				 * source link-layer address option in the message.
+				 */
+				pbuf_free(p);
+				ND6_STATS_INC(nd6.proterr);
+				ND6_STATS_INC(nd6.drop);
+				return;
+			}
+
 			if (ip6_addr_issolicitednode(ip6_current_dest_addr())) {
 				/* Sender is validating this address. */
 				for (i = 0; i < LWIP_IPV6_NUM_ADDRESSES; ++i) {
@@ -490,17 +501,6 @@ void nd6_input(struct pbuf *p, struct netif *inp)
 				/* RFC 7.1.1.
 				 * If the IP source address is the unspecified address, the IP
 				 * destination address is a solicited-node multicast address.
-				 */
-				pbuf_free(p);
-				ND6_STATS_INC(nd6.proterr);
-				ND6_STATS_INC(nd6.drop);
-				return;
-			}
-
-			if (lladdr_opt != NULL) {
-				/* RFC 7.1.1.
-				 * If the IP source address is the unspecified address, there is no
-				 * source link-layer address option in the message.
 				 */
 				pbuf_free(p);
 				ND6_STATS_INC(nd6.proterr);
