@@ -80,6 +80,7 @@
 #include <net/lwip/dns.h>
 
 #include <string.h>
+#include <time.h>
 
 #ifdef LWIP_HOOK_FILENAME
 #include LWIP_HOOK_FILENAME
@@ -88,6 +89,12 @@
 #if LWIP_IPV6_DUP_DETECT_ATTEMPTS > IP6_ADDR_TENTATIVE_COUNT_MASK
 #error LWIP_IPV6_DUP_DETECT_ATTEMPTS > IP6_ADDR_TENTATIVE_COUNT_MASK
 #endif
+
+#define TIME_INIT(time)			do {time.tv_sec = 0; time.tv_usec = 0; } while (0)
+#define TIME_INITIALIZED(time)	(time.tv_sec == 0 && time.tv_usec == 0)
+#define TIME_GET(time)			gettimeofday(&time, NULL)
+#define TIME_DIFF_SEC(old_time, cur_time) \
+		(((cur_time.tv_sec - old_time.tv_sec) + ((cur_time.tv_usec - old_time.tv_usec) / 1000000)))
 
 /* Router tables. */
 struct nd6_neighbor_cache_entry neighbor_cache[LWIP_ND6_NUM_NEIGHBORS];
@@ -992,6 +999,7 @@ void nd6_input(struct pbuf *p, struct netif *inp)
 		struct ip6_hdr *ip6hdr;	/* IPv6 header of the packet which caused the error */
 		u32_t pmtu;
 		ip6_addr_t tmp;
+		struct timeval curtime;
 
 		/* Check that ICMPv6 header + IPv6 header fit in payload */
 		if (p->len < (sizeof(struct icmp6_hdr) + IP6_HLEN)) {
@@ -1018,7 +1026,18 @@ void nd6_input(struct pbuf *p, struct netif *inp)
 
 		/* Change the Path MTU. */
 		pmtu = lwip_htonl(icmp6hdr->data);
-		destination_cache[i].pmtu = (u16_t) LWIP_MIN(pmtu, 0xFFFF);
+		TIME_GET(curtime);
+		if (TIME_INITIALIZED(destination_cache[i].pmtu_update_time) ||
+			(pmtu <= destination_cache[i].pmtu) ||
+			(TIME_DIFF_SEC(destination_cache[i].pmtu_update_time, curtime) >= (10 * 60) /* 10 minutes */)) {
+			/* PMTU will be updated when one of the following conditions is true.
+			 * 1. pmtu is changed for the 1st time
+			 * 2. pmtu size is equal or decreased
+			 * 3. pmtu size is increased and 10 minutes or more passed since last pmtu update. (RFC 1981)
+			 */
+			destination_cache[i].pmtu = (u16_t) LWIP_MIN(pmtu, 0xFFFF);
+			destination_cache[i].pmtu_update_time = curtime;
+		}
 
 		break;				/* ICMP6_TYPE_PTB */
 	}
@@ -1965,11 +1984,13 @@ static s8_t nd6_get_next_hop_entry(const ip6_addr_t *ip6addr, struct netif *neti
 			if (ip6_addr_islinklocal(ip6addr) || nd6_is_prefix_in_netif(ip6addr, netif)) {
 				/* Destination in local link. */
 				destination_cache[nd6_cached_destination_index].pmtu = netif->mtu;
+				TIME_INIT(destination_cache[nd6_cached_destination_index].pmtu_update_time);
 				ip6_addr_copy(destination_cache[nd6_cached_destination_index].next_hop_addr, destination_cache[nd6_cached_destination_index].destination_addr);
 #ifdef LWIP_HOOK_ND6_GET_GW
 			} else if (next_hop_addr != NULL) {
 				/* Next hop for destination provided by hook function. */
 				destination_cache[nd6_cached_destination_index].pmtu = netif->mtu;
+				TIME_INIT(destination_cache[nd6_cached_destination_index].pmtu_update_time);
 				ip6_addr_set(&destination_cache[nd6_cached_destination_index].next_hop_addr, next_hop_addr);
 #endif							/* LWIP_HOOK_ND6_GET_GW */
 			} else {
@@ -1981,6 +2002,7 @@ static s8_t nd6_get_next_hop_entry(const ip6_addr_t *ip6addr, struct netif *neti
 					return ERR_RTE;
 				}
 				destination_cache[nd6_cached_destination_index].pmtu = netif->mtu;	/* Start with netif mtu, correct through ICMPv6 if necessary */
+				TIME_INIT(destination_cache[nd6_cached_destination_index].pmtu_update_time);
 				ip6_addr_copy(destination_cache[nd6_cached_destination_index].next_hop_addr, default_router_list[i].neighbor_entry->next_hop_address);
 			}
 		}

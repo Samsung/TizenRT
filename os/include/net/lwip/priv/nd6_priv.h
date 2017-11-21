@@ -112,6 +112,7 @@ struct nd6_destination_cache_entry {
 	ip6_addr_t next_hop_addr;
 	u16_t pmtu;
 	u32_t age;
+	struct timeval pmtu_update_time;
 };
 
 struct nd6_prefix_list_entry {
