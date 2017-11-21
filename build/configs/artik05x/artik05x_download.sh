@@ -24,10 +24,12 @@
 source .config
 OS_DIR_PATH=${PWD}
 BUILD_DIR_PATH=${OS_DIR_PATH}/../build
-CONFIGS_PATH=${BUILD_DIR_PATH}/configs
+CONFIGS_DIR_PATH=${BUILD_DIR_PATH}/configs
 OUTPUT_BINARY_PATH=${BUILD_DIR_PATH}/output/bin
 OPENOCD_DIR_PATH=${BUILD_DIR_PATH}/tools/openocd
-PARTGEN_PATH=${BUILD_DIR_PATH}/configs/artik05x/scripts
+ARTIK05X_DIR_PATH=${CONFIGS_DIR_PATH}/artik05x
+SCRIPTS_PATH=${ARTIK05X_DIR_PATH}/scripts
+CODESIGNER_PATH=${ARTIK05X_DIR_PATH}/tools/codesigner
 
 SYSTEM_TYPE=`getconf LONG_BIT`
 if [ "$SYSTEM_TYPE" = "64" ]; then
@@ -37,6 +39,7 @@ else
 fi
 
 TIZENRT_BIN=$OUTPUT_BINARY_PATH/tinyara_head.bin
+CODESIGNER_TOOL=artik05x_AppCodesigner
 
 usage() {
     cat <<EOF
@@ -100,7 +103,7 @@ download()
     fi
 
     # Generate Partition Map
-    ${PARTGEN_PATH}/partition_gen.sh
+    ${SCRIPTS_PATH}/partition_gen.sh
 
     # Download all binaries using openocd script
     pushd ${OPENOCD_DIR_PATH} > /dev/null
@@ -137,7 +140,7 @@ erase()
     esac
 
     # Generate Partition Map
-    ${PARTGEN_PATH}/partition_gen.sh
+    ${SCRIPTS_PATH}/partition_gen.sh
 
     # Download all binaries using openocd script
     pushd ${OPENOCD_DIR_PATH} > /dev/null
@@ -148,12 +151,12 @@ erase()
 }
 
 signing() {
-    if [ ! -f $CONFIGS_PATH/artik05x/tools/codesigner/artik05x_codesigner ]; then
-        echo "artik05x_codesigner should be in $CONFIGS_PATH/artik05x/tools/codesigner to use secure board like ARTIK053S, ARTIK055S."
+    if [ ! -f ${CODESIGNER_PATH}/${CODESIGNER_TOOL} ]; then
+        echo "${CODESIGNER_TOOL} should be in ${CODESIGNER_PATH} to use secure boards like ARTIK053S, ARTIK055S."
         exit 1
     fi
 
-    $CONFIGS_PATH/artik05x/tools/codesigner/artik05x_codesigner -sign $TIZENRT_BIN
+    ${CODESIGNER_PATH}/${CODESIGNER_TOOL} ${CODESIGNER_PATH}/rsa_private.key $TIZENRT_IMAGE
     TIZENRT_BIN=${TIZENRT_BIN}-signed
 }
 
