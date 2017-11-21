@@ -65,6 +65,7 @@
 #include <tinyara/sched.h>
 #endif
 #include <tinyara/mm/mm.h>
+#include <tinyara/userspace.h>
 
 /****************************************************************************
  * Pre-processor Definitions
@@ -118,6 +119,10 @@ FAR void *mm_realloc(FAR struct mm_heap_s *heap, FAR void *oldmem, size_t size)
 	size_t nextsize = 0;
 #endif
 	FAR void *newmem;
+
+#if defined(CONFIG_BUILD_PROTECTED) && defined(CONFIG_UTASK_MEMORY_PROTECTION) && !defined(__KERNEL__)
+	mm_set_alloc_state(heap, MM_IN_REALLOC);
+#endif
 
 	/* If oldmem is NULL, then realloc is equivalent to malloc */
 
@@ -387,4 +392,12 @@ FAR void *mm_realloc(FAR struct mm_heap_s *heap, FAR void *oldmem, size_t size)
 
 		return newmem;
 	}
+
+#if defined(CONFIG_BUILD_PROTECTED) && defined(CONFIG_UTASK_MEMORY_PROTECTION) && !defined(__KERNEL__)
+	mm_set_alloc_state(heap, MM_DEFAULT);
+
+	// This is done to revoke permission given at the start of this function
+	char *p = (char *)CONFIG_RAM_END;
+	*p = 0xf;
+#endif
 }

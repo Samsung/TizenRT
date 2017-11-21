@@ -79,31 +79,58 @@
 extern uint32_t _vector_start;
 extern uint32_t _vector_end;
 
-#if defined(CONFIG_BUILD_PROTECTED)
+#if defined(CONFIG_BUILD_PROTECTED) && defined(CONFIG_UTASK_MEMORY_PROTECTION)
 const struct mpu_region_info regions_info[] = {
 	{
-		&mpu_user_intsram_wb, 0x0, 0x80000000, MPU_REG_ENTIRE_MAP,
+		&mpu_priv_intsram_wb, 0x0, 0x80000000, MPU_REG_ENTIRE_MAP,
 	},
 	{
-		&mpu_priv_intsram_wb, S5J_IRAM_PADDR, 0x40000, MPU_REG_KERN_DATA,
+		&mpu_user_intsram_wb, 0x02060000, 0x1000, MPU_REG_USER_DATA,
 	},
 	{
-		&mpu_priv_noncache, 0x02100000, 0x80000, MPU_REG_KERN_REG2,
+		&mpu_priv_noncache, 0x02100000, 0x80000, MPU_REG_KERN_REG0,
 	},
 	{
-		&mpu_priv_flash, S5J_FLASH_MIRROR_PADDR, S5J_FLASH_MIRROR_SIZE, MPU_REG_KERN_CODE,
-	},
-	{
-		&mpu_priv_flash_rw, S5J_FLASH_PADDR, S5J_FLASH_SIZE, MPU_REG_KERN_REG1,
-	},
-	{
-		&mpu_user_flash_rw, (uintptr_t)__uflash_segment_start__, (size_t)__uflash_segment_size__, MPU_REG_KERN_REG0,
+		&mpu_priv_flash, S5J_FLASH_MIRROR_PADDR, S5J_FLASH_MIRROR_SIZE, MPU_REG_KERN_REG1,
 	},
 	{
 		&mpu_peripheral, S5J_PERIPHERAL_PADDR, S5J_PERIPHERAL_SIZE, MPU_REG_KERN_PERI,
 	},
 	{
+		&mpu_user_flash, (uintptr_t)__uflash_segment_start__, (size_t)__uflash_segment_size__, MPU_REG_KERN_CODE,
+	},
+	{
 		&mpu_priv_flash, S5J_IRAM_MIRROR_PADDR, S5J_IRAM_MIRROR_SIZE, MPU_REG_KERN_VEC,
+	}
+};
+#elif defined(CONFIG_BUILD_PROTECTED)
+const struct mpu_region_info regions_info[] = {
+	{
+		&mpu_priv_flash, 0x0, 0x80000000, MPU_REG0,
+	},
+	{
+		&mpu_user_intsram_wb, S5J_IRAM_PADDR, S5J_IRAM_SIZE, MPU_REG1,
+	},
+	{
+		&mpu_priv_intsram_wb, S5J_IRAM_PADDR, 0x40000, MPU_REG2,
+	},
+	{
+		&mpu_priv_noncache, 0x02100000, 0x80000, MPU_REG3,
+	},
+	{
+		&mpu_priv_intsram_wb, S5J_FLASH_PADDR, S5J_FLASH_SIZE, MPU_REG4,
+	},
+	{
+		&mpu_user_intsram_ro, (uintptr_t)__uflash_segment_start__, (size_t)__uflash_segment_size__, MPU_REG5,
+	},
+	{
+		&mpu_priv_flash, S5J_FLASH_MIRROR_PADDR, S5J_FLASH_MIRROR_SIZE, MPU_REG6,
+	},
+	{
+		&mpu_priv_stronglyordered, S5J_PERIPHERAL_PADDR, S5J_PERIPHERAL_SIZE, MPU_REG7
+	},
+	{
+		&mpu_priv_flash, S5J_IRAM_MIRROR_PADDR, S5J_IRAM_MIRROR_SIZE, MPU_REG8
 	}
 };
 #endif
@@ -163,7 +190,7 @@ void up_copyvectorblock(void)
 #ifdef CONFIG_ARMV7M_MPU
 int s5j_mpu_initialize(void)
 {
-#if defined(CONFIG_BUILD_PROTECTED)
+#ifdef CONFIG_BUILD_PROTECTED
 	int i;
 
 	for (i = 0; i < (sizeof(regions_info) / sizeof(struct mpu_region_info)); i++) {
@@ -202,7 +229,6 @@ int s5j_mpu_initialize(void)
 	 */
 	mpu_priv_flash(S5J_IRAM_MIRROR_PADDR, S5J_IRAM_MIRROR_SIZE);
 #endif
-
 	mpu_control(true);
 
 	return 0;

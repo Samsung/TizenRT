@@ -72,11 +72,8 @@
 /****************************************************************************
  * Pre-processor Definitions
  ****************************************************************************/
-/*
-  Region definitions for our platform
- * TODO: This definition should be moved to platform specific header
- *
- */
+/* MPU Region Definitions */
+
 #define MPU_REG0       (0)
 #define MPU_REG1       (1)
 #define MPU_REG2       (2)
@@ -193,11 +190,52 @@
 #define FPU_CONTEXT_REGS  (0)
 #endif
 
+#if defined(CONFIG_BUILD_PROTECTED) && defined(CONFIG_UTASK_MEMORY_PROTECTION)
+#define REG_USR_CFG    (ARM_CONTEXT_REGS + FPU_CONTEXT_REGS)
+#define REG_RNUM      (REG_USR_CFG + 0)
+#define REG_RBASE     (REG_USR_CFG + 1)
+#define REG_RSIZE     (REG_USR_CFG + 2)
+#define REG_RATTR     (REG_USR_CFG + 3)
 
+#define REG_USR_CFG1   (REG_RATTR + 1)
+#define REG_RNUM1      (REG_USR_CFG1 + 0)
+#define REG_RBASE1     (REG_USR_CFG1 + 1)
+#define REG_RSIZE1     (REG_USR_CFG1 + 2)
+#define REG_RATTR1     (REG_USR_CFG1 + 3)
+
+#define REG_USR_STK     (REG_RATTR1 + 1)
+#define REG_RNUM_STK    (REG_USR_STK + 0)
+#define REG_RBASE_STK   (REG_USR_STK + 1)
+#define REG_RSIZE_STK   (REG_USR_STK + 2)
+#define REG_RATTR_STK   (REG_USR_STK + 3)
+
+/* Availbale user configurable registers */
+#define MPU_CONTEXT_REGS    ((REG_RATTR_STK - REG_RNUM) + 1)
+
+#else
+#define MPU_CONTEXT_REGS  (0)
+#endif
+
+/* 3 regions, each region has 4 info, each info is 4 byte */
+#define MPU_CONTEXT_SIZE    (4 * MPU_CONTEXT_REGS)
+
+#ifdef CONFIG_MPU_STACKGUARD
+#define REG_STACK_GUARD        (ARM_CONTEXT_REGS + FPU_CONTEXT_REGS + MPU_CONTEXT_REGS)
+#define REG_RNUM_STKGUARD      (REG_STACK_GUARD + 0)
+#define REG_RBASE_STKGUARD     (REG_STACK_GUARD + 1)
+#define REG_RSIZE_STKGUARD     (REG_STACK_GUARD + 2)
+#define REG_RATTR_STKGUARD     (REG_STACK_GUARD + 3)
+#define MPU_GUARD_REGS  (4)
+#define ARCH_STACKGUARD_MINSIZE	(32) /* supported minimum region size is 32 for armv-r */
+#else
+#define MPU_GUARD_REGS  (0)
+#define ARCH_STACKGUARD_MINSIZE	(0)
+#endif
 /* The total number of registers saved by software */
 
-#define XCPTCONTEXT_REGS    (ARM_CONTEXT_REGS + FPU_CONTEXT_REGS)
+#define XCPTCONTEXT_REGS    (ARM_CONTEXT_REGS + FPU_CONTEXT_REGS + MPU_CONTEXT_REGS + MPU_GUARD_REGS)
 #define XCPTCONTEXT_SIZE    (4 * XCPTCONTEXT_REGS)
+#define MPU_TOTAL_USER_REG  (MPU_CONTEXT_REGS / 4)
 
 /* Friendly register names */
 

@@ -89,8 +89,12 @@
 
 #define FILENAME_MAX _POSIX_NAME_MAX
 
-/* The (default) size of the I/O buffers */
+//TODO: It's a workaround to get printf logs from userspace
+#if defined(CONFIG_BUILD_PROTECTED) && !defined(CONFIG_UTASK_MEMORY_PROTECTION)
+#define CONFIG_STDIO_BUFFER_SIZE  0
+#endif
 
+/* The (default) size of the I/O buffers */
 #if (CONFIG_STDIO_BUFFER_SIZE > 0)
 #  define BUFSSIZ   CONFIG_STDIO_BUFFER_SIZE
 #else

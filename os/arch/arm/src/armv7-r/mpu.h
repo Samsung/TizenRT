@@ -393,7 +393,7 @@ static inline void mpu_showtype(void)
 static inline inline uint32_t get_mpu_region_base(void)
 {
 	uint32_t value;
-	__asm__
+	__asm__ __volatile__
 	(
 		"mrc p15, 0, %0, c6, c1, 0"
 		: "=r"(value)
@@ -407,7 +407,7 @@ static inline inline uint32_t get_mpu_region_base(void)
 static inline inline uint32_t get_mpu_region_size(void)
 {
 	uint32_t value;
-	__asm__
+	__asm__ __volatile__
 	(
 		"mrc p15, 0, %0, c6, c1, 2"
 		: "=r"(value)
@@ -421,7 +421,7 @@ static inline inline uint32_t get_mpu_region_size(void)
 static inline inline uint32_t is_mpu_region_en(void)
 {
 	uint32_t value;
-	__asm__
+	__asm__ __volatile__
 	(
 		"mrc p15, 0, %0, c6, c1, 2"
 		: "=r"(value)
@@ -435,7 +435,7 @@ static inline inline uint32_t is_mpu_region_en(void)
 static inline inline uint32_t get_mpu_region_access_ctrl(void)
 {
 	uint32_t value;
-	__asm__
+	__asm__ __volatile__
 	(
 		"mrc p15, 0, %0, c6, c1, 4"
 		: "=r"(value)
@@ -449,7 +449,7 @@ static inline inline uint32_t get_mpu_region_access_ctrl(void)
 static inline inline uint32_t get_mpu_region_num(void)
 {
 	uint32_t value;
-	__asm__
+	__asm__ __volatile__
 	(
 		"mrc p15, 0, %0, c6, c2, 0"
 		: "=r"(value)
@@ -457,6 +457,35 @@ static inline inline uint32_t get_mpu_region_num(void)
 		: "memory"
 	);
 	return value;
+}
+
+static inline void mpu_show_regioninfo(void)
+{
+#if defined(CONFIG_DEBUG) && defined(CONFIG_DEBUG_ERROR)
+	int idx, temp;
+	uint32_t regval, base, size, attr;
+
+	/* save the current region before printing the information */
+	temp = get_mpu_region_num();
+
+	lldbg("*****************************************************************************\n");
+	lldbg("*REGION_NO.\tBASE_ADDRESS\t    SIZE\t    STATUS\tATTRIBUTES*\n");
+	lldbg("*****************************************************************************\n");
+	for (idx = 0; idx < 12; idx++) {
+		mpu_set_rgnr(idx);
+		regval = get_mpu_region_num();
+		base = get_mpu_region_base();
+		size = get_mpu_region_size();
+		attr = get_mpu_region_access_ctrl();
+		lldbg("%8d\t\t%8X\t%8X\t%8d\t%8X\n", (regval & MPU_RGNR_MASK),
+			(base & MPU_RBAR_ADDR_MASK),
+			(size ? (1 << (((size & MPU_RASR_RSIZE_MASK) >> MPU_RASR_RSIZE_SHIFT) + 1)) : 0),
+			(size & MPU_RASR_ENABLE) ? 1 : 0, attr);
+	}
+	lldbg("*****************************************************************************\n");
+	/* restore the previous region */
+	mpu_set_rgnr(temp);
+#endif
 }
 
 /****************************************************************************
@@ -668,34 +697,6 @@ static inline void mpu_priv_flash(uintptr_t base, size_t size)
 	regval = MPU_RASR_ENABLE			| /* Enable region */
 		 MPU_RASR_RSIZE_LOG2((uint32_t)l2size)	| /* Region size   */
 		 ((uint32_t)subregions << MPU_RASR_SRD_SHIFT); /* Sub-regions */
-	mpu_set_drsr(regval);
-}
-
-static inline void mpu_priv_flash_rw(uintptr_t base, size_t size)
-{
-	unsigned int region = mpu_allocregion();
-	uint32_t regval;
-	uint8_t l2size;
-	uint8_t subregions;
-
-	/* Select the region */
-	mpu_set_rgnr(region);
-
-	/* Select the region base address */
-	mpu_set_drbar(base & MPU_RBAR_ADDR_MASK);
-
-	/* Select the region size and the sub-region map */
-	l2size = mpu_log2regionceil(size);
-	subregions = mpu_subregion(base, size, l2size);
-
-	/* The configure the region */
-	regval = MPU_RACR_C             | /* Cacheable     */
-		MPU_RACR_AP_RWNO;            /* P:RW   U:None */
-	mpu_set_dracr(regval);
-
-	regval = MPU_RASR_ENABLE            | /* Enable region */
-		MPU_RASR_RSIZE_LOG2((uint32_t)l2size)  | /* Region size   */
-		((uint32_t)subregions << MPU_RASR_SRD_SHIFT); /* Sub-regions */
 	mpu_set_drsr(regval);
 }
 
@@ -949,7 +950,7 @@ static inline void mpu_user_intsram_ro(uintptr_t base, size_t size)
 	regval =					  /* Not Cacheable  */
 		 MPU_RACR_B				| /* Not Bufferable */
 		 MPU_RACR_TEX(5)			| /* TEX */
-		 MPU_RACR_AP_RWNO;			  /* P:RW   U:NO */
+		 MPU_RACR_AP_RWRO;			  /* P:RW   U:RO */
 	mpu_set_dracr(regval);
 
 	regval = MPU_RASR_ENABLE			| /* Enable region */

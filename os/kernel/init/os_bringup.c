@@ -254,6 +254,7 @@ static inline void os_do_appstart(void)
 #else
 	pid = task_create("appinit", SCHED_PRIORITY_DEFAULT, CONFIG_SYSTEM_PREAPP_STACKSIZE, preapp_start, (FAR char *const *)NULL);
 #endif
+	ASSERT(pid > 0);
 #endif
 
 	svdbg("Starting application main thread\n");

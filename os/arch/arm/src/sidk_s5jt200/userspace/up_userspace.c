@@ -110,6 +110,7 @@ const struct userspace_s userspace __attribute__((section(".userspace"))) = {
 	.us_dataend       = (uintptr_t)&_edata,
 	.us_bssstart      = (uintptr_t)&_sbss,
 	.us_bssend        = (uintptr_t)&_ebss,
+	.us_heap          = (uintptr_t)&g_mmheap,
 
 	/* Task/thread startup routines */
 	.task_startup     = task_startup,

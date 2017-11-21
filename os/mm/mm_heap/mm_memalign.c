@@ -169,8 +169,11 @@ FAR void *mm_memalign(FAR struct mm_heap_s *heap, size_t alignment, size_t size)
 		/* Make sure that there is space to convert the preceding mm_allocnode_s
 		 * into an mm_freenode_s.  I think that this should always be true
 		 */
-
+#if defined(CONFIG_BUILD_PROTECTED) && defined(CONFIG_UTASK_MEMORY_PROTECTION)
+		DEBUGASSERT(alignedchunk >= rawchunk + 12);
+#else
 		DEBUGASSERT(alignedchunk >= rawchunk + 8);
+#endif
 
 		newnode = (FAR struct mm_allocnode_s *)(alignedchunk - SIZEOF_MM_ALLOCNODE);
 
@@ -198,7 +201,10 @@ FAR void *mm_memalign(FAR struct mm_heap_s *heap, size_t alignment, size_t size)
 
 		newnode->size = (size_t)next - (size_t)newnode;
 		newnode->preceding = precedingsize | MM_ALLOC_BIT;
-
+#if defined(CONFIG_BUILD_PROTECTED) && defined(CONFIG_UTASK_MEMORY_PROTECTION)
+		newnode->pid = node->pid;
+		newnode->reserved = node->reserved;
+#endif
 		/* Reduce the size of the original chunk and mark it not allocated, */
 
 		node->size = precedingsize;
@@ -222,6 +228,9 @@ FAR void *mm_memalign(FAR struct mm_heap_s *heap, size_t alignment, size_t size)
 		 * aligned node
 		 */
 		node = newnode;
+#if defined(CONFIG_BUILD_PROTECTED) && defined(CONFIG_UTASK_MEMORY_PROTECTION) && !defined(__KERNEL__)
+		mm_list_add_node(heap, node, node->size);
+#endif
 	}
 
 	/* Check if there is free space at the end of the aligned chunk */

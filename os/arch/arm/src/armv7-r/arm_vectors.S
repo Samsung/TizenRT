@@ -56,6 +56,7 @@
 
 #include <tinyara/config.h>
 #include <tinyara/irq.h>
+#include <chip/mpu-reg.h>
 
 #include "arm.h"
 #include "cp15.h"
@@ -73,12 +74,11 @@
 	.data
 	.align 3
 g_svctmp:
-	.word	0		/* Saved r9 */
+	.word	0		/* Saved lr */
 	.word	0		/* Saved r10 */
 g_irqtmp:
 	.word	0		/* Saved lr */
 	.word	0		/* Saved spsr */
-	.word	0		/* Saved r9 */
 	.word	0		/* Saved r10 */
 g_undeftmp:
 	.word	0		/* Saved lr */
@@ -86,6 +86,8 @@ g_undeftmp:
 g_aborttmp:
 	.word	0		/* Saved lr */
 	.word	0		/* Saved spsr */
+	.word	0		/* Saved r9 */
+	.word	0		/* Saved r10 */
 #if defined(CONFIG_ARCH_DABORTSTACK) && CONFIG_ARCH_DABORTSTACK >= 512
 	.word	0		/* Saved r0 */
 #endif
@@ -133,25 +135,24 @@ arm_vectorirq:
 	str		lr, [r13, #4]			/* Save spsr_IRQ */
 
 #ifdef CONFIG_BUILD_PROTECTED
-	str		r9, [r13, #8]			/* Save R9 */
-	str		r10, [r13, #12]			/* Save R10 */
+	str		r10, [r13, #8]			/* Save R10 */
 
 	/* Then switch back to SVC mode */
-	mov		r10, lr
-	and		r10, #PSR_MODE_MASK		/* User mode? */
-	cmp		r10, #PSR_MODE_USR		/* User mode? */
+	and		lr, #PSR_MODE_MASK		/* User mode? */
+	cmp		lr, #PSR_MODE_USR		/* User mode? */
 	bne		1f			/* Branch if not user mode */
 
-	bic		r10, r10, #PSR_MODE_MASK	/* Keep F and T bits */
-	orr		r10, r10, #(PSR_MODE_SYS | PSR_I_BIT)
-	msr		cpsr_c, r10				/* Switch to SYS mode */
-	mov		r9, r13
-	bic		r10, r10, #PSR_MODE_MASK	/* Keep F and T bits */
-	orr		r10, r10, #(PSR_MODE_SVC | PSR_I_BIT)
-	msr		cpsr_c, r10				/* Switch to SVC mode */
-	mov		r13, r9
-	b 2f
+	bic		lr, lr, #PSR_MODE_MASK	/* Keep F and T bits */
+	orr		lr, lr, #(PSR_MODE_SYS | PSR_I_BIT)
+	msr		cpsr_c, lr				/* Switch to SVC mode */
+	mov		r10, r13
+	bic		lr, lr, #PSR_MODE_MASK	/* Keep F and T bits */
+	orr		lr, lr, #(PSR_MODE_SVC | PSR_I_BIT)
+	msr		cpsr_c, lr				/* Switch to SVC mode */
+	mov		r13, r10
+	b		2f
 1:
+	mrs		lr, spsr
 #endif
 	bic		lr, lr, #PSR_MODE_MASK	/* Keep F and T bits */
 #ifdef CONFIG_ARMV7R_DECODEFIQ
@@ -172,19 +173,30 @@ arm_vectorirq:
 
 	ldr		r0, .Lirqtmp			/* Points to temp storage */
 #ifndef CONFIG_BUILD_PROTECTED
-	ldmia	r0, {r3, r4}		/* Recover r3=lr_IRQ, r4=spsr_IRQ */
+	ldmia	r0, {r3, r4}			/* Recover r3=lr_IRQ, r4=spsr_IRQ */
+#else
+	ldmia	r0, {r3, r4, r10}			/* Recover r3=lr_IRQ, r4=spsr_IRQ, R10 */
+	str		r10, [r13, #(4*REG_R10)]		/* Save R10 */
 #endif
 
+	/*This push is required to save the return address before making C call
+	 * If the configs are disabled then its just a dummy save and restore */
+#ifdef CONFIG_MPU_STACKGUARD
+	mov     r0, sp
+	push	{lr}
+	bl		up_mpuguardsave
+	pop		{lr}
+#endif
 #ifdef CONFIG_BUILD_PROTECTED
-	/* Recover r3=lr_IRQ, r4=spsr_IRQ, R9 and R10 */
-
-	ldmia	r0, {r3, r4, r9, r10}
-	str		r9, [r13, #(4*REG_R9)]			/* Save R9 */
-	str		r10, [r13, #(4*REG_R10)]		/* Save R10 */
-
 	/* Did we enter from user mode?  If so then we need get the values of
 	 * USER mode r13(sp) and r14(lr).
 	 */
+#if defined(CONFIG_UTASK_MEMORY_PROTECTION)
+	mov     r0, sp
+	push	{lr}
+	bl		up_mpucontextsave
+	pop		{lr}
+#endif
 	and		r1, r4, #PSR_MODE_MASK	/* Interrupted mode */
 	cmp		r1, #PSR_MODE_USR		/* User mode? */
 	bne		.Lirqentersvc			/* Branch if not user mode */
@@ -256,7 +268,17 @@ arm_vectorirq:
 	ldr		r1, [r0, #(4*REG_CPSR)]	/* Fetch the return SPSR */
 	msr		spsr_cxsf, r1				/* Set the return mode SPSR */
 
+#ifdef CONFIG_MPU_STACKGUARD
+	push	{lr}
+	bl		up_mpuguardrestore
+	pop		{lr}
+#endif
 #ifdef CONFIG_BUILD_PROTECTED
+#if defined(CONFIG_UTASK_MEMORY_PROTECTION)
+	push	{lr}
+	bl		up_mpucontextrestore
+	pop		{lr}
+#endif
 	/* Are we leaving in user mode?  If so then we need to restore the
 	 * values of USER mode r13(sp) and r14(lr).
 	 */
@@ -281,6 +303,8 @@ arm_vectorirq:
 
 	ldmia	r0, {r0-r15}^			/* Return */
 
+.Lsvctmp:
+	.word	g_svctmp
 .Lirqtmp:
 	.word	g_irqtmp
 #if CONFIG_ARCH_INTERRUPTSTACK > 3
@@ -308,38 +332,35 @@ arm_vectorsvc:
 	 * and store r0-r12 into the frame.
 	 */
 #ifdef CONFIG_BUILD_PROTECTED
-	push	{lr}
+	push		{lr}
 	ldr		lr, .Lsvctmp
-	stmia	lr, {r9, r10}
-
-	mrs		r10, spsr
-	and		r10, #PSR_MODE_MASK		/* User mode? */
-	cmp		r10, #PSR_MODE_USR		/* User mode? */
+	str		r10, [lr]
+	mrs		lr, spsr
+	and		lr, #PSR_MODE_MASK		/* User mode? */
+	cmp		lr, #PSR_MODE_USR		/* User mode? */
 	bne		1f			/* Branch if not user mode */
 
-	bic		r10, r10, #PSR_MODE_MASK	/* Keep F and T bits */
-	orr		r10, r10, #(PSR_MODE_SYS | PSR_I_BIT)
-	msr		cpsr_c, r10				/* Switch to SVC mode */
-	mov		r9, r13
-	bic		r10, r10, #PSR_MODE_MASK	/* Keep F and T bits */
-	orr		r10, r10, #(PSR_MODE_SVC | PSR_I_BIT)
-	msr		cpsr_c, r10				/* Switch to SVC mode */
+	bic		lr, lr, #PSR_MODE_MASK	/* Keep F and T bits */
+	orr		lr, lr, #(PSR_MODE_SYS | PSR_I_BIT)
+	msr		cpsr_c, lr				/* Switch to SVC mode */
+	mov		r10, r13
+	bic		lr, lr, #PSR_MODE_MASK	/* Keep F and T bits */
+	orr		lr, lr, #(PSR_MODE_SVC | PSR_I_BIT)
+	msr		cpsr_c, lr				/* Switch to SVC mode */
 	pop		{lr}
-	mov		r13, r9
+	mov		r13, r10
 	b		2f
 1:
-	pop		{lr}
+	pop	{lr}
 2:
 #endif
-
-	sub		sp, sp, #XCPTCONTEXT_SIZE
+	sub	sp, sp, #XCPTCONTEXT_SIZE
 	stmia	sp, {r0-r12}			/* Save the SVC mode regs */
 
 #ifdef CONFIG_BUILD_PROTECTED
 	ldr		r3, .Lsvctmp
-	ldmia	r3, {r9, r10}				/* restore R9, R10 */
-	str		r9, [r13, #(4*REG_R9)]		/* Save R9 */
-	str		r10, [r13, #(4*REG_R10)]	/* Save R10 */
+	ldr		r10, [r3]
+	str		r10, [r13, #(4*REG_R10)]			/* Save R10 */
 #endif
 
 	/* Get the values for r15(pc) and CPSR in r3 and r4 */
@@ -440,9 +461,6 @@ arm_vectorsvc:
 
 	ldmia	r0, {r0-r15}^			/* Return */
 
-.Lsvctmp:
-	.word	g_svctmp
-
 	.size	arm_vectorsvc, . - arm_vectorsvc
 
 	.align	5
@@ -472,13 +490,31 @@ arm_vectordata:
 	str		lr, [r13]				/* Save in temp storage */
 	mrs		lr, spsr				/* Get SPSR */
 	str		lr, [r13, #4]			/* Save in temp storage */
+	str		r9, [r13, #8]
+	str		r10, [r13, #12]
 
 #if defined(CONFIG_ARCH_DABORTSTACK) && CONFIG_ARCH_DABORTSTACK >= 512
-	str		r0, [r13, #8]
+	str		r0, [r13, #16]
 #endif
 
 	/* Then switch back to SVC mode */
+#ifdef CONFIG_BUILD_PROTECTED
+	mov		r10, lr
+	and		r10, #PSR_MODE_MASK		/* User mode? */
+	cmp		r10, #PSR_MODE_USR		/* User mode? */
+	bne		1f			/* Branch if not user mode */
 
+	bic		r10, r10, #PSR_MODE_MASK	/* Keep F and T bits */
+	orr		r10, r10, #(PSR_MODE_SYS | PSR_I_BIT)
+	msr		cpsr_c, r10				/* Switch to SVC mode */
+	mov		r9, r13
+	bic		r10, r10, #PSR_MODE_MASK	/* Keep F and T bits */
+	orr		r10, r10, #(PSR_MODE_SVC | PSR_I_BIT)
+	msr		cpsr_c, r10				/* Switch to SVC mode */
+	mov		r13, r9
+	b 2f
+1:
+#endif
 	bic		lr, lr, #PSR_MODE_MASK	/* Keep F and T bits */
 	orr		lr, lr, #(PSR_MODE_SVC | PSR_I_BIT | PSR_F_BIT)
 	msr		cpsr_c, lr				/* Switch to SVC mode */
@@ -496,19 +532,35 @@ arm_vectordata:
 	ldr		sp, .Ldabtstackbase	/* Set back DABT mode stack */
 	bic		sp, sp, #7		/* Force 8-byte alignment */
 #endif
+2:
 	sub		sp, sp, #XCPTCONTEXT_SIZE
 	stmia	sp, {r0-r12}			/* Save the SVC mode regs */
 
 	/* Get the values for r15(pc) and CPSR in r3 and r4 */
 
 	ldr		r0, .Ldaborttmp			/* Points to temp storage */
-	ldmia	r0, {r3, r4}			/* Recover r3=lr_ABT, r4=spsr_ABT */
+	ldmia	r0, {r3, r4, r9, r10}			/* Recover r3=lr_ABT, r4=spsr_ABT */
+	str		r9, [r13, #36]
+	str		r10, [r13, #40]
 
+#ifdef CONFIG_MPU_STACKGUARD
+	mov     r0, sp
+	push	{lr}
+	bl	up_mpuguardsave
+	pop	{lr}
+#endif
 #ifdef CONFIG_BUILD_PROTECTED
+	/* Save MPU context information */
+
 	/* Did we enter from user mode?  If so then we need get the values of
 	 * USER mode r13(sp) and r14(lr).
 	 */
-
+#if defined(CONFIG_UTASK_MEMORY_PROTECTION)
+	mov     r0, sp
+	push	{lr}
+	bl	up_mpucontextsave
+	pop	{lr}
+#endif
 	and		r1, r4, #PSR_MODE_MASK	/* Interrupted mode */
 	cmp		r1, #PSR_MODE_USR		/* User mode? */
 	bne		.Ldabtentersvc			/* Branch if not user mode */
@@ -590,7 +642,20 @@ arm_vectordata:
 	ldr		r1, [r0, #(4*REG_CPSR)]	/* Fetch the return SPSR */
 	msr		spsr_cxsf, r1			/* Set the return mode SPSR */
 
+#ifdef CONFIG_MPU_STACKGUARD
+	push	{lr}
+	bl	up_mpuguardrestore
+	pop	{lr}
+#endif
 #ifdef CONFIG_BUILD_PROTECTED
+	/* Restore MPU context information */
+
+#if defined(CONFIG_UTASK_MEMORY_PROTECTION)
+	push {lr}
+	bl up_mpucontextrestore
+	pop	{lr}
+#endif
+
 	/* Are we leaving in user mode?  If so then we need to restore the
 	 * values of USER mode r13(sp) and r14(lr).
 	 */

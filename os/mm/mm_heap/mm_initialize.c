@@ -141,6 +141,10 @@ void mm_addregion(FAR struct mm_heap_s *heap, FAR void *heapstart, size_t heapsi
 	heap->mm_heapstart[IDX]            = (FAR struct mm_allocnode_s *)heapbase;
 	heap->mm_heapstart[IDX]->size      = SIZEOF_MM_ALLOCNODE;
 	heap->mm_heapstart[IDX]->preceding = MM_ALLOC_BIT;
+#if defined(CONFIG_BUILD_PROTECTED) && defined(CONFIG_UTASK_MEMORY_PROTECTION)
+	heap->mm_heapstart[IDX]->pid = 0;
+	heap->mm_heapstart[IDX]->reserved = 0;
+#endif
 #ifdef CONFIG_DEBUG_MM_HEAPINFO
 	/* fill magic number 0xDEAD as malloc info for head node */
 	heapinfo_update_node((FAR struct mm_allocnode_s *)heap->mm_heapstart[IDX], 0xDEAD);
@@ -153,6 +157,10 @@ void mm_addregion(FAR struct mm_heap_s *heap, FAR void *heapstart, size_t heapsi
 	heap->mm_heapend[IDX]            = (FAR struct mm_allocnode_s *)(heapend - SIZEOF_MM_ALLOCNODE);
 	heap->mm_heapend[IDX]->size      = SIZEOF_MM_ALLOCNODE;
 	heap->mm_heapend[IDX]->preceding = node->size | MM_ALLOC_BIT;
+#if defined(CONFIG_BUILD_PROTECTED) && defined(CONFIG_UTASK_MEMORY_PROTECTION)
+	heap->mm_heapend[IDX]->pid = 0;
+	heap->mm_heapend[IDX]->reserved = 0;
+#endif
 #ifdef CONFIG_DEBUG_MM_HEAPINFO
 	/* Fill magic number 0xDEADDEAD as malloc info for tail node */
 	heapinfo_update_node((FAR struct mm_allocnode_s *)heap->mm_heapend[IDX], 0xDEADDEAD);
@@ -168,6 +176,87 @@ void mm_addregion(FAR struct mm_heap_s *heap, FAR void *heapstart, size_t heapsi
 
 	mm_addfreechunk(heap, node);
 }
+
+#if defined(CONFIG_BUILD_PROTECTED) && defined(CONFIG_UTASK_MEMORY_PROTECTION)
+#define MAX_TASKS_MASK      (CONFIG_MAX_TASKS-1)
+#define MPIDHASH(pid)        ((pid) & MAX_TASKS_MASK)
+
+struct node_info_s tempn;
+struct node_info_s tempf;
+
+#if 0
+FAR void mm_update_tmpalloc_node(FAR struct mm_heap_s *heap, struct mm_allocnode_s *node, uint32_t size)
+{
+
+	tempn.pid = getpid();
+	tempn.naddr = node;
+	tempn.size = size;
+	if (tempn.pid < 0)
+	    return;
+	heap->tnode = &tempn;
+}
+#endif
+
+#if 0
+FAR void mm_update_tmpfree_node(FAR struct mm_heap_s *heap, struct mm_freenode_s *node, uint32_t size)
+{
+
+	tempf.pid = getpid();
+	tempf.naddr = node;
+	tempf.size = size;
+	if (tempf.pid < 0)
+	    return;
+	heap->fnode = &tempf;
+}
+#endif
+
+FAR void mm_set_alloc_state(FAR struct mm_heap_s *heap, uint8_t state)
+{
+	pid_t pid;
+
+	pid = getpid();
+
+	heap->alloc_state[MPIDHASH(pid)] = state;
+}
+
+FAR void mm_list_add_node(FAR struct mm_heap_s *heap, struct mm_allocnode_s *node, uint32_t size)
+{
+	sq_queue_t *pqueue;
+
+	node->pid = getpid();
+	node->reserved = 0;
+	if (node->pid < 0)
+	    return;
+
+	sched_lock();
+	pqueue = &heap->alloc_list[MPIDHASH(node->pid)];
+	if (!pqueue)
+		return;
+
+	sq_addlast((sq_entry_t *)node, pqueue);
+	sched_unlock();
+}
+
+FAR void mm_list_del_node(FAR struct mm_heap_s *heap, struct mm_allocnode_s *node)
+{
+	sq_queue_t *pqueue;
+
+	if (node && node->pid < 0)
+	    return;
+
+	sched_lock();
+	pqueue = &heap->alloc_list[MPIDHASH(node->pid)];
+
+	/* Parse the list for address match and remove the node from the list */
+	sq_rem((sq_entry_t *)node, pqueue);
+	sched_unlock();
+}
+
+FAR void* mm_get_mmlist_bypid(FAR struct mm_heap_s *heap, int16_t pid)
+{
+	return (void *)&heap->alloc_list[MPIDHASH(pid)];
+}
+#endif
 
 /****************************************************************************
  * Name: mm_initialize

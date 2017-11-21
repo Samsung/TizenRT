@@ -5,7 +5,7 @@
 
 config SYSTEM_INFORMATION
 	bool "System Information"
-	default y
+	default n
 	---help---
 		print System Information like version, time and etc
 

@@ -131,6 +131,10 @@ void mm_extend(FAR struct mm_heap_s *heap, FAR void *mem, size_t size, int regio
 	newnode            = (FAR struct mm_allocnode_s *)(blockend - SIZEOF_MM_ALLOCNODE);
 	newnode->size      = SIZEOF_MM_ALLOCNODE;
 	newnode->preceding = oldnode->size | MM_ALLOC_BIT;
+#if defined(CONFIG_BUILD_PROTECTED) && defined(CONFIG_UTASK_MEMORY_PROTECTION)
+	newnode->pid	   = oldnode->pid;
+	newnode->reserved  = oldnode->reserved;
+#endif
 
 	heap->mm_heapend[region] = newnode;
 	mm_givesemaphore(heap);

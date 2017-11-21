@@ -76,6 +76,17 @@ CMN_ASRCS += cp15_coherent_dcache.S cp15_invalidate_dcache.S
 CMN_ASRCS += cp15_clean_dcache.S cp15_flush_dcache.S cp15_invalidate_dcache_all.S
 CMN_ASRCS += arm_savefpu.S arm_restorefpu.S setjmp.S
 
+ifeq ($(CONFIG_MPU_STACKGUARD),y)
+CMN_ASRCS += arm_mpuguardrestore.S arm_mpuguardsave.S
+endif
+
+# Configuration dependent assembly language files
+ifeq ($(CONFIG_BUILD_PROTECTED),y)
+ifeq ($(CONFIG_UTASK_MEMORY_PROTECTION),y)
+CMN_ASRCS += arm_mpucontextsave.S arm_mpucontextrestore.S
+endif
+endif
+
 # Configuration dependent assembly language files
 
 ifeq ($(CONFIG_ARCH_MEMCPY),y)
@@ -111,12 +122,14 @@ endif
 
 ifeq ($(CONFIG_BUILD_PROTECTED),y)
 CMN_CSRCS += up_task_start.c up_pthread_start.c
+ifeq ($(CONFIG_UTASK_MEMORY_PROTECTION),y)
+CMN_CSRCS += arm_setupregions.c
+endif
 ifneq ($(CONFIG_DISABLE_SIGNALS),y)
 CMN_CSRCS += arm_signal_dispatch.c
 CMN_UASRCS += arm_signal_handler.S
 endif
 endif
-
 ifneq ($(CONFIG_SCHED_TICKLESS),y)
 CHIP_CSRCS += s5j_timerisr.c
 endif
