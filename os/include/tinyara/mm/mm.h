@@ -316,8 +316,8 @@ struct mm_heap_s {
 
 	size_t mm_heapsize;
 #ifdef CONFIG_DEBUG_MM_HEAPINFO
-	int peak_alloc_size;
-	int total_alloc_size;
+	size_t peak_alloc_size;
+	size_t total_alloc_size;
 #endif
 
 	/* This is the first and last nodes of the heap */
