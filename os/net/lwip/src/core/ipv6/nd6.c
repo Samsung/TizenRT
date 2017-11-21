@@ -575,14 +575,14 @@ void nd6_input(struct pbuf *p, struct netif *inp)
 
 		if (!ip6_addr_islinklocal(ip6_current_src_addr())) {
 			pbuf_free(p);
-			ND6_STATS_INC(nd6.lenerr);
+			ND6_STATS_INC(nd6.proterr);
 			ND6_STATS_INC(nd6.drop);
 			return;
 		}
 
 		if (IP6H_HOPLIM(ip6_current_header()) != 255) {
 			pbuf_free(p);
-			ND6_STATS_INC(nd6.lenerr);
+			ND6_STATS_INC(nd6.proterr);
 			ND6_STATS_INC(nd6.drop);
 			return;
 		}
@@ -590,7 +590,7 @@ void nd6_input(struct pbuf *p, struct netif *inp)
 		ra_hdr = (struct ra_header *)p->payload;
 		if (ND6H_CODE(ra_hdr) != 0) {
 			pbuf_free(p);
-			ND6_STATS_INC(nd6.lenerr);
+			ND6_STATS_INC(nd6.proterr);
 			ND6_STATS_INC(nd6.drop);
 			return;
 		}
