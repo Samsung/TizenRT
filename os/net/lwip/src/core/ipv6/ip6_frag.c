@@ -722,6 +722,11 @@ err_t ip6_frag(struct pbuf *p, struct netif *netif, const ip6_addr_t *dest)
 
 	mtu = nd6_get_destination_mtu(dest, netif);
 
+	/* do not reduce the size less than IPv6 minimum link MTU (1280) */
+	if (mtu < 1280) {
+		mtu = 1280;
+	}
+
 	/* @todo we assume there are no options in the unfragmentable part (IPv6 header). */
 	left = p->tot_len - IP6_HLEN;
 
