@@ -444,7 +444,7 @@ err_t ip6_input(struct pbuf *p, struct netif *inp)
 
 	/* match packet against an interface, i.e. is this packet for us? */
 	if (ip6_addr_ismulticast(ip6_current_dest_addr())) {
-		if (netif_is_up(netif)) {
+		if (netif_is_up(inp)) {
 			/* Always joined to multicast if-local and link-local all-nodes group. */
 			if (ip6_addr_isallnodes_iflocal(ip6_current_dest_addr()) || ip6_addr_isallnodes_linklocal(ip6_current_dest_addr())) {
 				netif = inp;
