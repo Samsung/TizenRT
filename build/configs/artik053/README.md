@@ -171,6 +171,39 @@ openocd -f artik053.cfg -c ' \
     flash_write os ../build/output/bin/tinyara_head.bin; exit'
 ```
 
+### Factory Reset
+
+If you can not boot normally, you can change os to the initial version. This is possible if there is an initialization binary in memory.
+
+#### How to Download the Initialization Binaries
+
+You can download it using OpenOCD. You compress the compiled firmware and download it to the board.
+
+```bash
+gzip -c tinyara_head.bin > factoryimage.gz
+openocd -f artik05x.cfg -s ../build/configs/artik05x/scripts -c ' \
+    flash_write factory    ../build/configs/artik053/bin/factoryimage.gz;      \
+    exit'
+```
+
+#### How to enter initialization mode
+
+When you press the RESET button (SW700) to reboot the Starter Kit, press and hold the 'ARDUINO RESET' button (SW701) for 10 seconds. Enter initialization mode as follows.
+```
+.....
+Factory reset.
+Erasing boot partitions...
+....................................e
+Erased 600 sectors
+Flashing factory image...
+Uncompressed size: 1258496 = 0x133400
+resetting ...
+
+........ <RESET>.....................
+U-Boot 2017
+.....
+```
+
 ## ROMFS
 
 Before executing below steps, execute [generic steps](../../../tools/fs/README_ROMFS.md), step 1 and step 2.  
