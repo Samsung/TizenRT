@@ -133,6 +133,7 @@ static s8_t nd6_get_next_hop_entry(const ip6_addr_t *ip6addr, struct netif *neti
 static err_t nd6_queue_packet(s8_t neighbor_index, struct pbuf *q);
 #define ND6_SEND_FLAG_MULTICAST_DEST 0x01
 #define ND6_SEND_FLAG_ALLNODES_DEST 0x02
+#define ND6_SEND_FLAG_ADDRANY_SRC 0x04
 static void nd6_send_ns(struct netif *netif, const ip6_addr_t *target_addr, u8_t flags);
 static void nd6_send_na(struct netif *netif, const ip6_addr_t *target_addr, u8_t flags);
 static void nd6_send_neighbor_cache_probe(struct nd6_neighbor_cache_entry *entry, u8_t flags);
@@ -1250,7 +1251,7 @@ void nd6_tmr(void)
 					/* @todo implement preferred and valid lifetimes. */
 				} else if (netif->flags & NETIF_FLAG_UP) {
 					/* Send a NS for this address. */
-					nd6_send_ns(netif, netif_ip6_addr(netif, i), ND6_SEND_FLAG_MULTICAST_DEST);
+					nd6_send_ns(netif, netif_ip6_addr(netif, i), ND6_SEND_FLAG_MULTICAST_DEST | ND6_SEND_FLAG_ADDRANY_SRC);
 					/* tentative: set next state by increasing by one */
 					netif_ip6_addr_set_state(netif, i, addr_state + 1);
 					/* @todo send max 1 NS per tmr call? enable return */
@@ -1301,15 +1302,15 @@ static void nd6_send_ns(struct netif *netif, const ip6_addr_t *target_addr, u8_t
 	const ip6_addr_t *src_addr;
 	u16_t lladdr_opt_len;
 
-	if (ip6_addr_isvalid(netif_ip6_addr_state(netif, 0))) {
+	if ((flags & ND6_SEND_FLAG_ADDRANY_SRC) || !ip6_addr_isvalid(netif_ip6_addr_state(netif, 0))) {
+		src_addr = IP6_ADDR_ANY6;
+		/* Option "MUST NOT be included when the source IP address is the unspecified address." */
+		lladdr_opt_len = 0;
+	} else {
 		/* Use link-local address as source address. */
 		src_addr = netif_ip6_addr(netif, 0);
 		/* calculate option length (in 8-byte-blocks) */
 		lladdr_opt_len = ((netif->hwaddr_len + 2) + 7) >> 3;
-	} else {
-		src_addr = IP6_ADDR_ANY6;
-		/* Option "MUST NOT be included when the source IP address is the unspecified address." */
-		lladdr_opt_len = 0;
 	}
 
 	/* Allocate a packet. */
