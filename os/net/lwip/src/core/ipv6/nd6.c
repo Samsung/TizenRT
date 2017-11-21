@@ -164,7 +164,7 @@ void nd6_input(struct pbuf *p, struct netif *inp)
 	switch (msg_type) {
 	case ICMP6_TYPE_NA: {		/* Neighbor Advertisement. */
 		struct na_header *na_hdr;
-		struct lladdr_option *lladdr_opt;
+		struct lladdr_option *lladdr_opt = NULL;
 		ip6_addr_t target_address;
 
 		/* Check that na header fits in packet. */
@@ -202,19 +202,27 @@ void nd6_input(struct pbuf *p, struct netif *inp)
 			return;
 		}
 
-		if (p->len >= (sizeof(struct na_header) + 2)) {
-			lladdr_opt = (struct lladdr_option *)((u8_t *) p->payload + sizeof(struct na_header));
-			if (ND6H_LLADDR_OPT_LEN(lladdr_opt) == 0) {
-				pbuf_free(p);
-				ND6_STATS_INC(nd6.lenerr);
-				ND6_STATS_INC(nd6.drop);
-				return;
+		if (p->len >= (sizeof(struct na_header) + 8)) {
+			u32_t offset = sizeof(struct na_header);
+
+			while (p->len >= offset + 8) {
+				lladdr_opt = (struct lladdr_option *)((u8_t *) p->payload + offset);
+				if (ND6H_LLADDR_OPT_LEN(lladdr_opt) == 0) {
+					pbuf_free(p);
+					ND6_STATS_INC(nd6.lenerr);
+					ND6_STATS_INC(nd6.drop);
+					return;
+				}
+
+				if (ND6H_LLADDR_OPT_TYPE(lladdr_opt) != ND6_OPTION_TYPE_TARGET_LLADDR) {
+					/* RFC 4861 clause 4.4.
+					 * only target lladdr option is possible option for NA message
+					 */
+					lladdr_opt = NULL;
+				}
+
+				offset += (ND6H_LLADDR_OPT_LEN(lladdr_opt) << 3);
 			}
-			if (p->len < (sizeof(struct na_header) + (ND6H_LLADDR_OPT_LEN(lladdr_opt) << 3))) {
-				lladdr_opt = NULL;
-			}
-		} else {
-			lladdr_opt = NULL;
 		}
 
 		/* Detect the duplicated NA message */
@@ -404,7 +412,7 @@ void nd6_input(struct pbuf *p, struct netif *inp)
 	}
 	case ICMP6_TYPE_NS: {		/* Neighbor solicitation. */
 		struct ns_header *ns_hdr;
-		struct lladdr_option *lladdr_opt;
+		struct lladdr_option *lladdr_opt = NULL;
 		u8_t accepted;
 
 		/* Check that ns header fits in packet. */
@@ -435,19 +443,27 @@ void nd6_input(struct pbuf *p, struct netif *inp)
 		}
 
 		/* Check if there is a link-layer address provided. Only point to it if in this buffer. */
-		if (p->len >= (sizeof(struct ns_header) + 2)) {
-			lladdr_opt = (struct lladdr_option *)((u8_t *) p->payload + sizeof(struct ns_header));
-			if (ND6H_LLADDR_OPT_LEN(lladdr_opt) == 0) {
-				pbuf_free(p);
-				ND6_STATS_INC(nd6.lenerr);
-				ND6_STATS_INC(nd6.drop);
-				return;
+		if (p->len >= (sizeof(struct ns_header) + 8)) {
+			u32_t offset = sizeof(struct ns_header);
+
+			while (p->len >= offset + 8) {
+				lladdr_opt = (struct lladdr_option *)((u8_t *) p->payload + offset);
+				if (ND6H_LLADDR_OPT_LEN(lladdr_opt) == 0) {
+					pbuf_free(p);
+					ND6_STATS_INC(nd6.lenerr);
+					ND6_STATS_INC(nd6.drop);
+					return;
+				}
+
+				if (ND6H_LLADDR_OPT_TYPE(lladdr_opt) != ND6_OPTION_TYPE_SOURCE_LLADDR) {
+					/* RFC 4861 clause 4.3
+					 * only source lladdr option is possible option for NS message
+					 */
+					lladdr_opt = NULL;
+				}
+
+				offset += (ND6H_LLADDR_OPT_LEN(lladdr_opt) << 3);
 			}
-			if (p->len < (sizeof(struct ns_header) + (ND6H_LLADDR_OPT_LEN(lladdr_opt) << 3))) {
-				lladdr_opt = NULL;
-			}
-		} else {
-			lladdr_opt = NULL;
 		}
 
 		/* Check if the target address is configured on the receiving netif. */
@@ -467,7 +483,7 @@ void nd6_input(struct pbuf *p, struct netif *inp)
 
 		/* Check for ANY address in src (DAD algorithm). */
 		if (ip6_addr_isany(ip6_current_src_addr())) {
-			if ((lladdr_opt != NULL) && (ND6H_LLADDR_OPT_TYPE(lladdr_opt) == ND6_OPTION_TYPE_SOURCE_LLADDR)) {
+			if (lladdr_opt != NULL) {
 				/* RFC 7.1.1.
 				 * If the IP source address is the unspecified address, there is no
 				 * source link-layer address option in the message.
