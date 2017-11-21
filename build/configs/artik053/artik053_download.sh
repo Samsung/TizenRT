@@ -126,6 +126,21 @@ main()
 			popd
 			;;
 
+		ERASE_ALL|erase_all)
+			echo "Erase ALL :"
+
+                        # Generate Partition Map
+                        if [ -f "${OPENOCD_DIR_PATH}/partition_gen.sh" ]; then
+                                ${OPENOCD_DIR_PATH}/partition_gen.sh
+                        fi
+
+			pushd ${OPENOCD_DIR_PATH}
+			${OPENOCD_BIN_PATH}/openocd -c "${OPENOCD_ROMFS}" -f artik053.cfg -c ' 	\
+			flash_erase_part all;	\
+			exit' || finish_download 1
+			popd
+			;;
+
 		*)
 			echo "${arg} is not suppported in artik053"
 			echo "Usage : make download [ ALL | ERASE_USERFS ]"
