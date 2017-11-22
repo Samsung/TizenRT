@@ -677,6 +677,15 @@ void nd6_input(struct pbuf *p, struct netif *inp)
 				if (lwip_htonl(ND6H_MTU_OPT_MTU(mtu_opt)) >= 1280) {
 #if LWIP_ND6_ALLOW_RA_UPDATES
 					inp->mtu = (u16_t) lwip_htonl(ND6H_MTU_OPT_MTU(mtu_opt));
+					for (i = 0; i < LWIP_ND6_NUM_DESTINATIONS; i++) {
+						if (ip6_addr_cmp(ip6_current_src_addr(), &(destination_cache[i].next_hop_addr))) {
+							struct timeval curtime;
+
+							TIME_GET(curtime);
+							destination_cache[i].pmtu = inp->mtu;
+							destination_cache[i].pmtu_update_time = curtime;
+						}
+					}
 #endif							/* LWIP_ND6_ALLOW_RA_UPDATES */
 				}
 				break;
