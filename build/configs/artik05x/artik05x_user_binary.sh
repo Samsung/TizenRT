@@ -43,7 +43,7 @@ EOF
 }
 
 signing() {
-    $CODESIGNER -sign $TIZENRT_IMAGE
+    $CODESIGNER/artik05x_AppCodesigner $CODESIGNER/rsa_private.key $TIZENRT_IMAGE
     TIZENRT_IMAGE=${TIZENRT_IMAGE}-signed
 }
 

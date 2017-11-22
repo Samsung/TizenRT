@@ -97,13 +97,7 @@ download()
 
 signing() {
     CODESIGNER=$1
-    if [ ! -e $CODESIGNER ]; then
-        echo "No Such as codesigner. Please check the path:"
-        echo "   $CODESIGNER"
-        exit 1
-    fi
-    chmod +x $CODESIGNER
-    $CODESIGNER -sign $TIZENRT_BIN
+    $CODESIGNER/artik05x_AppCodesigner $CODESIGNER/rsa_private.key $TIZENRT_BIN
     TIZENRT_BIN=${TIZENRT_BIN}-signed
 }
 
