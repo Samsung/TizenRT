@@ -920,13 +920,14 @@ void nd6_input(struct pbuf *p, struct netif *inp)
 		if (redir_optlen >= 2) {
 			buffer = ((u8_t *)p->payload + sizeof(struct redirect_header));
 			while (!redirected_opt && redir_optlen >= 2) {
+				if (buffer[1] == 0) { /* Invalid length */
+					pbuf_free(p);
+					ND6_STATS_INC(nd6.drop);
+					return;
+				}
 				switch (buffer[0]) {
-				case ND6_OPTION_TYPE_TARGET_LLADDR :
-					if (buffer[1] == 0) { /* Invalid length */
-						pbuf_free(p);
-						ND6_STATS_INC(nd6.drop);
-						return;
-					} else if (buffer[1] == 1) { /* IEEE 802 Link Layer Address */
+				case ND6_OPTION_TYPE_TARGET_LLADDR:
+					if (buffer[1] == 1) { /* IEEE 802 Link Layer Address */
 						lladdr_opt = (struct lladdr_option *)buffer;
 						offset = sizeof(struct lladdr_option);
 					} else {
@@ -934,13 +935,12 @@ void nd6_input(struct pbuf *p, struct netif *inp)
 						offset = buffer[1] << 3;
 					}
 					break;
-				case ND6_OPTION_TYPE_REDIR_HDR :
+				case ND6_OPTION_TYPE_REDIR_HDR:
 					redirected_opt = (struct redirected_header_option *)buffer;
 					offset = sizeof(struct redirected_header_option);
 					break;
-				default :
-					/* @todo Considering Link-layer address is not IEEE 802 */
-					offset = sizeof(struct lladdr_option);
+				default:
+					offset = (buffer[1] << 3);
 					break;
 				}
 				redir_optlen -= offset;
