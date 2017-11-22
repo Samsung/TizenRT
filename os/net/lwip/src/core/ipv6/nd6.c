@@ -378,27 +378,16 @@ void nd6_input(struct pbuf *p, struct netif *inp)
 
 						neighbor_cache[i].isrouter = 0;
 						tmp = nd6_get_router(&neighbor_cache[i].next_hop_address, inp);
-						if (tmp == 0) {
-							/* TODO: error */
+
+						if (tmp >= 0) {
+							/* RFC 4861, 6.3.5.  Timing out Prefixes and Default Routers  */
+							if (default_router_list[tmp].neighbor_entry) {
+								nd6_free_expired_router_in_destination_cache(&(default_router_list[tmp].neighbor_entry->next_hop_address));
+							}
+							default_router_list[tmp].neighbor_entry = NULL;
+							default_router_list[tmp].invalidation_timer = 0;
+							default_router_list[tmp].flags = 0;
 						}
-
-						/* RFC 4861, 6.3.5.  Timing out Prefixes and Default Routers  */
-						nd6_free_expired_router_in_destination_cache(&(default_router_list[tmp].neighbor_entry->next_hop_address));
-
-						s8_t j; /* Neighbor cache index */
-
-						j = nd6_find_neighbor_cache_entry(&(default_router_list[tmp].neighbor_entry->next_hop_address));
-						if (j < 0) {
-							LWIP_DEBUGF(ND6_DEBUG, ("Failed to find matched negighbor entry to default router list\n"));
-							/* @todo should we do initialize NCE manually?*/
-						} else {
-							LWIP_DEBUGF(ND6_DEBUG, ("Neighbor cache entry (index %d) will be freed\n", j));
-							nd6_free_neighbor_cache_entry(j);
-						}
-
-						default_router_list[tmp].neighbor_entry = NULL;
-						default_router_list[tmp].invalidation_timer = 0;
-						default_router_list[tmp].flags = 0;
 					}
 				}
 			}
