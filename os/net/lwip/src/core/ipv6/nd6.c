@@ -1095,9 +1095,39 @@ void nd6_input(struct pbuf *p, struct netif *inp)
 		/* Look for entry in destination cache. */
 		i = nd6_find_destination_cache_entry(&tmp);
 		if (i < 0) {
-			/* Destination not in cache, drop packet. */
-			pbuf_free(p);
-			return;
+#if LWIP_IPV6_PMTU_FOR_MULTICAST
+			if (ip6_addr_ismulticast(&tmp)) {
+				/* create new entry in destination cache */
+				i = nd6_new_destination_cache_entry();
+				if (i >= 0) {
+					s8_t router_idx;
+
+					/* set next_hop_address to default router. */
+					router_idx = nd6_select_router(&tmp, inp);
+					if (router_idx < 0) {
+						pbuf_free(p);
+						return;
+					}
+					ip6_addr_copy(destination_cache[i].next_hop_addr, default_router_list[router_idx].neighbor_entry->next_hop_address);
+
+					/* copy multicast address to destination cache. */
+					ip6_addr_set(&(destination_cache[i].destination_addr), &tmp);
+
+					/* initialize pmtu, pmtu_update_time and age */
+					destination_cache[i].pmtu = inp->mtu;
+					TIME_INIT(destination_cache[i].pmtu_update_time);
+					destination_cache[i].age = 0;
+				} else {
+					pbuf_free(p);
+					return;
+				}
+			} else
+#endif
+			{
+				/* Destination not in cache, drop packet. */
+				pbuf_free(p);
+				return;
+			}
 		}
 
 		/* Change the Path MTU. */
