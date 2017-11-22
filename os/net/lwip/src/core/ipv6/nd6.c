@@ -595,6 +595,7 @@ void nd6_input(struct pbuf *p, struct netif *inp)
 	case ICMP6_TYPE_RA: {		/* Router Advertisement. */
 		struct ra_header *ra_hdr;
 		struct lladdr_option *lladdr_opt = NULL;
+		u8_t nce_flag = 0;
 
 		u8_t *buffer;		/* Used to copy options. */
 		u16_t offset;
@@ -669,13 +670,13 @@ void nd6_input(struct pbuf *p, struct netif *inp)
 			}
 			switch (buffer[0]) {
 			case ND6_OPTION_TYPE_SOURCE_LLADDR: {
-				if (lladdr_opt == NULL) {
-					lladdr_opt = (struct lladdr_option *)buffer;
-				} else {
-					/* @todo how about duplicated LLADDR option case?
-					 *       currently ignore duplicated lladdr option
-					 */
+				if (nce_flag) {
+					/* TODO: We should consider when we received SADDR option two times */
+					LWIP_DEBUGF(ND6_DEBUG, ("Duplicated SLLADDR OPTION\n"));
+					break;
 				}
+				lladdr_opt = (struct lladdr_option *)buffer;
+				nce_flag = 1;
 				break;
 			}
 			case ND6_OPTION_TYPE_MTU: {
@@ -780,29 +781,42 @@ void nd6_input(struct pbuf *p, struct netif *inp)
 				break;
 			}
 			/* option length is checked earlier to be non-zero to make sure loop ends */
-			offset += 8 * ((u16_t) buffer[1]);
+			offset += (((u16_t) buffer[1]) << 3);
 		}
 
-		/* Get the matching default router entry. */
-		i = nd6_get_router(ip6_current_src_addr(), inp);
-		if (i < 0) {
-			/* Create a new router entry. */
-			i = nd6_new_router(ip6_current_src_addr(), inp);
+		struct nd6_neighbor_cache_entry *nce_update = NULL;
 
-			/* Failed to create new router */
-			if (i < 0) {
-				/* Could not create a new router entry. */
-				LWIP_DEBUGF(ND6_DEBUG, ("Failed to create new router, ret %d\n", i));
-				pbuf_free(p);
-				ND6_STATS_INC(nd6.memerr);
-				return;
+		if (nce_flag) {
+			s8_t j;
+
+			j = nd6_find_neighbor_cache_entry(ip6_current_src_addr());
+
+			if (j < 0) {
+				j = nd6_new_neighbor_cache_entry();
+				if (j < 0) {
+					pbuf_free(p);
+					ND6_STATS_INC(nd6.memerr);
+					ND6_STATS_INC(nd6.drop);
+					return;
+				}
+				ip6_addr_set(&(neighbor_cache[j].next_hop_address), ip6_current_src_addr());
+				SMEMCPY(neighbor_cache[j].lladdr, ND6H_LLADDR_OPT_ADDR(lladdr_opt), inp->hwaddr_len);
+				neighbor_cache[j].netif = inp;
+				neighbor_cache[j].q = NULL;
+				neighbor_cache[j].state = ND6_STALE;
+			} else {
+				if (neighbor_cache[j].state == ND6_INCOMPLETE) {
+					neighbor_cache[j].state = ND6_STALE;
+				}
+				/* Neighbor cache address isn't same with lladdr */
+				if (memcmp(neighbor_cache[j].lladdr, ND6H_LLADDR_OPT_ADDR(lladdr_opt), inp->hwaddr_len)) {
+					SMEMCPY(neighbor_cache[j].lladdr, ND6H_LLADDR_OPT_ADDR(lladdr_opt), inp->hwaddr_len);
+					neighbor_cache[j].state = ND6_STALE;
+				}
 			}
-
-			LWIP_DEBUGF(ND6_DEBUG, ("Created new router on default_router_list %d\n", i));
+			neighbor_cache[j].isrouter = 1;
+			nce_update = &(neighbor_cache[j]);
 		}
-
-		/* Re-set invalidation timer. */
-		default_router_list[i].invalidation_timer = lwip_htons(ND6H_RA_ROUT_LIFE(ra_hdr)) * 1000;
 
 		/* Re-set default timer values. */
 #if LWIP_ND6_ALLOW_RA_UPDATES
@@ -822,40 +836,63 @@ void nd6_input(struct pbuf *p, struct netif *inp)
 			current_hop_limit = ND6H_RA_HOPLIM(ra_hdr);
 		}
 
-		/* Update flags in local entry (incl. preference). */
-		default_router_list[i].flags = ND6H_RA_FLAG(ra_hdr);
+		u16_t lifetime = lwip_htons(ND6H_RA_ROUT_LIFE(ra_hdr));
 
-		if (lladdr_opt != NULL) {
-			if (default_router_list[i].neighbor_entry == NULL) {
-				/* default router table has been created but "no entry on neighbor cache" */
-				/* Create new neighbor cache */
-				s8_t j; /* Neighbor cache index */
+		/* Get the matching default router entry. */
+		i = nd6_get_router(ip6_current_src_addr(), inp);
 
-				j = nd6_new_neighbor_cache_entry();
+		/* RFC 6.3.4. Processing Received Router Advertisements.
+		 * If the address is not already present in the host's Default
+		 * Router List, and the advertisement's Router Lifetime is non-
+		 * zero, create a new entry in the list, and initialize its
+		 * invalidation timer value from the advertisement's Router
+		 * Lifetime field.
+		 */
+		if (i < 0 && lifetime != 0) {
+			/* Create a new router entry. */
+			i = nd6_new_router(ip6_current_src_addr(), inp);
 
-				if (j < 0) {
-					pbuf_free(p);
-					ND6_STATS_INC(nd6.memerr);
-					ND6_STATS_INC(nd6.drop);
-					return;
-				} else {
-					default_router_list[i].neighbor_entry = &(neighbor_cache[j]);
-					SMEMCPY(default_router_list[i].neighbor_entry->lladdr, ND6H_LLADDR_OPT_ADDR(lladdr_opt), inp->hwaddr_len);
-					default_router_list[i].neighbor_entry->state = ND6_STALE;
-				}
-			} else {
-				/* default router has been existed on neighbor cache */
-				if (memcmp(default_router_list[i].neighbor_entry->lladdr, ND6H_LLADDR_OPT_ADDR(lladdr_opt), inp->hwaddr_len) != 0) {
-					SMEMCPY(default_router_list[i].neighbor_entry->lladdr, ND6H_LLADDR_OPT_ADDR(lladdr_opt), inp->hwaddr_len);
-					default_router_list[i].neighbor_entry->state = ND6_STALE;
-				} else {
-					default_router_list[i].neighbor_entry->state = ND6_REACHABLE;
+			/* Failed to create new router */
+			if (i < 0) {
+				/* Could not create a new router entry. */
+				LWIP_DEBUGF(ND6_DEBUG, ("Failed to create new router, ret %d\n", i));
+				pbuf_free(p);
+				ND6_STATS_INC(nd6.memerr);
+				return;
+			}
+			LWIP_DEBUGF(ND6_DEBUG, ("Created new router on default_router_list %d\n", i));
+			default_router_list[i].invalidation_timer = lifetime * 1000;
+
+			if (nce_update) {
+				default_router_list[i].neighbor_entry = nce_update;
+				default_router_list[i].neighbor_entry->counter.reachable_time = reachable_time;
+			}
+		} else if (i >= 0 && lifetime != 0) {
+			default_router_list[i].invalidation_timer = lifetime * 1000;
+			if (nce_update) {
+				if (default_router_list[i].neighbor_entry != nce_update) {
+					default_router_list[i].neighbor_entry = nce_update;
 				}
 			}
-			default_router_list[i].neighbor_entry->counter.reachable_time = reachable_time;
-			default_router_list[i].neighbor_entry->isrouter = 1;
-		} /* End of lladdr_opt != NULL */
-
+			if (default_router_list[i].neighbor_entry) {
+				default_router_list[i].neighbor_entry->counter.reachable_time = reachable_time;
+			}
+		} else if (i >= 0 && lifetime == 0) {
+			/* RFC 4861, 6.3.5.  Timing out Prefixes and Default Routers  */
+			if (default_router_list[i].neighbor_entry) {
+				default_router_list[i].neighbor_entry->isrouter = 0;
+				default_router_list[i].neighbor_entry = NULL;
+				nd6_free_expired_router_in_destination_cache(&(default_router_list[i].neighbor_entry->next_hop_address));
+			}
+			default_router_list[i].invalidation_timer = 0;
+			default_router_list[i].flags = 0;
+		} else if (i < 0 && lifetime == 0) {
+			if (nce_update) {
+				nce_update->counter.reachable_time = reachable_time;
+			}
+		} else {
+			LWIP_DEBUGF(ND6_DEBUG, ("Never happen\n"));
+		}
 		break;				/* ICMP6_TYPE_RA */
 	}
 	case ICMP6_TYPE_RD: {		/* Redirect */
@@ -1200,18 +1237,6 @@ void nd6_tmr(void)
 
 				/* RFC 4861, 6.3.5.  Timing out Prefixes and Default Routers  */
 				nd6_free_expired_router_in_destination_cache(&(default_router_list[i].neighbor_entry->next_hop_address));
-
-				s8_t j; /* Neighbor cache index */
-
-				j = nd6_find_neighbor_cache_entry(&(default_router_list[i].neighbor_entry->next_hop_address));
-				if (j < 0) {
-					LWIP_DEBUGF(ND6_DEBUG, ("Failed to find matched negighbor entry to default router list\n"));
-					/* @todo should we do initialize NCE manually?*/
-				} else {
-					LWIP_DEBUGF(ND6_DEBUG, ("Neighbor cache entry (index %d) will be freed\n", j));
-					nd6_free_neighbor_cache_entry(j);
-				}
-
 				default_router_list[i].neighbor_entry = NULL;
 				default_router_list[i].invalidation_timer = 0;
 				default_router_list[i].flags = 0;
