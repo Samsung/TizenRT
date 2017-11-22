@@ -103,6 +103,7 @@ struct nd6_prefix_list_entry prefix_list[LWIP_ND6_NUM_PREFIXES];
 struct nd6_router_list_entry default_router_list[LWIP_ND6_NUM_ROUTERS];
 
 /* Default values, can be updated by a RA message. */
+u8_t current_hop_limit = LWIP_ICMP6_HL;
 u32_t reachable_time = LWIP_ND6_REACHABLE_TIME;
 u32_t retrans_timer = LWIP_ND6_RETRANS_TIMER;	/* @todo implement this value in timer */
 
@@ -813,8 +814,13 @@ void nd6_input(struct pbuf *p, struct netif *inp)
 		}
 #endif							/* LWIP_ND6_ALLOW_RA_UPDATES */
 
-		/* @todo set default hop limit... */
-		/* ra_hdr->current_hop_limit; */
+		/* RFC 6.3.4.  Processing Received Router Advertisements
+		 * If the received Cur Hop Limit value is non-zero, the host SHOULD set
+		 * its CurHopLimit variable to the received value.
+		 */
+		if (ND6H_RA_HOPLIM(ra_hdr) > 0) {
+			current_hop_limit = ND6H_RA_HOPLIM(ra_hdr);
+		}
 
 		/* Update flags in local entry (incl. preference). */
 		default_router_list[i].flags = ND6H_RA_FLAG(ra_hdr);

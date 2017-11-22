@@ -196,7 +196,7 @@ void icmp6_input(struct pbuf *p, struct netif *inp)
 
 		/* Send reply. */
 		ICMP6_STATS_INC(icmp6.xmit);
-		ip6_output_if(r, reply_src, ip6_current_src_addr(), LWIP_ICMP6_HL, 0, IP6_NEXTH_ICMP6, inp);
+		ip6_output_if(r, reply_src, ip6_current_src_addr(), ND6_CUR_HOPLIM(), 0, IP6_NEXTH_ICMP6, inp);
 		pbuf_free(r);
 
 		break;

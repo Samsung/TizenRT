@@ -78,6 +78,9 @@ extern "C" {
 struct pbuf;
 struct netif;
 
+extern u8_t current_hop_limit;
+#define ND6_CUR_HOPLIM() (current_hop_limit)
+
 void nd6_tmr(void);
 void nd6_input(struct pbuf *p, struct netif *inp);
 void nd6_clear_destination_cache(void);
