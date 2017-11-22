@@ -84,13 +84,13 @@ void heapinfo_parse(FAR struct mm_heap_s *heap, int mode, pid_t pid)
 	size_t mxordblk = 0;
 	int    ordblks  = 0;		/* Number of non-inuse chunks */
 	size_t fordblks = 0;		/* Total non-inuse space */
-	int stack_resource;
-	int nonsched_resource;
+	size_t stack_resource;
+	size_t nonsched_resource;
 	int nonsched_idx;
 
 	/* This nonsched can be 3 types : group resources, freed when child task finished, leak */
 	pid_t nonsched_list[CONFIG_MAX_TASKS];
-	int nonsched_size[CONFIG_MAX_TASKS];
+	size_t nonsched_size[CONFIG_MAX_TASKS];
 
 #if CONFIG_MM_REGIONS > 1
 	int region;
@@ -136,7 +136,7 @@ void heapinfo_parse(FAR struct mm_heap_s *heap, int mode, pid_t pid)
 			/* Check if the node corresponds to an allocated memory chunk */
 			if ((pid == HEAPINFO_PID_NOTNEEDED || node->pid == pid) && (node->preceding & MM_ALLOC_BIT) != 0) {
 				if (mode == HEAPINFO_DETAIL_ALL || mode == HEAPINFO_DETAIL_PID) {
-					printf("0x%x | %8d |   %c    | 0x%x | %3d |\n", node, node->size, 'A', node->alloc_call_addr, node->pid);
+					printf("0x%x | %8u |   %c    | 0x%x | %3d |\n", node, node->size, 'A', node->alloc_call_addr, node->pid);
 				}
 
 #if CONFIG_TASK_NAME_SIZE > 0
@@ -166,26 +166,26 @@ void heapinfo_parse(FAR struct mm_heap_s *heap, int mode, pid_t pid)
 
 		mm_givesemaphore(heap);
 		if (mode != HEAPINFO_SIMPLE) {
-			printf("HeapReg#=%d End node=0x%p Size=%5d (%c)\n", region, node, node->size, 'A');
+			printf("HeapReg#=%d End node=0x%p Size=%5u (%c)\n", region, node, node->size, 'A');
 		}
 	}
 #undef region
 	printf("\nHeap Alloation Summary(Bytes)\n");
-	printf("Heap Size                      : %d\n", heap->mm_heapsize);
-	printf("Current Allocated Node Size    : %d\n", heap->total_alloc_size + SIZEOF_MM_ALLOCNODE * 2);
-	printf("Peak Allocated Node Size       : %d\n", heap->peak_alloc_size);
-	printf("Free Size                      : %d\n", fordblks);
-	printf("Largest Free Node Size         : %d\n", mxordblk);
+	printf("Heap Size                      : %u\n", heap->mm_heapsize);
+	printf("Current Allocated Node Size    : %u\n", heap->total_alloc_size + SIZEOF_MM_ALLOCNODE * 2);
+	printf("Peak Allocated Node Size       : %u\n", heap->peak_alloc_size);
+	printf("Free Size                      : %u\n", fordblks);
+	printf("Largest Free Node Size         : %u\n", mxordblk);
 	printf("Number of Free Node            : %d\n", ordblks);
-	printf("\nStack Resources                : %d", stack_resource);
+	printf("\nStack Resources                : %u", stack_resource);
 
-	printf("\nNon Scheduled Task Resources   : %d\n", nonsched_resource);
+	printf("\nNon Scheduled Task Resources   : %u\n", nonsched_resource);
 	if (mode != HEAPINFO_SIMPLE) {
 		printf(" PID | SIZE \n");
 		printf("-----|------\n");
 		for (nonsched_idx = 0; nonsched_idx < CONFIG_MAX_TASKS; nonsched_idx++) {
 			if (nonsched_list[nonsched_idx] != HEAPINFO_NONSCHED) {
-				printf("%4d | %5d\n", nonsched_list[nonsched_idx], nonsched_size[nonsched_idx]);
+				printf("%4d | %5u\n", nonsched_list[nonsched_idx], nonsched_size[nonsched_idx]);
 			}
 		}
 	}

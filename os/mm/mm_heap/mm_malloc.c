@@ -119,7 +119,7 @@ FAR void *mm_malloc(FAR struct mm_heap_s *heap, size_t size)
 	}
 
 	if (size > MM_ALIGN_DOWN(MMSIZE_MAX) - SIZEOF_MM_ALLOCNODE) {
-		mvdbg("Because of mm_allocnode, %d cannot be allocated. The maximun allocable size is (MM_ALIGN_DOWN(MMSIZE_MAX) - SIZEOF_MM_ALLOCNODE) : %d\n.", size, (MM_ALIGN_DOWN(MMSIZE_MAX) - SIZEOF_MM_ALLOCNODE));
+		mvdbg("Because of mm_allocnode, %u cannot be allocated. The maximun allocable size is (MM_ALIGN_DOWN(MMSIZE_MAX) - SIZEOF_MM_ALLOCNODE) : %u\n.", size, (MM_ALIGN_DOWN(MMSIZE_MAX) - SIZEOF_MM_ALLOCNODE));
 		return NULL;
 	}
 
@@ -226,12 +226,12 @@ FAR void *mm_malloc(FAR struct mm_heap_s *heap, size_t size)
 
 #ifdef CONFIG_DEBUG_MM
 	if (!ret) {
-		mdbg("Allocation failed, size %d\n", size);
+		mdbg("Allocation failed, size %u\n", size);
 #ifdef CONFIG_DEBUG_MM_HEAPINFO
 		heapinfo_parse(heap, HEAPINFO_DETAIL_ALL, HEAPINFO_PID_NOTNEEDED);
 #endif
 	} else {
-		mvdbg("Allocated %p, size %d\n", ret, size);
+		mvdbg("Allocated %p, size %u\n", ret, size);
 	}
 #endif
 
