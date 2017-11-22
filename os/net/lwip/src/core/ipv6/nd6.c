@@ -190,16 +190,14 @@ void nd6_input(struct pbuf *p, struct netif *inp)
 			return;
 		}
 
-		if (IP6H_HOPLIM(ip6_current_header()) != 255) {
-			pbuf_free(p);
-			ND6_STATS_INC(nd6.proterr);
-			ND6_STATS_INC(nd6.drop);
-			return;
-		}
-
 		na_hdr = (struct na_header *)p->payload;
 
-		if (ND6H_CODE(na_hdr) != 0) {
+		if ((IP6H_HOPLIM(ip6_current_header()) != 255) ||
+		    (ip6_addr_ismulticast(&target_address)) ||
+		    (ND6H_CODE(na_hdr) != 0)) {
+			/* RFC 4861 clause 7.1.2.
+			 * Validation of NA message
+			 */
 			pbuf_free(p);
 			ND6_STATS_INC(nd6.proterr);
 			ND6_STATS_INC(nd6.drop);
@@ -210,14 +208,6 @@ void nd6_input(struct pbuf *p, struct netif *inp)
 		nd6_sflag = ND6H_NA_FLAG(na_hdr) & ND6_FLAG_SOLICITED;
 		nd6_rflag = ND6H_NA_FLAG(na_hdr) & ND6_FLAG_ROUTER;
 		ip6_addr_set(&target_address, &(ND6H_NA_TARGET_ADDR(na_hdr)));
-
-		if (ip6_addr_ismulticast(&target_address)) {
-			/* RFC 7.1.2.
-			 * target address must not be multicast
-			 */
-			pbuf_free(p);
-			return;
-		}
 
 		lladdr_opt = NULL;
 		if (p->len >= (sizeof(struct na_header) + 8)) {
@@ -341,8 +331,8 @@ void nd6_input(struct pbuf *p, struct netif *inp)
 						default_router_list[j].flags = 0;
 					} else {
 						pbuf_free(p);
-						ND6_STATS_INC(nd6.drop);
 						ND6_STATS_INC(nd6.memerr);
+						ND6_STATS_INC(nd6.drop);
 						return;
 					}
 				} else {
