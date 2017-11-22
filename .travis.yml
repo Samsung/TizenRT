@@ -16,7 +16,5 @@ install:
   - git clone https://github.com/SamsungARTIK/TizenRT.git
 
 script:
-  - mkdir -p build/configs/artik05x/tools/codesigner
-  - touch build/configs/artik05x/tools/codesigner/artik05x_codesigner
   - cd os/tools; ./configure.sh ${BUILD_CONFIG}
   - cd ..; make
