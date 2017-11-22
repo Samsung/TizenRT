@@ -751,9 +751,6 @@ static void up_dumpstate(void)
 static void _up_assert(int errorcode) noreturn_function;
 static void _up_assert(int errorcode)
 {
-#ifdef CONFIG_BOOT_RESULT
-	board_boot_result();
-#endif
 	/* Are we in an interrupt handler or the idle task? */
 
 	if (g_upassert || current_regs || (this_task())->pid == 0) {
