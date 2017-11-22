@@ -128,6 +128,14 @@
 #ifndef SMEMCPY
 #define SMEMCPY(dst, src, len)            memcpy(dst, src, len)
 #endif
+
+/**
+ * MEMCMP : override this with care! Some compilers (e.g. gcc) can inline a
+ * call to memcmp() if the length is known at compile time and is small.
+ */
+#ifndef MEMCMP
+#define MEMCMP(dst, src, len)            memcmp(dst, src, len)
+#endif
 /**
  * @}
  */
