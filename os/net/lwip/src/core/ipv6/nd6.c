@@ -925,10 +925,22 @@ void nd6_input(struct pbuf *p, struct netif *inp)
 				return;
 			}
 		} else {
-			/* Destination not in cache, drop packet. */
-			pbuf_free(p);
-			ND6_STATS_INC(nd6.drop);
-			return;
+			/* Destination not in cache, create new destination cache entry. */
+			/* As per RFC 4861, 8.3 Host specification
+			 * If no Destination Cache entry exists for the destination, an implementation SHOULD create such an entry.
+			 */
+			i = nd6_new_destination_cache_entry();
+			if (i >= 0) {
+				destination_cache[i].pmtu = inp->mtu;
+				destination_cache[i].age = 0;
+				ip6_addr_set(&(destination_cache[i].next_hop_addr), &ND6H_RD_TARGET_ADDR(redir_hdr));
+				ip6_addr_set(&(destination_cache[i].destination_addr), &ND6H_RD_DEST_ADDR(redir_hdr));
+			} else {
+				pbuf_free(p);
+				ND6_STATS_INC(nd6.drop);
+				ND6_STATS_INC(nd6.memerr);
+				return;
+			}
 		}
 
 		/* End of validation check for RD message */
