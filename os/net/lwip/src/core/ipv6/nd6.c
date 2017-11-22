@@ -786,36 +786,39 @@ void nd6_input(struct pbuf *p, struct netif *inp)
 
 		struct nd6_neighbor_cache_entry *nce_update = NULL;
 
-		if (nce_flag) {
-			s8_t j;
+		s8_t j;
 
-			j = nd6_find_neighbor_cache_entry(ip6_current_src_addr());
+		j = nd6_find_neighbor_cache_entry(ip6_current_src_addr());
 
+		if (nce_flag && j < 0) {
+			j = nd6_new_neighbor_cache_entry();
 			if (j < 0) {
-				j = nd6_new_neighbor_cache_entry();
-				if (j < 0) {
-					pbuf_free(p);
-					ND6_STATS_INC(nd6.memerr);
-					ND6_STATS_INC(nd6.drop);
-					return;
-				}
-				ip6_addr_set(&(neighbor_cache[j].next_hop_address), ip6_current_src_addr());
-				SMEMCPY(neighbor_cache[j].lladdr, ND6H_LLADDR_OPT_ADDR(lladdr_opt), inp->hwaddr_len);
-				neighbor_cache[j].netif = inp;
-				neighbor_cache[j].q = NULL;
+				pbuf_free(p);
+				ND6_STATS_INC(nd6.memerr);
+				ND6_STATS_INC(nd6.drop);
+				return;
+			}
+			ip6_addr_set(&(neighbor_cache[j].next_hop_address), ip6_current_src_addr());
+			SMEMCPY(neighbor_cache[j].lladdr, ND6H_LLADDR_OPT_ADDR(lladdr_opt), inp->hwaddr_len);
+			neighbor_cache[j].netif = inp;
+			neighbor_cache[j].q = NULL;
+			neighbor_cache[j].state = ND6_STALE;
+			neighbor_cache[j].isrouter = 1;
+			nce_update = &(neighbor_cache[j]);
+		} else if (nce_flag && j >= 0) {
+			if (neighbor_cache[j].state == ND6_INCOMPLETE) {
 				neighbor_cache[j].state = ND6_STALE;
-			} else {
-				if (neighbor_cache[j].state == ND6_INCOMPLETE) {
-					neighbor_cache[j].state = ND6_STALE;
-				}
-				/* Neighbor cache address isn't same with lladdr */
-				if (memcmp(neighbor_cache[j].lladdr, ND6H_LLADDR_OPT_ADDR(lladdr_opt), inp->hwaddr_len)) {
-					SMEMCPY(neighbor_cache[j].lladdr, ND6H_LLADDR_OPT_ADDR(lladdr_opt), inp->hwaddr_len);
-					neighbor_cache[j].state = ND6_STALE;
-				}
+			}
+			/* Neighbor cache address isn't same with lladdr */
+			if (memcmp(neighbor_cache[j].lladdr, ND6H_LLADDR_OPT_ADDR(lladdr_opt), inp->hwaddr_len)) {
+				SMEMCPY(neighbor_cache[j].lladdr, ND6H_LLADDR_OPT_ADDR(lladdr_opt), inp->hwaddr_len);
+				neighbor_cache[j].state = ND6_STALE;
 			}
 			neighbor_cache[j].isrouter = 1;
 			nce_update = &(neighbor_cache[j]);
+		} else if (j >= 0) {
+			neighbor_cache[j].isrouter = 1;
+			/* TODO: Should change neighbor_cache state? */
 		}
 
 		/* Re-set default timer values. */
@@ -881,8 +884,8 @@ void nd6_input(struct pbuf *p, struct netif *inp)
 			/* RFC 4861, 6.3.5.  Timing out Prefixes and Default Routers  */
 			if (default_router_list[i].neighbor_entry) {
 				default_router_list[i].neighbor_entry->isrouter = 0;
-				default_router_list[i].neighbor_entry = NULL;
 				nd6_free_expired_router_in_destination_cache(&(default_router_list[i].neighbor_entry->next_hop_address));
+				default_router_list[i].neighbor_entry = NULL;
 			}
 			default_router_list[i].invalidation_timer = 0;
 			default_router_list[i].flags = 0;
