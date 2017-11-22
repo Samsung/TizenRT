@@ -969,6 +969,7 @@ void nd6_input(struct pbuf *p, struct netif *inp)
 			i = nd6_new_destination_cache_entry();
 			if (i >= 0) {
 				destination_cache[i].pmtu = inp->mtu;
+				TIME_INIT(destination_cache[i].pmtu_update_time);
 				destination_cache[i].age = 0;
 				ip6_addr_set(&(destination_cache[i].next_hop_addr), &ND6H_RD_TARGET_ADDR(redir_hdr));
 				ip6_addr_set(&(destination_cache[i].destination_addr), &ND6H_RD_DEST_ADDR(redir_hdr));
