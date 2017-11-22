@@ -682,7 +682,7 @@ void nd6_input(struct pbuf *p, struct netif *inp)
 				 * Preferred Lifetime:
 				 *   The value MUST NOT exceed the Valid Lifetime field to avoid preferring address that are no longer valid.
 				 */
-				if (ND6H_PF_OPT_VAL_LIFE(prefix_opt) < ND6H_PF_OPT_PREFER_LIFE(prefix_opt)) {
+				if (lwip_htonl(ND6H_PF_OPT_VAL_LIFE(prefix_opt)) < lwip_htonl(ND6H_PF_OPT_PREFER_LIFE(prefix_opt))) {
 					pbuf_free(p);
 					ND6_STATS_INC(nd6.proterr);
 					return;
