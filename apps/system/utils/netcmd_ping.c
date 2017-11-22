@@ -289,11 +289,10 @@ static void nu_ping_prepare_echo(int family, struct icmp_echo_hdr *iecho, u16_t 
 	if (family == AF_INET6) {
 		icmp_hdrlen = sizeof(struct icmp6_echo_hdr);
 	} else
-#else
+#endif
 	{
 		icmp_hdrlen = sizeof(struct icmp_echo_hdr);
 	}
-#endif
 	ICMPH_CODE_SET(iecho, 0);
 	iecho->id = PING_ID;
 	++g_ping_seq_num;
