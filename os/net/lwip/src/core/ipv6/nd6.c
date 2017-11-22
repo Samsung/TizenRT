@@ -148,6 +148,7 @@ static void nd6_free_q(struct nd6_q_entry *q);
 #define nd6_free_q(q) pbuf_free(q)
 #endif							/* LWIP_ND6_QUEUEING */
 static void nd6_send_q(s8_t i);
+static void nd6_cleanup_all_caches(ip6_addr_t *invalid_ip6addr);
 
 #if ND6_DEBUG
 void nd6_cache_debug_print(void);
@@ -1147,7 +1148,7 @@ void nd6_tmr(void)
 		case ND6_INCOMPLETE:
 			if (neighbor_cache[i].probes_sent >= LWIP_ND6_MAX_MULTICAST_SOLICIT) {
 				/* Retries exceeded. */
-				nd6_free_neighbor_cache_entry(i);
+				nd6_cleanup_all_caches(&neighbor_cache[i].next_hop_address);
 			} else {
 				neighbor_cache[i].counter.incomplete_time += ND6_TMR_INTERVAL;
 				if (retrans_timer <= ND6_TMR_INTERVAL ||
@@ -1189,18 +1190,7 @@ void nd6_tmr(void)
 			break;
 		case ND6_PROBE:
 			if (neighbor_cache[i].probes_sent >= LWIP_ND6_MAX_UNICAST_SOLICIT) {
-				s8_t j; /* default router list */
-				/* Retries exceeded. */
-				/* Clean-up destination cache */
-				nd6_free_expired_router_in_destination_cache(&(neighbor_cache[i].next_hop_address));
-				/* Clean-up default-router */
-				for (j = 0; j < LWIP_ND6_NUM_ROUTERS; j++) {
-					if (default_router_list[j].neighbor_entry == &(neighbor_cache[i])) {
-						default_router_list[j].neighbor_entry = NULL;
-						default_router_list[j].flags = 0;
-					}
-				}
-				nd6_free_neighbor_cache_entry(i);
+				nd6_cleanup_all_caches(&neighbor_cache[i].next_hop_address);
 			} else {
 				neighbor_cache[i].counter.probe_time += ND6_TMR_INTERVAL;
 				if (retrans_timer <= ND6_TMR_INTERVAL ||
@@ -2459,6 +2449,43 @@ void nd6_cleanup_netif(struct netif *netif)
 	}
 }
 
+/**
+ * Remove all destination, neighbor_cache and router entries of the specified invalid address.
+ *
+ * @param invalid_ip6addr points to an invalid next-hop address (e.g., expired, un-reached address)
+ */
+static void nd6_cleanup_all_caches(ip6_addr_t *invalid_ip6addr)
+{
+	s8_t i;
+	struct nd6_neighbor_cache_entry *nentry;
+
+	if (ip6_addr_isany(invalid_ip6addr)) {
+		return;
+	}
+
+	LWIP_DEBUGF(ND6_DEBUG, ("Clean-up caches including %4x:%4x:%4x:%4x:%4x:%4x:%4x:%4x (invalid addr)\n", IP6_ADDR_BLOCK1(invalid_ip6addr), IP6_ADDR_BLOCK2(invalid_ip6addr), IP6_ADDR_BLOCK3(invalid_ip6addr), IP6_ADDR_BLOCK4(invalid_ip6addr), IP6_ADDR_BLOCK5(invalid_ip6addr), IP6_ADDR_BLOCK6(invalid_ip6addr), IP6_ADDR_BLOCK7(invalid_ip6addr), IP6_ADDR_BLOCK8(invalid_ip6addr)));
+
+	/* Clean-up destination cache */
+	nd6_free_expired_router_in_destination_cache(invalid_ip6addr);
+
+	/* Clean-up default router list */
+	for (i = 0; i < LWIP_ND6_NUM_ROUTERS; i++) {
+		if (default_router_list[i].neighbor_entry != NULL) {
+			nentry = default_router_list[i].neighbor_entry;
+			if (ip6_addr_cmp(invalid_ip6addr, &(nentry->next_hop_address))) {
+				default_router_list[i].neighbor_entry = NULL;
+				default_router_list[i].flags = 0;
+			}
+		}
+	}
+
+	/* Clean-up neighbor cache list */
+	for (i = 0; i < LWIP_ND6_NUM_NEIGHBORS; i++) {
+		if (ip6_addr_cmp(invalid_ip6addr, &(neighbor_cache[i].next_hop_address))) {
+			nd6_free_neighbor_cache_entry(i);
+		}
+	}
+}
 #if LWIP_IPV6_MLD
 /**
  * The state of a local IPv6 address entry is about to change. If needed, join
