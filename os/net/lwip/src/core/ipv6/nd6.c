@@ -678,6 +678,16 @@ void nd6_input(struct pbuf *p, struct netif *inp)
 				struct prefix_option *prefix_opt;
 				prefix_opt = (struct prefix_option *)buffer;
 
+				/* RFC 4861. 4.6.2
+				 * Preferred Lifetime:
+				 *   The value MUST NOT exceed the Valid Lifetime field to avoid preferring address that are no longer valid.
+				 */
+				if (ND6H_PF_OPT_VAL_LIFE(prefix_opt) < ND6H_PF_OPT_PREFER_LIFE(prefix_opt)) {
+					pbuf_free(p);
+					ND6_STATS_INC(nd6.proterr);
+					return;
+				}
+
 				if ((ND6H_PF_OPT_FLAG(prefix_opt) & ND6_PREFIX_FLAG_ON_LINK) && (ND6H_PF_OPT_PF_LEN(prefix_opt) == 64) && !ip6_addr_islinklocal(&(ND6H_PF_OPT_PF(prefix_opt)))) {
 					/* Add to on-link prefix list. */
 					s8_t prefix;
