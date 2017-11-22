@@ -76,9 +76,9 @@
  * Private Functions
  ****************************************************************************/
 
-static void err_cb(FAR struct i2s_dev_s *dev, FAR void *arg, int state)
+static void err_cb(FAR struct i2s_dev_s *dev, FAR void *arg, int flags)
 {
-	lldbg("I2S error callback is engaged with state: 0x%x, arg:  %s\n", state, arg);
+	lldbg("I2S error callback is engaged with state: 0x%x, arg:  %s\n", flags, arg);
 } 
 
 /****************************************************************************

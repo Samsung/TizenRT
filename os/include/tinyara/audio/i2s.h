@@ -213,9 +213,24 @@
 
 #define I2S_SEND(d, b, c, a, t) ((d)->ops->i2s_send(d, b, c, a, t))
 
-#define I2S_ERR_CB_RX	1
-#define I2S_ERR_CB_TX	2
-#define I2S_ERR_CB_STX	3
+/****************************************************************************
+ * Name: I2S_ERR_CB_REG
+ *
+ * Description:
+ *   Register error reporting callback function for I2S driver.
+ *
+ * Input Parameters:
+ *   dev      - Device-specific state data
+ *   cb       - A user provided callback function that will be called in
+ *              case of error.  The callback will be
+ *              performed in the context of the interrupt handler.
+ *   arg      - An opaque argument that will be provided to the callback
+ *              when the transfer completes.
+ *
+ * Returned Value:
+ *   OK on success; a negated errno value on failure.
+ *
+ ****************************************************************************/
 
 #define I2S_ERR_CB_REG(d, b, c) ((d)->ops->i2s_err_cb_register(d, b, c))
 
@@ -227,7 +242,7 @@
 struct i2s_dev_s;
 typedef CODE void (*i2s_callback_t)(FAR struct i2s_dev_s *dev, FAR struct ap_buffer_s *apb, FAR void *arg, int result);
 
-typedef CODE void (*i2s_err_cb_t)(FAR struct i2s_dev_s *dev, FAR void *arg, int state);
+typedef CODE void (*i2s_err_cb_t)(FAR struct i2s_dev_s *dev, FAR void *arg, int flags);
 
 
 /* The I2S vtable */
@@ -244,6 +259,8 @@ struct i2s_ops_s {
 	CODE uint32_t(*i2s_txsamplerate)(FAR struct i2s_dev_s *dev, uint32_t rate);
 	CODE uint32_t(*i2s_txdatawidth)(FAR struct i2s_dev_s *dev, int bits);
 	CODE int (*i2s_send)(FAR struct i2s_dev_s *dev, FAR struct ap_buffer_s *apb, i2s_callback_t callback, FAR void *arg, uint32_t timeout);
+
+	/* Errors handling methods */
 
 	CODE int (*i2s_err_cb_register)(FAR struct i2s_dev_s *dev, i2s_err_cb_t cb, FAR void *arg);	
 };

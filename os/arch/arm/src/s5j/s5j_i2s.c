@@ -68,6 +68,7 @@
 #include <debug.h>
 
 #include <arch/board/board.h>
+#include <arch/chip/i2s.h>
 
 #include <tinyara/irq.h>
 #include <tinyara/arch.h>
@@ -1700,7 +1701,6 @@ static int i2s_err_cb_register(struct i2s_dev_s *dev, i2s_err_cb_t cb, void *arg
 	priv->err_cb = cb;
 	priv->err_cb_arg = arg;
 
-
 	/* Set initial state to error, it will be cleaned when operation starts */
 #ifdef I2S_HAVE_RX
 	priv->rx.error_state = -1;
@@ -1712,13 +1712,8 @@ static int i2s_err_cb_register(struct i2s_dev_s *dev, i2s_err_cb_t cb, void *arg
 	priv->txs.error_state = -1;
 #endif
 
-	lldbg("Try to call CB for test purpose \n");
-	priv->err_cb(dev, priv->err_cb_arg, 0xaaaa5555);
-
 return 0;
 }
-
-
 
 /****************************************************************************
  * Name: i2s_rx/tx_configure
@@ -2024,7 +2019,7 @@ static int i2s_irq_handler(int irq, FAR void *context, FAR void *arg)
 		modifyreg32(priv->base + S5J_I2S_CON, I2S_CR_FTXURINTEN, 0);
 		modifyreg32(priv->base + S5J_I2S_CON, 0, I2S_CR_FTXURSTATUS);
 		modifyreg32(priv->base + S5J_I2S_CON, I2S_CR_TXDMACTIVE, 0);
-		if(priv->err_cb)
+		if (priv->err_cb)
 			priv->err_cb((struct i2s_dev_s *)priv, priv->err_cb_arg, I2S_ERR_CB_TX);
 	
 	}
@@ -2033,7 +2028,7 @@ static int i2s_irq_handler(int irq, FAR void *context, FAR void *arg)
 		modifyreg32(priv->base + S5J_I2S_CON, I2S_CR_FRXOFINTEN, 0);
 		modifyreg32(priv->base + S5J_I2S_CON, 0, I2S_CR_FRXOFSTATUS);
 		modifyreg32(priv->base + S5J_I2S_CON, I2S_CR_RXDMACTIVE, 0);
-		if(priv->err_cb)
+		if (priv->err_cb)
 			priv->err_cb((struct i2s_dev_s *)priv, priv->err_cb_arg, I2S_ERR_CB_RX);
 	}
 
