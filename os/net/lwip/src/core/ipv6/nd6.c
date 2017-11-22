@@ -223,6 +223,8 @@ void nd6_input(struct pbuf *p, struct netif *inp)
 
 			while (p->len >= offset + 8) {
 				lladdr_opt = (struct lladdr_option *)((u8_t *) p->payload + offset);
+				offset += (ND6H_LLADDR_OPT_LEN(lladdr_opt) << 3);
+
 				if (ND6H_LLADDR_OPT_LEN(lladdr_opt) == 0) {
 					pbuf_free(p);
 					ND6_STATS_INC(nd6.lenerr);
@@ -236,8 +238,6 @@ void nd6_input(struct pbuf *p, struct netif *inp)
 					 */
 					lladdr_opt = NULL;
 				}
-
-				offset += (ND6H_LLADDR_OPT_LEN(lladdr_opt) << 3);
 			}
 		}
 
@@ -452,6 +452,8 @@ void nd6_input(struct pbuf *p, struct netif *inp)
 
 			while (p->len >= offset + 8) {
 				lladdr_opt = (struct lladdr_option *)((u8_t *) p->payload + offset);
+				offset += (ND6H_LLADDR_OPT_LEN(lladdr_opt) << 3);
+
 				if (ND6H_LLADDR_OPT_LEN(lladdr_opt) == 0) {
 					pbuf_free(p);
 					ND6_STATS_INC(nd6.lenerr);
@@ -465,8 +467,6 @@ void nd6_input(struct pbuf *p, struct netif *inp)
 					 */
 					lladdr_opt = NULL;
 				}
-
-				offset += (ND6H_LLADDR_OPT_LEN(lladdr_opt) << 3);
 			}
 		}
 
