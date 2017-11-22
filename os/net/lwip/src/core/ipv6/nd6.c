@@ -693,6 +693,16 @@ void nd6_input(struct pbuf *p, struct netif *inp)
 
 				prefix_opt = (struct prefix_option *)buffer;
 
+				/* RFC 4861. 4.6.2
+				 * Preferred Lifetime:
+				 *   The value MUST NOT exceed the Valid Lifetime field to avoid preferring address that are no longer valid.
+				 */
+				if (lwip_htonl(ND6H_PF_OPT_VAL_LIFE(prefix_opt)) < lwip_htonl(ND6H_PF_OPT_PREFER_LIFE(prefix_opt))) {
+					pbuf_free(p);
+					ND6_STATS_INC(nd6.proterr);
+					return;
+				}
+
 				if ((ND6H_PF_OPT_FLAG(prefix_opt) & ND6_PREFIX_FLAG_ON_LINK) && (ND6H_PF_OPT_PF_LEN(prefix_opt) == 64) && !ip6_addr_islinklocal(&(ND6H_PF_OPT_PF(prefix_opt)))) {
 					/* Add to on-link prefix list. */
 					s8_t prefix;
@@ -931,13 +941,14 @@ void nd6_input(struct pbuf *p, struct netif *inp)
 		if (redir_optlen >= 2) {
 			buffer = ((u8_t *)p->payload + sizeof(struct redirect_header));
 			while (!redirected_opt && redir_optlen >= 2) {
+				if (buffer[1] == 0) { /* Invalid length */
+					pbuf_free(p);
+					ND6_STATS_INC(nd6.drop);
+					return;
+				}
 				switch (buffer[0]) {
 				case ND6_OPTION_TYPE_TARGET_LLADDR:
-					if (buffer[1] == 0) { /* Invalid length */
-						pbuf_free(p);
-						ND6_STATS_INC(nd6.drop);
-						return;
-					} else if (buffer[1] == 1) { /* IEEE 802 Link Layer Address */
+					if (buffer[1] == 1) { /* IEEE 802 Link Layer Address */
 						lladdr_opt = (struct lladdr_option *)buffer;
 						offset = sizeof(struct lladdr_option);
 					} else {
@@ -950,8 +961,7 @@ void nd6_input(struct pbuf *p, struct netif *inp)
 					offset = sizeof(struct redirected_header_option);
 					break;
 				default:
-					/* @todo Considering Link-layer address is not IEEE 802 */
-					offset = sizeof(struct lladdr_option);
+					offset = (buffer[1] << 3);
 					break;
 				}
 				redir_optlen -= offset;
