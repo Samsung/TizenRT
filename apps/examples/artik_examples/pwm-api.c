@@ -44,6 +44,7 @@ static int pwm_start(int argc, char *argv[])
 {
 	artik_pwm_module *pwm = NULL;
 	int ret = 0;
+	artik_error err = S_OK;
 
 	artik_pwm_config config;
 	char name[16] = "";
@@ -61,7 +62,7 @@ static int pwm_start(int argc, char *argv[])
 	}
 
 	if (pwm_handle) {
-		fprintf(stderr, "PW was already started\n");
+		fprintf(stderr, "PWM was already started\n");
 		ret = -1;
 		goto exit;
 	}
@@ -70,15 +71,25 @@ static int pwm_start(int argc, char *argv[])
 	config.pin_num = atoi(argv[3]);
 	config.period = atoi(argv[4]);
 	config.duty_cycle = atoi(argv[5]);
-	if ((argc > 5) && !strcmp(argv[6], "invert")) {
+	if ((argc > 6) && !strcmp(argv[6], "invert")) {
 		config.polarity = ARTIK_PWM_POLR_INVERT;
 	}
 
 	snprintf(name, 16, "pwm%d", config.pin_num);
 	config.name = name;
 
-	if (pwm->request(&pwm_handle, &config) != S_OK) {
-		fprintf(stderr, "Failed to request PWM %d\n", config.pin_num);
+	err = pwm->request(&pwm_handle, &config);
+	if (err != S_OK) {
+		fprintf(stderr, "Failed to request PWM %d (err=%d)\n",
+				config.pin_num, err);
+		ret = -1;
+		goto exit;
+	}
+
+	err = pwm->enable(pwm_handle);
+	if (err != S_OK) {
+		fprintf(stderr, "Failed to enable PWM %d (err=%d)\n",
+				config.pin_num, err);
 		ret = -1;
 		goto exit;
 	}
@@ -92,6 +103,7 @@ static int pwm_stop(int argc, char *argv[])
 {
 	int ret = 0;
 	artik_pwm_module *pwm = (artik_pwm_module *)artik_request_api_module("pwm");
+	artik_error err = S_OK;
 
 	if (!pwm) {
 		fprintf(stderr, "PWM module is not available\n");
@@ -104,7 +116,13 @@ static int pwm_stop(int argc, char *argv[])
 		goto exit;
 	}
 
-	pwm->release(pwm_handle);
+	err = pwm->release(pwm_handle);
+	if (err != S_OK) {
+		fprintf(stderr, "Failed to release PWM (err=%d)\n", err);
+		ret = -1;
+		goto exit;
+	}
+
 	pwm_handle = NULL;
 
 exit:

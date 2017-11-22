@@ -97,6 +97,7 @@ ifeq ($(CONFIG_EXAMPLES_ARTIK_MODULE), y)
   MAINSRC += module-api.c
 endif
 ifeq ($(CONFIG_EXAMPLES_ARTIK_PWM), y)
+  THREADEXEC_pwm = TASH_EXECMD_SYNC
   TASH_APPS += pwm
   MAINSRC += pwm-api.c
 endif
