@@ -65,6 +65,9 @@
 #include <errno.h>
 #include <semaphore.h>
 #include <pthread.h>
+#ifndef CONFIG_DISABLE_POLL
+#  include <poll.h>
+#endif
 
 #include <tinyara/timer.h>
 #include <tinyara/clock.h>
@@ -115,11 +118,18 @@ static pthread_addr_t timer_thread(pthread_addr_t arg)
 	 */
 	sigemptyset(&sigact.sa_mask);
 	sigaddset(&sigact.sa_mask, EXAMPLE_TIMER_SIGNO);
+	sigaddset(&sigact.sa_mask, SIGKILL);
 
 	while (i > nbr) {
 		signo = sigwaitinfo(&sigact.sa_mask, &info);
-		if (signo == EXAMPLE_TIMER_SIGNO) {
+		switch (signo) {
+		case SIGKILL:
+			pthread_exit(NULL);
+			return NULL;
+
+		case EXAMPLE_TIMER_SIGNO:
 			fprintf(stdout, "time limits(%d)\n", ++nbr);
+			break;
 		}
 	}
 
@@ -205,6 +215,10 @@ int timer_main(int argc, char *argv[])
 	int dev = 0;
 	int intval = -1;
 	int repeat = -1;
+
+#ifndef CONFIG_DISABLE_POLL
+	struct pollfd input[1];
+#endif
 
 	optind = 0;
 
@@ -294,7 +308,31 @@ int timer_main(int argc, char *argv[])
 		return EXIT_FAILURE;
 	}
 
+#ifndef CONFIG_DISABLE_POLL
+	input[0].fd     = 0;
+	input[0].events = POLLIN;
+
+#endif
+
+#ifndef CONFIG_DISABLE_POLL
 	/* Wait a bit showing timer thread */
+	for (;;) {
+		(void) poll(input, 1, 500);
+		if (input[0].revents & POLLIN) {
+			/* User Input - terminate the timer thread */
+			pthread_kill(tid, SIGKILL);
+			break;
+		}
+
+		/* Is timer thread still alive? */
+
+		if (pthread_kill(tid, 0)) {
+			pthread_kill(tid, SIGKILL);
+			break;
+		}
+	}
+#endif
+
 	pthread_join(tid, NULL);
 
 	/* Stop the timer */
