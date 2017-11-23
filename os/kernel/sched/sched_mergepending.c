@@ -146,12 +146,8 @@ bool sched_mergepending(void)
 		rtrprev = rtrtcb->blink;
 		if (!rtrprev) {
 			/* Special case: Inserting pndtcb at the head of the list */
-			/* Inform the instrumentation layer that we are switching tasks */
-
-			sched_note_switch(rtrtcb, pndtcb);
 
 			/* Then insert at the head of the list */
-
 			pndtcb->flink = rtrtcb;
 			pndtcb->blink = NULL;
 			rtrtcb->blink = pndtcb;

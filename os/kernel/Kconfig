@@ -529,18 +529,6 @@ config SCHED_CPULOAD_TIMECONSTANT
 
 endif # SCHED_CPULOAD
 
-config SCHED_INSTRUMENTATION
-	bool "System performance monitor hooks"
-	default n
-	---help---
-		Enables instrumentation in scheduler to monitor system performance.
-		If enabled, then the board-specific logic must provide the following
-		functions (see include/sched.h):
-
-		void sched_note_start(FAR struct tcb_s *tcb);
-		void sched_note_stop(FAR struct tcb_s *tcb);
-		void sched_note_switch(FAR struct tcb_s *pFromTcb, FAR struct tcb_s *pToTcb);
-
 endmenu # Performance Monitoring
 
 menu "Latency optimization"
