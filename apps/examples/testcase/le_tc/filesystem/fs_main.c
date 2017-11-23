@@ -128,6 +128,10 @@
 
 #define ROOT_PATH "/"
 
+#define NONEFS_TYPE     "None FS"
+#define SMARTFS_TYPE    "smartfs"
+#define PROCFS_TYPE     "procfs"
+#define ROMFS_TYPE      "romfs"
 
 /****************************************************************************
  * Global Variables
@@ -215,7 +219,33 @@ static int make_long_file(void)
 	printf("finished!\n");
 	return ret;
 }
+#ifndef CONFIG_DISABLE_ENVIRON
+static int handler(FAR const char *mountpoint, FAR struct statfs *statbuf, FAR void *arg)
+{
+	char *fstype;
 
+	switch (statbuf->f_type) {
+	case SMARTFS_MAGIC:
+		fstype = SMARTFS_TYPE;
+		break;
+	case ROMFS_MAGIC:
+		fstype = ROMFS_TYPE;
+		break;
+	case PROCFS_MAGIC:
+		fstype = PROCFS_TYPE;
+		break;
+	default:
+		fstype = NONEFS_TYPE;
+		break;
+	}
+	return OK;
+
+}
+static int mount_show(foreach_mountpoint_t mount_handler, FAR void *arg)
+{
+	return foreach_mountpoint(mount_handler, arg);
+}
+#endif
 /**
 * @testcase         tc_fs_vfs_mount
 * @brief            Mount file system
@@ -227,11 +257,18 @@ static int make_long_file(void)
 static void tc_fs_vfs_mount(void)
 {
 	int ret;
+
 	ret = mount(MOUNT_DEV_DIR, CONFIG_MOUNT_POINT, TARGET_FS_NAME, 0, NULL);
 	TC_ASSERT_EQ("mount", ret, OK);
+
+	/*For each mountpt operation*/
+
+#ifndef CONFIG_DISABLE_ENVIRON
+	ret = mount_show(handler, NULL);
+	TC_ASSERT_EQ("mount_show", ret, OK);
+#endif
 	TC_SUCCESS_RESULT();
 }
-
 /**
 * @testcase         tc_fs_vfs_umount
 * @brief            Unmount file system
@@ -716,7 +753,7 @@ static void tc_fs_vfs_readdir(void)
 
 	do {
 		dirent = readdir(dir);
-	}while (dirent != NULL);
+	} while (dirent != NULL);
 
 	ret = closedir(dir);
 	TC_ASSERT_NEQ("closedir", ret, OK);
@@ -728,7 +765,7 @@ static void tc_fs_vfs_readdir(void)
 
 	do {
 		dirent = readdir(dir);
-	}while (dirent != NULL);
+	} while (dirent != NULL);
 
 	ret = closedir(dir);
 	TC_ASSERT_EQ("closedir", ret, OK);
