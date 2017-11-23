@@ -554,8 +554,8 @@
 #define MD5_SUPPORT                     0
 #endif
 
-#ifdef CONFIG_NET_LWIP_MD5_SUPPORT
-#define PPP_MTU                         CONFIG_NET_LWIP_MD5_SUPPORT
+#ifdef CONFIG_NET_LWIP_PPP_MTU
+#define PPP_MTU                         CONFIG_NET_LWIP_PPP_MTU
 #endif
 
 #ifdef CONFIG_NET_LWIP_PPP_THREAD_NAME
