@@ -78,12 +78,6 @@ ifeq ($(CONFIG_HAVE_CXX),y)
 TINYARALIBS += $(LIBRARIES_DIR)$(DELIM)libcxx$(LIBEXT)
 endif
 
-# Add library for application support.
-
-ifneq ($(APPDIR),)
-TINYARALIBS += $(LIBRARIES_DIR)$(DELIM)libapps$(LIBEXT)
-endif
-
 # Add library for external support.
 
 TINYARALIBS += $(LIBRARIES_DIR)$(DELIM)libexternal$(LIBEXT)
@@ -101,6 +95,7 @@ TINYARALIBS += $(LIBRARIES_DIR)$(DELIM)libnet$(LIBEXT)
 endif
 
 # Add libraries for iotivity support
+
 ifeq ($(CONFIG_ENABLE_IOTIVITY),y)
 TINYARALIBS += $(LIBRARIES_DIR)$(DELIM)liboctbstack$(LIBEXT)
 TINYARALIBS += $(LIBRARIES_DIR)$(DELIM)libc_common$(LIBEXT)
@@ -146,7 +141,14 @@ TINYARALIBS += $(LIBRARIES_DIR)$(DELIM)libaudio$(LIBEXT)
 endif
 
 # Add library for Framework
+
 TINYARALIBS += $(LIBRARIES_DIR)$(DELIM)libframework$(LIBEXT)
+
+# Add library for application support.
+
+ifneq ($(APPDIR),)
+TINYARALIBS += $(LIBRARIES_DIR)$(DELIM)libapps$(LIBEXT)
+endif
 
 # Export all libraries
 
