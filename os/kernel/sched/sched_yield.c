@@ -126,7 +126,6 @@ int sched_yield(void)
 		saved_state = irqsave();
 
 		/* A context switch will occur. */
-		sched_note_switch(rtcb, ntcb);
 		ntcb->task_state = TSTATE_TASK_RUNNING;
 		switch_needed = true;
 

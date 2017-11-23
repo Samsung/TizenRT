@@ -138,10 +138,6 @@ bool sched_addreadytorun(FAR struct tcb_s *btcb)
 	/* Otherwise, add the new task to the ready-to-run task list */
 
 	else if (sched_addprioritized(btcb, (FAR dq_queue_t *)&g_readytorun)) {
-		/* Inform the instrumentation logic that we are switching tasks */
-
-		sched_note_switch(rtcb, btcb);
-
 		/* The new btcb was added at the head of the ready-to-run list.  It
 		 * is now to new active task!
 		 */
