@@ -409,18 +409,14 @@ void nd6_input(struct pbuf *p, struct netif *inp)
 			return;
 		}
 
-		if (IP6H_HOPLIM(ip6_current_header()) != 255) {
-			/* silently discard a NS message with invalid hop limit */
-			pbuf_free(p);
-			ND6_STATS_INC(nd6.proterr);
-			ND6_STATS_INC(nd6.drop);
-			return;
-		}
-
 		ns_hdr = (struct ns_header *)p->payload;
 
-		if (ND6H_CODE(ns_hdr) != 0) {
-			/* silently discard a NS message with invalid code */
+		if ((IP6H_HOPLIM(ip6_current_header()) != 255) ||
+		    (ND6H_CODE(ns_hdr) != 0) ||
+		    ip6_addr_ismulticast(&ND6H_NS_TARGET_ADDR(ns_hdr))) {
+			/* RFC 4861 clause 7.1.1.
+			 * Validation of Ns message
+			 */
 			pbuf_free(p);
 			ND6_STATS_INC(nd6.proterr);
 			ND6_STATS_INC(nd6.drop);
