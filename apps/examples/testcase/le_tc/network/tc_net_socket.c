@@ -377,6 +377,7 @@ static void tc_net_socket_af_ax25_sock_stream_n(void)
 }
 #endif
 
+#ifdef AF_PACKET
 /**
 * @testcase		tc_net_socket_af_packet_sock_stream_n
 * @brief
@@ -394,6 +395,7 @@ static void tc_net_socket_af_packet_sock_stream_n(void)
 
 	close(fd);
 }
+#endif
 
 #ifdef AF_UNIX
 /**
@@ -1111,6 +1113,7 @@ static void tc_net_socket_af_ax25_sock_dgram_n(void)
 }
 #endif
 
+#ifdef AF_PACKET
 /**
 * @testcase		tc_net_socket_af_packet_sock_dgram_p
 * @brief
@@ -1128,6 +1131,7 @@ static void tc_net_socket_af_packet_sock_dgram_p(void)
 
 	close(fd);
 }
+#endif
 
 /**
 * @testcase		tc_net_socket_af_inet_sock_raw_p
@@ -1506,7 +1510,9 @@ int net_socket_main(void)
 #ifdef AF_AX25
 	tc_net_socket_af_ax25_sock_stream_n();
 #endif
+#ifdef AF_PACKET
 	tc_net_socket_af_packet_sock_stream_n();
+#endif
 #ifdef AF_UNIX
 	tc_net_socket_af_unix_sock_stream_p();
 	tc_net_socket_af_unix_sock_stream_udp_n();
@@ -1560,7 +1566,9 @@ int net_socket_main(void)
 #ifdef AF_AX25
 	tc_net_socket_af_ax25_sock_dgram_n();
 #endif
+#ifdef AF_PACKET
 	tc_net_socket_af_packet_sock_dgram_p();
+#endif
 	tc_net_socket_af_inet_sock_raw_p();
 	tc_net_socket_af_inet_sock_raw_tcp_p();
 	tc_net_socket_af_inet_sock_raw_udp_p();
