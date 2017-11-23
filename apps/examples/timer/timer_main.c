@@ -58,6 +58,7 @@
 
 #include <sys/ioctl.h>
 #include <stdio.h>
+#include <unistd.h>
 #include <stdlib.h>
 #include <fcntl.h>
 #include <signal.h>
@@ -89,38 +90,37 @@
 
 #define TIMER_THEAD_SIZE                512
 #define TIMER_THEAD_PRIORITY            100
-
 /****************************************************************************
  * Private Data
  ****************************************************************************/
-static sem_t g_sem;
 
 /****************************************************************************
  * Private Functions
  ****************************************************************************/
-static void timer_sighandler(int signo, FAR siginfo_t *siginfo,
-							 FAR void *context)
-{
-	/*
-	 * Does nothing in this example except for increment a count of signals
-	 * received.
-	 *
-	 * NOTE: The use of signal handler is not recommended if you are concerned
-	 * about the signal latency.  Instead, a dedicated, high-priority thread
-	 * that waits on sigwaitinfo() is recommended.  High priority is required
-	 * if you want a deterministic wake-up time when the signal occurs.
-	 */
-	sem_post(&g_sem);
-}
 
 static pthread_addr_t timer_thread(pthread_addr_t arg)
 {
+	struct sigaction sigact;
+	siginfo_t info;
+	int signo;
+
 	int nbr = 0;
 	int i = (int)arg;
 
-	while (i--) {
-		sem_wait(&g_sem);
-		fprintf(stdout, "time limits(%d)\n", ++nbr);
+	/*
+	 * Attach a signal handler to catch the notifications.  NOTE that using
+	 * signal handler is very slow.  A much more efficient thing to do is to
+	 * create a separate pthread that waits on sigwaitinfo() for timer events.
+	 * Much less overhead in that case.
+	 */
+	sigemptyset(&sigact.sa_mask);
+	sigaddset(&sigact.sa_mask, EXAMPLE_TIMER_SIGNO);
+
+	while (i > nbr) {
+		signo = sigwaitinfo(&sigact.sa_mask, &info);
+		if (signo == EXAMPLE_TIMER_SIGNO) {
+			fprintf(stdout, "time limits(%d)\n", ++nbr);
+		}
 	}
 
 	pthread_exit(NULL);
@@ -134,12 +134,6 @@ static pthread_t create_timer_thread(void *arg)
 	pthread_attr_t attr;
 	struct sched_param sparam;
 	int ret = OK;
-
-	ret = sem_init(&g_sem, 0, 0);
-	if (ret != 0) {
-		fprintf(stderr, "failed to set semaphore init(%d)\n", ret);
-		return -ret;
-	}
 
 	ret = pthread_attr_init(&attr);
 	if (ret != 0) {
@@ -203,7 +197,6 @@ int timer_main(int argc, char *argv[])
 #endif
 {
 	struct timer_notify_s notify;
-	struct sigaction act;
 	int tid = 0;
 	int fd;
 	int opt = 0;
@@ -233,7 +226,7 @@ int timer_main(int argc, char *argv[])
 		}
 	}
 
-	if (optind >= argc) {
+	if (optind > argc) {
 		fprintf(stderr, "timer: invalid option -- \'%s\'\n", argv[optind]);
 		fprintf(stdout, USAGE);
 		return EXIT_SUCCESS;
@@ -265,29 +258,13 @@ int timer_main(int argc, char *argv[])
 	}
 
 	/* Set the timer interval */
-	fprintf(stdout, "Set timer interval to %lu\n",
-			(unsigned long)intval);
+
+	fprintf(stdout, "Set timer interval to %lu during %d times\n",
+			(unsigned long)intval,
+			repeat);
 
 	if (ioctl(fd, TCIOC_SETTIMEOUT, intval) < 0) {
 		fprintf(stderr, "ERROR: Failed to set the timer interval: %d\n", errno);
-		close(fd);
-		return EXIT_FAILURE;
-	}
-
-	/*
-	 * Attach a signal handler to catch the notifications.  NOTE that using
-	 * signal handler is very slow.  A much more efficient thing to do is to
-	 * create a separate pthread that waits on sigwaitinfo() for timer events.
-	 * Much less overhead in that case.
-	 */
-	act.sa_sigaction = timer_sighandler;
-	act.sa_flags     = SA_SIGINFO;
-
-	(void)sigfillset(&act.sa_mask);
-	(void)sigdelset(&act.sa_mask, EXAMPLE_TIMER_SIGNO);
-
-	if (sigaction(EXAMPLE_TIMER_SIGNO, &act, NULL) != OK) {
-		fprintf(stderr, "ERROR: Fsigaction failed: %d\n", errno);
 		close(fd);
 		return EXIT_FAILURE;
 	}
@@ -299,7 +276,7 @@ int timer_main(int argc, char *argv[])
 	fprintf(stdout, "Attach timer handler\n");
 
 	notify.arg   = NULL;
-	notify.pid   = getpid();
+	notify.pid   = tid;
 	notify.signo = EXAMPLE_TIMER_SIGNO;
 
 	if (ioctl(fd, TCIOC_NOTIFICATION,
@@ -319,7 +296,6 @@ int timer_main(int argc, char *argv[])
 
 	/* Wait a bit showing timer thread */
 	pthread_join(tid, NULL);
-	sem_destroy(&g_sem);
 
 	/* Stop the timer */
 	fprintf(stdout, "Stop the timer\n");
@@ -329,10 +305,6 @@ int timer_main(int argc, char *argv[])
 		close(fd);
 		return EXIT_FAILURE;
 	}
-
-	/* Detach the signal handler */
-	act.sa_handler = SIG_DFL;
-	sigaction(EXAMPLE_TIMER_SIGNO, &act, NULL);
 
 	/* Close the timer driver */
 	fprintf(stdout, "Finished\n");
