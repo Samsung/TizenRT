@@ -163,6 +163,7 @@ static void tc_net_socket_af_inet_soc_dgram_icmp_p(void)
 
 }
 
+#ifdef IPPROTO_IGMP
 /**
 * @testcase		tc_net_socket_af_inet_sock_dgram_igmp_p
 * @brief
@@ -182,6 +183,8 @@ static void tc_net_socket_af_inet_sock_dgram_igmp_p(void)
 	close(fd);
 
 }
+#endif
+
 #ifdef CONFIG_NET_IPv6
 /**
 * @testcase		tc_net_socket_af_inet_sock_dgram_ipv6_n
@@ -321,6 +324,7 @@ static void tc_net_socket_af_unix_sock_dgram_icmp_n(void)
 	close(fd);
 }
 
+#ifdef IPPROTO_IGMP
 /**
 * @testcase		tc_net_socket_af_unix_sock_dgram_igmp_n
 * @brief
@@ -339,6 +343,7 @@ static void tc_net_socket_af_unix_sock_dgram_igmp_n(void)
 
 	close(fd);
 }
+#endif
 #endif
 
 #ifdef AF_X25
@@ -474,6 +479,7 @@ static void tc_net_socket_af_unix_sock_stream_icmp_n(void)
 	close(fd);
 }
 
+#ifdef IPPROTO_IGMP
 /**
 * @testcase		tc_net_socket_af_unix_sock_stream_igmp_n
 * @brief
@@ -492,6 +498,7 @@ static void tc_net_socket_af_unix_sock_stream_igmp_n(void)
 
 	close(fd);
 }
+#endif
 #ifdef CONFIG_NET_IPv6
 /**
 * @testcase		tc_net_socket_af_unix_sock_stream_ipv6_n
@@ -735,6 +742,7 @@ static void tc_net_socket_af_inet_sock_stream_icmp_p(void)
 	close(fd);
 }
 
+#ifdef IPPROTO_IGMP
 /**
 * @testcase		tc_net_socket_af_inet_sock_stream_igmp_p
 * @brief
@@ -752,6 +760,8 @@ static void tc_net_socket_af_inet_sock_stream_igmp_p(void)
 
 	close(fd);
 }
+#endif
+
 #ifdef CONFIG_NET_IPv6
 /**
 * @testcase		tc_net_socket_af_inet_sock_stream_protoipv6_n
@@ -1221,6 +1231,7 @@ static void tc_net_socket_af_inet_sock_raw_icmp_p(void)
 	close(fd);
 }
 
+#ifdef IPPROTO_IGMP
 /**
 * @testcase		tc_net_socket_af_inet_sock_raw_igmp_p
 * @brief
@@ -1238,6 +1249,8 @@ static void tc_net_socket_af_inet_sock_raw_igmp_p(void)
 
 	close(fd);
 }
+#endif
+
 #ifdef CONFIG_NET_IPv6
 /**
 * @testcase		tc_net_socket_af_inet_sock_raw_ipv6_n
@@ -1394,6 +1407,7 @@ static void tc_net_socket_af_unix_sock_raw_icmp_n(void)
 	close(fd);
 }
 
+#ifdef IPPROTO_IGMP
 /**
 * @testcase		tc_net_socket_af_unix_sock_raw_igmp_n
 * @brief
@@ -1412,6 +1426,8 @@ static void tc_net_socket_af_unix_sock_raw_igmp_n(void)
 
 	close(fd);
 }
+#endif
+
 #ifdef CONFIG_NET_IPv6
 /**
 * @testcase		tc_net_socket_af_unix_sock_raw_ipv6_n
@@ -1508,7 +1524,9 @@ int net_socket_main(void)
 	tc_net_socket_af_inet_sock_dgram_tcp_n();
 	tc_net_socket_af_inet_sock_dgram_udp_p();
 	tc_net_socket_af_inet_soc_dgram_icmp_p();
+#ifdef IPPROTO_IGMP
 	tc_net_socket_af_inet_sock_dgram_igmp_p();
+#endif
 #ifdef CONFIG_NET_IPv6
 	tc_net_socket_af_inet_sock_dgram_ipv6_n();
 #ifdef IPPROTO_ROUTING
@@ -1526,7 +1544,9 @@ int net_socket_main(void)
 	tc_net_socket_af_unix_sock_dgram_tcp_n();
 	tc_net_socket_af_unix_sock_dgram_udp_p();
 	tc_net_socket_af_unix_sock_dgram_icmp_n();
+#ifdef IPPROTO_IGMP
 	tc_net_socket_af_unix_sock_dgram_igmp_n();
+#endif
 #endif
 #ifdef AF_X25
 	tc_net_socket_af_x25_sock_stream_n();
@@ -1541,7 +1561,9 @@ int net_socket_main(void)
 	tc_net_socket_af_unix_sock_stream_p();
 	tc_net_socket_af_unix_sock_stream_udp_n();
 	tc_net_socket_af_unix_sock_stream_icmp_n();
+#ifdef IPPROTO_IGMP
 	tc_net_socket_af_unix_sock_stream_igmp_n();
+#endif
 #ifdef CONFIG_NET_IPv6
 	tc_net_socket_af_unix_sock_stream_ipv6_n();
 #ifdef IPPROTO_ROUTING
@@ -1563,7 +1585,9 @@ int net_socket_main(void)
 	tc_net_socket_domain_sock_stream_tcp_n();
 	tc_net_socket_af_inet_sock_stream_udp_n();
 	tc_net_socket_af_inet_sock_stream_icmp_p();
+#ifdef IPPROTO_IGMP
 	tc_net_socket_af_inet_sock_stream_igmp_p();
+#endif
 #ifdef CONFIG_NET_IPv6
 	tc_net_socket_af_inet_sock_stream_protoipv6_n();
 #ifdef IPPROTO_ROUTING
@@ -1609,7 +1633,9 @@ int net_socket_main(void)
 	tc_net_socket_af_inet_sock_raw_tcp_p();
 	tc_net_socket_af_inet_sock_raw_udp_p();
 	tc_net_socket_af_inet_sock_raw_icmp_p();
+#ifdef IPPROTO_IGMP
 	tc_net_socket_af_inet_sock_raw_igmp_p();
+#endif
 #ifdef CONFIG_NET_IPv6
 	tc_net_socket_af_inet_sock_raw_ipv6_n();
 #ifdef IPPROTO_ROUTING
@@ -1625,7 +1651,9 @@ int net_socket_main(void)
 	tc_net_socket_af_unix_sock_raw_tcp_n();
 	tc_net_socket_af_unix_sock_raw_udp_n();
 	tc_net_socket_af_unix_sock_raw_icmp_n();
+#ifdef IPPROTO_IGMP
 	tc_net_socket_af_unix_sock_raw_igmp_n();
+#endif
 #ifdef CONFIG_NET_IPv6
 	tc_net_socket_af_unix_sock_raw_ipv6_n();
 #ifdef IPPROTO_ROUTING
