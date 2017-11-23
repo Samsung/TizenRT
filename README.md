@@ -9,7 +9,7 @@ Please find project details like APIs reference at [docs](docs/) folder. Wiki wi
 ## Contents
 
 > [Quick Start](#quick-start)  
-> [Supported Board](#supported-board)  
+> [Supported Board / Emulator](#supported-board--emulator)  
 > [Configuration Sets](#configuration-sets)
 
 ## Quick Start
