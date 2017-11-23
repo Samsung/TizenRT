@@ -194,6 +194,102 @@ static int timedsend_test(void)
 		g_timedsend_mqfd = NULL;
 	}
 
+	/* Perform the timedsend_test for file read permission cases */
+
+	memcpy(msg_buffer, TEST_MESSAGE, TEST_MSGLEN);
+
+	g_timedsend_mqfd = mq_open("t_mqueue", O_RDONLY | O_CREAT, 0666, &attr);
+	if (g_timedsend_mqfd == (mqd_t)-1) {
+		printf("tc_mqueue_mq_timedsend_timedreceive FAIL: mq_open\n");
+		return ERROR;
+	}
+
+	/* Perform the send for above failure check cases */
+
+	status = mq_timedsend(g_timedsend_mqfd, msg_buffer, TEST_MSGLEN, 42, &st_time);
+	if (status != ERROR) {
+		mq_close(g_timedsend_mqfd);
+		return ERROR;
+	}
+
+	if (mq_close(g_timedsend_mqfd) < 0) {
+		printf("tc_mqueue_mq_timedsend_timedreceive FAIL : mq_close\n");
+		return ERROR;
+	} else {
+		g_timedsend_mqfd = NULL;
+	}
+
+	/* Perform the timedsend_test for NULL message queue parameter check */
+
+	g_timedsend_mqfd = mq_open("t_mqueue", O_WRONLY | O_CREAT, 0666, &attr);
+	if (g_timedsend_mqfd == (mqd_t)-1) {
+		printf("tc_mqueue_mq_timedsend_timedreceive FAIL: mq_open\n");
+		return ERROR;
+	}
+
+	status = mq_timedsend(NULL, msg_buffer, TEST_MSGLEN, 42, &st_time);
+	if (status != ERROR) {
+		mq_close(g_timedsend_mqfd);
+		return ERROR;
+	}
+
+	if (mq_close(g_timedsend_mqfd) < 0) {
+		printf("tc_mqueue_mq_timedsend_timedreceive FAIL : mq_close\n");
+		return ERROR;
+	} else {
+		g_timedsend_mqfd = NULL;
+	}
+
+	/* Perform the timedsend_test for mqueue msg length check case */
+
+	memcpy(msg_buffer, TEST_MESSAGE, TEST_MSGLEN);
+
+	g_timedsend_mqfd = mq_open("t_mqueue", O_WRONLY | O_CREAT, 0666, &attr);
+	if (g_timedsend_mqfd == (mqd_t)-1) {
+		printf("tc_mqueue_mq_timedsend_timedreceive FAIL: mq_open\n");
+		return ERROR;
+	}
+
+	/* Perform the send for above failure check case */
+
+	status = mq_timedsend(g_timedsend_mqfd, msg_buffer, 33, 42, &st_time);
+	if (status != ERROR) {
+		mq_close(g_timedsend_mqfd);
+		return ERROR;
+	}
+
+	if (mq_close(g_timedsend_mqfd) < 0) {
+		printf("tc_mqueue_mq_timedsend_timedreceive FAIL : mq_close\n");
+		return ERROR;
+	} else {
+		g_timedsend_mqfd = NULL;
+	}
+
+	/* Perform the timedsend_test for NULL time parameter check */
+
+	memcpy(msg_buffer, TEST_MESSAGE, TEST_MSGLEN);
+
+	g_timedsend_mqfd = mq_open("t_mqueue", O_WRONLY | O_CREAT, 0666, &attr);
+	if (g_timedsend_mqfd == (mqd_t)-1) {
+		printf("tc_mqueue_mq_timedsend_timedreceive FAIL: mq_open\n");
+		return ERROR;
+	}
+
+	/* Perform the send for above failure check case */
+
+	status = mq_timedsend(g_timedsend_mqfd, msg_buffer, TEST_MSGLEN, 42, NULL);
+	if (status != ERROR) {
+		mq_close(g_timedsend_mqfd);
+		return ERROR;
+	}
+
+	if (mq_close(g_timedsend_mqfd) < 0) {
+		printf("tc_mqueue_mq_timedsend_timedreceive FAIL : mq_close\n");
+		return ERROR;
+	} else {
+		g_timedsend_mqfd = NULL;
+	}
+
 	return OK;
 }
 
@@ -244,6 +340,56 @@ static int timedreceive_test(void)
 	}
 
 	/* Close the queue and return success */
+
+	if (mq_close(g_timedrecv_mqfd) < 0) {
+		printf("tc_mqueue_mq_close FAIL\n");
+		return ERROR;
+	} else {
+		g_timedrecv_mqfd = NULL;
+	}
+
+	/* Perform the timedreceive_test for NULL message queue parameter check & file write permission cases */
+
+	memset(msg_buffer, 0xaa, TEST_MSGLEN);
+
+	g_timedrecv_mqfd = mq_open("t_mqueue", O_WRONLY | O_CREAT, 0666, &attr);
+	if (g_timedrecv_mqfd == (mqd_t)ERROR) {
+		printf("tc_mqueue_mq_timedsend_timedreceive FAIL : mq_open\n");
+		return ERROR;
+	}
+
+	/* Perform the receive for above failure check cases */
+
+	nbytes = mq_timedreceive(g_timedrecv_mqfd, msg_buffer, TEST_MSGLEN, 0, &st_time);
+	if (nbytes != ERROR) {
+		mq_close(g_timedrecv_mqfd);
+		return ERROR;
+	}
+
+	if (mq_close(g_timedrecv_mqfd) < 0) {
+		printf("tc_mqueue_mq_close FAIL\n");
+		return ERROR;
+	} else {
+		g_timedrecv_mqfd = NULL;
+	}
+
+	/* Perform the timedreceive_test for NULL time parameter check */
+
+	memset(msg_buffer, 0xaa, TEST_MSGLEN);
+
+	g_timedrecv_mqfd = mq_open("t_mqueue", O_RDONLY | O_CREAT, 0666, &attr);
+	if (g_timedrecv_mqfd == (mqd_t)ERROR) {
+		printf("tc_mqueue_mq_timedsend_timedreceive FAIL : mq_open\n");
+		return ERROR;
+	}
+
+	/* Perform the receive for above failure check cases */
+
+	nbytes = mq_timedreceive(g_timedrecv_mqfd, msg_buffer, TEST_MSGLEN, 0, NULL);
+	if (nbytes != ERROR || errno != EINVAL) {
+		mq_close(g_timedrecv_mqfd);
+		return ERROR;
+	}
 
 	if (mq_close(g_timedrecv_mqfd) < 0) {
 		printf("tc_mqueue_mq_close FAIL\n");
@@ -531,18 +677,39 @@ static void tc_mqueue_mq_notify(void)
 	sa.sa_flags = 0;
 	sigaction(SIGUSR1, &sa, NULL);
 
-	TC_ASSERT_EQ_ERROR_CLEANUP("mq_notify", mq_notify(mqdes, &notification), OK, get_errno(), {
-		goto cleanup;
-	}
-						);
-
-	TC_ASSERT_EQ_CLEANUP("mq_send", mq_send(mqdes, s_msg_ptr, 15, prio), OK, {
-		goto cleanup;
-	}
-						 );
+	TC_ASSERT_EQ_ERROR_CLEANUP("mq_notify", mq_notify(mqdes, &notification), OK, get_errno(), goto cleanup);
+	TC_ASSERT_EQ_CLEANUP("mq_send", mq_send(mqdes, s_msg_ptr, 15, prio), OK, goto cleanup);
 
 	sleep(1);
 	TC_ASSERT_EQ("mq_notify", enter_notify_handler, true);
+
+	mq_close(mqdes);
+
+	mqdes = mq_open("noti_queue", O_CREAT | O_RDWR, 0666, 0);
+	TC_ASSERT_NEQ("mq_open", mqdes, (mqd_t)-1);
+
+	notification.sigev_notify = SIGEV_SIGNAL;
+	notification.sigev_signo = SIGUSR1;
+	sa.sa_handler = mq_notify_handler;
+	sa.sa_flags = 0;
+	sigaction(SIGUSR1, &sa, NULL);
+
+	/* Null Message queue descriptor check */
+	TC_ASSERT_EQ_ERROR_CLEANUP("mq_notify", mq_notify(NULL, &notification), ERROR, get_errno(), goto cleanup);
+
+	/* Invalid signal number check */
+	notification.sigev_signo = 33;
+	TC_ASSERT_EQ_ERROR_CLEANUP("mq_notify", mq_notify(mqdes, &notification), ERROR, get_errno(), goto cleanup);
+
+	/* Valid signal number check */
+	notification.sigev_signo = SIGUSR1;
+	TC_ASSERT_EQ_ERROR_CLEANUP("mq_notify", mq_notify(mqdes, &notification), OK, get_errno(), goto cleanup);
+	TC_ASSERT_EQ_ERROR_CLEANUP("mq_notify", mq_notify(mqdes, &notification), ERROR, get_errno(), goto cleanup);
+
+	/* Detaching the notification */
+	TC_ASSERT_EQ_ERROR_CLEANUP("mq_notify", mq_notify(mqdes, NULL), OK, get_errno(), goto cleanup);
+
+	mq_close(mqdes);
 
 	TC_SUCCESS_RESULT();
 cleanup:
@@ -573,16 +740,112 @@ static void tc_mqueue_mq_unlink(void)
 	TC_ASSERT_NEQ("mq_open", mqdes, (mqd_t)-1);
 
 	ret = mq_unlink("mqunlink");
-	TC_ASSERT_EQ_ERROR_CLEANUP("mq_unlink", ret, OK, get_errno(), {
-		mq_close(mqdes);
-	});
+	TC_ASSERT_EQ_ERROR_CLEANUP("mq_unlink", ret, OK, get_errno(), mq_close(mqdes));
 
 	ret = mq_unlink("mqunlink");
 	TC_ASSERT_EQ_CLEANUP("mq_unlink", ret, ERROR, mq_close(mqdes));
 	TC_ASSERT_EQ_CLEANUP("mq_unlink", errno, ENOENT, mq_close(mqdes));
 
 	mq_close(mqdes);
+
 	TC_SUCCESS_RESULT();
+}
+
+/**
+* @fn                   :tc_mqueue_mq_timedsend_timedreceive_failurechecks
+* @description          :Function for tc_mqueue_mq_timedsend_timedreceive corner case checks
+* @return               :void*
+*/
+static void tc_mqueue_mq_timedsend_timedreceive_failurechecks(void)
+{
+	char msg_buffer[TEST_MSGLEN];
+	struct mq_attr attr;
+	struct timespec st_time;
+	int ret_chk = OK;
+
+	/* TIMEDSEND_TEST */
+
+	clock_gettime(CLOCK_REALTIME, &st_time);
+	st_time.tv_sec += 1;
+
+	/* Fill in attributes for message queue */
+
+	attr.mq_maxmsg = TEST_TIMEDRECEIVE_NMSGS;
+	attr.mq_msgsize = TEST_MSGLEN;
+	attr.mq_flags = 0;
+
+	/* Fill in a test message buffer to send */
+
+	memcpy(msg_buffer, TEST_MESSAGE, TEST_MSGLEN);
+
+	/* Perform the timedsend_test for NULL time parameter check */
+
+	g_timedsend_mqfd = mq_open("t_mqueues", O_WRONLY | O_CREAT, 0666, &attr);
+	TC_ASSERT_NEQ("timedsend_test", g_timedsend_mqfd, (mqd_t)ERROR);
+
+	/* Perform the send for above failure check case */
+
+	ret_chk = mq_timedsend(NULL, msg_buffer, TEST_MSGLEN, 42, NULL);
+	TC_ASSERT_EQ_CLEANUP("timedsend_test", ret_chk, ERROR, goto cleanup1);
+	TC_ASSERT_EQ_CLEANUP("timedsend_test", errno, EINVAL, goto cleanup1);
+
+	/* TIMEDRECEIVE_TEST */
+
+	clock_gettime(CLOCK_REALTIME, &st_time);
+	st_time.tv_sec += 1;
+
+	/* Fill in attributes for message queue */
+
+	attr.mq_maxmsg = TEST_TIMEDRECEIVE_NMSGS;
+	attr.mq_msgsize = TEST_MSGLEN;
+	attr.mq_flags = 0;
+
+	/* Perform the timedreceive_test for time-related errors */
+
+	memset(msg_buffer, 0xaa, TEST_MSGLEN);
+
+	g_timedrecv_mqfd = mq_open("t_mqueuer", O_RDONLY | O_CREAT, 0666, &attr);
+	TC_ASSERT_NEQ_CLEANUP("timedreceive_test", g_timedrecv_mqfd, (mqd_t)ERROR, goto cleanup1);
+
+	/* Perform the receive for above failure check cases */
+
+	ret_chk = mq_timedreceive(g_timedrecv_mqfd, msg_buffer, TEST_MSGLEN, 0, &st_time);
+	TC_ASSERT_EQ_CLEANUP("timedreceive_test", ret_chk, ERROR, goto cleanup2);
+
+	/* Close the queue and return success */
+
+	TC_ASSERT_GEQ_CLEANUP("timedreceive_test", mq_close(g_timedrecv_mqfd), 0, goto cleanup1);
+
+	clock_gettime(CLOCK_REALTIME, &st_time);
+	st_time.tv_sec += 1;
+
+	sleep(10);
+
+	/* Perform the timedreceive_test for expired time & empty message queue cases */
+
+	memset(msg_buffer, 0xaa, TEST_MSGLEN);
+
+	g_timedrecv_mqfd = mq_open("t_mqueuer", O_RDONLY | O_CREAT, 0666, &attr);
+	TC_ASSERT_NEQ_CLEANUP("timedreceive_test", g_timedrecv_mqfd, (mqd_t)ERROR, goto cleanup1);
+
+	/* Perform the receive for above failure check cases */
+
+	ret_chk = mq_timedreceive(g_timedrecv_mqfd, msg_buffer, TEST_MSGLEN, 0, &st_time);
+	TC_ASSERT_EQ_CLEANUP("timedreceive_test", ret_chk, ERROR, goto cleanup2);
+
+	/* Close the queue and return success */
+
+	TC_ASSERT_GEQ_CLEANUP("timedreceive_test", mq_close(g_timedrecv_mqfd), 0, goto cleanup1);
+	TC_ASSERT_GEQ("timedsend_test", mq_close(g_timedsend_mqfd), 0);
+
+	TC_SUCCESS_RESULT();
+
+cleanup2:
+	mq_close(g_timedrecv_mqfd);
+	mq_unlink("t_mqueuer");
+cleanup1:
+	mq_close(g_timedsend_mqfd);
+	mq_unlink("t_mqueues");
 }
 
 /****************************************************************************
@@ -593,6 +856,7 @@ int mqueue_main(void)
 	tc_mqueue_mq_open_close_send_receive();
 	tc_mqueue_mq_notify();
 	tc_mqueue_mq_timedsend_timedreceive();
+	tc_mqueue_mq_timedsend_timedreceive_failurechecks();
 	tc_mqueue_mq_unlink();
 
 	return 0;
