@@ -15,6 +15,9 @@ Aimed especially at power-sensitive devices needing Wi-Fi®, the ARTIK055S Modul
 
 After configuration, you can add / remove the configuration you want via menuconfig. If you want to run menuconfig, you need to install `kconfig-frontends`. kconfig-frontends was set at [[kconfig-frontends]](../../../README.md#set-kconfig-frontends) tab of Quick Start.
 
+#### [audio](audio/README.md)
+This can be used to test audio functionality.
+
 #### nettestsecure
 
 This is the basic configuration of ARTIK055S products. If you have an ARTIK055S product, use this config.
