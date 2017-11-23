@@ -1057,6 +1057,7 @@ static void tc_net_socket_af_unspec_sock_dgram_p(void)
 	close(fd);
 }
 
+#ifdef AF_LOCAL
 /**
 * @testcase		tc_net_socket_af_local_sock_dgram_p
 * @brief
@@ -1074,6 +1075,8 @@ static void tc_net_socket_af_local_sock_dgram_p(void)
 
 	close(fd);
 }
+#endif
+
 #ifdef AF_X25
 /**
 * @testcase		tc_net_socket_af_x25_sock_dgram_n
@@ -1559,7 +1562,9 @@ int net_socket_main(void)
 #endif
 	tc_net_socket_af_netlink_sock_dgram_p();
 	tc_net_socket_af_unspec_sock_dgram_p();
+#ifdef AF_LOCAL
 	tc_net_socket_af_local_sock_dgram_p();
+#endif
 #ifdef AF_X25
 	tc_net_socket_af_x25_sock_dgram_n();
 #endif
