@@ -561,6 +561,7 @@ static void tc_net_socket_af_unix_sock_stream_icmpv6_n(void)
 #endif
 #endif
 
+#ifdef AF_NETLINK
 /**
 * @testcase		tc_net_socket_af_netlink_sock_stream_n
 * @brief
@@ -578,6 +579,7 @@ static void tc_net_socket_af_netlink_sock_stream_n(void)
 
 	close(fd);
 }
+#endif
 
 /**
 * @testcase		tc_net_socket_af_unspec_sock_stream_p
@@ -1044,6 +1046,7 @@ static void tc_net_socket_af_unix_sock_dgram_icmpv6_n(void)
 #endif
 #endif
 
+#ifdef AF_NETLINK
 /**
 * @testcase		tc_net_socket_af_netlink_sock_dgram_p
 * @brief
@@ -1061,7 +1064,7 @@ static void tc_net_socket_af_netlink_sock_dgram_p(void)
 
 	close(fd);
 }
-
+#endif
 /**
 * @testcase		tc_net_socket_af_unspec_sock_dgram_p
 * @brief
@@ -1572,7 +1575,9 @@ int net_socket_main(void)
 	tc_net_socket_af_unix_sock_stream_icmpv6_n();
 #endif
 #endif
+#ifdef AF_NETLINK
 	tc_net_socket_af_netlink_sock_stream_n();
+#endif
 	tc_net_socket_af_unspec_sock_stream_p();
 #ifdef AF_UNIX
 	tc_net_socket_af_unix_sock_stream_tcp_p();
@@ -1615,7 +1620,9 @@ int net_socket_main(void)
 	tc_net_socket_af_unix_sock_dgram_icmpv6_n();
 #endif
 #endif
+#ifdef AF_NETLINK
 	tc_net_socket_af_netlink_sock_dgram_p();
+#endif
 	tc_net_socket_af_unspec_sock_dgram_p();
 #ifdef AF_LOCAL
 	tc_net_socket_af_local_sock_dgram_p();
