@@ -292,7 +292,7 @@ void nd6_input(struct pbuf *p, struct netif *inp)
 
 		lladdr_diff = 0;
 		if (lladdr_opt) {
-			lladdr_diff = memcmp(neighbor_cache[i].lladdr, ND6H_LLADDR_OPT_ADDR(lladdr_opt), inp->hwaddr_len);
+			lladdr_diff = MEMCMP(neighbor_cache[i].lladdr, ND6H_LLADDR_OPT_ADDR(lladdr_opt), inp->hwaddr_len);
 		}
 
 		if ((neighbor_cache[i].state == ND6_INCOMPLETE)) {
@@ -522,7 +522,7 @@ void nd6_input(struct pbuf *p, struct netif *inp)
 				 * differs from the one in the received Source Link-Layer option,
 				 * the cached address should be replaced by the received address,
 				 * and the entry's reachability state MUST be set to STALE. */
-				if (memcmp(neighbor_cache[i].lladdr, ND6H_LLADDR_OPT_ADDR(lladdr_opt), inp->hwaddr_len) != 0) {
+				if (MEMCMP(neighbor_cache[i].lladdr, ND6H_LLADDR_OPT_ADDR(lladdr_opt), inp->hwaddr_len) != 0) {
 					MEMCPY(neighbor_cache[i].lladdr, ND6H_LLADDR_OPT_ADDR(lladdr_opt), inp->hwaddr_len);
 
 					/* RFC 4861 page 91, appendix c */
@@ -779,7 +779,7 @@ void nd6_input(struct pbuf *p, struct netif *inp)
 				neighbor_cache[j].state = ND6_STALE;
 			}
 			/* Neighbor cache address isn't same with lladdr */
-			if (memcmp(neighbor_cache[j].lladdr, ND6H_LLADDR_OPT_ADDR(lladdr_opt), inp->hwaddr_len)) {
+			if (MEMCMP(neighbor_cache[j].lladdr, ND6H_LLADDR_OPT_ADDR(lladdr_opt), inp->hwaddr_len)) {
 				SMEMCPY(neighbor_cache[j].lladdr, ND6H_LLADDR_OPT_ADDR(lladdr_opt), inp->hwaddr_len);
 				neighbor_cache[j].state = ND6_STALE;
 			}
