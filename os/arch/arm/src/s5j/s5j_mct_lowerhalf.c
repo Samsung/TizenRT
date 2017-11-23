@@ -184,8 +184,10 @@ static int s5j_timer_handler(int irq, void *context, void *arg)
 static int s5j_mct_start(FAR struct timer_lowerhalf_s *lower)
 {
 	FAR struct s5j_lowerhalf_s *priv = (FAR struct s5j_lowerhalf_s *)lower;
+	irqstate_t flags;
 
 	if (!priv->started) {
+		flags = irqsave();
 
 		/* use interval mode */
 		s5j_mct_setmode(priv->mct, false);
@@ -196,7 +198,11 @@ static int s5j_mct_start(FAR struct timer_lowerhalf_s *lower)
 		}
 
 		s5j_mct_enable(priv->mct);
+		s5j_mct_ack_irq(priv->mct);
+
 		priv->started = true;
+
+		irqrestore(flags);
 
 		return OK;
 	}
