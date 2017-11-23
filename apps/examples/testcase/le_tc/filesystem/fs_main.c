@@ -120,6 +120,15 @@
 
 #define INV_FD -3
 
+#define DEV_PATH "/dev"
+#define DEV_INVALID_DIR "/dev/invalid"
+#define DEV_EMPTY_FOLDER_PATH "/dev/folder"
+#define VFS_INVALID_PATH "/mnt/nofolder"
+#define INVALID_PATH "/empty"
+
+#define ROOT_PATH "/"
+
+
 /****************************************************************************
  * Global Variables
  ****************************************************************************/
@@ -629,6 +638,9 @@ static void tc_fs_vfs_mkdir(void)
 		ret = mkdir(filename, 0777);
 		TC_ASSERT_EQ("mkdir", ret, OK);
 	}
+	/*creating an empty folder */
+	ret = mkdir(DEV_EMPTY_FOLDER_PATH, 0777);
+	TC_ASSERT_EQ("mkdir", ret, OK);
 
 	TC_SUCCESS_RESULT();
 }
@@ -643,11 +655,27 @@ static void tc_fs_vfs_mkdir(void)
 */
 static void tc_fs_vfs_opendir(void)
 {
-	DIR *dirp;
+	DIR *dir;
 
-	dirp = opendir(VFS_FOLDER_PATH);
-	TC_ASSERT_NEQ("opendir", dirp, NULL);
-	closedir(dirp);
+	dir = opendir(VFS_FOLDER_PATH);
+	TC_ASSERT_NEQ("opendir", dir, NULL);
+	closedir(dir);
+	/*Path doesnot exist */
+	dir = opendir(INVALID_PATH);
+	TC_ASSERT_EQ("opendir", dir, NULL);
+
+	dir = opendir(DEV_PATH);
+	TC_ASSERT_NEQ("opendir", dir, NULL);
+	closedir(dir);
+	/* Pseudo file system node covers error condition path is not a directory */
+	dir = opendir(DEV_INVALID_DIR);
+	TC_ASSERT_EQ("opendir", dir, NULL);
+
+	/* Opening an empty folder */
+	dir = opendir(DEV_EMPTY_FOLDER_PATH);
+	TC_ASSERT_NEQ("opendir", dir, NULL);
+	closedir(dir);
+
 	TC_SUCCESS_RESULT();
 }
 
@@ -661,24 +689,49 @@ static void tc_fs_vfs_opendir(void)
 */
 static void tc_fs_vfs_readdir(void)
 {
-	int ret, count;
-	DIR *dirp;
+	int ret;
+	int count;
+	DIR *dir;
 	struct dirent *dirent;
 
-	dirp = opendir(VFS_FOLDER_PATH);
-	TC_ASSERT_NEQ("opendir", dirp, NULL);
+	dir = opendir(VFS_FOLDER_PATH);
+	TC_ASSERT_NEQ("opendir", dir, NULL);
 
 	count = 0;
 	while (1) {
-		dirent = readdir(dirp);
+		dirent = readdir(dir);
 		if (dirent == NULL) {
 			break;
 		}
 		count++;
 	}
-	ret = closedir(dirp);
+	ret = closedir(dir);
 	TC_ASSERT_EQ("closedir", ret, OK);
 	TC_ASSERT_EQ("readdir", count, VFS_LOOP_COUNT);
+
+	/*reading invalid directory */
+
+	dir = opendir(VFS_INVALID_PATH);
+	TC_ASSERT_EQ("opendir", dir, NULL);
+
+	do {
+		dirent = readdir(dir);
+	}while (dirent != NULL);
+
+	ret = closedir(dir);
+	TC_ASSERT_NEQ("closedir", ret, OK);
+
+	/*reading empty folder */
+
+	dir = opendir(DEV_EMPTY_FOLDER_PATH);
+	TC_ASSERT_NEQ("opendir", dir, NULL);
+
+	do {
+		dirent = readdir(dir);
+	}while (dirent != NULL);
+
+	ret = closedir(dir);
+	TC_ASSERT_EQ("closedir", ret, OK);
 	TC_SUCCESS_RESULT();
 }
 
@@ -692,28 +745,47 @@ static void tc_fs_vfs_readdir(void)
 */
 static void tc_fs_vfs_rewinddir(void)
 {
-	int ret, count;
-	DIR *dirp;
+	int ret;
+	int count;
+	DIR *dir;
 	struct dirent *dirent;
 
-	dirp = opendir(VFS_FOLDER_PATH);
-	TC_ASSERT_NEQ("opendir", dirp, NULL);
+	dir = opendir(VFS_FOLDER_PATH);
+	TC_ASSERT_NEQ("opendir", dir, NULL);
 
 	count = 0;
 	while (1) {
-		dirent = readdir(dirp);
+		dirent = readdir(dir);
 		if (dirent == NULL) {
 			if (count > VFS_LOOP_COUNT) {
 				break;
 			}
-			rewinddir(dirp);
+			rewinddir(dir);
 			continue;
 		}
 		count++;
 	}
-	ret = closedir(dirp);
+	ret = closedir(dir);
 	TC_ASSERT_EQ("closedir", ret, OK);
 	TC_ASSERT_EQ("rewinddir", count, VFS_LOOP_COUNT * 2);
+
+	/*For Pseudo dir operations */
+	dir = opendir(ROOT_PATH);
+	TC_ASSERT_NEQ("opendir", dir, NULL);
+
+	count = 0;
+	while ((dirent = readdir(dir)) != NULL) {
+		count++;
+	}
+	rewinddir(dir);
+
+	while ((dirent = readdir(dir)) != NULL) {
+		count--;
+	}
+
+	ret = closedir(dir);
+	TC_ASSERT_EQ("closedir", ret, OK);
+	TC_ASSERT_EQ("rewinddir", count, 0);
 	TC_SUCCESS_RESULT();
 }
 
@@ -728,26 +800,50 @@ static void tc_fs_vfs_rewinddir(void)
 static void tc_fs_vfs_seekdir(void)
 {
 	int ret;
-	DIR *dirp;
+	DIR *dir;
 	struct dirent *dirent;
 	off_t offset;
 	char filename[1];
 
-	dirp = opendir(VFS_FOLDER_PATH);
-	TC_ASSERT_NEQ("opendir", dirp, NULL);
+	dir = opendir(VFS_FOLDER_PATH);
+	TC_ASSERT_NEQ("opendir", dir, NULL);
 
-	offset = 2;
-	seekdir(dirp, offset);
-	TC_ASSERT_NEQ_CLEANUP("seekdir", dirp, NULL, closedir(dirp));
-	dirent = readdir(dirp);
-	TC_ASSERT_NEQ_CLEANUP("readdir", dirent, NULL, closedir(dirp));
-	TC_ASSERT_EQ_CLEANUP("readdir", dirent->d_type, DTYPE_DIRECTORY, closedir(dirp));
+	offset = SEEK_END;
+	seekdir(dir, offset);
+	TC_ASSERT_NEQ_CLEANUP("seekdir", dir, NULL, closedir(dir));
+	dirent = readdir(dir);
+	TC_ASSERT_NEQ_CLEANUP("readdir", dirent, NULL, closedir(dir));
+	TC_ASSERT_EQ_CLEANUP("readdir", dirent->d_type, DTYPE_DIRECTORY, closedir(dir));
 
-	ret = closedir(dirp);
+	ret = closedir(dir);
 	TC_ASSERT_EQ("closedir", ret, OK);
 
 	itoa((int)offset, filename, 10);
 	TC_ASSERT_EQ("readdir", strncmp(dirent->d_name, filename, 1), 0);
+
+	/* For Negative offset in seekmountdir operations */
+	dir = opendir(VFS_FOLDER_PATH);
+	TC_ASSERT_NEQ("opendir", dir, NULL);
+
+	offset = -2;
+	seekdir(dir, offset);
+	TC_ASSERT_NEQ_CLEANUP("seekdir", dir, NULL, closedir(dir));
+
+	ret = closedir(dir);
+	TC_ASSERT_EQ("closedir", ret, OK);
+	/* for pseudo dir operations */
+
+	dir = opendir(ROOT_PATH);
+	TC_ASSERT_NEQ("opendir", dir, NULL);
+
+	offset = SEEK_END;
+	seekdir(dir, offset);
+	TC_ASSERT_NEQ_CLEANUP("seekdir", dir, NULL, closedir(dir));
+	dirent = readdir(dir);
+	TC_ASSERT_NEQ_CLEANUP("readdir", dirent, NULL, closedir(dir));
+
+	ret = closedir(dir);
+	TC_ASSERT_EQ("closedir", ret, OK);
 
 	TC_SUCCESS_RESULT();
 }
@@ -875,6 +971,10 @@ static void tc_fs_vfs_rmdir(void)
 	/* Nagative case with invalid argument, NULL pathname. It will return ERROR */
 	ret = rmdir(NULL);
 	TC_ASSERT_EQ("rmdir", ret, ERROR);
+
+	/*Removes the empty directory created*/
+	ret = rmdir(DEV_EMPTY_FOLDER_PATH);
+	TC_ASSERT_EQ("rmdir", ret, OK);
 
 	TC_SUCCESS_RESULT();
 }
