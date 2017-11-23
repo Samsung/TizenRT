@@ -681,7 +681,7 @@ void nd6_input(struct pbuf *p, struct netif *inp)
 					return;
 				}
 
-				if ((ND6H_PF_OPT_FLAG(prefix_opt) & ND6_PREFIX_FLAG_ON_LINK) && (ND6H_PF_OPT_PF_LEN(prefix_opt) == 64) && !ip6_addr_islinklocal(&(ND6H_PF_OPT_PF(prefix_opt)))) {
+				if ((ND6H_PF_OPT_FLAG(prefix_opt) & ND6_PREFIX_FLAG_ON_LINK) && (ND6H_PF_OPT_PF_LEN(prefix_opt) <= 128) && !ip6_addr_islinklocal(&(ND6H_PF_OPT_PF(prefix_opt)))) {
 					/* Add to on-link prefix list. */
 					s8_t prefix;
 					ip6_addr_t prefix_addr;
@@ -699,15 +699,23 @@ void nd6_input(struct pbuf *p, struct netif *inp)
 						prefix_list[prefix].invalidation_timer = lwip_htonl(ND6H_PF_OPT_VAL_LIFE(prefix_opt)) * 1000;
 
 #if LWIP_IPV6_AUTOCONFIG
-						if (ND6H_PF_OPT_FLAG(prefix_opt) & ND6_PREFIX_FLAG_AUTONOMOUS) {
-							/* Mark prefix as autonomous, so that address autoconfiguration can take place.
-							 * Only OR flag, so that we don't over-write other flags (such as ADDRESS_DUPLICATE)*/
-							prefix_list[prefix].flags |= ND6_PREFIX_AUTOCONFIG_AUTONOMOUS;
+						if (ND6H_PF_OPT_PF_LEN(prefix_opt) == 64) {
+							if (ND6H_PF_OPT_FLAG(prefix_opt) & ND6_PREFIX_FLAG_AUTONOMOUS) {
+								/* Mark prefix as autonomous, so that address autoconfiguration can take place.
+								 * Only OR flag, so that we don't over-write other flags (such as ADDRESS_DUPLICATE)*/
+								LWIP_DEBUGF(ND6_DEBUG, ("created on-link prefix (for stateless-autoconfig)\n"));
+								prefix_list[prefix].flags |= ND6_PREFIX_AUTOCONFIG_AUTONOMOUS;
+							}
+						} else
+#endif	/* LWIP_IPV6_AUTOCONFIG */
+						{
+							/* @todo just add onlink prefix? */
+							LWIP_DEBUGF(ND6_DEBUG, ("created on-link prefix (not for stateless-autoconfig)\n"));
+							prefix_list[prefix].flags = 0;
+
 						}
-#endif							/* LWIP_IPV6_AUTOCONFIG */
 					}
 				}
-
 				break;
 			}
 			case ND6_OPTION_TYPE_ROUTE_INFO:
@@ -1348,11 +1356,31 @@ static void nd6_send_ns(struct netif *netif, const ip6_addr_t *target_addr, u8_t
 	const ip6_addr_t *src_addr;
 	u16_t lladdr_opt_len;
 
+	u8_t i;
+
 	if ((flags & ND6_SEND_FLAG_ADDRANY_SRC) || !ip6_addr_isvalid(netif_ip6_addr_state(netif, 0))) {
 		src_addr = IP6_ADDR_ANY6;
 		/* Option "MUST NOT be included when the source IP address is the unspecified address." */
 		lladdr_opt_len = 0;
+	} else if (!ip6_addr_islinklocal(target_addr)) {
+		/* @todo should we do for site-local or unique-local */
+		for (i = 0; i < LWIP_IPV6_NUM_ADDRESSES; i++) {
+			src_addr = netif_ip6_addr(netif, i);
+			if (!ip6_addr_islinklocal(src_addr)
+					&& ip6_addr_isvalid(netif_ip6_addr_state(netif, i))) {
+				break;
+			}
+		}
+
+		if (i >= LWIP_IPV6_NUM_ADDRESSES) {
+			/* no matched global or site address */
+			src_addr = IP6_ADDR_ANY6;
+			lladdr_opt_len = 0;
+		} else {
+			lladdr_opt_len = ((netif->hwaddr_len + 2) + 7) >> 3;
+		}
 	} else {
+		/* @todo should we do for site-local or unique-local */
 		/* Use link-local address as source address. */
 		src_addr = netif_ip6_addr(netif, 0);
 		/* calculate option length (in 8-byte-blocks) */
