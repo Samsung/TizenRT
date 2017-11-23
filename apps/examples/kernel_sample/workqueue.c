@@ -20,9 +20,13 @@
  ****************************************************************************/
 
 #include <tinyara/config.h>
-#include <stdio.h>
 #include <tinyara/clock.h>
 #include <tinyara/wqueue.h>
+#include <sys/types.h>
+#include <stdint.h>
+#include <stdio.h>
+
+#if defined(CONFIG_SCHED_WORKQUEUE) || defined(CONFIG_LIB_USRWORK)
 
 /****************************************************************************
  * Definitions
@@ -32,15 +36,18 @@
  * Private Data
  ****************************************************************************/
 
+static systime_t g_start_time;
+
 /****************************************************************************
  * Private Functions
  ****************************************************************************/
+
 static void wq_test1(FAR void *arg)
 {
 	systime_t cur_time = 0;
 	cur_time = clock_systimer();
 
-	printf("test1 is excuted at (%d) ticks\n", cur_time);
+	printf("workqueue_test: test 1 requested delay is (%u) ticks, executed delay is (%llu) ticks.\n", (uint32_t)arg, (uint64_t)cur_time - (uint64_t)g_start_time);
 }
 
 static void wq_test2(FAR void *arg)
@@ -48,7 +55,7 @@ static void wq_test2(FAR void *arg)
 	systime_t cur_time = 0;
 	cur_time = clock_systimer();
 
-	printf("test2 is excuted at (%d) ticks\n", cur_time);
+	printf("workqueue_test: test 2 requested delay is (%u) ticks, executed delay is (%llu) ticks.\n", (uint32_t)arg, (uint64_t)cur_time - (uint64_t)g_start_time);
 }
 
 static void wq_test3(FAR void *arg)
@@ -56,7 +63,7 @@ static void wq_test3(FAR void *arg)
 	systime_t cur_time = 0;
 	cur_time = clock_systimer();
 
-	printf("test3 is excuted at (%d) ticks\n", cur_time);
+	printf("workqueue_test: test 3 requested delay is (%u) ticks, executed delay is (%llu) ticks.\n", (uint32_t)arg, (uint64_t)cur_time - (uint64_t)g_start_time);
 }
 
 static void wq_test4(FAR void *arg)
@@ -64,7 +71,7 @@ static void wq_test4(FAR void *arg)
 	systime_t cur_time = 0;
 	cur_time = clock_systimer();
 
-	printf("test4 is excuted at (%d) ticks\n", cur_time);
+	printf("workqueue_test: test 4 requested delay is (%u) ticks, executed delay is (%llu) ticks.\n", (uint32_t)arg, (uint64_t)cur_time - (uint64_t)g_start_time);
 }
 
 /****************************************************************************
@@ -72,16 +79,11 @@ static void wq_test4(FAR void *arg)
  ****************************************************************************/
 
 /****************************************************************************
- * workqueue_main
+ * workqueue_test
  ****************************************************************************/
 
-#ifdef CONFIG_BUILD_KERNEL
-int main(int argc, FAR char *argv[])
-#else
-int workqueue_main(int argc, char *argv[])
-#endif
+int workqueue_test(void)
 {
-	systime_t cur_time;
 	struct work_s *test_wq1;
 	struct work_s *test_wq2;
 	struct work_s *test_wq3;
@@ -92,19 +94,28 @@ int workqueue_main(int argc, char *argv[])
 	test_wq3 = (struct work_s *)malloc(sizeof(struct work_s));
 	test_wq4 = (struct work_s *)malloc(sizeof(struct work_s));
 
-	cur_time = clock_systimer();
+	g_start_time = clock_systimer();
 
-	printf("current time is (%d)\n", cur_time);
-	printf("test1 is queued and will excute it after 50 ticks\n");
-	work_queue(HPWORK, test_wq1, wq_test1, NULL, 50);
+	printf("workqueue_test: test1 is queued and will excute it after 50 ticks\n");
+	work_queue(HPWORK, test_wq1, wq_test1, (void *)50, 50);
 
-	printf("test2 is queued and will excute it after 30 ticks\n");
-	work_queue(HPWORK, test_wq2, wq_test2, NULL, 30);
+	printf("workqueue_test: test2 is queued and will excute it after 30 ticks\n");
+	work_queue(HPWORK, test_wq2, wq_test2, (void *)30, 30);
 
-	printf("test3 is queued and will excute it after 70 ticks\n");
-	work_queue(HPWORK, test_wq3, wq_test3, NULL, 70);
+	printf("workqueue_test: test3 is queued and will excute it after 70 ticks\n");
+	work_queue(HPWORK, test_wq3, wq_test3, (void *)70, 70);
 
-	printf("test4 is queued and will excute it after 90 ticks\n");
-	work_queue(HPWORK, test_wq4, wq_test4, NULL, 90);
+	printf("workqueue_test: test4 is queued and will excute it after 90 ticks\n");
+	work_queue(HPWORK, test_wq4, wq_test4, (void *)90, 90);
+	
+	sleep(1);
+
+	free(test_wq1);
+	free(test_wq2);
+	free(test_wq3);
+	free(test_wq4);
+
 	return 0;
 }
+
+#endif

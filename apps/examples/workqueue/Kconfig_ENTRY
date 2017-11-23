@@ -1,3 +1,0 @@
-config ENTRY_WORKQUEUE
-	bool "work queue example"
-	depends on EXAMPLES_WORKQUEUE
