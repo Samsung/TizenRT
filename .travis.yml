@@ -12,6 +12,7 @@ env:
 - BUILD_CONFIG=artik053/tc
 - BUILD_CONFIG=artik053/st_things
 - BUILD_CONFIG=artik053/iotjs
+- BUILD_CONFIG=artik055s/audio
 - BUILD_CONFIG=qemu/tc_64k
 
 
