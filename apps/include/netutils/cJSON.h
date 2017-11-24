@@ -78,7 +78,7 @@ extern "C"
 #define cJSON_AddNullToObject(object, name) \
 	cJSON_AddItemToObject(object, name, cJSON_CreateNull())
 #define cJSON_AddTrueToObject(object, name) \
-	cJSON_AddItemToObject(object, name, cJSON_CreateTrue())cd
+	cJSON_AddItemToObject(object, name, cJSON_CreateTrue())
 #define cJSON_AddFalseToObject(object, name) \
 	cJSON_AddItemToObject(object, name, cJSON_CreateFalse())
 #define cJSON_AddNumberToObject(object, name, n) \
