@@ -117,6 +117,8 @@ download()
 
     # Check romfs and download it
     romfs
+
+    echo "Flash DONE"
 }
 
 erase()
@@ -146,6 +148,11 @@ erase()
 }
 
 signing() {
+    if [ ! -f $CONFIGS_PATH/artik05x/tools/codesigner/artik05x_codesigner ]; then
+        echo "artik05x_codesigner should be in $CONFIGS_PATH/artik05x/tools/codesigner to use secure board like ARTIK053S, ARTIK055S."
+        exit 1
+    fi
+
     $CONFIGS_PATH/artik05x/tools/codesigner/artik05x_codesigner -sign $TIZENRT_BIN
     TIZENRT_BIN=${TIZENRT_BIN}-signed
 }
