@@ -384,6 +384,7 @@ void nd6_input(struct pbuf *p, struct netif *inp)
 							default_router_list[tmp].neighbor_entry = NULL;
 							default_router_list[tmp].invalidation_timer = 0;
 							default_router_list[tmp].flags = 0;
+							ip6_addr_set_any(&default_router_list[tmp].router_ip6addr);
 						}
 					}
 				}
@@ -1240,6 +1241,7 @@ void nd6_tmr(void)
 				default_router_list[i].neighbor_entry = NULL;
 				default_router_list[i].invalidation_timer = 0;
 				default_router_list[i].flags = 0;
+				ip6_addr_set_any(&default_router_list[i].router_ip6addr);
 			}
 		}
 	}
