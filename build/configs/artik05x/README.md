@@ -5,7 +5,6 @@
 ### Physical Address Space
 
 The following is the memory map of ARTIK05x.
-
 ```
              ADDRESS      CONTENTS       NOTE
            0xFFFFFFFF +---------------+
@@ -40,12 +39,9 @@ The following is the memory map of ARTIK05x.
            0x00000000 +---------------+
 ```
 
-
-
 ### Flash Partitions (8MB)
 
 8MB is allocated to the SPI Flash area. After building TizenRT, refer to the following areas when downloading to the board.
-
 ```
              ADDRESS      CONTENTS       NOTE
            0x047FFFFF +---------------+
@@ -96,12 +92,9 @@ The following is the memory map of ARTIK05x.
            0x04000000 +---------------+
 ```
 
-
-
 ### iRAM usage (1280KB)
 
 Actually, BL1, OS and WiFi firmware are operated in iRAM.
-
 ```
              ADDRESS      CONTENTS       NOTE
            0x02160000 +---------------+
@@ -149,9 +142,9 @@ Install and configure USB drivers, so OpenOCD is able to communicate with JTAG i
  * Open a terminal, enter `ls -l /dev/ttyUSB*` command and check, if board's USB ports are recognized by the OS. You are looking for similar result:
 
 ```bash
-    root@ubuntu:~$ ls -l /dev/ttyUSB*
-    crw-rw---- 1 root dialout 188, 0 Oct 25 13:42 /dev/ttyUSB0
-    crw-rw---- 1 root dialout 188, 1 Oct 25 13:42 /dev/ttyUSB1
+$ ls -l /dev/ttyUSB*
+crw-rw---- 1 root dialout 188, 0 Oct 25 13:42 /dev/ttyUSB0
+crw-rw---- 1 root dialout 188, 1 Oct 25 13:42 /dev/ttyUSB1
 ```
 
- * The /dev/ttyUSBn interface with lower number is used for JTAG communication. The other interface is routed to ARTIK05x's serial port (UART) used for upload of application to ARTIK05x's flash.
+ * The `/dev/ttyUSBn` interface with lower number is used for JTAG communication. The other interface is routed to ARTIK05x's serial port (UART) used for upload of application to ARTIK05x's flash.
