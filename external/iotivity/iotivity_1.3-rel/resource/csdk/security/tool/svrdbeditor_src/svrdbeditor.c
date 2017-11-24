@@ -31,6 +31,7 @@
 #include "svrdbeditorcred.h"
 #include "svrdbeditordoxm.h"
 #include "svrdbeditorpstat.h"
+#include "pstatresource.h"
 
 static bool g_allowedEditMenu[SVR_EDIT_IDX_SIZE] = {false/*unused*/, false, false, false, false};
 static char g_svrDbPath[SVR_DB_PATH_LENGTH];
@@ -38,9 +39,9 @@ static char g_svrDbPath[SVR_DB_PATH_LENGTH];
 typedef enum OperationType
 {
     SVR_PRINT_ALL = 1,
-    SVR_EDIT_CRED = 2,
-    SVR_EDIT_ACL = 3,
-    SVR_EDIT_DOXM = 4,
+    SVR_EDIT_CRED,
+    SVR_EDIT_ACL,
+    SVR_EDIT_DOXM,
     SVR_EDIT_PSTAT = 5,
     EXIT = 99
 } OperationType_t;
@@ -98,6 +99,9 @@ static int MainOperation(const char *svrpath)
         PRINT_ERR("OCRegisterPersistentStorageHandler : %d", ocResult);
         return -1;
     }
+
+    InitPstatResourceToDefault();
+
     RefreshACL();
     RefreshCred();
     RefreshDoxm();

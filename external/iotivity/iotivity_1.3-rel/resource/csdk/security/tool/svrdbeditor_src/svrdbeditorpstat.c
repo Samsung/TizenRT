@@ -283,8 +283,10 @@ static unsigned int InputDpm(void)
             for (int ret = 0; 1 != ret; )
             {
                 ret = scanf("%c", &ans);
-                for ( ; 0x20 <= getchar(); ); // for removing overflow garbages
-                // '0x20<=code' is character region
+                if ('\n' !=  ans)
+                {
+                    while ('\n' != getchar());
+                }
             }
             if ('y' == ans || 'Y' == ans || 'n' == ans || 'N' == ans)
             {
@@ -323,8 +325,10 @@ static unsigned int InputDpom()
             for (int ret = 0; 1 != ret; )
             {
                 ret = scanf("%c", &ans);
-                for ( ; 0x20 <= getchar(); ); // for removing overflow garbages
-                // '0x20<=code' is character region
+                if ('\n' !=  ans)
+                {
+                    while ('\n' != getchar());
+                }
             }
             if ('y' == ans || 'Y' == ans || 'n' == ans || 'N' == ans)
             {

@@ -37,7 +37,6 @@
 #include "oic_string.h"
 #include "logger.h"
 
-#include "casecurityinterface.h"
 #include "srmresourcestrings.h"
 #include "pinoxmcommon.h"
 #include "credresource.h"
@@ -48,15 +47,12 @@
 #include "svrdbeditordoxm.h"
 #include "svrdbeditorcred.h"
 
-static void PrintCredType(OicSecCredType_t credType);
-static void PrintCredEncodingType(OicEncodingType_t encoding);
-static int InputCredUsage(char **credUsage);
-static int InputCredEncodingType(const char *dataType, OicEncodingType_t *encoding);
-static int ReadDataFromFile(const char *infoTxt, uint8_t **buffer, size_t *bufferSize);
-static int InputCredentialData(OicSecCred_t *cred);
-static int ParseCertChain(mbedtls_x509_crt *crt, unsigned char *buf, size_t bufLen);
-static void ParseDerCaCert(ByteArray_t *crt, const char *usage, uint16_t credId);
-static void ParseDerOwnCert(ByteArray_t *crt, const char *usage, uint16_t credId);
+typedef enum CredModifyType
+{
+    CRED_EDIT_SUBJECTUUID = 1,
+    CRED_EDIT_PSK,
+    CRED_EDIT_ROWNERUUID = 3,
+} CredModifyType_t;
 
 void RefreshCred()
 {
@@ -77,7 +73,7 @@ void RefreshCred()
     }
     if (secPayload && 0 != payloadSize)
     {
-        ocResult = CBORPayloadToCred(secPayload, payloadSize, &credList, &rownerId);
+        ocResult = CBORPayloadToCred(secPayload , payloadSize, &credList, &rownerId);
         if (OC_STACK_OK != ocResult)
         {
             PRINT_ERR("CBORPayloadToCred : %d", ocResult);
@@ -85,8 +81,14 @@ void RefreshCred()
             return;
         }
     }
-    OICFree(secPayload);
+    ocResult = SetCredRownerId(rownerId);
+    if (OC_STACK_OK != ocResult)
+    {
+        PRINT_ERR("SetCredRownerId failed");
+        return;
+    }
     OICFree(rownerId);
+    OICFree(secPayload);
     DeInitCredResource();
 
     //Add the loaded credentials into gCred of CredResource module in order to use the credential management mechanism.
@@ -101,737 +103,29 @@ void RefreshCred()
         }
     }
 }
-static void PrintCredType(OicSecCredType_t credType)
+
+static void UpdateCred(void)
 {
-    PRINT_DATA("%d", credType);
-    switch (credType)
+    OCStackResult credResult = OC_STACK_ERROR;
+    uint8_t *credPayload = NULL;
+    size_t credPayloadSize = 0;
+    int secureFlag = 0;
+
+    credResult = CredToCBORPayload(GetCredList(), &credPayload, &credPayloadSize, secureFlag);
+    if (OC_STACK_OK != credResult)
     {
-        case NO_SECURITY_MODE:
-            PRINT_DATA(" (NO_SECURITY_MODE)\n");
-            break;
-        case SYMMETRIC_PAIR_WISE_KEY:
-            PRINT_DATA(" (SYMMETRIC_PAIR_WISE_KEY)\n");
-            break;
-        case SYMMETRIC_GROUP_KEY:
-            PRINT_DATA(" (SYMMETRIC_GROUP_KEY)\n");
-            break;
-        case ASYMMETRIC_KEY:
-            PRINT_DATA(" (ASYMMETRIC_KEY)\n");
-            break;
-        case SIGNED_ASYMMETRIC_KEY:
-            PRINT_DATA(" (SIGNED_ASYMMETRIC_KEY)\n");
-            break;
-        case PIN_PASSWORD:
-            PRINT_DATA(" (PIN_PASSWORD)\n");
-            break;
-        case ASYMMETRIC_ENCRYPTION_KEY:
-            PRINT_DATA(" (ASYMMETRIC_ENCRYPTION_KEY)\n");
-            break;
-        default:
-            PRINT_ERR(" (Unknown Cred type)");
-            break;
+        PRINT_ERR("CredToCBORPayload error : %d", credResult);
+        return;
     }
+    credResult = UpdateSecureResourceInPS(OIC_JSON_CRED_NAME, credPayload, credPayloadSize);
+    if (OC_STACK_OK != credResult)
+    {
+        PRINT_ERR("UpdateSecureResourceInPS error : %d", credResult);
+        OICFree(credPayload);
+        return;
+    }
+    OICFree(credPayload);
 }
-
-static void PrintCredEncodingType(OicEncodingType_t encoding)
-{
-    PRINT_DATA("%d", encoding);
-    switch (encoding)
-    {
-        case OIC_ENCODING_RAW:
-            PRINT_DATA(" (OIC_ENCODING_RAW)\n");
-            break;
-        case OIC_ENCODING_BASE64:
-            PRINT_DATA(" (OIC_ENCODING_BASE64)\n");
-            break;
-        case OIC_ENCODING_PEM:
-            PRINT_DATA(" (OIC_ENCODING_PEM)\n");
-            break;
-        case OIC_ENCODING_DER:
-            PRINT_DATA(" (OIC_ENCODING_DER)\n");
-            break;
-        default:
-            PRINT_ERR(" (Unknown Encoding type)");
-            break;
-    }
-
-}
-
-/**
- * This API to print credential list.
- * Also return the number of credential in credential list.
- */
-void PrintCredList(const OicSecCred_t *creds)
-{
-    const OicSecCred_t *cred = NULL;
-    const OicSecCred_t *tempCred = NULL;
-    bool isEmptyList = true;
-    PRINT_INFO("\n\n********************* [%-20s] *********************",
-               "Credential Resource");
-    LL_FOREACH_SAFE(creds, cred, tempCred)
-    {
-        PRINT_PROG("%15s : ", OIC_JSON_CREDID_NAME);
-        PrintInt(cred->credId);
-
-        PRINT_PROG("%15s : ", OIC_JSON_SUBJECTID_NAME);
-        if (0 == memcmp(&(cred->subject), &WILDCARD_SUBJECT_ID, sizeof(OicUuid_t)))
-        {
-            PrintString((char *)WILDCARD_SUBJECT_ID.id);
-        }
-        else
-        {
-            PrintUuid(&(cred->subject));
-        }
-
-#ifdef MULTIPLE_OWNER
-        if (creds->eownerID)
-        {
-            PRINT_PROG("%15s : ", OIC_JSON_EOWNERID_NAME);
-            PrintUuid(cred->eownerID);
-        }
-#endif
-
-        PRINT_PROG("%15s : ", OIC_JSON_CREDTYPE_NAME);
-        PrintCredType(cred->credType);
-
-        switch (cred->credType)
-        {
-            case SYMMETRIC_PAIR_WISE_KEY:
-            case SYMMETRIC_GROUP_KEY:
-                PRINT_PROG("%15s : \n", OIC_JSON_PRIVATEDATA_NAME);
-                if (cred->privateData.data)
-                {
-                    PRINT_DATA("%s : ", OIC_JSON_ENCODING_NAME);
-                    PrintCredEncodingType(cred->privateData.encoding);
-
-                    PRINT_DATA("%s : ", OIC_JSON_DATA_NAME);
-                    if (OIC_ENCODING_BASE64 == cred->privateData.encoding)
-                    {
-                        PrintString((char *)cred->privateData.data);
-                    }
-                    else
-                    {
-                        PrintBuffer(cred->privateData.data, cred->privateData.len);
-                    }
-                }
-                else
-                {
-                    PRINT_ERR("Private data is null");
-                }
-                break;
-            case ASYMMETRIC_KEY:
-            case SIGNED_ASYMMETRIC_KEY:
-                // TODO: Print certificate and asymmetric key in readable formats
-
-                //cred usage
-                if (cred->credUsage)
-                {
-                    PRINT_PROG("%15s : ", OIC_JSON_CREDUSAGE_NAME);
-                    PRINT_DATA("%s\n", cred->credUsage);
-                }
-
-                //private data
-                if (cred->privateData.data)
-                {
-                    PRINT_PROG("%15s : ", OIC_JSON_PRIVATEDATA_NAME);
-                    PRINT_INFO("will be updated to print private data");
-
-                    PrintBuffer(cred->privateData.data, cred->privateData.len);
-
-                    if (cred->credUsage &&
-                        (0 == strcmp(cred->credUsage, PRIMARY_CERT) ||
-                         0 == strcmp(cred->credUsage, MF_PRIMARY_CERT)))
-                    {
-                        // TODO: T.B.D
-                    }
-                    else
-                    {
-                        // TODO: T.B.D
-                    }
-                }
-
-                //public data
-                if (cred->publicData.data)
-                {
-                    PRINT_PROG("%15s : ", OIC_JSON_PUBLICDATA_NAME);
-                    PRINT_DATA("%-17s : ", OIC_JSON_ENCODING_NAME);
-                    PrintCredEncodingType(cred->publicData.encoding);
-
-                    PrintBuffer(cred->publicData.data, cred->publicData.len);
-
-                    if (cred->credUsage &&
-                        (0 == strcmp(cred->credUsage, PRIMARY_CERT) ||
-                         0 == strcmp(cred->credUsage, MF_PRIMARY_CERT)))
-                    {
-                        char buf[2048];
-                        mbedtls_x509_crt crt;
-                        mbedtls_x509_crt *tmpCrt = NULL;
-                        PkiInfo_t inf;
-                        int i = 0;
-
-                        memset(&inf, 0x00, sizeof(PkiInfo_t));
-                        mbedtls_x509_crt_init(&crt);
-
-                        ParseDerOwnCert(&inf.crt, cred->credUsage, cred->credId);
-                        ParseCertChain(&crt, inf.crt.data, inf.crt.len);
-
-                        for (i = 0, tmpCrt = &crt; NULL != tmpCrt; i++, tmpCrt = tmpCrt->next)
-                        {
-                            PRINT_INFO("[Cert #%d]", (i + 1));
-                            mbedtls_x509_crt_info( buf, sizeof(buf) - 1, "", tmpCrt );
-                            PrintBuffer(inf.crt.data, inf.crt.len);
-                            PRINT_DATA("%s", buf);
-                        }
-                        mbedtls_x509_crt_free(&crt);
-                    }
-                    else
-                    {
-                        PRINT_INFO("will be updated to print public data");
-                    }
-                }
-
-                //optional data
-                if (cred->optionalData.data)
-                {
-                    PRINT_PROG("%15s : \n", OIC_JSON_OPTDATA_NAME);
-
-                    //revocation status
-                    PRINT_DATA("%-17s : %s\n", OIC_JSON_REVOCATION_STATUS_NAME,
-                               (cred->optionalData.revstat ? "True" : "False"));
-
-                    PRINT_DATA("%-17s : ", OIC_JSON_ENCODING_NAME);
-                    PrintCredEncodingType(cred->optionalData.encoding);
-
-                    //CA chain
-                    if (cred->credUsage &&
-                        (0 == strcmp(cred->credUsage, TRUST_CA) ||
-                         0 == strcmp(cred->credUsage, MF_TRUST_CA)))
-                    {
-                        char buf[2048];
-                        mbedtls_x509_crt ca;
-                        mbedtls_x509_crt *tmpCa = NULL;
-                        PkiInfo_t inf;
-                        int i = 0;
-
-                        memset(&inf, 0x00, sizeof(PkiInfo_t));
-                        mbedtls_x509_crt_init(&ca);
-
-                        ParseDerCaCert(&inf.ca, cred->credUsage, cred->credId);
-                        ParseCertChain(&ca, inf.ca.data, inf.ca.len);
-
-                        for (i = 0, tmpCa = &ca; NULL != tmpCa; i++, tmpCa = tmpCa->next)
-                        {
-                            PRINT_INFO("[Cert #%d]", (i + 1));
-                            mbedtls_x509_crt_info( buf, sizeof(buf) - 1, "", tmpCa );
-                            PRINT_DATA("%s", buf);
-                        }
-                        mbedtls_x509_crt_free(&ca);
-                    }
-                    else
-                    {
-                        // TODO: T.B.D
-                        PRINT_INFO("will be updated to print optional data");
-                    }
-                }
-                break;
-            case PIN_PASSWORD:
-                PRINT_PROG("%15s : ", OIC_JSON_PRIVATEDATA_NAME);
-                if (cred->privateData.data)
-                {
-                    PRINT_DATA("%s : ", OIC_JSON_ENCODING_NAME);
-                    PrintCredEncodingType(cred->privateData.encoding);
-
-                    PRINT_DATA("%s : ", OIC_JSON_DATA_NAME);
-                    PRINT_DATA("%s\n", cred->privateData.data);
-                }
-                else
-                {
-                    PRINT_ERR("Private data is null");
-                }
-                break;
-            case ASYMMETRIC_ENCRYPTION_KEY:
-                break;
-            default:
-                PRINT_ERR(" (Unknown Cred type)");
-                break;
-        }
-        PRINT_PROG("------------------------------------------------------------------\n");
-        isEmptyList = false;
-    }
-
-    if (!isEmptyList)
-    {
-        PRINT_PROG("%15s : ", OIC_JSON_ROWNERID_NAME);
-//        PrintUuid(&(creds->rownerID));
-    }
-    else
-    {
-        PRINT_PROG("Cred List is empty.\n");
-    }
-
-    PRINT_INFO("********************* [%-20s] *********************",
-               "Credential Resource");
-
-    return;
-}
-
-static int InputCredUsage(char **credUsage)
-{
-    char inputUsage[128] = {0};
-    int credUsageNum = 0;
-
-    if (NULL == credUsage || NULL != *credUsage)
-    {
-        PRINT_ERR("InputCredUsage error : invaild param");
-        return -1;
-    }
-
-    do
-    {
-        PRINT_NORMAL("\n\n");
-        PRINT_NORMAL("\t1. %s\n", TRUST_CA);
-        PRINT_NORMAL("\t2. %s\n", PRIMARY_CERT);
-        PRINT_NORMAL("\t3. %s\n", MF_TRUST_CA);
-        PRINT_NORMAL("\t4. %s\n", MF_PRIMARY_CERT);
-        PRINT_NORMAL("\t5. Input manually\n");
-        credUsageNum = InputNumber("\tSelect the credential usage : ");
-        switch (credUsageNum)
-        {
-            case 1:
-                *credUsage = OICStrdup(TRUST_CA);
-                break;
-            case 2:
-                *credUsage = OICStrdup(PRIMARY_CERT);
-                break;
-            case 3:
-                *credUsage = OICStrdup(MF_TRUST_CA);
-                break;
-            case 4:
-                *credUsage = OICStrdup(MF_PRIMARY_CERT);
-                break;
-            case 5:
-                PRINT_NORMAL("\tInput the credential usage : ");
-                for (int ret = 0; 1 != ret; )
-                {
-                    ret = scanf("%128s", inputUsage);
-                    for ( ; 0x20 <= getchar(); ); // for removing overflow garbages
-                    // '0x20<=code' is character region
-                }
-                *credUsage = OICStrdup(inputUsage);
-                break;
-            default:
-                PRINT_ERR("Invaild credential usage");
-                credUsageNum = 0;
-                break;
-        }
-    }
-    while (0 == credUsageNum);
-
-    if (NULL == *credUsage)
-    {
-        PRINT_ERR("Failed OICStrdup");
-        return -1;
-    }
-
-    return 0;
-}
-
-static int InputCredEncodingType(const char *dataType, OicEncodingType_t *encoding)
-{
-    int credEncType = 0;
-    char infoText[512] = {0};
-
-    if (NULL == dataType || NULL == encoding)
-    {
-        PRINT_ERR("InputCredEncodingType : Invaild param");
-        return -1;
-    }
-
-    snprintf(infoText, sizeof(infoText), "\tSelect the encoding type of %s : ", dataType);
-
-    do
-    {
-        PRINT_NORMAL("\n\n");
-        PRINT_NORMAL("\t%d. %s\n", OIC_ENCODING_RAW, "OIC_ENCODING_RAW");
-        PRINT_NORMAL("\t%d. %s\n", OIC_ENCODING_BASE64, "OIC_ENCODING_BASE64");
-        PRINT_NORMAL("\t%d. %s\n", OIC_ENCODING_PEM, "OIC_ENCODING_PEM");
-        PRINT_NORMAL("\t%d. %s\n", OIC_ENCODING_DER, "OIC_ENCODING_DER");
-        credEncType = InputNumber(infoText);
-        switch ( (OicEncodingType_t)credEncType )
-        {
-            case OIC_ENCODING_RAW:
-                break;
-            case OIC_ENCODING_BASE64:
-                break;
-            case OIC_ENCODING_PEM:
-                break;
-            case OIC_ENCODING_DER:
-                break;
-            default:
-                PRINT_ERR("Invaild encoding type");
-                credEncType = 0;
-                break;
-        }
-    }
-    while (0 == credEncType);
-
-    *encoding = (OicEncodingType_t)credEncType;
-
-    return 0;
-}
-
-static int ReadDataFromFile(const char *infoTxt, uint8_t **buffer, size_t *bufferSize)
-{
-    char filePath[512] = {0};
-    char tmpBuffer[SVR_DB_PATH_LENGTH] = {0};
-    FILE *fp = NULL;
-    size_t fileSize = 0;
-
-    if (NULL == buffer || NULL != *buffer || NULL == bufferSize)
-    {
-        PRINT_ERR("ReadDataFromFile : Invaild param");
-        return -1;
-    }
-
-    PRINT_NORMAL("%s", infoTxt);
-    for (int ret = 0; 1 != ret; )
-    {
-        ret = scanf("%512s", filePath);
-        for ( ; 0x20 <= getchar(); ); // for removing overflow garbages
-        // '0x20<=code' is character region
-    }
-
-    //Get a file size
-    fp = fopen(filePath, "rb");
-    if (fp)
-    {
-        size_t bytesRead = 0;
-        do
-        {
-            bytesRead = fread(tmpBuffer, 1, 1023, fp);
-            fileSize += bytesRead;
-            if (ferror (fp))
-            {
-                printf ("Error fread\n");
-                fclose (fp);
-                return -1;
-            }
-        }
-        while (bytesRead);
-        fclose(fp);
-        fp = NULL;
-    }
-    else
-    {
-        PRINT_ERR("Failed to open %s" , filePath);
-        PRINT_ERR("Please make sure the file path and access permission.");
-        goto error;
-    }
-
-    if (0 == fileSize)
-    {
-        PRINT_ERR("%s is empty." , filePath);
-        goto error;
-    }
-
-    fp = fopen(filePath, "rb");
-    if (fp)
-    {
-        *buffer = (uint8_t *) OICCalloc(1, fileSize);
-        if ( NULL == *buffer)
-        {
-            PRINT_ERR("Failed to allocate memory.");
-            goto error;
-        }
-
-        if ( fread(*buffer, 1, fileSize, fp) == fileSize)
-        {
-            *bufferSize = fileSize;
-        }
-        fclose(fp);
-    }
-    else
-    {
-        PRINT_ERR("Failed to open %s" , filePath);
-        PRINT_ERR("Please make sure the file path and access permission.");
-        goto error;
-    }
-
-    return 0;
-
-error:
-    if (fp)
-    {
-        fclose(fp);
-    }
-    if (*buffer)
-    {
-        OICFree(*buffer);
-    }
-    return -1;
-}
-
-static int InputCredentialData(OicSecCred_t *cred)
-{
-    uint8_t *certChain = NULL;
-    uint8_t *privateKey = NULL;
-    uint8_t *publicKey = NULL;
-    size_t certChainSize = 0;
-    size_t privateKeySize = 0;
-    size_t publicKeySize = 0;
-
-
-    PRINT_PROG("\n\nPlease input the each entity of new credential.\n");
-
-    PRINT_NORMAL("\t%3d. Symmetric pair wise key\n", SYMMETRIC_PAIR_WISE_KEY);
-    PRINT_NORMAL("\t%3d. Symmetric group key\n", SYMMETRIC_GROUP_KEY);
-    PRINT_NORMAL("\t%3d. Asymmetric key\n", ASYMMETRIC_KEY);
-    PRINT_NORMAL("\t%3d. Signed asymmetric key\n", SIGNED_ASYMMETRIC_KEY);
-    PRINT_NORMAL("\t%3d. PIN/Password\n", PIN_PASSWORD);
-    PRINT_NORMAL("\t%3d. Asymmetric encryption key\n", ASYMMETRIC_ENCRYPTION_KEY);
-    cred->credType = (OicSecCredType_t)InputNumber("\tSelect the credential type : ");
-    if (SYMMETRIC_PAIR_WISE_KEY != cred->credType &&
-        SYMMETRIC_GROUP_KEY != cred->credType &&
-        SIGNED_ASYMMETRIC_KEY != cred->credType &&
-        PIN_PASSWORD != cred->credType &&
-        ASYMMETRIC_ENCRYPTION_KEY != cred->credType)
-    {
-        PRINT_ERR("Invaild credential type");
-        goto error;
-    }
-
-    //Input the key data according to credential type
-    switch (cred->credType)
-    {
-        case SYMMETRIC_PAIR_WISE_KEY:
-            PRINT_INFO("Not supported yet.");
-            goto error;
-            // TODO: T.B.D
-            /*
-            PRINT_PROG("\tSubject UUID (e.g. 61646D69-6E44-6576-6963-655575696430) : ");
-            if (0 != InputUuid(&cred->subject))
-            {
-                PRINT_ERR("InputUuid error");
-                goto error;
-            }
-            */
-            break;
-        case SYMMETRIC_GROUP_KEY:
-            // TODO: T.B.D
-            PRINT_INFO("Not supported yet.");
-            goto error;
-            break;
-        case ASYMMETRIC_KEY:
-            // TODO: T.B.D
-            PRINT_INFO("Not supported yet.");
-            goto error;
-            break;
-        case SIGNED_ASYMMETRIC_KEY:
-            //Credential usage
-            if ( 0 != InputCredUsage(&cred->credUsage))
-            {
-                PRINT_ERR("Failed InputCredUsage");
-                goto error;
-            }
-
-            //Input the other data according to credential usage.
-            if (0 == strcmp(cred->credUsage, TRUST_CA) ||
-                0 == strcmp(cred->credUsage, MF_TRUST_CA))
-            {
-                OicUuid_t doxmUuid;
-                if (0 != GetDoxmDevID(&doxmUuid))
-                {
-                    PRINT_ERR("Failed get doxm device id");
-                }
-                else
-                {
-                    memcpy(cred->subject.id, doxmUuid.id, sizeof(doxmUuid.id));
-                }
-
-                //encoding type
-                if ( 0 != InputCredEncodingType("certificate chain", &cred->optionalData.encoding))
-                {
-                    PRINT_ERR("Failed InputCredEncodingType");
-                    goto error;
-                }
-
-                //Read chain data from file (readed data will be saved to optional data)
-                if (0 != ReadDataFromFile("\tInput the certificate chain path : ", &certChain, &certChainSize))
-                {
-                    PRINT_ERR("Failed ReadDataFromFile");
-                    goto error;
-                }
-
-                //optional data
-                if (OIC_ENCODING_PEM == cred->optionalData.encoding)
-                {
-                    cred->optionalData.data = (uint8_t *)OICCalloc(1, certChainSize + 1);
-                    if (NULL == cred->optionalData.data)
-                    {
-                        PRINT_ERR("InputCredentialData : Failed to allocate memory.");
-                        goto error;
-                    }
-                    cred->optionalData.len = certChainSize + 1;
-                }
-                else
-                {
-                    cred->optionalData.data = (uint8_t *)OICCalloc(1, certChainSize);
-                    if (NULL == cred->optionalData.data)
-                    {
-                        PRINT_ERR("InputCredentialData : Failed to allocate memory.");
-                        goto error;
-                    }
-                    cred->optionalData.len = certChainSize;
-                }
-                memcpy(cred->optionalData.data, certChain, certChainSize);
-                cred->optionalData.revstat = false;
-            }
-            else if (0 == strcmp(cred->credUsage, PRIMARY_CERT) ||
-                     0 == strcmp(cred->credUsage, MF_PRIMARY_CERT))
-            {
-                OicUuid_t doxmUuid;
-                if (0 != GetDoxmDevID(&doxmUuid))
-                {
-                    PRINT_ERR("Failed get doxm device id");
-                }
-                else
-                {
-                    memcpy(cred->subject.id, doxmUuid.id, sizeof(doxmUuid.id));
-                }
-
-                //private key
-                //encoding type
-                if ( 0 != InputCredEncodingType(YELLOW_BEGIN"Private key"COLOR_END, &cred->privateData.encoding))
-                {
-                    PRINT_ERR("Failed InputCredEncodingType");
-                    goto error;
-                }
-
-                if (OIC_ENCODING_RAW != cred->privateData.encoding)
-                {
-                    PRINT_ERR("Not supported encoding type for private key");
-                    goto error;
-                }
-
-                //Read private key data from file
-                if (0 != ReadDataFromFile("\tInput the private key's path : ", &privateKey, &privateKeySize))
-                {
-                    PRINT_ERR("Failed ReadDataFromFile");
-                    goto error;
-                }
-
-                cred->privateData.data = OICCalloc(1, privateKeySize);
-                if (NULL == cred->privateData.data)
-                {
-                    PRINT_ERR("InputCredentialData : Failed to allocate memory.");
-                    goto error;
-                }
-                memcpy(cred->privateData.data, privateKey, privateKeySize);
-                cred->privateData.len = privateKeySize;
-
-
-                //public key
-                //encoding type
-                if ( 0 != InputCredEncodingType(YELLOW_BEGIN"Certificate"COLOR_END, &cred->publicData.encoding))
-                {
-                    PRINT_ERR("Failed InputCredEncodingType");
-                    goto error;
-                }
-
-                if (OIC_ENCODING_DER != cred->publicData.encoding &&
-                    OIC_ENCODING_PEM != cred->publicData.encoding)
-                {
-                    PRINT_ERR("Not supported encoding type for private key");
-                    goto error;
-                }
-
-                //Read certificate data from file
-                if (0 != ReadDataFromFile("\tInput the certificate's path : ", &publicKey, &publicKeySize))
-                {
-                    PRINT_ERR("Failed ReadDataFromFile");
-                    goto error;
-                }
-
-                if (OIC_ENCODING_PEM == cred->publicData.encoding)
-                {
-                    cred->publicData.data = OICCalloc(1, publicKeySize + 1);
-                    if (NULL == cred->publicData.data)
-                    {
-                        PRINT_ERR("InputCredentialData : Failed to allocate memory.");
-                        goto error;
-                    }
-                    cred->publicData.len = publicKeySize + 1;
-                }
-                else
-                {
-                    cred->publicData.data = OICCalloc(1, publicKeySize);
-                    if (NULL == cred->publicData.data)
-                    {
-                        PRINT_ERR("InputCredentialData : Failed to allocate memory.");
-                        goto error;
-                    }
-                    cred->publicData.len = publicKeySize;
-                }
-                memcpy(cred->publicData.data, publicKey, publicKeySize);
-            }
-            else
-            {
-                // TODO: T.B.D : Data type should be selected by user.
-                PRINT_ERR("Not supported yet.");
-                goto error;
-            }
-            break;
-        case PIN_PASSWORD:
-            {
-                char pinPass[OXM_RANDOM_PIN_MAX_SIZE + 1] = {0};
-
-                PRINT_NORMAL("\tSubject UUID (e.g. 61646D69-6E44-6576-6963-655575696430) : ");
-                if (0 != InputUuid(&cred->subject))
-                {
-                    PRINT_ERR("Failed InputUuid");
-                    goto error;
-                }
-
-                PRINT_NORMAL("\tInput the PIN or Password : ");
-                for (int ret = 0; 1 != ret; )
-                {
-                    ret = scanf("%32s", pinPass);
-                    for ( ; 0x20 <= getchar(); ); // for removing overflow garbages
-                    // '0x20<=code' is character region
-                }
-                cred->privateData.data = (uint8_t *)OICStrdup(pinPass);
-                if (NULL == cred->privateData.data)
-                {
-                    PRINT_ERR("Failed OICStrdup");
-                    goto error;
-                }
-                cred->privateData.len = strlen((char *)cred->privateData.data);
-                cred->privateData.encoding = OIC_ENCODING_RAW;
-                break;
-            }
-        case ASYMMETRIC_ENCRYPTION_KEY:
-            // TODO: T.B.D
-            PRINT_INFO("Not supported yet.");
-            goto error;
-            break;
-        default:
-            PRINT_ERR("Invalid credential type");
-            goto error;
-    }
-
-    OICFree(certChain);
-    OICFree(privateKey);
-    OICFree(publicKey);
-    return 0;
-
-error:
-    OICFree(certChain);
-    OICFree(privateKey);
-    OICFree(publicKey);
-    memset(cred, 0x00, sizeof(OicSecCred_t));
-    return -1;
-}
-
 
 /**
  * Parse chain of X.509 certificates.
@@ -1073,6 +367,912 @@ inline void ParseDerKey(ByteArray_t *key, const char *usage, uint16_t credId)
     OIC_LOG_V(DEBUG, TAG, "Out %s", __func__);
 }
 
+static void PrintCredType(OicSecCredType_t credType)
+{
+    PRINT_DATA("%d", credType);
+    switch (credType)
+    {
+        case NO_SECURITY_MODE:
+            PRINT_DATA(" (NO_SECURITY_MODE)\n");
+            break;
+        case SYMMETRIC_PAIR_WISE_KEY:
+            PRINT_DATA(" (SYMMETRIC_PAIR_WISE_KEY)\n");
+            break;
+        case SYMMETRIC_GROUP_KEY:
+            PRINT_DATA(" (SYMMETRIC_GROUP_KEY)\n");
+            break;
+        case ASYMMETRIC_KEY:
+            PRINT_DATA(" (ASYMMETRIC_KEY)\n");
+            break;
+        case SIGNED_ASYMMETRIC_KEY:
+            PRINT_DATA(" (SIGNED_ASYMMETRIC_KEY)\n");
+            break;
+        case PIN_PASSWORD:
+            PRINT_DATA(" (PIN_PASSWORD)\n");
+            break;
+        case ASYMMETRIC_ENCRYPTION_KEY:
+            PRINT_DATA(" (ASYMMETRIC_ENCRYPTION_KEY)\n");
+            break;
+        default:
+            PRINT_ERR(" (Unknown Cred type)");
+            break;
+    }
+}
+
+static void PrintCredEncodingType(OicEncodingType_t encoding)
+{
+    PRINT_DATA("%d", encoding);
+    switch (encoding)
+    {
+        case OIC_ENCODING_RAW:
+            PRINT_DATA(" (OIC_ENCODING_RAW)\n");
+            break;
+        case OIC_ENCODING_BASE64:
+            PRINT_DATA(" (OIC_ENCODING_BASE64)\n");
+            break;
+        case OIC_ENCODING_PEM:
+            PRINT_DATA(" (OIC_ENCODING_PEM)\n");
+            break;
+        case OIC_ENCODING_DER:
+            PRINT_DATA(" (OIC_ENCODING_DER)\n");
+            break;
+        default:
+            PRINT_ERR(" (Unknown Encoding type)");
+            break;
+    }
+
+}
+
+/**
+ * This API to print credential list.
+ * Also return the number of credential in credential list.
+ */
+void PrintCredList(const OicSecCred_t *creds)
+{
+    const OicSecCred_t *cred = NULL;
+    const OicSecCred_t *tempCred = NULL;
+    bool isEmptyList = true;
+    PRINT_INFO("\n\n********************* [%-20s] *********************",
+               "Credential Resource");
+    LL_FOREACH_SAFE(creds, cred, tempCred)
+    {
+        PRINT_PROG("%15s : ", OIC_JSON_CREDID_NAME);
+        PrintInt(cred->credId);
+
+        PRINT_PROG("%15s : ", OIC_JSON_SUBJECTID_NAME);
+        if (0 == memcmp(&(cred->subject), &WILDCARD_SUBJECT_ID, sizeof(OicUuid_t)))
+        {
+            PrintString((char *)WILDCARD_SUBJECT_ID.id);
+        }
+        else
+        {
+            PrintUuid(&(cred->subject));
+        }
+
+#ifdef MULTIPLE_OWNER
+        if (creds->eownerID)
+        {
+            PRINT_PROG("%15s : ", OIC_JSON_EOWNERID_NAME);
+            PrintUuid(cred->eownerID);
+        }
+#endif
+
+        PRINT_PROG("%15s : ", OIC_JSON_CREDTYPE_NAME);
+        PrintCredType(cred->credType);
+
+        switch (cred->credType)
+        {
+            case SYMMETRIC_PAIR_WISE_KEY:
+            case SYMMETRIC_GROUP_KEY:
+                PRINT_PROG("%15s : \n", OIC_JSON_PRIVATEDATA_NAME);
+                if (cred->privateData.data)
+                {
+                    PRINT_DATA("%s : ", OIC_JSON_ENCODING_NAME);
+                    PrintCredEncodingType(cred->privateData.encoding);
+
+                    PRINT_DATA("%s : ", OIC_JSON_DATA_NAME);
+                    if (OIC_ENCODING_BASE64 == cred->privateData.encoding)
+                    {
+                        PrintString((char *)cred->privateData.data);
+                    }
+                    else
+                    {
+                        PrintBuffer(cred->privateData.data, cred->privateData.len);
+                    }
+                }
+                else
+                {
+                    PRINT_ERR("Private data is null");
+                }
+                break;
+            case ASYMMETRIC_KEY:
+            case SIGNED_ASYMMETRIC_KEY:
+                // TODO: Print certificate and asymmetric key in readable formats
+
+                //cred usage
+                if (cred->credUsage)
+                {
+                    PRINT_PROG("%15s : ", OIC_JSON_CREDUSAGE_NAME);
+                    PRINT_DATA("%s\n", cred->credUsage);
+                }
+
+                //private data
+                if (cred->privateData.data)
+                {
+                    PRINT_PROG("%15s : \n", OIC_JSON_PRIVATEDATA_NAME);
+                    PrintBuffer(cred->privateData.data, cred->privateData.len);
+
+                    if (cred->credUsage &&
+                        (0 == strcmp(cred->credUsage, PRIMARY_CERT) ||
+                         0 == strcmp(cred->credUsage, MF_PRIMARY_CERT)))
+                    {
+                        // TODO: T.B.D
+                    }
+                    else
+                    {
+                        // TODO: T.B.D
+                    }
+                }
+
+                //public data
+                if (cred->publicData.data)
+                {
+                    PRINT_PROG("%15s : ", OIC_JSON_PUBLICDATA_NAME);
+                    PRINT_DATA("%-17s : ", OIC_JSON_ENCODING_NAME);
+                    PrintCredEncodingType(cred->publicData.encoding);
+                    PrintBuffer(cred->publicData.data, cred->publicData.len);
+                    if (cred->credUsage &&
+                        (0 == strcmp(cred->credUsage, PRIMARY_CERT) ||
+                         0 == strcmp(cred->credUsage, MF_PRIMARY_CERT)))
+                    {
+                        char buf[2048];
+                        mbedtls_x509_crt crt;
+                        mbedtls_x509_crt *tmpCrt = NULL;
+                        PkiInfo_t inf;
+                        int i = 0;
+
+                        memset(&inf, 0x00, sizeof(PkiInfo_t));
+                        mbedtls_x509_crt_init(&crt);
+
+                        ParseDerOwnCert(&inf.crt, cred->credUsage, cred->credId);
+                        ParseCertChain(&crt, inf.crt.data, inf.crt.len);
+
+                        for (i = 0, tmpCrt = &crt; NULL != tmpCrt; i++, tmpCrt = tmpCrt->next)
+                        {
+                            PRINT_INFO("[Cert #%d]", (i + 1));
+                            mbedtls_x509_crt_info( buf, sizeof(buf) - 1, "", tmpCrt );
+                            PrintBuffer(inf.crt.data, inf.crt.len);
+                            PRINT_DATA("%s", buf);
+                        }
+                        mbedtls_x509_crt_free(&crt);
+                    }
+                    else if (cred->credUsage &&
+                             (0 == strcmp(cred->credUsage, TRUST_CA) ||
+                              0 == strcmp(cred->credUsage, MF_TRUST_CA)))
+                    {
+                        char buf[2048];
+                        mbedtls_x509_crt ca;
+                        mbedtls_x509_crt *tmpCa = NULL;
+                        PkiInfo_t inf;
+                        int i = 0;
+
+                        memset(&inf, 0x00, sizeof(PkiInfo_t));
+                        mbedtls_x509_crt_init(&ca);
+
+                        ParseDerOwnCert(&inf.ca, cred->credUsage, cred->credId);
+                        ParseCertChain(&ca, inf.ca.data, inf.ca.len);
+
+                        for (i = 0, tmpCa = &ca; NULL != tmpCa; i++, tmpCa = tmpCa->next)
+                        {
+                            PRINT_INFO("[Cert #%d]", (i + 1));
+                            mbedtls_x509_crt_info( buf, sizeof(buf) - 1, "", tmpCa );
+                            PRINT_DATA("%s", buf);
+                        }
+                        mbedtls_x509_crt_free(&ca);
+                    }
+                    else
+                    {
+                        PRINT_INFO("will be updated to print public data");
+                    }
+                }
+
+                //optional data
+                if (cred->optionalData.data)
+                {
+                    PRINT_PROG("%15s : \n", OIC_JSON_OPTDATA_NAME);
+
+                    //revocation status
+                    PRINT_DATA("%-17s : %s\n", OIC_JSON_REVOCATION_STATUS_NAME,
+                               (cred->optionalData.revstat ? "True" : "False"));
+
+                    PRINT_DATA("%-17s : ", OIC_JSON_ENCODING_NAME);
+                    PrintCredEncodingType(cred->optionalData.encoding);
+
+                    //CA chain
+                    if (cred->credUsage &&
+                        (0 == strcmp(cred->credUsage, TRUST_CA) ||
+                         0 == strcmp(cred->credUsage, MF_TRUST_CA)))
+                    {
+                        char buf[2048];
+                        mbedtls_x509_crt ca;
+                        mbedtls_x509_crt *tmpCa = NULL;
+                        PkiInfo_t inf;
+                        int i = 0;
+
+                        memset(&inf, 0x00, sizeof(PkiInfo_t));
+                        mbedtls_x509_crt_init(&ca);
+
+                        ParseDerCaCert(&inf.ca, cred->credUsage, cred->credId);
+                        ParseCertChain(&ca, inf.ca.data, inf.ca.len);
+
+                        for (i = 0, tmpCa = &ca; NULL != tmpCa; i++, tmpCa = tmpCa->next)
+                        {
+                            PRINT_INFO("[Cert #%d]", (i + 1));
+                            mbedtls_x509_crt_info( buf, sizeof(buf) - 1, "", tmpCa );
+                            PRINT_DATA("%s", buf);
+                        }
+                        mbedtls_x509_crt_free(&ca);
+                    }
+                    else
+                    {
+                        // TODO: T.B.D
+                        PRINT_INFO("will be updated to print optional data");
+                    }
+                }
+                break;
+            case PIN_PASSWORD:
+                PRINT_PROG("%15s : ", OIC_JSON_PRIVATEDATA_NAME);
+                if (cred->privateData.data)
+                {
+                    PRINT_DATA("%s : ", OIC_JSON_ENCODING_NAME);
+                    PrintCredEncodingType(cred->privateData.encoding);
+
+                    PRINT_DATA("%s : ", OIC_JSON_DATA_NAME);
+                    PRINT_DATA("%s\n", cred->privateData.data);
+                }
+                else
+                {
+                    PRINT_ERR("Private data is null");
+                }
+                break;
+            case ASYMMETRIC_ENCRYPTION_KEY:
+                break;
+            default:
+                PRINT_ERR(" (Unknown Cred type)");
+                break;
+        }
+        PRINT_PROG("------------------------------------------------------------------\n");
+        isEmptyList = false;
+    }
+
+    if (!isEmptyList)
+    {
+        OicUuid_t uuid = {.id = {0}};
+        if (OC_STACK_OK != GetCredRownerId(&uuid))
+        {
+            PRINT_WARN("GetCredRownerId failed");
+        }
+        else
+        {
+            PRINT_PROG("%15s : ", OIC_JSON_ROWNERID_NAME);
+            PrintUuid(&uuid);
+        }
+    }
+    else
+    {
+        PRINT_PROG("Cred List is empty.\n");
+    }
+
+    PRINT_INFO("********************* [%-20s] *********************",
+               "Credential Resource");
+
+    return;
+}
+
+static int ReadDataFromFile(const char *infoTxt, uint8_t **buffer, size_t *bufferSize)
+{
+    char filePath[512] = {0};
+    char tmpBuffer[SVR_DB_PATH_LENGTH] = {0};
+    FILE *fp = NULL;
+    size_t filePathLen = 0 ;
+    size_t fileSize = 0;
+
+    if (NULL == buffer || NULL != *buffer || NULL == bufferSize)
+    {
+        PRINT_ERR("ReadDataFromFile : Invaild param");
+        return -1;
+    }
+
+    PRINT_NORMAL("%s", infoTxt);
+    if (NULL == fgets(filePath, sizeof(filePath), stdin))
+    {
+        PRINT_ERR("Failed fgets");
+        return -1;
+    }
+    filePathLen = strlen(filePath);
+    if ('\n' == filePath[filePathLen - 1])
+    {
+        filePath[filePathLen - 1] = '\0';
+    }
+
+    //Get a file size
+    fp = fopen(filePath, "rb");
+    if (fp)
+    {
+        size_t bytesRead = 0;
+        do
+        {
+            bytesRead = fread(tmpBuffer, 1, 1023, fp);
+            fileSize += bytesRead;
+            if (ferror (fp))
+            {
+                PRINT_ERR("Error fread\n");
+                fclose (fp);
+                return -1;
+            }
+        }
+        while (bytesRead);
+        fclose(fp);
+        fp = NULL;
+    }
+    else
+    {
+        PRINT_ERR("Failed to open %s" , filePath);
+        PRINT_ERR("Please make sure the file path and access permission.");
+        goto error;
+    }
+
+    if (0 == fileSize)
+    {
+        PRINT_ERR("%s is empty." , filePath);
+        goto error;
+    }
+
+    fp = fopen(filePath, "rb");
+    if (fp)
+    {
+        *buffer = (uint8_t *) OICCalloc(1, fileSize);
+        if ( NULL == *buffer)
+        {
+            PRINT_ERR("Failed to allocate memory.");
+            goto error;
+        }
+
+        if ( fread(*buffer, 1, fileSize, fp) == fileSize)
+        {
+            *bufferSize = fileSize;
+        }
+        fclose(fp);
+    }
+    else
+    {
+        PRINT_ERR("Failed to open %s" , filePath);
+        PRINT_ERR("Please make sure the file path and access permission.");
+        goto error;
+    }
+
+    return 0;
+
+error:
+    if (fp)
+    {
+        fclose(fp);
+    }
+    if (*buffer)
+    {
+        OICFree(*buffer);
+    }
+    return -1;
+}
+
+static int InputCredUsage(char **credUsage)
+{
+    char inputUsage[128] = {0};
+    int credUsageNum = 0;
+
+    if (NULL == credUsage || NULL != *credUsage)
+    {
+        PRINT_ERR("InputCredUsage error : invaild param");
+        return -1;
+    }
+
+    do
+    {
+        PRINT_NORMAL("\n\n");
+        PRINT_NORMAL("\t1. %s\n", TRUST_CA);
+        PRINT_NORMAL("\t2. %s\n", PRIMARY_CERT);
+        PRINT_NORMAL("\t3. %s\n", MF_TRUST_CA);
+        PRINT_NORMAL("\t4. %s\n", MF_PRIMARY_CERT);
+        PRINT_NORMAL("\t5. Input manually\n");
+        credUsageNum = InputNumber("\tSelect the credential usage : ");
+        switch (credUsageNum)
+        {
+            case 1:
+                *credUsage = OICStrdup(TRUST_CA);
+                break;
+            case 2:
+                *credUsage = OICStrdup(PRIMARY_CERT);
+                break;
+            case 3:
+                *credUsage = OICStrdup(MF_TRUST_CA);
+                break;
+            case 4:
+                *credUsage = OICStrdup(MF_PRIMARY_CERT);
+                break;
+            case 5:
+                PRINT_NORMAL("\tInput the credential usage : ");
+                for (int ret = 0; 1 != ret; )
+                {
+                    ret = scanf("%128s", inputUsage);
+                    while ('\n' != getchar());
+                }
+                *credUsage = OICStrdup(inputUsage);
+                break;
+            default:
+                PRINT_ERR("Invaild credential usage");
+                credUsageNum = 0;
+                break;
+        }
+    }
+    while (0 == credUsageNum);
+
+    if (NULL == *credUsage)
+    {
+        PRINT_ERR("Failed OICStrdup");
+        return -1;
+    }
+
+    return 0;
+}
+
+static int InputCredEncodingType(const char *dataType, OicEncodingType_t *encoding)
+{
+    int credEncType = 0;
+    char infoText[512] = {0};
+
+    if (NULL == dataType || NULL == encoding)
+    {
+        PRINT_ERR("InputCredEncodingType : Invaild param");
+        return -1;
+    }
+
+    snprintf(infoText, sizeof(infoText), "\tSelect the encoding type of %s : ", dataType);
+
+    do
+    {
+        PRINT_NORMAL("\n\n");
+        PRINT_NORMAL("\t%d. %s\n", OIC_ENCODING_RAW, "OIC_ENCODING_RAW");
+        PRINT_NORMAL("\t%d. %s\n", OIC_ENCODING_BASE64, "OIC_ENCODING_BASE64");
+        PRINT_NORMAL("\t%d. %s\n", OIC_ENCODING_PEM, "OIC_ENCODING_PEM");
+        PRINT_NORMAL("\t%d. %s\n", OIC_ENCODING_DER, "OIC_ENCODING_DER");
+        credEncType = InputNumber(infoText);
+        switch ( (OicEncodingType_t)credEncType )
+        {
+            case OIC_ENCODING_RAW:
+                break;
+            case OIC_ENCODING_BASE64:
+                break;
+            case OIC_ENCODING_PEM:
+                break;
+            case OIC_ENCODING_DER:
+                break;
+            default:
+                PRINT_ERR("Invaild encoding type");
+                credEncType = 0;
+                break;
+        }
+    }
+    while (0 == credEncType);
+
+    *encoding = (OicEncodingType_t)credEncType;
+
+    return 0;
+}
+
+static int InputPSK(OicSecKey_t *secKey)
+{
+    char *data = NULL;
+    size_t psklen = 0;
+    size_t bufSize = 0;
+    uint8_t *buf = NULL;
+    size_t outSize = 0;
+
+    data = InputString("\tInput encoded base64 psk (decoded psk 128 or 256 bits,\n"
+                       "\te.g. BxjJidB+u21QlEwMCYBoKA== ) : ");
+    if (NULL == data)
+    {
+        PRINT_ERR("Failed InputString");
+        return -1;
+    }
+
+    psklen = strlen(data);
+    bufSize = B64DECODE_OUT_SAFESIZE(psklen + 1);
+    buf = OICCalloc(1, bufSize);
+    if (NULL == buf)
+    {
+        PRINT_ERR("Failed to allocate memory");
+        OICFree(data);
+        return -1;
+    }
+    //validate base64 psk
+    if (B64_OK != b64Decode(data, psklen, buf, bufSize, &outSize))
+    {
+        PRINT_ERR("Failed to decode base64 data. Invalid base64 input");
+        OICFree(data);
+        OICFree(buf);
+        return -1;
+    }
+    if (!(OWNER_PSK_LENGTH_128 == outSize || OWNER_PSK_LENGTH_256 == outSize))
+    {
+        PRINT_ERR("Invalid key size");
+        OICFree(data);
+        OICFree(buf);
+        return -1;
+    }
+    secKey->data = (uint8_t *)data;
+    secKey->encoding = OIC_ENCODING_BASE64;
+    secKey->len = psklen;
+    OICFree(buf);
+    return 0;
+}
+
+static int InputCredentialData(OicSecCred_t *cred)
+{
+    uint8_t *certChain = NULL;
+    uint8_t *privateKey = NULL;
+    uint8_t *publicKey = NULL;
+    size_t certChainSize = 0;
+    size_t privateKeySize = 0;
+    size_t publicKeySize = 0;
+
+    PRINT_PROG("\n\nPlease input the each entity of new credential.\n");
+
+    PRINT_NORMAL("\t%3d. Symmetric pair wise key\n", SYMMETRIC_PAIR_WISE_KEY);
+    PRINT_NORMAL("\t%3d. Symmetric group key\n", SYMMETRIC_GROUP_KEY);
+    PRINT_NORMAL("\t%3d. Asymmetric key\n", ASYMMETRIC_KEY);
+    PRINT_NORMAL("\t%3d. Signed asymmetric key\n", SIGNED_ASYMMETRIC_KEY);
+    PRINT_NORMAL("\t%3d. PIN/Password\n", PIN_PASSWORD);
+    PRINT_NORMAL("\t%3d. Asymmetric encryption key\n", ASYMMETRIC_ENCRYPTION_KEY);
+    cred->credType = (OicSecCredType_t)InputNumber("\tSelect the credential type : ");
+    if (SYMMETRIC_PAIR_WISE_KEY != cred->credType &&
+        SYMMETRIC_GROUP_KEY != cred->credType &&
+        SIGNED_ASYMMETRIC_KEY != cred->credType &&
+        PIN_PASSWORD != cred->credType &&
+        ASYMMETRIC_ENCRYPTION_KEY != cred->credType)
+    {
+        PRINT_ERR("Invaild credential type");
+        goto error;
+    }
+
+    //Input the key data according to credential type
+    switch (cred->credType)
+    {
+        case SYMMETRIC_PAIR_WISE_KEY:
+            {
+                PRINT_PROG("\tSubject UUID (e.g. 61646D69-6E44-6576-6963-655575696430) : ");
+                if (0 != InputUuid(&cred->subject))
+                {
+                    PRINT_ERR("InputUuid error");
+                    return -1;
+                }
+                if (0 != InputPSK(&cred->privateData))
+                {
+                    PRINT_ERR("Failed InputPSK");
+                    return -1;
+                }
+                break;
+            }
+        case SYMMETRIC_GROUP_KEY:
+            // TODO: T.B.D
+            PRINT_INFO("Not supported yet.");
+            goto error;
+            break;
+        case ASYMMETRIC_KEY:
+            // TODO: T.B.D
+            PRINT_INFO("Not supported yet.");
+            goto error;
+            break;
+        case SIGNED_ASYMMETRIC_KEY:
+            //Credential usage
+            if ( 0 != InputCredUsage(&cred->credUsage))
+            {
+                PRINT_ERR("Failed InputCredUsage");
+                goto error;
+            }
+
+            //Input the other data according to credential usage.
+            if (0 == strcmp(cred->credUsage, TRUST_CA) ||
+                0 == strcmp(cred->credUsage, MF_TRUST_CA))
+            {
+                OicUuid_t doxmUuid = {.id = {0}};
+                if (0 != GetDoxmDevID(&doxmUuid))
+                {
+                    PRINT_ERR("Failed get doxm device id");
+                }
+                else
+                {
+                    memcpy(cred->subject.id, doxmUuid.id, sizeof(doxmUuid.id));
+                }
+
+                //encoding type
+                if ( 0 != InputCredEncodingType("certificate chain", &cred->publicData.encoding))
+                {
+                    PRINT_ERR("Failed InputCredEncodingType");
+                    goto error;
+                }
+
+                //Read chain data from file (readed data will be saved to optional data)
+                if (0 != ReadDataFromFile("\tInput the certificate chain path : ", &certChain, &certChainSize))
+                {
+                    PRINT_ERR("Failed ReadDataFromFile");
+                    goto error;
+                }
+
+                //public data
+                if (OIC_ENCODING_PEM == cred->publicData.encoding)
+                {
+                    cred->publicData.data = (uint8_t *)OICCalloc(1, certChainSize + 1);
+                    if (NULL == cred->publicData.data)
+                    {
+                        PRINT_ERR("InputCredentialData : Failed to allocate memory.");
+                        goto error;
+                    }
+                    cred->publicData.len = certChainSize + 1;
+                }
+                else
+                {
+                    cred->publicData.data = (uint8_t *)OICCalloc(1, certChainSize);
+                    if (NULL == cred->publicData.data)
+                    {
+                        PRINT_ERR("InputCredentialData : Failed to allocate memory.");
+                        goto error;
+                    }
+                    cred->publicData.len = certChainSize;
+                }
+                memcpy(cred->publicData.data, certChain, certChainSize);
+            }
+            else if (0 == strcmp(cred->credUsage, PRIMARY_CERT) ||
+                     0 == strcmp(cred->credUsage, MF_PRIMARY_CERT))
+            {
+                OicUuid_t doxmUuid = {.id = {0}};
+                if (0 != GetDoxmDevID(&doxmUuid))
+                {
+                    PRINT_ERR("Failed get doxm device id");
+                }
+                else
+                {
+                    memcpy(cred->subject.id, doxmUuid.id, sizeof(doxmUuid.id));
+                }
+
+                //private key
+                //encoding type
+                if ( 0 != InputCredEncodingType(YELLOW_BEGIN"Private key"COLOR_END, &cred->privateData.encoding))
+                {
+                    PRINT_ERR("Failed InputCredEncodingType");
+                    goto error;
+                }
+
+                if (OIC_ENCODING_RAW != cred->privateData.encoding)
+                {
+                    PRINT_ERR("Not supported encoding type for private key");
+                    goto error;
+                }
+
+                //Read private key data from file
+                if (0 != ReadDataFromFile("\tInput the private key's path : ", &privateKey, &privateKeySize))
+                {
+                    PRINT_ERR("Failed ReadDataFromFile");
+                    goto error;
+                }
+
+                cred->privateData.data = OICCalloc(1, privateKeySize);
+                if (NULL == cred->privateData.data)
+                {
+                    PRINT_ERR("InputCredentialData : Failed to allocate memory.");
+                    goto error;
+                }
+                memcpy(cred->privateData.data, privateKey, privateKeySize);
+                cred->privateData.len = privateKeySize;
+
+                //public key
+                //encoding type
+                if ( 0 != InputCredEncodingType(YELLOW_BEGIN"Certificate"COLOR_END, &cred->publicData.encoding))
+                {
+                    PRINT_ERR("Failed InputCredEncodingType");
+                    goto error;
+                }
+
+                if (OIC_ENCODING_DER != cred->publicData.encoding &&
+                    OIC_ENCODING_PEM != cred->publicData.encoding)
+                {
+                    PRINT_ERR("Not supported encoding type for private key");
+                    goto error;
+                }
+
+                //Read certificate data from file
+                if (0 != ReadDataFromFile("\tInput the certificate's path : ", &publicKey, &publicKeySize))
+                {
+                    PRINT_ERR("Failed ReadDataFromFile");
+                    goto error;
+                }
+
+                if (OIC_ENCODING_PEM == cred->publicData.encoding)
+                {
+                    cred->publicData.data = OICCalloc(1, publicKeySize + 1);
+                    if (NULL == cred->publicData.data)
+                    {
+                        PRINT_ERR("InputCredentialData : Failed to allocate memory.");
+                        goto error;
+                    }
+                    cred->publicData.len = publicKeySize + 1;
+                }
+                else
+                {
+                    cred->publicData.data = OICCalloc(1, publicKeySize);
+                    if (NULL == cred->publicData.data)
+                    {
+                        PRINT_ERR("InputCredentialData : Failed to allocate memory.");
+                        goto error;
+                    }
+                    cred->publicData.len = publicKeySize;
+                }
+                memcpy(cred->publicData.data, publicKey, publicKeySize);
+            }
+            else
+            {
+                // TODO: T.B.D : Data type should be selected by user.
+                PRINT_ERR("Not supported yet.");
+                goto error;
+            }
+            break;
+        case PIN_PASSWORD:
+            {
+                char pinPass[OXM_RANDOM_PIN_MAX_SIZE + 1] = {0};
+
+                PRINT_NORMAL("\tSubject UUID (e.g. 61646D69-6E44-6576-6963-655575696430) : ");
+                if (0 != InputUuid(&cred->subject))
+                {
+                    PRINT_ERR("Failed InputUuid");
+                    goto error;
+                }
+
+                PRINT_NORMAL("\tInput the PIN or Password : ");
+                for (int ret = 0; 1 != ret; )
+                {
+                    ret = scanf("%32s", pinPass);
+                    while ('\n' != getchar());
+                }
+                cred->privateData.data = (uint8_t *)OICStrdup(pinPass);
+                if (NULL == cred->privateData.data)
+                {
+                    PRINT_ERR("Failed OICStrdup");
+                    goto error;
+                }
+                cred->privateData.len = strlen((char *)cred->privateData.data);
+                cred->privateData.encoding = OIC_ENCODING_RAW;
+                break;
+            }
+        case ASYMMETRIC_ENCRYPTION_KEY:
+            // TODO: T.B.D
+            PRINT_INFO("Not supported yet.");
+            goto error;
+            break;
+        default:
+            PRINT_ERR("Invalid credential type");
+            goto error;
+    }
+
+    OICFree(certChain);
+    OICFree(privateKey);
+    OICFree(publicKey);
+    return 0;
+
+error:
+    OICFree(certChain);
+    OICFree(privateKey);
+    OICFree(publicKey);
+    memset(cred, 0x00, sizeof(OicSecCred_t));
+    return -1;
+}
+
+static int ModifyCred(void)
+{
+    OCStackResult credResult = OC_STACK_ERROR;
+    int ret = 0;
+    int modifyMenu = 0;
+    OicSecCred_t *cred = NULL;
+    uint16_t credId = 0;
+    OicUuid_t uuid = {.id = {0}};
+
+    PRINT_PROG("\n\nPlease select the menu you want to modify\n");
+    PRINT_DATA("\t%2d. Edit subjectuuid\n", CRED_EDIT_SUBJECTUUID);
+    PRINT_DATA("\t%2d. Edit psk of symmetric cred\n", CRED_EDIT_PSK);
+    PRINT_DATA("\t%2d. Edit rowner uuid\n", CRED_EDIT_ROWNERUUID);
+    PRINT_DATA("\t%2d. Back to the previous\n", BACK);
+    modifyMenu = InputNumber("Select the menu : ");
+    switch (modifyMenu)
+    {
+        case CRED_EDIT_SUBJECTUUID:
+            PrintCredList(GetCredList());
+            credId = (uint16_t)InputNumber("\tPlease input the credential ID : ");
+            cred = GetCredEntryByCredId(credId);
+            if (NULL == cred)
+            {
+                PRINT_ERR("Invalid credId");
+                return -1;
+            }
+            PRINT_PROG(
+                "\tInput the Subject UUID for this access (e.g. 61646D69-6E44-6576-6963-655575696430) : ");
+            ret = InputUuid(&cred->subject);
+            if (0 != ret)
+            {
+                PRINT_ERR("InputUuid error");
+                DeleteCredList(cred);
+                return -1;
+            }
+            credResult = AddCredential(cred);
+            if (OC_STACK_OK != credResult)
+            {
+                PRINT_ERR("AddCredential : %d", credResult);
+                DeleteCredList(cred);
+                return -1;
+            }
+            break;
+        case CRED_EDIT_PSK:
+            PrintCredList(GetCredList());
+            credId = (uint16_t)InputNumber("\tPlease input the credential ID : ");
+            cred = GetCredEntryByCredId(credId);
+            if (NULL == cred)
+            {
+                PRINT_ERR("Invalid credId");
+                return -1;
+            }
+            if (SYMMETRIC_PAIR_WISE_KEY != cred->credType)
+            {
+                PRINT_ERR("Selected cred is not SYMMETRIC_PAIR_WISE_KEY type");
+                DeleteCredList(cred);
+                return -1;
+            }
+            if (0 != InputPSK(&cred->privateData))
+            {
+                PRINT_ERR("Failed InputPSK");
+                DeleteCredList(cred);
+                return -1;
+            }
+            credResult = AddCredential(cred);
+            if (OC_STACK_OK != credResult)
+            {
+                PRINT_ERR("AddCredential : %d", credResult);
+                DeleteCredList(cred);
+                return -1;
+            }
+            break;
+        case CRED_EDIT_ROWNERUUID:
+            PRINT_PROG(
+                "\tInput the ROWNER UUID (e.g. 61646D69-6E44-6576-6963-655575696430) : ");
+            ret = InputUuid(&uuid);
+            if (0 != ret)
+            {
+                PRINT_ERR("InputUuid error");
+                return -1;
+            }
+            credResult = SetCredRownerId(&uuid);
+            if (OC_STACK_OK != credResult)
+            {
+                PRINT_ERR("SetCredRownerId failed");
+                return -1;
+            }
+            break;
+        case BACK:
+            PRINT_INFO("Back to the previous menu.");
+            break;
+        default:
+            PRINT_ERR("Wrong type Number");
+            ret = -1;
+            break;
+    }
+    return ret;
+}
 
 void HandleCredOperation(SubOperationType_t cmd)
 {
@@ -1104,7 +1304,6 @@ void HandleCredOperation(SubOperationType_t cmd)
                     DeleteCredList(cred);
                     return;
                 }
-
                 credResult = AddCredential(cred);
                 if ( OC_STACK_OK != credResult)
                 {
@@ -1124,11 +1323,15 @@ void HandleCredOperation(SubOperationType_t cmd)
                 PRINT_ERR("RemoveCredentialByCredId error : %d" , credResult);
                 return;
             }
-
             break;
         case SVR_MODIFY:
-            PRINT_INFO("Not supported yet.");
-            // TODO: T.B.D
+            if (0 != ModifyCred())
+            {
+                PRINT_ERR("Failed Modification");
+                return;
+            }
+            PRINT_INFO("\n\nCred Modified");
+            UpdateCred();
             break;
         default:
             break;

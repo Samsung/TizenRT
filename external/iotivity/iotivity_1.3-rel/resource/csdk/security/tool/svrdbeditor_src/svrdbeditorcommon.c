@@ -101,8 +101,7 @@ int InputNumber(const char *infoText)
     for (int ret = 0; 1 != ret; )
     {
         ret = scanf("%d", &inputValue);
-        for ( ; 0x20 <= getchar(); ); // for removing overflow garbages
-        // '0x20<=code' is character region
+        while ('\n' != getchar());
     }
 
     return inputValue;
@@ -116,8 +115,7 @@ char *InputString(const char *infoText)
     for (int ret = 0; 1 != ret; )
     {
         ret = scanf("%1024s", tmpStr);
-        for ( ; 0x20 <= getchar(); ); // for removing overflow garbages
-        // '0x20<=code' is character region
+        while ('\n' != getchar());
     }
 
     return OICStrdup(tmpStr);
@@ -144,6 +142,10 @@ int InputUuid(OicUuid_t *uuid)
     if ('\n' == strUuid[strLen - 1])
     {
         strUuid[strLen - 1] = '\0';
+    }
+    else
+    {
+        while ('\n' != getchar());
     }
 
     if (0 == strncmp(strUuid, STR_UUID_ZERO, sizeof(STR_UUID_ZERO)))

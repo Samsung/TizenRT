@@ -482,7 +482,6 @@ static int InputResources(OicSecRsrc_t *resources)
             if (NULL == interfaces[i] )
             {
                 PRINT_ERR("Failed InputString");
-                interfaceLen = i;
                 OICFree(href);
                 for (size_t j = 0; j < typeLen; j++)
                 {
@@ -492,7 +491,7 @@ static int InputResources(OicSecRsrc_t *resources)
 
                 for (size_t j = 0; j < i; j++)
                 {
-                    OICFree(interfaces[i]);
+                    OICFree(interfaces[j]);
                 }
                 OICFree(interfaces);
                 return -1;
@@ -543,8 +542,10 @@ static uint16_t InputAccessPermission(void)
             for (int ret = 0; 1 != ret; )
             {
                 ret = scanf("%c", &ans);
-                for ( ; 0x20 <= getchar(); ); // for removing overflow garbages
-                // '0x20<=code' is character region
+                if ('\n' !=  ans)
+                {
+                    while ('\n' != getchar());
+                }
             }
             if ('y' == ans || 'Y' == ans || 'n' == ans || 'N' == ans)
             {

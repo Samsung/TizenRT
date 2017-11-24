@@ -1,4 +1,4 @@
-# ******************************************************************
+#******************************************************************
 #
 # Copyright 2015 Samsung Electronics All Rights Reserved.
 #
@@ -44,8 +44,6 @@ tools_env.PrependUnique(CPPPATH=[
     '#/resource/oc_logger/include',
     '#/resource/csdk/connectivity/api',
     '#/resource/csdk/connectivity/inc/pkix',
-    '#/resource/include',
-    '#/resource/include/internal',
     '#/resource/csdk/security/provisioning/include',
     '#/resource/csdk/security/provisioning/include/internal'
 ])

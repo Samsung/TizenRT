@@ -356,7 +356,7 @@ static int InputSct(OicSecCredType_t *sct)
 {
     unsigned int sel = 0;
     OicSecCredType_t tmpSct = 0;
-
+    PRINT_PROG("\nInput the Supported Credential Types\n");
     for (;;)
     {
         for (size_t i = 0; i < DOXM_SCT_CNT; i++)
@@ -397,8 +397,10 @@ static bool InputOwned(void)
         for (int ret = 0; 1 != ret; )
         {
             ret = scanf("%c", &ans);
-            for ( ; 0x20 <= getchar(); ); // for removing overflow garbages
-            // '0x20<=code' is character region
+            if ('\n' != ans)
+            {
+                while ('\n' != getchar());
+            }
         }
         if ('y' == ans || 'Y' == ans || 'n' == ans || 'N' == ans)
         {
