@@ -993,8 +993,10 @@ bool handle_post_req_helper(const char *res_uri, const char *query, OCRepPayload
 		return false;
 	}
 
-	for (int index = 0; index < count; index++) {
-		if (NULL != properties[index] && IS_WRITABLE(properties[index]->rw)) {
+	for (int index = 0; index < count && NULL != properties[index]; index++) {
+		bool exist = (false == OCRepPayloadIsNull(req_payload, properties[index]->key));
+		ST_LOG_V(ST_DEBUG, "Is property(%s) present in request payload?: %s", properties[index]->key, exist ? "Yes" : "No");
+		if (exist && IS_WRITABLE(properties[index]->rw)) {
 			res = add_property_in_post_req_msg(req_msg, req_payload, properties[index]);
 			if (!res) {
 				break;
