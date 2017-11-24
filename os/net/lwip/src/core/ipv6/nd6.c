@@ -501,33 +501,33 @@ void nd6_input(struct pbuf *p, struct netif *inp)
 		} else {
 			ip6_addr_t target_address;
 
-			/* Sender is trying to resolve our address. */
-			/* Verify that they included their own link-layer address. */
-			if (lladdr_opt == NULL) {
-				/* Not a valid message. */
+			/* RFC 7.2.4.
+			 * Unicast NSs are not required to include a source lladdr option */
+			if (ip6_addr_ismulticast(ip6_current_dest_addr()) && (lladdr_opt == NULL)) {
 				pbuf_free(p);
-				ND6_STATS_INC(nd6.proterr);
+				ND6_STATS_INC(nd6.lenerr);
 				ND6_STATS_INC(nd6.drop);
 				return;
 			}
 
 			i = nd6_find_neighbor_cache_entry(ip6_current_src_addr());
 			if (i >= 0) {
-				neighbor_cache[i].netif = inp;
 				/* RFC 7.2.3.
 				 * If an entry already exists, and the cached link-layer address
 				 * differs from the one in the received Source Link-Layer option,
 				 * the cached address should be replaced by the received address,
 				 * and the entry's reachability state MUST be set to STALE. */
-				if (MEMCMP(neighbor_cache[i].lladdr, ND6H_LLADDR_OPT_ADDR(lladdr_opt), inp->hwaddr_len) != 0) {
-					MEMCPY(neighbor_cache[i].lladdr, ND6H_LLADDR_OPT_ADDR(lladdr_opt), inp->hwaddr_len);
+				if (lladdr_opt) {
+					if (MEMCMP(neighbor_cache[i].lladdr, ND6H_LLADDR_OPT_ADDR(lladdr_opt), inp->hwaddr_len) != 0) {
+						MEMCPY(neighbor_cache[i].lladdr, ND6H_LLADDR_OPT_ADDR(lladdr_opt), inp->hwaddr_len);
 
 					/* RFC 4861 page 91, appendix c */
-					if ((neighbor_cache[i].state == ND6_INCOMPLETE) && neighbor_cache[i].q != NULL) {
-						neighbor_cache[i].state = ND6_STALE;
-						nd6_send_q(i);
-					} else {
-						neighbor_cache[i].state = ND6_STALE;
+						if ((neighbor_cache[i].state == ND6_INCOMPLETE) && neighbor_cache[i].q != NULL) {
+							neighbor_cache[i].state = ND6_STALE;
+							nd6_send_q(i);
+						} else {
+							neighbor_cache[i].state = ND6_STALE;
+						}
 					}
 				}
 			} else {
@@ -544,9 +544,15 @@ void nd6_input(struct pbuf *p, struct netif *inp)
 				}
 
 				neighbor_cache[i].netif = inp;
-				MEMCPY(neighbor_cache[i].lladdr, ND6H_LLADDR_OPT_ADDR(lladdr_opt), inp->hwaddr_len);
-				ip6_addr_set(&(neighbor_cache[i].next_hop_address), ip6_current_src_addr());
-				neighbor_cache[i].state = ND6_STALE;
+
+				if (lladdr_opt) {
+					MEMCPY(neighbor_cache[i].lladdr, ND6H_LLADDR_OPT_ADDR(lladdr_opt), inp->hwaddr_len);
+					ip6_addr_set(&(neighbor_cache[i].next_hop_address), ip6_current_src_addr());
+					neighbor_cache[i].state = ND6_STALE;
+				} else {
+					ip6_addr_set(&(neighbor_cache[i].next_hop_address), ip6_current_src_addr());
+					neighbor_cache[i].state = ND6_INCOMPLETE;
+				}
 			}
 
 			/* Create an aligned copy. */
