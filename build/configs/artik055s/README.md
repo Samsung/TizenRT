@@ -199,39 +199,24 @@ U-Boot 2017
 
 ## ROMFS
 
-Before executing below steps, execute [generic steps](../../../tools/fs/README_ROMFS.md), step 1 and step 2.  
-When you use artik053/iotivity config, you can execute only step 4. But note that if you want to resize the rom partition,  
-you must modify partition_map.cfg matching the sizes in ARTIK053_FLASH_PART_LIST.
+Before executing below board-specific steps, execute [generic steps](../../../tools/fs/README_ROMFS.md), step 1 and step 2.
 
-3. Modify partition configs  
+3. Modify partition configs and enable the automount config through *menuconfig*  
     Below steps creates ROMFS partition with size 400KB at next of user partition.  
-    1. Split user partition size from (1400) to (1000, 400) in ARTIK053_FLASH_PART_LIST
+    1. Split user partition size from (1400) to (1000, 400) in ARTIK05X_FLASH_PART_LIST
         ```bash
-        Board Selection -> change values at Flash partition size list (in KBytes)
+        Hardware Configuration -> Board Selection -> change values at Flash partition size list (in KBytes)
         ```
-    2. Append "romfs" at next of *smartfs* to ARTIK053_FLASH_PART_TYPE
+    2. Append "romfs" at next of *smartfs* to ARTIK05X_FLASH_PART_TYPE
         ```bash
-        Board Selection -> append string at Flash partition type list
+        Hardware Configuration -> Board Selection -> append string at Flash partition type list
         ```
-    3. Append "rom" at next of *user* to ARTIK053_FLASH_PART_NAME
+    3. Append "rom" at next of *user* to ARTIK05X_FLASH_PART_NAME
         ```bash
-        Board Selection -> append string at FLash partition name list
+        Hardware Configuration -> Board Selection -> append string at FLash partition name list
         ```
-4. Build Tizen RT  
-5. Prepare ROM image
-    ```bash
-    sh $TIZENRT_BASEDIR/../tools/fs/mkromfsimg.sh
-    ```
-6. Modify partition map to *$TIZENRT_BASEDIR/../build/configs/artik053/tools/openocd/partition_map.cfg*
-    ```bash
-    user	{ "USER R/W"		0x04620000	0x000FA000  0 }
-    rom  	{ "ROM FS"  		0x0471A000	0x00064000  0 }
-    ```
-7. Program a ROM image
-    ```bash
-    flash_write rom ../bin/romfs.img;    \
-    ```
-8. Mount on device
-    ```bash
-    mount -t romfs /dev/smart4rom9 /rom
-    ```
+    4. Enable the audomount config for romfs
+        ```bash
+        Hardware Configuration -> Board Selection -> Automount partitions -> Automount romfs partiton to y
+        ````
+4. Build Tizen RT and flash a binary [using download script](#using-download-script)
