@@ -526,17 +526,18 @@ void nd6_input(struct pbuf *p, struct netif *inp)
 				 * If an entry already exists, and the cached link-layer address
 				 * differs from the one in the received Source Link-Layer option,
 				 * the cached address should be replaced by the received address,
-				 * and the entry's reachability state MUST be set to STALE.
-				 */
-				if (MEMCMP(neighbor_cache[i].lladdr, ND6H_LLADDR_OPT_ADDR(lladdr_opt), inp->hwaddr_len) != 0) {
-					MEMCPY(neighbor_cache[i].lladdr, ND6H_LLADDR_OPT_ADDR(lladdr_opt), inp->hwaddr_len);
+				 * and the entry's reachability state MUST be set to STALE. */
+				if (lladdr_opt) {
+					if (MEMCMP(neighbor_cache[i].lladdr, ND6H_LLADDR_OPT_ADDR(lladdr_opt), inp->hwaddr_len) != 0) {
+						MEMCPY(neighbor_cache[i].lladdr, ND6H_LLADDR_OPT_ADDR(lladdr_opt), inp->hwaddr_len);
 
 					/* RFC 4861 page 91, appendix c */
-					if ((neighbor_cache[i].state == ND6_INCOMPLETE) && neighbor_cache[i].q != NULL) {
-						neighbor_cache[i].state = ND6_STALE;
-						nd6_send_q(i);
-					} else {
-						neighbor_cache[i].state = ND6_STALE;
+						if ((neighbor_cache[i].state == ND6_INCOMPLETE) && neighbor_cache[i].q != NULL) {
+							neighbor_cache[i].state = ND6_STALE;
+							nd6_send_q(i);
+						} else {
+							neighbor_cache[i].state = ND6_STALE;
+						}
 					}
 				}
 			} else {
