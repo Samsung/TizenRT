@@ -22,38 +22,97 @@
 
 # Remember, make is invoked from "os" directory
 
-OS_DIR_PATH=${PWD}
-BUILD_DIR_PATH=${OS_DIR_PATH}/../build
-CONFIGS_PATH=${BUILD_DIR_PATH}/configs
+WD=$(cd `dirname $0` && pwd)
+
+OS_DIR_PATH=${WD}/../../../os
+BUILD_DIR_PATH=${WD}/../..
 OUTPUT_BINARY_PATH=${BUILD_DIR_PATH}/output/bin
 OPENOCD_DIR_PATH=${BUILD_DIR_PATH}/tools/openocd
 
 TIZENRT_BIN=$OUTPUT_BINARY_PATH/tinyara_head.bin
 
+declare -a id desc addr size ro
+
 usage() {
+    local OPT="ALL"
+    for n in ${id[@]}; do
+        test $n = "os" && bin=${TIZENRT_BIN} || bin="${FW_DIR_PATH}/$n.bin"
+        if test -f $bin; then
+            OPT="$OPT | $n"
+        fi
+    done
+
     cat <<EOF
 USAGE: `basename $0` [OPTIONS]
 OPTIONS:
     [--board[="<board-name>"]]
     [--secure[=<exec-path>]]
-    [ALL | BOOTLOADER | RESOURCE | KERNEL | THIRDPARTY]
+      [$OPT]
 
 For examples:
     `basename $0` --board=artik053 ALL
-    `basename $0` --board=artik053s --verify
-    `basename $0` --board=artik055s --secure=../codesigner BOOTLOADER
+    `basename $0` --board=artik053s --verify wlanfw
+    `basename $0` --board=artik055s --secure=../codesigner os
 
 Options:
     --board[="<board-name>"]      select target board-name
     --secure[=<exec-path>]        choose secure mode, and set the codesinger path
     --verify                      verify downloaded image if you need
-    ALL                           write each firmware image into FLASH
-    BOOTLOADER                    not supported yet
-    RESOURCE                      not supported yet
-    KERNEL                        not supported yet
-    THIRDPARTY                    not supported yet
-
+    $OPT
+                                  write each firmware image into FLASH
 EOF
+}
+
+partition() {
+    local START=0
+
+    while read line
+    do
+        test `expr match "$line" '^set\ \w*.\W$'` -ne 0 && START=1 && continue;
+        test `expr index "$line" }` -eq 1 && START=0 && continue;
+
+        if test $START -eq 1; then
+            local NAME_IDX=`expr index "$line" '[^"]'`
+            local NAME_LEN=`expr index "${line:NAME_IDX}" '[^"]'`
+            local TMP=${line:NAME_IDX+NAME_LEN}
+
+            id=(${id[@]} `echo $line | awk '{print $1}'`)
+            desc=(${desc[@]} `echo ${line:NAME_IDX:NAME_LEN-1}`)
+            addr=(${addr[@]} `echo $TMP | awk '{print $1}'`)
+            size=(${size[@]} `echo $TMP | awk '{print $2}'`)
+            ro=(${ro[@]} `echo $TMP | awk '{print $3}'`)
+        fi
+    done < $WD/scripts/partition_map.cfg
+}
+
+get_idx() {
+    local field=$1
+    for i in ${!id[*]}; do
+        if test ${id[$i]} = $field; then
+            echo $i;
+        fi
+    done
+}
+
+add_target() {
+    local field=$1
+    local bin=""
+    local protect=0
+
+    test $field = "os" && bin=${TIZENRT_BIN} || bin="${FW_DIR_PATH}/$field.bin"
+    test $field = "bl1" && protect=1;
+
+    # check existence of firmware binaries
+    if test ! -f $bin; then
+        echo "Firmware binaries for ARTIK 05X are not existed"
+        echo "   TARGET: $bin"
+        exit 1
+    fi
+
+    test $protect -eq 1 && target="$target flash_protect off;"
+    target="$target flash_write $1 $bin $VERIFY;"
+    test $protect -eq 1 && target="$target flash_protect on;"
+
 }
 
 download()
@@ -65,33 +124,10 @@ download()
         local OPENOCD_BIN_PATH=${OPENOCD_DIR_PATH}/linux32
     fi
 
-    # check existence of os binary
-    if [ ! -f "${OUTPUT_BINARY_PATH}/tinyara_head.bin" ]; then
-        echo "TinyAra binary is not existed, build first"
-        exit 1
-    fi
-
-    # check existence of firmware binaries
-    if [ ! -f "${FW_DIR_PATH}/bl1.bin" ] ||\
-        [ ! -f "${FW_DIR_PATH}/bl2.bin" ] ||\
-        [ ! -f "${FW_DIR_PATH}/sssfw.bin" ] ||\
-        [ ! -f "${FW_DIR_PATH}/wlanfw.bin" ]; then
-        echo "Firmware binaries for ARTIK 05X are not existed"
-        exit 1
-    fi
-
     # Download all binaries using openocd script
     pushd ${OPENOCD_DIR_PATH} > /dev/null
         ${OPENOCD_BIN_PATH}/openocd -f artik05x.cfg -s $BOARD_DIR_PATH/../artik05x/scripts -c \
-        "flash_protect off; \
-        flash_write bl1 ${FW_DIR_PATH}/bl1.bin $VERIFY;
-        flash_protect on; \
-        flash_write bl2 ${FW_DIR_PATH}/bl2.bin  $VERIFY; 		\
-        flash_write sssfw ${FW_DIR_PATH}/sssfw.bin  $VERIFY; 		\
-        flash_write wlanfw ${FW_DIR_PATH}/wlanfw.bin  $VERIFY;	\
-        flash_write os ${TIZENRT_BIN} $VERIFY;	\
-
-        exit"
+        "$target exit"
     popd > /dev/null
 }
 
@@ -100,6 +136,9 @@ signing() {
     $CODESIGNER/artik05x_AppCodesigner $CODESIGNER/rsa_private.key $TIZENRT_BIN
     TIZENRT_BIN=${TIZENRT_BIN}-signed
 }
+
+#read partition table
+partition
 
 if test $# -eq 0; then
     usage 1>&2
@@ -128,11 +167,22 @@ while test $# -gt 0; do
             VERIFY=verify
             ;;
         ALL)
+            add_target bl1
+            add_target bl2
+            add_target sssfw
+            add_target wlanfw
+            add_target os
             download
             ;;
         *)
-            usage 1>&2
-            exit 1
+            if test -n "`get_idx $1`"; then
+                echo DOWNLOAD: $1 | tr [a-z] [A-Z]
+                add_target $1
+                download
+            else
+                usage 1>&2
+                exit 1
+            fi
             ;;
     esac
     shift
