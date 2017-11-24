@@ -96,6 +96,9 @@
 #define TIME_DIFF_SEC(old_time, cur_time) \
 		(((cur_time.tv_sec - old_time.tv_sec) + ((cur_time.tv_usec - old_time.tv_usec) / 1000000)))
 
+#define TIME_HOUR_TO_MS(hour)    (hour * 3600 * 1000)
+#define TIME_SEC_TO_MS(sec)      (sec * 1000)
+
 /* Router tables. */
 struct nd6_neighbor_cache_entry neighbor_cache[LWIP_ND6_NUM_NEIGHBORS];
 struct nd6_destination_cache_entry destination_cache[LWIP_ND6_NUM_DESTINATIONS];
@@ -150,7 +153,7 @@ static void nd6_free_q(struct nd6_q_entry *q);
 #endif							/* LWIP_ND6_QUEUEING */
 static void nd6_send_q(s8_t i);
 static void nd6_cleanup_all_caches(ip6_addr_t *invalid_ip6addr);
-
+static u8_t nd6_prefix_lifetime_isvalid(const struct nd6_prefix_list_entry *prefix_entry, u32_t lifetime_ms);
 #if ND6_DEBUG
 void nd6_cache_debug_print(void);
 #endif
@@ -707,6 +710,7 @@ void nd6_input(struct pbuf *p, struct netif *inp)
 					/* Add to on-link prefix list. */
 					s8_t prefix;
 					ip6_addr_t prefix_addr;
+					u32_t lifetime_ms = TIME_SEC_TO_MS(lwip_htonl(ND6H_PF_OPT_VAL_LIFE(prefix_opt)));
 
 					/* Get a memory-aligned copy of the prefix. */
 					ip6_addr_set(&prefix_addr, &(ND6H_PF_OPT_PF(prefix_opt)));
@@ -716,9 +720,19 @@ void nd6_input(struct pbuf *p, struct netif *inp)
 					if (prefix < 0) {
 						/* Create a new cache entry. */
 						prefix = nd6_new_onlink_prefix(&prefix_addr, inp);
+						prefix_list[prefix].invalidation_timer = lifetime_ms;
 					}
 					if (prefix >= 0) {
-						prefix_list[prefix].invalidation_timer = lwip_htonl(ND6H_PF_OPT_VAL_LIFE(prefix_opt)) * 1000;
+						/* Found matched prefix entry or Create a new prefix entry */
+						if (nd6_prefix_lifetime_isvalid(&prefix_list[prefix], lifetime_ms)) {
+							prefix_list[prefix].invalidation_timer = lifetime_ms;
+						} else {
+							if (prefix_list[prefix].invalidation_timer > TIME_HOUR_TO_MS(2)) {
+								/* Otherwise, reset the valid lifetime of the corresponding address to 2 hours. */
+								LWIP_DEBUGF(ND6_DEBUG, ("prefix lifetime reset to 2 hours (current invalidation_timer %lu ms, lifetime %lu ms)\n", prefix_list[prefix].invalidation_timer, lifetime_ms));
+								prefix_list[prefix].invalidation_timer = TIME_HOUR_TO_MS(2);
+							}
+						}
 
 #if LWIP_IPV6_AUTOCONFIG
 						if (ND6H_PF_OPT_PF_LEN(prefix_opt) == 64) {
@@ -2393,6 +2407,28 @@ static void nd6_send_q(s8_t i)
 		neighbor_cache[i].q = NULL;
 	}
 #endif							/* LWIP_ND6_QUEUEING */
+}
+
+/**
+ * Check validation of received Prefix lifetime value
+ *
+ * @param prefix_entry Pointer of the entry in prefix_list for comparing current value of invalidation timer
+ * @param lifetime_ms Received option value of lifetime for validation check (time unit MUST be ms)
+ *
+ * @return 1 if the lifetime is valid, 0  if the lifetime is invalid
+ *
+ */
+
+static u8_t nd6_prefix_lifetime_isvalid(const struct nd6_prefix_list_entry *prefix_entry, u32_t lifetime_ms)
+{
+	if (prefix_entry == NULL)
+		return 0;
+
+	if ((lifetime_ms > prefix_entry->invalidation_timer) || (lifetime_ms > TIME_HOUR_TO_MS(2))) {
+		return 1;
+	}
+
+	return 0;
 }
 
 /**
