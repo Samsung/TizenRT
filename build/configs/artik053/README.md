@@ -217,6 +217,8 @@ Before executing below board-specific steps, execute [generic steps](../../../to
 
 ## Configuration Sets
 
+#### [audio](audio/README.md)
+This can be used to test audio functionality.
 #### [extra](extra/README.md)
 This can be used to use full functionality of Tizen RT on ARTIK053.
 #### [hello](hello/README.md)
