@@ -1175,8 +1175,8 @@ void nd6_tmr(void)
 				/* Retries exceeded. */
 				nd6_cleanup_all_caches(&neighbor_cache[i].next_hop_address);
 			} else {
-				neighbor_cache[i].counter.incomplete_time += ND6_TMR_INTERVAL;
-				if (retrans_timer <= ND6_TMR_INTERVAL ||
+				neighbor_cache[i].counter.incomplete_time += LWIP_ND6_RETRANS_TIMER;
+				if (retrans_timer <= LWIP_ND6_RETRANS_TIMER ||
 					neighbor_cache[i].counter.incomplete_time >= retrans_timer) {
 					/* Send a NS for this entry */
 					neighbor_cache[i].counter.incomplete_time = 0;
@@ -1217,8 +1217,8 @@ void nd6_tmr(void)
 			if (neighbor_cache[i].probes_sent >= LWIP_ND6_MAX_UNICAST_SOLICIT) {
 				nd6_cleanup_all_caches(&neighbor_cache[i].next_hop_address);
 			} else {
-				neighbor_cache[i].counter.probe_time += ND6_TMR_INTERVAL;
-				if (retrans_timer <= ND6_TMR_INTERVAL ||
+				neighbor_cache[i].counter.probe_time += LWIP_ND6_RETRANS_TIMER;
+				if (retrans_timer <= LWIP_ND6_RETRANS_TIMER ||
 					neighbor_cache[i].counter.probe_time >= retrans_timer) {
 					/* Send a NS for this entry. */
 					neighbor_cache[i].counter.probe_time = 0;
