@@ -719,6 +719,7 @@ int s5j_i2c_transfer(struct i2c_dev_s *dev, struct i2c_msg_s *msgv, int msgc)
 	 * i2c_read is expected from writing with count '1',
 	 * no stop for next transfer
 	 */
+#if defined CONFIG_BROKEN_I2C_TRANSACTIONS
 	if (((msgv->flags & I2C_M_READ) != 1) && (msgv->length == 1) && (msgc == 1)) {
 		stop = 0;
 	}
@@ -726,6 +727,7 @@ int s5j_i2c_transfer(struct i2c_dev_s *dev, struct i2c_msg_s *msgv, int msgc)
 	if ((msgv->flags & I2C_M_READ) && (msgc == 1)) {
 		start = 0;
 	}
+#endif
 
 	priv->mcnt = 0;
 	priv->ptr = NULL;
