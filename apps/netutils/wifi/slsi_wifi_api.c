@@ -1525,15 +1525,15 @@ void slsi_monitor_thread_handler(void *param)
 						if (slsi_event_recieved(result, WPA_EVENT_DISCONNECTED)) {
 							slsi_sta_disconnect_event_handler(result, &reason);
 							g_state = SLSI_WIFIAPI_STATE_SUPPLICANT_RUNNING;
-							if (g_network_id) {
-								free(g_network_id);
-								g_network_id = NULL;
-							}
 							if (g_link_down) {
 								VPRINT("SLSI_API slsi_link_event_handler send link_down\n");
 								slsi_msg_callback_t msg;
 								msg.reason = reason;
 								slsi_send_mqueue(SLSI_CALLBACK_LINK_DOWN, &msg);
+							}
+							if (g_network_id) {
+								free(g_network_id);
+								g_network_id = NULL;
 							}
 							// TODO: clean join info for recovery
 						} else {
