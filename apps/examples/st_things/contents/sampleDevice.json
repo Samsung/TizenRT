@@ -9,7 +9,7 @@
                 "dataModelVersion": "res.1.1.0"
             },
             "platform": {
-                "manufacturerName": "Samsung Electronics",
+                "manufacturerName": "Test",
                 "manufacturerUrl": "http://www.samsung.com/sec/",
                 "manufacturingDate": "2017-08-31",
                 "modelNumber": "NWSP-01",
@@ -23,7 +23,7 @@
           "resources": {
             "single": [
               {
-                  "uri": "/switch/main/0",
+                  "uri": "/capability/switch/main/0",
                   "types": [
                       "x.com.st.powerswitch"
                   ],
@@ -34,7 +34,7 @@
               },
             
                 {
-                    "uri": "/switchLevel/main/0",
+                    "uri": "/capability/switchLevel/main/0",
                     "types": [
                         "oic.r.light.dimming"
                     ],
@@ -44,7 +44,7 @@
                     "policy": 3
                 },
                 {
-                    "uri": "/colorTemperature/main/0",                
+                    "uri": "/capability/colorTemperature/main/0",                
                     "types": [
                         "x.com.st.color.temperature"
                     ],
@@ -98,7 +98,6 @@
             "connectivity": {
                 "type": 1,
                 "softAP": {
-                    "manufacturerId": "AAA1",
                     "setupId": "001",
                     "artik": false
                 }
