@@ -63,10 +63,26 @@
 #define htons HTONS
 #define PING_ID        0xAFAF
 #define PING_DELAY     1000
+#define PING_MAX_TRY_COUNTER	10
+#define PING_DATA_SIZE			32
 #define PING_RESULT(ping_ok)
 
 static int g_ping_recv_counter;
 static uint16_t g_ping_seq_num;
+static uint16_t g_ping_data_size;
+
+static void dump_usage(void)
+{
+	printf("Usage :\n");
+	printf("\tping <IP address>\n");
+	printf("\tping <IP address> <count>\n");
+	printf("\tping <IP address> <count> <size>\n");
+	printf("Where :\n");
+	printf("\tIP address : destination's IP address\n");
+	printf("\tcount : number of ping packets to send (default 10)\n");
+	printf("\tsize : ping packet data size (default 32 Bytes)\n");
+	printf("\n");
+}
 
 static int
 nu_ping_options(int argc, char **argv, int *count, uint32_t *dsec, char **staddr)
@@ -182,17 +198,24 @@ nu_standard_chksum(void *dataptr, u16_t len)
 static void
 nu_ping_recv(int s, struct timespec *ping_time)
 {
-	char buf[64];
+	char *buf;
 	int fromlen;
 	int len;
 	struct sockaddr_in from;
 	struct ip_hdr *iphdr;
 	struct icmp_echo_hdr *iecho;
+	int ping_size = sizeof(struct ip_hdr) + sizeof(struct icmp_echo_hdr) + g_ping_data_size;
 
 	fromlen = sizeof(struct sockaddr_in);
 
 	while (1) {
-		len = recvfrom(s, buf, sizeof(buf), 0, (struct sockaddr *)&from, (socklen_t *)&fromlen);
+		buf = (char *)malloc(sizeof(char)*ping_size);
+		if (!buf) {
+			printf("failed to allocate memory\n");
+			return;
+		}
+
+		len = recvfrom(s, buf, ping_size, 0, (struct sockaddr *)&from, (socklen_t *)&fromlen);
 		if (len <= 0) break;
 
 		if (len >= (int)(sizeof(struct ip_hdr) + sizeof(struct icmp_echo_hdr))) {
@@ -211,10 +234,12 @@ nu_ping_recv(int s, struct timespec *ping_time)
 				if ((iecho->id == PING_ID) && (iecho->seqno == htons(g_ping_seq_num))) {
 					/* do some ping result processing */
 					PING_RESULT((ICMPH_TYPE(iecho) == ICMP_ER));
+					free(buf);
 					return;
 				} else printf("drop\n");
 			}
 		}
+		free(buf);
 	}
 	if (len == 0) {
 		printf("ping: recv - timeout\n");
@@ -231,7 +256,7 @@ nu_ping_prepare_echo(struct icmp_echo_hdr *iecho, u16_t len)
 	ICMPH_TYPE_SET(iecho, ICMP_ECHO);
 	ICMPH_CODE_SET(iecho, 0);
 	iecho->chksum = 0;
-	iecho->id     = 0xAFAF;
+	iecho->id     = PING_ID;
 	++g_ping_seq_num;
 	iecho->seqno  = htons(g_ping_seq_num);
 
@@ -249,8 +274,9 @@ nu_ping_send(int s, struct sockaddr_in *to)
 {
 	int err;
 	struct icmp_echo_hdr *iecho;
+	size_t ping_size = sizeof(struct icmp_echo_hdr) + g_ping_data_size;
 
-	size_t ping_size = sizeof(struct icmp_echo_hdr) + 32;
+	LWIP_ASSERT("ping_size is too big", ping_size <= 0xffff);
 
 	iecho = (struct icmp_echo_hdr *)malloc(ping_size);
 	if (!iecho) {
@@ -320,16 +346,42 @@ nu_ping_process(int count, const char *taddr)
 
 int cmd_ping(int argc, char **argv)
 {
+	int count;
+	int ret;
 	char *staddr;
-	uint32_t dsec = 10;
-	int count = 10;
 
-	/* Get the ping options */
-
-	int ret = nu_ping_options(argc, argv, &count, &dsec, &staddr);
-	if (ret < 0) {
-		return ERROR;
+	if (argc < 2) {
+		dump_usage();
+		return OK;
 	}
+
+	staddr = argv[1];
+
+	g_ping_data_size = PING_DATA_SIZE;
+	count = PING_MAX_TRY_COUNTER;
+
+	if (argc == 3) {
+		count = atoi(argv[2]);
+
+		if (count < 1) {
+			count = PING_MAX_TRY_COUNTER;
+			printf("Invaild data : max counter set to default value %d\n", count);
+		}
+	} else if (argc == 4) {
+		count = atoi(argv[2]);
+		g_ping_data_size = atoi(argv[3]);
+
+		if (g_ping_data_size < 1) {
+			g_ping_data_size = PING_DATA_SIZE;
+			printf("Invaild data : data size set to default value %d\n", g_ping_data_size);
+		}
+
+		if (count < 1) {
+			count = PING_MAX_TRY_COUNTER;
+			printf("Invaild data : max counter set to default value %d\n", count);
+		}
+	}
+
 	ret = nu_ping_process(count, staddr);
 	if (ret < 0) {
 		return ERROR;
