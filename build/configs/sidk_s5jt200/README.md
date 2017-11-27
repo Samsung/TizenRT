@@ -118,19 +118,19 @@ Before executing below steps, execute [generic steps](../../../tools/fs/README_R
     where romfs device is a ftl mtd block device and romfs filesystem will be mounted on ftl mtd device "/dev/mtdblockX"
     1. Split last partition size to (256, 256) in SIDK_S5JT200_FLASH_PART_LIST
         ```bash
-        Board Selection -> change values at Flash partition size list (in KBytes)
+        Hardware Configuration -> Board Selection -> change values at Flash partition size list (in KBytes)
         ```
     2. Append "romfs," at end to SIDK_S5JT200_FLASH_PART_TYPE
         ```bash
-        Board Selection -> append string at Flash partition type list
+        Hardware Configuration -> Board Selection -> append string at Flash partition type list
         ```
     3. Append "rom," at end to SIDK_S5JT200_FLASH_PART_NAME
         ```bash
-        Board Selection -> append string at FLash partition name list
+        Hardware Configuration -> Board Selection -> append string at FLash partition name list
         ```
 4. Enable auto-mount config.
     ```bash
-    Board Selection -> Automount partitions -> Automount ROM read only partition to y
+    Hardware Configuration -> Board Selection -> Automount partitions -> Automount ROM read only partition to y
     ```
 
 After above two steps, build Tizen RT and program a Tizen RT binary through above [method](#how-to-program-a-binary).

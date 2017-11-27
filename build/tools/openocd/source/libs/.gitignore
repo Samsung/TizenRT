@@ -1,0 +1,7 @@
+/build
+/hidapi
+/libconfuse
+/libftdi
+/libusb
+/libusb-compat-0.1
+/openocd

@@ -1,0 +1,101 @@
+From 2ce4741cc5b03369746863a6dd3a3288ba329e18 Mon Sep 17 00:00:00 2001
+From: Jihun Ahn <jhun.ahnn@gmail.com>
+Date: Thu, 31 Aug 2017 02:50:14 +0900
+Subject: [PATCH] change build target shared to static librarya
+
+Signed-off-by: Jihun Ahn <jhun.ahnn@gmail.com>
+---
+ ftdipp/CMakeLists.txt | 21 +++++++--------------
+ src/CMakeLists.txt    | 19 +++++++------------
+ 2 files changed, 14 insertions(+), 26 deletions(-)
+
+diff --git a/ftdipp/CMakeLists.txt b/ftdipp/CMakeLists.txt
+index 27fbe8d..6483bb5 100644
+--- a/ftdipp/CMakeLists.txt
++++ b/ftdipp/CMakeLists.txt
+@@ -24,7 +24,7 @@ if (FTDIPP)
+     message(STATUS "Building libftdi1++")
+ 
+     # Shared library
+-    add_library(ftdipp1 SHARED ${cpp_sources})
++    add_library(ftdipp1 STATIC ${cpp_sources})
+ 
+     math(EXPR VERSION_FIXUP "${MAJOR_VERSION} + 1")    # Compatiblity with previous releases
+     set_target_properties(ftdipp1 PROPERTIES VERSION ${VERSION_FIXUP}.${MINOR_VERSION}.0 SOVERSION 3)
+@@ -35,24 +35,17 @@ if (FTDIPP)
+     # Dependencies
+     target_link_libraries(ftdipp1 ftdi1 ${LIBUSB_LIBRARIES} ${BOOST_LIBRARIES})
+ 
+-    
++    if (${CMAKE_SYSTEM_NAME} STREQUAL "Linux")
++      target_link_libraries(ftdipp1 libudev.so)
++      target_link_libraries(ftdipp1 libpthread.so)
++    endif()
++
+     install ( TARGETS ftdipp1
+               RUNTIME DESTINATION bin
+               LIBRARY DESTINATION lib${LIB_SUFFIX}
+               ARCHIVE DESTINATION lib${LIB_SUFFIX}
++              COMPONENT staticlibs
+             )
+-            
+-    # Static library
+-    if ( STATICLIBS )
+-      add_library(ftdipp1-static STATIC ${cpp_sources})
+-      set_target_properties(ftdipp1-static PROPERTIES OUTPUT_NAME "ftdipp1")
+-      set_target_properties(ftdipp1-static PROPERTIES CLEAN_DIRECT_OUTPUT 1)
+-
+-      install ( TARGETS ftdipp1-static
+-                ARCHIVE DESTINATION lib${LIB_SUFFIX}
+-                COMPONENT staticlibs
+-              )
+-    endif ()
+ 
+     install ( FILES ${cpp_headers}
+               DESTINATION include/${PROJECT_NAME}
+diff --git a/src/CMakeLists.txt b/src/CMakeLists.txt
+index 9fd86a6..89da1d4 100644
+--- a/src/CMakeLists.txt
++++ b/src/CMakeLists.txt
+@@ -21,7 +21,7 @@ configure_file(ftdi_version_i.h.in "${CMAKE_CURRENT_BINARY_DIR}/ftdi_version_i.h
+ set(c_sources     ${CMAKE_CURRENT_SOURCE_DIR}/ftdi.c ${CMAKE_CURRENT_SOURCE_DIR}/ftdi_stream.c CACHE INTERNAL "List of c sources" )
+ set(c_headers     ${CMAKE_CURRENT_SOURCE_DIR}/ftdi.h CACHE INTERNAL "List of c headers" )
+ 
+-add_library(ftdi1 SHARED ${c_sources})
++add_library(ftdi1 STATIC ${c_sources})
+ 
+ math(EXPR VERSION_FIXUP "${MAJOR_VERSION} + 1")    # Compatiblity with previous releases
+ set_target_properties(ftdi1 PROPERTIES VERSION ${VERSION_FIXUP}.${MINOR_VERSION}.0 SOVERSION 2)
+@@ -32,23 +32,18 @@ set_target_properties ( ftdi1 PROPERTIES CLEAN_DIRECT_OUTPUT 1 )
+ # Dependencies
+ target_link_libraries(ftdi1 ${LIBUSB_LIBRARIES})
+ 
++if (${CMAKE_SYSTEM_NAME} STREQUAL "Linux")
++  target_link_libraries(ftdi1 libudev.so)
++  target_link_libraries(ftdi1 libpthread.so)
++endif()
++
+ install ( TARGETS ftdi1
+           RUNTIME DESTINATION bin
+           LIBRARY DESTINATION lib${LIB_SUFFIX}
+           ARCHIVE DESTINATION lib${LIB_SUFFIX}
++          COMPONENT staticlibs
+         )
+ 
+-if ( STATICLIBS )
+-  add_library(ftdi1-static STATIC ${c_sources})
+-  target_link_libraries(ftdi1-static ${LIBUSB_LIBRARIES})
+-  set_target_properties(ftdi1-static PROPERTIES OUTPUT_NAME "ftdi1")
+-  set_target_properties(ftdi1-static PROPERTIES CLEAN_DIRECT_OUTPUT 1)
+-  install ( TARGETS ftdi1-static
+-            ARCHIVE DESTINATION lib${LIB_SUFFIX}
+-            COMPONENT staticlibs
+-          )
+-endif ()
+-
+ install ( FILES ${c_headers}
+           DESTINATION include/${PROJECT_NAME}
+           COMPONENT headers
+-- 
+2.14.1
+
