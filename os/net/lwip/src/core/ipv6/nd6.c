@@ -2411,7 +2411,9 @@ static u8_t nd6_prefix_lifetime_isvalid(const struct nd6_prefix_list_entry *pref
 	if (prefix_entry == NULL)
 		return 0;
 
-	if ((lifetime_ms > prefix_entry->invalidation_timer) || (lifetime_ms > TIME_HOUR_TO_MS(2))) {
+	if ((lifetime_ms > prefix_entry->invalidation_timer) ||
+	    (lifetime_ms > TIME_HOUR_TO_MS(2)) ||
+	    (lifetime_ms == 0)) {
 		return 1;
 	}
 
