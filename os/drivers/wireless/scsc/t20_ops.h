@@ -32,12 +32,17 @@
 #define SLSI_P2P_OUI_PATTERN                    0x099a6f50
 #define SLSI_VENDOR_OUI_AND_TYPE_LEN            4
 
+struct slsi_drv_interface {
+	char ifname[IFNAMSIZ + 1];
+	struct netif *dev;
+	struct slsi_dev *sdev;
+
+};
+
 struct slsi_t20_drv {
 	void *global;
-	void *ctx;
-	struct slsi_dev *sdev;
-	char ifname[IFNAMSIZ + 1];
 	struct wpa_driver_capa capa;
+	struct slsi_drv_interface supp_iface[CONFIG_SCSC_WLAN_MAX_INTERFACES + 1];
 };
 
 struct slsi_dev *slsi_new(void);

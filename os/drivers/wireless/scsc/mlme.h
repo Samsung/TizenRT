@@ -43,7 +43,7 @@ enum slsi_ac_index_wmm_pe {
 
 #define SLSI_SCAN_DONE_IND_WAIT_TIMEOUT 40000	/* 40 seconds */
 
-#ifdef CONFIG_SCSC_ENABLE_P2P
+#ifdef CONFIG_SLSI_WLAN_P2P
 /* P2P (Wi-Fi Direct) */
 #define SLSI_P2P_WILDCARD_SSID "DIRECT-"
 #define SLSI_P2P_WILDCARD_SSID_LENGTH 7
@@ -103,7 +103,11 @@ struct slsi_mlme_pkt_filter_elem {
 };
 
 u16 slsi_get_chann_info(struct slsi_dev *sdev, struct hostapd_freq_params *chandef);
+#ifdef CONFIG_SCSC_ADV_FEATURE
+
 int slsi_check_channelization(struct slsi_dev *sdev, struct slsi_80211_chan_def *chandef);
+#endif
+
 #ifndef CONFIG_SCSC_WLAN_BLOCK_IPV6
 int slsi_mlme_set_ipv6_address(struct slsi_dev *sdev, struct netif *dev);
 #endif
@@ -112,7 +116,7 @@ int slsi_mlme_get(struct slsi_dev *sdev, struct netif *dev, u8 *req, int req_len
 
 int slsi_mlme_add_vif(struct slsi_dev *sdev, struct netif *dev, u8 *interface_address, u8 *device_address);
 void slsi_mlme_del_vif(struct slsi_dev *sdev, struct netif *dev);
-int slsi_mlme_set_channel(struct slsi_dev *sdev, struct netif *dev, struct slsi_80211_channel *chan, u16 duration, u16 interval, u16 count);
+int slsi_mlme_set_channel(struct slsi_dev *sdev, struct netif *dev, unsigned int freq, u16 duration, u16 interval, u16 count);
 const u8 *slsi_80211_find_ie(u8 eid, const u8 *ies, int len);
 u8 *slsi_80211_find_ie_mod(u8 eid, u8 *ies, int len);
 const u8 *slsi_80211_find_vendor_ie(unsigned int oui, u8 oui_type, const u8 *ies, int len);
@@ -155,11 +159,10 @@ int slsi_mlme_powermgt(struct slsi_dev *sdev, struct netif *dev, u16 ps_mode);
 int slsi_mlme_powermgt_unlocked(struct slsi_dev *sdev, struct netif *dev, u16 ps_mode);
 #endif
 int slsi_mlme_register_action_frame(struct slsi_dev *sdev, struct netif *dev, u32 af_bitmap_active, u32 af_bitmap_suspended);
-int slsi_mlme_channel_switch(struct slsi_dev *sdev, struct netif *dev, u16 center_freq, u16 chan_info);
 int slsi_mlme_add_info_elements(struct slsi_dev *sdev, struct netif *dev, u16 purpose, const u8 *ies, const u16 ies_len);
 int slsi_mlme_send_frame_mgmt(struct slsi_dev *sdev, struct netif *dev, const u8 *frame, int frame_len, u16 data_desc, u16 msg_type, u16 host_tag, u16 freq, u32 dwell_time, u32 period);
 int slsi_mlme_send_frame_data(struct slsi_dev *sdev, struct netif *dev, struct max_buff *mbuf, u16 msg_type);
-#ifdef CONFIG_SCSC_ENABLE_P2P
+#ifdef CONFIG_SLSI_WLAN_P2P
 int slsi_mlme_reset_dwell_time(struct slsi_dev *sdev, struct netif *dev);
 #endif
 int slsi_mlme_set_packet_filter(struct slsi_dev *sdev, struct netif *dev, int pkt_filter_len, u8 num_filters, struct slsi_mlme_pkt_filter_elem *pkt_filter_elems);
@@ -169,9 +172,9 @@ int slsi_mlme_set_pmk(struct slsi_dev *sdev, struct netif *dev, const u8 *pmk, u
 #ifdef CONFIG_SCSC_ADV_FEATURE
 void slsi_ap_obss_scan_done_ind(struct netif *dev, struct netdev_vif *ndev_vif);
 int slsi_mlme_set_acl(struct slsi_dev *sdev, struct netif *dev, const struct cfg80211_acl_data *params);
-#endif
 int slsi_mlme_blockack_control_req(struct slsi_dev *sdev, struct netif *dev, u16 blockack_control_bitmap, u16 direction, const u8 *peer_sta_address);
-
+#endif
+void sisi_update_supported_channels(struct slsi_dev *sdev);
 int slsi_mlme_set_ext_capab(struct slsi_dev *sdev, struct netif *dev, struct slsi_mib_value *mib_val);
 int slsi_mlme_set_iw_ext_cap(struct slsi_dev *sdev, struct netif *dev, const u8 *ies, int ie_len);
 int slsi_modify_ies(struct netif *dev, u8 eid, u8 *ies, int ies_len, u8 ie_index, u8 ie_value);

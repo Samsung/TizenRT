@@ -158,7 +158,7 @@ static struct mbulk *mbulk_seg_generic_alloc(struct mbulk_pool *pool, enum mbulk
 	}
 
 	/* signal buffer */
-	m->sig_bufsz = (mbulk_len_t)sig_bufsz;
+	m->sig_bufsz = (mbulk_len_t) sig_bufsz;
 	if (sig_bufsz) {
 		m->flag = MBULK_F_SIG;
 	}
@@ -174,7 +174,7 @@ static struct mbulk *mbulk_seg_generic_alloc(struct mbulk_pool *pool, enum mbulk
 		m->dat_bufsz = pool->seg_size - m->sig_bufsz;
 		m->refcnt = 1;
 	} else {
-		m->dat_bufsz = (mbulk_len_t)dat_bufsz;
+		m->dat_bufsz = (mbulk_len_t) dat_bufsz;
 		m->refcnt = 1;
 	}
 

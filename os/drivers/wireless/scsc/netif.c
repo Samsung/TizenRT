@@ -27,10 +27,17 @@
 #include <tinyara/kmalloc.h>
 #include <tinyara/clock.h>
 #include <tinyara/net/net.h>
-//#include <tinyara/net/arp.h>
+#include <net/if.h>
+#include <net/lwip/sockets.h>
+#include <netinet/arp.h>
 #include <arpa/inet.h>
 #include <net/lwip/netif/etharp.h>
+#ifdef CONFIG_NET_IPv6
+#include <net/lwip/ethip6.h>
+#endif
+#ifdef CONFIG_NET_LWIP_IGMP
 #include <net/lwip/ipv4/igmp.h>
+#endif
 
 #include "debug_scsc.h"
 #include "netif.h"
@@ -63,30 +70,31 @@ static int slsi_net_open(struct netif *dev)
 		return err;
 	}
 
-	if (!sdev->netdev_up_count) {
+	if (ndev_vif->ifnum == SLSI_NET_INDEX_WLAN) {
 		slsi_get_hw_mac_address(sdev, sdev->hw_addr);
 		SLSI_INFO(sdev, "Configure MAC address to [" SLSI_MAC_FORMAT "]\n", SLSI_MAC_STR(sdev->hw_addr));
 
 		/* Assign Addresses */
 		SLSI_ETHER_COPY(sdev->netdev_addresses[SLSI_NET_INDEX_WLAN], sdev->hw_addr);
-#ifdef CONFIG_SCSC_ENABLE_P2P
+		SLSI_ETHER_COPY(dev->d_mac.ether_addr_octet, sdev->netdev_addresses[SLSI_NET_INDEX_WLAN]);
+		memcpy(dev->hwaddr, sdev->hw_addr, ETHARP_HWADDR_LEN);
+	}
+#ifdef CONFIG_SLSI_WLAN_P2P
+	else if (ndev_vif->ifnum == SLSI_NET_INDEX_P2P) {
 		SLSI_ETHER_COPY(sdev->netdev_addresses[SLSI_NET_INDEX_P2P], sdev->hw_addr);
 		sdev->netdev_addresses[SLSI_NET_INDEX_P2P][0] |= 0x02;	/* Set the local bit */
-
 		SLSI_ETHER_COPY(sdev->netdev_addresses[SLSI_NET_INDEX_P2PX], sdev->hw_addr);
 		sdev->netdev_addresses[SLSI_NET_INDEX_P2PX][0] |= 0x02;	/* Set the local bit */
 		sdev->netdev_addresses[SLSI_NET_INDEX_P2PX][4] ^= 0x80;	/* EXOR 5th byte with 0x80 */
-#endif
+		SLSI_ETHER_COPY(dev->d_mac.ether_addr_octet, sdev->netdev_addresses[SLSI_NET_INDEX_P2P]);
+		memcpy(dev->hwaddr, sdev->netdev_addresses[SLSI_NET_INDEX_P2P], ETHARP_HWADDR_LEN);
 	}
-
-	SLSI_ETHER_COPY(dev->d_mac.ether_addr_octet, sdev->netdev_addresses[SLSI_NET_INDEX_WLAN]);
+#endif
 	SLSI_MUTEX_LOCK(ndev_vif->vif_mutex);
 	ndev_vif->is_available = true;
 	sdev->netdev_up_count++;
-
 	SLSI_MUTEX_UNLOCK(ndev_vif->vif_mutex);
 
-	memcpy(dev->hwaddr, sdev->hw_addr, ETHARP_HWADDR_LEN);
 	dev->flags |= NETIF_FLAG_ETHARP | NETIF_FLAG_ETHERNET | NETIF_FLAG_BROADCAST | NETIF_FLAG_IGMP;
 
 	/* Put the network interface in the UP state */
@@ -95,9 +103,11 @@ static int slsi_net_open(struct netif *dev)
 
 	/* Send interface enabled event to supplicant if it is present. This could happen if ifdown-ifup is done
 	 * explicilty while supplicant is running */
-	if (sdev->drv != NULL) {
-		wpa_supplicant_event_send(sdev->drv->ctx, EVENT_INTERFACE_ENABLED, NULL);
+#ifdef CONFIG_WPA_SUPPLICANT
+	if (ndev_vif->ctx != NULL) {
+		wpa_supplicant_event_send(ndev_vif->ctx, EVENT_INTERFACE_ENABLED, NULL);
 	}
+#endif
 
 	return 0;
 }
@@ -108,7 +118,6 @@ static int slsi_net_stop(struct netif *dev)
 	struct slsi_dev *sdev = ndev_vif->sdev;
 
 	SLSI_NET_DBG1(dev, SLSI_NETDEV, "\n");
-
 	/* Put the network interface in the DOWN state */
 	netif_set_down(dev);
 
@@ -121,9 +130,11 @@ static int slsi_net_stop(struct netif *dev)
 	slsi_stop_net_dev(sdev, dev);
 
 	/* Send interface disabled event to supplicant if ifdown is not triggered by it */
-	if ((sdev->is_supplicant_deinit != 1) && (sdev->drv != NULL)) {
-		wpa_supplicant_event_send(sdev->drv->ctx, EVENT_INTERFACE_DISABLED, NULL);
+#ifdef CONFIG_WPA_SUPPLICANT
+	if ((sdev->is_supplicant_deinit != 1) && (ndev_vif->ctx != NULL)) {
+		wpa_supplicant_event_send(ndev_vif->ctx, EVENT_INTERFACE_DISABLED, NULL);
 	}
+#endif
 
 	/* Free country list allocated during slsi_start */
 	slsi_regd_deinit(sdev);
@@ -225,7 +236,7 @@ enum slsi_traffic_q slsi_frame_priority_to_ac_queue(u16 priority)
 	}
 }
 
-int slsi_ac_to_tids(enum slsi_traffic_q ac, int *tids)
+	int slsi_ac_to_tids(enum slsi_traffic_q ac, int *tids)
 {
 	switch (ac) {
 	case SLSI_TRAFFIC_Q_BE:
@@ -332,16 +343,21 @@ static u16 slsi_net_select_queue(struct netif *dev, struct max_buff *mbuf)
 int eth_send_eapol(const u8 *src, const u8 *dst, const u8 *buf, u16 len, u16 proto)
 {
 	struct max_buff *mbuf = NULL;
-	int alloc_size;
+	int alloc_size, i;
 	struct slsi_dev *sdev = cm_ctx.sdev;
-	struct netif *dev;
+	struct netif *dev = NULL;
 	struct netdev_vif *ndev_vif;
 
 	if (!sdev) {
 		SLSI_ERR_NODEV("sdev not available\n");
 		return -EINVAL;
 	}
-	dev = slsi_get_netdev(sdev, SLSI_NET_INDEX_WLAN);
+
+	for (i = 0; i <= CONFIG_SCSC_WLAN_MAX_INTERFACES; i++) {
+		if (memcmp(src, sdev->netdev_addresses[i], ETH_ALEN) == 0) {
+			dev = sdev->netdev[i];
+		}
+	}
 
 	if (!dev) {
 		SLSI_ERR_NODEV("dev not available\n");
@@ -484,6 +500,7 @@ exit:
 				  (u8)(ip)[2], \
 				  (u8)(ip)[3] \
 }
+#ifdef CONFIG_NET_LWIP_IGMP
 static err_t slsi_set_multicast_list(struct netif *dev, ip_addr_t *group, u8_t action)
 {
 	struct netdev_vif *ndev_vif = netdev_priv(dev);
@@ -507,6 +524,7 @@ static err_t slsi_set_multicast_list(struct netif *dev, ip_addr_t *group, u8_t a
 		return slsi_clear_packet_filters(sdev, dev);
 	}
 }
+#endif
 
 static struct netif *slsi_alloc_netdev(int sizeof_priv)
 {
@@ -532,7 +550,12 @@ static struct netif *slsi_alloc_netdev(int sizeof_priv)
 	dev->d_ifdown = slsi_net_stop;
 	dev->linkoutput = slsi_linkoutput;
 	dev->output = etharp_output;
+#ifdef CONFIG_NET_IPv6
+	dev->output_ip6 = ethip6_output;
+#endif
+#ifdef CONFIG_NET_LWIP_IGMP
 	dev->igmp_mac_filter = slsi_set_multicast_list;
+#endif
 #ifdef CONFIG_NETDEV_PHY_IOCTL
 	dev->d_ioctl = slsi_net_ioctl;
 #endif
@@ -618,9 +641,9 @@ static int slsi_netif_add_locked(struct slsi_dev *sdev, int ifnum)
 
 	SLSI_INFO_NODEV("ifnum=%d\n", ndev_vif->ifnum);
 
-#ifdef CONFIG_SCSC_ENABLE_P2P
+#ifdef CONFIG_SLSI_WLAN_P2P
 	/* For p2p0 interface */
-	else if (SLSI_IS_VIF_INDEX_P2P(ndev_vif)) {
+	if (SLSI_IS_VIF_INDEX_P2P(ndev_vif)) {
 		ret = slsi_p2p_init(sdev, ndev_vif);
 		if (ret) {
 			goto exit_with_error;
@@ -674,6 +697,7 @@ int slsi_netif_add(struct slsi_dev *sdev, const char *name)
 			index = err;
 		}
 	}
+	SLSI_DBG3(sdev, SLSI_NETDEV, "Index = %d\n", index);
 	SLSI_MUTEX_UNLOCK(sdev->netdev_add_remove_mutex);
 	return index;
 }
@@ -690,10 +714,16 @@ int slsi_netif_init(struct slsi_dev *sdev)
 		SLSI_MUTEX_UNLOCK(sdev->netdev_add_remove_mutex);
 		return -EINVAL;
 	}
-#ifdef CONFIG_SCSC_ENABLE_P2P
+#ifdef CONFIG_SLSI_WLAN_P2P
 	if (slsi_netif_add_locked(sdev, SLSI_NET_INDEX_P2P) != 0) {
-		slsi_netif_remove(sdev, sdev->netdev[SLSI_NET_INDEX_WLAN]);
 		SLSI_MUTEX_UNLOCK(sdev->netdev_add_remove_mutex);
+		slsi_netif_remove(sdev, sdev->netdev[SLSI_NET_INDEX_WLAN]);
+		return -EINVAL;
+	}
+	if (slsi_netif_add_locked(sdev, SLSI_NET_INDEX_P2PX) != 0) {
+		SLSI_MUTEX_UNLOCK(sdev->netdev_add_remove_mutex);
+		slsi_netif_remove(sdev, sdev->netdev[SLSI_NET_INDEX_WLAN]);
+		slsi_netif_remove(sdev, sdev->netdev[SLSI_NET_INDEX_P2P]);
 		return -EINVAL;
 	}
 #endif
@@ -717,6 +747,9 @@ static int slsi_netif_register_locked(struct slsi_dev *sdev, struct netif *dev)
 	}
 
 	up_wlan_init(dev);
+	ndev_vif->is_registered = true;
+
+	SLSI_INFO_NODEV("WLAN interface name: %s\n", dev->d_ifname);
 
 	return err;
 }
@@ -755,7 +788,7 @@ static void slsi_netif_remove_locked(struct slsi_dev *sdev, struct netif *dev)
 			ndev_vif->peer_sta_record[queueset] = NULL;
 		}
 	}
-#ifdef CONFIG_SCSC_ENABLE_P2P
+#ifdef CONFIG_SLSI_WLAN_P2P
 	if (SLSI_IS_VIF_INDEX_P2P(ndev_vif)) {
 		slsi_p2p_deinit(sdev, ndev_vif);
 	}
@@ -763,8 +796,9 @@ static void slsi_netif_remove_locked(struct slsi_dev *sdev, struct netif *dev)
 	if (SLSI_IS_VIF_INDEX_WLAN(ndev_vif)) {
 		ndev_vif->vif_type = SLSI_VIFTYPE_UNSPECIFIED;
 	}
-
-	work_cancel(SCSC_WORK, &ndev_vif->scan_timeout_work);
+	if (slsi_is_work_pending(&ndev_vif->scan_timeout_work)) {
+		work_cancel(SCSC_WORK, &ndev_vif->scan_timeout_work);
+	}
 
 	slsi_mbuf_work_deinit(&ndev_vif->rx_data);
 	slsi_mbuf_work_deinit(&ndev_vif->rx_mlme);

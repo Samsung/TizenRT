@@ -21,6 +21,7 @@
 #include "tinyara_wrapper.h"
 #include "utils_scsc.h"
 #include "utils_misc.h"
+#include "debug_scsc.h"
 
 /**
  * wait_for_completion_timeout: - waits for completion of a task (w/timeout)
@@ -51,8 +52,7 @@ unsigned long wait_for_completion_timeout(struct completion *x, unsigned long ti
 			timeout.tv_nsec -= NSEC_PER_SEC;
 		}
 		while (sem_timedwait(&x->sem, &timeout) != 0) {
-			ret = get_errno();
-			if (ret == ETIMEDOUT) {
+			if (get_errno() == ETIMEDOUT) {
 				ret = 1;
 				break;
 			}
@@ -72,7 +72,12 @@ unsigned long wait_for_completion_timeout(struct completion *x, unsigned long ti
 
 void wait_for_completion(struct completion *x)
 {
-	wait_for_completion_timeout(x, 0);
+	int ret;
+
+	ret = wait_for_completion_timeout(x, 0);
+	if (ret != 1) {
+		SLSI_DBG1_NODEV(SLSI_MLME, "wait_for_completion: ret(%d)\n", ret);
+	}
 }
 
 /**
@@ -85,7 +90,13 @@ void wait_for_completion(struct completion *x)
  */
 int wait_for_completion_interruptible(struct completion *x)
 {
-	wait_for_completion_timeout(x, 0);
+	int ret;
+
+	ret = wait_for_completion_timeout(x, 0);
+	if (ret != 1) {
+		SLSI_DBG1_NODEV(SLSI_MLME, "wait_for_completion_interruptible: ret(%d)\n", ret);
+	}
+
 	return 0;
 }
 
@@ -120,4 +131,12 @@ void *copy_from_user(void *dest, const void *src, size_t n)
 {
 	memcpy(dest, src, n);
 	return 0;
+}
+
+/*
+ * Returns true if the work is pending else returns false.
+ */
+bool slsi_is_work_pending(struct work_s *work)
+{
+	return (work_available(work) == true) ? false : true;
 }

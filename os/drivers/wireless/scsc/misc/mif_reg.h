@@ -144,6 +144,11 @@ struct peterson_mutex {
 #define WIFI_IRAM_MEM_BASE              0x2020	/* Base address for iRAM mappings */
 #define WIFI_IMEM_SIZE                  0x800	/* Mapped flash region up to the top of the iram_shared block (8 MB) */
 
+#ifdef CONFIG_SLSI_WLAN_HCF_ENABLE
+#define WLAN_MIB_HCF_ADDR	(WLAN_FW_LOAD_ADDR + CONFIG_SLSI_WLAN_FW_SIZE)
+#define WLAN_HCF_HEADER	(8)
+#endif
+
 /* Power down registers */
 #define CLEANY_BUS_WIFI_SYS_PWR_REG ((void *)(PMU_ALIVE_BASE + 0x1324))	/* Control power state in LOWPWR mode 1 - on, 0 - down */
 #define LOGIC_RESET_WIFI_SYS_PWR_REG ((void *)(PMU_ALIVE_BASE + 0x1328))	/* Control power state in LOWPWR mode 1 - on, 0 - down */

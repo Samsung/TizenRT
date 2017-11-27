@@ -31,6 +31,14 @@
 #define SLSI_80211_TYPE_CTRL             0x0004
 #define SLSI_80211_TYPE_DATA            0x0008
 
+/* for ht_param */
+#define SLSI_80211_HT_PARAM_CHA_SEC_OFFSET		0x03
+#define		SLSI_80211_HT_PARAM_CHA_SEC_NONE		0x00
+#define		SLSI_80211_HT_PARAM_CHA_SEC_ABOVE	0x01
+#define		SLSI_80211_HT_PARAM_CHA_SEC_BELOW	0x03
+#define SLSI_80211_HT_PARAM_CHAN_WIDTH_ANY		0x04
+#define SLSI_80211_HT_PARAM_RIFS_MODE			0x08
+
 /* Management Frames */
 #define SLSI_80211_SUBTYPE_ASSOC_REQ       0x0000
 #define SLSI_80211_SUBTYPE_ASSOC_RESP      0x0010
@@ -120,7 +128,7 @@ enum slsi_80211_iftype {
 	SLSI_80211_IFTYPE_AP,
 	SLSI_80211_IFTYPE_P2P_CLIENT,
 	SLSI_80211_IFTYPE_P2P_GO,
-	SLSI_80211_IFTYPE_P2P_DEVICE,
+	SLSI_80211_IFTYPE_P2P_GROUP,
 };
 
 enum slsi_80211_chan_width {
@@ -225,7 +233,6 @@ enum slsi_80211_reg_rule_flags {
 
 #define SLSI_80211_RRF_PASSIVE_SCAN SLSI_80211_RRF_NO_IR
 #define SLSI_80211_RRF_NO_IBSS      SLSI_80211_RRF_NO_IR
-#define SLSI_80211_RRF_NO_IR        SLSI_80211_RRF_NO_IR
 #define SLSI_80211_RRF_NO_HT40      (SLSI_80211_RRF_NO_HT40MINUS | \
 				     SLSI_80211_RRF_NO_HT40PLUS)
 
@@ -242,6 +249,9 @@ enum slsi_80211_reg_rule_flags {
 #define SLSI_80211_HT_CAP_RESERVED      0x2000
 #define SLSI_80211_HT_CAP_40MHZ_INTOLERANT  0x4000
 
+#define SLSI_80211_HEADER_LENGTH        24
+#define SLSI_80211_MGMT_FRAME_CTRL_ACTION   0x00D0
+
 enum wpa_alg {
 	SLSI_WPA_ALG_NONE,
 	SLSI_WPA_ALG_WEP,
@@ -251,6 +261,55 @@ enum wpa_alg {
 	SLSI_WPA_ALG_PMK,
 	SLSI_WPA_ALG_GCMP,
 	SLSI_WPA_ALG_SMS4
+};
+
+enum wpa_driver_if_type {
+	/**
+	 * WPA_IF_STATION - Station mode interface
+	 */
+	WPA_IF_STATION,
+
+	/**
+	 * WPA_IF_AP_VLAN - AP mode VLAN interface
+	 *
+	 * This interface shares its address and Beacon frame with the main
+	 * BSS.
+	 */
+	WPA_IF_AP_VLAN,
+
+	/**
+	 * WPA_IF_AP_BSS - AP mode BSS interface
+	 *
+	 * This interface has its own address and Beacon frame.
+	 */
+	WPA_IF_AP_BSS,
+
+	/**
+	 * WPA_IF_P2P_GO - P2P Group Owner
+	 */
+	WPA_IF_P2P_GO,
+
+	/**
+	 * WPA_IF_P2P_CLIENT - P2P Client
+	 */
+	WPA_IF_P2P_CLIENT,
+
+	/**
+	 * WPA_IF_P2P_GROUP - P2P Group interface (will become either
+	 * WPA_IF_P2P_GO or WPA_IF_P2P_CLIENT, but the role is not yet known)
+	 */
+	WPA_IF_P2P_GROUP,
+
+	/**
+	 * WPA_IF_P2P_DEVICE - P2P Device interface is used to indentify the
+	 * abstracted P2P Device function in the driver
+	 */
+	WPA_IF_P2P_DEVICE,
+
+	/*
+	 * WPA_IF_MESH - Mesh interface
+	 */
+	WPA_IF_MESH,
 };
 
 /*
@@ -309,6 +368,7 @@ struct slsi_80211_channel {
 	u16 hw_value;
 	u32 flags;
 } STRUCT_PACKED;
+#ifdef CONFIG_SCSC_ADV_FEATURE
 
 /**
  * struct slsi_80211_chan_def - channel definition
@@ -325,6 +385,7 @@ struct slsi_80211_chan_def {
 	u32 center_freq2;
 };
 
+#endif
 struct slsi_80211_rate {
 	u32 flags;
 	u16 bitrate;
@@ -403,6 +464,31 @@ struct slsi_80211_mgmt {
 			__le16 capab_info;
 			u8 variable[0];
 		} STRUCT_PACKED probe_resp;
+		struct {
+			u8 category;
+			union {
+				struct {
+					u8 action_code;
+					u8 variable[0];
+				} __packed chan_switch;
+				struct {
+					u8 action_code;
+					//struct ieee80211_ext_chansw_ie data;
+					u8 variable[0];
+				} __packed ext_chan_switch;
+				struct {
+					u8 action;
+					u8 variable[];
+				} __packed public_action;
+				struct {
+					u8 action;	/* 9 */
+					u8 oui[3];
+					/* Vendor-specific content */
+					u8 variable[];
+				} __packed vs_public_action;
+			} u;
+		} STRUCT_PACKED action;
+
 		struct {
 			__le16 auth_alg;
 			__le16 auth_transaction;

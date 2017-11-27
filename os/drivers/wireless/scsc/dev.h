@@ -42,6 +42,7 @@
 #include "hip4.h"
 #include "wlan_80211_utils.h"
 #include "tinyara_wrapper.h"
+#include "mxman.h"
 #ifdef CONFIG_SLSI_WLAN_STATS
 #include "stats.h"
 #endif
@@ -224,9 +225,8 @@ struct slsi_peer {
 /* Used to update vif type on vif deactivation indicating vif is no longer available */
 #define SLSI_VIFTYPE_UNSPECIFIED   0xFFFF
 
-#ifdef CONFIG_SCSC_ENABLE_P2P
+#ifdef CONFIG_SLSI_WLAN_P2P
 struct slsi_vif_mgmt_tx {
-	u64 cookie;					/* Cookie assigned by Host for the tx mgmt frame */
 	u16 host_tag;				/* Host tag for the tx mgmt frame */
 	const u8 *buf;				/* Buffer - Mgmt frame requested for tx */
 	size_t buf_len;				/* Buffer length */
@@ -318,7 +318,7 @@ enum slsi_filter_id {
  *
  * Used to indicate the status of an activated VIF, to help resolve
  * conflicting activities with indications from the firmware eg.
- * cfg80211 triggers a disconnection before a STA completes its
+ * upper layer triggers a disconnection before a STA completes its
  * connection to an AP.
  */
 #define SLSI_VIF_STATUS_UNSPECIFIED   0
@@ -341,15 +341,13 @@ struct slsi_vif_sta {
 	bool group_key_set;
 };
 
-#ifdef CONFIG_SCSC_ENABLE_P2P
+#ifdef CONFIG_SLSI_WLAN_P2P
 struct slsi_vif_unsync {
-	//struct delayed_work roc_expiry_work;   /* Work on ROC duration expiry */
-	//struct delayed_work del_vif_work;      /* Work on unsync vif retention timeout */
-	u64 roc_cookie;				/* Cookie id for ROC */
+	struct work_s roc_expiry_work;	/* Work on ROC duration expiry */
+	struct work_s del_vif_work;	/* Work on unsync vif retention timeout */
 	u8 *probe_rsp_ies;			/* Probe response IEs to be configured in firmware */
 	size_t probe_rsp_ies_len;	/* Probe response IE length */
 	bool ies_changed;			/* To indicate if Probe Response IEs have changed from that previously stored */
-	bool listen_offload;		/* To indicate if Listen Offload is started */
 };
 #endif
 
@@ -361,7 +359,7 @@ struct slsi_vif_ap {
 	size_t wmm_ie_len;
 	size_t wpa_ie_len;
 	size_t add_info_ies_len;
-#ifdef CONFIG_SCSC_ENABLE_P2P
+#ifdef CONFIG_SLSI_WLAN_P2P
 	bool p2p_gc_keys_set;		/* Used in GO mode to identify that a CLI has connected after WPA2 handshake */
 #endif
 	bool privacy;				/* Used for port enabling based on the open/secured AP configuration */
@@ -423,20 +421,25 @@ struct netdev_vif {
 	int ba_flush;
 
 	struct work_s scan_timeout_work;	/* Work on scan timeout */
-#ifdef CONFIG_SCSC_ENABLE_P2P
+#ifdef CONFIG_SLSI_WLAN_P2P
 	u64 mgmt_tx_cookie;			/* Cookie id for mgmt tx */
 	struct slsi_vif_mgmt_tx mgmt_tx_data;
 	struct slsi_vif_unsync unsync;
+#ifdef CONFIG_SCSC_ADV_FEATURE
+	struct slsi_80211_channel *chan;
+#endif
 #endif
 	struct slsi_vif_sta sta;
 	struct slsi_vif_ap ap;
+	struct slsi_drv_interface *ctx;
 };
 
 struct slsi_802_11d_reg_domain {
 	u8 alpha2[3];
 	u8 *countrylist;
-	//struct ieee80211_regdomain *regdomain;
 	int country_len;
+	u32 n_reg_rules;
+	struct slsi_80211_reg_rule reg_rules[];
 };
 
 struct slsi_dev_config {
@@ -481,7 +484,7 @@ struct slsi_dev_config {
 
 	/*QoS capability for a non-AP Station */
 	int qos_info;
-	struct slsi_802_11d_reg_domain domain_info;
+	struct slsi_802_11d_reg_domain *domain_info;
 
 	int ap_disconnect_ind_timeout;
 };
@@ -505,7 +508,7 @@ struct slsi_chip_info_mib {
 	u32 fw_patch_id;
 };
 
-#ifdef CONFIG_SCSC_ENABLE_P2P
+#ifdef CONFIG_SLSI_WLAN_P2P
 /* States used during P2P operations */
 enum slsi_p2p_states {
 	P2P_IDLE_NO_VIF,			/* Initial state - Unsync vif is not present */
@@ -583,9 +586,6 @@ struct slsi_dev {
 
 	/* Configuration */
 	u8 hw_addr[ETH_ALEN];
-	char *mib_file_name;
-	char *local_mib_file_name;
-	char *maddr_file_name;
 	struct max_buff *tx_mbuf;	/* On TinyARA allocating the mbuf during runtime fails */
 #ifdef CONFIG_SLSI_WLAN_STATS
 	struct data_path_stats dp_stats;
@@ -601,7 +601,7 @@ struct slsi_dev {
 	pthread_mutex_t device_config_mutex;
 	struct slsi_dev_config device_config;
 
-#ifdef CONFIG_SCSC_ENABLE_P2P
+#ifdef CONFIG_SLSI_WLAN_P2P
 	enum slsi_p2p_states p2p_state;	/* Store current P2P operation */
 	bool delete_gc_probe_req_ies;	/* Delete probe request stored at  gc_probe_req_ies, if connected for WAP2 at mlme_del_vif */
 	u8 *gc_probe_req_ies;

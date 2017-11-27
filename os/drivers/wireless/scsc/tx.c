@@ -135,7 +135,7 @@ static int slsi_tx_eapol(struct slsi_dev *sdev, struct netif *dev, struct max_bu
 		} else if (eapol[SLSI_EAPOL_IEEE8021X_TYPE_POS] == SLSI_IEEE8021X_TYPE_EAPOL_KEY) {
 			msg_type = FAPI_MESSAGETYPE_EAPOL_KEY_M123;
 
-			if ((eapol[SLSI_EAPOL_TYPE_POS] == SLSI_EAPOL_TYPE_RSN_KEY || eapol[SLSI_EAPOL_TYPE_POS] == SLSI_EAPOL_TYPE_WPA_KEY) && (eapol[SLSI_EAPOL_KEY_INFO_LOWER_BYTE_POS] & SLSI_EAPOL_KEY_INFO_KEY_TYPE_BIT_IN_LOWER_BYTE) && (eapol[SLSI_EAPOL_KEY_INFO_HIGHER_BYTE_POS] & SLSI_EAPOL_KEY_INFO_MIC_BIT_IN_HIGHER_BYTE) && (eapol[SLSI_EAPOL_KEY_DATA_LENGTH_HIGHER_BYTE_POS] == 0) && (eapol[SLSI_EAPOL_KEY_DATA_LENGTH_LOWER_BYTE_POS] == 0)) {
+			if ((eapol[SLSI_EAPOL_TYPE_POS] == SLSI_EAPOL_TYPE_RSN_KEY || eapol[SLSI_EAPOL_TYPE_POS] == SLSI_EAPOL_TYPE_WPA_KEY) && (eapol[SLSI_EAPOL_KEY_INFO_LOWER_BYTE_POS] & SLSI_EAPOL_KEY_INFO_KEY_TYPE_BIT_IN_LOWER_BYTE) && (eapol[SLSI_EAPOL_KEY_INFO_HIGHER_BYTE_POS] & SLSI_EAPOL_KEY_INFO_MIC_BIT_IN_HIGHER_BYTE) && (eapol[SLSI_EAPOL_KEY_INFO_HIGHER_BYTE_POS] ^ SLSI_EAPOL_KEY_INFO_REQUEST_BIT_IN_HIGHER_BYTE) && (eapol[SLSI_EAPOL_KEY_DATA_LENGTH_HIGHER_BYTE_POS] == 0) && (eapol[SLSI_EAPOL_KEY_DATA_LENGTH_LOWER_BYTE_POS] == 0)) {
 				SLSI_NET_DBG1(dev, SLSI_MLME, "message M4\n");
 				msg_type = FAPI_MESSAGETYPE_EAPOL_KEY_M4;
 			}
@@ -276,7 +276,7 @@ int slsi_tx_data(struct slsi_dev *sdev, struct netif *dev, struct max_buff *mbuf
 		return ERR_VAL;
 	}
 
-	/* Align mac_header with mbuf->data */
+	/* Align mac_header with mbuf data */
 	if (mbuf_headroom(mbuf) != mbuf->mac_header) {
 		mbuf_pull(mbuf, mbuf->mac_header - mbuf_headroom(mbuf));
 	}

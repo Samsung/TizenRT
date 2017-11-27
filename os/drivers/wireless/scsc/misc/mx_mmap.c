@@ -45,7 +45,7 @@
 //#define MAX_MEMORY              4194304UL /* 4M maximum memory */
 #define MAX_MEMORY              4096UL
 #define NPOLLWAITERS            2
-unsigned long bitmap_minor[(((SCSC_MAX_INTERFACES) + (64) - 1) / (64))];
+static unsigned long bitmap_minor[(((SCSC_MAX_INTERFACES) + (64) - 1) / (64))];
 struct inode;					/* Forward reference */
 
 /* keep track of how many times it is mmapped */
@@ -556,12 +556,11 @@ int mx_gdb_close(struct file *filp)
 	}
 
 	sem_post(&mx_dev->data_wait);
-	return OK;
 
 	filp->f_priv = NULL;
 	mx_dev->filp = NULL;
 
-	return 0;
+	return OK;
 }
 
 static const struct file_operations mx_gdb_fops = {
@@ -634,7 +633,7 @@ void client_gdb_remove(struct gdb_transport_client *gdb_client, struct gdb_trans
 }
 
 /* Test client driver registration */
-struct gdb_transport_client client_gdb_driver = {
+static struct gdb_transport_client client_gdb_driver = {
 	.name = "GDB client driver",
 	.probe = client_gdb_probe,
 	.remove = client_gdb_remove,

@@ -30,6 +30,14 @@ config SCSC_WLAN_STA_ONLY
 	---help---
 	  Enable only basic STA mode for debugging purposes
 
+config SLSI_WLAN_P2P
+	bool "Support WLAN P2P (WiFi Direct) mode"
+	depends on !SCSC_WLAN_STA_ONLY
+	depends on SLSI_WIFI_P2P_API
+	default n
+	---help---
+	  Enable peer to peer (p2p)/WiFi Direct mode in the system.
+
 config SCSC_WLAN_BLOCK_IPV6
 	bool "Block IPv6"
 	default n
@@ -59,10 +67,33 @@ config SCSC_WLAN_POWER_SAVE
 
 config SCSC_WLAN_MAX_INTERFACES
 	int "Max number of virtual interfaces supported"
-	default 1
+	default 3
 	---help---
 	  The driver structures are sized to support this
 	  number of interfaces.
+
+config SLSI_WLAN_HCF_ENABLE
+        bool "Enable HCF Support"
+        depends on SCSC_WLAN
+        default n
+        ---help---
+          This option enables driver to configure hcf file for firmware.
+
+config SLSI_WLAN_HCF_SIZE
+        hex "Size of HCF bin"
+        depends on SLSI_WLAN_HCF_ENABLE
+        default 0x0
+	---help---
+	  This option is required to be specified when HCF support is enabled.
+	  It provides the size of the hcf bin.
+
+config SLSI_WLAN_FW_SIZE
+        hex "Size of firmware bin"
+        depends on SLSI_WLAN_HCF_ENABLE
+        default 0x0
+	---help---
+	  This option is required to be specified when HCF support is enabled.
+	  It provides the size of the fw bin.
 
 endif
 
@@ -73,13 +104,19 @@ menuconfig SCSC_CORE
 
 if SCSC_CORE
 
+config SCSC_CORE_CM
+	tristate "Samsung SCSC Maxwell driver Core Module"
+
 config SCSC_PLATFORM
-	bool "Samsung SCSC MIF Platform driver implementation"
+	tristate "Samsung SCSC MIF Platform driver implementation"
 	default n
 
 config SCSC_WLANLITE
 	bool "Samsung SCSC WLANLITE driver mode"
 	default n
+
+config SCSC_MMAP
+	tristate "Samsung SCSC MMAP/GDB User space interface"
 
 config SCSC_DISABLE_WLAN_RESET
 	bool "Never power down the Samsung SCSC WLAN CPU"

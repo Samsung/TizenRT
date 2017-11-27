@@ -34,7 +34,7 @@ struct max_buff_head {
 	struct max_buff *next;
 	struct max_buff *prev;
 
-	unsigned int    queue_len;
+	unsigned int queue_len;
 	pthread_mutex_t lock;
 };
 

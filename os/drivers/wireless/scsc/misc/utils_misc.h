@@ -20,6 +20,7 @@
 #define SLSI_UTILS_MISC_H__
 #include <stdint.h>
 #include <string.h>
+#include <stddef.h>
 #include <sys/types.h>
 #include <tinyara/irq.h>
 
@@ -38,6 +39,10 @@
 #include <arch/chip/irq.h>
 #include <tinyara/kmalloc.h>
 #include "utils_scsc.h"
+
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 #define __bitwise
 #define __force         __attribute__((force))
@@ -59,6 +64,15 @@
 #define ETH_P_ARP  0x0806
 
 #define SSID_MAX_LEN 32
+
+struct firmware {
+	size_t size;
+	const u8 *data;
+	//struct page **pages;
+
+	/* firmware loader private fields */
+	void *priv;
+};
 
 static inline void *ERR_PTR(long error)
 {
@@ -121,12 +135,13 @@ static inline int test_bit(int nr, const long unsigned int *addr)
 #ifndef CONFIG_SPINLOCK
 #define spin_lock_irqsave(a, b) \
 	UNUSED(a);  \
-	b = irqsave();
+	b = (unsigned long)irqsave();
 #define spin_unlock_irqrestore(a, b) \
 	UNUSED(a); \
-	 irqrestore((irqstate_t)b);
+	irqrestore((irqstate_t)b);
 #define spin_lock_init(a) UNUSED(a);
 #endif							//CONFIG_SPINLOCK
+
 #define small_const_nbits(nbits) \
 	(__builtin_constant_p(nbits) && (nbits) <= BITS_PER_LONG)
 
@@ -163,6 +178,7 @@ static inline void bitmap_copy_le(void *dst, const unsigned long *src, int nbits
 		d[i] = cpu_to_le32(src[i]);
 	}
 }
+
 #define __round_mask(x, y) ((__typeof__(x))((y) - 1))
 #define round_up(x, y) ((((x) - 1) | __round_mask(x, y)) + 1)
 
@@ -172,13 +188,26 @@ static inline unsigned long find_first_zero_bit(const unsigned long *addr, unsig
 	int i;
 
 	for (i = 0; i < size; i++) {
-		if (!(addr[0] & (1 << i)))
+		if (!(addr[0] & (1 << i))) {
 			return i;
+		}
 	}
 
 	return size;
 }
 
+#ifndef BUG
+#define BUG() do { \
+	printf("BUG: failure at %s:%d/%s()!\n", __FILE__, __LINE__, __FUNCTION__); \
+} while (0)
+#define BUG_ON(condition) do { if (unlikely((condition)!=0)) BUG(); } while(0)
+#endif /* BUG */
+
+
+
+#ifdef __cplusplus
+}
+#endif
 /*
  * SLSI doubly linked llist implementation.
  *
@@ -262,8 +291,8 @@ static inline void prefetch(__attribute__((unused))
 	;
 }
 
-#define container_of(ptr, type, member) ({				\
-		const typeof(((type*)0)->member) *__mptr = (ptr);	\
+#define container_of(ptr, type, member) ({                              \
+		const typeof(((type*)0)->member) *__mptr = (ptr);       \
 		(type *)((char *)__mptr - offsetof(type, member));})
 
 /**

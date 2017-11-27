@@ -16,35 +16,34 @@
  *
  ****************************************************************************/
 
-#include <tinyara/config.h>
+/* Implements interface */
 
+#include "platform_mif.h"
+
+/* Interfaces it Uses */
+
+#include "mif_reg.h"
+#include "platform_mif_module.h"
+#include "utils_misc.h"
+#include <tinyara/config.h>
+#include <tinyara/kmalloc.h>
 #include <stdint.h>
 #include <stdbool.h>
 #include <sys/time.h>
 #include <errno.h>
-
 #include <tinyara/arch.h>
 #include <tinyara/clock.h>
 #include <tinyara/irq.h>
 #include <tinyara/wdog.h>
-#include <tinyara/kmalloc.h>
-
 #include <arch/chip/irq.h>
-
-#include "platform_mif.h"
-#include "mif_reg.h"
-#include "platform_mif_module.h"
-#include "utils_misc.h"
-
+typedef uint8_t spinlock_t;
 enum irqreturn {
 	IRQ_NONE = (0 << 0),
 	IRQ_HANDLED = (1 << 0),
 	IRQ_WAKE_THREAD = (1 << 1),
 };
 typedef enum irqreturn irqreturn_t;
-
 #define __iomem
-
 #define putreg32(v, c)		(*(volatile unsigned int*)(c) = (v))
 #define getreg32(c)		(*(volatile unsigned int*)(c))
 

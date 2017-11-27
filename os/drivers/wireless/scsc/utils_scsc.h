@@ -22,6 +22,7 @@
 #include <stdbool.h>
 #include <string.h>
 #include <errno.h>
+#include <time.h>
 #include <sys/types.h>
 #include <tinyara/wqueue.h>
 
@@ -102,8 +103,12 @@ static inline u32 bswap_32(u32 x)
 #define SLSI_MUTEX_LOCK(mutex_to_lock)                                           \
 	do {                                                                     \
 		int __ret;                                                       \
-		__ret = pthread_mutex_lock(&(mutex_to_lock));                    \
-		WARN(__ret, "Failed to lock the mutex (ret:%d)\n", __ret);       \
+		while ((__ret = pthread_mutex_lock(&(mutex_to_lock))) != OK) {   \
+			if (__ret != EINTR) {                                    \
+				WARN(__ret, "Failed to lock the mutex (ret:%d)\n", __ret);       \
+				break;                                           \
+			}                                                        \
+		}										\
 	} while (0)
 #define SLSI_MUTEX_UNLOCK(mutex_to_unlock)                                       \
 	do {                                                                     \
@@ -117,6 +122,8 @@ static inline u32 bswap_32(u32 x)
 #define SLSI_NETIF_MBUF_TAILROOM 0
 
 #define WLAN_REASON_DEAUTH_LEAVING 3
+#define WLAN_REASON_DISASSOC_DUE_TO_INACTIVITY 4
+#define WLAN_REASON_DISASSOC_STA_HAS_LEFT 8
 
 #define mbuf_queue_walk(queue, mbuf) \
 	for (mbuf = (queue)->next;                                      \
@@ -154,15 +161,8 @@ struct ethhdr {
 
 struct max_buff;
 
-#define SLSI_MBUF_GET_ALIGNMENT_OFFSET(mbuf) 0
-
 /* Get the Compiler to ignore Unused parameters */
 #define SLSI_UNUSED_PARAMETER(x) ((void)(x))
-#ifdef UFK6_DEBUG
-#define SLSI_UNUSED_PARAMETER_NOT_DEBUG(x)
-#else
-#define SLSI_UNUSED_PARAMETER_NOT_DEBUG(x) ((void)(x))
-#endif
 
 /* Helper ERROR Macros */
 #define SLSI_ECR(func) \
@@ -304,8 +304,12 @@ extern void slsi_wlan_fapi_log_init(void);
 extern void slsi_wlan_fapi_log_add_record(u16 signal_id, struct timespec ts);
 #endif
 
-/* instead of normal spinlock type*/
-typedef uint8_t spinlock_t;
+#ifdef CONFIG_SLSI_WLAN_UDI
+bool udi_enabled;
+bool skip_scan_ind;
+void slsi_wlan_set_udi_flag(bool udi, bool scan_ind);
+extern void slsi_wlan_udi_log_data(struct timespec ts, uint32_t signal_length, unsigned char *log_data, size_t len);
+#endif
 
 #ifdef __cplusplus
 }

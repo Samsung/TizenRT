@@ -200,11 +200,11 @@ static int slsi_rx_action_enqueue_netdev_mlme(struct slsi_dev *sdev, struct max_
 		slsi_kfree_mbuf(mbuf);
 		return 0;
 	}
-#ifdef CONFIG_SCSC_ENABLE_P2P
+#ifdef CONFIG_SLSI_WLAN_P2P
 	if (ndev_vif->iftype == SLSI_80211_IFTYPE_P2P_GO || ndev_vif->iftype == SLSI_80211_IFTYPE_P2P_CLIENT) {
 		struct slsi_80211_mgmt *mgmt = fapi_get_mgmt(mbuf);
 		/*  Check the DA of received action frame with the GO interface address */
-		if (memcmp(mgmt->da, dev->dev_addr, ETH_ALEN) != 0) {
+		if (memcmp(mgmt->da, dev->d_mac.ether_addr_octet, ETH_ALEN) != 0) {
 			/* If not equal, compare DA of received action frame with the P2P DEV address */
 			struct netif *p2pdev = slsi_get_netdev(sdev, SLSI_NET_INDEX_P2P);
 
@@ -212,7 +212,7 @@ static int slsi_rx_action_enqueue_netdev_mlme(struct slsi_dev *sdev, struct max_
 				/* Calling function should free the mbuf */
 				return -ENODEV;
 			}
-			if (memcmp(mgmt->da, p2pdev->dev_addr, ETH_ALEN) == 0) {
+			if (memcmp(mgmt->da, p2pdev->d_mac.ether_addr_octet, ETH_ALEN) == 0) {
 				/* If destination address is equal to P2P DEV ADDR, then action frame is received on
 				 * GO interface. Hence indicate action frames on P2P DEV
 				 */

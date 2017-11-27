@@ -23,7 +23,7 @@
 #include "scsc_mx_impl.h"
 #include "utils_scsc.h"
 
-int clk_request = 0;
+static int clk_request = 0;
 
 /* Register a callback function to indicate to the (USB) client the status of
  * the clock request

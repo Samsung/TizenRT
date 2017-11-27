@@ -226,6 +226,7 @@ struct hip4_priv {
 	scsc_mifram_ref hip_control;
 	scsc_mifram_ref from_host_pool;
 	scsc_mifram_ref to_host_pool;
+	scsc_mifram_ref mib_pool;
 #endif
 };
 

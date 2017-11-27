@@ -38,6 +38,9 @@ enum reg_type {
 	REGDOM_TYPE_INTERSECTION,
 };
 
+#define IEEE80211_MODE_INFRA	0
+#define IEEE80211_MODE_AP	2
+
 /**
  * enum hostapd_hw_mode - Hardware mode
  */
@@ -68,6 +71,8 @@ enum chan_width {
 #define WPA_AUTH_ALG_SAE BIT(4)
 
 typedef long os_time_t;
+#define WLAN_FC_GET_TYPE(fc)	(((fc) & 0x000c) >> 2)
+#define WLAN_FC_GET_STYPE(fc)	(((fc) & 0x00f0) >> 4)
 
 /**
  * struct dl_list - Doubly-linked list

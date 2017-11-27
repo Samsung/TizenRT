@@ -35,15 +35,6 @@
 extern int mx_mmap_init(void);
 extern void mx_mmap_deinit(void);
 
-/* Mib data filename */
-static char *mib_file = "wlan.hcf";
-
-/* Local mib data filename (Optional extra mib values) */
-static char *local_mib_file = "localmib.hcf";
-
-/* MAC address filename */
-static char *maddr_file = "mac.txt";
-
 void slsi_driver_initialize(void)
 {
 	platform_mif_module_probe();
@@ -53,13 +44,15 @@ void slsi_driver_initialize(void)
 
 static void slsi_regd_init(struct slsi_dev *sdev)
 {
-#ifdef CONFIG_SCSC_ADV_FEATURE
-	struct ieee80211_regdomain *slsi_world_regdom_custom = sdev->device_config.domain_info.regdomain;
+	struct slsi_802_11d_reg_domain *slsi_world_regdom_custom = sdev->device_config.domain_info;
 	struct slsi_80211_reg_rule reg_rules[] = {
-		/* Channel 1 - 11, allow channel 12 and 13 as well (NO_IR restriction removed) */
-		SLSI_REG_RULE(2412 - 10, 2472 + 10, 20, 0, 20, 0),
+		/* Channel 1 - 11 */
+		SLSI_REG_RULE(2412 - 10, 2462 + 10, 20, 0, 20, 0),
+		/* Channel 12 - 13 NO_IR */
+		SLSI_REG_RULE(2467 - 10, 2472 + 10, 20, 0, 20, SLSI_80211_RRF_NO_IR),
 		/* Channel 14 */
 		SLSI_REG_RULE(2484 - 10, 2484 + 10, 20, 0, 20, (SLSI_80211_RRF_PASSIVE_SCAN | SLSI_80211_RRF_NO_OFDM)),
+#ifdef CONFIG_SCSC_ADV_FEATURE
 		/* Channel 36 - 48 */
 		SLSI_REG_RULE(5180 - 10, 5240 + 10, 80, 0, 20, 0),
 		/* Channel 149 - 165 */
@@ -68,15 +61,18 @@ static void slsi_regd_init(struct slsi_dev *sdev)
 		SLSI_REG_RULE(5260 - 10, 5320 + 10, 80, 0, 20, SLSI_80211_RRF_DFS),
 		/* Channel 100 - 140 */
 		SLSI_REG_RULE(5500 - 10, 5700 + 10, 80, 0, 20, SLSI_80211_RRF_DFS),
+#endif
 	};
 	int i;
-#endif
 
 	SLSI_DBG1_NODEV(SLSI_INIT_DEINIT, "regulatory init\n");
 
 	SLSI_DBG1(sdev, SLSI_INIT_DEINIT, "chip ver=Maxwell, chan supp=2.4 GHz");
 #ifdef CONFIG_SCSC_ADV_FEATURE
 	slsi_world_regdom_custom->n_reg_rules = 6;
+#else
+	slsi_world_regdom_custom->n_reg_rules = 2;
+#endif
 	for (i = 0; i < slsi_world_regdom_custom->n_reg_rules; i++) {
 		slsi_world_regdom_custom->reg_rules[i] = reg_rules[i];
 	}
@@ -85,8 +81,52 @@ static void slsi_regd_init(struct slsi_dev *sdev)
 	slsi_world_regdom_custom->alpha2[0] = '0';
 	slsi_world_regdom_custom->alpha2[1] = '0';
 
-	wiphy_apply_custom_regulatory(sdev->wiphy, slsi_world_regdom_custom);
-#endif
+	sisi_update_supported_channels(sdev);
+}
+
+static void slsi_t20_drv_init(struct slsi_dev *sdev)
+{
+	struct slsi_t20_drv *drv;
+
+	drv = kmm_zalloc(sizeof(struct slsi_t20_drv));
+	if (!drv) {
+		SLSI_ERR_NODEV("Failed to allocate drv\n");
+		return;
+	}
+
+	drv->capa.flags = sdev->flags;
+	drv->capa.key_mgmt = WPA_DRIVER_CAPA_KEY_MGMT_WPA | WPA_DRIVER_CAPA_KEY_MGMT_WPA_PSK | WPA_DRIVER_CAPA_KEY_MGMT_WPA2 | WPA_DRIVER_CAPA_KEY_MGMT_WPA2_PSK;
+
+	drv->capa.auth = WPA_DRIVER_AUTH_OPEN | WPA_DRIVER_AUTH_SHARED;
+
+	drv->capa.flags |= WPA_DRIVER_FLAGS_SANE_ERROR_CODES;
+	drv->capa.flags |= WPA_DRIVER_FLAGS_SET_KEYS_AFTER_ASSOC_DONE;
+	drv->capa.flags |= WPA_DRIVER_FLAGS_EAPOL_TX_STATUS;
+
+	drv->capa.enc = WPA_DRIVER_CAPA_ENC_WEP40 | WPA_DRIVER_CAPA_ENC_WEP104 | WPA_DRIVER_CAPA_ENC_TKIP | WPA_DRIVER_CAPA_ENC_CCMP | WPA_DRIVER_CAPA_ENC_WEP128;
+
+	drv->capa.max_remain_on_chan = 5000;
+	drv->capa.wmm_ac_supported = 1;
+
+	drv->capa.flags |= WPA_DRIVER_FLAGS_AP_TEARDOWN_SUPPORT;
+	drv->capa.max_scan_ssids = sdev->max_scan_ssids;
+	drv->capa.max_sched_scan_ssids = sdev->max_sched_scan_ssids;
+	drv->capa.sched_scan_supported = sdev->sched_scan_supported;
+	drv->capa.max_match_sets = sdev->max_match_sets;
+	drv->capa.max_remain_on_chan = sdev->max_remain_on_chan;
+	drv->capa.max_stations = sdev->max_stations;
+	drv->capa.probe_resp_offloads = sdev->probe_resp_offloads;
+	drv->capa.max_acl_mac_addrs = sdev->max_acl_mac_addrs;
+	sdev->drv = drv;
+	return;
+
+}
+
+static void slsi_t20_drv_deinit(struct slsi_dev *sdev)
+{
+	/* Free the drv context allocated during init */
+	kmm_free(sdev->drv);
+	sdev->drv = NULL;
 }
 
 struct slsi_dev *slsi_dev_attach(struct scsc_mx *core, struct scsc_service_client *mx_wlan_client)
@@ -110,9 +150,6 @@ struct slsi_dev *slsi_dev_attach(struct scsc_mx *core, struct scsc_service_clien
 	memcpy(&sdev->mx_wlan_client, mx_wlan_client, sizeof(struct scsc_service_client));
 
 	sdev->fail_reported = false;
-	sdev->mib_file_name = mib_file;
-	sdev->local_mib_file_name = local_mib_file;
-	sdev->maddr_file_name = maddr_file;
 	sdev->device_config.qos_info = 0;
 	memset(&sdev->chip_info_mib, 0xFF, sizeof(struct slsi_chip_info_mib));
 
@@ -145,12 +182,12 @@ struct slsi_dev *slsi_dev_attach(struct scsc_mx *core, struct scsc_service_clien
 		SLSI_ERR(sdev, "failed to init UDI\n");
 		goto err_hip_init;
 	}
-#ifdef CONFIG_SCSC_ADV_FEATURE
+
 	/* update regulatory domain */
 	slsi_regd_init(sdev);
-#endif
 
 	slsi_rx_ba_init(sdev);
+	slsi_t20_drv_init(sdev);
 
 	SLSI_MUTEX_INIT(sdev->rx_data_mutex);
 
@@ -161,32 +198,29 @@ struct slsi_dev *slsi_dev_attach(struct scsc_mx *core, struct scsc_service_clien
 
 	if (slsi_netif_register(sdev, sdev->netdev[SLSI_NET_INDEX_WLAN]) != 0) {
 		SLSI_ERR(sdev, "failed to register with wlan netdev\n");
-		goto err_wlan_registered;
+		goto err_netif_registered;
 	}
-#ifdef CONFIG_SCSC_WLAN_STA_ONLY
-	SLSI_ERR(sdev, "CONFIG_SCSC_WLAN_STA_ONLY: not registering p2p netdev\n");
-#else
-#ifdef CONFIG_SCSC_ENABLE_P2P
+#ifdef CONFIG_SLSI_WLAN_P2P
 	if (slsi_netif_register(sdev, sdev->netdev[SLSI_NET_INDEX_P2P]) != 0) {
 		SLSI_ERR(sdev, "failed to register with p2p netdev\n");
-		goto err_wlan_registered;
+		goto err_netif_registered;
 	}
-#endif
+	if (slsi_netif_register(sdev, sdev->netdev[SLSI_NET_INDEX_P2PX]) != 0) {
+		SLSI_ERR(sdev, "failed to register with p2px netdev\n");
+		goto err_netif_registered;
+	}
 #endif
 	sdev->device_state = SLSI_DEVICE_STATE_STOPPED;
 	sdev->current_tspec_id = -1;
 	sdev->tspec_error_code = -1;
-#ifdef CONFIG_SCSC_ENABLE_P2P
-	/* Driver workqueue used to queue work in different modes (STA/P2P) */
-	sdev->device_wq = alloc_ordered_workqueue("slsi_wlan_wq", 0);
-	if (!sdev->device_wq) {
-		SLSI_ERR(sdev, "Cannot allocate workqueue\n");
-		goto err_wlan_registered;
-	}
-#endif
+
 	return sdev;
 
-err_wlan_registered:
+err_netif_registered:
+#ifdef CONFIG_SLSI_WLAN_P2P
+	slsi_netif_remove(sdev, sdev->netdev[SLSI_NET_INDEX_P2PX]);
+	slsi_netif_remove(sdev, sdev->netdev[SLSI_NET_INDEX_P2P]);
+#endif
 	slsi_netif_remove(sdev, sdev->netdev[SLSI_NET_INDEX_WLAN]);
 	slsi_udi_node_deinit(sdev);
 err_hip_init:
@@ -212,12 +246,6 @@ void slsi_dev_detach(struct slsi_dev *sdev)
 	complete_all(&sdev->recovery_remove_completion);
 	complete_all(&sdev->recovery_stop_completion);
 
-#ifdef CONFIG_SCSC_ENABLE_P2P
-	WARN_ON(sdev->device_wq == NULL);
-	if (sdev->device_wq) {
-		flush_workqueue(sdev->device_wq);
-	}
-#endif
 	sdev->scan_init_24g = false;
 
 	SLSI_DBG2(sdev, SLSI_INIT_DEINIT, "Unregister netif\n");
@@ -241,6 +269,9 @@ void slsi_dev_detach(struct slsi_dev *sdev)
 
 	SLSI_DBG2(sdev, SLSI_INIT_DEINIT, "Stop Work Queues\n");
 	slsi_mbuf_work_deinit(&sdev->rx_dbg_sap);
+
+	SLSI_DBG2(sdev, SLSI_INIT_DEINIT, "t20_drvier deinit\n");
+	slsi_t20_drv_deinit(sdev);
 
 	SLSI_DBG2(sdev, SLSI_INIT_DEINIT, "Cleanup Device Data\n");
 	slsi_kfree_mbuf(sdev->device_config.channel_config);

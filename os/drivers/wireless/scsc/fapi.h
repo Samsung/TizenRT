@@ -2724,11 +2724,11 @@ static inline u16 fapi_get_expected_size(struct max_buff *mbuf)
 		return fapi_get_expected_size_table(mbuf, fapi_test_cfm_size_table, ARRAY_SIZE(fapi_test_cfm_size_table), RADIO_LOGGING_CFM);
 	} else if (fapi_is_test(mbuf) && fapi_is_ind(mbuf)) {
 		return fapi_get_expected_size_table(mbuf, fapi_test_ind_size_table, ARRAY_SIZE(fapi_test_ind_size_table), RADIO_LOGGING_IND);
-	} else if (fapi_is_mlme(mbuf) && fapi_is_res(mbuf)) {
+	} else if (fapi_is_ma(mbuf) && fapi_is_res(mbuf)) {
 		return fapi_get_expected_size_table(mbuf, fapi_ma_res_size_table, ARRAY_SIZE(fapi_ma_res_size_table), MA_SPARE_SIGNAL_1_RES);
-	} else if (fapi_is_mlme(mbuf) && fapi_is_res(mbuf)) {
+	} else if (fapi_is_debug(mbuf) && fapi_is_res(mbuf)) {
 		return fapi_get_expected_size_table(mbuf, fapi_debug_res_size_table, ARRAY_SIZE(fapi_debug_res_size_table), DEBUG_SPARE_SIGNAL_1_RES);
-	} else if (fapi_is_mlme(mbuf) && fapi_is_res(mbuf)) {
+	} else if (fapi_is_test(mbuf) && fapi_is_res(mbuf)) {
 		return fapi_get_expected_size_table(mbuf, fapi_test_res_size_table, ARRAY_SIZE(fapi_test_res_size_table), TEST_SPARE_SIGNAL_1_RES);
 	}
 

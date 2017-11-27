@@ -106,7 +106,7 @@ exit:
 
 #define MIFRAMMAN_PTR(mem) \
 	(*(((void **)((uintptr_t)(mem) & \
-			(~(uintptr_t)(sizeof(void *)-1)))) - 1))
+		      (~(uintptr_t)(sizeof(void *)-1)))) - 1))
 
 bool is_power_of_2(unsigned long n)
 {

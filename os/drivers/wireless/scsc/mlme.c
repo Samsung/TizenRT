@@ -387,30 +387,28 @@ err:
 	return NULL;
 }
 
-#ifdef CONFIG_SCSC_ADV_FEATURE
-static struct ieee80211_reg_rule *slsi_get_reg_rule(u32 center_freq, struct slsi_802_11d_reg_domain *domain_info)
+static struct slsi_80211_reg_rule *slsi_get_reg_rule(u32 center_freq, struct slsi_802_11d_reg_domain *domain_info)
 {
-	struct ieee80211_reg_rule *rule;
+	struct slsi_80211_reg_rule *rule;
 	int i;
 
-	for (i = 0; i < domain_info->regdomain->n_reg_rules; i++) {
-		rule = &domain_info->regdomain->reg_rules[i];
+	for (i = 0; i < domain_info->n_reg_rules; i++) {
+		rule = &domain_info->reg_rules[i];
 
 		/* Consider 10Mhz on both side from the center frequency */
-		if (((center_freq - MHZ_TO_KHZ(10)) >= rule->freq_range.start_freq_khz) && ((center_freq + MHZ_TO_KHZ(10)) <= rule->freq_range.end_freq_khz)) {
+		if (((center_freq - SLSI_MHZ_TO_KHZ(10)) >= rule->start_freq_khz) && ((center_freq + SLSI_MHZ_TO_KHZ(10)) <= rule->end_freq_khz)) {
 			return rule;
 		}
 	}
 
 	return NULL;
 }
-#endif
 
 u16 slsi_get_chann_info(struct slsi_dev *sdev, struct hostapd_freq_params *chandef)
 {
 	u16 chann_info;
 
-	SLSI_UNUSED_PARAMETER_NOT_DEBUG(sdev);
+	SLSI_UNUSED_PARAMETER(sdev);
 
 	switch (chandef->bandwidth) {
 	case 20:
@@ -431,6 +429,25 @@ u16 slsi_get_chann_info(struct slsi_dev *sdev, struct hostapd_freq_params *chand
 
 	SLSI_DBG3(sdev, SLSI_MLME, "channel_width:%u, chann_info:0x%x\n", chandef->bandwidth, chann_info);
 	return chann_info;
+}
+
+void sisi_update_supported_channels(struct slsi_dev *sdev)
+{
+	int channel;
+	u16 center_freq;
+	int num_supp_chan = 0;
+	struct slsi_80211_reg_rule *rule;
+
+	for (channel = 0; channel < 14; channel++) {
+		center_freq = sdev->device_config.band_2G->channels[channel].center_freq;
+
+		rule = slsi_get_reg_rule(SLSI_MHZ_TO_KHZ(center_freq), sdev->device_config.domain_info);
+		if (rule) {
+			num_supp_chan++;
+		}
+	}
+	sdev->device_config.band_2G->n_channels = num_supp_chan;
+	SLSI_INFO(sdev, "Number of supported channels: %d\n", num_supp_chan);
 }
 
 #ifdef CONFIG_SCSC_ADV_FEATURE
@@ -775,8 +792,8 @@ void slsi_mlme_del_vif(struct slsi_dev *sdev, struct netif *dev)
 		SLSI_NET_ERR(dev, "mlme_del_vif_cfm(result:%u) ERROR\n", fapi_get_u16(cfm, u.mlme_del_vif_cfm.result_code));
 		r = -EINVAL;
 	}
-#ifdef CONFIG_SCSC_ENABLE_P2P
-	if ((ndev_vif->iftype == SLSI_80211_IFTYPE_P2P_CLIENT) && (sdev->delete_gc_probe_req_ies == true)) {
+#ifdef CONFIG_SLSI_WLAN_P2P
+	if (sdev->delete_gc_probe_req_ies == true) {
 		kmm_free(sdev->gc_probe_req_ies);
 		sdev->gc_probe_req_ies = NULL;
 		sdev->gc_probe_req_ie_len = 0;
@@ -787,8 +804,8 @@ void slsi_mlme_del_vif(struct slsi_dev *sdev, struct netif *dev)
 	slsi_kfree_mbuf(cfm);
 }
 
-#ifdef CONFIG_SCSC_ENABLE_P2P
-int slsi_mlme_set_channel(struct slsi_dev *sdev, struct netif *dev, struct ieee80211_channel *chan, u16 duration, u16 interval, u16 count)
+#ifdef CONFIG_SLSI_WLAN_P2P
+int slsi_mlme_set_channel(struct slsi_dev *sdev, struct netif *dev, unsigned int freq, u16 duration, u16 interval, u16 count)
 {
 	struct netdev_vif *ndev_vif = netdev_priv(dev);
 	struct max_buff *req;
@@ -802,7 +819,7 @@ int slsi_mlme_set_channel(struct slsi_dev *sdev, struct netif *dev, struct ieee8
 
 	WARN_ON(!SLSI_MUTEX_IS_LOCKED(ndev_vif->vif_mutex));
 
-	SLSI_NET_DBG2(dev, SLSI_MLME, "mlme_set_channel_req(freq:%u, duration:%u, interval:%u, count:%u)\n", chan->center_freq, duration, interval, count);
+	SLSI_NET_DBG2(dev, SLSI_MLME, "mlme_set_channel_req(freq:%u, duration:%u, interval:%u, count:%u)\n", freq, duration, interval, count);
 
 	req = fapi_alloc(mlme_set_channel_req, MLME_SET_CHANNEL_REQ, ndev_vif->ifnum, 0);
 	if (!req) {
@@ -812,7 +829,7 @@ int slsi_mlme_set_channel(struct slsi_dev *sdev, struct netif *dev, struct ieee8
 	fapi_set_u16(req, u.mlme_set_channel_req.availability_duration, duration);
 	fapi_set_u16(req, u.mlme_set_channel_req.availability_interval, interval);
 	fapi_set_u16(req, u.mlme_set_channel_req.count, count);
-	fapi_set_u16(req, u.mlme_set_channel_req.channel_frequency, SLSI_FREQ_HOST_TO_FW(chan->center_freq));
+	fapi_set_u16(req, u.mlme_set_channel_req.channel_frequency, SLSI_FREQ_HOST_TO_FW(freq));
 
 	cfm = slsi_mlme_req_cfm(sdev, dev, req, MLME_SET_CHANNEL_CFM);
 	if (!cfm) {
@@ -2090,7 +2107,6 @@ int slsi_mlme_disconnect(struct slsi_dev *sdev, struct netif *dev, u8 *mac, u16 
 	WARN_ON(!SLSI_MUTEX_IS_LOCKED(ndev_vif->vif_mutex));
 
 	SLSI_NET_DBG1(dev, SLSI_MLME, "mlme_disconnect_req(vif:%u, bssid:" SLSI_MAC_FORMAT ", reason:%d)\n", ndev_vif->ifnum, SLSI_MAC_STR(mac), reason_code);
-
 	/* No data reference required */
 	req = fapi_alloc(mlme_disconnect_req, MLME_DISCONNECT_REQ, ndev_vif->ifnum, 0);
 	if (!req) {
@@ -2297,13 +2313,16 @@ int slsi_mlme_get_sinfo_mib(struct slsi_dev *sdev, struct netif *dev, struct wpa
 	int data_length = 0;
 	int r = 0;
 	static const struct slsi_mib_get_entry getValues[] = {
-		{ SLSI_PSID_UNIFI_TX_DATA_RATE, { 0, 0 } },	/* to get STATION_INFO_TX_BITRATE */
-		{ SLSI_PSID_UNIFI_RSSI, { 0, 0 } },			/* to get STATION_INFO_SIGNAL_AVG */
+		{SLSI_PSID_UNIFI_TX_DATA_RATE, {0, 0}},	/* to get STATION_INFO_TX_BITRATE */
+		{SLSI_PSID_UNIFI_RSSI, {0, 0}},       	/* to get STATION_INFO_SIGNAL_AVG */
 	};
 
 	WARN_ON(!SLSI_MUTEX_IS_LOCKED(ndev_vif->vif_mutex));
 	r = slsi_mib_encode_get_list(&mibreq, (sizeof(getValues) / sizeof(struct slsi_mib_get_entry)), getValues);
 	if (r != SLSI_MIB_STATUS_SUCCESS) {
+		if (mibreq.data) {	/* For SVACE */
+			kmm_free(mibreq.data);
+		}
 		return -ENOMEM;
 	}
 
@@ -2439,38 +2458,6 @@ int slsi_mlme_register_action_frame(struct slsi_dev *sdev, struct netif *dev, u3
 
 	if (fapi_get_u16(cfm, u.mlme_register_action_frame_cfm.result_code) != FAPI_RESULTCODE_SUCCESS) {
 		SLSI_NET_ERR(dev, "mlme_register_action_frame_cfm(result:%u) ERROR\n", fapi_get_u16(cfm, u.mlme_register_action_frame_cfm.result_code));
-		r = -EINVAL;
-	}
-
-	slsi_kfree_mbuf(cfm);
-	return r;
-}
-
-int slsi_mlme_channel_switch(struct slsi_dev *sdev, struct netif *dev, u16 center_freq, u16 chan_info)
-{
-	struct netdev_vif *ndev_vif = netdev_priv(dev);
-	struct max_buff *req;
-	struct max_buff *cfm;
-	int r = 0;
-
-	WARN_ON(!SLSI_MUTEX_IS_LOCKED(ndev_vif->vif_mutex));
-
-	SLSI_NET_DBG2(dev, SLSI_MLME, "mlme_channel_switch_req(vif:%d, freq: %d, channel info: 0x%x)\n", ndev_vif->ifnum, center_freq, chan_info);
-	req = fapi_alloc(mlme_channel_switch_req, MLME_CHANNEL_SWITCH_REQ, ndev_vif->ifnum, 0);
-	if (!req) {
-		return -ENOMEM;
-	}
-
-	fapi_set_u16(req, u.mlme_channel_switch_req.channel_frequency, SLSI_FREQ_HOST_TO_FW(center_freq));
-	fapi_set_u16(req, u.mlme_channel_switch_req.channel_information, chan_info);
-
-	cfm = slsi_mlme_req_cfm(sdev, dev, req, MLME_CHANNEL_SWITCH_CFM);
-	if (!cfm) {
-		return -EIO;
-	}
-
-	if (fapi_get_u16(cfm, u.mlme_channel_switch_cfm.result_code) != FAPI_RESULTCODE_SUCCESS) {
-		SLSI_NET_ERR(dev, "mlme_channel_switch_cfm(result:%u) ERROR\n", fapi_get_u16(cfm, u.mlme_channel_switch_cfm.result_code));
 		r = -EINVAL;
 	}
 
@@ -2627,7 +2614,6 @@ int slsi_mlme_send_frame_mgmt(struct slsi_dev *sdev, struct netif *dev, const u8
 	fapi_set_u16(req, u.mlme_send_frame_req.channel_frequency, freq);
 	fapi_set_u32(req, u.mlme_send_frame_req.dwell_time, dwell_time);
 	fapi_set_u32(req, u.mlme_send_frame_req.period, period);
-
 	p = fapi_append_data(req, frame, frame_len);
 	if (!p) {
 		slsi_kfree_mbuf(req);
@@ -2645,12 +2631,11 @@ int slsi_mlme_send_frame_mgmt(struct slsi_dev *sdev, struct netif *dev, const u8
 		SLSI_NET_ERR(dev, "mlme_send_frame_cfm(result:%u) ERROR\n", fapi_get_u16(cfm, u.mlme_send_frame_cfm.result_code));
 		r = -EINVAL;
 	}
-
 	slsi_kfree_mbuf(cfm);
 	return r;
 }
 
-#ifdef CONFIG_SCSC_ENABLE_P2P
+#ifdef CONFIG_SLSI_WLAN_P2P
 int slsi_mlme_reset_dwell_time(struct slsi_dev *sdev, struct netif *dev)
 {
 	struct netdev_vif *ndev_vif = netdev_priv(dev);
@@ -2819,6 +2804,47 @@ int slsi_mlme_set_acl(struct slsi_dev *sdev, struct netif *dev, const struct cfg
 	slsi_kfree_mbuf(cfm);
 	return r;
 }
+
+int slsi_mlme_blockack_control_req(struct slsi_dev *sdev, struct netif *dev, u16 blockack_control_bitmap, u16 direction, const u8 *peer_sta_address)
+{
+	struct netdev_vif *ndev_vif = netdev_priv(dev);
+	struct max_buff *req;
+	struct max_buff *cfm;
+	int r = 0;
+
+	WARN_ON(!SLSI_MUTEX_IS_LOCKED(ndev_vif->vif_mutex));
+
+	if (!peer_sta_address) {
+		SLSI_NET_WARN(dev, "INVALID PEER ADDRESS");
+		return -EINVAL;
+	}
+
+	req = fapi_alloc(mlme_blockack_control_req, MLME_BLOCKACK_CONTROL_REQ, ndev_vif->ifnum, 0);
+	if (!req) {
+		SLSI_NET_ERR(dev, "memory allocation failed for blockack control request\n");
+		return -ENOMEM;
+	}
+
+	fapi_set_u16(req, u.mlme_blockack_control_req.blockack_control_bitmap, blockack_control_bitmap);
+	fapi_set_u16(req, u.mlme_blockack_control_req.direction, direction);
+	fapi_set_memcpy(req, u.mlme_blockack_control_req.peer_sta_address, peer_sta_address);
+
+	SLSI_NET_DBG2(dev, SLSI_MLME, "mlme_blockack_control_req(vif:%u, direction:%d, blockack_control_bitmap:%d)\n", ndev_vif->ifnum, direction, blockack_control_bitmap);
+	cfm = slsi_mlme_req_cfm(sdev, dev, req, MLME_BLOCKACK_CONTROL_CFM);
+	if (!cfm) {
+		return -EIO;
+	}
+
+	SLSI_NET_DBG2(dev, SLSI_MLME, "mlme_blockack_control_cfm: peer=" SLSI_MAC_FORMAT " up=%X dir=%X\n", SLSI_MAC_STR(peer_sta_address), blockack_control_bitmap, direction);
+
+	if (fapi_get_u16(cfm, u.mlme_blockack_control_cfm.result_code) != FAPI_RESULTCODE_SUCCESS) {
+		SLSI_NET_ERR(dev, "mlme_blockack_control_cfm (result: %u) ERROR\n", fapi_get_u16(cfm, u.mlme_blockack_control_cfm.result_code));
+		r = -EINVAL;
+	}
+
+	slsi_kfree_mbuf(cfm);
+	return r;
+}
 #endif							/* CONFIG_SCSC_ADV_FEATURE */
 
 int slsi_mlme_set_ext_capab(struct slsi_dev *sdev, struct netif *dev, struct slsi_mib_value *mib_val)
@@ -2903,46 +2929,5 @@ int slsi_mlme_set_iw_ext_cap(struct slsi_dev *sdev, struct netif *dev, const u8 
 
 exit:
 	kmm_free(mibrsp.data);
-	return r;
-}
-
-int slsi_mlme_blockack_control_req(struct slsi_dev *sdev, struct netif *dev, u16 blockack_control_bitmap, u16 direction, const u8 *peer_sta_address)
-{
-	struct netdev_vif *ndev_vif = netdev_priv(dev);
-	struct max_buff *req;
-	struct max_buff *cfm;
-	int r = 0;
-
-	WARN_ON(!SLSI_MUTEX_IS_LOCKED(ndev_vif->vif_mutex));
-
-	if (!peer_sta_address) {
-		SLSI_NET_WARN(dev, "INVALID PEER ADDRESS");
-		return -EINVAL;
-	}
-
-	req = fapi_alloc(mlme_blockack_control_req, MLME_BLOCKACK_CONTROL_REQ, ndev_vif->ifnum, 0);
-	if (!req) {
-		SLSI_NET_ERR(dev, "memory allocation failed for blockack control request\n");
-		return -ENOMEM;
-	}
-
-	fapi_set_u16(req, u.mlme_blockack_control_req.blockack_control_bitmap, blockack_control_bitmap);
-	fapi_set_u16(req, u.mlme_blockack_control_req.direction, direction);
-	fapi_set_memcpy(req, u.mlme_blockack_control_req.peer_sta_address, peer_sta_address);
-
-	SLSI_NET_DBG2(dev, SLSI_MLME, "mlme_blockack_control_req(vif:%u, direction:%d, blockack_control_bitmap:%d)\n", ndev_vif->ifnum, direction, blockack_control_bitmap);
-	cfm = slsi_mlme_req_cfm(sdev, dev, req, MLME_BLOCKACK_CONTROL_CFM);
-	if (!cfm) {
-		return -EIO;
-	}
-
-	SLSI_NET_DBG2(dev, SLSI_MLME, "mlme_blockack_control_cfm: peer=" SLSI_MAC_FORMAT " up=%X dir=%X\n", SLSI_MAC_STR(peer_sta_address), blockack_control_bitmap, direction);
-
-	if (fapi_get_u16(cfm, u.mlme_blockack_control_cfm.result_code) != FAPI_RESULTCODE_SUCCESS) {
-		SLSI_NET_ERR(dev, "mlme_blockack_control_cfm (result: %u) ERROR\n", fapi_get_u16(cfm, u.mlme_blockack_control_cfm.result_code));
-		r = -EINVAL;
-	}
-
-	slsi_kfree_mbuf(cfm);
 	return r;
 }

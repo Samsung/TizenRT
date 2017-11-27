@@ -68,7 +68,16 @@ void slsi_rx_scan_done_ind(struct slsi_dev *sdev, struct netif *dev, struct max_
 	}
 
 	slsi_scan_complete(ndev_vif);
-
+#ifdef CONFIG_SLSI_WLAN_P2P
+	if (SLSI_IS_VIF_INDEX_P2P(ndev_vif) && (!SLSI_IS_P2P_GROUP_STATE(sdev))) {
+		/* Check for unsync vif as it could be present during the cycle of social channel scan and listen */
+		if (ndev_vif->activated) {
+			SLSI_P2P_STATE_CHANGE(sdev, P2P_IDLE_VIF_ACTIVE);
+		} else {
+			SLSI_P2P_STATE_CHANGE(sdev, P2P_IDLE_NO_VIF);
+		}
+	}
+#endif
 	SLSI_MUTEX_UNLOCK(ndev_vif->scan_mutex);
 	SLSI_MUTEX_UNLOCK(ndev_vif->vif_mutex);
 	slsi_kfree_mbuf(mbuf);
@@ -406,7 +415,7 @@ void slsi_rx_connect_ind(struct slsi_dev *sdev, struct netif *dev, struct max_bu
 			slsi_ps_port_control(sdev, dev, peer, SLSI_STA_CONN_STATE_CONNECTED);
 		}
 
-#ifdef CONFIG_SCSC_ENABLE_P2P
+#ifdef CONFIG_SLSI_WLAN_P2P
 		/* For P2PCLI, set the Connection Timeout (beacon miss) mib to 10 seconds */
 		if (ndev_vif->iftype == SLSI_80211_IFTYPE_P2P_CLIENT) {
 			if (slsi_set_uint_mib(sdev, dev, SLSI_PSID_UNIFI_MLME_CONNECTION_TIMEOUT, SLSI_P2PGC_CONN_TIMEOUT_MSEC) != 0) {
@@ -418,7 +427,7 @@ void slsi_rx_connect_ind(struct slsi_dev *sdev, struct netif *dev, struct max_bu
 #endif
 		goto exit_with_lock;
 	}
-#ifdef CONFIG_SCSC_ENABLE_P2P
+#ifdef CONFIG_SLSI_WLAN_P2P
 exit_with_vif:
 	slsi_mlme_del_vif(sdev, dev);
 	slsi_vif_deactivated(sdev, dev);
@@ -437,7 +446,7 @@ void slsi_rx_disconnect_ind(struct slsi_dev *sdev, struct netif *dev, struct max
 
 	SLSI_NET_DBG1(dev, SLSI_MLME, "mlme_disconnect_ind(vif:%d, tx_status:%d, MAC:" SLSI_MAC_FORMAT ")\n", fapi_get_vif(mbuf), fapi_get_u16(mbuf, u.mlme_disconnect_ind.transmission_status), SLSI_MAC_STR(fapi_get_buff(mbuf, u.mlme_disconnect_ind.peer_sta_address)));
 
-	slsi_handle_disconnect(sdev, dev, fapi_get_buff(mbuf, u.mlme_disconnect_ind.peer_sta_address), 0);
+	slsi_handle_disconnect(sdev, dev, fapi_get_buff(mbuf, u.mlme_disconnect_ind.peer_sta_address), 0, 1);
 
 	SLSI_MUTEX_UNLOCK(ndev_vif->vif_mutex);
 	slsi_kfree_mbuf(mbuf);
@@ -461,11 +470,47 @@ void slsi_rx_disconnected_ind(struct slsi_dev *sdev, struct netif *dev, struct m
 			slsi_ps_port_control(sdev, dev, peer, SLSI_STA_CONN_STATE_DISCONNECTED);
 		}
 	}
-	slsi_handle_disconnect(sdev, dev, fapi_get_buff(mbuf, u.mlme_disconnected_ind.peer_sta_address), fapi_get_u16(mbuf, u.mlme_disconnected_ind.reason_code));
+	slsi_handle_disconnect(sdev, dev, fapi_get_buff(mbuf, u.mlme_disconnected_ind.peer_sta_address), fapi_get_u16(mbuf, u.mlme_disconnected_ind.reason_code), 0);
 
 	SLSI_MUTEX_UNLOCK(ndev_vif->vif_mutex);
 	slsi_kfree_mbuf(mbuf);
 }
+
+#ifdef CONFIG_SLSI_WLAN_P2P
+/* Handle Procedure Started (Type = Device Discovered) indication for P2P */
+static void slsi_rx_p2p_device_discovered_ind(struct slsi_dev *sdev, struct netif *dev, struct max_buff *mbuf)
+{
+	struct netdev_vif *ndev_vif = netdev_priv(dev);
+	int mgmt_len;
+	union wpa_event_data event;
+
+	SLSI_UNUSED_PARAMETER(sdev);
+	SLSI_UNUSED_PARAMETER(ndev_vif);
+
+	SLSI_NET_DBG2(dev, SLSI_T20_80211, "Freq = %d\n", ndev_vif->center_freq);
+
+	/* Only Probe Request is expected as of now */
+	mgmt_len = fapi_get_mgmtlen(mbuf);
+	if (mgmt_len) {
+		struct slsi_80211_mgmt *mgmt = fapi_get_mgmt(mbuf);
+
+		if (slsi_80211_is_mgmt(mgmt->frame_control)) {
+			if (slsi_80211_is_probe_req(mgmt->frame_control)) {
+				SLSI_NET_DBG3(dev, SLSI_T20_80211, "Received Probe Request\n");
+				memset(&event, 0, sizeof(event));
+				event.rx_mgmt.freq = ndev_vif->center_freq;
+				event.rx_mgmt.frame = (const u8 *)mgmt;
+				event.rx_mgmt.frame_len = mgmt_len;
+				wpa_supplicant_event_send(ndev_vif->ctx, EVENT_RX_MGMT, &event);
+			} else {
+				SLSI_NET_ERR(dev, "Ignore Indication - Not Probe Request frame\n");
+			}
+		} else {
+			SLSI_NET_ERR(dev, "Ignore Indication - Not Management frame\n");
+		}
+	}
+}
+#endif
 
 void slsi_rx_procedure_started_ind(struct slsi_dev *sdev, struct netif *dev, struct max_buff *mbuf)
 {
@@ -528,7 +573,7 @@ void slsi_rx_procedure_started_ind(struct slsi_dev *sdev, struct netif *dev, str
 			break;
 		}
 		break;
-#ifdef CONFIG_SCSC_ENABLE_P2P
+#ifdef CONFIG_SLSI_WLAN_P2P
 	case FAPI_PROCEDURETYPE_DEVICE_DISCOVERED:
 		/* Expected only in P2P Device and P2P GO role */
 		if (WARN_ON(!SLSI_IS_VIF_INDEX_P2P(ndev_vif) && (ndev_vif->iftype != SLSI_80211_IFTYPE_P2P_GO))) {
@@ -555,51 +600,23 @@ exit_with_lock:
 	slsi_kfree_mbuf(mbuf);
 }
 
-#ifdef CONFIG_SCSC_ENABLE_P2P
-/* Handle Procedure Started (Type = Device Discovered) indication for P2P */
-static void slsi_rx_p2p_device_discovered_ind(struct slsi_dev *sdev, struct netif *dev, struct max_buff *mbuf)
-{
-	struct netdev_vif *ndev_vif = netdev_priv(dev);
-	int mgmt_len;
-
-	SLSI_UNUSED_PARAMETER(sdev);
-
-	SLSI_NET_DBG2(dev, SLSI_T20_80211, "Freq = %d\n", ndev_vif->chan->center_freq);
-
-	/* Only Probe Request is expected as of now */
-	mgmt_len = fapi_get_mgmtlen(mbuf);
-	if (mgmt_len) {
-		struct slsi_80211_mgmt *mgmt = fapi_get_mgmt(mbuf);
-
-		if (slsi_80211_is_mgmt(mgmt->frame_control)) {
-			if (slsi_80211_is_probe_req(mgmt->frame_control)) {
-				SLSI_NET_DBG3(dev, SLSI_T20_80211, "Received Probe Request\n");
-				cfg80211_rx_mgmt(&ndev_vif->wdev, ndev_vif->chan->center_freq, 0, (const u8 *)mgmt, mgmt_len);
-			} else {
-				SLSI_NET_ERR(dev, "Ignore Indication - Not Probe Request frame\n");
-			}
-		} else {
-			SLSI_NET_ERR(dev, "Ignore Indication - Not Management frame\n");
-		}
-	}
-}
-#endif
-
 void slsi_rx_frame_transmission_ind(struct slsi_dev *sdev, struct netif *dev, struct max_buff *mbuf)
 {
 	struct netdev_vif *ndev_vif = netdev_priv(dev);
 	u16 host_tag = fapi_get_u16(mbuf, u.mlme_frame_transmission_ind.host_tag);
 	u16 tx_status = fapi_get_u16(mbuf, u.mlme_frame_transmission_ind.transmission_status);
 
-//  bool              ack = true;
+#ifdef CONFIG_SLSI_WLAN_P2P
+	bool ack = true;
+	struct ieee80211_mgmt *mgmt = (struct ieee80211_mgmt *)ndev_vif->mgmt_tx_data.buf;
+#endif
 
 	SLSI_MUTEX_LOCK(ndev_vif->vif_mutex);
+	SLSI_NET_DBG1(dev, SLSI_MLME, "mlme_frame_transmission_ind(vif:%d, host_tag:%d, transmission_status:%d)\n", fapi_get_vif(mbuf), host_tag, tx_status);
 
-	SLSI_NET_DBG2(dev, SLSI_MLME, "mlme_frame_transmission_ind(vif:%d, host_tag:%d, transmission_status:%d)\n", fapi_get_vif(mbuf), host_tag, tx_status);
-
-#ifdef CONFIG_SCSC_ENABLE_P2P
+#ifdef CONFIG_SLSI_WLAN_P2P
 	if (ndev_vif->mgmt_tx_data.host_tag == host_tag) {
-		//  struct netdev_vif *ndev_vif_to_cfg = ndev_vif;
+		struct netdev_vif *ndev_vif_rcvd = ndev_vif;
 		/* If frame tx failed allow del_vif work to take care of vif deletion.
 		 * This work would be queued as part of frame_tx with the wait duration
 		 */
@@ -616,31 +633,31 @@ void slsi_rx_frame_transmission_ind(struct slsi_dev *sdev, struct netif *dev, st
 
 		/* Change state if frame tx was in Listen as peer response is not expected */
 		if (SLSI_IS_VIF_INDEX_P2P(ndev_vif) && (ndev_vif->mgmt_tx_data.exp_frame == SLSI_P2P_PA_INVALID)) {
-			//if (delayed_work_pending(&ndev_vif->unsync.roc_expiry_work))
-			SLSI_P2P_STATE_CHANGE(sdev, P2P_LISTENING);
-			else {
+			if (slsi_is_work_pending(&ndev_vif->unsync.roc_expiry_work)) {
+				SLSI_P2P_STATE_CHANGE(sdev, P2P_LISTENING);
+			} else {
 				SLSI_P2P_STATE_CHANGE(sdev, P2P_IDLE_VIF_ACTIVE);
 			}
 		} else if (SLSI_IS_VIF_INDEX_P2P_GROUP(ndev_vif)) {
-			const struct slsi_80211_mgmt *mgmt = (const struct ieee80211_mgmt *)ndev_vif->mgmt_tx_data.buf;
 
 			/* If frame transmission was initiated on P2P device vif by supplicant, then use the net_dev of that vif (i.e. p2p0) */
-			if ((mgmt) && (memcmp(mgmt->sa, dev->dev_addr, ETH_ALEN) != 0)) {
+			if ((mgmt) && (memcmp(mgmt->sa, dev->hwaddr, ETH_ALEN) != 0)) {
 				struct netif *ndev = slsi_get_netdev(sdev, SLSI_NET_INDEX_P2P);
 
 				SLSI_NET_DBG2(dev, SLSI_MLME, "Frame Tx was requested with device address - Change ndev_vif for tx_status\n");
 
-				ndev_vif_to_cfg = netdev_priv(ndev);
-				if (!ndev_vif_to_cfg) {
+				ndev_vif_rcvd = netdev_priv(ndev);
+				if (!ndev_vif_rcvd) {
 					SLSI_NET_ERR(dev, "Getting P2P Index netdev failed\n");
-					ndev_vif_to_cfg = ndev_vif;
+					ndev_vif_rcvd = ndev_vif;
 				}
 			}
 		}
-		/*
-					cfg80211_mgmt_tx_status(&ndev_vif_to_cfg->wdev, ndev_vif->mgmt_tx_data.cookie, ndev_vif->mgmt_tx_data.buf, ndev_vif->mgmt_tx_data.buf_len, ack);
-		 */
-		(void)slsi_set_mgmt_tx_data(ndev_vif, 0, 0, NULL, 0);
+		if (mgmt) {
+			(void)slsi_send_tx_status_event(mgmt, ndev_vif_rcvd, ndev_vif_rcvd->mgmt_tx_data.buf, ndev_vif_rcvd->mgmt_tx_data.buf_len, ack);
+		}
+
+		(void)slsi_set_mgmt_tx_data(ndev_vif, 0, NULL, 0);
 	}
 #endif
 
@@ -658,7 +675,6 @@ void slsi_rx_frame_transmission_ind(struct slsi_dev *sdev, struct netif *dev, st
 			switch (ndev_vif->sta.resp_id) {
 			case MLME_CONNECT_RES:
 				slsi_mlme_connect_resp(sdev, dev);
-				//slsi_set_packet_filters(sdev, dev);
 #ifdef CONFIG_SCSC_WLAN_POWER_SAVE
 				slsi_mlme_powermgt(sdev, dev, FAPI_POWERMANAGEMENTMODE_POWER_SAVE);
 #endif
@@ -694,10 +710,12 @@ void slsi_rx_received_frame_ind(struct slsi_dev *sdev, struct netif *dev, struct
 
 	SLSI_MUTEX_LOCK(ndev_vif->vif_mutex);
 
-#ifdef CONFIG_SCSC_ENABLE_P2P
+#ifdef CONFIG_SLSI_WLAN_P2P
 	if (data_unit_descriptor == FAPI_DATAUNITDESCRIPTOR_IEEE802_11_FRAME) {
 		struct slsi_80211_mgmt *mgmt;
 		int mgmt_len;
+		int subtype;
+		union wpa_event_data event;
 
 		mgmt_len = fapi_get_mgmtlen(mbuf);
 		if (!mgmt_len) {
@@ -708,26 +726,24 @@ void slsi_rx_received_frame_ind(struct slsi_dev *sdev, struct netif *dev, struct
 			goto exit;
 		}
 
-		/* HS2 code removed, restructure P2P code below */
-		{
-			int subtype = slsi_p2p_get_public_action_subtype(mgmt);
+		subtype = slsi_p2p_get_public_action_subtype(mgmt);
 
-			SLSI_NET_DBG2(dev, SLSI_T20_80211, "Received action frame (%s)\n", slsi_p2p_pa_subtype_text(subtype));
+		SLSI_NET_DBG2(dev, SLSI_T20_80211, "Received action frame (%s)\n", slsi_p2p_pa_subtype_text(subtype));
 
-			if (SLSI_IS_P2P_UNSYNC_VIF(ndev_vif) && (ndev_vif->mgmt_tx_data.exp_frame != SLSI_P2P_PA_INVALID) && (subtype == ndev_vif->mgmt_tx_data.exp_frame)) {
-				if (sdev->p2p_state == P2P_LISTENING) {
-					SLSI_NET_WARN(dev, "Driver in incorrect P2P state (P2P_LISTENING)");
-				}
+		if (SLSI_IS_P2P_UNSYNC_VIF(ndev_vif) && (ndev_vif->mgmt_tx_data.exp_frame != SLSI_P2P_PA_INVALID) && (subtype == ndev_vif->mgmt_tx_data.exp_frame)) {
+			if (sdev->p2p_state == P2P_LISTENING) {
+				SLSI_NET_WARN(dev, "Driver in incorrect P2P state (P2P_LISTENING)");
+			}
+			if (slsi_is_work_pending(&ndev_vif->unsync.del_vif_work)) {
+				work_cancel(SCSC_WORK, &ndev_vif->unsync.del_vif_work);
+			}
 
-				//cancel_delayed_work(&ndev_vif->unsync.del_vif_work);
-
-				ndev_vif->mgmt_tx_data.exp_frame = SLSI_P2P_PA_INVALID;
-				(void)slsi_mlme_reset_dwell_time(sdev, dev);
-				//if (delayed_work_pending(&ndev_vif->unsync.roc_expiry_work)) {
+			ndev_vif->mgmt_tx_data.exp_frame = SLSI_P2P_PA_INVALID;
+			(void)slsi_mlme_reset_dwell_time(sdev, dev);
+			if (slsi_is_work_pending(&ndev_vif->unsync.roc_expiry_work)) {
 				SLSI_P2P_STATE_CHANGE(sdev, P2P_LISTENING);
 			} else {
-				/*queue_delayed_work(sdev->device_wq, &ndev_vif->unsync.del_vif_work,
-				   SLSI_P2P_UNSYNC_VIF_EXTRA_MSEC); */
+				work_queue(SCSC_WORK, &ndev_vif->unsync.del_vif_work, slsi_p2p_unsync_vif_delete_work, (FAR void *)ndev_vif, MSEC2TICK(SLSI_P2P_UNSYNC_VIF_EXTRA_MSEC));
 				SLSI_P2P_STATE_CHANGE(sdev, P2P_IDLE_VIF_ACTIVE);
 			}
 		} else if ((sdev->p2p_group_exp_frame != SLSI_P2P_PA_INVALID) && (sdev->p2p_group_exp_frame == subtype)) {
@@ -735,75 +751,72 @@ void slsi_rx_received_frame_ind(struct slsi_dev *sdev, struct netif *dev, struct
 			slsi_clear_offchannel_data(sdev, (ndev_vif->ifnum != SLSI_NET_INDEX_P2PX) ? true : false);
 		}
 
-	}
+		memset(&event, 0, sizeof(event));
+		event.rx_mgmt.freq = SLSI_FREQ_FW_TO_HOST(fapi_get_u16(mbuf, u.mlme_received_frame_ind.channel_frequency));
+		event.rx_mgmt.frame = (const u8 *)mgmt;
+		event.rx_mgmt.frame_len = mgmt_len;
+		wpa_supplicant_event_send(ndev_vif->ctx, EVENT_RX_MGMT, &event);
 
-	/*  if (mgmt->u.action.category == WLAN_CATEGORY_WMM)
-	   cac_rx_wmm_action(sdev, dev, mgmt, mgmt_len);
-
-	   cfg80211_rx_mgmt(&ndev_vif->wdev, frequency, 0, (const u8 *)mgmt, mgmt_len);
-	 */
-}
-
-else
+	} else
 #endif
 
-	if (data_unit_descriptor == FAPI_DATAUNITDESCRIPTOR_IEEE802_3_FRAME) {
-		struct slsi_peer *peer = NULL;
-		struct ethhdr *ehdr = (struct ethhdr *)fapi_get_data(mbuf);
+		if (data_unit_descriptor == FAPI_DATAUNITDESCRIPTOR_IEEE802_3_FRAME) {
+			struct slsi_peer *peer = NULL;
+			struct ethhdr *ehdr = (struct ethhdr *)fapi_get_data(mbuf);
 
-		peer = slsi_get_peer_from_mac(sdev, dev, ehdr->h_source);
-		if (!peer) {
-			SLSI_INCR_DATA_PATH_STATS(sdev->dp_stats.rx_drop_peer_not_present);
-			SLSI_DBG1(sdev, SLSI_RX, "drop packet as No peer found\n");
-			goto exit;
-		}
-
-		/* strip signal and any signal/bulk roundings/offsets */
-		mbuf_pull(mbuf, fapi_get_siglen(mbuf));
-
-		/* test for an overlength frame */
-		if (mbuf->data_len > (dev->mtu + ETH_HLEN)) {
-			/* A bogus length ethfrm has been encap'd. */
-			/* Is someone trying an oflow attack? */
-			SLSI_WARN(sdev, "oversize frame (%d > %d)\n", mbuf->data_len, dev->mtu + ETH_HLEN);
-			SLSI_INCR_DATA_PATH_STATS(sdev->dp_stats.rx_drop_large_frame);
-			goto exit;
-		}
-
-		SLSI_MUTEX_UNLOCK(ndev_vif->vif_mutex);
-		SLSI_DBG3(sdev, SLSI_RX, "pass %u bytes to local stack\n", mbuf->data_len);
-		dev->d_buf = slsi_mbuf_get_data(mbuf);
-		dev->d_len = mbuf->data_len;
-
-		if (ntohs(ehdr->h_proto) == ETH_P_PAE) {
-			SLSI_INCR_DATA_PATH_STATS(sdev->dp_stats.rx_num_eapol);
-			if (ndev_vif->vif_type == FAPI_VIFTYPE_STATION) {
-				SLSI_NET_DBG2(dev, SLSI_MLME, "Received eapol from AP\n");
-				mbuf_pull(mbuf, sizeof(*ehdr));
-				l2_packet_receive(ndev_vif->sdev->drv->ctx, ehdr->h_source, slsi_mbuf_get_data(mbuf), mbuf->data_len);
+			peer = slsi_get_peer_from_mac(sdev, dev, ehdr->h_source);
+			if (!peer) {
+				SLSI_INCR_DATA_PATH_STATS(sdev->dp_stats.rx_drop_peer_not_present);
+				SLSI_DBG1(sdev, SLSI_RX, "drop packet as No peer found\n");
+				goto exit;
 			}
-			if (ndev_vif->vif_type == FAPI_VIFTYPE_AP) {
-				union wpa_event_data event;
-				memset(&event, 0, sizeof(event));
-				SLSI_NET_DBG2(dev, SLSI_MLME, "Received eapol from STA\n");
-				mbuf_pull(mbuf, sizeof(*ehdr));
-				event.eapol_rx.data = slsi_mbuf_get_data(mbuf);
-				event.eapol_rx.data_len = mbuf->data_len;
-				event.eapol_rx.src = ehdr->h_source;
-				wpa_supplicant_event_send(ndev_vif->sdev->drv->ctx, EVENT_EAPOL_RX, &event);
-			}
-		} else {
-			SLSI_NET_DBG2(dev, SLSI_MLME, "sending non eapol\n");
-			SLSI_INCR_DATA_PATH_STATS(sdev->dp_stats.rx_num_mlme_dhcp);
-			slsi_ethernetif_input(dev, slsi_mbuf_get_data(mbuf), mbuf->data_len);
-		}
-		slsi_kfree_mbuf(mbuf);
 
-		return;
-	}
+			/* strip signal and any signal/bulk roundings/offsets */
+			mbuf_pull(mbuf, fapi_get_siglen(mbuf));
+
+			/* test for an overlength frame */
+			if (mbuf->data_len > (dev->mtu + ETH_HLEN)) {
+				/* A bogus length ethfrm has been encap'd. */
+				/* Is someone trying an oflow attack? */
+				SLSI_WARN(sdev, "oversize frame (%d > %d)\n", mbuf->data_len, dev->mtu + ETH_HLEN);
+				SLSI_INCR_DATA_PATH_STATS(sdev->dp_stats.rx_drop_large_frame);
+				goto exit;
+			}
+
+			SLSI_MUTEX_UNLOCK(ndev_vif->vif_mutex);
+			SLSI_DBG3(sdev, SLSI_RX, "pass %u bytes to local stack\n", mbuf->data_len);
+			dev->d_buf = slsi_mbuf_get_data(mbuf);
+			dev->d_len = mbuf->data_len;
+
+			if (ntohs(ehdr->h_proto) == ETH_P_PAE) {
+				SLSI_INCR_DATA_PATH_STATS(sdev->dp_stats.rx_num_eapol);
+				if (ndev_vif->vif_type == FAPI_VIFTYPE_STATION) {
+					SLSI_NET_DBG2(dev, SLSI_MLME, "Received eapol from AP\n");
+					mbuf_pull(mbuf, sizeof(*ehdr));
+					l2_packet_receive(ndev_vif->ctx, ehdr->h_source, slsi_mbuf_get_data(mbuf), mbuf->data_len);
+				}
+				if (ndev_vif->vif_type == FAPI_VIFTYPE_AP) {
+					union wpa_event_data event;
+					memset(&event, 0, sizeof(event));
+					SLSI_NET_DBG2(dev, SLSI_MLME, "Received eapol from STA\n");
+					mbuf_pull(mbuf, sizeof(*ehdr));
+					event.eapol_rx.data = slsi_mbuf_get_data(mbuf);
+					event.eapol_rx.data_len = mbuf->data_len;
+					event.eapol_rx.src = ehdr->h_source;
+					wpa_supplicant_event_send(ndev_vif->ctx, EVENT_EAPOL_RX, &event);
+				}
+			} else {
+				SLSI_NET_DBG2(dev, SLSI_MLME, "sending non eapol\n");
+				SLSI_INCR_DATA_PATH_STATS(sdev->dp_stats.rx_num_mlme_dhcp);
+				slsi_ethernetif_input(dev, slsi_mbuf_get_data(mbuf), mbuf->data_len);
+			}
+			slsi_kfree_mbuf(mbuf);
+
+			return;
+		}
 exit:
-SLSI_MUTEX_UNLOCK(ndev_vif->vif_mutex);
-slsi_kfree_mbuf(mbuf);
+	SLSI_MUTEX_UNLOCK(ndev_vif->vif_mutex);
+	slsi_kfree_mbuf(mbuf);
 }
 
 void slsi_rx_mic_failure_ind(struct slsi_dev *sdev, struct netif *dev, struct max_buff *mbuf)
@@ -822,7 +835,7 @@ void slsi_rx_mic_failure_ind(struct slsi_dev *sdev, struct netif *dev, struct ma
 	key_type = fapi_get_u16(mbuf, u.mlme_mic_failure_ind.key_type);
 	key_id = fapi_get_u16(mbuf, u.mlme_mic_failure_ind.key_id);
 
-	SLSI_NET_DBG1(dev, SLSI_MLME, "mlme_mic_failure_ind(vif:%d, MAC:%pM, key_type:%d, key_id:%d)\n", fapi_get_vif(mbuf), mac_addr, key_type, key_id);
+	SLSI_NET_ERR(dev, "mlme_mic_failure_ind(vif:%d, MAC:%pM, key_type:%d, key_id:%d)\n", fapi_get_vif(mbuf), mac_addr, key_type, key_id);
 
 	if (WARN_ON((key_type != FAPI_KEYTYPE_GROUP) && (key_type != FAPI_KEYTYPE_PAIRWISE))) {
 		goto exit;
@@ -832,7 +845,7 @@ void slsi_rx_mic_failure_ind(struct slsi_dev *sdev, struct netif *dev, struct ma
 	if (key_type == SLSI_80211_KEYTYPE_PAIRWISE) {
 		event.michael_mic_failure.unicast = 1;
 	}
-	wpa_supplicant_event_send(ndev_vif->sdev->drv->ctx, EVENT_MICHAEL_MIC_FAILURE, &event);
+	wpa_supplicant_event_send(ndev_vif->ctx, EVENT_MICHAEL_MIC_FAILURE, &event);
 exit:
 	SLSI_MUTEX_UNLOCK(ndev_vif->vif_mutex);
 	slsi_kfree_mbuf(mbuf);
@@ -893,7 +906,7 @@ int slsi_rx_blocking_signals(struct slsi_dev *sdev, struct max_buff *mbuf)
 		struct netif *dev;
 		struct netdev_vif *ndev_vif;
 
-		dev = slsi_get_netdev(sdev, vif);
+		dev = sdev->netdev[vif];
 		if (dev) {
 			ndev_vif = netdev_priv(dev);
 			sig_wait = &ndev_vif->sig_wait;
@@ -901,18 +914,18 @@ int slsi_rx_blocking_signals(struct slsi_dev *sdev, struct max_buff *mbuf)
 		SLSI_DBG3(sdev, SLSI_MLME, "rx ind(0x%.4x, pid:0x%.4x)\n", id, pid);
 		if (sig_wait->ind_id) {
 			SLSI_DBG3(sdev, SLSI_MLME, "exp ind(0x%.4x, pid:0x%.4x)\n", sig_wait->ind_id, sig_wait->process_id);
-		}
-		SLSI_MUTEX_LOCK(sig_wait->send_signal_lock);
-		if (id == sig_wait->ind_id && pid == sig_wait->process_id) {
-			if (WARN_ON(sig_wait->ind)) {
-				slsi_kfree_mbuf(sig_wait->ind);
+			SLSI_MUTEX_LOCK(sig_wait->send_signal_lock);
+			if (id == sig_wait->ind_id && pid == sig_wait->process_id) {
+				if (WARN_ON(sig_wait->ind)) {
+					slsi_kfree_mbuf(sig_wait->ind);
+				}
+				sig_wait->ind = mbuf;
+				SLSI_MUTEX_UNLOCK(sig_wait->send_signal_lock);
+				complete(&sig_wait->completion);
+				return 0;
 			}
-			sig_wait->ind = mbuf;
 			SLSI_MUTEX_UNLOCK(sig_wait->send_signal_lock);
-			complete(&sig_wait->completion);
-			return 0;
 		}
-		SLSI_MUTEX_UNLOCK(sig_wait->send_signal_lock);
 	}
 	return -EINVAL;
 }

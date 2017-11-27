@@ -41,6 +41,7 @@
 
 #define SLSI_EAPOL_KEY_INFO_KEY_TYPE_BIT_IN_LOWER_BYTE     (1 << 3)	/* Group = 0, Pairwise = 1 */
 #define SLSI_EAPOL_KEY_INFO_MIC_BIT_IN_HIGHER_BYTE         (1 << 0)
+#define SLSI_EAPOL_KEY_INFO_REQUEST_BIT_IN_HIGHER_BYTE     (1 << 3)	/* Request bit set in MIC failure */
 /* pkt_data would start from 802.1X Authentication field (pkt_data[0] = Version).
  * For M4 packet, it will be something as below... member(size, position)
  * Version (1, 0) + Type (1, 1) + Length (2, 2:3) + Descriptor Type (1, 4) + Key Information (2, 5:6) +
@@ -65,7 +66,7 @@
 #define SLSI_IS_VIF_INDEX_P2P(ndev_vif) (ndev_vif->ifnum == SLSI_NET_INDEX_P2P)
 #define SLSI_IS_VIF_INDEX_P2P_GROUP(ndev_vif) (ndev_vif->ifnum == SLSI_NET_INDEX_P2PX)
 
-#ifdef CONFIG_SCSC_ENABLE_P2P
+#ifdef CONFIG_SLSI_WLAN_P2P
 /* Check for P2P unsync vif type */
 #define SLSI_IS_P2P_UNSYNC_VIF(ndev_vif) ((ndev_vif->ifnum == SLSI_NET_INDEX_P2P) && (ndev_vif->vif_type == FAPI_VIFTYPE_UNSYNCHRONISED))
 
@@ -266,7 +267,7 @@ static inline void slsi_clear_cached_ies(u8 **ie, size_t *ie_len)
 	*ie_len = 0;
 }
 
-#ifdef CONFIG_SCSC_ENABLE_P2P
+#ifdef CONFIG_SLSI_WLAN_P2P
 /* P2P Public Action frame subtype in text format for debug purposes */
 static inline char *slsi_p2p_pa_subtype_text(int subtype)
 {
@@ -323,13 +324,18 @@ static inline void slsi_unsync_vif_set_probe_rsp_ie(struct netdev_vif *ndev_vif,
 	ndev_vif->unsync.probe_rsp_ies_len = ies_len;
 }
 
+void slsi_p2p_unsync_vif_delete_work(FAR void *arg);
+void slsi_p2p_roc_duration_expiry_work(FAR void *arg);
+
 /**
  * Handler to queue P2P unsync vif deletion work.
  */
 static inline void slsi_p2p_queue_unsync_vif_del_work(struct netdev_vif *ndev_vif, unsigned int delay)
 {
-	//cancel_delayed_work(&ndev_vif->unsync.del_vif_work);
-	//queue_delayed_work(ndev_vif->sdev->device_wq, &ndev_vif->unsync.del_vif_work, delay);
+	if (slsi_is_work_pending(&ndev_vif->unsync.del_vif_work)) {
+		work_cancel(SCSC_WORK, &ndev_vif->unsync.del_vif_work);
+	}
+	work_queue(SCSC_WORK, &ndev_vif->unsync.del_vif_work, slsi_p2p_unsync_vif_delete_work, (FAR void *)ndev_vif, MSEC2TICK(delay));
 }
 
 /* Update the new state for P2P. Also log the state change for debug purpose */
@@ -340,35 +346,23 @@ static inline void slsi_p2p_queue_unsync_vif_del_work(struct netdev_vif *ndev_vi
 	} while (0)
 
 /* Set management frame tx data of vif */
-static inline int slsi_set_mgmt_tx_data(struct netdev_vif *ndev_vif, u64 cookie, u16 host_tag, const u8 *buf, size_t buf_len)
+static inline int slsi_set_mgmt_tx_data(struct netdev_vif *ndev_vif, u16 host_tag, const u8 *buf, size_t buf_len)
 {
-	u8 *tx_frame = NULL;
-
-	if (buf_len != 0) {
-		tx_frame = kmm_malloc(buf_len);
-		if (!tx_frame)
-			//SLSI_NET_ERR(ndev_vif->sdev->netdev, "FAILED to allocate memory for Tx frame\n");
-		{
-			return -ENOMEM;
-		}
-		SLSI_NET_DBG3(ndev_vif->sdev->netdev, SLSI_T20_80211, "Copy buffer for tx_status\n");
-		memcpy(tx_frame, buf, buf_len);
-	} else if (ndev_vif->mgmt_tx_data.buf) {
+	if (ndev_vif->mgmt_tx_data.buf) {
 		SLSI_NET_DBG3(ndev_vif->sdev->netdev, SLSI_T20_80211, "Free buffer of tx_status\n");
 		kmm_free((void *)ndev_vif->mgmt_tx_data.buf);
 	}
-
-	ndev_vif->mgmt_tx_data.cookie = cookie;
 	ndev_vif->mgmt_tx_data.host_tag = host_tag;
-	ndev_vif->mgmt_tx_data.buf = tx_frame;
+	ndev_vif->mgmt_tx_data.buf = buf;
 	ndev_vif->mgmt_tx_data.buf_len = buf_len;
 
 	return 0;
 }
-#endif							/* CONFIG_SCSC_ENABLE_P2P */
+#endif							/* CONFIG_SLSI_WLAN_P2P */
 
 bool is_multicast_ether_addr(const u8 *addr);
 void slsi_get_hw_mac_address(struct slsi_dev *sdev, u8 *addr);
+void slsi_channel_list_changed(struct netdev_vif *ndev_vif, const char *country);
 int slsi_start(struct slsi_dev *sdev);
 void slsi_stop_net_dev(struct slsi_dev *sdev, struct netif *dev);
 void slsi_stop(struct slsi_dev *sdev);
@@ -380,9 +374,8 @@ int slsi_peer_remove(struct slsi_dev *sdev, struct netif *dev, struct slsi_peer 
 int slsi_ps_port_control(struct slsi_dev *sdev, struct netif *dev, struct slsi_peer *peer, enum slsi_sta_conn_state s);
 int slsi_vif_activated(struct slsi_dev *sdev, struct netif *dev);
 void slsi_vif_deactivated(struct slsi_dev *sdev, struct netif *dev);
-int slsi_handle_disconnect(struct slsi_dev *sdev, struct netif *dev, u8 *peer_address, u16 reason);
+int slsi_handle_disconnect(struct slsi_dev *sdev, struct netif *dev, u8 *peer_address, u16 reason, int locallygenerated);
 int slsi_update_suspend_mode(struct slsi_dev *sdev);
-int slsi_band_update(struct slsi_dev *sdev, int band);
 int slsi_ip_address_changed(struct slsi_dev *sdev, struct netif *dev, __be32 ipaddress);
 int slsi_send_gratuitous_arp(struct slsi_dev *sdev, struct netif *dev);
 int slsi_find_scan_freq(struct slsi_80211_mgmt *mgmt, size_t mgmt_len, u16 freq);
@@ -390,15 +383,15 @@ int slsi_auto_chan_select_scan(struct slsi_dev *sdev, int chan_count, struct sls
 int slsi_set_uint_mib(struct slsi_dev *dev, struct netif *ndev, u16 psid, int value);
 int slsi_update_regd_rules(struct slsi_dev *sdev, bool country_check);
 int slsi_set_uapsd_qos_info(struct slsi_dev *sdev, struct netif *dev, const int qos_info);
-#ifdef CONFIG_SCSC_ENABLE_P2P
+#ifdef CONFIG_SLSI_WLAN_P2P
 int slsi_p2p_init(struct slsi_dev *sdev, struct netdev_vif *ndev_vif);
 void slsi_p2p_deinit(struct slsi_dev *sdev, struct netdev_vif *ndev_vif);
-int slsi_p2p_vif_activate(struct slsi_dev *sdev, struct netif *dev, struct slsi_80211_channel *chan, u16 duration, bool set_probe_rsp_ies);
+int slsi_p2p_vif_activate(struct slsi_dev *sdev, struct netif *dev, unsigned int freq, u16 duration, bool set_probe_rsp_ies);
 void slsi_p2p_vif_deactivate(struct slsi_dev *sdev, struct netif *dev, bool hw_available);
 void slsi_p2p_group_start_remove_unsync_vif(struct slsi_dev *sdev);
 int slsi_p2p_dev_probe_rsp_ie(struct slsi_dev *sdev, struct netif *dev, u8 *probe_rsp_ie, size_t probe_rsp_ie_len);
 int slsi_p2p_dev_null_ies(struct slsi_dev *sdev, struct netif *dev);
-int slsi_p2p_get_public_action_subtype(const struct slsi_80211_mgmt *mgmt);
+int slsi_p2p_get_public_action_subtype(struct slsi_80211_mgmt *mgmt);
 int slsi_p2p_get_go_neg_rsp_status(struct netif *dev, const struct slsi_80211_mgmt *mgmt);
 u8 slsi_p2p_get_exp_peer_frame_subtype(u8 subtype);
 #endif
@@ -416,12 +409,14 @@ int slsi_read_default_country(struct slsi_dev *sdev, u8 *alpha2, u16 psid);
 int slsi_read_disconnect_ind_timeout(struct slsi_dev *sdev, u16 psid);
 void slsi_connect_indication(struct netdev_vif *ndev_vif, const u8 *req_ie, size_t req_ie_len, const u8 *resp_ie, size_t resp_ie_len, u16 status, u16 vif_type, const u8 *addr);
 
-u16 slsi_country_to_index(struct slsi_802_11d_reg_domain regd_info, const char *alpha2);
+u16 slsi_country_to_index(struct slsi_802_11d_reg_domain *regd_info, const char *alpha2);
 int slsi_read_regulatory_rules(struct slsi_dev *sdev, u16 psid, u16 index);
 int slsi_set_country_update_regd(struct slsi_dev *sdev, const char *alpha2_code, int size);
 void slsi_clear_offchannel_data(struct slsi_dev *sdev, bool acquire_lock);
 void slsi_scan_ind_timeout_handle(FAR void *arg);
 void slsi_scan_complete(struct netdev_vif *ndev_vif);
+void slsi_send_tx_status_event(struct ieee80211_mgmt *mgmt, struct netdev_vif *ndev_vif, const u8 *data, size_t data_len, int ack);
+
 #ifdef CONFIG_SLSI_RX_PERFORMANCE_TEST
 void slsi_rx_stop_performace_test_timer(struct slsi_dev *sdev);
 #endif

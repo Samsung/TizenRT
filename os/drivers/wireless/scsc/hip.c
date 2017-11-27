@@ -229,6 +229,16 @@ int slsi_hip_rx(struct slsi_dev *sdev, struct max_buff *mbuf)
 		slsi_kfree_mbuf(mbuf);
 		return 0;
 	}
+#ifdef CONFIG_SLSI_WLAN_UDI
+	if (udi_enabled) {
+		if (!(skip_scan_ind && (fapi_get_sigid(mbuf) == MLME_SCAN_IND))) {
+			struct timespec sig_time;
+
+			clock_gettime(CLOCK_REALTIME, &sig_time);
+			slsi_wlan_udi_log_data(sig_time, fapi_get_siglen(mbuf), slsi_mbuf_get_data(mbuf), mbuf->data_len);
+		}
+	}
+#endif
 
 	if (fapi_is_ma(mbuf)) {
 		return hip_sap_cont.sap[SAP_MA]->sap_handler(sdev, mbuf);
@@ -267,7 +277,6 @@ int slsi_hip_stop(struct slsi_dev *sdev)
 	sdev->hip.hip_state = SLSI_HIP_STATE_STOPPING;
 
 	hip4_deinit(&sdev->hip4_inst);
-
 	SLSI_DBG4(sdev, SLSI_HIP_INIT_DEINIT, "Update HIP state (SLSI_HIP_STATE_STOPPED)\n");
 	sdev->hip.hip_state = SLSI_HIP_STATE_STOPPED;
 

@@ -23,6 +23,9 @@
 #include "dev.h"
 #include "utils_scsc.h"
 #include "debug_scsc.h"
+#ifdef CONFIG_SLSI_WLAN_HCF_ENABLE
+#include "mif_reg.h"
+#endif
 
 #ifdef CONFIG_SCSC_PLATFORM
 #define SCSC_SCOREBOARD_VER  (1)
@@ -57,6 +60,15 @@ enum rw {
  * The queue indcies which owned by the host are only writable by the host.
  * F/W can only read them. And vice versa.
  */
+
+#ifdef CONFIG_SLSI_WLAN_UDI
+void slsi_wlan_set_udi_flag(bool udi_flag, bool skip_scan_ind_flag)
+{
+	udi_enabled = udi_flag;
+	skip_scan_ind = skip_scan_ind_flag;
+}
+#endif
+
 static int q_idx_layout[6][2] = {
 	{0, FW_OWN_OFS + 0},		/* mif_q_fh_ctl : 0 */
 	{1, FW_OWN_OFS + 1},		/* mif_q_fh_dat : 1 */
@@ -282,8 +294,8 @@ static int hip4_q_add_signal(struct slsi_hip4 *hip, enum hip4_hip_q_conf conf, s
 {
 	struct hip4_hip_control *ctrl = hip->hip_control;
 	struct hip4_priv *hip_priv = hip->hip_priv;
-	u8 idx_w;
-	u8 idx_r;
+	u16 idx_w;
+	u16 idx_r;
 
 	/* Read the current q write pointer */
 	if (SCSC_SCOREBOARD_VER == 0) {
@@ -384,13 +396,14 @@ static void hip4_wq(FAR void *arg)
 	scsc_mifram_ref ref;
 	void *mem;
 	struct mbulk *m;
-	u8 idx_r;
-	u8 idx_w;
+	u16 idx_r;
+	u16 idx_w;
 	struct slsi_dev *sdev = container_of(hip, struct slsi_dev, hip4_inst);
 	struct scsc_service *service;
 	bool update = false;
 
 	if (!sdev || !sdev->service) {
+		BUG();
 		return;
 	}
 	service = sdev->service;
@@ -595,18 +608,29 @@ static void hip4_irq_handler(int irq, void *data)
 }
 
 /**** OFFSET SHOULD BE 4096 BYTES ALIGNED ***/
-#define IMG_MGR_SEC_WLAN_CONFIG_SIZE    0x2000	/* 8 kB */
 #define IMG_MGR_SEC_WLAN_MIB_SIZE       0x01000	/* 4 kB */
 
 #ifdef CONFIG_SCSC_WLANLITE
+
 #define IMG_MGR_SEC_WLAN_TX_DAT_SIZE    0x02000	/* 8 kB */
 #define IMG_MGR_SEC_WLAN_TX_CTL_SIZE    0x00800	/* 2 kB */
-#define IMG_MGR_SEC_WLAN_RX_SIZE        0x48000	/* 288 kB */
+#ifdef CONFIG_SLSI_WLAN_HCF_ENABLE
+#define IMG_MGR_SEC_WLAN_RX_SIZE        0x46800	/* 282 kB */
 #else
+#define IMG_MGR_SEC_WLAN_RX_SIZE        0x48000	/* 288 kB */
+#endif							/* CONFIG_SLSI_WLAN_HCF_ENABLE */
+
+#else							/* CONFIG_SCSC_WLANLITE */
+
 #define IMG_MGR_SEC_WLAN_TX_DAT_SIZE    0x1C000	/* 112 kB */
 #define IMG_MGR_SEC_WLAN_TX_CTL_SIZE    0x03800	/* 14 kB */
+#ifdef CONFIG_SLSI_WLAN_HCF_ENABLE
+#define IMG_MGR_SEC_WLAN_RX_SIZE        0x2A800	/* 170 kB */
+#else
 #define IMG_MGR_SEC_WLAN_RX_SIZE        0x2C000	/* 176 kB */
-#endif
+#endif							/* CONFIG_SLSI_WLAN_HCF_ENABLE */
+
+#endif							/* CONFIG_SCSC_WLANLITE */
 
 #define IMG_MGR_SEC_WLAN_TX_SIZE        (IMG_MGR_SEC_WLAN_TX_DAT_SIZE + IMG_MGR_SEC_WLAN_TX_CTL_SIZE)
 
@@ -631,6 +655,10 @@ int hip4_init(struct slsi_hip4 *hip)
 	char *from_host_pool_addr;
 	char *from_host_ctrl_pool_addr;
 	char *to_host_pool_addr;
+#ifdef CONFIG_SLSI_WLAN_HCF_ENABLE
+	u32 mib_data_loc = 0;
+	u32 mib_data_sz = 0;
+#endif
 
 	if (!sdev || !sdev->service) {
 		return -EINVAL;
@@ -648,6 +676,13 @@ int hip4_init(struct slsi_hip4 *hip)
 
 	hip->hip_priv->host_pool_id_dat = MBULK_CLASS_FROM_HOST_DAT;
 	hip->hip_priv->host_pool_id_ctl = MBULK_CLASS_FROM_HOST_CTL;
+
+#ifdef CONFIG_SLSI_WLAN_HCF_ENABLE
+	if (scsc_mx_service_mifram_alloc(sdev->service, IMG_MGR_SEC_WLAN_MIB_SIZE, &hip->hip_priv->mib_pool, 32)) {
+		pr_err("%s: Not enough memory to allocate mib pool\n", __func__);
+		return -ENOMEM;
+	}
+#endif
 
 	/* Queue memories */
 	if (scsc_mx_service_mifram_alloc(sdev->service, IMG_MGR_SEC_WLAN_TX_SIZE, &hip->hip_priv->from_host_pool, 4096)) {
@@ -696,10 +731,33 @@ int hip4_init(struct slsi_hip4 *hip)
 	 * wifi subsystem
 	 */
 	if (scsc_mx_service_mifram_alloc(sdev->service, sizeof(struct hip4_hip_control), &hip->hip_priv->hip_control, 32)) {
+		pr_err("%s: Not enough memory to allocate hip_control\n", __func__);
 		return -ENOMEM;
 	}
 
 	hip_control = scsc_mx_service_mif_addr_to_ptr(sdev->service, hip->hip_priv->hip_control);
+
+#ifdef CONFIG_SLSI_WLAN_HCF_ENABLE
+	if (CONFIG_SLSI_WLAN_HCF_SIZE > IMG_MGR_SEC_WLAN_MIB_SIZE) {
+		SLSI_ERR_NODEV("MIB size (%d) > MIB AREA (%d). Aborting memcpy\n", CONFIG_SLSI_WLAN_HCF_SIZE, IMG_MGR_SEC_WLAN_MIB_SIZE);
+	} else {
+		u8 *buf = (u8 *) WLAN_MIB_HCF_ADDR;
+		u8 *addr = scsc_mx_service_mif_addr_to_ptr(service, hip->hip_priv->mib_pool);
+
+		/* Check MIB file header */
+		if ((CONFIG_SLSI_WLAN_HCF_SIZE > WLAN_HCF_HEADER) && (*(buf + 7) == 1)) {
+			/* Skip header and continue */
+			u8 *mib_data = buf + WLAN_HCF_HEADER;
+			mib_data_sz = CONFIG_SLSI_WLAN_HCF_SIZE - WLAN_HCF_HEADER;
+
+			SLSI_INFO_NODEV("Loading MIB into shared memory without header, size (%d)\n", mib_data_sz);
+			memcpy((u8 *) addr, mib_data, mib_data_sz);
+			mib_data_loc = hip->hip_priv->mib_pool;
+		} else {
+			SLSI_ERR_NODEV("Incorrect MIB header. Aborting MIB read\n");
+		}
+	}
+#endif
 
 	/* Reset hip_control table */
 	memset(hip_control, 0, sizeof(struct hip4_hip_control));
@@ -719,8 +777,10 @@ int hip4_init(struct slsi_hip4 *hip)
 	hip_control->config_v4.fw_buf_loc = hip->hip_priv->to_host_pool;
 	hip_control->config_v4.host_buf_sz = IMG_MGR_SEC_WLAN_TX_SIZE;
 	hip_control->config_v4.fw_buf_sz = IMG_MGR_SEC_WLAN_RX_SIZE;
-	hip_control->config_v4.mib_loc = 0;
-	hip_control->config_v4.mib_sz = 0;
+#ifdef CONFIG_SLSI_WLAN_HCF_ENABLE
+	hip_control->config_v4.mib_loc = mib_data_loc;
+	hip_control->config_v4.mib_sz = mib_data_sz;
+#endif
 	hip_control->config_v4.log_config_loc = 0;
 	hip_control->config_v4.mif_fh_int_n = hip->hip_priv->rx_intr_fromhost;
 	hip_control->config_v4.mif_th_int_n = hip->hip_priv->rx_intr_tohost;
@@ -747,8 +807,10 @@ int hip4_init(struct slsi_hip4 *hip)
 	hip_control->config_v3.fw_buf_loc = hip->hip_priv->to_host_pool;
 	hip_control->config_v3.host_buf_sz = IMG_MGR_SEC_WLAN_TX_SIZE;
 	hip_control->config_v3.fw_buf_sz = IMG_MGR_SEC_WLAN_RX_SIZE;
-	hip_control->config_v3.mib_loc = 0;
-	hip_control->config_v3.mib_sz = 0;
+#ifdef CONFIG_SLSI_WLAN_HCF_ENABLE
+	hip_control->config_v3.mib_loc = mib_data_loc;
+	hip_control->config_v3.mib_sz = mib_data_sz;
+#endif
 	hip_control->config_v3.log_config_loc = 0;
 	hip_control->config_v3.mif_fh_int_n = hip->hip_priv->rx_intr_fromhost;
 	hip_control->config_v3.mif_th_int_n = hip->hip_priv->rx_intr_tohost;
@@ -850,6 +912,16 @@ int scsc_wifi_transmit_frame(struct slsi_hip4 *hip, bool ctrl_packet, struct max
 		mbulk_free_virt_host(m);
 		return ERR_VAL;
 	}
+#ifdef CONFIG_SLSI_WLAN_UDI
+	/* Log the FH record (req) before adding it to hip queue as the Rx (cfm) path might get triggered
+	 * before the req is logged causing cfm to be logged first. */
+	if (udi_enabled) {
+		struct timespec sig_time;
+
+		clock_gettime(CLOCK_REALTIME, &sig_time);
+		slsi_wlan_udi_log_data(sig_time, fapi_get_siglen(mbuf), slsi_mbuf_get_data(mbuf), mbuf->data_len);
+	}
+#endif
 
 	if (hip4_q_add_signal(hip, ctrl_packet ? HIP4_MIF_Q_FH_CTRL : HIP4_MIF_Q_FH_DAT, offset, service)) {
 #ifdef CONFIG_SLSI_WLAN_STATS
