@@ -207,7 +207,7 @@ struct wpa_ptk {
 	size_t kck_len;
 	size_t kek_len;
 	size_t tk_len;
-	int installed; /* 1 if key has already been installed to driver */
+	int installed;				/* 1 if key has already been installed to driver */
 };
 
 struct wpa_gtk {
@@ -220,7 +220,7 @@ struct wpa_igtk {
 	u8 igtk[WPA_IGTK_MAX_LEN];
 	size_t igtk_len;
 };
-#endif /* CONFIG_IEEE80211W */
+#endif							/* CONFIG_IEEE80211W */
 
 /* WPA IE version 1
  * 00-50-f2:1 (OUI:OUI type)

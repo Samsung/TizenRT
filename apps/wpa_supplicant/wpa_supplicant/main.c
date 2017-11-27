@@ -91,10 +91,16 @@ int wpa_supplicant_main(int argc, char *argv[])
 
 	os_memset(&params, 0, sizeof(params));
 
-#ifdef CONFIG_DEBUG_WLAN_SUPPLICANT_ERROR
+#ifdef CONFIG_DEBUG_WLAN_SUPPLICANT_VERBOSE
+	params.wpa_debug_level = MSG_EXCESSIVE;
+#elif defined(CONFIG_DEBUG_WLAN_SUPPLICANT_DEBUG)
+	params.wpa_debug_level = MSG_DEBUG;
+#elif defined(CONFIG_DEBUG_WLAN_SUPPLICANT_INFO)
+       params.wpa_debug_level = MSG_INFO;
+#elif defined(CONFIG_DEBUG_WLAN_SUPPLICANT_ERROR)
 	params.wpa_debug_level = MSG_ERROR;
 #else
-	params.wpa_debug_level = MSG_INFO;
+	params.wpa_debug_level = MSG_NO_DEBUG;
 #endif
 
 	iface = ifaces = os_zalloc(sizeof(struct wpa_interface));
@@ -275,7 +281,6 @@ int wpa_supplicant_main(int argc, char *argv[])
 			break;
 		}
 	}
-
 	if (exitcode == 0) {
 		exitcode = wpa_supplicant_run(global);
 	}
@@ -297,7 +302,7 @@ int wpa_supplicant_task(int argc, char *argv[])
 
 	argv[argc] = NULL;
 
-	task = task_create("WPA Supplicant", CONFIG_WPA_SUPPLICANT_PRIORITY, CONFIG_WPA_SUPPLICANT_STACKSIZE, wpa_supplicant_main,	/*CONFIG_WPA_SUPPLICANT_ENTRYPOINT, */
+	task = task_create("WPA Supplicant", CONFIG_WPA_SUPPLICANT_PRIORITY, CONFIG_WPA_SUPPLICANT_STACKSIZE, (main_t)CONFIG_WPA_SUPPLICANT_ENTRYPOINT, 
 					   &argv[1]);
 
 	sleep(1);

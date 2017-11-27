@@ -38,33 +38,34 @@ config CTRL_IFACE
 	default y
 
 config CTRL_IFACE_FIFO
-    bool "wpa_supplicant ctrl_iface type - fifo"
-    default y
+	bool "wpa_supplicant ctrl_iface type - fifo"
+	default y
 
 if CTRL_IFACE_FIFO
+
 config WPA_CTRL_FIFO_DEV_REQ
-    string "Path to WPA Control FIFO device for requests"
-    default "/dev/wpa_ctrl_req"
+	string "Path to WPA Control FIFO device for requests"
+	default "/dev/wpa_ctrl_req"
 
 config WPA_CTRL_FIFO_DEV_CFM
-    string "Path to WPA Control FIFO device for confirm"
-    default "/dev/wpa_ctrl_cfm"
+	string "Path to WPA Control FIFO device for confirm"
+	default "/dev/wpa_ctrl_cfm"
 
 config WPA_CTRL_FIFO_DEV_GLOBAL_REQ
-    string "Path to WPA Control global FIFO device for requests"
-    default "/dev/wpa_ctrl_global_req"
+	string "Path to WPA Control global FIFO device for requests"
+	default "/dev/wpa_ctrl_global_req"
 
 config WPA_CTRL_FIFO_DEV_GLOBAL_CFM
-    string "Path to WPA Control global FIFO device for confirm"
-    default "/dev/wpa_ctrl_global_cfm"
+	string "Path to WPA Control global FIFO device for confirm"
+	default "/dev/wpa_ctrl_global_cfm"
 
 config WPA_MONITOR_FIFO_DEV
-    string "Path to WPA Control monitor FIFO device"
-    default "/dev/wpa_monitor"
+	string "Path to WPA Control monitor FIFO device"
+	default "/dev/wpa_monitor"
 
 config WPA_CTRL_FIFO_MK_MODE
-    int "File access mode for WPA control FIFOs"
-    default 666
+	int "File access mode for WPA control FIFOs"
+	default 666
 
 endif
 
@@ -75,6 +76,15 @@ config ELOOP_POLL
 config WPA_SUPPLICANT_CMD
 	bool "wpa_supplicant command line interface"
 	default n
+
+config WPA_SUPPLICANT_P2P
+	bool "Enable P2P (WiFi Direct) support in the supplicant"
+	depends on SLSI_WLAN_P2P
+	depends on SLSI_WIFI_P2P_API
+	default n
+	---help---
+		Enable the P2P (WiFi Direct) functionality in the supplicant.
+		This requires that it is enabled in driver as well.
 
 endif
 

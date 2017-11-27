@@ -1251,10 +1251,31 @@ static int _wpa_supplicant_event_scan_results(struct wpa_supplicant *wpa_s, unio
 		if (!own_request) {
 			return -1;
 		}
+#ifdef CONFIG_P2P
+		if (!(wpa_s->p2p_scan_work)) {
+
+			wpa_dbg(wpa_s, MSG_DEBUG, "Failed to get scan results - try " "scanning again");
+			wpa_msg_ctrl(wpa_s, MSG_INFO, WPA_EVENT_SCAN_RESULTS);
+			wpa_supplicant_req_new_scan(wpa_s, 1, 0);
+			ret = -1;
+			goto scan_work_done;
+		} else {
+			if (wpa_s->p2p_scan_work) {
+				struct wpa_radio_work *work = wpa_s->p2p_scan_work;
+				wpa_s->p2p_scan_work = NULL;
+				radio_work_done(work);
+			}
+			p2p_scan_res_handled(wpa_s->global->p2p);
+			return ret;
+		}
+#else
 		wpa_dbg(wpa_s, MSG_DEBUG, "Failed to get scan results - try " "scanning again");
+		wpa_msg_ctrl(wpa_s, MSG_INFO, WPA_EVENT_SCAN_RESULTS);
 		wpa_supplicant_req_new_scan(wpa_s, 1, 0);
 		ret = -1;
 		goto scan_work_done;
+
+#endif
 	}
 #ifndef CONFIG_NO_RANDOM_POOL
 	num = scan_res->num;
@@ -1360,6 +1381,7 @@ static int _wpa_supplicant_event_scan_results(struct wpa_supplicant *wpa_s, unio
 
 scan_work_done:
 	wpa_scan_results_free(scan_res);
+	wpa_dbg(wpa_s, MSG_DEBUG, "work = %p ", wpa_s->scan_work);
 	if (wpa_s->scan_work) {
 		struct wpa_radio_work *work = wpa_s->scan_work;
 		wpa_s->scan_work = NULL;
@@ -1380,10 +1402,11 @@ static int wpas_select_network_from_last_scan(struct wpa_supplicant *wpa_s, int 
 		eloop_register_timeout(time_to_reenable, 0, wpas_network_reenabled, wpa_s, NULL);
 		return 0;
 	}
-
+#ifdef CONFIG_P2P
 	if (wpa_s->p2p_mgmt) {
 		return 0;    /* no normal connection on p2p_mgmt interface */
 	}
+#endif
 
 	selected = wpa_supplicant_pick_network(wpa_s, &ssid);
 
@@ -1560,7 +1583,7 @@ static void wnm_bss_keep_alive(void *eloop_ctx, void *sock_ctx)
 		/* TODO: Consider using some more appropriate data frame for
 		 * this */
 		if (wpa_s->l2) {
-			l2_packet_send(wpa_s->l2, wpa_s->bssid, 0x0800, (u8 *)"", 0);
+			l2_packet_send(wpa_s->l2, wpa_s->bssid, 0x0800, (u8 *) "", 0);
 		}
 	}
 #ifdef CONFIG_SME
@@ -2492,7 +2515,7 @@ static void wpas_event_disconnect(struct wpa_supplicant *wpa_s, const u8 *addr, 
 {
 #ifdef CONFIG_AP
 	if (wpa_s->ap_iface && addr) {
-		hostapd_notif_disassoc(wpa_s->ap_iface->bss[0], addr);
+		hostapd_notif_disassoc(wpa_s->ap_iface->bss[0], addr, reason_code);
 		return;
 	}
 
@@ -2551,7 +2574,7 @@ static void wpas_event_disassoc(struct wpa_supplicant *wpa_s, struct disassoc_in
 	}
 #ifdef CONFIG_AP
 	if (wpa_s->ap_iface && info && info->addr) {
-		hostapd_notif_disassoc(wpa_s->ap_iface->bss[0], info->addr);
+		hostapd_notif_disassoc(wpa_s->ap_iface->bss[0], info->addr, reason_code);
 		return;
 	}
 
@@ -2688,7 +2711,6 @@ static void wpas_event_rx_mgmt_action(struct wpa_supplicant *wpa_s, const u8 *fr
 	plen = len - IEEE80211_HDRLEN - 1;
 
 	wpa_dbg(wpa_s, MSG_DEBUG, "Received Action frame: SA=" MACSTR " Category=%u DataLen=%d freq=%d MHz", MAC2STR(mgmt->sa), category, (int)plen, freq);
-
 	if (category == WLAN_ACTION_WMM) {
 		wmm_ac_rx_action(wpa_s, mgmt->da, mgmt->sa, payload, plen);
 		return;
@@ -2822,8 +2844,12 @@ void wpa_supplicant_free_event_data(void *udata)
 	if (params->data != NULL) {
 		switch (params->event) {
 		case EVENT_EAPOL_RX:
-			os_free((void *)params->data->eapol_rx.data);
-			os_free((void *)params->data->eapol_rx.src);
+			if (params->data->eapol_rx.data) {
+				os_free((void *)params->data->eapol_rx.data);
+			}
+			if (params->data->eapol_rx.src) {
+				os_free((void *)params->data->eapol_rx.src);
+			}
 			break;
 		case EVENT_ASSOC:
 			if (params->data->assoc_info.req_ies) {
@@ -2852,6 +2878,19 @@ void wpa_supplicant_free_event_data(void *udata)
 		case EVENT_MICHAEL_MIC_FAILURE:
 			if (params->data->michael_mic_failure.src) {
 				os_free((void *)params->data->michael_mic_failure.src);
+			}
+			break;
+		case EVENT_TX_STATUS:
+			if (params->data->tx_status.data) {
+				os_free((void *)params->data->tx_status.data);
+			}
+			if (params->data->tx_status.dst) {
+				os_free((void *)params->data->tx_status.dst);
+			}
+			break;
+		case EVENT_RX_MGMT:
+			if (params->data->rx_mgmt.frame) {
+				os_free((void *)params->data->rx_mgmt.frame);
 			}
 			break;
 		default:
@@ -2895,7 +2934,6 @@ void wpa_supplicant_event_send(void *ctx, enum wpa_event_type event, union wpa_e
 	struct wpa_supplicant_event_params *params;
 
 	wpa_printf(MSG_DEBUG, "Event %s (%d) received from driver", event_to_string(event), event);
-
 	params = os_zalloc(sizeof(struct wpa_supplicant_event_params));
 	if (params == NULL) {
 		wpa_printf(MSG_ERROR, "Event not sent due to event param allocation failure");
@@ -2930,8 +2968,8 @@ void wpa_supplicant_event_send(void *ctx, enum wpa_event_type event, union wpa_e
 				}
 
 				params->data->eapol_rx.data_len = data->eapol_rx.data_len;
-				os_memcpy((u8 *)params->data->eapol_rx.data, data->eapol_rx.data, data->eapol_rx.data_len);
-				os_memcpy((u8 *)params->data->eapol_rx.src, data->eapol_rx.src, ETH_ALEN);
+				os_memcpy((u8 *) params->data->eapol_rx.data, data->eapol_rx.data, data->eapol_rx.data_len);
+				os_memcpy((u8 *) params->data->eapol_rx.src, data->eapol_rx.src, ETH_ALEN);
 			} else {
 				wpa_printf(MSG_ERROR, "EAPOL data not available");
 				os_free(params);
@@ -2947,7 +2985,7 @@ void wpa_supplicant_event_send(void *ctx, enum wpa_event_type event, union wpa_e
 					wpa_printf(MSG_ERROR, "EVENT_ASSOC req_ies allocation failed");
 					goto error;
 				}
-				os_memcpy((u8 *)params->data->assoc_info.req_ies, data->assoc_info.req_ies, data->assoc_info.req_ies_len);
+				os_memcpy((u8 *) params->data->assoc_info.req_ies, data->assoc_info.req_ies, data->assoc_info.req_ies_len);
 				params->data->assoc_info.req_ies_len = data->assoc_info.req_ies_len;
 			}
 
@@ -2960,7 +2998,7 @@ void wpa_supplicant_event_send(void *ctx, enum wpa_event_type event, union wpa_e
 					}
 					goto error;
 				}
-				os_memcpy((u8 *)params->data->assoc_info.resp_ies, data->assoc_info.resp_ies, data->assoc_info.resp_ies_len);
+				os_memcpy((u8 *) params->data->assoc_info.resp_ies, data->assoc_info.resp_ies, data->assoc_info.resp_ies_len);
 				params->data->assoc_info.resp_ies_len = data->assoc_info.resp_ies_len;
 			}
 
@@ -2976,19 +3014,20 @@ void wpa_supplicant_event_send(void *ctx, enum wpa_event_type event, union wpa_e
 					}
 					goto error;
 				}
-				os_memcpy((u8 *)params->data->assoc_info.addr, data->assoc_info.addr, ETH_ALEN);
+				os_memcpy((u8 *) params->data->assoc_info.addr, data->assoc_info.addr, ETH_ALEN);
 			}
 
 			break;
 		case EVENT_DISASSOC:
 			os_memcpy(params->data, data, sizeof(union wpa_event_data));
+			params->data->disassoc_info.reason_code = data->disassoc_info.reason_code;
 			if (data->disassoc_info.addr) {
 				params->data->disassoc_info.addr = os_zalloc(ETH_ALEN);
 				if (params->data->disassoc_info.addr == NULL) {
 					wpa_printf(MSG_ERROR, "EVENT_DISASSOC addr allocation failed");
 					goto error;
 				}
-				os_memcpy((u8 *)params->data->disassoc_info.addr, data->disassoc_info.addr, ETH_ALEN);
+				os_memcpy((u8 *) params->data->disassoc_info.addr, data->disassoc_info.addr, ETH_ALEN);
 			}
 			break;
 		case EVENT_DEAUTH:
@@ -3001,7 +3040,7 @@ void wpa_supplicant_event_send(void *ctx, enum wpa_event_type event, union wpa_e
 			if (data->assoc_reject.resp_ies) {
 				params->data->assoc_reject.resp_ies = os_zalloc(data->assoc_reject.resp_ies_len);
 				if (params->data->assoc_reject.resp_ies) {
-					os_memcpy((u8 *)params->data->assoc_reject.resp_ies, data->assoc_reject.resp_ies, data->assoc_reject.resp_ies_len);
+					os_memcpy((u8 *) params->data->assoc_reject.resp_ies, data->assoc_reject.resp_ies, data->assoc_reject.resp_ies_len);
 					params->data->assoc_reject.resp_ies_len = data->assoc_reject.resp_ies_len;
 				} else {
 					wpa_printf(MSG_WARNING, "EVENT_ASSOC_REJECT resp_ies allocation failed");
@@ -3010,7 +3049,7 @@ void wpa_supplicant_event_send(void *ctx, enum wpa_event_type event, union wpa_e
 			if (data->assoc_reject.bssid) {
 				params->data->assoc_reject.bssid = os_zalloc(ETH_ALEN);
 				if (params->data->assoc_reject.bssid) {
-					os_memcpy((u8 *)params->data->assoc_reject.bssid, data->assoc_reject.bssid, ETH_ALEN);
+					os_memcpy((u8 *) params->data->assoc_reject.bssid, data->assoc_reject.bssid, ETH_ALEN);
 				} else {
 					wpa_printf(MSG_WARNING, "EVENT_ASSOC_REJECT bssid allocation failed");
 				}
@@ -3023,9 +3062,43 @@ void wpa_supplicant_event_send(void *ctx, enum wpa_event_type event, union wpa_e
 					wpa_printf(MSG_ERROR, "Event not sent due to MAC addr allocation failure");
 					goto error;
 				}
-				os_memcpy((u8 *)params->data->michael_mic_failure.src, data->michael_mic_failure.src, ETH_ALEN);
+				os_memcpy((u8 *) params->data->michael_mic_failure.src, data->michael_mic_failure.src, ETH_ALEN);
 				params->data->michael_mic_failure.unicast = data->michael_mic_failure.unicast;
 			}
+			break;
+		case EVENT_RX_MGMT:
+			if (data->rx_mgmt.frame) {
+				params->data->rx_mgmt.frame = os_zalloc(data->rx_mgmt.frame_len);
+				if (params->data->rx_mgmt.frame == NULL) {
+					wpa_printf(MSG_ERROR, "EVENT_RX_MGMT rx_mgmt allocation failed");
+					goto error;
+				}
+				os_memcpy((u8 *) params->data->rx_mgmt.frame, data->rx_mgmt.frame, data->rx_mgmt.frame_len);
+				params->data->rx_mgmt.frame_len = data->rx_mgmt.frame_len;
+				params->data->rx_mgmt.freq = data->rx_mgmt.freq;
+			}
+			break;
+		case EVENT_TX_STATUS:
+			if (data->tx_status.data) {
+				params->data->tx_status.data = os_zalloc(data->tx_status.data_len);
+				if (params->data->tx_status.data == NULL) {
+					wpa_printf(MSG_ERROR, "EVENT_TX_STATUS data allocation failed");
+					goto error;
+				}
+				os_memcpy((u8 *) params->data->tx_status.data, data->tx_status.data, data->tx_status.data_len);
+			}
+			if (data->tx_status.dst) {
+				params->data->tx_status.dst = os_zalloc(ETH_ALEN);
+				if (params->data->tx_status.dst == NULL) {
+					wpa_printf(MSG_ERROR, "EVENT_TX_STATUS dst allocation failed");
+					goto error;
+				}
+				os_memcpy((u8 *) params->data->tx_status.dst, data->tx_status.dst, ETH_ALEN);
+			}
+			params->data->tx_status.data_len = data->tx_status.data_len;
+			params->data->tx_status.stype = data->tx_status.stype;
+			params->data->tx_status.type = data->tx_status.type;
+			params->data->tx_status.ack = data->tx_status.ack;
 			break;
 		default:
 			os_memcpy(params->data, data, sizeof(union wpa_event_data));
@@ -3331,7 +3404,6 @@ void wpa_supplicant_event(void *ctx, enum wpa_event_type event, union wpa_event_
 				wpas_event_rx_mgmt_action(wpa_s, data->rx_mgmt.frame, data->rx_mgmt.frame_len, data->rx_mgmt.freq, data->rx_mgmt.ssi_signal);
 				break;
 			}
-
 			if (wpa_s->ifmsh) {
 				mesh_mpm_mgmt_rx(wpa_s, &data->rx_mgmt);
 				break;
@@ -3389,10 +3461,13 @@ void wpa_supplicant_event(void *ctx, enum wpa_event_type event, union wpa_event_
 		wpa_dbg(wpa_s, MSG_DEBUG, "Interface was enabled");
 		if (wpa_s->wpa_state == WPA_INTERFACE_DISABLED) {
 			wpa_supplicant_update_mac_addr(wpa_s);
+#ifdef CONFIG_P2P
 			if (wpa_s->p2p_mgmt) {
 				wpa_supplicant_set_state(wpa_s, WPA_DISCONNECTED);
 				break;
 			}
+#endif
+
 #ifdef CONFIG_AP
 			if (!wpa_s->ap_iface) {
 				wpa_supplicant_set_state(wpa_s, WPA_DISCONNECTED);

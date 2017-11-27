@@ -1,0 +1,152 @@
+State				Event					Final State			Function name				Comment
+# -------------------------------------------------------------------------------------------------------------------
+NULL				<any other event>		NULL
+NULL				START					RUNNING				handle_start				initial start of p2p
+
+RUNNING				LISTEN					LISTENING			handle_listen
+RUNNING				FIND					FINDING				handle_find
+RUNNING				CONNECT					CONNECT_OUT_FIND	handle_connect_find_init
+RUNNING				DISCONNECTED			RUNNING				handle_ignore
+RUNNING				GO						GROUP_OWNER			handle_ignore
+RUNNING				ADD_GROUP				CREATING_GROUP		handle_add_group
+RUNNING				GROUP_REMOVED			RUNNING				handle_group_removed
+RUNNING				STOP					NULL				handle_stop					return to NULL
+RUNNING				<any other event>		ERROR				-
+
+LISTENING			PROV_DISC				CONNECT_IN_PROV		handle_prov_disc
+LISTENING			TIMEOUT					RUNNING				handle_find_timeout         same handler as for find timeout
+LISTENING			STOP_LISTEN				RUNNING				handle_stop_listen
+LISTENING			DISCONNECTED			RUNNING				handle_ignore
+LISTENING			STOP					TERMINATING			handle_terminate
+LISTENING			<any other event>		ERROR				-
+
+FINDING				PROV_DISC				CONNECT_IN_PROV		handle_prov_disc
+FINDING				FOUND					FINDING				handle_found
+FINDING				TIMEOUT					RUNNING				handle_find_timeout
+FINDING				STOP_FIND				RUNNING				handle_stop_find
+FINDING				DISCONNECTED			RUNNING				handle_ignore
+FINDING				STOP					TERMINATING			handle_terminate_stop_find
+FINDING 			<any other event>		ERROR				-
+
+# incoming connect request
+CONNECT_IN_PROV		FOUND					CONNECT_IN_PROV		handle_ignore
+CONNECT_IN_PROV		PROV_DISC				CONNECT_IN_PROV		handle_ignore
+CONNECT_IN_PROV		CONTINUE				CONNECT_IN_PROV		handle_prov_disc_in_cont	To reuse handle for GO
+CONNECT_IN_PROV		NEG_REQ					CONNECT_NEG			handle_neg_req
+CONNECT_IN_PROV		STOP_FIND				RUNNING				handle_stop_find
+CONNECT_IN_PROV		CONNECT_FAIL			FINDING				handle_connect_in_fail
+CONNECT_IN_PROV		STOP					TERMINATING			handle_terminate_cancel		start termination process
+CONNECT_IN_PROV		<any other event>		ERROR				-
+CONNECT_NEG			NEG_REQ					CONNECT_NEG	 		handle_ignore
+CONNECT_NEG			CONNECT_FAIL			RUNNING				handle_connect_in_fail
+CONNECT_NEG			GROUP_STARTED			CONNECT_IN	 		handle_group_started
+CONNECT_NEG			STOP					TERMINATING			handle_terminate_cancel		start termination process
+CONNECT_NEG			TIMEOUT					CONNECT_NEG			handle_ignore				find stops when connecting
+CONNECT_NEG			<any other event>		ERROR				-
+CONNECT_IN			CONNECTED				CONNECTED			handle_connected
+CONNECT_IN			CONNECT_FAIL			RUNNING				handle_connect_in_fail
+CONNECT_IN			STOP					TERMINATING			handle_terminate_cancel		start termination process
+CONNECT_IN			<any other event>		ERROR				-
+
+# outgoing connect request
+CONNECT_OUT_FIND	FOUND					CONNECT_OUT_FIND	handle_connect_find_check   We found something - lets check it
+CONNECT_OUT_FIND	FOUND_CORRECT			CONNECT_OUT_PROV	handle_connect_find_success We just need to change state
+CONNECT_OUT_FIND	TIMEOUT					RUNNING				handle_connect_find_fail	Didnt find anything so return to running state
+CONNECT_OUT_FIND	STOP					TERMINATING			handle_terminate_cancel		start termination process
+CONNECT_OUT_FIND	PROV_DISC				CONNECT_OUT_PROV	handle_ignore				Incoming connects ignored
+CONNECT_OUT_FIND	<any other event>		ERROR				-
+CONNECT_OUT_PROV	CONNECT					CONNECT_OUT_PROV	handle_connect_connect
+CONNECT_OUT_PROV	PROV_DISC				CONNECT_OUT_PROV	handle_prov_disc
+CONNECT_OUT_PROV	CONTINUE				CONNECT_OUT			handle_prov_disc_cont
+CONNECT_OUT_PROV	CONNECT_FAIL			RUNNING				handle_connect_fail
+CONNECT_OUT_PROV	STOP					TERMINATING			handle_terminate_cancel		start termination process
+CONNECT_OUT_PROV	<any other event>		ERROR				-
+CONNECT_OUT			ACCEPT					CONNECT_OUT			handle_accept
+CONNECT_OUT			REJECT					RUNNING 			handle_connect_fail
+CONNECT_OUT			CONNECT_FAIL			RUNNING				handle_connect_fail
+CONNECT_OUT			NEG_SUCCESS				CONNECT_OUT			handle_neg_success			to find out who becomes GO
+CONNECT_OUT			GROUP_STARTED			CONNECT_WAIT_CONN	handle_group_started
+CONNECT_OUT			CONNECTED				CONNECT_WAIT_GS		handle_connected
+CONNECT_OUT			FOUND   				CONNECT_OUT			handle_ignore				we can get other found results just ignore them
+CONNECT_OUT			STOP					TERMINATING			handle_terminate_cancel		start termination process
+CONNECT_OUT			<any other event>		ERROR				-
+CONNECT_WAIT_CONN	CONNECTED				CONNECTED			handle_connected
+CONNECT_WAIT_CONN	LINK_UP					CONNECT_WAIT_CONN	handle_ignore
+CONNECT_WAIT_GS		GROUP_STARTED			CONNECTED			handle_group_started
+CONNECT_WAIT_GS		LINK_UP					CONNECT_WAIT_CONN	handle_ignore
+
+CONNECTED			LINK_UP					CONNECTED			handle_link_up
+CONNECTED			DISCONNECT				DISCONNECTING		handle_disconnect
+CONNECTED			DISCONNECTED			DISCONNECT_WAIT_GR	handle_disconnected
+CONNECTED			CONNECTED				CONNECTED			handle_ignore
+CONNECTED			PROV_DISC				CONNECTED			handle_ignore				Ignore other incoming connects
+CONNECTED			STOP					TERMINATING			handle_terminate_disconnect	start termination process
+CONNECTED			GROUP_REMOVED			DISCONNECT_WAIT_DIS	handle_group_removed
+CONNECTED			<any_other event>		ERROR				-
+
+DISCONNECTING		GROUP_REMOVED			DISCONNECT_WAIT_DIS	handle_group_removed
+DISCONNECTING		DISCONNECTED			DISCONNECT_WAIT_GR	handle_disconnected
+DISCONNECTING		STOP					TERMINATING			handle_terminate_cancel		start termination process
+DISCONNECT_WAIT_GR	GROUP_REMOVED			RUNNING				handle_link_down
+DISCONNECT_WAIT_GR	DISCONNECTED			DISCONNECT_WAIT_GR	handle_ignore
+DISCONNECT_WAIT_DIS	DISCONNECTED			RUNNING				handle_link_down
+DISCONNECTING		<any other event>		ERROR				-
+
+CREATING_GROUP		GROUP_STARTED			GROUP_OWNER			handle_group_created
+CREATING_GROUP		STOP					TERMINATING			handle_terminate_cancel		start termination process
+CREATING_GROUP		<any other event>		ERROR				-
+
+GROUP_OWNER			CONNECT_FAIL			RUNNING				handle_connect_fail
+GROUP_OWNER			REMOVE_GROUP			RUNNING				handle_remove_group
+GROUP_OWNER			PROV_DISC				GROUP_OWNER			handle_prov_disc
+GROUP_OWNER			CONTINUE				GO_CONNECT_IN		handle_prov_disc_cont
+GROUP_OWNER			STOP					TERMINATING			handle_terminate_remove		start termination process
+GROUP_OWNER			<any other event>		ERROR				-
+
+GO_CONNECT_IN		PROV_DISC				GO_CONNECT_IN	    handle_ignore
+GO_CONNECT_IN		ACCEPT					GO_CONNECT_IN		handle_user_accept
+GO_CONNECT_IN		REJECT					GROUP_OWNER 		handle_user_reject
+GO_CONNECT_IN		NEG_REQ					GO_CONNECT_IN		handle_ignore
+GO_CONNECT_IN		CONNECTED				GO_CONNECTED		handle_connected
+GO_CONNECT_IN		CONNECT_FAIL			GROUP_OWNER			handle_connect_fail
+GO_CONNECT_IN		STOP					TERMINATING			handle_terminate			start termination process
+GO_CONNECT_IN		<any other event>		ERROR				-
+
+GO_CONNECTED		DISCONNECT				GO_CONNECTED		handle_disconnect_go
+GO_CONNECTED		DISCONNECTED			GROUP_OWNER			handle_disconnected_go
+GO_CONNECTED		CONNECTED				GO_CONNECTED		handle_connected			Was handle_connect_success
+GO_CONNECTED		PROV_DISC				GO_CONNECTED		handle_ignore				Ignore other incoming connects
+GO_CONNECTED		STOP					TERMINATING			handle_terminate_disconnect	start termination process
+GO_CONNECTED		REMOVE_GROUP			RUNNING				handle_remove_group			Remove Group with cli Connected
+GO_CONNECTED		<any_other event>		ERROR				-
+
+# all STOP events go here
+TERMINATING			CANCEL					NULL				handle_terminate
+TERMINATING			DISCONNECTED			NULL				handle_terminate_disconnected
+TERMINATING			GROUP_REMOVED			TERMINATING			handle_ignore
+TERMINATING			<any other event> 		ERROR				-
+
+ERROR				<any other event>		NULL				p2p_terminate_with_error		-
+
+
+# ------------------------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------------------------
+__FSM_START,,,,,
+__FSM_SRC_LIST(1, 2, 3, 4),,,,,
+
+__FSM_COMMENTS_C,,,,
+__FSM_TEMPLATE_FILE(.\fsm\templates\Sparse32_Constants_C.tpl),,,,,
+__FSM_OUTPUT_FILE(slsi_wifi_p2p_fsm_constants, c, Sparse32_Constants_C, .),,,,,
+__FSM_TEMPLATE_FILE(.\fsm\templates\Sparse32_Definitions_H.tpl),,,,,
+__FSM_OUTPUT_FILE(slsi_wifi_p2p_fsm_definitions, h, Sparse32_Definitions_H, .),,,,
+
+__FSM_VAR(StatePrefix, P2P_ST_),,,,
+__FSM_VAR(EventPrefix, P2P_EV_),,,,
+__FSM_VAR(ActionNumPrefix, P2P_AC_),,,,
+__FSM_VAR(ActionFnPrefix, p2p_fsm_),,,,
+__FSM_END,,,,
+# ------------------------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------------------------
+

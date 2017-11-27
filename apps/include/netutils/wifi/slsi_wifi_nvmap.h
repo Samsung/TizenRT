@@ -18,10 +18,15 @@
 #ifndef SLSI_WIFI_NVMAP_H_
 #define SLSI_WIFI_NVMAP_H_
 
-#ifdef  __cplusplus
-extern "C" {
-#endif
 #include <stdlib.h>
+
+#ifdef __cplusplus
+#define EXTERN extern "C"
+extern "C"
+{
+#else
+#define EXTERN extern
+#endif
 
 /* struct containing all the values that needs to be read/written
  * from/to the non-volatile memory.
@@ -43,13 +48,18 @@ typedef struct slsi_wifi_nv_data {
 #define SLSI_WIFI_NV_DEFAULT_COUNTRY_CODE	"00"
 #endif
 #ifdef CONFIG_SLSI_WIFI_DEFAULT_WLAN_TX_POWER
+#if (CONFIG_SLSI_WIFI_DEFAULT_WLAN_TX_POWER > 30) || (CONFIG_SLSI_WIFI_DEFAULT_WLAN_TX_POWER < 12)
+#error CONFIG_SLSI_WIFI_DEFAULT_WLAN_TX_POWER must be between 12 and 30 inclusive
+#endif
 #define SLSI_WIFI_NV_DEFAULT_TX_POWER		CONFIG_SLSI_WIFI_DEFAULT_WLAN_TX_POWER
 #else
 #define SLSI_WIFI_NV_DEFAULT_TX_POWER		(uint8_t)30
 #endif
 
-#define SLSI_WIFI_NV_DATA_SIZE				(sizeof(slsi_wifi_nv_data_t))
+#define SLSI_WIFI_NV_DATA_START (CONFIG_NVRAM_WIFI_START)
+#define SLSI_WIFI_NV_DATA_SIZE (sizeof(slsi_wifi_nv_data_t))
 
+#undef EXTERN
 #ifdef  __cplusplus
 }
 #endif

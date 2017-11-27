@@ -225,11 +225,12 @@ struct wpa_params {
 	 * This can also be %NULL. In such a case, if a P2P Device dedicated
 	 * interfaces is created, the main configuration file will be used.
 	 */
-	const char *conf_p2p_dev;
+	char *conf_p2p_dev;
 #endif							/* CONFIG_P2P */
 
 };
 
+#ifdef CONFIG_P2P
 struct p2p_srv_bonjour {
 	struct dl_list list;
 	struct wpabuf *query;
@@ -241,6 +242,7 @@ struct p2p_srv_upnp {
 	u8 version;
 	char *service;
 };
+#endif
 
 /**
  * struct wpa_global - Internal, global data for all %wpa_supplicant interfaces
@@ -256,6 +258,7 @@ struct wpa_global {
 	void **drv_priv;
 	size_t drv_count;
 	struct os_time suspend_time;
+#ifdef CONFIG_P2P
 	struct p2p_data *p2p;
 	struct wpa_supplicant *p2p_init_wpa_s;
 	struct wpa_supplicant *p2p_group_formation;
@@ -265,19 +268,22 @@ struct wpa_global {
 	struct dl_list p2p_srv_bonjour;	/* struct p2p_srv_bonjour */
 	struct dl_list p2p_srv_upnp;	/* struct p2p_srv_upnp */
 	int p2p_disabled;
-	int cross_connection;
 	struct wpa_freq_range_list p2p_disallow_freq;
 	struct wpa_freq_range_list p2p_go_avoid_freq;
+#endif
+	int cross_connection;
 	enum wpa_conc_pref {
 		WPA_CONC_PREF_NOT_SET,
 		WPA_CONC_PREF_STA,
 		WPA_CONC_PREF_P2P
 	} conc_pref;
+#ifdef CONFIG_P2P
 	unsigned int p2p_per_sta_psk: 1;
 	unsigned int p2p_fail_on_wps_complete: 1;
 	unsigned int p2p_24ghz_social_channels: 1;
 	unsigned int pending_p2ps_group: 1;
 	unsigned int pending_group_iface_for_p2ps: 1;
+#endif
 
 #ifdef CONFIG_WIFI_DISPLAY
 	int wifi_display;
@@ -351,6 +357,7 @@ enum offchannel_send_action_result {
 				       */
 };
 
+#ifdef CONFIG_WPS
 struct wps_ap_info {
 	u8 bssid[ETH_ALEN];
 	enum wps_ap_info_type {
@@ -363,6 +370,7 @@ struct wps_ap_info {
 	unsigned int pbc_active;
 	u8 uuid[WPS_UUID_LEN];
 };
+#endif
 
 struct wpa_ssid_value {
 	u8 ssid[SSID_MAX_LEN];
@@ -518,9 +526,13 @@ struct wpa_supplicant {
 								 * removed */
 	struct wpa_sm *wpa;
 	struct eapol_sm *eapol;
-
+#ifdef CONFIG_CTRL_IFACE_FIFO
+	struct wpa_ifname *ctrl_iface;
+	struct ctrl_iface_priv *ctrl_priv;
+#endif
+#ifdef CONFIG_CTRL_IFACE_UDP
 	struct ctrl_iface_priv *ctrl_iface;
-
+#endif
 	enum wpa_states wpa_state;
 	struct wpa_radio_work *scan_work;
 	int scanning;
@@ -633,11 +645,13 @@ struct wpa_supplicant {
 	int pending_mic_error_pairwise;
 	int mic_errors_seen;		/* Michael MIC errors with the current PTK */
 
+#ifdef CONFIG_WPS
 	struct wps_context *wps;
-	int wps_success;			/* WPS success event received */
 	struct wps_er *wps_er;
+	int wps_success;			/* WPS success event received */
 	unsigned int wps_run;
 	struct os_reltime wps_pin_start_time;
+#endif
 	int blacklist_cleared;
 
 	struct wpabuf *pending_eapol_rx;
@@ -728,10 +742,8 @@ struct wpa_supplicant {
 	void (*pending_action_tx_status_cb)(struct wpa_supplicant *wpa_s, unsigned int freq, const u8 *dst, const u8 *src, const u8 *bssid, const u8 *data, size_t data_len, enum offchannel_send_action_result result);
 	unsigned int roc_waiting_drv_freq;
 	int action_tx_wait_time;
-
-	int p2p_mgmt;
-
 #ifdef CONFIG_P2P
+	int p2p_mgmt;
 	struct p2p_go_neg_results *go_params;
 	int create_p2p_iface;
 	u8 pending_interface_addr[ETH_ALEN];
@@ -842,14 +854,16 @@ struct wpa_supplicant {
 
 	struct wpa_ssid *connect_without_scan;
 
+#ifdef CONFIG_WPS
 	struct wps_ap_info *wps_ap;
 	size_t num_wps_ap;
 	int wps_ap_iter;
-
 	int after_wps;
 	int known_wps_freq;
 	unsigned int wps_freq;
 	int wps_fragment_size;
+#endif
+
 	int auto_reconnect_disabled;
 
 	/* Channel preferences for AP/P2P GO use */

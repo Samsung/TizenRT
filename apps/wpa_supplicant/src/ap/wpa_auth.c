@@ -1340,7 +1340,7 @@ void __wpa_send_eapol(struct wpa_authenticator *wpa_auth, struct wpa_state_machi
 		}
 
 		key_mic = key192->key_mic;	/* same offset for key and key192 */
-		wpa_eapol_key_mic(sm->PTK.kck, sm->PTK.kck_len, sm->wpa_key_mgmt, version, (u8 *)hdr, len, key_mic);
+		wpa_eapol_key_mic(sm->PTK.kck, sm->PTK.kck_len, sm->wpa_key_mgmt, version, (u8 *) hdr, len, key_mic);
 #ifdef CONFIG_TESTING_OPTIONS
 		if (!pairwise && wpa_auth->conf.corrupt_gtk_rekey_mic_probability > 0.0 && drand48() < wpa_auth->conf.corrupt_gtk_rekey_mic_probability) {
 			wpa_auth_logger(wpa_auth, sm->addr, LOGGER_INFO, "Corrupting group EAPOL-Key Key MIC");
@@ -1350,7 +1350,7 @@ void __wpa_send_eapol(struct wpa_authenticator *wpa_auth, struct wpa_state_machi
 	}
 
 	wpa_auth_set_eapol(sm->wpa_auth, sm->addr, WPA_EAPOL_inc_EapolFramesTx, 1);
-	wpa_auth_send_eapol(wpa_auth, sm->addr, (u8 *)hdr, len, sm->pairwise_set);
+	wpa_auth_send_eapol(wpa_auth, sm->addr, (u8 *) hdr, len, sm->pairwise_set);
 	os_free(hdr);
 }
 

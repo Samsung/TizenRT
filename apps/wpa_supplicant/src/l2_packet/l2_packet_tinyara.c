@@ -154,7 +154,7 @@ int l2_packet_get_ip_addr(struct l2_packet_data *l2, char *buf, size_t len)
 	}
 	os_memset(&ifr, 0, sizeof(ifr));
 	os_strlcpy(ifr.ifr_name, l2->ifname, sizeof(ifr.ifr_name));
-	if (ioctl(s, SIOCGIFADDR, &ifr) < 0) {
+	if (ioctl(s, SIOCGIFADDR, (unsigned long)&ifr) < 0) {
 		if (errno != EADDRNOTAVAIL) {
 			wpa_printf(MSG_ERROR, "%s: ioctl[SIOCGIFADDR]: %s", __func__, strerror(errno));
 		}

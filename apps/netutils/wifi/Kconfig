@@ -11,6 +11,45 @@ config NETUTILS_WIFI
 		Enable support for the SLSI WI-Fi Networking API.
 
 if NETUTILS_WIFI
+config SLSI_WIFI_WPA_SUPPLICANT_PRIORITY
+	int "wpa_supplicant task priority"
+	default 100
+
+config SLSI_WIFI_WPA_SUPPLICANT_STACKSIZE
+	int "wpa_supplicant stack size"
+	default 16384
+
+config SLSI_WIFI_WPA_SUPPLICANT_ENTRYPOINT
+	string "wpa_supplicant entry point"
+	default "wpa_supplicant_main"
+
+config SLSI_WIFI_P2P_API
+	bool "P2P (WiFi Direct) support in the API"
+	default n
+	select SLSI_WLAN_P2P
+	select WPA_SUPPLICANT_P2P
+	---help---
+		The API can support P2P (WiFi Direct) functionality. This requires that it is enabled in
+		the lower layers as well.
+
+if SLSI_WIFI_P2P_API
+config SLSI_WIFI_P2P_POSTFIX
+	string "The POSTFIX is used in WiFi Direct as postfix in (DIRECT-xy-POSTFIX-*) ssid"
+	default "SLSI"
+	---help---
+		Possible to use for e.g. branding of device.
+		This string will be set as postfix for the WiFi Direct ssid name.
+		Example: if string is "SLSI" the WiFi Direct name will be: DIRECT-xy-SLSI-<mydevice>.
+		The <mydevice> can optionally be set from API, if not set the last part of MAC address
+		is added as <mydevice>.
+		Notice that the string will have added "-" to start and end with if needed.
+config SLSI_WIFI_P2P_LISTEN_CHANNEL
+	int "Channel used for P2P listen (possible values 1/6/11)"
+	default 6
+	---help---
+		The listen channel used for P2P. This setting can have one of the values 1/6/11.
+endif
+
 config SLSI_WIFI_DEFAULT_WLAN_COUNTRY_CODE
 	string "Country code (2 chars)"
 	default "00"
@@ -35,9 +74,8 @@ config SLSI_WIFI_FILESYSTEM_SUPPORT
 		This is the default behavior but can be disabled on systems without filesystems.
 		If filesystem support is disabled then functionality like auto-reconnect will not work as
 		this uses the config file to store the relevant info across reboots.
-
+		
 if SLSI_WIFI_FILESYSTEM_SUPPORT
-
 config SLSI_WIFI_DIR
 	string "Path to where wifi can store the config files (ommit the trailing /)"
 	default "/mnt/wifi"
@@ -52,9 +90,19 @@ config SLSI_WIFI_LOG_FILE_NAME
 		The name of the file used to store logs from the wifi system.
 
 config SLSI_WIFI_CONFIG_FILE_NAME
-	string "name of the configuration file to use"
+	string "name of the configuration file to use when in station/softAP mode"
 	default "slsiwifi.conf"
 	---help---
 		The name of the file used to store information about the wifi system.
+
+if SLSI_WIFI_P2P_API
+config SLSI_WIFI_P2P_CONFIG_FILE_NAME
+	string "name of the configuration file to use when in p2p mode"
+	default "slsiwifip2p.conf"
+	---help---
+		The name of the file used to store information about the wifi system.
 endif
+
+endif
+
 endif

@@ -78,6 +78,8 @@ struct wpa_ctrl {
 	int s;						// For sending requests
 	int s_cfm;					// For receiving confirms
 	int monitor;				// The monitor file handle - read only
+	char *ifname;
+	char *send_cmd_ifname;		//this variable should be passed when command needs to be sent on a specific interface
 	char *cookie;
 	pthread_mutex_t busy;		// Ensure only a single thread uses the if at any given time
 	/*
@@ -258,7 +260,7 @@ void wpa_ctrl_cleanup(void)
 		return;
 	}
 
-	dirnamelen = (size_t)os_snprintf(pathname, sizeof(pathname), "%s/", CONFIG_CTRL_IFACE_CLIENT_DIR);
+	dirnamelen = (size_t) os_snprintf(pathname, sizeof(pathname), "%s/", CONFIG_CTRL_IFACE_CLIENT_DIR);
 	if (dirnamelen >= sizeof(pathname)) {
 		closedir(dir);
 		return;
@@ -292,7 +294,7 @@ void wpa_ctrl_write_handler(void *param)
 	ctrl->write_stop = false;
 	/* wait for someone that wants to write from other context */
 	while (!ctrl->write_stop) {
-		sem_wait(&ctrl->write_start);
+		(void)sem_wait(&ctrl->write_start);
 		if (ctrl->write_stop) {
 			sem_post(&ctrl->write_complete);
 			pthread_exit(NULL);
@@ -464,10 +466,9 @@ struct wpa_ctrl *wpa_ctrl_open(const char *ctrl_path)
 #endif
 
 	len = sizeof(buf) - 1;
-	if (wpa_ctrl_request(ctrl, "GET_COOKIE", 10, buf, &len, NULL) == 0) {
-		buf[len] = '\0';
-		ctrl->cookie = os_strdup(buf);
-	}
+
+	ctrl->ifname = os_strdup(ctrl_path);
+
 #ifdef CONFIG_CTRL_IFACE_UDP_REMOTE
 	if (wpa_ctrl_request(ctrl, "IFNAME", 6, buf, &len, NULL) == 0) {
 		buf[len] = '\0';
@@ -491,6 +492,10 @@ char *wpa_ctrl_get_remote_ifname(struct wpa_ctrl *ctrl)
 void wpa_ctrl_close(struct wpa_ctrl *ctrl)
 {
 #ifdef CONFIG_CTRL_IFACE_FIFO
+	if (ctrl->ifname != NULL) {
+		os_free(ctrl->ifname);
+		ctrl->ifname = NULL;
+	}
 	if (ctrl->monitor >= 0) {
 		close(ctrl->monitor);
 	}
@@ -564,27 +569,25 @@ int wpa_ctrl_recvfrom(int sock, char *buf, size_t len
 	ssize_t amount = 0;
 	size_t recv_len;
 	char *pos;
-	int res;
 #ifdef CONFIG_CTRL_IFACE_UDP
 	UNUSED(flags);
 #endif
-	while ((amount >= 0) && ((amount + offset) < CTRL_HEADER_SIZE)) {
+	while ((offset += amount) < CTRL_HEADER_SIZE) {
 #ifdef CONFIG_CTRL_IFACE_UDP
 		amount = recvfrom(sock, buf + offset, CTRL_HEADER_SIZE - offset, 0, from, fromlen);
 #else
 		amount = read(sock, buf + offset, CTRL_HEADER_SIZE - offset);
 #endif
+		if (amount < 0) {
+			return amount;
+		}
 	}
-	if (amount < 0) {
-		return amount;
-	} else {
-		msg_size = wpa_ctrl_get_header(buf);
-		offset = 0;
-		amount = 0;
-		buf[CTRL_HEADER_SIZE] = '\0';
-		wpa_printf(MSG_EXCESSIVE, "received message size: %d ('%s')", msg_size, buf);
-	}
-	while ((amount >= 0) && ((amount + offset) < msg_size)) {
+	msg_size = wpa_ctrl_get_header(buf);
+	offset = 0;
+	amount = 0;
+	buf[CTRL_HEADER_SIZE] = '\0';
+	wpa_printf(MSG_EXCESSIVE, "received message size: %d ('%s')", msg_size, buf);
+	while ((offset += amount) < msg_size) {
 		if (msg_size > len) {	// This is BAD!!! read out the message to keep alignment.
 			pos = buf;
 		} else {
@@ -596,16 +599,14 @@ int wpa_ctrl_recvfrom(int sock, char *buf, size_t len
 #else
 		amount += read(sock, pos, recv_len);
 #endif
+		if (amount < 0) {
+			return amount;
+		}
 	}
 	if (msg_size > len) {
 		return -1;				// Buffer too small for the message, return error
 	}
-	if (amount >= 0) {
-		res = amount + offset;
-	} else {
-		res = amount;
-	}
-	return res;
+	return msg_size;
 }
 
 static int _wpa_ctrl_sendto(int sock, const char *buf, size_t len
@@ -709,17 +710,24 @@ static int wpa_ctrl_request_ext(struct wpa_ctrl *ctrl, const char *cmd, size_t c
 
 	// TODO: Remove the overhead of cookie
 #if defined(CONFIG_CTRL_IFACE_UDP) || defined(CONFIG_CTRL_IFACE_FIFO)
-	if (ctrl->cookie) {
+	if (ctrl->ifname) {
 		char *pos;
-		_cmd_len = os_strlen(ctrl->cookie) + 1 + cmd_len;
+		_cmd_len = os_strlen(ctrl->ifname) + 1 + cmd_len;
 		cmd_buf = os_malloc(_cmd_len);
 		if (cmd_buf == NULL) {
 			return -1;
 		}
 		_cmd = cmd_buf;
 		pos = cmd_buf;
-		os_strlcpy(pos, ctrl->cookie, _cmd_len);
-		pos += os_strlen(ctrl->cookie);
+
+		if (ctrl->send_cmd_ifname) {
+			os_strlcpy(pos, ctrl->send_cmd_ifname, _cmd_len);
+			os_free(ctrl->send_cmd_ifname);
+			ctrl->send_cmd_ifname = NULL;
+		} else {
+			os_strlcpy(pos, ctrl->ifname, _cmd_len);
+		}
+		pos += os_strlen(ctrl->ifname);
 		*pos++ = ' ';
 		os_memcpy(pos, cmd, cmd_len);
 	} else
@@ -803,7 +811,7 @@ send_err:
 				if (msg_cb) {
 					/* Make sure the message is nul
 					 * terminated. */
-					if ((size_t)res == *reply_len) {
+					if ((size_t) res == *reply_len) {
 						res = (*reply_len) - 1;
 					}
 					reply[res] = '\0';
@@ -831,12 +839,17 @@ int wpa_ctrl_request(struct wpa_ctrl *ctrl, const char *cmd, size_t cmd_len, cha
 	pthread_mutex_lock(&(ctrl->busy));
 	int current_pid = getpid();
 	wpa_printf(MSG_EXCESSIVE, "Current pid %d other pid %d\n", current_pid, ctrl->pid);
+	if (ctrl->send_cmd_ifname) {
+		wpa_printf(MSG_DEBUG, "TEMPLOG wpa_ctrl_request ifname %s\n", ctrl->send_cmd_ifname);
+	} else {
+		wpa_printf(MSG_DEBUG, "TEMPLOG wpa_ctrl_request ifname %s\n", ctrl->ifname);
+	}
 
 	if (current_pid == ctrl->pid) {	// we are in the right context
 		ret = wpa_ctrl_request_ext(ctrl, cmd, cmd_len, reply, reply_len, msg_cb);
 	} else {
 		ctrl->write_cmd = (char *)cmd;
-		ctrl->write_cmdlen = (size_t)cmd_len;
+		ctrl->write_cmdlen = (size_t) cmd_len;
 		ctrl->write_reply = (char *)reply;
 		ctrl->write_replylen = reply_len;
 		ctrl->write_msgcb = (void *)msg_cb;
@@ -1075,5 +1088,18 @@ int wpa_ctrl_get_fd(struct wpa_ctrl *ctrl)
 }
 
 #endif							/* CONFIG_CTRL_IFACE_NAMED_PIPE */
+
+#if  defined(CONFIG_CTRL_IFACE_FIFO)
+void wpa_update_send_cmd_ifname(struct wpa_ctrl *ctrl, char *ifname)
+{
+	ctrl->send_cmd_ifname = ifname;
+}
+
+void wpa_update_ctrl_ifname(struct wpa_ctrl *ctrl, char *ifname)
+{
+	//wpa_printf(MSG_DEBUG, "wpa_update_ctrl_ifname: ifname =%s",ifname);
+	os_memcpy(ctrl->ifname, ifname, os_strlen(ifname));
+}
+#endif
 
 #endif							/* CONFIG_CTRL_IFACE */

@@ -16,6 +16,7 @@
 /* Include possible build time configuration before including anything else */
 #include "build_config.h"
 
+#include <fcntl.h>
 #include <stdlib.h>
 #include <stdio.h>
 #include <stdarg.h>

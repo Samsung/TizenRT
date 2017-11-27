@@ -36,7 +36,7 @@ const char *hostapd_ip_txt(const struct hostapd_ip_addr *addr, char *buf, size_t
 int hostapd_parse_ip_addr(const char *txt, struct hostapd_ip_addr *addr)
 {
 #ifndef CONFIG_NATIVE_WINDOWS
-	if (inet_aton(txt, &addr->u.v4)) {
+	if (ipaddr_aton(txt, (void *)&addr->u.v4)) {
 		addr->af = AF_INET;
 		return 0;
 	}

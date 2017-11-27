@@ -394,7 +394,7 @@ static int wpa_config_parse_psk(const struct parse_data *data, struct wpa_ssid *
 			wpa_printf(MSG_ERROR, "Line %d: Invalid passphrase " "length %lu (expected: 8..63) '%s'.", line, (unsigned long)len, value);
 			return -1;
 		}
-		wpa_hexdump_ascii_key(MSG_MSGDUMP, "PSK (ASCII passphrase)", (u8 *)value, len);
+		wpa_hexdump_ascii_key(MSG_MSGDUMP, "PSK (ASCII passphrase)", (u8 *) value, len);
 		if (has_ctrl_char((u8 *) value, len)) {
 			wpa_printf(MSG_ERROR, "Line %d: Invalid passphrase character", line);
 			return -1;
@@ -2676,12 +2676,7 @@ int wpa_config_set_cred(struct wpa_cred *cred, const char *var, const char *valu
 	}
 
 	val = wpa_config_parse_string(value, &len);
-
-	if (val == NULL ||
-		(os_strcmp(var, "excluded_ssid") != 0 &&
-		 os_strcmp(var, "roaming_consortium") != 0 &&
-		 os_strcmp(var, "required_roaming_consortium") != 0 &&
-		 has_newline(val))) {
+	if (val == NULL || (os_strcmp(var, "excluded_ssid") != 0 && os_strcmp(var, "roaming_consortium") != 0 && os_strcmp(var, "required_roaming_consortium") != 0 && has_newline(val))) {
 		wpa_printf(MSG_ERROR, "Line %d: invalid field '%s' string " "value '%s'.", line, var, value);
 		os_free(val);
 		return -1;

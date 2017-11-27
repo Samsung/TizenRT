@@ -35,7 +35,7 @@ struct wpa_sm {
 #ifdef CONFIG_IEEE80211W
 	struct wpa_igtk igtk;
 	struct wpa_igtk igtk_wnm_sleep;
-#endif /* CONFIG_IEEE80211W */
+#endif							/* CONFIG_IEEE80211W */
 
 	struct eapol_sm *eapol;		/* EAPOL state machine from upper level code */
 

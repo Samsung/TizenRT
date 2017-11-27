@@ -588,8 +588,7 @@ static int wpa_supplicant_install_gtk(struct wpa_sm *sm, const struct wpa_gtk_da
 	u8 gtk_buf[32];
 
 	/* Detect possible key reinstallation */
-	if ((sm->gtk.gtk_len == (size_t) gd->gtk_len && os_memcmp(sm->gtk.gtk, gd->gtk, sm->gtk.gtk_len) == 0) ||
-		(sm->gtk_wnm_sleep.gtk_len == (size_t) gd->gtk_len && os_memcmp(sm->gtk_wnm_sleep.gtk, gd->gtk, sm->gtk_wnm_sleep.gtk_len) == 0)) {
+	if ((sm->gtk.gtk_len == (size_t) gd->gtk_len && os_memcmp(sm->gtk.gtk, gd->gtk, sm->gtk.gtk_len) == 0) || (sm->gtk_wnm_sleep.gtk_len == (size_t) gd->gtk_len && os_memcmp(sm->gtk_wnm_sleep.gtk, gd->gtk, sm->gtk_wnm_sleep.gtk_len) == 0)) {
 		wpa_dbg(sm->ctx->msg_ctx, MSG_DEBUG, "WPA: Not reinstalling already in-use GTK to the driver (keyidx=%d tx=%d len=%d)", gd->keyidx, gd->tx, gd->gtk_len);
 		return 0;
 	}
@@ -687,11 +686,9 @@ static int wpa_supplicant_install_igtk(struct wpa_sm *sm, const struct wpa_igtk_
 	u16 keyidx = WPA_GET_LE16(igtk->keyid);
 
 	/* Detect possible key reinstallation */
-	if ((sm->igtk.igtk_len == len &&
-		os_memcmp(sm->igtk.igtk, igtk->igtk, sm->igtk.igtk_len) == 0) ||
-		(sm->igtk_wnm_sleep.igtk_len == len && os_memcmp(sm->igtk_wnm_sleep.igtk, igtk->igtk, sm->igtk_wnm_sleep.igtk_len) == 0)) {
+	if ((sm->igtk.igtk_len == len && os_memcmp(sm->igtk.igtk, igtk->igtk, sm->igtk.igtk_len) == 0) || (sm->igtk_wnm_sleep.igtk_len == len && os_memcmp(sm->igtk_wnm_sleep.igtk, igtk->igtk, sm->igtk_wnm_sleep.igtk_len) == 0)) {
 		wpa_dbg(sm->ctx->msg_ctx, MSG_DEBUG, "WPA: Not reinstalling already in-use IGTK to the driver (keyidx=%d)", keyidx);
-		return  0;
+		return 0;
 	}
 
 	wpa_dbg(sm->ctx->msg_ctx, MSG_DEBUG, "WPA: IGTK keyid %d pn %02x%02x%02x%02x%02x%02x", keyidx, MAC2STR(igtk->pn));
@@ -700,8 +697,7 @@ static int wpa_supplicant_install_igtk(struct wpa_sm *sm, const struct wpa_igtk_
 		wpa_msg(sm->ctx->msg_ctx, MSG_WARNING, "WPA: Invalid IGTK KeyID %d", keyidx);
 		return -1;
 	}
-	if (wpa_sm_set_key(sm, wpa_cipher_to_alg(sm->mgmt_group_cipher),
-		broadcast_ether_addr, keyidx, 0, igtk->pn, sizeof(igtk->pn), igtk->igtk, len) < 0) {
+	if (wpa_sm_set_key(sm, wpa_cipher_to_alg(sm->mgmt_group_cipher), broadcast_ether_addr, keyidx, 0, igtk->pn, sizeof(igtk->pn), igtk->igtk, len) < 0) {
 		wpa_msg(sm->ctx->msg_ctx, MSG_WARNING, "WPA: Failed to configure IGTK to the driver");
 		return -1;
 	}
@@ -716,7 +712,7 @@ static int wpa_supplicant_install_igtk(struct wpa_sm *sm, const struct wpa_igtk_
 
 	return 0;
 }
-#endif /* CONFIG_IEEE80211W */
+#endif							/* CONFIG_IEEE80211W */
 
 static int ieee80211w_set_keys(struct wpa_sm *sm, struct wpa_eapol_ie_parse *ie)
 {
@@ -734,7 +730,7 @@ static int ieee80211w_set_keys(struct wpa_sm *sm, struct wpa_eapol_ie_parse *ie)
 			return -1;
 		}
 
-		igtk = (const struct wpa_igtk_kde *) ie->igtk;
+		igtk = (const struct wpa_igtk_kde *)ie->igtk;
 		if (wpa_supplicant_install_igtk(sm, igtk, 0) < 0) {
 			return -1;
 		}
@@ -1847,7 +1843,7 @@ void wpa_sm_notify_assoc(struct wpa_sm *sm, const u8 *bssid)
 #ifdef CONFIG_IEEE80211W
 		os_memset(&sm->igtk, 0, sizeof(sm->igtk));
 		os_memset(&sm->igtk_wnm_sleep, 0, sizeof(sm->igtk_wnm_sleep));
-#endif /* CONFIG_IEEE80211W */
+#endif							/* CONFIG_IEEE80211W */
 	}
 #ifdef CONFIG_TDLS
 	wpa_tdls_assoc(sm);
@@ -2355,7 +2351,7 @@ void wpa_sm_drop_sa(struct wpa_sm *sm)
 #ifdef CONFIG_IEEE80211W
 	os_memset(&sm->igtk, 0, sizeof(sm->igtk));
 	os_memset(&sm->igtk_wnm_sleep, 0, sizeof(sm->igtk_wnm_sleep));
-#endif /* CONFIG_IEEE80211W */
+#endif							/* CONFIG_IEEE80211W */
 #ifdef CONFIG_IEEE80211R
 	os_memset(sm->xxkey, 0, sizeof(sm->xxkey));
 	os_memset(sm->pmk_r0, 0, sizeof(sm->pmk_r0));
@@ -2423,11 +2419,11 @@ int wpa_wnmsleep_install_key(struct wpa_sm *sm, u8 subelem_id, u8 *buf)
 	} else if (subelem_id == WNM_SLEEP_SUBELEM_IGTK) {
 		const struct wpa_igtk_kde *igtk;
 
-		igtk = (const struct wpa_igtk_kde *) (buf + 2);
+		igtk = (const struct wpa_igtk_kde *)(buf + 2);
 		if (wpa_supplicant_install_igtk(sm, igtk, 1) < 0) {
 			return -1;
 		}
-#endif /* CONFIG_IEEE80211W */
+#endif							/* CONFIG_IEEE80211W */
 	} else {
 		wpa_printf(MSG_DEBUG, "Unknown element id");
 		return -1;

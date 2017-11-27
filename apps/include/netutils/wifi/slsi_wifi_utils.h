@@ -37,8 +37,13 @@
 #include "slsi_wifi_api.h"
 
 #ifdef __cplusplus
-extern "C" {
+#define EXTERN extern "C"
+extern "C"
+{
+#else
+#define EXTERN extern
 #endif
+
 /* Supported security modes as string */
 #define SLSI_WIFI_SECURITY_OPEN          "open"
 #define SLSI_WIFI_SECURITY_WEP_OPEN      "wep"
@@ -62,8 +67,10 @@ slsi_security_config_t *getSecurityConfig(char *sec_type, char *psk, WiFi_InterF
 
 void printScanResult(slsi_scan_info_t *list);
 
+#undef EXTERN
 #ifdef __cplusplus
 }
 #endif
+
 #endif							/* __SLSI_WIFI_UTILS_H */
 

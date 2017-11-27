@@ -67,8 +67,8 @@ static int wpa_to_android_level(int level)
 
 #ifdef CONFIG_DEBUG_FILE
 static FILE *out_file = NULL;
-bool alreadyFulled = FALSE;
-int noOfLinesInLogFile = 0;
+static bool alreadyFulled = FALSE;
+static int noOfLinesInLogFile = 0;
 int presentLineInLogFile = 0;
 int curPosBeforeClosingLen = 0;
 #endif							/* CONFIG_DEBUG_FILE */

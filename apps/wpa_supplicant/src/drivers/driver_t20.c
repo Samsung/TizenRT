@@ -32,9 +32,19 @@ extern int slsi_set_tx_power(void *priv, int dbm);
 extern int slsi_get_tx_power(void *priv);
 extern int slsi_set_panic(void *priv);
 
-//extern struct wireless_dev *slsi_add_virtual_intf(struct wiphy *wiphy, const char *name, enum nl80211_iftype type, u32 *flags, struct vif_params *params);
 extern int slsi_add_key(const char *ifname, void *priv, enum wpa_alg alg, const u8 *mac_addr, int key_idx, int set_tx, const u8 *seq, size_t seq_len, const u8 *key, size_t key_len);
 extern int slsi_get_ssid(void *priv, u8 *ssid);
+
+#ifdef CONFIG_SLSI_WLAN_P2P
+extern int slsi_remain_on_channel(void *priv, unsigned int freq, unsigned int duration);
+extern int slsi_cancel_remain_on_channel(void *priv);
+extern int slsi_mgmt_tx(void *priv, unsigned int freq, unsigned int wait, const u8 *dst, const u8 *src, const u8 *bssid, const u8 *data, size_t data_len, int no_cck);
+extern void slsi_mgmt_tx_cancel_wait(void *priv);
+extern int slsi_set_p2p_powersave(void *priv, int legacy_ps, int opp_ps, int ctwindow);
+extern int slsi_set_ap_wps_ie(void *priv, const struct wpabuf *beacon, const struct wpabuf *proberesp, const struct wpabuf *assocresp);
+extern int slsi_add_virtual_intf(void *priv, enum wpa_driver_if_type type, const char *ifname, const u8 *addr, void *bss_ctx, void **drv_priv, char *force_ifname, u8 *if_addr, const char *bridge, int use_existing);
+extern int slsi_del_virtual_intf(void *priv, enum wpa_driver_if_type type, const char *ifname);
+#endif							/*CONFIG_SLSI_WLAN_P2P */
 
 int slsi_sta_remove(void *priv, const u8 *addr)
 {
@@ -75,7 +85,16 @@ const struct wpa_driver_ops wpa_driver_t20_ops = {
 	.set_tx_power = slsi_set_tx_power,
 	.get_tx_power = slsi_get_tx_power,
 	.set_panic = slsi_set_panic,
-//  .if_add = slsi_add_virtual_intf
+#ifdef CONFIG_SLSI_WLAN_P2P
+	.remain_on_channel = slsi_remain_on_channel,
+	.cancel_remain_on_channel = slsi_cancel_remain_on_channel,
+	.send_action = slsi_mgmt_tx,
+	.send_action_cancel_wait = slsi_mgmt_tx_cancel_wait,
+	.set_p2p_powersave = slsi_set_p2p_powersave,
+	.set_ap_wps_ie = slsi_set_ap_wps_ie,
+	.if_add = slsi_add_virtual_intf,
+	.if_remove = slsi_del_virtual_intf,
+#endif							/*CONFIG_SLSI_WLAN_P2P */
 };
 #else
 int slsi_sta_remove(void *priv, const u8 *addr)

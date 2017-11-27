@@ -389,7 +389,7 @@ static enum wpa_driver_if_type wpas_p2p_if_type(int p2p_group_interface)
 {
 	switch (p2p_group_interface) {
 	case P2P_GROUP_INTERFACE_PENDING:
-			return WPA_IF_P2P_GROUP;
+		return WPA_IF_P2P_GROUP;
 	case P2P_GROUP_INTERFACE_GO:
 		return WPA_IF_P2P_GO;
 	case P2P_GROUP_INTERFACE_CLIENT:
@@ -913,7 +913,7 @@ static int wpas_p2p_persistent_group(struct wpa_supplicant *wpa_s, u8 *go_dev_ad
 	if (p2p == NULL) {
 		wpa_printf(MSG_DEBUG, "P2P: Could not figure out whether " "group is persistent - BSS " MACSTR " did not include P2P IE", MAC2STR(bssid));
 		wpa_hexdump(MSG_DEBUG, "P2P: Probe Response IEs", (u8 *)(bss + 1), bss->ie_len);
-		wpa_hexdump(MSG_DEBUG, "P2P: Beacon IEs", ((u8 *)bss + 1) + bss->ie_len, bss->beacon_ie_len);
+		wpa_hexdump(MSG_DEBUG, "P2P: Beacon IEs", ((u8 *) bss + 1) + bss->ie_len, bss->beacon_ie_len);
 		return 0;
 	}
 
@@ -1691,8 +1691,14 @@ static int wpas_p2p_add_group_interface(struct wpa_supplicant *wpa_s, enum wpa_d
 		}
 		return 0;
 	}
-
+	/* Tinyara Driver doesnt take Group Ifname as Input.
+	   It creates the Group with IFNAME Wl3.So Hardcoding the Ifname to Wl3
+	 */
+#ifndef CONFIG_ARCH_BOARD_SIDK_S5JT200
 	wpas_p2p_get_group_ifname(wpa_s, ifname, sizeof(ifname));
+#else
+	snprintf(ifname, sizeof(ifname), "wl3");
+#endif
 	force_ifname[0] = '\0';
 
 	wpa_printf(MSG_DEBUG, "P2P: Create a new interface %s for the group", ifname);
@@ -2005,13 +2011,13 @@ static void wpas_start_listen_cb(struct wpa_radio_work *work, int deinit)
 	wpa_s->p2p_listen_work = work;
 
 	wpa_drv_set_ap_wps_ie(wpa_s, NULL, lwork->probe_resp_ie, NULL);
-
+#if 0
 	if (wpa_drv_probe_req_report(wpa_s, 1) < 0) {
 		wpa_printf(MSG_DEBUG, "P2P: Failed to request the driver to " "report received Probe Request frames");
 		wpas_p2p_listen_work_done(wpa_s);
 		return;
 	}
-
+#endif
 	wpa_s->pending_listen_freq = lwork->freq;
 	wpa_s->pending_listen_duration = lwork->duration;
 
@@ -3840,7 +3846,7 @@ static void wpas_p2p_join_scan_req(struct wpa_supplicant *wpa_s, int freq, const
 		os_memcpy(wpa_s->p2p_join_ssid, ssid, ssid_len);
 		wpa_s->p2p_join_ssid_len = ssid_len;
 	} else {
-		params.ssids[0].ssid = (u8 *)P2P_WILDCARD_SSID;
+		params.ssids[0].ssid = (u8 *) P2P_WILDCARD_SSID;
 		params.ssids[0].ssid_len = P2P_WILDCARD_SSID_LEN;
 		wpa_s->p2p_join_ssid_len = 0;
 	}
@@ -5597,7 +5603,7 @@ void wpas_p2p_update_config(struct wpa_supplicant *wpa_s)
 	}
 
 	if (wpa_s->conf->changed_parameters & CFG_CHANGED_P2P_SSID_POSTFIX) {
-		p2p_set_ssid_postfix(p2p, (u8 *)wpa_s->conf->p2p_ssid_postfix, wpa_s->conf->p2p_ssid_postfix ? os_strlen(wpa_s->conf->p2p_ssid_postfix) : 0);
+		p2p_set_ssid_postfix(p2p, (u8 *) wpa_s->conf->p2p_ssid_postfix, wpa_s->conf->p2p_ssid_postfix ? os_strlen(wpa_s->conf->p2p_ssid_postfix) : 0);
 	}
 
 	if (wpa_s->conf->changed_parameters & CFG_CHANGED_P2P_INTRA_BSS) {

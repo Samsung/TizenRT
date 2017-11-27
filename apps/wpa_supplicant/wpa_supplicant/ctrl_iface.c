@@ -315,9 +315,12 @@ static int wpa_ctrl_set_ap_vendor_ie(struct wpa_supplicant *wpa_s, char *value)
 	wpabuf_put_u8(wpa_buf, oui[1]);	/* OUI 2nd */
 	wpabuf_put_u8(wpa_buf, oui[2]);	/* OUI 3rd */
 	ie = wpabuf_put(wpa_buf, ie_len);	/* Hex string would be double in length */
-	hexstr2bin(value, ie, data_len);
+	(void)hexstr2bin(value, ie, ie_len);
 	wpa_printf(MSG_DEBUG, "wpa_ctrl_set_vendor_ie");
 	/* copy into ap_vendor elements so that they get published in beacon , probe resp */
+	if (wpa_s->conf->ap_vendor_elements) {
+		os_free(wpa_s->conf->ap_vendor_elements);
+	}
 	wpa_s->conf->ap_vendor_elements = wpa_buf;
 	return 0;
 }
@@ -379,7 +382,9 @@ static int wpa_supplicant_ctrl_iface_set(struct wpa_supplicant *wpa_s, char *cmd
 			ret = -1;
 		}
 	} else if (os_strcasecmp(cmd, "wps_fragment_size") == 0) {
+#ifdef CONFIG_WPS
 		wpa_s->wps_fragment_size = atoi(value);
+#endif
 #ifdef CONFIG_WPS_TESTING
 	} else if (os_strcasecmp(cmd, "wps_version_number") == 0) {
 		long int val;
@@ -974,7 +979,7 @@ static int wpa_supplicant_ctrl_iface_wps_check_pin(struct wpa_supplicant *wpa_s,
 	char *pos;
 	int ret;
 
-	wpa_hexdump_ascii_key(MSG_DEBUG, "WPS_CHECK_PIN", (u8 *)cmd, os_strlen(cmd));
+	wpa_hexdump_ascii_key(MSG_DEBUG, "WPS_CHECK_PIN", (u8 *) cmd, os_strlen(cmd));
 	for (pos = cmd, len = 0; *pos != '\0'; pos++) {
 		if (*pos < '0' || *pos > '9') {
 			continue;
@@ -1676,7 +1681,7 @@ static int wpa_supplicant_ctrl_iface_ctrl_rsp(struct wpa_supplicant *wpa_s, char
 	*pos++ = '\0';
 	id = atoi(id_pos);
 	wpa_printf(MSG_DEBUG, "CTRL_IFACE: field=%s id=%d", rsp, id);
-	wpa_hexdump_ascii_key(MSG_DEBUG, "CTRL_IFACE: value", (u8 *)pos, os_strlen(pos));
+	wpa_hexdump_ascii_key(MSG_DEBUG, "CTRL_IFACE: value", (u8 *) pos, os_strlen(pos));
 
 	ssid = wpa_config_get_network(wpa_s->conf, id);
 	if (ssid == NULL) {
@@ -2921,7 +2926,7 @@ static int wpa_supplicant_ctrl_iface_set_network(struct wpa_supplicant *wpa_s, c
 
 	id = atoi(cmd);
 	wpa_printf(MSG_DEBUG, "CTRL_IFACE: SET_NETWORK id=%d name='%s'", id, name);
-	wpa_hexdump_ascii_key(MSG_DEBUG, "CTRL_IFACE: value", (u8 *)value, os_strlen(value));
+	wpa_hexdump_ascii_key(MSG_DEBUG, "CTRL_IFACE: value", (u8 *) value, os_strlen(value));
 
 	ssid = wpa_config_get_network(wpa_s->conf, id);
 	if (ssid == NULL) {
@@ -3210,7 +3215,7 @@ static int wpa_supplicant_ctrl_iface_set_cred(struct wpa_supplicant *wpa_s, char
 
 	id = atoi(cmd);
 	wpa_printf(MSG_DEBUG, "CTRL_IFACE: SET_CRED id=%d name='%s'", id, name);
-	wpa_hexdump_ascii_key(MSG_DEBUG, "CTRL_IFACE: value", (u8 *)value, os_strlen(value));
+	wpa_hexdump_ascii_key(MSG_DEBUG, "CTRL_IFACE: value", (u8 *) value, os_strlen(value));
 
 	cred = wpa_config_get_cred(wpa_s->conf, id);
 	if (cred == NULL) {
@@ -4700,7 +4705,11 @@ static int p2p_ctrl_connect(struct wpa_supplicant *wpa_s, char *cmd, char *buf, 
 	pd = os_strstr(pos, " provdisc") != NULL;
 	vht = (os_strstr(cmd, " vht") != NULL) || wpa_s->conf->p2p_go_vht;
 	ht40 = (os_strstr(cmd, " ht40") != NULL) || wpa_s->conf->p2p_go_ht40 || vht;
-
+#ifdef WPA_SUPPLICANT_P2P_USER_REJECT
+	if (os_strstr(pos, " reject") != NULL) {
+		p2p_reject(wpa_s->global->p2p, addr);
+	}
+#endif
 	pos2 = os_strstr(pos, " go_intent=");
 	if (pos2) {
 		pos2 += 11;
@@ -5577,7 +5586,7 @@ static int p2p_ctrl_set(struct wpa_supplicant *wpa_s, char *cmd)
 	}
 
 	if (os_strcmp(cmd, "ssid_postfix") == 0) {
-		return p2p_set_ssid_postfix(wpa_s->global->p2p, (u8 *)param, os_strlen(param));
+		return p2p_set_ssid_postfix(wpa_s->global->p2p, (u8 *) param, os_strlen(param));
 	}
 
 	if (os_strcmp(cmd, "noa") == 0) {
@@ -6274,7 +6283,7 @@ static int hs20_icon_request(struct wpa_supplicant *wpa_s, char *cmd)
 	icon = &cmd[used];
 
 	wpa_s->fetch_osu_icon_in_progress = 0;
-	return hs20_anqp_send_req(wpa_s, dst_addr, BIT(HS20_STYPE_ICON_REQUEST), (u8 *)icon, os_strlen(icon));
+	return hs20_anqp_send_req(wpa_s, dst_addr, BIT(HS20_STYPE_ICON_REQUEST), (u8 *) icon, os_strlen(icon));
 }
 
 #endif							/* CONFIG_HS20 */
@@ -6569,9 +6578,9 @@ static void wpa_supplicant_ctrl_iface_flush(struct wpa_supplicant *wpa_s)
 	wpa_s->wps_fragment_size = 0;
 	wpas_wps_cancel(wpa_s);
 	wps_registrar_flush(wpa_s->wps->registrar);
-#endif							/* CONFIG_WPS */
 	wpa_s->after_wps = 0;
 	wpa_s->known_wps_freq = 0;
+#endif							/* CONFIG_WPS */
 
 #ifdef CONFIG_TDLS
 #ifdef CONFIG_TDLS_TESTING
@@ -6988,8 +6997,10 @@ static void wpas_ctrl_scan(struct wpa_supplicant *wpa_s, char *params, char *rep
 
 		wpa_s->normal_scans = 0;
 		wpa_s->scan_req = MANUAL_SCAN_REQ;
+#ifdef CONFIG_WPS
 		wpa_s->after_wps = 0;
 		wpa_s->known_wps_freq = 0;
+#endif
 		wpa_supplicant_req_scan(wpa_s, 0, 0);
 		if (wpa_s->manual_scan_use_id) {
 			wpa_s->manual_scan_id++;
@@ -7421,8 +7432,7 @@ static int wpas_ctrl_get_alloc_fail(struct wpa_supplicant *wpa_s, char *buf, siz
 static void wpas_ctrl_event_test_cb(void *eloop_ctx, void *timeout_ctx)
 {
 	struct wpa_supplicant *wpa_s = eloop_ctx;
-	int i;
-	int count = (intptr_t)timeout_ctx;
+	int i, count = (intptr_t) timeout_ctx;
 
 	wpa_printf(MSG_DEBUG, "TEST: Send %d control interface event messages", count);
 	for (i = 0; i < count; i++) {
@@ -7439,7 +7449,7 @@ static int wpas_ctrl_event_test(struct wpa_supplicant *wpa_s, const char *cmd)
 		return -1;
 	}
 
-	return eloop_register_timeout(0, 0, wpas_ctrl_event_test_cb, wpa_s, (void *)(intptr_t)count);
+	return eloop_register_timeout(0, 0, wpas_ctrl_event_test_cb, wpa_s, (void *)(intptr_t) count);
 }
 
 #endif							/* CONFIG_TESTING_OPTIONS */

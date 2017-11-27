@@ -11,6 +11,7 @@
 
 #ifdef CONFIG_CTRL_IFACE
 
+#define CTRL_P2P_GROUP_IFNAME "wl3"
 /* Shared functions from ctrl_iface.c; to be called by ctrl_iface backends */
 
 /**
@@ -58,7 +59,7 @@ char *wpa_supplicant_global_ctrl_iface_process(struct wpa_global *global, char *
  *
  * Required to be implemented in each control interface backend.
  */
-struct ctrl_iface_priv *wpa_supplicant_ctrl_iface_init(struct wpa_supplicant *wpa_s);
+struct wpa_ifname *wpa_supplicant_ctrl_iface_init(struct wpa_supplicant *wpa_s);
 
 /**
  * wpa_supplicant_ctrl_iface_deinit - Deinitialize control interface
@@ -69,7 +70,7 @@ struct ctrl_iface_priv *wpa_supplicant_ctrl_iface_init(struct wpa_supplicant *wp
  *
  * Required to be implemented in each control interface backend.
  */
-void wpa_supplicant_ctrl_iface_deinit(struct ctrl_iface_priv *priv);
+void wpa_supplicant_ctrl_iface_deinit(struct wpa_ifname *wpaifname);
 
 /**
  * wpa_supplicant_ctrl_iface_wait - Wait for ctrl_iface monitor

@@ -74,7 +74,7 @@ slsi_security_config_t *getSecurityConfig(char *sec_type, char *psk, WiFi_InterF
 			}
 		}
 		/* store the passphrase */
-		if (psk && ret != NULL) {
+		if (psk && ret != NULL && strlen(psk) <= SLSI_PASSPHRASE_LEN) {
 			memcpy(ret->passphrase, psk, strlen(psk));
 		} else {
 			if (ret) {

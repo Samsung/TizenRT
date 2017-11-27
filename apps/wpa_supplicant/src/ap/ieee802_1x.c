@@ -91,11 +91,11 @@ void ieee802_1x_set_sta_authorized(struct hostapd_data *hapd, struct sta_info *s
 	}
 
 	if (authorized) {
-		ap_sta_set_authorized(hapd, sta, 1);
+		ap_sta_set_authorized(hapd, sta, 1, 0);
 		res = hostapd_set_authorized(hapd, sta, 1);
 		hostapd_logger(hapd, sta->addr, HOSTAPD_MODULE_IEEE8021X, HOSTAPD_LEVEL_DEBUG, "authorizing port");
 	} else {
-		ap_sta_set_authorized(hapd, sta, 0);
+		ap_sta_set_authorized(hapd, sta, 0, 0);
 		res = hostapd_set_authorized(hapd, sta, 0);
 		hostapd_logger(hapd, sta->addr, HOSTAPD_MODULE_IEEE8021X, HOSTAPD_LEVEL_DEBUG, "unauthorizing port");
 	}

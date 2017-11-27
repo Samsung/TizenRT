@@ -319,7 +319,7 @@ skip_wpa_check:
 	hostapd_sta_assoc(hapd, addr, reassoc, status, buf, p - buf);
 
 	if (sta->auth_alg == WLAN_AUTH_FT) {
-		ap_sta_set_authorized(hapd, sta, 1);
+		ap_sta_set_authorized(hapd, sta, 1, reason);
 	}
 #else							/* CONFIG_IEEE80211R */
 	/* Keep compiler silent about unused variables */
@@ -360,7 +360,7 @@ fail:
 	return -1;
 }
 
-void hostapd_notif_disassoc(struct hostapd_data *hapd, const u8 *addr)
+void hostapd_notif_disassoc(struct hostapd_data *hapd, const u8 *addr, u16 reason)
 {
 	struct sta_info *sta;
 
@@ -384,7 +384,7 @@ void hostapd_notif_disassoc(struct hostapd_data *hapd, const u8 *addr)
 		return;
 	}
 
-	ap_sta_set_authorized(hapd, sta, 0);
+	ap_sta_set_authorized(hapd, sta, 0, reason);
 	sta->flags &= ~(WLAN_STA_AUTH | WLAN_STA_ASSOC);
 	wpa_auth_sm_event(sta->wpa_sm, WPA_DISASSOC);
 	sta->acct_terminate_cause = RADIUS_ACCT_TERMINATE_CAUSE_USER_REQUEST;
@@ -1064,12 +1064,12 @@ void wpa_supplicant_event(void *ctx, enum wpa_event_type event, union wpa_event_
 		break;
 	case EVENT_DISASSOC:
 		if (data) {
-			hostapd_notif_disassoc(hapd, data->disassoc_info.addr);
+			hostapd_notif_disassoc(hapd, data->disassoc_info.addr, data->disassoc_info.reason_code);
 		}
 		break;
 	case EVENT_DEAUTH:
 		if (data) {
-			hostapd_notif_disassoc(hapd, data->deauth_info.addr);
+			hostapd_notif_disassoc(hapd, data->deauth_info.addr, data->deauth_info.reason_code);
 		}
 		break;
 	case EVENT_STATION_LOW_ACK:

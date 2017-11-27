@@ -17,27 +17,39 @@
  ****************************************************************************/
 
 /**
-* @defgroup WiFi WiFi
-* SLSI WiFi API for TinyAra
+* @defgroup Wi-Fi Wi-Fi
+* @brief Introduce Wi-Fi APIs for TizenRT.
+* @details This is the Samsung LSI Wi-Fi API for TizenRT OS.
+* It contains support for both station and soft-ap mode on the 2.4Ghz frequency.
+* The API has support for security modes WPA/WPA2/WEP with various ciphers.
+*
+* @ingroup NETWORK
 * @{
 *
-* @brief S.LSI WiFi API for TinyARA.
-*
-* This is the Samsung LSI WiFi API for TinyARA OS. It contains support for both station and soft-ap
-* mode on the 2.4Ghz frequency.
-* The API has support for security modes WPA/WPA2/WEP with various ciphers.
 */
 
+/**
+ * @file slsi_wifi_api.h
+ * @brief Provides APIs for SLSI Wi-Fi APIs
+ */
+
+/**
+ * @cond HIDDEN
+ */
 #ifndef SLSI_WIFI_API_H_
 #define SLSI_WIFI_API_H_
-
-#ifdef  __cplusplus
-extern "C" {
+#ifdef __cplusplus
+#define EXTERN extern "C"
+extern "C"
+{
+#else
+#define EXTERN extern
 #endif
 
 /* interface name to use */
-#define CTRL_IFNAME "wl1"
-
+#define CTRL_IFNAME             "wl1"
+#define CTRL_P2P_IFNAME         "wl2"
+#define CTRL_P2P_GROUP_IFNAME   "wl3"
 #ifndef BIT
 #define BIT(x) (1 << (x))
 #endif
@@ -86,7 +98,16 @@ typedef enum {
 #define SLSI_REASON_NETWORK_CONFIGURATION_NOT_FOUND 201
 #define SLSI_REASON_NETWORK_AUTHENTICATION_FAILED   202
 #define SLSI_REASON_ASSOCIATION_REQ_FAILED          203
-
+#ifdef CONFIG_SLSI_WIFI_P2P_API
+/* Added in p2p connect scenarios:*/
+#define SLSI_REASON_PROV_DISC_FAILED                204
+#define SLSI_REASON_GO_NEG_FAILED                   205
+#define SLSI_REASON_GROUP_FORMATION_FAILED          206
+#define SLSI_REASON_WPS_EVENT_FAILED                207
+#define SLSI_REASON_CONNECT_ATTEMPT_FAILED          208
+#define SLSI_REASON_TIMEOUT                         209
+#define SLSI_REASON_OPERATION_FAILED                210
+#endif
 /**
  * Specify interval between scans performed by lower layers.
  * Value is in seconds. Default is 30 seconds,
@@ -116,14 +137,64 @@ typedef enum {
  * Values: 3 is default
  */
 #define SLSI_STA_JOIN_SCAN_ATTEMPT  3
+/**
+ * @endcond
+ */
 
-/* slsi wifi network interface - api parameter defines */
+/** @brief Defines slsi wifi network interface api parameters. */
 typedef enum WiFi_InterFace_ID {
-	SLSI_WIFI_NONE,
-	SLSI_WIFI_STATION_IF,	// Station mode (turns on wpa_supplicant)
-	SLSI_WIFI_SOFT_AP_IF,	// Soft AP mode (turns on hostapd)
-	SLSI_WIFI_P2P_IF		// P2P mode (turns on wpa_supplicant)
+	SLSI_WIFI_NONE,         /**< Unknown mode (error case) */
+	SLSI_WIFI_STATION_IF,	/**< Station mode (turns on wpa_supplicant) */
+	SLSI_WIFI_SOFT_AP_IF,	/**< Soft AP mode (turns on hostapd) */
+#ifdef CONFIG_SLSI_WIFI_P2P_API
+	SLSI_WIFI_P2P_IF		/**< P2P mode (turns on wpa_supplicant */
+#endif
 } WiFi_InterFace_ID_t;
+
+#ifdef CONFIG_SLSI_WIFI_P2P_API
+/* Defines for P2P interface */
+
+#define SLSI_P2P_INTENT_CLI 1
+#define SLSI_P2P_INTENT_ANY 6
+#define SLSI_P2P_INTENT_GO 15
+
+#define SLSI_P2P_MAX_DEVICE_NAME_LEN (SLSI_SSID_LEN - 10)  /* 10 = DIRECT-xy- */
+
+typedef enum {
+    SLSI_P2P_CONN_ACCEPT      = 0,
+    SLSI_P2P_CONN_REJECT      = 1
+} slsi_p2p_connect_response_t;
+
+/* enum containing available configuration methods for p2p */
+typedef enum config_method {
+    SLSI_P2P_PBC     = 0x01,
+    SLSI_P2P_DISPLAY = 0x02,
+    SLSI_P2P_KEYPAD  = 0x04,
+    SLSI_P2P_P2PS    = 0x08 // Not supported, but found devices could support this
+} slsi_config_method_t;
+
+/* struct containing peer information about p2p devices
+ * connected to us
+ */
+typedef struct peer_info {
+    uint8_t              device_name[SLSI_SSID_LEN + 1];
+    char                 device_address[SLSI_MACADDR_STR_LEN];
+    slsi_config_method_t config_methods;
+    uint8_t              primary_device_type[8];
+    uint8_t              secondary_device_type[8];
+    uint8_t              device_capability;
+    uint8_t              group_capability;
+} slsi_peer_info_t;
+
+typedef struct slsi_find_info {
+    uint32_t reason_code;
+    slsi_peer_info_t peer_info;
+} slsi_find_info_t;
+
+#endif //CONFIG_SLSI_WIFI_P2P_API
+/**
+ *@cond HIDDEN
+ */
 
 /* Capabilities bit mask
  * Return values defined in ieee802_11_defs.h
@@ -148,69 +219,98 @@ typedef enum WiFi_InterFace_ID {
  #define HT_CAP_INFO_40MHZ_INTOLERANT       ((u16) BIT(14))
  #define HT_CAP_INFO_LSIG_TXOP_PROTECT_SUPPORT    ((u16) BIT(15))*/
 
+/**
+ * @endcond
+ */
+
+/** @brief The typedef structure to support 802.11 HT (High-throughput) mode */
 typedef struct slsi_ht_config {
-	uint16_t ht_capab_info;		// Supported fields: HT_CAP_INFO_GREEN_FIELD, HT_CAP_INFO_SHORT_GI20MHZ
-	uint8_t mcs_index[10];		// 0 uses default, supported HT-MCS rates - in ASCII hex: 0xffff0000000000000000
+	uint16_t ht_capab_info;		/**< Supported fields: HT_CAP_INFO_GREEN_FIELD, HT_CAP_INFO_SHORT_GI20MHZ */
+	uint8_t mcs_index[10];		/**< 0 uses default, supported HT-MCS rates - in ASCII hex: 0xffff0000000000000000 */
 } slsi_ht_config_t;
 
+/** @brief The typedef structure storing 802.11 security mode and passpharase */
 typedef struct slsi_security_config {
-	uint32_t secmode;
-	char passphrase[SLSI_PASSPHRASE_LEN];
+	uint32_t secmode;                          /**< 802.11 security authentication mode */
+	char passphrase[SLSI_PASSPHRASE_LEN];      /**< Pre-shared key for authentication, (maximum length: 64) */
 } slsi_security_config_t;
 
+/** @brief The typedef structure for vendor specific IE (Information Element) block */
 typedef struct slsi_vendor_ie {
-	uint8_t oui[3];				// Organizational Unique ID
-	uint8_t *content;			// the ponter to the data allocated for the Vendor IE block
-	uint8_t content_length;		// total size of the allocated buffer
+	uint8_t oui[3];						/**< Organizational Unique ID */
+	uint8_t *content;					/**< The ponter to the data allocated for the Vendor IE block */
+	uint8_t content_length;	     		/**< Total size of the allocated buffer */
+    struct slsi_vendor_ie *next;    	/**<  pointer to next element if used as a list */
 } slsi_vendor_ie_t;
 
+/** @brief The typedef structure of 802.11 network information */
 typedef struct slsi_ap_config {
-	uint8_t ssid[SLSI_SSID_LEN + 1];	// 802.11 spec defined unspecified or uint8
-	int8_t ssid_len;					// length of ssid - # of valid octets
-	uint32_t beacon_period;				// beacon period, default 100 TU
-	uint32_t DTIM;						// Delivery Traffic Information Message (range 1..255), default 2
-	uint8_t channel;					// channel/frequency
-	uint8_t phy_mode;					// 0:legacy 1: 11N HT
-	slsi_ht_config_t ht_mode;			// requires CONFIG_HT_OVERRIDES enabled, see slsi_ht_config_t
-	slsi_security_config_t *security;	// use NULL if security mode is open
-	slsi_vendor_ie_t *vsie;				// Vender specific IE block
+	uint8_t ssid[SLSI_SSID_LEN + 1];	/**< Name of AP, 802.11 spec. defined unspecified or uint8 */
+	int8_t ssid_len;					/**< The length of ssid - # of valid octets */
+	uint32_t beacon_period;				/**< Period of beacon frame, default 100 TU */
+	uint32_t DTIM;						/**< Delivery Traffic Information Message (range 1..255), default 2 */
+	uint8_t channel;					/**< Information of channel/frequency */
+	uint8_t phy_mode;					/**< HT mode supporting, 0: legacy 1: 11N HT */
+	slsi_ht_config_t ht_mode;			/**< CONFIG_HT_OVERRIDES required, @ref slsi_ht_config_t */
+	slsi_security_config_t *security;	/**< @ref slsi_security_config_t (use NULL if security mode is open) */
+	slsi_vendor_ie_t *vsie;				/**< @ref slsi_vendor_ie_t */
 } slsi_ap_config_t;
 
+/** @brief The typedef structure to be used for storing scan results from Wi-Fi driver */
 typedef struct slsi_scan_info {
-	uint8_t ssid[SLSI_SSID_LEN + 1];	// 802.11 spec defined unspecified or uint8
-	char bssid[SLSI_MACADDR_STR_LEN];	// char string e.g. xx:xx:xx:xx:xx:xx
-	int8_t ssid_len;					// length of ssid - # of valid octets
-	int8_t rssi;						// rssi level of scanned device
-	uint32_t beacon_period;				// beacon period used (default 100)
-	uint8_t channel;					// channel/frequency
-	uint8_t phy_mode;					// 0:legacy 1: 11N HT
-	uint8_t bss_type;					// 0:infrastructure, 1:independent
-	uint8_t wps_support;				// boolean 1 supported, 0 not supported
-	uint8_t num_sec_modes;				// number of elements of security modes in sec_mode
-	slsi_ht_config_t ht_mode;			// See slsi_ht_config_t
-	slsi_security_config_t *sec_modes;	// list of security modes
-	struct slsi_scan_info *next;
+	uint8_t ssid[SLSI_SSID_LEN + 1];	/**< Name of AP, 802.11 spec. defined unspecified or uint8 */
+	char bssid[SLSI_MACADDR_STR_LEN];	/**< BSS identification, char string e.g. xx:xx:xx:xx:xx:xx */
+	int8_t ssid_len;					/**< The length of ssid - # of valid octets */
+	int8_t rssi;						/**< RSSI level of scanned device */
+	uint32_t beacon_period;				/**< Beacon period used (default 100) */
+	uint8_t channel;					/**< Information of channel/frequency */
+	uint8_t phy_mode;					/**< 802.11 PHY mode, 0: legacy 1: 11N HT */
+	uint8_t bss_type;					/**< Type of BSS, 0: infrastructure, 1: independent */
+	uint8_t wps_support;				/**< Support of WPS, boolean 1 supported, 0 not supported */
+	uint8_t num_sec_modes;				/**< The number of elements of security modes in sec_mode */
+	slsi_ht_config_t ht_mode;			/**< @ref slsi_ht_config_t */
+	slsi_security_config_t *sec_modes;	/**< @ref slsi_security_config_t, The list of security modes */
+	struct slsi_scan_info *next;        /**< Pointer to next scan results */
+    slsi_vendor_ie_t *vsie;             /**< Vendor Specific IEs from an AP */
 } slsi_scan_info_t;
 
+
+/** @brief The typedef structure to be used to sharing reason code */
 typedef struct slsi_reason {
-	uint32_t reason_code;				// Reason codes - 0 for success - error code see 'SLSI reason codes' above
-	uint8_t locally_generated;			// Which side cause link down, 1 = locally, 0 = remotely - valid for STA mode only
-	int8_t ssid_len;					// length of ssid - # of valid octets
-	uint8_t ssid[SLSI_SSID_LEN + 1];	// 802.11 spec defined up to 32 octets of data
-	char bssid[SLSI_MACADDR_STR_LEN];	// BSS identification, char string e.g. xx:xx:xx:xx:xx:xx
+	uint32_t reason_code;				/**< Reason codes - 0 for success, others @see apps/wpa_supplicant/src/common/ieee802_11_defs.h*/
+	uint8_t locally_generated;			/**< Which side cause link down, 1 = locally, 0 = remotely - valid for STA mode only */
+	int8_t ssid_len;					/**< The length of ssid - # of valid octets */
+	uint8_t ssid[SLSI_SSID_LEN + 1];	/**< Name of AP, 802.11 spec defined up to 32 octets of data */
+	char bssid[SLSI_MACADDR_STR_LEN];	/**< BSS identification, char string e.g. xx:xx:xx:xx:xx:xx */
 } slsi_reason_t;
 
-typedef int8_t (*network_scan_result_handler_t)(slsi_reason_t *reason);
+
+/** @brief The callback function to handle event of the scan results from wpa_supplicant */
+typedef int8_t (*slsi_scan_result_callback_t)(slsi_reason_t* reason);
+
+/** @brief The callback function to handle link event from wpa_supplicant */
 typedef void (*slsi_network_link_callback_t)(slsi_reason_t *reason);
 
 /**
- * Set the network configuration and start Wi-Fi interface
- * @interface_id    interface id to use (STATION_IF = 0 or SOFT_AP_IF = 1)
- * @ap_config       network configurations needed if SOFT_AP_IF is selected as
+ *@cond HIDDEN
+ */
+typedef struct te_func_ {
+    char* (*WiFiWpaSendRequest)(char *,char*,int8_t*);
+    int8_t (*WiFiGetBssid)(char**);
+    int8_t (*WiFiSetSecurity)(const slsi_security_config_t *, const char *);
+    int8_t (*WiFiGetNetwork)(uint8_t* , uint8_t , char** );
+} te_func_t;
+
+/**
+ * @endcond
+ */
+/**
+ * @brief Set the network configuration and start Wi-Fi interface.
+ * @param [in] interface_id    Interface id to use (STATION_IF = 0 or SOFT_AP_IF = 1)
+ * @param [in] ap_config       Network configurations needed if SOFT_AP_IF is selected as
  *                  WiFi_InterFace_ID_t else NULL. The caller owns this structure.
- * Return: Completed successfully or failed
- *
- * Set the network configuration and start Wi-Fi interface in either AP mode or
+ * @return On success, 0 is returned. On failure, a negative vaule is returned.
+ * @details Set the network configuration and start Wi-Fi interface in either AP mode or
  * Station Mode. Will start either Hostapd or wpa_supplicant process depending on the mode
  * selected.
  * A WiFiStart implies the init of the Wi-Fi stack + driver + IP stack if
@@ -235,43 +335,43 @@ typedef void (*slsi_network_link_callback_t)(slsi_reason_t *reason);
 int8_t WiFiStart(WiFi_InterFace_ID_t interface_id, const slsi_ap_config_t *ap_config);
 
 /**
- * Stop the Wi-Fi interface
- * Return: Completed successfully or failed
+ * @brief Stop the Wi-Fi interface.
+ * @return On success, 0 is returned. On failure, a negative vaule is returned.
  *
- * Stop the interface that currently associated AP, or abort the current
+ * @details Stop the interface that currently associated AP, or abort the current
  * connection process. A WiFiStop implies a stop of the Wi-Fi stack,
  * driver and IP stack if nothing else needs it.
- * If the selected interface is not running, the function will return success
+ * If the selected interface is not running, the function will return success.
  */
 int8_t WiFiStop(void);
 
 /**
- * Register callback functions for WiFi link
- * @link_up        callback function to register for the link up event
- * @link_down    callback function to register for the link down event
- * Return: Completed successfully or failed
+ * @brief Register callback functions for WiFi link.
+ * @param [in] link_up      Callback function to register for the link up event
+ * @param [in] link_down    Callback function to register for the link down event
+ * @return On success, 0 is returned. On failure, a negative vaule is returned.
  *
- * Register callback functions that gets called when a change in network link
+ * @details Register callback functions that gets called when a change in network link
  * status occurs, these carry a slsi_reason_t to tell why link is up or down
  */
 int8_t WiFiRegisterLinkCallback(slsi_network_link_callback_t link_up, slsi_network_link_callback_t link_down);
 
 /**
- * Register callback functions for WiFi scan
- * @scan_result_handler     callback function to register for the link up event
- * Return: Completed successfully or failed
+ * @brief Register callback functions for WiFi scan.
+ * @param [in] scan_result_handler     Callback function to register for the link up event
+ * @return On success, 0 is returned. On failure, a negative vaule is returned.
  *
- * Register callback functions that gets called when a scan trigger gets
+ * @details Register callback functions that gets called when a scan trigger gets
  * response for its request has done.
  */
-int8_t WiFiRegisterScanCallback(network_scan_result_handler_t scan_result_handler);
+int8_t WiFiRegisterScanCallback(slsi_scan_result_callback_t scan_result_handler);
 
 /**
- * Scan for Wi-Fi network
+ * @brief Scan for Wi-Fi network.
  *
- * Return: Scan initiated successfully or failed
+ * @return On success, 0 is returned. On failure, a negative vaule is returned.
  *
- * Start a scan for Wi-Fi AP in the surroundings.
+ * @details Start a scan for Wi-Fi AP in the surroundings.
  * result is returned to the callback handler registered with
  * WiFiRegisterScanCallback(). Events are : Scan complete event
  * or Scan aborted.
@@ -280,16 +380,29 @@ int8_t WiFiRegisterScanCallback(network_scan_result_handler_t scan_result_handle
 int8_t WiFiScanNetwork(void);
 
 /**
- * Return current scan results list
- * @scan_results        A pointer to a linked list of scan results
- *                      The caller takes owner responsibility of this list,
- *                      and must free each item on the list after use.
- *                      For convince the function WiFiFreeScanResults() can
- *                      be used to free the list.
+ * Scan for specific Wi-Fi network
+ * @param ssid              SSID of the AP that is to be search for (can be hidden SSID)
+ * @param ssid_len          length in bytes for the SSID
+ * @param security_config   the security config to use with the specific SSID
+ * @return: Scan initiated successfully or failed
  *
- * Return: Completed successfully or failed
+ * Start a scan for specific Wi-Fi AP in the surroundings.
+ * result is returned to the callback handler registered with
+ * WiFiRegisterScanCallback(). Events are : Scan complete event
+ * or Scan aborted.
+ * The scan results are retrieved using WiFiGetScanResults().
+ */
+int8_t WiFiScanSpecificNetwork(uint8_t* ssid, uint8_t ssid_len,
+        const slsi_security_config_t *security_config);
+/**
+ * @brief Return current scan results list.
+ * @param [out] scan_results        A pointer to a linked list of scan results
+ * - The caller takes owner responsibility of this list, and must free each item on the list after use.
+ * - For convince the function WiFiFreeScanResults() can be used to free the list.
  *
- * Request available list of scan results for Wi-Fi AP in the surroundings. The
+ * @return On success, 0 is returned. On failure, a negative vaule is returned.
+ *
+ * @details Request available list of scan results for Wi-Fi AP in the surroundings. The
  * results are returned as the list of structure slsi_ap_info_t linked via next
  * pointer.
  * The list must be freed by the caller, hence passing an existing list to this
@@ -298,119 +411,251 @@ int8_t WiFiScanNetwork(void);
 int8_t WiFiGetScanResults(slsi_scan_info_t **scan_results);
 
 /**
- * Free the result list returned by WifiGetScanResults.
+ * @brief Free the result list returned by WifiGetScanResults.
  * Does nothing if a NULL pointer is passed.
  * Sets *scan_results to NULL after operation is done.
- * @scan_results       A pointer to the linked list to free
- * Return: Always success
+ * @param [in] scan_results       A pointer to the linked list to free
+ * @return Returns always as succeed.
  */
 int8_t WiFiFreeScanResults(slsi_scan_info_t **scan_results);
 
 /**
- * Join a known Wi-Fi AP
- * @ssid               SSID to be used for the AP
- * @ssid_len           Length of SSID (# of valid octets in @ssid)
- * @bssid              preferred BSSID to be used when multiple APs has same SSID.
- *                     Set to NULL for best effort
- * @security_config    a pointer to data to slsi_security_config_t containing passphrase, keymgmt and cipher.
- *                     The caller owns this struct, use NULL if open security is requred.
- * Return: Completed successfully or failed
+ * @brief Join a known Wi-Fi AP.
+ * @param [in] ssid               SSID to be used for the AP
+ * @param [in] ssid_len           Length of SSID (# of valid octets in @ssid)
+ * @param [in] bssid              preferred BSSID to be used when multiple APs has same SSID.
+ *                                Set to NULL for best effort
+ * @param [in] security_config    A pointer to data to slsi_security_config_t containing passphrase, keymgmt and cipher.
+ *                                The caller owns this struct, use NULL if open security is requred.
+ * @return On success, 0 is returned. On failure, a negative vaule is returned.
  *
- * Join a known Wi-Fi AP with specified SSID and security key. The authentication
+ * @details Join a known Wi-Fi AP with specified SSID and security key. The authentication
  * type needed will automatically be resolved by the Wi-Fi stack.
  * The function will return after the connection is tried.
  */
 int8_t WiFiNetworkJoin(uint8_t *ssid, uint8_t ssid_len, uint8_t *bssid, const slsi_security_config_t *security_config);
 
 /**
- * Leave a connected AP
- * Return: Completed successfully or failed
+ * @brief Leave a connected AP.
+ * @return On success, 0 is returned. On failure, a negative vaule is returned.
  *
- * Close the connection to a connected AP. This will not close down the Wi-Fi
+ * @details Close the connection to a connected AP. This will not close down the Wi-Fi
  * stack but simply disconnect.
  */
 int8_t WiFiNetworkLeave(void);
 
 /**
- * Request get tx power.
- *  @dbm: a pointer to data to return value in dbm.
- * Return: success or failure
+ * @brief Request get tx power.
+ * @param [out] dbm A pointer to data to return value in dbm
+ * @return On success, 0 is returned. On failure, a negative vaule is returned.
  */
 int8_t WiFiGetTxPower(uint8_t *dbm);
 
 /**
- * Request set tx power
- *  @dbm: a pointer to value between 12 and 30 dbm
- * Return: success or failure
+ * @brief Request set tx power.
+ * @param [in] dbm A pointer to value between 12 and 30 dbm
+ * @return On success, 0 is returned. On failure, a negative vaule is returned.
  */
 int8_t WiFiSetTxPower(uint8_t *dbm);
 
 /**
- * Request get own mac address
- *  @mac: a pointer to data to return mac address (xx:xx:xx:xx:xx:xx)
- * Return: success or failure
+ * @brief Request get own mac address.
+ * @param [out] mac A pointer to data to return mac address (xx:xx:xx:xx:xx:xx)
+ * @return On success, 0 is returned. On failure, a negative vaule is returned.
  */
 int8_t WiFiGetMac(uint8_t *mac);
 
 /**
- * Request rssi level of connection
- *  @rssi: a pointer to data to return level of rssi
- * Return: success or failure
+ * @brief Request rssi level of connection.
+ * @param [out] rssi A pointer to data to return level of rssi
+ * @return On success, 0 is returned. On failure, a negative vaule is returned.
  */
 int8_t WiFiGetRssi(int8_t *rssi);
 
 /**
- * Request channel of connection
- *  @channel: a pointer to data to return channel of current connection
- * Return: success or failure
+ * @brief Request channel of connection.
+ * @param [out] channel A pointer to data to return channel of current connection
+ * @return On success, 0 is returned. On failure, a negative vaule is returned.
  */
 int8_t WiFiGetChannel(int8_t *channel);
 
 /**
- * Request connected status:
- * In STA mode:
- *   @count      1 for connected in STA mode, count of connected devices in AP
- *               mode if count > 1 details are updated, otherwise NULL
- *               0 for disconnected
- *   @details    a pointer to a data structure which will be filled in with
- *               BSSID and SSID of AP if connected. Set to NULL if this
- *               information is not needed
- * In AP mode:
- *   @details    unused - PASS NULL
- *   @count      the number of currently connected stations.
+ * @brief Request connected status.
+ * @param [out] count      Connection status according to operation mode
+ * - In STA mode: Equal and larger than 1 for connected, NULL for disconnected
+ * - In AP mode: The count of connected devices in an AP
+ * @param [out] details    A pointer to a data structure which will be filled with BSSID and SSID of AP
+ * - In STA mode: Information of connected AP, if disconnected NULL
+ * - In AP mode: Unused
  *
- * Return: success or failure
- *   In case of failure count will be set to the last know information and
- *   details will be filled as best effort (hence all values that could not
- *   be extracted will have the value 0)
+ * @return On success, 0 is returned. On failure, a negative vaule is returned.
+ * @details  In case of failure count will be set to the last know information and
+ *           details will be filled as best effort (hence all values that could not
+ *           be extracted will have the value 0)
  */
 int8_t WiFiIsConnected(uint8_t *count, slsi_reason_t *details);
 
 /**
- * Request the current mode of operation.
- *  @mode:       sets to one of SLSI_WIFI_NONE, SLSI_WIFI_STATION_IF,
- *               SLSI_WIFI_SOFT_AP_IF
- * Return: success or failure
+ * @brief Request the current mode of operation.
+ * @param [out] mode       Wi-Fi operation mode (one of SLSI_WIFI_NONE, SLSI_WIFI_STATION_IF and SLSI_WIFI_SOFT_AP_IF)
+ * @return On success, 0 is returned. On failure, a negative vaule is returned.
  */
 int8_t WiFiGetOpMode(WiFi_InterFace_ID_t *mode);
 
 /**
- * Request to set country code
- *  @country_code    a pointer to data to containing a two capital letter country code
- * Return: Completed successfully or failed
+ * @brief Request to set country code.
+ * @param [in] country_code    A pointer to data to containing a two capital letter country code
+ * @return On success, 0 is returned. On failure, a negative vaule is returned.
  */
 int8_t WiFiSetCountryCode(const char *country_code);
 
 /**
- * Request to save network configuration file
- * Return: Completed successfully or failed
+ * @brief Request to save network configuration file.
+ * @return On success, 0 is returned. On failure, a negative vaule is returned.
  *
- *   Will save current network state in configuration file. E.g. if auto
- *   connect is enabled and a network is saved, next time Wi-Fi is started
- *   it will look into configuration file and try to connect known network
+ * @details  Will save current network state in configuration file. E.g. if auto
+ *           connect is enabled and a network is saved, next time Wi-Fi is started
+ *           it will look into configuration file and try to connect known network
  */
 int8_t WiFiSaveConfig(void);
 
+
+#ifdef CONFIG_SLSI_WIFI_P2P_API
+/**
+ * Set WiFiP2P device name
+ * @param device_name       Name of own device
+ * @param device_name_len   Length of device name included
+ * @return                  SLSI_STATUS_SUCCESS or other failure, see @SLSI status codes
+ *
+ *  Will change P2P Device Name in supplicant and furthermore be used as extended postfix
+ *  for the WiFi Direct ssid name, e.g. DIRECT-xy-[POSTFIX-]device_name, if not set
+ *  last part of MAC address is used instead, e.g. DIRECT-xy-[POSTFIX-]1234, if postfix
+ *  name length exceeds SLSI_SSID_LEN, the name will be cropped
+ */
+int8_t WiFiP2PSetDeviceName(uint8_t* device_name, uint8_t device_name_len);
+
+/**
+ * Start WiFiP2P Listen
+ * @return              SLSI_STATUS_SUCCESS or other failure, see @SLSI status codes
+ */
+int8_t WiFiP2PListen(void);
+
+/**
+ * Stop WiFiP2P Listen
+ * @return              SLSI_STATUS_SUCCESS or other failure, see @SLSI status codes
+ */
+int8_t WiFiP2PStopListen(void);
+
+/**
+ * Discover WiFiP2P devices nearby.
+ * @param timeout           timeout value in seconds. WiFiP2P find will be stopped after timeout.
+ *                          0 indicates no timeout, max value is size of parameter type.
+ * @param device_address    Array containing one specific device to look for. Leave empty to look
+ *                          for all P2P devices.
+ * @return                  SLSI_STATUS_SUCCESS or other failure, see @SLSI status codes
+ *
+ *  Devices found will be returned in find callback function see @slsi_p2p_find_handler_t
+ *  callback function below. If device address specified only this device will be reported in
+ *  callback
+ */
+int8_t WiFiP2PFind(uint32_t timeout, char device_address[SLSI_MACADDR_STR_LEN]);
+
+/**
+ * Stop P2P find explicitly
+ * @return              SLSI_STATUS_SUCCESS or other failure, see @SLSI status codes
+ */
+int8_t WiFiP2PStopFind(void);
+
+/**
+ * Callback function to be called when nearby devices are found
+ * @param find_info     struct with found peers and reason code
+ */
+typedef void (*slsi_p2p_find_callback_t)(slsi_find_info_t *find_info);
+
+/**
+ * Register callback handler for find results
+ * @param find_handler  callback handler function that will be registered
+ * @return              SLSI_STATUS_SUCCESS or other failure, see @SLSI status codes
+ */
+int8_t WiFiP2PRegisterFindCallback(slsi_p2p_find_callback_t find_handler);
+
+/**
+ * Start Autonomous GO
+ * @param channel       GO Operating channel
+ * @param persistent    Indicates if it will be a persistent group or not.
+ *                      It has to be FALSE as of now.
+ * @return              SLSI_STATUS_SUCCESS or other failure, see @SLSI status codes
+ */
+int8_t WiFiP2PCreateGroup(uint8_t channel, bool persistent);
+
+/**
+ * Stop Autonomous GO
+ * @return              SLSI_STATUS_SUCCESS or other failure, see @SLSI status codes
+ */
+int8_t WiFiP2PRemoveGroup(void);
+
+/**
+ * Try to connect to p2p device
+ * @param device_address    Address of device for connection establishment
+ * @param config_method     Configuration method to be used for authentication,
+ *                          see @slsi_config_method_t for details
+ * @return                  SLSI_STATUS_SUCCESS or other failure, see @SLSI status codes
+ *
+ *  See slsi_p2p_connect_ind_t handler for exchange of provisioning information
+ *  during connection establishment
+ */
+int8_t WiFiP2PConnect(char device_address[SLSI_MACADDR_STR_LEN],
+        slsi_config_method_t config_method);
+
+/**
+ * This is invoked when it received connection indication from a peer.
+ * @param peer_info     received information of peer device, see @slsi_peer_info_t structure
+ * @param method        Configuration method which is used, see @slsi_config_method_t
+ * @param response      Application can accept or reject the request, see @slsi_p2p_connect_response_t
+ * @param go_intent     Intent to become a Group Owner, value between 1 and 15
+ * @param passphrase    Passphrase to be displayed in case of DISPLAY config method,
+ *                      passphrase entered by applicaiton in case of KEYPAD config method, or
+ *                      left empty (= NULL) if config method is PBC
+ * @return              SLSI_STATUS_SUCCESS or other failure, see @SLSI status codes
+ *
+ *  Note: Implementation of connection handler should never call back into API
+ */
+typedef void (*slsi_p2p_connect_ind_t)(slsi_peer_info_t *peer_info,
+        slsi_config_method_t config_method,
+        slsi_p2p_connect_response_t *response,
+        uint8_t *go_intent,
+        char **passphrase);
+
+/**
+ * Disconnect the connection
+ * @return      SLSI_STATUS_SUCCESS or other failure, see @SLSI status codes
+ *
+ *  Will disconnect the ongoing connection to Wi-Fi Direct peer in case of GO or CLI.
+ *  In case of Autonomous GO, the WiFiP2PRemoveGroup must be used instead
+ *
+ */
+int8_t WiFiP2PDisconnect(void);
+
+/**
+ * Used to register connection callback handler function
+ * @param connect_handler   Callback function for connection indication, see
+ *                          slsi_p2p_connect_ind_t for details
+ * @return                  SLSI_STATUS_SUCCESS or other failure, see @SLSI status codes
+ * This needs to be invoked prior to using the P2PFind api.
+ */
+int8_t WiFiP2PRegisterConnectionHandler(slsi_p2p_connect_ind_t connect_handler);
+
+/**
+ * Used to register link callback handler functions
+ * @param link_up   Callback for link up, see @slsi_network_link_callback_t for details
+ * @param link_down Callback handler for link down, see @slsi_network_link_callback_t for details
+ * @return          SLSI_STATUS_SUCCESS or other failure, see @SLSI status codes
+ */
+int8_t WiFiP2PRegisterLinkCallback(slsi_network_link_callback_t link_up, slsi_network_link_callback_t link_down);
+
+#endif //CONFIG_SLSI_WIFI_P2P_API
+
+#undef EXTERN
 #ifdef  __cplusplus
 }
 #endif

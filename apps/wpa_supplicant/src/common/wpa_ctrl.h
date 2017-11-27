@@ -463,6 +463,10 @@ int wpa_ctrl_recvfrom(int sock, char *buf, size_t len);
 int wpa_ctrl_sendto(int sock, const char *buf, size_t len);
 #endif
 #endif							/* CONFIG_CTRL_IFACE_UDP */
+#if  defined(CONFIG_CTRL_IFACE_FIFO)
+void wpa_update_send_cmd_ifname(struct wpa_ctrl *ctrl, char *ifname);
+void wpa_update_ctrl_ifname(struct wpa_ctrl *ctrl, char *ifname);
+#endif
 
 #ifdef  __cplusplus
 }

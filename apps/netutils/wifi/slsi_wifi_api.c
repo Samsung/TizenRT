@@ -30,172 +30,24 @@
 #include <unistd.h>
 #include <string.h>
 #include <errno.h>
+#include <mqueue.h>
 #include <pthread.h>
 #include <semaphore.h>
 #include <sys/stat.h>
 #include <slsi_wifi_api.h>
 #include <slsi_wifi_nvmap.h>
 
+#include "slsi_wifi_private.h"
+
 extern int wpa_supplicant_main(int argc, char *argv[]);
 /* Reuse SSID decoder from wpa_supplicant: mind requires buf to be len+1 long to avoid mem corruption*/
 extern size_t printf_decode(u8 *buf, size_t maxlen, const char *str);
 extern void printf_encode(char *txt, size_t maxlen, const u8 *data, size_t len);
 
-#ifdef CONFIG_DEBUG_WLAN_API_VERBOSE
-#define VPRINT(format, ...) printf("SLSI API VERBOSE (%s): " format, __FUNCTION__, ##__VA_ARGS__)
-#define SLSI_API_VERBOSE  (1)
-#ifndef CONFIG_DEBUG_WLAN_API_DEBUG
-#define CONFIG_DEBUG_WLAN_API_DEBUG
-#endif
-#else
-#define VPRINT(a, ...) (void)0
-#define SLSI_API_VERBOSE  (0)
-#endif							//CONFIG_DEBUG_WLAN_API_VERBOSE
-
-#ifdef CONFIG_DEBUG_WLAN_API_DEBUG
-#define DPRINT(format, ...) printf("SLSI API DEBUG (%s): " format, __FUNCTION__, ##__VA_ARGS__)
-#ifndef CONFIG_DEBUG_WLAN_API_ERROR
-#define CONFIG_DEBUG_WLAN_API_ERROR
-#endif
-#else
-#define DPRINT(a, ...) (void)0
-#endif							//CONFIG_DEBUG_WLAN_API_DEBUG
-
-#ifdef CONFIG_DEBUG_WLAN_API_ERROR
-#define EPRINT(format, ...) printf("SLSI API ERROR (%s): " format, __FUNCTION__, ##__VA_ARGS__)
-#else
-#define EPRINT(a, ...) (void)0
-#endif							//CONFIG_DEBUG_WLAN_API_ERROR
-
-// Enable DEBUG_SLEEP to allow sleeps and print out during run - can only be enabled manually
-#define SLSI_WIFI_API_DEBUG_SLEEP       0
-
-/*
- * test functions
- */
-#ifdef SLSI_WIFI_API_DEBUG_SLEEP
-static int sleep_count = 0;
-void slsi_demo_app_sleep(int seconds, char *str)
-{
-	printf("SLSI API debug sleep number %d - %s\n", sleep_count, str);
-	sleep(seconds);
-	printf("SLSI API debug sleep number %d DONE \n", sleep_count++);
-}
-#endif
-
 #define IEEE80211_CAP_IBSS              0x0002
-
-#define WPA_COMMAND_SCAN                "SCAN"
-#define WPA_COMMAND_SCAN_STOP           "ABORT_SCAN"
-#define WPA_COMMAND_SCAN_INTERVAL       "SCAN_INTERVAL "
-#define WPA_COMMAND_BSS_EXPIRE_AGE      "BSS_EXPIRE_AGE "
-#define WPA_COMMAND_SCAN_RESULTS        "SCAN_RESULTS"
-#define WPA_COMMAND_AUCOTONNECT         "STA_AUTOCONNECT "
-#define WPA_COMMAND_LIST_NETWORKS       "LIST_NETWORKS"
-#define WPA_COMMAND_ADD_NETWORK         "ADD_NETWORK"
-#define WPA_COMMAND_REMOVE_NETWORK      "REMOVE_NETWORK "
-#define WPA_COMMAND_BSS                 "BSS "
-#define WPA_COMMAND_UPDATE_CONFIG       "SET update_config "
-#define WPA_COMMAND_SAVE_CONFIG         "SAVE_CONFIG"
-
-#define WPA_COMMAND_SET                 "SET "
-#define WPA_COMMAND_SET_NETWORK         "SET_NETWORK "
-#define WPA_PARAM_KEY_MGMT_NONE         "key_mgmt NONE"
-#define WPA_PARAM_KEY_MGMT_WEP          "key_mgmt NONE"
-#define WPA_PARAM_KEY_MGMT_WEP_SHARED   "key_mgmt NONE"
-#define WPA_PARAM_KEY_MGMT_WPA_PSK      "key_mgmt WPA-PSK"
-#define WPA_PARAM_SSID                  "ssid "
-#define WPA_PARAM_SCAN_SSID             "scan_ssid "
-#define WPA_PARAM_BSSID                 "bssid "
-#define WPA_PARAM_PSK                   "psk "
-#define WPA_PARAM_WEPKEY                "wep_key0 "
-#define WPA_PARAM_FREQUENCY             "frequency "
-#define WPA_PARAM_MODE_AP               "mode 2"
-#define WPA_PARAM_MODE_STA              "mode 0"
-#define WPA_PARAM_NETWORK_DISABLED      "disabled 0"
-#define WPA_PARAM_AUTH_ALG              "auth_alg "
-#define WPA_PARAM_PAIRWISE              "pairwise "
-#define WPA_PARAM_CIPHER                "cipher "
-#define WPA_PARAM_GROUP                 "group "
-#define WPA_PARAM_PROTO                 "proto "
-#define WPA_PARAM_BEACON_INT            "beacon_int "
-#define WPA_PARAM_DTIM_PERIOD           "dtim_period "
-#define WPA_PARAM_VSIE                  "ap_vendor_ie "
-#define WPA_PARAM_DISABLE_HT            "disable_ht 1"
-#define WPA_PARAM_DISABLE_SHORT_GI      "disable_sgi 1"
-#define WPA_PARAM_HT_CAPAB              "ht_capab "
-#define WPA_PARAM_HT_MCS                "ht_mcs "
-
-#define WPA_COMMAND_SELECT_NETWORK      "SELECT_NETWORK "
-#define WPA_COMMAND_ENABLE_NETWORK      "ENABLE_NETWORK "
-#define WPA_COMMAND_DISABLE_NETWORK     "DISABLE_NETWORK all"
-#define WPA_COMMAND_RECONNECT           "RECONNECT"
-#define WPA_COMMAND_DISCONNECT          "DISCONNECT"
-#define WPA_COMMAND_STOP_AP             "STOP_AP"
-
-#define WPA_COMMAND_TERMINATE           "TERMINATE"
-
-#define WPA_COMMAND_STATUS              "STATUS"
-#define WPA_STATE_COMPLETED             "COMPLETED"
-#define WPA_STATE_DISCONNECTED          "DISCONNECTED"
-#define WPA_STATE_SCANNING              "SCANNING"
-#define WPA_VALUE_SSID                  "ssid="
-#define WPA_VALUE_IP_ADDRESS            "ip_address="
-#define WPA_VALUE_ADDRESS               "address="
-#define WPA_VALUE_BSSID                 "bssid="
-#define WPA_VALUE_WPA_STATE             "wpa_state="
-#define WPA_VALUE_WPS_STATE             "wps_state="
-#define WPA_VALUE_BEACON_INT            "beacon_int="
-#define WPA_VALUE_DTIM_PERIOD           "dtim_period="
-#define WPA_VALUE_CAPABILITIES          "capabilities="
-#define WPA_VALUE_LEVEL                 "level="
-#define WPA_VALUE_QUAL                  "qual="
-#define WPA_VALUE_FLAGS                 "flags="
-#define WPA_VALUE_FREQ                  "freq="
-#define WPA_VALUE_FREQUENCY             "frequency="
-#define WPA_VALUE_REASON                "reason="
-#define WPA_VALUE_LOACLLY_GENERATED     "locally_generated="
-#define WPA_VALUE_IE                    "ie="
-
-#define WPA_VALUE_AUTH_ALG_OPEN         "OPEN"
-#define WPA_VALUE_AUTH_ALG_SHARED       "SHARED"
-#define WPA_VALUE_AUTH_ALG_OPEN_SHARED  "OPEN SHARED"
-#define WPA_VALUE_PAIRWISE_TKIP         "TKIP"
-#define WPA_VALUE_PAIRWISE_MIXED        "CCMP TKIP"
-#define WPA_VALUE_PAIRWISE_AES          "CCMP"
-#define WPA_VALUE_CIPHER_NONE BIT       "NONE"
-#define WPA_VALUE_CIPHER_WEP40          "WEP40"
-#define WPA_VALUE_CIPHER_WEP104         "WEP104"
-#define WPA_VALUE_CIPHER_TKIP           "TKIP"
-#define WPA_VALUE_CIPHER_CCMP           "CCMP"
-#define WPA_VALUE_CIPHER_MIXED          "TKIP CCMP"
-#define WPA_VALUE_PROTO_WPA             "WPA"
-#define WPA_VALUE_PROTO_RSN             "RSN"	// Same as WPA2
-#define WPA_VALUE_PROTO_MIXED           "WPA RSN"
-#define WPA_VALUE_GROUP_CCMP            "CCMP"
-#define WPA_VALUE_GROUP_TKIP            "TKIP"
-#define WPA_VALUE_GROUP_WEP40           "WEP40"
-#define WPA_VALUE_GROUP_WEP104          "WEP104"
-
-#define WPA_COMMAND_DRIVER              "DRIVER "
-#define WPA_PARAM_COUNTRY               "COUNTRY"
-#define WPA_PARAM_FORCE_PANIC           "FORCE_PANIC"
-#define WPA_COMMAND_SET_TX_POWER        "SET set_tx_power "
-#define WPA_COMMAND_GET_TX_POWER        "GET get_tx_power"
-
-#define WPA_COMMAND_SIGNAL_POLL         "SIGNAL_POLL"
-#define WPA_VALUE_RSSI                  "RSSI="
-#define WPA_VALUE_LINKSPEED             "LINKSPEED="
 
 /* Events received - used to handle connect failed cases */
 #define SLSI_EVENT_ASSOCIATION_REQ_FAILED "Association request to the driver failed"
-
-/* SSID encoded in a string - worst case is all 4-octet hex digits + '\0' */
-#define WPA_MAX_SSID_LEN                (4 * 32 + 1)
-
-#define WPA_COMMAND_MAX_SIZE            (30 + WPA_MAX_SSID_LEN)
-#define WPA_BUFFER_SIZE                 4096
-#define REQUEST_RETRY_COUNT             5
 
 #define SLSI_WIFI_WEP_ASCII_KEY_MIN     5
 #define SLSI_WIFI_WEP_ASCII_KEY_MAX     13
@@ -209,6 +61,11 @@ void slsi_demo_app_sleep(int seconds, char *str)
 #define SLSI_SCAN_INTERVAL_MIN   10
 #define SLSI_SCAN_INTERVAL_MAX   60
 
+/* Defines related to callback thread and mqueue */
+#define SLSI_CALLBACK_MQUEUE    "callback_queue"
+#define SLSI_CALLBACK_MGS_COUNT 10
+#define SLSI_CALLBACK_MGS_SIZE  sizeof(slsi_callback_t) + sizeof(slsi_msg_callback_t)
+
 typedef enum {
 	SLSI_WIFIAPI_STATE_NOT_STARTED,
 	SLSI_WIFIAPI_STATE_SUPPLICANT_RUNNING,	//SLSI_WIFIAPI_STATE_STA_ENABLED
@@ -221,10 +78,20 @@ typedef enum {
 	SLSI_WIFIAPI_STATE_AP_DISABLING,
 	SLSI_WIFIAPI_STATE_TERMINATING,
 	SLSI_WIFIAPI_STATE_RECOVERING,
+	SLSI_WIFIAPI_STATE_P2P,
 	SLSI_WIFIAPI_STATE_COUNT
 } slsi_api_states_t;
 
-#ifdef SLSI_API_VERBOSE
+#if SLSI_API_DEBUG == 1
+/* Used in conjunction with WiFi_InterFace_ID for debug print */
+static char *slsi_wifi_interface_id[4] = {
+	"WIFI_NONE",
+	"WIFI_STATION_IF",
+	"WIFI_SOFT_AP_IF",
+	"WIFI_P2P_IF"
+};
+#endif
+
 char *slsi_state_strings[SLSI_WIFIAPI_STATE_COUNT] = {
 	"STATE_NOT_STARTED",
 	"STATE_SUPPLICANT_RUNNING",	//SLSI_WIFIAPI_STATE_STA_ENABLED
@@ -235,11 +102,11 @@ char *slsi_state_strings[SLSI_WIFIAPI_STATE_COUNT] = {
 	"STATE_AP_ENABLED",
 	"STATE_AP_CONNECTED",
 	"STATE_AP_DISABLING",
-	"STATE_TERMINATING"
+	"STATE_TERMINATING",
+	"STATE_RECOVERING",
+	"STATE_P2P"
 };
-#endif
 
-// BEGIN Recovery
 #ifdef CONFIG_SCSC_WLAN_AUTO_RECOVERY
 
 typedef struct slsi_recovery_data {
@@ -248,7 +115,7 @@ typedef struct slsi_recovery_data {
 	WiFi_InterFace_ID_t old_interface_type;
 	slsi_network_link_callback_t link_up;	// callback function
 	slsi_network_link_callback_t link_down;	// callback function
-	network_scan_result_handler_t scan_result_handler;	// callback function
+	slsi_scan_result_callback_t scan_result_handler;	// callback function
 	char remote_bssid[18];		// char string e.g. xx:xx:xx:xx:xx:xx
 	slsi_ap_config_t ap_config;	// contains security pointer!
 	uint8_t ssid[SLSI_SSID_LEN + 1];	// 802.11 spec defined unspecified or uint8
@@ -262,8 +129,6 @@ static pthread_t g_recovery_thread;
 static int g_recovery_running = 0;
 static sem_t g_sem_recover;
 #endif							// CONFIG_SCSC_WLAN_AUTO_RECOVERY
-
-static int g_recovering = 0;
 // END Recovery
 
 static slsi_api_states_t g_state = SLSI_WIFIAPI_STATE_NOT_STARTED;
@@ -271,79 +136,102 @@ static struct wpa_ctrl *g_ctrl_conn;
 static int g_wpa_attached = 0;
 static int g_running = 0;
 static int g_scanning = 0;
+static int g_recovering = 0;
+static int g_callback_running = 0;
+static mqd_t g_send_cbmqfd = NULL;
+static mqd_t g_recv_cbmqfd = NULL;
+static pthread_t g_callback_thread;
 static pthread_t g_monitoring_thread;
 static sem_t g_sem_terminate;
 static sem_t g_sem_ap_mode;
 static sem_t g_sem_disconnect;
-
 static sem_t g_sem_api_block;
 static pthread_mutex_t mutex_state;
 static bool g_mutex_initialized = FALSE;
-static network_scan_result_handler_t g_scan_result_handler;
+static slsi_scan_result_callback_t g_scan_result_handler;
 static slsi_network_link_callback_t g_link_up;
 static slsi_network_link_callback_t g_link_down;
 static slsi_ap_config_t *g_ap_config;
 static pid_t g_task = 0;
 static char *g_network_id = NULL;
 static uint8_t g_num_sta_connected = 0;
+static char *g_active_ifname = NULL;
 static slsi_wifi_nv_data_t *g_slsi_wifi_nv_data;
 static char g_country_code[3] = { 0 };
-
-static void *nvram;
+static char *g_scan_network_id = NULL;
+static void *g_nvram;
 
 #ifdef CONFIG_SLSI_WIFI_FILESYSTEM_SUPPORT
+#ifdef CONFIG_SLSI_WIFI_P2P_API
+static const char g_supplicant_conf[] = "ctrl_interface=udp\n p2p_disabled=1";
+static const char g_supplicant_conf_p2p[] = "ctrl_interface=udp\n device_name=T200\n " "config_methods='push_button keypad display'";
+/*
+ * Available methods: usba ethernet label display ext_nfc_token
+ * int_nfc_token nfc_interface push_button keypad
+ * virtual_display physical_display
+ * virtual_push_button physical_push_button.
+ * */
+#else
 static const char g_supplicant_conf[] = "ctrl_interface=udp";
-
+#endif
 #endif
 
-#ifdef CONFIG_DEBUG_WLAN_SUPPLICANT_ERROR
-static char *sup_argv[5];		/* We need this to be a static array, as the supplicant needs it
-								 * after we exit from slsi_init()*/
-#elif defined(CONFIG_DEBUG)
-static char *sup_argv[5];
+/* We need this to be a static array, as the supplicant needs it after we exit from slsi_init()*/
+static char *sup_argv[10];		// Enough to contain all modes
+
+#ifdef CONFIG_SCSC_WLAN_AUTO_RECOVERY
+#define LOCK_API sem_wait(&g_sem_api_block)
 #else
-static char *sup_argv[6];
+#define LOCK_API (void)0
 #endif
 
 #define LOCKUNLOCK_CRITICAL { \
-	EPRINT("LOCKUNLOCK_CRITICAL - %s\n", __func__); \
-	if (SLSI_API_VERBOSE) fflush(stdout); \
-	pthread_mutex_trylock(&mutex_state); \
-	pthread_mutex_unlock(&mutex_state); \
+    EPRINT("LOCKUNLOCK_CRITICAL - %s\n", __func__); \
+    if(SLSI_API_VERBOSE) fflush(stdout); \
+    pthread_mutex_trylock(&mutex_state); \
+    pthread_mutex_unlock(&mutex_state); \
 }
 
 #define ENTER_CRITICAL { \
-	VPRINT("ENTER_CRITICAL in API - %s\n", __func__); \
-	if (!g_mutex_initialized) { \
-		VPRINT("Initializing the mutex\n"); \
-		if (pthread_mutex_init(&mutex_state, NULL) != OK) { \
-			EPRINT("Could not initialize mutex\n"); \
-		} else { \
-			VPRINT("Mutex ready\n"); \
-			g_mutex_initialized = TRUE; \
-		} \
-	} \
-	if (SLSI_API_VERBOSE) fflush(stdout); \
-	int err = pthread_mutex_lock(&mutex_state); \
-	if (err != OK) { \
-		EPRINT("mutex lock failed with error %d", err); \
-	} \
-	if (g_state == SLSI_WIFIAPI_STATE_RECOVERING || g_recovering) { \
-		VPRINT("sem_wait recovering - %s\n", __func__); \
-		if (SLSI_API_VERBOSE) fflush(stdout); \
-		sem_wait(&g_sem_api_block); \
-	} \
+    VPRINT("ENTER_CRITICAL in API - %s\n", __func__); \
+    if(!g_mutex_initialized){ \
+        VPRINT("Initializing the mutex\n"); \
+        if(pthread_mutex_init(&mutex_state, NULL) != OK){ \
+            EPRINT("Could not initialize mutex\n"); \
+        }else { \
+            VPRINT("Mutex ready\n"); \
+            g_mutex_initialized = TRUE; \
+        } \
+    } \
+    if(SLSI_API_VERBOSE) fflush(stdout); \
+    if(g_mutex_initialized){ \
+        int err = pthread_mutex_lock(&mutex_state); \
+       if(err != OK){ \
+           EPRINT("mutex lock failed with error %d",err); \
+       } \
+       if((g_state == SLSI_WIFIAPI_STATE_RECOVERING || g_recovering ) && g_mutex_initialized){ \
+           VPRINT("sem_wait recovering - %s\n", __func__); \
+            if(SLSI_API_VERBOSE) fflush(stdout); \
+               LOCK_API;} \
+    } \
 }
 
 #define LEAVE_CRITICAL { \
-	VPRINT("LEAVE_CRITICAL in API - %s\n", __func__); \
-	if (SLSI_API_VERBOSE) fflush(stdout); \
-	pthread_mutex_unlock(&mutex_state); \
+    VPRINT("LEAVE_CRITICAL in API - %s\n", __func__); \
+    if(SLSI_API_VERBOSE) fflush(stdout); \
+    if(g_mutex_initialized) { \
+        pthread_mutex_unlock(&mutex_state); \
+    } \
 }
 
 /*
  * Prototype functions
  */
+static int8_t slsi_get_bssid(char **bssid);
+static int8_t slsi_init(WiFi_InterFace_ID_t interface_id, const slsi_ap_config_t *ap_config);
+static void slsi_deinit(void);
+static int8_t slsi_set_security(const slsi_security_config_t *sec_config, const char *network_id);
+static int8_t slsi_stop_ap(void);
 static int8_t slsi_api_start(WiFi_InterFace_ID_t interface_id, const slsi_ap_config_t *ap_config);
 static int8_t slsi_join_network(uint8_t *ssid, int ssid_len, uint8_t *bssid, const slsi_security_config_t *sec_config);
 static void slsi_wpa_reopen(void);
@@ -354,16 +242,17 @@ static int8_t slsi_recv_pending(char **result);
 static void slsi_remove_network(char *network_id);
 static void slsi_init_nvram(void);
 static uint8_t slsi_stop_supplicant(void);
-static void slsi_deinit(void);
 static int8_t slsi_wpa_close(bool terminate);
 static int8_t slsi_start_scan(void);
-static int8_t slsi_get_country_code(char *country_code);
+int8_t slsi_get_country_code(char *country_code);
 static WiFi_InterFace_ID_t slsi_get_op_mode(void);
 static void slsi_set_scan_interval(uint8_t interval);
 static int8_t slsi_disable_all_networks(void);
+
 #ifdef CONFIG_SCSC_WLAN_AUTO_RECOVERY
 static slsi_ap_config_t *slsi_get_ap_config(void);
 #endif
+
 /*
  * Private functions
  */
@@ -371,6 +260,10 @@ void slsi_msg_cb(char *msg, size_t len)
 {
 	DPRINT("SLSI_API msg_cb - %s\n", msg);
 }
+
+#ifdef CONFIG_TEST_ENGINE
+te_func_t tefn = { &slsi_send_request, &slsi_get_bssid, &slsi_set_security, &slsi_get_network };
+#endif
 
 /**
  * Used to send request to WPA supplicant
@@ -381,10 +274,9 @@ void slsi_msg_cb(char *msg, size_t len)
  * Return:
  *  buf         Character array[WPA_BUFFER_SIZE] with result string
   */
-static char *slsi_send_request(char *cmd, int8_t *success)
+char *slsi_send_request(char *ifname, char *cmd, int8_t *result)
 {
 	int retry = 0;
-
 	if (g_ctrl_conn == NULL) {
 		EPRINT("Ctrl iface not available\n");
 		return NULL;
@@ -397,17 +289,20 @@ static char *slsi_send_request(char *cmd, int8_t *success)
 
 	size_t len = WPA_BUFFER_SIZE - 1;
 	DPRINT("SLSI_API command %s \n", cmd);
+	if (ifname) {
+		wpa_update_send_cmd_ifname(g_ctrl_conn, ifname);
+	}
 	for (retry = 0; retry < REQUEST_RETRY_COUNT; retry++) {
 		int ret = wpa_ctrl_request(g_ctrl_conn, cmd, strlen(cmd), buf, &len, NULL);
 		if (ret == -2) {
 			EPRINT("%s command timed out. \n", cmd);
-			if (success) {
-				*success = SLSI_STATUS_ERROR;
+			if (result) {
+				*result = SLSI_STATUS_ERROR;
 			}
 		} else if (ret < 0) {
 			EPRINT("... command failed. \n");
-			if (success) {
-				*success = SLSI_STATUS_ERROR;
+			if (result) {
+				*result = SLSI_STATUS_ERROR;
 			}
 		} else {
 			buf[len] = '\0';
@@ -415,16 +310,16 @@ static char *slsi_send_request(char *cmd, int8_t *success)
 			if (len > 0 && buf[len - 1] != '\n') {
 				DPRINT("\n");
 			}
-			if (success) {
+			if (result) {
 				if (strncmp(buf, "OK", strlen("OK")) == 0) {
-					*success = SLSI_STATUS_SUCCESS;
+					*result = SLSI_STATUS_SUCCESS;
 				} else if (strncmp(buf, "FAIL", strlen("FAIL")) == 0) {
 					DPRINT("SLSI_API command %s returned FAIL from supplicant \n", cmd);
-					*success = SLSI_STATUS_COMMAND_FAILED;
+					*result = SLSI_STATUS_COMMAND_FAILED;
 				} else if (strncmp(buf, "UNKNOWN COMMAND", strlen("UNKNOWN COMMAND")) == 0) {
-					*success = SLSI_STATUS_COMMAND_UNKNOWN;	//e.g. "UNKNOWN COMMAND"
+					*result = SLSI_STATUS_COMMAND_UNKNOWN;
 				} else {
-					*success = SLSI_STATUS_ERROR;
+					*result = SLSI_STATUS_ERROR;
 				}
 			}
 			break;
@@ -434,19 +329,36 @@ static char *slsi_send_request(char *cmd, int8_t *success)
 	return buf;
 }
 
-static void slsi_send_command_str_digit(char *string, int digit)
+void slsi_send_command_str_digit(char *ifname, char *string, int digit, int8_t *result)
 {
 	char *pbuf = NULL;
 	char command[WPA_COMMAND_MAX_SIZE] = { 0 };
 	snprintf(command, WPA_COMMAND_MAX_SIZE, "%s%d", string, digit);
-	pbuf = slsi_send_request(command, NULL);
+	pbuf = slsi_send_request(ifname, command, result);
 	if (pbuf) {
 		free(pbuf);
 		pbuf = NULL;
 	}
 }
 
-static void slsi_send_command_str_upto_4(char *one, char *two, char *three, char *four, int8_t *result)
+void slsi_send_command_str(char *ifname, int8_t *result, const char *fmt, ...)
+{
+	char *pbuf = NULL;
+	char command[WPA_COMMAND_MAX_SIZE] = { 0 };
+	va_list(args);
+	va_start(args, fmt);
+	vsnprintf(command, WPA_COMMAND_MAX_SIZE, fmt, args);
+	if (command[0] != '\0') {
+		pbuf = slsi_send_request(ifname, command, result);
+	}
+	if (pbuf) {
+		free(pbuf);
+		pbuf = NULL;
+	}
+	va_end(args);
+}
+
+void slsi_send_command_str_upto_4(char *ifname, char *one, char *two, char *three, char *four, int8_t *result)
 {
 	char *pbuf = NULL;
 	char command[WPA_COMMAND_MAX_SIZE] = { 0 };
@@ -460,7 +372,7 @@ static void slsi_send_command_str_upto_4(char *one, char *two, char *three, char
 		snprintf(command, WPA_COMMAND_MAX_SIZE, "%s", one);
 	}
 	if (command[0] != '\0') {
-		pbuf = slsi_send_request(command, result);
+		pbuf = slsi_send_request(ifname, command, result);
 	}
 	if (pbuf) {
 		free(pbuf);
@@ -468,11 +380,18 @@ static void slsi_send_command_str_upto_4(char *one, char *two, char *three, char
 	}
 }
 
+int8_t slsi_leave_network(char *ifname)
+{
+	int8_t result = SLSI_STATUS_ERROR;
+	slsi_send_command_str_upto_4(ifname, WPA_COMMAND_DISCONNECT, NULL, NULL, NULL, &result);
+	return result;
+}
+
 static int8_t slsi_save_config(void)
 {
 	int8_t result = SLSI_STATUS_ERROR;
 	char *pbuf = NULL;
-	pbuf = slsi_send_request(WPA_COMMAND_SAVE_CONFIG, &result);
+	pbuf = slsi_send_request(NULL, WPA_COMMAND_SAVE_CONFIG, &result);
 	if (pbuf) {
 		free(pbuf);
 		pbuf = NULL;
@@ -480,42 +399,62 @@ static int8_t slsi_save_config(void)
 	return result;
 }
 
-static int8_t slsi_init_filesystem(void)
+static int8_t slsi_create_conffile(char *file, const char *file_config)
+{
+	uint8_t ret = SLSI_STATUS_ERROR;
+	FILE *fp = NULL;
+	fp = fopen(file, "r");
+	if (fp == NULL) {
+		DPRINT("Creating config file %s with default content '%s'\n", file, file_config);
+		fp = fopen(file, "w+");
+		if (fp == NULL) {
+			EPRINT("write_file: ERROR failed to open %s for writing, errno=%d\n", file, errno);
+		} else {
+			size_t fres = fwrite(file_config, strlen(file_config), 1, fp);
+			if (fres != 1) {
+				EPRINT("write_file: ERROR failed to write to %s, errno=%d, ret=%d\n", file, errno, fres);
+				ret = SLSI_STATUS_ERROR;
+			} else {
+				ret = SLSI_STATUS_SUCCESS;
+			}
+		}
+	} else {
+		DPRINT("Config file already exists %s\n", file);
+		ret = SLSI_STATUS_SUCCESS;
+	}
+	if (fp != NULL) {
+		fclose(fp);
+	}
+	return ret;
+}
+
+static int8_t slsi_init_filesystem(WiFi_InterFace_ID_t interface)
 {
 	uint8_t ret = SLSI_STATUS_ERROR;
 #ifdef CONFIG_SLSI_WIFI_FILESYSTEM_SUPPORT
 	FILE *fp = NULL;
-	char *conffile = CONFIG_SLSI_WIFI_DIR "/" CONFIG_SLSI_WIFI_CONFIG_FILE_NAME;
 	char *logfile = CONFIG_SLSI_WIFI_DIR "/" CONFIG_SLSI_WIFI_LOG_FILE_NAME;
 	/* Create the Wi-Fi directory */
-	ret = mkdir(CONFIG_SLSI_WIFI_DIR, 0666);
-	if (ret == OK || get_errno() == EEXIST) {
+	int res = mkdir(CONFIG_SLSI_WIFI_DIR, 0666);
+	if (res == 0 || get_errno() == EEXIST) {
 		/* Clear supplicant log file */
 		fp = fopen(logfile, "w+");
 		DPRINT("Creating logfile %s\n", logfile);
 		if (fp != NULL) {
 			fclose(fp);
 		}
-		struct stat buffer;
-		if (stat(conffile, &buffer)) {
-			DPRINT("Creating config file %s\n", conffile);
-			fp = fopen(conffile, "w+");
-			if (fp == NULL) {
-				EPRINT("write_file: ERROR failed to open %s for writing, errno=%d\n", conffile, errno);
-			} else {
-				ret = fwrite(g_supplicant_conf, sizeof(g_supplicant_conf), 1, fp);
+		char *conffile = CONFIG_SLSI_WIFI_DIR "/" CONFIG_SLSI_WIFI_CONFIG_FILE_NAME;
+		// create configuration file
+		ret = slsi_create_conffile(conffile, g_supplicant_conf);
 
-				if (ret != 1) {
-					EPRINT("write_file: ERROR failed to write to %s, errno=%d, ret=%d\n", conffile, errno, ret);
-					fclose(fp);
-					ret = SLSI_STATUS_ERROR;
-				}
-				fclose(fp);
-				ret = SLSI_STATUS_SUCCESS;
-			}
-		} else {
-			ret = SLSI_STATUS_SUCCESS;
+#ifdef CONFIG_SLSI_WIFI_P2P_API
+		char *conffile2 = CONFIG_SLSI_WIFI_DIR "/" CONFIG_SLSI_WIFI_P2P_CONFIG_FILE_NAME;
+		// create configuration file for p2p
+		if (conffile2) {
+			ret = slsi_create_conffile(conffile2, g_supplicant_conf_p2p);
 		}
+#endif
+
 	}
 #endif
 
@@ -568,7 +507,7 @@ static bool slsi_get_security_from_flags(const char *flag_str, slsi_security_con
 		uint8_t strlen = 0;
 		pos = (char *)flag_str;
 		for (x = 0; x < mode_count; x++) {
-			bool wpa = FALSE;
+			bool wpa  = FALSE;
 			bool wpa2 = FALSE;
 
 			pos = strchr(pos, '[');
@@ -657,7 +596,7 @@ static uint8_t *slsi_hexstr_2_bytearray(char *str, size_t str_size, size_t *arra
 		for (i = 0; i < str_len; i += 2) {
 			a = string[i + 0];
 			b = string[i + 1];
-			byte_array[i / 2] = ((a < '9' ? a - '0' : a - 'a' + 10) << 4) + (b < '9' ? b - '0' : b - 'a' + 10);
+			byte_array[i / 2] = ((a <= '9' ? a - '0' : a - 'a' + 10) << 4) + (b <= '9' ? b - '0' : b - 'a' + 10);
 			// printf used due to not wanting function name pre-appended
 			if (SLSI_API_VERBOSE) {
 				printf("%02x, ", byte_array[i / 2]);
@@ -744,10 +683,10 @@ static bool slsi_get_bss_info(const char *bssid, slsi_scan_info_t *info)
 	 */
 
 	snprintf(command, WPA_COMMAND_MAX_SIZE, "%s%s", WPA_COMMAND_BSS, bssid);
-	pbuf = slsi_send_request(command, NULL);
+	pbuf = slsi_send_request(NULL, command, NULL);
 	if (pbuf) {
 		// Extract bssid
-		pos = strstr(pbuf, WPA_VALUE_BSSID);
+		pos = strstr(pbuf, WPA_PARAM_BSSID);
 		if (pos == NULL) {
 			goto errout;
 		}
@@ -760,7 +699,7 @@ static bool slsi_get_bss_info(const char *bssid, slsi_scan_info_t *info)
 		memcpy(&(info->bssid), pos, 18);
 		pos = end + 1;
 		// Extract channel
-		pos = strstr(pos, WPA_VALUE_FREQ);
+		pos = strstr(pos, WPA_PARAM_FREQ);
 		if (pos == NULL) {
 			goto errout;
 		}
@@ -773,7 +712,7 @@ static bool slsi_get_bss_info(const char *bssid, slsi_scan_info_t *info)
 		ieee80211_freq_to_chan(strtol(pos, &end, 10), &(info->channel));
 		pos = end + 1;
 		// Extract beacon interval
-		pos = strstr(pos, WPA_VALUE_BEACON_INT);
+		pos = strstr(pos, WPA_PARAM_BEACON_INT);
 		if (pos == NULL) {
 			goto errout;
 		}
@@ -786,7 +725,7 @@ static bool slsi_get_bss_info(const char *bssid, slsi_scan_info_t *info)
 		info->beacon_period = strtol(pos, &end, 10);
 		pos = end + 1;
 		// Extract bss_type
-		pos = strstr(pos, WPA_VALUE_CAPABILITIES);
+		pos = strstr(pos, WPA_PARAM_CAPABILITIES);
 		if (pos == NULL) {
 			goto errout;
 		}
@@ -802,7 +741,7 @@ static bool slsi_get_bss_info(const char *bssid, slsi_scan_info_t *info)
 			info->bss_type = 1;
 		}
 		// Extract qual as RSSI (set in t20_ops.c)
-		pos = strstr(pos, WPA_VALUE_QUAL);
+		pos = strstr(pos, WPA_PARAM_QUAL);
 		if (pos == NULL) {
 			goto errout;
 		}
@@ -815,7 +754,7 @@ static bool slsi_get_bss_info(const char *bssid, slsi_scan_info_t *info)
 		info->rssi = strtol(pos, &end, 10);
 		pos = end + 1;
 		// Extract ei data
-		pos = strstr(pos, WPA_VALUE_IE);
+		pos = strstr(pos, WPA_PARAM_IE);
 		if (pos == NULL) {
 			goto errout;
 		}
@@ -829,7 +768,7 @@ static bool slsi_get_bss_info(const char *bssid, slsi_scan_info_t *info)
 			size_t length = end - pos;
 			const uint8_t *ht_capab = NULL, *vendor_specific = NULL;
 			size_t size = 0;
-			uint8_t *bytes = (uint8_t *)slsi_hexstr_2_bytearray(pos, length, &size);
+			uint8_t *bytes = (uint8_t *) slsi_hexstr_2_bytearray(pos, length, &size);
 			if (bytes) {
 				ht_capab = slsi_get_ie(bytes, size, WLAN_EID_HT_CAP);
 				if (ht_capab) {
@@ -856,7 +795,7 @@ static bool slsi_get_bss_info(const char *bssid, slsi_scan_info_t *info)
 						size_t i;
 						for (i = 0; i < IEEE80211_HT_MCS_MASK_LEN; i++) {
 							VPRINT("ht_capab ht_mcs %02x found\n", cap->supported_mcs_set[i]);
-							info->ht_mode.mcs_index[i] = (uint8_t)cap->supported_mcs_set[i];
+							info->ht_mode.mcs_index[i] = (uint8_t) cap->supported_mcs_set[i];
 						}
 					}
 				}
@@ -864,15 +803,40 @@ static bool slsi_get_bss_info(const char *bssid, slsi_scan_info_t *info)
 				uint8_t *tmpBytes = bytes;
 				uint8_t *tmpEnd = bytes + length;
 				// Extract wps_support
+				slsi_vendor_ie_t *tmpvsie = NULL;
 				while (tmpBytes + 1 < tmpEnd) {
 					vendor_specific = slsi_get_ie(tmpBytes, size, WLAN_EID_VENDOR_SPECIFIC);
 					if (vendor_specific) {
+						slsi_vendor_ie_t *vsie = zalloc(sizeof(slsi_vendor_ie_t));
+						if (info->vsie == NULL) {
+							info->vsie = zalloc(sizeof(slsi_vendor_ie_t));
+							if (!info->vsie) {
+								EPRINT("could not allocate memory for vsie\n");
+								break;
+							} else {
+								tmpvsie = info->vsie;
+								tmpvsie->next = NULL;
+							}
+						}
 						if (WPS_IE_VENDOR_TYPE == WPA_GET_BE32(&vendor_specific[2])) {
 							VPRINT("IE data - WLAN_EID_VENDOR_SPECIFIC + WPS_IE_VENDOR_TYPE length=%d found\n", vendor_specific[1]);
 							info->wps_support = 1;
-							break;
 						}
 						tmpBytes += (2 + vendor_specific[1]);
+						if (vsie) {
+							memcpy(vsie->oui, &vendor_specific[2], 3);
+							vsie->content_length = vendor_specific[1];
+							vsie->content = zalloc(vsie->content_length - 3 /*OUI*/);
+							memcpy(vsie->content, &vendor_specific[5], vsie->content_length - 3);
+
+							if (!tmpvsie) {
+								tmpvsie = vsie;
+								tmpvsie->next = NULL;
+							} else {
+								tmpvsie->next = vsie;
+								tmpvsie = tmpvsie->next;
+							}
+						}
 					} else {
 						break;
 					}
@@ -885,7 +849,7 @@ static bool slsi_get_bss_info(const char *bssid, slsi_scan_info_t *info)
 		}
 		pos = end + 1;
 		// Extract flags containing security mode
-		pos = strstr(pos, WPA_VALUE_FLAGS);
+		pos = strstr(pos, WPA_PARAM_FLAGS);
 		if (pos == NULL) {
 			goto errout;
 		}
@@ -910,7 +874,7 @@ static bool slsi_get_bss_info(const char *bssid, slsi_scan_info_t *info)
 		}
 		pos = end + 1;
 		// Extract ssid
-		pos = strstr(pos, WPA_VALUE_SSID);
+		pos = strstr(pos, WPA_PARAM_SSID);
 		if (pos == NULL) {
 			goto errout;
 		}
@@ -950,17 +914,11 @@ static void slsi_scan_event_handler(const char *str, const char *event)
 		DPRINT("\n wanted event received %s\n", str);
 		if (str_starts(str, WPA_EVENT_SCAN_RESULTS)) {
 			g_scanning = 0;
-			if (g_scan_result_handler) {
-				/* Save handler for last callback */
-				network_scan_result_handler_t tmpHander = g_scan_result_handler;
-				slsi_reason_t reason;
-				memset(&reason, 0, sizeof(slsi_reason_t));
-				/* Since we are finished with scanning scan callback needs to be cleared */
-				g_scan_result_handler = NULL;
-#ifdef CONFIG_SCSC_WLAN_AUTO_RECOVERY
-				g_recovery_data.scan_result_handler = NULL;
-#endif
-				tmpHander(&reason);
+			/* Send MESSAGE to callback thread to initiate callback */
+			slsi_send_mqueue(SLSI_CALLBACK_SCAN_RESULT, NULL);
+			if (g_scan_network_id) {
+				// remove network
+				slsi_send_command_str_upto_4(NULL, WPA_COMMAND_REMOVE_NETWORK, g_scan_network_id, NULL, NULL, NULL);
 			}
 		}
 	}
@@ -968,6 +926,7 @@ static void slsi_scan_event_handler(const char *str, const char *event)
 
 bool slsi_event_recieved(const char *str, const char *event)
 {
+
 	bool recieved = FALSE;
 	if (str_starts(str, event)) {
 		VPRINT("Event found: %s\n", event);
@@ -982,7 +941,7 @@ void slsi_sta_disconnect_event_handler(const char *str, slsi_reason_t *reason)
 	VPRINT("SLSI_API - got %s\n", str);
 	memset(reason, 0, sizeof(slsi_reason_t));
 
-	s = strstr(str, WPA_VALUE_BSSID);
+	s = strstr(str, WPA_PARAM_BSSID);
 	if (s != NULL) {
 		s += 6;
 		memcpy(&(reason->bssid), s, 17);
@@ -991,36 +950,22 @@ void slsi_sta_disconnect_event_handler(const char *str, slsi_reason_t *reason)
 		memset(reason->bssid, 0, sizeof(reason->bssid));
 		s = str;
 	}
-	s = strstr(s, WPA_VALUE_REASON);
+	s = strstr(s, WPA_PARAM_REASON);
 	if (s != NULL) {
-		reason->reason_code = (uint32_t)strtol(s + 7, NULL, 10);
+		reason->reason_code = (uint32_t) strtol(s + 7, NULL, 10);
 	} else {
 		s = str;
 	}
-	s = strstr(s, WPA_VALUE_LOACLLY_GENERATED);
+	s = strstr(s, WPA_PARAM_LOACLLY_GENERATED);
 	if (s == NULL) {
 		// Reason not found or locally generated
 		reason->locally_generated = 0;
 	} else {
-		reason->locally_generated = (uint8_t)strtol(s + 18, NULL, 10);
+		reason->locally_generated = (uint8_t) strtol(s + 18, NULL, 10);
 	}
 	VPRINT("SLSI_API reason_code: %d locally_generated: %d\n", reason->reason_code, reason->locally_generated);
 
 	VPRINT("SLSI_API send link_down\n");
-}
-
-static void slsi_ap_disconnect_event_handler(const char *result)
-{
-	slsi_reason_t reason;
-	memset(&reason, 0, sizeof(slsi_reason_t));
-	result += sizeof(AP_STA_DISCONNECTED) - 1;	// Exclude null-termination
-	if (strlen(result) >= 17) {	// bssid is a 17 character string
-		memcpy(&(reason.bssid), result, 17);
-	}
-	if (g_link_down) {
-		VPRINT("SLSI_API slsi_handle_disconnect send link_down\n");
-		g_link_down(&reason);
-	}
 }
 
 #ifdef CONFIG_SCSC_WLAN_AUTO_RECOVERY
@@ -1082,20 +1027,26 @@ static void slsi_verify_recovered(void)
 					VPRINT("SLSI_WIFIAPI_STATE_STA_DISCONNECTING \n");
 					if (g_link_down) {
 						VPRINT("sta was disconnecting - send link_down\n");
-						g_link_down(&reason);
+						slsi_msg_callback_t msg;
+						msg.reason = reason;
+						slsi_send_mqueue(SLSI_CALLBACK_LINK_DOWN, &msg);
 					}
 					break;
 				case SLSI_WIFIAPI_STATE_STA_CONNECTING:
 					VPRINT("SLSI_WIFIAPI_STATE_STA_CONNECTING \n");
 					if (g_link_up) {
 						VPRINT("sta was connecting - send link up\n");
-						g_link_up(&reason);
+						slsi_msg_callback_t msg;
+						msg.reason = reason;
+						slsi_send_mqueue(SLSI_CALLBACK_LINK_UP, &msg);
 					}
 					break;
 				case SLSI_WIFIAPI_STATE_AP_CONNECTED:
 					if (g_link_down) {
 						VPRINT("ap was connected - send link_down\n");
-						g_link_down(&reason);
+						slsi_msg_callback_t msg;
+						msg.reason = reason;
+						slsi_send_mqueue(SLSI_CALLBACK_LINK_DOWN, &msg);
 					}
 					break;
 				case SLSI_WIFIAPI_STATE_AP_ENABLING:
@@ -1118,6 +1069,7 @@ static void slsi_verify_recovered(void)
 
 static void slsi_reinitiate_state(void)
 {
+
 	// Re-initiate state
 	int8_t res_api = SLSI_STATUS_ERROR;
 	DPRINT("Re-initiate - old_state: %s\n", slsi_state_strings[g_recovery_data.old_state]);
@@ -1198,6 +1150,7 @@ static void slsi_reinitiate_state(void)
 
 void slsi_recovery_thread_handler(void *param)
 {
+
 	g_recovery_running = 1;
 	sem_init(&g_sem_recover, 0, 0);
 
@@ -1213,12 +1166,13 @@ void slsi_recovery_thread_handler(void *param)
 
 	VPRINT("SLSI_API pthread_exit %d \n", g_recovery_thread);
 	pthread_detach(g_recovery_thread);
-	pthread_exit(&g_recovery_thread);
+	pthread_exit(0);
 	g_recovery_thread = 0;
 }
 
 static bool slsi_recovery_handler(const char *str)
 {
+
 	bool handled = FALSE;
 
 	if (slsi_event_recieved(str, WPA_EVENT_HANGED) && g_state != SLSI_WIFIAPI_STATE_TERMINATING) {
@@ -1238,18 +1192,171 @@ static bool slsi_recovery_handler(const char *str)
 }
 #endif							// CONFIG_SCSC_WLAN_AUTO_RECOVERY
 
+void slsi_callback_thread_handler(void *param)
+{
+	g_callback_running = 1;
+	FAR char msg_buffer[SLSI_CALLBACK_MGS_SIZE];
+
+	struct mq_attr attr;
+	attr.mq_maxmsg = SLSI_CALLBACK_MGS_COUNT;
+	attr.mq_msgsize = SLSI_CALLBACK_MGS_SIZE;
+	attr.mq_flags = 0;
+
+	int nbytes;
+
+	g_recv_cbmqfd = mq_open(SLSI_CALLBACK_MQUEUE, O_RDONLY | O_CREAT, 0666, &attr);
+	if (g_recv_cbmqfd == (mqd_t) ERROR) {
+		EPRINT("open mqueue failed, errno: %d\n", errno);
+		pthread_exit((pthread_addr_t) 1);
+	} else {
+		while (g_callback_running) {
+			nbytes = mq_receive(g_recv_cbmqfd, msg_buffer, SLSI_CALLBACK_MGS_SIZE, 0);
+			if (nbytes < 0) {
+				EPRINT("mqueue receive failed, errno: %d\n", errno);
+			} else if (nbytes != attr.mq_msgsize) {
+				EPRINT("mqueue wrong num bytes received: %d, errno: %d\n", nbytes, errno);
+			} else if (nbytes == attr.mq_msgsize) {
+
+				switch ((slsi_callback_t) msg_buffer[0]) {
+				case SLSI_CALLBACK_SHUTDOWN: {
+					DPRINT("SLSI_CALLBACK_SHUTDOWN event received \n");
+					g_callback_running = 0;
+					break;
+				}
+				case SLSI_CALLBACK_LINK_UP: {
+					slsi_reason_t tmp_reason;
+					memcpy(&tmp_reason, &msg_buffer[sizeof(slsi_callback_t)], sizeof(slsi_reason_t));
+					if (g_link_up) {
+						DPRINT("SLSI_CALLBACK_LINK_UP \n");
+						g_link_up(&tmp_reason);
+					}
+					break;
+				}
+				case SLSI_CALLBACK_LINK_DOWN: {
+					slsi_reason_t tmp_reason;
+					memcpy(&tmp_reason, &msg_buffer[sizeof(slsi_callback_t)], sizeof(slsi_reason_t));
+					if (g_link_down) {
+						DPRINT("SLSI_CALLBACK_LINK_DOWN \n");
+						g_link_down(&tmp_reason);
+					}
+					break;
+				}
+				case SLSI_CALLBACK_SCAN_RESULT: {
+					if (g_scan_result_handler) {
+						slsi_reason_t reason;
+						memset(&reason, 0, sizeof(slsi_reason_t));
+						DPRINT("SLSI_CALLBACK_SCAN_RESULT \n");
+						g_scan_result_handler(&reason);
+						g_scan_result_handler = NULL;
+					}
+#ifdef CONFIG_SCSC_WLAN_AUTO_RECOVERY
+					g_recovery_data.scan_result_handler = NULL;
+#endif
+					break;
+				}
+#ifdef CONFIG_SLSI_WIFI_P2P_API
+				case SLSI_CALLBACK_P2P_FOUND: {
+					slsi_find_info_t tmp_find_info;
+					memcpy(&tmp_find_info, &msg_buffer[sizeof(slsi_callback_t)], sizeof(slsi_find_info_t));
+					if (g_find_results_handler) {
+						DPRINT("SLSI_CALLBACK_P2P_FOUND \n");
+						g_find_results_handler(&tmp_find_info);
+					}
+					break;
+				}
+				case SLSI_CALLBACK_P2P_LINK_UP: {
+					slsi_reason_t tmp_reason;
+					memcpy(&tmp_reason, &msg_buffer[sizeof(slsi_callback_t)], sizeof(slsi_reason_t));
+					if (g_p2p_link_up) {
+						DPRINT("SLSI_CALLBACK_P2P_LINK_UP \n");
+						g_p2p_link_up(&tmp_reason);
+					}
+					break;
+				}
+				case SLSI_CALLBACK_P2P_LINK_DOWN: {
+					slsi_reason_t tmp_reason;
+					memcpy(&tmp_reason, &msg_buffer[sizeof(slsi_callback_t)], sizeof(slsi_reason_t));
+					if (g_p2p_link_down) {
+						DPRINT("SLSI_CALLBACK_P2P_LINK_DOWN \n");
+						g_p2p_link_down(&tmp_reason);
+					}
+					break;
+				}
+#endif
+				default:
+					EPRINT("Message unknown: %d\n", msg_buffer);
+					break;
+				}
+			}
+		}
+	}
+	/* Close callback receiver mqueue */
+	if (mq_close(g_recv_cbmqfd) < 0) {
+		EPRINT("receiver_thread: ERROR mq_close failed\n");
+	} else {
+		DPRINT("Closed g_recv_cbmqfd mqueue \n");
+		g_recv_cbmqfd = NULL;
+	}
+
+	VPRINT("SLSI_API pthread_exit %d \n", g_callback_thread);
+	pthread_detach(g_callback_thread);
+	pthread_exit(0);
+}
+
+static uint8_t slsi_open_sender_mqueue(void)
+{
+	uint8_t result = SLSI_STATUS_ERROR;
+	struct mq_attr attr;
+
+	/* Fill in attributes for message queue */
+	attr.mq_maxmsg = SLSI_CALLBACK_MGS_COUNT;
+	attr.mq_msgsize = SLSI_CALLBACK_MGS_SIZE;
+	attr.mq_flags = 0;
+
+	g_send_cbmqfd = mq_open(SLSI_CALLBACK_MQUEUE, O_WRONLY | O_CREAT, 0666, &attr);
+	if (g_send_cbmqfd == (mqd_t) ERROR) {
+		EPRINT("open mqueue failed, errno: %d\n", errno);
+	} else {
+		result = SLSI_STATUS_SUCCESS;
+	}
+	return result;
+}
+
+uint8_t slsi_send_mqueue(slsi_callback_t event, slsi_msg_callback_t *msg)
+{
+	uint8_t result = SLSI_STATUS_ERROR;
+	FAR char msg_buffer[SLSI_CALLBACK_MGS_SIZE];
+	memset(msg_buffer, 0, SLSI_CALLBACK_MGS_SIZE);
+	memcpy(msg_buffer, (void *)&event, sizeof(slsi_callback_t));
+	if (msg) {
+		memcpy(msg_buffer + sizeof(slsi_callback_t), (void *)msg, sizeof(slsi_msg_callback_t));
+	}
+
+	int status = mq_send(g_send_cbmqfd, msg_buffer, SLSI_CALLBACK_MGS_SIZE, 42);
+	if (status < 0) {
+		EPRINT("send message: ERROR mq_send failure=%d\n", errno);
+	} else {
+		result = SLSI_STATUS_SUCCESS;
+	}
+	return result;
+}
+
 void slsi_monitor_thread_handler(void *param)
 {
 	g_running = 1;
 	char *result = NULL;
 	uint8_t join_count = 0;
 
+	if (slsi_open_sender_mqueue() != SLSI_STATUS_SUCCESS) {
+		g_running = 0;
+	}
+
 	while (g_running) {
 		if (slsi_recv_pending(&result) && (result != NULL)) {
 			char *tmp = result;
 			slsi_reason_t reason;
 			memset(&reason, 0, sizeof(slsi_reason_t));
-			DPRINT("SLSI_API slsi_monitor_thread_handler event - %s\n", result);
+			DPRINT("SLSI_API event - %s\n", result);
 			result = strchr(result, '>');
 			if (result == NULL) {
 				if (tmp) {
@@ -1263,217 +1370,256 @@ void slsi_monitor_thread_handler(void *param)
 			if (slsi_recovery_handler(result) == FALSE)
 #endif
 			{
-				// Checking events received
-				if (g_scanning) {
-					slsi_scan_event_handler(result, WPA_EVENT_SCAN_RESULTS);
-				}
+#ifdef CONFIG_SLSI_WIFI_P2P_API
+				if (g_state == SLSI_WIFIAPI_STATE_P2P) {
+					slsi_p2p_event_handle(result);
+				} else {
+#endif
 
-				VPRINT("Switch - current state: %s\n", slsi_state_strings[g_state]);
-				switch (g_state) {
-				case SLSI_WIFIAPI_STATE_SUPPLICANT_RUNNING:
-					// Handling reconnect after remote disconnect
-					if (slsi_event_recieved(result, WPA_EVENT_CONNECTED)) {
-						slsi_check_status(reason.ssid, &reason.ssid_len, reason.bssid);
-						slsi_get_network(reason.ssid, reason.ssid_len, &g_network_id);
-						g_state = SLSI_WIFIAPI_STATE_STA_CONNECTED;
-						slsi_set_scan_interval(SLSI_SCAN_INTERVAL); // connected so lets set scan interval back and save power
-						if (g_link_up) {
-							VPRINT("SLSI_API send link_up\n");
-							g_link_up(&reason);
-						}
+					// Checking events received
+					if (g_scanning) {
+						slsi_scan_event_handler(result, WPA_EVENT_SCAN_RESULTS);
 					}
-					// To ensure join counter is reset in switch mode
-					join_count = 0;
-					break;
-				case SLSI_WIFIAPI_STATE_AP_ENABLING:
-					// AP mode setup and select network
-					if (slsi_event_recieved(result, AP_EVENT_ENABLED)) {
-						g_state = SLSI_WIFIAPI_STATE_AP_ENABLED;
-						sem_post(&g_sem_ap_mode);
-					} else if (slsi_event_recieved(result, AP_EVENT_DISABLED)) {
-						// The network setup failed
-						g_state = SLSI_WIFIAPI_STATE_SUPPLICANT_RUNNING;
-						sem_post(&g_sem_ap_mode);
-					} else {
-						VPRINT("Info: Event not handled %s in current state %s\n", result, slsi_state_strings[g_state]);
-					}
-					break;
-				case SLSI_WIFIAPI_STATE_AP_ENABLED:
-					if (slsi_event_recieved(result, AP_STA_CONNECTED)) {
-						result += sizeof(AP_STA_CONNECTED) - 1;
-						if (strlen(result) >= 17) {	// bssid is a 17 character string
-							memcpy(&(reason.bssid), result, 17);	// Exclude null-termination
+					VPRINT("Switch - current state: %s\n", slsi_state_strings[g_state]);
+					switch (g_state) {
+					case SLSI_WIFIAPI_STATE_SUPPLICANT_RUNNING:
+						// Handling reconnect after remote disconnect
+						if (slsi_event_recieved(result, WPA_EVENT_CONNECTED)) {
+							slsi_check_status(reason.ssid, &reason.ssid_len, reason.bssid);
+							slsi_get_network(reason.ssid, reason.ssid_len, &g_network_id);
+							g_state = SLSI_WIFIAPI_STATE_STA_CONNECTED;
+							slsi_set_scan_interval(SLSI_SCAN_INTERVAL);	// connected so lets set scan interval back and save power
+							if (g_link_up) {
+								VPRINT("SLSI_API send link_up\n");
+								slsi_msg_callback_t msg;
+								msg.reason = reason;
+								slsi_send_mqueue(SLSI_CALLBACK_LINK_UP, &msg);
+								//g_link_up(&reason);
+							}
 						}
-						g_num_sta_connected++;
-						if (g_num_sta_connected == 1) {
-							g_state = SLSI_WIFIAPI_STATE_AP_CONNECTED;
-
-						}
-						if (g_link_up) {
-							VPRINT("SLSI_API slsi_link_event_handler send link_up\n");
-							g_link_up(&reason);
-						}
-					} else {
-						VPRINT("Info: Event not handled %s in current state %s\n", result, slsi_state_strings[g_state]);
-					}
-					break;
-				case SLSI_WIFIAPI_STATE_AP_CONNECTED:
-					if (slsi_event_recieved(result, AP_STA_DISCONNECTED)) {
-						g_num_sta_connected--;
-						if (g_num_sta_connected == 0) {
+						// To ensure join counter is reset in switch mode
+						join_count = 0;
+						break;
+					case SLSI_WIFIAPI_STATE_AP_ENABLING:
+						// AP mode setup and select network
+						if (slsi_event_recieved(result, AP_EVENT_ENABLED)) {
 							g_state = SLSI_WIFIAPI_STATE_AP_ENABLED;
+							sem_post(&g_sem_ap_mode);
+						} else if (slsi_event_recieved(result, AP_EVENT_DISABLED)) {
+							// The network setup failed
+							g_state = SLSI_WIFIAPI_STATE_SUPPLICANT_RUNNING;
+							sem_post(&g_sem_ap_mode);
+						} else {
+							VPRINT("Info: Event not handled %s in current state %s\n", result, slsi_state_strings[g_state]);
 						}
-						/* Always call slsi_ap_disconnect_event_handler() at the end of function
-						 * as link_down callback handler is called */
-						slsi_ap_disconnect_event_handler(result);
-					} else {
-						VPRINT("Info: Event not handled %s in current state %s\n", result, slsi_state_strings[g_state]);
-					}
-					break;
-				case SLSI_WIFIAPI_STATE_AP_DISABLING:
-					// AP stop sent
-					if (slsi_event_recieved(result, AP_EVENT_DISABLED)) {
-						g_state = SLSI_WIFIAPI_STATE_SUPPLICANT_RUNNING;
-						sem_post(&g_sem_ap_mode);
-					} else if (slsi_event_recieved(result, AP_EVENT_ENABLED)) {
-						g_state = SLSI_WIFIAPI_STATE_AP_ENABLED;
-						sem_post(&g_sem_ap_mode);
-					} else {
-						VPRINT("Info: Event not handled %s in current state %s\n", result, slsi_state_strings[g_state]);
-					}
-					break;
-				case SLSI_WIFIAPI_STATE_STA_CONNECTING: {
-					bool event_handled = FALSE;
-					if (slsi_event_recieved(result, WPA_EVENT_CONNECTED)) {
-						slsi_check_status(reason.ssid, &reason.ssid_len, reason.bssid);
-						g_state = SLSI_WIFIAPI_STATE_STA_CONNECTED;
-						// connected so lets set scan interval back to limit power consumption
-						slsi_set_scan_interval(SLSI_SCAN_INTERVAL);
-						event_handled = TRUE;
-					} else if (slsi_event_recieved(result, WPA_EVENT_NETWORK_NOT_FOUND)) {
-						/* Assumed to be because network with specification setup is not
-						 * found in scan results - handle as error - disable network */
-						if (join_count == SLSI_STA_JOIN_SCAN_ATTEMPT) {
-							reason.reason_code = SLSI_REASON_NETWORK_CONFIGURATION_NOT_FOUND;
+						break;
+					case SLSI_WIFIAPI_STATE_AP_ENABLED:
+						if (slsi_event_recieved(result, AP_STA_CONNECTED)) {
+							g_num_sta_connected++;
+							if (g_num_sta_connected == 1) {
+								g_state = SLSI_WIFIAPI_STATE_AP_CONNECTED;
+							}
+							result += sizeof(AP_STA_CONNECTED) - 1;
+							if (strlen(result) >= 17) {	// bssid is a 17 character string
+								memcpy(&(reason.bssid), result, 17);	// Exclude null-termination
+							}
+							if (g_link_up) {
+								VPRINT("SLSI_API slsi_link_event_handler send link_up\n");
+								slsi_msg_callback_t msg;
+								msg.reason = reason;
+								slsi_send_mqueue(SLSI_CALLBACK_LINK_UP, &msg);
+								//g_link_up(&reason);
+							}
+						} else {
+							VPRINT("Info: Event not handled %s in current state %s\n", result, slsi_state_strings[g_state]);
+						}
+						break;
+					case SLSI_WIFIAPI_STATE_AP_CONNECTED:
+						if (slsi_event_recieved(result, AP_STA_DISCONNECTED)) {
+							g_num_sta_connected--;
+							if (g_num_sta_connected == 0) {
+								g_state = SLSI_WIFIAPI_STATE_AP_ENABLED;
+							}
+							result += sizeof(AP_STA_DISCONNECTED) - 1;	// Exclude null-termination
+							if (strlen(result) >= 17) {	// bssid is a 17 character string
+								memcpy(&(reason.bssid), result, 17);
+							}
+							result = strstr(result, WPA_PARAM_REASON_CODE);
+							if (result != NULL) {
+								reason.reason_code = (uint32_t) strtol(result + strlen(WPA_PARAM_REASON_CODE), NULL, 10);
+							}
+							if (g_link_down) {
+								VPRINT("SLSI_API slsi_handle_disconnect send link_down\n");
+								slsi_msg_callback_t msg;
+								msg.reason = reason;
+								slsi_send_mqueue(SLSI_CALLBACK_LINK_DOWN, &msg);
+							}
+						} else {
+							VPRINT("Info: Event not handled %s in current state %s\n", result, slsi_state_strings[g_state]);
+						}
+						break;
+					case SLSI_WIFIAPI_STATE_AP_DISABLING:
+						// AP stop sent
+						if (slsi_event_recieved(result, AP_EVENT_DISABLED)) {
+							g_state = SLSI_WIFIAPI_STATE_SUPPLICANT_RUNNING;
+							sem_post(&g_sem_ap_mode);
+						} else if (slsi_event_recieved(result, AP_EVENT_ENABLED)) {
+							g_state = SLSI_WIFIAPI_STATE_AP_ENABLED;
+							sem_post(&g_sem_ap_mode);
+						} else {
+							VPRINT("Info: Event not handled %s in current state %s\n", result, slsi_state_strings[g_state]);
+						}
+						break;
+					case SLSI_WIFIAPI_STATE_STA_CONNECTING: {
+						bool event_handled = FALSE;
+						if (slsi_event_recieved(result, WPA_EVENT_CONNECTED)) {
+							slsi_check_status(reason.ssid, &reason.ssid_len, reason.bssid);
+							g_state = SLSI_WIFIAPI_STATE_STA_CONNECTED;
+							// connected so lets set scan interval back to limit power consumption
+							slsi_set_scan_interval(SLSI_SCAN_INTERVAL);
+							event_handled = TRUE;
+						} else if (slsi_event_recieved(result, WPA_EVENT_NETWORK_NOT_FOUND)) {
+							/* Assumed to be because network with specification setup is not
+							 * found in scan results - handle as error - disable network */
+							if (join_count == SLSI_STA_JOIN_SCAN_ATTEMPT) {
+								reason.reason_code = SLSI_REASON_NETWORK_CONFIGURATION_NOT_FOUND;
+								event_handled = TRUE;
+							} else {
+								join_count++;
+							}
+						} else if (slsi_event_recieved(result, WPA_EVENT_TEMP_DISABLED)) {
+							reason.reason_code = SLSI_REASON_NETWORK_AUTHENTICATION_FAILED;
+							event_handled = TRUE;
+						} else if (slsi_event_recieved(result, SLSI_EVENT_ASSOCIATION_REQ_FAILED)) {
+							reason.reason_code = SLSI_REASON_ASSOCIATION_REQ_FAILED;
+							event_handled = TRUE;
+						} else if (slsi_event_recieved(result, WPA_EVENT_DISCONNECTED)) {
+							reason.reason_code = SLSI_REASON_ASSOCIATION_REQ_FAILED;
 							event_handled = TRUE;
 						} else {
-							join_count++;
+							VPRINT("Info: Event not handled %s in current state %s\n", result, slsi_state_strings[g_state]);
 						}
-					} else if (slsi_event_recieved(result, WPA_EVENT_TEMP_DISABLED)) {
-						reason.reason_code = SLSI_REASON_NETWORK_AUTHENTICATION_FAILED;
-						event_handled = TRUE;
-					} else if (slsi_event_recieved(result, SLSI_EVENT_ASSOCIATION_REQ_FAILED)) {
-						reason.reason_code = SLSI_REASON_ASSOCIATION_REQ_FAILED;
-						event_handled = TRUE;
-					} else {
-						VPRINT("Info: Event not handled %s in current state %s\n", result, slsi_state_strings[g_state]);
+						if (event_handled) {
+							join_count = 0;
+							if (reason.reason_code) {
+								VPRINT("reason.reason_code=%d\n", reason.reason_code);
+								// Connection failed change back state
+								g_state = SLSI_WIFIAPI_STATE_SUPPLICANT_RUNNING;
+								if (g_network_id) {
+									slsi_remove_network(g_network_id);
+									free(g_network_id);
+									g_network_id = NULL;
+								}
+							}
+							if (g_link_up) {
+								VPRINT("SLSI_API slsi_link_event_handler send link_up\n");
+								slsi_msg_callback_t msg;
+								msg.reason = reason;
+								slsi_send_mqueue(SLSI_CALLBACK_LINK_UP, &msg);
+								//g_link_up(&reason);
+							}
+						}
+						break;
 					}
-					if (event_handled) {
-						join_count = 0;
-						if (reason.reason_code) {
-							VPRINT("reason.reason_code=%d\n", reason.reason_code);
-							// Connection failed change back state
+					case SLSI_WIFIAPI_STATE_STA_CONNECTED:
+						if (slsi_event_recieved(result, WPA_EVENT_DISCONNECTED)) {
+							slsi_sta_disconnect_event_handler(result, &reason);
 							g_state = SLSI_WIFIAPI_STATE_SUPPLICANT_RUNNING;
+							if (g_network_id) {
+								free(g_network_id);
+								g_network_id = NULL;
+							}
+							if (g_link_down) {
+								VPRINT("SLSI_API slsi_link_event_handler send link_down\n");
+								slsi_msg_callback_t msg;
+								msg.reason = reason;
+								slsi_send_mqueue(SLSI_CALLBACK_LINK_DOWN, &msg);
+							}
+							// TODO: clean join info for recovery
+						} else {
+							VPRINT("Info: Event not handled %s in current state %s\n", result, slsi_state_strings[g_state]);
+						}
+						break;
+					case SLSI_WIFIAPI_STATE_STA_DISCONNECTING:
+						if (slsi_event_recieved(result, WPA_EVENT_DISCONNECTED)) {
+							slsi_sta_disconnect_event_handler(result, &reason);
+							g_state = SLSI_WIFIAPI_STATE_SUPPLICANT_RUNNING;
+							/* start by disabling all previous networks to make sure
+							 * they are not running simultaneous */
+							uint8_t tmp_result = slsi_disable_all_networks();
+							if (tmp_result != SLSI_STATUS_SUCCESS) {
+								EPRINT("disable networks - failed\n");
+							}
 							if (g_network_id) {
 								slsi_remove_network(g_network_id);
 								free(g_network_id);
 								g_network_id = NULL;
 							}
+							// Release sem_wait after finished removing the network
+							VPRINT("Before post sem count %d\n", g_sem_disconnect.semcount);
+							sem_post(&g_sem_disconnect);
+							if (g_link_down) {
+								VPRINT("SLSI_API slsi_link_event_handler send link_down\n");
+								slsi_msg_callback_t msg;
+								msg.reason = reason;
+								slsi_send_mqueue(SLSI_CALLBACK_LINK_DOWN, &msg);
+							}
+							// TODO: clean join info for recovery
+						} else {
+							VPRINT("Info: Event not handled %s in current state %s\n", result, slsi_state_strings[g_state]);
 						}
-						if (g_link_up) {
-							VPRINT("SLSI_API slsi_link_event_handler send link_up\n");
-							g_link_up(&reason);
-						}
-					}
-					break;
-				}
-				case SLSI_WIFIAPI_STATE_STA_CONNECTED:
-					if (slsi_event_recieved(result, WPA_EVENT_DISCONNECTED)) {
-						slsi_sta_disconnect_event_handler(result, &reason);
-						g_state = SLSI_WIFIAPI_STATE_SUPPLICANT_RUNNING;
-						if (g_link_down) {
-							VPRINT("SLSI_API slsi_link_event_handler send link_down\n");
-							g_link_down(&reason);
-						}
-						// TODO: clean join info for recovery
-					} else {
-						VPRINT("Info: Event not handled %s in current state %s\n", result, slsi_state_strings[g_state]);
-					}
-					break;
-				case SLSI_WIFIAPI_STATE_STA_DISCONNECTING:
-					if (slsi_event_recieved(result, WPA_EVENT_DISCONNECTED)) {
-						slsi_sta_disconnect_event_handler(result, &reason);
-						g_state = SLSI_WIFIAPI_STATE_SUPPLICANT_RUNNING;
-						/* start by disabling all previous networks to make sure
-						 * they are not running simultaneous */
-						uint8_t tmp_result = slsi_disable_all_networks();
-						if (tmp_result != SLSI_STATUS_SUCCESS) {
-							EPRINT("disable networks - failed\n");
-						}
-						if (g_network_id) {
-							slsi_remove_network(g_network_id);
-							free(g_network_id);
-							g_network_id = NULL;
-						}
-						if (g_link_down) {
-							VPRINT("SLSI_API slsi_link_event_handler send link_down\n");
-							g_link_down(&reason);
-						}
-						// Release sem_wait after finished removing the network
-						sem_post(&g_sem_disconnect);
-						// TODO: clean join info for recovery
-					} else {
-						VPRINT("Info: Event not handled %s in current state %s\n", result, slsi_state_strings[g_state]);
-					}
-					break;
-				case SLSI_WIFIAPI_STATE_TERMINATING:
-					if (slsi_event_recieved(result, WPA_EVENT_TERMINATING)) {
-						VPRINT("WPA_EVENT_TERMINATING Received\n");
-						g_running = 0;
-						sem_post(&g_sem_terminate);
-					} else {
-						VPRINT("Info: Event not handled %s in current state %s\n", result, slsi_state_strings[g_state]);
-					}
-					break;
-				case SLSI_WIFIAPI_STATE_RECOVERING:
-					if (slsi_event_recieved(result, WPA_EVENT_TERMINATING) == TRUE) {
-						// Secondary entry here - continue shut down and re-initiate
-						VPRINT("WPA_EVENT_TERMINATING Received in recover handler \n");
-						pid_t r_task_id = -1;
-						int status = -1;
-						UNUSED(status);
-						r_task_id = waitpid(g_task, &status, NULL);
-						DPRINT("Wait for supplicant task to terminate\n");
-						if (r_task_id != g_task) {
-							DPRINT("    result: %d, status: %d\n", r_task_id, status);
-							VPRINT("Error waiting for task termination - sleep and continue \n");
-							usleep(100000);
-						}
-						// if monitor still running - stop running
-						if (g_running) {
-							VPRINT(" stop running\n");
-							// Will end while loop in monitoring thread and exit thread
+						break;
+					case SLSI_WIFIAPI_STATE_TERMINATING:
+						if (slsi_event_recieved(result, WPA_EVENT_TERMINATING)) {
+							VPRINT("WPA_EVENT_TERMINATING Received\n");
 							g_running = 0;
+							sem_post(&g_sem_terminate);
+						} else {
+							VPRINT("Info: Event not handled %s in current state %s\n", result, slsi_state_strings[g_state]);
 						}
-						// Disconnect wpa_ctrl connection
-						if (slsi_wpa_close(TRUE) != SLSI_STATUS_SUCCESS) {
-							EPRINT("Error: still running after disconnect. \n");
-						}
-						// CLean up local
-						slsi_deinit();
-#ifdef CONFIG_SCSC_WLAN_AUTO_RECOVERY
-						g_recovering = 1;
-						sem_post(&g_sem_recover);
-#endif
-					} else {
-						VPRINT("Info: Event not handled %s in current state %s\n", result, slsi_state_strings[g_state]);
-					}
-					break;
+						break;
+					case SLSI_WIFIAPI_STATE_RECOVERING:
+						if (slsi_event_recieved(result, WPA_EVENT_TERMINATING) == TRUE) {
+							// Secondary entry here - continue shut down and re-initiate
+							VPRINT("WPA_EVENT_TERMINATING Received in recover handler \n");
+							pid_t r_task_id = -1;
+							int status = -1;
+							UNUSED(status);
+							DPRINT("Wait for supplicant task to terminate task id=%d \n", g_task);
+							r_task_id = waitpid(g_task, &status, NULL);
 
-				default:
-					EPRINT("Should not happen as the state is not valid\n");
-					break;
+							if (r_task_id != g_task) {
+								DPRINT("    result: %d, status: %d\n", r_task_id, status);
+								VPRINT("Error waiting for task termination - sleep and continue \n");
+							}
+							// if monitor still running - stop running
+							if (g_running) {
+								VPRINT(" stop running\n");
+								// Will end while loop in monitoring thread and exit thread
+								g_running = 0;
+							}
+							// Disconnect wpa_ctrl connection
+							if (slsi_wpa_close(TRUE) != SLSI_STATUS_SUCCESS) {
+								EPRINT("Error: still running after disconnect. \n");
+							}
+							// CLean up local
+							slsi_deinit();
+#ifdef CONFIG_SCSC_WLAN_AUTO_RECOVERY
+							g_recovering = 1;
+							sem_post(&g_sem_recover);
+#endif
+						} else {
+							VPRINT("Info: Event not handled %s in current state %s\n", result, slsi_state_strings[g_state]);
+						}
+						break;
+
+					default:
+						EPRINT("Should not happen as the state is not valid\n");
+						break;
+					}
+#ifdef CONFIG_SLSI_WIFI_P2P_API
 				}
+#endif
 			}
 			if (tmp) {
 				free(tmp);
@@ -1484,10 +1630,19 @@ void slsi_monitor_thread_handler(void *param)
 #endif
 		}
 	}
+	/* Close callback sender mqueue */
+	if (g_send_cbmqfd) {
+		if (mq_close(g_send_cbmqfd) < 0) {
+			EPRINT("close mqueue failed: %d\n", errno);
+		} else {
+			DPRINT("Closed g_send_cbmqfd mqueue \n");
+			g_send_cbmqfd = NULL;
+		}
+	}
+
 	VPRINT("SLSI_API pthread_exit %d \n", g_monitoring_thread);
 	pthread_detach(g_monitoring_thread);
-	pthread_exit(&g_monitoring_thread);
-	g_monitoring_thread = 0;
+	pthread_exit(0);
 }
 
 /* Receive monitor message */
@@ -1534,26 +1689,17 @@ static int8_t slsi_wpa_open(char *network_path)
 	int8_t result = SLSI_STATUS_ERROR;
 	/* The control connection */
 	VPRINT("SLSI_API wpa_ctrl_connect before open\n");
-	if (SLSI_WIFI_API_DEBUG_SLEEP) {
-		slsi_demo_app_sleep(1, NULL);
-	}
 	g_ctrl_conn = wpa_ctrl_open(network_path);
 	if (g_ctrl_conn == NULL) {
-		EPRINT("SLSI_API Failed to connect to interface: %s \n", CTRL_IFNAME);
+		EPRINT("SLSI_API Failed to connect to interface: %s \n", g_active_ifname);
 		return result;
 	} else {
 		VPRINT("SLSI_API wpa_ctrl_connect success\n");
-	}
-	if (SLSI_WIFI_API_DEBUG_SLEEP) {
-		slsi_demo_app_sleep(1, NULL);
 	}
 	/* The monitor connection and thread setup */
 	if (wpa_ctrl_attach(g_ctrl_conn) == 0) {
 		g_wpa_attached = 1;
 		VPRINT("SLSI_API wpa_ctrl_attach success\n");
-		if (SLSI_WIFI_API_DEBUG_SLEEP) {
-			slsi_demo_app_sleep(1, NULL);
-		}
 	} else {
 		EPRINT("SLSI_API Failed to open monitor connection " "through control interface\n");
 		return result;
@@ -1564,9 +1710,6 @@ static int8_t slsi_wpa_open(char *network_path)
 		result = SLSI_STATUS_SUCCESS;
 		pthread_setname_np(g_monitoring_thread, "Wi-Fi API monitor");
 		VPRINT("SLSI_API Monitoring thread created successfully\n");
-	}
-	if (SLSI_WIFI_API_DEBUG_SLEEP) {
-		slsi_demo_app_sleep(1, NULL);
 	}
 
 	return result;
@@ -1585,9 +1728,6 @@ static int8_t slsi_wpa_close(bool terminate)
 			g_wpa_attached = 0;
 			VPRINT("SLSI_API g_mon_conn closed\n");
 		}
-		if (SLSI_WIFI_API_DEBUG_SLEEP) {
-			slsi_demo_app_sleep(1, "detach and close wpa_ctrl");
-		}
 		wpa_ctrl_close(g_ctrl_conn);
 		g_ctrl_conn = NULL;
 		VPRINT("SLSI_API g_ctrl_conn closed\n");
@@ -1596,9 +1736,6 @@ static int8_t slsi_wpa_close(bool terminate)
 		VPRINT("SLSI_API wpa_ctrl iface already closed!\n");
 	}
 
-	if (SLSI_WIFI_API_DEBUG_SLEEP) {
-		slsi_demo_app_sleep(1, "end of disconnect wpa_ctrl");
-	}
 	return result;
 }
 
@@ -1606,7 +1743,7 @@ static void slsi_wpa_reopen(void)
 {
 	VPRINT("SLSI_API Trying to reconnect...\n");
 	(void)slsi_wpa_close(FALSE);
-	(void)slsi_wpa_open(CTRL_IFNAME);
+	(void)slsi_wpa_open(g_active_ifname);
 }
 
 static int8_t slsi_get_network(uint8_t *ssid, uint8_t ssid_len, char **network_id)
@@ -1619,7 +1756,7 @@ static int8_t slsi_get_network(uint8_t *ssid, uint8_t ssid_len, char **network_i
 	// List networks to see if already available
 	snprintf(command, WPA_COMMAND_MAX_SIZE, "%s", WPA_COMMAND_LIST_NETWORKS);
 	VPRINT("SLSI_API get_network list: %s\n", command);
-	pbuf = slsi_send_request(command, NULL);
+	pbuf = slsi_send_request(NULL, command, NULL);
 	if (pbuf != NULL) {
 		VPRINT("%s", pbuf);
 	}
@@ -1676,10 +1813,10 @@ static int8_t slsi_check_status(uint8_t *ssid, int8_t *ssid_len, char *bssid)
 	// Check state of network possibly already connected
 	snprintf(command, WPA_COMMAND_MAX_SIZE, "%s", WPA_COMMAND_STATUS);
 	VPRINT("SLSI_API check_status select: %s\n", command);
-	pbuf = slsi_send_request(command, NULL);
+	pbuf = slsi_send_request(NULL, command, NULL);
 	if (pbuf) {
 		VPRINT("  Response: %s", pbuf);
-		pos = strstr(pbuf, WPA_VALUE_WPA_STATE);
+		pos = strstr(pbuf, WPA_PARAM_WPA_STATE);
 		if (pos == NULL) {
 			goto errout;
 		}
@@ -1687,7 +1824,7 @@ static int8_t slsi_check_status(uint8_t *ssid, int8_t *ssid_len, char *bssid)
 		if (str_starts(pos, WPA_STATE_DISCONNECTED)) {
 			//g_state = SLSI_WIFIAPI_STATE_SUPPLICANT_RUNNING;
 		} else if (str_starts(pos, WPA_STATE_COMPLETED)) {
-			pos = strstr(pbuf, WPA_VALUE_BSSID);
+			pos = strstr(pbuf, WPA_PARAM_BSSID);
 			if (pos != NULL) {
 				pos += 6;
 				end = strchr(pos, '\n');
@@ -1700,7 +1837,7 @@ static int8_t slsi_check_status(uint8_t *ssid, int8_t *ssid_len, char *bssid)
 				}
 				pos = end + 1;
 				/* NOTE as ssid is a substring of bssid, we need to skip past the bssid entry */
-				pos = strstr(pos, WPA_VALUE_SSID);
+				pos = strstr(pos, WPA_PARAM_SSID);
 			}
 			if (pos != NULL) {
 				pos += 5;
@@ -1740,7 +1877,7 @@ static int8_t slsi_set_security(const slsi_security_config_t *sec_config, const 
 	char *authalg = WPA_VALUE_AUTH_ALG_OPEN;
 
 	if (sec_config == NULL) {
-		slsi_send_command_str_upto_4(WPA_COMMAND_SET_NETWORK, (char *)network_id, WPA_PARAM_KEY_MGMT_NONE, NULL, &result);
+		slsi_send_command_str_upto_4(NULL, WPA_COMMAND_SET_NETWORK, (char *)network_id, WPA_PARAM_KEY_MGMT_NONE, NULL, &result);
 		if (result != SLSI_STATUS_SUCCESS) {
 			goto errout;
 		}
@@ -1780,7 +1917,7 @@ static int8_t slsi_set_security(const slsi_security_config_t *sec_config, const 
 				proto = WPA_VALUE_PROTO_WPA;
 			}
 
-			slsi_send_command_str_upto_4(WPA_COMMAND_SET_NETWORK, (char *)network_id, WPA_PARAM_PROTO, proto, &result);
+			slsi_send_command_str_upto_4(NULL, WPA_COMMAND_SET_NETWORK, (char *)network_id, WPA_PARAM_PROTO, proto, &result);
 			if (result != SLSI_STATUS_SUCCESS) {
 				goto errout;
 			}
@@ -1792,13 +1929,13 @@ static int8_t slsi_set_security(const slsi_security_config_t *sec_config, const 
 			} else {
 				pairwise = WPA_VALUE_CIPHER_TKIP;
 			}
-			slsi_send_command_str_upto_4(WPA_COMMAND_SET_NETWORK, (char *)network_id, WPA_PARAM_PAIRWISE, pairwise, &result);
+			slsi_send_command_str_upto_4(NULL, WPA_COMMAND_SET_NETWORK, (char *)network_id, WPA_PARAM_PAIRWISE, pairwise, &result);
 			if (result != SLSI_STATUS_SUCCESS) {
 				goto errout;
 			}
 
 			if (slsi_get_op_mode() == SLSI_WIFI_SOFT_AP_IF) {
-				slsi_send_command_str_upto_4(WPA_COMMAND_SET_NETWORK, (char *)network_id, WPA_PARAM_GROUP, pairwise, &result);
+				slsi_send_command_str_upto_4(NULL, WPA_COMMAND_SET_NETWORK, (char *)network_id, WPA_PARAM_GROUP, pairwise, &result);
 				if (result != SLSI_STATUS_SUCCESS) {
 					goto errout;
 				}
@@ -1809,7 +1946,7 @@ static int8_t slsi_set_security(const slsi_security_config_t *sec_config, const 
 			goto errout;
 		}
 
-		slsi_send_command_str_upto_4(WPA_COMMAND_SET_NETWORK, (char *)network_id, keymgmt, NULL, &result);
+		slsi_send_command_str_upto_4(NULL, WPA_COMMAND_SET_NETWORK, (char *)network_id, keymgmt, NULL, &result);
 		if (result != SLSI_STATUS_SUCCESS) {
 			goto errout;
 		}
@@ -1818,7 +1955,7 @@ static int8_t slsi_set_security(const slsi_security_config_t *sec_config, const 
 			authalg = WPA_VALUE_AUTH_ALG_SHARED;
 		}
 		//We always set auth_alg
-		slsi_send_command_str_upto_4(WPA_COMMAND_SET_NETWORK, (char *)network_id, WPA_PARAM_AUTH_ALG, authalg, &result);
+		slsi_send_command_str_upto_4(NULL, WPA_COMMAND_SET_NETWORK, (char *)network_id, WPA_PARAM_AUTH_ALG, authalg, &result);
 		if (result != SLSI_STATUS_SUCCESS) {
 			goto errout;
 		}
@@ -1861,7 +1998,7 @@ static int8_t slsi_set_security(const slsi_security_config_t *sec_config, const 
 					goto errout;
 				}
 			}
-			char *pbuf = slsi_send_request(command, &result);
+			char *pbuf = slsi_send_request(NULL, command, &result);
 			if (pbuf) {
 				free(pbuf);
 				pbuf = NULL;
@@ -2016,7 +2153,7 @@ static int8_t slsi_join_network(uint8_t *ssid, int ssid_len, uint8_t *bssid, con
 		char ssid_formatted[WPA_MAX_SSID_LEN];
 		char command[WPA_COMMAND_MAX_SIZE] = { 0 };
 		snprintf(command, WPA_COMMAND_MAX_SIZE, "%s", WPA_COMMAND_ADD_NETWORK);
-		pbuf = slsi_send_request(command, NULL);
+		pbuf = slsi_send_request(NULL, command, NULL);
 		if (pbuf) {
 			pbuf[strcspn(pbuf, "\r\n")] = '\0';
 			network_id = strdup(pbuf);
@@ -2029,8 +2166,8 @@ static int8_t slsi_join_network(uint8_t *ssid, int ssid_len, uint8_t *bssid, con
 		// Set network ssid
 		printf_encode(ssid_formatted, WPA_MAX_SSID_LEN, ssid, ssid_len);
 		memset(command, 0, WPA_COMMAND_MAX_SIZE);
-		snprintf(command, WPA_COMMAND_MAX_SIZE, "%s%s %sP\"%s\"", WPA_COMMAND_SET_NETWORK, network_id, WPA_PARAM_SSID, ssid_formatted);
-		pbuf = slsi_send_request(command, &result);
+		snprintf(command, WPA_COMMAND_MAX_SIZE, "%s%s %sP\"%s\"", WPA_COMMAND_SET_NETWORK, network_id, WPA_PARAM_SSID_, ssid_formatted);
+		pbuf = slsi_send_request(NULL, command, &result);
 		if (pbuf) {
 			free(pbuf);
 			// removed to prevent lint warning pbuf = NULL;
@@ -2041,7 +2178,7 @@ static int8_t slsi_join_network(uint8_t *ssid, int ssid_len, uint8_t *bssid, con
 		// Set scan_ssid which scans for APs using hidden SSIDs.
 		memset(command, 0, WPA_COMMAND_MAX_SIZE);
 		snprintf(command, WPA_COMMAND_MAX_SIZE, "%s%s %s%d", WPA_COMMAND_SET_NETWORK, network_id, WPA_PARAM_SCAN_SSID, 1);
-		pbuf = slsi_send_request(command, &result);
+		pbuf = slsi_send_request(NULL, command, &result);
 		if (pbuf) {
 			free(pbuf);
 			// removed to prevent lint warning pbuf = NULL;
@@ -2051,7 +2188,7 @@ static int8_t slsi_join_network(uint8_t *ssid, int ssid_len, uint8_t *bssid, con
 		}
 		// Set network bssid if available
 		if (bssid != NULL && bssid[0] != '\0') {
-			slsi_send_command_str_upto_4(WPA_COMMAND_SET_NETWORK, network_id, WPA_PARAM_BSSID, (char *)bssid, &result);
+			slsi_send_command_str(NULL, &result, "%s%s %s%s", WPA_COMMAND_SET_NETWORK, network_id, WPA_PARAM_BSSID_, (char *)bssid);
 			if (result != SLSI_STATUS_SUCCESS) {
 				goto errout;
 			}
@@ -2061,12 +2198,12 @@ static int8_t slsi_join_network(uint8_t *ssid, int ssid_len, uint8_t *bssid, con
 	result = slsi_set_security(sec_config, network_id);
 	if (result != SLSI_STATUS_SUCCESS) {
 		// remove network
-		slsi_send_command_str_upto_4(WPA_COMMAND_REMOVE_NETWORK, network_id, NULL, NULL, NULL);
+		slsi_send_command_str_upto_4(NULL, WPA_COMMAND_REMOVE_NETWORK, network_id, NULL, NULL, NULL);
 	} else {
 		// Select network (and disable other networks)
 		g_state = SLSI_WIFIAPI_STATE_STA_CONNECTING;
-		slsi_set_scan_interval(SLSI_SCAN_INTERVAL_CONNECT); //set more agressive scan interval for connections
-		slsi_send_command_str_upto_4(WPA_COMMAND_SELECT_NETWORK, network_id, NULL, NULL, &result);
+		slsi_set_scan_interval(SLSI_SCAN_INTERVAL_CONNECT);	//set more agressive scan interval for connections
+		slsi_send_command_str_upto_4(NULL, WPA_COMMAND_SELECT_NETWORK, network_id, NULL, NULL, &result);
 		if (result != SLSI_STATUS_SUCCESS) {
 			g_state = SLSI_WIFIAPI_STATE_SUPPLICANT_RUNNING;
 			goto errout;
@@ -2089,7 +2226,7 @@ errout:
 
 static void slsi_set_bss_expiration(void)
 {
-	slsi_send_command_str_digit(WPA_COMMAND_BSS_EXPIRE_AGE, SLSI_BSS_EXPIRE_AGE);
+	slsi_send_command_str_digit(NULL, WPA_COMMAND_BSS_EXPIRE_AGE, SLSI_BSS_EXPIRE_AGE, NULL);
 }
 
 static void slsi_set_scan_interval(uint8_t interval)
@@ -2099,38 +2236,46 @@ static void slsi_set_scan_interval(uint8_t interval)
 	} else if (interval > SLSI_SCAN_INTERVAL_MAX) {
 		interval = SLSI_SCAN_INTERVAL_MAX;
 	}
-	slsi_send_command_str_digit(WPA_COMMAND_SCAN_INTERVAL, interval);
+	slsi_send_command_str_digit(NULL, WPA_COMMAND_SCAN_INTERVAL, interval, NULL);
 }
 
 static void slsi_set_autoconnect(uint8_t onoff)
 {
-	slsi_send_command_str_digit(WPA_COMMAND_AUCOTONNECT, onoff);
+	slsi_send_command_str_digit(NULL, WPA_COMMAND_AUCOTONNECT, onoff, NULL);
 }
+
+#ifdef CONFIG_SLSI_WIFI_P2P_LISTEN_CHANNEL
+static void slsi_set_p2p_channel(uint8_t channel)
+{
+	if (channel == 1 || channel == 6 || channel == 11) {
+		char buf[2];
+		(void)slsi_p2p_set(WPA_PARAM_P2P_LISTEN_CHANNEL, itoa(channel, &buf[0], 10));
+		DPRINT("Setting listening channel to %d\n", channel);
+	} else if (channel == 0) {
+		//ignore
+	} else {
+		DPRINT("P2P channel set to invalid value (%d) in menu config\n", channel);
+	}
+}
+#endif
 
 static void slsi_set_updateconfig(void)
 {
-	slsi_send_command_str_digit(WPA_COMMAND_UPDATE_CONFIG, SLSI_SAVE_CONFIG);
+	slsi_send_command_str_digit(NULL, WPA_COMMAND_UPDATE_CONFIG, SLSI_SAVE_CONFIG, NULL);
 }
 
 static int8_t slsi_disable_all_networks(void)
 {
 	int8_t result = SLSI_STATUS_SUCCESS;
-	slsi_send_command_str_upto_4(WPA_COMMAND_DISABLE_NETWORK, NULL, NULL, NULL, NULL);
-	if (SLSI_WIFI_API_DEBUG_SLEEP) {
-		slsi_demo_app_sleep(1, "DISABLE ALL NETWORKS");
-	}
+	slsi_send_command_str_upto_4(NULL, WPA_COMMAND_DISABLE_NETWORK, NULL, NULL, NULL, NULL);
 	return result;
-
 }
 
 static int8_t slsi_stop_ap(void)
 {
 	int8_t result = SLSI_STATUS_ERROR;
 	VPRINT("requesting to stop ap mode\n");
-	if (SLSI_WIFI_API_DEBUG_SLEEP) {
-		slsi_demo_app_sleep(1, NULL);
-	}
-	slsi_send_command_str_upto_4(WPA_COMMAND_STOP_AP, NULL, NULL, NULL, &result);
+	slsi_send_command_str_upto_4(NULL, WPA_COMMAND_STOP_AP, NULL, NULL, NULL, &result);
 	if (result == SLSI_STATUS_SUCCESS) {
 		VPRINT("stop ap mode awaiting AP_DISABLED event\n");
 		int res = sem_wait(&g_sem_ap_mode);
@@ -2142,16 +2287,13 @@ static int8_t slsi_stop_ap(void)
 			result = SLSI_STATUS_ERROR;
 		}
 	}
-	if (SLSI_WIFI_API_DEBUG_SLEEP) {
-		slsi_demo_app_sleep(1, "STOP AP");
-	}
 	return result;
 }
 
 static void slsi_remove_network(char *network_id)
 {
 	// remove network
-	slsi_send_command_str_upto_4(WPA_COMMAND_REMOVE_NETWORK, network_id, NULL, NULL, NULL);
+	slsi_send_command_str_upto_4(NULL, WPA_COMMAND_REMOVE_NETWORK, network_id, NULL, NULL, NULL);
 }
 
 // create a new network block for AP mode (mode=2)
@@ -2172,7 +2314,7 @@ static int8_t slsi_set_ap_network(slsi_ap_config_t *ap_config)
 		//no network block exists with that SSID - create one!
 		memset(command, 0, WPA_COMMAND_MAX_SIZE);
 		snprintf(command, WPA_COMMAND_MAX_SIZE, "%s", WPA_COMMAND_ADD_NETWORK);
-		pbuf = slsi_send_request(command, NULL);
+		pbuf = slsi_send_request(NULL, command, NULL);
 		if (pbuf) {
 			pbuf[strcspn(pbuf, "\r\n")] = '\0';
 			network_id = strdup(pbuf);
@@ -2181,26 +2323,19 @@ static int8_t slsi_set_ap_network(slsi_ap_config_t *ap_config)
 				//removed to prevent lint warning pbuf = NULL;
 			}
 		}
-		if (SLSI_WIFI_API_DEBUG_SLEEP) {
-			slsi_demo_app_sleep(1, WPA_COMMAND_ADD_NETWORK);
-		}
 	}
 
 	if (network_id) {
 		// Set mode (needs to be mode=2 for AP mode)
-		slsi_send_command_str_upto_4(WPA_COMMAND_SET_NETWORK, network_id, WPA_PARAM_MODE_AP, NULL, &result);
+		slsi_send_command_str_upto_4(NULL, WPA_COMMAND_SET_NETWORK, network_id, WPA_PARAM_MODE_AP, NULL, &result);
 		if (result != SLSI_STATUS_SUCCESS) {
 			goto errout;
-		}
-
-		if (SLSI_WIFI_API_DEBUG_SLEEP) {
-			slsi_demo_app_sleep(1, WPA_PARAM_MODE_AP);
 		}
 		// Set network ssid
 		if (ap_config->ssid_len != 0) {
 			memset(command, 0, WPA_COMMAND_MAX_SIZE);
-			snprintf(command, WPA_COMMAND_MAX_SIZE, "%s%s %sP\"%s\"", WPA_COMMAND_SET_NETWORK, network_id, WPA_PARAM_SSID, ssid_formated);
-			pbuf = slsi_send_request(command, &result);
+			snprintf(command, WPA_COMMAND_MAX_SIZE, "%s%s %sP\"%s\"", WPA_COMMAND_SET_NETWORK, network_id, WPA_PARAM_SSID_, ssid_formated);
+			pbuf = slsi_send_request(NULL, command, &result);
 			if (pbuf) {
 				free(pbuf);
 				//removed to prevent lint warning pbuf = NULL;
@@ -2210,22 +2345,12 @@ static int8_t slsi_set_ap_network(slsi_ap_config_t *ap_config)
 			}
 		}
 		// Set network disabled=0
-		if (SLSI_WIFI_API_DEBUG_SLEEP) {
-			slsi_demo_app_sleep(2, "After set mode=2 - before disable = 0 ");
-		}
-		slsi_send_command_str_upto_4(WPA_COMMAND_SET_NETWORK, network_id, WPA_PARAM_NETWORK_DISABLED, NULL, &result);
+		slsi_send_command_str_upto_4(NULL, WPA_COMMAND_SET_NETWORK, network_id, WPA_PARAM_NETWORK_DISABLED, NULL, &result);
 		if (result != SLSI_STATUS_SUCCESS) {
 			goto errout;
 		}
-		if (SLSI_WIFI_API_DEBUG_SLEEP) {
-			slsi_demo_app_sleep(2, "After  disable = 0 - before set security");
-		}
-
 		// Set security
 		result = slsi_set_security(ap_config->security, network_id);
-		if (SLSI_WIFI_API_DEBUG_SLEEP) {
-			slsi_demo_app_sleep(1, "security set");
-		}
 
 		if (result == SLSI_STATUS_SUCCESS) {
 			// Set freqency/channel
@@ -2238,10 +2363,10 @@ static int8_t slsi_set_ap_network(slsi_ap_config_t *ap_config)
 					if (strncmp(ccode, "US", 2) == 0 || strncmp(ccode, "CA", 2) == 0) {
 						endchannel = 11;
 					}
-					if (ap_config->channel >= 1 || ap_config->channel <= endchannel) {
+					if (ap_config->channel >= 1 && ap_config->channel <= endchannel) {
 						localFreq = 2407 + 5 * ap_config->channel;
 					}
-					if (strncmp(ccode, "JP", 2) == 0 || ap_config->channel == 14) {
+					if ((strncmp(ccode, "JP", 2) == 0) && ap_config->channel == 14) {
 						localFreq = 2484;
 					}
 				}
@@ -2249,8 +2374,8 @@ static int8_t slsi_set_ap_network(slsi_ap_config_t *ap_config)
 				memset(command, 0, WPA_COMMAND_MAX_SIZE);
 				if (localFreq) {
 					// Frequency found the specify otherwise failed
-					snprintf(command, WPA_COMMAND_MAX_SIZE, "%s%s %s%d", WPA_COMMAND_SET_NETWORK, network_id, WPA_PARAM_FREQUENCY, localFreq);
-					pbuf = slsi_send_request(command, &result);
+					snprintf(command, WPA_COMMAND_MAX_SIZE, "%s%s %s%d", WPA_COMMAND_SET_NETWORK, network_id, WPA_PARAM_FREQUENCY_, localFreq);
+					pbuf = slsi_send_request(NULL, command, &result);
 					if (pbuf) {
 						free(pbuf);
 						// removed to prevent lint error pbuf = NULL;
@@ -2259,20 +2384,16 @@ static int8_t slsi_set_ap_network(slsi_ap_config_t *ap_config)
 						}
 					}
 				} else {
-					DPRINT("SLSI_API ERROR: Failed to set channel - wrong channel \n");
+					EPRINT("SLSI_API ERROR: Failed to set channel - wrong channel \n");
 					result = SLSI_STATUS_PARAM_FAILED;
 					goto errout;
 				}
 			}
-			if (SLSI_WIFI_API_DEBUG_SLEEP) {
-				slsi_demo_app_sleep(2, "After set freq - before select ");
-			}
-
 			// Set ap config beacon interval different from default 100
 			if (ap_config->beacon_period != 100) {
 				memset(command, 0, WPA_COMMAND_MAX_SIZE);
-				snprintf(command, WPA_COMMAND_MAX_SIZE, "%s%s %s%d", WPA_COMMAND_SET_NETWORK, network_id, WPA_PARAM_BEACON_INT, ap_config->beacon_period);
-				pbuf = slsi_send_request(command, &result);
+				snprintf(command, WPA_COMMAND_MAX_SIZE, "%s%s %s %d", WPA_COMMAND_SET_NETWORK, network_id, WPA_PARAM_BEACON_INT_, ap_config->beacon_period);
+				pbuf = slsi_send_request(NULL, command, &result);
 				if (pbuf) {
 					free(pbuf);
 					// removed to prevent lint warning pbuf = NULL;
@@ -2284,8 +2405,8 @@ static int8_t slsi_set_ap_network(slsi_ap_config_t *ap_config)
 			// Set ap config DTIM interval different from default 2
 			if (ap_config->DTIM != 2) {
 				memset(command, 0, WPA_COMMAND_MAX_SIZE);
-				snprintf(command, WPA_COMMAND_MAX_SIZE, "%s%s %s%d", WPA_COMMAND_SET_NETWORK, network_id, WPA_PARAM_DTIM_PERIOD, ap_config->DTIM);
-				pbuf = slsi_send_request(command, &result);
+				snprintf(command, WPA_COMMAND_MAX_SIZE, "%s%s %s %d", WPA_COMMAND_SET_NETWORK, network_id, WPA_PARAM_DTIM_PERIOD_, ap_config->DTIM);
+				pbuf = slsi_send_request(NULL, command, &result);
 				if (pbuf) {
 					free(pbuf);
 					// removed to prevent lint warning pbuf = NULL;
@@ -2314,9 +2435,11 @@ static int8_t slsi_set_ap_network(slsi_ap_config_t *ap_config)
 								 &slen);
 				VPRINT("Content length: %d\nContent: %s\n", ap_config->vsie->content_length, iehex);
 				snprintf(tcommand, cmdsize, "%s%s%02X%02X%02X %s", WPA_COMMAND_SET, WPA_PARAM_VSIE, ap_config->vsie->oui[0], ap_config->vsie->oui[1], ap_config->vsie->oui[2], iehex);
-				pbuf = slsi_send_request(tcommand, &result);
+
+				pbuf = slsi_send_request(NULL, tcommand, &result);
 				if (iehex != NULL) {
 					free(iehex);
+					iehex = NULL;
 				}
 				if (tcommand) {
 					free(tcommand);
@@ -2332,7 +2455,7 @@ static int8_t slsi_set_ap_network(slsi_ap_config_t *ap_config)
 			// Set phy_mode if disabled, default is enabled
 			if (ap_config->phy_mode == 0) {
 #ifdef CONFIG_HT_OVERRIDES
-				slsi_send_command_str_upto_4(WPA_COMMAND_SET_NETWORK, network_id, WPA_PARAM_DISABLE_HT, NULL, &result);
+				slsi_send_command_str_upto_4(NULL, WPA_COMMAND_SET_NETWORK, network_id, WPA_PARAM_DISABLE_HT, NULL, &result);
 				if (result != SLSI_STATUS_SUCCESS) {
 					goto errout;
 				}
@@ -2353,7 +2476,7 @@ static int8_t slsi_set_ap_network(slsi_ap_config_t *ap_config)
 				if (ap_config->ht_mode.ht_capab_info & HT_CAP_INFO_GREEN_FIELD) {
 
 #ifdef CONFIG_HT_OVERRIDES
-					slsi_send_command_str_upto_4(WPA_COMMAND_SET_NETWORK, network_id, WPA_PARAM_HT_CAPAB, HT_CAP_INFO_GREEN_FIELD, &result);
+					slsi_send_command_str_upto_4(NULL, WPA_COMMAND_SET_NETWORK, network_id, WPA_PARAM_HT_CAPAB, HT_CAP_INFO_GREEN_FIELD, &result);
 					if (result != SLSI_STATUS_SUCCESS) {
 						goto errout;
 					}
@@ -2366,7 +2489,7 @@ static int8_t slsi_set_ap_network(slsi_ap_config_t *ap_config)
 				// green_field and guard_interval are mutually exclusive
 #ifdef CONFIG_HT_OVERRIDES
 				if ((ap_config->ht_mode.ht_capab_info & HT_CAP_INFO_SHORT_GI20MHZ) == 0) {
-					slsi_send_command_str_upto_4(WPA_COMMAND_SET_NETWORK, network_id, WPA_PARAM_DISABLE_SHORT_GI, NULL, &result);
+					slsi_send_command_str_upto_4(NULL, WPA_COMMAND_SET_NETWORK, network_id, WPA_PARAM_DISABLE_SHORT_GI, NULL, &result);
 					if (result != SLSI_STATUS_SUCCESS) {
 						goto errout;
 					}
@@ -2377,7 +2500,7 @@ static int8_t slsi_set_ap_network(slsi_ap_config_t *ap_config)
 #ifdef CONFIG_HT_OVERRIDES
 					memset(command, 0, WPA_COMMAND_MAX_SIZE);
 					snprintf(command, WPA_COMMAND_MAX_SIZE, "%s%s %s%x", WPA_COMMAND_SET_NETWORK, network_id, WPA_PARAM_HT_MCS, ap_config->ht_mode.mcs_index);
-					pbuf = slsi_send_request(command, &result);
+					pbuf = slsi_send_request(NULL, command, &result);
 					if (pbuf) {
 						free(pbuf);
 						pbuf = NULL;
@@ -2394,7 +2517,7 @@ static int8_t slsi_set_ap_network(slsi_ap_config_t *ap_config)
 			}
 
 			// Select network
-			slsi_send_command_str_upto_4(WPA_COMMAND_SELECT_NETWORK, network_id, NULL, NULL, &result);
+			slsi_send_command_str_upto_4(NULL, WPA_COMMAND_SELECT_NETWORK, network_id, NULL, NULL, &result);
 			if (result != SLSI_STATUS_SUCCESS) {
 				goto errout;
 			} else {
@@ -2414,9 +2537,6 @@ static int8_t slsi_set_ap_network(slsi_ap_config_t *ap_config)
 				}
 				g_network_id = strdup(network_id);
 			}
-			if (SLSI_WIFI_API_DEBUG_SLEEP) {
-				slsi_demo_app_sleep(2, "After select");
-			}
 		}
 
 errout:
@@ -2424,9 +2544,6 @@ errout:
 			// remove network
 			slsi_remove_network(network_id);
 			g_state = SLSI_WIFIAPI_STATE_SUPPLICANT_RUNNING;
-		}
-		if (SLSI_WIFI_API_DEBUG_SLEEP) {
-			slsi_demo_app_sleep(1, "AP setup");
 		}
 		if (network_id) {
 			free(network_id);
@@ -2440,10 +2557,88 @@ errout:
 static int8_t slsi_start_scan(void)
 {
 	int8_t result = SLSI_STATUS_ERROR;
-	slsi_send_command_str_upto_4(WPA_COMMAND_SCAN, NULL, NULL, NULL, &result);
+	slsi_send_command_str_upto_4(NULL, WPA_COMMAND_SCAN, NULL, NULL, NULL, &result);
 	if (result == SLSI_STATUS_SUCCESS) {
 		g_scanning = 1;
 	}
+	return result;
+}
+
+static int8_t slsi_start_specific_scan(uint8_t *ssid, uint8_t ssid_len, const slsi_security_config_t *sec_config)
+{
+	int8_t result = SLSI_STATUS_ERROR;
+	char *pbuf = NULL;
+	char *network_id = NULL;
+	char command[WPA_COMMAND_MAX_SIZE] = { 0 };
+
+	VPRINT("SLSI_API slsi_start_specific_scan with ssid %s\n", ssid);
+	if (sec_config) {
+		VPRINT("SLSI_API slsi_start_specific_scan with security settings: " "security mode %d\n", sec_config->secmode);
+	}
+	// Find network or add new network
+	result = slsi_get_network(ssid, ssid_len, &network_id);
+	if ((result != SLSI_STATUS_SUCCESS) && (network_id == NULL) /* Attempt to make SVACE happy */) {
+		// Add new network
+		char ssid_formatted[WPA_MAX_SSID_LEN];
+		snprintf(command, WPA_COMMAND_MAX_SIZE, "%s", WPA_COMMAND_ADD_NETWORK);
+		pbuf = slsi_send_request(NULL, command, NULL);
+		if (pbuf) {
+			pbuf[strcspn(pbuf, "\r\n")] = '\0';
+			network_id = strdup(pbuf);
+			free(pbuf);
+			pbuf = NULL;
+		} else {
+			goto errout;
+		}
+		if (g_scan_network_id) {
+			free(g_scan_network_id);
+			g_scan_network_id = NULL;
+		}
+		g_scan_network_id = strdup(network_id);
+		// Set network ssid
+		printf_encode(ssid_formatted, WPA_MAX_SSID_LEN - 1, ssid, ssid_len);
+		memset(command, 0, WPA_COMMAND_MAX_SIZE);
+		snprintf(command, WPA_COMMAND_MAX_SIZE, "%s%s %sP\"%s\"", WPA_COMMAND_SET_NETWORK, network_id, WPA_PARAM_SSID_, ssid_formatted);
+		pbuf = slsi_send_request(NULL, command, &result);
+		if (pbuf) {
+			free(pbuf);
+			// removed to prevent lint warning pbuf = NULL;
+			if (result != SLSI_STATUS_SUCCESS) {
+				goto errout;
+			}
+		}
+		// Set scan_ssid which scans for APs using hidden SSIDs.
+		memset(command, 0, WPA_COMMAND_MAX_SIZE);
+		snprintf(command, WPA_COMMAND_MAX_SIZE, "%s%s %s%d", WPA_COMMAND_SET_NETWORK, network_id, WPA_PARAM_SCAN_SSID, 1);
+		pbuf = slsi_send_request(NULL, command, &result);
+		if (pbuf) {
+			free(pbuf);
+			// removed to prevent lint warning pbuf = NULL;
+			if (result != SLSI_STATUS_SUCCESS) {
+				goto errout;
+			}
+		}
+	}
+	// Set security
+	result = slsi_set_security(sec_config, network_id);
+	if (result != SLSI_STATUS_SUCCESS) {
+		// remove network
+		slsi_send_command_str_upto_4(NULL, WPA_COMMAND_REMOVE_NETWORK, network_id, NULL, NULL, NULL);
+	} else {
+		memset(command, 0, WPA_COMMAND_MAX_SIZE);
+		snprintf(command, WPA_COMMAND_MAX_SIZE, " %s%s", WPA_PARAM_SCAN_ID, network_id);
+		slsi_send_command_str_upto_4(NULL, WPA_COMMAND_SCAN, command, NULL, NULL, &result);
+		if (result == SLSI_STATUS_SUCCESS) {
+			g_scanning = 1;
+		}
+	}
+
+errout:
+	if (network_id) {
+		free(network_id);
+		network_id = NULL;
+	}
+
 	return result;
 }
 
@@ -2457,7 +2652,7 @@ slsi_scan_info_t *slsi_parse_scan_results(char *sr)
 		return results;
 	}
 
-	slsi_scan_info_t *local_scan_result = (slsi_scan_info_t *)zalloc((size_t)sizeof(slsi_scan_info_t));
+	slsi_scan_info_t *local_scan_result = (slsi_scan_info_t *)zalloc((size_t) sizeof(slsi_scan_info_t));
 	if (local_scan_result == NULL) {
 		return results;
 	}
@@ -2525,20 +2720,13 @@ static int8_t slsi_get_api_scan_results(slsi_scan_info_t **result_handler)
 	char *pbuf = NULL;
 	char command[WPA_COMMAND_MAX_SIZE] = { 0 };
 	snprintf(command, WPA_COMMAND_MAX_SIZE, "%s", WPA_COMMAND_SCAN_RESULTS);
-	pbuf = slsi_send_request(command, NULL);
+	pbuf = slsi_send_request(NULL, command, NULL);
 	if (pbuf) {
 		*result_handler = slsi_parse_scan_results(pbuf);
 		free(pbuf);
 		pbuf = NULL;
 		result = SLSI_STATUS_SUCCESS;
 	}
-	return result;
-}
-
-static int8_t slsi_leave_network(void)
-{
-	int8_t result = SLSI_STATUS_ERROR;
-	slsi_send_command_str_upto_4(WPA_COMMAND_DISCONNECT, NULL, NULL, NULL, &result);
 	return result;
 }
 
@@ -2550,9 +2738,9 @@ static int8_t slsi_get_bssid(char **bssid)
 	char *pos, *end;
 
 	snprintf(command, WPA_COMMAND_MAX_SIZE, "%s", WPA_COMMAND_STATUS);
-	pbuf = slsi_send_request(command, NULL);
+	pbuf = slsi_send_request(NULL, command, NULL);
 	if (pbuf) {
-		pos = strstr(pbuf, WPA_VALUE_BSSID);
+		pos = strstr(pbuf, WPA_PARAM_BSSID);
 		if (pos == NULL) {
 			VPRINT("SLSI_API get bssid FAILED");
 			free(pbuf);
@@ -2578,20 +2766,20 @@ errout:
 	return result;
 }
 
-static int8_t slsi_get_country_code(char *country_code)
+int8_t slsi_get_country_code(char *country_code)
 {
 	int8_t result = SLSI_STATUS_ERROR;
 	slsi_init_nvram();
-	if (up_wlan_read_config((void *)nvram, SLSI_WIFI_NV_DATA_SIZE)) {
-		g_slsi_wifi_nv_data = (slsi_wifi_nv_data_t *)nvram;
+	if (up_wlan_read_config((void *)g_nvram, SLSI_WIFI_NV_DATA_SIZE)) {
+		g_slsi_wifi_nv_data = (slsi_wifi_nv_data_t *)g_nvram;
 		memcpy(country_code, g_slsi_wifi_nv_data->country_code, 3);
 		country_code[2] = '\0';
 		DPRINT("Country code found: %s\n", country_code);
 		result = SLSI_STATUS_SUCCESS;
 	}
-	if (nvram) {
-		free(nvram);
-		nvram = NULL;
+	if (g_nvram) {
+		free(g_nvram);
+		g_nvram = NULL;
 	}
 
 	return result;
@@ -2600,174 +2788,11 @@ static int8_t slsi_get_country_code(char *country_code)
 int8_t slsi_sent_force_panic(void)
 {
 	int8_t result = SLSI_STATUS_ERROR;
-	slsi_send_command_str_upto_4(WPA_COMMAND_DRIVER, WPA_PARAM_FORCE_PANIC, NULL, NULL, &result);
+	slsi_send_command_str_upto_4(NULL, WPA_COMMAND_DRIVER, WPA_PARAM_FORCE_PANIC, NULL, NULL, &result);
 	return result;
 }
 
-static int8_t slsi_set_country_code(const char *country_code, bool write_to_nvram, bool write_to_driver)
-{
-	int8_t result = SLSI_STATUS_ERROR;
-//    char *pbuf = NULL;
-	slsi_init_nvram();
-
-	if (write_to_driver) {
-		slsi_send_command_str_upto_4(WPA_COMMAND_DRIVER, WPA_PARAM_COUNTRY, (char *)country_code, NULL, &result);
-		VPRINT("SLSI_API country code: %s\n", country_code);
-	}
-	if (write_to_nvram) {
-		if (nvram == NULL) {
-			nvram = malloc(4 * 1024);	// flash block size of 4k
-		}
-		// set the country code in NV ram for next time
-		//start by reading the existing values form NVRAM and Erase to be ready for writing
-		if (up_wlan_read_config((void *)nvram, SLSI_WIFI_NV_DATA_SIZE)) {
-			g_slsi_wifi_nv_data = (slsi_wifi_nv_data_t *)nvram;
-			VPRINT("Read from NVRAM: %s\n", g_slsi_wifi_nv_data->country_code);
-			up_wlan_erase_config();
-			memcpy(g_slsi_wifi_nv_data->country_code, country_code, 3);
-			g_slsi_wifi_nv_data->country_code[2] = '\0';
-			//store the country code for later
-			g_country_code[0] = country_code[0];
-			g_country_code[1] = country_code[1];
-			// write it back to nvram
-			DPRINT("Writing countrycode %s to NVRAM\n", g_slsi_wifi_nv_data->country_code);
-			if (!up_wlan_write_config((void *)nvram, SLSI_WIFI_NV_DATA_SIZE)) {
-				EPRINT("NVRAM write failed\n");
-			} else {
-				result = SLSI_STATUS_SUCCESS;
-			}
-		} else {
-			EPRINT("NVRAM read failed\n");
-		}
-	}
-	if (g_state == SLSI_WIFIAPI_STATE_NOT_STARTED) {
-		// we need to cleanup nvram as it will only get cleaned on wifistop
-		if (nvram != NULL) {
-			free(nvram);
-			nvram = NULL;
-		}
-	}
-	return result;
-}
-
-static int8_t slsi_get_tx_power(uint8_t *dbm)
-{
-	int8_t result = SLSI_STATUS_ERROR;
-	char *pbuf = NULL;
-	char *pos, *end;
-	char command[WPA_COMMAND_MAX_SIZE] = { 0 };
-	slsi_init_nvram();
-
-	snprintf(command, WPA_COMMAND_MAX_SIZE, "%s", WPA_COMMAND_GET_TX_POWER);
-	pbuf = slsi_send_request(command, NULL);
-
-	if (pbuf) {
-		*dbm = strtol(pbuf, &end, 10);
-		VPRINT("dbm = %d\n", *dbm);
-		pos = end + 1;
-		free(pbuf);
-		pbuf = NULL;
-		result = SLSI_STATUS_SUCCESS;
-	} else {
-		DPRINT("Could not get tx_power from supplicant, trying from NVRAM\n");
-		if (nvram == NULL) {
-			nvram = malloc(4 * 1024);	// flash block size of 4k
-		}
-		if (up_wlan_read_config((void *)nvram, SLSI_WIFI_NV_DATA_SIZE)) {
-			g_slsi_wifi_nv_data = (slsi_wifi_nv_data_t *)nvram;
-			*dbm = g_slsi_wifi_nv_data->tx_power;
-			DPRINT("Tx Power found in NVRAM: %d dbm\n", dbm);
-			result = SLSI_STATUS_SUCCESS;
-		}
-	}
-	if (nvram) {
-		free(nvram);
-		nvram = NULL;
-	}
-
-	return result;
-}
-
-static int8_t slsi_set_tx_power(uint8_t *dbm, bool write_to_nvram, bool write_to_sup)
-{
-	int8_t result = SLSI_STATUS_ERROR;
-
-	if (*dbm > 30 || *dbm < 12) {
-		return SLSI_STATUS_PARAM_FAILED;
-	}
-	if (write_to_sup) {
-		slsi_send_command_str_digit(WPA_COMMAND_SET_TX_POWER, *dbm);
-	}
-	if (write_to_nvram) {
-		slsi_init_nvram();
-		// set the tx_power in NV ram for next time
-		//start by reading the existing values form NVRAM and Erase to be ready for writing
-		if (up_wlan_read_config((void *)nvram, SLSI_WIFI_NV_DATA_SIZE)) {
-			g_slsi_wifi_nv_data = (slsi_wifi_nv_data_t *)nvram;
-			VPRINT("Tx Power read from NVRAM: %d\n", g_slsi_wifi_nv_data->tx_power);
-			up_wlan_erase_config();
-			g_slsi_wifi_nv_data->tx_power = *dbm;
-			// write it back to nvram
-			DPRINT("Writing tx_power (dbm) %d to NVRAM\n", g_slsi_wifi_nv_data->tx_power);
-			if (!up_wlan_write_config((void *)nvram, SLSI_WIFI_NV_DATA_SIZE)) {
-				EPRINT("NVRAM write failed\n");
-			} else {
-				result = SLSI_STATUS_SUCCESS;
-			}
-		} else {
-			EPRINT("NVRAM read failed\n");
-		}
-	}
-	if (g_state == SLSI_WIFIAPI_STATE_NOT_STARTED) {
-		// we need to cleanup nvram as it will only get cleaned on wifistop
-		if (nvram != NULL) {
-			free(nvram);
-			nvram = NULL;
-		}
-	}
-	return result;
-}
-
-static int8_t slsi_get_rssi(int8_t *rssi_value)
-{
-	int8_t result = SLSI_STATUS_ERROR;
-
-	char *pbuf = NULL;
-	char *pos, *end;
-
-	char command[WPA_COMMAND_MAX_SIZE] = { 0 };
-
-	snprintf(command, WPA_COMMAND_MAX_SIZE, "%s", WPA_COMMAND_SIGNAL_POLL);
-
-	pbuf = slsi_send_request(command, NULL);
-	if (pbuf) {
-		VPRINT("SLSI_API slsi_get_rssi buffer: %s\n", pbuf);
-		// Extract rssi
-		pos = strstr(pbuf, WPA_VALUE_RSSI);
-		if (pos == NULL) {
-			VPRINT("SLSI_API get_rssi cannot find: %s\n", WPA_VALUE_RSSI);
-			free(pbuf);
-			pbuf = NULL;
-			goto errout;
-		}
-		pos += 5;
-		end = strchr(pos, '\n');
-		if (end == NULL) {
-			VPRINT("SLSI_API get_rssi failed \n");
-			free(pbuf);
-			pbuf = NULL;
-			goto errout;
-		}
-		*end = '\0';
-		*rssi_value = strtol(pos, &end, 10);
-		VPRINT("SLSI_API rssi: %d\n", *rssi_value);
-		result = SLSI_STATUS_SUCCESS;
-	}
-errout:
-	return result;
-}
-
-static int8_t slsi_get_mac(uint8_t *mac)
+int8_t slsi_get_mac(uint8_t *mac)
 {
 	int8_t result = SLSI_STATUS_ERROR;
 	char *pbuf = NULL;
@@ -2776,15 +2801,15 @@ static int8_t slsi_get_mac(uint8_t *mac)
 
 	// Check status to get own address
 	snprintf(command, WPA_COMMAND_MAX_SIZE, "%s", WPA_COMMAND_STATUS);
-	pbuf = slsi_send_request(command, NULL);
+	pbuf = slsi_send_request(NULL, command, NULL);
 	if (pbuf) {
 		uint8_t i;
-		pos = strstr(pbuf, WPA_VALUE_IP_ADDRESS);
+		pos = strstr(pbuf, WPA_PARAM_IP_ADDRESS);
 		if (pos != NULL) {
 			pos += 11;
-			pos = strstr(pos, WPA_VALUE_ADDRESS);
+			pos = strstr(pos, WPA_PARAM_ADDRESS);
 		} else {
-			pos = strstr(pbuf, WPA_VALUE_ADDRESS);
+			pos = strstr(pbuf, WPA_PARAM_ADDRESS);
 		}
 		if (pos == NULL) {
 			VPRINT("SLSI_API get_mac parameter missing WPA_VALUE_ADDRESS\n");
@@ -2814,6 +2839,170 @@ errout:
 	return result;
 }
 
+static int8_t slsi_set_country_code(const char *country_code, bool write_to_nvram, bool write_to_driver)
+{
+	int8_t result = SLSI_STATUS_ERROR;
+	slsi_init_nvram();
+	if (write_to_driver) {
+		slsi_send_command_str_upto_4(NULL, WPA_COMMAND_DRIVER, WPA_PARAM_COUNTRY, (char *)country_code, NULL, &result);
+		VPRINT("SLSI_API country code: %s\n", country_code);
+	}
+	if (write_to_nvram) {
+		if (g_nvram == NULL) {
+			g_nvram = malloc(4 * 1024);	// flash block size of 4k
+		}
+		// set the country code in NV ram for next time
+		//start by reading the existing values form NVRAM and Erase to be ready for writing
+		if (up_wlan_read_config((void *)g_nvram, SLSI_WIFI_NV_DATA_SIZE)) {
+			g_slsi_wifi_nv_data = (slsi_wifi_nv_data_t *)g_nvram;
+			VPRINT("Read from NVRAM: %s\n", g_slsi_wifi_nv_data->country_code);
+			up_wlan_erase_config();
+			memcpy(g_slsi_wifi_nv_data->country_code, country_code, 3);
+			g_slsi_wifi_nv_data->country_code[2] = '\0';
+			//store the country code for later
+			g_country_code[0] = country_code[0];
+			g_country_code[1] = country_code[1];
+			// write it back to nvram
+			DPRINT("Writing countrycode %s to NVRAM\n", g_slsi_wifi_nv_data->country_code);
+			if (!up_wlan_write_config((void *)g_nvram, SLSI_WIFI_NV_DATA_SIZE)) {
+				EPRINT("NVRAM write failed\n");
+			} else {
+				result = SLSI_STATUS_SUCCESS;
+			}
+		} else {
+			EPRINT("NVRAM read failed\n");
+		}
+	}
+	if (g_state == SLSI_WIFIAPI_STATE_NOT_STARTED) {
+		// we need to cleanup nvram as it will only get cleaned on wifistop
+		if (g_nvram != NULL) {
+			free(g_nvram);
+			g_nvram = NULL;
+		}
+	}
+	return result;
+}
+
+static int8_t slsi_get_tx_power(uint8_t *dbm)
+{
+	int8_t result = SLSI_STATUS_ERROR;
+	char *pbuf = NULL;
+	char *pos, *end;
+	char command[WPA_COMMAND_MAX_SIZE] = { 0 };
+
+	slsi_init_nvram();
+	snprintf(command, WPA_COMMAND_MAX_SIZE, "%s", WPA_COMMAND_GET_TX_POWER);
+	pbuf = slsi_send_request(NULL, command, NULL);
+
+	if (pbuf) {
+		*dbm = strtol(pbuf, &end, 10);
+		VPRINT("dbm = %d\n", *dbm);
+		pos = end + 1;
+		free(pbuf);
+		pbuf = NULL;
+		result = SLSI_STATUS_SUCCESS;
+	} else {
+		DPRINT("Could not get tx_power from supplicant, trying from NVRAM\n");
+		if (g_nvram == NULL) {
+			g_nvram = malloc(4 * 1024);	// flash block size of 4k
+		}
+		if (up_wlan_read_config((void *)g_nvram, SLSI_WIFI_NV_DATA_SIZE)) {
+			g_slsi_wifi_nv_data = (slsi_wifi_nv_data_t *)g_nvram;
+			*dbm = g_slsi_wifi_nv_data->tx_power;
+			DPRINT("Tx Power found in NVRAM: %d dbm\n", dbm);
+			result = SLSI_STATUS_SUCCESS;
+		}
+	}
+	if (g_nvram) {
+		free(g_nvram);
+		g_nvram = NULL;
+	}
+
+	return result;
+}
+
+static int8_t slsi_set_tx_power(uint8_t *dbm, bool write_to_nvram, bool write_to_sup)
+{
+	int8_t result = SLSI_STATUS_ERROR;
+
+	if (*dbm > 30 || *dbm < 12) {
+		return SLSI_STATUS_PARAM_FAILED;
+	}
+	if (write_to_sup) {
+		slsi_send_command_str_digit(NULL, WPA_COMMAND_SET_TX_POWER, *dbm, NULL);
+	}
+	if (write_to_nvram) {
+		slsi_init_nvram();
+		// set the tx_power in NV ram for next time
+		//start by reading the existing values form NVRAM and Erase to be ready for writing
+		if (up_wlan_read_config((void *)g_nvram, SLSI_WIFI_NV_DATA_SIZE)) {
+			g_slsi_wifi_nv_data = (slsi_wifi_nv_data_t *)g_nvram;
+			VPRINT("Tx Power read from NVRAM: %d\n", g_slsi_wifi_nv_data->tx_power);
+			up_wlan_erase_config();
+			g_slsi_wifi_nv_data->tx_power = *dbm;
+			// write it back to nvram
+			DPRINT("Writing tx_power (dbm) %d to NVRAM\n", g_slsi_wifi_nv_data->tx_power);
+			if (!up_wlan_write_config((void *)g_nvram, SLSI_WIFI_NV_DATA_SIZE)) {
+				EPRINT("NVRAM write failed\n");
+			} else {
+				result = SLSI_STATUS_SUCCESS;
+			}
+		} else {
+			EPRINT("NVRAM read failed\n");
+		}
+	}
+	if (g_state == SLSI_WIFIAPI_STATE_NOT_STARTED) {
+		// we need to cleanup nvram as it will only get cleaned on wifistop
+		if (g_nvram != NULL) {
+			free(g_nvram);
+			g_nvram = NULL;
+		}
+	}
+	return result;
+}
+
+static int8_t slsi_get_rssi(int8_t *rssi_value)
+{
+	int8_t result = SLSI_STATUS_ERROR;
+
+	char *pbuf = NULL;
+	char *pos, *end;
+
+	char command[WPA_COMMAND_MAX_SIZE] = { 0 };
+
+	snprintf(command, WPA_COMMAND_MAX_SIZE, "%s", WPA_COMMAND_SIGNAL_POLL);
+
+	pbuf = slsi_send_request(NULL, command, NULL);
+	if (pbuf) {
+		VPRINT("SLSI_API slsi_get_rssi buffer: %s\n", pbuf);
+		// Extract rssi
+		pos = strstr(pbuf, WPA_PARAM_RSSI);
+		if (pos == NULL) {
+			VPRINT("SLSI_API get_rssi cannot find: %s\n", WPA_PARAM_RSSI);
+			free(pbuf);
+			pbuf = NULL;
+			goto errout;
+		}
+		pos += 5;
+		end = strchr(pos, '\n');
+		if (end == NULL) {
+			VPRINT("SLSI_API get_rssi failed \n");
+			free(pbuf);
+			pbuf = NULL;
+			goto errout;
+		}
+		*end = '\0';
+		*rssi_value = strtol(pos, &end, 10);
+		VPRINT("SLSI_API rssi: %d\n", *rssi_value);
+		result = SLSI_STATUS_SUCCESS;
+	}
+errout:
+	if (pbuf) {
+		free(pbuf);
+	}
+	return result;
+}
+
 static int8_t slsi_get_channel(int8_t *channel)
 {
 	int8_t result = SLSI_STATUS_ERROR;
@@ -2822,12 +3011,12 @@ static int8_t slsi_get_channel(int8_t *channel)
 	char *pos, *end;
 
 	snprintf(command, WPA_COMMAND_MAX_SIZE, "%s", WPA_COMMAND_STATUS);
-	pbuf = slsi_send_request(command, NULL);
+	pbuf = slsi_send_request(NULL, command, NULL);
 	if (pbuf) {
 		// Extract frequency
-		pos = strstr(pbuf, WPA_VALUE_FREQ);
+		pos = strstr(pbuf, WPA_PARAM_FREQ);
 		if (pos == NULL) {
-			VPRINT("SLSI_API get: %s FAILED \n", WPA_VALUE_FREQ);
+			VPRINT("SLSI_API get: %s FAILED \n", WPA_PARAM_FREQ);
 			free(pbuf);
 			pbuf = NULL;
 			goto errout;
@@ -2855,7 +3044,7 @@ static int8_t slsi_terminate_supplicant(void)
 {
 	int8_t result = SLSI_STATUS_ERROR;
 	VPRINT("slsi_terminate_supplicant \n");
-	slsi_send_command_str_upto_4(WPA_COMMAND_TERMINATE, NULL, NULL, NULL, &result);
+	slsi_send_command_str_upto_4(NULL, WPA_COMMAND_TERMINATE, NULL, NULL, NULL, &result);
 	return result;
 }
 
@@ -2865,11 +3054,13 @@ static uint8_t slsi_stop_supplicant(void)
 	int status = -1;
 	UNUSED(status);
 	pid_t r_task_id = -1;
+	/* Send message to end callback thread */
+	if (g_callback_running) {
+		slsi_send_mqueue(SLSI_CALLBACK_SHUTDOWN, NULL);
+	}
+	/* Send TERMINATE to supplicant */
 	g_state = SLSI_WIFIAPI_STATE_TERMINATING;
 	VPRINT("SLSI_API terminate requested\n");
-	if (SLSI_WIFI_API_DEBUG_SLEEP) {
-		slsi_demo_app_sleep(1, "terminate requested - stop app and terminate");
-	}
 	result = slsi_terminate_supplicant();
 	if (result == SLSI_STATUS_SUCCESS) {
 		int res = sem_wait(&g_sem_terminate);
@@ -2879,101 +3070,125 @@ static uint8_t slsi_stop_supplicant(void)
 	} else {
 		EPRINT("Termination of supplicant failed - but will continue disconnecting wpa_ctrl \n");
 	}
-	if (SLSI_WIFI_API_DEBUG_SLEEP) {
-		slsi_demo_app_sleep(1, "before waitpid");
-	}
+	DPRINT("Wait for supplicant task to terminate task id=%d \n", g_task);
 	r_task_id = waitpid(g_task, &status, NULL);
-	DPRINT("Wait for supplicant task to terminate\n");
 	if (r_task_id != g_task) {
+		DPRINT("    result: %d, status: %d\n", r_task_id, status);
 		EPRINT("Error waiting for task termination but nothing to do about it\n");
 	}
-	DPRINT("    result: %d, status: %d\n", r_task_id, status);
+	g_active_ifname = NULL;
 	g_task = 0;
-	// if monitor still running at least running state to not running
+	/* If monitor still running - stop it now */
 	if (g_running) {
 		VPRINT("SLSI_API stop running\n");
-		// Will end while loop in monitoring thread and exit thread
 		g_running = 0;
 	}
-	// Disconnect wpa_ctrl connection
+	/* Ensure callback queues are closed and thread have terminated */
+	if (g_callback_running) {
+		VPRINT("Should already be closed\n");
+		g_callback_running = 0;
+	}
+	if (g_send_cbmqfd) {
+		if (mq_close(g_send_cbmqfd) < 0) {
+			EPRINT("sender mq_close failed\n");
+		}
+	}
+	if (g_recv_cbmqfd) {
+		if (mq_close(g_recv_cbmqfd) < 0) {
+			EPRINT("receiver mq_close failed\n");
+		}
+	}
+	if (mq_unlink(SLSI_CALLBACK_MQUEUE) < 0) {
+		EPRINT("mq_unlink failed \n");
+	}
+
+	/* Disconnect wpa_ctrl connection */
 	result = slsi_wpa_close(TRUE);
 	if (result != SLSI_STATUS_SUCCESS) {
 		EPRINT("Error: still running after disconnect. \n");
 	}
+
 	return result;
 }
 
-static uint8_t slsi_start_supplicant(void)
+static uint8_t slsi_create_callback_thread(void)
+{
+	uint8_t result = SLSI_STATUS_ERROR;
+	if (pthread_create(&g_callback_thread, NULL, (void *)slsi_callback_thread_handler, NULL)) {
+		EPRINT("SLSI_API Failed to create thread\n");
+	} else {
+		result = SLSI_STATUS_SUCCESS;
+		pthread_setname_np(g_callback_thread, "Wi-Fi API callback");
+		VPRINT("SLSI_API Callback thread created successfully\n");
+	}
+	return result;
+}
+
+static uint8_t slsi_start_supplicant(WiFi_InterFace_ID_t interface)
 {
 	uint8_t result;
-#ifndef CONFIG_DEBUG
+#ifndef CONFIG_DEBUG_FEATURES
 	char *logarg = NULL;
 #endif
 	char *confarg = NULL;
+#ifdef CONFIG_SLSI_WIFI_P2P_API
+	char *confarg2 = NULL;
+#endif
+	g_active_ifname = (interface == SLSI_WIFI_SOFT_AP_IF || interface == SLSI_WIFI_STATION_IF)
+					  ? CTRL_IFNAME : CTRL_P2P_IFNAME;
+
 #ifdef CONFIG_SLSI_WIFI_FILESYSTEM_SUPPORT
-	if (slsi_init_filesystem() == SLSI_STATUS_SUCCESS) {
+	if (slsi_init_filesystem(interface) == SLSI_STATUS_SUCCESS) {
+		// TODO This is a hack!!!
 		confarg = "-c" CONFIG_SLSI_WIFI_DIR "/" CONFIG_SLSI_WIFI_CONFIG_FILE_NAME;
-#ifndef CONFIG_DEBUG
+#ifdef CONFIG_SLSI_WIFI_P2P_API
+		confarg2 = "-c" CONFIG_SLSI_WIFI_DIR "/" CONFIG_SLSI_WIFI_P2P_CONFIG_FILE_NAME;
+#else
+		UNUSED(confarg2);
+#endif
+
+#ifndef CONFIG_DEBUG_FEATURES
 		logarg = "-f" CONFIG_SLSI_WIFI_DIR "/" CONFIG_SLSI_WIFI_LOG_FILE_NAME;
 #endif							// CONFIG_DEBUG
 	}
 #endif							// CONFIG_SLSI_WIFI_FILESYSTEM_SUPPORT
-	VPRINT("SLSI_API start up supplicant ifname %s\n", CTRL_IFNAME);
-	// Start by creating task for wpa_supplicant
-#ifdef CONFIG_DEBUG_WLAN_SUPPLICANT_ERROR
-	sup_argv[0] = "-dd";		// ERROR + WARN + INFO
-#ifdef CONFIG_DEBUG_WLAN_SUPPLICANT_DEBUG
-	sup_argv[0] = "-ddd";		// + DEBUG
-#endif
-#ifdef CONFIG_DEBUG_WLAN_SUPPLICANT_MORE
-	sup_argv[0] = "-dddd";		// + DUMP
-#endif
-#ifdef CONFIG_DEBUG_WLAN_SUPPLICANT_VERBOSE
-	sup_argv[0] = "-ddddd";		// + EXCESSIVE
-#endif
-	sup_argv[1] = "-t";
-	sup_argv[2] = "-i" CTRL_IFNAME;
-	if (confarg != NULL) {
-		sup_argv[3] = confarg;
-	} else {
-		sup_argv[3] = "-Cudp";
-	}
-	sup_argv[4] = NULL;
-#elif defined(CONFIG_DEBUG)		// user manually disabled logging from supplicant
-	sup_argv[0] = "-qqq";
-	sup_argv[1] = "-t";
-	sup_argv[2] = "-i" CTRL_IFNAME;
-	if (confarg != NULL) {
-		sup_argv[3] = confarg;
-	} else {
-		sup_argv[3] = "-Cudp";
-	}
-	sup_argv[4] = NULL;
-#else
-	sup_argv[0] = "-B";
-	sup_argv[1] = "-t";
-	sup_argv[2] = "-i" CTRL_IFNAME;
-	if (confarg != NULL) {
-		sup_argv[3] = confarg;
-	} else {
-		sup_argv[3] = "-Cudp";
-	}
 
-	if (logarg != NULL) {
-		sup_argv[4] = logarg;
-		sup_argv[5] = NULL;
+	// Start by creating task for wpa_supplicant
+	int arg_count = 0;
+
+#ifndef CONFIG_DEBUG_FEATURES
+	sup_argv[arg_count++] = "-B";
+#endif
+	sup_argv[arg_count++] = "-t";
+	sup_argv[arg_count++] = "-i" CTRL_IFNAME;
+	if (confarg != NULL) {
+		sup_argv[arg_count++] = confarg;
 	} else {
-		sup_argv[4] = NULL;
+		sup_argv[arg_count++] = "-Cudp";
+	}
+#ifdef CONFIG_SLSI_WIFI_P2P_API
+	sup_argv[arg_count++] = "-N";
+	sup_argv[arg_count++] = "-i" CTRL_P2P_IFNAME;
+	if (confarg2 != NULL) {
+		sup_argv[arg_count++] = confarg2;
+	} else {
+		sup_argv[arg_count++] = "-Cudp";
 	}
 #endif
-	VPRINT("SLSI_API call task_create\n");
-	if (SLSI_WIFI_API_DEBUG_SLEEP) {
-		slsi_demo_app_sleep(1, NULL);
+#ifndef CONFIG_DEBUG_FEATURES
+	if (logarg != NULL) {
+		sup_argv[arg_count++] = logarg;
 	}
-	g_task = task_create("WPA Supplicant", 100, 4096, wpa_supplicant_main, sup_argv);
+#endif
+	sup_argv[arg_count++] = NULL;
+
+	DPRINT("SLSI_API call task_create, arg count = %d\n", arg_count);
+	g_task = task_create("WPA Supplicant", CONFIG_WPA_SUPPLICANT_PRIORITY, CONFIG_WPA_SUPPLICANT_STACKSIZE, (main_t)CONFIG_WPA_SUPPLICANT_ENTRYPOINT, sup_argv);
 	sleep(1);
 
-	VPRINT("SLSI_API task_create called \n");
+	/* Start call back thread */
+	slsi_create_callback_thread();
+
 	if (g_task < 0) {
 		EPRINT("SLSI_API ERROR: Failed to start supplicant \n");
 		result = SLSI_STATUS_SUPPLICANT_START_FAILED;
@@ -2983,13 +3198,9 @@ static uint8_t slsi_start_supplicant(void)
 		g_state = SLSI_WIFIAPI_STATE_SUPPLICANT_RUNNING;
 		g_running = 0;
 		g_wpa_attached = 0;
-		if (SLSI_WIFI_API_DEBUG_SLEEP) {
-			slsi_demo_app_sleep(1, NULL);
-		}
-		result = slsi_wpa_open(CTRL_IFNAME);
-		if (SLSI_WIFI_API_DEBUG_SLEEP) {
-			slsi_demo_app_sleep(2, NULL);
-		}
+		VPRINT("register ifname %s\n", g_active_ifname);
+		/* open channel to supplicant and create monitor thread */
+		result = slsi_wpa_open(g_active_ifname);
 	}
 	return result;
 }
@@ -3006,14 +3217,14 @@ static bool slsi_is_connected(void)
 static void slsi_init_nvram(void)
 {
 
-	if (nvram == NULL) {
-		nvram = zalloc(4 * 1024);	// flash block size of 4k
-		if (!nvram) {
+	if (g_nvram == NULL) {
+		g_nvram = zalloc(4 * 1024);	// flash block size of 4k
+		if (!g_nvram) {
 			return;
 		}
 	}
-	if (up_wlan_read_config((void *)nvram, SLSI_WIFI_NV_DATA_SIZE)) {
-		g_slsi_wifi_nv_data = (slsi_wifi_nv_data_t *)nvram;
+	if (up_wlan_read_config((void *)g_nvram, SLSI_WIFI_NV_DATA_SIZE)) {
+		g_slsi_wifi_nv_data = (slsi_wifi_nv_data_t *) g_nvram;
 		//check if it this is not the first boot - it is already initialized
 		if (memcmp("SLSI", g_slsi_wifi_nv_data->initialized, 4) != 0) {
 			char *default_cc = SLSI_WIFI_NV_DEFAULT_COUNTRY_CODE;
@@ -3028,12 +3239,8 @@ static void slsi_init_nvram(void)
 			g_slsi_wifi_nv_data->country_code[0] = default_cc[0];
 			g_slsi_wifi_nv_data->country_code[1] = default_cc[1];
 			g_slsi_wifi_nv_data->country_code[2] = '\0';
-			if (tx_power < 12 || tx_power > 30) {
-				EPRINT("Wrong value (%d) for TX power found in config. Correcting it to 30dbm\n", tx_power);
-				tx_power = 30;
-			}
 			g_slsi_wifi_nv_data->tx_power = tx_power;
-			if (!up_wlan_write_config((void *)nvram, SLSI_WIFI_NV_DATA_SIZE)) {
+			if (!up_wlan_write_config((void *)g_nvram, SLSI_WIFI_NV_DATA_SIZE)) {
 				EPRINT("NVRAM write failed\n");
 			} else {
 				VPRINT("NVRAM now contains:\n\tcountry-code: %s\n\ttx_power: %d\n", g_slsi_wifi_nv_data->country_code, g_slsi_wifi_nv_data->tx_power);
@@ -3108,7 +3315,7 @@ static int8_t slsi_init(WiFi_InterFace_ID_t interface_id, const slsi_ap_config_t
 	}
 
 	if (g_task == 0) {
-		result = slsi_start_supplicant();
+		result = slsi_start_supplicant(interface_id);
 		if (result == SLSI_STATUS_SUCCESS) {
 #ifdef CONFIG_SCSC_WLAN_AUTO_RECOVERY
 			// setup recovery thread
@@ -3117,36 +3324,29 @@ static int8_t slsi_init(WiFi_InterFace_ID_t interface_id, const slsi_ap_config_t
 					EPRINT("Failed to recovery create thread\n");
 				} else {
 					result = SLSI_STATUS_SUCCESS;
-					pthread_setname_np(g_monitoring_thread, "Wi-Fi API recovery");
+					pthread_setname_np(g_recovery_thread, "Wi-Fi API recovery");
 					VPRINT("Recovery thread created successfully\n");
 				}
 			}
 #endif
-			// configure supplicant
+			/* Initialize nvram value if it is the first time we run.
+			 * Use default values from menuconfig defines */
+			slsi_init_nvram();	//Always need to be called at startup prior to any set function
+			slsi_set_country_code(g_slsi_wifi_nv_data->country_code, FALSE, TRUE);
+			slsi_set_tx_power(&g_slsi_wifi_nv_data->tx_power, FALSE, TRUE);
 			slsi_set_updateconfig();
 			slsi_set_scan_interval(SLSI_SCAN_INTERVAL);
 			slsi_set_bss_expiration();
-			if (interface_id == SLSI_WIFI_SOFT_AP_IF) {
-				slsi_set_autoconnect(0);
-			} else {
-				slsi_set_autoconnect(1);
-			}
-
 		} else {
 			goto errout;
 		}
 	} else {
 		if (g_task && g_running && g_wpa_attached) {
-			VPRINT("Supplicant already started ifname %s in task %d \n", CTRL_IFNAME, g_task);
 			result = SLSI_STATUS_SUCCESS;
 		} else {
 			EPRINT("Supplicant started but socket connections need restart \n");
 		}
 	}
-	// initialize nvram if first time we run. use default values from menuconfig
-	slsi_init_nvram();
-	slsi_set_country_code(g_slsi_wifi_nv_data->country_code, FALSE, TRUE);
-	slsi_set_tx_power(&g_slsi_wifi_nv_data->tx_power, FALSE, TRUE);
 
 errout:
 	return result;
@@ -3158,19 +3358,24 @@ static void slsi_deinit(void)
 	g_link_up = NULL;
 	g_link_down = NULL;
 	g_wpa_attached = 0;
+	g_callback_running = 0;
 	g_running = 0;
 	g_scanning = 0;
 	g_state = SLSI_WIFIAPI_STATE_NOT_STARTED;
 	g_task = 0;
-
+	g_num_sta_connected = 0;
+	sem_post(&g_sem_terminate);
 	sem_destroy(&g_sem_terminate);
+	sem_post(&g_sem_ap_mode);
 	sem_destroy(&g_sem_ap_mode);
+	sem_post(&g_sem_disconnect);
 	sem_destroy(&g_sem_disconnect);
+	sem_post(&g_sem_api_block);
 	sem_destroy(&g_sem_api_block);
 
-	if (nvram != NULL) {
-		free(nvram);
-		nvram = NULL;
+	if (g_nvram != NULL) {
+		free(g_nvram);
+		g_nvram = NULL;
 	}
 	if (g_ap_config != NULL) {
 		if (g_ap_config->security) {
@@ -3195,73 +3400,174 @@ static void slsi_deinit(void)
 	}
 }
 
+static void slsi_init_sta(void)
+{
+	slsi_set_autoconnect(1);
+}
+
+static void slsi_init_ap(void)
+{
+	slsi_set_autoconnect(0);
+}
+
+static void slsi_init_p2p(void)
+{
+	slsi_set_autoconnect(0);
+#ifdef CONFIG_SLSI_WIFI_P2P_LISTEN_CHANNEL
+	uint8_t channel = 0;
+	channel = CONFIG_SLSI_WIFI_P2P_LISTEN_CHANNEL;
+	slsi_set_p2p_channel(channel);
+#endif
+	//    slsi_send_command_str_upto_4(WPA_COMMAND_DISABLE_NETWORK, NULL, NULL, NULL, NULL);
+	//    slsi_send_command_str_digit(WPA_COMMAND_UPDATE_CONFIG, SLSI_SAVE_CONFIG, NULL);
+	/*
+	 * TODO: add set commands for the following to get rid of config file
+	 CTRL_IFACE SET 'config_methods'='push_button display keypad'
+	 CTRL_IFACE SET 'device_type'='10-0050F204-5'
+	 */
+}
+
+static int8_t slsi_ap_stop(void)
+{
+	int8_t result = SLSI_STATUS_ERROR;
+	VPRINT("STA enabled - stop AP mode\n");
+	g_state = SLSI_WIFIAPI_STATE_AP_DISABLING;
+	result = slsi_stop_ap();
+	if (result != SLSI_STATUS_SUCCESS) {
+		EPRINT("stop ap mode - failed - still attempt to disable networks\n");
+		uint8_t tmp_result = slsi_disable_all_networks();
+		if (tmp_result != SLSI_STATUS_SUCCESS) {
+			EPRINT("disable networks - failed\n");
+		}
+	} else {
+		VPRINT("supplicant running so disabling all existing networks\n");
+		result = slsi_disable_all_networks();
+	}
+	// remove network
+	if (g_network_id) {
+		slsi_remove_network(g_network_id);
+		free(g_network_id);
+		g_network_id = NULL;
+	}
+	return result;
+}
+
+static int8_t slsi_sta_stop(void)
+{
+	int8_t result = SLSI_STATUS_ERROR;
+	/* Disconnect if in STA mode and connected */
+	if (g_state == SLSI_WIFIAPI_STATE_STA_CONNECTED) {
+		g_state = SLSI_WIFIAPI_STATE_STA_DISCONNECTING;
+		VPRINT("supplicant already running - disconnect connected STA networks\n");
+		result = slsi_leave_network(NULL);
+		if (result == SLSI_STATUS_SUCCESS) {
+			int res = sem_wait(&g_sem_disconnect);
+			if (res) {
+				EPRINT("g_sem_disconnect sem_wait error %d\n", errno);
+			}
+		} else {
+			EPRINT("%s Error: disconnect. \n", __func__);
+		}
+	} else {
+		/* Nothing to do */
+		result = SLSI_STATUS_SUCCESS;
+	}
+	return result;
+}
+
+static void slsi_set_ifname(WiFi_InterFace_ID_t interface_id)
+{
+	VPRINT("Update ifname %s for new interface \n", g_active_ifname);
+	//Update the Ifname alone as supplicant is already started to handle Mode Switch cases.
+	g_active_ifname = (interface_id == SLSI_WIFI_SOFT_AP_IF || interface_id == SLSI_WIFI_STATION_IF)
+					  ? CTRL_IFNAME : CTRL_P2P_IFNAME;
+	wpa_update_ctrl_ifname(g_ctrl_conn, g_active_ifname);
+}
+
 static int8_t slsi_api_start(WiFi_InterFace_ID_t interface_id, const slsi_ap_config_t *ap_config)
 {
 	int8_t result = SLSI_STATUS_ERROR;
-	DPRINT("Start\n");
-
-	if (SLSI_WIFI_API_DEBUG_SLEEP) {
-		slsi_demo_app_sleep(1, NULL);
-	}
+	DPRINT("Start %s\n", slsi_wifi_interface_id[interface_id]);
 	result = slsi_init(interface_id, ap_config);
-
 	if (result == SLSI_STATUS_SUCCESS) {
-		if (interface_id == SLSI_WIFI_STATION_IF) {
+		/*Supplicant started */
+		switch (interface_id) {
+		case SLSI_WIFI_STATION_IF: {
 			VPRINT("Start STA\n");
 			/* Check old interface type - if AP then stop first */
 			if (slsi_get_op_mode() == SLSI_WIFI_SOFT_AP_IF) {
-				VPRINT("STA enabled - stop AP mode\n");
-				g_state = SLSI_WIFIAPI_STATE_AP_DISABLING;
-				result = slsi_stop_ap();
-				if (result != SLSI_STATUS_SUCCESS) {
-					EPRINT("stop ap mode - failed - still attempt to disable networks\n");
-					uint8_t tmp_result = slsi_disable_all_networks();
-					if (tmp_result != SLSI_STATUS_SUCCESS) {
-						EPRINT("disable networks - failed\n");
-					}
-				} else {
-					VPRINT("supplicant already running so disabling all existing networks\n");
-					result = slsi_disable_all_networks();
-				}
-				// remove network
-				if (g_network_id) {
-					slsi_remove_network(g_network_id);
-					free(g_network_id);
-					g_network_id = NULL;
-				}
+				result = slsi_ap_stop();
 			}
-		} else if (interface_id == SLSI_WIFI_SOFT_AP_IF) {
-			VPRINT("Start AP\n");
-			/* Disconnect if in STA mode and connected */
-			if (g_state == SLSI_WIFIAPI_STATE_STA_CONNECTED) {
-				g_state = SLSI_WIFIAPI_STATE_STA_DISCONNECTING;
-				VPRINT("supplicant already running - disconnect connected STA networks\n");
-				result = slsi_leave_network();
-				if (result == SLSI_STATUS_SUCCESS) {
-					int res = sem_wait(&g_sem_disconnect);
-					if (res) {
-						EPRINT("g_sem_disconnect sem_wait error %d\n", errno);
-					}
-				} else {
-					EPRINT("%s Error: disconnect. \n", __func__);
-				}
-			}
-
-			result = slsi_set_ap_network(g_ap_config);
-#ifdef CONFIG_SCSC_WLAN_AUTO_RECOVERY
-			if (!g_recovering) {
-				/* Save start information needed in case of recovery handling */
-				if (result == SLSI_STATUS_SUCCESS) {
-					// TODO: can rely on g_ap_config as this is now our own???
-					slsi_save_ap_config(g_ap_config);
-				}
+#ifdef CONFIG_SLSI_WIFI_P2P_API
+			else if (slsi_get_op_mode() == SLSI_WIFI_P2P_IF) {
+				/* P2P procedures would have been stopped through explicit stop procedure via
+				 * artikwifi, otherwise it needs to be stopped here. */
+				result = slsi_p2p_stop();
+				g_state = SLSI_WIFIAPI_STATE_SUPPLICANT_RUNNING;
 			}
 #endif
+			slsi_set_ifname(interface_id);
+			slsi_init_sta();
+			break;
+		}
+		case SLSI_WIFI_SOFT_AP_IF: {
+			VPRINT("Start AP\n");
+			if (slsi_get_op_mode() == SLSI_WIFI_STATION_IF) {
+				result = slsi_sta_stop();
+			}
+#ifdef CONFIG_SLSI_WIFI_P2P_API
+			else if (slsi_get_op_mode() == SLSI_WIFI_P2P_IF) {
+				/* P2P procedures would have been stopped through explicit stop procedure via
+				 * artikwifi. otherwise it needs to be stopped here. */
+				result = slsi_p2p_stop();
+				g_state = SLSI_WIFIAPI_STATE_SUPPLICANT_RUNNING;
+			}
+#endif
+			slsi_set_ifname(interface_id);
+			slsi_init_ap();
+			if (result == SLSI_STATUS_SUCCESS) {
+				result = slsi_set_ap_network(g_ap_config);
+#ifdef CONFIG_SCSC_WLAN_AUTO_RECOVERY
+				if (!g_recovering) {
+					/* Save start information needed in case of recovery handling */
+					if (result == SLSI_STATUS_SUCCESS) {
+						// TODO: can rely on g_ap_config as this is now our own???
+						slsi_save_ap_config(g_ap_config);
+					}
+				}
+#endif
+			}
+			break;
+		}
+#ifdef CONFIG_SLSI_WIFI_P2P_API
+		case SLSI_WIFI_P2P_IF: {
+			VPRINT("Start P2P\n");
+			// TODO: add parameters from API call
+			if (slsi_get_op_mode() == SLSI_WIFI_SOFT_AP_IF) {
+				DPRINT("Stop AP mode first \n");
+				result = slsi_ap_stop();
+			} else if (slsi_get_op_mode() == SLSI_WIFI_STATION_IF) {
+				DPRINT("Stop STA mode first \n");
+				result = slsi_sta_stop();
+			}
+			slsi_set_ifname(interface_id);
+			slsi_init_p2p();
+			if (result == SLSI_STATUS_SUCCESS) {
+				result = slsi_p2p_start();
+				if (result == SLSI_STATUS_SUCCESS) {
+					g_state = SLSI_WIFIAPI_STATE_P2P;
+				}
+			} else {
+				EPRINT("Failed to stop running modes!\n");
+			}
+			break;
+		}
+#endif
+		default:
+			EPRINT("No interface specified \n");
+			break;
 		}
 
-		if (SLSI_WIFI_API_DEBUG_SLEEP) {
-			slsi_demo_app_sleep(1, NULL);
-		}
 		/* Do not assign global until after used to check for running interfaces
 		 * If i.e. start of AP mode fails then supplicant is still running and we
 		 * need to make sure that the interface type is set in that situation */
@@ -3289,7 +3595,11 @@ static WiFi_InterFace_ID_t slsi_get_op_mode(void)
 	} else if (g_state >= SLSI_WIFIAPI_STATE_AP_ENABLING && g_state <= SLSI_WIFIAPI_STATE_AP_DISABLING) {
 		return SLSI_WIFI_SOFT_AP_IF;
 	}
-
+#ifdef CONFIG_SLSI_WIFI_P2P_API
+	else if (g_state == SLSI_WIFIAPI_STATE_P2P) {
+		return SLSI_WIFI_P2P_IF;
+	}
+#endif
 	return SLSI_WIFI_NONE;
 }
 
@@ -3299,7 +3609,6 @@ static WiFi_InterFace_ID_t slsi_get_op_mode(void)
 int8_t WiFiStart(WiFi_InterFace_ID_t interface_id, const slsi_ap_config_t *ap_config)
 {
 	int8_t result = SLSI_STATUS_ERROR;
-
 	if (interface_id == SLSI_WIFI_NONE || ((interface_id == SLSI_WIFI_SOFT_AP_IF) && (ap_config == NULL))) {
 		/* Not a valid parameters */
 		DPRINT("WiFiStart parameters not set\n");
@@ -3331,11 +3640,10 @@ int8_t WiFiStop(void)
 	DPRINT("SLSI_WiFiStop\n");
 	ENTER_CRITICAL;
 
-	// Disconnect if in STA mode and connected
 	if (g_state == SLSI_WIFIAPI_STATE_STA_CONNECTED) {
+		// Disconnect if in STA mode and connected
 		g_state = SLSI_WIFIAPI_STATE_STA_DISCONNECTING;
-
-		result = slsi_leave_network();
+		result = slsi_leave_network(NULL);
 		if (result == SLSI_STATUS_SUCCESS) {
 			int res = sem_wait(&g_sem_disconnect);
 			if (res) {
@@ -3345,9 +3653,8 @@ int8_t WiFiStop(void)
 			EPRINT("%s Error: disconnect. \n", __func__);
 		}
 		// Still progress shutting down
-	}
-	// Stop AP mode if in AP mode
-	if (slsi_get_op_mode() == SLSI_WIFI_SOFT_AP_IF) {
+	} else if (slsi_get_op_mode() == SLSI_WIFI_SOFT_AP_IF) {
+		// Stop AP mode if in AP mode
 		VPRINT("Stop AP mode\n");
 		g_state = SLSI_WIFIAPI_STATE_AP_DISABLING;
 		result = slsi_stop_ap();
@@ -3357,9 +3664,21 @@ int8_t WiFiStop(void)
 			free(g_network_id);
 			g_network_id = NULL;
 		}
-	} else {
+	}
+#ifdef CONFIG_SLSI_WIFI_P2P_API
+	// Stop P2P mode
+	else if (g_state == SLSI_WIFIAPI_STATE_P2P) {
+		VPRINT("Stop P2P mode\n");
+		result = slsi_p2p_stop();
+	}
+#endif
+	else {
 		result = SLSI_STATUS_SUCCESS;
 	}
+
+	sem_post(&g_sem_disconnect);	//for svace
+	LEAVE_CRITICAL;
+	ENTER_CRITICAL;				// needed as some other thread might have locked the mutex by now
 
 	// Stop supplicant
 	if (result == SLSI_STATUS_SUCCESS) {
@@ -3371,10 +3690,10 @@ int8_t WiFiStop(void)
 		slsi_deinit();
 	}
 
-	LEAVE_CRITICAL;
+	VPRINT("Stopped\n");
 	pthread_mutex_destroy(&mutex_state);
 	g_mutex_initialized = FALSE;
-
+//    LEAVE_CRITICAL; //Not actually doing anything as the mutex is already destroyed
 	return result;
 }
 
@@ -3384,6 +3703,17 @@ int8_t WiFiScanNetwork(void)
 	int8_t result = SLSI_STATUS_NOT_STARTED;
 	if (g_state != SLSI_WIFIAPI_STATE_NOT_STARTED) {
 		result = slsi_start_scan();
+	}
+	LEAVE_CRITICAL;
+	return result;
+}
+
+int8_t WiFiScanSpecificNetwork(uint8_t *ssid, uint8_t ssid_len, const slsi_security_config_t *security_config)
+{
+	ENTER_CRITICAL;
+	int8_t result = SLSI_STATUS_NOT_STARTED;
+	if (g_state != SLSI_WIFIAPI_STATE_NOT_STARTED) {
+		result = slsi_start_specific_scan(ssid, ssid_len, security_config);
 	}
 	LEAVE_CRITICAL;
 	return result;
@@ -3410,6 +3740,15 @@ int8_t WiFiFreeScanResults(slsi_scan_info_t **scan_results)
 		tmp_bss_list = tmp_bss_list->next;
 		free(tmp->sec_modes);
 		tmp->sec_modes = NULL;
+		slsi_vendor_ie_t *vsie, *vsielist = tmp->vsie;
+		while (vsielist != NULL) {
+			vsie = vsielist;
+			vsielist = vsielist->next;
+			free(vsie->content);
+			vsie->content = NULL;
+			free(vsie);
+			vsie = NULL;
+		}
 		free(tmp);
 	}
 	tmp = NULL;
@@ -3420,34 +3759,35 @@ int8_t WiFiFreeScanResults(slsi_scan_info_t **scan_results)
 
 int8_t WiFiRegisterLinkCallback(slsi_network_link_callback_t link_up, slsi_network_link_callback_t link_down)
 {
+	ENTER_CRITICAL;
 	int8_t result = SLSI_STATUS_ERROR;
 	slsi_reason_t reason;
 	memset(&reason, 0, sizeof(slsi_reason_t));
-	//
-	ENTER_CRITICAL;
 	g_link_up = link_up;
 	g_link_down = link_down;
 #ifdef CONFIG_SCSC_WLAN_AUTO_RECOVERY
 	g_recovery_data.link_up = link_up;
 	g_recovery_data.link_down = link_down;
 #endif
-	LEAVE_CRITICAL;
 	if (g_running) {
 		result = slsi_check_status(reason.ssid, &reason.ssid_len, reason.bssid);
 		if (result == SLSI_STATUS_SUCCESS) {
 			if (slsi_is_connected()) {	// Mind SSID can be empty for hidden networks
 				if (g_link_up) {
-					g_link_up(&reason);
+					slsi_msg_callback_t msg;
+					msg.reason = reason;
+					slsi_send_mqueue(SLSI_CALLBACK_LINK_UP, &msg);
 				}
 			}
 		}
 	} else {
 		result = SLSI_STATUS_SUCCESS;
 	}
+	LEAVE_CRITICAL;
 	return result;
 }
 
-int8_t WiFiRegisterScanCallback(network_scan_result_handler_t scan_result_handler)
+int8_t WiFiRegisterScanCallback(slsi_scan_result_callback_t scan_result_handler)
 {
 	ENTER_CRITICAL;
 
@@ -3493,7 +3833,16 @@ int8_t WiFiNetworkLeave(void)
 	if (g_state != SLSI_WIFIAPI_STATE_NOT_STARTED) {
 		if (slsi_is_connected()) {
 			g_state = SLSI_WIFIAPI_STATE_STA_DISCONNECTING;
-			result = slsi_leave_network();
+			result = slsi_leave_network(NULL);
+			if (result == SLSI_STATUS_SUCCESS) {
+				VPRINT("Before wait sem count %d\n", g_sem_disconnect.semcount);
+				int res = sem_wait(&g_sem_disconnect);
+				if (res) {
+					EPRINT("g_sem_disconnect sem_wait error %d\n", errno);
+				}
+			} else {
+				EPRINT("%s Error: disconnect. \n", __func__);
+			}
 		} else {
 			result = SLSI_STATUS_NOT_CONNECTED;
 			DPRINT("SLSI_API NetworkLeave - not connected\n");
@@ -3678,7 +4027,6 @@ int8_t WiFiSaveConfig(void)
 	int8_t result = SLSI_STATUS_NOT_SUPPORTED;
 #ifdef CONFIG_SLSI_WIFI_FILESYSTEM_SUPPORT
 	result = SLSI_STATUS_NOT_STARTED;
-
 	ENTER_CRITICAL;
 	if (slsi_get_op_mode() == SLSI_WIFI_STATION_IF) {
 		result = slsi_save_config();

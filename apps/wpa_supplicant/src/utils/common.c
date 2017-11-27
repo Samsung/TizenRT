@@ -281,7 +281,7 @@ int wpa_scnprintf(char *buf, size_t size, const char *fmt, ...)
 	if (ret < 0) {
 		return 0;
 	}
-	if ((size_t)ret >= size) {
+	if ((size_t) ret >= size) {
 		return size - 1;
 	}
 
@@ -666,7 +666,7 @@ char *wpa_config_parse_string(const char *value, size_t *len)
 			return NULL;
 		}
 
-		*len = printf_decode((u8 *)str, tlen + 1, tstr);
+		*len = printf_decode((u8 *) str, tlen + 1, tstr);
 		os_free(tstr);
 
 		return str;

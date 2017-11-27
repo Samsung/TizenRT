@@ -15,19 +15,16 @@ extern int wpa_debug_level;
 extern int wpa_debug_show_keys;
 extern int wpa_debug_timestamp;
 
-#if defined(CONFIG_DEBUG_WLAN_SUPPLICANT_MORE) && !defined(CONFIG_NO_WPA_MSG)
-#define CONFIG_SUPPLICANT_MORE_LOG true
-#endif
-
 #if defined(CONFIG_DEBUG_WLAN_SUPPLICANT_VERBOSE)  && !defined(CONFIG_NO_STDOUT_DEBUG)
 #define CONFIG_SUPPLICANT_EXCESS_LOG true
+#define CONFIG_SUPPLICANT_MORE_LOG true
 #endif
 
 /* Debugging function - conditional printf and hex dump. Driver wrappers can
  * use these for debugging purposes. */
 
 enum {
-	MSG_EXCESSIVE, MSG_MSGDUMP, MSG_DEBUG, MSG_INFO, MSG_WARNING, MSG_ERROR
+	MSG_EXCESSIVE, MSG_MSGDUMP, MSG_DEBUG, MSG_INFO, MSG_WARNING, MSG_ERROR, MSG_NO_DEBUG
 };
 
 #ifndef CONFIG_SUPPLICANT_EXCESS_LOG
