@@ -92,7 +92,7 @@ endif # AUDIO_ALC5658
 
 config AUDIO_ALC5658CHAR
 	bool "ALC5658 Character Driver (for testing and demo only)"
-	depends on I2S && AUDIO && I2C && !AUDIO_ALC5658 && EXAMPLES_SENSORBOARD
+	depends on I2S && AUDIO && I2C && !AUDIO_ALC5658
 	---help---
 		This selection enables a simple character driver that supports ALC codec
 		transfers via a read() and write() ioctl.  The intent of this driver is to
