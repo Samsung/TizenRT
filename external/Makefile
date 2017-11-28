@@ -132,10 +132,10 @@ ifeq ($(CONFIG_ARTIK_SDK),y)
 endif
 
 custom_clean:
-	$(foreach OBJFILE, $(OBJS), rm -f $(OBJFILE))
 
 clean: custom_clean iotivity_clean artiksdk_clean
 	$(call DELFILE, $(BIN))
+	$(call CLEAN, $(OBJS))
 	$(call CLEAN)
 
 distclean: clean
