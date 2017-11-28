@@ -1466,6 +1466,22 @@ void slsi_monitor_thread_handler(void *param)
 						} else if (slsi_event_recieved(result, AP_EVENT_ENABLED)) {
 							g_state = SLSI_WIFIAPI_STATE_AP_ENABLED;
 							sem_post(&g_sem_ap_mode);
+						} else if (slsi_event_recieved(result, AP_STA_DISCONNECTED)) {
+							g_num_sta_connected--;
+							result += sizeof(AP_STA_DISCONNECTED) - 1;	// Exclude null-termination
+							if (strlen(result) >= 17) {	// bssid is a 17 character string
+								memcpy(&(reason.bssid), result, 17);
+							}
+							result = strstr(result, WPA_PARAM_REASON_CODE);
+							if (result != NULL) {
+								reason.reason_code = (uint32_t) strtol(result + strlen(WPA_PARAM_REASON_CODE), NULL, 10);
+							}
+							if (g_link_down) {
+								VPRINT("SLSI_API slsi_handle_disconnect send link_down\n");
+								slsi_msg_callback_t msg;
+								msg.reason = reason;
+								slsi_send_mqueue(SLSI_CALLBACK_LINK_DOWN, &msg);
+							}
 						} else {
 							VPRINT("Info: Event not handled %s in current state %s\n", result, slsi_state_strings[g_state]);
 						}
