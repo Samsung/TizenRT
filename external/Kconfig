@@ -211,3 +211,9 @@ config ARTIK_SDK
 	select LWM2M_WAKAAMA_CLIENT
 	---help---
 		include the ARTIK SDK
+
+config IOTBUS
+	bool "IoTBUS api"
+	default n
+	---help---
+		Enable the IoTBUS api
