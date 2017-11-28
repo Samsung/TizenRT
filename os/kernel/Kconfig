@@ -833,10 +833,8 @@ endmenu # POSIX Message Queue Options
 menu "Work Queue Support"
 
 config SCHED_WORKQUEUE
-#	bool "Enable worker thread"
 	bool
 	default y
-	depends on !DISABLE_SIGNALS
 	---help---
 		Create dedicated "worker" threads to handle delayed or asynchronous
 		processing.
@@ -844,7 +842,7 @@ config SCHED_WORKQUEUE
 config SCHED_WORKQUEUE_SORTING
 	bool "Sort workers by delay"
 	default y
-	select SCHED_WORKQUEUE
+	depends on SCHED_WORKQUEUE
 	---help---
 		Sort workers by delay when worker is inserted
 
@@ -1032,12 +1030,14 @@ config MPU_STACKGAURD
 config PTHREAD_STACK_MIN
 	int "Minimum pthread stack size"
 	default 256
+	depends on !DISABLE_PTHREAD
 	---help---
 		Minimum pthread stack size
 
 config PTHREAD_STACK_DEFAULT
 	int "Default pthread stack size"
 	default 2048
+	depends on !DISABLE_PTHREAD
 	---help---
 		Default pthread stack size
 endmenu # Stack size information
