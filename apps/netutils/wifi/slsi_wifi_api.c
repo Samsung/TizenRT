@@ -3417,7 +3417,11 @@ static void slsi_deinit(void)
 
 static void slsi_init_sta(void)
 {
+#ifdef CONFIG_SLSI_WIFI_NO_AUTOCONNECT
+	slsi_set_autoconnect(0);
+#else
 	slsi_set_autoconnect(1);
+#endif
 }
 
 static void slsi_init_ap(void)

@@ -2,7 +2,7 @@
 # For a description of the syntax of this configuration file,
 # see misc/tools/kconfig-language.txt.
 #
-config NETUTILS_WIFI
+menuconfig NETUTILS_WIFI
 	bool "SLSI Wi-Fi API"
 	default n
 	select SCSC_WLAN
@@ -23,33 +23,6 @@ config SLSI_WIFI_WPA_SUPPLICANT_ENTRYPOINT
 	string "wpa_supplicant entry point"
 	default "wpa_supplicant_main"
 
-config SLSI_WIFI_P2P_API
-	bool "P2P (WiFi Direct) support in the API"
-	default n
-	select SLSI_WLAN_P2P
-	select WPA_SUPPLICANT_P2P
-	---help---
-		The API can support P2P (WiFi Direct) functionality. This requires that it is enabled in
-		the lower layers as well.
-
-if SLSI_WIFI_P2P_API
-config SLSI_WIFI_P2P_POSTFIX
-	string "The POSTFIX is used in WiFi Direct as postfix in (DIRECT-xy-POSTFIX-*) ssid"
-	default "SLSI"
-	---help---
-		Possible to use for e.g. branding of device.
-		This string will be set as postfix for the WiFi Direct ssid name.
-		Example: if string is "SLSI" the WiFi Direct name will be: DIRECT-xy-SLSI-<mydevice>.
-		The <mydevice> can optionally be set from API, if not set the last part of MAC address
-		is added as <mydevice>.
-		Notice that the string will have added "-" to start and end with if needed.
-config SLSI_WIFI_P2P_LISTEN_CHANNEL
-	int "Channel used for P2P listen (possible values 1/6/11)"
-	default 6
-	---help---
-		The listen channel used for P2P. This setting can have one of the values 1/6/11.
-endif
-
 config SLSI_WIFI_DEFAULT_WLAN_COUNTRY_CODE
 	string "Country code (2 chars)"
 	default "00"
@@ -66,22 +39,30 @@ config SLSI_WIFI_DEFAULT_WLAN_TX_POWER
 		The default tx power value in dBm to use for the board when starting the first time.
 		The tx power value is in the range 0-30 and is of the type dBm.
 
+config SLSI_WIFI_NO_AUTOCONNECT
+	bool "Disable autoconnect feature of wpa_supplicant"
+	default n
+	---help---
+		This prevents wpa_supplicant from performing autoconnection when disconnected
+		unexpectedly in STA mode. Enable this options in case that user application wants
+		to take control of re-association with an access point.
+
 config SLSI_WIFI_FILESYSTEM_SUPPORT
 	bool "Support filesystem"
 	default n
 	---help---
 		The API can utilize the filesystem for configuration files and log files if needed.
 		This is the default behavior but can be disabled on systems without filesystems.
-		If filesystem support is disabled then functionality like auto-reconnect will not work as
-		this uses the config file to store the relevant info across reboots.
-		
+		If filesystem support is disabled then functionality like auto-reconnect will not
+		work as this uses the config file to store the relevant info across reboots.
+
 if SLSI_WIFI_FILESYSTEM_SUPPORT
 config SLSI_WIFI_DIR
 	string "Path to where wifi can store the config files (ommit the trailing /)"
 	default "/mnt/wifi"
 	---help---
-		The path where the wifi system can store the config and log files if needed. The path must be
-		without the trailing /.
+		The path where the wifi system can store the config and log files if needed.
+		The path must be without the trailing /.
 
 config SLSI_WIFI_LOG_FILE_NAME
 	string "Name of the log file to use"
@@ -94,15 +75,40 @@ config SLSI_WIFI_CONFIG_FILE_NAME
 	default "slsiwifi.conf"
 	---help---
 		The name of the file used to store information about the wifi system.
+endif
+
+menuconfig SLSI_WIFI_P2P_API
+	bool "Support P2P (Wi-Fi Direct)"
+	default n
+	select SLSI_WLAN_P2P
+	select WPA_SUPPLICANT_P2P
+	---help---
+		The API can support P2P (WiFi Direct) functionality.
+		This requires that it is enabled in the lower layers as well.
 
 if SLSI_WIFI_P2P_API
+config SLSI_WIFI_P2P_POSTFIX
+	string "The POSTFIX is used in WiFi Direct as postfix in (DIRECT-xy-POSTFIX-*) ssid"
+	default "SLSI"
+	---help---
+		Possible to use for e.g. branding of device.
+		This string will be set as postfix for the WiFi Direct ssid name.
+		Example: if string is "SLSI" the WiFi Direct name will be: DIRECT-xy-SLSI-<mydevice>.
+		The <mydevice> can optionally be set from API,
+		if not set the last part of MAC address is added as <mydevice>.
+		Notice that the string will have added "-" to start and end with if needed.
+
+config SLSI_WIFI_P2P_LISTEN_CHANNEL
+	int "Channel used for P2P listen (possible values 1/6/11)"
+	default 6
+	---help---
+		The listen channel used for P2P. This setting can have one of the values 1/6/11.
+
 config SLSI_WIFI_P2P_CONFIG_FILE_NAME
 	string "name of the configuration file to use when in p2p mode"
 	default "slsiwifip2p.conf"
 	---help---
 		The name of the file used to store information about the wifi system.
-endif
-
 endif
 
 endif
