@@ -557,7 +557,7 @@ static int ntpc_daemon(int argc, char **argv)
 			denied_by_server = 0;
 
 			/* set time information from ntp server */
-			if (recv.recvtimestamp != 0) {
+			if ((ntpc_getuint32(recv.recvtimestamp) != 0) || (ntpc_getuint32(recv.recvtimestamp + 4) != 0)) {
 				svdbg("Setting time\n");
 				ntpc_settime(recv.recvtimestamp);
 			} else {
