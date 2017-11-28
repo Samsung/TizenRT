@@ -12,7 +12,7 @@
 #define WPA_COMMAND_SCAN_INTERVAL       "SCAN_INTERVAL "
 #define WPA_COMMAND_BSS_EXPIRE_AGE      "BSS_EXPIRE_AGE "
 #define WPA_COMMAND_SCAN_RESULTS        "SCAN_RESULTS"
-#define WPA_COMMAND_AUCOTONNECT         "STA_AUTOCONNECT "
+#define WPA_COMMAND_AUTOCONNECT         "STA_AUTOCONNECT "
 #define WPA_COMMAND_LIST_NETWORKS       "LIST_NETWORKS"
 #define WPA_COMMAND_ADD_NETWORK         "ADD_NETWORK"
 #define WPA_COMMAND_REMOVE_NETWORK      "REMOVE_NETWORK "
@@ -238,7 +238,7 @@ uint8_t slsi_send_mqueue(slsi_callback_t event, slsi_msg_callback_t *msg);
 char *slsi_send_request(char *ifname, char *cmd, int8_t *result);
 void slsi_send_command_str_digit(char *ifname, char *string, int digit, int8_t *result);
 void slsi_send_command_str_upto_4(char *ifname, char *one, char *two, char *three, char *four, int8_t *result);
-bool slsi_event_recieved(const char *str, const char *event);
+bool slsi_event_received(const char *str, const char *event);
 void slsi_send_command_str(char *ifname, int8_t *result, const char *fmt, ...);
 int8_t slsi_leave_network(char *ifname);
 

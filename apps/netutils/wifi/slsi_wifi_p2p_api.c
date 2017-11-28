@@ -403,45 +403,45 @@ void slsi_p2p_event_handle(const char *str)
 	p2p_fsm_event_instance_t inst;
 
 	VPRINT("P2P Event received: %s\n", str);
-	if (slsi_event_recieved(str, P2P_EVENT_DEVICE_FOUND)) {
+	if (slsi_event_received(str, P2P_EVENT_DEVICE_FOUND)) {
 		event = P2P_EV_FOUND;
 	}
-	if (slsi_event_recieved(str, P2P_EVENT_FIND_STOPPED)) {
+	if (slsi_event_received(str, P2P_EVENT_FIND_STOPPED)) {
 		event = P2P_EV_TIMEOUT;
 	}
-	if (slsi_event_recieved(str, P2P_EVENT_PROV_DISC_SHOW_PIN) || slsi_event_recieved(str, P2P_EVENT_PROV_DISC_ENTER_PIN) || slsi_event_recieved(str, P2P_EVENT_PROV_DISC_PBC_REQ) || slsi_event_recieved(str, P2P_EVENT_PROV_DISC_PBC_RESP)) {
+	if (slsi_event_received(str, P2P_EVENT_PROV_DISC_SHOW_PIN) || slsi_event_received(str, P2P_EVENT_PROV_DISC_ENTER_PIN) || slsi_event_received(str, P2P_EVENT_PROV_DISC_PBC_REQ) || slsi_event_received(str, P2P_EVENT_PROV_DISC_PBC_RESP)) {
 		event = P2P_EV_PROV_DISC;
 	}
-	if (slsi_event_recieved(str, P2P_EVENT_GO_NEG_REQUEST)) {
+	if (slsi_event_received(str, P2P_EVENT_GO_NEG_REQUEST)) {
 		event = P2P_EV_NEG_REQ;
 	}
 
-	if (slsi_event_recieved(str, P2P_EVENT_GO_NEG_SUCCESS)) {
+	if (slsi_event_received(str, P2P_EVENT_GO_NEG_SUCCESS)) {
 		event = P2P_EV_NEG_SUCCESS;
 	}
 
-	if (slsi_event_recieved(str, P2P_EVENT_GROUP_STARTED)) {
+	if (slsi_event_received(str, P2P_EVENT_GROUP_STARTED)) {
 		event = P2P_EV_GROUP_STARTED;
 	}
 
-	if (slsi_event_recieved(str, P2P_EVENT_GROUP_REMOVED)) {
+	if (slsi_event_received(str, P2P_EVENT_GROUP_REMOVED)) {
 		event = P2P_EV_GROUP_REMOVED;
 	}
 
-	if (slsi_event_recieved(str, P2P_EVENT_GO_NEG_FAILURE)) {
+	if (slsi_event_received(str, P2P_EVENT_GO_NEG_FAILURE)) {
 		g_connect_failed_reason = SLSI_REASON_GO_NEG_FAILED;
 		event = P2P_EV_CONNECT_FAIL;
 	}
 
-	if (slsi_event_recieved(str, P2P_EVENT_GROUP_FORMATION_FAILURE)) {
+	if (slsi_event_received(str, P2P_EVENT_GROUP_FORMATION_FAILURE)) {
 		g_connect_failed_reason = SLSI_REASON_GROUP_FORMATION_FAILED;
 		event = P2P_EV_GROUP_REMOVED;
 	}
 
-	if (slsi_event_recieved(str, WPA_EVENT_CONNECTED) || slsi_event_recieved(str, AP_STA_CONNECTED)) {
+	if (slsi_event_received(str, WPA_EVENT_CONNECTED) || slsi_event_received(str, AP_STA_CONNECTED)) {
 		event = P2P_EV_CONNECTED;
 	}
-	if (slsi_event_recieved(str, WPA_EVENT_DISCONNECTED) || slsi_event_recieved(str, AP_STA_DISCONNECTED)) {
+	if (slsi_event_received(str, WPA_EVENT_DISCONNECTED) || slsi_event_received(str, AP_STA_DISCONNECTED)) {
 		event = P2P_EV_DISCONNECTED;
 	}
 
@@ -1364,14 +1364,14 @@ fsm_event_t p2p_fsm_handle_connected(void *arg1, void *arg2)
 
 	if (g_is_group_owner == FALSE) {
 		//CTRL-EVENT-CONNECTED
-		if (slsi_event_recieved(inst->event_str, WPA_EVENT_CONNECTED)) {
+		if (slsi_event_received(inst->event_str, WPA_EVENT_CONNECTED)) {
 			event = P2P_EV_LINK_UP;
 		} else {
 			EPRINT("Ignore AP-STA-CONNECTED event as we are client - should not happen!\n");
 		}
 	} else {
 		//AP-STA-CONNECTED 96:b1:0a:cc:6b:ba p2p_dev_addr=96:b1:0a:cc:6b:ba
-		if (slsi_event_recieved(inst->event_str, AP_STA_CONNECTED)) {
+		if (slsi_event_received(inst->event_str, AP_STA_CONNECTED)) {
 			event = P2P_EV_LINK_UP;
 		} else {
 			VPRINT("Ignore CTRL-EVENT-CONNECTED event as we are GO\n");

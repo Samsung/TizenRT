@@ -924,15 +924,15 @@ static void slsi_scan_event_handler(const char *str, const char *event)
 	}
 }
 
-bool slsi_event_recieved(const char *str, const char *event)
+bool slsi_event_received(const char *str, const char *event)
 {
 
-	bool recieved = FALSE;
+	bool received = FALSE;
 	if (str_starts(str, event)) {
 		VPRINT("Event found: %s\n", event);
-		recieved = TRUE;
+		received = TRUE;
 	}
-	return recieved;
+	return received;
 }
 
 void slsi_sta_disconnect_event_handler(const char *str, slsi_reason_t *reason)
@@ -1175,7 +1175,7 @@ static bool slsi_recovery_handler(const char *str)
 
 	bool handled = FALSE;
 
-	if (slsi_event_recieved(str, WPA_EVENT_HANGED) && g_state != SLSI_WIFIAPI_STATE_TERMINATING) {
+	if (slsi_event_received(str, WPA_EVENT_HANGED) && g_state != SLSI_WIFIAPI_STATE_TERMINATING) {
 		EPRINT("SLSI-RECOVERY-EVENT received\n");
 		// Initial entering here - start recovering handling
 		LOCKUNLOCK_CRITICAL;
@@ -1384,7 +1384,7 @@ void slsi_monitor_thread_handler(void *param)
 					switch (g_state) {
 					case SLSI_WIFIAPI_STATE_SUPPLICANT_RUNNING:
 						// Handling reconnect after remote disconnect
-						if (slsi_event_recieved(result, WPA_EVENT_CONNECTED)) {
+						if (slsi_event_received(result, WPA_EVENT_CONNECTED)) {
 							slsi_check_status(reason.ssid, &reason.ssid_len, reason.bssid);
 							slsi_get_network(reason.ssid, reason.ssid_len, &g_network_id);
 							g_state = SLSI_WIFIAPI_STATE_STA_CONNECTED;
@@ -1402,10 +1402,10 @@ void slsi_monitor_thread_handler(void *param)
 						break;
 					case SLSI_WIFIAPI_STATE_AP_ENABLING:
 						// AP mode setup and select network
-						if (slsi_event_recieved(result, AP_EVENT_ENABLED)) {
+						if (slsi_event_received(result, AP_EVENT_ENABLED)) {
 							g_state = SLSI_WIFIAPI_STATE_AP_ENABLED;
 							sem_post(&g_sem_ap_mode);
-						} else if (slsi_event_recieved(result, AP_EVENT_DISABLED)) {
+						} else if (slsi_event_received(result, AP_EVENT_DISABLED)) {
 							// The network setup failed
 							g_state = SLSI_WIFIAPI_STATE_SUPPLICANT_RUNNING;
 							sem_post(&g_sem_ap_mode);
@@ -1414,7 +1414,7 @@ void slsi_monitor_thread_handler(void *param)
 						}
 						break;
 					case SLSI_WIFIAPI_STATE_AP_ENABLED:
-						if (slsi_event_recieved(result, AP_STA_CONNECTED)) {
+						if (slsi_event_received(result, AP_STA_CONNECTED)) {
 							g_num_sta_connected++;
 							if (g_num_sta_connected == 1) {
 								g_state = SLSI_WIFIAPI_STATE_AP_CONNECTED;
@@ -1435,7 +1435,7 @@ void slsi_monitor_thread_handler(void *param)
 						}
 						break;
 					case SLSI_WIFIAPI_STATE_AP_CONNECTED:
-						if (slsi_event_recieved(result, AP_STA_DISCONNECTED)) {
+						if (slsi_event_received(result, AP_STA_DISCONNECTED)) {
 							g_num_sta_connected--;
 							if (g_num_sta_connected == 0) {
 								g_state = SLSI_WIFIAPI_STATE_AP_ENABLED;
@@ -1460,13 +1460,13 @@ void slsi_monitor_thread_handler(void *param)
 						break;
 					case SLSI_WIFIAPI_STATE_AP_DISABLING:
 						// AP stop sent
-						if (slsi_event_recieved(result, AP_EVENT_DISABLED)) {
+						if (slsi_event_received(result, AP_EVENT_DISABLED)) {
 							g_state = SLSI_WIFIAPI_STATE_SUPPLICANT_RUNNING;
 							sem_post(&g_sem_ap_mode);
-						} else if (slsi_event_recieved(result, AP_EVENT_ENABLED)) {
+						} else if (slsi_event_received(result, AP_EVENT_ENABLED)) {
 							g_state = SLSI_WIFIAPI_STATE_AP_ENABLED;
 							sem_post(&g_sem_ap_mode);
-						} else if (slsi_event_recieved(result, AP_STA_DISCONNECTED)) {
+						} else if (slsi_event_received(result, AP_STA_DISCONNECTED)) {
 							g_num_sta_connected--;
 							result += sizeof(AP_STA_DISCONNECTED) - 1;	// Exclude null-termination
 							if (strlen(result) >= 17) {	// bssid is a 17 character string
@@ -1488,13 +1488,13 @@ void slsi_monitor_thread_handler(void *param)
 						break;
 					case SLSI_WIFIAPI_STATE_STA_CONNECTING: {
 						bool event_handled = FALSE;
-						if (slsi_event_recieved(result, WPA_EVENT_CONNECTED)) {
+						if (slsi_event_received(result, WPA_EVENT_CONNECTED)) {
 							slsi_check_status(reason.ssid, &reason.ssid_len, reason.bssid);
 							g_state = SLSI_WIFIAPI_STATE_STA_CONNECTED;
 							// connected so lets set scan interval back to limit power consumption
 							slsi_set_scan_interval(SLSI_SCAN_INTERVAL);
 							event_handled = TRUE;
-						} else if (slsi_event_recieved(result, WPA_EVENT_NETWORK_NOT_FOUND)) {
+						} else if (slsi_event_received(result, WPA_EVENT_NETWORK_NOT_FOUND)) {
 							/* Assumed to be because network with specification setup is not
 							 * found in scan results - handle as error - disable network */
 							if (join_count == SLSI_STA_JOIN_SCAN_ATTEMPT) {
@@ -1503,13 +1503,13 @@ void slsi_monitor_thread_handler(void *param)
 							} else {
 								join_count++;
 							}
-						} else if (slsi_event_recieved(result, WPA_EVENT_TEMP_DISABLED)) {
+						} else if (slsi_event_received(result, WPA_EVENT_TEMP_DISABLED)) {
 							reason.reason_code = SLSI_REASON_NETWORK_AUTHENTICATION_FAILED;
 							event_handled = TRUE;
-						} else if (slsi_event_recieved(result, SLSI_EVENT_ASSOCIATION_REQ_FAILED)) {
+						} else if (slsi_event_received(result, SLSI_EVENT_ASSOCIATION_REQ_FAILED)) {
 							reason.reason_code = SLSI_REASON_ASSOCIATION_REQ_FAILED;
 							event_handled = TRUE;
-						} else if (slsi_event_recieved(result, WPA_EVENT_DISCONNECTED)) {
+						} else if (slsi_event_received(result, WPA_EVENT_DISCONNECTED)) {
 							reason.reason_code = SLSI_REASON_ASSOCIATION_REQ_FAILED;
 							event_handled = TRUE;
 						} else {
@@ -1538,7 +1538,7 @@ void slsi_monitor_thread_handler(void *param)
 						break;
 					}
 					case SLSI_WIFIAPI_STATE_STA_CONNECTED:
-						if (slsi_event_recieved(result, WPA_EVENT_DISCONNECTED)) {
+						if (slsi_event_received(result, WPA_EVENT_DISCONNECTED)) {
 							slsi_sta_disconnect_event_handler(result, &reason);
 							g_state = SLSI_WIFIAPI_STATE_SUPPLICANT_RUNNING;
 							if (g_link_down) {
@@ -1557,7 +1557,7 @@ void slsi_monitor_thread_handler(void *param)
 						}
 						break;
 					case SLSI_WIFIAPI_STATE_STA_DISCONNECTING:
-						if (slsi_event_recieved(result, WPA_EVENT_DISCONNECTED)) {
+						if (slsi_event_received(result, WPA_EVENT_DISCONNECTED)) {
 							slsi_sta_disconnect_event_handler(result, &reason);
 							g_state = SLSI_WIFIAPI_STATE_SUPPLICANT_RUNNING;
 							/* start by disabling all previous networks to make sure
@@ -1586,7 +1586,7 @@ void slsi_monitor_thread_handler(void *param)
 						}
 						break;
 					case SLSI_WIFIAPI_STATE_TERMINATING:
-						if (slsi_event_recieved(result, WPA_EVENT_TERMINATING)) {
+						if (slsi_event_received(result, WPA_EVENT_TERMINATING)) {
 							VPRINT("WPA_EVENT_TERMINATING Received\n");
 							g_running = 0;
 							sem_post(&g_sem_terminate);
@@ -1595,7 +1595,7 @@ void slsi_monitor_thread_handler(void *param)
 						}
 						break;
 					case SLSI_WIFIAPI_STATE_RECOVERING:
-						if (slsi_event_recieved(result, WPA_EVENT_TERMINATING) == TRUE) {
+						if (slsi_event_received(result, WPA_EVENT_TERMINATING) == TRUE) {
 							// Secondary entry here - continue shut down and re-initiate
 							VPRINT("WPA_EVENT_TERMINATING Received in recover handler \n");
 							pid_t r_task_id = -1;
@@ -2257,7 +2257,7 @@ static void slsi_set_scan_interval(uint8_t interval)
 
 static void slsi_set_autoconnect(uint8_t onoff)
 {
-	slsi_send_command_str_digit(NULL, WPA_COMMAND_AUCOTONNECT, onoff, NULL);
+	slsi_send_command_str_digit(NULL, WPA_COMMAND_AUTOCONNECT, onoff, NULL);
 }
 
 #ifdef CONFIG_SLSI_WIFI_P2P_LISTEN_CHANNEL
