@@ -11,18 +11,6 @@ menuconfig NETUTILS_WIFI
 		Enable support for the SLSI WI-Fi Networking API.
 
 if NETUTILS_WIFI
-config SLSI_WIFI_WPA_SUPPLICANT_PRIORITY
-	int "wpa_supplicant task priority"
-	default 100
-
-config SLSI_WIFI_WPA_SUPPLICANT_STACKSIZE
-	int "wpa_supplicant stack size"
-	default 16384
-
-config SLSI_WIFI_WPA_SUPPLICANT_ENTRYPOINT
-	string "wpa_supplicant entry point"
-	default "wpa_supplicant_main"
-
 config SLSI_WIFI_DEFAULT_WLAN_COUNTRY_CODE
 	string "Country code (2 chars)"
 	default "00"

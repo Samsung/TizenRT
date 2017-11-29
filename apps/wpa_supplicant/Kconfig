@@ -27,7 +27,7 @@ config WPA_SUPPLICANT_PRIORITY
 
 config WPA_SUPPLICANT_STACKSIZE
 	int "wpa_supplicant stack size"
-	default 16384
+	default 4096
 
 config WPA_SUPPLICANT_ENTRYPOINT
 	string "wpa_supplicant entry point"
