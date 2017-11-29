@@ -16,7 +16,7 @@
  *
  ****************************************************************************/
 /****************************************************************************
- * apps/include/netutils/ftpd.h
+ * external/include/protocols/ftpd.h
  *
  *   Copyright (C) 2012 Gregory Nutt. All rights reserved.
  *   Author: Gregory Nutt <gnutt@nuttx.org>
@@ -50,8 +50,8 @@
  *
  ****************************************************************************/
 
-#ifndef __APPS_INCLUDE_NETUTILS_FTPD_H
-#define __APPS_INCLUDE_NETUTILS_FTPD_H
+#ifndef __EXTERNAL_INCLUDE_PROTOCOLS_FTPD_H
+#define __EXTERNAL_INCLUDE_PROTOCOLS_FTPD_H
 
 /****************************************************************************
  * Included Files
@@ -229,4 +229,4 @@ EXTERN void ftpd_close(FTPD_SESSION handle);
 #ifdef __cplusplus
 }
 #endif
-#endif							/* __APPS_INCLUDE_NETUTILS_FTPD_H */
+#endif							/* __EXTERNAL_INCLUDE_PROTOCOLS_FTPD_H */

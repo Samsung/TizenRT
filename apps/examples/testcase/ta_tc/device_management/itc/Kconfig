@@ -19,7 +19,7 @@ config ITC_DM_SERVER_IPADDR
 config ITC_DM_SERVER_PORT
   string "Server Port"
   default "5683"
-
+  
 config ITC_DM_START
   bool "Start API"
   default n

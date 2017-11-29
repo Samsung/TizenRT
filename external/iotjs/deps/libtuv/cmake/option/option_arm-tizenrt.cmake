@@ -52,6 +52,3 @@ set(TARGET_INC
 # build tester as library
 set(BUILD_TEST_LIB "yes")
 unset(BUILD_TEST_LIB CACHE)
-
-# set copy libs to ${TARGET_SYSTEMROOT}/lib
-set(COPY_TARGET_LIB "${TARGET_SYSTEMROOT}/lib")

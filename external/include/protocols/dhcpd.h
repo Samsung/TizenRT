@@ -16,7 +16,7 @@
  *
  ****************************************************************************/
 /****************************************************************************
- * apps/include/netutils/dhcpd.h
+ * external/include/protocols/dhcpd.h
  *
  *   Copyright (C) 2007, 2009, 2011 Gregory Nutt. All rights reserved.
  *   Author: Gregory Nutt <gnutt@nuttx.org>
@@ -62,8 +62,8 @@
  * @brief netif API (to be used from lwIP TCPIP thread)
  */
 
-#ifndef __APPS_INCLUDE_NETUTILS_DHCPD_H
-#define __APPS_INCLUDE_NETUTILS_DHCPD_H
+#ifndef __EXTERNAL_INCLUDE_PROTOCOLS_DHCPD_H
+#define __EXTERNAL_INCLUDE_PROTOCOLS_DHCPD_H
 
 /****************************************************************************
  * Included Files
@@ -111,5 +111,5 @@ int dhcpd_start(char *intf, dhcp_sta_joined dhcp_join_cb);
 }
 #endif
 
-#endif							/* __APPS_INCLUDE_NETUTILS_DHCPD_H */
+#endif							/* __EXTERNAL_INCLUDE_PROTOCOLS_DHCPD_H */
 /** @} */

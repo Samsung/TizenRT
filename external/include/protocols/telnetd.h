@@ -16,7 +16,7 @@
  *
  ****************************************************************************/
 /****************************************************************************
- *  apps/include/netutils/telnetd.h
+ *  external/include/protocols/telnetd.h
  *
  *   Copyright (C) 2007, 2011-2012 Gregory Nutt. All rights reserved.
  *   Author: Gregory Nutt <gnutt@nuttx.org>
@@ -50,8 +50,8 @@
  *
  ****************************************************************************/
 
-#ifndef __APPS_INCLUDE_NETUTILS_TELNETD_H
-#define __APPS_INCLUDE_NETUTILS_TELNETD_H
+#ifndef __EXTERNAL_INCLUDE_PROTOCOLS_TELNETD_H
+#define __EXTERNAL_INCLUDE_PROTOCOLS_TELNETD_H
 
 /****************************************************************************
  * Included Files
@@ -140,4 +140,4 @@ EXTERN int telnetd_start(FAR struct telnetd_config_s *config);
 #ifdef __cplusplus
 }
 #endif
-#endif							/* __APPS_INCLUDE_NETUTILS_TELNETD_H */
+#endif							/* __EXTERNAL_INCLUDE_PROTOCOLS_TELNETD_H */

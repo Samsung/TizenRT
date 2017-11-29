@@ -65,9 +65,11 @@ typedef struct {
 	unsigned char bssid[6];				  /**<  MAC address of Access Point                            */
 	unsigned int max_rate;				  /**<  Maximum data rate in kilobits/s                        */
 	int rssi;							  /**<  Receive Signal Strength Indication in dBm              */
-	wifi_utils_ap_auth_type_e ap_auth_type;	   /**<  @ref wifi_utils_ap_auth_type                                */
-	wifi_utils_ap_crypto_type_e ap_crypto_type;  /**<  @ref wifi_utils_ap_crypto_type                              */
+	uint8_t phy_mode;					// 0:legacy 1: 11N HT
+	wifi_utils_ap_auth_type_e ap_auth_type;	   /**<  @ref wifi_utils_ap_auth_type            */
+	wifi_utils_ap_crypto_type_e ap_crypto_type;  /**<  @ref wifi_utils_ap_crypto_type        */
 } wifi_utils_ap_scan_info_s;
+
 
 /**
  * @brief wifi ap connect config
@@ -94,6 +96,26 @@ typedef struct {
 	wifi_utils_ap_crypto_type_e ap_crypto_type;	  /**<  @ref wifi_utils_ap_crypto_type          */
 	void (*inform_new_sta_join)(void);		/**< @ref inform application about new station joining softAP */
 } wifi_utils_softap_config_s;
+
+struct wifi_utils_scan_list {
+	wifi_utils_ap_scan_info_s ap_info;
+	struct wifi_utils_scan_list *next;
+};
+typedef struct wifi_utils_scan_list wifi_utils_scan_list_s;
+
+typedef void (*wifi_utils_sta_connected)(wifi_utils_result_e res, void *arg);
+typedef void (*wifi_utils_sta_disconnected)(void *arg);
+typedef void (*wifi_utils_softap_sta_joined)(void *arg);
+typedef void (*wifi_utils_softap_sta_left)(void *arg);
+typedef void (*wifi_utils_scan_done)(wifi_utils_result_e res, wifi_utils_scan_list_s *slist, void *arg);
+
+typedef struct {
+	wifi_utils_sta_connected sta_connected;// in station mode, connected to ap
+	wifi_utils_sta_disconnected sta_disconnected;		// in station mode, disconnected from ap
+	wifi_utils_softap_sta_joined softap_sta_joined;	// in softap mode, a station joined
+	wifi_utils_softap_sta_left softap_sta_left;		// in softap mode, a station left
+	wifi_utils_scan_done scan_done;
+} wifi_utils_cb_s;
 
 /**
  * @brief wifi information (ip address, mac address)
@@ -132,7 +154,7 @@ wifi_utils_result_e wifi_utils_deinit(void);
  * @return WIFI_UTILS_FAIL          :  fail
  * @return WIFI_UTILS_INVALID_ARGS  :  input parameter invalid
  */
-wifi_utils_result_e wifi_utils_scan_ap(wifi_utils_ap_scan_info_s *ap_list, unsigned int list_size, unsigned int *found_ap_count);
+wifi_utils_result_e wifi_utils_scan_ap(void *arg);
 
 /**
  * @brief wifi connect access point
@@ -143,7 +165,7 @@ wifi_utils_result_e wifi_utils_scan_ap(wifi_utils_ap_scan_info_s *ap_list, unsig
  * @return WIFI_UTILS_FAIL          :  fail
  * @return WIFI_UTILS_INVALID_ARGS  :  input parameter invalid
  */
-wifi_utils_result_e wifi_utils_connect_ap(wifi_utils_ap_config_s *ap_connect_config);
+wifi_utils_result_e wifi_utils_connect_ap(wifi_utils_ap_config_s *ap_connect_config, void *arg);
 
 /**
  * @brief wifi disconnect access point
@@ -151,7 +173,7 @@ wifi_utils_result_e wifi_utils_connect_ap(wifi_utils_ap_config_s *ap_connect_con
  * @return WIFI_UTILS_SUCCESS       :  success
  * @return WIFI_UTILS_FAIL          :  fail
  */
-wifi_utils_result_e wifi_utils_disconnect_ap(void);
+wifi_utils_result_e wifi_utils_disconnect_ap(void *arg);
 
 /**
  * @brief get wifi information (IP address, MAC address)
@@ -167,14 +189,13 @@ wifi_utils_result_e wifi_utils_get_info(wifi_utils_info *wifi_info);
 /**
  * @brief register wifi connection event callback (connect/disconnect event)
  *
- * @param[in]   linkup_event_func    :  when wifi linkup event received, function start
- * @param[in]   linkdown_event_func :  when wifi linkdown event received, function start
+ * @param[in]   cbk                 :  when an event received, function start
  *
  * @return WIFI_UTILS_SUCCESS       :  success
  * @return WIFI_UTILS_FAIL          :  fail
  * @return WIFI_UTILS_INVALID_ARGS  :  input parameter invalid
  */
-wifi_utils_result_e wifi_utils_register_callback(void *linkup_event_func, void *linkdown_event_func);
+wifi_utils_result_e wifi_utils_register_callback(wifi_utils_cb_s *cbk);
 
 /**
  * @brief wifi start soft ap mode

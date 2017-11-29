@@ -100,19 +100,6 @@
 #undef CONFIG_ARCH_USBDUMP
 #endif
 
-/* The following is just intended to keep some ugliness out of the mainline
- * code.  We are going to print the task name if:
- *
- *  CONFIG_TASK_NAME_SIZE > 0 &&    <-- The task has a name
- *  (defined(CONFIG_DEBUG)    ||    <-- And the debug is enabled (lldbg used)
- *   defined(CONFIG_ARCH_STACKDUMP) <-- Or lowsyslog() is used
- */
-
-#undef CONFIG_PRINT_TASKNAME
-#if CONFIG_TASK_NAME_SIZE > 0 && (defined(CONFIG_DEBUG) || defined(CONFIG_ARCH_STACKDUMP))
-#define CONFIG_PRINT_TASKNAME 1
-#endif
-
 #define FRAME_POINTER_ADDR __builtin_frame_address(0)
 
 /* Flag used to detect the whether upassert called or not */
@@ -341,7 +328,7 @@ static void up_taskdump(FAR struct tcb_s *tcb, FAR void *arg)
 {
 	/* Dump interesting properties of this task */
 
-#ifdef CONFIG_PRINT_TASKNAME
+#if CONFIG_TASK_NAME_SIZE > 0
 	lldbg("%s: PID=%d Stack Used=%lu of %lu\n", tcb->name, tcb->pid, (unsigned long)up_check_tcbstack(tcb), (unsigned long)tcb->adj_stack_size);
 #else
 	lldbg("PID: %d Stack Used=%lu of %lu\n", tcb->pid, (unsigned long)up_check_tcbstack(tcb), (unsigned long)tcb->adj_stack_size);
@@ -751,9 +738,6 @@ static void up_dumpstate(void)
 static void _up_assert(int errorcode) noreturn_function;
 static void _up_assert(int errorcode)
 {
-#ifdef CONFIG_BOOT_RESULT
-	board_boot_result();
-#endif
 	/* Are we in an interrupt handler or the idle task? */
 
 	if (g_upassert || current_regs || (this_task())->pid == 0) {
@@ -781,12 +765,12 @@ static void _up_assert(int errorcode)
 
 void up_assert(const uint8_t *filename, int lineno)
 {
-#ifdef CONFIG_PRINT_TASKNAME
+#if CONFIG_TASK_NAME_SIZE > 0
 	struct tcb_s *rtcb = this_task();
 #endif
 	board_autoled_on(LED_ASSERTION);
 
-#ifdef CONFIG_PRINT_TASKNAME
+#if CONFIG_TASK_NAME_SIZE > 0
 	lldbg("Assertion failed at file:%s line: %d task: %s\n", filename, lineno, rtcb->name);
 #else
 	lldbg("Assertion failed at file:%s line: %d\n", filename, lineno);

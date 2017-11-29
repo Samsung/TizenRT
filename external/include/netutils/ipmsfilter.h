@@ -16,7 +16,7 @@
  *
  ****************************************************************************/
 /****************************************************************************
- * apps/include/netutils/ipmsfilter.h
+ * external/include/netutils/ipmsfilter.h
  * User interface to add/remove IP multicast address
  *
  *   Copyright (C) 2009, 2011 Gregory Nutt. All rights reserved.
@@ -51,8 +51,8 @@
  *
  ****************************************************************************/
 
-#ifndef __APPS_INCLUDE_NETUTILS_IPMSFILTER_H
-#define __APPS_INCLUDE_NETUTILS_IPMSFILTER_H
+#ifndef __EXTERNAL_INCLUDE_NETUTILS_IPMSFILTER_H
+#define __EXTERNAL_INCLUDE_NETUTILS_IPMSFILTER_H
 
 /****************************************************************************
  * Included Files
@@ -112,4 +112,4 @@ EXTERN int ipmsfilter(FAR const char *ifname, FAR const struct in_addr *multiadd
 #endif
 
 #endif							/* CONFIG_NET_IGMP */
-#endif							/* __APPS_INCLUDE_NETUTILS_IPMSFILTER_H */
+#endif							/* __EXTERNAL_INCLUDE_NETUTILS_IPMSFILTER_H */

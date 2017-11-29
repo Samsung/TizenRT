@@ -30,8 +30,8 @@
  * @brief APIs for HTTP Client.
  */
 
-#ifndef __APPS_INCLUDE_NETUTILS_WEBCLIENT_H
-#define __APPS_INCLUDE_NETUTILS_WEBCLIENT_H
+#ifndef __EXTERNAL_INCLUDE_PROTOCOLS_WEBCLIENT_H
+#define __EXTERNAL_INCLUDE_PROTOCOLS_WEBCLIENT_H
 
 /****************************************************************************
  * Included Files
@@ -215,5 +215,5 @@ void http_client_response_release(struct http_client_response_t *response);
 }
 #endif
 
-#endif /* __APPS_INCLUDE_NETUTILS_WEBCLIENT_H */
+#endif /* __EXTERNAL_INCLUDE_PROTOCOLS_WEBCLIENT_H */
 /**@} */

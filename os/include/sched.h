@@ -357,35 +357,6 @@ int sched_unlock(void);
  */
 int sched_lockcount(void);
 
-/* If instrumentation of the scheduler is enabled, then some outboard logic
- * must provide the following interfaces.
- */
-
-#ifdef CONFIG_SCHED_INSTRUMENTATION
-/**
- *@cond
- *@ internal
- */
-void sched_note_start(FAR struct tcb_s *tcb);
-/**
- *@internal
- */
-void sched_note_stop(FAR struct tcb_s *tcb);
-/**
- *@internal
- */
-void sched_note_switch(FAR struct tcb_s *pFromTcb, FAR struct tcb_s *pToTcb);
-
-/**
- *@endcond
- */
-
-#else
-#define sched_note_start(t)
-#define sched_note_stop(t)
-#define sched_note_switch(t1, t2)
-#endif							/* CONFIG_SCHED_INSTRUMENTATION */
-
 #undef EXTERN
 #if defined(__cplusplus)
 }

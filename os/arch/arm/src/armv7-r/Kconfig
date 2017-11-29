@@ -203,9 +203,3 @@ config ARMV7R_DECODEFIQ
 	---help---
 		Select this option if your platform supports the function
 		arm_decodefiq().
-
-config BOOT_RESULT
-	bool "Save Boot Result"
-	default n
-	---help---
-		enable boot_result function to store result of last boot

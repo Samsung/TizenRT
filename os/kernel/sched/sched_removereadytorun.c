@@ -122,9 +122,6 @@ bool sched_removereadytorun(FAR struct tcb_s *rtcb)
 		ntcb = (FAR struct tcb_s *)rtcb->flink;
 		DEBUGASSERT(ntcb != NULL);
 
-		/* Inform the instrumentation layer that we are switching tasks */
-
-		sched_note_switch(rtcb, ntcb);
 		ntcb->task_state = TSTATE_TASK_RUNNING;
 		ret = true;
 	}

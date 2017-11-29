@@ -16,7 +16,7 @@
  *
  ****************************************************************************/
 /****************************************************************************
- *  apps/include/netutils/netlib.h
+ *  external/include/netutils/netlib.h
  * Various non-standard APIs to support netutils.  All non-standard and
  * intended only for internal use.
  *
@@ -57,8 +57,8 @@
  *
  ****************************************************************************/
 
-#ifndef __APPS_INCLUDE_NETUTILS_NETLIB_H
-#define __APPS_INCLUDE_NETUTILS_NETLIB_H
+#ifndef __EXTERNAL_INCLUDE_NETUTILS_NETLIB_H
+#define __EXTERNAL_INCLUDE_NETUTILS_NETLIB_H
 
 /****************************************************************************
  * Included Files
@@ -167,4 +167,4 @@ int netlib_ifdown(FAR const char *ifname);
 // *INDENT-ON*
 #endif
 
-#endif							/* __APPS_INCLUDE_NETUTILS_NETLIB_H */
+#endif							/* __EXTERNAL_INCLUDE_NETUTILS_NETLIB_H */

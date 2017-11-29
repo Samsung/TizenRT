@@ -16,7 +16,7 @@
  *
  ****************************************************************************/
 /****************************************************************************
- * apps/include/netutils/discover.h
+ * external/include/protocols/discover.h
  *
  *   Copyright (C) 2012 Max Holtzberg. All rights reserved.
  *   Author: Max Holtzberg <mh@uvc.de>
@@ -50,8 +50,8 @@
  *
  ****************************************************************************/
 
-#ifndef __APPS_INCLUDE_NETUTILS_DISCOVER_H
-#define __APPS_INCLUDE_NETUTILS_DISCOVER_H
+#ifndef __EXTERNAL_INCLUDE_PROTOCOLS_DISCOVER_H
+#define __EXTERNAL_INCLUDE_PROTOCOLS_DISCOVER_H
 
 #include <stdint.h>
 
@@ -96,4 +96,4 @@ int discover_start(struct discover_info_s *info);
 }
 #endif
 
-#endif							/* __APPS_INCLUDE_NETUTILS_DISCOVER_H */
+#endif							/* __EXTERNAL_INCLUDE_PROTOCOLS_DISCOVER_H */

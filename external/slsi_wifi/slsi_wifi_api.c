@@ -1485,8 +1485,6 @@ void slsi_monitor_thread_handler(void *param)
 		}
 	}
 	VPRINT("SLSI_API pthread_exit %d \n", g_monitoring_thread);
-	pthread_detach(g_monitoring_thread);
-	pthread_exit(&g_monitoring_thread);
 	g_monitoring_thread = 0;
 }
 
@@ -1563,6 +1561,7 @@ static int8_t slsi_wpa_open(char *network_path)
 	} else {
 		result = SLSI_STATUS_SUCCESS;
 		pthread_setname_np(g_monitoring_thread, "Wi-Fi API monitor");
+		pthread_detach(g_monitoring_thread);
 		VPRINT("SLSI_API Monitoring thread created successfully\n");
 	}
 	if (SLSI_WIFI_API_DEBUG_SLEEP) {
