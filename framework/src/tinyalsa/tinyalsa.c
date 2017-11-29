@@ -920,11 +920,7 @@ struct pcm *pcm_open(unsigned int card, unsigned int device, unsigned int flags,
 	}
 	memset(pcm, 0, sizeof(struct pcm));
 
-#ifdef CONFIG_AUDIO_MULTI_CARD
 	snprintf(fn, sizeof(fn), "/dev/audio/pcmC%uD%u%c", card, device, flags & PCM_IN ? 'c' : 'p');
-#else
-	snprintf(fn, sizeof(fn), "/dev/audio/pcmC%u", card);
-#endif
 
 	pcm->flags = flags;
 	if (flags & PCM_IN) {
