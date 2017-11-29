@@ -134,13 +134,16 @@ $(FSMOUTPATH)/slsi_wifi_%_fsm_constants.c $(FSMOUTPATH)/slsi_wifi_%_fsm_definiti
 
 fsmclean:
 	$(call DELFILE, $(FSMGEN_SOURCES))
-#	$(call DELFILE, fsm/src/fsm32.o)
+	$(call DELFILE, $(FSMGEN_PRIVATE_HEADERS))
+	$(call DELFILE, fsm/src/fsm32.o)
+
 fsmgen: $(FSMGEN_SOURCE:%=$(FSMOUTPATH)/%) $(FSMGEN_PRIVATE_HEADERS:%=$(FSMOUTPATH)/%)
 
 fsminfo:
-		echo $(CSRCS)
-		echo FSMGEN_SOURCE:
-		echo $(FSMGEN_SOURCES)
+	echo $(CSRCS)
+	echo FSMGEN_SOURCE:
+	echo $(FSMGEN_SOURCES)
+	echo $(FSMGEN_PRIVATE_HEADERS)
 
 -include Make.dep
 .PHONY: preconfig
