@@ -831,10 +831,11 @@ config MQ_MAXMSGSIZE
 endmenu # POSIX Message Queue Options
 
 menu "Work Queue Support"
+	depends on !DISABLE_SIGNALS
 
 config SCHED_WORKQUEUE
 	bool
-	default y
+	default n
 	---help---
 		Create dedicated "worker" threads to handle delayed or asynchronous
 		processing.
@@ -850,7 +851,6 @@ config SCHED_WORKQUEUE_SORTING
 config SCHED_HPWORK
 	bool "High priority (kernel) worker thread"
 	default y
-	depends on !DISABLE_SIGNALS
 	select SCHED_WORKQUEUE
 	---help---
 		Create a dedicated high-priority "worker" thread to handle delayed
@@ -910,7 +910,6 @@ endif # SCHED_HPWORK
 config SCHED_LPWORK
 	bool "Low priority (kernel) worker thread"
 	default y
-	depends on !DISABLE_SIGNALS
 	select SCHED_WORKQUEUE
 	---help---
 		If SCHED_LPWORK is defined then a lower-priority work queue will
