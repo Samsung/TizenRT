@@ -143,6 +143,9 @@
 
 #define MAX_SOFTAP_SSID				(64)
 
+#define PATH_MNT "/mnt/"
+#define PATH_ROM "/rom/"
+
 static bool is_support_user_def_dev_list = true;	// It's allow to apply user-defined device-ID only when start Stack.
 static char *user_def_dev_list[MAX_SUBDEVICE_EA + 1] = { 0, };
 
@@ -1260,23 +1263,72 @@ static int parse_things_info_json(const char *filename)
 				cJSON *certificate = cJSON_GetObjectItem(file_path, KEY_CONFIGURATION_FILEPATH_CERTIFICATE);
 				cJSON *privateKey = cJSON_GetObjectItem(file_path, KEY_CONFIGURATION_FILEPATH_PRIVATEKEY);
 
-				if (NULL != svrdb && NULL != provisioning && NULL != certificate && NULL != privateKey) {
-					memset(g_svrdb_file_path, 0, (size_t) MAX_FILE_PATH_LENGTH);
-					memset(g_certificate_file_path, 0, (size_t) MAX_FILE_PATH_LENGTH);
-					memset(g_private_key_file_path, 0, (size_t) MAX_FILE_PATH_LENGTH);
-					memcpy(g_svrdb_file_path, svrdb->valuestring, strlen(svrdb->valuestring) + 1);
-					memcpy(g_certificate_file_path, certificate->valuestring, strlen(certificate->valuestring) + 1);
-					memcpy(g_private_key_file_path, privateKey->valuestring, strlen(privateKey->valuestring) + 1);
-					memcpy(g_things_cloud_file_path, provisioning->valuestring, strlen(provisioning->valuestring) + 1);
-
-					THINGS_LOG_D(THINGS_INFO, TAG, "Security SVR DB file path : %s", g_svrdb_file_path);
-					THINGS_LOG_D(THINGS_INFO, TAG, "[configuration] svrdb : %s / provisioning : %s", svrdb->valuestring, provisioning->valuestring);
-					THINGS_LOG_D(THINGS_INFO, TAG, "[configuration] certificate : %s / privateKey : %s", certificate->valuestring, privateKey->valuestring);
-
-					ret = 1;
-				} else {
+				if (NULL == svrdb || NULL == provisioning || NULL == certificate || NULL == privateKey) 
+					THINGS_LOG_V_ERROR(THINGS_ERROR, TAG, "User authentication file not found");
 					return 0;
 				}
+
+				memset(g_svrdb_file_path, 0, (size_t) MAX_FILE_PATH_LENGTH);
+				memset(g_certificate_file_path, 0, (size_t) MAX_FILE_PATH_LENGTH);
+				memset(g_private_key_file_path, 0, (size_t) MAX_FILE_PATH_LENGTH);
+
+				if(strncmp(svrdb->valuestring, PATH_MNT, 5) == 0) {
+					memcpy(g_svrdb_file_path, svrdb->valuestring, strlen(svrdb->valuestring) + 1);
+				} else {
+					char *svrdb_path = (char *)things_malloc(sizeof(char) * MAX_FILE_PATH_LENGTH);
+
+					strcpy(svrdb_path, PATH_MNT);
+					strcat(svrdb_path, svrdb->valuestring);
+
+					memcpy(g_svrdb_file_path, svrdb_path, strlen(svrdb_path) + 1);
+
+					things_free(svrdb_path);
+				}
+
+				if(strncmp(provisioning->valuestring, PATH_MNT, 5) == 0) {
+					memcpy(g_things_cloud_file_path, provisioning->valuestring, strlen(provisioning->valuestring) + 1);
+				} else {
+					char *provisioning_path = (char *)things_malloc(sizeof(char) * MAX_CLOUD_ADDRESS);
+
+					strcpy(provisioning_path, PATH_MNT);
+					strcat(provisioning_path, provisioning->valuestring);
+
+					memcpy(g_things_cloud_file_path, provisioning_path, strlen(provisioning_path) + 1);
+
+					things_free(provisioning_path);
+				}
+
+				if(strncmp(certificate->valuestring, PATH_ROM, 5) == 0) {
+					memcpy(g_certificate_file_path, certificate->valuestring, strlen(certificate->valuestring) + 1);
+				} else {
+					char *certificate_path = (char *)things_malloc(sizeof(char) * MAX_FILE_PATH_LENGTH);
+
+					strcpy(certificate_path, PATH_ROM);
+					strcat(certificate_path, certificate->valuestring);
+
+					memcpy(g_certificate_file_path, certificate_path, strlen(certificate_path) + 1);
+
+					things_free(certificate_path);					
+				}
+
+				if(strncmp(privateKey->valuestring, PATH_ROM, 5) == 0) {
+					memcpy(g_private_key_file_path, privateKey->valuestring, strlen(privateKey->valuestring) + 1);
+				} else {
+					char *privatekey_path = (char *)things_malloc(sizeof(char) * MAX_FILE_PATH_LENGTH);
+
+					strcpy(privatekey_path, PATH_ROM);
+					strcat(privatekey_path, privateKey->valuestring);
+
+					memcpy(g_private_key_file_path, privatekey_path, strlen(privatekey_path) + 1);
+
+					things_free(privatekey_path);
+				}
+
+				THINGS_LOG_D(THINGS_INFO, TAG, "Security SVR DB file path : %s", g_svrdb_file_path);
+				THINGS_LOG_D(THINGS_INFO, TAG, "[configuration] svrdb : %s / provisioning : %s", svrdb->valuestring, provisioning->valuestring);
+				THINGS_LOG_D(THINGS_INFO, TAG, "[configuration] certificate : %s / privateKey : %s", certificate->valuestring, privateKey->valuestring);
+
+				ret = 1;
 			} else {
 				return 0;
 			}
