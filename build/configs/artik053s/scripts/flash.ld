@@ -54,7 +54,7 @@
 MEMORY
 {
 	FLASH	(rx)	: ORIGIN = 0x040C8000, LENGTH = 2400K
-	SRAM	(rwx)	: ORIGIN = 0x02023800, LENGTH = 946K
+	SRAM	(rwx)	: ORIGIN = 0x02020400, LENGTH = 959K
 }
 
 OUTPUT_FORMAT("elf32-littlearm", "elf32-littlearm", "elf32-littlearm")

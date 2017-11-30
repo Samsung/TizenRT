@@ -98,10 +98,8 @@ int s5j_mpu_initialize(void)
 {
 #ifdef CONFIG_ARCH_CHIP_S5JT200
 	/*
-	 * Vector Table	0x02020000	0x02020FFF	4
-	 * Reserved		0x02021000	0x020217FF	2
-	 * BL1			0x02021800	0x020237FF	8
-	 * TizenRT		0x02023800	0x0210FFFF	946(WBWA)
+	 * Vector Table	0x02020000	0x020203FF	1
+	 * TizenRT		0x02023800	0x0210FFFF	959(WBWA)
 	 * WIFI			0x02110000	0x0215FFFF	320(NCNB)
 	 */
 
@@ -112,7 +110,7 @@ int s5j_mpu_initialize(void)
 	mpu_user_intsram_wb(S5J_IRAM_PADDR, S5J_IRAM_SIZE);
 
 	/* Region 2, wifi driver needs non-$(0x02110000++320KB, RW-NCNB */
-	mpu_priv_noncache(S5J_IRAM_PADDR + ((4 + 2 + 8 + 946) * 1024), (320 * 1024));
+	mpu_priv_noncache(S5J_IRAM_PADDR + (S5J_IRAM_SIZE - S5J_IRAM_WIFI_SIZE), S5J_IRAM_WIFI_SIZE);
 
 	/* region 3, for Sflash Mirror area to be device type */
 	mpu_device(S5J_FLASH_MIRROR_PADDR, S5J_FLASH_MIRROR_SIZE);

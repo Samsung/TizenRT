@@ -96,33 +96,37 @@ The following is the memory map of ARTIK05x.
 
 Actually, BL1, OS and WiFi firmware are operated in iRAM.
 ```
-             ADDRESS      CONTENTS       NOTE
-           0x02160000 +---------------+
-                      |     WiFi      |
-                      |    (320KB)    |
-                      |               |
-                      |               |
-                      |               |
-           0x02110000 +---------------+
-                      |   User Data   |
-                      |     (OS)      |
-                      |    (946KB)    |
-                      |               |
-                      |               |
-                      |               |
-                      |               |
-                      |               |
-                      |               |
-                      |               |
-                      |               |
-           0x02023800 +---------------+
-                      |      BL1      |
-                      |     (8KB)     |
-           0x02021800 +---------------+
-           0x02020FFF +---------------+
-                      |  Vector Table |
-                      |     (4KB)     |
-           0x02020000 +---------------+
+                      **Before OS Boot**                           **After OS Boot**
+
+             ADDRESS      CONTENTS                        ADDRESS      CONTENTS
+           0x02160000 +---------------+                 0x02160000 +---------------+
+                      |      BL2      |                            |     WiFi      |
+                      |  Code & Data  |                            |    (320KB)    |
+                      |    (1266KB)   |                            |               |
+                      |               |                            |               |
+                      |               |                            |               |
+                      |               |                 0x02110000 +---------------+
+                      |               |                            |   User Data   |
+                      |               |                            |     (OS)      |
+                      |               |                            |    (959KB)    |
+                      |               |                            |               |
+                      |               |                            |               |
+                      |               |                            |               |
+                      |               |        =>                  |               |
+                      |               |        =>                  |               |
+                      |               |                            |               |
+                      |               |                            |               |
+                      |               |                            |               |
+           0x02023800 +---------------+                            |               |
+                      |      BL1      |                            |               |
+                      |     (8KB)     |                            |               |
+           0x02021800 +---------------+                            |               |
+                      |   Reserved    |                            |               |
+                      |     (2KB)     |                            |               |
+           0x02021000 +---------------+                 0x02020400 +---------------+
+                      |  Vector Table |                            |  Vector Table |
+                      |     (4KB)     |                            |     (1KB)     |
+           0x02020000 +---------------+                 0x02020000 +---------------+
 ```
 
 # Configure USB Drivers

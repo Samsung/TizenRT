@@ -65,6 +65,7 @@
 /* Size of memory regions in bytes */
 #define S5J_IROM_SIZE			(64 * 1024)
 #define S5J_IRAM_SIZE			(1280 * 1024)
+#define S5J_IRAM_WIFI_SIZE		(320 * 1024)
 #define S5J_IRAM_SHARED_SIZE	(128 * 1024)
 #define S5J_FLASH_SIZE			(16 * 1024 * 1024)
 #define S5J_FLASH_MIRROR_SIZE	S5J_FLASH_SIZE
