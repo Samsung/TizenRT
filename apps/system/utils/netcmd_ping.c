@@ -229,11 +229,44 @@ static int nu_ping_recv(int family, int s, struct timespec *ping_time)
 #if LWIP_IPV6
 		if (family == AF_INET6) {
 			if (len >= ICMP6_HDR_SIZE) {
-				inet_ntop(family, (void *)&((struct sockaddr_in6 *)from)->sin6_addr, addr_str, 64);
+				struct ip6_hdr *ip6hdr;
+				unsigned char nexth;
+				char *curp;
+				int ok = 0;
 
-				iecho = (struct icmp_echo_hdr *)(buf + sizeof(struct ip6_hdr));
-				if (iecho->type == ICMP6_TYPE_EREP) {
-					status = OK;
+				ip6hdr = (struct ip6_hdr *)buf;
+				curp = (char *)(buf + sizeof(struct ip6_hdr));
+
+				nexth = ip6hdr->_nexth;
+				while (nexth != IP6_NEXTH_NONE) {
+					switch (nexth) {
+						case IP6_NEXTH_FRAGMENT:
+						{
+							struct ip6_frag_hdr *frag_hdr;
+
+							frag_hdr = (struct ip6_frag_hdr *)curp;
+
+							nexth = frag_hdr->_nexth;
+							curp += (sizeof(struct ip6_frag_hdr));
+							break;
+						}
+						case IP6_NEXTH_ICMP6:
+							ok = 1;
+							nexth = IP6_NEXTH_NONE;
+							break;
+						default:
+							nexth = IP6_NEXTH_NONE;
+							break;
+					}
+				}
+
+				if (ok) {
+					iecho = (struct icmp_echo_hdr *)(curp);
+
+					if (iecho->type == ICMP6_TYPE_EREP) {
+						inet_ntop(family, (void *)&((struct sockaddr_in6 *)from)->sin6_addr, addr_str, 64);
+						status = OK;
+					}
 				}
 			}
 		} else
