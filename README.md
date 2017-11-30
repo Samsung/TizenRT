@@ -7,7 +7,7 @@
 
 lightweight RTOS-based platform to support low-end IoT devices.
 
-This project is forking [TizenRT](https://github.com/Samsung/TizenRT) from [SamsungOpenSource](https://github.com/Samsung). It is intended to support ARTIK05x board stably.
+This project is forking [TizenRT 1.0](https://github.com/Samsung/TizenRT) from [SamsungOpenSource](https://github.com/Samsung). It is intended to support ARTIK05x board stably.
 
 ## Quick Start
 ### Ubuntu Development Setting
