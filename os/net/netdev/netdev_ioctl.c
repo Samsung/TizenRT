@@ -1068,7 +1068,6 @@ void netdev_ifup(FAR struct netif *dev)
 				/* netdev_ifdown is blocked function, but some API that is mapping d_ifup
 				 * operated as non-blocking, so disalbe netdev_ifdown temporarily until API is fixed
 				 */
-				sleep(3);
 			}
 		}
 	}
