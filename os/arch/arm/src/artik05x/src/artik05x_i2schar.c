@@ -69,10 +69,6 @@
  * Pre-processor Definitions
  ****************************************************************************/
 
-#ifndef CONFIG_S5JT200_I2SCHAR_MINOR
-#define CONFIG_S5JT200_I2SCHAR_MINOR 0
-#endif
-
 /****************************************************************************
  * Public Functions
  ****************************************************************************/
@@ -105,7 +101,7 @@ int i2schar_devinit(void)
 
 		/* Register the I2S character driver at "/dev/i2schar0" */
 
-		ret = i2schar_register(i2s, CONFIG_S5JT200_I2SCHAR_MINOR);
+		ret = i2schar_register(i2s, 0);
 		if (ret < 0) {
 			auddbg("ERROR: i2schar_register failed: %d\n", ret);
 			return ret;
