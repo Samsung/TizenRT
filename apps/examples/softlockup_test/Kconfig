@@ -1,0 +1,13 @@
+#
+# For a description of the syntax of this configuration file,
+# see kconfig-language at https://www.kernel.org/doc/Documentation/kbuild/kconfig-language.txt
+#
+
+config EXAMPLES_SOFTLOCKUP_TEST
+	bool "Soft lockup Test example"
+	default n
+	depends on !DISABLE_PTHREAD
+	depends on !DISABLE_SIGNALS
+	select SOFT_LOCKUP_DETECT
+	---help---
+		Enable testcases to validate soft lockup detect feature.
