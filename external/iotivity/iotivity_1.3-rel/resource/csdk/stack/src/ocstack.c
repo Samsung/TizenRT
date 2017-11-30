@@ -5737,31 +5737,20 @@ OCStackResult getQueryFromUri(const char * uri, char** query, char ** uriWithout
 
 static const OicUuid_t* OC_CALL OCGetServerInstanceID(void)
 {
-    static bool generated = false;
     static OicUuid_t sid;
-    if (generated)
-    {
-        return &sid;
-    }
 
     if (OC_STACK_OK != GetDoxmDeviceID(&sid))
     {
         OIC_LOG(FATAL, TAG, "Generate UUID for Server Instance failed!");
         return NULL;
     }
-    generated = true;
+
     return &sid;
 }
 
 const char* OC_CALL OCGetServerInstanceIDString(void)
 {
-    static bool generated = false;
     static char sidStr[UUID_STRING_SIZE];
-
-    if (generated)
-    {
-        return sidStr;
-    }
 
     const OicUuid_t *sid = OCGetServerInstanceID();
     if(sid && !OCConvertUuidToString(sid->id, sidStr))
@@ -5770,7 +5759,6 @@ const char* OC_CALL OCGetServerInstanceIDString(void)
         return NULL;
     }
 
-    generated = true;
     return sidStr;
 }
 
