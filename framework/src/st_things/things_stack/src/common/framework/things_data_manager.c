@@ -143,16 +143,19 @@
 
 #define MAX_SOFTAP_SSID				(64)
 
+#define PATH_MNT "/mnt/"
+#define PATH_ROM "/rom/"
+
 static bool is_support_user_def_dev_list = true;	// It's allow to apply user-defined device-ID only when start Stack.
 static char *user_def_dev_list[MAX_SUBDEVICE_EA + 1] = { 0, };
 
 static volatile int resource_type_cnt = 0;
 
-static char g_things_cloud_file_path[MAX_FILE_PATH_LENGTH] = { 0 };
+static char g_things_cloud_file_path[MAX_FILE_PATH_LENGTH + 1] = { 0 };
 static char g_things_info_file_path[MAX_FILE_PATH_LENGTH] = { 0 };
-static char g_svrdb_file_path[MAX_FILE_PATH_LENGTH] = { 0 };
-static char g_certificate_file_path[MAX_FILE_PATH_LENGTH] = { 0 };
-static char g_private_key_file_path[MAX_FILE_PATH_LENGTH] = { 0 };
+static char g_svrdb_file_path[MAX_FILE_PATH_LENGTH + 1] = { 0 };
+static char g_certificate_file_path[MAX_FILE_PATH_LENGTH + 1] = { 0 };
+static char g_private_key_file_path[MAX_FILE_PATH_LENGTH + 1] = { 0 };
 
 static char g_cloud_address[MAX_CLOUD_ADDRESS] = { 0 };
 
@@ -1260,23 +1263,80 @@ static int parse_things_info_json(const char *filename)
 				cJSON *certificate = cJSON_GetObjectItem(file_path, KEY_CONFIGURATION_FILEPATH_CERTIFICATE);
 				cJSON *privateKey = cJSON_GetObjectItem(file_path, KEY_CONFIGURATION_FILEPATH_PRIVATEKEY);
 
-				if (NULL != svrdb && NULL != provisioning && NULL != certificate && NULL != privateKey) {
-					memset(g_svrdb_file_path, 0, (size_t) MAX_FILE_PATH_LENGTH);
-					memset(g_certificate_file_path, 0, (size_t) MAX_FILE_PATH_LENGTH);
-					memset(g_private_key_file_path, 0, (size_t) MAX_FILE_PATH_LENGTH);
-					memcpy(g_svrdb_file_path, svrdb->valuestring, strlen(svrdb->valuestring) + 1);
-					memcpy(g_certificate_file_path, certificate->valuestring, strlen(certificate->valuestring) + 1);
-					memcpy(g_private_key_file_path, privateKey->valuestring, strlen(privateKey->valuestring) + 1);
-					memcpy(g_things_cloud_file_path, provisioning->valuestring, strlen(provisioning->valuestring) + 1);
-
-					THINGS_LOG_D(THINGS_INFO, TAG, "Security SVR DB file path : %s", g_svrdb_file_path);
-					THINGS_LOG_D(THINGS_INFO, TAG, "[configuration] svrdb : %s / provisioning : %s", svrdb->valuestring, provisioning->valuestring);
-					THINGS_LOG_D(THINGS_INFO, TAG, "[configuration] certificate : %s / privateKey : %s", certificate->valuestring, privateKey->valuestring);
-
-					ret = 1;
-				} else {
+				if (NULL == svrdb || NULL == provisioning || NULL == certificate || NULL == privateKey) {
+					THINGS_LOG_V_ERROR(THINGS_ERROR, TAG, "User certificate file not found");
 					return 0;
 				}
+
+				memset(g_svrdb_file_path, 0, (size_t) MAX_FILE_PATH_LENGTH + 1);
+				memset(g_certificate_file_path, 0, (size_t) MAX_FILE_PATH_LENGTH + 1);
+				memset(g_private_key_file_path, 0, (size_t) MAX_FILE_PATH_LENGTH + 1);
+
+				if (strncmp(svrdb->valuestring, PATH_MNT, sizeof(PATH_MNT)) == 0) {
+					if (strlen(svrdb->valuestring) > (size_t)MAX_FILE_PATH_LENGTH) {
+						THINGS_LOG_V_ERROR(THINGS_ERROR, TAG, "svrdb file path length exceeded");
+						return 0;
+					}
+					memcpy(g_svrdb_file_path, svrdb->valuestring, strlen(svrdb->valuestring));					
+				} else {
+					if (strlen(svrdb->valuestring) > (size_t)MAX_FILE_PATH_LENGTH - strlen(PATH_MNT)) {
+						THINGS_LOG_V_ERROR(THINGS_ERROR, TAG, "svrdb file path length exceeded");
+						return 0;
+					}
+					strcpy(g_svrdb_file_path, PATH_MNT);
+					strcat(g_svrdb_file_path, svrdb->valuestring);
+				}
+
+				if (strncmp(provisioning->valuestring, PATH_MNT, sizeof(PATH_MNT)) == 0) {
+					if (strlen(provisioning->valuestring) > (size_t)MAX_CLOUD_ADDRESS) {
+						THINGS_LOG_V_ERROR(THINGS_ERROR, TAG, "provisioning file path length exceeded");
+						return 0;
+					}
+					memcpy(g_things_cloud_file_path, provisioning->valuestring, strlen(provisioning->valuestring));
+				} else {
+					if (strlen(provisioning->valuestring) > (size_t)MAX_CLOUD_ADDRESS - strlen(PATH_MNT)) {
+						THINGS_LOG_V_ERROR(THINGS_ERROR, TAG, "provisioning file path length exceeded");
+						return 0;
+					}
+					strcpy(g_things_cloud_file_path, PATH_MNT);
+					strcat(g_things_cloud_file_path, provisioning->valuestring);
+				}
+
+				if (strncmp(certificate->valuestring, PATH_ROM, sizeof(PATH_ROM)) == 0) {
+					if (strlen(certificate->valuestring) > (size_t)MAX_FILE_PATH_LENGTH) {
+						THINGS_LOG_V_ERROR(THINGS_ERROR, TAG, "certificate file path length exceeded");
+						return 0;
+					}
+					memcpy(g_certificate_file_path, certificate->valuestring, strlen(certificate->valuestring));
+				} else {
+					if (strlen(certificate->valuestring) > (size_t)MAX_FILE_PATH_LENGTH - strlen(PATH_ROM)) {
+						THINGS_LOG_V_ERROR(THINGS_ERROR, TAG, "certificate file path length exceeded");
+						return 0;
+					}
+					strcpy(g_certificate_file_path, PATH_ROM);
+					strcat(g_certificate_file_path, certificate->valuestring);
+				}
+
+				if (strncmp(privateKey->valuestring, PATH_ROM, sizeof(PATH_ROM)) == 0) {
+					if (strlen(privateKey->valuestring) > (size_t)MAX_FILE_PATH_LENGTH) {
+						THINGS_LOG_V_ERROR(THINGS_ERROR, TAG, "privateKey file path length exceeded");
+						return 0;
+					}
+					memcpy(g_private_key_file_path, privateKey->valuestring, strlen(privateKey->valuestring));
+				} else {
+					if (strlen(privateKey->valuestring) > (size_t)MAX_FILE_PATH_LENGTH - strlen(PATH_ROM)) {
+						THINGS_LOG_V_ERROR(THINGS_ERROR, TAG, "privateKey file path length exceeded");
+						return 0;
+					}
+					strcpy(g_private_key_file_path, PATH_ROM);
+					strcat(g_private_key_file_path, privateKey->valuestring);
+				}
+
+				THINGS_LOG_D(THINGS_INFO, TAG, "Security SVR DB file path : %s", g_svrdb_file_path);
+				THINGS_LOG_D(THINGS_INFO, TAG, "[configuration] svrdb : %s / provisioning : %s", svrdb->valuestring, provisioning->valuestring);
+				THINGS_LOG_D(THINGS_INFO, TAG, "[configuration] certificate : %s / privateKey : %s", certificate->valuestring, privateKey->valuestring);
+
+				ret = 1;
 			} else {
 				return 0;
 			}
