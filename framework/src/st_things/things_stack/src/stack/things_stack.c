@@ -189,8 +189,12 @@ static void *__attribute__((optimize("O0"))) t_things_wifi_join_loop(void *args)
 	return NULL;
 }
 
-void things_wifi_sta_connected(void)
+void things_wifi_sta_connected(wifi_manager_result_e res)
 {
+	if (res == WIFI_MANAGER_FAIL) {
+		THINGS_LOG_ERROR(THINGS_ERROR, TAG, "Failed to connect to the AP");
+		return;
+	}
 	THINGS_LOG_D(THINGS_INFO, TAG, "T%d --> %s", getpid(), __FUNCTION__);
 
 	pthread_create_rtos(&h_thread_things_wifi_join, NULL, (pthread_func_type) t_things_wifi_join_loop, NULL, THINGS_STACK_WIFI_JOIN);
