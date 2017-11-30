@@ -93,6 +93,7 @@ static const char akc_root_ca[] =
 static int device_command(int argc, char *argv[]);
 static int devices_command(int argc, char *argv[]);
 static int message_command(int argc, char *argv[]);
+static int action_command(int argc, char *argv[]);
 static int connect_command(int argc, char *argv[]);
 static int disconnect_command(int argc, char *argv[]);
 static int send_command(int argc, char *argv[]);
@@ -108,6 +109,7 @@ const struct command cloud_commands[] = {
 	{ "device", "device <token> <device id> [<properties>]", device_command },
 	{ "devices", "<token> <user id> [<count> <offset> <properties>]", devices_command },
 	{ "message", "<token> <device id> <message>", message_command },
+	{ "action", "<token> <destination device id> <action>", action_command },
 	{ "connect", "<token> <device id> [use_se]", connect_command },
 	{ "disconnect", "", disconnect_command },
 	{ "send", "<message>", send_command },
@@ -241,6 +243,47 @@ static int devices_command(int argc, char *argv[])
 	err = cloud->get_user_devices(argv[3], count, properties, 0, argv[4], &response, &ssl);
 	if (err != S_OK) {
 		FAIL_AND_EXIT("Failed to get user devices\n");
+		goto exit;
+	}
+
+	if (response) {
+		fprintf(stdout, "Response: %s\n", response);
+		free(response);
+	}
+
+exit:
+	if (cloud)
+		artik_release_api_module(cloud);
+
+	return ret;
+}
+
+static int action_command(int argc, char *argv[])
+{
+	artik_cloud_module *cloud = (artik_cloud_module *)artik_request_api_module("cloud");
+	int ret = 0;
+	char *response = NULL;
+	artik_error err = S_OK;
+	artik_ssl_config ssl;
+
+	if (!cloud) {
+		fprintf(stderr, "Failed to request cloud module\n");
+		return -1;
+	}
+
+	/* Check number of arguments */
+	if (argc < 6) {
+		FAIL_AND_EXIT("Wrong number of arguments\n");
+		goto exit;
+	}
+
+	memset(&ssl, 0, sizeof(ssl));
+	ssl.ca_cert.data = (char *)akc_root_ca;
+	ssl.ca_cert.len = sizeof(akc_root_ca);
+
+	err = cloud->send_action(argv[3], argv[4], argv[5], &response, &ssl);
+	if (err != S_OK) {
+		FAIL_AND_EXIT("Failed to send action\n");
 		goto exit;
 	}
 
