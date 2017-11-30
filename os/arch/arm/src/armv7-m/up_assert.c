@@ -368,14 +368,10 @@ void dump_all_stack(void)
 
 void up_assert(const uint8_t *filename, int lineno)
 {
-#if CONFIG_TASK_NAME_SIZE > 0
-	struct tcb_s *rtcb = this_task();
-#endif
-
 	board_led_on(LED_ASSERTION);
 
 #if CONFIG_TASK_NAME_SIZE > 0
-	lldbg("Assertion failed at file:%s line: %d task: %s\n", filename, lineno, rtcb->name);
+	lldbg("Assertion failed at file:%s line: %d task: %s\n", filename, lineno, this_task()->name);
 #else
 	lldbg("Assertion failed at file:%s line: %d\n", filename, lineno);
 #endif
