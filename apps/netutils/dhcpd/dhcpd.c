@@ -313,6 +313,7 @@ static char DHCPD_IFNAME[IFNAMSIZ] = {0,};
 
 #if DHCPD_SELECT
 static struct timeval g_select_timeout = {10, 0};
+static int g_sockfd;
 #endif
 
 /****************************************************************************
@@ -1527,9 +1528,29 @@ int dhcpd_status(void)
  ****************************************************************************/
 void dhcpd_stop(void)
 {
+#if DHCPD_SELECT
+	int sockfd;
+	struct sockaddr_in addr;
+	int len;
+#endif
+
 	g_dhcpd_quit = 1;
 #if DHCPD_SELECT
 	ndbg("WARN : dhcpd will be stopped after %d seconds\n", g_select_timeout.tv_sec);
+	sockfd = g_sockfd;
+	if (sockfd < 0) {
+		ndbg("Failed to bind socket to stop dhcpd\n");
+	} else {
+		memset(&addr, 0, sizeof(struct sockaddr_in));
+		addr.sin_family = AF_INET;
+		addr.sin_port = HTONS(DHCP_SERVER_PORT);
+		addr.sin_addr.s_addr = INADDR_ANY;
+
+		len = 1;
+		/* Sending trash packet to induce listen socket closed by error */
+		sendto(sockfd, &g_state.ds_inpacket, len, 0, (struct sockaddr *)&addr, sizeof(struct sockaddr_in));
+		close(sockfd);
+	}
 #endif
 	sem_wait(&g_sem_quit);
 }
@@ -1575,7 +1596,6 @@ int dhcpd_run(void *arg)
 		/* Create a socket to listen for requests from DHCP clients */
 
 		/* TODO : Need to add cancellation point */
-
 		if (sockfd < 0) {
 			sockfd = dhcpd_openlistener();
 			if (sockfd < 0) {
@@ -1588,6 +1608,7 @@ int dhcpd_run(void *arg)
 		nbytes = -1;
 		FD_ZERO(&sockfd_set);
 		FD_SET(sockfd, &sockfd_set);
+		g_sockfd = sockfd;
 
 		ret = select(sockfd+1, &sockfd_set, NULL, NULL, &g_select_timeout);
 		if ((ret > 0) && FD_ISSET(sockfd, &sockfd_set)) {
@@ -1668,6 +1689,9 @@ int dhcpd_run(void *arg)
 		close(sockfd);
 	}
 	g_dhcpd_running = 0;
+#if DHCPD_SELECT
+	g_sockfd = -1;
+#endif
 
 	/* de-initialize netif address (ip address, netmask, default gateway) */
 
