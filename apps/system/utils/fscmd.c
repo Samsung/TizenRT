@@ -228,6 +228,11 @@ static int tash_cat(int argc, char **args)
 				goto error;
 			}
 			len = strlen(args[3]);
+			if (len > FSCMD_BUFFER_LEN) {
+				FSCMD_OUTPUT("Too large size of data. (input: %d, max: %d)\n", len, FSCMD_BUFFER_LEN);
+				close(fd);
+				goto error;
+			}
 			memcpy(fscmd_buffer, args[3], len);
 			if (write(fd, fscmd_buffer, len) < 0) {
 				FSCMD_OUTPUT(CMD_FAILED, "write", src_fullpath);
