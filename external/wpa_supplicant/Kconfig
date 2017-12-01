@@ -76,6 +76,11 @@ config WPA_SUPPLICANT_CMD
 	bool "wpa_supplicant command line interface"
 	default n
 
+config DRIVER_T20
+	bool "Driver T20 for SLSI WiFi"
+	default y
+	depends on SCSC_WLAN
+
 endif
 
 endmenu # wpa_supplicant
