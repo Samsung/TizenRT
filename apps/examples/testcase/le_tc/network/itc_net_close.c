@@ -23,34 +23,14 @@
 #include "tc_internal.h"
 
 /**
-* @testcase          :tc_net_close_p
-* @brief             :close file descriptor
-* @scenario          :open socket and close file descriptor
-* @apicovered        :close()
-* @precondition      :open socket
-* @postcondition     :none
-*/
-static void tc_net_close_p(void)
-{
-	int fd = -1;
-	fd = socket(AF_INET, SOCK_STREAM, 0);
-	TC_ASSERT_GEQ("socket", fd, 0);
-
-	int ret = close(fd);
-	TC_ASSERT_EQ("close", ret, 0);
-
-	TC_SUCCESS_RESULT();
-}
-
-/**
-* @testcase          :tc_net_close_multi_times_p
+* @testcase          :itc_net_close_p_multi_times
 * @brief             :close file descriptor
 * @scenario          :open socket and close file descriptor multiple times
 * @apicovered        :close()
 * @precondition      :open socket
 * @postcondition     :none
 */
-static void tc_net_close_multi_times_p(void)
+static void itc_net_close_p_multi_times(void)
 {
 	int fd = -1;
 	int loop_count = 10;
@@ -70,14 +50,14 @@ static void tc_net_close_multi_times_p(void)
 }
 
 /**
-* @testcase          :tc_net_reclose_n
+* @testcase          :itc_net_close_n_reclose
 * @brief             :close file descriptor
-* @scenario          :open socket and reclose file descriptor
+* @scenario          :open socket and close file descriptor and then reclose file descriptor
 * @apicovered        :close()
 * @precondition      :open socket
 * @postcondition     :none
 */
-static void tc_net_reclose_n(void)
+static void itc_net_close_n_reclose(void)
 {
 	int fd = -1;
 	fd = socket(AF_INET, SOCK_STREAM, 0);
@@ -92,33 +72,14 @@ static void tc_net_reclose_n(void)
 	TC_SUCCESS_RESULT();
 }
 
-/**
-* @testcase          :tc_net_close_n
-* @brief             :close file descriptor
-* @scenario          :close file descriptor with invalid value
-* @apicovered        :close()
-* @precondition      :none
-* @postcondition     :none
-*/
-static void tc_net_close_n(void)
-{
-	int fd = -1;
-	int ret = close(fd);
-	TC_ASSERT_NEQ("close", ret, 0);
-
-	TC_SUCCESS_RESULT();
-}
-
 /****************************************************************************
  * Name: close()
  ****************************************************************************/
 
-int net_close_main(void)
+int itc_net_close_main(void)
 {
-	tc_net_close_p();
-	tc_net_close_multi_times_p();
-	tc_net_reclose_n();
-	tc_net_close_n();
+	itc_net_close_p_multi_times();
+	itc_net_close_n_reclose();
 
 	return 0;
 }

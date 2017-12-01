@@ -42,7 +42,7 @@ int network_tc_main(int argc, char *argv[])
 	total_pass = 0;
 	total_fail = 0;
 
-	printf("=== TINYARA Network TC START! ===\n");
+	printf("\n########## Network TC Start ##########\n");
 
 #ifdef CONFIG_TC_NET_SOCKET
 	net_socket_main();
@@ -114,8 +114,20 @@ int network_tc_main(int argc, char *argv[])
 	net_dup_main();
 #endif
 
-	printf("\n=== TINYARA Network TC COMPLETE ===\n");
-	printf("\t\tTotal pass : %d\n\t\tTotal fail : %d\n", total_pass, total_fail);
+#ifdef CONFIG_ITC_NET_CLOSE
+	itc_net_close_main();
+#endif
+#ifdef CONFIG_ITC_NET_DUP
+	itc_net_dup_main();
+#endif
+#ifdef CONFIG_ITC_NET_FCNTL
+	itc_net_fcntl_main();
+#endif
+#ifdef CONFIG_ITC_NET_LISTEN
+	itc_net_listen_main();
+#endif
+
+	printf("\n########## Network TC END [PASS : %d, FAIL : %d] ##########\n", total_pass, total_fail);
 
 	working_tc--;
 	sem_post(&tc_sem);

@@ -54,73 +54,86 @@
 ifeq ($(CONFIG_EXAMPLES_TESTCASE_NETWORK),y)
 CSRCS += network_tc_main.c
 ifeq ($(CONFIG_TC_NET_SOCKET),y)
-CSRCS +=tc_net_socket.c
+CSRCS += tc_net_socket.c
 endif
 ifeq ($(CONFIG_TC_NET_SETSOCKOPT),y)
 CSRCS += tc_net_setsockopt.c
 endif
 ifeq ($(CONFIG_TC_NET_CONNECT),y)
-CSRCS +=tc_net_connect.c
+CSRCS += tc_net_connect.c
 endif
 ifeq ($(CONFIG_TC_NET_CLOSE),y)
-CSRCS +=tc_net_close.c
+CSRCS += tc_net_close.c
 endif
 ifeq ($(CONFIG_TC_NET_BIND),y)
-CSRCS +=tc_net_bind.c
+CSRCS += tc_net_bind.c
 endif
 ifeq ($(CONFIG_TC_NET_LISTEN),y)
-CSRCS +=tc_net_listen.c
+CSRCS += tc_net_listen.c
 endif
 ifeq ($(CONFIG_TC_NET_GETSOCKNAME),y)
-CSRCS +=tc_net_getsockname.c
+CSRCS += tc_net_getsockname.c
 endif
 ifeq ($(CONFIG_TC_NET_GETSOCKOPT),y)
-CSRCS +=tc_net_getsockopt.c
+CSRCS += tc_net_getsockopt.c
 endif
 ifeq ($(CONFIG_TC_NET_FCNTL),y)
-CSRCS +=tc_net_fcntl.c
+CSRCS += tc_net_fcntl.c
 endif
 ifeq ($(CONFIG_TC_NET_IOCTL),y)
-CSRCS +=tc_net_ioctl.c
+CSRCS += tc_net_ioctl.c
 endif
 ifeq ($(CONFIG_TC_NET_ACCEPT),y)
-CSRCS +=tc_net_accept.c
+CSRCS += tc_net_accept.c
 endif
 ifeq ($(CONFIG_TC_NET_SEND),y)
-CSRCS +=tc_net_send.c
+CSRCS += tc_net_send.c
 endif
 ifeq ($(CONFIG_TC_NET_RECV),y)
-CSRCS +=tc_net_recv.c
+CSRCS += tc_net_recv.c
 endif
 ifeq ($(CONFIG_TC_NET_GETPEERNAME),y)
-CSRCS +=tc_net_getpeername.c
+CSRCS += tc_net_getpeername.c
 endif
 ifeq ($(CONFIG_TC_NET_SENDTO),y)
-CSRCS +=tc_net_sendto.c
+CSRCS += tc_net_sendto.c
 endif
 ifeq ($(CONFIG_TC_NET_RECVFROM),y)
-CSRCS +=tc_net_recvfrom.c
+CSRCS += tc_net_recvfrom.c
 endif
 ifeq ($(CONFIG_TC_NET_SHUTDOWN),y)
-CSRCS +=tc_net_shutdown.c
+CSRCS += tc_net_shutdown.c
 endif
 ifeq ($(CONFIG_TC_NET_DHCPC),y)
-CSRCS +=tc_net_dhcpc.c
+CSRCS += tc_net_dhcpc.c
 endif
 ifeq ($(CONFIG_TC_NET_SELECT),y)
-CSRCS +=tc_net_select.c
+CSRCS += tc_net_select.c
 endif
 ifeq ($(CONFIG_TC_NET_INET),y)
-CSRCS +=tc_net_inet.c
+CSRCS += tc_net_inet.c
 endif
 ifeq ($(CONFIG_TC_NET_ETHER),y)
-CSRCS +=tc_net_ether.c
+CSRCS += tc_net_ether.c
 endif
 ifeq ($(CONFIG_TC_NET_NETDB),y)
-CSRCS +=tc_net_netdb.c
+CSRCS += tc_net_netdb.c
 endif
 ifeq ($(CONFIG_TC_NET_DUP),y)
-CSRCS +=tc_net_dup.c
+CSRCS += tc_net_dup.c
+endif
+
+ifeq ($(CONFIG_ITC_NET_CLOSE),y)
+CSRCS += itc_net_close.c
+endif
+ifeq ($(CONFIG_ITC_NET_DUP),y)
+CSRCS += itc_net_dup.c
+endif
+ifeq ($(CONFIG_ITC_NET_FCNTL),y)
+CSRCS += itc_net_fcntl.c
+endif
+ifeq ($(CONFIG_ITC_NET_LISTEN),y)
+CSRCS += itc_net_listen.c
 endif
 
 # Include network build support
