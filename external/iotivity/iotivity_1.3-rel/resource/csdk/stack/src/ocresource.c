@@ -1213,6 +1213,10 @@ OCStackResult BuildIntrospectionResponseRepresentation(const OCResource *resourc
 
                         char *epStr = OCCreateEndpointStringFromCA(&caEps[i]);
                         urlInfoPayload[dimensions[0]] = BuildUrlInfoWithProtocol(proto, epStr);
+#if defined(__TIZENRT__)
+                        OICFree(epStr);
+                        OICFree(proto);
+#endif
                         if (!urlInfoPayload[dimensions[0]])
                         {
                             OIC_LOG(ERROR, TAG, "Unable to build urlInfo object for protocol");
@@ -1257,6 +1261,13 @@ exit:
             OICFree(urlInfoPayload);
         }
     }
+
+#if defined(__TIZENRT__)
+    if (caEps)
+    {
+        OICFree(caEps);
+    }
+#endif
 
     return OC_STACK_OK;
 }
@@ -1799,6 +1810,9 @@ static OCStackResult HandleVirtualResource (OCServerRequest *request, OCResource
     {
         OIC_LOG_V(ERROR, TAG, "Resource : %s not permitted for method: %d",
             request->resourceUrl, request->method);
+#if defined(__TIZENRT__)
+        FindAndDeleteServerRequest (request);
+#endif
         return OC_STACK_UNAUTHORIZED_REQ;
     }
 
