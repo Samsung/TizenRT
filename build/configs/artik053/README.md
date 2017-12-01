@@ -235,11 +235,5 @@ This can be used to use the minimal functionality of Tizen RT on ARTIK053.
 This can be used to test network functionality.
 #### [st_things](st_things/README.md)
 This can be used to test Smart Things Things SDK functionality.
-#### [tash](tash/README.md)
-This can be used to use Tizen RT Shell(TASH).
 #### [tc](tc/README.md)
 This can be used to test database, file system, kernel, network functionality of Tizen RT on ARTIK053.
-#### [typical](typical/README.md)
-This can be used to use typical functionality of Tizen RT on ARTIK053.
-#### [wifi_test](wifi_test/README.md)
-This can be used to test wifi functionality of Tizen RT on ARTIK053.
