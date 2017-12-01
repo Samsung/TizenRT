@@ -16,4 +16,9 @@ config TC_FS_PROCFS
 	default n
 	select FS_PROCFS
 
+config ITC_FS
+	bool "ITC Filesystem"
+	default n
+	select FS
+
 endif

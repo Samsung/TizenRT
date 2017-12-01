@@ -2965,6 +2965,11 @@ static void tc_libc_stdio_ungetc(void)
 
 static int fs_sample_launcher(int argc, char **args)
 {
+	sem_wait(&tc_sem);
+	working_tc++;
+
+	printf("\n########## FileSystem TC Start ##########\n");
+
 	total_pass = 0;
 	total_fail = 0;
 
@@ -3059,12 +3064,15 @@ static int fs_sample_launcher(int argc, char **args)
 	tc_libc_stdio_tmpnam();
 	tc_libc_stdio_ungetc();
 	tc_libc_stdio_zeroinstream();
+#ifdef CONFIG_ITC_FS
+	itc_fs_main();
+#endif
 
-	printf("#########################################\n");
-	printf("           FS TC Result               \n");
-	printf("           PASS : %d FAIL : %d        \n",
-		   total_pass, total_fail);
-	printf("#########################################\n");
+	printf("\n########## FileSystem TC End [PASS : %d, FAIL : %d] ##########\n", total_pass, total_fail);
+
+	working_tc--;
+	sem_post(&tc_sem);
+
 	return total_pass;
 }
 
@@ -3074,17 +3082,11 @@ int main(int argc, FAR char *argv[])
 int fs_main(int argc, char *argv[])
 #endif
 {
-	sem_wait(&tc_sem);
-	working_tc++;
-
 #ifdef CONFIG_TASH
 	tash_cmd_install("fs_sample", fs_sample_launcher, TASH_EXECMD_SYNC);
 #else
 	fs_sample_launcher(argc, argv);
 #endif
-
-	working_tc--;
-	sem_post(&tc_sem);
 
 	return 0;
 }
