@@ -78,7 +78,7 @@
 #include <errno.h>
 
 #ifdef CONFIG_NET_LWIP
-#include "net/lwip/netif.h"
+#include <net/lwip/netif.h>
 #endif
 
 /*
@@ -180,6 +180,36 @@ static pthread_mutex_t g_cmd_lock;
 static int g_cmd_lock_initialized = 0;
 
 /////////////////////////////////
+
+static inline int mdns_mutex_init(pthread_mutex_t *mutex)
+{
+	return pthread_mutex_init(mutex, NULL);
+}
+
+static inline int mdns_mutex_destroy(pthread_mutex_t *mutex)
+{
+	return pthread_mutex_destroy(mutex);
+}
+
+static inline int mdns_mutex_lock(pthread_mutex_t *mutex)
+{
+	int ret;
+
+	while ((ret = pthread_mutex_lock(mutex)) != OK) {
+		/* if pthread_mutex_lock() is failed by signal, retry it. */
+		if (ret != EINTR) {
+			break;
+		}
+	}
+
+	return ret;
+}
+
+static inline int mdns_mutex_unlock(pthread_mutex_t *mutex)
+{
+	return pthread_mutex_unlock(mutex);
+}
+
 #ifdef MDNSD_RR_DEBUG
 static void print_rr_entry(struct rr_entry *rr_e)
 {
@@ -222,7 +252,7 @@ static void print_rr_entry(struct rr_entry *rr_e)
 
 static void print_cache(struct mdnsd *svr)
 {
-	struct rr_group *group = svr->cache;
+	struct rr_group *group = NULL;
 	struct rr_list *list = NULL;
 	struct rr_entry *entry = NULL;
 	char *pname = NULL;
@@ -230,6 +260,9 @@ static void print_cache(struct mdnsd *svr)
 	DEBUG_PRINTF("\n");
 	DEBUG_PRINTF(" Multicast DNS Cache\n");
 
+	mdns_mutex_lock(&svr->data_lock);
+
+	group = svr->cache;
 	for (; group; group = group->next) {
 		if (group->name) {
 			pname = nlabel_to_str(group->name);
@@ -252,6 +285,9 @@ static void print_cache(struct mdnsd *svr)
 			}
 		}
 	}
+
+	mdns_mutex_unlock(&svr->data_lock);
+
 	DEBUG_PRINTF("==================================================\n");
 	DEBUG_PRINTF("\n");
 }
@@ -303,15 +339,16 @@ static char *get_service_type_without_subtype(char *name)
 static int lookup_hostname(struct mdnsd *svr, char *hostname)
 {
 	int result = -1;
-	struct rr_group *group = svr->cache;
+	struct rr_group *group = NULL;
 	struct rr_list *list = NULL;
 	struct rr_entry *entry = NULL;
 	int b_found = 0;
 	char *e_name;
 	int ret;
 
-	pthread_mutex_lock(&svr->data_lock);
+	mdns_mutex_lock(&svr->data_lock);
 
+	group = svr->cache;
 	for (; group; group = group->next) {
 		list = group->rr;
 		for (; list; list = list->next) {
@@ -335,7 +372,7 @@ static int lookup_hostname(struct mdnsd *svr, char *hostname)
 		}
 	}
 
-	pthread_mutex_unlock(&svr->data_lock);
+	mdns_mutex_unlock(&svr->data_lock);
 
 	if (b_found) {
 		result = 0;
@@ -348,7 +385,7 @@ static int lookup_hostname(struct mdnsd *svr, char *hostname)
 static int lookup_hostname_to_addr(struct mdnsd *svr, char *hostname, int *ipaddr)
 {
 	int result = -1;
-	struct rr_group *group = svr->cache;
+	struct rr_group *group = NULL;
 	struct rr_list *list = NULL;
 	struct rr_entry *entry = NULL;
 	int b_found = 0;
@@ -357,8 +394,9 @@ static int lookup_hostname_to_addr(struct mdnsd *svr, char *hostname, int *ipadd
 
 	update_cache(svr);
 
-	pthread_mutex_lock(&svr->data_lock);
+	mdns_mutex_lock(&svr->data_lock);
 
+	group = svr->cache;
 	for (; group; group = group->next) {
 		list = group->rr;
 		for (; list; list = list->next) {
@@ -385,7 +423,7 @@ static int lookup_hostname_to_addr(struct mdnsd *svr, char *hostname, int *ipadd
 		}
 	}
 
-	pthread_mutex_unlock(&svr->data_lock);
+	mdns_mutex_unlock(&svr->data_lock);
 
 	if (b_found) {
 		result = 0;
@@ -405,7 +443,7 @@ static int lookup_service(struct mdnsd *svr, char *type, struct mdns_service_inf
 
 	update_cache(svr);
 
-	pthread_mutex_lock(&svr->data_lock);
+	mdns_mutex_lock(&svr->data_lock);
 
 	struct rr_group *ptr_grp = rr_group_find(svr->cache, (uint8_t *)type_nlabel);
 
@@ -479,7 +517,7 @@ static int lookup_service(struct mdnsd *svr, char *type, struct mdns_service_inf
 		}
 	}
 
-	pthread_mutex_unlock(&svr->data_lock);
+	mdns_mutex_unlock(&svr->data_lock);
 
 	*num_of_services = result_cnt;
 
@@ -595,7 +633,7 @@ static int populate_query(struct mdnsd *svr, struct rr_list **rr_head)
 	struct rr_entry *qn_e = NULL;
 
 	// check if we have the records
-	pthread_mutex_lock(&svr->data_lock);
+	mdns_mutex_lock(&svr->data_lock);
 
 	while (svr->query) {
 		qn_e = rr_list_remove(&svr->query, svr->query->e);
@@ -605,7 +643,7 @@ static int populate_query(struct mdnsd *svr, struct rr_list **rr_head)
 		num_qns += rr_list_append(rr_head, qn_e);
 	}
 
-	pthread_mutex_unlock(&svr->data_lock);
+	mdns_mutex_unlock(&svr->data_lock);
 
 	return num_qns;
 }
@@ -619,7 +657,7 @@ static int populate_probe(struct mdnsd *svr, struct rr_list **rr_head)
 	struct rr_entry *qn_e = NULL;
 
 	// check if we have the records
-	pthread_mutex_lock(&svr->data_lock);
+	mdns_mutex_lock(&svr->data_lock);
 
 	while (svr->probe) {
 		qn_e = rr_list_remove(&svr->probe, svr->probe->e);
@@ -629,7 +667,7 @@ static int populate_probe(struct mdnsd *svr, struct rr_list **rr_head)
 		num_qns += rr_list_append(rr_head, qn_e);
 	}
 
-	pthread_mutex_unlock(&svr->data_lock);
+	mdns_mutex_unlock(&svr->data_lock);
 
 	return num_qns;
 }
@@ -641,10 +679,10 @@ static int populate_answers(struct mdnsd *svr, struct rr_list **rr_head, uint8_t
 	int num_ans = 0;
 
 	// check if we have the records
-	pthread_mutex_lock(&svr->data_lock);
+	mdns_mutex_lock(&svr->data_lock);
 	struct rr_group *ans_grp = rr_group_find(svr->group, name);
 	if (ans_grp == NULL) {
-		pthread_mutex_unlock(&svr->data_lock);
+		mdns_mutex_unlock(&svr->data_lock);
 		return num_ans;
 	}
 	// decide which records should go into answers
@@ -660,7 +698,7 @@ static int populate_answers(struct mdnsd *svr, struct rr_list **rr_head, uint8_t
 		}
 	}
 
-	pthread_mutex_unlock(&svr->data_lock);
+	mdns_mutex_unlock(&svr->data_lock);
 
 	return num_ans;
 }
@@ -743,12 +781,14 @@ static void process_for_query(struct mdnsd *svr, struct mdns_pkt *mdns_packet)
 
 static void update_cache(struct mdnsd *svr)
 {
-	struct rr_group *group = svr->cache;
+	struct rr_group *group = NULL;
 	struct rr_list *list = NULL;
 	struct rr_entry *entry = NULL;
 	struct rr_list *remove_list = NULL;
 
-	pthread_mutex_lock(&svr->data_lock);
+	mdns_mutex_lock(&svr->data_lock);
+
+	group = svr->cache;
 	for (; group; group = group->next) {
 		list = group->rr;
 		for (; list; list = list->next) {
@@ -772,7 +812,7 @@ static void update_cache(struct mdnsd *svr)
 	}
 	rr_list_destroy(remove_list, 0);	/* destroy remove list */
 
-	pthread_mutex_unlock(&svr->data_lock);
+	mdns_mutex_unlock(&svr->data_lock);
 }
 
 static void add_rr_to_cache(struct mdnsd *svr, struct mdns_pkt *pkt)
@@ -791,7 +831,7 @@ static void add_rr_to_cache(struct mdnsd *svr, struct mdns_pkt *pkt)
 	struct rr_list *rr_l = NULL;
 	int b_found = 0;
 
-	pthread_mutex_lock(&svr->data_lock);
+	mdns_mutex_lock(&svr->data_lock);
 
 	if (svr->c_status == CACHE_SLEEP) {
 		goto out_with_mutex;
@@ -907,7 +947,7 @@ static void add_rr_to_cache(struct mdnsd *svr, struct mdns_pkt *pkt)
 	}
 
 out_with_mutex:
-	pthread_mutex_unlock(&svr->data_lock);
+	mdns_mutex_unlock(&svr->data_lock);
 
 	return;
 
@@ -1312,11 +1352,11 @@ static void main_loop(struct mdnsd *svr)
 			struct rr_entry *ann_e = NULL;
 
 			// extract from head of list
-			pthread_mutex_lock(&svr->data_lock);
+			mdns_mutex_lock(&svr->data_lock);
 			if (svr->announce) {
 				ann_e = rr_list_remove(&svr->announce, svr->announce->e);
 			}
-			pthread_mutex_unlock(&svr->data_lock);
+			mdns_mutex_unlock(&svr->data_lock);
 
 			if (!ann_e) {
 				break;
@@ -1354,14 +1394,15 @@ static void main_loop(struct mdnsd *svr)
 	mdns_init_reply(mdns_packet, 0);
 
 #if defined(CONFIG_NETUTILS_MDNS_RESPONDER_SUPPORT)
-	pthread_mutex_lock(&svr->data_lock);
+	mdns_mutex_lock(&svr->data_lock);
+
 	struct rr_list *svc_le = svr->services;
 	for (; svc_le; svc_le = svc_le->next) {
 		// set TTL to zero
 		svc_le->e->ttl = 0;
 		mdns_packet->num_ans_rr += rr_list_append(&mdns_packet->rr_ans, svc_le->e);
 	}
-	pthread_mutex_unlock(&svr->data_lock);
+	mdns_mutex_unlock(&svr->data_lock);
 #endif
 
 	// send out packet
@@ -1404,24 +1445,24 @@ static int probe_hostname(struct mdnsd *svr, char *hostname)
 	struct rr_entry *probe_e = NULL;
 	uint8_t *name;
 
-	pthread_mutex_lock(&svr->data_lock);
+	mdns_mutex_lock(&svr->data_lock);
 	svr->c_status = CACHE_RESOLVE_HOSTNAME;
 	if (svr->c_filter) {
 		MDNS_FREE(svr->c_filter);
 		svr->c_filter = MDNS_STRDUP(hostname);
 	}
-	pthread_mutex_unlock(&svr->data_lock);
+	mdns_mutex_unlock(&svr->data_lock);
 
 	for (i = 0; i < 3; i++) {
 		/* make query with RR_ANY for probe hostname */
 		name = create_nlabel(hostname);
 		probe_e = qn_create(name, RR_ANY, 0);
 
-		pthread_mutex_lock(&svr->data_lock);
+		mdns_mutex_lock(&svr->data_lock);
 
 		rr_list_append(&svr->probe, probe_e);
 
-		pthread_mutex_unlock(&svr->data_lock);
+		mdns_mutex_unlock(&svr->data_lock);
 
 		request_sendmsg(svr);
 
@@ -1433,13 +1474,13 @@ static int probe_hostname(struct mdnsd *svr, char *hostname)
 		}
 	}
 
-	pthread_mutex_lock(&svr->data_lock);
+	mdns_mutex_lock(&svr->data_lock);
 	svr->c_status = CACHE_NORMAL;
 	if (svr->c_filter) {
 		MDNS_FREE(svr->c_filter);
 		svr->c_filter = NULL;
 	}
-	pthread_mutex_unlock(&svr->data_lock);
+	mdns_mutex_unlock(&svr->data_lock);
 
 	return result;
 }
@@ -1601,14 +1642,14 @@ static int mdnsd_set_host_info(struct mdnsd *svr, const char *hostname, uint32_t
 	rr_set_nsec(nsec_e, RR_A);
 	MDNS_FREE(hname_str);
 
-	pthread_mutex_lock(&svr->data_lock);
+	mdns_mutex_lock(&svr->data_lock);
 	rr_group_add(&svr->group, a_e);
 	rr_group_add(&svr->group, nsec_e);
 
 	// append RR_A entry to announce list
 	rr_list_append(&svr->announce, a_e);
 
-	pthread_mutex_unlock(&svr->data_lock);
+	mdns_mutex_unlock(&svr->data_lock);
 
 	request_sendmsg(svr);
 
@@ -1635,7 +1676,7 @@ static int mdnsd_set_host_info_by_netif(struct mdnsd *svr, const char *hostname,
 	// find ip address with lwip netif_find() function
 	netif = netif_find(netif_name);
 	if (netif) {
-		ipaddr = netif->ip_addr.addr;
+		ipaddr = ip4_addr_get_u32(ip_2_ip4(&netif->ip_addr));
 	} else {
 		ndbg("ERROR: mdnsd cannot find netif.(%s)\n", netif_name);
 		goto done;
@@ -1715,12 +1756,15 @@ static int init_mdns_context(int domain)
 		init_service_discovery_result(g_service_list, MAX_NUMBER_OF_SERVICE_DISCOVERY_RESULT);
 	}
 
-	pthread_mutex_init(&g_svr->data_lock, NULL);
+	mdns_mutex_init(&g_svr->data_lock);
 	sem_init(&g_svr->sendmsg_sem, 0, 0);
 	g_svr->sendmsg_requested = 1;
 
-	// init thread
-	pthread_attr_init(&attr);
+	/* init thread */
+	if (pthread_attr_init(&attr) != 0) {
+		ndbg("ERROR: pthread_attr_init() failed.\n");
+		goto errout_with_mutex;
+	}
 #if 0							/* PTHREAD_CREATE_DETACHED is not supported in tinyara */
 	pthread_attr_setdetachstate(&attr, PTHREAD_CREATE_DETACHED);
 #endif
@@ -1764,7 +1808,7 @@ out:
 
 errout_with_mutex:
 	if (g_svr) {
-		pthread_mutex_destroy(&g_svr->data_lock);
+		mdns_mutex_destroy(&g_svr->data_lock);
 		sem_destroy(&g_svr->sendmsg_sem);
 	}
 
@@ -1808,7 +1852,7 @@ static void release_mdns_context_resource(void)
 		g_svr->notify_pipe[1] = -1;
 	}
 
-	pthread_mutex_destroy(&g_svr->data_lock);
+	mdns_mutex_destroy(&g_svr->data_lock);
 	sem_destroy(&g_svr->sendmsg_sem);
 
 	rr_group_destroy(g_svr->cache);
@@ -1897,22 +1941,22 @@ done:
 static void mdns_cmd_mutex_lock(void)
 {
 	if (!g_cmd_lock_initialized) {
-		if (pthread_mutex_init(&g_cmd_lock, NULL) != 0) {
-			ndbg("ERROR: pthread_mutex_init() failed.\n");
+		if (mdns_mutex_init(&g_cmd_lock) != 0) {
+			ndbg("ERROR: mdns_mutex_init() failed.\n");
 			return;
 		}
 		g_cmd_lock_initialized = 1;
 	}
 
 	if (g_cmd_lock_initialized) {
-		pthread_mutex_lock(&g_cmd_lock);
+		mdns_mutex_lock(&g_cmd_lock);
 	}
 }
 
 static void mdns_cmd_mutex_unlock(void)
 {
 	if (g_cmd_lock_initialized) {
-		pthread_mutex_unlock(&g_cmd_lock);
+		mdns_mutex_unlock(&g_cmd_lock);
 	}
 }
 
@@ -2037,19 +2081,39 @@ static void mdns_service_destroy(struct mdns_service *srv)
 {
 	assert(srv != NULL);
 	rr_list_destroy(srv->entries, 0);
-	free(srv);
+	MDNS_FREE(srv);
 }
 
-int mdnsd_register_service(const char *instance_name, const char *type,
-				uint16_t port, const char *hostname, const char *txt[])
+int mdnsd_register_service(const char *instance_name, const char *type, uint16_t port, const char *hostname, const char *txt[])
 {
-	struct rr_entry *txt_e = NULL,
-					*srv_e = NULL,
-					*ptr_e = NULL,
-					*bptr_e = NULL;
+	int result = -1;
+	struct rr_entry *txt_e = NULL, *srv_e = NULL, *ptr_e = NULL, *bptr_e = NULL;
 	uint8_t *target;
 	uint8_t *inst_nlabel, *type_nlabel, *nlabel;
-	struct mdns_service *service = malloc(sizeof(struct mdns_service));
+	struct mdns_service *service = NULL;
+
+	if (g_svr == NULL) {
+		ndbg("ERROR: mdnsd is not running.\n");
+		goto out;
+	}
+
+	if (check_mdns_domain(type) == MDNS_DOMAIN_UNKNOWN) {
+		ndbg("ERROR: service type is invalid. service type should be "
+#if defined(CONFIG_NETUTILS_MDNS_XMDNS)
+			 "%s or %s domain.\n", MDNS_SUFFIX_LOCAL, MDNS_SUFFIX_SITE);
+#else
+			 "%s domain.\n", MDNS_SUFFIX_LOCAL);
+#endif
+		goto out;
+	}
+
+	mdns_cmd_mutex_lock();
+
+	service = (struct mdns_service *)MDNS_MALLOC(sizeof(struct mdns_service));
+	if (service == NULL) {
+		ndbg("ERROR: memory allocation failed.\n");
+		goto out_with_mutex;
+	}
 	memset(service, 0, sizeof(struct mdns_service));
 
 	// combine service name
@@ -2067,12 +2131,9 @@ int mdnsd_register_service(const char *instance_name, const char *type,
 			rr_add_txt(txt_e, *txt);
 		}
 	}
-
 	// create SRV record
-	assert(hostname || g_svr->hostname);  // either one as target
-	target = hostname ?
-	create_nlabel(hostname) :
-	dup_nlabel(g_svr->hostname);
+	assert(hostname || g_svr->hostname);	// either one as target
+	target = hostname ? create_nlabel(hostname) : dup_nlabel(g_svr->hostname);
 
 	srv_e = rr_create_srv(dup_nlabel(nlabel), port, target);
 	rr_list_append(&service->entries, srv_e);
@@ -2085,7 +2146,7 @@ int mdnsd_register_service(const char *instance_name, const char *type,
 	bptr_e = rr_create_ptr(dup_nlabel(SERVICES_DNS_SD_NLABEL), ptr_e);
 
 	// modify lists here
-	pthread_mutex_lock(&g_svr->data_lock);
+	mdns_mutex_lock(&g_svr->data_lock);
 
 	if (txt_e) {
 		rr_group_add(&g_svr->group, txt_e);
@@ -2098,7 +2159,7 @@ int mdnsd_register_service(const char *instance_name, const char *type,
 	rr_list_append(&g_svr->announce, ptr_e);
 	rr_list_append(&g_svr->services, ptr_e);
 
-	pthread_mutex_unlock(&g_svr->data_lock);
+	mdns_mutex_unlock(&g_svr->data_lock);
 
 	// don't free type_nlabel - it's with the PTR record
 	MDNS_FREE(nlabel);
@@ -2109,7 +2170,14 @@ int mdnsd_register_service(const char *instance_name, const char *type,
 
 	mdns_service_destroy(service);
 
-	return 0;
+	/* result is success */
+	result = 0;
+
+out_with_mutex:
+	mdns_cmd_mutex_unlock();
+
+out:
+	return result;
 }
 #endif							/*CONFIG_NETUTILS_MDNS_RESPONDER_SUPPORT */
 
@@ -2144,7 +2212,12 @@ int mdnsd_resolve_hostname(char *hostname, int *ipaddr)
 
 	domain = check_mdns_domain(hostname);
 	if (domain == MDNS_DOMAIN_UNKNOWN) {
-		ndbg("ERROR: hostname is invalid. hostname should be %s or %s domain.\n", MDNS_SUFFIX_LOCAL, MDNS_SUFFIX_SITE);
+		ndbg("ERROR: hostname is invalid. hostname should be "
+#if defined(CONFIG_NETUTILS_MDNS_XMDNS)
+			 "%s or %s domain.\n", MDNS_SUFFIX_LOCAL, MDNS_SUFFIX_SITE);
+#else
+			 "%s domain.\n", MDNS_SUFFIX_LOCAL);
+#endif
 		goto out;
 	}
 
@@ -2165,14 +2238,14 @@ int mdnsd_resolve_hostname(char *hostname, int *ipaddr)
 		goto out_with_mutex;
 	}
 
-	pthread_mutex_lock(&g_svr->data_lock);
+	mdns_mutex_lock(&g_svr->data_lock);
 	g_svr->c_status = CACHE_RESOLVE_HOSTNAME;
 	if (g_svr->c_filter) {
 		MDNS_FREE(g_svr->c_filter);
 		g_svr->c_filter = NULL;
 	}
 	g_svr->c_filter = MDNS_STRDUP(hostname);
-	pthread_mutex_unlock(&g_svr->data_lock);
+	mdns_mutex_unlock(&g_svr->data_lock);
 #endif
 
 	if (lookup_hostname_to_addr(g_svr, hostname, ipaddr) == 0) {
@@ -2200,12 +2273,12 @@ int mdnsd_resolve_hostname(char *hostname, int *ipaddr)
 			a_e = qn_create(create_nlabel(hostname), RR_A, 0);
 			aaaa_e = qn_create(create_nlabel(hostname), RR_AAAA, 0);
 
-			pthread_mutex_lock(&g_svr->data_lock);
+			mdns_mutex_lock(&g_svr->data_lock);
 
 			rr_list_append(&g_svr->query, a_e);
 			rr_list_append(&g_svr->query, aaaa_e);
 
-			pthread_mutex_unlock(&g_svr->data_lock);
+			mdns_mutex_unlock(&g_svr->data_lock);
 
 			request_sendmsg(g_svr);
 
@@ -2222,13 +2295,13 @@ int mdnsd_resolve_hostname(char *hostname, int *ipaddr)
 
 #if ! defined(CONFIG_NETUTILS_MDNS_RESPONDER_SUPPORT)
 out_with_context:
-	pthread_mutex_lock(&g_svr->data_lock);
+	mdns_mutex_lock(&g_svr->data_lock);
 	g_svr->c_status = CACHE_SLEEP;
 	if (g_svr->c_filter) {
 		MDNS_FREE(g_svr->c_filter);
 		g_svr->c_filter = NULL;
 	}
-	pthread_mutex_unlock(&g_svr->data_lock);
+	mdns_mutex_unlock(&g_svr->data_lock);
 
 	if (destroy_mdns_context() != 0) {
 		ndbg("ERROR: destroy_mdns_context() failed.\n");
@@ -2327,14 +2400,14 @@ int mdnsd_discover_service(char *service_type, int discover_time_msec, struct md
 	}
 #endif
 
-	pthread_mutex_lock(&g_svr->data_lock);
+	mdns_mutex_lock(&g_svr->data_lock);
 	g_svr->c_status = CACHE_SERVICE_DISCOVERY;
 	if (g_svr->c_filter) {
 		MDNS_FREE(g_svr->c_filter);
 		g_svr->c_filter = NULL;
 	}
 	g_svr->c_filter = MDNS_STRDUP(service_type_str);
-	pthread_mutex_unlock(&g_svr->data_lock);
+	mdns_mutex_unlock(&g_svr->data_lock);
 
 	/* query PTR for service discovery */
 	struct rr_entry *ptr_e = NULL;
@@ -2352,9 +2425,9 @@ int mdnsd_discover_service(char *service_type, int discover_time_msec, struct md
 
 			ptr_e = qn_create(create_nlabel(service_type_str), RR_PTR, 0);
 
-			pthread_mutex_lock(&g_svr->data_lock);
+			mdns_mutex_lock(&g_svr->data_lock);
 			rr_list_append(&g_svr->query, ptr_e);
-			pthread_mutex_unlock(&g_svr->data_lock);
+			mdns_mutex_unlock(&g_svr->data_lock);
 
 			request_sendmsg(g_svr);
 
@@ -2371,7 +2444,7 @@ int mdnsd_discover_service(char *service_type, int discover_time_msec, struct md
 		*service_list = NULL;
 	}
 
-	pthread_mutex_lock(&g_svr->data_lock);
+	mdns_mutex_lock(&g_svr->data_lock);
 	if (g_svr->c_filter) {
 		MDNS_FREE(g_svr->c_filter);
 		g_svr->c_filter = NULL;
@@ -2381,7 +2454,7 @@ int mdnsd_discover_service(char *service_type, int discover_time_msec, struct md
 #else
 	g_svr->c_status = CACHE_SLEEP;
 #endif
-	pthread_mutex_unlock(&g_svr->data_lock);
+	mdns_mutex_unlock(&g_svr->data_lock);
 
 #if ! defined(CONFIG_NETUTILS_MDNS_RESPONDER_SUPPORT)
 	if (destroy_mdns_context() != 0) {

@@ -302,6 +302,8 @@ const char *rr_get_type_name(enum rr_type type)
 		return "NSEC";
 	case RR_ANY:
 		return "ANY";
+	default:
+		break;
 	}
 	return NULL;
 }
