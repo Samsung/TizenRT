@@ -94,6 +94,8 @@
 
 /* Router tables. */
 struct nd6_neighbor_cache_entry neighbor_cache[LWIP_ND6_NUM_NEIGHBORS];
+
+
 struct nd6_destination_cache_entry destination_cache[LWIP_ND6_NUM_DESTINATIONS];
 struct nd6_prefix_list_entry prefix_list[LWIP_ND6_NUM_PREFIXES];
 struct nd6_router_list_entry default_router_list[LWIP_ND6_NUM_ROUTERS];
@@ -115,6 +117,7 @@ static u8_t nd6_ra_buffer[sizeof(struct prefix_option)];
 
 /* Forward declarations. */
 static s8_t nd6_find_neighbor_cache_entry(const ip6_addr_t *ip6addr);
+static s8_t nd6_find_lladdr_neighbor_cache_entry(const u8_t *lladdr, const struct netif *inp);
 static s8_t nd6_new_neighbor_cache_entry(void);
 static void nd6_free_neighbor_cache_entry(s8_t i);
 static s8_t nd6_find_destination_cache_entry(const ip6_addr_t *ip6addr);
@@ -1045,45 +1048,34 @@ void nd6_input(struct pbuf *p, struct netif *inp)
 		ip6_addr_set(&(destination_cache[i].next_hop_addr), &(ND6H_RD_TARGET_ADDR(redir_hdr)));
 
 		/* If Link-layer address of other router is given, try to add to neighbor cache. */
-
 		if (lladdr_opt != NULL) {
-			if (ND6H_LLADDR_OPT_TYPE(lladdr_opt) == ND6_OPTION_TYPE_TARGET_LLADDR) {
-				/* Copy target address to current source address, to have an aligned copy. */
-				ip6_addr_set(&tmp, &(ND6H_RD_TARGET_ADDR(redir_hdr)));
+			/* Copy target address to current source address, to have an aligned copy. */
+			ip6_addr_set(&tmp, &(ND6H_RD_TARGET_ADDR(redir_hdr)));
 
-				i = nd6_find_neighbor_cache_entry(&tmp);
+			i = nd6_find_neighbor_cache_entry(&tmp);
+
+			if (i < 0) {
+				/* Creates the Neighbor cache entry for the target */
+				i = nd6_new_neighbor_cache_entry();
 				if (i < 0) {
-					/* Creates the Neighbor cache entry for the target */
-					i = nd6_new_neighbor_cache_entry();
-					if (i >= 0) {
-						neighbor_cache[i].netif = inp;
-						MEMCPY(neighbor_cache[i].lladdr, ND6H_LLADDR_OPT_ADDR(lladdr_opt), inp->hwaddr_len);
-						ip6_addr_set(&(neighbor_cache[i].next_hop_address), &tmp);
-
-						/**
-						 * Receiving a message does not prove reachability: only in one direction.
-						 * Delay probe in case we get confirmation of reachability from upper layer (TCP).
-						 */
-						/* RFC 4861, 8.3.  Host Specification
-						 * Reachability state MUST be set to STALE as specified in Section 7.3.3
-						 */
-						neighbor_cache[i].state = ND6_STALE;
-					} else {
-						LWIP_DEBUGF(ND6_DEBUG, ("Failed to create a new neighbor cache entry\n"));
-						ND6_STATS_INC(nd6.memerr);
-					}
-				} else {
-					/* Updates the Neighbor cache entry for the target */
-					MEMCPY(neighbor_cache[i].lladdr, ND6H_LLADDR_OPT_ADDR(lladdr_opt), inp->hwaddr_len);
-					/* Receiving a message does not prove reachability: only in one direction.
-					 * Delay probe in case we get confirmation of reachability from upper layer (TCP).
-					 */
-					/* RFC 4861, 8.3.  Host Specification
-					 * Reachability state MUST be set to STALE as specified in Section 7.3.3
-					 */
-					neighbor_cache[i].state = ND6_STALE;
+					LWIP_DEBUGF(ND6_DEBUG, ("Failed to create a new neighbor cache entry\n"));
+					ND6_STATS_INC(nd6.memerr);
+					pbuf_free(p);
+					return;
 				}
 			}
+
+			neighbor_cache[i].netif = inp;
+
+			/* If the link-layer address is the same as that already in the cache,
+			 * the cache entry's state remains unchanged.
+			 */
+			if (nd6_find_lladdr_neighbor_cache_entry(ND6H_LLADDR_OPT_ADDR(lladdr_opt), inp) < 0) {
+				neighbor_cache[i].state = ND6_STALE;
+			}
+
+			MEMCPY(neighbor_cache[i].lladdr, ND6H_LLADDR_OPT_ADDR(lladdr_opt), inp->hwaddr_len);
+			ip6_addr_set(&(neighbor_cache[i].next_hop_address), &tmp);
 		}
 		break;				/* ICMP6_TYPE_RD */
 	}
@@ -1192,8 +1184,8 @@ void nd6_tmr(void)
 				/* Retries exceeded. */
 				nd6_cleanup_all_caches(&neighbor_cache[i].next_hop_address);
 			} else {
-				neighbor_cache[i].counter.incomplete_time += ND6_TMR_INTERVAL;
-				if (retrans_timer <= ND6_TMR_INTERVAL ||
+				neighbor_cache[i].counter.incomplete_time += LWIP_ND6_RETRANS_TIMER;
+				if (retrans_timer <= LWIP_ND6_RETRANS_TIMER ||
 					neighbor_cache[i].counter.incomplete_time >= retrans_timer) {
 					/* Send a NS for this entry */
 					neighbor_cache[i].counter.incomplete_time = 0;
@@ -1234,8 +1226,8 @@ void nd6_tmr(void)
 			if (neighbor_cache[i].probes_sent >= LWIP_ND6_MAX_UNICAST_SOLICIT) {
 				nd6_cleanup_all_caches(&neighbor_cache[i].next_hop_address);
 			} else {
-				neighbor_cache[i].counter.probe_time += ND6_TMR_INTERVAL;
-				if (retrans_timer <= ND6_TMR_INTERVAL ||
+				neighbor_cache[i].counter.probe_time += LWIP_ND6_RETRANS_TIMER;
+				if (retrans_timer <= LWIP_ND6_RETRANS_TIMER ||
 					neighbor_cache[i].counter.probe_time >= retrans_timer) {
 					/* Send a NS for this entry. */
 					neighbor_cache[i].counter.probe_time = 0;
@@ -1624,6 +1616,31 @@ static s8_t nd6_find_neighbor_cache_entry(const ip6_addr_t *ip6addr)
 			return i;
 		}
 	}
+	return -1;
+}
+
+/**
+ * Search for a neighbor cache entry by using link-layer address (lladdr)
+ *
+ * @param lladdr the Link-layer address
+ * @param netif points to a network interface
+ * @return The neighbor cache entry index that matched, -1 if no
+ * entry is found
+ */
+static s8_t nd6_find_lladdr_neighbor_cache_entry(const u8_t *lladdr, const struct netif *inp)
+{
+	s8_t i;
+
+	if (inp == NULL || lladdr == NULL) {
+		return -1;
+	}
+
+	for (i = 0; i < LWIP_ND6_NUM_NEIGHBORS; i++) {
+		if (!MEMCMP(neighbor_cache[i].lladdr, lladdr, inp->hwaddr_len)) {
+			return i;
+		}
+	}
+
 	return -1;
 }
 
