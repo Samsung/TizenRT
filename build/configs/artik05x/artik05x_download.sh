@@ -127,7 +127,7 @@ download()
     # Download all binaries using openocd script
     pushd ${OPENOCD_DIR_PATH} > /dev/null
         ${OPENOCD_BIN_PATH}/openocd -f artik05x.cfg -s $BOARD_DIR_PATH/../artik05x/scripts -c \
-        "$target exit"
+        "init; $target reset; exit"
     popd > /dev/null
 }
 
