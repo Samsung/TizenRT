@@ -97,7 +97,7 @@
  * Private Functions
  ****************************************************************************/
 
-#ifdef CONFIG_MBEDTLS
+#ifdef CONFIG_NET_SECURITY_TLS
 void wget_tls_release(struct http_client_tls_t *client);
 #endif
 
@@ -340,7 +340,7 @@ int wget_gethostip(FAR char *hostname, in_addr_t *ipv4addr)
 #endif
 }
 
-#ifdef CONFIG_MBEDTLS
+#ifdef CONFIG_NET_SECURITY_TLS
 void wget_tls_debug(void *ctx, int level, const char *file, int line, const char *str)
 {
 	printf("%s:%04d: %s", file, line, str);

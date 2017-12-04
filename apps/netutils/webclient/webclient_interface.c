@@ -167,7 +167,7 @@ errret:
 
 static int http_client_send_requests(struct http_client_request_t *request, void *ssl_config, struct http_client_response_t *response, wget_callback_t cb)
 {
-#ifdef CONFIG_MBEDTLS
+#ifdef CONFIG_NET_SECURITY_TLS
 	struct mallinfo data;
 	struct http_client_ssl_config_t *ssl_conf = ssl_config;
 #endif
@@ -198,7 +198,7 @@ static int http_client_send_requests(struct http_client_request_t *request, void
 			return -1;
 		}
 	}
-#ifdef CONFIG_MBEDTLS
+#ifdef CONFIG_NET_SECURITY_TLS
 	if (ssl_conf) {
 		request->tls = true;
 		memcpy(&request->ssl_config, ssl_conf, sizeof(struct http_client_ssl_config_t));
@@ -314,7 +314,7 @@ errret:
 
 static int http20_client_send_requests(struct http_client_request_t *request, void *ssl_config, wget_callback_t cb)
 {
-#ifdef CONFIG_MBEDTLS
+#ifdef CONFIG_NET_SECURITY_TLS
 	struct mallinfo data;
 	struct http_client_ssl_config_t *ssl_conf = ssl_config;
 #endif
@@ -345,7 +345,7 @@ static int http20_client_send_requests(struct http_client_request_t *request, vo
 		}
 	}
 
-#ifdef CONFIG_MBEDTLS
+#ifdef CONFIG_NET_SECURITY_TLS
 	if (ssl_conf) {
 		request->tls = true;
 		memcpy(&request->ssl_config, ssl_conf, sizeof(struct http_client_ssl_config_t));
@@ -430,7 +430,7 @@ int http20_client_init(struct http_client_http20_t *http2, struct http_client_ss
 		ndbg("ERROR: mq_open failed\n");
 		return -1;
 	}
-#ifdef CONFIG_MBEDTLS
+#ifdef CONFIG_NET_SECURITY_TLS
 	http2->ishandshaked = 0;
 	if (ssl_config != NULL) {
 		http2->client_tls = (struct http_client_tls_t *)malloc(sizeof(struct http_client_tls_t));
@@ -457,7 +457,7 @@ void http20_client_release(struct http_client_http20_t *http2)
 	nghttp2_hd_inflate_free(&http2->inflater);
 	nghttp2_hd_deflate_free(&http2->deflater);
 	mq_unlink("wc_mq");
-#ifdef CONFIG_MBEDTLS
+#ifdef CONFIG_NET_SECURITY_TLS
 	if (http2->client_tls) {
 		if (http2->ishandshaked) {
 			wget_tls_ssl_release(http2->client_tls);

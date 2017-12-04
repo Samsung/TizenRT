@@ -330,7 +330,7 @@ int wget_msg_construct_11(char *buf, struct http_client_request_t *param, struct
  *  -1: On a failure with errno set appropriately
  *
  ****************************************************************************/
-#ifdef CONFIG_MBEDTLS
+#ifdef CONFIG_NET_SECURITY_TLS
 pthread_addr_t wget_base_11(void *arg)
 {
 	int sockfd = -1;
@@ -587,7 +587,7 @@ errout_before_tlsinit:
 }
 #endif
 
-#ifndef CONFIG_MBEDTLS
+#ifndef CONFIG_NET_SECURITY_TLS
 pthread_addr_t wget_base_11(void *arg)
 {
 	int sockfd = -1;

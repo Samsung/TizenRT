@@ -196,7 +196,7 @@ int wget_parseheaders(struct wget_s *ws);
 
 int wget_gethostip(FAR char *hostname, in_addr_t *ipv4addr);
 
-#ifdef CONFIG_MBEDTLS
+#ifdef CONFIG_NET_SECURITY_TLS
 void wget_tls_debug(void *ctx, int level, const char *file, int line, const char *str);
 
 int webclient_tls_init(struct http_client_tls_t *client, struct http_client_ssl_config_t *ssl_config);
@@ -206,7 +206,7 @@ void wget_tls_release(struct http_client_tls_t *client);
 void wget_tls_ssl_release(struct http_client_tls_t *client);
 
 int wget_tls_handshake(struct http_client_tls_t *client, const char *hostname);
-#endif /* CONFIG_MBEDTLS */
+#endif /* CONFIG_NET_SECURITY_TLS */
 
 int wget_socket_connect(struct wget_s *ws);
 
