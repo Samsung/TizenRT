@@ -23,15 +23,15 @@
 #include <st_things/st_things_types.h>
 #else
 #include "st_things_types.h"
-#endif // __ST_THINGS_RTOS__
+#endif							// __ST_THINGS_RTOS__
 #include "octypes.h"
 
-st_things_representation_s* create_representation_inst(void);
+st_things_representation_s *create_representation_inst(void);
 
-st_things_representation_s* create_representation_inst_internal(OCRepPayload *payload);
+st_things_representation_s *create_representation_inst_internal(OCRepPayload *payload);
 
 void destroy_representation_inst(st_things_representation_s *rep);
 
 void destroy_representation_inst_internal(st_things_representation_s *rep, bool destroy_payload);
 
-#endif // __ST_THINGS_REPRESENTATION_H__
+#endif							// __ST_THINGS_REPRESENTATION_H__

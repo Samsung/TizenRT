@@ -43,57 +43,57 @@ extern "C" {
 
 // Log levels
 #ifdef __TIZEN__
-	typedef enum {
-		ST_DEBUG = DLOG_DEBUG,
-		ST_INFO = DLOG_INFO,
-		ST_WARNING = DLOG_WARN,
-		ST_ERROR = DLOG_ERROR,
-		ST_FATAL = DLOG_FATAL
-	} st_things_log_level_e;
+typedef enum {
+	ST_DEBUG = DLOG_DEBUG,
+	ST_INFO = DLOG_INFO,
+	ST_WARNING = DLOG_WARN,
+	ST_ERROR = DLOG_ERROR,
+	ST_FATAL = DLOG_FATAL
+} st_things_log_level_e;
 #endif
 
 #ifndef __TIZEN__				/* Linux */
-	typedef enum {
-		ST_DEBUG,
-		ST_INFO,
-		ST_WARNING,
-		ST_ERROR,
-		ST_FATAL
-	} st_things_log_level_e;
+typedef enum {
+	ST_DEBUG,
+	ST_INFO,
+	ST_WARNING,
+	ST_ERROR,
+	ST_FATAL
+} st_things_log_level_e;
 
- /**
-  * Initialize the logger.
-  */
-	void st_things_log_init();
+/**
+ * Initialize the logger.
+ */
+void st_things_log_init();
 
- /**
-  * Called to Free dyamically allocated resources used with custom logging.
-  * Not necessary if default logging is used
-  */
-	void st_things_log_shutdown();
+/**
+ * Called to Free dyamically allocated resources used with custom logging.
+ * Not necessary if default logging is used
+ */
+void st_things_log_shutdown();
 
- /**
-  * Set the Version.
-  */
-	void st_things_log_set_version(char *version);
+/**
+ * Set the Version.
+ */
+void st_things_log_set_version(char *version);
 
- /**
-  * Output a log string with the specified priority level.
-  * Only defined for Linux and Android
-  *
-  * @param level   - ST_DEBUG, ST_INFO, ST_WARNING, ST_ERROR, ST_FATAL
-  * @param tag     - Module name
-  * @param log_str - log string
-  */
-	void st_things_log(st_things_log_level_e level, const char *tag, const char *func_name, const int16_t line_num, const char *log_str);
+/**
+ * Output a log string with the specified priority level.
+ * Only defined for Linux and Android
+ *
+ * @param level   - ST_DEBUG, ST_INFO, ST_WARNING, ST_ERROR, ST_FATAL
+ * @param tag     - Module name
+ * @param log_str - log string
+ */
+void st_things_log(st_things_log_level_e level, const char *tag, const char *func_name, const int16_t line_num, const char *log_str);
 
- /**
-  * Output a variable argument list log string with the specified priority level.
-  * @param level  - ST_DEBUG, ST_INFO, ST_WARNING, ST_ERROR, ST_FATAL
-  * @param tag    - Module name
-  * @param format - variadic log string
-  */
-	void st_things_log_v(st_things_log_level_e level, const char *tag, const char *func_name, const int16_t line_num, const char *format, ...);
+/**
+ * Output a variable argument list log string with the specified priority level.
+ * @param level  - ST_DEBUG, ST_INFO, ST_WARNING, ST_ERROR, ST_FATAL
+ * @param tag    - Module name
+ * @param format - variadic log string
+ */
+void st_things_log_v(st_things_log_level_e level, const char *tag, const char *func_name, const int16_t line_num, const char *format, ...);
 #endif							//#ifndef __TIZEN__
 
 #ifdef FEATURE_LOGGING

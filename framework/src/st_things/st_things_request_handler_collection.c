@@ -24,7 +24,7 @@
 #include "things_api.h"
 #include "ocpayload.h"
 
-static bool get_resource_types2(things_resource_info_s * rsrc, char ***res_types, int *count)
+static bool get_resource_types2(things_resource_info_s *rsrc, char ***res_types, int *count)
 {
 	RET_FALSE_IF_PARAM_IS_NULL(rsrc);
 	RET_FALSE_IF_PARAM_IS_NULL(res_types);
@@ -106,21 +106,21 @@ static bool get_interface_types2(things_resource_info_s *rsrc, char ***if_types,
 	return result;
 }
 
- /*
-  * Sample format of "links" representation:-
-  *   [
-  *       {
-  *           "href": , // Resource URI
-  *           "rt": [],
-  *           "if": []
-  *       },
-  *       {
-  *           "href": , // Resource URI
-  *           "rt": [],
-  *           "if": []
-  *       }
-  *   ]
-  */
+/*
+ * Sample format of "links" representation:-
+ *   [
+ *       {
+ *           "href": , // Resource URI
+ *           "rt": [],
+ *           "if": []
+ *       },
+ *       {
+ *           "href": , // Resource URI
+ *           "rt": [],
+ *           "if": []
+ *       }
+ *   ]
+ */
 bool form_collection_links(things_resource_s *collection_rsrc, OCRepPayload ***links, size_t *count)
 {
 	RET_FALSE_IF_PARAM_IS_NULL(collection_rsrc);
@@ -236,29 +236,29 @@ bool form_collection_links(things_resource_s *collection_rsrc, OCRepPayload ***l
 	return result;
 }
 
- /*
-  * Response for links list can directly be sent without dependency on application
-  * because the response will include only the common properties of all the child resources.
-  *
-  * Sample response representation:-
-  *
-  *   {
-  *       // Child resources' common properties
-  *       "links":
-  *       [
-  *           {
-  *               "href": , // Resource URI
-  *               "rt": [],
-  *               "if": []
-  *           },
-  *           {
-  *               "href": , // Resource URI
-  *               "rt": [],
-  *               "if": []
-  *           }
-  *       ]
-  *   }
-  */
+/*
+ * Response for links list can directly be sent without dependency on application
+ * because the response will include only the common properties of all the child resources.
+ *
+ * Sample response representation:-
+ *
+ *   {
+ *       // Child resources' common properties
+ *       "links":
+ *       [
+ *           {
+ *               "href": , // Resource URI
+ *               "rt": [],
+ *               "if": []
+ *           },
+ *           {
+ *               "href": , // Resource URI
+ *               "rt": [],
+ *               "if": []
+ *           }
+ *       ]
+ *   }
+ */
 static bool handle_get_req_on_collection_linkslist(things_resource_s *collection_rsrc)
 {
 	RET_FALSE_IF_PARAM_IS_NULL(collection_rsrc);
@@ -300,34 +300,34 @@ static bool handle_get_req_on_collection_linkslist(things_resource_s *collection
 	return result;
 }
 
- /*
-  * Sample response representation:-
-  *
-  *   {
-  *       "href": ,
-  *
-  *       // Collection resource's common properties
-  *       "rt":[],
-  *       "if":[],
-  *       "links":
-  *       [
-  *           {
-  *               "href": , // Resource URI
-  *               "rt": [],
-  *               "if": []
-  *           },
-  *           {
-  *               "href": , // Resource URI
-  *               "rt": [],
-  *               "if": []
-  *           }
-  *       ]
-  *
-  *       // Collection resource's properties
-  *       "ps":,
-  *       "lec":,
-  *   }
-  */
+/*
+ * Sample response representation:-
+ *
+ *   {
+ *       "href": ,
+ *
+ *       // Collection resource's common properties
+ *       "rt":[],
+ *       "if":[],
+ *       "links":
+ *       [
+ *           {
+ *               "href": , // Resource URI
+ *               "rt": [],
+ *               "if": []
+ *           },
+ *           {
+ *               "href": , // Resource URI
+ *               "rt": [],
+ *               "if": []
+ *           }
+ *       ]
+ *
+ *       // Collection resource's properties
+ *       "ps":,
+ *       "lec":,
+ *   }
+ */
 static bool handle_get_req_on_collection_baseline(things_resource_s *collection_rsrc)
 {
 	RET_FALSE_IF_PARAM_IS_NULL(collection_rsrc);
@@ -374,40 +374,40 @@ static bool handle_get_req_on_collection_baseline(things_resource_s *collection_
 	return true;
 }
 
- /*
-  * Linked list of payload(OCRepPayload) of each and every resources.
-  * First object in the payload is collection resource.
-  *
-  * Sample response representation:-
-  *
-  *   {
-  *       "href": ,
-  *       "rep":
-  *       {
-  *           // Collection resource's common properties
-  *           "rt":[],
-  *           "if":[],
-  *           "links":[],
-  *
-  *           // Collection resource's properties
-  *           "ps":,
-  *           "lec":,
-  *       }
-  *   },
-  *   {
-  *       "href": ,
-  *       "rep":
-  *       {
-  *           // Child resource's common properties
-  *           "rt":[],
-  *           "if":[],
-  *
-  *           // Child resource's properties
-  *           "prop1":,
-  *           "prop2":,
-  *       }
-  *   }
-  */
+/*
+ * Linked list of payload(OCRepPayload) of each and every resources.
+ * First object in the payload is collection resource.
+ *
+ * Sample response representation:-
+ *
+ *   {
+ *       "href": ,
+ *       "rep":
+ *       {
+ *           // Collection resource's common properties
+ *           "rt":[],
+ *           "if":[],
+ *           "links":[],
+ *
+ *           // Collection resource's properties
+ *           "ps":,
+ *           "lec":,
+ *       }
+ *   },
+ *   {
+ *       "href": ,
+ *       "rep":
+ *       {
+ *           // Child resource's common properties
+ *           "rt":[],
+ *           "if":[],
+ *
+ *           // Child resource's properties
+ *           "prop1":,
+ *           "prop2":,
+ *       }
+ *   }
+ */
 static bool handle_get_req_on_collection_batch(things_resource_s *collection_rsrc)
 {
 	RET_FALSE_IF_PARAM_IS_NULL(collection_rsrc);
@@ -613,10 +613,10 @@ static bool handle_get_req_on_collection_batch(things_resource_s *collection_rsr
 	return true;
 }
 
- /*
-  * Handles GET request for colletion resources on "read-only", "read-write", "actuator" and "sensor" interfaces.
-  * Common properties will not be added.
-  */
+/*
+ * Handles GET request for colletion resources on "read-only", "read-write", "actuator" and "sensor" interfaces.
+ * Common properties will not be added.
+ */
 static bool handle_get_req_on_collection_common(things_resource_s *collection_rsrc)
 {
 	RET_FALSE_IF_PARAM_IS_NULL(collection_rsrc);
@@ -694,9 +694,9 @@ int handle_get_req_on_collection_rsrc(things_resource_s *collection_rsrc)
 	return result ? 1 : 0;
 }
 
- /*
-  * POST request and response schema is same as the GET response schema.
-  */
+/*
+ * POST request and response schema is same as the GET response schema.
+ */
 static bool handle_post_req_on_collection_baseline(things_resource_s *collection_rsrc)
 {
 	RET_FALSE_IF_PARAM_IS_NULL(collection_rsrc);
@@ -751,9 +751,9 @@ static bool handle_post_req_on_collection_baseline(things_resource_s *collection
 	return true;
 }
 
- /*
-  * POST request and response schema is same as the GET response schema.
-  */
+/*
+ * POST request and response schema is same as the GET response schema.
+ */
 static bool handle_post_req_on_collection_batch(things_resource_s *collection_rsrc)
 {
 	RET_FALSE_IF_PARAM_IS_NULL(collection_rsrc);
@@ -973,12 +973,12 @@ static bool handle_post_req_on_collection_batch(things_resource_s *collection_rs
 	return true;
 }
 
- /*
-  * Handles POST request for colletion resources on "read-write" and "actuator" interfaces.
-  * Request and response neither include the common properties of collection resource
-  * nor the child resources' properties which means both request and response includes only
-  * the collection resource's properties.
-  */
+/*
+ * Handles POST request for colletion resources on "read-write" and "actuator" interfaces.
+ * Request and response neither include the common properties of collection resource
+ * nor the child resources' properties which means both request and response includes only
+ * the collection resource's properties.
+ */
 static bool handle_post_req_on_collection_common(things_resource_s *collection_rsrc)
 {
 	RET_FALSE_IF_PARAM_IS_NULL(collection_rsrc);

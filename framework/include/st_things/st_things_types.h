@@ -158,7 +158,7 @@ typedef struct _st_things_representation {
 	* @return @c true if setting value is successful, otherwise @c false
 	* @since Tizen RT v1.1
 	*/
-	bool (*set_str_value) (struct _st_things_representation *rep, const char *key, const char *value);
+	bool (*set_str_value)(struct _st_things_representation *rep, const char *key, const char *value);
 
 	/**
 	* @brief API for setting the value of boolean type property with a key.

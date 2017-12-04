@@ -105,12 +105,6 @@ void heapinfo_parse(FAR struct mm_heap_s *heap, int mode, pid_t pid)
 		nonsched_size[nonsched_idx] = 0;
 	}
 
-	if (mode != HEAPINFO_SIMPLE) {
-		printf("****************************************************************\n");
-		printf("Heap Walker Output for Heap = 0x%p\n", heap);
-		printf("****************************************************************\n");
-	}
-
 	/* Visit each region */
 
 #if CONFIG_MM_REGIONS > 1
@@ -123,9 +117,14 @@ void heapinfo_parse(FAR struct mm_heap_s *heap, int mode, pid_t pid)
 		mm_takesemaphore(heap);
 
 		if (mode != HEAPINFO_SIMPLE) {
-			printf("HeapReg#%d Heap StartAddr=0x%p, EndAddr=0x%p\n\n", region, heap->mm_heapstart[region], heap->mm_heapend[region]);
 			printf("****************************************************************\n");
-			printf("Heap Alloation Info- (Size in Bytes)\n");
+			printf("REGION #%d Start=0x%p, End=0x%p, Size=%d\n",
+				region,
+				heap->mm_heapstart[region],
+				heap->mm_heapend[region],
+				(int)heap->mm_heapend[region] - (int)heap->mm_heapstart[region] + SIZEOF_MM_ALLOCNODE);
+			printf("****************************************************************\n");
+			printf("Allocation Info- (Size in Bytes)\n");
 			printf("****************************************************************\n");
 			printf("  MemAddr |   Size   | Status |   Owner   | Pid |\n");
 			printf("----------|----------|--------|-----------|-----|\n");
@@ -163,14 +162,13 @@ void heapinfo_parse(FAR struct mm_heap_s *heap, int mode, pid_t pid)
 				}
 			}
 		}
-
+		printf("\n");
 		mm_givesemaphore(heap);
-		if (mode != HEAPINFO_SIMPLE) {
-			printf("HeapReg#=%d End node=0x%p Size=%5u (%c)\n", region, node, node->size, 'A');
-		}
 	}
 #undef region
-	printf("\nHeap Alloation Summary(Bytes)\n");
+	printf("\n****************************************************************\n");
+	printf("Heap Allocation Summary(Size in Bytes)\n");
+	printf("****************************************************************\n");
 	printf("Heap Size                      : %u\n", heap->mm_heapsize);
 	printf("Current Allocated Node Size    : %u\n", heap->total_alloc_size + SIZEOF_MM_ALLOCNODE * 2);
 	printf("Peak Allocated Node Size       : %u\n", heap->peak_alloc_size);
@@ -181,7 +179,7 @@ void heapinfo_parse(FAR struct mm_heap_s *heap, int mode, pid_t pid)
 
 	printf("\nNon Scheduled Task Resources   : %u\n", nonsched_resource);
 	if (mode != HEAPINFO_SIMPLE) {
-		printf(" PID | SIZE \n");
+		printf(" Pid | Size \n");
 		printf("-----|------\n");
 		for (nonsched_idx = 0; nonsched_idx < CONFIG_MAX_TASKS; nonsched_idx++) {
 			if (nonsched_list[nonsched_idx] != HEAPINFO_NONSCHED) {
