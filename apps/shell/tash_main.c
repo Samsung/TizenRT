@@ -53,6 +53,10 @@ enum tash_input_state_e {
 #define TASH_TASK_STACKSIZE   (4096)
 #define TASH_TASK_PRIORITY    (125)
 
+#ifndef CONFIG_TASH_QSIZE
+#define CONFIG_TASH_QSIZE     (5)
+#endif
+
 const char tash_prompt[] = "TASH>>";
 #endif							/* CONFIG_TASH */
 
@@ -79,6 +83,118 @@ static void tash_remove_char(char *char_pos)
 /** @brief Read the input command
  *  @ingroup tash
  */
+
+#if CONFIG_TASH_QSIZE > 0
+struct cmd_buffer {
+	char cmd_buf[TASH_LINEBUFLEN];
+	int cmd_len;
+};
+
+static struct cmd_buffer *cmdq[CONFIG_TASH_QSIZE];
+static int cmdq_widx;
+static int retries;
+char blank[TASH_LINEBUFLEN];
+
+static struct cmd_buffer *tash_de_queue(int offset)
+{
+	int index;
+
+	if (offset > CONFIG_TASH_QSIZE) {
+		offset %= CONFIG_TASH_QSIZE;
+	}
+
+	index = cmdq_widx - offset + CONFIG_TASH_QSIZE;
+	index %= CONFIG_TASH_QSIZE;
+
+	return cmdq[index];
+}
+
+static int tash_arr_queue(char *cmd, int cmdlen)
+{
+	int i;
+	struct cmd_buffer *prev = NULL;
+
+	for (i = 1; i <= CONFIG_TASH_QSIZE; i++) {
+		prev = tash_de_queue(i);
+		if(prev->cmd_len != cmdlen) {
+			continue;
+		}
+		if (!memcmp(cmd, prev->cmd_buf, prev->cmd_len)) {
+			break;
+		}
+	}
+
+	/* New command */
+	if (i == 1) {
+		return 1;
+	} else if (i == CONFIG_TASH_QSIZE + 1) {
+		return 0;
+	}
+
+	/* Rearrangement command */
+	int index = (cmdq_widx - i + CONFIG_TASH_QSIZE) % CONFIG_TASH_QSIZE;
+
+	while (i-- > 1)
+	{
+		cmdq[index] = tash_de_queue(i);
+		index = cmdq_widx - i + CONFIG_TASH_QSIZE;
+		index %= CONFIG_TASH_QSIZE;
+	}
+
+	cmdq[index] = prev;
+
+	return 1;
+}
+
+static void tash_en_queue(char *buf, int len)
+{
+	if (buf == NULL || len <= 0 || len > TASH_LINEBUFLEN) {
+		return;
+	}
+
+	/* Check whether input command is new or not */
+	if (!tash_arr_queue(buf, len)) {
+		memcpy(cmdq[cmdq_widx]->cmd_buf, buf, len);
+		cmdq[cmdq_widx++]->cmd_len = len;
+
+		if (cmdq_widx == CONFIG_TASH_QSIZE) {
+			cmdq_widx = 0;
+		}
+	}
+}
+
+/* Handle a Control Sequence Introducer (CSI) */
+static int tash_handle_csi(int operation, int fd, char *buffer)
+{
+	struct cmd_buffer *cmd;
+
+	switch (operation) {
+	case ASCII_A:
+		cmd = tash_de_queue(++retries);
+		break;
+	case ASCII_B:
+		cmd = tash_de_queue(--retries);
+		break;
+	default:
+		return 0;
+	}
+
+	if (cmd == NULL) {
+		return 0;
+	}
+
+	write(fd, blank, TASH_LINEBUFLEN);
+	write(fd, tash_prompt, sizeof(tash_prompt));
+
+	memcpy(buffer, cmd->cmd_buf, cmd->cmd_len);
+
+	if (write(fd, &buffer[0], cmd->cmd_len) <= 0) {
+		shdbg("TASH: echo failed (errno = %d)\n", get_errno());
+	}
+	return cmd->cmd_len;
+}
+#endif
+
 static char *tash_read_input_line(int fd)
 {
 	int bufsize = TASH_LINEBUFLEN;
@@ -129,7 +245,15 @@ static char *tash_read_input_line(int fd)
 					if ((buffer[valid_char_pos] != 0x0) && (valid_char_pos < TASH_LINEBUFLEN)) {
 						memmove(&buffer[pos], &buffer[valid_char_pos], (bufsize - valid_char_pos));
 					}
-				} else {
+				}
+#if CONFIG_TASH_QSIZE > 0
+				/* Handle a Control Sequence Introducer (CSI : start with '^[') */
+				else if (nbytes == 3 && (buffer[pos] == ASCII_ESC) && (buffer[pos + 1] == ASCII_LBRACKET)) {
+					pos = tash_handle_csi(buffer[pos + 2], fd, buffer);
+					break;
+				}
+#endif
+				else {
 					if (buffer[pos] == ASCII_CR) {
 						buffer[pos] = ASCII_LF;
 					}
@@ -157,6 +281,15 @@ static char *tash_read_input_line(int fd)
 					if (pos >= TASH_LINEBUFLEN) {
 						printf("\nTASH: length of input character is too long, maximum length is %d\n", TASH_LINEBUFLEN);
 						buffer[0] = ASCII_NUL;
+						return buffer;
+					}
+
+					if (buffer[pos - 1] == ASCII_LF) {
+						buffer[pos - 1] = ASCII_NUL;
+#if CONFIG_TASH_QSIZE > 0
+						retries = 0;
+						tash_en_queue(buffer, pos - 1);
+#endif
 						return buffer;
 					}
 				}
@@ -205,6 +338,24 @@ static int tash_main(int argc, char *argv[])
 	if (ret == ERROR) {
 		exit(EXIT_FAILURE);
 	}
+
+#if CONFIG_TASH_QSIZE > 0
+	int i;
+	struct cmd_buffer *tmp = malloc(CONFIG_TASH_QSIZE * sizeof(struct cmd_buffer));
+
+	if (tmp == NULL) {
+		exit(EXIT_FAILURE);
+	} else {
+		memset(tmp, 0, CONFIG_TASH_QSIZE * sizeof(struct cmd_buffer));
+		for (i = 0; i < CONFIG_TASH_QSIZE; i++)
+		{
+			cmdq[i] = tmp + i;
+		}
+	}
+	memset(blank, ' ', TASH_LINEBUFLEN);
+	blank[0] = '\r';
+	blank[TASH_LINEBUFLEN - 1] = '\r';
+#endif
 
 	fd = tash_open_console();
 	if (fd < 0) {
@@ -270,6 +421,9 @@ static int tash_main(int argc, char *argv[])
 		tash_free(line_buff);
 	} while (tash_running);
 
+#if CONFIG_TASH_QSIZE > 0
+	free(tmp);
+#endif
 	(void)close(fd);
 	return 0;					/* TBD: For now, it always returns success */
 }
