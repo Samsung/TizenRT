@@ -63,9 +63,11 @@
  * In this platform, DHCP client and server are supported through netutils
  * Instead of using lwIP DHCP, please use netutils dhcpc and dhcpd
  */
+#define ENABLE_LOOPBACK                 1
 #define LWIP_DHCPS                      0
 #define LWIP_DHCP                       0
 #define LWIP_NETIF_API                  1
+#define LWIP_ETHERNET                   1
 /* --------- PreDefined Configurations -------------*/
 
 
@@ -396,11 +398,11 @@
 #define MEMP_NUM_NETCONN	CONFIG_NET_MEMP_NUM_NETCONN
 #endif
 */
-#ifdef CONFIG_NET_MEMP_NUM_TCPIP_MSG_API 
+#ifdef CONFIG_NET_MEMP_NUM_TCPIP_MSG_API
 #define MEMP_NUM_TCPIP_MSG_API  CONFIG_NET_MEMP_NUM_TCPIP_MSG_API
 #endif
 
-#ifdef CONFIG_NET_MEMP_NUM_TCPIP_MSG_INPKT 
+#ifdef CONFIG_NET_MEMP_NUM_TCPIP_MSG_INPKT
 #define MEMP_NUM_TCPIP_MSG_INPKT  CONFIG_NET_MEMP_NUM_TCPIP_MSG_INPKT
 #endif
 
@@ -471,7 +473,7 @@
 
 #ifdef CONFIG_NSOCKET_DESCRIPTORS
 #define MEMP_NUM_NETCONN CONFIG_NSOCKET_DESCRIPTORS
-#define MEMP_NUM_RAW_PCB CONFIG_NSOCKET_DESCRIPTORS 
+#define MEMP_NUM_RAW_PCB CONFIG_NSOCKET_DESCRIPTORS
 #endif
 
 #ifdef CONFIG_NET_TCP_KEEPALIVE
