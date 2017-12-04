@@ -401,7 +401,7 @@ void destroy_representation_inst_internal(st_things_representation_s *rep, bool 
 	// DA Stack will de-allocate the payload for other cases.
 	// 1. For response representations.
 	if (destroy_payload) {
-		OCPayloadDestroy((OCPayload *) (rep->payload));
+		OCPayloadDestroy((OCPayload *)(rep->payload));
 	}
 
 	util_free(rep);

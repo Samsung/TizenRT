@@ -9,6 +9,7 @@
 #include "utils/includes.h"
 #include "utils/common.h"
 #include "driver.h"
+#include <tinyara/config.h>
 
 #ifdef CONFIG_DRIVER_WEXT
 extern struct wpa_driver_ops wpa_driver_wext_ops;	/* driver_wext.c */

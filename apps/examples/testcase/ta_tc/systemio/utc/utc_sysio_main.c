@@ -49,7 +49,7 @@ int sysio_utc(int argc, FAR char *argv[])
 	sem_wait(&tc_sem);
 	working_tc++;
 
-	SYSIO_UTC_PRINT("=== TINYARA SYSIO UTC START! ===\n");
+	printf("\n########## SystemIO UTC Start ##########\n");
 
 	total_pass = 0;
 	total_fail = 0;
@@ -74,8 +74,7 @@ int sysio_utc(int argc, FAR char *argv[])
 	utc_uart_main();
 #endif
 
-	SYSIO_UTC_PRINT("\n=== TINYARA SYSIO TC COMPLETE ===\n");
-	SYSIO_UTC_PRINT("\t\tTotal pass : %d\n\t\tTotal fail : %d\n", total_pass, total_fail);
+	printf("\n########## SystemIO UTC End [PASS : %d, FAIL : %d] ##########\n", total_pass, total_fail);
 
 	working_tc--;
 	sem_post(&tc_sem);
