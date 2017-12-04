@@ -235,6 +235,7 @@ static int nu_ping_recv(int family, int s, struct timespec *ping_time)
 				int ok = 0;
 
 				ip6hdr = (struct ip6_hdr *)buf;
+				len = IP6H_PLEN(ip6hdr);
 				curp = (char *)(buf + sizeof(struct ip6_hdr));
 
 				nexth = ip6hdr->_nexth;
@@ -248,6 +249,7 @@ static int nu_ping_recv(int family, int s, struct timespec *ping_time)
 
 							nexth = frag_hdr->_nexth;
 							curp += (sizeof(struct ip6_frag_hdr));
+							len -= (sizeof(struct ip6_frag_hdr));
 							break;
 						}
 						case IP6_NEXTH_ICMP6:
@@ -276,6 +278,7 @@ static int nu_ping_recv(int family, int s, struct timespec *ping_time)
 				inet_ntop(family, (void *)&((struct sockaddr_in *)from)->sin_addr, addr_str, 64);
 
 				iphdr = (struct ip_hdr *)buf;
+				len = htons(IPH_LEN(iphdr)) - IP_HLEN;
 				iecho = (struct icmp_echo_hdr *)(buf + (IPH_HL(iphdr) * 4));
 				if (iecho->type == ICMP_ER) {
 					status = OK;
