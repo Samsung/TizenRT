@@ -1,8 +1,429 @@
+# Samsung ARTIK™ 053/053s/055s
 
+## Contents
 
-# Memory Map (ARTIK05x)
+> * Home
+>   * [Overview](#overview)
+>   * [ARTIK053](../artik053/README.md)
+>   * [ARTIK053s](../artik053s/README.md)
+>   * [ARTIK055s](../artik055s/README.md)
+> * Setup Environment
+>   * [Ubuntu Development Setting](#ubuntu-development-setting)
+>   * [Getting the toolchain](#getting-the-toolchain)
+>   * [Set kconfig-frontends](#set-kconfig-frontends)
+>   * [Getting the sources](#getting-the-sources)
+>   * [On Chip Debugger installation](#on-chip-debugger-installation)
+> * Development
+>   * [Configuration Sets](#configuration-sets)
+>   * [How to Build](#how-to-build)
+>   * [How to program a binary](#how-to-program-a-binary)
+>   * [How to clear flashed content on a board](#how-to-clear-flashed-content-on-a-board)
+>   * [How to save/restore wifi info](#how-to-saverestore-wifi-info)
+>   * [How to enable the ARTIK SDK](#how-to-enable-the-artik-sdk)
+>   * [How to SLIP/PPP on UART](#how-to-slipppp-on-uart)
+> * ETC
+>   * [Factory Reset](#factory-reset)
+>   * [Memory Map](#memory-map)
+>   * [U-Boot for ARTIK05x](#u-boot-for-artik05x)
+>   * [Configure USB Drivers](#configure-usb-drivers)
+> * Training
+>   * [Sign up for an ARTIK Cloud account](#sign-up-for-an-artik-cloud-account)
+>   * [Onboard a device with the ARTIK mobile app](#onboard-a-device-with-the-artik-mobile-app)
+>   * [Easily create a simple example](#easily-create-a-simple-example)
 
-### Physical Address Space
+<!-- Home -->
+
+## Overview
+
+* Homepage : https://www.artik.io/modules/artik-05x/
+
+Wi-Fi®-based IoT module with built-in hardware security for single-function “things”.
+
+ARTIK 05x series Smart IoT Modules bring Wi-Fi to things that need compactness and connectivity, but without sacrificing hardware-based security. ARTIK053s and ARTIK055s have built-in, enterprise-grade security for a strong root of trust with Samsung Public Key Infrastructure (PKI) and mutual authentication to ARTIK cloud services.
+
+Each Samsung ARTIK IoT module is a true System on Module (SoM), with CPUs, networking, wireless radios, and full system software stack, all build onto a single, easy-to-integrate package.
+
+The ARTIK 05x family runs Tizen RT, a platform that includes a compact RTOS with built-in TCP/IP stack and support for Lightweight Machine-to-machine (LWM2M) protocol. This also means you can develop for ARTIK 05x using free tools like ARTIK IDE, GCC C/C++ compilers, and OpenOCD.
+
+![ARTIK053 and ARTIK055s](../../../docs/media/artik053055.png)
+
+#### Performance and flexibility
+
+* 32-bit ARM® Cortex® R4 @ 320MHz for applications
+* 29 dedicated GPIO ports, 2 SPI, 4 UART (2-pin), 4 ADC, 1 JTAG, 2 I2C
+* Input voltage: 3.3VDC (ARTIK055s), 5-12VDC (ARTIK053/053s)
+
+#### Robust security (“s” versions)
+
+* Completely integrated security subsystem
+* Secure communication with unique, per-device key for authentication
+* Secure boot to make sure only authorized software can run
+* Secure storage protected by physically unclonable function (PUF)
+
+#### Integrated and tested middleware
+
+* TizenRT with RTOS, Wi-Fi and networking middleware
+* API interface to simplify development process
+* LWM2M support for device management
+
+#### Fully integrated with ARTIK IoT Platform and ARTIK cloud services
+
+* Mobile reference app to add modules to ARTIK cloud services easily
+* Manage devices, including OTA updates, with ARTIK cloud services
+
+<!-- Setup Environment -->
+
+## Ubuntu Development Setting
+
+Install the most basic packages for using TizenRT.
+```bash
+$ sudo apt-get update
+$ sudo apt-get upgrade
+$ sudo apt-get install build-essential openocd git gcc-arm-none-eabi gdb-arm-none-eabi minicom
+```
+
+## Getting the toolchain
+
+Get the build in binaries and libraries, [gcc-arm-none-eabi-4_9-2015q3-20150921-linux.tar.bz2](https://launchpad.net/gcc-arm-embedded/4.9/4.9-2015-q3-update/+download/gcc-arm-none-eabi-4_9-2015q3-20150921-linux.tar.bz2)
+
+Untar the archive file.
+```bash
+$ tar -tvf gcc-arm-none-eabi-4_9-2015q3-20150921-linux.tar.bz2
+```
+
+and export the path like.
+```bash
+export PATH=<Your Toolchain PATH>:$PATH
+```
+
+## Set kconfig-frontends
+
+This package is used by the TizenRT to configure the build. You can change build environment, what is enabled as peripherals from the SoC and from the board.
+```bash
+$ sudo apt-get install gperf libncurses5-dev flex bison
+$ git clone https://bitbucket.org/nuttx/tools.git tools
+$ cd tools/kconfig-frontends
+$ ./configure --enable-mconf --disable-gconf --disable-qconf --prefix=/usr
+$ make
+$ sudo make install
+```
+
+## Getting the sources
+
+The main branch is `artik`.
+```bash
+$ git clone https://github.com/SamsungARTIK/TizenRT.git
+$ cd TizenRT
+```
+Since then, `TizenRT` means the path where the source was cloned.
+
+## On Chip Debugger installation
+
+OpenOCD is used to program and debug.
+
+OpenOCD v0.10.0 is recommended and can be installed like below, but pre-built OpenOCD binaray on `TizenRT/build/tools/openocd/linux64(or 32)` can be used without installing.
+```bash
+$ sudo apt-get build-dep openocd
+$ git clone --depth 1 -b v0.10.0 https://git.code.sf.net/p/openocd/code openocd-code
+$ cd openocd-code
+$ ./bootstrap
+$ ./configure
+$ make
+$ sudo make install
+```
+
+<!-- Development -->
+
+## Configuration Sets
+
+To build a TizenRT application, use the default configuration files named `defconfig` under `TizenRT/build/configs/<board>/` folder.
+
+After configuration, you can add/remove the configuration you want via menuconfig. If you want to run menuconfig, you need to install `kconfig-frontends`.
+```bash
+$ cd os
+$ make menuconfig
+```
+
+#### nettest
+
+This is the basic configuration of ARTIK05x products. You can set and build the following:
+```bash
+$ cd os/tools
+$ ./configure.sh artik053/nettest
+```
+
+#### onboard
+
+This is the configuration for the production phase of ARTIK05x product. When you download it to the board, the `artik_onboarding` app will start automatically when it boots.
+```bash
+$ cd os/tools
+$ ./configure.sh artik053/onboard
+```
+
+#### other configures
+
+The following environment settings are divided into three stages and used in advance. The details are as follows.
+
+1) minimal
+```bash
+$ cd os/tools
+$ ./configure.sh artik053/minimal
+```
+> * OS kernel
+> * Customized C Library
+> * Security(TLS)
+> * BSP(boot loader)
+> * Power
+> * Networking support (LWIP, DHCP Client, Wi-Fi)
+
+2) typical
+```bash
+$ cd os/tools
+$ ./configure.sh artik053/typical
+```
+> * OS kernel
+> * Customized C Library
+> * Security(TLS)
+> * BSP(boot loader)
+> * Power
+> * Networking support(LWIP, DHCP Client, DHCP Server, Wi-Fi)
+> * Watchdog
+> * ARTIK-SDK
+> * JSON
+> * Tash
+> * I2S
+> * DMA
+> * System IO(I2C, UART, GPIO, PWM, SPI)
+> * Network Utilities(FTP Client, Websock, Webclient, Webserver, NTP Client)
+
+3) extra
+```bash
+$ cd os/tools
+$ ./configure.sh artik053/extra
+```
+> * OS kernel
+> * Customized C Library
+> * Security(TLS)
+> * BSP(boot loader)
+> * Power
+> * Networking support (LWIP, DHCP Client, DHCP Server, Wi-Fi)
+> * Watchdog
+> * ARTIK-SDK
+> * JSON
+> * Tash
+> * I2S
+> * DMA
+> * System IO(I2C, UART, GPIO, PWM, SPI)
+> * Network Utilities(FTP Client, Websock, Webclient, Webserver, NTP Client, CoAP, MQTT)
+
+## How to Build
+
+Configure the build from `TizenRT/os/tools` directory
+```bash
+$ cd os/tools
+$ ./configure.sh <board>/<configuration_set>
+```
+For list of boards and configuration set supported, refer belows.
+
+Above copies the canned configuration-set for the particular board, into the `TizenRT/os` directory.
+
+Configuration can be modified through make menuconfig from `TizenRT/os`.
+```bash
+$ cd os
+$ make menuconfig
+```
+
+Finally, initiate build by make from `TizenRT/os`.
+```bash
+$ cd os
+$ make
+```
+
+Built binaries are in `TizenRT/build/output/bin`.
+```bash
+$ cd build/output/bin
+$ ls
+System.map  tinyara  tinyara.bin  tinyara_head.bin  tinyara.map  tinyara_memstats.txt
+```
+
+## How to program a binary
+
+After building TizenRT, follow below steps at `TizenRT/os` folder.
+
+This makes complete set of binaries programmed. `make download ALL`
+```bash
+$ cd os
+$ make download ALL
+```
+
+If you want to download only the necessary binaries, use `make download <partition_name>` as follows.
+```bash
+$ cd os
+$ make download os
+```
+```bash
+$ cd os
+$ make download bl2
+```
+You can refer to the [partition_map.cfg](../artik05x/scripts/partition_map.cfg) file for the partition name.
+
+## How to clear flashed content on a board
+
+You can also delete the binaries on the board. You can clean the board with the following command. `make download erase ALL`
+```bash
+$ cd os
+$ make download erase ALL
+```
+
+You can also erase only specific areas. This is especially useful for refreshing the user area (smartfs area). `make download erase <partition_name>`
+```bash
+$ cd os
+$ make download erase os
+```
+```bash
+$ cd os
+$ make download erase user
+```
+
+## How to save/restore wifi info
+
+![wifi info](../../../docs/media/wifiinfo.jpg)
+
+Only in case that file system is available, it stores information as file `/mnt/wifi/slsiwifi.conf`. You need the following settings in menuconfig.
+ * Application Configuration > Network Utilities > SLSI Wi-Fi API > Enable "Support filesystem"
+
+```
+TASH>>wifi startsta
+TASH>>wifi join <ssid> <key> <security>
+TASH>>
+TASH>>wifi saveconfig                        # save wifi information
+TASH>>cat /mnt/wifi/slsiwifi.conf            # check wifi information
+TASH>>
+TASH>>reboot
+TASH>>
+TASH>>wifi startsta                          # restore wifi connect
+TASH>>
+```
+
+## How to enable the ARTIK SDK
+
+![ARTIK SDK](../../../docs/media/artiksdk.png)
+
+If you want to use the `ARTIK SDK`, you need the following settings in menuconfig.
+ * External Functions > Enable "ARTIK SDK"
+ * Save and exit
+ * Launch the build
+
+If you enable ARTIK SDK and then build it, it will automatically download the ARTIK SDK sources from github and build it. You do not need to download additional files.
+
+In addition, to enable the `ARTIK SDK examples`, set the following in menuconfig:
+ * Application Configuration > Examples > Enable "ARTIK SDK examples"
+ * Press Enter then select all the examples you want to include in the image
+
+## How to SLIP/PPP on UART
+
+LwIP already supports the SLIP/PPP feature which provides a virtual network interface to encapsulate IP packets and to send and receive them to a remote system through UART. Due to poor implementation of the port layer between LwIP and OS, however, we need some modification to it to make SLIP work. Then, we will be able to use one of /dev/ttyS1-4 as a SLIP/PPP channel. This demo will show you how to enable a SLIP interface over /dev/ttyS4 at ARTIK side and that `ping` works well.
+
+1) Enable SLIP
+
+The patch itself does not enable SLIP feature. To enable it, you need to add more configurations through `make menuconfig` as following:
+```diff
+-# CONFIG_BOARD_INITTHREAD is not set
++CONFIG_BOARD_INITTHREAD=y
++CONFIG_BOARD_INITTHREAD_STACKSIZE=2048
++CONFIG_BOARD_INITTHREAD_PRIORITY=240
+```
+```diff
+-# CONFIG_NET_SLIP is not set
++CONFIG_NET_SLIP=y
+```
+```diff
+-# CONFIG_NET_LWIP_SLIP_INTERFACE is not set
++CONFIG_LWIP_SLIP_INTERFACE=y
++CONFIG_LWIP_SLIPIF_THREAD_NAME="slipif_loop"
++CONFIG_LWIP_SLIPIF_THREAD_STACKSIZE=1024
++CONFIG_LWIP_SLIPIF_THREAD_PRIO=100
+```
+
+2) Build & Flash the binary
+
+TizenRT should be built without any compilation errors. Fuse it.
+
+3) Configure SLIP interface at ARTIK05x side
+
+![SLIP_TASH_IFCONFIG](../../../docs/media/slip_tash_ifconfig.jpg)
+
+After boot, a SLIP interface will be regsitered as a network interface, `sl2`. Configure it.
+
+4) Connect CP2103 to UART3 (=/dev/ttyS4)
+
+The SLIP interface is using /dev/ttyS4. Connect your CP2103 to Rx/Tx pins of UART3 on ARTIK05x side.
+CON704[8] and CON704[10] are Rx and Tx of UART3 (/dev/ttyS4) in respectively.
+
+5) Configure host
+
+On the host side (a Linux machine), add a SLIP interface and attach it to the serial device of CP2103. In my case, /dev/ttyUSB3 was the CP2103 connected to the ARTIK05x.
+
+ * step 1 - add and attach SLIP interface over /dev/ttyUSB2
+
+![SLIP_UBUNTU_SLATTACH](../../../docs/media/slip_ubuntu_slattach.jpg)
+
+ * step 2 - configure and set it up
+
+![SLIP_UBUNTU_IFCONFIG](../../../docs/media/slip_ubuntu_ifconfig.jpg)
+
+6) Ping from ARTIK05x to Host PC
+
+![SLIP_TASH_PING](../../../docs/media/slip_tash_ping.jpg)
+
+7) Ping from Host PC to ARTIK05x
+
+![SLIP_UBUNTU_PING](../../../docs/media/slip_ubuntu_ping.jpg)
+
+<!-- ETC -->
+
+## Factory Reset
+
+If you can not boot normally, you can change os to the initial version. This is possible if there is an initialization binary in memory.
+
+#### How to Download the Initialization Binaries
+
+You compress the compiled firmware and download it to the board.
+
+```bash
+$ cd build/output/bin
+$ gzip -c tinyara_head.bin > ../../configs/artik053/bin/factory.bin          # ARTIK053
+$ gzip -c tinyara_head.bin-signed > ../../configs/artik053s/bin/factory.bin  # ARTIK053s
+$ gzip -c tinyara_head.bin-signed > ../../configs/artik055s/bin/factory.bin  # ARTIK055s
+```
+```bash
+$ cd os
+$ make download factory
+```
+
+#### How to enter initialization mode
+
+When you press the RESET button (SW700) to reboot the Starter Kit, press and hold the `ARDUINO RESET` button (SW701) for 10 seconds. Enter initialization mode as follows.
+```
+.....
+Factory reset.
+Erasing boot partitions...
+....................................e
+Erased 600 sectors
+Flashing factory image...
+Uncompressed size: 1258496 = 0x133400
+resetting ...
+
+........ <RESET>.....................
+U-Boot 2017
+.....
+```
+
+## Memory Map
+
+8MB is allocated to the SPI Flash area. 1280 KB is prepared for operation in SRAM.
+
+#### Physical Address Space
 
 The following is the memory map of ARTIK05x.
 ```
@@ -39,7 +460,7 @@ The following is the memory map of ARTIK05x.
            0x00000000 +---------------+
 ```
 
-### Flash Partitions (8MB)
+#### Flash Partitions (8MB)
 
 8MB is allocated to the SPI Flash area. After building TizenRT, refer to the following areas when downloading to the board.
 ```
@@ -92,55 +513,64 @@ The following is the memory map of ARTIK05x.
            0x04000000 +---------------+
 ```
 
-### iRAM usage (1280KB)
+#### iRAM usage (1280KB)
 
 Actually, BL1, OS and WiFi firmware are operated in iRAM.
 ```
-                      **Before OS Boot**                           **After OS Boot**
+                 **Before OS Boot**                           **After OS Boot**
 
-             ADDRESS      CONTENTS                        ADDRESS      CONTENTS
-           0x02160000 +---------------+                 0x02160000 +---------------+
-                      |      BL2      |                            |     WiFi      |
-                      |  Code & Data  |                            |    (320KB)    |
-                      |    (1266KB)   |                            |               |
-                      |               |                            |               |
-                      |               |                            |               |
-                      |               |                 0x02110000 +---------------+
-                      |               |                            |   User Data   |
-                      |               |                            |     (OS)      |
-                      |               |                            |    (959KB)    |
-                      |               |                            |               |
-                      |               |                            |               |
-                      |               |                            |               |
-                      |               |        =>                  |               |
-                      |               |        =>                  |               |
-                      |               |                            |               |
-                      |               |                            |               |
-                      |               |                            |               |
-           0x02023800 +---------------+                            |               |
-                      |      BL1      |                            |               |
-                      |     (8KB)     |                            |               |
-           0x02021800 +---------------+                            |               |
-                      |   Reserved    |                            |               |
-                      |     (2KB)     |                            |               |
-           0x02021000 +---------------+                 0x02020400 +---------------+
-                      |  Vector Table |                            |  Vector Table |
-                      |     (4KB)     |                            |     (1KB)     |
-           0x02020000 +---------------+                 0x02020000 +---------------+
+        ADDRESS      CONTENTS                        ADDRESS      CONTENTS
+      0x02160000 +---------------+                 0x02160000 +---------------+
+                 |      BL2      |                            |     WiFi      |
+                 |  Code & Data  |                            |    (320KB)    |
+                 |    (1266KB)   |                            |               |
+                 |               |                            |               |
+                 |               |                            |               |
+                 |               |                 0x02110000 +---------------+
+                 |               |                            |   User Data   |
+                 |               |                            |     (OS)      |
+                 |               |                            |    (959KB)    |
+                 |               |                            |               |
+                 |               |                            |               |
+                 |               |                            |               |
+                 |               |        =>                  |               |
+                 |               |        =>                  |               |
+                 |               |                            |               |
+                 |               |                            |               |
+                 |               |                            |               |
+      0x02023800 +---------------+                            |               |
+                 |      BL1      |                            |               |
+                 |     (8KB)     |                            |               |
+      0x02021800 +---------------+                            |               |
+                 |   Reserved    |                            |               |
+                 |     (2KB)     |                            |               |
+      0x02021000 +---------------+                 0x02020400 +---------------+
+                 |  Vector Table |                            |  Vector Table |
+                 |     (4KB)     |                            |     (1KB)     |
+      0x02020000 +---------------+                 0x02020000 +---------------+
 ```
 
-# Configure USB Drivers
+## U-Boot for ARTIK05x
+
+* You can refer to the following [link](https://github.com/SamsungARTIK/u-boot-artik/blob/artik-05x/README.md).
+```bash
+git clone --depth=50 --branch=artik-05x https://github.com/SamsungARTIK/u-boot-artik.git
+```
+
+## Configure USB Drivers
 
 Install and configure USB drivers, so OpenOCD is able to communicate with JTAG interface on ARTIK05x board as well as with UART interface used to upload application for flash. Follow steps below specific to your operating system.
 
-### Windows
+#### Windows
+
+![Zadig](../../../docs/media/zadig.png)
 
  * Using standard micro USB B cable connect ARTIK05x Starter Kit to the computer.
  * Wait until ARTIK05x Board is recognized by Windows and drives are installed. If it do not install automatically, then then download Zadig tool (Zadig_X.X.exe) from http://zadig.akeo.ie/ and run it.
  * In Zadig tool go to "Options" and check "List All Devices".
  * Check the list of devices that should contain two ARTIK05x specific USB entries: "Dual RS232-HS (Interface 0)" and "Dual RS232-HS (Interface 1)". The driver name would be "FTDIBUS (vxxxx)" and USB ID: 0403 6010.
 
-### Linux
+#### Linux
 
  * Using standard micro USB B cable connect ARTIK05x Starter Kit to the computer.
  * Open a terminal, enter `ls -l /dev/ttyUSB*` command and check, if board's USB ports are recognized by the OS. You are looking for similar result:
@@ -152,3 +582,27 @@ crw-rw---- 1 root dialout 188, 1 Oct 25 13:42 /dev/ttyUSB1
 ```
 
  * The `/dev/ttyUSBn` interface with lower number is used for JTAG communication. The other interface is routed to ARTIK05x's serial port (UART) used for upload of application to ARTIK05x's flash.
+
+<!-- Training -->
+
+## Sign up for an ARTIK Cloud account
+
+[![Video Label](http://img.youtube.com/vi/yPqhjR3orrI/0.jpg)](https://youtu.be/yPqhjR3orrI?t=0s "Sign up for an ARTIK Cloud account")
+
+In this ARTIK training video, we show how to sign up for an ARTIK Cloud account. This is a prerequisite for any activities involving ARTIK Cloud.
+
+## Onboard a device with the ARTIK mobile app
+
+[![Video Label](http://img.youtube.com/vi/7F0EUays2hE/0.jpg)](https://youtu.be/7F0EUays2hE?t=0s "Onboard a device with the ARTIK mobile app")
+
+In this ARTIK training video, we show how to connect your ARTIK053 developer kit to ARTIK Cloud using the ARTIK mobile app. We call this "onboarding".
+
+## Easily create a simple example
+
+You can quickly and easily create a templete of examples. We prepared `mksampleapp.sh`.
+```bash
+$ cd apps/tools
+$ sh mksampleapp.sh awesome_test
+$ cd ../examples/awesome_test
+```
+Enjoy!

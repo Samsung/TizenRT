@@ -1,5 +1,7 @@
 # ARTIK053
 
+![ARTIK053](../../../docs/media/a053.jpg)
+
 The ARTIK053 is a SOC for Wi-Fi™ IoT solutions. The ARTIK053 has a Wi-Fi subsystem, security subsystem, and application subsystem.
 
 ## Information
@@ -71,156 +73,17 @@ Aimed especially at power-sensitive devices needing Wi-Fi®, the ARTIK053 Module
              XGPIO3(gpio32) <- 23 | 24 -> GND
 ```
 
-## MemoryMap
+## How to Build
 
-8MB is allocated to the SPI Flash area. 1280 KB is prepared for operation in SRAM. If you want to know the physical memory address, see [[here]](../artik05x/README.md#memory-map-artik05x).
-
-## Configuration Sets
-
-After configuration, you can add / remove the configuration you want via menuconfig. If you want to run menuconfig, you need to install `kconfig-frontends`. kconfig-frontends was set at [[kconfig-frontends]](../../../README.md#set-kconfig-frontends) tab of Quick Start.
-
-#### nettest
-
-This is the basic configuration of ARTIK053 products. You can set and build the following:
+This guide is a summary. For more information, please see [here](../artik05x/README.md#how-to-build).
 ```bash
+$ git clone https://github.com/SamsungARTIK/TizenRT.git
+$ cd TizenRT
 $ cd os/tools
 $ ./configure.sh artik053/nettest
-```
-
-#### onboard
-
-This is the configuration for the production phase of ARTIK053 product. When you download it to the board, the `artik_onboarding` app will start automatically when it boots.
-```bash
-$ cd os/tools
-$ ./configure.sh artik053/onboard
-```
-
-#### other configures
-
-The following environment settings are divided into three stages and used in advance. The details are as follows.
-
-1) minimal
-```bash
-$ cd os/tools
-$ ./configure.sh artik053/minimal
-```
-> * OS kernel
-> * Customized C Library
-> * Security(TLS)
-> * BSP(boot loader)
-> * Power
-> * Networking support (LWIP, DHCP Client, Wi-Fi)
-
-2) typical
-```bash
-$ cd os/tools
-$ ./configure.sh artik053/typical
-```
-> * OS kernel
-> * Customized C Library
-> * Security(TLS)
-> * BSP(boot loader)
-> * Power
-> * Networking support(LWIP, DHCP Client, DHCP Server, Wi-Fi)
-> * Watchdog
-> * ARTIK-SDK
-> * JSON
-> * Tash
-> * I2S
-> * DMA
-> * System IO(I2C, UART, GPIO, PWM, SPI)
-> * Network Utilities(FTP Client, Websock, Webclient, Webserver, NTP Client)
-
-3) extra
-```bash
-$ cd os/tools
-$ ./configure.sh artik053/extra
-```
-> * OS kernel
-> * Customized C Library
-> * Security(TLS)
-> * BSP(boot loader)
-> * Power
-> * Networking support (LWIP, DHCP Client, DHCP Server, Wi-Fi)
-> * Watchdog
-> * ARTIK-SDK
-> * JSON
-> * Tash
-> * I2S
-> * DMA
-> * System IO(I2C, UART, GPIO, PWM, SPI)
-> * Network Utilities(FTP Client, Websock, Webclient, Webserver, NTP Client, CoAP, MQTT)
-
-## Environment Set-up
-### On Chip Debugger installation
-
-OpenOCD is used to program and debug.
-
-OpenOCD v0.10.0 is recommended and can be installed like below, but pre-built OpenOCD binaray on `TIZENRT_BASEDIR/build/tools/openocd/linux64(or 32)` can be used without installing.
-```bash
-$ sudo apt-get build-dep openocd
-$ git clone --depth 1 -b v0.10.0 https://git.code.sf.net/p/openocd/code openocd-code
-$ cd openocd-code
-$ ./bootstrap
-$ ./configure
+$ cd ..
 $ make
-$ sudo make install
 ```
-
-## How to program a binary
-
-After building TizenRT, follow below steps at `TIZENRT_BASEDIR/os` folder.
-
-`TIZENRT_BASEDIR` was set at [[Getting the sources]](../../../README.md#getting-the-sources) tab of Quick Start.
-
-This makes complete set of binaries programmed. `TIZENRT_BASEDIR/os/make download ALL`
 ```bash
-$ cd os
 $ make download ALL
-```
-
-If you want to download only the necessary binaries, use `TIZENRT_BASEDIR/os/make download <partition_name>` as follows.
-```bash
-$ cd os
-$ make download bl2
-```
-```bash
-$ cd os
-$ make download os
-```
-You can refer to the [partition_map.cfg](../artik05x/scripts/partition_map.cfg) file for the partition name.
-
-### Factory Reset
-
-If you can not boot normally, you can change os to the initial version. This is possible if there is an initialization binary in memory.
-
-#### How to Download the Initialization Binaries
-
-You compress the compiled firmware and download it to the board.
-
-```bash
-$ cd build/output/bin
-$ gzip -c tinyara_head.bin > ../../configs/artik053/bin/factory.bin
-```
-```bash
-$ cd os
-$ make download factory
-```
-
-#### How to enter initialization mode
-
-When you press the RESET button (SW700) to reboot the Starter Kit, press and hold the `ARDUINO RESET` button (SW701) for 10 seconds. Enter initialization mode as follows.
-```
-.....
-Factory reset.
-Erasing boot partitions...
-....................................e
-Erased 600 sectors
-Flashing factory image...
-Uncompressed size: 1258496 = 0x133400
-resetting ...
-
-........ <RESET>.....................
-U-Boot 2017
-.....
 ```
