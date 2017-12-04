@@ -114,7 +114,20 @@ int network_tc_main(int argc, char *argv[])
 	net_dup_main();
 #endif
 
-	printf("\n########## Network TC End [PASS : %d, FAIL : %d] ##########\n", total_pass, total_fail);
+#ifdef CONFIG_ITC_NET_CLOSE
+	itc_net_close_main();
+#endif
+#ifdef CONFIG_ITC_NET_DUP
+	itc_net_dup_main();
+#endif
+#ifdef CONFIG_ITC_NET_FCNTL
+	itc_net_fcntl_main();
+#endif
+#ifdef CONFIG_ITC_NET_LISTEN
+	itc_net_listen_main();
+#endif
+
+	printf("\n########## Network TC END [PASS : %d, FAIL : %d] ##########\n", total_pass, total_fail);
 
 	working_tc--;
 	sem_post(&tc_sem);
