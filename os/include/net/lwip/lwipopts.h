@@ -66,6 +66,14 @@
 #define LWIP_DHCPS                      0
 #define LWIP_DHCP                       0
 #define LWIP_NETIF_API                  1
+
+#ifdef CONFIG_NET_ENABLE_LOOPBACK
+#define ENABLE_LOOPBACK    CONFIG_NET_ENABLE_LOOPBACK
+#endif
+
+#ifdef CONFIG_NET_LWIP_ETHERNET
+#define LWIP_ETHERNET    CONFIG_NET_LWIP_ETHERNET
+#endif
 /* --------- PreDefined Configurations -------------*/
 
 
