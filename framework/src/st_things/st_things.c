@@ -53,7 +53,7 @@ typedef enum {
 
 static stack_status_e g_stack_status = STACK_NOT_INITIALIZED;
 
- /**
+/**
  * This callback will be invoked by DA Stack with the result of reset.
  * Result will be passed to the application through its registered callback.
  */
@@ -68,7 +68,7 @@ void get_reset_result_cb(int result)
 	ST_LOG_EXIT(ST_INFO);
 }
 
- /**
+/**
  * This callback will be registered with the DA Stack to get the request for user's confirmation for reset.
  * Application's callback will be invoked to get the user's opinion.
  */
@@ -105,7 +105,7 @@ int get_reset_confirm_cb(things_reset_result_func_type *func_carrier, things_es_
 	return 1;
 }
 
- /**
+/**
  * This callback will be registered with the DA Stack to recieve easy-setup events.
  * The status will be passed to the application through the callback registered by the application.
  */
@@ -152,7 +152,7 @@ void get_things_status_cb(things_es_enrollee_state_e state)
 	ST_LOG_EXIT(ST_INFO);
 }
 
- /**
+/**
  * DA Stack invokes this callback for providing ownership transfer states.
  */
 void ownership_transfer_state_cb(const char *addr, uint16_t port, const char *uuid, int event)
@@ -182,7 +182,7 @@ void ownership_transfer_state_cb(const char *addr, uint16_t port, const char *uu
 	ST_LOG_EXIT(ST_INFO);
 }
 
- /**
+/**
  * Callback for getting users confirmation for MUTUAL VERIFICATION BASED JUST WORK Ownership transfer
  */
 int get_user_confirm_cb(void)
@@ -200,7 +200,7 @@ int get_user_confirm_cb(void)
 	return confirm ? 1 : 0;
 }
 
- /**
+/**
  * Callback for getting the pin for random pin based ownership transfer.
  */
 void generated_pin_cb(char *pin_data, size_t pin_size)
@@ -212,7 +212,7 @@ void generated_pin_cb(char *pin_data, size_t pin_size)
 	ST_LOG_EXIT(ST_INFO);
 }
 
- /**
+/**
  * Callback for getting the close pin display request after random pin based ownership transfer.
  */
 void close_pin_display_cb(void)
@@ -380,7 +380,7 @@ int st_things_start(void)
 	ST_LOG_EXIT(ST_INFO);
 	return ST_THINGS_ERROR_NONE;
 
- error:
+error:
 	ST_LOG_EXIT(ST_INFO);
 	return ST_THINGS_ERROR_OPERATION_FAILED;
 }
