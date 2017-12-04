@@ -1283,7 +1283,11 @@ OCStackResult CBORPayloadToCred(const uint8_t *cborPayload, size_t size,
     ret = OC_STACK_OK;
 
 exit:
+#ifdef __TIZENRT__
+    if ((CborNoError != cborFindResult) || (ret != OC_STACK_OK))
+#else
     if (CborNoError != cborFindResult)
+#endif
     {
         DeleteCredList(headCred);
         headCred = NULL;
@@ -1291,9 +1295,26 @@ exit:
         ret = OC_STACK_ERROR;
     }
 
+#ifdef __TIZENRT__
+    if (tagName)
+    {
+        free(tagName);
+    }
+
+    if (roleIdTagName)
+    {
+        free(roleIdTagName);
+    }
+
+    if (name)
+    {
+        free(name);
+    }
+#else
     free(tagName);
     free(roleIdTagName);
     free(name);
+#endif
 
     return ret;
 }
