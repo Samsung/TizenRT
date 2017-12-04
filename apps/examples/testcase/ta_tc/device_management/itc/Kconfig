@@ -12,6 +12,14 @@ menuconfig EXAMPLES_TESTCASE_DM_ITC
 
 if EXAMPLES_TESTCASE_DM_ITC
 
+config ITC_DM_SERVER_IPADDR
+  string "Server IP address"
+  default "192.168.0.105"
+
+config ITC_DM_SERVER_PORT
+  string "Server Port"
+  default "5683"
+  
 config ITC_DM_START
   bool "Start API"
   default n

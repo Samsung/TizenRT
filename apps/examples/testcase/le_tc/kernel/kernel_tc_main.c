@@ -40,7 +40,7 @@ int kernel_tc_main(int argc, char *argv[])
 	total_pass = 0;
 	total_fail = 0;
 
-	printf("=== TINYARA Kernel TC START! ===\n");
+	printf("\n########## Kernel TC Start ##########\n");
 
 #ifdef CONFIG_TC_KERNEL_TASH_HEAPINFO
 	tash_heapinfo_main();
@@ -200,8 +200,7 @@ int kernel_tc_main(int argc, char *argv[])
 #ifdef CONFIG_TC_KERNEL_UMM_HEAP
 	umm_heap_main();
 #endif
-	printf("\n=== TINYARA Kernel TC COMPLETE ===\n");
-	printf("\t\tTotal pass : %d\n\t\tTotal fail : %d\n", total_pass, total_fail);
+	printf("\n########## Kernel TC End [PASS : %d, FAIL : %d] ##########\n", total_pass, total_fail);
 
 	working_tc--;
 	sem_post(&tc_sem);

@@ -171,7 +171,7 @@ int itc_dm_main(int argc, char *argv[])
 	return 0;
 #endif
 	if (wifiAutoConnect() == 1) {
-		printf("=== TINYARA DM ITC START! ===\n");
+		printf("\n########## DeviceManagement ITC Start ##########\n");
 		itc_dm_lwm2m_testcase_main();
 #ifdef CONFIG_ITC_DM_CONN_GET_RSSI
 		itc_dm_conn_get_rssi_main();
@@ -202,8 +202,7 @@ int itc_dm_main(int argc, char *argv[])
 #endif
 #endif
 
-		printf("\n=== TINYARA DM ITC COMPLETE ===\n");
-		printf("\t\tTotal pass : %d\n\t\tTotal fail : %d\n", total_pass, total_fail);
+	printf("\n########## DeviceManagement ITC End [PASS : %d, FAIL : %d] ##########\n", total_pass, total_fail);
 
 		wifiAutoConnectDeInit_itc();
 	}

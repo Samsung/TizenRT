@@ -433,7 +433,7 @@ static int mqtt_utc(int argc, FAR char *argv[])
 
 	total_fail = total_pass = 0;
 
-	printf("=== TIZENRT MQTT TC START! ===\n");
+	printf("\n########## MQTT UTC Start ##########\n");
 	int res = _utc_mqtt_init();
 	if (res < 0) {
 		UTC_MQTT_LOGE;
@@ -456,8 +456,7 @@ static int mqtt_utc(int argc, FAR char *argv[])
 
 	_utc_mqtt_deinit();
 exit:
-	printf("\n=== TIZENRT MQTT TC COMPLETE ===\n");
-	printf("\t\tTotal pass : %d\n\t\tTotal fail : %d\n", total_pass, total_fail);
+	printf("\n########## MQTT UTC End [PASS : %d, FAIL : %d] ##########\n", total_pass, total_fail);
 
 	working_tc--;
 	sem_post(&tc_sem);

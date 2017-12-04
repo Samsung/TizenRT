@@ -158,7 +158,7 @@ signing() {
         exit 1
     fi
 
-    ${CODESIGNER_PATH}/${CODESIGNER_TOOL} ${CODESIGNER_PATH}/rsa_private.key $TIZENRT_IMAGE
+    ${CODESIGNER_PATH}/${CODESIGNER_TOOL} ${CODESIGNER_PATH}/rsa_private.key $TIZENRT_BIN
     TIZENRT_BIN=${TIZENRT_BIN}-signed
 }
 

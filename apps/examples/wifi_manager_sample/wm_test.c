@@ -70,7 +70,7 @@ int wm_signal_init(void);
 /*
  * callbacks
  */
-static void wm_sta_connected(void);
+static void wm_sta_connected(wifi_manager_result_e);
 static void wm_sta_disconnected(void);
 static void wm_softap_sta_join(void);
 static void wm_softap_sta_leave(void);
@@ -279,7 +279,7 @@ wm_signal_deinit(void)
 /*
  * Callback
  */
-void wm_sta_connected(void)
+void wm_sta_connected(wifi_manager_result_e res)
 {
 	printf(" T%d --> %s\n", getpid(), __FUNCTION__);
 	WM_TEST_SIGNAL;

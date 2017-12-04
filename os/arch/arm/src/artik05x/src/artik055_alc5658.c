@@ -287,7 +287,6 @@ int s5j_alc5658_initialize(int minor)
 		 * ALC5658 which will return an audio interface.
 		 */
 		/* Create a device name */
-#ifdef CONFIG_AUDIO_MULTI_CARD
 		snprintf(devname, 12, "pcmC%uD%u%c", minor, 0, 'c');
 
 		alc5658 = alc5658_initialize(i2c, i2s, &g_alc5658info.lower);
@@ -316,10 +315,6 @@ int s5j_alc5658_initialize(int minor)
 		}
 
 		snprintf(devname, 12, "pcmC%uD%u%c", minor, 0, 'p');
-
-#else
-		snprintf(devname, 12, "pcmC%u", minor);
-#endif
 
 		alc5658 = alc5658_initialize(i2c, i2s, &g_alc5658info.lower);
 		if (!alc5658) {

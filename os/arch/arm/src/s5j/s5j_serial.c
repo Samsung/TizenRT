@@ -1102,6 +1102,36 @@ int up_putc(int ch)
 }
 
 /****************************************************************************
+ * Name: up_getc
+ *
+ * Description:
+ *   Read one byte from the serial console
+ *
+ * Input Parameters:
+ *   none
+ *
+ * Returned Value:
+ *   int value, -1 if error, 0~255 if byte successfully read
+ *
+ ****************************************************************************/
+int up_getc(void)
+{
+#ifdef HAVE_SERIAL_CONSOLE
+	uint32_t state;
+	uint32_t ufstat = uart_getreg32(CONSOLE_DEV.priv, S5J_UART_UFSTAT_OFFSET);
+
+	if ((ufstat & (UART_UFSTAT_RX_FIFO_COUNT_MASK |
+				UART_UFSTAT_RX_FIFO_FULL_MASK)) != 0) {
+		return up_receive(&CONSOLE_DEV, &state);
+	} else {
+		return -1;
+	}
+#else
+	return -1;
+#endif
+}
+
+/****************************************************************************
  * Name: up_lowputc
  *
  * Description:

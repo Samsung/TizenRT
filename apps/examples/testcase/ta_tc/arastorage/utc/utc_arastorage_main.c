@@ -109,14 +109,14 @@ static void cleanup(void)
 }
 
 /**
-* @testcase         utc_arastorage_db_init_tc_p
+* @testcase         utc_arastorage_db_init_p
 * @brief            Initialize database resources
 * @scenario         Initialize resources used in database
 * @apicovered       db_init
 * @precondition     none
 * @postcondition    none
 */
-static void utc_arastorage_db_init_tc_p(void)
+static void utc_arastorage_db_init_p(void)
 {
 	db_result_t res;
 
@@ -127,14 +127,14 @@ static void utc_arastorage_db_init_tc_p(void)
 }
 
 /**
-* @testcase         utc_arastorage_db_deinit_tc_p
+* @testcase         utc_arastorage_db_deinit_p
 * @brief            De-initialize database resources
 * @scenario         Release any resources used in database
 * @apicovered       db_deinit
 * @precondition     none
 * @postcondition    none
 */
-static void utc_arastorage_db_deinit_tc_p(void)
+static void utc_arastorage_db_deinit_p(void)
 {
 	db_result_t res;
 
@@ -145,14 +145,14 @@ static void utc_arastorage_db_deinit_tc_p(void)
 }
 
 /**
-* @testcase         utc_arastorage_db_exec_tc_p
+* @testcase         utc_arastorage_db_exec_p
 * @brief            Excute database operations
 * @scenario         Create relation, attributes, index and insert data
 * @apicovered       db_exec
 * @precondition     none
 * @postcondition    none
 */
-static void utc_arastorage_db_exec_tc_p(void)
+static void utc_arastorage_db_exec_p(void)
 {
 	db_result_t res;
 	char query[QUERY_LENGTH];
@@ -318,14 +318,14 @@ static void utc_arastorage_db_exec_tc_p(void)
 }
 
 /**
-* @testcase         utc_arastorage_db_exec_tc_n
+* @testcase         utc_arastorage_db_exec_n
 * @brief            Excute database operations with invalid argument
 * @scenario         Create exiting relation, attribute and excute db with NULL value
 * @apicovered       db_exec
 * @precondition     none
 * @postcondition    none
 */
-static void utc_arastorage_db_exec_tc_n(void)
+static void utc_arastorage_db_exec_n(void)
 {
 	db_result_t res;
 	char query[QUERY_LENGTH];
@@ -375,14 +375,14 @@ static void utc_arastorage_db_exec_tc_n(void)
 }
 
 /**
-* @testcase         utc_arastorage_db_query_tc_p
+* @testcase         utc_arastorage_db_query_p
 * @brief            Query a database
 * @scenario         Select data and get returned cursor
 * @apicovered       db_query
-* @precondition     utc_arastorage_db_exec_tc_p should be passed
+* @precondition     utc_arastorage_db_exec_p should be passed
 * @postcondition    none
 */
-static void utc_arastorage_db_query_tc_p(void)
+static void utc_arastorage_db_query_p(void)
 {
 	db_result_t res;
 	char query[QUERY_LENGTH];
@@ -444,14 +444,14 @@ static void utc_arastorage_db_query_tc_p(void)
 }
 
 /**
-* @testcase         utc_arastorage_db_query_tc_n
+* @testcase         utc_arastorage_db_query_n
 * @brief            Query a database with invalid argument
 * @scenario         Select data from invalid relation and query db with NULL value
 * @apicovered       db_query
 * @precondition     none
 * @postcondition    none
 */
-static void utc_arastorage_db_query_tc_n(void)
+static void utc_arastorage_db_query_n(void)
 {
 	char query[QUERY_LENGTH];
 	char *name = "BAD_RELATION";
@@ -468,14 +468,14 @@ static void utc_arastorage_db_query_tc_n(void)
 }
 
 /**
-* @testcase         utc_arastorage_db_get_result_message_tc_p
+* @testcase         utc_arastorage_db_get_result_message_p
 * @brief            Get database result message
 * @scenario         Get database result message corresponding to result value
 * @apicovered       db_get_result_message
 * @precondition     none
 * @postcondition    none
 */
-static void utc_arastorage_db_get_result_message_tc_p(void)
+static void utc_arastorage_db_get_result_message_p(void)
 {
 	TC_ASSERT_EQ("db_get_result_message", strcmp(DB_FINISHED_MSG, db_get_result_message(DB_FINISHED)), 0);
 	TC_ASSERT_EQ("db_get_result_message", strcmp(DB_OK_MSG, db_get_result_message(DB_OK)), 0);
@@ -499,14 +499,14 @@ static void utc_arastorage_db_get_result_message_tc_p(void)
 }
 
 /**
-* @testcase         utc_arastorage_db_get_result_message_tc_n
+* @testcase         utc_arastorage_db_get_result_message_n
 * @brief            Get database result message with invalid argument
 * @scenario         Get database result message with out of range result value
 * @apicovered       db_get_result_message
 * @precondition     none
 * @postcondition    none
 */
-static void utc_arastorage_db_get_result_message_tc_n(void)
+static void utc_arastorage_db_get_result_message_n(void)
 {
 	int num;
 
@@ -518,14 +518,14 @@ static void utc_arastorage_db_get_result_message_tc_n(void)
 }
 
 /**
-* @testcase         utc_arastorage_db_print_header_tc_p
+* @testcase         utc_arastorage_db_print_header_p
 * @brief            Print a header of query result
 * @scenario         Print relation, attribute name of query result
 * @apicovered       db_print_header
-* @precondition     utc_arastorage_db_exec_tc_p, utc_arastorage_db_query_tc_p should be passed
+* @precondition     utc_arastorage_db_exec_p, utc_arastorage_db_query_p should be passed
 * @postcondition    none
 */
-static void utc_arastorage_db_print_header_tc_p(void)
+static void utc_arastorage_db_print_header_p(void)
 {
 	db_result_t res;
 
@@ -536,14 +536,14 @@ static void utc_arastorage_db_print_header_tc_p(void)
 }
 
 /**
-* @testcase         utc_arastorage_db_print_header_tc_n
+* @testcase         utc_arastorage_db_print_header_n
 * @brief            Print a header of query result with invalid argument
 * @scenario         Print relation, attribute name of query result with NULL value
 * @apicovered       db_print_header
 * @precondition     none
 * @postcondition    none
 */
-static void utc_arastorage_db_print_header_tc_n(void)
+static void utc_arastorage_db_print_header_n(void)
 {
 	db_result_t res;
 
@@ -554,14 +554,14 @@ static void utc_arastorage_db_print_header_tc_n(void)
 }
 
 /**
-* @testcase         utc_arastorage_db_print_tuple_tc_p
+* @testcase         utc_arastorage_db_print_tuple_p
 * @brief            Print tuple pointed by cursor
 * @scenario         Print tuple values from the first to the last row
 * @apicovered       cursor_move_first, db_print_tuple, cursor_move_next
-* @precondition     utc_arastorage_db_exec_tc_p, utc_arastorage_db_query_tc_p should be passed
+* @precondition     utc_arastorage_db_exec_p, utc_arastorage_db_query_p should be passed
 * @postcondition    none
 */
-static void utc_arastorage_db_print_tuple_tc_p(void)
+static void utc_arastorage_db_print_tuple_p(void)
 {
 	db_result_t res;
 
@@ -576,14 +576,14 @@ static void utc_arastorage_db_print_tuple_tc_p(void)
 }
 
 /**
-* @testcase         utc_arastorage_db_print_tuple_tc_n
+* @testcase         utc_arastorage_db_print_tuple_n
 * @brief            Print tuple pointed by cursor with invalid argument
 * @scenario         Print tuple values from the first to the last row with NULL value
 * @apicovered       cursor_move_first, db_print_tuple, cursor_move_next
 * @precondition	    none
 * @postcondition    none
 */
-static void utc_arastorage_db_print_tuple_tc_n(void)
+static void utc_arastorage_db_print_tuple_n(void)
 {
 	db_result_t res;
 
@@ -594,14 +594,14 @@ static void utc_arastorage_db_print_tuple_tc_n(void)
 }
 
 /**
-* @testcase         utc_arastorage_db_print_value_tc_p
+* @testcase         utc_arastorage_db_print_value_p
 * @brief            Print a attribute value of tuple pointed by cursor
 * @scenario         Print a specific attribute value of tuple pointed by cursor
 * @apicovered       db_print_value
-* @precondition     utc_arastorage_db_exec_tc_p, utc_arastorage_db_query_tc_p should be passed
+* @precondition     utc_arastorage_db_exec_p, utc_arastorage_db_query_p should be passed
 * @postcondition    none
 */
-static void utc_arastorage_db_print_value_tc_p(void)
+static void utc_arastorage_db_print_value_p(void)
 {
 	db_result_t res;
 
@@ -618,14 +618,14 @@ static void utc_arastorage_db_print_value_tc_p(void)
 }
 
 /**
-* @testcase         utc_arastorage_db_print_value_tc_n
+* @testcase         utc_arastorage_db_print_value_n
 * @brief            Print a attribute value of tuple pointed by cursor with invalid argument
 * @scenario         Print a specific attribute value of tuple pointed by cursor with NULL value
 * @apicovered       db_print_value
 * @precondition     none
 * @postcondition    none
 */
-static void utc_arastorage_db_print_value_tc_n(void)
+static void utc_arastorage_db_print_value_n(void)
 {
 	db_result_t res;
 
@@ -639,14 +639,14 @@ static void utc_arastorage_db_print_value_tc_n(void)
 }
 
 /**
-* @testcase         utc_arastorage_db_cursor_free_tc_p
+* @testcase         utc_arastorage_db_cursor_free_p
 * @brief            Free cursor
 * @scenario         Free allocated resources for cursor
 * @apicovered       db_cursor_free
-* @precondition     utc_arastorage_db_exec_tc_p, utc_arastorage_db_query_tc_p should be passed
+* @precondition     utc_arastorage_db_exec_p, utc_arastorage_db_query_p should be passed
 * @postcondition    none
 */
-static void utc_arastorage_db_cursor_free_tc_p(void)
+static void utc_arastorage_db_cursor_free_p(void)
 {
 	db_result_t res;
 
@@ -658,14 +658,14 @@ static void utc_arastorage_db_cursor_free_tc_p(void)
 }
 
 /**
-* @testcase         utc_arastorage_db_cursor_free_tc_n
+* @testcase         utc_arastorage_db_cursor_free_n
 * @brief            Free cursor with invalid argument
 * @scenario         Free allocated resources for cursor with NULL value
 * @apicovered       db_cursor_free
 * @precondition     none
 * @postcondition    none
 */
-static void utc_arastorage_db_cursor_free_tc_n(void)
+static void utc_arastorage_db_cursor_free_n(void)
 {
 	db_result_t res;
 
@@ -681,14 +681,14 @@ static void utc_arastorage_db_cursor_free_tc_n(void)
 }
 
 /**
-* @testcase         utc_arastorage_cursor_get_count_tc_p
+* @testcase         utc_arastorage_cursor_get_count_p
 * @brief            Get the number of tuples in cursor
 * @scenario         Get the number of tuples in cursor
 * @apicovered       cursor_get_count
-* @precondition     utc_arastorage_db_exec_tc_p, utc_arastorage_db_query_tc_p should be passed
+* @precondition     utc_arastorage_db_exec_p, utc_arastorage_db_query_p should be passed
 * @postcondition    none
 */
-static void utc_arastorage_cursor_get_count_tc_p(void)
+static void utc_arastorage_cursor_get_count_p(void)
 {
 	tuple_id_t count;
 
@@ -700,14 +700,14 @@ static void utc_arastorage_cursor_get_count_tc_p(void)
 }
 
 /**
-* @testcase         utc_arastorage_cursor_get_count_tc_n
+* @testcase         utc_arastorage_cursor_get_count_n
 * @brief            Get the number of tuples in cursor with invalid argument
 * @scenario         Get the number of tuples in cursor with NULL value
 * @apicovered       cursor_get_count
 * @precondition     none
 * @postcondition    none
 */
-static void utc_arastorage_cursor_get_count_tc_n(void)
+static void utc_arastorage_cursor_get_count_n(void)
 {
 	tuple_id_t count;
 
@@ -719,14 +719,14 @@ static void utc_arastorage_cursor_get_count_tc_n(void)
 }
 
 /**
-* @testcase         utc_arastorage_cursor_move_first_tc_p
+* @testcase         utc_arastorage_cursor_move_first_p
 * @brief            Move cursor to the first row
 * @scenario         Move cursor to the first row and check whether current row is set as the first row
 * @apicovered       cursor_move_first, cursor_get_row
-* @precondition     utc_arastorage_db_exec_tc_p, utc_arastorage_db_query_tc_p should be passed
+* @precondition     utc_arastorage_db_exec_p, utc_arastorage_db_query_p should be passed
 * @postcondition    none
 */
-static void utc_arastorage_cursor_move_first_tc_p(void)
+static void utc_arastorage_cursor_move_first_p(void)
 {
 	db_result_t res;
 
@@ -739,14 +739,14 @@ static void utc_arastorage_cursor_move_first_tc_p(void)
 }
 
 /**
-* @testcase         utc_arastorage_cursor_move_first_tc_n
+* @testcase         utc_arastorage_cursor_move_first_n
 * @brief            Move cursor to the first row with invalid argument
 * @scenario         Move cursor to the first row with NULL value
 * @apicovered       cursor_move_first, cursor_get_row
 * @precondition     none
 * @postcondition    none
 */
-static void utc_arastorage_cursor_move_first_tc_n(void)
+static void utc_arastorage_cursor_move_first_n(void)
 {
 	db_result_t res;
 
@@ -758,14 +758,14 @@ static void utc_arastorage_cursor_move_first_tc_n(void)
 }
 
 /**
-* @testcase         utc_arastorage_cursor_move_next_tc_p
+* @testcase         utc_arastorage_cursor_move_next_p
 * @brief            Move cursor to next row
 * @scenario         Move cursor to next row and check whether current row is set as the next row
 * @apicovered       cursor_move_next, cursor_get_row
-* @precondition     utc_arastorage_db_exec_tc_p, utc_arastorage_db_query_tc_p should be passed
+* @precondition     utc_arastorage_db_exec_p, utc_arastorage_db_query_p should be passed
 * @postcondition    none
 */
-static void utc_arastorage_cursor_move_next_tc_p(void)
+static void utc_arastorage_cursor_move_next_p(void)
 {
 	db_result_t res;
 
@@ -778,14 +778,14 @@ static void utc_arastorage_cursor_move_next_tc_p(void)
 }
 
 /**
-* @testcase         utc_arastorage_cursor_move_next_tc_n
+* @testcase         utc_arastorage_cursor_move_next_n
 * @brief            Move cursor to next row with invalid argument
 * @scenario         Move cursor to next row with NULL value
 * @apicovered       cursor_move_next, cursor_get_row
 * @precondition     none
 * @postcondition    none
 */
-static void utc_arastorage_cursor_move_next_tc_n(void)
+static void utc_arastorage_cursor_move_next_n(void)
 {
 	db_result_t res;
 
@@ -797,14 +797,14 @@ static void utc_arastorage_cursor_move_next_tc_n(void)
 }
 
 /**
-* @testcase         utc_arastorage_cursor_move_prev_tc_p
+* @testcase         utc_arastorage_cursor_move_prev_p
 * @brief            Move cursor to previous row
 * @scenario         Move cursor to previous row and checkwhether current row is set as the previous row
 * @apicovered       cursor_move_next, cursor_get_row
-* @precondition     utc_arastorage_db_exec_tc_p, utc_arastorage_db_query_tc_p should be passed
+* @precondition     utc_arastorage_db_exec_p, utc_arastorage_db_query_p should be passed
 * @postcondition    none
 */
-static void utc_arastorage_cursor_move_prev_tc_p(void)
+static void utc_arastorage_cursor_move_prev_p(void)
 {
 	db_result_t res;
 
@@ -817,14 +817,14 @@ static void utc_arastorage_cursor_move_prev_tc_p(void)
 }
 
 /**
-* @testcase         utc_arastorage_cursor_move_prev_tc_n
+* @testcase         utc_arastorage_cursor_move_prev_n
 * @brief            Move cursor to previous row with invalid argument
 * @scenario         Move cursor to previous row with NULL value
 * @apicovered       cursor_move_prev, cursor_get_row
 * @precondition     none
 * @postcondition    none
 */
-static void utc_arastorage_cursor_move_prev_tc_n(void)
+static void utc_arastorage_cursor_move_prev_n(void)
 {
 	db_result_t res;
 
@@ -836,14 +836,14 @@ static void utc_arastorage_cursor_move_prev_tc_n(void)
 }
 
 /**
-* @testcase         utc_arastorage_cursor_move_last_tc_p
+* @testcase         utc_arastorage_cursor_move_last_p
 * @brief            Move cursor to the last row
 * @scenario         Move cursor to the last row and check whether current row is set as the last row
 * @apicovered       cursor_move_last, cursor_get_row
-* @precondition     utc_arastorage_db_exec_tc_p, utc_arastorage_db_query_tc_p should be passed
+* @precondition     utc_arastorage_db_exec_p, utc_arastorage_db_query_p should be passed
 * @postcondition    none
 */
-static void utc_arastorage_cursor_move_last_tc_p(void)
+static void utc_arastorage_cursor_move_last_p(void)
 {
 	db_result_t res;
 
@@ -856,14 +856,14 @@ static void utc_arastorage_cursor_move_last_tc_p(void)
 }
 
 /**
-* @testcase         utc_arastorage_cursor_move_last_tc_n
+* @testcase         utc_arastorage_cursor_move_last_n
 * @brief            Move cursor to the last row with invalid argument
 * @scenario         Move cursor to the last row with NULL value
 * @apicovered       cursor_move_last, cursor_get_row
 * @precondition	    none
 * @postcondition    none
 */
-static void utc_arastorage_cursor_move_last_tc_n(void)
+static void utc_arastorage_cursor_move_last_n(void)
 {
 	db_result_t res;
 
@@ -875,14 +875,14 @@ static void utc_arastorage_cursor_move_last_tc_n(void)
 }
 
 /**
-* @testcase         utc_arastorage_cursor_move_last_tc_p
+* @testcase         utc_arastorage_cursor_move_last_p
 * @brief            Move cursor to specific row
 * @scenario         Move cursor to specific row and check whether current row is set as the specific row
 * @apicovered       cursor_move_to, cursor_get_row
-* @precondition     utc_arastorage_db_exec_tc_p, utc_arastorage_db_query_tc_p should be passed
+* @precondition     utc_arastorage_db_exec_p, utc_arastorage_db_query_p should be passed
 * @postcondition    none
 */
-static void utc_arastorage_cursor_move_to_tc_p(void)
+static void utc_arastorage_cursor_move_to_p(void)
 {
 	db_result_t res;
 	tuple_id_t row = 3;
@@ -896,14 +896,14 @@ static void utc_arastorage_cursor_move_to_tc_p(void)
 }
 
 /**
-* @testcase         utc_arastorage_cursor_move_last_tc_n
+* @testcase         utc_arastorage_cursor_move_last_n
 * @brief            Move cursor to specific row with invalid argument
 * @scenario         Move cursor to out of range row value and valid row value with NULL cursor value
 * @apicovered       cursor_move_to, cursor_get_row
 * @precondition     none
 * @postcondition    none
 */
-static void utc_arastorage_cursor_move_to_tc_n(void)
+static void utc_arastorage_cursor_move_to_n(void)
 {
 	db_result_t res;
 	tuple_id_t row = 3;
@@ -921,14 +921,14 @@ static void utc_arastorage_cursor_move_to_tc_n(void)
 }
 
 /**
-* @testcase         utc_arastorage_cursor_get_row_tc_p
+* @testcase         utc_arastorage_cursor_get_row_p
 * @brief            Get current row in cursor
 * @scenario         Get current row in cursor
 * @apicovered       cursor_get_row
-* @precondition     utc_arastorage_db_exec_tc_p, utc_arastorage_db_query_tc_p should be passed
+* @precondition     utc_arastorage_db_exec_p, utc_arastorage_db_query_p should be passed
 * @postcondition    none
 */
-static void utc_arastorage_cursor_get_row_tc_p(void)
+static void utc_arastorage_cursor_get_row_p(void)
 {
 	cursor_row_t row;
 	tuple_id_t id = 3;
@@ -940,14 +940,14 @@ static void utc_arastorage_cursor_get_row_tc_p(void)
 }
 
 /**
-* @testcase         utc_arastorage_cursor_get_row_tc_n
+* @testcase         utc_arastorage_cursor_get_row_n
 * @brief            Get current row in cursor with invalid argument
 * @scenario         Get current row in cursor with NULL value
 * @apicovered       cursor_get_row
 * @precondition     none
 * @postcondition    none
 */
-static void utc_arastorage_cursor_get_row_tc_n(void)
+static void utc_arastorage_cursor_get_row_n(void)
 {
 	cursor_row_t row;
 	tuple_id_t id = 3;
@@ -959,14 +959,14 @@ static void utc_arastorage_cursor_get_row_tc_n(void)
 }
 
 /**
-* @testcase         utc_arastorage_cursor_is_first_row_tc_p
+* @testcase         utc_arastorage_cursor_is_first_row_p
 * @brief            Check whether cursor points the first row
 * @scenario         Move cursor to the first row and check whether cursor points the first row
 * @apicovered       cursor_move_first, cursor_is_first_row
-* @precondition	    utc_arastorage_db_exec_tc_p, utc_arastorage_db_query_tc_p should be passed
+* @precondition	    utc_arastorage_db_exec_p, utc_arastorage_db_query_p should be passed
 * @postcondition    none
 */
-static void utc_arastorage_cursor_is_first_row_tc_p(void)
+static void utc_arastorage_cursor_is_first_row_p(void)
 {
 	db_result_t res;
 
@@ -978,7 +978,7 @@ static void utc_arastorage_cursor_is_first_row_tc_p(void)
 }
 
 /**
-* @testcase         utc_arastorage_cursor_is_first_row_tc_n
+* @testcase         utc_arastorage_cursor_is_first_row_n
 * @brief            Check whether cursor points the first row with invalid argument
 * @scenario         Move cursor to the last row and check whether current row is set as the first row,
 *                   Check whether cursor points the first row with NULL value
@@ -986,7 +986,7 @@ static void utc_arastorage_cursor_is_first_row_tc_p(void)
 * @precondition     none
 * @postcondition    none
 */
-static void utc_arastorage_cursor_is_first_row_tc_n(void)
+static void utc_arastorage_cursor_is_first_row_n(void)
 {
 	db_result_t res;
 	char query[QUERY_LENGTH];
@@ -1007,14 +1007,14 @@ static void utc_arastorage_cursor_is_first_row_tc_n(void)
 }
 
 /**
-* @testcase         utc_arastorage_cursor_is_last_row_tc_p
+* @testcase         utc_arastorage_cursor_is_last_row_p
 * @brief            Check whether cursor points the last row
 * @scenario         Move cursor to the last row and check whether cursor points the last row
 * @apicovered       cursor_move_last, cursor_is_last_row
-* @precondition     utc_arastorage_db_exec_tc_p, utc_arastorage_db_query_tc_p should be passed
+* @precondition     utc_arastorage_db_exec_p, utc_arastorage_db_query_p should be passed
 * @postcondition    none
 */
-static void utc_arastorage_cursor_is_last_row_tc_p(void)
+static void utc_arastorage_cursor_is_last_row_p(void)
 {
 	db_result_t res;
 
@@ -1026,7 +1026,7 @@ static void utc_arastorage_cursor_is_last_row_tc_p(void)
 }
 
 /**
-* @testcase         utc_arastorage_cursor_is_last_row_tc_n
+* @testcase         utc_arastorage_cursor_is_last_row_n
 * @brief            Check whether cursor points the last row with invalid argument
 * @scenario         Move cursor to the first row and check whether current row is set as the last row,
 *                   Check whether cursor points the last row with NULL value
@@ -1034,7 +1034,7 @@ static void utc_arastorage_cursor_is_last_row_tc_p(void)
 * @precondition	    none
 * @postcondition    none
 */
-static void utc_arastorage_cursor_is_last_row_tc_n(void)
+static void utc_arastorage_cursor_is_last_row_n(void)
 {
 	db_result_t res;
 	char query[QUERY_LENGTH];
@@ -1055,14 +1055,14 @@ static void utc_arastorage_cursor_is_last_row_tc_n(void)
 }
 
 /**
-* @testcase         utc_arastorage_cursor_get_attr_type_tc_p
+* @testcase         utc_arastorage_cursor_get_attr_type_p
 * @brief            Get a domain(type) of specific attribute
 * @scenario         Get a domain of specific attribute
 * @apicovered       cursor_get_attr_type
-* @precondition     utc_arastorage_db_exec_tc_p, utc_arastorage_db_query_tc_p should be passed
+* @precondition     utc_arastorage_db_exec_p, utc_arastorage_db_query_p should be passed
 * @postcondition    none
 */
-static void utc_arastorage_cursor_get_attr_type_tc_p(void)
+static void utc_arastorage_cursor_get_attr_type_p(void)
 {
 	domain_t domain;
 
@@ -1084,7 +1084,7 @@ static void utc_arastorage_cursor_get_attr_type_tc_p(void)
 }
 
 /**
-* @testcase         utc_arastorage_cursor_get_attr_type_tc_n
+* @testcase         utc_arastorage_cursor_get_attr_type_n
 * @brief            Get a domain(type) of specific attribute with invalid argument
 * @scenario         Get a domain of specific attribute with NULL value
 *                   Get a domain of attribute with out of range attribute index
@@ -1092,7 +1092,7 @@ static void utc_arastorage_cursor_get_attr_type_tc_p(void)
 * @precondition     none
 * @postcondition    none
 */
-static void utc_arastorage_cursor_get_attr_type_tc_n(void)
+static void utc_arastorage_cursor_get_attr_type_n(void)
 {
 	domain_t domain;
 
@@ -1116,14 +1116,14 @@ static void utc_arastorage_cursor_get_attr_type_tc_n(void)
 }
 
 /**
-* @testcase         utc_arastorage_cursor_get_attr_name_tc_p
+* @testcase         utc_arastorage_cursor_get_attr_name_p
 * @brief            Get a name of specific attribute
 * @scenario         Get a name of specific attribute
 * @apicovered       cursor_get_attr_name
-* @precondition     utc_arastorage_db_exec_tc_p, utc_arastorage_db_query_tc_p should be passed
+* @precondition     utc_arastorage_db_exec_p, utc_arastorage_db_query_p should be passed
 * @postcondition    none
 */
-static void utc_arastorage_cursor_get_attr_name_tc_p(void)
+static void utc_arastorage_cursor_get_attr_name_p(void)
 {
 	char *attr_name;
 
@@ -1149,7 +1149,7 @@ static void utc_arastorage_cursor_get_attr_name_tc_p(void)
 }
 
 /**
-* @testcase         utc_arastorage_cursor_get_attr_name_tc_n
+* @testcase         utc_arastorage_cursor_get_attr_name_n
 * @brief            Get a name of specific attribute with invalid argument
 * @scenario         Get a name of specific attribute with NULL value
 *                   Get a name of attribute with out of range attribute index
@@ -1157,7 +1157,7 @@ static void utc_arastorage_cursor_get_attr_name_tc_p(void)
 * @precondition     none
 * @postcondition    none
 */
-static void utc_arastorage_cursor_get_attr_name_tc_n(void)
+static void utc_arastorage_cursor_get_attr_name_n(void)
 {
 	char *attr_name;
 
@@ -1191,14 +1191,14 @@ static void utc_arastorage_cursor_get_attr_name_tc_n(void)
 }
 
 /**
-* @testcase         utc_arastorage_cursor_get_attr_index_tc_p
+* @testcase         utc_arastorage_cursor_get_attr_index_p
 * @brief            Get a index of specific attribute
 * @scenario         Get a index of specific attribute
 * @apicovered       cursor_get_attr_index
-* @precondition     utc_arastorage_db_exec_tc_p, utc_arastorage_db_query_tc_p should be passed
+* @precondition     utc_arastorage_db_exec_p, utc_arastorage_db_query_p should be passed
 * @postcondition    none
 */
-static void utc_arastorage_cursor_get_attr_index_tc_p(void)
+static void utc_arastorage_cursor_get_attr_index_p(void)
 {
 	attribute_id_t index;
 
@@ -1224,14 +1224,14 @@ static void utc_arastorage_cursor_get_attr_index_tc_p(void)
 }
 
 /**
-* @testcase         utc_arastorage_cursor_get_attr_index_tc_n
+* @testcase         utc_arastorage_cursor_get_attr_index_n
 * @brief            Get a index of specific attribute with invalid argument
 * @scenario         Get a index of specific attribute with NULL value
 * @apicovered       cursor_get_attr_index
 * @precondition     none
 * @postcondition    none
 */
-static void utc_arastorage_cursor_get_attr_index_tc_n(void)
+static void utc_arastorage_cursor_get_attr_index_n(void)
 {
 	attribute_id_t index;
 
@@ -1257,14 +1257,14 @@ static void utc_arastorage_cursor_get_attr_index_tc_n(void)
 }
 
 /**
-* @testcase         utc_arastorage_cursor_get_int_value_tc_p
+* @testcase         utc_arastorage_cursor_get_int_value_p
 * @brief            Get a int value of specific attribute
 * @scenario         Get a int value of specific attribute
 * @apicovered       cursor_get_int_value
-* @precondition     utc_arastorage_db_exec_tc_p, utc_arastorage_db_query_tc_p should be passed
+* @precondition     utc_arastorage_db_exec_p, utc_arastorage_db_query_p should be passed
 * @postcondition    none
 */
-static void utc_arastorage_cursor_get_int_value_tc_p(void)
+static void utc_arastorage_cursor_get_int_value_p(void)
 {
 	int value;
 
@@ -1279,7 +1279,7 @@ static void utc_arastorage_cursor_get_int_value_tc_p(void)
 }
 
 /**
-* @testcase         utc_arastorage_cursor_get_int_value_tc_n
+* @testcase         utc_arastorage_cursor_get_int_value_n
 * @brief            Get a int value of specific attribute with invalid argument
 * @scenario         Get a int value of specific attribute with NULL value
 *                   Get a int value of attribute which the type is not integer
@@ -1287,7 +1287,7 @@ static void utc_arastorage_cursor_get_int_value_tc_p(void)
 * @precondition     none
 * @postcondition    none
 */
-static void utc_arastorage_cursor_get_int_value_tc_n(void)
+static void utc_arastorage_cursor_get_int_value_n(void)
 {
 	int value;
 
@@ -1302,14 +1302,14 @@ static void utc_arastorage_cursor_get_int_value_tc_n(void)
 }
 
 /**
-* @testcase         utc_arastorage_cursor_get_long_value_tc_p
+* @testcase         utc_arastorage_cursor_get_long_value_p
 * @brief            Get a long value of specific attribute
 * @scenario         Get a long value of specific attribute
 * @apicovered       cursor_get_long_value
-* @precondition     utc_arastorage_db_exec_tc_p, utc_arastorage_db_query_tc_p should be passed
+* @precondition     utc_arastorage_db_exec_p, utc_arastorage_db_query_p should be passed
 * @postcondition    none
 */
-static void utc_arastorage_cursor_get_long_value_tc_p(void)
+static void utc_arastorage_cursor_get_long_value_p(void)
 {
 	long value;
 
@@ -1324,7 +1324,7 @@ static void utc_arastorage_cursor_get_long_value_tc_p(void)
 }
 
 /**
-* @testcase         utc_arastorage_cursor_get_long_value_tc_n
+* @testcase         utc_arastorage_cursor_get_long_value_n
 * @brief            Get a long value of specific attribute with invalid argument
 * @scenario         Get a long value of specific attribute with NULL value
 *                   Get a long value of attribute which the type is not long
@@ -1332,7 +1332,7 @@ static void utc_arastorage_cursor_get_long_value_tc_p(void)
 * @precondition     none
 * @postcondition    none
 */
-static void utc_arastorage_cursor_get_long_value_tc_n(void)
+static void utc_arastorage_cursor_get_long_value_n(void)
 {
 	long value;
 
@@ -1348,14 +1348,14 @@ static void utc_arastorage_cursor_get_long_value_tc_n(void)
 
 #ifdef CONFIG_ARCH_FLOAT_H
 /**
-* @testcase         utc_arastorage_cursor_get_double_value_tc_p
+* @testcase         utc_arastorage_cursor_get_double_value_p
 * @brief            Get a double value of specific attribute
 * @scenario         Get a double value of specific attribute
 * @apicovered       cursor_get_double_value
-* @precondition     utc_arastorage_db_exec_tc_p, utc_arastorage_db_query_tc_p should be passed
+* @precondition     utc_arastorage_db_exec_p, utc_arastorage_db_query_p should be passed
 * @postcondition    none
 */
-static void utc_arastorage_cursor_get_double_value_tc_p(void)
+static void utc_arastorage_cursor_get_double_value_p(void)
 {
 	double value;
 
@@ -1370,7 +1370,7 @@ static void utc_arastorage_cursor_get_double_value_tc_p(void)
 }
 
 /**
-* @testcase         utc_arastorage_cursor_get_double_value_tc_n
+* @testcase         utc_arastorage_cursor_get_double_value_n
 * @brief            Get a double value of specific attribute with invalid argument
 * @scenario         Get a double value of specific attribute with NULL value
 *                   Get a double value of attribute which the type is not double
@@ -1378,7 +1378,7 @@ static void utc_arastorage_cursor_get_double_value_tc_p(void)
 * @precondition     none
 * @postcondition    none
 */
-static void utc_arastorage_cursor_get_double_value_tc_n(void)
+static void utc_arastorage_cursor_get_double_value_n(void)
 {
 	double value;
 
@@ -1394,14 +1394,14 @@ static void utc_arastorage_cursor_get_double_value_tc_n(void)
 #endif
 
 /**
-* @testcase         utc_arastorage_cursor_get_string_value_tc_p
+* @testcase         utc_arastorage_cursor_get_string_value_p
 * @brief            Get a string value of specific attribute
 * @scenario         Get a string value of specific attribute
 * @apicovered       cursor_get_string_value
-* @precondition     utc_arastorage_db_exec_tc_p, utc_arastorage_db_query_tc_p should be passed
+* @precondition     utc_arastorage_db_exec_p, utc_arastorage_db_query_p should be passed
 * @postcondition    none
 */
-static void utc_arastorage_cursor_get_string_value_tc_p(void)
+static void utc_arastorage_cursor_get_string_value_p(void)
 {
 	unsigned char *value;
 
@@ -1416,7 +1416,7 @@ static void utc_arastorage_cursor_get_string_value_tc_p(void)
 }
 
 /**
-* @testcase         utc_arastorage_cursor_get_string_value_tc_n
+* @testcase         utc_arastorage_cursor_get_string_value_n
 * @brief            Get a string value of specific attribute with invalid argument
 * @scenario         Get a string value of specific attribute with NULL value
 *                   Get a string value of attribute which the type is not string
@@ -1424,7 +1424,7 @@ static void utc_arastorage_cursor_get_string_value_tc_p(void)
 * @precondition	    none
 * @postcondition    none
 */
-static void utc_arastorage_cursor_get_string_value_tc_n(void)
+static void utc_arastorage_cursor_get_string_value_n(void)
 {
 	unsigned char *value;
 
@@ -1450,78 +1450,69 @@ int utc_arastorage_main(int argc, char *argv[])
 	total_pass = 0;
 	total_fail = 0;
 
-	printf("=== TINYARA Arastorage TC START! ===\n");
+	printf("########## Arastorage UTC Start ##########\n");
 
-	utc_arastorage_db_init_tc_p();
-	utc_arastorage_db_exec_tc_p();
-	utc_arastorage_db_query_tc_p();
-	utc_arastorage_db_get_result_message_tc_p();
-	utc_arastorage_db_print_header_tc_p();
-	utc_arastorage_db_print_tuple_tc_p();
-	utc_arastorage_db_print_value_tc_p();
-	utc_arastorage_cursor_get_count_tc_p();
-	utc_arastorage_cursor_move_first_tc_p();
-	utc_arastorage_cursor_move_next_tc_p();
-	utc_arastorage_cursor_move_prev_tc_p();
-	utc_arastorage_cursor_move_last_tc_p();
-	utc_arastorage_cursor_move_to_tc_p();
-	utc_arastorage_cursor_get_row_tc_p();
-	utc_arastorage_cursor_is_first_row_tc_p();
-	utc_arastorage_cursor_is_last_row_tc_p();
-	utc_arastorage_cursor_get_attr_type_tc_p();
-	utc_arastorage_cursor_get_attr_name_tc_p();
-	utc_arastorage_cursor_get_attr_index_tc_p();
-	utc_arastorage_cursor_get_int_value_tc_p();
-	utc_arastorage_cursor_get_long_value_tc_p();
+	/* Positive TCs */
+	utc_arastorage_db_init_p();
+	utc_arastorage_db_exec_p();
+	utc_arastorage_db_query_p();
+	utc_arastorage_db_get_result_message_p();
+	utc_arastorage_db_print_header_p();
+	utc_arastorage_db_print_tuple_p();
+	utc_arastorage_db_print_value_p();
+	utc_arastorage_cursor_get_count_p();
+	utc_arastorage_cursor_move_first_p();
+	utc_arastorage_cursor_move_next_p();
+	utc_arastorage_cursor_move_prev_p();
+	utc_arastorage_cursor_move_last_p();
+	utc_arastorage_cursor_move_to_p();
+	utc_arastorage_cursor_get_row_p();
+	utc_arastorage_cursor_is_first_row_p();
+	utc_arastorage_cursor_is_last_row_p();
+	utc_arastorage_cursor_get_attr_type_p();
+	utc_arastorage_cursor_get_attr_name_p();
+	utc_arastorage_cursor_get_attr_index_p();
+	utc_arastorage_cursor_get_int_value_p();
+	utc_arastorage_cursor_get_long_value_p();
 #ifdef CONFIG_ARCH_FLOAT_H
-	utc_arastorage_cursor_get_double_value_tc_p();
+	utc_arastorage_cursor_get_double_value_p();
 #endif
-	utc_arastorage_cursor_get_string_value_tc_p();
-	utc_arastorage_db_cursor_free_tc_p();
-	utc_arastorage_db_deinit_tc_p();
+	utc_arastorage_cursor_get_string_value_p();
+	utc_arastorage_db_cursor_free_p();
+	utc_arastorage_db_deinit_p();
 
-	printf("#########################################\n");
-	printf("         Arastorage Positive TC Result            \n");
-	printf("         Total TC : %d              \n", (total_pass + total_fail));
-	printf("         PASS : %d FAIL : %d        \n", total_pass, total_fail);
-	printf("#########################################\n");
-
-	total_pass = 0;
-	total_fail = 0;
 	db_init();
-	utc_arastorage_db_exec_tc_n();
-	utc_arastorage_db_query_tc_n();
-	utc_arastorage_db_get_result_message_tc_n();
-	utc_arastorage_db_print_header_tc_n();
-	utc_arastorage_db_print_tuple_tc_n();
-	utc_arastorage_db_print_value_tc_n();
-	utc_arastorage_cursor_get_count_tc_n();
-	utc_arastorage_cursor_move_first_tc_n();
-	utc_arastorage_cursor_move_next_tc_n();
-	utc_arastorage_cursor_move_prev_tc_n();
-	utc_arastorage_cursor_move_last_tc_n();
-	utc_arastorage_cursor_move_to_tc_n();
-	utc_arastorage_cursor_get_row_tc_n();
-	utc_arastorage_cursor_is_first_row_tc_n();
-	utc_arastorage_cursor_is_last_row_tc_n();
-	utc_arastorage_cursor_get_attr_type_tc_n();
-	utc_arastorage_cursor_get_attr_name_tc_n();
-	utc_arastorage_cursor_get_attr_index_tc_n();
-	utc_arastorage_cursor_get_int_value_tc_n();
-	utc_arastorage_cursor_get_long_value_tc_n();
+
+	/* Negative TCs */
+	utc_arastorage_db_exec_n();
+	utc_arastorage_db_query_n();
+	utc_arastorage_db_get_result_message_n();
+	utc_arastorage_db_print_header_n();
+	utc_arastorage_db_print_tuple_n();
+	utc_arastorage_db_print_value_n();
+	utc_arastorage_cursor_get_count_n();
+	utc_arastorage_cursor_move_first_n();
+	utc_arastorage_cursor_move_next_n();
+	utc_arastorage_cursor_move_prev_n();
+	utc_arastorage_cursor_move_last_n();
+	utc_arastorage_cursor_move_to_n();
+	utc_arastorage_cursor_get_row_n();
+	utc_arastorage_cursor_is_first_row_n();
+	utc_arastorage_cursor_is_last_row_n();
+	utc_arastorage_cursor_get_attr_type_n();
+	utc_arastorage_cursor_get_attr_name_n();
+	utc_arastorage_cursor_get_attr_index_n();
+	utc_arastorage_cursor_get_int_value_n();
+	utc_arastorage_cursor_get_long_value_n();
 #ifdef CONFIG_ARCH_FLOAT_H
-	utc_arastorage_cursor_get_double_value_tc_n();
+	utc_arastorage_cursor_get_double_value_n();
 #endif
-	utc_arastorage_cursor_get_string_value_tc_n();
-	utc_arastorage_db_cursor_free_tc_n();
+	utc_arastorage_cursor_get_string_value_n();
+	utc_arastorage_db_cursor_free_n();
 	cleanup();
 	db_deinit();
 
-	printf("#########################################\n");
-	printf("         Arastorage Negative TC Result            \n");
-	printf("         Total TC : %d              \n", (total_pass + total_fail));
-	printf("         PASS : %d FAIL : %d        \n", total_pass, total_fail);
-	printf("#########################################\n");
+	printf("########## Arastorage UTC End [PASS : %d, FAIL : %d] ##########\n", total_pass, total_fail);
 
 	working_tc--;
 	sem_post(&tc_sem);

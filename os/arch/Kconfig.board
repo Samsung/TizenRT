@@ -158,18 +158,20 @@ config BOARDCTL_UNIQUEID_SIZE
 
 endif # LIB_BOARDCTL
 
-config BOARD_COREDUMP_FLASH
-	bool "Enable crashlog dump to flash"
-	default n
-	---help---
-		If selected it will dump the assert log information to flash.
-
 config BOARD_FOTA_SUPPORT
 	bool "Enable board support for FOTA"
 	default n
 	select FOTA_DRIVER
 	---help---
 		If selected the board provides support for FOTA.
+
+if BOARD_CRASHDUMP
+
+config BOARD_COREDUMP_FLASH
+	bool "Enable crashlog dump to flash"
+	default n
+	---help---
+		If selected it will dump the assert log information to flash.
 
 config BOARD_RAMDUMP_FLASH
 	bool "Enable ramdump to flash"
@@ -182,7 +184,7 @@ config BOARD_RAMDUMP_UART
 	default n
 	---help---
 		If selected it will send the RAM dump via UART.
-
+endif
 
 comment "Board-Specific Options"
 

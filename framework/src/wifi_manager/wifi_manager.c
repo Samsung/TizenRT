@@ -827,11 +827,11 @@ void _handle_user_cb(_wifimgr_usr_cb_type_e evt, void *arg)
 	switch (evt) {
 	case CB_STA_CONNECTED:
 		nvdbg("call sta connect success event\n");
-		cbk->sta_connected();
+		cbk->sta_connected(WIFI_MANAGER_SUCCESS);
 		break;
 	case CB_STA_CONNECT_FAILED:
 		nvdbg("call sta connect fail event\n");
-		cbk->sta_connected();
+		cbk->sta_connected(WIFI_MANAGER_FAIL);
 		break;
 	case CB_STA_DISCONNECTED:
 		nvdbg("call sta disconnect event\n");

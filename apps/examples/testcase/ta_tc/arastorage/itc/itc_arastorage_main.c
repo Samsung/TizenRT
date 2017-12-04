@@ -1781,10 +1781,12 @@ static void itc_arastorage_db_cursor_free_n(void)
 int itc_arastorage_launcher(int argc, FAR char *argv[])
 {
 	sem_wait(&tc_sem);
+
+	printf("\n########## Arastorage ITC Start ##########\n");
+
 	total_fail = 0;
 	total_pass = 0;
 
-	printf("=== TINYARA Arastorage ITC START! ===\n");
 	itc_arastorage_db_init_deinit_p();
 	itc_arastorage_db_init_deinit_multi_time_p();
 	itc_arastorage_db_print_header_after_deinit_n();
@@ -1848,13 +1850,10 @@ int itc_arastorage_launcher(int argc, FAR char *argv[])
 	deinit_db();
 	db_cleanup(RELATION_NAME);
 
-	printf("\n#########################################\n");
-	printf("         Arastorage ITC Result            \n");
-	printf("         Total TC : %d              \n", (total_pass + total_fail));
-	printf("         PASS : %d FAIL : %d        \n", total_pass, total_fail);
-	printf("#########################################\n");
-
 	sem_post(&tc_sem);
+
+	printf("\n########## Arastorage ITC End [PASS : %d, FAIL : %d] ##########\n", total_pass, total_fail);
+
 	return 0;
 }
 
