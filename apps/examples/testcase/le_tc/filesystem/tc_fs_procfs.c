@@ -31,11 +31,18 @@
 #include <limits.h>
 #include <errno.h>
 #include <sys/types.h>
+#include <sys/stat.h>
 #include "tc_common.h"
 
 #define PROC_MOUNTPOINT "/proc"
 #define PROC_BUFFER_LEN 128
 #define PROC_FILEPATH_LEN CONFIG_PATH_MAX
+
+#define LOOP_COUNT 5
+#define PROC_UPTIME_PATH "/proc/uptime"
+#define PROC_VERSION_PATH "/proc/version"
+#define PROC_INVALID_PATH "/proc/nofile"
+#define INVALID_PATH "/proc/fs/invalid"
 
 /* Read all files in the directory */
 static int read_dir_entries(const char *dirpath)
@@ -94,10 +101,118 @@ error:
 
 	return ERROR;
 }
+#if defined(CONFIG_FS_PROCFS) && !defined (CONFIG_FS_PROCFS_EXCLUDE_UPTIME)
+static int procfs_uptime_ops(char *dirpath)
+{
+	int ret;
+	int fd;
+	int fd1 = 0;
+	struct stat st;
+	fd = open(PROC_UPTIME_PATH, O_RDONLY);
+	if (fd < 0) {
+		printf("Failed to open \n" );
+		close(fd);
+		return ERROR;
+	}
+
+	ret = stat(PROC_UPTIME_PATH, &st);
+	if (ret != OK) {
+		printf("failed to stat \n");
+		close(fd);
+		return ERROR;
+	}
+	ret = dup2(fd, fd1);
+	if (ret != OK) {
+		printf("failed to duplicate the file data \n");
+		close(fd);
+		return ERROR;
+	}
+
+	ret = close(fd);
+	if (ret != OK) {
+		printf("failed to close \n");
+		close(fd);
+		return ERROR;
+	}
+
+	return OK;
+}
+#endif
+
+#if defined(CONFIG_FS_PROCFS)
+static int procfs_version_ops(char *dirpath)
+{
+	int ret;
+	int fd;
+	int fd1 = 0;
+	struct stat st;
+	fd = open(PROC_VERSION_PATH, O_RDONLY);
+	if (fd < 0) {
+		printf("Failed to open \n");
+		close(fd);
+		return ERROR;
+	}
+
+	ret = stat(PROC_VERSION_PATH, &st);
+	if (ret != OK) {
+		printf("failed to stat \n");
+		close(fd);
+		return ERROR;
+	}
+	ret = dup2(fd, fd1);
+	if (ret != OK) {
+		printf("failed to duplicate the file data \n");
+		close(fd);
+		return ERROR;
+	}
+
+	ret = close(fd);
+	if (ret != OK) {
+		printf("failed to close \n");
+		return ERROR;
+	}
+
+		return OK;
+}
+#endif
+static int procfs_rewind_tc(const char *dirpath)
+{
+	int count;
+	DIR *dir;
+	struct dirent *dirent;
+
+	dir = opendir(dirpath);
+	if (!dir) {
+		printf("Failed to open directory %s\n", dirpath);
+		return ERROR;
+	}
+
+	count = 0;
+	do {
+		dirent = readdir(dir);
+		count++;
+	} while (dirent != NULL);
+
+	rewinddir(dir);
+	do {
+		dirent = readdir(dir);
+		count--;
+	} while (dirent != NULL);
+
+	if (count != 0) {
+		printf("rewind operation failed %s \n",dirpath);
+		closedir(dir);
+		return ERROR;
+	}
+	closedir(dir);
+
+	return OK;
+}
 
 void tc_fs_procfs_main(void)
 {
 	int ret;
+	struct stat st;
 
 	ret = mount(NULL, PROC_MOUNTPOINT, "procfs", 0, NULL);
 	if (ret < 0) {
@@ -106,6 +221,23 @@ void tc_fs_procfs_main(void)
 
 	ret = read_dir_entries(PROC_MOUNTPOINT);
 	TC_ASSERT_EQ("read_dir_entries", ret, OK);
+
+	ret = procfs_rewind_tc(PROC_MOUNTPOINT);
+	TC_ASSERT_EQ("procfs_rewind_tc", ret, OK);
+
+#if defined(CONFIG_FS_PROCFS) && !defined (CONFIG_FS_PROCFS_EXCLUDE_UPTIME)
+	ret = procfs_uptime_ops(PROC_UPTIME_PATH);
+	TC_ASSERT_EQ("procfs_uptime_ops", ret, OK);
+
+	ret = stat(PROC_INVALID_PATH, &st);
+	TC_ASSERT_EQ("stat", ret, ERROR);
+
+#endif
+
+#if defined(CONFIG_FS_PROCFS)
+	ret = procfs_version_ops(PROC_UPTIME_PATH);
+	TC_ASSERT_EQ("procfs_version_ops", ret, OK);
+#endif
 
 	TC_SUCCESS_RESULT();
 }
