@@ -36,11 +36,11 @@ CSRCS		=
 
 ifeq ($(CONFIG_NETUTILS_WIFI),y)
 CSRCS		+= slsi_wifi_api.c \
+		   $(FSMGEN_PRIVATE_SRCS) \
+		   $(FSMGEN_SOURCES) \
 		   slsi_wifi_p2p_api.c \
 		   slsi_wifi_utils.c \
-		   $(FSM32_SRCS) \
-		   $(FSMGEN_PRIVATE_SRCS) \
-		   $(FSMGEN_SOURCES)
+		   $(FSM32_SRCS)
 endif
 
 AOBJS		= $(ASRCS:.S=$(OBJEXT))
