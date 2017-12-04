@@ -20,6 +20,7 @@ config DEBUG_TASH
 
 config TASH_TELNET_INTERFACE
 	bool "enable telnet interface to TASH"
+	depends on NETUTILS_TELNETD
 	default n
 	---help---
 		Enable TASH commands to be executed in TELNET shell.

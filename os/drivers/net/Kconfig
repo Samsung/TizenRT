@@ -8,7 +8,7 @@ comment "General Ethernet MAC Driver Options"
 config NETDEV_TELNET
         bool "Telnet driver"
         default n
-        depends on NET
+        depends on NET && NETUTILS_TELNETD
         ---help---
                 The Telnet driver generates a character driver instance to support a
                 Telnet session.  This driver is used by the Telnet daemon.  The
