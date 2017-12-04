@@ -103,7 +103,7 @@ endif
 
 ARCHCFLAGS = -fno-builtin
 ARCHCXXFLAGS = -fno-builtin -fno-exceptions -fno-rtti
-ARCHWARNINGS = -Wall -Werror -Wstrict-prototypes -Wshadow -Wundef -Wno-unused-but-set-variable
+ARCHWARNINGS = -Wall -Werror -Wstrict-prototypes -Wshadow -Wundef -Wno-implicit-function-declaration -Wno-unused-but-set-variable
 ARCHWARNINGSXX = -Wall -Wshadow
 ARCHDEFINES =
 ARCHPICFLAGS = -fpic -msingle-pic-base -mpic-register=r10
@@ -131,5 +131,5 @@ HOSTCFLAGS = -Wall -Wstrict-prototypes -Wshadow -g -pipe
 HOSTLDFLAGS =
 
 define DOWNLOAD
-	@gnome-terminal -e "qemu-system-arm -M lm3s6965evb -kernel $(TOPDIR)/../build/output/bin/tinyara -nographic -gdb tcp::3333"
+  @gnome-terminal -e "bash -c \"sudo qemu-system-arm -M lm3s6965evb -kernel $(TOPDIR)/../build/output/bin/tinyara.bin -nographic -gdb tcp::3333 -net nic -net tap,ifname=tap0,script=no; exec bash\""
 endef
