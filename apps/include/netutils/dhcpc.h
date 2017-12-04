@@ -54,13 +54,13 @@
 
 /**
  * @defgroup DHCP DHCP
- * @brief Provides APIs for DHCP(Dynamic Host Configuration Protocol) Client
+ * @brief Provides APIs for DHCP(Dynamic Host Configuration Protocol) Client and Server
  * @ingroup NETWORK
  * @{
  */
 /**
  * @file dhcpc.h
- * @brief APIs for DHCP client
+ * @brief Support APIs for DHCP client
  */
 
 #ifndef __APPS_INCLUDE_NETUTILS_DHCPC_H
@@ -81,63 +81,57 @@
  * Public Types
  ****************************************************************************/
 
+/**
+ * @brief dhcpc_state is the structure to store parsed DHCP options from DHCP server.
+ */
 struct dhcpc_state {
-	struct in_addr serverid;
-	struct in_addr ipaddr;
-	struct in_addr netmask;
-	struct in_addr dnsaddr;
-	struct in_addr default_router;
-	uint32_t lease_time;		/* Lease expires in this number of seconds */
+	struct in_addr serverid;       /**< Index of DHCP server */
+	struct in_addr ipaddr;         /**< Leased IP address from DHCP server */
+	struct in_addr netmask;        /**< Netmask of subnet */
+	struct in_addr dnsaddr;        /**< Received IP address of DNS server from DHCP server */
+	struct in_addr default_router; /**< Default router address */
+	uint32_t lease_time;           /**< Lease expires in this number of seconds */
 };
 
 /****************************************************************************
  * Public Function Prototypes
  ****************************************************************************/
-
+/** @cond HIDDEN */
 #ifdef __cplusplus
-// *INDENT-OFF*
 #define EXTERN extern "C"
 extern "C" {
 #else
 #define EXTERN extern
-// *INDENT-ON*
 #endif
+/** @endcond */
 
 /**
- * @brief Get DHCP client handle
+ * @brief Open a socket for DHCP handshaking.
  *
- * @param[in] intf the name of network interface
- * @param[in] mac_addr the mac address of network interface
- * @param[in] mac_len the length of mac address
- * @return On success, handle. On failure, returns null
- * @since Tizen RT v1.0
+ * @param[in] intf The name of network interface
+ * @return On success, pointer value is returned. On failure, NULL is returned
  */
 void *dhcpc_open(const char *intf);
 
 /**
- * @brief Starts DHCP client
+ * @brief Trigger DHCP handshaking with provided handle information.
  *
- * @param[in] handle generic data structure that contains dhcpc information
- * @param[out] presult dhcp informations that contain ip address, netmask and gateway
- * @return On success, 0. On failure, returns negative
- * @since Tizen RT v1.0
+ * @param[in] handle Generic data structure that contains dhcpc information
+ * @param[out] presult DHCP information that contain ip address, netmask and gateway, @ref dhcpc_state
+ * @return On success, 0 is returned. On failure, a negative is returned
  */
 int dhcpc_request(void *handle, struct dhcpc_state *presult);
 
 /**
- * @brief dhcpc_close() return dhcp client handle
+ * @brief Terminate DHCP client operation and close a socket.
  *
- * @param[in] handle generic data structure that contains dhcpc information
- * @return none
- * @since Tizen RT v1.0
+ * @param[in] handle Generic data structure that contains dhcpc information to be released
 */
 void dhcpc_close(void *handle);
 
 #undef EXTERN
 #ifdef __cplusplus
-// *INDENT-OFF*
 }
-// *INDENT-ON*
 #endif
 
 #endif							/* __APPS_INCLUDE_NETUTILS_DHCPC_H */

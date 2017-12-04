@@ -1,6 +1,6 @@
 /****************************************************************************
  *
- * Copyright 2016 Samsung Electronics All Rights Reserved.
+ * Copyright 2017 Samsung Electronics All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -59,6 +59,7 @@
  * Pre-processor Definitions
  ****************************************************************************/
 
+/** @cond HIDDEN */
 #define WGET_MODE_GET                     0
 #define WGET_MODE_POST                    1
 #define WGET_MODE_PUT                     2
@@ -66,153 +67,193 @@
 
 #define CONTENT_LENGTH                    0
 #define CHUNKED_ENCODING                  1
+/** @endcond */
 
+/**
+ * @brief The maximum length of url
+ */
 #define WEBCLIENT_CONF_MAX_URL_SIZE       50
+
+/**
+ * @brief The maximum buffer size of entity
+ */
 #define WEBCLIENT_CONF_MAX_ENTITY_SIZE    2048
+
+/**
+ * @brief The maximum buffer size of phrase
+ */
 #define WEBCLIENT_CONF_MAX_PHRASE_SIZE    50
+
+/**
+ * @brief The maximum buffer size of entire message
+ */
 #define WEBCLIENT_CONF_MAX_MESSAGE_SIZE   2100
 
-#ifdef CONFIG_NETUTILS_WEBCLIENT_RX_TIMEOUT
-#define WEBCLIENT_CONF_TIMEOUT_MSEC       (CONFIG_NETUTILS_WEBCLIENT_RX_TIMEOUT * 1000)
-#else
+/**
+ * @brief Socket recv timeout milisecond
+ */
 #define WEBCLIENT_CONF_TIMEOUT_MSEC       5000
-#endif
+
+/**
+ * @brief Minimum memory size for tls handshake
+ */
 #define WEBCLIENT_CONF_MIN_TLS_MEMORY     100000
 
+/**
+ * @brief The maximum retry count of handshake
+ */
 #define WEBCLIENT_CONF_HANDSHAKE_RETRY    3
+
+/**
+ * @brief List of ALPN (Application-Layer Protocol Negotiation)
+ */
+#define WEBCLIENT_CONF_ALPN_LIST          "h2\0h2-14\0h2-16\0"
+
+/**
+ * @brief Number of ALPN list
+ */
+#define WEBCLIENT_CONF_ALPN_LIST_NUM      3
+
+/**
+ * @brief SSL/TLS hostname check option
+ */
 #define WEBCLIENT_CONF_CHECK_TLS_HOSTNAME 0
+
+/**
+ * @brief SSL/TLS certificate verify option
+ */
+#define WEBCLIENT_CONF_SSL_VERIFY_LEVEL   MBEDTLS_SSL_VERIFY_NONE
+
+/**
+ * @brief Magic string for http2
+ */
+#define HTTP2_MAGIC_STRING                "PRI * HTTP/2.0\r\n\r\nSM\r\n\r\n"
+
+/**
+ * @brief Magic string length for http2
+ */
+#define HTTP2_MAGIC_STRING_LEN            24
+
+/**
+ * @brief The number of setting parameters
+ */
+#define SETTINGS_PARAMS                   6
+
 /****************************************************************************
  * Public types
  ****************************************************************************/
 
+/** @cond HIDDEN */
 typedef struct http_client_response_t *httprsp;
 typedef void (*wget_callback_t)(httprsp);
+/** @endcond */
 
 #ifdef CONFIG_NET_SECURITY_TLS
 /**
- * @brief HTTP client TLS structure.
+ * @brief HTTP client TLS structure
  */
 struct http_client_tls_t {
-	int client_fd;
-	mbedtls_ssl_context       tls_ssl;
-	mbedtls_net_context       tls_client_fd;
+	int client_fd;                          ///< Socket file descriptor
+	mbedtls_ssl_context tls_ssl;            ///< TLS context
+	mbedtls_net_context tls_client_fd;      ///< TLS network context
 
-	int                       tls_init;
-	mbedtls_ssl_config        tls_conf;
-	mbedtls_entropy_context   tls_entropy;
-	mbedtls_ctr_drbg_context  tls_ctr_drbg;
-	mbedtls_x509_crt          tls_clicert;
-	mbedtls_pk_context        tls_pkey;
-	mbedtls_ssl_session       tls_session;
+	int tls_init;                           ///< Initialized status of TLS
+	mbedtls_ssl_config tls_conf;            ///< TLS configurations
+	mbedtls_entropy_context tls_entropy;    ///< TLS entropy context
+	mbedtls_ctr_drbg_context tls_ctr_drbg;  ///< TLS deterministic random generator structure
+	mbedtls_x509_crt tls_clicert;           ///< TLS client certificate context
+	mbedtls_pk_context tls_pkey;            ///< TLS private key context
+	mbedtls_ssl_session tls_session;        ///< TLS session information
 };
+#endif
 
 /**
- * @brief SSL configure structure.
+ * @brief SSL configure structure
  */
 struct http_client_ssl_config_t {
-	char *root_ca;
-	char *dev_cert;
-	char *private_key;
-	unsigned int root_ca_len;
-	unsigned int dev_cert_len;
-	unsigned int private_key_len;
-	mbedtls_ssl_config *tls_conf;
+	char *root_ca;                  ///< CA certificate buffer
+	char *dev_cert;                 ///< Device certificate buffer
+	char *private_key;              ///< Private key buffer
+	unsigned int root_ca_len;       ///< Length of ca certificate
+	unsigned int dev_cert_len;      ///< Length of device certificate
+	unsigned int private_key_len;   ///< Length of private key
+	int auth_mode;                  ///< Authentication mode (0:none, 1:optional, 2:mandatory)
 };
 
-#endif
-
 /**
- * @brief HTTP request structure.
+ * @brief HTTP request structure
  */
 struct http_client_request_t {
-	int method;
-	char *url;
-	char *buffer;
-	int buflen;
-	int encoding;
-	int tls;
-	char *entity;
-	wget_callback_t callback;
-	struct http_keyvalue_list_t *headers;
-	struct http_client_response_t *response;
+	int method;                                  ///< Request method
+	char *url;                                   ///< Request url
+	char *buffer;                                ///< Request buffer to recv/send data
+	int buflen;                                  ///< Request buffer length
+	int encoding;                                ///< Request encoding type (content-length/chunked)
+	int tls;                                     ///< Request TLS mode (disable:0 enable:1)
+	char *entity;                                ///< Request entity buffer
+	wget_callback_t callback;                    ///< Callback function pointer to response
+	struct http_keyvalue_list_t *headers;        ///< Keyvalue list structure
+	struct http_client_response_t *response;     ///< Buffer for response message
 #ifdef CONFIG_NET_SECURITY_TLS
-	struct http_client_ssl_config_t ssl_config;
+	struct http_client_ssl_config_t ssl_config;  ///< SSL configure structure
 #endif
-	int async_flag;
+	int async_flag;                              ///< Async-request status flag
 };
 
 /**
- * @brief HTTP response structure.
+ * @brief HTTP response structure
  */
 struct http_client_response_t {
-	int method;
-	char *url;
-	int status;
-	char *phrase;
-	struct http_keyvalue_list_t *headers;
-	char *message;
-	char *entity;
-	unsigned int entity_len;
+	int method;                             ///< Response method, same with request method
+	char *url;                              ///< Response url, same with request url
+	int status;                             ///< Response status
+	char *phrase;                           ///< Response phrase
+	struct http_keyvalue_list_t *headers;   ///< Response keyvalue list buffer
+	char *message;                          ///< Response message buffer
+	char *entity;                           ///< Response entity buffer
+	unsigned int entity_len;                ///< Response entity length
 };
 
 /****************************************************************************
  * Public Function Prototypes
  ****************************************************************************/
 
+/** @cond HIDDEN */
 #ifdef __cplusplus
 #define EXTERN extern "C"
 extern "C" {
 #else
 #define EXTERN extern
 #endif
+/** @endcond */
 
 /**
- * @brief http_client_send_request() sends the HTTP request to HTTP server with
- *                                   synchronous function.
+ * @brief Send the HTTP request to HTTP server with asynchronous function.
  *
- * @param[in] request a structure pointer of information of request.
- * @param[in] ssl_config a structure pointer of information of TLS config.
- * @param[in] response a structure pointer of response message.
+ * @param[in] request Structure pointer of request
+ * @param[in] ssl_config Structure pointer of TLS config
+ * @param[in] cb Callback function pointer for response
  * @return On success, OK(0) is returned.
  *         On failure, negative value is returned.
- * @since Tizen RT v1.0
- */
-
-int http_client_send_request(struct http_client_request_t *request, void *ssl_config, struct http_client_response_t *response);
-
-/**
- * @brief http_client_send_request_async() sends the HTTP request to HTTP server
- *                                         with asynchronous function.
- *
- * @param[in] request a structure pointer of information of request.
- * @param[in] ssl_config a structure pointer of information of TLS config.
- * @param[in] cb a function pointer called when receive response.
- * @return On success, OK(0) is returned.
- *         On failure, negative value is returned.
- * @since Tizen RT v1.0
  */
 
 int http_client_send_request_async(struct http_client_request_t *request, void *ssl_config, wget_callback_t cb);
 
 /**
- * @brief http_client_response_init() initializes the response structure.
+ * @brief Initialize the response structure.
  *
- * @param[in] response a structure pointer of response message.
+ * @param[in] response Structure pointer of response message
  * @return On success, OK(0) is returned.
  *         On failure, negative value is returned.
- * @since Tizen RT v1.0
  */
 
 int http_client_response_init(struct http_client_response_t *response);
 
 /**
- * @brief http_client_response_release() releases the response structure.
+ * @brief Release the response structure.
  *
- * @param[in] response a structure pointer of response message.
- * @return N/A.
- * @since Tizen RT v1.0
+ * @param[in] response Structure pointer of response message
  */
-
 void http_client_response_release(struct http_client_response_t *response);
 
 #undef EXTERN
@@ -220,5 +261,5 @@ void http_client_response_release(struct http_client_response_t *response);
 }
 #endif
 
-#endif /* __APPS_INCLUDE_NETUTILS_WEBCLIENT_H */
+#endif							/* __APPS_INCLUDE_NETUTILS_WEBCLIENT_H */
 /**@} */

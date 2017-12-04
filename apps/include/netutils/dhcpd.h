@@ -58,8 +58,8 @@
   */
 
 /**
- * @file netif.h
- * @brief netif API (to be used from lwIP TCPIP thread)
+ * @file dhcpd.h
+ * @brief Support APIs for DHCP server daemon.
  */
 
 #ifndef __APPS_INCLUDE_NETUTILS_DHCPD_H
@@ -80,37 +80,40 @@
 /****************************************************************************
  * Public Function Prototypes
  ****************************************************************************/
-
+/** @cond HIDDEN */
 #ifdef __cplusplus
-// *INDENT-OFF*
 #define EXTERN extern "C"
 extern "C" {
 #else
 #define EXTERN extern
-// *INDENT-ON*
 #endif
 
-/**
- * @brief Starts DHCP server which is attached given network interface.
+/*
+ * @brief dhcpd_run() run DHCP server which is attached given network interface.
  *
- * @param[in] intf the name of network interface to run DHCP server
- * @return On success, 0. On failure, returns error
+ * @param[in] intf The name of network interface to run DHCP server
+ * @return On success, 0 is returned. On failure, a negative value is returned.
 */
 int dhcpd_run(void *arg);
+/** @endcond */
 
 /**
- * @brief Starts DHCP server as daemon which is attached given network interface.
+ * @brief Create DHCP server daemon with a given network interface.
  *
- * @param[in] intf the name of network interface to run DHCP server
- * @return On success, 0. On failure, returns -1
+ * @param[in] intf The name of network interface to run DHCP server
+ * @return On success, 0 is returned. On failure, -1 is returned.
 */
 int dhcpd_start(char *intf);
 
+/**
+ * @brief Terminate DHCP server daemon.
+ * @note dhcpd_stop() should be paired to dhcpd_start()
+*/
+void dhcpd_stop(void);
+
 #undef EXTERN
 #ifdef __cplusplus
-// *INDENT-OFF*
 }
-// *INDENT-ON*
 #endif
 
 #endif							/* __APPS_INCLUDE_NETUTILS_DHCPD_H */
