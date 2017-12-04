@@ -55,7 +55,7 @@ static pthread_cond_t g_wifi_manager_test_cond;
 		pthread_mutex_unlock(&g_wifi_manager_test_mutex);\
 	} while (0)
 
-static void wifi_sta_connected_cb(void); // in station mode, connected to ap
+static void wifi_sta_connected_cb(wifi_manager_result_e res); // in station mode, connected to ap
 static void wifi_sta_disconnected_cb(void); // in station mode, disconnected from ap
 static void wifi_scan_ap_done_cb(wifi_manager_scan_info_s **scan_info, wifi_manager_scan_result_e res); // called when scanning ap is done
 
@@ -67,7 +67,7 @@ static wifi_manager_cb_s wifi_callbacks = {
 	wifi_scan_ap_done_cb, // this callback function is called when scanning ap is done.
 };
 
-static void wifi_sta_connected_cb(void)
+static void wifi_sta_connected_cb(wifi_manager_result_e res)
 {
 	printf("wifi_sta_connected: send signal!!! \n");
 	WIFITEST_SIGNAL;
@@ -267,9 +267,6 @@ static void itc_wifi_manager_connect_disconnect_ap_p(void)
 	ret = wifi_manager_init(&wifi_callbacks);
 	TC_ASSERT_EQ("wifi_manager_init", ret, WIFI_MANAGER_SUCCESS);
 
-	ret = wifi_manager_set_mode(STA_MODE, NULL);
-	TC_ASSERT_EQ_CLEANUP("wifi_manager_set_mode", ret, WIFI_MANAGER_SUCCESS, wifi_manager_deinit());
-
 	wifi_manager_ap_config_s config;
 	config.ssid_length = strlen(TEST_SSID);
 	config.passphrase_length = strlen(TEST_PASSWORD);
@@ -334,7 +331,7 @@ static void itc_wifi_manager_reinit_p(void)
 	TC_ASSERT_EQ("wifi_manager_init", ret, WIFI_MANAGER_SUCCESS);
 
 	ret = wifi_manager_init(&wifi_callbacks);
-	TC_ASSERT_EQ_CLEANUP("wifi_manager_init", ret, WIFI_MANAGER_INITIALIZED, wifi_manager_deinit());
+	TC_ASSERT_LT_CLEANUP("wifi_manager_init", ret, WIFI_MANAGER_SUCCESS, wifi_manager_deinit());
 
 	ret = wifi_manager_deinit();
 	TC_ASSERT_EQ("wifi_manager_deinit", ret, WIFI_MANAGER_SUCCESS);
@@ -361,7 +358,7 @@ static void itc_wifi_manager_redeinit_p(void)
 	TC_ASSERT_EQ("wifi_manager_deinit", ret, WIFI_MANAGER_SUCCESS);
 
 	ret = wifi_manager_deinit();
-	TC_ASSERT_EQ("wifi_manager_deinit", ret, WIFI_MANAGER_DEINITIALIZED);
+	TC_ASSERT_LT("wifi_manager_deinit", ret, WIFI_MANAGER_SUCCESS);
 
 	TC_SUCCESS_RESULT();
 }
@@ -380,9 +377,6 @@ static void itc_wifi_manager_reconnect_p(void)
 
 	ret = wifi_manager_init(&wifi_callbacks);
 	TC_ASSERT_EQ("wifi_manager_init", ret, WIFI_MANAGER_SUCCESS);
-
-	ret = wifi_manager_set_mode(STA_MODE, NULL);
-	TC_ASSERT_EQ_CLEANUP("wifi_manager_set_mode", ret, WIFI_MANAGER_SUCCESS, wifi_manager_deinit());
 
 	wifi_manager_ap_config_s config;
 	config.ssid_length = strlen(TEST_SSID);
@@ -429,8 +423,6 @@ static void itc_wifi_manager_connect_long_ssid_p(void)
 	ret = wifi_manager_init(&wifi_callbacks);
 	TC_ASSERT_EQ("wifi_manager_init", ret, WIFI_MANAGER_SUCCESS);
 
-	ret = wifi_manager_set_mode(STA_MODE, NULL);
-	TC_ASSERT_EQ_CLEANUP("wifi_manager_set_mode", ret, WIFI_MANAGER_SUCCESS, wifi_manager_deinit());
 	wifi_manager_ap_config_s config;
 	config.ssid_length = strlen(ssid);
 	config.passphrase_length = strlen(passphrase);
@@ -463,9 +455,6 @@ static void itc_wifi_manager_redisconnect_p(void)
 
 	ret = wifi_manager_init(&wifi_callbacks);
 	TC_ASSERT_EQ("wifi_manager_init", ret, WIFI_MANAGER_SUCCESS);
-
-	ret = wifi_manager_set_mode(STA_MODE, NULL);
-	TC_ASSERT_EQ_CLEANUP("wifi_manager_set_mode", ret, WIFI_MANAGER_SUCCESS, wifi_manager_deinit());
 
 	wifi_manager_ap_config_s config;
 	config.ssid_length = strlen(TEST_SSID);
@@ -515,9 +504,6 @@ static void itc_wifi_manager_average_joining_ap(void)
 	ret = wifi_manager_init(&wifi_callbacks);
 	TC_ASSERT_EQ("wifi_manager_init", ret, WIFI_MANAGER_SUCCESS);
 
-	ret = wifi_manager_set_mode(STA_MODE, NULL);
-	TC_ASSERT_EQ_CLEANUP("wifi_manager_set_mode", ret, WIFI_MANAGER_SUCCESS, wifi_manager_deinit());
-
 	wifi_manager_ap_config_s config;
 	config.ssid_length = strlen(TEST_SSID);
 	config.passphrase_length = strlen(TEST_PASSWORD);
@@ -565,9 +551,6 @@ static void itc_wifi_manager_average_leaving_ap(void)
 	wifi_manager_result_e ret = WIFI_MANAGER_FAIL;
 	ret = wifi_manager_init(&wifi_callbacks);
 	TC_ASSERT_EQ("wifi_manager_init", ret, WIFI_MANAGER_SUCCESS);
-
-	ret = wifi_manager_set_mode(STA_MODE, NULL);
-	TC_ASSERT_EQ_CLEANUP("wifi_manager_set_mode", ret, WIFI_MANAGER_SUCCESS, wifi_manager_deinit());
 
 	wifi_manager_ap_config_s config;
 	config.ssid_length = strlen(TEST_SSID);
@@ -639,9 +622,6 @@ static void itc_wifi_manager_success_ratio_ap(void)
 		} else {
 			continue;
 		}
-
-		ret = wifi_manager_set_mode(STA_MODE, NULL);
-		TC_ASSERT_EQ("wifi_manager_set_mode", ret, WIFI_MANAGER_SUCCESS);
 
 		join_cnt++;
 		ret = wifi_manager_connect_ap(&config);
@@ -717,9 +697,6 @@ static void itc_wifi_manager_average_stoping_ap(void)
 		ret = wifi_manager_init(&wifi_callbacks);
 		TC_ASSERT_EQ("wifi_manager_init", ret, WIFI_MANAGER_SUCCESS);
 
-		ret = wifi_manager_set_mode(STA_MODE, NULL);
-		TC_ASSERT_EQ_CLEANUP("wifi_manager_set_mode", ret, WIFI_MANAGER_SUCCESS, wifi_manager_deinit());
-
 		ret = wifi_manager_connect_ap(&config);
 		TC_ASSERT_EQ_CLEANUP("wifi_manager_connect_ap", ret, WIFI_MANAGER_SUCCESS, wifi_manager_deinit());
 		WIFITEST_WAIT;
@@ -753,10 +730,10 @@ static void itc_wifi_manager_init_deinit_n(void)
 {
 	wifi_manager_result_e ret = WIFI_MANAGER_FAIL;
 	ret = wifi_manager_init(NULL);
-	TC_ASSERT_EQ("wifi_manager_init_n", ret, WIFI_MANAGER_FAIL);
+	TC_ASSERT_EQ("wifi_manager_init_n", ret, WIFI_MANAGER_INVALID_ARGS);
 
 	ret = wifi_manager_deinit();
-	TC_ASSERT_EQ("wifi_manager_deinit_n", ret, WIFI_MANAGER_DEINITIALIZED);
+	TC_ASSERT_EQ("wifi_manager_deinit_n", ret, WIFI_MANAGER_FAIL);
 	TC_SUCCESS_RESULT();
 }
 
@@ -777,8 +754,6 @@ static void itc_wifi_manager_connect_ap_n(void)
 	ret = wifi_manager_init(&wifi_callbacks);
 	TC_ASSERT_EQ("wifi_manager_init", ret, WIFI_MANAGER_SUCCESS);
 
-	ret = wifi_manager_set_mode(STA_MODE, NULL);
-	TC_ASSERT_EQ_CLEANUP("wifi_manager_set_mode", ret, WIFI_MANAGER_SUCCESS, wifi_manager_deinit());
 	wifi_manager_ap_config_s config;
 	config.ssid_length = strlen(ssid);
 	config.passphrase_length = strlen(passphrase);
