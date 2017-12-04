@@ -446,7 +446,14 @@ OCStackResult UpdateCRLResource(OicSecCrl_t *crl)
         return res;
     }
 
+#if defined(__TIZENRT__)
+    res = UpdateSecureResourceInPS(OIC_CBOR_CRL_NAME, payload, size);
+    OICFree(payload);
+
+    return res;
+#else
     return UpdateSecureResourceInPS(OIC_CBOR_CRL_NAME, payload, size);
+#endif
 }
 
 static bool ValidateQuery(const char * query)
