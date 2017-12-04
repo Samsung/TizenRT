@@ -203,13 +203,8 @@
 
 /* Determines the size of the chunk size/offset type */
 
-#ifdef CONFIG_MM_SMALL
-typedef uint16_t mmsize_t;
-#define MMSIZE_MAX 0xffff
-#else
 typedef size_t mmsize_t;
 #define MMSIZE_MAX SIZE_MAX
-#endif
 
 /* typedef is used for defining size of address space */
 
