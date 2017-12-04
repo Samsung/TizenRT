@@ -320,6 +320,11 @@ config S5J_PWM5
 	select S5J_PWM
 	default n
 
+config S5J_RTC
+	bool "RTC"
+	depends on S5J_HAVE_RTC
+	default y
+
 config S5J_SSS
 	bool "SSS"
 	depends on S5J_HAVE_SSS

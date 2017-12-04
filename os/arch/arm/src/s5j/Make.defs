@@ -166,7 +166,7 @@ ifeq ($(CONFIG_S5J_PWM),y)
 CHIP_CSRCS += s5j_pwm.c
 endif
 
-ifeq ($(CONFIG_RTC),y)
+ifeq ($(CONFIG_S5J_RTC),y)
 CHIP_CSRCS += s5j_rtc.c
 ifeq ($(CONFIG_RTC_DRIVER),y)
 CHIP_CSRCS += s5j_rtc_lowerhalf.c
