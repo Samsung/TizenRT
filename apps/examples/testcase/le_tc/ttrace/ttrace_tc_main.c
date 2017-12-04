@@ -147,15 +147,14 @@ static int ttrace_tc_launcher(int argc, char **args)
 	total_pass = 0;
 	total_fail = 0;
 
+	printf("\n########## TTRACE TC Start ##########\n");
+
 	tc_libc_trace_begin();
 	tc_libc_trace_begin_uid();
 	tc_libc_trace_end();
 	tc_libc_trace_end_uid();
 	tc_libc_trace_sched();
-	printf("#########################################\n");
-	printf("           T-trace TC Result             \n");
-	printf("           PASS : %d FAIL : %d        \n", total_pass, total_fail);
-	printf("#########################################\n");
+	printf("\n########## TTRACE TC End [PASS : %d, FAIL : %d] ##########\n", total_pass, total_fail);
 
 	working_tc--;
 	sem_post(&tc_sem);

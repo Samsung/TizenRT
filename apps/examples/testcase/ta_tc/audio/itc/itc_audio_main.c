@@ -475,6 +475,7 @@ static int audio_tc_launcher(int argc, char **args)
 	sem_wait(&tc_sem);
 	working_tc++;
 
+	printf("\n########## Audio ITC Start ##########\n");
 	total_pass = 0;
 	total_fail = 0;
 
@@ -498,10 +499,7 @@ static int audio_tc_launcher(int argc, char **args)
 	/* after test, unlink the file */
 	unlink(AUDIO_TEST_FILE);
 
-	printf("#########################################\n");
-	printf("           Audio ITC Result               \n");
-	printf("           PASS : %d FAIL : %d        \n", total_pass, total_fail);
-	printf("#########################################\n");
+	printf("\n########## Audio ITC End [PASS : %d, FAIL : %d] ##########\n", total_pass, total_fail);
 
 	working_tc--;
 	sem_post(&tc_sem);

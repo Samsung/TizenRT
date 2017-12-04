@@ -282,7 +282,7 @@ static int mqtt_itc(int arc, FAR char *argv[])
 
 	total_fail = total_pass = 0;
 
-	printf("=== TIZENRT MQTT ITC START! ===\n");
+	printf("\n########## MQTT ITC Start ##########\n");
 	int res = _itc_mqtt_init();
 
 	if (res < 0) {
@@ -294,8 +294,7 @@ static int mqtt_itc(int arc, FAR char *argv[])
 		itc_mqtt_subscribe_unsubscribe_p();
 		_itc_mqtt_deinit();
 	}
-	printf("\n=== TIZENRT MQTT ITC COMPLETE ===\n");
-	printf("\t\tTotal pass : %d\n\t\tTotal fail : %d\n", total_pass, total_fail);
+	printf("\n########## MQTT ITC End [PASS : %d, FAIL : %d] ##########\n", total_pass, total_fail);
 
 	working_tc--;
 	sem_post(&tc_sem);

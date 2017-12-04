@@ -641,6 +641,8 @@ void itc_arastorage_cursor_get_row_tc_p(void)
 
 int itc_arastorage_launcher(int argc, FAR char *argv[])
 {
+	printf("\n########## Arastorage ITC Start ##########\n");
+
 	total_fail = 0;
 	total_pass = 0;
 	itc_arastorage_db_init_deinit_p();
@@ -672,11 +674,7 @@ int itc_arastorage_launcher(int argc, FAR char *argv[])
 	}
 	itc_arastorage_cleanup_p();
 
-	printf("\n#########################################\n");
-	printf("         Arastorage ITC Result            \n");
-	printf("         Total TC : %d              \n", (total_pass + total_fail));
-	printf("         PASS : %d FAIL : %d        \n", total_pass, total_fail);
-	printf("#########################################\n");
+	printf("\n########## Arastorage ITC End [PASS : %d, FAIL : %d] ##########\n", total_pass, total_fail);
 	return 0;
 }
 

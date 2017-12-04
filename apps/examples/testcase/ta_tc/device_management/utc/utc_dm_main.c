@@ -164,7 +164,7 @@ int utc_dm_main(int argc, char *argv[])
 	return 0;
 #endif
 	if (wifiAutoConnect() == 1) {
-		printf("=== TINYARA DM TC START! ===\n");
+		printf("\n########## DeviceManagement UTC Start ##########\n");
 		dm_lwm2m_testcase_main();
 #ifdef CONFIG_UTC_DM_CONN_GET_RSSI
 		dm_conn_get_rssi_main();
@@ -197,8 +197,7 @@ int utc_dm_main(int argc, char *argv[])
 		dm_conn_unregi_linkdown_main();
 #endif
 
-		printf("\n=== TINYARA DM TC COMPLETE ===\n");
-		printf("\t\tTotal pass : %d\n\t\tTotal fail : %d\n", total_pass, total_fail);
+	printf("\n########## DeviceManagement UTC End [PASS : %d, FAIL : %d] ##########\n", total_pass, total_fail);
 
 		wifiAutoConnectDeInit();
 	}

@@ -50,6 +50,8 @@ int itc_sysio_launcher(int argc, FAR char *argv[])
 
 	sem_wait(&tc_sem);
 
+	printf("\n########## SystemIO ITC Start ##########\n");
+
 #ifdef CONFIG_SYSIO_ITC_PWM
 	itc_pwm_main();
 #endif
@@ -70,8 +72,7 @@ int itc_sysio_launcher(int argc, FAR char *argv[])
 	itc_gpio_main();
 #endif
 
-	SYSIO_ITC_PRINT("\n=== TINYARA SYSIO TC COMPLETE ===\n");
-	SYSIO_ITC_PRINT("\t\tTotal pass : %d\n\t\tTotal fail : %d\n", total_pass, total_fail);
+	printf("\n########## SystemIO ITC End [PASS : %d, FAIL : %d] ##########\n", total_pass, total_fail);
 
 	sem_post(&tc_sem);
 

@@ -830,7 +830,7 @@ int wifi_manager_itc(int argc, FAR char *argv[])
 	total_pass = 0;
 	total_fail = 0;
 
-	printf("=== TINYARA WIFI_MANAGER ITC START! ===\n");
+	printf("\n########## WiFiManager ITC Start ##########\n");
 
 	itc_wifi_manager_init_deinit_p();
 
@@ -866,8 +866,7 @@ int wifi_manager_itc(int argc, FAR char *argv[])
 
 	//itc_wifi_manager_reconnect_p(); // System is crashing tested manually
 
-	printf("\n=== TINYARA WIFI_MANAGER ITC COMPLETE ===\n");
-	printf("\t\tTotal pass : %d\n\t\tTotal fail : %d\n", total_pass, total_fail);
+	printf("\n########## WiFiManager ITC End [PASS : %d, FAIL : %d] ##########\n", total_pass, total_fail);
 
 	working_tc--;
 	sem_post(&tc_sem);
