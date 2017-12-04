@@ -18,8 +18,11 @@
 
 CSRCS += \
 	drivers.c \
-	driver_common.c \
-	driver_t20.c
+	driver_common.c
+
+ifeq ($(CONFIG_DRIVER_T20), y)
+CSRCS += driver_t20.c
+endif
 
 DEPPATH += --dep-path src/drivers
 VPATH += :src/drivers
