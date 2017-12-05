@@ -2662,7 +2662,6 @@
 #endif
 
 #undef MBEDTLS_KEY_EXCHANGE_ECDH_RSA_ENABLED
-#undef MBEDTLS_KEY_EXCHANGE_ECDHE_RSA_ENABLED
 
 /**
  * Complete list of ciphersuites to use, in order of preference.
