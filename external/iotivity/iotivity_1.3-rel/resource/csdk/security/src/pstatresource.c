@@ -485,6 +485,13 @@ static OCStackResult CBORPayloadToPstatBin(const uint8_t *cborPayload,
             }
             while (cbor_value_is_valid(&dosMap) && cbor_value_is_text_string(&dosMap))
             {
+#if defined(__TIZENRT)
+                if (dosTagName)
+                {
+                    free(dosTagName);
+                    dosTagName = NULL;
+                }
+#endif
                 cborFindResult = cbor_value_dup_text_string(&dosMap, &dosTagName, &dosLen, NULL);
                 VERIFY_CBOR_SUCCESS_OR_OUT_OF_MEMORY(TAG, cborFindResult, "Failed getting dos map next tag.");
                 cborFindResult = cbor_value_advance(&dosMap);
@@ -699,8 +706,16 @@ static OCStackResult CBORPayloadToPstatBin(const uint8_t *cborPayload,
             OIC_JSON_ROWNERID_NAME, strUuid);
         ret = ConvertStrToUuid(strUuid , &pstat->rownerID);
         VERIFY_SUCCESS(TAG, OC_STACK_OK == ret, ERROR);
+#if defined(__TIZENRT__)
+        if (strUuid)
+        {
+            free(strUuid);
+            strUuid = NULL;
+        }
+#else
         OICFree(strUuid );
         strUuid  = NULL;
+#endif
         if (roParsed)
         {
             if (IsPropertyReadOnly(PSTAT_ROWNERUUID, stateForReadOnlyCheck))
@@ -721,6 +736,18 @@ static OCStackResult CBORPayloadToPstatBin(const uint8_t *cborPayload,
     ret = OC_STACK_OK;
 
 exit:
+#if defined(__TIZENRT__)
+    if(dosTagName)
+    {
+        free(dosTagName);
+        dosTagName = NULL;
+    }
+    if(strUuid)
+    {
+        free(strUuid);
+        strUuid = NULL;
+    }
+#endif
     if (CborNoError != cborFindResult)
     {
         OIC_LOG(ERROR, TAG, "CBORPayloadToPstat failed");

@@ -609,8 +609,16 @@ static OCStackResult CBORPayloadToDoxmBin(const uint8_t *cborPayload, size_t siz
         OIC_LOG_V(DEBUG, TAG, "Read doxm.deviceuuid value = %s", strUuid);
         ret = ConvertStrToUuid(strUuid, &doxm->deviceID);
         VERIFY_SUCCESS(TAG, OC_STACK_OK == ret, ERROR);
+#if defined(__TIZENRT__)
+        if (strUuid)
+        {
+            free(strUuid);
+            strUuid  = NULL;
+        }
+#else
         OICFree(strUuid);
         strUuid  = NULL;
+#endif
 
         if (roParsed)
         {
@@ -636,9 +644,16 @@ static OCStackResult CBORPayloadToDoxmBin(const uint8_t *cborPayload, size_t siz
         OIC_LOG_V(DEBUG, TAG, "Read doxm.devowneruuid value = %s", strUuid);
         ret = ConvertStrToUuid(strUuid , &doxm->owner);
         VERIFY_SUCCESS(TAG, OC_STACK_OK == ret, ERROR);
+#if defined(__TIZENRT__)
+        if (strUuid)
+        {
+            free(strUuid);
+            strUuid  = NULL;
+        }
+#else
         OICFree(strUuid);
         strUuid  = NULL;
-
+#endif
         if (roParsed)
         {
             if (IsPropertyReadOnly(DOXM_DEVOWNERUUID, stateForReadOnlyCheck))
@@ -712,11 +727,15 @@ static OCStackResult CBORPayloadToDoxmBin(const uint8_t *cborPayload, size_t siz
             subOwner = (OicSecSubOwner_t*)OICCalloc(1, sizeof(OicSecSubOwner_t));
             VERIFY_NOT_NULL(TAG, subOwner, ERROR);
 
+#if defined(__TIZENRT__)
+            LL_APPEND(doxm->subOwners, subOwner);
+#endif
             convertRes = ConvertStrToUuid(strSubOwnerUuid, &subOwner->uuid);
             VERIFY_SUCCESS(TAG, OC_STACK_OK == convertRes, ERROR);
             subOwner->status = MOT_STATUS_DONE;
+#if !defined(__TIZENRT__)
             LL_APPEND(doxm->subOwners, subOwner);
-
+#endif
             cborFindResult = cbor_value_advance(&subOwnerCbor);
             VERIFY_CBOR_SUCCESS_OR_OUT_OF_MEMORY(TAG, cborFindResult, "Failed Advancing SubOwnerId.")
         }
@@ -755,9 +774,16 @@ static OCStackResult CBORPayloadToDoxmBin(const uint8_t *cborPayload, size_t siz
         OIC_LOG_V(DEBUG, TAG, "Read doxm.rowneruuid value = %s", strUuid);
         ret = ConvertStrToUuid(strUuid , &doxm->rownerID);
         VERIFY_SUCCESS(TAG, OC_STACK_OK == ret, ERROR);
+#if defined(__TIZENRT__)
+        if (strUuid)
+        {
+            free(strUuid);
+            strUuid  = NULL;
+        }
+#else
         OICFree(strUuid);
         strUuid  = NULL;
-
+#endif
         if (roParsed)
         {
             if (IsPropertyReadOnly(DOXM_ROWNERUUID, stateForReadOnlyCheck))
@@ -776,13 +802,29 @@ static OCStackResult CBORPayloadToDoxmBin(const uint8_t *cborPayload, size_t siz
     ret = OC_STACK_OK;
 
 exit:
+#if defined(__TIZENRT__)
+    if ((CborNoError != cborFindResult) || (ret != OC_STACK_OK))
+#else
     if (CborNoError != cborFindResult)
+#endif
     {
         OIC_LOG (ERROR, TAG, "CBORPayloadToDoxm failed!!!");
         DeleteDoxmBinData(doxm);
         doxm = NULL;
         *secDoxm = NULL;
+#if defined(__TIZENRT__)
+        if (strUuid)
+        {
+            free(strUuid);
+            strUuid  = NULL;
+        }
+        if (ret == OC_STACK_OK)
+        {
+            ret = OC_STACK_ERROR;
+        }
+#else
         ret = OC_STACK_ERROR;
+#endif
     }
     return ret;
 }

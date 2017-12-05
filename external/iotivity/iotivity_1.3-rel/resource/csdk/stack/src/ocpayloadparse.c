@@ -160,6 +160,9 @@ static CborError OCParseStringLL(CborValue *map, char *type, OCStringLL **resour
                     {
                         if (!OCResourcePayloadAddStringLL(resource, trimmed))
                         {
+#if defined(__TIZENRT__)
+                            free(input);
+#endif
                             return CborErrorOutOfMemory;
                         }
                     }
@@ -404,6 +407,12 @@ static OCStackResult OCParseDiscoveryPayloadCbor(OCPayload **outPayload,
     return OC_STACK_OK;
 
 exit:
+#if defined(__TIZENRT__)
+    if (temp != curPayload)
+    {
+        OCDiscoveryPayloadDestroy(temp);
+    }
+#endif
     OCDiscoveryResourceDestroy(resource);
     OCDiscoveryPayloadDestroy(rootPayload);
     return ret;
@@ -1136,6 +1145,12 @@ static CborError OCParseSingleRepPayload(OCRepPayload **outPayload, CborValue *o
                         err = cbor_value_dup_text_string(&repMap, &strval, &len, NULL);
                         VERIFY_CBOR_SUCCESS_OR_OUT_OF_MEMORY(TAG, err, "Failed getting string value");
                         res = OCRepPayloadSetPropStringAsOwner(curPayload, name, strval);
+#if defined(__TIZENRT__)
+                       if (!res)
+                       {
+                           free(strval);
+                       }
+#endif
                     }
                     break;
                 case CborByteStringType:
@@ -1145,6 +1160,12 @@ static CborError OCParseSingleRepPayload(OCRepPayload **outPayload, CborValue *o
                         VERIFY_CBOR_SUCCESS_OR_OUT_OF_MEMORY(TAG, err, "Failed getting byte string value");
                         OCByteString tmp = {.bytes = bytestrval, .len = len};
                         res = OCRepPayloadSetPropByteStringAsOwner(curPayload, name, &tmp);
+#if defined(__TIZENRT__)
+                       if (!res)
+                       {
+                           free(bytestrval);
+                       }
+#endif
                     }
                     break;
                 case CborMapType:
@@ -1153,6 +1174,12 @@ static CborError OCParseSingleRepPayload(OCRepPayload **outPayload, CborValue *o
                         err = OCParseSingleRepPayload(&pl, &repMap, false);
                         VERIFY_CBOR_SUCCESS_OR_OUT_OF_MEMORY(TAG, err, "Failed setting parse single rep");
                         res = OCRepPayloadSetPropObjectAsOwner(curPayload, name, pl);
+#if defined(__TIZENRT__)
+                       if (!res)
+                       {
+                           OCRepPayloadDestroy(pl);
+                       }
+#endif
                     }
                     break;
                 case CborArrayType:
@@ -1165,6 +1192,12 @@ static CborError OCParseSingleRepPayload(OCRepPayload **outPayload, CborValue *o
                         err = OCParseSingleRepPayload(&pl, &repMap, false);
                         VERIFY_CBOR_SUCCESS_OR_OUT_OF_MEMORY(TAG, err, "Failed setting parse single rep");
                         res = OCRepPayloadSetPropObjectAsOwner(curPayload, name, pl);
+#if defined(__TIZENRT__)
+                       if (!res)
+                       {
+                           OCRepPayloadDestroy(pl);
+                       }
+#endif
                     }
                     break;
                 default:

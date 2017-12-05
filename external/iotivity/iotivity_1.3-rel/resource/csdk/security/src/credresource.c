@@ -521,6 +521,15 @@ static CborError DeserializeEncodingFromCborInternal(CborValue *map, char *name,
         free(strEncoding);
     }
     exit:
+#if defined(__TIZENRT__)
+    if (cborFindResult != CborNoError)
+    {
+        if(value->data)
+        {
+            free(value->data);
+        }
+    }
+#endif
     return cborFindResult;
 }
 
@@ -529,10 +538,21 @@ CborError DeserializeEncodingFromCbor(CborValue *rootMap, OicSecKey_t *value)
     CborValue map = { .parser = NULL };
     CborError cborFindResult = cbor_value_enter_container(rootMap, &map);
     size_t len = 0;
+#if defined(__TIZENRT__)
+    char* name = NULL;
+#endif
 
     while (cbor_value_is_valid(&map))
     {
+#if defined(__TIZENRT__)
+        if (name)
+        {
+            free(name);
+            name = NULL;
+        }
+#else
         char* name = NULL;
+#endif
         CborType type = cbor_value_get_type(&map);
         if (type == CborTextStringType && cbor_value_is_text_string(&map))
         {
@@ -552,9 +572,24 @@ CborError DeserializeEncodingFromCbor(CborValue *rootMap, OicSecKey_t *value)
             VERIFY_CBOR_SUCCESS_OR_OUT_OF_MEMORY(TAG, cborFindResult, "Failed Advancing Map.");
         }
         //Because cbor using malloc directly, it is required to use free() instead of OICFree
+
+#if defined(__TIZENRT__)
+        if (name)
+        {
+            free(name);
+            name = NULL;
+        }
+#else
         free(name);
+#endif
     }
     exit:
+#if defined(__TIZENRT__)
+    if (name)
+    {
+        free(name);
+    }
+#endif
     return cborFindResult;
 }
 
@@ -564,10 +599,21 @@ CborError DeserializeSecOptFromCbor(CborValue *rootMap, OicSecOpt_t *value)
     CborError cborFindResult = cbor_value_enter_container(rootMap, &map);
     size_t len = 0;
     value->revstat = false;
+#if defined(__TIZENRT__)
+    char* name = NULL;
+#endif
 
     while (cbor_value_is_valid(&map))
     {
+#if defined(__TIZENRT__)
+        if (name)
+        {
+            free(name);
+            name = NULL;
+        }
+#else
         char* name = NULL;
+#endif
         CborType type = cbor_value_get_type(&map);
         if (type == CborTextStringType && cbor_value_is_text_string(&map))
         {
@@ -598,9 +644,23 @@ CborError DeserializeSecOptFromCbor(CborValue *rootMap, OicSecOpt_t *value)
             VERIFY_CBOR_SUCCESS_OR_OUT_OF_MEMORY(TAG, cborFindResult, "Failed Advancing Map.");
         }
         //Because cbor using malloc directly, it is required to use free() instead of OICFree
+#if defined(__TIZENRT__)
+        if (name)
+        {
+            free(name);
+            name = NULL;
+        }
+#else
         free(name);
+#endif
     }
     exit:
+#if defined(__TIZENRT__)
+    if (name)
+    {
+        free(name);
+    }
+#endif
     return cborFindResult;
 }
 
@@ -994,7 +1054,10 @@ OCStackResult CBORPayloadToCred(const uint8_t *cborPayload, size_t size,
     CborParser parser = { .end = NULL };
     CborError cborFindResult = CborNoError;
     cbor_parser_init(cborPayload, size, 0, &parser, &credCbor);
-
+#if defined(__TIZENRT__)
+    char *subjectid = NULL;
+    char *eowner = NULL;
+#endif
     if (!cbor_value_is_container(&credCbor))
     {
         return OC_STACK_ERROR;
@@ -1016,6 +1079,13 @@ OCStackResult CBORPayloadToCred(const uint8_t *cborPayload, size_t size,
         CborType type = cbor_value_get_type(&CredRootMap);
         if (type == CborTextStringType && cbor_value_is_text_string(&CredRootMap))
         {
+#if defined(__TIZENRT__)
+            if (tagName)
+            {
+                free(tagName);
+                tagName = NULL;
+            }
+#endif
             cborFindResult = cbor_value_dup_text_string(&CredRootMap, &tagName, &len, NULL);
             VERIFY_CBOR_SUCCESS_OR_OUT_OF_MEMORY(TAG, cborFindResult, "Failed Finding Name in CRED Root Map.");
             cborFindResult = cbor_value_advance(&CredRootMap);
@@ -1062,6 +1132,13 @@ OCStackResult CBORPayloadToCred(const uint8_t *cborPayload, size_t size,
                         CborType cmType = cbor_value_get_type(&credMap);
                         if (cmType == CborTextStringType)
                         {
+#if defined(__TIZENRT__)
+                            if (name)
+                            {
+                                free(name);
+                                name = NULL;
+                            }
+#endif
                             cborFindResult = cbor_value_dup_text_string(&credMap, &name, &tempLen, NULL);
                             VERIFY_CBOR_SUCCESS_OR_OUT_OF_MEMORY(TAG, cborFindResult, "Failed Finding Name in CRED Map.");
                             cborFindResult = cbor_value_advance(&credMap);
@@ -1080,7 +1157,15 @@ OCStackResult CBORPayloadToCred(const uint8_t *cborPayload, size_t size,
                             // subjectid
                             if (strcmp(name, OIC_JSON_SUBJECTID_NAME)  == 0)
                             {
+#if defined(__TIZENRT__)
+                                if (subjectid)
+                                {
+                                    free(subjectid);
+                                    subjectid = NULL;
+                                }
+#else
                                 char *subjectid = NULL;
+#endif
                                 cborFindResult = cbor_value_dup_text_string(&credMap, &subjectid, &tempLen, NULL);
                                 VERIFY_CBOR_SUCCESS_OR_OUT_OF_MEMORY(TAG, cborFindResult, "Failed Finding subjectid Value.");
                                 if(strcmp(subjectid, WILDCARD_RESOURCE_URI) == 0)
@@ -1094,7 +1179,15 @@ OCStackResult CBORPayloadToCred(const uint8_t *cborPayload, size_t size,
                                 }
                                 //Because cbor using malloc directly
                                 //It is required to use free() instead of OICFree
+#if defined(__TIZENRT__)
+                                if (subjectid)
+                                {
+                                    free(subjectid);
+                                    subjectid = NULL;
+                                }
+#else
                                 free(subjectid);
+#endif
                             }
                             // roleid
                             if (strcmp(name, OIC_JSON_ROLEID_NAME) == 0)
@@ -1217,7 +1310,15 @@ OCStackResult CBORPayloadToCred(const uint8_t *cborPayload, size_t size,
                             // Eowner uuid -- Not Mandatory
                             if (strcmp(OIC_JSON_EOWNERID_NAME, name)  == 0 && cbor_value_is_text_string(&credMap))
                             {
+#if defined(__TIZENRT__)
+                                if (eowner)
+                                {
+                                    free(eowner);
+                                    eowner = NULL;
+                                }
+#else
                                 char *eowner = NULL;
+#endif
                                 cborFindResult = cbor_value_dup_text_string(&credMap, &eowner, &tempLen, NULL);
                                 VERIFY_CBOR_SUCCESS_OR_OUT_OF_MEMORY(TAG, cborFindResult, "Failed Finding eownerId Value.");
                                 if(NULL == cred->eownerID)
@@ -1228,7 +1329,15 @@ OCStackResult CBORPayloadToCred(const uint8_t *cborPayload, size_t size,
                                 ret = ConvertStrToUuid(eowner, cred->eownerID);
                                 //Because cbor using malloc directly
                                 //It is required to use free() instead of OICFree
+#if defined(__TIZENRT__)
+                                if (eowner)
+                                {
+                                    free(eowner);
+                                    eowner = NULL;
+                                }
+#else
                                 free(eowner);
+#endif
                                 VERIFY_SUCCESS(TAG, OC_STACK_OK == ret , ERROR);
                             }
 #endif //MULTIPLE_OWNER
@@ -1260,7 +1369,18 @@ OCStackResult CBORPayloadToCred(const uint8_t *cborPayload, size_t size,
                 cborFindResult = cbor_value_dup_text_string(&CredRootMap, &stRowner, &len, NULL);
                 VERIFY_CBOR_SUCCESS_OR_OUT_OF_MEMORY(TAG, cborFindResult, "Failed Finding Rownerid Value.");
                 *rownerid = (OicUuid_t *) OICCalloc(1, sizeof(OicUuid_t));
+#if defined(__TIZENRT__)
+                if (!*rownerid)
+                {
+                    free(*rownerid);
+                    rownerid = NULL;
+                    ret = OC_STACK_ERROR;
+                    OIC_LOG_V(ERROR, TAG, "rownerid fail:");
+                    goto exit;
+                }
+#else
                 VERIFY_NOT_NULL(TAG, *rownerid, ERROR);
+#endif
                 ret = ConvertStrToUuid(stRowner, *rownerid);
                 //Because cbor using malloc directly
                 //It is required to use free() instead of OICFree
@@ -1269,8 +1389,16 @@ OCStackResult CBORPayloadToCred(const uint8_t *cborPayload, size_t size,
             }
             //Because cbor using malloc directly
             //It is required to use free() instead of OICFree
+#if defined(__TIZENRT__)
+            if (tagName)
+            {
+                free(tagName);
+                tagName = NULL;
+            }
+#else
             free(tagName);
             tagName = NULL;
+#endif
         }
         if (cbor_value_is_valid(&CredRootMap))
         {
@@ -1292,6 +1420,12 @@ exit:
         DeleteCredList(headCred);
         headCred = NULL;
         *secCred = NULL;
+#if defined(__TIZENRT__)
+        if(*rownerid)
+        {
+            free(*rownerid);
+        }
+#endif
         ret = OC_STACK_ERROR;
     }
 
@@ -1309,6 +1443,14 @@ exit:
     if (name)
     {
         free(name);
+    }
+    if (subjectid)
+    {
+        free(subjectid);
+    }
+    if (eowner)
+    {
+        free(eowner);
     }
 #else
     free(tagName);

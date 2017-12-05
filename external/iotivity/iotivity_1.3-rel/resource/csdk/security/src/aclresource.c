@@ -1094,6 +1094,11 @@ OicSecAcl_t* CBORPayloadToCloudAcl(const uint8_t *cborPayload, const size_t size
     CborParser parser = { .end = NULL };
     CborError cborFindResult = CborNoError;
     cbor_parser_init(cborPayload, size, 0, &parser, &aclCbor);
+#if defined(__TIZENRT__)
+    char* tagName = NULL;
+    char* name = NULL;
+    char *rMapName = NULL;
+#endif
 
     OicSecAcl_t *acl = (OicSecAcl_t *) OICCalloc(1, sizeof(OicSecAcl_t));
     VERIFY_NOT_NULL_RETURN(TAG, acl, ERROR, NULL);
@@ -1105,7 +1110,15 @@ OicSecAcl_t* CBORPayloadToCloudAcl(const uint8_t *cborPayload, const size_t size
 
     while (cbor_value_is_valid(&aclMap))
     {
+#if defined(__TIZENRT__)
+        if (tagName)
+        {
+            free(tagName);
+            tagName = NULL;
+        }
+#else
         char* tagName = NULL;
+#endif
         size_t len = 0;
         CborType type = cbor_value_get_type(&aclMap);
         if (type == CborTextStringType)
@@ -1141,7 +1154,15 @@ OicSecAcl_t* CBORPayloadToCloudAcl(const uint8_t *cborPayload, const size_t size
 
                     while (cbor_value_is_valid(&aceMap))
                     {
+#if defined(__TIZENRT__)
+                        if (name)
+                        {
+                            free(name);
+                            name = NULL:
+                        }
+#else
                         char* name = NULL;
+#endif
                         size_t tempLen = 0;
                         CborType aceMapType = cbor_value_get_type(&aceMap);
                         if (aceMapType == CborTextStringType)
@@ -1193,7 +1214,15 @@ OicSecAcl_t* CBORPayloadToCloudAcl(const uint8_t *cborPayload, const size_t size
 
                                     while(cbor_value_is_valid(&rMap))
                                     {
-                                        char *rMapName = NULL;
+#if defined(__TIZENRT__)
+                                        if (rMapName)
+                                        {
+                                            free(rMapName);
+                                            rMapName = NULL;
+                                        }
+#else
+                                        char* rMapName = NULL;
+#endif
                                         size_t rMapNameLen = 0;
                                         cborFindResult = cbor_value_dup_text_string(&rMap, &rMapName, &rMapNameLen, NULL);
                                         VERIFY_CBOR_SUCCESS_OR_OUT_OF_MEMORY(TAG, cborFindResult, "Failed Finding RMap Data Name Tag.");
@@ -1267,7 +1296,15 @@ OicSecAcl_t* CBORPayloadToCloudAcl(const uint8_t *cborPayload, const size_t size
                                             cborFindResult = cbor_value_advance(&rMap);
                                             VERIFY_CBOR_SUCCESS_OR_OUT_OF_MEMORY(TAG, cborFindResult, "Failed Advancing Rlist Map.");
                                         }
+#if defined(__TIZENRT__)
+                                        if (rMapName)
+                                        {
+                                            free(rMapName);
+                                            rMapName = NULL;
+                                        }
+#else
                                         OICFree(rMapName);
+#endif
                                     }
 
                                     if (cbor_value_is_valid(&resources))
@@ -1339,7 +1376,15 @@ OicSecAcl_t* CBORPayloadToCloudAcl(const uint8_t *cborPayload, const size_t size
                                     VERIFY_CBOR_SUCCESS_OR_OUT_OF_MEMORY(TAG, cborFindResult, "Failed Advancing a validities Array.");
                                 }
                             }
+#if defined(__TIZENRT__)
+                            if (name)
+                            {
+                                free(name);
+                                name = NULL;
+                            }
+#else
                             OICFree(name);
+#endif
                         }
 
                         if (aceMapType != CborMapType && cbor_value_is_valid(&aceMap))
@@ -1369,8 +1414,16 @@ OicSecAcl_t* CBORPayloadToCloudAcl(const uint8_t *cborPayload, const size_t size
                 VERIFY_SUCCESS(TAG, ret == OC_STACK_OK, ERROR);
             }
             // Strings allocated with cbor_value_dup_text_string must be freed with free, not OICFree.
+#if defined(__TIZENRT__)
+            if (tagName)
+            {
+                free(tagName);
+                tagName = NULL;
+            }
+#else
             free(tagName);
             tagName = NULL;
+#endif
         }
         if (cbor_value_is_valid(&aclMap))
         {
@@ -1378,9 +1431,28 @@ OicSecAcl_t* CBORPayloadToCloudAcl(const uint8_t *cborPayload, const size_t size
             VERIFY_CBOR_SUCCESS_OR_OUT_OF_MEMORY(TAG, cborFindResult, "Failed Advancing ACL Map.");
         }
     }
+#if defined(__TIZENRT__)
+    ret = OC_STACK_OK;
+#endif
 
 exit:
+#if defined(__TIZENRT__)
+    if (tagName)
+    {
+        free(tagName);
+    }
+    if (name)
+    {
+        free(name);
+    }
+    if (rMapName)
+    {
+        free(rMapName);
+    }
+    if ((cborFindResult != CborNoError) || (ret != OC_STACK_OK))
+#else
     if (cborFindResult != CborNoError)
+#endif
     {
         OIC_LOG(ERROR, TAG, "Failed to CBORPayloadToAcl");
         DeleteACLList(acl);
@@ -1423,7 +1495,9 @@ static OicSecAcl_t* CBORPayloadToAclVersionOpt(const uint8_t *cborPayload, const
     bool aceArrayIsNextItem = false;
     char *acName = NULL;
     size_t readLen = 0;
-
+#if defined(__TIZENRT__)
+    char* name = NULL;
+#endif
     cbor_parser_init(cborPayload, size, 0, &parser, &aclCbor);
 
     OicSecAcl_t *acl = (OicSecAcl_t *) OICCalloc(1, sizeof(OicSecAcl_t));
@@ -1454,7 +1528,11 @@ static OicSecAcl_t* CBORPayloadToAclVersionOpt(const uint8_t *cborPayload, const
                     *versionCheck = OIC_SEC_ACL_V1;
                     OICFree(acl);
 #if defined(__TIZENRT__)
-                    free(tagName);
+                    if (tagName)
+                    {
+                        free(tagName);
+                        tagName = NULL;
+                    }
 #endif
                     return NULL;
                 }
@@ -1471,7 +1549,11 @@ static OicSecAcl_t* CBORPayloadToAclVersionOpt(const uint8_t *cborPayload, const
                     *versionCheck = OIC_SEC_ACL_V2;
                     OICFree(acl);
 #if defined(__TIZENRT__)
-                    free(tagName);
+                    if (tagName)
+                    {
+                        free(tagName);
+                        tagName = NULL;
+                    }
 #endif
                     return NULL;
                 }
@@ -1488,7 +1570,11 @@ static OicSecAcl_t* CBORPayloadToAclVersionOpt(const uint8_t *cborPayload, const
                     *versionCheck = OIC_SEC_ACL_UNKNOWN;
                     OICFree(acl);
 #if defined(__TIZENRT__)
-                    free(tagName);
+                    if (tagName)
+                    {
+                        free(tagName);
+                        tagName = NULL;
+                    }
 #endif
                     return NULL;
                 }
@@ -1520,6 +1606,9 @@ static OicSecAcl_t* CBORPayloadToAclVersionOpt(const uint8_t *cborPayload, const
                             OIC_LOG_V(DEBUG, TAG, "%s found %s tag.", __func__, acName);
                             parsedAcesTag = true;
                         }
+#if defined(__TIZENRT__)
+                        free(acName);
+#endif
                     }
                 }
                 if (parsedAcesTag)
@@ -1572,7 +1661,15 @@ static OicSecAcl_t* CBORPayloadToAclVersionOpt(const uint8_t *cborPayload, const
                         // parse this ACE/ACE2 object
                         while (cbor_value_is_valid(&aceMap))
                         {
+#if defined(__TIZENRT__)
+                            if (name)
+                            {
+                                free(name);
+                                name = NULL;
+                            }
+#else
                             char* name = NULL;
+#endif
                             size_t tempLen = 0;
                             CborType aceMapType = cbor_value_get_type(&aceMap);
                             if (aceMapType == CborTextStringType)
@@ -1742,8 +1839,11 @@ static OicSecAcl_t* CBORPayloadToAclVersionOpt(const uint8_t *cborPayload, const
                                                     OIC_LOG_V(WARNING, TAG, "Unknown tag in subject map: %s", subjectTag);
                                                 }
 #if defined(__TIZENRT__)
-                                                free(subjectTag);
-                                                subjectTag = NULL;
+                                                if (subjectTag)
+                                                {
+                                                    free(subjectTag);
+                                                    subjectTag = NULL;
+                                                }
 #endif
                                             }
 
@@ -2018,7 +2118,15 @@ static OicSecAcl_t* CBORPayloadToAclVersionOpt(const uint8_t *cborPayload, const
                                 }
 #endif //MULTIPLE_OWNER
                                 OIC_LOG_V(DEBUG, TAG, "%s finished decoding %s.", __func__, name);
+#if defined(__TIZENRT__)
+                                if (name);
+                                {
+                                    free(name);
+                                    name = NULL;
+                                }
+#else
                                 OICFree(name);
+#endif
                             }
 
                             if (aceMapType != CborMapType && cbor_value_is_valid(&aceMap))
@@ -2074,9 +2182,16 @@ static OicSecAcl_t* CBORPayloadToAclVersionOpt(const uint8_t *cborPayload, const
                     OIC_LOG_V(DEBUG, TAG, "%s: rowner uuid from gAcl", __func__);
                 }
             }
-
+#if defined(__TIZENRT__)
+            if (tagName)
+            {
+                free(tagName);
+                tagName = NULL;
+            }
+#else
             free(tagName);
             tagName = NULL;
+#endif
         }
         if (cbor_value_is_valid(&aclMap))
         {
@@ -2104,6 +2219,14 @@ exit:
     {
         free(tagName);
         tagName = NULL;
+    }
+    if (NULL != name)
+    {
+        free(name);
+    }
+    if (NULL != subjectTag)
+    {
+        free(subjectTag);
     }
 #else
     free(tagName);
