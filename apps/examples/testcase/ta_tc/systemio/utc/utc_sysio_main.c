@@ -24,7 +24,6 @@
 #include <string.h>
 #include <semaphore.h>
 #include "utc_internal.h"
-#include <apps/shell/tash.h>
 
 /***************************************************************************
  * Definitions
@@ -44,7 +43,11 @@
 extern sem_t tc_sem;
 extern int working_tc;
 
-int sysio_utc(int argc, FAR char *argv[])
+#ifdef CONFIG_BUILD_KERNEL
+int main(int argc, FAR char *argv[])
+#else
+int utc_sysio_main(int argc, char *argv[])
+#endif
 {
 	sem_wait(&tc_sem);
 	working_tc++;
@@ -79,20 +82,5 @@ int sysio_utc(int argc, FAR char *argv[])
 	working_tc--;
 	sem_post(&tc_sem);
 
-	return 0;
-}
-
-#ifdef CONFIG_BUILD_KERNEL
-int main(int argc, FAR char *argv[])
-#else
-int utc_sysio_main(int argc, char *argv[])
-#endif
-{
-
-#ifdef CONFIG_TASH
-	tash_cmd_install("sysio_utc", sysio_utc, TASH_EXECMD_SYNC);
-#else
-	sysio_utc(argc, argv);
-#endif
 	return 0;
 }

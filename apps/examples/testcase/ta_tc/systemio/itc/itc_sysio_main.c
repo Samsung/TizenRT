@@ -43,7 +43,11 @@
 
 extern sem_t tc_sem;
 
-int itc_sysio_launcher(int argc, FAR char *argv[])
+#ifdef CONFIG_BUILD_KERNEL
+int main(int argc, FAR char *argv[])
+#else
+int itc_sysio_main(int argc, char *argv[])
+#endif
 {
 	total_pass = 0;
 	total_fail = 0;
@@ -76,19 +80,5 @@ int itc_sysio_launcher(int argc, FAR char *argv[])
 
 	sem_post(&tc_sem);
 
-	return 0;
-}
-
-#ifdef CONFIG_BUILD_KERNEL
-int main(int argc, FAR char *argv[])
-#else
-int itc_sysio_main(int argc, char *argv[])
-#endif
-{
-#ifdef CONFIG_TASH
-	tash_cmd_install("sysio_itc", itc_sysio_launcher, 0);
-#else
-	itc_sysio_launcher(argc, argv);
-#endif
 	return 0;
 }

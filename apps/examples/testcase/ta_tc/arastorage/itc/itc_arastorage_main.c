@@ -22,7 +22,6 @@
 #include <stdio.h>
 #include <string.h>
 #include <arastorage/arastorage.h>
-#include <apps/shell/tash.h>
 #include <tinyara/fs/fs_utils.h>
 #include "tc_common.h"
 
@@ -639,7 +638,11 @@ void itc_arastorage_cursor_get_row_tc_p(void)
 	TC_SUCCESS_RESULT();
 }
 
-int itc_arastorage_launcher(int argc, FAR char *argv[])
+#ifdef CONFIG_BUILD_KERNEL
+int main(int argc, FAR char *argv[])
+#else
+int itc_arastorage_main(int argc, char *argv[])
+#endif
 {
 	printf("\n########## Arastorage ITC Start ##########\n");
 
@@ -675,20 +678,5 @@ int itc_arastorage_launcher(int argc, FAR char *argv[])
 	itc_arastorage_cleanup_p();
 
 	printf("\n########## Arastorage ITC End [PASS : %d, FAIL : %d] ##########\n", total_pass, total_fail);
-	return 0;
-}
-
-#ifdef CONFIG_BUILD_KERNEL
-int main(int argc, FAR char *argv[])
-#else
-int itc_arastorage_main(int argc, char *argv[])
-#endif
-{
-
-#ifdef CONFIG_TASH
-	tash_cmd_install("arastorage_itc", itc_arastorage_launcher, TASH_EXECMD_SYNC);
-#else
-	itc_arastorage_launcher(argc, argv);
-#endif
 	return 0;
 }
