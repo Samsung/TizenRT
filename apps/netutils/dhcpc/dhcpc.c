@@ -270,6 +270,7 @@ static int dhcpc_sendmsg(struct dhcpc_state_s *pdhcpc, struct dhcpc_state *presu
 #endif
 		pend = dhcpc_addserverid(&pdhcpc->serverid, pend);
 		pend = dhcpc_addreqipaddr(&pdhcpc->ipaddr, pend);
+		pend = dhcpc_addreqoptions(pend);
 		break;
 
 		/* Send DECLINE message to the server that sent the *last* OFFER */
@@ -539,11 +540,6 @@ int dhcpc_request(void *handle, struct dhcpc_state *presult)
 			pdhcpc->ipaddr.s_addr = presult->ipaddr.s_addr;
 			pdhcpc->serverid.s_addr = presult->serverid.s_addr;
 
-			/* Temporarily use the address offered by the server and break
-			 * out of the loop.
-			 */
-
-			(void)netlib_set_ipv4addr(intf, &presult->ipaddr);
 			g_dhcpc_state = STATE_HAVE_OFFER;
 			break;
 		} else {
@@ -590,6 +586,9 @@ int dhcpc_request(void *handle, struct dhcpc_state *presult)
 
 		if (msgtype == DHCPACK) {
 			ndbg("Received ACK\n");
+			if (netlib_set_ipv4addr(intf, &presult->ipaddr) == ERROR) {
+				ndbg("netlib_set_ipv4addr failed\n");
+			}
 			g_dhcpc_state = STATE_HAVE_LEASE;
 
 		}
