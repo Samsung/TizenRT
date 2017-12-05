@@ -600,7 +600,7 @@
  * entries (using etharp_add_static_entry/etharp_remove_static_entry).
  */
 #ifndef ETHARP_SUPPORT_STATIC_ENTRIES
-#define ETHARP_SUPPORT_STATIC_ENTRIES   0
+#define ETHARP_SUPPORT_STATIC_ENTRIES   1
 #endif
 
 /** ETHARP_TABLE_MATCH_NETIF==1: Match netif for ARP table entries.
