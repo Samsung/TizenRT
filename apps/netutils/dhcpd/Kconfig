@@ -23,7 +23,7 @@ config NETUTILS_DHCPD_HOST
 
 config NETUTILS_DHCPD_IGNOREBROADCAST
 	bool "Ignore client broadcast"
-	default y
+	default n
 	---help---
 		This is a hack.  I've had problems with Windows machines responding
 		to unicast.  I think this is associated with a Windows registry key in
@@ -31,6 +31,12 @@ config NETUTILS_DHCPD_IGNOREBROADCAST
 		The IgnoreBroadcastFlag value controls this behavior:  A value of 1 will
 		cause the server to ignore the client broadcast flag and always respond
 		with multicast; the value 0 to allows clients to request unicast.
+
+config NETUTILS_DHCPD_RESPOND_UNICAST
+	bool "Respond with unicast"
+	default n
+	---help---
+		It respond with unicast packet when it send DHCP_OFFER and DHCP_ACK messages.
 
 config NETUTILS_DHCPD_INTERFACE
 	string "DHCPD network interface"

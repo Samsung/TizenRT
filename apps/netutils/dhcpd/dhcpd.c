@@ -96,6 +96,10 @@
 #include <netinet/in.h>
 #include <arpa/inet.h>
 
+#ifdef CONFIG_NETUTILS_DHCPD_RESPOND_UNICAST
+#include <net/lwip/etharp.h>
+#endif
+
 /****************************************************************************
  * Global Data
  ****************************************************************************/
@@ -339,7 +343,22 @@ static inline void dhcpd_arpupdate(uint16_t *pipaddr, uint8_t *phwaddr)
 	net_unlock(flags);
 }
 #else
+#ifdef CONFIG_NETUTILS_DHCPD_RESPOND_UNICAST
+static void dhcpd_arpupdate(uint32_t *pipaddr, uint8_t *phwaddr)
+{
+	if (etharp_add_static_entry((ip4_addr_t *)pipaddr, (struct eth_addr *)phwaddr) != ERR_OK) {
+		ndbg("etharp_add_static_entry failed. ipaddr=0x%x\n", (long)*pipaddr);
+	}
+}
+static void dhcpd_arpremove(uint32_t *pipaddr)
+{
+	if (etharp_remove_static_entry((ip4_addr_t *)pipaddr) != ERR_OK) {
+		ndbg("etharp_remove_static_entry failed. ipaddr=0x%x\n", (long)*pipaddr);
+	}
+}
+#else
 #define dhcpd_arpupdate(pipaddr, phwaddr)
+#endif /* CONFIG_NETUTILS_DHCPD_RESPOND_UNICAST */
 #endif /* CONFIG_NET_LWIP */
 #else
 #define dhcpd_arpupdate(pipaddr, phwaddr)
@@ -949,12 +968,12 @@ static int dhcpd_sendpacket(int bbroadcast)
 	if (bbroadcast) {
 		ipaddr = INADDR_BROADCAST;
 	} else if (memcmp(g_state.ds_outpacket.ciaddr, g_anyipaddr, 4) != 0) {
-		dhcpd_arpupdate((uint16_t *)g_state.ds_outpacket.ciaddr, g_state.ds_outpacket.chaddr);
+		dhcpd_arpupdate((uint32_t *)g_state.ds_outpacket.ciaddr, g_state.ds_outpacket.chaddr);
 		memcpy(&ipaddr, g_state.ds_outpacket.ciaddr, 4);
 	} else if (g_state.ds_outpacket.flags & HTONS(BOOTP_BROADCAST)) {
 		ipaddr = INADDR_BROADCAST;
 	} else {
-		dhcpd_arpupdate((uint16_t *)g_state.ds_outpacket.yiaddr, g_state.ds_outpacket.chaddr);
+		dhcpd_arpupdate((uint32_t *)g_state.ds_outpacket.yiaddr, g_state.ds_outpacket.chaddr);
 		memcpy(&ipaddr, g_state.ds_outpacket.yiaddr, 4);
 	}
 #endif
@@ -981,6 +1000,9 @@ static int dhcpd_sendpacket(int bbroadcast)
 	} else {
 		ndbg("create socket failed : %d\n", sockfd);
 	}
+#ifdef CONFIG_NETUTILS_DHCPD_RESPOND_UNICAST
+	dhcpd_arpremove((uint32_t *)&ipaddr);
+#endif
 
 	return ret;
 }
@@ -1003,7 +1025,9 @@ static int dhcpd_send_offerpacket(void)
 	/* A dhcp offer message should be sent as broadcast message
 	 *  Some platform might discard 255.255.255.255 broadcast message, so replace it to subnet broadcast message
 	 */
+#ifndef CONFIG_NETUTILS_DHCPD_RESPOND_UNICAST
 	ipaddr |= (~htonl(CONFIG_NETUTILS_DHCPD_NETMASK));
+#endif
 #else
 	ipaddr = htonl(IPADDR_BROADCAST);
 #endif
@@ -1017,12 +1041,17 @@ static int dhcpd_send_offerpacket(void)
 		addr.sin_port = HTONS(DHCP_CLIENT_PORT);
 		addr.sin_addr.s_addr = ipaddr;
 
+#ifdef CONFIG_NETUTILS_DHCPD_RESPOND_UNICAST
+		dhcpd_arpupdate((uint32_t *)&ipaddr, g_state.ds_outpacket.chaddr);
+#endif
 		/* Send the minimum sized packet that includes the END option */
-
 		len = (g_state.ds_optend - (uint8_t *)&g_state.ds_outpacket) + 1;
 		nvdbg("dhcp offer sendto %08lx:%04x len=%d\n", (long)ntohl(addr.sin_addr.s_addr), ntohs(addr.sin_port), len);
 		ret = sendto(sockfd, &g_state.ds_outpacket, len, 0, (struct sockaddr *)&addr, sizeof(struct sockaddr_in));
 		close(sockfd);
+#ifdef CONFIG_NETUTILS_DHCPD_RESPOND_UNICAST
+		dhcpd_arpremove((uint32_t *)&ipaddr);
+#endif
 	} else {
 		ndbg("create socket failed : %d\n", sockfd);
 	}
@@ -1125,7 +1154,11 @@ int dhcpd_sendack(in_addr_t ipaddr)
 	dhcp_addoption32p(DHCP_OPTION_DNS_SERVER, (FAR uint8_t *)&dnsaddr);
 #endif
 
+#ifdef CONFIG_NETUTILS_DHCPD_RESPOND_UNICAST
+	if (dhcpd_sendpacket(false) < 0) {
+#else
 	if (dhcpd_sendpacket(true) < 0) {
+#endif
 		return ERROR;
 	}
 
