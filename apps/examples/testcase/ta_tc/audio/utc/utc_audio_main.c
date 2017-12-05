@@ -82,7 +82,7 @@ static void clean_all_data(int fd, char *buffer)
 * @precondition     NA
 * @postcondition    NA
 */
-static void utc_audio_pcm_open_tc_p(void)
+static void utc_audio_pcm_open_p(void)
 {
 	g_pcm = pcm_open(0, 0, PCM_IN, NULL);
 	TC_ASSERT_GT("pcm_open", pcm_get_file_descriptor(g_pcm), 0)
@@ -97,7 +97,7 @@ static void utc_audio_pcm_open_tc_p(void)
 * @precondition     NA
 * @postcondition    NA
 */
-static void utc_audio_pcm_open_tc_n(void)
+static void utc_audio_pcm_open_n(void)
 {
 	struct pcm *pcm;
 	pcm = pcm_open(999, 999, PCM_IN, NULL);
@@ -114,7 +114,7 @@ static void utc_audio_pcm_open_tc_n(void)
 * @precondition     pcm_open should be called
 * @postcondition    NA
 */
-static void utc_audio_pcm_is_ready_tc_p(void)
+static void utc_audio_pcm_is_ready_p(void)
 {
 	TC_ASSERT_GT("pcm_is_ready", pcm_is_ready(g_pcm), 0);
 	TC_SUCCESS_RESULT();
@@ -128,7 +128,7 @@ static void utc_audio_pcm_is_ready_tc_p(void)
 * @precondition     pcm_open should be called
 * @postcondition    NA
 */
-static void utc_audio_pcm_is_ready_tc_n(void)
+static void utc_audio_pcm_is_ready_n(void)
 {
 	TC_ASSERT_LEQ("pcm_is_ready", pcm_is_ready(NULL), 0);
 	TC_SUCCESS_RESULT();
@@ -142,7 +142,7 @@ static void utc_audio_pcm_is_ready_tc_n(void)
 * @precondition     pcm_open should be called
 * @postcondition    NA
 */
-static void utc_audio_pcm_prepare_tc_p(void)
+static void utc_audio_pcm_prepare_p(void)
 {
 	TC_ASSERT_EQ("pcm_prepare", pcm_prepare(g_pcm), 0);
 	TC_SUCCESS_RESULT();
@@ -156,7 +156,7 @@ static void utc_audio_pcm_prepare_tc_p(void)
 * @precondition     pcm_open should be called
 * @postcondition    NA
 */
-static void utc_audio_pcm_prepare_tc_n(void)
+static void utc_audio_pcm_prepare_n(void)
 {
 	TC_ASSERT_LT("pcm_prepare", pcm_prepare(NULL), 0);
 	TC_SUCCESS_RESULT();
@@ -170,7 +170,7 @@ static void utc_audio_pcm_prepare_tc_n(void)
 * @precondition     pcm should be opened before.
 * @postcondition    NA
 */
-static void utc_audio_pcm_close_tc_p(void)
+static void utc_audio_pcm_close_p(void)
 {
 	TC_ASSERT_EQ("pcm_close", pcm_close(g_pcm), 0);
 	TC_SUCCESS_RESULT();
@@ -184,7 +184,7 @@ static void utc_audio_pcm_close_tc_p(void)
 * @precondition     NA
 * @postcondition    NA
 */
-static void utc_audio_pcm_close_tc_n(void)
+static void utc_audio_pcm_close_n(void)
 {
 	TC_ASSERT_NEQ("pcm_close", pcm_close(NULL), 0);
 	TC_SUCCESS_RESULT();
@@ -198,7 +198,7 @@ static void utc_audio_pcm_close_tc_n(void)
 * @precondition     NA
 * @postcondition    NA
 */
-static void utc_audio_pcm_open_by_name_tc_p(void)
+static void utc_audio_pcm_open_by_name_p(void)
 {
 	g_pcm = pcm_open_by_name("hw:0,0", PCM_IN, NULL);
 	TC_ASSERT_GT_CLEANUP("pcm_open_by_name", pcm_get_file_descriptor(g_pcm), 0, pcm_close(g_pcm))
@@ -214,7 +214,7 @@ static void utc_audio_pcm_open_by_name_tc_p(void)
 * @precondition     NA
 * @postcondition    NA
 */
-static void utc_audio_pcm_open_by_name_tc_n(void)
+static void utc_audio_pcm_open_by_name_n(void)
 {
 	struct pcm *pcm;
 	pcm = pcm_open_by_name(NULL, PCM_IN, NULL);
@@ -231,7 +231,7 @@ static void utc_audio_pcm_open_by_name_tc_n(void)
 * @precondition     pcm should be opened before.
 * @postcondition    NA
 */
-static void utc_audio_pcm_get_config_tc_p(void)
+static void utc_audio_pcm_get_config_p(void)
 {
 	const struct pcm_config *config;
 	/* open g_pcm again to check config test */
@@ -251,7 +251,7 @@ static void utc_audio_pcm_get_config_tc_p(void)
 * @precondition     NA.
 * @postcondition    NA
 */
-static void utc_audio_pcm_get_config_tc_n(void)
+static void utc_audio_pcm_get_config_n(void)
 {
 	const struct pcm_config *config = pcm_get_config(NULL);
 	TC_ASSERT_EQ("pcm_get_config", config, NULL);
@@ -266,7 +266,7 @@ static void utc_audio_pcm_get_config_tc_n(void)
 * @precondition     pcm should be opened before.
 * @postcondition    NA
 */
-static void utc_audio_pcm_get_channels_tc_p(void)
+static void utc_audio_pcm_get_channels_p(void)
 {
 	unsigned int ch;
 	ch = pcm_get_channels(g_pcm);
@@ -282,7 +282,7 @@ static void utc_audio_pcm_get_channels_tc_p(void)
 * @precondition     NA
 * @postcondition    NA
 */
-static void utc_audio_pcm_get_channels_tc_n(void)
+static void utc_audio_pcm_get_channels_n(void)
 {
 	int ch;
 	ch = pcm_get_channels(NULL);
@@ -298,7 +298,7 @@ static void utc_audio_pcm_get_channels_tc_n(void)
 * @precondition     pcm should be opened before.
 * @postcondition    NA
 */
-static void utc_audio_pcm_get_rate_tc_p(void)
+static void utc_audio_pcm_get_rate_p(void)
 {
 	int rate;
 	rate = pcm_get_rate(g_pcm);
@@ -314,7 +314,7 @@ static void utc_audio_pcm_get_rate_tc_p(void)
 * @precondition     NA
 * @postcondition    NA
 */
-static void utc_audio_pcm_get_rate_tc_n(void)
+static void utc_audio_pcm_get_rate_n(void)
 {
 	int rate;
 	rate = pcm_get_rate(NULL);
@@ -330,7 +330,7 @@ static void utc_audio_pcm_get_rate_tc_n(void)
 * @precondition     pcm should be opened before.
 * @postcondition    NA
 */
-static void utc_audio_pcm_get_format_tc_p(void)
+static void utc_audio_pcm_get_format_p(void)
 {
 	int format;
 	format = pcm_get_format(g_pcm);
@@ -346,7 +346,7 @@ static void utc_audio_pcm_get_format_tc_p(void)
 * @precondition     NA
 * @postcondition    NA
 */
-static void utc_audio_pcm_get_format_tc_n(void)
+static void utc_audio_pcm_get_format_n(void)
 {
 	int pcm_format;
 	pcm_format = pcm_get_format(NULL);
@@ -362,7 +362,7 @@ static void utc_audio_pcm_get_format_tc_n(void)
 * @precondition     pcm should be opened before.
 * @postcondition    NA
 */
-static void utc_audio_pcm_get_file_descriptor_tc_p(void)
+static void utc_audio_pcm_get_file_descriptor_p(void)
 {
 	int fd;
 
@@ -381,7 +381,7 @@ static void utc_audio_pcm_get_file_descriptor_tc_p(void)
 * @precondition     NA
 * @postcondition    NA
 */
-static void utc_audio_pcm_get_file_descriptor_tc_n(void)
+static void utc_audio_pcm_get_file_descriptor_n(void)
 {
 	int fd;
 	fd = pcm_get_file_descriptor(NULL);
@@ -397,7 +397,7 @@ static void utc_audio_pcm_get_file_descriptor_tc_n(void)
 * @precondition     NA
 * @postcondition    NA
 */
-static void utc_audio_pcm_get_error_tc_p(void)
+static void utc_audio_pcm_get_error_p(void)
 {
 	struct pcm *pcm;
 	pcm = pcm_open(0, 0, PCM_IN, NULL);
@@ -415,7 +415,7 @@ static void utc_audio_pcm_get_error_tc_p(void)
 * @precondition     NA
 * @postcondition    NA
 */
-static void utc_audio_pcm_get_error_tc_n(void)
+static void utc_audio_pcm_get_error_n(void)
 {
 	TC_ASSERT_EQ("pcm_get_error", pcm_get_error(NULL), NULL);
 	TC_SUCCESS_RESULT();
@@ -429,7 +429,7 @@ static void utc_audio_pcm_get_error_tc_n(void)
 * @precondition     pcm should be opened before.
 * @postcondition    NA
 */
-static void utc_audio_pcm_get_buffer_size_tc_p(void)
+static void utc_audio_pcm_get_buffer_size_p(void)
 {
 	ssize_t size;
 	/* Open again to test APIs regarding buffering & recoridng & playing */
@@ -447,7 +447,7 @@ static void utc_audio_pcm_get_buffer_size_tc_p(void)
 * @precondition     NA
 * @postcondition    NA
 */
-static void utc_audio_pcm_get_buffer_size_tc_n(void)
+static void utc_audio_pcm_get_buffer_size_n(void)
 {
 	ssize_t size;
 	size = pcm_get_buffer_size(NULL);
@@ -463,7 +463,7 @@ static void utc_audio_pcm_get_buffer_size_tc_n(void)
 * @precondition     pcm should be opened before.
 * @postcondition    NA
 */
-static void utc_audio_pcm_get_subdevice_tc_p(void)
+static void utc_audio_pcm_get_subdevice_p(void)
 {
 	unsigned int device;
 	device = pcm_get_subdevice(g_pcm);
@@ -479,7 +479,7 @@ static void utc_audio_pcm_get_subdevice_tc_p(void)
 * @precondition     NA.
 * @postcondition    NA
 */
-static void utc_audio_pcm_get_subdevice_tc_n(void)
+static void utc_audio_pcm_get_subdevice_n(void)
 {
 	unsigned int device;
 	device = pcm_get_subdevice(g_pcm);
@@ -765,35 +765,40 @@ static void utc_audio_pcm_writei_n(void)
 
 static int audio_tc_launcher(int argc, char **args)
 {
+	sem_wait(&tc_sem);
+	working_tc++;
+
 	total_pass = 0;
 	total_fail = 0;
 
-	utc_audio_pcm_open_tc_p();
-	utc_audio_pcm_open_tc_n();
-	utc_audio_pcm_is_ready_tc_p();
-	utc_audio_pcm_is_ready_tc_n();
-	utc_audio_pcm_prepare_tc_p();
-	utc_audio_pcm_prepare_tc_n();
-	utc_audio_pcm_close_tc_p();
-	utc_audio_pcm_close_tc_n();
-	utc_audio_pcm_open_by_name_tc_p();
-	utc_audio_pcm_open_by_name_tc_n();
-	utc_audio_pcm_get_config_tc_p();
-	utc_audio_pcm_get_config_tc_n();
-	utc_audio_pcm_get_channels_tc_p();
-	utc_audio_pcm_get_channels_tc_n();
-	utc_audio_pcm_get_rate_tc_p();
-	utc_audio_pcm_get_rate_tc_n();
-	utc_audio_pcm_get_format_tc_p();
-	utc_audio_pcm_get_format_tc_n();
-	utc_audio_pcm_get_file_descriptor_tc_p();
-	utc_audio_pcm_get_file_descriptor_tc_n();
-	utc_audio_pcm_get_error_tc_p();
-	utc_audio_pcm_get_error_tc_n();
-	utc_audio_pcm_get_buffer_size_tc_p();
-	utc_audio_pcm_get_buffer_size_tc_n();
-	utc_audio_pcm_get_subdevice_tc_p();
-	utc_audio_pcm_get_subdevice_tc_n();
+	printf("########## Audio UTC Start ##########\n");	
+
+	utc_audio_pcm_open_p();
+	utc_audio_pcm_open_n();
+	utc_audio_pcm_is_ready_p();
+	utc_audio_pcm_is_ready_n();
+	utc_audio_pcm_prepare_p();
+	utc_audio_pcm_prepare_n();
+	utc_audio_pcm_close_p();
+	utc_audio_pcm_close_n();
+	utc_audio_pcm_open_by_name_p();
+	utc_audio_pcm_open_by_name_n();
+	utc_audio_pcm_get_config_p();
+	utc_audio_pcm_get_config_n();
+	utc_audio_pcm_get_channels_p();
+	utc_audio_pcm_get_channels_n();
+	utc_audio_pcm_get_rate_p();
+	utc_audio_pcm_get_rate_n();
+	utc_audio_pcm_get_format_p();
+	utc_audio_pcm_get_format_n();
+	utc_audio_pcm_get_file_descriptor_p();
+	utc_audio_pcm_get_file_descriptor_n();
+	utc_audio_pcm_get_error_p();
+	utc_audio_pcm_get_error_n();
+	utc_audio_pcm_get_buffer_size_p();
+	utc_audio_pcm_get_buffer_size_n();
+	utc_audio_pcm_get_subdevice_p();
+	utc_audio_pcm_get_subdevice_n();
 	utc_audio_pcm_frames_to_bytes_p();
 	utc_audio_pcm_frames_to_bytes_n();
 	utc_audio_pcm_bytes_to_frames_p();
@@ -807,10 +812,11 @@ static int audio_tc_launcher(int argc, char **args)
 	/* after test, unlink the file */
 	unlink(AUDIO_TEST_FILE);
 
-	printf("#########################################\n");
-	printf("           Audio TC Result               \n");
-	printf("           PASS : %d FAIL : %d        \n", total_pass, total_fail);
-	printf("#########################################\n");
+	printf("########## Audio UTC End [PASS : %d, FAIL : %d] ##########\n", total_pass, total_fail);
+
+	working_tc--;
+	sem_post(&tc_sem);
+
 	return total_pass;
 }
 
@@ -820,17 +826,11 @@ int main(int argc, FAR char *argv[])
 int utc_audio_main(int argc, char *argv[])
 #endif
 {
-	sem_wait(&tc_sem);
-	working_tc++;
-
 #ifdef CONFIG_TASH
 	tash_cmd_install("audio_utc", audio_tc_launcher, TASH_EXECMD_SYNC);
 #else
 	audio_tc_launcher(argc, argv);
 #endif
-
-	working_tc--;
-	sem_post(&tc_sem);
 
 	return 0;
 }

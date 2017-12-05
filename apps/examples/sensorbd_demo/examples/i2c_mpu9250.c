@@ -79,15 +79,18 @@ uint8_t mpu9250_accel_out[3] = {
 	MPU9250_ACCEL_ZOUT_H,
 };
 
-static uint32_t mpu9250_get_axis(uint8_t i)
+static int mpu9250_get_axis(uint16_t *x, uint16_t *y, uint16_t *z)
 {
-	uint8_t data[2];
-	int ret;
+	int i;
+	int ret = OK;
 	uint8_t reg;
-	data[0] = 0;
-	data[1] = 0;
+	uint8_t data[6];
 
-	reg = MPU9250_PWR_MGMT_2;
+	for (i = 0; i < 6; i++) {
+		data[i] = 0;
+	}
+
+	reg = mpu9250_accel_out[MPU9250_AXIS_X];
 
 	ret = i2c_write(i2c_dev, &configs, &reg, 1);
 	if (ret < 0) {
@@ -97,37 +100,17 @@ static uint32_t mpu9250_get_axis(uint8_t i)
 
 	up_mdelay(1);
 
-	ret = i2c_read(i2c_dev, &configs, data, 1);
+	ret = i2c_read(i2c_dev, &configs, data, 6);
 	if (ret < 0) {
 		printf("i2c_read fail(%d)\n", ret);
 		return -ret;
 	}
 
-	if (0 != (data[0] & mpu9250_disable_mask[i])) {
-		printf("Disabled (%d) axis(%d)\n", i, ret);
-		return 0;
-	}
+	*x = (data[0] << 8) | data[1];
+	*y = (data[2] << 8) | data[3];
+	*z = (data[4] << 8) | data[5];
 
-	up_mdelay(1);
-
-	reg = mpu9250_accel_out[i];
-
-	ret = i2c_write(i2c_dev, &configs, &reg, 1);
-	if (ret < 0) {
-		printf("i2c_write fail(%d)\n", ret);
-		return -ret;
-	}
-
-	up_mdelay(1);
-
-	ret = i2c_read(i2c_dev, &configs, data, 2);
-
-	if (ret < 0) {
-		printf("i2c_read fail(%d)\n", ret);
-		return -ret;
-	}
-
-	return (uint16_t)(data[0] << 8) | data[1];
+	return OK;
 }
 
 /****************************************************************************
@@ -174,16 +157,25 @@ int mpu9250_main(int argc, char *argv[])
 	configs.address = MPU9250_ADDR;
 	configs.addrlen = 7;
 
-	mpu9250_initialize();
+	if (mpu9250_initialize() != 0) {
+		printf("init error!\n");
+		goto errout;
+	}
 
 	printf("ACC:      %-10s%-10s%-10s\n", "X", "Y", "Z");
 
 	for (i = 0; i < 30; i++) {
-		data[0] = mpu9250_get_axis(MPU9250_AXIS_X);
-		data[1] = mpu9250_get_axis(MPU9250_AXIS_Y);
-		data[2] = mpu9250_get_axis(MPU9250_AXIS_Z);
+		data[0] = 0;
+		data[1] = 0;
+		data[2] = 0;
 
-		printf("ACC:      %-10d%-10d%-10d\n", (int16_t)data[0], (int16_t)data[1], (int16_t)data[2]);
+		if (mpu9250_get_axis(&data[0], &data[1], &data[2]) != 0) {
+			printf("get error!\n");
+			goto errout;
+		} else {
+			printf("ACC:      %-10d%-10d%-10d\n", (int16_t)data[0], (int16_t)data[1], (int16_t)data[2]);
+		}
+
 		up_mdelay(500);
 	}
 

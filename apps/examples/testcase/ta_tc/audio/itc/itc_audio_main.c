@@ -1168,6 +1168,10 @@ static void itc_audio_pcm_writei_n(void)
 
 static int audio_itc_launcher(int argc, char **args)
 {
+	sem_wait(&tc_sem);
+	working_tc++;
+
+	printf("\n########## Audio ITC Start ##########\n");
 	total_pass = 0;
 	total_fail = 0;
 
@@ -1224,7 +1228,11 @@ static int audio_itc_launcher(int argc, char **args)
 	/* after test, unlink the file */
 	unlink(AUDIO_TEST_FILE);
 
-	printf("\n########## Audio ITC END [PASS : %d, FAIL : %d] ##########\n", total_pass, total_fail);
+	printf("\n########## Audio ITC End [PASS : %d, FAIL : %d] ##########\n", total_pass, total_fail);
+
+	working_tc--;
+	sem_post(&tc_sem);
+
 	return total_pass;
 }
 
@@ -1234,17 +1242,11 @@ int main(int argc, FAR char *argv[])
 int itc_audio_main(int argc, char *argv[])
 #endif
 {
-	sem_wait(&tc_sem);
-	working_tc++;
-
 #ifdef CONFIG_TASH
 	tash_cmd_install("audio_itc", audio_itc_launcher, TASH_EXECMD_SYNC);
 #else
 	audio_itc_launcher(argc, argv);
 #endif
-
-	working_tc--;
-	sem_post(&tc_sem);
 
 	return 0;
 }

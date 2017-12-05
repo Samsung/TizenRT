@@ -24,7 +24,7 @@
 * @scenario		1. Start webserver at TASH using the command "webserver start".
 *			2. Start webclient at TASH using the command "webclient GET http://[serverip]/". Refer to webclient_main.c to run HTTP client.
 * @apicovered
-* @precondition		Connect to Wi-Fi. Both ARTIK051 server and ARTIK051 client should be in the same network.
+* @precondition		Connect to Wi-Fi. Both ARTIK05x server and ARTIK05x client should be in the same network.
 * @postcondition
 */
 
@@ -34,7 +34,7 @@
 * @scenario		1. Start webserver at TASH using the command "webserver start".
 *			2. Start websocket client at TASH using the command "websocket client [serverip] 80 \ 0 128 10". Refer to websocket_main.c to run websocket client.
 * @apicovered
-* @precondition		Connect to Wi-Fi. Both ARTIK051 server and ARTIK051 client should be in the same network.
+* @precondition		Connect to Wi-Fi. Both ARTIK05x server and ARTIK05x client should be in the same network.
 * @postcondition
 */
 
@@ -44,7 +44,7 @@
 * @scenario		1. Start webserver at TASH using the command "webserver start".
 *			2. Start websocket client at TASH using the command "websocket client [serverip] 443 \ 1 128 10". Refer to websocket_main.c to run websocket client.
 * @apicovered
-* @precondition		Connect to Wi-Fi. Both ARTIK051 server and ARTIK051 client should be in the same network.
+* @precondition		Connect to Wi-Fi. Both ARTIK05x server and ARTIK05x client should be in the same network.
 * @postcondition
 */
 

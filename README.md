@@ -4,7 +4,7 @@
 [![Build Status](https://travis-ci.org/Samsung/TizenRT.svg?branch=master)](https://travis-ci.org/Samsung/TizenRT)
 
 lightweight RTOS-based platform to support low-end IoT devices.  
-Please find project details like APIs reference at [docs](docs/) folder. Wiki will be provided.
+Please find project details at [Wiki](https://github.com/Samsung/TizenRT/wiki) especially [documentations page](https://github.com/Samsung/TizenRT/wiki/Documentations).
 
 ## Contents
 
@@ -58,6 +58,10 @@ Built binaries are in *$TIZENRT_BASEDIR/build/output/bin*.
 ## Supported Board / Emulator
 
 ARTIK053 [[details]](build/configs/artik053/README.md)
+
+ARTIK053S [[details]](build/configs/artik053s/README.md)
+
+ARTIK055S [[details]](build/configs/artik055s/README.md)
 
 SIDK_S5JT200 [[details]](build/configs/sidk_s5jt200/README.md)
 

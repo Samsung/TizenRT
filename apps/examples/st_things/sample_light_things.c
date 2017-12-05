@@ -27,9 +27,9 @@
 
 #define TAG		"LIGHT_THINGS"
 
-static const char *g_res_switch = "/switch/main/0";
-static const char *g_res_dimming = "/switchLevel/main/0";
-static const char *g_res_temp = "/colorTemperature/main/0";
+static const char *g_res_switch = "/capability/switch/main/0";
+static const char *g_res_dimming = "/capability/switchLevel/main/0";
+static const char *g_res_temp = "/capability/colorTemperature/main/0";
 
 extern bool handle_get_request_on_switch(st_things_get_request_message_s *req_msg, st_things_representation_s *resp_rep);
 extern bool handle_set_request_on_switch(st_things_set_request_message_s *req_msg, st_things_representation_s *resp_rep);

@@ -16,8 +16,25 @@ config ARCH_BOARD_ARTIK053
 	bool "Samsung ARTIK-053 Starter Kit"
 	depends on ARCH_CHIP_S5JT200
 	select SAMSUNG_NS2
+	select ARCH_BOARD_ARTIK05X_FAMILY
 	---help---
 		Samsung ARTIK-053 Starter Kit based on S5JT200 IoT WiFi MCU
+
+config ARCH_BOARD_ARTIK053S
+	bool "Samsung ARTIK-053S Starter Kit"
+	depends on ARCH_CHIP_S5JT200
+	select SAMSUNG_NS2
+	select ARCH_BOARD_ARTIK05X_FAMILY
+	---help---
+		Samsung ARTIK-053S Starter Kit based on S5JT200 IoT WiFi MCU
+
+config ARCH_BOARD_ARTIK055S
+	bool "Samsung ARTIK-055S Starter Kit"
+	depends on ARCH_CHIP_S5JT200
+	select SAMSUNG_NS2
+	select ARCH_BOARD_ARTIK05X_FAMILY
+	---help---
+		Samsung ARTIK-055S Starter Kit based on S5JT200 IoT WiFi MCU
 
 config ARCH_BOARD_LM3S6965EK
 	bool "Stellaris LM3S6965 Evaluation Kit"
@@ -37,9 +54,13 @@ config ARCH_BOARD_SIDK_S5JT200
 		Samsung S5JT200 IoT wifi MCU
 endchoice
 
+config ARCH_BOARD_ARTIK05X_FAMILY
+    bool
+    default n
+
 config ARCH_BOARD
 	string
-	default "artik053"           if ARCH_BOARD_ARTIK053
+	default "artik05x"           if ARCH_BOARD_ARTIK05X_FAMILY
 	default "lm3s6965-ek"        if ARCH_BOARD_LM3S6965EK
 	default "sidk_s5jt200"       if ARCH_BOARD_SIDK_S5JT200
 
@@ -137,18 +158,20 @@ config BOARDCTL_UNIQUEID_SIZE
 
 endif # LIB_BOARDCTL
 
-config BOARD_COREDUMP_FLASH
-	bool "Enable crashlog dump to flash"
-	default n
-	---help---
-		If selected it will dump the assert log information to flash.
-
 config BOARD_FOTA_SUPPORT
 	bool "Enable board support for FOTA"
 	default n
 	select FOTA_DRIVER
 	---help---
 		If selected the board provides support for FOTA.
+
+if BOARD_CRASHDUMP
+
+config BOARD_COREDUMP_FLASH
+	bool "Enable crashlog dump to flash"
+	default n
+	---help---
+		If selected it will dump the assert log information to flash.
 
 config BOARD_RAMDUMP_FLASH
 	bool "Enable ramdump to flash"
@@ -161,12 +184,12 @@ config BOARD_RAMDUMP_UART
 	default n
 	---help---
 		If selected it will send the RAM dump via UART.
-
+endif
 
 comment "Board-Specific Options"
 
-if ARCH_BOARD_ARTIK053
-source arch/arm/src/artik053/Kconfig
+if ARCH_BOARD_ARTIK05X_FAMILY
+source arch/arm/src/artik05x/Kconfig
 endif
 if ARCH_BOARD_LM3S6965EK
 source arch/arm/src/lm3s6965-ek/Kconfig
@@ -174,4 +197,3 @@ endif
 if ARCH_BOARD_SIDK_S5JT200
 source arch/arm/src/sidk_s5jt200/Kconfig
 endif
-

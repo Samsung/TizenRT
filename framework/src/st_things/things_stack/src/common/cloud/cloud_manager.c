@@ -1893,7 +1893,7 @@ static int cloud_retry_sign_up(es_cloud_prov_data_s *event_data, timeout_s *time
 
 	if ((cloned_data = clone_data_add_timeout(event_data, timeout)) == NULL ||
 #ifdef __ST_THINGS_RTOS__
-		pthread_create_rtos(&cthread_handler, NULL, (pthread_func_type) ci_connection_waiting_loop, (void *)cloned_data, THINGS_STACK_CICONNETION_INIT_THREAD) != 0)
+		pthread_create_rtos(&cthread_handler, NULL, (pthread_func_type) ci_connection_waiting_loop, (void *)cloned_data, THINGS_STACK_CICONNETION_WAIT_THREAD) != 0)
 #else
 		things_thread_create(&cthread_handler, NULL, (pthread_func_type) ci_connection_waiting_loop, (void *)cloned_data) != 0)
 #endif
