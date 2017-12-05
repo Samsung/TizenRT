@@ -27,16 +27,21 @@ config TC_NET_ALL
 	select TC_NET_ACCEPT
 	select TC_NET_SEND
 	select TC_NET_RECV
-    select TC_NET_GETPEERNAME
-    select TC_NET_SENDTO
-    select TC_NET_RECVFROM
-    select TC_NET_SHUTDOWN
+	select TC_NET_GETPEERNAME
+	select TC_NET_SENDTO
+	select TC_NET_RECVFROM
+	select TC_NET_SHUTDOWN
 	select TC_NET_DHCPC
 	select TC_NET_SELECT
 	select TC_NET_INET
 	select TC_NET_ETHER
 	select TC_NET_NETDB
 	select TC_NET_DUP
+	select ITC_NET_SETSOCKOPT
+	select ITC_NET_SEND
+	select ITC_NET_INET
+	select ITC_NET_NETDB
+	select ITC_NET_CONNECT
 
 config TC_NET_SOCKET
 	bool "socket() api"
@@ -126,5 +131,24 @@ config TC_NET_DUP
 	bool "dup() api"
 	default n
 
+config ITC_NET_SETSOCKOPT
+	bool "ITC setsockopt() api"
+	default n
+
+config ITC_NET_SEND
+	bool "ITC send() api"
+	default n
+
+config ITC_NET_INET
+	bool "ITC inet() api"
+	default n
+
+config ITC_NET_NETDB
+	bool "ITC netdb() api"
+	default n
+
+config ITC_NET_CONNECT
+	bool "ITC connect() api"
+	default n
 
 endif #EXAMPLES_TESTCASE_NETWORK

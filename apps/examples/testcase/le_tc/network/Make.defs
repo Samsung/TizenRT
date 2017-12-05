@@ -122,6 +122,21 @@ endif
 ifeq ($(CONFIG_TC_NET_DUP),y)
 CSRCS +=tc_net_dup.c
 endif
+ifeq ($(CONFIG_ITC_NET_SETSOCKOPT),y)
+CSRCS +=itc_net_setsockopt.c
+endif
+ifeq ($(CONFIG_ITC_NET_SEND),y)
+CSRCS +=itc_net_send.c
+endif
+ifeq ($(CONFIG_ITC_NET_INET),y)
+CSRCS +=itc_net_inet.c
+endif
+ifeq ($(CONFIG_ITC_NET_NETDB),y)
+CSRCS +=itc_net_netdb.c
+endif
+ifeq ($(CONFIG_ITC_NET_CONNECT),y)
+CSRCS += itc_net_connect.c
+endif
 
 # Include network build support
 
