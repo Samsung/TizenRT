@@ -68,6 +68,7 @@
 #include <net/lwip/ipv4/inet_chksum.h>
 #include <net/lwip/stats.h>
 #include <net/lwip/snmp.h>
+#include <arpa/inet.h>
 #if LWIP_TCP_TIMESTAMPS
 #include <net/lwip/sys.h>
 #endif

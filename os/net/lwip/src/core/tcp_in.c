@@ -72,6 +72,7 @@
 #include <net/lwip/stats.h>
 #include <net/lwip/snmp.h>
 #include <net/lwip/arch/perf.h>
+#include <arpa/inet.h>
 
 /* These variables are global to all functions involved in the input
    processing of TCP segments. They are set by the tcp_input()

@@ -57,7 +57,7 @@
 #include <net/lwip/debug.h>
 #include <net/lwip/ipv4/inet_chksum.h>
 #include <net/lwip/def.h>
-
+#include <arpa/inet.h>
 #include <stddef.h>
 #include <string.h>
 

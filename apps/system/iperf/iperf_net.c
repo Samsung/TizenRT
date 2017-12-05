@@ -51,6 +51,7 @@
 #include <netinet/in.h>
 #include <assert.h>
 #include <netdb.h>
+#include <arpa/inet.h>
 #include <string.h>
 
 #ifdef HAVE_SENDFILE

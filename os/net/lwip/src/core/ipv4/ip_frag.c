@@ -63,7 +63,7 @@
 #include <net/lwip/snmp.h>
 #include <net/lwip/stats.h>
 #include <net/lwip/ipv4/icmp.h>
-
+#include <arpa/inet.h>
 #include <string.h>
 
 #if IP_REASSEMBLY

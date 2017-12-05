@@ -337,14 +337,14 @@ static inline uint32_t tiva_ethin(struct tiva_driver_s *priv, int offset)
 static void tiva_irqworker(FAR void *arg)
 {
 	FAR struct tiva_driver_s *priv = (FAR struct tiva_driver_s *)arg;
-	uint8_t eir;
+
 	DEBUGASSERT(priv);
 
 	tiva_receive(priv);
 }
 
 /* ****************************************************************************/
-static int tiva_handle_recv_interrupt(FAR void *arg)
+static int tiva_handle_recv_interrupt(void)
 {
 	register FAR struct tiva_driver_s *priv = &g_lm3sdev[0];
 
@@ -693,14 +693,11 @@ static void tiva_receive(struct tiva_driver_s *priv)
 			int res = ethernetif_input(&priv->ld_dev);
 			if (res == 0) {
 				break;
-			}
-			else{
-				printf("trying to handle again\n");
+			} else {
+				nlldbg("trying to handle again\n");
 			}
 			usleep(2000);
 		}
-
-
 
 			/* If the above function invocation resulted in data that should be
 			 * sent out on the network, the field  d_len will set to a value > 0.
@@ -878,7 +875,7 @@ static int tiva_interrupt(int irq, FAR void *context, FAR void *arg)
 		/* Handle the incoming packet */
 
 		EMAC_STAT(priv, rx_int);
-		tiva_handle_recv_interrupt(NULL);
+		tiva_handle_recv_interrupt();
 	}
 
 	/* Is this an Tx interrupt (meaning that the Tx FIFO is empty)? */

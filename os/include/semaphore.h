@@ -66,7 +66,7 @@
  ****************************************************************************/
 
 #include <tinyara/config.h>
-
+#include <tinyara/clock.h>
 #include <stdint.h>
 #include <limits.h>
 
@@ -200,6 +200,7 @@ int sem_wait(FAR sem_t *sem);
  * @since Tizen RT v1.0
  */
 int sem_timedwait(FAR sem_t *sem, FAR const struct timespec *abstime);
+int sem_tickwait(FAR sem_t *sem, systime_t start, uint32_t delay);
 /**
  * @ingroup SEMAPHORE_KERNEL
  * @brief lock a semaphore

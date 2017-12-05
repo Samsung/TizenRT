@@ -51,6 +51,7 @@
 
 #include <netdb.h>
 #include <errno.h>
+#include <arpa/inet.h>
 
 #include "lib_internal.h"
 #include "netdb/lib_netdb.h"

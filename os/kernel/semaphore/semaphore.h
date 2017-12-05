@@ -59,7 +59,6 @@
 
 #include <tinyara/config.h>
 #include <tinyara/compiler.h>
-
 #include <stdint.h>
 #include <stdbool.h>
 #include <semaphore.h>
@@ -106,7 +105,6 @@ void sem_recover(FAR struct tcb_s *tcb);
 /* Special logic needed only by priority inheritance to manage collections of
  * holders of semaphores.
  */
-
 #ifdef CONFIG_PRIORITY_INHERITANCE
 void sem_initholders(void);
 void sem_destroyholder(FAR sem_t *sem);

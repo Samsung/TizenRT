@@ -65,6 +65,7 @@
 
 #include <tinyara/arch.h>
 #include <tinyara/wdog.h>
+#include <tinyara/clock.h>
 
 #include "sched/sched.h"
 #include "clock/clock.h"

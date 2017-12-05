@@ -31,7 +31,7 @@
 #include <tinyara/cancelpt.h>
 #include <tinyara/kthread.h>
 #include <sys/types.h>
-
+#include <semaphore.h>
 /* lwIP includes. */
 #include <net/lwip/stats.h>
 #include <net/lwip/opt.h>
@@ -283,7 +283,7 @@ u32_t sys_arch_mbox_fetch(sys_mbox_t *mbox, void **msg, u32_t timeout)
 		mbox->wait_fetch--;
 		if (status == SYS_ARCH_CANCELED) {
 			return SYS_ARCH_CANCELED;
-		}		
+		}
 	}
 
 	mbox->front = (mbox->front + 1) % mbox->queue_size;

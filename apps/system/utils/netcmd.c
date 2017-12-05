@@ -97,7 +97,7 @@ static void nic_display_state(void)
 	ifcfg.ifc_buf = NULL;
 	ifcfg.ifc_len = sizeof(struct ifreq) * numreqs;
 	ifcfg.ifc_buf = malloc(ifcfg.ifc_len);
-	if (ioctl(fd, SIOCGIFCONF, (void *)&ifcfg) < 0) {
+	if (ioctl(fd, SIOCGIFCONF, (unsigned long)&ifcfg) < 0) {
 		perror("SIOCGIFCONF ");
 		goto DONE;
 	}
@@ -112,19 +112,19 @@ static void nic_display_state(void)
 		} else {
 			struct ifreq tmp;
 			strncpy(tmp.ifr_name, ifr->ifr_name, IF_NAMESIZE);
-			ioctl(fd, SIOCGIFHWADDR, (char *)&tmp);
+			ioctl(fd, SIOCGIFHWADDR, (unsigned long)&tmp);
 			sa = &tmp.ifr_hwaddr;
 			printf("Link encap: %s\t", ether_ntoa((struct ether_addr *)sa->sa_data));
 
-			ioctl(fd, SIOCGIFFLAGS, (void *)ifr);
+			ioctl(fd, SIOCGIFFLAGS, (unsigned long)ifr);
 			printf("RUNNING: %s\n", (ifr->ifr_flags & IFF_UP) ? "UP" : "DOWN");
 		}
 		printf("\tinet addr: %s\t", inet_ntoa(sin->sin_addr));
 
-		ioctl(fd, SIOCGIFNETMASK, (char *)ifr);
+		ioctl(fd, SIOCGIFNETMASK, (unsigned long)ifr);
 		sin = (struct sockaddr_in *)&ifr->ifr_addr;
 		printf("Mask: %s\t", inet_ntoa(sin->sin_addr));
-		ioctl(fd, SIOCGIFMTU, (char *)ifr);
+		ioctl(fd, SIOCGIFMTU, (unsigned long)ifr);
 		printf("MTU: %d\n", ifr->ifr_mtu);
 		printf("\n");
 	}
@@ -183,7 +183,6 @@ int cmd_ifconfig(int argc, char **argv)
 	FAR char *dns = NULL;
 	bool badarg = false;
 	uint8_t mac[IFHWADDRLEN];
-	struct netif *netif;
 
 	/* With one or no arguments, ifconfig simply shows the status of Ethernet
 	 * device:
@@ -248,7 +247,6 @@ int cmd_ifconfig(int argc, char **argv)
 					}
 				}
 			}
-			netif = netif_find(intf);
 		}
 	}
 
