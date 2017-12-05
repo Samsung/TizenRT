@@ -9,3 +9,14 @@ config NETUTILS_DHCPC
 	# This depend will be added when Network Config implementation is finished
 	---help---
 		Enable support for the DHCP client.
+
+if NETUTILS_DHCPC
+
+config NETUTILS_DHCPC_CLIENTID
+	bool "DHCP Client ID option field"
+	default y
+	---help---
+		Enable Client ID(61) field in DHCP Discover and Request.
+		Some DHCP server doesn't send response if this option does not exist.
+
+endif

@@ -112,6 +112,9 @@
 #define DHCP_OPTION_MSG_TYPE    53
 #define DHCP_OPTION_SERVER_ID   54
 #define DHCP_OPTION_REQ_LIST    55
+#ifdef CONFIG_NETUTILS_DHCPC_CLIENTID
+#define DHCP_OPTION_CLIENT_ID   61
+#endif
 #define DHCP_OPTION_END         255
 
 #define BUFFER_SIZE             256
@@ -199,6 +202,18 @@ static uint8_t *dhcpc_addreqoptions(uint8_t *optptr)
 	return optptr;
 }
 
+#ifdef CONFIG_NETUTILS_DHCPC_CLIENTID
+static uint8_t *dhcpc_addclientid(uint8_t *macaddr, uint8_t *optptr)
+{
+	*optptr++ = DHCP_OPTION_CLIENT_ID;
+	*optptr++ = 1 + DHCP_HLEN_ETHERNET;
+	*optptr++ = DHCP_HTYPE_ETHERNET;
+	memcpy(optptr, macaddr, DHCP_HLEN_ETHERNET);
+
+	return optptr + DHCP_HLEN_ETHERNET;
+}
+#endif
+
 static uint8_t *dhcpc_addend(uint8_t *optptr)
 {
 	*optptr++ = DHCP_OPTION_END;
@@ -238,8 +253,10 @@ static int dhcpc_sendmsg(struct dhcpc_state_s *pdhcpc, struct dhcpc_state *presu
 		/* Broadcast DISCOVER message to all servers */
 
 	case DHCPDISCOVER:
-
 		pdhcpc->packet.flags = HTONS(BOOTP_BROADCAST);	/*  Broadcast bit. */
+#ifdef CONFIG_NETUTILS_DHCPC_CLIENTID
+		pend = dhcpc_addclientid(pdhcpc->packet.chaddr, pend);
+#endif
 		pend = dhcpc_addreqoptions(pend);
 		break;
 
@@ -248,6 +265,9 @@ static int dhcpc_sendmsg(struct dhcpc_state_s *pdhcpc, struct dhcpc_state *presu
 	case DHCPREQUEST:
 		pdhcpc->packet.flags = HTONS(BOOTP_BROADCAST);	/*  Broadcast bit. */
 		memcpy(pdhcpc->packet.ciaddr, &pdhcpc->ipaddr.s_addr, 4);
+#ifdef CONFIG_NETUTILS_DHCPC_CLIENTID
+		pend = dhcpc_addclientid(pdhcpc->packet.chaddr, pend);
+#endif
 		pend = dhcpc_addserverid(&pdhcpc->serverid, pend);
 		pend = dhcpc_addreqipaddr(&pdhcpc->ipaddr, pend);
 		break;
