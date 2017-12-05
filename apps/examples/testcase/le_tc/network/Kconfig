@@ -37,6 +37,10 @@ config TC_NET_ALL
 	select TC_NET_ETHER
 	select TC_NET_NETDB
 	select TC_NET_DUP
+	select ITC_NET_CLOSE
+	select ITC_NET_DUP
+	select ITC_NET_FCNTL
+	select ITC_NET_LISTEN
 
 config TC_NET_SOCKET
 	bool "socket() api"
@@ -126,5 +130,20 @@ config TC_NET_DUP
 	bool "dup() api"
 	default n
 
+config ITC_NET_CLOSE
+	bool "ITC close() api"
+	default n
+
+config ITC_NET_DUP
+	bool "ITC dup() api"
+	default n
+
+config ITC_NET_FCNTL
+	bool "ITC fcntl() api"
+	default n
+
+config ITC_NET_LISTEN
+	bool "ITC listen() api"
+	default n
 
 endif #EXAMPLES_TESTCASE_NETWORK
