@@ -44,7 +44,7 @@ config NET_RANDOMIZE_INITIAL_LOCAL_PORTS
 
 config NET_SO_SNDTIMEO
 	bool "Enable send timeout socket option"
-	default n
+	default y
 	---help---
 		Enable send timeout for sockets/netconns and SO_SNDTIMEO processing.
 
