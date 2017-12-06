@@ -138,18 +138,14 @@ struct pcm {
 	int underruns;
 	/** Size of the buffer */
 	unsigned int buffer_size;
-	/** The boundary for ring buffer pointers */
-	unsigned int boundary;
+	/* Number of buffers */
+	unsigned int buffer_cnt;
 	/** Description of the last error that occured */
 	char error[PCM_ERROR_MAX];
 	/** Configuration that was passed to @ref pcm_open */
 	struct pcm_config config;
-	unsigned int noirq_frames_per_msec;
-	/** The delay of the PCM, in terms of frames */
-	long pcm_delay;
 	/** The subdevice corresponding to the PCM */
 	unsigned int subdevice;
-
 #ifdef CONFIG_AUDIO_MULTI_SESSION
 	/* Session pointer to be managed by driver */
 	void *session;
@@ -168,6 +164,10 @@ struct pcm {
 	unsigned int next_size;
 	/* Offset of data in next buffer */
 	unsigned int next_offset;
+};
+
+static struct pcm bad_pcm = {
+	.fd = -1,
 };
 
 static int oops(struct pcm *pcm, int e, const char *fmt, ...)
@@ -309,12 +309,9 @@ static int pcm_set_config(struct pcm *pcm, const struct pcm_config *config)
 		config = &pcm->config;
 		pcm->config.channels = 2;
 		pcm->config.rate = 16000;
+		pcm->config.format = PCM_FORMAT_S16_LE;
 		pcm->config.period_size = 1024;
 		pcm->config.period_count = 8;
-		pcm->config.format = PCM_FORMAT_S16_LE;
-		pcm->config.start_threshold = 0;
-		pcm->config.stop_threshold = 0;
-		pcm->config.silence_threshold = 0;
 	} else {
 		pcm->config = *config;
 	}
@@ -345,10 +342,10 @@ static int pcm_set_config(struct pcm *pcm, const struct pcm_config *config)
 		buf_info.buffer_size = CONFIG_AUDIO_BUFSIZE;
 		buf_info.nbuffers = CONFIG_AUDIO_NUM_BUFFERS;
 	}
-
 	pcm->config.period_size = buf_info.buffer_size;
 	pcm->config.period_count = buf_info.nbuffers;
-	pcm->buffer_size = pcm->config.period_size;
+	pcm->buffer_size = buf_info.buffer_size;
+	pcm->buffer_cnt = buf_info.nbuffers;
 
 	return 0;
 }
@@ -459,22 +456,6 @@ static int pcm_mmap_transfer_areas(struct pcm *pcm, char *buf, unsigned int offs
 	return count;
 }
 
-/** Returns available frames in pcm buffer and corresponding time stamp.
- * The clock is CLOCK_MONOTONIC if flag @ref PCM_MONOTONIC was specified in @ref pcm_open,
- * otherwise the clock is CLOCK_REALTIME.
- * For an input stream, frames available are frames ready for the application to read.
- * For an output stream, frames available are the number of empty frames available for the application to write.
- * Only available for PCMs opened with the @ref PCM_MMAP flag.
- * @param pcm A PCM handle.
- * @param avail The number of available frames
- * @param tstamp The timestamp
- * @return On success, zero is returned; on failure, negative one.
- */
-int pcm_get_htimestamp(struct pcm *pcm, unsigned int *avail, struct timespec *tstamp)
-{
-	return -1;
-}
-
 /** Writes audio samples to PCM.
  * If the PCM has not been started, it is started in this function.
  * This function is only valid for PCMs opened with the @ref PCM_OUT flag.
@@ -510,11 +491,11 @@ int pcm_writei(struct pcm *pcm, const void *data, unsigned int frame_count)
 	pending = pcm_frames_to_bytes(pcm, frame_count);
 
 	while (pending > 0) {
-		nbytes = pending > pcm->config.period_size ? pcm->config.period_size : pending;
+		nbytes = pending > pcm->buffer_size ? pcm->buffer_size : pending;
 
-		if (pcm->buf_ptr < pcm->config.period_count) {
+		if (pcm->buf_ptr < pcm->buffer_cnt) {
 			/* If we have empty buffers, fill them first */
-			memcpy(pcm->pBuffers[pcm->buf_ptr]->samp, (char*)data + offset, nbytes);
+			memcpy(pcm->pBuffers[pcm->buf_ptr]->samp, (char *)data + offset, nbytes);
 			apb = pcm->pBuffers[pcm->buf_ptr];
 			pcm->buf_ptr++;
 		} else {
@@ -526,7 +507,7 @@ int pcm_writei(struct pcm *pcm, const void *data, unsigned int frame_count)
 			}
 			if (msg.msgId == AUDIO_MSG_DEQUEUE) {
 				apb = (struct ap_buffer_s *)msg.u.pPtr;
-				memcpy(apb->samp, (char*)data + offset, nbytes);
+				memcpy(apb->samp, (char *)data + offset, nbytes);
 			} else {
 				return oops(pcm, EINTR, "Recieved unexpected msg (id = %d) while waiting for deque message from kernel", msg.msgId);
 			}
@@ -614,7 +595,7 @@ int pcm_readi(struct pcm *pcm, void *data, unsigned int frame_count)
 			if (pending <= pcm->next_size) {
 				/* User wants less data than we have in buffer.
 				   Copy the requested amount of data to user buffer and return */
-				memcpy((char*)data + offset, apb->samp + pcm->next_offset, pending);
+				memcpy((char *)data + offset, apb->samp + pcm->next_offset, pending);
 				pcm->next_size -= pending;
 				pcm->next_offset += pending;
 
@@ -622,7 +603,7 @@ int pcm_readi(struct pcm *pcm, void *data, unsigned int frame_count)
 			} else {
 				/* User wants more data than we have in buffer.
 				   Copy available data to user buffer, enqueue buffer and return */
-				memcpy((char*)data + offset, apb->samp + pcm->next_offset, pcm->next_size);
+				memcpy((char *)data + offset, apb->samp + pcm->next_offset, pcm->next_size);
 
 				nbytes = pcm->next_size;
 				pcm->next_size = 0;
@@ -666,7 +647,7 @@ int pcm_readi(struct pcm *pcm, void *data, unsigned int frame_count)
 				if (pending <= apb->nbytes) {
 					/* User wants less data than we have in buffer.
 					   Copy the requested amount of data and keep the buffer as pending buffer */
-					memcpy((char*)data + offset, apb->samp, pending);
+					memcpy((char *)data + offset, apb->samp, pending);
 
 					pcm->next_buf = apb;
 					pcm->next_offset = pending;
@@ -676,7 +657,7 @@ int pcm_readi(struct pcm *pcm, void *data, unsigned int frame_count)
 				} else {
 					/* User wants more data than we have in buffer.
 					   Copy available data to user buffer, enqueue buffer and return */
-					memcpy((char*)data + offset, apb->samp, apb->nbytes);
+					memcpy((char *)data + offset, apb->samp, apb->nbytes);
 					nbytes = apb->nbytes;
 
 					if (!pcm->draining) {
@@ -736,78 +717,6 @@ int pcm_read(struct pcm *pcm, void *data, unsigned int count)
 	return pcm_readi(pcm, data, pcm_bytes_to_frames(pcm, count)) > 0 ? 0 : -1;
 }
 
-static struct pcm bad_pcm = {
-	.fd = -1,
-};
-
-/** Gets the hardware parameters of a PCM, without created a PCM handle.
- * @param card The card of the PCM.
- *  The default card is zero.
- * @param device The device of the PCM.
- *  The default device is zero.
- * @param flags Specifies whether the PCM is an input or output.
- *  May be one of the following:
- *   - @ref PCM_IN
- *   - @ref PCM_OUT
- * @return On success, the hardware parameters of the PCM; on failure, NULL.
- * @ingroup libtinyalsa-pcm
- */
-
-#if 0
-struct pcm_params *pcm_params_get(unsigned int card, unsigned int device, unsigned int flags)
-{
-	return NULL;
-}
-
-/** Frees the hardware parameters returned by @ref pcm_params_get.
- * @param pcm_params Hardware parameters of a PCM.
- *  May be NULL.
- * @ingroup libtinyalsa-pcm
- */
-void pcm_params_free(struct pcm_params *pcm_params)
-{
-}
-
-static int pcm_param_to_alsa(enum pcm_param param)
-{
-	return -1;
-}
-
-/** Gets a mask from a PCM's hardware parameters.
- * @param pcm_params A PCM's hardware parameters.
- * @param param The parameter to get.
- * @return If @p pcm_params is NULL or @p param is not a mask, NULL is returned.
- *  Otherwise, the mask associated with @p param is returned.
- * @ingroup libtinyalsa-pcm
- */
-const struct pcm_mask *pcm_params_get_mask(const struct pcm_params *pcm_params, enum pcm_param param)
-{
-	return NULL;
-}
-
-/** Get the minimum of a specified PCM parameter.
- * @param pcm_params A PCM parameters structure.
- * @param param The specified parameter to get the minimum of.
- * @returns On success, the parameter minimum.
- *  On failure, zero.
- */
-unsigned int pcm_params_get_min(const struct pcm_params *pcm_params, enum pcm_param param)
-{
-	return 0;
-}
-
-/** Get the maximum of a specified PCM parameter.
- * @param pcm_params A PCM parameters structure.
- * @param param The specified parameter to get the maximum of.
- * @returns On success, the parameter maximum.
- *  On failure, zero.
- */
-unsigned int pcm_params_get_max(const struct pcm_params *pcm_params, enum pcm_param param)
-{
-	return 0;
-}
-#endif
-
 /** Closes a PCM returned by @ref pcm_open.
  * @param pcm A PCM returned by @ref pcm_open.
  *  May not be NULL.
@@ -843,7 +752,7 @@ int pcm_close(struct pcm *pcm)
 #endif
 
 	if (pcm->pBuffers != NULL) {
-		for (x = 0; x < pcm->config.period_count; x++) {
+		for (x = 0; x < pcm->buffer_cnt; x++) {
 			if (pcm->pBuffers[x] != NULL) {
 				buf_desc.u.pBuffer = pcm->pBuffers[x];
 				ioctl(pcm->fd, AUDIOIOC_FREEBUFFER, (unsigned long)&buf_desc);
@@ -858,13 +767,6 @@ int pcm_close(struct pcm *pcm)
 		close(pcm->fd);
 	}
 
-	pcm->next_size = 0;
-	pcm->next_offset = 0;
-	pcm->next_buf = NULL;
-	pcm->prepared = 0;
-	pcm->running = 0;
-	pcm->buffer_size = 0;
-	pcm->fd = -1;
 	free(pcm);
 	return 0;
 }
@@ -878,7 +780,6 @@ int pcm_close(struct pcm *pcm)
  *   - @ref PCM_OUT
  *   - @ref PCM_MMAP
  *   - @ref PCM_NOIRQ
- *   - @ref PCM_MONOTONIC
  * @param config The hardware and software parameters to open the PCM with.
  * @returns A PCM structure.
  *  If an error occurs allocating memory for the PCM, NULL is returned.
@@ -913,7 +814,6 @@ struct pcm *pcm_open_by_name(const char *name, unsigned int flags, const struct 
  *   - @ref PCM_OUT
  *   - @ref PCM_MMAP
  *   - @ref PCM_NOIRQ
- *   - @ref PCM_MONOTONIC
  * @param config The hardware and software parameters to open the PCM with.
  * @returns A PCM structure.
  *  If an error occurs allocating memory for the PCM, NULL is returned.
@@ -988,7 +888,7 @@ struct pcm *pcm_open(unsigned int card, unsigned int device, unsigned int flags,
 	ioctl(pcm->fd, AUDIOIOC_REGISTERMQ, (unsigned long)pcm->mq);
 
 	/* Create array of pointers to buffers */
-	pcm->pBuffers = (FAR struct ap_buffer_s **)malloc(pcm->config.period_count * sizeof(FAR void *));
+	pcm->pBuffers = (FAR struct ap_buffer_s **)malloc(pcm->buffer_cnt * sizeof(FAR void *));
 	if (pcm->pBuffers == NULL) {
 		/* Error allocating memory for buffer storage! */
 		ret = -ENOMEM;
@@ -997,7 +897,7 @@ struct pcm *pcm_open(unsigned int card, unsigned int device, unsigned int flags,
 
 	/* Create our audio pipeline buffers to use for queueing up data */
 
-	for (x = 0; x < pcm->config.period_count; x++) {
+	for (x = 0; x < pcm->buffer_cnt; x++) {
 		pcm->pBuffers[x] = NULL;
 		/* Fill in the buffer descriptor struct to issue an alloc request */
 
@@ -1064,7 +964,7 @@ struct pcm *pcm_open(unsigned int card, unsigned int device, unsigned int flags,
 
 fail_cleanup_buffers:
 	if (pcm->pBuffers != NULL) {
-		for (x = 0; x < pcm->config.period_count; x++) {
+		for (x = 0; x < pcm->buffer_cnt; x++) {
 			/* Fill in the buffer descriptor struct to issue a free request */
 			if (pcm->pBuffers[x] != NULL) {
 				buf_desc.u.pBuffer = pcm->pBuffers[x];
@@ -1174,7 +1074,7 @@ int pcm_start(struct pcm *pcm)
 		bufdesc.session = pcm->session;
 #endif
 		bufdesc.numbytes = pcm_frames_to_bytes(pcm, pcm->buffer_size);
-		for (pcm->buf_ptr = 0; pcm->buf_ptr < pcm->config.period_count; pcm->buf_ptr++) {
+		for (pcm->buf_ptr = 0; pcm->buf_ptr < pcm->buffer_cnt; pcm->buf_ptr++) {
 			bufdesc.u.pBuffer = pcm->pBuffers[pcm->buf_ptr];
 			if (ioctl(pcm->fd, AUDIOIOC_ENQUEUEBUFFER, (unsigned long)&bufdesc) < 0) {
 				return oops(pcm, errno, "AUDIOIOC_ENQUEUEBUFFER ioctl failed");
@@ -1393,7 +1293,7 @@ int pcm_wait(struct pcm *pcm, int timeout)
 	if (pcm == NULL) {
 		return -EINVAL;
 	}
-	if ((pcm->flags & PCM_OUT) && pcm->buf_ptr < pcm->config.period_count) {
+	if ((pcm->flags & PCM_OUT) && pcm->buf_ptr < pcm->buffer_cnt) {
 		/* In playback scenario, if audio buffers are available, return immediately */
 		pcm->next_buf = pcm->pBuffers[pcm->buf_ptr];
 		pcm->next_size = pcm->pBuffers[pcm->buf_ptr]->nmaxbytes;
