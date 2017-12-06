@@ -34,7 +34,6 @@
 #include <tinyara/audio/audio.h>
 #include <tinyalsa/tinyalsa.h>
 #include <tinyara/fs/ioctl.h>
-#include <apps/shell/tash.h>
 #include "tc_common.h"
 
 /****************************************************************************
@@ -763,7 +762,11 @@ static void utc_audio_pcm_writei_n(void)
 	TC_SUCCESS_RESULT();
 }
 
-static int audio_tc_launcher(int argc, char **args)
+#ifdef CONFIG_BUILD_KERNEL
+int main(int argc, FAR char *argv[])
+#else
+int utc_audio_main(int argc, char *argv[])
+#endif
 {
 	sem_wait(&tc_sem);
 	working_tc++;
@@ -816,21 +819,6 @@ static int audio_tc_launcher(int argc, char **args)
 
 	working_tc--;
 	sem_post(&tc_sem);
-
-	return total_pass;
-}
-
-#ifdef CONFIG_BUILD_KERNEL
-int main(int argc, FAR char *argv[])
-#else
-int utc_audio_main(int argc, char *argv[])
-#endif
-{
-#ifdef CONFIG_TASH
-	tash_cmd_install("audio_utc", audio_tc_launcher, TASH_EXECMD_SYNC);
-#else
-	audio_tc_launcher(argc, argv);
-#endif
 
 	return 0;
 }

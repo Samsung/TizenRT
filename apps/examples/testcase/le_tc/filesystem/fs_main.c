@@ -45,7 +45,6 @@
 #include <tinyara/streams.h>
 #include <tinyara/fs/ioctl.h>
 #include <tinyara/fs/fs_utils.h>
-#include <apps/shell/tash.h>
 #include <time.h>
 #include "tc_common.h"
 #include "tc_internal.h"
@@ -2963,7 +2962,11 @@ static void tc_libc_stdio_ungetc(void)
 	TC_SUCCESS_RESULT();
 }
 
-static int fs_sample_launcher(int argc, char **args)
+#ifdef CONFIG_BUILD_KERNEL
+int main(int argc, FAR char *argv[])
+#else
+int tc_filesystem_main(int argc, char *argv[])
+#endif
 {
 	sem_wait(&tc_sem);
 	working_tc++;
@@ -3069,21 +3072,6 @@ static int fs_sample_launcher(int argc, char **args)
 
 	working_tc--;
 	sem_post(&tc_sem);
-
-	return total_pass;
-}
-
-#ifdef CONFIG_BUILD_KERNEL
-int main(int argc, FAR char *argv[])
-#else
-int fs_main(int argc, char *argv[])
-#endif
-{
-#ifdef CONFIG_TASH
-	tash_cmd_install("fs_sample", fs_sample_launcher, TASH_EXECMD_SYNC);
-#else
-	fs_sample_launcher(argc, argv);
-#endif
 
 	return 0;
 }

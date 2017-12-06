@@ -30,10 +30,11 @@ extern int working_tc;
 /****************************************************************************
  * Name: network_tc_main
  ****************************************************************************/
+
 #ifdef CONFIG_BUILD_KERNEL
 int main(int argc, FAR char *argv[])
 #else
-int network_tc_main(int argc, char *argv[])
+int tc_network_main(int argc, char *argv[])
 #endif
 {
 	sem_wait(&tc_sem);

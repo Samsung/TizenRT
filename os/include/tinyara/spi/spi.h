@@ -49,8 +49,8 @@
  *
  ****************************************************************************/
 
-#ifndef __INCLUDE_SPI_SPI_H
-#define __INCLUDE_SPI_SPI_H
+#ifndef __INCLUDE_TINYARA_SPI_SPI_H
+#define __INCLUDE_TINYARA_SPI_SPI_H
 
 /****************************************************************************
  * Included Files
@@ -475,4 +475,4 @@ FAR struct spi_dev_s *up_spiinitialize(int port);
 #if defined(__cplusplus)
 }
 #endif
-#endif							/* __INCLUDE_SPI_SPI_H */
+#endif					/* __INCLUDE_TINYARA_SPI_SPI_H */

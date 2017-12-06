@@ -27,7 +27,6 @@
 #include <netdb.h>
 #include <sys/socket.h>
 #include <errno.h>
-#include <apps/shell/tash.h>
 #include <network/mqtt/mqtt_api.h>
 #include "tc_common.h"
 
@@ -426,7 +425,11 @@ static void utc_mqtt_deinit_client_p(void)
 }
 
 
-static int mqtt_utc(int argc, FAR char *argv[])
+#ifdef CONFIG_BUILD_KERNEL
+int main(int argc, FAR char *argv[])
+#else
+int utc_mqtt_main(int argc, char *argv[])
+#endif
 {
 	sem_wait(&tc_sem);
 	working_tc++;
@@ -463,20 +466,3 @@ exit:
 
 	return 0;
 }
-
-
-#ifdef CONFIG_BUILD_KERNEL
-int main(int argc, FAR char *argv[])
-#else
-int utc_mqtt_main(int argc, char *argv[])
-#endif
-{
-
-#ifdef CONFIG_TASH
-	tash_cmd_install("mqtt_utc", mqtt_utc, TASH_EXECMD_SYNC);
-#else
-	mqtt_utc(argc, argv);
-#endif
-	return 0;
-}
-

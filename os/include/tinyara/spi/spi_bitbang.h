@@ -49,8 +49,8 @@
  *
  ****************************************************************************/
 
-#ifndef __INCLUDE_SPI_SPI_BITBANG_H
-#define __INCLUDE_SPI_SPI_BITBANG_H
+#ifndef __INCLUDE_TINYARA_SPI_SPI_BITBANG_H
+#define __INCLUDE_TINYARA_SPI_SPI_BITBANG_H
 
 /****************************************************************************
  * Included Files
@@ -185,4 +185,4 @@ FAR struct spi_dev_s *spi_create_bitbang(FAR const struct spi_bitbang_ops_s *low
 
 #endif							/* __ASSEMBLY__ */
 #endif							/* CONFIG_SPI_BITBANG */
-#endif							/* __INCLUDE_SPI_SPI_BITBANG_H */
+#endif				/* __INCLUDE_TINYARA_SPI_SPI_BITBANG_H */

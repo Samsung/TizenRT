@@ -26,7 +26,7 @@ Understanding the TizenRT code structure and adhering to the structure helps in 
 
 ## Kernel & System
 1. [How to add new board](HowToAddnewBoard.md)
-2. How to use peripheral (will be updated)
+2. [How to use peripheral](HowToUsePeripheral.md)
 3. [How to add static library](HowToAddStaticLibrary.md)
 4. [How to use multiple memory as a heap](HowToUseMultiHeap.md)
 
