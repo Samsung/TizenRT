@@ -54,7 +54,6 @@
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
-#include <arpa/inet.h>
 
 #define BUFSIZ 1024
 char *fgetln(FILE *fp, size_t *len)

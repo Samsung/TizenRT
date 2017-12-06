@@ -101,10 +101,27 @@ ifneq ($(CONFIG_DEBUG_NOOPT),y)
   ARCHOPTIMIZATION += $(MAXOPTIMIZATION) -fno-strict-aliasing -fno-strength-reduce -fomit-frame-pointer
 endif
 
-ARCHCFLAGS = -fno-builtin
-ARCHCXXFLAGS = -fno-builtin -fno-exceptions -fno-rtti
-ARCHWARNINGS = -Wall -Werror -Wstrict-prototypes -Wshadow -Wundef -Wno-unused-but-set-variable
-ARCHWARNINGSXX = -Wall -Wshadow
+ifeq ($(CONFIG_FRAME_POINTER),y)
+  ARCHOPTIMIZATION += -fno-omit-frame-pointer -mapcs -mno-sched-prolog
+endif
+
+ARCHCFLAGS = -fno-builtin -mcpu=cortex-r4 -mfpu=vfpv3
+ARCHCXXFLAGS = -fno-builtin -fexceptions -mcpu=cortex-r4 -mfpu=vfpv3
+ifeq ($(QUICKBUILD),y)
+ARCHWARNINGS = -Wall -Werror -Wstrict-prototypes -Wshadow -Wundef -Wno-implicit-function-declaration -Wno-unused-function -Wno-unused-but-set-variable
+ARCHWARNINGSXX = -Wall -Werror -Wshadow -Wundef
+else
+ARCHWARNINGS = -Wall -Werror -Wstrict-prototypes -Wshadow -Wundef -Wno-implicit-function-declaration -Wno-unused-function -Wno-unused-but-set-variable
+ARCHWARNINGSXX = -Wall -Werror -Wshadow -Wundef
+# only version 4.9 supports color diagnostics
+ifeq "$(ARCHMAJOR)" "4"
+ifeq "$(ARCHMINOR)" "9"
+  ARCHWARNINGS += -fdiagnostics-color=auto
+  ARCHWARNINGSCC += -fdiagnostics-color=auto
+endif
+endif
+
+endif
 ARCHDEFINES =
 ARCHPICFLAGS = -fpic -msingle-pic-base -mpic-register=r10
 

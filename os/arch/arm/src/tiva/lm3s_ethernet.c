@@ -689,15 +689,15 @@ static void tiva_receive(struct tiva_driver_s *priv)
 
 			EMAC_STAT(priv, rx_ip);
 
-		while (1) {
-			int res = ethernetif_input(&priv->ld_dev);
-			if (res == 0) {
-				break;
-			} else {
-				nlldbg("trying to handle again\n");
+			while (1) {
+				int res = ethernetif_input(&priv->ld_dev);
+				if (res == 0) {
+					break;
+				} else {
+					nlldbg("trying to handle again\n");
+				}
+				usleep(2000);
 			}
-			usleep(2000);
-		}
 
 			/* If the above function invocation resulted in data that should be
 			 * sent out on the network, the field  d_len will set to a value > 0.
@@ -714,7 +714,7 @@ static void tiva_receive(struct tiva_driver_s *priv)
 
 				tiva_transmit(priv);
 			}
-		} else
+		}
 #endif
 #ifdef CONFIG_NET_IPv6
 			if (ETHBUF->type == HTONS(ETHTYPE_IP6)) {
@@ -746,27 +746,27 @@ static void tiva_receive(struct tiva_driver_s *priv)
 
 					tiva_transmit(priv);
 				}
-			} else
+			}
 #endif
 #ifdef CONFIG_NET_ARP
-				if (ETHBUF->type == htons(ETHTYPE_ARP)) {
-					nllvdbg("ARP packet received (%02x)\n", ETHBUF->type);
-					EMAC_STAT(priv, rx_arp);
+			if (ETHBUF->type == htons(ETHTYPE_ARP)) {
+				nllvdbg("ARP packet received (%02x)\n", ETHBUF->type);
+				EMAC_STAT(priv, rx_arp);
 
-					/* If the above function invocation resulted in data that should be
-					 * sent out on the network, the field  d_len will set to a value > 0.
-					 */
+				/* If the above function invocation resulted in data that should be
+				 * sent out on the network, the field  d_len will set to a value > 0.
+				 */
 
-		while (1) {
-			int res = ethernetif_input(&priv->ld_dev);
-			if (res == 0) {
-				break;
-			}
-			else{
-				printf("trying to handle again\n");
-			}
-			usleep(2000);
-		}
+				while (1) {
+					int res = ethernetif_input(&priv->ld_dev);
+
+					if (res == 0) {
+						break;
+					} else {
+						nlldbg("trying to handle again\n");
+					}
+					usleep(2000);
+				}
 
 					if (priv->ld_dev.d_len > 0) {
 						tiva_transmit(priv);
@@ -1346,8 +1346,8 @@ static inline int tiva_ethinitialize(int intf)
 
 #if TIVA_NETHCONTROLLERS > 1
 #error "A mechanism to associate base address an IRQ with an interface is needed"
-	priv->ld_base = ? ?;		/* Ethernet controller base address */
-	priv->ld_irq = ? ?;			/* Ethernet controller IRQ number */
+	priv->ld_base = ? ? ;		/* Ethernet controller base address */
+	priv->ld_irq = ? ? ;			/* Ethernet controller IRQ number */
 #endif
 	priv->ld_txpoll = wd_create();	/* Create periodic poll timer */
 	priv->ld_txtimeout = wd_create();	/* Create TX timeout timer */

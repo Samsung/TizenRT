@@ -983,6 +983,7 @@ err_t pbuf_take(struct pbuf *buf, const void *dataptr, u16_t len)
 struct pbuf *pbuf_coalesce(struct pbuf *p, pbuf_layer layer)
 {
 	struct pbuf *q;
+	err_t err;
 	if (p->next == NULL) {
 		return p;
 	}
@@ -991,7 +992,7 @@ struct pbuf *pbuf_coalesce(struct pbuf *p, pbuf_layer layer)
 		/* @todo: what do we do now? */
 		return p;
 	}
-	pbuf_copy(q, p);
+	err = pbuf_copy(q, p);
 	LWIP_ASSERT("pbuf_copy failed", err == ERR_OK);
 	pbuf_free(p);
 	return q;

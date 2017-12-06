@@ -72,7 +72,7 @@
 #include <net/lwip/dhcp.h>
 #include <net/lwip/ipv4/autoip.h>
 #include <net/lwip/netif/etharp.h>
-#include <arpa/inet.h>
+
 #if PPPOE_SUPPORT
 #include <net/lwip/netif/ppp_oe.h>
 #endif							/* PPPOE_SUPPORT */

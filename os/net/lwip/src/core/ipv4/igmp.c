@@ -111,7 +111,6 @@ Steve Reynolds
 #include <net/lwip/stats.h>
 
 #include <string.h>
-#include <stdlib.h>
 /*
  * IGMP constants
  */

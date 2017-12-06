@@ -23,7 +23,6 @@
 #include <tinyara/config.h>
 
 #include <netdb.h>
-#include <arpa/inet.h>
 #include <errno.h>
 #include <string.h>
 

@@ -54,7 +54,6 @@
 #include <netdb.h>
 #include <sys/time.h>
 #include <sys/select.h>
-#include <arpa/inet.h>
 
 #include "iperf.h"
 #include "iperf_api.h"

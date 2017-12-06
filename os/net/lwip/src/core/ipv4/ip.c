@@ -73,7 +73,7 @@
 #include <net/lwip/ipv4/autoip.h>
 #include <net/lwip/stats.h>
 #include <net/lwip/arch/perf.h>
-#include <arpa/inet.h>
+
 #include <string.h>
 
 /** Set this to 0 in the rare case of wanting to call an extra function to

@@ -77,7 +77,6 @@
 #include <net/lwip/snmp.h>
 #include <net/lwip/arch/perf.h>
 #include <net/lwip/dhcp.h>
-#include <arpa/inet.h>
 
 #include <string.h>
 
