@@ -710,8 +710,9 @@ int smartfs_unmount(struct smartfs_mountpt_s *fs)
 		g_mounthead = fs->fs_next;
 	} else {
 		/* Remove from the middle of the list somewhere */
-
-		prevfs->fs_next = fs->fs_next;
+		if (!prevfs) {
+			prevfs->fs_next = fs->fs_next;
+		}
 	}
 #else
 	if (fs->fs_blkdriver) {
@@ -2826,7 +2827,6 @@ static int move_journal_area(struct smartfs_mountpt_s *fs)
 
 		if (read_logging_entry(fs, &temp_mgr, &readsect, &readoffset) != OK) {
 			/* Failure here means no more entries exist/readable */
-			ret = OK;
 			break;
 		}
 		/* Check whether this transaction exists, and logging of transaction has been completed */
