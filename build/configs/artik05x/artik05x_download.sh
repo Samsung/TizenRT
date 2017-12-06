@@ -32,6 +32,8 @@ OPENOCD_DIR_PATH=${BUILD_DIR_PATH}/tools/openocd
 TIZENRT_BIN=$OUTPUT_BINARY_PATH/tinyara_head.bin
 CODESIGNER=
 
+erase=0
+
 declare -a id desc addr size ro
 
 usage() {
@@ -62,6 +64,7 @@ Options:
     --board[="<board-name>"]      select target board-name
     --secure[=<exec-path>]        choose secure mode, and set the codesinger path
     --verify                      verify downloaded image if you need
+    --erase                       erase the FLASH memory area corresponding to "<partition>".
 
     <partition>                   write each firmware image into FLASH
 
@@ -100,44 +103,49 @@ get_idx() {
 }
 
 add_target() {
-    local field=$1
-    local bin=""
-    local protect=0
-
-    if test $field = "os"; then
-        signing $CODESIGNER
-        bin=${TIZENRT_BIN}
-    else
-        bin="${FW_DIR_PATH}/$field.bin"
-    fi
-    test $field = "bl1" && protect=1;
-
-    # check existence of firmware binaries
-    if test ! -f $bin; then
-        echo "Firmware binaries for ARTIK 05X are not existed"
-        echo "   TARGET: $bin"
-        exit 1
-    fi
-
-    test $protect -eq 1 && target="$target flash_protect off;"
-    target="$target flash_write $1 $bin $VERIFY;"
-    test $protect -eq 1 && target="$target flash_protect on;"
-
+    target=(${target[@]} "$1")
 }
 
 download()
 {
     local SYSTEM_TYPE=`getconf LONG_BIT`
+    local erase=$1
+    local strcmd=""
+
     if [ "$SYSTEM_TYPE" = "64" ]; then
         local OPENOCD_BIN_PATH=${OPENOCD_DIR_PATH}/linux64
     else
         local OPENOCD_BIN_PATH=${OPENOCD_DIR_PATH}/linux32
     fi
 
+    for cmd in ${target[@]};
+    do
+        if test $erase -ne 1; then
+            test $cmd = "os" && signing $CODESIGNER;
+            test $cmd = "os" && bin=${TIZENRT_BIN} || bin="${FW_DIR_PATH}/$cmd.bin"
+
+            # check existence of firmware binaries
+            if test ! -f $bin; then
+                echo "Firmware binaries for ARTIK 05X are not existed"
+                echo "   TARGET: $bin"
+                exit 1
+            fi
+        fi
+
+        test $cmd = "bl1" && strcmd="$strcmd flash_protect off;"
+        if test $erase -eq 1; then
+            strcmd="$strcmd flash_erase_part $cmd;"
+        else
+            strcmd="$strcmd flash_write $cmd $bin $VERIFY;"
+        fi
+
+        test $cmd = "bl1" && strcmd="$strcmd flash_protect on;"
+    done
+
     # Download all binaries using openocd script
     pushd ${OPENOCD_DIR_PATH} > /dev/null
         ${OPENOCD_BIN_PATH}/openocd -f artik05x.cfg -s $BOARD_DIR_PATH/../artik05x/scripts -c \
-        "init; $target reset; exit"
+        "init; $strcmd reset; exit"
     popd > /dev/null
 }
 
@@ -177,19 +185,15 @@ while test $# -gt 0; do
         --verify)
             VERIFY=verify
             ;;
+        erase)
+            erase=1
+            ;;
         ALL)
-            add_target bl1
-            add_target bl2
-            add_target sssfw
-            add_target wlanfw
-            add_target os
-            download
+            add_target all
             ;;
         *)
             if test -n "`get_idx $1`"; then
-                echo DOWNLOAD: $1 | tr [a-z] [A-Z]
                 add_target $1
-                download
             else
                 usage 1>&2
                 exit 1
@@ -199,4 +203,10 @@ while test $# -gt 0; do
     shift
 done
 
-
+if test -n "$target"; then
+    test $erase -eq 0 -a $target = "all" && target=(bl1 bl2 sssfw wlanfw os)
+    download $erase
+else
+    echo "Not selected target"
+    usage 1>&2
+fi
