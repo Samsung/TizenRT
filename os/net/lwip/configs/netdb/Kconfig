@@ -11,6 +11,12 @@ config NET_DNS_TABLE_SIZE
 	---help---
 		DNS maximum number of entries to maintain locally.
 
+config NET_DNS_MAX_TTL
+	int "DNS resource record max. TTL (one wwek as default)"
+	default 604800
+	---help---
+		DNS maximum number of entries to maintain locally.
+
 config NET_DNS_MAX_NAME_LENGTH
 	int "DNS maximum host name length supported in the name table"
 	default 256
