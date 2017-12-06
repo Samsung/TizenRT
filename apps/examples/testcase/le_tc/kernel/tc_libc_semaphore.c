@@ -30,8 +30,8 @@
 #include "tc_internal.h"
 
 #define SEM_VALUE SEM_VALUE_MAX
-#define PSHARED 0
-
+#define PSHARED			0
+#define SEM_PRIO_DEFAULT	3
 /****************************************************************************
  * Public Functions
  ****************************************************************************/
@@ -140,6 +140,49 @@ static void tc_libc_semaphore_sem_getprotocol(void)
 	return;
 }
 
+#ifndef CONFIG_PRIORITY_INHERITANCE
+/**
+ * @fn                   :tc_libc_semaphore_sem_setprotocol
+ * @brief                :this tc test sem_setprotocol function
+ * @Scenario             :Set the value of the semaphore protocol attribute.
+ * API's covered         :sem_init, sem_setprotocol
+ * Preconditions         :NA
+ * Postconditions        :NA
+ * @return               :total_pass on success.
+ */
+static void tc_libc_semaphore_sem_setprotocol(void)
+{
+	sem_t sem;
+	unsigned int value = SEM_VALUE;
+	int protocol;
+	int ret_chk;
+
+	ret_chk = sem_init(&sem, PSHARED, value);
+	TC_ASSERT_EQ("sem_init", ret_chk, OK);
+
+	protocol = SEM_PRIO_NONE;
+	ret_chk = sem_setprotocol(&sem, protocol);
+	TC_ASSERT_EQ("sem_setprotocol", ret_chk, OK);
+
+	protocol = SEM_PRIO_INHERIT;
+	ret_chk = sem_setprotocol(&sem, protocol);
+	TC_ASSERT_EQ("sem_setprotocol", ret_chk, ERROR);
+	TC_ASSERT_EQ("sem_setprotocol", errno, ENOSYS);
+
+	protocol = SEM_PRIO_DEFAULT;
+	ret_chk = sem_setprotocol(&sem, protocol);
+	TC_ASSERT_EQ("sem_setprotocol", ret_chk, ERROR);
+	TC_ASSERT_EQ("sem_setprotocol", errno, EINVAL);
+
+	ret_chk = sem_destroy(&sem);
+	TC_ASSERT_EQ("sem_destroy", ret_chk, OK);
+
+	TC_SUCCESS_RESULT();
+
+	return;
+}
+#endif
+
 /****************************************************************************
  * Name: libc_semaphore
  ****************************************************************************/
@@ -149,6 +192,9 @@ int libc_semaphore_main(void)
 	tc_libc_semaphore_sem_getvalue();
 	tc_libc_semaphore_sem_getprotocol();
 	tc_libc_semaphore_sem_init();
+#ifndef CONFIG_PRIORITY_INHERITANCE
+	tc_libc_semaphore_sem_setprotocol();
+#endif
 
 	return 0;
 }
