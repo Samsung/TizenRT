@@ -29,6 +29,7 @@ Understanding the TizenRT code structure and adhering to the structure helps in 
 2. [How to use peripheral](HowToUsePeripheral.md)
 3. [How to add static library](HowToAddStaticLibrary.md)
 4. [How to use multiple memory as a heap](HowToUseMultiHeap.md)
+5. [How to use MPU](HowToUseMPU.md)
 
 ## File System
 1. [How to use SmartFS](HowToUseSmartFS.md)
