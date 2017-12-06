@@ -301,9 +301,7 @@ struct dhcpd_state_s {
  ****************************************************************************/
 
 static const uint8_t g_magiccookie[4] = { 99, 130, 83, 99 };
-#ifndef CONFIG_NETUTILS_DHCPD_IGNOREBROADCAST
 static const uint8_t g_anyipaddr[4] = { 0, 0, 0, 0 };
-#endif
 
 static struct dhcpd_state_s g_state;
 
@@ -941,17 +939,6 @@ static int dhcpd_sendpacket(int bbroadcast)
 	int len;
 	int ret = ERROR;
 
-#ifdef CONFIG_NETUTILS_DHCPD_IGNOREBROADCAST
-	/* This is a hack.  I've had problems with Windows machines responding
-	 * to unicast.  I think this is associated with a Windows registry key in
-	 * HKEY_LOCAL_MACHINE\SYSTEM\CurrentControlSet\Services\DHCPServer\Parameters:
-	 * The IgnoreBroadcastFlag value controls this behavior:  A value of 1 will
-	 * cause the server to ignore the client broadcast flag and always respond
-	 * with multicast; the value 0 to allows clients to request unicast.
-	 */
-
-	ipaddr = INADDR_BROADCAST;
-#else
 	/* Determine which address to respond to (or if we need to broadcast the response)
 	 *
 	 * (1) If he caller know that it needs to multicast the response, it will set bbroadcast.
@@ -976,7 +963,6 @@ static int dhcpd_sendpacket(int bbroadcast)
 		dhcpd_arpupdate((uint32_t *)g_state.ds_outpacket.yiaddr, g_state.ds_outpacket.chaddr);
 		memcpy(&ipaddr, g_state.ds_outpacket.yiaddr, 4);
 	}
-#endif
 
 	/* Create a socket to respond with a packet to the client.  We
 	 * cannot re-use the listener socket because it is not bound correctly
