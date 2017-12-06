@@ -2602,7 +2602,6 @@ static int8_t slsi_start_specific_scan(uint8_t *ssid, uint8_t ssid_len, const sl
 			pbuf[strcspn(pbuf, "\r\n")] = '\0';
 			network_id = strdup(pbuf);
 			free(pbuf);
-			pbuf = NULL;
 		} else {
 			goto errout;
 		}

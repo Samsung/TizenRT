@@ -276,7 +276,11 @@ int8_t doJoin(uint8_t *ssid, uint8_t ssid_len, uint8_t *bssid, char *sec, char *
 	result = (WiFiNetworkJoin(ssid, ssid_len, bssid, conf));
 	if (wifiStarted && result == SLSI_STATUS_SUCCESS) {
 		result = SLSI_STATUS_SUCCESS;
-		sem_wait(&g_sem_join);	// wait for it to join
+		int res = sem_wait(&g_sem_join);	// wait for it to join
+
+		if (res) {
+			printf("sem_wait() error: g_sem_join\n");
+		}
 		if (!g_join_result) {
 			printf("Successfully joined the network with SSID %s\n", ssid);
 		} else {
@@ -298,7 +302,11 @@ int8_t doLeave(void)
 	int8_t result = SLSI_STATUS_ERROR;
 	sem_init(&g_sem_join, 0, 0);
 	if (wifiStarted && WiFiNetworkLeave() == SLSI_STATUS_SUCCESS) {
-		sem_wait(&g_sem_join);
+		int res = sem_wait(&g_sem_join);
+
+		if (res) {
+			printf("sem_wait() error: g_sem_join\n");
+		}
 		result = SLSI_STATUS_SUCCESS;
 		printf("Left network\n");
 	} else {
@@ -316,7 +324,11 @@ int8_t doScan(void)
 	if (wifiStarted && WiFiScanNetwork() == SLSI_STATUS_SUCCESS) {
 		result = SLSI_STATUS_SUCCESS;
 		printf("Successfully started scan...waiting for result!\n");
-		sem_wait(&g_sem_result);
+		int res = sem_wait(&g_sem_result);
+
+		if (res) {
+			printf("sem_wait() error: g_sem_result\n");
+		}
 	} else {
 		printf("Failed to start scan for networks. maybe you forgot to do \"startsta/startap\"\n");
 	}
