@@ -1783,7 +1783,10 @@ static int smart_find_failure(FAR struct smart_struct_s *dev, int erase_block)
 		read_addr = (start_sector + i) * dev->mtdBlksPerSector * dev->geo.blocksize;
 		fdbg("addr 0x%x\n", read_addr);
 
-		MTD_READ(dev->mtd, read_addr, sizeof(struct smart_sect_header_s), (FAR uint8_t *) &header);
+		ret = MTD_READ(dev->mtd, read_addr, sizeof(struct smart_sect_header_s), (FAR uint8_t *) &header);
+		if (ret != sizeof(struct smart_sect_header_s)) {
+			return -1;
+		}
 
 		memcpy(dev->rwbuffer, &header, sizeof(struct  smart_sect_header_s));
 #ifdef CONFIG_DEBUG_FS
@@ -3487,6 +3490,7 @@ retry:
 	wornlevel = 15;
 	maxwearlevel = 0;
 #endif
+	bitflipped = FALSE;
 	physicalsector = 0xFFFF;
 	if (++dev->lastallocblock >= dev->neraseblocks) {
 		dev->lastallocblock = 0;
