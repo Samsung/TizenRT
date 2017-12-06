@@ -68,6 +68,7 @@
 #include <debug.h>
 
 #include <arch/board/board.h>
+#include <arch/chip/i2s.h>
 
 #include <tinyara/irq.h>
 #include <tinyara/arch.h>
@@ -187,6 +188,7 @@ struct s5j_transport_s {
 	sq_queue_t act;				/* A queue of active transfers */
 	sq_queue_t done;			/* A queue of completed transfers */
 	struct work_s work;			/* Supports worker thread operations */
+	int error_state;			/* Channel error state, 0 - OK*/
 };
 
 /* The state of the one I2S peripheral */
@@ -196,6 +198,9 @@ struct s5j_i2s_s {
 	uintptr_t base;				/* I2S controller register base address */
 	int isr_num;				/* isr number */
 	xcpt_t isr_handler;			/* irs handler */
+
+	i2s_err_cb_t err_cb;			/* registered error callback function */
+	void *err_cb_arg;			/* argiment to return with err cb call */
 
 	sem_t exclsem;				/* Assures mutually exclusive acess to I2S */
 	uint8_t datalen;			/* Data width (8, 16, or 32) */
@@ -293,6 +298,10 @@ static uint32_t i2s_samplerate(struct i2s_dev_s *dev, uint32_t rate);
 static uint32_t i2s_txdatawidth(struct i2s_dev_s *dev, int bits);
 static int i2s_send(struct i2s_dev_s *dev, struct ap_buffer_s *apb, i2s_callback_t callback, void *arg, uint32_t timeout);
 
+
+static int i2s_err_cb_register(struct i2s_dev_s *dev, i2s_err_cb_t cb, void *arg);	
+
+
 /* Initialization */
 
 #ifdef I2S_HAVE_RX
@@ -324,6 +333,8 @@ static const struct i2s_ops_s g_i2sops = {
 	.i2s_txsamplerate = i2s_samplerate,
 	.i2s_txdatawidth = i2s_txdatawidth,
 	.i2s_send = i2s_send,
+	
+	.i2s_err_cb_register = i2s_err_cb_register,
 };
 
 static struct s5j_i2s_s *g_i2sdevice[S5J_I2S_MAXPORTS];
@@ -1576,6 +1587,7 @@ static uint32_t i2s_txdatawidth(struct i2s_dev_s *dev, int bits)
 	return 0;
 }
 
+
 /****************************************************************************
  * Name: i2s_send
  *
@@ -1665,6 +1677,7 @@ static int i2s_send(struct i2s_dev_s *dev, struct ap_buffer_s *apb, i2s_callback
 	DEBUGASSERT(ret == OK);
 	irqrestore(flags);
 	i2s_exclsem_give(priv);
+
 	return OK;
 
 errout_with_exclsem:
@@ -1677,6 +1690,29 @@ errout_with_exclsem:
 	UNUSED(priv);
 	return -ENOSYS;
 #endif
+}
+
+
+static int i2s_err_cb_register(struct i2s_dev_s *dev, i2s_err_cb_t cb, void *arg)
+{
+	struct s5j_i2s_s *priv = (struct s5j_i2s_s *)dev;
+	DEBUGASSERT(priv);
+
+	priv->err_cb = cb;
+	priv->err_cb_arg = arg;
+
+	/* Set initial state to error, it will be cleaned when operation starts */
+#ifdef I2S_HAVE_RX
+	priv->rx.error_state = -1;
+#endif
+#ifdef I2S_HAVE_TX_P
+	priv->txp.error_state = -1;
+#endif
+#ifdef I2S_HAVE_TX_S
+	priv->txs.error_state = -1;
+#endif
+
+return 0;
 }
 
 /****************************************************************************
@@ -1983,12 +2019,17 @@ static int i2s_irq_handler(int irq, FAR void *context, FAR void *arg)
 		modifyreg32(priv->base + S5J_I2S_CON, I2S_CR_FTXURINTEN, 0);
 		modifyreg32(priv->base + S5J_I2S_CON, 0, I2S_CR_FTXURSTATUS);
 		modifyreg32(priv->base + S5J_I2S_CON, I2S_CR_TXDMACTIVE, 0);
+		if (priv->err_cb)
+			priv->err_cb((struct i2s_dev_s *)priv, priv->err_cb_arg, I2S_ERR_CB_TX);
+	
 	}
 
 	if (reg & I2S_CR_FRXOFSTATUS) {
 		modifyreg32(priv->base + S5J_I2S_CON, I2S_CR_FRXOFINTEN, 0);
 		modifyreg32(priv->base + S5J_I2S_CON, 0, I2S_CR_FRXOFSTATUS);
 		modifyreg32(priv->base + S5J_I2S_CON, I2S_CR_RXDMACTIVE, 0);
+		if (priv->err_cb)
+			priv->err_cb((struct i2s_dev_s *)priv, priv->err_cb_arg, I2S_ERR_CB_RX);
 	}
 
 	reg = getreg32(priv->base + S5J_I2S_CON);
@@ -1996,6 +2037,7 @@ static int i2s_irq_handler(int irq, FAR void *context, FAR void *arg)
 	if ((reg & (I2S_CR_TXDMACTIVE | I2S_CR_RXDMACTIVE)) == 0) {
 		modifyreg32(priv->base + S5J_I2S_CON, I2S_CR_I2SACTIVE, 0);
 	}
+
 
 	return 0;
 }

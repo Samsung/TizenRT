@@ -72,6 +72,14 @@
 #ifndef CONFIG_S5JT200_I2SCHAR_MINOR
 #define CONFIG_S5JT200_I2SCHAR_MINOR 0
 #endif
+/*****************************************************************************
+ * Private Functions
+ ****************************************************************************/
+
+static void err_cb(FAR struct i2s_dev_s *dev, FAR void *arg, int flags)
+{
+	lldbg("I2S error callback is engaged with state: 0x%x, arg:  %s\n", flags, arg);
+} 
 
 /****************************************************************************
  * Public Functions
@@ -110,6 +118,9 @@ int i2schar_devinit(void)
 			auddbg("ERROR: i2schar_register failed: %d\n", ret);
 			return ret;
 		}
+
+		I2S_ERR_CB_REG(i2s, err_cb, "Error_Test_String");  
+
 
 		/* Now we are initialized */
 
