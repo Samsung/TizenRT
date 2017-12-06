@@ -3007,7 +3007,9 @@ int tc_filesystem_main(int argc, char *argv[])
 	tc_fs_vfs_fcntl();
 #ifndef CONFIG_DISABLE_POLL
 	tc_fs_vfs_poll();
+#ifndef CONFIG_DISABLE_MANUAL_TESTCASE
 	tc_fs_vfs_select();
+#endif
 #endif
 	tc_fs_vfs_rename();
 	tc_fs_vfs_ioctl();
@@ -3033,8 +3035,10 @@ int tc_filesystem_main(int argc, char *argv[])
 	tc_libc_stdio_freopen();
 	tc_libc_stdio_ferror();
 	tc_libc_stdio_clearerr();
+#ifndef CONFIG_DISABLE_MANUAL_TESTCASE
 	tc_libc_stdio_gets();
 	tc_libc_stdio_gets_s();
+#endif
 	tc_libc_stdio_fileno();
 #if CONFIG_STDIO_BUFFER_SIZE > 0
 	tc_libc_stdio_lib_rdflush();

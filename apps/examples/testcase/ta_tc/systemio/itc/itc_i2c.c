@@ -356,9 +356,11 @@ int itc_i2c_main(void)
 	itc_iotbus_i2c_init_stop_p();
 	itc_iotbus_i2c_set_frequency_p();
 	itc_iotbus_i2c_set_address_p();
-	itc_iotbus_i2c_write_read_p();
-	itc_iotbus_i2c_set_frequency_address_p();
+#ifndef CONFIG_DISABLE_MANUAL_TESTCASE
+	itc_iotbus_i2c_write_read_p(); // Require hardware to perform write/read operation
 	itc_iotbus_i2c_write_read_all_freq_p();//TC FAIL
+#endif
+	itc_iotbus_i2c_set_frequency_address_p();
 	itc_iotbus_i2c_init_n();
 	itc_iotbus_i2c_stop_n();
 	itc_iotbus_i2c_set_frequency_n();

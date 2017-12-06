@@ -130,9 +130,11 @@ int utc_i2c_main(void)
 	utc_systemio_i2c_set_frequency_p_IOTBUS_I2C_STD();
 	utc_systemio_i2c_set_address_p();
 	utc_systemio_i2c_set_address_n();
-	utc_systemio_i2c_write_p();
-	utc_systemio_i2c_write_n();
+#ifndef CONFIG_DISABLE_MANUAL_TESTCASE
+	utc_systemio_i2c_write_p(); //(Manual TCs) Require hardware to perform write/read operation
 	utc_systemio_i2c_read_p();
+#endif
+	utc_systemio_i2c_write_n();
 	utc_systemio_i2c_read_n();
 	utc_systemio_i2c_stop_n();
 	utc_systemio_i2c_stop_p();
