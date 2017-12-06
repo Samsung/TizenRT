@@ -115,9 +115,9 @@ int pdma_irq_handler(int irq, FAR void *context, FAR void *arg)
 
 	for (i = 0; i < dma->max_ch_num; i++) {
 		if ((intstatus & (1 << i)) && (dma->dma_ch[i].task->callback)) {
-			dma->dma_ch[i].task->callback(&dma->dma_ch[i], dma->dma_ch[i].task->arg, 0);
 			dma_clear_ch_interrupt(dma, i);
 			dma_disable_ch_interrupt(dma, i);
+			dma->dma_ch[i].task->callback(&dma->dma_ch[i], dma->dma_ch[i].task->arg, 0);
 		}
 	}
 
