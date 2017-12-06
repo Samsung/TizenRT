@@ -23,7 +23,6 @@
 #include <tinyara/config.h>
 #include <stdio.h>
 #include <netdb.h>
-#include <apps/shell/tash.h>
 #include <network/mqtt/mqtt_api.h>
 #include "tc_common.h"
 
@@ -275,7 +274,11 @@ void itc_mqtt_subscribe_unsubscribe_p(void)
 	TC_SUCCESS_RESULT();
 }
 
-static int mqtt_itc(int arc, FAR char *argv[])
+#ifdef CONFIG_BUILD_KERNEL
+int main(int argc, FAR char *argv[])
+#else
+int itc_mqtt_main(int argc, char *argv[])
+#endif
 {
 	sem_wait(&tc_sem);
 	working_tc++;
@@ -301,18 +304,3 @@ static int mqtt_itc(int arc, FAR char *argv[])
 
 	return 0;
 }
-
-#ifdef CONFIG_BUILD_KERNEL
-int main(int argc, FAR char *argv[])
-#else
-int itc_mqtt_main(int argc, char *argv[])
-#endif
-{
-#ifdef CONFIG_TASH
-	tash_cmd_install("mqtt_itc", mqtt_itc, TASH_EXECMD_SYNC);
-#else
-	mqtt_itc(argc, argv);
-#endif
-	return 0;
-}
-

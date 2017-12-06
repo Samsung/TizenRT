@@ -31,7 +31,7 @@ extern int working_tc;
 #ifdef CONFIG_BUILD_KERNEL
 int main(int argc, FAR char *argv[])
 #else
-int kernel_tc_main(int argc, char *argv[])
+int tc_kernel_main(int argc, char *argv[])
 #endif
 {
 	sem_wait(&tc_sem);
