@@ -30,6 +30,7 @@ OUTPUT_BINARY_PATH=${BUILD_DIR_PATH}/output/bin
 OPENOCD_DIR_PATH=${BUILD_DIR_PATH}/tools/openocd
 
 TIZENRT_BIN=$OUTPUT_BINARY_PATH/tinyara_head.bin
+CODESIGNER=
 
 declare -a id desc addr size ro
 
@@ -43,11 +44,14 @@ usage() {
     done
 
     cat <<EOF
-USAGE: `basename $0` [OPTIONS]
+USAGE: `basename $0` [OPTIONS] ["<partition>"]
 OPTIONS:
     [--board[="<board-name>"]]
     [--secure[=<exec-path>]]
-      [$OPT]
+    [--verify]
+
+PARTITIONS:
+    [$OPT]
 
 For examples:
     `basename $0` --board=artik053 ALL
@@ -58,8 +62,9 @@ Options:
     --board[="<board-name>"]      select target board-name
     --secure[=<exec-path>]        choose secure mode, and set the codesinger path
     --verify                      verify downloaded image if you need
-    $OPT
-                                  write each firmware image into FLASH
+
+    <partition>                   write each firmware image into FLASH
+
 EOF
 }
 
@@ -99,7 +104,12 @@ add_target() {
     local bin=""
     local protect=0
 
-    test $field = "os" && bin=${TIZENRT_BIN} || bin="${FW_DIR_PATH}/$field.bin"
+    if test $field = "os"; then
+        signing $CODESIGNER
+        bin=${TIZENRT_BIN}
+    else
+        bin="${FW_DIR_PATH}/$field.bin"
+    fi
     test $field = "bl1" && protect=1;
 
     # check existence of firmware binaries
@@ -132,9 +142,10 @@ download()
 }
 
 signing() {
-    CODESIGNER=$1
-    $CODESIGNER/artik05x_AppCodesigner $CODESIGNER/rsa_private.key $TIZENRT_BIN
-    TIZENRT_BIN=${TIZENRT_BIN}-signed
+    if test -e $CODESIGNER; then
+        $CODESIGNER/artik05x_AppCodesigner $CODESIGNER/rsa_private.key $TIZENRT_BIN
+        TIZENRT_BIN=${TIZENRT_BIN}-signed
+    fi
 }
 
 #read partition table
@@ -161,7 +172,7 @@ while test $# -gt 0; do
                 exit 1
             fi
             ;;
-        --secure=*) signing $optarg
+        --secure=*) CODESIGNER=$optarg
             ;;
         --verify)
             VERIFY=verify
