@@ -17,6 +17,12 @@ config NET_DNS_MAX_TTL
 	---help---
 		DNS maximum number of entries to maintain locally.
 
+config NET_DNS_MAX_RETRIES
+	int "DNS maximum number of retries when asking for a name"
+	default 4
+	---help---
+		DNS maximum number of retries when asking for a name
+
 config NET_DNS_MAX_NAME_LENGTH
 	int "DNS maximum host name length supported in the name table"
 	default 256
