@@ -939,9 +939,7 @@ int slsi_handle_disconnect(struct slsi_dev *sdev, struct netif *dev, u8 *peer_ad
 				reason = WLAN_REASON_DISASSOC_DUE_TO_INACTIVITY;
 			}
 			slsi_peer_remove(sdev, dev, peer);
-			if (reason != WLAN_REASON_DISASSOC_STA_HAS_LEFT) {
-				slsi_sta_disconnected(ndev_vif, addr, reason);
-			}
+			slsi_sta_disconnected(ndev_vif, addr, reason);
 		}
 
 		break;

@@ -185,7 +185,7 @@ void sw_linkDownHandler(slsi_reason_t *reason)
 		}
 		sem_post(&g_sem_join);	// need to tell the system that we have a link-down. Needed for doLeave()
 	} else if (g_mode == SLSI_WIFI_SOFT_AP_IF) {
-		printf("Station disconnected from network. bssid: %s\n", reason->bssid);
+		printf("Station %s disconnected from network with reason_code: %d\n", reason->bssid, reason->reason_code);
 		WiFiIsConnected(&numStations, NULL);
 	}
 }
