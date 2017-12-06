@@ -420,7 +420,7 @@ static void check_configdir(void)
 {
 	/* Get the path to the top level configuration directory */
 
-	snprintf(g_buffer, BUFFER_SIZE, "%s%c..%cbuild%cconfigs", g_topdir,g_delim, g_delim,g_delim);
+	snprintf(g_buffer, BUFFER_SIZE, "%s%c..%cbuild%cconfigs", g_topdir, g_delim, g_delim, g_delim);
 	debug("check_configdir: Checking configtop=%s\n", g_buffer);
 
 	verify_directory(g_buffer);
@@ -428,7 +428,7 @@ static void check_configdir(void)
 
 	/* Get and verify the path to the selected configuration */
 
-	snprintf(g_buffer, BUFFER_SIZE, "%s%c..%cbuild%cconfigs%c%s%c%s", g_topdir,g_delim, g_delim, g_delim, g_delim, g_boarddir, g_delim, g_configdir);
+	snprintf(g_buffer, BUFFER_SIZE, "%s%c..%cbuild%cconfigs%c%s%c%s", g_topdir, g_delim, g_delim, g_delim, g_delim, g_boarddir, g_delim, g_configdir);
 	debug("check_configdir: Checking configpath=%s\n", g_buffer);
 
 	if (!verify_optiondir(g_buffer)) {
