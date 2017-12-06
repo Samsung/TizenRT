@@ -41,7 +41,7 @@ Contributors:
 #include <net_mosq.h>
 
 #if defined(__TINYARA__)
-#define TINYARA_MQTT_PTHREAD_STACK_SIZE		(8 * 1024)
+#define TINYARA_MQTT_PTHREAD_STACK_SIZE		(CONFIG_NETUTILS_MQTT_TASK_STACKSIZE)
 #endif
 
 void *_mosquitto_thread_main(void *obj);

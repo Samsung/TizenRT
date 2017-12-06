@@ -15,6 +15,10 @@ config NETUTILS_MQTT
 
 if NETUTILS_MQTT
 
+config NETUTILS_MQTT_TASK_STACKSIZE
+	int "MQTT task stacksize"
+	default 8192
+
 config NETUTILS_MQTT_SECURITY
         bool "MQTT with security"
         default n
