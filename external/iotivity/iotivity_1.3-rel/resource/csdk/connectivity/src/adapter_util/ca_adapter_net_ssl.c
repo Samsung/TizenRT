@@ -52,7 +52,7 @@
 #include "mbedtls/ssl_cookie.h"
 #endif
 
-#if !defined(NDEBUG) || defined(TB_LOG)
+#if !defined(NDEBUG) || defined(TB_LOG) || (defined(__TIZENRT__) && defined(CONFIG_IOTIVITY_MBEDTLS_DEBUG))
 #include "mbedtls/debug.h"
 #include "mbedtls/version.h"
 #endif
@@ -101,7 +101,15 @@
  * @brief Logging level for mbedTLS library
  * Level 1 logs errors only, level 4 is verbose logging.
  */
+#if defined(__TIZENRT__)
+#if defined(CONFIG_IOTIVITY_MBEDTLS_DEBUG_LEVEL)
+#define MBED_TLS_DEBUG_LEVEL CONFIG_IOTIVITY_MBEDTLS_DEBUG_LEVEL
+#else
+#define MBED_TLS_DEBUG_LEVEL (3)
+#endif
+#else
 #define MBED_TLS_DEBUG_LEVEL (4)
+#endif
 
 /**
  * @def TLS_MSG_BUF_LEN
@@ -313,7 +321,7 @@ static unsigned char GetAlertCode(uint32_t flags)
     return 0;
 }
 
-#if !defined(NDEBUG) || defined(TB_LOG)
+#if !defined(NDEBUG) || defined(TB_LOG) || (defined(__TIZENRT__) && defined(CONFIG_IOTIVITY_MBEDTLS_DEBUG))
 /**
  * Pass a message to the OIC logger.
  *
@@ -1709,7 +1717,7 @@ static int InitConfig(mbedtls_ssl_config * conf, int transport, int mode)
     /* Set TLS 1.2 as the minimum allowed version. */
     mbedtls_ssl_conf_min_version(conf, MBEDTLS_SSL_MAJOR_VERSION_3, MBEDTLS_SSL_MINOR_VERSION_3);
 
-#if !defined(NDEBUG) || defined(TB_LOG)
+#if !defined(NDEBUG) || defined(TB_LOG) || (defined(__TIZENRT__) && defined(CONFIG_IOTIVITY_MBEDTLS_DEBUG))
     mbedtls_ssl_conf_dbg(conf, DebugSsl, NULL);
 #if defined(MBEDTLS_DEBUG_C)
     mbedtls_debug_set_threshold(MBED_TLS_DEBUG_LEVEL);

@@ -2743,6 +2743,10 @@
 #ifndef MBEDTLS_SSL_ALL_ALERT_MESSAGES
 #define MBEDTLS_SSL_ALL_ALERT_MESSAGES
 #endif
+
+#if defined(CONFIG_IOTIVITY_MBEDTLS_DEBUG) && !defined(MBEDTLS_DEBUG_C)
+#define MBEDTLS_DEBUG_C
+#endif
 #endif
 
 #include "check_config.h"
