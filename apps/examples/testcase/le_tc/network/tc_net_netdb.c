@@ -1,20 +1,21 @@
 /****************************************************************************
- *
- * Copyright 2016 Samsung Electronics All Rights Reserved.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- * http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing,
- * software distributed under the License is distributed on an
- * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND,
- * either express or implied. See the License for the specific
- * language governing permissions and limitations under the License.
- *
- ****************************************************************************/
+
+*
+* Copyright 2016 Samsung Electronics All Rights Reserved.
+*
+* Licensed under the Apache License, Version 2.0 (the "License");
+* you may not use this file except in compliance with the License.
+* You may obtain a copy of the License at
+*
+* http://www.apache.org/licenses/LICENSE-2.0
+*
+* Unless required by applicable law or agreed to in writing,
+* software distributed under the License is distributed on an
+* "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND,
+* either express or implied. See the License for the specific
+* language governing permissions and limitations under the License.
+*
+****************************************************************************/
 
 /// @file tc_net_netdb.c
 /// @brief Test Case Example for getaddrinfo(), freeaddrinfo() API
@@ -59,22 +60,45 @@ static void tc_net_netdb_p(void)
 	ret = getaddrinfo(NULL, port, &hints, &res);
 	TC_ASSERT_EQ("getaddrinfo", ret, 0)
 
-	/*
-	* This API has no way to check errors.
-	*/
-	freeaddrinfo(res);
-	TC_SUCCESS_RESULT()
+		// This API has no way to check errors.
+		freeaddrinfo(res);
+	TC_SUCCESS_RESULT();
 }
-#endif
 
+/**
+* @testcase		tc_net_netdb_getaddrinfo_n
+* @brief		freeaddrinfo() has no way to check errors.
+* @scenario
+* @apicovered		getaddrinfo() freeaddrinfo()
+* @precondition
+* @postcondition
+*/
+static void tc_net_netdb_getaddrinfo_n(void)
+{
+
+	struct addrinfo hints;
+	struct addrinfo *res;
+	int ret;
+
+	memset(&hints, 0, sizeof hints);
+	hints.ai_family = AF_INET;
+	hints.ai_socktype = SOCK_DGRAM;
+
+	ret = getaddrinfo(NULL, NULL, &hints, &res);
+	TC_ASSERT_NEQ("getaddrinfo", ret, 0);
+	TC_SUCCESS_RESULT();
+}
+
+#endif
 /****************************************************************************
- * Name: getaddrinfo(), freeaddrinfo()
- ****************************************************************************/
+* Name: getaddrinfo(), freeaddrinfo()
+****************************************************************************/
 
 int net_netdb_main(void)
 {
 #ifdef CONFIG_LIBC_NETDB
 	tc_net_netdb_p();
+	tc_net_netdb_getaddrinfo_n();
 #endif
 	return 0;
 }
