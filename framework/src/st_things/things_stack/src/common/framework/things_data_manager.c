@@ -1268,9 +1268,9 @@ static int parse_things_info_json(const char *filename)
 					return 0;
 				}
 
-				memset(g_svrdb_file_path, 0, (size_t) MAX_FILE_PATH_LENGTH + 1);
-				memset(g_certificate_file_path, 0, (size_t) MAX_FILE_PATH_LENGTH + 1);
-				memset(g_private_key_file_path, 0, (size_t) MAX_FILE_PATH_LENGTH + 1);
+				memset(g_svrdb_file_path, 0, (size_t)MAX_FILE_PATH_LENGTH + 1);
+				memset(g_certificate_file_path, 0, (size_t)MAX_FILE_PATH_LENGTH + 1);
+				memset(g_private_key_file_path, 0, (size_t)MAX_FILE_PATH_LENGTH + 1);
 
 				if (strncmp(svrdb->valuestring, PATH_MNT, sizeof(PATH_MNT)) == 0) {
 					if (strlen(svrdb->valuestring) > (size_t)MAX_FILE_PATH_LENGTH) {
