@@ -1594,6 +1594,17 @@ static SslEndPoint_t * InitiateTlsHandshake(const CAEndpoint_t *endpoint)
             oc_mutex_unlock(g_sslContextMutex);
             return NULL;
         }
+#if defined (__TIZENRT__)
+        if (MBEDTLS_ERR_X509_CERT_VERIFY_FAILED == ret)
+        {
+            char vrfy_buf[512];
+            uint32_t flags = mbedtls_ssl_get_verify_result(&tep->ssl);
+
+            /* Get verify result as a string type */
+            mbedtls_x509_crt_verify_info(vrfy_buf, sizeof(vrfy_buf), " -", flags);
+            OIC_LOG_V(ERROR, NET_SSL_TAG, "Fail to verify certificate \n %s", vrfy_buf);
+        }
+#endif
         if (!checkSslOperation(tep,
                                ret,
                                "Handshake error",
@@ -1742,6 +1753,17 @@ static void StartRetransmit()
             }
             int ret = mbedtls_ssl_handshake_step(&tep->ssl);
 
+#if defined (__TIZENRT__)
+            if (MBEDTLS_ERR_X509_CERT_VERIFY_FAILED == ret)
+            {
+                char vrfy_buf[512];
+                uint32_t flags = mbedtls_ssl_get_verify_result(&tep->ssl);
+
+                /* Get verify result as a string type */
+                mbedtls_x509_crt_verify_info(vrfy_buf, sizeof(vrfy_buf), " -", flags);
+                OIC_LOG_V(ERROR, NET_SSL_TAG, "Fail to verify certificate \n %s", vrfy_buf);
+            }
+#endif
             if (MBEDTLS_ERR_SSL_CONN_EOF != ret)
             {
                 //start new timer
@@ -2184,10 +2206,21 @@ CAResult_t CAdecryptSsl(const CASecureEndpoint_t *sep, uint8_t *data, size_t dat
                                                  sizeof(sep->endpoint.addr));
             ret = mbedtls_ssl_handshake_step(&peer->ssl);
         }
+#if defined (__TIZENRT__)
+        if (MBEDTLS_ERR_X509_CERT_VERIFY_FAILED == ret)
+        {
+            char vrfy_buf[512];
+            uint32_t flags = mbedtls_ssl_get_verify_result(&peer->ssl);
+
+            /* Get verify result as a string type */
+            mbedtls_x509_crt_verify_info(vrfy_buf, sizeof(vrfy_buf), " -", flags);
+            OIC_LOG_V(ERROR, NET_SSL_TAG, "Fail to verify certificate \n %s", vrfy_buf);
+#else
         uint32_t flags = mbedtls_ssl_get_verify_result(&peer->ssl);
         if (0 != flags)
         {
             OIC_LOG_BUFFER(ERROR, NET_SSL_TAG, (const uint8_t *) &flags, sizeof(flags));
+#endif
             if (!checkSslOperation(peer,
                                    (int)flags,
                                    "Cert verification failed",
