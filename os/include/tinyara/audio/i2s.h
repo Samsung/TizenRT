@@ -213,6 +213,8 @@
 
 #define I2S_SEND(d, b, c, a, t) ((d)->ops->i2s_send(d, b, c, a, t))
 
+#define I2S_STOP(d)		((d)->ops->i2s_stop(d))
+
 /****************************************************************************
  * Public Types
  ****************************************************************************/
@@ -235,6 +237,9 @@ struct i2s_ops_s {
 	CODE uint32_t(*i2s_txsamplerate)(FAR struct i2s_dev_s *dev, uint32_t rate);
 	CODE uint32_t(*i2s_txdatawidth)(FAR struct i2s_dev_s *dev, int bits);
 	CODE int (*i2s_send)(FAR struct i2s_dev_s *dev, FAR struct ap_buffer_s *apb, i2s_callback_t callback, FAR void *arg, uint32_t timeout);
+
+	/* Generic stop method */
+	CODE int (*i2s_stop)(FAR struct i2s_dev_s *dev);
 };
 
 /* I2S private data.  This structure only defines the initial fields of the

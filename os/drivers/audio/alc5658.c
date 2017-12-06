@@ -777,6 +777,15 @@ static int alc5658_stop(FAR struct audio_lowerhalf_s *dev)
 	/* Need to run the stop script here */
 	alc5658_exec_i2c_script(priv, codec_stop_script, sizeof(codec_stop_script) / sizeof(t_codec_init_script_entry));
 
+
+	I2S_STOP(priv->i2s);
+
+	dq_entry_t *tmp;
+        for (tmp = (dq_entry_t *)dq_peek(&priv->pendq); tmp; tmp = dq_next(tmp)) {
+		dq_rem(tmp, &priv->pendq);
+		apb_free((struct ap_buffer_s *)tmp);
+        }
+
 	alc5658_takesem(&priv->devsem);
 	priv->running = false;
 	alc5658_givesem(&priv->devsem);
