@@ -137,10 +137,11 @@ config NET_TCP_TIMESTAMPS
 		support the TCP timestamp option.
 
 
-config NET_TCP_WND_UPDATE_THREASHOLD
+config NET_TCP_WND_UPDATE_THRESHOLD
 	int "TCP Window Update Threshold"
 	default 536
 	---help---
 		Difference in window to trigger an explicit window update
+		Default value : LWIP_MIN((TCP_WND / 4), (TCP_MSS * 4))
 
 endif #NET_TCP
