@@ -2,38 +2,13 @@
 # For a description of the syntax of this configuration file,
 # see kconfig-language at https://www.kernel.org/doc/Documentation/kbuild/kconfig-language.txt
 #
-config KERNEL_CMDS
+menuconfig KERNEL_CMDS
 	bool "Kernel shell commands"
 	default y
 	depends on TASH
 	---help---
 		register shell commands for kernel
-
-config FS_CMDS
-	bool "FS shell commands"
-	default y
-	depends on TASH
-	---help---
-		Disable File System command in TASH.
-		Command including ls, cd, cat, mount, and so on.
-
-if FS_CMDS
-config FSCMD_BUFFER_LEN
-       int "Buffer length of FSCMD"
-       default 32
-       ---help---
-             Buffer length of FS command's I/O operation
-             Using this buffer in cat, and so on.
-endif
-
-config NET_CMDS
-	bool "Network shell commands"
-	default y
-	depends on TASH && NETUTILS_DHCPC && NETUTILS_NETLIB && NET_LWIP
-	---help---
-		Disable Network command in TASH.
-		Command including ifconfig, ifdown, ifup, and so on.
-
+if KERNEL_CMDS
 config ENABLE_DATE
 	bool "date"
 	default y
@@ -135,4 +110,30 @@ config ENABLE_UPTIME
 	default y
 	---help---
 		print how long the system has been running
+endif #KERNEL_CMDS
+
+config FS_CMDS
+	bool "FS shell commands"
+	default y
+	depends on TASH
+	---help---
+		Disable File System command in TASH.
+		Command including ls, cd, cat, mount, and so on.
+
+if FS_CMDS
+config FSCMD_BUFFER_LEN
+       int "Buffer length of FSCMD"
+       default 32
+       ---help---
+             Buffer length of FS command's I/O operation
+             Using this buffer in cat, and so on.
+endif
+
+config NET_CMDS
+	bool "Network shell commands"
+	default y
+	depends on TASH && NETUTILS_DHCPC && NETUTILS_NETLIB && NET_LWIP
+	---help---
+		Disable Network command in TASH.
+		Command including ifconfig, ifdown, ifup, and so on.
 
