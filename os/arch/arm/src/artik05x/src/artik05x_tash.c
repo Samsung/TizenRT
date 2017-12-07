@@ -182,7 +182,7 @@ static void artik05x_configure_partitions(void)
 			if (!strncmp(types, "smartfs,", 8)) {
 				char partref[4];
 
-				sprintf(partref, "p%d", partno);
+				snprintf(partref, 4, "p%d", partno);
 				smart_initialize(CONFIG_ARTIK05X_FLASH_MINOR, mtd_part, partref);
 			} else
 #endif
