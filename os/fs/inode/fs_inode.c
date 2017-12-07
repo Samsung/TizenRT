@@ -114,15 +114,17 @@ FAR struct inode *root_inode = NULL;
 
 static int _inode_compare(FAR const char *fname, FAR struct inode *node)
 {
-	char *nname = node->i_name;
-
-	if (!nname) {
-		return 1;
-	}
+	char *nname;
 
 	if (!fname) {
 		return -1;
 	}
+
+	if (!node || !(node->i_name)) {
+		return 1;
+	}
+
+	nname = node->i_name;
 
 	for (;;) {
 		/* At end of node name? */
