@@ -443,6 +443,14 @@ config ARCH_STACKDUMP
 	---help---
 		Enable to do stack dumps after assertions
 
+config ARCH_ASSERT_REBOOT
+	bool "Enforce reboot on assertions"
+	depends on DEBUG
+	depends on BOARDCTL_RESET
+	default n
+	---help---
+		Enable to enforce reboot after assertions
+
 config ARCH_USBDUMP
 	bool "Dump USB trace data"
 	default n
