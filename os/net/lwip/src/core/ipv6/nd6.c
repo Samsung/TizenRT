@@ -193,8 +193,8 @@ void nd6_input(struct pbuf *p, struct netif *inp)
 		na_hdr = (struct na_header *)p->payload;
 
 		if ((IP6H_HOPLIM(ip6_current_header()) != 255) ||
-		    (ip6_addr_ismulticast(&target_address)) ||
-		    (ND6H_CODE(na_hdr) != 0)) {
+			(ip6_addr_ismulticast(&ND6H_NA_TARGET_ADDR(na_hdr))) ||
+			(ND6H_CODE(na_hdr) != 0)) {
 			/* RFC 4861 clause 7.1.2.
 			 * Validation of NA message
 			 */
