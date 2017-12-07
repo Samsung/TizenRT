@@ -594,8 +594,8 @@ int hw_ecdsa_sign_wrap(void *ctx, mbedtls_md_type_t md_alg, const unsigned char 
 		goto cleanup;
 	}
 
-	mbedtls_mpi_read_binary(&r, ecc_sign.r, ecc_sign.r_byte_len);
-	mbedtls_mpi_read_binary(&s, ecc_sign.s, ecc_sign.s_byte_len);
+	MBEDTLS_MPI_CHK(mbedtls_mpi_read_binary(&r, ecc_sign.r, ecc_sign.r_byte_len));
+	MBEDTLS_MPI_CHK(mbedtls_mpi_read_binary(&s, ecc_sign.s, ecc_sign.s_byte_len));
 
 	MBEDTLS_MPI_CHK(ecdsa_signature_to_asn1(&r, &s, sig, sig_len));
 
@@ -847,7 +847,7 @@ int hw_rsa_verify_wrap(void *ctx, mbedtls_md_type_t md_alg, const unsigned char 
 	unsigned char *der_buf = NULL;
 	unsigned char *t_hash = (unsigned char *)hash;
 	struct sRSA_SIGN rsa_sign;
-	unsigned int padding = ((mbedtls_rsa_context *) ctx)->padding;
+	unsigned int padding;
 
 	((void)md_alg);
 
@@ -855,11 +855,14 @@ int hw_rsa_verify_wrap(void *ctx, mbedtls_md_type_t md_alg, const unsigned char 
 		return MBEDTLS_ERR_RSA_BAD_INPUT_DATA;
 	}
 
+	padding = ((mbedtls_rsa_context *) ctx)->padding;
+
 	/*
 	 * 1. Encrypt publickey for using SSS accelator.
 	 */
 	mbedtls_pk_context t_pk;
-	unsigned int len, der_buflen = 2048;
+	int len = 0;
+	unsigned int der_buflen = 2048;
 
 	t_pk.pk_info = mbedtls_pk_info_from_type(MBEDTLS_PK_RSA);
 	t_pk.pk_ctx = (mbedtls_rsa_context *) ctx;
@@ -957,18 +960,21 @@ int hw_rsa_encrypt_wrap(void *ctx, const unsigned char *input, size_t ilen, unsi
 	int ret = MBEDTLS_ERR_RSA_BAD_INPUT_DATA;
 	unsigned char *key_buf = NULL;
 	unsigned char *der_buf = NULL;
-	unsigned int padding = ((mbedtls_rsa_context *) ctx)->padding;
+	unsigned int padding;
 	unsigned char *t_input = (unsigned char *)input;
 
 	if (ctx == NULL) {
 		return MBEDTLS_ERR_RSA_BAD_INPUT_DATA;
 	}
 
+	padding = ((mbedtls_rsa_context *) ctx)->padding;
+
 	/*
 	 * 1. Encrypt publickey for using SSS accelator.
 	 */
 	mbedtls_pk_context t_pk;
-	unsigned int len, der_buflen = 1024;
+	int len = 0;
+	unsigned int der_buflen = 1024;
 
 	t_pk.pk_info = mbedtls_pk_info_from_type(MBEDTLS_PK_RSA);
 	t_pk.pk_ctx = (mbedtls_rsa_context *) ctx;

@@ -256,7 +256,6 @@ tls_ctx *TLSCtx(tls_cred *cred)
 	return ctx;
 errout:
 	TLSCtx_free(ctx);
-	TLS_FREE(ctx);
 
 	return NULL;
 }

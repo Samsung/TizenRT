@@ -27,7 +27,7 @@
 
 int parse_crt_chain(mbedtls_x509_crt *crt, unsigned char *buf, unsigned int buf_len)
 {
-	int r;
+	int r = 0;
 	int pos = 0;
 	size_t len = 0;
 	unsigned char *p;
