@@ -1241,7 +1241,7 @@ fast_failed:
 
 	/* Do we have a "small" integer? */
 
-	if (be >= 0 && k <= Int_max) {
+	if (be >= 0 && (uint32_t)(k) <= Int_max) {
 		/* Yes. */
 
 		ds = tens[k];
