@@ -100,7 +100,7 @@ FAR char *gets_s(FAR char *s, rsize_t n)
 {
 	/* Handle the case where n is out of range as required */
 
-	if (n < 1 || n > RSIZE_MAX) {
+	if (n < 1 || n >= RSIZE_MAX) {
 		/* Set n=1, i.e., room only for the NUL terminator */
 
 		n = 1;
