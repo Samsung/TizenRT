@@ -28,14 +28,14 @@
 
 
 /**
-* @testcase         itc_pwm_open_close_p
+* @testcase         itc_systemio_pwm_open_close_p
 * @brief            open and closes the pwm_context
 * @scenario         open and closes the pwm_context
 * @apicovered       iotbus_pwm_open, iotbus_pwm_close
 * @precondition     none
 * @postcondition    none
 */
-void itc_pwm_open_close_p(void)
+void itc_systemio_pwm_open_close_p(void)
 {
 	int device = 0;
 	int channel = 1;
@@ -50,14 +50,14 @@ void itc_pwm_open_close_p(void)
 }
 
 /**
-* @testcase         itc_pwm_set_get_duty_cycle_p
+* @testcase         itc_systemio_pwm_set_get_duty_cycle_p
 * @brief            sets and gets the pwm duty cycle
 * @scenario         sets and gets the same pwm duty cycle
 * @apicovered       iotbus_pwm_set_duty_cycle, iotbus_pwm_get_duty_cycle
 * @precondition     opens the pwm_context
 * @postcondition    closes the pwm_context
 */
-void itc_pwm_set_get_duty_cycle_p(void)
+void itc_systemio_pwm_set_get_duty_cycle_p(void)
 {
 	int device = 0;
 	int channel = 1;
@@ -79,14 +79,14 @@ void itc_pwm_set_get_duty_cycle_p(void)
 }
 
 /**
-* @testcase         itc_pwm_set_get_period_p
+* @testcase         itc_systemio_pwm_set_get_period_p
 * @brief            sets and gets the pwm period
 * @scenario         sets and gets the same pwm period
 * @apicovered       iotbus_pwm_set_period, iotbus_pwm_get_period
 * @precondition     opens the pwm_context
 * @postcondition    closes the pwm_context
 */
-void itc_pwm_set_get_period_p(void)
+void itc_systemio_pwm_set_get_period_p(void)
 {
 	int device = 0;
 	int channel = 1;
@@ -108,14 +108,14 @@ void itc_pwm_set_get_period_p(void)
 }
 
 /**
-* @testcase         itc_pwm_set_enabled_is_enabled_p
+* @testcase         itc_systemio_pwm_set_period_is_enabled_p
 * @brief            checks if pwm state is enabled
 * @scenario         sets and gets the same pwm period and checks if pwm state is enabled
 * @apicovered       iotbus_pwm_is_enabled
 * @precondition     opens the pwm_context
 * @postcondition    closes the pwm_context
 */
-void itc_pwm_set_enabled_is_enabled_p(void)
+void itc_systemio_pwm_set_period_is_enabled_p(void)
 {
 	int device = 0;
 	int channel = 1;
@@ -164,14 +164,14 @@ void itc_pwm_set_enabled_is_enabled_p(void)
 }
 
 /**
-* @testcase         itc_pwm_set_get_different_duty_cycle_p
+* @testcase         itc_systemio_pwm_set_get_duty_cycle_p_different_cycle
 * @brief            sets and gets the pwm duty cycle
 * @scenario         sets and gets the same pwm duty cycle for all cycle values
 * @apicovered       iotbus_pwm_set_duty_cycle, iotbus_pwm_get_duty_cycle
 * @precondition     opens the pwm_context
 * @postcondition    closes the pwm_context
 */
-void itc_pwm_set_get_different_duty_cycle_p(void)
+void itc_systemio_pwm_set_get_duty_cycle_p_different_cycle(void)
 {
 	int device = 0;
 	int channel = 1;
@@ -196,7 +196,7 @@ void itc_pwm_set_get_different_duty_cycle_p(void)
 			continue;
 		}
 	}
-	TC_ASSERT_EQ_CLEANUP("itc_pwm_set_get_different_duty_cycle_p", check, true, iotbus_pwm_close(h_pwm));
+	TC_ASSERT_EQ_CLEANUP("itc_systemio_pwm_set_get_duty_cycle_p_different_cycle", check, true, iotbus_pwm_close(h_pwm));
 	ret = iotbus_pwm_close(h_pwm);
 	TC_ASSERT_EQ("iotbus_pwm_close", ret, OK);
 
@@ -204,14 +204,14 @@ void itc_pwm_set_get_different_duty_cycle_p(void)
 }
 
 /**
-* @testcase         itc_pwm_set_get_different_period_p
+* @testcase         itc_systemio_pwm_set_get_period_p_different_period
 * @brief            sets and gets the pwm period
 * @scenario         sets and gets the same pwm period
 * @apicovered       iotbus_pwm_set_period, iotbus_pwm_get_period
 * @precondition     opens the pwm_context
 * @postcondition    closes the pwm_context
 */
-void itc_pwm_set_get_different_period_p(void)
+void itc_systemio_pwm_set_get_period_p_different_period(void)
 {
 	int device = 0;
 	int channel = 1;
@@ -238,7 +238,7 @@ void itc_pwm_set_get_different_period_p(void)
 			continue;
 		}
 	}
-	TC_ASSERT_EQ_CLEANUP("itc_pwm_set_get_different_period_p", check, true, iotbus_pwm_close(h_pwm));
+	TC_ASSERT_EQ_CLEANUP("itc_systemio_pwm_set_get_period_p_different_period", check, true, iotbus_pwm_close(h_pwm));
 	ret = iotbus_pwm_close(h_pwm);
 	TC_ASSERT_EQ("iotbus_pwm_close", ret, OK);
 
@@ -246,14 +246,14 @@ void itc_pwm_set_get_different_period_p(void)
 }
 
 /**
-* @testcase         itc_pwm_open_n
+* @testcase         itc_systemio_pwm_open_n
 * @brief            open the pwm_context
 * @scenario         open the pwm_context with invalid argument
 * @apicovered       iotbus_pwm_open
 * @precondition     none
 * @postcondition    none
 */
-void itc_pwm_open_n(void)
+void itc_systemio_pwm_open_n(void)
 {
 	int invalid_device = 1;
 	int channel = 1;
@@ -264,14 +264,14 @@ void itc_pwm_open_n(void)
 }
 
 /**
-* @testcase         itc_pwm_close_n
+* @testcase         itc_systemio_pwm_close_n
 * @brief            open and closes the pwm_context
 * @scenario         open and closes the pwm_context
 * @apicovered       iotbus_pwm_open, iotbus_pwm_close
 * @precondition     none
 * @postcondition    none
 */
-void itc_pwm_close_n(void)
+void itc_systemio_pwm_close_n(void)
 {
 	int ret = iotbus_pwm_close(NULL);
 	TC_ASSERT_EQ("iotbus_pwm_close", ret, IOTBUS_ERROR_INVALID_PARAMETER);
@@ -280,14 +280,14 @@ void itc_pwm_close_n(void)
 }
 
 /**
-* @testcase         itc_pwm_set_duty_cycle_n
+* @testcase         itc_systemio_pwm_set_duty_cycle_n
 * @brief            sets the pwm duty cycle
 * @scenario         sets the same pwm duty cycle with invalid parameter
 * @apicovered       iotbus_pwm_set_duty_cycle
 * @precondition     opens the pwm_context
 * @postcondition    closes the pwm_context
 */
-void itc_pwm_set_duty_cycle_n(void)
+void itc_systemio_pwm_set_duty_cycle_n(void)
 {
 	int device = 0;
 	int channel = 1;
@@ -310,14 +310,14 @@ void itc_pwm_set_duty_cycle_n(void)
 }
 
 /**
-* @testcase         itc_pwm_set_duty_cycle_after_close_n
+* @testcase         itc_systemio_pwm_set_duty_cycle_n_after_close
 * @brief            sets the pwm duty cycle
 * @scenario         sets the pwm duty cycle after pwm close
 * @apicovered       iotbus_pwm_set_duty_cycle
 * @precondition     opens the pwm_context
 * @postcondition    closes the pwm_context
 */
-void itc_pwm_set_duty_cycle_after_close_n(void)
+void itc_systemio_pwm_set_duty_cycle_n_after_close(void)
 {
 	int device = 0;
 	int channel = 1;
@@ -336,14 +336,14 @@ void itc_pwm_set_duty_cycle_after_close_n(void)
 }
 
 /**
-* @testcase         itc_pwm_get_duty_cycle_n
+* @testcase         itc_systemio_pwm_get_duty_cycle_n
 * @brief            gets the pwm duty cycle
 * @scenario         gets the same pwm duty cycle with invalid parameter
 * @apicovered       iotbus_pwm_get_duty_cycle
 * @precondition     NA
 * @postcondition    NA
 */
-void itc_pwm_get_duty_cycle_n(void)
+void itc_systemio_pwm_get_duty_cycle_n(void)
 {
 	int ret = iotbus_pwm_get_duty_cycle(NULL);
 	TC_ASSERT_EQ("iotbus_pwm_get_duty_cycle", ret, IOTBUS_ERROR_INVALID_PARAMETER);
@@ -352,14 +352,14 @@ void itc_pwm_get_duty_cycle_n(void)
 }
 
 /**
-* @testcase         itc_pwm_get_duty_cycle_after_close_n
+* @testcase         itc_systemio_pwm_get_duty_cycle_n_after_close
 * @brief            sets and gets the pwm duty cycle
 * @scenario         sets and gets the same pwm duty cycle
 * @apicovered       iotbus_pwm_set_duty_cycle, iotbus_pwm_get_duty_cycle
 * @precondition     opens the pwm_context
 * @postcondition    closes the pwm_context
 */
-void itc_pwm_get_duty_cycle_after_close_n(void)
+void itc_systemio_pwm_get_duty_cycle_n_after_close(void)
 {
 	int device = 0;
 	int channel = 1;
@@ -381,14 +381,14 @@ void itc_pwm_get_duty_cycle_after_close_n(void)
 }
 
 /**
-* @testcase         itc_pwm_set_period_n
+* @testcase         itc_systemio_pwm_set_period_n
 * @brief            sets the pwm period
 * @scenario         sets the pwm period with invalid argument
 * @apicovered       iotbus_pwm_set_period
 * @precondition     opens the pwm_context
 * @postcondition    closes the pwm_context
 */
-void itc_pwm_set_period_n(void)
+void itc_systemio_pwm_set_period_n(void)
 {
 	int device = 0;
 	int channel = 1;
@@ -407,14 +407,14 @@ void itc_pwm_set_period_n(void)
 }
 
 /**
-* @testcase         itc_pwm_set_period_after_close_n
+* @testcase         itc_systemio_pwm_set_period_n_after_close
 * @brief            sets the pwm period
 * @scenario         sets the pwm period after close
 * @apicovered       iotbus_pwm_set_period
 * @precondition     opens the pwm_context
 * @postcondition    closes the pwm_context
 */
-void itc_pwm_set_period_after_close_n(void)
+void itc_systemio_pwm_set_period_n_after_close(void)
 {
 	int device = 0;
 	int channel = 1;
@@ -433,14 +433,14 @@ void itc_pwm_set_period_after_close_n(void)
 }
 
 /**
-* @testcase         itc_pwm_get_period_n
+* @testcase         itc_systemio_pwm_get_period_n
 * @brief            gets the pwm period
 * @scenario         gets the pwm period with invalid parameter
 * @apicovered       iotbus_pwm_get_period
 * @precondition     opens the pwm_context
 * @postcondition    closes the pwm_context
 */
-void itc_pwm_get_period_n(void)
+void itc_systemio_pwm_get_period_n(void)
 {
 	int ret = iotbus_pwm_get_period(NULL);
 	TC_ASSERT_EQ("iotbus_pwm_get_period", ret, IOTBUS_ERROR_INVALID_PARAMETER);
@@ -449,14 +449,14 @@ void itc_pwm_get_period_n(void)
 }
 
 /**
-* @testcase         itc_pwm_get_period_after_close_n
+* @testcase         itc_systemio_pwm_get_period_n_after_close
 * @brief            gets the pwm period
 * @scenario         gets the pwm period after pwm close
 * @apicovered       iotbus_pwm_get_period
 * @precondition     opens the pwm_context
 * @postcondition    closes the pwm_context
 */
-void itc_pwm_get_period_after_close_n(void)
+void itc_systemio_pwm_get_period_n_after_close(void)
 {
 	int device = 0;
 	int channel = 1;
@@ -478,14 +478,14 @@ void itc_pwm_get_period_after_close_n(void)
 }
 
 /**
-* @testcase         itc_pwm_set_enabled_is_enabled_n
+* @testcase         itc_systemio_pwm_is_enabled_n
 * @brief            checks if pwm state is enabled
 * @scenario         checks if pwm state is enabled with invalid handle
 * @apicovered       iotbus_pwm_is_enabled
 * @precondition     opens the pwm_context
 * @postcondition    closes the pwm_context
 */
-void itc_pwm_set_enabled_is_enabled_n(void)
+void itc_systemio_pwm_is_enabled_n(void)
 {
 	int ret = iotbus_pwm_is_enabled(NULL);
 	TC_ASSERT_EQ("iotbus_pwm_is_enabled", ret, IOTBUS_ERROR_INVALID_PARAMETER);
@@ -495,23 +495,23 @@ void itc_pwm_set_enabled_is_enabled_n(void)
 
 int itc_pwm_main(void)
 {
-	itc_pwm_open_close_p();
-	itc_pwm_set_get_duty_cycle_p();
-	itc_pwm_set_get_period_p();
-	itc_pwm_set_enabled_is_enabled_p();
-	itc_pwm_set_get_different_duty_cycle_p();
-	itc_pwm_set_get_different_period_p();
-	itc_pwm_open_n();
-	itc_pwm_close_n();
-	itc_pwm_set_duty_cycle_n();
-	itc_pwm_set_duty_cycle_after_close_n();
-	itc_pwm_get_duty_cycle_n();
-	itc_pwm_get_duty_cycle_after_close_n();
-	itc_pwm_set_period_n();
-	itc_pwm_set_period_after_close_n();
-	itc_pwm_get_period_n();
-	itc_pwm_get_period_after_close_n();
-	itc_pwm_set_enabled_is_enabled_n();
+	itc_systemio_pwm_open_close_p();
+	itc_systemio_pwm_set_get_duty_cycle_p();
+	itc_systemio_pwm_set_get_period_p();
+	itc_systemio_pwm_set_period_is_enabled_p();
+	itc_systemio_pwm_set_get_duty_cycle_p_different_cycle();
+	itc_systemio_pwm_set_get_period_p_different_period();
+	itc_systemio_pwm_open_n();
+	itc_systemio_pwm_close_n();
+	itc_systemio_pwm_set_duty_cycle_n();
+	itc_systemio_pwm_set_duty_cycle_n_after_close();
+	itc_systemio_pwm_get_duty_cycle_n();
+	itc_systemio_pwm_get_duty_cycle_n_after_close();
+	itc_systemio_pwm_set_period_n();
+	itc_systemio_pwm_set_period_n_after_close();
+	itc_systemio_pwm_get_period_n();
+	itc_systemio_pwm_get_period_n_after_close();
+	itc_systemio_pwm_is_enabled_n();
 
 	return 0;
 }
