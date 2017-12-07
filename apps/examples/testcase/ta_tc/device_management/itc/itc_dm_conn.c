@@ -190,14 +190,14 @@ static void itc_dm_conn_set_get_tx_power_p(void)
 }
 
 /**
-* @testcase         itc_dm_conn_get_adress_channel_after_set_tx_power_p
+* @testcase         itc_dm_conn_get_adress_channel_p_after_set_tx_power
 * @brief            Set wifi tx power and get address and channel value
 * @scenario         Set wifi tx power and get address and channel value
 * @apicovered       dm_conn_set_tx_power, dm_conn_get_tx_power, dm_conn_get_address, dm_conn_get_channel
 * @precondition     WiFi connected
 * @postcondition    NA
 */
-static void itc_dm_conn_get_adress_channel_after_set_tx_power_p(void)
+static void itc_dm_conn_get_adress_channel_p_after_set_tx_power(void)
 {
 	int ret;
 	int set_val = 20;
@@ -229,14 +229,14 @@ static void itc_dm_conn_get_adress_channel_after_set_tx_power_p(void)
 }
 
 /**
-* @testcase         itc_dm_conn_get_interface_rssi_after_set_tx_power_p
+* @testcase         itc_dm_conn_get_interface_rssi_p_after_set_tx_power
 * @brief            Set wifi tx power and get interface and rssi value
 * @scenario         Set wifi tx power and get interface and rssi value
 * @apicovered       dm_conn_set_tx_power, dm_conn_get_tx_power, dm_conn_get_interface, dm_conn_get_rssi
 * @precondition     WiFi connected
 * @postcondition    NA
 */
-static void itc_dm_conn_get_interface_rssi_after_set_tx_power_p(void)
+static void itc_dm_conn_get_interface_rssi_p_after_set_tx_power(void)
 {
 	int ret;
 	int set_val = 20;
@@ -355,14 +355,14 @@ static void itc_dm_conn_re_register_linkup_p(void)
 }
 
 /**
-* @testcase         itc_dm_conn_get_address_channel_after_register_linkup_p
+* @testcase         itc_dm_conn_get_address_channel_p_after_register_linkup
 * @brief            Register linkup callback and get address and channel value
 * @scenario         Register linkup callback and get address and channel value
 * @apicovered       dm_conn_get_address, dm_conn_get_channel, dm_conn_register_linkup_cb, dm_conn_unregister_linkup_cb
 * @precondition     WiFi connected
 * @postcondition    NA
 */
-static void itc_dm_conn_get_address_channel_after_register_linkup_p(void)
+static void itc_dm_conn_get_address_channel_p_after_register_linkup(void)
 {
 	int ret;
 	int val = -1;
@@ -386,14 +386,14 @@ static void itc_dm_conn_get_address_channel_after_register_linkup_p(void)
 }
 
 /**
-* @testcase         itc_dm_conn_get_interface_rssi_after_register_linkup_p
+* @testcase         itc_dm_conn_get_interface_rssi_p_after_register_linkup
 * @brief            Register linkup callback and get address and channel value
 * @scenario         Register linkup callback and get address and channel value
 * @apicovered       dm_conn_get_address, dm_conn_get_channel, dm_conn_register_linkup_cb, dm_conn_unregister_linkup_cb
 * @precondition     WiFi connected
 * @postcondition    NA
 */
-static void itc_dm_conn_get_interface_rssi_after_register_linkup_p(void)
+static void itc_dm_conn_get_interface_rssi_p_after_register_linkup(void)
 {
 	int ret;
 	char interface[BUF_SIZE] = { 0, };
@@ -417,14 +417,14 @@ static void itc_dm_conn_get_interface_rssi_after_register_linkup_p(void)
 }
 
 /**
-* @testcase         itc_dm_conn_setget_tx_power_after_register_linkup_p
+* @testcase         itc_dm_conn_setget_tx_power_p_after_register_linkup
 * @brief            Set and unset link up callback function with set and get tx power
 * @scenario         Set link up callback and then set and get tx power and then unset link up callback
 * @apicovered       dm_conn_register_linkup_cb, dm_conn_unregister_linkup_cb, dm_conn_set_tx_power, dm_conn_get_tx_power
 * @precondition     NA
 * @postcondition    NA
 */
-static void itc_dm_conn_setget_tx_power_after_register_linkup_p(void)
+static void itc_dm_conn_setget_tx_power_p_after_register_linkup(void)
 {
 	int ret;
 	int set_val = 20;
@@ -496,14 +496,14 @@ static void itc_dm_conn_register_unregister_linkdown_p(void)
 }
 
 /**
-* @testcase         itc_dm_conn_re_register_linkdown_p
+* @testcase         itc_dm_conn_register_linkdown_p_reregister
 * @brief            Re-register link down callback function
 * @scenario         Set link down callback function successfully and then re-register link down callback function
 * @apicovered       dm_conn_register_linkup_cb
 * @precondition     NA
 * @postcondition    NA
 */
-static void itc_dm_conn_re_register_linkdown_p(void)
+static void itc_dm_conn_register_linkdown_p_reregister(void)
 {
 	int ret;
 	ret = dm_conn_register_linkdown_cb(link_event);
@@ -519,14 +519,14 @@ static void itc_dm_conn_re_register_linkdown_p(void)
 }
 
 /**
-* @testcase         itc_dm_conn_get_address_channel_after_register_linkdown_p
+* @testcase         itc_dm_conn_get_address_channel_p_after_register_linkdown
 * @brief            Register linkdown callback and get address and channel value
 * @scenario         Register linkdown callback and get address and channel value and unregister callback
 * @apicovered       dm_conn_get_address, dm_conn_get_channel, dm_conn_register_linkdown_cb, dm_conn_unregister_linkdown_cb
 * @precondition     WiFi connected
 * @postcondition    NA
 */
-static void itc_dm_conn_get_address_channel_after_register_linkdown_p(void)
+static void itc_dm_conn_get_address_channel_p_after_register_linkdown(void)
 {
 	int ret;
 	int val = -1;
@@ -550,14 +550,14 @@ static void itc_dm_conn_get_address_channel_after_register_linkdown_p(void)
 }
 
 /**
-* @testcase         itc_dm_conn_get_interface_rssi_after_register_linkdown_p
+* @testcase         itc_dm_conn_get_interface_rssi_p_after_register_linkdown
 * @brief            Register linkdown callback and get interface and rssi value
 * @scenario         Register linkdown callback and get interface and rssi value and unregister callback
 * @apicovered       dm_conn_get_interface, dm_conn_get_rssi, dm_conn_register_linkdown_cb, dm_conn_unregister_linkdown_cb
 * @precondition     WiFi connected
 * @postcondition    NA
 */
-static void itc_dm_conn_get_interface_rssi_after_register_linkdown_p(void)
+static void itc_dm_conn_get_interface_rssi_p_after_register_linkdown(void)
 {
 	int ret;
 	char interface[BUF_SIZE] = { 0, };
@@ -581,14 +581,14 @@ static void itc_dm_conn_get_interface_rssi_after_register_linkdown_p(void)
 }
 
 /**
-* @testcase         itc_dm_conn_setget_tx_power_after_register_linkdown_p
+* @testcase         itc_dm_conn_setget_tx_power_p_after_register_linkdown
 * @brief            Set and unset link up callback function with set and get tx power
 * @scenario         Set link up callback and then set and get tx power and then unset link up callback
 * @apicovered       dm_conn_register_linkdown_cb, dm_conn_unregister_linkdown_cb, dm_conn_set_tx_power, dm_conn_get_tx_power
 * @precondition     NA
 * @postcondition    NA
 */
-static void itc_dm_conn_setget_tx_power_after_register_linkdown_p(void)
+static void itc_dm_conn_setget_tx_power_p_after_register_linkdown(void)
 {
 	int ret;
 	int set_val = 20;
@@ -691,8 +691,8 @@ int itc_dm_conn_get_rssi_main(void)
 int itc_dm_conn_set_get_tx_power_main(void)
 {
 	itc_dm_conn_set_get_tx_power_p();
-	itc_dm_conn_get_adress_channel_after_set_tx_power_p();
-	itc_dm_conn_get_interface_rssi_after_set_tx_power_p();
+	itc_dm_conn_get_adress_channel_p_after_set_tx_power();
+	itc_dm_conn_get_interface_rssi_p_after_set_tx_power();
 	itc_dm_conn_set_tx_power_n();
 	itc_dm_conn_get_tx_power_n();
 	return 0;
@@ -706,9 +706,9 @@ int itc_dm_conn_regi_unreg_linkup_main(void)
 {
 	itc_dm_conn_register_unregister_linkup_p();
 	itc_dm_conn_re_register_linkup_p();
-	itc_dm_conn_get_address_channel_after_register_linkup_p();
-	itc_dm_conn_get_interface_rssi_after_register_linkup_p();
-	itc_dm_conn_setget_tx_power_after_register_linkup_p();
+	itc_dm_conn_get_address_channel_p_after_register_linkup();
+	itc_dm_conn_get_interface_rssi_p_after_register_linkup();
+	itc_dm_conn_setget_tx_power_p_after_register_linkup();
 	itc_dm_conn_register_linkup_n();
 	itc_dm_conn_unregister_linkup_n();
 	return 0;
@@ -721,10 +721,10 @@ int itc_dm_conn_regi_unreg_linkup_main(void)
 int itc_dm_conn_regi_unreg_linkdown_main(void)
 {
 	itc_dm_conn_register_unregister_linkdown_p();
-	itc_dm_conn_re_register_linkdown_p();
-	itc_dm_conn_get_address_channel_after_register_linkdown_p();
-	itc_dm_conn_get_interface_rssi_after_register_linkdown_p();//TC FAIL when run along with all other DM TCs, individual TC is PASS, return value is 0xffffffc3 not equal to 0x0
-	itc_dm_conn_setget_tx_power_after_register_linkdown_p();
+	itc_dm_conn_register_linkdown_p_reregister();
+	itc_dm_conn_get_address_channel_p_after_register_linkdown();
+	itc_dm_conn_get_interface_rssi_p_after_register_linkdown();//TC FAIL when run along with all other DM TCs, individual TC is PASS, return value is 0xffffffc3 not equal to 0x0
+	itc_dm_conn_setget_tx_power_p_after_register_linkdown();
 	itc_dm_conn_register_linkdown_n();
 	itc_dm_conn_unregister_linkdown_n();
 	return 0;
