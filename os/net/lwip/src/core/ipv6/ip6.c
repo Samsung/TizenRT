@@ -852,7 +852,7 @@ netif_found:
 				 */
 				ip6hdr = (struct ip6_hdr *)p->payload;
 				nexth = &IP6H_NEXTH(ip6hdr);
-				hlen = ip_data.current_ip_header_tot_len = IP6_HLEN;
+				ip_data.current_ip_header_tot_len = IP6_HLEN;
 				pbuf_header(p, -IP6_HLEN);
 
 #else							/* LWIP_IPV6_REASS */
