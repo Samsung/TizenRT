@@ -71,7 +71,6 @@
 #include <tinyara/irq.h>
 #include <tinyara/wqueue.h>
 #include <arch/board/board.h>
-#include <netinet/arp.h>
 #include <tinyara/net/netdev.h>
 #include <net/lwip/netif/etharp.h>
 #include <tinyara/net/ethernet.h>

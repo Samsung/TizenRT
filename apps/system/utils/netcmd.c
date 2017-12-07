@@ -183,6 +183,7 @@ int cmd_ifconfig(int argc, char **argv)
 	FAR char *dns = NULL;
 	bool badarg = false;
 	uint8_t mac[IFHWADDRLEN];
+	struct netif *netif;
 
 	/* With one or no arguments, ifconfig simply shows the status of Ethernet
 	 * device:
@@ -247,6 +248,7 @@ int cmd_ifconfig(int argc, char **argv)
 					}
 				}
 			}
+			netif = netif_find(intf);
 		}
 	}
 
