@@ -465,7 +465,6 @@ int dhcpc_request(void *handle, struct dhcpc_state *presult)
 
 	struct dhcpc_state_s *pdhcpc = (struct dhcpc_state_s *)handle;
 	g_pResult = presult;
-	struct in_addr oldaddr;
 	struct in_addr newaddr;
 	uint8_t msgtype;
 	int retries = 0, result = 0;
@@ -473,10 +472,8 @@ int dhcpc_request(void *handle, struct dhcpc_state *presult)
 #define CNT_MAX_DISCOVER 5
 #define CNT_MAX_REQUEST 5
 	/* Save the currently assigned IP address (should be INADDR_ANY) */
-	oldaddr.s_addr = 0;
 
 	intf = pdhcpc->nic;
-	netlib_get_ipv4addr(intf, &oldaddr);
 
 	/* Loop until we receive the lease (or an error occurs) */
 	/* Set the IP address to INADDR_ANY. */
