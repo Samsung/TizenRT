@@ -1688,7 +1688,7 @@ int dhcpd_run(void *arg)
  * Name: dhcpd_start
  ****************************************************************************/
 
-#define DHCPD_STACK_SIZE		20480
+#define DHCPD_STACK_SIZE		1024
 #define DHCPD_SCHED_PRI			100
 #define DHCPD_SCHED_POLICY		SCHED_RR
 
