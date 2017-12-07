@@ -3158,8 +3158,6 @@ static uint8_t slsi_start_supplicant(WiFi_InterFace_ID_t interface)
 		confarg = "-c" CONFIG_SLSI_WIFI_DIR "/" CONFIG_SLSI_WIFI_CONFIG_FILE_NAME;
 #ifdef CONFIG_SLSI_WIFI_P2P_API
 		confarg2 = "-c" CONFIG_SLSI_WIFI_DIR "/" CONFIG_SLSI_WIFI_P2P_CONFIG_FILE_NAME;
-#else
-		UNUSED(confarg2);
 #endif
 
 #ifndef CONFIG_DEBUG_FEATURES
