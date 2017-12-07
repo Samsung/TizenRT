@@ -597,7 +597,7 @@ int8_t parseCmdLine(int argc, char *argv[])
 				if (strlen(argv[4]) <= 4) {
 					/* We expect it to be a number = channel */
 					/* TODO: isdigit() will make this more robust */
-					channel = atoi(argv[3]);
+					channel = atoi(argv[4]);
 				} else {
 					sec = argv[4];
 				}
