@@ -81,7 +81,7 @@
 #ifndef CONFIG_STACKMONITOR_INTERVAL
 #define CONFIG_STACKMONITOR_INTERVAL 5
 #endif
-extern const uint32_t g_idle_topstack;
+
 /****************************************************************************
  * Private Types
  ****************************************************************************/
@@ -132,10 +132,6 @@ static void stkmon_inactive_check(void)
 
 static void stkmon_active_check(struct tcb_s *tcb, void *arg)
 {
-	if (tcb->pid == 0) {
-		tcb->adj_stack_size = CONFIG_IDLETHREAD_STACKSIZE;
-		tcb->stack_alloc_ptr = (void *)(g_idle_topstack - CONFIG_IDLETHREAD_STACKSIZE);
-	}
 #ifdef CONFIG_DEBUG_MM_HEAPINFO
 	printf("%5d | %8s | %8d | %10d | %10d | %7lld | ", tcb->pid, "ACTIVE", tcb->adj_stack_size, up_check_tcbstack(tcb), tcb->peak_alloc_size, (uint64_t)((systime_t)clock_systimer()));
 #else
