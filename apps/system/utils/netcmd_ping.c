@@ -273,6 +273,7 @@ static int
 nu_ping_send(int s, struct sockaddr_in *to)
 {
 	int err;
+    int ret = 0;
 	struct icmp_echo_hdr *iecho;
 	size_t ping_size = sizeof(struct icmp_echo_hdr) + g_ping_data_size;
 
@@ -287,9 +288,13 @@ nu_ping_send(int s, struct sockaddr_in *to)
 	nu_ping_prepare_echo(iecho, (u16_t)ping_size);
 
 	err = sendto(s, iecho, ping_size, 0, (struct sockaddr *)to, sizeof(struct sockaddr_in));
+	if (err < 0) {
+		printf("sendto is failed\n");
+		ret = -1;
+	}
 	free(iecho);
 
-	return 0;
+	return ret;
 }
 
 int
