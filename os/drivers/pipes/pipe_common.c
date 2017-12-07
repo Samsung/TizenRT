@@ -363,6 +363,7 @@ int pipecommon_close(FAR struct file *filep)
 		 */
 
 		if (PIPE_IS_UNLINKED(dev->d_flags)) {
+			sem_post(&dev->d_bfsem);
 			pipecommon_freedev(dev);
 			inode->i_private = NULL;
 			return OK;
