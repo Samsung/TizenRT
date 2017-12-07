@@ -84,7 +84,6 @@
 #include <net/lwip/tcpip.h>
 #include <net/lwip/pbuf.h>
 #include <net/lwip/mem.h>
-#include <arpa/inet.h>
 #if LWIP_CHECKSUM_ON_COPY
 #include <net/lwip/ipv4/inet_chksum.h>
 #endif
