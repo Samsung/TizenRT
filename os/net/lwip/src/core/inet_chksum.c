@@ -397,6 +397,9 @@ u16_t ip6_chksum_pseudo(struct pbuf *p, u8_t proto, u16_t proto_len, const ip6_a
  */
 u16_t ip_chksum_pseudo(struct pbuf *p, u8_t proto, u16_t proto_len, const ip_addr_t *src, const ip_addr_t *dest)
 {
+	if (src == NULL || dest == NULL)
+		return 0;
+
 #if LWIP_IPV6
 	if (IP_IS_V6(dest)) {
 		return ip6_chksum_pseudo(p, proto, proto_len, ip_2_ip6(src), ip_2_ip6(dest));
@@ -537,6 +540,9 @@ u16_t ip6_chksum_pseudo_partial(struct pbuf *p, u8_t proto, u16_t proto_len, u16
  */
 u16_t ip_chksum_pseudo_partial(struct pbuf *p, u8_t proto, u16_t proto_len, u16_t chksum_len, const ip_addr_t *src, const ip_addr_t *dest)
 {
+	if (src == NULL || dest == NULL)
+		return 0;
+
 #if LWIP_IPV6
 	if (IP_IS_V6(dest)) {
 		return ip6_chksum_pseudo_partial(p, proto, proto_len, chksum_len, ip_2_ip6(src), ip_2_ip6(dest));
