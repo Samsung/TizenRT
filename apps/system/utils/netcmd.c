@@ -43,7 +43,6 @@
 #include <tinyara/clock.h>
 #include <tinyara/net/net.h>
 #include <net/lwip/netif.h>
-#include <net/lwip/dhcp.h>
 #include <net/lwip/stats.h>
 #include <tinyara/net/ip.h>
 #include <apps/netutils/dhcpc.h>

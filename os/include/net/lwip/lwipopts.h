@@ -64,7 +64,7 @@
  * Instead of using lwIP DHCP, please use netutils dhcpc and dhcpd
  */
 #define LWIP_DHCPS                      0
-#define LWIP_DHCP                       1
+#define LWIP_DHCP                       0
 #define LWIP_NETIF_API                  1
 /* --------- PreDefined Configurations -------------*/
 
