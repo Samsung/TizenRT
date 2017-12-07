@@ -198,7 +198,7 @@ nu_standard_chksum(void *dataptr, u16_t len)
 static void
 nu_ping_recv(int s, struct timespec *ping_time)
 {
-	char *buf;
+	char *buf = NULL;
 	int fromlen;
 	int len;
 	struct sockaddr_in from;
@@ -243,6 +243,10 @@ nu_ping_recv(int s, struct timespec *ping_time)
 	}
 	if (len == 0) {
 		printf("ping: recv - timeout\n");
+	}
+
+	if (buf) {
+		free(buf);
 	}
 }
 
