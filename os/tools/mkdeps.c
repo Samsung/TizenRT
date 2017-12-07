@@ -387,7 +387,7 @@ static void do_dependency(const char *file, char separator)
 		exit(EXIT_FAILURE);
 	}
 
-	strcpy(g_command, g_cc);
+	strncpy(g_command, g_cc, MAX_BUFFER);
 
 	/* Copy " -M " */
 
@@ -424,11 +424,11 @@ static void do_dependency(const char *file, char separator)
 			exit(EXIT_FAILURE);
 		}
 
-		strcat(g_command, tmp);
+		strncat(g_command, tmp, MAX_BUFFER);
 		free(dupname);
 	}
 
-	strcat(g_command, moption);
+	strncat(g_command, moption, MAX_BUFFER);
 
 	/* Copy the CFLAGS into the command buffer */
 
@@ -439,7 +439,7 @@ static void do_dependency(const char *file, char separator)
 			exit(EXIT_FAILURE);
 		}
 
-		strcat(g_command, g_cflags);
+		strncat(g_command, g_cflags, MAX_BUFFER);
 	}
 
 	/* Add a space */
@@ -479,7 +479,7 @@ static void do_dependency(const char *file, char separator)
 			exit(EXIT_FAILURE);
 		}
 
-		strcpy(&g_command[cmdlen], path);
+		strncpy(&g_command[cmdlen], path, MAX_BUFFER);
 
 		if (g_command[totallen] != '\0') {
 			fprintf(stderr, "ERROR: Missing NUL terminator\n");
@@ -504,7 +504,7 @@ static void do_dependency(const char *file, char separator)
 			exit(EXIT_FAILURE);
 		}
 
-		strcat(g_command, file);
+		strncat(g_command, file, MAX_BUFFER);
 
 		/* Check that a file actually exists at this path */
 
