@@ -25,7 +25,17 @@
 #include "slsi_wifi_api.h"
 #include "nettest_functions.h"
 
+#ifdef CONFIG_SLSI_WIFI_P2P_API
+#define CONFIG_SLSI_WIFI_P2P_APP
+#endif
+
 void sw_linkUpHandler(slsi_reason_t *reason);
 void sw_linkDownHandler(slsi_reason_t *reason);
+
+#ifdef CONFIG_SLSI_WIFI_P2P_APP
+void sw_connectionHandler(slsi_peer_info_t *, slsi_config_method_t, slsi_p2p_connect_response_t *, uint8_t *, char **);
+void sw_p2pLinkUpHandler(slsi_reason_t *reason);
+void sw_p2pLinkDownHandler(slsi_reason_t *reason);
+#endif
 
 #endif

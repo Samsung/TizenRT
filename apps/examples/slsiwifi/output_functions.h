@@ -28,8 +28,8 @@
 
 #define DEBUG     0
 
-void sw_printFullHelp(FAR const char *program);
+void sw_printFullHelp(void);
 void sw_printHelp(void);
-void sw_printJoinHelp(FAR const char *program);
+void sw_printJoinHelp(void);
 void sw_printHeader(void);
 void sw_printFooter(void);

@@ -30,7 +30,9 @@ THREADEXEC = TASH_EXECMD_SYNC
 ASRCS =
 CSRCS += \
          output_functions.c \
-         nettest_functions.c
+         nettest_functions.c \
+         nettest_p2p_functions.c \
+         slsi_p2p_test/p2p_test_main.c
 MAINSRC = slsiwifi_main.c
 
 OBJS = $(CSRCS:.c=$(OBJEXT))
