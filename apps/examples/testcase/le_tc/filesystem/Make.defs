@@ -56,6 +56,9 @@ CSRCS += fs_main.c
 ifeq ($(CONFIG_TC_FS_PROCFS),y)
   CSRCS += tc_fs_procfs.c
 endif
+ifeq ($(CONFIG_ITC_FS),y)
+  CSRCS += itc_fs.c
+endif
 
 # Include filesystem build support
 
