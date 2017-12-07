@@ -331,11 +331,14 @@ void generate_definitions(FILE * stream)
 					cnt++;
 				}
 				varval = strdup(copy);
+				free(copy);
 
 				tmp = strsep(&varval, "\"");
 				word = (char **)malloc((sizeof(char *)*cnt));
+				memset(word, 0, sizeof(char *)*cnt);
 				while ((tmp = strsep(&varval, ",")) != NULL) {
 					word[i] = (char *)malloc(20);
+					memset(word[i], 0, 20);
 					for (ndx = 0; ndx < strlen(tmp); ndx++) {
 						word[i][ndx] = (char)toupper(tmp[ndx]);
 					}
