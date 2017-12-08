@@ -278,7 +278,7 @@ void generate_definitions(FILE * stream)
 	char *varname;
 	char *varval;
 	char *ptr;
-	char **word;
+	char **word = NULL;
 	int cnt = 0;
 
 	/* Loop until the entire file has been parsed. */
@@ -322,6 +322,7 @@ void generate_definitions(FILE * stream)
 			if (strcmp(varname, "CONFIG_ARTIK05X_FLASH_PART_NAME") == 0) {
 				char *tmp;
 				char *copy;
+				char *val;
 				int i = 0;
 				int ndx;
 
@@ -330,13 +331,13 @@ void generate_definitions(FILE * stream)
 				while ((tmp = strsep(&varval, ",")) != NULL) {
 					cnt++;
 				}
-				varval = strdup(copy);
+				val = strdup(copy);
 				free(copy);
 
-				tmp = strsep(&varval, "\"");
+				tmp = strsep(&val, "\"");
 				word = (char **)malloc((sizeof(char *)*cnt));
 				memset(word, 0, sizeof(char *)*cnt);
-				while ((tmp = strsep(&varval, ",")) != NULL) {
+				while ((tmp = strsep(&val, ",")) != NULL) {
 					word[i] = (char *)malloc(20);
 					memset(word[i], 0, 20);
 					for (ndx = 0; ndx < strlen(tmp); ndx++) {
@@ -344,6 +345,7 @@ void generate_definitions(FILE * stream)
 					}
 					i++;
 				}
+				free(val);
 			}
 
 			if (strcmp(varname, "CONFIG_ARTIK05X_FLASH_PART_LIST") == 0) {
@@ -366,7 +368,9 @@ void generate_definitions(FILE * stream)
 						break;
 					}
 					printf("#define CONFIG_ARTIK05X_%s_BIN_ADDR 0x%08X\n", (char *)word[i], base * 1024);
+					free(word[i - 1]);
 				}
+				free(word);
 			}
 		}
 	} while (ptr);
