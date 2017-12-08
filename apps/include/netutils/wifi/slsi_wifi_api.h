@@ -231,16 +231,16 @@ typedef struct slsi_ht_config {
 
 /** @brief The typedef structure storing 802.11 security mode and passpharase */
 typedef struct slsi_security_config {
-	uint32_t secmode;                          /**< 802.11 security authentication mode */
-	char passphrase[SLSI_PASSPHRASE_LEN];      /**< Pre-shared key for authentication, (maximum length: 64) */
+	uint32_t secmode;							/**< 802.11 security authentication mode */
+	char passphrase[SLSI_PASSPHRASE_LEN];		/**< Pre-shared key for authentication, (maximum length: 64) */
 } slsi_security_config_t;
 
 /** @brief The typedef structure for vendor specific IE (Information Element) block */
 typedef struct slsi_vendor_ie {
+	uint8_t content_length;				/**< Total size of the allocated buffer */
 	uint8_t oui[3];						/**< Organizational Unique ID */
 	uint8_t *content;					/**< The ponter to the data allocated for the Vendor IE block */
-	uint8_t content_length;	     		/**< Total size of the allocated buffer */
-    struct slsi_vendor_ie *next;    	/**<  pointer to next element if used as a list */
+	struct slsi_vendor_ie *next;		/**<  pointer to next element if used as a list */
 } slsi_vendor_ie_t;
 
 /** @brief The typedef structure of 802.11 network information */

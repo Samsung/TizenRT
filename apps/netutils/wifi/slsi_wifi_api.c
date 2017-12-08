@@ -766,10 +766,10 @@ static bool slsi_get_bss_info(const char *bssid, slsi_scan_info_t *info)
 		*end = '\0';
 		{
 			size_t length = end - pos;
-			const uint8_t *ht_capab = NULL, *vendor_specific = NULL;
 			size_t size = 0;
 			uint8_t *bytes = (uint8_t *) slsi_hexstr_2_bytearray(pos, length, &size);
 			if (bytes) {
+				const uint8_t *ht_capab = NULL;
 				ht_capab = slsi_get_ie(bytes, size, WLAN_EID_HT_CAP);
 				if (ht_capab) {
 					// Extract phy_mode
@@ -802,41 +802,36 @@ static bool slsi_get_bss_info(const char *bssid, slsi_scan_info_t *info)
 
 				uint8_t *tmpBytes = bytes;
 				uint8_t *tmpEnd = bytes + length;
-				// Extract wps_support
+				const uint8_t *vendor_specific = NULL;
 				slsi_vendor_ie_t *tmpvsie = NULL;
 				while (tmpBytes + 1 < tmpEnd) {
-					vendor_specific = slsi_get_ie(tmpBytes, size, WLAN_EID_VENDOR_SPECIFIC);
+					vendor_specific = slsi_get_ie(tmpBytes, tmpEnd - tmpBytes, WLAN_EID_VENDOR_SPECIFIC);
 					if (vendor_specific) {
-						slsi_vendor_ie_t *vsie = zalloc(sizeof(slsi_vendor_ie_t));
-						if (info->vsie == NULL) {
-							info->vsie = zalloc(sizeof(slsi_vendor_ie_t));
-							if (!info->vsie) {
-								EPRINT("could not allocate memory for vsie\n");
-								break;
-							} else {
-								tmpvsie = info->vsie;
-								tmpvsie->next = NULL;
-							}
-						}
+						// Extract wps_support
 						if (WPS_IE_VENDOR_TYPE == WPA_GET_BE32(&vendor_specific[2])) {
 							VPRINT("IE data - WLAN_EID_VENDOR_SPECIFIC + WPS_IE_VENDOR_TYPE length=%d found\n", vendor_specific[1]);
 							info->wps_support = 1;
 						}
-						tmpBytes += (2 + vendor_specific[1]);
+						slsi_vendor_ie_t *vsie = zalloc(sizeof(slsi_vendor_ie_t));
 						if (vsie) {
-							memcpy(vsie->oui, &vendor_specific[2], 3);
 							vsie->content_length = vendor_specific[1];
-							vsie->content = zalloc(vsie->content_length - 3 /*OUI*/);
-							memcpy(vsie->content, &vendor_specific[5], vsie->content_length - 3);
-
+							memcpy(vsie->oui, &vendor_specific[2], 3);
+							if (vsie->content_length > 3) {
+								vsie->content = zalloc(vsie->content_length - 3 /*OUI*/);
+								memcpy(vsie->content, &vendor_specific[5], vsie->content_length - 3);
+							} else {
+								vsie->content = NULL;
+							}
 							if (!tmpvsie) {
 								tmpvsie = vsie;
+								info->vsie = tmpvsie; // update initial pointer to beginning of the list
 								tmpvsie->next = NULL;
 							} else {
 								tmpvsie->next = vsie;
 								tmpvsie = tmpvsie->next;
 							}
 						}
+						tmpBytes += (2 + vendor_specific[1]);
 					} else {
 						break;
 					}
@@ -3749,14 +3744,17 @@ int8_t WiFiGetScanResults(slsi_scan_info_t **scan_results)
 int8_t WiFiFreeScanResults(slsi_scan_info_t **scan_results)
 {
 	ENTER_CRITICAL;
-	slsi_scan_info_t *tmp, *tmp_bss_list = *scan_results;
+	slsi_scan_info_t *tmp;
+	slsi_scan_info_t *tmp_bss_list = *scan_results;
 	// This will handle passing a NULL pointer
 	while (tmp_bss_list != NULL) {
 		tmp = tmp_bss_list;
 		tmp_bss_list = tmp_bss_list->next;
+
 		free(tmp->sec_modes);
 		tmp->sec_modes = NULL;
-		slsi_vendor_ie_t *vsie, *vsielist = tmp->vsie;
+		slsi_vendor_ie_t *vsie;
+		slsi_vendor_ie_t *vsielist = tmp->vsie;
 		while (vsielist != NULL) {
 			vsie = vsielist;
 			vsielist = vsielist->next;
@@ -3806,7 +3804,6 @@ int8_t WiFiRegisterLinkCallback(slsi_network_link_callback_t link_up, slsi_netwo
 int8_t WiFiRegisterScanCallback(slsi_scan_result_callback_t scan_result_handler)
 {
 	ENTER_CRITICAL;
-
 	g_scan_result_handler = scan_result_handler;
 #ifdef CONFIG_SCSC_WLAN_AUTO_RECOVERY
 	g_recovery_data.scan_result_handler = scan_result_handler;
