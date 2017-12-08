@@ -2352,6 +2352,9 @@ OCStackResult HandleStackRequests(OCServerProtocolRequest * protocolRequest)
         {
             result = ProcessRequest(resHandling, resource, request);
         }
+#if defined(__TIZENRT__)
+        FindAndDeleteServerRequest(request);
+#endif
     }
     else
     {
