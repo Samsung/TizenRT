@@ -511,7 +511,7 @@ static int netdev_ifrioctl(FAR struct socket *sock, int cmd, FAR struct ifreq *r
 			gw = dev->gw;
 			netifapi_netif_set_addr(dev, &ipaddr, &netmask, &gw);
 			netifapi_netif_set_up(dev);
-			
+
 			ret = OK;
 #endif
 		}
