@@ -109,6 +109,8 @@
 #define FIFO_DATA "FIFO DATA"
 #endif
 
+#define MTD_PROCFS_PATH "/proc/mtd"
+
 #ifndef STDIN_FILENO
 #define STDIN_FILENO 0
 #endif
@@ -3157,7 +3159,76 @@ static void tc_libc_stdio_zeroinstream(void)
 
 	TC_SUCCESS_RESULT();
 }
+/**
+* @testcase         tc_fs_driver_mtd_procfs_ops
+* @brief            mtd procfs ops
+* @scenario         opens /proc/mtd and performs operations
+* @apicovered       mtdprocfs_operations (mtd_open, mtd_dup, mtd_stat, mtd_close)
+* @precondition     NA
+* @postcondition    NA
+*/
+#if !defined(CONFIG_FS_PROCFS_EXCLUDE_MTD)
+static void tc_driver_mtd_procfs_ops(void)
+{
+	int fd1;
+	int fd2;
+	int ret;
+	struct stat st;
 
+	fd1 = open(MTD_PROCFS_PATH, O_RDONLY);
+	TC_ASSERT_GEQ("open", fd1, 0);
+
+	fd2 = dup(fd1);
+	TC_ASSERT_GEQ_CLEANUP("dup", fd2, 0, close(fd1));
+
+	ret = stat(MTD_PROCFS_PATH, &st);
+	TC_ASSERT_EQ_CLEANUP("stat", ret, OK, close(fd1));
+
+	ret = close(fd1);
+	TC_ASSERT_EQ("close", ret, OK);
+
+	TC_SUCCESS_RESULT();
+}
+#endif
+/**
+* @testcase         tc_fs_mqueue_ops
+* @brief            mqueue creation
+* @scenario         opens the mqueue
+* @apicovered       mq_open and mq_unlink
+* @precondition     NA
+* @postcondition    NA
+*/
+static void tc_fs_mqueue_ops(void)
+{
+	mqd_t mqd_fd;
+	int ret;
+	struct mq_attr attr;
+	attr.mq_maxmsg  = 20;
+	attr.mq_msgsize = 10;
+	attr.mq_flags   = 0;
+
+	/*Invalid param*/
+	mqd_fd = mq_open(NULL, O_WRONLY | O_CREAT, 0666, &attr);
+	TC_ASSERT_EQ("mq_open", mqd_fd, (mqd_t)ERROR);
+
+	mqd_fd = mq_open(MOUNT_DIR, O_RDONLY, 0666, &attr);
+	TC_ASSERT_EQ("mq_open", mqd_fd, (mqd_t)ERROR);
+
+	mqd_fd = mq_open("test_mqueue", O_CREAT, 0666, &attr);
+	TC_ASSERT_NEQ("mq_open", mqd_fd, (mqd_t)ERROR);
+
+	/*Opening invalid mqueue*/
+	mqd_fd = mq_open("Test_mqueue", O_RDONLY, 0666, &attr);
+	TC_ASSERT_EQ("mq_open", mqd_fd, (mqd_t)ERROR);
+
+	ret = mq_unlink("Test_mqueue");
+	TC_ASSERT_EQ("mq_unlink", mqd_fd, (mqd_t)ERROR);
+
+	ret = mq_unlink("test_mqueue");
+	TC_ASSERT_EQ("mq_unlink", ret, OK);
+
+	TC_SUCCESS_RESULT();
+}
 /**
 * @testcase         tc_libc_stdio_ungetc
 * @brief            Input character into file stream
@@ -3311,6 +3382,10 @@ int tc_filesystem_main(int argc, char *argv[])
 	tc_libc_stdio_setbuf();
 	tc_libc_stdio_setvbuf();
 #endif
+#if !defined(CONFIG_FS_PROCFS_EXCLUDE_MTD)
+	tc_driver_mtd_procfs_ops();
+#endif
+	tc_fs_mqueue_ops();
 	tc_libc_stdio_meminstream();
 	tc_libc_stdio_memoutstream();
 	tc_libc_stdio_memsistream();
