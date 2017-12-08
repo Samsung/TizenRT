@@ -30,14 +30,14 @@
 int g_bus = 0;
 
 /**
-* @testcase         itc_iotbus_i2c_init_stop_p
+* @testcase         itc_systemio_i2c_init_stop_p
 * @brief            initializes and closes i2c_context
 * @scenario         initializes and closes i2c_context
 * @apicovered       iotbus_i2c_init, iotbus_i2c_stop
 * @precondition     none
 * @postcondition    none
 */
-void itc_iotbus_i2c_init_stop_p(void)
+void itc_systemio_i2c_init_stop_p(void)
 {
 	int ret = IOTBUS_ERROR_NONE;
 	iotbus_i2c_context_h h_i2c = iotbus_i2c_init(g_bus);
@@ -50,14 +50,14 @@ void itc_iotbus_i2c_init_stop_p(void)
 }
 
 /**
-* @testcase         itc_iotbus_i2c_set_frequency_p
+* @testcase         itc_systemio_i2c_set_frequency_p
 * @brief            sets the i2c frequency
 * @scenario         sets the i2c frequency
 * @apicovered       iotbus_i2c_set_frequency
 * @precondition     initializes i2c_context
 * @postcondition    closes i2c_context
 */
-void itc_iotbus_i2c_set_frequency_p(void)
+void itc_systemio_i2c_set_frequency_p(void)
 {
 	int ret = IOTBUS_ERROR_NONE;
 	int freq_mode[] = { IOTBUS_I2C_STD, IOTBUS_I2C_FAST, IOTBUS_I2C_HIGH };
@@ -74,7 +74,7 @@ void itc_iotbus_i2c_set_frequency_p(void)
 			SYSIO_ITC_PRINT("iotbus_i2c_set_frequency failed for frequency : %d for index : %d\n", freq_mode[index], index);
 		}
 	}
-	TC_ASSERT_EQ_CLEANUP("itc_iotbus_i2c_set_frequency_p", check, true, iotbus_i2c_stop(h_i2c));
+	TC_ASSERT_EQ_CLEANUP("itc_systemio_i2c_set_frequency_p", check, true, iotbus_i2c_stop(h_i2c));
 	ret = iotbus_i2c_stop(h_i2c);
 	TC_ASSERT_EQ("iotbus_i2c_stop", ret, IOTBUS_ERROR_NONE);
 
@@ -82,14 +82,14 @@ void itc_iotbus_i2c_set_frequency_p(void)
 }
 
 /**
-* @testcase         itc_iotbus_i2c_set_address_p
+* @testcase         itc_systemio_i2c_set_address_p
 * @brief            sets the i2c slave address
 * @scenario         sets the i2c slave address
 * @apicovered       iotbus_i2c_set_address
 * @precondition     initializes i2c_context
 * @postcondition    closes i2c_context
 */
-void itc_iotbus_i2c_set_address_p(void)
+void itc_systemio_i2c_set_address_p(void)
 {
 	int ret = IOTBUS_ERROR_NONE;
 	uint8_t address = 0x8;
@@ -106,14 +106,14 @@ void itc_iotbus_i2c_set_address_p(void)
 }
 
 /**
-* @testcase         itc_iotbus_i2c_write_read_p
+* @testcase         itc_systemio_i2c_write_read_p
 * @brief            writes to i2c device and reads from i2c device
 * @scenario         writes to i2c device and reads from i2c device
 * @apicovered       iotbus_i2c_write, iotbus_i2c_read
 * @precondition     initializes i2c_context
 * @postcondition    closes i2c_context
 */
-void itc_iotbus_i2c_write_read_p(void)
+void itc_systemio_i2c_write_read_p(void)
 {
 	int ret = IOTBUS_ERROR_NONE;
 	uint8_t write_cmd[2] = { 0x1, 0x2 };
@@ -145,14 +145,14 @@ void itc_iotbus_i2c_write_read_p(void)
 }
 
 /**
-* @testcase         itc_iotbus_i2c_set_frequency_address_p
+* @testcase         itc_systemio_i2c_set_frequency_address_p
 * @brief            sets the i2c frequency and address
 * @scenario         sets the i2c frequency and address
 * @apicovered       iotbus_i2c_set_frequency, iotbus_i2c_set_address
 * @precondition     initializes i2c_context
 * @postcondition    closes i2c_context
 */
-void itc_iotbus_i2c_set_frequency_address_p(void)
+void itc_systemio_i2c_set_frequency_address_p(void)
 {
 	int ret = IOTBUS_ERROR_NONE;
 	uint8_t address = 0x8;
@@ -167,18 +167,18 @@ void itc_iotbus_i2c_set_frequency_address_p(void)
 		ret = iotbus_i2c_set_frequency(h_i2c, freq_mode[index]);
 		if (ret != IOTBUS_ERROR_NONE) {
 			check = false;
-			SYSIO_ITC_PRINT("\nitc_iotbus_i2c_set_frequency_address_p: iotbus_i2c_set_frequency FAIL for frequency : %d\n", freq_mode[index]);
+			SYSIO_ITC_PRINT("\nitc_systemio_i2c_set_frequency_address_p: iotbus_i2c_set_frequency FAIL for frequency : %d\n", freq_mode[index]);
 			continue;
 		}
 
 		ret = iotbus_i2c_set_address(h_i2c, address);
 		if (ret != IOTBUS_ERROR_NONE) {
 			check = false;
-			SYSIO_ITC_PRINT("\nitc_iotbus_i2c_set_frequency_address_p: iotbus_i2c_set_address FAIL for frequency : %d\n", freq_mode[index]);
+			SYSIO_ITC_PRINT("\nitc_systemio_i2c_set_frequency_address_p: iotbus_i2c_set_address FAIL for frequency : %d\n", freq_mode[index]);
 		}
 	}
 
-	TC_ASSERT_EQ_CLEANUP("itc_iotbus_i2c_set_frequency_address_p", check, true, iotbus_i2c_stop(h_i2c));
+	TC_ASSERT_EQ_CLEANUP("itc_systemio_i2c_set_frequency_address_p", check, true, iotbus_i2c_stop(h_i2c));
 	ret = iotbus_i2c_stop(h_i2c);
 	TC_ASSERT_EQ("iotbus_i2c_stop", ret, IOTBUS_ERROR_NONE);
 
@@ -186,14 +186,14 @@ void itc_iotbus_i2c_set_frequency_address_p(void)
 }
 
 /**
-* @testcase         itc_iotbus_i2c_write_read_all_freq_p
+* @testcase         itc_systemio_i2c_write_read_p_all_freq
 * @brief            writes to i2c device and reads from i2c device
 * @scenario         writes to i2c device and reads from i2c device
 * @apicovered       iotbus_i2c_write, iotbus_i2c_read
 * @precondition     initializes i2c_context
 * @postcondition    closes i2c_context
 */
-void itc_iotbus_i2c_write_read_all_freq_p(void)
+void itc_systemio_i2c_write_read_p_all_freq(void)
 {
 	int ret = IOTBUS_ERROR_NONE;
 	uint8_t write_cmd[2] = { 0x1, 0x2 };
@@ -209,7 +209,7 @@ void itc_iotbus_i2c_write_read_all_freq_p(void)
 		h_i2c = iotbus_i2c_init(g_bus);
 		if (h_i2c == NULL) {
 			check = false;
-			SYSIO_ITC_PRINT("\nitc_iotbus_i2c_write_read_all_freq_p: iotbus_i2c_init FAIL for init for index : %d\n", index);
+			SYSIO_ITC_PRINT("\nitc_systemio_i2c_write_read_p_all_freq: iotbus_i2c_init FAIL for init for index : %d\n", index);
 			continue;
 		}
 		TC_ASSERT_NEQ("iotbus_i2c_init", h_i2c, NULL);
@@ -217,7 +217,7 @@ void itc_iotbus_i2c_write_read_all_freq_p(void)
 		ret = iotbus_i2c_set_frequency(h_i2c, freq_mode[index]);
 		if (ret != IOTBUS_ERROR_NONE) {
 			check = false;
-			SYSIO_ITC_PRINT("\nitc_iotbus_i2c_write_read_all_freq_p: iotbus_i2c_set_frequency FAIL for frequency : %d for index : %d\n", freq_mode[index], index);
+			SYSIO_ITC_PRINT("\nitc_systemio_i2c_write_read_p_all_freq: iotbus_i2c_set_frequency FAIL for frequency : %d for index : %d\n", freq_mode[index], index);
 			ret = iotbus_i2c_stop(h_i2c);
 			TC_ASSERT_EQ("iotbus_i2c_stop", ret, IOTBUS_ERROR_NONE);
 			continue;
@@ -226,7 +226,7 @@ void itc_iotbus_i2c_write_read_all_freq_p(void)
 		ret = iotbus_i2c_set_address(h_i2c, address);
 		if (ret != IOTBUS_ERROR_NONE) {
 			check = false;
-			SYSIO_ITC_PRINT("\nitc_iotbus_i2c_write_read_all_freq_p: iotbus_i2c_set_address FAIL for frequency : %d for index : %d\n", freq_mode[index], index);
+			SYSIO_ITC_PRINT("\nitc_systemio_i2c_write_read_p_all_freq: iotbus_i2c_set_address FAIL for frequency : %d for index : %d\n", freq_mode[index], index);
 			ret = iotbus_i2c_stop(h_i2c);
 			TC_ASSERT_EQ("iotbus_i2c_stop", ret, IOTBUS_ERROR_NONE);
 			continue;
@@ -235,7 +235,7 @@ void itc_iotbus_i2c_write_read_all_freq_p(void)
 		ret = iotbus_i2c_write(h_i2c, write_cmd, 2);
 		if (ret < IOTBUS_ERROR_NONE) {
 			check = false;
-			SYSIO_ITC_PRINT("\nitc_iotbus_i2c_write_read_all_freq_p: iotbus_i2c_write FAIL for frequency : %d for index : %d\n", freq_mode[index], index);
+			SYSIO_ITC_PRINT("\nitc_systemio_i2c_write_read_p_all_freq: iotbus_i2c_write FAIL for frequency : %d for index : %d\n", freq_mode[index], index);
 			ret = iotbus_i2c_stop(h_i2c);
 			TC_ASSERT_EQ("iotbus_i2c_stop", ret, IOTBUS_ERROR_NONE);
 			continue;
@@ -244,7 +244,7 @@ void itc_iotbus_i2c_write_read_all_freq_p(void)
 		ret = iotbus_i2c_read(h_i2c, read_buf, 2);
 		if (ret < IOTBUS_ERROR_NONE) {
 			check = false;
-			SYSIO_ITC_PRINT("\nitc_iotbus_i2c_write_read_all_freq_p: iotbus_i2c_read FAIL for frequency : %d for index : %d\n", freq_mode[index], index);
+			SYSIO_ITC_PRINT("\nitc_systemio_i2c_write_read_p_all_freq: iotbus_i2c_read FAIL for frequency : %d for index : %d\n", freq_mode[index], index);
 			ret = iotbus_i2c_stop(h_i2c);
 			TC_ASSERT_EQ("iotbus_i2c_stop", ret, IOTBUS_ERROR_NONE);
 			continue;
@@ -252,20 +252,20 @@ void itc_iotbus_i2c_write_read_all_freq_p(void)
 		ret = iotbus_i2c_stop(h_i2c);
 		TC_ASSERT_EQ("iotbus_i2c_stop", ret, IOTBUS_ERROR_NONE);
 	}
-	TC_ASSERT_EQ("itc_iotbus_i2c_write_read_all_freq_p", check, true);
+	TC_ASSERT_EQ("itc_systemio_i2c_write_read_p_all_freq", check, true);
 
 	TC_SUCCESS_RESULT();
 }
 
 /**
-* @testcase         itc_iotbus_i2c_init_n
+* @testcase         itc_systemio_i2c_init_n
 * @brief            initializes i2c_context
 * @scenario         initializes i2c_context with invalid parameter
 * @apicovered       iotbus_i2c_init
 * @precondition     none
 * @postcondition    none
 */
-void itc_iotbus_i2c_init_n(void)
+void itc_systemio_i2c_init_n(void)
 {
 	iotbus_i2c_context_h h_i2c = iotbus_i2c_init(-1);//invalid bus
 	TC_ASSERT_EQ("iotbus_i2c_init", h_i2c, NULL);
@@ -274,14 +274,14 @@ void itc_iotbus_i2c_init_n(void)
 }
 
 /**
-* @testcase         itc_iotbus_i2c_stop_n
+* @testcase         itc_systemio_i2c_stop_n
 * @brief            stop i2c_context
 * @scenario         stop i2c_context with invalid parameter
 * @apicovered       iotbus_i2c_stop
 * @precondition     none
 * @postcondition    none
 */
-void itc_iotbus_i2c_stop_n(void)
+void itc_systemio_i2c_stop_n(void)
 {
 	int ret = iotbus_i2c_stop(NULL);//invalid handle
 	TC_ASSERT_EQ("iotbus_i2c_stop", ret, IOTBUS_ERROR_INVALID_PARAMETER);
@@ -290,14 +290,14 @@ void itc_iotbus_i2c_stop_n(void)
 }
 
 /**
-* @testcase         itc_iotbus_i2c_set_frequency_n
+* @testcase         itc_systemio_i2c_set_frequency_n
 * @brief            sets the i2c frequency
 * @scenario         sets the i2c frequency with invalid handle
 * @apicovered       iotbus_i2c_set_frequency
 * @precondition     initializes i2c_context
 * @postcondition    closes i2c_context
 */
-void itc_iotbus_i2c_set_frequency_n(void)
+void itc_systemio_i2c_set_frequency_n(void)
 {
 	int ret = IOTBUS_ERROR_NONE;
 	int freq_mode = IOTBUS_I2C_STD;
@@ -309,14 +309,14 @@ void itc_iotbus_i2c_set_frequency_n(void)
 }
 
 /**
-* @testcase         itc_iotbus_i2c_set_address_n
+* @testcase         itc_systemio_i2c_set_address_n
 * @brief            sets the i2c slave address
 * @scenario         sets the i2c slave address with invalid parameter
 * @apicovered       iotbus_i2c_set_address
 * @precondition     initializes i2c_context
 * @postcondition    closes i2c_context
 */
-void itc_iotbus_i2c_set_address_n(void)
+void itc_systemio_i2c_set_address_n(void)
 {
 	int ret = IOTBUS_ERROR_NONE;
 	uint8_t address = 0x3;
@@ -328,14 +328,14 @@ void itc_iotbus_i2c_set_address_n(void)
 }
 
 /**
-* @testcase         itc_iotbus_i2c_set_address_after_stop_n
+* @testcase         itc_systemio_i2c_set_address_n_after_stop
 * @brief            sets the i2c slave address
 * @scenario         sets the i2c slave address
 * @apicovered       iotbus_i2c_set_address
 * @precondition     initializes i2c_context
 * @postcondition    closes i2c_context
 */
-void itc_iotbus_i2c_set_address_after_stop_n(void)
+void itc_systemio_i2c_set_address_n_after_stop(void)
 {
 	int ret = IOTBUS_ERROR_NONE;
 	uint8_t address = 0x8;
@@ -353,19 +353,19 @@ void itc_iotbus_i2c_set_address_after_stop_n(void)
 
 int itc_i2c_main(void)
 {
-	itc_iotbus_i2c_init_stop_p();
-	itc_iotbus_i2c_set_frequency_p();
-	itc_iotbus_i2c_set_address_p();
+	itc_systemio_i2c_init_stop_p();
+	itc_systemio_i2c_set_frequency_p();
+	itc_systemio_i2c_set_address_p();
 #ifndef CONFIG_DISABLE_MANUAL_TESTCASE
-	itc_iotbus_i2c_write_read_p(); // Require hardware to perform write/read operation
-	itc_iotbus_i2c_write_read_all_freq_p();//TC FAIL
+	itc_systemio_i2c_write_read_p(); // Require hardware to perform write/read operation
+	itc_systemio_i2c_write_read_p_all_freq();//TC FAIL
 #endif
-	itc_iotbus_i2c_set_frequency_address_p();
-	itc_iotbus_i2c_init_n();
-	itc_iotbus_i2c_stop_n();
-	itc_iotbus_i2c_set_frequency_n();
-	itc_iotbus_i2c_set_address_n();
-	//itc_iotbus_i2c_set_address_after_stop_n();//System hangs on execution of this TC
+	itc_systemio_i2c_set_frequency_address_p();
+	itc_systemio_i2c_init_n();
+	itc_systemio_i2c_stop_n();
+	itc_systemio_i2c_set_frequency_n();
+	itc_systemio_i2c_set_address_n();
+	//itc_systemio_i2c_set_address_n_after_stop();//System hangs on execution of this TC
 
 	return 0;
 }
