@@ -283,7 +283,7 @@ u32_t sys_arch_mbox_fetch(sys_mbox_t *mbox, void **msg, u32_t timeout)
 		mbox->wait_fetch--;
 		if (status == SYS_ARCH_CANCELED) {
 			return SYS_ARCH_CANCELED;
-		}		
+		}
 	}
 
 	mbox->front = (mbox->front + 1) % mbox->queue_size;
