@@ -711,7 +711,9 @@ void nd6_input(struct pbuf *p, struct netif *inp)
 					if (prefix < 0) {
 						/* Create a new cache entry. */
 						prefix = nd6_new_onlink_prefix(&prefix_addr, inp);
-						prefix_list[prefix].invalidation_timer = lifetime_ms;
+						if (prefix >= 0) {
+							prefix_list[prefix].invalidation_timer = lifetime_ms;
+						}
 					}
 					if (prefix >= 0) {
 						/* Found matched prefix entry or Create a new prefix entry */
