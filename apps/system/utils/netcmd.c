@@ -136,7 +136,9 @@ static void nic_display_state(void)
 	}
 DONE:
 	free(ifcfg.ifc_buf);
-	close(fd);
+	if (fd > 0) {
+		close(fd);
+	}
 }
 
 int cmd_ifup(int argc, char **argv)
