@@ -857,6 +857,13 @@ static OCEntityHandlerResult HandlePostRequest(OCEntityHandlerRequest *ehRequest
                 freeData = true;
             }
 
+#if defined(__TIZENRT__)
+            if (pubKey)
+            {
+                OICFree(pubKey);
+                pubKey = NULL;
+            }
+#endif
             OCStackResult validationResult = OCInternalIsValidRoleCertificate(data, dataLength,
                 &pubKey, &pubKeyLength);
 
