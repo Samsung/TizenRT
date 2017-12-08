@@ -59,6 +59,7 @@
 #include <limits.h>
 #include <ctype.h>
 #include <unistd.h>
+#include <sys/types.h>
 
 #include <apps/netutils/cJSON.h>
 
