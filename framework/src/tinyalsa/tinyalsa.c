@@ -166,10 +166,6 @@ struct pcm {
 	unsigned int next_offset;
 };
 
-static struct pcm bad_pcm = {
-	.fd = -1,
-};
-
 static int oops(struct pcm *pcm, int e, const char *fmt, ...)
 {
 	va_list ap;
@@ -735,7 +731,8 @@ int pcm_close(struct pcm *pcm)
 		return -EINVAL;
 	}
 
-	if (pcm == &bad_pcm) {
+	if (pcm->fd < 0) {
+		free(pcm);
 		return 0;
 	}
 
@@ -766,9 +763,7 @@ int pcm_close(struct pcm *pcm)
 
 	mq_unlink(pcm->mqname);
 
-	if (pcm->fd >= 0) {
-		close(pcm->fd);
-	}
+	close(pcm->fd);
 
 	free(pcm);
 	return 0;
