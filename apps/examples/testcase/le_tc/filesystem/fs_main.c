@@ -87,6 +87,18 @@
 
 #define VFS_FOLDER_PATH MOUNT_DIR"folder"
 
+#define VFS_FILE1_PATH MOUNT_DIR"file1.txt"
+
+#define PROCFS_PATH "/proc"
+
+#define DEV_ZERO_PATH "/dev/zero"
+
+#define DEV_CONSOLE_PATH "/dev/console"
+
+#define DEV_NULL_PATH "/dev/null"
+
+#define DEV_NEW_NULL_PATH "/dev/NULL"
+
 #define VFS_LOOP_COUNT 5
 
 #define LONG_FILE_PATH MOUNT_DIR"long"
@@ -311,6 +323,28 @@ static void tc_fs_vfs_open(void)
 	fd = open(VFS_INVALID_FILE_PATH, O_WROK);
 	TC_ASSERT_LT_CLEANUP("open", fd, 0, close(fd));
 
+	TC_SUCCESS_RESULT();
+}
+/**
+* @testcase         tc_fs_vfs_fdopen
+* @brief            Open file to do file operation using file descriptor
+* @scenario         Open specific file
+* @apicovered       fs_fdopen
+* @precondition     NA
+* @postcondition    NA
+*/
+static void tc_fs_vfs_fdopen(void)
+{
+	int fd;
+	struct file_struct *fp ;
+	fd = open(VFS_FILE_PATH, O_WROK | O_CREAT);
+	TC_ASSERT_GEQ("open", fd, 0);
+
+	fp = fs_fdopen(fd, O_WROK, NULL);
+	TC_ASSERT_NEQ_CLEANUP("fs_fdopen", fp, NULL, close(fd));
+
+	fclose(fp);
+	close(fd);
 	TC_SUCCESS_RESULT();
 }
 
@@ -594,6 +628,35 @@ static void tc_fs_vfs_lseek(void)
 	ret = lseek(CONFIG_NFILE_DESCRIPTORS, 5, SEEK_SET);
 	TC_ASSERT_EQ("lseek", ret, ERROR);
 
+	/* empty file seek*/
+	fd = open(VFS_FILE1_PATH, O_CREAT);
+	TC_ASSERT_GEQ("open", fd, 0);
+
+	ret = lseek(fd, 10, SEEK_SET);
+	TC_ASSERT_NEQ_CLEANUP("lseek", ret, 10, close(fd));
+#if defined(CONFIG_PIPES) && (CONFIG_DEV_PIPE_SIZE > 11)
+	ret = mkfifo(FIFO_FILE_PATH, 0666);
+	if (ret < 0) {
+		TC_ASSERT_EQ("mkfifo", ret, -EEXIST);
+	}
+	fd = open(FIFO_FILE_PATH, O_WRONLY);
+	TC_ASSERT_GEQ("open", fd, 0);
+
+	ret = lseek(fd, 10, SEEK_SET);
+	TC_ASSERT_EQ_CLEANUP("lseek", ret, 10, close(fd));
+
+	ret = lseek(fd, -10, SEEK_SET);
+	TC_ASSERT_NEQ_CLEANUP("lseek", ret, 10, close(fd));
+
+	ret = lseek(fd, 10, SEEK_CUR);
+	TC_ASSERT_GEQ_CLEANUP("lseek", ret, 0, close(fd));
+
+	ret = lseek(fd, 10, SEEK_END);
+	TC_ASSERT_NEQ_CLEANUP("lseek", ret, 10, close(fd));
+
+	close(fd);
+
+#endif
 	TC_SUCCESS_RESULT();
 }
 
@@ -1042,7 +1105,10 @@ static void tc_fs_vfs_unlink(void)
 	/* Nagative case with invalid argument, NULL pathname. It will return ERROR */
 	ret = unlink(NULL);
 	TC_ASSERT_EQ("unlink", ret, ERROR);
-
+#if defined(CONFIG_PIPES) && (CONFIG_DEV_PIPE_SIZE > 11)
+	ret = unlink(FIFO_FILE_PATH);
+	TC_ASSERT_EQ("unlink", ret, OK);
+#endif
 	TC_SUCCESS_RESULT();
 }
 
@@ -1075,6 +1141,13 @@ static void tc_fs_vfs_stat(void)
 	ret = stat(VFS_INVALID_FILE_PATH, &st);
 	TC_ASSERT_EQ("stat", ret, ERROR);
 
+	/*Negative testcase path is empty string */
+	ret = stat("", &st);
+	TC_ASSERT_EQ("stat", ret, ERROR);
+
+	ret = stat(PROCFS_PATH, &st);
+	TC_ASSERT_EQ("stat", ret, OK);
+
 	TC_SUCCESS_RESULT();
 }
 
@@ -1100,6 +1173,69 @@ static void tc_fs_vfs_statfs(void)
 	/* Nagative case with invalid argument, NULL pathname. It will return ERROR */
 	ret = statfs(NULL, &fs);
 	TC_ASSERT_EQ("statfs", ret, ERROR);
+
+	/*root pseudo file system */
+	ret = statfs("/dev", &fs);
+	TC_ASSERT_EQ("statfs", ret, OK);
+
+
+	TC_SUCCESS_RESULT();
+}
+
+/**
+* @testcase         tc_fs_vfs_fstat
+* @brief            Get status of specific file
+* @scenario         Get status of specific file(VFS_FILE_PATH) by stat
+* @apicovered       fstat
+* @precondition     File VFS_FILE_PATH should be existed
+* @postcondition    NA
+*/
+static void tc_fs_vfs_fstat(void)
+{
+	char *filename = VFS_FILE_PATH;
+	struct stat st;
+	int ret;
+	int fd;
+	fd = open(filename, O_RDWR);
+	TC_ASSERT_GEQ("open", fd, 0);
+
+	ret = fstat(fd, &st);
+	TC_ASSERT_EQ("fstat", ret, OK);
+
+	close(fd);
+	TC_SUCCESS_RESULT();
+}
+
+/**
+* @testcase         tc_fs_vfs_fstatfs
+* @brief            Get status of mounted file system
+* @scenario         Get status of mounted file system by statfs and check type of file system
+* @apicovered       fstatfs
+* @precondition     File system should be mounted
+* @postcondition    NA
+*/
+static void tc_fs_vfs_fstatfs(void)
+{
+	struct statfs fs;
+	int ret;
+	int fd;
+
+	fd = open(VFS_FILE_PATH, 0666);
+	TC_ASSERT_GEQ("open", fd, 0);
+
+	ret = fstatfs(fd, &fs);
+	TC_ASSERT_EQ_CLEANUP("fstatfs", ret, OK, close(fd));
+#ifdef CONFIG_FS_SMARTFS
+	TC_ASSERT_EQ_CLEANUP("fstatfs", fs.f_type, SMARTFS_MAGIC, close(fd));
+#endif
+	close(fd);
+
+	fd = open(DEV_ZERO_PATH, O_RDWR);
+	TC_ASSERT_GEQ("open", fd, 0);
+	/*root pseudo file system */
+	ret = fstatfs(fd, &fs);
+	TC_ASSERT_EQ_CLEANUP("fstatfs", ret, OK, close(fd));
+	close(fd);
 
 	TC_SUCCESS_RESULT();
 }
@@ -1300,6 +1436,7 @@ static void tc_fs_vfs_fcntl(void)
 	mode = fcntl(fd, F_GETFL, 0) & O_ACCMODE;
 	close(fd);
 	TC_ASSERT_EQ("fcntl", mode, O_WROK);
+
 	TC_SUCCESS_RESULT();
 }
 
@@ -1422,6 +1559,13 @@ static void tc_fs_vfs_rename(void)
 	ret = rename(old_file, NULL);
 	TC_ASSERT_EQ("rename", ret, ERROR);
 
+	/*Condition where rename is not possible*/
+	ret = rename(DEV_NULL_PATH, DEV_NEW_NULL_PATH);
+	TC_ASSERT_NEQ("rename", ret, ERROR);
+
+	ret = rename(DEV_NEW_NULL_PATH, DEV_NULL_PATH);
+	TC_ASSERT_NEQ("rename", ret, ERROR);
+
 	TC_SUCCESS_RESULT();
 }
 
@@ -1435,14 +1579,29 @@ static void tc_fs_vfs_rename(void)
 */
 static void tc_fs_vfs_ioctl(void)
 {
-	int fd, ret;
+	int fd1;
+	int fd2;
+	int ret;
 	long size;
 
-	fd = open("/dev/console", O_RDWR);
-	TC_ASSERT_GEQ("open", fd, 0);
-	ret = ioctl(fd, FIONREAD, &size);
-	close(fd);
+	fd1 = open(DEV_CONSOLE_PATH, O_RDWR);
+	TC_ASSERT_GEQ("open", fd1, 0);
+	ret = ioctl(fd1, FIONREAD, &size);
+	close(fd1);
 	TC_ASSERT_EQ("ioctl", ret, OK);
+
+	/*Negative case where invalid fd */
+	ret = ioctl(INV_FD, FIONREAD, &size);
+	TC_ASSERT_EQ("ioctl", ret, ERROR);
+
+	/*Negative cae where invalid cmd */
+	fd2 = open(DEV_CONSOLE_PATH, O_RDWR);
+	TC_ASSERT_GEQ("open", fd2, 0);
+
+	ret = ioctl(fd2, FIONREAD, &size);
+	close(fd2);
+	TC_ASSERT_LEQ("ioctl", ret, 0);
+
 	TC_SUCCESS_RESULT();
 }
 /**
@@ -3319,11 +3478,14 @@ int tc_filesystem_main(int argc, char *argv[])
 	tc_fs_vfs_unlink();
 	tc_fs_vfs_stat();
 	tc_fs_vfs_statfs();
+	tc_fs_vfs_fstat();
+	tc_fs_vfs_fstatfs();
 #if defined(CONFIG_PIPES) && (CONFIG_DEV_PIPE_SIZE > 11)
 	tc_fs_vfs_mkfifo();
 #endif
 	tc_fs_vfs_sendfile();
 	tc_fs_vfs_fcntl();
+	tc_fs_vfs_fdopen();
 #ifndef CONFIG_DISABLE_POLL
 	tc_fs_vfs_poll();
 #ifndef CONFIG_DISABLE_MANUAL_TESTCASE
