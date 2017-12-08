@@ -266,6 +266,9 @@ int initThread()
         printf("ERROR; return code from pthread_create() is %d\n", res);
         return -1;
     }
+#ifdef __TIZENRT__
+		pthread_setname_np(thread_id, "IoT_Timer");
+#endif
 
     return 0;
 }
