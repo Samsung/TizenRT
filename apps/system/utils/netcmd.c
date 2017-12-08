@@ -192,6 +192,8 @@ int cmd_ifconfig(int argc, char **argv)
 	bool badarg = false;
 	uint8_t mac[IFHWADDRLEN];
 	struct netif *netif;
+	int ret;
+
 
 	/* With one or no arguments, ifconfig simply shows the status of Ethernet
 	 * device:
@@ -343,8 +345,6 @@ int cmd_ifconfig(int argc, char **argv)
 
 	/* Get the MAC address of the NIC */
 	if (!gip) {
-		int ret;
-
 #if 0 /* TODO : LWIP_DHCP */
 #define NET_CMD_DHCP_TIMEOUT 5000000
 #define NET_CMD_DHCP_CHECK_INTERVAL 10000
@@ -386,7 +386,10 @@ int cmd_ifconfig(int argc, char **argv)
 		FAR void *handle;
 		struct dhcpc_state ds;
 
-		netlib_getmacaddr(intf, mac);
+		ret = netlib_getmacaddr(intf, mac);
+		if (ret < 0) {
+			return ERROR;
+		}
 
 		/* Set up the DHCPC modules */
 		handle = dhcpc_open(intf);
@@ -406,7 +409,10 @@ int cmd_ifconfig(int argc, char **argv)
 			return ERROR;
 		}
 
-		netlib_set_ipv4addr(intf, &ds.ipaddr);
+		ret = netlib_set_ipv4addr(intf, &ds.ipaddr);
+		if (ret < 0) {
+			return ERROR;
+		}
 
 		if (ds.netmask.s_addr != 0) {
 			netlib_set_ipv4netmask(intf, &ds.netmask);
@@ -441,7 +447,10 @@ int cmd_ifconfig(int argc, char **argv)
 		}
 		addr.s_addr = gip;
 	}
-	netlib_set_dripv4addr(intf, &addr);
+	ret = netlib_set_dripv4addr(intf, &addr);
+	if (ret < 0) {
+		return ERROR;
+	}
 
 	/* Set network mask */
 	if (mask) {
@@ -451,7 +460,10 @@ int cmd_ifconfig(int argc, char **argv)
 		ndbg("Netmask: Default\n");
 		addr.s_addr = inet_addr("255.255.255.0");
 	}
-	netlib_set_ipv4netmask(intf, &addr);
+	ret = netlib_set_ipv4netmask(intf, &addr);
+	if (ret < 0) {
+		return ERROR;
+	}
 
 	if (dns) {
 		ndbg("DNS: %s\n", dns);
@@ -466,7 +478,10 @@ int cmd_ifconfig(int argc, char **argv)
 	/* REVISIT: How will we handle Ethernet and SLIP networks together? */
 	if (hw) {
 		ndbg("HW MAC: %s\n", hw);
-		netlib_setmacaddr(intf, mac);
+		ret = netlib_setmacaddr(intf, mac);
+		if (ret < 0) {
+			return ERROR;
+		}
 	}
 #endif
 
