@@ -77,7 +77,7 @@
 /****************************************************************************
  * Global Variables
  ****************************************************************************/
-#if defined(CONFIG_FS_ROMFS) && defined(CONFIG_FRAME_POINTER)
+#ifdef CONFIG_DEBUG_DISPLAY_SYMBOL
 extern bool abort_mode;
 #endif
 
@@ -121,7 +121,7 @@ int sem_wait(FAR sem_t *sem)
 	irqstate_t saved_state;
 	int ret = ERROR;
 	/* This API should not be called from interrupt handlers */
-#if defined(CONFIG_FS_ROMFS) && defined(CONFIG_FRAME_POINTER)
+#ifdef CONFIG_DEBUG_DISPLAY_SYMBOL
 	DEBUGASSERT((sem != NULL && up_interrupt_context() == false) || abort_mode);
 
 	if (abort_mode && up_interrupt_context() == true) {
