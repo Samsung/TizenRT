@@ -277,7 +277,7 @@ static int
 nu_ping_send(int s, struct sockaddr_in *to)
 {
 	int err;
-    int ret = 0;
+	int ret = 0;
 	struct icmp_echo_hdr *iecho;
 	size_t ping_size = sizeof(struct icmp_echo_hdr) + g_ping_data_size;
 
@@ -305,6 +305,7 @@ int
 nu_ping_process(int count, const char *taddr)
 {
 	int s;
+	int ret;
 	struct timeval tv;
 	struct sockaddr_in to;
 	struct timespec  ping_time;
@@ -321,8 +322,13 @@ nu_ping_process(int count, const char *taddr)
 	tv.tv_sec = 1;
 	tv.tv_usec = 0;
 
-	setsockopt(s, SOL_SOCKET, SO_RCVTIMEO, (struct timeval *)&tv,
+	ret = setsockopt(s, SOL_SOCKET, SO_RCVTIMEO, (struct timeval *)&tv,
 			   sizeof(struct timeval));
+	if (ret < 0) {
+		printf("ping: setsockopt error\n");
+		close(s);
+		return -1;
+	}
 
 	to.sin_len = sizeof(to);
 	to.sin_family = AF_INET;
