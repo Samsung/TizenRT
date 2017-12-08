@@ -257,6 +257,31 @@ void *loop(void *threadid)
     }
 }
 
+#ifdef __TIZENRT__
+int destroyTimer(int idx)
+{
+    int res;
+    int i;
+
+    unregisterTimer(idx);
+
+    for (i = 0; i < TIMEOUTS; i++)
+    {
+        if ((timeout_list[i].timeout_state & (TIMEOUT_USED | TIMEOUT_UNUSED)) == TIMEOUT_USED)
+        {
+            return -1;
+        }
+    }
+
+    res = pthread_cancel(thread_id);
+    if(res != 0)
+    {
+        printf("ERROR; return code from pthread_cencel() is %d\n", res);
+        return -1;
+    }
+	thread_id = 0;
+}
+#endif
 int initThread()
 {
     int res = pthread_create(&thread_id, NULL, loop, NULL);
@@ -288,7 +313,6 @@ time_t OC_CALL registerTimer(const time_t seconds, int *id, TimerCallback cb)
     time_t t, then;
     time_t next;
     int i, idx;
-
     if (seconds <= 0)
         return -1;
 

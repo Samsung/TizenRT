@@ -74,7 +74,9 @@ int initThread();
 void *loop(void *threadid);
 time_t OC_CALL registerTimer(const time_t seconds, int *id, TimerCallback cb);
 void OC_CALL unregisterTimer(int id);
-
+#ifdef __TIZENRT__
+int destroyTimer(int idx);
+#endif
 #else
 
 time_t timeToSecondsFromNow(tmElements_t *t);

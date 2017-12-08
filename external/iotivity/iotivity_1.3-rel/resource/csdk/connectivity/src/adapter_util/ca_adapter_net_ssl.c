@@ -1637,7 +1637,11 @@ static void StopRetransmit()
 {
     if (g_caSslContext)
     {
+#ifdef __TIZENRT__
+        destroyTimer(g_caSslContext->timerId);
+#else
         unregisterTimer(g_caSslContext->timerId);
+#endif
         g_caSslContext->timerId= -1;
     }
 }
