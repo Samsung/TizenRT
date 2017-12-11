@@ -123,6 +123,7 @@ static int bch_open(FAR struct file *filep)
 {
 	FAR struct inode *inode = filep->f_inode;
 	FAR struct bchlib_s *bch;
+	int ret = OK;
 
 	DEBUGASSERT(inode && inode->i_private);
 	bch = (FAR struct bchlib_s *)inode->i_private;
@@ -131,13 +132,13 @@ static int bch_open(FAR struct file *filep)
 
 	bchlib_semtake(bch);
 	if (bch->refs == MAX_OPENCNT) {
-		return -EMFILE;
+		ret = -EMFILE;
 	} else {
 		bch->refs++;
 	}
 
 	bchlib_semgive(bch);
-	return OK;
+	return ret;
 }
 
 /****************************************************************************
