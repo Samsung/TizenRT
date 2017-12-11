@@ -687,26 +687,21 @@ systime_t sys_now(void)
  *---------------------------------------------------------------------------*/
 sys_thread_t sys_thread_new(const char *name, lwip_thread_fn entry_function, void *arg, int stacksize, int priority)
 {
-	int ret;
-	pthread_t thread;
-	pthread_attr_t tattr;
-	struct sched_param param;
 
 	if (s_nextthread < SYS_THREAD_MAX) {
-		pthread_attr_init(&tattr);
-		tattr.stacksize = stacksize;
-		param.sched_priority = priority;
-		pthread_attr_setschedparam(&tattr, &param);
-
-		ret = pthread_create(&thread, &tattr, entry_function, (pthread_addr_t)arg);
-		if (ret == 0) {
+		sys_thread_t new_thread;
+		new_thread = task_create(name, priority, stacksize, (main_t)entry_function, (char * const *)NULL);
+		if (new_thread < 0) {
+			int errval = errno;
+			LWIP_DEBUGF(SYS_DEBUG, ("Failed to create new_thread: %d", errval));
+			return -errval;
+		} else {
 			LWIP_DEBUGF(SYS_DEBUG, ("Created New Thread with pid %d", new_thread));
 			s_nextthread++;
-			return (sys_thread_t)thread;
+			return new_thread;
 		}
 	}
-
-	return (sys_thread_t)-1;
+	return -1;
 }
 
 /*---------------------------------------------------------------------------*
@@ -729,26 +724,21 @@ sys_thread_t sys_thread_new(const char *name, lwip_thread_fn entry_function, voi
  *---------------------------------------------------------------------------*/
 sys_thread_t sys_kernel_thread_new(const char *name, lwip_thread_fn entry_function, void *arg, int stacksize, int priority)
 {
-	int ret;
-	pthread_t thread;
-	pthread_attr_t tattr;
-	struct sched_param param;
 
 	if (s_nextthread < SYS_THREAD_MAX) {
-		pthread_attr_init(&tattr);
-		tattr.stacksize = stacksize;
-		param.sched_priority = priority;
-		pthread_attr_setschedparam(&tattr, &param);
-
-		ret = pthread_create(&thread, &tattr, entry_function, (pthread_addr_t)arg);
-		if (ret == 0) {
+		sys_thread_t new_thread;
+		new_thread = kernel_thread(name, priority, stacksize, (main_t)entry_function, (char * const *)NULL);
+		if (new_thread < 0) {
+			int errval = errno;
+			LWIP_DEBUGF(SYS_DEBUG, ("Failed to create new_thread: %d", errval));
+			return -errval;
+		} else {
 			LWIP_DEBUGF(SYS_DEBUG, ("Created New Thread with pid %d", new_thread));
 			s_nextthread++;
-			return (sys_thread_t)thread;
+			return new_thread;
 		}
 	}
-
-	return (sys_thread_t)-1;
+	return -1;
 }
 
 sys_prot_t sys_arch_protect(void)

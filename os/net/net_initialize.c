@@ -142,26 +142,6 @@ void net_setup(void)
 #endif
 }
 
-#ifdef CONFIG_NET_SLIP
-#include <net/lwip/netif/slipif.h>
-struct netif g_slipif;
-
-void slip_init(void)
-{
-	struct ip_addr ipaddr;
-	struct ip_addr netmask;
-	struct ip_addr gw;
-
-	ipaddr.addr = inet_addr("10.0.0.2");
-	netmask.addr = inet_addr("255.255.255.0");
-	gw.addr = inet_addr("10.0.0.1");
-
-	netif_add(&g_slipif, &ipaddr, &netmask, &gw, NULL, slipif_init, tcpip_input);
-}
-#else
-#define slip_init()
-#endif
-
 /****************************************************************************
  * Name: net_initialize
  *
@@ -184,8 +164,6 @@ void net_initialize(void)
 #ifdef CONFIG_NET_LWIP
 	/* Create tcp_ip stack from lwip thread */
 	tcpip_init(NULL, NULL);
-
-	slip_init();
 #endif
 	return;
 }

@@ -88,7 +88,7 @@ sys_mutex_t lock_tcpip_core;
  *
  * @param arg unused argument
  */
-static void *tcpip_thread(void *arg)
+static void tcpip_thread(void *arg)
 {
 
 	struct tcpip_msg *msg = NULL;
@@ -174,9 +174,6 @@ static void *tcpip_thread(void *arg)
 			break;
 		}
 	}
-
-	/* never reach here */
-	return NULL;
 }
 
 /**
