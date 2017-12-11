@@ -742,6 +742,10 @@ static void CAReceivedPacketCallback(const CASecureEndpoint_t *sep,
     VERIFY_NON_NULL_VOID(data, TAG, "data");
     OIC_TRACE_BEGIN(%s:CAReceivedPacketCallback, TAG);
 
+#if defined(__TIZENRT__)
+    OIC_LOG_V(INFO, TAG, "Packet received: dataLen=%d\n", dataLen);
+#endif
+
     if (0 == dataLen)
     {
         OIC_LOG(ERROR, TAG, "dataLen is zero");

@@ -1826,6 +1826,9 @@ static OCStackResult HandleVirtualResource (OCServerRequest *request, OCResource
         // for the request in ocserverrequest.c : HandleSingleResponse()
         // Since we are making an early return and not responding, the server request
         // needs to be deleted.
+#if defined(__TIZENRT__)
+        OIC_LOG_V(DEBUG, TAG, "removed duplicate request");
+#endif
         FindAndDeleteServerRequest (request);
         discoveryResult = OC_STACK_OK;
         goto exit;
@@ -1844,6 +1847,9 @@ static OCStackResult HandleVirtualResource (OCServerRequest *request, OCResource
     {
         if (g_multicastServerStopped && !isUnicast(request))
         {
+#if defined(__TIZENRT__)
+            OIC_LOG(DEBUG, TAG, "ignore the discovery request");
+#endif
             // Ignore the discovery request
             FindAndDeleteServerRequest(request);
             discoveryResult = OC_STACK_CONTINUE;
@@ -1918,6 +1924,9 @@ static OCStackResult HandleVirtualResource (OCServerRequest *request, OCResource
         }
         if (discPayload->resources == NULL)
         {
+#if defined(__TIZENRT__)
+            OIC_LOG(DEBUG, TAG, "NO RESOURCES (discPayload->resources == NULL)");
+#endif
             discoveryResult = OC_STACK_NO_RESOURCE;
             OCPayloadDestroy(payload);
             payload = NULL;
@@ -2021,14 +2030,22 @@ static OCStackResult HandleVirtualResource (OCServerRequest *request, OCResource
         OIC_LOG_PAYLOAD(DEBUG, payload);
         if(discoveryResult == OC_STACK_OK)
         {
+#if defined(__TIZENRT__)
+            OIC_LOG(DEBUG, TAG, "Sending discovery response");
+#endif
             SendNonPersistantDiscoveryResponse(request, resource, payload, OC_EH_OK);
         }
         else // Error handling
         {
             if (isUnicast(request))
             {
+#if defined(__TIZENRT__)
+                OIC_LOG_V(INFO, TAG, "Unicast: Sending a (%d) error to (%d) discovery request",
+                    discoveryResult, virtualUriInRequest);
+#else
                 OIC_LOG_V(ERROR, TAG, "Sending a (%d) error to (%d) discovery request",
                     discoveryResult, virtualUriInRequest);
+#endif
                 SendNonPersistantDiscoveryResponse(request, resource, NULL,
                     (discoveryResult == OC_STACK_NO_RESOURCE) ?
                         OC_EH_RESOURCE_NOT_FOUND : OC_EH_ERROR);
@@ -2036,7 +2053,11 @@ static OCStackResult HandleVirtualResource (OCServerRequest *request, OCResource
             else // Multicast
             {
                 // Ignoring the discovery request as per RFC 7252, Section #8.2
+#if defined(__TIZENRT__)
+                OIC_LOG(INFO, TAG, "Multicast: Silently ignoring the request since no useful data to send.");
+#else
                 OIC_LOG(INFO, TAG, "Silently ignoring the request since no useful data to send.");
+#endif
                 // the request should be removed.
                 // since it never remove and causes a big memory waste.
                 FindAndDeleteServerRequest(request);
@@ -2267,6 +2288,16 @@ OCStackResult
 ProcessRequest(ResourceHandling resHandling, OCResource *resource, OCServerRequest *request)
 {
     OCStackResult ret = OC_STACK_OK;
+#if defined(__TIZENRT__)
+    int i;
+
+    printf("request info: tokenLength=%d, token=", request->tokenLength);
+    for (i = 0; i < request->tokenLength; i++)
+    {
+        printf("%02X", request->requestToken[i]);
+    }
+    printf("\n");
+#endif
 
     switch (resHandling)
     {
