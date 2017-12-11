@@ -98,7 +98,7 @@
 #define CHECKSUM_GEN_IP_INLINE  0
 #endif
 
-#if LWIP_DHCP || defined(LWIP_IP_ACCEPT_UDP_PORT)
+#if defined(LWIP_DHCP) || defined(LWIP_IP_ACCEPT_UDP_PORT)
 #define IP_ACCEPT_LINK_LAYER_ADDRESSING 1
 
 /** Some defines for DHCP to let link-layer-addressed packets through while the
