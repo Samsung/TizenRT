@@ -710,7 +710,7 @@ int smartfs_unmount(struct smartfs_mountpt_s *fs)
 		g_mounthead = fs->fs_next;
 	} else {
 		/* Remove from the middle of the list somewhere */
-		if (!prevfs) {
+		if (prevfs) {
 			prevfs->fs_next = fs->fs_next;
 		}
 	}
