@@ -20,7 +20,6 @@
 >   * [How to clear flashed content on a board](#how-to-clear-flashed-content-on-a-board)
 >   * [How to save/restore wifi info](#how-to-saverestore-wifi-info)
 >   * [How to enable the ARTIK SDK](#how-to-enable-the-artik-sdk)
->   * [How to SLIP/PPP on UART](#how-to-slipppp-on-uart)
 > * ETC
 >   * [Factory Reset](#factory-reset)
 >   * [Memory Map](#memory-map)
@@ -319,66 +318,6 @@ If you enable ARTIK SDK and then build it, it will automatically download the AR
 In addition, to enable the `ARTIK SDK examples`, set the following in menuconfig:
  * Application Configuration > Examples > Enable "ARTIK SDK examples"
  * Press Enter then select all the examples you want to include in the image
-
-## How to SLIP/PPP on UART
-
-LwIP already supports the SLIP/PPP feature which provides a virtual network interface to encapsulate IP packets and to send and receive them to a remote system through UART. Due to poor implementation of the port layer between LwIP and OS, however, we need some modification to it to make SLIP work. Then, we will be able to use one of /dev/ttyS1-4 as a SLIP/PPP channel. This demo will show you how to enable a SLIP interface over /dev/ttyS4 at ARTIK side and that `ping` works well.
-
-1) Enable SLIP
-
-The patch itself does not enable SLIP feature. To enable it, you need to add more configurations through `make menuconfig` as following:
-```diff
--# CONFIG_BOARD_INITTHREAD is not set
-+CONFIG_BOARD_INITTHREAD=y
-+CONFIG_BOARD_INITTHREAD_STACKSIZE=2048
-+CONFIG_BOARD_INITTHREAD_PRIORITY=240
-```
-```diff
--# CONFIG_NET_SLIP is not set
-+CONFIG_NET_SLIP=y
-```
-```diff
--# CONFIG_NET_LWIP_SLIP_INTERFACE is not set
-+CONFIG_LWIP_SLIP_INTERFACE=y
-+CONFIG_LWIP_SLIPIF_THREAD_NAME="slipif_loop"
-+CONFIG_LWIP_SLIPIF_THREAD_STACKSIZE=1024
-+CONFIG_LWIP_SLIPIF_THREAD_PRIO=100
-```
-
-2) Build & Flash the binary
-
-TizenRT should be built without any compilation errors. Fuse it.
-
-3) Configure SLIP interface at ARTIK05x side
-
-![SLIP_TASH_IFCONFIG](../../../docs/media/slip_tash_ifconfig.jpg)
-
-After boot, a SLIP interface will be regsitered as a network interface, `sl2`. Configure it.
-
-4) Connect CP2103 to UART3 (=/dev/ttyS4)
-
-The SLIP interface is using /dev/ttyS4. Connect your CP2103 to Rx/Tx pins of UART3 on ARTIK05x side.
-CON704[8] and CON704[10] are Rx and Tx of UART3 (/dev/ttyS4) in respectively.
-
-5) Configure host
-
-On the host side (a Linux machine), add a SLIP interface and attach it to the serial device of CP2103. In my case, /dev/ttyUSB3 was the CP2103 connected to the ARTIK05x.
-
- * step 1 - add and attach SLIP interface over /dev/ttyUSB2
-
-![SLIP_UBUNTU_SLATTACH](../../../docs/media/slip_ubuntu_slattach.jpg)
-
- * step 2 - configure and set it up
-
-![SLIP_UBUNTU_IFCONFIG](../../../docs/media/slip_ubuntu_ifconfig.jpg)
-
-6) Ping from ARTIK05x to Host PC
-
-![SLIP_TASH_PING](../../../docs/media/slip_tash_ping.jpg)
-
-7) Ping from Host PC to ARTIK05x
-
-![SLIP_UBUNTU_PING](../../../docs/media/slip_ubuntu_ping.jpg)
 
 <!-- ETC -->
 
