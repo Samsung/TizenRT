@@ -157,6 +157,10 @@ static int8_t doVsieTest(char *oui, char *data)
 {
 	int8_t result = SLSI_STATUS_ERROR;
 
+	if (data == NULL) {
+		printf("data is NULL\n");
+		return result;
+	}
 	printf("Storing new OUI=%s IE=%s\n", oui, data);
 	if (g_vsie == NULL) {
 		g_vsie = (slsi_vendor_ie_t *)zalloc(sizeof(slsi_vendor_ie_t));

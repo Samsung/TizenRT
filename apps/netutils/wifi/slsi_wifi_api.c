@@ -2278,7 +2278,7 @@ static void slsi_set_updateconfig(void)
 static int8_t slsi_disable_all_networks(void)
 {
 	int8_t result = SLSI_STATUS_SUCCESS;
-	slsi_send_command_str_upto_4(NULL, WPA_COMMAND_DISABLE_NETWORK, NULL, NULL, NULL, NULL);
+	slsi_send_command_str_upto_4(NULL, WPA_COMMAND_DISABLE_NETWORK, NULL, NULL, NULL, &result);
 	return result;
 }
 
@@ -2860,6 +2860,10 @@ static int8_t slsi_set_country_code(const char *country_code, bool write_to_nvra
 	if (write_to_nvram) {
 		if (g_nvram == NULL) {
 			g_nvram = malloc(SLSI_WIFI_NV_DATA_SIZE);	// flash block size of 4k
+			if (g_nvram == NULL) {
+				EPRINT("Failed to allocate memory for NVRAM\n");
+				return SLSI_STATUS_ERROR;
+			}
 		}
 		// set the country code in NV ram for next time
 		//start by reading the existing values form NVRAM and Erase to be ready for writing
@@ -2915,6 +2919,10 @@ static int8_t slsi_get_tx_power(uint8_t *dbm)
 		DPRINT("Could not get tx_power from supplicant, trying from NVRAM\n");
 		if (g_nvram == NULL) {
 			g_nvram = malloc(SLSI_WIFI_NV_DATA_SIZE);	// flash block size of 4k
+			if (g_nvram == NULL) {
+				EPRINT("Failed to allocate memory for NVRAM\n");
+				return SLSI_STATUS_ERROR;
+			}
 		}
 		if (up_wlan_read_config((void *)g_nvram, SLSI_WIFI_NV_DATA_SIZE)) {
 			g_slsi_wifi_nv_data = (slsi_wifi_nv_data_t *)g_nvram;
