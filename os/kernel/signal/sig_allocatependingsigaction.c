@@ -129,10 +129,7 @@ FAR sigq_t *sig_allocatependingsigaction(void)
 
 		if (!sigq) {
 			/* No...Try the resource pool */
-
-			if (!sigq) {
 				sigq = (FAR sigq_t *)kmm_malloc((sizeof(sigq_t)));
-			}
 
 			/* Check if we got an allocated message */
 
