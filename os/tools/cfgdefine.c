@@ -322,22 +322,24 @@ void generate_definitions(FILE * stream)
 			if (strcmp(varname, "CONFIG_ARTIK05X_FLASH_PART_NAME") == 0) {
 				char *tmp;
 				char *copy;
-				char *val;
+				char *tok;
 				int i = 0;
 				int ndx;
 
 				copy = strdup(varval);
-				tmp = strsep(&varval, "\"");
-				while ((tmp = strsep(&varval, ",")) != NULL) {
+				tok = copy;
+				tmp = strsep(&tok, "\"");
+				while ((tmp = strsep(&tok, ",")) != NULL) {
 					cnt++;
 				}
-				val = strdup(copy);
 				free(copy);
 
-				tmp = strsep(&val, "\"");
+				copy = strdup(varval);
+				tok = copy;
+				tmp = strsep(&tok, "\"");
 				word = (char **)malloc((sizeof(char *)*cnt));
 				memset(word, 0, sizeof(char *)*cnt);
-				while ((tmp = strsep(&val, ",")) != NULL) {
+				while ((tmp = strsep(&tok, ",")) != NULL) {
 					word[i] = (char *)malloc(20);
 					memset(word[i], 0, 20);
 					for (ndx = 0; ndx < strlen(tmp); ndx++) {
@@ -345,7 +347,7 @@ void generate_definitions(FILE * stream)
 					}
 					i++;
 				}
-				free(val);
+				free(copy);
 			}
 
 			if (strcmp(varname, "CONFIG_ARTIK05X_FLASH_PART_LIST") == 0) {
