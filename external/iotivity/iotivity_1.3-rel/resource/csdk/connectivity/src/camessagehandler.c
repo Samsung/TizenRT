@@ -206,9 +206,13 @@ static CAData_t* CAGenerateHandlerData(const CAEndpoint_t *endpoint,
             CADropSecondMessage(&caglobals.ca.requestHistory, endpoint, reqInfo->info.messageId,
                                 reqInfo->info.token, reqInfo->info.tokenLength))
         {
+#if defined(__TIZENRT__)
+            OIC_LOG(INFO, TAG, "Second Request with same Token, Drop it -> not drop");
+#else
             OIC_LOG(INFO, TAG, "Second Request with same Token, Drop it");
             CADestroyRequestInfoInternal(reqInfo);
             goto exit;
+#endif
         }
 
         cadata->requestInfo = reqInfo;
