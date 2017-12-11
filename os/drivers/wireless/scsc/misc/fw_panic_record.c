@@ -18,6 +18,7 @@
 #include "panic_record_r4_defs.h"
 #include "utils_misc.h"
 #include "debug_scsc.h"
+#include "fw_panic_record.h"
 
 #define PANIC_RECORD_CKSUM_SEED 0xa5a5a5a5
 /*
