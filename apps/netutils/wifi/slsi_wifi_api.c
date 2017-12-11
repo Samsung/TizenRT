@@ -2034,7 +2034,7 @@ static slsi_ap_config_t *slsi_get_ap_config(void)
 	slsi_ap_config_t *p_ap_config = zalloc(sizeof(slsi_ap_config_t));
 
 	if (p_ap_config == NULL) {
-		EPRINT("Memory allocation failed \n");
+		EPRINT("Memory allocation failed\n");
 	} else {
 		slsi_ap_config_t *tmp_ap_config = &g_recovery_data.ap_config;
 		memcpy(p_ap_config, tmp_ap_config, sizeof(slsi_ap_config_t));
@@ -2042,7 +2042,7 @@ static slsi_ap_config_t *slsi_get_ap_config(void)
 		if (tmp_ap_config->security) {
 			p_ap_config->security = zalloc(sizeof(slsi_security_config_t));
 			if (p_ap_config->security == NULL) {
-				EPRINT("Memory allocation failed \n");
+				EPRINT("Memory allocation failed\n");
 			} else {
 				memcpy(p_ap_config->security, tmp_ap_config->security, sizeof(slsi_security_config_t));
 			}
@@ -2050,15 +2050,15 @@ static slsi_ap_config_t *slsi_get_ap_config(void)
 		if (tmp_ap_config->vsie) {
 			p_ap_config->vsie = zalloc(sizeof(slsi_vendor_ie_t));
 			if (p_ap_config->vsie == NULL) {
-				EPRINT("Memory allocation failed \n");
+				EPRINT("Memory allocation failed\n");
 			} else {
 				memcpy(p_ap_config->vsie, tmp_ap_config->vsie, sizeof(slsi_vendor_ie_t));
-			}
-			p_ap_config->vsie->content = zalloc(tmp_ap_config->vsie->content_length);
-			if (p_ap_config->vsie->content == NULL) {
-				EPRINT("Memory allocation failed \n");
-			} else {
-				memcpy(p_ap_config->vsie->content, tmp_ap_config->vsie->content, tmp_ap_config->vsie->content_length);
+				p_ap_config->vsie->content = zalloc(tmp_ap_config->vsie->content_length);
+				if (p_ap_config->vsie->content == NULL) {
+					EPRINT("Memory allocation failed\n");
+				} else {
+					memcpy(p_ap_config->vsie->content, tmp_ap_config->vsie->content, tmp_ap_config->vsie->content_length);
+				}
 			}
 		}
 	}
