@@ -410,6 +410,7 @@ int cmd_ifconfig(int argc, char **argv)
 
 		ret = netlib_set_ipv4addr(intf, &ds.ipaddr);
 		if (ret < 0) {
+			dhcpc_close(handle);
 			return ERROR;
 		}
 
