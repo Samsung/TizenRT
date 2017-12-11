@@ -70,10 +70,6 @@ buildpath=${topdir}/../build
 contentsdir=${topdir}/../tools/fs/contents
 romfsimg=${buildpath}/output/bin/romfs.img
 
-system_map_srcpath=${buildpath}/output/bin/System.map
-system_map_destpath=${contentsdir}/System.map
-cp $system_map_srcpath $system_map_destpath
-
 # Sanity checks
 
 if [ ! -d "${contentsdir}" ]; then

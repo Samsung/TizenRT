@@ -48,6 +48,17 @@ prepare_resource()
 {
 	if [ -d "${RESOURCE_DIR_PATH}" ]; then
 		echo "Packing resources into romfs.img ..."
+		# When CONGIG_FRAME_POINTER flag is enabled, copy the build/output/bin/System.map
+		# file to tools/fs/contents directory so that symbol names can be displayed using
+		# dump_stack
+		if [ "${CONFIG_FRAME_POINTER}" == "y" ]; then
+			echo "Copying System.map file from ${OUTPUT_BIN_PATH} to ${RESOURCE_DIR_PATH}"
+			cp ${OUTPUT_BIN_PATH}/System.map ${RESOURCE_DIR_PATH}/System.map
+			if [ ! -f "${RESOURCE_DIR_PATH}/System.map" ]; then
+				echo "Failed to copy System.map file"
+				exit 1
+			fi
+		fi
 
 		# create romfs.img
 		sh ${FSTOOLS_DIR_PATH}/mkromfsimg.sh

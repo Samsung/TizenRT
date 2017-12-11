@@ -30,6 +30,8 @@ OPENOCD_DIR_PATH=${BUILD_DIR_PATH}/tools/openocd
 ARTIK05X_DIR_PATH=${CONFIGS_DIR_PATH}/artik05x
 SCRIPTS_PATH=${ARTIK05X_DIR_PATH}/scripts
 CODESIGNER_PATH=${ARTIK05X_DIR_PATH}/tools/codesigner
+FSTOOLS_DIR_PATH=${OS_DIR_PATH}/../tools/fs
+RESOURCE_DIR_PATH=${FSTOOLS_DIR_PATH}/contents
 
 SYSTEM_TYPE=`getconf LONG_BIT`
 if [ "$SYSTEM_TYPE" = "64" ]; then
@@ -67,10 +69,27 @@ Options:
 EOF
 }
 
+prepare_resource()
+{
+    if [ -d "${RESOURCE_DIR_PATH}" ]; then
+        # When CONGIG_FRAME_POINTER flag is enabled, copy the build/output/bin/System.map file
+        # to tools/fs/contents directory so that symbol names can be displayed using dump_stack
+        if [ "${CONFIG_FRAME_POINTER}" == "y" ]; then
+            echo "Copying System.map file from ${OUTPUT_BINARY_PATH} to ${RESOURCE_DIR_PATH}"
+	    cp ${OUTPUT_BINARY_PATH}/System.map ${RESOURCE_DIR_PATH}/System.map
+            if [ ! -f "${RESOURCE_DIR_PATH}/System.map" ]; then
+                echo "Failed to copy System.map file"
+                exit 1
+            fi
+        fi
+    fi
+}
+
 romfs()
 {
     # Make romfs.img
     if [ "${CONFIG_FS_ROMFS}" == "y" ]; then
+        prepare_resource
         pushd ${OS_DIR_PATH} > /dev/null
         sh ../tools/fs/mkromfsimg.sh
         if [ ! -f "${OUTPUT_BINARY_PATH}/romfs.img" ]; then
