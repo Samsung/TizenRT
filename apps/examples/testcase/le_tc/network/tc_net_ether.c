@@ -27,6 +27,7 @@
 #include <arpa/inet.h>
 #include <netinet/in.h>
 #include <netutils/netlib.h>
+#include <netinet/ether.h>
 
 #include <sys/socket.h>
 #include <sys/ioctl.h>
@@ -61,11 +62,11 @@ static void tc_net_ether_ntoa_p(void)
 	fd = socket(AF_INET, SOCK_DGRAM, 0);
 	TC_ASSERT_NEQ("ether_ntoa", fd, -1)
 
-	ret = ioctl(fd, SIOCGIFCONF, (void *)&ifcfg);
+	ret = ioctl(fd, SIOCGIFCONF, (unsigned long)&ifcfg);
 	TC_ASSERT_GEQ("ether_ntoa", ret, 0)
 
 	strncpy(tmp.ifr_name, ifr->ifr_name, 6);
-	ret = ioctl(fd, SIOCGIFHWADDR, (char *)&tmp);
+	ret = ioctl(fd, SIOCGIFHWADDR, (unsigned long)&tmp);
 	TC_ASSERT_GEQ("ether_ntoa", ret, 0)
 
 	sa = &tmp.ifr_hwaddr;
