@@ -1132,7 +1132,6 @@ CAResult_t CAIPStartServer(const ca_thread_pool_t threadPool)
 void CAIPStopServer()
 {
     caglobals.ip.terminate = true;
-    int err;
 
 #if !defined(WSA_WAIT_EVENT_0)
 #ifndef __TIZENRT__
@@ -1163,6 +1162,8 @@ void CAIPStopServer()
 #ifdef __TIZENRT__
     if (g_nwevent_mqfd)
     {
+        int err;
+
         err = mq_close(g_nwevent_mqfd);
         if (err < 0)
         {
