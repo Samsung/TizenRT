@@ -150,7 +150,7 @@ download()
 }
 
 signing() {
-    if test -e $CODESIGNER; then
+    if test -e "$CODESIGNER"; then
         $CODESIGNER/artik05x_AppCodesigner $CODESIGNER/rsa_private.key $TIZENRT_BIN
         TIZENRT_BIN=${TIZENRT_BIN}-signed
     fi
