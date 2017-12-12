@@ -1819,8 +1819,8 @@ static void tc_libc_math_j0(void)
  */
 static void tc_libc_math_j0f(void)
 {
-	const float in_val[] = { ZERO, VAL1, -VAL1, VAL2, -VAL2, INFINITY, -INFINITY, NAN, 0x1p-11 };
-	const float sol_val[] = { 1.0, ZERO, ZERO, ZERO, ZERO, ZERO, ZERO, NAN, 0.999999940395 };
+	const float in_val[] = { ZERO, VAL1, -VAL1, VAL2, -VAL2, INFINITY, -INFINITY, NAN, 0x1p-11, 2.0, 3.0, 8.0, 7.8};
+	const float sol_val[] = { 1.0, ZERO, ZERO, ZERO, ZERO, ZERO, ZERO, NAN, 0.999999940395, 0.223890766501427, -0.260051935911179, 0.171650826931000, 0.215407878160477 };
 	float ret_val[SIZE(sol_val, float)] = { ZERO };
 	int j0f_idx;
 
@@ -1871,8 +1871,8 @@ static void tc_libc_math_j1(void)
  */
 static void tc_libc_math_j1f(void)
 {
-	const float in_val[] = { ZERO, VAL1, -VAL1, VAL2, -VAL2, INFINITY, -INFINITY, NAN, 0x1p-27 };
-	const float sol_val[] = { ZERO, ZERO, -ZERO, ZERO, -ZERO, ZERO, -ZERO, NAN, ZERO };
+	const float in_val[] = { ZERO, VAL1, -VAL1, VAL2, -VAL2, INFINITY, -INFINITY, NAN, 0x1p-27, -2.0, -3.0, -7.8, -8.0 };
+	const float sol_val[] = { ZERO, ZERO, -ZERO, ZERO, -ZERO, ZERO, -ZERO, NAN, ZERO, -0.576724827289581, -0.339058995246887, -0.201356813311577, -0.234636336565018 };
 	float ret_val[SIZE(sol_val, float)] = { ZERO };
 	int j1f_idx;
 
@@ -1897,8 +1897,8 @@ static void tc_libc_math_j1f(void)
  */
 static void tc_libc_math_jn(void)
 {
-	const double in_val[] = { ZERO, VAL1, -VAL1, VAL2, -VAL2, INFINITY, -INFINITY, NAN, 0x1p302, 0x1p-29, 0x1p-30 };
-	const double sol_val[][7] = { { ZERO, 1.0, ZERO, ZERO, ZERO, ZERO, ZERO }, { -ZERO, ZERO, ZERO, -ZERO, -ZERO, ZERO, ZERO }, { ZERO, ZERO, -ZERO, -ZERO, ZERO, ZERO, -ZERO }, { -ZERO, ZERO, ZERO, -ZERO, -ZERO, ZERO, ZERO }, {  ZERO, ZERO, -ZERO, -ZERO, ZERO, ZERO, -ZERO }, { ZERO, ZERO, ZERO, ZERO, ZERO, ZERO, ZERO }, { ZERO, ZERO, -ZERO, ZERO, -ZERO, ZERO, -ZERO }, { NAN, NAN, NAN, NAN, NAN, NAN, NAN }, { ZERO, -ZERO, -ZERO, ZERO, ZERO, -ZERO, -ZERO }, { -ZERO, 1.0, ZERO, ZERO, ZERO, ZERO, ZERO }, { -ZERO, 1.0, ZERO, ZERO, ZERO, ZERO, ZERO } };
+	const double in_val[] = { ZERO, VAL1, -VAL1, VAL2, -VAL2, INFINITY, -INFINITY, NAN, 0x1p302, 0x1p-29, 0x1p-30, 0x1p-40 };
+	const double sol_val[][7] = { { ZERO, 1.0, ZERO, ZERO, ZERO, ZERO, ZERO }, { -ZERO, ZERO, ZERO, -ZERO, -ZERO, ZERO, ZERO }, { ZERO, ZERO, -ZERO, -ZERO, ZERO, ZERO, -ZERO }, { -ZERO, ZERO, ZERO, -ZERO, -ZERO, ZERO, ZERO }, {  ZERO, ZERO, -ZERO, -ZERO, ZERO, ZERO, -ZERO }, { ZERO, ZERO, ZERO, ZERO, ZERO, ZERO, ZERO }, { ZERO, ZERO, -ZERO, ZERO, -ZERO, ZERO, -ZERO }, { NAN, NAN, NAN, NAN, NAN, NAN, NAN }, { ZERO, -ZERO, -ZERO, ZERO, ZERO, -ZERO, -ZERO }, { -ZERO, 1.0, ZERO, ZERO, ZERO, ZERO, ZERO }, { -ZERO, 1.0, ZERO, ZERO, ZERO, ZERO, ZERO }, { -ZERO, 1.0, ZERO, ZERO, ZERO, ZERO, ZERO } };
 	double ret_val[SIZE(sol_val, double)][7];
 	int jn_idx;
 	int order_idx;
@@ -1926,9 +1926,9 @@ static void tc_libc_math_jn(void)
  */
 static void tc_libc_math_jnf(void)
 {
-	const float in_val[] = { ZERO, VAL1, -VAL1, VAL2, -VAL2, INFINITY, -INFINITY, NAN, 0x1p-10, 0x1p-20 };
+	const float in_val[] = { ZERO, VAL1, -VAL1, VAL2, -VAL2, INFINITY, -INFINITY, NAN, 0x1p-10, 0x1p-20, 0x2p-30 };
 	int order[] = { -1, 0, 1, 2, 9 };
-	const float sol_val[][SIZE(order, int)] = { { -ZERO, 1.0, ZERO, ZERO, ZERO }, { -ZERO, ZERO, ZERO, -ZERO, ZERO }, { ZERO, ZERO, -ZERO, -ZERO, -ZERO }, { -ZERO, ZERO, ZERO, -ZERO, ZERO }, { ZERO, ZERO, -ZERO, -ZERO, -ZERO }, { -ZERO, ZERO, ZERO, ZERO, ZERO }, { ZERO, ZERO, -ZERO, ZERO, -ZERO }, { NAN, NAN, NAN, NAN, NAN }, { -0.0004883, 0.9999998, 0.0004883, 0.0000001, ZERO }, { -0.0000005, 1.0, 0.0000005, ZERO, ZERO } };
+	const float sol_val[][SIZE(order, int)] = { { -ZERO, 1.0, ZERO, ZERO, ZERO }, { -ZERO, ZERO, ZERO, -ZERO, ZERO }, { ZERO, ZERO, -ZERO, -ZERO, -ZERO }, { -ZERO, ZERO, ZERO, -ZERO, ZERO }, { ZERO, ZERO, -ZERO, -ZERO, -ZERO }, { -ZERO, ZERO, ZERO, ZERO, ZERO }, { ZERO, ZERO, -ZERO, ZERO, -ZERO }, { NAN, NAN, NAN, NAN, NAN }, { -0.0004883, 0.9999998, 0.0004883, 0.0000001, ZERO }, { -0.0000005, 1.0, 0.0000005, ZERO, ZERO }, { -ZERO, 1.0, ZERO, ZERO, ZERO } };
 	float ret_val[SIZE(sol_val, float)][SIZE(order, int)];
 	int jnf_idx;
 	int order_idx;
@@ -2187,9 +2187,9 @@ static void tc_libc_math_log10l(void)
  */
 static void tc_libc_math_nextafter(void)
 {
-	const double in_val1[] = { VAL1, VAL1, ZERO, -VAL1, -VAL2, VAL1, NAN };
-	const double in_val2[] = { VAL1, VAL2, VAL1, -VAL2, ZERO, NAN, VAL2 };
-	const double sol_val[] = { VAL1, 2251799813685249.0, ZERO, -2251799813685249.0, -4503599627370495.5, NAN, NAN };
+	const double in_val1[] = { VAL1, VAL1, ZERO, -VAL1, -VAL2, VAL1, NAN, ZERO };
+	const double in_val2[] = { VAL1, VAL2, VAL1, -VAL2, ZERO, NAN, VAL2, ZERO };
+	const double sol_val[] = { VAL1, 2251799813685249.0, ZERO, -2251799813685249.0, -4503599627370495.5, NAN, NAN, ZERO };
 	double ret_val[SIZE(sol_val, double)];
 	int nextafter_idx;
 
@@ -2216,9 +2216,9 @@ static void tc_libc_math_nextafter(void)
  */
 static void tc_libc_math_nextafterf(void)
 {
-	const float in_val1[] = { VAL1, VAL1, ZERO, -VAL1, -VAL2 , VAL1, NAN };
-	const float in_val2[] = { VAL1, VAL2, VAL1, -VAL2, ZERO, NAN, VAL2 };
-	const float sol_val[] = { 2251799813685248.0, 2251800082120704.0, ZERO, -2251800082120704.0, -4503599358935040.0, NAN, NAN };
+	const float in_val1[] = { VAL1, VAL1, ZERO, -VAL1, -VAL2 , VAL1, NAN, ZERO };
+	const float in_val2[] = { VAL1, VAL2, VAL1, -VAL2, ZERO, NAN, VAL2, ZERO };
+	const float sol_val[] = { 2251799813685248.0, 2251800082120704.0, ZERO, -2251800082120704.0, -4503599358935040.0, NAN, NAN, ZERO };
 	float ret_val[SIZE(sol_val, float)];
 	int nextafterf_idx;
 
@@ -3227,7 +3227,7 @@ static void tc_libc_math_truncf(void)
 
 	for (truncf_idx = 0; truncf_idx < SIZE(sol_val, float); truncf_idx++) {
 		ret_val[truncf_idx] = truncf(in_val[truncf_idx]);
-		TC_ASSERT_LEQ("truncf", fabs(sol_val[truncf_idx] - ret_val[truncf_idx]), FLT_EPSILON);
+		TC_ASSERT_LEQ("truncf", fabsf(sol_val[truncf_idx] - ret_val[truncf_idx]), FLT_EPSILON);
 	}
 
 	TC_SUCCESS_RESULT();
