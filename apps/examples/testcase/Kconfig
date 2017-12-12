@@ -10,6 +10,10 @@ menuconfig EXAMPLES_TESTCASE
 		Enable the TestCase Example
 
 if EXAMPLES_TESTCASE
+config DISABLE_MANUAL_TESTCASE
+	bool "Disable Manual Testcase"
+	default n
+
 source "$APPSDIR/examples/testcase/ta_tc/arastorage/utc/Kconfig"
 source "$APPSDIR/examples/testcase/ta_tc/arastorage/itc/Kconfig"
 source "$APPSDIR/examples/testcase/ta_tc/audio/utc/Kconfig"

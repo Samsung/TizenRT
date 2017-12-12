@@ -91,6 +91,11 @@
 #include "mpu.h"
 #endif
 
+#if defined(CONFIG_FS_ROMFS) && defined(CONFIG_FRAME_POINTER)
+#include <stdio.h>
+bool abort_mode = false;
+#endif
+
 /****************************************************************************
  * Pre-processor Definitions
  ****************************************************************************/
@@ -163,6 +168,10 @@ struct stackframe {
 	uint32_t framePointer;		// R11
 };
 
+/****************************************************************************
+ * Name: is_text_address
+ ****************************************************************************/
+
 static int is_text_address(unsigned long programCounter)
 {
 
@@ -189,6 +198,101 @@ static int is_text_address(unsigned long programCounter)
 }
 
 #define MEM_READ(x) (*(uint32_t volatile*)(x))
+
+/****************************************************************************
+ * Name: get_symbol
+ * Below API works if there is existance of System.map file in rom fs
+ ****************************************************************************/
+#ifdef CONFIG_FS_ROMFS
+void get_symbol(unsigned long search_addr, char *buffer)
+{
+	FILE *pFile;
+	unsigned long sym_offset;
+	unsigned long total_size;
+	unsigned long addr;
+	unsigned long next_addr;
+	int first = 0;
+	int last = 0;
+	int mid;
+	char line[128];
+	char data[6][128];
+	char c;
+	int n;
+	int i;
+	int j;
+	int k;
+
+	pFile = fopen("/rom/System.map", "r");
+
+	/* Check if file exists */
+	if (pFile == NULL) {
+		lldbg("Could not open file: /rom/System.map\n");
+		return;
+	}
+	// obtain file size:
+	fseek(pFile, 0, SEEK_END);
+	last = ftell(pFile);
+
+	rewind(pFile);
+	mid = (first + last) / 2;
+	while (first <= last) {
+		fseek(pFile, mid, SEEK_SET);
+
+		// Extract characters from file and store in character c
+		for (c = getc(pFile); c != '\n'; c = getc(pFile)) {
+		}
+		n = 0;
+		// Read 2 lines and Split the string as words
+		for (k = 0; k < 2; k++) {
+			fgets(line, 128, pFile);
+			i = 0;
+			j = 0;
+			while (line[i] != '\0') {
+				if (line[i] != ' ') {
+					data[n][j++] = line[i];
+				} else {
+					data[n][j++] = '\0';//insert NULL
+					n++;
+					j = 0;
+				}
+				i++;
+				if (line[i] == '\0') {
+					data[n][j++] = '\0';//insert NULL
+					n++;
+					j = 0;
+				}
+			}
+		}
+		addr = strtoul(data[0], NULL, 16);
+		next_addr = strtoul(data[3], NULL, 16);
+		if (search_addr >= addr && search_addr < next_addr) {
+			sprintf(buffer, "%s", data[2]);
+			sym_offset = search_addr - addr;
+			total_size = next_addr - addr;
+			sprintf(buffer + strlen(buffer)-1, "+0x%lx/0x%lx", sym_offset, total_size);
+			//lldbg("Got it buffer is : %s\n", buffer);
+			break;
+		}
+		if (search_addr < addr) {
+			last = mid - 1;
+		} else {
+			first = mid + 1;
+		}
+
+		mid = (first + last ) / 2;
+	}
+	if (first > last) {
+		lldbg("symbol is not found in system map\n");
+		buffer = "";
+	}
+
+	fclose(pFile);
+}
+#endif						/* End of CONFIG_FS_ROMFS */
+
+/****************************************************************************
+ * Name: unwind_frame_with_fp
+ ****************************************************************************/
 
 static int unwind_frame_with_fp(struct stackframe *stack_frame, uint32_t stacksize)
 {
@@ -217,6 +321,10 @@ static int unwind_frame_with_fp(struct stackframe *stack_frame, uint32_t stacksi
 	return 0;
 }
 
+/****************************************************************************
+ * Name: unwind_backtrace_with_fp
+ ****************************************************************************/
+
 static void unwind_backtrace_with_fp(arm_regs_t *regs, struct tcb_s *task)
 {
 	uint32_t ustacksize;
@@ -224,7 +332,7 @@ static void unwind_backtrace_with_fp(arm_regs_t *regs, struct tcb_s *task)
 	struct tcb_s *current = this_task();
 
 #if CONFIG_TASK_NAME_SIZE > 0
-	lldbg("Task(pid): %s(%d), TaskAddr: [0x%p] and [Current : %s]\n", task ? task->name : "No Task", task->pid, task, current ? current->name : "No Task");
+	lldbg("Task: [%s], Pid: [%d], TaskAddr: [0x%p] and [Current : %s]\n", task ? task->name : "No Task", task->pid, task, current ? current->name : "No Task");
 #else
 	lldbg("pid: %d, TaskAddr: [0x%p] \n", task->pid, task);
 #endif
@@ -240,7 +348,7 @@ static void unwind_backtrace_with_fp(arm_regs_t *regs, struct tcb_s *task)
 		stack_frame.programCounter = (uint32_t)unwind_backtrace_with_fp;
 		stack_frame.stackPointer = up_getsp();
 		stack_frame.framePointer = (uint32_t)FRAME_POINTER_ADDR;
-	} else if (regs->reg[REG_R15] && regs->reg[REG_R14]) {
+	} else if (regs && regs->reg[REG_R15] && regs->reg[REG_R14] && task == current) {
 		lldbg("Registers are Valid, We may be either Interrupt context/exception context\n");
 		stack_frame.programCounter = regs->reg[REG_R15];	/* pc */
 		stack_frame.stackPointer = regs->reg[REG_R13];	/* sp */
@@ -265,16 +373,24 @@ static void unwind_backtrace_with_fp(arm_regs_t *regs, struct tcb_s *task)
 		uint32_t current_addr = stack_frame.programCounter;
 		if (unwind_frame_with_fp(&stack_frame, ustacksize) >= 0) {
 			/* Print the call stack address */
+#ifdef CONFIG_FS_ROMFS
+			char buffer[64];
+			get_symbol(current_addr, buffer);
+			lldbg("[<0x%p>] %s\n", (void *)current_addr, buffer);
+#else
 			lldbg("[<0x%p>]\n", (void *)current_addr);
+#endif
 		} else {
 			/* End of stack */
 			break;
 		}
 	}
 }
-#endif
 
-static uint32_t task_counter = 0;
+/****************************************************************************
+ * Name: print_callstack
+ ****************************************************************************/
+
 static void print_callstack(FAR struct tcb_s *tcb, FAR void *arg)
 {
 	uint32_t regs;
@@ -285,28 +401,32 @@ static void print_callstack(FAR struct tcb_s *tcb, FAR void *arg)
 			task_ctxt_regs.reg[regs] = current_regs[regs];
 		}
 	}
-#ifdef CONFIG_FRAME_POINTER
 	/* Unwind the task stack by using fp (R11) */
 	unwind_backtrace_with_fp(&task_ctxt_regs, tcb);
-	lldbg("Call stack displayed for %d of Tasks.\n", ++task_counter);
-#endif
+	lldbg("*******************************************************************************\n");
 
 }
 
+/****************************************************************************
+ * Name: dump_all_stack
+ ****************************************************************************/
+
 void dump_all_stack(void)
 {
-	/* Reset the counter which counts the callstack displyed */
-	task_counter = 0;
+	lldbg("*******************************************************************************\n");
+	lldbg("Printing the call stack of all the tasks in the system\n");
+	lldbg("*******************************************************************************\n");
 
 	/* Display Call stack for all available tasks in the system */
 	sched_foreach(print_callstack, NULL);
 }
 
+/****************************************************************************
+ * Name: dump_stack
+ ****************************************************************************/
+
 void dump_stack(void)
 {
-	/* Reset the counter which counts the callstack displyed */
-	task_counter = 0;
-
 	/* Disable the irqs */
 	irqstate_t flags = irqsave();
 
@@ -318,6 +438,7 @@ void dump_stack(void)
 	/* Restore the irqs */
 	irqrestore(flags);
 }
+#endif						/* End of CONFIG_FRAME_POINTER */
 
 /****************************************************************************
  * Name: up_taskdump
@@ -715,11 +836,24 @@ static void up_dumpstate(void)
 
 	up_registerdump();
 
+#ifdef CONFIG_FRAME_POINTER
+	/* Dump the stack */
+	lldbg("*******************************************\n");
+	lldbg("Call stack of aborted task:\n");
+	lldbg("*******************************************\n");
 	dump_stack();
-
+#endif
 	/* Dump the state of all tasks (if available) */
 
+	lldbg("*******************************************\n");
+	lldbg("List of all tasks in the system:\n");
+	lldbg("*******************************************\n");
 	up_showtasks();
+
+#ifdef CONFIG_FRAME_POINTER
+	/* Display the call stack of all tasks */
+	dump_all_stack();
+#endif
 
 #ifdef CONFIG_ARCH_USBDUMP
 	/* Dump USB trace data */
@@ -766,6 +900,9 @@ static void _up_assert(int errorcode)
 void up_assert(const uint8_t *filename, int lineno)
 {
 	board_autoled_on(LED_ASSERTION);
+#if defined(CONFIG_FS_ROMFS) && defined(CONFIG_FRAME_POINTER)
+	abort_mode = true;
+#endif
 
 #if CONFIG_TASK_NAME_SIZE > 0
 	lldbg("Assertion failed at file:%s line: %d task: %s\n", filename, lineno, this_task()->name);

@@ -213,6 +213,17 @@ void up_assert(FAR const uint8_t *filename, int linenum) noreturn_function;
 void up_assert(void) noreturn_function;
 #endif
 
+#ifdef CONFIG_FRAME_POINTER
+/*****************************************************************************
+ * dump_stack : Dumps the call stack of the calling Task/Thread
+ *****************************************************************************/
+void dump_stack(void);
+
+/*****************************************************************************
+ * dump_all_stack : Dumps the call stack of all the tasks/threads in system
+ *****************************************************************************/
+void dump_all_stack(void);
+#endif
 /**
  * @}
  * @endcond

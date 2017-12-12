@@ -6,6 +6,7 @@
 menuconfig EXAMPLES_TESTCASE_NETWORK
 	bool "Network TestCase Example"
 	default n
+	select NET_LWIP_ERROR if NET_LWIP
 	---help---
 		Enable the Network TestCase Example
 

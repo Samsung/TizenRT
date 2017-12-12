@@ -16,7 +16,7 @@
  *
  ****************************************************************************/
 
-/// @file iotbus_uart.h
+/// @file itc_uart.c
 
 /// @brief Test Case Iotbus APIs for UART
 
@@ -24,12 +24,6 @@
  * Included Files
  ****************************************************************************/
 #include <tinyara/config.h>
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
-#include <errno.h>
-#include <termios.h>
-
 #include <iotbus_uart.h>
 #include "itc_internal.h"
 #include "iotbus_error.h"
@@ -42,14 +36,14 @@
 #endif
 
 /**
-* @testcase         itc_iotbus_uart_init_stop_p
+* @testcase         itc_systemio_iotbus_uart_init_stop_p
 * @brief            initializes and closes uart_context
 * @scenario         initializes and closes uart_context
 * @apicovered       iotbus_uart_init, iotbus_uart_stop
 * @precondition     none
 * @postcondition    none
 */
-void itc_iotbus_uart_init_stop_p(void)
+void itc_systemio_iotbus_uart_init_stop_p(void)
 {
 	int ret = IOTBUS_ERROR_NONE;
 	iotbus_uart_context_h h_uart = iotbus_uart_init(DEVPATH);
@@ -62,14 +56,14 @@ void itc_iotbus_uart_init_stop_p(void)
 }
 
 /**
-* @testcase         itc_iotbus_uart_set_baudrate_p
+* @testcase         itc_systemio_iotbus_uart_set_baudrate_p
 * @brief            sets uart baud rate
 * @scenario         sets uart baud rate
 * @apicovered       iotbus_uart_set_baudrate
 * @precondition     initializes uart_context
 * @postcondition    closes uart_context
 */
-void itc_iotbus_uart_set_baudrate_p(void)
+void itc_systemio_iotbus_uart_set_baudrate_p(void)
 {
 	int i_baudrate = 115200;
 	int ret = IOTBUS_ERROR_NONE;
@@ -86,14 +80,14 @@ void itc_iotbus_uart_set_baudrate_p(void)
 }
 
 /**
-* @testcase         itc_iotbus_uart_set_mode_p
+* @testcase         itc_systemio_iotbus_uart_set_mode_p
 * @brief            sets byte size, parity bit and stop bits
 * @scenario         sets byte size, parity bit and stop bits
 * @apicovered       iotbus_uart_set_mode
 * @precondition     initializes uart_context
 * @postcondition    closes uart_context
 */
-void itc_iotbus_uart_set_mode_p(void)
+void itc_systemio_iotbus_uart_set_mode_p(void)
 {
 	int i_bytesize = 8;
 	int i_stop_bits = 1;
@@ -116,14 +110,14 @@ void itc_iotbus_uart_set_mode_p(void)
 }
 
 /**
-* @testcase         itc_iotbus_uart_set_flowcontrol_p
+* @testcase         itc_systemio_iotbus_uart_set_flowcontrol_p
 * @brief            set flow control settings
 * @scenario         set flow control settings
 * @apicovered       iotbus_uart_set_flowcontrol
 * @precondition     initializes uart_context
 * @postcondition    closes uart_context
 */
-void itc_iotbus_uart_set_flowcontrol_p(void)
+void itc_systemio_iotbus_uart_set_flowcontrol_p(void)
 {
 	int i_size = 4;
 	int ret = IOTBUS_ERROR_NONE;
@@ -144,14 +138,14 @@ void itc_iotbus_uart_set_flowcontrol_p(void)
 }
 
 /**
-* @testcase         itc_iotbus_uart_write_read_p
+* @testcase         itc_systemio_iotbus_uart_write_read_p
 * @brief            write and read data over uart bus
 * @scenario         write and read data over uart bus
 * @apicovered       iotbus_uart_write, iotbus_uart_read
 * @precondition     initializes uart_context
 * @postcondition    closes uart_context
 */
-void itc_iotbus_uart_write_read_p(void)
+void itc_systemio_iotbus_uart_write_read_p(void)
 {
 	int ret = IOTBUS_ERROR_NONE;
 	char szInputText[32] = "UART READ/WRITE ITC TESTING!";
@@ -176,14 +170,14 @@ void itc_iotbus_uart_write_read_p(void)
 }
 
 /**
-* @testcase         itc_iotbus_uart_flush_p
+* @testcase         itc_systemio_iotbus_uart_flush_p
 * @brief            flushes uart buffer
 * @scenario         flushes uart buffer
 * @apicovered       iotbus_uart_flush
 * @precondition     initializes uart_context
 * @postcondition    closes uart_context
 */
-void itc_iotbus_uart_flush_p(void)
+void itc_systemio_iotbus_uart_flush_p(void)
 {
 	int ret = IOTBUS_ERROR_NONE;
 	iotbus_uart_context_h h_uart = iotbus_uart_init(DEVPATH);
@@ -207,12 +201,12 @@ int itc_uart_main(void)
 #ifndef CONFIG_SERIAL_TERMIOS
 	SYSIO_ITC_UART_PRINT("IOTBUS Not Supported\n");
 #else
-	itc_iotbus_uart_init_stop_p();
-	itc_iotbus_uart_set_baudrate_p();
-	itc_iotbus_uart_set_mode_p();
-	itc_iotbus_uart_set_flowcontrol_p();
-	itc_iotbus_uart_write_read_p();
-	itc_iotbus_uart_flush_p();
+	itc_systemio_iotbus_uart_init_stop_p();
+	itc_systemio_iotbus_uart_set_baudrate_p();
+	itc_systemio_iotbus_uart_set_mode_p();
+	itc_systemio_iotbus_uart_set_flowcontrol_p();
+	itc_systemio_iotbus_uart_write_read_p();
+	itc_systemio_iotbus_uart_flush_p();
 #endif
 
 	return 0;

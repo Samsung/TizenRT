@@ -85,6 +85,21 @@ int net_shutdown_main(void);
 #ifdef CONFIG_TC_NET_SELECT
 int net_select_main(void);
 #endif
+#ifdef CONFIG_TC_NET_DHCPC
+int net_dhcpc_main(void);
+#endif
+#ifdef CONFIG_TC_NET_INET
+int net_inet_main(void);
+#endif
+#ifdef CONFIG_TC_NET_ETHER
+int net_ether_main(void);
+#endif
+#ifdef CONFIG_TC_NET_NETDB
+int net_netdb_main(void);
+#endif
+#ifdef CONFIG_TC_NET_DUP
+int net_dup_main(void);
+#endif
 #ifdef CONFIG_ITC_NET_CLOSE
 int itc_net_close_main(void);
 #endif

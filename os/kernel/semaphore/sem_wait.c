@@ -77,6 +77,9 @@
 /****************************************************************************
  * Global Variables
  ****************************************************************************/
+#if defined(CONFIG_FS_ROMFS) && defined(CONFIG_FRAME_POINTER)
+extern bool abort_mode;
+#endif
 
 /****************************************************************************
  * Private Variables
@@ -117,10 +120,16 @@ int sem_wait(FAR sem_t *sem)
 	FAR struct tcb_s *rtcb = this_task();
 	irqstate_t saved_state;
 	int ret = ERROR;
-
 	/* This API should not be called from interrupt handlers */
+#if defined(CONFIG_FS_ROMFS) && defined(CONFIG_FRAME_POINTER)
+	DEBUGASSERT((sem != NULL && up_interrupt_context() == false) || abort_mode);
 
+	if (abort_mode && up_interrupt_context() == true) {
+		return OK;
+	}
+#else
 	DEBUGASSERT(sem != NULL && up_interrupt_context() == false);
+#endif
 
 	/* The following operations must be performed with interrupts
 	 * disabled because sem_post() may be called from an interrupt
