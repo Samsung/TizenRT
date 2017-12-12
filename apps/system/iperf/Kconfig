@@ -16,7 +16,6 @@ if SYSTEM_IPERF
 config SYSTEM_IPERF_PROGNAME
 	string "Program name"
 	default "iperf"
-	depends on BUILD_KERNEL
 	---help---
 		This is the name of the program that will be use when the TASH ELF
 		program is installed.

@@ -63,6 +63,7 @@
  * In this platform, DHCP client and server are supported through netutils
  * Instead of using lwIP DHCP, please use netutils dhcpc and dhcpd
  */
+
 #define LWIP_DHCPS                      0
 #define LWIP_DHCP                       0
 #define LWIP_NETIF_API                  1

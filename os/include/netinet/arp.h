@@ -58,7 +58,6 @@
  ****************************************************************************/
 
 #include <tinyara/config.h>
-
 #include <stdint.h>
 #include <tinyara/fs/ioctl.h>
 

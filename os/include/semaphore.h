@@ -66,7 +66,7 @@
  ****************************************************************************/
 
 #include <tinyara/config.h>
-
+#include <tinyara/clock.h>
 #include <stdint.h>
 #include <limits.h>
 

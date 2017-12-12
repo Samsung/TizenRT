@@ -53,8 +53,6 @@
  *
  */
 
-#include <net/lwip/opt.h>
-#include <net/lwip/ipv4/ip_addr.h>
 #include <net/lwip/netif.h>
 #include <net/lwip/debug.h>
 
