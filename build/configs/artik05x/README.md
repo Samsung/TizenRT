@@ -18,10 +18,14 @@
 >   * [How to Build](#how-to-build)
 >   * [How to program a binary](#how-to-program-a-binary)
 >   * [How to clear flashed content on a board](#how-to-clear-flashed-content-on-a-board)
+>   * [How to use JTAG equiqments](#how-to-use-jtag-equiqments)
+>   * [GPIO Mapping](#gpio-mapping)
+>   * [SERIAL Mapping](#serial-mapping)
 >   * [How to save/restore wifi info](#how-to-saverestore-wifi-info)
 >   * [How to enable the ARTIK SDK](#how-to-enable-the-artik-sdk)
 > * ETC
 >   * [Factory Reset](#factory-reset)
+>   * [OTA](#ota)
 >   * [Memory Map](#memory-map)
 >   * [U-Boot for ARTIK05x](#u-boot-for-artik05x)
 >   * [Configure USB Drivers](#configure-usb-drivers)
@@ -284,6 +288,55 @@ $ cd os
 $ make download erase user
 ```
 
+## How to use JTAG equiqments
+
+![jtag pin kit](../../../docs/media/jtagkit.png)
+
+If you are using the Starter Kit, you can use the JTAG pin(CON707).
+
+![jtag pin module](../../../docs/media/jtagmodule.png)
+
+If you are using only the ARTIK05x module, you can connect it using the JTAG pin output from the module.
+
+## GPIO Mapping
+
+The GPIO PAD name on the schematic differs from the GPIO name of the device. Please refer to the table below.
+
+|    XGPIO0   |    XGPIO1   |    XGPIO2   |    XGPIO3   |    XGPIO4   |    XGPIO5   |    XGPIO6   |    XGPIO7   |
+|:-----------:|:-----------:|:-----------:|:-----------:|:-----------:|:-----------:|:-----------:|:-----------:|
+| /dev/gpio29 | /dev/gpio30 | /dev/gpio31 | /dev/gpio32 | /dev/gpio33 | /dev/gpio34 | /dev/gpio35 | /dev/gpio36 |
+
+|    XGPIO8   |    XGPIO9   |   XGPIO10   |   XGPIO11   |   XGPIO12   |   XGPIO13   |   XGPIO14   |   XGPIO15   |
+|:-----------:|:-----------:|:-----------:|:-----------:|:-----------:|:-----------:|:-----------:|:-----------:|
+| /dev/gpio37 | /dev/gpio38 | /dev/gpio39 | /dev/gpio40 | /dev/gpio41 | /dev/gpio42 | /dev/gpio43 | /dev/gpio44 |
+
+|   XGPIO16   |   XGPIO17   |   XGPIO18   |   XGPIO19   |   XGPIO20   |   XGPIO21   |   XGPIO22   |   XGPIO23   |
+|:-----------:|:-----------:|:-----------:|:-----------:|:-----------:|:-----------:|:-----------:|:-----------:|
+| /dev/gpio45 | /dev/gpio46 | /dev/gpio47 | /dev/gpio48 | /dev/gpio49 | /dev/gpio50 | /dev/gpio51 | /dev/gpio52 |
+
+|   XGPIO24   |   XGPIO25   |   XGPIO26   |   XGPIO27   |   XGPIO28   |    XEINT0   |    XEINT1   |    XEINT2   |
+|:-----------:|:-----------:|:-----------:|:-----------:|:-----------:|:-----------:|:-----------:|:-----------:|
+| /dev/gpio53 | /dev/gpio54 | /dev/gpio55 | /dev/gpio56 | /dev/gpio20 | /dev/gpio57 | /dev/gpio58 | /dev/gpio59 |
+
+## SERIAL Mapping
+
+![uart default console](../../../docs/media/uartconsole.png)
+
+You need the following settings in menuconfig.
+ * Device Drivers > Serial Driver Support > Serial console
+
+The mapping for the UART changes depending on the selection of the **serial console**. The default setting for the serial console is `UART4`. At this time, the device is set as follows.
+
+|   XUART4   |   XUART0   |   XUART1   |   XUART2   |   XUART3   |
+|:----------:|:----------:|:----------:|:----------:|:----------:|
+| /dev/ttyS0 | /dev/ttyS1 | /dev/ttyS2 | /dev/ttyS3 | /dev/ttyS4 |
+
+If you change the serial console to UART3, the mapping of the other device changes as follows.
+
+|   XUART3   |   XUART0   |   XUART1   |   XUART2   |   XUART4   |
+|:----------:|:----------:|:----------:|:----------:|:----------:|
+| /dev/ttyS0 | /dev/ttyS1 | /dev/ttyS2 | /dev/ttyS3 | /dev/ttyS4 |
+
 ## How to save/restore wifi info
 
 ![wifi info](../../../docs/media/wifiinfo.jpg)
@@ -330,10 +383,8 @@ If you can not boot normally, you can change os to the initial version. This is 
 You compress the compiled firmware and download it to the board.
 
 ```bash
-$ cd build/output/bin
-$ gzip -c tinyara_head.bin > ../../configs/artik053/bin/factory.bin          # ARTIK053
-$ gzip -c tinyara_head.bin-signed > ../../configs/artik053s/bin/factory.bin  # ARTIK053s
-$ gzip -c tinyara_head.bin-signed > ../../configs/artik055s/bin/factory.bin  # ARTIK055s
+$ cd os
+$ make image factory
 ```
 ```bash
 $ cd os
@@ -343,6 +394,8 @@ $ make download factory
 #### How to enter initialization mode
 
 When you press the RESET button (SW700) to reboot the Starter Kit, press and hold the `ARDUINO RESET` button (SW701) for 10 seconds. Enter initialization mode as follows.
+
+#### Factory Reset Log
 ```
 .....
 Factory reset.
@@ -352,10 +405,66 @@ Erased 600 sectors
 Flashing factory image...
 Uncompressed size: 1258496 = 0x133400
 resetting ...
-
-........ <RESET>.....................
-U-Boot 2017
 .....
+```
+
+## OTA
+
+You can use the OTA feature when updating the OS binaries externally.
+
+#### How to create an OTA binary
+
+Compress the compiled firmware and add the CRC information for the OTA.
+
+```bash
+$ cd os
+$ make image ota
+```
+
+#### How to fusing OTA binary
+
+##### using `UART`
+
+```bash
+$ cd os
+$ make download ota
+```
+
+##### using `YMODEM` (in U-BOOT using Minicom)
+
+```
+U-BOOT > erase 0x044A0000 +0x15E000               # erase ota area
+Erased 350 sectors
+U-BOOT > loady 0x044A0000                         # load ymodem
+## Ready for binary (ymodem) download to 0x044A0000 at 115200 bps...
+                                                  # ctrl-A Z S ymodem
+xyzModem - Cksum mode, 4728(SOH)/0(STX)/0(CAN) packets, 17 retries
+## Total Size      = 0x00093ad1 = 604881 Bytes
+U-BOOT > reset                                    # reboot
+```
+
+##### using `HTTP` (own webserver)
+
+You need the following settings in menuconfig.
+ * Application Configuration > Examples > OTA downloader
+
+```
+TASH>>ota http://192.168.1.10/ota.bin /dev/mtdblock7
+TASH>>reboot
+```
+
+#### OTA Log
+```
+CRC32 for 044a1000 ... 0453a3a8 ==> 3cf5a5b1
+Found an update image downloaded.
+....................................e
+Erased 600 sectors
+Updating boot partition...
+Uncompressed size: 1256448 = 0x132C00
+....................................e
+Erased 384 sectors
+Done
+resetting ...
 ```
 
 ## Memory Map

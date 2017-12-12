@@ -35,42 +35,50 @@ Aimed especially at power-sensitive devices needing Wi-Fi®, the ARTIK055s Modul
             XADC4 <- A4                      1 -> XUART0_TX
             XADC5 <- A5                      0 -> XUART0_RX
 
-                   [CON703]
-                   2 4 6 8 10 12 14 16 18 20 22 24
-                   1 3 5 7  9 11 13 15 17 19 21 23
-                   [CON704]
-                   2 4 6 8 10 12 14 16 18 20 22 24
-                   1 3 5 7  9 11 13 15 17 19 21 23
+                 [CON703]
+                 2  4  6  8 10 12 14 16 18 20 22 24
+                 1  3  5  7  9 11 13 15 17 19 21 23
+                 [CON704]
+                 2  4  6  8 10 12 14 16 18 20 22 24
+                 1  3  5  7  9 11 13 15 17 19 21 23
 ```
 #### CON703
 ```
-                 XPWMTOUT_1 <-  1 |  2 -> VCC_EXT3P3
-                 XPWMTOUT_2 <-  3 |  4 -> XADC6
-                 XPWMTOUT_3 <-  5 |  6 -> XADC7
-                 XPWMTOUT_0 <-  7 |  8 -> XI2C1_SCL
-                 XUART1_RXD <-  9 | 10 -> XI2C1_SDA
-                 XUART1_TXD <- 11 | 12 -> GND
-  XGPIO26(gpio55)/XI2S0_SDO <- 13 | 14 -> VCC_EXT3P3
- XGPIO25(gpio54)/XI2S0_LRCK <- 15 | 16 -> XSPI0_CLK
-            XGPIO24(gpio53) <- 17 | 18 -> XSPI0_CSN
-  XGPIO27(gpio56)/XI2S0_SDI <- 19 | 20 -> XSPI0_MISO
-            XGPIO22(gpio51) <- 21 | 22 -> XSPI0_MOSI
-             XEINT0(gpio57) <- 23 | 24 -> GND
+                              GND  VCC_EXT3P3
+                     XI2C1_SDA  |  |  XSPI0_CLK
+                  XI2C1_SCL  |  |  |  |  XSPI0_CSN
+                   XADC7  |  |  |  |  |  |  XSPI0_MISO
+                XADC6  |  |  |  |  |  |  |  |  XSPI0_MOSI
+        VCC_EXT3P3  |  |  |  |  |  |  |  |  |  |  GND
+                 |  |  |  |  |  |  |  |  |  |  |  |
+                 2  4  6  8 10 12 14 16 18 20 22 24
+                 1  3  5  7  9 11 13 15 17 19 21 23
+                 |  |  |  |  |  |  |  |  |  |  |  |
+        XPWMTOUT_1  |  |  |  |  |  |  |  |  |  |  XEINT0(gpio57)
+           XPWMTOUT_2  |  |  |  |  |  |  |  |  XGPIO22(gpio51)
+              XPWMTOUT_3  |  |  |  |  |  |  XGPIO27(gpio56)/XI2S0_SDI
+                 XPWMTOUT_0  |  |  |  |  XGPIO24(gpio53)
+                    XUART1_RXD  |  |  XGPIO25(gpio54)/XI2S0_LRCK
+                       XUART1_TXD  XGPIO26(gpio55)/XI2S0_SDO
 ```
 #### CON704
 ```
-                 XPWMTOUT_4 <-  1 |  2 -> VCC_EXT3P3
-                 XPWMTOUT_5 <-  3 |  4 -> XUART2_RXD
-             XEINT2(gpio59) <-  5 |  6 -> XUART2_TXD
-             XEINT1(gpio58) <-  7 |  8 -> XUART3_RXD
-            XGPIO12(gpio41) <-  9 | 10 -> XUART3_TXD
-            XGPIO10(gpio39) <- 11 | 12 -> GND
-             XGPIO9(gpio38) <- 13 | 14 -> VCC_EXT3P3
-            XGPIO11(gpio40) <- 15 | 16 -> XGPIO4(gpio33)/XSPI2_CLK
-             XGPIO8(gpio37) <- 17 | 18 -> XGPIO5(gpio34)/XSPI2_CSN
-             XGPIO2(gpio31) <- 19 | 20 -> XGPIO6(gpio35)/XSPI2_MISO
-             XGPIO1(gpio30) <- 21 | 22 -> XGPIO7(gpio36)/XSPI2_MOSI
-             XGPIO3(gpio32) <- 23 | 24 -> GND
+                              GND  VCC_EXT3P3
+                    XUART3_TXD  |  |  XGPIO4(gpio33)/XSPI2_CLK
+                 XUART3_RXD  |  |  |  |  XGPIO5(gpio34)/XSPI2_CSN
+              XUART2_TXD  |  |  |  |  |  |  XGPIO6(gpio35)/XSPI2_MISO
+           XUART2_RXD  |  |  |  |  |  |  |  |  XGPIO7(gpio36)/XSPI2_MOSI
+        VCC_EXT3P3  |  |  |  |  |  |  |  |  |  |  GND
+                 |  |  |  |  |  |  |  |  |  |  |  |
+                 2  4  6  8 10 12 14 16 18 20 22 24
+                 1  3  5  7  9 11 13 15 17 19 21 23
+                 |  |  |  |  |  |  |  |  |  |  |  |
+        XPWMTOUT_4  |  |  |  |  |  |  |  |  |  |  XGPIO3(gpio32)
+           XPWMTOUT_5  |  |  |  |  |  |  |  |  XGPIO1(gpio30)
+          XEINT2(gpio59)  |  |  |  |  |  |  XGPIO2(gpio31)
+             XEINT1(gpio58)  |  |  |  |  XGPIO8(gpio37)
+               XGPIO12(gpio41)  |  |  XGPIO11(gpio40)
+                  XGPIO10(gpio39)  XGPIO9(gpio38)
 ```
 
 ## How to Build
