@@ -3071,6 +3071,9 @@ int tc_filesystem_main(int argc, char *argv[])
 	tc_libc_stdio_tmpnam();
 	tc_libc_stdio_ungetc();
 	tc_libc_stdio_zeroinstream();
+#ifdef CONFIG_ITC_FS
+	itc_fs_main();
+#endif
 
 	printf("\n########## FileSystem TC End [PASS : %d, FAIL : %d] ##########\n", total_pass, total_fail);
 
