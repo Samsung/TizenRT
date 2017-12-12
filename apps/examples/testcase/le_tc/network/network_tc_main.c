@@ -30,7 +30,6 @@ extern int working_tc;
 /****************************************************************************
  * Name: network_tc_main
  ****************************************************************************/
-
 #ifdef CONFIG_BUILD_KERNEL
 int main(int argc, FAR char *argv[])
 #else
@@ -113,6 +112,18 @@ int tc_network_main(int argc, char *argv[])
 #endif
 #ifdef CONFIG_TC_NET_DUP
 	net_dup_main();
+#endif
+#ifdef CONFIG_ITC_NET_CLOSE
+	itc_net_close_main();
+#endif
+#ifdef CONFIG_ITC_NET_DUP
+	itc_net_dup_main();
+#endif
+#ifdef CONFIG_ITC_NET_FCNTL
+	itc_net_fcntl_main();
+#endif
+#ifdef CONFIG_ITC_NET_LISTEN
+	itc_net_listen_main();
 #endif
 
 	printf("\n########## Network TC End [PASS : %d, FAIL : %d] ##########\n", total_pass, total_fail);
