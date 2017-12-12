@@ -99,7 +99,7 @@ int group_setupidlefiles(FAR struct task_tcb_s *tcb)
 #if CONFIG_NFILE_DESCRIPTORS > 0
 	FAR struct task_group_s *group = tcb->cmn.group;
 #endif
-#if CONFIG_NFILE_DESCRIPTORS > 0 && defined(CONFIG_DEV_CONSOLE)
+#if defined(CONFIG_DEV_CONSOLE)
 	int fd;
 #endif
 
@@ -119,7 +119,7 @@ int group_setupidlefiles(FAR struct task_tcb_s *tcb)
 	 * descriptor 0.
 	 */
 
-#if CONFIG_NFILE_DESCRIPTORS > 0 && defined(CONFIG_DEV_CONSOLE)
+#if defined(CONFIG_DEV_CONSOLE)
 	fd = open("/dev/console", O_RDWR);
 	if (fd == 0) {
 		/* Successfully opened /dev/console as stdin (fd == 0) */

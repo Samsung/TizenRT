@@ -598,6 +598,7 @@ menu "Files and I/O"
 
 config DEV_CONSOLE
 	bool "Enable /dev/console"
+	depends on NFILE_DESCRIPTORS != 0
 	default y
 	---help---
 		Set if architecture-specific logic provides /dev/console at boot-up
