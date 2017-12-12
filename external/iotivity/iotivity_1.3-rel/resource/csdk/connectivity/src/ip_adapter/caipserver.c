@@ -1132,6 +1132,7 @@ CAResult_t CAIPStartServer(const ca_thread_pool_t threadPool)
 void CAIPStopServer()
 {
     caglobals.ip.terminate = true;
+    int err;
 
 #if !defined(WSA_WAIT_EVENT_0)
 #ifndef __TIZENRT__
@@ -1159,6 +1160,21 @@ void CAIPStopServer()
         CACloseFDs();
     }
     caglobals.ip.started = false;
+#ifdef __TIZENRT__
+    if (g_nwevent_mqfd)
+    {
+        err = mq_close(g_nwevent_mqfd);
+        if (err < 0)
+        {
+            OIC_LOG_V(ERROR, TAG, "Error to close message queue(%d)", err);
+        }
+        err = mq_unlink("netlink_evtq");
+        if (err < 0)
+        {
+            OIC_LOG_V(ERROR, TAG, "Error to unlink message queue(%d)", err);
+        }
+    }
+#endif
 }
 
 void CAWakeUpForChange()
