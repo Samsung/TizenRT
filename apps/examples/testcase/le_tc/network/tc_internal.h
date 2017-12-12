@@ -100,4 +100,16 @@ int net_netdb_main(void);
 #ifdef CONFIG_TC_NET_DUP
 int net_dup_main(void);
 #endif
+#ifdef CONFIG_ITC_NET_CLOSE
+int itc_net_close_main(void);
+#endif
+#ifdef CONFIG_ITC_NET_DUP
+int itc_net_dup_main(void);
+#endif
+#ifdef CONFIG_ITC_NET_FCNTL
+int itc_net_fcntl_main(void);
+#endif
+#ifdef CONFIG_ITC_NET_LISTEN
+int itc_net_listen_main(void);
+#endif
 #endif /* __EXAMPLES_TESTCASE_NETWORK_TC_INTERNAL_H */
