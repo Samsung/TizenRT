@@ -151,17 +151,46 @@ HOSTINCLUDES = -I.
 HOSTCFLAGS = -Wall -Wstrict-prototypes -Wshadow -Wundef -g -pipe
 HOSTLDFLAGS =
 
+BOARD_NAME := artik053s
+BOARDBINDIR := $(TOPDIR)/../build/configs/$(BOARD_NAME)/bin
+
 define DOWNLOAD
-       @$(TOPDIR)/../build/configs/artik05x/artik05x_download.sh --board=artik053s --secure=$(TOPDIR)/$(CONFIG_ARTIK05X_CODESIGNER_PATH) $(1)
+       @$(TOPDIR)/../build/configs/artik05x/artik05x_download.sh --board=$(BOARD_NAME) --secure=$(TOPDIR)/$(CONFIG_ARTIK05X_CODESIGNER_PATH) $(1)
 endef
 
 ifeq ($(WINTOOL),y)
 # Windows-native toolchains
 define PACKAGE
-	${shell cygpath -w $(TOPDIR)/../build/configs/artik05x/artik05x_user_binary.sh --topdir=$(TOPDIR) --board=artik053s --secure=$(TOPDIR)/$(CONFIG_ARTIK05X_CODESIGNER_PATH)}
+	${shell cygpath -w $(TOPDIR)/../build/configs/artik05x/artik05x_user_binary.sh --topdir=$(TOPDIR) --board=$(BOARD_NAME) --secure=$(TOPDIR)/$(CONFIG_ARTIK05X_CODESIGNER_PATH)}
 endef
 else
 define PACKAGE
-	$(Q) $(TOPDIR)/../build/configs/artik05x/artik05x_user_binary.sh --topdir=$(TOPDIR) --board=artik053s --secure=$(TOPDIR)/$(CONFIG_ARTIK05X_CODESIGNER_PATH)
+	$(Q) $(TOPDIR)/../build/configs/artik05x/artik05x_user_binary.sh --topdir=$(TOPDIR) --board=$(BOARD_NAME) --secure=$(TOPDIR)/$(CONFIG_ARTIK05X_CODESIGNER_PATH)
 endef
 endif
+
+define HTON
+	echo $(1) | tac -rs .. | xxd -r -p
+endef
+
+define MAKEFACTORY
+	$(Q) if test ! -e $(1)_head.bin; then \
+		echo "can't stat '`basename $(1)_head.bin`': No such file or directory"; exit 1; \
+	fi
+	$(Q) $(TOPDIR)/$(CONFIG_ARTIK05X_CODESIGNER_PATH)/artik05x_AppCodesigner \
+		$(TOPDIR)/$(CONFIG_ARTIK05X_CODESIGNER_PATH)/rsa_private.key $(1)_head.bin
+	$(Q) gzip -c $(1)_head.bin-signed > $(BOARDBINDIR)/$(2).bin;
+	$(Q) $(call DELFILE,$(1)_head.bin-signed)
+
+endef
+
+define MAKEOTA
+	$(call MAKEFACTORY,$(1),tmp)
+	$(Q) dd if=$(BOARDBINDIR)/tmp.bin of=$(BOARDBINDIR)/$(2).bin bs=1024 seek=4;
+	$(Q) $(call HTON, $$(printf "%08x" $$(cat $(BOARDBINDIR)/tmp.bin | wc -c))) | \
+		dd of=$(BOARDBINDIR)/$(2).bin bs=1 seek=0 conv=notrunc;
+	$(Q) $(call HTON, $$(crc32 $(BOARDBINDIR)/tmp.bin)) | \
+		dd of=$(BOARDBINDIR)/$(2).bin bs=1 seek=4 conv=notrunc;
+	$(Q) $(call DELFILE,$(BOARDBINDIR)/tmp.bin)
+
+endef

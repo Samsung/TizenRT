@@ -534,15 +534,16 @@ $(BIN): pass1deps pass2deps pass1 pass2
 # example : 	make download ALL
 # 		make download [ALL | BOOTLOADER | RESOURCE | KERNEL | APP]
 
-ifeq (download,$(firstword $(MAKECMDGOALS)))
+
+ifneq (,$(filter $(firstword $(MAKECMDGOALS)),download image))
   # use the rest as arguments for "download"
-  DOWNLOAD_ARGS := $(wordlist 2,$(words $(MAKECMDGOALS)),$(MAKECMDGOALS))
-  # Turn DOWNLOAD_ARGS into do-nothing targets
-  $(eval $(DOWNLOAD_ARGS):;@:)
+  TARGET_ARGS := $(wordlist 2,$(words $(MAKECMDGOALS)),$(MAKECMDGOALS))
+  # Turn TARGET_ARGS into do-nothing targets
+  $(eval $(TARGET_ARGS):;@:)
 endif
 
 download:
-	$(call DOWNLOAD, $(DOWNLOAD_ARGS))
+	$(call DOWNLOAD, $(TARGET_ARGS))
 
 #
 # package
@@ -550,6 +551,13 @@ download:
 
 package:
 	$(Q) $(call PACKAGE)
+
+#
+# image: make factory image
+#
+
+image:
+	$(foreach ARG, $(TARGET_ARGS),$(call MAKE$(shell echo $(ARG) | tr a-z A-Z),$(BIN),$(ARG)))
 
 # pass1dep: Create pass1 build dependencies
 # pass2dep: Create pass2 build dependencies
