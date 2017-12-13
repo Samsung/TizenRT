@@ -1660,8 +1660,10 @@ void CAdeinitSslAdapter()
     DeletePeerList();
 
     // De-initialize mbedTLS
+    mbedtls_x509_crt_free(&g_caSslContext->ca);
     mbedtls_x509_crt_free(&g_caSslContext->crt);
     mbedtls_pk_free(&g_caSslContext->pkey);
+    mbedtls_x509_crl_free(&g_caSslContext->crl);
 #ifdef __WITH_TLS__
     mbedtls_ssl_config_free(&g_caSslContext->clientTlsConf);
     mbedtls_ssl_config_free(&g_caSslContext->serverTlsConf);
