@@ -86,13 +86,12 @@ extern int sm_init_svrdb();
 extern int sm_reset_svrdb();
 
 /**
- * Function to generate MAC based UUID.
- * NOTE : device uuid will be changed to the MD5 hash value of MAC address
+ * Function to generate the device UUID.
+ * NOTE : device uuid will be generated.
  *
- * @param is_forced if true, Device UUID will be created forcibly.
- * @ret 0 is success, otherwise fail.
+  * @ret 0 is success, otherwise fail.
  */
-extern int sm_generate_mac_based_device_id(bool is_forced);
+extern int sm_generate_device_id();
 
 /**
  * Function to save the Cloud ACL
