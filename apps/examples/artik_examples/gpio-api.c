@@ -37,7 +37,7 @@ static int gpio_unwatch(int argc, char *argv[]);
 const struct command gpio_commands[] = {
 	{ "read", "read <num>", gpio_read },
 	{ "write", "write <num> <0|1>", gpio_write },
-	{ "watch", "watch <num>", gpio_watch },
+	{ "watch", "watch <num> [edge]", gpio_watch },
 	{ "unwatch", "unwatch <num>", gpio_unwatch },
 	{ "", "", NULL}
 };
@@ -145,8 +145,17 @@ static int gpio_watch(int argc, char *argv[])
 	config.name = name;
 	config.id = atoi(argv[3]);
 	config.dir = GPIO_IN;
-	config.edge = GPIO_EDGE_BOTH;
 	config.initial_value = 0;
+	config.edge = GPIO_EDGE_BOTH;
+
+	if (argc > 4) {
+		if (!strcmp(argv[4], "rising"))
+			config.edge = GPIO_EDGE_RISING;
+		else if (!strcmp(argv[4], "falling"))
+			config.edge = GPIO_EDGE_FALLING;
+		else if (!strcmp(argv[4], "none"))
+			config.edge = GPIO_EDGE_NONE;
+	}
 
 	ret = gpio->request(&handle, &config);
 	if (ret != S_OK) {

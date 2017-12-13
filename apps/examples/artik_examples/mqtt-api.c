@@ -167,6 +167,7 @@ static int mqtt_cmd_connect(int argc, char **argv)
 
 	if (use_tls) {
 		memset(&ssl, 0, sizeof(ssl));
+		ssl.verify_cert = ARTIK_SSL_VERIFY_REQUIRED;
 		ssl.ca_cert.data = (char *)akc_root_ca;
 		ssl.ca_cert.len = sizeof(akc_root_ca);
 		config.tls = &ssl;
