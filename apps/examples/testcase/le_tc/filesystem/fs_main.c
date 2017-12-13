@@ -3002,6 +3002,9 @@ int tc_filesystem_main(int argc, char *argv[])
 #ifdef CONFIG_TC_FS_PROCFS
 	tc_fs_procfs_main();
 #endif
+#if defined(CONFIG_FS_PROCFS) && !defined(CONFIG_FS_PROCFS_EXCLUDE_SMARTFS)
+	tc_smartfs_procfs_main();
+#endif
 	tc_libc_stdio_dprintf();
 	tc_libc_stdio_fdopen();
 	tc_libc_stdio_fopen();
@@ -3060,7 +3063,9 @@ int tc_filesystem_main(int argc, char *argv[])
 #ifdef CONFIG_ITC_FS
 	itc_fs_main();
 #endif
-
+#ifndef CONFIG_SMARTFS_MULTI_ROOT_DIRS
+	tc_fs_smartfs_mksmartfs();
+#endif
 	(void)tc_handler(TC_END, "FileSystem TC");
 
 	return 0;

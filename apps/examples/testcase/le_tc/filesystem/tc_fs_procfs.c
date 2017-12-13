@@ -43,7 +43,18 @@
 #define PROC_VERSION_PATH "/proc/version"
 #define PROC_INVALID_PATH "/proc/nofile"
 #define INVALID_PATH "/proc/fs/invalid"
+#if defined(CONFIG_SIDK_S5JT200_AUTOMOUNT_USERFS)
+#define SMARTFS_DEV_PATH CONFIG_SIDK_S5JT200_AUTOMOUNT_USERFS_DEVNAME
 
+#elif defined(CONFIG_ARTIK05X_AUTOMOUNT_USERFS)
+#define SMARTFS_DEV_PATH CONFIG_ARTIK05X_AUTOMOUNT_USERFS_DEVNAME
+
+#else
+#define MOUNT_DEV_DIR "/dev/smart1"
+#endif
+
+#define PROC_SMARTFS_PATH "/proc/fs/smartfs"
+#define PROC_SMARTFS_FILE_PATH "/proc/fs/smartfs/file.txt"
 /* Read all files in the directory */
 static int read_dir_entries(const char *dirpath)
 {
@@ -210,6 +221,51 @@ static int procfs_rewind_tc(const char *dirpath)
 
 	return OK;
 }
+#ifndef CONFIG_SMARTFS_MULTI_ROOT_DIRS
+void tc_fs_smartfs_mksmartfs(void)
+{
+	int ret;
+	ret = mksmartfs(SMARTFS_DEV_PATH, 1);
+	TC_ASSERT_EQ("mksmartfs", ret, OK);
+	ret = mksmartfs(INVALID_PATH, 1);
+	TC_ASSERT_NEQ("mksmartfs", ret, OK);
+	ret = mksmartfs(SMARTFS_DEV_PATH, 0);
+	TC_ASSERT_EQ("mksmartfs", ret, OK);
+
+	TC_SUCCESS_RESULT();
+}
+#endif
+
+#if defined(CONFIG_FS_PROCFS) && !defined(CONFIG_FS_PROCFS_EXCLUDE_SMARTFS)
+void tc_smartfs_procfs_main(void)
+{
+	int fd;
+	int ret;
+	struct stat st;
+
+	fd = open(PROC_SMARTFS_PATH, O_RDONLY);
+	TC_ASSERT_GEQ("open", fd, 0);
+
+	ret = close(fd);
+	TC_ASSERT_EQ("close", ret, OK);
+
+	/* entry not found condition */
+
+	fd = open(PROC_SMARTFS_FILE_PATH, O_RDWR | O_CREAT );
+	TC_ASSERT_EQ("open", fd, ERROR);
+
+	fd = open(INVALID_PATH, O_RDONLY);
+	TC_ASSERT_EQ("open", fd, ERROR);
+
+	ret = read_dir_entries(PROC_SMARTFS_PATH);
+	TC_ASSERT_EQ("read_dir_entries", ret, OK);
+
+	ret = stat(PROC_SMARTFS_PATH, &st);
+	TC_ASSERT_EQ("stat", ret, OK);
+
+	TC_SUCCESS_RESULT();
+}
+#endif
 
 void tc_fs_procfs_main(void)
 {
