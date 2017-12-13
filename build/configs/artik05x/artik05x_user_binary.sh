@@ -195,7 +195,9 @@ fi
     flash_write wlanfw ../boot_bin/wlanfw.bin;	\
     flash_write os ../boot_bin/$(basename ${TIZENRT_IMAGE});	\
     flash_write factory ../boot_bin/factoryimage.gz;\
-    flash_erase_part user; exit"
+    flash_erase_part user; \
+    flash_erase_part sssrw; \
+    exit"
 __EOF__
 
 tee user_binary/openocd/fusing_a05x.bat << __EOF__
@@ -209,7 +211,9 @@ tee user_binary/openocd/fusing_a05x.bat << __EOF__
         flash_write wlanfw ../boot_bin/wlanfw.bin;\
         flash_write os ../boot_bin/$(basename ${TIZENRT_IMAGE});	\
         flash_write factory ../boot_bin/factoryimage.gz;\
-        flash_erase_part user; exit"
+        flash_erase_part user; \
+        flash_erase_part sssrw; \
+        exit"
 __EOF__
 
 chmod +x user_binary/openocd/fusing_a05x.*
