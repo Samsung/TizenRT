@@ -864,7 +864,6 @@ static void alc5658_rxtxcallback(FAR struct i2s_dev_s *dev, FAR struct ap_buffer
 	for (tmp = (dq_entry_t *)dq_peek(&priv->pendq); tmp; tmp = dq_next(tmp)) {
 		if (tmp == (dq_entry_t *)apb) {
 			dq_rem(tmp, &priv->pendq);
-			apb_free(apb);		/* let the reference gained in enqueue */
 			audvdbg("found the apb to remove 0x%x\n", tmp);
 			break;
 		}
@@ -891,7 +890,6 @@ static int alc5658_enqueuebuffer(FAR struct audio_lowerhalf_s *dev, FAR struct a
 
 	/* Need to fix later */
 	if (!priv->running) {
-		apb_reference(apb);
 
 		/* Add the new buffer to the tail of pending audio buffers */
 		alc5658_takesem(&priv->devsem);
