@@ -5,7 +5,7 @@
 
 menuconfig EXAMPLES_TESTCASE_KERNEL
 	bool "Kernel TestCase Example"
-	default n
+	default y
 	---help---
 		Enable the Kernel TestCase Example
 
@@ -17,7 +17,7 @@ config DEBUG_TC_KN
 
 config TC_KN_ALL
 	bool "All"
-	default n
+	default y
 	select TC_KERNEL_CLOCK
 	select TC_KERNEL_ENVIRON
 	select TC_KERNEL_ERRNO

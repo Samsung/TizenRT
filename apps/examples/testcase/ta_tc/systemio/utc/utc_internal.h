@@ -26,9 +26,6 @@
 
 #include "tc_common.h"
 
-extern int total_pass;
-extern int total_fail;
-
 #define SYSIO_UTC_PRINT   printf
 #define SYSIO_UTC_UART_PRINT   printf
 #define SYSIO_UTC_GPIO_PRINT   printf

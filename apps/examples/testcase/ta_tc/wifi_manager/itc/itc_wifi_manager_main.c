@@ -24,9 +24,6 @@
 #include <wifi_manager/wifi_manager.h>
 #include "tc_common.h"
 
-extern sem_t tc_sem;
-extern int working_tc;
-
 static pthread_mutex_t g_wifi_manager_test_mutex = PTHREAD_MUTEX_INITIALIZER;
 static pthread_cond_t g_wifi_manager_test_cond;
 
@@ -799,13 +796,9 @@ static void itc_wifi_manager_connect_set_mode_n(void)
 
 int wifi_manager_itc(int argc, FAR char *argv[])
 {
-	sem_wait(&tc_sem);
-	working_tc++;
-
-	total_pass = 0;
-	total_fail = 0;
-
-	printf("\n########## WiFiManager ITC Start ##########\n");
+	if (tc_handler(TC_START, "WiFiManager ITC") == ERROR) {
+		return ERROR;
+	}
 
 	itc_wifi_manager_init_deinit_p();
 
@@ -841,10 +834,7 @@ int wifi_manager_itc(int argc, FAR char *argv[])
 
 	//itc_wifi_manager_reconnect_p(); // System is crashing tested manually
 
-	printf("\n########## WiFiManager ITC End [PASS : %d, FAIL : %d] ##########\n", total_pass, total_fail);
-
-	working_tc--;
-	sem_post(&tc_sem);
+	(void)tc_handler(TC_END, "WiFiManager ITC");
 
 	return 0;
 }

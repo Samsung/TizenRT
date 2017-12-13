@@ -22,18 +22,16 @@
 #include <tinyara/config.h>
 #include <stdio.h>
 #include <semaphore.h>
-#include "itc_internal.h"
 
 #include <dm/dm_error.h>
 #include <dm/dm_connectivity.h>
-
 #include <protocols/dhcpc.h>
-
 #include <slsi_wifi/slsi_wifi_api.h>
 
-#define NET_DEVNAME "wl1"
+#include "tc_common.h"
+#include "itc_internal.h"
 
-extern sem_t tc_sem;
+#define NET_DEVNAME "wl1"
 
 static int isConnected = 0;
 
@@ -163,15 +161,15 @@ int main(int argc, FAR char *argv[])
 int itc_dm_main(int argc, char *argv[])
 #endif
 {
-	sem_wait(&tc_sem);
-	total_pass = 0;
-	total_fail = 0;
+	if (tc_handler(TC_START, "DeviceManagement ITC") == ERROR) {
+		return ERROR;
+	}
+
 #ifndef CONFIG_EXAMPLES_TESTCASE_DM_WIFI
 	printf("=== Please Setup WiFi Info ===\n");
 	return 0;
 #endif
 	if (wifiAutoConnect() == 1) {
-		printf("\n########## DeviceManagement ITC Start ##########\n");
 		itc_dm_lwm2m_testcase_main();
 #ifdef CONFIG_ITC_DM_CONN_GET_RSSI
 		itc_dm_conn_get_rssi_main();
@@ -201,12 +199,10 @@ int itc_dm_main(int argc, char *argv[])
 		itc_dm_conn_regi_unreg_linkdown_main();
 #endif
 #endif
-
-	printf("\n########## DeviceManagement ITC End [PASS : %d, FAIL : %d] ##########\n", total_pass, total_fail);
-
 		wifiAutoConnectDeInit_itc();
 	}
-	sem_post(&tc_sem);
+
+	(void)tc_handler(TC_END, "DeviceManagement ITC");
 
 	return 0;
 }

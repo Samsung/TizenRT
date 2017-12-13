@@ -21,11 +21,8 @@
 /// @brief Main Function for Network TestCase Example
 #include <tinyara/config.h>
 #include <stdio.h>
-#include <semaphore.h>
+#include "tc_common.h"
 #include "tc_internal.h"
-
-extern sem_t tc_sem;
-extern int working_tc;
 
 /****************************************************************************
  * Name: network_tc_main
@@ -37,13 +34,9 @@ int main(int argc, FAR char *argv[])
 int tc_network_main(int argc, char *argv[])
 #endif
 {
-	sem_wait(&tc_sem);
-	working_tc++;
-
-	total_pass = 0;
-	total_fail = 0;
-
-	printf("\n########## Network TC Start ##########\n");
+	if (tc_handler(TC_START, "Network TC") == ERROR) {
+		return ERROR;
+	}
 
 #ifdef CONFIG_TC_NET_SOCKET
 	net_socket_main();
@@ -115,10 +108,7 @@ int tc_network_main(int argc, char *argv[])
 	net_dup_main();
 #endif
 
-	printf("\n########## Network TC End [PASS : %d, FAIL : %d] ##########\n", total_pass, total_fail);
-
-	working_tc--;
-	sem_post(&tc_sem);
+	(void)tc_handler(TC_END, "Network TC");
 
 	return 0;
 }

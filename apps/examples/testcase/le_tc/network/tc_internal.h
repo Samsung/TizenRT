@@ -24,9 +24,6 @@
 
 #include "tc_common.h"
 
-extern int total_pass;
-extern int total_fail;
-
 /**********************************************************
 * TC Function Declarations
 **********************************************************/

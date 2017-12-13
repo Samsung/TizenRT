@@ -644,10 +644,10 @@ int main(int argc, FAR char *argv[])
 int itc_arastorage_main(int argc, char *argv[])
 #endif
 {
-	printf("\n########## Arastorage ITC Start ##########\n");
+	if (tc_handler(TC_START, "Arastorage ITC") == ERROR) {
+		return ERROR;
+	}
 
-	total_fail = 0;
-	total_pass = 0;
 	itc_arastorage_db_init_deinit_p();
 	itc_arastorage_startup_p();
 	if (g_check) {
@@ -677,6 +677,7 @@ int itc_arastorage_main(int argc, char *argv[])
 	}
 	itc_arastorage_cleanup_p();
 
-	printf("\n########## Arastorage ITC End [PASS : %d, FAIL : %d] ##########\n", total_pass, total_fail);
+	(void)tc_handler(TC_END, "Arastorage ITC");
+
 	return 0;
 }
