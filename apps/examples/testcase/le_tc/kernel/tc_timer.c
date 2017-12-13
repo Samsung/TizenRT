@@ -44,14 +44,41 @@ static void tc_timer_timer_create_delete(void)
 	int ret_chk = 0;
 	timer_t timer_id;
 	timer_t gtimer_id;
-	clockid_t clockid = CLOCK_REALTIME;
+	clockid_t clockid;
+#ifdef CONFIG_CLOCK_MONOTONIC
+	clockid = CLOCK_MONOTONIC;
+#endif
 	struct sigevent st_sigevent;
 	struct posix_timer_s *st_ret_prt;
 	struct itimerspec st_timer_spec_val;
+
 	/* Set and enable alarm */
+
 	st_sigevent.sigev_notify = SIGEV_SIGNAL;
 	st_sigevent.sigev_signo = sig_no;
 	st_sigevent.sigev_value.sival_ptr = &timer_id;
+
+	/* Check for clock ID != CLOCK_REALTIME */
+
+#ifdef CONFIG_CLOCK_MONOTONIC
+	ret_chk = timer_create(clockid, &st_sigevent, &timer_id);
+	TC_ASSERT_EQ("timer_create", ret_chk, ERROR);
+	TC_ASSERT_EQ("timer_create", errno, EINVAL);
+#endif
+
+	clockid = CLOCK_REALTIME;
+
+	/* Check for NULL timer ID */
+
+	ret_chk = timer_create(clockid, &st_sigevent, NULL);
+	TC_ASSERT_EQ("timer_create", ret_chk, ERROR);
+	TC_ASSERT_EQ("timer_create", errno, EINVAL);
+
+	/* Check for NULL timer ID */
+
+	ret_chk = timer_delete(NULL);
+	TC_ASSERT_EQ("timer_delete", ret_chk, ERROR);
+	TC_ASSERT_EQ("timer_delete", errno, EINVAL);
 
 	ret_chk = timer_create(clockid, &st_sigevent, &timer_id);
 	TC_ASSERT_NEQ("timer_create", ret_chk, ERROR);
@@ -88,8 +115,50 @@ static void tc_timer_timer_create_delete(void)
 
 	ret_chk = timer_delete(gtimer_id);
 	TC_ASSERT_NEQ("timer_delete", ret_chk, ERROR);
+
 	TC_SUCCESS_RESULT();
 }
+
+#ifndef CONFIG_DISABLE_POSIX_TIMERS
+/**
+* @fn                   :tc_timer_timer_getoverrun
+* @brief                :queue a signal to the process for a given timer at any point in time
+* @scenario             :If the timer_getoverrun() function succeeds, it will return the timer expiration overrun count
+* @scenario              EINVAL if The timerid argument does not correspond to an ID returned by timer_create() but not yet deleted by timer_delete().
+* API's covered         :timer_create, timer_getoverrun
+* Preconditions         :Creation of timer_id(timer_create)
+* Postconditions        :none
+* @return               :void
+*/
+static void tc_timer_timer_getoverrun(void)
+{
+	int ret_chk = 0;
+	timer_t timer_id;
+	clockid_t clockid = CLOCK_REALTIME;
+	struct sigevent st_sigevent;
+
+	/* Set and enable alarm */
+
+	st_sigevent.sigev_notify = SIGEV_SIGNAL;
+	st_sigevent.sigev_signo = sig_no;
+	st_sigevent.sigev_value.sival_ptr = &timer_id;
+
+	/* Check for NULL clock ID != CLOCK_REALTIME */
+
+	ret_chk = timer_create(clockid, &st_sigevent, &timer_id);
+	TC_ASSERT_NEQ("timer_create", ret_chk, ERROR);
+	TC_ASSERT_NEQ("timer_create", timer_id, NULL);
+
+	ret_chk = timer_getoverrun(timer_id);
+	TC_ASSERT_EQ_CLEANUP("timer_getoverrun", ret_chk, ERROR, timer_delete(timer_id));
+	TC_ASSERT_EQ_CLEANUP("timer_getoverrun", errno, ENOSYS, timer_delete(timer_id));
+
+	ret_chk = timer_delete(timer_id);
+	TC_ASSERT_NEQ("timer_delete", ret_chk, ERROR);
+
+	TC_SUCCESS_RESULT();
+}
+#endif
 
 /**
 * @fn                   :tc_timer_timer_set_get_time
@@ -110,9 +179,11 @@ static void tc_timer_timer_set_get_time(void)
 	timer_t timer_id;
 
 	/* Set and enable alarm */
+
 	st_sigevent.sigev_notify = SIGEV_SIGNAL;
 	st_sigevent.sigev_signo = sig_no;
 	st_sigevent.sigev_value.sival_ptr = &timer_id;
+
 	ret_chk = timer_create(clockid, &st_sigevent, &timer_id);
 	TC_ASSERT_NEQ("timer_create", ret_chk, ERROR);
 	TC_ASSERT_NEQ("timer_create", timer_id, NULL);
@@ -122,10 +193,47 @@ static void tc_timer_timer_set_get_time(void)
 	st_timer_spec_set.it_value.tv_sec = 1;
 	st_timer_spec_set.it_value.tv_nsec = 0;	/* expire; */
 
+	/* Null timer ID check for timer_settime */
+
+	ret_chk = timer_settime(NULL, 0, &st_timer_spec_set, NULL);
+	TC_ASSERT_EQ_CLEANUP("timer_settime", ret_chk, ERROR, timer_delete(timer_id));
+	TC_ASSERT_EQ_CLEANUP("timer_settime", errno, EINVAL, timer_delete(timer_id));
+
+	/* Null timer value check for timer_settime */
+
+	ret_chk = timer_settime(timer_id, 0, NULL, NULL);
+	TC_ASSERT_EQ_CLEANUP("timer_settime", ret_chk, ERROR, timer_delete(timer_id));
+	TC_ASSERT_EQ_CLEANUP("timer_settime", errno, EINVAL, timer_delete(timer_id));
+
+	/* Null it_value parameter check for timer_settime */
+
+	st_timer_spec_set.it_value.tv_sec = 0;
+	ret_chk = timer_settime(timer_id, 0, &st_timer_spec_set, NULL);
+	TC_ASSERT_EQ_CLEANUP("timer_settime", ret_chk, OK, timer_delete(timer_id));
+	st_timer_spec_set.it_value.tv_sec = 1;
+
+	/* Null it_value parameter check for timer_settime */
+
+	st_timer_spec_set.it_value.tv_sec = -1;
+	ret_chk = timer_settime(timer_id, 0, &st_timer_spec_set, NULL);
+	TC_ASSERT_EQ_CLEANUP("timer_settime", ret_chk, OK, timer_delete(timer_id));
+	st_timer_spec_set.it_value.tv_sec = 1;
+
+	/* Check if TIMER_ABSTIME (Flag = 1) is selected */
+
+	ret_chk = timer_settime(timer_id, 1, &st_timer_spec_set, NULL);
+	TC_ASSERT_EQ_CLEANUP("timer_settime", ret_chk, OK, timer_delete(timer_id));
+
 	ret_chk = timer_settime(timer_id, 0, &st_timer_spec_set, NULL);	/* Flag =1 :TIMER_ABSTIME */
 	TC_ASSERT_EQ_ERROR_CLEANUP("timer_settime", ret_chk, OK, errno, timer_delete(timer_id));
 
 	usleep(USECINT);
+
+	/* Null timer ID check for timer_gettime */
+
+	ret_chk = timer_gettime(NULL, &st_timer_spec_get);
+	TC_ASSERT_EQ("timer_gettime", ret_chk, ERROR);
+	TC_ASSERT_EQ("timer_gettime", errno, EINVAL);
 
 	ret_chk = timer_gettime(timer_id, &st_timer_spec_get);
 	TC_ASSERT_EQ_ERROR_CLEANUP("timer_gettime", ret_chk, OK, errno, timer_delete(timer_id));
@@ -222,6 +330,9 @@ static void tc_timer_timer_initialize(void)
 int timer_main(void)
 {
 	tc_timer_timer_create_delete();
+#ifndef CONFIG_DISABLE_POSIX_TIMERS
+	tc_timer_timer_getoverrun();
+#endif                     /* CONFIG_DISABLE_POSIX_TIMERS */
 	tc_timer_timer_set_get_time();
 	tc_timer_timer_initialize();
 
