@@ -109,10 +109,10 @@
             "frequency": 1
         },
         "filePath":{
-            "svrdb": "/mnt/artikserversecured.dat",
-            "provisioning": "/mnt/provisioning.dat",
-            "certificate": "/rom/certificate",
-            "privateKey": "/rom/privatekey"
+            "svrdb": "artikserversecured.dat",
+            "provisioning": "provisioning.dat",
+            "certificate": "certificate",
+            "privateKey": "privatekey"
         }
     }
 }
