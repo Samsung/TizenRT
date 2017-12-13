@@ -26,5 +26,7 @@
 * TC Function Declarations
 **********************************************************/
 void tc_fs_procfs_main(void);
+void tc_fs_smartfs_procfs_main(void);
+void tc_fs_smartfs_mksmartfs(void);
 
 #endif /* __EXAMPLES_TESTCASE_FILESYSTEM_TC_INTERNAL_H */
