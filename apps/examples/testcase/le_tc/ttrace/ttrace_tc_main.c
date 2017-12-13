@@ -26,7 +26,6 @@
 #include <stdio.h>
 #include <time.h>
 #include <tinyara/ttrace.h>
-#include <semaphore.h>
 #include "tc_common.h"
 
 /****************************************************************************
@@ -36,8 +35,6 @@
 /****************************************************************************
  * Global Variables
  ****************************************************************************/
-extern sem_t tc_sem;
-extern int working_tc;
 
 /**
 * @testcase         tc_libc_trace_begin
@@ -144,23 +141,17 @@ int main(int argc, FAR char *argv[])
 int tc_ttrace_main(int argc, char *argv[])
 #endif
 {
-	sem_wait(&tc_sem);
-	working_tc++;
-
-	total_pass = 0;
-	total_fail = 0;
-
-	printf("\n########## TTRACE TC Start ##########\n");
+	if (tc_handler(TC_START, "TTRACE TC") == ERROR) {
+		return ERROR;
+	}
 
 	tc_libc_trace_begin();
 	tc_libc_trace_begin_uid();
 	tc_libc_trace_end();
 	tc_libc_trace_end_uid();
 	tc_libc_trace_sched();
-	printf("\n########## TTRACE TC End [PASS : %d, FAIL : %d] ##########\n", total_pass, total_fail);
 
-	working_tc--;
-	sem_post(&tc_sem);
+	(void)tc_handler(TC_END, "TTRACE TC");
 
 	return 0;
 }

@@ -22,6 +22,8 @@
 #ifndef __EXAMPLES_TESTCASE_KERNEL_TC_INTERNAL_H
 #define __EXAMPLES_TESTCASE_KERNEL_TC_INTERNAL_H
 
+#include "tc_common.h"
+
 #ifdef CONFIG_CPP_HAVE_VARARGS
 
 #ifdef CONFIG_DEBUG_TC_KN
@@ -51,11 +53,6 @@
 #endif
 
 #endif /* CONFIG_CPP_HAVE_VARARGS */
-
-#include "tc_common.h"
-
-extern int total_pass;
-extern int total_fail;
 
 /**********************************************************
 * TC Function Declarations

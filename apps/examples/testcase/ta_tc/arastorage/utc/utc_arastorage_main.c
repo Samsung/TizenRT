@@ -47,9 +47,6 @@
 /****************************************************************************
  *  Global Variables
  ****************************************************************************/
-extern sem_t tc_sem;
-extern int working_tc;
-
 static db_cursor_t *g_cursor;
 
 const static char *g_attribute_set[] = {"id", "date", "fruit", "value", "weight"};
@@ -1444,13 +1441,9 @@ int main(int argc, FAR char *argv[])
 int utc_arastorage_main(int argc, char *argv[])
 #endif
 {
-	sem_wait(&tc_sem);
-	working_tc++;
-
-	total_pass = 0;
-	total_fail = 0;
-
-	printf("########## Arastorage UTC Start ##########\n");
+	if (tc_handler(TC_START, "Arastorage UTC") == ERROR) {
+		return ERROR;
+	}
 
 	/* Positive TCs */
 	utc_arastorage_db_init_p();
@@ -1512,10 +1505,7 @@ int utc_arastorage_main(int argc, char *argv[])
 	cleanup();
 	db_deinit();
 
-	printf("########## Arastorage UTC End [PASS : %d, FAIL : %d] ##########\n", total_pass, total_fail);
-
-	working_tc--;
-	sem_post(&tc_sem);
+	(void)tc_handler(TC_END, "Arastorage UTC");
 
 	return 0;
 }

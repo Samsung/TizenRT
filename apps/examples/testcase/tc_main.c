@@ -25,6 +25,8 @@
 #include <sched.h>
 #include <sys/types.h>
 #include <semaphore.h>
+#include "tc_common.h"
+
 #if CONFIG_TASH
 #include <apps/shell/tash.h>
 #else
@@ -65,6 +67,8 @@
 
 sem_t tc_sem;
 int working_tc;
+int total_pass;
+int total_fail;
 
 /* Library&Environment Test Case as le_tc*/
 extern int tc_filesystem_main(int argc, char *argv[]);
@@ -90,7 +94,7 @@ extern int itc_audio_main(int argc, char *argv[]);
 extern int tc_mpu_main(int argc, char *argv[]);
 
 #ifdef CONFIG_TASH
-const static tash_cmdlist_t tc_cmds[] = {
+static const tash_cmdlist_t tc_cmds[] = {
 #ifdef CONFIG_EXAMPLES_TESTCASE_ARASTORAGE_UTC
 	{"arastorage_utc", utc_arastorage_main, TASH_EXECMD_ASYNC},
 #endif
@@ -146,20 +150,57 @@ const static tash_cmdlist_t tc_cmds[] = {
 };
 #endif
 
+int tc_handler(tc_op_type_t type, const char *tc_name)
+{
+	switch (type) {
+	case TC_START:
+		if (working_tc == 0) {
+			sem_init(&tc_sem, 0, 1);
+		}
+
+		working_tc++;
+		if (sem_wait(&tc_sem) == ERROR) {
+			printf("Fail to start \"%s\" due to semaphore\n", tc_name);
+			working_tc--;
+			return ERROR;
+		}
+
+		total_pass = 0;
+		total_fail = 0;
+
+		printf("\n########## %s Start ##########\n", tc_name);
+		break;
+	case TC_END:
+		printf("\n########## %s End [PASS : %d, FAIL : %d] ##########\n", tc_name, total_pass, total_fail);
+
+		working_tc--;
+		sem_post(&tc_sem);
+
+		if (working_tc == 0) {
+			sem_destroy(&tc_sem);
+		}
+		break;
+	default:
+		printf("Invalid testcase execution type\n");
+		return ERROR;
+		break;
+	}
+
+	return OK;
+}
+
 #ifdef CONFIG_BUILD_KERNEL
 int main(int argc, FAR char *argv[])
 #else
 int tc_main(int argc, char *argv[])
 #endif
 {
-#ifndef CONFIG_TASH
-	int pid;
-#endif
-
-	sem_init(&tc_sem, 0, 1);
 #ifdef CONFIG_TASH
 	tash_cmdlist_install(tc_cmds);
+	printf("\nTestcase registers TASH commands named \"<MODULE_NAME>_tc\".\nPlease find them using \"help\" and execute them in TASH\n");
 #else
+	int pid;
+
 #ifdef CONFIG_EXAMPLES_TESTCASE_ARASTORAGE_UTC
 	pid = task_create("arastorageutc", SCHED_PRIORITY_DEFAULT, TC_ARASTORAGE_STACK, utc_arastorage_main, argv);
 	if (pid < 0) {
@@ -263,13 +304,9 @@ int tc_main(int argc, char *argv[])
 		printf("Audio itc is not started, err = %d\n", pid);
 	}
 #endif
-#endif
-	do {
-		sleep(5);
-	} while (working_tc > 0);
-	(void)sem_destroy(&tc_sem);
 
-	printf("TC is finished\n");
+	printf("All Testcases finished\n");
+#endif
 
 	return 0;
 }

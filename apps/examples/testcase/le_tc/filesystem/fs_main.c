@@ -35,7 +35,6 @@
 #include <poll.h>
 #endif
 #include <errno.h>
-#include <semaphore.h>
 #include <sys/stat.h>
 #include <sys/sendfile.h>
 #include <sys/statfs.h>
@@ -127,8 +126,6 @@
 #if defined(CONFIG_PIPES) && (CONFIG_DEV_PIPE_SIZE > 11)
 static int g_thread_result;
 #endif
-extern sem_t tc_sem;
-extern int working_tc;
 
 #if defined(CONFIG_PIPES) && (CONFIG_DEV_PIPE_SIZE > 11)
 /**
@@ -2968,13 +2965,9 @@ int main(int argc, FAR char *argv[])
 int tc_filesystem_main(int argc, char *argv[])
 #endif
 {
-	sem_wait(&tc_sem);
-	working_tc++;
-
-	printf("\n########## FileSystem TC Start ##########\n");
-
-	total_pass = 0;
-	total_fail = 0;
+	if (tc_handler(TC_START, "FileSystem TC") == ERROR) {
+		return ERROR;
+	}
 
 	tc_fs_vfs_umount();
 	tc_fs_vfs_mount();
@@ -3075,10 +3068,7 @@ int tc_filesystem_main(int argc, char *argv[])
 	itc_fs_main();
 #endif
 
-	printf("\n########## FileSystem TC End [PASS : %d, FAIL : %d] ##########\n", total_pass, total_fail);
-
-	working_tc--;
-	sem_post(&tc_sem);
+	(void)tc_handler(TC_END, "FileSystem TC");
 
 	return 0;
 }

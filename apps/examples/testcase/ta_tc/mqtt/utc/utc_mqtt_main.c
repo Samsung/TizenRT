@@ -61,8 +61,6 @@ static pthread_cond_t g_ocfcond;
 static mqtt_client_t *g_mqtt_pub_handle = NULL;
 static mqtt_client_t *g_mqtt_sub_handle = NULL;
 
-extern sem_t tc_sem;
-extern int working_tc;
 /**
  * Private Functions
  */
@@ -431,12 +429,10 @@ int main(int argc, FAR char *argv[])
 int utc_mqtt_main(int argc, char *argv[])
 #endif
 {
-	sem_wait(&tc_sem);
-	working_tc++;
+	if (tc_handler(TC_START, "MQTT UTC") == ERROR) {
+		return ERROR;
+	}
 
-	total_fail = total_pass = 0;
-
-	printf("\n########## MQTT UTC Start ##########\n");
 	int res = _utc_mqtt_init();
 	if (res < 0) {
 		UTC_MQTT_LOGE;
@@ -459,10 +455,7 @@ int utc_mqtt_main(int argc, char *argv[])
 
 	_utc_mqtt_deinit();
 exit:
-	printf("\n########## MQTT UTC End [PASS : %d, FAIL : %d] ##########\n", total_pass, total_fail);
-
-	working_tc--;
-	sem_post(&tc_sem);
+	(void)tc_handler(TC_END, "MQTT UTC");
 
 	return 0;
 }

@@ -20,9 +20,17 @@
 #define __EXAMPLES_TESTCASE_TESTCASE_COMMON_H
 #include <stdio.h>
 #include <stdlib.h>
+#include <sys/types.h>
 
-int total_pass;
-int total_fail;
+enum tc_op_type_e {
+	TC_START,
+	TC_END,
+	TC_OP_TYPE_MAX
+};
+typedef enum tc_op_type_e tc_op_type_t;
+
+extern int total_pass;
+extern int total_fail;
 
 #define TC_ASSERT_CLEANUP(api_name, var, freeResource) \
 {\
@@ -140,5 +148,7 @@ int total_fail;
 		buffer = NULL; \
 	} \
 }
+
+int tc_handler(tc_op_type_t type, const char *tc_name);
 
 #endif

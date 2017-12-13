@@ -54,8 +54,6 @@
 static mqtt_client_t *g_mqtt_client_handle;
 static pthread_mutex_t g_ocfmutex = PTHREAD_MUTEX_INITIALIZER;;
 static pthread_cond_t g_ocfcond;
-extern int working_tc;
-extern sem_t tc_sem;
 static char g_mqtt_msg[] = ITC_MQTT_MESSAGE;
 
 /****************************************************************************************
@@ -280,12 +278,10 @@ int main(int argc, FAR char *argv[])
 int itc_mqtt_main(int argc, char *argv[])
 #endif
 {
-	sem_wait(&tc_sem);
-	working_tc++;
+	if (tc_handler(TC_START, "MQTT ITC") == ERROR) {
+		return ERROR;
+	}
 
-	total_fail = total_pass = 0;
-
-	printf("\n########## MQTT ITC Start ##########\n");
 	int res = _itc_mqtt_init();
 
 	if (res < 0) {
@@ -297,10 +293,8 @@ int itc_mqtt_main(int argc, char *argv[])
 		itc_mqtt_subscribe_unsubscribe_p();
 		_itc_mqtt_deinit();
 	}
-	printf("\n########## MQTT ITC End [PASS : %d, FAIL : %d] ##########\n", total_pass, total_fail);
 
-	working_tc--;
-	sem_post(&tc_sem);
+	(void)tc_handler(TC_END, "MQTT ITC");
 
 	return 0;
 }

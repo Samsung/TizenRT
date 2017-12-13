@@ -51,10 +51,6 @@
 /****************************************************************************
  * Global Variables
  ****************************************************************************/
-
-extern sem_t tc_sem;
-extern int working_tc;
-
 struct pcm *g_pcm;
 
 static void clean_all_data(int fd, char *buffer)
@@ -935,13 +931,9 @@ int main(int argc, FAR char *argv[])
 int utc_audio_main(int argc, char *argv[])
 #endif
 {
-	sem_wait(&tc_sem);
-	working_tc++;
-
-	total_pass = 0;
-	total_fail = 0;
-
-	printf("########## Audio UTC Start ##########\n");	
+	if (tc_handler(TC_START, "Audio UTC") == ERROR) {
+		return ERROR;
+	}
 
 	utc_audio_pcm_open_p();
 	utc_audio_pcm_open_n();
@@ -991,10 +983,7 @@ int utc_audio_main(int argc, char *argv[])
 	/* after test, unlink the file */
 	unlink(AUDIO_TEST_FILE);
 
-	printf("########## Audio UTC End [PASS : %d, FAIL : %d] ##########\n", total_pass, total_fail);
-
-	working_tc--;
-	sem_post(&tc_sem);
+	(void)tc_handler(TC_END, "Audio UTC");
 
 	return 0;
 }

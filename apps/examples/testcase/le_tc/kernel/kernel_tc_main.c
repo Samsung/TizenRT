@@ -22,11 +22,8 @@
 
 #include <tinyara/config.h>
 #include <stdio.h>
-#include <semaphore.h>
+#include "tc_common.h"
 #include "tc_internal.h"
-
-extern sem_t tc_sem;
-extern int working_tc;
 
 #ifdef CONFIG_BUILD_KERNEL
 int main(int argc, FAR char *argv[])
@@ -34,13 +31,9 @@ int main(int argc, FAR char *argv[])
 int tc_kernel_main(int argc, char *argv[])
 #endif
 {
-	sem_wait(&tc_sem);
-	working_tc++;
-
-	total_pass = 0;
-	total_fail = 0;
-
-	printf("\n########## Kernel TC Start ##########\n");
+	if (tc_handler(TC_START, "Kernel TC") == ERROR) {
+		return ERROR;
+	}
 
 #ifdef CONFIG_TC_KERNEL_TASH_HEAPINFO
 	tash_heapinfo_main();
@@ -200,10 +193,8 @@ int tc_kernel_main(int argc, char *argv[])
 #ifdef CONFIG_TC_KERNEL_UMM_HEAP
 	umm_heap_main();
 #endif
-	printf("\n########## Kernel TC End [PASS : %d, FAIL : %d] ##########\n", total_pass, total_fail);
 
-	working_tc--;
-	sem_post(&tc_sem);
+	(void)tc_handler(TC_END, "Kernel TC");
 
 	return 0;
 }

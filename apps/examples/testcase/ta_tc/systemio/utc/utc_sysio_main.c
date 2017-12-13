@@ -23,6 +23,7 @@
 #include <stdio.h>
 #include <string.h>
 #include <semaphore.h>
+#include "tc_common.h"
 #include "utc_internal.h"
 
 /***************************************************************************
@@ -49,13 +50,9 @@ int main(int argc, FAR char *argv[])
 int utc_sysio_main(int argc, char *argv[])
 #endif
 {
-	sem_wait(&tc_sem);
-	working_tc++;
-
-	printf("\n########## SystemIO UTC Start ##########\n");
-
-	total_pass = 0;
-	total_fail = 0;
+	if (tc_handler(TC_START, "SystemIO UTC") == ERROR) {
+		return ERROR;
+	}
 
 #ifdef CONFIG_SYSIO_UTC_GPIO
 	utc_gpio_main();
@@ -77,10 +74,7 @@ int utc_sysio_main(int argc, char *argv[])
 	utc_uart_main();
 #endif
 
-	printf("\n########## SystemIO UTC End [PASS : %d, FAIL : %d] ##########\n", total_pass, total_fail);
-
-	working_tc--;
-	sem_post(&tc_sem);
+	(void)tc_handler(TC_END, "SystemIO UTC");
 
 	return 0;
 }

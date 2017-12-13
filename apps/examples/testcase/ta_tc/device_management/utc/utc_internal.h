@@ -26,9 +26,6 @@
 
 #define DM_TC_PRINT printf
 
-extern int total_pass;
-extern int total_fail;
-
 /**********************************************************
 * TC Function Declarations
 **********************************************************/
