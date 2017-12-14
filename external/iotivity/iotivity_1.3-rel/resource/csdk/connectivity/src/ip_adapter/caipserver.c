@@ -859,11 +859,12 @@ static CASocketFd_t CACreateSocket(int family, uint16_t *port, bool isMulticast)
 #endif
     {
         int on = 1;
+#ifndef __TIZENRT__
         if (OC_SOCKET_ERROR == setsockopt(fd, IPPROTO_IP, IP_PKTINFO, OPTVAL_T(&on), sizeof (on)))
         {
             OIC_LOG_V(ERROR, TAG, "IP_PKTINFO failed: %s", CAIPS_GET_ERROR);
         }
-
+#endif
         ((struct sockaddr_in *)&sa)->sin_port = htons(*port);
         socklen = sizeof (struct sockaddr_in);
     }
