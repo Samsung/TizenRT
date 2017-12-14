@@ -696,6 +696,15 @@ static int alc5658_shutdown(FAR struct audio_lowerhalf_s *dev)
 
 	ALC5658_DISABLE(priv->lower);
 
+	alc5658_takesem(&priv->devsem);
+	dq_entry_t *tmp = NULL;
+	for (tmp = (dq_entry_t *)dq_peek(&priv->pendq); tmp; tmp = dq_next(tmp)) {
+		dq_rem(tmp, &priv->pendq);
+		audvdbg("(alcshutdown)removing tmp with addr 0x%x\n", tmp);
+	}
+	dq_init(&priv->pendq);
+	alc5658_givesem(&priv->devsem);
+
 	/* Now issue a software reset.  This puts all ALC5658 registers back in
 	 * their default state.
 	 */
