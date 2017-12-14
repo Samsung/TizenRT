@@ -80,6 +80,7 @@
  *   This is the entry point for the receiver thread.
  *
  ****************************************************************************/
+FAR struct ap_buffer_s *g_apb[CONFIG_EXAMPLES_I2SCHAR_TXBUFFERS];
 
 pthread_addr_t i2schar_receiver(pthread_addr_t arg)
 {
@@ -87,19 +88,23 @@ pthread_addr_t i2schar_receiver(pthread_addr_t arg)
 	struct audio_buf_desc_s desc;
 	int bufsize;
 	int nread;
+	int nwritten;
 	int ret;
 	int fd;
 	int i;
 
 	/* Open the I2S character device */
 
-	fd = open(g_i2schar.devpath, O_RDONLY);
+	fd = open(g_i2schar.devpath, O_RDWR);
 	if (fd < 0) {
 		int errcode = errno;
 
 		printf("i2schar_receiver: ERROR: failed to open %s: %d\n", g_i2schar.devpath, errcode);
 		pthread_exit(NULL);
 	}
+
+
+	bufsize = sizeof(struct ap_buffer_s) + CONFIG_EXAMPLES_I2SCHAR_BUFSIZE;
 
 	/* Loop for the requested number of times */
 
@@ -115,8 +120,6 @@ pthread_addr_t i2schar_receiver(pthread_addr_t arg)
 			close(fd);
 			pthread_exit(NULL);
 		}
-
-		bufsize = sizeof(struct ap_buffer_s) + CONFIG_EXAMPLES_I2SCHAR_BUFSIZE;
 
 		/* Then receifve into the buffer */
 
@@ -151,6 +154,33 @@ pthread_addr_t i2schar_receiver(pthread_addr_t arg)
 	}
 
 	sleep(2);
+
+	for (i = 0; i < CONFIG_EXAMPLES_I2SCHAR_TXBUFFERS; i++) {
+		do {
+			/* Flush any output before writing */
+
+			fflush(stdout);
+
+			/* Write the buffer to the I2S character driver */
+			nwritten = write(fd, apb[i], bufsize);
+			if (nwritten < 0) {
+				int errcode = errno;
+
+				if (errcode != EINTR) {
+					printf("i2schar_transmitter: ERROR: write failed: %d\n", errcode);
+					goto exit;
+				}
+			} else if (nwritten != bufsize) {
+				printf("i2schar_transmitter: ERROR: partial write: %d\n", nwritten);
+				goto exit;
+			} else {
+				printf("i2schar_transmitter: Send buffer %d\n", i + 1);
+			}
+		} while (nwritten != bufsize);
+
+	}
+
+exit:
 
 	for (i = 0; i < CONFIG_EXAMPLES_I2SCHAR_TXBUFFERS; i++) {
 		apb_free(apb[i]);

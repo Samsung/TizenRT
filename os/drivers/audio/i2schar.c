@@ -244,15 +244,7 @@ static ssize_t i2schar_read(FAR struct file *filep, FAR char *buffer, size_t buf
 
 	apb_reference(apb);
 
-	/* Get exclusive access to i2c character driver */
-
-	ret = sem_wait(&priv->exclsem);
-	if (ret < 0) {
-		ret = -errno;
-		DEBUGASSERT(ret < 0);
-		lldbg("ERROR: sem_wait returned: %d\n", ret);
-		goto errout_with_reference;
-	}
+	/* Exclusive access will be provided by I2S driver */
 
 	/* Give the buffer to the I2S driver */
 
@@ -263,15 +255,13 @@ static ssize_t i2schar_read(FAR struct file *filep, FAR char *buffer, size_t buf
 	}
 
 	/* Lie to the caller and tell them that all of the bytes have been
-	 * received
+	 * received. Actually it will be receiver in callback function.
 	 */
 
-	sem_post(&priv->exclsem);
 	return sizeof(struct ap_buffer_s) + nbytes;
 
 errout_with_reference:
 	apb_free(apb);
-	sem_post(&priv->exclsem);
 	return ret;
 }
 
@@ -315,15 +305,7 @@ static ssize_t i2schar_write(FAR struct file *filep, FAR const char *buffer, siz
 
 	apb_reference(apb);
 
-	/* Get exclusive access to i2c character driver */
-
-	ret = sem_wait(&priv->exclsem);
-	if (ret < 0) {
-		ret = -errno;
-		DEBUGASSERT(ret < 0);
-		lldbg("ERROR: sem_wait returned: %d\n", ret);
-		goto errout_with_reference;
-	}
+	/* Exclusive access will be provided by I2S driver */
 
 	/* Give the audio buffer to the I2S driver */
 
@@ -334,15 +316,13 @@ static ssize_t i2schar_write(FAR struct file *filep, FAR const char *buffer, siz
 	}
 
 	/* Lie to the caller and tell them that all of the bytes have been
-	 * sent.
+	 * sent. Actual transfer completion will be in callback function.
 	 */
 
-	sem_post(&priv->exclsem);
 	return sizeof(struct ap_buffer_s) + nbytes;
 
 errout_with_reference:
 	apb_free(apb);
-	sem_post(&priv->exclsem);
 	return ret;
 }
 
@@ -393,7 +373,6 @@ int i2schar_register(FAR struct i2s_dev_s *i2s, int minor)
 	/* Initialize the I2S character device structure */
 
 	priv->i2s = i2s;
-	sem_init(&priv->exclsem, 0, 1);
 
 	/* Create the character device name */
 
