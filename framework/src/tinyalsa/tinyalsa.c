@@ -1119,8 +1119,10 @@ int pcm_stop(struct pcm *pcm)
 	struct audio_msg_s msg;
 	unsigned int size;
 	int prio;
-	while (pcm->buf_ptr > 0) {
-		size = mq_receive(pcm->mq, (FAR char *)&msg, sizeof(msg), &prio);
+	struct timespec st_time;
+	while (1) {
+		clock_gettime(CLOCK_REALTIME, &st_time);
+		size = mq_timedreceive(pcm->mq, (FAR char *)&msg, sizeof(msg), &prio, &st_time);
 		if (size != sizeof(msg)) {
 			break;
 		}
@@ -1133,7 +1135,6 @@ int pcm_stop(struct pcm *pcm)
 	pcm->prepared = 0;
 	pcm->running = 0;
 	pcm->draining = 0;
-	pcm->buf_ptr = 0;
 	pcm->next_size = 0;
 	pcm->next_offset = 0;
 	pcm->next_buf = NULL;
