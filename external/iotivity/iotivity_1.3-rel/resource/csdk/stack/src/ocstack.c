@@ -2764,12 +2764,20 @@ OCStackResult OCInitializeInternal(OCMode mode, OCTransportFlags serverFlags,
     caglobals.serverFlags = (CATransportFlags_t)serverFlags;
     if (!(caglobals.serverFlags & CA_IPFAMILY_MASK))
     {
+#ifndef __TIZENRT__ /* temporarilly disabled IPv6 */
         caglobals.serverFlags = (CATransportFlags_t)(caglobals.serverFlags|CA_IPV4|CA_IPV6);
+#else
+        caglobals.serverFlags = (CATransportFlags_t)(caglobals.serverFlags|CA_IPV4);
+#endif
     }
     caglobals.clientFlags = (CATransportFlags_t)clientFlags;
     if (!(caglobals.clientFlags & CA_IPFAMILY_MASK))
     {
+#ifndef __TIZENRT__ /* temporarilly disabled IPv6 */
         caglobals.clientFlags = (CATransportFlags_t)(caglobals.clientFlags|CA_IPV4|CA_IPV6);
+#else
+        caglobals.clientFlags = (CATransportFlags_t)(caglobals.clientFlags|CA_IPV4);
+#endif
     }
 
     defaultDeviceHandler = NULL;
