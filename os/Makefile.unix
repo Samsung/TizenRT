@@ -557,7 +557,7 @@ package:
 #
 
 image:
-	$(foreach ARG, $(TARGET_ARGS),$(call MAKE$(shell echo $(ARG) | tr a-z A-Z),$(BIN),$(ARG)))
+	$(call MAKEIMAGE,$(TARGET_ARGS))
 
 # pass1dep: Create pass1 build dependencies
 # pass2dep: Create pass2 build dependencies

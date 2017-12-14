@@ -31,8 +31,8 @@ OPENOCD_DIR_PATH=${BUILD_DIR_PATH}/tools/openocd
 
 TIZENRT_BIN=$OUTPUT_BINARY_PATH/tinyara_head.bin
 CODESIGNER=
-
 erase=0
+make=n
 
 declare -a id desc addr size ro
 
@@ -106,11 +106,57 @@ add_target() {
     target=(${target[@]} "$1")
 }
 
+make-target-bin() {
+    local bin=
+    local obj=
+    local optarg=
+
+    while test $# -gt 0; do
+        optarg=`echo "$1" | sed 's/[-_a-zA-Z0-9]*=//'`
+
+        case $1 in
+            --target=*) t=$optarg ;;
+            --make=*)   m=$optarg ;;
+            --bin=*)    bin=$FW_DIR_PATH/$optarg.bin ;;
+        esac
+        shift
+    done
+
+    case $t in
+        os) bin=`signing $TIZENRT_BIN` || return 1 ;;
+        factory)
+            if test "$m" = "n" ; then
+                test ! -e $bin && return 1;
+            else
+                obj=`make-target-bin --target=os --make=y` || return 1
+                gzip -c $obj > $bin
+            fi ;;
+        ota)
+            if test "$m" = "n" ; then
+                test ! -e $bin && return 1;
+            else
+                obj=`make-target-bin --target=factory --bin=tmp --make=y` || return 1
+                dd if=$obj of=$bin bs=1024 seek=4;
+                echo $(printf "%08x" $(cat $obj | wc -c)) | tac -rs .. | xxd -r -p | \
+                    dd of=$bin bs=1 seek=0 conv=notrunc
+                echo $(crc32 $obj) | tac -rs .. | xxd -r -p | \
+                    dd of=$bin bs=1 seek=4 conv=notrunc
+                rm -rf $obj
+            fi ;;
+        *)
+            test ! -e $bin && return 1 ;;
+    esac
+
+    echo $bin
+
+    return 0
+}
+
 download()
 {
     local SYSTEM_TYPE=`getconf LONG_BIT`
-    local erase=$1
     local strcmd=""
+    local bin=
 
     if [ "$SYSTEM_TYPE" = "64" ]; then
         local OPENOCD_BIN_PATH=${OPENOCD_DIR_PATH}/linux64
@@ -118,42 +164,54 @@ download()
         local OPENOCD_BIN_PATH=${OPENOCD_DIR_PATH}/linux32
     fi
 
-    for cmd in ${target[@]};
-    do
-        if test $erase -ne 1; then
-            test $cmd = "os" && signing $CODESIGNER;
-            test $cmd = "os" && bin=${TIZENRT_BIN} || bin="${FW_DIR_PATH}/$cmd.bin"
+    test -e $TIZENRT_BIN-signed && rm -rf $TIZENRT_BIN-signed
 
+    for cmd in ${target[@]}; do
+        if test $erase -eq 0; then
+            bin=$(make-target-bin --target=$cmd --bin=$cmd --make=$make)
             # check existence of firmware binaries
-            if test ! -f $bin; then
-                echo "Firmware binaries for ARTIK 05X are not existed"
-                echo "   TARGET: $bin"
+            if test $? -eq 1; then
+                echo " `echo $cmd | tr a-z A-Z` binary was not existed"
                 exit 1
             fi
+
         fi
 
-        test $cmd = "bl1" && strcmd="$strcmd flash_protect off;"
-        if test $erase -eq 1; then
-            strcmd="$strcmd flash_erase_part $cmd;"
-        else
-            strcmd="$strcmd flash_write $cmd $bin $VERIFY;"
-        fi
+        if test "$make" = "n" ; then
+            test $cmd = "bl1" && strcmd="$strcmd flash_protect off;"
+            test $erase -eq 1 && \
+                strcmd="$strcmd flash_erase_part $cmd;" || \
+                strcmd="$strcmd flash_write $cmd $bin $VERIFY;"
 
-        test $cmd = "bl1" && strcmd="$strcmd flash_protect on;"
+            test $cmd = "bl1" && strcmd="$strcmd flash_protect on;"
+        fi
     done
 
     # Download all binaries using openocd script
-    pushd ${OPENOCD_DIR_PATH} > /dev/null
-        ${OPENOCD_BIN_PATH}/openocd -f artik05x.cfg -s $BOARD_DIR_PATH/../artik05x/scripts -c \
-        "init; $strcmd reset; exit"
-    popd > /dev/null
+    if test "$make" = "n" ; then
+        pushd ${OPENOCD_DIR_PATH} > /dev/null
+            ${OPENOCD_BIN_PATH}/openocd -f artik05x.cfg -s $BOARD_DIR_PATH/../artik05x/scripts -c \
+            "init; $strcmd reset; exit"
+        popd > /dev/null
+    fi
 }
 
 signing() {
-    if test -e "$CODESIGNER"; then
-        $CODESIGNER/artik05x_AppCodesigner $CODESIGNER/rsa_private.key $TIZENRT_BIN
-        TIZENRT_BIN=${TIZENRT_BIN}-signed
+    local bin=$1
+
+    if test ! -e $1; then
+        echo "OS image file not found" >&2
+        return 1
     fi
+
+    if test ! -e "$1-signed" -a -e "$CODESIGNER"; then
+        $CODESIGNER/artik05x_AppCodesigner $CODESIGNER/rsa_private.key $1 >&2
+        bin="$1-signed"
+    fi
+
+    echo $bin
+
+    return 0;
 }
 
 #read partition table
@@ -185,6 +243,9 @@ while test $# -gt 0; do
         --verify)
             VERIFY=verify
             ;;
+        --make-only)
+            make=y
+            ;;
         erase)
             erase=1
             ;;
@@ -203,10 +264,11 @@ while test $# -gt 0; do
     shift
 done
 
-if test -n "$target"; then
-    test $erase -eq 0 -a $target = "all" && target=(bl1 bl2 sssfw wlanfw os)
-    download $erase
-else
+if test -z "$target"; then
     echo "Not selected target"
     usage 1>&2
 fi
+
+test $erase -eq 0 -a $target = "all" && \
+    target=(bl1 bl2 sssfw wlanfw os)
+download
