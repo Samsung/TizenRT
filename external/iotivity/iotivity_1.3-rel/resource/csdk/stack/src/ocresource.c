@@ -1042,8 +1042,17 @@ OCStackResult BuildIntrospectionPayloadResponse(const OCResource *resourcePtr,
         else
         {
             ret = OC_STACK_NO_MEMORY;
+#if ! defined(__TIZENRT__)
             OICFree(introspectionData);
+#endif
         }
+#if defined(__TIZENRT__)
+        if (introspectionData)
+        {
+            OICFree(introspectionData);
+            introspectionData = NULL;
+        }
+#endif
     }
 
     return ret;
