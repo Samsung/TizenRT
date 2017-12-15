@@ -194,6 +194,13 @@ int tc_kernel_main(int argc, char *argv[])
 	umm_heap_main();
 #endif
 
+#ifdef CONFIG_ITC_KERNEL_LIBC_STDLIB
+#if (!defined CONFIG_FS_WRITABLE)
+#error CONFIG_FS_WRITABLE is needed for testing LIBC_STDLIB ITC
+#endif
+	itc_libc_stdlib_main();
+#endif
+
 	(void)tc_handler(TC_END, "Kernel TC");
 
 	return 0;
