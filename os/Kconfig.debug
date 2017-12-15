@@ -525,6 +525,7 @@ config DEBUG_WATCHDOG
 config DEBUG_TTRACE
 	bool "T-trace Debug Output"
 	default n
+	depends on TTRACE
 	---help---
 		Enable T-trace debug SYSLOG output (disabled by default)
 
