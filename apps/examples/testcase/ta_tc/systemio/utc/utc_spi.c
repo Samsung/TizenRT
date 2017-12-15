@@ -48,7 +48,7 @@ struct iotbus_spi_config_s config = {
 	0,
 };
 
-static void utc_spi_open_p(void)
+static void utc_systemio_spi_open_p(void)
 {
 	iotbus_spi_context_h m_spi = iotbus_spi_open(bus, &config);
 	TC_ASSERT_NEQ("iotbus_spi_open", m_spi, NULL);
@@ -56,52 +56,52 @@ static void utc_spi_open_p(void)
 	TC_SUCCESS_RESULT();
 }
 
-static void utc_spi_open_n(void)
+static void utc_systemio_spi_open_n(void)
 {
 	iotbus_spi_context_h m_spi = iotbus_spi_open(bus, NULL);
 	TC_ASSERT_EQ("iotbus_spi_open", m_spi, NULL);
 	TC_SUCCESS_RESULT();
 }
 
-static void utc_spi_write_p(void)
+static void utc_systemio_spi_write_p(void)
 {
 	int ret = iotbus_spi_write(spi, txbuf, 8);
 	TC_ASSERT_EQ("iotbus_spi_write", ret, IOTBUS_ERROR_NONE);
 	TC_SUCCESS_RESULT();
 }
 
-static void utc_spi_write_n(void)
+static void utc_systemio_spi_write_n(void)
 {
 	int ret = iotbus_spi_write(spi, NULL, 0);
 	TC_ASSERT_EQ("iotbus_spi_write", ret, IOTBUS_ERROR_INVALID_PARAMETER);
 	TC_SUCCESS_RESULT();
 }
 
-static void utc_spi_recv_p(void)
+static void utc_systemio_spi_recv_p(void)
 {
 	int ret = iotbus_spi_recv(spi, rxbuf, 8);
 	TC_ASSERT_EQ("iotbus_spi_recv", ret, IOTBUS_ERROR_NONE);
 	TC_SUCCESS_RESULT();
 }
 
-static void utc_spi_recv_n(void)
+static void utc_systemio_spi_recv_n(void)
 {
 	int ret = iotbus_spi_recv(spi, NULL, -1);
 	TC_ASSERT_EQ("iotbus_spi_recv", ret, IOTBUS_ERROR_INVALID_PARAMETER);
 	TC_SUCCESS_RESULT();
 }
 
-static void utc_spi_transfer_p(void)
+static void utc_systemio_spi_transfer_p(void)
 {
 	//TO DO
 }
 
-static void utc_spi_transfer_n(void)
+static void utc_systemio_spi_transfer_n(void)
 {
 	//TO DO
 }
 
-static void utc_spi_close_p(void)
+static void utc_systemio_spi_close_p(void)
 {
 	int ret = iotbus_spi_close(spi);
 	TC_ASSERT_EQ("iotbus_spi_close", ret, IOTBUS_ERROR_NONE);
@@ -109,7 +109,7 @@ static void utc_spi_close_p(void)
 
 }
 
-static void utc_spi_close_n(void)
+static void utc_systemio_spi_close_n(void)
 {
 	int ret = iotbus_spi_close(NULL);
 	TC_ASSERT_EQ("iotbus_spi_close", ret, IOTBUS_ERROR_INVALID_PARAMETER);
@@ -119,16 +119,16 @@ static void utc_spi_close_n(void)
 int utc_spi_main(void)
 {
 	SYSIO_UTC_I2C_PRINT("## SPI SYSIO Test##\n");
-	utc_spi_open_p();
-	utc_spi_open_n();
-	utc_spi_write_p();
-	utc_spi_write_n();
-	utc_spi_recv_p();
-	utc_spi_recv_n();
-	utc_spi_transfer_p();
-	utc_spi_transfer_n();
-	utc_spi_close_n();
-	utc_spi_close_p();	
+	utc_systemio_spi_open_p();
+	utc_systemio_spi_open_n();
+	utc_systemio_spi_write_p();
+	utc_systemio_spi_write_n();
+	utc_systemio_spi_recv_p();
+	utc_systemio_spi_recv_n();
+	utc_systemio_spi_transfer_p();
+	utc_systemio_spi_transfer_n();
+	utc_systemio_spi_close_n();
+	utc_systemio_spi_close_p();	
 
 	return 0;
 }

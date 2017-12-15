@@ -24,9 +24,6 @@
 #include <wifi_manager/wifi_manager.h>
 #include "tc_common.h"
 
-extern sem_t tc_sem;
-extern int working_tc;
-
 static pthread_mutex_t g_wifi_manager_test_mutex = PTHREAD_MUTEX_INITIALIZER;;
 static pthread_cond_t g_wifi_manager_test_cond;
 
@@ -357,13 +354,9 @@ static void utc_wifi_manager_scan_ap_p(void)
 
 int wifi_manager_utc(int argc, FAR char *argv[])
 {
-	sem_wait(&tc_sem);
-	working_tc++;
-
-	total_pass = 0;
-	total_fail = 0;
-
-	printf("=== TINYARA WIFI_MANAGER TC START! ===\n");
+	if (tc_handler(TC_START, "WiFiManager UTC") == ERROR) {
+		return ERROR;
+	}
 
 	utc_wifi_manager_init_n();
 	utc_wifi_manager_init_p();
@@ -397,11 +390,7 @@ int wifi_manager_utc(int argc, FAR char *argv[])
 	utc_wifi_manager_scan_ap_n(); // Get failed becasue there is no callback hander for scan results
 	utc_wifi_manager_scan_ap_p(); // Reinitialized wifi manager with the callback hander for scan results
 
-	printf("\n=== TINYARA WIFI_MANAGER TC COMPLETE ===\n");
-	printf("\t\tTotal pass : %d\n\t\tTotal fail : %d\n", total_pass, total_fail);
-
-	working_tc--;
-	sem_post(&tc_sem);
+	(void)tc_handler(TC_END, "WiFiManager UTC");
 
 	return 0;
 }

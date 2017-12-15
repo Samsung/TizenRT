@@ -524,6 +524,7 @@ static void tc_sched_sched_getstreams(void)
 	TC_SUCCESS_RESULT();
 }
 
+#if !defined(CONFIG_BUILD_PROTECTED)
 /**
  * @fn                   :tc_sched_task_setcancelstate
  * @brief                :This tc tests sched_task_setcancelstate()
@@ -647,6 +648,7 @@ static void tc_sched_task_testcancel(void)
 	TC_SUCCESS_RESULT();
 }
 #endif
+#endif
 
 /****************************************************************************
  * Name: sched
@@ -670,10 +672,12 @@ int sched_main(void)
 	tc_sched_sched_foreach();
 	tc_sched_sched_lockcount();
 	tc_sched_sched_getstreams();
+#ifndef CONFIG_BUILD_PROTECTED
 	tc_sched_task_setcancelstate();
 #ifdef CONFIG_CANCELLATION_POINTS
 	tc_sched_task_setcanceltype();
 	tc_sched_task_testcancel();
+#endif
 #endif
 
 	return 0;

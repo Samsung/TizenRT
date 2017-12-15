@@ -27,7 +27,6 @@
 #include <netdb.h>
 #include <sys/socket.h>
 #include <errno.h>
-#include <apps/shell/tash.h>
 #include <network/mqtt/mqtt_api.h>
 #include "tc_common.h"
 
@@ -62,8 +61,6 @@ static pthread_cond_t g_ocfcond;
 static mqtt_client_t *g_mqtt_pub_handle = NULL;
 static mqtt_client_t *g_mqtt_sub_handle = NULL;
 
-extern sem_t tc_sem;
-extern int working_tc;
 /**
  * Private Functions
  */
@@ -426,14 +423,16 @@ static void utc_mqtt_deinit_client_p(void)
 }
 
 
-static int mqtt_utc(int argc, FAR char *argv[])
+#ifdef CONFIG_BUILD_KERNEL
+int main(int argc, FAR char *argv[])
+#else
+int utc_mqtt_main(int argc, char *argv[])
+#endif
 {
-	sem_wait(&tc_sem);
-	working_tc++;
+	if (tc_handler(TC_START, "MQTT UTC") == ERROR) {
+		return ERROR;
+	}
 
-	total_fail = total_pass = 0;
-
-	printf("=== TIZENRT MQTT TC START! ===\n");
 	int res = _utc_mqtt_init();
 	if (res < 0) {
 		UTC_MQTT_LOGE;
@@ -456,28 +455,7 @@ static int mqtt_utc(int argc, FAR char *argv[])
 
 	_utc_mqtt_deinit();
 exit:
-	printf("\n=== TIZENRT MQTT TC COMPLETE ===\n");
-	printf("\t\tTotal pass : %d\n\t\tTotal fail : %d\n", total_pass, total_fail);
-
-	working_tc--;
-	sem_post(&tc_sem);
+	(void)tc_handler(TC_END, "MQTT UTC");
 
 	return 0;
 }
-
-
-#ifdef CONFIG_BUILD_KERNEL
-int main(int argc, FAR char *argv[])
-#else
-int utc_mqtt_main(int argc, char *argv[])
-#endif
-{
-
-#ifdef CONFIG_TASH
-	tash_cmd_install("mqtt_utc", mqtt_utc, TASH_EXECMD_SYNC);
-#else
-	mqtt_utc(argc, argv);
-#endif
-	return 0;
-}
-

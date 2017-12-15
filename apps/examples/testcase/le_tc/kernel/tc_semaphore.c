@@ -19,15 +19,18 @@
 /// @file semaphore.c
 /// @brief Test Case Example for semaphore API
 #include <tinyara/config.h>
+#include <tinyara/clock.h>
+#include <tinyara/semaphore.h>
 #include <stdio.h>
 #include <errno.h>
 #include <sys/time.h>
 #include <sys/types.h>
 #include "tc_internal.h"
 
-#define PSHARED     0
-#define SEC_2       2
-#define LOOP_CNT    5
+#define PSHARED			0
+#define SEC_2			2
+#define LOOP_CNT		5
+#define SEM_PRIO_DEFAULT	3
 
 static sem_t g_empty;
 static sem_t g_full;
@@ -352,6 +355,107 @@ static void tc_semaphore_sem_destroy(void)
 	TC_SUCCESS_RESULT();
 }
 
+#ifdef CONFIG_PRIORITY_INHERITANCE
+/**
+* @fn                   :tc_semaphore_sem_setprotocol
+* @brief                :Set semaphore protocol attribute
+* @scenario             :if sem protocol is SEM_PRIO_NONE/SEM_PRIO_INHERIT, it returns OK else it returns ERROR
+* API's covered         :sem_setprotocol
+* Preconditions         :none
+* Postconditions        :none
+* @return               :void
+*/
+static void tc_semaphore_sem_setprotocol(void)
+{
+	sem_t sem;
+	int ret_chk;
+
+	ret_chk = sem_init(&sem, PSHARED, 1);
+	TC_ASSERT_EQ("sem_init", ret_chk, OK);
+
+	ret_chk = sem_setprotocol(&sem, SEM_PRIO_NONE);
+	TC_ASSERT_EQ("sem_setprotocol", ret_chk, OK);
+
+	ret_chk = sem_setprotocol(&sem, SEM_PRIO_INHERIT);
+	TC_ASSERT_EQ("sem_setprotocol", ret_chk, OK);
+
+	ret_chk = sem_setprotocol(&sem, SEM_PRIO_PROTECT);
+	TC_ASSERT_EQ("sem_setprotocol", ret_chk, ERROR);
+	TC_ASSERT_EQ("sem_setprotocol", errno, ENOSYS);
+
+	ret_chk = sem_setprotocol(&sem, SEM_PRIO_DEFAULT);
+	TC_ASSERT_EQ("sem_setprotocol", ret_chk, ERROR);
+	TC_ASSERT_EQ("sem_setprotocol", errno, EINVAL);
+
+	ret_chk = sem_destroy(&sem);
+	TC_ASSERT_EQ("sem_destroy", ret_chk, OK);
+	TC_ASSERT_EQ("sem_destroy", sem.semcount, 1);
+
+	TC_SUCCESS_RESULT();
+}
+#endif
+
+/**
+* @fn                   :tc_semaphore_sem_tickwait
+* @brief                :lighter weight version of sem_timedwait() - will lock the semaphore referenced by sem as in the sem_wait() function
+* @scenario             :if parameters are invalid, sem_timedwait returns ERROR
+*                        else, it returns OK
+* API's covered         :sem_tickwait
+* Preconditions         :none
+* Postconditions        :none
+* @return               :void
+*/
+static void tc_semaphore_sem_tickwait(void)
+{
+	sem_t sem;
+	int ret_chk;
+	struct timespec abstime;
+	struct timespec curtime;
+
+	/* init sem count to 1 */
+
+	ret_chk = sem_init(&sem, PSHARED, 1);
+	TC_ASSERT_EQ("sem_init", ret_chk, OK);
+
+	/* success to get sem case test */
+
+	ret_chk = clock_gettime(CLOCK_REALTIME, &abstime);
+	TC_ASSERT_EQ("clock_gettime", ret_chk, OK);
+
+	ret_chk = sem_tickwait(&sem, clock_systimer(), SEC_2);
+	TC_ASSERT_EQ("sem_tickwait", ret_chk, OK);
+
+	ret_chk = clock_gettime(CLOCK_REALTIME, &curtime);
+	TC_ASSERT_EQ("clock_gettime", ret_chk, OK);
+	TC_ASSERT_NEQ("sem_timedwait", abstime.tv_sec + SEC_2, curtime.tv_sec);
+
+	ret_chk = sem_post(&sem);
+	TC_ASSERT_EQ("sem_post", ret_chk, OK);
+
+	ret_chk = sem_destroy(&sem);
+	TC_ASSERT_EQ("sem_destroy", ret_chk, OK);
+
+	/* init sem count to 0 */
+
+	ret_chk = sem_init(&sem, PSHARED, 0);
+	TC_ASSERT_EQ("sem_init", ret_chk, OK);
+
+	/* expired time test */
+
+	ret_chk = sem_tickwait(&sem, clock_systimer() - SEC_2, 0);
+	TC_ASSERT_EQ("sem_tickwait", ret_chk, ERROR);
+
+	ret_chk = sem_tickwait(&sem, clock_systimer() - SEC_2, 1);
+	TC_ASSERT_EQ("sem_tickwait", ret_chk, ERROR);
+
+	ret_chk = sem_tickwait(&sem, clock_systimer() - SEC_2, 3);
+	TC_ASSERT_EQ("sem_tickwait", ret_chk, ERROR);
+
+	ret_chk = sem_destroy(&sem);
+	TC_ASSERT_EQ("sem_destroy", ret_chk, OK);
+
+	TC_SUCCESS_RESULT();
+}
 /****************************************************************************
  * Name: semaphore
  ****************************************************************************/
@@ -360,6 +464,10 @@ int semaphore_main(void)
 {
 	tc_semaphore_sem_destroy();
 	tc_semaphore_sem_post_wait();
+#ifdef CONFIG_PRIORITY_INHERITANCE
+	tc_semaphore_sem_setprotocol();
+#endif
+	tc_semaphore_sem_tickwait();
 	tc_semaphore_sem_trywait();
 	tc_semaphore_sem_timedwait();
 

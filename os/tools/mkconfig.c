@@ -169,6 +169,14 @@ int main(int argc, char **argv, char **envp)
 	printf("# undef CONFIG_NFILE_STREAMS\n");
 	printf("# define CONFIG_NFILE_STREAMS 0\n");
 	printf("#endif\n\n");
+	printf("/* If no board crashdump mechanism's are enabled,\n");
+	printf(" * then let's disable the board crashdump itself\n");
+	printf(" */\n\n");
+	printf("#if !defined(CONFIG_BOARD_RAMDUMP_UART) && \\\n");
+	printf("    !defined(CONFIG_BOARD_RAMDUMP_FLASH) && \\\n");
+	printf("    !defined(CONFIG_BOARD_COREDUMP_FLASH)\n");
+	printf("# undef CONFIG_BOARD_CRASHDUMP\n");
+	printf("#endif\n\n");
 	printf("/* It is the number of sectors in one journal area.\n");
 	printf(" * A journal area is a set of sectors where journal entries are stored.\n");
 	printf(" * The capacity of journal to store entries is equal to the total available bytes a journal area.\n");

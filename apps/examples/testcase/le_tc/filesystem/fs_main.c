@@ -35,7 +35,6 @@
 #include <poll.h>
 #endif
 #include <errno.h>
-#include <semaphore.h>
 #include <sys/stat.h>
 #include <sys/sendfile.h>
 #include <sys/statfs.h>
@@ -45,7 +44,6 @@
 #include <tinyara/streams.h>
 #include <tinyara/fs/ioctl.h>
 #include <tinyara/fs/fs_utils.h>
-#include <apps/shell/tash.h>
 #include <time.h>
 #include "tc_common.h"
 #include "tc_internal.h"
@@ -65,8 +63,8 @@
 #if defined(CONFIG_SIDK_S5JT200_AUTOMOUNT_USERFS)
 #define MOUNT_DEV_DIR CONFIG_SIDK_S5JT200_AUTOMOUNT_USERFS_DEVNAME
 
-#elif defined(CONFIG_ARTIK053_AUTOMOUNT_USERFS)
-#define MOUNT_DEV_DIR CONFIG_ARTIK053_AUTOMOUNT_USERFS_DEVNAME
+#elif defined(CONFIG_ARTIK05X_AUTOMOUNT_USERFS)
+#define MOUNT_DEV_DIR CONFIG_ARTIK05X_AUTOMOUNT_USERFS_DEVNAME
 
 #else
 #define MOUNT_DEV_DIR "/dev/smart1"
@@ -128,8 +126,6 @@
 #if defined(CONFIG_PIPES) && (CONFIG_DEV_PIPE_SIZE > 11)
 static int g_thread_result;
 #endif
-extern sem_t tc_sem;
-extern int working_tc;
 
 #if defined(CONFIG_PIPES) && (CONFIG_DEV_PIPE_SIZE > 11)
 /**
@@ -2963,10 +2959,15 @@ static void tc_libc_stdio_ungetc(void)
 	TC_SUCCESS_RESULT();
 }
 
-static int fs_sample_launcher(int argc, char **args)
+#ifdef CONFIG_BUILD_KERNEL
+int main(int argc, FAR char *argv[])
+#else
+int tc_filesystem_main(int argc, char *argv[])
+#endif
 {
-	total_pass = 0;
-	total_fail = 0;
+	if (tc_handler(TC_START, "FileSystem TC") == ERROR) {
+		return ERROR;
+	}
 
 	tc_fs_vfs_umount();
 	tc_fs_vfs_mount();
@@ -2999,7 +3000,9 @@ static int fs_sample_launcher(int argc, char **args)
 	tc_fs_vfs_fcntl();
 #ifndef CONFIG_DISABLE_POLL
 	tc_fs_vfs_poll();
+#ifndef CONFIG_DISABLE_MANUAL_TESTCASE
 	tc_fs_vfs_select();
+#endif
 #endif
 	tc_fs_vfs_rename();
 	tc_fs_vfs_ioctl();
@@ -3025,8 +3028,10 @@ static int fs_sample_launcher(int argc, char **args)
 	tc_libc_stdio_freopen();
 	tc_libc_stdio_ferror();
 	tc_libc_stdio_clearerr();
+#ifndef CONFIG_DISABLE_MANUAL_TESTCASE
 	tc_libc_stdio_gets();
 	tc_libc_stdio_gets_s();
+#endif
 	tc_libc_stdio_fileno();
 #if CONFIG_STDIO_BUFFER_SIZE > 0
 	tc_libc_stdio_lib_rdflush();
@@ -3059,32 +3064,11 @@ static int fs_sample_launcher(int argc, char **args)
 	tc_libc_stdio_tmpnam();
 	tc_libc_stdio_ungetc();
 	tc_libc_stdio_zeroinstream();
-
-	printf("#########################################\n");
-	printf("           FS TC Result               \n");
-	printf("           PASS : %d FAIL : %d        \n",
-		   total_pass, total_fail);
-	printf("#########################################\n");
-	return total_pass;
-}
-
-#ifdef CONFIG_BUILD_KERNEL
-int main(int argc, FAR char *argv[])
-#else
-int fs_main(int argc, char *argv[])
-#endif
-{
-	sem_wait(&tc_sem);
-	working_tc++;
-
-#ifdef CONFIG_TASH
-	tash_cmd_install("fs_sample", fs_sample_launcher, TASH_EXECMD_SYNC);
-#else
-	fs_sample_launcher(argc, argv);
+#ifdef CONFIG_ITC_FS
+	itc_fs_main();
 #endif
 
-	working_tc--;
-	sem_post(&tc_sem);
+	(void)tc_handler(TC_END, "FileSystem TC");
 
 	return 0;
 }

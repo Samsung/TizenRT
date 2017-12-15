@@ -87,6 +87,7 @@ struct progmem_dev_s {
 	/* Fields unique to the progmem MTD driver */
 
 	bool initialized;			/* True: Already initialized */
+	uint8_t pgshift;			/* Log2 of the flash page size */
 	uint8_t blkshift;			/* Log2 of the flash block size */
 };
 
@@ -96,7 +97,7 @@ struct progmem_dev_s {
 
 /* Internal helper functions */
 
-static int32_t progmem_log2(size_t blocksize);
+static int32_t progmem_log2(size_t num);
 
 /* MTD driver methods */
 
@@ -132,34 +133,30 @@ static struct progmem_dev_s g_progmem = {
  ****************************************************************************/
 
 /****************************************************************************
- * Name: progmem_erase
+ * Name: progmem_log2
  *
  * Description:
- *   Erase several blocks, each of the size previously reported.
+ *   Calculate the base 2 logarithm of a given number
  *
  ****************************************************************************/
 
-static int32_t progmem_log2(uint32_t blocksize)
+static int32_t progmem_log2(uint32_t num)
 {
-	uint32_t log2 = 0;
+	uint32_t log2;
 
-	/* Search every bit in the blocksize from bit zero to bit 30 (omitting bit
-	 * 31 which is the sign bit on return)
-	 */
-
-	for (log2 = 0; log2 < 31; log2++, blocksize >>= 1) {
+	for (log2 = 0; log2 < 31; log2++, num >>= 1) {
 		/* Is bit zero set? */
 
-		if ((blocksize & 1) != 0) {
+		if ((num & 1) != 0) {
 			/* Yes... the value should be exactly one.  We do not support
-			 * block sizes that are not exact powers of two.
+			 * numbers that are not exact powers of two.
 			 */
 
-			return blocksize == 1 ? log2 : -ENOSYS;
+			return num == 1 ? log2 : -ENOSYS;
 		}
 	}
 
-	return blocksize == 0 ? -EINVAL : -E2BIG;
+	return num == 0 ? -EINVAL : -E2BIG;
 }
 
 /****************************************************************************
@@ -172,12 +169,15 @@ static int32_t progmem_log2(uint32_t blocksize)
 
 static int progmem_erase(FAR struct mtd_dev_s *dev, off_t startblock, size_t nblocks)
 {
+	int page;
 	ssize_t result;
+	FAR struct progmem_dev_s *priv = (FAR struct progmem_dev_s *)dev;
+
 
 	/* Erase the specified blocks and return status (OK or a negated errno) */
-
 	while (nblocks > 0) {
-		result = up_progmem_erasepage(startblock);
+		page = startblock << (priv->blkshift - priv->pgshift);
+		result = up_progmem_erasepage(page);
 		if (result < 0) {
 			return (int)result;
 		}
@@ -210,7 +210,7 @@ static ssize_t progmem_bread(FAR struct mtd_dev_s *dev, off_t startblock, size_t
 	 */
 
 	src = (FAR const uint8_t *)up_progmem_getaddress(startblock);
-	memcpy(buffer, src, nblocks << priv->blkshift);
+	memcpy(buffer, src, nblocks << priv->pgshift);
 	return nblocks;
 }
 
@@ -231,7 +231,7 @@ static ssize_t progmem_bwrite(FAR struct mtd_dev_s *dev, off_t startblock, size_
 	 * (The positive, number of blocks actually written or a negated errno)
 	 */
 
-	result = up_progmem_write(up_progmem_getaddress(startblock), buffer, nblocks << priv->blkshift);
+	result = up_progmem_write(up_progmem_getaddress(startblock), buffer, nblocks << priv->pgshift);
 	return result < 0 ? result : nblocks;
 }
 
@@ -254,9 +254,9 @@ static ssize_t progmem_read(FAR struct mtd_dev_s *dev, off_t offset, size_t nbyt
 	 * errno)
 	 */
 
-	block = offset >> priv->blkshift;
+	block = offset >> priv->pgshift;
 	src = (FAR const uint8_t *)up_progmem_getaddress(block) +
-				(offset & ((1 << priv->blkshift) - 1));
+				(offset & ((1 << priv->pgshift) - 1));
 	memcpy(buffer, src, nbytes);
 	return nbytes;
 }
@@ -281,9 +281,9 @@ static ssize_t progmem_write(FAR struct mtd_dev_s *dev, off_t offset, size_t nby
 	 * (The positive, number of blocks actually written or a negated errno)
 	 */
 
-	block = offset >> priv->blkshift;
+	block = offset >> priv->pgshift;
 	result = up_progmem_write(up_progmem_getaddress(block) +
-			(offset & ((1 << priv->blkshift) - 1)), buffer, nbytes);
+			(offset & ((1 << priv->pgshift) - 1)), buffer, nbytes);
 	return result < 0 ? result : nbytes;
 }
 #endif
@@ -310,8 +310,8 @@ static int progmem_ioctl(FAR struct mtd_dev_s *dev, int cmd, unsigned long arg)
 			 * appear so.
 			 */
 
-			geo->blocksize = (1 << priv->blkshift);	/* Size of one read/write block */
-			geo->erasesize = (1 << priv->blkshift);	/* Size of one erase block */
+			geo->blocksize = (1 << priv->pgshift);		/* Size of one read/write block */
+			geo->erasesize = (1 << priv->blkshift);		/* Size of one erase block */
 			geo->neraseblocks = up_progmem_npages();	/* Number of erase blocks */
 			ret = OK;
 		}
@@ -367,7 +367,7 @@ static int progmem_ioctl(FAR struct mtd_dev_s *dev, int cmd, unsigned long arg)
 FAR struct mtd_dev_s *progmem_initialize(void)
 {
 	FAR struct progmem_dev_s *priv = (FAR struct progmem_dev_s *)&g_progmem;
-	int32_t blkshift;
+	int32_t pgshift, blkshift;
 
 	/* Perform initialization if necessary */
 
@@ -377,17 +377,24 @@ FAR struct mtd_dev_s *progmem_initialize(void)
 		 * other block.
 		 */
 
-		size_t blocksize = up_progmem_pagesize(0);
+		size_t pagesize = up_progmem_pagesize(0);
+
+		/* Calculate Log2 of the flash page size */
+		pgshift = progmem_log2(pagesize);
+		if (pgshift < 0) {
+			return NULL;
+		}
+
+		size_t blocksize = up_progmem_blocksize();
 
 		/* Calculate Log2 of the flash block size */
-
 		blkshift = progmem_log2(blocksize);
 		if (blkshift < 0) {
 			return NULL;
 		}
 
 		/* Save the configuration data */
-
+		g_progmem.pgshift = pgshift;
 		g_progmem.blkshift = blkshift;
 		g_progmem.initialized = true;
 

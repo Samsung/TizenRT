@@ -26,16 +26,17 @@ Understanding the TizenRT code structure and adhering to the structure helps in 
 
 ## Kernel & System
 1. [How to add new board](HowToAddnewBoard.md)
-2. How to use peripheral (will be updated)
+2. [How to use peripheral](HowToUsePeripheral.md)
 3. [How to add static library](HowToAddStaticLibrary.md)
-4. [How to use multiple memory as a heap](HowToUseMultiHeap.md)
+4. [How to configure memory](HowToConfigureMemory.md)
+5. [How to use MPU](HowToUseMPU.md)
 
 ## File System
 1. [How to use SmartFS](HowToUseSmartFS.md)
 
 ## Network
 1. How to use LWIP (will be updated)
-2. [How to use WPA_SUPPLICANT](HowToUseWPASupplicant.md)
+2. [How to port TizenRT on new WiFi chipset](HowToPortTizenRTOnWiFiChipset.md)
 
 ## Audio
 Will be updated

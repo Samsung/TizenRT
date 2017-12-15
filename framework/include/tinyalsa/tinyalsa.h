@@ -106,12 +106,6 @@ extern "C" {
  */
 #define PCM_NORESTART 0x00000004
 
-/** Specifies monotonic timestamps.
- * Used in @ref pcm_open.
- * @ingroup libtinyalsa-pcm
- */
-#define PCM_MONOTONIC 0x00000008
-
 /** For inputs, this means the PCM is recording audio samples.
  * For outputs, this means the PCM is playing audio samples.
  * @ingroup libtinyalsa-pcm
@@ -138,7 +132,7 @@ extern "C" {
  */
 #define	PCM_STATE_DISCONNECTED 0x08
 
-/** 
+/**
  * @brief Audio sample format of a PCM.
  * @details The first letter specifiers whether the sample is signed or unsigned.
  * The letter 'S' means signed. The letter 'U' means unsigned.
@@ -174,15 +168,7 @@ enum pcm_format {
 	PCM_FORMAT_MAX
 };
 
-/** 
- * @brief A bit mask of 256 bits (32 bytes) that describes some hardware parameters of a PCM 
- */
-struct pcm_mask {
-	/** bits of the bit mask */
-	unsigned int bits[32 / sizeof(unsigned int)];
-};
-
-/** 
+/**
  * @brief Encapsulates the hardware and software parameters of a PCM.
  * @ingroup libtinyalsa-pcm
  */
@@ -191,60 +177,13 @@ struct pcm_config {
 	unsigned int channels;
 	/** The number of frames per second */
 	unsigned int rate;
+	/** The sample format of a PCM */
+	enum pcm_format format;
 	/** The number of frames in a period */
 	unsigned int period_size;
 	/** The number of periods in a PCM */
 	unsigned int period_count;
-	/** The sample format of a PCM */
-	enum pcm_format format;
-	/* Values to use for the ALSA start, stop and silence thresholds.  Setting
-	 * any one of these values to 0 will cause the default tinyalsa values to be
-	 * used instead.  Tinyalsa defaults are as follows.
-	 *
-	 * start_threshold   : period_count * period_size
-	 * stop_threshold    : period_count * period_size
-	 * silence_threshold : 0
-	 */
-	/** The minimum number of frames required to start the PCM */
-	unsigned int start_threshold;
-	/** The minimum number of frames required to stop the PCM */
-	unsigned int stop_threshold;
-	/** The minimum number of frames to silence the PCM */
-	unsigned int silence_threshold;
 };
-
-/** 
- * @brief Enumeration of a PCM's hardware parameters.
- * @details Each of these parameters is either a mask or an interval.
- * @ingroup libtinyalsa-pcm
- */
-enum pcm_param {
-	/** A mask that represents the type of read or write method available (e.g. interleaved, mmap). */
-	PCM_PARAM_ACCESS,
-	/** A mask that represents the @ref pcm_format available (e.g. @ref PCM_FORMAT_S32_LE) */
-	PCM_PARAM_FORMAT,
-	/** A mask that represents the subformat available */
-	PCM_PARAM_SUBFORMAT,
-	/** An interval representing the range of sample bits available (e.g. 8 to 32) */
-	PCM_PARAM_SAMPLE_BITS,
-	/** An interval representing the range of frame bits available (e.g. 8 to 64) */
-	PCM_PARAM_FRAME_BITS,
-	/** An interval representing the range of channels available (e.g. 1 to 2) */
-	PCM_PARAM_CHANNELS,
-	/** An interval representing the range of rates available (e.g. 44100 to 192000) */
-	PCM_PARAM_RATE,
-	PCM_PARAM_PERIOD_TIME,
-	/** The number of frames in a period */
-	PCM_PARAM_PERIOD_SIZE,
-	/** The number of bytes in a period */
-	PCM_PARAM_PERIOD_BYTES,
-	/** The number of periods for a PCM */
-	PCM_PARAM_PERIODS,
-	PCM_PARAM_BUFFER_TIME,
-	PCM_PARAM_BUFFER_SIZE,
-	PCM_PARAM_BUFFER_BYTES,
-	PCM_PARAM_TICK_TIME,
-};							/* enum pcm_param */
 
 struct pcm;
 
@@ -260,26 +199,6 @@ struct pcm;
  * @since Tizen RT v1.1
  */
 struct pcm *pcm_open(unsigned int card, unsigned int device, unsigned int flags, const struct pcm_config *config);
-
-/**
-* @brief Stops a PCM. Any data present in the buffers will be dropped.
-*
-* @details @b #include <tinyalsa/tinyalsa.h>
-* @param[in] pcm A PCM handle.
-* @returns On success, zero; on failure, a negative number.
-* @since Tizen RT v1.x
-*/
-int pcm_drop(struct pcm *pcm);
-
-/**
-* @brief Stop a PCM preserving pending frames.
-*
-* @details @b #include <tinyalsa/tinyalsa.h>
-* @param[in] pcm A PCM handle.
-* @returns On success, zero; on failure, a negative number.
-* @since Tizen RT v1.x
-*/
-int pcm_drain(struct pcm *pcm);
 
 /**
  * @brief Opens a PCM by it's name.
@@ -406,16 +325,6 @@ unsigned int pcm_frames_to_bytes(const struct pcm *pcm, unsigned int frames);
 unsigned int pcm_bytes_to_frames(const struct pcm *pcm, unsigned int bytes);
 
 /**
- * @brief Gets the subdevice on which the pcm has been opened.
- *
- * @details @b #include <tinyalsa/tinyalsa.h>
- * @param[in] pcm A PCM handle.
- * @return The subdevice on which the pcm has been opened.
- * @since Tizen RT v1.1
- */
-unsigned int pcm_get_subdevice(const struct pcm *pcm);
-
-/**
  * @brief Writes audio samples to PCM.
  *
  * @details @b #include <tinyalsa/tinyalsa.h>
@@ -440,6 +349,26 @@ int pcm_writei(struct pcm *pcm, const void *data, unsigned int frame_count);
 int pcm_readi(struct pcm *pcm, void *data, unsigned int frame_count);
 
 /**
+* @brief Stops a PCM. Any data present in the buffers will be dropped.
+*
+* @details @b #include <tinyalsa/tinyalsa.h>
+* @param[in] pcm A PCM handle.
+* @returns On success, zero; on failure, a negative number.
+* @since Tizen RT v1.x
+*/
+int pcm_drop(struct pcm *pcm);
+
+/**
+* @brief Stop a PCM preserving pending frames.
+*
+* @details @b #include <tinyalsa/tinyalsa.h>
+* @param[in] pcm A PCM handle.
+* @returns On success, zero; on failure, a negative number.
+* @since Tizen RT v1.x
+*/
+int pcm_drain(struct pcm *pcm);
+
+/**
  * @brief Prepares a PCM, if it has not been prepared already.
  *
  * @details @b #include <tinyalsa/tinyalsa.h>
@@ -458,6 +387,16 @@ int pcm_prepare(struct pcm *pcm);
  * @since Tizen RT v1.1
  */
 unsigned int pcm_format_to_bits(enum pcm_format format);
+
+/**
+ * @brief Gets the subdevice on which the pcm has been opened.
+ *
+ * @details @b #include <tinyalsa/tinyalsa.h>
+ * @param[in] pcm A PCM handle.
+ * @return The subdevice on which the pcm has been opened.
+ * @since Tizen RT v1.1
+ */
+unsigned int pcm_get_subdevice(const struct pcm *pcm);
 
 #if defined(__cplusplus)
 }								/* extern "C" */

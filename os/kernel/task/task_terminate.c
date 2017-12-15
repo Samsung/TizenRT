@@ -194,12 +194,6 @@ int task_terminate(pid_t pid, bool nonblocking)
 
 	sched_unlock();
 
-	/* Since all tasks pass through this function as the final step in their
-	 * exit sequence, this is an appropriate place to inform any instrumentation
-	 * layer that the task no longer exists.
-	 */
-
-	sched_note_stop(dtcb);
 	trace_end(TTRACE_TAG_TASK);
 
 	/* Deallocate its TCB */

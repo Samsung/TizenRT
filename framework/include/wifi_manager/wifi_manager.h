@@ -99,7 +99,7 @@ typedef struct wifi_manager_scan_info_s wifi_manager_scan_info_s;
  * @brief Include callback functions which are asynchronously called after Wi-Fi Manager APIs are called
  */
 typedef struct {
-	void (*sta_connected)(void);		// in station mode, connected to ap
+	void (*sta_connected)(wifi_manager_result_e);	// in station mode, connected to ap
 	void (*sta_disconnected)(void);		// in station mode, disconnected from ap
 	void (*softap_sta_joined)(void);	// in softap mode, a station joined
 	void (*softap_sta_left)(void);		// in softap mode, a station left

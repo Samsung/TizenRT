@@ -143,16 +143,19 @@
 
 #define MAX_SOFTAP_SSID				(64)
 
+#define PATH_MNT "/mnt/"
+#define PATH_ROM "/rom/"
+
 static bool is_support_user_def_dev_list = true;	// It's allow to apply user-defined device-ID only when start Stack.
 static char *user_def_dev_list[MAX_SUBDEVICE_EA + 1] = { 0, };
 
 static volatile int resource_type_cnt = 0;
 
-static char g_things_cloud_file_path[MAX_FILE_PATH_LENGTH] = { 0 };
+static char g_things_cloud_file_path[MAX_FILE_PATH_LENGTH + 1] = { 0 };
 static char g_things_info_file_path[MAX_FILE_PATH_LENGTH] = { 0 };
-static char g_svrdb_file_path[MAX_FILE_PATH_LENGTH] = { 0 };
-static char g_certificate_file_path[MAX_FILE_PATH_LENGTH] = { 0 };
-static char g_private_key_file_path[MAX_FILE_PATH_LENGTH] = { 0 };
+static char g_svrdb_file_path[MAX_FILE_PATH_LENGTH + 1] = { 0 };
+static char g_certificate_file_path[MAX_FILE_PATH_LENGTH + 1] = { 0 };
+static char g_private_key_file_path[MAX_FILE_PATH_LENGTH + 1] = { 0 };
 
 static char g_cloud_address[MAX_CLOUD_ADDRESS] = { 0 };
 
@@ -872,6 +875,10 @@ static int parse_things_info_json(const char *filename)
 					cJSON *vendor_id = cJSON_GetObjectItem(spec_platform, KEY_DEVICE_SPECIFICATION_PLATFORM_VENDORID);
 
 					if (NULL != manufacturer_name) {
+						if (strlen(manufacturer_name->valuestring) != 4) {
+							THINGS_LOG_V_ERROR(THINGS_ERROR, TAG, "manufacturer_name exceeds 4 bytes. please check (4 bytes are fixed sizes.)");
+							return 0;
+						}
 						memcpy(node->manufacturer_name, manufacturer_name->valuestring, strlen(manufacturer_name->valuestring) + 1);
 					}
 					if (NULL != manufacturer_url) {
@@ -931,7 +938,7 @@ static int parse_things_info_json(const char *filename)
 								node->collection[iter].rt_cnt = type_cnt;
 								for (int typeiter = 0; typeiter < type_cnt; typeiter++) {
 									cJSON *type = cJSON_GetArrayItem(types, typeiter);
-									node->collection[iter].resource_types[typeiter] = things_malloc(sizeof(char *) * strlen(type->valuestring) + 1);
+									node->collection[iter].resource_types[typeiter] = things_malloc(sizeof(char) * strlen(type->valuestring) + 1);
 									memcpy(node->collection[iter].resource_types[typeiter], type->valuestring, strlen(type->valuestring) + 1);
 									THINGS_LOG_D(THINGS_INFO, TAG, "[COLLECTION] collection[iter].resource_types[typeiter] : %s", (node->collection[iter].resource_types[typeiter]));
 								}
@@ -945,7 +952,7 @@ static int parse_things_info_json(const char *filename)
 								node->collection[iter].if_cnt = if_cnt;
 								for (int ifiter = 0; ifiter < if_cnt; ifiter++) {
 									cJSON *interface = cJSON_GetArrayItem(interfaces, ifiter);
-									node->collection[iter].interface_types[ifiter] = things_malloc(sizeof(char *) * strlen(interface->valuestring) + 1);
+									node->collection[iter].interface_types[ifiter] = things_malloc(sizeof(char) * strlen(interface->valuestring) + 1);
 									memcpy(node->collection[iter].interface_types[ifiter], interface->valuestring, strlen(interface->valuestring) + 1);
 								}
 							} else {
@@ -978,7 +985,7 @@ static int parse_things_info_json(const char *filename)
 										link_resource->rt_cnt = type_cnt;
 										for (int typeiter = 0; typeiter < type_cnt; typeiter++) {
 											cJSON *type = cJSON_GetArrayItem(types, typeiter);
-											link_resource->resource_types[typeiter] = things_malloc(sizeof(char *) * strlen(type->valuestring) + 1);
+											link_resource->resource_types[typeiter] = things_malloc(sizeof(char) * strlen(type->valuestring) + 1);
 											memcpy(link_resource->resource_types[typeiter], type->valuestring, strlen(type->valuestring) + 1);
 										}
 									} else {
@@ -990,7 +997,7 @@ static int parse_things_info_json(const char *filename)
 										link_resource->if_cnt = if_cnt;
 										for (int ifiter = 0; ifiter < if_cnt; ifiter++) {
 											cJSON *interface = cJSON_GetArrayItem(interfaces, ifiter);
-											link_resource->interface_types[ifiter] = things_malloc(sizeof(char *) * strlen(interface->valuestring) + 1);
+											link_resource->interface_types[ifiter] = things_malloc(sizeof(char) * strlen(interface->valuestring) + 1);
 											memcpy(link_resource->interface_types[ifiter], interface->valuestring, strlen(interface->valuestring) + 1);
 										}
 									} else {
@@ -1045,7 +1052,7 @@ static int parse_things_info_json(const char *filename)
 								node->single[iter].rt_cnt = type_cnt;
 								for (int typeiter = 0; typeiter < type_cnt; typeiter++) {
 									cJSON *type = cJSON_GetArrayItem(types, typeiter);
-									node->single[iter].resource_types[typeiter] = things_malloc(sizeof(char *) * strlen(type->valuestring) + 1);
+									node->single[iter].resource_types[typeiter] = things_malloc(sizeof(char) * strlen(type->valuestring) + 1);
 									memcpy(node->single[iter].resource_types[typeiter], type->valuestring, strlen(type->valuestring) + 1);
 								}
 							} else {
@@ -1057,7 +1064,7 @@ static int parse_things_info_json(const char *filename)
 								node->single[iter].if_cnt = if_cnt;
 								for (int ifiter = 0; ifiter < if_cnt; ifiter++) {
 									cJSON *interface = cJSON_GetArrayItem(interfaces, ifiter);
-									node->single[iter].interface_types[ifiter] = things_malloc(sizeof(char *) * strlen(interface->valuestring) + 1);
+									node->single[iter].interface_types[ifiter] = things_malloc(sizeof(char) * strlen(interface->valuestring) + 1);
 									memcpy(node->single[iter].interface_types[ifiter], interface->valuestring, strlen(interface->valuestring) + 1);
 								}
 							} else {
@@ -1182,22 +1189,25 @@ static int parse_things_info_json(const char *filename)
 						es_conn_type = es_conn_type_softap;
 						cJSON *softap = cJSON_GetObjectItem(connectivity, KEY_CONFIGURATION_EASYSETUP_CONNECTIVITY_SOFTAP);
 						if (NULL != softap) {
-							cJSON *manufature_id = cJSON_GetObjectItem(softap, KEY_CONFIGURATION_EASYSETUP_CONNECTIVITY_SOFTAP_MANUFACTUREID);
 							cJSON *setup_id = cJSON_GetObjectItem(softap, KEY_CONFIGURATION_EASYSETUP_CONNECTIVITY_SOFTAP_SETUPID);
 							cJSON *artik = cJSON_GetObjectItem(softap, KEY_CONFIGURATION_EASYSETUP_CONNECTIVITY_SOFTAP_ARTIK);
 
-							if (NULL != manufature_id && NULL != setup_id) {
+							if (NULL != setup_id) {
+								if (strlen(setup_id->valuestring) != 3) {
+							   		THINGS_LOG_V_ERROR(THINGS_ERROR, TAG, "setup_id exceeds 3 bytes. please check (3 bytes are fixed sizes.)");
+									return 0;
+								}
 								is_artik = false;
 								if (artik->type == cJSON_True) {
 									is_artik = true;
 								}
 
-								THINGS_LOG_D(THINGS_INFO, TAG, "[configuration] manufature_id : %s / setup_id : %s / artik : %d", manufature_id->valuestring, setup_id->valuestring, is_artik);
+								THINGS_LOG_D(THINGS_INFO, TAG, "[configuration] manufature_name : %s / setup_id : %s / artik : %d", node->manufacturer_name, setup_id->valuestring, is_artik);
 
-								g_manufacturer_name = things_malloc(sizeof(char *) * strlen(manufature_id->valuestring) + 1);
-								strncpy(g_manufacturer_name, manufature_id->valuestring, strlen(manufature_id->valuestring) + 1);
+								g_manufacturer_name = things_malloc(sizeof(char) * strlen(node->manufacturer_name) + 1);
+								strncpy(g_manufacturer_name, node->manufacturer_name, strlen(node->manufacturer_name) + 1);
 
-								g_setup_id = things_malloc(sizeof(char *) * strlen(setup_id->valuestring) + 1);
+								g_setup_id = things_malloc(sizeof(char) * strlen(setup_id->valuestring) + 1);
 								strncpy(g_setup_id, setup_id->valuestring, strlen(setup_id->valuestring) + 1);
 							} else {
 								return 0;
@@ -1253,23 +1263,80 @@ static int parse_things_info_json(const char *filename)
 				cJSON *certificate = cJSON_GetObjectItem(file_path, KEY_CONFIGURATION_FILEPATH_CERTIFICATE);
 				cJSON *privateKey = cJSON_GetObjectItem(file_path, KEY_CONFIGURATION_FILEPATH_PRIVATEKEY);
 
-				if (NULL != svrdb && NULL != provisioning && NULL != certificate && NULL != privateKey) {
-					memset(g_svrdb_file_path, 0, (size_t) MAX_FILE_PATH_LENGTH);
-					memset(g_certificate_file_path, 0, (size_t) MAX_FILE_PATH_LENGTH);
-					memset(g_private_key_file_path, 0, (size_t) MAX_FILE_PATH_LENGTH);
-					memcpy(g_svrdb_file_path, svrdb->valuestring, strlen(svrdb->valuestring) + 1);
-					memcpy(g_certificate_file_path, certificate->valuestring, strlen(certificate->valuestring) + 1);
-					memcpy(g_private_key_file_path, privateKey->valuestring, strlen(privateKey->valuestring) + 1);
-					memcpy(g_things_cloud_file_path, provisioning->valuestring, strlen(provisioning->valuestring) + 1);
-
-					THINGS_LOG_D(THINGS_INFO, TAG, "Security SVR DB file path : %s", g_svrdb_file_path);
-					THINGS_LOG_D(THINGS_INFO, TAG, "[configuration] svrdb : %s / provisioning : %s", svrdb->valuestring, provisioning->valuestring);
-					THINGS_LOG_D(THINGS_INFO, TAG, "[configuration] certificate : %s / privateKey : %s", certificate->valuestring, privateKey->valuestring);
-
-					ret = 1;
-				} else {
+				if (NULL == svrdb || NULL == provisioning || NULL == certificate || NULL == privateKey) {
+					THINGS_LOG_V_ERROR(THINGS_ERROR, TAG, "User certificate file not found");
 					return 0;
 				}
+
+				memset(g_svrdb_file_path, 0, (size_t)MAX_FILE_PATH_LENGTH + 1);
+				memset(g_certificate_file_path, 0, (size_t)MAX_FILE_PATH_LENGTH + 1);
+				memset(g_private_key_file_path, 0, (size_t)MAX_FILE_PATH_LENGTH + 1);
+
+				if (strncmp(svrdb->valuestring, PATH_MNT, sizeof(PATH_MNT)) == 0) {
+					if (strlen(svrdb->valuestring) > (size_t)MAX_FILE_PATH_LENGTH) {
+						THINGS_LOG_V_ERROR(THINGS_ERROR, TAG, "svrdb file path length exceeded");
+						return 0;
+					}
+					memcpy(g_svrdb_file_path, svrdb->valuestring, strlen(svrdb->valuestring));					
+				} else {
+					if (strlen(svrdb->valuestring) > (size_t)MAX_FILE_PATH_LENGTH - strlen(PATH_MNT)) {
+						THINGS_LOG_V_ERROR(THINGS_ERROR, TAG, "svrdb file path length exceeded");
+						return 0;
+					}
+					strcpy(g_svrdb_file_path, PATH_MNT);
+					strcat(g_svrdb_file_path, svrdb->valuestring);
+				}
+
+				if (strncmp(provisioning->valuestring, PATH_MNT, sizeof(PATH_MNT)) == 0) {
+					if (strlen(provisioning->valuestring) > (size_t)MAX_CLOUD_ADDRESS) {
+						THINGS_LOG_V_ERROR(THINGS_ERROR, TAG, "provisioning file path length exceeded");
+						return 0;
+					}
+					memcpy(g_things_cloud_file_path, provisioning->valuestring, strlen(provisioning->valuestring));
+				} else {
+					if (strlen(provisioning->valuestring) > (size_t)MAX_CLOUD_ADDRESS - strlen(PATH_MNT)) {
+						THINGS_LOG_V_ERROR(THINGS_ERROR, TAG, "provisioning file path length exceeded");
+						return 0;
+					}
+					strcpy(g_things_cloud_file_path, PATH_MNT);
+					strcat(g_things_cloud_file_path, provisioning->valuestring);
+				}
+
+				if (strncmp(certificate->valuestring, PATH_ROM, sizeof(PATH_ROM)) == 0) {
+					if (strlen(certificate->valuestring) > (size_t)MAX_FILE_PATH_LENGTH) {
+						THINGS_LOG_V_ERROR(THINGS_ERROR, TAG, "certificate file path length exceeded");
+						return 0;
+					}
+					memcpy(g_certificate_file_path, certificate->valuestring, strlen(certificate->valuestring));
+				} else {
+					if (strlen(certificate->valuestring) > (size_t)MAX_FILE_PATH_LENGTH - strlen(PATH_ROM)) {
+						THINGS_LOG_V_ERROR(THINGS_ERROR, TAG, "certificate file path length exceeded");
+						return 0;
+					}
+					strcpy(g_certificate_file_path, PATH_ROM);
+					strcat(g_certificate_file_path, certificate->valuestring);
+				}
+
+				if (strncmp(privateKey->valuestring, PATH_ROM, sizeof(PATH_ROM)) == 0) {
+					if (strlen(privateKey->valuestring) > (size_t)MAX_FILE_PATH_LENGTH) {
+						THINGS_LOG_V_ERROR(THINGS_ERROR, TAG, "privateKey file path length exceeded");
+						return 0;
+					}
+					memcpy(g_private_key_file_path, privateKey->valuestring, strlen(privateKey->valuestring));
+				} else {
+					if (strlen(privateKey->valuestring) > (size_t)MAX_FILE_PATH_LENGTH - strlen(PATH_ROM)) {
+						THINGS_LOG_V_ERROR(THINGS_ERROR, TAG, "privateKey file path length exceeded");
+						return 0;
+					}
+					strcpy(g_private_key_file_path, PATH_ROM);
+					strcat(g_private_key_file_path, privateKey->valuestring);
+				}
+
+				THINGS_LOG_D(THINGS_INFO, TAG, "Security SVR DB file path : %s", g_svrdb_file_path);
+				THINGS_LOG_D(THINGS_INFO, TAG, "[configuration] svrdb : %s / provisioning : %s", svrdb->valuestring, provisioning->valuestring);
+				THINGS_LOG_D(THINGS_INFO, TAG, "[configuration] certificate : %s / privateKey : %s", certificate->valuestring, privateKey->valuestring);
+
+				ret = 1;
 			} else {
 				return 0;
 			}

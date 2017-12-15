@@ -26,8 +26,6 @@
 #include <stdio.h>
 #include <time.h>
 #include <tinyara/ttrace.h>
-#include <semaphore.h>
-#include <apps/shell/tash.h>
 #include "tc_common.h"
 
 /****************************************************************************
@@ -37,8 +35,6 @@
 /****************************************************************************
  * Global Variables
  ****************************************************************************/
-extern sem_t tc_sem;
-extern int working_tc;
 
 /**
 * @testcase         tc_libc_trace_begin
@@ -139,39 +135,23 @@ static void tc_libc_trace_sched(void)
 	TC_SUCCESS_RESULT();
 }
 
-static int ttrace_tc_launcher(int argc, char **args)
+#ifdef CONFIG_BUILD_KERNEL
+int main(int argc, FAR char *argv[])
+#else
+int tc_ttrace_main(int argc, char *argv[])
+#endif
 {
-	total_pass = 0;
-	total_fail = 0;
+	if (tc_handler(TC_START, "TTRACE TC") == ERROR) {
+		return ERROR;
+	}
+
 	tc_libc_trace_begin();
 	tc_libc_trace_begin_uid();
 	tc_libc_trace_end();
 	tc_libc_trace_end_uid();
 	tc_libc_trace_sched();
-	printf("#########################################\n");
-	printf("           T-trace TC Result             \n");
-	printf("           PASS : %d FAIL : %d        \n", total_pass, total_fail);
-	printf("#########################################\n");
-	return total_pass;
-}
 
-#ifdef CONFIG_BUILD_KERNEL
-int main(int argc, FAR char *argv[])
-#else
-int ttrace_tc_main(int argc, char *argv[])
-#endif
-{
-	sem_wait(&tc_sem);
-	working_tc++;
-
-#ifdef CONFIG_TASH
-	tash_cmd_install("ttrace_tc", ttrace_tc_launcher, TASH_EXECMD_SYNC);
-#else
-	ttrace_tc_launcher(argc, argv);
-#endif
-
-	working_tc--;
-	sem_post(&tc_sem);
+	(void)tc_handler(TC_END, "TTRACE TC");
 
 	return 0;
 }

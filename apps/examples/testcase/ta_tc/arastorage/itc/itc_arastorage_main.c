@@ -22,7 +22,6 @@
 #include <stdio.h>
 #include <string.h>
 #include <arastorage/arastorage.h>
-#include <apps/shell/tash.h>
 #include <tinyara/fs/fs_utils.h>
 #include "tc_common.h"
 
@@ -639,10 +638,16 @@ void itc_arastorage_cursor_get_row_tc_p(void)
 	TC_SUCCESS_RESULT();
 }
 
-int itc_arastorage_launcher(int argc, FAR char *argv[])
+#ifdef CONFIG_BUILD_KERNEL
+int main(int argc, FAR char *argv[])
+#else
+int itc_arastorage_main(int argc, char *argv[])
+#endif
 {
-	total_fail = 0;
-	total_pass = 0;
+	if (tc_handler(TC_START, "Arastorage ITC") == ERROR) {
+		return ERROR;
+	}
+
 	itc_arastorage_db_init_deinit_p();
 	itc_arastorage_startup_p();
 	if (g_check) {
@@ -672,25 +677,7 @@ int itc_arastorage_launcher(int argc, FAR char *argv[])
 	}
 	itc_arastorage_cleanup_p();
 
-	printf("\n#########################################\n");
-	printf("         Arastorage ITC Result            \n");
-	printf("         Total TC : %d              \n", (total_pass + total_fail));
-	printf("         PASS : %d FAIL : %d        \n", total_pass, total_fail);
-	printf("#########################################\n");
-	return 0;
-}
+	(void)tc_handler(TC_END, "Arastorage ITC");
 
-#ifdef CONFIG_BUILD_KERNEL
-int main(int argc, FAR char *argv[])
-#else
-int itc_arastorage_main(int argc, char *argv[])
-#endif
-{
-
-#ifdef CONFIG_TASH
-	tash_cmd_install("arastorage_itc", itc_arastorage_launcher, TASH_EXECMD_SYNC);
-#else
-	itc_arastorage_launcher(argc, argv);
-#endif
 	return 0;
 }

@@ -81,7 +81,7 @@ Aimed especially at power-sensitive devices needing Wi-Fi®, the ARTIK 053 Modul
 
 ### MemoryMap
 
-8MB is allocated to the SPI Flash area. 1280 KB is prepared for operation in SRAM. Here is the physical memory address, see [[here]](scripts/README.md).
+8MB is allocated to the SPI Flash area. 1280 KB is prepared for operation in SRAM. Here is the physical memory address, see [[here]](../artik05x/README.md#memory-map-artik05x).
 
 ## Environment Set-up
 ### On Chip Debugger installation
@@ -136,13 +136,13 @@ This is used to program a partial binary.
 Export 'OPENOCD_SCRIPTS' to environment variable.
 
 ```bash
-export OPENOCD_SCRIPTS=$TIZENRT_BASEDIR/build/configs/artik053/tools/openocd
+export OPENOCD_SCRIPTS=$TIZENRT_BASEDIR/build/tools/openocd
 ```
 
 At first, programming the complete set of binaries are needed.
 
 ```bash
-openocd -f artik053.cfg -c ' \
+openocd -f artik05x.cfg -s ../build/configs/artik05x/scripts -c ' \
     flash_write bl1    ../build/configs/artik053/bin/bl1.bin;      \
     flash_write bl2    ../build/configs/artik053/bin/bl2.bin;      \
     flash_write sssfw  ../build/configs/artik053/bin/sssfw.bin;    \
@@ -151,50 +151,69 @@ openocd -f artik053.cfg -c ' \
     exit'
 ```
 
-Once the complete binaries are successfully programmed, each partition can be updated seperately with new one.
+Once the complete binaries are successfully programmed, each partition can be updated separately with new one.
+
 ```bash
-openocd -f artik053.cfg -c ' \
+openocd -f artik05x.cfg -s ../build/configs/artik05x/scripts -c ' \
     flash_write os ../build/output/bin/tinyara_head.bin; exit'
+```
+
+### Factory Reset
+
+If you can not boot normally, you can change os to the initial version. This is possible if there is an initialization binary in memory.
+
+#### How to Download the Initialization Binaries
+
+You can download it using OpenOCD. You compress the compiled firmware and download it to the board.
+
+```bash
+gzip -c tinyara_head.bin > factoryimage.gz
+openocd -f artik05x.cfg -s ../build/configs/artik05x/scripts -c ' \
+    flash_write factory    ../build/configs/artik053/bin/factoryimage.gz;      \
+    exit'
+```
+
+#### How to enter initialization mode
+
+When you press the RESET button (SW700) to reboot the Starter Kit, press and hold the 'ARDUINO RESET' button (SW701) for 10 seconds. Enter initialization mode as follows.
+```
+.....
+Factory reset.
+Erasing boot partitions...
+....................................e
+Erased 600 sectors
+Flashing factory image...
+Uncompressed size: 1258496 = 0x133400
+resetting ...
+
+........ <RESET>.....................
+U-Boot 2017
+.....
 ```
 
 ## ROMFS
 
-Before executing below steps, execute [generic steps](../../../tools/fs/README_ROMFS.md), step 1 and step 2.  
-When you use artik053/iotivity config, you can execute only step 4. But note that if you want to resize the rom partition,  
-you must modify partition_map.cfg matching the sizes in ARTIK053_FLASH_PART_LIST.
+Before executing below board-specific steps, execute [generic steps](../../../tools/fs/README_ROMFS.md), step 1 and step 2.
 
-3. Modify partition configs  
+3. Modify partition configs and enable the automount config through *menuconfig*  
     Below steps creates ROMFS partition with size 400KB at next of user partition.  
-    1. Split user partition size from (1400) to (1000, 400) in ARTIK053_FLASH_PART_LIST
+    1. Split user partition size from (1400) to (1000, 400) in ARTIK05X_FLASH_PART_LIST
         ```bash
-        Board Selection -> change values at Flash partition size list (in KBytes)
+        Hardware Configuration -> Board Selection -> change values at Flash partition size list (in KBytes)
         ```
-    2. Append "romfs" at next of *smartfs* to ARTIK053_FLASH_PART_TYPE
+    2. Append "romfs" at next of *smartfs* to ARTIK05X_FLASH_PART_TYPE
         ```bash
-        Board Selection -> append string at Flash partition type list
+        Hardware Configuration -> Board Selection -> append string at Flash partition type list
         ```
-    3. Append "rom" at next of *user* to ARTIK053_FLASH_PART_NAME
+    3. Append "rom" at next of *user* to ARTIK05X_FLASH_PART_NAME
         ```bash
-        Board Selection -> append string at FLash partition name list
+        Hardware Configuration -> Board Selection -> append string at FLash partition name list
         ```
-4. Build Tizen RT  
-5. Prepare ROM image
-    ```bash
-    sh $TIZENRT_BASEDIR/../tools/fs/mkromfsimg.sh
-    ```
-6. Modify partition map to *$TIZENRT_BASEDIR/../build/configs/artik053/tools/openocd/partition_map.cfg*
-    ```bash
-    user	{ "USER R/W"		0x04620000	0x000FA000  0 }
-    rom  	{ "ROM FS"  		0x0471A000	0x00064000  0 }
-    ```
-7. Program a ROM image
-    ```bash
-    flash_write rom ../bin/romfs.img;    \
-    ```
-8. Mount on device
-    ```bash
-    mount -t romfs /dev/smart4rom9 /rom
-    ```
+    4. Enable the audomount config for romfs
+        ```bash
+        Hardware Configuration -> Board Selection -> Automount partitions -> Automount romfs partiton to y
+        ```
+4. Build Tizen RT and flash a binary [using download script](#using-download-script)
 
 ## Configuration Sets
 
@@ -216,11 +235,5 @@ This can be used to use the minimal functionality of Tizen RT on ARTIK053.
 This can be used to test network functionality.
 #### [st_things](st_things/README.md)
 This can be used to test Smart Things Things SDK functionality.
-#### [tash](tash/README.md)
-This can be used to use Tizen RT Shell(TASH).
 #### [tc](tc/README.md)
 This can be used to test database, file system, kernel, network functionality of Tizen RT on ARTIK053.
-#### [typical](typical/README.md)
-This can be used to use typical functionality of Tizen RT on ARTIK053.
-#### [wifi_test](wifi_test/README.md)
-This can be used to test wifi functionality of Tizen RT on ARTIK053.

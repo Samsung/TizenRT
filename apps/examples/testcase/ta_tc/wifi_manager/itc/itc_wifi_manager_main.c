@@ -24,12 +24,18 @@
 #include <wifi_manager/wifi_manager.h>
 #include "tc_common.h"
 
-extern sem_t tc_sem;
-extern int working_tc;
-
 static pthread_mutex_t g_wifi_manager_test_mutex = PTHREAD_MUTEX_INITIALIZER;
 static pthread_cond_t g_wifi_manager_test_cond;
 
+#define TEST_SSID CONFIG_EXAMPLES_TESTCASE_WIFI_MANAGER_ITC_SSID
+#define TEST_PASSWORD CONFIG_EXAMPLES_TESTCASE_WIFI_MANAGER_ITC_PASSPHRASE
+#define TEST_AUTH_TYPE CONFIG_EXAMPLES_TESTCASE_WIFI_MANAGER_ITC_AUTHENTICATION
+#define TEST_CRYPTO_TYPE CONFIG_EXAMPLES_TESTCASE_WIFI_MANAGER_ITC_CRYPTO
+#define TEST_SOFTAP_SSID CONFIG_EXAMPLES_TESTCASE_WIFI_MANAGER_ITC_SOFTAP_SSID
+#define TEST_SOFTAP_CHANNEL CONFIG_EXAMPLES_TESTCASE_WIFI_MANAGER_ITC_SOFTAP_CHANNEL
+#define TEST_SOFTAP_PASSWORD CONFIG_EXAMPLES_TESTCASE_WIFI_MANAGER_ITC_SOFTAP_PASSPHRASE
+#define SEC_5 5
+#define LOOP_SIZE 3
 #define SSID_MAX_LEN 32
 #define PASSPHRASE_MAX_LEN 64
 #define WIFITEST_SIGNAL\
@@ -46,7 +52,7 @@ static pthread_cond_t g_wifi_manager_test_cond;
 		pthread_mutex_unlock(&g_wifi_manager_test_mutex);\
 	} while (0)
 
-static void wifi_sta_connected_cb(void); // in station mode, connected to ap
+static void wifi_sta_connected_cb(wifi_manager_result_e res); // in station mode, connected to ap
 static void wifi_sta_disconnected_cb(void); // in station mode, disconnected from ap
 static void wifi_scan_ap_done_cb(wifi_manager_scan_info_s **scan_info, wifi_manager_scan_result_e res); // called when scanning ap is done
 
@@ -58,7 +64,7 @@ static wifi_manager_cb_s wifi_callbacks = {
 	wifi_scan_ap_done_cb, // this callback function is called when scanning ap is done.
 };
 
-static void wifi_sta_connected_cb(void)
+static void wifi_sta_connected_cb(wifi_manager_result_e res)
 {
 	printf("wifi_sta_connected: send signal!!! \n");
 	WIFITEST_SIGNAL;
@@ -120,19 +126,29 @@ static void wifi_test_signal_deinit(void)
 	}
 }
 
+static double diff_time(struct timeval *x, struct timeval *y)
+{
+	double x_ms;
+	double y_ms;
+	double diff;
+	x_ms = (double)x->tv_sec * 1000000 + (double)x->tv_usec;
+	y_ms = (double)y->tv_sec * 1000000 + (double)y->tv_usec;
+	diff = (double)y_ms - (double)x_ms;
+	return diff;
+}
+
 /*********************************************************************
  * Test Cases
 *********************************************************************/
 
 /**
  * @testcase         itc_wifi_manager_init_deinit_p
- * @brief            Initialize  and de-initalization of wifi manager
- * @scenario
- * @apicovered       wifi_manager_init and wifi_manager_deinit
+ * @brief            to check initialize and de-initalization of wifi manager
+ * @scenario         check initialize and de-initalization of wifi manager
+ * @apicovered       wifi_manager_init, wifi_manager_deinit
  * @precondition     none
  * @postcondition    none
  */
-
 static void itc_wifi_manager_init_deinit_p(void)
 {
 	wifi_manager_result_e ret = WIFI_MANAGER_FAIL;
@@ -146,13 +162,12 @@ static void itc_wifi_manager_init_deinit_p(void)
 
 /**
  * @testcase         itc_wifi_manager_set_mode_p
- * @brief            Initialize  and de-initalization of wifi manager
- * @scenario
- * @apicovered
- * @precondition     wifi_manager_init
- * @postcondition    wifi_manager_deinit
+ * @brief            to check get info operation of wifi manager
+ * @scenario         check get info operation of wifi manager
+ * @apicovered       wifi_manager_init, wifi_manager_set_mode, wifi_manager_get_info, wifi_manager_deinit
+ * @precondition     none
+ * @postcondition    none
  */
-
 static void itc_wifi_manager_set_mode_p(void)
 {
 	wifi_manager_result_e ret = WIFI_MANAGER_FAIL;
@@ -162,21 +177,21 @@ static void itc_wifi_manager_set_mode_p(void)
 
 	wifi_manager_softap_config_s ap_config;
 
-	strncpy(ap_config.ssid, CONFIG_EXAMPLES_TESTCASE_WIFI_MANAGER_ITC_SOFTAP_SSID,
-			strlen(CONFIG_EXAMPLES_TESTCASE_WIFI_MANAGER_ITC_SOFTAP_SSID) + 1);
+	strncpy(ap_config.ssid, TEST_SOFTAP_SSID,
+			strlen(TEST_SOFTAP_SSID) + 1);
 
-	ap_config.channel = CONFIG_EXAMPLES_TESTCASE_WIFI_MANAGER_ITC_SOFTAP_CHANNEL;
-	strncpy(ap_config.passphrase, CONFIG_EXAMPLES_TESTCASE_WIFI_MANAGER_ITC_SOFTAP_PASSPHRASE,
-			strlen(CONFIG_EXAMPLES_TESTCASE_WIFI_MANAGER_ITC_SOFTAP_PASSPHRASE) + 1);
+	ap_config.channel = TEST_SOFTAP_CHANNEL;
+	strncpy(ap_config.passphrase, TEST_SOFTAP_PASSWORD,
+			strlen(TEST_SOFTAP_PASSWORD) + 1);
 
-	printf("SoftAP config: %s(%d), %s(%d), %d\n", ap_config.ssid, strlen(CONFIG_EXAMPLES_TESTCASE_WIFI_MANAGER_ITC_SOFTAP_SSID),
-			ap_config.passphrase, strlen(CONFIG_EXAMPLES_TESTCASE_WIFI_MANAGER_ITC_SOFTAP_PASSPHRASE), ap_config.channel);
+	printf("SoftAP config: %s(%d), %s(%d), %d\n", ap_config.ssid, strlen(TEST_SOFTAP_SSID),
+			ap_config.passphrase, strlen(TEST_SOFTAP_PASSWORD), ap_config.channel);
 
 	ret = wifi_manager_set_mode(SOFTAP_MODE, &ap_config);
-	TC_ASSERT_EQ("wifi_manager_set_mode_p", ret, WIFI_MANAGER_SUCCESS);
+	TC_ASSERT_EQ_CLEANUP("wifi_manager_set_mode_p", ret, WIFI_MANAGER_SUCCESS, wifi_manager_deinit());
 
 	ret = wifi_manager_set_mode(STA_MODE, NULL);
-	TC_ASSERT_EQ("wifi_manager_set_mode_p", ret, WIFI_MANAGER_SUCCESS);
+	TC_ASSERT_EQ_CLEANUP("wifi_manager_set_mode_p", ret, WIFI_MANAGER_SUCCESS, wifi_manager_deinit());
 
 	ret = wifi_manager_deinit();
 	TC_ASSERT_EQ("wifi_manager_deinit", ret, WIFI_MANAGER_SUCCESS);
@@ -185,13 +200,12 @@ static void itc_wifi_manager_set_mode_p(void)
 
 /**
  * @testcase         itc_wifi_manager_get_mode_p
- * @brief            Initialize  and de-initalization of wifi manager
- * @scenario
- * @apicovered
- * @precondition     wifi_manager_init
- * @postcondition    wifi_manager_deinit
+ * @brief            to check get info operation of wifi manager
+ * @scenario         check set mode operation of wifi manager
+ * @apicovered       wifi_manager_init, wifi_manager_set_mode, wifi_manager_get_info, wifi_manager_deinit
+ * @precondition     none
+ * @postcondition    none
  */
-
 static void itc_wifi_manager_get_mode_p(void)
 {
 	wifi_manager_result_e ret = WIFI_MANAGER_FAIL;
@@ -203,23 +217,23 @@ static void itc_wifi_manager_get_mode_p(void)
 	TC_ASSERT_EQ("wifi_manager_init", ret, WIFI_MANAGER_SUCCESS);
 
 	ret = wifi_manager_get_info(&info);
-	TC_ASSERT_EQ("wifi_manager_get_info", ret, WIFI_MANAGER_SUCCESS);
-	TC_ASSERT_EQ("wifi_manager_get_info", info.mode, STA_MODE);
+	TC_ASSERT_EQ_CLEANUP("wifi_manager_get_info", ret, WIFI_MANAGER_SUCCESS, wifi_manager_deinit());
+	TC_ASSERT_EQ_CLEANUP("wifi_manager_get_info", info.mode, STA_MODE, wifi_manager_deinit());
 
 	wifi_manager_softap_config_s ap_config;
-	strncpy(ap_config.ssid, CONFIG_EXAMPLES_TESTCASE_WIFI_MANAGER_ITC_SOFTAP_SSID,
-			strlen(CONFIG_EXAMPLES_TESTCASE_WIFI_MANAGER_ITC_SOFTAP_SSID) + 1);
+	strncpy(ap_config.ssid, TEST_SOFTAP_SSID,
+			strlen(TEST_SOFTAP_SSID) + 1);
 
-	ap_config.channel = CONFIG_EXAMPLES_TESTCASE_WIFI_MANAGER_ITC_SOFTAP_CHANNEL;
-	strncpy(ap_config.passphrase, CONFIG_EXAMPLES_TESTCASE_WIFI_MANAGER_ITC_SOFTAP_PASSPHRASE,
-			strlen(CONFIG_EXAMPLES_TESTCASE_WIFI_MANAGER_ITC_SOFTAP_PASSPHRASE) + 1);
+	ap_config.channel = TEST_SOFTAP_CHANNEL;
+	strncpy(ap_config.passphrase, TEST_SOFTAP_PASSWORD,
+			strlen(TEST_SOFTAP_PASSWORD) + 1);
 
 	ret = wifi_manager_set_mode(SOFTAP_MODE, &ap_config);
-	TC_ASSERT_EQ("wifi_manager_set_mode", ret, WIFI_MANAGER_SUCCESS);
+	TC_ASSERT_EQ_CLEANUP("wifi_manager_set_mode", ret, WIFI_MANAGER_SUCCESS, wifi_manager_deinit());
 
 	ret = wifi_manager_get_info(&info);
-	TC_ASSERT_EQ("wifi_manager_get_info", ret, WIFI_MANAGER_SUCCESS);
-	TC_ASSERT_EQ("wifi_manager_get_info", info.mode, SOFTAP_MODE);
+	TC_ASSERT_EQ_CLEANUP("wifi_manager_get_info", ret, WIFI_MANAGER_SUCCESS, wifi_manager_deinit());
+	TC_ASSERT_EQ_CLEANUP("wifi_manager_get_info", info.mode, SOFTAP_MODE, wifi_manager_deinit());
 
 	printf("\nMAC Address: ");
 
@@ -228,8 +242,8 @@ static void itc_wifi_manager_get_mode_p(void)
 	}
 	printf("%x\n", info.mac_address[5]);
 
-	ret_cmp = strncmp(info.ssid, ap_config.ssid, strlen(CONFIG_EXAMPLES_TESTCASE_WIFI_MANAGER_ITC_SOFTAP_SSID));
-	TC_ASSERT_EQ("string cmp between SSID ", ret_cmp, 0);
+	ret_cmp = strncmp(info.ssid, ap_config.ssid, strlen(TEST_SOFTAP_SSID));
+	TC_ASSERT_EQ_CLEANUP("string cmp between SSID ", ret_cmp, 0, wifi_manager_deinit());
 
 	ret = wifi_manager_deinit();
 	TC_ASSERT_EQ("wifi_manager_deinit", ret, WIFI_MANAGER_SUCCESS);
@@ -238,39 +252,35 @@ static void itc_wifi_manager_get_mode_p(void)
 
 /**
  * @testcase         itc_wifi_manager_connect_disconnect_ap_p
- * @brief            Initialize  and de-initalization of wifi manager
- * @scenario
- * @apicovered
- * @precondition     wifi_manager_init
- * @postcondition    wifi_manager_deinit
+ * @brief            check initialize, connect, disconnect, de-initalization operations of wifi manager
+ * @scenario         check initialize, connect, disconnect, de-initalization operations of wifi manager
+ * @apicovered       wifi_manager_init, wifi_manager_set_mode, wifi_manager_connect_ap, wifi_manager_disconnect_ap, wifi_manager_deinit
+ * @precondition     none
+ * @postcondition    none
  */
-
 static void itc_wifi_manager_connect_disconnect_ap_p(void)
 {
 	wifi_manager_result_e ret = WIFI_MANAGER_FAIL;
 	ret = wifi_manager_init(&wifi_callbacks);
 	TC_ASSERT_EQ("wifi_manager_init", ret, WIFI_MANAGER_SUCCESS);
 
-	ret = wifi_manager_set_mode(STA_MODE, NULL);
-	TC_ASSERT_EQ("wifi_manager_set_mode", ret, WIFI_MANAGER_SUCCESS);
-
 	wifi_manager_ap_config_s config;
-	config.ssid_length = strlen(CONFIG_EXAMPLES_TESTCASE_WIFI_MANAGER_ITC_SSID);
-	config.passphrase_length = strlen(CONFIG_EXAMPLES_TESTCASE_WIFI_MANAGER_ITC_PASSPHRASE);
-	strncpy(config.ssid, CONFIG_EXAMPLES_TESTCASE_WIFI_MANAGER_ITC_SSID, config.ssid_length + 1);
-	strncpy(config.passphrase, CONFIG_EXAMPLES_TESTCASE_WIFI_MANAGER_ITC_PASSPHRASE, config.passphrase_length + 1);
-	config.ap_auth_type = (wifi_manager_ap_auth_type_e)CONFIG_EXAMPLES_TESTCASE_WIFI_MANAGER_ITC_AUTHENTICATION;
-	config.ap_crypto_type = (wifi_manager_ap_crypto_type_e)CONFIG_EXAMPLES_TESTCASE_WIFI_MANAGER_ITC_CRYPTO;
+	config.ssid_length = strlen(TEST_SSID);
+	config.passphrase_length = strlen(TEST_PASSWORD);
+	strncpy(config.ssid, TEST_SSID, config.ssid_length + 1);
+	strncpy(config.passphrase, TEST_PASSWORD, config.passphrase_length + 1);
+	config.ap_auth_type = (wifi_manager_ap_auth_type_e)TEST_AUTH_TYPE;
+	config.ap_crypto_type = (wifi_manager_ap_crypto_type_e)TEST_CRYPTO_TYPE;
 	printf("AP config: %s(%d), %s(%d), %d %d\n", config.ssid, config.ssid_length, config.passphrase, \
 			config.passphrase_length, config.ap_auth_type, config.ap_crypto_type);
 
 	ret = wifi_manager_connect_ap(&config);
-	TC_ASSERT_EQ("wifi_manager_connect_ap", ret, WIFI_MANAGER_SUCCESS);
+	TC_ASSERT_EQ_CLEANUP("wifi_manager_connect_ap", ret, WIFI_MANAGER_SUCCESS, wifi_manager_deinit());
 	WIFITEST_WAIT;
-	sleep(5);
+	sleep(SEC_5);
 	ret = wifi_manager_disconnect_ap();
 	WIFITEST_WAIT;
-	TC_ASSERT_EQ("wifi_manager_disconnect_ap", ret, WIFI_MANAGER_SUCCESS);
+	TC_ASSERT_EQ_CLEANUP("wifi_manager_disconnect_ap", ret, WIFI_MANAGER_SUCCESS, wifi_manager_deinit());
 
 	ret = wifi_manager_deinit();
 	TC_ASSERT_EQ("wifi_manager_deinit", ret, WIFI_MANAGER_SUCCESS);
@@ -280,13 +290,12 @@ static void itc_wifi_manager_connect_disconnect_ap_p(void)
 
 /**
  * @testcase         itc_wifi_manager_scan_ap_p
- * @brief            Initialize  and de-initalization of wifi manager
- * @scenario
- * @apicovered
- * @precondition     wifi_manager_init
- * @postcondition    wifi_manager_deinit
+ * @brief            check initialize, scan,and de-initalization of wifi manager
+ * @scenario         check initialize, scan,and de-initalization of wifi manager
+ * @apicovered       wifi_manager_init, wifi_manager_scan_ap, wifi_manager_deinit
+ * @precondition     none
+ * @postcondition    none
  */
-
 static void itc_wifi_manager_scan_ap_p(void)
 {
 	wifi_manager_result_e ret = WIFI_MANAGER_FAIL;
@@ -295,25 +304,501 @@ static void itc_wifi_manager_scan_ap_p(void)
 	TC_ASSERT_EQ("wifi_manager_init", ret, WIFI_MANAGER_SUCCESS);
 
 	ret = wifi_manager_scan_ap();
-	TC_ASSERT_EQ("wifi_manager_scan_ap", ret, WIFI_MANAGER_SUCCESS);
-	sleep(5);
+	TC_ASSERT_EQ_CLEANUP("wifi_manager_scan_ap", ret, WIFI_MANAGER_SUCCESS, wifi_manager_deinit());
+	sleep(SEC_5);
 	ret = wifi_manager_deinit();
 	TC_ASSERT_EQ("wifi_manager_deinit", ret, WIFI_MANAGER_SUCCESS);
 
 	TC_SUCCESS_RESULT();
 }
 
+/**
+ * @testcase         itc_wifi_manager_reinit_p
+ * @brief            check re-initialize and de-initalization of wifi manager
+ * @scenario         check re-initialize and de-initalization of wifi manager
+ * @apicovered       wifi_manager_init, wifi_manager_deinit
+ * @precondition     none
+ * @postcondition    none
+ */
+static void itc_wifi_manager_reinit_p(void)
+{
+	wifi_manager_result_e ret = WIFI_MANAGER_FAIL;
+
+	ret = wifi_manager_init(&wifi_callbacks);
+	TC_ASSERT_EQ("wifi_manager_init", ret, WIFI_MANAGER_SUCCESS);
+
+	ret = wifi_manager_init(&wifi_callbacks);
+	TC_ASSERT_LT_CLEANUP("wifi_manager_init", ret, WIFI_MANAGER_SUCCESS, wifi_manager_deinit());
+
+	ret = wifi_manager_deinit();
+	TC_ASSERT_EQ("wifi_manager_deinit", ret, WIFI_MANAGER_SUCCESS);
+
+	TC_SUCCESS_RESULT();
+}
+
+/**
+ * @testcase         itc_wifi_manager_init_redeinit_p
+ * @brief            check initialization and multi time de-initalization of wifi manager
+ * @scenario         check initialization and multi time de-initalization of wifi manager
+ * @apicovered       wifi_manager_init, wifi_manager_deinit
+ * @precondition     none
+ * @postcondition    none
+ */
+static void itc_wifi_manager_redeinit_p(void)
+{
+	wifi_manager_result_e ret = WIFI_MANAGER_FAIL;
+
+	ret = wifi_manager_init(&wifi_callbacks);
+	TC_ASSERT_EQ("wifi_manager_init", ret, WIFI_MANAGER_SUCCESS);
+
+	ret = wifi_manager_deinit();
+	TC_ASSERT_EQ("wifi_manager_deinit", ret, WIFI_MANAGER_SUCCESS);
+
+	ret = wifi_manager_deinit();
+	TC_ASSERT_LT("wifi_manager_deinit", ret, WIFI_MANAGER_SUCCESS);
+
+	TC_SUCCESS_RESULT();
+}
+
+/**
+ * @testcase         itc_wifi_manager_reconnect_p
+ * @brief            check reconnecting AP when already connected
+ * @scenario         check reconnecting operation of AP when already connected
+ * @apicovered       wifi_manager_init, wifi_manager_set_mode, wifi_manager_connect_ap, wifi_manager_disconnect_ap, wifi_manager_deinit
+ * @precondition     none
+ * @postcondition    none
+ */
+static void itc_wifi_manager_reconnect_p(void)
+{
+	wifi_manager_result_e ret = WIFI_MANAGER_FAIL;
+
+	ret = wifi_manager_init(&wifi_callbacks);
+	TC_ASSERT_EQ("wifi_manager_init", ret, WIFI_MANAGER_SUCCESS);
+
+	wifi_manager_ap_config_s config;
+	config.ssid_length = strlen(TEST_SSID);
+	config.passphrase_length = strlen(TEST_PASSWORD);
+	strncpy(config.ssid, TEST_SSID, config.ssid_length + 1);
+	strncpy(config.passphrase, TEST_PASSWORD, config.passphrase_length + 1);
+	config.ap_auth_type = (wifi_manager_ap_auth_type_e)TEST_AUTH_TYPE;
+	config.ap_crypto_type = (wifi_manager_ap_crypto_type_e)TEST_CRYPTO_TYPE;
+	printf("AP config: %s(%d), %s(%d), %d %d\n", config.ssid, config.ssid_length, config.passphrase, \
+			config.passphrase_length, config.ap_auth_type, config.ap_crypto_type);
+
+	ret = wifi_manager_connect_ap(&config);
+	TC_ASSERT_EQ_CLEANUP("wifi_manager_connect_ap", ret, WIFI_MANAGER_SUCCESS, wifi_manager_deinit());
+	WIFITEST_WAIT;
+
+	sleep(SEC_5);
+	ret = wifi_manager_connect_ap(&config);
+	TC_ASSERT_EQ_CLEANUP("wifi_manager_connect_ap", ret, WIFI_MANAGER_SUCCESS, wifi_manager_disconnect_ap(); wifi_manager_deinit());
+
+	sleep(SEC_5);
+	ret = wifi_manager_disconnect_ap();
+	TC_ASSERT_EQ_CLEANUP("wifi_manager_disconnect_ap", ret, WIFI_MANAGER_SUCCESS, wifi_manager_deinit());
+
+	ret = wifi_manager_deinit();
+	TC_ASSERT_EQ("wifi_manager_deinit", ret, WIFI_MANAGER_SUCCESS);
+
+	TC_SUCCESS_RESULT();
+}
+
+/**
+ * @testcase         itc_wifi_manager_connect_long_ssid_p
+ * @brief            check connection with very long SSID
+ * @scenario         check connection with very long SSID
+ * @apicovered       wifi_manager_init, wifi_manager_set_mode, wifi_manager_connect_ap, wifi_manager_deinit
+ * @precondition     none
+ * @postcondition    none
+ */
+static void itc_wifi_manager_connect_long_ssid_p(void)
+{
+	const char ssid[] = "qwertyuiopalokasdasdjasdkajshdukekukzhjdshdkjsdksjdsdadsasdasdasd";
+	const char passphrase[] = "ashfdkjasfhkjsdhksahfkjdhsjfkhsdjahfkjashdfkjhasjkdhfkfdhksjafhsdaashdkjfksdhfkjashdjfhsajkdfh";
+
+	wifi_manager_result_e ret = WIFI_MANAGER_FAIL;
+	ret = wifi_manager_init(&wifi_callbacks);
+	TC_ASSERT_EQ("wifi_manager_init", ret, WIFI_MANAGER_SUCCESS);
+
+	wifi_manager_ap_config_s config;
+	config.ssid_length = strlen(ssid);
+	config.passphrase_length = strlen(passphrase);
+	strncpy(config.ssid, ssid, config.ssid_length + 1);
+	strncpy(config.passphrase, passphrase, config.passphrase_length + 1);
+	config.ap_auth_type = (wifi_manager_ap_auth_type_e)TEST_AUTH_TYPE;
+	config.ap_crypto_type = (wifi_manager_ap_crypto_type_e)TEST_CRYPTO_TYPE;
+	printf("AP config: %s(%d), %s(%d), %d %d\n", config.ssid, config.ssid_length, config.passphrase, \
+			config.passphrase_length, config.ap_auth_type, config.ap_crypto_type);
+
+	ret = wifi_manager_connect_ap(&config);
+	TC_ASSERT_EQ_CLEANUP("wifi_manager_connect_ap", ret, WIFI_MANAGER_INVALID_ARGS, wifi_manager_deinit());
+
+	ret = wifi_manager_deinit();
+	TC_ASSERT_EQ("wifi_manager_deinit", ret, WIFI_MANAGER_SUCCESS);
+	TC_SUCCESS_RESULT();
+}
+
+/**
+ * @testcase         itc_wifi_manager_redisconnect_p
+ * @brief            check disconnect operation if AP already disconnected
+ * @scenario         check disconnect operation if AP already disconnected
+ * @apicovered       wifi_manager_init, wifi_manager_set_mode, wifi_manager_connect_ap, wifi_manager_disconnect_ap, wifi_manager_deinit
+ * @precondition     none
+ * @postcondition    none
+ */
+static void itc_wifi_manager_redisconnect_p(void)
+{
+	wifi_manager_result_e ret = WIFI_MANAGER_FAIL;
+
+	ret = wifi_manager_init(&wifi_callbacks);
+	TC_ASSERT_EQ("wifi_manager_init", ret, WIFI_MANAGER_SUCCESS);
+
+	wifi_manager_ap_config_s config;
+	config.ssid_length = strlen(TEST_SSID);
+	config.passphrase_length = strlen(TEST_PASSWORD);
+	strncpy(config.ssid, TEST_SSID, config.ssid_length + 1);
+	strncpy(config.passphrase, TEST_PASSWORD, config.passphrase_length + 1);
+	config.ap_auth_type = (wifi_manager_ap_auth_type_e)TEST_AUTH_TYPE;
+	config.ap_crypto_type = (wifi_manager_ap_crypto_type_e)TEST_CRYPTO_TYPE;
+	printf("AP config: %s(%d), %s(%d), %d %d\n", config.ssid, config.ssid_length, config.passphrase, \
+			config.passphrase_length, config.ap_auth_type, config.ap_crypto_type);
+
+	ret = wifi_manager_connect_ap(&config);
+	TC_ASSERT_EQ_CLEANUP("wifi_manager_connect_ap", ret, WIFI_MANAGER_SUCCESS, wifi_manager_deinit());
+	WIFITEST_WAIT;
+	sleep(SEC_5);
+
+	ret = wifi_manager_disconnect_ap();
+	TC_ASSERT_EQ_CLEANUP("wifi_manager_disconnect_ap", ret, WIFI_MANAGER_SUCCESS, wifi_manager_deinit());
+	WIFITEST_WAIT;
+	sleep(SEC_5);
+
+	ret = wifi_manager_disconnect_ap();
+	TC_ASSERT_EQ_CLEANUP("wifi_manager_disconnect_ap", ret, WIFI_MANAGER_FAIL, wifi_manager_deinit());
+	// wifitest_wait is not required here, as it is already disconnected
+
+	ret = wifi_manager_deinit();
+	TC_ASSERT_EQ("wifi_manager_deinit", ret, WIFI_MANAGER_SUCCESS);
+
+	TC_SUCCESS_RESULT();
+}
+
+/**
+ * @testcase         itc_wifi_manager_average_joining_ap
+ * @brief            to check average time taken while connecting to AP
+ * @scenario         check average time taken while connecting to AP
+ * @apicovered       wifi_manager_init, wifi_manager_set_mode, wifi_manager_connect_ap, wifi_manager_disconnect_ap, wifi_manager_deinit
+ * @precondition     none
+ * @postcondition    none
+ */
+static void itc_wifi_manager_average_joining_ap(void)
+{
+	int i = 0;
+	double average = 0.0f;
+	struct timeval start_t;
+	struct timeval end_t;
+	wifi_manager_result_e ret = WIFI_MANAGER_FAIL;
+	ret = wifi_manager_init(&wifi_callbacks);
+	TC_ASSERT_EQ("wifi_manager_init", ret, WIFI_MANAGER_SUCCESS);
+
+	wifi_manager_ap_config_s config;
+	config.ssid_length = strlen(TEST_SSID);
+	config.passphrase_length = strlen(TEST_PASSWORD);
+	strncpy(config.ssid, TEST_SSID, config.ssid_length + 1);
+	strncpy(config.passphrase, TEST_PASSWORD, config.passphrase_length + 1);
+	config.ap_auth_type = (wifi_manager_ap_auth_type_e)TEST_AUTH_TYPE;
+	config.ap_crypto_type = (wifi_manager_ap_crypto_type_e)TEST_CRYPTO_TYPE;
+	printf("AP config: %s(%d), %s(%d), %d %d\n", config.ssid, config.ssid_length, config.passphrase, \
+			config.passphrase_length, config.ap_auth_type, config.ap_crypto_type);
+
+	for (i = 1; i <= LOOP_SIZE; i++) {
+		gettimeofday(&start_t, NULL);
+		ret = wifi_manager_connect_ap(&config);
+		TC_ASSERT_EQ_CLEANUP("wifi_manager_connect_ap", ret, WIFI_MANAGER_SUCCESS, wifi_manager_deinit());
+		WIFITEST_WAIT;
+		gettimeofday(&end_t, NULL);
+		average += diff_time(&start_t, &end_t);
+		sleep(SEC_5);
+		ret = wifi_manager_disconnect_ap();
+		TC_ASSERT_EQ_CLEANUP("wifi_manager_disconnect_ap", ret, WIFI_MANAGER_SUCCESS, wifi_manager_deinit());
+		WIFITEST_WAIT;
+		sleep(SEC_5);
+	}
+
+	ret = wifi_manager_deinit();
+	TC_ASSERT_EQ("wifi_manager_deinit", ret, WIFI_MANAGER_SUCCESS);
+	printf("\n[Average connect time: %.2f ms]\n", average / (LOOP_SIZE * 1000));
+	TC_SUCCESS_RESULT();
+}
+
+/**
+ * @testcase         itc_wifi_manager_average_leaving_ap
+ * @brief            to check average time taken while disconnecting to AP
+ * @scenario         check average time taken while disconnecting to AP
+ * @apicovered       wifi_manager_init, wifi_manager_set_mode, wifi_manager_connect_ap, wifi_manager_disconnect_ap, wifi_manager_deinit
+ * @precondition     none
+ * @postcondition    none
+ */
+static void itc_wifi_manager_average_leaving_ap(void)
+{
+	int i = 0;
+	double average = 0.0f;
+	struct timeval start_t;
+	struct timeval end_t;
+	wifi_manager_result_e ret = WIFI_MANAGER_FAIL;
+	ret = wifi_manager_init(&wifi_callbacks);
+	TC_ASSERT_EQ("wifi_manager_init", ret, WIFI_MANAGER_SUCCESS);
+
+	wifi_manager_ap_config_s config;
+	config.ssid_length = strlen(TEST_SSID);
+	config.passphrase_length = strlen(TEST_PASSWORD);
+	strncpy(config.ssid, TEST_SSID, config.ssid_length + 1);
+	strncpy(config.passphrase, TEST_PASSWORD, config.passphrase_length + 1);
+	config.ap_auth_type = (wifi_manager_ap_auth_type_e)TEST_AUTH_TYPE;
+	config.ap_crypto_type = (wifi_manager_ap_crypto_type_e)TEST_CRYPTO_TYPE;
+	printf("AP config: %s(%d), %s(%d), %d %d\n", config.ssid, config.ssid_length, config.passphrase, \
+			config.passphrase_length, config.ap_auth_type, config.ap_crypto_type);
+
+	for (i = 1; i <= LOOP_SIZE; i++) {
+		ret = wifi_manager_connect_ap(&config);
+		TC_ASSERT_EQ_CLEANUP("wifi_manager_connect_ap", ret, WIFI_MANAGER_SUCCESS, wifi_manager_deinit());
+		WIFITEST_WAIT;
+		sleep(SEC_5);
+		gettimeofday(&start_t, NULL);
+		ret = wifi_manager_disconnect_ap();
+		TC_ASSERT_EQ_CLEANUP("wifi_manager_disconnect_ap", ret, WIFI_MANAGER_SUCCESS, wifi_manager_deinit());
+		WIFITEST_WAIT;
+		gettimeofday(&end_t, NULL);
+		average += diff_time(&start_t, &end_t);
+		sleep(SEC_5);
+	}
+
+	ret = wifi_manager_deinit();
+	TC_ASSERT_EQ("wifi_manager_deinit", ret, WIFI_MANAGER_SUCCESS);
+	printf("\n[Average disconnect time: %.2f ms]\n", average / (LOOP_SIZE * 1000));
+	TC_SUCCESS_RESULT();
+}
+
+/**
+ * @testcase         itc_wifi_manager_success_ratio_ap
+ * @brief            to check success ratio of operations(init, join, leave, deinit)
+ * @scenario         check success ratio of operations(init, join, leave, deinit)
+ * @apicovered       wifi_manager_init, wifi_manager_set_mode, wifi_manager_connect_ap, wifi_manager_disconnect_ap, wifi_manager_deinit
+ * @precondition     none
+ * @postcondition    none
+ */
+static void itc_wifi_manager_success_ratio_ap(void)
+{
+	float init_cnt = 0.0f;
+	float s_init_cnt = 0.0f;
+	float join_cnt = 0.0f;
+	float s_join_cnt = 0.0f;
+	float leave_cnt = 0.0f;
+	float s_leave_cnt = 0.0f;
+	float deinit_cnt = 0.0f;
+	float s_deinit_cnt = 0.0f;
+	int i = 0;
+
+	wifi_manager_result_e ret = WIFI_MANAGER_FAIL;
+
+	wifi_manager_ap_config_s config;
+	config.ssid_length = strlen(TEST_SSID);
+	config.passphrase_length = strlen(TEST_PASSWORD);
+	strncpy(config.ssid, TEST_SSID, config.ssid_length + 1);
+	strncpy(config.passphrase, TEST_PASSWORD, config.passphrase_length + 1);
+	config.ap_auth_type = (wifi_manager_ap_auth_type_e)TEST_AUTH_TYPE;
+	config.ap_crypto_type = (wifi_manager_ap_crypto_type_e)TEST_CRYPTO_TYPE;
+	printf("AP config: %s(%d), %s(%d), %d %d\n", config.ssid, config.ssid_length, config.passphrase, \
+			config.passphrase_length, config.ap_auth_type, config.ap_crypto_type);
+
+	for (i = 0; i < LOOP_SIZE; i++) {
+		init_cnt++;
+		ret = wifi_manager_init(&wifi_callbacks);
+		if (ret == WIFI_MANAGER_SUCCESS) {
+			s_init_cnt++;
+		} else {
+			continue;
+		}
+
+		join_cnt++;
+		ret = wifi_manager_connect_ap(&config);
+		if (ret == WIFI_MANAGER_SUCCESS) {
+			s_join_cnt++;
+			WIFITEST_WAIT;
+			sleep(SEC_5);
+
+			leave_cnt++;
+			ret = wifi_manager_disconnect_ap();
+			if (ret == WIFI_MANAGER_SUCCESS) {
+				s_leave_cnt++;
+				WIFITEST_WAIT;
+				sleep(SEC_5);
+			}
+		}
+
+		deinit_cnt++;
+		ret = wifi_manager_deinit();
+		if (ret == WIFI_MANAGER_SUCCESS) {
+			s_deinit_cnt++;
+		}
+	}
+
+	printf("\nSuccess Ratio \n");
+	if (init_cnt > 0) {
+	printf("[Initialization Wifi] Success Ratio = %.2f% \n", (s_init_cnt / init_cnt) * 100);
+	}
+	if (join_cnt > 0) {
+		printf("[Connect Wifi] Success Ratio = %.2f% \n", (s_join_cnt / join_cnt) * 100);
+	}
+	if (leave_cnt > 0) {
+		printf("[Disconnect Wifi] Success Ratio = %.2f% \n", (s_leave_cnt / leave_cnt) * 100);
+	}
+	if (deinit_cnt > 0) {
+		printf("[Deinitization Wifi] Success Ratio = %.2f% \n", (s_deinit_cnt / deinit_cnt) * 100);
+	}
+	TC_ASSERT_EQ("itc_wifi_manager_success_ratio_ap", s_init_cnt, init_cnt);
+	TC_ASSERT_EQ("itc_wifi_manager_success_ratio_ap", s_join_cnt, join_cnt);
+	TC_ASSERT_EQ("itc_wifi_manager_success_ratio_ap", s_leave_cnt, leave_cnt);
+	TC_ASSERT_EQ("itc_wifi_manager_success_ratio_ap", s_deinit_cnt, deinit_cnt);
+
+	TC_SUCCESS_RESULT();
+}
+
+/**
+ * @testcase         itc_wifi_manager_average_stoping_ap
+ * @brief            to check average time taken while deinit wifi
+ * @scenario         to check average time taken while deinit wifi
+ * @apicovered       wifi_manager_init, wifi_manager_set_mode, wifi_manager_connect_ap, wifi_manager_disconnect_ap, wifi_manager_deinit
+ * @precondition     none
+ * @postcondition    none
+ */
+static void itc_wifi_manager_average_stoping_ap(void)
+{
+	int i = 0;
+	double average = 0.0f;
+	struct timeval start_t;
+	struct timeval end_t;
+	wifi_manager_result_e ret = WIFI_MANAGER_FAIL;
+
+	wifi_manager_ap_config_s config;
+	config.ssid_length = strlen(TEST_SSID);
+	config.passphrase_length = strlen(TEST_PASSWORD);
+	strncpy(config.ssid, TEST_SSID, config.ssid_length + 1);
+	strncpy(config.passphrase, TEST_PASSWORD, config.passphrase_length + 1);
+	config.ap_auth_type = (wifi_manager_ap_auth_type_e)TEST_AUTH_TYPE;
+	config.ap_crypto_type = (wifi_manager_ap_crypto_type_e)TEST_CRYPTO_TYPE;
+	printf("AP config: %s(%d), %s(%d), %d %d\n", config.ssid, config.ssid_length, config.passphrase, \
+			config.passphrase_length, config.ap_auth_type, config.ap_crypto_type);
+
+	for (i = 1; i <= LOOP_SIZE; i++) {
+		ret = wifi_manager_init(&wifi_callbacks);
+		TC_ASSERT_EQ("wifi_manager_init", ret, WIFI_MANAGER_SUCCESS);
+
+		ret = wifi_manager_connect_ap(&config);
+		TC_ASSERT_EQ_CLEANUP("wifi_manager_connect_ap", ret, WIFI_MANAGER_SUCCESS, wifi_manager_deinit());
+		WIFITEST_WAIT;
+		sleep(SEC_5);
+
+		ret = wifi_manager_disconnect_ap();
+		TC_ASSERT_EQ_CLEANUP("wifi_manager_disconnect_ap", ret, WIFI_MANAGER_SUCCESS, wifi_manager_deinit());
+		WIFITEST_WAIT;
+		sleep(SEC_5);
+
+		gettimeofday(&start_t, NULL);
+		ret = wifi_manager_deinit();
+		TC_ASSERT_EQ("wifi_manager_deinit", ret, WIFI_MANAGER_SUCCESS);
+		gettimeofday(&end_t, NULL);
+		average += diff_time(&start_t, &end_t);
+	}
+
+	printf("\n[Average wifi deinitialization time: %.2f ms]\n", average / (LOOP_SIZE * 1000));
+	TC_SUCCESS_RESULT();
+}
+
+/**
+* @testcase         itc_wifi_manager_init_deinit_n
+* @brief            initialize and de-initalization of wifi manager
+* @scenario         initialize and de-initalization of wifi manager
+* @apicovered       wifi_manager_init and wifi_manager_deinit
+* @precondition     none
+* @postcondition    none
+*/
+static void itc_wifi_manager_init_deinit_n(void)
+{
+	wifi_manager_result_e ret = WIFI_MANAGER_FAIL;
+	ret = wifi_manager_init(NULL);
+	TC_ASSERT_EQ("wifi_manager_init_n", ret, WIFI_MANAGER_INVALID_ARGS);
+
+	ret = wifi_manager_deinit();
+	TC_ASSERT_EQ("wifi_manager_deinit_n", ret, WIFI_MANAGER_FAIL);
+	TC_SUCCESS_RESULT();
+}
+
+/**
+* @testcase         itc_wifi_manager_connect_ap_n
+* @brief            connecting with invalid configuration parameters
+* @scenario         connecting with invalid configuration parameters
+* @apicovered       wifi_manager_init, wifi_manager_set_mode, wifi_manager_connect_ap, wifi_manager_deinit
+* @precondition     none
+* @postcondition    none
+*/
+static void itc_wifi_manager_connect_ap_n(void)
+{
+	char ssid[] = "";
+	char passphrase[] = "";
+
+	wifi_manager_result_e ret = WIFI_MANAGER_FAIL;
+	ret = wifi_manager_init(&wifi_callbacks);
+	TC_ASSERT_EQ("wifi_manager_init", ret, WIFI_MANAGER_SUCCESS);
+
+	wifi_manager_ap_config_s config;
+	config.ssid_length = strlen(ssid);
+	config.passphrase_length = strlen(passphrase);
+	strncpy(config.ssid, ssid, config.ssid_length + 1);
+	strncpy(config.passphrase, passphrase, config.passphrase_length + 1);
+	config.ap_auth_type = (wifi_manager_ap_auth_type_e)TEST_AUTH_TYPE;
+	config.ap_crypto_type = (wifi_manager_ap_crypto_type_e)TEST_CRYPTO_TYPE;
+	printf("AP config: %s(%d), %s(%d), %d %d\n", config.ssid, config.ssid_length, config.passphrase, \
+		config.passphrase_length, config.ap_auth_type, config.ap_crypto_type);
+
+	ret = wifi_manager_connect_ap(&config);
+	TC_ASSERT_EQ_CLEANUP("wifi_manager_connect_ap", ret, WIFI_MANAGER_FAIL, wifi_manager_deinit());
+
+	ret = wifi_manager_deinit();
+	TC_ASSERT_EQ("wifi_manager_deinit", ret, WIFI_MANAGER_SUCCESS);
+	TC_SUCCESS_RESULT();
+}
+
+/**
+* @testcase         itc_wifi_manager_connect_set_mode_n
+* @brief            set mode with NULL config
+* @scenario         set mode with NULL config
+* @apicovered       wifi_manager_set_mode, wifi_manager_init, wifi_manager_deinit
+* @precondition     none
+* @postcondition    none
+*/
+static void itc_wifi_manager_connect_set_mode_n(void)
+{
+	wifi_manager_result_e ret = WIFI_MANAGER_FAIL;
+	ret = wifi_manager_init(&wifi_callbacks);
+	TC_ASSERT_EQ("wifi_manager_init", ret, WIFI_MANAGER_SUCCESS);
+
+	ret = wifi_manager_set_mode(SOFTAP_MODE, NULL);
+	TC_ASSERT_EQ_CLEANUP("wifi_manager_set_mode", ret, WIFI_MANAGER_INVALID_ARGS, wifi_manager_deinit());
+
+	ret = wifi_manager_deinit();
+	TC_ASSERT_EQ("wifi_manager_deinit", ret, WIFI_MANAGER_SUCCESS);
+	TC_SUCCESS_RESULT();
+}
+
+
 /*******************************************************************************************************************/
 
 int wifi_manager_itc(int argc, FAR char *argv[])
 {
-	sem_wait(&tc_sem);
-	working_tc++;
-
-	total_pass = 0;
-	total_fail = 0;
-
-	printf("=== TINYARA WIFI_MANAGER ITC START! ===\n");
+	if (tc_handler(TC_START, "WiFiManager ITC") == ERROR) {
+		return ERROR;
+	}
 
 	itc_wifi_manager_init_deinit_p();
 
@@ -325,11 +810,31 @@ int wifi_manager_itc(int argc, FAR char *argv[])
 
 	itc_wifi_manager_scan_ap_p(); // Reinitialized wifi manager with the callback hander for scan results
 
-	printf("\n=== TINYARA WIFI_MANAGER ITC COMPLETE ===\n");
-	printf("\t\tTotal pass : %d\n\t\tTotal fail : %d\n", total_pass, total_fail);
+	itc_wifi_manager_reinit_p();
 
-	working_tc--;
-	sem_post(&tc_sem);
+	itc_wifi_manager_redeinit_p();
+
+	itc_wifi_manager_redisconnect_p();
+
+	itc_wifi_manager_connect_long_ssid_p();
+
+	itc_wifi_manager_average_joining_ap(); // Disable DoS preventation from Access Point
+
+	itc_wifi_manager_average_leaving_ap(); // Disable DoS preventation from Access Point
+
+	itc_wifi_manager_average_stoping_ap(); // Disable DoS preventation from Access Point
+
+	itc_wifi_manager_success_ratio_ap();
+
+	itc_wifi_manager_init_deinit_n();
+
+	itc_wifi_manager_connect_ap_n();
+
+	itc_wifi_manager_connect_set_mode_n();
+
+	//itc_wifi_manager_reconnect_p(); // System is crashing tested manually
+
+	(void)tc_handler(TC_END, "WiFiManager ITC");
 
 	return 0;
 }
@@ -340,10 +845,10 @@ int main(int argc, FAR char *argv[])
 int itc_wifi_manager_main(int argc, char *argv[])
 #endif
 {
-	int ssid_len = strlen(CONFIG_EXAMPLES_TESTCASE_WIFI_MANAGER_ITC_SSID);
-	int passphrase_len = strlen(CONFIG_EXAMPLES_TESTCASE_WIFI_MANAGER_ITC_PASSPHRASE);
-	int softap_ssid_len = strlen(CONFIG_EXAMPLES_TESTCASE_WIFI_MANAGER_ITC_SOFTAP_SSID);
-	int softap_passphrase_len = strlen(CONFIG_EXAMPLES_TESTCASE_WIFI_MANAGER_ITC_SOFTAP_PASSPHRASE);
+	int ssid_len = strlen(TEST_SSID);
+	int passphrase_len = strlen(TEST_PASSWORD);
+	int softap_ssid_len = strlen(TEST_SOFTAP_SSID);
+	int softap_passphrase_len = strlen(TEST_SOFTAP_PASSWORD);
 
 	if ((ssid_len >= SSID_MAX_LEN) || (softap_ssid_len >= SSID_MAX_LEN) || (passphrase_len >= PASSPHRASE_MAX_LEN) || (softap_passphrase_len >= PASSPHRASE_MAX_LEN)) {
 		printf("AP or SoftAP configuration fails: too long ssid or passphrase\n");

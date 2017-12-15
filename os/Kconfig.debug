@@ -567,5 +567,7 @@ config FRAME_POINTER
 		reported during system crash is very limited.
 
 menu "Logger Module"
+	depends on !DISABLE_SIGNALS
+
 source logm/Kconfig
 endmenu

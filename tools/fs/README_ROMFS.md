@@ -1,7 +1,7 @@
 
 # Contents for ROMFS
 
-### Pre-condition
+### Prerequisites
 ```bash
 sudo apt-get install genromfs
 ```
@@ -21,7 +21,8 @@ File Systems -> ROMFS to y
 
 After these two steps, board specific steps should be executed.
 
-ARTIK053 [[Details]](../../build/configs/artik053/README.md#romfs)
-
+ARTIK053 [[Details]](../../build/configs/artik053/README.md#romfs)  
+ARTIK053S [[Details]](../../build/configs/artik053s/README.md#romfs)  
+ARTIK055S [[Details]](../../build/configs/artik055s/README.md#romfs)  
 SIDK_S5JT200 [[Details]](../../build/configs/sidk_s5jt200/README.md#romfs)
 

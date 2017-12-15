@@ -34,7 +34,6 @@
 #include <tinyara/audio/audio.h>
 #include <tinyalsa/tinyalsa.h>
 #include <tinyara/fs/ioctl.h>
-#include <apps/shell/tash.h>
 #include "tc_common.h"
 
 /****************************************************************************
@@ -52,10 +51,6 @@
 /****************************************************************************
  * Global Variables
  ****************************************************************************/
-
-extern sem_t tc_sem;
-extern int working_tc;
-
 struct pcm *g_pcm;
 
 static void clean_all_data(int fd, char *buffer)
@@ -82,7 +77,7 @@ static void clean_all_data(int fd, char *buffer)
 * @precondition     NA
 * @postcondition    NA
 */
-static void utc_audio_pcm_open_tc_p(void)
+static void utc_audio_pcm_open_p(void)
 {
 	g_pcm = pcm_open(0, 0, PCM_IN, NULL);
 	TC_ASSERT_GT("pcm_open", pcm_get_file_descriptor(g_pcm), 0)
@@ -97,7 +92,7 @@ static void utc_audio_pcm_open_tc_p(void)
 * @precondition     NA
 * @postcondition    NA
 */
-static void utc_audio_pcm_open_tc_n(void)
+static void utc_audio_pcm_open_n(void)
 {
 	struct pcm *pcm;
 	pcm = pcm_open(999, 999, PCM_IN, NULL);
@@ -114,7 +109,7 @@ static void utc_audio_pcm_open_tc_n(void)
 * @precondition     pcm_open should be called
 * @postcondition    NA
 */
-static void utc_audio_pcm_is_ready_tc_p(void)
+static void utc_audio_pcm_is_ready_p(void)
 {
 	TC_ASSERT_GT("pcm_is_ready", pcm_is_ready(g_pcm), 0);
 	TC_SUCCESS_RESULT();
@@ -128,7 +123,7 @@ static void utc_audio_pcm_is_ready_tc_p(void)
 * @precondition     pcm_open should be called
 * @postcondition    NA
 */
-static void utc_audio_pcm_is_ready_tc_n(void)
+static void utc_audio_pcm_is_ready_n(void)
 {
 	TC_ASSERT_LEQ("pcm_is_ready", pcm_is_ready(NULL), 0);
 	TC_SUCCESS_RESULT();
@@ -142,7 +137,7 @@ static void utc_audio_pcm_is_ready_tc_n(void)
 * @precondition     pcm_open should be called
 * @postcondition    NA
 */
-static void utc_audio_pcm_prepare_tc_p(void)
+static void utc_audio_pcm_prepare_p(void)
 {
 	TC_ASSERT_EQ("pcm_prepare", pcm_prepare(g_pcm), 0);
 	TC_SUCCESS_RESULT();
@@ -156,7 +151,7 @@ static void utc_audio_pcm_prepare_tc_p(void)
 * @precondition     pcm_open should be called
 * @postcondition    NA
 */
-static void utc_audio_pcm_prepare_tc_n(void)
+static void utc_audio_pcm_prepare_n(void)
 {
 	TC_ASSERT_LT("pcm_prepare", pcm_prepare(NULL), 0);
 	TC_SUCCESS_RESULT();
@@ -170,7 +165,7 @@ static void utc_audio_pcm_prepare_tc_n(void)
 * @precondition     pcm should be opened before.
 * @postcondition    NA
 */
-static void utc_audio_pcm_close_tc_p(void)
+static void utc_audio_pcm_close_p(void)
 {
 	TC_ASSERT_EQ("pcm_close", pcm_close(g_pcm), 0);
 	TC_SUCCESS_RESULT();
@@ -184,7 +179,7 @@ static void utc_audio_pcm_close_tc_p(void)
 * @precondition     NA
 * @postcondition    NA
 */
-static void utc_audio_pcm_close_tc_n(void)
+static void utc_audio_pcm_close_n(void)
 {
 	TC_ASSERT_NEQ("pcm_close", pcm_close(NULL), 0);
 	TC_SUCCESS_RESULT();
@@ -198,7 +193,7 @@ static void utc_audio_pcm_close_tc_n(void)
 * @precondition     NA
 * @postcondition    NA
 */
-static void utc_audio_pcm_open_by_name_tc_p(void)
+static void utc_audio_pcm_open_by_name_p(void)
 {
 	g_pcm = pcm_open_by_name("hw:0,0", PCM_IN, NULL);
 	TC_ASSERT_GT_CLEANUP("pcm_open_by_name", pcm_get_file_descriptor(g_pcm), 0, pcm_close(g_pcm))
@@ -214,7 +209,7 @@ static void utc_audio_pcm_open_by_name_tc_p(void)
 * @precondition     NA
 * @postcondition    NA
 */
-static void utc_audio_pcm_open_by_name_tc_n(void)
+static void utc_audio_pcm_open_by_name_n(void)
 {
 	struct pcm *pcm;
 	pcm = pcm_open_by_name(NULL, PCM_IN, NULL);
@@ -231,7 +226,7 @@ static void utc_audio_pcm_open_by_name_tc_n(void)
 * @precondition     pcm should be opened before.
 * @postcondition    NA
 */
-static void utc_audio_pcm_get_config_tc_p(void)
+static void utc_audio_pcm_get_config_p(void)
 {
 	const struct pcm_config *config;
 	/* open g_pcm again to check config test */
@@ -251,7 +246,7 @@ static void utc_audio_pcm_get_config_tc_p(void)
 * @precondition     NA.
 * @postcondition    NA
 */
-static void utc_audio_pcm_get_config_tc_n(void)
+static void utc_audio_pcm_get_config_n(void)
 {
 	const struct pcm_config *config = pcm_get_config(NULL);
 	TC_ASSERT_EQ("pcm_get_config", config, NULL);
@@ -266,7 +261,7 @@ static void utc_audio_pcm_get_config_tc_n(void)
 * @precondition     pcm should be opened before.
 * @postcondition    NA
 */
-static void utc_audio_pcm_get_channels_tc_p(void)
+static void utc_audio_pcm_get_channels_p(void)
 {
 	unsigned int ch;
 	ch = pcm_get_channels(g_pcm);
@@ -282,7 +277,7 @@ static void utc_audio_pcm_get_channels_tc_p(void)
 * @precondition     NA
 * @postcondition    NA
 */
-static void utc_audio_pcm_get_channels_tc_n(void)
+static void utc_audio_pcm_get_channels_n(void)
 {
 	int ch;
 	ch = pcm_get_channels(NULL);
@@ -298,7 +293,7 @@ static void utc_audio_pcm_get_channels_tc_n(void)
 * @precondition     pcm should be opened before.
 * @postcondition    NA
 */
-static void utc_audio_pcm_get_rate_tc_p(void)
+static void utc_audio_pcm_get_rate_p(void)
 {
 	int rate;
 	rate = pcm_get_rate(g_pcm);
@@ -314,7 +309,7 @@ static void utc_audio_pcm_get_rate_tc_p(void)
 * @precondition     NA
 * @postcondition    NA
 */
-static void utc_audio_pcm_get_rate_tc_n(void)
+static void utc_audio_pcm_get_rate_n(void)
 {
 	int rate;
 	rate = pcm_get_rate(NULL);
@@ -330,7 +325,7 @@ static void utc_audio_pcm_get_rate_tc_n(void)
 * @precondition     pcm should be opened before.
 * @postcondition    NA
 */
-static void utc_audio_pcm_get_format_tc_p(void)
+static void utc_audio_pcm_get_format_p(void)
 {
 	int format;
 	format = pcm_get_format(g_pcm);
@@ -346,7 +341,7 @@ static void utc_audio_pcm_get_format_tc_p(void)
 * @precondition     NA
 * @postcondition    NA
 */
-static void utc_audio_pcm_get_format_tc_n(void)
+static void utc_audio_pcm_get_format_n(void)
 {
 	int pcm_format;
 	pcm_format = pcm_get_format(NULL);
@@ -362,7 +357,7 @@ static void utc_audio_pcm_get_format_tc_n(void)
 * @precondition     pcm should be opened before.
 * @postcondition    NA
 */
-static void utc_audio_pcm_get_file_descriptor_tc_p(void)
+static void utc_audio_pcm_get_file_descriptor_p(void)
 {
 	int fd;
 
@@ -381,7 +376,7 @@ static void utc_audio_pcm_get_file_descriptor_tc_p(void)
 * @precondition     NA
 * @postcondition    NA
 */
-static void utc_audio_pcm_get_file_descriptor_tc_n(void)
+static void utc_audio_pcm_get_file_descriptor_n(void)
 {
 	int fd;
 	fd = pcm_get_file_descriptor(NULL);
@@ -397,7 +392,7 @@ static void utc_audio_pcm_get_file_descriptor_tc_n(void)
 * @precondition     NA
 * @postcondition    NA
 */
-static void utc_audio_pcm_get_error_tc_p(void)
+static void utc_audio_pcm_get_error_p(void)
 {
 	struct pcm *pcm;
 	pcm = pcm_open(0, 0, PCM_IN, NULL);
@@ -415,7 +410,7 @@ static void utc_audio_pcm_get_error_tc_p(void)
 * @precondition     NA
 * @postcondition    NA
 */
-static void utc_audio_pcm_get_error_tc_n(void)
+static void utc_audio_pcm_get_error_n(void)
 {
 	TC_ASSERT_EQ("pcm_get_error", pcm_get_error(NULL), NULL);
 	TC_SUCCESS_RESULT();
@@ -429,7 +424,7 @@ static void utc_audio_pcm_get_error_tc_n(void)
 * @precondition     pcm should be opened before.
 * @postcondition    NA
 */
-static void utc_audio_pcm_get_buffer_size_tc_p(void)
+static void utc_audio_pcm_get_buffer_size_p(void)
 {
 	ssize_t size;
 	/* Open again to test APIs regarding buffering & recoridng & playing */
@@ -447,7 +442,7 @@ static void utc_audio_pcm_get_buffer_size_tc_p(void)
 * @precondition     NA
 * @postcondition    NA
 */
-static void utc_audio_pcm_get_buffer_size_tc_n(void)
+static void utc_audio_pcm_get_buffer_size_n(void)
 {
 	ssize_t size;
 	size = pcm_get_buffer_size(NULL);
@@ -463,7 +458,7 @@ static void utc_audio_pcm_get_buffer_size_tc_n(void)
 * @precondition     pcm should be opened before.
 * @postcondition    NA
 */
-static void utc_audio_pcm_get_subdevice_tc_p(void)
+static void utc_audio_pcm_get_subdevice_p(void)
 {
 	unsigned int device;
 	device = pcm_get_subdevice(g_pcm);
@@ -479,7 +474,7 @@ static void utc_audio_pcm_get_subdevice_tc_p(void)
 * @precondition     NA.
 * @postcondition    NA
 */
-static void utc_audio_pcm_get_subdevice_tc_n(void)
+static void utc_audio_pcm_get_subdevice_n(void)
 {
 	unsigned int device;
 	device = pcm_get_subdevice(g_pcm);
@@ -617,22 +612,22 @@ static void utc_audio_pcm_readi_p(void)
 	int remain;
 
 	buffer = malloc(pcm_frames_to_bytes(g_pcm, pcm_get_buffer_size(g_pcm)));
-	TC_ASSERT_NEQ_CLEANUP("pcm_readi", buffer, NULL, clean_all_data(0, 0));
+	TC_ASSERT_NEQ_CLEANUP("pcm_readi", buffer, NULL, clean_all_data(0, NULL));
 
-	fd = open(AUDIO_TEST_FILE, O_RDWR | O_CREAT);
+	fd = open(AUDIO_TEST_FILE, O_RDWR | O_CREAT | O_TRUNC);
 	TC_ASSERT_GT_CLEANUP("pcm_readi", fd, 0, clean_all_data(0, buffer));
 
 	bytes_per_frame = pcm_frames_to_bytes(g_pcm, 1);
 	frames_read = 0;
 	remain = AUDIO_DEFAULT_RATE * AUDIO_RECORD_DURATION;
 
-	printf("Record will be start for 3s, press any key to start(Total frame: %d)\n", remain);
+	printf("Sample will be recorded for 3s, press any key to start(Total frame: %d)\n", remain);
 	fflush(stdout);
 	str = gets(input_str);
 	TC_ASSERT_NEQ_CLEANUP("pcm_readi", str, NULL, clean_all_data(fd, buffer));
 
 	while (remain > 0) {
-		frames_read = pcm_readi(g_pcm, buffer, remain);
+		frames_read = pcm_readi(g_pcm, buffer, pcm_get_buffer_size(g_pcm));
 		if (frames_read < 0) {
 			break;
 		}
@@ -683,12 +678,121 @@ static void utc_audio_pcm_readi_n(void)
 }
 
 /**
+* @testcase         audio_pcm_drop_p
+* @brief            drop all the buffers which are being processed and stop the device
+* @scenario         call pcm_drop after readi and check that audio until pcm_drop print is recorded.
+* @apicovered       pcm_drop
+* @precondition     NA
+* @postcondition    NA
+*/
+
+static void utc_audio_pcm_drop_p(void)
+{
+	int fd;
+	char input_str[16];
+	int ret;
+	char *str;
+	char *buffer;
+	unsigned int bytes_per_frame;
+	int frames_read;
+	int remain;
+	int size;
+	int total_frames;
+	int num_read;
+
+	g_pcm = pcm_open(0, 0, PCM_IN, NULL);
+	TC_ASSERT_GT("pcm_drop", pcm_is_ready(g_pcm), 0);
+
+	buffer = malloc(pcm_frames_to_bytes(g_pcm, pcm_get_buffer_size(g_pcm)));
+	TC_ASSERT_NEQ_CLEANUP("pcm_drop", buffer, NULL, clean_all_data(0, NULL));
+
+	fd = open(AUDIO_TEST_FILE, O_RDWR | O_CREAT | O_TRUNC);
+	TC_ASSERT_GT_CLEANUP("pcm_drop", fd, 0, clean_all_data(0, buffer));
+
+	bytes_per_frame = pcm_frames_to_bytes(g_pcm, 1);
+	frames_read = 0;
+	remain = AUDIO_DEFAULT_RATE * AUDIO_RECORD_DURATION;
+
+	printf("Sample will be recorded for 3s, press any key to start(Total frame: %d)\n", remain);
+	fflush(stdout);
+	str = gets(input_str);
+	TC_ASSERT_NEQ_CLEANUP("pcm_drop", str, NULL, clean_all_data(fd, buffer));
+
+	while (remain > 0) {
+		frames_read = pcm_readi(g_pcm, buffer, pcm_get_buffer_size(g_pcm));
+		if (frames_read < 0) {
+			break;
+		}
+		remain -= frames_read;
+		ret = write(fd, buffer, bytes_per_frame * frames_read);
+		TC_ASSERT_EQ_CLEANUP("pcm_drop", ret, (bytes_per_frame * frames_read), clean_all_data(fd, buffer));
+	}
+
+	printf("Nothing after this statement should be recorded\n");
+	ret = pcm_drop(g_pcm);
+	TC_ASSERT_GEQ_CLEANUP("pcm_drop", ret, 0, clean_all_data(fd, buffer));
+
+	printf("Record dropped.\n");
+
+	clean_all_data(fd, buffer);
+
+	g_pcm = pcm_open(0, 0, PCM_OUT, NULL);
+	TC_ASSERT_GT("pcm_drop", pcm_is_ready(g_pcm), 0);
+
+	size = pcm_frames_to_bytes(g_pcm, pcm_get_buffer_size(g_pcm));
+	buffer = malloc(size);
+	TC_ASSERT_NEQ_CLEANUP("pcm_drop", buffer, NULL, clean_all_data(0, NULL));
+
+	fd = open(AUDIO_TEST_FILE, O_RDONLY);
+	TC_ASSERT_GEQ_CLEANUP("pcm_drop", fd, 0, clean_all_data(0, buffer));
+
+	printf("Check now for recorded part. Nothing after drop should be heard\n");
+	total_frames = 0;
+	do {
+		num_read = read(fd, buffer, size);
+		if (num_read > 0) {
+			total_frames += num_read;
+			ret = pcm_writei(g_pcm, buffer, pcm_bytes_to_frames(g_pcm, num_read));
+			TC_ASSERT_GEQ_CLEANUP("pcm_drop", ret, 0, clean_all_data(fd, buffer));
+		}
+	} while (num_read > 0);
+
+	clean_all_data(fd, buffer);
+	TC_SUCCESS_RESULT();
+}
+
+/**
+* @testcase         audio_pcm_drop_n
+* @brief            drop all the buffers which are being processed and stop the device
+* @scenario         call drop when device is stopped (not started)
+* @apicovered       pcm_drop
+* @precondition     NA
+* @postcondition    NA
+*/
+
+static void utc_audio_pcm_drop_n(void)
+{
+	int ret;
+
+	/* use default config here */
+	g_pcm = pcm_open(0, 0, PCM_IN, NULL);
+	TC_ASSERT_GT("pcm_drop", pcm_is_ready(g_pcm), 0);
+
+	ret = pcm_drop(g_pcm);
+	TC_ASSERT_LT_CLEANUP("pcm_drop", ret, 0, clean_all_data(0, NULL));
+
+	clean_all_data(0, NULL);
+	TC_SUCCESS_RESULT();
+}
+
+
+/**
 * @testcase         audio_pcm_write_p
 * @brief            play captured data from filesystem
 * @scenario         play recored file previously
 * @apicovered       pcm_writei
 * @precondition     pcm_readi should be opened before
-* @postcondition    NA
+* @postcondition    audio_pcm_drain_p should be called to ensure clean exit 
 */
 static void utc_audio_pcm_writei_p(void)
 {
@@ -722,11 +826,14 @@ static void utc_audio_pcm_writei_p(void)
 		}
 	} while (num_read > 0);
 
-	sleep(2);
-	printf("Playback done! Total Frames: %d\n", pcm_bytes_to_frames(g_pcm, total_frames));
+	if (buffer != NULL) {
+		free(buffer);
+		buffer = NULL;
+	}
+	if (fd > 0) {
+		close(fd);
+	}
 
-	clean_all_data(fd, buffer);
-	TC_SUCCESS_RESULT();
 }
 
 /**
@@ -763,55 +870,59 @@ static void utc_audio_pcm_writei_n(void)
 	TC_SUCCESS_RESULT();
 }
 
-static int audio_tc_launcher(int argc, char **args)
+/**
+* @testcase         audio_pcm_drain_p
+* @brief            play/record all enqueued buffers and stop the device
+* @scenario         play recored file previously completely
+* @apicovered       pcm_drain
+* @precondition     audio_pcm_writei_p should be executed just before this function
+* @postcondition    NA
+*/
+
+static void utc_audio_pcm_drain_p(void)
 {
-	total_pass = 0;
-	total_fail = 0;
+	/* Executed after writei positive tc */
 
-	utc_audio_pcm_open_tc_p();
-	utc_audio_pcm_open_tc_n();
-	utc_audio_pcm_is_ready_tc_p();
-	utc_audio_pcm_is_ready_tc_n();
-	utc_audio_pcm_prepare_tc_p();
-	utc_audio_pcm_prepare_tc_n();
-	utc_audio_pcm_close_tc_p();
-	utc_audio_pcm_close_tc_n();
-	utc_audio_pcm_open_by_name_tc_p();
-	utc_audio_pcm_open_by_name_tc_n();
-	utc_audio_pcm_get_config_tc_p();
-	utc_audio_pcm_get_config_tc_n();
-	utc_audio_pcm_get_channels_tc_p();
-	utc_audio_pcm_get_channels_tc_n();
-	utc_audio_pcm_get_rate_tc_p();
-	utc_audio_pcm_get_rate_tc_n();
-	utc_audio_pcm_get_format_tc_p();
-	utc_audio_pcm_get_format_tc_n();
-	utc_audio_pcm_get_file_descriptor_tc_p();
-	utc_audio_pcm_get_file_descriptor_tc_n();
-	utc_audio_pcm_get_error_tc_p();
-	utc_audio_pcm_get_error_tc_n();
-	utc_audio_pcm_get_buffer_size_tc_p();
-	utc_audio_pcm_get_buffer_size_tc_n();
-	utc_audio_pcm_get_subdevice_tc_p();
-	utc_audio_pcm_get_subdevice_tc_n();
-	utc_audio_pcm_frames_to_bytes_p();
-	utc_audio_pcm_frames_to_bytes_n();
-	utc_audio_pcm_bytes_to_frames_p();
-	utc_audio_pcm_bytes_to_frames_n();
-	utc_audio_pcm_format_to_bits_p();
-	utc_audio_pcm_format_to_bits_n();
-	utc_audio_pcm_readi_p();
-	utc_audio_pcm_readi_n();
-	utc_audio_pcm_writei_p();
-	utc_audio_pcm_writei_n();
-	/* after test, unlink the file */
-	unlink(AUDIO_TEST_FILE);
+	int ret;
 
-	printf("#########################################\n");
-	printf("           Audio TC Result               \n");
-	printf("           PASS : %d FAIL : %d        \n", total_pass, total_fail);
-	printf("#########################################\n");
-	return total_pass;
+	printf("Draining buffers to complete playback and close device\n");
+	ret = pcm_drain(g_pcm);
+	TC_ASSERT_GEQ_CLEANUP("pcm_drain", ret, 0, clean_all_data(0, NULL));
+	printf("Playback done!\n");
+
+	clean_all_data(0, NULL);
+	TC_SUCCESS_RESULT();
+
+}
+
+/**
+* @testcase         audio_pcm_drain_n
+* @brief            play/record all enqueued buffers and stop the device
+* @scenario         drain when device is stopped (not started)
+* @apicovered       pcm_drain
+* @precondition     NA
+* @postcondition    NA
+*/
+
+static void utc_audio_pcm_drain_n(void)
+{
+	int ret;
+
+	/* use default config here */
+	g_pcm = pcm_open(0, 0, PCM_IN, NULL);
+	TC_ASSERT_GT("pcm_drain", pcm_is_ready(g_pcm), 0);
+
+	ret = pcm_start(g_pcm);
+	TC_ASSERT_GEQ_CLEANUP("pcm_drain", ret, 0, clean_all_data(0, NULL));
+
+	ret = pcm_stop(g_pcm);
+	TC_ASSERT_GEQ_CLEANUP("pcm_drain", ret, 0, clean_all_data(0, NULL));
+
+	ret = pcm_drain(g_pcm);
+	TC_ASSERT_LT_CLEANUP("pcm_drain", ret, 0, clean_all_data(0, NULL));
+
+	clean_all_data(0, NULL);
+	TC_SUCCESS_RESULT();
 }
 
 #ifdef CONFIG_BUILD_KERNEL
@@ -820,17 +931,59 @@ int main(int argc, FAR char *argv[])
 int utc_audio_main(int argc, char *argv[])
 #endif
 {
-	sem_wait(&tc_sem);
-	working_tc++;
+	if (tc_handler(TC_START, "Audio UTC") == ERROR) {
+		return ERROR;
+	}
 
-#ifdef CONFIG_TASH
-	tash_cmd_install("audio_utc", audio_tc_launcher, TASH_EXECMD_SYNC);
-#else
-	audio_tc_launcher(argc, argv);
-#endif
+	utc_audio_pcm_open_p();
+	utc_audio_pcm_open_n();
+	utc_audio_pcm_is_ready_p();
+	utc_audio_pcm_is_ready_n();
+	utc_audio_pcm_prepare_p();
+	utc_audio_pcm_prepare_n();
+	utc_audio_pcm_close_p();
+	utc_audio_pcm_close_n();
+	utc_audio_pcm_open_by_name_p();
+	utc_audio_pcm_open_by_name_n();
+	utc_audio_pcm_get_config_p();
+	utc_audio_pcm_get_config_n();
+	utc_audio_pcm_get_channels_p();
+	utc_audio_pcm_get_channels_n();
+	utc_audio_pcm_get_rate_p();
+	utc_audio_pcm_get_rate_n();
+	utc_audio_pcm_get_format_p();
+	utc_audio_pcm_get_format_n();
+	utc_audio_pcm_get_file_descriptor_p();
+	utc_audio_pcm_get_file_descriptor_n();
+	utc_audio_pcm_get_error_p();
+	utc_audio_pcm_get_error_n();
+	utc_audio_pcm_get_buffer_size_p();
+	utc_audio_pcm_get_buffer_size_n();
+	utc_audio_pcm_get_subdevice_p();
+	utc_audio_pcm_get_subdevice_n();
+	utc_audio_pcm_frames_to_bytes_p();
+	utc_audio_pcm_frames_to_bytes_n();
+	utc_audio_pcm_bytes_to_frames_p();
+	utc_audio_pcm_bytes_to_frames_n();
+	utc_audio_pcm_format_to_bits_p();
+	utc_audio_pcm_format_to_bits_n();
+	utc_audio_pcm_readi_p();
+	utc_audio_pcm_readi_n();
 
-	working_tc--;
-	sem_post(&tc_sem);
+	/* writei_p and drain_p should be executed together since drain needs writei for testing.
+	  drain_p includes the cleanup part needed by writei to exit cleanly 
+	*/
+	utc_audio_pcm_writei_p();
+	utc_audio_pcm_drain_p();
+
+	utc_audio_pcm_writei_n();
+	utc_audio_pcm_drain_n();
+	utc_audio_pcm_drop_p();
+	utc_audio_pcm_drop_n();
+	/* after test, unlink the file */
+	unlink(AUDIO_TEST_FILE);
+
+	(void)tc_handler(TC_END, "Audio UTC");
 
 	return 0;
 }

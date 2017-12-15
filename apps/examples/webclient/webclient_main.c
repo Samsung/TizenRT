@@ -58,7 +58,7 @@
 * @scenario            1. Start webserver at TASH using the command "webserver start". Refer to webserver_main.c to run HTTP server.
 *                      2. Start webclient at TASH using the command "webclient GET http://[serverip]/".
 * @apicovered
-* @precondition                Connect to Wi-Fi. Both ARTIK051 server and ARTIK051 client should be in the same network.
+* @precondition                Connect to Wi-Fi. Both ARTIK05x server and ARTIK05x client should be in the same network.
 * @postcondition
 */
 

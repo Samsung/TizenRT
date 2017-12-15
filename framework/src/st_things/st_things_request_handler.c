@@ -238,12 +238,12 @@ static bool get_interface_types(things_resource_s *rsrc, char ***if_types, int *
 	return result;
 }
 
- /*
-  * Adds the common properties of resource such as 'rt', 'if'.
-  * 'links' property will be added in the response payload for collection resources.
-  * If it fails for any reason, the resp_payload which is partially updated by this function will not be reset.
-  * The caller of this method will have to release the payload and return an error response to the client.
-  */
+/*
+ * Adds the common properties of resource such as 'rt', 'if'.
+ * 'links' property will be added in the response payload for collection resources.
+ * If it fails for any reason, the resp_payload which is partially updated by this function will not be reset.
+ * The caller of this method will have to release the payload and return an error response to the client.
+ */
 bool add_common_props(things_resource_s *rsrc, bool collection, OCRepPayload *resp_payload)
 {
 	RET_FALSE_IF_PARAM_IS_NULL(rsrc);
@@ -442,7 +442,7 @@ static void remove_query_parameter(char *query, char *key)
 	if (NULL != pos2) {
 		pos2++;					// Increment the pointer to make it point the first character in the next key
 		while ((*pos1++ = *pos2++)) ;
-	} else{						// Given key is the last in the query.
+	} else {					// Given key is the last in the query.
 		if (pos1 != query) {
 			pos1--;				// Decrement the pointer to remove the leading query delimiter
 		}
@@ -480,161 +480,151 @@ static bool add_property_in_post_req_msg(st_things_set_request_message_s *req_ms
 	// the property from request payload to request representation.
 	bool result = false;
 	switch (prop->type) {
-	case BOOL_ID:
-		{
-			bool value = false;
-			if (OCRepPayloadGetPropBool(req_payload, prop->key, &value)) {
-				result = OCRepPayloadSetPropBool(resp_payload, prop->key, value);
-				if (!result) {
-					ST_LOG_V(ST_ERROR, "Failed to set the boolean value of '%s' in request message.", prop->key);
-				}
-			} else {
-				ST_LOG_V(ST_ERROR, "Failed to get the boolean value of '%s' for request message.", prop->key);
-			}
-		}
-		break;
-	case INT_ID:
-		{
-			int64_t value = 0;
-			if (OCRepPayloadGetPropInt(req_payload, prop->key, &value)) {
-				result = OCRepPayloadSetPropInt(resp_payload, prop->key, value);
-				if (!result) {
-					ST_LOG_V(ST_ERROR, "Failed to set the integer value of '%s' in request message", prop->key);
-				}
-			} else {
-				ST_LOG_V(ST_ERROR, "Failed to get the integer value of '%s' for request message", prop->key);
-			}
-		}
-		break;
-	case DOUBLE_ID:
-		{
-			double value = 0.0;
-			if (OCRepPayloadGetPropDouble(req_payload, prop->key, &value)) {
-				result = OCRepPayloadSetPropDouble(resp_payload, prop->key, value);
-				if (!result) {
-					ST_LOG_V(ST_ERROR, "Failed to set the double value of '%s' in request message", prop->key);
-				}
-			} else {
-				ST_LOG_V(ST_ERROR, "Failed to get the double value of '%s' for request message", prop->key);
-			}
-		}
-		break;
-	case STRING_ID:
-		{
-			char *value = NULL;
-			if (OCRepPayloadGetPropString(req_payload, prop->key, &value)) {
-				result = OCRepPayloadSetPropStringAsOwner(resp_payload, prop->key, value);
-				if (!result) {
-					ST_LOG_V(ST_ERROR, "Failed to set the string value of '%s' in request message", prop->key);
-					util_free(value);
-				}
-			} else {
-				ST_LOG_V(ST_ERROR, "Failed to get the string value of '%s' for request message", prop->key);
-			}
-		}
-		break;
-	case OBJECT_ID:
-		{
-			OCRepPayload *value = NULL;
-			if (OCRepPayloadGetPropObject(req_payload, prop->key, &value)) {
-				result = OCRepPayloadSetPropObjectAsOwner(resp_payload, prop->key, value);
-				if (!result) {
-					ST_LOG_V(ST_ERROR, "Failed to set the object value of '%s' in request message", prop->key);
-					OCRepPayloadDestroy(value);
-				}
-			} else {
-				ST_LOG_V(ST_ERROR, "Failed to get the object value of '%s' for request message", prop->key);
-			}
-		}
-		break;
-	case BYTE_ID:
-		{
-			OCByteString *byte_value = (OCByteString *) util_calloc(1, sizeof(OCByteString));
-			if (NULL == byte_value) {
-				ST_LOG_V(ST_ERROR, "Failed to allocate memory for byte string value of '%s' in request message", prop->key);
-				break;
-			}
-
-			if (OCRepPayloadGetPropByteString(req_payload, prop->key, byte_value)) {
-				result = OCRepPayloadSetPropByteStringAsOwner(resp_payload, prop->key, byte_value);
-				if (!result) {
-					ST_LOG_V(ST_ERROR, "Failed to set the byte string value of '%s' in request message", prop->key);
-					util_free(byte_value->bytes);
-				}
-			} else {
-				ST_LOG_V(ST_ERROR, "Failed to get the byte string value of '%s' for request message", prop->key);
-			}
-
+	case BOOL_ID: {
+		bool value = false;
+		if (OCRepPayloadGetPropBool(req_payload, prop->key, &value)) {
+			result = OCRepPayloadSetPropBool(resp_payload, prop->key, value);
 			if (!result) {
-				util_free(byte_value);
+				ST_LOG_V(ST_ERROR, "Failed to set the boolean value of '%s' in request message.", prop->key);
 			}
+		} else {
+			ST_LOG_V(ST_ERROR, "Failed to get the boolean value of '%s' for request message.", prop->key);
 		}
-		break;
-	case INT_ARRAY_ID:
-		{
-			int64_t *value = NULL;
-			size_t dimensions[MAX_REP_ARRAY_DEPTH] = { 0 };
-			if (OCRepPayloadGetIntArray(req_payload, prop->key, &value, dimensions)) {
-				result = OCRepPayloadSetIntArrayAsOwner(resp_payload, prop->key, value, dimensions);
-				if (!result) {
-					ST_LOG_V(ST_ERROR, "Failed to set the integer array value of '%s' in request message", prop->key);
-					util_free(value);
+	}
+	break;
+	case INT_ID: {
+		int64_t value = 0;
+		if (OCRepPayloadGetPropInt(req_payload, prop->key, &value)) {
+			result = OCRepPayloadSetPropInt(resp_payload, prop->key, value);
+			if (!result) {
+				ST_LOG_V(ST_ERROR, "Failed to set the integer value of '%s' in request message", prop->key);
+			}
+		} else {
+			ST_LOG_V(ST_ERROR, "Failed to get the integer value of '%s' for request message", prop->key);
+		}
+	}
+	break;
+	case DOUBLE_ID: {
+		double value = 0.0;
+		if (OCRepPayloadGetPropDouble(req_payload, prop->key, &value)) {
+			result = OCRepPayloadSetPropDouble(resp_payload, prop->key, value);
+			if (!result) {
+				ST_LOG_V(ST_ERROR, "Failed to set the double value of '%s' in request message", prop->key);
+			}
+		} else {
+			ST_LOG_V(ST_ERROR, "Failed to get the double value of '%s' for request message", prop->key);
+		}
+	}
+	break;
+	case STRING_ID: {
+		char *value = NULL;
+		if (OCRepPayloadGetPropString(req_payload, prop->key, &value)) {
+			result = OCRepPayloadSetPropStringAsOwner(resp_payload, prop->key, value);
+			if (!result) {
+				ST_LOG_V(ST_ERROR, "Failed to set the string value of '%s' in request message", prop->key);
+				util_free(value);
+			}
+		} else {
+			ST_LOG_V(ST_ERROR, "Failed to get the string value of '%s' for request message", prop->key);
+		}
+	}
+	break;
+	case OBJECT_ID: {
+		OCRepPayload *value = NULL;
+		if (OCRepPayloadGetPropObject(req_payload, prop->key, &value)) {
+			result = OCRepPayloadSetPropObjectAsOwner(resp_payload, prop->key, value);
+			if (!result) {
+				ST_LOG_V(ST_ERROR, "Failed to set the object value of '%s' in request message", prop->key);
+				OCRepPayloadDestroy(value);
+			}
+		} else {
+			ST_LOG_V(ST_ERROR, "Failed to get the object value of '%s' for request message", prop->key);
+		}
+	}
+	break;
+	case BYTE_ID: {
+		OCByteString *byte_value = (OCByteString *)util_calloc(1, sizeof(OCByteString));
+		if (NULL == byte_value) {
+			ST_LOG_V(ST_ERROR, "Failed to allocate memory for byte string value of '%s' in request message", prop->key);
+			break;
+		}
+
+		if (OCRepPayloadGetPropByteString(req_payload, prop->key, byte_value)) {
+			result = OCRepPayloadSetPropByteStringAsOwner(resp_payload, prop->key, byte_value);
+			if (!result) {
+				ST_LOG_V(ST_ERROR, "Failed to set the byte string value of '%s' in request message", prop->key);
+				util_free(byte_value->bytes);
+			}
+		} else {
+			ST_LOG_V(ST_ERROR, "Failed to get the byte string value of '%s' for request message", prop->key);
+		}
+
+		if (!result) {
+			util_free(byte_value);
+		}
+	}
+	break;
+	case INT_ARRAY_ID: {
+		int64_t *value = NULL;
+		size_t dimensions[MAX_REP_ARRAY_DEPTH] = { 0 };
+		if (OCRepPayloadGetIntArray(req_payload, prop->key, &value, dimensions)) {
+			result = OCRepPayloadSetIntArrayAsOwner(resp_payload, prop->key, value, dimensions);
+			if (!result) {
+				ST_LOG_V(ST_ERROR, "Failed to set the integer array value of '%s' in request message", prop->key);
+				util_free(value);
+			}
+		} else {
+			ST_LOG_V(ST_ERROR, "Failed to get the integer array value of '%s' for request message", prop->key);
+		}
+	}
+	break;
+	case DOUBLE_ARRAY_ID: {
+		double *value = NULL;
+		size_t dimensions[MAX_REP_ARRAY_DEPTH] = { 0 };
+		if (OCRepPayloadGetDoubleArray(req_payload, prop->key, &value, dimensions)) {
+			result = OCRepPayloadSetDoubleArrayAsOwner(resp_payload, prop->key, value, dimensions);
+			if (!result) {
+				ST_LOG_V(ST_ERROR, "Failed to set the double array value of '%s' in request message", prop->key);
+				util_free(value);
+			}
+		} else {
+			ST_LOG_V(ST_ERROR, "Failed to get the double array value of '%s' for request message", prop->key);
+		}
+	}
+	break;
+	case STRING_ARRAY_ID: {
+		char **value = NULL;
+		size_t dimensions[MAX_REP_ARRAY_DEPTH] = { 0 };
+		if (OCRepPayloadGetStringArray(req_payload, prop->key, &value, dimensions)) {
+			result = OCRepPayloadSetStringArrayAsOwner(resp_payload, prop->key, value, dimensions);
+			if (!result) {
+				ST_LOG_V(ST_ERROR, "Failed to set the string array value of '%s' in request message", prop->key);
+				size_t len = calcDimTotal(dimensions);
+				util_free_str_array(value, len);
+			}
+		} else {
+			ST_LOG_V(ST_ERROR, "Failed to get the string array value of '%s' for request message", prop->key);
+		}
+	}
+	break;
+	case OBJECT_ARRAY_ID: {
+		OCRepPayload **value = NULL;
+		size_t dimensions[MAX_REP_ARRAY_DEPTH] = { 0 };
+		if (OCRepPayloadGetPropObjectArray(req_payload, prop->key, &value, dimensions)) {
+			result = OCRepPayloadSetPropObjectArrayAsOwner(resp_payload, prop->key, value, dimensions);
+			if (!result) {
+				ST_LOG_V(ST_ERROR, "Failed to set the object array value of '%s' in request message", prop->key);
+				size_t len = calcDimTotal(dimensions);
+				for (size_t index = 0; index < len; index++) {
+					OCRepPayloadDestroy(value[index]);
 				}
-			} else {
-				ST_LOG_V(ST_ERROR, "Failed to get the integer array value of '%s' for request message", prop->key);
+				util_free(value);
 			}
+		} else {
+			ST_LOG_V(ST_ERROR, "Failed to get the object array value of '%s' for request message", prop->key);
 		}
-		break;
-	case DOUBLE_ARRAY_ID:
-		{
-			double *value = NULL;
-			size_t dimensions[MAX_REP_ARRAY_DEPTH] = { 0 };
-			if (OCRepPayloadGetDoubleArray(req_payload, prop->key, &value, dimensions)) {
-				result = OCRepPayloadSetDoubleArrayAsOwner(resp_payload, prop->key, value, dimensions);
-				if (!result) {
-					ST_LOG_V(ST_ERROR, "Failed to set the double array value of '%s' in request message", prop->key);
-					util_free(value);
-				}
-			} else {
-				ST_LOG_V(ST_ERROR, "Failed to get the double array value of '%s' for request message", prop->key);
-			}
-		}
-		break;
-	case STRING_ARRAY_ID:
-		{
-			char **value = NULL;
-			size_t dimensions[MAX_REP_ARRAY_DEPTH] = { 0 };
-			if (OCRepPayloadGetStringArray(req_payload, prop->key, &value, dimensions)) {
-				result = OCRepPayloadSetStringArrayAsOwner(resp_payload, prop->key, value, dimensions);
-				if (!result) {
-					ST_LOG_V(ST_ERROR, "Failed to set the string array value of '%s' in request message", prop->key);
-					size_t len = calcDimTotal(dimensions);
-					util_free_str_array(value, len);
-				}
-			} else {
-				ST_LOG_V(ST_ERROR, "Failed to get the string array value of '%s' for request message", prop->key);
-			}
-		}
-		break;
-	case OBJECT_ARRAY_ID:
-		{
-			OCRepPayload **value = NULL;
-			size_t dimensions[MAX_REP_ARRAY_DEPTH] = { 0 };
-			if (OCRepPayloadGetPropObjectArray(req_payload, prop->key, &value, dimensions)) {
-				result = OCRepPayloadSetPropObjectArrayAsOwner(resp_payload, prop->key, value, dimensions);
-				if (!result) {
-					ST_LOG_V(ST_ERROR, "Failed to set the object array value of '%s' in request message", prop->key);
-					size_t len = calcDimTotal(dimensions);
-					for (size_t index = 0; index < len; index++) {
-						OCRepPayloadDestroy(value[index]);
-					}
-					util_free(value);
-				}
-			} else {
-				ST_LOG_V(ST_ERROR, "Failed to get the object array value of '%s' for request message", prop->key);
-			}
-		}
-		break;
+	}
+	break;
 	default:
 		ST_LOG_V(ST_ERROR, "Invalid property type (%d).", prop->type);
 		break;
@@ -723,11 +713,11 @@ static st_things_set_request_message_s *create_req_msg_inst_for_post(const char 
 	return req_msg;
 }
 
- /*
-  * Helper method to get the response from application for GET requests.
-  * The 'resp_payload' parameter will be used to get the response.
-  * Common properties of the resource such as rt, if and links will not be set by this method.
-  */
+/*
+ * Helper method to get the response from application for GET requests.
+ * The 'resp_payload' parameter will be used to get the response.
+ * Common properties of the resource such as rt, if and links will not be set by this method.
+ */
 bool handle_get_req_helper(const char *res_uri, const char *query, OCRepPayload *resp_payload)
 {
 	RET_FALSE_IF_PARAM_IS_NULL(resp_payload);
@@ -909,11 +899,11 @@ static int handle_get_req_on_single_rsrc(things_resource_s *single_rsrc)
 	return 1;
 }
 
- /*
-  * Helper method to get the response from application for POST requests.
-  * The 'resp_payload' parameter will be used to get the response.
-  * Common properties of the resource such as rt, if and links will not be set by this method.
-  */
+/*
+ * Helper method to get the response from application for POST requests.
+ * The 'resp_payload' parameter will be used to get the response.
+ * Common properties of the resource such as rt, if and links will not be set by this method.
+ */
 bool handle_post_req_helper(const char *res_uri, const char *query, OCRepPayload *req_payload, OCRepPayload *resp_payload)
 {
 	RET_FALSE_IF_PARAM_IS_NULL(req_payload);
@@ -993,8 +983,10 @@ bool handle_post_req_helper(const char *res_uri, const char *query, OCRepPayload
 		return false;
 	}
 
-	for (int index = 0; index < count; index++) {
-		if (NULL != properties[index] && IS_WRITABLE(properties[index]->rw)) {
+	for (int index = 0; index < count && NULL != properties[index]; index++) {
+		bool exist = (false == OCRepPayloadIsNull(req_payload, properties[index]->key));
+		ST_LOG_V(ST_DEBUG, "Is property(%s) present in request payload?: %s", properties[index]->key, exist ? "Yes" : "No");
+		if (exist && IS_WRITABLE(properties[index]->rw)) {
 			res = add_property_in_post_req_msg(req_msg, req_payload, properties[index]);
 			if (!res) {
 				break;

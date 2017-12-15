@@ -15,46 +15,46 @@
  * language governing permissions and limitations under the License.
  *
  ****************************************************************************/
- /****************************************************************************
- *
- * Developed by:
- *
- *   Copyright (C) 2013 Ken Pettit. All rights reserved.
- *   Author: Ken Pettit <pettitkd@gmail.com>
- *
- * With ongoing support:
- *
- *   Copyright (C) 2014 Gregory Nutt. All rights reserved.
- *   Author: Greory Nutt <gnutt@nuttx.org>
- *
- * Redistribution and use in source and binary forms, with or without
- * modification, are permitted provided that the following conditions
- * are met:
- *
- * 1. Redistributions of source code must retain the above copyright
- *    notice, this list of conditions and the following disclaimer.
- * 2. Redistributions in binary form must reproduce the above copyright
- *    notice, this list of conditions and the following disclaimer in
- *    the documentation and/or other materials provided with the
- *    distribution.
- * 3. Neither the name NuttX nor the names of its contributors may be
- *    used to endorse or promote products derived from this software
- *    without specific prior written permission.
- *
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
- * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
- * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS
- * FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE
- * COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT,
- * INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING,
- * BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS
- * OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED
- * AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT
- * LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN
- * ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
- * POSSIBILITY OF SUCH DAMAGE.
- *
- ****************************************************************************/
+/****************************************************************************
+*
+* Developed by:
+*
+*   Copyright (C) 2013 Ken Pettit. All rights reserved.
+*   Author: Ken Pettit <pettitkd@gmail.com>
+*
+* With ongoing support:
+*
+*   Copyright (C) 2014 Gregory Nutt. All rights reserved.
+*   Author: Greory Nutt <gnutt@nuttx.org>
+*
+* Redistribution and use in source and binary forms, with or without
+* modification, are permitted provided that the following conditions
+* are met:
+*
+* 1. Redistributions of source code must retain the above copyright
+*    notice, this list of conditions and the following disclaimer.
+* 2. Redistributions in binary form must reproduce the above copyright
+*    notice, this list of conditions and the following disclaimer in
+*    the documentation and/or other materials provided with the
+*    distribution.
+* 3. Neither the name NuttX nor the names of its contributors may be
+*    used to endorse or promote products derived from this software
+*    without specific prior written permission.
+*
+* THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+* "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+* LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS
+* FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE
+* COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT,
+* INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING,
+* BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS
+* OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED
+* AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT
+* LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN
+* ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
+* POSSIBILITY OF SUCH DAMAGE.
+*
+****************************************************************************/
 /* tinyalsa.c
 **
 ** Copyright 2011, The Android Open Source Project
@@ -138,18 +138,14 @@ struct pcm {
 	int underruns;
 	/** Size of the buffer */
 	unsigned int buffer_size;
-	/** The boundary for ring buffer pointers */
-	unsigned int boundary;
+	/* Number of buffers */
+	unsigned int buffer_cnt;
 	/** Description of the last error that occured */
 	char error[PCM_ERROR_MAX];
 	/** Configuration that was passed to @ref pcm_open */
 	struct pcm_config config;
-	unsigned int noirq_frames_per_msec;
-	/** The delay of the PCM, in terms of frames */
-	long pcm_delay;
 	/** The subdevice corresponding to the PCM */
 	unsigned int subdevice;
-
 #ifdef CONFIG_AUDIO_MULTI_SESSION
 	/* Session pointer to be managed by driver */
 	void *session;
@@ -309,16 +305,12 @@ static int pcm_set_config(struct pcm *pcm, const struct pcm_config *config)
 		config = &pcm->config;
 		pcm->config.channels = 2;
 		pcm->config.rate = 16000;
+		pcm->config.format = PCM_FORMAT_S16_LE;
 		pcm->config.period_size = 1024;
 		pcm->config.period_count = 8;
-		pcm->config.format = PCM_FORMAT_S16_LE;
-		pcm->config.start_threshold = 0;
-		pcm->config.stop_threshold = 0;
-		pcm->config.silence_threshold = 0;
 	} else {
 		pcm->config = *config;
 	}
-
 
 #ifdef CONFIG_AUDIO_MULTI_SESSION
 	cap_desc.session = pcm->session;
@@ -346,10 +338,10 @@ static int pcm_set_config(struct pcm *pcm, const struct pcm_config *config)
 		buf_info.buffer_size = CONFIG_AUDIO_BUFSIZE;
 		buf_info.nbuffers = CONFIG_AUDIO_NUM_BUFFERS;
 	}
-
 	pcm->config.period_size = buf_info.buffer_size;
 	pcm->config.period_count = buf_info.nbuffers;
-	pcm->buffer_size = pcm->config.period_size;
+	pcm->buffer_size = buf_info.buffer_size;
+	pcm->buffer_cnt = buf_info.nbuffers;
 
 	return 0;
 }
@@ -460,22 +452,6 @@ static int pcm_mmap_transfer_areas(struct pcm *pcm, char *buf, unsigned int offs
 	return count;
 }
 
-/** Returns available frames in pcm buffer and corresponding time stamp.
- * The clock is CLOCK_MONOTONIC if flag @ref PCM_MONOTONIC was specified in @ref pcm_open,
- * otherwise the clock is CLOCK_REALTIME.
- * For an input stream, frames available are frames ready for the application to read.
- * For an output stream, frames available are the number of empty frames available for the application to write.
- * Only available for PCMs opened with the @ref PCM_MMAP flag.
- * @param pcm A PCM handle.
- * @param avail The number of available frames
- * @param tstamp The timestamp
- * @return On success, zero is returned; on failure, negative one.
- */
-int pcm_get_htimestamp(struct pcm *pcm, unsigned int *avail, struct timespec *tstamp)
-{
-	return -1;
-}
-
 /** Writes audio samples to PCM.
  * If the PCM has not been started, it is started in this function.
  * This function is only valid for PCMs opened with the @ref PCM_OUT flag.
@@ -483,14 +459,13 @@ int pcm_get_htimestamp(struct pcm *pcm, unsigned int *avail, struct timespec *ts
  * @param pcm A PCM handle.
  * @param data The audio sample array
  * @param frame_count The number of frames occupied by the sample array.
- *  This value should not be greater than @ref TINYALSA_FRAMES_MAX
- *  or INT_MAX.
+ *  This value should not be greater than @ref INT_MAX.
  * @return On success, this function returns the number of frames written; otherwise, a negative number.
  * @ingroup libtinyalsa-pcm
  */
 int pcm_writei(struct pcm *pcm, const void *data, unsigned int frame_count)
 {
-	unsigned int nbytes;
+	unsigned int nbytes = 0, pending = 0, offset = 0;
 	struct audio_buf_desc_s bufdesc;
 	struct ap_buffer_s *apb;
 	struct audio_msg_s msg;
@@ -505,49 +480,57 @@ int pcm_writei(struct pcm *pcm, const void *data, unsigned int frame_count)
 		return -EINVAL;
 	}
 
-	if (frame_count > pcm->config.period_size) {
-		frame_count = pcm->config.period_size;
+	if (frame_count > INT_MAX) {
+		return -EINVAL;
 	}
 
-	nbytes = pcm_frames_to_bytes(pcm, frame_count);
+	pending = pcm_frames_to_bytes(pcm, frame_count);
 
-	if (pcm->buf_ptr < pcm->config.period_count) {
-		/* If we have empty buffers, fill them first */
-		memcpy(pcm->pBuffers[pcm->buf_ptr]->samp, data, nbytes);
-		apb = pcm->pBuffers[pcm->buf_ptr];
-		pcm->buf_ptr++;
-	} else {
-		/* We dont have any empty buffers. wait for deque message from kernel */
-		size = mq_receive(pcm->mq, (FAR char *)&msg, sizeof(msg), &prio);
-		if (size != sizeof(msg)) {
-			/* Interrupted by a signal? What to do? */
-			return oops(pcm, EINTR, "Interrupted while waiting for deque message from kernel");
-		}
-		if (msg.msgId == AUDIO_MSG_DEQUEUE) {
-			apb = (struct ap_buffer_s *)msg.u.pPtr;
-			memcpy(apb->samp, data, nbytes);
+	while (pending > 0) {
+		nbytes = pending > pcm->buffer_size ? pcm->buffer_size : pending;
+
+		if (pcm->buf_ptr < pcm->buffer_cnt) {
+			/* If we have empty buffers, fill them first */
+			memcpy(pcm->pBuffers[pcm->buf_ptr]->samp, (char *)data + offset, nbytes);
+			apb = pcm->pBuffers[pcm->buf_ptr];
 		} else {
-			return oops(pcm, EINTR, "Recieved unexpected msg (id = %d) while waiting for deque message from kernel", msg.msgId);
+			/* We dont have any empty buffers. wait for deque message from kernel */
+			size = mq_receive(pcm->mq, (FAR char *)&msg, sizeof(msg), &prio);
+			if (size != sizeof(msg)) {
+				/* Interrupted by a signal? What to do? */
+				return oops(pcm, EINTR, "Interrupted while waiting for deque message from kernel");
+			}
+			if (msg.msgId == AUDIO_MSG_DEQUEUE) {
+				apb = (struct ap_buffer_s *)msg.u.pPtr;
+				memcpy(apb->samp, (char *)data + offset, nbytes);
+				pcm->buf_ptr--;
+			} else {
+				return oops(pcm, EINTR, "Recieved unexpected msg (id = %d) while waiting for deque message from kernel", msg.msgId);
+			}
 		}
-	}
 
-	/* Buffer is ready. Enque it */
+		/* Buffer is ready. Enque it */
 #ifdef CONFIG_AUDIO_MULTI_SESSION
-	bufdesc.session = pcm->session;
+		bufdesc.session = pcm->session;
 #endif
-	apb->nbytes = nbytes;
-	apb->curbyte = 0;
-	apb->flags = 0;
-	bufdesc.numbytes = apb->nbytes;
-	bufdesc.u.pBuffer = apb;
-	if (ioctl(pcm->fd, AUDIOIOC_ENQUEUEBUFFER, (unsigned long)&bufdesc) < 0) {
-		return oops(pcm, errno, "AUDIOIOC_ENQUEUEBUFFER ioctl failed");
-	}
-	/* If playback is not already started, start now! */
-	if ((!pcm->running) && (pcm_start(pcm) < 0)) {
-		return -errno;
-	} else {
-		pcm->running = 1;
+		apb->nbytes = nbytes;
+		apb->curbyte = 0;
+		apb->flags = 0;
+		bufdesc.numbytes = apb->nbytes;
+		bufdesc.u.pBuffer = apb;
+		if (ioctl(pcm->fd, AUDIOIOC_ENQUEUEBUFFER, (unsigned long)&bufdesc) < 0) {
+			return oops(pcm, errno, "AUDIOIOC_ENQUEUEBUFFER ioctl failed");
+		}
+		pcm->buf_ptr++;
+		/* If playback is not already started, start now! */
+		if ((!pcm->running) && (pcm_start(pcm) < 0)) {
+			return -errno;
+		} else {
+			pcm->running = 1;
+		}
+
+		offset += nbytes;
+		pending -= nbytes;
 	}
 
 	return pcm_bytes_to_frames(pcm, nbytes);
@@ -560,14 +543,13 @@ int pcm_writei(struct pcm *pcm, const void *data, unsigned int frame_count)
  * @param pcm A PCM handle.
  * @param data The audio sample array
  * @param frame_count The number of frames occupied by the sample array.
- *  This value should not be greater than @ref TINYALSA_FRAMES_MAX
- *  or INT_MAX.
+ *  This value should not be greater than @ref INT_MAX.
  * @return On success, this function returns the number of frames written; otherwise, a negative number.
  * @ingroup libtinyalsa-pcm
  */
 int pcm_readi(struct pcm *pcm, void *data, unsigned int frame_count)
 {
-	int nbytes;
+	int nbytes = 0, pending = 0, offset = 0;
 	struct audio_buf_desc_s bufdesc;
 	struct ap_buffer_s *apb;
 	struct audio_msg_s msg;
@@ -583,7 +565,11 @@ int pcm_readi(struct pcm *pcm, void *data, unsigned int frame_count)
 		return -EINVAL;
 	}
 
-	nbytes = pcm_frames_to_bytes(pcm, frame_count);
+	if (frame_count > INT_MAX) {
+		return -EINVAL;
+	}
+
+	pending = pcm_frames_to_bytes(pcm, frame_count);
 
 	bufdesc.numbytes = pcm_frames_to_bytes(pcm, (pcm->buffer_size));
 
@@ -596,80 +582,30 @@ int pcm_readi(struct pcm *pcm, void *data, unsigned int frame_count)
 		return -errno;
 	}
 
-	/* Read data */
-	if (pcm->next_buf != NULL) {
-		/* We have a pending buffer with some data in it. */
-		apb = pcm->next_buf;
+	while (pending > 0) {
 
-		if (nbytes < pcm->next_size) {
-			/* User wants less data than we have in buffer.
-			   Copy the requested amount of data to user buffer and return */
-			memcpy(data, apb->samp + pcm->next_offset, nbytes);
-			pcm->next_size -= nbytes;
-			pcm->next_offset += nbytes;
-		} else {
-			/* User wants more data than we have in buffer.
-			   Copy available data to user buffer, enqueue buffer and return */
-			memcpy(data, apb->samp + pcm->next_offset, pcm->next_size);
+		/* Read data */
+		if (pcm->next_buf != NULL) {
+			/* We have a pending buffer with some data in it. */
+			apb = pcm->next_buf;
 
-			nbytes = pcm->next_size;
-			pcm->next_size = 0;
-			pcm->next_offset = 0;
-			pcm->next_buf = NULL;
-
-			apb->nbytes = 0;
-			apb->curbyte = 0;
-			apb->flags = 0;
-			bufdesc.u.pBuffer = apb;
-			if (ioctl(pcm->fd, AUDIOIOC_ENQUEUEBUFFER, (unsigned long)&bufdesc) < 0) {
-				return oops(pcm, errno, "failed to enque buffer after read");
-			}
-		}
-
-	} else {
-		/* We got here because we dont have any pending buffers */
-		/* Wait for deque message from kernel */
-		if (pcm->draining) {
-			/* When we are in draining state, we will check for buffers already in the msg queue
-			   If there is no buffer on the queue, we return immediately */
-			clock_gettime(CLOCK_REALTIME, &st_time);
-			size = mq_timedreceive(pcm->mq, (FAR char *)&msg, sizeof(msg), &prio, &st_time);
-			if (size != sizeof(msg)) {
-				pcm->draining = 0;
-				pcm->next_size = 0;
-				pcm->next_offset = 0;
-				pcm->next_buf = NULL;
-				return oops(pcm, ENODATA, "no data available");
-			}
-		} else {
-			size = mq_receive(pcm->mq, (FAR char *)&msg, sizeof(msg), &prio);
-			if (size != sizeof(msg)) {
-				/* Interrupted by a signal? What to do? */
-				return oops(pcm, EINTR, "Interrupted while waiting for deque message from kernel");
-			}
-		}
-		if (msg.msgId == AUDIO_MSG_DEQUEUE) {
-			apb = (struct ap_buffer_s *)msg.u.pPtr;
-
-			if (nbytes < apb->nbytes) {
+			if (pending <= pcm->next_size) {
 				/* User wants less data than we have in buffer.
-				   Copy the requested amount of data and keep the buffer as pending buffer */
-				memcpy(data, apb->samp, nbytes);
+				   Copy the requested amount of data to user buffer and return */
+				memcpy((char *)data + offset, apb->samp + pcm->next_offset, pending);
+				pcm->next_size -= pending;
+				pcm->next_offset += pending;
 
-				pcm->next_buf = apb;
-				pcm->next_offset = nbytes;
-				pcm->next_size = apb->nbytes - nbytes;
+				nbytes = pending;
 			} else {
 				/* User wants more data than we have in buffer.
 				   Copy available data to user buffer, enqueue buffer and return */
-				memcpy(data, apb->samp, apb->nbytes);
-				nbytes = apb->nbytes;
+				memcpy((char *)data + offset, apb->samp + pcm->next_offset, pcm->next_size);
 
-				if (pcm->draining) {
-					/* Dont enque the buffer since we are draining and
-						the pcm has already been stopped */
-					return pcm_bytes_to_frames(pcm, nbytes);
-				}
+				nbytes = pcm->next_size;
+				pcm->next_size = 0;
+				pcm->next_offset = 0;
+				pcm->next_buf = NULL;
 
 				apb->nbytes = 0;
 				apb->curbyte = 0;
@@ -678,14 +614,74 @@ int pcm_readi(struct pcm *pcm, void *data, unsigned int frame_count)
 				if (ioctl(pcm->fd, AUDIOIOC_ENQUEUEBUFFER, (unsigned long)&bufdesc) < 0) {
 					return oops(pcm, errno, "failed to enque buffer after read");
 				}
+				pcm->buf_ptr++;
 			}
 
 		} else {
-			return oops(pcm, EINTR, "Recieved unexpected msg (id = %d) while waiting for deque message from kernel", msg.msgId);
+			/* We got here because we dont have any pending buffers */
+			/* Wait for deque message from kernel */
+			if (pcm->draining) {
+				/* When we are in draining state, we will check for buffers already in the msg queue
+				   If there is no buffer on the queue, we return immediately */
+				clock_gettime(CLOCK_REALTIME, &st_time);
+				size = mq_timedreceive(pcm->mq, (FAR char *)&msg, sizeof(msg), &prio, &st_time);
+				if (size != sizeof(msg)) {
+					pcm->draining = 0;
+					pcm->next_size = 0;
+					pcm->next_offset = 0;
+					pcm->next_buf = NULL;
+					return pcm_frames_to_bytes(pcm, frame_count) - pending;
+				}
+			} else {
+				size = mq_receive(pcm->mq, (FAR char *)&msg, sizeof(msg), &prio);
+				if (size != sizeof(msg)) {
+					/* Interrupted by a signal? What to do? */
+					return oops(pcm, EINTR, "Interrupted while waiting for deque message from kernel");
+				}
+			}
+			if (msg.msgId == AUDIO_MSG_DEQUEUE) {
+				apb = (struct ap_buffer_s *)msg.u.pPtr;
+				pcm->buf_ptr--;
+				if (pending <= apb->nbytes) {
+					/* User wants less data than we have in buffer.
+					   Copy the requested amount of data and keep the buffer as pending buffer */
+					memcpy((char *)data + offset, apb->samp, pending);
+
+					pcm->next_buf = apb;
+					pcm->next_offset = pending;
+					pcm->next_size = apb->nbytes - pending;
+
+					nbytes = pending;
+				} else {
+					/* User wants more data than we have in buffer.
+					   Copy available data to user buffer, enqueue buffer and return */
+					memcpy((char *)data + offset, apb->samp, apb->nbytes);
+					nbytes = apb->nbytes;
+
+					if (!pcm->draining) {
+						/* Dont enque the buffer since we are draining and
+						   the pcm has already been stopped */
+						apb->nbytes = 0;
+						apb->curbyte = 0;
+						apb->flags = 0;
+						bufdesc.u.pBuffer = apb;
+						if (ioctl(pcm->fd, AUDIOIOC_ENQUEUEBUFFER, (unsigned long)&bufdesc) < 0) {
+							return oops(pcm, errno, "failed to enque buffer after read");
+						}
+						pcm->buf_ptr++;
+					}
+				}
+
+			} else {
+				return oops(pcm, EINTR, "Recieved unexpected msg (id = %d) while waiting for deque message from kernel", msg.msgId);
+			}
 		}
+
+		offset += nbytes;
+		pending -= nbytes;
 	}
 
-	return pcm_bytes_to_frames(pcm, nbytes);
+	return pcm_bytes_to_frames(pcm, pcm_frames_to_bytes(pcm, frame_count) - pending);
 }
 
 /** Writes audio samples to PCM.
@@ -720,78 +716,6 @@ int pcm_read(struct pcm *pcm, void *data, unsigned int count)
 	return pcm_readi(pcm, data, pcm_bytes_to_frames(pcm, count)) > 0 ? 0 : -1;
 }
 
-static struct pcm bad_pcm = {
-	.fd = -1,
-};
-
-/** Gets the hardware parameters of a PCM, without created a PCM handle.
- * @param card The card of the PCM.
- *  The default card is zero.
- * @param device The device of the PCM.
- *  The default device is zero.
- * @param flags Specifies whether the PCM is an input or output.
- *  May be one of the following:
- *   - @ref PCM_IN
- *   - @ref PCM_OUT
- * @return On success, the hardware parameters of the PCM; on failure, NULL.
- * @ingroup libtinyalsa-pcm
- */
-
-#if 0
-struct pcm_params *pcm_params_get(unsigned int card, unsigned int device, unsigned int flags)
-{
-	return NULL;
-}
-
-/** Frees the hardware parameters returned by @ref pcm_params_get.
- * @param pcm_params Hardware parameters of a PCM.
- *  May be NULL.
- * @ingroup libtinyalsa-pcm
- */
-void pcm_params_free(struct pcm_params *pcm_params)
-{
-}
-
-static int pcm_param_to_alsa(enum pcm_param param)
-{
-	return -1;
-}
-
-/** Gets a mask from a PCM's hardware parameters.
- * @param pcm_params A PCM's hardware parameters.
- * @param param The parameter to get.
- * @return If @p pcm_params is NULL or @p param is not a mask, NULL is returned.
- *  Otherwise, the mask associated with @p param is returned.
- * @ingroup libtinyalsa-pcm
- */
-const struct pcm_mask *pcm_params_get_mask(const struct pcm_params *pcm_params, enum pcm_param param)
-{
-	return NULL;
-}
-
-/** Get the minimum of a specified PCM parameter.
- * @param pcm_params A PCM parameters structure.
- * @param param The specified parameter to get the minimum of.
- * @returns On success, the parameter minimum.
- *  On failure, zero.
- */
-unsigned int pcm_params_get_min(const struct pcm_params *pcm_params, enum pcm_param param)
-{
-	return 0;
-}
-
-/** Get the maximum of a specified PCM parameter.
- * @param pcm_params A PCM parameters structure.
- * @param param The specified parameter to get the maximum of.
- * @returns On success, the parameter maximum.
- *  On failure, zero.
- */
-unsigned int pcm_params_get_max(const struct pcm_params *pcm_params, enum pcm_param param)
-{
-	return 0;
-}
-#endif
-
 /** Closes a PCM returned by @ref pcm_open.
  * @param pcm A PCM returned by @ref pcm_open.
  *  May not be NULL.
@@ -807,7 +731,8 @@ int pcm_close(struct pcm *pcm)
 		return -EINVAL;
 	}
 
-	if (pcm == &bad_pcm) {
+	if (pcm->fd < 0) {
+		free(pcm);
 		return 0;
 	}
 
@@ -827,7 +752,7 @@ int pcm_close(struct pcm *pcm)
 #endif
 
 	if (pcm->pBuffers != NULL) {
-		for (x = 0; x < pcm->config.period_count; x++) {
+		for (x = 0; x < pcm->buffer_cnt; x++) {
 			if (pcm->pBuffers[x] != NULL) {
 				buf_desc.u.pBuffer = pcm->pBuffers[x];
 				ioctl(pcm->fd, AUDIOIOC_FREEBUFFER, (unsigned long)&buf_desc);
@@ -838,17 +763,8 @@ int pcm_close(struct pcm *pcm)
 
 	mq_unlink(pcm->mqname);
 
-	if (pcm->fd >= 0) {
-		close(pcm->fd);
-	}
+	close(pcm->fd);
 
-	pcm->next_size = 0;
-	pcm->next_offset = 0;
-	pcm->next_buf = NULL;
-	pcm->prepared = 0;
-	pcm->running = 0;
-	pcm->buffer_size = 0;
-	pcm->fd = -1;
 	free(pcm);
 	return 0;
 }
@@ -862,7 +778,6 @@ int pcm_close(struct pcm *pcm)
  *   - @ref PCM_OUT
  *   - @ref PCM_MMAP
  *   - @ref PCM_NOIRQ
- *   - @ref PCM_MONOTONIC
  * @param config The hardware and software parameters to open the PCM with.
  * @returns A PCM structure.
  *  If an error occurs allocating memory for the PCM, NULL is returned.
@@ -897,7 +812,6 @@ struct pcm *pcm_open_by_name(const char *name, unsigned int flags, const struct 
  *   - @ref PCM_OUT
  *   - @ref PCM_MMAP
  *   - @ref PCM_NOIRQ
- *   - @ref PCM_MONOTONIC
  * @param config The hardware and software parameters to open the PCM with.
  * @returns A PCM structure.
  *  If an error occurs allocating memory for the PCM, NULL is returned.
@@ -920,11 +834,7 @@ struct pcm *pcm_open(unsigned int card, unsigned int device, unsigned int flags,
 	}
 	memset(pcm, 0, sizeof(struct pcm));
 
-#ifdef CONFIG_AUDIO_MULTI_CARD
 	snprintf(fn, sizeof(fn), "/dev/audio/pcmC%uD%u%c", card, device, flags & PCM_IN ? 'c' : 'p');
-#else
-	snprintf(fn, sizeof(fn), "/dev/audio/pcmC%u", card);
-#endif
 
 	pcm->flags = flags;
 	if (flags & PCM_IN) {
@@ -976,7 +886,7 @@ struct pcm *pcm_open(unsigned int card, unsigned int device, unsigned int flags,
 	ioctl(pcm->fd, AUDIOIOC_REGISTERMQ, (unsigned long)pcm->mq);
 
 	/* Create array of pointers to buffers */
-	pcm->pBuffers = (FAR struct ap_buffer_s **)malloc(pcm->config.period_count * sizeof(FAR void *));
+	pcm->pBuffers = (FAR struct ap_buffer_s **)malloc(pcm->buffer_cnt * sizeof(FAR void *));
 	if (pcm->pBuffers == NULL) {
 		/* Error allocating memory for buffer storage! */
 		ret = -ENOMEM;
@@ -985,7 +895,7 @@ struct pcm *pcm_open(unsigned int card, unsigned int device, unsigned int flags,
 
 	/* Create our audio pipeline buffers to use for queueing up data */
 
-	for (x = 0; x < pcm->config.period_count; x++) {
+	for (x = 0; x < pcm->buffer_cnt; x++) {
 		pcm->pBuffers[x] = NULL;
 		/* Fill in the buffer descriptor struct to issue an alloc request */
 
@@ -1052,7 +962,7 @@ struct pcm *pcm_open(unsigned int card, unsigned int device, unsigned int flags,
 
 fail_cleanup_buffers:
 	if (pcm->pBuffers != NULL) {
-		for (x = 0; x < pcm->config.period_count; x++) {
+		for (x = 0; x < pcm->buffer_cnt; x++) {
 			/* Fill in the buffer descriptor struct to issue a free request */
 			if (pcm->pBuffers[x] != NULL) {
 				buf_desc.u.pBuffer = pcm->pBuffers[x];
@@ -1162,7 +1072,7 @@ int pcm_start(struct pcm *pcm)
 		bufdesc.session = pcm->session;
 #endif
 		bufdesc.numbytes = pcm_frames_to_bytes(pcm, pcm->buffer_size);
-		for (pcm->buf_ptr = 0; pcm->buf_ptr < pcm->config.period_count; pcm->buf_ptr++) {
+		for (pcm->buf_ptr = 0; pcm->buf_ptr < pcm->buffer_cnt; pcm->buf_ptr++) {
 			bufdesc.u.pBuffer = pcm->pBuffers[pcm->buf_ptr];
 			if (ioctl(pcm->fd, AUDIOIOC_ENQUEUEBUFFER, (unsigned long)&bufdesc) < 0) {
 				return oops(pcm, errno, "AUDIOIOC_ENQUEUEBUFFER ioctl failed");
@@ -1198,7 +1108,6 @@ int pcm_stop(struct pcm *pcm)
 	if (!pcm->running) {
 		return oops(pcm, EINVAL, "PCM already in stop state");
 	}
-
 #ifdef CONFIG_AUDIO_MULTI_SESSION
 	if (ioctl(pcm->fd, AUDIOIOC_STOP, (unsigned long)pcm->session) < 0)
 #else
@@ -1207,16 +1116,18 @@ int pcm_stop(struct pcm *pcm)
 		return oops(pcm, errno, "cannot stop channel");
 
 	/* Remove any pending messages from the message queue */
-	struct timespec st_time;
 	struct audio_msg_s msg;
 	unsigned int size;
 	int prio;
-	while (1) {
-		clock_gettime(CLOCK_REALTIME, &st_time);
-		size = mq_timedreceive(pcm->mq, (FAR char *)&msg, sizeof(msg), &prio, &st_time);
+	while (pcm->buf_ptr > 0) {
+		size = mq_receive(pcm->mq, (FAR char *)&msg, sizeof(msg), &prio);
 		if (size != sizeof(msg)) {
 			break;
 		}
+		if (msg.msgId == AUDIO_MSG_DEQUEUE) {
+			pcm->buf_ptr--;
+		}
+
 	}
 
 	pcm->prepared = 0;
@@ -1352,6 +1263,7 @@ int pcm_mmap_commit(struct pcm *pcm, unsigned int offset, unsigned int frames)
 		if (ioctl(pcm->fd, AUDIOIOC_ENQUEUEBUFFER, (unsigned long)&bufdesc) < 0) {
 			return oops(pcm, errno, "AUDIOIOC_ENQUEUEBUFFER ioctl failed");
 		}
+		pcm->buf_ptr++;
 		pcm->next_buf = NULL;
 	}
 
@@ -1382,11 +1294,10 @@ int pcm_wait(struct pcm *pcm, int timeout)
 	if (pcm == NULL) {
 		return -EINVAL;
 	}
-	if ((pcm->flags & PCM_OUT) && pcm->buf_ptr < pcm->config.period_count) {
+	if ((pcm->flags & PCM_OUT) && pcm->buf_ptr < pcm->buffer_cnt) {
 		/* In playback scenario, if audio buffers are available, return immediately */
 		pcm->next_buf = pcm->pBuffers[pcm->buf_ptr];
 		pcm->next_size = pcm->pBuffers[pcm->buf_ptr]->nmaxbytes;
-		pcm->buf_ptr++;
 		return 1;
 	} else {
 		/* We dont have any empty buffers. wait for deque message from kernel */
@@ -1410,6 +1321,7 @@ int pcm_wait(struct pcm *pcm, int timeout)
 			apb = (struct ap_buffer_s *)msg.u.pPtr;
 			pcm->next_buf = apb;
 			pcm->next_size = apb->nbytes;
+			pcm->buf_ptr--;
 			return 1;
 		} else {
 			return oops(pcm, EINTR, "Recieved unexpected msg (id = %d) while waiting for deque message from kernel", msg.msgId);

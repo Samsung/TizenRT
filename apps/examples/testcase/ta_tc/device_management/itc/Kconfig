@@ -12,29 +12,14 @@ menuconfig EXAMPLES_TESTCASE_DM_ITC
 
 if EXAMPLES_TESTCASE_DM_ITC
 
-menuconfig EXAMPLES_TESTCASE_DM_WIFI
-  bool "Set Up Wifi Info For DM Demo"
-  default n
-  ---help---
-    Enable the artik demo example
+config ITC_DM_SERVER_IPADDR
+  string "Server IP address"
+  default "192.168.0.105"
 
-if EXAMPLES_TESTCASE_DM_WIFI
-
-config DM_AP_SSID
-  string "wifi ap ssid"
-  default "SSID"
-
-config DM_AP_PASS
-  string "wifi ap password"
-  default "PASSWORD"
-
-config DM_AP_SECURITY
-  string "wifi join security"
-  default "wpa2_aes"
-
-endif #EXAMPLES_TESTCASE_DM_WIFI
-
-
+config ITC_DM_SERVER_PORT
+  string "Server Port"
+  default "5683"
+  
 config ITC_DM_START
   bool "Start API"
   default n

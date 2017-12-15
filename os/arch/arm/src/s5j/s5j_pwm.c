@@ -430,6 +430,7 @@ FAR struct pwm_lowerhalf_s *s5j_pwminitialize(int timer)
 #endif
 	{
 		lldbg("ERROR: invalid PWM is requested\n");
+		return NULL;
 	}
 
 	s5j_pwm_reset(lower, timer);

@@ -328,9 +328,6 @@ config S5J_WATCHDOG
 	depends on S5J_HAVE_WATCHDOG
 	default n
 
-menu "Watchdog driver configuration"
-	depends on S5J_WATCHDOG
-
 config S5J_WATCHDOG_DEBUG
 	bool "S5J Watchdog debug"
 	default n
@@ -350,8 +347,6 @@ config S5J_WDT_DEFTIMEOUT
 	int "S5J Watchdog Timeout(in msec)"
 	default 7000
 	depends on S5J_WATCHDOG
-
-endmenu
 
 config S5J_SFLASH
 	bool "SFLASH"

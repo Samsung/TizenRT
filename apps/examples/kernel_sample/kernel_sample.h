@@ -211,6 +211,11 @@ void priority_inheritance(void);
 int vfork_test(void);
 #endif
 
+/* workqueue.c **************************************************************/
+#if defined(CONFIG_SCHED_WORKQUEUE) || defined(CONFIG_LIB_USRWORK)
+int workqueue_test(void);
+#endif
+
 /* APIs exported (conditionally) by the OS specifically for testing of
  * priority inheritance
  */

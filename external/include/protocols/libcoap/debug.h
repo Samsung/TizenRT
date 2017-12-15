@@ -86,7 +86,7 @@ size_t coap_print_addr(const struct coap_address_t *, unsigned char *, size_t);
 #define warn(...)
 
 #define coap_show_pdu(x)
-#define coap_show_pdu2(x)
+#define coap_show_pdu2(...)
 #define coap_print_addr(...)
 
 #endif
