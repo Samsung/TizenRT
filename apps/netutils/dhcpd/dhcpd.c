@@ -112,6 +112,8 @@
 #define DHCP_SERVER_PORT         67
 #define DHCP_CLIENT_PORT         68
 
+#define DHCPD_STOP               "STOPDHCP"
+
 /* Option codes understood in this file                                     */
 /*                              Code    Data   Description                  */
 /*                                      Length                              */
@@ -1550,7 +1552,6 @@ void dhcpd_stop(void)
 #if DHCPD_SELECT
 	int sockfd;
 	struct sockaddr_in addr;
-	int len;
 #endif
 
 	g_dhcpd_quit = 1;
@@ -1563,13 +1564,12 @@ void dhcpd_stop(void)
 		memset(&addr, 0, sizeof(struct sockaddr_in));
 		addr.sin_family = AF_INET;
 		addr.sin_port = HTONS(DHCP_SERVER_PORT);
-		addr.sin_addr.s_addr = INADDR_ANY;
+		addr.sin_addr.s_addr = htonl(CONFIG_NETUTILS_DHCPD_ROUTERIP);
 
-		len = 1;
-		/* Sending trash packet to induce listen socket closed by error */
-		sendto(sockfd, &g_state.ds_inpacket, len, 0, (struct sockaddr *)&addr, sizeof(struct sockaddr_in));
-		close(sockfd);
+		/* Sending stop signal packet to terminate select loop */
+		sendto(sockfd, DHCPD_STOP, strlen(DHCPD_STOP), 0, (struct sockaddr *)&addr, sizeof(struct sockaddr_in));
 	}
+
 #endif
 	sem_wait(&g_sem_quit);
 }
@@ -1663,9 +1663,11 @@ int dhcpd_run(void *arg)
 
 		if (!dhcpd_parseoptions()) {
 			/* Failed to parse the message options */
-
-			ndbg("No msg type\n");
-
+			if (memcmp((uint8_t *)&g_state.ds_inpacket, DHCPD_STOP, strlen(DHCPD_STOP)) != 0) {
+				ndbg("No msg type\n");
+			} else {
+				ndbg("Got stop signal\n");
+			}
 			continue;
 		}
 #ifdef CONFIG_NETUTILS_DHCPD_HOST
@@ -1706,11 +1708,12 @@ int dhcpd_run(void *arg)
 
 	if (sockfd != -1) {
 		close(sockfd);
+		sockfd = -1;
+#if DHCPD_SELECT
+		g_sockfd = -1;
+#endif
 	}
 	g_dhcpd_running = 0;
-#if DHCPD_SELECT
-	g_sockfd = -1;
-#endif
 
 	/* de-initialize netif address (ip address, netmask, default gateway) */
 
