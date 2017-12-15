@@ -1067,6 +1067,8 @@ void up_serialinit(void)
 #ifdef TTYS4_DEV
 	uart_register("/dev/ttyS4", &TTYS4_DEV);
 #endif
+	putreg32(0x99999, 0x800A0454);
+
 }
 #endif /* USE_SERIALDRIVER */
 
