@@ -1,0 +1,35 @@
+#
+# For a description of the syntax of this configuration file,
+# see kconfig-language at https://www.kernel.org/doc/Documentation/kbuild/kconfig-language.txt
+#
+
+config MEDIA
+	bool "Media Support"
+	default n
+	depends on AUDIO
+	---help---
+		Enables overall support for Media library.
+
+if MEDIA
+
+config MEDIA_PRIORITY
+	int "Media Priority"
+	default 150
+
+config MEDIA_STACK_SIZE
+	int "Media Stack Size"
+	default 8192
+
+config MEDIA_PLAYER
+	bool "Support Media player"
+	default n
+	---help---
+		Enable media player functions
+
+config MEDIA_RECORDER
+	bool "Support Media recorder"
+	default n
+	---help---
+		Enable media recoreder functions
+
+endif
