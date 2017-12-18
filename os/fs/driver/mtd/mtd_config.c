@@ -464,7 +464,6 @@ read_next:
 				if (size > 0 && bytes_left_in_block >= size + sizeof(*phdr)) {
 					/* Free entry of large enough size found */
 
-					found = true;
 					break;
 				}
 

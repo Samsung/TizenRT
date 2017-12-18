@@ -208,7 +208,7 @@ static int tash_main(int argc, char *argv[])
 		line_buff = tash_read_input_line(fd);
 		shvdbg("TASH: input string (%s)\n", line_buff);
 
-		ret = tash_execute_cmdline(line_buff);
+		tash_execute_cmdline(line_buff);
 
 		tash_free(line_buff);
 	} while (tash_running);

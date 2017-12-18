@@ -152,7 +152,7 @@ int avsprintf(FAR char **ptr, const char *fmt, va_list ap)
 	 */
 
 	lib_nulloutstream(&nulloutstream);
-	nbytes = lib_vsprintf((FAR struct lib_outstream_s *)&nulloutstream, fmt, ap1);
+	lib_vsprintf((FAR struct lib_outstream_s *)&nulloutstream, fmt, ap1);
 
 	/* Then allocate a buffer to hold that number of characters, adding one
 	 * for the null terminator.
