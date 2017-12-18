@@ -31,7 +31,187 @@
 #include "http_arch.h"
 #include "http_log.h"
 
+#ifdef CONFIG_NETUTILS_WEBSOCKET
+#include <apps/netutils/websocket.h>
+#endif
+
 #define MIN_WS_HEADER_FIELD 2
+
+/****************************************************************************
+ * Private Functions
+ ****************************************************************************/
+
+static struct http_client_t *http_client_init(struct http_server_t *server, int sock_fd)
+{
+	struct http_client_t *p = (struct http_client_t *)HTTP_MALLOC(sizeof(struct http_client_t));
+
+	if (p == NULL) {
+		return NULL;
+	}
+
+	memset(p, 0, sizeof(struct http_client_t));
+
+	p->client_fd = sock_fd;
+	p->server = server;
+
+	return p;
+}
+
+static int http_client_release(struct http_client_t *client)
+{
+#ifdef CONFIG_NET_SECURITY_TLS
+	if (client->server->tls_init && client->ws_state < MIN_WS_HEADER_FIELD) {
+		http_client_tls_release(client);
+	}
+#endif
+	HTTP_FREE(client);
+	HTTP_LOGD("Free Client\n");
+	return HTTP_OK;
+}
+
+static int http_recv_and_handle_request(struct http_client_t *client, struct http_keyvalue_list_t *request_params)
+{
+	char *buf;
+	int len = 0;
+	char *body = NULL;
+	int read_finish = false;
+
+	int method = HTTP_METHOD_UNKNOWN;
+	char url[HTTP_CONF_MAX_REQUEST_HEADER_URL_LENGTH] = { 0, };
+	int buf_len = 0;
+	int remain = HTTP_CONF_MAX_REQUEST_LENGTH;
+	int enc = HTTP_CONTENT_LENGTH;
+	struct http_req_message req = { 0, };
+	int state = HTTP_REQUEST_HEADER;
+	struct http_message_len_t mlen = { 0, };
+	struct sockaddr_in addr;
+	socklen_t addr_len;
+#ifdef CONFIG_NETUTILS_WEBSOCKET
+	websocket_t *ws = NULL;
+#endif
+
+	client->ws_state = 0;
+
+	buf = HTTP_MALLOC(HTTP_CONF_MAX_REQUEST_LENGTH);
+	if (buf == NULL) {
+		HTTP_LOGE("Error: Fail to malloc buf\n");
+		close(client->client_fd);
+		return HTTP_ERROR;
+	}
+
+	if (getpeername(client->client_fd, (struct sockaddr *)&addr, &addr_len) < 0) {
+		HTTP_LOGE("Error: Fail to getpeername\n");
+		goto errout;
+	}
+	req.req_msg = buf;
+	req.url = url;
+	req.headers = request_params;
+	req.client_ip = addr.sin_addr.s_addr;
+	req.encoding = HTTP_CONTENT_LENGTH;
+
+	while (!read_finish) {
+		if (remain <= 0) {
+			HTTP_LOGE("Error: Request size is too large!!\n");
+			goto errout;
+		}
+#ifdef CONFIG_NET_SECURITY_TLS
+		if (client->server->tls_init) {
+			len = mbedtls_ssl_read(&(client->tls_ssl), (unsigned char *)buf + buf_len, HTTP_CONF_MAX_REQUEST_LENGTH - buf_len);
+		} else
+#endif
+		{
+			len = recv(client->client_fd, buf + buf_len, HTTP_CONF_MAX_REQUEST_LENGTH - buf_len, 0);
+		}
+		if (len < 0) {
+			HTTP_LOGE("Error: Receive Fail %d\n", len);
+			goto errout;
+		} else if (len == 0) {
+			HTTP_LOGD("Finish read\n");
+			goto errout;
+		}
+		buf_len += len;
+		remain -= len;
+
+		read_finish = http_parse_message(buf, len, &method, url, &body, &enc, &state, &mlen, request_params, client, NULL, &req);
+		if (read_finish == HTTP_ERROR) {
+			goto errout;
+		}
+	}
+	if (method == HTTP_METHOD_UNKNOWN) {
+		goto errout;
+	}
+
+	if (enc == HTTP_CONTENT_LENGTH) {
+		req.entity = body;
+		http_dispatch_url(client, &req);
+	}
+#ifdef CONFIG_NETUTILS_WEBSOCKET
+	/* open websocket */
+	if (client->ws_state >= MIN_WS_HEADER_FIELD) {
+		ws = websocket_find_table();
+		if (ws == NULL) {
+			goto errout;
+		}
+		ws->fd = client->client_fd;
+		ws->cb = &client->server->ws_cb;
+#ifdef CONFIG_NET_SECURITY_TLS
+		if (client->server->tls_init) {
+			ws->tls_enabled = 1;
+			ws->tls_conf = NULL;
+			ws->tls_ssl = (tls_session *)malloc(sizeof(tls_session));
+			if (ws->tls_ssl == NULL) {
+				goto errout;
+			}
+			ws->tls_ssl->ssl = (mbedtls_ssl_context *)malloc(sizeof(mbedtls_ssl_context));
+			if (ws->tls_ssl->ssl == NULL) {
+				free(ws->tls_ssl);
+				goto errout;
+			}
+			ws->tls_ssl->net.fd = client->tls_client_fd.fd;
+			memcpy(ws->tls_ssl->ssl, &client->tls_ssl, sizeof(mbedtls_ssl_context));
+			mbedtls_ssl_set_bio(ws->tls_ssl->ssl, &ws->tls_ssl->net, mbedtls_net_send, mbedtls_net_recv, NULL);
+		}
+#endif
+		if (pthread_attr_init(&ws->thread_attr) != 0) {
+			HTTP_LOGE("Error: Cannot initialize thread attribute\n");
+			goto errout;
+		}
+		pthread_attr_setstacksize(&ws->thread_attr, WEBSOCKET_STACKSIZE);
+		pthread_attr_setschedpolicy(&ws->thread_attr, SCHED_RR);
+		if (pthread_create(&ws->thread_id, &ws->thread_attr, (pthread_startroutine_t) websocket_server_init, (pthread_addr_t) ws) != 0) {
+			HTTP_LOGE("Error: Cannot create websocket thread!!\n");
+			goto errout;
+		}
+		pthread_setname_np(ws->thread_id, "websocket handle server");
+		pthread_detach(ws->thread_id);
+	} else
+#endif
+	{
+		close(client->client_fd);
+	}
+
+	HTTP_FREE(buf);
+	if (enc == HTTP_CHUNKED_ENCODING) {
+		HTTP_FREE(body);
+	}
+	return HTTP_OK;
+errout:
+#ifdef CONFIG_NETUTILS_WEBSOCKET
+	if (ws) {
+		TLSSession_free(ws->tls_ssl);
+	}
+#endif
+	close(client->client_fd);
+	HTTP_FREE(buf);
+	if (enc == HTTP_CHUNKED_ENCODING) {
+		HTTP_FREE(body);
+	}
+	return HTTP_ERROR;
+}
+
+/****************************************************************************
+ * Public Functions
+ ****************************************************************************/
 
 pthread_addr_t http_handle_client(pthread_addr_t arg)
 {
@@ -113,42 +293,9 @@ pthread_addr_t http_handle_client(pthread_addr_t arg)
 	return NULL;
 }
 
-
-struct http_client_t *http_client_init(struct http_server_t *server, int sock_fd)
+int http_parse_message(char *buf, int buf_len, int *method, char *url, char **body, int *enc, int *state, struct http_message_len_t *len, struct http_keyvalue_list_t *params, struct http_client_t *client, struct http_client_response_t *response, struct http_req_message *req)
 {
-	struct http_client_t *p = (struct http_client_t *)HTTP_MALLOC(sizeof(struct http_client_t));
-	if (p == NULL) {
-		return NULL;
-	}
-
-	memset(p, 0, sizeof(struct http_client_t));
-
-	p->client_fd = sock_fd;
-	p->server = server;
-
-	return p;
-}
-
-int http_client_release(struct http_client_t *client)
-{
-#ifdef CONFIG_NET_SECURITY_TLS
-	if (client->server->tls_init && client->ws_state < MIN_WS_HEADER_FIELD) {
-		http_client_tls_release(client);
-	}
-#endif
-	HTTP_FREE(client);
-	HTTP_LOGD("Free Client\n");
-	return HTTP_OK;
-}
-
-int http_parse_message(char *buf, int buf_len, int *method, char *url,
-					   char **body, int *enc, int *state,
-					   struct http_message_len_t *len,
-					   struct http_keyvalue_list_t *params,
-					   struct http_client_t *client,
-					   struct http_client_response_t *response,
-					   struct http_req_message *req)
-{
+	int ret = 0;
 	int protocol = 0;
 	int sentence_end = 0;
 	char key[HTTP_CONF_MAX_KEY_LENGTH] = { 0, };
@@ -175,15 +322,12 @@ int http_parse_message(char *buf, int buf_len, int *method, char *url,
 					 * 1. GET / HTTP/1.1
 					 * 2. GET /cgi-bin/http_trace.pl HTTP/1.1\r\n
 					 */
-					http_separate_header(buf + len->sentence_start, method, url, &protocol);
+					if ((ret = http_separate_header(buf + len->sentence_start, method, url, &protocol)) != HTTP_OK) {
+						HTTP_LOGD("Fail to separate header %d\n", ret);
+						return HTTP_ERROR;
+					}
 
-					HTTP_LOGD(
-						"Request Method : %s\n",
-						(*method == HTTP_METHOD_GET) ? "GET" :
-						(*method == HTTP_METHOD_PUT) ? "PUT" :
-						(*method == HTTP_METHOD_POST) ? "POST" :
-						(*method == HTTP_METHOD_DELETE) ?
-						"DELETE" : "UNKNOWN");
+					HTTP_LOGD("Request Method : %s\n", (*method == HTTP_METHOD_GET) ? "GET" : (*method == HTTP_METHOD_PUT) ? "PUT" : (*method == HTTP_METHOD_POST) ? "POST" : (*method == HTTP_METHOD_DELETE) ? "DELETE" : "UNKNOWN");
 					req->method = *method;
 					HTTP_LOGD("Request URI : %s\n", url);
 					HTTP_LOGD("Request Protocol : ");
@@ -196,8 +340,11 @@ int http_parse_message(char *buf, int buf_len, int *method, char *url,
 					} else {
 						HTTP_LOGD("unknown version\n");
 					}
-				} else { /* If this is called by webclient */
-					http_separate_status_line(buf + len->sentence_start, &protocol, &response->status, response->phrase);
+				} else {		/* If this is called by webclient */
+					if ((ret = http_separate_status_line(buf + len->sentence_start, &protocol, &response->status, response->phrase)) != HTTP_OK) {
+						HTTP_LOGD("Fail to separate status line %d\n", ret);
+						return HTTP_ERROR;
+					}
 					HTTP_LOGD("Response Status : %d\n", response->status);
 					HTTP_LOGD("Response Phrase : %s\n", response->phrase);
 				}
@@ -215,7 +362,10 @@ int http_parse_message(char *buf, int buf_len, int *method, char *url,
 				buf[sentence_end] = '\0';
 				if (strlen(buf + len->sentence_start) > 0) {
 					/* Read parameters */
-					http_separate_keyvalue(buf + len->sentence_start, key, value);
+					if ((ret = http_separate_keyvalue(buf + len->sentence_start, key, value)) != HTTP_OK) {
+						HTTP_LOGD("Fail to separate keyvalue %d\n", ret);
+						return HTTP_ERROR;
+					}
 					HTTP_LOGD("[HTTP Parameter] Key: %s / Value: %s\n", key, value);
 
 					http_keyvalue_list_add(params, key, value);
@@ -227,7 +377,11 @@ int http_parse_message(char *buf, int buf_len, int *method, char *url,
 							++client->ws_state;
 						}
 						if (strcmp(key, "Sec-WebSocket-Key") == 0) {
+#ifdef CONFIG_NETUTILS_WEBSOCKET
 							strncpy((char *)client->ws_key, value, WEBSOCKET_CLIENT_KEY_LEN);
+#else
+							HTTP_LOGE("Websocket is not supported\n");
+#endif
 						}
 					}
 					if (strcmp(key, "Content-Length") == 0) {
@@ -239,7 +393,7 @@ int http_parse_message(char *buf, int buf_len, int *method, char *url,
 						if (client) {
 							len->chunked_remain = 0;
 							len->entity_len = 0;
-							entity = HTTP_MALLOC(HTTP_CONF_MAX_ENTITY_LENGTH);
+							entity = HTTP_MALLOC(HTTP_CONF_MAX_ENTITY_LENGTH + 1);
 							if (entity == NULL) {
 								HTTP_LOGE("Error: Fail to alloc memory\n");
 								return HTTP_ERROR;
@@ -272,19 +426,34 @@ int http_parse_message(char *buf, int buf_len, int *method, char *url,
 				break;
 			}
 			if (*enc == HTTP_CONTENT_LENGTH) {
-				if (!len->message_len) {
-					*body = buf + len->sentence_start;
-				}
-				if (buf_len - len->sentence_start + len->message_len == len->content_len) {
-					buf[buf_len + len->message_len] = '\0';
-
-					HTTP_LOGD("All body readed : \n%s\n", *body);
+				*body = buf + len->sentence_start;
+				if (buf_len - len->sentence_start + len->message_len >= len->content_len) {
+					if (len->entity_len == 0) {
+						len->entity_len += (buf_len - len->sentence_start);
+					} else {
+						len->entity_len += buf_len;
+					}
+					len->message_len += (buf_len - len->sentence_start);
+					HTTP_LOGD("==== read finish ====\n");
+					HTTP_LOGD("All body read\n");
 					read_finish = true;
 				} else {
-					len->message_len += buf_len;
-
-					HTTP_LOGD("Not all body readed\n");
+					if (len->entity_len == 0) {
+						len->entity_len += (buf_len - len->sentence_start);
+						len->message_len += (buf_len - len->sentence_start);
+					} else {
+						len->entity_len += buf_len;
+						len->message_len += buf_len;
+					}
+					HTTP_LOGD("Not all body read\n");
 				}
+
+				HTTP_LOGD("BODY : entity_len[%d]\n", len->entity_len);
+				HTTP_LOGD("BODY : buf_len[%d]\n", buf_len);
+				HTTP_LOGD("BODY : len->sentence_start[%d]\n", len->sentence_start);
+				HTTP_LOGD("BODY : len->message_len[%d]\n", len->message_len);
+				HTTP_LOGD("BODY : len->content_len[%d]\n", len->content_len);
+
 				process_finish = true;
 			}
 			/* Chunked encoding */
@@ -327,6 +496,13 @@ int http_parse_message(char *buf, int buf_len, int *method, char *url,
 				}
 				i = 0;
 				if (len->chunked_remain > 0) {
+
+					/* Check whether incoming entity is smaller than entity max size or not */
+					if (len->entity_len + len->chunked_remain > HTTP_CONF_MAX_ENTITY_LENGTH) {
+						HTTP_LOGE("Error: Incoming entity is too big\n");
+						return HTTP_ERROR;
+					}
+
 					for (i = 0; len->chunked_remain > 0; ++i) {
 						if (len->sentence_start >= buf_len + len->message_len) {
 							len->message_len = len->sentence_start;
@@ -366,202 +542,6 @@ int http_parse_message(char *buf, int buf_len, int *method, char *url,
 	return read_finish;
 }
 
-int http_recv_and_handle_request(struct http_client_t *client, struct http_keyvalue_list_t *request_params)
-{
-	char *buf;
-	int len = 0;
-	char *body = NULL;
-	int read_finish = false;
-
-	int method = HTTP_METHOD_UNKNOWN;
-	char url[HTTP_CONF_MAX_REQUEST_HEADER_URL_LENGTH] = { 0, };
-	int buf_len = 0;
-	int remain = HTTP_CONF_MAX_REQUEST_LENGTH;
-	int enc = HTTP_CONTENT_LENGTH;
-	struct http_req_message req;
-	int state = HTTP_REQUEST_HEADER;
-	struct http_message_len_t mlen = {0,};
-	struct sockaddr_in addr;
-	socklen_t addr_len;
-
-	client->ws_state = 0;
-
-	buf = HTTP_MALLOC(HTTP_CONF_MAX_REQUEST_LENGTH);
-	if (buf == NULL) {
-		HTTP_LOGE("Error: Fail to malloc buf\n");
-		close(client->client_fd);
-		return HTTP_ERROR;
-	}
-
-	if (getpeername(client->client_fd, (struct sockaddr *)&addr, &addr_len) < 0) {
-		HTTP_LOGE("Error: Fail to getpeername\n");
-		goto errout;
-	}
-	req.req_msg = buf;
-	req.url = url;
-	req.headers = request_params;
-	req.client_ip = addr.sin_addr.s_addr;
-
-	while (!read_finish) {
-		if (remain <= 0) {
-			HTTP_LOGE("Error: Request size is too large!!\n");
-			goto errout;
-		}
-#ifdef CONFIG_NET_SECURITY_TLS
-		if (client->server->tls_init) {
-			len = mbedtls_ssl_read(&(client->tls_ssl), (unsigned char *)buf + buf_len, HTTP_CONF_MAX_REQUEST_LENGTH - buf_len);
-		} else
-#endif
-		{
-			len = recv(client->client_fd, buf + buf_len, HTTP_CONF_MAX_REQUEST_LENGTH - buf_len, 0);
-		}
-		if (len < 0) {
-			HTTP_LOGE("Error: Receive Fail %d\n", len);
-			goto errout;
-		} else if (len == 0) {
-			HTTP_LOGD("Finish read\n");
-			goto errout;
-		}
-		buf_len += len;
-		remain -= len;
-
-		read_finish = http_parse_message(buf, len, &method, url, &body, &enc, &state, &mlen, request_params, client, NULL, &req);
-		if (read_finish == HTTP_ERROR) {
-			goto errout;
-		}
-	}
-	if (method == HTTP_METHOD_UNKNOWN) {
-		goto errout;
-	}
-
-	if (enc == HTTP_CONTENT_LENGTH) {
-		req.entity = body;
-		http_dispatch_url(client, &req);
-	}
-
-#ifdef CONFIG_NETUTILS_WEBSOCKET
-	/* open websocket */
-	if (client->ws_state >= MIN_WS_HEADER_FIELD) {
-		websocket_t *ws = NULL;
-		ws = websocket_find_table();
-		if (ws == NULL) {
-			goto errout;
-		}
-		memset(ws, 0, sizeof(websocket_t));
-		ws->fd = client->client_fd;
-		ws->cb = &client->server->ws_cb;
-#ifdef CONFIG_NET_SECURITY_TLS
-		if (client->server->tls_init) {
-			ws->tls_enabled = 1;
-			ws->tls_net.fd = client->tls_client_fd.fd;
-			ws->tls_ssl = (mbedtls_ssl_context *)malloc(sizeof(mbedtls_ssl_context));
-			memcpy(ws->tls_ssl, &client->tls_ssl, sizeof(mbedtls_ssl_context));
-			ws->tls_conf = &client->server->tls_conf;
-			mbedtls_ssl_set_bio(ws->tls_ssl, &ws->tls_net, mbedtls_net_send, mbedtls_net_recv, NULL);
-		}
-#endif
-		pthread_attr_init(&ws->thread_attr);
-		pthread_attr_setstacksize(&ws->thread_attr, WEBSOCKET_STACKSIZE);
-		pthread_attr_setschedpolicy(&ws->thread_attr, SCHED_RR);
-		if (pthread_create(&ws->thread_id, &ws->thread_attr,
-						   (pthread_startroutine_t)websocket_server_init,
-						   (pthread_addr_t)ws) != 0) {
-			HTTP_LOGE("Error: Cannot create websocket thread!!\n");
-			goto errout;
-		}
-		pthread_setname_np(ws->thread_id, "websocket handle server");
-		pthread_detach(ws->thread_id);
-	} else
-#endif
-	{
-		close(client->client_fd);
-	}
-
-	HTTP_FREE(buf);
-	if (enc == HTTP_CHUNKED_ENCODING) {
-		HTTP_FREE(body);
-	}
-	return HTTP_OK;
-errout:
-	close(client->client_fd);
-	HTTP_FREE(buf);
-	if (enc == HTTP_CHUNKED_ENCODING) {
-		HTTP_FREE(body);
-	}
-	return HTTP_ERROR;
-}
-
-void http_handle_file(struct http_client_t *client, int method, const char *url, char *entity)
-{
-	FILE *f;
-	char path[HTTP_CONF_MAX_REQUEST_HEADER_URL_LENGTH + 1] = ".";
-	switch (method) {
-	case HTTP_METHOD_GET:
-		if ((f = fopen(url, "r")) != NULL) {
-			fgets(entity, HTTP_CONF_MAX_ENTITY_LENGTH, f);
-			if (http_send_response(client, 200, entity, NULL) == HTTP_ERROR) {
-				HTTP_LOGE("Error: Fail to send response\n");
-			}
-			fclose(f);
-		} else {
-			if (http_send_response(client, 404, HTTP_ERROR_404, NULL) == HTTP_ERROR) {
-				HTTP_LOGE("Error: Fail to send response\n");
-			}
-		}
-		break;
-	case HTTP_METHOD_POST:
-		/* Need to create file with unique file name */
-		strncat(path, url, HTTP_CONF_MAX_REQUEST_HEADER_URL_LENGTH);
-		strncat(path, "index.shtml", HTTP_CONF_MAX_REQUEST_HEADER_URL_LENGTH);
-		if ((f = fopen(path, "w"))) {
-			if (fputs(entity, f) < 0) {
-				HTTP_LOGE("Error: Fail to execute fputs\n");
-				break;
-			}
-			if (http_send_response(client, 200, path, NULL) == HTTP_ERROR) {
-				HTTP_LOGE("Error: Fail to send response\n");
-			}
-			fclose(f);
-		} else {
-			HTTP_LOGE("fail to open %s\n", path);
-			if (http_send_response(client, 500, HTTP_ERROR_500, NULL) == HTTP_ERROR) {
-				HTTP_LOGE("Error: Fail to send response\n");
-			}
-		}
-		break;
-	case HTTP_METHOD_PUT:
-		if ((f = fopen(strncat(path, url, HTTP_CONF_MAX_REQUEST_HEADER_URL_LENGTH), "w"))) {
-			if (fputs(entity, f) < 0) {
-				HTTP_LOGE("Error: Fail to execute fputs\n");
-				break;
-			}
-			if (http_send_response(client, 200, url, NULL) == HTTP_ERROR) {
-				HTTP_LOGE("Error: Fail to send response\n");
-			}
-			fclose(f);
-		} else {
-			HTTP_LOGE("fail to open %s\n", url);
-			if (http_send_response(client, 500, HTTP_ERROR_500, NULL) == HTTP_ERROR) {
-				HTTP_LOGE("Error: Fail to send response\n");
-			}
-		}
-		break;
-	case HTTP_METHOD_DELETE:
-		if (unlink(strncat(path, url, HTTP_CONF_MAX_REQUEST_HEADER_URL_LENGTH))) {
-			HTTP_LOGE("fail to delete %s\n", url);
-			if (http_send_response(client, 500, HTTP_ERROR_500, NULL) == HTTP_ERROR) {
-				HTTP_LOGE("Error: Fail to send response\n");
-			}
-		} else {
-			HTTP_LOGD("success to delete %s\n", url);
-			if (http_send_response(client, 200, url, NULL) == HTTP_ERROR) {
-				HTTP_LOGE("Error: Fail to send response\n");
-			}
-		}
-		break;
-	}
-}
-
 int http_send_response(struct http_client_t *client, int status, const char *body, struct http_keyvalue_list_t *headers)
 {
 	char *buf;
@@ -575,49 +555,30 @@ int http_send_response(struct http_client_t *client, int status, const char *bod
 	}
 #ifdef CONFIG_NETUTILS_WEBSOCKET
 	if (client->ws_state >= MIN_WS_HEADER_FIELD) {
-		unsigned char accept_key[WEBSOCKET_ACCEPT_KEY_LEN] = {0, };
+		unsigned char accept_key[WEBSOCKET_ACCEPT_KEY_LEN] = { 0, };
 		websocket_create_accept_key(accept_key, WEBSOCKET_ACCEPT_KEY_LEN, client->ws_key, WEBSOCKET_CLIENT_KEY_LEN);
-		buflen = snprintf(buf, HTTP_CONF_MAX_REQUEST_LENGTH,
-						  "HTTP/1.1 101 Switching Protocols\r\n"
-						  "Upgrade: websocket\r\n"
-						  "Connection: Upgrade\r\n"
-						  "Sec-WebSocket-Accept: %s\r\n\r\n",
-						  accept_key);
+		buflen = snprintf(buf, HTTP_CONF_MAX_REQUEST_LENGTH, "HTTP/1.1 101 Switching Protocols\r\n" "Upgrade: websocket\r\n" "Connection: Upgrade\r\n" "Sec-WebSocket-Accept: %s\r\n\r\n", accept_key);
 	} else
 #endif
 	{
-		buflen = snprintf(buf, HTTP_CONF_MAX_REQUEST_LENGTH, "HTTP/1.1 %d %s\r\n",
-						  status, (status == 200) ? "OK" : body);
+		buflen = snprintf(buf, HTTP_CONF_MAX_REQUEST_LENGTH, "HTTP/1.1 %d %s\r\n", status, (status == 200) ? "OK" : "NOT OK");
 		if (headers) {
 			cur = headers->head->next;
 			while (cur != headers->tail) {
-				buflen += snprintf(buf + buflen, HTTP_CONF_MAX_REQUEST_LENGTH - buflen,
-								   "%s: %s\r\n", cur->key, cur->value);
+				buflen += snprintf(buf + buflen, HTTP_CONF_MAX_REQUEST_LENGTH - buflen, "%s: %s\r\n", cur->key, cur->value);
 				cur = cur->next;
 			}
 		}
 
-		if (status == 200) {
-			if (headers == NULL) {
-				buflen += snprintf(buf + buflen, HTTP_CONF_MAX_REQUEST_LENGTH - buflen,
-								   "Content-type: text/html\r\n"
-								   "Connection: close\r\n");
-				if (body) {
-					buflen += snprintf(buf + buflen,
-									   HTTP_CONF_MAX_REQUEST_LENGTH - buflen,
-									   "Content-Length: %d\r\n"
-									   "\r\n"
-									   "%s",
-									   strlen(body), body);
-				} else {
-					buflen += snprintf(buf + buflen,
-									   HTTP_CONF_MAX_REQUEST_LENGTH - buflen,
-									   "\r\n");
-				}
+		if (headers == NULL) {
+			buflen += snprintf(buf + buflen, HTTP_CONF_MAX_REQUEST_LENGTH - buflen, "Content-type: text/html\r\n" "Connection: close\r\n");
+			if (body) {
+				snprintf(buf + buflen, HTTP_CONF_MAX_REQUEST_LENGTH - buflen, "Content-Length: %d\r\n" "\r\n" "%s", strlen(body), body);
 			} else {
-				snprintf(buf + buflen, HTTP_CONF_MAX_REQUEST_LENGTH - buflen,
-						 "\r\n%s", body);
+				snprintf(buf + buflen, HTTP_CONF_MAX_REQUEST_LENGTH - buflen, "\r\n");
 			}
+		} else {
+			snprintf(buf + buflen, HTTP_CONF_MAX_REQUEST_LENGTH - buflen, "\r\n%s", body);
 		}
 	}
 

@@ -28,6 +28,7 @@
 #include <tls/ctr_drbg.h>
 #include <tls/x509_crt.h>
 #include <tls/timing.h>
+#include <tls/ssl_cookie.h>
 
 #ifdef MBEDTLS_SSL_CACHE_C
 #include <tls/ssl_cache.h>
@@ -44,6 +45,7 @@ enum easy_tls_error {
 	TLS_INVALID_CRED,
 	TLS_SET_DEFAULT_FAIL,
 	TLS_SET_HOSTNAME_FAIL,
+	TLS_SET_COOKIE_FAIL,
 	TLS_INVALID_CACERT,
 	TLS_INVALID_DEVCERT,
 	TLS_INVALID_DEVKEY,
@@ -71,6 +73,7 @@ typedef struct tls_context {
 	mbedtls_entropy_context *entropy;
 	mbedtls_ctr_drbg_context *ctr_drbg;
 	mbedtls_timing_delay_context *timer;
+	mbedtls_ssl_cookie_ctx *cookie;
 #ifdef MBEDTLS_SSL_CACHE_C
 	mbedtls_ssl_cache_context *cache;
 #endif
@@ -83,6 +86,7 @@ typedef struct tls_options {
 	int debug_mode;				///< select debug level (0 ~ 5)
 	char *host_name;			///< set host_name (NULL or char *)
 	int force_ciphersuites[3];	///< set force ciphersuites
+	unsigned int recv_timeout;	///< parameter for setting tls recv timeout milisecond
 } tls_opt;
 
 typedef struct tls_session_context {
@@ -98,7 +102,6 @@ typedef struct tls_session_context {
  * @param[in] cred     a structure pointer of key and certificates
  * @return On success, a structure pointer of tls context will be returned.
  *         On failure, NULL will be returned.
- * @since Tizen RT v1.0
  *
  */
 tls_ctx *TLSCtx(tls_cred *cred);
@@ -110,7 +113,6 @@ tls_ctx *TLSCtx(tls_cred *cred);
  * @param[in] ctx	a structure pointer of tls context.
  * @return On success,	TLS_SUCCESS(0) will be returned.
  *         On failure,	positive value will be returned.
- * @since Tizen RT v1.0
  *
  */
 int TLSCtx_free(tls_ctx *ctx);
@@ -125,7 +127,6 @@ int TLSCtx_free(tls_ctx *ctx);
  * @param[in] opt	a structure pointer including several tls options.
  * @return On success,	a structure pointer of tls session context will be returned.
  *         On failure,	positive value will be returned.
- * @since Tizen RT v1.0
  *
  */
 tls_session *TLSSession(int fd, tls_ctx *ctx, tls_opt *opt);
@@ -137,7 +138,6 @@ tls_session *TLSSession(int fd, tls_ctx *ctx, tls_opt *opt);
  * @param[in] session	a structure pointer of tls session context.
  * @return On success,	TLS_SUCCESS(0) will be returned.
  *         On failure,	positive value will be returned.
- * @since Tizen RT v1.0
  *
  */
 int TLSSession_free(tls_session *session);
@@ -151,10 +151,9 @@ int TLSSession_free(tls_session *session);
  * @param[in] size	send data size.
  * @return On success,	sent size will be returned.
  *         On failure,	0 or negative value will be returned.
- * @since Tizen RT v1.0
  *
  */
-int TLSSend(tls_session *session, unsigned char *buf, size_t size);
+int TLSSend(tls_session *session, const unsigned char *buf, size_t size);
 
 /**
  * @brief TLSRecv()	recv security data.
@@ -165,7 +164,6 @@ int TLSSend(tls_session *session, unsigned char *buf, size_t size);
  * @param[in] size	received data size.
  * @return On success,	received size will be returned.
  *         On failure,	0 or negative value will be returned.
- * @since Tizen RT v1.0
  *
  */
 int TLSRecv(tls_session *session, unsigned char *buf, size_t size);

@@ -67,44 +67,122 @@
  * Pre-processor Definitions
  ****************************************************************************/
 
-#define HTTP_METHOD_UNKNOWN -1
-#define HTTP_METHOD_GET     0
-#define HTTP_METHOD_PUT     1
-#define HTTP_METHOD_POST    2
-#define HTTP_METHOD_DELETE  3
+/**
+ * @cond
+ * internal
+ */
+#define HTTP_METHOD_UNKNOWN        -1
+#define HTTP_METHOD_GET             0
+#define HTTP_METHOD_PUT             1
+#define HTTP_METHOD_POST            2
+#define HTTP_METHOD_DELETE          3
 
-#define HTTP_HTTP_VERSION_UNKNOWN 0
-#define HTTP_HTTP_VERSION_09      9
-#define HTTP_HTTP_VERSION_10      10
-#define HTTP_HTTP_VERSION_11      11
+#define HTTP_HTTP_VERSION_UNKNOWN   0
+#define HTTP_HTTP_VERSION_09        9
+#define HTTP_HTTP_VERSION_10        10
+#define HTTP_HTTP_VERSION_11        11
 
-#define HTTP_CONTENT_LENGTH       0
-#define HTTP_CHUNKED_ENCODING     1
+#define HTTP_CONTENT_LENGTH         0
+#define HTTP_CHUNKED_ENCODING       1
 
+#define HTTP_CONF_SERVER_SIGWAKEUP  18
+
+/**
+ * @endcond
+ */
+
+/**
+ * @brief The number of maximum clients
+ */
 #define HTTP_CONF_MAX_CLIENT                    16
-#define HTTP_CONF_CLIENT_STACKSIZE              8192
-#define HTTP_CONF_MIN_TLS_MEMORY                80000
-#define HTTP_CONF_SOCKET_TIMEOUT_MSEC           5000
-#define HTTP_CONF_MAX_CLIENT_HANDLE             1
-#define HTTP_CONF_SERVER_MQ_MAX_MSG             10
-#define HTTP_CONF_SERVER_MQ_PRIO                50
-#define HTTP_CONF_SERVER_SIGWAKEUP              18
 
+/**
+ * @brief The number of maximum client handler threads
+ */
+#if defined(CONFIG_NETUTILS_WEBSERVER_MAX_CLIENT_HANDLER)
+#define HTTP_CONF_MAX_CLIENT_HANDLE		(CONFIG_NETUTILS_WEBSERVER_MAX_CLIENT_HANDLER)
+#else
+#define HTTP_CONF_MAX_CLIENT_HANDLE		1
+#endif
+
+/**
+ * @brief The maximum size of client threads stack
+ */
+#define HTTP_CONF_CLIENT_STACKSIZE              8192
+
+/**
+ * @brief Minimum memory size for tls handshake
+ */
+#define HTTP_CONF_MIN_TLS_MEMORY                80000
+
+/**
+ * @brief Socket recv timeout milisecond
+ */
+#define HTTP_CONF_SOCKET_TIMEOUT_MSEC           5000
+
+/**
+ * @brief The maximum number of messages in message queue
+ */
+#define HTTP_CONF_SERVER_MQ_MAX_MSG             10
+
+/**
+ * @brief The maximum size of request buffer
+ */
 #define HTTP_CONF_MAX_REQUEST_LENGTH            4096
-#define HTTP_CONF_MAX_REQUEST_LINE_LENGTH       256
+
+/**
+ * @brief The maximum size of request url
+ */
 #define HTTP_CONF_MAX_REQUEST_HEADER_URL_LENGTH 128
+
+/**
+ * @brief The maximum size of query url
+ */
 #define HTTP_CONF_MAX_URL_QUERY_LENGTH          64
+
+/**
+ * @brief The maximum size of query parameter
+ */
 #define HTTP_CONF_MAX_URL_PARAMS_LENGTH         256
+
+/**
+ * @brief The maximum size of key
+ */
 #define HTTP_CONF_MAX_KEY_LENGTH                32
+
+/**
+ * @brief The maximum size of value
+ */
 #define HTTP_CONF_MAX_VALUE_LENGTH              256
+
+/**
+ * @brief The maximum size of divided path
+ */
 #define HTTP_CONF_MAX_DIVIDED_PATH_LENGTH       32
+
+/**
+ * @brief The maximum slash counts
+ */
 #define HTTP_CONF_MAX_SLASH_COUNT               32
+
+/**
+ * @brief The maximum count of query handler loop
+ */
 #define HTTP_CONF_MAX_QUERY_HANDLER_COUNT       64
+
+/**
+ * @brief The maximum size of entity
+ */
 #define HTTP_CONF_MAX_ENTITY_LENGTH             2048
 
-#define HTTP_ERROR_400            "Bad Request"
-#define HTTP_ERROR_404            "Not Found"
-#define HTTP_ERROR_500            "Internal Server Error"
+/** @cond HIDDEN */
+#ifdef __cplusplus
+#define EXTERN extern "C"
+extern "C" {
+#else
+#define EXTERN extern
+#endif
+/** @endcond */
 
 /****************************************************************************
  * Public Types
@@ -114,77 +192,75 @@ struct http_client_t;
 struct http_keyvalue_list_t;
 
 /**
- * @brief http server ssl config structure.
+ * @brief SSL config structure for TLS handshaking
  */
-
 struct ssl_config_t {
-	char *root_ca;
-	char *dev_cert;
-	char *private_key;
-	unsigned int root_ca_len;
-	unsigned int dev_cert_len;
-	unsigned int private_key_len;
-	int auth_mode;
+	char *root_ca;                  ///< CA certificate buffer
+	char *dev_cert;                 ///< Device certificate buffer
+	char *private_key;              ///< Private key buffer
+	unsigned int root_ca_len;       ///< Length of ca certificate
+	unsigned int dev_cert_len;      ///< Length of device certificate
+	unsigned int private_key_len;   ///< Length of private key
+	int auth_mode;                  ///< Authentication mode (0:none, 1:optional, 2:mandatory)
 };
 
+/**
+ * @brief HTTP status enumerations
+ */
 typedef enum {
-	HTTP_SERVER_INIT,
-	HTTP_SERVER_RUN,
-	HTTP_SERVER_STOP_REQ,
-	HTTP_SERVER_STOP,
+	HTTP_SERVER_INIT,       ///< Initialized
+	HTTP_SERVER_RUN,        ///< Running
+	HTTP_SERVER_STOP_REQ,   ///< Sent stop request
+	HTTP_SERVER_STOP,       ///< Stopped
 } http_server_state_t;
 
 /**
- * @brief http request message.
+ * @brief Data structure for handling client requests
  */
-
 struct http_req_message {
-	char *req_msg;
-	int method;
-	uint32_t client_ip;
-	char *url;
-	struct http_keyvalue_list_t *headers;
-	char *entity;
-	char *query_string;
-	int encoding;
+	char *req_msg;                          ///< Request message
+	int method;                             ///< Types of method
+	uint32_t client_ip;                     ///< Source IP address
+	char *url;                              ///< Request url
+	struct http_keyvalue_list_t *headers;   ///< Request keyvalue structure
+	char *entity;                           ///< Request entity
+	char *query_string;                     ///< Request query string
+	int encoding;                           ///< Encoding type
 };
 
 /**
- * @brief typedef for callback function.
+ * @brief Response callback prototype
  */
-
 typedef void (*http_cb_t)(struct http_client_t *client, struct http_req_message *msg);
 
 /**
- * @brief http server structure.
+ * @brief Webserver context structure
  */
-
 struct http_server_t {
-	int  port;
-	int  listen_fd;
-	http_server_state_t state;
-	sem_t sem_thread_sync;
-	pthread_t tid;
-	pthread_t c_tid[HTTP_CONF_MAX_CLIENT_HANDLE];
-	mqd_t msg_q;
+	int  port;                                      ///< Port number
+	int  listen_fd;                                 ///< Listening fd
+	http_server_state_t state;                      ///< Server status
+	pthread_t tid;                                  ///< Thread id for handling asynchronous mode
+	pthread_t c_tid[HTTP_CONF_MAX_CLIENT_HANDLE];   ///< Client thread id
+	mqd_t msg_q;                                    ///< Message queue descriptor
 
-	int                       tls_init;
+	int                       tls_init;             ///< TLS init flag
 #ifdef CONFIG_NET_SECURITY_TLS
-	mbedtls_ssl_config        tls_conf;
-	mbedtls_entropy_context   tls_entropy;
-	mbedtls_ctr_drbg_context  tls_ctr_drbg;
-	mbedtls_x509_crt          tls_srvcert;
-	mbedtls_pk_context        tls_pkey;
-	mbedtls_ssl_cache_context tls_cache;
-	mbedtls_net_context       tls_ctx;
+	mbedtls_ssl_config        tls_conf;             ///< TLS configuration structure
+	mbedtls_entropy_context   tls_entropy;          ///< TLS entropy structure
+	mbedtls_ctr_drbg_context  tls_ctr_drbg;         ///< TLS deterministic random generator structure
+	mbedtls_x509_crt          tls_srvcert;          ///< Server certificate
+	mbedtls_pk_context        tls_pkey;             ///< Server private key
+	mbedtls_ssl_cache_context tls_cache;            ///< TLS cache structure
+	mbedtls_net_context       tls_ctx;              ///< TLS context structure
 #endif
 
-	struct sockaddr_in             servaddr;
-	http_cb_t cb[4];
+	struct sockaddr_in             servaddr;        ///< IP address of server
+	http_cb_t cb[4];                                ///< Callback handle
 	struct http_query_handler_t
-	*query_handlers[HTTP_CONF_MAX_QUERY_HANDLER_COUNT];
+	*query_handlers[HTTP_CONF_MAX_QUERY_HANDLER_COUNT]; ///< Query handler structure
 #ifdef CONFIG_NETUTILS_WEBSOCKET
-	struct websocket_cb_t ws_cb;
+	websocket_cb_t ws_cb;                           ///< Callback for websocket
 #endif
 };
 
@@ -193,104 +269,98 @@ struct http_server_t {
  ****************************************************************************/
 
 /**
- * @brief http_server_init() initializes the webserver.
+ * @brief Initialize the webserver context structure.
  *
- * @param[in] port number of port that executes the webserver.
+ * @param[in] port Port number for running webserver
  * @return On success, address of created struct http_server_t is returned.
  *         On failure, NULL is returned.
- * @since Tizen RT v1.0
  */
 struct http_server_t *http_server_init(int port);
 
 /**
- * @brief http_server_start() starts the webserver.
+ * @brief Start the webserver daemon.
  *
- * @param[in] server http_server_t structure pointer returned by http_server_init().
+ * @param[in] server Webserver context structure to use
  * @return On success, HTTP_OK(0) is returned.
  *         On failure, HTTP_ERROR(-1) is returned.
- * @since Tizen RT v1.0
  */
 int http_server_start(struct http_server_t *server);
 
 /**
- * @brief http_server_stop() stops the webserver.
- *        Both HTTP server and HTTPS server are stoped by this function.
+ * @brief Stop the webserver daemon.
  *
- * @param[in] server pointer of the webserver to be stopped.
+ * @param[in] server Webserver context structure to use
  * @return On success, HTTP_OK(0) is returned.
  *         On failure, HTTP_ERROR(-1) is returned.
- * @since Tizen RT v1.0
  */
 int http_server_stop(struct http_server_t *server);
 
 /**
- * @brief http_server_release() releases the struct http_server_t.
+ * @brief Release the webserver context structure.
  *
- * @param[in] server http_server_t structure pointer of the webserver.
- * @return none
- * @since Tizen RT v1.0
+ * @param[in] server Webserver context structure to be released
  */
 void http_server_release(struct http_server_t **server);
 
 /**
- * @brief http_server_register_cb() registers the cb function to each method on webserver.
+ * @brief Register the cb function to each method on webserver.
  *
- * @param[in] server http_server_t structure pointer of the webserver.
- * @param[in] method number of method to register cb.
+ * @param[in] server Webserver context structure to use
+ * @param[in] method Number of method type to register cb
  *                   - HTTP_METHOD_GET
  *                   - HTTP_METHOD_PUT
  *                   - HTTP_METHOD_POST
  *                   - HTTP_METHOD_DELETE
- * @param[in] url_format url to register cb.
- * @param[in] func pointer of the callback function.
+ * @param[in] url_format Url to register cb
+ * @param[in] func Pointer of the callback function
  * @return On success, HTTP_OK(0) is returned.
  *         On failure, HTTP_ERROR(-1) is returned.
- * @since Tizen RT v1.0
  */
 int http_server_register_cb(struct http_server_t *server, int method, const char *url_format, http_cb_t func);
 
 /**
- * @brief http_server_deregister_cb() deregisters the cb function to each method on webserver.
+ * @brief Deregister the cb function to each method on webserver.
  *
- * @param[in] server http_server_t structure pointer of the webserver.
- * @param[in] method number of method to deregister cb.
+ * @param[in] server Webserver context structure to use
+ * @param[in] method Number of method type to deregister cb
  *                   - HTTP_METHOD_GET
  *                   - HTTP_METHOD_PUT
  *                   - HTTP_METHOD_POST
  *                   - HTTP_METHOD_DELETE
- * @param[in] url_format url to deregister cb.
+ * @param[in] url_format Url to deregister cb
  * @return On success, HTTP_OK(0) is returned.
  *         On failure, HTTP_ERROR(-1) is returned.
- * @since Tizen RT v1.0
  */
 int http_server_deregister_cb(struct http_server_t *server, int method, const char *url_format);
 
 /**
- * @brief http_send_response() sends the response.
+ * @brief Send the response.
  *        If receive request, you must send a response by this function.
  *
- * @param[in] server a pointer of HTTP request.
- * @param[in] status status code of a response.
- * @param[in] body If status is 200, it would be entity.
- *                 Else it would be reason phrase.
- * @param[in] headers HTTP headers of a response.
+ * @param[in] client Webserver sub-context structure for handling request
+ * @param[in] status Status code of response
+ * @param[in] body Entity or phrase pointer depens on status
+ * @param[in] headers HTTP header of response
  * @return On success, HTTP_OK(0) is returned.
  *         On failure, HTTP_ERROR(-1) is returned.
- * @since Tizen RT v1.0
  */
 int http_send_response(struct http_client_t *client, int status, const char *body, struct http_keyvalue_list_t *headers);
 
 #ifdef CONFIG_NET_SECURITY_TLS
 /**
- * @brief http_tls_init() initializes the TLS configuere for webserver.
+ * @brief Initialize TLS context for webserver.
  *
- * @param[in] server http_server_t structure pointer of the webserver.
- * @param[in] ssl_config ssl_config_t structure pointer of the certification.
+ * @param[in] server Webserver context structure to use
+ * @param[in] ssl_config SSL configuration including certificates and private key
  * @return On success, HTTP_OK(0) is returned.
  *         On failure, HTTP_ERROR(-1) is returned.
- * @since Tizen RT v1.0
  */
 int http_tls_init(struct http_server_t *server, struct ssl_config_t *ssl_config);
+#endif
+
+#undef EXTERN
+#ifdef __cplusplus
+}
 #endif
 
 #endif
