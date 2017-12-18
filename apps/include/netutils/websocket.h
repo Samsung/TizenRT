@@ -105,7 +105,12 @@
 /**
  * @brief Websocket socket input timeout value, msec
  */
-#define WEBSOCKET_SOCK_RCV_TIMEOUT                   (5 * 1000)	//mili second
+#ifdef CONFIG_NETUTILS_WEBSOCKET_RX_TIMEOUT
+#define WEBSOCKET_SOCK_RCV_TIMEOUT                   (CONFIG_NETUTILS_WEBSOCKET_RX_TIMEOUT * 1000)     //mili second
+#else
+#define WEBSOCKET_SOCK_RCV_TIMEOUT                   (5 * 1000)        //mili second
+#endif
+
 /**
  * @brief Websocket accept server select() timeout value, msec
  */
@@ -158,11 +163,6 @@
  * @brief Websocket context pointer wrapper
  */
 #define websocket_context_ptr                        wslay_event_context_ptr
-
-/**
- * @brief Websocket structure wrapper to carry call back pointers
- */
-#define websocket_cb_t                               struct wslay_event_callbacks
 
 /**
  * @brief Websocket structure wrapper to send a frame
@@ -287,6 +287,14 @@
  * Public Types
  ****************************************************************************/
 /**
+ * @brief Describe the connection state
+ */
+typedef enum websocket_connection_state {
+	WEBSOCKET_CLOSED,		///< The connection is closed
+	WEBSOCKET_CONNECTED	///< The websocket is connected
+} websocket_connection_state;
+
+/**
  * @brief Describe return value from websocket functions.
  */
 typedef enum {
@@ -355,6 +363,25 @@ enum websocket_opcode {
 	WEBSOCKET_PING = 0x9,		///< A control frame to ping
 	WEBSOCKET_PONG = 0xa		///< A control frame to pong
 };
+
+typedef void (*websocket_event_on_connectivity_change_callback)(
+	wslay_event_context_ptr ctx,
+	enum websocket_connection_state state,
+	void *user_data);
+
+/**
+ * @brief Websocket structure wrapper to carry call back pointers
+ */
+typedef struct {
+	wslay_event_recv_callback recv_callback;
+	wslay_event_send_callback send_callback;
+	wslay_event_genmask_callback genmask_callback;
+	wslay_event_on_frame_recv_start_callback on_frame_recv_start_callback;
+	wslay_event_on_frame_recv_chunk_callback on_frame_recv_chunk_callback;
+	wslay_event_on_frame_recv_end_callback on_frame_recv_end_callback;
+	wslay_event_on_msg_recv_callback on_msg_recv_callback;
+	websocket_event_on_connectivity_change_callback on_connectivity_change_callback;
+} websocket_cb_t;
 
 /**
  * @brief Describe the websocket structure to manage client/server

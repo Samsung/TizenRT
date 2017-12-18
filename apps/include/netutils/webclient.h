@@ -92,7 +92,11 @@
 /**
  * @brief Socket recv timeout milisecond
  */
+#ifdef CONFIG_NETUTILS_WEBCLIENT_RX_TIMEOUT
+#define WEBCLIENT_CONF_TIMEOUT_MSEC       (CONFIG_NETUTILS_WEBCLIENT_RX_TIMEOUT * 1000)
+#else
 #define WEBCLIENT_CONF_TIMEOUT_MSEC       5000
+#endif
 
 /**
  * @brief Minimum memory size for tls handshake
@@ -178,6 +182,7 @@ struct http_client_ssl_config_t {
 	unsigned int dev_cert_len;      ///< Length of device certificate
 	unsigned int private_key_len;   ///< Length of private key
 	int auth_mode;                  ///< Authentication mode (0:none, 1:optional, 2:mandatory)
+	mbedtls_ssl_config * tls_conf;  ///< Custom SSL configuration (useful when using Secure Element)
 };
 
 /**

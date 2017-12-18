@@ -531,7 +531,11 @@ send_message:
 	}
 	if (!keep_connect) {
 		if (param->tls) {
-			wget_tls_release(client_tls);
+			// If the caller provides a custom SSL configuration, the caller must release it.
+			if (!param->ssl_config.tls_conf) {
+				wget_tls_release(client_tls);
+			}
+
 			wget_tls_ssl_release(client_tls);
 		}
 		if (client_tls) {
@@ -562,7 +566,9 @@ errout_before_tlsinit:
 	if (!param->http2->init)
 #endif
 	{
-		if (param->tls) {
+
+		// If the caller provides a custom SSL configuration, the caller must release it.
+		if (param->tls && !param->ssl_config.tls_conf) {
 			wget_tls_release(client_tls);
 		}
 		if (client_tls) {

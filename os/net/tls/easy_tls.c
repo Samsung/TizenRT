@@ -21,6 +21,11 @@
 
 #include <tls/easy_tls.h>
 
+#if defined(CONFIG_TLS_WITH_SSS)
+#include <tls/see_cert.h>
+#include <tls/see_api.h>
+#endif
+
 /****************************************************************************
  * Pre-processor Definitions
  ****************************************************************************/
@@ -144,23 +149,68 @@ static int tls_set_cred(tls_ctx *ctx, tls_cred *cred)
 	}
 
 	/* Optional */
-	if (cred->dev_cert && cred->dev_key) {
+	if (cred->dev_cert) {
 		ret = mbedtls_x509_crt_parse(ctx->crt, cred->dev_cert, cred->dev_certlen);
 		if (ret) {
 			return TLS_INVALID_DEVCERT;
 		}
-		ret = mbedtls_pk_parse_key(ctx->pkey, cred->dev_key, cred->dev_keylen, NULL, 0);
-		if (ret) {
+
+		if (cred->dev_key) {
+			ret = mbedtls_pk_parse_key(ctx->pkey, cred->dev_key, cred->dev_keylen, NULL, 0);
+			if (ret) {
+				return TLS_INVALID_DEVKEY;
+			}
+		}
+#if defined(CONFIG_TLS_WITH_SSS)
+		else if (cred->use_se) {
+			ctx->use_se = true;
+			((mbedtls_ecdsa_context *)(ctx->pkey->pk_ctx))->grp.id =
+						MBEDTLS_ECP_DP_SECP256R1;
+			((mbedtls_ecdsa_context *)(ctx->pkey->pk_ctx))->key_index =
+						FACTORYKEY_ARTIK_DEVICE;
+		}
+#endif
+		else {
 			return TLS_INVALID_DEVKEY;
 		}
+
 		ret = mbedtls_ssl_conf_own_cert(ctx->conf, ctx->crt->next, ctx->pkey);
 		if (ret) {
 			return TLS_INVALID_DEVCERT;
 		}
+
 	}
 
-	return ret;
+	return TLS_SUCCESS;
 }
+
+#if defined(CONFIG_TLS_WITH_SSS)
+static int see_generate_random_client(void *ctx, unsigned char *data, size_t len)
+{
+	size_t offset = 0;
+	int ret = 0;
+	unsigned int rand[SEE_MAX_RANDOM_SIZE];
+
+	if (!data || !len)
+		return -1;
+
+	while (len != 0) {
+		size_t rand_size = len >= SEE_MAX_RANDOM_SIZE ? SEE_MAX_RANDOM_SIZE : len;
+
+		ret = see_generate_random(rand, rand_size);
+		if (ret != SEE_OK) {
+			return -1;
+		}
+
+		memcpy(data + offset, rand, rand_size);
+
+		len -= rand_size;
+		offset += rand_size;
+	}
+
+	return 0;
+}
+#endif
 
 static int tls_set_default(tls_session *session, tls_ctx *ctx, tls_opt *opt)
 {
@@ -188,7 +238,16 @@ static int tls_set_default(tls_session *session, tls_ctx *ctx, tls_opt *opt)
 		mbedtls_debug_set_threshold(opt->debug_mode);
 	}
 #endif
-	mbedtls_ssl_conf_rng(ctx->conf, mbedtls_ctr_drbg_random, ctx->ctr_drbg);
+
+#if defined(CONFIG_TLS_WITH_SSS)
+	if (ctx->use_se) {
+		mbedtls_ssl_conf_rng(ctx->conf, see_generate_random_client, ctx->ctr_drbg);
+	} else
+#endif
+	{
+		mbedtls_ssl_conf_rng(ctx->conf, mbedtls_ctr_drbg_random, ctx->ctr_drbg);
+	}
+
 	mbedtls_ssl_conf_dbg(ctx->conf, easy_tls_debug, stdout);
 
 #if defined(MBEDTLS_SSL_CACHE_C)

@@ -59,6 +59,7 @@ typedef struct tls_cert_and_key {
 	unsigned int ca_certlen;
 	unsigned int dev_certlen;
 	unsigned int dev_keylen;
+	bool use_se;
 #ifdef MBEDTLS_KEY_EXCHANGE__SOME__PSK_ENABLED
 	unsigned char *psk;
 	char *psk_identity;
@@ -77,6 +78,7 @@ typedef struct tls_context {
 #ifdef MBEDTLS_SSL_CACHE_C
 	mbedtls_ssl_cache_context *cache;
 #endif
+	bool use_se;
 } tls_ctx;
 
 typedef struct tls_options {

@@ -354,6 +354,12 @@ int webclient_tls_init(struct http_client_tls_t *client, struct http_client_ssl_
 		return -1;
 	}
 
+	/* If caller provides SSL configuration, just copy the config */
+	if (ssl_config->tls_conf) {
+		memcpy(&(client->tls_conf), ssl_config->tls_conf, sizeof(mbedtls_ssl_config));
+		return 0;
+	}
+
 	mbedtls_ssl_config_init(&(client->tls_conf));
 	mbedtls_x509_crt_init(&(client->tls_clicert));
 	mbedtls_pk_init(&(client->tls_pkey));

@@ -160,6 +160,11 @@ int websocket_handler(websocket_t *websocket)
 			}
 
 			WEBSOCKET_DEBUG("select function returned errno == %d\n", errno);
+			if (websocket->cb->on_connectivity_change_callback) {
+				struct websocket_info_t data = { .data = websocket };
+
+				websocket->cb->on_connectivity_change_callback(websocket->ctx, WEBSOCKET_CLOSED, &data);
+			}
 			return WEBSOCKET_SOCKET_ERROR;
 		} else if (r == 0) {
 			if (WEBSOCKET_HANDLER_TIMEOUT != 0) {
@@ -167,6 +172,12 @@ int websocket_handler(websocket_t *websocket)
 				if ((WEBSOCKET_HANDLER_TIMEOUT * timeout) >= (WEBSOCKET_PING_INTERVAL * 10)) {
 					timeout = 0;
 					if (websocket_ping_counter(websocket) != WEBSOCKET_SUCCESS) {
+						if (websocket->cb->on_connectivity_change_callback) {
+							struct websocket_info_t data = { .data = websocket };
+
+							websocket->cb->on_connectivity_change_callback(websocket->ctx,
+												WEBSOCKET_CLOSED, &data);
+						}
 						return WEBSOCKET_SOCKET_ERROR;
 					}
 				}
@@ -180,6 +191,12 @@ int websocket_handler(websocket_t *websocket)
 				r = wslay_event_recv(ctx);
 				if (r != WEBSOCKET_SUCCESS) {
 					WEBSOCKET_DEBUG("fail to process recv event, result : %d\n", r);
+					if (websocket->cb->on_connectivity_change_callback) {
+						struct websocket_info_t data = { .data = websocket };
+
+						websocket->cb->on_connectivity_change_callback(websocket->ctx,
+													WEBSOCKET_CLOSED, &data);
+					}
 					websocket_update_state(websocket, WEBSOCKET_ERROR);
 					return WEBSOCKET_SOCKET_ERROR;
 				}
@@ -189,6 +206,12 @@ int websocket_handler(websocket_t *websocket)
 				r = wslay_event_send(ctx);
 				if (r != WEBSOCKET_SUCCESS) {
 					WEBSOCKET_DEBUG("fail to process send event, result : %d\n", r);
+					if (websocket->cb->on_connectivity_change_callback) {
+						struct websocket_info_t data = { .data = websocket };
+
+						websocket->cb->on_connectivity_change_callback(websocket->ctx,
+											WEBSOCKET_CLOSED, &data);
+					}
 					websocket_update_state(websocket, WEBSOCKET_ERROR);
 					return WEBSOCKET_SOCKET_ERROR;
 				}
@@ -758,6 +781,24 @@ websocket_t *websocket_find_table(void)
 	return &ws_srv_table[i];
 }
 
+static void websocket_on_msg_recv_callback(websocket_context_ptr ctx, const websocket_on_msg_arg *arg, void *user_data)
+{
+	struct websocket_info_t *info = user_data;
+	websocket_t *websocket = info->data;
+
+	if (!info)
+		return;
+
+	if (WEBSOCKET_CHECK_CTRL_CLOSE(arg->opcode)) {
+		if (websocket->cb->on_connectivity_change_callback) {
+			websocket->cb->on_connectivity_change_callback(ctx, WEBSOCKET_CLOSED, user_data);
+		}
+		return;
+	}
+
+	websocket->cb->on_msg_recv_callback(ctx, arg, user_data);
+}
+
 websocket_return_t websocket_client_open(websocket_t *client, char *host, char *port, char *path)
 {
 	int r = WEBSOCKET_SUCCESS;
@@ -775,9 +816,11 @@ websocket_return_t websocket_client_open(websocket_t *client, char *host, char *
 	if (client->tls_enabled) {
 		client->tls_conf = TLSCtx(client->tls_cred);
 		if (client->tls_conf == NULL) {
+			printf("Failed to init TLS context\n");
 			WEBSOCKET_DEBUG("fail to init TLS context\n");
 			return WEBSOCKET_ALLOCATION_ERROR;
 		}
+
 	} else {
 		client->tls_conf = NULL;
 	}
@@ -802,7 +845,17 @@ websocket_return_t websocket_client_open(websocket_t *client, char *host, char *
 	memset(socket_data, 0, sizeof(struct websocket_info_t));
 	socket_data->data = client;
 
-	if (wslay_event_context_client_init(&client->ctx, client->cb, socket_data) != WEBSOCKET_SUCCESS) {
+	struct wslay_event_callbacks wslay_callbacks = {
+		client->cb->recv_callback,
+		client->cb->send_callback,
+		client->cb->genmask_callback,
+		client->cb->on_frame_recv_start_callback,
+		client->cb->on_frame_recv_chunk_callback,
+		client->cb->on_frame_recv_end_callback,
+		websocket_on_msg_recv_callback
+	};
+
+	if (wslay_event_context_client_init(&client->ctx, &wslay_callbacks, socket_data) != WEBSOCKET_SUCCESS) {
 		WEBSOCKET_DEBUG("fail to init websocket client context\n");
 		WEBSOCKET_FREE(socket_data);
 		r = WEBSOCKET_INIT_ERROR;
@@ -924,7 +977,17 @@ websocket_return_t websocket_server_init(websocket_t *server)
 	}
 	socket_data->data = server;
 
-	if (wslay_event_context_server_init(&(server->ctx), server->cb, socket_data) != WEBSOCKET_SUCCESS) {
+	struct wslay_event_callbacks wslay_callbacks = {
+		server->cb->recv_callback,
+		server->cb->send_callback,
+		server->cb->genmask_callback,
+		server->cb->on_frame_recv_start_callback,
+		server->cb->on_frame_recv_chunk_callback,
+		server->cb->on_frame_recv_end_callback,
+		server->cb->on_msg_recv_callback
+	};
+
+	if (wslay_event_context_server_init(&(server->ctx), &wslay_callbacks, socket_data) != WEBSOCKET_SUCCESS) {
 		WEBSOCKET_DEBUG("fail to initiate websocket server\n");
 		r = WEBSOCKET_INIT_ERROR;
 		goto EXIT_SERVER_INIT;
@@ -964,7 +1027,18 @@ websocket_return_t websocket_register_cb(websocket_t *websocket, websocket_cb_t 
 	}
 
 	if (websocket->ctx != NULL) {
-		wslay_event_config_set_callbacks(websocket->ctx, cb);
+		websocket->cb = cb;
+		struct wslay_event_callbacks wslay_callbacks = {
+			cb->recv_callback,
+			cb->send_callback,
+			cb->genmask_callback,
+			cb->on_frame_recv_start_callback,
+			cb->on_frame_recv_chunk_callback,
+			cb->on_frame_recv_end_callback,
+			websocket_on_msg_recv_callback
+		};
+
+		wslay_event_config_set_callbacks(websocket->ctx, &wslay_callbacks);
 	} else {
 		websocket->cb = cb;
 	}
