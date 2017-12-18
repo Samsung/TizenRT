@@ -48,6 +48,7 @@
  *
  */
 #include <tinyara/config.h>
+#include <netdb.h>
 #include <stdio.h>
 #include <string.h>
 #include <stdint.h>
@@ -55,17 +56,26 @@
 #include <sys/socket.h>
 #include <arpa/inet.h>
 #include <net/lwip/icmp.h>
+#include <net/lwip/icmp6.h>
 #include <net/lwip/ip.h>
+#include <net/lwip/arch.h>
 #include "netcmd.h"
 #include "netcmd_ping.h"
 
 #undef htons
 #define htons HTONS
-#define PING_ID        0xAFAF
-#define PING_DELAY     1000
-#define PING_MAX_TRY_COUNTER	10
-#define PING_DATA_SIZE			32
-#define PING_RESULT(ping_ok)
+#define PING_ID                 0xAFAF
+#define PING_DELAY              1000
+#define PING_MAX_TRY_COUNTER    10
+#define PING_DATA_SIZE          32
+
+#define ICMP_HDR_SIZE (sizeof(struct ip_hdr) + sizeof(struct icmp_echo_hdr))
+#if LWIP_IPV6
+#define ICMP6_HDR_SIZE (sizeof(struct ip6_hdr) + sizeof(struct icmp6_echo_hdr))
+#define PING_SIZE(proto) ((proto == IPPROTO_ICMPV6) ? ICMP6_HDR_SIZE : ICMP_HDR_SIZE)
+#else
+#define PING_SIZE(proto) (ICMP_HDR_SIZE + 32)
+#endif
 
 static int g_ping_recv_counter;
 static uint16_t g_ping_seq_num;
@@ -84,6 +94,7 @@ dump_usage(void)
 	printf("\tsize : ping packet data size (default 32 Bytes)\n");
 	printf("\n");
 }
+
 static int
 nu_ping_options(int argc, char **argv, int *count, uint32_t *dsec, char **staddr)
 {
@@ -194,169 +205,311 @@ nu_standard_chksum(void *dataptr, u16_t len)
 	return htons((u16_t)acc);
 }
 
-
-static void
-nu_ping_recv(int s, struct timespec *ping_time)
+static int
+nu_ping_recv(int family, int s, struct timespec *ping_time)
 {
-	char *buf = NULL;
-	int fromlen;
+	char buf[64];
+	char addr_str[64];
+	socklen_t fromlen;
+	int status = ERROR;
 	int len;
-	struct sockaddr_in from;
-	struct ip_hdr *iphdr;
-	struct icmp_echo_hdr *iecho;
-	int ping_size = sizeof(struct ip_hdr) + sizeof(struct icmp_echo_hdr) + g_ping_data_size;
+	struct sockaddr *from = NULL;
+	struct icmp_echo_hdr *iecho = NULL;
+	struct ip_hdr *iphdr = NULL;
 
-	fromlen = sizeof(struct sockaddr_in);
+#if LWIP_IPV6
+	if (family == AF_INET6) {
+		fromlen = sizeof(struct sockaddr_in6);
+	} else
+#endif
+	if (family == AF_INET) {
+		fromlen = sizeof(struct sockaddr_in);
+	} else {
+		printf("nu_ping_recv: invalid family\n");
+		return ERROR;
+	}
+
+	/* allocate memory due to difference of size between ipv4/v6 socket structure */
+	from = malloc(fromlen);
+	if (from == NULL) {
+		printf("nu_ping_recv: fail to allocate memoru\n");
+		return ERROR;
+	}
 
 	while (1) {
-		buf = (char *)malloc(sizeof(char)*ping_size);
-		if (!buf) {
-			printf("failed to allocate memory\n");
-			return;
+		len = recvfrom(s, buf, sizeof(buf), 0, from, &fromlen);
+		if (len < 0) {
+			printf("nu_ping_recv: recvfrom error(%d)\n", errno);
+			goto err_out;
+		} else if (len == 0) {
+			printf("nu_ping_recv: timeout\n");
 		}
 
-		len = recvfrom(s, buf, ping_size, 0, (struct sockaddr *)&from, (socklen_t *)&fromlen);
-		if (len <= 0) break;
+#if LWIP_IPV6
+		if (family == AF_INET6) {
+			if (len >= ICMP6_HDR_SIZE) {
+				struct ip6_hdr *ip6hdr;
+				unsigned char nexth;
+				char *curp;
+				int ok = 0;
 
-		if (len >= (int)(sizeof(struct ip_hdr) + sizeof(struct icmp_echo_hdr))) {
+				ip6hdr = (struct ip6_hdr *)buf;
+				len = IP6H_PLEN(ip6hdr);
+				curp = (char *)(buf + sizeof(struct ip6_hdr));
 
-			iphdr = (struct ip_hdr *)buf;
-			iecho = (struct icmp_echo_hdr *)(buf + (IPH_HL(iphdr) * 4));
+				nexth = ip6hdr->_nexth;
+				while (nexth != IP6_NEXTH_NONE) {
+					switch (nexth) {
+					case IP6_NEXTH_FRAGMENT:
+					{
+						struct ip6_frag_hdr *frag_hdr;
 
-			if (iecho->type == ICMP_ER) {
-				struct timespec now;
-				clock_gettime(CLOCK_REALTIME, &now);
-				g_ping_recv_counter++;
-				uint32_t elapsed = (now.tv_sec - ping_time->tv_sec) * 1000 + (now.tv_nsec - ping_time->tv_nsec) / 1000000;
-				printf(" %d bytes from %s: icmp_seq=%d ttl=255 time=%" U32_F " ms\n",
-					   len, inet_ntoa(from.sin_addr), g_ping_seq_num, elapsed);
+						frag_hdr = (struct ip6_frag_hdr *)curp;
+						nexth = frag_hdr->_nexth;
+						curp += (sizeof(struct ip6_frag_hdr));
+						len -= (sizeof(struct ip6_frag_hdr));
+						break;
+					}
+					case IP6_NEXTH_ICMP6:
+						ok = 1;
+						nexth = IP6_NEXTH_NONE;
+						break;
+					default:
+						nexth = IP6_NEXTH_NONE;
+						break;
+					}
+				}
 
-				if ((iecho->id == PING_ID) && (iecho->seqno == htons(g_ping_seq_num))) {
-					/* do some ping result processing */
-					PING_RESULT((ICMPH_TYPE(iecho) == ICMP_ER));
-					free(buf);
-					return;
-				} else printf("drop\n");
+				if (ok) {
+					iecho = (struct icmp_echo_hdr *)(curp);
+
+					if (iecho->type == ICMP6_TYPE_EREP) {
+						inet_ntop(family, (void *)&((struct sockaddr_in6 *)from)->sin6_addr, addr_str, 64);
+						status = OK;
+					}
+				}
+			}
+		} else
+#endif
+		{
+			if (len >= ICMP_HDR_SIZE) {
+				inet_ntop(family, (void *)&((struct sockaddr_in *)from)->sin_addr, addr_str, 64);
+
+				iphdr = (struct ip_hdr *)buf;
+				len = htons(IPH_LEN(iphdr)) - IP_HLEN;
+				iecho = (struct icmp_echo_hdr *)(buf + (IPH_HL(iphdr) * 4));
+				if (iecho->type == ICMP_ER) {
+					status = OK;
+				}
 			}
 		}
-		free(buf);
-	}
-	if (len == 0) {
-		printf("ping: recv - timeout\n");
+
+		if (status == OK) {
+			uint32_t elapsed;
+			struct timespec now;
+
+			clock_gettime(CLOCK_REALTIME, &now);
+			g_ping_recv_counter++;
+			elapsed = (now.tv_sec - ping_time->tv_sec) * 1000 + (now.tv_nsec - ping_time->tv_nsec) / 1000000;
+			printf(" %d bytes from %s: icmp_seq=%d ttl=255 time=%" U32_F "ms\n", len, addr_str, g_ping_seq_num, elapsed);
+
+			if ((iecho->id == PING_ID) && (iecho->seqno == htons(g_ping_seq_num))) {
+				/* do some ping result processing */
+				break;
+			} else {
+				printf("drop\n");
+			}
+		}
 	}
 
-	if (buf) {
-		free(buf);
+	free(from);
+	return OK;
+err_out:
+	if (from) {
+		free(from);
+		from = NULL;
 	}
+
+	return ERROR;
 }
 
 
 static void
-nu_ping_prepare_echo(struct icmp_echo_hdr *iecho, u16_t len)
+nu_ping_prepare_echo(int family, struct icmp_echo_hdr *iecho, u16_t len)
 {
+	int icmp_hdrlen;
 	size_t i;
-	size_t data_len = len - sizeof(struct icmp_echo_hdr);
 
-	ICMPH_TYPE_SET(iecho, ICMP_ECHO);
+#if LWIP_IPV6
+	if (family == AF_INET6) {
+		icmp_hdrlen = sizeof(struct icmp6_echo_hdr);
+	} else
+#endif
+	{
+		icmp_hdrlen = sizeof(struct icmp_echo_hdr);
+	}
 	ICMPH_CODE_SET(iecho, 0);
-	iecho->chksum = 0;
-	iecho->id     = PING_ID;
+	iecho->id = PING_ID;
 	++g_ping_seq_num;
-	iecho->seqno  = htons(g_ping_seq_num);
+	iecho->seqno = htons(g_ping_seq_num);
 
 	/* fill the additional data buffer with some data */
-	for (i = 0; i < data_len; i++) {
-		((char *)iecho)[sizeof(struct icmp_echo_hdr) + i] = (char)i;
+	for (i = icmp_hdrlen; i < len; i++) {
+		((char *)iecho)[i] = (char)i;
 	}
 
-	iecho->chksum = ~nu_standard_chksum(iecho, len);
+#if LWIP_IPV6
+	if (family == AF_INET6) {
+		ICMPH_TYPE_SET(iecho, ICMP6_TYPE_EREQ);
+		iecho->chksum = 0;
+	} else
+#endif
+	{
+		ICMPH_TYPE_SET(iecho, ICMP_ECHO);
+		iecho->chksum = 0;
+		iecho->chksum = ~nu_standard_chksum(iecho, len);
+	}
 }
 
-
 static int
-nu_ping_send(int s, struct sockaddr_in *to)
+nu_ping_send(int s, struct sockaddr *to, int size)
 {
-	int err;
-	int ret = 0;
-	struct icmp_echo_hdr *iecho;
-	size_t ping_size = sizeof(struct icmp_echo_hdr) + g_ping_data_size;
+	int ret;
+	size_t icmplen;
+	socklen_t addrlen;
+	struct icmp_echo_hdr *iecho = NULL;
 
-	LWIP_ASSERT("ping_size is too big", ping_size <= 0xffff);
-
-	iecho = (struct icmp_echo_hdr *)malloc(ping_size);
-	if (!iecho) {
-		printf("fail to alloc mem\n");
-		return -1;
+#if LWIP_IPV6
+	if (to->sa_family == AF_INET6) {
+		addrlen = sizeof(struct sockaddr_in6);
+		icmplen = sizeof(struct icmp6_echo_hdr) + size;
+	} else
+#endif
+	if (to->sa_family == AF_INET) {
+		addrlen = sizeof(struct sockaddr_in);
+		icmplen = sizeof(struct icmp_echo_hdr) + size;
+	} else {
+		printf("nu_ping_send: invalid family\n");
+		return ERROR;
 	}
 
-	nu_ping_prepare_echo(iecho, (u16_t)ping_size);
+	iecho = (struct icmp_echo_hdr *)malloc(icmplen);
+	if (!iecho) {
+		printf("nu_ping_send: fail to alloc mem\n");
+		return ERROR;
+	}
 
-	err = sendto(s, iecho, ping_size, 0, (struct sockaddr *)to, sizeof(struct sockaddr_in));
-	if (err < 0) {
-		printf("sendto is failed\n");
-		ret = -1;
+	nu_ping_prepare_echo((int)to->sa_family, iecho, (u16_t)icmplen);
+
+	ret = sendto(s, iecho, icmplen, 0, to, addrlen);
+	if (ret <= 0) {
+		free(iecho);
+		return ret;
 	}
 	free(iecho);
 
-	return ret;
+	return 0;
 }
 
-int
-nu_ping_process(int count, const char *taddr)
+static int
+nu_ping_process(int count, const char *taddr, int size)
 {
-	int s;
-	int ret;
+	int s = -1;
+	int ping_send_counter = 0;
 	struct timeval tv;
-	struct sockaddr_in to;
-	struct timespec  ping_time;
-	int32_t ping_send_counter = 0;
+	struct timespec ping_time;
+	struct addrinfo hints;
+	struct addrinfo *result = NULL;
+	struct addrinfo *rp = NULL;
+	struct sockaddr *to = NULL;
+
 	g_ping_seq_num = 0;
 	g_ping_recv_counter = 0;
 
-	printf("PING %s (%s) 60(88) bytes of data. count(%d)\n", taddr, taddr, count);
-	if ((s = socket(AF_INET, SOCK_RAW, IP_PROTO_ICMP)) < 0) {
-		printf("fail to create raw socket...\n");
-		return -1;
+	/* write information for getaddrinfo() */
+	memset(&hints, 0, sizeof(hints));
+	hints.ai_family = AF_UNSPEC;
+	hints.ai_socktype = SOCK_RAW;
+	if (strstr(taddr, ".") != NULL) {
+		hints.ai_protocol = IPPROTO_ICMP;
 	}
+#if LWIP_IPV6
+	if (strstr(taddr, ":") != NULL) {
+		hints.ai_protocol = hints.ai_protocol ? 0 : IPPROTO_ICMPV6;
+	}
+#endif
+	if (hints.ai_protocol == 0) {
+		printf("nu_ping_process: invalid target ip address\n");
+		return ERROR;
+	}
+
+	printf("PING %s (%s) %d bytes of data. count(%d)\n", taddr, taddr, size, count);
+
+	/* get address information */
+	if (lwip_getaddrinfo(taddr, NULL, &hints, &result) != 0) {
+		printf("nu_ping_process: fail to get addrinfo\n");
+		return ERROR;
+	}
+
+	/* try to find valid socket with address information */
+	for (rp = result; rp != NULL; rp = rp->ai_next) {
+		s = socket(rp->ai_family, rp->ai_socktype, rp->ai_protocol);
+		if (s < 0) {
+			/* continue if open is failed */
+			continue;
+		} else {
+			/* success */
+			break;
+		}
+	}
+	if (rp == NULL) {
+		/* opening socket is totally failed */
+		printf("nu_ping_process: fail to create raw socket\n");
+		goto err_out;
+	}
+
+	/* copy the socket pointer we found */
+	to = rp->ai_addr;
 
 	tv.tv_sec = 1;
 	tv.tv_usec = 0;
-
-	ret = setsockopt(s, SOL_SOCKET, SO_RCVTIMEO, (struct timeval *)&tv,
-			   sizeof(struct timeval));
-	if (ret < 0) {
-		printf("ping: setsockopt error\n");
-		close(s);
-		return -1;
+	if (setsockopt(s, SOL_SOCKET, SO_RCVTIMEO, (struct timeval *)&tv, sizeof(struct timeval)) != ERR_OK) {
+		printf("nu_ping_process: setsockopt error\n");
+		goto err_out;
 	}
 
-	to.sin_len = sizeof(to);
-	to.sin_family = AF_INET;
-	to.sin_addr.s_addr = inet_addr(taddr);
-
 	while (1) {
-		if (nu_ping_send(s, &to) == ERR_OK) {
-			// printf("ping : send %d\n", ping_send_counter);
+		if (nu_ping_send(s, to, size) == ERR_OK) {
 			clock_gettime(CLOCK_REALTIME, &ping_time);
-			nu_ping_recv(s, &ping_time);
+			nu_ping_recv((int)to->sa_family, s, &ping_time);
 		} else {
-			printf("ping: send error\n");
+			printf("nu_ping_process: sendto error(%d)\n", errno);
 			break;
 		}
 
 		ping_send_counter++;
 		usleep(1000 * PING_DELAY);
-		if (ping_send_counter == count) break;
+		if (ping_send_counter == count) {
+			break;
+		}
 	}
 
+	lwip_freeaddrinfo(result);
 	close(s);
 
 	printf("--- %s ping statistics ---\n", taddr);
-	printf("%d packets transmitted, %d received, %f\%% packet loss,\n", ping_send_counter,
-		   g_ping_recv_counter,
-		   (100.0f * (float)(g_ping_recv_counter - ping_send_counter))/(float)g_ping_recv_counter);
+	printf("%d packets transmitted, %d received, %f\%% packet loss,\n", ping_send_counter, g_ping_recv_counter, (100.0f * (float)(ping_send_counter - g_ping_recv_counter)) / (float)ping_send_counter);
 
 	return OK;
+
+err_out:
+	lwip_freeaddrinfo(result);
+	if (s >= 0) {
+		close(s);
+		s = -1;
+	}
+
+	return ERROR;
 }
 
 int cmd_ping(int argc, char **argv)
@@ -397,7 +550,7 @@ int cmd_ping(int argc, char **argv)
 		}
 	}
 
-	ret = nu_ping_process(count, staddr);
+	ret = nu_ping_process(count, staddr, g_ping_data_size);
 	if (ret < 0) {
 		return ERROR;
 	}
