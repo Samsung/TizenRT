@@ -1,0 +1,14 @@
+#
+# For a description of the syntax of this configuration file,
+# see kconfig-language at https://www.kernel.org/doc/Documentation/kbuild/kconfig-language.txt
+#
+
+config EXAMPLES_STACKTEST
+	bool "\"Stack Protection Test\" example"
+	default n
+	---help---
+		Enable the \"Stack Protection Test\" example
+
+config USER_ENTRYPOINT
+	string
+	default "stack_test_main" if ENTRY_STACKTEST
