@@ -46,6 +46,9 @@
 #include <net/lwip/stats.h>
 #include <tinyara/net/ip.h>
 #include <apps/netutils/dhcpc.h>
+#ifdef CONFIG_NET_IPv6
+#include <net/lwip/mld6.h>
+#endif
 
 #ifdef CONFIG_NETUTILS_NETLIB
 #include <apps/netutils/netlib.h>
@@ -90,13 +93,13 @@ extern int lwm2m_server_main(int argc, char *argv[]);
 
 static void nic_display_state(void)
 {
-	struct ifreq *ifr;
-	struct sockaddr_in *sin;
-	struct sockaddr *sa;
 	struct ifconf ifcfg;
-	int fd;
+	struct ifreq *if_list;
+	int i;
+	int fd = -1;
 	int numreqs = 3;
 	int num_nic = 0;
+
 	fd = socket(AF_INET, SOCK_DGRAM, 0);
 	memset(&ifcfg, 0, sizeof(ifcfg));
 	ifcfg.ifc_buf = NULL;
@@ -107,30 +110,49 @@ static void nic_display_state(void)
 		goto DONE;
 	}
 	num_nic = ifcfg.ifc_len / sizeof(struct ifreq);
-	ifr = ifcfg.ifc_req;
-	int i = 0;
-	for (; i < num_nic; ifr++, i++) {
-		printf("%s\t", ifr->ifr_name);
-		sin = (struct sockaddr_in *)&ifr->ifr_addr;
-		if ((sin->sin_addr.s_addr) == INADDR_LOOPBACK) {
-			printf("Loop Back\t");
-		} else {
-			struct ifreq tmp;
-			strncpy(tmp.ifr_name, ifr->ifr_name, IF_NAMESIZE);
-			ioctl(fd, SIOCGIFHWADDR, (char *)&tmp);
-			sa = &tmp.ifr_hwaddr;
-			printf("Link encap: %s\t", ether_ntoa((struct ether_addr *)sa->sa_data));
+	if_list = ifcfg.ifc_req;
 
-			ioctl(fd, SIOCGIFFLAGS, (void *)ifr);
-			printf("RUNNING: %s\n", (ifr->ifr_flags & IFF_UP) ? "UP" : "DOWN");
+	for (i = 0; i < num_nic; if_list++, i++) {
+		struct sockaddr *sa;
+		struct ifreq ifr;
+		struct sockaddr_in *sin;
+#ifdef CONFIG_NET_IPv6
+		struct lifreq lifr;
+		struct netif *netif;
+		int j;
+#endif
+
+		ifr = *if_list;
+#ifdef CONFIG_NET_IPv6
+		lifr = *(struct lifreq *)if_list;
+#endif
+
+		printf("%s", ifr.ifr_name);
+
+		ioctl(fd, SIOCGIFHWADDR, (char *)&ifr);
+		sa = &ifr.ifr_hwaddr;
+		printf("\tLink encap: %s", ether_ntoa((struct ether_addr *)sa->sa_data));
+
+		ioctl(fd, SIOCGIFFLAGS, (void *)&ifr);
+		printf("\tRUNNING: %s", (ifr.ifr_flags & IFF_UP) ? "UP" : "DOWN");
+
+		ioctl(fd, SIOCGIFMTU, (char *)&ifr);
+		printf("\tMTU: %d\n", ifr.ifr_mtu);
+
+		ioctl(fd, SIOCGIFADDR, (char *)&ifr);
+		printf("\tinet addr: %s", inet_ntoa(sin->sin_addr));
+
+		ioctl(fd, SIOCGIFNETMASK, (char *)&ifr);
+		sin = (struct sockaddr_in *)&ifr.ifr_netmask;
+		printf("\tMask: %s\n", inet_ntoa(sin->sin_addr));
+#ifdef CONFIG_NET_IPv6_NUM_ADDRESSES
+		netif = netif_find(ifr.ifr_name);
+		for (j = 0; netif != NULL && j < CONFIG_NET_IPv6_NUM_ADDRESSES; j++) {
+			if (netif->ip6_addr_state[j] != 0) {
+				printf("\tinet6 addr: %s\n", ip6addr_ntoa(ip_2_ip6(&netif->ip6_addr[j])));
+			}
 		}
-		printf("\tinet addr: %s\t", inet_ntoa(sin->sin_addr));
-
-		ioctl(fd, SIOCGIFNETMASK, (char *)ifr);
-		sin = (struct sockaddr_in *)&ifr->ifr_addr;
-		printf("Mask: %s\t", inet_ntoa(sin->sin_addr));
-		ioctl(fd, SIOCGIFMTU, (char *)ifr);
-		printf("MTU: %d\n", ifr->ifr_mtu);
+#endif /* CONFIG_NET_IPv6_NUM_ADDRESSES */
 		printf("\n");
 	}
 DONE:
@@ -319,12 +341,33 @@ int cmd_ifconfig(int argc, char **argv)
 					inet_pton(AF_INET6, hostip, &temp);
 					idx = netif_get_ip6_addr_match(netif, &temp);
 					if (idx != -1) {
+#ifdef CONFIG_NET_IPv6_MLD
+						ip6_addr_t solicit_addr;
+
+						/* leaving MLD6 group */
+						ip6_addr_set_solicitednode(&solicit_addr, ip_2_ip6(&netif->ip6_addr[0])->addr[idx]);
+						mld6_leavegroup_netif(netif, &solicit_addr);
+						ndbg("MLD6 group left - %X : %X : %X : %X\n", PP_HTONL(solicit_addr.addr[0]), PP_HTONL(solicit_addr.addr[1]), PP_HTONL(solicit_addr.addr[2]), PP_HTONL(solicit_addr.addr[3]));
+#endif /* CONFIG_NET_IPv6_MLD */
 						/* delete static ipv6 address if the same ip address exists */
 						netif_ip6_addr_set_state(netif, idx, IP6_ADDR_INVALID);
 						return OK;
 					}
+#ifdef CONFIG_NET_IPv6_AUTOCONFIG
+					/* enable IPv6 address stateless autoconfiguration */
+					netif_set_ip6_autoconfig_enabled(netif, 1);
+#endif /* CONFIG_NET_IPv6_AUTOCONFIG */
 					/* add static ipv6 address */
 					result = netif_add_ip6_address(netif, &temp, &idx);
+
+#ifdef CONFIG_NET_IPv6_MLD
+					ip6_addr_t solicit_addr;
+
+					/* set MLD6 group to receive solicit multicast message */
+					ip6_addr_set_solicitednode(&solicit_addr, ip_2_ip6(&netif->ip6_addr[0])->addr[idx]);
+					mld6_joingroup_netif(netif, &solicit_addr);
+					ndbg("MLD6 group added - %X : %X : %X : %X\n", PP_HTONL(solicit_addr.addr[0]), PP_HTONL(solicit_addr.addr[1]), PP_HTONL(solicit_addr.addr[2]), PP_HTONL(solicit_addr.addr[3]));
+#endif /* CONFIG_NET_IPv6_MLD */
 				}
 
 				return OK;
