@@ -1,0 +1,3 @@
+config ENTRY_MEDIA_TEST
+	bool "Media test example"
+	depends on EXAMPLES_MEDIA_TEST

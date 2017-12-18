@@ -1,0 +1,27 @@
+#
+# For a description of the syntax of this configuration file,
+# see kconfig-language at https://www.kernel.org/doc/Documentation/kbuild/kconfig-language.txt
+#
+
+config EXAMPLES_MEDIA_TEST
+	bool "Media test example"
+	depends on DM
+	default n
+	---help---
+		Enable the Media example in tash
+
+if EXAMPLES_MEDIA_TEST
+
+config EXAMPLES_MEDIA_TEST_PROGNAME
+	string "Program name"
+	default "media_test"
+	depends on BUILD_KERNEL
+	---help---
+		This is the name of the program that will be use when the NSH ELF
+		program is installed.
+
+endif
+
+config USER_ENTRYPOINT
+	string
+	default "media_test_main" if ENTRY_MEDIA_TEST

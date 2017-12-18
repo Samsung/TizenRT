@@ -53,6 +53,10 @@ ifeq ($(CONFIG_AUDIO), y)
 include src$(DELIM)tinyalsa$(DELIM)Make.defs
 endif
 
+ifeq ($(CONFIG_MEDIA), y)
+include src$(DELIM)media$(DELIM)Make.defs
+endif
+
 AOBJS = $(ASRCS:.S=$(OBJEXT))
 COBJS = $(CSRCS:.c=$(OBJEXT))
 

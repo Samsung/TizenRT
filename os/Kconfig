@@ -464,6 +464,10 @@ menu "Audio Support"
 source audio/Kconfig
 endmenu
 
+menu "Media Support"
+source media/Kconfig
+endmenu
+
 menu "File Systems"
 source fs/Kconfig
 endmenu
