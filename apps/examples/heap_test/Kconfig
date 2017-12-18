@@ -1,0 +1,25 @@
+#
+# For a description of the syntax of this configuration file,
+# see kconfig-language at https://www.kernel.org/doc/Documentation/kbuild/kconfig-language.txt
+#
+
+config EXAMPLES_HEAPTEST
+	bool "\"Heap Protection Test\" example"
+	default n
+	---help---
+		Enable the \"Heap Protection Test\" example
+
+if EXAMPLES_HEAPTEST
+
+config EXAMPLES_HEAPTEST_PROGNAME
+	string "Program name"
+	default "heap_test"
+	depends on BUILD_PROTECTED
+	---help---
+		Heap protection feature test example program
+
+endif
+
+config USER_ENTRYPOINT
+	string
+	default "heap_test_main" if ENTRY_HEAPTEST
