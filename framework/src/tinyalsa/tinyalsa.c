@@ -487,7 +487,7 @@ int pcm_writei(struct pcm *pcm, const void *data, unsigned int frame_count)
 	pending = pcm_frames_to_bytes(pcm, frame_count);
 
 	while (pending > 0) {
-		nbytes = pending > pcm->buffer_size ? pcm->buffer_size : pending;
+		nbytes = pending > pcm_frames_to_bytes(pcm, pcm->buffer_size) ? pcm_frames_to_bytes(pcm, pcm->buffer_size) : pending;
 
 		if (pcm->buf_ptr < pcm->buffer_cnt) {
 			/* If we have empty buffers, fill them first */
