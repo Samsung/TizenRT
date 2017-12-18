@@ -288,7 +288,7 @@ char *slsi_send_request(char *ifname, char *cmd, int8_t *result)
 	}
 
 	size_t len = WPA_BUFFER_SIZE - 1;
-	DPRINT("SLSI_API command %s \n", cmd);
+	VPRINT("SLSI_API command %s\n", cmd);
 	if (ifname) {
 		wpa_update_send_cmd_ifname(g_ctrl_conn, ifname);
 	}
