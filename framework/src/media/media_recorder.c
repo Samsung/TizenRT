@@ -142,6 +142,9 @@ record_result_t media_record_set_config(int channel, int sample_rate, int pcm_fo
 	g_rc.rec_config->channels = channel;
 	g_rc.rec_config->rate = sample_rate;
 	g_rc.rec_config->format = pcm_format;
+	//TO-DO we should discussion for default value or user value and then will change.
+	g_rc.rec_config->period_size = 0;
+	g_rc.rec_config->period_count = 0;
 	g_rc.format = format;
 
 	RECORD_UNLOCK();
