@@ -24,6 +24,8 @@
  ****************************************************************************/
 
 #include <tinyara/config.h>
+#include <tinyara/fs/ramdisk.h>
+#include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <unistd.h>
@@ -112,6 +114,8 @@
 #define VFS_TEST_CONTENTS_3 "THIS IS VFS TEST 3"
 
 #define LONG_FILE_CONTENTS "Yesterday all my trouble seemed so far away. Now it looks as though they're here to stay. Oh, I believe in yesterday."
+
+#define DEV_RAMDISK_PATH "/dev/ram2"
 
 #define LONG_FILE_LOOP_COUNT 24
 
@@ -3444,6 +3448,59 @@ static void tc_libc_stdio_ungetc(void)
 	TC_SUCCESS_RESULT();
 }
 
+/**
+* @testcase         tc_fs_driver_ramdisk_ops
+* @brief            creating an ramddisk device
+* @scenario         Creates an /dev/ram2 and peforms operations on /dev/ram2
+* @apicovered       rd_open, rd_close, ramdisk_register, rd_read, rd_write
+* @precondition     NA
+* @postcondition    NA
+*/
+#ifdef CONFIG_BCH
+static void tc_fs_driver_ramdisk_ops(void)
+{
+	uint8_t *buffer;
+	int sectsize = 512;
+	uint32_t nsectors = 1;
+	int minor = 2;
+	int ret;
+	int fd;
+	char buf[20];
+	long size;
+
+	/* Allocate the memory backing up the ramdisk */
+	buffer = (uint8_t *)malloc(sectsize * nsectors);
+	if (!buffer) {
+		printf("out of memory \n");
+		return;
+	}
+
+	ret = ramdisk_register(minor, buffer, nsectors, sectsize, RDFLAG_WRENABLED | RDFLAG_FUNLINK);
+	TC_ASSERT_EQ_CLEANUP("ramdisk_register", ret, OK, free(buffer));
+
+	fd = open(DEV_RAMDISK_PATH, O_RDWR);
+	TC_ASSERT_GEQ_CLEANUP("open", fd, 0, free(buffer));
+
+	ret = ioctl(fd, BIOC_XIPBASE, &size);
+	TC_ASSERT_EQ_CLEANUP("ioctl", ret, OK, free(buffer); close(fd));
+
+	ret = read(fd, buf, sizeof(buf));
+	TC_ASSERT_NEQ_CLEANUP("read", ret, ERROR, free(buffer); close(fd));
+
+#ifdef CONFIG_FS_WRITABLE
+	ret = write(fd, buf, sizeof(buf));
+	TC_ASSERT_NEQ_CLEANUP("write", ret, ERROR, free(buffer); close(fd));
+#endif
+
+	ret = close(fd);
+	TC_ASSERT_EQ_CLEANUP("close", ret, OK, free(buffer));
+
+	ret = unlink(DEV_RAMDISK_PATH);
+	TC_ASSERT_EQ_CLEANUP("unlink", ret, OK, free(buffer));
+
+	TC_SUCCESS_RESULT();
+}
+#endif
 #ifdef CONFIG_BUILD_KERNEL
 int main(int argc, FAR char *argv[])
 #else
@@ -3492,6 +3549,7 @@ int tc_filesystem_main(int argc, char *argv[])
 	tc_fs_vfs_select();
 #endif
 #endif
+
 	tc_fs_vfs_rename();
 	tc_fs_vfs_ioctl();
 #ifdef CONFIG_TC_FS_PROCFS
@@ -3548,6 +3606,9 @@ int tc_filesystem_main(int argc, char *argv[])
 	tc_driver_mtd_procfs_ops();
 #endif
 	tc_fs_mqueue_ops();
+#ifdef CONFIG_BCH
+	tc_fs_driver_ramdisk_ops();
+#endif
 	tc_libc_stdio_meminstream();
 	tc_libc_stdio_memoutstream();
 	tc_libc_stdio_memsistream();
