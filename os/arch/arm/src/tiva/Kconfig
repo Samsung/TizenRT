@@ -532,7 +532,8 @@ config TIVA_TIMER7
 config TIVA_ETHERNET
 	bool "Ethernet"
 	default n
-	select NETDEVICES
+	depends on TIVA_HAVE_ETHERNET
+	select NETDEVICES if NET
 	---help---
 		This must be set (along with NET) to build the Stellaris Ethernet driver.
 
