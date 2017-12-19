@@ -158,7 +158,7 @@ static void tc_environ_putenv(void)
 	TC_ASSERT_EQ("putenv", ret_chk, OK);
 
 	psz_getvalue = getenv("PATH");
-	TC_ASSERT_NEQ_CLEANUP("getenv", psz_getvalue, NULL, clearenv());	
+	TC_ASSERT_NEQ_CLEANUP("getenv", psz_getvalue, NULL, clearenv());
 	TC_ASSERT_EQ_CLEANUP("getenv", strcmp(psz_getvalue, "D:"), 0, clearenv());
 
 	ret_chk = putenv(NULL);
