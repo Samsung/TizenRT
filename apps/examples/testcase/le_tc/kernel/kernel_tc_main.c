@@ -196,6 +196,9 @@ int tc_kernel_main(int argc, char *argv[])
 #ifdef CONFIG_ITC_KERNEL_LIBC_SCHED
 	itc_libc_sched_main();
 #endif
+#ifdef CONFIG_ITC_KERNEL_LIBC_PTHREAD
+	itc_libc_pthread_main();
+#endif
 
 	(void)tc_handler(TC_END, "Kernel TC");
 

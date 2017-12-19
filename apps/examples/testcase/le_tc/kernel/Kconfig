@@ -48,6 +48,7 @@ config TC_KN_ALL
 	select TC_KERNEL_TIMER
 	select TC_KERNEL_UMM_HEAP
 	select ITC_KERNEL_LIBC_SCHED
+	select ITC_KERNEL_LIBC_PTHREAD
 
 config TC_KERNEL_CLOCK
 	bool "Clock"
@@ -202,6 +203,10 @@ config TC_KERNEL_TASH_STACKMONITOR
 
 config ITC_KERNEL_LIBC_SCHED
 	bool "ITC Libc Sched"
+	default n
+
+config ITC_KERNEL_LIBC_PTHREAD
+	bool "ITC Libc Pthread"
 	default n
 endif #EXAMPLES_TESTCASE_KERNEL
 
