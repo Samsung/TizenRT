@@ -60,7 +60,7 @@ env.AppendUnique(CCFLAGS = ['-std=c99'])
 env.AppendUnique(CCFLAGS = ['-w'])
 
 arch_board = ARGUMENTS.get('ARCH_BOARD')
-if arch_board in ['sidk_s5jt200', 'artik053']:
+if arch_board in ['sidk_s5jt200', 'artik053', 'artik05x']:
 	env.AppendUnique(CCFLAGS = ['-mcpu=cortex-r4', '-mfpu=vfpv3', '-Wall',
 		'-Wstrict-prototypes', '-Wshadow', '-Wundef', '-Wno-implicit-function-declaration',
 		'-Wno-unused-function', '-Wno-unused-but-set-variable', '-fno-strict-aliasing',
