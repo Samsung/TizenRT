@@ -268,7 +268,8 @@ int record_and_write(char *buffer)
 	int size;
 	char inst = ST_PROTO_RECORD_DATA;
 
-	frames = pcm_readi(g_rc.pcmin, buffer, g_rc.buffer_size);
+	frames = pcm_readi(g_rc.pcmin, buffer, pcm_bytes_to_frames(g_rc.pcmin, g_rc.buffer_size));
+	printf("(*)frames: %d\n", frames);
 
 	if (frames > 0) {
 		size = pcm_frames_to_bytes(g_rc.pcmin, frames);
