@@ -82,7 +82,7 @@ static int gpio_io(artik_gpio_dir_t dir, artik_gpio_id id, int new_value)
 		goto exit;
 	}
 
-	if (dir == GPIO_IN) {
+	if (dir == GPIO_OUT) {
 		ret = gpio->write(handle, new_value);
 		if (ret != S_OK) {
 			fprintf(stderr, "Failed to write GPIO %d [err %d]\n", config.id, ret);
@@ -112,7 +112,7 @@ static int gpio_read(int argc, char *argv[])
 		return -1;
 	}
 
-	return gpio_io(GPIO_OUT, atoi(argv[3]), 0);
+	return gpio_io(GPIO_IN, atoi(argv[3]), 0);
 }
 
 static int gpio_write(int argc, char *argv[])
@@ -122,7 +122,7 @@ static int gpio_write(int argc, char *argv[])
 		return -1;
 	}
 
-	return gpio_io(GPIO_IN, atoi(argv[3]), atoi(argv[4]));
+	return gpio_io(GPIO_OUT, atoi(argv[3]), atoi(argv[4]));
 }
 
 static int gpio_watch(int argc, char *argv[])
