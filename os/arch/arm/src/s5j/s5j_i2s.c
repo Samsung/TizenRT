@@ -297,6 +297,7 @@ static uint32_t i2s_samplerate(struct i2s_dev_s *dev, uint32_t rate);
 
 static uint32_t i2s_txdatawidth(struct i2s_dev_s *dev, int bits);
 static int i2s_send(struct i2s_dev_s *dev, struct ap_buffer_s *apb, i2s_callback_t callback, void *arg, uint32_t timeout);
+static int i2s_stop(struct i2s_dev_s *dev);
 
 
 static int i2s_err_cb_register(struct i2s_dev_s *dev, i2s_err_cb_t cb, void *arg);	
@@ -333,7 +334,8 @@ static const struct i2s_ops_s g_i2sops = {
 	.i2s_txsamplerate = i2s_samplerate,
 	.i2s_txdatawidth = i2s_txdatawidth,
 	.i2s_send = i2s_send,
-	
+
+	.i2s_stop = i2s_stop,
 	.i2s_err_cb_register = i2s_err_cb_register,
 };
 
@@ -1588,6 +1590,72 @@ static uint32_t i2s_txdatawidth(struct i2s_dev_s *dev, int bits)
 	return 0;
 }
 
+/***************************************************************************
+****************************************************************************/
+static int i2s_stop(struct i2s_dev_s *dev)
+{
+	struct s5j_i2s_s *priv = (struct s5j_i2s_s *)dev;
+	irqstate_t flags;
+	struct s5j_buffer_s *bfcontainer;
+	DEBUGASSERT(priv);
+
+#ifdef I2S_HAVE_TX_P
+	while (sq_peek(&priv->txp.pend) != NULL) {
+		flags = irqsave();
+		bfcontainer = (struct s5j_buffer_s *)sq_remfirst(&priv->txp.pend);
+		irqrestore(flags);
+		apb_free(bfcontainer->apb);
+		i2s_buf_tx_free(priv, bfcontainer);
+	}
+
+	s5j_dmastop(priv->txp.dma);
+
+	while (sq_peek(&priv->txp.act) != NULL) {
+		flags = irqsave();
+		bfcontainer = (struct s5j_buffer_s *)sq_remfirst(&priv->txp.act);
+		irqrestore(flags);
+		apb_free(bfcontainer->apb);
+		i2s_buf_tx_free(priv, bfcontainer);
+	}
+
+	while (sq_peek(&priv->txp.done) != NULL) {
+		flags = irqsave();
+		bfcontainer = (struct s5j_buffer_s *)sq_remfirst(&priv->txp.done);
+		irqrestore(flags);
+		apb_free(bfcontainer->apb);
+		i2s_buf_tx_free(priv, bfcontainer);
+	}
+#endif
+
+#ifdef I2S_HAVE_RX
+	while (sq_peek(&priv->rx.pend) != NULL) {
+		flags = irqsave();
+		bfcontainer = (struct s5j_buffer_s *)sq_remfirst(&priv->rx.pend);
+		irqrestore(flags);
+		apb_free(bfcontainer->apb);
+		i2s_buf_rx_free(priv, bfcontainer);
+	}
+
+	s5j_dmastop(priv->rx.dma);
+
+	while (sq_peek(&priv->rx.act) != NULL) {
+		flags = irqsave();
+		bfcontainer = (struct s5j_buffer_s *)sq_remfirst(&priv->rx.act);
+		irqrestore(flags);
+		apb_free(bfcontainer->apb);
+		i2s_buf_rx_free(priv, bfcontainer);
+	}
+
+	while (sq_peek(&priv->rx.done) != NULL) {
+		flags = irqsave();
+		bfcontainer = (struct s5j_buffer_s *)sq_remfirst(&priv->rx.done);
+		irqrestore(flags);
+		apb_free(bfcontainer->apb);
+		i2s_buf_rx_free(priv, bfcontainer);
+	}
+#endif
+	return 0;
+}
 
 /****************************************************************************
  * Name: i2s_send
