@@ -1117,39 +1117,32 @@ static void tc_fs_vfs_fcntl(void)
 /**
 * @testcase         tc_fs_vfs_poll
 * @brief            Polling for I/O
-* @scenario         Check poll works properly or not(STDIN, STDOUT)
+* @scenario         Check poll works properly or not
 * @apicovered       poll
 * @precondition     CONFIG_DISABLE_POLL should be disabled
 * @postcondition    NA
 */
 static void tc_fs_vfs_poll(void)
 {
-	struct pollfd fds[2];
+	struct pollfd pollfd;
 	int ret;
-	int timeout = 30;
-	printf("input text : ");
+	int fd;
+	char *filename = VFS_FILE_PATH;
 
-	fds[0].fd = STDIN_FILENO;
-	fds[0].events = POLLIN;
+	fd = open(filename, O_RDWR);
+	TC_ASSERT_GEQ("open", fd, 0);
 
-	fds[1].fd = STDOUT_FILENO;
-	fds[1].events = POLLOUT;
+	pollfd.fd = fd;
+	pollfd.events = POLLIN | POLLOUT;
 
-	fflush(stdout);
+	/* Poll regular file, it will always return positive value */
+	ret = poll(&pollfd, 1, -1);
 
-	ret = poll(fds, 2, timeout * 1000);
-	TC_ASSERT_GEQ("poll", ret, 0);
+	TC_ASSERT_GT_CLEANUP("poll", ret, 0, close(fd));
+	TC_ASSERT_CLEANUP("poll", pollfd.revents & POLLIN, close(fd));
+	TC_ASSERT_CLEANUP("poll", pollfd.revents & POLLOUT, close(fd));
 
-	if (fds[0].revents & POLLIN) {
-		ret = OK;
-		printf("stdin is readable.\n");
-	}
-
-	if (fds[1].revents & POLLOUT) {
-		ret = OK;
-		printf("stdout is writable.\n");
-	}
-	TC_ASSERT_EQ("poll", ret, OK);
+	close(fd);
 	TC_SUCCESS_RESULT();
 }
 
