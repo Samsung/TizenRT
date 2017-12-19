@@ -419,6 +419,12 @@ config DEBUG
 
 if DEBUG
 
+config DEBUG_FEATURES
+	bool "Enable Debug Features"
+	default n
+	---help---
+		Enable Debug Features (assuming debug features are enabled).
+
 config DEBUG_ERROR
 	bool "Enable Error Debug Output"
 	default n

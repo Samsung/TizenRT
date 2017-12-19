@@ -142,10 +142,6 @@
 
 #endif
 
-#ifdef CONFIG_DEBUG
-#define CONFIG_DEBUG_FEATURES
-#endif
-
 /* DMA configuration */
 
 #if !defined(CONFIG_I2S_TXP_DMACH) || !defined(CONFIG_I2S_TXS_DMACH) || !defined(CONFIG_I2S_RX_DMACH)
