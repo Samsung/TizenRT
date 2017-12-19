@@ -123,6 +123,9 @@ endif
 MAINSRC = wpa_supplicant/main.c
 CSRCS += wpa_supplicant/main.c
 
+# Tracks changes for IOT solution
+CFLAGS += -DCONFIG_WPA_SUPPLICANT_IOT_SOLUTION
+
 CFLAGS += -DCONFIG_DRIVER_T20
 CFLAGS += -DCONFIG_DEBUG_FILE
 CFLAGS += -DCONFIG_NO_RANDOM_POOL

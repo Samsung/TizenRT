@@ -1053,6 +1053,20 @@ enum wpa_event_type {
 	 * Indicates the driver or firmware is in bad state and start the auto recovery process.
 	 */
 	EVENT_HANGED,
+
+	/**
+	 * EVENT_LINK_UP - WLAN driver link is UP.
+	 *
+	 * Indicates the WLAN driver is now ready to handle data packets
+	 */
+	EVENT_LINK_UP,
+
+	/**
+	 * EVENT_LINK_DOWN - WLAN driver link is DOWN.
+	 *
+	 * Indicates the WLAN driver can not handle data packets
+	 */
+	EVENT_LINK_DOWN,
 };
 
 /**

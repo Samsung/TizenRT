@@ -2489,7 +2489,7 @@ int slsi_start_ap(void *priv, struct wpa_driver_ap_params *settings)
 
 	SLSI_NET_DBG2(dev, SLSI_T20_80211, "slsi_read_disconnect_ind_timeout: timeout = %d", sdev->device_config.ap_disconnect_ind_timeout);
 
-	netif_set_link_up(dev);
+	slsi_netif_set_link_up(dev);
 	goto exit_with_vif_mutex;
 
 exit_with_vif:
@@ -2565,7 +2565,7 @@ int slsi_stop_ap(void *priv)
 		r = slsi_handle_disconnect(sdev, dev, peer->address, WLAN_REASON_DISASSOC_STA_HAS_LEFT, 1);
 	}
 
-	netif_set_link_down(dev);
+	slsi_netif_set_link_down(dev);
 	/* All STA related packets and info should already have been flushed */
 	slsi_mlme_del_vif(sdev, dev);
 	slsi_vif_deactivated(sdev, dev);

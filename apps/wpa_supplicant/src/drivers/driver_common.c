@@ -81,7 +81,11 @@ const char *event_to_string(enum wpa_event_type event)
 		E2S(NEW_PEER_CANDIDATE);
 		E2S(ACS_CHANNEL_SELECTED);
 		E2S(DFS_CAC_STARTED);
+#ifdef CONFIG_WPA_SUPPLICANT_IOT_SOLUTION
 		E2S(HANGED);
+		E2S(LINK_UP);
+		E2S(LINK_DOWN);
+#endif
 	}
 
 	return "UNKNOWN";

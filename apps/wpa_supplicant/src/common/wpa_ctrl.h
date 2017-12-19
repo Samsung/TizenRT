@@ -88,7 +88,10 @@ extern "C" {
 /** Regulatory domain channel */
 #define WPA_EVENT_REGDOM_CHANGE "CTRL-EVENT-REGDOM-CHANGE "
 
+/** CONFIG_WPA_SUPPLICANT_IOT_SOLUTION: IoT solution specific events */
 #define WPA_EVENT_HANGED "SLSI-RECOVERY-EVENT "
+#define WPA_EVENT_LINK_UP "SLSI-EVENT-LINK-UP "
+#define WPA_EVENT_LINK_DOWN "SLSI-EVENT-LINK-DOWN "
 
 /** RSN IBSS 4-way handshakes completed with specified peer */
 #define IBSS_RSN_COMPLETED "IBSS-RSN-COMPLETED "

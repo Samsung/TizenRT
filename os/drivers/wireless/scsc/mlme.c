@@ -2042,7 +2042,7 @@ void slsi_mlme_connect_resp(struct slsi_dev *sdev, struct netif *dev)
 
 	cfm = slsi_mlme_req_no_cfm(sdev, dev, req);
 	WARN_ON(cfm);
-	netif_set_link_up(dev);
+	slsi_netif_set_link_up(dev);
 }
 
 void slsi_mlme_connected_resp(struct slsi_dev *sdev, struct netif *dev, u16 peer_index)

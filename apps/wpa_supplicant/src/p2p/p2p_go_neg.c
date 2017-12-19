@@ -172,7 +172,7 @@ static struct wpabuf *p2p_build_go_neg_req(struct p2p_data *p2p, struct p2p_devi
 	p2p_buf_add_device_info(buf, p2p, peer);
 	p2p_buf_add_operating_channel(buf, p2p->cfg->country, p2p->op_reg_class, p2p->op_channel);
 	p2p_buf_update_ie_hdr(buf, len);
-#ifdef WPA_SUPPLICANT_P2P_USER_REJECT
+#ifdef CONFIG_WPA_SUPPLICANT_IOT_SOLUTION
 	if (peer->status == P2P_SC_FAIL_REJECTED_BY_USER) {
 		p2p_buf_add_status(buf, peer->status);
 	}

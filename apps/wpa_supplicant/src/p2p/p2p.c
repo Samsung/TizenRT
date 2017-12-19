@@ -1454,7 +1454,7 @@ int p2p_connect(struct p2p_data *p2p, const u8 *peer_addr, enum p2p_wps_method w
 
 	dev->wps_method = wps_method;
 	dev->oob_pw_id = oob_pw_id;
-#ifdef WPA_SUPPLICANT_P2P_USER_REJECT
+#ifdef CONFIG_WPA_SUPPLICANT_IOT_SOLUTION
 	if (dev->status != P2P_SC_FAIL_REJECTED_BY_USER) {
 		dev->status = P2P_SC_SUCCESS;
 	}
@@ -2656,7 +2656,7 @@ struct p2p_data *p2p_init(const struct p2p_config *cfg)
 		p2p->dev_capab |= P2P_DEV_CAPAB_SERVICE_DISCOVERY;
 	}
 	/*Currently we are not supporting Invitation */
-#ifndef CONFIG_ARCH_BOARD_SIDK_S5JT200
+#ifndef CONFIG_WPA_SUPPLICANT_IOT_SOLUTION
 	p2p->dev_capab |= P2P_DEV_CAPAB_INVITATION_PROCEDURE;
 #endif
 	if (cfg->concurrent_operations) {

@@ -2404,7 +2404,7 @@ static int wpa_supplicant_ctrl_iface_scan_result(struct wpa_supplicant *wpa_s, c
 {
 	char *pos, *end;
 	int ret;
-#ifndef CONFIG_ARCH_CHIP_S5JT200
+#ifndef CONFIG_WPA_SUPPLICANT_IOT_SOLUTION
 	const u8 *ie, *ie2, *osen_ie,
 #endif
 		  const u8 *p2p, *mesh;
@@ -2421,7 +2421,7 @@ static int wpa_supplicant_ctrl_iface_scan_result(struct wpa_supplicant *wpa_s, c
 	pos = buf;
 	end = buf + buflen;
 
-#ifndef CONFIG_ARCH_CHIP_S5JT200
+#ifndef CONFIG_WPA_SUPPLICANT_IOT_SOLUTION
 	ret = os_snprintf(pos, end - pos, MACSTR "\t%d\t%d\t", MAC2STR(bss->bssid), bss->freq, bss->qual);
 #endif
 	ret = os_snprintf(pos, end - pos, MACSTR "\n", MAC2STR(bss->bssid), bss->freq, bss->qual);
@@ -2432,7 +2432,7 @@ static int wpa_supplicant_ctrl_iface_scan_result(struct wpa_supplicant *wpa_s, c
 	/* T20: We only need the BSSIDs in this response, and to ensure it does not grow
 	 *      too big, skip all the stuff we don't really need */
 	return pos - buf;
-#ifndef CONFIG_ARCH_CHIP_S5JT200
+#ifndef CONFIG_WPA_SUPPLICANT_IOT_SOLUTION
 	ie = wpa_bss_get_vendor_ie(bss, WPA_IE_VENDOR_TYPE);
 	if (ie) {
 		pos = wpa_supplicant_ie_txt(pos, end, "WPA", ie, 2 + ie[1]);
@@ -4705,7 +4705,7 @@ static int p2p_ctrl_connect(struct wpa_supplicant *wpa_s, char *cmd, char *buf, 
 	pd = os_strstr(pos, " provdisc") != NULL;
 	vht = (os_strstr(cmd, " vht") != NULL) || wpa_s->conf->p2p_go_vht;
 	ht40 = (os_strstr(cmd, " ht40") != NULL) || wpa_s->conf->p2p_go_ht40 || vht;
-#ifdef WPA_SUPPLICANT_P2P_USER_REJECT
+#ifdef CONFIG_WPA_SUPPLICANT_IOT_SOLUTION
 	if (os_strstr(pos, " reject") != NULL) {
 		p2p_reject(wpa_s->global->p2p, addr);
 	}

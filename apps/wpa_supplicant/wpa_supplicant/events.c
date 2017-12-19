@@ -3620,9 +3620,19 @@ void wpa_supplicant_event(void *ctx, enum wpa_event_type event, union wpa_event_
 		wpa_mesh_notify_peer(wpa_s, data->mesh_peer.peer, data->mesh_peer.ies, data->mesh_peer.ie_len);
 #endif							/* CONFIG_MESH */
 		break;
+#ifdef CONFIG_WPA_SUPPLICANT_IOT_SOLUTION
 	case EVENT_HANGED:
 		wpa_msg(wpa_s, MSG_INFO, WPA_EVENT_HANGED);
 		break;
+
+	case EVENT_LINK_UP:
+		wpa_msg(wpa_s, MSG_INFO, WPA_EVENT_LINK_UP);
+		break;
+
+	case EVENT_LINK_DOWN:
+		wpa_msg(wpa_s, MSG_INFO, WPA_EVENT_LINK_DOWN);
+		break;
+#endif
 	default:
 		wpa_msg(wpa_s, MSG_INFO, "Unknown event %d", event);
 		break;

@@ -49,6 +49,24 @@
 
 static int slsi_mib_initial_get(struct slsi_dev *sdev);
 
+void slsi_netif_set_link_up(struct netif *dev)
+{
+	struct netdev_vif *ndev_vif = netdev_priv(dev);
+
+	netif_set_link_up(dev);
+
+	wpa_supplicant_event_send(ndev_vif->ctx, EVENT_LINK_UP, NULL);
+}
+
+void slsi_netif_set_link_down(struct netif *dev)
+{
+	struct netdev_vif *ndev_vif = netdev_priv(dev);
+
+	netif_set_link_down(dev);
+
+	wpa_supplicant_event_send(ndev_vif->ctx, EVENT_LINK_DOWN, NULL);
+}
+
 bool is_multicast_ether_addr(const u8 *addr)
 {
 	u16 a = *(const u16 *)addr;
@@ -269,7 +287,7 @@ void slsi_vif_cleanup(struct slsi_dev *sdev, struct netif *dev, bool hw_availabl
 		if (ndev_vif->vif_type == FAPI_VIFTYPE_STATION) {
 			bool already_disconnected = false;
 			SLSI_DBG2(sdev, SLSI_INIT_DEINIT, "Station active: hw_available=%d\n", hw_available);
-			netif_set_link_down(dev);
+			slsi_netif_set_link_down(dev);
 			if (hw_available) {
 				struct slsi_peer *peer = ndev_vif->peer_sta_record[SLSI_STA_PEER_QUEUESET];
 
@@ -290,7 +308,7 @@ void slsi_vif_cleanup(struct slsi_dev *sdev, struct netif *dev, bool hw_availabl
 			}
 		} else if (ndev_vif->vif_type == FAPI_VIFTYPE_AP) {
 			SLSI_DBG2(sdev, SLSI_INIT_DEINIT, "AP active\n");
-			netif_set_link_down(dev);
+			slsi_netif_set_link_down(dev);
 			if (hw_available) {
 				int r = 0;
 
@@ -922,7 +940,7 @@ int slsi_handle_disconnect(struct slsi_dev *sdev, struct netif *dev, u8 *peer_ad
 
 		/* Delayed ARP only needs to run when connected. */
 
-		netif_set_link_down(dev);
+		slsi_netif_set_link_down(dev);
 		slsi_mlme_del_vif(sdev, dev);
 		slsi_vif_deactivated(sdev, dev);
 		break;
