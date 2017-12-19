@@ -193,6 +193,9 @@ int tc_kernel_main(int argc, char *argv[])
 #ifdef CONFIG_TC_KERNEL_UMM_HEAP
 	umm_heap_main();
 #endif
+#ifdef CONFIG_ITC_KERNEL_LIBC_SCHED
+	itc_libc_sched_main();
+#endif
 
 	(void)tc_handler(TC_END, "Kernel TC");
 
