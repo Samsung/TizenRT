@@ -23,6 +23,7 @@
 >   * [SERIAL Mapping](#serial-mapping)
 >   * [How to save/restore wifi info](#how-to-saverestore-wifi-info)
 >   * [How to enable the ARTIK SDK](#how-to-enable-the-artik-sdk)
+>   * [How to test OCF certification](#how-to-test-ocf-certification)
 > * ETC
 >   * [Factory Reset](#factory-reset)
 >   * [OTA](#ota)
@@ -38,7 +39,7 @@
 
 ## Overview
 
-* Homepage : https://www.artik.io/modules/artik-05x/
+> * Homepage : https://www.artik.io/modules/artik-05x/
 
 Wi-Fi®-based IoT module with built-in hardware security for single-function “things”.
 
@@ -52,27 +53,27 @@ The ARTIK 05x family runs Tizen RT, a platform that includes a compact RTOS with
 
 #### Performance and flexibility
 
-* 32-bit ARM® Cortex® R4 @ 320MHz for applications
-* 29 dedicated GPIO ports, 2 SPI, 4 UART (2-pin), 4 ADC, 1 JTAG, 2 I2C
-* Input voltage: 3.3VDC (ARTIK055s), 5-12VDC (ARTIK053/053s)
+> * 32-bit ARM® Cortex® R4 @ 320MHz for applications
+> * 29 dedicated GPIO ports, 2 SPI, 4 UART (2-pin), 4 ADC, 1 JTAG, 2 I2C
+> * Input voltage: 3.3VDC (ARTIK055s), 5-12VDC (ARTIK053/053s)
 
 #### Robust security (“s” versions)
 
-* Completely integrated security subsystem
-* Secure communication with unique, per-device key for authentication
-* Secure boot to make sure only authorized software can run
-* Secure storage protected by physically unclonable function (PUF)
+> * Completely integrated security subsystem
+> * Secure communication with unique, per-device key for authentication
+> * Secure boot to make sure only authorized software can run
+> * Secure storage protected by physically unclonable function (PUF)
 
 #### Integrated and tested middleware
 
-* TizenRT with RTOS, Wi-Fi and networking middleware
-* API interface to simplify development process
-* LWM2M support for device management
+> * TizenRT with RTOS, Wi-Fi and networking middleware
+> * API interface to simplify development process
+> * LWM2M support for device management
 
 #### Fully integrated with ARTIK IoT Platform and ARTIK cloud services
 
-* Mobile reference app to add modules to ARTIK cloud services easily
-* Manage devices, including OTA updates, with ARTIK cloud services
+> * Mobile reference app to add modules to ARTIK cloud services easily
+> * Manage devices, including OTA updates, with ARTIK cloud services
 
 <!-- Setup Environment -->
 
@@ -323,7 +324,7 @@ The GPIO PAD name on the schematic differs from the GPIO name of the device. Ple
 ![uart default console](../../../docs/media/uartconsole.png)
 
 You need the following settings in menuconfig.
- * Device Drivers > Serial Driver Support > Serial console
+> * Device Drivers > Serial Driver Support > Serial console
 
 The mapping for the UART changes depending on the selection of the **serial console**. The default setting for the serial console is `UART4`. At this time, the device is set as follows.
 
@@ -342,18 +343,18 @@ If you change the serial console to UART3, the mapping of the other device chang
 ![wifi info](../../../docs/media/wifiinfo.jpg)
 
 Only in case that file system is available, it stores information as file `/mnt/wifi/slsiwifi.conf`. You need the following settings in menuconfig.
- * Application Configuration > Network Utilities > SLSI Wi-Fi API > Enable "Support filesystem"
+> * Application Configuration > Network Utilities > SLSI Wi-Fi API > Enable "Support filesystem"
 
 ```
-TASH>>wifi startsta
-TASH>>wifi join <ssid> <key> <security>
+TASH>> wifi startsta
+TASH>> wifi join <ssid> <key> <security>
 TASH>>
-TASH>>wifi saveconfig                        # save wifi information
-TASH>>cat /mnt/wifi/slsiwifi.conf            # check wifi information
+TASH>> wifi saveconfig                        # save wifi information
+TASH>> cat /mnt/wifi/slsiwifi.conf            # check wifi information
 TASH>>
-TASH>>reboot
+TASH>> reboot
 TASH>>
-TASH>>wifi startsta                          # restore wifi connect
+TASH>> wifi startsta                          # restore wifi connect
 TASH>>
 ```
 
@@ -362,15 +363,35 @@ TASH>>
 ![ARTIK SDK](../../../docs/media/artiksdk.png)
 
 If you want to use the `ARTIK SDK`, you need the following settings in menuconfig.
- * External Functions > Enable "ARTIK SDK"
- * Save and exit
- * Launch the build
+> * External Functions > Enable "ARTIK SDK"
+> * Save and exit
+> * Launch the build
 
 If you enable ARTIK SDK and then build it, it will automatically download the ARTIK SDK sources from github and build it. You do not need to download additional files.
 
 In addition, to enable the `ARTIK SDK examples`, set the following in menuconfig:
- * Application Configuration > Examples > Enable "ARTIK SDK examples"
- * Press Enter then select all the examples you want to include in the image
+> * Application Configuration > Examples > Enable "ARTIK SDK examples"
+> * Press Enter then select all the examples you want to include in the image
+
+## How to test OCF certification
+
+![OCF Certified](../../../docs/media/ocfcertified.png)
+
+Samsung ARTIK05x becomes the first family of IoT systems-on-module to be certified under Open Connectivity Foundation 1.3 standards. If you want to test OCF certification, you need the following setting in menuconfig.
+
+![Iotivity](../../../docs/media/iotivity.png)
+
+> * External Functions > IOTIVITY Config Parameters > Enable "enable / disable iotivity stack"
+> * Check "iotivity stack version" value to `1.3-rel`
+> * Change "Default pthread stack size for the receive-handler thread" value to `32768`
+> * Enable "enable iotivity security"
+
+* Iotivity uses `scons`. You have to install `scons` to compile Iotivity.
+```bash
+$ sudo apt-get install scons
+```
+
+For more information on OCF certification, click [here](https://openconnectivity.org/certified-product/artiktm-053-smart-iot-module).
 
 <!-- ETC -->
 
@@ -446,12 +467,49 @@ U-BOOT > reset                                    # reboot
 ##### using `HTTP` (own webserver)
 
 You need the following settings in menuconfig.
- * Application Configuration > Examples > OTA downloader
+> * Application Configuration > Examples > OTA downloader
 
 ```
-TASH>>ota http://192.168.1.10/ota.bin /dev/mtdblock7
-TASH>>reboot
+TASH>> ota http://192.168.1.10/ota.bin /dev/mtdblock7
+TASH>> reboot
 ```
+
+#### using `ARTIK CLOUD`
+
+1) Prepare a device type in ARTIK Cloud
+
+Log into ARTIK Cloud and go to the developer portal. Under the **Device Types section**, create a new device type (or reuse an existing one) that will be used for testing Device Management and OTA from a device manufacturer's point of view. Make sure the device type has properties enabled by clicking the **Device Management** tab of the device type.
+
+![ARTIKCLOUD_OTA](../../../docs/media/ota_artikcloud01.png)
+
+2) Configure the board
+
+In order for the services running on the A05x to be properly configured to connect to ARTIK Cloud, a few parameters need to be changed. This needs to be done only once as parameters will be stored and reused across reboots. Type the commands below to specify the ARTIK Cloud Device Type ID that you chose for the device (the one that has properties enabled), then configure the address of a NTP server that operates well in your region.
+```
+TASH>> onboard dtid <device type ID>
+TASH>> onboard ntp <NTP server address>
+TASH>> onboard config
+```
+
+3) Onboard the board to ARTIK Cloud
+
+Use a mobile application (available on iOS and Android) to onboard the device to ARTIK Cloud, scan its QR code then follow the instructions until the device is properly created in ARTIK Cloud. After onboarding, the board should successfully connect to ARTIK Cloud.
+
+4) Upload the package to ARTIK Cloud
+
+In ARTIK Cloud's developer portal, go to the Device Management tab of the relevant device type, then click the **OTA Updates** subtab, then click the **Upload new image** button.
+
+![ARTIKCLOUD_OTA](../../../docs/media/ota_artikcloud02.png)
+
+5) Trigger the update
+
+Go to ARTIK Cloud's developer portal, and browse to the device type's **Device Management** pane. In the devices list, identify the currently connected board by its device ID.
+
+Check the device (or devices) you want to update, click **Execute** then **OTA update**.
+
+![ARTIKCLOUD_OTA](../../../docs/media/ota_artikcloud03.png)
+
+In the next window, you can select a date to schedule the update, or leave empty to launch the update right now. Click **Perform OTA Update** when ready.
 
 #### OTA Log
 ```

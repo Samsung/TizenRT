@@ -9,7 +9,7 @@ lightweight RTOS-based platform to support low-end IoT devices.
 
 This project is forking [TizenRT 1.0](https://github.com/Samsung/TizenRT) from [SamsungOpenSource](https://github.com/Samsung). It is intended to support ARTIK05x board stably.
 
-## Supported Board
+### Supported Board
 
 > * [ARTIK05x Family](build/configs/artik05x/README.md)
 > 	* [ARTIK053](build/configs/artik053/README.md)
@@ -17,3 +17,4 @@ This project is forking [TizenRT 1.0](https://github.com/Samsung/TizenRT) from [
 > 	* [ARTIK055s](build/configs/artik055s/README.md)
 > * [sidk_s5jt200](build/configs/sidk_s5jt200/README.md)
 
+If you want to develop using TizenRT and ARTIK05x, click [here](build/configs/artik05x/README.md).
