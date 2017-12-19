@@ -30,7 +30,7 @@
 #define ST_PROTO_RECORD			0x04
 #define ST_PROTO_RECORD_DATA	0x05
 #define ST_PROTO_RECORD_PAUSE	0x02
-#define ST_PROTO_RECORD_STOP	0x03
+#define ST_PROTO_RECORD_STOP	0x01
 
 enum record_state_e {
 	RECORD_ERROR,

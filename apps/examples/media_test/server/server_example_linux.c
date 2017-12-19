@@ -114,6 +114,10 @@ void *recv_thread(void *arg)
 			SEND_STATE_LOCK();
 			g_sc.send_state = SEND_STATE_STOP;
 			close(g_sc.client_sock);
+			if (fp) {
+				fclose(fp);
+				fp = NULL;
+			}
 			g_sc.recv_thread_running = false;
 			g_sc.send_thread_running = false;
 			g_sc.client_sock = -1;
