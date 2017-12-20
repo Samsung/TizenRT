@@ -280,6 +280,11 @@ config S5J_UART4
 	select ARCH_HAVE_UART4
 	select ARCH_HAVE_SERIAL_TERMIOS
 
+config S5J_UART_INPUT_FILTER
+	bool "UART_INPUT_FILTER"
+	depends on S5J_UART0 || S5J_UART1 || S5J_UART2 || S5J_UART3 || S5J_UART4
+	default n
+
 config S5J_PWM
 	bool
 	default n

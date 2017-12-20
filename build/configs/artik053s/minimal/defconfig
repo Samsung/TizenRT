@@ -186,6 +186,7 @@ CONFIG_S5J_TIMER3=y
 # CONFIG_S5J_UART2 is not set
 # CONFIG_S5J_UART3 is not set
 CONFIG_S5J_UART4=y
+# CONFIG_S5J_UART_INPUT_FILTER is not set
 # CONFIG_S5J_PWM is not set
 # CONFIG_S5J_PWM0 is not set
 # CONFIG_S5J_PWM1 is not set
