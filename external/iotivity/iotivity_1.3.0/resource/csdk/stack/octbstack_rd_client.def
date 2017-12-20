@@ -1,7 +1,0 @@
-; APIs used when RD_MODE includes CLIENT
-
-OCRDDelete
-OCRDDeleteWithDeviceId
-OCRDDiscover
-OCRDPublish
-OCRDPublishWithDeviceId

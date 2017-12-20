@@ -1,3 +1,0 @@
-DEBUG: StringArgMultiline: this is a DEBUG message
-on multiple
-lines
