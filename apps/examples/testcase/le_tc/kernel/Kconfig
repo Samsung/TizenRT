@@ -49,6 +49,7 @@ config TC_KN_ALL
 	select TC_KERNEL_UMM_HEAP
 	select ITC_KERNEL_LIBC_SCHED
 	select ITC_KERNEL_LIBC_PTHREAD
+	select ITC_KERNEL_LIBC_SEMAPHORE
 
 config TC_KERNEL_CLOCK
 	bool "Clock"
@@ -208,5 +209,10 @@ config ITC_KERNEL_LIBC_SCHED
 config ITC_KERNEL_LIBC_PTHREAD
 	bool "ITC Libc Pthread"
 	default n
+
+config ITC_KERNEL_LIBC_SEMAPHORE
+	bool "ITC Libc Semaphore"
+	default n
+
 endif #EXAMPLES_TESTCASE_KERNEL
 
