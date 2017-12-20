@@ -92,9 +92,7 @@ $(AOBJS): %$(OBJEXT): %.S
 	$(call ASSEMBLE, $<, $@)
 
 $(COBJS): %$(OBJEXT): %.c
-	$(if $(KASAN_AVOID_SANITIZE_$*),\
-		$(call COMPILE, $<, $@),\
-		$(call COMPILE_SANITIZE, $<, $@))
+	$(call COMPILE, $<, $@)
 
 $(CXXOBJS): %$(OBJEXT): %.cpp
 	$(call COMPILEXX, $<, $@)
@@ -107,7 +105,6 @@ endif
 
 $(BIN): $(OBJS) iotivity_build
 	$(call ARCHIVE, $@, $(OBJS))
-
 
 .depend: Makefile $(SRCS)
 	$(Q) $(MKDEP) $(DEPPATH) "$(CC)" -- $(CFLAGS) -- $(ASRCS) >Make.dep
