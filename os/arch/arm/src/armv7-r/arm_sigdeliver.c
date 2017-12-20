@@ -68,6 +68,9 @@
 #include "sched/sched.h"
 #include "up_internal.h"
 #include "up_arch.h"
+#ifdef CONFIG_TASK_SCHED_HISTORY
+#include <tinyara/debug/sysdbg.h>
+#endif
 
 #ifndef CONFIG_DISABLE_SIGNALS
 
@@ -149,6 +152,10 @@ void up_sigdeliver(void)
 	/* Then restore the correct state for this thread of execution. */
 
 	board_autoled_off(LED_SIGNAL);
+#ifdef CONFIG_TASK_SCHED_HISTORY
+	/* Save the task name which will be scheduled */
+	save_task_scheduling_status(rtcb);
+#endif
 	up_fullcontextrestore(regs);
 }
 

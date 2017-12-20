@@ -66,6 +66,9 @@
 #include "sched/sched.h"
 #include "group/group.h"
 #include "up_internal.h"
+#ifdef CONFIG_TASK_SCHED_HISTORY
+#include <tinyara/debug/sysdbg.h>
+#endif
 
 /****************************************************************************
  * Public Functions
@@ -161,6 +164,10 @@ void up_reprioritize_rtr(struct tcb_s *tcb, uint8_t priority)
 				/* Then switch contexts.  Any necessary address environment
 				 * changes will be made when the interrupt returns.
 				 */
+#ifdef CONFIG_TASK_SCHED_HISTORY
+				/* Save the task name which will be scheduled */
+				save_task_scheduling_status(rtcb);
+#endif
 				up_restorestate(rtcb->xcp.regs);
 			}
 
@@ -177,6 +184,10 @@ void up_reprioritize_rtr(struct tcb_s *tcb, uint8_t priority)
 				rtcb = this_task();
 
 				/* Then switch contexts */
+#ifdef CONFIG_TASK_SCHED_HISTORY
+				/* Save the task name which will be scheduled */
+				save_task_scheduling_status(rtcb);
+#endif
 				up_fullcontextrestore(rtcb->xcp.regs);
 			}
 		}

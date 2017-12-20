@@ -61,6 +61,11 @@
 
 #include "semaphore/semaphore.h"
 
+#ifdef CONFIG_SEMAPHORE_HISTORY
+#include "sched/sched.h"
+#include <tinyara/debug/sysdbg.h>
+#endif
+
 /****************************************************************************
  * Definitions
  ****************************************************************************/
@@ -127,7 +132,9 @@ int sem_destroy(FAR sem_t *sem)
 		if (sem->semcount >= 0) {
 			sem->semcount = 1;
 		}
-
+#ifdef CONFIG_SEMAPHORE_HISTORY
+		save_semaphore_history(sem, (void *)this_task(), SEM_DESTROY);
+#endif
 		/* Release holders of the semaphore */
 
 		sem_destroyholder(sem);
