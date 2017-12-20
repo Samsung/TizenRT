@@ -1,0 +1,34 @@
+{
+    "device": "BinarySwitch_Dimming",
+    "company": "Samsung Electronics Co., Ltd.",
+    "role": "Server",
+    "supportedVerticalProfile": [
+        "Smart Home"
+    ],
+    "supportedDeviceTypes": [
+        "oic.d.light"
+    ],
+    "icv": "ocf.1.0.0",
+    "dmv": "ocf.res.1.3.0, ocf.sh.1.3.0",
+    "acceptVersion": [
+        "1.0.0"
+    ],
+    "resources": [
+        "oic.r.crl",
+        "oic.r.csr",
+        "oic.r.roles",
+        "oic.r.switch.binary",
+        "oic.r.light.dimming"
+    ],
+    "jurisdictionSwitch": false,
+    "OTM": [
+        "oic.sec.doxm.jw"
+    ],
+    "contentFormatVersion": [
+        "1.0.0"
+    ],
+    "multiValueQuerySupport": false,
+    "sct": 9,
+    "observableOICRES": false,
+    "persistentDeviceuuid": false
+}

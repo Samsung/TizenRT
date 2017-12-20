@@ -1,0 +1,4 @@
+# auto generated files
+json2cbor.c
+ocf_mylight_default_db.c
+ocf_mylight_tz.c

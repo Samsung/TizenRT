@@ -1,0 +1,16 @@
+23a24,28
+> 
+> #include "tizenrt_compat.h"
+> static const char *OIC_JSON_MOM_NAME = "x.org.iotivity.mom";
+> #include <apps/netutils/cJSON.h>
+> 
+25d29
+< #include "cJSON.h"
+1495c1499
+< static OCStackResult ConvertJSONFileToCBORFile(const char *jsonFileName, const char *cborFileName)
+---
+> OCStackResult ConvertJSONFileToCBORFile(const char *jsonFileName, const char *cborFileName)
+1533a1538
+> #if 0
+1551a1557
+> #endif

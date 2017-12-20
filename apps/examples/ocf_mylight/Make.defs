@@ -1,0 +1,3 @@
+ifeq ($(CONFIG_EXAMPLES_OCFMYLIGHT),y)
+CONFIGURED_APPS += examples/ocf_mylight
+endif

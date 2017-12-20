@@ -1,0 +1,22 @@
+#
+# For a description of the syntax of this configuration file,
+# see kconfig-language at https://www.kernel.org/doc/Documentation/kbuild/kconfig-language.txt
+#
+
+config EXAMPLES_OCFMYLIGHT
+	bool "OCF My Light sample application"
+	default n
+	select ENABLE_IOTIVITY
+	select ENABLE_IOTIVITY_SECURED
+	select NETUTILS_JSON
+	select NETUTILS_NTPCLIENT
+	---help---
+		Enable OCF My Light example application
+
+if EXAMPLES_OCFMYLIGHT
+config EXAMPLES_OCFMYLIGHT_DIMMER
+	bool "Add dimmer resource (oic.r.light.dimming)"
+	default n
+	---help---
+		Add dimmer resource (oic.r.light.dimming) to /dimm uri path
+endif # EXAMPLES_OCFMYLIGHT

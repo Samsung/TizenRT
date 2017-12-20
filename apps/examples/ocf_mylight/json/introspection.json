@@ -1,0 +1,113 @@
+{
+    "swagger": "2.0",
+    "info": {
+        "title": "TestLight",
+        "version": "0.0.1"
+    },
+    "schemes": [
+        "http"
+    ],
+    "consumes": [
+        "application/json"
+    ],
+    "produces": [
+        "application/json"
+    ],
+    "paths": {
+        "/light": {
+            "get": {
+                "parameters": [
+                    {
+                        "name": "if",
+                        "in": "query",
+                        "description": "",
+                        "enum": [
+                            "oic.if.a",
+                            "oic.if.baseline"
+                        ],
+                        "type": "string"
+                    }
+                ],
+                "responses": {
+                    "205": {
+                        "description": "",
+                        "schema": {
+                            "$ref": "#/definitions/BinarySwitch"
+                        }
+                    }
+                }
+            },
+            "post": {
+                "parameters": [
+                    {
+                        "name": "if",
+                        "in": "query",
+                        "description": "",
+                        "enum": [
+                            "oic.if.a",
+                            "oic.if.baseline"
+                        ],
+                        "type": "string"
+                    },
+                    {
+                        "name": "body",
+                        "in": "body",
+                        "required": false,
+                        "schema": {
+                            "$ref": "#/definitions/BinarySwitch"
+                        }
+                    }
+                ],
+                "responses": {
+                    "204": {
+                        "description": "",
+                        "schema": {
+                            "$ref": "#/definitions/BinarySwitch"
+                        }
+                    }
+                }
+            }
+        }
+    },
+    "definitions": {
+        "BinarySwitch": {
+            "type": "object",
+            "required": [
+                "value"
+            ],
+            "properties": {
+                "value": {
+                    "type": "boolean",
+                    "description": "Status of the switch"
+                },
+                "rt": {
+                    "type": "array",
+                    "items": [
+                        {
+                            "type": "string",
+                            "maxLength": 64
+                        }
+                    ],
+                    "minItems": 1,
+                    "description": "Resource Type",
+                    "readOnly": true,
+                    "default": [
+                        "oic.r.switch.binary"
+                    ]
+                },
+                "if": {
+                    "type": "array",
+                    "description": "The interface set supported by this resource",
+                    "readOnly": true,
+                    "items": {
+                        "type": "string",
+                        "enum": [
+                            "oic.if.baseline",
+                            "oic.if.a"
+                        ]
+                    }
+                }
+            }
+        }
+    }
+}
