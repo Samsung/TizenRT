@@ -27,6 +27,9 @@
 #include <apps/shell/tash.h>
 #include <apps/system/utils.h>
 #endif
+#ifdef CONFIG_DEBUG_SYSTEM_APP
+#include <apps/system/sysdbgapp_init.h>
+#endif
 #ifdef CONFIG_BUILTIN_APPS
 #include <apps/builtin.h>
 #endif
@@ -84,6 +87,9 @@ static void tash_register_cmds(void)
 	iotjs_register_cmds();
 #endif
 
+#ifdef CONFIG_DEBUG_SYSTEM_APP
+	sysdbgapp_init();
+#endif
 }
 #endif							/* CONFIG_TASH */
 
