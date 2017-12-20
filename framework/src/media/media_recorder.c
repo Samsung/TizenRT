@@ -193,8 +193,9 @@ record_result_t media_stop_record(void)
 	}
 
 	g_rc.state = RECORD_STOPPING;
-	pthread_join(g_rc.pth, NULL);
 	RECORD_UNLOCK();
+
+	pthread_join(g_rc.pth, NULL);	
 
 	return RECORD_OK;
 }
