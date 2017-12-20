@@ -57,7 +57,7 @@ if target_os not in ['windows']:
 SConscript(os.path.join(src_dir, 'extlibs', 'tinycbor', 'SConscript'))
 
 #cJSON lib
-SConscript(os.path.join(src_dir, 'extlibs', 'cjson', 'SConscript'))
+#SConscript(os.path.join(src_dir, 'extlibs', 'cjson', 'SConscript'))
 
 with_ra = env.get('WITH_RA')
 if with_ra:
