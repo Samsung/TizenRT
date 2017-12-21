@@ -43,7 +43,6 @@
    * @precondition	   :At Linux PC,	1. Build an IoTivity client
    *			   :			 $ ./occlient -t <tc number>
    *			   :At test board,	1. Make a binary with 'iotivity_simpleserver' example configuration and flash
-   *			   :				($ ./configure.sh artik053/iotivity)
    *			   :			2. Run the TASH
    *			   :			3. Connect to Wi-Fi and get an IP address using DHCP
    *			   :			 TASH>> simpleServer
@@ -86,7 +85,7 @@
 
 #if defined(CONFIG_ENC28J60) || defined(CONFIG_WICED)
 #define NET_DEVNAME "en"
-#elif defined(CONFIG_ARCH_BOARD_SIDK_S5JT200) || defined(CONFIG_ARCH_BOARD_ARTIK053)
+#elif defined(CONFIG_ARCH_BOARD_SIDK_S5JT200) || defined(CONFIG_ARCH_BOARD_ARTIK05X_FAMILY)
 #define NET_DEVNAME "wl"
 #else
 #error "undefined CONFIG_NET_<type>, check your .config"

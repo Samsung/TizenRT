@@ -77,15 +77,6 @@ CSRCS += secureServer.c
 else
 ifeq ($(CONFIG_EXAMPLES_IOTIVITY_CLOUDSERVER),y)
 CSRCS += cloudServer.c
-else
-ifeq ($(CONFIG_EXAMPLES_IOTIVITY_CTT_LIGHT),y)
-CSRCS += ctt_light.c \
-		ctt_light_resource.c \
-		ocf_mylight_notify.c \
-		ocf_mylight_userinput.c \
-		ocf_mylight_security.c \
-		ocf_mylight_default_db.c
-endif
 endif
 endif
 endif
@@ -104,21 +95,6 @@ CFLAGS += -I$(IOTIVITY_BASE_DIR)/resource/csdk/stack/include
 CFLAGS += -I$(IOTIVITY_BASE_DIR)/build_common/tizenrt/compatibility
 CFLAGS += -I$(APPDIR)/../external/mbedtls/include
 CFLAGS += -I$(IOTIVITY_CONFIG_DIR)
-
-
-# json2cbor
-CSRCS += json2cbor.c
-CSRCS += cJSON.c # $(IOTIVITY_BASE_DIR)/extlibs/cjson
-CFLAGS += -I$(IOTIVITY_BASE_DIR)/extlibs/cjson
-CFLAGS += -I$(IOTIVITY_BASE_DIR)/extlibs/tinycbor/tinycbor/src
-CFLAGS += -I$(IOTIVITY_BASE_DIR)/resource/c_common/oic_malloc/include
-CFLAGS += -I$(IOTIVITY_BASE_DIR)/resource/c_common/oic_string/include
-CFLAGS += -I$(IOTIVITY_BASE_DIR)/resource/c_common/ocrandom/include
-CFLAGS += -I$(IOTIVITY_BASE_DIR)/resource/csdk/stack/include/internal
-CFLAGS += -I$(IOTIVITY_BASE_DIR)/resource/csdk/security/include/internal
-CFLAGS += -I$(IOTIVITY_BASE_DIR)/resource/csdk/connectivity/lib/libcoap-4.1.1/include
-CFLAGS += -DTB_LOG -DMULTIPLE_OWNER -DINLINE_API=inline
-CFLAGS += -DPRIi64=\"lld\"
 
 CFLAGS += -DWITH_POSIX -DIP_ADAPTER
 CFLAGS += -DWITH_BWT
@@ -223,13 +199,6 @@ endif
 $(BUILTIN_REGISTRY)$(DELIM)cloudServer_main.bdat: $(DEPCONFIG) Makefile
 	$(Q) $(call REGISTER,cloudServer,cloudServer_main,$(THREADEXEC),$(PRIORITY),$(STACKSIZE))
 context: $(BUILTIN_REGISTRY)$(DELIM)cloudServer_main.bdat
-endif
-
-# ctt light
-ifeq ($(CONFIG_EXAMPLES_IOTIVITY_CTT_LIGHT),y)
-$(BUILTIN_REGISTRY)$(DELIM)ctt_light_main.bdat: $(DEPCONFIG) Makefile
-	$(Q) $(call REGISTER,ctt_light,ctt_light_main,$(THREADEXEC),$(PRIORITY),$(STACKSIZE))
-context: $(BUILTIN_REGISTRY)$(DELIM)ctt_light_main.bdat
 endif
 
 else

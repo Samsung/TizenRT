@@ -25,14 +25,14 @@
 char *gResourceUri = (char *)"/a/light/0";
 const char *deviceType = "oic.d.light";
 const char *dateOfManufacture = "2017-07-11";
-const char *deviceName = "artik053_tinyara";
+const char *deviceName = "artik05x_tinyara";
 const char *firmwareVersion = "LSI_1.0";
 const char *manufacturerName = "Samsung LSI";
 const char *operatingSystemVersion = "myOS";
-const char *hardwareVersion = "ARTIK_LSI_053";
+const char *hardwareVersion = "ARTIK_LSI_05x";
 const char *platformID = "C0FFEE00-BAB0-FACE-B00C-00BA5EBA1100";
 const char *manufacturerLink = "https://www.iotivity.org";
-const char *modelNumber = "ARTIK053";
+const char *modelNumber = "ARTIK05x";
 const char *platformVersion = "TINYARA_1.0";
 const char *supportLink = "https://www.iotivity.org";
 const char *version = "IOTIVITY_1.3_REL";

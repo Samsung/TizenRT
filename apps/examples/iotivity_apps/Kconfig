@@ -7,7 +7,6 @@ config EXAMPLES_IOTIVITY
 	bool "Enable building IoTivity Samples"
 	default n
 	depends on ENABLE_IOTIVITY
-	depends on !EXAMPLES_OCFMYLIGHT
 	---help---
 		Enable building IoTivity Samples
 if EXAMPLES_IOTIVITY
@@ -25,10 +24,6 @@ config EXAMPLES_IOTIVITY_SECURESERVER
 	bool "secureServer"
 	---help---
 	"build in secureServer application"
-config EXAMPLES_IOTIVITY_CTT_LIGHT
-	bool "ctt_light"
-	---help---
-	"build in ctt_light application"
 endif
 
 if ENABLE_IOTIVITY_CLOUD

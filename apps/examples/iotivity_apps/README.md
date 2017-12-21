@@ -5,7 +5,7 @@ This is an example for an IoTivity simple server test.
 ## How to build
 Configure the build from $TIZENRT_BASEDIR/os/tools directory.
 ```bash
-./configure.sh artik053/iotivity
+./configure.sh artik053/nettest
 ```
 
 Select the 'Enable build IoTivity Samples' example in menuconfig.
