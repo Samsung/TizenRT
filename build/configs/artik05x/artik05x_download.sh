@@ -30,7 +30,6 @@ OUTPUT_BINARY_PATH=${BUILD_DIR_PATH}/output/bin
 OPENOCD_DIR_PATH=${BUILD_DIR_PATH}/tools/openocd
 
 TIZENRT_BIN=$OUTPUT_BINARY_PATH/tinyara_head.bin
-CODESIGNER=
 erase=0
 make=n
 
@@ -198,14 +197,14 @@ download()
 
 signing() {
     local bin=$1
-
+    local codesigner=$secure_tool_path/artik05x_AppCodesigner
     if test ! -e $1; then
         echo "OS image file not found" >&2
         return 1
     fi
 
-    if test ! -e "$1-signed" -a -e "$CODESIGNER"; then
-        $CODESIGNER/artik05x_AppCodesigner $CODESIGNER/rsa_private.key $1 >&2
+    if test ! -e "$1-signed" -a -e "$codesigner"; then
+        $codesigner $secure_tool_path/rsa_private.key $1 >&2
         bin="$1-signed"
     fi
 
@@ -238,7 +237,7 @@ while test $# -gt 0; do
                 exit 1
             fi
             ;;
-        --secure=*) CODESIGNER=$optarg
+        --secure=*) secure_tool_path=$(echo $optarg | sed -e "s#^\~#$HOME#")
             ;;
         --verify)
             VERIFY=verify
