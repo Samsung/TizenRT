@@ -1120,7 +1120,7 @@ int pcm_stop(struct pcm *pcm)
 	unsigned int size;
 	int prio;
 	struct timespec st_time;
-	while (1) {
+	while (pcm->buf_ptr > 0) {
 		clock_gettime(CLOCK_REALTIME, &st_time);
 		size = mq_timedreceive(pcm->mq, (FAR char *)&msg, sizeof(msg), &prio, &st_time);
 		if (size != sizeof(msg)) {
