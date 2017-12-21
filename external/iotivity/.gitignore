@@ -1,0 +1,7 @@
+*/.scon*
+*/build_common/iotivityconfig/*.pyc
+*/build_common/iotivityconfig/compiler/*.pyc
+*/out
+*/*.log
+*/*.pc
+*/extlibs/mbedtls/mbedtls
