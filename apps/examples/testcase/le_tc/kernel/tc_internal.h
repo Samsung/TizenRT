@@ -99,5 +99,6 @@ int itc_timer_main(void);
 int itc_environ_main(void);
 int itc_libc_spawn_main(void);
 int itc_pthread_main(void);
+int itc_libc_misc_main(void);
 
 #endif /* __EXAMPLES_TESTCASE_KERNEL_TC_INTERNAL_H */
