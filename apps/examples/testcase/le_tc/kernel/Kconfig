@@ -54,6 +54,7 @@ config TC_KN_ALL
 	select ITC_KERNEL_SCHED
 	select ITC_KERNEL_TIMER
 	select ITC_KERNEL_ENVIRON
+	select ITC_KERNEL_LIBC_SPAWN
 
 config TC_KERNEL_CLOCK
 	bool "Clock"
@@ -235,6 +236,10 @@ config ITC_KERNEL_TIMER
 
 config ITC_KERNEL_ENVIRON
 	bool "ITC Environ"
+	default n
+
+config ITC_KERNEL_LIBC_SPAWN
+	bool "ITC Libc Spawn"
 	default n
 
 endif #EXAMPLES_TESTCASE_KERNEL
