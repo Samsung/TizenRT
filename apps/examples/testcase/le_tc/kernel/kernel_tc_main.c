@@ -211,6 +211,13 @@ int tc_kernel_main(int argc, char *argv[])
 	itc_semaphore_main();
 #endif
 
+#ifdef CONFIG_ITC_KERNEL_SCHED
+#if (!defined CONFIG_SCHED_HAVE_PARENT)
+	/* #error CONFIG_SCHED_HAVE_PARENT is needed for testing SCHED TC */
+#endif
+	itc_sched_main();
+#endif
+
 	(void)tc_handler(TC_END, "Kernel TC");
 
 	return 0;

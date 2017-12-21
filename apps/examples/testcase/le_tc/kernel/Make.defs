@@ -164,6 +164,9 @@ endif
 ifeq ($(CONFIG_ITC_KERNEL_SEMAPHORE),y)
   CSRCS += itc_semaphore.c
 endif
+ifeq ($(CONFIG_ITC_KERNEL_SCHED),y)
+  CSRCS += itc_sched.c
+endif
 
 # Include kernel build support
 
