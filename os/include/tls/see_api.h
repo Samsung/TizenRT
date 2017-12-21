@@ -93,7 +93,6 @@ typedef enum {
 #define AES_KEY           0x010000
 #define HMAC_KEY          0x020000
 #define RSA_KEY           0x030000
-#define ECC_KEY           0x040000
 
 #define AES_KEY_128       ((AES_KEY)  | (0x1))
 #define AES_KEY_256       ((AES_KEY)  | (0x2))
