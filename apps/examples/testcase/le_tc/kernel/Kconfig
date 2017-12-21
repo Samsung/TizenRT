@@ -55,6 +55,7 @@ config TC_KN_ALL
 	select ITC_KERNEL_TIMER
 	select ITC_KERNEL_ENVIRON
 	select ITC_KERNEL_LIBC_SPAWN
+	select ITC_KERNEL_PTHREAD
 
 config TC_KERNEL_CLOCK
 	bool "Clock"
@@ -241,6 +242,11 @@ config ITC_KERNEL_ENVIRON
 config ITC_KERNEL_LIBC_SPAWN
 	bool "ITC Libc Spawn"
 	default n
+
+config ITC_KERNEL_PTHREAD
+	bool "ITC Pthread"
+	default n
+	select MUTEX_TYPES
 
 endif #EXAMPLES_TESTCASE_KERNEL
 
