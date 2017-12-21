@@ -56,21 +56,16 @@ CSRCS += lib_strftime.c lib_calendar2utc.c lib_daysbeforemonth.c
 CSRCS += lib_isleapyear.c lib_time.c lib_difftime.c
 
 ifdef CONFIG_ENABLE_IOTIVITY
-CSRCS +=lib_strptime.c
+CSRCS += lib_strptime.c
 endif
 
 ifdef CONFIG_LIBC_LOCALTIME
-CSRCS +=lib_asctime.c lib_asctimer.c lib_ctime.c lib_ctimer.c
-else
-ifdef CONFIG_TIME_EXTENDED
-CSRCS +=lib_asctime.c lib_asctimer.c lib_ctime.c lib_ctimer.c lib_dayofweek.c
-endif
-endif
-
-ifdef CONFIG_LIBC_LOCALTIME
-CSRCS += lib_localtime.c
+CSRCS += lib_localtime.c lib_asctime.c lib_asctimer.c lib_ctime.c lib_ctimer.c
 else
 CSRCS += lib_mktime.c lib_gmtime.c lib_gmtimer.c
+ifdef CONFIG_TIME_EXTENDED
+CSRCS += lib_dayofweek.c lib_asctime.c lib_asctimer.c lib_ctime.c lib_ctimer.c
+endif
 endif
 
 # Add the time directory to the build

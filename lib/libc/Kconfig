@@ -207,26 +207,45 @@ config LIBC_LOCALTIME
 	---help---
 		localtime API call support
 
-config TIME_EXTENDED
-	bool "enable time extended"
-	default "n"
-	depends on !LIBC_LOCALTIME
+		Logic currently depends on file system support with, at a minimum, these
+		files in the zoneinfo directory:  GMT and posixrules.  An additional
+		timezone file is required for any additional, local time zone(s) and the
+		environment variable TZ must be set to the name of that timezone file
+		when tzset() is called.
 
 if LIBC_LOCALTIME
 
 config LIBC_TZ_MAX_TIMES
 	int "Maximum number of times in timezone"
 	default 8
+	---help---
+		Timezone files with more than this number of times will not be used
+		(tmecnt).
 
 config LIBC_TZ_MAX_TYPES
 	int "Maximum number of TZ types"
 	default 8
+	---help---
+		Maximum number of local time types.  You may want to reduce this value
+		for a smaller footprint.
 
 config LIBC_TZDIR
 	string "zoneinfo directory path"
 	default "/etc/zoneinfo"
+	---help---
+		This is the full path to the location where the TZ database is expected
+		to be found.
 
-endif
+endif # LIBC_LOCALTIME
+
+config TIME_EXTENDED
+	bool "enable time extended"
+	default "n"
+	depends on !LIBC_LOCALTIME
+	---help---
+		Selecting TIME_EXTENDED adds tm_wday, tm_yday and tm_isdst
+		to the tm struct. This allows integration with 3rd party libraries
+		that expect the tm struct to contain these members.
 
 config LIB_SENDFILE_BUFSIZE
 	int "sendfile() buffer size"
