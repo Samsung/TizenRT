@@ -192,6 +192,7 @@ endif
 choice
 	prompt "iotivity log level"
 	default IOTIVITY_LOG_LEVEL_ERROR
+	depends on ENABLE_IOTIVITY
 
 config IOTIVITY_LOG_LEVEL_DEBUG
         bool "DEBUG"
