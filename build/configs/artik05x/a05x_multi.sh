@@ -22,43 +22,23 @@
 vid=0403
 pid=6010
 
-if [ "${0:0:1}" == "." ]; then
-  WD=`pwd`/`dirname $0`
-else
-  WD=`dirname $0`
-fi
-
-config_path=$WD/..
+WD=$(cd `dirname $0` && pwd)
+config_path=$WD/scripts
+tool_path=$WD/../../tools/openocd
 HOST=`gcc -dumpmachine`
 
-if [ -z ${HOST##x86_64*} ]; then
-    ARCH=64;
-else
-    ARCH=32;
-fi
-
-case $OSTYPE in
-  linux*)
-    EEPROMEXE=$config_path/../tools/openocd/linux$ARCH/ftdi_eeprom
-    OPENOCDEXE=$config_path/../tools/openocd/linux$ARCH/openocd
-    ;;
-  darwin*)
-    EEPROMEXE=$config_path/../tools/openocd/macos/ftdi_eeprom
-    OPENOCDEXE=$config_path/../tools/openocd/macos/openocd
-    ;;
-  msys*)
-    EEPROMEXE=$config_path/../tools/openocd/win$ARCH/ftdi_eeprom
-    OPENOCDEXE=$config_path/../tools/openocd/win$ARCH/openocd
-    ;;
-  *)
-    die "Not support Host OS: $OSTYPE"
-    ;;
-esac
-
 # Openocd
+test -z ${HOST##x86_64*} && ARCH=64 || ARCH=32;
+case $OSTYPE in
+  linux*)  tool_path=$tool_path/linux$ARCH ;;
+  darwin*) tool_path=$tool_path/macos ;;
+  msys*)   tool_path=$tool_path/win$ARCH ;;
+  *)       die "Not support Host OS: $OSTYPE" ;;
+esac
+EEPROMEXE=$tool_path/ftdi_eeprom
+OPENOCDEXE=$tool_path/openocd
 
 opt="init;reset halt"
-
 declare -a devlist=()
 declare -a seriallist=()
 
@@ -78,16 +58,17 @@ Options:
     [--dev[=serial]]
 	[--list[=file]]
         [--set[="partition file"]]
-    [--board[=<board-name>]]
     [--exec-path[=<path>]]
     [--config-path[=<path>]]
 
 For examples:
     `basename $0` --write
-    `basename $0` --board=artik05x --write \\
+    `basename $0` --write \\
                   --set="bl1 ../bl1.bin" --set="os tinyara_head.bin" \\
                   --flash
-    `basename $0` --board=artik05x --list=serial.txt --set="os tinyara_head.bin" --flash
+    `basename $0` --list=serial.txt --set="os tinyara_head.bin" --flash
+    `basename $0` --dev=024 --exec-path=./tools --config-path=./scripts \\
+                  --set="os tinyara_head.bin" --flash
 
 Options:
    --write                  Write FTDI serial into EEPROM.
@@ -96,7 +77,6 @@ Options:
    --dev[=serial]           Choose the device corresponding to 'serial'.
    --list[=file]            Read the list of target devices from input file.
    --set[=partition file]   Choose the partition what do you want.
-   --board[=<board-name>]   Choose the config of target board what do you want.
    --exec-path[=<path..>]   Specifies the path to the executables. If you don't use this
                             option, the default path is specified.
                             <default-path := `dirname $OPENOCDEXE`
@@ -170,87 +150,63 @@ __EOF__
 }
 
 download() {
-  CFGFILE=$BOARD_NAME.cfg
-  SCRIPTPATH=$config_path/$BOARD_NAME/scripts
-  if [ ! -e $SCRIPTPATH/$CFGFILE ]; then
-    echo "No such as board name: $BOARD_NAME" 1>&2
-    exit 1
-  fi
+  local CFGFILE=artik05x.cfg
+
+  test -e $config_path/$CFGFILE || error "can not found script file: $CFGFILE"
+
   for _dev in "${seriallist[@]}"; do
     echo "DOWNLOAD: $_dev($opt)"
-    $OPENOCDEXE -f $CFGFILE -s $SCRIPTPATH \
+    $OPENOCDEXE -f $CFGFILE -s $config_path \
         -c "ftdi_serial $_dev" \
         -c "$opt;reset;exit" || error "FAILURE FLASHING By Openocd"
   done
 }
 
 readlist() {
-  if [ ! -e $1 ]; then
-    error "No such list file '$1'";
-  fi
+  test -e $1 || error "No such list file '$1'"
   exec < $1
 
   while read line; do
-    seriallist=("${seriallist[@]}" "$line")
+    $2 "$line"
   done
 }
 
-append_option() {
-  local commands=$1
-  local part=`echo $commands | awk '{print $1}'`
-  local file=`echo $commands | awk '{print $2}'`
-
-  echo "$part $file"
-  if [ ! -e $file ]; then
-    error "No such binary file '$file'";
-  fi
-
-  opt="$opt;flash_write $part $file"
+append_list() {
+  seriallist=("${seriallist[@]}" "$1")
 }
 
-if test $# -eq 0; then
-  usage 1 1>&2
-fi
+append_option() {
+  local cmds=($1)
+
+  echo "${cmds[@]}"
+  test -e ${cmds[1]} || error "No such binary file '${cmds[1]}'"
+
+  opt="$opt;flash_write ${cmds[@]}"
+}
+
+test $# -eq 0 && usage 1 1>&2
 
 while test $# -gt 0; do
   case "$1" in
     -*=*) optarg=`echo "$1" | sed 's/[-_a-zA-Z0-9]*=//'` ;;
-    *) optarg= ;;
+    *)    optarg= ;;
   esac
 
   case $1 in
-    --board=*)
-      BOARD_NAME=$optarg
-      ;;
-    --write)
-      search_device
-      write_serial
-      ;;
+    --write)  search_device; write_serial ;;
     --flash)
-      if [ ${#seriallist[@]} -eq 0 ]; then error "Not exist FTDI serial list"; fi
-      download
-      ;;
-    --list=*)
-      readlist $optarg append_serial
-      ;;
-    --set=*)
-      append_option "$optarg"
-      ;;
-    --dev=*)
-      seriallist=("${seriallist[@]}" "$optarg")
-      ;;
+      test ${#seriallist[@]} -eq 0 && \
+          error "Not exist FTDI serial list" || \
+          download ;;
+    --list=*) readlist $optarg append_list ;;
+    --opt=*)  readlist $optarg append_option ;;
+    --set=*)  append_option "$optarg" ;;
+    --dev=*)  seriallist=("${seriallist[@]}" "$optarg") ;;
     --exec-path=*)
       EEPROMEXE=$optarg/ftdi_eeprom
-      OPENOCDEXE=$optarg/openocd
-      ;;
-    --config-path=*)
-      config_path=$optarg
-      ;;
-    *)
-      usage 1 1>&2
-      ;;
+      OPENOCDEXE=$optarg/openocd ;;
+    --config-path=*) config_path=$optarg ;;
+    *) usage 1 1>&2 ;;
     esac
   shift
 done
-
-#download
