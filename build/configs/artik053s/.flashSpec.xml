@@ -21,6 +21,10 @@
     </executors>
     <options>
         <option desc="Flash all binaries and images">ALL</option>
+        <option desc="Flash TizenRT binary">OS</option>
+        <option desc="Flash Bootloader binaries">BL1 BL2</option>
+        <option desc="Flash Firmware binaries">SSSFW WLANFW</option>
+        <option desc="Flash ROMFS image">ROMFS</option>
         <option desc="Erase user file system">ERASE_USERFS</option>
         <option desc="Erase all of partitions">ERASE_ALL</option>
     </options>
