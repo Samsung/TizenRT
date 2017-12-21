@@ -297,6 +297,7 @@ static uint32_t i2s_samplerate(struct i2s_dev_s *dev, uint32_t rate);
 
 static uint32_t i2s_txdatawidth(struct i2s_dev_s *dev, int bits);
 static int i2s_send(struct i2s_dev_s *dev, struct ap_buffer_s *apb, i2s_callback_t callback, void *arg, uint32_t timeout);
+static int i2s_stop(struct i2s_dev_s *dev);
 
 
 static int i2s_err_cb_register(struct i2s_dev_s *dev, i2s_err_cb_t cb, void *arg);	
@@ -333,7 +334,8 @@ static const struct i2s_ops_s g_i2sops = {
 	.i2s_txsamplerate = i2s_samplerate,
 	.i2s_txdatawidth = i2s_txdatawidth,
 	.i2s_send = i2s_send,
-	
+
+	.i2s_stop = i2s_stop,
 	.i2s_err_cb_register = i2s_err_cb_register,
 };
 
@@ -692,7 +694,7 @@ static int i2s_rx_start(struct s5j_i2s_s *priv)
 	}
 		
 	/* Here is no DMA activity, We do not care about IRQ, just initate first transfer */
-	lldbg("RX Initiate first RX\n");
+	i2sinfo("RX Initiate first RX\n");
 
 	timeout = 0;
 	notimeout = false;
@@ -741,7 +743,7 @@ static int i2s_rx_start(struct s5j_i2s_s *priv)
 		 */
 
 		if (ret < 0) {
-			lldbg("ERROR: wd_start failed: %d\n", errno);
+			i2serr("ERROR: wd_start failed: %d\n", errno);
 		}
 	}
 
@@ -783,7 +785,7 @@ static void i2s_rx_worker(void *arg)
 	 * is started.
 	 */
 
-	lldbg("rx.act.head=%p rx.done.head=%p\n", priv->rx.act.head, priv->rx.done.head);
+	i2sinfo("rx.act.head=%p rx.done.head=%p\n", priv->rx.act.head, priv->rx.done.head);
 
 
 	/* Process each buffer in the rx.done queue */
@@ -899,7 +901,7 @@ static void i2s_rx_schedule(struct s5j_i2s_s *priv, int result)
 
 		ret = work_queue(HPWORK, &priv->rx.work, i2s_rx_worker, priv, 0);
 		if (ret != 0) {
-			lldbg("ERROR: Failed to queue RX work: %d\n", ret);
+			i2serr("ERROR: Failed to queue RX work: %d\n", ret);
 		}
 	}
 }
@@ -1086,7 +1088,7 @@ static int i2s_txp_start(struct s5j_i2s_s *priv)
 		 */
 
 		if (ret < 0) {
-			lldbg("ERROR: wd_start failed: %d\n", errno);
+			i2serr("ERROR: wd_start failed: %d\n", errno);
 		}
 	}
 
@@ -1127,7 +1129,7 @@ static void i2s_txp_worker(void *arg)
 	 * started.
 	 */
 
-	lldbg("txp.act.head=%p txp.done.head=%p\n", priv->txp.act.head, priv->txp.done.head);
+	i2sinfo("txp.act.head=%p txp.done.head=%p\n", priv->txp.act.head, priv->txp.done.head);
 
 
 	/* Process each buffer in the tx.done queue */
@@ -1234,7 +1236,7 @@ static void i2s_txp_schedule(struct s5j_i2s_s *priv, int result)
 
 		ret = work_queue(HPWORK, &priv->txp.work, i2s_txp_worker, priv, 0);
 		if (ret != 0) {
-			lldbg("ERROR: Failed to queue TX primary work: %d\n", ret);
+			i2serr("ERROR: Failed to queue TX primary work: %d\n", ret);
 		}
 	}
 }
@@ -1307,7 +1309,7 @@ static int i2s_checkwidth(struct s5j_i2s_s *priv, int bits)
 		break;
 
 	default:
-		lldbg("ERROR: Unsupported or invalid data width: %d\n", bits);
+		i2serr("ERROR: Unsupported or invalid data width: %d\n", bits);
 		return (bits < 2 || bits > 32) ? -EINVAL : -ENOSYS;
 	}
 
@@ -1352,7 +1354,7 @@ static uint32_t i2s_bitrate(struct s5j_i2s_s *priv)
 		break;
 
 	default:
-		lldbg("ERROR: Unsupported or invalid datalen: %d\n", priv->datalen);
+		i2serr("ERROR: Unsupported or invalid datalen: %d\n", priv->datalen);
 		return -EINVAL;
 	}
 
@@ -1397,7 +1399,7 @@ static uint32_t i2s_rxdatawidth(struct i2s_dev_s *dev, int bits)
 
 	ret = i2s_checkwidth(priv, bits);
 	if (ret < 0) {
-		lldbg("ERROR: i2s_checkwidth failed: %d\n", ret);
+		i2serr("ERROR: i2s_checkwidth failed: %d\n", ret);
 		return 0;
 	}
 
@@ -1448,7 +1450,7 @@ static int i2s_receive(struct i2s_dev_s *dev, struct ap_buffer_s *apb, i2s_callb
 	int ret;
 #endif
 
-	lldbg("apb=%p nmaxbytes=%d arg=%p timeout=%d\n", apb, apb->nmaxbytes, arg, timeout);
+	i2sinfo("apb=%p nmaxbytes=%d arg=%p timeout=%d\n", apb, apb->nmaxbytes, arg, timeout);
 
 	i2s_init_buffer(apb->samp, apb->nmaxbytes);
 
@@ -1468,12 +1470,12 @@ static int i2s_receive(struct i2s_dev_s *dev, struct ap_buffer_s *apb, i2s_callb
 	/* Get exclusive access to the I2S driver data */
 
 	i2s_exclsem_take(priv);
-	lldbg("RX Exclusive Enter\n");
+	i2sinfo("RX Exclusive Enter\n");
 
 	/* Has the RX channel been enabled? */
 
 	if (!priv->rxenab) {
-		lldbg("ERROR: I2S has no receiver\n");
+		i2serr("ERROR: I2S has no receiver\n");
 		ret = -EAGAIN;
 		goto errout_with_exclsem;
 	}
@@ -1505,7 +1507,7 @@ static int i2s_receive(struct i2s_dev_s *dev, struct ap_buffer_s *apb, i2s_callb
 	i2s_rx_start(priv);
 
 	i2s_exclsem_give(priv);
-	lldbg("RX Exclusive Exit\n");
+	i2sinfo("RX Exclusive Exit\n");
 
 	return OK;
 
@@ -1515,7 +1517,7 @@ errout_with_exclsem:
 	return ret;
 
 #else
-	lldbg("ERROR: I2S has no receiver\n");
+	i2serr("ERROR: I2S has no receiver\n");
 	UNUSED(priv);
 	return -ENOSYS;
 #endif
@@ -1576,7 +1578,7 @@ static uint32_t i2s_txdatawidth(struct i2s_dev_s *dev, int bits)
 
 	ret = i2s_checkwidth(priv, bits);
 	if (ret < 0) {
-		lldbg("ERROR: i2s_checkwidth failed: %d\n", ret);
+		i2serr("ERROR: i2s_checkwidth failed: %d\n", ret);
 		return 0;
 	}
 
@@ -1588,6 +1590,72 @@ static uint32_t i2s_txdatawidth(struct i2s_dev_s *dev, int bits)
 	return 0;
 }
 
+/***************************************************************************
+****************************************************************************/
+static int i2s_stop(struct i2s_dev_s *dev)
+{
+	struct s5j_i2s_s *priv = (struct s5j_i2s_s *)dev;
+	irqstate_t flags;
+	struct s5j_buffer_s *bfcontainer;
+	DEBUGASSERT(priv);
+
+#ifdef I2S_HAVE_TX_P
+	while (sq_peek(&priv->txp.pend) != NULL) {
+		flags = irqsave();
+		bfcontainer = (struct s5j_buffer_s *)sq_remfirst(&priv->txp.pend);
+		irqrestore(flags);
+		apb_free(bfcontainer->apb);
+		i2s_buf_tx_free(priv, bfcontainer);
+	}
+
+	s5j_dmastop(priv->txp.dma);
+
+	while (sq_peek(&priv->txp.act) != NULL) {
+		flags = irqsave();
+		bfcontainer = (struct s5j_buffer_s *)sq_remfirst(&priv->txp.act);
+		irqrestore(flags);
+		apb_free(bfcontainer->apb);
+		i2s_buf_tx_free(priv, bfcontainer);
+	}
+
+	while (sq_peek(&priv->txp.done) != NULL) {
+		flags = irqsave();
+		bfcontainer = (struct s5j_buffer_s *)sq_remfirst(&priv->txp.done);
+		irqrestore(flags);
+		apb_free(bfcontainer->apb);
+		i2s_buf_tx_free(priv, bfcontainer);
+	}
+#endif
+
+#ifdef I2S_HAVE_RX
+	while (sq_peek(&priv->rx.pend) != NULL) {
+		flags = irqsave();
+		bfcontainer = (struct s5j_buffer_s *)sq_remfirst(&priv->rx.pend);
+		irqrestore(flags);
+		apb_free(bfcontainer->apb);
+		i2s_buf_rx_free(priv, bfcontainer);
+	}
+
+	s5j_dmastop(priv->rx.dma);
+
+	while (sq_peek(&priv->rx.act) != NULL) {
+		flags = irqsave();
+		bfcontainer = (struct s5j_buffer_s *)sq_remfirst(&priv->rx.act);
+		irqrestore(flags);
+		apb_free(bfcontainer->apb);
+		i2s_buf_rx_free(priv, bfcontainer);
+	}
+
+	while (sq_peek(&priv->rx.done) != NULL) {
+		flags = irqsave();
+		bfcontainer = (struct s5j_buffer_s *)sq_remfirst(&priv->rx.done);
+		irqrestore(flags);
+		apb_free(bfcontainer->apb);
+		i2s_buf_rx_free(priv, bfcontainer);
+	}
+#endif
+	return 0;
+}
 
 /****************************************************************************
  * Name: i2s_send
@@ -1631,7 +1699,7 @@ static int i2s_send(struct i2s_dev_s *dev, struct ap_buffer_s *apb, i2s_callback
 
 	DEBUGASSERT(priv && apb);
 
-	lldbg("apb=%p nbytes=%d arg=%p timeout=%d\n", apb, apb->nbytes - apb->curbyte, arg, timeout);
+	i2sinfo("apb=%p nbytes=%d arg=%p timeout=%d\n", apb, apb->nbytes - apb->curbyte, arg, timeout);
 
 	i2s_dump_buffer("Sending", &apb->samp[apb->curbyte], apb->nbytes - apb->curbyte);
 
@@ -1652,12 +1720,12 @@ static int i2s_send(struct i2s_dev_s *dev, struct ap_buffer_s *apb, i2s_callback
 
 	i2s_exclsem_take(priv);
 
-	lldbg("TX Exclusive Enter\n");
+	i2sinfo("TX Exclusive Enter\n");
 
 	/* Has the TX channel been enabled? */
 
 	if (!priv->txpenab) {
-		lldbg("ERROR: I2S has no transmitter\n");
+		i2serr("ERROR: I2S has no transmitter\n");
 		ret = -EAGAIN;
 		goto errout_with_exclsem;
 	}
@@ -1691,7 +1759,7 @@ static int i2s_send(struct i2s_dev_s *dev, struct ap_buffer_s *apb, i2s_callback
 
 	DEBUGASSERT(ret == OK);
 	i2s_exclsem_give(priv);
-	lldbg("TX Exclusive Exit\n");
+	i2sinfo("TX Exclusive Exit\n");
 
 	return OK;
 
@@ -1701,7 +1769,7 @@ errout_with_exclsem:
 	return ret;
 
 #else
-	lldbg("ERROR: I2S has no transmitter\n");
+	i2serr("ERROR: I2S has no transmitter\n");
 	UNUSED(priv);
 	return -ENOSYS;
 #endif
@@ -1772,7 +1840,7 @@ static int i2s_rx_configure(struct s5j_i2s_s *priv)
 	}
 
 	priv->rxenab = 1;
-	lldbg("i2s_rx_configure success with i2s dev addr 0x%x\n");
+	i2sinfo("i2s_rx_configure success with i2s dev addr 0x%x\n");
 	return OK;
 
 err:
@@ -1846,7 +1914,7 @@ static int i2s_dma_allocate(struct s5j_i2s_s *priv)
 
 		priv->rx.dma = s5j_dmachannel(CONFIG_I2S_RX_DMACH, "pdma");
 		if (!priv->rx.dma) {
-			lldbg("ERROR: Failed to allocate the RX DMA channel\n");
+			i2serr("ERROR: Failed to allocate the RX DMA channel\n");
 			goto errout;
 		}
 
@@ -1854,7 +1922,7 @@ static int i2s_dma_allocate(struct s5j_i2s_s *priv)
 
 		priv->rx.dog = wd_create();
 		if (!priv->rx.dog) {
-			lldbg("ERROR: Failed to create the RX DMA watchdog\n");
+			i2serr("ERROR: Failed to create the RX DMA watchdog\n");
 			goto errout;
 		}
 	}
@@ -1866,7 +1934,7 @@ static int i2s_dma_allocate(struct s5j_i2s_s *priv)
 
 		priv->txp.dma = s5j_dmachannel(CONFIG_I2S_TXP_DMACH, "pdma");
 		if (!priv->txp.dma) {
-			lldbg("ERROR: Failed to allocate the TXP DMA channel\n");
+			i2serr("ERROR: Failed to allocate the TXP DMA channel\n");
 			goto errout;
 		}
 
@@ -1874,7 +1942,7 @@ static int i2s_dma_allocate(struct s5j_i2s_s *priv)
 
 		priv->txp.dog = wd_create();
 		if (!priv->txp.dog) {
-			lldbg("ERROR: Failed to create the TXP DMA watchdog\n");
+			i2serr("ERROR: Failed to create the TXP DMA watchdog\n");
 			goto errout;
 		}
 	}
@@ -1886,7 +1954,7 @@ static int i2s_dma_allocate(struct s5j_i2s_s *priv)
 
 		priv->txs.dma = s5j_dmachannel(CONFIG_I2S_TXS_DMACH, "pdma");
 		if (!priv->txs.dma) {
-			lldbg("ERROR: Failed to allocate the TX DMA channel\n");
+			i2serr("ERROR: Failed to allocate the TX DMA channel\n");
 			goto errout;
 		}
 
@@ -1894,7 +1962,7 @@ static int i2s_dma_allocate(struct s5j_i2s_s *priv)
 
 		priv->txs.dog = wd_create();
 		if (!priv->txs.dog) {
-			lldbg("ERROR: Failed to create the TX DMA watchdog\n");
+			i2serr("ERROR: Failed to create the TX DMA watchdog\n");
 			goto errout;
 		}
 	}
@@ -2133,7 +2201,7 @@ static int i2s_irq_handler(int irq, FAR void *context, FAR void *arg)
 struct i2s_dev_s *s5j_i2s_initialize(uint16_t port)
 {
 	if (port >= S5J_I2S_MAXPORTS) {
-		lldbg("ERROR: Port number outside the allowed port number range\n");
+		i2serr("ERROR: Port number outside the allowed port number range\n");
 		return NULL;
 	}
 	if (g_i2sdevice[port] != NULL) {
@@ -2149,7 +2217,7 @@ struct i2s_dev_s *s5j_i2s_initialize(uint16_t port)
 	 */
 	priv = (struct s5j_i2s_s *)zalloc(sizeof(struct s5j_i2s_s));
 	if (!priv) {
-		lldbg("ERROR: Failed to allocate a chip select structure\n");
+		i2serr("ERROR: Failed to allocate a chip select structure\n");
 		return NULL;
 	}
 	priv->isr_num = IRQ_I2S;
@@ -2171,7 +2239,7 @@ struct i2s_dev_s *s5j_i2s_initialize(uint16_t port)
 
 	ret = i2s_rx_configure(priv);
 	if (ret < 0) {
-		lldbg("ERROR: Failed to configure the receiver: %d\n", ret);
+		i2serr("ERROR: Failed to configure the receiver: %d\n", ret);
 		goto errout_with_clocking;
 	}
 #endif
@@ -2181,7 +2249,7 @@ struct i2s_dev_s *s5j_i2s_initialize(uint16_t port)
 
 	ret = i2s_txp_configure(priv);
 	if (ret < 0) {
-		lldbg("ERROR: Failed to configure the primary transmitter: %d\n", ret);
+		i2serr("ERROR: Failed to configure the primary transmitter: %d\n", ret);
 		goto errout_with_clocking;
 	}
 #endif
@@ -2189,7 +2257,7 @@ struct i2s_dev_s *s5j_i2s_initialize(uint16_t port)
 #ifdef I2S_HAVE_TX_S
 	ret = i2s_txs_configure(priv);
 	if (ret < 0) {
-		lldbg("ERROR: Failed to configure the secondary transmitter: %d\n", ret);
+		i2serr("ERROR: Failed to configure the secondary transmitter: %d\n", ret);
 		goto errout_with_clocking;
 	}
 #endif

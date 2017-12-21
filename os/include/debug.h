@@ -646,6 +646,31 @@ Once LOGM is approved, each module should have its own index
 #define i2cllvdbg(x...)
 #endif
 
+#ifdef CONFIG_DEBUG_I2S_ERROR
+#define i2serr(format, ...)    dbg(format, ##__VA_ARGS__)
+#define i2slldbg(format, ...)  lldbg(format, ##__VA_ARGS__)
+#else
+#define i2serr(x...)
+#define i2slldbg(x...)
+#endif
+
+#ifdef CONFIG_DEBUG_I2S_WARN
+#define i2swarn(format, ...)    wdbg(format, ##__VA_ARGS__)
+#define i2sllwdbg(format, ...)  llwdbg(format, ##__VA_ARGS__)
+#else
+#define i2swarn(x...)
+#define i2sllwdbg(x...)
+#endif
+
+#ifdef CONFIG_DEBUG_I2S_INFO
+#define i2sinfo(format, ...)   vdbg(format, ##__VA_ARGS__)
+#define i2sllvdbg(format, ...) llvdbg(format, ##__VA_ARGS__)
+#else
+#define i2sinfo(x...)
+#define i2sllvdbg(x...)
+#endif
+
+
 #ifdef CONFIG_NET_LWIP_DEBUG
 #define lwipdbg(format, ...)    dbg(format, ##__VA_ARGS__)
 #define lwiplldbg(format, ...)  lldbg(format, ##__VA_ARGS__)
