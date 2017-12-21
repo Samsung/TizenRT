@@ -52,6 +52,7 @@ config TC_KN_ALL
 	select ITC_KERNEL_LIBC_SEMAPHORE
 	select ITC_KERNEL_SEMAPHORE
 	select ITC_KERNEL_SCHED
+	select ITC_KERNEL_TIMER
 
 config TC_KERNEL_CLOCK
 	bool "Clock"
@@ -226,6 +227,10 @@ config ITC_KERNEL_SCHED
 	bool "ITC Sched"
 	default n
 #	select SCHED_HAVE_PARENT
+
+config ITC_KERNEL_TIMER
+	bool "ITC Timer"
+	default n
 
 endif #EXAMPLES_TESTCASE_KERNEL
 
