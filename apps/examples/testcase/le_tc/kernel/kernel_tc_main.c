@@ -204,6 +204,13 @@ int tc_kernel_main(int argc, char *argv[])
 	itc_libc_semaphore_main();
 #endif
 
+#ifdef CONFIG_ITC_KERNEL_SEMAPHORE
+#if (!defined CONFIG_DEBUG) || (!defined CONFIG_SEM_PREALLOCHOLDERS) || (!defined CONFIG_PRIORITY_INHERITANCE)
+#error CONFIG_DEBUG, CONFIG_SEM_PHDEBUG, CONFIG_SEM_PREALLOCHOLDERS and CONFIG_PRIORITY_INHERITANCE are needed for testing SEMAPHORE ITC
+#endif
+	itc_semaphore_main();
+#endif
+
 	(void)tc_handler(TC_END, "Kernel TC");
 
 	return 0;
