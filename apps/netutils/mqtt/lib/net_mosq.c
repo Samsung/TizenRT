@@ -247,6 +247,18 @@ int _mosquitto_socket_close(struct mosquitto *mosq)
 	}
 #endif
 
+#ifdef WITH_MBEDTLS
+	if (mosq->ssl_ctx) {
+		mbedtls_ssl_free(mosq->ssl_ctx);
+		free(mosq->ssl_ctx);
+		mosq->ssl_ctx = NULL;
+	}
+	if (mosq->net) {
+		free(mosq->net);
+		mosq->net = NULL;
+	}
+#endif
+
 	if ((int)mosq->sock >= 0) {
 #ifdef WITH_BROKER
 		HASH_DELETE(hh_sock, db->contexts_by_sock, mosq);
