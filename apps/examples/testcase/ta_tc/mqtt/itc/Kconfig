@@ -12,13 +12,13 @@ config EXAMPLES_TESTCASE_MQTT_ITC
 
 if EXAMPLES_TESTCASE_MQTT_ITC
 
-config EXAMPLES_TESTCASE_ITC_MQTT_BROKER_ADDR
+config ITC_MQTT_BROKER_ADDR
 	string "MQTT broker IP address for ITC"
 	default "127.0.0.1"
 	---help---
 		MQTT broker's ip address to connect
 
-config EXAMPLES_TESTCASE_ITC_MQTT_BROKER_PORT
+config ITC_MQTT_BROKER_PORT
 	int "MQTT broker port for ITC"
 	default 1883
 	---help---
