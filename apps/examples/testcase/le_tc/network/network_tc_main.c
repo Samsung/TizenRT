@@ -107,6 +107,21 @@ int tc_network_main(int argc, char *argv[])
 #ifdef CONFIG_TC_NET_DUP
 	net_dup_main();
 #endif
+#ifdef CONFIG_ITC_NET_SETSOCKOPT
+	itc_net_setsockopt_main();
+#endif
+#ifdef CONFIG_ITC_NET_SEND
+	itc_net_send_main();
+#endif
+#ifdef CONFIG_ITC_NET_INET
+	itc_net_inet_main();
+#endif
+#ifdef CONFIG_ITC_NET_NETDB
+	itc_net_netdb_main();
+#endif
+#ifdef CONFIG_ITC_NET_CONNECT
+	itc_net_connect_main();
+#endif
 
 	(void)tc_handler(TC_END, "Network TC");
 
