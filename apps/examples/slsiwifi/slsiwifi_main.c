@@ -876,6 +876,14 @@ int8_t parseCmdLine(int argc, char *argv[])
 		} else {
 			WiFiSetCountryCode(argv[2]);
 		}
+	} else if (strncmp("getcountry", argv[1], MAXLEN(10, strlen(argv[1]))) == 0) {
+		char ccode[10] = {0,};
+
+		if (WiFiGetCountryCode(ccode) == SLSI_STATUS_SUCCESS) {
+			printf("Current Country Code = %s\n", ccode);
+		} else {
+			printf("Failed to get country code\n");
+		}
 	} else if (strncmp("txpower", argv[1], MAXLEN(7, strlen(argv[1]))) == 0) {
 		if (!argv[2] || strlen(argv[2]) != 2) {
 			sw_printHelp();
