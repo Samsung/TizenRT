@@ -423,7 +423,7 @@ void CALogAdapterTypeInfo(CATransportAdapter_t adapter)
     }
 }
 
-#ifndef __TIZENRT__ /* temporarilly disabled IPv6 */
+#if !defined(__TIZENRT__) || defined(CONFIG_NET_IPv6)
 CAResult_t CAGetIpv6AddrScopeInternal(const char *addr, CATransportFlags_t *scopeLevel)
 {
     if (!addr || !scopeLevel)

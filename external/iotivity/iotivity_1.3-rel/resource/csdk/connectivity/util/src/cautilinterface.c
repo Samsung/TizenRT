@@ -414,7 +414,7 @@ CAResult_t CAUtilSetBTConfigure(CAUtilConfig_t config)
 #endif
 }
 
-#ifndef __TIZENRT__ /* temporarilly disabled IPv6 */
+#if !defined(__TIZENRT__) || defined(CONFIG_NET_IPv6)
 CAResult_t CAGetIpv6AddrScope(const char *addr, CATransportFlags_t *scopeLevel)
 {
     return CAGetIpv6AddrScopeInternal(addr, scopeLevel);

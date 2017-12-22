@@ -968,7 +968,7 @@ static CASocketFd_t CACreateAcceptSocket(int family, CASocket_t *sock)
     if (family == AF_INET6)
     {
         // the socket is restricted to sending and receiving IPv6 packets only.
-#ifndef __TIZENRT__ /* temporarilly disabled IPv6 */
+#ifndef __TIZENRT__
         int on = 1;
         if (OC_SOCKET_ERROR == setsockopt(fd, IPPROTO_IPV6, IPV6_V6ONLY, OPTVAL_T(&on), sizeof (on)))
         {
@@ -1111,7 +1111,7 @@ CAResult_t CATCPStartServer(const ca_thread_pool_t threadPool)
         return res;
     }
 
-#ifndef __TIZENRT__ /* temporarilly disabled IPv6 */
+#if !defined(__TIZENRT__) || defined(CONFIG_NET_IPv6)
     if (caglobals.tcp.ipv6tcpenabled)
     {
         NEWSOCKET(AF_INET6, ipv6);

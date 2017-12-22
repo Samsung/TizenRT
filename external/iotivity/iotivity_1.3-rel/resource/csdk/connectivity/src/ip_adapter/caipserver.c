@@ -142,29 +142,6 @@ static char *ipv6mcnames[IPv6_DOMAINS] = {
     NULL
 };
 
-#ifdef __TIZENRT__ /* this code block may be modified */
-struct in6_pktinfo {
-        struct in6_addr ipi6_addr;
-        int             ipi6_ifindex;
-};
-
-struct in_pktinfo
-{
-  unsigned int   ipi_ifindex;  /* Interface index */
-  struct in_addr ipi_spec_dst; /* Local address */
-  struct in_addr ipi_addr;     /* Header Destination
-                                    address */
-};
-
-#define RTMGRP_LINK 1
-#define IP_PKTINFO         8
-#define IPV6_PKTINFO            50
-#define IPV6_MULTICAST_IF 9
-#define IPV6_V6ONLY 27
-#define IPV6_RECVPKTINFO       50
-#define IPV6_JOIN_GROUP 12
-#endif
-
 #if defined (_WIN32)
 #define IFF_UP_RUNNING_FLAGS  (IFF_UP)
 
@@ -631,7 +608,7 @@ static CAResult_t CAReceiveMessage(CASocketFd_t fd, CATransportFlags_t flags)
         unsigned char data[CMSG_SPACE(sizeof (struct in6_pktinfo))];
     } cmsg;
 
-#ifndef __TIZENRT__ /* temporarilly disabled IPv6 */
+#if !defined(__TIZENRT__) || defined(CONFIG_NET_IPv6)
     if (flags & CA_IPV6)
     {
         namelen = sizeof (struct sockaddr_in6);
@@ -735,9 +712,10 @@ static CAResult_t CAReceiveMessage(CASocketFd_t fd, CATransportFlags_t flags)
 
     CASecureEndpoint_t sep = {.endpoint = {.adapter = CA_ADAPTER_IP, .flags = flags}};
 
-#ifndef __TIZENRT__ /* temporarilly disabled IPv6 */
+#if !defined(__TIZENRT__) || defined(CONFIG_NET_IPv6)
     if (flags & CA_IPV6)
     {
+#ifndef __TIZENRT__
         sep.endpoint.ifindex = ((struct in6_pktinfo *)pktinfo)->ipi6_ifindex;
 
         if (flags & CA_MULTICAST)
@@ -749,6 +727,11 @@ static CAResult_t CAReceiveMessage(CASocketFd_t fd, CATransportFlags_t flags)
                 sep.endpoint.flags &= ~CA_MULTICAST;
             }
         }
+#else
+        if((struct in_pktinfo *)pktinfo){
+            sep.endpoint.ifindex = ((struct in6_pktinfo *)pktinfo)->ipi6_ifindex;
+        }
+#endif
     }
     else
 #endif
@@ -758,7 +741,7 @@ static CAResult_t CAReceiveMessage(CASocketFd_t fd, CATransportFlags_t flags)
 #else
         if((struct in_pktinfo *)pktinfo){
             sep.endpoint.ifindex = ((struct in_pktinfo *)pktinfo)->ipi_ifindex;
-	}
+        }
 #endif
 
 #ifndef __TIZENRT__
@@ -833,9 +816,10 @@ static CASocketFd_t CACreateSocket(int family, uint16_t *port, bool isMulticast)
     struct sockaddr_storage sa = { .ss_family = (short)family };
     socklen_t socklen = 0;
 
-#ifndef __TIZENRT__ /* temporarilly disabled IPv6 */
+#if !defined(__TIZENRT__) || defined(CONFIG_NET_IPv6)
     if (family == AF_INET6)
     {
+#ifndef __TIZENRT__
         int on = 1;
 
         if (OC_SOCKET_ERROR == setsockopt(fd, IPPROTO_IPV6, IPV6_V6ONLY, OPTVAL_T(&on), sizeof (on)))
@@ -851,6 +835,7 @@ static CASocketFd_t CACreateSocket(int family, uint16_t *port, bool isMulticast)
         {
             OIC_LOG_V(ERROR, TAG, "IPV6_RECVPKTINFO failed: %s",CAIPS_GET_ERROR);
         }
+#endif
 
         ((struct sockaddr_in6 *)&sa)->sin6_port = htons(*port);
         socklen = sizeof (struct sockaddr_in6);
@@ -858,8 +843,8 @@ static CASocketFd_t CACreateSocket(int family, uint16_t *port, bool isMulticast)
     else
 #endif
     {
-        int on = 1;
 #ifndef __TIZENRT__
+        int on = 1;
         if (OC_SOCKET_ERROR == setsockopt(fd, IPPROTO_IP, IP_PKTINFO, OPTVAL_T(&on), sizeof (on)))
         {
             OIC_LOG_V(ERROR, TAG, "IP_PKTINFO failed: %s", CAIPS_GET_ERROR);
@@ -1259,7 +1244,7 @@ static void applyMulticastToInterface4(uint32_t ifindex)
 
 static void applyMulticast6(CASocketFd_t fd, struct in6_addr *addr, uint32_t ifindex)
 {
-#ifndef __TIZENRT__ /* temporarilly disabled IPv6 */
+#if !defined(__TIZENRT__) || (defined(CONFIG_NET_IPv6) && (SUPPORT_SETSOCKOPT_IPV6_JOIN_GROUP == 1))
     struct ipv6_mreq mreq = { .ipv6mr_interface = ifindex };
 
     // VS2013 has problems with struct copies inside struct initializers, so copy separately.
@@ -1285,6 +1270,16 @@ static void applyMulticast6(CASocketFd_t fd, struct in6_addr *addr, uint32_t ifi
         {
             OIC_LOG_V(ERROR, TAG, "IPv6 IPV6_JOIN_GROUP failed: %s", CAIPS_GET_ERROR);
         }
+    }
+
+#elif defined(CONFIG_NET_IPv6) && (SUPPORT_SETSOCKOPT_IPV6_JOIN_GROUP == 0)
+    (void)fd;
+    (void)ifindex;
+
+    int ret = do_ipv6_join_group(addr);
+    if (ret != 0)
+    {
+        OIC_LOG_V(ERROR, TAG, "IPv6 IPV6_JOIN_GROUP failed: %s", CAIPS_GET_ERROR);
     }
 #endif
 }
@@ -1526,7 +1521,7 @@ static void sendMulticastData6(const u_arraylist_t *iflist,
                                CAEndpoint_t *endpoint,
                                const void *data, size_t datalen)
 {
-#ifndef __TIZENRT__ /* temporarilly disabled IPv6 */
+#if !defined(__TIZENRT__) || defined(CONFIG_NET_IPv6)
     if (!endpoint)
     {
         OIC_LOG(DEBUG, TAG, "endpoint is null");

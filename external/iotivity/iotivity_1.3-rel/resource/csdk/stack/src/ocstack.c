@@ -1470,7 +1470,7 @@ OCStackResult OCMapZoneIdToLinkLocalEndpoint(OCDiscoveryPayload *payload, uint32
             if (eps->family & OC_IP_USE_V6)
             {
                 CATransportFlags_t scopeLevel;
-#ifndef __TIZENRT__ // temporarilly disabled IPv6
+#if !defined(__TIZENRT__) || defined(CONFIG_NET_IPv6)
                 if (CA_STATUS_OK == CAGetIpv6AddrScope(eps->addr, &scopeLevel))
                 {
                     if (CA_SCOPE_LINK == scopeLevel)
@@ -2764,7 +2764,7 @@ OCStackResult OCInitializeInternal(OCMode mode, OCTransportFlags serverFlags,
     caglobals.serverFlags = (CATransportFlags_t)serverFlags;
     if (!(caglobals.serverFlags & CA_IPFAMILY_MASK))
     {
-#ifndef __TIZENRT__ /* temporarilly disabled IPv6 */
+#if !defined(__TIZENRT__) || defined(CONFIG_NET_IPv6)
         caglobals.serverFlags = (CATransportFlags_t)(caglobals.serverFlags|CA_IPV4|CA_IPV6);
 #else
         caglobals.serverFlags = (CATransportFlags_t)(caglobals.serverFlags|CA_IPV4);
@@ -2773,7 +2773,7 @@ OCStackResult OCInitializeInternal(OCMode mode, OCTransportFlags serverFlags,
     caglobals.clientFlags = (CATransportFlags_t)clientFlags;
     if (!(caglobals.clientFlags & CA_IPFAMILY_MASK))
     {
-#ifndef __TIZENRT__ /* temporarilly disabled IPv6 */
+#if !defined(__TIZENRT__) || defined(CONFIG_NET_IPv6)
         caglobals.clientFlags = (CATransportFlags_t)(caglobals.clientFlags|CA_IPV4|CA_IPV6);
 #else
         caglobals.clientFlags = (CATransportFlags_t)(caglobals.clientFlags|CA_IPV4);
@@ -6284,7 +6284,7 @@ OCStackResult OC_CALL OCSelectCipherSuite(uint16_t cipher, OCTransportAdapter ad
     return CAResultToOCResult(CASelectCipherSuite(cipher, (CATransportAdapter_t)adapterType));
 }
 
-#ifndef __TIZENRT__ /* temporarilly disabled IPv6 */
+#if !defined(__TIZENRT__) || defined(CONFIG_NET_IPv6)
 OCStackResult OC_CALL OCGetIpv6AddrScope(const char *addr, OCTransportFlags *scope)
 {
     // OCTransportFlags and CATransportFlags_t are using the same bits for each scope.

@@ -429,6 +429,7 @@ u_arraylist_t *CAIPGetInterfaceInformation(int desiredIndex)
         if (!result)
         {
             OIC_LOG(ERROR, TAG, "u_arraylist_add failed.");
+            OICFree(ifitem);
             goto exit;
         }
 
@@ -437,6 +438,10 @@ u_arraylist_t *CAIPGetInterfaceInformation(int desiredIndex)
         {
             CAInterface_t *newifitem = CANewInterfaceItem(ifitem->index, ifitem->name, ifitem->family,
                                                           ifitem->addr, ifitem->flags);
+            if (newifitem == NULL)
+            {
+                goto exit;
+            }
             CAResult_t ret = CAAddNetworkMonitorList(newifitem);
             if (CA_STATUS_OK != ret)
             {
@@ -447,15 +452,11 @@ u_arraylist_t *CAIPGetInterfaceInformation(int desiredIndex)
             OIC_LOG_V(DEBUG, TAG, "Added interface: %s (%d)", ifitem->name, ifitem->family);
         }
     }
-#ifndef __TIZENRT__
     freeifaddrs(ifp);
-#endif
     return iflist;
 
 exit:
-#ifndef __TIZENRT__
     freeifaddrs(ifp);
-#endif
     u_arraylist_destroy(iflist);
     return NULL;
 }
