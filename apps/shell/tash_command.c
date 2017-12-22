@@ -294,8 +294,12 @@ int tash_execute_cmd(char **args, int argc)
 int tash_cmd_install(const char *str, TASH_CMD_CALLBACK cb, int thread_exec)
 {
 	int cmd_idx;
+	static int fail_cmd_count;
 
 	if (TASH_MAX_COMMANDS == tash_cmds_info.count) {
+		printf("Allowed Max tash cmds: %d and Current tash cmd count: %d\n",
+				TASH_MAX_COMMANDS, tash_cmds_info.count + ++fail_cmd_count);
+		printf("Couldn't install cmd: (%s), Refer CONFIG_TASH_MAX_COMMANDS\n", str);
 		return -1;				/* MAX cmd count reached */
 	}
 

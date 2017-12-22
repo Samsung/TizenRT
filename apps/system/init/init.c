@@ -121,13 +121,13 @@ int preapp_start(int argc, char *argv[])
 #endif
 
 #ifdef CONFIG_TASH
-	tash_register_cmds();
-
 	pid = tash_start();
 	if (pid <= 0) {
 		printf("TASH is failed to start, error code is %d\n", pid);
 		goto error_out;
 	}
+
+	tash_register_cmds();
 #endif
 
 #if defined(CONFIG_LIB_USRWORK) || defined(CONFIG_TASH)
