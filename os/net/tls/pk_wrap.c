@@ -623,9 +623,6 @@ int hw_rsa_sign_wrap(mbedtls_rsa_context *ctx, mbedtls_md_type_t md_alg, const u
 	case MBEDTLS_MD_SHA1:
 		rsa_sign.alg_type = SHA1_160 | (padding ^ 0x1);	/* 0x110X */
 		break;
-	case MBEDTLS_MD_SHA224:
-		rsa_sign.alg_type = SHA2_224 | (padding ^ 0x1);	/* 0x220X */
-		break;
 	case MBEDTLS_MD_SHA256:
 		rsa_sign.alg_type = SHA2_256 | (padding ^ 0x1);	/* 0x230X */
 		break;
@@ -902,9 +899,6 @@ int hw_rsa_verify_wrap(void *ctx, mbedtls_md_type_t md_alg, const unsigned char 
 		goto cleanup;
 	case MBEDTLS_MD_SHA1:
 		rsa_sign.alg_type = SHA1_160 | (padding ^ 0x1);	/* 0x110X */
-		break;
-	case MBEDTLS_MD_SHA224:
-		rsa_sign.alg_type = SHA2_224 | (padding ^ 0x1);	/* 0x220X */
 		break;
 	case MBEDTLS_MD_SHA256:
 		rsa_sign.alg_type = SHA2_256 | (padding ^ 0x1);	/* 0x230X */
