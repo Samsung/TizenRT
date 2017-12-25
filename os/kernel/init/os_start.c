@@ -101,6 +101,8 @@
  * Global Variables
  ****************************************************************************/
 
+extern const uint32_t g_idle_topstack;
+
 /* Task Lists ***************************************************************/
 /* The state of a task is indicated both by the task_state field of the TCB
  * and by a series of task lists.  All of these tasks lists are declared
@@ -326,6 +328,8 @@ void os_start(void)
 	g_idletcb.cmn.task_state = TSTATE_TASK_RUNNING;
 	g_idletcb.cmn.entry.main = (main_t)os_start;
 	g_idletcb.cmn.flags = TCB_FLAG_TTYPE_KERNEL;
+	g_idletcb.cmn.stack_alloc_ptr = (void *)(g_idle_topstack - CONFIG_IDLETHREAD_STACKSIZE);
+	g_idletcb.cmn.adj_stack_size = CONFIG_IDLETHREAD_STACKSIZE;
 
 	/* Set the IDLE task name */
 
