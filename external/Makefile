@@ -67,12 +67,6 @@ IOTIVITY_RELEASE=${shell echo $(CONFIG_IOTIVITY_RELEASE_VERSION) | sed 's/"//g'}
 IOTIVITY_BASE_DIR=$(EXTDIR)/iotivity/iotivity_$(IOTIVITY_RELEASE)
 endif
 
-ifeq ($(CONFIG_LIBTUV),y)
-include libtuv/source/tinyara/Make.defs
-include libtuv/source/unix/Make.defs
-include libtuv/source/Make.defs
-endif
-
 ifeq ($(CONFIG_DM),y)
 CFLAGS+=-I$(TOPDIR)/../framework/include/dm
 endif

@@ -222,12 +222,6 @@ endchoice
 
 endmenu #IOTIVITY Config Parameters
 
-config LIBTUV
-	bool "libtuv"
-	default n
-	---help---
-		enable libtuv
-
 config ARTIK_SDK
 	bool "ARTIK SDK"
 	default n

@@ -1,6 +1,0 @@
-config EXAMPLES_LIBTUV
-	bool "libtuv Example"
-	select LIBTUV
-	default n
-	---help---
-		Enable the libtuv Example
