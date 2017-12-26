@@ -108,6 +108,9 @@ CFLAGS += -std=c99
 CFLAGS += -w
 CFLAGS += -D__WITH_DTLS__
 
+ifeq ($(CONFIG_IOTIVITY_RELEASE_VERSION),"1.2-rel")
+CSRCS += port_tinyara.c
+endif
 
 AOBJS = $(ASRCS:.S=$(OBJEXT))
 COBJS = $(CSRCS:.c=$(OBJEXT))
