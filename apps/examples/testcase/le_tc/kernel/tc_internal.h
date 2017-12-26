@@ -90,6 +90,7 @@ int timer_main(void);
 int umm_heap_main(void);
 int tash_heapinfo_main(void);
 int tash_stackmonitor_main(void);
+int wqueue_main(void);
 int itc_environ_main(void);
 int itc_libc_pthread_main(void);
 int itc_libc_semaphore_main(void);
