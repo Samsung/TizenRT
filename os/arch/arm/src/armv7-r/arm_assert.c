@@ -92,7 +92,7 @@
 #endif
 #include <stdbool.h>
 
-#if defined(CONFIG_FS_ROMFS) && defined(CONFIG_FRAME_POINTER)
+#ifdef CONFIG_DEBUG_DISPLAY_SYMBOL
 #include <stdio.h>
 bool abort_mode = false;
 #endif
@@ -204,7 +204,7 @@ static int is_text_address(unsigned long programCounter)
  * Name: get_symbol
  * Below API works if there is existance of System.map file in rom fs
  ****************************************************************************/
-#ifdef CONFIG_FS_ROMFS
+#ifdef CONFIG_DEBUG_DISPLAY_SYMBOL
 int get_symbol(unsigned long search_addr, char *buffer, size_t buflen)
 {
 	FILE *pFile;
@@ -301,7 +301,7 @@ int get_symbol(unsigned long search_addr, char *buffer, size_t buflen)
 
 	return 0;
 }
-#endif						/* End of CONFIG_FS_ROMFS */
+#endif
 
 /****************************************************************************
  * Name: unwind_frame_with_fp
@@ -386,7 +386,7 @@ static void unwind_backtrace_with_fp(arm_regs_t *regs, struct tcb_s *task)
 		uint32_t current_addr = stack_frame.programCounter;
 		if (unwind_frame_with_fp(&stack_frame, ustacksize) >= 0) {
 			/* Print the call stack address */
-#ifdef CONFIG_FS_ROMFS
+#ifdef CONFIG_DEBUG_DISPLAY_SYMBOL
 			char buffer[128];
 			if (get_symbol(current_addr, buffer, sizeof(buffer)) == 0) {
 				lldbg("[<0x%p>] %s\n", (void *)current_addr, buffer);
@@ -915,7 +915,7 @@ static void _up_assert(int errorcode)
 void up_assert(const uint8_t *filename, int lineno)
 {
 	board_autoled_on(LED_ASSERTION);
-#if defined(CONFIG_FS_ROMFS) && defined(CONFIG_FRAME_POINTER)
+#ifdef CONFIG_DEBUG_DISPLAY_SYMBOL
 	abort_mode = true;
 #endif
 
