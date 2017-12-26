@@ -18,7 +18,7 @@
 ###########################################################################
 #
 # File   : artik05x_download.sh
-# Description : Download script for ARTIK 053
+# Description : Download script for ARTIK 05X
 
 # Remember, make is invoked from "os" directory
 source .config
@@ -31,17 +31,13 @@ ARTIK05X_DIR_PATH=${CONFIGS_DIR_PATH}/artik05x
 SCRIPTS_PATH=${ARTIK05X_DIR_PATH}/scripts
 CODESIGNER_PATH=${ARTIK05X_DIR_PATH}/tools/codesigner
 
-if ! which openocd >/dev/null; then
-	SYSTEM_TYPE=`getconf LONG_BIT`
-	if [ "$SYSTEM_TYPE" = "64" ]; then
-		OPENOCD_BIN_PATH=${OPENOCD_DIR_PATH}/linux64
-	else
-		OPENOCD_BIN_PATH=${OPENOCD_DIR_PATH}/linux32
-	fi
-	OPENOCD=${OPENOCD_BIN_PATH}/openocd
+SYSTEM_TYPE=`getconf LONG_BIT`
+if [ "$SYSTEM_TYPE" = "64" ]; then
+	OPENOCD_BIN_PATH=${OPENOCD_DIR_PATH}/linux64
 else
-	OPENOCD=openocd
+	OPENOCD_BIN_PATH=${OPENOCD_DIR_PATH}/linux32
 fi
+OPENOCD=${OPENOCD_BIN_PATH}/openocd
 
 CFG_FILE=artik05x.cfg
 
