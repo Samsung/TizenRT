@@ -44,6 +44,7 @@
 #include <tinyara/streams.h>
 #include <tinyara/fs/ioctl.h>
 #include <tinyara/fs/fs_utils.h>
+#include <tinyara/configdata.h>
 #include <time.h>
 #include "tc_common.h"
 #include "tc_internal.h"
@@ -119,6 +120,10 @@
 #endif
 
 #define INV_FD -3
+
+#define MTD_CONFIG_PATH "/dev/config"
+#define MTD_FTL_PATH "/dev/mtdblock1"
+#define BUF_SIZE 4096
 
 /****************************************************************************
  * Global Variables
@@ -1255,7 +1260,82 @@ static void tc_fs_vfs_ioctl(void)
 	TC_ASSERT_EQ("ioctl", ret, OK);
 	TC_SUCCESS_RESULT();
 }
+/**
+* @testcase         tc_driver_mtd_config_ops
+* @brief            mtd_config operations
+* @scenario         Set and get config from /dev/config
+* @apicovered       mtd_config ops
+* @precondition     NA
+* @postcondition    NA
+*/
+#if defined(CONFIG_MTD_CONFIG)
+static void tc_driver_mtd_config_ops(void)
+{
 
+	int fd;
+	int ret;
+	struct config_data_s config;
+	char *buf = "test";
+
+	fd = open(MTD_CONFIG_PATH, O_RDOK);
+	TC_ASSERT_GEQ("open", fd, 0);
+
+	config.id = 0xff;
+	config.instance = 0;
+	config.configdata = (unsigned char *)buf;
+	config.len = 5;
+
+	ret = ioctl(fd, CFGDIOC_SETCONFIG, &config);
+	TC_ASSERT_EQ_CLEANUP("ioctl", ret, OK, close(fd));
+
+	ret = ioctl(fd, CFGDIOC_GETCONFIG, &config);
+	TC_ASSERT_EQ_CLEANUP("ioctl", ret, OK, close(fd));
+
+	/*To cover negative condition */
+
+	ret = ioctl(fd, CFGDIOC_SETCONFIG, NULL);
+	TC_ASSERT_NEQ_CLEANUP("ioctl", ret, OK, close(fd));
+
+	ret = close(fd);
+	TC_ASSERT_EQ("close", ret, OK);
+	TC_SUCCESS_RESULT();
+}
+#endif
+/**
+* @testcase         tc_driver_mtd_ftl_ops
+* @brief            ftl block operations
+* @scenario         opens the ftl device and perforsm operations
+* @apicovered       ftl block operations
+* @precondition     NA
+* @postcondition    NA
+*/
+#if defined(CONFIG_MTD_FTL) && defined(CONFIG_BCH)
+static void tc_driver_mtd_ftl_ops(void)
+{
+	int fd;
+	int ret;
+	char *buf;
+
+	buf = (char *)malloc(BUF_SIZE);
+	if (!buf) {
+		printf("Memory not allocated \n");
+		return;
+	}
+
+	fd = open(MTD_FTL_PATH, O_RDWR);
+	TC_ASSERT_GEQ("open", fd, 0);
+
+	ret = read(fd, buf, BUF_SIZE);
+	TC_ASSERT_EQ_CLEANUP("read", ret, BUF_SIZE, close(fd));
+#ifdef CONFIG_FS_WRITABLE
+	ret = write(fd, buf, BUF_SIZE);
+	TC_ASSERT_EQ_CLEANUP("write", ret, BUF_SIZE, close(fd));
+#endif
+	ret = close(fd);
+	TC_ASSERT_EQ("close", ret, OK);
+	TC_SUCCESS_RESULT();
+}
+#endif
 /**
 * @testcase         tc_libc_stdio_dprintf
 * @brief            Exact analogs of fprintf and vfprintf, except that they output to a file descriptor fd instead of to a stdio stream.
@@ -3002,6 +3082,17 @@ int tc_filesystem_main(int argc, char *argv[])
 #ifdef CONFIG_TC_FS_PROCFS
 	tc_fs_procfs_main();
 #endif
+#if defined(CONFIG_FS_PROCFS) && !defined(CONFIG_FS_PROCFS_EXCLUDE_SMARTFS)
+	tc_smartfs_procfs_main();
+#endif
+#if defined(CONFIG_MTD_CONFIG)
+	tc_driver_mtd_config_ops();
+#endif
+
+#if defined(CONFIG_MTD_FTL) && defined(CONFIG_BCH)
+	tc_driver_mtd_ftl_ops();
+#endif
+
 	tc_libc_stdio_dprintf();
 	tc_libc_stdio_fdopen();
 	tc_libc_stdio_fopen();
@@ -3060,7 +3151,9 @@ int tc_filesystem_main(int argc, char *argv[])
 #ifdef CONFIG_ITC_FS
 	itc_fs_main();
 #endif
-
+#ifndef CONFIG_SMARTFS_MULTI_ROOT_DIRS
+	tc_fs_smartfs_mksmartfs();
+#endif
 	(void)tc_handler(TC_END, "FileSystem TC");
 
 	return 0;
