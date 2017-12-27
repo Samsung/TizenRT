@@ -109,13 +109,13 @@
 #endif
 
 #ifndef STDIN_FILENO
-#  define STDIN_FILENO 0
+#define STDIN_FILENO 0
 #endif
 #ifndef STDOUT_FILENO
-#  define STDOUT_FILENO 1
+#define STDOUT_FILENO 1
 #endif
 #ifndef STDERR_FILENO
-#  define STDERR_FILENO 2
+#define STDERR_FILENO 2
 #endif
 
 #define INV_FD -3
@@ -146,11 +146,22 @@ void mkfifo_test_listener(pthread_addr_t pvarg)
 		g_thread_result = false;
 		return;
 	}
+
+	ret = read(fd, buf, 0);
+	if (ret != 0) {
+		g_thread_result = false;
+		close(fd);
+		return;
+	}
+
 	count = 1;
 	size = strlen(FIFO_DATA) + 2;
-	while (count < 4) {
+	while (count < 6) {
 		ret = read(fd, buf, size);
-		if (ret <= 0) {
+		if (ret == 0) {
+			printf("Read data returned zero (EOF). Hence closing fifo\n");
+			break;
+		} else if (ret < 0) {
 			printf("Read data from fifo failed\n");
 			g_thread_result = false;
 			break;
@@ -972,11 +983,16 @@ static void tc_fs_vfs_mkfifo(void)
 		TC_ASSERT_EQ("mkfifo", ret, -EEXIST);
 	}
 
+	ret = pthread_create(&tid, NULL, (pthread_startroutine_t) mkfifo_test_listener, NULL);
+	TC_ASSERT_EQ("pthread_create", ret, 0);
+
+	sleep(2);
+
 	fd = open(FIFO_FILE_PATH, O_WRONLY);
 	TC_ASSERT_GEQ("open", fd, 0);
 
-	ret = pthread_create(&tid, NULL, (pthread_startroutine_t)mkfifo_test_listener, NULL);
-	TC_ASSERT_EQ_CLEANUP("pthread_create", ret, 0, close(fd));
+	ret = write(fd, buf, 0);
+	TC_ASSERT_EQ_CLEANUP("write", ret, 0, goto errout);
 
 	size = strlen(FIFO_DATA) + 2;
 	count = 1;
@@ -991,8 +1007,38 @@ static void tc_fs_vfs_mkfifo(void)
 		sleep(5);
 	}
 	close(fd);
+	sleep(1);
 	pthread_kill(tid, SIGUSR1);
 	TC_ASSERT_EQ("mkfifo", g_thread_result, true);
+
+	fd = open(FIFO_FILE_PATH, O_WRONLY | O_NONBLOCK);
+	TC_ASSERT_GEQ("open", fd, 0);
+
+	ret = ioctl(fd, PIPEIOC_POLICY, 0);
+	TC_ASSERT_GEQ_CLEANUP("ioctl", ret, 0, goto errout);
+
+	ret = ioctl(fd, PIPEIOC_POLICY, 1);
+	TC_ASSERT_GEQ_CLEANUP("ioctl", ret, 0, goto errout);
+
+	ret = ioctl(fd, -1, 0);
+	TC_ASSERT_LT_CLEANUP("ioctl", ret, 0, goto errout);
+
+	count = 0;
+	snprintf(buf, size, "%s%d\0", FIFO_DATA, count);
+	while (count <= CONFIG_DEV_PIPE_SIZE) {
+		ret = write(fd, buf, size);
+		TC_ASSERT_EQ_CLEANUP("write", (ret >= 0 || errno == EAGAIN), true, goto errout);
+		if (ret < 0) {
+			break;
+		}
+		count += size;
+	}
+
+	close(fd);
+
+	ret = unlink(FIFO_FILE_PATH);
+	TC_ASSERT_GEQ("unlink", ret, 0);
+
 	TC_SUCCESS_RESULT();
 errout:
 	pthread_kill(tid, SIGUSR1);

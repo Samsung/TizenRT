@@ -27,7 +27,7 @@
 #define RECORD_LOCK() do { pthread_mutex_lock(&g_rc.mutex_record); } while (false)
 #define RECORD_UNLOCK() do { pthread_mutex_unlock(&g_rc.mutex_record); } while (false)
 
-#define ST_PROTO_RECORD			0x04
+#define ST_PROTO_RECORD		0x04
 #define ST_PROTO_RECORD_DATA	0x05
 #define ST_PROTO_RECORD_PAUSE	0x02
 #define ST_PROTO_RECORD_STOP	0x01
@@ -194,8 +194,10 @@ record_result_t media_stop_record(void)
 
 	g_rc.state = RECORD_STOPPING;
 	RECORD_UNLOCK();
+	
+	pthread_join(g_rc.pth, NULL);
 
-	pthread_join(g_rc.pth, NULL);	
+	printf("media_stop_record done.\n");
 
 	return RECORD_OK;
 }
@@ -359,6 +361,7 @@ int recorder_worker(void *args)
 	b_started = false;
 
 	RECORD_UNLOCK();
+	printf("media_stop_record done.\n");
 
 	return 0;
 }
