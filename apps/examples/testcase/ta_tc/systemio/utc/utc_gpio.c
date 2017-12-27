@@ -291,6 +291,19 @@ static void utc_systemio_gpio_close_n(void)
 	TC_SUCCESS_RESULT();
 }
 
+static void utc_systemio_gpio_register_signal_p(void)
+{
+	TC_ASSERT_EQ("iotbus_gpio_register_signal", iotbus_gpio_register_signal(gpio, IOTBUS_GPIO_EDGE_NONE), IOTBUS_ERROR_NONE);
+	TC_SUCCESS_RESULT();
+}
+
+static void utc_systemio_gpio_register_signal_n(void)
+{
+	TC_ASSERT_EQ("iotbus_gpio_register_signal", iotbus_gpio_register_signal(gpio, -1), IOTBUS_ERROR_INVALID_PARAMETER);
+	TC_SUCCESS_RESULT();
+}
+
+
 int utc_gpio_main(void)
 {
 	iotapi_initialize();
@@ -341,6 +354,10 @@ int utc_gpio_main(void)
 	utc_systemio_gpio_register_n();
 	utc_systemio_gpio_unregister_p();
 	utc_systemio_gpio_unregister_n();
+#ifndef CONFIG_DISABLE_SIGNALS
+	utc_systemio_gpio_register_signal_p();
+	utc_systemio_gpio_register_signal_n();
+#endif
 	utc_systemio_gpio_close_n();
 	utc_systemio_gpio_close_p();
 
