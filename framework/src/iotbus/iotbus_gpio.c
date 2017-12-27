@@ -31,6 +31,7 @@
 #include <debug.h>
 #include <errno.h>
 #include <fcntl.h>
+#include <stdbool.h>
 
 #include <include/iotbus/iotbus_gpio.h>
 #include <include/iotbus/iotbus_error.h>
@@ -154,6 +155,59 @@ int iotbus_gpio_set_direction(iotbus_gpio_context_h dev, iotbus_gpio_direction_e
 
 	return IOTBUS_ERROR_NONE;
 }
+
+/**
+ * @brief Registers signal for current process based on rising or falling edge on the gpio line
+ */
+#ifndef CONFIG_DISABLE_SIGNALS
+int iotbus_gpio_register_signal(iotbus_gpio_context_h dev, iotbus_gpio_edge_e edge)
+{
+	int ret = -1;
+	FAR struct gpio_notify_s notify;
+
+	if (!dev) {
+		return IOTBUS_ERROR_INVALID_PARAMETER;
+	}
+
+	switch (edge) {
+	case IOTBUS_GPIO_EDGE_NONE:
+		notify.gn_rising = false;
+		notify.gn_falling = false;
+		break;
+	case IOTBUS_GPIO_EDGE_BOTH:
+		notify.gn_rising  = true;
+		notify.gn_falling = true;
+		break;
+	case IOTBUS_GPIO_EDGE_RISING:
+		notify.gn_rising  = true;
+		notify.gn_falling = false;
+		break;
+	case IOTBUS_GPIO_EDGE_FALLING:
+		notify.gn_rising  = false;
+		notify.gn_falling = true;
+		break;
+	default:
+		return IOTBUS_ERROR_INVALID_PARAMETER;
+	}
+
+	notify.gn_signo = SIGUSR1;
+	ret = ioctl(dev->fd, GPIOIOC_REGISTER, (unsigned long)&notify);
+	if (ret != 0) {
+		switch (errno) {
+		case EPERM:
+			zdbg("unsupported command \n");
+			return IOTBUS_ERROR_NOT_SUPPORTED;
+		case EINVAL:
+			zdbg("invalid parameter \n");
+			return IOTBUS_ERROR_INVALID_PARAMETER;
+		default:
+			zdbg("ioctl failed \n");
+			return IOTBUS_ERROR_UNKNOWN;
+		}
+	}
+	return IOTBUS_ERROR_NONE;
+}
+#endif
 
 /**
  * @brief Sets the edge mode on the Gpio.
