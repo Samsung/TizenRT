@@ -31,6 +31,7 @@
 #ifndef IOTBUS_GPIO_H_
 #define IOTBUS_GPIO_H_
 
+#include <tinyara/config.h>
 /**
  * @brief Enumeration of Gpio output mode
  * @details
@@ -232,6 +233,19 @@ int iotbus_gpio_get_edge_mode(iotbus_gpio_context_h dev, iotbus_gpio_edge_e *edg
  * @since Tizen RT v1.0
  */
 int iotbus_gpio_get_drive_mode(iotbus_gpio_context_h dev, iotbus_gpio_drive_e *drive);
+
+/**
+ * @brief registers a signal for current on rising or falling edge of gpio
+ *
+ * @details @b #include <iotbus/iotbus_gpio.h>
+ * @param[in] dev handle of gpio_context
+ * @param[in] edge gpio edge type
+ * @return On success, 0 is returned. On failure, a negative value is returned.
+ * @since Tizen RT v1.x
+ */
+#ifndef CONFIG_DISABLE_SIGNALS
+int iotbus_gpio_register_signal(iotbus_gpio_context_h dev, iotbus_gpio_edge_e edge);
+#endif
 
 #ifdef __cplusplus
 }
