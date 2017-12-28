@@ -150,13 +150,11 @@ play_result_t media_stop_play(void)
 	}
 
 	g_pc.state = PLAY_STOPPING;
+
 	PLAY_UNLOCK();
 
-	pthread_join(g_pc.pth, NULL);
-	
-	PLAY_LOCK();
+	pthread_join(g_pc.pth, NULL);	
 	g_pc.pth = -1;
-	PLAY_UNLOCK();
 
 	return MEDIA_OK;
 }
@@ -323,7 +321,7 @@ int player_worker(void *args)
 	g_pc.pcmout = NULL;
 
 	PLAY_LOCK();
-	g_pc.state = PLAY_STOPPING;
+	g_pc.state = PLAY_ERROR;
 	PLAY_UNLOCK();
 
 	return 0;
