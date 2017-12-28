@@ -98,7 +98,9 @@ hidapi: context libusb
 openocd: context libusb libusb-compat-0.1 libftdi hidapi
 	$(eval url := http://repo.or.cz/openocd.git)
 	$(eval version := v0.10.0)
+	$(Q) ln -s $(wildcard $(WD)/patches/$(@)/$(version)/*.patch) $(WD)/patches/$(@)
 	$(call build)
+	$(call DELFILE, $(WD)/patches/$(@)/*.patch)
 
 #
 # Make install targets

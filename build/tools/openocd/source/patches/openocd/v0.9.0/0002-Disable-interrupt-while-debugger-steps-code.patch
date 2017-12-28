@@ -1,0 +1,173 @@
+From 9e711064cec0bc8db8ac17a6dba1df4ae6345986 Mon Sep 17 00:00:00 2001
+From: Jihun Ahn <jhun.ahn@samsung.com>
+Date: Wed, 27 Dec 2017 19:27:26 +0900
+Subject: [PATCH] Disable interrupt while debugger steps code
+
+Signed-off-by: Jihoon Park <jh6186.park@samsung.com>
+Signed-off-by: Jihun Ahn <jhun.ahn@samsung.com>
+---
+ src/target/cortex_a.c | 82 ++++++++++++++++++++++++++++++++++++++++++++++++++-
+ src/target/cortex_a.h |  9 +++++-
+ 2 files changed, 89 insertions(+), 2 deletions(-)
+
+diff --git a/src/target/cortex_a.c b/src/target/cortex_a.c
+index 207fb81..3d844d2 100644
+--- a/src/target/cortex_a.c
++++ b/src/target/cortex_a.c
+@@ -1323,9 +1323,33 @@ static int cortex_a_post_debug_entry(struct target *target)
+ 	return ERROR_OK;
+ }
+ 
++int cortex_a_set_dscr_bits(struct target *target, unsigned long bit_mask, unsigned long value)
++{
++    struct armv7a_common *armv7a = target_to_armv7a(target);
++    struct adiv5_dap *swjdp = armv7a->arm.dap;
++    uint32_t dscr;
++
++    /* Read DSCR */
++    int retval = mem_ap_sel_read_atomic_u32(swjdp, armv7a->debug_ap,
++        armv7a->debug_base + CPUDBG_DSCR, &dscr);
++    if (ERROR_OK != retval)
++        return retval;
++
++    /* clear bitfield */
++    dscr &= ~bit_mask;
++    /* put new value */
++    dscr |= value & bit_mask;
++
++    /* write new DSCR */
++    retval = mem_ap_sel_write_atomic_u32(swjdp, armv7a->debug_ap,
++        armv7a->debug_base + CPUDBG_DSCR, dscr);
++    return retval;
++}
++
+ static int cortex_a_step(struct target *target, int current, uint32_t address,
+ 	int handle_breakpoints)
+ {
++    struct cortex_a_common *cortex_a = target_to_cortex_a(target);
+ 	struct armv7a_common *armv7a = target_to_armv7a(target);
+ 	struct arm *arm = &armv7a->arm;
+ 	struct breakpoint *breakpoint = NULL;
+@@ -1363,6 +1387,13 @@ static int cortex_a_step(struct target *target, int current, uint32_t address,
+ 	stepbreakpoint.type = BKPT_HARD;
+ 	stepbreakpoint.set = 0;
+ 
++    /* Disable interrupts during single step if requested */
++    if (cortex_a->isrmasking_mode == CORTEX_A_ISRMASK_ON) {
++        retval = cortex_a_set_dscr_bits(target, DSCR_INT_DIS, DSCR_INT_DIS);
++        if (ERROR_OK != retval)
++            return retval;
++    }
++
+ 	/* Break on IVA mismatch */
+ 	cortex_a_set_breakpoint(target, &stepbreakpoint, 0x04);
+ 
+@@ -1385,6 +1416,13 @@ static int cortex_a_step(struct target *target, int current, uint32_t address,
+ 
+ 	cortex_a_unset_breakpoint(target, &stepbreakpoint);
+ 
++    /* Re-enable interrupts if they were disabled */
++    if (cortex_a->isrmasking_mode == CORTEX_A_ISRMASK_ON) {
++        retval = cortex_a_set_dscr_bits(target, DSCR_INT_DIS, 0);
++        if (ERROR_OK != retval)
++            return retval;
++    }
++
+ 	target->debug_reason = DBG_REASON_BREAKPOINT;
+ 
+ 	if (breakpoint)
+@@ -3193,6 +3231,34 @@ COMMAND_HANDLER(cortex_a_handle_smp_gdb_command)
+ 	return ERROR_OK;
+ }
+ 
++COMMAND_HANDLER(handle_cortex_a_mask_interrupts_command)
++{
++    struct target *target = get_current_target(CMD_CTX);
++    struct cortex_a_common *cortex_a = target_to_cortex_a(target);
++
++    static const Jim_Nvp nvp_maskisr_modes[] = {
++        { .name = "off", .value = CORTEX_A_ISRMASK_OFF },
++        { .name = "on", .value = CORTEX_A_ISRMASK_ON },
++        { .name = NULL, .value = -1 },
++    };
++    const Jim_Nvp *n;
++
++    if (CMD_ARGC > 0) {
++        n = Jim_Nvp_name2value_simple(nvp_maskisr_modes, CMD_ARGV[0]);
++        if (n->name == NULL) {
++            LOG_ERROR("Unknown parameter: %s - should be off or on", CMD_ARGV[0]);
++            return ERROR_COMMAND_SYNTAX_ERROR;
++        }
++
++        cortex_a->isrmasking_mode = n->value;
++    }
++
++    n = Jim_Nvp_value2name_simple(nvp_maskisr_modes, cortex_a->isrmasking_mode);
++    command_print(CMD_CTX, "cortex_a interrupt mask %s", n->name);
++
++    return ERROR_OK;
++}
++
+ static const struct command_registration cortex_a_exec_command_handlers[] = {
+ 	{
+ 		.name = "cache_info",
+@@ -3227,7 +3293,13 @@ static const struct command_registration cortex_a_exec_command_handlers[] = {
+ 		.help = "display/fix current core played to gdb",
+ 		.usage = "",
+ 	},
+-
++    {
++        .name = "maskisr",
++        .handler = handle_cortex_a_mask_interrupts_command,
++        .mode = COMMAND_EXEC,
++        .help = "mask cortex_r4 interrupts",
++        .usage = "['on'|'off']",
++    },
+ 
+ 	COMMAND_REGISTRATION_DONE
+ };
+@@ -3306,6 +3378,14 @@ static const struct command_registration cortex_r4_exec_command_handlers[] = {
+ 		.help = "Initialize core debug",
+ 		.usage = "",
+ 	},
++    {
++        .name = "maskisr",
++        .handler = handle_cortex_a_mask_interrupts_command,
++        .mode = COMMAND_EXEC,
++        .help = "mask cortex_r4 interrupts",
++        .usage = "['on'|'off']",
++    },
++
+ 
+ 	COMMAND_REGISTRATION_DONE
+ };
+diff --git a/src/target/cortex_a.h b/src/target/cortex_a.h
+index ebf79b8..93d9b28 100644
+--- a/src/target/cortex_a.h
++++ b/src/target/cortex_a.h
+@@ -55,6 +55,11 @@
+ 
+ #define CORTEX_A_PADDRDBG_CPU_SHIFT 13
+ 
++enum cortex_a_isrmasking_mode {
++    CORTEX_A_ISRMASK_OFF,
++    CORTEX_A_ISRMASK_ON,
++};
++
+ struct cortex_a_brp {
+ 	int used;
+ 	int type;
+@@ -91,7 +96,9 @@ struct cortex_a_common {
+ 	uint32_t ttypr;
+ 	uint32_t didr;
+ 
+-	struct armv7a_common armv7a_common;
++    enum cortex_a_isrmasking_mode isrmasking_mode;
++
++    struct armv7a_common armv7a_common;
+ 
+ };
+ 
+-- 
+2.7.4
+
