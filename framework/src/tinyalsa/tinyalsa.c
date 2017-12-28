@@ -156,7 +156,7 @@ struct pcm {
 	char mqname[16];
 	/* Pointers to apb buffers */
 	struct ap_buffer_s **pBuffers;
-	/* Index into the array of apb's */
+	/* Index of the next apb to be queued during start of play or record */
 	unsigned int buf_ptr;
 	/* Pointer to next apb for read / write */
 	struct ap_buffer_s *next_buf;
@@ -164,6 +164,8 @@ struct pcm {
 	unsigned int next_size;
 	/* Offset of data in next buffer */
 	unsigned int next_offset;
+	/* Index of next buffer in ring for mmap operations */
+	unsigned int mmap_idx;
 };
 
 static int oops(struct pcm *pcm, int e, const char *fmt, ...)
@@ -415,7 +417,7 @@ unsigned int pcm_frames_to_bytes(const struct pcm *pcm, unsigned int frames)
 	return frames * pcm->config.channels * (pcm_format_to_bits(pcm->config.format) >> 3);
 }
 
-static int pcm_areas_copy(struct pcm *pcm, unsigned int pcm_offset, char *buf, unsigned int src_offset, unsigned int frames)
+static int pcm_areas_copy(struct pcm *pcm, unsigned int pcm_offset, void *pcm_buf, char *buf, unsigned int src_offset, unsigned int frames)
 {
 	int size_bytes = pcm_frames_to_bytes(pcm, frames);
 	int pcm_offset_bytes = pcm_frames_to_bytes(pcm, pcm_offset);
@@ -423,9 +425,9 @@ static int pcm_areas_copy(struct pcm *pcm, unsigned int pcm_offset, char *buf, u
 
 	/* interleaved only atm */
 	if (pcm->flags & PCM_IN) {
-		memcpy(buf + src_offset_bytes, (char *)pcm->next_buf + pcm_offset_bytes, size_bytes);
+		memcpy(buf + src_offset_bytes, (char *)pcm_buf + pcm_offset_bytes, size_bytes);
 	} else {
-		memcpy((char *)pcm->next_buf + pcm_offset_bytes, buf + src_offset_bytes, size_bytes);
+		memcpy((char *)pcm_buf + pcm_offset_bytes, buf + src_offset_bytes, size_bytes);
 	}
 	return 0;
 }
@@ -439,7 +441,7 @@ static int pcm_mmap_transfer_areas(struct pcm *pcm, char *buf, unsigned int offs
 	while (size > 0) {
 		frames = size;
 		pcm_mmap_begin(pcm, &pcm_areas, &pcm_offset, &frames);
-		pcm_areas_copy(pcm, pcm_offset, buf, offset, frames);
+		pcm_areas_copy(pcm, pcm_offset, pcm_areas, buf, offset, frames);
 		commit = pcm_mmap_commit(pcm, pcm_offset, frames);
 		if (commit < 0) {
 			return oops(pcm, -commit, "failed to commit %d frames\n", frames);
@@ -455,7 +457,6 @@ static int pcm_mmap_transfer_areas(struct pcm *pcm, char *buf, unsigned int offs
 /** Writes audio samples to PCM.
  * If the PCM has not been started, it is started in this function.
  * This function is only valid for PCMs opened with the @ref PCM_OUT flag.
- * This function is not valid for PCMs opened with the @ref PCM_MMAP flag.
  * @param pcm A PCM handle.
  * @param data The audio sample array
  * @param frame_count The number of frames occupied by the sample array.
@@ -476,7 +477,7 @@ int pcm_writei(struct pcm *pcm, const void *data, unsigned int frame_count)
 		return -EINVAL;
 	}
 
-	if (pcm->flags & PCM_IN) {
+	if (!(pcm->flags & PCM_OUT)) {
 		return -EINVAL;
 	}
 
@@ -493,6 +494,7 @@ int pcm_writei(struct pcm *pcm, const void *data, unsigned int frame_count)
 			/* If we have empty buffers, fill them first */
 			memcpy(pcm->pBuffers[pcm->buf_ptr]->samp, (char *)data + offset, nbytes);
 			apb = pcm->pBuffers[pcm->buf_ptr];
+			pcm->buf_ptr++;
 		} else {
 			/* We dont have any empty buffers. wait for deque message from kernel */
 			size = mq_receive(pcm->mq, (FAR char *)&msg, sizeof(msg), &prio);
@@ -503,7 +505,7 @@ int pcm_writei(struct pcm *pcm, const void *data, unsigned int frame_count)
 			if (msg.msgId == AUDIO_MSG_DEQUEUE) {
 				apb = (struct ap_buffer_s *)msg.u.pPtr;
 				memcpy(apb->samp, (char *)data + offset, nbytes);
-				pcm->buf_ptr--;
+				apb->flags &= ~AUDIO_APB_OUTPUT_ENQUEUED;
 			} else {
 				return oops(pcm, EINTR, "Recieved unexpected msg (id = %d) while waiting for deque message from kernel", msg.msgId);
 			}
@@ -521,7 +523,7 @@ int pcm_writei(struct pcm *pcm, const void *data, unsigned int frame_count)
 		if (ioctl(pcm->fd, AUDIOIOC_ENQUEUEBUFFER, (unsigned long)&bufdesc) < 0) {
 			return oops(pcm, errno, "AUDIOIOC_ENQUEUEBUFFER ioctl failed");
 		}
-		pcm->buf_ptr++;
+		apb->flags |= AUDIO_APB_OUTPUT_ENQUEUED;
 		/* If playback is not already started, start now! */
 		if ((!pcm->running) && (pcm_start(pcm) < 0)) {
 			return -errno;
@@ -539,7 +541,6 @@ int pcm_writei(struct pcm *pcm, const void *data, unsigned int frame_count)
 /** Reads audio samples from PCM.
  * If the PCM has not been started, it is started in this function.
  * This function is only valid for PCMs opened with the @ref PCM_IN flag.
- * This function is not valid for PCMs opened with the @ref PCM_MMAP flag.
  * @param pcm A PCM handle.
  * @param data The audio sample array
  * @param frame_count The number of frames occupied by the sample array.
@@ -614,7 +615,7 @@ int pcm_readi(struct pcm *pcm, void *data, unsigned int frame_count)
 				if (ioctl(pcm->fd, AUDIOIOC_ENQUEUEBUFFER, (unsigned long)&bufdesc) < 0) {
 					return oops(pcm, errno, "failed to enque buffer after read");
 				}
-				pcm->buf_ptr++;
+				apb->flags |= AUDIO_APB_OUTPUT_ENQUEUED;
 			}
 
 		} else {
@@ -641,7 +642,7 @@ int pcm_readi(struct pcm *pcm, void *data, unsigned int frame_count)
 			}
 			if (msg.msgId == AUDIO_MSG_DEQUEUE) {
 				apb = (struct ap_buffer_s *)msg.u.pPtr;
-				pcm->buf_ptr--;
+				apb->flags &= ~AUDIO_APB_OUTPUT_ENQUEUED;
 				if (pending <= apb->nbytes) {
 					/* User wants less data than we have in buffer.
 					   Copy the requested amount of data and keep the buffer as pending buffer */
@@ -668,7 +669,7 @@ int pcm_readi(struct pcm *pcm, void *data, unsigned int frame_count)
 						if (ioctl(pcm->fd, AUDIOIOC_ENQUEUEBUFFER, (unsigned long)&bufdesc) < 0) {
 							return oops(pcm, errno, "failed to enque buffer after read");
 						}
-						pcm->buf_ptr++;
+						apb->flags |= AUDIO_APB_OUTPUT_ENQUEUED;
 					}
 				}
 
@@ -687,7 +688,6 @@ int pcm_readi(struct pcm *pcm, void *data, unsigned int frame_count)
 /** Writes audio samples to PCM.
  * If the PCM has not been started, it is started in this function.
  * This function is only valid for PCMs opened with the @ref PCM_OUT flag.
- * This function is not valid for PCMs opened with the @ref PCM_MMAP flag.
  * @param pcm A PCM handle.
  * @param data The audio sample array
  * @param count The number of bytes occupied by the sample array.
@@ -703,7 +703,6 @@ int pcm_write(struct pcm *pcm, const void *data, unsigned int count)
 /** Reads audio samples from PCM.
  * If the PCM has not been started, it is started in this function.
  * This function is only valid for PCMs opened with the @ref PCM_IN flag.
- * This function is not valid for PCMs opened with the @ref PCM_MMAP flag.
  * @param pcm A PCM handle.
  * @param data The audio sample array
  * @param count The number of bytes occupied by the sample array.
@@ -777,7 +776,6 @@ int pcm_close(struct pcm *pcm)
  *   - @ref PCM_IN
  *   - @ref PCM_OUT
  *   - @ref PCM_MMAP
- *   - @ref PCM_NOIRQ
  * @param config The hardware and software parameters to open the PCM with.
  * @returns A PCM structure.
  *  If an error occurs allocating memory for the PCM, NULL is returned.
@@ -811,7 +809,6 @@ struct pcm *pcm_open_by_name(const char *name, unsigned int flags, const struct 
  *   - @ref PCM_IN
  *   - @ref PCM_OUT
  *   - @ref PCM_MMAP
- *   - @ref PCM_NOIRQ
  * @param config The hardware and software parameters to open the PCM with.
  * @returns A PCM structure.
  *  If an error occurs allocating memory for the PCM, NULL is returned.
@@ -958,6 +955,8 @@ struct pcm *pcm_open(unsigned int card, unsigned int device, unsigned int flags,
 	pcm->next_offset = 0;
 	pcm->next_buf = NULL;
 	pcm->underruns = 0;
+	pcm->mmap_idx = 0;
+
 	return pcm;
 
 fail_cleanup_buffers:
@@ -1068,6 +1067,18 @@ int pcm_start(struct pcm *pcm)
 
 	/* If the device is opened for read and Our buffers are not enqued. Enque them now. */
 	if (pcm->flags & PCM_IN) {
+		if (pcm->draining) {
+			/* Remove any pending messages from the message queue */
+			struct audio_msg_s msg;
+			unsigned int size;
+			int prio;
+			struct timespec st_time;
+			do {
+				clock_gettime(CLOCK_REALTIME, &st_time);
+				size = mq_timedreceive(pcm->mq, (FAR char *)&msg, sizeof(msg), &prio, &st_time);
+			} while (size > 0);
+		}
+
 #ifdef CONFIG_AUDIO_MULTI_SESSION
 		bufdesc.session = pcm->session;
 #endif
@@ -1077,6 +1088,13 @@ int pcm_start(struct pcm *pcm)
 			if (ioctl(pcm->fd, AUDIOIOC_ENQUEUEBUFFER, (unsigned long)&bufdesc) < 0) {
 				return oops(pcm, errno, "AUDIOIOC_ENQUEUEBUFFER ioctl failed");
 			}
+			pcm->pBuffers[pcm->buf_ptr]->flags |= AUDIO_APB_OUTPUT_ENQUEUED;
+		}
+	} else {
+		/* If device is opened for playback, we need atleast one buffer to be enqueued before
+		starting the codec. Else we return error here */
+		if ((pcm->pBuffers[0]->flags & AUDIO_APB_OUTPUT_ENQUEUED) == 0) {
+			return oops(pcm, -EINVAL, "ERROR Trying to start PCM for playback without enqueuing buffers");
 		}
 	}
 #ifdef CONFIG_AUDIO_MULTI_SESSION
@@ -1120,17 +1138,10 @@ int pcm_stop(struct pcm *pcm)
 	unsigned int size;
 	int prio;
 	struct timespec st_time;
-	while (pcm->buf_ptr > 0) {
+	do {
 		clock_gettime(CLOCK_REALTIME, &st_time);
 		size = mq_timedreceive(pcm->mq, (FAR char *)&msg, sizeof(msg), &prio, &st_time);
-		if (size != sizeof(msg)) {
-			break;
-		}
-		if (msg.msgId == AUDIO_MSG_DEQUEUE) {
-			pcm->buf_ptr--;
-		}
-
-	}
+	} while (size > 0);
 
 	pcm->prepared = 0;
 	pcm->running = 0;
@@ -1139,6 +1150,7 @@ int pcm_stop(struct pcm *pcm)
 	pcm->next_size = 0;
 	pcm->next_offset = 0;
 	pcm->next_buf = NULL;
+	pcm->mmap_idx = 0;
 
 	return 0;
 }
@@ -1210,71 +1222,139 @@ int pcm_drain(struct pcm *pcm)
 	}
 }
 
-static inline int pcm_mmap_avail(struct pcm *pcm)
-{
-	if (pcm == NULL) {
-		return 0;
-	}
-	return pcm_bytes_to_frames(pcm, pcm->next_size);
-}
-
+/** Application request to access a portion of direct (mmap) area
+ * @param[in] pcm A PCM handle
+ * @param[out] areas Returned mmap channel areas
+ * @param[out] offset Returned mmap area offset in frames
+ * @param[out] frames Mmap area portion size in frames
+ * @returns On success, zero is returned. On failure, a negative number returned
+ * @ingroup libtinyalsa-pcm
+ */
 int pcm_mmap_begin(struct pcm *pcm, void **areas, unsigned int *offset, unsigned int *frames)
 {
 	if (pcm == NULL || *areas == NULL || offset == NULL || frames == NULL) {
 		return -EINVAL;
 	}
-	int nframes = pcm_bytes_to_frames(pcm, pcm->next_size);
 
-	/* If data is not available, return -1 */
-	if (nframes == 0) {
+	int nframes = 0;
+	/* The next buffer to be used is pointed by mmap_idx */
+	struct ap_buffer_s *apb = pcm->pBuffers[pcm->mmap_idx];
+
+	/* If buffer is in enqueued state, return 0 */
+	if (apb->flags & AUDIO_APB_OUTPUT_ENQUEUED) {
 		*frames = 0;
-		return -1;
+		return 0;
 	}
 
-	*areas = pcm->next_buf->samp;
-	*offset = pcm->next_offset;
+	*areas = apb->samp;
 
-	if (*frames < nframes) {
-		pcm->next_size -= pcm_frames_to_bytes(pcm, *frames);
-		pcm->next_offset += pcm_frames_to_bytes(pcm, *frames);
+	if (pcm->flags & PCM_IN) {
+		*offset = pcm_bytes_to_frames(pcm, apb->curbyte);
+		nframes = pcm_bytes_to_frames(pcm, apb->nbytes - apb->curbyte);
 	} else {
-		*frames = pcm_bytes_to_frames(pcm, pcm->next_size);
-		pcm->next_size = 0;
-		pcm->next_offset = 0;
+		*offset = 0;
+		nframes = pcm_bytes_to_frames(pcm, apb->nmaxbytes);
+	}
+
+	if (*frames > nframes) {
+		*frames = nframes;
 	}
 
 	return 0;
 }
 
+/** Application indicates the completion of access to mmap area
+ * @param[in] pcm A PCM handle
+ * @param[in] offset Area offset in frames. This must be same as the offset returned by pcm_mmap_begin
+ * @param[in] frames Mmap area portion size in frames that application wishes to commit
+ * @returns On success, zero is returned. On failure, a negative number returned
+ * @ingroup libtinyalsa-pcm
+ */
 int pcm_mmap_commit(struct pcm *pcm, unsigned int offset, unsigned int frames)
 {
-	/* not used */
-	(void)offset;
-
 	if (pcm == NULL) {
 		return -EINVAL;
 	}
-	struct audio_buf_desc_s bufdesc;
 
-	if (pcm->next_size == 0) {
-#ifdef CONFIG_AUDIO_MULTI_SESSION
-		bufdesc.session = pcm->session;
-#endif
-		bufdesc.numbytes = pcm->next_buf->nmaxbytes;
-		bufdesc.u.pBuffer = pcm->next_buf;
-		if (ioctl(pcm->fd, AUDIOIOC_ENQUEUEBUFFER, (unsigned long)&bufdesc) < 0) {
-			return oops(pcm, errno, "AUDIOIOC_ENQUEUEBUFFER ioctl failed");
+	struct audio_buf_desc_s bufdesc;
+	struct ap_buffer_s *apb = pcm->pBuffers[pcm->mmap_idx];
+
+	if (pcm->flags & PCM_OUT) {
+		/* In case of playback, we will always enqueue the buffer when
+		application calls commit, even if the buffer is not completely filled */
+		bufdesc.numbytes = pcm_frames_to_bytes(pcm, frames);
+	} else {
+		/* In record case, we will enqueue the buffer only after the application
+		reads all data present in buffer */
+		if (pcm_frames_to_bytes(pcm, offset + frames) < apb->nbytes) {
+			/* Application has not completely read the buffer. So, we only
+			update the offset in the buffer. The application will get the same buffer
+			when it calls mmap_begin() function again */
+			apb->curbyte = pcm_frames_to_bytes(pcm, offset + frames);
+			return 0;
+		} else {
+			bufdesc.numbytes = pcm_frames_to_bytes(pcm, apb->nmaxbytes);
 		}
-		pcm->buf_ptr++;
-		pcm->next_buf = NULL;
 	}
 
-	return frames;
+	if (pcm->draining) {
+		return 0;
+	}
+
+	/* Enqueue the buffer and set the apb flag */
+#ifdef CONFIG_AUDIO_MULTI_SESSION
+	bufdesc.session = pcm->session;
+#endif
+	bufdesc.u.pBuffer = apb;
+	if (ioctl(pcm->fd, AUDIOIOC_ENQUEUEBUFFER, (unsigned long)&bufdesc) < 0) {
+		return oops(pcm, errno, "AUDIOIOC_ENQUEUEBUFFER ioctl failed");
+	}
+	apb->flags |= AUDIO_APB_OUTPUT_ENQUEUED;
+
+	/* Move the mmap_idx to tbe next position so that when
+	subsequent calls to mmap_begin will use the next buffer */
+	pcm->mmap_idx++;
+	if (pcm->mmap_idx == pcm->buffer_cnt) {
+		pcm->mmap_idx = 0;
+	}
+
+	/* Update buf_ptr. It will be used during pcm_drain */
+	if (pcm->buf_ptr < pcm->buffer_cnt) {
+		pcm->buf_ptr++;
+	}
+
+	return 0;
 }
 
+/** Returns the number of frames ready to be written or read
+ * @param[in] pcm A PCM handle
+ * @returns On success, positive number is returned. On failure, a negative number returned
+ * @ingroup libtinyalsa-pcm
+ */
 int pcm_avail_update(struct pcm *pcm)
 {
-	return pcm_mmap_avail(pcm);
+	if (pcm == NULL) {
+		return -EINVAL;
+	}
+
+	int count = 0;
+	int i;
+
+	/* We will count the number of bytes available in all the buffers which have not been enqueued */
+	if (pcm->flags & PCM_OUT) {
+		for (i = 0; i < pcm->buffer_cnt; i++) {
+			count += pcm->pBuffers[i]->flags & AUDIO_APB_OUTPUT_ENQUEUED ? 0 : (pcm->pBuffers[i]->nmaxbytes);
+		}
+	} else {
+		if (!pcm->running && !pcm->draining) {
+			return 0;
+		}
+		for (i = 0; i < pcm->buffer_cnt; i++) {
+			count += pcm->pBuffers[i]->flags & AUDIO_APB_OUTPUT_ENQUEUED ? 0 : (pcm->pBuffers[i]->nbytes);
+		}
+	}
+
+	return pcm_bytes_to_frames(pcm, count);
 }
 
 /** Waits for frames to be available for read or write operations.
@@ -1292,43 +1372,78 @@ int pcm_wait(struct pcm *pcm, int timeout)
 	unsigned int size;
 	int prio;
 	struct timespec st_time;
+	int count = 0;
 
-	if (pcm == NULL) {
+	if (pcm == NULL || (!pcm->running && !pcm->draining)) {
 		return -EINVAL;
 	}
-	if ((pcm->flags & PCM_OUT) && pcm->buf_ptr < pcm->buffer_cnt) {
-		/* In playback scenario, if audio buffers are available, return immediately */
-		pcm->next_buf = pcm->pBuffers[pcm->buf_ptr];
-		pcm->next_size = pcm->pBuffers[pcm->buf_ptr]->nmaxbytes;
-		return 1;
-	} else {
-		/* We dont have any empty buffers. wait for deque message from kernel */
-		if (timeout > 0) {
-			clock_gettime(CLOCK_REALTIME, &st_time);
-			st_time.tv_nsec += timeout * MILLI_TO_NANO;
-			size = mq_timedreceive(pcm->mq, (FAR char *)&msg, sizeof(msg), &prio, &st_time);
-		} else {
-			size = mq_receive(pcm->mq, (FAR char *)&msg, sizeof(msg), &prio);
+
+	/* If there are some messages in the queue, empty them */
+	while (1) {
+		clock_gettime(CLOCK_REALTIME, &st_time);
+		size = mq_timedreceive(pcm->mq, (FAR char *)&msg, sizeof(msg), &prio, &st_time);
+		if (size != sizeof(msg)) {
+			break;
 		}
 
-		if (size != sizeof(msg)) {
-			if (errno == ETIMEDOUT) {
-				oops(pcm, errno, "TIMEOUT while watiting for deque message from kernel");
-				return 0;
-			} else {
-				return oops(pcm, errno, "Interrupted while waiting for deque message from kernel");
-			}
-		}
+		/* If you find a dequeue message in the queue,
+		update the apb flags and curbyte and increment the count*/
 		if (msg.msgId == AUDIO_MSG_DEQUEUE) {
 			apb = (struct ap_buffer_s *)msg.u.pPtr;
-			pcm->next_buf = apb;
-			pcm->next_size = apb->nbytes;
-			pcm->buf_ptr--;
-			return 1;
-		} else {
-			return oops(pcm, EINTR, "Recieved unexpected msg (id = %d) while waiting for deque message from kernel", msg.msgId);
+			apb->flags &= ~AUDIO_APB_OUTPUT_ENQUEUED;
+			apb->curbyte = 0;
+			count++;
 		}
 	}
+
+	/* If we got some buffer from the queue, return positive result */
+	if (count > 0) {
+		return 1;
+	}
+
+	/* If we are in draining state, and the queue is empty, reset the draining state
+	We will return positive result for now. But next call to pcm_wait will return error */
+	if (count == 0 && pcm->draining) {
+		pcm->draining = 0;
+		return 1;
+	}
+
+	/* Check if some buffer is already available */
+	if (pcm_avail_update(pcm) == pcm->buffer_size) {
+		return 1;
+	}
+
+	/* If there were no buffers in the queue, wait for codec to put a buffer on the queue */
+	if (timeout > 0) {
+		/* Use the timeout given by application */
+		clock_gettime(CLOCK_REALTIME, &st_time);
+		st_time.tv_nsec += timeout * MILLI_TO_NANO;
+		size = mq_timedreceive(pcm->mq, (FAR char *)&msg, sizeof(msg), &prio, &st_time);
+	} else {
+		/* Application did not give a timeout value
+		The behavior here depends on whether mq was opened with O_NONBLOCK
+		This might block until a msg becomes available on the queue */
+		size = mq_receive(pcm->mq, (FAR char *)&msg, sizeof(msg), &prio);
+	}
+
+	if (size != sizeof(msg)) {
+		if (errno == ETIMEDOUT) {
+			oops(pcm, errno, "TIMEOUT while watiting for deque message from kernel");
+			return 0;
+		} else {
+			return oops(pcm, errno, "Interrupted while waiting for deque message from kernel");
+		}
+	}
+	if (msg.msgId == AUDIO_MSG_DEQUEUE) {
+		/* If you find a dequeue message in the queue,
+		update the apb flags and curbyte and increment the count*/
+		apb = (struct ap_buffer_s *)msg.u.pPtr;
+		apb->flags &= ~AUDIO_APB_OUTPUT_ENQUEUED;
+		apb->curbyte = 0;
+		return 1;
+	}
+
+	return oops(pcm, EINTR, "Recieved unexpected msg (id = %d) while waiting for deque message from kernel", msg.msgId);
 }
 
 int pcm_mmap_transfer(struct pcm *pcm, const void *buffer, unsigned int bytes)
@@ -1336,38 +1451,29 @@ int pcm_mmap_transfer(struct pcm *pcm, const void *buffer, unsigned int bytes)
 	int err = 0, frames, avail;
 	unsigned int offset = 0, count;
 
+	/* No data to be transferred */
 	if (bytes == 0) {
 		return 0;
 	}
 
+	/* Start the PCM, if required */
+	if (pcm->flags & PCM_IN && !pcm->running) {
+		if (pcm_start(pcm) < 0) {
+			return oops(pcm, errno, "start error\n");
+		}
+	}
+
 	count = pcm_bytes_to_frames(pcm, bytes);
-
 	while (count > 0) {
-
 		/* get the available space for writing new frames */
 		avail = pcm_avail_update(pcm);
 		if (avail < 0) {
 			return oops(pcm, ENOMEM, "cannot determine available mmap frames");
 		}
 
-		/* start the audio if we reach the threshold */
-		if (!pcm->running) {
-			if (pcm_start(pcm) < 0) {
-				return oops(pcm, errno, "start error: avail 0x%x\n", avail);
-			}
-		}
-
 		/* sleep until we have space to write new frames */
-		if (pcm->running && (unsigned int)avail == 0) {
-			int time = -1;
-
-			/* We will not support NOIRQ flag presently */
-#if 0
-			if (pcm->flags & PCM_NOIRQ)
-				time = (pcm->buffer_size - avail - pcm->mmap_control->avail_min)
-					   / pcm->noirq_frames_per_msec;
-#endif
-			err = pcm_wait(pcm, time);
+		if ((unsigned int)avail == 0) {
+			err = pcm_wait(pcm, -1);
 			if (err < 0) {
 				pcm->prepared = 0;
 				pcm->running = 0;
@@ -1385,7 +1491,7 @@ int pcm_mmap_transfer(struct pcm *pcm, const void *buffer, unsigned int bytes)
 			break;
 		}
 
-		/* copy frames from buffer */
+		/* copy frames to/from buffer */
 		frames = pcm_mmap_transfer_areas(pcm, (void *)buffer, offset, frames);
 		if (frames < 0) {
 			return oops(pcm, ENOMEM, "write error: avail 0x%x\n", avail);
@@ -1393,11 +1499,25 @@ int pcm_mmap_transfer(struct pcm *pcm, const void *buffer, unsigned int bytes)
 
 		offset += frames;
 		count -= frames;
+
+		/* Start the PCM, if required */
+		if (pcm->flags & PCM_OUT && !pcm->running) {
+			if (pcm_start(pcm) < 0) {
+				return oops(pcm, errno, "start error\n");
+			}
+		}
 	}
 
-	return 0;
+	return offset;
 }
 
+/** Write data to the codec using mmap audio buffer
+ * @param[in] pcm A PCM handle
+ * @param[in] data Pointer to the buffer containing data to be written
+ * @param[in] count Size of the data in bytes
+ * @returns On success, written number of frames returned. On failure, a negative number returned
+ * @ingroup libtinyalsa-pcm
+ */
 int pcm_mmap_write(struct pcm *pcm, const void *data, unsigned int count)
 {
 	if (pcm == NULL || data == NULL) {
@@ -1410,6 +1530,13 @@ int pcm_mmap_write(struct pcm *pcm, const void *data, unsigned int count)
 	return pcm_mmap_transfer(pcm, (void *)data, count);
 }
 
+/** Read data from codec using mmap audio buffers
+ * @param[in] pcm A PCM handle
+ * @param[in] data Pointer to the buffer to read into
+ * @param[in] count Size of the buffer in bytes
+ * @returns On success, read number of frames returned. On failure, a negative number returned
+ * @ingroup libtinyalsa-pcm
+ */
 int pcm_mmap_read(struct pcm *pcm, void *data, unsigned int count)
 {
 	if (pcm == NULL || data == NULL) {
@@ -1421,16 +1548,3 @@ int pcm_mmap_read(struct pcm *pcm, void *data, unsigned int count)
 
 	return pcm_mmap_transfer(pcm, data, count);
 }
-
-#if 0
-/** Gets the delay of the PCM, in terms of frames.
- * @param pcm A PCM handle.
- * @returns On success, the delay of the PCM.
- *  On failure, a negative number.
- * @ingroup libtinyalsa-pcm
- */
-long pcm_get_delay(struct pcm *pcm)
-{
-	return -1;
-}
-#endif
