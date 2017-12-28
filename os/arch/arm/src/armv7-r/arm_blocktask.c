@@ -67,6 +67,10 @@
 #include "group/group.h"
 #include "up_internal.h"
 
+#ifdef CONFIG_TASK_SCHED_HISTORY
+#include <tinyara/debug/sysdbg.h>
+#endif
+
 /****************************************************************************
  * Public Functions
  ****************************************************************************/
@@ -139,6 +143,11 @@ void up_block_task(struct tcb_s *tcb, tstate_t task_state)
 
 			rtcb = this_task();
 
+#ifdef CONFIG_TASK_SCHED_HISTORY
+			/* Save the task name which will be scheduled */
+			save_task_scheduling_status(rtcb);
+#endif
+
 			/* Then switch contexts. */
 			up_restorestate(rtcb->xcp.regs);
 		}
@@ -154,6 +163,11 @@ void up_block_task(struct tcb_s *tcb, tstate_t task_state)
 			 */
 
 			rtcb = this_task();
+
+#ifdef CONFIG_TASK_SCHED_HISTORY
+			/* Save the task name which will be scheduled */
+			save_task_scheduling_status(rtcb);
+#endif
 
 			/* Then switch contexts */
 			up_fullcontextrestore(rtcb->xcp.regs);

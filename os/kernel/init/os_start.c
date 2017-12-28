@@ -88,6 +88,9 @@
 #include  "group/group.h"
 #endif
 #include  "init/init.h"
+#ifdef CONFIG_DEBUG_SYSTEM
+#include <tinyara/debug/sysdbg.h>
+#endif
 
 /****************************************************************************
  * Pre-processor Definitions
@@ -507,6 +510,10 @@ void os_start(void)
 	 */
 
 	up_initialize();
+
+#if defined(CONFIG_DEBUG_SYSTEM)
+	sysdbg_init();
+#endif
 
 #if defined(CONFIG_TTRACE)
 	ttrace_init();

@@ -61,6 +61,10 @@
 #include <semaphore.h>
 #include <errno.h>
 
+#ifdef CONFIG_SEMAPHORE_HISTORY
+#include <tinyara/debug/sysdbg.h>
+#endif
+
 /****************************************************************************
  * Public Functions
  ****************************************************************************/
@@ -100,6 +104,9 @@ int sem_init(FAR sem_t *sem, int pshared, unsigned int value)
 		/* Initialize the seamphore count */
 
 		sem->semcount = (int16_t)value;
+#ifdef CONFIG_SEMAPHORE_HISTORY
+		save_semaphore_history(sem, (void *)NULL, SEM_INIT);
+#endif
 
 		/* Initialize to support priority inheritance */
 
