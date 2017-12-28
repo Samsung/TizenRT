@@ -767,13 +767,6 @@ void up_assert(const uint8_t *filename, int lineno)
 {
 	board_autoled_on(LED_ASSERTION);
 
-#ifdef CONFIG_ARCH_ASSERT_REBOOT
-	board_reset(EXIT_FAILURE);
-	while (1) {
-		/* system will be rebooted */;
-	}
-#endif
-
 #if CONFIG_TASK_NAME_SIZE > 0
 	lldbg("Assertion failed at file:%s line: %d task: %s\n", filename, lineno, this_task()->name);
 #else
@@ -783,6 +776,14 @@ void up_assert(const uint8_t *filename, int lineno)
 
 #ifdef CONFIG_BOARD_CRASHDUMP
 	board_crashdump(up_getsp(), g_readytorun.head, (uint8_t *)filename, lineno);
+#endif
+
+#ifdef CONFIG_ARCH_ASSERT_REBOOT
+	board_reset(EXIT_FAILURE);
+	for (;;) {
+		/* system will be rebooted */
+		up_mdelay(250);
+	}
 #endif
 
 	_up_assert(EXIT_FAILURE);
