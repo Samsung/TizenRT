@@ -27,6 +27,7 @@
 #include <sys/socket.h>
 
 #define SEND_BUFFER_SIZE (1 << 16)
+#define RECV_BUFFER_SIZE (1 << 11)
 
 #define INST_PLAY         0x00
 #define INST_STOP         0x01
@@ -59,7 +60,8 @@ struct server_context_s {
 };
 
 struct server_context_s g_sc;
-char buffer[SEND_BUFFER_SIZE];
+char s_buffer[SEND_BUFFER_SIZE];
+char r_buffer[RECV_BUFFER_SIZE];
 
 bool recv_data(void *ptr, size_t size)
 {
@@ -114,10 +116,6 @@ void *recv_thread(void *arg)
 			SEND_STATE_LOCK();
 			g_sc.send_state = SEND_STATE_STOP;
 			close(g_sc.client_sock);
-			if (fp) {
-				fclose(fp);
-				fp = NULL;
-			}
 			g_sc.recv_thread_running = false;
 			g_sc.send_thread_running = false;
 			g_sc.client_sock = -1;
@@ -148,8 +146,8 @@ void *recv_thread(void *arg)
 
 		case INST_RECORD_DATA:
 			recv_data(&packet_size, sizeof(int));
-			recv_data(buffer, packet_size);
-			fwrite(buffer, 1, packet_size, fp);
+			recv_data(r_buffer, packet_size);
+			fwrite(r_buffer, 1, packet_size, fp);
 			break;
 
 		case INST_QUIT:
@@ -206,8 +204,8 @@ void *send_thread(void *arg)
 				g_sc.send_thread_running = false;
 				g_sc.recv_thread_running = false;
 			} else {
-				len = fread(buffer, 1, SEND_BUFFER_SIZE, fp);
-				if (!send_data(buffer, len)) {
+				len = fread(s_buffer, 1, SEND_BUFFER_SIZE, fp);
+				if (!send_data(s_buffer, len)) {
 					g_sc.send_thread_running = false;
 					close(g_sc.client_sock);
 					g_sc.client_sock = -1;
@@ -227,11 +225,12 @@ void *send_thread(void *arg)
 		}
 		SEND_STATE_UNLOCK();
 	}
-
-	fclose(fp);
-
+	if (fp) {
+		fclose(fp);
+		fp = NULL;
+	}
 	printf("Send thread finished.\n");
-
+	g_sc.send_state = SEND_STATE_NONE;
 	return NULL;
 }
 
