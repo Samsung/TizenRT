@@ -36,10 +36,9 @@
 #ifdef CONFIG_SYSTEM_INFORMATION
 #include <apps/system/sysinfo.h>
 #endif
-#ifdef CONFIG_BUILD_PROTECTED
-#if !defined(CONFIG_DISABLE_MOUNTPOINT) && defined(CONFIG_FS_PROCFS)
+#if defined(CONFIG_BUILD_PROTECTED) && defined(CONFIG_FS_PROCFS)
+#include <errno.h>
 #include <sys/mount.h>
-#endif
 #endif
 
 /****************************************************************************
@@ -107,14 +106,12 @@ int preapp_start(int argc, char *argv[])
 	int pid;
 #endif
 
-#ifdef CONFIG_BUILD_PROTECTED
-#if !defined(CONFIG_DISABLE_MOUNTPOINT) && defined(CONFIG_FS_PROCFS)
+#if defined(CONFIG_BUILD_PROTECTED) && defined(CONFIG_FS_PROCFS)
 	int ret;
 	ret = mount(NULL, "/proc", "procfs", 0, NULL);
 	if (ret < 0) {
-		printf("procfs mount is failed, error code is %d\n", ret);
+		printf("procfs mount is failed, error code is %d\n", get_errno());
 	}
-#endif
 #endif
 
 #ifdef CONFIG_SYSTEM_INFORMATION
