@@ -21,6 +21,8 @@
  ****************************************************************************/
 
 #include <errno.h>
+#include <stdio.h>
+#include <string.h>
 #include <tinyara/config.h>
 #include <tinyara/arch.h>
 #include <tinyara/kmalloc.h>
