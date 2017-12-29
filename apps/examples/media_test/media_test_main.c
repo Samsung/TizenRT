@@ -31,7 +31,7 @@
 #include <dm/dm_error.h>
 #include <sys/socket.h>
 
-#define DISCONNECT_WIFI_AND_CLOSE_SOCKET() do { dm_conn_wifi_disconnect(); disconnect_socket(&fd); } while(0)
+#define DISCONNECT_WIFI_AND_CLOSE_SOCKET() do { dm_conn_wifi_disconnect(); disconnect_socket(&fd); } while (0)
 
 int isWiFiConnected = 0;
 
@@ -160,7 +160,7 @@ int media_test_cb(int argc, char **argv)
 			}
 
 			printf("Socket connecting...\n");
-			fd = connect_socket("192.168.1.213", 8080);
+			fd = connect_socket("192.168.1.151", 8888);
 			if (fd < 0) {
 				printf("Connection failed...\n");
 				dm_conn_wifi_disconnect();
@@ -301,7 +301,7 @@ int media_test_cb(int argc, char **argv)
 			}
 
 			printf("Socket connecting...\n");
-			fd = connect_socket("192.168.1.213", 8080);
+			fd = connect_socket("192.168.1.151", 8888);
 			if (fd < 0) {
 				printf("Connection failed...\n");
 				dm_conn_wifi_disconnect();
