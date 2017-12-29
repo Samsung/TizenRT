@@ -220,10 +220,13 @@ static int tash_main(int argc, char *argv[])
 int tash_start(void)
 {
 	int pid;
+	int errcode;
 
 	pid = task_create("tash", TASH_TASK_PRIORITY, TASH_TASK_STACKSIZE, tash_main, (FAR char *const *)NULL);
 	if (pid < 0) {
-		printf("TASH is not started, error code = %d\n", pid);
+		errcode = errno;
+		DEBUGASSERT(errcode > 0);
+		return -errcode;
 	}
 
 	return pid;
