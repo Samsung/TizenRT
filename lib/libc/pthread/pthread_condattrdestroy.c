@@ -84,12 +84,12 @@ int pthread_condattr_destroy(FAR pthread_condattr_t *attr)
 {
 	int ret = OK;
 
-	sdbg("attr=0x%p\n", attr);
+	svdbg("attr=0x%p\n", attr);
 
 	if (!attr) {
 		ret = EINVAL;
 	}
 
-	sdbg("Returning %d\n", ret);
+	svdbg("Returning %d\n", ret);
 	return ret;
 }
