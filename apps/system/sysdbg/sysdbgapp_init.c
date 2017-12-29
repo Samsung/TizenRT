@@ -22,6 +22,8 @@
 
 #include <fcntl.h>
 #include <errno.h>
+#include <stdio.h>
+#include <string.h>
 #include <apps/system/sysdbgapp_init.h>
 #include <apps/shell/tash.h>
 
