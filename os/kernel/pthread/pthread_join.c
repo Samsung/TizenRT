@@ -204,7 +204,7 @@ int pthread_join(pthread_t thread, FAR pthread_addr_t *pexit_value)
 			/* Get the thread exit value from the terminated thread. */
 
 			if (pexit_value) {
-				sdbg("exit_value=0x%p\n", pjoin->exit_value);
+				svdbg("exit_value=0x%p\n", pjoin->exit_value);
 				*pexit_value = pjoin->exit_value;
 			}
 		} else {

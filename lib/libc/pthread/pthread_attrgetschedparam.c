@@ -106,7 +106,7 @@ int pthread_attr_getschedparam(FAR const pthread_attr_t *attr, FAR struct sched_
 {
 	int ret;
 
-	sdbg("attr=0x%p param=0x%p\n", attr, param);
+	svdbg("attr=0x%p param=0x%p\n", attr, param);
 
 	if (!attr || !param) {
 		ret = EINVAL;
@@ -115,6 +115,6 @@ int pthread_attr_getschedparam(FAR const pthread_attr_t *attr, FAR struct sched_
 		ret = OK;
 	}
 
-	sdbg("Returning %d\n", ret);
+	svdbg("Returning %d\n", ret);
 	return ret;
 }

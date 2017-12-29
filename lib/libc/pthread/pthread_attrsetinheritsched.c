@@ -109,7 +109,7 @@ int pthread_attr_setinheritsched(FAR pthread_attr_t *attr, int inheritsched)
 {
 	int ret;
 
-	sdbg("inheritsched=%d\n", inheritsched);
+	svdbg("inheritsched=%d\n", inheritsched);
 
 	if (!attr || (inheritsched != PTHREAD_INHERIT_SCHED && inheritsched != PTHREAD_EXPLICIT_SCHED)) {
 		ret = EINVAL;
@@ -118,6 +118,6 @@ int pthread_attr_setinheritsched(FAR pthread_attr_t *attr, int inheritsched)
 		ret = OK;
 	}
 
-	sdbg("Returning %d\n", ret);
+	svdbg("Returning %d\n", ret);
 	return ret;
 }

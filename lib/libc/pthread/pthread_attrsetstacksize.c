@@ -105,7 +105,7 @@ int pthread_attr_setstacksize(FAR pthread_attr_t *attr, long stacksize)
 {
 	int ret;
 
-	sdbg("attr=0x%p stacksize=%ld\n", attr, stacksize);
+	svdbg("attr=0x%p stacksize=%ld\n", attr, stacksize);
 
 	if (!attr || stacksize < PTHREAD_STACK_MIN) {
 		ret = EINVAL;
@@ -114,6 +114,6 @@ int pthread_attr_setstacksize(FAR pthread_attr_t *attr, long stacksize)
 		ret = OK;
 	}
 
-	sdbg("Returning %d\n", ret);
+	svdbg("Returning %d\n", ret);
 	return ret;
 }

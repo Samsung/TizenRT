@@ -108,7 +108,7 @@ int pthread_attr_getinheritsched(FAR const pthread_attr_t *attr, FAR int *inheri
 {
 	int ret;
 
-	sdbg("attr=0x%p inheritsched=0x%p\n", attr, inheritsched);
+	svdbg("attr=0x%p inheritsched=0x%p\n", attr, inheritsched);
 
 	if (!attr || !inheritsched) {
 		ret = EINVAL;
@@ -117,6 +117,6 @@ int pthread_attr_getinheritsched(FAR const pthread_attr_t *attr, FAR int *inheri
 		ret = OK;
 	}
 
-	sdbg("Returning %d\n", ret);
+	svdbg("Returning %d\n", ret);
 	return ret;
 }
