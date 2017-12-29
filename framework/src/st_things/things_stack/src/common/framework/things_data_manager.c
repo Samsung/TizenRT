@@ -24,19 +24,19 @@
 
 #include "octypes.h"
 #include "ocpayload.h"
-#include "easysetup.h"
+#include "easy-setup/easysetup.h"
 #include "ocstackconfig.h"
 #include "ocrandom.h"
 #include "things_def.h"
-#include "things_logger.h"
-#include "things_malloc.h"
-#include "things_string_util.h"
-#include "things_hashmap.h"
+#include "logging/things_logger.h"
+#include "memory/things_malloc.h"
+#include "utils/things_string_util.h"
+#include "utils/things_hashmap.h"
 #include "things_resource.h"
 #include "things_data_manager.h"
 #include "things_server_builder.h"
-#include "cloud_manager.h"
-#include "cloud_connector.h"
+#include "cloud/cloud_manager.h"
+#include "cloud/cloud_connector.h"
 #include "things_types.h"
 #include <wifi_manager/wifi_manager.h>
 
@@ -526,9 +526,9 @@ static int get_json_string(cJSON *json, char **variable)
 	int length = 0;
 
 	if (json == NULL || variable == NULL || *variable != NULL) {
-		THINGS_LOG_V_ERROR(THINGS_ERROR, TAG, "There is NULL value.(json = %d, variable = %d)", json, variable);
+		THINGS_LOG_D(THINGS_INFO, TAG, "There is NULL value.(json = %d, variable = %d)", json, variable);
 		if (variable != NULL) {
-			THINGS_LOG_V_ERROR(THINGS_ERROR, TAG, "variable value is not NULL.(*variable = %d)", *variable);
+			THINGS_LOG_D(THINGS_INFO, TAG, "variable value is not NULL.(*variable = %d)", *variable);
 		}
 		return 0;
 	}
@@ -1194,7 +1194,7 @@ static int parse_things_info_json(const char *filename)
 
 							if (NULL != setup_id) {
 								if (strlen(setup_id->valuestring) != 3) {
-							   		THINGS_LOG_V_ERROR(THINGS_ERROR, TAG, "setup_id exceeds 3 bytes. please check (3 bytes are fixed sizes.)");
+									THINGS_LOG_V_ERROR(THINGS_ERROR, TAG, "setup_id exceeds 3 bytes. please check (3 bytes are fixed sizes.)");
 									return 0;
 								}
 								is_artik = false;
@@ -1272,7 +1272,7 @@ static int parse_things_info_json(const char *filename)
 				memset(g_certificate_file_path, 0, (size_t)MAX_FILE_PATH_LENGTH + 1);
 				memset(g_private_key_file_path, 0, (size_t)MAX_FILE_PATH_LENGTH + 1);
 
-				if (strncmp(svrdb->valuestring, PATH_MNT, sizeof(PATH_MNT)) == 0) {
+				if (strncmp(svrdb->valuestring, "/", 1) == 0) {
 					if (strlen(svrdb->valuestring) > (size_t)MAX_FILE_PATH_LENGTH) {
 						THINGS_LOG_V_ERROR(THINGS_ERROR, TAG, "svrdb file path length exceeded");
 						return 0;
@@ -1287,7 +1287,7 @@ static int parse_things_info_json(const char *filename)
 					strcat(g_svrdb_file_path, svrdb->valuestring);
 				}
 
-				if (strncmp(provisioning->valuestring, PATH_MNT, sizeof(PATH_MNT)) == 0) {
+				if (strncmp(provisioning->valuestring, "/", 1) == 0) {
 					if (strlen(provisioning->valuestring) > (size_t)MAX_CLOUD_ADDRESS) {
 						THINGS_LOG_V_ERROR(THINGS_ERROR, TAG, "provisioning file path length exceeded");
 						return 0;
@@ -1302,7 +1302,7 @@ static int parse_things_info_json(const char *filename)
 					strcat(g_things_cloud_file_path, provisioning->valuestring);
 				}
 
-				if (strncmp(certificate->valuestring, PATH_ROM, sizeof(PATH_ROM)) == 0) {
+				if (strncmp(certificate->valuestring, "/", 1) == 0) {
 					if (strlen(certificate->valuestring) > (size_t)MAX_FILE_PATH_LENGTH) {
 						THINGS_LOG_V_ERROR(THINGS_ERROR, TAG, "certificate file path length exceeded");
 						return 0;
@@ -1317,7 +1317,7 @@ static int parse_things_info_json(const char *filename)
 					strcat(g_certificate_file_path, certificate->valuestring);
 				}
 
-				if (strncmp(privateKey->valuestring, PATH_ROM, sizeof(PATH_ROM)) == 0) {
+				if (strncmp(privateKey->valuestring, "/", 1) == 0) { 
 					if (strlen(privateKey->valuestring) > (size_t)MAX_FILE_PATH_LENGTH) {
 						THINGS_LOG_V_ERROR(THINGS_ERROR, TAG, "privateKey file path length exceeded");
 						return 0;

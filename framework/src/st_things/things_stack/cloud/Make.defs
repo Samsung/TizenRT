@@ -16,8 +16,7 @@
 #
 ###########################################################################
 
-CSRCS += port_tinyara.c things_stack.c things_rtos_apis.c
+CSRCS += cloud_connector.c cloud_evtpend.c cloud_manager.c
 
-DEPPATH += --dep-path src/st_things/things_stack
-VPATH += :src/st_things/things_stack
-
+DEPPATH += --dep-path src/st_things/things_stack/cloud
+VPATH += :src/st_things/things_stack/cloud
