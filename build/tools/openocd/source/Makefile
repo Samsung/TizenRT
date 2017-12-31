@@ -61,7 +61,7 @@ ARCH ?= 32
 endif
 
 all: openocd
-.PHONY: context libusb libusb-compat-0.1 libconfuse libftdi hidapi openocd
+.PHONY: context libusb libusb-compat-0.1 libconfuse libftdi hidapi openocd clean install distclean
 
 context:
 ifeq ($(shell which $(CHOST)-gcc),)
@@ -124,8 +124,7 @@ endif
 	$(eval FILES += $(PREFIXDIR)/bin/openocd$(EXT))
 	$(eval FILES += $(PREFIXDIR)/bin/ftdi_eeprom$(EXT))
 	$(foreach f,$(FILES),$(call INSTALL,$(f),$(IDIR)))
-
-	$(call INSTALL,$(PREFIXDIR)/share/openocd/scripts,$(INSTALLDIR))
+	$(call INSTALL,$(PREFIXDIR)/share/openocd,$(INSTALLDIR)/share/)
 
 clean:
 	@echo "CLEAN.."

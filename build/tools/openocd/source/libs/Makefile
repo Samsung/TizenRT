@@ -22,6 +22,27 @@ include ../define.mk
 WD = $(abspath $(shell pwd))
 BUILDDIR=build
 
+CORES := $(shell getconf _NPROCESSORS_ONLN)
+
+define SDIR_init
+.$(1)_init:
+	@echo "MKDIR:   $(1)"
+	$(Q) test -e $(BUILDDIR)/$(1) && rm -rf $(BUILDDIR)/$(1) || echo
+	$(Q) mkdir -p $(BUILDDIR)/$(1)
+ifneq ($(wildcard $(WD)/../patches/$(1)/*.patch),)
+	$(eval _PATCHES := $(wildcard $(WD)/../patches/$(1)/*.patch))
+	$(call CD,$(1)) && \
+		$(foreach FILE,$(_PATCHES), \
+		echo PATCH:  $(notdir $(FILE)); patch -p1 < $(FILE);)
+endif
+	$(eval _initfile := $(wildcard $(WD)/$(1)/bootstrap*))
+	$(eval _initfile += $(wildcard $(WD)/$(1)/autogen*))
+ifneq ($(_initfile),)
+	$(call CD,$(1)) && ./$(notdir $(_initfile)) || exit 1;
+endif
+
+endef
+
 define BUILD
 	$(Q) $(MAKE) -C $(BUILDDIR)/$(1) -j$(CORES) $(BUILDOPT)
 	$(Q) $(MAKE) -C $(BUILDDIR)/$(1) install
@@ -45,53 +66,29 @@ endif
 
 CBUILD := $(shell gcc -dumpmachine)
 
+SUBDIRS := libusb libusb-compat-0.1 libconfuse libftdi hidapi openocd
+
+#
+# Taget init
+#
+
+$(foreach SDIR, $(SUBDIRS), $(eval $(call SDIR_init,$(SDIR))))
+
 #
 # nothing to be done 'all'
 #
 all:
+.PHONY : clean download
 
 download:
-	$(Q) if [ -e $(pkg) ]; then rm -rf $(pkg); fi
+	$(Q) test -e $(pkg) && rm -rf $(pkg) || echo
 	$(Q) git clone $(url) -b $(version) --depth=1 $(pkg)
-
-.init:
-	@echo "MKDIR:   $(_name:_init=)"
-	$(Q) if [ -e $(BUILDDIR)/$(_name:_init=) ]; then \
-		rm -rf $(BUILDDIR)/$(_name:_init=); \
-	fi
-	$(Q) mkdir -p $(BUILDDIR)/$(_name:_init=)
-ifneq ($(wildcard $(WD)/../patches/$(_name:_init=)/*.patch),)
-	@echo "PATCH:   $(notdir $(wildcard $(WD)/../patches/$(_name:_init=)/*.patch))"
-	$(call CD,$(_name:_init=)) && patch -p1 < $(wildcard $(WD)/../patches/$(_name:_init=)/*.patch)
-endif
-ifneq ($(_initfile),)
-	$(call CD,$(_name:_init=)) && ./$(_initfile) || exit 1;
-endif
-
-libusb_init:
-	$(Q) $(MAKE) _name=$(@) _initfile=bootstrap.sh .init
-
-libusb-compat-0.1_init:
-	$(Q) $(MAKE) _name=$(@) _initfile=bootstrap.sh .init
-
-libconfuse_init:
-	$(Q) $(MAKE) _name=$(@) _initfile=autogen.sh .init
-
-libftdi_init:
-	$(Q) $(MAKE) _name=$(@) .init
-
-hidapi_init:
-	$(Q) $(MAKE) _name=$(@) _initfile=bootstrap .init
-
-openocd_init:
-	$(Q) $(MAKE) _name=$(@) _initfile=bootstrap .init
-	$(eval LDFLAGS += -L$(PREFIXDIR)/bin -L$(PREFIXDIR)/lib)
 
 #
 # Make Targets
 #
 
-libusb: libusb_init
+libusb: .libusb_init
 	$(call CD,$(BUILDDIR)/$(@)) && \
 	$(WD)/$(@)/configure --enable-static --disable-shared \
 		--prefix=$(PREFIXDIR) \
@@ -99,7 +96,7 @@ libusb: libusb_init
 		CFLAGS="$(CFLAGS)" CXXFLAGS="$(CXXFLAGS)" LDFLAGS="$(LDFLAGS)"
 	$(call BUILD,$(@))
 
-libusb-compat-0.1: libusb-compat-0.1_init
+libusb-compat-0.1: .libusb-compat-0.1_init
 	$(call CD,$(BUILDDIR)/$(@)) && \
 	$(WD)/$(@)/configure --enable-static  --disable-shared \
 		--prefix=$(PREFIXDIR) \
@@ -112,7 +109,7 @@ libusb-compat-0.1: libusb-compat-0.1_init
 		CFLAGS="$(CFLAGS)" CXXFLAGS="$(CXXFLAGS)" LDFLAGS="$(LDFLAGS)"
 	$(call BUILD,$(@))
 
-libconfuse: libconfuse_init
+libconfuse: .libconfuse_init
 	$(call CD,$(BUILDDIR)/$(@)) && \
 	$(WD)/$(@)/configure --enable-static  --disable-shared \
 		--disable-examples \
@@ -121,7 +118,7 @@ libconfuse: libconfuse_init
 		CFLAGS="$(CFLAGS)" CXXFLAGS="$(CXXFLAGS)" LDFLAGS="$(LDFLAGS)"
 	$(call BUILD,$(@))
 
-libftdi: libftdi_init .libftdi_$(TOOL)
+libftdi: .libftdi_init .libftdi_$(TOOL)
 	$(call CD,$(BUILDDIR)/$(@)) && \
 	cmake $(option) -DCMAKE_INSTALL_PREFIX=$(PREFIXDIR) \
 		-DCMAKE_BUILD_TYPE=Release \
@@ -147,7 +144,7 @@ libftdi: libftdi_init .libftdi_$(TOOL)
 	$(eval option := -DCMAKE_SYSTEM_NAME=Darwin)
 	$(eval option += -DCMAKE_EXE_LINKER_FLAGS="-lobjc -Wl,-framework,IOKit -Wl,-framework,CoreFoundation")
 
-hidapi: hidapi_init
+hidapi: .hidapi_init
 	$(call CD,$(BUILDDIR)/$(@)) && \
 	$(WD)/$(@)/configure --enable-static --disable-shared \
 		--disable-testgui \
@@ -158,7 +155,8 @@ hidapi: hidapi_init
 		CFLAGS="$(CFLAGS)" CXXFLAGS="$(CXXFLAGS)" LDFLAGS="$(LDFLAGS)"
 	$(call BUILD,$(@))
 
-openocd: openocd_init .openocd_$(TOOL)
+openocd: .openocd_init .openocd_$(TOOL)
+	$(eval LDFLAGS += -L$(PREFIXDIR)/bin -L$(PREFIXDIR)/lib)
 	$(call CD,$(BUILDDIR)/$(@)) && \
 	$(WD)/$(@)/configure $(option) \
 		--enable-static --disable-shared \
