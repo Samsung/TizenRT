@@ -1072,7 +1072,7 @@ static void dns_check_entry(u8_t i)
 				}
 			} else {
 				/* wait longer for the next retry */
-				entry->tmr = entry->retries;
+				entry->tmr = 1;
 			}
 
 			/* send DNS packet for this entry */
