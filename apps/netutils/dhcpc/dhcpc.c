@@ -160,6 +160,8 @@ struct dhcpc_state_s {
 static const uint8_t g_dhcpc_xid[4] = { 0xad, 0xde, 0x12, 0x23 };
 static const uint8_t magic_cookie[4] = { 99, 130, 83, 99 };
 
+static int g_dhcpc_state;
+
 /****************************************************************************
  * Private Functions
  ****************************************************************************/
@@ -264,7 +266,14 @@ static int dhcpc_sendmsg(struct dhcpc_state_s *pdhcpc, struct dhcpc_state *presu
 
 	case DHCPREQUEST:
 		pdhcpc->packet.flags = HTONS(BOOTP_BROADCAST);	/*  Broadcast bit. */
-		memcpy(pdhcpc->packet.ciaddr, &pdhcpc->ipaddr.s_addr, 4);
+		if (g_dhcpc_state == STATE_HAVE_LEASE) {
+			/* RFC 2131, 4.3.2 DHCPREQUEST message
+			 * DHCPREQUEST generated during SELECTING state:
+			 * Client inserts the address of the selected server in 'server identifier',
+			 * 'ciaddr' MUST be zero, 'requested IP address' MUST be filled in with the yiaddr value from the chosen DHCPOFFER.
+			 */
+			memcpy(pdhcpc->packet.ciaddr, &pdhcpc->ipaddr.s_addr, 4);
+		}
 #ifdef CONFIG_NETUTILS_DHCPC_CLIENTID
 		pend = dhcpc_addclientid(pdhcpc->packet.chaddr, pend);
 #endif
@@ -466,7 +475,6 @@ void dhcpc_close(void *handle)
 }
 
 static struct dhcpc_state *g_pResult;
-static int g_dhcpc_state;
 
 /****************************************************************************
  * Name: dhcpc_request
