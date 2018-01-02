@@ -41,7 +41,7 @@ CSRCS += \
 	mib_text_convert.c \
 	mlme.c \
 	mgt.c \
-	wlan_80211_utils.c \
+	utils_scsc.c \
 	log_clients.c \
 	udi.c \
 	fw_test.c

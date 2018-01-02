@@ -45,22 +45,22 @@ void slsi_driver_initialize(void)
 static void slsi_regd_init(struct slsi_dev *sdev)
 {
 	struct slsi_802_11d_reg_domain *slsi_world_regdom_custom = sdev->device_config.domain_info;
-	struct slsi_80211_reg_rule reg_rules[] = {
+	struct slsi_wlan_reg_rule reg_rules[] = {
 		/* Channel 1 - 11 */
 		SLSI_REG_RULE(2412 - 10, 2462 + 10, 20, 0, 20, 0),
 		/* Channel 12 - 13 NO_IR */
-		SLSI_REG_RULE(2467 - 10, 2472 + 10, 20, 0, 20, SLSI_80211_RRF_NO_IR),
+		SLSI_REG_RULE(2467 - 10, 2472 + 10, 20, 0, 20, SLSI_REG_RULE_FLAG_NO_IR),
 		/* Channel 14 */
-		SLSI_REG_RULE(2484 - 10, 2484 + 10, 20, 0, 20, (SLSI_80211_RRF_PASSIVE_SCAN | SLSI_80211_RRF_NO_OFDM)),
+		SLSI_REG_RULE(2484 - 10, 2484 + 10, 20, 0, 20, (SLSI_REG_RULE_FLAG_PASSIVE_SCAN | SLSI_REG_RULE_FLAG_NO_OFDM)),
 #ifdef CONFIG_SCSC_ADV_FEATURE
 		/* Channel 36 - 48 */
 		SLSI_REG_RULE(5180 - 10, 5240 + 10, 80, 0, 20, 0),
 		/* Channel 149 - 165 */
 		SLSI_REG_RULE(5745 - 10, 5825 + 10, 80, 0, 20, 0),
 		/* Channel 52 - 64 */
-		SLSI_REG_RULE(5260 - 10, 5320 + 10, 80, 0, 20, SLSI_80211_RRF_DFS),
+		SLSI_REG_RULE(5260 - 10, 5320 + 10, 80, 0, 20, SLSI_REG_RULE_FLAG_DFS),
 		/* Channel 100 - 140 */
-		SLSI_REG_RULE(5500 - 10, 5700 + 10, 80, 0, 20, SLSI_80211_RRF_DFS),
+		SLSI_REG_RULE(5500 - 10, 5700 + 10, 80, 0, 20, SLSI_REG_RULE_FLAG_DFS),
 #endif
 	};
 	int i;

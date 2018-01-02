@@ -236,7 +236,7 @@ static inline struct slsi_peer *slsi_get_peer_from_qs(struct slsi_dev *sdev, str
 
 static inline bool slsi_is_proxy_arp_supported_on_ap(struct max_buff *assoc_resp_ie)
 {
-	const u8 *ie = slsi_80211_find_ie(SLSI_WLAN_EID_EXT_CAPABILITY, slsi_mbuf_get_data(assoc_resp_ie), assoc_resp_ie->data_len);
+	const u8 *ie = slsi_wlan_find_ie(SLSI_WLAN_EID_EXT_CAPABILITY, slsi_mbuf_get_data(assoc_resp_ie), assoc_resp_ie->data_len);
 
 	if ((ie) && (ie[1] > 1)) {
 		return ie[3] & 0x10;    /*0: eid, 1: len; 3: proxy arp is 12th bit */
@@ -376,10 +376,10 @@ int slsi_vif_activated(struct slsi_dev *sdev, struct netif *dev);
 void slsi_vif_deactivated(struct slsi_dev *sdev, struct netif *dev);
 int slsi_handle_disconnect(struct slsi_dev *sdev, struct netif *dev, u8 *peer_address, u16 reason, int locallygenerated);
 int slsi_update_suspend_mode(struct slsi_dev *sdev);
-int slsi_ip_address_changed(struct slsi_dev *sdev, struct netif *dev, __be32 ipaddress);
+int slsi_ip_address_changed(struct slsi_dev *sdev, struct netif *dev, be32 ipaddress);
 int slsi_send_gratuitous_arp(struct slsi_dev *sdev, struct netif *dev);
-int slsi_find_scan_freq(struct slsi_80211_mgmt *mgmt, size_t mgmt_len, u16 freq);
-int slsi_auto_chan_select_scan(struct slsi_dev *sdev, int chan_count, struct slsi_80211_channel *channels[]);
+int slsi_find_scan_freq(struct ieee80211_mgmt *mgmt, size_t mgmt_len, u16 freq);
+int slsi_auto_chan_select_scan(struct slsi_dev *sdev, int chan_count, struct slsi_wlan_channel *channels[]);
 int slsi_set_uint_mib(struct slsi_dev *dev, struct netif *ndev, u16 psid, int value);
 int slsi_update_regd_rules(struct slsi_dev *sdev, bool country_check);
 int slsi_set_uapsd_qos_info(struct slsi_dev *sdev, struct netif *dev, const int qos_info);
@@ -391,8 +391,8 @@ void slsi_p2p_vif_deactivate(struct slsi_dev *sdev, struct netif *dev, bool hw_a
 void slsi_p2p_group_start_remove_unsync_vif(struct slsi_dev *sdev);
 int slsi_p2p_dev_probe_rsp_ie(struct slsi_dev *sdev, struct netif *dev, u8 *probe_rsp_ie, size_t probe_rsp_ie_len);
 int slsi_p2p_dev_null_ies(struct slsi_dev *sdev, struct netif *dev);
-int slsi_p2p_get_public_action_subtype(struct slsi_80211_mgmt *mgmt);
-int slsi_p2p_get_go_neg_rsp_status(struct netif *dev, const struct slsi_80211_mgmt *mgmt);
+int slsi_p2p_get_public_action_subtype(struct ieee80211_mgmt *mgmt);
+int slsi_p2p_get_go_neg_rsp_status(struct netif *dev, const struct ieee80211_mgmt *mgmt);
 u8 slsi_p2p_get_exp_peer_frame_subtype(u8 subtype);
 #endif
 int slsi_send_txq_params(struct slsi_dev *sdev, struct netif *ndev);

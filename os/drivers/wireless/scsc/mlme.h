@@ -35,7 +35,6 @@ enum slsi_ac_index_wmm_pe {
 
 #define SLSI_SINFO_MIB_ACCESS_TIMEOUT (1000)	/* 1 sec timeout */
 
-#define SLSI_WLAN_EID_VENDOR_SPECIFIC 0xdd
 #define SLSI_WLAN_EID_INTERWORKING 107
 #define SLSI_WLAN_EID_EXT_CAPABILITY 127
 
@@ -73,9 +72,9 @@ enum slsi_ac_index_wmm_pe {
  */
 #define SLSI_FW_CHANNEL_DURATION_UNSPECIFIED             (0x0000)
 
-extern struct slsi_80211_supported_band slsi_band_2ghz;
+extern struct slsi_wlan_supported_band slsi_band_2ghz;
 #ifdef CONFIG_SCSC_ADV_FEATURE
-extern struct slsi_80211_supported_band slsi_band_5ghz;
+extern struct slsi_wlan_supported_band slsi_band_5ghz;
 extern struct ieee80211_sta_vht_cap slsi_vht_cap;
 #endif
 
@@ -117,9 +116,6 @@ int slsi_mlme_get(struct slsi_dev *sdev, struct netif *dev, u8 *req, int req_len
 int slsi_mlme_add_vif(struct slsi_dev *sdev, struct netif *dev, u8 *interface_address, u8 *device_address);
 void slsi_mlme_del_vif(struct slsi_dev *sdev, struct netif *dev);
 int slsi_mlme_set_channel(struct slsi_dev *sdev, struct netif *dev, unsigned int freq, u16 duration, u16 interval, u16 count);
-const u8 *slsi_80211_find_ie(u8 eid, const u8 *ies, int len);
-u8 *slsi_80211_find_ie_mod(u8 eid, u8 *ies, int len);
-const u8 *slsi_80211_find_vendor_ie(unsigned int oui, u8 oui_type, const u8 *ies, int len);
 
 /**
  * slsi_mlme_add_scan() Returns:
@@ -127,7 +123,7 @@ const u8 *slsi_80211_find_vendor_ie(unsigned int oui, u8 oui_type, const u8 *ies
  * >0 : Scan NOT installed. Not an Error
  * <0 : Scan NOT installed. Error
  */
-int slsi_mlme_add_scan(struct slsi_dev *sdev, struct netif *dev, u16 scan_type, u16 report_mode, u32 n_ssids, struct wpa_driver_scan_ssid *ssids, u32 n_channels, struct slsi_80211_channel *channels[], void *gscan_param, const u8 *ies, u16 ies_len, bool wait_for_ind);
+int slsi_mlme_add_scan(struct slsi_dev *sdev, struct netif *dev, u16 scan_type, u16 report_mode, u32 n_ssids, struct wpa_driver_scan_ssid *ssids, u32 n_channels, struct slsi_wlan_channel *channels[], void *gscan_param, const u8 *ies, u16 ies_len, bool wait_for_ind);
 
 int slsi_mlme_del_scan(struct slsi_dev *sdev, struct netif *dev, u16 scan_id);
 int slsi_mlme_start(struct slsi_dev *sdev, struct netif *dev, u8 *bssid, struct wpa_driver_ap_params *settings, const u8 *wpa_ie_pos, const u8 *wmm_ie_pos, bool append_vht_ies);

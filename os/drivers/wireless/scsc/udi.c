@@ -851,7 +851,7 @@ static int udi_log_event(struct slsi_log_client *log_client, struct max_buff *mb
 		}
 		if (frametype == FAPI_DATAUNITDESCRIPTOR_IEEE802_11_FRAME)
 			if (slsi_cdev_unitdata_filter_allow(client, UDI_MA_UNITDATA_FILTER_ALLOW_MGT_ID))
-				if (slsi_80211_is_mgmt(fapi_get_mgmt(mbuf)->frame_control)) {
+				if (slsi_is_mgmt_frame(fapi_get_mgmt(mbuf)->frame_control)) {
 					goto allow_frame;
 				}
 

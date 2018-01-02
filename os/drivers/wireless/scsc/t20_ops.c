@@ -23,8 +23,8 @@
 #include "netif.h"
 #include "unifiio.h"
 #include "mib.h"
-#include "wlan_80211_utils.h"
 #include "netif.h"
+#include "wpa_driver_copy.h"
 
 #define SLSI_FW_SCAN_DONE_TIMEOUT_MSEC (15 * 1000)
 #define SLSI_MAX_CHAN_2G_BAND          14
@@ -42,20 +42,20 @@ static uint keep_alive_period = SLSI_P2PGO_KEEP_ALIVE_PERIOD_SEC;
 }
 
 #define CHAN2G(_freq, _idx)  { \
-		.band = SLSI_80211_BAND_2GHZ, \
+		.band = SLSI_WLAN_BAND_2GHZ, \
 		.center_freq = (_freq), \
 		.hw_value = (_idx), \
 }
 
 #ifdef CONFIG_SCSC_ADV_FEATURE
 #define CHAN5G(_freq, _idx)  { \
-		.band = SLSI_80211_BAND_5GHZ, \
+		.band = SLSI_WLAN_BAND_5GHZ, \
 		.center_freq = (_freq), \
 		.hw_value = (_idx), \
 }
 #endif
 
-static struct slsi_80211_channel slsi_2ghz_channels[] = {
+static struct slsi_wlan_channel slsi_2ghz_channels[] = {
 	CHAN2G(2412, 1),
 	CHAN2G(2417, 2),
 	CHAN2G(2422, 3),
@@ -72,7 +72,7 @@ static struct slsi_80211_channel slsi_2ghz_channels[] = {
 	CHAN2G(2484, 14),
 };
 
-static struct slsi_80211_rate slsi_11g_rates[] = {
+static struct slsi_wlan_rate slsi_11g_rates[] = {
 	RATE_LEGACY(10, 1, 0),
 	RATE_LEGACY(20, 2, 1),
 	RATE_LEGACY(55, 3, 1),
@@ -87,7 +87,7 @@ static struct slsi_80211_rate slsi_11g_rates[] = {
 	RATE_LEGACY(540, 12, 0),
 };
 
-static u32 wpa_alg_to_cipher_suite(enum wpa_alg alg, size_t key_len)
+static u32 wpa_alg_to_cipher_suite(enum slsi_wpa_alg alg, size_t key_len)
 {
 	switch (alg) {
 	case SLSI_WPA_ALG_TKIP:
@@ -100,16 +100,16 @@ static u32 wpa_alg_to_cipher_suite(enum wpa_alg alg, size_t key_len)
 		return SLSI_WLAN_CIPHER_SUITE_SMS4;
 	case SLSI_WPA_ALG_WEP:
 		if (key_len == 5) {
-			return SLSI_WLAN_CIPHER_SUITE_WEP40;
+			return SLSI_WLAN_CIPHER_SUITE_WEP_40;
 		}
-		return SLSI_WLAN_CIPHER_SUITE_WEP104;
+		return SLSI_WLAN_CIPHER_SUITE_WEP_104;
 	default:					/* SLSI_WPA_ALG_NONE/SLSI_WPA_ALG_PMK/SLSI_WPA_ALG_IGTK */
 		SLSI_ERR_NODEV(" Unexpected encryption algorithm %d", alg);
 		return 0;
 	}
 }
 
-int slsi_add_key(const char *ifname, void *priv, enum wpa_alg alg, const u8 *mac_addr, int key_index, int set_tx, const u8 *seq, size_t seq_len, const u8 *key, size_t key_len)
+int slsi_add_key(const char *ifname, void *priv, enum slsi_wpa_alg alg, const u8 *mac_addr, int key_index, int set_tx, const u8 *seq, size_t seq_len, const u8 *key, size_t key_len)
 {
 	struct slsi_drv_interface *drv_iface;
 	struct slsi_dev *sdev;
@@ -160,7 +160,7 @@ int slsi_add_key(const char *ifname, void *priv, enum wpa_alg alg, const u8 *mac
 	params.seq = seq;
 	params.seq_len = seq_len;
 	params.cipher = wpa_alg_to_cipher_suite(alg, key_len);
-	if (alg != SLSI_WPA_ALG_WEP && key_index && is_broadcast_ether_addr(mac_addr)) {
+	if (alg != SLSI_WPA_ALG_WEP && key_index && slsi_is_broadcast_addr(mac_addr)) {
 		key_type = FAPI_KEYTYPE_GROUP;
 	} else {
 		key_type = FAPI_KEYTYPE_PAIRWISE;
@@ -194,7 +194,7 @@ int slsi_add_key(const char *ifname, void *priv, enum wpa_alg alg, const u8 *mac
 	SLSI_NET_DBG2(dev, SLSI_T20_80211, "(key_index:%d, pairwise:%d, address:" SLSI_MAC_FORMAT ", cipher:0x%.8X, key_len:%d)\n", key_index, pairwise, SLSI_MAC_STR(mac_addr), params.cipher, params.key_len);
 
 	/*Treat WEP key as pairwise key */
-	if ((ndev_vif->vif_type == FAPI_VIFTYPE_STATION) && ((params.cipher == SLSI_WLAN_CIPHER_SUITE_WEP40) || (params.cipher == SLSI_WLAN_CIPHER_SUITE_WEP104)) && peer) {
+	if ((ndev_vif->vif_type == FAPI_VIFTYPE_STATION) && ((params.cipher == SLSI_WLAN_CIPHER_SUITE_WEP_40) || (params.cipher == SLSI_WLAN_CIPHER_SUITE_WEP_104)) && peer) {
 		u8 bc_mac_addr[ETH_ALEN] = { 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF };
 
 		SLSI_NET_DBG3(dev, SLSI_T20_80211, "WEP Key: store key\n");
@@ -261,7 +261,7 @@ int slsi_add_key(const char *ifname, void *priv, enum wpa_alg alg, const u8 *mac
 			slsi_ps_port_control(sdev, dev, peer, SLSI_STA_CONN_STATE_CONNECTED);
 			peer->connected_state = SLSI_STA_CONN_STATE_CONNECTED;
 #ifdef CONFIG_SLSI_WLAN_P2P
-			if (ndev_vif->iftype == SLSI_80211_IFTYPE_P2P_GO) {
+			if (ndev_vif->iftype == SLSI_WLAN_IFTYPE_P2P_GO) {
 				ndev_vif->ap.p2p_gc_keys_set = true;
 			}
 #endif
@@ -403,7 +403,7 @@ static size_t slsi_strip_wsc_p2p_ie(const u8 *src_ie, size_t src_ie_len, u8 *des
 	for (ie = src_ie; (ie - src_ie) < src_ie_len; ie = next_ie) {
 		next_ie = ie + ie[1] + 2;
 
-		if (ie[0] == WLAN_EID_VENDOR_SPECIFIC && ie[1] > 4) {
+		if (ie[0] == SLSI_WLAN_EID_VENDOR_SPEC && ie[1] > 4) {
 			int i;
 			unsigned int oui = 0;
 
@@ -461,7 +461,7 @@ int slsi_hw_scan(void *priv, struct wpa_driver_scan_params *request)
 	size_t scan_ie_len;
 	bool strip_wsc = false;
 	bool strip_p2p = false;
-	struct slsi_80211_channel *channels[15];
+	struct slsi_wlan_channel *channels[15];
 	int chan_count = 0;
 	drv_iface = priv;
 	if (!drv_iface) {
@@ -515,7 +515,7 @@ int slsi_hw_scan(void *priv, struct wpa_driver_scan_params *request)
 		goto exit;
 	}
 
-	/* Convert scan params freqs to slsi_80211_channel. Only 2.4 GHz channels considered for now.
+	/* Convert scan params freqs to slsi_wlan_channel. Only 2.4 GHz channels considered for now.
 	 * The scan params freqs is of the form '2412 MHz' OR NULL for all frequencies
 	 */
 	if (request->freqs == NULL) {
@@ -570,12 +570,12 @@ int slsi_hw_scan(void *priv, struct wpa_driver_scan_params *request)
 		 * for wps case remove only p2p IE
 		 */
 
-		ie = (u8 *) slsi_80211_find_vendor_ie(WLAN_OUI_MICROSOFT, WLAN_OUI_TYPE_MICROSOFT_WPS, request->extra_ies, request->extra_ies_len);
+		ie = (u8 *) slsi_wlan_find_vendor_spec_ie(SLSI_WLAN_VS_OUI_MICROSOFT, SLSI_WLAN_VS_OUI_TYPE_MS_WPS, request->extra_ies, request->extra_ies_len);
 		if (ie && ie[1] > SLSI_WPS_REQUEST_TYPE_POS && ie[SLSI_WPS_REQUEST_TYPE_POS] == SLSI_WPS_REQUEST_TYPE_ENROLEE_INFO_ONLY) {
 			strip_wsc = true;
 		}
 
-		ie = (u8 *) slsi_80211_find_vendor_ie(WLAN_OUI_WFA, WLAN_OUI_TYPE_WFA_P2P, request->extra_ies, request->extra_ies_len);
+		ie = (u8 *) slsi_wlan_find_vendor_spec_ie(SLSI_WLAN_VS_OUI_WFA, SLSI_WLAN_VS_OUI_TYPE_WFA_P2P, request->extra_ies, request->extra_ies_len);
 		if (ie) {
 			strip_p2p = true;
 		}
@@ -655,7 +655,7 @@ exit:
 static void slsi_add_wpa_scan_entry(struct wpa_scan_results *results, struct max_buff *scan, struct netif *dev)
 {
 	struct wpa_scan_res *scan_res;
-	struct slsi_80211_mgmt *frame = fapi_get_mgmt(scan);
+	struct ieee80211_mgmt *frame = fapi_get_mgmt(scan);
 	size_t frame_len = fapi_get_mgmtlen(scan);
 	size_t ie_len = frame_len - (frame->u.beacon.variable - (u8 *) frame);
 	u8 *scan_res_ies, *ies;
@@ -880,13 +880,13 @@ int slsi_connect(void *priv, struct wpa_driver_associate_params *request)
 		goto exit_with_error;
 	}
 
-	if (WARN_ON(request->ssid_len > SLSI_80211_MAX_SSID_LEN)) {
+	if (WARN_ON(request->ssid_len > SLSI_WLAN_MAX_SSID_LEN)) {
 		goto exit_with_error;
 	}
 
 	if (request->mode == IEEE80211_MODE_AP) {
-		if (ndev_vif->iftype == SLSI_80211_IFTYPE_P2P_GROUP) {
-			ndev_vif->iftype = SLSI_80211_IFTYPE_P2P_GO;
+		if (ndev_vif->iftype == SLSI_WLAN_IFTYPE_P2P_GROUP) {
+			ndev_vif->iftype = SLSI_WLAN_IFTYPE_P2P_GO;
 		}
 		goto exit;
 	}
@@ -904,19 +904,19 @@ int slsi_connect(void *priv, struct wpa_driver_associate_params *request)
 	SLSI_NET_DBG2(dev, SLSI_T20_80211, "iftype: %d\n", ndev_vif->iftype);
 
 	switch (ndev_vif->iftype) {
-	case SLSI_80211_IFTYPE_UNSPECIFIED:
-	case SLSI_80211_IFTYPE_STATION:
-		ndev_vif->iftype = SLSI_80211_IFTYPE_STATION;
+	case SLSI_WLAN_IFTYPE_UNSPECIFIED:
+	case SLSI_WLAN_IFTYPE_STATION:
+		ndev_vif->iftype = SLSI_WLAN_IFTYPE_STATION;
 		action_frame_bmap = SLSI_ACTION_FRAME_WMM | SLSI_ACTION_FRAME_PUBLIC;
 		break;
 #ifdef CONFIG_SLSI_WLAN_P2P
 	/**
 	 * For P2P iftype is initialized in slsi_add_virtual_intf()
-	 * For negotiated group the iftype will be SLSI_80211_IFTYPE_P2P_GROUP.
+	 * For negotiated group the iftype will be SLSI_WLAN_IFTYPE_P2P_GROUP.
 	 */
-	case SLSI_80211_IFTYPE_P2P_CLIENT:
-	case SLSI_80211_IFTYPE_P2P_GROUP:
-		ndev_vif->vif_type = SLSI_80211_IFTYPE_P2P_CLIENT;
+	case SLSI_WLAN_IFTYPE_P2P_CLIENT:
+	case SLSI_WLAN_IFTYPE_P2P_GROUP:
+		ndev_vif->vif_type = SLSI_WLAN_IFTYPE_P2P_CLIENT;
 		slsi_p2p_group_start_remove_unsync_vif(sdev);
 		p2p_dev = slsi_get_netdev_locked(sdev, SLSI_NET_INDEX_P2P);
 		if (p2p_dev) {
@@ -945,7 +945,6 @@ int slsi_connect(void *priv, struct wpa_driver_associate_params *request)
 	}
 	SLSI_MUTEX_UNLOCK(ndev_vif->scan_mutex);
 
-	ndev_vif->channel_type = SLSI_80211_CHAN_NO_HT;
 	ndev_vif->center_freq = request->freq_hint;
 	if (slsi_mlme_add_vif(sdev, dev, dev->d_mac.ether_addr_octet, device_address) != 0) {
 		SLSI_NET_ERR(dev, "slsi_mlme_add_vif failed\n");
@@ -974,7 +973,7 @@ int slsi_connect(void *priv, struct wpa_driver_associate_params *request)
 	/* If P2P CLI, add_info_elements with Probe Req IEs. Proceed even if confirm fails for add_info as it would still work if the
 	 * fw pre-join scan does not include the vendor IEs
 	 */
-	if ((ndev_vif->iftype == SLSI_80211_IFTYPE_P2P_CLIENT) && (sdev->gc_probe_req_ies)) {
+	if ((ndev_vif->iftype == SLSI_WLAN_IFTYPE_P2P_CLIENT) && (sdev->gc_probe_req_ies)) {
 #ifdef CONFIG_SCSC_ADV_FEATURE
 		if (sme->crypto.wpa_versions == 2) {
 			sdev->delete_gc_probe_req_ies = true;    /* Stored P2P Probe Req can be deleted at vif deletion, after WPA2 association  */
@@ -1166,8 +1165,8 @@ int slsi_get_signal_poll(void *priv, struct wpa_signal_info *si)
 		goto exit;
 	}
 	memset(si, 0, sizeof(*si));
-	if (((ndev_vif->iftype == SLSI_80211_IFTYPE_STATION && ndev_vif->sta.vif_status == SLSI_VIF_STATUS_CONNECTED)
-		 || ndev_vif->iftype == SLSI_80211_IFTYPE_P2P_CLIENT)) {
+	if (((ndev_vif->iftype == SLSI_WLAN_IFTYPE_STATION && ndev_vif->sta.vif_status == SLSI_VIF_STATUS_CONNECTED)
+		 || ndev_vif->iftype == SLSI_WLAN_IFTYPE_P2P_CLIENT)) {
 		/*Read MIB and fill into the peer.sinfo */
 		res = slsi_mlme_get_sinfo_mib(sdev, dev, si);
 		if (res) {
@@ -1310,7 +1309,7 @@ int slsi_del_station(void *priv, const u8 *addr, int reason)
 	/* MAC with NULL value will come in case of flushing VLANS . Ignore this. */
 	if (!mac) {
 		goto exit;
-	} else if (is_broadcast_ether_addr(mac)) {
+	} else if (slsi_is_broadcast_addr(mac)) {
 		int i = 0;
 		bool peer_connected = false;
 
@@ -1391,13 +1390,13 @@ int slsi_add_virtual_intf(void *priv, enum wpa_driver_if_type type, const char *
 	SLSI_MUTEX_LOCK(ndev_vif->vif_mutex);
 	switch (type) {
 	case WPA_IF_P2P_GO:
-		ndev_vif->iftype = SLSI_80211_IFTYPE_P2P_GO;
+		ndev_vif->iftype = SLSI_WLAN_IFTYPE_P2P_GO;
 		break;
 	case WPA_IF_P2P_CLIENT:
-		ndev_vif->iftype = SLSI_80211_IFTYPE_P2P_CLIENT;
+		ndev_vif->iftype = SLSI_WLAN_IFTYPE_P2P_CLIENT;
 		break;
 	case WPA_IF_P2P_GROUP:
-		ndev_vif->iftype = SLSI_80211_IFTYPE_P2P_GROUP;
+		ndev_vif->iftype = SLSI_WLAN_IFTYPE_P2P_GROUP;
 		break;
 	default:
 		SLSI_ERR_NODEV("Unknown iftype on wl3 p2p interface: %d\n", type);
@@ -1634,7 +1633,7 @@ exit:
 	return r;
 }
 
-static int slsi_p2p_group_mgmt_tx(struct slsi_dev *sdev, struct slsi_80211_mgmt *mgmt, struct netif *dev, unsigned int freq, unsigned int wait, const u8 *buf, size_t len)
+static int slsi_p2p_group_mgmt_tx(struct slsi_dev *sdev, struct ieee80211_mgmt *mgmt, struct netif *dev, unsigned int freq, unsigned int wait, const u8 *buf, size_t len)
 {
 	struct netdev_vif *ndev_vif;
 	int subtype = slsi_p2p_get_public_action_subtype(mgmt);
@@ -1655,7 +1654,7 @@ static int slsi_p2p_group_mgmt_tx(struct slsi_dev *sdev, struct slsi_80211_mgmt 
 	}
 	SLSI_MUTEX_LOCK(ndev_vif->vif_mutex);
 
-	if (!((ndev_vif->iftype == SLSI_80211_IFTYPE_P2P_GO) || (ndev_vif->iftype == SLSI_80211_IFTYPE_P2P_CLIENT))) {
+	if (!((ndev_vif->iftype == SLSI_WLAN_IFTYPE_P2P_GO) || (ndev_vif->iftype == SLSI_WLAN_IFTYPE_P2P_CLIENT))) {
 		goto exit_with_error;
 	}
 
@@ -1685,12 +1684,12 @@ exit_with_lock:
 }
 
 /* Handle mgmt_tx callback for P2P modes */
-static int slsi_p2p_mgmt_tx(struct slsi_dev *sdev, struct slsi_80211_mgmt *mgmt, struct netif *dev, struct netdev_vif *ndev_vif, unsigned int freq, unsigned int wait, const u8 *buf, size_t len)
+static int slsi_p2p_mgmt_tx(struct slsi_dev *sdev, struct ieee80211_mgmt *mgmt, struct netif *dev, struct netdev_vif *ndev_vif, unsigned int freq, unsigned int wait, const u8 *buf, size_t len)
 {
 	int ret = 0;
 	union wpa_event_data event;
 
-	if (slsi_80211_is_action(mgmt->frame_control)) {
+	if (SLSI_IS_MGMT_FRAME_ACTION(mgmt->frame_control)) {
 		u16 host_tag = slsi_tx_host_tag(sdev);
 		int subtype = slsi_p2p_get_public_action_subtype(mgmt);
 		u8 exp_peer_frame;
@@ -1727,7 +1726,7 @@ static int slsi_p2p_mgmt_tx(struct slsi_dev *sdev, struct slsi_80211_mgmt *mgmt,
 		exp_peer_frame = slsi_p2p_get_exp_peer_frame_subtype(subtype);
 
 		if (exp_peer_frame != SLSI_P2P_PA_INVALID) {
-			if ((subtype == SLSI_P2P_PA_GO_NEG_RSP) && (slsi_p2p_get_go_neg_rsp_status(dev, (struct slsi_80211_mgmt *)mgmt) != SLSI_P2P_STATUS_CODE_SUCCESS)) {
+			if ((subtype == SLSI_P2P_PA_GO_NEG_RSP) && (slsi_p2p_get_go_neg_rsp_status(dev, (struct ieee80211_mgmt *)mgmt) != SLSI_P2P_STATUS_CODE_SUCCESS)) {
 				SLSI_NET_DBG1(dev, SLSI_T20_80211, "GO_NEG_RSP Tx, peer response not expected\n");
 				exp_peer_frame = SLSI_P2P_PA_INVALID;
 			} else {
@@ -1818,7 +1817,7 @@ int slsi_mgmt_tx(void *priv, unsigned int freq, unsigned int wait, const u8 *dst
 	struct slsi_dev *sdev;
 	struct netif *dev;
 	struct netdev_vif *ndev_vif;
-	struct slsi_80211_mgmt *mgmt;
+	struct ieee80211_mgmt *mgmt;
 	int r = 0;
 	union wpa_event_data event;
 	u16 host_tag = 0;
@@ -1841,20 +1840,20 @@ int slsi_mgmt_tx(void *priv, unsigned int freq, unsigned int wait, const u8 *dst
 		return -EINVAL;
 	}
 
-	buf = malloc(data_len + SLSI_80211_HEADER_LENGTH);
-	memcpy(buf + SLSI_80211_HEADER_LENGTH, data, data_len);
-	mgmt = (struct slsi_80211_mgmt *)buf;
-	mgmt->frame_control = SLSI_80211_MGMT_FRAME_CTRL_ACTION;
+	buf = malloc(data_len + SLSI_WLAN_HEADER_LENGTH);
+	memcpy(buf + SLSI_WLAN_HEADER_LENGTH, data, data_len);
+	mgmt = (struct ieee80211_mgmt *)buf;
+	mgmt->frame_control = SLSI_MGMT_SUB_TYPE_ACTION;
 	memcpy(mgmt->da, dst, ETH_ALEN);
 	memcpy(mgmt->sa, src, ETH_ALEN);
 	memcpy(mgmt->bssid, bssid, ETH_ALEN);
-	data_len = data_len + SLSI_80211_HEADER_LENGTH;
+	data_len = data_len + SLSI_WLAN_HEADER_LENGTH;
 
 	ndev_vif = netdev_priv(dev);
 	SLSI_MUTEX_LOCK(sdev->start_stop_mutex);
 	SLSI_MUTEX_LOCK(ndev_vif->vif_mutex);
 	SLSI_NET_DBG2(dev, SLSI_T20_80211, "Mgmt Frame Tx: iface_num = %d, freq = %d, wait = %d\n", ndev_vif->ifnum, freq, wait);
-	if (!(slsi_80211_is_mgmt(mgmt->frame_control))) {
+	if (!(slsi_is_mgmt_frame(mgmt->frame_control))) {
 		SLSI_NET_ERR(dev, "Drop Tx frame: Not a Management frame\n");
 		r = -EINVAL;
 		goto exit;
@@ -1862,7 +1861,7 @@ int slsi_mgmt_tx(void *priv, unsigned int freq, unsigned int wait, const u8 *dst
 
 	/*P2P */
 	/* Drop Probe Responses which can come in P2P Device and P2P Group role */
-	if (slsi_80211_is_probe_resp(mgmt->frame_control)) {
+	if (SLSI_IS_MGMT_FRAME_PROBE_RSP(mgmt->frame_control)) {
 		SLSI_NET_DBG3(dev, SLSI_T20_80211, "Drop Probe Response from supplicant");
 		/* Ideally supplicant doesn't expect Tx status for Probe Rsp. Send tx status just in case it requests ack */
 		memset(&event, 0, sizeof(event));
@@ -1991,7 +1990,7 @@ int slsi_set_p2p_powersave(void *priv, int legacy_ps, int opp_ps, int ctwindow)
 	SLSI_MUTEX_LOCK(ndev_vif->vif_mutex);
 
 	/* The NOA param shall be added only after P2P-VIF is active */
-	if ((!ndev_vif->activated) || (ndev_vif->iftype != SLSI_80211_IFTYPE_P2P_GO)) {
+	if ((!ndev_vif->activated) || (ndev_vif->iftype != SLSI_WLAN_IFTYPE_P2P_GO)) {
 		SLSI_ERR_NODEV("P2P GO vif not activated\n");
 		result = -EINVAL;
 		goto exit;
@@ -2149,7 +2148,7 @@ static void slsi_ap_start_obss_scan(struct slsi_dev *sdev, struct netif *dev, st
 	SLSI_MUTEX_LOCK(ndev_vif->scan_mutex);
 
 	ssids.ssid_len = 0;
-	for (i = 0; i < SLSI_80211_MAX_SSID_LEN; i++) {
+	for (i = 0; i < SLSI_WLAN_MAX_SSID_LEN; i++) {
 		ssids.ssid[i] = 0x00;    /* Broadcast SSID */
 	}
 
@@ -2282,7 +2281,7 @@ int slsi_start_ap(void *priv, struct wpa_driver_ap_params *settings)
 	/*slsi_netif_init_all_peers(sdev, dev); */
 
 	/* Reg domain changes */
-	country_ie = slsi_80211_find_ie(WLAN_EID_COUNTRY, settings->tail, settings->tail_len);
+	country_ie = slsi_wlan_find_ie(SLSI_WLAN_EID_COUNTRY, settings->tail, settings->tail_len);
 	if (country_ie) {
 		country_ie += 2;
 		memcpy(alpha2, country_ie, SLSI_COUNTRY_CODE_LEN);
@@ -2300,8 +2299,8 @@ int slsi_start_ap(void *priv, struct wpa_driver_ap_params *settings)
 		}
 	}
 #ifdef CONFIG_SLSI_WLAN_P2P
-	/* For P2P iftype is initialized in slsi_add_virtual_intf(). For negotiated group the iftype will be SLSI_80211_IFTYPE_P2P_GROUP */
-	if ((ndev_vif->iftype == SLSI_80211_IFTYPE_P2P_GO) || (ndev_vif->iftype == SLSI_80211_IFTYPE_P2P_GROUP)) {
+	/* For P2P iftype is initialized in slsi_add_virtual_intf(). For negotiated group the iftype will be SLSI_WLAN_IFTYPE_P2P_GROUP */
+	if ((ndev_vif->iftype == SLSI_WLAN_IFTYPE_P2P_GO) || (ndev_vif->iftype == SLSI_WLAN_IFTYPE_P2P_GROUP)) {
 		slsi_p2p_group_start_remove_unsync_vif(sdev);
 		SLSI_ETHER_COPY(device_address, sdev->netdev_addresses[SLSI_NET_INDEX_P2P]);
 		if (keep_alive_period != SLSI_P2PGO_KEEP_ALIVE_PERIOD_SEC)
@@ -2312,21 +2311,21 @@ int slsi_start_ap(void *priv, struct wpa_driver_ap_params *settings)
 			}
 #ifdef CONFIG_SLSI_WLAN_P2P_VHT
 		/* Default 11ac configuration */
-		if (!(slsi_80211_find_ie(WLAN_EID_VHT_CAPABILITY, settings->tail, settings->tail_len)) && (ndev_vif->chandef->chan->hw_value >= 36)) {
+		if (!(slsi_wlan_find_ie(SLSI_WLAN_EID_VHT_CAPAB, settings->tail, settings->tail_len)) && (ndev_vif->chandef->chan->hw_value >= 36)) {
 			u16 oper_chan = ndev_vif->chandef->chan->hw_value;
 
 			ndev_vif->chandef->width = CHAN_WIDTH_80;
 			if ((oper_chan >= 36) && (oper_chan <= 48)) {
-				ndev_vif->chandef->center_freq1 = ieee80211_channel_to_frequency(42, SLSI_80211_BAND_5GHZ);
+				ndev_vif->chandef->center_freq1 = ieee80211_channel_to_frequency(42, SLSI_WLAN_BAND_5GHZ);
 			} else if ((oper_chan >= 149) && (oper_chan <= 161)) {
-				ndev_vif->chandef->center_freq1 = ieee80211_channel_to_frequency(155, SLSI_80211_BAND_5GHZ);
+				ndev_vif->chandef->center_freq1 = ieee80211_channel_to_frequency(155, SLSI_WLAN_BAND_5GHZ);
 			}
 			if (cfg80211_chandef_valid(ndev_vif->chandef)) {
 				u8 *ht_operation_ie;
 				u8 sec_chan_offset = 0;
 
 				append_vht_ies = true;
-				ht_operation_ie = (u8 *) slsi_80211_find_ie(WLAN_EID_HT_OPERATION, settings->beacon.tail, settings->beacon.tail_len);
+				ht_operation_ie = (u8 *) slsi_wlan_find_ie(WLAN_EID_HT_OPERATION, settings->beacon.tail, settings->beacon.tail_len);
 				if (!ht_operation_ie) {
 					SLSI_NET_ERR(dev, "HT Operation IE is not passed by wpa_supplicant");
 					r = -EINVAL;
@@ -2334,14 +2333,14 @@ int slsi_start_ap(void *priv, struct wpa_driver_ap_params *settings)
 				}
 
 				if (oper_chan == 36 || oper_chan == 44 || oper_chan == 149 || oper_chan == 157) {
-					sec_chan_offset = SLSI_80211_HT_PARAM_CHA_SEC_ABOVE;
+					sec_chan_offset = SLSI_WLAN_HT_OPER_SEC_CHAN_ABOVE;
 				} else {
-					sec_chan_offset = SLSI_80211_HT_PARAM_CHA_SEC_BELOW;
+					sec_chan_offset = SLSI_WLAN_HT_OPER_SEC_CHAN_BELOW;
 				}
 				/* Change HT Information IE subset 1 */
 				ht_operation_ie += 3;
 				*(ht_operation_ie) |= sec_chan_offset;
-				*(ht_operation_ie) |= SLSI_80211_HT_PARAM_CHAN_WIDTH_ANY;
+				*(ht_operation_ie) |= SLSI_WLAN_HT_OPER_CHAN_WIDTH_ANY;
 			}
 		}
 		/* End */
@@ -2357,20 +2356,20 @@ int slsi_start_ap(void *priv, struct wpa_driver_ap_params *settings)
 
 			for (ch = 0; ch < 4; ch++)
 				if (oper_chan == bw_40_minus_channels[ch]) {
-					ht_info_value = SLSI_80211_HT_PARAM_CHAN_WIDTH_ANY | SLSI_80211_HT_PARAM_CHA_SEC_BELOW;
+					ht_info_value = SLSI_WLAN_HT_OPER_CHAN_WIDTH_ANY | SLSI_WLAN_HT_OPER_SEC_CHAN_BELOW;
 					ndev_vif->chandef->center_freq1 = ndev_vif->chandef->chan->center_freq - 10;
 					offset_above = false;
 					break;
 				}
 
 			if (offset_above) {
-				ht_info_value = SLSI_80211_HT_PARAM_CHAN_WIDTH_ANY | SLSI_80211_HT_PARAM_CHA_SEC_ABOVE;
+				ht_info_value = SLSI_WLAN_HT_OPER_CHAN_WIDTH_ANY | SLSI_WLAN_HT_OPER_SEC_CHAN_ABOVE;
 				ndev_vif->chandef->center_freq1 = ndev_vif->chandef->chan->center_freq + 10;
 			}
 
 			if (cfg80211_chandef_valid(ndev_vif->chandef)) {
 				slsi_modify_ies(dev, WLAN_EID_HT_OPERATION, (u8 *) settings->beacon_ies->buf, settings->beacon_ies->size, 3, ht_info_value);
-				slsi_modify_ies(dev, WLAN_EID_HT_CAPABILITY, (u8 *) settings->beacon_ies->buf, settings->beacon_ies->size, 2, SLSI_80211_HT_CAP_SUP_WIDTH_20_40);
+				slsi_modify_ies(dev, SLSI_WLAN_EID_HT_CAPAB, (u8 *) settings->beacon_ies->buf, settings->beacon_ies->size, 2, SLSI_HT_CAPAB_SUP_WIDTH_20_40);
 			} else {
 				SLSI_NET_WARN(dev, "chandef is not valid");
 			}
@@ -2386,18 +2385,18 @@ int slsi_start_ap(void *priv, struct wpa_driver_ap_params *settings)
 #endif
 
 		/* Enable SGI by default */
-		if (slsi_80211_find_ie(WLAN_EID_HT_CAPABILITY, settings->tail, settings->tail_len)) {
-			u8 mod_value = SLSI_80211_HT_CAP_SGI_20;
+		if (slsi_wlan_find_ie(SLSI_WLAN_EID_HT_CAPAB, settings->tail, settings->tail_len)) {
+			u8 mod_value = SLSI_WLAN_HT_CAPAB_SGI_20;
 
 			if (ndev_vif->chandef->bandwidth == 40) {
-				mod_value |= SLSI_80211_HT_CAP_SGI_40;
+				mod_value |= SLSI_WLAN_HT_CAPAB_SGI_40;
 			}
 
-			slsi_modify_ies(dev, WLAN_EID_HT_CAPABILITY, (u8 *) settings->tail, settings->tail_len, 2, mod_value);
+			slsi_modify_ies(dev, SLSI_WLAN_EID_HT_CAPAB, (u8 *) settings->tail, settings->tail_len, 2, mod_value);
 		}
 #ifdef CONFIG_SCSC_ADV_FEATURE
-		if (slsi_80211_find_ie(WLAN_EID_VHT_CAPABILITY, settings->tail, settings->tail_len)) {
-			slsi_modify_ies(dev, WLAN_EID_VHT_CAPABILITY, (u8 *) settings->tail, settings->tail_len, 2, SLSI_80211_VHT_CAP_SHORT_GI_80);
+		if (slsi_wlan_find_ie(SLSI_WLAN_EID_VHT_CAPAB, settings->tail, settings->tail_len)) {
+			slsi_modify_ies(dev, SLSI_WLAN_EID_VHT_CAPAB, (u8 *) settings->tail, settings->tail_len, 2, SLSI_80211_VHT_CAP_SHORT_GI_80);
 		}
 #endif
 	}
@@ -2417,14 +2416,14 @@ int slsi_start_ap(void *priv, struct wpa_driver_ap_params *settings)
 	/* Extract the WMM and WPA IEs from settings->beacon.tail - This is sent in add_info_elements and shouldn't be included in start_req
 	 * Cache IEs to be used in later add_info_elements_req. The IEs would be freed during AP stop
 	 */
-	wpa_ie_pos = slsi_80211_find_vendor_ie(WLAN_OUI_MICROSOFT, WLAN_OUI_TYPE_MICROSOFT_WPA, settings->tail, settings->tail_len);
+	wpa_ie_pos = slsi_wlan_find_vendor_spec_ie(SLSI_WLAN_VS_OUI_MICROSOFT, SLSI_WLAN_VS_OUI_TYPE_MS_WPA, settings->tail, settings->tail_len);
 	if (wpa_ie_pos) {
 		wpa_ie_len = *(wpa_ie_pos + 1) + 2;	/* For 0xdd (1) and Tag Length (1) */
 		SLSI_NET_DBG2(dev, SLSI_T20_80211, "WPA IE found: Length = %zu\n", wpa_ie_len);
 		SLSI_EC_GOTO(slsi_cache_ies(wpa_ie_pos, wpa_ie_len, &ndev_vif->ap.cache_wpa_ie, &ndev_vif->ap.wpa_ie_len), r, exit_with_vif);
 	}
 
-	wmm_ie_pos = slsi_80211_find_vendor_ie(WLAN_OUI_MICROSOFT, WLAN_OUI_TYPE_MICROSOFT_WMM, settings->tail, settings->tail_len);
+	wmm_ie_pos = slsi_wlan_find_vendor_spec_ie(SLSI_WLAN_VS_OUI_MICROSOFT, SLSI_WLAN_VS_OUI_TYPE_MS_WMM, settings->tail, settings->tail_len);
 	if (wmm_ie_pos) {
 		wmm_ie_len = *(wmm_ie_pos + 1) + 2;
 		SLSI_NET_DBG2(dev, SLSI_T20_80211, "WMM IE found: Length = %zu\n", wmm_ie_len);
@@ -2459,7 +2458,7 @@ int slsi_start_ap(void *priv, struct wpa_driver_ap_params *settings)
 		slsi_clear_cached_ies(&ndev_vif->ap.add_info_ies, &ndev_vif->ap.add_info_ies_len);
 	}
 #ifdef CONFIG_SLSI_WLAN_P2P
-	if (ndev_vif->iftype == SLSI_80211_IFTYPE_P2P_GO) {
+	if (ndev_vif->iftype == SLSI_WLAN_IFTYPE_P2P_GO) {
 		u32 af_bmap_active = SLSI_ACTION_FRAME_PUBLIC;
 		u32 af_bmap_suspended = SLSI_ACTION_FRAME_PUBLIC;
 
@@ -2476,7 +2475,7 @@ int slsi_start_ap(void *priv, struct wpa_driver_ap_params *settings)
 		SLSI_NET_ERR(dev, "Start ap failed: resultcode = %d\n", r);
 		goto exit_with_vif;
 #ifdef CONFIG_SLSI_WLAN_P2P
-	} else if (ndev_vif->iftype == SLSI_80211_IFTYPE_P2P_GO) {
+	} else if (ndev_vif->iftype == SLSI_WLAN_IFTYPE_P2P_GO) {
 		SLSI_P2P_STATE_CHANGE(sdev, P2P_GROUP_FORMED_GO);
 #endif
 	}
@@ -2769,7 +2768,7 @@ struct hostapd_hw_modes *slsi_get_hw_feature_data(void *priv, u16 *num_modes, u1
 {
 	struct slsi_drv_interface *drv = priv;
 	struct slsi_dev *sdev;
-	struct slsi_80211_supported_band *supp_band;
+	struct slsi_wlan_supported_band *supp_band;
 	struct hostapd_hw_modes *hw_modes, *mode;
 	int i;
 
@@ -2876,11 +2875,11 @@ int slsi_t20_get_capa(void *priv, struct wpa_driver_capa *capa)
 	return 0;
 }
 
-static struct slsi_80211_sta_ht_cap slsi_ht_cap_2ghz = {
+static struct slsi_wlan_sta_ht_cap slsi_ht_cap_2ghz = {
 	.ht_supported = true,
-	.cap = SLSI_80211_HT_CAP_RX_STBC | SLSI_80211_HT_CAP_SGI_20,
-	.ampdu_factor = SLSI_80211_HT_MAX_AMPDU_64K,
-	.ampdu_density = SLSI_80211_HT_MPDU_DENSITY_16,
+	.cap = SLSI_WLAN_HT_CAPAB_RX_STBC | SLSI_WLAN_HT_CAPAB_SGI_20,
+	.ampdu_factor = SLSI_WLAN_HT_MAX_AMPDU_64K,
+	.ampdu_density = SLSI_WLAN_HT_MPDU_MIN_SPACING_16,
 	.mcs = {
 		.rx_mask = {0xff, 0,},
 		.rx_highest = cpu_to_le16(0),
@@ -2888,16 +2887,16 @@ static struct slsi_80211_sta_ht_cap slsi_ht_cap_2ghz = {
 	},
 };
 
-struct slsi_80211_supported_band slsi_band_2ghz = {
+struct slsi_wlan_supported_band slsi_band_2ghz = {
 	.channels = slsi_2ghz_channels,
-	.band = SLSI_80211_BAND_2GHZ,
+	.band = SLSI_WLAN_BAND_2GHZ,
 	.n_channels = ARRAY_SIZE(slsi_2ghz_channels),
 	.bitrates = slsi_11g_rates,
 	.n_bitrates = ARRAY_SIZE(slsi_11g_rates),
 };
 
 #ifdef CONFIG_SCSC_ADV_FEATURE
-static struct slsi_80211_channel slsi_5ghz_channels[] = {
+static struct slsi_wlan_channel slsi_5ghz_channels[] = {
 	/* _We_ call this UNII 1 */
 	CHAN5G(5180, 36),
 	CHAN5G(5200, 40),
@@ -2930,7 +2929,7 @@ static struct slsi_80211_channel slsi_5ghz_channels[] = {
 
 /* note fw_rate_idx_to_host_11a_idx[] below must change if this table changes */
 
-static struct slsi_80211_channel wifi_11a_rates[] = {
+static struct slsi_wlan_rate wifi_11a_rates[] = {
 	RATE_LEGACY(60, 4, 0),
 	RATE_LEGACY(90, 5, 0),
 	RATE_LEGACY(120, 7, 0),
@@ -2941,14 +2940,14 @@ static struct slsi_80211_channel wifi_11a_rates[] = {
 	RATE_LEGACY(540, 12, 0),
 };
 
-struct slsi_80211_supported_band slsi_band_5ghz = {
+struct slsi_wlan_supported_band slsi_band_5ghz = {
 	.channels = slsi_5ghz_channels,
-	.band = SLSI_80211_BAND_5GHZ,
+	.band = SLSI_WLAN_BAND_5GHZ,
 	.n_channels = ARRAY_SIZE(slsi_5ghz_channels),
 	.bitrates = wifi_11a_rates,
 	.n_bitrates = ARRAY_SIZE(wifi_11a_rates),
 };
-#endif							/* CONFIG_SCSC_ADV_FEATURE */
+#endif /* CONFIG_SCSC_ADV_FEATURE */
 
 static struct slsi_802_11d_reg_domain slsi_regdomain = {
 	.reg_rules = {

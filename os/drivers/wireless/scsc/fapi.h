@@ -2377,8 +2377,8 @@ static inline struct max_buff *fapi_alloc_f(size_t sig_size, size_t data_size, u
 #define fapi_get_datalen(mp_mbuf) (mp_mbuf->fapi.data_length - mp_mbuf->fapi.sig_length)
 #define fapi_get_data(mp_mbuf) (slsi_mbuf_get_data(mp_mbuf) + fapi_get_siglen(mp_mbuf))
 #define fapi_get_vif(mp_mbuf) le16_to_cpu(((struct fapi_vif_signal_header *)slsi_mbuf_get_data(mp_mbuf))->vif)
-/* Helper to get the struct slsi_80211_mgmt from the data */
-#define fapi_get_mgmt(mp_mbuf) ((struct slsi_80211_mgmt *)fapi_get_data(mp_mbuf))
+/* Helper to get the struct ieee80211_mgmt from the data */
+#define fapi_get_mgmt(mp_mbuf) ((struct ieee80211_mgmt *)fapi_get_data(mp_mbuf))
 #define fapi_get_mgmtlen(mp_mbuf) fapi_get_datalen(mp_mbuf)
 static inline u8 *fapi_append_data(struct max_buff *mbuf, const u8 *data, size_t data_len)
 {

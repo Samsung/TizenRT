@@ -40,7 +40,6 @@
 #include "scsc_wifi_fcq.h"
 #include "scsc_wifi_cm_if.h"
 #include "hip4.h"
-#include "wlan_80211_utils.h"
 #include "tinyara_wrapper.h"
 #include "mxman.h"
 #ifdef CONFIG_SLSI_WLAN_STATS
@@ -65,9 +64,6 @@
 #define NUM_BA_SESSIONS_PER_PEER 8
 #define MAX_CHANNEL_LIST 20
 #define SLSI_MAX_RX_BA_SESSIONS (8)
-
-#define WLAN_EID_VHT_CAPABILITY 191
-#define WLAN_EID_VHT_OPERATION 192
 
 #define NUM_COUNTRY             (300)
 
@@ -386,17 +382,16 @@ struct netdev_vif {
 	struct slsi_mbuf_work rx_data;
 	struct slsi_mbuf_work rx_mlme;
 	u16 ifnum;
-	enum slsi_80211_iftype iftype;
-	enum slsi_80211_channel_type channel_type;
+	enum slsi_wlan_iftype iftype;
 	int center_freq;
 
 	struct hostapd_freq_params *chandef;
 
-	/* NOTE: The Address is a __be32
+	/* NOTE: The Address is a be32
 	 * It needs converting to pass to the FW
 	 * But not for the Arp or trace %pI4
 	 */
-	__be32 ipaddress;
+	be32 ipaddress;
 
 #ifndef CONFIG_SCSC_WLAN_BLOCK_IPV6
 	struct in6_addr ipv6address;
@@ -426,7 +421,7 @@ struct netdev_vif {
 	struct slsi_vif_mgmt_tx mgmt_tx_data;
 	struct slsi_vif_unsync unsync;
 #ifdef CONFIG_SCSC_ADV_FEATURE
-	struct slsi_80211_channel *chan;
+	struct slsi_wlan_channel *chan;
 #endif
 #endif
 	struct slsi_vif_sta sta;
@@ -439,7 +434,7 @@ struct slsi_802_11d_reg_domain {
 	u8 *countrylist;
 	int country_len;
 	u32 n_reg_rules;
-	struct slsi_80211_reg_rule reg_rules[];
+	struct slsi_wlan_reg_rule reg_rules[];
 };
 
 struct slsi_dev_config {
@@ -454,8 +449,8 @@ struct slsi_dev_config {
 #define SLSI_FREQ_BAND_2GHZ 2
 	int supported_band;
 
-	struct slsi_80211_supported_band *band_5G;
-	struct slsi_80211_supported_band *band_2G;
+	struct slsi_wlan_supported_band *band_5G;
+	struct slsi_wlan_supported_band *band_2G;
 
 	/* current user suspend mode
 	 * Set via the suspend_mode procfs
@@ -620,7 +615,7 @@ struct slsi_dev {
 	u16 software_iftypes;
 	unsigned int probe_resp_offloads;
 
-	/* Supported interface modes, OR together BIT(SLSI_80211_IFTYPE_...) */
+	/* Supported interface modes, OR together BIT(SLSI_WLAN_IFTYPE_...) */
 	u16 interface_modes;
 
 	u16 max_acl_mac_addrs;

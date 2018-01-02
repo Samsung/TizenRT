@@ -21,7 +21,6 @@
 #include "mib.h"
 #include "mgt.h"
 #include "hydra.h"
-#include "wlan_80211_utils.h"
 #include "utils_scsc.h"
 
 #define SLSI_SCAN_PRIVATE_IE_CHANNEL_LIST_HEADER_LEN  (7)
@@ -387,9 +386,9 @@ err:
 	return NULL;
 }
 
-static struct slsi_80211_reg_rule *slsi_get_reg_rule(u32 center_freq, struct slsi_802_11d_reg_domain *domain_info)
+static struct slsi_wlan_reg_rule *slsi_get_reg_rule(u32 center_freq, struct slsi_802_11d_reg_domain *domain_info)
 {
-	struct slsi_80211_reg_rule *rule;
+	struct slsi_wlan_reg_rule *rule;
 	int i;
 
 	for (i = 0; i < domain_info->n_reg_rules; i++) {
@@ -436,7 +435,7 @@ void sisi_update_supported_channels(struct slsi_dev *sdev)
 	int channel;
 	u16 center_freq;
 	int num_supp_chan = 0;
-	struct slsi_80211_reg_rule *rule;
+	struct slsi_wlan_reg_rule *rule;
 
 	for (channel = 0; channel < 14; channel++) {
 		center_freq = sdev->device_config.band_2G->channels[channel].center_freq;
@@ -454,8 +453,8 @@ void sisi_update_supported_channels(struct slsi_dev *sdev)
 int slsi_check_channelization(struct slsi_dev *sdev, struct slsi_80211_chan_def *chandef)
 {
 	u8 width;
-	struct slsi_80211_reg_rule *rule = NULL;
-	struct slsi_80211_channel *channel = NULL;
+	struct slsi_wlan_reg_rule *rule = NULL;
+	struct slsi_wlan_channel *channel = NULL;
 
 	switch (chandef->width) {
 	case SLSI_80211_CHAN_WIDTH_20:
@@ -846,14 +845,14 @@ int slsi_mlme_set_channel(struct slsi_dev *sdev, struct netif *dev, unsigned int
 }
 #endif
 
-static inline bool is_channel_active(struct slsi_80211_channel *channel)
+static inline bool is_channel_active(struct slsi_wlan_channel *channel)
 {
 	/* Ignore disabled channels, radar channels are ALWAYS passive */
-	if ((channel->flags & SLSI_80211_CHAN_DISABLED) || (channel->flags & SLSI_80211_CHAN_RADAR)) {
+	if ((channel->flags & SLSI_WLAN_CHAN_DISABLED) || (channel->flags & SLSI_WLAN_CHAN_RADAR)) {
 		return false;
 	}
 
-	if (!(channel->flags & SLSI_80211_CHAN_NO_IR)) {
+	if (!(channel->flags & SLSI_WLAN_CHAN_NO_IR)) {
 		return true;
 	}
 
@@ -881,7 +880,7 @@ void slsi_ap_obss_scan_done_ind(struct netif *dev, struct netdev_vif *ndev_vif)
 
 		SLSI_NET_DBG4(dev, SLSI_MLME, "OBSS scan result (scan_id:%d, %pM, freq:%d, rssi:%d, ie_len = %zu)\n", fapi_get_u16(scan_res, u.mlme_scan_ind.scan_id), fapi_get_mgmt(scan_res)->bssid, fapi_get_u16(scan_res, u.mlme_scan_ind.channel_frequency) / 2, fapi_get_s16(scan_res, u.mlme_scan_ind.rssi), ie_len);
 
-		if (!slsi_80211_find_ie(WLAN_EID_HT_CAPABILITY, mgmt->u.beacon.variable, ie_len)) {
+		if (!slsi_wlan_find_ie(SLSI_WLAN_EID_HT_CAPAB, mgmt->u.beacon.variable, ie_len)) {
 			SLSI_NET_DBG1(dev, SLSI_MLME, "Non HT BSS detected on primary channel\n");
 			ndev_vif->ap.non_ht_bss_present = true;
 		}
@@ -906,7 +905,7 @@ static bool slsi_scan_cfm_validate(struct slsi_dev *sdev, struct netif *dev, str
 	return r;
 }
 
-static int slsi_mlme_append_channel_list(struct slsi_dev *sdev, struct netif *dev, struct max_buff *req, u32 num_channels, struct slsi_80211_channel *channels[])
+static int slsi_mlme_append_channel_list(struct slsi_dev *sdev, struct netif *dev, struct max_buff *req, u32 num_channels, struct slsi_wlan_channel *channels[])
 {
 	struct netdev_vif *ndev_vif = netdev_priv(dev);
 	int chann;
@@ -933,15 +932,15 @@ static int slsi_mlme_append_channel_list(struct slsi_dev *sdev, struct netif *de
 
 	for (i = 0; i < num_channels; i++) {
 		chann = channels[i]->hw_value & 0xFF;
-		if (channels[i]->flags & SLSI_80211_CHAN_DISABLED) {
+		if (channels[i]->flags & SLSI_WLAN_CHAN_DISABLED) {
 			continue;
 		}
 
 		if (sdev->device_config.supported_band) {
-			if (channels[i]->band == SLSI_80211_BAND_2GHZ && sdev->device_config.supported_band != SLSI_FREQ_BAND_2GHZ) {
+			if (channels[i]->band == SLSI_WLAN_BAND_2GHZ && sdev->device_config.supported_band != SLSI_FREQ_BAND_2GHZ) {
 				continue;
 			}
-			if (channels[i]->band == SLSI_80211_BAND_5GHZ && sdev->device_config.supported_band != SLSI_FREQ_BAND_5GHZ) {
+			if (channels[i]->band == SLSI_WLAN_BAND_5GHZ && sdev->device_config.supported_band != SLSI_FREQ_BAND_5GHZ) {
 				continue;
 			}
 		}
@@ -1002,7 +1001,7 @@ static inline int slsi_set_scan_params(struct netif *dev, u16 scan_id, u16 scan_
 			return -EINVAL;
 		}
 
-		*p++ = WLAN_EID_SSID;
+		*p++ = SLSI_WLAN_EID_SSID;
 		*p++ = pssid->ssid_len;
 		if (pssid->ssid_len) {
 			memcpy(p, pssid->ssid, pssid->ssid_len);
@@ -1014,7 +1013,7 @@ static inline int slsi_set_scan_params(struct netif *dev, u16 scan_id, u16 scan_
 	return 0;
 }
 
-int slsi_mlme_add_scan(struct slsi_dev *sdev, struct netif *dev, u16 scan_type, u16 report_mode, u32 n_ssids, struct wpa_driver_scan_ssid *ssids, u32 n_channels, struct slsi_80211_channel *channels[], void *gscan, const u8 *ies, u16 ies_len, bool wait_for_ind)
+int slsi_mlme_add_scan(struct slsi_dev *sdev, struct netif *dev, u16 scan_type, u16 report_mode, u32 n_ssids, struct wpa_driver_scan_ssid *ssids, u32 n_channels, struct slsi_wlan_channel *channels[], void *gscan, const u8 *ies, u16 ies_len, bool wait_for_ind)
 {
 	struct netdev_vif *ndev_vif = netdev_priv(dev);
 	struct max_buff *req;
@@ -1163,7 +1162,7 @@ static int slsi_prepare_country_ie(struct slsi_dev *sdev, u16 center_freq, u8 *c
 {
 	struct ieee80211_supported_band band;
 	struct ieee80211_reg_rule *rule;
-	struct slsi_80211_channel *channels;
+	struct slsi_wlan_channel *channels;
 	u8 *ie;
 	u8 offset = 0;
 	int i;
@@ -1213,12 +1212,12 @@ int slsi_modify_ies(struct netif *dev, u8 eid, u8 *ies, int ies_len, u8 ie_index
 
 	SLSI_NET_DBG1(dev, SLSI_MLME, "eid: %d, ie_value = 0x%x\n", eid, ie_value);
 
-	ie = (u8 *) slsi_80211_find_ie_mod(eid, ies, ies_len);
+	ie = (u8 *) slsi_wlan_find_ie_mod(eid, ies, ies_len);
 	if (ie) {
 		switch (eid) {
 		case WLAN_EID_HT_OPERATION:
-		case WLAN_EID_HT_CAPABILITY:
-		case WLAN_EID_VHT_CAPABILITY:
+		case SLSI_WLAN_EID_HT_CAPAB:
+		case SLSI_WLAN_EID_VHT_CAPAB:
 			ie[ie_index] |= ie_value;
 			break;
 		default:
@@ -1247,7 +1246,7 @@ static void slsi_mlme_start_prepare_ies(struct max_buff *req, struct netif *dev,
 	 * Channel list of Country IE prepared by hostapd is wrong, so driver needs remove the existing country IE and prepare correct one.
 	 * Hostapd adds country IE at the beginning of the tail, beacon_tail is moved to the next IE to avoid the default county IE.
 	 */
-	country_ie = (u8 *) slsi_80211_find_ie(WLAN_EID_COUNTRY, beacon_tail, beacon_tail_len);
+	country_ie = (u8 *) slsi_wlan_find_ie(SLSI_WLAN_EID_COUNTRY, beacon_tail, beacon_tail_len);
 	if (country_ie) {
 		u8 *new_country_ie = NULL;
 
@@ -1295,7 +1294,7 @@ static void slsi_mlme_start_prepare_ies(struct max_buff *req, struct netif *dev,
 		beacon_ie_len = wmm_ie_pos - beacon_tail;
 	} else {
 		/* WMM IE is not present. Check for WPS IE (and thereby P2P IE) and exclude it */
-		wps_ie = slsi_80211_find_vendor_ie(WLAN_OUI_MICROSOFT, WLAN_OUI_TYPE_MICROSOFT_WPS, beacon_tail, beacon_tail_len);
+		wps_ie = slsi_wlan_find_vendor_spec_ie(SLSI_WLAN_VS_OUI_MICROSOFT, SLSI_WLAN_VS_OUI_TYPE_MS_WPS, beacon_tail, beacon_tail_len);
 		if (wps_ie) {
 			beacon_ie_len = wps_ie - beacon_tail;
 		} else {
@@ -1326,7 +1325,7 @@ static void slsi_mlme_start_prepare_ies(struct max_buff *req, struct netif *dev,
 	/* Add Ext Capab IE only for VHT mode for now */
 	if (ndev_vif->chandef->bandwidth == 80) {
 		/* Ext Capab should be before VHT IEs */
-		vht_capab_ie = (slsi_80211_find_ie(WLAN_EID_VHT_CAPABILITY, tail_pos, tail_length));
+		vht_capab_ie = (slsi_wlan_find_ie(SLSI_WLAN_EID_VHT_CAPAB, tail_pos, tail_length));
 		if (vht_capab_ie) {
 			size_t len_before_vht;
 
@@ -1375,14 +1374,14 @@ static int slsi_prepare_vht_ies(struct netif *dev, u8 **vht_ie_capab, u8 **vht_i
 	p_cap = *vht_ie_capab;
 	p_oper = *vht_ie_operation;
 
-	*p_cap++ = WLAN_EID_VHT_CAPABILITY;
+	*p_cap++ = SLSI_WLAN_EID_VHT_CAPAB;
 	*p_cap++ = SLSI_VHT_CAPABILITIES_IE_LEN - 1 - 1;
 	capabs = cpu_to_le32(slsi_vht_cap.cap);
 	memcpy(p_cap, &capabs, sizeof(capabs));
 	p_cap += sizeof(capabs);
 	memcpy(p_cap, &slsi_vht_cap.vht_mcs, sizeof(slsi_vht_cap.vht_mcs));
 
-	*p_oper++ = WLAN_EID_VHT_OPERATION;
+	*p_oper++ = SLSI_WLAN_EID_VHT_OPER;
 	*p_oper++ = SLSI_VHT_OPERATION_IE_LEN - 1 - 1;
 	*p_oper++ = IEEE80211_VHT_CHANWIDTH_80MHZ;
 	*p_oper++ = ieee80211_frequency_to_channel(ndev_vif->chandef->center_freq1);
@@ -1402,7 +1401,7 @@ int slsi_mlme_start(struct slsi_dev *sdev, struct netif *dev, u8 *bssid, struct 
 	struct ieee80211_mgmt *mgmt;
 	int r = 0;
 	u8 *p;
-	enum slsi_80211_auth_type auth_type = SLSI_80211_AUTHTYPE_UNSUPPORTED;
+	enum slsi_wlan_auth_type auth_type = SLSI_WLAN_AUTHTYPE_UNSUPPORTED;
 	u16 beacon_ie_head_len;
 	u16 chan_info;
 	u16 fw_freq;
@@ -1436,16 +1435,16 @@ int slsi_mlme_start(struct slsi_dev *sdev, struct netif *dev, u8 *bssid, struct 
 	beacon_ie_head_len = settings->head_len - ((u8 *) mgmt->u.beacon.variable - (u8 *) mgmt);
 
 	/* For port enabling, save the privacy bit used in assoc response or beacon */
-	if (mgmt->u.beacon.capab_info & WLAN_CAPABILITY_PRIVACY) {
+	if (mgmt->u.beacon.capab_info & SLSI_WLAN_CAPAB_INFO_PRIVACY) {
 		ndev_vif->ap.privacy = 1;
 	} else {
 		ndev_vif->ap.privacy = 0;
 	}
 
 	if (settings->auth_algs & WPA_AUTH_ALG_OPEN) {
-		auth_type = SLSI_80211_AUTHTYPE_OPEN_SYSTEM;
+		auth_type = SLSI_WLAN_AUTHTYPE_OPEN_SYSTEM;
 	} else if (settings->auth_algs & WPA_AUTH_ALG_SHARED) {
-		auth_type = SLSI_80211_AUTHTYPE_SHARED_KEY;
+		auth_type = SLSI_WLAN_AUTHTYPE_SHARED_KEY;
 	} else {
 		SLSI_NET_ERR(dev, "Unsupported auth_type: %d\n", settings->auth_algs);
 	}
@@ -1505,7 +1504,7 @@ int slsi_mlme_start(struct slsi_dev *sdev, struct netif *dev, u8 *bssid, struct 
 			slsi_kfree_mbuf(req);
 			return -EINVAL;
 		}
-		*p++ = WLAN_EID_SSID;
+		*p++ = SLSI_WLAN_EID_SSID;
 		*p++ = settings->ssid_len;
 		memcpy(p, settings->ssid, settings->ssid_len);
 	}
@@ -1607,7 +1606,7 @@ static int slsi_mlme_connect_wapi_rsse_prep(struct wpa_driver_associate_params *
 
 	/* For WAPI IE , refer 7.3.2.9 WAPI information element in WAPI Independent IS Sample Draft Document Number: N13774 */
 
-	wapi_ie = slsi_80211_find_ie(WLAN_EID_WAPI, sme->ie, sme->ie_len);
+	wapi_ie = slsi_wlan_find_ie(WLAN_EID_WAPI, sme->ie, sme->ie_len);
 	if (wapi_ie) {
 		u16 version = wapi_ie[3] << 8 | wapi_ie[2];
 
@@ -1672,11 +1671,11 @@ static int slsi_mlme_connect_rsse_prep(struct wpa_driver_associate_params *sme, 
 	memset(rsse, 0, sizeof(struct slsi_mlme_rsse));
 
 	/* For rsn indices refer "Figure 8-187RSNE format" in IEEE spec */
-	if (sme->wpa_proto & WPA_PROTO_RSN) {
-		ie = slsi_80211_find_ie(WLAN_EID_RSN, sme->wpa_ie, sme->wpa_ie_len);
+	if (sme->wpa_proto & SLSI_WPA_PROTOCOL_RSN) {
+		ie = slsi_wlan_find_ie(SLSI_WLAN_EID_RSN, sme->wpa_ie, sme->wpa_ie_len);
 		version_index = 2;
 	} else {					/*(sme->crypto.wpa_versions == 1 */
-		ie = slsi_80211_find_vendor_ie(WLAN_OUI_MICROSOFT, WLAN_OUI_TYPE_MICROSOFT_WPA, sme->wpa_ie, sme->wpa_ie_len);
+		ie = slsi_wlan_find_vendor_spec_ie(SLSI_WLAN_VS_OUI_MICROSOFT, SLSI_WLAN_VS_OUI_TYPE_MS_WPA, sme->wpa_ie, sme->wpa_ie_len);
 		oui_len = 4;			/*3-> OUI,1- type */
 		version_index = 6;
 	}
@@ -1744,7 +1743,7 @@ static int slsi_mlme_connect_rsse_prep(struct wpa_driver_associate_params *sme, 
 		goto exit;
 	}
 
-	if (sme->wpa_proto & WPA_PROTO_RSN) {
+	if (sme->wpa_proto & SLSI_WPA_PROTOCOL_RSN) {
 		/* RSN capabilities */
 
 		/*get the PMF info from rsn capabilities */
@@ -1797,7 +1796,7 @@ static int slsi_mlme_connect_info_elems_ie_prep(const u8 *connect_ie, const size
 	}
 
 	/* find interworking ie id:107 */
-	ie_pos = slsi_80211_find_ie(SLSI_WLAN_EID_INTERWORKING, connect_ie, connect_ie_len);
+	ie_pos = slsi_wlan_find_ie(SLSI_WLAN_EID_INTERWORKING, connect_ie, connect_ie_len);
 	if (ie_pos != NULL) {
 		curr_ie_len = *(ie_pos + 1) + 2;
 		if (is_copy) {
@@ -1815,11 +1814,11 @@ static int slsi_mlme_connect_info_elems_ie_prep(const u8 *connect_ie, const size
 	}
 
 	/* vendor specific IEs will be the last elements. */
-	ie_pos = slsi_80211_find_ie(WLAN_EID_VENDOR_SPECIFIC, connect_ie, connect_ie_len);
+	ie_pos = slsi_wlan_find_ie(SLSI_WLAN_EID_VENDOR_SPEC, connect_ie, connect_ie_len);
 	if (ie_pos != NULL) {
 		curr_ie_len = connect_ie_len - (ie_pos - connect_ie);	/* length of all the vendor specific IEs */
 		/* WPA ie will be the first vendor specific ie since wpa_supplicant adds it as first element */
-		wpa_ie_pos = slsi_80211_find_vendor_ie(WLAN_OUI_MICROSOFT, WLAN_OUI_TYPE_MICROSOFT_WPA, connect_ie, connect_ie_len);
+		wpa_ie_pos = slsi_wlan_find_vendor_spec_ie(SLSI_WLAN_VS_OUI_MICROSOFT, SLSI_WLAN_VS_OUI_TYPE_MS_WPA, connect_ie, connect_ie_len);
 		if (wpa_ie_pos) {
 			wpa_ie_len = wpa_ie_pos[1] + 2;	/* length of WPA vendor specific IE */
 			curr_ie_len -= wpa_ie_len;
@@ -1884,8 +1883,8 @@ static int slsi_mlme_connect_info_elements(struct slsi_dev *sdev, struct netif *
 		r = -EINVAL;
 	}
 
-	/*if (slsi_80211_find_vendor_ie(WLAN_OUI_MICROSOFT, WLAN_OUI_TYPE_MICROSOFT_WPS, sme->ie, sme->ie_len))
-	 *      ndev_vif->sta.is_wps = true; */
+	if (slsi_wlan_find_vendor_spec_ie(SLSI_WLAN_VS_OUI_MICROSOFT, SLSI_WLAN_VS_OUI_TYPE_MS_WPS, sme->wpa_ie, sme->wpa_ie_len))
+		ndev_vif->sta.is_wps = true;
 
 	slsi_kfree_mbuf(cfm);
 	return r;
@@ -1898,7 +1897,7 @@ int slsi_mlme_connect(struct slsi_dev *sdev, struct netif *dev, struct wpa_drive
 	struct max_buff *cfm;
 	int r = 0;
 	u8 *p;
-	enum slsi_80211_auth_type auth_type;
+	enum slsi_wlan_auth_type auth_type;
 	struct slsi_mlme_rsse rsse;
 	int rsse_len = 0;
 	u8 mfp = FAPI_PMFCONTROL_DISABLED;
@@ -1926,17 +1925,17 @@ int slsi_mlme_connect(struct slsi_dev *sdev, struct netif *dev, struct wpa_drive
 		 */
 		/* Supplicant maintains the auth_type as bitmap incase of WEP we need to
 		 * try both open and shared and hence auth_type is set to 3, i.e OPEN and SHARED*/
-		if ((sme->group_suite == WPA_CIPHER_WEP40 || sme->group_suite == WPA_CIPHER_WEP104)) {
-			auth_type = SLSI_80211_AUTHTYPE_SHARED_KEY;
+		if ((sme->group_suite == SLSI_WPA_CIPHER_WEP_40 || sme->group_suite == SLSI_WPA_CIPHER_WEP_104)) {
+			auth_type = SLSI_WLAN_AUTHTYPE_SHARED_KEY;
 		} else {
-			auth_type = SLSI_80211_AUTHTYPE_OPEN_SYSTEM;
+			auth_type = SLSI_WLAN_AUTHTYPE_OPEN_SYSTEM;
 		}
 		break;
 	case WPA_AUTH_ALG_OPEN:
-		auth_type = SLSI_80211_AUTHTYPE_OPEN_SYSTEM;
+		auth_type = SLSI_WLAN_AUTHTYPE_OPEN_SYSTEM;
 		break;
 	case WPA_AUTH_ALG_SHARED:
-		auth_type = SLSI_80211_AUTHTYPE_SHARED_KEY;
+		auth_type = SLSI_WLAN_AUTHTYPE_SHARED_KEY;
 		break;
 	default:
 		SLSI_NET_ERR(dev, "Unsupported auth_alg: %d\n", sme->auth_alg);
@@ -1944,7 +1943,7 @@ int slsi_mlme_connect(struct slsi_dev *sdev, struct netif *dev, struct wpa_drive
 	}
 
 	/* We save the WEP key for shared authentication. */
-	if ((auth_type == SLSI_80211_AUTHTYPE_SHARED_KEY) && ((sme->group_suite == WPA_CIPHER_WEP40) || (sme->group_suite == WPA_CIPHER_WEP104)) && (ndev_vif->vif_type == FAPI_VIFTYPE_STATION)) {
+	if ((auth_type == SLSI_WLAN_AUTHTYPE_SHARED_KEY) && ((sme->group_suite == SLSI_WPA_CIPHER_WEP_40) || (sme->group_suite == SLSI_WPA_CIPHER_WEP_104)) && (ndev_vif->vif_type == FAPI_VIFTYPE_STATION)) {
 		SLSI_NET_DBG3(dev, SLSI_MLME, "key len (%d)\n", sme->wep_key_len[sme->wep_tx_keyidx]);
 		slsi_key.key = (u8 *) sme->wep_key[sme->wep_tx_keyidx];
 		if (slsi_key.key == NULL) {
@@ -1952,10 +1951,10 @@ int slsi_mlme_connect(struct slsi_dev *sdev, struct netif *dev, struct wpa_drive
 		}
 		slsi_key.key_len = sme->wep_key_len[sme->wep_tx_keyidx];
 		slsi_key.seq_len = 0;
-		if (sme->group_suite == WPA_CIPHER_WEP40) {
-			slsi_key.cipher = SLSI_WLAN_CIPHER_SUITE_WEP40;
+		if (sme->group_suite == SLSI_WPA_CIPHER_WEP_40) {
+			slsi_key.cipher = SLSI_WLAN_CIPHER_SUITE_WEP_40;
 		} else {
-			slsi_key.cipher = SLSI_WLAN_CIPHER_SUITE_WEP104;
+			slsi_key.cipher = SLSI_WLAN_CIPHER_SUITE_WEP_104;
 		}
 
 		r = slsi_mlme_set_key(sdev, dev, sme->wep_tx_keyidx, FAPI_KEYTYPE_DEFAULT, mac_addr, &slsi_key);
@@ -1973,7 +1972,7 @@ int slsi_mlme_connect(struct slsi_dev *sdev, struct netif *dev, struct wpa_drive
 		}
 
 		/* supplicant specific values: version 1 => wpa, version 2 => wpa2 */
-		if (sme->wpa_proto & WPA_PROTO_WPA || sme->wpa_proto & WPA_PROTO_RSN) {
+		if (sme->wpa_proto & SLSI_WPA_PROTOCOL_WPA || sme->wpa_proto & SLSI_WPA_PROTOCOL_RSN) {
 			rsse_len = slsi_mlme_connect_rsse_prep(sme, &rsse, &mfp);
 		}
 		/*else if ((sme->wpa_proto &WPA_PROTO_WAPI) && (sme->wpa_ie[0] == WLAN_EID_WAPI))
@@ -2001,7 +2000,7 @@ int slsi_mlme_connect(struct slsi_dev *sdev, struct netif *dev, struct wpa_drive
 		slsi_kfree_mbuf(req);
 		return -EINVAL;
 	}
-	*p++ = WLAN_EID_SSID;
+	*p++ = SLSI_WLAN_EID_SSID;
 	*p++ = sme->ssid_len;
 	memcpy(p, sme->ssid, sme->ssid_len);
 	p += sme->ssid_len;
@@ -2183,7 +2182,7 @@ int slsi_mlme_set_key(struct slsi_dev *sdev, struct netif *dev, u16 key_id, u16 
 
 	fapi_set_u32(req, u.mlme_setkeys_req.cipher_suite_selector, key->cipher);
 
-	if (key->cipher == SLSI_WLAN_CIPHER_SUITE_WEP40 || key->cipher == SLSI_WLAN_CIPHER_SUITE_WEP104) {
+	if (key->cipher == SLSI_WLAN_CIPHER_SUITE_WEP_40 || key->cipher == SLSI_WLAN_CIPHER_SUITE_WEP_104) {
 		u8 wep_key_id = (u8) key_id;
 
 		if (key_id > 3) {
@@ -2579,7 +2578,7 @@ int slsi_mlme_send_frame_data(struct slsi_dev *sdev, struct netif *dev, struct m
 		ndev_vif->sta.m4_host_tag = host_tag;
 		SLSI_NET_DBG1(dev, SLSI_MLME, "EAPOL-Key M4 frame (host_tag:%d)\n", ndev_vif->sta.m4_host_tag);
 	} else if (msg_type == FAPI_MESSAGETYPE_EAP_MESSAGE) {
-		if (!ndev_vif->sta.is_wps && (ndev_vif->iftype == SLSI_80211_IFTYPE_STATION)) {
+		if (!ndev_vif->sta.is_wps && (ndev_vif->iftype == SLSI_WLAN_IFTYPE_STATION)) {
 			/* In case of non-P2P station and Enterprise security store the host_tag.
 			 * If transmission of such frame fails, inform supplicant to disconnect.
 			 */
@@ -2913,7 +2912,7 @@ int slsi_mlme_set_iw_ext_cap(struct slsi_dev *sdev, struct netif *dev, const u8 
 		goto exit;
 	}
 
-	ext_capab_ie = slsi_80211_find_ie(SLSI_WLAN_EID_EXT_CAPABILITY, ies, ie_len);
+	ext_capab_ie = slsi_wlan_find_ie(SLSI_WLAN_EID_EXT_CAPABILITY, ies, ie_len);
 
 	/*interworking bit is bit 31 ,ie length must be >= 4 */
 	if ((ext_capab_ie) && (ext_capab_ie[1] >= 4) && (ext_capab_ie[5] & 0x80)) {

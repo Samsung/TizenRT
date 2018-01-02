@@ -21,7 +21,6 @@
 #include "mlme.h"
 #include "ba.h"
 #include "mib.h"
-#include "wlan_80211_utils.h"
 #include "wpa_driver_copy.h"
 #include "t20_ops.h"
 
@@ -83,11 +82,11 @@ void slsi_rx_scan_done_ind(struct slsi_dev *sdev, struct netif *dev, struct max_
 	slsi_kfree_mbuf(mbuf);
 }
 
-int slsi_find_scan_freq(struct slsi_80211_mgmt *mgmt, size_t mgmt_len, u16 freq)
+int slsi_find_scan_freq(struct ieee80211_mgmt *mgmt, size_t mgmt_len, u16 freq)
 {
 	int ielen = mgmt_len - (mgmt->u.beacon.variable - (u8 *) mgmt);
-	const u8 *scan_ds = slsi_80211_find_ie(WLAN_EID_DS_PARAMS, mgmt->u.beacon.variable, ielen);
-	const u8 *scan_ht = slsi_80211_find_ie(WLAN_EID_HT_OPERATION, mgmt->u.beacon.variable, ielen);
+	const u8 *scan_ds = slsi_wlan_find_ie(SLSI_WLAN_EID_DS_PARAMS, mgmt->u.beacon.variable, ielen);
+	const u8 *scan_ht = slsi_wlan_find_ie(WLAN_EID_HT_OPERATION, mgmt->u.beacon.variable, ielen);
 	u8 chan = 0;
 
 	/* Use the DS or HT channel where possible as the Offchannel results mean the RX freq is not reliable */
@@ -98,12 +97,7 @@ int slsi_find_scan_freq(struct slsi_80211_mgmt *mgmt, size_t mgmt_len, u16 freq)
 	}
 
 	if (chan) {
-		enum slsi_80211_band band = SLSI_80211_BAND_2GHZ;
-
-		if (chan > 14) {
-			band = SLSI_80211_BAND_5GHZ;
-		}
-		freq = (u16) slsi_80211_channel_to_frequency(chan, band);
+		freq = slsi_wlan_channel_to_freq(chan);
 	}
 	if (!freq) {
 		return 0;
@@ -147,8 +141,6 @@ void slsi_rx_blockack_ind(struct slsi_dev *sdev, struct netif *dev, struct max_b
 
 static bool get_wmm_ie_from_resp_ie(struct slsi_dev *sdev, struct netif *dev, u8 *resp_ie, size_t resp_ie_len, const u8 **wmm_elem, size_t *wmm_elem_len)
 {
-	struct slsi_80211_vendor_ie *ie;
-
 	SLSI_UNUSED_PARAMETER(sdev);
 
 	if (!resp_ie) {
@@ -156,14 +148,14 @@ static bool get_wmm_ie_from_resp_ie(struct slsi_dev *sdev, struct netif *dev, u8
 		return false;
 	}
 	/* parse response ie elements and return the wmm ie */
-	*wmm_elem = slsi_80211_find_vendor_ie(WLAN_OUI_MICROSOFT, WLAN_OUI_TYPE_MICROSOFT_WMM, resp_ie, resp_ie_len);
+	*wmm_elem = slsi_wlan_find_vendor_spec_ie(SLSI_WLAN_VS_OUI_MICROSOFT, SLSI_WLAN_VS_OUI_TYPE_MS_WMM, resp_ie, resp_ie_len);
 
 	if (!(*wmm_elem)) {
 		SLSI_NET_DBG2(dev, SLSI_MLME, "No WMM IE\n");
 		return false;
 	}
-	ie = (struct slsi_80211_vendor_ie *)*wmm_elem;
-	*wmm_elem_len = ie->len + 2;
+
+	*wmm_elem_len = *wmm_elem[1] + 2;
 
 	SLSI_NET_DBG3(dev, SLSI_MLME, "WMM IE received and parsed successfully\n");
 
@@ -362,7 +354,7 @@ void slsi_rx_connect_ind(struct slsi_dev *sdev, struct netif *dev, struct max_bu
 			if (peer->assoc_resp_ie) {
 				assoc_rsp_ie = slsi_mbuf_get_data(peer->assoc_resp_ie);
 				assoc_rsp_ie_len = peer->assoc_resp_ie->data_len;
-				ssid_ie = slsi_80211_find_ie(WLAN_EID_SSID, assoc_ie, assoc_ie_len);
+				ssid_ie = slsi_wlan_find_ie(SLSI_WLAN_EID_SSID, assoc_ie, assoc_ie_len);
 				if (ssid_ie != NULL) {
 					peer->ssid_len = ssid_ie[1];
 					memcpy(peer->ssid, ssid_ie + 2, peer->ssid_len);
@@ -399,7 +391,7 @@ void slsi_rx_connect_ind(struct slsi_dev *sdev, struct netif *dev, struct max_bu
 		/* For Open & WEP AP,set the power mode, send connect response and install the packet filters .
 		 * For secured AP, all this would be done after handshake
 		 */
-		if ((peer->capabilities & WLAN_CAPABILITY_PRIVACY) && (slsi_80211_find_ie(WLAN_EID_RSN, assoc_ie, assoc_ie_len) || slsi_80211_find_ie(WLAN_EID_WAPI, assoc_ie, assoc_ie_len) || slsi_80211_find_vendor_ie(WLAN_OUI_MICROSOFT, WLAN_OUI_TYPE_MICROSOFT_WPA, assoc_ie, assoc_ie_len))) {
+		if ((peer->capabilities & SLSI_WLAN_CAPAB_INFO_PRIVACY) && (slsi_wlan_find_ie(SLSI_WLAN_EID_RSN, assoc_ie, assoc_ie_len) || slsi_wlan_find_ie(WLAN_EID_WAPI, assoc_ie, assoc_ie_len) || slsi_wlan_find_vendor_spec_ie(SLSI_WLAN_VS_OUI_MICROSOFT, SLSI_WLAN_VS_OUI_TYPE_MS_WPA, assoc_ie, assoc_ie_len))) {
 			/*secured AP */
 
 			slsi_ps_port_control(sdev, dev, peer, SLSI_STA_CONN_STATE_DOING_KEY_CONFIG);
@@ -417,7 +409,7 @@ void slsi_rx_connect_ind(struct slsi_dev *sdev, struct netif *dev, struct max_bu
 
 #ifdef CONFIG_SLSI_WLAN_P2P
 		/* For P2PCLI, set the Connection Timeout (beacon miss) mib to 10 seconds */
-		if (ndev_vif->iftype == SLSI_80211_IFTYPE_P2P_CLIENT) {
+		if (ndev_vif->iftype == SLSI_WLAN_IFTYPE_P2P_CLIENT) {
 			if (slsi_set_uint_mib(sdev, dev, SLSI_PSID_UNIFI_MLME_CONNECTION_TIMEOUT, SLSI_P2PGC_CONN_TIMEOUT_MSEC) != 0) {
 				SLSI_NET_ERR(dev, "P2PGC Connection Timeout MIB set failed");
 				goto exit_with_vif;
@@ -492,10 +484,10 @@ static void slsi_rx_p2p_device_discovered_ind(struct slsi_dev *sdev, struct neti
 	/* Only Probe Request is expected as of now */
 	mgmt_len = fapi_get_mgmtlen(mbuf);
 	if (mgmt_len) {
-		struct slsi_80211_mgmt *mgmt = fapi_get_mgmt(mbuf);
+		struct ieee80211_mgmt *mgmt = fapi_get_mgmt(mbuf);
 
-		if (slsi_80211_is_mgmt(mgmt->frame_control)) {
-			if (slsi_80211_is_probe_req(mgmt->frame_control)) {
+		if (slsi_is_mgmt_frame(mgmt->frame_control)) {
+			if (SLSI_IS_MGMT_FRAME_PROBE_REQ(mgmt->frame_control)) {
 				SLSI_NET_DBG3(dev, SLSI_T20_80211, "Received Probe Request\n");
 				memset(&event, 0, sizeof(event));
 				event.rx_mgmt.freq = ndev_vif->center_freq;
@@ -576,7 +568,7 @@ void slsi_rx_procedure_started_ind(struct slsi_dev *sdev, struct netif *dev, str
 #ifdef CONFIG_SLSI_WLAN_P2P
 	case FAPI_PROCEDURETYPE_DEVICE_DISCOVERED:
 		/* Expected only in P2P Device and P2P GO role */
-		if (WARN_ON(!SLSI_IS_VIF_INDEX_P2P(ndev_vif) && (ndev_vif->iftype != SLSI_80211_IFTYPE_P2P_GO))) {
+		if (WARN_ON(!SLSI_IS_VIF_INDEX_P2P(ndev_vif) && (ndev_vif->iftype != SLSI_WLAN_IFTYPE_P2P_GO))) {
 			break;
 		}
 
@@ -584,7 +576,7 @@ void slsi_rx_procedure_started_ind(struct slsi_dev *sdev, struct netif *dev, str
 		 * Probe request was sent to supplicant while waiting for GO Neg Req from peer.
 		 * Send Probe request to supplicant if received in GO mode
 		 */
-		if ((sdev->p2p_state == P2P_LISTENING) || (ndev_vif->iftype == SLSI_80211_IFTYPE_P2P_GO)) {
+		if ((sdev->p2p_state == P2P_LISTENING) || (ndev_vif->iftype == SLSI_WLAN_IFTYPE_P2P_GO)) {
 			slsi_rx_p2p_device_discovered_ind(sdev, dev, mbuf);
 		}
 		break;
@@ -690,7 +682,7 @@ void slsi_rx_frame_transmission_ind(struct slsi_dev *sdev, struct netif *dev, st
 			ndev_vif->sta.resp_id = 0;
 		}
 	} else {
-		if ((tx_status == FAPI_TRANSMISSIONSTATUS_RETRY_LIMIT) && (ndev_vif->iftype == SLSI_80211_IFTYPE_STATION) && (ndev_vif->sta.eap_hosttag == host_tag)) {
+		if ((tx_status == FAPI_TRANSMISSIONSTATUS_RETRY_LIMIT) && (ndev_vif->iftype == SLSI_WLAN_IFTYPE_STATION) && (ndev_vif->sta.eap_hosttag == host_tag)) {
 			SLSI_NET_WARN(dev, "Disconnect as EAP frame transmission failed\n");
 
 			slsi_mlme_disconnect(sdev, dev, ndev_vif->sta.mac_addr, FAPI_REASONCODE_UNSPECIFIED_REASON, false);
@@ -712,7 +704,7 @@ void slsi_rx_received_frame_ind(struct slsi_dev *sdev, struct netif *dev, struct
 
 #ifdef CONFIG_SLSI_WLAN_P2P
 	if (data_unit_descriptor == FAPI_DATAUNITDESCRIPTOR_IEEE802_11_FRAME) {
-		struct slsi_80211_mgmt *mgmt;
+		struct ieee80211_mgmt *mgmt;
 		int mgmt_len;
 		int subtype;
 		union wpa_event_data event;
@@ -722,7 +714,7 @@ void slsi_rx_received_frame_ind(struct slsi_dev *sdev, struct netif *dev, struct
 			goto exit;
 		}
 		mgmt = fapi_get_mgmt(mbuf);
-		if (WARN_ON(!(slsi_80211_is_action(mgmt->frame_control)))) {
+		if (WARN_ON(!(SLSI_IS_MGMT_FRAME_ACTION(mgmt->frame_control)))) {
 			goto exit;
 		}
 
@@ -842,7 +834,7 @@ void slsi_rx_mic_failure_ind(struct slsi_dev *sdev, struct netif *dev, struct ma
 	}
 
 	event.michael_mic_failure.src = mac_addr;
-	if (key_type == SLSI_80211_KEYTYPE_PAIRWISE) {
+	if (key_type == FAPI_KEYTYPE_PAIRWISE) {
 		event.michael_mic_failure.unicast = 1;
 	}
 	wpa_supplicant_event_send(ndev_vif->ctx, EVENT_MICHAEL_MIC_FAILURE, &event);

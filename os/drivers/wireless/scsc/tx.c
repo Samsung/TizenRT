@@ -421,7 +421,7 @@ int slsi_tx_data_lower(struct slsi_dev *sdev, struct max_buff *mbuf)
 		dest = eth_hdr(mbuf)->h_dest;
 		break;
 	case FAPI_DATAUNITDESCRIPTOR_IEEE802_11_FRAME:
-		dest = slsi_80211_get_DA((struct slsi_80211_hdr *)fapi_get_data(mbuf));
+		dest = slsi_wlan_get_dest_addr((struct slsi_wlan_frame_header *)fapi_get_data(mbuf));
 		break;
 	default:
 		SLSI_ERR(sdev, "data_unit_descriptor incorrectly set (0x%02x), dropping TX frame\n", fapi_get_u16(mbuf, u.ma_unitdata_req.data_unit_descriptor));

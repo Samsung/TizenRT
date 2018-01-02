@@ -304,7 +304,7 @@ void slsi_vif_cleanup(struct slsi_dev *sdev, struct netif *dev, bool hw_availabl
 			slsi_vif_deactivated(sdev, dev);
 
 #ifdef CONFIG_SLSI_WLAN_P2P
-			if (ndev_vif->iftype == SLSI_80211_IFTYPE_P2P_GO) {
+			if (ndev_vif->iftype == SLSI_WLAN_IFTYPE_P2P_GO) {
 				SLSI_P2P_STATE_CHANGE(sdev, P2P_IDLE_NO_VIF);
 			}
 #endif
@@ -603,16 +603,16 @@ static bool slsi_search_ies_for_qos_indicators(struct slsi_dev *sdev, u8 *ies, i
 {
 	SLSI_UNUSED_PARAMETER(sdev);
 
-	if (slsi_80211_find_ie(WLAN_EID_HT_CAPABILITY, ies, ies_len)) {
-		SLSI_DBG1(sdev, SLSI_T20_80211, "QOS enabled due to WLAN_EID_HT_CAPABILITY\n");
+	if (slsi_wlan_find_ie(SLSI_WLAN_EID_HT_CAPAB, ies, ies_len)) {
+		SLSI_DBG1(sdev, SLSI_T20_80211, "QOS enabled due to SLSI_WLAN_EID_HT_CAPAB\n");
 		return true;
 	}
-	if (slsi_80211_find_ie(WLAN_EID_VHT_CAPABILITY, ies, ies_len)) {
-		SLSI_DBG1(sdev, SLSI_T20_80211, "QOS enabled due to WLAN_EID_VHT_CAPABILITY\n");
+	if (slsi_wlan_find_ie(SLSI_WLAN_EID_VHT_CAPAB, ies, ies_len)) {
+		SLSI_DBG1(sdev, SLSI_T20_80211, "QOS enabled due to SLSI_WLAN_EID_VHT_CAPAB\n");
 		return true;
 	}
-	if (slsi_80211_find_vendor_ie(WLAN_OUI_MICROSOFT, WLAN_OUI_TYPE_MICROSOFT_WMM, ies, ies_len)) {
-		SLSI_DBG1(sdev, SLSI_T20_80211, "QOS enabled due to WLAN_OUI_TYPE_MICROSOFT_WMM\n");
+	if (slsi_wlan_find_vendor_spec_ie(SLSI_WLAN_VS_OUI_MICROSOFT, SLSI_WLAN_VS_OUI_TYPE_MS_WMM, ies, ies_len)) {
+		SLSI_DBG1(sdev, SLSI_T20_80211, "QOS enabled due to SLSI_WLAN_VS_OUI_TYPE_MS_WMM\n");
 		return true;
 	}
 	return false;
@@ -646,16 +646,16 @@ void slsi_peer_update_assoc_req(struct slsi_dev *sdev, struct netif *dev, struct
 
 	if (fapi_get_datalen(mbuf)) {
 		int mgmt_hdr_len;
-		struct slsi_80211_mgmt *mgmt = fapi_get_mgmt(mbuf);
+		struct ieee80211_mgmt *mgmt = fapi_get_mgmt(mbuf);
 		/* Update the mbuf to just point to the frame */
 		mbuf_pull(mbuf, fapi_get_siglen(mbuf));
 
-		if (slsi_80211_is_assoc_req(mgmt->frame_control)) {
+		if (SLSI_IS_MGMT_FRAME_ASSOC_REQ(mgmt->frame_control)) {
 			mgmt_hdr_len = (mgmt->u.assoc_req.variable - (u8 *) mgmt);
 			if (ndev_vif->vif_type == FAPI_VIFTYPE_AP) {
 				peer->capabilities = le16_to_cpu(mgmt->u.assoc_req.capab_info);
 			}
-		} else if (slsi_80211_is_reassoc_req(mgmt->frame_control)) {
+		} else if (SLSI_IS_MGMT_FRAME_REASSOC_REQ(mgmt->frame_control)) {
 			mgmt_hdr_len = (mgmt->u.reassoc_req.variable - (u8 *) mgmt);
 			if (ndev_vif->vif_type == FAPI_VIFTYPE_AP) {
 				peer->capabilities = le16_to_cpu(mgmt->u.reassoc_req.capab_info);
@@ -697,15 +697,15 @@ void slsi_peer_update_assoc_rsp(struct slsi_dev *sdev, struct netif *dev, struct
 	peer->capabilities = 0;
 	if (fapi_get_datalen(mbuf)) {
 		int mgmt_hdr_len;
-		struct slsi_80211_mgmt *mgmt = fapi_get_mgmt(mbuf);
+		struct ieee80211_mgmt *mgmt = fapi_get_mgmt(mbuf);
 
 		/* Update the mbuf to just point to the frame */
 		mbuf_pull(mbuf, fapi_get_siglen(mbuf));
 
-		if (slsi_80211_is_assoc_resp(mgmt->frame_control)) {
+		if (SLSI_IS_MGMT_FRAME_ASSOC_RSP(mgmt->frame_control)) {
 			mgmt_hdr_len = (mgmt->u.assoc_resp.variable - (u8 *) mgmt);
 			peer->capabilities = le16_to_cpu(mgmt->u.assoc_resp.capab_info);
-		} else if (slsi_80211_is_reassoc_resp(mgmt->frame_control)) {
+		} else if (SLSI_IS_MGMT_FRAME_REASSOC_RSP(mgmt->frame_control)) {
 			mgmt_hdr_len = (mgmt->u.reassoc_resp.variable - (u8 *) mgmt);
 			peer->capabilities = le16_to_cpu(mgmt->u.reassoc_resp.capab_info);
 		} else {
@@ -861,7 +861,7 @@ void slsi_vif_deactivated(struct slsi_dev *sdev, struct netif *dev)
 	/* MUST be done last as lots of code is dependent on checking the vif_type */
 	ndev_vif->vif_type = SLSI_VIFTYPE_UNSPECIFIED;
 	if (ndev_vif->ifnum != SLSI_NET_INDEX_P2PX) {
-		ndev_vif->iftype = SLSI_80211_IFTYPE_UNSPECIFIED;
+		ndev_vif->iftype = SLSI_WLAN_IFTYPE_UNSPECIFIED;
 	}
 
 	/* SHOULD have cleared any peer records */
@@ -1182,7 +1182,7 @@ int slsi_send_gratuitous_arp(struct slsi_dev *sdev, struct netif *dev)
 #ifdef CONFIG_SCSC_ADV_FEATURE
 #define SLSI_AP_AUTO_CHANLS_LIST_FROM_HOSTAPD_MAX 3
 
-int slsi_auto_chan_select_scan(struct slsi_dev *sdev, int n_channels, struct slsi_80211_channel *channels[])
+int slsi_auto_chan_select_scan(struct slsi_dev *sdev, int n_channels, struct slsi_wlan_channel *channels[])
 {
 	struct netif *dev;
 	struct netdev_vif *ndev_vif;
@@ -1227,12 +1227,12 @@ int slsi_auto_chan_select_scan(struct slsi_dev *sdev, int n_channels, struct sls
 		struct max_buff *scan = slsi_mbuf_dequeue(&ndev_vif->scan[SLSI_SCAN_HW_ID].scan_results);
 
 		while (scan) {
-			struct slsi_80211_mgmt *mgmt = fapi_get_mgmt(scan);
-			struct slsi_80211_channel *channel;
+			struct ieee80211_mgmt *mgmt = fapi_get_mgmt(scan);
+			struct slsi_wlan_channel *channel;
 
 			/* make sure this BSSID has not already been used */
 			mbuf_queue_walk(&unique_scan_results, unique_scan) {
-				struct slsi_80211_mgmt *unique_mgmt = fapi_get_mgmt(unique_scan);
+				struct ieee80211_mgmt *unique_mgmt = fapi_get_mgmt(unique_scan);
 
 				if (compare_ether_addr(mgmt->bssid, unique_mgmt->bssid) == 0) {
 					slsi_kfree_mbuf(scan);
@@ -1613,7 +1613,7 @@ int slsi_p2p_dev_null_ies(struct slsi_dev *sdev, struct netif *dev)
  * Returns the P2P public action frame subtype.
  * Returns SLSI_P2P_PA_INVALID if it is not a P2P public action frame.
  */
-int slsi_p2p_get_public_action_subtype(struct slsi_80211_mgmt *mgmt)
+int slsi_p2p_get_public_action_subtype(struct ieee80211_mgmt *mgmt)
 {
 	int subtype = SLSI_P2P_PA_INVALID;
 	/* Vendor specific Public Action (0x09), P2P OUI (0x50, 0x6f, 0x9a), P2P Subtype (0x09) */
@@ -1631,7 +1631,7 @@ int slsi_p2p_get_public_action_subtype(struct slsi_80211_mgmt *mgmt)
  * Returns the P2P status code of Status attribute of the GO Neg Rsp frame.
  * Returns -1 if status attribute is NOT found.
  */
-int slsi_p2p_get_go_neg_rsp_status(struct netif *dev, const struct slsi_80211_mgmt *mgmt)
+int slsi_p2p_get_go_neg_rsp_status(struct netif *dev, const struct ieee80211_mgmt *mgmt)
 {
 	int status = -1;
 	u8 p2p_oui_type[4] = { 0x50, 0x6f, 0x9a, 0x09 };
@@ -1640,7 +1640,7 @@ int slsi_p2p_get_go_neg_rsp_status(struct netif *dev, const struct slsi_80211_mg
 	u8 ie_length, elem_idx;
 	u16 attr_length;
 
-	while (vendor_ie && (*vendor_ie == SLSI_WLAN_EID_VENDOR_SPECIFIC)) {
+	while (vendor_ie && (*vendor_ie == SLSI_WLAN_EID_VENDOR_SPEC)) {
 		ie_length = vendor_ie[1];
 
 		if (memcmp(&vendor_ie[2], p2p_oui_type, 4) == 0) {
@@ -1723,7 +1723,7 @@ int slsi_ap_prepare_add_info_ies(struct netdev_vif *ndev_vif, const u8 *ies, siz
 	size_t wps_p2p_ie_len = 0;
 
 	/* The ies may contain Extended Capability followed by WPS IE. The Extended capability IE needs to be excluded. */
-	wps_p2p_ies = slsi_80211_find_ie(SLSI_WLAN_EID_VENDOR_SPECIFIC, ies, ies_len);
+	wps_p2p_ies = slsi_wlan_find_ie(SLSI_WLAN_EID_VENDOR_SPEC, ies, ies_len);
 	if (wps_p2p_ies) {
 		size_t temp_len = wps_p2p_ies - ies;
 
@@ -1766,19 +1766,19 @@ static u32 slsi_remap_reg_rule_flags(u8 flags)
 	u32 remapped_flags = 0;
 
 	if (flags & SLSI_REGULATORY_DFS) {
-		remapped_flags |= SLSI_80211_RRF_DFS;
+		remapped_flags |= SLSI_REG_RULE_FLAG_DFS;
 	}
 	if (flags & SLSI_REGULATORY_NO_OFDM) {
-		remapped_flags |= SLSI_80211_RRF_NO_OFDM;
+		remapped_flags |= SLSI_REG_RULE_FLAG_NO_OFDM;
 	}
 	if (flags & SLSI_REGULATORY_NO_IR) {
-		remapped_flags |= SLSI_80211_RRF_PASSIVE_SCAN | SLSI_80211_RRF_NO_IBSS;
+		remapped_flags |= SLSI_REG_RULE_FLAG_PASSIVE_SCAN | SLSI_REG_RULE_FLAG_NO_IBSS;
 	}
 	if (flags & SLSI_REGULATORY_NO_INDOOR) {
-		remapped_flags |= SLSI_80211_RRF_NO_INDOOR;
+		remapped_flags |= SLSI_REG_RULE_FLAG_NO_INDOOR;
 	}
 	if (flags & SLSI_REGULATORY_NO_OUTDOOR) {
-		remapped_flags |= SLSI_80211_RRF_NO_OUTDOOR;
+		remapped_flags |= SLSI_REG_RULE_FLAG_NO_OUTDOOR;
 	}
 
 	return remapped_flags;
@@ -1790,7 +1790,7 @@ static void slsi_reg_mib_to_regd(struct slsi_mib_data *mib, struct slsi_802_11d_
 	int num_rules = 0;
 	u16 freq;
 	u8 byte_val;
-	struct slsi_80211_reg_rule *reg_rule;
+	struct slsi_wlan_reg_rule *reg_rule;
 
 	SLSI_DBG3_NODEV(SLSI_MLME, "slsi_reg_mib_to_regd");
 

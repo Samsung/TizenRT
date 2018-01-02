@@ -158,7 +158,7 @@ static void slsi_fw_test_connect_station_roam(struct slsi_dev *sdev, struct neti
 {
 	struct netdev_vif *ndev_vif = netdev_priv(dev);
 	struct slsi_peer *peer = slsi_get_peer_from_qs(sdev, dev, SLSI_STA_PEER_QUEUESET);
-	struct slsi_80211_mgmt *mgmt = fapi_get_mgmt(mbuf);
+	struct ieee80211_mgmt *mgmt = fapi_get_mgmt(mbuf);
 	struct max_buff *mlme_procedure_started_ind;
 
 	WARN_ON(!SLSI_MUTEX_IS_LOCKED(ndev_vif->vif_mutex));
@@ -233,8 +233,7 @@ static void slsi_fw_test_connect_start_station(struct slsi_dev *sdev, struct net
 		return;
 	}
 
-	ndev_vif->iftype = SLSI_80211_IFTYPE_STATION;
-	//dev->ieee80211_ptr->iftype = SLSI_80211_IFTYPE_STATION;
+	ndev_vif->iftype = SLSI_WLAN_IFTYPE_STATION;
 	ndev_vif->vif_type = FAPI_VIFTYPE_STATION;
 
 	SLSI_NET_DBG1(dev, SLSI_FW_TEST, "vif:%d slsi_vif_activated", ndev_vif->ifnum);
@@ -328,8 +327,7 @@ static void slsi_fw_test_started_network(struct slsi_dev *sdev, struct netif *de
 		return;
 	}
 
-	ndev_vif->iftype = SLSI_80211_IFTYPE_AP;
-	//dev->ieee80211_ptr->iftype = SLSI_80211_IFTYPE_AP;
+	ndev_vif->iftype = SLSI_WLAN_IFTYPE_AP;
 	ndev_vif->vif_type = FAPI_VIFTYPE_AP;
 
 	if (WARN(slsi_vif_activated(sdev, dev) != 0, "slsi_vif_activated() Failed")) {
@@ -391,8 +389,7 @@ static void slsi_fw_test_started_ibss_network(struct slsi_dev *sdev, struct neti
 	 * There is no neutral setting for iftype - it is set explicitly and not
 	 * checked elsehwere for a previous value.
 	 */
-	ndev_vif->iftype = SLSI_80211_IFTYPE_ADHOC;
-	//dev->ieee80211_ptr->iftype = SLSI_80211_IFTYPE_ADHOC;
+	ndev_vif->iftype = SLSI_WLAN_IFTYPE_ADHOC;
 	ndev_vif->vif_type = FAPI_VIFTYPE_ADHOC;
 
 	if (WARN(slsi_vif_activated(sdev, dev) != 0, "slsi_vif_activated() Failed")) {
@@ -408,7 +405,7 @@ static void slsi_fw_test_connect_start_ap(struct slsi_dev *sdev, struct netif *d
 {
 	struct netdev_vif *ndev_vif = netdev_priv(dev);
 	struct slsi_peer *peer = NULL;
-	struct slsi_80211_mgmt *mgmt = fapi_get_mgmt(mbuf);
+	struct ieee80211_mgmt *mgmt = fapi_get_mgmt(mbuf);
 	u16 peer_index;
 
 	SLSI_UNUSED_PARAMETER(fwtest);
@@ -422,7 +419,7 @@ static void slsi_fw_test_connect_start_ap(struct slsi_dev *sdev, struct netif *d
 		return;
 	}
 
-	if (WARN_ON(!slsi_80211_is_assoc_req(mgmt->frame_control) && !slsi_80211_is_reassoc_req(mgmt->frame_control))) {
+	if (WARN_ON(!SLSI_IS_MGMT_FRAME_ASSOC_REQ(mgmt->frame_control) && !SLSI_IS_MGMT_FRAME_REASSOC_REQ(mgmt->frame_control))) {
 		return;
 	}
 	peer_index = fapi_get_u16(mbuf, u.mlme_procedure_started_ind.peer_index);
@@ -473,7 +470,7 @@ static void slsi_fw_test_connected_ibss_network(struct slsi_dev *sdev, struct ne
 	struct netdev_vif *ndev_vif = netdev_priv(dev);
 	struct slsi_peer *peer = NULL;
 	u16 peer_index = fapi_get_u16(mbuf, u.mlme_connected_ind.peer_index);
-	struct slsi_80211_mgmt *mgmt = fapi_get_mgmt(mbuf);
+	struct ieee80211_mgmt *mgmt = fapi_get_mgmt(mbuf);
 
 	WARN_ON(!SLSI_MUTEX_IS_LOCKED(ndev_vif->vif_mutex));
 

@@ -20,6 +20,7 @@
 #include "sap.h"
 #include "sap_mlme.h"
 #include "hip.h"
+#include "wpa_driver_copy.h"
 
 #define SUPPORTED_VERSION       13
 #define SUPPORTED_OLD_VERSION   0
@@ -201,8 +202,8 @@ static int slsi_rx_action_enqueue_netdev_mlme(struct slsi_dev *sdev, struct max_
 		return 0;
 	}
 #ifdef CONFIG_SLSI_WLAN_P2P
-	if (ndev_vif->iftype == SLSI_80211_IFTYPE_P2P_GO || ndev_vif->iftype == SLSI_80211_IFTYPE_P2P_CLIENT) {
-		struct slsi_80211_mgmt *mgmt = fapi_get_mgmt(mbuf);
+	if (ndev_vif->iftype == SLSI_WLAN_IFTYPE_P2P_GO || ndev_vif->iftype == SLSI_WLAN_IFTYPE_P2P_CLIENT) {
+		struct ieee80211_mgmt *mgmt = fapi_get_mgmt(mbuf);
 		/*  Check the DA of received action frame with the GO interface address */
 		if (memcmp(mgmt->da, dev->d_mac.ether_addr_octet, ETH_ALEN) != 0) {
 			/* If not equal, compare DA of received action frame with the P2P DEV address */

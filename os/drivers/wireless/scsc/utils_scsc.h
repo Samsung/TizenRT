@@ -55,17 +55,22 @@ extern "C" {
 #define __force         __attribute__((force))
 #define __aligned(x)    __attribute__((aligned(x)))
 
-typedef u16 __bitwise __le16;
-typedef u32 __bitwise __le32;
-typedef u64 __bitwise __le64;
-typedef u16 __bitwise __be16;
-typedef u32 __bitwise __be32;
+typedef u16 __bitwise le16;
+typedef u32 __bitwise le32;
+typedef u64 __bitwise le64;
+typedef u16 __bitwise be16;
+typedef u32 __bitwise be32;
 
 typedef unsigned char __u8;
 typedef unsigned short __u16;
 #ifndef CONFIG_ENABLE_IOTIVITY
 typedef unsigned int __u32;
 #endif
+
+#define BIT(nr)            (1 << (nr))
+#define BITS_PER_BYTE        8
+#define BIT_MASK(nr)        (1 << ((nr) % BITS_PER_BYTE))
+#define BIT_BYTE(nr)        ((nr) / BITS_PER_BYTE)
 
 #define ARRAY_SIZE(x) (sizeof(x) / sizeof((x)[0]))
 static inline u16 bswap_16(u16 x)
@@ -77,22 +82,21 @@ static inline u32 bswap_32(u32 x)
 	return ((x & 0xff) << 24) | ((x & 0xff00) << 8) | ((x & 0xff0000) >> 8) | (x >> 24);
 }
 
-#define cpu_to_le16(x) ((__le16)(u16)(x))
-#define cpu_to_le32(x) ((__le32)(u32)(x))
-#define cpu_to_be16(x) ((__be16)bswap_16(x))
-#define cpu_to_be32(x) ((__be32)bswap_32(x))
+#define cpu_to_le16(x) ((le16)(u16)(x))
+#define cpu_to_le32(x) ((le32)(u32)(x))
+#define cpu_to_be16(x) ((be16)bswap_16(x))
+#define cpu_to_be32(x) ((be32)bswap_32(x))
 
-#define le16_to_cpu(x) ((u16)(__le16)(x))
-#define le32_to_cpu(x) ((u32)(__le32)(x))
-#define be16_to_cpu(x) bswap_16((u16)(__be16)(x))
-#define be32_to_cpu(x) bswap_32((u32)(__be32)(x))
+#define le16_to_cpu(x) ((u16)(le16)(x))
+#define le32_to_cpu(x) ((u32)(le32)(x))
+#define be16_to_cpu(x) bswap_16((u16)(be16)(x))
+#define be32_to_cpu(x) bswap_32((u32)(be32)(x))
 
 /* MAC Address Length */
 #define ETH_ALEN        6
 #define ETH_HLEN 14
 #define ETH_ZLEN        60		/* Min. octets in frame sans FCS */
 #define ETH_DATA_LEN    1500	/* Max. octets in payload        */
-#define ETH_P_802_3     0x0001	/* Dummy type for 802.3 frames  */
 
 #define SLSI_MUTEX_INIT(mutex__)                                                 \
 	do {                                                                     \
@@ -100,6 +104,7 @@ static inline u32 bswap_32(u32 x)
 		__ret = pthread_mutex_init(&(mutex__), NULL);                    \
 		WARN(__ret, "Failed to initialize the mutex (ret:%d)\n", __ret); \
 	} while (0)
+
 #define SLSI_MUTEX_LOCK(mutex_to_lock)                                           \
 	do {                                                                     \
 		int __ret;                                                       \
@@ -110,12 +115,14 @@ static inline u32 bswap_32(u32 x)
 			}                                                        \
 		}										\
 	} while (0)
+
 #define SLSI_MUTEX_UNLOCK(mutex_to_unlock)                                       \
 	do {                                                                     \
 		int __ret;                                                       \
 		__ret = pthread_mutex_unlock(&(mutex_to_unlock));                \
 		WARN(__ret, "Failed to unlock the mutex (ret:%d)\n", __ret);     \
 	} while (0)
+
 #define SLSI_MUTEX_IS_LOCKED(mutex__)      (!(mutex__.sem.semcount == 1))
 
 #define SLSI_NETIF_MBUF_HEADROOM (68 + 160)	/* sizeof ma_unitdata_req [36] + pad [30] + pad_words [2]  */
@@ -130,11 +137,6 @@ static inline u32 bswap_32(u32 x)
 	     mbuf != (struct max_buff *)(queue);                    \
 	     mbuf = mbuf->next)
 
-static inline int is_broadcast_ether_addr(const u8 *a)
-{
-	return (a[0] & a[1] & a[2] & a[3] & a[4] & a[5]) == 0xff;
-}
-
 static inline void ether_addr_copy(u8 *dst, const u8 *src)
 {
 	u16 *a = (u16 *) dst;
@@ -146,20 +148,16 @@ static inline void ether_addr_copy(u8 *dst, const u8 *src)
 }
 #define SLSI_ETHER_COPY(dst, src)       ether_addr_copy((dst), (src))
 
+#define SLSI_MAC_LEN	(6)
 #define SLSI_MAC_FORMAT "%02x:%02x:%02x:%02x:%02x:%02x"
 #define SLSI_MAC_STR(x) (x)[0], (x)[1], (x)[2], (x)[3], (x)[4], (x)[5]
 
-/*
- *      This is an Ethernet frame header.
- */
-
+/* Ethernet frame header */
 struct ethhdr {
 	unsigned char h_dest[ETH_ALEN];	/* destination eth addr */
 	unsigned char h_source[ETH_ALEN];	/* source ether addr    */
-	__be16 h_proto;			/* packet type ID field */
+	be16 h_proto;			/* packet type ID field */
 } __attribute__((packed));
-
-struct max_buff;
 
 /* Get the Compiler to ignore Unused parameters */
 #define SLSI_UNUSED_PARAMETER(x) ((void)(x))
@@ -231,73 +229,263 @@ struct max_buff;
 		(output) += 4; \
 	} while (0)
 
-static inline void slsi_eth_zero_addr(u8 *addr)
-{
-	memset(addr, 0x00, ETH_ALEN);
+/*------------------------------------------------------------------*/
+/* IEEE 802.11 Frame and IE related fields */
+/*------------------------------------------------------------------*/
+
+/* Frame Control Fields and Flags related masks */
+#define SLSI_WLAN_FRM_CTRL_TYPE			(0x000C)
+#define SLSI_WLAN_FRM_CTRL_SUB_TYPE		(0x00F0)
+#define SLSI_WLAN_FRM_CTRL_TYPE_MGMT		(0x0000)
+
+#define SLSI_WLAN_FRM_CTRL_TYPE_SUB_TYPE	(SLSI_WLAN_FRM_CTRL_TYPE | SLSI_WLAN_FRM_CTRL_SUB_TYPE)
+
+#define SLSI_WLAN_FRM_CTRL_TO_DS		(0x0100)
+
+/* Capability Information Field */
+#define SLSI_WLAN_CAPAB_INFO_PRIVACY		BIT(4)
+
+/* Management Frames */
+#define SLSI_MGMT_SUB_TYPE_ASSOC_REQ		(0x0000)
+#define SLSI_MGMT_SUB_TYPE_ASSOC_RSP		(0x0010)
+#define SLSI_MGMT_SUB_TYPE_REASSOC_REQ		(0x0020)
+#define SLSI_MGMT_SUB_TYPE_REASSOC_RSP		(0x0030)
+#define SLSI_MGMT_SUB_TYPE_PROBE_REQ		(0x0040)
+#define SLSI_MGMT_SUB_TYPE_PROBE_RSP		(0x0050)
+#define SLSI_MGMT_SUB_TYPE_BEACON		(0x0080)
+#define SLSI_MGMT_SUB_TYPE_DISASSOC		(0x00A0)
+#define SLSI_MGMT_SUB_TYPE_AUTH			(0x00B0)
+#define SLSI_MGMT_SUB_TYPE_DEAUTH		(0x00C0)
+#define SLSI_MGMT_SUB_TYPE_ACTION		(0x00D0)
+
+/* WLAN Element IDs */
+#define SLSI_WLAN_EID_SSID			(0)
+#define SLSI_WLAN_EID_DS_PARAMS			(3)
+#define SLSI_WLAN_EID_COUNTRY			(7)
+#define SLSI_WLAN_EID_HT_CAPAB			(45)
+#define SLSI_WLAN_EID_RSN			(48)
+#define SLSI_WLAN_EID_VHT_CAPAB			(191)
+#define SLSI_WLAN_EID_VHT_OPER			(192)
+#define SLSI_WLAN_EID_VENDOR_SPEC		(221)
+
+/* HT Capabilities Info Mask */
+#define SLSI_WLAN_HT_CAPAB_SUP_WIDTH_20_40	(0x0002)
+#define SLSI_WLAN_HT_CAPAB_SGI_20		(0x0020)
+#define SLSI_WLAN_HT_CAPAB_SGI_40		(0x0040)
+#define SLSI_WLAN_HT_CAPAB_RX_STBC		(0x0300)
+
+/* Maximum A-MPDU Length Exponent */
+#define SLSI_WLAN_HT_MAX_AMPDU_64K		(3)	/* 2 ^ (13 + 3) - 1 ~ 64 KB */
+
+/* Minimum MPDU start spacing */
+#define SLSI_WLAN_HT_MPDU_MIN_SPACING_16	(7)	/* 16 usec */
+
+/* HT Operation Info - Secondary Channel Offset */
+#define SLSI_WLAN_HT_OPER_SEC_CHAN_NONE		(0x00)
+#define SLSI_WLAN_HT_OPER_SEC_CHAN_ABOVE	(0x01)
+#define SLSI_WLAN_HT_OPER_SEC_CHAN_BELOW	(0x03)
+
+/* HT Operation Info - STA Channel Width */
+#define SLSI_WLAN_HT_OPER_CHAN_WIDTH_ANY	BIT(2)
+
+/* Cipher suite type */
+#define SLSI_WLAN_CIPHER_SUITE_WEP_40		(0x000FAC01)
+#define SLSI_WLAN_CIPHER_SUITE_TKIP		(0x000FAC02)
+#define SLSI_WLAN_CIPHER_SUITE_CCMP		(0x000FAC04)
+#define SLSI_WLAN_CIPHER_SUITE_WEP_104		(0x000FAC05)
+#define SLSI_WLAN_CIPHER_SUITE_AES_CMAC		(0x000FAC06)
+#define SLSI_WLAN_CIPHER_SUITE_GCMP		(0x000FAC08)
+#define SLSI_WLAN_CIPHER_SUITE_SMS4		(0x00147201)	/* WAPI */
+
+/* Vendor Specific OUI */
+#define SLSI_WLAN_VS_OUI_MICROSOFT		(0x0050F2)
+#define SLSI_WLAN_VS_OUI_WFA			(0x506F9A)
+
+/* Vendor Specific MICROSOFT OUI Type */
+#define SLSI_WLAN_VS_OUI_TYPE_MS_WPA		(1)
+#define SLSI_WLAN_VS_OUI_TYPE_MS_WMM		(2)
+#define SLSI_WLAN_VS_OUI_TYPE_MS_WPS		(4)
+
+/* Vendor Specific WFA OUI Type */
+#define SLSI_WLAN_VS_OUI_TYPE_WFA_P2P		(9)
+
+/* Supplicant Protocol Version */
+#define SLSI_WPA_PROTOCOL_WPA			BIT(0)
+#define SLSI_WPA_PROTOCOL_RSN			BIT(1)
+
+/* Supplicant Cipher Suite */
+#define SLSI_WPA_CIPHER_WEP_40			BIT(1)
+#define SLSI_WPA_CIPHER_WEP_104			BIT(2)
+
+/* Conversions */
+#define SLSI_MHZ_TO_KHZ(freq)			((freq) * 1000)
+#define SLSI_DBI_TO_MBI(gain)			((gain) * 100)
+#define SLSI_DBM_TO_MBM(gain)			((gain) * 100)
+
+/* Others */
+#define SLSI_WLAN_MAX_SSID_LEN			(32)
+#define SLSI_WLAN_HEADER_LENGTH			(24)
+#define SLSI_WLAN_MIN_IE_LENGTH			(2)		/* EID(1) + LEN(1) field*/
+
+/* Regulatory Rule Flags */
+#define SLSI_REG_RULE_FLAG_NO_OFDM		BIT(0)
+#define SLSI_REG_RULE_FLAG_NO_CCK		BIT(1)
+#define SLSI_REG_RULE_FLAG_NO_INDOOR		BIT(2)
+#define SLSI_REG_RULE_FLAG_NO_OUTDOOR		BIT(3)
+#define SLSI_REG_RULE_FLAG_DFS			BIT(4)
+#define SLSI_REG_RULE_FLAG_NO_IR		BIT(7)
+#define SLSI_REG_RULE_FLAG_PASSIVE_SCAN		SLSI_REG_RULE_FLAG_NO_IR
+#define SLSI_REG_RULE_FLAG_NO_IBSS		SLSI_REG_RULE_FLAG_NO_IR
+
+#define SLSI_REG_RULE(start, end, bw, gain, eirp, reg_flags)    \
+{								\
+	.start_freq_khz = SLSI_MHZ_TO_KHZ(start),		\
+	.end_freq_khz = SLSI_MHZ_TO_KHZ(end),			\
+	.max_bandwidth_khz = SLSI_MHZ_TO_KHZ(bw),		\
+	.max_antenna_gain = SLSI_DBI_TO_MBI(gain),		\
+	.max_eirp = SLSI_DBM_TO_MBM(eirp),			\
+	.flags = reg_flags,					\
 }
 
-static inline void slsi_eth_broadcast_addr(u8 *addr)
+/* Management Frame check helper functions and macros */
+static inline bool slsi_is_expected_mgmt_frame(le16 frame_ctrl, u16 exp_sub_type)
 {
-	memset(addr, 0xff, ETH_ALEN);
+	return ((frame_ctrl & cpu_to_le16(SLSI_WLAN_FRM_CTRL_TYPE_SUB_TYPE)) == cpu_to_le16(exp_sub_type));
 }
 
-static inline int slsi_str_to_int(char *str, int *result)
-{
-	int i = 0;
+#define SLSI_IS_MGMT_FRAME_ASSOC_REQ(frame_ctrl)	slsi_is_expected_mgmt_frame(frame_ctrl, SLSI_MGMT_SUB_TYPE_ASSOC_REQ)
+#define SLSI_IS_MGMT_FRAME_ASSOC_RSP(frame_ctrl)	slsi_is_expected_mgmt_frame(frame_ctrl, SLSI_MGMT_SUB_TYPE_ASSOC_RSP)
+#define SLSI_IS_MGMT_FRAME_REASSOC_REQ(frame_ctrl)	slsi_is_expected_mgmt_frame(frame_ctrl, SLSI_MGMT_SUB_TYPE_REASSOC_REQ)
+#define SLSI_IS_MGMT_FRAME_REASSOC_RSP(frame_ctrl)	slsi_is_expected_mgmt_frame(frame_ctrl, SLSI_MGMT_SUB_TYPE_REASSOC_RSP)
+#define SLSI_IS_MGMT_FRAME_PROBE_REQ(frame_ctrl)	slsi_is_expected_mgmt_frame(frame_ctrl, SLSI_MGMT_SUB_TYPE_PROBE_REQ)
+#define SLSI_IS_MGMT_FRAME_PROBE_RSP(frame_ctrl)	slsi_is_expected_mgmt_frame(frame_ctrl, SLSI_MGMT_SUB_TYPE_PROBE_RSP)
+#define SLSI_IS_MGMT_FRAME_ACTION(frame_ctrl)		slsi_is_expected_mgmt_frame(frame_ctrl, SLSI_MGMT_SUB_TYPE_ACTION)
 
-	*result = 0;
-	if ((str[i] == '-') || ((str[i] >= '0') && (str[i] <= '9'))) {
-		if (str[0] == '-') {
-			i++;
-		}
-		while (str[i] >= '0' && str[i] <= '9') {
-			*result *= 10;
-			*result += (int)str[i++] - '0';
-		}
+/*------------------------------------------------------------------*/
+/* Enums */
+/*------------------------------------------------------------------*/
+enum slsi_wlan_band {
+	SLSI_WLAN_BAND_2GHZ,
+	SLSI_WLAN_BAND_5GHZ,
+};
 
-		*result = ((str[0] == '-') ? (-(*result)) : *result);
-	}
-	return i;
-}
+enum slsi_wlan_auth_type {
+	SLSI_WLAN_AUTHTYPE_OPEN_SYSTEM,
+	SLSI_WLAN_AUTHTYPE_SHARED_KEY,
+	SLSI_WLAN_AUTHTYPE_FT,
+	SLSI_WLAN_AUTHTYPE_AUTOMATIC,
+	SLSI_WLAN_AUTHTYPE_NETWORK_EAP,
+	SLSI_WLAN_AUTHTYPE_SAE,
+	SLSI_WLAN_AUTHTYPE_UNSUPPORTED,
+};
 
+enum slsi_wlan_iftype {
+	SLSI_WLAN_IFTYPE_UNSPECIFIED,
+	SLSI_WLAN_IFTYPE_ADHOC,
+	SLSI_WLAN_IFTYPE_STATION,
+	SLSI_WLAN_IFTYPE_AP,
+	SLSI_WLAN_IFTYPE_P2P_CLIENT,
+	SLSI_WLAN_IFTYPE_P2P_GO,
+	SLSI_WLAN_IFTYPE_P2P_GROUP,
+};
+
+enum slsi_wlan_channel_flags {
+	SLSI_WLAN_CHAN_DISABLED = 1 << 0,
+	SLSI_WLAN_CHAN_NO_IR	= 1 << 1,
+	SLSI_WLAN_CHAN_RADAR	= 1 << 2,
+};
+
+enum slsi_wpa_alg {
+	SLSI_WPA_ALG_NONE,
+	SLSI_WPA_ALG_WEP,
+	SLSI_WPA_ALG_TKIP,
+	SLSI_WPA_ALG_CCMP,
+	SLSI_WPA_ALG_IGTK,
+	SLSI_WPA_ALG_PMK,
+	SLSI_WPA_ALG_GCMP,
+	SLSI_WPA_ALG_SMS4
+};
+
+/*------------------------------------------------------------------*/
+/* Data Structures */
+/*------------------------------------------------------------------*/
 struct slsi_dev;
 
-static inline u32 slsi_get_center_freq1(struct slsi_dev *sdev, u16 chann_info, u16 center_freq)
-{
-	u32 center_freq1 = 0x0000;
+struct slsi_key_params {
+	const u8 *key;
+	const u8 *seq;
+	int key_len;
+	int seq_len;
+	u32 cipher;
+};
 
-	SLSI_UNUSED_PARAMETER(sdev);
+struct slsi_wlan_reg_rule {
+	u32 start_freq_khz;
+	u32 end_freq_khz;
+	u32 max_bandwidth_khz;
+	u32 max_antenna_gain;
+	u32 max_eirp;
+	u32 flags;
+};
 
-	switch (chann_info & 0xFF) {
-	case 40:
-		center_freq1 = center_freq - 20 * ((chann_info & 0xFF00) >> 8) + 10;
-		break;
+struct slsi_wlan_channel {
+	enum slsi_wlan_band band;
+	u16 center_freq;
+	u16 hw_value;
+	u32 flags;
+} STRUCT_PACKED;
 
-	case 80:
-		center_freq1 = center_freq - 20 * ((chann_info & 0xFF00) >> 8) + 30;
-		break;
-	default:
-		break;
-	}
-	return center_freq1;
-}
+struct slsi_wlan_rate {
+	u32 flags;
+	u16 bitrate;
+	u16 hw_value;
+	u16 hw_value_short;
+} STRUCT_PACKED;
 
-/****************************************************************************
- * __set_bit - Set a bit in memory
- *
- * @nr: the bit to set
- * @addr: the address to start counting from
- *
- * Unlike set_bit(), this function is non-atomic and may be reordered.
- * If it's called on the same region of memory simultaneously, the effect
- * may be that only one operation succeeds.
- *
- ****************************************************************************/
+struct slsi_wlan_frame_header {
+	le16 frame_ctrl;
+	le16 duration;
+	u8 addr_1[SLSI_MAC_LEN];
+	u8 addr_2[SLSI_MAC_LEN];
+	u8 addr_3[SLSI_MAC_LEN];
+	le16 sequence_ctrl;
+	/* Other data follows as appropriate */
+} STRUCT_PACKED;
 
-#define BIT(nr)            (1 << (nr))
-#define BITS_PER_BYTE        8
-#define BIT_MASK(nr)        (1 << ((nr) % BITS_PER_BYTE))
-#define BIT_BYTE(nr)        ((nr) / BITS_PER_BYTE)
+struct slsi_wlan_mcs_info {
+	le16 rx_highest;
+	u8 rx_mask[10];
+	u8 tx_params;
+} STRUCT_PACKED;
+
+struct slsi_wlan_sta_ht_cap {
+	bool ht_supported;
+	u16 cap;
+	struct slsi_wlan_mcs_info mcs;
+	u8 ampdu_factor;
+	u8 ampdu_density;
+} STRUCT_PACKED;
+
+struct slsi_wlan_supported_band {
+	struct slsi_wlan_channel *channels;
+	struct slsi_wlan_rate *bitrates;
+	enum slsi_wlan_band band;
+	int n_channels;
+	int n_bitrates;
+	struct slsi_wlan_sta_ht_cap ht_cap;
+} STRUCT_PACKED;
+
+/*------------------------------------------------------------------*/
+/* Helper Functions */
+/*------------------------------------------------------------------*/
+bool slsi_is_broadcast_addr(const u8 *a);
+bool slsi_is_mgmt_frame(le16 frame_ctrl);
+u16 slsi_wlan_channel_to_freq(int chan);
+u32 slsi_get_center_freq1(struct slsi_dev *sdev, u16 chann_info, u16 center_freq);
+const u8 *slsi_wlan_find_ie(u8 eid, const u8 *ies, int len);
+u8 *slsi_wlan_find_ie_mod(u8 eid, u8 *ies, int len);
+const u8 *slsi_wlan_find_vendor_spec_ie(u32 oui, u8 oui_type, const u8 *ies, int len);
+u8 *slsi_wlan_get_dest_addr(struct slsi_wlan_frame_header *hdr);
 
 #ifdef CONFIG_SLSI_WLAN_FAPI_LOG
 extern void slsi_wlan_fapi_log_init(void);

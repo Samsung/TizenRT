@@ -2427,7 +2427,7 @@ struct ieee80211_mgmt {
 			u8 variable[];
 		} STRUCT_PACKED disassoc;
 		struct {
-			u8 timestamp[8];
+			le64 timestamp;
 			le16 beacon_int;
 			le16 capab_info;
 			/* followed by some of SSID, Supported rates,
@@ -2439,7 +2439,7 @@ struct ieee80211_mgmt {
 			u8 variable[0];
 		} STRUCT_PACKED probe_req;
 		struct {
-			u8 timestamp[8];
+			le64 timestamp;
 			le16 beacon_int;
 			le16 capab_info;
 			/* followed by some of SSID, Supported rates,
@@ -2543,6 +2543,55 @@ struct ieee80211_mgmt {
 		} STRUCT_PACKED action;
 	} u;
 } STRUCT_PACKED;
+
+enum wpa_driver_if_type {
+	/**
+	 * WPA_IF_STATION - Station mode interface
+	 */
+	WPA_IF_STATION,
+
+	/**
+	 * WPA_IF_AP_VLAN - AP mode VLAN interface
+	 *
+	 * This interface shares its address and Beacon frame with the main
+	 * BSS.
+	 */
+	WPA_IF_AP_VLAN,
+
+	/**
+	 * WPA_IF_AP_BSS - AP mode BSS interface
+	 *
+	 * This interface has its own address and Beacon frame.
+	 */
+	WPA_IF_AP_BSS,
+
+	/**
+	 * WPA_IF_P2P_GO - P2P Group Owner
+	 */
+	WPA_IF_P2P_GO,
+
+	/**
+	 * WPA_IF_P2P_CLIENT - P2P Client
+	 */
+	WPA_IF_P2P_CLIENT,
+
+	/**
+	 * WPA_IF_P2P_GROUP - P2P Group interface (will become either
+	 * WPA_IF_P2P_GO or WPA_IF_P2P_CLIENT, but the role is not yet known)
+	 */
+	WPA_IF_P2P_GROUP,
+
+	/**
+	 * WPA_IF_P2P_DEVICE - P2P Device interface is used to indentify the
+	 * abstracted P2P Device function in the driver
+	 */
+	WPA_IF_P2P_DEVICE,
+
+	/*
+	 * WPA_IF_MESH - Mesh interface
+	 */
+	WPA_IF_MESH,
+};
 
 /*
  * Internal data structure for wpabuf. Please do not touch this directly from
