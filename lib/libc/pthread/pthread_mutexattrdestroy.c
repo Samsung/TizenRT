@@ -104,7 +104,7 @@ int pthread_mutexattr_destroy(FAR pthread_mutexattr_t *attr)
 {
 	int ret = OK;
 
-	sdbg("attr=0x%p\n", attr);
+	svdbg("attr=0x%p\n", attr);
 
 	if (!attr) {
 		ret = EINVAL;
@@ -112,6 +112,6 @@ int pthread_mutexattr_destroy(FAR pthread_mutexattr_t *attr)
 		attr->pshared = 0;
 	}
 
-	sdbg("Returning %d\n", ret);
+	svdbg("Returning %d\n", ret);
 	return ret;
 }

@@ -30,7 +30,7 @@
 #define ST_PROTO_RECORD			0x04
 #define ST_PROTO_RECORD_DATA	0x05
 #define ST_PROTO_RECORD_PAUSE	0x02
-#define ST_PROTO_RECORD_STOP	0x03
+#define ST_PROTO_RECORD_STOP	0x01
 
 enum record_state_e {
 	RECORD_ERROR,
@@ -142,6 +142,9 @@ record_result_t media_record_set_config(int channel, int sample_rate, int pcm_fo
 	g_rc.rec_config->channels = channel;
 	g_rc.rec_config->rate = sample_rate;
 	g_rc.rec_config->format = pcm_format;
+	//TO-DO we should discussion for default value or user value and then will change.
+	g_rc.rec_config->period_size = 0;
+	g_rc.rec_config->period_count = 0;
 	g_rc.format = format;
 
 	RECORD_UNLOCK();
@@ -190,8 +193,9 @@ record_result_t media_stop_record(void)
 	}
 
 	g_rc.state = RECORD_STOPPING;
-	pthread_join(g_rc.pth, NULL);
 	RECORD_UNLOCK();
+
+	pthread_join(g_rc.pth, NULL);	
 
 	return RECORD_OK;
 }
@@ -268,7 +272,8 @@ int record_and_write(char *buffer)
 	int size;
 	char inst = ST_PROTO_RECORD_DATA;
 
-	frames = pcm_readi(g_rc.pcmin, buffer, g_rc.buffer_size);
+	frames = pcm_readi(g_rc.pcmin, buffer, pcm_bytes_to_frames(g_rc.pcmin, g_rc.buffer_size));
+	printf("(*)frames: %d\n", frames);
 
 	if (frames > 0) {
 		size = pcm_frames_to_bytes(g_rc.pcmin, frames);

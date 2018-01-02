@@ -53,13 +53,41 @@ copying ramdump_0x02020000_0x0210c800.bin to  $TIZENRT_BASEDIR/build/output/bin
 ```
 
 ## Ramdump Parsing Steps
+DumpParser Script privodes two interfaces: CUI and GUI
+
+### DumpParser using CUI
 1. Run Ramdump Parser Script
 ```
 cd $TIZENRT_BASEDIR/tools/ramdump/
 python dumpParce.py -r $TIZENRT_BASEDIR/build/output/bin/ramdump_0x02020000_0x0210c800.bin -e $TIZENRT_BASEDIR/build/output/bin/tinyara -g 0
 ```
+2. See the Output
 
-2. Example Call Stack Output
+### DumpParser using GUI
+The UI configuration of DumpParser is as follows
+
+| (X) (-)           | Dump Parser           |        |
+| ----------------- |:---------------------:| ------:|
+| ELF path          | `<Your ELF path>`     | Browse |
+| (O) AssertLog     |                       |        |
+| (O) AssertLogFile |                       |        |
+| (O) Ramdump       |                       |        |
+| Ramdump path      | `<Your Ramdump path>` | Browse |
+| Run DumpParser    |                       |        |
+
+1. Run GUI Ramdump Parser Script
+```
+cd $TIZENRT_BASEDIR/tools/ramdump/
+python gui_dumpParser.py
+```
+
+2. Browse ELF path
+3. Select Ramdump mode
+4. Browse Ramdump path
+5. Click `Run DumpParser` button
+6. See the Output
+
+### Example Call Stack Output
 ```
 ********************************************************************
 Board Crashed at :

@@ -99,6 +99,18 @@ static int function_waitid(int argc, char *argv[])
 	task_delete(0);
 	return 0;
 }
+
+/**
+* @fn                   :function_waitid_2
+* @description          :Function for tc_sched_waitid
+* @return               :int
+*/
+static int function_waitid_2(int argc, char *argv[])
+{
+	usleep(SLEEPVAL);
+	task_delete(0);
+	return 0;
+}
 #endif
 
 /**
@@ -134,6 +146,26 @@ static void tc_sched_sched_setget_scheduler_param(void)
 	int loop_cnt = LOOPCOUNT;
 	int arr_idx = 0;
 	int sched_arr[ARRLEN] = { SCHED_RR, SCHED_FIFO };
+
+	/*  Check null priority parameter */
+
+	ret_chk = sched_setparam(getpid(), NULL);
+	TC_ASSERT_EQ("sched_setparam", ret_chk, ERROR);
+
+	ret_chk = sched_getparam(getpid(), NULL);
+	TC_ASSERT_EQ("sched_getparam", ret_chk, ERROR);
+
+	/*  Check invalid priority parameter */
+
+	st_setparam.sched_priority = SCHED_OTHER;
+	ret_chk = sched_setscheduler(0, SCHED_OTHER, &st_setparam);
+	TC_ASSERT_EQ("sched_setscheduler", ret_chk, ERROR);
+
+	/*  Check for invalid scheduling policy */
+
+	ret_chk = sched_setscheduler(0, SCHED_OTHER, &st_setparam);
+	TC_ASSERT_EQ("sched_setscheduler", ret_chk, ERROR);
+	TC_ASSERT_EQ("sched_setscheduler", errno, EINVAL);
 
 	while (arr_idx < loop_cnt) {
 		st_setparam.sched_priority = SCHED_PRIORITY;
@@ -174,7 +206,15 @@ static void tc_sched_sched_rr_get_interval(void)
 
 	st_timespec2.tv_sec = 0;
 	st_timespec2.tv_nsec = -1;
+
+	/* Check for invalid PID */
+
+	ret_chk = sched_rr_get_interval(-1, &st_timespec1);
+	TC_ASSERT_EQ("sched_rr_get_interval", ret_chk, ERROR);
+	TC_ASSERT_EQ("sched_rr_get_interval", errno, EINVAL);
+
 	/* Values are filled in st_timespec structure to differentiate them with values overwritten by rr_interval */
+
 	ret_chk = sched_rr_get_interval(0, &st_timespec1);
 	TC_ASSERT_NEQ("sched_rr_get_interval", ret_chk, ERROR);
 	TC_ASSERT_GEQ("sched_rr_get_interval", st_timespec1.tv_nsec, 0);
@@ -186,8 +226,15 @@ static void tc_sched_sched_rr_get_interval(void)
 	TC_ASSERT_LT("sched_rr_get_interval", st_timespec2.tv_nsec, 1000000000);
 
 	/* after sched_rr_get_interval() call, st_timespec structure should be overwritten with rr_interval values */
+
 	TC_ASSERT_EQ("sched_rr_get_interval", st_timespec1.tv_sec, st_timespec2.tv_sec);
 	TC_ASSERT_EQ("sched_rr_get_interval", st_timespec1.tv_nsec, st_timespec2.tv_nsec);
+
+	/* Check for NULL interval */
+
+	ret_chk = sched_rr_get_interval(getpid(), NULL);
+	TC_ASSERT_EQ("sched_rr_get_interval", ret_chk, ERROR);
+	TC_ASSERT_EQ("sched_rr_get_interval", errno, EFAULT);
 
 	TC_SUCCESS_RESULT();
 }
@@ -274,14 +321,57 @@ static void tc_sched_waitid(void)
 {
 	int ret_chk;
 	pid_t child_pid;
+	pid_t child_ppid;
 	siginfo_t info;
+
+	/* Check for The TCB corresponding to this PID is not our child. */
+
+	ret_chk = waitid(P_GID, 0, &info, WEXITED);
+	TC_ASSERT_EQ("waitid", ret_chk, ERROR);
+	TC_ASSERT_EQ("waitid", errno, ECHILD);
 
 	child_pid = task_create("tc_waitid", SCHED_PRIORITY_DEFAULT, TASK_STACKSIZE, function_waitid, (char * const *)NULL);
 	TC_ASSERT_GT("task_create", child_pid, 0);
 
+	/* Check for P_PID type */
+
 	ret_chk = waitid(P_PID, child_pid, &info, WEXITED);
 	TC_ASSERT_NEQ("waitid", ret_chk, ERROR);
 	TC_ASSERT_EQ("waitid", info.si_pid, child_pid);
+
+	/* Check for P_ALL ID type */
+
+	child_pid = task_create("tc_waitid", SCHED_PRIORITY_DEFAULT, TASK_STACKSIZE, function_waitid, (char * const *)NULL);
+	TC_ASSERT_GT("task_create", child_pid, 0);
+
+	ret_chk = waitid(P_ALL, child_pid, &info, WEXITED);
+	TC_ASSERT_NEQ("waitid", ret_chk, ERROR);
+	TC_ASSERT_EQ("waitid", info.si_pid, child_pid);
+
+	/* Check for other ID types that are not supported  */
+
+	child_pid = task_create("tc_waitid", SCHED_PRIORITY_DEFAULT, TASK_STACKSIZE, function_waitid, (char * const *)NULL);
+	TC_ASSERT_GT("task_create", child_pid, 0);
+
+	ret_chk = waitid(P_GID, child_pid, &info, WEXITED);
+	TC_ASSERT_EQ("waitid", ret_chk, ERROR);
+	TC_ASSERT_EQ("waitid", errno, ENOSYS);
+
+	/* Check for options != WEXITED */
+#ifdef CONFIG_DEBUG
+	ret_chk = waitid(P_PID, child_pid, &info, 0);
+	TC_ASSERT_EQ("waitid", ret_chk, ERROR);
+	TC_ASSERT_EQ("waitid", errno, ENOSYS);
+#endif
+
+	/* Check for The TCB corresponding to this PID is not our child. */
+
+	child_ppid = task_create("tc_waitid_2", SCHED_PRIORITY_DEFAULT, TASK_STACKSIZE, function_waitid_2, (char * const *)NULL);
+	TC_ASSERT_GT("task_create", child_pid, 0);
+
+	ret_chk = waitid(P_PID, child_pid, &info, WEXITED);
+	TC_ASSERT_EQ("waitid", ret_chk, ERROR);
+	TC_ASSERT_EQ("waitid", errno, ECHILD);
 
 	TC_SUCCESS_RESULT();
 }
@@ -305,11 +395,23 @@ static void tc_sched_waitpid(void)
 	pid_t child_pid;
 	int status;
 
+	/* Check for The TCB corresponding to this PID is not our child. */
+
+	ret_chk = waitpid(0, &status, 0);
+	TC_ASSERT_EQ("waitpid", ret_chk, ERROR);
+	TC_ASSERT_EQ("waitpid", errno, ECHILD);
+
 	child_pid = task_create("tc_waitpid", SCHED_PRIORITY_DEFAULT, TASK_STACKSIZE, function_wait, (char * const *)NULL);
 	TC_ASSERT_GT("task_create", child_pid, 0);
 
 	ret_chk = waitpid(child_pid, &status, 0);
 	TC_ASSERT_EQ("waitpid", ret_chk, child_pid);
+
+	/* None of the options are supported */
+
+	ret_chk = waitpid(0, &status, 1);
+	TC_ASSERT_EQ("waitpid", ret_chk, ERROR);
+	TC_ASSERT_EQ("waitpid", errno, ENOSYS);
 
 	TC_SUCCESS_RESULT();
 }
@@ -524,6 +626,35 @@ static void tc_sched_sched_getstreams(void)
 	TC_SUCCESS_RESULT();
 }
 
+
+/**
+* @fn                   :tc_sched_sched_setpriority
+* @brief                :This function sets the priority of a specified task
+* @scenario             :On success, sched_setparam() returns 0 (OK). On error, -1 (ERROR) is returned
+* API's covered         :sched_setpriority
+* Preconditions         :tcb - the TCB of task to reprioritize
+* Postconditions        :sched_priority - The new task priority
+* @return               :void
+*/
+
+static void tc_sched_sched_setpriority(void)
+{
+	int ret_chk = ERROR;
+	FAR struct tcb_s *tcb;
+
+	tcb = sched_gettcb(getpid());
+	TC_ASSERT_NEQ("sched_gettcb", tcb, NULL);
+
+	ret_chk = sched_setpriority(tcb, SCHED_PRIORITY);
+	TC_ASSERT_EQ("sched_setpriority", ret_chk, OK);
+
+	ret_chk = sched_setpriority(tcb, SCHED_PRIORITY_MIN - 1);
+	TC_ASSERT_EQ("sched_setpriority", ret_chk, ERROR);
+	TC_ASSERT_EQ("sched_setpriority", errno, EINVAL);
+
+	TC_SUCCESS_RESULT();
+}
+
 #if !defined(CONFIG_BUILD_PROTECTED)
 /**
  * @fn                   :tc_sched_task_setcancelstate
@@ -672,6 +803,7 @@ int sched_main(void)
 	tc_sched_sched_foreach();
 	tc_sched_sched_lockcount();
 	tc_sched_sched_getstreams();
+	tc_sched_sched_setpriority();
 #ifndef CONFIG_BUILD_PROTECTED
 	tc_sched_task_setcancelstate();
 #ifdef CONFIG_CANCELLATION_POINTS

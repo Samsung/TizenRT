@@ -66,6 +66,10 @@
 #include "sched/sched.h"
 #include "semaphore/semaphore.h"
 
+#ifdef CONFIG_SEMAPHORE_HISTORY
+#include <tinyara/debug/sysdbg.h>
+#endif
+
 /****************************************************************************
  * Pre-processor Definitions
  ****************************************************************************/
@@ -77,7 +81,7 @@
 /****************************************************************************
  * Global Variables
  ****************************************************************************/
-#if defined(CONFIG_FS_ROMFS) && defined(CONFIG_FRAME_POINTER)
+#ifdef CONFIG_DEBUG_DISPLAY_SYMBOL
 extern bool abort_mode;
 #endif
 
@@ -121,7 +125,7 @@ int sem_wait(FAR sem_t *sem)
 	irqstate_t saved_state;
 	int ret = ERROR;
 	/* This API should not be called from interrupt handlers */
-#if defined(CONFIG_FS_ROMFS) && defined(CONFIG_FRAME_POINTER)
+#ifdef CONFIG_DEBUG_DISPLAY_SYMBOL
 	DEBUGASSERT((sem != NULL && up_interrupt_context() == false) || abort_mode);
 
 	if (abort_mode && up_interrupt_context() == true) {
@@ -159,7 +163,9 @@ int sem_wait(FAR sem_t *sem)
 			sem->semcount--;
 			sem_addholder(sem);
 			rtcb->waitsem = NULL;
-
+#ifdef CONFIG_SEMAPHORE_HISTORY
+			save_semaphore_history(sem, (void *)rtcb, SEM_AQUIRE);
+#endif
 			ret = OK;
 		}
 
@@ -181,6 +187,10 @@ int sem_wait(FAR sem_t *sem)
 			/* Save the waited on semaphore in the TCB */
 
 			rtcb->waitsem = sem;
+
+#ifdef CONFIG_SEMAPHORE_HISTORY
+			save_semaphore_history(sem, (void *)rtcb, SEM_WAITING);
+#endif
 
 			/* If priority inheritance is enabled, then check the priority of
 			 * the holder of the semaphore.

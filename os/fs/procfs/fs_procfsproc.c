@@ -477,7 +477,9 @@ static ssize_t proc_cmdline(FAR struct proc_file_s *procfile, FAR struct tcb_s *
 		buffer += copysize;
 		remaining -= copysize;
 
-		return totalsize;
+		if (totalsize >= buflen) {
+			return totalsize;
+		}
 	}
 #endif
 
@@ -576,10 +578,11 @@ static ssize_t proc_stack(FAR struct proc_file_s *procfile, FAR struct tcb_s *tc
 	copysize = procfs_memcpy(procfile->line, linesize, buffer, remaining, &offset);
 
 	totalsize += copysize;
+
+#ifdef CONFIG_STACK_COLORATION
 	buffer += copysize;
 	remaining -= copysize;
 
-#ifdef CONFIG_DEBUG_COLORATION
 	if (totalsize >= buflen) {
 		return totalsize;
 	}

@@ -76,6 +76,7 @@ ifeq ($(WINTOOL),y)
 INCDIROPT = -w
 endif
 
+include le_tc/drivers/Make.defs
 include le_tc/filesystem/Make.defs
 include le_tc/kernel/Make.defs
 include le_tc/network/Make.defs

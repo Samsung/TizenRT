@@ -783,6 +783,8 @@ static int alc5658_stop(FAR struct audio_lowerhalf_s *dev)
 {
 	FAR struct alc5658_dev_s *priv = (FAR struct alc5658_dev_s *)dev;
 
+	I2S_STOP(priv->i2s);
+
 	/* Need to run the stop script here */
 	alc5658_exec_i2c_script(priv, codec_stop_script, sizeof(codec_stop_script) / sizeof(t_codec_init_script_entry));
 

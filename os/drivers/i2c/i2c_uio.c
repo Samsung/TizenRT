@@ -97,7 +97,7 @@ static const struct file_operations g_i2cops = {
 
 static int i2c_uio_open(FAR struct file *filep)
 {
-	FAR struct inode *inode = filep->f_inode;
+	FAR struct inode *inode;
 	FAR struct i2c_dev_s *dev;
 //  int ret;
 
@@ -134,7 +134,7 @@ static int i2c_uio_open(FAR struct file *filep)
 
 static int i2c_uio_close(FAR struct file *filep)
 {
-	FAR struct inode *inode = filep->f_inode;
+	FAR struct inode *inode;
 	FAR struct i2c_dev_s *dev;
 //  int ret;
 

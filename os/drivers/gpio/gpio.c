@@ -243,7 +243,7 @@ static void gpio_interrupt(FAR struct gpio_upperhalf_s *upper)
 
 static void gpio_enable(FAR struct gpio_upperhalf_s *priv)
 {
-	FAR struct gpio_lowerhalf_s *lower = priv->gu_lower;
+	FAR struct gpio_lowerhalf_s *lower;
 	FAR struct gpio_open_s *opriv;
 	bool rising;
 	bool falling;

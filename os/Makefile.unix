@@ -507,6 +507,11 @@ ifeq ($(CONFIG_UBOOT_UIMAGE),y)
 		cp -f uImage /tftpboot/uImage; \
 	fi
 endif
+ifeq ($(CONFIG_DEBUG_DISPLAY_SYMBOL),y)
+	cp ${BIN_DIR}/System.map ${TOOLSDIR}/fs/contents/System.map
+else
+	$(call DELFILE, ${TOOLSDIR}/fs/contents/System.map)
+endif
 
 # $(BIN)
 #
