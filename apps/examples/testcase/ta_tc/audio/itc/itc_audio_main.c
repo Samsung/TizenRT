@@ -1099,6 +1099,196 @@ static void itc_audio_pcm_writei_n(void)
 	TC_SUCCESS_RESULT();
 }
 
+/**
+* @testcase         itc_audio_pcm_drain_p
+* @brief            play/record all enqueued buffers and stop the device
+* @scenario         play recored file previously completely
+* @apicovered       pcm_drain
+* @precondition     pcm_writei should be done just before pcm_drain
+* @postcondition    NA
+*/
+static void itc_audio_pcm_drain_p(void)
+{
+	int fd = 0;
+	int ret = 0;
+
+	char *buffer = NULL;
+	int num_read = 0;
+	unsigned int size = 0;
+
+	g_pcm = pcm_open(0, 0, PCM_OUT, NULL);
+	TC_ASSERT_GT_CLEANUP("pcm_drain", pcm_is_ready(g_pcm), 0, pcm_close(g_pcm));
+
+	size = pcm_get_buffer_size(g_pcm);
+	buffer = malloc(size);
+	TC_ASSERT_NEQ_CLEANUP("pcm_drain", buffer, NULL, pcm_close(g_pcm));
+
+	fd = open(AUDIO_TEST_FILE, O_RDONLY);
+	TC_ASSERT_GEQ_CLEANUP("pcm_drain", fd, 0, clean_all_data(0, buffer));
+
+	printf("Playback start!!\n");
+
+	do {
+		num_read = read(fd, buffer, size);
+		if (num_read > 0) {
+			ret = pcm_writei(g_pcm, buffer, pcm_bytes_to_frames(g_pcm, num_read));
+			TC_ASSERT_GEQ_CLEANUP("pcm_writei", ret, 0, clean_all_data(fd, buffer));
+		}
+	} while (num_read > 0);
+
+	if (buffer != NULL) {
+		free(buffer);
+		buffer = NULL;
+	}
+	if (fd > 0) {
+		close(fd);
+	}
+
+	printf("Draining buffers to complete playback and close device\n");
+	ret = pcm_drain(g_pcm);
+	TC_ASSERT_GEQ_CLEANUP("pcm_drain", ret, 0, pcm_close(g_pcm));
+	printf("Playback done!\n");
+
+	pcm_close(g_pcm);
+	TC_SUCCESS_RESULT();
+}
+
+/**
+* @testcase         itc_audio_pcm_drain_n
+* @brief            play/record all enqueued buffers and stop the device
+* @scenario         drain when device is stopped (not started)
+* @apicovered       pcm_drain
+* @precondition     NA
+* @postcondition    NA
+*/
+static void itc_audio_pcm_drain_n(void)
+{
+	int ret;
+
+	g_pcm = pcm_open(0, 0, PCM_IN, NULL);
+	TC_ASSERT_GT("pcm_drain", pcm_is_ready(g_pcm), 0);
+
+	ret = pcm_start(g_pcm);
+	TC_ASSERT_GEQ_CLEANUP("pcm_drain", ret, 0, pcm_close(g_pcm));
+
+	ret = pcm_stop(g_pcm);
+	TC_ASSERT_GEQ_CLEANUP("pcm_drain", ret, 0, pcm_close(g_pcm));
+
+	ret = pcm_drain(g_pcm);
+	TC_ASSERT_LT_CLEANUP("pcm_drain", ret, 0, pcm_close(g_pcm));
+
+	pcm_close(g_pcm);
+	TC_SUCCESS_RESULT();
+}
+
+/**
+* @testcase         itc_audio_pcm_drop_p
+* @brief            drop all the buffers which are being processed and stop the device
+* @scenario         call pcm_drop after readi and check that audio until pcm_drop print is recorded.
+* @apicovered       pcm_drop
+* @precondition     NA
+* @postcondition    NA
+*/
+static void itc_audio_pcm_drop_p(void)
+{
+	int fd;
+	char input_str[INPUT_STR_LEN];
+	int ret;
+	char *str;
+	char *buffer;
+	unsigned int bytes_per_frame;
+	int frames_read;
+	int remain;
+	int size;
+	int num_read;
+
+	g_pcm = pcm_open(0, 0, PCM_IN, NULL);
+	TC_ASSERT_GT("pcm_drop", pcm_is_ready(g_pcm), 0);
+
+	buffer = malloc(pcm_frames_to_bytes(g_pcm, pcm_get_buffer_size(g_pcm)));
+	TC_ASSERT_NEQ_CLEANUP("pcm_drop", buffer, NULL, clean_all_data(0, NULL));
+
+	fd = open(AUDIO_TEST_FILE, O_RDWR | O_CREAT | O_TRUNC);
+	TC_ASSERT_GT_CLEANUP("pcm_drop", fd, 0, clean_all_data(0, buffer));
+
+	bytes_per_frame = pcm_frames_to_bytes(g_pcm, 1);
+	frames_read = 0;
+	remain = AUDIO_DEFAULT_RATE * AUDIO_RECORD_DURATION;
+
+	printf("Sample will be recorded for 3s, press any key to start(Total frame: %d)\n", remain);
+	fflush(stdout);
+	str = gets(input_str);
+	TC_ASSERT_NEQ_CLEANUP("pcm_drop", str, NULL, clean_all_data(fd, buffer));
+
+	while (remain > 0) {
+		frames_read = pcm_readi(g_pcm, buffer, pcm_get_buffer_size(g_pcm));
+		if (frames_read < 0) {
+			break;
+		}
+		remain -= frames_read;
+		ret = write(fd, buffer, bytes_per_frame * frames_read);
+		TC_ASSERT_EQ_CLEANUP("pcm_drop", ret, (bytes_per_frame * frames_read), clean_all_data(fd, buffer));
+	}
+
+	printf("Nothing after this statement should be recorded\n");
+	ret = pcm_drop(g_pcm);
+	TC_ASSERT_GEQ_CLEANUP("pcm_drop", ret, 0, clean_all_data(fd, buffer));
+
+	printf("Record dropped.\n");
+
+	clean_all_data(fd, buffer);
+
+	g_pcm = pcm_open(0, 0, PCM_OUT, NULL);
+	TC_ASSERT_GT("pcm_drop", pcm_is_ready(g_pcm), 0);
+
+	size = pcm_frames_to_bytes(g_pcm, pcm_get_buffer_size(g_pcm));
+	buffer = malloc(size);
+	TC_ASSERT_NEQ_CLEANUP("pcm_drop", buffer, NULL, pcm_close(g_pcm));
+
+	fd = open(AUDIO_TEST_FILE, O_RDONLY);
+	TC_ASSERT_GEQ_CLEANUP("pcm_drop", fd, 0, clean_all_data(0, buffer));
+
+	printf("Check now for recorded part. Nothing after drop should be heard\n");
+	do {
+		num_read = read(fd, buffer, size);
+		if (num_read > 0) {
+			ret = pcm_writei(g_pcm, buffer, pcm_bytes_to_frames(g_pcm, num_read));
+			TC_ASSERT_GEQ_CLEANUP("pcm_drop", ret, 0, clean_all_data(fd, buffer));
+		}
+	} while (num_read > 0);
+
+	clean_all_data(fd, buffer);
+	TC_SUCCESS_RESULT();
+}
+
+/**
+* @testcase         itc_audio_pcm_drop_n
+* @brief            drop all the buffers which are being processed and stop the device
+* @scenario         call drop when device is stopped (not started)
+* @apicovered       pcm_drop
+* @precondition     NA
+* @postcondition    NA
+*/
+static void itc_audio_pcm_drop_n(void)
+{
+	int ret;
+
+	g_pcm = pcm_open(0, 0, PCM_IN, NULL);
+	TC_ASSERT_GT("pcm_drop", pcm_is_ready(g_pcm), 0);
+
+	ret = pcm_start(g_pcm);
+	TC_ASSERT_GEQ_CLEANUP("pcm_drain", ret, 0, pcm_close(g_pcm));
+
+	ret = pcm_stop(g_pcm);
+	TC_ASSERT_GEQ_CLEANUP("pcm_drain", ret, 0, pcm_close(g_pcm));
+
+	ret = pcm_drop(g_pcm);
+	TC_ASSERT_LT_CLEANUP("pcm_drop", ret, 0, pcm_close(g_pcm));
+
+	pcm_close(g_pcm);
+	TC_SUCCESS_RESULT();
+}
+
 #ifdef CONFIG_BUILD_KERNEL
 int main(int argc, FAR char *argv[])
 #else
@@ -1157,6 +1347,10 @@ int itc_audio_main(int argc, char *argv[])
 	itc_audio_pcm_readi_n();
 	itc_audio_pcm_writei_p();
 	itc_audio_pcm_writei_n();
+	itc_audio_pcm_drain_p();
+	itc_audio_pcm_drain_n();
+	itc_audio_pcm_drop_p();
+	itc_audio_pcm_drop_n();
 	/* after test, unlink the file */
 	unlink(AUDIO_TEST_FILE);
 
