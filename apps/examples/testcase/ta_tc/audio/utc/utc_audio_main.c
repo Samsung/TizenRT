@@ -615,7 +615,7 @@ static void utc_audio_pcm_readi_p(void)
 	TC_ASSERT_NEQ_CLEANUP("pcm_readi", buffer, NULL, clean_all_data(0, NULL));
 
 	fd = open(AUDIO_TEST_FILE, O_RDWR | O_CREAT | O_TRUNC);
-	TC_ASSERT_GT_CLEANUP("pcm_readi", fd, 0, clean_all_data(0, buffer));
+	TC_ASSERT_GEQ_CLEANUP("pcm_readi", fd, 0, clean_all_data(0, buffer));
 
 	bytes_per_frame = pcm_frames_to_bytes(g_pcm, 1);
 	frames_read = 0;
@@ -662,7 +662,7 @@ static void utc_audio_pcm_readi_n(void)
 
 	size = pcm_frames_to_bytes(g_pcm, pcm_get_buffer_size(g_pcm));
 	buffer = (char *)malloc(size);
-	TC_ASSERT_GT_CLEANUP("pcm_readi", buffer, 0, clean_all_data(0, NULL));
+	TC_ASSERT_NEQ_CLEANUP("pcm_readi", buffer, NULL, clean_all_data(0, NULL));
 
 	ret = pcm_readi(NULL, buffer, size);
 	TC_ASSERT_LT_CLEANUP("pcm_readi", ret, 0, clean_all_data(0, buffer));
@@ -707,7 +707,7 @@ static void utc_audio_pcm_drop_p(void)
 	TC_ASSERT_NEQ_CLEANUP("pcm_drop", buffer, NULL, clean_all_data(0, NULL));
 
 	fd = open(AUDIO_TEST_FILE, O_RDWR | O_CREAT | O_TRUNC);
-	TC_ASSERT_GT_CLEANUP("pcm_drop", fd, 0, clean_all_data(0, buffer));
+	TC_ASSERT_GEQ_CLEANUP("pcm_drop", fd, 0, clean_all_data(0, buffer));
 
 	bytes_per_frame = pcm_frames_to_bytes(g_pcm, 1);
 	frames_read = 0;
