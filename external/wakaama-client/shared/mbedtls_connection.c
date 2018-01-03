@@ -847,16 +847,16 @@ connection_t * connection_create(coap_protocol_t protocol,
         goto error;
     }
 
-    if (NULL != servinfo)
-        free(servinfo);
+    if (servinfo)
+        freeaddrinfo(servinfo);
 
     connP->connected = true;
 
     return connP;
 
 error:
-    if (NULL != servinfo)
-        free(servinfo);
+    if (servinfo)
+        freeaddrinfo(servinfo);
 
     if (connP)
     {
