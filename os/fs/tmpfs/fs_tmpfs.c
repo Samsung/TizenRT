@@ -156,6 +156,7 @@ static off_t tmpfs_seek(FAR struct file *filep, off_t offset, int whence);
 static int  tmpfs_ioctl(FAR struct file *filep, int cmd, unsigned long arg);
 static int  tmpfs_dup(FAR const struct file *oldp, FAR struct file *newp);
 static int  tmpfs_fstat(FAR const struct file *filep, FAR struct stat *buf);
+static int  tmpfs_truncate(FAR struct file *filep, off_t length);
 
 static int  tmpfs_opendir(FAR struct inode *mountpt, FAR const char *relpath,
 		FAR struct fs_dirent_s *dir);
@@ -194,6 +195,7 @@ const struct mountpt_operations tmpfs_operations = {
 	NULL,             /* sync */
 	tmpfs_dup,        /* dup */
 	tmpfs_fstat,      /* fstat */
+	tmpfs_truncate,   /* truncate */
 
 	tmpfs_opendir,    /* opendir */
 	tmpfs_closedir,   /* closedir */
@@ -1718,6 +1720,53 @@ static int tmpfs_fstat(FAR const struct file *filep, FAR struct stat *buf)
 
 	tmpfs_unlock_file(tfo);
 	return OK;
+}
+
+/****************************************************************************
+ * Name: tmpfs_truncate
+ ****************************************************************************/
+
+static int tmpfs_truncate(FAR struct file *filep, off_t length)
+{
+	FAR struct tmpfs_file_s *tfo;
+	size_t oldsize;
+	int ret = OK;
+
+	fvdbg("filep: %p length: %ld\n", filep, (long)length);
+	DEBUGASSERT(filep != NULL && length >= 0);
+
+	/* Recover our private data from the struct file instance */
+	tfo = filep->f_priv;
+
+	/* Get exclusive access to the file */
+	tmpfs_lock_file(tfo);
+
+	/* Get the old size of the file.  Do nothing if the file size is not
+	 * changing.
+	 */
+	oldsize = tfo->tfo_size;
+	if (oldsize != length) {
+		/* The size is changing.. up or down.  Reallocate the file memory. */
+		ret = tmpfs_realloc_file(&tfo, (size_t)length);
+		if (ret < 0) {
+			goto errout_with_lock;
+		}
+
+		filep->f_priv = tfo;
+
+		/* If the size has increased, then we need to zero the newly added
+		 * memory.
+		 */
+		if (length > oldsize) {
+			memset(&tfo->tfo_data[oldsize], '\0', length - oldsize);
+		}
+		ret = OK;
+	}
+
+	/* Release the lock on the file */
+errout_with_lock:
+	tmpfs_unlock_file(tfo);
+	return ret;
 }
 
 /****************************************************************************

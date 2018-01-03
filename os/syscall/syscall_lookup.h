@@ -216,6 +216,7 @@ SYSCALL_LOOKUP(sched_getstreams,        0, STUB_sched_getstreams)
 
 #  if !defined(CONFIG_DISABLE_MOUNTPOINT)
 SYSCALL_LOOKUP(fsync,                   1, STUB_fsync)
+SYSCALL_LOOKUP(ftruncate,               2, STUB_ftruncate)
 SYSCALL_LOOKUP(mkdir,                   2, STUB_mkdir)
 SYSCALL_LOOKUP(mount,                   5, STUB_mount)
 SYSCALL_LOOKUP(rename,                  2, STUB_rename)
