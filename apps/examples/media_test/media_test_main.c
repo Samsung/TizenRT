@@ -31,7 +31,7 @@
 #include <dm/dm_error.h>
 #include <sys/socket.h>
 
-#define DISCONNECT_WIFI_AND_CLOSE_SOCKET() do { dm_conn_wifi_disconnect(); disconnect_socket(&fd); } while(0)
+#define DISCONNECT_WIFI_AND_CLOSE_SOCKET() do { dm_conn_wifi_disconnect(); disconnect_socket(&fd); } while (0)
 
 int isWiFiConnected = 0;
 
