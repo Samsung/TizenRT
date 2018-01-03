@@ -84,29 +84,36 @@ void ledpwm_main(int argc, char *argv[])
 	}
 	pwm_info.frequency = 1000;
 
-	for (i = 0; i < 100; i = i + 3) {
+	ioctl(fd1, PWMIOC_SETCHARACTERISTICS, (unsigned long)((uintptr_t)&pwm_info));
+	ioctl(fd2, PWMIOC_SETCHARACTERISTICS, (unsigned long)((uintptr_t)&pwm_info));
+	ioctl(fd3, PWMIOC_SETCHARACTERISTICS, (unsigned long)((uintptr_t)&pwm_info));
+	ioctl(fd4, PWMIOC_SETCHARACTERISTICS, (unsigned long)((uintptr_t)&pwm_info));
+	ioctl(fd1, PWMIOC_START, 0);
+	ioctl(fd2, PWMIOC_START, 0);
+	ioctl(fd3, PWMIOC_START, 0);
+	ioctl(fd4, PWMIOC_START, 0);
+
+	for (i = 0; i < 100; i++) {
 		printf("brightness %d, %d\n", i, 99 - i);
 
 		pwm_info.duty = i * 65536 / 100;
-		ioctl(fd1, PWMIOC_SETCHARACTERISTICS, (unsigned long)((uintptr_t)&pwm_info));
-		ioctl(fd2, PWMIOC_SETCHARACTERISTICS, (unsigned long)((uintptr_t)&pwm_info));
-		ioctl(fd1, PWMIOC_START);
-		ioctl(fd2, PWMIOC_START);
+		ioctl(fd1, PWMIOC_UPDATEDUTY, pwm_info.duty);
+		ioctl(fd2, PWMIOC_UPDATEDUTY, pwm_info.duty);
 
 		pwm_info.duty = (99 - i) * 65536 / 100;
-		ioctl(fd3, PWMIOC_SETCHARACTERISTICS, (unsigned long)((uintptr_t)&pwm_info));
-		ioctl(fd4, PWMIOC_SETCHARACTERISTICS, (unsigned long)((uintptr_t)&pwm_info));
-		ioctl(fd3, PWMIOC_START);
-		ioctl(fd4, PWMIOC_START);
+		ioctl(fd3, PWMIOC_UPDATEDUTY, pwm_info.duty);
+		ioctl(fd4, PWMIOC_UPDATEDUTY, pwm_info.duty);
 
-		up_mdelay(200);
+		up_mdelay(100);
 	}
 
+	ioctl(fd1, PWMIOC_STOP, 0);
+	ioctl(fd2, PWMIOC_STOP, 0);
+	ioctl(fd3, PWMIOC_STOP, 0);
+	ioctl(fd4, PWMIOC_STOP, 0);
+
 	up_mdelay(2000);
-	ioctl(fd1, PWMIOC_STOP);
-	ioctl(fd2, PWMIOC_STOP);
-	ioctl(fd3, PWMIOC_STOP);
-	ioctl(fd4, PWMIOC_STOP);
+
 	close(fd1);
 	close(fd2);
 	close(fd3);
