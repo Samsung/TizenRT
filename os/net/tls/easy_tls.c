@@ -126,6 +126,9 @@ static int tls_entropy_init(tls_ctx *ctx)
 static int tls_set_cred(tls_ctx *ctx, tls_cred *cred)
 {
 	int ret = TLS_PARSE_CRED_FAIL;
+#if defined(CONFIG_TLS_WITH_SSS)
+	const mbedtls_pk_info_t *pk_info = NULL;
+#endif
 
 	if (cred == NULL) {
 		return TLS_INVALID_CRED;
@@ -163,18 +166,28 @@ static int tls_set_cred(tls_ctx *ctx, tls_cred *cred)
 		}
 #if defined(CONFIG_TLS_WITH_SSS)
 		else if (cred->use_se) {
-			ctx->use_se = true;
+			pk_info = mbedtls_pk_info_from_type(MBEDTLS_PK_ECKEY);
+			if (!pk_info) {
+				return TLS_INVALID_DEVKEY;
+			}
+
+			ret = mbedtls_pk_setup(ctx->pkey, pk_info);
+			if (ret) {
+				return TLS_INVALID_DEVKEY;
+			}
+
 			((mbedtls_ecdsa_context *)(ctx->pkey->pk_ctx))->grp.id =
 						MBEDTLS_ECP_DP_SECP256R1;
 			((mbedtls_ecdsa_context *)(ctx->pkey->pk_ctx))->key_index =
 						FACTORYKEY_ARTIK_DEVICE;
+			ctx->use_se = true;
 		}
 #endif
 		else {
 			return TLS_INVALID_DEVKEY;
 		}
 
-		ret = mbedtls_ssl_conf_own_cert(ctx->conf, ctx->crt->next, ctx->pkey);
+		ret = mbedtls_ssl_conf_own_cert(ctx->conf, ctx->crt->next ? ctx->crt->next : ctx->crt, ctx->pkey);
 		if (ret) {
 			return TLS_INVALID_DEVCERT;
 		}
