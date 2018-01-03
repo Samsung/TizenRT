@@ -121,6 +121,26 @@ static unsigned int pwm_clk_freq(struct s5j_pwmtimer_s *priv)
 						>> pwm_get_divider(priv);
 }
 
+static void pwm_update_frequency(FAR struct s5j_pwmtimer_s *priv, uint32_t frequency)
+{
+	uint32_t tcntb;
+
+	tcntb = pwm_clk_freq(priv) / frequency - 1;
+
+	pwm_putreg32(priv, S5J_PWM_TCNTB_OFFSET(priv->id), tcntb);
+}
+
+static void pwm_update_duty(FAR struct s5j_pwmtimer_s *priv, ub16_t duty)
+{
+	uint32_t tcntb;
+	uint32_t tcmpb;
+
+	tcntb = pwm_getreg32(priv, S5J_PWM_TCNTB_OFFSET(priv->id));
+	tcmpb = (((uint64_t)(tcntb + 1) * duty) / 65536) - 1;
+
+	pwm_putreg32(priv, S5J_PWM_TCMPB_OFFSET(priv->id), tcmpb);
+}
+
 /****************************************************************************
  * Name: s5j_pwm_setup
  *
@@ -166,15 +186,10 @@ static int s5j_pwm_setup(FAR struct pwm_lowerhalf_s *dev)
 static int s5j_pwm_start(FAR struct pwm_lowerhalf_s *dev,
 						 FAR const struct pwm_info_s *info)
 {
-	uint32_t tcntb;
-	uint32_t tcmpb;
 	FAR struct s5j_pwmtimer_s *priv = (FAR struct s5j_pwmtimer_s *)dev;
 
-	tcntb = pwm_clk_freq(priv) / info->frequency - 1;
-	tcmpb = (((uint64_t)(tcntb + 1) * info->duty) / 65536) - 1;
-
-	pwm_putreg32(priv, S5J_PWM_TCNTB_OFFSET(priv->id), tcntb);
-	pwm_putreg32(priv, S5J_PWM_TCMPB_OFFSET(priv->id), tcmpb);
+	pwm_update_frequency(priv, info->frequency);
+	pwm_update_duty(priv, info->duty);
 
 	pwm_modifyreg32(priv, S5J_PWM_TCON_OFFSET,
 					PWM_TCON_TIM_MAN_UPDATE_MASK(priv->id),
@@ -267,7 +282,25 @@ static int s5j_pwm_shutdown(FAR struct pwm_lowerhalf_s *dev)
 static int s5j_pwm_ioctl(FAR struct pwm_lowerhalf_s *dev, int cmd,
 						 unsigned long arg)
 {
-	return -ENOTTY;
+	FAR struct s5j_pwmtimer_s *priv = (FAR struct s5j_pwmtimer_s *)dev;
+	uint32_t val;
+
+	val = (uint32_t)arg;
+
+	switch (cmd) {
+	case PWMIOC_UPDATEFREQUENCY:
+		pwm_update_frequency(priv, val);
+		break;
+
+	case PWMIOC_UPDATEDUTY:
+		pwm_update_duty(priv, val);
+		break;
+
+	default:
+		break;
+	}
+
+	return OK;
 }
 
 /****************************************************************************

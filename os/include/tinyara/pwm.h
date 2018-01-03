@@ -136,6 +136,8 @@
 #define PWMIOC_GETCHARACTERISTICS _PWMIOC(2)
 #define PWMIOC_START              _PWMIOC(3)
 #define PWMIOC_STOP               _PWMIOC(4)
+#define PWMIOC_UPDATEFREQUENCY    _PWMIOC(5)
+#define PWMIOC_UPDATEDUTY         _PWMIOC(6)
 
 /****************************************************************************
  * Public Types
