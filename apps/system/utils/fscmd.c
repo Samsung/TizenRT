@@ -238,7 +238,7 @@ static int tash_cat(int argc, char **args)
 			/* copy contents from source file to target file
 			 * cat <source filepath> <redirection> <target filepath> */
 			if (strcmp(args[1], args[3]) == 0) {
-				FSCMD_OUTPUT(INVALID_ARGS, "Same File name", args[1]);
+				FSCMD_OUTPUT(INVALID_ARGS "Same File name", args[1]);
 				return 0;
 			}
 
@@ -278,12 +278,12 @@ static int tash_cat(int argc, char **args)
 			close(fd);
 			close(destfd);
 		} else {
-			FSCMD_OUTPUT(INVALID_ARGS, " : [> or >>] [file] [contents]\n", args[0]);
+			FSCMD_OUTPUT(INVALID_ARGS " : [> or >>] [file] [contents]\n", args[0]);
 			return 0;
 		}
 	} else {
 		/* Wrong case */
-		FSCMD_OUTPUT(INVALID_ARGS, " : [> or >>] [file] [contents]\n", args[0]);
+		FSCMD_OUTPUT(INVALID_ARGS " : [> or >>] [file] [contents]\n", args[0]);
 
 		return 0;
 	}
@@ -584,7 +584,7 @@ static int tash_ls(int argc, char **args)
 		}
 	}
 	if (badarg) {
-		FSCMD_OUTPUT(INVALID_ARGS, " : [-lRs] <dir-path>\n", args[0]);
+		FSCMD_OUTPUT(INVALID_ARGS " : [-lRs] <dir-path>\n", args[0]);
 		return 0;
 	}
 
