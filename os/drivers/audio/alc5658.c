@@ -674,8 +674,8 @@ static int alc5658_configure(FAR struct audio_lowerhalf_s *dev, FAR const struct
 	}
 
 	alc5658_setregs(priv);
-
 	alc5658_getregs(priv);
+
 	return ret;
 }
 
@@ -693,16 +693,15 @@ static int alc5658_shutdown(FAR struct audio_lowerhalf_s *dev)
 	DEBUGASSERT(priv);
 
 	/* First disable interrupts */
-
 	ALC5658_DISABLE(priv->lower);
 
 	alc5658_takesem(&priv->devsem);
-	dq_entry_t *tmp = NULL;
-	for (tmp = (dq_entry_t *)dq_peek(&priv->pendq); tmp; tmp = dq_next(tmp)) {
-		dq_rem(tmp, &priv->pendq);
+	sq_entry_t *tmp = NULL;
+	for (tmp = (sq_entry_t *)sq_peek(&priv->pendq); tmp; tmp = sq_next(tmp)) {
+		sq_rem(tmp, &priv->pendq);
 		audvdbg("(alcshutdown)removing tmp with addr 0x%x\n", tmp);
 	}
-	dq_init(&priv->pendq);
+	sq_init(&priv->pendq);
 	alc5658_givesem(&priv->devsem);
 
 	/* Now issue a software reset.  This puts all ALC5658 registers back in
@@ -711,6 +710,25 @@ static int alc5658_shutdown(FAR struct audio_lowerhalf_s *dev)
 
 	alc5658_hw_reset(priv);
 	return OK;
+}
+
+/****************************************************************************
+ * Name: alc5658_io_err_cb
+ *
+ * Description:
+ *   Callback function for io error
+ *
+ ****************************************************************************/
+static void alc5658_io_err_cb(FAR struct i2s_dev_s *dev, FAR void *arg, int flags)
+{
+	FAR struct alc5658_dev_s *priv = (FAR struct alc5658_dev_s *)arg;
+
+	/* Call upper callback, let it post msg to user q
+	 * apb is set NULL, okay? Rethink
+	*/
+	lldbg("alc5658_io_err_cb flags: 0x%x\n", flags);
+	priv->dev.upper(priv->dev.priv, AUDIO_CALLBACK_IOERR, NULL, flags);
+	
 }
 
 /****************************************************************************
@@ -730,40 +748,46 @@ static int alc5658_start(FAR struct audio_lowerhalf_s *dev)
 
 	FAR struct alc5658_dev_s *priv = (FAR struct alc5658_dev_s *)dev;
 	int entry;
-	if (priv->running) {
-		return OK;
-	}
 
 	audvdbg(" alc5658_start Entry\n");
+	alc5658_takesem(&priv->devsem);
+
+	if (priv->running) {
+		goto alcstart_withsem;
+	}
+	/* Set first set of registers */
 	alc5658_exec_i2c_script(priv, codec_init_inout_script1, sizeof(codec_init_inout_script1) / sizeof(t_codec_init_script_entry));
 
+	/* Get configured sample rate and set it here - valdiation done in configure itself */
 	entry = alc5658_get_sample_rate_script(priv->samprate);
-	if (entry == -1) {
-		return -EINVAL;
-	}
-
 	alc5658_exec_i2c_script(priv, g_sample_entry[entry].script, g_sample_entry[entry].size / sizeof(t_codec_init_script_entry));
+
+	/* Set second set of registers */
 	alc5658_exec_i2c_script(priv, codec_init_inout_script2, sizeof(codec_init_inout_script2) / sizeof(t_codec_init_script_entry));
 
 	alc5658_setregs(priv);
 	alc5658_getregs(priv);
 
-	alc5658_takesem(&priv->devsem);
+	/* Register cb for io error */
+	I2S_ERR_CB_REG(priv->i2s, alc5658_io_err_cb, priv);
 
+	/* Finally set alc5658 to be running */
 	priv->running = true;
-	dq_entry_t *tmp = NULL;
-	dq_queue_t *q = &priv->pendq;
 
-	for (tmp = dq_peek(q); tmp; tmp = dq_next(tmp)) {
+	/* Enqueue buffers (enqueueed before the start of alc) to lower layer */
+	sq_entry_t *tmp = NULL;
+	sq_queue_t *q = &priv->pendq;
+	for (tmp = sq_peek(q); tmp; tmp = sq_next(tmp)) {
 		alc5658_enqueuebuffer(dev, (struct ap_buffer_s *)tmp);
 	}
-
-	alc5658_givesem(&priv->devsem);
 
 	/* Exit reduced power modes of operation */
 	/* REVISIT */
 
-	return OK;					/* Fix this -- always returns OK */
+alcstart_withsem:
+
+	alc5658_givesem(&priv->devsem);
+	return OK;
 }
 
 /****************************************************************************
@@ -871,14 +895,16 @@ static void alc5658_rxtxcallback(FAR struct i2s_dev_s *dev, FAR struct ap_buffer
 	audvdbg("alc5658_rxcallback, devaddr= 0x%x, apbaddr  =0x%x\n", dev, apb);
 
 	alc5658_takesem(&priv->devsem);
-	dq_entry_t *tmp;
-	for (tmp = (dq_entry_t *)dq_peek(&priv->pendq); tmp; tmp = dq_next(tmp)) {
-		if (tmp == (dq_entry_t *)apb) {
-			dq_rem(tmp, &priv->pendq);
+	sq_entry_t *tmp;
+	for (tmp = (sq_entry_t *)sq_peek(&priv->pendq); tmp; tmp = sq_next(tmp)) {
+		if (tmp == (sq_entry_t *)apb) {
+			sq_rem(tmp, &priv->pendq);
 			audvdbg("found the apb to remove 0x%x\n", tmp);
 			break;
 		}
 	}
+
+	audvdbg("i2s transcation result: 0x%x\n", result);
 
 	/* Call upper callback, let it post msg to user q */
 	priv->dev.upper(priv->dev.priv, AUDIO_CALLBACK_DEQUEUE, apb, OK);
@@ -899,12 +925,10 @@ static int alc5658_enqueuebuffer(FAR struct audio_lowerhalf_s *dev, FAR struct a
 
 	audvdbg("alc5658_enqueuebuffer: apbadr = 0x%x\n", apb);
 
-	/* Need to fix later */
 	if (!priv->running) {
-
 		/* Add the new buffer to the tail of pending audio buffers */
 		alc5658_takesem(&priv->devsem);
-		dq_addlast(&apb->dq_entry, &priv->pendq);
+		sq_addlast((sq_entry_t*)&apb->dq_entry, &priv->pendq);
 		audvdbg("enqueue added buf 0x%x\n", apb);
 		alc5658_givesem(&priv->devsem);
 		return OK;
@@ -949,23 +973,14 @@ static int alc5658_ioctl(FAR struct audio_lowerhalf_s *dev, int cmd, unsigned lo
 	/* Deal with ioctls passed from the upper-half driver */
 
 	switch (cmd) {
-	/* Check for AUDIOIOC_HWRESET ioctl.  This ioctl is passed straight
-	 * through from the upper-half audio driver.
-	 */
 
 	case AUDIOIOC_HWRESET: {
-		/* REVISIT:  Should we completely re-initialize the chip?   We
-		 * can't just issue a software reset; that would puts all ALC5658
-		 * registers back in their default state.
-		 */
-
-		audvdbg("AUDIOIOC_HWRESET:\n");
+		/* This should put ALC5658 in default state, reconfiguration needed */
+		audvdbg("AUDIOIOC_HWRESET: No Action Would be taken now \n");
 	}
 	break;
-
-		/* Report our preferred buffer size and quantity */
-
 	case AUDIOIOC_GETBUFFERINFO: {
+		/* Report our preferred buffer size and quantity */
 		audvdbg("AUDIOIOC_GETBUFFERINFO:\n");
 		bufinfo = (FAR struct ap_buffer_info_s *)arg;
 #ifdef CONFIG_AUDIO_DRIVER_SPECIFIC_BUFFERS
@@ -985,10 +1000,8 @@ static int alc5658_ioctl(FAR struct audio_lowerhalf_s *dev, int cmd, unsigned lo
 #endif
 	}
 	break;
-
-
 	default:
-		audvdbg("Ignored\n");
+		audvdbg("alc5658_ioctl received unkown cmd 0x%x\n", cmd);
 		break;
 	}
 
@@ -1233,17 +1246,9 @@ static void alc5658_hw_reset(FAR struct alc5658_dev_s *priv)
 	 */
 
 	alc5658_exec_i2c_script(priv, codec_reset_script, sizeof(codec_reset_script) / sizeof(t_codec_init_script_entry));
-
 	alc5658_writereg(priv, ALC5658_IN1, (10 + 16) << 8);
 	audvdbg("MIC GAIN 0x%x\n", (uint32_t)alc5658_readreg(priv, ALC5658_IN1));
-
-	/* Dump some information and return the device instance */
-
 }
-
-/****************************************************************************
- * Public Functions
- ****************************************************************************/
 
 /****************************************************************************
  * Name: alc5658_initialize
@@ -1274,28 +1279,25 @@ FAR struct audio_lowerhalf_s *alc5658_initialize(FAR struct i2c_dev_s *i2c, FAR 
 	/* Allocate a ALC5658 device structure */
 	priv = (FAR struct alc5658_dev_s *)kmm_zalloc(sizeof(struct alc5658_dev_s));
 	if (priv) {
+
 		/* Initialize the ALC5658 device structure.  Since we used kmm_zalloc,
 		 * only the non-zero elements of the structure need to be initialized.
 		 */
-
 		priv->dev.ops = &g_audioops;
 		priv->lower = lower;
 		priv->i2c = i2c;
 		priv->i2s = i2s;
 
 		sem_init(&priv->devsem, 0, 1);
-		dq_init(&priv->pendq);
-		dq_init(&priv->doneq);
+		sq_init(&priv->pendq);
 
 		/* Software reset.  This puts all ALC5658 registers back in their
 		 * default state.
 		 */
-
 		alc5658_writereg(priv, ALC5658_SW_RESET, 0);
 		alc5658_dump_registers(&priv->dev, "After reset");
 
 		/* Verify that ALC5658 is present and available on this I2C */
-
 		regval = alc5658_readreg(priv, ALC5658_SW_RESET);
 		if (regval != 0) {
 			auddbg("ERROR: ALC5658 not found: ID=%04x\n", regval);
