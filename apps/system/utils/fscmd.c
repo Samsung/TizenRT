@@ -171,13 +171,13 @@ static int tash_cat(int argc, char **args)
 	}
 
 	if (argc < 2) {
-		FSCMD_OUTPUT(MISSING_ARGS, " : [> or >>] [file] [contents]\n", args[0]);
+		FSCMD_OUTPUT(MISSING_ARGS " : [> or >>] [file] [contents]\n", args[0]);
 
 		return 0;
 	} else if (argc == 2) {
 		/* Below is basic case, cat <filepath> */
 		if (direction.mode != FSCMD_NONE) {
-			FSCMD_OUTPUT(INVALID_ARGS, " : [> or >>] [file] [contents]\n", args[0]);
+			FSCMD_OUTPUT(INVALID_ARGS " : [> or >>] [file] [contents]\n", args[0]);
 			return 0;
 		}
 
@@ -812,7 +812,7 @@ static int tash_mksmartfs(int argc, char **args)
 		nrootdirs = atoi(args[optind++]);
 	}
 	if (nrootdirs > 8 || nrootdirs < 1) {
-		FSCMD_OUTPUT(INVALID_ARGS, "Invalid number of root directories specified\n", args[0]);
+		FSCMD_OUTPUT(INVALID_ARGS "Invalid number of root directories specified\n", args[0]);
 		return ERROR;
 	}
 	if (optind + 1 < argc) {
@@ -912,7 +912,7 @@ static int tash_mount(int argc, char **args)
 	}
 
 	if (badarg) {
-		FSCMD_OUTPUT(INVALID_ARGS, " : [-t] <fs_type> <source> <target>\n", args[0]);
+		FSCMD_OUTPUT(INVALID_ARGS " : [-t] <fs_type> <source> <target>\n", args[0]);
 
 		return 0;
 	}
