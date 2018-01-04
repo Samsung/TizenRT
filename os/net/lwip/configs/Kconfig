@@ -152,6 +152,7 @@ config NET_LWIP_LOOPBACK_INTERFACE
 menuconfig NET_LWIP_SLIP_INTERFACE
 	bool "Support serial line IP interface"
 	default n
+	depends on NET_SLIP
 
 if NET_LWIP_SLIP_INTERFACE
 
@@ -166,6 +167,14 @@ config NET_LWIP_SLIPIF_THREAD_STACKSIZE
 config NET_LWIP_SLIPIF_THREAD_PRIO
 	int "The priority assigned to the slipif_loop thread"
 	default 100
+
+config NET_LWIP_SLIPIF_IP_ADDR
+	string "IP address value to use for slipif"
+	default "10.0.0.2"
+
+config NET_LWIP_SLIPIF_GW_ADDR
+	string "Gateway address value to use in slipif"
+	default "10.0.0.1"
 
 endif #NET_LWIP_SLIP_INTERFACE
 

@@ -69,6 +69,11 @@
 #include <net/lwip/init.h>
 #endif
 
+#ifdef CONFIG_NET_LWIP_SLIP_INTERFACE
+#include <net/lwip/netif/slipif.h>
+#include <net/lwip/ip_addr.h>
+#endif
+
 #include "netdev/netdev.h"
 #include "route/route.h"
 #include "utils/utils.h"
@@ -80,7 +85,9 @@
 /****************************************************************************
  * Public Types
  ****************************************************************************/
-
+#ifdef CONFIG_NET_LWIP_SLIP_INTERFACE
+extern struct netif g_slipif;
+#endif
 /****************************************************************************
  * Private Variables
  ****************************************************************************/
@@ -92,6 +99,24 @@
 /****************************************************************************
  * Private Functions
  ****************************************************************************/
+#ifdef CONFIG_NET_LWIP_SLIP_INTERFACE
+static void slip_init(void)
+{
+	struct ip4_addr ipaddr;
+	struct ip4_addr netmask;
+	struct ip4_addr gw;
+
+	memset(&g_slipif, 0x0, sizeof(struct netif));
+
+	ipaddr.addr  = inet_addr(CONFIG_NET_LWIP_SLIPIF_IP_ADDR);
+	gw.addr      = inet_addr(CONFIG_NET_LWIP_SLIPIF_GW_ADDR);
+	netmask.addr = inet_addr("255.255.255.0");
+
+	netif_add(&g_slipif, &ipaddr, &netmask, &gw, NULL, slipif_init, tcpip_input);
+}
+#else
+#define slip_init()
+#endif
 
 /****************************************************************************
  * Public Functions
@@ -164,6 +189,11 @@ void net_initialize(void)
 #ifdef CONFIG_NET_LWIP
 	/* Create tcp_ip stack from lwip thread */
 	tcpip_init(NULL, NULL);
+#endif
+
+#ifdef CONFIG_NET_LWIP_SLIP_INTERFACE
+	/* add lwIP interface for SLIP */
+	slip_init();
 #endif
 	return;
 }

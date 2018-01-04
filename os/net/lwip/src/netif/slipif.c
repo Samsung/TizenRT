@@ -118,6 +118,9 @@ struct slipif_priv {
 #endif
 };
 
+/* global variable of netif for slip RX thread */
+struct netif g_slipif;
+
 /**
  * Send a pbuf doing the necessary SLIP encapsulation
  *
@@ -300,7 +303,8 @@ static void slipif_rxbyte_input(struct netif *netif, u8_t c)
 static void slipif_loop_thread(void *nf)
 {
 	u8_t c;
-	struct netif *netif = (struct netif *)nf;
+
+	struct netif *netif = &g_slipif;
 	struct slipif_priv *priv = (struct slipif_priv *)netif->state;
 
 	while (1) {
@@ -346,7 +350,9 @@ err_t slipif_init(struct netif *netif)
 
 	netif->output = slipif_output;
 	netif->mtu = SLIP_MAX_SIZE;
-	netif->flags |= NETIF_FLAG_POINTTOPOINT;
+	netif->flags |= (NETIF_FLAG_LINK_UP | NETIF_FLAG_UP);
+	/* for TizenRT netlib compatibility */
+	netif->d_flags |= (NETIF_FLAG_LINK_UP | NETIF_FLAG_UP);
 
 	/* netif->state or netif->num contain the port number */
 	if (netif->state != NULL) {
@@ -379,11 +385,12 @@ err_t slipif_init(struct netif *netif)
 
 #if SLIP_USE_RX_THREAD
 	/* Create a thread to poll the serial line. */
-	sys_thread_new(SLIPIF_THREAD_NAME, slipif_loop_thread, netif, SLIPIF_THREAD_STACKSIZE, SLIPIF_THREAD_PRIO);
+	sys_thread_new(SLIPIF_THREAD_NAME, slipif_loop_thread, (void *)netif, SLIPIF_THREAD_STACKSIZE, SLIPIF_THREAD_PRIO);
 #endif							/* SLIP_USE_RX_THREAD */
 	return ERR_OK;
 }
 
+#ifndef SLIP_USE_RX_THREAD
 /**
  * Polls the serial device and feeds the IP layer with incoming packets.
  *
@@ -403,6 +410,7 @@ void slipif_poll(struct netif *netif)
 		slipif_rxbyte_input(netif, c);
 	}
 }
+#endif
 
 #if SLIP_RX_FROM_ISR
 /**
