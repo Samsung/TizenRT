@@ -138,7 +138,6 @@ int file_truncate(FAR struct file *filep, off_t length)
  *   references a shared memory object, ftruncate() sets the size of the
  *   shared memory object to length. If the file is not a regular file or
  *   a shared memory object, the result is unspecified.
-
  *   With ftruncate(), the file must be open for writing; for truncate(),
  *   the process must have write permission for the file.
  *
@@ -199,7 +198,7 @@ int ftruncate(int fd, off_t length)
 		return 0;
 	}
 
-	fwdbg("WARNING: file_truncate() failed: %d\n", ret);
+	fwdbg("WARNING: file_truncate() failed\n", ret);
 
 errout:
 	set_errno(-ret);

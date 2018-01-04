@@ -225,6 +225,11 @@
 
 #define SMARTFS_ERASEDSTATE_16BIT (uint16_t)((CONFIG_SMARTFS_ERASEDSTATE << 8) | \
 								  CONFIG_SMARTFS_ERASEDSTATE)
+/* Size of temporary buffer used when a file is zero extended by ftruncate()
+ * logic.
+ */
+
+#define SMARTFS_TRUNCBUFFER_SIZE 512
 
 #ifndef offsetof
 #define offsetof(type, member)   ((size_t)&(((type *)0)->member))
