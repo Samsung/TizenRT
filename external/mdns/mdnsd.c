@@ -1636,7 +1636,9 @@ static int mdnsd_set_host_info_by_netif(struct mdnsd *svr, const char *hostname,
 	// find ip address with lwip netif_find() function
 	netif = netif_find(netif_name);
 	if (netif) {
+#ifdef CONFIG_NET_IPv4
 		ipaddr = netif->ip_addr.addr;
+#endif
 	} else {
 		ndbg("ERROR: mdnsd cannot find netif.(%s)\n", netif_name);
 		goto done;

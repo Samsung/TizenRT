@@ -157,16 +157,20 @@ void *up_wlan_get_firmware(void)
 
 void up_wlan_init(struct netif *dev)
 {
-	struct ip_addr ipaddr;
-	struct ip_addr netmask;
-	struct ip_addr gw;
-
+#if LWIP_IPV4
+	struct ip4_addr ipaddr;
+	struct ip4_addr netmask;
+	struct ip4_addr gw;
 	/* Start LWIP network thread */
 	ipaddr.addr = inet_addr("0.0.0.0");
 	netmask.addr = inet_addr("255.255.255.255");
 	gw.addr = inet_addr("0.0.0.0");
-
+#endif
 	netif_set_default(dev);
+	 wlan_netif = netif_add(dev,
+#if LWIP_IPV4
+					 &ipaddr, &netmask, &gw,
+#endif
+					 NULL, wlan_init, tcpip_input);
 
-	wlan_netif = netif_add(dev, &ipaddr, &netmask, &gw, NULL, wlan_init, tcpip_input);
 }

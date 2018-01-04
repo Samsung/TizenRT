@@ -91,9 +91,9 @@ int net_dupsd(int sockfd)
 	struct socket *sock1 = NULL;
 	struct socket *sock2 = NULL;
 	struct netconn *conn = NULL;
-	int sockfd2;
-	int err;
-	int ret;
+	int sockfd2 = 0;
+	int err = 0;
+	int ret = 0;
 
 	/* Lock the scheduler throughout the following */
 
@@ -101,7 +101,7 @@ int net_dupsd(int sockfd)
 
 	/* Get the socket structure underlying sockfd */
 
-	sock1 = get_socket(sockfd);
+	sock1 = (struct socket *)get_socket(sockfd);
 
 	/* Verify that the sockfd corresponds to valid, allocated socket */
 
@@ -122,7 +122,7 @@ int net_dupsd(int sockfd)
 
 	/* Get the socket structure underlying the new descriptor */
 
-	sock2 = get_socket(sockfd2);
+	sock2 = (struct socket *)get_socket(sockfd2);
 	if (!sock2) {
 		err = ENOSYS;			/* should not happen */
 		goto errout;

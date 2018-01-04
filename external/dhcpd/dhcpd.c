@@ -1398,6 +1398,7 @@ static int dhcpd_netif_init(char *intf)
 
 	server_ipaddr.s_addr = htonl(CONFIG_NETUTILS_DHCPD_ROUTERIP);
 	netmask_ipaddr.s_addr = htonl(CONFIG_NETUTILS_DHCPD_NETMASK);
+#ifdef CONFIG_NET_IPv4
 
 	if (netlib_set_ipv4addr(intf, &server_ipaddr) == ERROR) {
 		ndbg("failed to set server IP address\n");
@@ -1413,6 +1414,7 @@ static int dhcpd_netif_init(char *intf)
 		ndbg("failed to set default gateway\n");
 		return -1;
 	}
+#endif
 
 	ndbg("\n");
 
@@ -1439,6 +1441,7 @@ static int dhcpd_netif_deinit(char *intf)
 
 	server_ipaddr.s_addr = IPADDR_ANY;
 	netmask_ipaddr.s_addr = IPADDR_NONE;
+#ifdef CONFIG_NET_IPv4
 
 	if (netlib_set_ipv4addr(intf, &server_ipaddr) == ERROR) {
 		ndbg("failed to set server IP address\n");
@@ -1454,7 +1457,7 @@ static int dhcpd_netif_deinit(char *intf)
 		ndbg("failed to set default gateway\n");
 		return -1;
 	}
-
+#endif
 	return 0;
 }
 

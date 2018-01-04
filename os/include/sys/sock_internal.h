@@ -60,8 +60,6 @@
 #include <tinyara/config.h>
 #include <sys/types.h>
 
-#ifdef CONFIG_ENABLE_IOTIVITY
-
 #include <uio.h>
 
 struct msghdr {
@@ -74,6 +72,7 @@ struct msghdr {
 	unsigned int msg_flags;
 };
 
+#ifdef CONFIG_ENABLE_IOTIVITY
 /*
  *  POSIX 1003.1g - ancillary data object information
  *  Ancillary data consits of a sequence of pairs of
@@ -191,41 +190,6 @@ static inline struct cmsghdr *cmsg_nxthdr(struct msghdr *__msg, struct cmsghdr *
 #define MSG_NOSIGNAL   0x4000	/* Do not generate SIGPIPE.  */
 #define MSG_MORE       0x8000	/* Sender will send more.  */
 
-/* Socket options */
-
-#define SO_DEBUG        0		/* Enables recording of debugging information (get/set).
-								 * arg: pointer to integer containing a boolean value */
-#define SO_ACCEPTCONN   1		/* Reports whether socket listening is enabled (get only).
-								 * arg: pointer to integer containing a boolean value */
-#define SO_BROADCAST    2		/* Permits sending of broadcast messages (get/set).
-								 * arg: pointer to integer containing a boolean value */
-#define SO_REUSEADDR    3		/* Allow reuse of local addresses (get/set)
-								 * arg: pointer to integer containing a boolean value */
-#define SO_KEEPALIVE    4		/* Keeps connections active by enabling the periodic transmission
-								 * of messages (get/set).
-								 * arg: pointer to integer containing a boolean value */
-#define SO_LINGER       5		/* Lingers on a close() if data is present (get/set)
-								 * arg: struct linger */
-#define SO_OOBINLINE    6		/* Leaves received out-of-band data (data marked urgent) inline
-								 * (get/set) arg: pointer to integer containing a boolean value */
-#define SO_SNDBUF       7		/* Sets send buffer size. arg: integer value (get/set). */
-#define SO_RCVBUF       8		/* Sets receive buffer size. arg: integer value (get/set). */
-#define SO_ERROR        9		/* Reports and clears error status (get only).  arg: returns
-								 * an integer value */
-#define SO_TYPE        10		/* Reports the socket type (get only). return: int */
-#define SO_DONTROUTE   11		/* Requests that outgoing messages bypass standard routing (get/set)
-								 * arg: pointer to integer containing a boolean value */
-#define SO_RCVLOWAT    12		/* Sets the minimum number of bytes to process for socket input
-								 * (get/set). arg: integer value */
-#define SO_RCVTIMEO    13		/* Sets the timeout value that specifies the maximum amount of time
-								 * an input function waits until it completes (get/set).
-								 * arg: struct timeval */
-#define SO_SNDLOWAT    14		/* Sets the minimum number of bytes to process for socket output
-								 * (get/set). arg: integer value */
-#define SO_SNDTIMEO    15		/* Sets the timeout value specifying the amount of time that an
-								 * output function blocks because flow control prevents data from
-								 * being sent(get/set). arg: struct timeval */
-
 /* Protocol levels supported by get/setsockopt(): */
 
 #define SOL_SOCKET     0xfff	/* Only socket-level options supported */
@@ -274,15 +238,12 @@ struct sockaddr_storage {
  * sendto() functions.
  */
 
+#ifndef CONFIG_NET_LWIP
 struct sockaddr {
-#ifdef CONFIG_NET_LWIP
-	uint8_t sa_len;
-	uint8_t sa_family;			/* Address family */
-#else
 	sa_family_t sa_family;		/* Address family: See AF_* definitions */
-#endif
 	char sa_data[14];			/* 14-bytes of address data */
 };
+#endif
 
 /* Used with the SO_LINGER socket option */
 

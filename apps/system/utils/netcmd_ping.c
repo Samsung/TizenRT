@@ -56,6 +56,8 @@
 #include <arpa/inet.h>
 #include <net/lwip/ipv4/icmp.h>
 #include <net/lwip/ipv4/ip.h>
+#include <net/lwip/prot/ip4.h>
+#include <net/lwip/prot/ip.h>
 #include "netcmd.h"
 #include "netcmd_ping.h"
 
@@ -178,7 +180,6 @@ nu_standard_chksum(void *dataptr, u16_t len)
 	return htons((u16_t)acc);
 }
 
-
 static void
 nu_ping_recv(int s, struct timespec *ping_time)
 {
@@ -196,17 +197,18 @@ nu_ping_recv(int s, struct timespec *ping_time)
 		if (len <= 0) break;
 
 		if (len >= (int)(sizeof(struct ip_hdr) + sizeof(struct icmp_echo_hdr))) {
-
 			iphdr = (struct ip_hdr *)buf;
 			iecho = (struct icmp_echo_hdr *)(buf + (IPH_HL(iphdr) * 4));
 
 			if (iecho->type == ICMP_ER) {
+#ifdef CONFIG_NET_IPv4
 				struct timespec now;
 				clock_gettime(CLOCK_REALTIME, &now);
 				g_ping_recv_counter++;
 				uint32_t elapsed = (now.tv_sec - ping_time->tv_sec) * 1000 + (now.tv_nsec - ping_time->tv_nsec) / 1000000;
 				printf(" %d bytes from %s: icmp_seq=%d ttl=255 time=%" U32_F " ms\n",
-					   len, inet_ntoa(from.sin_addr), g_ping_seq_num, elapsed);
+						len, inet_ntoa(from.sin_addr), g_ping_seq_num, elapsed);
+#endif
 
 				if ((iecho->id == PING_ID) && (iecho->seqno == htons(g_ping_seq_num))) {
 					/* do some ping result processing */
@@ -220,7 +222,6 @@ nu_ping_recv(int s, struct timespec *ping_time)
 		printf("ping: recv - timeout\n");
 	}
 }
-
 
 static void
 nu_ping_prepare_echo(struct icmp_echo_hdr *iecho, u16_t len)
@@ -242,7 +243,6 @@ nu_ping_prepare_echo(struct icmp_echo_hdr *iecho, u16_t len)
 
 	iecho->chksum = ~nu_standard_chksum(iecho, len);
 }
-
 
 static int
 nu_ping_send(int s, struct sockaddr_in *to)
@@ -287,7 +287,7 @@ nu_ping_process(int count, const char *taddr)
 	tv.tv_usec = 0;
 
 	setsockopt(s, SOL_SOCKET, SO_RCVTIMEO, (struct timeval *)&tv,
-			   sizeof(struct timeval));
+				sizeof(struct timeval));
 
 	to.sin_len = sizeof(to);
 	to.sin_family = AF_INET;
@@ -312,8 +312,8 @@ nu_ping_process(int count, const char *taddr)
 
 	printf("--- %s ping statistics ---\n", taddr);
 	printf("%d packets transmitted, %d received, %f\%% packet loss,\n", ping_send_counter,
-		   g_ping_recv_counter,
-		   (100.0f * (float)(g_ping_recv_counter - ping_send_counter))/(float)g_ping_recv_counter);
+			g_ping_recv_counter,
+			(100.0f * (float)(g_ping_recv_counter - ping_send_counter))/(float)g_ping_recv_counter);
 
 	return OK;
 }
@@ -337,4 +337,3 @@ int cmd_ping(int argc, char **argv)
 
 	return OK;
 }
-

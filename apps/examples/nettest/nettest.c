@@ -311,8 +311,9 @@ void broadcast_receive(uint32_t num_packets)
 			goto return_with_close;
 		}
 		count++;
+#ifdef CONFIG_NET_IPv4
 		printf("[BRSERVER] received data from %s #%d : %s\n", inet_ntoa(sendaddr.sin_addr), count, databuf);
-
+#endif
 		if (num_packets == 0) {
 			continue;
 		}
@@ -378,7 +379,9 @@ void ipmcast_sender_thread(int num_packets, uint32_t sleep_time, const char *int
 	 * The IP address specified must be associated with a local,
 	 * multicast-capable interface.
 	 */
+#ifdef CONFIG_NET_IPv4
 	ret = netlib_get_ipv4addr(intf, &localInterface);
+#endif
 	if (ret == -1) {
 		printf("[MCASTCLIENT] fail to get interface's ip address\n");
 		goto out_with_socket;
@@ -477,7 +480,9 @@ void ipmcast_receiver_thread(int num_packets, const char *intf)
 	 * datagrams are to be received.
 	 */
 
+#ifdef CONFIG_NET_IPv4
 	ret = netlib_get_ipv4addr(intf, &group.imr_interface);
+#endif
 	if (ret == -1) {
 		printf("[MCASTSERV] fail to get interface's ip address\n");
 		goto out_with_socket;

@@ -54,8 +54,9 @@
 #include <net/lwip/err.h>
 #include <net/lwip/pbuf.h>
 #include <net/lwip/netif.h>
-#include <net/lwip/ipv4/ip_addr.h>
-#include <net/lwip/ipv4/ip.h>
+#include <net/lwip/ip_addr.h>
+#include <net/lwip/ip.h>
+#include <net/lwip/prot/ip4.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -79,11 +80,13 @@ struct ip_reassdata {
 
 void ip_reass_init(void);
 void ip_reass_tmr(void);
-struct pbuf *ip_reass(struct pbuf *p);
-#endif							/* IP_REASSEMBLY */
+struct pbuf *ip4_reass(struct pbuf *p);
+#endif /* IP_REASSEMBLY */
 
 #if IP_FRAG
-#if !IP_FRAG_USES_STATIC_BUF && !LWIP_NETIF_TX_SINGLE_PBUF
+#if !LWIP_NETIF_TX_SINGLE_PBUF
+#ifndef LWIP_PBUF_CUSTOM_REF_DEFINED
+#define LWIP_PBUF_CUSTOM_REF_DEFINED
 /** A custom pbuf that holds a reference to another pbuf, which is freed
  * when this custom pbuf is freed. This is used to create a custom PBUF_REF
  * that points into the original pbuf. */
@@ -93,12 +96,14 @@ struct pbuf_custom_ref {
 	/** pointer to the original pbuf that is referenced */
 	struct pbuf *original;
 };
-#endif							/* !IP_FRAG_USES_STATIC_BUF && !LWIP_NETIF_TX_SINGLE_PBUF */
+#endif /* LWIP_PBUF_CUSTOM_REF_DEFINED */
+#endif /* !LWIP_NETIF_TX_SINGLE_PBUF */
 
-err_t ip_frag(struct pbuf *p, struct netif *netif, ip_addr_t *dest);
-#endif							/* IP_FRAG */
+err_t ip4_frag(struct pbuf *p, struct netif *netif, const ip4_addr_t *dest);
+#endif /* IP_FRAG */
 
 #ifdef __cplusplus
 }
 #endif
-#endif							/* __LWIP_IP_FRAG_H__ */
+
+#endif /* LWIP_HDR_IP4_FRAG_H */

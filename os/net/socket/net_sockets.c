@@ -142,7 +142,7 @@ void net_releaselist(FAR struct socketlist *list)
 	int idx = 0;
 	for (; idx < CONFIG_NSOCKET_DESCRIPTORS; idx++) {
 		if (list->sl_sockets[idx].conn) {
-			lwip_sock_close(&list->sl_sockets[idx]);
+			lwip_close(list->sl_sockets[idx].conn->socket);
 		}
 	}
 

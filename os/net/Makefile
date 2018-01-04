@@ -63,7 +63,7 @@ NET_CSRCS   = net_initialize.c
 #LWIP stack support
 
 LWIP_ASRCS   =
-LWIP_CSRCS   = 
+LWIP_CSRCS   =
 
 # Socket support
 
@@ -92,7 +92,9 @@ include lwip/src/core/snmp/Make.defs
 ifeq ($(CONFIG_NET_IPv4),y)
 include lwip/src/core/ipv4/Make.defs
 endif
-#include lwip/src/core/ipv6/Make.defs
+ifeq ($(CONFIG_NET_IPv6),y)
+include lwip/src/core/ipv6/Make.defs
+endif
 include lwip/src/netif/ppp/Make.defs
 include lwip/sys/arch/Make.defs
 endif

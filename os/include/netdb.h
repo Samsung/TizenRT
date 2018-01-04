@@ -79,7 +79,8 @@
 #include <inttypes.h>
 
 #include <netinet/in.h>
-#include <sys/socket.h>
+#include <net/lwip/sockets.h>
+#include <net/lwip/netdb.h>
 
 /****************************************************************************
  * Pre-processor Definitions

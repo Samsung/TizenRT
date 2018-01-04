@@ -145,7 +145,6 @@ int l2_packet_get_ip_addr(struct l2_packet_data *l2, char *buf, size_t len)
 	int s;
 	struct ifreq ifr;
 	struct sockaddr_in *saddr;
-	size_t res;
 
 	s = socket(PF_INET, SOCK_DGRAM, 0);
 	if (s < 0) {
@@ -166,10 +165,14 @@ int l2_packet_get_ip_addr(struct l2_packet_data *l2, char *buf, size_t len)
 	if (saddr->sin_family != AF_INET) {
 		return -1;
 	}
-	res = os_strlcpy(buf, inet_ntoa(saddr->sin_addr), len);
+#ifdef CONFIG_NET_IPv4
+	size_t res;
+	res = os_strlcpy(buf,inet_ntoa(saddr->sin_addr), len);
+
 	if (res >= len) {
 		return -1;
 	}
+#endif
 	return 0;
 }
 

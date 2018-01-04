@@ -29,6 +29,7 @@
 #include <tinyara/net/net.h>
 #include <arpa/inet.h>
 #include <net/lwip/netif/etharp.h>
+#include <net/lwip/prot/etharp.h>
 #include <net/lwip/ipv4/igmp.h>
 
 #include "debug_scsc.h"
@@ -477,13 +478,14 @@ exit:
 }
 
 #define MULTICAST_IP_TO_MAC(ip) { (u8)0x01, \
-				  (u8)0x00, \
-				  (u8)0x5e, \
-				  (u8)((ip)[1] & 0x7F), \
-				  (u8)(ip)[2], \
-				  (u8)(ip)[3] \
+					(u8)0x00, \
+					(u8)0x5e, \
+					(u8)((ip)[1] & 0x7F), \
+					(u8)(ip)[2], \
+					(u8)(ip)[3] \
 }
-static err_t slsi_set_multicast_list(struct netif *dev, ip_addr_t *group, u8_t action)
+#ifdef CONFIG_NET_IPv4
+static err_t slsi_set_multicast_list(struct netif *dev, const ip4_addr_t *group, u8_t action)
 {
 	struct netdev_vif *ndev_vif = netdev_priv(dev);
 	struct slsi_dev *sdev = ndev_vif->sdev;
@@ -506,7 +508,7 @@ static err_t slsi_set_multicast_list(struct netif *dev, ip_addr_t *group, u8_t a
 		return slsi_clear_packet_filters(sdev, dev);
 	}
 }
-
+#endif
 static struct netif *slsi_alloc_netdev(int sizeof_priv)
 {
 	struct netif *dev;
@@ -530,8 +532,10 @@ static struct netif *slsi_alloc_netdev(int sizeof_priv)
 	dev->d_ifup = slsi_net_open;
 	dev->d_ifdown = slsi_net_stop;
 	dev->linkoutput = slsi_linkoutput;
+#ifdef CONFIG_NET_IPv4
 	dev->output = etharp_output;
 	dev->igmp_mac_filter = slsi_set_multicast_list;
+#endif
 #ifdef CONFIG_NETDEV_PHY_IOCTL
 	dev->d_ioctl = slsi_net_ioctl;
 #endif

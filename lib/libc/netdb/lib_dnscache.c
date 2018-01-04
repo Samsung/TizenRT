@@ -281,12 +281,7 @@ int dns_find_answer(FAR const char *hostname, FAR struct sockaddr *addr, FAR soc
 #endif
 
 #ifdef CONFIG_NET_IPv6
-				else
-#ifdef CONFIG_NET_IPv4
-#endif
-				{
-					inlen = sizeof(struct sockaddr_in6);
-				}
+				inlen = sizeof(struct sockaddr_in6);
 #endif
 				/* Make sure that the address will fit in the caller-provided
 				 * buffer.

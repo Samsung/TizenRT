@@ -57,6 +57,7 @@
 
 #include <net/lwip/opt.h>
 #include <net/lwip/debug.h>
+#include <net/lwip/etharp.h>
 #include <net/lwip/memp.h>
 #include <net/lwip/pbuf.h>
 #include <net/lwip/udp.h>
@@ -69,7 +70,6 @@
 #include <net/lwip/sys.h>
 #include <net/lwip/timers.h>
 #include <net/lwip/stats.h>
-#include <net/lwip/netif/etharp.h>
 #include <net/lwip/ipv4/ip_frag.h>
 #include <net/lwip/snmp_structs.h>
 #include <net/lwip/snmp_msg.h>
@@ -197,7 +197,8 @@ static u8_t memp_memory[MEM_ALIGNMENT - 1
 static int memp_sanity(void)
 {
 	s16_t i;
-	struct memp *t, *h;
+	struct memp *t = NULL;
+	struct memp *h = NULL;
 
 	for (i = 0; i < MEMP_MAX; i++) {
 		t = memp_tab[i];
@@ -291,8 +292,9 @@ static void memp_overflow_check_element_underflow(struct memp *p, u16_t memp_typ
  */
 static void memp_overflow_check_all(void)
 {
-	u16_t i, j;
-	struct memp *p;
+	u16_t i;
+	u16_t j;
+	struct memp *p = NULL;
 
 	p = (struct memp *)LWIP_MEM_ALIGN(memp_memory);
 	for (i = 0; i < MEMP_MAX; ++i) {
@@ -317,8 +319,9 @@ static void memp_overflow_check_all(void)
  */
 static void memp_overflow_init(void)
 {
-	u16_t i, j;
-	struct memp *p;
+	u16_t i;
+	u16_t j;
+	struct memp *p = NULL;
 	u8_t *m;
 
 	p = (struct memp *)LWIP_MEM_ALIGN(memp_memory);
@@ -346,8 +349,9 @@ static void memp_overflow_init(void)
  */
 void memp_init(void)
 {
-	struct memp *memp;
-	u16_t i, j;
+	struct memp *memp = NULL;
+	u16_t i;
+	u16_t j;
 
 	for (i = 0; i < MEMP_MAX; ++i) {
 		MEMP_STATS_AVAIL(used, i, 0);
@@ -401,7 +405,7 @@ memp_malloc(memp_t type)
 memp_malloc_fn(memp_t type, const char *file, const int line)
 #endif
 {
-	struct memp *memp;
+	struct memp *memp = NULL;
 	SYS_ARCH_DECL_PROTECT(old_level);
 
 	LWIP_ERROR("memp_malloc: type < MEMP_MAX", (type < MEMP_MAX), return NULL;);
@@ -441,7 +445,7 @@ memp_malloc_fn(memp_t type, const char *file, const int line)
  */
 void memp_free(memp_t type, void *mem)
 {
-	struct memp *memp;
+	struct memp *memp = NULL;
 	SYS_ARCH_DECL_PROTECT(old_level);
 
 	if (mem == NULL) {

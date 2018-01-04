@@ -68,12 +68,13 @@
 #include <net/lwip/tcpip.h>
 
 #include <net/lwip/ipv4/ip_frag.h>
-#include <net/lwip/netif/etharp.h>
+#include <net/lwip/etharp.h>
 #include <net/lwip/dhcp.h>
 #include <net/lwip/ipv4/autoip.h>
 #include <net/lwip/ipv4/igmp.h>
 #include <net/lwip/sys.h>
 #include <net/lwip/pbuf.h>
+#include <net/lwip/tcpip_priv.h>
 
 /** The one and only timeout list */
 static struct sys_timeo *next_timeout;
@@ -137,7 +138,7 @@ static void ip_reass_timer(void *arg)
 }
 #endif							/* IP_REASSEMBLY */
 
-#if LWIP_ARP
+#if (LWIP_ARP && LWIP_IPV4)
 /**
  * Timer callback function that calls etharp_tmr() and reschedules itself.
  *
@@ -195,7 +196,7 @@ static void autoip_timer(void *arg)
 }
 #endif							/* LWIP_AUTOIP */
 
-#if LWIP_IGMP
+#if LWIP_IGMP && LWIP_IPV4
 /**
  * Timer callback function that calls igmp_tmr() and reschedules itself.
  *
@@ -216,7 +217,7 @@ void sys_timeouts_init(void)
 #if IP_REASSEMBLY
 	sys_timeout(IP_TMR_INTERVAL, ip_reass_timer, NULL);
 #endif							/* IP_REASSEMBLY */
-#if LWIP_ARP
+#if LWIP_ARP && LWIP_IPV4
 	sys_timeout(ARP_TMR_INTERVAL, arp_timer, NULL);
 #endif							/* LWIP_ARP */
 #if LWIP_DHCP
@@ -226,7 +227,7 @@ void sys_timeouts_init(void)
 #if LWIP_AUTOIP
 	sys_timeout(AUTOIP_TMR_INTERVAL, autoip_timer, NULL);
 #endif							/* LWIP_AUTOIP */
-#if LWIP_IGMP
+#if LWIP_IGMP && LWIP_IPV4
 	sys_timeout(IGMP_TMR_INTERVAL, igmp_timer, NULL);
 #endif							/* LWIP_IGMP */
 
@@ -252,7 +253,8 @@ void sys_timeout_debug(u32_t msecs, sys_timeout_handler handler, void *arg, cons
 void sys_timeout(u32_t msecs, sys_timeout_handler handler, void *arg)
 #endif							/* LWIP_DEBUG_TIMERNAMES */
 {
-	struct sys_timeo *timeout, *t;
+	struct sys_timeo *timeout = NULL;
+	struct sys_timeo *t = NULL;
 
 	timeout = (struct sys_timeo *)memp_malloc(MEMP_SYS_TIMEOUT);
 	if (timeout == NULL) {
@@ -304,7 +306,8 @@ void sys_timeout(u32_t msecs, sys_timeout_handler handler, void *arg)
 */
 void sys_untimeout(sys_timeout_handler handler, void *arg)
 {
-	struct sys_timeo *prev_t, *t;
+	struct sys_timeo *prev_t = NULL;
+	struct sys_timeo *t = NULL;
 
 	if (next_timeout == NULL) {
 		return;
@@ -402,7 +405,7 @@ void sys_restart_timeouts(void)
 void sys_timeouts_mbox_fetch(sys_mbox_t *mbox, void **msg)
 {
 	u32_t time_needed;
-	struct sys_timeo *tmptimeout;
+	struct sys_timeo *tmptimeout = NULL;
 	sys_timeout_handler handler;
 	void *arg;
 

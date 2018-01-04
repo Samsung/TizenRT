@@ -151,12 +151,8 @@ struct in_addr {
 };
 
 struct sockaddr_in {
-#if defined(CONFIG_NET_LWIP)
 	uint8_t sin_len;
-	uint8_t sin_family;
-#else
 	sa_family_t sin_family;		/* Address family: AF_INET */
-#endif
 	uint16_t sin_port;			/* Port in network byte order */
 	struct in_addr sin_addr;	/* Internet address */
 	char sin_zero[8];
@@ -173,10 +169,12 @@ struct in6_addr {
 };
 
 struct sockaddr_in6 {
+	uint8_t sin6_len;               /* length of the structure */
 	sa_family_t sin6_family;	/* Address family: AF_INET */
-	uint16_t sin6_port;			/* Port in network byte order */
+	uint16_t sin6_port;	        /* Port in network byte order */
 	struct in6_addr sin6_addr;	/* IPv6 internet address */
 	uint32_t sin6_scope_id;		/* Scope ID */
+	uint32_t sin6_flowinfo;         /* IPv6 flow information */
 };
 
 /* IGMP */

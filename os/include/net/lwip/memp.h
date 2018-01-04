@@ -59,7 +59,7 @@ extern "C" {
 /* Create the list of all memory pools managed by memp. MEMP_MAX represents a NULL pool at the end */
 typedef enum {
 #define LWIP_MEMPOOL(name, num, size, desc)  MEMP_##name,
-#include <net/lwip/memp_std.h>
+#include <net/lwip/priv/memp_std.h>
 	MEMP_MAX
 } memp_t;
 
@@ -82,7 +82,7 @@ typedef enum {
 #define LWIP_MALLOC_MEMPOOL_START
 #define LWIP_MALLOC_MEMPOOL(num, size) 0 + MEMP_POOL_##size *
 #define LWIP_MALLOC_MEMPOOL_END 1
-#include <net/lwip/memp_std.h>
+#include <net/lwip/priv/memp_std.h>
 							)
 } memp_pool_helper_t;
 

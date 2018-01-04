@@ -51,63 +51,29 @@
 
 #include <net/lwip/opt.h>
 
-#if LWIP_ICMP					/* don't build if not configured for use in lwipopts.h */
-
 #include <net/lwip/pbuf.h>
+#include <net/lwip/ip6_addr.h>
 #include <net/lwip/netif.h>
+#include <net/lwip/prot/icmp6.h>
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
-#define ICMP6_DUR  1
-#define ICMP6_TE   3
-#define ICMP6_ECHO 128			/* echo */
-#define ICMP6_ER   129			/* echo reply */
+#if LWIP_ICMP6 && LWIP_IPV6 /* don't build if not configured for use in lwipopts.h */
 
-enum icmp_dur_type {
-	ICMP_DUR_NET = 0,		/* net unreachable */
-	ICMP_DUR_HOST = 1,		/* host unreachable */
-	ICMP_DUR_PROTO = 2,		/* protocol unreachable */
-	ICMP_DUR_PORT = 3,		/* port unreachable */
-	ICMP_DUR_FRAG = 4,		/* fragmentation needed and DF set */
-	ICMP_DUR_SR = 5			/* source route failed */
-};
+void icmp6_input(struct pbuf *p, struct netif *inp);
+void icmp6_dest_unreach(struct pbuf *p, enum icmp6_dur_code c);
+void icmp6_packet_too_big(struct pbuf *p, u32_t mtu);
+void icmp6_time_exceeded(struct pbuf *p, enum icmp6_te_code c);
+void icmp6_param_problem(struct pbuf *p, enum icmp6_pp_code c, u32_t pointer);
 
-enum icmp_te_type {
-	ICMP_TE_TTL = 0,		/* time to live exceeded in transit */
-	ICMP_TE_FRAG = 1		/* fragment reassembly time exceeded */
-};
+#endif /* LWIP_ICMP6 && LWIP_IPV6 */
 
-void icmp_input(struct pbuf *p, struct netif *inp);
-
-void icmp_dest_unreach(struct pbuf *p, enum icmp_dur_type t);
-void icmp_time_exceeded(struct pbuf *p, enum icmp_te_type t);
-
-struct icmp_echo_hdr {
-	u8_t type;
-	u8_t icode;
-	u16_t chksum;
-	u16_t id;
-	u16_t seqno;
-};
-
-struct icmp_dur_hdr {
-	u8_t type;
-	u8_t icode;
-	u16_t chksum;
-	u32_t unused;
-};
-
-struct icmp_te_hdr {
-	u8_t type;
-	u8_t icode;
-	u16_t chksum;
-	u32_t unused;
-};
 
 #ifdef __cplusplus
 }
 #endif
-#endif							/* LWIP_ICMP */
-#endif							/* __LWIP_ICMP6_H__ */
+
+
+#endif /* LWIP_HDR_ICMP6_H */
