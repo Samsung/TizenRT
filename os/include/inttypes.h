@@ -206,28 +206,28 @@ extern "C" {
  * POSIX API (refer to : http://pubs.opengroup.org/onlinepubs/9699919799/)
  * @since Tizen RT v1.0
  */
-intmax_t imaxabs(intmax_t);
+intmax_t imaxabs(intmax_t j);
 /**
  * @cond
  * @internal
  */
-imaxdiv_t imaxdiv(intmax_t, intmax_t);
+imaxdiv_t imaxdiv(intmax_t numer, intmax_t denom);
 /**
  * @internal
  */
-intmax_t strtoimax(const char *, char **, int);
+intmax_t strtoimax(FAR const char *nptr, FAR char **endptr, int base);
 /**
  * @internal
  */
-uintmax_t strtoumax(const char *, char **, int);
+uintmax_t strtoumax(FAR const char *nptr, FAR char **endptr, int base);
 /**
  * @internal
  */
-intmax_t wcstoimax(const wchar_t *, wchar_t **, int);
+intmax_t wcstoimax(FAR const wchar_t *nptr, FAR wchar_t **endptr, int base);
 /**
  * @internal
  */
-uintmax_t wcstoumax(const wchar_t *, wchar_t **, int);
+uintmax_t wcstoumax(FAR const wchar_t *nptr, FAR wchar_t **endptr, int base);
 
 #if defined(__WORDSIZE) && __WORDSIZE == 64
 #define __PRI64_PREFIX  "l"

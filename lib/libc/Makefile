@@ -93,11 +93,15 @@ include math/Make.defs
 include fixedmath/Make.defs
 include net/Make.defs
 include time/Make.defs
+include inttypes/Make.defs
 include libgen/Make.defs
+include locale/Make.defs
 include dirent/Make.defs
 include termios/Make.defs
 include spawn/Make.defs
 include queue/Make.defs
+include wchar/Make.defs
+include wctype/Make.defs
 include wqueue/Make.defs
 include misc/Make.defs
 include netdb/Make.defs

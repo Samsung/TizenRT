@@ -57,6 +57,7 @@
 #include <tinyara/config.h>
 
 #include <stdlib.h>
+#include <errno.h>
 
 #include "lib_internal.h"
 
@@ -72,17 +73,22 @@
  * Name: strtoul
  *
  * Description:
- *   The  strtol() function  converts  the initial part of the string in
+ *   The strtoul() function  converts  the initial part of the string in
  *   nptr to a long unsigned integer value according to the given base, which
  *   must be between 2 and 36 inclusive, or be the special value 0.
  *
- * Warning: does not check for integer overflow!
+ * Returns:
+ *   - The converted value, if the base and number are valid
+ *   - 0 if an error occurs, and set errno to:
+ *     * EINVAL if base < 2 or base > 36
+ *   - ULONG_MAX if an overflow occurs, and set errno to:
+ *     * ERANGE if the number cannot be represented using unsigned long
  *
  ****************************************************************************/
 
 unsigned long strtoul(const char *nptr, char **endptr, int base)
 {
-	unsigned long accum = 0;
+	unsigned long prev, accum = 0;
 	int value;
 
 	if (nptr) {
@@ -91,14 +97,28 @@ unsigned long strtoul(const char *nptr, char **endptr, int base)
 		lib_skipspace(&nptr);
 
 		/* Check for unspecified base */
+		/* Check for unspecified or incorrect base */
 
 		base = lib_checkbase(base, &nptr);
+		if (base < 0) {
+			set_errno(EINVAL);
+			return 0;
+		}
 
 		/* Accumulate each "digit" */
 
 		while (lib_isbasedigit(*nptr, base, &value)) {
+			prev = accum;
 			accum = accum * base + value;
 			nptr++;
+
+			/* Check for overflow */
+
+			if (accum < prev) {
+				set_errno(ERANGE);
+				accum = ULONG_MAX;
+				break;
+			}
 		}
 
 		/* Return the final pointer to the unused value */

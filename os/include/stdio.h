@@ -483,7 +483,7 @@ int vsprintf(FAR char *buf, const char *format, va_list ap);
  * @cond
  * @internal
  */
-int avsprintf(FAR char **ptr, const char *fmt, va_list ap);
+int vasprintf(FAR char **ptr, const char *fmt, va_list ap);
 /**
  * @endcond
  */

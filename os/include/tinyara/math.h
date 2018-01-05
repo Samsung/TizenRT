@@ -443,6 +443,28 @@ double exp2(double x);
  */
 long double exp2l(long double x);
 #endif
+#ifdef CONFIG_HAVE_DOUBLE
+/**
++ * @cond
+ * @internal
+ */
+double __cos(double x, double y);
+/**
+ * @internal
+ */
+double __sin(double x, double y, int iy);
+/**
+ * @internal
+ */
+double gamma(double x);
+/**
+ * @internal
+ */
+double lgamma(double x);
+/**
+ * @endcond
+ */
+#endif
 /**
  * @cond
  * @internal

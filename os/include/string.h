@@ -18,7 +18,7 @@
 /****************************************************************************
  * include/string.h
  *
- *   Copyright (C) 2007-2012, 2014 Gregory Nutt. All rights reserved.
+ *   Copyright (C) 2007-2012, 2014, 2016 Gregory Nutt. All rights reserved.
  *   Author: Gregory Nutt <gnutt@nuttx.org>
  *
  * Redistribution and use in source and binary forms, with or without
@@ -116,6 +116,14 @@ FAR char *strndup(FAR const char *s, size_t size);
  */
 FAR const char *strerror(int);
 /**
+ * @cond
+ * @internal
+ */
+int strerror_r(int, FAR char *, size_t);
+/**
+ * @endcond
+ */
+/**
  * @brief get length of fixed size string
  * @details @b #include <string.h> \n
  * POSIX API (refer to : http://pubs.opengroup.org/onlinepubs/9699919799/)
@@ -172,6 +180,14 @@ int strcasecmp(FAR const char *, FAR const char *);
  */
 int strncasecmp(FAR const char *, FAR const char *, size_t);
 /**
+ * @cond
+ * @internal
+ */
+int strcoll(FAR const char *, FAR const char *s2);
+/**
+ * @endcond
+ */
+/**
  * @brief copy a string and return a pointer to the end of the result
  * @details @b #include <string.h> \n
  * POSIX API (refer to : http://pubs.opengroup.org/onlinepubs/9699919799/)
@@ -184,14 +200,14 @@ FAR char *strcpy(char *dest, FAR const char *src);
  * POSIX API (refer to : http://pubs.opengroup.org/onlinepubs/9699919799/)
  * @since Tizen RT v1.0
  */
-FAR char *stpcpy(char *dest, FAR const char *src);
+FAR char *stpcpy(FAR char *dest, FAR const char *src);
 /**
  * @brief copy fixed length string, returning a pointer to the array end
  * @details @b #include <string.h> \n
  * POSIX API (refer to : http://pubs.opengroup.org/onlinepubs/9699919799/)
  * @since Tizen RT v1.0
  */
-FAR char *strncpy(char *, FAR const char *, size_t);
+FAR char *strncpy(FAR char *, FAR const char *, size_t);
 /**
  * @brief scan a string for a byte
  * @details @b #include <string.h> \n
@@ -256,7 +272,14 @@ FAR char *strtok(FAR char *, FAR const char *);
  * @since Tizen RT v1.0
  */
 FAR char *strtok_r(FAR char *, FAR const char *, FAR char **);
-
+/**
+ * @cond
+ * @internal
+ */
+size_t strxfrm(FAR char *, FAR const char *, size_t n);
+/**
+ * @endcond
+ */
 /**
  * @brief find byte in memory
  * @details @b #include <string.h> \n

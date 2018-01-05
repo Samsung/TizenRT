@@ -1,6 +1,6 @@
 /****************************************************************************
  *
- * Copyright 2016 Samsung Electronics All Rights Reserved.
+ * Copyright 2018 Samsung Electronics All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,7 +16,7 @@
  *
  ****************************************************************************/
 /****************************************************************************
- * libc/stdio/lib_avsprintf.c
+ * libc/stdio/lib_vasprintf.c
  *
  *   Copyright (C) 2011-2012 Gregory Nutt. All rights reserved.
  *   Author: Gregory Nutt <gnutt@nuttx.org>
@@ -66,7 +66,7 @@
  ****************************************************************************/
 /* On some architectures, va_list is really a pointer to a structure on the
  * stack.  And the va_arg builtin will modify that instance of va_list.  Since
- * avsprintf traverse the parameters in the va_list twice, the va_list will
+ * vasprintf traverse the parameters in the va_list twice, the va_list will
  * be altered in this first cases and the second usage will fail.  So far, I
  * have seen this only on the X86 family with GCC.
  */
@@ -112,14 +112,14 @@
  ****************************************************************************/
 
 /****************************************************************************
- * Name: avsprintf
+ * Name: vasprintf
  *
  * Description:
  *   This function is similar to vsprintf, except that it dynamically
  *   allocates a string (as with malloc) to hold the output, instead of
  *   putting the output in a buffer you allocate in advance.  The ptr
  *   argument should be the address of a char * object, and a successful
- *   call to avsprintf stores a pointer to the newly allocated string at that
+ *   call to vasprintf stores a pointer to the newly allocated string at that
  *   location.
  *
  * Returned Value:
@@ -129,7 +129,7 @@
  *
  ****************************************************************************/
 
-int avsprintf(FAR char **ptr, const char *fmt, va_list ap)
+int vasprintf(FAR char **ptr, const char *fmt, va_list ap)
 {
 	struct lib_outstream_s nulloutstream;
 	struct lib_memoutstream_s memoutstream;
