@@ -1,6 +1,6 @@
 /****************************************************************************
  *
- * Copyright 2016 Samsung Electronics All Rights Reserved.
+ * Copyright 2018 Samsung Electronics All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,10 +16,10 @@
  *
  ****************************************************************************/
 //***************************************************************************
-// include/cxx/cunistd
+// lib/libxx/libxx_cxa_guard.cxx
 //
-//   Copyright (C) 2012, 2017 Gregory Nutt. All rights reserved.
-//   Author: Gregory Nutt <gnutt@nuttx.org>
+//   Copyright (C) 2015 Omni Hoverboards Inc. All rights reserved.
+//   Author: Paul Alexander Patience <paul-a.patience@polymtl.ca>
 //
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions
@@ -50,99 +50,55 @@
 //
 //***************************************************************************
 
-#ifndef __INCLUDE_CXX_CUNISTD
-#define __INCLUDE_CXX_CUNISTD
-
 //***************************************************************************
 // Included Files
 //***************************************************************************
 
-#include <unistd.h>
+#include <tinyara/compiler.h>
 
 //***************************************************************************
-// Namespace
+// Pre-processor Definitions
 //***************************************************************************
 
-namespace std
+//***************************************************************************
+// Private Types
+//***************************************************************************
+
+__extension__ typedef int __guard __attribute__((mode(__DI__)));
+
+//***************************************************************************
+// Private Data
+//***************************************************************************
+
+//***************************************************************************
+// Public Functions
+//***************************************************************************
+
+extern "C"
 {
-  // Task control interfaces
+  //*************************************************************************
+  // Name: __cxa_guard_acquire
+  //*************************************************************************
 
-  using ::vfork;
-  using ::getpid;
-  using ::_exit;
-  using ::sleep;
-  using ::usleep;
-  using ::pause;
+  int __cxa_guard_acquire(FAR __guard *g)
+  {
+    return !*g;
+  }
 
-  // File descriptor opertions
-`
-  using ::close;
-  using ::dup;
-  using ::dup2;
-  using ::fsync;
-  using ::lseek;
-  using ::read;
-  using ::write;
-  using ::pread;
-  using ::pwrite;
+  //*************************************************************************
+  // Name: __cxa_guard_release
+  //*************************************************************************
 
-  // Terminal I/O
+  void __cxa_guard_release(FAR __guard *g)
+  {
+    *g = 1;
+  }
 
-  using ::isatty;
+  //*************************************************************************
+  // Name: __cxa_guard_abort
+  //*************************************************************************
 
-  // Memory management
-
-#if defined(CONFIG_ARCH_ADDRENV) && defined(CONFIG_MM_PGALLOC) && \
-    defined(CONFIG_ARCH_USE_MMU)
-  using sbrk;
-#endif
-
-  // Special devices
-
-  using ::pipe;
-
-  // Operations on working directories
-
-  using ::chdir;
-  using ::getcwd;
-
-  // Operations on file paths
-
-  using ::access;
-  using ::unlink;
-  using ::rmdir;
-#ifdef CONFIG_PSEUDOFS_SOFTLINKS
-  using ::link;
-  using ::readlink;
-#endif
-
-  // Execution of program files
-
-#ifdef CONFIG_LIBC_EXECFUNCS
-  using ::execl;
-  using ::execv;
-#endif
-
-  // Byte operations
-
-  using ::swab;
-
-  // getopt and friends
-
-  using ::getopt;
-
-  // Non-standard accessor functions
-
-  using ::getoptargp;
-  using ::getoptindp;
-  using ::getoptoptp;
-
-  // Networking
-
-#ifdef CONFIG_NET
-  using ::gethostname;
-  using ::sethostname;
-#endif
+  void __cxa_guard_abort(FAR __guard *)
+  {
+  }
 }
-
-#endif // __INCLUDE_CXX_CUNISTD

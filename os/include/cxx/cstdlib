@@ -101,11 +101,24 @@ namespace std
   using ::strtoll;
   using ::strtoull;
 #endif
+  using ::strtof;
+#ifdef CONFIG_HAVE_DOUBLE
   using ::strtod;
+#endif
+#ifdef CONFIG_HAVE_LONG_DOUBLE
+  using ::strtold;
+#endif
 
   // Binary to string conversions
 
   using ::itoa;
+
+  // Wide character operations
+
+#ifdef CONFIG_LIBC_WCHAR
+  using ::mbtowc;
+  using ::wctomb;
+#endif
 
   // Memory Management
 

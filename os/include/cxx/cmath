@@ -120,6 +120,8 @@ namespace std
   using ::sqrt;
   using ::tan;
   using ::tanh;
+  using ::gamma;
+  using ::lgamma;
 #endif
 
 #ifdef CONFIG_HAVE_LONG_DOUBLE

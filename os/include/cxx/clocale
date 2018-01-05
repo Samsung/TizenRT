@@ -1,6 +1,6 @@
 /****************************************************************************
  *
- * Copyright 2016 Samsung Electronics All Rights Reserved.
+ * Copyright 2018 Samsung Electronics All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,9 +16,9 @@
  *
  ****************************************************************************/
 //***************************************************************************
-// include/cxx/cunistd
+// os/include/cxx/clocale
 //
-//   Copyright (C) 2012, 2017 Gregory Nutt. All rights reserved.
+//   Copyright (C) 2016 Gregory Nutt. All rights reserved.
 //   Author: Gregory Nutt <gnutt@nuttx.org>
 //
 // Redistribution and use in source and binary forms, with or without
@@ -50,14 +50,14 @@
 //
 //***************************************************************************
 
-#ifndef __INCLUDE_CXX_CUNISTD
-#define __INCLUDE_CXX_CUNISTD
+#ifndef __INCLUDE_CXX_CLOCALE
+#define __INCLUDE_CXX_CLOCALE
 
 //***************************************************************************
 // Included Files
 //***************************************************************************
 
-#include <unistd.h>
+#include <locale.h>
 
 //***************************************************************************
 // Namespace
@@ -65,84 +65,9 @@
 
 namespace std
 {
-  // Task control interfaces
-
-  using ::vfork;
-  using ::getpid;
-  using ::_exit;
-  using ::sleep;
-  using ::usleep;
-  using ::pause;
-
-  // File descriptor opertions
-`
-  using ::close;
-  using ::dup;
-  using ::dup2;
-  using ::fsync;
-  using ::lseek;
-  using ::read;
-  using ::write;
-  using ::pread;
-  using ::pwrite;
-
-  // Terminal I/O
-
-  using ::isatty;
-
-  // Memory management
-
-#if defined(CONFIG_ARCH_ADDRENV) && defined(CONFIG_MM_PGALLOC) && \
-    defined(CONFIG_ARCH_USE_MMU)
-  using sbrk;
-#endif
-
-  // Special devices
-
-  using ::pipe;
-
-  // Operations on working directories
-
-  using ::chdir;
-  using ::getcwd;
-
-  // Operations on file paths
-
-  using ::access;
-  using ::unlink;
-  using ::rmdir;
-#ifdef CONFIG_PSEUDOFS_SOFTLINKS
-  using ::link;
-  using ::readlink;
-#endif
-
-  // Execution of program files
-
-#ifdef CONFIG_LIBC_EXECFUNCS
-  using ::execl;
-  using ::execv;
-#endif
-
-  // Byte operations
-
-  using ::swab;
-
-  // getopt and friends
-
-  using ::getopt;
-
-  // Non-standard accessor functions
-
-  using ::getoptargp;
-  using ::getoptindp;
-  using ::getoptoptp;
-
-  // Networking
-
-#ifdef CONFIG_NET
-  using ::gethostname;
-  using ::sethostname;
-#endif
+  using ::locale_t;
+  using ::setlocale;
+  using ::localeconv;
 }
 
-#endif // __INCLUDE_CXX_CUNISTD
+#endif // __INCLUDE_CXX_CLOCALE
