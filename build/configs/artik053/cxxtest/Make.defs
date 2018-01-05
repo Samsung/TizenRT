@@ -56,11 +56,6 @@ include ${TOPDIR}/arch/arm/src/armv7-r/Toolchain.defs
 
 LDSCRIPT = flash.ld
 
-LIBSUPXX = ${shell $(CC) $(CXXFLAGS) --print-file-name=libsupc++.a}
-EXTRA_LIBPATHS = -L "${shell dirname "$(LIBSUPXX)"}"
-EXTRA_LIBS = -lsupc++
-EXTRA_LIBS = 
-
 ifeq ($(WINTOOL),y)
   # Windows-native toolchains
   DIRLINK = $(TOPDIR)/tools/copydir.sh
