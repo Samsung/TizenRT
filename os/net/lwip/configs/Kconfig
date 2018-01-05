@@ -7,6 +7,7 @@ menu "LwIP options"
 
 menuconfig NET_IPv4
 	bool "IPv4 support"
+	select NET_TCP
 	default y
 	---help---
 		Build in support for IPv4.
@@ -85,7 +86,7 @@ source net/lwip/configs/icmp6/Kconfig
 
 menuconfig NET_LWIP_IGMP
 	bool "IGMP Support"
-	depends on NET_IPv4	
+	depends on NET_IPv4
 	default n
 
 if NET_LWIP_IGMP
@@ -236,7 +237,7 @@ config NET_LWIP_SNMP_CONCURRENT_REQUESTS
 
 config NET_LWIP_SNMP_TRAP_DESTINATIONS
 	int "Number of trap destinations"
-	default 1	
+	default 1
 	---help---
 		Number of trap destinations. At least one trap destination
 		is required
