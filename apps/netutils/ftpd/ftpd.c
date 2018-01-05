@@ -2265,8 +2265,6 @@ static int ftpd_command_port(FAR struct ftpd_session_s *session)
 
 	(void)ftpd_dataclose(session);
 
-#if 1							/* Follow param */
-
 	memset(&session->data.addr, 0, sizeof(session->data.addr));
 
 	session->data.addr.in4.sin_family = AF_INET;
@@ -2276,35 +2274,6 @@ static int ftpd_command_port(FAR struct ftpd_session_s *session)
 
 	utemp = (value[4] << 8) | (value[5]);
 	session->data.addr.in4.sin_port = htons((short)utemp);
-
-#else							/* Follow command socket address */
-
-	session->data.addrlen = sizeof(session->data.addr);
-	ret = getpeername(session->cmd.sd, (struct sockaddr *)&session->data.addr, &session->data.addrlen);
-	if (ret >= 0) {
-		if (session->data.addr.ss.ss_family != AF_INET) {
-			memset(&session->data.addr, 0, sizeof(session->data.addr));
-
-			session->data.addr.in4.sin_family = AF_INET;
-
-			utemp = (value[0] << 24) | (value[1] << 16) | (value[2] << 8) | (value[3]);
-			session->data.addr.in4.sin_addr.s_addr = htonl(utemp);
-		}
-
-		utemp = (value[4] << 8) | (value[5]);
-		session->data.addr.in4.sin_port = htons(utemp);
-	} else {
-		memset(&session->data.addr, 0, sizeof(session->data.addr));
-
-		session->data.addr.in4.sin_family = AF_INET;
-
-		utemp = (value[0] << 24) | (value[1] << 16) | (value[2] << 8) | (value[3]);
-		session->data.addr.in4.sin_addr.s_addr = htonl(utemp);
-	}
-
-	utemp = (value[4] << 8) | (value[5]);
-	session->data.addr.in4.sin_port = htons(utemp);
-#endif
 
 	return ftpd_response(session->cmd.sd, session->txtimeout, g_respfmt1, 200, ' ', "PORT command successful");
 }
@@ -2588,14 +2557,14 @@ static int ftpd_command_pasv(FAR struct ftpd_session_s *session)
 		(void)ftpd_dataclose(session);
 		return ftpd_response(session->cmd.sd, session->txtimeout, g_respfmt1, 425, ' ', "PASV getsockname fail !");
 	}
-#ifdef CONFIG_NET_IPv6
+#if defined(CONFIG_NET_IPv6) && defined(IN6_IS_ADDR_V4MAPPED) && defined(IN6_IS_ADDR_V4COMPAT)
 	if (session->data.addr.ss.ss_family == AF_INET6) {
 		/* Convert ipv6 to ipv4 */
 
 		if ((IN6_IS_ADDR_V4MAPPED(&session->data.addr.in6.sin6_addr) != 0) || (IN6_IS_ADDR_V4COMPAT(&session->data.addr.in6.sin6_addr) != 0)) {
 			/* convert ipv6 to ipv4 */
 
-			in_addr in4addr;
+			struct in_addr in4addr;
 
 			in4addr.s_addr = session->data.addr.in6.sin6_addr.s6_addr32[3];
 
@@ -2741,12 +2710,11 @@ static int ftpd_command_epsv(FAR struct ftpd_session_s *session)
 }
 
 /****************************************************************************
- * Name: ftpd_command_list
+ * Name: ftpd_command_list_internal
  ****************************************************************************/
 
-static int ftpd_command_list(FAR struct ftpd_session_s *session)
+static int ftpd_command_list_internal(FAR struct ftpd_session_s *session, uint8_t option)
 {
-	uint8_t opton = FTPD_LISTOPTION_L;
 	int ret;
 
 	ret = ftpd_dataopen(session);
@@ -2760,8 +2728,8 @@ static int ftpd_command_list(FAR struct ftpd_session_s *session)
 		return ret;
 	}
 
-	opton |= ftpd_listoption((char **)(&session->param));
-	(void)ftpd_list(session, opton);
+	option |= ftpd_listoption((char **)(&session->param));
+	(void)ftpd_list(session, option);
 
 	ret = ftpd_response(session->cmd.sd, session->txtimeout, g_respfmt1, 226, ' ', "Transfer complete");
 
@@ -2770,32 +2738,21 @@ static int ftpd_command_list(FAR struct ftpd_session_s *session)
 }
 
 /****************************************************************************
+ * Name: ftpd_command_list
+ ****************************************************************************/
+
+static int ftpd_command_list(FAR struct ftpd_session_s *session)
+{
+	return ftpd_command_list_internal(session, FTPD_LISTOPTION_L);
+}
+
+/****************************************************************************
  * Name: ftpd_command_nlst
  ****************************************************************************/
 
 static int ftpd_command_nlst(FAR struct ftpd_session_s *session)
 {
-	uint8_t opton = 0;
-	int ret;
-
-	ret = ftpd_dataopen(session);
-	if (ret < 0) {
-		return 0;
-	}
-
-	ret = ftpd_response(session->cmd.sd, session->txtimeout, g_respfmt1, 150, ' ', "Opening ASCII mode data connection for file list");
-	if (ret < 0) {
-		(void)ftpd_dataclose(session);
-		return ret;
-	}
-
-	opton |= ftpd_listoption((char **)(&session->param));
-	(void)ftpd_list(session, opton);
-
-	ret = ftpd_response(session->cmd.sd, session->txtimeout, g_respfmt1, 226, ' ', "Transfer complete");
-
-	(void)ftpd_dataclose(session);
-	return ret;
+	return ftpd_command_list_internal(session, 0);
 }
 
 /****************************************************************************

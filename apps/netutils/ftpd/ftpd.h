@@ -104,11 +104,8 @@ union ftpd_sockaddr_u {
 	uint8_t raw[sizeof(struct sockaddr_storage)];
 	struct sockaddr_storage ss;
 	struct sockaddr sa;
-#ifdef CONFIG_NET_IPv6
 	struct sockaddr_in6 in6;
-#else
 	struct sockaddr_in in4;
-#endif
 };
 
 /* This structure describes on account */
