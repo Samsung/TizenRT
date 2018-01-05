@@ -1,0 +1,14 @@
+#
+# For a description of the syntax of this configuration file,
+# see kconfig-language at https://www.kernel.org/doc/Documentation/kbuild/kconfig-language.txt
+#
+
+config HAVE_CXXINITIALIZE
+	bool "Have C++ initialization"
+	default n
+	depends on HAVE_CXX
+	---help---
+		The platform-specific logic includes support for initialization
+		of static C++ instances for this architecture and for the selected
+		toolchain (via up_cxxinitialize()).
+
