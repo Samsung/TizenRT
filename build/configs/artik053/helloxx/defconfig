@@ -44,9 +44,9 @@ CONFIG_SAMSUNG_NS2=y
 # CONFIG_ARCH_FLOAT_H is not set
 # CONFIG_ARCH_STDARG_H is not set
 CONFIG_ARCH_HAVE_CUSTOMOPT=y
-CONFIG_DEBUG_NOOPT=y
+# CONFIG_DEBUG_NOOPT is not set
 # CONFIG_DEBUG_CUSTOMOPT is not set
-# CONFIG_DEBUG_FULLOPT is not set
+CONFIG_DEBUG_FULLOPT=y
 
 #
 # Hardware Configuration
@@ -535,6 +535,10 @@ CONFIG_UART4_2STOP=0
 # CONFIG_AUDIO is not set
 
 #
+# Media Support
+#
+
+#
 # File Systems
 #
 # CONFIG_DISABLE_MOUNTPOINT is not set
@@ -668,7 +672,6 @@ CONFIG_DEBUG_MM_HEAPINFO=y
 # CONFIG_DEBUG_RTC is not set
 # CONFIG_DEBUG_SPI is not set
 # CONFIG_DEBUG_WATCHDOG is not set
-# CONFIG_DEBUG_TTRACE is not set
 
 #
 # Stack Debug Options
@@ -769,7 +772,6 @@ CONFIG_LIBCXX_HAVE_LIBSUPCXX=y
 # Application entry point list
 #
 # CONFIG_ENTRY_MANUAL is not set
-# CONFIG_ENTRY_HELLO is not set
 CONFIG_ENTRY_HELLOXX=y
 CONFIG_USER_ENTRYPOINT="helloxx_main"
 CONFIG_BUILTIN_APPS=y
@@ -778,6 +780,7 @@ CONFIG_BUILTIN_APPS=y
 # Examples
 #
 # CONFIG_EXAMPLES_AWS is not set
+# CONFIG_EXAMPLES_CXXTEST is not set
 # CONFIG_EXAMPLES_EEPROM_TEST is not set
 # CONFIG_EXAMPLES_FOTA_SAMPLE is not set
 # CONFIG_FILESYSTEM_HELPER_ENABLE is not set
