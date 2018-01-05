@@ -527,8 +527,8 @@ int things_start_stack()
 
 #ifdef __SECURED__
 	//5. Generate MAC based device UUID
-	if (0 != sm_generate_mac_based_device_id(false)) {
-		THINGS_LOG(THINGS_WARNING, TAG, "Failed to generate MAC based device_id");
+	if (0 != sm_generate_device_id()) {
+		THINGS_LOG(THINGS_WARNING, TAG, "Failed to generate device_id");
 		return 0;
 	}
 #endif
@@ -924,8 +924,8 @@ static void *__attribute__((optimize("O0"))) t_things_reset_loop(reset_args_s *a
 	}
 	THINGS_LOG(THINGS_INFO, TAG, "Reset done: security resources");
 
-	if (0 != sm_generate_mac_based_device_id(true)) {
-		THINGS_LOG(THINGS_WARNING, TAG, "Failed to generate MAC based device_id.");
+	if (0 != sm_generate_device_id()) {
+		THINGS_LOG(THINGS_WARNING, TAG, "Failed to generate device_id.");
 		goto GOTO_OUT;
 	}
 #else

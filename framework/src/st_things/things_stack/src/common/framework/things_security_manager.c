@@ -34,19 +34,16 @@
 #include "ss_sha2.h"
 #include "oxmverifycommon.h"
 #include "oic_string.h"
+#include "credresource.h"
 #include "utlist.h"
 #include "aclresource.h"
 #include "srmutility.h"
 
+#ifdef CONFIG_SUPPORT_FULL_SECURITY
+#include <mbedtls/see_api.h>
+#endif
+#include <mbedtls/base64.h>
 #include <wifi_manager/wifi_manager.h>
-
-#if defined(CONFIG_TLS_WITH_SSS) && defined(CONFIG_HW_ECDSA)
-#if defined(CONFIG_IOTIVITY_SSS_STORAGE)	// pkss
-#ifndef USE_SSS
-#define USE_SSS
-#endif
-#endif							// pkss
-#endif
 
 #define TAG "OIC_SEC_MGR"
 
@@ -172,7 +169,117 @@ const unsigned char OIC_SVR_DB_DOXM_PAYLOAD[] = {
 	0x65, 0xFF, 0xFF
 };
 
-FILE *server_fopen(const char *path, const char *mode)	// pkss
+#ifdef CONFIG_SUPPORT_FULL_SECURITY
+typedef enum {
+	SVR_IDLE = 0,
+	SVR_READ,
+	SVR_WRITE
+} svr_mode_t;
+
+static struct {
+	uint8_t *ptr;
+	uint8_t data[SEE_IOTIVITY_MAXSIZE];
+	uint32_t len;
+	svr_mode_t mode;
+} svr;
+
+FILE *server_fopen(const char *filename, const char *mode)
+{
+	if (filename == NULL || mode == NULL) {
+		return NULL;
+	}
+
+	svr.ptr = svr.data;
+	if (strcmp(mode, "r") == 0 || strcmp(mode, "rb") == 0) {
+		see_read_iotivity_storage((unsigned char *)svr.data, SEE_IOTIVITY_MAXSIZE, &svr.len);
+		svr.mode = SVR_READ;
+		/* Set default svrdb size */
+		size_t svrdb_size = sizeof(OIC_SVR_DB_COMMON) + sizeof(OIC_SVR_DB_DOXM_HEADER) + sizeof(OIC_SVR_DB_DOXM_PAYLOAD);
+		if (svr.len < svrdb_size) {
+			THINGS_LOG_D(THINGS_ERROR, TAG, "Svrdb in SSS is invalid.");
+			svr.mode = SVR_IDLE;
+			return NULL;
+		}
+	} else if (strcmp(mode, "w") == 0 || strcmp(mode, "wb") == 0) {
+		svr.mode = SVR_WRITE;
+	} else {
+		svr.mode = SVR_IDLE;
+		return NULL;
+	}
+	return (FILE *)svr.data;
+}
+
+size_t server_fread(void *ptr, size_t size, size_t count, FILE *stream)
+{
+	if (ptr == NULL || stream == NULL || count == 0) {
+		return 0;
+	}
+
+	size_t wanted = size * count;
+	size_t ret = 0;
+	size_t remained = (svr.len - (svr.ptr - svr.data));
+
+	if (svr.mode != SVR_READ) {
+		THINGS_LOG_D(THINGS_ERROR, TAG, "Secure Storage Read Error!");
+		return 0;
+	}
+
+	if (wanted < remained) {
+		memcpy(ptr, svr.ptr, wanted);
+		ret = wanted;
+		svr.ptr += wanted;
+	} else {
+		memcpy(ptr, svr.ptr, remained);
+		ret = remained;
+		svr.ptr += remained;
+	}
+
+	THINGS_LOG_D(THINGS_DEBUG, TAG, "Secure Storage Read %d bytes", ret);
+	return ret;
+}
+
+size_t server_fwrite(const void *ptr, size_t size, size_t count, FILE *stream)
+{
+	if (ptr == NULL || stream == NULL || size == 0 || count == 0) {
+		return 0;
+	}
+
+	if (svr.mode != SVR_WRITE) {
+		THINGS_LOG_D(THINGS_ERROR, TAG, "Secure Storage Write Error!");
+		return 0;
+	}
+
+	unsigned int len = size * count;
+	see_write_iotivity_storage((unsigned char *)ptr, len);
+	THINGS_LOG_D(THINGS_DEBUG, TAG, "Secure Storage Write %d bytes", len);
+	return (size_t)len;
+}
+
+int server_fclose(FILE *fp)
+{
+	if (fp == NULL) {
+		return -1;
+	}
+	svr.ptr = svr.data;
+	svr.len = 0;
+	svr.mode = SVR_IDLE;
+	return 0;
+}
+
+int server_unlink(const char *path)
+{
+	if (path == NULL) {
+		return -1;
+	}
+	if (svr.mode != SVR_IDLE) {
+		return -1;
+	}
+	unsigned char tmp = 0;
+	see_write_iotivity_storage(&tmp, 1);
+	return 0;
+}
+#else							/* CONFIG_SUPPORT_FULL_SECURITY */
+FILE *server_fopen(const char *path, const char *mode)
 {
 	THINGS_LOG_D(THINGS_DEBUG, TAG, "F SVR DB File Path : %s", SVR_DB_PATH);
 	(void)path;
@@ -207,9 +314,77 @@ int server_fclose(FILE *stream)
 	return ret;
 }
 
+int server_unlink(const char *path)
+{
+	return unlink(path);
+}
+#endif
+
 /*
  * This API Setup Security key from filepath
  */
+static int convert_pem_to_der(const unsigned char *input, size_t ilen, unsigned char *output, size_t *olen)
+{
+	int ret;
+	unsigned char *offset = input;
+	unsigned char *s1, *s2, *end = input + ilen;
+	size_t len = 0, total_len = 0;
+
+	while (1) {
+		s1 = (unsigned char *)strstr((char *)(offset), "-----BEGIN");
+		if (s1 == NULL) {
+			break;
+		}
+
+		s2 = (unsigned char *)strstr((char *)(offset), "-----END");
+		if (s2 == NULL) {
+			break;
+		}
+
+		s1 += 10;
+		while (s1 < end && *s1 != '-') {
+			s1++;
+		}
+		while (s1 < end && *s1 == '-') {
+			s1++;
+		}
+
+		if (*s1 == '\r') {
+			s1++;
+		}
+		if (*s1 == '\n') {
+			s1++;
+		}
+
+		if (s2 <= s1 || s2 > end) {
+			return -1;
+		}
+
+		ret = mbedtls_base64_decode(NULL, 0, &len, (const unsigned char *)s1, s2 - s1);
+		if (ret == MBEDTLS_ERR_BASE64_INVALID_CHARACTER) {
+			return ret;
+		}
+
+		if (total_len + len > *olen) {
+			return -1;
+		}
+
+		if ((ret = mbedtls_base64_decode(output + total_len, len, &len, (const unsigned char *)s1, s2 - s1)) != 0) {
+			return ret;
+		}
+
+		total_len += len;
+		offset = s2 + 10;
+	}
+
+	if (total_len > 0) {
+		*olen = total_len;
+		return 0;
+	}
+
+	return -1;
+}
+
 static OCStackResult seckey_setup(const char *filename, OicSecKey_t *key, OicEncodingType_t encoding)
 {
 	THINGS_LOG_D(THINGS_DEBUG, TAG, "IN: %s", __func__);
@@ -260,8 +435,26 @@ static OCStackResult seckey_setup(const char *filename, OicSecKey_t *key, OicEnc
 		fread(key->data, 1, size, fp);
 		key->len = size;
 	}
-
 	fclose(fp);
+
+	if (key->encoding == OIC_ENCODING_PEM) {
+		uint8_t *der_data = (uint8_t *)things_malloc(size);
+		if (der_data == NULL) {
+			THINGS_LOG_D(THINGS_ERROR, TAG, "Memory Full");
+			THINGS_LOG_D(THINGS_DEBUG, TAG, "OUT[FAIL]: %s", __func__);
+			return OC_STACK_NO_MEMORY;
+		}
+		if (convert_pem_to_der(key->data, key->len, der_data, &size) < 0) {
+			THINGS_LOG_D(THINGS_ERROR, TAG, "Invalid PEM Certificate");
+			things_free(der_data);
+			return OC_STACK_INVALID_PARAM;
+		}
+		things_free(key->data);
+		key->data = der_data;
+		key->len = size;
+		key->encoding = OIC_ENCODING_DER;
+	}
+
 	THINGS_LOG_D(THINGS_DEBUG, TAG, "OUT: %s", __func__);
 	return OC_STACK_OK;
 }
@@ -272,7 +465,7 @@ static OCStackResult seckey_setup(const char *filename, OicSecKey_t *key, OicEnc
  */
 static OCStackResult save_signed_asymmetric_key(OicUuid_t *subject_uuid);
 
-static int GenerateSvrDb()
+static int GenerateSvrDb(OCPersistentStorage *ps)
 {
 	THINGS_LOG_D(THINGS_INFO, TAG, "In %s", __func__);
 
@@ -286,7 +479,7 @@ static int GenerateSvrDb()
 	}
 
 	FILE *fp = NULL;
-	fp = fopen(SVR_DB_PATH, "w");
+	fp = ps->open(SVR_DB_PATH, "w");
 
 	OICSecurityResult res = OIC_SEC_ERROR;
 
@@ -404,13 +597,13 @@ static int GenerateSvrDb()
 		//
 
 		//Save the constructed SVR DB into persistent storage.
-		fwrite(svrdb, 1, svrdb_size, fp);
-		fclose(fp);
+		ps->write(svrdb, 1, svrdb_size, fp);
+		ps->close(fp);
 		things_free(svrdb);
 		THINGS_LOG_D(THINGS_INFO, TAG, "Out %s", __func__);
 		return OIC_SEC_OK;
 error:
-		fclose(fp);
+		ps->close(fp);
 		things_free(svrdb);
 		return OIC_SEC_ERROR;
 	} else {
@@ -418,6 +611,49 @@ error:
 	}
 
 	return res;					// return 0 when failed, 1 otherwise..
+}
+
+static void sm_secure_resource_check(OicUuid_t *device_id)
+{
+	OCStackResult oc_res;
+
+	// Check Device is Owned
+	bool isOwned = false;
+	oc_res = GetDoxmIsOwned(&isOwned);
+	if (OC_STACK_OK != oc_res) {
+		THINGS_LOG_D_ERROR(THINGS_ERROR, TAG, "Error in GetDoxmIsOwned : %d", (int)oc_res);
+		return OIC_SEC_ERROR;
+	}
+	if (!isOwned) {
+		oc_res = SetDoxmDeviceID(device_id);
+		if (OC_STACK_OK != oc_res) {
+			THINGS_LOG_D_ERROR(THINGS_ERROR, TAG, "Error in SetDoxmDeviceID : %d", (int)oc_res);
+			return OIC_SEC_ERROR;
+		}
+	}
+	// Check SVR_DB has CA & Key
+	uint8_t cred_ret = 0;
+	OicSecCred_t *temp = NULL;
+	LL_FOREACH(GetCredList(), temp) {
+		if (0 == strcmp(temp->credUsage, TRUST_CA)) {
+			cred_ret |= (1 << 0);
+		} else if (0 == strcmp(temp->credUsage, PRIMARY_CERT)) {
+			cred_ret |= (1 << 1);
+		} else if (0 == strcmp(temp->credUsage, MF_TRUST_CA)) {
+			cred_ret |= (1 << 2);
+		} else if (0 == strcmp(temp->credUsage, MF_PRIMARY_CERT)) {
+			cred_ret |= (1 << 3);
+		}
+	}
+
+	if (!(cred_ret & (1 << 0)) || !(cred_ret & (1 << 1)) || !(cred_ret & (1 << 2)) || !(cred_ret & (1 << 3))) {
+		DeleteCredList(GetCredList());
+		oc_res = save_signed_asymmetric_key(device_id);
+		if (OC_STACK_OK != oc_res) {
+			THINGS_LOG_D_ERROR(THINGS_ERROR, TAG, "Error in save_signed_asymmetric_key : %d", (int)oc_res);
+			return OIC_SEC_ERROR;
+		}
+	}
 }
 
 static int get_mac_addr(unsigned char *p_id_buf, size_t p_id_buf_size, unsigned int *p_id_out_len)
@@ -435,7 +671,7 @@ static int get_mac_addr(unsigned char *p_id_buf, size_t p_id_buf_size, unsigned 
 	wifi_manager_get_info(&st_wifi_info);
 
 	if (wifi_manager_get_info(&st_wifi_info) != WIFI_MANAGER_SUCCESS) {
-		
+
 		THINGS_LOG_D_ERROR(THINGS_ERROR, TAG, "MAC Get Error\n");
 		return OIC_SEC_ERROR;
 	}
@@ -468,14 +704,9 @@ static int get_mac_addr(unsigned char *p_id_buf, size_t p_id_buf_size, unsigned 
 }
 
 // To support MAC based UUID
-int sm_generate_mac_based_device_id(bool is_forced)
+static int sm_generate_mac_based_device_id(void)
 {
 	THINGS_LOG_D(THINGS_DEBUG, TAG, "In %s", __func__);
-
-	if (g_is_svr_db_exist && !is_forced) {
-		THINGS_LOG_D(THINGS_WARNING, TAG, "MAC based device UUID generation is not required.");
-		return OIC_SEC_OK;
-	}
 
 	OICSecurityResult res = OIC_SEC_ERROR;
 	OicUuid_t device_id;
@@ -497,25 +728,48 @@ int sm_generate_mac_based_device_id(bool is_forced)
 
 	memcpy(device_id.id, hash_value, sizeof(device_id.id));
 
-	OCStackResult oc_res = SetDoxmDeviceID(&device_id);
-	if (OC_STACK_OK != oc_res) {
-		THINGS_LOG_D_ERROR(THINGS_ERROR, TAG, "Error in SetDoxmDeviceID : %d", (int)oc_res);
-		return OIC_SEC_ERROR;
-	}
-	// Added as workaround for cert based D2D & D2S connection
-	oc_res = save_signed_asymmetric_key(&device_id);
-	if (OC_STACK_OK != oc_res) {
-		THINGS_LOG_D_ERROR(THINGS_ERROR, TAG, "Error in save_signed_asymmetric_key : %d", (int)oc_res);
-		return OIC_SEC_ERROR;
-	}
+	sm_secure_resource_check(&device_id);
 
 	THINGS_LOG_D(THINGS_DEBUG, TAG, "Out %s", __func__);
 
 	return res;
 }
 
-// To support MAC based UUID
-//
+static int sm_generate_artik_device_id(void)
+{
+	THINGS_LOG_D(THINGS_DEBUG, TAG, "In %s", __func__);
+
+	OicUuid_t device_id;
+	unsigned char uuid_str[((UUID_LENGTH * 2) + 4 + 1)];
+	unsigned int uuid_len;
+
+	get_artik_crt_uuid(uuid_str, &uuid_len);
+	OCStackResult oc_res = ConvertStrToUuid(uuid_str, &device_id);
+
+	if (OC_STACK_OK != oc_res) {
+		THINGS_LOG_D_ERROR(THINGS_ERROR, TAG, "Error in ConvertStrToUuid : %d", (int)oc_res);
+		return OIC_SEC_ERROR;
+	}
+
+	sm_secure_resource_check(&device_id);
+
+	THINGS_LOG_D(THINGS_DEBUG, TAG, "Out %s", __func__);
+
+	return oc_res;
+}
+
+int sm_generate_device_id(void)
+{
+	int ret = -1;
+#if defined(CONFIG_SUPPORT_FULL_SECURITY)
+#if defined(CONFIG_ARCH_BOARD_ARTIK053)
+	ret = sm_generate_artik_device_id();
+#endif /* CONFIG_ARCH_BOARD_ARTIK053 */
+#else /* CONFIG_SUPPORT_FULL_SECURITY */
+	ret = sm_generate_mac_based_device_id();
+#endif /* CONFIG_SUPPORT_FULL_SECURITY */
+	return ret;
+}
 
 int sm_init_things_security(int auth_type, const char *db_path)
 {
@@ -544,15 +798,15 @@ int sm_init_things_security(int auth_type, const char *db_path)
 		g_is_mfg_cert_required = true;
 	}
 
-	res = SM_InitSvrDb();
+	static OCPersistentStorage ps = { server_fopen, server_fread, server_fwrite, server_fclose, server_unlink };
+	res = SM_InitSvrDb(&ps);
 	if (OIC_SEC_OK != res) {
 		THINGS_LOG_ERROR(THINGS_ERROR, TAG, "Failed to create SVR DB.");
 		return res;
 	}
 
-	static OCPersistentStorage ps = { server_fopen, server_fread, server_fwrite, server_fclose, unlink };
 	THINGS_LOG(THINGS_INFO, TAG, "******* WARNING : SVR DB will be used without encryption *******");
-	
+
 	OCStackResult oc_res = OCRegisterPersistentStorageHandler(&ps);
 	if (OC_STACK_INCONSISTENT_DB == oc_res || OC_STACK_SVR_DB_NOT_EXIST == oc_res) {
 		//If failed to load SVR DB
@@ -562,7 +816,7 @@ int sm_init_things_security(int auth_type, const char *db_path)
 		//re-generate and re-install SVR DB
 		if (g_is_svr_db_exist) {
 			g_is_svr_db_exist = false;
-			res = GenerateSvrDb();
+			res = GenerateSvrDb(&ps);
 			if (OIC_SEC_OK != res) {
 				THINGS_LOG_ERROR(THINGS_ERROR, TAG, "Failed to Generate SVR DB.");
 				return res;
@@ -589,19 +843,19 @@ int sm_init_things_security(int auth_type, const char *db_path)
 	return OIC_SEC_OK;
 }
 
-int SM_InitSvrDb()
+int SM_InitSvrDb(OCPersistentStorage *ps)
 {
-	FILE *fp = fopen(SVR_DB_PATH, "r");
+	FILE *fp = ps->open(SVR_DB_PATH, "r");
 	if (fp == NULL) {
 		THINGS_LOG_D(THINGS_INFO, TAG, "Can not find the [%s], SVR DB will be automatically generated...", SVR_DB_PATH);
 		THINGS_LOG_D(THINGS_INFO, TAG, "Out %s", __func__);
-		return GenerateSvrDb();
+		return GenerateSvrDb(ps);
 	} else {
 		THINGS_LOG_D(THINGS_INFO, TAG, "SVR DB [%s] is already exist.", SVR_DB_PATH);
 		g_is_svr_db_exist = true;
 	}
 
-	fclose(fp);
+	ps->close(fp);
 	THINGS_LOG_D(THINGS_INFO, TAG, "Out %s", __func__);
 
 	return OIC_SEC_OK;
