@@ -162,10 +162,6 @@ static void pwm_update_duty(FAR struct s5j_pwmtimer_s *priv, ub16_t duty)
  ****************************************************************************/
 static int s5j_pwm_setup(FAR struct pwm_lowerhalf_s *dev)
 {
-	FAR struct s5j_pwmtimer_s *priv = (FAR struct s5j_pwmtimer_s *)dev;
-
-	VERIFY(s5j_configgpio(priv->pincfg) == OK);
-
 	return OK;
 }
 
@@ -203,6 +199,9 @@ static int s5j_pwm_start(FAR struct pwm_lowerhalf_s *dev,
 					PWM_TCON_TIM_STARTSTOP_START(priv->id) |
 					PWM_TCON_TIM_MAN_UPDATE_NOP(priv->id) |
 					PWM_TCON_TIM_AUTO_RELOAD_ON(priv->id));
+
+	/* Sets the port configuration */
+	VERIFY(s5j_configgpio(priv->pincfg) == OK);
 
 	return OK;
 }
