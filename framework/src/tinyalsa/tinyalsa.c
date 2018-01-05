@@ -134,8 +134,6 @@ struct pcm {
 	int prepared:1;
 	/** Whether the PCM is in draining state */
 	int draining:1;
-	/** The number of underruns that have occured */
-	int underruns;
 	/** Size of the buffer */
 	unsigned int buffer_size;
 	/* Number of buffers */
@@ -506,6 +504,9 @@ int pcm_writei(struct pcm *pcm, const void *data, unsigned int frame_count)
 				apb = (struct ap_buffer_s *)msg.u.pPtr;
 				memcpy(apb->samp, (char *)data + offset, nbytes);
 				apb->flags &= ~AUDIO_APB_OUTPUT_ENQUEUED;
+			} else if (msg.msgId == AUDIO_MSG_XRUN) {
+				/* Underrun to be handled by client */
+				return -EPIPE;
 			} else {
 				return oops(pcm, EINTR, "Recieved unexpected msg (id = %d) while waiting for deque message from kernel", msg.msgId);
 			}
@@ -672,7 +673,9 @@ int pcm_readi(struct pcm *pcm, void *data, unsigned int frame_count)
 						apb->flags |= AUDIO_APB_OUTPUT_ENQUEUED;
 					}
 				}
-
+			} else if (msg.msgId == AUDIO_MSG_XRUN) {
+				/* Underrun to be handled by client */
+				return -EPIPE;
 			} else {
 				return oops(pcm, EINTR, "Recieved unexpected msg (id = %d) while waiting for deque message from kernel", msg.msgId);
 			}
@@ -954,7 +957,6 @@ struct pcm *pcm_open(unsigned int card, unsigned int device, unsigned int flags,
 	pcm->next_size = 0;
 	pcm->next_offset = 0;
 	pcm->next_buf = NULL;
-	pcm->underruns = 0;
 	pcm->mmap_idx = 0;
 
 	return pcm;
@@ -1037,6 +1039,15 @@ int pcm_prepare(struct pcm *pcm)
 		return 0;
 	}
 
+#ifdef CONFIG_AUDIO_MULTI_SESSION
+	if (ioctl(pcm->fd, AUDIOIOC_PREPARE, (unsigned long)pcm->session) < 0)
+#else
+	if (ioctl(pcm->fd, AUDIOIOC_PREPARE, 0) < 0)
+#endif
+	{
+		return oops(pcm, errno, "cannot prepare pcm");
+	}
+
 	pcm->prepared = 1;
 	return 0;
 }
@@ -1085,6 +1096,9 @@ int pcm_start(struct pcm *pcm)
 		bufdesc.numbytes = pcm_frames_to_bytes(pcm, pcm->buffer_size);
 		for (pcm->buf_ptr = 0; pcm->buf_ptr < pcm->buffer_cnt; pcm->buf_ptr++) {
 			bufdesc.u.pBuffer = pcm->pBuffers[pcm->buf_ptr];
+			bufdesc.u.pBuffer->nbytes = 0;
+			bufdesc.u.pBuffer->curbyte = 0;
+			bufdesc.u.pBuffer->flags = 0;
 			if (ioctl(pcm->fd, AUDIOIOC_ENQUEUEBUFFER, (unsigned long)&bufdesc) < 0) {
 				return oops(pcm, errno, "AUDIOIOC_ENQUEUEBUFFER ioctl failed");
 			}
@@ -1196,6 +1210,9 @@ int pcm_drain(struct pcm *pcm)
 			}
 			if (msg.msgId == AUDIO_MSG_DEQUEUE) {
 				pcm->buf_ptr--;
+			} else if (msg.msgId == AUDIO_MSG_XRUN) {
+				/* Underrun to be handled by client */
+				return -EPIPE;
 			}
 		}
 
@@ -1283,6 +1300,8 @@ int pcm_mmap_commit(struct pcm *pcm, unsigned int offset, unsigned int frames)
 		/* In case of playback, we will always enqueue the buffer when
 		application calls commit, even if the buffer is not completely filled */
 		bufdesc.numbytes = pcm_frames_to_bytes(pcm, frames);
+		apb->nbytes = bufdesc.numbytes;
+		apb->curbyte = 0;
 	} else {
 		/* In record case, we will enqueue the buffer only after the application
 		reads all data present in buffer */
@@ -1294,6 +1313,8 @@ int pcm_mmap_commit(struct pcm *pcm, unsigned int offset, unsigned int frames)
 			return 0;
 		} else {
 			bufdesc.numbytes = pcm_frames_to_bytes(pcm, apb->nmaxbytes);
+			apb->nbytes = 0;
+			apb->curbyte = 0;
 		}
 	}
 
@@ -1306,6 +1327,7 @@ int pcm_mmap_commit(struct pcm *pcm, unsigned int offset, unsigned int frames)
 	bufdesc.session = pcm->session;
 #endif
 	bufdesc.u.pBuffer = apb;
+	apb->flags = 0;
 	if (ioctl(pcm->fd, AUDIOIOC_ENQUEUEBUFFER, (unsigned long)&bufdesc) < 0) {
 		return oops(pcm, errno, "AUDIOIOC_ENQUEUEBUFFER ioctl failed");
 	}
@@ -1393,6 +1415,9 @@ int pcm_wait(struct pcm *pcm, int timeout)
 			apb->flags &= ~AUDIO_APB_OUTPUT_ENQUEUED;
 			apb->curbyte = 0;
 			count++;
+		} else if (msg.msgId == AUDIO_MSG_XRUN) {
+			/* Underrun to be handled by client */
+			return -EPIPE;
 		}
 	}
 
@@ -1441,6 +1466,9 @@ int pcm_wait(struct pcm *pcm, int timeout)
 		apb->flags &= ~AUDIO_APB_OUTPUT_ENQUEUED;
 		apb->curbyte = 0;
 		return 1;
+	} else if (msg.msgId == AUDIO_MSG_XRUN) {
+		/* Underrun to be handled by client */
+		return -EPIPE;
 	}
 
 	return oops(pcm, EINTR, "Recieved unexpected msg (id = %d) while waiting for deque message from kernel", msg.msgId);
