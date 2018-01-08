@@ -67,6 +67,10 @@
 #include "clock/clock.h"
 #include "up_internal.h"
 
+#ifdef CONFIG_TASK_SCHED_HISTORY
+#include <tinyara/debug/sysdbg.h>
+#endif
+
 /****************************************************************************
  * Pre-processor Definitions
  ****************************************************************************/
@@ -137,6 +141,11 @@ void up_unblock_task(struct tcb_s *tcb)
 
 			trace_sched(NULL, rtcb);
 
+#ifdef CONFIG_TASK_SCHED_HISTORY
+			/* Save the task name which will be scheduled */
+			save_task_scheduling_status(rtcb);
+#endif
+
 			/* Then switch contexts.  Any necessary address environment
 			 * changes will be made when the interrupt returns.
 			 */
@@ -158,6 +167,11 @@ void up_unblock_task(struct tcb_s *tcb)
 
 			rtcb = this_task();
 			trace_sched(NULL, rtcb);
+
+#ifdef CONFIG_TASK_SCHED_HISTORY
+			/* Save the task name which will be scheduled */
+			save_task_scheduling_status(rtcb);
+#endif
 
 			/* Then switch contexts */
 

@@ -442,7 +442,7 @@ static int pcm_mmap_transfer_areas(struct pcm *pcm, char *buf, unsigned int offs
 		pcm_areas_copy(pcm, pcm_offset, buf, offset, frames);
 		commit = pcm_mmap_commit(pcm, pcm_offset, frames);
 		if (commit < 0) {
-			return oops(pcm, commit, "failed to commit %d frames\n", frames);
+			return oops(pcm, -commit, "failed to commit %d frames\n", frames);
 		}
 
 		offset += commit;
@@ -1119,8 +1119,10 @@ int pcm_stop(struct pcm *pcm)
 	struct audio_msg_s msg;
 	unsigned int size;
 	int prio;
+	struct timespec st_time;
 	while (pcm->buf_ptr > 0) {
-		size = mq_receive(pcm->mq, (FAR char *)&msg, sizeof(msg), &prio);
+		clock_gettime(CLOCK_REALTIME, &st_time);
+		size = mq_timedreceive(pcm->mq, (FAR char *)&msg, sizeof(msg), &prio, &st_time);
 		if (size != sizeof(msg)) {
 			break;
 		}

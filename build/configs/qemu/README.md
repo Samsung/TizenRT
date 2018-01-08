@@ -8,9 +8,10 @@ Targets Supported:
 
 1. lm3s6963-ek  
 NOTE:  
-Tizen RT supports two memory options for lm3s6963-ek board;
+Tizen RT supports three memory options for lm3s6963-ek board;
 - 64KB RAM requirement configuration which matches with real memory of lm3s6963-ek board
-- 16MB RAM requirement which can be run on QEMU only with the patch in TizenRT/build/configs/qemu/qemu-2.10.0-rc2_increase_ram_size.patch
+- 1MB RAM requirement which can be run on QEMU only with the patch in TizenRT/build/configs/qemu/qemu-2.10.0-rc2_1m_ram_size.patch
+- 16MB RAM requirement which can be run on QEMU only with the patch in TizenRT/build/configs/qemu/qemu-2.10.0-rc2_16m_ram_size.patch
 
 ## Environment Set-up
 ### QEMU installation
@@ -19,8 +20,10 @@ Tizen RT supports two memory options for lm3s6963-ek board;
 wget http://download.qemu-project.org/qemu-2.10.0-rc2.tar.xz
 tar xvJf qemu-2.10.0-rc2.tar.xz
 cd qemu-2.10.0-rc2
-/* Copy qemu-2.10.0-rc2_increase_ram_size.patch from TizenRT/build/configs/qemu */
-patch -p1 < qemu-2.10.0-rc2_increase_ram_size.patch
+/* If you want to use 1MB RAM, copy qemu-2.10.0-rc2_1m_ram_size.patch from TizenRT/build/configs/qemu */
+patch -p1 < qemu-2.10.0-rc2_1m_ram_size.patch
+/* If you want to use 16MB RAM, copy qemu-2.10.0-rc2_16m_ram_size.patch from TizenRT/build/configs/qemu */
+patch -p1 < qemu-2.10.0-rc2_16m_ram_size.patch
 ./configure --target-list=arm-softmmu
 make -j 4
 cd arm-softmmu/
@@ -55,11 +58,14 @@ arm-none-eabi-gdb
 ```
 
 ## Configuration Sets
-### tash_64k
-for running tash under 256KB flash and 64KB sram
+### tc_64k
+for running tc under 256KB flash and 64KB sram
 
-### tash_16m
-for running tash under 128MB flash and 16MB sram
+### tc_1m
+for running tc under 32MB flash and 1MB sram
+
+### tc_16m
+for running tc under 128MB flash and 16MB sram
 
 ## APPENDIX
 ### How to change memory size

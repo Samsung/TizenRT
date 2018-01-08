@@ -27,7 +27,7 @@
 #define RECORD_LOCK() do { pthread_mutex_lock(&g_rc.mutex_record); } while (false)
 #define RECORD_UNLOCK() do { pthread_mutex_unlock(&g_rc.mutex_record); } while (false)
 
-#define ST_PROTO_RECORD			0x04
+#define ST_PROTO_RECORD		0x04
 #define ST_PROTO_RECORD_DATA	0x05
 #define ST_PROTO_RECORD_PAUSE	0x02
 #define ST_PROTO_RECORD_STOP	0x01
@@ -193,8 +193,9 @@ record_result_t media_stop_record(void)
 	}
 
 	g_rc.state = RECORD_STOPPING;
-	pthread_join(g_rc.pth, NULL);
 	RECORD_UNLOCK();
+	
+	pthread_join(g_rc.pth, NULL);
 
 	return RECORD_OK;
 }
@@ -272,7 +273,6 @@ int record_and_write(char *buffer)
 	char inst = ST_PROTO_RECORD_DATA;
 
 	frames = pcm_readi(g_rc.pcmin, buffer, pcm_bytes_to_frames(g_rc.pcmin, g_rc.buffer_size));
-	printf("(*)frames: %d\n", frames);
 
 	if (frames > 0) {
 		size = pcm_frames_to_bytes(g_rc.pcmin, frames);

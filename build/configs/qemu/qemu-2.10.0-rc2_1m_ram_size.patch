@@ -14,14 +14,15 @@ Signed-off-by: pradeep.ns <pradeep.ns@samsung.com>
  1 file changed, 29 insertions(+)
 
 diff --git a/hw/arm/stellaris.c b/hw/arm/stellaris.c
-index 408c1a1..6c44158 100644
+index 408c1a1..d9ebac8 100644
 --- a/hw/arm/stellaris.c
 +++ b/hw/arm/stellaris.c
-@@ -55,6 +55,15 @@ typedef const struct {
+@@ -55,6 +55,16 @@ typedef const struct {
  #define STELLARIS_GPTM(obj) \
      OBJECT_CHECK(gptm_state, (obj), TYPE_STELLARIS_GPTM)
  
-+#define INCREASE_SRAM_FLASH	1 /*Increase the SRAM and FLASH to its Max Size Possible*/
++#define SRAM_16M_FLASH_128M	0 /*Increase the SRAM and FLASH to 16M and 128M*/
++#define SRAM_1M_FLASH_32M	1 /*Increase the SRAM and FLASH to 1M and 32M*/
 +#define SUPPORT_SDARAM		1 /*Add a sdram @cortexm3 default extranal RAM map */
 +
 +
@@ -33,19 +34,21 @@ index 408c1a1..6c44158 100644
  typedef struct gptm_state {
      SysBusDevice parent_obj;
  
-@@ -1216,7 +1225,11 @@ static stellaris_board_info stellaris_boards[] = {
+@@ -1216,7 +1226,13 @@ static stellaris_board_info stellaris_boards[] = {
    { "LM3S6965EVB",
      0x10010002,
      0x1073402e,
-+#if defined(INCREASE_SRAM_FLASH)
++#if SRAM_16M_FLASH_128M
 +    0xffffffff, /* dc0 : flash(128M) sram(16M) */
++#elif SRAM_1M_FLASH_32M
++    0x0fffffff, /* dc0 : flash(32M) sram(1M) */
 +#else
      0x00ff007f, /* dc0 */
 +#endif
      0x001133ff,
      0x030f5317,
      0x0f0f87ff,
-@@ -1282,6 +1295,9 @@ static void stellaris_init(const char *kernel_filename, const char *cpu_model,
+@@ -1282,6 +1298,9 @@ static void stellaris_init(const char *kernel_filename, const char *cpu_model,
  
      MemoryRegion *sram = g_new(MemoryRegion, 1);
      MemoryRegion *flash = g_new(MemoryRegion, 1);
@@ -55,7 +58,7 @@ index 408c1a1..6c44158 100644
      MemoryRegion *system_memory = get_system_memory();
  
      flash_size = (((board->dc0 & 0xffff) + 1) << 1) * 1024;
-@@ -1297,6 +1313,19 @@ static void stellaris_init(const char *kernel_filename, const char *cpu_model,
+@@ -1297,6 +1316,19 @@ static void stellaris_init(const char *kernel_filename, const char *cpu_model,
                             &error_fatal);
      memory_region_add_subregion(system_memory, 0x20000000, sram);
  
@@ -65,10 +68,10 @@ index 408c1a1..6c44158 100644
 +				&error_fatal);
 +
 +    memory_region_add_subregion(system_memory, CORTEXM3_SDRAM_ADDR, sdram);
-+    printf("%s : FLASH (B) = %d : SRAM (B) = %d : SDRAM (B) = %d\n", 
++    printf("%s : FLASH (B) = %d : SRAM (B) = %d : SDRAM (B) = %d\n",
 +		board->name, flash_size, sram_size, CORTEXM3_SDRAM_SIZE);
 +#else
-+    printf("%s : FLASH (B) = %d : SRAM (B) = %d\n", 
++    printf("%s : FLASH (B) = %d : SRAM (B) = %d\n",
 +		board->name, flash_size, sram_size);
 +#endif
 +

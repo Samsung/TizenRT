@@ -67,7 +67,6 @@ class dumpParser:
 		# As well as open using NM utility so that, we can read the symbols easily
 		if self.elf is not None:
 			self.elf_file_fd = open(elf, 'rb')
-			self.elf_file_fd_nm = os.popen(self.nm_path + ' -n ' + elf)
 			if not self.elf_file_fd:
 				print('Failed to open {0}'.format(elf))
 				return None
@@ -91,16 +90,16 @@ class dumpParser:
 		# Read the elf header to get the offset of text section and ARM exidx section
 		# These offsets will be used while creating ARM exidx table as well as while reading
 		# the address from ELF file at a particular text address
-		self.readelf_fd = os.popen(self.readelf_path + ' -S ' + elf)
-		elfdata = self.readelf_fd.readlines()
-		for line in elfdata:
-			if '.text' in line:
-				word = line.split()
-				#word 5 contains the offset value
-				self.text_offset = word[5]
-				if debug:
-					print line
-					print self.text_offset
+		with os.popen(self.readelf_path + ' -S ' + elf) as readelf_fd:
+			elfdata = readelf_fd.readlines()
+			for line in elfdata:
+				if '.text' in line:
+					word = line.split()
+					#word 5 contains the offset value
+					self.text_offset = word[5]
+					if debug:
+						print line
+						print self.text_offset
 
 	def __del__(self):
 		self.elf_file_fd.close() # Close the elf file instance
@@ -238,23 +237,21 @@ class dumpParser:
 	# Function to setup the Address to Symbol mapping table from the ELF file ( tinyara in our case)
 	def setup_symbol_table(self,tinyara_elf_file, debug=False):
 		# Reading the tinyara elf and preparing the symbol map table
-		symbols = self.elf_file_fd_nm.readlines()
-		for line in symbols:
-			s = line.split(' ')
-			if len(s) == 3:
-				if not '$' in s[2]:
-					# s[0] contains address and s[2] contains Symbol name
-					self.symbol_lookup_table.append((int(s[0], 16), s[2].rstrip()))
+		with os.popen(self.nm_path + ' -n ' + tinyara_elf_file) as elf_file_fd_nm:
+			symbols = elf_file_fd_nm.readlines()
+			for line in symbols:
+				s = line.split(' ')
+				if len(s) == 3:
+					if not '$' in s[2]:
+						# s[0] contains address and s[2] contains Symbol name
+						self.symbol_lookup_table.append((int(s[0], 16), s[2].rstrip()))
 
-		# Printing the Created Symbol table
-		if debug:
-			print '~~~~~~~~~~~~~~~~~~~~~~~~ SYMBOL TABLE START ~~~~~~~~~~~~~~~~~~~~~'
-			for line in self.symbol_lookup_table:
-				print "{0:x} {1}".format(line[0], line[1])
-			print '~~~~~~~~~~~~~~~~~~~~~~~~ SYMBOL TABLE END   ~~~~~~~~~~~~~~~~~~~~~'
-
-		# Close the NM ELF file descriptor
-		self.elf_file_fd_nm.close()
+			# Printing the Created Symbol table
+			if debug:
+				print '~~~~~~~~~~~~~~~~~~~~~~~~ SYMBOL TABLE START ~~~~~~~~~~~~~~~~~~~~~'
+				for line in self.symbol_lookup_table:
+					print "{0:x} {1}".format(line[0], line[1])
+				print '~~~~~~~~~~~~~~~~~~~~~~~~ SYMBOL TABLE END   ~~~~~~~~~~~~~~~~~~~~~'
 
 	# Function to read the contents of given length from specific RAM/ELF address
 	def read_address(self, addr, length, debug=False):

@@ -150,10 +150,11 @@ play_result_t media_stop_play(void)
 	}
 
 	g_pc.state = PLAY_STOPPING;
-	pthread_join(g_pc.pth, NULL);
-	g_pc.pth = -1;
 
 	PLAY_UNLOCK();
+
+	pthread_join(g_pc.pth, NULL);	
+	g_pc.pth = -1;
 
 	return MEDIA_OK;
 }
@@ -242,6 +243,7 @@ int read_data_pcm_write(char *buffer)
 		} else {
 			ret = read(g_pc.fd, buffer + readed, g_pc.buffer_size - readed);
 		}
+		printf("ret = %d\n", ret);
 		readed += ret;
 		if (ret == 0) {
 			break;
@@ -319,7 +321,7 @@ int player_worker(void *args)
 	g_pc.pcmout = NULL;
 
 	PLAY_LOCK();
-	g_pc.state = PLAY_STOPPING;
+	g_pc.state = PLAY_ERROR;
 	PLAY_UNLOCK();
 
 	return 0;

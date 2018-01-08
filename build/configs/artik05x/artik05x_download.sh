@@ -18,7 +18,7 @@
 ###########################################################################
 #
 # File   : artik05x_download.sh
-# Description : Download script for ARTIK 053
+# Description : Download script for ARTIK 05X
 
 # Remember, make is invoked from "os" directory
 source .config
@@ -33,10 +33,13 @@ CODESIGNER_PATH=${ARTIK05X_DIR_PATH}/tools/codesigner
 
 SYSTEM_TYPE=`getconf LONG_BIT`
 if [ "$SYSTEM_TYPE" = "64" ]; then
-    OPENOCD_BIN_PATH=${OPENOCD_DIR_PATH}/linux64
+	OPENOCD_BIN_PATH=${OPENOCD_DIR_PATH}/linux64
 else
-    OPENOCD_BIN_PATH=${OPENOCD_DIR_PATH}/linux32
+	OPENOCD_BIN_PATH=${OPENOCD_DIR_PATH}/linux32
 fi
+OPENOCD=${OPENOCD_BIN_PATH}/openocd
+
+CFG_FILE=artik05x.cfg
 
 TIZENRT_BIN=$OUTPUT_BINARY_PATH/tinyara_head.bin
 CODESIGNER_TOOL=artik05x_AppCodesigner
@@ -47,10 +50,11 @@ USAGE: `basename $0` [OPTIONS]
 OPTIONS:
     [--board[="<board-name>"]]
     [--secure]
-    [ALL | BOOTLOADER | RESOURCE | KERNEL | THIRDPARTY]
+    [ALL | ROMFS | BL1 | BL2 | SSSFW | WLANFW]
 
 For examples:
     `basename $0` --board=artik053 ALL
+    `basename $0` --board=artik053 OS ROMFS
     `basename $0` --board=artik053s --verify
     `basename $0` --board=artik055s --secure
 
@@ -59,97 +63,163 @@ Options:
     --secure                      choose secure mode
     --verify                      verify downloaded image if you need
     ALL                           write each firmware image into FLASH
-    BOOTLOADER                    not supported yet
-    RESOURCE                      not supported yet
-    KERNEL                        not supported yet
-    THIRDPARTY                    not supported yet
+    ROMFS                         write ROM File System image into FLASH
+    BL1                           write Primary Bootloader image into FLASH
+    BL2                           write Secondary Bootloader image into FLASH
+    SSSFW                         write Secure Element Firmware image into FLASH
+    WLANFW                        write WiFi Firmware image into FLASH
 
 EOF
 }
 
-romfs()
+make_romfs()
 {
-    # Make romfs.img
-    if [ "${CONFIG_FS_ROMFS}" == "y" ]; then
-        pushd ${OS_DIR_PATH} > /dev/null
-        sh ../tools/fs/mkromfsimg.sh
-        if [ ! -f "${OUTPUT_BINARY_PATH}/romfs.img" ]; then
-            echo "ROMFS image is not present"
-            exit 1
-        fi
-        popd > /dev/null
+	for part in "$@"; do
+		case "${part}" in
+			rom)
+				# Make romfs.img
+				pushd ${OS_DIR_PATH} > /dev/null
+				sh ../tools/fs/mkromfsimg.sh
+				if [ ! -f "${OUTPUT_BINARY_PATH}/romfs.img" ]; then
+					echo "ROMFS image is not present"
+					exit 1
+				fi
+				popd > /dev/null
+				;;
+			*)
+				;;
+		esac
+	done
+}
 
-        pushd ${OPENOCD_DIR_PATH} > /dev/null
-        ${OPENOCD_BIN_PATH}/openocd -f artik05x.cfg -s "$BOARD_DIR_PATH/../artik05x/scripts" -c " 	\
-        flash_write rom ${OUTPUT_BINARY_PATH}/romfs.img $VERIFY; \
-        exit" || exit 1
-        popd > /dev/null
-    fi
+compute_fw_parts()
+{
+	bl1=0; bl2=0; sssfw=0; wlanfw=0; os=0; rom=0;
+	case $1 in
+		ALL|all)
+			bl1=1; bl2=1; sssfw=1; wlanfw=1; os=1;
+			if [ "${CONFIG_FS_ROMFS}" == "y" ]; then
+				rom=1
+			fi
+			;;
+		BL1|bl1)
+			bl1=1
+			;;
+		BL2|bl2)
+			bl2=1
+			;;
+		SSSFW|sssfw)
+			sssfw=1
+			;;
+		WLANFW|wlanfw)
+			wlanfw=1
+			;;
+		ROMFS|romfs)
+			rom=1
+			;;
+		OS|os)
+			os=1
+			;;
+		*)
+			echo "$1 is not supported"
+			exit 1
+			;;
+	esac
+
+	parts=
+	for var in bl1 bl2 sssfw wlanfw os rom; do
+		eval value='${'${var}:-}
+		if [ "x${value:-}" == x1 ]; then
+			parts+=" ${var}"
+		fi
+	done
+	[ -z "${parts}" ] || echo ${parts}
+}
+
+# Exit if the file is not there
+ensure_file()
+{
+	if [ ! -f "${1:?}" ]; then
+		echo "missing file $1"
+		exit 1
+	fi
+}
+
+compute_ocd_commands()
+{
+	commands=
+	for part in "$@"; do
+		case "${part}" in
+			bl1)
+				ensure_file ${FW_DIR_PATH}/${part}.bin
+				commands+="flash_protect off; flash_write bl1 ${FW_DIR_PATH}/bl1.bin ${VERIFY}; flash_protect on; "
+				;;
+			bl2|sssfw|wlanfw)
+				ensure_file ${FW_DIR_PATH}/${part}.bin
+				commands+="flash_write ${part} ${FW_DIR_PATH}/${part}.bin ${VERIFY}; "
+				;;
+			os)
+				ensure_file ${OUTPUT_BINARY_PATH}/tinyara_head.bin
+				commands+="flash_write ${part} ${TIZENRT_BIN} ${VERIFY}; "
+				;;
+			rom)
+				ensure_file ${OUTPUT_BINARY_PATH}/romfs.img
+				commands+="flash_write ${part} ${OUTPUT_BINARY_PATH}/romfs.img ${VERIFY}; "
+				;;
+			*)
+				echo "Unrecognized firmware part ${part}"
+				exit 1
+				;;
+		esac
+	done
+	echo ${commands}
 }
 
 download()
 {
-    # check existence of os binary
-    if [ ! -f "${OUTPUT_BINARY_PATH}/tinyara_head.bin" ]; then
-        echo "TinyAra binary is not existed, build first"
-        exit 1
-    fi
+	# Make a list which part should be flashed
+	parts=$(compute_fw_parts $1)
+	echo "The \"${parts}\" partition(s) will be flashed"
 
-    # check existence of firmware binaries
-    if [ ! -f "${FW_DIR_PATH}/bl1.bin" ] ||\
-        [ ! -f "${FW_DIR_PATH}/bl2.bin" ] ||\
-        [ ! -f "${FW_DIR_PATH}/sssfw.bin" ] ||\
-        [ ! -f "${FW_DIR_PATH}/wlanfw.bin" ]; then
-        echo "Firmware binaries for ARTIK 05X are not existed"
-        exit 1
-    fi
+	# Generate ROMFS image
+	make_romfs ${parts}
 
-    # Generate Partition Map
-    ${SCRIPTS_PATH}/partition_gen.sh
+	# Make Openocd commands for parts
+	commands=$(compute_ocd_commands ${parts})
 
-    # Download all binaries using openocd script
-    pushd ${OPENOCD_DIR_PATH} > /dev/null
-        ${OPENOCD_BIN_PATH}/openocd -f artik05x.cfg -s $BOARD_DIR_PATH/../artik05x/scripts -c \
-        "flash_protect off; \
-        flash_write bl1 ${FW_DIR_PATH}/bl1.bin $VERIFY;
-        flash_protect on; \
-        flash_write bl2 ${FW_DIR_PATH}/bl2.bin $VERIFY; 		\
-        flash_write sssfw ${FW_DIR_PATH}/sssfw.bin $VERIFY; 	\
-        flash_write wlanfw ${FW_DIR_PATH}/wlanfw.bin $VERIFY;	\
-        flash_write os ${TIZENRT_BIN} $VERIFY;	\
-        exit" || exit 1
-    popd > /dev/null
+	# Generate Partition Map
+	${SCRIPTS_PATH}/partition_gen.sh
 
-    # Check romfs and download it
-    romfs
+	# Download all binaries using openocd script
+	pushd ${OPENOCD_DIR_PATH} > /dev/null
+	${OPENOCD} -f ${CFG_FILE} -s ${SCRIPTS_PATH} -c "${commands} exit" || exit 1
+	popd > /dev/null
 
-    echo "Flash DONE"
+	echo "Flash DONE"
 }
 
 erase()
 {
-    case $optarg in
-        USERFS|userfs)
-            PART_NAME=user
-            ;;
-        ALL|all)
-            PART_NAME=all
-            ;;
-        *)
-            echo "${optarg} is not supported"
-            exit 1
-            ;;
-    esac
+	case $optarg in
+		USERFS|userfs)
+			PART_NAME=user
+			;;
+		ALL|all)
+			PART_NAME=all
+			;;
+		*)
+			echo "${optarg} is not supported"
+			exit 1
+			;;
+	esac
 
-    # Generate Partition Map
-    ${SCRIPTS_PATH}/partition_gen.sh
+	# Generate Partition Map
+	${SCRIPTS_PATH}/partition_gen.sh
 
-    # Download all binaries using openocd script
-    pushd ${OPENOCD_DIR_PATH} > /dev/null
-    ${OPENOCD_BIN_PATH}/openocd -f artik05x.cfg -s "$BOARD_DIR_PATH/../artik05x/scripts" -c " 	\
-        flash_erase_part ${PART_NAME};	\
-        exit" || exit 1
-    popd > /dev/null
+	# Download all binaries using openocd script
+	pushd ${OPENOCD_DIR_PATH} > /dev/null
+	${OPENOCD} -f ${CFG_FILE} -s ${SCRIPTS_PATH} -c "flash_erase_part ${PART_NAME};	exit" || exit 1
+	popd > /dev/null
 }
 
 signing() {
@@ -190,10 +260,9 @@ while test $# -gt 0; do
         --verify)
             VERIFY=verify
             ;;
-        ALL)
-            download
+        ALL|OS|ROMFS|BL1|BL2|SSSFW|WLANFW|all|os|romfs|bl1|bl2|sssfw|wlanfw)
+            download $1
             ;;
-
         ERASE_*)
             erase
             ;;

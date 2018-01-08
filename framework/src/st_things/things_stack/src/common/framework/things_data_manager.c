@@ -1255,7 +1255,6 @@ static int parse_things_info_json(const char *filename)
 			} else {
 				return 0;
 			}
-
 			cJSON *file_path = cJSON_GetObjectItem(configuration, KEY_CONFIGURATION_FILEPATH);
 			if (NULL != file_path) {
 				cJSON *svrdb = cJSON_GetObjectItem(file_path, KEY_CONFIGURATION_FILEPATH_SVRDB);
@@ -1317,7 +1316,8 @@ static int parse_things_info_json(const char *filename)
 					strcat(g_certificate_file_path, certificate->valuestring);
 				}
 
-				if (strncmp(privateKey->valuestring, "/", 1) == 0) { 
+
+				if (strncmp(privateKey->valuestring, "/", 1) == 0) {
 					if (strlen(privateKey->valuestring) > (size_t)MAX_FILE_PATH_LENGTH) {
 						THINGS_LOG_V_ERROR(THINGS_ERROR, TAG, "privateKey file path length exceeded");
 						return 0;

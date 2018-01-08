@@ -39,6 +39,9 @@
 #ifdef CONFIG_EXAMPLES_TESTCASE_KERNEL
 #define TC_KERNEL_STACK   2048
 #endif
+#ifdef CONFIG_EXAMPLES_TESTCASE_DRIVERS
+#define TC_DRIVERS_STACK   2048
+#endif
 #ifdef CONFIG_EXAMPLES_TESTCASE_MPU
 #define TC_MPU_STACK   2048
 #endif
@@ -75,6 +78,7 @@ extern int tc_filesystem_main(int argc, char *argv[]);
 extern int tc_kernel_main(int argc, char *argv[]);
 extern int tc_network_main(int argc, char *argv[]);
 extern int tc_ttrace_main(int argc, char *argv[]);
+extern int tc_drivers_main(int argc, char *argv[]);
 
 /* TinyAra Public API Test Case as ta_tc */
 extern int utc_arastorage_main(int argc, char *argv[]);
@@ -106,6 +110,9 @@ static const tash_cmdlist_t tc_cmds[] = {
 #endif
 #ifdef CONFIG_EXAMPLES_TESTCASE_KERNEL
 	{"kernel_tc", tc_kernel_main, TASH_EXECMD_ASYNC},
+#endif
+#ifdef CONFIG_EXAMPLES_TESTCASE_DRIVERS
+	{"drivers_tc", tc_drivers_main, TASH_EXECMD_ASYNC},
 #endif
 #ifdef CONFIG_EXAMPLES_TESTCASE_MPU
 	{"mpu_tc", tc_mpu_main, TASH_EXECMD_ASYNC},
@@ -224,6 +231,12 @@ int tc_main(int argc, char *argv[])
 	pid = task_create("kerneltc", SCHED_PRIORITY_DEFAULT, TC_KERNEL_STACK, tc_kernel_main, argv);
 	if (pid < 0) {
 		printf("Kernel tc is not started, err = %d\n", pid);
+	}
+#endif
+#ifdef CONFIG_EXAMPLES_TESTCASE_DRIVERS
+	pid = task_create("driverstc", SCHED_PRIORITY_DEFAULT, TC_DRIVERS_STACK, tc_drivers_main, argv);
+	if (pid < 0) {
+		printf("Drivers tc is not started, err = %d\n", pid);
 	}
 #endif
 #ifdef CONFIG_EXAMPLES_TESTCASE_MPU

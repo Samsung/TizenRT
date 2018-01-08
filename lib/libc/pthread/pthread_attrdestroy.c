@@ -105,7 +105,7 @@ int pthread_attr_destroy(FAR pthread_attr_t *attr)
 {
 	int ret;
 
-	sdbg("attr=0x%p\n", attr);
+	svdbg("attr=0x%p\n", attr);
 
 	if (!attr) {
 		ret = EINVAL;
@@ -114,6 +114,6 @@ int pthread_attr_destroy(FAR pthread_attr_t *attr)
 		ret = OK;
 	}
 
-	sdbg("Returning %d\n", ret);
+	svdbg("Returning %d\n", ret);
 	return ret;
 }

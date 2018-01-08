@@ -27,16 +27,18 @@
 #include <apps/shell/tash.h>
 #include <apps/system/utils.h>
 #endif
+#ifdef CONFIG_DEBUG_SYSTEM_APP
+#include <apps/system/sysdbgapp_init.h>
+#endif
 #ifdef CONFIG_BUILTIN_APPS
 #include <apps/builtin.h>
 #endif
 #ifdef CONFIG_SYSTEM_INFORMATION
 #include <apps/system/sysinfo.h>
 #endif
-#ifdef CONFIG_BUILD_PROTECTED
-#if !defined(CONFIG_DISABLE_MOUNTPOINT) && defined(CONFIG_FS_PROCFS)
+#if defined(CONFIG_BUILD_PROTECTED) && defined(CONFIG_FS_PROCFS)
+#include <errno.h>
 #include <sys/mount.h>
-#endif
 #endif
 
 /****************************************************************************
@@ -84,6 +86,9 @@ static void tash_register_cmds(void)
 	iotjs_register_cmds();
 #endif
 
+#ifdef CONFIG_DEBUG_SYSTEM_APP
+	sysdbgapp_init();
+#endif
 }
 #endif							/* CONFIG_TASH */
 
@@ -101,14 +106,12 @@ int preapp_start(int argc, char *argv[])
 	int pid;
 #endif
 
-#ifdef CONFIG_BUILD_PROTECTED
-#if !defined(CONFIG_DISABLE_MOUNTPOINT) && defined(CONFIG_FS_PROCFS)
+#if defined(CONFIG_BUILD_PROTECTED) && defined(CONFIG_FS_PROCFS)
 	int ret;
 	ret = mount(NULL, "/proc", "procfs", 0, NULL);
 	if (ret < 0) {
-		printf("procfs mount is failed, error code is %d\n", ret);
+		printf("procfs mount is failed, error code is %d\n", get_errno());
 	}
-#endif
 #endif
 
 #ifdef CONFIG_SYSTEM_INFORMATION
@@ -130,13 +133,13 @@ int preapp_start(int argc, char *argv[])
 #endif
 
 #ifdef CONFIG_TASH
-	tash_register_cmds();
-
 	pid = tash_start();
 	if (pid <= 0) {
 		printf("TASH is failed to start, error code is %d\n", pid);
 		goto error_out;
 	}
+
+	tash_register_cmds();
 #endif
 
 #if defined(CONFIG_LIB_USRWORK) || defined(CONFIG_TASH)

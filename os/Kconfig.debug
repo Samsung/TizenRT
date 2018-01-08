@@ -522,12 +522,83 @@ config DEBUG_WATCHDOG
 		Support for this debug option is architecture-specific and may not
 		be available for some MCUs.
 
+config DEBUG_I2S
+        bool "I2S Device Driver Debug Output"
+        default n
+        ---help---
+                Enable i2s debug logs
+
+if DEBUG_I2S
+
+config DEBUG_I2S_ERROR
+        bool "I2S Error Output"
+        default n
+        depends on DEBUG_ERROR
+        ---help---
+                Enable i2s error debug output.
+
+config DEBUG_I2S_WARN
+        bool "I2S Warning Output"
+        default n
+        depends on DEBUG_WARN
+        ---help---
+                Enable i2s warning debug output.
+
+config DEBUG_I2S_INFO
+        bool "I2S Infomational Debug Output"
+        default n
+        depends on DEBUG_VERBOSE
+        ---help---
+                Enable i2s informational debug output.
+
+endif #DEBUG_I2S
+
 config DEBUG_TTRACE
 	bool "T-trace Debug Output"
 	default n
 	depends on TTRACE
 	---help---
 		Enable T-trace debug SYSLOG output (disabled by default)
+
+comment "System Debug Options"
+
+config DEBUG_SYSTEM
+	bool "System debug"
+	default n
+	select DEBUG_ERROR
+	---help---
+		Enable the System debug feature
+
+if DEBUG_SYSTEM
+
+config TASK_SCHED_HISTORY
+	bool "Task Scheduling history"
+	default n
+
+config IRQ_SCHED_HISTORY
+	bool "IRQ Scheduling history"
+	default n
+
+config SEMAPHORE_HISTORY
+	bool "Semaphore holder history"
+	default n
+
+config DEBUG_TASK_MAX_COUNT
+	hex "Maximum count for task history"
+	default 0x20
+	depends on TASK_SCHED_HISTORY
+
+config DEBUG_IRQ_MAX_COUNT
+	hex "Maximum count for irq history"
+	default 0x20
+	depends on IRQ_SCHED_HISTORY
+
+config DEBUG_SEM_MAX_COUNT
+	hex "Maximum count for sem history"
+	default 0x20
+	depends on SEMAPHORE_HISTORY
+
+endif #DEBUG_SYSTEM
 
 endif # DEBUG
 

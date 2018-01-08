@@ -833,10 +833,12 @@ int audio_register(FAR const char *name, FAR struct audio_lowerhalf_s *dev)
 	static bool dev_audio_created = false;
 #ifndef CONFIG_AUDIO_CUSTOM_DEV_PATH
 	FAR const char *devname = "/dev/audio";
+	int ret;
 #elif !defined(CONFIG_AUDIO_DEV_ROOT)
 	FAR const char *devname = CONFIG_AUDIO_DEV_PATH;
 	FAR const char *ptr;
 	FAR char *pathptr;
+	int ret;
 #endif
 
 	/* Allocate the upper-half data structure */
@@ -893,7 +895,12 @@ int audio_register(FAR const char *name, FAR struct audio_lowerhalf_s *dev)
 
 			/* Make this level of directory */
 
-			mkdir(path, 0644);
+			ret = mkdir(path, 0644);
+			if (ret < 0) {
+				auddbg("ERROR: mkdir failed\n");
+				free(upper);
+				return ret;
+			}
 
 			/* Check for another level */
 
@@ -929,7 +936,12 @@ int audio_register(FAR const char *name, FAR struct audio_lowerhalf_s *dev)
 		 * for us.
 		 */
 
-		mkdir(devname, 0644);
+		ret = mkdir(devname, 0644);
+		if (ret < 0) {
+			auddbg("ERROR: mkdir failed\n");
+			free(upper);
+			return ret;
+		}
 		dev_audio_created = true;
 	}
 

@@ -1,0 +1,71 @@
+#
+# For a description of the syntax of this configuration file,
+# see kconfig-language at https://www.kernel.org/doc/Documentation/kbuild/kconfig-language.txt
+#
+
+menuconfig EXAMPLES_TESTCASE_DRIVERS
+	bool "Drivers TestCase Example"
+	default n
+	---help---
+		Enable the Drivers TestCase Example
+
+if EXAMPLES_TESTCASE_DRIVERS
+config TC_DRV_ALL
+	bool "All"
+	default n
+	select TC_DRIVERS_NULL
+	select TC_DRIVERS_ZERO
+	select TC_DRIVERS_RTC
+	select TC_DRIVERS_PWM
+	select TC_DRIVERS_WATCHDOG
+	select TC_DRIVERS_LOOP
+	select TC_DRIVERS_ADC
+	select TC_DRIVERS_BCH
+	select TC_DRIVERS_I2C
+
+config TC_DRIVERS_NULL
+	bool "Dev Null"
+	default n
+	depends on DEV_NULL
+
+config TC_DRIVERS_ZERO
+	bool "Dev Zero"
+	default n
+	depends on DEV_ZERO
+
+config TC_DRIVERS_RTC
+	bool "Dev Rtc"
+	default n
+	depends on RTC_DRIVER
+
+config TC_DRIVERS_PWM
+	bool "Dev PWM"
+	default n
+	depends on PWM
+
+config TC_DRIVERS_WATCHDOG
+	bool "Dev Watchdog"
+	default n
+	depends on WATCHDOG
+
+config TC_DRIVERS_LOOP
+	bool "Dev Loop"
+	default n
+
+config TC_DRIVERS_ADC
+	bool "Dev ADC"
+	default n
+	depends on ADC
+
+config TC_DRIVERS_BCH
+        bool "Dev BCH"
+        default n
+        depends on BCH
+
+config TC_DRIVERS_I2C
+        bool "Dev I2C"
+        default n
+        depends on I2C_TRANSFER
+
+endif #EXAMPLES_TESTCASE_DRIVERS
+

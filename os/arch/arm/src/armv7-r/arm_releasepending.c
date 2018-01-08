@@ -64,6 +64,9 @@
 #include "sched/sched.h"
 #include "group/group.h"
 #include "up_internal.h"
+#ifdef CONFIG_TASK_SCHED_HISTORY
+#include <tinyara/debug/sysdbg.h>
+#endif
 
 /****************************************************************************
  * Public Functions
@@ -109,6 +112,11 @@ void up_release_pending(void)
 
 			rtcb = this_task();
 
+#ifdef CONFIG_TASK_SCHED_HISTORY
+			/* Save the task name which will be scheduled */
+			save_task_scheduling_status(rtcb);
+#endif
+
 			/* Then switch contexts.  Any necessary address environment
 			 * changes will be made when the interrupt returns.
 			 */
@@ -127,6 +135,11 @@ void up_release_pending(void)
 			 */
 
 			rtcb = this_task();
+
+#ifdef CONFIG_TASK_SCHED_HISTORY
+			/* Save the task name which will be scheduled */
+			save_task_scheduling_status(rtcb);
+#endif
 
 			/* Then switch contexts */
 			up_fullcontextrestore(rtcb->xcp.regs);
