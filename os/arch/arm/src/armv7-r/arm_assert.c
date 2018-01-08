@@ -95,6 +95,7 @@
 #ifdef CONFIG_DEBUG_DISPLAY_SYMBOL
 #include <stdio.h>
 bool abort_mode = false;
+static bool recursive_abort = false;
 #endif
 
 /****************************************************************************
@@ -223,6 +224,16 @@ int get_symbol(unsigned long search_addr, char *buffer, size_t buflen)
 	int ch_in_word;
 	int read_line;
 	int ch_in_line;
+
+	if (recursive_abort) {
+		/* If there is a crash in file system, below operation would
+		   lead to recursive abort, as this api will be called inside
+		   abort handler and tries to access the file system api.
+		   To avoid recursive abort, just return from here if we are
+		   already in abort mode.
+		 */
+		return -1;
+	}
 
 	pFile = fopen("/rom/System.map", "r");
 
@@ -916,6 +927,13 @@ void up_assert(const uint8_t *filename, int lineno)
 {
 	board_autoled_on(LED_ASSERTION);
 #ifdef CONFIG_DEBUG_DISPLAY_SYMBOL
+	/* First time, when code reaches here abort_mode will be false and
+	   for next iteration (recursive abort case), abort_mode is already
+	   set to true and thus we can assume that we are in recursive abort
+	   mode and thus set the flag accordingly */
+	if (abort_mode) {
+		recursive_abort = true;
+	}
 	abort_mode = true;
 #endif
 
