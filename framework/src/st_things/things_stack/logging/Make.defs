@@ -16,8 +16,7 @@
 #
 ###########################################################################
 
-CSRCS += port_tinyara.c things_stack.c things_rtos_apis.c
+CSRCS += things_logger.c
 
-DEPPATH += --dep-path src/st_things/things_stack
-VPATH += :src/st_things/things_stack
-
+DEPPATH += --dep-path src/st_things/things_stack/logging
+VPATH += :src/st_things/things_stack/logging

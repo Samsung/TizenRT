@@ -16,8 +16,7 @@
 #
 ###########################################################################
 
-CSRCS += port_tinyara.c things_stack.c things_rtos_apis.c
+CSRCS += things_hashmap.c things_list.c things_network.c things_ping.c things_queue.c things_string_util.c things_thread.c things_wait_handler.c things_rtos_util.c
 
-DEPPATH += --dep-path src/st_things/things_stack
-VPATH += :src/st_things/things_stack
-
+DEPPATH += --dep-path src/st_things/things_stack/utils
+VPATH += :src/st_things/things_stack/utils
