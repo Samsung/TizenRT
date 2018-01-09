@@ -237,6 +237,11 @@ config S5J_UART0
 	select ARCH_HAVE_UART0
 	select ARCH_HAVE_SERIAL_TERMIOS
 
+config S5J_UART0_INPUT_FILTER
+	bool "UART0 Input Filter"
+	default n
+	depends on S5J_UART0
+
 config S5J_UART1
 	bool "UART1"
 	default n
@@ -244,12 +249,22 @@ config S5J_UART1
 	select ARCH_HAVE_UART1
 	select ARCH_HAVE_SERIAL_TERMIOS
 
+config S5J_UART1_INPUT_FILTER
+	bool "UART1 Input Filter"
+	default n
+	depends on S5J_UART1
+
 config S5J_UART2
 	bool "UART2"
 	default n
 	depends on S5J_HAVE_UART2
 	select ARCH_HAVE_UART2
 	select ARCH_HAVE_SERIAL_TERMIOS
+
+config S5J_UART2_INPUT_FILTER
+	bool "UART2 Input Filter"
+	default n
+	depends on S5J_UART2
 
 config S5J_UART2_FLOWCONTROL
 	bool "UART2 Flow Control"
@@ -264,6 +279,11 @@ config S5J_UART3
 	depends on S5J_HAVE_UART3
 	select ARCH_HAVE_UART3
 	select ARCH_HAVE_SERIAL_TERMIOS
+
+config S5J_UART3_INPUT_FILTER
+	bool "UART3 Input Filter"
+	default n
+	depends on S5J_UART3
 
 config S5J_UART3_FLOWCONTROL
 	bool "UART3 Flow Control"
@@ -280,10 +300,10 @@ config S5J_UART4
 	select ARCH_HAVE_UART4
 	select ARCH_HAVE_SERIAL_TERMIOS
 
-config S5J_UART_INPUT_FILTER
-	bool "UART_INPUT_FILTER"
-	depends on S5J_UART0 || S5J_UART1 || S5J_UART2 || S5J_UART3 || S5J_UART4
+config S5J_UART4_INPUT_FILTER
+	bool "UART4 Input Filter"
 	default n
+	depends on S5J_UART4
 
 config S5J_PWM
 	bool
