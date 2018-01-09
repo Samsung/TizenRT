@@ -564,7 +564,7 @@ int wpa_ctrl_recvfrom(int sock, char *buf, size_t len
 	ssize_t amount = 0;
 	size_t recv_len;
 	char *pos;
-	int res = -1;
+
 #ifdef CONFIG_CTRL_IFACE_UDP
 	UNUSED(flags);
 #endif
@@ -598,13 +598,13 @@ int wpa_ctrl_recvfrom(int sock, char *buf, size_t len
 		amount = read(sock, pos, recv_len);
 #endif
 		if (amount < 0) {
-			res = amount;
+			return amount;
 		}
 	}
 	if (msg_size > len) {
 		return -1;				// Buffer too small for the message, return error
 	}
-	return res;
+	return msg_size;
 }
 
 static int _wpa_ctrl_sendto(int sock, const char *buf, size_t len
