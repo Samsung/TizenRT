@@ -574,9 +574,11 @@ int wpa_ctrl_recvfrom(int sock, char *buf, size_t len
 #else
 		amount = read(sock, buf + offset, CTRL_HEADER_SIZE - offset);
 #endif
-	if (amount < 0) {
-		return amount;
+		if (amount < 0) {
+			return amount;
+		}
 	}
+	
 	msg_size = wpa_ctrl_get_header(buf);
 	offset = 0;
 	amount = 0;
