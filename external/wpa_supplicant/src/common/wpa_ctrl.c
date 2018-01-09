@@ -568,7 +568,7 @@ int wpa_ctrl_recvfrom(int sock, char *buf, size_t len
 #ifdef CONFIG_CTRL_IFACE_UDP
 	UNUSED(flags);
 #endif
-	while ((offset += amount) < CTRL_HEADER_SIZE)) {
+	while ((offset += amount) < CTRL_HEADER_SIZE) {
 #ifdef CONFIG_CTRL_IFACE_UDP
 		amount = recvfrom(sock, buf + offset, CTRL_HEADER_SIZE - offset, 0, from, fromlen);
 #else
@@ -583,7 +583,7 @@ int wpa_ctrl_recvfrom(int sock, char *buf, size_t len
 	buf[CTRL_HEADER_SIZE] = '\0';
 	wpa_printf(MSG_EXCESSIVE, "received message size: %d ('%s')", msg_size, buf);
 	
-	while ((offset += amount) < msg_size)) {
+	while ((offset += amount) < msg_size) {
 		if (msg_size > len) {	// This is BAD!!! read out the message to keep alignment.
 			pos = buf;
 		} else {
