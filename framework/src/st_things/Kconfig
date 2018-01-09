@@ -17,3 +17,15 @@ config ST_THINGS
 	depends on FS_ROMFS
 	---help---
 		SmartThings Things Management for applications to use and control devices
+
+if ST_THINGS
+
+comment "ST_Things Config Parameters"
+
+config ST_THINGS_STG_MODE
+	bool "Enable ST Things STG Mode"
+	default n
+	---help---
+		Build ST Things for STG Server
+
+endif # ST_THINGS
