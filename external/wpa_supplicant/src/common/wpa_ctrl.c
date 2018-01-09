@@ -564,7 +564,7 @@ int wpa_ctrl_recvfrom(int sock, char *buf, size_t len
 	ssize_t amount = 0;
 	size_t recv_len;
 	char *pos;
-	int res;
+	int res = -1;
 #ifdef CONFIG_CTRL_IFACE_UDP
 	UNUSED(flags);
 #endif
