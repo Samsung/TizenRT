@@ -839,11 +839,6 @@ int wpa_ctrl_request(struct wpa_ctrl *ctrl, const char *cmd, size_t cmd_len, cha
 	pthread_mutex_lock(&(ctrl->busy));
 	int current_pid = getpid();
 	wpa_printf(MSG_EXCESSIVE, "Current pid %d other pid %d\n", current_pid, ctrl->pid);
-	if (ctrl->send_cmd_ifname) {
-		wpa_printf(MSG_DEBUG, "TEMPLOG wpa_ctrl_request ifname %s\n", ctrl->send_cmd_ifname);
-	} else {
-		wpa_printf(MSG_DEBUG, "TEMPLOG wpa_ctrl_request ifname %s\n", ctrl->ifname);
-	}
 
 	if (current_pid == ctrl->pid) {	// we are in the right context
 		ret = wpa_ctrl_request_ext(ctrl, cmd, cmd_len, reply, reply_len, msg_cb);

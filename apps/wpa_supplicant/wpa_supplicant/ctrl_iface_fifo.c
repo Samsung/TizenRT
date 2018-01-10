@@ -132,7 +132,6 @@ void wpa_supplicant_ctrl_iface_receive(int fd, void *eloop_ctx, void *sock_ctx)
 	}
 
 	buf[res] = '\0';
-	wpa_printf(MSG_EXCESSIVE, "TEMPLOG _receive buf: %s", buf);
 
 	/* Find interface name */
 	pos = strchr(buf, ' ');
@@ -144,8 +143,6 @@ void wpa_supplicant_ctrl_iface_receive(int fd, void *eloop_ctx, void *sock_ctx)
 	}
 	strncpy(&ifname[0], buf, ifname_len);
 	ifname[ifname_len] = '\0';
-
-	wpa_printf(MSG_EXCESSIVE, "TEMPLOG _receive Interface name in cmd: %s", ifname);
 
 	/* Find supplicant interface data */
 	struct wpa_ifname *tmp = priv->if_list;
@@ -213,9 +210,6 @@ static void wpa_supplicant_monitor_iface_msg_cb(void *ctx, int level, enum wpa_m
 		return;
 	}
 
-	if (l_file_desc) {
-		wpa_printf(MSG_EXCESSIVE, "TEMPLOG _monitor_iface_msg_cb wpa_s->ifname: %s ctrl_dest ifname: %s", wpa_s->ifname, l_file_desc->ctrl_dst.ifname);
-	}
 	//FIXME: Might be needed if call back messages need to be dispatched
 //    if (wpa_s->ifname) {
 //        const char *_cmd;
@@ -261,7 +255,6 @@ struct wpa_ifname *wpa_supplicant_ctrl_iface_init(struct wpa_supplicant *wpa_s)
 	}
 
 	wpa_if->wpa_s = wpa_s;
-	wpa_printf(MSG_DEBUG, "TEMPLOG _ctrl_iface_init wpa_s->ifname: %s", wpa_s->ifname);
 
 	os_strlcpy(wpa_if->ifname, wpa_s->ifname, sizeof(wpa_s->ifname));
 
@@ -270,7 +263,6 @@ struct wpa_ifname *wpa_supplicant_ctrl_iface_init(struct wpa_supplicant *wpa_s)
 		return wpa_if;
 	}
 
-	wpa_printf(MSG_DEBUG, "TEMPLOG _ctrl_iface_init after wpa_s->conf->ctrl_interfase %s", wpa_s->conf->ctrl_interface);
 
 	if (l_file_desc->count == 0) {
 
@@ -289,7 +281,6 @@ struct wpa_ifname *wpa_supplicant_ctrl_iface_init(struct wpa_supplicant *wpa_s)
 		l_file_desc->ctrl_dst.monitor_fd = -1;
 
 		//FIXME: KSc if using a static to store fd's then check these instead.
-		wpa_printf(MSG_DEBUG, "TEMPLOG _ctrl_iface_init call eloop");
 		eloop_register_read_sock(l_file_desc->ctrl_fd_req, wpa_supplicant_ctrl_iface_receive, wpa_s, l_file_desc);
 		sem_init(&l_file_desc->ctrl_dst.sem_write, 1, 0);	// Shared between processes (tasks in case of tinyara)
 		wpa_msg_register_cb(wpa_supplicant_monitor_iface_msg_cb);
@@ -302,8 +293,6 @@ struct wpa_ifname *wpa_supplicant_ctrl_iface_init(struct wpa_supplicant *wpa_s)
 		}
 		tmp_if_list->next = wpa_if;
 	}
-	wpa_printf(MSG_DEBUG, "TEMPLOG _ctrl_iface_init ctrl_fd_cfm: %d", l_file_desc->ctrl_fd_cfm);
-	wpa_printf(MSG_DEBUG, "TEMPLOG _ctrl_iface_init ctrl_fd_req: %d", l_file_desc->ctrl_fd_req);
 
 	l_file_desc->count++;
 	wpa_s->ctrl_priv = l_file_desc;
@@ -358,7 +347,6 @@ void wpa_supplicant_ctrl_iface_deinit(struct wpa_ifname *wpaifname)
 			priv->ctrl_fd_cfm = -1;
 		}
 		sem_destroy(&priv->ctrl_dst.sem_write);
-		wpa_printf(MSG_DEBUG, "TEMPLOG _ctrl_iface_deinit after sem_destroy");
 		if (l_file_desc) {
 			os_free(l_file_desc);
 			l_file_desc = NULL;
