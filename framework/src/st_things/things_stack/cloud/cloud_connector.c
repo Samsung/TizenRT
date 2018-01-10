@@ -134,14 +134,16 @@ OCStackResult things_cloud_signup(const char *host, const char *device_id, const
 	char targetUri[MAX_URI_LENGTH * 2] = { 0, };
 	OCCallbackData cb_data;
 	OCRepPayload *registerPayload = NULL;
+	OCRepPayload *aafPayload = NULL;
+	char *mnid = NULL;
 
 	if (host == NULL || device_id == NULL || event_data == NULL || (event_data->accesstoken[0] == 0 && event_data->auth_code[0] == 0)) {
 		THINGS_LOG_D_ERROR(THINGS_ERROR, TAG, "Invalid event_data.");
-		goto no_memory;
+		return OC_STACK_ERROR;
 	}
 
 	snprintf(targetUri, MAX_URI_LENGTH * 2, "%s%s", host, OC_RSRVD_ACCOUNT_URI);
-	THINGS_LOG_D(THINGS_INFO, TAG, "Signing up to : %s", targetUri);
+	THINGS_LOG_D(THINGS_INFO, TAG, "targetUri : %s", targetUri);
 
 	memset(&cb_data, 0, sizeof(OCCallbackData));
 	cb_data.cb = response;
@@ -150,6 +152,7 @@ OCStackResult things_cloud_signup(const char *host, const char *device_id, const
 
 	registerPayload = OCRepPayloadCreate();
 	if (!registerPayload) {
+		THINGS_LOG_D(THINGS_ERROR, TAG, "registerPlayload is NULL");
 		goto no_memory;
 	}
 
@@ -180,6 +183,29 @@ OCStackResult things_cloud_signup(const char *host, const char *device_id, const
 	}
 
 	THINGS_LOG_D(THINGS_INFO, TAG, "OCToCATransportFlags(CT_ADAPTER_TCP)");
+	if (dm_get_easy_setup_use_artik_crt() == true) {
+		THINGS_LOG_D(THINGS_DEBUG, TAG, "haaf		: true");
+		OCRepPayloadSetPropBool(registerPayload, "haaf", true);
+
+		aafPayload = OCRepPayloadCreate();
+		if (aafPayload == NULL) {
+			THINGS_LOG_V(THINGS_ERROR, TAG, "[Error] memory allocation is failed.(aafPayload)");
+			goto no_memory;
+		}
+
+		mnid = (char *)dm_get_mnid();
+		if (mnid == NULL) {
+			THINGS_LOG_V(THINGS_ERROR, TAG, "[Error] mnid is NULL.");
+			OCRepPayloadDestroy(aafPayload);
+			OCRepPayloadDestroy(registerPayload);
+			return OC_STACK_ERROR;
+		}
+
+		THINGS_LOG_D(THINGS_DEBUG, TAG, "aaf.mnId	: %s", mnid);
+		OCRepPayloadSetPropString(aafPayload, "mnid", mnid);
+
+		OCRepPayloadSetPropObject(registerPayload, "aaf", aafPayload);
+	}
 
 #if defined(__WITH_DTLS__) || defined(__WITH_TLS__)
 	//CASelectCipherSuite(0x35, (1 << 4));
@@ -203,6 +229,7 @@ OCStackResult things_cloud_signup(const char *host, const char *device_id, const
 	return result;
 
 no_memory:
+	OCRepPayloadDestroy(aafPayload);
 	OCRepPayloadDestroy(registerPayload);
 	return OC_STACK_NO_MEMORY;
 }
