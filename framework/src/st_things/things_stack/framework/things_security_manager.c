@@ -30,6 +30,7 @@
 #include "memory/things_malloc.h"
 #include "things_security_manager.h"
 #include "things_common.h"
+#include "things_sss_manager.h"
 #include "credresource.h"
 #include "security/ss_sha2.h"
 #include "oxmverifycommon.h"
@@ -40,15 +41,12 @@
 
 #include <wifi_manager/wifi_manager.h>
 
-#if defined(CONFIG_TLS_WITH_SSS) && defined(CONFIG_HW_ECDSA)
-#if defined(CONFIG_IOTIVITY_SSS_STORAGE)	// pkss
-#ifndef USE_SSS
-#define USE_SSS
-#endif
-#endif							// pkss
+#ifdef CONFIG_SUPPORT_FULL_SECURITY
+#include <mbedtls/see_api.h>
 #endif
 
 #define TAG "OIC_SEC_MGR"
+#define USE_SSS
 
 typedef enum {
 	OIC_SEC_OK = 0,
@@ -207,6 +205,11 @@ int server_fclose(FILE *stream)
 	return ret;
 }
 
+int server_unlink(const char *path)
+{
+	return unlink(path);
+}
+
 /*
  * This API Setup Security key from filepath
  */
@@ -272,7 +275,7 @@ static OCStackResult seckey_setup(const char *filename, OicSecKey_t *key, OicEnc
  */
 static OCStackResult save_signed_asymmetric_key(OicUuid_t *subject_uuid);
 
-static int GenerateSvrDb()
+static int GenerateSvrDb(OCPersistentStorage *ps)
 {
 	THINGS_LOG_D(THINGS_INFO, TAG, "In %s", __func__);
 
@@ -286,7 +289,7 @@ static int GenerateSvrDb()
 	}
 
 	FILE *fp = NULL;
-	fp = fopen(SVR_DB_PATH, "w");
+	fp = ps->open(SVR_DB_PATH, "w");
 
 	OICSecurityResult res = OIC_SEC_ERROR;
 
@@ -404,13 +407,13 @@ static int GenerateSvrDb()
 		//
 
 		//Save the constructed SVR DB into persistent storage.
-		fwrite(svrdb, 1, svrdb_size, fp);
-		fclose(fp);
+		ps->write(svrdb, 1, svrdb_size, fp);
+		ps->close(fp);
 		things_free(svrdb);
 		THINGS_LOG_D(THINGS_INFO, TAG, "Out %s", __func__);
 		return OIC_SEC_OK;
 error:
-		fclose(fp);
+		ps->close(fp);
 		things_free(svrdb);
 		return OIC_SEC_ERROR;
 	} else {
@@ -420,6 +423,57 @@ error:
 	return res;					// return 0 when failed, 1 otherwise..
 }
 
+static void sm_secure_resource_check(OicUuid_t *device_id)
+{
+	OCStackResult oc_res;
+
+	// Check Device is Owned
+	bool isOwned = false;
+	oc_res = GetDoxmIsOwned(&isOwned);
+	if (OC_STACK_OK != oc_res) {
+		THINGS_LOG_D_ERROR(THINGS_ERROR, TAG, "Error in GetDoxmIsOwned : %d", (int)oc_res);
+		return OIC_SEC_ERROR;
+	}
+	if (!isOwned) {
+		oc_res = SetDoxmDeviceID(device_id);
+		if (OC_STACK_OK != oc_res) {
+			THINGS_LOG_D_ERROR(THINGS_ERROR, TAG, "Error in SetDoxmDeviceID : %d", (int)oc_res);
+			return OIC_SEC_ERROR;
+		}
+	}
+
+#ifndef USE_SSS	
+	// Check SVR_DB has CA & Key
+	uint8_t cred_ret = 0;
+	OicSecCred_t *temp = NULL;
+	LL_FOREACH(GetCredList(), temp) {
+		if (0 == strcmp(temp->credUsage, TRUST_CA)) {
+			cred_ret |= (1 << 0);
+		} else if (0 == strcmp(temp->credUsage, PRIMARY_CERT)) {
+			cred_ret |= (1 << 1);
+		} else if (0 == strcmp(temp->credUsage, MF_TRUST_CA)) {
+			cred_ret |= (1 << 2);
+		} else if (0 == strcmp(temp->credUsage, MF_PRIMARY_CERT)) {
+			cred_ret |= (1 << 3);
+		}
+	}
+
+	if (!(cred_ret & (1 << 0)) || !(cred_ret & (1 << 1)) || !(cred_ret & (1 << 2)) || !(cred_ret & (1 << 3))) {
+		DeleteCredList(GetCredList());
+		oc_res = save_signed_asymmetric_key(device_id);
+		if (OC_STACK_OK != oc_res) {
+			THINGS_LOG_D_ERROR(THINGS_ERROR, TAG, "Error in save_signed_asymmetric_key : %d", (int)oc_res);
+			return OIC_SEC_ERROR;
+		}
+	}
+#else	
+	oc_res = save_signed_asymmetric_key(device_id);
+	if (OC_STACK_OK != oc_res) {
+		THINGS_LOG_D_ERROR(THINGS_ERROR, TAG, "Error in save_signed_asymmetric_key : %d", (int)oc_res);
+		return OIC_SEC_ERROR;
+	}
+#endif
+}
 static int get_mac_addr(unsigned char *p_id_buf, size_t p_id_buf_size, unsigned int *p_id_out_len)
 {
 	char mac_addr[MAC_BUF_SIZE];
@@ -468,14 +522,9 @@ static int get_mac_addr(unsigned char *p_id_buf, size_t p_id_buf_size, unsigned 
 }
 
 // To support MAC based UUID
-int sm_generate_mac_based_device_id(bool is_forced)
+static int sm_generate_mac_based_device_id(void)
 {
 	THINGS_LOG_D(THINGS_DEBUG, TAG, "In %s", __func__);
-
-	if (g_is_svr_db_exist && !is_forced) {
-		THINGS_LOG_D(THINGS_WARNING, TAG, "MAC based device UUID generation is not required.");
-		return OIC_SEC_OK;
-	}
 
 	OICSecurityResult res = OIC_SEC_ERROR;
 	OicUuid_t device_id;
@@ -497,25 +546,46 @@ int sm_generate_mac_based_device_id(bool is_forced)
 
 	memcpy(device_id.id, hash_value, sizeof(device_id.id));
 
-	OCStackResult oc_res = SetDoxmDeviceID(&device_id);
-	if (OC_STACK_OK != oc_res) {
-		THINGS_LOG_D_ERROR(THINGS_ERROR, TAG, "Error in SetDoxmDeviceID : %d", (int)oc_res);
-		return OIC_SEC_ERROR;
-	}
-	// Added as workaround for cert based D2D & D2S connection
-	oc_res = save_signed_asymmetric_key(&device_id);
-	if (OC_STACK_OK != oc_res) {
-		THINGS_LOG_D_ERROR(THINGS_ERROR, TAG, "Error in save_signed_asymmetric_key : %d", (int)oc_res);
-		return OIC_SEC_ERROR;
-	}
+	sm_secure_resource_check(&device_id);
 
 	THINGS_LOG_D(THINGS_DEBUG, TAG, "Out %s", __func__);
 
 	return res;
 }
 
-// To support MAC based UUID
-//
+static int sm_generate_artik_device_id(void)
+{
+	THINGS_LOG_D(THINGS_DEBUG, TAG, "In %s", __func__);
+
+	OicUuid_t device_id;
+	unsigned char uuid_str[((UUID_LENGTH * 2) + 4 + 1)];
+	unsigned int uuid_len;
+
+	get_artik_crt_uuid(uuid_str, &uuid_len);
+	OCStackResult oc_res = ConvertStrToUuid(uuid_str, &device_id);
+
+	if (OC_STACK_OK != oc_res) {
+		THINGS_LOG_D_ERROR(THINGS_ERROR, TAG, "Error in ConvertStrToUuid : %d", (int)oc_res);
+		return OIC_SEC_ERROR;
+	}
+
+	sm_secure_resource_check(&device_id);
+
+	THINGS_LOG_D(THINGS_DEBUG, TAG, "Out %s", __func__);
+
+	return oc_res;
+}
+
+int sm_generate_device_id(void)
+{
+	int ret = -1;
+#if defined(CONFIG_ARCH_BOARD_ARTIK053)
+	ret = sm_generate_artik_device_id();
+#else /* CONFIG_ARCH_BOARD_ARTIK053 */
+	ret = sm_generate_mac_based_device_id();
+#endif /* CONFIG_ARCH_BOARD_ARTIK053 */
+	return ret;
+}
 
 int sm_init_things_security(int auth_type, const char *db_path)
 {
@@ -544,13 +614,13 @@ int sm_init_things_security(int auth_type, const char *db_path)
 		g_is_mfg_cert_required = true;
 	}
 
-	res = SM_InitSvrDb();
+	static OCPersistentStorage ps = { server_fopen, server_fread, server_fwrite, server_fclose, server_unlink };
+	res = SM_InitSvrDb(&ps);
 	if (OIC_SEC_OK != res) {
 		THINGS_LOG_ERROR(THINGS_ERROR, TAG, "Failed to create SVR DB.");
 		return res;
 	}
 
-	static OCPersistentStorage ps = { server_fopen, server_fread, server_fwrite, server_fclose, unlink };
 	THINGS_LOG(THINGS_INFO, TAG, "******* WARNING : SVR DB will be used without encryption *******");
 	
 	OCStackResult oc_res = OCRegisterPersistentStorageHandler(&ps);
@@ -562,7 +632,7 @@ int sm_init_things_security(int auth_type, const char *db_path)
 		//re-generate and re-install SVR DB
 		if (g_is_svr_db_exist) {
 			g_is_svr_db_exist = false;
-			res = GenerateSvrDb();
+			res = GenerateSvrDb(&ps);
 			if (OIC_SEC_OK != res) {
 				THINGS_LOG_ERROR(THINGS_ERROR, TAG, "Failed to Generate SVR DB.");
 				return res;
@@ -589,19 +659,19 @@ int sm_init_things_security(int auth_type, const char *db_path)
 	return OIC_SEC_OK;
 }
 
-int SM_InitSvrDb()
+int SM_InitSvrDb(OCPersistentStorage *ps)
 {
-	FILE *fp = fopen(SVR_DB_PATH, "r");
+	FILE *fp = ps->open(SVR_DB_PATH, "r");
 	if (fp == NULL) {
 		THINGS_LOG_D(THINGS_INFO, TAG, "Can not find the [%s], SVR DB will be automatically generated...", SVR_DB_PATH);
 		THINGS_LOG_D(THINGS_INFO, TAG, "Out %s", __func__);
-		return GenerateSvrDb();
+		return GenerateSvrDb(ps);
 	} else {
 		THINGS_LOG_D(THINGS_INFO, TAG, "SVR DB [%s] is already exist.", SVR_DB_PATH);
 		g_is_svr_db_exist = true;
 	}
 
-	fclose(fp);
+	ps->close(fp);
 	THINGS_LOG_D(THINGS_INFO, TAG, "Out %s", __func__);
 
 	return OIC_SEC_OK;
@@ -695,15 +765,17 @@ const unsigned char g_regional_test_root_ca[] = {
 	0x1C, 0x6F, 0x97, 0x10, 0x5D, 0x87, 0x3C, 0x3F, 0x7D, 0xCB, 0xF4, 0x98, 0x49, 0xAE, 0x93, 0xE7, 0xD6, 0x16, 0xFA, 0x31
 };
 #endif
+
 /*
  * This API added as workaround to test certificate based TLS connection.
  * It will be replaced to use TZ or eSE based key protection.
  *
  * NOTE : This API should be invoked after sm_generate_mac_based_device_id invoked.
  */
+
 static OCStackResult save_signed_asymmetric_key(OicUuid_t *subject_uuid)
 {
-	OCStackResult res = OC_STACK_ERROR;
+	OCStackResult res = OC_STACK_OK;
 	uint16_t cred_id = 0;
 
 	THINGS_LOG_D(THINGS_DEBUG, TAG, "IN: %s", __func__);
@@ -713,13 +785,6 @@ static OCStackResult save_signed_asymmetric_key(OicUuid_t *subject_uuid)
 	/*
 	 * 1. Save the Trust CA cert chain.
 	 */
-	res = CredSaveTrustCertChain(subject_uuid, g_regional_root_ca, sizeof(g_regional_root_ca), OIC_ENCODING_DER, TRUST_CA, &cred_id);
-	if (OC_STACK_OK != res) {
-		THINGS_LOG_D(THINGS_ERROR, TAG, "SRPCredSaveTrustCertChain #1 error");
-		return res;
-	}
-	THINGS_LOG_D(THINGS_DEBUG, TAG, "Samsung_OCF_RootCA.der saved w/ cred ID=%d", cred_id);
-
 #ifdef CONFIG_ST_THINGS_STG_MODE
 	res = CredSaveTrustCertChain(subject_uuid, g_regional_test_root_ca, sizeof(g_regional_test_root_ca), OIC_ENCODING_DER, TRUST_CA, &cred_id);
 	if (OC_STACK_OK != res) {
@@ -727,8 +792,16 @@ static OCStackResult save_signed_asymmetric_key(OicUuid_t *subject_uuid)
 		return res;
 	}
 	THINGS_LOG_D(THINGS_DEBUG, TAG, "Samsung_OCF_Test_RootCA.der saved w/ cred ID=%d", cred_id);
+#else
+	res = CredSaveTrustCertChain(subject_uuid, g_regional_root_ca, sizeof(g_regional_root_ca), OIC_ENCODING_DER, TRUST_CA, &cred_id);
+	if (OC_STACK_OK != res) {
+		THINGS_LOG_D(THINGS_ERROR, TAG, "SRPCredSaveTrustCertChain #1 error");
+		return res;
+	}
+	THINGS_LOG_D(THINGS_DEBUG, TAG, "Samsung_OCF_RootCA.der saved w/ cred ID=%d", cred_id);
 #endif
 
+#ifndef USE_SSS	
 	/*
 	 * 2. Save the key for D2S (primary cert & key)
 	 */
@@ -757,7 +830,7 @@ static OCStackResult save_signed_asymmetric_key(OicUuid_t *subject_uuid)
 #ifdef CONFIG_ST_THINGS_STG_MODE
 		res = CredSaveTrustCertChain(subject_uuid, g_regional_test_root_ca, sizeof(g_regional_test_root_ca), OIC_ENCODING_DER, MF_TRUST_CA, &cred_id);
 #else		
-		res = CredSaveTrustCertChain(subject_uuid, g_regional_root_ca, sizeof(g_regional_root_ca), OIC_ENCODING_DER, MF_TRUST_CA, &cred_id);
+		res = CredSaveTrustCertChain(subject_uuid, g_regional_test_ca, sizeof(g_regional_root_ca), OIC_ENCODING_DER, MF_TRUST_CA, &cred_id);
 #endif		
 
 		if (OC_STACK_OK != res) {
@@ -784,6 +857,17 @@ static OCStackResult save_signed_asymmetric_key(OicUuid_t *subject_uuid)
 	if (primary_key.data != NULL) {
 		things_free(primary_key.data);
 	}
+#else
+	if (InitializeSSSKeyHandlers() < 0) {
+		THINGS_LOG_D_ERROR(THINGS_ERROR, TAG, "InitializeSSSKeyHandlers() Fail");
+		return OC_STACK_ERROR;
+	}
+
+	if (SSSRootCAHandler(subject_uuid) < 0) {
+		THINGS_LOG_D_ERROR(THINGS_ERROR, TAG, "SSSRootCAHandler() Fail");
+		return OC_STACK_ERROR;
+	}
+#endif
 	THINGS_LOG_D(THINGS_DEBUG, TAG, "Out: %s", __func__);
 
 	return res;

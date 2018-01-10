@@ -16,8 +16,7 @@
 #
 ###########################################################################
 
-CSRCS += things_data_manager.c things_req_handler.c things_resource.c things_security_manager.c things_server_builder.c
-
+CSRCS += things_data_manager.c things_req_handler.c things_resource.c things_security_manager.c things_server_builder.c things_sss_manager.c
 
 DEPPATH += --dep-path src/st_things/things_stack/framework
 VPATH += :src/st_things/things_stack/framework
