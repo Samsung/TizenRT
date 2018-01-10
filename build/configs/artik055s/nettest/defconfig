@@ -93,7 +93,6 @@ CONFIG_ARMV7R_DCACHE=y
 CONFIG_ARMV7R_TOOLCHAIN_GNU_EABIL=y
 # CONFIG_ARMV7R_TOOLCHAIN_GNU_OABI is not set
 # CONFIG_ARMV7R_HAVE_DECODEFIQ is not set
-# CONFIG_BOOT_RESULT is not set
 
 #
 # S5J Configuration Options
@@ -228,10 +227,7 @@ CONFIG_ARCH_BOARD="artik05x"
 CONFIG_LIB_BOARDCTL=y
 CONFIG_BOARDCTL_RESET=y
 # CONFIG_BOARDCTL_UNIQUEID is not set
-# CONFIG_BOARD_COREDUMP_FLASH is not set
 # CONFIG_BOARD_FOTA_SUPPORT is not set
-# CONFIG_BOARD_RAMDUMP_FLASH is not set
-# CONFIG_BOARD_RAMDUMP_UART is not set
 
 #
 # Board-Specific Options
@@ -256,12 +252,7 @@ CONFIG_ARTIK05X_AUTOMOUNT_SSSRW_MOUNTPOINT="/sss"
 #
 # Kernel Features
 #
-CONFIG_DISABLE_OS_API=y
-# CONFIG_DISABLE_POSIX_TIMERS is not set
-# CONFIG_DISABLE_PTHREAD is not set
-# CONFIG_DISABLE_SIGNALS is not set
-# CONFIG_DISABLE_MQUEUE is not set
-# CONFIG_DISABLE_ENVIRON is not set
+# CONFIG_DISABLE_OS_API is not set
 
 #
 # Clocks and Timers
@@ -303,7 +294,6 @@ CONFIG_NPTHREAD_KEYS=4
 # Performance Monitoring
 #
 # CONFIG_SCHED_CPULOAD is not set
-# CONFIG_SCHED_INSTRUMENTATION is not set
 
 #
 # Latency optimization
@@ -801,6 +791,10 @@ CONFIG_NETUTILS_NETLIB=y
 # CONFIG_AUDIO is not set
 
 #
+# Media Support
+#
+
+#
 # File Systems
 #
 # CONFIG_DISABLE_MOUNTPOINT is not set
@@ -967,7 +961,12 @@ CONFIG_DEBUG_MM_HEAPINFO=y
 # CONFIG_DEBUG_RTC is not set
 # CONFIG_DEBUG_SPI is not set
 # CONFIG_DEBUG_WATCHDOG is not set
-# CONFIG_DEBUG_TTRACE is not set
+# CONFIG_DEBUG_I2S is not set
+
+#
+# System Debug Options
+#
+# CONFIG_DEBUG_SYSTEM is not set
 
 #
 # Stack Debug Options
@@ -1126,7 +1125,6 @@ CONFIG_EXAMPLES_TLS_CLIENT=y
 CONFIG_EXAMPLES_TLS_SERVER=y
 # CONFIG_EXAMPLES_WIFIMANAGER_TEST is not set
 # CONFIG_EXAMPLES_WIFI_TEST is not set
-# CONFIG_EXAMPLES_WORKQUEUE is not set
 
 #
 # Platform-specific Support
