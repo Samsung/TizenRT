@@ -63,6 +63,10 @@
 #include "sched/sched.h"
 #include "up_internal.h"
 
+#ifdef CONFIG_TASK_SCHED_HISTORY
+#include <tinyara/debug/sysdbg.h>
+#endif
+
 /****************************************************************************
  * Pre-processor Definitions
  ****************************************************************************/
@@ -118,6 +122,10 @@ void up_release_pending(void)
 			rtcb = this_task();
 			sllvdbg("New Active Task TCB=%p\n", rtcb);
 
+#ifdef CONFIG_TASK_SCHED_HISTORY
+			/* Save the task name which will be scheduled */
+			save_task_scheduling_status(rtcb);
+#endif
 			/* Then switch contexts */
 
 			up_restorestate(rtcb->xcp.regs);
@@ -131,6 +139,10 @@ void up_release_pending(void)
 			 */
 
 			struct tcb_s *nexttcb = this_task();
+#ifdef CONFIG_TASK_SCHED_HISTORY
+			/* Save the task name which will be scheduled */
+			save_task_scheduling_status(nexttcb);
+#endif
 			up_switchcontext(rtcb->xcp.regs, nexttcb->xcp.regs);
 
 			/* up_switchcontext forces a context switch to the task at the
