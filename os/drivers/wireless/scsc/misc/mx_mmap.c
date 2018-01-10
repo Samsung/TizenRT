@@ -556,12 +556,9 @@ int mx_gdb_close(struct file *filp)
 	}
 
 	sem_post(&mx_dev->data_wait);
-	return OK;
-
 	filp->f_priv = NULL;
 	mx_dev->filp = NULL;
-
-	return 0;
+	return OK;
 }
 
 static const struct file_operations mx_gdb_fops = {
