@@ -62,6 +62,10 @@
 
 #include <tinyara/mm/mm.h>
 
+#ifdef CONFIG_MM_ASAN_RT
+#include <asan/asan.h>
+#endif
+
 /****************************************************************************
  * Pre-processor Definitions
  ****************************************************************************/
@@ -229,4 +233,10 @@ void mm_initialize(FAR struct mm_heap_s *heap, FAR void *heapstart, size_t heaps
 	/* Add the initial region of memory to the heap */
 
 	mm_addregion(heap, heapstart, heapsize);
+
+#ifdef CONFIG_MM_ASAN_RT
+	mlldbg("Poisoning heap %p, size %u\n", heapstart, heapsize);
+	asan_poison_heap(heapstart, heapsize);
+#endif
+
 }

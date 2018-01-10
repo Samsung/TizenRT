@@ -1,0 +1,11 @@
+#
+# For a description of the syntax of this configuration file,
+# see kconfig-language at https://www.kernel.org/doc/Documentation/kbuild/kconfig-language.txt
+#
+
+config EXAMPLES_TESTCASE_ASAN
+	bool "Address Sanitizer TestCase Example"
+	default n
+	depends on MM_ASAN_RT && !ASAN_ENABLE
+	---help---
+		Enable the Address Sanitizer TestCase example

@@ -57,8 +57,13 @@
 #include <tinyara/config.h>
 
 #include <assert.h>
+#include <debug.h>
 
 #include <tinyara/mm/mm.h>
+
+#ifdef CONFIG_MM_ASAN_RT
+#include <asan/asan.h>
+#endif
 
 /****************************************************************************
  * Pre-processor Definitions
@@ -134,6 +139,11 @@ FAR void *mm_memalign(FAR struct mm_heap_s *heap, size_t alignment, size_t size)
 	if (rawchunk == 0) {
 		return NULL;
 	}
+
+#ifdef CONFIG_MM_ASAN_RT
+	mvdbg("Poisoning raw chunk %p, size %u\n", rawchunk, allocsize);
+	asan_poison_heap((void*) rawchunk, allocsize);
+#endif
 
 	/* We need to hold the MM semaphore while we muck with the chunks and
 	 * nodelist.
@@ -240,5 +250,11 @@ FAR void *mm_memalign(FAR struct mm_heap_s *heap, size_t alignment, size_t size)
 	heapinfo_update_total_size(heap, node->size);
 #endif
 	mm_givesemaphore(heap);
+
+#ifdef CONFIG_MM_ASAN_RT
+	mvdbg("Unpoisoning aligned chunk %p, size %u\n", alignedchunk, size);
+	asan_unpoison_heap( (FAR void *)alignedchunk, size);
+#endif
+
 	return (FAR void *)alignedchunk;
 }

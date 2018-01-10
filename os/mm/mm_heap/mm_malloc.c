@@ -64,6 +64,10 @@
 #ifdef CONFIG_DEBUG_MM_HEAPINFO
 #include  <tinyara/sched.h>
 #endif
+
+#ifdef CONFIG_MM_ASAN_RT
+#include <asan/asan.h>
+#endif
 /****************************************************************************
  * Pre-processor Definitions
  ****************************************************************************/
@@ -111,7 +115,9 @@ FAR void *mm_malloc(FAR struct mm_heap_s *heap, size_t size)
 	FAR struct mm_freenode_s *node;
 	void *ret = NULL;
 	int ndx;
-
+#ifdef CONFIG_MM_ASAN_RT
+	int poison_size = size;
+#endif
 	/* Handle bad sizes */
 
 	if (size < 1) {
@@ -235,5 +241,9 @@ FAR void *mm_malloc(FAR struct mm_heap_s *heap, size_t size)
 	}
 #endif
 
+#ifdef CONFIG_MM_ASAN_RT
+	mvdbg("Unpoisoning %p, size %u for heap %p\n", ret, poison_size, heap);
+	asan_unpoison_heap(ret, poison_size);
+#endif
 	return ret;
 }

@@ -1,0 +1,27 @@
+#
+# For a description of the syntax of this configuration file,
+# see kconfig-language at https://www.kernel.org/doc/Documentation/kbuild/kconfig-language.txt
+#
+
+config EXAMPLES_ASAN_TEST
+	bool "Address Sanitizer test app"
+	default n
+	depends on MM_ASAN_RT
+	---help---
+		Build Address Sanitizer test which causes error report.
+
+if EXAMPLES_ASAN_TEST
+
+config EXAMPLES_ASAN_TEST_PROGNAME
+	string "Program name"
+	default "asan_test"
+	depends on BUILD_KERNEL
+	---help---
+		This is the name of the program that will be use when the NSH ELF
+		program is installed.
+
+endif
+
+config USER_ENTRYPOINT
+	string
+	default "asan_test_main" if ENTRY_ASAN_TEST

@@ -282,6 +282,9 @@ FAR void *mm_realloc(FAR struct mm_heap_s *heap, FAR void *oldmem, size_t size)
 				 */
 				newnode            = (FAR struct mm_allocnode_s *)((FAR char *)oldnode - takeprev);
 				prev->size        -= takeprev;
+#ifdef CONFIG_MM_ASAN_RT
+				asan_unpoison_heap(newnode, SIZEOF_MM_ALLOCNODE);
+#endif
 				newnode->size      = oldsize + takeprev;
 				newnode->preceding = prev->size | MM_ALLOC_BIT;
 				next->preceding    = newnode->size | (next->preceding & MM_ALLOC_BIT);
@@ -340,6 +343,9 @@ FAR void *mm_realloc(FAR struct mm_heap_s *heap, FAR void *oldmem, size_t size)
 				 */
 				oldnode->size        = oldsize + takenext;
 				newnode              = (FAR struct mm_freenode_s *)((char *)oldnode + oldnode->size);
+#ifdef CONFIG_MM_ASAN_RT
+				asan_unpoison_heap(newnode, SIZEOF_MM_ALLOCNODE);
+#endif
 				newnode->size        = nextsize - takenext;
 				newnode->preceding   = oldnode->size;
 				andbeyond->preceding = newnode->size | (andbeyond->preceding & MM_ALLOC_BIT);

@@ -199,6 +199,11 @@ void mm_free(FAR struct mm_heap_s *heap, FAR void *mem)
 		node            = prev;
 	}
 
+#ifdef CONFIG_MM_ASAN_RT
+	mvdbg("Poisoning freed part %p, size %u for heap %p\n", mem, node->size, heap);
+	asan_poison_free(mem, node->size);
+#endif
+
 	/* Add the merged node to the nodelist */
 
 	mm_addfreechunk(heap, node);
