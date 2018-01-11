@@ -1,0 +1,11 @@
+#
+# For a description of the syntax of this configuration file,
+# see kconfig-language at https://www.kernel.org/doc/Documentation/kbuild/kconfig-language.txt
+#
+
+config KERNEL_TEST_DRV
+	bool "Testcase driver Support"
+	default n
+	depends on EXAMPLES_TESTCASE_DRIVERS || EXAMPLES_TESTCASE_KERNEL
+	---help---
+		Enables overall support for Kernel testcase driver library.
