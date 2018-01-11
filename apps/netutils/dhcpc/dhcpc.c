@@ -597,8 +597,14 @@ int dhcpc_request(void *handle, struct dhcpc_state *presult)
 			if (netlib_set_ipv4addr(intf, &presult->ipaddr) == ERROR) {
 				ndbg("netlib_set_ipv4addr failed\n");
 			}
-			g_dhcpc_state = STATE_HAVE_LEASE;
+			if (netlib_set_ipv4netmask(intf, &presult->netmask) == ERROR) {
+				ndbg("netlib_set_ipv4netmask failed\n");
+			}
+			if (netlib_set_dripv4addr(intf, &presult->default_router) == ERROR) {
+				ndbg("netlib_set_dripv4addr failed\n");
+			}
 
+			g_dhcpc_state = STATE_HAVE_LEASE;
 		}
 
 		/* NAK means the server has refused our request.  Break out of
