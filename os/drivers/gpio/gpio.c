@@ -270,6 +270,15 @@ static void gpio_enable(FAR struct gpio_upperhalf_s *priv)
 	/* Enable/disable GPIO interrupts */
 	DEBUGASSERT(lower->ops->enable);
 	if (rising || falling) {
+		/*
+		  * gu_sample saved the old status for GPIO, it used when interrupt coming to compare
+		  * current status to gu_sample.
+		  * It update on system startup during gpio_register().
+		  * But, device driver init always after gpio init.
+		  * If GPIO status changed after gpio_register(), it will not record.
+		  * So, we update gu_sample before enable gpio irq.
+		  */
+		priv->gu_sample = lower->ops->get(lower);
 		lower->ops->enable(lower, falling, rising, gpio_interrupt);
 	} else {
 		/* Disable further interrupts */
