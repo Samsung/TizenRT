@@ -322,6 +322,7 @@
 #define AUDIO_APB_OUTPUT_PROCESS    (1 << 1)
 #define AUDIO_APB_DEQUEUED          (1 << 2)
 #define AUDIO_APB_FINAL             (1 << 3)	/* Last buffer in the stream */
+#define AUDIO_APB_MMAP_ENQUEUED     (1 << 4)
 
 #define AUDIO_APB_TYPE_INPUT	    (1 << 4)
 #define AUDIO_APB_TYPE_OUTPUT	    (1 << 5)

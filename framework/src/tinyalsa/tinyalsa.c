@@ -155,7 +155,7 @@ struct pcm {
 	/* Pointers to apb buffers */
 	struct ap_buffer_s **pBuffers;
 	/* Index of the next apb to be queued during start of play or record */
-	unsigned int buf_ptr;
+	unsigned int buf_idx;
 	/* Pointer to next apb for read / write */
 	struct ap_buffer_s *next_buf;
 	/* Size of data in bytes in the next buffer */
@@ -488,11 +488,11 @@ int pcm_writei(struct pcm *pcm, const void *data, unsigned int frame_count)
 	while (pending > 0) {
 		nbytes = pending > pcm_frames_to_bytes(pcm, pcm->buffer_size) ? pcm_frames_to_bytes(pcm, pcm->buffer_size) : pending;
 
-		if (pcm->buf_ptr < pcm->buffer_cnt) {
+		if (pcm->buf_idx < pcm->buffer_cnt) {
 			/* If we have empty buffers, fill them first */
-			memcpy(pcm->pBuffers[pcm->buf_ptr]->samp, (char *)data + offset, nbytes);
-			apb = pcm->pBuffers[pcm->buf_ptr];
-			pcm->buf_ptr++;
+			memcpy(pcm->pBuffers[pcm->buf_idx]->samp, (char *)data + offset, nbytes);
+			apb = pcm->pBuffers[pcm->buf_idx];
+			pcm->buf_idx++;
 		} else {
 			/* We dont have any empty buffers. wait for deque message from kernel */
 			size = mq_receive(pcm->mq, (FAR char *)&msg, sizeof(msg), &prio);
@@ -503,7 +503,6 @@ int pcm_writei(struct pcm *pcm, const void *data, unsigned int frame_count)
 			if (msg.msgId == AUDIO_MSG_DEQUEUE) {
 				apb = (struct ap_buffer_s *)msg.u.pPtr;
 				memcpy(apb->samp, (char *)data + offset, nbytes);
-				apb->flags &= ~AUDIO_APB_OUTPUT_ENQUEUED;
 			} else if (msg.msgId == AUDIO_MSG_XRUN) {
 				/* Underrun to be handled by client */
 				return -EPIPE;
@@ -524,7 +523,6 @@ int pcm_writei(struct pcm *pcm, const void *data, unsigned int frame_count)
 		if (ioctl(pcm->fd, AUDIOIOC_ENQUEUEBUFFER, (unsigned long)&bufdesc) < 0) {
 			return oops(pcm, errno, "AUDIOIOC_ENQUEUEBUFFER ioctl failed");
 		}
-		apb->flags |= AUDIO_APB_OUTPUT_ENQUEUED;
 		/* If playback is not already started, start now! */
 		if ((!pcm->running) && (pcm_start(pcm) < 0)) {
 			return -errno;
@@ -616,7 +614,6 @@ int pcm_readi(struct pcm *pcm, void *data, unsigned int frame_count)
 				if (ioctl(pcm->fd, AUDIOIOC_ENQUEUEBUFFER, (unsigned long)&bufdesc) < 0) {
 					return oops(pcm, errno, "failed to enque buffer after read");
 				}
-				apb->flags |= AUDIO_APB_OUTPUT_ENQUEUED;
 			}
 
 		} else {
@@ -643,7 +640,6 @@ int pcm_readi(struct pcm *pcm, void *data, unsigned int frame_count)
 			}
 			if (msg.msgId == AUDIO_MSG_DEQUEUE) {
 				apb = (struct ap_buffer_s *)msg.u.pPtr;
-				apb->flags &= ~AUDIO_APB_OUTPUT_ENQUEUED;
 				if (pending <= apb->nbytes) {
 					/* User wants less data than we have in buffer.
 					   Copy the requested amount of data and keep the buffer as pending buffer */
@@ -670,7 +666,6 @@ int pcm_readi(struct pcm *pcm, void *data, unsigned int frame_count)
 						if (ioctl(pcm->fd, AUDIOIOC_ENQUEUEBUFFER, (unsigned long)&bufdesc) < 0) {
 							return oops(pcm, errno, "failed to enque buffer after read");
 						}
-						apb->flags |= AUDIO_APB_OUTPUT_ENQUEUED;
 					}
 				}
 			} else if (msg.msgId == AUDIO_MSG_XRUN) {
@@ -953,7 +948,7 @@ struct pcm *pcm_open(unsigned int card, unsigned int device, unsigned int flags,
 	pcm->prepared = 0;
 	pcm->running = 0;
 	pcm->draining = 0;
-	pcm->buf_ptr = 0;
+	pcm->buf_idx = 0;
 	pcm->next_size = 0;
 	pcm->next_offset = 0;
 	pcm->next_buf = NULL;
@@ -974,7 +969,7 @@ fail_cleanup_buffers:
 		free(pcm->pBuffers);
 	}
 
-	pcm->buf_ptr = 0;
+	pcm->buf_idx = 0;
 
 fail_after_mq:
 	mq_close(pcm->mq);			/* Close the message queue */
@@ -1094,20 +1089,20 @@ int pcm_start(struct pcm *pcm)
 		bufdesc.session = pcm->session;
 #endif
 		bufdesc.numbytes = pcm_frames_to_bytes(pcm, pcm->buffer_size);
-		for (pcm->buf_ptr = 0; pcm->buf_ptr < pcm->buffer_cnt; pcm->buf_ptr++) {
-			bufdesc.u.pBuffer = pcm->pBuffers[pcm->buf_ptr];
+		for (pcm->buf_idx = 0; pcm->buf_idx < pcm->buffer_cnt; pcm->buf_idx++) {
+			bufdesc.u.pBuffer = pcm->pBuffers[pcm->buf_idx];
 			bufdesc.u.pBuffer->nbytes = 0;
 			bufdesc.u.pBuffer->curbyte = 0;
 			bufdesc.u.pBuffer->flags = 0;
 			if (ioctl(pcm->fd, AUDIOIOC_ENQUEUEBUFFER, (unsigned long)&bufdesc) < 0) {
 				return oops(pcm, errno, "AUDIOIOC_ENQUEUEBUFFER ioctl failed");
 			}
-			pcm->pBuffers[pcm->buf_ptr]->flags |= AUDIO_APB_OUTPUT_ENQUEUED;
+			pcm->pBuffers[pcm->buf_idx]->flags |= AUDIO_APB_MMAP_ENQUEUED;
 		}
 	} else {
 		/* If device is opened for playback, we need atleast one buffer to be enqueued before
 		starting the codec. Else we return error here */
-		if ((pcm->pBuffers[0]->flags & AUDIO_APB_OUTPUT_ENQUEUED) == 0) {
+		if (pcm->buf_idx == 0) {
 			return oops(pcm, -EINVAL, "ERROR Trying to start PCM for playback without enqueuing buffers");
 		}
 	}
@@ -1160,7 +1155,7 @@ int pcm_stop(struct pcm *pcm)
 	pcm->prepared = 0;
 	pcm->running = 0;
 	pcm->draining = 0;
-	pcm->buf_ptr = 0;
+	pcm->buf_idx = 0;
 	pcm->next_size = 0;
 	pcm->next_offset = 0;
 	pcm->next_buf = NULL;
@@ -1201,7 +1196,7 @@ int pcm_drain(struct pcm *pcm)
 
 		/* Playback case */
 		/* Wait for all enqueued buffers to get dequeued. */
-		while (pcm->buf_ptr > 0) {
+		while (pcm->buf_idx > 0) {
 			/* Wait for deque message from kernel */
 			size = mq_receive(pcm->mq, (FAR char *)&msg, sizeof(msg), &prio);
 			if (size != sizeof(msg)) {
@@ -1209,7 +1204,7 @@ int pcm_drain(struct pcm *pcm)
 				return oops(pcm, EINTR, "Interrupted while waiting for deque message from kernel");
 			}
 			if (msg.msgId == AUDIO_MSG_DEQUEUE) {
-				pcm->buf_ptr--;
+				pcm->buf_idx--;
 			} else if (msg.msgId == AUDIO_MSG_XRUN) {
 				/* Underrun to be handled by client */
 				return -EPIPE;
@@ -1230,7 +1225,7 @@ int pcm_drain(struct pcm *pcm)
 
 		pcm->prepared = 0;
 		pcm->running = 0;
-		pcm->buf_ptr = 0;
+		pcm->buf_idx = 0;
 		/* We have stopped the codec, but the user can still call read API to
 		   get the data that has already been recorded */
 		pcm->draining = 1;
@@ -1253,12 +1248,16 @@ int pcm_mmap_begin(struct pcm *pcm, void **areas, unsigned int *offset, unsigned
 		return -EINVAL;
 	}
 
+	if (!(pcm->flags & PCM_MMAP)) {
+		return -EINVAL;
+	}
+
 	int nframes = 0;
 	/* The next buffer to be used is pointed by mmap_idx */
 	struct ap_buffer_s *apb = pcm->pBuffers[pcm->mmap_idx];
 
 	/* If buffer is in enqueued state, return 0 */
-	if (apb->flags & AUDIO_APB_OUTPUT_ENQUEUED) {
+	if (apb->flags & AUDIO_APB_MMAP_ENQUEUED) {
 		*frames = 0;
 		return 0;
 	}
@@ -1266,6 +1265,10 @@ int pcm_mmap_begin(struct pcm *pcm, void **areas, unsigned int *offset, unsigned
 	*areas = apb->samp;
 
 	if (pcm->flags & PCM_IN) {
+		if (!pcm->running) {
+			return -EINVAL;
+		}
+
 		*offset = pcm_bytes_to_frames(pcm, apb->curbyte);
 		nframes = pcm_bytes_to_frames(pcm, apb->nbytes - apb->curbyte);
 	} else {
@@ -1290,6 +1293,10 @@ int pcm_mmap_begin(struct pcm *pcm, void **areas, unsigned int *offset, unsigned
 int pcm_mmap_commit(struct pcm *pcm, unsigned int offset, unsigned int frames)
 {
 	if (pcm == NULL) {
+		return -EINVAL;
+	}
+
+	if (!(pcm->flags & PCM_MMAP)) {
 		return -EINVAL;
 	}
 
@@ -1331,7 +1338,7 @@ int pcm_mmap_commit(struct pcm *pcm, unsigned int offset, unsigned int frames)
 	if (ioctl(pcm->fd, AUDIOIOC_ENQUEUEBUFFER, (unsigned long)&bufdesc) < 0) {
 		return oops(pcm, errno, "AUDIOIOC_ENQUEUEBUFFER ioctl failed");
 	}
-	apb->flags |= AUDIO_APB_OUTPUT_ENQUEUED;
+	apb->flags |= AUDIO_APB_MMAP_ENQUEUED;
 
 	/* Move the mmap_idx to tbe next position so that when
 	subsequent calls to mmap_begin will use the next buffer */
@@ -1340,9 +1347,9 @@ int pcm_mmap_commit(struct pcm *pcm, unsigned int offset, unsigned int frames)
 		pcm->mmap_idx = 0;
 	}
 
-	/* Update buf_ptr. It will be used during pcm_drain */
-	if (pcm->buf_ptr < pcm->buffer_cnt) {
-		pcm->buf_ptr++;
+	/* Update buf_idx. It will be used during pcm_drain */
+	if (pcm->buf_idx < pcm->buffer_cnt) {
+		pcm->buf_idx++;
 	}
 
 	return 0;
@@ -1359,20 +1366,24 @@ int pcm_avail_update(struct pcm *pcm)
 		return -EINVAL;
 	}
 
+	if (!(pcm->flags & PCM_MMAP)) {
+		return -EINVAL;
+	}
+
 	int count = 0;
 	int i;
 
 	/* We will count the number of bytes available in all the buffers which have not been enqueued */
 	if (pcm->flags & PCM_OUT) {
 		for (i = 0; i < pcm->buffer_cnt; i++) {
-			count += pcm->pBuffers[i]->flags & AUDIO_APB_OUTPUT_ENQUEUED ? 0 : (pcm->pBuffers[i]->nmaxbytes);
+			count += pcm->pBuffers[i]->flags & AUDIO_APB_MMAP_ENQUEUED ? 0 : (pcm->pBuffers[i]->nmaxbytes);
 		}
 	} else {
 		if (!pcm->running && !pcm->draining) {
 			return 0;
 		}
 		for (i = 0; i < pcm->buffer_cnt; i++) {
-			count += pcm->pBuffers[i]->flags & AUDIO_APB_OUTPUT_ENQUEUED ? 0 : (pcm->pBuffers[i]->nbytes);
+			count += pcm->pBuffers[i]->flags & AUDIO_APB_MMAP_ENQUEUED ? 0 : (pcm->pBuffers[i]->nbytes);
 		}
 	}
 
@@ -1396,7 +1407,11 @@ int pcm_wait(struct pcm *pcm, int timeout)
 	struct timespec st_time;
 	int count = 0;
 
-	if (pcm == NULL || (!pcm->running && !pcm->draining)) {
+	if (pcm == NULL) {
+		return -EINVAL;
+	}
+
+	if (!(pcm->flags & PCM_MMAP)) {
 		return -EINVAL;
 	}
 
@@ -1412,7 +1427,7 @@ int pcm_wait(struct pcm *pcm, int timeout)
 		update the apb flags and curbyte and increment the count*/
 		if (msg.msgId == AUDIO_MSG_DEQUEUE) {
 			apb = (struct ap_buffer_s *)msg.u.pPtr;
-			apb->flags &= ~AUDIO_APB_OUTPUT_ENQUEUED;
+			apb->flags &= ~AUDIO_APB_MMAP_ENQUEUED;
 			apb->curbyte = 0;
 			count++;
 		} else if (msg.msgId == AUDIO_MSG_XRUN) {
@@ -1433,7 +1448,15 @@ int pcm_wait(struct pcm *pcm, int timeout)
 		return 1;
 	}
 
+	/* If PCM is opened for recording, then start it */
+	if ((pcm->flags & PCM_IN) && !pcm->running && !pcm->draining) {
+		if(pcm_start(pcm) < 0) {
+			return oops(pcm, -1, "Failed to start PCM");
+		}
+	}
+
 	/* Check if some buffer is already available */
+	/* This is put here to handle corner case of open for write -> wait() */
 	if (pcm_avail_update(pcm) == pcm->buffer_size) {
 		return 1;
 	}
@@ -1463,7 +1486,7 @@ int pcm_wait(struct pcm *pcm, int timeout)
 		/* If you find a dequeue message in the queue,
 		update the apb flags and curbyte and increment the count*/
 		apb = (struct ap_buffer_s *)msg.u.pPtr;
-		apb->flags &= ~AUDIO_APB_OUTPUT_ENQUEUED;
+		apb->flags &= ~AUDIO_APB_MMAP_ENQUEUED;
 		apb->curbyte = 0;
 		return 1;
 	} else if (msg.msgId == AUDIO_MSG_XRUN) {

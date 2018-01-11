@@ -711,8 +711,6 @@ static inline void audio_error_handler(FAR struct audio_upperhalf_s *upper, FAR 
 {
 	struct audio_msg_s msg;
 
-	audvdbg("Entry\n");
-
 	/* Send a error message to the user if a message queue is registered */
 
 	upper->started = false;

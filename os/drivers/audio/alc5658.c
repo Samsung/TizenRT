@@ -975,7 +975,7 @@ static int alc5658_ioctl(FAR struct audio_lowerhalf_s *dev, int cmd, unsigned lo
 	switch (cmd) {
 
 	case AUDIOIOC_PREPARE: {
-		/* Need to be implemented later */
+		/* TODO: Need to be implemented later */
 		audvdbg("AUDIOIOC_PREPARE: No Action Would be taken now \n");
 	}
 	break;
