@@ -153,6 +153,11 @@ char * if_indextoname(unsigned int ifindex, char *ifname)
 	return(ifname);
 }
 
+unsigned int get_default_ifindex(void)
+{
+	return if_nametoindex(NETIF_NAME);
+}
+
 #if defined(CONFIG_NET_IPv6) && (SUPPORT_SETSOCKOPT_IPV6_JOIN_GROUP == 0)
 int do_ipv6_join_group(const ip6_addr_t *groupaddr)
 {

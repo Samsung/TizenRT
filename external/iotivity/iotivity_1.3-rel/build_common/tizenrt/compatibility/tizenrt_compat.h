@@ -25,6 +25,8 @@
 /*************************************
    pkinfo for IPv4 and IPv6
  *************************************/
+#define SUPPORT_SETSOCKOPT_PKTINFO		0
+#if SUPPORT_SETSOCKOPT_PKTINFO != 1
 struct in_pktinfo
 {
   unsigned int	 ipi_ifindex;  /* Interface index */
@@ -39,6 +41,7 @@ struct in6_pktinfo {
 
 #define IP_PKTINFO        8
 #define IPV6_PKTINFO      50
+#endif
 
 /*************************************
    IPv6
@@ -73,5 +76,20 @@ extern const struct in6_addr in6addr_loopback;
 #define IN6_IS_ADDR_SITELOCAL(a) \
 (((a)->s6_addr[0] == 0xfe) && (((a)->s6_addr[1] & 0xc0) == 0xc0))
 #endif /* CONFIG_NET_IPv6 */
+
+
+/*************************************
+   External Function Prototype
+ *************************************/
+int getifaddrs(struct ifaddrs **ifap);
+void freeifaddrs(struct ifaddrs *ifa);
+const char *gai_strerror(int errcode);
+unsigned int if_nametoindex(const char *ifname);
+char * if_indextoname(unsigned int ifindex, char *ifname);
+unsigned int get_default_ifindex(void);
+#if defined(CONFIG_NET_IPv6) && (SUPPORT_SETSOCKOPT_IPV6_JOIN_GROUP == 0)
+int do_ipv6_join_group(const ip6_addr_t *groupaddr);
+int do_ipv6_leave_group(const ip6_addr_t *groupaddr);
+#endif
 
 #endif /* _TIZENRT_COMPAT_H_ */

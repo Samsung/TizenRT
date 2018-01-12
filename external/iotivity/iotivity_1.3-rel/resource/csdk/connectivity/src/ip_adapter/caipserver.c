@@ -597,7 +597,9 @@ static CAResult_t CAReceiveMessage(CASocketFd_t fd, CATransportFlags_t flags)
     int type = 0;
     int namelen = 0;
     struct sockaddr_storage srcAddr = { .ss_family = 0 };
+#if !defined(__TIZENRT__) || (SUPPORT_SETSOCKOPT_PKTINFO == 1)
     unsigned char *pktinfo = NULL;
+#endif
 #if !defined(WSA_CMSG_DATA)
     size_t len = 0;
     struct cmsghdr *cmp = NULL;
@@ -639,18 +641,13 @@ static CAResult_t CAReceiveMessage(CASocketFd_t fd, CATransportFlags_t flags)
         return CA_STATUS_FAILED;
     }
 
-#ifdef __TIZENRT__
-    if (flags & CA_MULTICAST)
+#if !defined(__TIZENRT__) || (SUPPORT_SETSOCKOPT_PKTINFO == 1)
+    for (cmp = CMSG_FIRSTHDR(&msg); cmp != NULL; cmp = CMSG_NXTHDR(&msg, cmp))
     {
-#endif
-        for (cmp = CMSG_FIRSTHDR(&msg); cmp != NULL; cmp = CMSG_NXTHDR(&msg, cmp))
+        if (cmp->cmsg_level == level && cmp->cmsg_type == type)
         {
-            if (cmp->cmsg_level == level && cmp->cmsg_type == type)
-            {
-                pktinfo = CMSG_DATA(cmp);
-            }
+            pktinfo = CMSG_DATA(cmp);
         }
-#ifdef __TIZENRT__
     }
 #endif
 #else // if defined(WSA_CMSG_DATA)
@@ -692,6 +689,7 @@ static CAResult_t CAReceiveMessage(CASocketFd_t fd, CATransportFlags_t flags)
 
     OIC_LOG_V(DEBUG, TAG, "WSARecvMsg recvd %u bytes", recvLen);
 
+#if !defined(__TIZENRT__) || (SUPPORT_SETSOCKOPT_PKTINFO == 1)
     for (WSACMSGHDR *cmp = WSA_CMSG_FIRSTHDR(&msg); cmp != NULL;
          cmp = WSA_CMSG_NXTHDR(&msg, cmp))
     {
@@ -700,9 +698,10 @@ static CAResult_t CAReceiveMessage(CASocketFd_t fd, CATransportFlags_t flags)
             pktinfo = WSA_CMSG_DATA(cmp);
         }
     }
+#endif
 #endif // !defined(WSA_CMSG_DATA)
 
-#ifndef __TIZENRT__
+#if !defined(__TIZENRT__) || (SUPPORT_SETSOCKOPT_PKTINFO == 1)
     if (!pktinfo)
     {
         OIC_LOG(ERROR, TAG, "pktinfo is null");
@@ -712,10 +711,10 @@ static CAResult_t CAReceiveMessage(CASocketFd_t fd, CATransportFlags_t flags)
 
     CASecureEndpoint_t sep = {.endpoint = {.adapter = CA_ADAPTER_IP, .flags = flags}};
 
+#if !defined(__TIZENRT__) || (SUPPORT_SETSOCKOPT_PKTINFO == 1)
 #if !defined(__TIZENRT__) || defined(CONFIG_NET_IPv6)
     if (flags & CA_IPV6)
     {
-#ifndef __TIZENRT__
         sep.endpoint.ifindex = ((struct in6_pktinfo *)pktinfo)->ipi6_ifindex;
 
         if (flags & CA_MULTICAST)
@@ -727,28 +726,13 @@ static CAResult_t CAReceiveMessage(CASocketFd_t fd, CATransportFlags_t flags)
                 sep.endpoint.flags &= ~CA_MULTICAST;
             }
         }
-#else
-        if((struct in_pktinfo *)pktinfo){
-            sep.endpoint.ifindex = ((struct in6_pktinfo *)pktinfo)->ipi6_ifindex;
-        }
-#endif
     }
     else
 #endif
     {
-#ifndef __TIZENRT__
         sep.endpoint.ifindex = ((struct in_pktinfo *)pktinfo)->ipi_ifindex;
-#else
-        if((struct in_pktinfo *)pktinfo){
-            sep.endpoint.ifindex = ((struct in_pktinfo *)pktinfo)->ipi_ifindex;
-        }
-#endif
 
-#ifndef __TIZENRT__
         if (flags & CA_MULTICAST)
-#else
-        if ((flags & CA_MULTICAST) && pktinfo)
-#endif
         {
             struct in_addr *addr = &((struct in_pktinfo *)pktinfo)->ipi_addr;
             uint32_t host = ntohl(addr->s_addr);
@@ -759,6 +743,9 @@ static CAResult_t CAReceiveMessage(CASocketFd_t fd, CATransportFlags_t flags)
             }
         }
     }
+#else
+    sep.endpoint.ifindex = get_default_ifindex();
+#endif
 
     CAConvertAddrToName(&srcAddr, namelen, sep.endpoint.addr, &sep.endpoint.port);
 
@@ -826,7 +813,9 @@ static CASocketFd_t CACreateSocket(int family, uint16_t *port, bool isMulticast)
         {
             OIC_LOG_V(ERROR, TAG, "IPV6_V6ONLY failed: %s", CAIPS_GET_ERROR);
         }
+#endif
 
+#if !defined(__TIZENRT__) || (SUPPORT_SETSOCKOPT_PKTINFO == 1)
 #if defined(IPV6_RECVPKTINFO)
         if (OC_SOCKET_ERROR == setsockopt(fd, IPPROTO_IPV6, IPV6_RECVPKTINFO, &on, sizeof (on)))
 #else
@@ -843,7 +832,7 @@ static CASocketFd_t CACreateSocket(int family, uint16_t *port, bool isMulticast)
     else
 #endif
     {
-#ifndef __TIZENRT__
+#if !defined(__TIZENRT__) || (SUPPORT_SETSOCKOPT_PKTINFO == 1)
         int on = 1;
         if (OC_SOCKET_ERROR == setsockopt(fd, IPPROTO_IP, IP_PKTINFO, OPTVAL_T(&on), sizeof (on)))
         {
