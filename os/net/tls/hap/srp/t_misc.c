@@ -81,7 +81,6 @@ static unsigned char entropy[32];
 static unsigned char crpool[64];
 #elif defined(MBEDTLS)
 #include <tls/ctr_drbg.h>
-mbedtls_ctr_drbg_context ctr_drbg;
 #else
 static unsigned char randpool[SHA_DIGESTSIZE], randout[SHA_DIGESTSIZE];
 static unsigned long randcnt = 0;
@@ -152,7 +151,6 @@ static void t_initrand(void)
 	initialized = 1;
 
 #if defined(MBEDTLS)
-	mbedtls_ctr_drbg_init(&ctr_drbg);
 	return;
 #endif
 
@@ -163,7 +161,6 @@ static void t_initrand(void)
 _TYPE(void) t_stronginitrand(void)
 {
 #if defined(MBEDTLS)							/* t_initrand() has been improved enough to make this unnecessary */
-	t_initrand();
 #else
 	SHACTX ctxt;
 	unsigned int rawrand[NUM_RANDOMS];
@@ -213,7 +210,7 @@ t_random(unsigned char *data, unsigned size)
 #elif defined(CRYPTOLIB)
 	randomBytes(data, size, PSEUDO);
 #elif defined(MBEDTLS)
-	mbedtls_ctr_drbg_random(&ctr_drbg, data, size);
+	see_generate_random((unsigned int *) data, (unsigned int) size);
 #else
 	while (size > outpos) {
 		if (outpos > 0) {
