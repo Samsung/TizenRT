@@ -17,6 +17,9 @@ config ST_THINGS
 	depends on FS_ROMFS
 	---help---
 		SmartThings Things Management for applications to use and control devices
+	depends on NETUTILS_NTPCLIENT
+	---help---
+		Enable the \"NTP Client\"
 
 if ST_THINGS
 
