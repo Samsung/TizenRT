@@ -68,21 +68,6 @@ extern "C" {
  * Pre-processor Definitions
  ****************************************************************************/
 
-typedef struct _SPI_SFR {
-	u32 CH_CFG;				/*  0x00 spi configuration register */
-	u32 CLK_CFG;			/*  0x04 deleted */
-	u32 MODE_CFG;			/*  0x08 spi fifo control register */
-	u32 CS_REG;				/*  0x0C slave selection signal */
-	u32 SPI_INT_EN;			/*  0x10 spi interrupt enable register */
-	u32 SPI_STATUS;			/*  0x14 spi status register */
-	u32 SPI_TX_DATA;		/*  0x18 spi tx data register */
-	u32 SPI_RX_DATA;		/*  0x1C spi rx data register */
-	u32 PACKET_CNT_REG;		/*  0x20 count how many data master gets. */
-	u32 PENDING_CLR_REG;	/*  0x24 pending clear register */
-	u32 SWAP_CFG;			/*  0x28 swap config register */
-	u32 FB_CLK_SEL;			/*  0x2C feedback clock config register */
-} SPI_SFR;
-
 typedef enum {
 	SPI_PORT0 = 0,
 	SPI_PORT1,
