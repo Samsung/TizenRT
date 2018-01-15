@@ -51,6 +51,10 @@
 #include "utils/things_rtos_util.h"
 #endif
 
+#ifdef CONFIG_NETUTILS_NTPCLIENT
+#include <protocols/ntpclient.h>
+#endif
+
 #define TAG "[things_stack]"
 
 typedef void *(*pthread_func_type)(void *);
@@ -186,6 +190,27 @@ static void *__attribute__((optimize("O0"))) t_things_wifi_join_loop(void *args)
 	return NULL;
 }
 
+#ifdef CONFIG_NETUTILS_NTPCLIENT
+
+#define MAX_NTP_SERVER_NUM 1
+
+static void ntp_link_error(void)
+{
+	THINGS_LOG_D(THINGS_INFO, TAG, "ntp_link_error() callback is called.");
+}
+
+void sync_time_from_ntp(void){
+	THINGS_LOG_D(THINGS_INFO, TAG, "T%d --> %s", getpid(), __FUNCTION__);
+	struct ntpc_server_conn_s server_conn[MAX_NTP_SERVER_NUM] = {"kr.pool.ntp.org", 123};
+
+	if (ntpc_start(server_conn, MAX_NTP_SERVER_NUM, 3600, ntp_link_error) < 0) {
+		THINGS_LOG_D(THINGS_INFO, TAG, "ERROR: ntpc_start() failed. OK.");
+	} else {
+		THINGS_LOG_D(THINGS_INFO, TAG, "ntpc_start() OK.");
+	}
+}
+#endif
+
 void things_wifi_sta_connected(wifi_manager_result_e res)
 {
 	if (res == WIFI_MANAGER_FAIL) {
@@ -193,6 +218,12 @@ void things_wifi_sta_connected(wifi_manager_result_e res)
 		return;
 	}
 	THINGS_LOG_D(THINGS_INFO, TAG, "T%d --> %s", getpid(), __FUNCTION__);
+
+#ifdef CONFIG_NETUTILS_NTPCLIENT
+	sync_time_from_ntp();
+#else
+	THINGS_LOG_D(THINGS_INFO, TAG, "CONFIG_NETUTILS_NTPCLIENT is not set");
+#endif
 
 	pthread_create_rtos(&h_thread_things_wifi_join, NULL, (pthread_func_type) t_things_wifi_join_loop, NULL, THINGS_STACK_WIFI_JOIN_THREAD);
 	pthread_detach(h_thread_things_wifi_join);
