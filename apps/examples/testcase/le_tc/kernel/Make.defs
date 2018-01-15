@@ -161,6 +161,9 @@ endif
 ifeq ($(CONFIG_ITC_KERNEL_LIBC_SEMAPHORE),y)
   CSRCS += itc_libc_semaphore.c
 endif
+ifeq ($(CONFIG_ITC_KERNEL_SEMAPHORE),y)
+  CSRCS += itc_semaphore.c
+endif
 
 
 # Include kernel build support

@@ -51,6 +51,7 @@ config TC_KN_ALL
 	select ITC_KERNEL_ENVIRON
 	select ITC_KERNEL_LIBC_PTHREAD
 	select ITC_KERNEL_LIBC_SEMAPHORE
+	select ITC_KERNEL_SEMAPHORE
 
 config TC_KERNEL_CLOCK
 	bool "Clock"
@@ -224,6 +225,18 @@ endif
 config ITC_KERNEL_LIBC_SEMAPHORE
 	bool "ITC Libc Semaphore"
 	default n
+
+config ITC_KERNEL_SEMAPHORE
+	bool "ITC Semaphore"
+	default n
+	select DEBUG
+	select PRIORITY_INHERITANCE
+if ITC_KERNEL_SEMAPHORE
+config ITC_KERN_SEM_LOOP_SIZE
+	int "Iterator Count"
+	default 100
+endif
+
 
 endif #EXAMPLES_TESTCASE_KERNEL
 

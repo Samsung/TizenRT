@@ -206,6 +206,10 @@ int tc_kernel_main(int argc, char *argv[])
 	itc_libc_semaphore_main();
 #endif
 
+#ifdef CONFIG_ITC_KERNEL_SEMAPHORE
+	itc_semaphore_main();
+#endif
+
 	(void)tc_handler(TC_END, "Kernel TC");
 
 	return 0;
