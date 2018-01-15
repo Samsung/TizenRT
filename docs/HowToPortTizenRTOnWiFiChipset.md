@@ -3,7 +3,7 @@
 There are two cases to consider towards porting TizenRT on a new WiFi chipset. The specific case depends on the vendor's decision to either use their proprietary supplicant codebase, or
 to directly use TizenRT's WiFi solution.
 
-Below are mentioned the two cases in detail. Additionally, instructions are provided to incorporate the WiFi chipset driver in TizenRT's code tree. Specifically, details are provided
+Below are mentioned the two cases in detail. Additionally, we provide guidelines on how to interface TizenRT's WiFi Manager to the newly added chipset. Lastly, instructions are provided to incorporate the WiFi chipset driver in TizenRT's code tree. Specifically, details are provided
 to interface driver to network stack, and to get/set WiFi configuration from a higher abstraction layer.
  
 ## How to add external WiFi library
@@ -69,6 +69,22 @@ const struct wpa_driver_ops *const wpa_drivers[] = {
 ```
 This links the supplicant to the relevant WiFi driver.
 
+## Interfacing to WiFi Manager
+
+TizenRT features a generic WiFi Manager framework (API located at *framework/inc/wifi_manager*) for applications.
+The WiFi Manager framework implements specific WiFi utility functions that will directly
+talk to the WiFi supplicant software. Also, in case of a proprietary WiFi API used over WiFi supplicant, the developer
+should invoke those APIs using the WiFi utility functions. TizenRT provides a standard API for WiFi utilities, which is declared under
+*framework/src/wifi_manager/wifi_utils.h*. Please make sure you create a new WiFi utility file named *wifi_utils_<supplicant_prefix>.c* in the same
+folder, and interface to the WiFi supplicant, using the API in *wifi_utils.h*. Developers are encouraged to consult *wifi_utils_wpa.c* as a reference implementation
+that interfaces to TizenRT's WPA_SUPPLICANT. Finally, to build the utility file that you have created, please edit *framework/src/wifi_manager/Make.defs*,
+and add the following lines as shown below:
+
+```
+ifeq ($(CONFIG_<SUPPLICANT_LIBRARY_NAME>), y)
+CSRCS += wifi_utils_<supplicant_prefix>.c
+endif
+```
 
 ## Incorporating WiFi Chipset Driver
 
