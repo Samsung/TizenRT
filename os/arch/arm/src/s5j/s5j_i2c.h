@@ -72,6 +72,19 @@
 #error "S5J chip is not specified"
 #endif
 
+#define I2C_MASTER_TYPE		0
+#define I2C_SLAVE_TYPE		1
+#define I2C_POLLING_MODE	0
+#define I2C_INTERRUPT_MODE	1
+
+typedef enum {
+	I2C_PORT0 = 0,
+	I2C_PORT1,
+	I2C_PORT2,
+	I2C_PORT3,
+	I2C_PORT_MAX,
+} I2C_PORT;
+
 /****************************************************************************
  * Public Function Prototypes
  ****************************************************************************/
@@ -81,7 +94,7 @@ int s5j_i2c_setaddress(FAR struct i2c_dev_s *dev, int addr, int nbits);
 int s5j_i2c_transfer(struct i2c_dev_s *dev, struct i2c_msg_s *msgv, int msgc);
 int s5j_i2c_read(FAR struct i2c_dev_s *dev, FAR uint8_t *buffer, int buflen);
 int s5j_i2c_write(FAR struct i2c_dev_s *dev, FAR const uint8_t *buffer, int buflen);
-struct i2c_dev_s *up_i2cinitialize(int port);
+FAR struct i2c_dev_s *up_i2cinitialize(int port);
 int s5j_i2cbus_uninitialize(FAR struct i2c_dev_s *dev);
 void s5j_i2c_register(int bus);
 

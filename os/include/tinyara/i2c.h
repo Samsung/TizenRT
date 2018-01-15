@@ -64,17 +64,6 @@
 /****************************************************************************
  * Pre-processor Definitions
  ****************************************************************************/
-/* If a dynamic timeout is selected, then a non-negative, non-zero micro-
- * seconds per byte value must be provided as well.
- */
-
-#ifdef CONFIG_STM32_I2C_DYNTIMEO
-#if CONFIG_STM32_I2C_DYNTIMEO_USECPERBYTE < 1
-#warning "Ignoring CONFIG_STM32_I2C_DYNTIMEO because of CONFIG_STM32_I2C_DYNTIMEO_USECPERBYTE"
-#undef CONFIG_STM32_I2C_DYNTIMEO
-#endif
-#endif
-
 /* I2C address calculation.  Convert 7- and 10-bit address to 8-bit and
  * 16-bit read/write address
  */
