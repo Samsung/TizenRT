@@ -511,6 +511,10 @@ void os_start(void)
 
 	up_initialize();
 
+#ifdef CONFIG_KERNEL_TEST_DRV
+	test_drv_register();
+#endif
+
 #if defined(CONFIG_DEBUG_SYSTEM)
 	sysdbg_init();
 #endif

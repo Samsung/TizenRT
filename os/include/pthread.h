@@ -77,7 +77,7 @@
 #include <signal.h>				/* Needed for sigset_t */
 #include <time.h>				/* Needed for struct timespec */
 
-#include <tinyara/semaphore.h>	/* For sem_t and SEM_PRIO_* defines */
+#include <tinyara/semaphore.h>	/* For sem_t and SEM_* defines */
 
 /********************************************************************************
  * Pre-processor Definitions
@@ -284,7 +284,7 @@ struct pthread_cond_s {
 	sem_t sem;
 };
 typedef struct pthread_cond_s pthread_cond_t;
-#define PTHREAD_COND_INITIALIZER { {0, 0xffff} }
+#define PTHREAD_COND_INITIALIZER { SEM_INITIALIZER(0) }
 
 /**
  * @ingroup PTHREAD_KERNEL
