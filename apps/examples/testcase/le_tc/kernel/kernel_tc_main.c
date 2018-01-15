@@ -194,6 +194,10 @@ int tc_kernel_main(int argc, char *argv[])
 	umm_heap_main();
 #endif
 
+#ifdef CONFIG_ITC_KERNEL_ENVIRON
+	itc_environ_main();
+#endif
+
 	(void)tc_handler(TC_END, "Kernel TC");
 
 	return 0;

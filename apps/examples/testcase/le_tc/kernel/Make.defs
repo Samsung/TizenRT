@@ -152,6 +152,9 @@ endif
 ifeq ($(CONFIG_TC_KERNEL_TASH_STACKMONITOR),y)
   CSRCS += tc_tash_stackmonitor.c
 endif
+ifeq ($(CONFIG_ITC_KERNEL_ENVIRON),y)
+  CSRCS += itc_environ.c
+endif
 
 # Include kernel build support
 
