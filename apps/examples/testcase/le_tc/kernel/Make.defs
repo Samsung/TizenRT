@@ -155,6 +155,9 @@ endif
 ifeq ($(CONFIG_ITC_KERNEL_ENVIRON),y)
   CSRCS += itc_environ.c
 endif
+ifeq ($(CONFIG_ITC_KERNEL_LIBC_PTHREAD),y)
+  CSRCS += itc_libc_pthread.c
+endif
 
 # Include kernel build support
 

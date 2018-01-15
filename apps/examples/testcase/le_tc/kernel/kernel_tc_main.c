@@ -198,6 +198,10 @@ int tc_kernel_main(int argc, char *argv[])
 	itc_environ_main();
 #endif
 
+#ifdef CONFIG_ITC_KERNEL_LIBC_PTHREAD
+	itc_libc_pthread_main();
+#endif
+
 	(void)tc_handler(TC_END, "Kernel TC");
 
 	return 0;
