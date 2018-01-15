@@ -94,5 +94,6 @@ int itc_environ_main(void);
 int itc_libc_pthread_main(void);
 int itc_libc_semaphore_main(void);
 int itc_semaphore_main(void);
+int itc_sched_main(void);
 
 #endif /* __EXAMPLES_TESTCASE_KERNEL_TC_INTERNAL_H */

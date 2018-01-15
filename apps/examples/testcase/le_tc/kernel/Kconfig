@@ -52,6 +52,7 @@ config TC_KN_ALL
 	select ITC_KERNEL_LIBC_PTHREAD
 	select ITC_KERNEL_LIBC_SEMAPHORE
 	select ITC_KERNEL_SEMAPHORE
+	select ITC_KERNEL_SCHED
 
 config TC_KERNEL_CLOCK
 	bool "Clock"
@@ -237,6 +238,9 @@ config ITC_KERN_SEM_LOOP_SIZE
 	default 100
 endif
 
+config ITC_KERNEL_SCHED
+	bool "ITC Sched"
+	default n
 
 endif #EXAMPLES_TESTCASE_KERNEL
 
