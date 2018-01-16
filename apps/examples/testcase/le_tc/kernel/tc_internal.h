@@ -96,5 +96,6 @@ int itc_libc_semaphore_main(void);
 int itc_semaphore_main(void);
 int itc_sched_main(void);
 int itc_timer_main(void);
+int itc_libc_spawn_main(void);
 
 #endif /* __EXAMPLES_TESTCASE_KERNEL_TC_INTERNAL_H */

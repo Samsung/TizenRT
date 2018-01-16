@@ -170,7 +170,9 @@ endif
 ifeq ($(CONFIG_ITC_KERNEL_TIMER),y)
   CSRCS += itc_timer.c
 endif
-
+ifeq ($(CONFIG_ITC_KERNEL_LIBC_SPAWN),y)
+  CSRCS += itc_libc_spawn.c
+endif
 
 # Include kernel build support
 
