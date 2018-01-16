@@ -193,6 +193,53 @@ int tc_kernel_main(int argc, char *argv[])
 #ifdef CONFIG_TC_KERNEL_UMM_HEAP
 	umm_heap_main();
 #endif
+#ifdef CONFIG_ITC_KERNEL_LIBC_SCHED
+	itc_libc_sched_main();
+#endif
+#ifdef CONFIG_ITC_KERNEL_LIBC_PTHREAD
+	itc_libc_pthread_main();
+#endif
+
+#ifdef CONFIG_ITC_KERNEL_LIBC_SEMAPHORE
+	itc_libc_semaphore_main();
+#endif
+
+#ifdef CONFIG_ITC_KERNEL_SEMAPHORE
+#if (!defined CONFIG_DEBUG) || (!defined CONFIG_SEM_PREALLOCHOLDERS) || (!defined CONFIG_PRIORITY_INHERITANCE)
+#error CONFIG_DEBUG, CONFIG_SEM_PHDEBUG, CONFIG_SEM_PREALLOCHOLDERS and CONFIG_PRIORITY_INHERITANCE are needed for testing SEMAPHORE ITC
+#endif
+	itc_semaphore_main();
+#endif
+
+#ifdef CONFIG_ITC_KERNEL_SCHED
+#if (!defined CONFIG_SCHED_HAVE_PARENT)
+	/* #error CONFIG_SCHED_HAVE_PARENT is needed for testing SCHED TC */
+#endif
+	itc_sched_main();
+#endif
+
+#ifdef CONFIG_ITC_KERNEL_TIMER
+	itc_timer_main();
+#endif
+
+#ifdef CONFIG_ITC_KERNEL_ENVIRON
+	itc_environ_main();
+#endif
+
+#ifdef CONFIG_ITC_KERNEL_LIBC_SPAWN
+	itc_libc_spawn_main();
+#endif
+
+#ifdef CONFIG_ITC_KERNEL_PTHREAD
+	itc_pthread_main();
+#endif
+
+#ifdef CONFIG_ITC_KERNEL_LIBC_MISC
+#if (!defined CONFIG_DEBUG) || (!defined CONFIG_DEBUG_ERROR) || (!defined CONFIG_DEBUG_VERBOSE)
+#error CONFIG_DEBUG, CONFIG_DEBUG_ERROR and CONFIG_DEBUG_VERBOSE are needed for testing LIBC_MISC ITC
+#endif
+	itc_libc_misc_main();
+#endif
 
 	(void)tc_handler(TC_END, "Kernel TC");
 

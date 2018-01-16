@@ -48,6 +48,16 @@ config TC_KN_ALL
 	select TC_KERNEL_TASK
 	select TC_KERNEL_TIMER
 	select TC_KERNEL_UMM_HEAP
+	select ITC_KERNEL_LIBC_SCHED
+	select ITC_KERNEL_LIBC_PTHREAD
+	select ITC_KERNEL_LIBC_SEMAPHORE
+	select ITC_KERNEL_SEMAPHORE
+	select ITC_KERNEL_SCHED
+	select ITC_KERNEL_TIMER
+	select ITC_KERNEL_ENVIRON
+	select ITC_KERNEL_LIBC_SPAWN
+	select ITC_KERNEL_PTHREAD
+	select ITC_KERNEL_LIBC_MISC
 
 config TC_KERNEL_CLOCK
 	bool "Clock"
@@ -199,6 +209,53 @@ config TC_KERNEL_TASH_HEAPINFO
 config TC_KERNEL_TASH_STACKMONITOR
 	bool "StackMonitor"
 	default n
+
+config ITC_KERNEL_LIBC_SCHED
+	bool "ITC Libc Sched"
+	default n
+
+config ITC_KERNEL_LIBC_PTHREAD
+	bool "ITC Libc Pthread"
+	default n
+
+config ITC_KERNEL_LIBC_SEMAPHORE
+	bool "ITC Libc Semaphore"
+	default n
+
+config ITC_KERNEL_SEMAPHORE
+	bool "ITC Semaphore"
+	default n
+	select DEBUG
+	select PRIORITY_INHERITANCE
+
+config ITC_KERNEL_SCHED
+	bool "ITC Sched"
+	default n
+#	select SCHED_HAVE_PARENT
+
+config ITC_KERNEL_TIMER
+	bool "ITC Timer"
+	default n
+
+config ITC_KERNEL_ENVIRON
+	bool "ITC Environ"
+	default n
+
+config ITC_KERNEL_LIBC_SPAWN
+	bool "ITC Libc Spawn"
+	default n
+
+config ITC_KERNEL_PTHREAD
+	bool "ITC Pthread"
+	default n
+	select MUTEX_TYPES
+
+config ITC_KERNEL_LIBC_MISC
+	bool "ITC Libc Misc"
+	default n
+	select DEBUG
+	select DEBUG_ERROR
+	select DEBUG_VERBOSE
 
 endif #EXAMPLES_TESTCASE_KERNEL
 

@@ -152,6 +152,36 @@ endif
 ifeq ($(CONFIG_TC_KERNEL_TASH_STACKMONITOR),y)
   CSRCS += tc_tash_stackmonitor.c
 endif
+ifeq ($(CONFIG_ITC_KERNEL_LIBC_SCHED),y)
+  CSRCS += itc_libc_sched.c
+endif
+ifeq ($(CONFIG_ITC_KERNEL_LIBC_PTHREAD),y)
+  CSRCS += itc_libc_pthread.c
+endif
+ifeq ($(CONFIG_ITC_KERNEL_LIBC_SEMAPHORE),y)
+  CSRCS += itc_libc_semaphore.c
+endif
+ifeq ($(CONFIG_ITC_KERNEL_SEMAPHORE),y)
+  CSRCS += itc_semaphore.c
+endif
+ifeq ($(CONFIG_ITC_KERNEL_SCHED),y)
+  CSRCS += itc_sched.c
+endif
+ifeq ($(CONFIG_ITC_KERNEL_TIMER),y)
+  CSRCS += itc_timer.c
+endif
+ifeq ($(CONFIG_ITC_KERNEL_ENVIRON),y)
+  CSRCS += itc_environ.c
+endif
+ifeq ($(CONFIG_ITC_KERNEL_LIBC_SPAWN),y)
+  CSRCS += itc_libc_spawn.c
+endif
+ifeq ($(CONFIG_ITC_KERNEL_PTHREAD),y)
+  CSRCS += itc_pthread.c
+endif
+ifeq ($(CONFIG_ITC_KERNEL_LIBC_MISC),y)
+  CSRCS += itc_libc_misc.c
+endif
 
 # Include kernel build support
 

@@ -90,5 +90,15 @@ int timer_main(void);
 int umm_heap_main(void);
 int tash_heapinfo_main(void);
 int tash_stackmonitor_main(void);
+int itc_libc_sched_main(void);
+int itc_libc_pthread_main(void);
+int itc_libc_semaphore_main(void);
+int itc_semaphore_main(void);
+int itc_sched_main(void);
+int itc_timer_main(void);
+int itc_environ_main(void);
+int itc_libc_spawn_main(void);
+int itc_pthread_main(void);
+int itc_libc_misc_main(void);
 
 #endif /* __EXAMPLES_TESTCASE_KERNEL_TC_INTERNAL_H */
