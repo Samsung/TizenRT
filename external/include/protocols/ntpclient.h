@@ -142,12 +142,13 @@ extern "C" {
  *                                   - server_list[n]->port : ntp server's port number
  * @param[in] num_of_servers number of servers
  * @param[in] interval_secs polling interval seconds
+ * @param[in] link_success_cb callback function for link success case
  * @param[in] link_error_cb callback function for link error case
  * @return On success, the non-negative task ID of the NTPC daemon is returned.
  *             On failure, a negative value is returned.
  * @since Tizen RT v1.0
  */
-int ntpc_start(struct ntpc_server_conn_s *server_list, uint32_t num_of_servers, uint32_t interval_secs, void *link_error_cb);
+int ntpc_start(struct ntpc_server_conn_s *server_list, uint32_t num_of_servers, uint32_t interval_secs, void *link_success_cb, void *link_error_cb);
 
 /**
  * @brief ntpc_stop() stops the NTP client daemon.
