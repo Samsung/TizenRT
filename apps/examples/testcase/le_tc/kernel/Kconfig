@@ -55,6 +55,7 @@ config TC_KN_ALL
 	select ITC_KERNEL_SCHED
 	select ITC_KERNEL_TIMER
 	select ITC_KERNEL_LIBC_SPAWN
+	select ITC_KERNEL_PTHREAD
 
 config TC_KERNEL_CLOCK
 	bool "Clock"
@@ -251,6 +252,17 @@ config ITC_KERNEL_TIMER
 config ITC_KERNEL_LIBC_SPAWN
 	bool "ITC Libc Spawn"
 	default n
+
+config ITC_KERNEL_PTHREAD
+	bool "ITC Pthread"
+	default n
+	select MUTEX_TYPES
+if ITC_KERNEL_PTHREAD
+config ITC_KERN_PTHREAD_LOOP_SIZE
+	int "Iterator Count"
+	default 100
+endif
+
 
 endif #EXAMPLES_TESTCASE_KERNEL
 

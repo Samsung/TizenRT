@@ -173,6 +173,9 @@ endif
 ifeq ($(CONFIG_ITC_KERNEL_LIBC_SPAWN),y)
   CSRCS += itc_libc_spawn.c
 endif
+ifeq ($(CONFIG_ITC_KERNEL_PTHREAD),y)
+  CSRCS += itc_pthread.c
+endif
 
 # Include kernel build support
 
