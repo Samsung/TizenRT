@@ -304,7 +304,7 @@ tools/mkversion$(HOSTEXEEXT):
 
 $(TOPDIR)/.version: force_build
 	echo "create .version file"; \
-	tools/version.sh -v 1.0 .version; \
+	tools/version.sh -v 1.0 --board "$(CONFIG_ARCH_BOARD_NAME)" .version; \
 	chmod 755 .version
 
 include/tinyara/version.h: $(TOPDIR)/.version tools/mkversion$(HOSTEXEEXT)

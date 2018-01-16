@@ -53,6 +53,13 @@ config ARCH_BOARD
 	default "artik05x" if ARCH_BOARD_ARTIK05X_FAMILY
 	default "sidk_s5jt200" if ARCH_BOARD_SIDK_S5JT200
 
+config ARCH_BOARD_NAME
+	string
+	default "artik053" if ARCH_BOARD_ARTIK053
+	default "artik053s" if ARCH_BOARD_ARTIK053S
+	default "artik055s" if ARCH_BOARD_ARTIK055S
+	default ARCH_BOARD
+
 comment "Common Board Options"
 
 config ARCH_HAVE_LEDS

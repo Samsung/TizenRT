@@ -53,11 +53,12 @@ WD=`pwd`
 
 # Get command line parameters
 
-USAGE="USAGE: $0 [-d|-h] [-b <build>] -v <major.minor> <outfile-path>"
+USAGE="USAGE: $0 [-d|-h] [-b <build>] [--board <board-name>] -v <major.minor> <outfile-path>"
 ADVICE="Try '$0 -h' for more information"
 
 unset VERSION
 unset BUILD
+unset BOARD
 unset OUTFILE
 
 while [ ! -z "$1" ]; do
@@ -72,6 +73,10 @@ while [ ! -z "$1" ]; do
 	-v )
 		shift
 		VERSION=$1
+		;;
+	--board )
+		shift
+		BOARD=$(echo $1 | tr /a-z/ /A-Z/)
 		;;
 	-h )
 		echo "$0 is a tool for generation of proper version files for the TinyAra build"
@@ -89,6 +94,8 @@ while [ ! -z "$1" ]; do
 		echo "	-v <major.minor>"
 		echo "		The TinyAra version number expressed as a major and minor number separated"
 		echo "		by a period"
+		echo "	--board <board-name>"
+		echo "		The BOARD Name"
 		echo " 	<outfile-path>"
 		echo "		The full path to the version file to be created"
 		exit 0
@@ -154,5 +161,7 @@ echo "CONFIG_VERSION_STRING=\"${VERSION}\"" >>${OUTFILE}
 echo "CONFIG_VERSION_MAJOR=${MAJOR}" >>${OUTFILE}
 echo "CONFIG_VERSION_MINOR=${MINOR}" >>${OUTFILE}
 echo "CONFIG_VERSION_BUILD=\"${BUILD}\"" >>${OUTFILE}
+[ -n "${BOARD}" ] && \
+	echo "CONFIG_VERSION_BOARD=\"${BOARD}\"" >>${OUTFILE}
 echo "CONFIG_VERSION_BUILD_USER=\"`whoami`@`hostname`\"" >>${OUTFILE}
 echo "CONFIG_VERSION_BUILD_TIME=\"`date '+%Y-%m-%d %T'`\"" >>${OUTFILE}

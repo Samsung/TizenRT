@@ -101,6 +101,9 @@ void sysinfo(void)
 		printf("Procfs is not mounted so that we can not printf sysinfo\n");
 	}
 #else
+#ifdef CONFIG_VERSION_BOARD
+	printf("\tBoard: %s\n", CONFIG_VERSION_BOARD);
+#endif
 	/* When flat build, just get values defined in version.h */
 	printf("\tVersion: " CONFIG_VERSION_STRING "\n\tCommit Hash: %s\n", CONFIG_VERSION_BUILD);
 	printf("\tBuild User: " CONFIG_VERSION_BUILD_USER "\n\tBuild Time: %s\n", CONFIG_VERSION_BUILD_TIME);
