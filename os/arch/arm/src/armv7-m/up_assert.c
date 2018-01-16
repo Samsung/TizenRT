@@ -305,7 +305,9 @@ static void up_dumpstate(void)
 	/* Then dump the registers (if available) */
 
 	up_registerdump();
+#ifdef CONFIG_ARMV7M_MPU
 	mpu_show_regioninfo();
+#endif
 #ifdef CONFIG_ARCH_USBDUMP
 	/* Dump USB trace data */
 
