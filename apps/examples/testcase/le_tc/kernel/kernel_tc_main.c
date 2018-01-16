@@ -217,6 +217,11 @@ int tc_kernel_main(int argc, char *argv[])
 	itc_sched_main();
 #endif
 
+#ifdef CONFIG_ITC_KERNEL_TIMER
+	itc_timer_main();
+#endif
+
+
 	(void)tc_handler(TC_END, "Kernel TC");
 
 	return 0;

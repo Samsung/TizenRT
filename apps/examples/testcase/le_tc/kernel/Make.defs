@@ -167,6 +167,9 @@ endif
 ifeq ($(CONFIG_ITC_KERNEL_SCHED),y)
   CSRCS += itc_sched.c
 endif
+ifeq ($(CONFIG_ITC_KERNEL_TIMER),y)
+  CSRCS += itc_timer.c
+endif
 
 
 # Include kernel build support
