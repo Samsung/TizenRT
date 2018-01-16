@@ -178,7 +178,8 @@ static void *client_connect(void *ptr_id)
 	ret = connect(sock, (struct sockaddr *)&serv_addr, sizeof(serv_addr));
 	if (ret != OK) {
 		close(sock);
-		pthread_exit(ret);
+		*pret = ret;
+		pthread_exit(pret);
 	}
 	strncpy(client_msg, CLIENT_MSG, sizeof(CLIENT_MSG));
 	client_msg[strlen(client_msg) - 2] = '0' + (*id);
