@@ -54,8 +54,14 @@
 -include $(TOPDIR)/Make.defs
 include $(APPDIR)/Make.defs
 
+CXXEXT ?= .cxx
 # Hello, World! C++ Example
 
+APPNAME    = helloxx
+FUNCNAME   = $(APPNAME)_main
+THREADEXEC = TASH_EXECMD_ASYNC
+
+# Hello, World! C++ Example
 ASRCS		=
 CSRCS		=
 CXXSRCS		=
@@ -63,8 +69,12 @@ MAINSRC		= helloxx_main.cxx
 
 AOBJS		= $(ASRCS:.S=$(OBJEXT))
 COBJS		= $(CSRCS:.c=$(OBJEXT))
-CXXOBJS		= $(CXXSRCS:.cxx=$(OBJEXT))
-MAINOBJ		= $(MAINSRC:.cxx=$(OBJEXT))
+CXXOBJS		= $(CXXSRCS:$(CXXEXT)=$(OBJEXT))
+ifeq ($(suffix $(MAINSRC)),$(CXXEXT))
+  MAINOBJ 	= $(MAINSRC:$(CXXEXT)=$(OBJEXT))
+else
+  MAINOBJ 	= $(MAINSRC:.c=$(OBJEXT))
+endif
 
 SRCS		= $(ASRCS) $(CSRCS) $(CXXSRCS) $(MAINSRC)
 OBJS		= $(AOBJS) $(COBJS) $(CXXOBJS)
@@ -93,19 +103,7 @@ ROOTDEPPATH	= --dep-path .
 VPATH		=
 
 all: .built
-.PHONY:	clean depend distclean chkcxx
-
-chkcxx:
-ifneq ($(CONFIG_HAVE_CXX),y)
-	@echo ""
-	@echo "In order to use this example, you toolchain must support must"
-	@echo ""
-	@echo "  (1) Explicitly select CONFIG_HAVE_CXX to build in C++ support"
-	@echo "  (2) Define CXX, CXXFLAGS, and COMPILEXX in the Make.defs file"
-	@echo "      of the configuration that you are using."
-	@echo ""
-	@exit 1
-endif
+.PHONY:	clean depend distclean
 
 $(AOBJS): %$(OBJEXT): %.S
 	$(call ASSEMBLE, $<, $@)
@@ -113,10 +111,18 @@ $(AOBJS): %$(OBJEXT): %.S
 $(COBJS): %$(OBJEXT): %.c
 	$(call COMPILE, $<, $@)
 
-$(CXXOBJS) $(MAINOBJ): %$(OBJEXT): %.cxx
+$(CXXOBJS): %$(OBJEXT): %$(CXXEXT)
 	$(call COMPILEXX, $<, $@)
 
-.built: chkcxx $(OBJS)
+ifeq ($(suffix $(MAINSRC)),$(CXXEXT))
+$(MAINOBJ): %$(OBJEXT): %$(CXXEXT)
+	$(call COMPILEXX, $<, $@)
+else
+$(MAINOBJ): %$(OBJEXT): %.c
+	$(call COMPILE, $<, $@)
+endif
+
+.built: $(OBJS)
 	$(call ARCHIVE, $(BIN), $(OBJS))
 	@touch .built
 
@@ -133,10 +139,23 @@ install:
 
 endif
 
+ifeq ($(CONFIG_BUILTIN_APPS)$(CONFIG_EXAMPLES_HELLOXX),yy)
+$(BUILTIN_REGISTRY)$(DELIM)$(FUNCNAME).bdat: $(DEPCONFIG) Makefile
+	$(Q) $(call REGISTER,$(APPNAME),$(FUNCNAME),$(THREADEXEC),$(PRIORITY),$(STACKSIZE))
+
+context: $(BUILTIN_REGISTRY)$(DELIM)$(FUNCNAME).bdat
+
+else
 context:
 
+endif
+
 .depend: Makefile $(SRCS)
+ifeq ($(filter %$(CXXEXT),$(SRCS)),)
 	@$(MKDEP) $(ROOTDEPPATH) "$(CC)" -- $(CFLAGS) -- $(SRCS) >Make.dep
+else
+	@$(MKDEP) $(ROOTDEPPATH) "$(CXX)" -- $(CXXFLAGS) -- $(SRCS) >Make.dep
+endif
 	@touch $@
 
 depend: .depend
