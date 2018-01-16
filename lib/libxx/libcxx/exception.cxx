@@ -47,10 +47,15 @@
   using namespace __cxxabiv1;
   #if defined(LIBCXXRT) || defined(_LIBCPPABI_VERSION)
     #define HAVE_DEPENDENT_EH_ABI 1
+  #else
+    #define HAVE_DEPENDENT_EH_ABI 0
   #endif
 #elif !defined(__GLIBCXX__) // defined(LIBCXX_BUILDING_LIBCXXABI)
   _LIBCPP_SAFE_STATIC static std::terminate_handler  __terminate_handler;
   _LIBCPP_SAFE_STATIC static std::unexpected_handler __unexpected_handler;
+  #define HAVE_DEPENDENT_EH_ABI 0
+#else
+  #define HAVE_DEPENDENT_EH_ABI 0
 #endif // defined(LIBCXX_BUILDING_LIBCXXABI)
 
 namespace std
@@ -134,10 +139,11 @@ int uncaught_exceptions() _NOEXCEPT
 #   if defined(_MSC_VER) && ! defined(__clang__)
         _LIBCPP_WARNING("uncaught_exceptions not yet implemented")
 #   else
-#       warning uncaught_exception not yet implemented
+#       if !defined(__TINYARA__)
+#           warning uncaught_exception not yet implemented
+#       endif
 #   endif
 #if defined(__TINYARA__)
-#warning uncaught_exception HACKED in nuttx to return 0
     return 0;
 #else
     fprintf(stderr, "uncaught_exceptions not yet implemented\n");
@@ -212,7 +218,9 @@ exception_ptr::~exception_ptr() _NOEXCEPT
 #   if defined(_MSC_VER) && ! defined(__clang__)
         _LIBCPP_WARNING("exception_ptr not yet implemented")
 #   else
-#       warning exception_ptr not yet implemented
+#       if !defined(__TINYARA__)
+#           warning exception_ptr not yet implemented
+#       endif
 #   endif
     fprintf(stderr, "exception_ptr not yet implemented\n");
     ::abort();
@@ -231,7 +239,9 @@ exception_ptr::exception_ptr(const exception_ptr& other) _NOEXCEPT
 #   if defined(_MSC_VER) && ! defined(__clang__)
         _LIBCPP_WARNING("exception_ptr not yet implemented")
 #   else
-#       warning exception_ptr not yet implemented
+#       if !defined(__TINYARA__)
+#           warning exception_ptr not yet implemented
+#       endif
 #   endif
     fprintf(stderr, "exception_ptr not yet implemented\n");
     ::abort();
@@ -256,7 +266,9 @@ exception_ptr& exception_ptr::operator=(const exception_ptr& other) _NOEXCEPT
 #   if defined(_MSC_VER) && ! defined(__clang__)
         _LIBCPP_WARNING("exception_ptr not yet implemented")
 #   else
-#       warning exception_ptr not yet implemented
+#       if !defined(__TINYARA__)
+#           warning exception_ptr not yet implemented
+#       endif
 #   endif
     fprintf(stderr, "exception_ptr not yet implemented\n");
     ::abort();
@@ -300,7 +312,9 @@ exception_ptr current_exception() _NOEXCEPT
 #   if defined(_MSC_VER) && ! defined(__clang__)
         _LIBCPP_WARNING( "exception_ptr not yet implemented" )
 #   else
-#       warning exception_ptr not yet implemented
+#       if !defined(__TINYARA__)
+#           warning exception_ptr not yet implemented
+#       endif
 #   endif
     fprintf(stderr, "exception_ptr not yet implemented\n");
     ::abort();
@@ -322,7 +336,9 @@ void rethrow_exception(exception_ptr p)
 #   if defined(_MSC_VER) && ! defined(__clang__)
         _LIBCPP_WARNING("exception_ptr not yet implemented")
 #   else
-#       warning exception_ptr not yet implemented
+#       if !defined(__TINYARA__)
+#           warning exception_ptr not yet implemented
+#       endif
 #   endif
     fprintf(stderr, "exception_ptr not yet implemented\n");
     ::abort();

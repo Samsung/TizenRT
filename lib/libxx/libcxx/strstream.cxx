@@ -271,7 +271,7 @@ strstreambuf::seekoff(off_type __off, ios_base::seekdir __way, ios_base::openmod
         legal = false;
     if (legal)
     {
-        off_type newoff;
+        off_type newoff = 0;
         char* seekhigh = epptr() ? epptr() : egptr();
         switch (__way)
         {

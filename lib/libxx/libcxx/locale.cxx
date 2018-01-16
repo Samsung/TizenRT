@@ -582,10 +582,10 @@ locale::name() const
 }
 
 void
-locale::__install_ctor(const locale& other, facet* f, long id)
+locale::__install_ctor(const locale& other, facet* f, long _id)
 {
     if (f)
-        __locale_ = new __imp(*other.__locale_, f, id);
+        __locale_ = new __imp(*other.__locale_, f, _id);
     else
         __locale_ = other.__locale_;
     __locale_->__add_shared();
