@@ -1641,15 +1641,6 @@ void slsi_monitor_thread_handler(void *param)
 #endif
 		}
 	}
-	/* Close callback sender mqueue */
-	if (g_send_cbmqfd) {
-		if (mq_close(g_send_cbmqfd) < 0) {
-			EPRINT("close mqueue failed: %d\n", errno);
-		} else {
-			DPRINT("Closed g_send_cbmqfd mqueue \n");
-			g_send_cbmqfd = NULL;
-		}
-	}
 
 	VPRINT("SLSI_API pthread_exit %d \n", g_monitoring_thread);
 	pthread_detach(g_monitoring_thread);
@@ -3110,6 +3101,7 @@ static uint8_t slsi_stop_supplicant(void)
 		if (mq_close(g_send_cbmqfd) < 0) {
 			EPRINT("sender mq_close failed\n");
 		}
+		g_send_cbmqfd = NULL;
 	}
 	if (g_recv_cbmqfd) {
 		if (mq_close(g_recv_cbmqfd) < 0) {
