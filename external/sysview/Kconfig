@@ -1,0 +1,77 @@
+#
+# For a description of the syntax of this configuration file,
+# see kconfig-language at https://www.kernel.org/doc/Documentation/kbuild/kconfig-language.txt
+#
+
+config SYSVIEW
+	bool "SystemView"
+	default n
+	---help---
+		SEGGER SystemView
+
+if SYSVIEW
+menu "SystemView configuration"
+
+config SYSVIEW_HWTIMER
+	bool "Use H/W Timer"
+	default y
+    depends on S5J_TIMER2
+	---help---
+		If you want to measure more accuracy time, Enable H/W Timer
+
+config SYSVIEW_POST_MORTEM
+	bool "POST Mortem"
+	default n
+	---help---
+		POST MORTEM mode
+
+config SYSVIEW_BUFFER_SIZE
+	int "Number of bytes that SystemView uses for a buffer"
+	default 32768
+	---help---
+		SEGGER Buffer size
+
+config SYSVIEW_RESOURCE_SIZE
+	int "Number of bytes for resource"
+	default 128
+	---help---
+		This space is used to store MsgQ, Semaphore, memory allocation information
+
+config SYSVIEW_MONITOR_TASK
+	bool "Monitor OS Task"
+	default y
+	---help---
+		Monitor Task
+
+config SYSVIEW_MONITOR_SEMAPHORE
+	bool "Monitor OS semaphore"
+	default n
+	---help---
+		Monitor semaphore
+
+config SYSVIEW_MONITOR_MSGQ
+	bool "Monitor OS Message queue"
+	default y
+	---help---
+		Monitor MsgQ
+
+config SYSVIEW_MONITOR_MEMINFO
+	bool "Monitor OS Memory allocation/free"
+	default y
+	---help---
+		Monitor Memory allocation/free
+
+config SYSVIEW_MONITOR_INTERRUPT
+	bool "Monitor interrupt"
+	default y
+	---help---
+		Monitor Interrupt
+
+config SYSVIEW_MONITOR_OSTICK
+	bool "Monitor OS tick interval"
+	default n
+	---help---
+		OS tick
+
+endmenu
+endif

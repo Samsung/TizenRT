@@ -1,0 +1,385 @@
+/****************************************************************************
+ * external/sysview/SEGGER_SYSVIEW_TizenRT.c
+ *
+ *   Copyright (C) 2018 SAMSUNG ELECTRONICS CO., LTD. All rights reserved.
+ *   Author: ByoungTae Cho <bt.cho@samsung.com>
+ *
+ * Redistribution and use in source and binary forms, with or without
+ * modification, are permitted provided that the following conditions
+ * are met:
+ *
+ * 1. Redistributions of source code must retain the above copyright
+ *    notice, this list of conditions and the following disclaimer.
+ * 2. Redistributions in binary form must reproduce the above copyright
+ *    notice, this list of conditions and the following disclaimer in
+ *    the documentation and/or other materials provided with the
+ *    distribution.
+ * 3. Neither the name NuttX nor the names of its contributors may be
+ *    used to endorse or promote products derived from this software
+ *    without specific prior written permission.
+ *
+ * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+ * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+ * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS
+ * FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE
+ * COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT,
+ * INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING,
+ * BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS
+ * OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED
+ * AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT
+ * LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN
+ * ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
+ *
+ ****************************************************************************/
+
+/*********************************************************************
+*                SEGGER Microcontroller GmbH & Co. KG                *
+*                        The Embedded Experts                        *
+**********************************************************************
+*                                                                    *
+*       (c) 2015 - 2017  SEGGER Microcontroller GmbH & Co. KG        *
+*                                                                    *
+*       www.segger.com     Support: support@segger.com               *
+*                                                                    *
+**********************************************************************
+*                                                                    *
+*       SEGGER SystemView * Real-time application analysis           *
+*                                                                    *
+**********************************************************************
+*                                                                    *
+* All rights reserved.                                               *
+*                                                                    *
+* SEGGER strongly recommends to not make any changes                 *
+* to or modify the source code of this software in order to stay     *
+* compatible with the RTT protocol and J-Link.                       *
+*                                                                    *
+* Redistribution and use in source and binary forms, with or         *
+* without modification, are permitted provided that the following    *
+* conditions are met:                                                *
+*                                                                    *
+* o Redistributions of source code must retain the above copyright   *
+*   notice, this list of conditions and the following disclaimer.    *
+*                                                                    *
+* o Redistributions in binary form must reproduce the above          *
+*   copyright notice, this list of conditions and the following      *
+*   disclaimer in the documentation and/or other materials provided  *
+*   with the distribution.                                           *
+*                                                                    *
+* o Neither the name of SEGGER Microcontroller GmbH & Co. KG         *
+*   nor the names of its contributors may be used to endorse or      *
+*   promote products derived from this software without specific     *
+*   prior written permission.                                        *
+*                                                                    *
+* THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND             *
+* CONTRIBUTORS "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES,        *
+* INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF           *
+* MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE           *
+* DISCLAIMED. IN NO EVENT SHALL SEGGER Microcontroller BE LIABLE FOR *
+* ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR           *
+* CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT  *
+* OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS;    *
+* OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF      *
+* LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT          *
+* (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE  *
+* USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH   *
+* DAMAGE.                                                            *
+*                                                                    *
+**********************************************************************
+*                                                                    *
+*       SystemView version: V2.42                                    *
+*                                                                    *
+**********************************************************************
+-------------------------- END-OF-HEADER -----------------------------
+
+File    : SEGGER_SYSVIEW_TizenRT.c
+Purpose : Interface between TizenRT and SystemView.
+Revision: $Rev: 3809 $
+*/
+
+#include <os_trace_events_tizenrt.h>
+#include <tinyara/clock.h>
+
+#ifndef SYSVIEW_MEMSET
+  #include <string.h>
+  #define SYSVIEW_MEMSET(p, v, n)   memset(p, v, n)
+#endif
+
+#undef   OS_CFG_TRACE_MAX_TASK
+#define  OS_CFG_TRACE_MAX_TASK                   (CONFIG_MAX_TASKS)
+
+#undef   OS_CFG_TRACE_MAX_RESOURCES
+#define  OS_CFG_TRACE_MAX_RESOURCES              (CONFIG_SYSVIEW_RESOURCE_SIZE)
+
+typedef struct SYSVIEW_TIZENRT_TASK_STATUS SYSVIEW_TIZENRT_TASK_STATUS;
+
+struct SYSVIEW_TIZENRT_TASK_STATUS {
+  U32           TaskID;
+  const char    *NamePtr;
+  U8            Prio;
+  void          *StkBasePtr;
+  U32           StkSize;
+};
+
+typedef struct SYSVIEW_TIZENRT_RESOURCE SYSVIEW_TIZENRT_RESOURCE;
+
+struct SYSVIEW_TIZENRT_RESOURCE {
+  U32         ResourceId;
+  const char* sResource;
+  U32         Registered;
+};
+
+static SYSVIEW_TIZENRT_TASK_STATUS _aTasks[OS_CFG_TRACE_MAX_TASK];
+static unsigned _NumTasks;
+
+#if OS_CFG_TRACE_MAX_RESOURCES > 0
+static SYSVIEW_TIZENRT_RESOURCE _aResources[OS_CFG_TRACE_MAX_RESOURCES];
+static unsigned                 _NumResources;
+#endif
+
+/*********************************************************************
+*
+*       _cbSendTaskList()
+*
+*  Function description
+*    This function is part of the link between TizenRT and SYSVIEW.
+*    Called from SystemView when asked by the host, it uses SYSVIEW
+*    functions to send the entire task list to the host.
+*/
+static void _cbSendTaskList(void) {
+  unsigned n;
+
+  for (n = 0; n < _NumTasks; n++) {
+    SYSVIEW_SendTaskInfo((U32)_aTasks[n].TaskID, _aTasks[n].NamePtr, (unsigned)_aTasks[n].Prio, (U32)_aTasks[n].StkBasePtr, (unsigned)_aTasks[n].StkSize);
+  }
+}
+
+/*********************************************************************
+*
+*       _cbGetTime()
+*
+*  Function description
+*    This function is part of the link between TizenRT and SYSVIEW.
+*    Called from SystemView when asked by the host, returns the
+*    current system time in micro seconds.
+*/
+static U64 _cbGetTime(void) {
+  U64 msec = TICK2USEC(clock_systimer());
+  return msec;
+}
+
+/*********************************************************************
+*
+*       Global functions
+*
+**********************************************************************
+*/
+
+/*********************************************************************
+*
+*       SYSVIEW_TaskReady()
+*
+*  Function description
+*    Record when a task is ready for execution.
+*/
+void SYSVIEW_TaskReady(U32 TaskID) {
+  if (TaskID != (U32)0) {
+    SEGGER_SYSVIEW_OnTaskStartReady(TaskID);
+  }
+}
+
+/*********************************************************************
+*
+*       SYSVIEW_TaskSwitchedIn()
+*
+*  Function description
+*    Record when a task starts/continues execution.
+*    If the idle task continues, record an on idle event.
+*/
+void SYSVIEW_TaskSwitchedIn(U32 TaskID) {
+  if (TaskID != (U32)0) {
+    SEGGER_SYSVIEW_OnTaskStartExec(TaskID);
+  } else {
+    SEGGER_SYSVIEW_OnIdle();
+  }
+}
+
+/*********************************************************************
+*
+*       SYSVIEW_TaskSuspend()
+*
+*  Function description
+*    Record when a task is suspended.
+*/
+void SYSVIEW_TaskSuspend(U32 TaskID) {
+  if (TaskID != (U32)0) {
+    SEGGER_SYSVIEW_OnTaskStopReady(TaskID,  (1u << 2));
+  }
+}
+
+/*********************************************************************
+*
+*       SYSVIEW_AddTask()
+*
+*  Function description
+*    Add a task to the internal list and record its information.
+*/
+void SYSVIEW_AddTask(U32 TaskID, const char* NamePtr, U8 Prio, void *StkBasePtr, U32 StkSize) {
+  if (TaskID != (U32)0) { /* 0 is g_idletcb.cmn.pid */
+    if (_NumTasks >= OS_CFG_TRACE_MAX_TASK) {
+      SEGGER_SYSVIEW_Warn("SYSTEMVIEW: Could not record task information. Maximum number of tasks reached.");
+      return;
+    }
+
+    _aTasks[_NumTasks].TaskID = TaskID;
+    _aTasks[_NumTasks].NamePtr = NamePtr;
+    _aTasks[_NumTasks].Prio = Prio;
+    _aTasks[_NumTasks].StkBasePtr = StkBasePtr;
+    _aTasks[_NumTasks].StkSize = StkSize;
+
+    _NumTasks++;
+
+    SYSVIEW_SendTaskInfo(TaskID, NamePtr, (unsigned)Prio, (U32)StkBasePtr, (unsigned)StkSize);
+  }
+}
+
+/*********************************************************************
+*
+*       SYSVIEW_UpdateTask()
+*
+*  Function description
+*    Update a task in the internal list and record its information.
+*/
+void SYSVIEW_UpdateTask(U32 TaskID, const char* NamePtr, U8 Prio, void *StkBasePtr, U32 StkSize) {
+  unsigned n;
+
+  if (TaskID != (U32)0) {
+    for (n = 0; n < _NumTasks; n++) {
+      if (_aTasks[n].TaskID == TaskID) {
+        break;
+      }
+    }
+    if (n < _NumTasks) {
+      _aTasks[n].NamePtr = NamePtr;
+      _aTasks[n].Prio = Prio;
+      _aTasks[n].StkBasePtr = StkBasePtr;
+      _aTasks[n].StkSize = StkSize;
+
+      SYSVIEW_SendTaskInfo(TaskID, NamePtr, (unsigned)Prio, (U32)StkBasePtr, (unsigned)StkSize);
+    } else {
+      SYSVIEW_AddTask(TaskID, NamePtr, Prio, StkBasePtr, StkSize);
+    }
+  }
+}
+
+/*********************************************************************
+*
+*       SYSVIEW_SendTaskInfo()
+*
+*  Function description
+*    Record task information.
+*/
+void SYSVIEW_SendTaskInfo(U32 TaskID, const char* sName, unsigned Prio, U32 StackBase, unsigned StackSize) {
+  SEGGER_SYSVIEW_TASKINFO TaskInfo;
+
+  //
+  // Fill all elements with 0 to allow extending the structure in future version without breaking the code
+  //
+  SYSVIEW_MEMSET(&TaskInfo, 0, sizeof(TaskInfo));
+  TaskInfo.TaskID     = TaskID;
+  TaskInfo.sName      = sName;
+  TaskInfo.Prio       = Prio;
+  TaskInfo.StackBase  = StackBase;
+  TaskInfo.StackSize  = StackSize;
+  SEGGER_SYSVIEW_SendTaskInfo(&TaskInfo);
+}
+
+/*********************************************************************
+*
+*       SYSVIEW_RecordU32x4()
+*
+*  Function description
+*    Record an event with 4 parameters
+*/
+void SYSVIEW_RecordU32x4(unsigned Id, U32 Para0, U32 Para1, U32 Para2, U32 Para3) {
+      U8  aPacket[SEGGER_SYSVIEW_INFO_SIZE + 4 * SEGGER_SYSVIEW_QUANTA_U32];
+      U8* pPayload;
+      //
+      pPayload = SEGGER_SYSVIEW_PREPARE_PACKET(aPacket);                // Prepare the packet for SystemView
+      pPayload = SEGGER_SYSVIEW_EncodeU32(pPayload, Para0);             // Add the first parameter to the packet
+      pPayload = SEGGER_SYSVIEW_EncodeU32(pPayload, Para1);             // Add the second parameter to the packet
+      pPayload = SEGGER_SYSVIEW_EncodeU32(pPayload, Para2);             // Add the third parameter to the packet
+      pPayload = SEGGER_SYSVIEW_EncodeU32(pPayload, Para3);             // Add the fourth parameter to the packet
+      //
+      SEGGER_SYSVIEW_SendPacket(&aPacket[0], pPayload, Id);             // Send the packet
+}
+
+/*********************************************************************
+*
+*       SYSVIEW_RecordU32x5()
+*
+*  Function description
+*    Record an event with 5 parameters
+*/
+void SYSVIEW_RecordU32x5(unsigned Id, U32 Para0, U32 Para1, U32 Para2, U32 Para3, U32 Para4) {
+      U8  aPacket[SEGGER_SYSVIEW_INFO_SIZE + 5 * SEGGER_SYSVIEW_QUANTA_U32];
+      U8* pPayload;
+      //
+      pPayload = SEGGER_SYSVIEW_PREPARE_PACKET(aPacket);                // Prepare the packet for SystemView
+      pPayload = SEGGER_SYSVIEW_EncodeU32(pPayload, Para0);             // Add the first parameter to the packet
+      pPayload = SEGGER_SYSVIEW_EncodeU32(pPayload, Para1);             // Add the second parameter to the packet
+      pPayload = SEGGER_SYSVIEW_EncodeU32(pPayload, Para2);             // Add the third parameter to the packet
+      pPayload = SEGGER_SYSVIEW_EncodeU32(pPayload, Para3);             // Add the fourth parameter to the packet
+      pPayload = SEGGER_SYSVIEW_EncodeU32(pPayload, Para4);             // Add the fifth parameter to the packet
+      //
+      SEGGER_SYSVIEW_SendPacket(&aPacket[0], pPayload, Id);             // Send the packet
+}
+/*********************************************************************
+*
+*       SYSVIEW_RecordU32Register()
+*
+*  Function description
+*    Record an event with 1 parameter and register the resource to be
+*    sent in the system description.
+*/
+void SYSVIEW_RecordU32Register(unsigned EventId, U32 ResourceId, const char* sResource) {
+  SEGGER_SYSVIEW_NameResource(ResourceId, sResource);
+  SEGGER_SYSVIEW_RecordU32(EventId, SEGGER_SYSVIEW_ShrinkId(ResourceId));
+#if OS_CFG_TRACE_MAX_RESOURCES > 0
+  if (_NumResources >= OS_CFG_TRACE_MAX_RESOURCES) {
+    SEGGER_SYSVIEW_Warn("SYSTEMVIEW: Could not register resource name. Maximum number of resources reached.");
+    return;
+  }
+
+  _aResources[_NumResources].ResourceId = ResourceId;
+  _aResources[_NumResources].sResource  = sResource;
+  _aResources[_NumResources].Registered = 0;
+
+  _NumResources++;
+#endif
+}
+
+void SYSVIEW_SendResourceList(void) {
+#if OS_CFG_TRACE_MAX_RESOURCES > 0
+  unsigned int n;
+
+  for (n = 0; n < _NumResources; n++) {
+    if (_aResources[n].Registered == 0) {
+      SEGGER_SYSVIEW_NameResource(_aResources[n].ResourceId, _aResources[n].sResource);
+      _aResources[n].Registered = 1;
+    }
+  }
+#endif
+}
+
+/*********************************************************************
+*
+*       Public API structures
+*
+**********************************************************************
+*/
+// Callbacks provided to SYSTEMVIEW by TizenRT
+const SEGGER_SYSVIEW_OS_API SYSVIEW_X_OS_TraceAPI = {
+  _cbGetTime,
+  _cbSendTaskList,
+};
+/*************************** End of file ****************************/

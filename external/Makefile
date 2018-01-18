@@ -71,6 +71,10 @@ ifeq ($(CONFIG_DM),y)
 CFLAGS+=-I$(TOPDIR)/../framework/include/dm
 endif
 
+ifeq ($(CONFIG_SYSVIEW),y)
+include sysview/Make.defs
+endif
+
 AOBJS = $(ASRCS:.S=$(OBJEXT))
 COBJS = $(CSRCS:.c=$(OBJEXT))
 CXXOBJS = $(CXXSRCS:.cpp=$(OBJEXT))
