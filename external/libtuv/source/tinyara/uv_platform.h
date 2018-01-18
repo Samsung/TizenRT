@@ -103,7 +103,7 @@ uint64_t uv__hrtime(void);
 #define uv__update_time(loop)                                                 \
   loop->time = uv__hrtime() / 1000000
 
-inline uint64_t uv__time_precise(void);
+uint64_t uv__time_precise(void);
 
 //-----------------------------------------------------------------------------
 // thread and mutex
