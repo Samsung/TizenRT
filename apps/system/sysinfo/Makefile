@@ -94,6 +94,8 @@ else
   INSTALL_DIR = $(BIN_DIR)
 endif
 
+# SYSVIEW
+CFLAGS += -I$(TOPDIR)/../external/sysview
 
 ROOTDEPPATH = --dep-path .
 

@@ -63,6 +63,10 @@
 #include <tinyara/version.h>
 #endif
 
+#ifdef CONFIG_SYSVIEW
+#include <SEGGER_RTT.h>
+#endif
+
 /****************************************************************************
  * Definitions
  ****************************************************************************/
@@ -121,5 +125,8 @@ void sysinfo(void)
 #endif
 		   "\n", sysinfo_str);
 
+#ifdef CONFIG_SYSVIEW
+	printf("\tSYSVIEW RTT Control Block: 0x%08x\n", &_SEGGER_RTT);
+#endif
 }
 
