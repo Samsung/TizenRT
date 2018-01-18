@@ -851,8 +851,13 @@ static struct up_dev_s g_uart0priv = {
 	.parity		= CONFIG_UART0_PARITY,
 	.bits		= CONFIG_UART0_BITS,
 	.stopbits2	= CONFIG_UART0_2STOP,
+#ifndef CONFIG_UART0_SERIAL_CONSOLE
 	.rxd		= GPIO_UART0_RXD,
 	.txd		= GPIO_UART0_TXD,
+#else
+	.rxd		= GPIO_UART0_RXD | GPIO_PULLUP,
+	.txd		= GPIO_UART0_TXD | GPIO_PULLUP,
+#endif
 	.pclk		= CLK_GATE_UART0_PCLK,
 	.extclk		= CLK_GATE_UART0_EXTCLK,
 };
@@ -879,8 +884,13 @@ static struct up_dev_s g_uart1priv = {
 	.parity		= CONFIG_UART1_PARITY,
 	.bits		= CONFIG_UART1_BITS,
 	.stopbits2	= CONFIG_UART1_2STOP,
+#ifndef CONFIG_UART1_SERIAL_CONSOLE
 	.rxd		= GPIO_UART1_RXD,
 	.txd		= GPIO_UART1_TXD,
+#else
+	.rxd		= GPIO_UART1_RXD | GPIO_PULLUP,
+	.txd		= GPIO_UART1_TXD | GPIO_PULLUP,
+#endif
 	.pclk		= CLK_GATE_UART1_PCLK,
 	.extclk		= CLK_GATE_UART1_EXTCLK,
 };
@@ -907,8 +917,13 @@ static struct up_dev_s g_uart2priv = {
 	.parity		= CONFIG_UART2_PARITY,
 	.bits		= CONFIG_UART2_BITS,
 	.stopbits2	= CONFIG_UART2_2STOP,
+#ifndef CONFIG_UART2_SERIAL_CONSOLE
 	.rxd		= GPIO_UART2_RXD,
 	.txd		= GPIO_UART2_TXD,
+#else
+	.rxd		= GPIO_UART2_RXD | GPIO_PULLUP,
+	.txd		= GPIO_UART2_TXD | GPIO_PULLUP,
+#endif
 #ifdef CONFIG_S5J_UART2_FLOWCONTROL
 	.rts		= GPIO_UART2_RTS,
 	.cts		= GPIO_UART2_CTS,
@@ -939,8 +954,13 @@ static struct up_dev_s g_uart3priv = {
 	.parity		= CONFIG_UART3_PARITY,
 	.bits		= CONFIG_UART3_BITS,
 	.stopbits2	= CONFIG_UART3_2STOP,
+#ifndef CONFIG_UART3_SERIAL_CONSOLE
 	.rxd		= GPIO_UART3_RXD,
 	.txd		= GPIO_UART3_TXD,
+#else
+	.rxd		= GPIO_UART3_RXD | GPIO_PULLUP,
+	.txd		= GPIO_UART3_TXD | GPIO_PULLUP,
+#endif
 #ifdef CONFIG_S5J_UART3_FLOWCONTROL
 	.rts		= GPIO_UART3_RTS,
 	.cts		= GPIO_UART3_CTS,
@@ -971,8 +991,13 @@ static struct up_dev_s g_uart4priv = {
 	.parity		= CONFIG_UART4_PARITY,
 	.bits		= CONFIG_UART4_BITS,
 	.stopbits2	= CONFIG_UART4_2STOP,
+#ifndef CONFIG_UART4_SERIAL_CONSOLE
 	.rxd		= GPIO_UART4_RXD,
 	.txd		= GPIO_UART4_TXD,
+#else
+	.rxd		= GPIO_UART4_RXD | GPIO_PULLUP,
+	.txd		= GPIO_UART4_TXD | GPIO_PULLUP,
+#endif
 	.pclk		= CLK_GATE_UARTDBG_PCLK,
 	.extclk		= CLK_GATE_UARTDBG_EXTCLK,
 };
