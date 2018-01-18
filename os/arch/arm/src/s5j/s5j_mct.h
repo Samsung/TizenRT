@@ -108,6 +108,9 @@ int s5j_mct_setisr(FAR struct s5j_mct_priv_s *priv, xcpt_t handler, void *arg);
 void s5j_mct_setperiod(FAR struct s5j_mct_priv_s *priv, uint32_t period);
 void s5j_mct_enableint(FAR struct s5j_mct_priv_s *priv);
 void s5j_mct_disableint(FAR struct s5j_mct_priv_s *priv);
+#ifdef CONFIG_SYSVIEW_HWTIMER
+unsigned int s5j_mct_gettick(FAR struct s5j_mct_priv_s *priv);
+#endif
 
 /* Power-up timer and get its structure */
 FAR struct s5j_mct_priv_s *s5j_mct_init(int timer);

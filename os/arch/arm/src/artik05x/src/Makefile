@@ -100,6 +100,8 @@ else
   CFLAGS += -I$(ARCH_SRCDIR)/armv7-r
 endif
 
+CFLAGS += -I$(TOPDIR)/../external/sysview
+
 all: libboard$(LIBEXT)
 
 context:

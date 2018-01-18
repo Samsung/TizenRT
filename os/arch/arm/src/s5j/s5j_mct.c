@@ -283,3 +283,13 @@ FAR struct s5j_mct_priv_s *s5j_mct_init(int timer)
 
 	return priv;
 }
+
+#ifdef CONFIG_SYSVIEW_HWTIMER
+unsigned int s5j_mct_gettick(FAR struct s5j_mct_priv_s *priv)
+{
+	unsigned int cnt = mct_getreg32(priv, S5J_MCT_TCNTB_OFFSET);
+	unsigned int value = mct_getreg32(priv, S5J_MCT_TCNTO_OFFSET);
+
+	return ((cnt - value));
+}
+#endif

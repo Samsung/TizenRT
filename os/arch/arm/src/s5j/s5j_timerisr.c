@@ -139,6 +139,38 @@ void up_timer_initialize(void)
 		s5j_mct_enable(mct);
 	}
 
+#ifdef CONFIG_SYSVIEW_HWTIMER
+	FAR struct s5j_mct_priv_s *mct2 =
+			s5j_mct_init(S5J_MCT_CHANNEL2);
+
+	if (mct2) {
+		/* Configure the timetick to generate periodic interrupts */
+		s5j_mct_setperiod(mct2, USEC_PER_SEC);
+
+		/* use interval mode */
+		s5j_mct_setmode(mct2, false);
+
+		s5j_mct_enable(mct2);
+	}
+#endif
+
 	irqrestore(flags);
 #undef TICK_INTERVAL
 }
+
+#ifdef CONFIG_SYSVIEW_HWTIMER
+/****************************************************************************
+ * Function:  up_timer_get_current_ticks
+ *
+ * Description:
+ *   This function allows you to get real time ticks per one tick period.
+ *
+ ****************************************************************************/
+unsigned int up_timer_get_current_ticks(void)
+{
+	FAR struct s5j_mct_priv_s *mct =
+			s5j_mct_init(S5J_MCT_CHANNEL2);
+
+	return s5j_mct_gettick(mct);
+}
+#endif

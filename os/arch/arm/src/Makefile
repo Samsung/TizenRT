@@ -91,6 +91,10 @@ else
 endif
 endif
 
+# SYSVIEW
+
+CFLAGS += -I$(TOPDIR)/../external/sysview
+
 # The "head" object
 
 HEAD_OBJ = $(HEAD_ASRC:.S=$(OBJEXT))
