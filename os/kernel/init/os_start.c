@@ -89,6 +89,8 @@
 #endif
 #include  "init/init.h"
 
+#include <os_trace_events_tizenrt.h>
+
 /****************************************************************************
  * Pre-processor Definitions
  ****************************************************************************/
@@ -538,6 +540,9 @@ void os_start(void)
 	DEBUGVERIFY(group_initialize(&g_idletcb));
 	g_idletcb.cmn.group->tg_flags = GROUP_FLAG_NOCLDWAIT;
 #endif
+
+	OS_TRACE_INIT();
+	OS_TRACE_START();
 
 	/* Bring Up the System ****************************************************/
 	/* Create initial tasks and bring-up the system */

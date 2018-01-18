@@ -54,5 +54,7 @@ CSRCS += os_start.c os_bringup.c
 
 # Include init build support
 
+CFLAGS += -I$(TOPDIR)/../external/sysview
+
 DEPPATH += --dep-path init
 VPATH += :init
