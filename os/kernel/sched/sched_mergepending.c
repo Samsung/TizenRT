@@ -61,6 +61,8 @@
 #include <queue.h>
 #include <assert.h>
 
+#include <os_trace_events_tizenrt.h>
+
 #include "sched/sched.h"
 
 /************************************************************************
@@ -157,7 +159,10 @@ bool sched_mergepending(void)
 			rtrtcb->blink = pndtcb;
 			g_readytorun.head = (FAR dq_entry_t *)pndtcb;
 			rtrtcb->task_state = TSTATE_TASK_READYTORUN;
+			OS_TRACE_TASK_READY(rtrtcb);
+
 			pndtcb->task_state = TSTATE_TASK_RUNNING;
+			OS_TRACE_TASK_SWITCHED_IN(pndtcb);
 			ret = true;
 		} else {
 			/* Insert in the middle of the list */
@@ -167,6 +172,7 @@ bool sched_mergepending(void)
 			rtrprev->flink = pndtcb;
 			rtrtcb->blink = pndtcb;
 			pndtcb->task_state = TSTATE_TASK_READYTORUN;
+			OS_TRACE_TASK_READY(pndtcb);
 		}
 
 		/* Set up for the next time through */

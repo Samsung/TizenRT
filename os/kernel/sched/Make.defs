@@ -81,6 +81,8 @@ else
 CSRCS += sched_processtimer.c
 endif
 
+CFLAGS += -I$(TOPDIR)/../apps/system/sysview
+
 # Include sched build support
 
 DEPPATH += --dep-path sched

@@ -68,6 +68,8 @@
 #include "task/task.h"
 #include <ttrace.h>
 
+#include <os_trace_events_tizenrt.h>
+
 /************************************************************************
  * Private Functions
  ************************************************************************/
@@ -149,6 +151,7 @@ int prctl(int option, ...)
 
 			strncpy(tcb->name, name, CONFIG_TASK_NAME_SIZE);
 			tcb->name[CONFIG_TASK_NAME_SIZE] = '\0';
+			OS_TRACE_TASK_UPDATE(tcb);
 		} else {
 			/* The returned value will be null-terminated, truncating if necessary */
 

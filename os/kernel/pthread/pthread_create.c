@@ -77,6 +77,8 @@
 #include "pthread/pthread.h"
 #include <ttrace.h>
 
+#include <os_trace_events_tizenrt.h>
+
 /****************************************************************************
  * Public Data
  ****************************************************************************/
@@ -416,6 +418,12 @@ int pthread_create(FAR pthread_t *thread, FAR const pthread_attr_t *attr, pthrea
 	if (ret == OK) {
 		ret = sem_setprotocol(&pjoin->exit_sem, SEM_PRIO_NONE);
 	}
+
+#ifdef CONFIG_SYSVIEW
+	struct tcb_s *p_tcb = (FAR struct tcb_s *)ptcb;
+
+	OS_TRACE_TASK_CREATE(p_tcb);
+#endif
 
 	/* Activate the task */
 

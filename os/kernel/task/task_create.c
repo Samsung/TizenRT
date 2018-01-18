@@ -69,6 +69,7 @@
 #include "group/group.h"
 #include "task/task.h"
 #include <ttrace.h>
+#include <os_trace_events_tizenrt.h>
 
 /****************************************************************************
  * Preprocessor Definitions
@@ -187,6 +188,8 @@ static int thread_create(FAR const char *name, uint8_t ttype, int priority, int 
 		goto errout_with_tcb;
 	}
 #endif
+
+	OS_TRACE_TASK_CREATE(((struct tcb_s *)tcb));
 
 	/* Get the assigned pid before we start the task */
 
