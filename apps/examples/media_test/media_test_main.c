@@ -101,7 +101,14 @@ void disconnect_socket(int *fd)
 	}
 }
 
-int media_test_cb(int argc, char **argv)
+/****************************************************************************
+ * media_test_main
+ ****************************************************************************/
+#ifdef CONFIG_BUILD_KERNEL
+int main(int argc, FAR char *argv[])
+#else
+int media_test_main(int argc, char **argv)
+#endif
 {
 	char ch;
 	unsigned char vol = 125;
@@ -398,20 +405,6 @@ int media_test_cb(int argc, char **argv)
 		}
 
 	}
-
-	return 0;
-}
-
-/****************************************************************************
- * media_test_main
- ****************************************************************************/
-#ifdef CONFIG_BUILD_KERNEL
-int main(int argc, FAR char *argv[])
-#else
-int media_test_main(int argc, char **argv)
-#endif
-{
-	tash_cmd_install("media_test", media_test_cb, TASH_EXECMD_ASYNC);
 
 	return 0;
 }
