@@ -178,57 +178,50 @@ static int version_close(FAR struct file *filep)
  ****************************************************************************/
 static ssize_t version_read(FAR struct file *filep, FAR char *buffer, size_t buflen)
 {
-	FAR struct version_file_s *attr;
-	size_t remaining;
-	size_t linesize;
-	size_t copysize;
-	size_t totalsize;
+#define append_version(name, value, e) { \
+	size_t linesize = snprintf(attr->line, VERSION_LINELEN, "\t%s: %s", #name, e ? value "\n" : value);	\
+	size_t copysize = procfs_memcpy(attr->line, linesize, buffer, remaining, &offset);	\
+	totalsize += copysize;	\
+	if (e) { \
+		buffer += copysize;	\
+		remaining -= copysize;	\
+	} \
+}
+
+	/* Recover our private data from the struct file instance */
+
+	FAR struct version_file_s *attr = (FAR struct version_file_s *)filep->f_priv;
+	size_t remaining = buflen;
+	size_t totalsize = 0;
 	off_t offset;
 
 	fvdbg("buffer=%p buflen=%d\n", buffer, (int)buflen);
 
-	/* Recover our private data from the struct file instance */
-
-	attr = (FAR struct version_file_s *)filep->f_priv;
 	DEBUGASSERT(attr);
 
 	offset = filep->f_pos;
-	remaining = buflen;
-	totalsize = 0;
 
-	linesize = snprintf(attr->line, VERSION_LINELEN, "\tVersion: %s\n", CONFIG_VERSION_STRING);
-	copysize = procfs_memcpy(attr->line, linesize, buffer, remaining, &offset);
-	totalsize += copysize;
-	buffer += copysize;
-	remaining -= copysize;
-
+	append_version(Board, CONFIG_VERSION_BOARD, true);
 	if (totalsize >= buflen) {
 		goto end;
 	}
 
-	linesize = snprintf(attr->line, VERSION_LINELEN, "\tCommit Hash: %s\n", CONFIG_VERSION_BUILD);
-	copysize = procfs_memcpy(attr->line, linesize, buffer, remaining, &offset);
-	totalsize += copysize;
-	buffer += copysize;
-	remaining -= copysize;
-
+	append_version(Version, CONFIG_VERSION_STRING, true);
 	if (totalsize >= buflen) {
 		goto end;
 	}
 
-	linesize = snprintf(attr->line, VERSION_LINELEN, "\tBuild User: %s\n", CONFIG_VERSION_BUILD_USER);
-	copysize = procfs_memcpy(attr->line, linesize, buffer, remaining, &offset);
-	totalsize += copysize;
-	buffer += copysize;
-	remaining -= copysize;
-
+	append_version(Commit Hash, CONFIG_VERSION_BUILD, true);
 	if (totalsize >= buflen) {
 		goto end;
 	}
 
-	linesize = snprintf(attr->line, VERSION_LINELEN, "\tBuild Time: %s", CONFIG_VERSION_BUILD_TIME);
-	copysize = procfs_memcpy(attr->line, linesize, buffer, remaining, &offset);
-	totalsize += copysize;
+	append_version(Build User, CONFIG_VERSION_BUILD_USER, true);
+	if (totalsize >= buflen) {
+		goto end;
+	}
+
+	append_version(Build Time, CONFIG_VERSION_BUILD_TIME, false);
 
 end:
 	if (totalsize > 0) {
@@ -236,6 +229,8 @@ end:
 	}
 
 	return totalsize;
+
+#undef append_version
 }
 
 /****************************************************************************
