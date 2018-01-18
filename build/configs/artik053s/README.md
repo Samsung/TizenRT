@@ -170,6 +170,7 @@ You can download it using OpenOCD. You compress the compiled firmware and downlo
 ```bash
 gzip -c tinyara_head.bin-signed > factoryimage.gz
 openocd -f artik05x.cfg -s ../build/configs/artik05x/scripts -c ' \
+    flash_erase_part ota ;\
     flash_write factory    ../build/configs/artik053/bin/factoryimage.gz;      \
     exit'
 ```
