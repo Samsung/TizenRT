@@ -69,6 +69,8 @@
 
 #include "group/group.h"
 
+#include <os_trace_events_tizenrt.h>
+
 /****************************************************************************
  * Pre-processor Definitions
  ****************************************************************************/
@@ -80,6 +82,9 @@
 /****************************************************************************
  * Private Data
  ****************************************************************************/
+#ifdef CONFIG_SYSVIEW
+extern unsigned int SEGGER_SYSVIEW_InterruptId;
+#endif
 
 /****************************************************************************
  * Private Functions
@@ -106,9 +111,25 @@ uint32_t *arm_doirq(int irq, uint32_t *regs)
 
 	current_regs = regs;
 
+#ifdef CONFIG_SYSVIEW
+	SEGGER_SYSVIEW_InterruptId = irq;
+#endif
+
 	/* Deliver the IRQ */
 
+#ifdef CONFIG_SYSVIEW
+	if (irq != IRQ_MCT_L3) {
+		OS_TRACE_ISR_ENTER();
+	}
+#endif
+
 	irq_dispatch(irq, regs);
+
+#ifdef CONFIG_SYSVIEW
+	if (irq != IRQ_MCT_L3) {
+		OS_TRACE_ISR_EXIT();
+	}
+#endif
 
 #ifdef CONFIG_ARCH_FPU
 	/* Check for a context switch.  If a context switch occurred, then
