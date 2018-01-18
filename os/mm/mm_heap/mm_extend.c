@@ -139,5 +139,10 @@ void mm_extend(FAR struct mm_heap_s *heap, FAR void *mem, size_t size, int regio
 	 * located.
 	 */
 
+#ifdef CONFIG_DEBUG_MM_HEAPINFO
+	ARCH_GET_RET_ADDRESS
+	mm_free(heap, (FAR void *)mem, retaddr);
+#else
 	mm_free(heap, (FAR void *)mem);
+#endif
 }

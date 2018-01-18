@@ -128,7 +128,12 @@ FAR void *mm_realloc(FAR struct mm_heap_s *heap, FAR void *oldmem, size_t size)
 	/* If size is zero, then realloc is equivalent to free */
 
 	if (size < 1) {
+#ifdef CONFIG_DEBUG_MM_HEAPINFO
+		ARCH_GET_RET_ADDRESS
+		mm_free(heap, oldmem, retaddr);
+#else
 		mm_free(heap, oldmem);
+#endif
 		return NULL;
 	}
 
@@ -378,7 +383,12 @@ FAR void *mm_realloc(FAR struct mm_heap_s *heap, FAR void *oldmem, size_t size)
 #endif
 		if (newmem) {
 			memcpy(newmem, oldmem, oldsize);
+#ifdef CONFIG_DEBUG_MM_HEAPINFO
+			ARCH_GET_RET_ADDRESS
+			mm_free(heap, oldmem, retaddr);
+#else
 			mm_free(heap, oldmem);
+#endif
 		}
 
 		return newmem;

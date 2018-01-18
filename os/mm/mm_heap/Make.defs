@@ -65,6 +65,7 @@ ifeq ($(CONFIG_DEBUG_MM_HEAPINFO),y)
 CSRCS += mm_heapinfo.c
 endif
 
+CFLAGS += -I$(TOPDIR)/../external/sysview
 # Add the core heap directory to the build
 
 DEPPATH += --dep-path mm_heap

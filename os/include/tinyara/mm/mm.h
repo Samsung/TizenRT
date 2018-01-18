@@ -431,9 +431,18 @@ FAR void *mm_malloc(FAR struct mm_heap_s *heap, size_t size);
 FAR void *kmm_malloc(size_t size);
 #endif
 
+#ifdef CONFIG_DEBUG_MM_HEAPINFO
+
+/* Functions contained in mm_free.c *****************************************/
+
+void mm_free(FAR struct mm_heap_s *heap, FAR void *mem, mmaddress_t caller_retaddr);
+
+#else
+
 /* Functions contained in mm_free.c *****************************************/
 
 void mm_free(FAR struct mm_heap_s *heap, FAR void *mem);
+#endif
 
 /* Functions contained in kmm_free.c ****************************************/
 

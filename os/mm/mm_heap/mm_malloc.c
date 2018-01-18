@@ -61,6 +61,8 @@
 
 #include <tinyara/mm/mm.h>
 
+#include <os_trace_events_tizenrt.h>
+
 #ifdef CONFIG_DEBUG_MM_HEAPINFO
 #include  <tinyara/sched.h>
 #endif
@@ -229,6 +231,8 @@ FAR void *mm_malloc(FAR struct mm_heap_s *heap, size_t size)
 		mvdbg("Allocated %p, size %d\n", ret, size);
 	}
 #endif
+
+	OS_TRACE_MEM_ALLOC(ret, size, caller_retaddr);
 
 	return ret;
 }

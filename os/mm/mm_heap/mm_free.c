@@ -64,6 +64,9 @@
 #ifdef CONFIG_DEBUG_MM_HEAPINFO
 #include  <tinyara/sched.h>
 #endif
+
+#include <os_trace_events_tizenrt.h>
+
 /****************************************************************************
  * Pre-processor Definitions
  ****************************************************************************/
@@ -84,7 +87,11 @@
  *   adjacent free chunks if possible.
  *
  ****************************************************************************/
+#ifdef CONFIG_DEBUG_MM_HEAPINFO
+void mm_free(FAR struct mm_heap_s *heap, FAR void *mem, mmaddress_t caller_retaddr)
+#else
 void mm_free(FAR struct mm_heap_s *heap, FAR void *mem)
+#endif
 {
 	FAR struct mm_freenode_s *node;
 	FAR struct mm_freenode_s *prev;
@@ -100,6 +107,8 @@ void mm_free(FAR struct mm_heap_s *heap, FAR void *mem)
 	if (!mem) {
 		return;
 	}
+
+	OS_TRACE_MEM_FREE(mem, caller_retaddr);
 
 	/* We need to hold the MM semaphore while we muck with the
 	 * nodelist.

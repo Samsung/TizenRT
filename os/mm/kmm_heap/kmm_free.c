@@ -93,7 +93,12 @@
 void kmm_free(FAR void *mem)
 {
 	DEBUGASSERT(kmm_heapmember(mem));
+#ifdef CONFIG_DEBUG_MM_HEAPINFO
+	ARCH_GET_RET_ADDRESS
+	mm_free(&g_kmmheap, mem, retaddr);
+#else
 	mm_free(&g_kmmheap, mem);
+#endif
 }
 
 #endif							/* CONFIG_MM_KERNEL_HEAP */

@@ -102,7 +102,12 @@
 
 void free(FAR void *mem)
 {
+#ifdef CONFIG_DEBUG_MM_HEAPINFO
+	ARCH_GET_RET_ADDRESS
+	mm_free(USR_HEAP, mem, retaddr);
+#else
 	mm_free(USR_HEAP, mem);
+#endif
 }
 
 #endif							/* !CONFIG_BUILD_PROTECTED || !__KERNEL__ */
