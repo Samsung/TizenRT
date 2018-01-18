@@ -65,6 +65,8 @@
 #include "sched/sched.h"
 #include "semaphore/semaphore.h"
 
+#include <os_trace_events_tizenrt.h>
+
 /****************************************************************************
  * Definitions
  ****************************************************************************/
@@ -125,6 +127,10 @@ int sem_post(FAR sem_t *sem)
 	/* Make sure we were supplied with a valid semaphore. */
 
 	if (sem) {
+
+		SYSVIEW_GET_RETADDR
+		OS_TRACE_SEM_POST(sem, retaddr);
+
 		/* The following operations must be performed with interrupts
 		 * disabled because sem_post() may be called from an interrupt
 		 * handler.

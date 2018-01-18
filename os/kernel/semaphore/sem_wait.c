@@ -66,6 +66,8 @@
 #include "sched/sched.h"
 #include "semaphore/semaphore.h"
 
+#include <os_trace_events_tizenrt.h>
+
 /****************************************************************************
  * Pre-processor Definitions
  ****************************************************************************/
@@ -117,6 +119,9 @@ int sem_wait(FAR sem_t *sem)
 	FAR struct tcb_s *rtcb = (FAR struct tcb_s *)g_readytorun.head;
 	irqstate_t saved_state;
 	int ret = ERROR;
+
+	SYSVIEW_GET_RETADDR
+	OS_TRACE_SEM_WAIT(sem, retaddr);
 
 	/* This API should not be called from interrupt handlers */
 

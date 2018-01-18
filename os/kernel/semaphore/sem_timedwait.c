@@ -71,6 +71,8 @@
 #include "clock/clock.h"
 #include "semaphore/semaphore.h"
 
+#include <os_trace_events_tizenrt.h>
+
 /****************************************************************************
  * Pre-processor Definitions
  ****************************************************************************/
@@ -186,6 +188,9 @@ int sem_timedwait(FAR sem_t *sem, FAR const struct timespec *abstime)
 	int ticks;
 	int errcode;
 	int ret = ERROR;
+
+	SYSVIEW_GET_RETADDR
+	OS_TRACE_SEM_TIMEWAIT(sem, abstime->tv_sec * 1000 + abstime->tv_nsec / 1000000, retaddr);
 
 	DEBUGASSERT(up_interrupt_context() == false && rtcb->waitdog == NULL);
 

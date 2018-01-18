@@ -61,6 +61,8 @@
 
 #include "semaphore/semaphore.h"
 
+#include <os_trace_events_tizenrt.h>
+
 /****************************************************************************
  * Definitions
  ****************************************************************************/
@@ -112,6 +114,9 @@
 int sem_destroy(FAR sem_t *sem)
 {
 	/* Assure a valid semaphore is specified */
+
+	SYSVIEW_GET_RETADDR
+	OS_TRACE_SEM_DEL(sem, retaddr);
 
 	if (sem) {
 		/* There is really no particular action that we need

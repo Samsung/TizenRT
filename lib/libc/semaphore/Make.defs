@@ -58,6 +58,10 @@ ifneq ($(CONFIG_PRIORITY_INHERITANCE),y)
 CSRCS += sem_setprotocol.c
 endif
 
+# SYSVIEW
+
+CFLAGS += -I$(TOPDIR)/../external/sysview
+
 # Add the semaphore directory to the build
 
 DEPPATH += --dep-path semaphore

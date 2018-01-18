@@ -59,6 +59,8 @@ ifeq ($(CONFIG_PRIORITY_INHERITANCE),y)
 CSRCS += sem_initialize.c sem_holder.c sem_setprotocol.c
 endif
 
+CFLAGS += -I$(TOPDIR)/../external/sysview
+
 # Include semaphore build support
 
 DEPPATH += --dep-path semaphore
