@@ -72,6 +72,8 @@
 
 #include "clock/clock.h"
 
+#include <os_trace_events_tizenrt.h>
+
 /****************************************************************************
  * Definitions
  ****************************************************************************/
@@ -280,5 +282,6 @@ void clock_timer(void)
 	/* Increment the per-tick system counter */
 
 	g_system_timer++;
+	OS_TRACE_TICK_INCREMENT(g_system_timer);
 }
 #endif
