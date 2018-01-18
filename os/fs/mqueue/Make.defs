@@ -56,6 +56,10 @@ ifneq ($(CONFIG_DISABLE_MQUEUE),y)
 
 CSRCS += mq_open.c mq_close.c mq_unlink.c
 
+# SYSVIEW
+
+CFLAGS += -I$(TOPDIR)/../external/sysview
+
 # Include POSIX message queue build support
 
 DEPPATH += --dep-path mqueue

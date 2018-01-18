@@ -66,6 +66,8 @@
 
 #include  "mqueue/mqueue.h"
 
+#include <os_trace_events_tizenrt.h>
+
 /****************************************************************************
  * Pre-processor Definitions
  ****************************************************************************/
@@ -151,6 +153,9 @@ int mq_send(mqd_t mqdes, FAR const char *msg, size_t msglen, int prio)
 		leave_cancellation_point();
 		return ERROR;
 	}
+
+	SYSVIEW_GET_RETADDR
+	OS_TRACE_MSGQ_SEND(mqdes, retaddr);
 
 	/* Get a pointer to the message queue */
 

@@ -66,6 +66,8 @@
 
 #include "mqueue/mqueue.h"
 
+#include <os_trace_events_tizenrt.h>
+
 /************************************************************************
  * Pre-processor Definitions
  ************************************************************************/
@@ -149,6 +151,9 @@ ssize_t mq_receive(mqd_t mqdes, FAR char *msg, size_t msglen, FAR int *prio)
 		leave_cancellation_point();
 		return ERROR;
 	}
+
+	SYSVIEW_GET_RETADDR
+	OS_TRACE_MSGQ_RECV(mqdes, retaddr);
 
 	/* Get the next message from the message queue.  We will disable
 	 * pre-emption until we have completed the message received.  This

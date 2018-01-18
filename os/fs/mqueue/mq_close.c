@@ -66,6 +66,8 @@
 #include "inode/inode.h"
 #include "mqueue/mqueue.h"
 
+#include <os_trace_events_tizenrt.h>
+
 /****************************************************************************
  * Pre-processor Definitions
  ****************************************************************************/
@@ -141,6 +143,9 @@ int mq_close(mqd_t mqdes)
 
 		inode = msgq->inode;
 		DEBUGASSERT(inode->u.i_mqueue == msgq);
+
+		SYSVIEW_GET_RETADDR
+		OS_TRACE_MSGQ_CLOSE(mqdes, retaddr);
 
 		/* Decrement the reference count on the inode, possibly freeing it */
 

@@ -69,6 +69,8 @@
 #include "inode/inode.h"
 #include "mqueue/mqueue.h"
 
+#include <os_trace_events_tizenrt.h>
+
 /****************************************************************************
  * Pre-processor Definitions
  ****************************************************************************/
@@ -240,6 +242,8 @@ mqd_t mq_open(FAR const char *mq_name, int oflags, ...)
 
 		inode->i_crefs = 1;
 	}
+
+	OS_TRACE_MSGQ_OPEN(mqdes, mq_name);
 
 	sched_unlock();
 	return mqdes;
