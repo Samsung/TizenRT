@@ -189,6 +189,11 @@ static void ntpclient_show_daemon_status(unsigned int status)
 	printf("ntpclient daemon status : %s\n", status_str);
 }
 
+static void ntp_link_success(void)
+{
+	printf("ntp_link_success() callback is called.\n");
+}
+
 static void ntp_link_error(void)
 {
 	printf("ntp_link_error() callback is called.\n");
@@ -196,7 +201,7 @@ static void ntp_link_error(void)
 
 static int test_ntpclient_start(struct ntpc_server_conn_s *server_conn, int interval_secs, int num_of_servers)
 {
-	if (ntpc_start(server_conn, num_of_servers, interval_secs, ntp_link_error) < 0) {
+	if (ntpc_start(server_conn, num_of_servers, interval_secs, ntp_link_success, ntp_link_error) < 0) {
 		fprintf(stderr, "ERROR: ntpc_start() failed.\n");
 		return -1;
 	}

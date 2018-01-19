@@ -108,6 +108,7 @@ struct ntpc_server_info_s {
 	int interval_secs;
 };
 
+void (*ntp_link_success_cb)(void);
 void (*ntp_link_err_cb)(void);
 /****************************************************************************
  * Private Data
@@ -432,6 +433,9 @@ static int ntpc_daemon(int argc, char **argv)
 		if (nbytes >= (ssize_t)NTP_DATAGRAM_MINSIZE) {
 			svdbg("Setting time\n");
 			ntpc_settime(recv.recvtimestamp);
+			if (ntp_link_success_cb) {
+				ntp_link_success_cb();
+			}
 			g_ntps.server[srv_index].link = NTP_LINK_UP;
 		}
 
@@ -589,7 +593,7 @@ static void ntpc_destroy_server_info(void)
  *
  ****************************************************************************/
 
-int ntpc_start(struct ntpc_server_conn_s *server_list, uint32_t num_of_servers, uint32_t interval_secs, void *link_error_cb)
+int ntpc_start(struct ntpc_server_conn_s *server_list, uint32_t num_of_servers, uint32_t interval_secs, void *link_success_cb, void *link_error_cb)
 {
 	int result = ERROR;
 
@@ -622,6 +626,7 @@ int ntpc_start(struct ntpc_server_conn_s *server_list, uint32_t num_of_servers, 
 			ndbg("ERROR: Failed to initialize NTP Server information \n");
 			goto done;
 		}
+		ntp_link_success_cb = link_success_cb;
 		ntp_link_err_cb = link_error_cb;
 		g_ntpc_daemon.state = NTP_STARTED;
 		g_ntpc_daemon.pid = task_create("NTP daemon", CONFIG_NETUTILS_NTPCLIENT_SERVERPRIO, CONFIG_NETUTILS_NTPCLIENT_STACKSIZE, ntpc_daemon, NULL);
