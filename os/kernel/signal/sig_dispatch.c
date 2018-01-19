@@ -310,9 +310,9 @@ int sig_tcbdispatch(FAR struct tcb_s *stcb, siginfo_t *info)
 	irqstate_t saved_state;
 	int ret = OK;
 
-	svdbg("TCB=0x%08x signo=%d code=%d value=%d mask=%08x\n", stcb, info->si_signo, info->si_code, info->si_value.sival_int, stcb->sigprocmask);
-
 	DEBUGASSERT(stcb && info);
+
+	svdbg("TCB=0x%08x signo=%d code=%d value=%d mask=%08x\n", stcb, info->si_signo, info->si_code, info->si_value.sival_int, stcb->sigprocmask);
 
 	/************************* MASKED SIGNAL HANDLING ************************/
 
