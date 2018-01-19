@@ -13,6 +13,12 @@ config WIFI_MANAGER
         Easy APIs for applications to use and control Wi-Fi features
 
 if WIFI_MANAGER
+config WIFI_PROFILE_SECURESTORAGE
+	bool "Store the Wi-Fi Profile in a Secure Storage"
+	depends on SUPPORT_FULL_SECURITY
+	default n
+
 source "$EXTERNALDIR/slsi_wifi/Kconfig"
 source "$EXTERNALDIR/wpa_supplicant/Kconfig"
+
 endif #WIFI_MANAGER

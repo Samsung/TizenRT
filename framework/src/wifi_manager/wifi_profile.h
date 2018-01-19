@@ -1,6 +1,6 @@
 /****************************************************************************
  *
- * Copyright 2017 Samsung Electronics All Rights Reserved.
+ * Copyright 2018 Samsung Electronics All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,30 +16,12 @@
  *
  ****************************************************************************/
 
-#ifndef WIFI_COMMON_H
-#define WIFI_COMMON_H
+#ifndef _WIFI_PROFILE_H__
+#define _WIFI_PROFILE_H__
 
+wifi_utils_result_e wifi_profile_init(void);
+wifi_utils_result_e wifi_profile_reset(void);
+wifi_utils_result_e wifi_profile_write(wifi_manager_ap_config_s *config);
+wifi_utils_result_e wifi_profile_read(wifi_manager_ap_config_s *config);
 
-/**
- * @brief time out option (used by message queue, uart, semaphore, mutex)
- *
- */
-typedef enum {
-	WIFI_UTILS_NO_WAIT = 0,   /**<  no wait contant          */
-	WIFI_UTILS_FOREVER = -1,  /**<  wait until job finished  */
-} wifi_utils_timeout_option;
-
-/**
- * @brief <b> wifi result type FAIL, SUCCESS, INVALID ARGS</b>
- */ 
-typedef enum {
-	WIFI_UTILS_FAIL = -1,
-	WIFI_UTILS_SUCCESS,
-	WIFI_UTILS_INVALID_ARGS,
-	WIFI_UTILS_TIMEOUT,
-	WIFI_UTILS_BUSY,
-	WIFI_UTILS_FILE_ERROR,
-} wifi_utils_result_e;
-
-
-#endif //WIFI_COMMON_H
+#endif //_WIFI_PROFILE_H__
