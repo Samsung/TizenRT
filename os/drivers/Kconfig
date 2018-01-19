@@ -240,7 +240,7 @@ config RTC_DATETIME
 		counter that keeps the time when power is down, and (2) a full
 		date / time RTC the provides the date and time information, often in
 		BCD format.  If RTC_DATETIME is selected, it specifies this second kind
-		of RTC. 
+		of RTC.
 
 if !RTC_DATETIME
 
@@ -252,7 +252,7 @@ config RTC_HIRES
 		is used.  There are two different implementations of such simple
 		counters based on the time resolution of the counter: The typical RTC
 		keeps time to resolution of 1 second, usually supporting a 32-bit
-		time_t value. 
+		time_t value.
 
 config RTC_FREQUENCY
 	int "Hi-Res RTC frequency"
@@ -416,21 +416,11 @@ if POWER
 source drivers/power/Kconfig
 endif # POWER
 
-menuconfig SERCOMM_CONSOLE
-	bool "Osmocom-bb Sercomm Driver Support"
-	default n
-	---help---
-		Sercomm is the transport used by osmocom-bb that runs on top of serial.
-
-if SERCOMM_CONSOLE
-source drivers/sercomm/Kconfig
-endif # SERCOMM_CONSOLE
-
 menuconfig SERIAL
 	bool "Serial Driver Support"
 	default y
 	---help---
-		Front-end character drivers for chip-specific UARTs. 
+		Front-end character drivers for chip-specific UARTs.
 
 if SERIAL
 source drivers/serial/Kconfig
