@@ -1,0 +1,3 @@
+config ENTRY_RTOCFTEST
+	bool "\"RT-OCF sample\" example"
+	depends on EXAMPLES_RTOCFTEST
