@@ -1286,11 +1286,13 @@ void slsi_callback_thread_handler(void *param)
 		}
 	}
 	/* Close callback receiver mqueue */
-	if (mq_close(g_recv_cbmqfd) < 0) {
-		EPRINT("receiver_thread: ERROR mq_close failed\n");
-	} else {
-		DPRINT("Closed g_recv_cbmqfd mqueue \n");
-		g_recv_cbmqfd = NULL;
+	if (g_recv_cbmqfd) {
+		if (mq_close(g_recv_cbmqfd) < 0) {
+			EPRINT("receiver_thread: ERROR mq_close failed\n");
+		} else {
+			DPRINT("Closed g_recv_cbmqfd mqueue\n");
+			g_recv_cbmqfd = NULL;
+		}
 	}
 
 	VPRINT("SLSI_API pthread_exit %d \n", g_callback_thread);
@@ -3107,6 +3109,7 @@ static uint8_t slsi_stop_supplicant(void)
 		if (mq_close(g_recv_cbmqfd) < 0) {
 			EPRINT("receiver mq_close failed\n");
 		}
+		g_recv_cbmqfd = NULL;
 	}
 	if (mq_unlink(SLSI_CALLBACK_MQUEUE) < 0) {
 		EPRINT("mq_unlink failed \n");
