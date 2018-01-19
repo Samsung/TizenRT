@@ -50,6 +50,8 @@
 #
 ############################################################################
 
+ifeq ($(CONFIG_PIPES),y)
+
 ifneq ($(CONFIG_NFILE_DESCRIPTORS),0)
 
 # Include pipe driver
@@ -60,4 +62,5 @@ CSRCS += pipe.c fifo.c pipe_common.c
 
 DEPPATH += --dep-path pipes
 VPATH += :pipes
+endif
 endif
