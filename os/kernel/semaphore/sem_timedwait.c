@@ -189,6 +189,8 @@ int sem_timedwait(FAR sem_t *sem, FAR const struct timespec *abstime)
 	int errcode;
 	int ret = ERROR;
 
+	DEBUGASSERT(abstime && sem);
+
 	SYSVIEW_GET_RETADDR
 	OS_TRACE_SEM_TIMEWAIT(sem, abstime->tv_sec * 1000 + abstime->tv_nsec / 1000000, retaddr);
 
