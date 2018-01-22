@@ -199,6 +199,14 @@ CXXELFFLAGS = $(CXXFLAGS)
 CPPFLAGS = $(ARCHINCLUDES) $(ARCHDEFINES) $(EXTRADEFINES)
 AFLAGS = $(CFLAGS) -D__ASSEMBLY__
 
+ifeq ($(CONFIG_ARCH_STACK_SMASH_PROTECT_ALL),y)
+CFLAGS += -fstack-protector-all
+else ifeq ($(CONFIG_ARCH_STACK_SMASH_PROTECT_STRONG),y)
+CFLAGS += -fstack-protector-strong
+else ifeq ($(ARCH_STACK_SMASH_PROTECT_NORMAL),y)
+CFLAGS += -fstack-protector
+endif
+
 # Linker
 
 ifeq ($(WINTOOL),y)

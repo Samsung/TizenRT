@@ -79,6 +79,8 @@
 extern uint32_t _vector_start;
 extern uint32_t _vector_end;
 
+extern uintptr_t __stack_chk_guard;
+
 /****************************************************************************
  * Public Functions
  ****************************************************************************/
@@ -171,5 +173,19 @@ void arm_boot(void)
 	 */
 	s5j_board_initialize();
 
+#if !defined(CONFIG_ARCH_STACK_SMASH_PROTECT_NONE) && \
+	defined(CONFIG_TLS_WITH_SSS)
+	{
+#include <sss/isp_custom.h>
+
+		uintptr_t tmp;
+
+		if (isp_generate_random(&tmp, 1)) {
+			isp_clear(0);
+		} else {
+			__stack_chk_guard = tmp;
+		}
+	}
+#endif
 	os_start();
 }

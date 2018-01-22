@@ -140,6 +140,14 @@ OBJEXT = .o
 LIBEXT = .a
 EXEEXT =
 
+ifeq ($(CONFIG_ARCH_STACK_SMASH_PROTECT_ALL),y)
+CFLAGS += -fstack-protector-all
+else ifeq ($(CONFIG_ARCH_STACK_SMASH_PROTECT_STRONG),y)
+CFLAGS += -fstack-protector-strong
+else ifeq ($(ARCH_STACK_SMASH_PROTECT_NORMAL),y)
+CFLAGS += -fstack-protector
+endif
+
 ifeq ($(CONFIG_DEBUG_SYMBOLS),y)
   LDFLAGS += -g
 endif

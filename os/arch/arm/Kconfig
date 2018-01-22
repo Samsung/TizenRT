@@ -144,6 +144,28 @@ config DEBUG_HARDFAULT
 		output is sometimes helpful when debugging difficult hard fault problems,
 		but may be more than you typcially want to see.
 
+choice
+	prompt "Stack Smash Protection"
+	default ARCH_STACK_SMASH_PROTECT_STRONG if ARCH_STACKDUMP
+	default ARCH_STACK_SMASH_PROTECT_NONE if !ARCH_STACKDUMP
+
+config ARCH_STACK_SMASH_PROTECT_NONE
+	bool "Suppress"
+
+config ARCH_STACK_SMASH_PROTECT_NORMAL
+	bool "Normal"
+	depends on ARCH_STACKDUMP
+
+config ARCH_STACK_SMASH_PROTECT_STRONG
+	bool "Strong"
+	depends on ARCH_STACKDUMP
+
+config ARCH_STACK_SMASH_PROTECT_ALL
+	bool "All"
+	depends on ARCH_STACKDUMP
+
+endchoice
+
 comment "Exception stack options"
 
 config ARCH_HAVE_DABORTSTACK
