@@ -889,21 +889,29 @@ static void sysdbg_monitor_enable(void)
 		irqrestore(saved_state);
 		return;
 	}
+
+#ifdef CONFIG_SEMAPHORE_HISTORY
 fail3:
+#endif
 #ifdef CONFIG_IRQ_SCHED_HISTORY
 	kmm_free(sysdbg_struct->irq);
 	sysdbg_struct->irq = NULL;
 #endif
 
+#ifdef CONFIG_IRQ_SCHED_HISTORY
 fail2:
+#endif
 #ifdef CONFIG_TASK_SCHED_HISTORY
 	kmm_free(sysdbg_struct->sched);
 	sysdbg_struct->sched = NULL;
 #endif
 
+#ifdef CONFIG_TASK_SCHED_HISTORY
 fail1:
+#endif
 	kmm_free(sysdbg_struct);
 	sysdbg_struct = NULL;
+
 fail:
 	lldbg("Disabling sysdbg monitoring feature, kindly use less count\n");
 	sysdbg_monitor = false;
