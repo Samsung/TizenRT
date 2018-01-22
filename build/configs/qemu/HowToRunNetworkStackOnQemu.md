@@ -12,7 +12,7 @@ Prerequisites: Connect WiFi AP to Linux machine(wired connection. dhcp should be
 4. make
 
 
-### Bringup tun interface on Host
+### Bringup tap interface on Host
 Create bridge and tap interface by adding below commands into shell script file(net_up.sh).  
 script to bring up the tun interface on QEMU in bridged mode first parameter is name of tap device (e.g. tap0).  
 ```

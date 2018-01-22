@@ -77,4 +77,4 @@ Enter `Chip Selection` -> `Boot Memory Configuration`
 Set `Primary RAM size` to `65536`(64KB) or `16777216`(16MB)
 
 ### How to run Network Stack on QEMU
-To run Network stack on QEMU please refer [How to run network stack on Qemu](HowToRunNetworkStackOnQemu.md). 
+To run the Network stack on QEMU please refer [How to run network stack on Qemu](HowToRunNetworkStackOnQemu.md). 
