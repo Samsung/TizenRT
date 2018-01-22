@@ -111,6 +111,7 @@ int iotbus_gpio_close(iotbus_gpio_context_h dev)
 
 	close(dev->fd);
 	free(dev);
+	dev = NULL;
 	return IOTBUS_ERROR_NONE;
 }
 
