@@ -262,11 +262,10 @@ struct pthread_region_s {
  * @brief Structure of pthread attr configuration
  */
 struct pthread_attr_s {
-	size_t stacksize;		/* Size of the stack allocated for the pthread */
-	int16_t priority;		/* Priority of the pthread */
-	uint8_t policy;			/* Pthread scheduler policy */
-	uint8_t inheritsched;	/* Inherit parent prio/policy? */
-	struct pthread_region_s region[2];	/* space for user-space region if MPU supported */
+	size_t stacksize;				/* Size of the stack allocated for the pthread */
+	uint8_t priority;				/* Priority of the pthread */
+	uint8_t policy;					/* Pthread scheduler policy */
+	uint8_t inheritsched;			/* Inherit parent prio/policy? */
 };
 typedef struct pthread_attr_s pthread_attr_t;
 

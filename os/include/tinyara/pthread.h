@@ -73,13 +73,12 @@
 #define PTHREAD_DEFAULT_POLICY SCHED_RR
 #endif
 
-#define PTHREAD_ATTR_INITIALIZER \
+#  define PTHREAD_ATTR_INITIALIZER \
 { \
-	PTHREAD_STACK_DEFAULT,         /* stacksize */ \
-	PTHREAD_DEFAULT_PRIORITY,      /* priority */ \
-	PTHREAD_DEFAULT_POLICY,        /* policy */ \
-	PTHREAD_EXPLICIT_SCHED,        /* inheritsched */ \
-	{ {NULL, 0, 0}, {NULL, 0, 0} } /* No MPU regions */ \
+	PTHREAD_STACK_DEFAULT,    /* stacksize */ \
+	PTHREAD_DEFAULT_PRIORITY, /* priority */ \
+	PTHREAD_DEFAULT_POLICY,   /* policy */ \
+	PTHREAD_EXPLICIT_SCHED,   /* inheritsched */ \
 }
 
 /****************************************************************************
