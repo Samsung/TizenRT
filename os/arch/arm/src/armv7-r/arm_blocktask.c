@@ -143,6 +143,7 @@ void up_block_task(struct tcb_s *tcb, tstate_t task_state)
 
 			/* Then switch contexts. */
 			OS_TRACE_TASK_SWITCHED_IN(rtcb);
+			__stack_chk_region(rtcb);
 			up_restorestate(rtcb->xcp.regs);
 		}
 
@@ -160,6 +161,7 @@ void up_block_task(struct tcb_s *tcb, tstate_t task_state)
 
 			/* Then switch contexts */
 			OS_TRACE_TASK_SWITCHED_IN(rtcb);
+			__stack_chk_region(rtcb);
 			up_fullcontextrestore(rtcb->xcp.regs);
 		}
 	}

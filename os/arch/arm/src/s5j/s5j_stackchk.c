@@ -26,7 +26,7 @@
 #include <sched/sched.h>
 #include <tls/see_api.h>
 
-#ifndef CONFIG_ARCH_STACK_SMASH_PROTECT_NONE
+#include "up_internal.h"
 
 /****************************************************************************
  * Pre-processor Definitions
@@ -43,7 +43,9 @@
 /****************************************************************************
  * Public Data
  ****************************************************************************/
+#ifndef CONFIG_ARCH_STACK_SMASH_PROTECT_NONE
 uintptr_t __stack_chk_guard = 0xe2dee396;
+#endif
 
 /****************************************************************************
  * Private Functions
@@ -52,7 +54,37 @@ uintptr_t __stack_chk_guard = 0xe2dee396;
 /****************************************************************************
  * Public Functions
 ****************************************************************************/
+void __stack_chk_region(struct tcb_s *ptcb)
+{
+#ifdef CONFIG_ARCH_STACK_OVF_DETECTION
+	FAR uint32_t *ebp;
 
+	/* Idle Task */
+
+	if (!ptcb->pid) {
+		return;
+	}
+
+	/* Get aligned addresses and adjusted sizes */
+
+	ebp = (FAR uint32_t *)((uintptr_t)ptcb->stack_alloc_ptr & ~3);
+
+	/* The ARM uses a grow downward stack */
+
+	if (*ebp != STACK_COLOR) {
+		lldbg("*** stack overflow detected ***\n");
+		lldbg("%s(%d): Kernel stack is corrupted in: %p(%x)\n",
+				ptcb->name, ptcb->pid, ptcb->adj_stack_ptr, *ebp);
+		lldbg("%s(%d): stack ptr: %p, size: %x\n",
+				ptcb->name, ptcb->pid,
+				ptcb->stack_alloc_ptr, ptcb->adj_stack_size);
+
+		assert(0);
+	}
+#endif
+}
+
+#ifndef CONFIG_ARCH_STACK_SMASH_PROTECT_NONE
 void __stack_chk_fail(void)
 {
 	lldbg("*** stack smashing detected ***\n");

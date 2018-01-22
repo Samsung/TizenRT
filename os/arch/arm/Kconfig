@@ -166,6 +166,13 @@ config ARCH_STACK_SMASH_PROTECT_ALL
 
 endchoice
 
+config ARCH_STACK_OVF_DETECTION
+	bool "Stack Overflow Detection"
+	depends on STACK_COLORATION
+	---help---
+		Enable the stack overflow detection. If enabled, tizenrt kernel is
+		checked stack check whenever every context switching.
+
 comment "Exception stack options"
 
 config ARCH_HAVE_DABORTSTACK

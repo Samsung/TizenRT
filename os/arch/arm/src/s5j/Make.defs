@@ -177,9 +177,7 @@ ifeq ($(CONFIG_S5J_I2S),y)
 CHIP_CSRCS += s5j_i2s.c
 endif
 
-ifneq ($(CONFIG_ARCH_STACK_SMASH_PROTECT_NONE),y)
 CHIP_CSRCS += s5j_stackchk.c
-endif
 
 ifeq ($(CONFIG_S5J_SSS),y)
 VPATH += chip/sss
