@@ -52,11 +52,10 @@
 ############################################################################
 
 # Make sure we understand where we are
-
-if [ ! -f tools/mkromfsimg.sh ]; then
+if [ ! -f ../tools/fs/mkromfsimg.sh ]; then
   cd .. || { echo "ERROR: cd .. failed"; exit 1; }
-  if [ ! -f tools/mkromfsimg.sh ]; then
-    error "This script must be executed from the top-level apps/ directory"
+  if [ ! -f ../tools/fs/mkromfsimg.sh ]; then
+    error "This script must be executed from the top-level os/ directory"
     exit 1
   fi
 fi
