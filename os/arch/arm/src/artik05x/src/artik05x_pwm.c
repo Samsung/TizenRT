@@ -70,7 +70,7 @@
 #include "chip.h"
 #include "s5j_pwm.h"
 
-int board_pwm_setup(void)
+int board_pwm_initialize(void)
 {
 #ifdef CONFIG_S5J_PWM
 	struct pwm_lowerhalf_s *pwm;

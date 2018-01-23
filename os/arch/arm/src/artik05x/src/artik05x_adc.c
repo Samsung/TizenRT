@@ -70,7 +70,7 @@
  *   Initialize ADC and register the ADC driver.
  *
  ****************************************************************************/
-int artik05x_adc_setup(void)
+int artik05x_adc_initialize(void)
 {
 #ifdef CONFIG_S5J_ADC
 	int ret;

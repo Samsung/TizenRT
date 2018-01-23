@@ -211,7 +211,7 @@ void board_initialize(void)
 	board_mct_initialize();
 
 #ifdef CONFIG_S5J_ADC
-	artik05x_adc_setup();
+	artik05x_adc_initialize();
 #endif
 
 	/* Perform app-specific initialization here instaed of from the TASH. */
@@ -222,7 +222,7 @@ void board_initialize(void)
 #endif
 
 #ifdef CONFIG_S5J_PWM
-	board_pwm_setup();
+	board_pwm_initialize();
 #endif
 
 	board_gpio_initialize();
