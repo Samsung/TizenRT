@@ -129,7 +129,7 @@ int sem_post(FAR sem_t *sem)
 	if (sem) {
 
 		SYSVIEW_GET_RETADDR
-		OS_TRACE_SEM_POST(sem, retaddr);
+		OS_TRACE_SEM_POST_ENTER(sem, retaddr);
 
 		/* The following operations must be performed with interrupts
 		 * disabled because sem_post() may be called from an interrupt
@@ -199,6 +199,7 @@ int sem_post(FAR sem_t *sem)
 		set_errno(EINVAL);
 	}
 
+	OS_TRACE_SEM_POST_EXIT(sem, ret);
 	return ret;
 }
 
@@ -239,6 +240,9 @@ int sem_post_from_isr(FAR sem_t *sem)
 	/* Make sure we were supplied with a valid semaphore. */
 
 	if (sem) {
+		SYSVIEW_GET_RETADDR
+		OS_TRACE_SEM_POST_ENTER(sem, retaddr);
+
 		/* The following operations must be performed with interrupts
 		 * disabled because sem_post() may be called from an interrupt
 		 * handler.
@@ -284,5 +288,6 @@ int sem_post_from_isr(FAR sem_t *sem)
 		set_errno(EINVAL);
 	}
 
+	OS_TRACE_SEM_POST_EXIT(sem, ret);
 	return ret;
 }

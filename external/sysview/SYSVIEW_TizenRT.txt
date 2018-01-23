@@ -5,7 +5,7 @@ Option    ReversePriority
 #
 # Types for parameter formatters
 #
-NamedType OSErr 0=OS_ERR_NONE
+NamedType OSErr 0=OK
 NamedType OSErr 10000=OS_ERR_A 10001=OS_ERR_ACCEPT_ISR
 NamedType OSErr 11000=OS_ERR_B
 NamedType OSErr 12000=OS_ERR_C 12001=OS_ERR_CREATE_ISR
@@ -53,16 +53,11 @@ TaskState 0xFF 0=Ready, 1=Delayed or Timeout, 2=Pending, 3=Pending with Timeout,
 44     OSMutexPend                      p_mutex=%I        | Returns %OSErr
 45     OS_TaskPrioInherit               p_tcb=%t prio=%u
 46     OS_TaskPrioDisinherit            p_tcb=%t prio=%u
-#47     SemInit				task=%I
-#48     SemDestroy                       task=%I, addr=%x, caller=%x
-#49     SemPost                          task=%I, addr=%x, caller=%x
-#50     SemWait                          task=%I, addr=%x, caller=%x
-#51     SemTimeWait                      task=%I, addr=%x, time=%u ms, caller=%x
-#47     SemInit				task=%I
-48     SemDestroy                       addr=%x, caller=%x
-49     SemPost                          addr=%x, caller=%x
-50     SemWait                          addr=%x, caller=%x
-51     SemTimeWait                      addr=%x, time=%u ms, caller=%x
+47     SemInit                          name=%I
+48     SemDestroy                       name=%I, caller=%x
+49     SemPost                          name=%I, caller=%x | Returns %OSErr
+50     SemWait                          name=%I, caller=%x | Returns %OSErr
+51     SemTimeWait                      name=%I, caller=%x, time=%u ms
 52     MsgQOpen                         name=%I
 53     MsgQClose                        name=%I
 54     MsgQSend                         name=%I, addr=%x, caller=%x

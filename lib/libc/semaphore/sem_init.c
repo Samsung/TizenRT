@@ -61,6 +61,8 @@
 #include <semaphore.h>
 #include <errno.h>
 
+#include <os_trace_events_tizenrt.h>
+
 /****************************************************************************
  * Public Functions
  ****************************************************************************/
@@ -112,9 +114,31 @@ int sem_init(FAR sem_t *sem, int pshared, unsigned int value)
 		sem->holder.counts = 0;
 #endif
 #endif
+#ifdef CONFIG_SEM_SUPPORT_TRACE
+		sem->trace = 0;
+#endif
+
 		return OK;
 	} else {
 		set_errno(EINVAL);
 		return ERROR;
 	}
 }
+
+#ifdef CONFIG_SEM_SUPPORT_TRACE
+int trace_sem_init(FAR char *name, FAR sem_t *sem, int pshared, unsigned int value)
+{
+	int ret;
+
+	ret = sem_init(sem, pshared, value);
+
+	if (ret != OK) {
+		return ret;
+	}
+
+	sem->trace = 1;
+	OS_TRACE_SEM_CREATE(sem, name);
+
+	return OK;
+}
+#endif

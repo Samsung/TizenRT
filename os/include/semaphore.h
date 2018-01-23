@@ -125,6 +125,9 @@ struct sem_s {
 	struct semholder_s holder;	/* Single holder */
 #endif
 #endif
+#ifdef CONFIG_SEM_SUPPORT_TRACE
+	uint8_t trace;
+#endif
 };
 
 typedef struct sem_s sem_t;
@@ -137,11 +140,23 @@ typedef struct sem_s sem_t;
 #ifdef CONFIG_PRIORITY_INHERITANCE
 #if CONFIG_SEM_PREALLOCHOLDERS > 0
 #define SEM_INITIALIZER(c) {(c), 0, NULL} /* semcount, flags, hhead */
+#ifdef CONFIG_SEM_SUPPORT_TRACE
+#  undef SEM_INITIALIZER
+#  define SEM_INITIALIZER(c) {(c), 0, NULL, 0} /* semcount, flags, hhead */
+#endif
 #else
 #define SEM_INITIALIZER(c) {(c), 0, SEMHOLDER_INITIALIZER} /* semcount, flags, holder */
+#ifdef CONFIG_SEM_SUPPORT_TRACE
+#  undef SEM_INITIALIZER
+#  define SEM_INITIALIZER(c) {(c), 0, SEMHOLDER_INITIALIZER, 0} /* semcount, flags, holder */
+#endif
 #endif
 #else
 #define SEM_INITIALIZER(c) {(c)}	/* semcount */
+#ifdef CONFIG_SEM_SUPPORT_TRACE
+#  undef SEM_INITIALIZER
+#  define SEM_INITIALIZER(c) {(c), 0}	/* semcount */
+#endif
 #endif
 
 /****************************************************************************
@@ -170,6 +185,15 @@ struct timespec;				/* Defined in time.h */
  * @since Tizen RT v1.0
  */
 int sem_init(FAR sem_t *sem, int pshared, unsigned int value);
+
+#ifdef CONFIG_SEM_SUPPORT_TRACE
+/**
+ * @ingroup SEMAPHORE_KERNEL
+ * @brief  POSIX APIs (refer to : http://pubs.opengroup.org/onlinepubs/9699919799/)
+ * @since Tizen RT v1.0
+ */
+int trace_sem_init(FAR char *name, FAR sem_t *sem, int pshared, unsigned int value);
+#endif
 
 /**
  * @ingroup SEMAPHORE_KERNEL

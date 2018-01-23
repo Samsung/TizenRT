@@ -121,7 +121,7 @@ int sem_wait(FAR sem_t *sem)
 	int ret = ERROR;
 
 	SYSVIEW_GET_RETADDR
-	OS_TRACE_SEM_WAIT(sem, retaddr);
+	OS_TRACE_SEM_WAIT_ENTER(sem, retaddr);
 
 	/* This API should not be called from interrupt handlers */
 
@@ -234,6 +234,7 @@ int sem_wait(FAR sem_t *sem)
 
 	leave_cancellation_point();
 	irqrestore(saved_state);
+	OS_TRACE_SEM_WAIT_EXIT(sem, ret);
 	return ret;
 }
 

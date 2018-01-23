@@ -1102,3 +1102,9 @@ config PTHREAD_STACK_DEFAULT
 		Default pthread stack size
 endmenu # Stack size information
 
+config SEM_SUPPORT_TRACE
+	bool "Tracing semaphore support"
+	default y
+	depends on SYSVIEW
+	---help---
+		This features used to trace semaphore by SEGGER SYSTEMVIEW.
