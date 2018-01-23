@@ -73,10 +73,6 @@ ifeq ($(CONFIG_AUDIO_ALC5658CHAR),y)
 CSRCS += artik05x_alc5658char.c
 endif
 
-ifeq ($(CONFIG_MTD_PROGMEM),y)
-CSRCS += artik05x_progmem.c
-endif
-
 ifeq ($(CONFIG_SCSC_WLAN),y)
 CSRCS += artik05x_wlan.c
 endif

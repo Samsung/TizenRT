@@ -312,7 +312,7 @@ static int progmem_ioctl(FAR struct mtd_dev_s *dev, int cmd, unsigned long arg)
 
 			geo->blocksize = (1 << priv->pgshift);		/* Size of one read/write block */
 			geo->erasesize = (1 << priv->blkshift);		/* Size of one erase block */
-			geo->neraseblocks = up_progmem_npages();	/* Number of erase blocks */
+			geo->neraseblocks = FLASH_MAX_PAGE;	/* Number of erase blocks */
 			ret = OK;
 		}
 	}
@@ -331,7 +331,7 @@ static int progmem_ioctl(FAR struct mtd_dev_s *dev, int cmd, unsigned long arg)
 	break;
 
 	case MTDIOC_BULKERASE: {
-		size_t nblocks = up_progmem_npages();
+		size_t nblocks = FLASH_MAX_PAGE;
 
 		/* Erase the entire device */
 
@@ -377,7 +377,7 @@ FAR struct mtd_dev_s *progmem_initialize(void)
 		 * other block.
 		 */
 
-		size_t pagesize = up_progmem_pagesize(0);
+		size_t pagesize = FLASH_PAGE_SIZE;
 
 		/* Calculate Log2 of the flash page size */
 		pgshift = progmem_log2(pagesize);
@@ -385,7 +385,7 @@ FAR struct mtd_dev_s *progmem_initialize(void)
 			return NULL;
 		}
 
-		size_t blocksize = up_progmem_blocksize();
+		size_t blocksize = FLASH_BLOCK_SIZE;
 
 		/* Calculate Log2 of the flash block size */
 		blkshift = progmem_log2(blocksize);

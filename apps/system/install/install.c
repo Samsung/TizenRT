@@ -334,7 +334,7 @@ int install_main(int argc, char *argv[])
 
 	/* Supported? */
 
-	if (!up_progmem_isuniform()) {
+	if (!FLASH_BLOCK_SIZE_UNIFORM) {
 		fprintf(stderr, "Error: install supports uniform organization only.\n");
 		return -1;
 	}

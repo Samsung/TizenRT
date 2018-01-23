@@ -64,7 +64,14 @@
 /****************************************************************************
  * Pre-processor Definitions
  ****************************************************************************/
+#define FLASH_PAGE_SIZE				256
+#define FLASH_MAX_PAGE				(CONFIG_ARTIK05X_FLASH_CAPACITY / FLASH_PAGE_SIZE)
+#define FLASH_BLOCK_SIZE			CONFIG_ARTIK05X_FLASH_PAGE_SIZE
+#define FLASH_BLOCK_SIZE_UNIFORM	true
 
+/****************************************************************************
+ * Public Functions
+ ****************************************************************************/
 #undef EXTERN
 #if defined(__cplusplus)
 #define EXTERN extern "C"
@@ -76,36 +83,6 @@ extern "C" {
 /****************************************************************************
  * Public Functions
  ****************************************************************************/
-
-/****************************************************************************
- * Name: up_progmem_npages
- *
- * Description:
- *   Return number of pages
- *
- ****************************************************************************/
-
-size_t up_progmem_npages(void);
-
-/****************************************************************************
- * Name: up_progmem_isuniform
- *
- * Description:
- *   Is program memory uniform or page size differs?
- *
- ****************************************************************************/
-
-bool up_progmem_isuniform(void);
-
-/****************************************************************************
- * Name: up_progmem_pagesize
- *
- * Description:
- *   Return page size
- *
- ****************************************************************************/
-
-size_t up_progmem_pagesize(size_t page);
 
 /****************************************************************************
  * Name: up_progmem_getpage

@@ -121,19 +121,19 @@ static inline void s5j_sflash_unlock(void)
 #ifdef CONFIG_MTD_PROGMEM
 size_t up_progmem_getaddress(size_t page)
 {
-	return S5J_FLASH_PADDR + up_progmem_pagesize(page) * page;
+	return S5J_FLASH_PADDR + FLASH_PAGE_SIZE * page;
 }
 
 ssize_t up_progmem_getpage(size_t addr)
 {
-	return (addr - S5J_FLASH_PADDR) / up_progmem_pagesize(0);
+	return (addr - S5J_FLASH_PADDR) / FLASH_PAGE_SIZE;
 }
 
 ssize_t up_progmem_erasepage(size_t page)
 {
 	size_t addr;
 
-	if (page >= up_progmem_npages()) {
+	if (page >= FLASH_MAX_PAGE) {
 		return -EFAULT;
 	}
 
@@ -154,12 +154,12 @@ ssize_t up_progmem_erasepage(size_t page)
 	s5j_sflash_enable_wp();
 
 	/* Invalidate cache */
-	arch_invalidate_dcache(addr, addr + up_progmem_blocksize());
+	arch_invalidate_dcache(addr, addr + FLASH_BLOCK_SIZE);
 
 	/* unlock */
 	s5j_sflash_unlock();
 
-	return up_progmem_blocksize();
+	return FLASH_BLOCK_SIZE;
 }
 
 ssize_t up_progmem_ispageerased(size_t page)
@@ -168,13 +168,13 @@ ssize_t up_progmem_ispageerased(size_t page)
 	size_t count;
 	size_t bwritten;
 
-	if (page >= up_progmem_npages()) {
+	if (page >= FLASH_MAX_PAGE) {
 		return -EFAULT;
 	}
 
 	bwritten = 0;
 	addr = up_progmem_getaddress(page);
-	for (count = up_progmem_pagesize(page); count; count--) {
+	for (count = FLASH_PAGE_SIZE; count; count--) {
 		if (getreg32(addr) != 0xffffff) {
 			bwritten++;
 		}
@@ -195,7 +195,7 @@ ssize_t up_progmem_write(size_t addr, const void *buf, size_t count)
 		return -EINVAL;
 	}
 
-	pagesize = up_progmem_pagesize(page);
+	pagesize = FLASH_PAGE_SIZE;
 
 	while (remain) {
 		int tmp = remain;
