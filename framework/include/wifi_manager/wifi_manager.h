@@ -228,8 +228,34 @@ wifi_manager_result_e wifi_manager_disconnect_ap(void);
  */
 wifi_manager_result_e wifi_manager_scan_ap(void);
 
-#endif
+/**
+ * @brief Save the AP configuration at persistent storage
+ * @details @b #include <wifi_manager/wifi_manager.h>
+ * @param[in] config AP configuration infomation should be given including ssid, channel, and passphrase.
+ * @return On success, WIFI_MANAGER_SUCCESS (i.e., 0) is returned. On failure, non-zero value is returned.
+ * @since Tizen RT v1.x
+ */
+wifi_manager_result_e wifi_manager_save_config(wifi_manager_ap_config_s *config);
 
+/**
+ * @brief Get the AP configuration which was saved
+ * @details @b #include <wifi_manager/wifi_manager.h>
+ * @param[in] config The pointer of AP configuration infomation which will be filled
+ * @return On success, WIFI_MANAGER_SUCCESS (i.e., 0) is returned. On failure, non-zero value is returned.
+ * @since Tizen RT v1.x
+ */
+
+wifi_manager_result_e wifi_manager_get_config(wifi_manager_ap_config_s *config);
+
+/**
+ * @brief Remove the AP configuration which was saved
+ * @details @b #include <wifi_manager/wifi_manager.h>
+ * @return On success, WIFI_MANAGER_SUCCESS (i.e., 0) is returned. On failure, non-zero value is returned.
+ * @since Tizen RT v1.x
+ */
+wifi_manager_result_e wifi_manager_remove_config(void);
+
+#endif
 /**
  *@}
  */
