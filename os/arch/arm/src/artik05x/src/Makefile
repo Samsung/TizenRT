@@ -88,6 +88,10 @@ VPATH += :$(TOPDIR)/arch
 CSRCS += boardctl.c
 endif
 
+ifeq ($(CONFIG_BOARD_CRASHDUMP),y)
+CSRCS += artik05x_dump.c
+endif
+
 COBJS = $(CSRCS:.c=$(OBJEXT))
 
 SRCS = $(ASRCS) $(CSRCS)
