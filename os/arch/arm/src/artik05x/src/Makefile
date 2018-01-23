@@ -57,8 +57,11 @@ DEPPATH = --dep-path .
 ASRCS =
 CSRCS = artik05x_boot.c \
 	artik05x_appinit.c \
-	artik05x_clock.c\
-	artik05x_pwm.c
+	artik05x_clock.c
+
+ifeq ($(CONFIG_S5J_PWM),y)
+CSRCS += artik05x_pwm.c
+endif
 
 ifeq ($(CONFIG_AUDIO_I2SCHAR),y)
 ifeq ($(CONFIG_S5J_I2S),y)
