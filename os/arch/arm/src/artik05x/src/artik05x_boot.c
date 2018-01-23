@@ -206,10 +206,14 @@ void s5j_board_initialize(void)
 void board_initialize(void)
 {
 	artik05x_clear_bootcount();
-
+	board_wdt_initialize();
+	board_gpio_initialize();
 	board_rtc_initialize();
 	board_mct_initialize();
-
+	board_i2c_initialize();
+#ifdef CONFIG_S5J_PWM
+	board_pwm_initialize();
+#endif
 #ifdef CONFIG_S5J_ADC
 	artik05x_adc_initialize();
 #endif
@@ -220,14 +224,6 @@ void board_initialize(void)
 #ifdef CONFIG_SCSC_WLAN
 	slsi_driver_initialize();
 #endif
-
-#ifdef CONFIG_S5J_PWM
-	board_pwm_initialize();
-#endif
-
-	board_gpio_initialize();
-	board_i2c_initialize();
-	board_wdt_initialize();
 
 #ifdef CONFIG_S5J_SSS
 	/* verify ARTIK Key */
