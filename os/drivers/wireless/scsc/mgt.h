@@ -360,7 +360,6 @@ static inline int slsi_set_mgmt_tx_data(struct netdev_vif *ndev_vif, u16 host_ta
 }
 #endif							/* CONFIG_SLSI_WLAN_P2P */
 void slsi_netif_set_link_up(struct netif *dev);
-void slsi_netif_set_link_down(struct netif *dev);
 bool is_multicast_ether_addr(const u8 *addr);
 void slsi_get_hw_mac_address(struct slsi_dev *sdev, u8 *addr);
 void slsi_channel_list_changed(struct netdev_vif *ndev_vif, const char *country);

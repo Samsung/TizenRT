@@ -58,15 +58,6 @@ void slsi_netif_set_link_up(struct netif *dev)
 	wpa_supplicant_event_send(ndev_vif->ctx, EVENT_LINK_UP, NULL);
 }
 
-void slsi_netif_set_link_down(struct netif *dev)
-{
-	struct netdev_vif *ndev_vif = netdev_priv(dev);
-
-	netif_set_link_down(dev);
-
-	wpa_supplicant_event_send(ndev_vif->ctx, EVENT_LINK_DOWN, NULL);
-}
-
 bool is_multicast_ether_addr(const u8 *addr)
 {
 	u16 a = *(const u16 *)addr;
@@ -284,10 +275,15 @@ void slsi_vif_cleanup(struct slsi_dev *sdev, struct netif *dev, bool hw_availabl
 			}
 		}
 
+		/* Set link down if not already done. */
+		if (netif_is_link_up(dev)) {
+			netif_set_link_down(dev);
+		}
+
 		if (ndev_vif->vif_type == FAPI_VIFTYPE_STATION) {
 			bool already_disconnected = false;
+
 			SLSI_DBG2(sdev, SLSI_INIT_DEINIT, "Station active: hw_available=%d\n", hw_available);
-			slsi_netif_set_link_down(dev);
 			if (hw_available) {
 				struct slsi_peer *peer = ndev_vif->peer_sta_record[SLSI_STA_PEER_QUEUESET];
 
@@ -306,9 +302,9 @@ void slsi_vif_cleanup(struct slsi_dev *sdev, struct netif *dev, bool hw_availabl
 					slsi_disconnected(ndev_vif, FAPI_REASONCODE_UNSPECIFIED_REASON, NULL, 0, 1);
 				}
 			}
+			wpa_supplicant_event_send(ndev_vif->ctx, EVENT_LINK_DOWN, NULL);
 		} else if (ndev_vif->vif_type == FAPI_VIFTYPE_AP) {
 			SLSI_DBG2(sdev, SLSI_INIT_DEINIT, "AP active\n");
-			slsi_netif_set_link_down(dev);
 			if (hw_available) {
 				int r = 0;
 
@@ -320,12 +316,12 @@ void slsi_vif_cleanup(struct slsi_dev *sdev, struct netif *dev, bool hw_availabl
 			}
 			SLSI_DBG2(sdev, SLSI_INIT_DEINIT, "Calling slsi_vif_deactivated\n");
 			slsi_vif_deactivated(sdev, dev);
-
 #ifdef CONFIG_SLSI_WLAN_P2P
 			if (ndev_vif->iftype == SLSI_WLAN_IFTYPE_P2P_GO) {
 				SLSI_P2P_STATE_CHANGE(sdev, P2P_IDLE_NO_VIF);
 			}
 #endif
+			wpa_supplicant_event_send(ndev_vif->ctx, EVENT_LINK_DOWN, NULL);
 		}
 #ifdef CONFIG_SLSI_WLAN_P2P
 		if (ndev_vif->vif_type == FAPI_VIFTYPE_UNSYNCHRONISED) {
@@ -915,6 +911,11 @@ int slsi_handle_disconnect(struct slsi_dev *sdev, struct netif *dev, u8 *peer_ad
 
 	switch (ndev_vif->vif_type) {
 	case FAPI_VIFTYPE_STATION: {
+		/* Link might have been already down if disconnect req was received. Hence the check. */
+		if (netif_is_link_up(dev)) {
+			netif_set_link_down(dev);
+		}
+
 		/* MLME-DISCONNECT-IND could indicate the completion of a MLME-DISCONNECT-REQ or
 		 * the connection with the AP has been lost
 		 */
@@ -926,9 +927,8 @@ int slsi_handle_disconnect(struct slsi_dev *sdev, struct netif *dev, u8 *peer_ad
 				reason = WLAN_REASON_DISASSOC_DUE_TO_INACTIVITY;
 			}
 
-			if (ndev_vif->sta.is_wps && ndev_vif->sta.vif_status == SLSI_VIF_STATUS_CONNECTED)
+			if (ndev_vif->sta.is_wps && ndev_vif->sta.vif_status == SLSI_VIF_STATUS_CONNECTED) {
 				/* Ignore sending deauth or disassoc event during WPS session */
-			{
 				SLSI_NET_INFO(dev, "Ignoring Deauth notification to supplicant from the peer during WPS procedure\n");
 			} else {
 				slsi_disconnected(ndev_vif, reason, NULL, 0, locallygenerated);
@@ -938,11 +938,10 @@ int slsi_handle_disconnect(struct slsi_dev *sdev, struct netif *dev, u8 *peer_ad
 
 		ndev_vif->sta.is_wps = false;
 
-		/* Delayed ARP only needs to run when connected. */
-
-		slsi_netif_set_link_down(dev);
 		slsi_mlme_del_vif(sdev, dev);
 		slsi_vif_deactivated(sdev, dev);
+		/* Inform upper layers */
+		wpa_supplicant_event_send(ndev_vif->ctx, EVENT_LINK_DOWN, NULL);
 		break;
 	}
 	case FAPI_VIFTYPE_AP: {

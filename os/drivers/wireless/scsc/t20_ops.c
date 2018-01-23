@@ -1062,6 +1062,8 @@ int slsi_disconnect(void *priv, const u8 *addr, int reason_code)
 
 	switch (ndev_vif->vif_type) {
 	case FAPI_VIFTYPE_STATION: {
+		netif_set_link_down(dev);
+
 		/* Disconnecting spans several host firmware interactions so track the status
 		 * so that the Host can ignore connect related signaling eg. MLME-CONNECT-IND
 		 * now that it has triggered a disconnect.
@@ -2539,6 +2541,9 @@ int slsi_stop_ap(void *priv)
 
 	SLSI_NET_DBG1(dev, SLSI_T20_80211, "\n");
 
+	/* Set link down as AP is shutting down */
+	netif_set_link_down(dev);
+
 	if (!ndev_vif->activated) {
 		r = -EINVAL;
 		goto exit;
@@ -2565,7 +2570,6 @@ int slsi_stop_ap(void *priv)
 		r = slsi_handle_disconnect(sdev, dev, peer->address, WLAN_REASON_DISASSOC_STA_HAS_LEFT, 1);
 	}
 
-	slsi_netif_set_link_down(dev);
 	/* All STA related packets and info should already have been flushed */
 	slsi_mlme_del_vif(sdev, dev);
 	slsi_vif_deactivated(sdev, dev);
@@ -2575,8 +2579,10 @@ int slsi_stop_ap(void *priv)
 	if (ndev_vif->ap.p2p_gc_keys_set) {
 		ndev_vif->ap.p2p_gc_keys_set = false;
 	}
-
 #endif
+
+	/* Inform upper layers */
+	wpa_supplicant_event_send(ndev_vif->ctx, EVENT_LINK_DOWN, NULL);
 
 exit:
 	SLSI_MUTEX_UNLOCK(ndev_vif->vif_mutex);

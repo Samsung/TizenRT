@@ -2934,6 +2934,12 @@ void wpa_supplicant_event_send(void *ctx, enum wpa_event_type event, union wpa_e
 	struct wpa_supplicant_event_params *params;
 
 	wpa_printf(MSG_DEBUG, "Event %s (%d) received from driver", event_to_string(event), event);
+
+	if (ctx == NULL) {
+		wpa_printf(MSG_ERROR, "Event not sent due to NULL context");
+		return;
+	}
+
 	params = os_zalloc(sizeof(struct wpa_supplicant_event_params));
 	if (params == NULL) {
 		wpa_printf(MSG_ERROR, "Event not sent due to event param allocation failure");
