@@ -67,6 +67,8 @@
 #include "group/group.h"
 #include "up_internal.h"
 
+#include <os_trace_events_tizenrt.h>
+
 /****************************************************************************
  * Public Functions
  ****************************************************************************/
@@ -161,6 +163,7 @@ void up_reprioritize_rtr(struct tcb_s *tcb, uint8_t priority)
 				/* Then switch contexts.  Any necessary address environment
 				 * changes will be made when the interrupt returns.
 				 */
+				OS_TRACE_TASK_SWITCHED_IN(rtcb);
 				up_restorestate(rtcb->xcp.regs);
 			}
 
@@ -177,6 +180,7 @@ void up_reprioritize_rtr(struct tcb_s *tcb, uint8_t priority)
 				rtcb = (struct tcb_s *)g_readytorun.head;
 
 				/* Then switch contexts */
+				OS_TRACE_TASK_SWITCHED_IN(rtcb);
 				up_fullcontextrestore(rtcb->xcp.regs);
 			}
 		}

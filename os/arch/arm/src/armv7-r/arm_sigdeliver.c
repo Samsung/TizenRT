@@ -71,6 +71,8 @@
 
 #ifndef CONFIG_DISABLE_SIGNALS
 
+#include <os_trace_events_tizenrt.h>
+
 /****************************************************************************
  * Pre-processor Definitions
  ****************************************************************************/
@@ -149,6 +151,7 @@ void up_sigdeliver(void)
 	/* Then restore the correct state for this thread of execution. */
 
 	board_autoled_off(LED_SIGNAL);
+	OS_TRACE_TASK_SWITCHED_IN(rtcb);
 	up_fullcontextrestore(regs);
 }
 
