@@ -216,6 +216,10 @@ void board_initialize(void)
 {
 	artik05x_clear_bootcount();
 
+#ifdef CONFIG_S5J_ADC
+	artik05x_adc_setup();
+#endif
+
 	/* Perform app-specific initialization here instaed of from the TASH. */
 	board_app_initialize();
 

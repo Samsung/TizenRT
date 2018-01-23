@@ -64,7 +64,6 @@
 #include <tinyara/fs/ioctl.h>
 #include <chip.h>
 
-#include "s5j_adc.h"
 #include "s5j_rtc.h"
 #include "s5j_mct.h"
 #include "up_internal.h"
@@ -80,41 +79,6 @@
 /****************************************************************************
  * Private Functions
  ****************************************************************************/
-
-/****************************************************************************
- * Name: artik05x_adc_setup
- *
- * Description:
- *   Initialize ADC and register the ADC driver.
- *
- ****************************************************************************/
-int artik05x_adc_setup(void)
-{
-#ifdef CONFIG_S5J_ADC
-	int ret;
-	struct adc_dev_s *adc;
-	uint8_t chanlist[] = {
-		adc_channel_0,
-		adc_channel_1,
-		adc_channel_2,
-		adc_channel_3,
-	};
-
-	/* Get an instance of the ADC interface */
-	adc = s5j_adc_initialize(chanlist, sizeof(chanlist));
-	if (adc == NULL) {
-		return -ENODEV;
-	}
-
-	/* Register the ADC driver at "/dev/adc0" */
-	ret = adc_register("/dev/adc0", adc);
-	if (ret < 0) {
-		return ret;
-	}
-#endif /* CONFIG_S5J_ADC */
-
-	return OK;
-}
 
 static void artik05x_configure_partitions(void)
 {
@@ -366,8 +330,6 @@ int board_app_initialize(void)
 		}
 	}
 #endif
-
-	artik05x_adc_setup();
 
 	scsc_wpa_ctrl_iface_init();
 
