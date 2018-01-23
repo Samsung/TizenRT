@@ -66,6 +66,7 @@
 
 #include "s5j_rtc.h"
 #include "s5j_mct.h"
+
 #include "up_internal.h"
 
 #include <apps/shell/tash.h>
@@ -301,34 +302,8 @@ int board_app_initialize(void)
 	}
 #endif /* CONFIG_RAMMTD */
 
-#if defined(CONFIG_RTC_DRIVER)
-	{
-		struct rtc_lowerhalf_s *rtclower;
-
-		rtclower = s5j_rtc_lowerhalf();
-		if (rtclower) {
-			ret = rtc_initialize(0, rtclower);
-			if (ret < 0) {
-				lldbg("Failed to register the RTC driver: %d\n", ret);
-			}
-		}
-	}
-#endif /* CONFIG_RTC_DRIVER */
-
 #if defined(CONFIG_SMARTFS_SECTOR_RECOVERY)
 	fs_recover();
-#endif
-
-#ifdef CONFIG_TIMER
-	{
-		int  i;
-		char path[CONFIG_PATH_MAX];
-
-		for (i = 0; i < CONFIG_S5J_MCT_NUM; i++) {
-			sprintf(path, "/dev/timer%d", i);
-			s5j_timer_initialize(path, i);
-		}
-	}
 #endif
 
 	scsc_wpa_ctrl_iface_init();
