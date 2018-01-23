@@ -128,7 +128,6 @@ int sched_yield(void)
 		/* A context switch will occur. */
 		sched_note_switch(rtcb, ntcb);
 		ntcb->task_state = TSTATE_TASK_RUNNING;
-		OS_TRACE_TASK_SWITCHED_IN(ntcb);
 		switch_needed = true;
 
 		/* Remove the TCB from the ready-to-run list */

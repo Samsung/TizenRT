@@ -67,6 +67,8 @@
 #include "clock/clock.h"
 #include "up_internal.h"
 
+#include <os_trace_events_tizenrt.h>
+
 /****************************************************************************
  * Pre-processor Definitions
  ****************************************************************************/
@@ -141,6 +143,7 @@ void up_unblock_task(struct tcb_s *tcb)
 			 * changes will be made when the interrupt returns.
 			 */
 
+			OS_TRACE_TASK_SWITCHED_IN(rtcb);
 			up_restorestate(rtcb->xcp.regs);
 		}
 
@@ -161,6 +164,7 @@ void up_unblock_task(struct tcb_s *tcb)
 
 			/* Then switch contexts */
 
+			OS_TRACE_TASK_SWITCHED_IN(rtcb);
 			up_fullcontextrestore(rtcb->xcp.regs);
 		}
 	}

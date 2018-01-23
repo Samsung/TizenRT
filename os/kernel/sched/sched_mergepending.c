@@ -162,7 +162,6 @@ bool sched_mergepending(void)
 			OS_TRACE_TASK_READY(rtrtcb);
 
 			pndtcb->task_state = TSTATE_TASK_RUNNING;
-			OS_TRACE_TASK_SWITCHED_IN(pndtcb);
 			ret = true;
 		} else {
 			/* Insert in the middle of the list */

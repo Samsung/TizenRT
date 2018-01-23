@@ -152,7 +152,6 @@ bool sched_addreadytorun(FAR struct tcb_s *btcb)
 		ASSERT(!rtcb->lockcount && btcb->flink != NULL);
 
 		btcb->task_state = TSTATE_TASK_RUNNING;
-		OS_TRACE_TASK_SWITCHED_IN(btcb);
 
 		btcb->flink->task_state = TSTATE_TASK_READYTORUN;
 		OS_TRACE_TASK_READY(btcb->flink);
