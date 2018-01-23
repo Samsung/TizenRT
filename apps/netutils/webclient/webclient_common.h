@@ -60,18 +60,6 @@
 #include "../webserver/http_string_util.h"
 #include "../webserver/http_client.h"
 #include <apps/netutils/webclient.h>
-#if defined(CONFIG_NETUTILS_CODECS)
-#if defined(CONFIG_CODECS_URLCODE)
-#	 define WGET_USE_URLENCODE 1
-#	 include <apps/netutils/urldecode.h>
-#endif
-#if defined(CONFIG_CODECS_BASE64)
-#	 include <apps/netutils/base64.h>
-#endif
-#else
-#undef CONFIG_CODECS_URLCODE
-#undef CONFIG_CODECS_BASE64
-#endif
 
 /****************************************************************************
  * Definitions

@@ -72,19 +72,6 @@
 #include <tinyara/version.h>
 #include <apps/netutils/netlib.h>
 
-#if defined(CONFIG_NETUTILS_CODECS)
-#if defined(CONFIG_CODECS_URLCODE)
-#	 define WGET_USE_URLENCODE 1
-#	 include "netutils/urldecode.h"
-#endif
-#if defined(CONFIG_CODECS_BASE64)
-#    include "netutils/base64.h"
-#endif
-#else
-#  undef CONFIG_CODECS_URLCODE
-#  undef CONFIG_CODECS_BASE64
-#endif
-
 #ifndef CONFIG_WGET_USERAGENT
 #define CONFIG_WGET_USERAGENT "TizenRT"
 #endif
