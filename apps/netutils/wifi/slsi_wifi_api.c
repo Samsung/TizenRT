@@ -1381,7 +1381,7 @@ void slsi_monitor_thread_handler(void *param)
 					switch (g_state) {
 					case SLSI_WIFIAPI_STATE_SUPPLICANT_RUNNING:
 						// Handling reconnect after remote disconnect
-						if (slsi_event_received(result, WPA_EVENT_CONNECTED)) {
+						if (slsi_event_received(result, WPA_EVENT_LINK_UP)) {
 							slsi_check_status(reason.ssid, &reason.ssid_len, reason.bssid);
 							slsi_get_network(reason.ssid, reason.ssid_len, &g_network_id);
 							g_state = SLSI_WIFIAPI_STATE_STA_CONNECTED;
@@ -1485,7 +1485,7 @@ void slsi_monitor_thread_handler(void *param)
 						break;
 					case SLSI_WIFIAPI_STATE_STA_CONNECTING: {
 						bool event_handled = FALSE;
-						if (slsi_event_received(result, WPA_EVENT_CONNECTED)) {
+						if (slsi_event_received(result, WPA_EVENT_LINK_UP)) {
 							slsi_check_status(reason.ssid, &reason.ssid_len, reason.bssid);
 							g_state = SLSI_WIFIAPI_STATE_STA_CONNECTED;
 							// connected so lets set scan interval back to limit power consumption
@@ -1535,7 +1535,7 @@ void slsi_monitor_thread_handler(void *param)
 						break;
 					}
 					case SLSI_WIFIAPI_STATE_STA_CONNECTED:
-						if (slsi_event_received(result, WPA_EVENT_DISCONNECTED)) {
+						if (slsi_event_received(result, WPA_EVENT_LINK_DOWN)) {
 							slsi_sta_disconnect_event_handler(result, &reason);
 							g_state = SLSI_WIFIAPI_STATE_SUPPLICANT_RUNNING;
 							if (g_link_down) {
@@ -1554,7 +1554,7 @@ void slsi_monitor_thread_handler(void *param)
 						}
 						break;
 					case SLSI_WIFIAPI_STATE_STA_DISCONNECTING:
-						if (slsi_event_received(result, WPA_EVENT_DISCONNECTED)) {
+						if (slsi_event_received(result, WPA_EVENT_LINK_DOWN)) {
 							slsi_sta_disconnect_event_handler(result, &reason);
 							g_state = SLSI_WIFIAPI_STATE_SUPPLICANT_RUNNING;
 							/* start by disabling all previous networks to make sure
