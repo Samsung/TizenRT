@@ -59,13 +59,20 @@ CSRCS =
 
 CXXSRCS  = libxx_cxapurevirtual.cxx libxx_eabi_atexit.cxx  libxx_cxa_atexit.cxx
 
-ifneq ($(CONFIG_UCLIBCXX),y)
-CXXSRCS += libxx_delete.cxx libxx_deletea.cxx libxx_new.cxx libxx_newa.cxx
-CXXSRCS += libxx_stdthrow.cxx libxx_cxa_guard.cxx
+ifeq (,$(findstring y,$(CONFIG_UCLIBCXX) $(CONFIG_LIBCXX)))
+CXXSRCS += libxx_delete.cxx libxx_delete_sized.cxx libxx_deletea.cxx
+CXXSRCS += libxx_deletea_sized.cxx libxx_new.cxx libxx_newa.cxx
+CXXSRCS += libxx_stdthrow.cxx
 else
-ifneq ($(UCLIBCXX_EXCEPTION),y)
+ifeq (,$(findstring y,$(CONFIG_UCLIBCXX_EXCEPTION) $(CONFIG_LIBCXX_EXCEPTION)))
 CXXSRCS += libxx_stdthrow.cxx
 endif
+endif
+
+# uClibc++ doesn't need this file
+
+ifneq ($(CONFIG_UCLIBCXX),y)
+CXXSRCS += libxx_cxa_guard.cxx
 endif
 
 # Paths
@@ -87,6 +94,10 @@ ifeq ($(CONFIG_UCLIBCXX),y)
 include uClibc++/Make.defs
 endif
 
+ifeq ($(CONFIG_LIBCXX),y)
+include libcxx/Make.defs
+endif
+
 # Object Files
 
 AOBJS = $(ASRCS:.S=$(OBJEXT))
@@ -99,6 +110,7 @@ OBJS = $(AOBJS) $(COBJS) $(CXXOBJS)
 BIN = libcxx$(LIBEXT)
 
 all: $(BIN)
+.PHONY: depend clean distclean
 
 $(AOBJS): %$(OBJEXT): %.S
 	$(call ASSEMBLE, $<, $@)
