@@ -144,10 +144,20 @@ static struct tiva_dev_s g_lmdev = {
 
 static int tiva_erase(FAR struct mtd_dev_s *dev, off_t startblock, size_t nblocks)
 {
+
+#if !defined(CONFIG_QEMU_SRAM) &&  !defined(CONFIG_QEMU_SDRAM)
 	int curpage;
 	uint32_t pageaddr;
+#endif
 
 	DEBUGASSERT(nblocks <= TIVA_VIRTUAL_NPAGES);
+
+#if defined(CONFIG_QEMU_SRAM) || defined(CONFIG_QEMU_SDRAM)
+	/* Qemu doesnt implement tiva flash memory controller.
+	 * Hence set the erase state to 0xFF using memset
+	 */
+	memset((void *)(TIVA_VIRTUAL_BASE + startblock * TIVA_FLASH_PAGESIZE), 0xFF, nblocks * TIVA_FLASH_PAGESIZE);
+#else
 
 	for (curpage = startblock; curpage < nblocks; curpage++) {
 		pageaddr = TIVA_VIRTUAL_BASE + curpage * TIVA_FLASH_PAGESIZE;
@@ -166,6 +176,7 @@ static int tiva_erase(FAR struct mtd_dev_s *dev, off_t startblock, size_t nblock
 
 		while (getreg32(TIVA_FLASH_FMC) & FLASH_FMC_ERASE) ;
 	}
+#endif
 
 	return OK;
 }
@@ -197,11 +208,21 @@ static ssize_t tiva_bread(FAR struct mtd_dev_s *dev, off_t startblock, size_t nb
 
 static ssize_t tiva_bwrite(FAR struct mtd_dev_s *dev, off_t startblock, size_t nblocks, FAR const uint8_t *buf)
 {
+
 	FAR uint32_t *src = (uint32_t *) buf;
 	FAR uint32_t *dst = (uint32_t *)(TIVA_VIRTUAL_BASE + startblock * TIVA_FLASH_PAGESIZE);
+#if !defined(CONFIG_QEMU_SRAM) &&  !defined(CONFIG_QEMU_SDRAM)
 	int i;
+#endif
 
 	DEBUGASSERT(nblocks <= TIVA_VIRTUAL_NPAGES);
+
+#if defined(CONFIG_QEMU_SRAM) || defined(CONFIG_QEMU_SDRAM)
+	/* Qemu doesnt implement tiva flash memory controller.
+	 * Hence copy the contents from buf to flash blocks using memcpy.
+	 */
+	memcpy(dst, src, nblocks * TIVA_FLASH_PAGESIZE);
+#else
 
 	for (i = 0; i < (nblocks *TIVA_FLASH_PAGESIZE) >> 2; i++) {
 		/* set data to write  */
@@ -220,6 +241,7 @@ static ssize_t tiva_bwrite(FAR struct mtd_dev_s *dev, off_t startblock, size_t n
 
 		while (getreg32(TIVA_FLASH_FMC) & FLASH_FMC_WRITE) ;
 	}
+#endif
 
 	return nblocks;
 }
@@ -335,7 +357,12 @@ static int tiva_ioctl(FAR struct mtd_dev_s *dev, int cmd, unsigned long arg)
 
 FAR struct mtd_dev_s *up_flashinitialize(void)
 {
-	/* Return the implementation-specific state structure as the MTD device */
 
+#if defined(CONFIG_QEMU_SRAM) || defined(CONFIG_QEMU_SDRAM)
+	/* Erase the flash */
+	tiva_erase((FAR struct mtd_dev_s *)&g_lmdev, 0, TIVA_VIRTUAL_NPAGES);
+#endif
+
+	/* Return the implementation-specific state structure as the MTD device */
 	return (FAR struct mtd_dev_s *)&g_lmdev;
 }
