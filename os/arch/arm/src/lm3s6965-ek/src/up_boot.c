@@ -61,6 +61,11 @@
 
 #include <arch/board/board.h>
 
+#ifdef CONFIG_MTD
+#include <tinyara/fs/mtd.h>
+#include <tinyara/fs/ioctl.h>
+#endif
+
 #include "up_arch.h"
 #include "up_internal.h"
 #include "lm3s6965ek_internal.h"
@@ -107,3 +112,103 @@ void tiva_boardinitialize(void)
 	board_led_initialize();
 #endif
 }
+
+
+#ifdef CONFIG_BOARD_INITIALIZE
+
+#if defined(CONFIG_QEMU_SRAM) || defined (CONFIG_QEMU_SDRAM)
+
+#define 	QEMU_SMARTFS_PARTITION_START	(0)
+#define 	QEMU_SMARTFS_PARTITION_SIZE	(1024 * 1024) /* 1MB */
+#define 	QEMU_SMARTFS_PARTITION_PARTNO	(0)
+#define 	QEMU_SMARTFS_PARTITION_MINORNO	(0)
+#define 	QEMU_SMARTFS_MOUNT_POINT	"/mnt"
+
+/************************************************************************************
+ * Name: board_initialize
+ *
+ * Description:
+ *	Board specific intialization after os app start
+ *
+ ************************************************************************************/
+
+int board_initialize(void)
+{
+	int ret;
+	char partref[4];
+	char devname[16];
+#ifdef CONFIG_MTD
+	FAR struct mtd_dev_s *mtd;
+	FAR struct mtd_geometry_s geo;
+	FAR struct mtd_dev_s *mtd_part;
+#endif
+	int partno = QEMU_SMARTFS_PARTITION_PARTNO;
+	int minorno = QEMU_SMARTFS_PARTITION_MINORNO;
+	int partoffset = QEMU_SMARTFS_PARTITION_START;
+	int partsize = QEMU_SMARTFS_PARTITION_SIZE;
+
+#ifdef CONFIG_MTD
+	mtd = up_flashinitialize();
+
+	if (!mtd) {
+		lldbg("ERROR : up_flashinitializ failed\n");
+		return ERROR;
+	}
+
+	if (mtd->ioctl(mtd, MTDIOC_GEOMETRY, (unsigned long)&geo) < 0) {
+		lldbg("ERROR: mtd->ioctl failed\n");
+		return ERROR;
+	}
+
+#ifdef CONFIG_MTD_PARTITION
+	mtd_part = mtd_partition(mtd, partoffset, partsize / geo.blocksize, partno);
+	if (!mtd_part) {
+		lldbg("ERROR: failed to create partition.\n");
+		return ERROR;
+	}
+#endif /* CONFIG_MTD_PARTITION */
+
+	ret = snprintf(partref, sizeof(partref), "p%d", partno);
+	if (ret < 0) {
+		lldbg("ERROR: snprintf failed while constructing partref, ret = %d\n", ret);
+		return ERROR;
+	}
+
+	if (ret >= sizeof(partref)) {
+		lldbg("WARNING: snprintf output might have truncated, ret = %d\n", ret);
+	}
+
+	ret = snprintf(devname, sizeof(devname), "/dev/smart%d%s", minorno, partref);
+	if (ret < 0) {
+		lldbg("ERROR: snprintf failed while constructing devname, ret = %d\n", ret);
+		return ERROR;
+	}
+
+	if (ret >= sizeof(devname)) {
+		lldbg("WARNING: snprintf output might have truncated, ret = %d\n", ret);
+	}
+
+
+#if defined(CONFIG_MTD_SMART) && defined(CONFIG_FS_SMARTFS)
+	smart_initialize(minorno, mtd_part, partref);
+#endif /* defined(CONFIG_MTD_SMART) && defined(CONFIG_FS_SMARTFS) */
+
+#endif /* CONFIG_MTD */
+
+	ret = mksmartfs(devname, false);
+
+	if (ret != OK) {
+		lldbg("ERROR: mksmartfs on %s failed, ret = %d\n", devname, ret);
+	} else {
+		ret = mount(devname, QEMU_SMARTFS_MOUNT_POINT, "smartfs", 0, NULL);
+		if (ret != OK) {
+			lldbg("ERROR: mounting '%s' failed, ret = %d\n", devname, ret);
+		} else {
+			lldbg("%s is mounted successfully at %s \n", devname, QEMU_SMARTFS_MOUNT_POINT);
+		}
+	}
+
+	return OK;
+}
+#endif /* defined(CONFIG_QEMU_SRAM) || defined (CONFIG_QEMU_SDRAM) */
+#endif /* CONFIG_BOARD_INITIALIZE */
