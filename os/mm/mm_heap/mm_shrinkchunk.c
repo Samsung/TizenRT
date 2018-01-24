@@ -116,6 +116,10 @@ void mm_shrinkchunk(FAR struct mm_heap_s *heap, FAR struct mm_allocnode_s *node,
 		 */
 
 		newnode = (FAR struct mm_freenode_s *)((char *)node + size);
+#ifdef CONFIG_MM_ASAN_RT
+	asan_unpoison_shadow((void*) newnode, SIZEOF_MM_FREENODE);
+	asan_unpoison_shadow((void*) andbeyond, SIZEOF_MM_ALLOCNODE);
+#endif
 
 		/* Set up the size of the new node */
 

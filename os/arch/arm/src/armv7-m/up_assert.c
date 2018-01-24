@@ -129,6 +129,7 @@ static inline uint32_t up_getsp(void)
  ****************************************************************************/
 
 #ifdef CONFIG_ARCH_STACKDUMP
+__attribute__((no_sanitize_address))
 static void up_stackdump(uint32_t sp, uint32_t stack_base)
 {
 	uint32_t stack;

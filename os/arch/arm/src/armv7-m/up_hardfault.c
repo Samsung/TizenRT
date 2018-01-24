@@ -108,7 +108,6 @@
  *   exceptions that are performed in bad contexts.
  *
  ****************************************************************************/
-
 int up_hardfault(int irq, FAR void *context, FAR void *arg)
 {
 #if defined(CONFIG_DEBUG_HARDFAULT) || !defined(CONFIG_ARMV7M_USEBASEPRI)

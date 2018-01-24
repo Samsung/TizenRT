@@ -28,7 +28,6 @@
 #define ASAN_SHADOW_SCALE_SIZE     (1UL << ASAN_SHADOW_SCALE_SHIFT)
 #define ASAN_SHADOW_MASK           (ASAN_SHADOW_SCALE_SIZE - 1)
 #define _RET_IP_		   (unsigned long)__builtin_return_address(0)
-#define SRAM_BEGIN                 0x20000000
 #define __alias(symbol)		   __attribute__((alias(#symbol)))
 #define BITS_PER_LONG              sizeof(long) * 8
 #define __round_mask(x, y)         ((__typeof__(x))((y)-1))
@@ -48,14 +47,14 @@ struct asan_access_info {
 
 static inline void *asan_mem_to_shadow(const void *addr)
 {
-	return (void *)(((unsigned long)addr - SRAM_BEGIN) >> ASAN_SHADOW_SCALE_SHIFT)
+	return (void *)(((unsigned long)addr - CONFIG_RAM_START) >> ASAN_SHADOW_SCALE_SHIFT)
 		   + ASAN_SHADOW_OFFSET;
 }
 
 static inline const void *asan_shadow_to_mem(const void *shadow_addr)
 {
 	return (void *)((((unsigned long)shadow_addr - ASAN_SHADOW_OFFSET)
-					 << ASAN_SHADOW_SCALE_SHIFT) + SRAM_BEGIN);
+					 << ASAN_SHADOW_SCALE_SHIFT) + CONFIG_RAM_START);
 }
 
 void asan_report_error(struct asan_access_info *info);

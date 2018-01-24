@@ -105,6 +105,9 @@ void up_sigdeliver(void)
 	struct tcb_s *rtcb = this_task();
 	uint32_t regs[XCPTCONTEXT_REGS];
 	sig_deliver_t sigdeliver;
+	void * stack_top = __builtin_frame_address(0);
+	void * stack_bottom = __builtin_frame_address(1);
+	svdbg("Stack: top=%p bottom=%p\n", stack_top, stack_bottom);
 
 	/* Save the errno.  This must be preserved throughout the signal handling
 	 * so that the user code final gets the correct errno value (probably

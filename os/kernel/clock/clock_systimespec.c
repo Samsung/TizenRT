@@ -186,7 +186,8 @@ int clock_systimespec(FAR struct timespec *ts)
 		/* Get the time since power-on in seconds and milliseconds */
 
 		msecs = TICK2MSEC(clock_systimer());
-		secs  = msecs / MSEC_PER_SEC;
+				secs  = msecs / MSEC_PER_SEC;
+				//secs  = msecs >> 10; // MSEC_PER_SEC;
 
 		/* Return the elapsed time in seconds and nanoseconds */
 

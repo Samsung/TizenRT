@@ -205,6 +205,10 @@ FAR void *mm_memalign(FAR struct mm_heap_s *heap, size_t alignment, size_t size)
 		}
 
 		/* Set up the size of the new node */
+#ifdef CONFIG_MM_ASAN_RT
+	mlldbg("Unpoisoning newnode 0x%08p\n", newnode);
+	asan_unpoison_shadow((void*) newnode, SIZEOF_MM_ALLOCNODE);
+#endif
 
 		newnode->size = (size_t)next - (size_t)newnode;
 		newnode->preceding = precedingsize | MM_ALLOC_BIT;

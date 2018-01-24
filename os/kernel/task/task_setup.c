@@ -575,6 +575,11 @@ static inline int task_stackargsetup(FAR struct task_tcb_s *tcb, FAR char *const
 
 	str = (FAR char *)stackargv + argvlen;
 
+#ifdef CONFIG_MM_ASAN_RT
+	mlldbg("Unpoisoning argv %p, size %u\n", stackargv, argvlen);
+	asan_unpoison_shadow(stackargv, argvlen);
+#endif
+
 	/* Copy the task name.  Increment str to skip over the task name and its
 	 * NUL terminator in the string buffer.
 	 */
@@ -594,6 +599,10 @@ static inline int task_stackargsetup(FAR struct task_tcb_s *tcb, FAR char *const
 
 		stackargv[i + 1] = str;
 		nbytes = strlen(argv[i]) + 1;
+#ifdef CONFIG_MM_ASAN_RT
+	mlldbg("Unpoisoning str %p, size %u\n", str, nbytes);
+	asan_unpoison_shadow(str, nbytes);
+#endif
 		strcpy(str, argv[i]);
 		str += nbytes;
 	}

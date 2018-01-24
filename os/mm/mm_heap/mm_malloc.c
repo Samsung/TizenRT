@@ -106,6 +106,7 @@
  *  8-byte alignment of the allocated data is assured.
  *
  ****************************************************************************/
+__attribute__((no_sanitize_address))
 #ifdef CONFIG_DEBUG_MM_HEAPINFO
 FAR void *mm_malloc(FAR struct mm_heap_s *heap, size_t size, mmaddress_t caller_retaddr)
 #else
@@ -115,9 +116,6 @@ FAR void *mm_malloc(FAR struct mm_heap_s *heap, size_t size)
 	FAR struct mm_freenode_s *node;
 	void *ret = NULL;
 	int ndx;
-#ifdef CONFIG_MM_ASAN_RT
-	int poison_size = size;
-#endif
 	/* Handle bad sizes */
 
 	if (size < 1) {
@@ -194,6 +192,10 @@ FAR void *mm_malloc(FAR struct mm_heap_s *heap, size_t size)
 			/* Create the remainder node */
 
 			remainder = (FAR struct mm_freenode_s *)(((char *)node) + size);
+#ifdef CONFIG_MM_ASAN_RT
+			//			mvdbg("Unpoisoning remainder node 0x%08p (%d bytes) with next 0x%08p\n", remainder, sizeof(struct mm_freenode_s), next);
+	asan_unpoison_shadow((void*) remainder, sizeof(struct mm_freenode_s));
+#endif
 			remainder->size = remaining;
 			remainder->preceding = size;
 
@@ -213,6 +215,7 @@ FAR void *mm_malloc(FAR struct mm_heap_s *heap, size_t size)
 		}
 
 		/* Handle the case of an exact size match */
+		asan_unpoison_heap(node, SIZEOF_MM_ALLOCNODE);
 
 		node->preceding |= MM_ALLOC_BIT;
 
@@ -242,8 +245,8 @@ FAR void *mm_malloc(FAR struct mm_heap_s *heap, size_t size)
 #endif
 
 #ifdef CONFIG_MM_ASAN_RT
-	mvdbg("Unpoisoning %p, size %u for heap %p\n", ret, poison_size, heap);
-	asan_unpoison_heap(ret, poison_size);
+	mvdbg("Unpoisoning %p, size %u for heap %p\n", ret - SIZEOF_MM_ALLOCNODE, size + SIZEOF_MM_ALLOCNODE, heap);
+	asan_unpoison_heap(ret - SIZEOF_MM_ALLOCNODE, size + SIZEOF_MM_ALLOCNODE);
 #endif
 	return ret;
 }

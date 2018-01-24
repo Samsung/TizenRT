@@ -9,8 +9,9 @@
 #define SHADOW_BYTES_PER_BLOCK 1
 #define SHADOW_BLOCKS_PER_ROW 16
 #define SHADOW_BYTES_PER_ROW (SHADOW_BLOCKS_PER_ROW * SHADOW_BYTES_PER_BLOCK)
-#define SHADOW_ROWS_AROUND_ADDR 2
+#define SHADOW_ROWS_AROUND_ADDR 4
 
+__attribute__((no_sanitize_address))
 static const void *find_first_bad_addr(const void *addr, size_t size)
 {
 	u8 shadow_val = *(u8 *) asan_mem_to_shadow(addr);
@@ -23,6 +24,7 @@ static const void *find_first_bad_addr(const void *addr, size_t size)
 	return first_bad_addr;
 }
 
+__attribute__((no_sanitize_address))
 static void print_error_description(struct asan_access_info *info)
 {
 	FAR struct task_tcb_s *tcb = (FAR struct task_tcb_s *)this_task();
@@ -67,6 +69,7 @@ static int shadow_pointer_offset(const void *row, const void *shadow)
 	return 3 + (BITS_PER_LONG / 8) * 2 + (shadow - row) * 2 + (shadow - row) / SHADOW_BYTES_PER_BLOCK + 1;
 }
 
+__attribute__((no_sanitize_address))
 static void print_shadow_for_address(const void *addr)
 {
 	int i;

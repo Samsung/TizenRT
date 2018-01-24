@@ -79,6 +79,7 @@
  *
  ****************************************************************************/
 
+__attribute__((no_sanitize_address))
 void mm_addfreechunk(FAR struct mm_heap_s *heap, FAR struct mm_freenode_s *node)
 {
 	FAR struct mm_freenode_s *next;

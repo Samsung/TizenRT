@@ -69,9 +69,19 @@ int asan_test_main(int argc, char *argv[])
 #endif
 {
 	int *a = (int *)malloc(3 * sizeof(int));
+	int *b = (int *)malloc(3 * sizeof(int));
+	int x;
+	int c[3];
+	c[0] = 0xdeadbeef;
+	char *xp = (char *)&x;
+	xp[0] = 0x1;
+	printf("c[0]@%08p: %x\n", &c[0], (int)c[0]);
+	printf("c[3]@%08p: %x\n", &c[3], (int)c[3]);
 	printf("a[0]@%08p: %x\n", &a[0], (int)a[1]);
 	printf("a[2]@%08p: %x\n", &a[2], (int)a[2]);
 	printf("a[3]@%08p: %x\n", &a[3], (int)a[3]);
+	printf("b[3]@%08p: %x\n", &b[3], (int)b[3]);
+	printf("c[3]@%08p: %x\n", &c[3], (int)c[3]);
 	printf("\nLast line\n");
 	free(a);
 	return 0;

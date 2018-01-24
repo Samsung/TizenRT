@@ -136,6 +136,9 @@ int sched_releasetcb(FAR struct tcb_s *tcb, uint8_t ttype)
 	int ret = OK;
 
 	if (tcb) {
+	  void * stack_ptr = tcb->stack_alloc_ptr;
+	  uint32_t stack_size = tcb->adj_stack_size;
+
 #if defined(CONFIG_ENABLE_STACKMONITOR) && defined(CONFIG_DEBUG)
 		stkmon_logging(tcb);
 #endif
@@ -183,6 +186,7 @@ int sched_releasetcb(FAR struct tcb_s *tcb, uint8_t ttype)
 #endif
 			{
 				up_release_stack(tcb, ttype);
+				asan_unpoison_shadow(stack_ptr, stack_size);
 			}
 		}
 #ifdef CONFIG_PIC
@@ -201,6 +205,7 @@ int sched_releasetcb(FAR struct tcb_s *tcb, uint8_t ttype)
 		/* Release the kernel stack */
 
 		(void)up_addrenv_kstackfree(tcb);
+		asan_unpoison_shadow(stack_ptr, stack_size);
 #endif
 
 #ifdef CONFIG_ARCH_ADDRENV
@@ -218,6 +223,7 @@ int sched_releasetcb(FAR struct tcb_s *tcb, uint8_t ttype)
 		/* And, finally, release the TCB itself */
 
 		sched_kfree(tcb);
+		asan_poison_free(stack_ptr, stack_size);
 	}
 
 	return ret;

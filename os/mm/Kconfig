@@ -206,4 +206,12 @@ config ASAN_INLINE
 		Use inline instrumentation instead of outline one.
 		This increases performance by trade-off to code size.
 
+config ASAN_STACK
+       bool "Enable stack memory instrumentation"
+       default n
+       depends on MM_ASAN_RT
+       ---help---
+		Instument stack memory as well as heap one.
+		Requires -fasan-shadow-offset support from compiler.
+
 endif # MM_ASAN

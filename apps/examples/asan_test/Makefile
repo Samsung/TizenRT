@@ -73,7 +73,12 @@ MAINOBJ = $(MAINSRC:.c=$(OBJEXT))
 SRCS = $(ASRCS) $(CSRCS) $(MAINSRC)
 OBJS = $(AOBJS) $(COBJS)
 
-CFLAGS += -fsanitize=kernel-address
+ifeq ($(CONFIG_ASAN_STACK),y)
+  SHADOW_OFFSET := $(shell awk "BEGIN{printf(\"0x%x\", $(CONFIG_MM_ASAN_SHADOW_OFFSET) - $(CONFIG_RAM_START) / 8)}")
+  SHADOW_OFFSET_FLAGS := -fasan-shadow-offset=$(SHADOW_OFFSET) --param asan-stack=1 -Wno-error=array-bounds
+endif
+
+CFLAGS += -fsanitize=kernel-address $(SHADOW_OFFSET_FLAGS)
 
 ifneq ($(CONFIG_BUILD_KERNEL),y)
   OBJS += $(MAINOBJ)

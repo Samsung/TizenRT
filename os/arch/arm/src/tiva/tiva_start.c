@@ -112,6 +112,9 @@
  *   This is the reset entry point.
  *
  ****************************************************************************/
+#ifdef CONFIG_ASAN_ENABLE
+void asan_clean_shadow(void);
+#endif
 
 void __start(void)
 {
@@ -119,6 +122,10 @@ void __start(void)
 	const uint32_t *src;
 #endif
 	uint32_t *dest;
+
+#ifdef CONFIG_ASAN_ENABLE
+        asan_clean_shadow();
+#endif
 
 	/* Configure the UART so that we can get debug output as soon as possible */
 
