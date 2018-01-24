@@ -155,7 +155,7 @@ static bool get_wmm_ie_from_resp_ie(struct slsi_dev *sdev, struct netif *dev, u8
 		return false;
 	}
 
-	*wmm_elem_len = *wmm_elem[1] + 2;
+	*wmm_elem_len = *(*wmm_elem + 1) + 2;
 
 	SLSI_NET_DBG3(dev, SLSI_MLME, "WMM IE received and parsed successfully\n");
 
