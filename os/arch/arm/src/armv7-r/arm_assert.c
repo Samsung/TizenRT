@@ -490,6 +490,10 @@ static void up_taskdump(FAR struct tcb_s *tcb, FAR void *arg)
 #ifdef CONFIG_STACK_COLORATION
 static inline void up_showtasks(void)
 {
+	lldbg("*******************************************\n");
+	lldbg("List of all tasks in the system:\n");
+	lldbg("*******************************************\n");
+
 	/* Dump interesting properties of each task in the crash environment */
 
 	sched_foreach(up_taskdump, NULL);
@@ -869,11 +873,9 @@ static void up_dumpstate(void)
 	lldbg("*******************************************\n");
 	dump_stack();
 #endif
+
 	/* Dump the state of all tasks (if available) */
 
-	lldbg("*******************************************\n");
-	lldbg("List of all tasks in the system:\n");
-	lldbg("*******************************************\n");
 	up_showtasks();
 
 #ifdef CONFIG_FRAME_POINTER
