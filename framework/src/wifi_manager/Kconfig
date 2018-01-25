@@ -7,18 +7,51 @@ config WIFI_MANAGER
     bool "Enable Wi-Fi Manager"
     default n
 	select NETUTILS_WIFI
-	select WPA_SUPPLICANT
-	select SCSC_WLAN
+	select DRIVERS_WIRELESS
     ---help---
         Easy APIs for applications to use and control Wi-Fi features
 
 if WIFI_MANAGER
+
+choice
+	prompt "WiFi library"
+	default SELECT_WPA_SUPPLICANT
+
+config SELECT_WPA_SUPPLICANT
+	bool "select wpa_supplicant"
+	default y
+	select WPA_SUPPLICANT
+	---help---
+		Select the wpa_supplicant
+
+config SELECT_PROPIETARY_SUPPLICANT
+	bool "Select external vendor supplicant"
+	default n
+	---help---
+		select the third party supplicant
+endchoice # WiFi supplicant library
+
+choice
+	prompt "WiFi Driver"
+	default SELECT_SCSC_WLAN
+
+config SELECT_SCSC_WLAN
+	bool "Enable SCSC Wireless Module"
+	default n
+	select SCSC_WLAN
+
+config SELECT_PROPIETARY_WLAN
+	bool "Enable vendor-specific Wireless Module"
+	default n
+endchoice # WiFi driver choice
+
+if SELECT_WPA_SUPPLICANT
+source "$EXTERNALDIR/slsi_wifi/Kconfig"
+source "$EXTERNALDIR/wpa_supplicant/Kconfig"
+endif #SELECT_WPA_SUPPLICANT
+
 config WIFI_PROFILE_SECURESTORAGE
 	bool "Store the Wi-Fi Profile in a Secure Storage"
 	depends on SUPPORT_FULL_SECURITY
 	default n
-
-source "$EXTERNALDIR/slsi_wifi/Kconfig"
-source "$EXTERNALDIR/wpa_supplicant/Kconfig"
-
 endif #WIFI_MANAGER
