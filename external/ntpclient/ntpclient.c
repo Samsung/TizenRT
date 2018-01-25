@@ -533,6 +533,7 @@ static int ntpc_init_server_info(struct ntpc_server_conn_s *server_list, uint32_
 		g_ntps.server[server_count].conn.port = server_list[i].port;
 		g_ntps.server[server_count].link = NTP_LINK_NOT_SET;
 		memcpy(&g_ntps.server[server_count].ipaddr, he->h_addr, sizeof(in_addr_t));
+		ndbg("ntpc_init_server_info : %s %d\n", g_ntps.server[server_count].conn.hostname, g_ntps.server[server_count].conn.port);
 		server_count++;
 	}
 
@@ -595,9 +596,18 @@ int ntpc_start(struct ntpc_server_conn_s *server_list, uint32_t num_of_servers, 
 
 	/* Is the NTP in a non-running state? */
 
-	if (server_list == NULL) {
-		ndbg("ERROR: server_list is NULL.\n");
-		return -EINVAL;
+	struct ntpc_server_conn_s default_server_conn;
+	if (server_list == NULL || num_of_servers == 0) {
+		num_of_servers = 1;
+		default_server_conn.hostname = CONFIG_NETUTILS_NTPCLIENT_DEFAULT_SERVER;
+		default_server_conn.port = CONFIG_NETUTILS_NTPCLIENT_DEFAULT_SERVER_PORT;
+		server_list = &default_server_conn;
+		ndbg("hostname = %s port = %d\n", default_server_conn.hostname, default_server_conn.port);
+	}
+
+	if (interval_secs == 0) {
+		interval_secs = CONFIG_NETUTILS_NTPCLIENT_DEFAULT_INTERVAL_SECONDS;
+		ndbg("interval = %d\n", interval_secs);
 	}
 
 	if (num_of_servers > MAX_NTP_SERVER_NUM) {
