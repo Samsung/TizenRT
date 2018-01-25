@@ -2604,6 +2604,7 @@ exit:
             DeleteCredList(cred);
         }
     }
+#if defined(__WITH_DTLS__) || defined(__WITH_TLS__)
 #if defined(__TIZENRT__)
     else
     {
@@ -2620,6 +2621,7 @@ exit:
             }
         }
     }
+#endif
 #endif
 
     // Send response to request originator
