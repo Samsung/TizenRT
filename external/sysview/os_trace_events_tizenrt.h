@@ -146,6 +146,8 @@ Revision: $Rev: 3809 $
 #  define OS_TRACE_ID_MEM_CREATE                      (28u + OS_TRACE_ID_OFFSET)
 #  define OS_TRACE_ID_MEM_ALLOC                       (29u + OS_TRACE_ID_OFFSET)
 #  define OS_TRACE_ID_MEM_FREE                        (30u + OS_TRACE_ID_OFFSET)
+#  define OS_TRACE_ID_ANNOTATION_MSG                  (50u + OS_TRACE_ID_OFFSET)
+#  define OS_TRACE_ID_ANNOTATION_VALUE                (51u + OS_TRACE_ID_OFFSET)
 #else  /* CONFIG_SYSVIEW */
 #  define  OS_TRACE_INIT()
 #  define  OS_TRACE_START()
@@ -258,6 +260,13 @@ Revision: $Rev: 3809 $
 #  define SYSVIEW_GET_RETADDR
 #endif
 
+#ifdef CONFIG_SYSVIEW
+#  define OS_TRACE_MSG(msg)                                       SEGGER_SYSVIEW_RecordString(OS_TRACE_ID_ANNOTATION_MSG, msg)
+#  define OS_TRACE_VALUE(msg)                                     SEGGER_SYSVIEW_RecordU32(OS_TRACE_ID_ANNOTATION_VALUE, value)
+#else
+#  define OS_TRACE_MSG(msg)
+#  define OS_TRACE_VALUE(msg)
+#endif
 
 /*
 ************************************************************************************************************************

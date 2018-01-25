@@ -71,3 +71,5 @@ TaskState 0xFF 0=Ready, 1=Delayed or Timeout, 2=Pending, 3=Pending with Timeout,
 #60     MemCreate                        task=%I
 #61     MemAlloc                         task=%I, addr=%x, size=%u, caller=%x
 #62     MemFree                          task=%I, addr=%x, caller=%x
+82     UserMsg                          %s
+83     UserValue                        %x
