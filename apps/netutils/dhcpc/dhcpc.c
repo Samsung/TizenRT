@@ -563,7 +563,7 @@ int dhcpc_request(void *handle, struct dhcpc_state *presult)
 
 	do {
 		if (retries++ > CNT_MAX_REQUEST)
-			break;
+			return -2;
 
 		ndbg("Send Request Packet\n");
 
