@@ -1,9 +1,9 @@
 # Kconfig-frontends Installation
 
 ## Prerequisites
-The *bison* (or byacc if supported), *flex*, *gperf*, *libncurses5-dev*, *zlib1g-dev*, *gettext* and *g++* packages should be installed:
+The *bison* (or *byacc* if supported), *flex*, *gperf*, *libncurses5-dev*, *zlib1g-dev*, *gettext* and *g++* packages should be installed:
 ```bash
-sudo apt-get install bison flex gperf libncurses5-dev zlib1g-dev gettext g++
+sudo apt-get install bison byacc flex gperf libncurses5-dev zlib1g-dev gettext g++
 ```
 
 ## Kconfig-frontend
