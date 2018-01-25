@@ -116,6 +116,7 @@ iotivity_clean:
 ifeq ($(CONFIG_ENABLE_IOTIVITY),y)
 	$(Q) echo "Cleaning IoTivity Build"
 	$(Q) TOPDIR="$(TOPDIR)" $(TOPDIR)/../external/iotivity/build_iotivity.sh clean
+	$(Q) rm -rf $(IOTIVITY_BASE_DIR)/resource/csdk/connectivity/lib/libcoap-4.1.1/*.o
 endif
 
 artiksdk_clean:
