@@ -96,12 +96,21 @@ config EXAMPLES_IOTIVITY
 	---help---
 		Enable building IoTivity Samples
 
-config IOTIVITY_RELEASE_VERSION
-	string "iotivity stack version"
-	default "1.3-rel"
+choice
+	prompt "iotivity stack version"
+	default IOTIVITY_RELEASE_VERSION_1_3
 	depends on ENABLE_IOTIVITY
+
+config IOTIVITY_RELEASE_VERSION_1_2
+	bool "1.2-rel"
 	---help---
-		define this to iotivity stack release veriosn in use
+		1.2-rel version
+
+config IOTIVITY_RELEASE_VERSION_1_3
+	bool "1.3-rel"
+	---help---
+		1.3-rel version
+endchoice
 
 config IOTIVITY_ROUTING
 	string "Enable routing, allowed values : 'EP' / 'GW' "

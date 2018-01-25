@@ -59,8 +59,14 @@ THREADEXEC = TASH_EXECMD_ASYNC
 # built-in application info
 
 # iotivitySimServ example
-IOTIVITY_RELEASE=${shell echo $(CONFIG_IOTIVITY_RELEASE_VERSION) | sed 's/"//g'}
-IOTIVITY_BASE_DIR = $(APPDIR)/../external/iotivity/iotivity_$(IOTIVITY_RELEASE)
+ifeq ($(CONFIG_IOTIVITY_RELEASE_VERSION_1_2),y)
+IOTIVITY_BASE_DIR = $(APPDIR)/../external/iotivity/iotivity_1.2-rel
+else
+ifeq ($(CONFIG_IOTIVITY_RELEASE_VERSION_1_3),y)
+IOTIVITY_BASE_DIR = $(APPDIR)/../external/iotivity/iotivity_1.3-rel
+endif
+endif
+
 IOTIVITY_TARGET_ARCH=${shell echo $(CONFIG_ARCH_FAMILY) | sed 's/"//g'}
 ifeq ($(CONFIG_IOTIVITY_RELEASE),y)
 IOTIVITY_OUT_DIR=$(IOTIVITY_BASE_DIR)/out/tizenrt/$(IOTIVITY_TARGET_ARCH)/release
@@ -108,7 +114,7 @@ CFLAGS += -std=c99
 CFLAGS += -w
 CFLAGS += -D__WITH_DTLS__
 
-ifeq ($(CONFIG_IOTIVITY_RELEASE_VERSION),"1.2-rel")
+ifeq ($(CONFIG_IOTIVITY_RELEASE_VERSION_1_2),y)
 CSRCS += port_tinyara.c
 endif
 

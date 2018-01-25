@@ -6,7 +6,7 @@
 config EXAMPLES_OCFMYLIGHT
 	bool "OCF My Light sample application"
 	default n
-	select ENABLE_IOTIVITY
+	depends on IOTIVITY_RELEASE_VERSION_1_3
 	select ENABLE_IOTIVITY_SECURED
 	select NETUTILS_JSON
 	select NETUTILS_NTPCLIENT

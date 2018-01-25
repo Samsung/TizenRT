@@ -108,7 +108,7 @@ ifeq ($(CONFIG_ENABLE_IOTIVITY_CLOUD),y)
 TINYARALIBS += $(LIBRARIES_DIR)$(DELIM)libresource_directory$(LIBEXT)
 TINYARALIBS += $(LIBRARIES_DIR)$(DELIM)libresource_directory_internal$(LIBEXT)
 endif
-ifneq ($(CONFIG_IOTIVITY_RELEASE_VERSION),"1.2-rel")
+ifneq ($(CONFIG_IOTIVITY_RELEASE_VERSION_1_2),y)
 TINYARALIBS += $(LIBRARIES_DIR)$(DELIM)libtizenrt_compat$(LIBEXT)
 endif
 endif

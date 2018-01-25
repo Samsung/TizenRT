@@ -224,7 +224,7 @@ ifeq ($(CONFIG_ENABLE_IOTIVITY_SECURED),y)
 
 endif
 
-ifneq ($(CONFIG_IOTIVITY_RELEASE_VERSION),"1.2-rel")
+ifneq ($(CONFIG_IOTIVITY_RELEASE_VERSION_1_2),y)
 $(LIBRARIES_DIR)$(DELIM)libtizenrt_compat$(LIBEXT): $(IOTIVITY_LIBS_DIR)$(DELIM)libtizenrt_compat$(LIBEXT)
 	$(Q) install $(IOTIVITY_LIBS_DIR)$(DELIM)libtizenrt_compat$(LIBEXT) $(LIBRARIES_DIR)$(DELIM)libtizenrt_compat$(LIBEXT)
 endif

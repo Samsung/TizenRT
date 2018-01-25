@@ -110,7 +110,7 @@ endif
 ifeq ($(CONFIG_ENABLE_IOTIVITY_SECURED),y)
 #TINYARALIBS += $(LIBRARIES_DIR)$(DELIM)libtinydtls$(LIBEXT)
 endif
-ifneq ($(CONFIG_IOTIVITY_RELEASE_VERSION),"1.2-rel")
+ifneq ($(CONFIG_IOTIVITY_RELEASE_VERSION_1_2),y)
 USERLIBS += $(LIBRARIES_DIR)$(DELIM)libtizenrt_compat$(LIBEXT)
 endif
 endif

@@ -66,8 +66,14 @@ endif
 
 MAINSRC = ocf_mylight_main.c
 
-IOTIVITY_RELEASE=${shell echo $(CONFIG_IOTIVITY_RELEASE_VERSION) | sed 's/"//g'}
-IOTIVITY_BASE_DIR = $(APPDIR)/../external/iotivity/iotivity_$(IOTIVITY_RELEASE)
+ifeq ($(CONFIG_IOTIVITY_RELEASE_VERSION_1_2),y)
+IOTIVITY_BASE_DIR = $(APPDIR)/../external/iotivity/iotivity_1.2-rel
+else
+ifeq ($(CONFIG_IOTIVITY_RELEASE_VERSION_1_3),y)
+IOTIVITY_BASE_DIR = $(APPDIR)/../external/iotivity/iotivity_1.3-rel
+endif
+endif
+
 IOTIVITY_TARGET_ARCH=${shell echo $(CONFIG_ARCH_FAMILY) | sed 's/"//g'}
 ifeq ($(CONFIG_IOTIVITY_RELEASE),y)
 IOTIVITY_OUT_DIR=$(IOTIVITY_BASE_DIR)/out/tizenrt/$(IOTIVITY_TARGET_ARCH)/release
