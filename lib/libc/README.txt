@@ -29,6 +29,8 @@ in the include/ directory provides the prototype for library functions.  So
 we have:
 
   libgen    - libgen.h
+  locale    - locale.h
+  inttypes  - inttypes.h
   fixedmath - fixedmath.h
   math      - math.h
   mqueue    - pthread.h
@@ -42,6 +44,8 @@ we have:
   string    - string.h
   time      - time.h
   unistd    - unistd.h
+  wchar     - wchar.h
+  wctype    - wctype.h
 
 There is also a misc/ subdirectory that contains various internal functions
 and interfaces from header files that are too few to warrant their own sub-

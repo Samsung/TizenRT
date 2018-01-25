@@ -407,7 +407,17 @@ int execv(FAR const char *path, FAR char *const argv[]);
  * @} */
 #endif
 
-/* Other */
+/* Byte operations */
+/**
+ * @cond
+ * @internal
+ */
+void swab(FAR const void *src, FAR void *dest, ssize_t nbytes);
+/**
+ * @endcond
+ */
+
+/* getopt and friends */
 /**
  * @ingroup UNISTD_KERNEL
  * @brief command option parsing
@@ -437,7 +447,7 @@ int *getoptoptp(void);			/* unrecognized option character */
 }
 #endif
 
-#endif							/* __INCLUDE_UNISTD_H */
+#endif					/* __INCLUDE_UNISTD_H */
 /**
  * @}
  */

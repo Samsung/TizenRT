@@ -73,18 +73,21 @@ endif
 
 # Directories
 
+GNUDIR      = $(APPDIR)/platform/gnu
 PLATFORMDIR = $(APPDIR)/platform/board
 DUMMYDIR    = $(APPDIR)/platform/dummy
 BOARDDIR    = $(APPDIR)/platform/$(CONFIG_ARCH_BOARD)
 LINKDIR     = $(if $(wildcard $(BOARDDIR)/Make.defs),$(BOARDDIR),$(DUMMYDIR))
 
 VPATH       = board
+DEPPATH     = --dep-path $(PLATFORMDIR)
 
 # Binaries
 
 ASRCS =
 CSRCS =
 
+-include $(GNUDIR)/Make.defs
 -include $(PLATFORMDIR)/Make.defs
 
 AOBJS = $(patsubst %.S, bin/%$(OBJEXT), $(ASRCS))
@@ -138,7 +141,7 @@ context: $(PLATFORMDIR)
 # Dependencies
 
 .depend: Makefile $(SRCS) $(PLATFORMDIR)
-	$(Q) $(MKDEP) --obj-path bin --obj-suffix  $(OBJEXT) --dep-path $(PLATFORMDIR) "$(CC)" -- $(CFLAGS) -- $(SRCS) >Make.dep
+	$(Q) $(MKDEP) --obj-path bin --obj-suffix  $(OBJEXT) --dep-path $(PLATFORMDIR) --dep-path $(GNUDIR) "$(CC)" -- $(CFLAGS) -- $(SRCS) >Make.dep
 	$(Q) touch $@
 
 depend: .depend

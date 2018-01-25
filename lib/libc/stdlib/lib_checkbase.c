@@ -80,6 +80,11 @@
  * Assumptions:
  *   *ptr points to the first, non-whitespace character in the string.
  *
+ * Returns:
+ *   - if base is valid, the actual base to use, and pptr is updated to point
+ *     at the first digit.
+ *   - if base is invalid (<2 or >36), return -1.
+ *
  ****************************************************************************/
 
 int lib_checkbase(int base, FAR const char **pptr)
@@ -116,6 +121,11 @@ int lib_checkbase(int base, FAR const char **pptr)
 		if (ptr[0] == '0' && (ptr[1] == 'X' || ptr[1] == 'x')) {
 			ptr += 2;
 		}
+	}
+
+	/* Check for incorrect bases. */
+	else if (base < 2 || base > 26) {
+		return -1;				/* Means incorrect base */
 	}
 
 	/* Return the updated pointer and base */

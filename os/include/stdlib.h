@@ -68,6 +68,7 @@
 
 #include <tinyara/config.h>
 #include <tinyara/compiler.h>
+
 #include <sys/types.h>
 #include <stdint.h>
 
@@ -339,6 +340,7 @@ long long strtoll(const char *, char **, int);
  */
 unsigned long long strtoull(const char *, char **, int);
 #endif
+#ifdef CONFIG_HAVE_DOUBLE
 /**
  * @ingroup STDLIB_LIBC
  * @brief convert a string to a double-precision number
@@ -346,7 +348,22 @@ unsigned long long strtoull(const char *, char **, int);
  * POSIX API (refer to : http://pubs.opengroup.org/onlinepubs/9699919799/)
  * @since Tizen RT v1.0
  */
-double_t strtod(const char *, char **);
+double strtod(FAR const char *str, FAR char **endptr);
+#endif
+#ifdef CONFIG_HAVE_LONG_DOUBLE
+/**
+ * @cond
+ * @internal
+ */
+long double strtold(FAR const char *str, FAR char **endptr);
+#endif
+/**
+ * @internal
+ */
+float strtof(FAR const char *str, FAR char **endptr);
+/**
+ * @endcond
+ */
 
 /**
  * @ingroup STDLIB_LIBC
@@ -396,6 +413,23 @@ double_t strtod(const char *, char **);
  * @since Tizen RT v1.0
  */
 char *itoa(int value, char *str, int base);
+
+/* Wide character operations */
+
+#ifdef CONFIG_LIBC_WCHAR
+/**
+ * @cond
+ * @internal
+ */
+int mbtowc(FAR wchar_t *pwc, FAR const char *s, size_t n);
+/**
+ * @internal
+ */
+int wctomb(FAR char *s, wchar_t wchar);
+/**
+ * @endcond
+ */
+#endif
 
 /* Memory Management */
 /**
