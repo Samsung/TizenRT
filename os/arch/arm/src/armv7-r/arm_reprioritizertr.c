@@ -121,6 +121,7 @@ void up_reprioritize_rtr(struct tcb_s *tcb, uint8_t priority)
 
 		/* Setup up the new task priority */
 
+		OS_TRACE_TASK_PRIORITY(tcb, tcb->sched_priority, priority);
 		tcb->sched_priority = (uint8_t)priority;
 
 		/* Return the task to the specified blocked task list.

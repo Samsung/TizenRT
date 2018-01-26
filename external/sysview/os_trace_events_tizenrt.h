@@ -128,8 +128,7 @@ Revision: $Rev: 3809 $
 #  define OS_TRACE_ID_MUTEX_DEL                       (10u + OS_TRACE_ID_OFFSET)
 #  define OS_TRACE_ID_MUTEX_POST                      (11u + OS_TRACE_ID_OFFSET)
 #  define OS_TRACE_ID_MUTEX_PEND                      (12u + OS_TRACE_ID_OFFSET)
-#  define OS_TRACE_ID_MUTEX_TASK_PRIO_INHERIT         (13u + OS_TRACE_ID_OFFSET)
-#  define OS_TRACE_ID_MUTEX_TASK_PRIO_DISINHERIT      (14u + OS_TRACE_ID_OFFSET)
+#  define OS_TRACE_ID_TASK_PRIORITY                   (13u + OS_TRACE_ID_OFFSET)
 #  define OS_TRACE_ID_SEM_CREATE                      (15u + OS_TRACE_ID_OFFSET)
 #  define OS_TRACE_ID_SEM_DEL                         (16u + OS_TRACE_ID_OFFSET)
 #  define OS_TRACE_ID_SEM_POST                        (17u + OS_TRACE_ID_OFFSET)
@@ -181,6 +180,7 @@ Revision: $Rev: 3809 $
 #  define OS_TRACE_TASK_SUSPEND(p_tcb)
 #  define OS_TRACE_TASK_SUSPENDED(p_tcb)                        SYSVIEW_TaskSuspend((U32)p_tcb->pid)
 #  define OS_TRACE_TASK_RESUME(p_tcb)                           SYSVIEW_TaskReady((U32)p_tcb->pid)
+#  define OS_TRACE_TASK_PRIORITY(p_tcb, _old, _new)             SEGGER_SYSVIEW_RecordU32x3(OS_TRACE_ID_TASK_PRIORITY,              SEGGER_SYSVIEW_ShrinkId((U32)p_tcb->pid),   (U32)_old, (U32)_new                             )
 #else
 #  define OS_TRACE_TASK_CREATE(p_tcb)
 #  define OS_TRACE_TASK_UPDATE(p_tcb)
@@ -191,6 +191,7 @@ Revision: $Rev: 3809 $
 #  define OS_TRACE_TASK_SUSPENDED(p_tcb)
 #  define OS_TRACE_TASK_RESUME(p_tcb)
 #  define OS_TRACE_TASK_DEL(p_tcb)
+#  define OS_TRACE_TASK_PRIORITY(p_tcb, _old, _new)
 #endif
 
 #ifdef CONFIG_SYSVIEW_MONITOR_INTERRUPT

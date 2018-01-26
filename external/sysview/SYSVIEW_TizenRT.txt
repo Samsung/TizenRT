@@ -51,8 +51,7 @@ TaskState 0xFF 0=Ready, 1=Delayed or Timeout, 2=Pending, 3=Pending with Timeout,
 42     OSMutexDel                       p_mutex=%I        | Returns %OSErr
 43     OSMutexPost                      p_mutex=%I        | Returns %OSErr
 44     OSMutexPend                      p_mutex=%I        | Returns %OSErr
-45     OS_TaskPrioInherit               p_tcb=%t prio=%u
-46     OS_TaskPrioDisinherit            p_tcb=%t prio=%u
+45     Task_Priority                    task=%t, %u -> %u
 47     SemInit                          name=%I
 48     SemDestroy                       name=%I, caller=%x
 49     SemPost                          name=%I, caller=%x | Returns %OSErr

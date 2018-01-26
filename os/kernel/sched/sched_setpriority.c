@@ -63,6 +63,8 @@
 
 #include "sched/sched.h"
 
+#include <os_trace_events_tizenrt.h>
+
 /****************************************************************************
  * Definitions
  ****************************************************************************/
@@ -163,6 +165,7 @@ int sched_setpriority(FAR struct tcb_s *tcb, int sched_priority)
 		else {
 			/* Change the task priority */
 
+			OS_TRACE_TASK_PRIORITY(tcb, tcb->sched_priority, sched_priority);
 			tcb->sched_priority = (uint8_t)sched_priority;
 		}
 		break;
@@ -194,6 +197,7 @@ int sched_setpriority(FAR struct tcb_s *tcb, int sched_priority)
 
 			/* Change the task priority */
 
+			OS_TRACE_TASK_PRIORITY(tcb, tcb->sched_priority, sched_priority);
 			tcb->sched_priority = (uint8_t)sched_priority;
 
 			/* Put it back into the ready-to-run task list */
@@ -217,6 +221,7 @@ int sched_setpriority(FAR struct tcb_s *tcb, int sched_priority)
 
 			/* Change the task priority */
 
+			OS_TRACE_TASK_PRIORITY(tcb, tcb->sched_priority, sched_priority);
 			tcb->sched_priority = (uint8_t)sched_priority;
 
 			/* Put it back into the prioritized list at the correct
@@ -231,6 +236,7 @@ int sched_setpriority(FAR struct tcb_s *tcb, int sched_priority)
 		else {
 			/* Just change the task's priority */
 
+			OS_TRACE_TASK_PRIORITY(tcb, tcb->sched_priority, sched_priority);
 			tcb->sched_priority = (uint8_t)sched_priority;
 		}
 		break;
