@@ -310,6 +310,7 @@ static struct dhcpd_state_s g_state;
 static int g_dhcpd_running = 0;
 static int g_dhcpd_quit = 0;
 static sem_t g_sem_quit;
+static sem_t g_sem_daemon_started;
 
 static pthread_t g_tid = 0;
 
@@ -1586,6 +1587,7 @@ int dhcpd_run(void *arg)
 {
 	int sockfd;
 	int nbytes;
+	int sval;
 #if DHCPD_SELECT
 	int ret = OK;
 	fd_set sockfd_set;
@@ -1629,7 +1631,12 @@ int dhcpd_run(void *arg)
 		FD_SET(sockfd, &sockfd_set);
 		g_sockfd = sockfd;
 
+		sched_lock();
+		if (sem_getvalue(&g_sem_daemon_started, &sval) == 0 && sval < 0) {
+			sem_post(&g_sem_daemon_started);
+		}
 		ret = select(sockfd+1, &sockfd_set, NULL, NULL, &g_select_timeout);
+		sched_unlock();
 		if ((ret > 0) && FD_ISSET(sockfd, &sockfd_set)) {
 			/* Read the next g_state.ds_outpacket */
 			nbytes = recv(sockfd, &g_state.ds_inpacket, sizeof(struct dhcpmsg_s), 0);
@@ -1779,6 +1786,9 @@ int dhcpd_start(char *intf)
 		goto err_exit;
 	}
 
+	sem_init(&g_sem_daemon_started, 0, 0);
+	sem_setprotocol(&g_sem_daemon_started, SEM_PRIO_NONE);
+
 	status = pthread_create(&g_tid, &attr, (pthread_startroutine_t)dhcpd_run, NULL);
 	if (status != 0) {
 		ndbg("failed to start dhcpd\n");
@@ -1787,6 +1797,8 @@ int dhcpd_start(char *intf)
 
 	pthread_setname_np(g_tid, "dhcpd");
 	pthread_detach(g_tid);
+
+	sem_wait(&g_sem_daemon_started);
 
 	return 0;
 err_exit:
