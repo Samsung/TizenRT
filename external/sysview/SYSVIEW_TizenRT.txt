@@ -54,8 +54,8 @@ TaskState 0xFF 0=Ready, 1=Delayed or Timeout, 2=Pending, 3=Pending with Timeout,
 45     Task_Priority                    task=%t, %u -> %u
 47     SemInit                          name=%I
 48     SemDestroy                       name=%I, caller=%x
-49     SemPost                          name=%I, caller=%x | Returns %OSErr
-50     SemWait                          name=%I, caller=%x | Returns %OSErr
+49     SemPost                          name=%I, caller=%x | name=%I, Returns %OSErr
+50     SemWait                          name=%I, caller=%x | name=%I, Returns %OSErr
 51     SemTimeWait                      name=%I, caller=%x, time=%u ms
 52     MsgQOpen                         name=%I
 53     MsgQClose                        name=%I

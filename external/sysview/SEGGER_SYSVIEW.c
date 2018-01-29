@@ -1958,6 +1958,31 @@ void SEGGER_SYSVIEW_RecordEndCallU32(unsigned int EventID, U32 Para0) {
 
 /*********************************************************************
 *
+*       SEGGER_SYSVIEW_RecordEndCallU32()
+*
+*  Function description
+*    Formats and sends an End API Call event with 2 U32 parameter payload.
+*
+*  Parameters
+*    EventID      - Id of API function which ends.
+*    Para0        - The 32-bit parameter encoded to SystemView packet payload.
+*    Para1        - Return value which will be returned by the API function.
+*/
+void SEGGER_SYSVIEW_RecordEndCallU32x2(unsigned int EventID, U32 Para0, U32 Para1) {
+  U8* pPayload;
+  U8* pPayloadStart;
+  RECORD_START(SEGGER_SYSVIEW_INFO_SIZE + 2 * SEGGER_SYSVIEW_QUANTA_U32);
+  //
+  pPayload = pPayloadStart;
+  ENCODE_U32(pPayload, EventID);
+  ENCODE_U32(pPayload, Para0);
+  ENCODE_U32(pPayload, Para1);
+  _SendPacket(pPayloadStart, pPayload, SYSVIEW_EVTID_END_CALL);
+  RECORD_END();
+}
+
+/*********************************************************************
+*
 *       SEGGER_SYSVIEW_OnIdle()
 *
 *  Function description
