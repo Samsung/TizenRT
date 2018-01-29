@@ -137,11 +137,11 @@ extern "C" {
 /**
  * @brief ntpc_start() starts the NTP client daemon.
  *
- * @param[in] server_list the array of struct ntpc_server_conn_s
+ * @param[in] server_list the array of struct ntpc_server_conn_s (If NULL is entered, it operates as the default NTP server set in the system)
  *                                   - server_list[n]->hostname : ntp server's hostname
  *                                   - server_list[n]->port : ntp server's port number
- * @param[in] num_of_servers number of servers
- * @param[in] interval_secs polling interval seconds
+ * @param[in] num_of_servers number of servers (If 0 is entered, it operates as the default NTP server set in the system)
+ * @param[in] interval_secs polling interval seconds (If 0 is entered, it operates as the default interval set in the system)
  * @param[in] link_error_cb callback function for link error case
  * @return On success, the non-negative task ID of the NTPC daemon is returned.
  *             On failure, a negative value is returned.
