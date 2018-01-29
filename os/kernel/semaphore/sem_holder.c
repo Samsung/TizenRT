@@ -65,6 +65,8 @@
 #include "sched/sched.h"
 #include "semaphore/semaphore.h"
 
+#include <os_trace_events_tizenrt.h>
+
 #ifdef CONFIG_PRIORITY_INHERITANCE
 
 /****************************************************************************
@@ -834,6 +836,7 @@ void sem_addholder_tcb(FAR struct tcb_s *htcb, FAR sem_t *sem)
 			 */
 			pholder->htcb = htcb;
 			pholder->counts++;
+			OS_TRACE_SEM_ADDHOLDER(sem, htcb, pholder->counts);
 		}
 	}
 }
@@ -919,6 +922,7 @@ void sem_releaseholder(FAR sem_t *sem)
 		 */
 
 		pholder->counts--;
+		OS_TRACE_SEM_DELHOLDER(sem, pholder->htcb, pholder->counts);
 	}
 }
 

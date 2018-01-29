@@ -57,18 +57,17 @@ TaskState 0xFF 0=Ready, 1=Delayed or Timeout, 2=Pending, 3=Pending with Timeout,
 49     SemPost                          name=%I, caller=%x | name=%I, Returns %OSErr
 50     SemWait                          name=%I, caller=%x | name=%I, Returns %OSErr
 51     SemTimeWait                      name=%I, caller=%x, time=%u ms
-52     MsgQOpen                         name=%I
-53     MsgQClose                        name=%I
-54     MsgQSend                         name=%I, addr=%x, caller=%x
-55     MsgQRecv                         name=%I, addr=%x, caller=%x
-56     OSFlagCreate                     p_grp=%I
-57     OSFlagDel                        p_grp=%I          | Returns %OSErr
-58     OSFlagPost                       p_grp=%I          | Returns %OSErr
-59     OSFlagPend                       p_grp=%I          | Returns %OSErr
-61     MemAlloc                         addr=%x, size=%u, caller=%x
-62     MemFree                          addr=%x, caller=%x
-#60     MemCreate                        task=%I
-#61     MemAlloc                         task=%I, addr=%x, size=%u, caller=%x
-#62     MemFree                          task=%I, addr=%x, caller=%x
+52     SemHoldAdd                       name=%I, task=%t, counts=%u
+53     SemHoldRelease                   name=%I, task=%t, counts=%u
+54     MsgQOpen                         name=%I
+55     MsgQClose                        name=%I
+56     MsgQSend                         name=%I, addr=%x, caller=%x
+57     MsgQRecv                         name=%I, addr=%x, caller=%x
+58     OSFlagCreate                     p_grp=%I
+59     OSFlagDel                        p_grp=%I          | Returns %OSErr
+60     OSFlagPost                       p_grp=%I          | Returns %OSErr
+61     OSFlagPend                       p_grp=%I          | Returns %OSErr
+63     MemAlloc                         addr=%x, size=%u, caller=%x
+64     MemFree                          addr=%x, caller=%x
 82     UserMsg                          %s
 83     UserValue                        %x
