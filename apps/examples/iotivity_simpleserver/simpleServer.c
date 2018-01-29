@@ -74,21 +74,6 @@
  * Definitions
  ****************************************************************************/
 
-#define IFHWADDRLEN 6
-
-#if LWIP_HAVE_LOOPIF == 1
-#define NET_DEVNUM 1
-#else
-#define NET_DEVNUM 0
-#endif
-
-#if defined(CONFIG_ENC28J60) || defined(CONFIG_WICED)
-#define NET_DEVNAME "en"
-#elif defined(CONFIG_ARCH_BOARD_SIDK_S5JT200) || defined(CONFIG_ARCH_BOARD_ARTIK053)
-#define NET_DEVNAME "wl"
-#else
-#error "undefined CONFIG_NET_<type>, check your .config"
-#endif
 
 #define IOTIVITY_TEST_STACKSIZE   4096
 #define IOTIVITY_TEST_PRI   100
