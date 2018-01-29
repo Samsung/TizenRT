@@ -281,7 +281,7 @@ static void utc_systemio_gpio_unregister_n(void)
 
 static void utc_systemio_gpio_close_p(void)
 {
-	TC_ASSERT_EQ("iotbus_gpio_close", iotbus_gpio_close(gpio), IOTBUS_ERROR_NONE);
+	TC_ASSERT_EQ("iotbus_gpio_close", iotbus_gpio_close(&gpio), IOTBUS_ERROR_NONE);
 	TC_SUCCESS_RESULT();
 }
 

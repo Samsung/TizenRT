@@ -142,10 +142,10 @@ iotbus_err:
 		printf("Unregistering RightBtn Callback Error!\n");
 	}
 
-	iotbus_gpio_close(r_led);
-	iotbus_gpio_close(b_led);
-	iotbus_gpio_close(left_btn);
-	iotbus_gpio_close(right_btn);
+	iotbus_gpio_close(&r_led);
+	iotbus_gpio_close(&b_led);
+	iotbus_gpio_close(&left_btn);
+	iotbus_gpio_close(&right_btn);
 
 	return -1;
 }

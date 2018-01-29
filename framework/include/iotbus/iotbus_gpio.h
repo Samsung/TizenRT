@@ -103,11 +103,11 @@ iotbus_gpio_context_h iotbus_gpio_open(int gpiopin);
  * @brief closes the gpio_context.
  *
  * @details @b #include <iotbus/iotbus_gpio.h>
- * @param[in] dev handle of gpio_context
+ * @param[in] dev pointer for a handle of gpio_context
  * @return On success, 0 is returned. On failure, a negative value is returned.
  * @since Tizen RT v1.0
  */
-int iotbus_gpio_close(iotbus_gpio_context_h dev);
+int iotbus_gpio_close(iotbus_gpio_context_h *dev);
 
 /**
  * @brief sets gpio direction.
