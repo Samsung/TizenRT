@@ -180,6 +180,7 @@ FAR struct pipe_dev_s *pipecommon_allocdev(void)
 		 * The read/write wait semaphores are used for signaling and,
 		 * hence, should not have priority inheritance enabled.
 		 */
+		sem_setprotocol(&dev->d_bfsem, SEM_PRIO_NONE);
 		sem_setprotocol(&dev->d_rdsem, SEM_PRIO_NONE);
 		sem_setprotocol(&dev->d_wrsem, SEM_PRIO_NONE);
 	}
