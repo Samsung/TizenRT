@@ -25,6 +25,18 @@ config NETUTILS_NTPCLIENT_SIGWAKEUP
 	default 18
 	depends on !DISABLE_SIGNALS
 
+config NETUTILS_NTPCLIENT_DEFAULT_SERVER
+	string "NTP client default server"
+	default "0.ubuntu.pool.ntp.org"
+
+config NETUTILS_NTPCLIENT_DEFAULT_SERVER_PORT
+	int "NTP client default server port"
+	default 123
+
+config NETUTILS_NTPCLIENT_DEFAULT_INTERVAL_SECONDS
+	int "NTP client default interval seconds"
+	default 60
+
 config NETUTILS_NTPCLIENT_DEBUG
 	bool "NTP client debug message option"
 	default n
