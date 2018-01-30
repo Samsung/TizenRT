@@ -233,6 +233,10 @@ int slsi_add_key(const char *ifname, void *priv, enum slsi_wpa_alg alg, const u8
 	}
 
 	if (key_type == FAPI_KEYTYPE_GROUP) {
+		if ((ndev_vif->sta.group_key_set == false) && (ndev_vif->sta.wpa_proto == SLSI_WPA_PROTOCOL_WPA)) {
+			SLSI_NET_DBG3(dev, SLSI_T20_80211, "Link UP for WPA connection\n");
+			slsi_netif_set_link_up(dev);
+		}
 		ndev_vif->sta.group_key_set = true;
 		ndev_vif->ap.cipher = params.cipher;
 	} else if (key_type == FAPI_KEYTYPE_PAIRWISE) {
@@ -987,7 +991,7 @@ int slsi_connect(void *priv, struct wpa_driver_associate_params *request)
 		}
 	}
 #endif
-
+	ndev_vif->sta.wpa_proto = request->wpa_proto;
 	ndev_vif->sta.vif_status = SLSI_VIF_STATUS_CONNECTING;
 	r = slsi_mlme_connect(sdev, dev, request);
 	if (r != 0) {

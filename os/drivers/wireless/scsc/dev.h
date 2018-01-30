@@ -335,6 +335,7 @@ struct slsi_vif_sta {
 	u16 resp_id;
 	bool gratuitous_arp_needed;
 	bool group_key_set;
+	unsigned int wpa_proto;
 };
 
 #ifdef CONFIG_SLSI_WLAN_P2P

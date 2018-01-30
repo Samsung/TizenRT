@@ -2042,7 +2042,11 @@ void slsi_mlme_connect_resp(struct slsi_dev *sdev, struct netif *dev)
 
 	cfm = slsi_mlme_req_no_cfm(sdev, dev, req);
 	WARN_ON(cfm);
-	slsi_netif_set_link_up(dev);
+
+	/* For WPA connection link up is sent after group key handshake */
+	if (ndev_vif->sta.wpa_proto != SLSI_WPA_PROTOCOL_WPA) {
+		slsi_netif_set_link_up(dev);
+	}
 }
 
 void slsi_mlme_connected_resp(struct slsi_dev *sdev, struct netif *dev, u16 peer_index)
