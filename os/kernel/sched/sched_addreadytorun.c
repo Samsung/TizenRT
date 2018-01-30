@@ -134,7 +134,6 @@ bool sched_addreadytorun(FAR struct tcb_s *btcb)
 
 		sched_addprioritized(btcb, (FAR dq_queue_t *)&g_pendingtasks);
 		btcb->task_state = TSTATE_TASK_PENDING;
-		OS_TRACE_TASK_SUSPENDED(btcb);
 		ret = false;
 	}
 
@@ -154,8 +153,9 @@ bool sched_addreadytorun(FAR struct tcb_s *btcb)
 		btcb->task_state = TSTATE_TASK_RUNNING;
 
 		btcb->flink->task_state = TSTATE_TASK_READYTORUN;
-		OS_TRACE_TASK_READY(btcb->flink);
+		OS_TRACE_TASK_SUSPENDED(btcb->flink);
 
+		OS_TRACE_TASK_READY(btcb);
 		ret = true;
 	} else {
 		/* The new btcb was added in the middle of the ready-to-run list */
