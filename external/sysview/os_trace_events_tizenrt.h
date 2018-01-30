@@ -268,10 +268,10 @@ Revision: $Rev: 3809 $
 
 #ifdef CONFIG_SYSVIEW
 #  define OS_TRACE_MSG(msg)                                       SEGGER_SYSVIEW_RecordString(OS_TRACE_ID_ANNOTATION_MSG, msg)
-#  define OS_TRACE_VALUE(msg)                                     SEGGER_SYSVIEW_RecordU32(OS_TRACE_ID_ANNOTATION_VALUE, value)
+#  define OS_TRACE_VALUE(value)                                     SEGGER_SYSVIEW_RecordU32(OS_TRACE_ID_ANNOTATION_VALUE, value)
 #else
 #  define OS_TRACE_MSG(msg)
-#  define OS_TRACE_VALUE(msg)
+#  define OS_TRACE_VALUE(value)
 #endif
 
 /*
