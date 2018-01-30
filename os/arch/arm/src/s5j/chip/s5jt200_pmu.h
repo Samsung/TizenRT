@@ -16,9 +16,9 @@
  *
  ****************************************************************************/
 /****************************************************************************
- * arch/arm/src/artik05x/src/artik05x_clock.c
+ * arch/arm/src/s5j/chip/s5j200_pmu.h
  *
- *   Copyright (C) 2010 Gregory Nutt. All rights reserved.
+ *   Copyright (C) 2009-2010, 2014-2015 Gregory Nutt. All rights reserved.
  *   Author: Gregory Nutt <gnutt@nuttx.org>
  *
  * Redistribution and use in source and binary forms, with or without
@@ -50,56 +50,30 @@
  *
  ****************************************************************************/
 
+#ifndef __ARCH_ARM_SRC_S5J_CHIP_S5JT200_PMU_H
+#define __ARCH_ARM_SRC_S5J_CHIP_S5JT200_PMU_H
+
 /****************************************************************************
- * Included Files
+ * Include
  ****************************************************************************/
-#include <tinyara/config.h>
-#include <stdio.h>
-#include <tinyara/board.h>
-#include <chip.h>
+#include "s5j_memorymap.h"
 
-#include "artik05x.h"
-#include "s5j_rtc.h"
-#include "s5j_mct.h"
-#include "up_arch.h"
-#include "chip/s5jt200_pmu.h"
+/****************************************************************************
+ * Pre-processor Definitions
+ ****************************************************************************/
+/* Power Management Unit Register Offsets ***********************************/
+#define S5J_PMU_SWRESET_OFFSET					0x0400
+#define S5J_PMU_MASK_WDT_RESET_REQUEST_OFFSET	0x040C
 
-void board_rtc_initialize(void)
-{
-#if defined(CONFIG_RTC_DRIVER)
-	int ret;
-	struct rtc_lowerhalf_s *rtclower;
+/* SWRESET Register Address *************************************************/
+#define S5J_PMU_SYSTEM_SHIFT			0
+#define S5J_PMU_SYSTEM_RESET_OFF		(0x0 << S5J_PMU_SYSTEM_SHIFT)
+#define S5J_PMU_SYSTEM_RESET_ON			(0x1 << S5J_PMU_SYSTEM_SHIFT)
 
-	rtclower = s5j_rtc_lowerhalf();
-	if (rtclower) {
-		ret = rtc_initialize(0, rtclower);
-		if (ret < 0) {
-			lldbg("Failed to register the RTC driver: %d\n", ret);
-		}
-	}
-#endif /* CONFIG_RTC_DRIVER */
-}
+/* MASK_WDT_RESET_REQUEST Register Address **********************************/
+#define S5J_PMU_CR4_WDTRESET_SHIFT		23
+#define S5J_PMU_CR4_WDTRESET_MASK		(0x1 << S5J_PMU_CR4_WDTRESET_SHIFT)
+#define S5J_PMU_CR4_WDTRESET_OFF		(0x0 << S5J_PMU_CR4_WDTRESET_SHIFT)
+#define S5J_PMU_CR4_WDTRESET_ON			(0x1 << S5J_PMU_CR4_WDTRESET_SHIFT)
 
-void board_mct_initialize(void)
-{
-#ifdef CONFIG_TIMER
-	int  i;
-	char path[CONFIG_PATH_MAX];
-
-	for (i = 0; i < CONFIG_S5J_MCT_NUM; i++) {
-		sprintf(path, "/dev/timer%d", i);
-		s5j_timer_initialize(path, i);
-	}
-#endif
-}
-
-void board_wdt_initialize(void)
-{
-#ifdef CONFIG_S5J_WATCHDOG
-	s5j_wdg_initialize(CONFIG_WATCHDOG_DEVPATH);
-
-	/* When set, PMU ignores the watchdog timer reset request. */
-	modifyreg32(S5J_PMU_BASE + S5J_PMU_MASK_WDT_RESET_REQUEST_OFFSET,
-				S5J_PMU_CR4_WDTRESET_MASK, S5J_PMU_CR4_WDTRESET_OFF);
-#endif
-}
+#endif /* __ARCH_ARM_SRC_S5J_CHIP_S5JT200_PMU_H */
