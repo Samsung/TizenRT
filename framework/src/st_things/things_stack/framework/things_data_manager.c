@@ -960,6 +960,10 @@ static int parse_things_info_json(const char *filename)
 							}
 
 							cJSON *policy = cJSON_GetObjectItem(res, KEY_DEVICE_RESOURCE_POLICY);
+							if (policy == NULL) {
+								THINGS_LOG_D(THINGS_ERROR, TAG, "[COLLECTION] Fail to get collection[iter].policy");
+								return -1;
+							}
 							node->collection[iter].policy = policy->valueint;
 							THINGS_LOG_D(THINGS_INFO, TAG, "[COLLECTION] collection[iter].policy : %d", (node->collection[iter].policy));
 
