@@ -32,6 +32,7 @@
 
 #include "up_arch.h"
 #include "artik05x.h"
+#include "chip/s5jt200_efuse.h"
 
 struct netif *wlan_netif;
 
@@ -134,14 +135,17 @@ int up_wlan_get_mac_addr(char *macaddr)
 		unsigned char bytes[8];
 	} addr;
 
-	putreg32(0x003c0180, 0x8000032c);
-	putreg32(0x00000001, 0x80000328);
+	putreg32(0x003c0180, S5J_CHIPID_BASE + S5J_EFUSE_CONFIG);
+	modifyreg32(S5J_CHIPID_BASE + S5J_EFUSE_CONTROL,
+				EFUSE_CONTROL_ADDRESS_MASK, EFUSE_CONTROL_ADDRESS_EN);
 
-	while ((getreg32(0x80000400) & 0x1) == 0)
+	/* wait for interrupt read done */
+	while ((getreg32(S5J_CHIPID_BASE + S5J_EFUSE_INT_STATUS) &
+			EFUSE_INT_STATUS_READ_DONE_MASK) == 0)
 		;
 
-	addr.low = getreg32(0x80000320);
-	addr.high = getreg32(0x80000324);
+	addr.low  = getreg32(S5J_CHIPID_BASE + S5J_EFUSE_N_SECU_RD_DATA2);
+	addr.high = getreg32(S5J_CHIPID_BASE + S5J_EFUSE_N_SECU_RD_DATA3);
 
 	addr.raw = addr.raw >> 6;
 
