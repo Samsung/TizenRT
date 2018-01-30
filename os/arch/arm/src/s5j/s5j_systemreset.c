@@ -59,6 +59,7 @@
 #include <tinyara/board.h>
 
 #include "up_arch.h"
+#include "chip/s5jt200_pmu.h"
 
 /****************************************************************************
  * Public functions
@@ -73,7 +74,11 @@
  ****************************************************************************/
 static void up_systemreset(void)
 {
-	putreg32(0x1, 0x80090400);
+	/* Software reset for the whole system
+	 * This field is automatically cleared to low on completion of
+	 * a software reset.
+	 */
+	putreg32(S5J_PMU_SYSTEM_RESET_ON, S5J_PMU_BASE + S5J_PMU_SWRESET_OFFSET);
 
 	/* Wait for the reset */
 	for (; ; ) {
