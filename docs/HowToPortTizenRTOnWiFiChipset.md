@@ -72,6 +72,63 @@ This links the supplicant to the relevant WiFi driver.
 ## Interfacing to WiFi Manager
 
 TizenRT features a generic WiFi Manager framework (API located at *framework/inc/wifi_manager*) for applications.
+In order to interface the new WiFi chipset to this WiFi Manager, please do the following:
+
+### Configuring new WiFi library, WiFi driver for WiFi Manager
+
+When you activate WiFI Manager, you have to specify your preference for WiFi library and WiFi driver.
+Accordingly, please modify the *framework/src/wifi_manager/Kconfig* as shown in the example below:
+
+```
+if WIFI_MANAGER
+choice
+	prompt "WiFi library"
+	default SELECT_WPA_SUPPLICANT
+
+...
+config SELECT_<SUPPLICANT_LIBRARY_NAME>
+	bool "Select external vendor supplicant"
+	default n
+	select <SUPPLICANT_LIBRARY_NAME>
+	---help---
+		select the third party supplicant
+endchoice # WiFi supplicant library
+
+choice
+	prompt "WiFi Driver"
+	default SELECT_SCSC_WLAN
+...
+config SELECT_DRIVER_<DRIVER_NAME>
+	bool "Enable vendor-specific Wireless Module"
+	default n
+	select DRIVER_<DRIVER_NAME>
+endchoice # WiFi driver choice
+
+if <SUPPLICANT_LIBRARY_NAME>
+source "$EXTERNALDIR/<wifi_lib_dir>/Kconfig"
+source "$EXTERNALDIR/<supplicant_dir>/Kconfig"
+endif #<SUPPLICANT_LIBRARY_NAME>
+
+```
+Here, *SELECT_<SUPPLICANT_LIBRARY_NAME>*, and *SELECT_DRIVER_<DRIVER_NAME>* are flags to enable the third-party WiFi supplicant and driver, respectively.
+When enabled, menuconfig will automatically include *<SUPPLICANT_LIBRARY_NAME>* and *DRIVER_<DRIVER_NAME>* for build with WiFi Manager.
+Finally, enable the configuration parameters for the third-party WiFi library by sourcing the Kconfigs in the relevant *external* folder
+(specified above as *$EXTERNALDIR/<supplicant_dir>/Kconfig*).
+
+Note that, if your WiFi software solution already includes the driver as an external library, you do *not* need a config parameter for build.
+However, you do need to inform TizenRT's build system accordingly, so please add in a *SELECT_DRIVER_NONE* as shown below:
+
+```
+config SELECT_DRIVER_NONE
+	bool "No Wireless Driver Module Required"
+	default n
+	depends on SELECT_<SUPPLICANT_LIBRARY_NAME>
+```
+Please add the above lines *ONLY* if you do not need wireless driver support from TizenRT. Also note, that in such cases, you should interface TizenRT's network stack directly
+to the WiFi library. These details are covered further in [Interfacing WiFi Driver to Network Stack](#1-interfacing-the-wifi-driver-to-the-network-stack).
+
+### Choosing the right WiFi utils for build
+
 The WiFi Manager framework implements specific WiFi utility functions that will directly
 talk to the WiFi supplicant software. Also, in case of a proprietary WiFi API used over WiFi supplicant, the developer
 should invoke those APIs using the WiFi utility functions. TizenRT provides a standard API for WiFi utilities, which is declared under
@@ -89,7 +146,20 @@ endif
 ## Incorporating WiFi Chipset Driver
 
 The WiFi driver source files should reside under a newly created *os/driver/wireless/<wifi_driver_name>* folder.
-Please follow the steps below to initialize the driver and interface it with the overlying network stack.
+In the following subsections, we describe how to configure the new WiFi driver for build. Additionally, we also describe how
+to initialize and interface it with the overlying network stack.
+
+### WiFi Driver Configuration
+
+The choice for the WiFi driver is already made when configuring WiFi Manager, as described in [configuring new wifi library, wifi driver for wifi manager](#configuring-new-wifi-library-wifi-driver-for-wifi-manager).
+Accordingly, please select the WiFi driver to build, by adding the lines to *os/drivers/wireless/Kconfig* as shown below:
+```
+if DRIVERS_WIRELESS && SELECT_DRIVER_<DRIVER_NAME>
+
+source drivers/wireless/<wifi_driver_name>/Kconfig
+
+endif # DRIVERS_WIRELESS
+```
 
 ### WiFi Driver Initialization
 This driver should be initialized from the main board's initialization routine.
@@ -110,9 +180,54 @@ driver initialization function as shown in the example above.
 
 Next, inside your board specific directory, create a *\<board\>_wlan.c* file. This file should include following functionalities:
 #### 1. Interfacing the WiFi driver to the Network Stack
-In TizenRT, the *netif* structure links the WiFi driver to the overlying network layer. Netif creation should
-be called from the WiFi driver initialization function. Please make sure you have implemented *netif.c* and *netif.h* files in your driver code for this purpose.
-An example netif creation can be found under *up_wlan_init* function  in *os/arch/arm/src/sidk_s5jt200/s5jt200_wlan.c* file. In this case,
+In TizenRT, the *netif* structure links the WiFi driver to the overlying network layer. Netif creation and initialization should
+follow immediately after WiFi driver initialization. Inside the *\<board\>_wlan.c* file, this can be implemented as a three step process
+1. Allocate memory for LWIP's netif structure, and populate its fields with the driver API
+2. Add the netif created in step 1 to TizenRT's runtime environment
+3. Initialize the netif created in step 2, thus completing the interface between LWIP and the WiFi driver.
+
+Please note that netif creation (Step 1) should be called from *board_initialize()* function defined at *os/arch/arm/src/\<board_name\>/src/\<board\>_boot.c*.
+The three steps above can be implemented as functions, as shown in the template code below:
+
+```
+/* STEP 3: Initialization of the netif structure - this completes the linking
+ * between the driver and the network layer
+ */
+static err_t wlan_init(struct netif *netif)
+{
+	// netif init code ...
+}
+/* STEP 2: Add the netif structure globally, so that different protocol layers
+ * can access it.
+ */
+void up_wlan_init(struct netif *dev)
+{
+	// netif_add code ...
+}
+/* STEP 1: Create a netif structure, and populate its fields with driver API functions
+ */
+void up_wlan_netif_create(void)
+{
+	struct netif *dev = NULL;
+	// netif creation code ...
+#ifndef SELECT_DRIVER_NONE
+	dev->d_ifup = <wifi_driver_init_fn>;
+	dev->d_ifdown = <wifi_driver_deinit_fn>;
+	dev->linkoutput = <wifi_driver_linkoutput_fn;
+	dev->output = <wifi_driver_output_fn>;
+#else
+	dev->d_ifup = <wifi_library_init_fn>;
+	dev->d_ifdown = <wifi_library_deinit_fn>;
+	dev->linkoutput = <wifi_library_linkoutput_fn;
+	dev->output = <wifi_library_output_fn>;
+#endif
+	up_wlan_init(dev);
+}
+
+```
+In Step 1 above, we link the *netif* structure to either WiFi Driver functions or external WiFi library functions, depending upon the third-party WiFi solution type.
+The *netif* structure is populated with function handlers for managing the network interface (*d_ifup* and *d_ifdown*), as well as handlers for data (*linkoutput* and *output*).
+An example netif initialization can be found under *up_wlan_init* function  in *os/arch/arm/src/sidk_s5jt200/s5jt200_wlan.c* file. In this case,
 during bootup, *up_wlan_init* is invoked from the driver initialization routine, and creates the *netif* structure. The *up_wlan_init* function is shown below for reference:
 
 ```

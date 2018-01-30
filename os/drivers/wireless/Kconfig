@@ -3,7 +3,7 @@
 # see kconfig-language at https://www.kernel.org/doc/Documentation/kbuild/kconfig-language.txt
 #
 
-if DRIVERS_WIRELESS
+if DRIVERS_WIRELESS && SELECT_SCSC_WLAN
 
 source drivers/wireless/scsc/Kconfig
 
