@@ -129,6 +129,8 @@ bool sched_removereadytorun(FAR struct tcb_s *rtcb)
 		sched_note_switch(rtcb, ntcb);
 		ntcb->task_state = TSTATE_TASK_RUNNING;
 		ret = true;
+
+		OS_TRACE_TASK_SUSPENDED(rtcb);
 	}
 
 	/* Remove the TCB from the ready-to-run list */
