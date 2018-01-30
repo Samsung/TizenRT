@@ -25,7 +25,7 @@
  * in the "oicXXdef.h"
  */
 
-#define OIC_STACK_FIRMWARE_VERSION      "OIC_0.9.1.D.17.03.31_1_30dbca2"
+#define ST_THINGS_STACK_VERSION      "ST_THINGS_1.0_18.1.30"
 
 /* Resource Types */
 #define OIC_INTERFACE_BASELINE          "oic.if.baseline"

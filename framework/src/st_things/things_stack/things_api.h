@@ -36,7 +36,6 @@ extern "C" {
 #define MAX_IPADDR           (16)
 #define OIC_UUID_STRING_SIZE (37)
 
-const char *things_get_sw_version();
 const char *things_get_device_id_string();
 int things_set_device_name(int dev_num, char *name);
 

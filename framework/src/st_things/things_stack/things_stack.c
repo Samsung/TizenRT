@@ -108,11 +108,6 @@ static volatile rst_state_e m_reset_bit_mask = RST_COMPLETE;
 static void *t_things_reset_loop(reset_args_s *args);
 static void *t_things_abort_loop(s_abort_s *contents);
 
-const char *things_get_sw_version()
-{
-	return OIC_STACK_FIRMWARE_VERSION;
-}
-
 const char *things_get_device_id_string()
 {
 	return OCGetServerInstanceIDString();
@@ -420,7 +415,7 @@ int things_initialize_stack(const char *json_path, bool *easysetup_completed)
 	}
 
 	things_log_init();
-	things_log_set_version(OIC_STACK_FIRMWARE_VERSION);
+	things_log_set_version(ST_THINGS_STACK_VERSION);
 
 	if (!dm_init_module(json_path)) {
 		THINGS_LOG(THINGS_ERROR, TAG, "dm_init_module() failed");
@@ -466,7 +461,7 @@ int things_start_stack()
 		THINGS_LOG_ERROR(THINGS_ERROR, TAG, "Failed to initialize WiFi manager");
 		return 0;
 	}
-	THINGS_LOG_D(THINGS_INFO, TAG, "THINGS_STACK version : %s", OIC_STACK_FIRMWARE_VERSION);
+	THINGS_LOG_D(THINGS_INFO, TAG, "ST_Things SDK version : %s", ST_THINGS_STACK_VERSION);
 
 	if (dm_get_easysetup_connectivity_type() == es_conn_type_softap) {
 		if (dm_is_there_things_cloud() == false) {
