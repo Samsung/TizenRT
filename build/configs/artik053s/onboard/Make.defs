@@ -182,3 +182,7 @@ define MAKEIMAGE
 		--board=$(BOARD_NAME) --secure=$(TOPDIR)/$(CONFIG_ARTIK05X_CODESIGNER_PATH) \
 		--make-only $(1)
 endef
+
+define CRASHDUMP
+	@$(TOPDIR)/../build/configs/artik05x/artik05x_crashdump.sh $(BOARD_NAME) $(1) $(2)
+endef

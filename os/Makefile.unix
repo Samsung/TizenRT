@@ -530,7 +530,7 @@ $(BIN): pass1deps pass2deps pass1 pass2
 # 		make download [ALL | BOOTLOADER | RESOURCE | KERNEL | APP]
 
 
-ifneq (,$(filter $(firstword $(MAKECMDGOALS)),download image))
+ifneq (,$(filter $(firstword $(MAKECMDGOALS)),download image crashdump))
   # use the rest as arguments for "download"
   TARGET_ARGS := $(wordlist 2,$(words $(MAKECMDGOALS)),$(MAKECMDGOALS))
   # Turn TARGET_ARGS into do-nothing targets
@@ -539,6 +539,9 @@ endif
 
 download:
 	$(call DOWNLOAD, $(TARGET_ARGS))
+
+crashdump:
+	$(call CRASHDUMP, $(TARGET_ARGS))
 
 #
 # package
