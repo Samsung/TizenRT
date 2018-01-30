@@ -48,13 +48,10 @@ static void tc_net_getsockname_p(void)
 	struct sockaddr foo;
 
 	sock = socket(AF_INET, SOCK_STREAM, 0);
-
 	int ret = getsockname(sock, &foo, (socklen_t *)&len);
-
+	close(sock);
 	TC_ASSERT_NEQ("getsockname", ret, -1);
 	TC_SUCCESS_RESULT();
-
-	close(sock);
 }
 
 /**
@@ -73,11 +70,9 @@ static void tc_net_getsockname_unix_p(void)
 
 	sock = socket(AF_UNIX, SOCK_STREAM, 0);
 	int ret = getsockname(sock, &foo, (socklen_t *)&len);
-
+	close(sock);
 	TC_ASSERT_NEQ("getsockname", ret, -1);
 	TC_SUCCESS_RESULT();
-
-	close(sock);
 }
 
 /**
@@ -123,7 +118,6 @@ static void tc_net_getsockname_close_n(void)
 
 	TC_ASSERT_NEQ("getsockname", ret, 0);
 	TC_SUCCESS_RESULT();
-
 }
 
 /**
@@ -142,11 +136,9 @@ static void tc_net_getsockname_udp_p(void)
 
 	sock = socket(AF_INET, SOCK_DGRAM, IPPROTO_UDP);
 	int ret = getsockname(sock, &foo, (socklen_t *)&len);
-
+	close(sock);
 	TC_ASSERT_NEQ("getsockname", ret, -1);
 	TC_SUCCESS_RESULT();
-
-	close(sock);
 }
 
 /**
@@ -165,11 +157,9 @@ static void tc_net_getsockname_icmp_p(void)
 
 	sock = socket(AF_INET, SOCK_DGRAM, IPPROTO_ICMP);
 	int ret = getsockname(sock, &foo, (socklen_t *)&len);
-
+	close(sock);
 	TC_ASSERT_NEQ("getsockname", ret, -1);
 	TC_SUCCESS_RESULT();
-
-	close(sock);
 }
 
 /**
