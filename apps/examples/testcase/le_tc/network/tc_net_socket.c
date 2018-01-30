@@ -118,7 +118,7 @@ static void tc_net_socket_af_inet_sock_dgram_tcp_n(void)
 
 	int fd = -1;
 	fd = socket(AF_INET, SOCK_DGRAM, IPPROTO_TCP);
-	TC_ASSERT_EQ("socket", fd, -1)
+	TC_ASSERT_EQ_CLEANUP("socket", fd, -1, close(fd))
 	TC_SUCCESS_RESULT()
 
 	close(fd);
@@ -193,10 +193,9 @@ static void tc_net_socket_af_inet_sock_dgram_igmp_p(void)
 */
 static void tc_net_socket_af_inet_sock_dgram_ipv6_n(void)
 {
-
 	int fd = -1;
 	fd = socket(AF_INET, SOCK_DGRAM, IPPROTO_IPV6);
-	TC_ASSERT_EQ("socket", fd, -1)
+	TC_ASSERT_EQ_CLEANUP("socket", fd, -1, close(fd))
 	TC_SUCCESS_RESULT()
 
 	close(fd);
@@ -253,7 +252,7 @@ static void tc_net_socket_af_inet_sock_dgram_icmpv6_n(void)
 
 	int fd = -1;
 	fd = socket(AF_INET, SOCK_DGRAM, IPPROTO_ICMPV6);
-	TC_ASSERT_EQ("socket", fd, -1)
+	TC_ASSERT_EQ_CLEANUP("socket", fd, -1, close(fd))
 	TC_SUCCESS_RESULT()
 
 	close(fd);
@@ -272,7 +271,7 @@ static void tc_net_socket_af_unix_sock_dgram_tcp_n(void)
 
 	int fd = -1;
 	fd = socket(AF_UNIX, SOCK_DGRAM, IPPROTO_TCP);
-	TC_ASSERT_EQ("socket", fd, -1)
+	TC_ASSERT_EQ_CLEANUP("socket", fd, -1, close(fd))
 	TC_SUCCESS_RESULT()
 
 	close(fd);
@@ -310,7 +309,7 @@ static void tc_net_socket_af_unix_sock_dgram_icmp_n(void)
 
 	int fd = -1;
 	fd = socket(AF_UNIX, SOCK_DGRAM, IPPROTO_ICMP);
-	TC_ASSERT_EQ("socket", fd, -1)
+	TC_ASSERT_EQ_CLEANUP("socket", fd, -1, close(fd))
 	TC_SUCCESS_RESULT()
 
 	close(fd);
@@ -329,7 +328,7 @@ static void tc_net_socket_af_unix_sock_dgram_igmp_n(void)
 
 	int fd = -1;
 	fd = socket(AF_UNIX, SOCK_DGRAM, IPPROTO_IGMP);
-	TC_ASSERT_EQ("socket", fd, -1)
+	TC_ASSERT_EQ_CLEANUP("socket", fd, -1, close(fd))
 	TC_SUCCESS_RESULT()
 
 	close(fd);
@@ -347,7 +346,7 @@ static void tc_net_socket_af_x25_sock_stream_n(void)
 {
 	int fd = -1;
 	fd = socket(AF_X25, SOCK_STREAM, 0);
-	TC_ASSERT_EQ("socket", fd, -1)
+	TC_ASSERT_EQ_CLEANUP("socket", fd, -1, close(fd))
 	TC_SUCCESS_RESULT()
 
 	close(fd);
@@ -365,7 +364,7 @@ static void tc_net_socket_af_ax25_sock_stream_n(void)
 {
 	int fd = -1;
 	fd = socket(AF_AX25, SOCK_STREAM, 0);
-	TC_ASSERT_EQ("socket", fd, -1)
+	TC_ASSERT_EQ_CLEANUP("socket", fd, -1, close(fd))
 	TC_SUCCESS_RESULT()
 
 	close(fd);
@@ -383,7 +382,7 @@ static void tc_net_socket_af_packet_sock_stream_n(void)
 {
 	int fd = -1;
 	fd = socket(AF_PACKET, SOCK_STREAM, 0);
-	TC_ASSERT_EQ("socket", fd, -1)
+	TC_ASSERT_EQ_CLEANUP("socket", fd, -1, close(fd))
 	TC_SUCCESS_RESULT()
 
 	close(fd);
@@ -421,7 +420,7 @@ static void tc_net_socket_af_unix_sock_stream_tcp_p(void)
 	fd = socket(AF_UNIX, SOCK_STREAM, IPPROTO_TCP);
 	TC_ASSERT_GEQ("socket", fd, 0)
 	TC_SUCCESS_RESULT()
-
+	close(fd);
 }
 
 /**
@@ -436,7 +435,7 @@ static void tc_net_socket_af_unix_sock_stream_udp_n(void)
 {
 	int fd = -1;
 	fd = socket(AF_UNIX, SOCK_STREAM, IPPROTO_UDP);
-	TC_ASSERT_EQ("socket", fd, -1)
+	TC_ASSERT_EQ_CLEANUP("socket", fd, -1, close(fd))
 	TC_SUCCESS_RESULT()
 
 	close(fd);
@@ -455,7 +454,7 @@ static void tc_net_socket_af_unix_sock_stream_icmp_n(void)
 
 	int fd = -1;
 	fd = socket(AF_UNIX, SOCK_STREAM, IPPROTO_ICMP);
-	TC_ASSERT_EQ("socket", fd, -1)
+	TC_ASSERT_EQ_CLEANUP("socket", fd, -1, close(fd))
 	TC_SUCCESS_RESULT()
 
 	close(fd);
@@ -474,7 +473,7 @@ static void tc_net_socket_af_unix_sock_stream_igmp_n(void)
 
 	int fd = -1;
 	fd = socket(AF_UNIX, SOCK_STREAM, IPPROTO_IGMP);
-	TC_ASSERT_EQ("socket", fd, -1)
+	TC_ASSERT_EQ_CLEANUP("socket", fd, -1, close(fd))
 	TC_SUCCESS_RESULT()
 
 	close(fd);
@@ -493,7 +492,7 @@ static void tc_net_socket_af_unix_sock_stream_ipv6_n(void)
 
 	int fd = -1;
 	fd = socket(AF_UNIX, SOCK_STREAM, IPPROTO_IPV6);
-	TC_ASSERT_EQ("socket", fd, -1)
+	TC_ASSERT_EQ_CLEANUP("socket", fd, -1, close(fd))
 	TC_SUCCESS_RESULT()
 
 	close(fd);
@@ -512,7 +511,7 @@ static void tc_net_socket_af_unixsock_stream_routing_n(void)
 
 	int fd = -1;
 	fd = socket(AF_UNIX, SOCK_STREAM, IPPROTO_ROUTING);
-	TC_ASSERT_EQ("socket", fd, -1)
+	TC_ASSERT_EQ_CLEANUP("socket", fd, -1, close(fd))
 	TC_SUCCESS_RESULT()
 
 	close(fd);
@@ -531,7 +530,7 @@ static void tc_net_socket_af_unix_sock_stream_icmpv6_n(void)
 
 	int fd = -1;
 	fd = socket(AF_UNIX, SOCK_STREAM, IPPROTO_ICMPV6);
-	TC_ASSERT_EQ("socket", fd, -1)
+	TC_ASSERT_EQ_CLEANUP("socket", fd, -1, close(fd))
 	TC_SUCCESS_RESULT()
 
 	close(fd);
@@ -549,7 +548,7 @@ static void tc_net_socket_af_netlink_sock_stream_n(void)
 {
 	int fd = -1;
 	fd = socket(AF_NETLINK, SOCK_STREAM, 0);
-	TC_ASSERT_EQ("socket", fd, -1)
+	TC_ASSERT_EQ_CLEANUP("socket", fd, -1, close(fd))
 	TC_SUCCESS_RESULT()
 
 	close(fd);
@@ -603,7 +602,7 @@ static void tc_net_socket_af_inet_sock_stream_protocol_n(void)
 {
 	int fd = -1;
 	fd = socket(AF_INET, SOCK_STREAM, 256);
-	TC_ASSERT_EQ("socket", fd, -1)
+	TC_ASSERT_EQ_CLEANUP("socket", fd, -1, close(fd))
 	TC_SUCCESS_RESULT()
 
 	close(fd);
@@ -622,7 +621,7 @@ static void tc_net_socket_domain_sock_stream_protocol_n(void)
 
 	int fd = -1;
 	fd = socket(30, SOCK_STREAM, 256);
-	TC_ASSERT_EQ("socket", fd, -1)
+	TC_ASSERT_EQ_CLEANUP("socket", fd, -1, close(fd))
 	TC_SUCCESS_RESULT()
 
 	close(fd);
@@ -640,7 +639,7 @@ static void tc_net_socket_af_inet_type_protocol_n(void)
 {
 	int fd = -1;
 	fd = socket(AF_INET, 7, 256);
-	TC_ASSERT_EQ("socket", fd, -1)
+	TC_ASSERT_EQ_CLEANUP("socket", fd, -1, close(fd))
 	TC_SUCCESS_RESULT()
 
 	close(fd);
@@ -658,7 +657,7 @@ static void tc_net_socket_domain_type_protocol_n(void)
 {
 	int fd = -1;
 	fd = socket(13, 6, 256);
-	TC_ASSERT_EQ("socket", fd, -1)
+	TC_ASSERT_EQ_CLEANUP("socket", fd, -1, close(fd))
 	TC_SUCCESS_RESULT()
 
 	close(fd);
@@ -676,7 +675,7 @@ static void tc_net_socket_domain_sock_stream_tcp_n(void)
 {
 	int fd = -1;
 	fd = socket(40, SOCK_STREAM, IPPROTO_TCP);
-	TC_ASSERT_EQ("socket", fd, -1)
+	TC_ASSERT_EQ_CLEANUP("socket", fd, -1, close(fd))
 	TC_SUCCESS_RESULT()
 
 	close(fd);
@@ -694,7 +693,7 @@ static void tc_net_socket_af_inet_sock_stream_udp_n(void)
 {
 	int fd = -1;
 	fd = socket(AF_INET, SOCK_STREAM, IPPROTO_UDP);
-	TC_ASSERT_EQ("socket", fd, -1)
+	TC_ASSERT_EQ_CLEANUP("socket", fd, -1, close(fd))
 	TC_SUCCESS_RESULT()
 
 	close(fd);
@@ -748,7 +747,7 @@ static void tc_net_socket_af_inet_sock_stream_protoipv6_n(void)
 {
 	int fd = -1;
 	fd = socket(AF_INET, SOCK_STREAM, IPPROTO_IPV6);
-	TC_ASSERT_EQ("socket", fd, -1)
+	TC_ASSERT_EQ_CLEANUP("socket", fd, -1, close(fd))
 	TC_SUCCESS_RESULT()
 
 	close(fd);
@@ -802,7 +801,7 @@ static void tc_net_socket_af_inet_sock_stream_icmpv6_n(void)
 {
 	int fd = -1;
 	fd = socket(AF_INET, SOCK_STREAM, IPPROTO_ICMPV6);
-	TC_ASSERT_EQ("socket", fd, -1)
+	TC_ASSERT_EQ_CLEANUP("socket", fd, -1, close(fd))
 	TC_SUCCESS_RESULT()
 
 	close(fd);
@@ -838,7 +837,7 @@ static void tc_net_socket_af_inet_sock_stream_type_n(void)
 {
 	int fd = -1;
 	fd = socket(AF_INET, 5, 0);
-	TC_ASSERT_EQ("socket", fd, -1)
+	TC_ASSERT_EQ_CLEANUP("socket", fd, -1, close(fd))
 	TC_SUCCESS_RESULT()
 
 	close(fd);
@@ -856,7 +855,7 @@ static void tc_net_socket_af_inet_sock_stream_domain_n(void)
 {
 	int fd = -1;
 	fd = socket(12, SOCK_STREAM, 0);
-	TC_ASSERT_EQ("socket", fd, -1)
+	TC_ASSERT_EQ_CLEANUP("socket", fd, -1, close(fd))
 	TC_SUCCESS_RESULT()
 
 	close(fd);
@@ -874,7 +873,7 @@ static void tc_net_socket_af_inet_sock_stream_domain_protocol_n(void)
 {
 	int fd = -1;
 	fd = socket(15, SOCK_STREAM, 289);
-	TC_ASSERT_EQ("socket", fd, -1)
+	TC_ASSERT_EQ_CLEANUP("socket", fd, -1, close(fd))
 	TC_SUCCESS_RESULT()
 
 	close(fd);
@@ -892,7 +891,7 @@ static void tc_net_socket_af_inet_sock_stream_type_protocol_n(void)
 {
 	int fd = -1;
 	fd = socket(AF_INET, 7, 300);
-	TC_ASSERT_EQ("socket", fd, -1)
+	TC_ASSERT_EQ_CLEANUP("socket", fd, -1, close(fd))
 	TC_SUCCESS_RESULT()
 
 	close(fd);
@@ -928,7 +927,7 @@ static void tc_net_socket_invalid_domain_sock_stream_n(void)
 {
 	int fd = -1;
 	fd = socket(-1, SOCK_STREAM, 0);
-	TC_ASSERT_EQ("socket", fd, -1)
+	TC_ASSERT_EQ_CLEANUP("socket", fd, -1, close(fd))
 	TC_SUCCESS_RESULT()
 
 	close(fd);
@@ -946,7 +945,7 @@ static void tc_net_socket_af_unix_sock_dgram_ipv6_n(void)
 {
 	int fd = -1;
 	fd = socket(AF_UNIX, SOCK_DGRAM, IPPROTO_IPV6);
-	TC_ASSERT_EQ("socket", fd, -1)
+	TC_ASSERT_EQ_CLEANUP("socket", fd, -1, close(fd))
 	TC_SUCCESS_RESULT()
 
 	close(fd);
@@ -964,7 +963,7 @@ static void tc_net_socket_af_unix_sock_dgram_routing_n(void)
 {
 	int fd = -1;
 	fd = socket(AF_UNIX, SOCK_DGRAM, IPPROTO_ROUTING);
-	TC_ASSERT_EQ("socket", fd, -1)
+	TC_ASSERT_EQ_CLEANUP("socket", fd, -1, close(fd))
 	TC_SUCCESS_RESULT()
 
 	close(fd);
@@ -1000,7 +999,7 @@ static void tc_net_socket_af_unix_sock_dgram_icmpv6_n(void)
 {
 	int fd = -1;
 	fd = socket(AF_UNIX, SOCK_DGRAM, IPPROTO_ICMPV6);
-	TC_ASSERT_EQ("socket", fd, -1)
+	TC_ASSERT_EQ_CLEANUP("socket", fd, -1, close(fd))
 	TC_SUCCESS_RESULT()
 
 	close(fd);
@@ -1072,7 +1071,7 @@ static void tc_net_socket_af_x25_sock_dgram_n(void)
 {
 	int fd = -1;
 	fd = socket(AF_X25, SOCK_DGRAM, 0);
-	TC_ASSERT_EQ("socket", fd, -1)
+	TC_ASSERT_EQ_CLEANUP("socket", fd, -1, close(fd))
 	TC_SUCCESS_RESULT()
 
 	close(fd);
@@ -1090,7 +1089,7 @@ static void tc_net_socket_af_ax25_sock_dgram_n(void)
 {
 	int fd = -1;
 	fd = socket(AF_AX25, SOCK_DGRAM, 0);
-	TC_ASSERT_EQ("socket", fd, -1)
+	TC_ASSERT_EQ_CLEANUP("socket", fd, -1, close(fd))
 	TC_SUCCESS_RESULT()
 
 	close(fd);
@@ -1217,7 +1216,7 @@ static void tc_net_socket_af_inet_sock_raw_ipv6_n(void)
 
 	int fd = -1;
 	fd = socket(AF_INET, SOCK_RAW, IPPROTO_IPV6);
-	TC_ASSERT_EQ("socket", fd, -1)
+	TC_ASSERT_EQ_CLEANUP("socket", fd, -1, close(fd))
 	TC_SUCCESS_RESULT()
 
 	close(fd);
@@ -1274,7 +1273,7 @@ static void tc_net_socket_af_inet_sock_raw_icmpv6_n(void)
 
 	int fd = -1;
 	fd = socket(AF_INET, SOCK_RAW, IPPROTO_ICMPV6);
-	TC_ASSERT_EQ("socket", fd, -1)
+	TC_ASSERT_EQ_CLEANUP("socket", fd, -1, close(fd))
 	TC_SUCCESS_RESULT()
 
 	close(fd);
@@ -1293,7 +1292,7 @@ static void tc_net_socket_af_unix_sock_raw_n(void)
 
 	int fd = -1;
 	fd = socket(AF_UNIX, SOCK_RAW, 0);
-	TC_ASSERT_EQ("socket", fd, -1)
+	TC_ASSERT_EQ_CLEANUP("socket", fd, -1, close(fd))
 	TC_SUCCESS_RESULT()
 
 	close(fd);
@@ -1312,7 +1311,7 @@ static void tc_net_socket_af_unix_sock_raw_tcp_n(void)
 
 	int fd = -1;
 	fd = socket(AF_UNIX, SOCK_RAW, IPPROTO_TCP);
-	TC_ASSERT_EQ("socket", fd, -1)
+	TC_ASSERT_EQ_CLEANUP("socket", fd, -1, close(fd))
 	TC_SUCCESS_RESULT()
 
 	close(fd);
@@ -1331,7 +1330,7 @@ static void tc_net_socket_af_unix_sock_raw_udp_n(void)
 
 	int fd = -1;
 	fd = socket(AF_UNIX, SOCK_RAW, IPPROTO_UDP);
-	TC_ASSERT_EQ("socket", fd, -1)
+	TC_ASSERT_EQ_CLEANUP("socket", fd, -1, close(fd))
 	TC_SUCCESS_RESULT()
 
 	close(fd);
@@ -1350,7 +1349,7 @@ static void tc_net_socket_af_unix_sock_raw_icmp_n(void)
 
 	int fd = -1;
 	fd = socket(AF_UNIX, SOCK_RAW, IPPROTO_ICMP);
-	TC_ASSERT_EQ("socket", fd, -1)
+	TC_ASSERT_EQ_CLEANUP("socket", fd, -1, close(fd))
 	TC_SUCCESS_RESULT()
 
 	close(fd);
@@ -1369,7 +1368,7 @@ static void tc_net_socket_af_unix_sock_raw_igmp_n(void)
 
 	int fd = -1;
 	fd = socket(AF_UNIX, SOCK_RAW, IPPROTO_IGMP);
-	TC_ASSERT_EQ("socket", fd, -1)
+	TC_ASSERT_EQ_CLEANUP("socket", fd, -1, close(fd))
 	TC_SUCCESS_RESULT()
 
 	close(fd);
@@ -1388,7 +1387,7 @@ static void tc_net_socket_af_unix_sock_raw_ipv6_n(void)
 
 	int fd = -1;
 	fd = socket(AF_UNIX, SOCK_RAW, IPPROTO_IPV6);
-	TC_ASSERT_EQ("socket", fd, -1)
+	TC_ASSERT_EQ_CLEANUP("socket", fd, -1, close(fd))
 	TC_SUCCESS_RESULT()
 
 	close(fd);
@@ -1407,7 +1406,7 @@ static void tc_net_socket_af_unix_sock_raw_routing_n(void)
 
 	int fd = -1;
 	fd = socket(AF_UNIX, SOCK_RAW, IPPROTO_ROUTING);
-	TC_ASSERT_EQ("socket", fd, -1)
+	TC_ASSERT_EQ_CLEANUP("socket", fd, -1, close(fd))
 	TC_SUCCESS_RESULT()
 
 	close(fd);
@@ -1426,7 +1425,7 @@ static void tc_net_socket_af_unix_sock_raw_fragment_n(void)
 
 	int fd = -1;
 	fd = socket(AF_UNIX, SOCK_RAW, IPPROTO_FRAGMENT);
-	TC_ASSERT_EQ("socket", fd, -1)
+	TC_ASSERT_EQ_CLEANUP("socket", fd, -1, close(fd))
 	TC_SUCCESS_RESULT()
 
 	close(fd);
@@ -1445,7 +1444,7 @@ static void tc_net_socket_af_unix_sock_raw_icmpv6_n(void)
 
 	int fd = -1;
 	fd = socket(AF_UNIX, SOCK_RAW, IPPROTO_ICMPV6);
-	TC_ASSERT_EQ("socket", fd, -1)
+	TC_ASSERT_EQ_CLEANUP("socket", fd, -1, close(fd))
 	TC_SUCCESS_RESULT()
 
 	close(fd);
