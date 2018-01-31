@@ -15,6 +15,30 @@ config NETUTILS_WEBCLIENT
 		Async mode is excuted on new task.
 
 if NETUTILS_WEBCLIENT
+	config WEBCLIENT_MAXHTTPLINE
+	int "Maximum Httpline Size"
+	default 200
+	---help---
+		Sets Buffer HTTP header data and parse line at a time.
+
+	config WEBCLIENT_MAXMIMESIZE
+	int "Maximum MimeType Size"
+	default 32
+	---help---
+		Sets Maximum Mimetype Size.
+
+	config WEBCLIENT_MAXHOSTNAME
+	int "Maximum Hostname Size"
+	default 128
+	---help---
+		Sets Maximum Hostname Size.
+
+	config WEBCLIENT_MAXFILENAME
+	int "Maximum Filename Size"
+	default 128
+	---help---
+		Sets Maximum Filename Size.
+
 	config WGET_USERAGENT
 	string "User Agent"
 	default "TinyARA"
