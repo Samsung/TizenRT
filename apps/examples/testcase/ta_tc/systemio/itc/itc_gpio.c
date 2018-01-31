@@ -66,7 +66,7 @@ static void itc_systemio_gpio_open_close_p(void)
 	g_gpio_h = iotbus_gpio_open(GPIO_PIN);
 	TC_ASSERT_NEQ("iotbus_gpio_open", g_gpio_h, NULL);
 
-	ret = iotbus_gpio_close(&g_gpio_h);
+	ret = iotbus_gpio_close(g_gpio_h);
 	TC_ASSERT_EQ("iotbus_gpio_close", ret, 0);
 
 	TC_SUCCESS_RESULT();
@@ -116,8 +116,8 @@ static void itc_systemio_gpio_set_get_direction_p(void)
 		}
 	}
 
-	TC_ASSERT_EQ_CLEANUP("iotbus_gpio_set_get_direction", check, true, iotbus_gpio_close(&g_gpio_h));
-	ret = iotbus_gpio_close(&g_gpio_h);
+	TC_ASSERT_EQ_CLEANUP("iotbus_gpio_set_get_direction", check, true, iotbus_gpio_close(g_gpio_h));
+	ret = iotbus_gpio_close(g_gpio_h);
 	TC_ASSERT_EQ("iotbus_gpio_close", ret, 0);
 
 	TC_SUCCESS_RESULT();
@@ -164,8 +164,8 @@ static void itc_systemio_gpio_set_get_edge_mode_p(void)
 		}
 	}
 
-	TC_ASSERT_EQ_CLEANUP("iotbus_gpio_set_get_edge", check, true, iotbus_gpio_close(&g_gpio_h));
-	ret = iotbus_gpio_close(&g_gpio_h);
+	TC_ASSERT_EQ_CLEANUP("iotbus_gpio_set_get_edge", check, true, iotbus_gpio_close(g_gpio_h));
+	ret = iotbus_gpio_close(g_gpio_h);
 	TC_ASSERT_EQ("iotbus_gpio_close", ret, 0);
 
 	TC_SUCCESS_RESULT();
@@ -213,8 +213,8 @@ static void itc_systemio_gpio_set_get_drive_mode_p(void)
 		}
 	}
 
-	TC_ASSERT_EQ_CLEANUP("iotbus_gpio_set_get_drive_mode", check, true, iotbus_gpio_close(&g_gpio_h));
-	ret = iotbus_gpio_close(&g_gpio_h);
+	TC_ASSERT_EQ_CLEANUP("iotbus_gpio_set_get_drive_mode", check, true, iotbus_gpio_close(g_gpio_h));
+	ret = iotbus_gpio_close(g_gpio_h);
 	TC_ASSERT_EQ("iotbus_gpio_close", ret, 0);
 
 	TC_SUCCESS_RESULT();
@@ -237,9 +237,9 @@ static void itc_systemio_gpio_get_pin_p(void)
 	TC_ASSERT_NEQ("iotbus_gpio_open", m_gpio, NULL);
 
 	gpio_get_pin = iotbus_gpio_get_pin(m_gpio);
-	TC_ASSERT_EQ_CLEANUP("iotbus_gpio_get_pin", gpio_get_pin, gpio_set_pin, iotbus_gpio_close(&m_gpio));
+	TC_ASSERT_EQ_CLEANUP("iotbus_gpio_get_pin", gpio_get_pin, gpio_set_pin, iotbus_gpio_close(m_gpio));
 
-	ret = iotbus_gpio_close(&m_gpio);
+	ret = iotbus_gpio_close(m_gpio);
 	TC_ASSERT_EQ("iotbus_gpio_close", ret, 0);
 
 	TC_SUCCESS_RESULT();
@@ -261,12 +261,12 @@ static void itc_systemio_gpio_read_write_p(void)
 	TC_ASSERT_NEQ("iotbus_gpio_open", g_gpio_h, NULL);
 
 	ret = iotbus_gpio_read(g_gpio_h);
-	TC_ASSERT_EQ_CLEANUP("iotbus_gpio_read", (ret < 0), false, iotbus_gpio_close(&g_gpio_h));
+	TC_ASSERT_EQ_CLEANUP("iotbus_gpio_read", (ret < 0), false, iotbus_gpio_close(g_gpio_h));
 
 	ret = iotbus_gpio_write(g_gpio_h, 1);
-	TC_ASSERT_EQ_CLEANUP("iotbus_gpio_write", (ret < 0), false, iotbus_gpio_close(&g_gpio_h));
+	TC_ASSERT_EQ_CLEANUP("iotbus_gpio_write", (ret < 0), false, iotbus_gpio_close(g_gpio_h));
 
-	ret = iotbus_gpio_close(&g_gpio_h);
+	ret = iotbus_gpio_close(g_gpio_h);
 	TC_ASSERT_EQ("iotbus_gpio_close", ret, 0);
 
 	TC_SUCCESS_RESULT();
@@ -294,48 +294,48 @@ static void itc_systemio_gpio_register_unregister_callback_p(void)
 	TC_ASSERT_NEQ("iotbus_gpio_open", g_gpio_h, NULL);
 
 	g_gpio_h2 = iotbus_gpio_open(gpio_pin2);
-	TC_ASSERT_NEQ_CLEANUP("iotbus_gpio_open", g_gpio_h2, NULL, iotbus_gpio_close(&g_gpio_h));
+	TC_ASSERT_NEQ_CLEANUP("iotbus_gpio_open", g_gpio_h2, NULL, iotbus_gpio_close(g_gpio_h));
 
 	ret = iotbus_gpio_set_direction(g_gpio_h, IOTBUS_GPIO_DIRECTION_OUT);
-	TC_ASSERT_EQ_CLEANUP("iotbus_gpio_set_direction", ret, 0, iotbus_gpio_close(&g_gpio_h2); iotbus_gpio_close(&g_gpio_h));
+	TC_ASSERT_EQ_CLEANUP("iotbus_gpio_set_direction", ret, 0, iotbus_gpio_close(g_gpio_h2); iotbus_gpio_close(g_gpio_h));
 
 	ret = iotbus_gpio_set_direction(g_gpio_h2, IOTBUS_GPIO_DIRECTION_IN);
-	TC_ASSERT_EQ_CLEANUP("iotbus_gpio_set_direction", ret, 0, iotbus_gpio_close(&g_gpio_h2); iotbus_gpio_close(&g_gpio_h));
+	TC_ASSERT_EQ_CLEANUP("iotbus_gpio_set_direction", ret, 0, iotbus_gpio_close(g_gpio_h2); iotbus_gpio_close(g_gpio_h));
 
 	ret = iotbus_gpio_register_cb(g_gpio_h2, IOTBUS_GPIO_EDGE_RISING, gpio_event_callback, (void *)g_gpio_h2);
-	TC_ASSERT_EQ_CLEANUP("iotbus_gpio_register_cb", ret, 0, iotbus_gpio_close(&g_gpio_h2); iotbus_gpio_close(&g_gpio_h));
+	TC_ASSERT_EQ_CLEANUP("iotbus_gpio_register_cb", ret, 0, iotbus_gpio_close(g_gpio_h2); iotbus_gpio_close(g_gpio_h));
 
 	// To trigger event for callback
 	ret = iotbus_gpio_write(g_gpio_h, data);
-	TC_ASSERT_EQ_CLEANUP("iotbus_gpio_write", ret, 0, iotbus_gpio_close(&g_gpio_h2); iotbus_gpio_close(&g_gpio_h));
+	TC_ASSERT_EQ_CLEANUP("iotbus_gpio_write", ret, 0, iotbus_gpio_close(g_gpio_h2); iotbus_gpio_close(g_gpio_h));
 	sleep(WAIT_SECONDS);
 
-	TC_ASSERT_EQ_CLEANUP("iotbus_gpio_register_cb", gpio_flag_callback, 0, iotbus_gpio_unregister_cb(g_gpio_h2); iotbus_gpio_close(&g_gpio_h2); iotbus_gpio_close(&g_gpio_h));
+	TC_ASSERT_EQ_CLEANUP("iotbus_gpio_register_cb", gpio_flag_callback, 0, iotbus_gpio_unregister_cb(g_gpio_h2); iotbus_gpio_close(g_gpio_h2); iotbus_gpio_close(g_gpio_h));
 
 	data = 1;
 	ret = iotbus_gpio_write(g_gpio_h, data);
-	TC_ASSERT_EQ_CLEANUP("iotbus_gpio_write", ret, 0, iotbus_gpio_close(&g_gpio_h2); iotbus_gpio_close(&g_gpio_h));
+	TC_ASSERT_EQ_CLEANUP("iotbus_gpio_write", ret, 0, iotbus_gpio_close(g_gpio_h2); iotbus_gpio_close(g_gpio_h));
 	sleep(WAIT_SECONDS);
 
-	TC_ASSERT_EQ_CLEANUP("iotbus_gpio_register_cb", gpio_flag_callback, 1, iotbus_gpio_unregister_cb(g_gpio_h2); iotbus_gpio_close(&g_gpio_h2); iotbus_gpio_close(&g_gpio_h));
-	TC_ASSERT_EQ_CLEANUP("iotbus_gpio_register_cb", gpio_callback_data, data, iotbus_gpio_unregister_cb(g_gpio_h2); iotbus_gpio_close(&g_gpio_h2); iotbus_gpio_close(&g_gpio_h));
+	TC_ASSERT_EQ_CLEANUP("iotbus_gpio_register_cb", gpio_flag_callback, 1, iotbus_gpio_unregister_cb(g_gpio_h2); iotbus_gpio_close(g_gpio_h2); iotbus_gpio_close(g_gpio_h));
+	TC_ASSERT_EQ_CLEANUP("iotbus_gpio_register_cb", gpio_callback_data, data, iotbus_gpio_unregister_cb(g_gpio_h2); iotbus_gpio_close(g_gpio_h2); iotbus_gpio_close(g_gpio_h));
 
 	ret = iotbus_gpio_unregister_cb(g_gpio_h2);
-	TC_ASSERT_EQ_CLEANUP("iotbus_gpio_unregister_cb", ret, 0, iotbus_gpio_close(&g_gpio_h2); iotbus_gpio_close(&g_gpio_h));
+	TC_ASSERT_EQ_CLEANUP("iotbus_gpio_unregister_cb", ret, 0, iotbus_gpio_close(g_gpio_h2); iotbus_gpio_close(g_gpio_h));
 
 	gpio_flag_callback = 0;
 	data = 1;
 
 	ret = iotbus_gpio_write(g_gpio_h, data);
-	TC_ASSERT_EQ_CLEANUP("iotbus_gpio_register_cb", ret, 0, iotbus_gpio_unregister_cb(g_gpio_h2); iotbus_gpio_close(&g_gpio_h2); iotbus_gpio_close(&g_gpio_h));
+	TC_ASSERT_EQ_CLEANUP("iotbus_gpio_register_cb", ret, 0, iotbus_gpio_unregister_cb(g_gpio_h2); iotbus_gpio_close(g_gpio_h2); iotbus_gpio_close(g_gpio_h));
 	sleep(WAIT_SECONDS);
 
-	TC_ASSERT_EQ_CLEANUP("iotbus_gpio_register_cb", gpio_flag_callback, 0, iotbus_gpio_unregister_cb(g_gpio_h2); iotbus_gpio_close(&g_gpio_h2); iotbus_gpio_close(&g_gpio_h));
+	TC_ASSERT_EQ_CLEANUP("iotbus_gpio_register_cb", gpio_flag_callback, 0, iotbus_gpio_unregister_cb(g_gpio_h2); iotbus_gpio_close(g_gpio_h2); iotbus_gpio_close(g_gpio_h));
 
-	ret = iotbus_gpio_close(&g_gpio_h2);
-	TC_ASSERT_EQ_CLEANUP("iotbus_gpio_close", ret, 0, iotbus_gpio_close(&g_gpio_h));
+	ret = iotbus_gpio_close(g_gpio_h2);
+	TC_ASSERT_EQ_CLEANUP("iotbus_gpio_close", ret, 0, iotbus_gpio_close(g_gpio_h));
 
-	ret = iotbus_gpio_close(&g_gpio_h);
+	ret = iotbus_gpio_close(g_gpio_h);
 	TC_ASSERT_EQ(iotbus_gpio_close, ret, 0)
 
 	TC_SUCCESS_RESULT();
@@ -384,13 +384,13 @@ static void itc_systemio_gpio_set_direction_read_write_p_all_directions(void)
 		}
 
 		ret = iotbus_gpio_read(g_gpio_h);
-		TC_ASSERT_EQ_CLEANUP("iotbus_gpio_read", (ret < 0), false, iotbus_gpio_close(&g_gpio_h));
+		TC_ASSERT_EQ_CLEANUP("iotbus_gpio_read", (ret < 0), false, iotbus_gpio_close(g_gpio_h));
 
 		ret = iotbus_gpio_write(g_gpio_h, 1);
-		TC_ASSERT_EQ_CLEANUP("iotbus_gpio_write", (ret < 0), false, iotbus_gpio_close(&g_gpio_h));
+		TC_ASSERT_EQ_CLEANUP("iotbus_gpio_write", (ret < 0), false, iotbus_gpio_close(g_gpio_h));
 	}
-	TC_ASSERT_EQ_CLEANUP("itc_systemio_gpio_all_direction_read_write_p", check, true, iotbus_gpio_close(&g_gpio_h));
-	iotbus_gpio_close(&g_gpio_h);
+	TC_ASSERT_EQ_CLEANUP("itc_systemio_gpio_all_direction_read_write_p", check, true, iotbus_gpio_close(g_gpio_h));
+	iotbus_gpio_close(g_gpio_h);
 	TC_SUCCESS_RESULT();
 }
 
@@ -437,13 +437,13 @@ static void itc_systemio_gpio_set_edge_read_write_p_all_edges(void)
 		}
 
 		ret = iotbus_gpio_read(g_gpio_h);
-		TC_ASSERT_EQ_CLEANUP("iotbus_gpio_read", (ret < 0), false, iotbus_gpio_close(&g_gpio_h));
+		TC_ASSERT_EQ_CLEANUP("iotbus_gpio_read", (ret < 0), false, iotbus_gpio_close(g_gpio_h));
 
 		ret = iotbus_gpio_write(g_gpio_h, 1);
-		TC_ASSERT_EQ_CLEANUP("iotbus_gpio_write", (ret < 0), false, iotbus_gpio_close(&g_gpio_h));
+		TC_ASSERT_EQ_CLEANUP("iotbus_gpio_write", (ret < 0), false, iotbus_gpio_close(g_gpio_h));
 	}
-	TC_ASSERT_EQ_CLEANUP("itc_systemio_gpio_all_edge_read_write_p", check, true, iotbus_gpio_close(&g_gpio_h));
-	iotbus_gpio_close(&g_gpio_h);
+	TC_ASSERT_EQ_CLEANUP("itc_systemio_gpio_all_edge_read_write_p", check, true, iotbus_gpio_close(g_gpio_h));
+	iotbus_gpio_close(g_gpio_h);
 	TC_SUCCESS_RESULT();
 }
 
@@ -490,13 +490,13 @@ static void itc_systemio_gpio_set_drive_read_write_p_all_drive_mode(void)
 		}
 
 		ret = iotbus_gpio_read(g_gpio_h);
-		TC_ASSERT_EQ_CLEANUP("iotbus_gpio_read", (ret < 0), false, iotbus_gpio_close(&g_gpio_h));
+		TC_ASSERT_EQ_CLEANUP("iotbus_gpio_read", (ret < 0), false, iotbus_gpio_close(g_gpio_h));
 
 		ret = iotbus_gpio_write(g_gpio_h, 1);
-		TC_ASSERT_EQ_CLEANUP("iotbus_gpio_write", (ret < 0), false, iotbus_gpio_close(&g_gpio_h));
+		TC_ASSERT_EQ_CLEANUP("iotbus_gpio_write", (ret < 0), false, iotbus_gpio_close(g_gpio_h));
 	}
-	TC_ASSERT_EQ_CLEANUP("itc_systemio_gpio_all_drive_read_write_p", check, true, iotbus_gpio_close(&g_gpio_h));
-	iotbus_gpio_close(&g_gpio_h);
+	TC_ASSERT_EQ_CLEANUP("itc_systemio_gpio_all_drive_read_write_p", check, true, iotbus_gpio_close(g_gpio_h));
+	iotbus_gpio_close(g_gpio_h);
 	TC_SUCCESS_RESULT();
 }
 
@@ -595,8 +595,8 @@ static void itc_systemio_gpio_set_get_direction_edge_drive_mode_p(void)
 			}
 		}
 	}
-	TC_ASSERT_EQ_CLEANUP("itc_systemio_gpio_set_get_direction_edge_drive_mode_p", check, true, iotbus_gpio_close(&g_gpio_h));
-	iotbus_gpio_close(&g_gpio_h);
+	TC_ASSERT_EQ_CLEANUP("itc_systemio_gpio_set_get_direction_edge_drive_mode_p", check, true, iotbus_gpio_close(g_gpio_h));
+	iotbus_gpio_close(g_gpio_h);
 	TC_SUCCESS_RESULT();
 }
 
@@ -620,7 +620,7 @@ static void itc_systemio_gpio_open_close_p_different_pin(void)
 		g_gpio_h = iotbus_gpio_open(gpio_pin[index]);
 		TC_ASSERT_NEQ("iotbus_gpio_open", g_gpio_h, NULL);
 
-		ret = iotbus_gpio_close(&g_gpio_h);
+		ret = iotbus_gpio_close(g_gpio_h);
 		TC_ASSERT_EQ("iotbus_gpio_close", ret, 0);
 	}
 
@@ -644,12 +644,12 @@ static void itc_systemio_gpio_open_close_p_multi_handle(void)
 	TC_ASSERT_NEQ("iotbus_gpio_open", g_gpio_h, NULL);
 
 	g_gpio_h2 = iotbus_gpio_open(GPIO_PIN);
-	TC_ASSERT_NEQ_CLEANUP("iotbus_gpio_open", g_gpio_h2, NULL, iotbus_gpio_close(&g_gpio_h));
+	TC_ASSERT_NEQ_CLEANUP("iotbus_gpio_open", g_gpio_h2, NULL, iotbus_gpio_close(g_gpio_h));
 
-	ret = iotbus_gpio_close(&g_gpio_h);
-	TC_ASSERT_EQ_CLEANUP("iotbus_gpio_close", ret, 0, iotbus_gpio_close(&g_gpio_h2));
+	ret = iotbus_gpio_close(g_gpio_h);
+	TC_ASSERT_EQ_CLEANUP("iotbus_gpio_close", ret, 0, iotbus_gpio_close(g_gpio_h2));
 
-	ret = iotbus_gpio_close(&g_gpio_h2);
+	ret = iotbus_gpio_close(g_gpio_h2);
 	TC_ASSERT_EQ("iotbus_gpio_close", ret, 0);
 
 	TC_SUCCESS_RESULT();
@@ -671,10 +671,10 @@ static void itc_systemio_gpio_open_close_p_reclose(void)
 	g_gpio_h = iotbus_gpio_open(GPIO_PIN);
 	TC_ASSERT_NEQ("iotbus_gpio_open", g_gpio_h, NULL);
 
-	ret = iotbus_gpio_close(&g_gpio_h);
+	ret = iotbus_gpio_close(g_gpio_h);
 	TC_ASSERT_EQ("iotbus_gpio_close", ret, 0);
 
-	ret = iotbus_gpio_close(&g_gpio_h);
+	ret = iotbus_gpio_close(g_gpio_h);
 	TC_ASSERT_LT("iotbus_gpio_close", ret, 0);
 
 	TC_SUCCESS_RESULT();
@@ -710,7 +710,7 @@ static void itc_systemio_gpio_close_n(void)
 	iotbus_gpio_context_h gpio_context = NULL;
 	int ret;
 
-	ret = iotbus_gpio_close(&gpio_context);
+	ret = iotbus_gpio_close(gpio_context);
 	TC_ASSERT_EQ("iotbus_gpio_close", ret, IOTBUS_ERROR_INVALID_PARAMETER);
 
 	TC_SUCCESS_RESULT();
@@ -748,7 +748,7 @@ static void itc_systemio_gpio_get_pin_n_after_close(void)
 	g_gpio_h = iotbus_gpio_open(GPIO_PIN);
 	TC_ASSERT_NEQ("iotbus_gpio_open", g_gpio_h, NULL);
 
-	ret = iotbus_gpio_close(&g_gpio_h);
+	ret = iotbus_gpio_close(g_gpio_h);
 	TC_ASSERT_EQ("iotbus_gpio_close", ret, 0);
 
 	ret = iotbus_gpio_get_pin(g_gpio_h);
@@ -794,7 +794,7 @@ static void itc_systemio_gpio_read_n_after_close(void)
 	g_gpio_h = iotbus_gpio_open(GPIO_PIN);
 	TC_ASSERT_NEQ("iotbus_gpio_open", g_gpio_h, NULL);
 
-	ret = iotbus_gpio_close(&g_gpio_h);
+	ret = iotbus_gpio_close(g_gpio_h);
 	TC_ASSERT_EQ("iotbus_gpio_close", ret, 0);
 
 	ret = iotbus_gpio_read(g_gpio_h);
@@ -818,7 +818,7 @@ static void itc_systemio_gpio_write_n_after_close(void)
 	g_gpio_h = iotbus_gpio_open(GPIO_PIN);
 	TC_ASSERT_NEQ("iotbus_gpio_open", g_gpio_h, NULL);
 
-	ret = iotbus_gpio_close(&g_gpio_h);
+	ret = iotbus_gpio_close(g_gpio_h);
 	TC_ASSERT_EQ("iotbus_gpio_close", ret, 0);
 
 	ret = iotbus_gpio_write(g_gpio_h, 1);
@@ -843,9 +843,9 @@ static void itc_systemio_gpio_set_direction_n(void)
 	TC_ASSERT_NEQ("iotbus_gpio_open", g_gpio_h, NULL);
 
 	ret = iotbus_gpio_set_direction(g_gpio_h, -1);
-	TC_ASSERT_LT_CLEANUP("iotbus_gpio_set_direction", ret, 0, iotbus_gpio_close(&g_gpio_h));
+	TC_ASSERT_LT_CLEANUP("iotbus_gpio_set_direction", ret, 0, iotbus_gpio_close(g_gpio_h));
 
-	ret = iotbus_gpio_close(&g_gpio_h);
+	ret = iotbus_gpio_close(g_gpio_h);
 	TC_ASSERT_EQ("iotbus_gpio_close", ret, 0);
 
 	TC_SUCCESS_RESULT();
@@ -887,7 +887,7 @@ static void itc_systemio_gpio_set_direction_n_after_close(void)
 	g_gpio_h = iotbus_gpio_open(GPIO_PIN);
 	TC_ASSERT_NEQ("iotbus_gpio_open", g_gpio_h, NULL);
 
-	ret = iotbus_gpio_close(&g_gpio_h);
+	ret = iotbus_gpio_close(g_gpio_h);
 	TC_ASSERT_EQ("iotbus_gpio_close", ret, 0);
 
 	ret = iotbus_gpio_set_direction(g_gpio_h, set_direction);
@@ -915,9 +915,9 @@ static void itc_systemio_gpio_get_direction_n_after_close(void)
 	TC_ASSERT_NEQ("iotbus_gpio_open", g_gpio_h, NULL);
 
 	ret = iotbus_gpio_set_direction(g_gpio_h, set_direction);
-	TC_ASSERT_EQ_CLEANUP("iotbus_gpio_set_direction", ret, 0, iotbus_gpio_close(&g_gpio_h));
+	TC_ASSERT_EQ_CLEANUP("iotbus_gpio_set_direction", ret, 0, iotbus_gpio_close(g_gpio_h));
 
-	ret = iotbus_gpio_close(&g_gpio_h);
+	ret = iotbus_gpio_close(g_gpio_h);
 	TC_ASSERT_EQ("iotbus_gpio_close", ret, 0);
 
 	ret = iotbus_gpio_get_direction(g_gpio_h, &get_direction);
@@ -943,9 +943,9 @@ static void itc_systemio_gpio_set_edge_mode_n(void)
 	TC_ASSERT_NEQ("iotbus_gpio_open", g_gpio_h, NULL);
 
 	ret = iotbus_gpio_set_edge_mode(g_gpio_h, -1);
-	TC_ASSERT_LT_CLEANUP("iotbus_gpio_set_edge_mode", ret, 0, iotbus_gpio_close(&g_gpio_h));
+	TC_ASSERT_LT_CLEANUP("iotbus_gpio_set_edge_mode", ret, 0, iotbus_gpio_close(g_gpio_h));
 
-	ret = iotbus_gpio_close(&g_gpio_h);
+	ret = iotbus_gpio_close(g_gpio_h);
 	TC_ASSERT_EQ("iotbus_gpio_close", ret, 0);
 
 	TC_SUCCESS_RESULT();
@@ -988,7 +988,7 @@ static void itc_systemio_gpio_set_edge_mode_n_after_close(void)
 	g_gpio_h = iotbus_gpio_open(GPIO_PIN);
 	TC_ASSERT_NEQ("iotbus_gpio_open", g_gpio_h, NULL);
 
-	ret = iotbus_gpio_close(&g_gpio_h);
+	ret = iotbus_gpio_close(g_gpio_h);
 	TC_ASSERT_EQ("iotbus_gpio_close", ret, 0);
 
 	ret = iotbus_gpio_set_edge_mode(g_gpio_h, set_edge);
@@ -1016,9 +1016,9 @@ static void itc_systemio_gpio_get_edge_mode_n_after_close(void)
 	TC_ASSERT_NEQ("iotbus_gpio_open", g_gpio_h, NULL);
 
 	ret = iotbus_gpio_set_edge_mode(g_gpio_h, set_edge);
-	TC_ASSERT_EQ_CLEANUP("iotbus_gpio_set_edge_mode", ret, 0, iotbus_gpio_close(&g_gpio_h));
+	TC_ASSERT_EQ_CLEANUP("iotbus_gpio_set_edge_mode", ret, 0, iotbus_gpio_close(g_gpio_h));
 
-	ret = iotbus_gpio_close(&g_gpio_h);
+	ret = iotbus_gpio_close(g_gpio_h);
 	TC_ASSERT_EQ("iotbus_gpio_close", ret, 0);
 
 	ret = iotbus_gpio_get_edge_mode(g_gpio_h, &get_edge);
@@ -1044,9 +1044,9 @@ static void itc_systemio_gpio_set_drive_mode_n(void)
 	TC_ASSERT_NEQ("iotbus_gpio_open", g_gpio_h, NULL);
 
 	ret = iotbus_gpio_set_drive_mode(g_gpio_h, -1);
-	TC_ASSERT_LT_CLEANUP("iotbus_gpio_set_drive_mode", ret, 0, iotbus_gpio_close(&g_gpio_h));
+	TC_ASSERT_LT_CLEANUP("iotbus_gpio_set_drive_mode", ret, 0, iotbus_gpio_close(g_gpio_h));
 
-	ret = iotbus_gpio_close(&g_gpio_h);
+	ret = iotbus_gpio_close(g_gpio_h);
 	TC_ASSERT_EQ("iotbus_gpio_close", ret, 0);
 
 	TC_SUCCESS_RESULT();
@@ -1089,7 +1089,7 @@ static void itc_systemio_gpio_set_drive_mode_n_after_close(void)
 	g_gpio_h = iotbus_gpio_open(GPIO_PIN);
 	TC_ASSERT_NEQ("iotbus_gpio_open", g_gpio_h, NULL);
 
-	ret = iotbus_gpio_close(&g_gpio_h);
+	ret = iotbus_gpio_close(g_gpio_h);
 	TC_ASSERT_EQ("iotbus_gpio_close", ret, 0);
 
 	ret = iotbus_gpio_set_drive_mode(g_gpio_h, set_drive);
@@ -1117,9 +1117,9 @@ static void itc_systemio_gpio_get_drive_mode_n_after_close(void)
 	TC_ASSERT_NEQ("iotbus_gpio_open", g_gpio_h, NULL);
 
 	ret = iotbus_gpio_set_drive_mode(g_gpio_h, set_drive);
-	TC_ASSERT_EQ_CLEANUP("iotbus_gpio_set_drive_mode", ret, 0, iotbus_gpio_close(&g_gpio_h));
+	TC_ASSERT_EQ_CLEANUP("iotbus_gpio_set_drive_mode", ret, 0, iotbus_gpio_close(g_gpio_h));
 
-	ret = iotbus_gpio_close(&g_gpio_h);
+	ret = iotbus_gpio_close(g_gpio_h);
 	TC_ASSERT_EQ("iotbus_gpio_close", ret, 0);
 
 	ret = iotbus_gpio_get_drive_mode(g_gpio_h, &get_drive);

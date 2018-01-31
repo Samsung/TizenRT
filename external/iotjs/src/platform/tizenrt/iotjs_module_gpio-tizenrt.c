@@ -45,7 +45,7 @@ void iotjs_gpio_open_worker(uv_work_t* work_req) {
   iotbus_gpio_context_h gpio_context = iotbus_gpio_open((int)_this->pin);
   if (gpio_context == NULL) {
     req_data->result = false;
-    iotbus_gpio_close(&gpio_context);
+    iotbus_gpio_close(gpio_context);
     return;
   }
 
@@ -60,7 +60,7 @@ void iotjs_gpio_open_worker(uv_work_t* work_req) {
   }
   if (iotbus_gpio_set_direction(gpio_context, direction) < 0) {
     req_data->result = false;
-    iotbus_gpio_close(&gpio_context);
+    iotbus_gpio_close(gpio_context);
     return;
   }
 
@@ -88,7 +88,7 @@ int iotjs_gpio_read(iotjs_gpio_t* gpio) {
 bool iotjs_gpio_close(iotjs_gpio_t* gpio) {
   IOTJS_VALIDATED_STRUCT_METHOD(iotjs_gpio_t, gpio);
   if (_this->platform->gpio_context &&
-      iotbus_gpio_close(&(_this->platform->gpio_context)) < 0) {
+      iotbus_gpio_close(_this->platform->gpio_context) < 0) {
     return false;
   }
   return true;
