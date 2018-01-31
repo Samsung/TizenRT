@@ -98,20 +98,20 @@ iotbus_gpio_context_h iotbus_gpio_open(int gpiopin)
 /**
  * @brief Closes the gpio_context.
  */
-int iotbus_gpio_close(iotbus_gpio_context_h *dev)
+int iotbus_gpio_close(iotbus_gpio_context_h dev)
 {
-	if (!dev || !(*dev))
+	if (!dev)
 		return IOTBUS_ERROR_INVALID_PARAMETER;
 
-	if ((*dev)->isr_cb != NULL) {
-		int ret = iotbus_gpio_unregister_cb(*dev);
+	if (dev->isr_cb != NULL) {
+		int ret = iotbus_gpio_unregister_cb(dev);
 		if (ret != IOTBUS_ERROR_NONE)
 			return ret;
 	}
 
-	close((*dev)->fd);
-	free(*dev);
-	*dev = NULL;
+	close(dev->fd);
+	free(dev);
+	dev = NULL;
 	return IOTBUS_ERROR_NONE;
 }
 
