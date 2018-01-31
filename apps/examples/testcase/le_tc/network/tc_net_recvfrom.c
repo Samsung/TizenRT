@@ -74,8 +74,9 @@ void tc_net_recvfrom_sock_n(void)
 	int fd = socket(AF_INET, SOCK_STREAM, IPPROTO_UDP);
 	int ret = recvfrom(fd, buffer, MAXRCVLEN, 0, (struct sockaddr *)&serverStorage, &addr_size);
 
-	TC_ASSERT_EQ("recvfrom", ret, -1);
+	TC_ASSERT_EQ_CLEANUP("recvfrom", ret, -1, close(fd));
 	TC_SUCCESS_RESULT();
+	close(fd);
 
 }
 
@@ -125,6 +126,7 @@ void *recvfrom_udpserver(void *args)
 	tc_net_recvfrom_p(SocketFD);
 	tc_net_recvfrom_sock_n();
 	tc_net_recvfrom_n(SocketFD);
+	close(SocketFD);
 
 	return 0;
 
@@ -154,6 +156,7 @@ void *recvfrom_udpclient(void *args)
 	dest.sin_port = htons(PORTNUM);
 	fromlen = sizeof(dest);
 	sendto(mysocket, buffer, len, 0, (struct sockaddr *)&dest, fromlen);
+	close(mysocket);
 
 	return 0;
 
