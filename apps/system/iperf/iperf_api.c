@@ -1348,7 +1348,7 @@ static int get_parameters(struct iperf_test *test)
 			test->settings->bytes = j_p->valueint;
 		}
 		if ((j_p = cJSON_GetObjectItem(j, "blockcount")) != NULL) {
-			test->settings->blocks = (j_p->valueint > 0 ? j_p->valueint : 0);
+			test->settings->blocks = (j_p->valueint > 0 ? (iperf_size_t)j_p->valueint : 0);
 		}
 		if ((j_p = cJSON_GetObjectItem(j, "MSS")) != NULL) {
 			test->settings->mss = j_p->valueint;

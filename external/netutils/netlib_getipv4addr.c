@@ -100,7 +100,11 @@ int netlib_get_ipv4addr(FAR const char *ifname, FAR struct in_addr *addr)
 		int sockfd = socket(PF_INET, NETLIB_SOCK_IOCTL, 0);
 		if (sockfd >= 0) {
 			struct ifreq req;
+			if (strlen(ifname) >= IFNAMSIZ) {
+				return ret;
+			}
 			strncpy(req.ifr_name, ifname, IFNAMSIZ);
+			req.ifr_name[IFNAMSIZ - 1] = '\0';
 			ret = ioctl(sockfd, SIOCGIFADDR, (unsigned long)&req);
 			if (!ret) {
 				FAR struct sockaddr_in *req_addr;
