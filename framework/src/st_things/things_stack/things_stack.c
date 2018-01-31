@@ -51,6 +51,10 @@
 #include "utils/things_rtos_util.h"
 #endif
 
+#ifdef CONFIG_NETUTILS_NTPCLIENT
+#include <protocols/ntpclient.h>
+#endif
+
 #define TAG "[things_stack]"
 
 typedef void *(*pthread_func_type)(void *);
@@ -168,8 +172,63 @@ int things_register_easysetup_state_func(things_get_easysetup_state_func_type fu
 	return res;
 }
 
+#ifdef CONFIG_NETUTILS_NTPCLIENT
+static void ntp_link_error(void)
+{
+	THINGS_LOG_D(THINGS_DEBUG, TAG, "ntp_link_error() callback is called");
+}
+
+static void sync_time_from_ntp(int guarantee_secs)
+{
+	THINGS_LOG_D(THINGS_INFO, TAG, "T%d --> %s", getpid(), __FUNCTION__);
+
+	if (ntpc_get_status() != NTP_RUNNING) {
+		struct timespec pre_tp;
+		clock_gettime(CLOCK_REALTIME, &pre_tp);
+
+		struct timespec init_tp;
+		init_tp.tv_sec = 0;
+		init_tp.tv_nsec = 0;
+		clock_settime(CLOCK_REALTIME, &init_tp);
+
+		if (ntpc_start(NULL, 0, 0, ntp_link_error) < 0) {
+			THINGS_LOG_ERROR(THINGS_ERROR, TAG, "ntpc_start() failed");
+		} else {
+			THINGS_LOG(THINGS_INFO, TAG, "ntpc_start() OK");
+			int time_sync = 0;
+
+			while (1) {
+				struct timespec sync_tp;
+				clock_gettime(CLOCK_REALTIME, &sync_tp);
+				if ((init_tp.tv_sec + 1000) < sync_tp.tv_sec) {
+					time_sync = 1;
+					break;
+				} else if ((init_tp.tv_sec + guarantee_secs) < sync_tp.tv_sec) {
+					break;
+				}
+				usleep(100000);				
+			}
+			if (time_sync) {
+				THINGS_LOG(THINGS_INFO, TAG, "ntpc_time sync done");
+			} else {
+				THINGS_LOG(THINGS_ERROR, TAG, "ntpc_time sync fail");
+				clock_settime(CLOCK_REALTIME, &pre_tp);
+			}
+		}
+	} else {
+		THINGS_LOG(THINGS_INFO, TAG, "ntpc already running");
+	}
+}
+#endif
+
 static void *__attribute__((optimize("O0"))) t_things_wifi_join_loop(void *args)
 {
+#ifdef CONFIG_NETUTILS_NTPCLIENT
+	sync_time_from_ntp(10);
+#else
+	THINGS_LOG_D(THINGS_INFO, TAG, "CONFIG_NETUTILS_NTPCLIENT is not set");
+#endif
+
 	wifi_manager_info_s wifi_info;
 	wifi_manager_get_info(&wifi_info);
 

@@ -14,6 +14,7 @@ config ST_THINGS
 	select WPA_SUPPLICANT
 	select SCSC_WLAN
 	select NETUTILS_JSON
+	select NETUTILS_NTPCLIENT
 	depends on FS_ROMFS
 	---help---
 		SmartThings Things Management for applications to use and control devices
