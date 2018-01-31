@@ -81,6 +81,9 @@ config DRIVER_T20
 	default y
 	depends on SCSC_WLAN
 
+config DISABLE_EAP_FOR_SUPPLICANT
+	bool "Disable EAP for WPA supplicant"
+	default y
 endif
 
 endmenu # wpa_supplicant
