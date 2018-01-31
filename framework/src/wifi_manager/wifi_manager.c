@@ -627,9 +627,8 @@ wifi_manager_result_e _handler_on_uninitialized_state(_wifimgr_msg_s *msg)
 		return WIFI_MANAGER_FAIL;
 	}
 
-	/* update wifi_manager info by being protected by w_info_mutex */
 	g_manager_info.cb = *cb;
-	strncpy(g_manager_info.mac_address, info.mac_address, 6);
+	memcpy(g_manager_info.mac_address, info.mac_address, 6);
 
 	WIFIMGR_SET_STATE(WIFIMGR_STA_DISCONNECTED);
 

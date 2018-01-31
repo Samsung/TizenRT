@@ -64,7 +64,8 @@ static void utc_systemio_gpio_open_p(void)
 
 static void utc_systemio_gpio_open_n(void)
 {
-	TC_ASSERT_EQ("iotbus_gpio_open", iotbus_gpio_open(-1), NULL);
+	iotbus_gpio_context_h m_gpio = iotbus_gpio_open(-1);
+	TC_ASSERT_EQ_CLEANUP("iotbus_gpio_open", m_gpio, NULL, iotbus_gpio_close(&m_gpio));
 	TC_SUCCESS_RESULT();
 }
 
@@ -281,7 +282,7 @@ static void utc_systemio_gpio_unregister_n(void)
 
 static void utc_systemio_gpio_close_p(void)
 {
-	TC_ASSERT_EQ("iotbus_gpio_close", iotbus_gpio_close(gpio), IOTBUS_ERROR_NONE);
+	TC_ASSERT_EQ("iotbus_gpio_close", iotbus_gpio_close(&gpio), IOTBUS_ERROR_NONE);
 	TC_SUCCESS_RESULT();
 }
 
