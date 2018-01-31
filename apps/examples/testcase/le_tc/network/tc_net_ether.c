@@ -44,7 +44,6 @@
 */
 static void tc_net_ether_ntoa_p(void)
 {
-
 	struct sockaddr *sa;
 	struct ifreq *ifr;
 	struct ifreq tmp;
@@ -63,19 +62,20 @@ static void tc_net_ether_ntoa_p(void)
 	TC_ASSERT_NEQ("ether_ntoa", fd, -1)
 
 	ret = ioctl(fd, SIOCGIFCONF, (unsigned long)&ifcfg);
-	TC_ASSERT_GEQ("ether_ntoa", ret, 0)
+	TC_ASSERT_GEQ_CLEANUP("ether_ntoa", ret, 0, close(fd))
 
 	strncpy(tmp.ifr_name, ifr->ifr_name, 6);
 	ret = ioctl(fd, SIOCGIFHWADDR, (unsigned long)&tmp);
-	TC_ASSERT_GEQ("ether_ntoa", ret, 0)
+	TC_ASSERT_GEQ_CLEANUP("ether_ntoa", ret, 0, close(fd))
 
 	sa = &tmp.ifr_hwaddr;
 	buffer = (FAR char *)ether_ntoa((struct ether_addr *)sa->sa_data);
-	TC_ASSERT_NEQ("ether_ntoa", buffer, 0)
+	TC_ASSERT_NEQ_CLEANUP("ether_ntoa", buffer, 0, close(fd))
 
 	TC_SUCCESS_RESULT()
 
 	close(fd);
+	free(ifcfg.ifc_buf);
 }
 
 /****************************************************************************
