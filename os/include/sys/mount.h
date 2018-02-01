@@ -102,7 +102,7 @@ extern "C" {
  * @param[in] mountflags the flags for mount
  * @param[in] data mountpoint private data
  * @return On success, Zero is returned. On failure, -1 is returned and errno is set appropriately.
- * @since Tizen RT v1.0
+ * @since TizenRT v1.0
  */
 int mount(const char *source, const char *target, const char *filesystemtype, unsigned long mountflags, const void *data);
 /**
@@ -112,7 +112,7 @@ int mount(const char *source, const char *target, const char *filesystemtype, un
  * SYSTEM CALL API \n
  * @param[in] target the root path of filesystem to be detached
  * @return On success, Zero is returned. On failure, -1 is returned and errno is set appropriately.
- * @since Tizen RT v1.0
+ * @since TizenRT v1.0
  */
 int umount(const char *target);
 

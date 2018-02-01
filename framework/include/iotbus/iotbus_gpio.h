@@ -95,7 +95,7 @@ typedef void (*gpio_isr_cb)(void *user_data);
  * @details @b #include <iotbus/iotbus_gpio.h>
  * @param[in] gpiopin gpio pin number
  * @return On success, handle of gpio_context is returned. On failure, NULL is returned.
- * @since Tizen RT v1.0
+ * @since TizenRT v1.0
  */
 iotbus_gpio_context_h iotbus_gpio_open(int gpiopin);
 
@@ -105,7 +105,7 @@ iotbus_gpio_context_h iotbus_gpio_open(int gpiopin);
  * @details @b #include <iotbus/iotbus_gpio.h>
  * @param[in] dev handle of gpio_context
  * @return On success, 0 is returned. On failure, a negative value is returned.
- * @since Tizen RT v1.0
+ * @since TizenRT v1.0
  */
 int iotbus_gpio_close(iotbus_gpio_context_h dev);
 
@@ -116,7 +116,7 @@ int iotbus_gpio_close(iotbus_gpio_context_h dev);
  * @param[in] dev handle of gpio_context
  * @param[in] dir gpio direction type
  * @return On success, 0 is returned. On failure, a negative value is returned.
- * @since Tizen RT v1.0
+ * @since TizenRT v1.0
  */
 int iotbus_gpio_set_direction(iotbus_gpio_context_h dev, iotbus_gpio_direction_e dir);
 
@@ -127,7 +127,7 @@ int iotbus_gpio_set_direction(iotbus_gpio_context_h dev, iotbus_gpio_direction_e
  * @param[in] dev handle of gpio_context
  * @param[in] edge gpio edge type
  * @return On success, 0 is returned. On failure, a negative value is returned.
- * @since Tizen RT v1.0
+ * @since TizenRT v1.0
  */
 int iotbus_gpio_set_edge_mode(iotbus_gpio_context_h dev, iotbus_gpio_edge_e edge);
 
@@ -138,7 +138,7 @@ int iotbus_gpio_set_edge_mode(iotbus_gpio_context_h dev, iotbus_gpio_edge_e edge
  * @param[in] dev handle of gpio_context
  * @param[in] drive gpio drive type
  * @return On success, 0 is returned. On failure, a negative value is returned.
- * @since Tizen RT v1.0
+ * @since TizenRT v1.0
  */
 int iotbus_gpio_set_drive_mode(iotbus_gpio_context_h dev, iotbus_gpio_drive_e drive);
 
@@ -155,7 +155,7 @@ int iotbus_gpio_set_drive_mode(iotbus_gpio_context_h dev, iotbus_gpio_drive_e dr
  * @param[in] isr_cb the pointer of isr callback function
  * @param[in] user_data isr function parameter
  * @return On success, 0 is returned. On failure, a negative value is returned.
- * @since Tizen RT v1.0
+ * @since TizenRT v1.0
  */
 int iotbus_gpio_register_cb(iotbus_gpio_context_h dev, iotbus_gpio_edge_e edge, gpio_isr_cb isr_cb, void *user_data);
 
@@ -165,7 +165,7 @@ int iotbus_gpio_register_cb(iotbus_gpio_context_h dev, iotbus_gpio_edge_e edge, 
  * @details @b #include <iotbus/iotbus_gpio.h>
  * @param[in] dev handle of gpio_context
  * @return On success, 0 is returned. On failure, a negative value is returned.
- * @since Tizen RT v1.0
+ * @since TizenRT v1.0
  */
 int iotbus_gpio_unregister_cb(iotbus_gpio_context_h dev);
 
@@ -176,7 +176,7 @@ int iotbus_gpio_unregister_cb(iotbus_gpio_context_h dev);
  * @param[in] dev handle of gpio_context
  * @return On success, 0 or 1 is returned. (0: signal low, 1: signal high)
  *             On failure, a nagative value is returned.
- * @since Tizen RT v1.0
+ * @since TizenRT v1.0
  */
 int iotbus_gpio_read(iotbus_gpio_context_h dev);
 
@@ -187,7 +187,7 @@ int iotbus_gpio_read(iotbus_gpio_context_h dev);
  * @param[in] dev handle of gpio_context
  * @param[in] value signal value
  * @return On success, 0 is returned. On failure, a negative value is returned.
- * @since Tizen RT v1.0
+ * @since TizenRT v1.0
  */
 int iotbus_gpio_write(iotbus_gpio_context_h dev, int value);
 
@@ -198,7 +198,7 @@ int iotbus_gpio_write(iotbus_gpio_context_h dev, int value);
  * @param[in] dev handle of gpio_context
  * @param[out] dir current gpio direction
  * @return On success, 0 is returned. On failure, a negative value is returned.
- * @since Tizen RT v1.0
+ * @since TizenRT v1.0
  */
 int iotbus_gpio_get_direction(iotbus_gpio_context_h dev, iotbus_gpio_direction_e *dir);
 
@@ -208,7 +208,7 @@ int iotbus_gpio_get_direction(iotbus_gpio_context_h dev, iotbus_gpio_direction_e
  * @details @b #include <iotbus/iotbus_gpio.h>
  * @param[in] dev handle of gpio_context
  * @return On success, gpio pin number is returned. On failure, a negative value is returned.
- * @since Tizen RT v1.0
+ * @since TizenRT v1.0
  */
 int iotbus_gpio_get_pin(iotbus_gpio_context_h dev);
 
@@ -219,7 +219,7 @@ int iotbus_gpio_get_pin(iotbus_gpio_context_h dev);
  * @param[in] dev handle of gpio_context
  * @param[out] edge current gpio edge type
  * @return On success, 0 is returned. On failure, a negative value is returned.
- * @since Tizen RT v1.0
+ * @since TizenRT v1.0
  */
 int iotbus_gpio_get_edge_mode(iotbus_gpio_context_h dev, iotbus_gpio_edge_e *edge);
 
@@ -230,7 +230,7 @@ int iotbus_gpio_get_edge_mode(iotbus_gpio_context_h dev, iotbus_gpio_edge_e *edg
  * @param[in] dev handle of gpio_context
  * @param[out] drive current drive type
  * @return On success, 0 is returned. On failure, a negative value is returned.
- * @since Tizen RT v1.0
+ * @since TizenRT v1.0
  */
 int iotbus_gpio_get_drive_mode(iotbus_gpio_context_h dev, iotbus_gpio_drive_e *drive);
 
@@ -241,7 +241,7 @@ int iotbus_gpio_get_drive_mode(iotbus_gpio_context_h dev, iotbus_gpio_drive_e *d
  * @param[in] dev handle of gpio_context
  * @param[in] edge gpio edge type
  * @return On success, 0 is returned. On failure, a negative value is returned.
- * @since Tizen RT v1.x
+ * @since TizenRT v1.x
  */
 #ifndef CONFIG_DISABLE_SIGNALS
 int iotbus_gpio_register_signal(iotbus_gpio_context_h dev, iotbus_gpio_edge_e edge);

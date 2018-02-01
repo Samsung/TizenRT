@@ -133,7 +133,7 @@ PACK_STRUCT_END
  * @param netif the netif for which to set the struct dhcp
  * @param dhcp (uninitialised) dhcp struct allocated by the application
  * @return none
- * @since Tizen RT v1.0
+ * @since TizenRT v1.0
 */
 void dhcp_set_struct(struct netif *netif, struct dhcp *dhcp);
 
@@ -147,7 +147,7 @@ void dhcp_set_struct(struct netif *netif, struct dhcp *dhcp);
  *
  * @param netif the netif from which to remove the struct dhcp
  * @return none
- * @since Tizen RT v1.0
+ * @since TizenRT v1.0
 */
 void dhcp_cleanup(struct netif *netif);
 
@@ -161,7 +161,7 @@ void dhcp_cleanup(struct netif *netif);
  * @return lwIP error code
  * - ERR_OK - No error
  * - ERR_MEM - Out of memory
- * @since Tizen RT v1.0
+ * @since TizenRT v1.0
 */
 err_t dhcp_start(struct netif *netif);
 
@@ -178,7 +178,7 @@ err_t dhcp_renew(struct netif *netif);
  * @return lwIP error code
  * - ERR_OK - No error
  * - ERR_MEM - Out of memory
- * @since Tizen RT v1.0
+ * @since TizenRT v1.0
 */
 err_t dhcp_release(struct netif *netif);
 
@@ -188,7 +188,7 @@ err_t dhcp_release(struct netif *netif);
  *
  * @param netif The network interface to stop DHCP on
  * @return none
- * @since Tizen RT v1.0
+ * @since TizenRT v1.0
 */
 void dhcp_stop(struct netif *netif);
 

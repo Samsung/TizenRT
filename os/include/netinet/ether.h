@@ -92,7 +92,7 @@ extern "C" {
 * @details @b #include <netinet/ether.h>
 * @param[in] addr is the Ethernet host address addr given in network byte order
 * @return the string is returned in a statically allocated buffer
-* @since Tizen RT v1.0
+* @since TizenRT v1.0
 */
 EXTERN FAR char *ether_ntoa(FAR const struct ether_addr *addr);
 

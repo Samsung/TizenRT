@@ -103,7 +103,7 @@ extern "C" {
  * @details @b #include <tinyara/time.h>
  * @param[in] year year to check whether a leap year or not
  * @return if leap year, TRUE or FALSE
- * @since Tizen RT v1.0
+ * @since TizenRT v1.0
  */
 EXTERN int clock_isleapyear(int year);
 
@@ -114,7 +114,7 @@ EXTERN int clock_isleapyear(int year);
  * @param[in] month the beginning of the month
  * @param[in] leapyear leap year
  * @return the number of days
- * @since Tizen RT v1.0
+ * @since TizenRT v1.0
  */
 EXTERN int clock_daysbeforemonth(int month, bool leapyear);
 
@@ -130,7 +130,7 @@ EXTERN int clock_daysbeforemonth(int month, bool leapyear);
  * @param[in] month The month of the year 1 - 12
  * @param[in] year the year including the 1900
  * @return Zero based day of the week 0-6, 0 = Sunday, 1 = Monday... 6 = Saturday
- * @since Tizen RT v1.0
+ * @since TizenRT v1.0
  */
 #if defined(CONFIG_TIME_EXTENDED)
 int clock_dayoftheweek(int mday, int month, int year);
@@ -151,7 +151,7 @@ int clock_dayoftheweek(int mday, int month, int year);
  * @param[in] month month to change
  * @param[in] day day to change
  * @return the specific time
- * @since Tizen RT v1.0
+ * @since TizenRT v1.0
  */
 EXTERN time_t clock_calendar2utc(int year, int month, int day);
 
