@@ -107,7 +107,6 @@ static void tc_net_getpeername_sock_n(void)
 
 	TC_ASSERT_EQ("getpeername", ret, -1);
 	TC_SUCCESS_RESULT();
-	
 }
 
 
@@ -130,7 +129,6 @@ static void tc_net_getpeername_close_n(void)
 
 	TC_ASSERT_EQ("getpeername", ret, -1);
 	TC_SUCCESS_RESULT();
-	
 }
 
 /**
@@ -150,9 +148,10 @@ static void tc_net_getpeername_unix_p(void)
 	sock = socket(AF_UNIX, SOCK_STREAM, 0);
 	int ret = getpeername(sock, &foo, (socklen_t *)&len);
 
+	close(sock);
+
 	TC_ASSERT_NEQ("getpeername", ret, -1);
 	TC_SUCCESS_RESULT();
-
 }
 
 /**
@@ -172,9 +171,10 @@ static void tc_net_getpeername_udp_p(void)
 	sock = socket(AF_INET, SOCK_DGRAM, IPPROTO_UDP);
 	int ret = getpeername(sock, &foo, (socklen_t *)&len);
 
+	close(sock);
+
 	TC_ASSERT_NEQ("getpeername", ret, -1);
 	TC_SUCCESS_RESULT();
-
 }
 
 /**
@@ -195,7 +195,6 @@ static void tc_net_getpeername_p(int fd)
 
 	TC_ASSERT_NEQ("getpeername", ret, -1);
 	TC_SUCCESS_RESULT();
-
 }
 
 /**
@@ -216,7 +215,6 @@ static void tc_net_getpeername_n(int fd)
 
 	TC_ASSERT_EQ("getpeername", ret, -1);
 	TC_SUCCESS_RESULT();
-
 }
 
 /**
@@ -281,7 +279,6 @@ void *getpeername_client(void *args)
 
 	close(mysocket);
 	return 0;
-
 }
 
 /****************************************************************************
