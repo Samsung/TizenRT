@@ -43,10 +43,12 @@
 
 #ifdef CONFIG_SUPPORT_FULL_SECURITY
 #include <mbedtls/see_api.h>
+#ifdef CONFIG_ARCH_BOARD_ARTIK053
+#define USE_SSS
+#endif
 #endif
 
 #define TAG "OIC_SEC_MGR"
-#define USE_SSS
 
 typedef enum {
 	OIC_SEC_OK = 0,
@@ -830,7 +832,7 @@ static OCStackResult save_signed_asymmetric_key(OicUuid_t *subject_uuid)
 #ifdef CONFIG_ST_THINGS_STG_MODE
 		res = CredSaveTrustCertChain(subject_uuid, g_regional_test_root_ca, sizeof(g_regional_test_root_ca), OIC_ENCODING_DER, MF_TRUST_CA, &cred_id);
 #else		
-		res = CredSaveTrustCertChain(subject_uuid, g_regional_test_ca, sizeof(g_regional_root_ca), OIC_ENCODING_DER, MF_TRUST_CA, &cred_id);
+		res = CredSaveTrustCertChain(subject_uuid, g_regional_root_ca, sizeof(g_regional_root_ca), OIC_ENCODING_DER, MF_TRUST_CA, &cred_id);
 #endif		
 
 		if (OC_STACK_OK != res) {
@@ -858,12 +860,12 @@ static OCStackResult save_signed_asymmetric_key(OicUuid_t *subject_uuid)
 		things_free(primary_key.data);
 	}
 #else
-	if (InitializeSSSKeyHandlers() < 0) {
+	if (things_sss_key_handler_init() < 0) {
 		THINGS_LOG_D_ERROR(THINGS_ERROR, TAG, "InitializeSSSKeyHandlers() Fail");
 		return OC_STACK_ERROR;
 	}
 
-	if (SSSRootCAHandler(subject_uuid) < 0) {
+	if (things_sss_rootca_handler_init(subject_uuid) < 0) {
 		THINGS_LOG_D_ERROR(THINGS_ERROR, TAG, "SSSRootCAHandler() Fail");
 		return OC_STACK_ERROR;
 	}

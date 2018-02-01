@@ -144,7 +144,7 @@ OCStackResult things_cloud_signup(const char *host, const char *device_id, const
 
 	snprintf(targetUri, MAX_URI_LENGTH * 2, "%s%s", host, OC_RSRVD_ACCOUNT_URI);
 	THINGS_LOG_D(THINGS_INFO, TAG, "targetUri : %s", targetUri);
-	
+
 	memset(&cb_data, 0, sizeof(OCCallbackData));
 	cb_data.cb = response;
 	cb_data.cd = NULL;

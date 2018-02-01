@@ -21,7 +21,7 @@
 #define _SSS_SERVER_STORAGE_H_
 #include <stdio.h>
 #include <string.h>
-OCStackResult SSSRootCAHandler(OicUuid_t* subjectUuid);
-OCStackResult InitializeSSSKeyHandlers(void);
+OCStackResult things_sss_rootca_handler_init(OicUuid_t* subjectUuid);
+OCStackResult things_sss_key_handler_init(void);
 bool things_encrypt_artik_uuid(unsigned char *output);
 #endif
