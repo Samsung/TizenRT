@@ -37,7 +37,7 @@
 struct _iotbus_pwm_s;
 
 /**
- * @brief Pointer definition to the internal struct _iotbus_pwm_s
+ * @brief Pointer definition to the internal struct _iotbus_pwm_wrapper_s
  */
 typedef struct _iotbus_pwm_wrapper_s *iotbus_pwm_context_h;
 
