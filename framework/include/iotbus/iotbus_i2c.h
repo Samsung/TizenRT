@@ -39,7 +39,7 @@ struct _iotbus_i2c_s;
 /**
  * @brief Pointer definition to the internal struct _iotbus_i2c_s
  */
-typedef struct _iotbus_i2c_s *iotbus_i2c_context_h;
+typedef struct _iotbus_i2c_wrapper_s *iotbus_i2c_context_h;
 
 /**
  * @brief Enumeration of I2C frequency mode

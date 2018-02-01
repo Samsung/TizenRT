@@ -65,7 +65,7 @@ struct _iotbus_spi_s;
 /**
  * @brief Pointer definition to the internal struct _iotbus_spi_s
  */
-typedef struct _iotbus_spi_s *iotbus_spi_context_h;
+typedef struct _iotbus_spi_wrapper_s *iotbus_spi_context_h;
 
 #ifdef __cplusplus
 extern "C" {

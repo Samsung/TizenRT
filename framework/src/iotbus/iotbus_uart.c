@@ -38,6 +38,10 @@ struct _iotbus_uart_s {
 	int fd;
 };
 
+struct _iotbus_uart_wrapper_s {
+	struct _iotbus_uart_s *handle;
+};
+
 int g_iotbus_uart_br[30] = {
 B50, B75, B110, B134, B150,
 B200, B300, B600, B1200, B1800,
@@ -67,31 +71,44 @@ int _iotbus_valid_baudrate(unsigned int rate)
 /*
  * Public Functions
  */
-
 iotbus_uart_context_h iotbus_uart_init(const char *path)
 {
-	struct _iotbus_uart_s *handle = NULL;
 	int fd;
+	struct _iotbus_uart_s *handle;
+	iotbus_uart_context_h dev;
+
 	fd = open(path, O_RDWR, 0666);
 	if (fd < 0)
-		return handle;
+		return NULL;
 
 	handle = (struct _iotbus_uart_s *)malloc(sizeof(struct _iotbus_uart_s));
-	if (handle == NULL) {
-		close(fd);
-		return NULL;
+	if(!handle) {
+		goto errout_with_close;
 	}
-	handle->fd = fd;
 
-	return handle;
+	dev = (struct _iotbus_uart_wrapper_s *)malloc(sizeof(struct _iotbus_uart_wrapper_s));
+	if(!dev) {
+		free(handle);
+		goto errout_with_close;
+	}
+
+	handle->fd = fd;
+	dev->handle = handle;
+
+	return dev;
+
+errout_with_close:
+	close(fd);
+	return NULL;
 }
 
 int iotbus_uart_stop(iotbus_uart_context_h hnd)
 {
-	if (!hnd)
+	if (!hnd || !hnd->handle) {
 		return IOTBUS_ERROR_INVALID_PARAMETER;
+	}
 
-	close(hnd->fd);
+	close(hnd->handle->fd);
 
 	return IOTBUS_ERROR_NONE;
 }
@@ -102,11 +119,11 @@ int iotbus_uart_flush(iotbus_uart_context_h hnd)
 	return IOTBUS_ERROR_NOT_SUPPORTED;
 #else
 	// tcdrain is not working even CONFIG_SERIAL_TERMIOS is defined.
-
-	if (!hnd)
+	if (!hnd || !hnd->handle) {
 		return IOTBUS_ERROR_INVALID_PARAMETER;
+	}
 
-	int fd = hnd->fd;
+	int fd = hnd->handle->fd;
 	int ret = tcflush(fd, TCIOFLUSH);
 	if (ret < 0)
 		return IOTBUS_ERROR_NOT_SUPPORTED;
@@ -120,13 +137,14 @@ int iotbus_uart_set_baudrate(iotbus_uart_context_h hnd, unsigned int baud)
 #ifndef CONFIG_SERIAL_TERMIOS
 	return IOTBUS_ERROR_NOT_SUPPORTED;
 #else
-	if (!hnd)
+	if (!hnd || !hnd->handle) {
 		return IOTBUS_ERROR_INVALID_PARAMETER;
+	}
 
 	if (!_iotbus_valid_baudrate(baud))
 		return IOTBUS_ERROR_INVALID_PARAMETER;
 
-	int fd = hnd->fd;
+	int fd = hnd->handle->fd;
 	int ret;
 	struct termios tio;
 
@@ -150,10 +168,11 @@ int iotbus_uart_set_mode(iotbus_uart_context_h hnd, int bytesize, iotbus_uart_pa
 #ifndef CONFIG_SERIAL_TERMIOS
 	return IOTBUS_ERROR_NOT_SUPPORTED;
 #else
-	if (!hnd)
+	if (!hnd || !hnd->handle) {
 		return IOTBUS_ERROR_INVALID_PARAMETER;
+	}
 
-	int fd = hnd->fd;
+	int fd = hnd->handle->fd;
 	int ret;
 	struct termios tio;
 	int byteinfo[4] = { CS5, CS6, CS7, CS8 };
@@ -214,8 +233,9 @@ int iotbus_uart_set_flowcontrol(iotbus_uart_context_h hnd, int xonxoff, int rtsc
 #ifndef CONFIG_SERIAL_TERMIOS
 	return IOTBUS_ERROR_NOT_SUPPORTED;
 #else
-	if (!hnd)
+	if (!hnd || !hnd->handle) {
 		return IOTBUS_ERROR_INVALID_PARAMETER;
+	}
 
 	if (xonxoff != 1 && xonxoff != 0)
 		return IOTBUS_ERROR_INVALID_PARAMETER;
@@ -223,7 +243,7 @@ int iotbus_uart_set_flowcontrol(iotbus_uart_context_h hnd, int xonxoff, int rtsc
 	if (rtscts != 1 && rtscts != 0)
 		return IOTBUS_ERROR_INVALID_PARAMETER;
 
-	int fd = hnd->fd;
+	int fd = hnd->handle->fd;
 	int ret;
 	struct termios tio;
 
@@ -249,8 +269,9 @@ int iotbus_uart_set_flowcontrol(iotbus_uart_context_h hnd, int xonxoff, int rtsc
 
 int iotbus_uart_read(iotbus_uart_context_h hnd, char *buf, unsigned int length)
 {
-	if (!hnd)
+	if (!hnd || !hnd->handle) {
 		return IOTBUS_ERROR_INVALID_PARAMETER;
+	}
 
 	if (!buf)
 		return IOTBUS_ERROR_INVALID_PARAMETER;
@@ -258,7 +279,7 @@ int iotbus_uart_read(iotbus_uart_context_h hnd, char *buf, unsigned int length)
 	if (length <= 0)
 		return IOTBUS_ERROR_INVALID_PARAMETER;
 
-	int fd = hnd->fd;
+	int fd = hnd->handle->fd;
 	int ret = read(fd, buf, length);
 	if (ret < 0)
 		return IOTBUS_ERROR_UNKNOWN;
@@ -268,8 +289,9 @@ int iotbus_uart_read(iotbus_uart_context_h hnd, char *buf, unsigned int length)
 
 int iotbus_uart_write(iotbus_uart_context_h hnd, const char *buf, unsigned int length)
 {
-	if (!hnd)
+	if (!hnd || !hnd->handle) {
 		return IOTBUS_ERROR_INVALID_PARAMETER;
+	}
 
 	if (!buf)
 		return IOTBUS_ERROR_INVALID_PARAMETER;
@@ -277,7 +299,7 @@ int iotbus_uart_write(iotbus_uart_context_h hnd, const char *buf, unsigned int l
 	if (length <= 0)
 		return IOTBUS_ERROR_INVALID_PARAMETER;
 
-	int fd = hnd->fd;
+	int fd = hnd->handle->fd;
 	int ret = write(fd, buf, length);
 	if (ret < 0)
 		return IOTBUS_ERROR_UNKNOWN;
