@@ -1,6 +1,6 @@
 /****************************************************************************
  *
- * Copyright 2016 Samsung Electronics All Rights Reserved.
+ * Copyright 2017 Samsung Electronics All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -69,7 +69,7 @@ void *OCGetHwKey(const char *service, const char *usage, const char *keytype)
 
 	if (service == NULL || usage == NULL) {
 		return NULL;
-    }
+	}
 
 	mbedtls_pk_context *pkey;
 
@@ -143,7 +143,7 @@ int OCSetupPkContextFromHw(mbedtls_pk_context* ctx, void* keyContext)
 	mbedtls_pk_init(pkey);
 	const mbedtls_pk_info_t *pk_info;
 
-	if ((pk_info = mbedtls_pk_info_from_type(MBEDTLS_PK_ECKEY))== NULL) {
+	if ((pk_info = mbedtls_pk_info_from_type(MBEDTLS_PK_ECKEY)) == NULL) {
 		mbedtls_pk_free(pkey);
 		things_free(pkey);
 		return -1;
@@ -295,7 +295,7 @@ bool things_encrypt_artik_uuid(unsigned char *output)
 	mbedtls_sha256(encode_buf, strlen((char *)encode_buf), uuid_hash, 0);
 
 	// 4. base64(uuid_hash)
-	unsigned char encode_buf2[128] ={ 0, };
+	unsigned char encode_buf2[128] = { 0, };
 	if ((ret = mbedtls_base64_encode(encode_buf2, sizeof(encode_buf2),
 									&written_len, uuid_hash, strlen((char *)uuid_hash))) != 0) {
 		THINGS_LOG_D(THINGS_ERROR, TAG, "mbedtls_base64_encode() error [%d], written_len [%d]", ret, written_len);

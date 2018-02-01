@@ -43,7 +43,7 @@
 
 #ifdef CONFIG_SUPPORT_FULL_SECURITY
 #include <mbedtls/see_api.h>
-#ifdef CONFIG_ARCH_BOARD_ARTIK053
+#ifdef CONFIG_ST_THINGS_ARTIK_HW_CERT_KEY
 #define USE_SSS
 #endif
 #endif
@@ -425,57 +425,62 @@ error:
 	return res;					// return 0 when failed, 1 otherwise..
 }
 
-static void sm_secure_resource_check(OicUuid_t *device_id)
+static OCStackResult sm_secure_resource_check(OicUuid_t *device_id)
 {
-	OCStackResult oc_res;
+	OCStackResult oc_res = OC_STACK_OK;
 
 	// Check Device is Owned
 	bool isOwned = false;
 	oc_res = GetDoxmIsOwned(&isOwned);
 	if (OC_STACK_OK != oc_res) {
 		THINGS_LOG_D_ERROR(THINGS_ERROR, TAG, "Error in GetDoxmIsOwned : %d", (int)oc_res);
-		return OIC_SEC_ERROR;
+		return oc_res;
 	}
 	if (!isOwned) {
 		oc_res = SetDoxmDeviceID(device_id);
 		if (OC_STACK_OK != oc_res) {
 			THINGS_LOG_D_ERROR(THINGS_ERROR, TAG, "Error in SetDoxmDeviceID : %d", (int)oc_res);
-			return OIC_SEC_ERROR;
+			return oc_res;
 		}
 	}
 
-#ifndef USE_SSS	
-	// Check SVR_DB has CA & Key
-	uint8_t cred_ret = 0;
-	OicSecCred_t *temp = NULL;
-	LL_FOREACH(GetCredList(), temp) {
-		if (0 == strcmp(temp->credUsage, TRUST_CA)) {
-			cred_ret |= (1 << 0);
-		} else if (0 == strcmp(temp->credUsage, PRIMARY_CERT)) {
-			cred_ret |= (1 << 1);
-		} else if (0 == strcmp(temp->credUsage, MF_TRUST_CA)) {
-			cred_ret |= (1 << 2);
-		} else if (0 == strcmp(temp->credUsage, MF_PRIMARY_CERT)) {
-			cred_ret |= (1 << 3);
-		}
-	}
-
-	if (!(cred_ret & (1 << 0)) || !(cred_ret & (1 << 1)) || !(cred_ret & (1 << 2)) || !(cred_ret & (1 << 3))) {
-		DeleteCredList(GetCredList());
+#ifdef USE_SSS
+	if (dm_get_easy_setup_use_artik_crt()) {
 		oc_res = save_signed_asymmetric_key(device_id);
 		if (OC_STACK_OK != oc_res) {
 			THINGS_LOG_D_ERROR(THINGS_ERROR, TAG, "Error in save_signed_asymmetric_key : %d", (int)oc_res);
-			return OIC_SEC_ERROR;
+			return oc_res;
+		}
+	} else
+#endif
+	{
+		// Check SVR_DB has CA & Key
+		uint8_t cred_ret = 0;
+		OicSecCred_t *temp = NULL;
+		LL_FOREACH(GetCredList(), temp) {
+			if (0 == strcmp(temp->credUsage, TRUST_CA)) {
+				cred_ret |= (1 << 0);
+			} else if (0 == strcmp(temp->credUsage, PRIMARY_CERT)) {
+				cred_ret |= (1 << 1);
+			} else if (0 == strcmp(temp->credUsage, MF_TRUST_CA)) {
+				cred_ret |= (1 << 2);
+			} else if (0 == strcmp(temp->credUsage, MF_PRIMARY_CERT)) {
+				cred_ret |= (1 << 3);
+			}
+		}
+
+		if (!(cred_ret & (1 << 0)) || !(cred_ret & (1 << 1)) || !(cred_ret & (1 << 2)) || !(cred_ret & (1 << 3))) {
+			DeleteCredList(GetCredList());
+			oc_res = save_signed_asymmetric_key(device_id);
+			if (OC_STACK_OK != oc_res) {
+				THINGS_LOG_D_ERROR(THINGS_ERROR, TAG, "Error in save_signed_asymmetric_key : %d", (int)oc_res);
+				return oc_res;
+			}
 		}
 	}
-#else	
-	oc_res = save_signed_asymmetric_key(device_id);
-	if (OC_STACK_OK != oc_res) {
-		THINGS_LOG_D_ERROR(THINGS_ERROR, TAG, "Error in save_signed_asymmetric_key : %d", (int)oc_res);
-		return OIC_SEC_ERROR;
-	}
-#endif
+	return oc_res;
 }
+
 static int get_mac_addr(unsigned char *p_id_buf, size_t p_id_buf_size, unsigned int *p_id_out_len)
 {
 	char mac_addr[MAC_BUF_SIZE];
@@ -548,13 +553,16 @@ static int sm_generate_mac_based_device_id(void)
 
 	memcpy(device_id.id, hash_value, sizeof(device_id.id));
 
-	sm_secure_resource_check(&device_id);
+	if (sm_secure_resource_check(&device_id) != OC_STACK_OK) {
+		return OIC_SEC_ERROR;
+	}
 
 	THINGS_LOG_D(THINGS_DEBUG, TAG, "Out %s", __func__);
 
 	return res;
 }
 
+#if defined(CONFIG_ST_THINGS_ARTIK_HW_CERT_KEY) && defined(CONFIG_TLS_WITH_SSS)
 static int sm_generate_artik_device_id(void)
 {
 	THINGS_LOG_D(THINGS_DEBUG, TAG, "In %s", __func__);
@@ -571,21 +579,27 @@ static int sm_generate_artik_device_id(void)
 		return OIC_SEC_ERROR;
 	}
 
-	sm_secure_resource_check(&device_id);
+	if (sm_secure_resource_check(&device_id) != OC_STACK_OK) {
+		return OIC_SEC_ERROR;
+	}
 
 	THINGS_LOG_D(THINGS_DEBUG, TAG, "Out %s", __func__);
 
 	return oc_res;
 }
+#endif
 
 int sm_generate_device_id(void)
 {
 	int ret = -1;
-#if defined(CONFIG_ARCH_BOARD_ARTIK053)
-	ret = sm_generate_artik_device_id();
-#else /* CONFIG_ARCH_BOARD_ARTIK053 */
-	ret = sm_generate_mac_based_device_id();
-#endif /* CONFIG_ARCH_BOARD_ARTIK053 */
+#if defined(CONFIG_ST_THINGS_ARTIK_HW_CERT_KEY) && defined(CONFIG_TLS_WITH_SSS)
+	if (dm_get_easy_setup_use_artik_crt()) {
+		ret = sm_generate_artik_device_id();
+	} else
+#endif
+	{
+		ret = sm_generate_mac_based_device_id();
+	}
 	return ret;
 }
 
@@ -803,75 +817,78 @@ static OCStackResult save_signed_asymmetric_key(OicUuid_t *subject_uuid)
 	THINGS_LOG_D(THINGS_DEBUG, TAG, "Samsung_OCF_RootCA.der saved w/ cred ID=%d", cred_id);
 #endif
 
-#ifndef USE_SSS	
-	/*
-	 * 2. Save the key for D2S (primary cert & key)
-	 */
-	res = seckey_setup(dm_get_certificate_file_path(), &primary_cert, OIC_ENCODING_UNKNOW);
-	if (OC_STACK_OK != res) {
-		THINGS_LOG_D_ERROR(THINGS_ERROR, TAG, "seckey_setup error");
-		return res;
-	}
-	res = seckey_setup(dm_get_privatekey_file_path(), &primary_key, OIC_ENCODING_RAW);
-	if (OC_STACK_OK != res) {
-		THINGS_LOG_D_ERROR(THINGS_ERROR, TAG, "seckey_setup error");
-		return res;
-	}
-	res = CredSaveOwnCert(subject_uuid, &primary_cert, &primary_key, PRIMARY_CERT, &cred_id);
-	if (OC_STACK_OK != res) {
-		THINGS_LOG_D_ERROR(THINGS_ERROR, TAG, "SRPCredSaveOwnCertChain error");
-		return res;
-	}
-	THINGS_LOG_D(THINGS_DEBUG, TAG, "Primary cert & key saved w/ cred ID=%d", cred_id);
+#ifdef USE_SSS
+	if (dm_get_easy_setup_use_artik_crt()) {
+		if (things_sss_key_handler_init() < 0) {
+			THINGS_LOG_D_ERROR(THINGS_ERROR, TAG, "InitializeSSSKeyHandlers() Fail");
+			return OC_STACK_ERROR;
+		}
 
-	// For D2D
-	if (g_is_mfg_cert_required) {
+		if (things_sss_rootca_handler_init(subject_uuid) < 0) {
+			THINGS_LOG_D_ERROR(THINGS_ERROR, TAG, "SSSRootCAHandler() Fail");
+			return OC_STACK_ERROR;
+		}
+	} else
+#endif
+	{
 		/*
-		 * 3. Save the MFG trust CA cert chain.
-		 */
+		* 2. Save the key for D2S (primary cert & key)
+		*/
+		res = seckey_setup(dm_get_certificate_file_path(), &primary_cert, OIC_ENCODING_UNKNOW);
+		if (OC_STACK_OK != res) {
+			THINGS_LOG_D_ERROR(THINGS_ERROR, TAG, "seckey_setup error");
+			return res;
+		}
+		res = seckey_setup(dm_get_privatekey_file_path(), &primary_key, OIC_ENCODING_RAW);
+		if (OC_STACK_OK != res) {
+			THINGS_LOG_D_ERROR(THINGS_ERROR, TAG, "seckey_setup error");
+			return res;
+		}
+		res = CredSaveOwnCert(subject_uuid, &primary_cert, &primary_key, PRIMARY_CERT, &cred_id);
+		if (OC_STACK_OK != res) {
+			THINGS_LOG_D_ERROR(THINGS_ERROR, TAG, "SRPCredSaveOwnCertChain error");
+			return res;
+		}
+		THINGS_LOG_D(THINGS_DEBUG, TAG, "Primary cert & key saved w/ cred ID=%d", cred_id);
+
+		// For D2D
+		if (g_is_mfg_cert_required) {
+			/*
+			* 3. Save the MFG trust CA cert chain.
+			*/
 #ifdef CONFIG_ST_THINGS_STG_MODE
-		res = CredSaveTrustCertChain(subject_uuid, g_regional_test_root_ca, sizeof(g_regional_test_root_ca), OIC_ENCODING_DER, MF_TRUST_CA, &cred_id);
+			res = CredSaveTrustCertChain(subject_uuid, g_regional_test_root_ca, sizeof(g_regional_test_root_ca), OIC_ENCODING_DER, MF_TRUST_CA, &cred_id);
 #else		
-		res = CredSaveTrustCertChain(subject_uuid, g_regional_root_ca, sizeof(g_regional_root_ca), OIC_ENCODING_DER, MF_TRUST_CA, &cred_id);
+			res = CredSaveTrustCertChain(subject_uuid, g_regional_root_ca, sizeof(g_regional_root_ca), OIC_ENCODING_DER, MF_TRUST_CA, &cred_id);
 #endif		
 
-		if (OC_STACK_OK != res) {
-			THINGS_LOG_D_ERROR(THINGS_ERROR, TAG, "SRPCredSaveOwnCertChain error");
-			return res;
+			if (OC_STACK_OK != res) {
+				THINGS_LOG_D_ERROR(THINGS_ERROR, TAG, "SRPCredSaveOwnCertChain error");
+				return res;
+			}
+			THINGS_LOG_D(THINGS_DEBUG, TAG, "MFG trust CA chain saved w/ cred ID=%d", cred_id);
+
+			/*
+			* 4. Save the key for D2D (manufacturer cert & key)
+			*/
+			res = CredSaveOwnCert(subject_uuid, &primary_cert, &primary_key, MF_PRIMARY_CERT, &cred_id);
+			if (OC_STACK_OK != res) {
+				THINGS_LOG_D_ERROR(THINGS_ERROR, TAG, "SRPCredSaveOwnCertChain error");
+				return res;
+			}
+			THINGS_LOG_D(THINGS_DEBUG, TAG, "MFG primary cert & key saved w/ cred ID=%d", cred_id);
 		}
-		THINGS_LOG_D(THINGS_DEBUG, TAG, "MFG trust CA chain saved w/ cred ID=%d", cred_id);
 
-		/*
-		 * 4. Save the key for D2D (manufacturer cert & key)
-		 */
-		res = CredSaveOwnCert(subject_uuid, &primary_cert, &primary_key, MF_PRIMARY_CERT, &cred_id);
-		if (OC_STACK_OK != res) {
-			THINGS_LOG_D_ERROR(THINGS_ERROR, TAG, "SRPCredSaveOwnCertChain error");
-			return res;
+		if (primary_cert.data != NULL) {
+			things_free(primary_cert.data);
 		}
-		THINGS_LOG_D(THINGS_DEBUG, TAG, "MFG primary cert & key saved w/ cred ID=%d", cred_id);
+
+		if (primary_key.data != NULL) {
+			things_free(primary_key.data);
+		}
 	}
 
-	if (primary_cert.data != NULL) {
-		things_free(primary_cert.data);
-	}
-
-	if (primary_key.data != NULL) {
-		things_free(primary_key.data);
-	}
-#else
-	if (things_sss_key_handler_init() < 0) {
-		THINGS_LOG_D_ERROR(THINGS_ERROR, TAG, "InitializeSSSKeyHandlers() Fail");
-		return OC_STACK_ERROR;
-	}
-
-	if (things_sss_rootca_handler_init(subject_uuid) < 0) {
-		THINGS_LOG_D_ERROR(THINGS_ERROR, TAG, "SSSRootCAHandler() Fail");
-		return OC_STACK_ERROR;
-	}
-#endif
 	THINGS_LOG_D(THINGS_DEBUG, TAG, "Out: %s", __func__);
-
 	return res;
 }
 

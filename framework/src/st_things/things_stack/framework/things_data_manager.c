@@ -676,14 +676,18 @@ wifi_manager_softap_config_s *dm_get_softap_wifi_config(void)
 	wifi_manager_info_s st_wifi_info;
 	wifi_manager_get_info(&st_wifi_info);
 
-	if (is_artik)  {
+#if defined(CONFIG_ST_THINGS_ARTIK_HW_CERT_KEY) && defined(CONFIG_TLS_WITH_SSS)
+	if (is_artik) {
 		if (!things_encrypt_artik_uuid(ext_value)) {
 			THINGS_LOG_D(THINGS_ERROR, TAG, "Fail to encrypt artik uuid");
 			return NULL;
 		}
-	} else {
+	} else 
+#endif	
+	{
 		snprintf(ext_value, sizeof(ext_value), "%02X%02X", st_wifi_info.mac_address[4], st_wifi_info.mac_address[5]);
 	}
+
 	snprintf(g_easysetup_softap_ssid, sizeof(g_easysetup_softap_ssid), "%s_%s%s%s%d%s", ssid_device_name, g_easysetup_tag, g_manufacturer_name, g_setup_id, ssid_type, ext_value);
 	THINGS_LOG_V(THINGS_INFO, TAG, "SoftAP SSID : %s", g_easysetup_softap_ssid);
 

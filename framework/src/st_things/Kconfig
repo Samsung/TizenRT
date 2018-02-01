@@ -22,6 +22,13 @@ if ST_THINGS
 
 comment "ST_Things Config Parameters"
 
+config ST_THINGS_ARTIK_HW_CERT_KEY
+	bool "Enable Artik H/W Certificate & Key"
+	depends on ARCH_BOARD_ARTIK053 || ARCH_BOARD_ARTIK053S || ARCH_BOARD_ARTIK055 || ARCH_BOARD_ARTIK055S
+	default n
+	---help---
+		Build ST Things for STG Server
+
 config ST_THINGS_STG_MODE
 	bool "Enable ST Things STG Mode"
 	default n
