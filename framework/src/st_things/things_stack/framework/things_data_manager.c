@@ -2313,3 +2313,13 @@ int dm_termiate_module()
 	hashmap_delete(g_resource_type_hmap);
 	return 1;
 }
+
+bool dm_get_easy_setup_use_artik_crt()
+{
+	return is_artik;
+}
+
+char *dm_get_mnid()
+{
+	return g_manufacturer_name;
+}

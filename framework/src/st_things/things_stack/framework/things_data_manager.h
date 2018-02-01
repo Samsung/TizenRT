@@ -126,6 +126,9 @@ bool dm_is_rsc_published(void);
 int dm_del_things_cloud_data(void);
 bool dm_is_there_things_cloud(void);
 
+bool dm_get_easy_setup_use_artik_crt(void);
+char *dm_get_mnid();
+
 int dm_validate_attribute_in_request(char *res_type, const void *payload);
 
 typedef enum {
