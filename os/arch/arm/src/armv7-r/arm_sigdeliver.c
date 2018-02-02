@@ -152,6 +152,7 @@ void up_sigdeliver(void)
 
 	board_autoled_off(LED_SIGNAL);
 	OS_TRACE_TASK_SWITCHED_IN(rtcb);
+	__stack_chk_region(rtcb);
 	up_fullcontextrestore(regs);
 }
 

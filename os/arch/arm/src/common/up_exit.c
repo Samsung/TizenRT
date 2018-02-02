@@ -188,5 +188,6 @@ void _exit(int status)
 	/* Then switch contexts */
 
 	OS_TRACE_TASK_SWITCHED_IN(tcb);
+	__stack_chk_region(tcb);
 	up_fullcontextrestore(tcb->xcp.regs);
 }

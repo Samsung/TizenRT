@@ -75,6 +75,7 @@ void up_schedyield(struct tcb_s *rtcb)
 		 */
 
 		OS_TRACE_TASK_SWITCHED_IN(tcb);
+		__stack_chk_region(tcb);
 		up_restorestate(rtcb->xcp.regs);
 	}
 	/* Copy the exception context into the TCB at the (old) head of the
@@ -92,6 +93,7 @@ void up_schedyield(struct tcb_s *rtcb)
 		/* Then switch contexts */
 
 		OS_TRACE_TASK_SWITCHED_IN(tcb);
+		__stack_chk_region(tcb);
 		up_fullcontextrestore(rtcb->xcp.regs);
 	}
 }
