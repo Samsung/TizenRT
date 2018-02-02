@@ -35,6 +35,7 @@
 #include "security/ss_sha2.h"
 #include "oxmverifycommon.h"
 #include "oic_string.h"
+#include "oic_malloc.h"
 #include "utlist.h"
 #include "aclresource.h"
 #include "srmutility.h"
@@ -552,6 +553,14 @@ static int sm_generate_mac_based_device_id(void)
 	ss_sha256_final(&sha256_ctx, hash_value);
 
 	memcpy(device_id.id, hash_value, sizeof(device_id.id));
+	char *uuid_str = NULL;
+	OCStackResult oc_res = ConvertUuidToStr(&device_id, &uuid_str);
+	if (OC_STACK_OK != oc_res) {
+		THINGS_LOG_D_ERROR(THINGS_ERROR, TAG, "Error in ConvertUuidToStr : %d", (int)oc_res);
+		return OIC_SEC_ERROR;
+	}
+	THINGS_LOG_D(THINGS_INFO, TAG, "MACbased UUID : %s", uuid_str);
+	OICFree(uuid_str);
 
 	if (sm_secure_resource_check(&device_id) != OC_STACK_OK) {
 		return OIC_SEC_ERROR;
@@ -571,13 +580,14 @@ static int sm_generate_artik_device_id(void)
 	unsigned char uuid_str[((UUID_LENGTH * 2) + 4 + 1)];
 	unsigned int uuid_len;
 
+	memset(uuid_str, 0, sizeof(uuid_str));
 	get_artik_crt_uuid(uuid_str, &uuid_len);
 	OCStackResult oc_res = ConvertStrToUuid(uuid_str, &device_id);
-
 	if (OC_STACK_OK != oc_res) {
 		THINGS_LOG_D_ERROR(THINGS_ERROR, TAG, "Error in ConvertStrToUuid : %d", (int)oc_res);
 		return OIC_SEC_ERROR;
 	}
+	THINGS_LOG_D(THINGS_INFO, TAG, "Artik UUID : %s", uuid_str);
 
 	if (sm_secure_resource_check(&device_id) != OC_STACK_OK) {
 		return OIC_SEC_ERROR;
