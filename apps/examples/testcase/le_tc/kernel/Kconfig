@@ -48,6 +48,14 @@ config TC_KN_ALL
 	select TC_KERNEL_TASK
 	select TC_KERNEL_TIMER
 	select TC_KERNEL_UMM_HEAP
+	select ITC_KERNEL_ENVIRON
+	select ITC_KERNEL_LIBC_PTHREAD
+	select ITC_KERNEL_LIBC_SEMAPHORE
+	select ITC_KERNEL_SEMAPHORE
+	select ITC_KERNEL_SCHED
+	select ITC_KERNEL_TIMER
+	select ITC_KERNEL_LIBC_SPAWN
+	select ITC_KERNEL_PTHREAD
 
 config TC_KERNEL_CLOCK
 	bool "Clock"
@@ -199,6 +207,62 @@ config TC_KERNEL_TASH_HEAPINFO
 config TC_KERNEL_TASH_STACKMONITOR
 	bool "StackMonitor"
 	default n
+
+config ITC_KERNEL_ENVIRON
+	bool "ITC Environ"
+	default n
+if ITC_KERNEL_ENVIRON
+config ITC_ENV_LOOP_SIZE
+	int "Iterator Count"
+	default 100
+endif
+
+config ITC_KERNEL_LIBC_PTHREAD
+	bool "ITC libc Pthread"
+	default n
+if ITC_KERNEL_LIBC_PTHREAD
+config ITC_LIBC_PTHREAD_LOOP_SIZE
+	int "Iterator Count"
+	default 100
+endif
+
+config ITC_KERNEL_LIBC_SEMAPHORE
+	bool "ITC Libc Semaphore"
+	default n
+
+config ITC_KERNEL_SEMAPHORE
+	bool "ITC Semaphore"
+	default n
+	select DEBUG
+	select PRIORITY_INHERITANCE
+if ITC_KERNEL_SEMAPHORE
+config ITC_KERN_SEM_LOOP_SIZE
+	int "Iterator Count"
+	default 100
+endif
+
+config ITC_KERNEL_SCHED
+	bool "ITC Sched"
+	default n
+
+config ITC_KERNEL_TIMER
+	bool "ITC Timer"
+	default n
+
+config ITC_KERNEL_LIBC_SPAWN
+	bool "ITC Libc Spawn"
+	default n
+
+config ITC_KERNEL_PTHREAD
+	bool "ITC Pthread"
+	default n
+	select MUTEX_TYPES
+if ITC_KERNEL_PTHREAD
+config ITC_KERN_PTHREAD_LOOP_SIZE
+	int "Iterator Count"
+	default 100
+endif
+
 
 endif #EXAMPLES_TESTCASE_KERNEL
 
