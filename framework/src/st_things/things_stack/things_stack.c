@@ -246,6 +246,7 @@ void things_wifi_sta_connected(wifi_manager_result_e res)
 		THINGS_LOG_ERROR(THINGS_ERROR, TAG, "Failed to connect to the AP");
 		return;
 	}
+
 	THINGS_LOG_D(THINGS_INFO, TAG, "T%d --> %s", getpid(), __FUNCTION__);
 
 	pthread_create_rtos(&h_thread_things_wifi_join, NULL, (pthread_func_type) t_things_wifi_join_loop, NULL, THINGS_STACK_WIFI_JOIN_THREAD);
@@ -289,8 +290,11 @@ typedef int8_t INT8;
 
 bool try_connect_home_ap(wifi_manager_ap_config_s *connect_config)
 {
-	wifi_manager_result_e result = WIFI_MANAGER_SUCCESS;
+	if (connect_config != NULL && connect_config->ssid != NULL) {
+		THINGS_LOG_V(THINGS_INFO, TAG, "Try_connect_home_ap [ssid : %s]", connect_config->ssid);
+	}
 
+	wifi_manager_result_e result = WIFI_MANAGER_SUCCESS;
 	int retry_count = 0;
 
 	for (; retry_count < 3; retry_count++) {
@@ -299,7 +303,7 @@ bool try_connect_home_ap(wifi_manager_ap_config_s *connect_config)
 		if (result == WIFI_MANAGER_SUCCESS) {
 			break;
 		} else {
-			THINGS_LOG_ERROR(THINGS_ERROR, TAG, "Failed to connect WiFi");
+			THINGS_LOG_V(THINGS_ERROR, TAG, "Failed to connect WiFi [Error Code : %d, Retry count : %d]", result, retry_count);
 		}
 	}
 
@@ -358,19 +362,15 @@ bool things_handle_stop_soft_ap(wifi_manager_ap_config_s *connect_config)
 		return false;
 	}
 
-	if (connect_config != NULL) {
-		save_acces_point_info(connect_config);
-	}
-
 	return true;
 }
 
 INT8 things_wifi_connection_cb(access_point_info_s *p_info, char *p_cmd_id)
 {
-	THINGS_LOG_D(THINGS_INFO, TAG, "T%d --> %s", getpid(), __FUNCTION__);
+	THINGS_LOG_D(THINGS_DEBUG, TAG, "T%d --> %s", getpid(), __FUNCTION__);
 
 	if (p_info == NULL) {
-		THINGS_LOG_D(THINGS_INFO, TAG, "Invalid params");
+		THINGS_LOG_ERROR(THINGS_ERROR, TAG, "Invalid params");
 		return -1;
 	}
 
@@ -382,8 +382,7 @@ INT8 things_wifi_connection_cb(access_point_info_s *p_info, char *p_cmd_id)
 
 	connect_config.passphrase_length = strlen(connect_config.passphrase);
 
-	THINGS_LOG_D(THINGS_INFO, TAG, "[%s] ssid : %s", __FUNCTION__, connect_config.ssid);
-	THINGS_LOG_D(THINGS_INFO, TAG, "[%s] passphrase : %s", __FUNCTION__, connect_config.passphrase);
+	THINGS_LOG_V(THINGS_INFO, TAG, "[%s] ssid : %s", __FUNCTION__, connect_config.ssid);
 
 	// set auth type
 	if (strncmp(p_info->auth_type, "WEP", strlen("WEP")) == 0) {
@@ -406,31 +405,26 @@ INT8 things_wifi_connection_cb(access_point_info_s *p_info, char *p_cmd_id)
 		connect_config.ap_crypto_type = WIFI_MANAGER_CRYPTO_TKIP_AND_AES;
 	}
 
-	int ret = things_handle_stop_soft_ap(&connect_config);
-	if (ret != 1) {
+	wifi_manager_result_e res = wifi_manager_save_config(&connect_config);
+
+	if (res != WIFI_MANAGER_SUCCESS) {
+		THINGS_LOG_V(THINGS_ERROR, TAG, "Failed to save AP configuration : [%d]", res);
+		return -1;
+	} else {
+		THINGS_LOG_V(THINGS_INFO, TAG, "Success to save AP configuration");
+	}
+
+	if (!things_handle_stop_soft_ap(&connect_config)) {
 		return -1;
 	}
 
 	return 1;
 }
 
-access_point_info_s *create_access_info()
-{
-	access_point_info_s *info = (access_point_info_s *) things_malloc(sizeof(access_point_info_s));
-	memset(info->e_ssid, 0, MAX_ESSID);
-	memset(info->security_key, 0, MAX_SECUIRTYKEY);
-	memset(info->auth_type, 0, MAX_TYPE_AUTH);
-	memset(info->enc_type, 0, MAX_TYPE_ENC);
-	memset(info->channel, 0, MAX_CHANNEL);
-	memset(info->signal_level, 0, MAX_LEVEL_SIGNAL);
-	memset(info->bss_id, 0, MAX_BSSID);
-	return info;
-}
-
 int things_wifi_search_cb(access_point_info_s *** p_info, int *p_count)
 {
-	THINGS_LOG_V(THINGS_INFO, TAG, THINGS_FUNC_ENTRY);
-//TO DO
+	THINGS_LOG_D(THINGS_DEBUG, TAG, THINGS_FUNC_ENTRY);
+	//TO DO
 	(*p_count) = 0;
 
 	return 1;
