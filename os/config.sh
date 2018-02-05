@@ -1,7 +1,10 @@
+#!/bin/bash
+#
+
+WD=$(cd `dirname $0` && pwd)
+
 # clean
-make distclean
+make -C $WD distclean
 
 # set config
-cd tools
-./configure.sh $1
-cd ..
+$WD/tools/configure.sh $1

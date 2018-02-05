@@ -49,7 +49,7 @@
 # POSSIBILITY OF SUCH DAMAGE.
 #
 
-WD=`pwd`
+WD=$(cd `dirname $0` && pwd)
 TOPDIR="${WD}/.."
 USAGE="
 
