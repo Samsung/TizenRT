@@ -53,7 +53,7 @@ WD=`pwd`
 
 # Get command line parameters
 
-USAGE="USAGE: $0 [-d|-h] [-b <build>] [--board <board-name>] -v <major.minor> <outfile-path>"
+USAGE="USAGE: $0 [-d|-h] [-b <build>] [--board <board-name>] -v <major.minor.revision> <outfile-path>"
 ADVICE="Try '$0 -h' for more information"
 
 unset VERSION
@@ -135,6 +135,7 @@ if [ "X${MAJOR}" = "X${VERSION}" ]; then
 	exit 2
 fi
 MINOR=`echo ${VERSION} | cut -d'.' -f2`
+REVISION=`echo ${VERSION} | cut -d'.' -f3`
 
 # Get GIT information (if not provided on the command line)
 
@@ -160,6 +161,7 @@ echo "" >>${OUTFILE}
 echo "CONFIG_VERSION_STRING=\"${VERSION}\"" >>${OUTFILE}
 echo "CONFIG_VERSION_MAJOR=${MAJOR}" >>${OUTFILE}
 echo "CONFIG_VERSION_MINOR=${MINOR}" >>${OUTFILE}
+echo "CONFIG_VERSION_REVISION=${REVISION}" >>${OUTFILE}
 echo "CONFIG_VERSION_BUILD=\"${BUILD}\"" >>${OUTFILE}
 [ -n "${BOARD}" ] && \
 	echo "CONFIG_VERSION_BOARD=\"${BOARD}\"" >>${OUTFILE}
