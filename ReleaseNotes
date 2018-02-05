@@ -1,0 +1,101 @@
+TizenRT Release Notes
+=====================
+
+TizenRT has the same version name as the GIT tag name. You can revert
+back to the previous TizenRT with the following tag name. (For example,
+git checkout v1.0.09)
+
+The following version-specific history is also posted in GITHUB.
+(https://github.com/SamsungARTIK/TizenRT/releases)
+
+v1.0.01
+-------
+
+* initial version of TizenRT 1.0
+
+v1.0.02
+-------
+
+* Product version of ARTIK053
+
+v1.0.03
+-------
+
+* Product version of ARTIK053S
+
+v1.0.04
+-------
+
+* Support ARTIK-SDK 1.5.0
+
+v1.0.05
+-------
+
+* Product version of ARTIK055S
+* Support ARTIK-SDK 1.6.0
+* DHCPD: prevent buffer overflow
+* GPIO: add missing gpio pinout
+* MQTT: fix mqtt disconnect example
+* NTPclient: reinit interlock semaphore
+* NTPclient: add 1 sec delay on error handling
+* NTPclient: add handling about RATE KoD message
+* SPI: fix clock rate
+* TLS: fix verification mode
+* time: support timezone
+* WiFi: fix KRACK patch (security issue)
+
+v1.0.06
+-------
+
+* Support ARTIK-SDK 1.7.0
+* ALRAM: add alram example
+* Bootloader: update bl2.bin binary. enable secure boot.
+* FS: support MX25L12835F driver
+* FS: modify SmartFS driver
+* FS: enable JOURNALING, SECTOR_RECOVERY, MTD_WEARLEVEL
+* I2C: modify MPU9250 example
+* MCT: change TimerISR to MCT driver
+* OpenOCD: fix wrong path in script
+* Onboarding: replace hardcoded certificate by the one from the SE
+* PWM: fix bug in static test
+* RTC: modify rtc driver
+* S-module: add new signing tool for S-module
+* SFlash: add semaphore
+* TLS: add HAP crypto library
+* Webserver: allow caller application to provide SSL config
+* WiFi: clean code
+* Watchdog: support WDOG interrupt
+
+v1.0.07
+-------
+
+* OpenOCD: change to excutable attribute for windows
+* NTP: fix wrong condition when setting ntp time
+* Ping: add ping option in ping command
+* CodeSigner: add app codesigner for windows
+
+v1.0.08
+-------
+
+* LWIP: update LWIP v2.0.2 (support IPv6)
+* Iotivity: update Iotivity 1.3-rel for OCF 1.3
+
+v1.0.09
+-------
+
+* Support ARTIK-SDK 1.7.1
+
+v1.0.10
+-------
+
+* WiFi: fix wrong handling of received msg from supplicant
+* PWM: add frequency/duty functions
+* PWM: change order port configuration
+* Serial: enable uart input filter feature
+* DHCPC: add to set netmask and default router
+* ETC: remove libtuv library
+* TLS: fix SRP repeat test fail for HOMEKIT
+* ETC: add board name in version (boot, /proc/version)
+* WiFi: remove duplicate calling mq_close
+* Serial: enable uart PULLUP in console mode
+* SysView: add sysview target initial sources
