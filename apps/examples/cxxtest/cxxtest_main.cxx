@@ -69,8 +69,16 @@
 #include <algorithm>
 #include <list>
 
+
+
+#include <media/MediaPlayer.hpp>
+
 #include <tinyara/init.h>
 #include <apps/platform/cxxinitialize.h>
+
+//#include <media/MediaRecorder.hpp>
+
+#include "jsdosa.h"
 
 using namespace std;
 
@@ -93,304 +101,51 @@ using namespace std;
 #define CXXTEST_EXCEPTION
 #endif
 
+void printString()
+{
+	std::cout << "printstring: " << std::endl;
+}
 
+/*
+template<typename _Callable, typename... _Args>
+void enqueue(_Callable&& __f, _Args&&... __args)
+{
+	//unique_lock<std::mutex> lock(*qMtx);
+	//std::function<void()> func = std::bind(std::forward<_Callable>(__f), std::forward<_Args>(__args)...);	
+	//cmdQueue.push(func);
+	//cv.notify_one();
+	std::cout << "18: " << std::endl;
+}*/
 //***************************************************************************
 // Private Classes
 //***************************************************************************
 
-#ifdef CXXTEST_RTTI
-class Base
-{
-public:
-	virtual void printBase(void) {};
-};
-
-class Extend : public Base
-{
-public:
-	void printExtend(void)
-	{
-		cout << "extend" << endl;
-	}
-};
-#endif
-
-//***************************************************************************
-// Private Data
-//***************************************************************************
-
-//***************************************************************************
-// Private Functions
-//***************************************************************************
-struct Foo
-{
-	Foo(int num) : num_(num) {}
-	void print_add(int i) const
-	{
-		printf("%d\n", num_+i);
-	}
-	int num_;
-};
-
-static void print_num(int i)
-{
-	printf("%d\n", i);
-}
-
-struct PrintNum
-{
-	void operator()(int i) const
-	{
-		printf("%d\n", i);
-	}
-};
-
-static void test_function(void)
-{
-	cout << endl << "============ Test STL(Function Templates) ===============" << endl;
-	// store a free function
-	function<void(int)> f_display = print_num;
-	f_display(-9);
-
-	// store a lambda
-	function<void()> f_display_42 = []()
-	{
-		print_num(42);
-	};
-	f_display_42();
-
-	// store the result of a call to bind
-	function<void()> f_display_31337 = bind(print_num, 31337);
-	f_display_31337();
-
-	// store a call to a member function
-	function<void(const Foo&, int)> f_add_display = &Foo::print_add;
-	const Foo foo(314159);
-	f_add_display(foo, 1);
-
-	// store a call to a data member accessor
-	function<int(Foo const&)> f_num = &Foo::num_;
-	printf("num_: %d\n", f_num(foo));
-
-	// store a call to a member function and object
-	using placeholders::_1;
-	function<void(int)> f_add_display2 = bind( &Foo::print_add, foo, _1 );
-	f_add_display2(2);
-
-	// store a call to a member function and object ptr
-	function<void(int)> f_add_display3 = bind( &Foo::print_add, &foo, _1 );
-	f_add_display3(3);
-
-	// store a call to a function object
-	function<void(int)> f_display_obj = PrintNum();
-	f_display_obj(18);
-}
-
-static void test_tuple(void)
-{
-	cout << endl << "============ Test STL(Tuple) ============================" << endl;
-	using wcs_t= tuple<float, float, float>;
-	wcs_t g92_offset = wcs_t(1.0F, 2.1F, 3.2F);
-	float x=1.234f, y=2.345f, z=3.456f;
-	tie(x, y, z) = g92_offset;
-	printf("Tuple tie X%8.4f Y%8.4f Z%8.4f\n", x, y, z);
-	printf("Tuple X%8.4f Y%8.4f Z%8.4f\n", get<0>(g92_offset),  get<1>(g92_offset), get<2>(g92_offset) );
-}
-
-static void test_array(void)
-{
-	cout << endl << "============ Test STL(Array) ============================" << endl;
-	array<int, 4> ta {{1,2,3,4}};
-	for(const auto& s: ta) printf("%d ", s);
-	printf("\n");
-	int n= 10;
-	generate(ta.begin(), ta.end(), [&n] { return n++; });
-	for(const auto& s: ta) printf("%d ", s);
-	printf("\n");
-}
-
-static void test_list(void)
-{
-	cout << endl << "============ Test STL(List) =============================" << endl;
-	// constructors used in the same order as described above:
-	list<int> first;                                // empty list of ints
-	list<int> second (4,100);                       // four ints with value 100
-	list<int> third (second.begin(),second.end());  // iterating through second
-	list<int> fourth (third);                       // a copy of third
-
-	// the iterator constructor can also be used to construct from arrays:
-	int myints[] = {16,2,77,29};
-	list<int> fifth (myints, myints + sizeof(myints) / sizeof(int) );
-
-	cout << "The contents of fifth are: ";
-	for (list<int>::iterator it = fifth.begin(); it != fifth.end(); it++)
-		cout << *it << ' ';
-
-	cout << endl;
-}
-
-
-//***************************************************************************
-// Name: test_ostream
-//***************************************************************************/
-
-static void test_ofstream(void)
-{
-	cout << endl << "============ Test ofstream ==============================" << endl;
-	ofstream ttyOut;
-	printf("printf: Starting test_ostream\n");
-	ttyOut.open ("/dev/console");
-	if (!ttyOut.good())
-	{
-		printf("printf: Failed opening /dev/console\n");
-		cout << "cout: Failed opening /dev/console" << endl;
-		cout << " good()=" << ttyOut.good();
-		cout << " eof()=" << ttyOut.eof();
-		cout << " fail()=" << ttyOut.fail();
-		cout << " bad()=" << ttyOut.bad() << endl;
-	}
-	else
-	{
-		printf("printf: Successfully opened /dev/console\n");
-		cout << "cout: Successfully opened /dev/console" << endl;
-		ttyOut << "Writing this to /dev/console\n";
-		ttyOut.close();
-	}
-}
-
-//***************************************************************************
-// Name: test_iostream
-//***************************************************************************/
-
-static void test_iostream(void)
-{
-	cout << endl << "============ Test iostream ==============================" << endl;
-	cout << "Hello, this is only a test" << endl;
-	cout << "Print an int: "  <<  190  <<  endl;
-	cout <<  "Print a char: "  <<  'd'  <<  endl;
-
-#ifdef CXXTEST_ISTREAM
-	int a;
-	string s;
-
-	cout << "Please type in an int:" << endl;
-	cin >> a;
-	cout << "You type in: " << a << endl;
-	cout << "Please type in a string:" << endl;
-	cin >> s;
-	cout << "You type in: " << s << endl;
-#endif
-}
-
-//***************************************************************************
-// Name: test_stl
-//***************************************************************************/
-
-static void test_vectors(void)
-{
-	cout << endl << "============ Test STL(Vectors) ==========================" << endl;
-	vector<int> v1;
-	assert(v1.empty());
-
-	v1.push_back(1);
-	assert(!v1.empty());
-
-	v1.push_back(2);
-	v1.push_back(3);
-	v1.push_back(4);
-	assert(v1.size() == 4);
-
-	v1.pop_back();
-	assert(v1.size() == 3);
-
-	cout << "v1=" << v1[0] << ' ' << v1[1] << ' ' << v1[2] << endl;
-	assert(v1[2] == 3);
-
-	vector<int> v2 = v1;
-	assert(v2 == v1);
-
-	string words[4] = {"Hello", "World", "Good", "Luck"};
-	vector<string> v3(words, words + 4);
-	vector<string>::iterator it;
-	for (it = v3.begin(); it != v3.end(); ++it)
-	{
-		cout << *it << ' ';
-	}
-
-	cout << endl;
-	assert(v3[1] == "World");
-}
-
-static void test_map(void)
-{
-	cout << endl << "============ Test STL(Map) ==============================" << endl;
-
-	map<int,string> m1;
-	m1[12] = "Hello";
-	m1[24] = "World";
-	assert(m1.size() == 2);
-	assert(m1[24] == "World");
-}
-
-static void test_stl(void)
-{
-	test_array();
-	test_vectors();
-	test_map();
-	test_list();
-	test_tuple();
-	test_function();
-}
-
-#ifdef CXXTEST_RTTI
-//***************************************************************************
-// Name: test_rtti
-//***************************************************************************/
-
-static void test_rtti(void)
-{
-	cout << endl << "============ Test RTTI ==================================" << endl;
-
-	Base *a = new Base();
-	Base *b = new Extend();
-	assert(a);
-	assert(b);
-
-	Extend *t = dynamic_cast<Extend *>(a);
-	assert(t == NULL);
-
-	t = dynamic_cast<Extend *>(b);
-	assert(t);
-	t->printExtend();
-
-	delete a;
-	delete b;
-}
-#endif
-
-//***************************************************************************
-// Name: test_exception
-//***************************************************************************/
-
-#ifdef CXXTEST_EXCEPTION
-static void test_exception(void)
-{
-	cout << endl << "============ Test Exception =============================" << endl;
-	try
-	{
-		throw runtime_error("runtime error");
-	}
-
-	catch (runtime_error &e)
-	{
-		cout << "Catch exception: " << e.what() << endl;
-	}
-}
-#endif
+JSDOSA jsdosa;
 
 //***************************************************************************
 // Public Functions
 //***************************************************************************
+void test()
+{
+	jsdosa.set(3);
+	printf("%d", jsdosa.get());
+	MediaPlayer p;
+	p.create();
+	p.start();
+	p.pause();
+	p.resume();
+	p.stop();
+	p.destroy();
+/*
+	MediaRecorder r;
+	r.create();
+	r.start();
+	r.pause();
+	r.resume();
+	r.stop();
+	r.destroy();
+	*/
+}
 
 //***************************************************************************
 // Name: cxxtest_main
@@ -406,17 +161,10 @@ extern "C"
 #ifdef CONFIG_EXAMPLES_CXXTEST_CXXINITIALIZE
 		up_cxxinitialize();
 #endif
-		test_ofstream();
-		test_iostream();
-		test_stl();
 
-#ifdef CXXTEST_RTTI
-		test_rtti();
-#endif
+		test();
+		//enqueue(printString);
 
-#ifdef CXXTEST_EXCEPTION
-		test_exception();
-#endif
 		return 0;
 	}
 }
