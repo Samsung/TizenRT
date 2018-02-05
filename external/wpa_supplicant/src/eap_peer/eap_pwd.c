@@ -5,7 +5,7 @@
  * This software may be distributed under the terms of the BSD license.
  * See README for more details.
  */
-
+#ifndef CONFIG_DISABLE_EAP_FOR_SUPPLICANT
 #include "includes.h"
 
 #include "common.h"
@@ -941,3 +941,4 @@ int eap_peer_pwd_register(void)
 	}
 	return ret;
 }
+#endif /* #ifndef CONFIG_DISABLE_EAP_FOR_SUPPLICANT */
