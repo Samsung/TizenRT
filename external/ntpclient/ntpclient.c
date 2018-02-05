@@ -89,6 +89,18 @@
 #define CONFIG_NETUTILS_NTPCLIENT_DEBUG		0
 #endif
 
+#ifndef CONFIG_NETUTILS_NTPCLIENT_DEFAULT_SERVER
+#define CONFIG_NETUTILS_NTPCLIENT_DEFAULT_SERVER		"0.ubuntu.pool.ntp.org"
+#endif
+
+#ifndef CONFIG_NETUTILS_NTPCLIENT_DEFAULT_SERVER_PORT
+#define CONFIG_NETUTILS_NTPCLIENT_DEFAULT_SERVER_PORT		123
+#endif
+
+#ifndef CONFIG_NETUTILS_NTPCLIENT_DEFAULT_INTERVAL_SECONDS
+#define CONFIG_NETUTILS_NTPCLIENT_DEFAULT_INTERVAL_SECONDS		86400
+#endif
+
 /****************************************************************************
  * Private Types
  ****************************************************************************/

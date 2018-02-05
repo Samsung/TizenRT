@@ -34,6 +34,7 @@
 #include "utils/things_hashmap.h"
 #include "things_resource.h"
 #include "things_data_manager.h"
+#include "things_sss_manager.h"
 #include "things_server_builder.h"
 #include "cloud/cloud_manager.h"
 #include "cloud/cloud_connector.h"
@@ -663,8 +664,11 @@ wifi_manager_softap_config_s *dm_get_softap_wifi_config(void)
 {
 	st_device_s *device = (st_device_s *)hashmap_get(g_device_hmap, (unsigned long)(0));
 	int ssid_type = (is_artik == true ? 1 : 0);
-	unsigned char mac_id[16] = { 0, };
+	unsigned char ext_value[16] = { 0, };
 	char ssid_device_name[17];
+
+	memset(ext_value, 0, sizeof(ext_value));
+	memset(ssid_device_name, 0, sizeof(ssid_device_name));
 
 	snprintf(ssid_device_name, sizeof(ssid_device_name), "%s", device->name);
 	THINGS_LOG_V(THINGS_INFO, TAG, "DeviceName : %s", ssid_device_name);
@@ -672,9 +676,19 @@ wifi_manager_softap_config_s *dm_get_softap_wifi_config(void)
 	wifi_manager_info_s st_wifi_info;
 	wifi_manager_get_info(&st_wifi_info);
 
-	snprintf(mac_id, sizeof(mac_id), "%02X%02X", st_wifi_info.mac_address[4], st_wifi_info.mac_address[5]);
+#if defined(CONFIG_ST_THINGS_ARTIK_HW_CERT_KEY) && defined(CONFIG_TLS_WITH_SSS)
+	if (is_artik) {
+		if (!things_encrypt_artik_uuid(ext_value)) {
+			THINGS_LOG_D(THINGS_ERROR, TAG, "Fail to encrypt artik uuid");
+			return NULL;
+		}
+	} else 
+#endif	
+	{
+		snprintf(ext_value, sizeof(ext_value), "%02X%02X", st_wifi_info.mac_address[4], st_wifi_info.mac_address[5]);
+	}
 
-	snprintf(g_easysetup_softap_ssid, sizeof(g_easysetup_softap_ssid), "%s_%s%s%s%d%s", ssid_device_name, g_easysetup_tag, g_manufacturer_name, g_setup_id, 0, mac_id);
+	snprintf(g_easysetup_softap_ssid, sizeof(g_easysetup_softap_ssid), "%s_%s%s%s%d%s", ssid_device_name, g_easysetup_tag, g_manufacturer_name, g_setup_id, ssid_type, ext_value);
 	THINGS_LOG_V(THINGS_INFO, TAG, "SoftAP SSID : %s", g_easysetup_softap_ssid);
 
 	snprintf(ap_config.ssid, sizeof(ap_config.ssid), "%s", g_easysetup_softap_ssid);
@@ -2312,4 +2326,14 @@ int dm_termiate_module()
 	hashmap_delete(g_device_hmap);
 	hashmap_delete(g_resource_type_hmap);
 	return 1;
+}
+
+bool dm_get_easy_setup_use_artik_crt()
+{
+	return is_artik;
+}
+
+char *dm_get_mnid()
+{
+	return g_manufacturer_name;
 }

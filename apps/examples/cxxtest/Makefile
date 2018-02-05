@@ -63,7 +63,7 @@ THREADEXEC = TASH_EXECMD_ASYNC
 # C++ Test Example
 ASRCS		=
 CSRCS		=
-CXXSRCS		=
+CXXSRCS		= MediaPlayer.cxx MediaRecorder.cxx DataSource.cxx InputDataSource.cxx OutputDataSource.cxx
 MAINSRC		= cxxtest_main.cxx
 
 AOBJS		= $(ASRCS:.S=$(OBJEXT))

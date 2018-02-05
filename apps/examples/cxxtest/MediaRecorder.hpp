@@ -6,7 +6,7 @@
 #include <functional>
 #include <iostream>
 
-#include <media/InputDataSource.hpp>
+#include "InputDataSource.hpp"
 
 using namespace std;
 
@@ -46,7 +46,7 @@ public:
 	void setDataSource(DataSource dataSource);
 
 private:
-/*
+
 	template<typename _Callable, typename... _Args>
 	void enqueue(_Callable&& __f, _Args&&... __args)
 	{
@@ -54,7 +54,7 @@ private:
 		std::function<void()> func = std::bind(std::forward<_Callable>(__f), std::forward<_Args>(__args)...);
 		cmdQueue.push(func);
 		cv.notify_one();
-	};*/
+	};
 
 	thread *worker;
 	int worker_thread();

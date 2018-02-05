@@ -6,7 +6,8 @@
 #include <functional>
 #include <iostream>
 
-#include <media/InputDataSource.hpp>
+#include "InputDataSource.hpp"
+#include <tinyalsa/tinyalsa.h>
 
 using namespace std;
 
@@ -63,8 +64,6 @@ private:
 	void _pause();
 	void _resume();
 	void _stop();
-
-
 
 private:
 	play_state_t curState;

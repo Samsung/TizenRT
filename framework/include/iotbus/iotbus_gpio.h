@@ -79,9 +79,9 @@ typedef enum {
 struct _iotbus_gpio_s;
 
 /**
- * @brief Pointer definition to the internal struct iotbus_gpio_s
+ * @brief Pointer definition to the internal struct _iotbus_gpio_wrapper_s
  */
-typedef struct _iotbus_gpio_s *iotbus_gpio_context_h;
+typedef struct _iotbus_gpio_wrapper_s *iotbus_gpio_context_h;
 
 #ifdef __cplusplus
 extern "C" {

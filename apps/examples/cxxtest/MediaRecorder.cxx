@@ -1,4 +1,4 @@
-#include <media/MediaRecorder.hpp>
+#include "MediaRecorder.hpp"
 
 MediaRecorder::MediaRecorder()
 {
@@ -31,7 +31,7 @@ recorder_result_t MediaRecorder::destroy() // sync call
 recorder_result_t MediaRecorder::start()
 {
 	lock_guard<mutex> lock(*cMtx);
-	//enqueue([this](){_start(); });
+	enqueue([this](){_start(); });
 
 	return RECORDER_OK;
 }
@@ -39,7 +39,7 @@ recorder_result_t MediaRecorder::start()
 recorder_result_t MediaRecorder::resume()
 {
 	lock_guard<mutex> lock(*cMtx);
-	//enqueue([this](){_resume(); });
+	enqueue([this](){_resume(); });
 
 	return RECORDER_OK;
 }
@@ -47,7 +47,7 @@ recorder_result_t MediaRecorder::resume()
 recorder_result_t MediaRecorder::stop()
 {
 	lock_guard<mutex> lock(*cMtx);
-	//enqueue([this](){_stop(); });
+	enqueue([this](){_stop();});
 
 	return RECORDER_OK;
 }
@@ -55,7 +55,7 @@ recorder_result_t MediaRecorder::stop()
 recorder_result_t MediaRecorder::pause()
 {
 	lock_guard<mutex> lock(*cMtx);
-	//enqueue([this](){_pause(); });
+	enqueue([this](){_pause(); });
 
 	return RECORDER_OK;
 }

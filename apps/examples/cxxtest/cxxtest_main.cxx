@@ -70,11 +70,11 @@
 #include <list>
 
 
-
-#include <media/MediaPlayer.hpp>
-
 #include <tinyara/init.h>
 #include <apps/platform/cxxinitialize.h>
+
+#include "MediaPlayer.hpp"
+#include "MediaRecorder.hpp"
 
 //#include <media/MediaRecorder.hpp>
 
@@ -126,9 +126,9 @@ JSDOSA jsdosa;
 // Public Functions
 //***************************************************************************
 void test()
-{
-	jsdosa.set(3);
-	printf("%d", jsdosa.get());
+{	
+	//jsdosa.set(3);	
+	//printf("%d\n", jsdosa.get());	
 	MediaPlayer p;
 	p.create();
 	p.start();
@@ -136,7 +136,7 @@ void test()
 	p.resume();
 	p.stop();
 	p.destroy();
-/*
+
 	MediaRecorder r;
 	r.create();
 	r.start();
@@ -144,7 +144,7 @@ void test()
 	r.resume();
 	r.stop();
 	r.destroy();
-	*/
+	
 }
 
 //***************************************************************************
@@ -162,8 +162,10 @@ extern "C"
 		up_cxxinitialize();
 #endif
 
+		printf("cxxtest_main\n");
 		test();
 		//enqueue(printString);
+		printf("cxxtest_main2\n");
 
 		return 0;
 	}

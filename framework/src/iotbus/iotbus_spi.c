@@ -40,6 +40,10 @@ struct _iotbus_spi_s {
 #endif
 };
 
+struct _iotbus_spi_wrapper_s {
+	struct _iotbus_spi_s *handle;
+};
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -53,16 +57,22 @@ extern "C" {
 /**
  * Public Functions
  */
-
 iotbus_spi_context_h iotbus_spi_open(unsigned int bus, const struct iotbus_spi_config_s *config)
 {
-	if (!config)
-		return NULL;
+	struct spi_dev_s *spi_dev;
+	struct _iotbus_spi_s *handle;
+	iotbus_spi_context_h dev;
 
-	if (config->bits_per_word != 8)
+	if (!config) {
 		return NULL;
-	if (config->frequency == 0 || config->frequency > _IOTBUS_SPI_MAX_FREQUENCY)
+	}
+	if (config->bits_per_word != 8) {
 		return NULL;
+	}
+	if (config->frequency == 0 || config->frequency > _IOTBUS_SPI_MAX_FREQUENCY) {
+		return NULL;
+	}
+
 	switch (config->mode) {
 	case IOTBUS_SPI_MODE0:
 	case IOTBUS_SPI_MODE1:
@@ -73,81 +83,109 @@ iotbus_spi_context_h iotbus_spi_open(unsigned int bus, const struct iotbus_spi_c
 		return NULL;
 	}
 
-	struct _iotbus_spi_s *handle = NULL;
 	handle = (struct _iotbus_spi_s *)malloc(sizeof(struct _iotbus_spi_s));
-	if (handle == NULL) {
+	if (!handle) {
 		return NULL;
 	}
-	handle->bpw = config->bits_per_word;
-	handle->freq = config->frequency;
-	handle->cs = config->chip_select;
-	handle->mode = config->mode;
-	struct spi_dev_s *dev = up_spiinitialize(bus);
+
+	dev = (struct _iotbus_spi_wrapper_s *)malloc(sizeof(struct _iotbus_spi_wrapper_s));
 	if (!dev) {
 		free(handle);
 		return NULL;
 	}
 
-	handle->sdev = dev;
+	spi_dev = up_spiinitialize(bus);
+	if (!spi_dev) {
+		free(handle);
+		free(dev);
+		return NULL;
+	}
 
-	SPI_LOCK(dev, true);
-	SPI_SETMODE(dev, handle->mode);
-	SPI_SETBITS(dev, handle->bpw);
-	SPI_SETFREQUENCY(dev, handle->freq);
-	SPI_LOCK(dev, false);
-	return handle;
+	handle->bpw = config->bits_per_word;
+	handle->freq = config->frequency;
+	handle->cs = config->chip_select;
+	handle->mode = config->mode;
+
+	SPI_LOCK(spi_dev, true);
+	SPI_SETMODE(spi_dev, handle->mode);
+	SPI_SETBITS(spi_dev, handle->bpw);
+	SPI_SETFREQUENCY(spi_dev, handle->freq);
+	SPI_LOCK(spi_dev, false);
+
+	handle->sdev = spi_dev;
+	dev->handle = handle;
+
+	return dev;
 }
 
 int iotbus_spi_write(iotbus_spi_context_h hnd, uint8_t *txbuf, size_t length)
 {
-	if (!hnd)
-		return IOTBUS_ERROR_INVALID_PARAMETER;
+	struct spi_dev_s *dev;
+	struct _iotbus_spi_s *handle;
 
-	if (!txbuf || length < 0)
+	if (!hnd || !hnd->handle) {
 		return IOTBUS_ERROR_INVALID_PARAMETER;
+	}
 
-	struct spi_dev_s *dev = (struct spi_dev_s *)hnd->sdev;
+	if (!txbuf || length < 0) {
+		return IOTBUS_ERROR_INVALID_PARAMETER;
+	}
+
+	handle = (struct _iotbus_spi_s *)hnd->handle;
+	dev = (struct spi_dev_s *)handle->sdev;
 	SPI_LOCK(dev, true);
-	SPI_SELECT(dev, hnd->cs, true);
+	SPI_SELECT(dev, handle->cs, true);
 	SPI_SNDBLOCK(dev, txbuf, length); // return type is void
-	SPI_SELECT(dev, hnd->cs, false);
+	SPI_SELECT(dev, handle->cs, false);
 	SPI_LOCK(dev, false);
-	return 0;
+
+	return IOTBUS_ERROR_NONE;
 }
 
 int iotbus_spi_recv(iotbus_spi_context_h hnd, uint8_t *rxbuf, size_t length)
 {
+	struct spi_dev_s *dev;
+	struct _iotbus_spi_s *handle;
 
-	if (!hnd)
+	if (!hnd || !hnd->handle) {
 		return IOTBUS_ERROR_INVALID_PARAMETER;
+	}
 
-	if (!rxbuf || length < 0)
+	if (!rxbuf || length < 0) {
 		return IOTBUS_ERROR_INVALID_PARAMETER;
+	}
 
-	struct spi_dev_s *dev = (struct spi_dev_s *)hnd->sdev;
+	handle = (struct _iotbus_spi_s *)hnd->handle;
+	dev = (struct spi_dev_s *)handle->sdev;
 	SPI_LOCK(dev, true);
-	SPI_SELECT(dev, hnd->cs, true);
+	SPI_SELECT(dev, handle->cs, true);
 	SPI_RECVBLOCK(dev, rxbuf, length); // return type is void
-	SPI_SELECT(dev, hnd->cs, false);
+	SPI_SELECT(dev, handle->cs, false);
 	SPI_LOCK(dev, false);
-	return 0;
+
+	return IOTBUS_ERROR_NONE;
 }
 
 int iotbus_spi_transfer_buf(iotbus_spi_context_h hnd, uint8_t *txbuf, uint8_t *rxbuf, size_t length)
 {
-
-	if (!hnd)
-		return IOTBUS_ERROR_INVALID_PARAMETER;
-
-	if (!txbuf || !rxbuf || length < 0)
-		return IOTBUS_ERROR_INVALID_PARAMETER;
-
 #ifdef CONFIG_SPI_EXCHANGE
-	struct spi_dev_s *dev = (struct spi_dev_s *)hnd->sdev;
+	struct spi_dev_s *dev;
+	struct _iotbus_spi_s *handle;
+
+	if (!hnd || !hnd->handle) {
+		return IOTBUS_ERROR_INVALID_PARAMETER;
+	}
+
+	if (!txbuf || !rxbuf || length < 0) {
+		return IOTBUS_ERROR_INVALID_PARAMETER;
+	}
+
+	handle = (struct _iotbus_spi_s *)hnd->handle;
+	dev = (struct spi_dev_s *)handle->sdev;
 	SPI_LOCK(dev, true);
-	SPI_SELECT(dev, hnd->cs, true);
+	SPI_SELECT(dev, handle->cs, true);
 	SPI_EXCHANGE(dev, txbuf, rxbuf, length);
-	SPI_SELECT(dev, hnd->cs, false);
+	SPI_SELECT(dev, handle->cs, false);
 	SPI_LOCK(dev, false);
 	return 0;
 #else
@@ -157,12 +195,15 @@ int iotbus_spi_transfer_buf(iotbus_spi_context_h hnd, uint8_t *txbuf, uint8_t *r
 
 int iotbus_spi_close(iotbus_spi_context_h hnd)
 {
-	if (!hnd)
+	if (!hnd || !hnd->handle) {
 		return IOTBUS_ERROR_INVALID_PARAMETER;
+	}
 
+	free(hnd->handle);
+	hnd->handle = NULL;
 	free(hnd);
 
-	return 0;
+	return IOTBUS_ERROR_NONE;
 }
 #else // CONFIG_SPI
 iotbus_spi_context_h iotbus_spi_open(unsigned int bus,

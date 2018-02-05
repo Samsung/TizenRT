@@ -1,4 +1,4 @@
-#include <media/MediaPlayer.hpp>
+#include "MediaPlayer.hpp"
 
 MediaPlayer::MediaPlayer()
 {
@@ -24,6 +24,7 @@ play_result_t MediaPlayer::destroy() // sync call
 	isRunning = false;
 	worker->join();
 	delete worker;
+	worker = nullptr;
 
 	return PLAYER_OK;	
 }
@@ -31,7 +32,7 @@ play_result_t MediaPlayer::destroy() // sync call
 play_result_t MediaPlayer::prepare()
 {	
 	lock_guard<mutex> lock(*cMtx);
-	//enqueue([this](){_prepare(); });
+	enqueue([this](){_prepare(); });
 
 	return PLAYER_OK;
 }
@@ -39,7 +40,7 @@ play_result_t MediaPlayer::prepare()
 play_result_t MediaPlayer::start()
 {
 	lock_guard<mutex> lock(*cMtx);
-	//enqueue([this](){_start(); });
+	enqueue([this](){_start(); });
 	
 	return PLAYER_OK;
 }
@@ -47,7 +48,7 @@ play_result_t MediaPlayer::start()
 play_result_t MediaPlayer::resume()
 {
 	lock_guard<mutex> lock(*cMtx);
-	//enqueue([this](){_resume(); });
+	enqueue([this](){_resume(); });
 
 	return PLAYER_OK;
 }
@@ -55,7 +56,7 @@ play_result_t MediaPlayer::resume()
 play_result_t MediaPlayer::stop()
 {
 	lock_guard<mutex> lock(*cMtx);
-	//enqueue([this](){_stop(); });	
+	enqueue([this](){_stop(); });	
 
 	return PLAYER_OK;
 }
@@ -63,7 +64,7 @@ play_result_t MediaPlayer::stop()
 play_result_t MediaPlayer::pause()
 {
 	lock_guard<mutex> lock(*cMtx);
-	//enqueue([this](){_pause(); });
+	enqueue([this](){_pause(); });
 
 	return PLAYER_OK;
 }
@@ -93,6 +94,7 @@ void MediaPlayer::_prepare()
 void MediaPlayer::_start()
 {	
 	std::cout << "start playing" << std::endl;
+	curState = 
 }
 
 void MediaPlayer::_stop()
