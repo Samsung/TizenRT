@@ -156,9 +156,16 @@ config ARTIK05X_SECURE
     default n
 
 if ARTIK05X_SECURE
+menu "Configure Secure tool"
 config ARTIK05X_CODESIGNER_PATH
 	string "codesigner tool path"
 	default "../build/configs/artik05x/tools/codesigner"
     ---help---
 
+config ARTIK05X_CODESIGNER_EXEC
+	string "codesigner tool executable"
+	default "artik05x_AppCodesigner"
+    ---help---
+
+endmenu
 endif

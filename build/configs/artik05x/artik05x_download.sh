@@ -33,6 +33,18 @@ TIZENRT_BIN=$OUTPUT_BINARY_PATH/tinyara_head.bin
 erase=0
 make=n
 
+source $OS_DIR_PATH/.config
+
+test $(expr match $(gcc -dumpmachine) '^x86_64*.') -eq 0 \
+    && arch=32 || arch=64
+
+case "$(uname)" in
+    CYGWIN* ) TOOL=win$arch ;;
+    MINGW* ) TOOL=win$arch ;;
+    Darwin* ) TOOL=macos ;;
+    Linux* ) TOOL=linux$arch ;;
+esac
+
 declare -a id desc addr size ro
 
 usage() {
@@ -48,7 +60,7 @@ usage() {
 USAGE: `basename $0` [OPTIONS] ["<partition>"]
 OPTIONS:
     [--board[="<board-name>"]]
-    [--secure[=<exec-path>]]
+    [--secure]
     [--verify]
 
 PARTITIONS:
@@ -57,11 +69,11 @@ PARTITIONS:
 For examples:
     `basename $0` --board=artik053 ALL
     `basename $0` --board=artik053s --verify wlanfw
-    `basename $0` --board=artik055s --secure=../codesigner os
+    `basename $0` --board=artik055s --secure os
 
 Options:
     --board[="<board-name>"]      select target board-name
-    --secure[=<exec-path>]        choose secure mode, and set the codesinger path
+    --secure                      choose secure mode, and set the codesinger path
     --verify                      verify downloaded image if you need
     --erase                       erase the FLASH memory area corresponding to "<partition>".
 
@@ -156,12 +168,7 @@ download()
     local SYSTEM_TYPE=`getconf LONG_BIT`
     local strcmd=""
     local bin=
-
-    if [ "$SYSTEM_TYPE" = "64" ]; then
-        local OPENOCD_BIN_PATH=${OPENOCD_DIR_PATH}/linux64
-    else
-        local OPENOCD_BIN_PATH=${OPENOCD_DIR_PATH}/linux32
-    fi
+    local OPENOCD_BIN_PATH=${OPENOCD_DIR_PATH}/$TOOL
 
     test -e $TIZENRT_BIN-signed && rm -rf $TIZENRT_BIN-signed
 
@@ -197,7 +204,10 @@ download()
 
 signing() {
     local bin=$1
-    local codesigner=$secure_tool_path/artik05x_AppCodesigner
+    local codesigner=$secure_tool_path/$TOOL/$CONFIG_ARTIK05X_CODESIGNER_EXEC
+    test $(expr match "$CONFIG_HOST_WINDOWS" y) -eq 1 \
+        && codesigner=${codesigner}.exe
+
     if test ! -e $1; then
         echo "OS image file not found" >&2
         return 1
@@ -237,20 +247,11 @@ while test $# -gt 0; do
                 exit 1
             fi
             ;;
-        --secure=*) secure_tool_path=$(echo $optarg | sed -e "s#^\~#$HOME#")
-            ;;
-        --verify)
-            VERIFY=verify
-            ;;
-        --make-only)
-            make=y
-            ;;
-        erase)
-            erase=1
-            ;;
-        ALL)
-            add_target all
-            ;;
+        --secure) secure_tool_path=$CONFIG_ARTIK05X_CODESIGNER_PATH ;;
+        --verify) VERIFY=verify ;;
+        --make-only) make=y;;
+        erase) erase=1 ;;
+        ALL) add_target all ;;
         *)
             if test -n "`get_idx $1`"; then
                 add_target $1

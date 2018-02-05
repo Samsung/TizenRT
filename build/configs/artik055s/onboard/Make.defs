@@ -163,7 +163,7 @@ BOARD_NAME := artik055s
 BOARDBINDIR := $(TOPDIR)/../build/configs/$(BOARD_NAME)/bin
 
 define DOWNLOAD
-       @$(TOPDIR)/../build/configs/artik05x/artik05x_download.sh --board=$(BOARD_NAME) --secure=$(TOPDIR)/$(CONFIG_ARTIK05X_CODESIGNER_PATH) $(1)
+       @$(TOPDIR)/../build/configs/artik05x/artik05x_download.sh --board=$(BOARD_NAME) --secure $(1)
 endef
 
 ifeq ($(WINTOOL),y)
@@ -179,7 +179,7 @@ endif
 
 define MAKEIMAGE
 	$(Q) $(TOPDIR)/../build/configs/artik05x/artik05x_download.sh \
-		--board=$(BOARD_NAME) --secure=$(TOPDIR)/$(CONFIG_ARTIK05X_CODESIGNER_PATH) \
+		--board=$(BOARD_NAME) --secure \
 		--make-only $(1)
 endef
 
