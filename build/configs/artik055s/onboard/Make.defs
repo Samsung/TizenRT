@@ -169,11 +169,11 @@ endef
 ifeq ($(WINTOOL),y)
 # Windows-native toolchains
 define PACKAGE
-	${shell cygpath -w $(TOPDIR)/../build/configs/artik05x/artik05x_user_binary.sh --topdir=$(TOPDIR) --board=$(BOARD_NAME) --secure=$(TOPDIR)/$(CONFIG_ARTIK05X_CODESIGNER_PATH)}
+	${shell cygpath -w $(TOPDIR)/../build/configs/artik05x/artik05x_user_binary.sh --topdir=$(TOPDIR) --board=$(BOARD_NAME) --secure}
 endef
 else
 define PACKAGE
-	$(Q) $(TOPDIR)/../build/configs/artik05x/artik05x_user_binary.sh --topdir=$(TOPDIR) --board=$(BOARD_NAME) --secure=$(TOPDIR)/$(CONFIG_ARTIK05X_CODESIGNER_PATH)
+	$(Q) $(TOPDIR)/../build/configs/artik05x/artik05x_user_binary.sh --topdir=$(TOPDIR) --board=$(BOARD_NAME) --secure
 endef
 endif
 

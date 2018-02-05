@@ -28,22 +28,42 @@ USAGE: `basename $0` [OPTIONS]
 OPTIONS:
     [--topdir[=<TOPDIR>]]
     [--board[="<board-name>"]]
-    [--secure[=<exec-path>]]
+    [--secure]
 
 For examples:
     `basename $0` --topdir=`pwd` --board=artik053
-    `basename $0`--topdir=../ --board=artik055s --secure=./codesigner
+    `basename $0`--topdir=../ --board=artik055s --secure
 
 Options:
     --topdir[="<TOPDIR>"]         assign the base path of tizenrt
     --board[="<board-name>"]      select target board-name
-    --secure[=<exec-path>]        choose secure mode, and set the codesinger path
+    --secure                      choose secure mode, and set the codesinger path
 
 EOF
 }
 
 signing() {
-    $CODESIGNER/artik05x_AppCodesigner $CODESIGNER/rsa_private.key $TIZENRT_IMAGE
+    source $TOPDIR/.config
+    local CODESIGNER=$CONFIG_ARTIK05X_CODESIGNER_PATH
+    local tool=linux
+    local arch=64
+
+    test $(expr match $(gcc -dumpmachine) '^x86_64*.') -eq 0 && arch=32
+
+    case "$(uname)" in
+        CYGWIN* | MINGW* ) tool=win$arch ;;
+        Linux* ) tool=$tool$arch ;;
+        Darwin*) tool=macos ;;
+    esac
+
+    CODESIGNER=$CODESIGNER/$tool/$CONFIG_ARTIK05X_CODESIGNER_EXEC
+    if [ ! -e $CODESIGNER ]; then
+        echo "No Such as codesigner. Please check the path:"
+        echo "   $CODESIGNER"
+        exit 1
+    fi
+
+    $CODESIGNER $CONFIG_ARTIK05X_CODESIGNER_PATH/rsa_private.key $TIZENRT_IMAGE
     TIZENRT_IMAGE=${TIZENRT_IMAGE}-signed
 }
 
@@ -104,15 +124,8 @@ while test $# -gt 0; do
 
     case $1 in
         --topdir=*) TOPDIR=$optarg ;;
-        --secure=*)
-            CODESIGNER=$optarg
-            if [ ! -e $CODESIGNER ]; then
-                echo "No Such as codesigner. Please check the path:"
-                echo "   $CODESIGNER"
-                exit 1
-            fi
-            ;;
-        --board=*) BOARD_NAME=$optarg ;;
+        --secure)   secure=y ;;
+        --board=*)  BOARD_NAME=$optarg ;;
         *)
             usage 1>&2
             exit 1
@@ -142,7 +155,7 @@ if [ ! -e $TIZENRT_IMAGE ]; then
     exit 1;
 fi
 
-if [ ! -z $CODESIGNER ]; then
+if [ ! -z "$secure" ]; then
     signing
 fi
 
