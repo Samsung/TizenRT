@@ -81,12 +81,12 @@ download()
 
     # Download all binaries using openocd script
     pushd ${OPENOCD_DIR_PATH} > /dev/null
-    ${OPENOCD_BIN_PATH}/openocd -f artik05x.cfg -s "$BOARD_DIR_PATH/../artik05x/scripts" -c " 	\
-        flash_write bl1 ${FW_DIR_PATH}/bl1.bin; 		\
-        flash_write bl2 ${FW_DIR_PATH}/bl2.bin; 		\
-        flash_write sssfw ${FW_DIR_PATH}/sssfw.bin; 		\
-        flash_write wlanfw ${FW_DIR_PATH}/wlanfw.bin;	\
-        flash_write os ../../../../output/bin/tinyara_head.bin;	\
+    ${OPENOCD_BIN_PATH}/openocd -f artik05x.cfg -s "$BOARD_DIR_PATH/../artik05x/scripts" -c "     \
+        flash_write bl1 ${FW_DIR_PATH}/bl1.bin;         \
+        flash_write bl2 ${FW_DIR_PATH}/bl2.bin;         \
+        flash_write sssfw ${FW_DIR_PATH}/sssfw.bin;         \
+        flash_write wlanfw ${FW_DIR_PATH}/wlanfw.bin;    \
+        flash_write os ../../../../output/bin/tinyara_head.bin;    \
         exit"
     popd > /dev/null
 }
@@ -187,13 +187,13 @@ fi
 # Download all binaries using openocd script
 \${OPENOCD_BIN_PATH}/openocd -f artik05x.cfg -c \
     "init; reset halt; \
-    flash_protect off;\
-    flash_write bl1 ../boot_bin/bl1.bin; 		\
+    flash_protect off; \
+    flash_write bl1 ../boot_bin/bl1.bin; \
     flash_protect on; \
-    flash_write bl2 ../boot_bin/bl2.bin; 		\
-    flash_write sssfw ../boot_bin/sssfw.bin; 		\
-    flash_write wlanfw ../boot_bin/wlanfw.bin;	\
-    flash_write os ../boot_bin/$(basename ${TIZENRT_IMAGE});	\
+    flash_write bl2 ../boot_bin/bl2.bin; \
+    flash_write sssfw ../boot_bin/sssfw.bin; \
+    flash_write wlanfw ../boot_bin/wlanfw.bin; \
+    flash_write os ../boot_bin/$(basename ${TIZENRT_IMAGE}); \
     flash_write factory ../boot_bin/factoryimage.gz;\
     flash_erase_part user; \
     flash_erase_part sssrw; \
@@ -201,19 +201,18 @@ fi
 __EOF__
 
 tee user_binary/openocd/fusing_a05x.bat << __EOF__
-    win32\openocd.exe -f artik05x.cfg -c \
-        "init;reset halt; \
-        flash_protect off;\
-        flash_write bl1 ../boot_bin/bl1.bin;\
-        flash_protect on; \
-        flash_write bl2 ../boot_bin/bl2.bin;\
-        flash_write sssfw ../boot_bin/sssfw.bin;\
-        flash_write wlanfw ../boot_bin/wlanfw.bin;\
-        flash_write os ../boot_bin/$(basename ${TIZENRT_IMAGE});	\
-        flash_write factory ../boot_bin/factoryimage.gz;\
-        flash_erase_part user; \
-        flash_erase_part sssrw; \
-        exit"
+set cmd=flash_protect off;^
+    flash_write bl1 ../boot_bin/bl1.bin;^
+    flash_protect on;^
+    flash_write bl2 ../boot_bin/bl2.bin;^
+    flash_write sssfw ../boot_bin/sssfw.bin;^
+    flash_write wlanfw ../boot_bin/wlanfw.bin;^
+    flash_write os ../boot_bin/$(basename ${TIZENRT_IMAGE});^
+    flash_write factory ../boot_bin/factoryimage.gz;^
+    flash_erase_part user;^
+    flash_erase_part sssrw
+win32\openocd.exe -f artik05x.cfg -c \
+    "init;reset halt;%cmd% ; exit"
 __EOF__
 
 chmod +x user_binary/openocd/fusing_a05x.*
