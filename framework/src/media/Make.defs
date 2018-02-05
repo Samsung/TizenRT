@@ -16,14 +16,16 @@
 #
 ###########################################################################
 ifeq ($(CONFIG_MEDIA_PLAYER), y)
-CSRCS += media_player.c
+#CSRCS += media_player.c
+CXXSRCS += MediaPlayer.cxx
 endif
 
 ifeq ($(CONFIG_MEDIA_RECORDER), y)
-CSRCS += media_recorder.c
+#CSRCS += media_recorder.c
+CXXSRCS += MediaRecorder.cxx
 endif
 
-CSRCS += media_utils.c
+#CSRCS += media_utils.c
 
 DEPPATH += --dep-path src/media
 VPATH += :src/media
