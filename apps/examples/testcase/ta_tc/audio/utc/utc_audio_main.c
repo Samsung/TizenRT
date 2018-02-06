@@ -634,6 +634,10 @@ static void utc_audio_pcm_readi_p(void)
 		remain -= frames_read;
 		ret = write(fd, buffer, bytes_per_frame * frames_read);
 		TC_ASSERT_EQ_CLEANUP("pcm_readi", ret, (bytes_per_frame * frames_read), clean_all_data(fd, buffer));
+		if (remain < pcm_get_buffer_size(g_pcm)) {
+			pcm_drop(g_pcm);
+			break;
+		}
 	}
 
 	printf("Record done.\n");
