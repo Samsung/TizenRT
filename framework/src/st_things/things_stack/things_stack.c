@@ -232,10 +232,7 @@ static void *__attribute__((optimize("O0"))) t_things_wifi_join_loop(void *args)
 	wifi_manager_info_s wifi_info;
 	wifi_manager_get_info(&wifi_info);
 
-	char cur_device_ip_address[18 + 1];
-	wifi_net_ip4_addr_to_ip4_str(wifi_info.ip4_address, cur_device_ip_address);
-
-	things_wifi_changed_call_func(1, wifi_info.ssid, cur_device_ip_address);
+	things_wifi_changed_call_func(1, wifi_info.ssid, wifi_info.ip4_address);
 
 	return NULL;
 }
