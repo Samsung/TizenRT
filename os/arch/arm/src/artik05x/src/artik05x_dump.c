@@ -127,20 +127,37 @@ struct arm_mode_regs_s {
 	uint32_t spsr_und;
 };
 
-struct crash_dump_head {
-	uint32_t magic1;
-	uint32_t magic2;
-	uint32_t start_addr;
-	uint32_t len;
+struct dump_header {
+	uint32_t	magic;
+	uint32_t	len;
+};
+
+struct dump_data {
+	struct dump_header	h;
+	uint32_t	*data;
+	uint32_t	magic;
 };
 
 extern struct arm_mode_regs_s cpu_ctxt_regs;	/* Global variable to store the register context */
+extern volatile uint32_t *current_regs;
 
 #ifdef CONFIG_BOARD_CRASHDUMP
+static int artik05x_dump_write(uint32_t addr, struct dump_data *data)
+{
+
+	s5j_direct_write(addr, &(data->h), sizeof(struct dump_header));
+	addr += sizeof(struct dump_header);
+	s5j_direct_write(addr, data->data, data->h.len);
+	addr += data->h.len;
+	s5j_direct_write(addr, &data->magic, CRASHDUMP_MAGIC_LEN);
+	addr += CRASHDUMP_MAGIC_LEN;
+
+	return addr;
+}
+
 void board_crashdump(uint32_t currentsp, void *tcb, uint8_t *filename, int lineno)
 {
-	struct crash_dump_head h;
-	uint32_t magic_end;
+	struct dump_data data;
 	uint32_t addr;
 
 	s5j_watchdog_disable();
@@ -150,38 +167,23 @@ void board_crashdump(uint32_t currentsp, void *tcb, uint8_t *filename, int linen
 
 	/*RAM dump to Flash */
 	addr = CRASHDUMO_START_ADDR;
-	lldbg("RAM dump to Flash 0x%08x\n", addr);
-
-	h.magic1 = CRASHDUMP_COMMON_START_MAGIC;
-	h.magic2 = CRASHDUMP_RAM_DUMP_START_MAGIC;
-	h.start_addr = CONFIG_RAM_START;
-	h.len = CONFIG_RAM_SIZE;
-
-	s5j_direct_write(addr, &h, sizeof(struct crash_dump_head));
-	addr += sizeof(struct crash_dump_head);
-
-	s5j_direct_write(addr, CONFIG_RAM_START, CONFIG_RAM_SIZE);
-	addr += CONFIG_RAM_SIZE;
-
-	magic_end = CRASHDUMP_COMMON_END_MAGIC;
-	s5j_direct_write(addr, &magic_end, CRASHDUMP_MAGIC_LEN);
-	addr += CRASHDUMP_MAGIC_LEN;
+	lldbg("RAM DUMP to Flash....\n");
+	data.h.magic = CRASHDUMP_COMMON_START_MAGIC;
+	data.h.len = CONFIG_RAM_SIZE;
+	data.data = (uint32_t *) CONFIG_RAM_START;
+	addr = artik05x_dump_write(addr, &data);
 
 	/*Register dump to Flash */
-	lldbg("Register dump to Flash 0x%08x\n", addr);
-	h.magic1 = CRASHDUMP_COMMON_START_MAGIC;
-	h.magic2 = CRASHDUMP_REG_DUMP_START_MAGIC;
-	h.start_addr = 0;
-	h.len = sizeof(struct arm_mode_regs_s);
-
-	s5j_direct_write(addr, &h, sizeof(struct crash_dump_head));
-	addr += sizeof(struct crash_dump_head);
-
-	s5j_direct_write(addr, &cpu_ctxt_regs, sizeof(struct arm_mode_regs_s));
-	addr += sizeof(struct arm_mode_regs_s);
-
-	magic_end = CRASHDUMP_COMMON_END_MAGIC;
-	s5j_direct_write(addr, &magic_end, CRASHDUMP_MAGIC_LEN);
+	lldbg("REG DUMP to Flash....\n");
+	data.h.magic = CRASHDUMP_COMMON_START_MAGIC;
+	if (current_regs) {
+		data.h.len = REG_R15 * 4;
+		data.data = (uint32_t *)current_regs;
+	} else {
+		data.h.len = sizeof(struct arm_mode_regs_s);
+		data.data = (uint32_t *) &cpu_ctxt_regs;
+	}
+	addr = artik05x_dump_write(addr, &data);
 
 	lldbg("Crash dump done\n");
 #ifdef CONFIG_S5J_WATCHDOG
