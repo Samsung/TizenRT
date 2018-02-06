@@ -45,14 +45,6 @@ play_result_t MediaPlayer::start()
 	return PLAYER_OK;
 }
 
-play_result_t MediaPlayer::resume()
-{
-	lock_guard<mutex> lock(*cMtx);
-	enqueue([this](){_resume(); });
-
-	return PLAYER_OK;
-}
-
 play_result_t MediaPlayer::stop()
 {
 	lock_guard<mutex> lock(*cMtx);
@@ -105,9 +97,6 @@ void MediaPlayer::_pause()
 {
 }
 
-void MediaPlayer::_resume()
-{
-}
 
 MediaPlayer::~MediaPlayer()
 {
