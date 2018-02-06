@@ -38,7 +38,6 @@ public:
 	play_result_t prepare();
 	play_result_t start();
 	play_result_t pause();
-	play_result_t resume();
 	play_result_t stop();
 
 	play_result_t getVolume() const;
@@ -62,7 +61,6 @@ private:
 	void _prepare();
 	void _start();
 	void _pause();
-	void _resume();
 	void _stop();
 
 private:
