@@ -329,6 +329,7 @@ bad_alloc::what() const _NOEXCEPT
 
 #endif // !__GLIBCXX__
 
+#ifndef __GLIBCXX__
 bad_array_new_length::bad_array_new_length() _NOEXCEPT
 {
 }
@@ -342,9 +343,11 @@ bad_array_new_length::what() const _NOEXCEPT
 {
     return "bad_array_new_length";
 }
+#endif //__GLIBCXX__
 
 #endif //LIBCXXRT
 
+#ifndef __GLIBCXX__
 const char*
 bad_array_length::what() const _NOEXCEPT
 {
@@ -358,6 +361,7 @@ bad_array_length::bad_array_length() _NOEXCEPT
 bad_array_length::~bad_array_length() _NOEXCEPT
 {
 }
+#endif //__GLIBCXX__
 
 #endif // _LIBCPPABI_VERSION
 
