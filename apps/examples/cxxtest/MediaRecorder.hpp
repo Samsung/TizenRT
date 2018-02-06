@@ -34,10 +34,8 @@ public:
 	recorder_result_t create();
 	recorder_result_t destroy();
 
-	//recorder_result_t prepare();
 	recorder_result_t start();
 	recorder_result_t pause();
-	recorder_result_t resume();
 	recorder_result_t stop();
 
 	recorder_result_t getVolume() const;
@@ -53,16 +51,15 @@ private:
 		unique_lock<std::mutex> lock(*qMtx);
 		std::function<void()> func = std::bind(std::forward<_Callable>(__f), std::forward<_Args>(__args)...);
 		cmdQueue.push(func);
-		cv.notify_one();
-	};
+		cvQueue.notify_one();
+	}
 
 	thread *worker;
 	int worker_thread();
 
-	//void _prepare();
+	void _create();
 	void _start();
 	void _pause();
-	void _resume();
 	void _stop();
 
 private:
@@ -70,7 +67,8 @@ private:
 	mutex *cMtx; // command mutex
 	mutex *qMtx; // queue mutex
 
-	std::condition_variable cv;
+	std::condition_variable cvQueue;
+	std::condition_variable cvStart;
 	std::queue<std::function<void()>> cmdQueue;
 
 	bool isRunning;
