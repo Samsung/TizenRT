@@ -26,7 +26,6 @@
 #include <tinyara/net/ethernet.h>
 
 #ifdef CONFIG_NET_LWIP
-
 #include <net/lwip/netif.h>
 #include <net/lwip/opt.h>
 #include <net/lwip/debug.h>
@@ -34,7 +33,8 @@
 #include <net/lwip/mem.h>
 #include <net/lwip/pbuf.h>
 #include <net/lwip/stats.h>
-#include <net/lwip/netif/etharp.h>
+#include <net/lwip/etharp.h>
+#include <net/lwip/ethip6.h>
 #include <net/lwip/ipv4/ip_addr.h>
 
 #define ETHERNET_MTU 1500
@@ -50,6 +50,7 @@ struct netif *g_netdevices = NULL;
 /* Define those to better describe your network interface. */
 #define IFNAME0 'e'
 #define IFNAME1 'n'
+#define LWIP "lwip"
 
 #define ETH_HWADDR_0 0x00
 #define ETH_HWADDR_1 0x01
@@ -73,7 +74,9 @@ struct ethernetif {
 void ethernetif_status_callback(struct netif *netif)
 {
 	if (netif->flags & NETIF_FLAG_UP) {
+#ifdef CONFIG_NET_IPv4
 		printf("IP: %d.%d.%d.%d\n", ip4_addr1_16(&netif->ip_addr), ip4_addr2_16(&netif->ip_addr), ip4_addr3_16(&netif->ip_addr), ip4_addr4_16(&netif->ip_addr));
+#endif
 	}
 }
 #endif
@@ -96,7 +99,7 @@ void ethernetif_status_callback(struct netif *netif)
 
 static err_t ethernetif_output(struct netif *netif, struct pbuf *p)
 {
-	struct pbuf *q;
+	struct pbuf *q = NULL;
 
 	netif->d_len = 0;
 	q = p;
@@ -139,7 +142,8 @@ int ethernetif_input(struct netif *netif)
 {
 
 	LWIP_DEBUGF(NETIF_DEBUG, ("passing to LWIP layer, packet len %d \n", netif->d_len));
-	struct pbuf *p, *q;
+	struct pbuf *p = NULL;
+	struct pbuf *q = NULL;
 	u16_t len = 0;
 	u8_t *frame_ptr;
 	/* Receive the complete packet */
@@ -196,7 +200,7 @@ err_t ethernetif_init(struct netif *netif)
 
 #if LWIP_NETIF_HOSTNAME
 	/* Initialize interface hostname */
-	netif->hostname = "lwip";
+	netif->hostname = LWIP;
 #endif							/* LWIP_NETIF_HOSTNAME */
 
 	/*
@@ -217,7 +221,9 @@ err_t ethernetif_init(struct netif *netif)
 	 * You can instead declare your own function an call etharp_output()
 	 * from it if you have to do some checks before sending (e.g. if link
 	 * is available...) */
+#ifdef CONFIG_NET_IPv4
 	netif->output = etharp_output;
+#endif
 	/* netif->linkoutput is set in enc_initialize function */
 	netif->linkoutput = ethernetif_output;
 	netif->mtu = ETHERNET_MTU;
@@ -249,10 +255,17 @@ err_t ethernetif_init(struct netif *netif)
 
 	memcpy(netif->d_mac.ether_addr_octet, netif->hwaddr, IFHWADDRLEN);
 #endif
-	netif->d_ipaddr = netif->ip_addr.addr;
-	netif->d_draddr = netif->gw.addr;
-	netif->d_netmask = netif->netmask.addr;
-	//memcpy(netif->d_mac.ether_addr_octet,netif->hwaddr, IFHWADDRLEN);
+#ifdef CONFIG_NET_IPv4
+	netif->d_ipaddr = (u32_t)netif->ip_addr.addr;
+	netif->d_draddr = (u32_t)netif->gw.addr;
+	netif->d_netmask = (u32_t)netif->netmask.addr;
+#endif
+#ifdef CONFIG_NET_IPv6
+		netif->output_ip6 = ethip6_output;
+		netif->ip6_autoconfig_enabled = 1;
+		netif_create_linklocal_address(netif, 1);
+		netif->flags |= NETIF_FLAG_MLD6;
+#endif
 	/* Do whatever else is needed to initialize interface. */
 	return ERR_OK;
 }

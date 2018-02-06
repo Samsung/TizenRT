@@ -79,7 +79,6 @@
  ****************************************************************************/
 /*  Length of the string form for IP address (excludes NULL termination) */
 
-#define INET_ADDRSTRLEN 16
 
 /*  Length of the string form for IPv6 address (excludes NULL termination) */
 
@@ -261,7 +260,7 @@ in_addr_t   _inet_netof(in_addr_t in);
 ///@cond
 struct in_addr inet_makeaddr(in_addr_t net, in_addr_t host);
 
-int         inet_pton(int af, FAR const char *src, FAR void *dst);
+int inet_pton(int af, FAR const char *src, FAR void *dst);
 const char *inet_ntop(int af, FAR const void *src, FAR char *dst, socklen_t size);
 ///@endcond
 

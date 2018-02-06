@@ -53,10 +53,4 @@
 #define __OS_INCLUDE_UIO_H
 
 #include <sys/types.h>
-
-struct iovec {
-	void *iov_base;
-	__kernel_size_t iov_len;
-};
-
 #endif							/* __OS_INCLUDE_UIO_H */

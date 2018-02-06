@@ -72,12 +72,9 @@
 #include <stdint.h>
 #include <time.h>
 
-#if CONFIG_NFILE_DESCRIPTORS > 0 || CONFIG_NSOCKET_DESCRIPTORS > 0
-
 #if defined(CONFIG_DISABLE_POLL) && defined(CONFIG_NET_SOCKET)
 
 #include <net/lwip/sockets.h>
-
 #else
 
 /****************************************************************************
@@ -156,7 +153,6 @@ EXTERN int select(int nfds, FAR fd_set *readfds, FAR fd_set *writefds, FAR fd_se
 }
 #endif
 
-#endif							/* CONFIG_NFILE_DESCRIPTORS || CONFIG_NSOCKET_DESCRIPTORS */
 
 #endif							/* __INCLUDE_SYS_SELECT_H */
 /**

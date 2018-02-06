@@ -100,7 +100,7 @@ void parse_aps_list(void)
 	aps_cnt = cnt;
 
 	cnt = 0;
-	ptr = strtok(aps_list, ";");
+	ptr = (char*)strtok(aps_list, ";");
 	while (ptr != NULL) {
 		c = 0;
 		p = id;
@@ -119,7 +119,7 @@ void parse_aps_list(void)
 
 		cnt++;
 
-		ptr = strtok(NULL, ";");
+		ptr = (char*)strtok(NULL, ";");
 	}
 }
 

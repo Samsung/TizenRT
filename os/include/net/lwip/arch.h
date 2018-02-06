@@ -69,6 +69,23 @@
 #define X8_F  "02x"
 #endif							/* X8_F */
 
+/** C++ const_cast<target_type>(val) equivalent to remove constness from a value (GCC -Wcast-qual) */
+#ifndef LWIP_CONST_CAST
+#define LWIP_CONST_CAST(target_type, val) ((target_type)((ptrdiff_t)val))
+#endif
+
+/** Get rid of alignment cast warnings (GCC -Wcast-align) */
+#ifndef LWIP_ALIGNMENT_CAST
+#define LWIP_ALIGNMENT_CAST(target_type, val) LWIP_CONST_CAST(target_type, val)
+#endif
+
+/** Get rid of warnings related to pointer-to-numeric and vice-versa casts,
+ * e.g. "conversion from 'u8_t' to 'void *' of greater size"
+ */
+#ifndef LWIP_PTR_NUMERIC_CAST
+#define LWIP_PTR_NUMERIC_CAST(target_type, val) LWIP_CONST_CAST(target_type, val)
+#endif
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -81,9 +98,46 @@ extern "C" {
 #define PACK_STRUCT_END
 #endif							/* PACK_STRUCT_END */
 
+/** Packed structs support.
+  * Placed between end of declaration of a packed struct and trailing semicolon.\n
+  * For examples of packed struct declarations, see include/lwip/prot/ subfolder.\n
+  * A port to GCC/clang is included in lwIP, if you use these compilers there is nothing to do here.
+  */
+#ifndef PACK_STRUCT_STRUCT
+#if defined(__GNUC__) || defined(__clang__)
+#define PACK_STRUCT_STRUCT __attribute__((packed))
+#else
+#define PACK_STRUCT_STRUCT
+#endif
+#endif /* PACK_STRUCT_STRUCT */
+
+/** Packed structs support.
+  * Wraps u32_t and u16_t members.\n
+  * For examples of packed struct declarations, see include/lwip/prot/ subfolder.\n
+  * A port to GCC/clang is included in lwIP, if you use these compilers there is nothing to do here.
+  */
 #ifndef PACK_STRUCT_FIELD
 #define PACK_STRUCT_FIELD(x) x
-#endif							/* PACK_STRUCT_FIELD */
+#endif /* PACK_STRUCT_FIELD */
+
+/** Packed structs support.
+  * Wraps u8_t members, where some compilers warn that packing is not necessary.\n
+  * For examples of packed struct declarations, see include/lwip/prot/ subfolder.\n
+  * A port to GCC/clang is included in lwIP, if you use these compilers there is nothing to do here.
+  */
+#ifndef PACK_STRUCT_FLD_8
+#define PACK_STRUCT_FLD_8(x) PACK_STRUCT_FIELD(x)
+#endif /* PACK_STRUCT_FLD_8 */
+
+/** Packed structs support.
+  * Wraps members that are packed structs themselves, where some compilers warn that packing is not necessary.\n
+  * For examples of packed struct declarations, see include/lwip/prot/ subfolder.\n
+  * A port to GCC/clang is included in lwIP, if you use these compilers there is nothing to do here.
+  */
+#ifndef PACK_STRUCT_FLD_S
+#define PACK_STRUCT_FLD_S(x) PACK_STRUCT_FIELD(x)
+#endif /* PACK_STRUCT_FLD_S */
+
 
 #ifndef LWIP_UNUSED_ARG
 #define LWIP_UNUSED_ARG(x) (void)x

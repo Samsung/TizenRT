@@ -102,7 +102,7 @@ int net_clone(FAR struct socket *sock1, FAR struct socket *sock2)
 	sock2->err = sock1->err;	/* last error that occurred on this socket */
 
 	sock2->select_waiting = sock1->select_waiting;	/* counter of how many threads are waiting for this socket using select */
-	sock2->conn->crefs++;
+	//sock2->conn->crefs++;
 	net_unlock(flags);
 
 	return ret;

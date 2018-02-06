@@ -19,9 +19,7 @@
 # net/lwip/src/api/Make.defs
 #/* SAMSUNG LICENSE */
 ############################################################################
-
-
-LWIP_CSRCS += api_lib.c api_msg.c err.c netbuf.c netifapi.c sockets.c tcpip.c
+LWIP_CSRCS += api_lib.c api_msg.c err.c netbuf.c netifapi.c sockets.c tcpip.c netdb.c
 
 # Include api build support
 

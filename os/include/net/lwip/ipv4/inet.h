@@ -53,9 +53,16 @@
 #include <net/lwip/opt.h>
 #include <net/lwip/def.h>
 #include <net/lwip/ipv4/ip_addr.h>
+#include <net/lwip/ip6_addr.h>
 
 #ifdef __cplusplus
 extern "C" {
+#endif
+
+/* If your port already typedef's in_addr_t, define IN_ADDR_T_DEFINED
+   to prevent this code from redefining it. */
+#if !defined(in_addr_t) && !defined(IN_ADDR_T_DEFINED)
+typedef u32_t in_addr_t;
 #endif
 
 /** 255.255.255.255 */
@@ -67,10 +74,12 @@ extern "C" {
 /** 255.255.255.255 */
 #define INADDR_BROADCAST    IPADDR_BROADCAST
 
-/* Definitions of the bits in an Internet address integer.
 
-   On subnets, host and network parts are found according to
-   the subnet mask, not these masks.  */
+/**
+	Definitions of the bits in an (IPv4) Internet address integer.
+	On subnets, host and network parts are found according to
+	the subnet mask, not these masks.
+*/
 #define IN_CLASSA(a)        IP_CLASSA(a)
 #define IN_CLASSA_NET       IP_CLASSA_NET
 #define IN_CLASSA_NSHIFT    IP_CLASSA_NSHIFT
@@ -90,9 +99,9 @@ extern "C" {
 #define IN_CLASSC_MAX       IP_CLASSC_MAX
 
 #define IN_CLASSD(d)        IP_CLASSD(d)
-#define IN_CLASSD_NET       IP_CLASSD_NET	/* These ones aren't really */
-#define IN_CLASSD_NSHIFT    IP_CLASSD_NSHIFT	/*   net and host fields, but */
-#define IN_CLASSD_HOST      IP_CLASSD_HOST	/*   routing needn't know. */
+#define IN_CLASSD_NET       IP_CLASSD_NET     /* These ones aren't really */
+#define IN_CLASSD_NSHIFT    IP_CLASSD_NSHIFT  /*   net and host fields, but */
+#define IN_CLASSD_HOST      IP_CLASSD_HOST    /*   routing needn't know. */
 #define IN_CLASSD_MAX       IP_CLASSD_MAX
 
 #define IN_MULTICAST(a)     IP_MULTICAST(a)
@@ -102,21 +111,53 @@ extern "C" {
 
 #define IN_LOOPBACKNET      IP_LOOPBACKNET
 
-#define inet_addr_from_ipaddr(target_inaddr, source_ipaddr) ((target_inaddr)->s_addr = ip4_addr_get_u32(source_ipaddr))
-#define inet_addr_to_ipaddr(target_ipaddr, source_inaddr)   (ip4_addr_set_u32(target_ipaddr, (source_inaddr)->s_addr))
-/* ATTENTION: the next define only works because both s_addr and ip_addr_t are an u32_t effectively! */
-#define inet_addr_to_ipaddr_p(target_ipaddr_p, source_inaddr)   ((target_ipaddr_p) = (ip_addr_t*)&((source_inaddr)->s_addr))
+
+#ifndef INET_ADDRSTRLEN
+#define INET_ADDRSTRLEN     IP4ADDR_STRLEN_MAX
+#endif
+#if LWIP_IPV6
+#ifndef INET6_ADDRSTRLEN
+#define INET6_ADDRSTRLEN    IP6ADDR_STRLEN_MAX
+#endif
+#endif
+
+#if LWIP_IPV4
+
+#define inet_addr_from_ip4addr(target_inaddr, source_ipaddr) ((target_inaddr)->s_addr = ip4_addr_get_u32(source_ipaddr))
+#define inet_addr_to_ip4addr(target_ipaddr, source_inaddr)   (ip4_addr_set_u32(target_ipaddr, (source_inaddr)->s_addr))
+/* ATTENTION: the next define only works because both s_addr and ip4_addr_t are an u32_t effectively! */
+#define inet_addr_to_ip4addr_p(target_ip4addr_p, source_inaddr)   ((target_ip4addr_p) = (ip4_addr_t*)&((source_inaddr)->s_addr))
 
 /* directly map this to the lwip internal functions */
-/* TinyAra applications should not use lwip API directly
- * Applications call API that is defined in net libraries
- */
-/* #define inet_addr(cp)         ipaddr_addr(cp) */
-/* #define inet_aton(cp, addr)   ipaddr_aton(cp, (ip_addr_t*)addr) */
-/* #define inet_ntoa(addr)       ipaddr_ntoa((ip_addr_t*)&(addr)) */
-/* #define inet_ntoa_r(addr, buf, buflen) ipaddr_ntoa_r((ip_addr_t*)&(addr), buf, buflen) */
+#define inet_addr(cp)                   ipaddr_addr(cp)
+#define inet_aton(cp, addr)             ip4addr_aton(cp, (ip4_addr_t*)addr)
+#define inet_ntoa(addr)                 ip4addr_ntoa((const ip4_addr_t*)&(addr))
+#define inet_ntoa_r(addr, buf, buflen)  ip4addr_ntoa_r((const ip4_addr_t*)&(addr), buf, buflen)
+
+#endif /* LWIP_IPV4 */
+
+#if LWIP_IPV6
+#define inet6_addr_from_ip6addr(target_in6addr, source_ip6addr) {(target_in6addr)->in6_u.u6_addr32[0] = (source_ip6addr)->addr[0]; \
+																(target_in6addr)->in6_u.u6_addr32[1] = (source_ip6addr)->addr[1]; \
+																(target_in6addr)->in6_u.u6_addr32[2] = (source_ip6addr)->addr[2]; \
+																(target_in6addr)->in6_u.u6_addr32[3] = (source_ip6addr)->addr[3]; }
+#define inet6_addr_to_ip6addr(target_ip6addr, source_in6addr)   {(target_ip6addr)->addr[0] = (source_in6addr)->in6_u.u6_addr32[0]; \
+																(target_ip6addr)->addr[1] = (source_in6addr)->in6_u.u6_addr32[1]; \
+																(target_ip6addr)->addr[2] = (source_in6addr)->in6_u.u6_addr32[2]; \
+																(target_ip6addr)->addr[3] = (source_in6addr)->in6_u.u6_addr32[3]; }
+/* ATTENTION: the next define only works because both in6_addr and ip6_addr_t are an u32_t[4] effectively! */
+#define inet6_addr_to_ip6addr_p(target_ip6addr_p, source_in6addr)   ((target_ip6addr_p) = (ip6_addr_t*)(source_in6addr))
+
+/* directly map this to the lwip internal functions */
+#define inet6_aton(cp, addr)            ip6addr_aton(cp, (ip6_addr_t*)addr)
+#define inet6_ntoa(addr)                ip6addr_ntoa((const ip6_addr_t*)&(addr))
+#define inet6_ntoa_r(addr, buf, buflen) ip6addr_ntoa_r((const ip6_addr_t*)&(addr), buf, buflen)
+
+#endif /* LWIP_IPV6 */
+
 
 #ifdef __cplusplus
 }
 #endif
-#endif							/* __LWIP_INET_H__ */
+
+#endif /* LWIP_HDR_INET_H */

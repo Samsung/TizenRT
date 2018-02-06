@@ -74,10 +74,12 @@ LWIP_MEMPOOL(TCPIP_MSG_API, MEMP_NUM_TCPIP_MSG_API, sizeof(struct tcpip_msg), "T
 LWIP_MEMPOOL(TCPIP_MSG_INPKT, MEMP_NUM_TCPIP_MSG_INPKT, sizeof(struct tcpip_msg), "TCPIP_MSG_INPKT")
 #endif							/* !LWIP_TCPIP_CORE_LOCKING_INPUT */
 #endif							/* NO_SYS==0 */
-#if LWIP_ARP && ARP_QUEUEING
+#ifdef CONFIG_NET_IPv4
+#if (LWIP_ARP && ARP_QUEUEING)
 LWIP_MEMPOOL(ARP_QUEUE, MEMP_NUM_ARP_QUEUE, sizeof(struct etharp_q_entry), "ARP_QUEUE")
 #endif							/* LWIP_ARP && ARP_QUEUEING */
-#if LWIP_IGMP
+#endif
+#if LWIP_IGMP && LWIP_IPV4
 LWIP_MEMPOOL(IGMP_GROUP, MEMP_NUM_IGMP_GROUP, sizeof(struct igmp_group), "IGMP_GROUP")
 #endif							/* LWIP_IGMP */
 #if (!NO_SYS || (NO_SYS && !NO_SYS_NO_TIMERS))	/* LWIP_TIMERS */

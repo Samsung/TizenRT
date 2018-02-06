@@ -21,8 +21,7 @@
 #/* SAMSUNG LICENSE */
 ############################################################################
 
-
-LWIP_CSRCS += etharp.c slipif.c
+LWIP_CSRCS += etharp.c slipif.c ethernet.c
 
 # Include netif build support
 

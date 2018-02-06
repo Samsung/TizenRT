@@ -88,11 +88,10 @@ int net_dupsd2(int sockfd1, int sockfd2)
 int dup2(int sockfd1, int sockfd2)
 #endif
 {
-
-	FAR struct socket *sock1;
-	FAR struct socket *sock2;
-	int err;
-	int ret;
+	FAR struct socket *sock1 = NULL;
+	FAR struct socket *sock2 = NULL;
+	int err = 0;
+	int ret = 0;
 
 	/* Lock the scheduler throughout the following */
 
@@ -100,8 +99,8 @@ int dup2(int sockfd1, int sockfd2)
 
 	/* Get the socket structures underly both descriptors */
 
-	sock1 = get_socket(sockfd1);
-	sock2 = get_socket_struct(sockfd2);
+	sock1 = (struct socket *)get_socket(sockfd1);
+	sock2 = (struct socket *)get_socket(sockfd2);
 
 	/* Verify that the sockfd1 and sockfd2 both refer to valid socket
 	 * descriptors and that sockfd1 has valid allocated conn

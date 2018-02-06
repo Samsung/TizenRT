@@ -56,7 +56,27 @@
 #define __LWIP_LWIPOPTS_H__
 
 #include <tinyara/config.h>
+#include <time.h>
+#include <debug.h>
+#include <stdlib.h>
+#include <net/lwip/debug.h>
 
+/* NO_SYS==1: Provides VERY minimal functionality. Otherwise,
+* use lwIP facilities.
+*/
+#define NO_SYS                          0
+
+#ifdef CONFIG_NET_IPv6
+#define LWIP_IPV6                       1
+#define LWIP_IPV6_MLD                   1
+#define LWIP_IPV6_AUTOCONFIG            1
+#define LWIP_IPV6_FRAG                  0
+#define LWIP_IPV6_REASS                 1
+#define LWIP_IPV6_DUP_DETECT_ATTEMPTS   3
+#define LWIP_MULTICAST_PING             1
+#define LWIP_IPV6_FORWARD               1
+#define LWIP_ICMP6                      1
+#endif
 /* --------- PreDefined Configurations -------------*/
 /*
  * Note
@@ -171,7 +191,7 @@
 
 /* ---------- IGMP options ---------- */
 #ifdef CONFIG_NET_LWIP_IGMP
-#define LWIP_IGMP                       CONFIG_NET_LWIP_IGMP
+#define LWIP_IGMP                       CONFIG_NET_IPv4
 #endif
 // pknet
 #ifdef CONFIG_NET_LWIP_MEMP_NUM_IGMP_GROUP

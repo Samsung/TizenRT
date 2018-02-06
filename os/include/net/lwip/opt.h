@@ -106,6 +106,68 @@
 #ifndef SMEMCPY
 #define SMEMCPY(dst, src, len)          memcpy(dst, src, len)
 #endif
+/**
+ * @}
+ */
+
+/*
+   ------------------------------------
+   ----------- Core locking -----------
+   ------------------------------------
+*/
+/**
+ * @defgroup lwip_opts_lock Core locking and MPU
+ * @ingroup lwip_opts_infrastructure
+ * @{
+ */
+/**
+ * LWIP_MPU_COMPATIBLE: enables special memory management mechanism
+ * which makes lwip able to work on MPU (Memory Protection Unit) system
+ * by not passing stack-pointers to other threads
+ * (this decreases performance as memory is allocated from pools instead
+ * of keeping it on the stack)
+ */
+#if !defined LWIP_MPU_COMPATIBLE || defined __DOXYGEN__
+#define LWIP_MPU_COMPATIBLE             0
+#endif
+
+/**
+ * LWIP_TCPIP_CORE_LOCKING
+ * Creates a global mutex that is held during TCPIP thread operations.
+ * Can be locked by client code to perform lwIP operations without changing
+ * into TCPIP thread using callbacks. See LOCK_TCPIP_CORE() and
+ * UNLOCK_TCPIP_CORE().
+ * Your system should provide mutexes supporting priority inversion to use this.
+ */
+#if !defined LWIP_TCPIP_CORE_LOCKING || defined __DOXYGEN__
+#define LWIP_TCPIP_CORE_LOCKING         1
+#endif
+
+/**
+ * LWIP_TCPIP_CORE_LOCKING_INPUT: when LWIP_TCPIP_CORE_LOCKING is enabled,
+ * this lets tcpip_input() grab the mutex for input packets as well,
+ * instead of allocating a message and passing it to tcpip_thread.
+ *
+ * ATTENTION: this does not work when tcpip_input() is called from
+ * interrupt context!
+ */
+#if !defined LWIP_TCPIP_CORE_LOCKING_INPUT || defined __DOXYGEN__
+#define LWIP_TCPIP_CORE_LOCKING_INPUT   0
+#endif
+
+/**
+ * SYS_LIGHTWEIGHT_PROT==1: enable inter-task protection (and task-vs-interrupt
+ * protection) for certain critical regions during buffer allocation, deallocation
+ * and memory allocation and deallocation.
+ * ATTENTION: This is required when using lwIP from more than one context! If
+ * you disable this, you must be sure what you are doing!
+ */
+#if !defined SYS_LIGHTWEIGHT_PROT || defined __DOXYGEN__
+#define SYS_LIGHTWEIGHT_PROT            1
+#endif
+/**
+ * @}
+ */
 
 /*
    ------------------------------------
@@ -326,8 +388,8 @@
  * The default number of timeouts is calculated here for all enabled modules.
  * The formula expects settings to be either '0' or '1'.
  */
-#ifndef MEMP_NUM_SYS_TIMEOUT
-#define MEMP_NUM_SYS_TIMEOUT            (LWIP_TCP + IP_REASSEMBLY + LWIP_ARP + (2*LWIP_DHCP) + LWIP_AUTOIP + LWIP_IGMP + PPP_SUPPORT)
+#if !defined MEMP_NUM_SYS_TIMEOUT || defined __DOXYGEN__
+#define MEMP_NUM_SYS_TIMEOUT            (LWIP_TCP + IP_REASSEMBLY + LWIP_ARP + (2*LWIP_DHCP) + LWIP_AUTOIP + LWIP_IGMP + LWIP_DNS + (PPP_SUPPORT*6*MEMP_NUM_PPP_PCB) + (LWIP_IPV6 ? (1 + LWIP_IPV6_REASS + LWIP_IPV6_MLD) : 0))
 #endif
 
 /**
@@ -351,7 +413,7 @@
  * for callback/timeout API communication.
  * (only needed if you use tcpip.c)
  */
-#ifndef MEMP_NUM_TCPIP_MSG_API
+#if !defined MEMP_NUM_TCPIP_MSG_API || defined __DOXYGEN__
 #define MEMP_NUM_TCPIP_MSG_API          8
 #endif
 
@@ -360,7 +422,7 @@
  * for incoming packets.
  * (only needed if you use tcpip.c)
  */
-#ifndef MEMP_NUM_TCPIP_MSG_INPKT
+#if !defined MEMP_NUM_TCPIP_MSG_INPKT || defined __DOXYGEN__
 #define MEMP_NUM_TCPIP_MSG_INPKT        8
 #endif
 
@@ -370,6 +432,15 @@
 #ifndef MEMP_NUM_SNMP_NODE
 #define MEMP_NUM_SNMP_NODE              50
 #endif
+
+/**
+ * MEMP_NUM_LOCALHOSTLIST: the number of host entries in the local host list
+ * if DNS_LOCAL_HOSTLIST_IS_DYNAMIC==1.
+ */
+#if !defined MEMP_NUM_LOCALHOSTLIST || defined __DOXYGEN__
+#define MEMP_NUM_LOCALHOSTLIST          1
+#endif
+
 
 /**
  * MEMP_NUM_SNMP_ROOTNODE: the number of branches in the SNMP tree.
@@ -393,8 +464,17 @@
  * (does not have to be changed normally) - 3 of these are used per request
  * (1 for the value read and 2 for OIDs - input and output)
  */
+
+#if !defined MEMP_NUM_API_MSG || defined __DOXYGEN__
+#define MEMP_NUM_API_MSG                MEMP_NUM_TCPIP_MSG_API
+#endif
+
 #ifndef MEMP_NUM_SNMP_VALUE
 #define MEMP_NUM_SNMP_VALUE             3
+#endif
+
+#if !defined MEMP_NUM_DNS_API_MSG || defined __DOXYGEN__
+#define MEMP_NUM_DNS_API_MSG            MEMP_NUM_TCPIP_MSG_API
 #endif
 
 /**
@@ -405,18 +485,37 @@
 #define MEMP_NUM_NETDB                  1
 #endif
 
+#if !defined MEMP_NUM_DNS_API_MSG || defined __DOXYGEN__
+#define MEMP_NUM_DNS_API_MSG            MEMP_NUM_TCPIP_MSG_API
+#endif
+
+
 /**
  * MEMP_NUM_LOCALHOSTLIST: the number of host entries in the local host list
  * if DNS_LOCAL_HOSTLIST_IS_DYNAMIC==1.
  */
+
+#if !defined MEMP_NUM_SOCKET_SETGETSOCKOPT_DATA || defined __DOXYGEN__
+#define MEMP_NUM_SOCKET_SETGETSOCKOPT_DATA MEMP_NUM_TCPIP_MSG_API
+#endif
+
 #ifndef MEMP_NUM_LOCALHOSTLIST
 #define MEMP_NUM_LOCALHOSTLIST          1
+#endif
+
+#if !defined MEMP_NUM_NETIFAPI_MSG || defined __DOXYGEN__
+#define MEMP_NUM_NETIFAPI_MSG           MEMP_NUM_TCPIP_MSG_API
 #endif
 
 /**
  * MEMP_NUM_PPPOE_INTERFACES: the number of concurrently active PPPoE
  * interfaces (only used with PPPOE_SUPPORT==1)
  */
+
+#if !defined MEMP_NUM_NETIFAPI_MSG || defined __DOXYGEN__
+#define MEMP_NUM_NETIFAPI_MSG           MEMP_NUM_TCPIP_MSG_API
+#endif
+
 #ifndef MEMP_NUM_PPPOE_INTERFACES
 #define MEMP_NUM_PPPOE_INTERFACES       1
 #endif
@@ -447,6 +546,14 @@
 #define ARP_TABLE_SIZE                  10
 #endif
 
+/** the time an ARP entry stays valid after its last update,
+ *  for ARP_TMR_INTERVAL = 1000, this is
+ *  (60 * 5) seconds = 5 minutes.
+ */
+#if !defined ARP_MAXAGE || defined __DOXYGEN__
+#define ARP_MAXAGE                      300
+#endif
+
 /**
  * ARP_QUEUEING==1: Multiple outgoing packets are queued during hardware address
  * resolution. By default, only the most recent packet is queued per IP address.
@@ -470,6 +577,14 @@
  */
 #ifndef ETHARP_TRUST_IP_MAC
 #define ETHARP_TRUST_IP_MAC             0
+#endif
+
+/** The maximum number of packets which may be queued for each
+ *  unresolved address by other network layers. Defaults to 3, 0 means disabled.
+ *  Old packets are dropped, new packets are queued.
+ */
+#if !defined ARP_QUEUE_LEN || defined __DOXYGEN__
+#define ARP_QUEUE_LEN                   3
 #endif
 
 /**
@@ -507,11 +622,34 @@
 #define ETHARP_SUPPORT_STATIC_ENTRIES   0
 #endif
 
+/** ETHARP_TABLE_MATCH_NETIF==1: Match netif for ARP table entries.
+ * If disabled, duplicate IP address on multiple netifs are not supported
+ * (but this should only occur for AutoIP).
+ */
+#if !defined ETHARP_TABLE_MATCH_NETIF || defined __DOXYGEN__
+#define ETHARP_TABLE_MATCH_NETIF        0
+#endif
+/**
+ * @}
+ */
+
 /*
    --------------------------------
    ---------- IP options ----------
    --------------------------------
 */
+/**
+ * @defgroup lwip_opts_ipv4 IPv4
+ * @ingroup lwip_opts
+ * @{
+ */
+/**
+ * LWIP_IPV4==1: Enable IPv4
+ */
+#if !defined LWIP_IPV4 || defined __DOXYGEN__
+#define LWIP_IPV4                       CONFIG_NET_IPv4
+#endif
+
 /**
  * IP_FORWARD==1: Enables the ability to forward IP packets across network
  * interfaces. If you are going to run lwIP on a device with only one network
@@ -548,6 +686,25 @@
 #define IP_FRAG                         1
 #endif
 
+#if !LWIP_IPV4
+/* disable IPv4 extensions when IPv4 is disabled */
+#undef IP_FORWARD
+#define IP_FORWARD                      0
+#undef IP_REASSEMBLY
+#define IP_REASSEMBLY                   0
+#undef IP_FRAG
+#define IP_FRAG                         0
+#endif /* !LWIP_IPV4 */
+
+/**
+ * IP_OPTIONS_ALLOWED: Defines the behavior for IP options.
+ *      IP_OPTIONS_ALLOWED==0: All packets with IP options are dropped.
+ *      IP_OPTIONS_ALLOWED==1: IP options are allowed (but not parsed).
+ */
+#if !defined IP_OPTIONS_ALLOWED || defined __DOXYGEN__
+#define IP_OPTIONS_ALLOWED              1
+#endif
+
 /**
  * IP_REASS_MAXAGE: Maximum time (in multiples of IP_TMR_INTERVAL - so seconds, normally)
  * a fragmented IP packet waits for all fragments to arrive. If not all fragments arrived
@@ -555,6 +712,16 @@
  */
 #ifndef IP_REASS_MAXAGE
 #define IP_REASS_MAXAGE                 3
+#endif
+
+
+/**
+ * IP6_REASS_MAXAGE: Maximum time (in multiples of IP6_REASS_TMR_INTERVAL - so seconds, normally)
+ * a fragmented IP6 packet waits for all fragments to arrive. If not all fragments arrived
+ * in this time, the whole packet is discarded. As per RFC 2460 this must be 60 seconds
+ */
+#if !defined IP6_REASS_MAXAGE || defined __DOXYGEN__
+#define IP6_REASS_MAXAGE                 60
 #endif
 
 /**
@@ -720,6 +887,11 @@
 #ifndef LWIP_AUTOIP
 #define LWIP_AUTOIP                     0
 #endif
+#if !LWIP_IPV4
+/* disable AUTOIP when IPv4 is disabled */
+#undef LWIP_AUTOIP
+#define LWIP_AUTOIP                     0
+#endif /* !LWIP_IPV4 */
 
 /**
  * LWIP_DHCP_AUTOIP_COOP==1: Allow DHCP and AUTOIP to be both enabled on
@@ -763,6 +935,14 @@
 #endif
 
 /**
+ * LWIP_MIB2_CALLBACKS==1: Turn on SNMP MIB2 callbacks.
+ * Turn this on to get callbacks needed to implement MIB2.
+ * Usually MIB2_STATS should be enabled, too.
+ */
+#if !defined LWIP_MIB2_CALLBACKS || defined __DOXYGEN__
+#define LWIP_MIB2_CALLBACKS             0
+#endif
+/**
  * SNMP_TRAP_DESTINATIONS: Number of trap destinations. At least one trap
  * destination is required
  */
@@ -797,6 +977,14 @@
 #endif
 
 /**
+ * LWIP_MULTICAST_TX_OPTIONS==1: Enable multicast TX support like the socket options
+ * IP_MULTICAST_TTL/IP_MULTICAST_IF/IP_MULTICAST_LOOP
+ */
+#if !defined LWIP_MULTICAST_TX_OPTIONS || defined __DOXYGEN__
+#define LWIP_MULTICAST_TX_OPTIONS       (LWIP_IGMP && LWIP_UDP)
+#endif
+
+/**
  * The maximum depth of the SNMP tree.
  * With private MIBs enabled, this depends on your MIB!
  * This affects the size of MEMP_SNMP_VALUE elements.
@@ -813,17 +1001,80 @@
 #define SNMP_MAX_VALUE_SIZE             LWIP_MAX((SNMP_MAX_OCTET_STRING_LEN)+1, sizeof(s32_t)*(SNMP_MAX_TREE_DEPTH))
 #endif
 
-/*
-   ----------------------------------
-   ---------- IGMP options ----------
-   ----------------------------------
-*/
 /**
- * LWIP_IGMP==1: Turn on IGMP module.
+ * LWIP_DNS==1: Turn on DNS module. UDP must be available for DNS
+ * transport.
  */
-#ifndef LWIP_IGMP
-#define LWIP_IGMP                       0
+#if !defined LWIP_DNS || defined __DOXYGEN__
+#define LWIP_DNS                        0
 #endif
+
+/** DNS maximum number of entries to maintain locally. */
+#if !defined DNS_TABLE_SIZE || defined __DOXYGEN__
+#define DNS_TABLE_SIZE                  4
+#endif
+
+/** DNS maximum host name length supported in the name table. */
+#if !defined DNS_MAX_NAME_LENGTH || defined __DOXYGEN__
+#define DNS_MAX_NAME_LENGTH             256
+#endif
+
+/** The maximum of DNS servers
+ * The first server can be initialized automatically by defining
+ * DNS_SERVER_ADDRESS(ipaddr), where 'ipaddr' is an 'ip_addr_t*'
+ */
+#if !defined LWIP_DNS || defined __DOXYGEN__
+#define LWIP_DNS                        0
+#endif
+
+#if !defined DNS_MAX_SERVERS || defined __DOXYGEN__
+#define DNS_MAX_SERVERS                 2
+#endif
+
+/** DNS do a name checking between the query and the response. */
+#if !defined DNS_DOES_NAME_CHECK || defined __DOXYGEN__
+#define DNS_DOES_NAME_CHECK             1
+#endif
+
+/** LWIP_DNS_SECURE: controls the security level of the DNS implementation
+ * Use all DNS security features by default.
+ * This is overridable but should only be needed by very small targets
+ * or when using against non standard DNS servers. */
+#if !defined LWIP_DNS_SECURE || defined __DOXYGEN__
+#define LWIP_DNS_SECURE (LWIP_DNS_SECURE_RAND_XID | LWIP_DNS_SECURE_NO_MULTIPLE_OUTSTANDING | LWIP_DNS_SECURE_RAND_SRC_PORT)
+#endif
+
+/* A list of DNS security features follows */
+#define LWIP_DNS_SECURE_RAND_XID                1
+#define LWIP_DNS_SECURE_NO_MULTIPLE_OUTSTANDING 2
+#define LWIP_DNS_SECURE_RAND_SRC_PORT           4
+
+/** DNS_LOCAL_HOSTLIST: Implements a local host-to-address list. If enabled, you have to define an initializer:
+ *  \#define DNS_LOCAL_HOSTLIST_INIT {DNS_LOCAL_HOSTLIST_ELEM("host_ip4", IPADDR4_INIT_BYTES(1,2,3,4)), \
+ *                                    DNS_LOCAL_HOSTLIST_ELEM("host_ip6", IPADDR6_INIT_HOST(123, 234, 345, 456)}
+ *
+ *  Instead, you can also use an external function:
+ *  \#define DNS_LOOKUP_LOCAL_EXTERN(x) extern err_t my_lookup_function(const char *name, ip_addr_t *addr, u8_t dns_addrtype)
+ *  that looks up the IP address and returns ERR_OK if found (LWIP_DNS_ADDRTYPE_xxx is passed in dns_addrtype).
+ */
+#if !defined DNS_LOCAL_HOSTLIST || defined __DOXYGEN__
+#define DNS_LOCAL_HOSTLIST              0
+#endif /* DNS_LOCAL_HOSTLIST */
+
+/** If this is turned on, the local host-list can be dynamically changed
+ *  at runtime. */
+#if !defined DNS_LOCAL_HOSTLIST_IS_DYNAMIC || defined __DOXYGEN__
+#define DNS_LOCAL_HOSTLIST_IS_DYNAMIC   0
+#endif /* DNS_LOCAL_HOSTLIST_IS_DYNAMIC */
+
+/** Set this to 1 to enable querying ".local" names via mDNS
+ *  using a One-Shot Multicast DNS Query */
+#if !defined LWIP_DNS_SUPPORT_MDNS_QUERIES || defined __DOXYGEN__
+#define LWIP_DNS_SUPPORT_MDNS_QUERIES  0
+#endif
+/**
+ * @}
+ */
 
 /*
    ---------------------------------
@@ -1039,7 +1290,30 @@
 #if !defined(LWIP_EVENT_API) && !defined(LWIP_CALLBACK_API)
 #define LWIP_EVENT_API                  0
 #define LWIP_CALLBACK_API               1
+#else
+#ifndef LWIP_EVENT_API
+#define LWIP_EVENT_API                  0
 #endif
+#ifndef LWIP_CALLBACK_API
+#define LWIP_CALLBACK_API               0
+#endif
+#endif
+
+/**
+ * LWIP_WND_SCALE and TCP_RCV_SCALE:
+ * Set LWIP_WND_SCALE to 1 to enable window scaling.
+ * Set TCP_RCV_SCALE to the desired scaling factor (shift count in the
+ * range of [0..14]).
+ * When LWIP_WND_SCALE is enabled but TCP_RCV_SCALE is 0, we can use a large
+ * send window while having a small receive window only.
+ */
+#if !defined LWIP_WND_SCALE || defined __DOXYGEN__
+#define LWIP_WND_SCALE                  0
+#define TCP_RCV_SCALE                   0
+#endif
+/**
+ * @}
+ */
 
 /*
    ----------------------------------
@@ -1053,6 +1327,14 @@
  */
 #ifndef PBUF_LINK_HLEN
 #define PBUF_LINK_HLEN                  (14 + ETH_PAD_SIZE)
+#endif
+
+/**
+ * PBUF_LINK_ENCAPSULATION_HLEN: the number of bytes that should be allocated
+ * for an additional encapsulation header before ethernet headers (e.g. 802.11)
+ */
+#if !defined PBUF_LINK_ENCAPSULATION_HLEN || defined __DOXYGEN__
+#define PBUF_LINK_ENCAPSULATION_HLEN    0u
 #endif
 
 /**
@@ -1120,11 +1402,49 @@
 #endif
 
 /**
+ * LWIP_NUM_NETIF_CLIENT_DATA: Number of clients that may store
+ * data in client_data member array of struct netif.
+ */
+#if !defined LWIP_NUM_NETIF_CLIENT_DATA || defined __DOXYGEN__
+#define LWIP_NUM_NETIF_CLIENT_DATA            0
+#endif
+/**
+ * @}
+ */
+
+/*
+   ------------------------------------
+   ---------- LOOPIF options ----------
+   ------------------------------------
+*/
+/**
+ * @defgroup lwip_opts_loop Loopback interface
+ * @ingroup lwip_opts_netif
+ * @{
+ */
+/**
+ * LWIP_HAVE_LOOPIF==1: Support loop interface (127.0.0.1).
+ * This is only needed when no real netifs are available. If at least one other
+ * netif is available, loopback traffic uses this netif.
+ */
+#if !defined LWIP_HAVE_LOOPIF || defined __DOXYGEN__
+#define LWIP_HAVE_LOOPIF                LWIP_NETIF_LOOPBACK
+#endif
+
+
+/**
+ * LWIP_LOOPIF_MULTICAST==1: Support multicast/IGMP on loop interface (127.0.0.1).
+ */
+#if !defined LWIP_LOOPIF_MULTICAST || defined __DOXYGEN__
+#define LWIP_LOOPIF_MULTICAST               0
+#endif
+
+/**
  * LWIP_NETIF_LOOPBACK==1: Support sending packets with a destination IP
  * address equal to the netif IP address, looping them back up the stack.
  */
 #ifndef LWIP_NETIF_LOOPBACK
-#define LWIP_NETIF_LOOPBACK             0
+#define LWIP_NETIF_LOOPBACK             1
 #endif
 
 /**
@@ -1208,6 +1528,15 @@
  */
 #ifndef TCPIP_THREAD_STACKSIZE
 #define TCPIP_THREAD_STACKSIZE          0
+#endif
+
+/**
+ * Define this to something that triggers a watchdog. This is called from
+ * tcpip_thread after processing a message.
+ */
+
+#if !defined LWIP_TCPIP_THREAD_ALIVE || defined __DOXYGEN__
+#define LWIP_TCPIP_THREAD_ALIVE()
 #endif
 
 /**
@@ -1360,6 +1689,22 @@
 #define LWIP_TCPIP_CORE_LOCKING_INPUT   0
 #endif
 
+/** LWIP_NETCONN_SEM_PER_THREAD==1: Use one (thread-local) semaphore per
+ * thread calling socket/netconn functions instead of allocating one
+ * semaphore per netconn (and per select etc.)
+ * ATTENTION: a thread-local semaphore for API calls is needed:
+ * - LWIP_NETCONN_THREAD_SEM_GET() returning a sys_sem_t*
+ * - LWIP_NETCONN_THREAD_SEM_ALLOC() creating the semaphore
+ * - LWIP_NETCONN_THREAD_SEM_FREE() freeing the semaphore
+ * The latter 2 can be invoked up by calling netconn_thread_init()/netconn_thread_cleanup().
+ * Ports may call these for threads created with sys_thread_new().
+ */
+#if !defined LWIP_NETCONN_SEM_PER_THREAD || defined __DOXYGEN__
+#define LWIP_NETCONN_SEM_PER_THREAD     0
+#endif
+
+
+
 /**
  * LWIP_NETCONN==1: Enable Netconn API (require to use api_lib.c)
  */
@@ -1367,12 +1712,28 @@
 #define LWIP_NETCONN                    1
 #endif
 
+
+
 /** LWIP_TCPIP_TIMEOUT==1: Enable tcpip_timeout/tcpip_untimeout tod create
  * timers running in tcpip_thread from another thread.
  */
 #ifndef LWIP_TCPIP_TIMEOUT
 #define LWIP_TCPIP_TIMEOUT              1
 #endif
+
+
+/** LWIP_NETCONN_FULLDUPLEX==1: Enable code that allows reading from one thread,
+ * writing from a 2nd thread and closing from a 3rd thread at the same time.
+ * ATTENTION: This is currently really alpha! Some requirements:
+ * - LWIP_NETCONN_SEM_PER_THREAD==1 is required to use one socket/netconn from
+ *   multiple threads at once
+ * - sys_mbox_free() has to unblock receive tasks waiting on recvmbox/acceptmbox
+ *   and prevent a task pending on this during/after deletion
+ */
+#if !defined LWIP_NETCONN_FULLDUPLEX || defined __DOXYGEN__
+#define LWIP_NETCONN_FULLDUPLEX         0
+#endif
+
 
 /*
    ------------------------------------
@@ -1385,6 +1746,14 @@
 #ifndef LWIP_SOCKET
 #define LWIP_SOCKET                     1
 #endif
+
+/* LWIP_SOCKET_SET_ERRNO==1: Set errno when socket functions cannot complete
+ * successfully, as required by POSIX. Default is POSIX-compliant.
+ */
+#if !defined LWIP_SOCKET_SET_ERRNO || defined __DOXYGEN__
+#define LWIP_SOCKET_SET_ERRNO           1
+#endif
+
 
 /**
  * LWIP_SELECT==1: Enable lwip_select API
@@ -1447,6 +1816,14 @@
 #endif
 
 /**
+ * LWIP_SO_SNDRCVTIMEO_NONSTANDARD==1: SO_RCVTIMEO/SO_SNDTIMEO take an int
+ * (milliseconds, much like winsock does) instead of a struct timeval (default).
+ */
+#if !defined LWIP_SO_SNDRCVTIMEO_NONSTANDARD || defined __DOXYGEN__
+#define LWIP_SO_SNDRCVTIMEO_NONSTANDARD 0
+#endif
+
+/**
  * LWIP_SO_RCVBUF==1: Enable SO_RCVBUF processing.
  */
 #ifndef LWIP_SO_RCVBUF
@@ -1454,10 +1831,24 @@
 #endif
 
 /**
+ * LWIP_SO_LINGER==1: Enable SO_LINGER processing.
+ */
+#if !defined LWIP_SO_LINGER || defined __DOXYGEN__
+#define LWIP_SO_LINGER                  0
+#endif
+
+/**
  * If LWIP_SO_RCVBUF is used, this is the default value for recv_bufsize.
  */
 #ifndef RECV_BUFSIZE_DEFAULT
 #define RECV_BUFSIZE_DEFAULT            INT_MAX
+#endif
+
+/**
+ * By default, TCP socket/netconn close waits 20 seconds max to send the FIN
+ */
+#if !defined LWIP_TCP_CLOSE_TIMEOUT_MS_DEFAULT || defined __DOXYGEN__
+#define LWIP_TCP_CLOSE_TIMEOUT_MS_DEFAULT 20000
 #endif
 
 /**
@@ -1476,16 +1867,44 @@
 #define SO_REUSE_RXTOALL                0
 #endif
 
+/**
+ * LWIP_FIONREAD_LINUXMODE==0 (default): ioctl/FIONREAD returns the amount of
+ * pending data in the network buffer. This is the way windows does it. It's
+ * the default for lwIP since it is smaller.
+ * LWIP_FIONREAD_LINUXMODE==1: ioctl/FIONREAD returns the size of the next
+ * pending datagram in bytes. This is the way linux does it. This code is only
+ * here for compatibility.
+ */
+#if !defined LWIP_FIONREAD_LINUXMODE || defined __DOXYGEN__
+#define LWIP_FIONREAD_LINUXMODE         0
+#endif
+/**
+ * @}
+ */
+
 /*
    ----------------------------------------
    ---------- Statistics options ----------
    ----------------------------------------
 */
+
+/**
+ * @defgroup lwip_opts_stats Statistics
+ * @ingroup lwip_opts_debug
+ * @{
+ */
 /**
  * LWIP_STATS==1: Enable statistics collection in lwip_stats.
  */
-#ifndef LWIP_STATS
-#define LWIP_STATS                      0
+#if !defined LWIP_STATS || defined __DOXYGEN__
+#define LWIP_STATS                      1
+#endif
+
+/**
+ * LWIP_STATS==1: Enable statistics collection in lwip_stats.
+ */
+#if !defined LWIP_STATS || defined __DOXYGEN__
+#define LWIP_STATS                      1
 #endif
 
 #if LWIP_STATS
@@ -1493,28 +1912,28 @@
 /**
  * LWIP_STATS_DISPLAY==1: Compile in the statistics output functions.
  */
-#ifndef LWIP_STATS_DISPLAY
+#if !defined LWIP_STATS_DISPLAY || defined __DOXYGEN__
 #define LWIP_STATS_DISPLAY              0
 #endif
 
 /**
  * LINK_STATS==1: Enable link stats.
  */
-#ifndef LINK_STATS
+#if !defined LINK_STATS || defined __DOXYGEN__
 #define LINK_STATS                      1
 #endif
 
 /**
  * ETHARP_STATS==1: Enable etharp stats.
  */
-#ifndef ETHARP_STATS
+#if !defined ETHARP_STATS || defined __DOXYGEN__
 #define ETHARP_STATS                    (LWIP_ARP)
 #endif
 
 /**
  * IP_STATS==1: Enable IP stats.
  */
-#ifndef IP_STATS
+#if !defined IP_STATS || defined __DOXYGEN__
 #define IP_STATS                        1
 #endif
 
@@ -1522,21 +1941,21 @@
  * IPFRAG_STATS==1: Enable IP fragmentation stats. Default is
  * on if using either frag or reass.
  */
-#ifndef IPFRAG_STATS
+#if !defined IPFRAG_STATS || defined __DOXYGEN__
 #define IPFRAG_STATS                    (IP_REASSEMBLY || IP_FRAG)
 #endif
 
 /**
  * ICMP_STATS==1: Enable ICMP stats.
  */
-#ifndef ICMP_STATS
+#if !defined ICMP_STATS || defined __DOXYGEN__
 #define ICMP_STATS                      1
 #endif
 
 /**
  * IGMP_STATS==1: Enable IGMP stats.
  */
-#ifndef IGMP_STATS
+#if !defined IGMP_STATS || defined __DOXYGEN__
 #define IGMP_STATS                      (LWIP_IGMP)
 #endif
 
@@ -1544,7 +1963,7 @@
  * UDP_STATS==1: Enable UDP stats. Default is on if
  * UDP enabled, otherwise off.
  */
-#ifndef UDP_STATS
+#if !defined UDP_STATS || defined __DOXYGEN__
 #define UDP_STATS                       (LWIP_UDP)
 #endif
 
@@ -1577,9 +1996,52 @@
 #define SYS_STATS                       (NO_SYS == 0)
 #endif
 
+/**
+ * IP6_STATS==1: Enable IPv6 stats.
+ */
+#if !defined IP6_STATS || defined __DOXYGEN__
+#define IP6_STATS                       (LWIP_IPV6)
+#endif
+
+/**
+ * ICMP6_STATS==1: Enable ICMP for IPv6 stats.
+ */
+#if !defined ICMP6_STATS || defined __DOXYGEN__
+#define ICMP6_STATS                     (LWIP_IPV6 && LWIP_ICMP6)
+#endif
+
+/**
+ * IP6_FRAG_STATS==1: Enable IPv6 fragmentation stats.
+ */
+#if !defined IP6_FRAG_STATS || defined __DOXYGEN__
+#define IP6_FRAG_STATS                  (LWIP_IPV6 && (LWIP_IPV6_FRAG || LWIP_IPV6_REASS))
+#endif
+
+/**
+ * MLD6_STATS==1: Enable MLD for IPv6 stats.
+ */
+#if !defined MLD6_STATS || defined __DOXYGEN__
+#define MLD6_STATS                      (LWIP_IPV6 && LWIP_IPV6_MLD)
+#endif
+
+/**
+ * ND6_STATS==1: Enable Neighbor discovery for IPv6 stats.
+ */
+#if !defined ND6_STATS || defined __DOXYGEN__
+#define ND6_STATS                       (LWIP_IPV6)
+#endif
+
+/**
+ * MIB2_STATS==1: Stats for SNMP MIB2.
+ */
+#if !defined MIB2_STATS || defined __DOXYGEN__
+#define MIB2_STATS                      0
+#endif
+
 #else
 
 #define LINK_STATS                      0
+#define ETHARP_STATS                    0
 #define IP_STATS                        0
 #define IPFRAG_STATS                    0
 #define ICMP_STATS                      0
@@ -1590,6 +2052,12 @@
 #define MEMP_STATS                      0
 #define SYS_STATS                       0
 #define LWIP_STATS_DISPLAY              0
+#define IP6_STATS                       0
+#define ICMP6_STATS                     0
+#define IP6_FRAG_STATS                  0
+#define MLD6_STATS                      0
+#define ND6_STATS                       0
+#define MIB2_STATS                      0
 
 #endif							/* LWIP_STATS */
 
@@ -1758,6 +2226,264 @@
 #endif							/* PPP_SUPPORT */
 
 /*
+   ---------------------------------------
+   ---------- IPv6 options ---------------
+   ---------------------------------------
+*/
+/**
+ * @defgroup lwip_opts_ipv6 IPv6
+ * @ingroup lwip_opts
+ * @{
+ */
+/**
+ * LWIP_IPV6==1: Enable IPv6
+ */
+#if !defined LWIP_IPV6 || defined __DOXYGEN__
+#define LWIP_IPV6                       0
+#endif
+
+/**
+ * LWIP_IPV6_NUM_ADDRESSES: Number of IPv6 addresses per netif.
+ */
+#if !defined LWIP_IPV6_NUM_ADDRESSES || defined __DOXYGEN__
+#define LWIP_IPV6_NUM_ADDRESSES         3
+#endif
+
+/**
+ * LWIP_IPV6_FORWARD==1: Forward IPv6 packets across netifs
+ */
+#if !defined LWIP_IPV6_FORWARD || defined __DOXYGEN__
+#define LWIP_IPV6_FORWARD               0
+#endif
+
+/**
+ * LWIP_IPV6_FRAG==1: Fragment outgoing IPv6 packets that are too big.
+ */
+#if !defined LWIP_IPV6_FRAG || defined __DOXYGEN__
+#define LWIP_IPV6_FRAG                  0
+#endif
+
+/**
+ * LWIP_IPV6_REASS==1: reassemble incoming IPv6 packets that fragmented
+ */
+#if !defined LWIP_IPV6_REASS || defined __DOXYGEN__ || defined __DOXYGEN__
+#define LWIP_IPV6_REASS                 (LWIP_IPV6)
+#endif
+
+/**
+ * LWIP_IPV6_SEND_ROUTER_SOLICIT==1: Send router solicitation messages during
+ * network startup.
+ */
+#if !defined LWIP_IPV6_SEND_ROUTER_SOLICIT || defined __DOXYGEN__
+#define LWIP_IPV6_SEND_ROUTER_SOLICIT   1
+#endif
+
+/**
+ * LWIP_IPV6_AUTOCONFIG==1: Enable stateless address autoconfiguration as per RFC 4862.
+ */
+#if !defined LWIP_IPV6_AUTOCONFIG || defined __DOXYGEN__
+#define LWIP_IPV6_AUTOCONFIG            (LWIP_IPV6)
+#endif
+
+/**
+ * LWIP_IPV6_DUP_DETECT_ATTEMPTS=[0..7]: Number of duplicate address detection attempts.
+ */
+#if !defined LWIP_IPV6_DUP_DETECT_ATTEMPTS || defined __DOXYGEN__
+#define LWIP_IPV6_DUP_DETECT_ATTEMPTS   1
+#endif
+/**
+ * @}
+ */
+
+/**
+ * @defgroup lwip_opts_icmp6 ICMP6
+ * @ingroup lwip_opts_ipv6
+ * @{
+ */
+/**
+ * LWIP_ICMP6==1: Enable ICMPv6 (mandatory per RFC)
+ */
+#if !defined LWIP_ICMP6 || defined __DOXYGEN__
+#define LWIP_ICMP6                      (LWIP_IPV6)
+#endif
+
+/**
+ * LWIP_ICMP6_DATASIZE: bytes from original packet to send back in
+ * ICMPv6 error messages.
+ */
+#if !defined LWIP_ICMP6_DATASIZE || defined __DOXYGEN__
+#define LWIP_ICMP6_DATASIZE             8
+#endif
+
+/**
+ * LWIP_ICMP6_HL: default hop limit for ICMPv6 messages
+ */
+#if !defined LWIP_ICMP6_HL || defined __DOXYGEN__
+#define LWIP_ICMP6_HL                   255
+#endif
+/**
+ * @}
+ */
+
+/**
+ * @defgroup lwip_opts_mld6 Multicast listener discovery
+ * @ingroup lwip_opts_ipv6
+ * @{
+ */
+/**
+ * LWIP_IPV6_MLD==1: Enable multicast listener discovery protocol.
+ */
+#if !defined LWIP_IPV6_MLD || defined __DOXYGEN__
+#define LWIP_IPV6_MLD                   (LWIP_IPV6)
+#endif
+
+/**
+ * MEMP_NUM_MLD6_GROUP: Max number of IPv6 multicast that can be joined.
+ */
+#if !defined MEMP_NUM_MLD6_GROUP || defined __DOXYGEN__
+#define MEMP_NUM_MLD6_GROUP             4
+#endif
+/**
+ * @}
+ */
+
+/**
+ * @defgroup lwip_opts_nd6 Neighbor discovery
+ * @ingroup lwip_opts_ipv6
+ * @{
+ */
+/**
+ * LWIP_ND6_QUEUEING==1: queue outgoing IPv6 packets while MAC address
+ * is being resolved.
+ */
+#if !defined LWIP_ND6_QUEUEING || defined __DOXYGEN__
+#define LWIP_ND6_QUEUEING               (LWIP_IPV6)
+#endif
+
+/**
+ * MEMP_NUM_ND6_QUEUE: Max number of IPv6 packets to queue during MAC resolution.
+ */
+#if !defined MEMP_NUM_ND6_QUEUE || defined __DOXYGEN__
+#define MEMP_NUM_ND6_QUEUE              20
+#endif
+
+/**
+ * LWIP_ND6_NUM_NEIGHBORS: Number of entries in IPv6 neighbor cache
+ */
+#if !defined LWIP_ND6_NUM_NEIGHBORS || defined __DOXYGEN__
+#define LWIP_ND6_NUM_NEIGHBORS          10
+#endif
+
+/**
+ * LWIP_ND6_NUM_DESTINATIONS: number of entries in IPv6 destination cache
+ */
+#if !defined LWIP_ND6_NUM_DESTINATIONS || defined __DOXYGEN__
+#define LWIP_ND6_NUM_DESTINATIONS       10
+#endif
+
+/**
+ * LWIP_ND6_NUM_PREFIXES: number of entries in IPv6 on-link prefixes cache
+ */
+#if !defined LWIP_ND6_NUM_PREFIXES || defined __DOXYGEN__
+#define LWIP_ND6_NUM_PREFIXES           5
+#endif
+
+/**
+ * LWIP_ND6_NUM_ROUTERS: number of entries in IPv6 default router cache
+ */
+#if !defined LWIP_ND6_NUM_ROUTERS || defined __DOXYGEN__
+#define LWIP_ND6_NUM_ROUTERS            3
+#endif
+
+/**
+ * LWIP_ND6_MAX_MULTICAST_SOLICIT: max number of multicast solicit messages to send
+ * (neighbor solicit and router solicit)
+ */
+#if !defined LWIP_ND6_MAX_MULTICAST_SOLICIT || defined __DOXYGEN__
+#define LWIP_ND6_MAX_MULTICAST_SOLICIT  3
+#endif
+
+/**
+ * LWIP_ND6_MAX_UNICAST_SOLICIT: max number of unicast neighbor solicitation messages
+ * to send during neighbor reachability detection.
+ */
+#if !defined LWIP_ND6_MAX_UNICAST_SOLICIT || defined __DOXYGEN__
+#define LWIP_ND6_MAX_UNICAST_SOLICIT    3
+#endif
+
+/**
+ * Unused: See ND RFC (time in milliseconds).
+ */
+#if !defined LWIP_ND6_MAX_ANYCAST_DELAY_TIME || defined __DOXYGEN__
+#define LWIP_ND6_MAX_ANYCAST_DELAY_TIME 1000
+#endif
+
+/**
+ * Unused: See ND RFC
+ */
+#if !defined LWIP_ND6_MAX_NEIGHBOR_ADVERTISEMENT || defined __DOXYGEN__
+#define LWIP_ND6_MAX_NEIGHBOR_ADVERTISEMENT  3
+#endif
+
+/**
+ * LWIP_ND6_REACHABLE_TIME: default neighbor reachable time (in milliseconds).
+ * May be updated by router advertisement messages.
+ */
+#if !defined LWIP_ND6_REACHABLE_TIME || defined __DOXYGEN__
+#define LWIP_ND6_REACHABLE_TIME         30000
+#endif
+
+/**
+ * LWIP_ND6_RETRANS_TIMER: default retransmission timer for solicitation messages
+ */
+#if !defined LWIP_ND6_RETRANS_TIMER || defined __DOXYGEN__
+#define LWIP_ND6_RETRANS_TIMER          1000
+#endif
+
+/**
+ * LWIP_ND6_DELAY_FIRST_PROBE_TIME: Delay before first unicast neighbor solicitation
+ * message is sent, during neighbor reachability detection.
+ */
+#if !defined LWIP_ND6_DELAY_FIRST_PROBE_TIME || defined __DOXYGEN__s
+#define LWIP_ND6_DELAY_FIRST_PROBE_TIME 5000
+#endif
+
+/**
+ * LWIP_ND6_RS_TMR_INTERVAL: default time interval between router solicitation messages
+ */
+#if !defined LWIP_ND6_RS_TMR_INTERVAL || defined __DOXYGEN__
+#define LWIP_ND6_RS_TMR_INTERVAL        4000
+#endif
+
+/**
+ * LWIP_ND6_ALLOW_RA_UPDATES==1: Allow Router Advertisement messages to update
+ * Reachable time and retransmission timers, and netif MTU.
+ */
+#if !defined LWIP_ND6_ALLOW_RA_UPDATES || defined __DOXYGEN__
+#define LWIP_ND6_ALLOW_RA_UPDATES       1
+#endif
+
+/**
+ * LWIP_ND6_TCP_REACHABILITY_HINTS==1: Allow TCP to provide Neighbor Discovery
+ * with reachability hints for connected destinations. This helps avoid sending
+ * unicast neighbor solicitation messages.
+ */
+#if !defined LWIP_ND6_TCP_REACHABILITY_HINTS || defined __DOXYGEN__ || defined __DOXYGEN__
+#define LWIP_ND6_TCP_REACHABILITY_HINTS 1
+#endif
+/**
+ * @}
+ */
+
+/**
+ * LWIP_IPV6_DHCP6==1: enable DHCPv6 stateful address autoconfiguration.
+ */
+#if !defined LWIP_IPV6_DHCP6 || defined __DOXYGEN__
+#define LWIP_IPV6_DHCP6                 0
+#endif
+
+
+/*
    --------------------------------------
    ---------- Checksum options ----------
    --------------------------------------
@@ -1791,6 +2517,35 @@
 #endif
 
 /**
+ * CHECKSUM_CHECK_ICMP==1: Check checksums in software for incoming ICMP packets.
+ */
+#if !defined CHECKSUM_CHECK_ICMP || defined __DOXYGEN__
+#define CHECKSUM_CHECK_ICMP             1
+#endif
+
+/**
+ * CHECKSUM_CHECK_ICMP6==1: Check checksums in software for incoming ICMPv6 packets
+ */
+#if !defined CHECKSUM_CHECK_ICMP6 || defined __DOXYGEN__
+#define CHECKSUM_CHECK_ICMP6            1
+#endif
+
+/**
+ * CHECKSUM_GEN_ICMP6==1: Generate checksums in software for outgoing ICMP6 packets.
+ */
+#if !defined CHECKSUM_GEN_ICMP6 || defined __DOXYGEN__
+#define CHECKSUM_GEN_ICMP6              1
+#endif
+/**
+ * LWIP_CHECKSUM_CTRL_PER_NETIF==1: Checksum generation/check can be enabled/disabled
+ * per netif.
+ * ATTENTION: if enabled, the CHECKSUM_GEN_* and CHECKSUM_CHECK_* defines must be enabled!
+ */
+#if !defined LWIP_CHECKSUM_CTRL_PER_NETIF || defined __DOXYGEN__
+#define LWIP_CHECKSUM_CTRL_PER_NETIF    0
+#endif
+
+/**
  * CHECKSUM_CHECK_IP==1: Check checksums in software for incoming IP packets.
  */
 #ifndef CHECKSUM_CHECK_IP
@@ -1819,6 +2574,57 @@
 #define LWIP_CHECKSUM_ON_COPY           0
 #endif
 
+/**
+ * LWIP_ND6_DELAY_FIRST_PROBE_TIME: Delay before first unicast neighbor solicitation
+ * message is sent, during neighbor reachability detection.
+ */
+#if !defined LWIP_ND6_DELAY_FIRST_PROBE_TIME || defined __DOXYGEN__
+#define LWIP_ND6_DELAY_FIRST_PROBE_TIME 5000
+#endif
+
+/**
+ * LWIP_ND6_RS_TMR_INTERVAL: default time interval between router solicitation messages
+ */
+#if !defined LWIP_ND6_RS_TMR_INTERVAL || defined __DOXYGEN__
+#define LWIP_ND6_RS_TMR_INTERVAL        4000
+#endif
+
+/**
+ * LWIP_ND6_ALLOW_RA_UPDATES==1: Allow Router Advertisement messages to update
+ * Reachable time and retransmission timers, and netif MTU.
+ */
+#if !defined LWIP_ND6_ALLOW_RA_UPDATES || defined __DOXYGEN__
+#define LWIP_ND6_ALLOW_RA_UPDATES       1
+#endif
+
+/**
+ * LWIP_ND6_TCP_REACHABILITY_HINTS==1: Allow TCP to provide Neighbor Discovery
+ * with reachability hints for connected destinations. This helps avoid sending
+ * unicast neighbor solicitation messages.
+ */
+#if !defined LWIP_ND6_TCP_REACHABILITY_HINTS || defined __DOXYGEN__
+#define LWIP_ND6_TCP_REACHABILITY_HINTS 1
+#endif
+
+/**
+ * LWIP_ND6_RDNSS_MAX_DNS_SERVERS > 0: Use IPv6 Router Advertisement Recursive
+ * DNS Server Option (as per RFC 6106) to copy a defined maximum number of DNS
+ * servers to the DNS module.
+ */
+#if !defined LWIP_ND6_RDNSS_MAX_DNS_SERVERS || defined __DOXYGEN__
+#define LWIP_ND6_RDNSS_MAX_DNS_SERVERS  0
+#endif
+/**
+ * @}
+ */
+
+/**
+ * LWIP_IPV6_DHCP6==1: enable DHCPv6 stateful address autoconfiguration.
+ */
+#if !defined LWIP_IPV6_DHCP6 || defined __DOXYGEN__
+#define LWIP_IPV6_DHCP6                 0
+#endif
+
 /*
    ---------------------------------------
    ---------- Hook options ---------------
@@ -1838,6 +2644,9 @@
  * If the hook consumed the packet, 'pbuf' is in the responsibility of the hook
  * (i.e. free it when done).
  */
+#ifdef __DOXYGEN__
+#define LWIP_HOOK_IP4_INPUT(pbuf, input_netif)
+#endif
 
 /**
  * LWIP_HOOK_IP4_ROUTE(dest):
@@ -1846,7 +2655,9 @@
  * Returns the destination netif or NULL if no destination netif is found. In
  * that case, ip_route() continues as normal.
  */
-
+#ifdef __DOXYGEN__
+#define LWIP_HOOK_IP4_ROUTE(dest)
+#endif
 /*
    ---------------------------------------
    ---------- Debugging options ----------
@@ -2099,6 +2910,13 @@
  */
 #ifndef SNMP_MIB_DEBUG
 #define SNMP_MIB_DEBUG                  LWIP_DBG_OFF
+#endif
+
+/**
+ * IP6_DEBUG: Enable debugging for IPv6.
+ */
+#if !defined IP6_DEBUG || defined __DOXYGEN__
+#define IP6_DEBUG                       LWIP_DBG_OFF
 #endif
 
 /**

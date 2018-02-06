@@ -21,8 +21,7 @@
 #/* SAMSUNG LICENSE */
 ############################################################################
 
-
-LWIP_CSRCS += autoip.c icmp.c igmp.c inet.c inet_chksum.c ip.c ip_addr.c ip_frag.c
+LWIP_CSRCS += autoip.c icmp.c igmp.c inet.c inet_chksum.c ip4.c ip4_addr.c ip4_frag.c
 
 # Include ipv4 build support
 

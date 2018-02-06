@@ -52,38 +52,137 @@
 
 #include <net/lwip/opt.h>
 
-#if LWIP_SOCKET					/* don't build if not configured for use in lwipopts.h */
-
-#include <stddef.h>				/* for size_t */
-#include <string.h>				/* for memset used by FD_ZERO */
+#if LWIP_SOCKET /* don't build if not configured for use in lwipopts.h */
 #include <fcntl.h>
-#include <tinyara/fs/ioctl.h> 
-#if LWIP_TIMEVAL_PRIVATE
-#include <time.h>
-#endif
-#include <sys/sock_internal.h>
-#include <netinet/in.h>
-
-#include <net/lwip/ipv4/ip_addr.h>
+#include <net/lwip/ip_addr.h>
+#include <net/lwip/err.h>
 #include <net/lwip/ipv4/inet.h>
+#include <net/lwip/errno.h>
+#include <sys/sock_internal.h>
+#include <sys/select.h>
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
+/* If your port already typedef's in_port_t, define IN_PORT_T_DEFINED
+   to prevent this code from redefining it. */
+#if !defined(in_port_t) && !defined(IN_PORT_T_DEFINED)
+typedef u16_t in_port_t;
+#endif
+#define SIN_ZERO_LEN 8
+
+struct sockaddr {
+	u8_t        sa_len;
+	sa_family_t sa_family;
+	char        sa_data[14];
+};
+
+/* If your port already typedef's socklen_t, define SOCKLEN_T_DEFINED
+   to prevent this code from redefining it. */
+#if !defined(socklen_t) && !defined(SOCKLEN_T_DEFINED)
+typedef u32_t socklen_t;
+#endif
+
+struct lwip_sock;
+
+#if !LWIP_TCPIP_CORE_LOCKING
+/** Maximum optlen used by setsockopt/getsockopt */
+#define LWIP_SETGETSOCKOPT_MAXOPTLEN 16
+
+/** This struct is used to pass data to the set/getsockopt_internal
+ * functions running in tcpip_thread context (only a void* is allowed) */
+struct lwip_setgetsockopt_data {
+	/** socket index for which to change options */
+	int s;
+	/** level of the option to process */
+	int level;
+	/** name of the option to process */
+	int optname;
+	/** set: value to set the option to
+	* get: value of the option is stored here */
+#if LWIP_MPU_COMPATIBLE
+	u8_t optval[LWIP_SETGETSOCKOPT_MAXOPTLEN];
+#else
+	union {
+		void *p;
+		const void *pc;
+	} optval;
+#endif
+	/** size of *optval */
+	socklen_t optlen;
+	/** if an error occurs, it is temporarily stored here */
+	err_t err;
+	/** semaphore to wake up the calling task */
+	void* completed_sem;
+};
+#endif /* !LWIP_TCPIP_CORE_LOCKING */
+
+#if !defined(iovec)
+struct iovec {
+	void  *iov_base;
+	size_t iov_len;
+};
+#endif
+
+/* Socket protocol types (TCP/UDP/RAW) */
+#define SOCK_STREAM    0		/* Provides sequenced, reliable, two-way, connection-based byte streams.
+								 * An  out-of-band data transmission mechanism may be supported. */
+#define SOCK_DGRAM     1		/* Supports  datagrams (connectionless, unreliable messages of a fixed
+								 * maximum length). */
+#define SOCK_SEQPACKET 2		/* Provides a sequenced, reliable, two-way connection-based data
+								 * transmission path for datagrams of fixed maximum length; a consumer
+								 * is required to read an entire packet with each read system call. */
+#define SOCK_RAW       3		/* Provides raw network protocol access. */
+#define SOCK_RDM       4		/* Provides a reliable datagram layer that does not guarantee ordering. */
+#define SOCK_PACKET    5		/* Obsolete and should not be used in new programs */
+
 /*
  * Option flags per-socket. These must match the SOF_ flags in ip.h (checked in init.c)
  */
-#define  SO_USELOOPBACK 0x0040	/* Unimplemented: bypass hardware when possible */
-#define  SO_REUSEPORT   0x0200	/* Unimplemented: allow local address & port reuse */
+#define SO_REUSEADDR   0x0004 /* Allow local address reuse */
+#define SO_KEEPALIVE   0x0008 /* keep connections alive */
+#define SO_BROADCAST   0x0020 /* permit to send and to receive broadcast messages (see IP_SOF_BROADCAST option) */
 
-#define SO_DONTLINGER   ((int)(~SO_LINGER))
 
 /*
  * Additional options, not kept in so_options.
  */
-#define SO_CONTIMEO  0x1009		/* Unimplemented: connect timeout */
-#define SO_NO_CHECK  0x100a		/* don't create UDP checksum */
+#define SO_DEBUG       0x0001 /* Unimplemented: turn on debugging info recording */
+#define SO_ACCEPTCONN  0x0002 /* socket has had listen() */
+#define SO_DONTROUTE   0x0010 /* Unimplemented: just use interface addresses */
+#define SO_USELOOPBACK 0x0040 /* Unimplemented: bypass hardware when possible */
+#define SO_LINGER      0x0080 /* linger on close if data present */
+#define SO_DONTLINGER  ((int)(~SO_LINGER))
+#define SO_OOBINLINE   0x0100 /* Unimplemented: leave received OOB data in line */
+#define SO_REUSEPORT   0x0200 /* Unimplemented: allow local address & port reuse */
+#define SO_SNDBUF      0x1001 /* Unimplemented: send buffer size */
+#define SO_RCVBUF      0x1002 /* receive buffer size */
+#define SO_SNDLOWAT    0x1003 /* Unimplemented: send low-water mark */
+#define SO_RCVLOWAT    0x1004 /* Unimplemented: receive low-water mark */
+#define SO_SNDTIMEO    0x1005 /* send timeout */
+#define SO_RCVTIMEO    0x1006 /* receive timeout */
+#define SO_ERROR       0x1007 /* get error status and clear */
+#define SO_TYPE        0x1008 /* get socket type */
+#define SO_CONTIMEO    0x1009 /* Unimplemented: connect timeout */
+#define SO_NO_CHECK    0x100a /* don't create UDP checksum */
+
+/*
+ * Level number for (get/set)sockopt() to apply to socket itself.
+ */
+#define  SOL_SOCKET  0xfff    /* options for socket level */
+
+
+#define IPPROTO_IP      0
+#define IPPROTO_ICMP    1
+#define IPPROTO_TCP     6
+#define IPPROTO_UDP     17
+#if LWIP_IPV6
+#define IPPROTO_IPV6    41
+#define IPPROTO_ICMPV6  58
+#endif /* LWIP_IPV6 */
+#define IPPROTO_UDPLITE 136
+#define IPPROTO_RAW     255
 
 /*
  * Options for level IPPROTO_IP
@@ -95,20 +194,47 @@ extern "C" {
 /*
  * Options for level IPPROTO_TCP
  */
-#define TCP_NODELAY    0x01		/* don't delay send to coalesce packets */
-#define TCP_KEEPALIVE  0x02		/* send KEEPALIVE probes when idle for pcb->keep_idle milliseconds */
-#define TCP_KEEPIDLE   0x03		/* set pcb->keep_idle  - Same as TCP_KEEPALIVE, but use seconds for get/setsockopt */
-#define TCP_KEEPINTVL  0x04		/* set pcb->keep_intvl - Use seconds for get/setsockopt */
-#define TCP_KEEPCNT    0x05		/* set pcb->keep_cnt   - Use number of probes sent for get/setsockopt */
-#endif							/* LWIP_TCP */
+#define TCP_NODELAY    0x01    /* don't delay send to coalesce packets */
+#define TCP_KEEPALIVE  0x02    /* send KEEPALIVE probes when idle for pcb->keep_idle milliseconds */
+#define TCP_KEEPIDLE   0x03    /* set pcb->keep_idle  - Same as TCP_KEEPALIVE, but use seconds for get/setsockopt */
+#define TCP_KEEPINTVL  0x04    /* set pcb->keep_intvl - Use seconds for get/setsockopt */
+#define TCP_KEEPCNT    0x05    /* set pcb->keep_cnt   - Use number of probes sent for get/setsockopt */
+#endif /* LWIP_TCP */
+
+#if LWIP_IPV6
+/*
+ * Options for level IPPROTO_IPV6
+ */
+#define IPV6_CHECKSUM       7  /* RFC3542: calculate and insert the ICMPv6 checksum for raw sockets. */
+#define IPV6_V6ONLY         27 /* RFC3493: boolean control to restrict AF_INET6 sockets to IPv6 communications only. */
+#endif /* LWIP_IPV6 */
 
 #if LWIP_UDP && LWIP_UDPLITE
 /*
  * Options for level IPPROTO_UDPLITE
  */
-#define UDPLITE_SEND_CSCOV 0x01	/* sender checksum coverage */
-#define UDPLITE_RECV_CSCOV 0x02	/* minimal receiver checksum coverage */
-#endif							/* LWIP_UDP && LWIP_UDPLITE */
+#define UDPLITE_SEND_CSCOV 0x01 /* sender checksum coverage */
+#define UDPLITE_RECV_CSCOV 0x02 /* minimal receiver checksum coverage */
+#endif /* LWIP_UDP && LWIP_UDPLITE*/
+
+
+#if LWIP_MULTICAST_TX_OPTIONS
+/*
+ * Options and types for UDP multicast traffic handling
+ */
+#define IP_MULTICAST_TTL   5
+#define IP_MULTICAST_IF    6
+#define IP_MULTICAST_LOOP  7
+#endif /* LWIP_MULTICAST_TX_OPTIONS */
+
+#if LWIP_IGMP
+/*
+ * Options and types related to multicast membership
+ */
+#define IP_ADD_MEMBERSHIP  3
+#define IP_DROP_MEMBERSHIP 4
+
+#endif
 
 /*
  * The Type of Service provides an indication of the abstract
@@ -154,6 +280,7 @@ extern "C" {
 #define IPTOS_PREC_PRIORITY             0x20
 #define IPTOS_PREC_ROUTINE              0x00
 
+
 /*
  * Commands for ioctlsocket(),  taken from the BSD file fcntl.h.
  * lwip_ioctl only supports FIONREAD and FIONBIO, for now
@@ -165,34 +292,57 @@ extern "C" {
  * we restrict parameters to at most 128 bytes.
  */
 #if !defined(FIONREAD) || !defined(FIONBIO)
-#define IOCPARM_MASK    0x7fU	/* parameters must be < 128 bytes */
-#define IOC_VOID        0x20000000UL	/* no parameters */
-#define IOC_OUT         0x40000000UL	/* copy out parameters */
-#define IOC_IN          0x80000000UL	/* copy in parameters */
+#define IOCPARM_MASK    0x7fU           /* parameters must be < 128 bytes */
+#define IOC_VOID        0x20000000UL    /* no parameters */
+#define IOC_OUT         0x40000000UL    /* copy out parameters */
+#define IOC_IN          0x80000000UL    /* copy in parameters */
 #define IOC_INOUT       (IOC_IN|IOC_OUT)
-/* 0x20000000 distinguishes new &
-   old ioctl's */
-#define _IO(x, y)       (IOC_VOID|((x)<<8)|(y))
+											/* 0x20000000 distinguishes new &
+											old ioctl's */
+#define _IO(x, y)        (IOC_VOID|((x)<<8)|(y))
 
-#define _IOR(x, y, t)   (IOC_OUT|(((long)sizeof(t)&IOCPARM_MASK)<<16)|((x)<<8)|(y))
+#define _IOR(x, y, t)     (IOC_OUT|(((long)sizeof(t)&IOCPARM_MASK)<<16)|((x)<<8)|(y))
 
-#define _IOW(x, y, t)   (IOC_IN|(((long)sizeof(t)&IOCPARM_MASK)<<16)|((x)<<8)|(y))
-#endif							/* !defined(FIONREAD) || !defined(FIONBIO) */
+#define _IOW(x, y, t)     (IOC_IN|(((long)sizeof(t)&IOCPARM_MASK)<<16)|((x)<<8)|(y))
+#endif /* !defined(FIONREAD) || !defined(FIONBIO) */
 
 #ifndef FIONREAD
-#define FIONREAD    _IOR('f', 127, unsigned long)	/* get # bytes to read */
+#define FIONREAD    _IOR('f', 127, unsigned long) /* get # bytes to read */
 #endif
 #ifndef FIONBIO
-#define FIONBIO     _IOW('f', 126, unsigned long)	/* set/clear non-blocking i/o */
+#define FIONBIO     _IOW('f', 126, unsigned long) /* set/clear non-blocking i/o */
 #endif
 
 /* Socket I/O Controls: unimplemented */
 #ifndef SIOCSHIWAT
-#define SIOCSHIWAT  _IOW('s',  0, unsigned long)	/* set high watermark */
-#define SIOCGHIWAT  _IOR('s',  1, unsigned long)	/* get high watermark */
-#define SIOCSLOWAT  _IOW('s',  2, unsigned long)	/* set low watermark */
-#define SIOCGLOWAT  _IOR('s',  3, unsigned long)	/* get low watermark */
-#define SIOCATMARK  _IOR('s',  7, unsigned long)	/* at oob mark? */
+#define SIOCSHIWAT  _IOW('s',  0, unsigned long)  /* set high watermark */
+#define SIOCGHIWAT  _IOR('s',  1, unsigned long)  /* get high watermark */
+#define SIOCSLOWAT  _IOW('s',  2, unsigned long)  /* set low watermark */
+#define SIOCGLOWAT  _IOR('s',  3, unsigned long)  /* get low watermark */
+#define SIOCATMARK  _IOR('s',  7, unsigned long)  /* at oob mark? */
+#endif
+
+/* commands for fnctl */
+#ifndef F_GETFL
+#define F_GETFL 3
+#endif
+#ifndef F_SETFL
+#define F_SETFL 4
+#endif
+
+/* File status flags and file access modes for fnctl,
+   these are bits in an int. */
+#ifndef O_NONBLOCK
+#define O_NONBLOCK  1 /* nonblocking I/O */
+#endif
+#ifndef O_NDELAY
+#define O_NDELAY    1 /* same as O_NONBLOCK, for compatibility */
+#endif
+
+#ifndef SHUT_RD
+#define SHUT_RD   0
+#define SHUT_WR   1
+#define SHUT_RDWR 2
 #endif
 
 #if LWIP_SELECT
@@ -200,23 +350,67 @@ extern "C" {
 #ifndef FD_SET
 #undef  FD_SETSIZE
 /* Make FD_SETSIZE match NUM_SOCKETS in socket.c */
-#define FD_SETSIZE     (LWIP_SOCKET_OFFSET + MEMP_NUM_NETCONN)
-#define FD_SET(n, p)   ((p)->fd_bits[(n)/8] |=  (1 << ((n) & 7)))
-#define FD_CLR(n, p)   ((p)->fd_bits[(n)/8] &= ~(1 << ((n) & 7)))
-#define FD_ISSET(n, p) ((p)->fd_bits[(n)/8] &   (1 << ((n) & 7)))
-#define FD_ZERO(p)     memset((void*)(p), 0, sizeof(*(p)))
-
-typedef struct fd_set {
-	unsigned char fd_bits[(FD_SETSIZE + 7) / 8];
-} fd_set;
-
-#endif							/* FD_SET */
+#define FD_SETSIZE    MEMP_NUM_NETCONN
+#define FDSETSAFESET(n, code) do { \
+				if (((n) - LWIP_SOCKET_OFFSET < MEMP_NUM_NETCONN) && (((int)(n) - LWIP_SOCKET_OFFSET) >= 0)) { \
+				code; } } while (0)
+#define FDSETSAFEGET(n, code) (((n) - LWIP_SOCKET_OFFSET < MEMP_NUM_NETCONN) && (((int)(n) - LWIP_SOCKET_OFFSET) >= 0) ?\
+							(code) : 0)
+#define FD_SET(n, p)  FDSETSAFESET(n, (p)->fd_bits[((n)-LWIP_SOCKET_OFFSET)/8] |=  (1 << (((n)-LWIP_SOCKET_OFFSET) & 7)))
+#define FD_CLR(n, p)  FDSETSAFESET(n, (p)->fd_bits[((n)-LWIP_SOCKET_OFFSET)/8] &= ~(1 << (((n)-LWIP_SOCKET_OFFSET) & 7)))
+#define FD_ISSET(n, p) FDSETSAFEGET(n, (p)->fd_bits[((n)-LWIP_SOCKET_OFFSET)/8] & (1 << (((n)-LWIP_SOCKET_OFFSET) & 7)))
+#define FD_ZERO(p)    memset((void*)(p), 0, sizeof(*(p)))
 #endif							/* LWIP_SELECT */
+#elif LWIP_SOCKET_OFFSET
+//#error LWIP_SOCKET_OFFSET does not work with external FD_SET!
+#elif FD_SETSIZE < MEMP_NUM_NETCONN
+#error "external FD_SETSIZE too small for number of sockets"
+#endif /* FD_SET */
 
-void lwip_socket_init(void);
-struct socket *get_socket(int sd);
-struct socket *get_socket_struct(int sd);
-int alloc_socket(struct netconn *newconn, int accepted);
+/** LWIP_TIMEVAL_PRIVATE: if you want to use the struct timeval provided
+ * by your system, set this to 0 and include <sys/time.h> in cc.h */
+#ifndef LWIP_TIMEVAL_PRIVATE
+#define LWIP_TIMEVAL_PRIVATE 1
+#endif
+
+#if LWIP_TIMEVAL_PRIVATE
+struct timeval {
+	long tv_sec;         /* seconds */
+	long tv_usec;        /* and microseconds */
+};
+#endif /* LWIP_TIMEVAL_PRIVATE */
+
+#define lwip_socket_init() /* Compatibility define, no init needed. */
+void lwip_socket_thread_init(void); /* LWIP_NETCONN_SEM_PER_THREAD==1: initialize thread-local semaphore */
+void lwip_socket_thread_cleanup(void); /* LWIP_NETCONN_SEM_PER_THREAD==1: destroy thread-local semaphore */
+
+#if LWIP_COMPAT_SOCKETS == 2
+/* This helps code parsers/code completion by not having the COMPAT functions as defines */
+#define lwip_shutdown     shutdown
+#define lwip_getsockname  getsockname
+#define lwip_setsockopt   setsockopt
+#define lwip_getsockopt   getsockopt
+#define lwip_close        closesocket
+#define lwip_connect      connect
+#define lwip_listen       listen
+#define lwip_recv         recv
+#define lwip_send         send
+#define lwip_sendmsg      sendmsg
+#define lwip_socket       socket
+#define lwip_select       select
+#define lwip_ioctlsocket  ioctl
+
+#if LWIP_POSIX_SOCKETS_IO_NAMES
+#define lwip_read         read
+#define lwip_write        write
+#define lwip_writev       writev
+#undef lwip_close
+#define lwip_close        close
+#define closesocket(s)    close(s)
+#define lwip_fcntl        fcntl
+#define lwip_ioctl        ioctl
+#endif /* LWIP_POSIX_SOCKETS_IO_NAMES */
+#endif /* LWIP_COMPAT_SOCKETS == 2 */
 
 int lwip_accept(int s, struct sockaddr *addr, socklen_t *addrlen);
 int lwip_bind(int s, const struct sockaddr *name, socklen_t namelen);
@@ -226,16 +420,18 @@ int lwip_getsockname(int s, struct sockaddr *name, socklen_t *namelen);
 int lwip_getsockopt(int s, int level, int optname, void *optval, socklen_t *optlen);
 int lwip_setsockopt(int s, int level, int optname, const void *optval, socklen_t optlen);
 int lwip_close(int s);
-int lwip_sock_close(struct socket *sock);
 int lwip_connect(int s, const struct sockaddr *name, socklen_t namelen);
 int lwip_listen(int s, int backlog);
 int lwip_recv(int s, void *mem, size_t len, int flags);
 int lwip_read(int s, void *mem, size_t len);
 int lwip_recvfrom(int s, void *mem, size_t len, int flags, struct sockaddr *from, socklen_t *fromlen);
 int lwip_send(int s, const void *dataptr, size_t size, int flags);
-int lwip_sendto(int s, const void *dataptr, size_t size, int flags, const struct sockaddr *to, socklen_t tolen);
+int lwip_sendmsg(int s, const struct msghdr *message, int flags);
+int lwip_sendto(int s, const void *data, size_t size, int flags, const struct sockaddr *to, socklen_t tolen);
+
 int lwip_socket(int domain, int type, int protocol);
 int lwip_write(int s, const void *dataptr, size_t size);
+int lwip_writev(int s, const struct iovec *iov, int iovcnt);
 #if LWIP_SELECT
 int lwip_select(int maxfdp1, fd_set *readset, fd_set *writeset, fd_set *exceptset, struct timeval *timeout);
 #endif
@@ -243,15 +439,53 @@ int lwip_poll(int fd, struct pollfd *fds, bool setup);
 int lwip_ioctl(int s, long cmd, void *argp);
 int lwip_fcntl(int s, int cmd, int val);
 
+#if LWIP_COMPAT_SOCKETS
+#if LWIP_COMPAT_SOCKETS != 2
+/** @ingroup socket */
+#define sendmsg(s, message, flags)                lwip_sendmsg(s, message, flags)
+
 #if LWIP_POSIX_SOCKETS_IO_NAMES
-#define read(a, b, c)         lwip_read(a, b, c)
-#define write(a, b, c)        lwip_write(a, b, c)
-#define close(s)              lwip_close(s)
-#define fcntl(a, b, c)        lwip_fcntl(a, b, c)
-#endif							/* LWIP_POSIX_SOCKETS_IO_NAMES */
+/** @ingroup socket */
+#define read(s, mem, len)                         lwip_read(s, mem, len)
+/** @ingroup socket */
+#define write(s, dataptr, len)                    lwip_write(s, dataptr, len)
+/** @ingroup socket */
+#define writev(s, iov, iovcnt)                    lwip_writev(s, iov, iovcnt)
+/** @ingroup socket */
+#define close(s)                                  lwip_close(s)
+/** @ingroup socket */
+#define fcntl(s, cmd, val)                        lwip_fcntl(s, cmd, val)
+/** @ingroup socket */
+#define ioctl(s, cmd, argp)                       lwip_ioctl(s, cmd, argp)
+#endif /* LWIP_POSIX_SOCKETS_IO_NAMES */
+#endif /* LWIP_COMPAT_SOCKETS != 2 */
+
+#if LWIP_IPV4 && LWIP_IPV6
+/** @ingroup socket */
+#define inet_ntop(af, src, dst, size) \
+	(((af) == AF_INET6) ? ip6addr_ntoa_r((const ip6_addr_t*)(src), (dst), (size)) \
+	: (((af) == AF_INET) ? ip4addr_ntoa_r((const ip4_addr_t*)(src), (dst), (size)) : NULL))
+/** @ingroup socket */
+#define inet_pton(af, src, dst) \
+	(((af) == AF_INET6) ? ip6addr_aton((src), (ip6_addr_t*)(dst)) \
+	: (((af) == AF_INET) ? ip4addr_aton((src), (ip4_addr_t*)(dst)) : 0))
+#elif LWIP_IPV4 /* LWIP_IPV4 && LWIP_IPV6 */
+#define inet_ntop(af, src, dst, size) \
+	(((af) == AF_INET) ? ip4addr_ntoa_r((const ip4_addr_t*)(src), (dst), (size)) : NULL)
+#define inet_pton(af, src, dst) \
+	(((af) == AF_INET) ? ip4addr_aton((src), (ip4_addr_t*)(dst)) : 0)
+#else /* LWIP_IPV4 && LWIP_IPV6 */
+#define inet_ntop(af, src, dst, size) \
+	(((af) == AF_INET6) ? ip6addr_ntoa_r((const ip6_addr_t*)(src), (dst), (size)) : NULL)
+#define inet_pton(af, src, dst) \
+	(((af) == AF_INET6) ? ip6addr_aton((src), (ip6_addr_t*)(dst)) : 0)
+#endif /* LWIP_IPV4 && LWIP_IPV6 */
+
+#endif /* LWIP_COMPAT_SOCKETS */
 
 #ifdef __cplusplus
 }
 #endif
-#endif							/* LWIP_SOCKET */
-#endif							/* __LWIP_SOCKETS_H__ */
+#endif /* LWIP_SOCKET */
+
+#endif /* LWIP_HDR_SOCKETS_H */

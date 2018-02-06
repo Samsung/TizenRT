@@ -90,6 +90,7 @@
  ****************************************************************************/
 
 #define NET_DEV_MTU(d)  ((d)->mtu)
+#define  SIZE             16
 
 /* This is really kind of bogus.. When asked for an IP address, this is
  * family that is returned in the ifr structure.  Probably could just skip
@@ -120,7 +121,7 @@
 #if defined(CONFIG_NET_ROUTE) && defined(CONFIG_NET_IPv4)
 static int ioctl_addipv4route(FAR struct rtentry *rtentry)
 {
-	FAR struct sockaddr_in *addr;
+	FAR struct sockaddr_in *addr = NULL;
 	in_addr_t target;
 	in_addr_t netmask;
 	in_addr_t router;
@@ -158,7 +159,7 @@ static int ioctl_addipv4route(FAR struct rtentry *rtentry)
 #if defined(CONFIG_NET_ROUTE) && defined(CONFIG_NET_IPv6)
 static int ioctl_addipv6route(FAR struct rtentry *rtentry)
 {
-	FAR struct sockaddr_in6 *addr;
+	FAR struct sockaddr_in6 *addr = NULL;
 	net_ipv6addr_t target;
 	net_ipv6addr_t netmask;
 	net_ipv6addr_t router;
@@ -196,7 +197,7 @@ static int ioctl_addipv6route(FAR struct rtentry *rtentry)
 #if defined(CONFIG_NET_ROUTE) && defined(CONFIG_NET_IPv4)
 static int ioctl_delipv4route(FAR struct rtentry *rtentry)
 {
-	FAR struct sockaddr_in *addr;
+	FAR struct sockaddr_in *addr = NULL;
 	in_addr_t target;
 	in_addr_t netmask;
 
@@ -224,7 +225,7 @@ static int ioctl_delipv4route(FAR struct rtentry *rtentry)
 #if defined(CONFIG_NET_ROUTE) && defined(CONFIG_NET_IPv6)
 static int ioctl_delipv6route(FAR struct rtentry *rtentry)
 {
-	FAR struct sockaddr_in6 *addr;
+	FAR struct sockaddr_in6 *addr = NULL;
 	net_ipv6addr_t target;
 	net_ipv6addr_t netmask;
 
@@ -278,7 +279,7 @@ static void ioctl_getipv6addr(FAR struct sockaddr_storage *outaddr, FAR const ne
 	FAR struct sockaddr_in6 *dest = (FAR struct sockaddr_in6 *)outaddr;
 	dest->sin6_family = AF_INET6;
 	dest->sin6_port = 0;
-	memcpy(dest->sin6_addr.in6_u.u6_addr8, inaddr, 16);
+	memcpy(dest->sin6_addr.in6_u.u6_addr8, inaddr, SIZE);
 }
 #endif
 
@@ -320,28 +321,30 @@ static void ioctl_setipv4addr(FAR in_addr_t *outaddr, FAR const struct sockaddr 
 static void ioctl_setipv6addr(FAR net_ipv6addr_t outaddr, FAR const struct sockaddr_storage *inaddr)
 {
 	FAR const struct sockaddr_in6 *src = (FAR const struct sockaddr_in6 *)inaddr;
-	memcpy(outaddr, src->sin6_addr.in6_u.u6_addr8, 16);
+	memcpy(outaddr, src->sin6_addr.in6_u.u6_addr8, SIZE);
 }
 #endif
 
 struct ifenum {
-	FAR struct ifconf	*ifc;
-	unsigned int		pos;
+	FAR struct ifconf *ifc;
+	unsigned int pos;
 };
 
 static int netdev_getconf(FAR struct netif *dev, void *arg)
 {
 	FAR struct ifenum *ifenum = (FAR struct ifenum *)arg;
 	FAR struct ifconf *ifc = ifenum->ifc;
-	FAR struct ifreq  *ifr = (FAR struct ifreq *)(ifc->ifc_buf + ifenum->pos);
+	FAR struct ifreq *ifr = (FAR struct ifreq *)(ifc->ifc_buf + ifenum->pos);
 
 	if (ifenum->pos + sizeof(struct ifreq) > ifc->ifc_len) {
 		return -EFAULT;
 	}
 
 	strncpy(ifr->ifr_name, dev->d_ifname, IFNAMSIZ - 1);
+#ifdef CONFIG_NET_IPv4
 	struct sockaddr_in *sin = (struct sockaddr_in *)&ifr->ifr_addr;
 	sin->sin_addr.s_addr = dev->ip_addr.addr;
+#endif
 	ifenum->pos += sizeof(struct ifreq);
 
 	return OK;
@@ -349,7 +352,7 @@ static int netdev_getconf(FAR struct netif *dev, void *arg)
 
 static int ioctl_siocgifconf(FAR struct ifconf *ifc)
 {
-	int ret;
+	int ret = 0;
 	struct ifenum ife = {
 		.ifc = ifc,
 		.pos = 0,
@@ -410,7 +413,7 @@ static FAR struct netif *netdev_ifrdev(FAR struct ifreq *req)
 
 static int netdev_ifrioctl(FAR struct socket *sock, int cmd, FAR struct ifreq *req)
 {
-	FAR struct netif *dev;
+	FAR struct netif *dev = NULL;
 	int ret = -EINVAL;
 
 	//nvdbg("cmd: %d\n", cmd);
@@ -511,7 +514,7 @@ static int netdev_ifrioctl(FAR struct socket *sock, int cmd, FAR struct ifreq *r
 			gw = dev->gw;
 			netifapi_netif_set_addr(dev, &ipaddr, &netmask, &gw);
 			netifapi_netif_set_up(dev);
-			
+
 			ret = OK;
 #endif
 		}
@@ -519,8 +522,7 @@ static int netdev_ifrioctl(FAR struct socket *sock, int cmd, FAR struct ifreq *r
 	break;
 #endif
 
-	/* TODO: Support IPv6 related IOCTL calls once IPv6 is functional */
-#if 0
+		/* TODO: Support IPv6 related IOCTL calls once IPv6 is functional */
 
 #ifdef CONFIG_NET_IPv6
 	case SIOCGLIFADDR: {		/* Get IP address */
@@ -603,7 +605,6 @@ static int netdev_ifrioctl(FAR struct socket *sock, int cmd, FAR struct ifreq *r
 	}
 	break;
 #endif
-#endif
 	case SIOCGLIFMTU:			/* Get MTU size */
 	case SIOCGIFMTU: {			/* Get MTU size */
 		dev = netdev_ifrdev(req);
@@ -648,7 +649,7 @@ static int netdev_ifrioctl(FAR struct socket *sock, int cmd, FAR struct ifreq *r
 	}
 	break;
 
-	/* MAC address operations only make sense if Ethernet is supported */
+		/* MAC address operations only make sense if Ethernet is supported */
 
 #ifdef CONFIG_NET_ETHERNET
 	case SIOCGIFHWADDR: {		/* Get hardware address */
@@ -786,7 +787,7 @@ static FAR struct netif *netdev_imsfdev(FAR struct ip_msfilter *imsf)
 #ifdef CONFIG_NET_IGMP
 static int netdev_imsfioctl(FAR struct socket *sock, int cmd, FAR struct ip_msfilter *imsf)
 {
-	FAR struct netif *dev;
+	FAR struct netif *dev = NULL;
 	int ret = -EINVAL;
 
 	nvdbg("cmd: %d\n", cmd);
@@ -956,7 +957,7 @@ int netdev_ioctl(int sockfd, int cmd, unsigned long arg)
 
 	/* Verify that the sockfd corresponds to valid, allocated socket */
 
-	sock = get_socket(sockfd);
+	sock = (struct socket *)get_socket(sockfd);
 
 	if (NULL == sock) {
 		ret = -EBADF;
