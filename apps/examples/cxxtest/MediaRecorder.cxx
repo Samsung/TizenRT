@@ -105,11 +105,6 @@ void MediaRecorder::_pause()
 	std::cout << "pause recording" << std::endl;
 }
 
-void MediaRecorder::_resume()
-{
-	std::cout << "resume recording" << std::endl;
-}
-
 MediaRecorder::~MediaRecorder()
 {
 	delete qMtx;

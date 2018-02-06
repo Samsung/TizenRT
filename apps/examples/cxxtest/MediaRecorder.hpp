@@ -34,10 +34,8 @@ public:
 	recorder_result_t create();
 	recorder_result_t destroy();
 
-	//recorder_result_t prepare();
 	recorder_result_t start();
 	recorder_result_t pause();
-	recorder_result_t resume();
 	recorder_result_t stop();
 
 	recorder_result_t getVolume() const;
@@ -59,11 +57,9 @@ private:
 	thread *worker;
 	int worker_thread();
 
-	//void _prepare();
 	void _create();
 	void _start();
 	void _pause();
-	void _resume();
 	void _stop();
 
 private:
