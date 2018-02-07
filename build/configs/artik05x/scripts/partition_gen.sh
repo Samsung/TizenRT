@@ -72,6 +72,7 @@ echo -n "Generating partition map ... "
 echo ${PARTITION_MAP_HEADER} > ${PARTITION_MAP_CFG}
 
 #Loop partition size list
+sum=0
 for psize in $partsize_list
 do
 	while [ "$count" -le "$total" ];

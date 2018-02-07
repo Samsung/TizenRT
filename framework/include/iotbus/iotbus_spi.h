@@ -63,9 +63,9 @@ struct iotbus_spi_config_s {
 struct _iotbus_spi_s;
 
 /**
- * @brief Pointer definition to the internal struct _iotbus_spi_s
+ * @brief Pointer definition to the internal struct _iotbus_spi_wrapper_s
  */
-typedef struct _iotbus_spi_s *iotbus_spi_context_h;
+typedef struct _iotbus_spi_wrapper_s *iotbus_spi_context_h;
 
 #ifdef __cplusplus
 extern "C" {
@@ -82,7 +82,7 @@ extern "C" {
  *                   - config->frequency : frequency in Hz
  *                   - config->mode : spi mode
  * @return On success, handle of spi_context is returned. On failure, NULL is returned.
- * @since Tizen RT v1.0
+ * @since TizenRT v1.0
  */
 iotbus_spi_context_h iotbus_spi_open(unsigned int bus, const struct iotbus_spi_config_s *config);
 
@@ -94,7 +94,7 @@ iotbus_spi_context_h iotbus_spi_open(unsigned int bus, const struct iotbus_spi_c
  * @param[in] txbuf the pointer of tx data buffer
  * @param[in] length size to write
  * @return On success, 0 is returned. On failure, a negative value is returned.
- * @since Tizen RT v1.0
+ * @since TizenRT v1.0
  */
 int iotbus_spi_write(iotbus_spi_context_h hnd, uint8_t *txbuf, size_t length);
 
@@ -106,7 +106,7 @@ int iotbus_spi_write(iotbus_spi_context_h hnd, uint8_t *txbuf, size_t length);
  * @param[in] rxbuf the pointer of rx data buffer
  * @param[in] length size to read
  * @return On success, 0 is returned. On failure, a negative value is returned.
- * @since Tizen RT v1.0
+ * @since TizenRT v1.0
  */
 int iotbus_spi_recv(iotbus_spi_context_h hnd, uint8_t *rxbuf, size_t length);
 
@@ -119,7 +119,7 @@ int iotbus_spi_recv(iotbus_spi_context_h hnd, uint8_t *rxbuf, size_t length);
  * @param[in] rxbuf the pointer of rx data buffer
  * @param[in] length size to transfer
  * @return On success, 0 is returned. On failure, a negative value is returned.
- * @since Tizen RT v1.0
+ * @since TizenRT v1.0
  */
 int iotbus_spi_transfer_buf(iotbus_spi_context_h hnd, uint8_t *txbuf, uint8_t *rxbuf, size_t length);
 
@@ -129,7 +129,7 @@ int iotbus_spi_transfer_buf(iotbus_spi_context_h hnd, uint8_t *txbuf, uint8_t *r
  * @details @b #include <iotbus/iotbus_spi.h>
  * @param[in] hnd handle of spi_context
  * @return On success, 0 is returned. On failure, a negative value is returned.
- * @since Tizen RT v1.0
+ * @since TizenRT v1.0
  */
 int iotbus_spi_close(iotbus_spi_context_h hnd);
 

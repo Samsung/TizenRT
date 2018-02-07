@@ -42,6 +42,11 @@ config TC_NET_ALL
 	select ITC_NET_DUP
 	select ITC_NET_FCNTL
 	select ITC_NET_LISTEN
+	select ITC_NET_SETSOCKOPT
+	select ITC_NET_SEND
+	select ITC_NET_INET
+	select ITC_NET_NETDB
+	select ITC_NET_CONNECT
 
 config TC_NET_SOCKET
 	bool "socket() api"
@@ -145,6 +150,26 @@ config ITC_NET_FCNTL
 
 config ITC_NET_LISTEN
 	bool "ITC listen() api"
+	default n
+
+config ITC_NET_SETSOCKOPT
+	bool "ITC setsockopt() api"
+	default n
+
+config ITC_NET_SEND
+	bool "ITC send() api"
+	default n
+
+config ITC_NET_INET
+	bool "ITC inet() api"
+	default n
+
+config ITC_NET_NETDB
+	bool "ITC netdb() api"
+	default n
+
+config ITC_NET_CONNECT
+	bool "ITC connect() api"
 	default n
 
 endif #EXAMPLES_TESTCASE_NETWORK

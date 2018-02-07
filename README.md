@@ -1,4 +1,4 @@
-# Tizen RT
+# TizenRT
 
 [![License](https://img.shields.io/badge/licence-Apache%202.0-brightgreen.svg?style=flat)](LICENSE)
 [![Build Status](https://travis-ci.org/Samsung/TizenRT.svg?branch=master)](https://travis-ci.org/Samsung/TizenRT)
@@ -69,7 +69,7 @@ QEMU [[details]](build/configs/qemu/README.md)
 
 ## Configuration Sets
 
-To build a Tizen RT application, use the default configuration files named *defconfig* under *build/configs/\<board\>/\<configuration_set\>* folder.  
+To build a TizenRT application, use the default configuration files named *defconfig* under *build/configs/\<board\>/\<configuration_set\>* folder.  
 To customize your application with specific configuration settings, using the menuconfig tool is recommended at *os* folder as shown:
 ```bash
 make menuconfig

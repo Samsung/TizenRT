@@ -102,7 +102,7 @@ SUBSYSTEMS=="usb",ATTRS{idVendor}=="0403",ATTRS{idProduct}=="6010",MODE="0666" R
 
 ## How to program a binary
 
-After buiding a Tizen RT, execute below at $TIZENRT_BASEDIR/os folder.
+After buiding a TizenRT, execute below at $TIZENRT_BASEDIR/os folder.
 
 TIZENRT_BASEDIR was set at [[Getting the sources]](../../../README.md#getting-the-sources) tab of Quick Start.
 ```bash
@@ -133,10 +133,10 @@ Before executing below steps, execute [generic steps](../../../tools/fs/README_R
     Hardware Configuration -> Board Selection -> Automount partitions -> Automount ROM read only partition to y
     ```
 
-After above two steps, build Tizen RT and program a Tizen RT binary through above [method](#how-to-program-a-binary).
+After above two steps, build TizenRT and program a TizenRT binary through above [method](#how-to-program-a-binary).
 
 ## Using GDB
-1. Build Tizen RT and program a Tizen RT binary through above [method](#how-to-program-a-binary)
+1. Build TizenRT and program a TizenRT binary through above [method](#how-to-program-a-binary)
 
 2. Run GDB server by running openocd with gdb cfg
     ```bash

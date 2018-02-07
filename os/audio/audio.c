@@ -185,7 +185,13 @@ static int audio_open(FAR struct file *filep)
 	/* Save the new open count on success */
 
 	upper->crefs = tmp;
-	upper->usermq = NULL;
+
+	/* Initialize usermq only when it is the first open */
+
+	if (upper->crefs == 1) {
+		upper->usermq = NULL;
+	}
+
 	ret = OK;
 
 errout_with_sem:
@@ -694,6 +700,40 @@ static inline void audio_dequeuebuffer(FAR struct audio_upperhalf_s *upper, FAR 
 }
 
 /****************************************************************************
+ * Name: audio_error_handler
+ *
+ * Description:
+ *   Send an AUDIO_MSG_IOERR message to the client to indicate that the
+ *   an error has occured.  The lower-half driver initiates this
+ *   call via its callback pointer to our upper-half driver.
+ *
+ ****************************************************************************/
+
+#ifdef CONFIG_AUDIO_MULTI_SESSION
+static inline void audio_error_handler(FAR struct audio_upperhalf_s *upper, FAR struct ap_buffer_s *apb, uint16_t status, FAR void *session)
+#else
+static inline void audio_error_handler(FAR struct audio_upperhalf_s *upper, FAR struct ap_buffer_s *apb, uint16_t status)
+#endif
+{
+	struct audio_msg_s msg;
+
+	/* Send a error message to the user if a message queue is registered */
+
+	upper->started = false;
+	if (upper->usermq != NULL) {
+		/* We are always sending XRUN error msg since it is the
+		only type of error that we handle now. If new error scenario
+		is required, then we need to handle here */
+		msg.msgId = AUDIO_MSG_XRUN;
+		msg.u.pPtr = NULL;
+#ifdef CONFIG_AUDIO_MULTI_SESSION
+		msg.session = session;
+#endif
+		mq_send(upper->usermq, (FAR const char *)&msg, sizeof(msg), MQ_PRIO_MAX);
+	}
+}
+
+/****************************************************************************
  * Name: audio_complete
  *
  * Description:
@@ -774,6 +814,11 @@ static void audio_callback(FAR void *handle, uint16_t reason, FAR struct ap_buff
 	/* Lower-half I/O error occurred */
 
 	case AUDIO_CALLBACK_IOERR: {
+#ifdef CONFIG_AUDIO_MULTI_SESSION
+		audio_error_handler(upper, apb, status, session);
+#else
+		audio_error_handler(upper, apb, status);
+#endif
 	}
 	break;
 
@@ -833,10 +878,12 @@ int audio_register(FAR const char *name, FAR struct audio_lowerhalf_s *dev)
 	static bool dev_audio_created = false;
 #ifndef CONFIG_AUDIO_CUSTOM_DEV_PATH
 	FAR const char *devname = "/dev/audio";
+	int ret;
 #elif !defined(CONFIG_AUDIO_DEV_ROOT)
 	FAR const char *devname = CONFIG_AUDIO_DEV_PATH;
 	FAR const char *ptr;
 	FAR char *pathptr;
+	int ret;
 #endif
 
 	/* Allocate the upper-half data structure */
@@ -893,7 +940,12 @@ int audio_register(FAR const char *name, FAR struct audio_lowerhalf_s *dev)
 
 			/* Make this level of directory */
 
-			mkdir(path, 0644);
+			ret = mkdir(path, 0644);
+			if (ret < 0) {
+				auddbg("ERROR: mkdir failed\n");
+				free(upper);
+				return ret;
+			}
 
 			/* Check for another level */
 
@@ -929,7 +981,12 @@ int audio_register(FAR const char *name, FAR struct audio_lowerhalf_s *dev)
 		 * for us.
 		 */
 
-		mkdir(devname, 0644);
+		ret = mkdir(devname, 0644);
+		if (ret < 0) {
+			auddbg("ERROR: mkdir failed\n");
+			free(upper);
+			return ret;
+		}
 		dev_audio_created = true;
 	}
 

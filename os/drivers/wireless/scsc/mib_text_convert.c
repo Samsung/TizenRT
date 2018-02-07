@@ -176,6 +176,9 @@ static bool CsrWifiMibConvertTextParseLine(const char *linestr, struct slsi_mib_
 	size_t dot2 = 0;
 	size_t trimmedIndex = 0;
 	char *trimmed = kmm_malloc(strlen(linestr) + 1);
+	if (trimmed == NULL) {
+		return false;
+	}
 	const char *current_char = linestr;
 	bool processingStr = false;
 
@@ -266,6 +269,10 @@ static bool CsrWifiMibConvertTextParseLine(const char *linestr, struct slsi_mib_
 				entry.value.type = SLSI_MIB_TYPE_OCTET;
 				entry.value.u.octetValue.dataLength = octetLen;
 				entry.value.u.octetValue.data = kmm_malloc(entry.value.u.octetValue.dataLength + 1);
+				if (entry.value.u.octetValue.data == NULL) {
+					kmm_free(trimmed);
+					return false;
+				}
 				for (i = 0; i < octetLen; i++)
 					if (!CsrHexStrToUint8(&data[1 + (i * 2)], &entry.value.u.octetValue.data[i])) {
 						SLSI_ERR_NODEV("CsrWifiMibConvertTextParseLine('%s') Convert Hex Bytes <data> failed", trimmed);

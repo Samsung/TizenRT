@@ -84,8 +84,8 @@ void tc_net_send_p(int fd)
 	int ConnectFD = accept(fd, NULL, NULL);
 	int ret = send(ConnectFD, msg, strlen(msg), 0);
 
-	TC_ASSERT_NEQ("send", ret, -1);
-	TC_SUCCESS_RESULT();
+	TC_ASSERT_NEQ_CLEANUP("send", ret, -1, close(ConnectFD))
+	TC_SUCCESS_RESULT()
 
 	close(ConnectFD);
 

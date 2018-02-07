@@ -181,7 +181,7 @@ extern "C" {
  * @brief ceiling value function
  * @details @b #include <tinyara/math.h> \n
  * POSIX API (refer to : http://pubs.opengroup.org/onlinepubs/9699919799/)
- * @since Tizen RT v1.1
+ * @since TizenRT v1.1
  */
 float ceilf(float x);
 #ifdef CONFIG_HAVE_DOUBLE
@@ -190,7 +190,7 @@ float ceilf(float x);
  * @brief ceiling value function
  * @details @b #include <tinyara/math.h> \n
  * POSIX API (refer to : http://pubs.opengroup.org/onlinepubs/9699919799/)
- * @since Tizen RT v1.1
+ * @since TizenRT v1.1
  */
 double ceil(double x);
 #endif
@@ -200,7 +200,7 @@ double ceil(double x);
  * @brief ceiling value function
  * @details @b #include <tinyara/math.h> \n
  * POSIX API (refer to : http://pubs.opengroup.org/onlinepubs/9699919799/)
- * @since Tizen RT v1.1
+ * @since TizenRT v1.1
  */
 long double ceill(long double x);
 #endif
@@ -209,7 +209,7 @@ long double ceill(long double x);
  * @brief floor function
  * @details @b #include <tinyara/math.h> \n
  * POSIX API (refer to : http://pubs.opengroup.org/onlinepubs/9699919799/)
- * @since Tizen RT v1.1
+ * @since TizenRT v1.1
  */
 float floorf(float x);
 #ifdef CONFIG_HAVE_DOUBLE
@@ -218,7 +218,7 @@ float floorf(float x);
  * @brief floor function
  * @details @b #include <tinyara/math.h> \n
  * POSIX API (refer to : http://pubs.opengroup.org/onlinepubs/9699919799/)
- * @since Tizen RT v1.0
+ * @since TizenRT v1.0
  */
 double floor(double x);
 #endif
@@ -228,7 +228,7 @@ double floor(double x);
  * @brief floor function
  * @details @b #include <tinyara/math.h> \n
  * POSIX API (refer to : http://pubs.opengroup.org/onlinepubs/9699919799/)
- * @since Tizen RT v1.1
+ * @since TizenRT v1.1
  */
 long double floorl(long double x);
 #endif
@@ -237,7 +237,7 @@ long double floorl(long double x);
  * @brief round to the nearest integer value in a floating-point format
  * @details @b #include <tinyara/math.h> \n
  * POSIX API (refer to : http://pubs.opengroup.org/onlinepubs/9699919799/)
- * @since Tizen RT v1.1
+ * @since TizenRT v1.1
  */
 float roundf(float x);
 #ifdef CONFIG_HAVE_DOUBLE
@@ -246,7 +246,7 @@ float roundf(float x);
  * @brief round to the nearest integer value in a floating-point format
  * @details @b #include <tinyara/math.h> \n
  * POSIX API (refer to : http://pubs.opengroup.org/onlinepubs/9699919799/)
- * @since Tizen RT v1.1
+ * @since TizenRT v1.1
  */
 double round(double x);
 #endif
@@ -256,7 +256,7 @@ double round(double x);
  * @brief round to the nearest integer value in a floating-point format
  * @details @b #include <tinyara/math.h> \n
  * POSIX API (refer to : http://pubs.opengroup.org/onlinepubs/9699919799/)
- * @since Tizen RT v1.1
+ * @since TizenRT v1.1
  */
 long double roundl(long double x);
 #endif
@@ -265,7 +265,7 @@ long double roundl(long double x);
  * @brief round-to-nearest integral value
  * @details @b #include <tinyara/math.h> \n
  * POSIX API (refer to : http://pubs.opengroup.org/onlinepubs/9699919799/)
- * @since Tizen RT v1.1
+ * @since TizenRT v1.1
  */
 float rintf(float x);		/* Not implemented */
 #ifdef CONFIG_HAVE_DOUBLE
@@ -274,7 +274,7 @@ float rintf(float x);		/* Not implemented */
  * @brief round-to-nearest integral value
  * @details @b #include <tinyara/math.h> \n
  * POSIX API (refer to : http://pubs.opengroup.org/onlinepubs/9699919799/)
- * @since Tizen RT v1.1
+ * @since TizenRT v1.1
  */
 double rint(double x);
 #endif
@@ -284,7 +284,7 @@ double rint(double x);
  * @brief round-to-nearest integral value
  * @details @b #include <tinyara/math.h> \n
  * POSIX API (refer to : http://pubs.opengroup.org/onlinepubs/9699919799/)
- * @since Tizen RT v1.1
+ * @since TizenRT v1.1
  */
 long double rintl(long double x);	/* Not implemented */
 #endif
@@ -293,7 +293,7 @@ long double rintl(long double x);	/* Not implemented */
  * @brief absolute value function
  * @details @b #include <tinyara/math.h> \n
  * POSIX API (refer to : http://pubs.opengroup.org/onlinepubs/9699919799/)
- * @since Tizen RT v1.1
+ * @since TizenRT v1.1
  */
 float fabsf(float x);
 #ifdef CONFIG_HAVE_DOUBLE
@@ -302,7 +302,7 @@ float fabsf(float x);
  * @brief absolute value function
  * @details @b #include <tinyara/math.h> \n
  * POSIX API (refer to : http://pubs.opengroup.org/onlinepubs/9699919799/)
- * @since Tizen RT v1.0
+ * @since TizenRT v1.0
  */
 double fabs(double x);
 #endif
@@ -312,7 +312,7 @@ double fabs(double x);
  * @brief absolute value function
  * @details @b #include <tinyara/math.h> \n
  * POSIX API (refer to : http://pubs.opengroup.org/onlinepubs/9699919799/)
- * @since Tizen RT v1.1
+ * @since TizenRT v1.1
  */
 long double fabsl(long double x);
 #endif
@@ -363,7 +363,7 @@ float powf(float b, float e);
  * @brief power function
  * @details @b #include <tinyara/math.h> \n
  * POSIX API (refer to : http://pubs.opengroup.org/onlinepubs/9699919799/)
- * @since Tizen RT v1.0
+ * @since TizenRT v1.0
  */
 double pow(double b, double e);
 #endif
@@ -382,7 +382,7 @@ long double powl(long double b, long double e);
  * @brief exponential function
  * @details @b #include <tinyara/math.h> \n
  * POSIX API (refer to : http://pubs.opengroup.org/onlinepubs/9699919799/)
- * @since Tizen RT v1.1
+ * @since TizenRT v1.1
  */
 float expf(float x);
 /**
@@ -390,7 +390,7 @@ float expf(float x);
  * @brief exponential function
  * @details @b #include <tinyara/math.h> \n
  * POSIX API (refer to : http://pubs.opengroup.org/onlinepubs/9699919799/)
- * @since Tizen RT v1.1
+ * @since TizenRT v1.1
  */
 #define expm1f(x) (expf(x) - 1.0)
 #ifdef CONFIG_HAVE_DOUBLE
@@ -399,7 +399,7 @@ float expf(float x);
  * @brief exponential function
  * @details @b #include <tinyara/math.h> \n
  * POSIX API (refer to : http://pubs.opengroup.org/onlinepubs/9699919799/)
- * @since Tizen RT v1.1
+ * @since TizenRT v1.1
  */
 double exp(double x);
 #define expm1(x) (exp(x) - 1.0)
@@ -410,7 +410,7 @@ double exp(double x);
  * @brief exponential function
  * @details @b #include <tinyara/math.h> \n
  * POSIX API (refer to : http://pubs.opengroup.org/onlinepubs/9699919799/)
- * @since Tizen RT v1.1
+ * @since TizenRT v1.1
  */
 long double expl(long double x);
 #define expm1l(x) (expl(x) - 1.0)
@@ -420,7 +420,7 @@ long double expl(long double x);
  * @brief exponential base 2 functions
  * @details @b #include <tinyara/math.h> \n
  * POSIX API (refer to : http://pubs.opengroup.org/onlinepubs/9699919799/)
- * @since Tizen RT v1.1
+ * @since TizenRT v1.1
  */
 float exp2f(float x);
 #ifdef CONFIG_HAVE_DOUBLE
@@ -429,7 +429,7 @@ float exp2f(float x);
  * @brief exponential base 2 functions
  * @details @b #include <tinyara/math.h> \n
  * POSIX API (refer to : http://pubs.opengroup.org/onlinepubs/9699919799/)
- * @since Tizen RT v1.1
+ * @since TizenRT v1.1
  */
 double exp2(double x);
 #endif
@@ -439,9 +439,31 @@ double exp2(double x);
  * @brief exponential base 2 functions
  * @details @b #include <tinyara/math.h> \n
  * POSIX API (refer to : http://pubs.opengroup.org/onlinepubs/9699919799/)
- * @since Tizen RT v1.1
+ * @since TizenRT v1.1
  */
 long double exp2l(long double x);
+#endif
+#ifdef CONFIG_HAVE_DOUBLE
+/**
++ * @cond
+ * @internal
+ */
+double __cos(double x, double y);
+/**
+ * @internal
+ */
+double __sin(double x, double y, int iy);
+/**
+ * @internal
+ */
+double gamma(double x);
+/**
+ * @internal
+ */
+double lgamma(double x);
+/**
+ * @endcond
+ */
 #endif
 /**
  * @cond
@@ -484,7 +506,7 @@ long double log10l(long double x);
  * @brief compute base 2 logarithm functions
  * @details @b #include <tinyara/math.h> \n
  * POSIX API (refer to : http://pubs.opengroup.org/onlinepubs/9699919799/)
- * @since Tizen RT v1.1
+ * @since TizenRT v1.1
  */
 float log2f(float x);
 #ifdef CONFIG_HAVE_DOUBLE
@@ -493,7 +515,7 @@ float log2f(float x);
  * @brief compute base 2 logarithm functions
  * @details @b #include <tinyara/math.h> \n
  * POSIX API (refer to : http://pubs.opengroup.org/onlinepubs/9699919799/)
- * @since Tizen RT v1.1
+ * @since TizenRT v1.1
  */
 double log2(double x);
 #endif
@@ -503,7 +525,7 @@ double log2(double x);
  * @brief compute base 2 logarithm functions
  * @details @b #include <tinyara/math.h> \n
  * POSIX API (refer to : http://pubs.opengroup.org/onlinepubs/9699919799/)
- * @since Tizen RT v1.1
+ * @since TizenRT v1.1
  */
 long double log2l(long double x);
 #endif
@@ -512,7 +534,7 @@ long double log2l(long double x);
  * @brief cube root functions
  * @details @b #include <tinyara/math.h> \n
  * POSIX API (refer to : http://pubs.opengroup.org/onlinepubs/9699919799/)
- * @since Tizen RT v1.1
+ * @since TizenRT v1.1
  */
 float cbrtf(float x);
 #ifdef CONFIG_HAVE_DOUBLE
@@ -521,7 +543,7 @@ float cbrtf(float x);
  * @brief cube root functions
  * @details @b #include <tinyara/math.h> \n
  * POSIX API (refer to : http://pubs.opengroup.org/onlinepubs/9699919799/)
- * @since Tizen RT v1.1
+ * @since TizenRT v1.1
  */
 double cbrt(double x);
 #endif
@@ -531,7 +553,7 @@ double cbrt(double x);
  * @brief cube root functions
  * @details @b #include <tinyara/math.h> \n
  * POSIX API (refer to : http://pubs.opengroup.org/onlinepubs/9699919799/)
- * @since Tizen RT v1.1
+ * @since TizenRT v1.1
  */
 long double cbrtl(long double x);
 #endif
@@ -540,7 +562,7 @@ long double cbrtl(long double x);
  * @brief square root function
  * @details @b #include <tinyara/math.h> \n
  * POSIX API (refer to : http://pubs.opengroup.org/onlinepubs/9699919799/)
- * @since Tizen RT v1.1
+ * @since TizenRT v1.1
  */
 float sqrtf(float x);
 #ifdef CONFIG_HAVE_DOUBLE
@@ -549,7 +571,7 @@ float sqrtf(float x);
  * @brief square root function
  * @details @b #include <tinyara/math.h> \n
  * POSIX API (refer to : http://pubs.opengroup.org/onlinepubs/9699919799/)
- * @since Tizen RT v1.1
+ * @since TizenRT v1.1
  */
 double sqrt(double x);
 #endif
@@ -559,7 +581,7 @@ double sqrt(double x);
  * @brief square root function
  * @details @b #include <tinyara/math.h> \n
  * POSIX API (refer to : http://pubs.opengroup.org/onlinepubs/9699919799/)
- * @since Tizen RT v1.1
+ * @since TizenRT v1.1
  */
 long double sqrtl(long double x);
 #endif
@@ -568,7 +590,7 @@ long double sqrtl(long double x);
  * @brief load exponent of a floating-point number
  * @details @b #include <tinyara/math.h> \n
  * POSIX API (refer to : http://pubs.opengroup.org/onlinepubs/9699919799/)
- * @since Tizen RT v1.1
+ * @since TizenRT v1.1
  */
 float ldexpf(float x, int n);
 #ifdef CONFIG_HAVE_DOUBLE
@@ -577,7 +599,7 @@ float ldexpf(float x, int n);
  * @brief load exponent of a floating-point number
  * @details @b #include <tinyara/math.h> \n
  * POSIX API (refer to : http://pubs.opengroup.org/onlinepubs/9699919799/)
- * @since Tizen RT v1.1
+ * @since TizenRT v1.1
  */
 double ldexp(double x, int n);
 #endif
@@ -587,7 +609,7 @@ double ldexp(double x, int n);
  * @brief load exponent of a floating-point number
  * @details @b #include <tinyara/math.h> \n
  * POSIX API (refer to : http://pubs.opengroup.org/onlinepubs/9699919799/)
- * @since Tizen RT v1.1
+ * @since TizenRT v1.1
  */
 long double ldexpl(long double x, int n);
 #endif
@@ -596,7 +618,7 @@ long double ldexpl(long double x, int n);
  * @brief extract mantissa and exponent from a double precision number
  * @details @b #include <tinyara/math.h> \n
  * POSIX API (refer to : http://pubs.opengroup.org/onlinepubs/9699919799/)
- * @since Tizen RT v1.1
+ * @since TizenRT v1.1
  */
 float frexpf(float x, int *exp);
 #ifdef CONFIG_HAVE_DOUBLE
@@ -605,7 +627,7 @@ float frexpf(float x, int *exp);
  * @brief extract mantissa and exponent from a double precision number
  * @details @b #include <tinyara/math.h> \n
  * POSIX API (refer to : http://pubs.opengroup.org/onlinepubs/9699919799/)
- * @since Tizen RT v1.1
+ * @since TizenRT v1.1
  */
 double frexp(double x, int *exp);
 #endif
@@ -615,7 +637,7 @@ double frexp(double x, int *exp);
  * @brief extract mantissa and exponent from a double precision number
  * @details @b #include <tinyara/math.h> \n
  * POSIX API (refer to : http://pubs.opengroup.org/onlinepubs/9699919799/)
- * @since Tizen RT v1.1
+ * @since TizenRT v1.1
  */
 long double frexpl(long double x, int *exp);
 #endif
@@ -626,7 +648,7 @@ long double frexpl(long double x, int *exp);
  * @brief sine function
  * @details @b #include <tinyara/math.h> \n
  * POSIX API (refer to : http://pubs.opengroup.org/onlinepubs/9699919799/)
- * @since Tizen RT v1.1
+ * @since TizenRT v1.1
  */
 float sinf(float x);
 #ifdef CONFIG_HAVE_DOUBLE
@@ -635,7 +657,7 @@ float sinf(float x);
  * @brief sine function
  * @details @b #include <tinyara/math.h> \n
  * POSIX API (refer to : http://pubs.opengroup.org/onlinepubs/9699919799/)
- * @since Tizen RT v1.1
+ * @since TizenRT v1.1
  */
 double sin(double x);
 #endif
@@ -645,7 +667,7 @@ double sin(double x);
  * @brief sine function
  * @details @b #include <tinyara/math.h> \n
  * POSIX API (refer to : http://pubs.opengroup.org/onlinepubs/9699919799/)
- * @since Tizen RT v1.1
+ * @since TizenRT v1.1
  */
 long double sinl(long double x);
 #endif
@@ -654,7 +676,7 @@ long double sinl(long double x);
  * @brief cosine function
  * @details @b #include <tinyara/math.h> \n
  * POSIX API (refer to : http://pubs.opengroup.org/onlinepubs/9699919799/)
- * @since Tizen RT v1.1
+ * @since TizenRT v1.1
  */
 float cosf(float x);
 #ifdef CONFIG_HAVE_DOUBLE
@@ -663,7 +685,7 @@ float cosf(float x);
  * @brief cosine function
  * @details @b #include <tinyara/math.h> \n
  * POSIX API (refer to : http://pubs.opengroup.org/onlinepubs/9699919799/)
- * @since Tizen RT v1.1
+ * @since TizenRT v1.1
  */
 double cos(double x);
 #endif
@@ -673,7 +695,7 @@ double cos(double x);
  * @brief cosine function
  * @details @b #include <tinyara/math.h> \n
  * POSIX API (refer to : http://pubs.opengroup.org/onlinepubs/9699919799/)
- * @since Tizen RT v1.1
+ * @since TizenRT v1.1
  */
 long double cosl(long double x);
 #endif
@@ -682,7 +704,7 @@ long double cosl(long double x);
  * @brief tangent function
  * @details @b #include <tinyara/math.h> \n
  * POSIX API (refer to : http://pubs.opengroup.org/onlinepubs/9699919799/)
- * @since Tizen RT v1.1
+ * @since TizenRT v1.1
  */
 float tanf(float x);
 #if CONFIG_HAVE_DOUBLE
@@ -691,7 +713,7 @@ float tanf(float x);
  * @brief tangent function
  * @details @b #include <tinyara/math.h> \n
  * POSIX API (refer to : http://pubs.opengroup.org/onlinepubs/9699919799/)
- * @since Tizen RT v1.1
+ * @since TizenRT v1.1
  */
 double tan(double x);
 #endif
@@ -701,7 +723,7 @@ double tan(double x);
  * @brief tangent function
  * @details @b #include <tinyara/math.h> \n
  * POSIX API (refer to : http://pubs.opengroup.org/onlinepubs/9699919799/)
- * @since Tizen RT v1.1
+ * @since TizenRT v1.1
  */
 long double tanl(long double x);
 #endif
@@ -710,7 +732,7 @@ long double tanl(long double x);
  * @brief arc sine function
  * @details @b #include <tinyara/math.h> \n
  * POSIX API (refer to : http://pubs.opengroup.org/onlinepubs/9699919799/)
- * @since Tizen RT v1.1
+ * @since TizenRT v1.1
  */
 float asinf(float x);
 #ifdef CONFIG_HAVE_DOUBLE
@@ -719,7 +741,7 @@ float asinf(float x);
  * @brief arc sine function
  * @details @b #include <tinyara/math.h> \n
  * POSIX API (refer to : http://pubs.opengroup.org/onlinepubs/9699919799/)
- * @since Tizen RT v1.1
+ * @since TizenRT v1.1
  */
 double asin(double x);
 #endif
@@ -729,7 +751,7 @@ double asin(double x);
  * @brief arc sine function
  * @details @b #include <tinyara/math.h> \n
  * POSIX API (refer to : http://pubs.opengroup.org/onlinepubs/9699919799/)
- * @since Tizen RT v1.1
+ * @since TizenRT v1.1
  */
 long double asinl(long double x);
 #endif
@@ -738,7 +760,7 @@ long double asinl(long double x);
  * @brief 
  * @details @b #include <tinyara/math.h> \n
  * POSIX API (refer to : http://pubs.opengroup.org/onlinepubs/9699919799/)
- * @since Tizen RT v1.1
+ * @since TizenRT v1.1
  */
 float acosf(float x);
 #if CONFIG_HAVE_DOUBLE
@@ -747,7 +769,7 @@ float acosf(float x);
  * @brief arc cosine functions
  * @details @b #include <tinyara/math.h> \n
  * POSIX API (refer to : http://pubs.opengroup.org/onlinepubs/9699919799/)
- * @since Tizen RT v1.1
+ * @since TizenRT v1.1
  */
 double acos(double x);
 #endif
@@ -757,7 +779,7 @@ double acos(double x);
  * @brief arc cosine functions
  * @details @b #include <tinyara/math.h> \n
  * POSIX API (refer to : http://pubs.opengroup.org/onlinepubs/9699919799/)
- * @since Tizen RT v1.1
+ * @since TizenRT v1.1
  */
 long double acosl(long double x);
 #endif
@@ -766,7 +788,7 @@ long double acosl(long double x);
  * @brief arc cosine functions
  * @details @b #include <tinyara/math.h> \n
  * POSIX API (refer to : http://pubs.opengroup.org/onlinepubs/9699919799/)
- * @since Tizen RT v1.1
+ * @since TizenRT v1.1
  */
 float atanf(float x);
 #ifdef CONFIG_HAVE_DOUBLE
@@ -775,7 +797,7 @@ float atanf(float x);
  * @brief arc tangent function
  * @details @b #include <tinyara/math.h> \n
  * POSIX API (refer to : http://pubs.opengroup.org/onlinepubs/9699919799/)
- * @since Tizen RT v1.1
+ * @since TizenRT v1.1
  */
 double atan(double x);
 #endif
@@ -785,7 +807,7 @@ double atan(double x);
  * @brief arc tangent function
  * @details @b #include <tinyara/math.h> \n
  * POSIX API (refer to : http://pubs.opengroup.org/onlinepubs/9699919799/)
- * @since Tizen RT v1.1
+ * @since TizenRT v1.1
  */
 long double atanl(long double x);
 #endif
@@ -794,7 +816,7 @@ long double atanl(long double x);
  * @brief arc tangent function
  * @details @b #include <tinyara/math.h> \n
  * POSIX API (refer to : http://pubs.opengroup.org/onlinepubs/9699919799/)
- * @since Tizen RT v1.1
+ * @since TizenRT v1.1
  */
 float atan2f(float y, float x);
 #ifdef CONFIG_HAVE_DOUBLE
@@ -803,7 +825,7 @@ float atan2f(float y, float x);
  * @brief arc tangent function
  * @details @b #include <tinyara/math.h> \n
  * POSIX API (refer to : http://pubs.opengroup.org/onlinepubs/9699919799/)
- * @since Tizen RT v1.1
+ * @since TizenRT v1.1
  */
 double atan2(double y, double x);
 #endif
@@ -813,7 +835,7 @@ double atan2(double y, double x);
  * @brief arc tangent function
  * @details @b #include <tinyara/math.h> \n
  * POSIX API (refer to : http://pubs.opengroup.org/onlinepubs/9699919799/)
- * @since Tizen RT v1.1
+ * @since TizenRT v1.1
  */
 long double atan2l(long double y, long double x);
 #endif
@@ -822,7 +844,7 @@ long double atan2l(long double y, long double x);
  * @brief hyperbolic sine functions
  * @details @b #include <tinyara/math.h> \n
  * POSIX API (refer to : http://pubs.opengroup.org/onlinepubs/9699919799/)
- * @since Tizen RT v1.1
+ * @since TizenRT v1.1
  */
 float sinhf(float x);
 #ifdef CONFIG_HAVE_DOUBLE
@@ -831,7 +853,7 @@ float sinhf(float x);
  * @brief hyperbolic sine functions
  * @details @b #include <tinyara/math.h> \n
  * POSIX API (refer to : http://pubs.opengroup.org/onlinepubs/9699919799/)
- * @since Tizen RT v1.1
+ * @since TizenRT v1.1
  */
 double sinh(double x);
 #endif
@@ -841,7 +863,7 @@ double sinh(double x);
  * @brief hyperbolic sine functions
  * @details @b #include <tinyara/math.h> \n
  * POSIX API (refer to : http://pubs.opengroup.org/onlinepubs/9699919799/)
- * @since Tizen RT v1.1
+ * @since TizenRT v1.1
  */
 long double sinhl(long double x);
 #endif
@@ -850,7 +872,7 @@ long double sinhl(long double x);
  * @brief hyperbolic cosine functions
  * @details @b #include <tinyara/math.h> \n
  * POSIX API (refer to : http://pubs.opengroup.org/onlinepubs/9699919799/)
- * @since Tizen RT v1.1
+ * @since TizenRT v1.1
  */
 float coshf(float x);
 #ifdef CONFIG_HAVE_DOUBLE
@@ -859,7 +881,7 @@ float coshf(float x);
  * @brief hyperbolic cosine functions
  * @details @b #include <tinyara/math.h> \n
  * POSIX API (refer to : http://pubs.opengroup.org/onlinepubs/9699919799/)
- * @since Tizen RT v1.1
+ * @since TizenRT v1.1
  */
 double cosh(double x);
 #endif
@@ -869,7 +891,7 @@ double cosh(double x);
  * @brief hyperbolic cosine functions
  * @details @b #include <tinyara/math.h> \n
  * POSIX API (refer to : http://pubs.opengroup.org/onlinepubs/9699919799/)
- * @since Tizen RT v1.1
+ * @since TizenRT v1.1
  */
 long double coshl(long double x);
 #endif
@@ -878,7 +900,7 @@ long double coshl(long double x);
  * @brief hyperbolic tangent functions
  * @details @b #include <tinyara/math.h> \n
  * POSIX API (refer to : http://pubs.opengroup.org/onlinepubs/9699919799/)
- * @since Tizen RT v1.1
+ * @since TizenRT v1.1
  */
 float tanhf(float x);
 #ifdef CONFIG_HAVE_DOUBLE
@@ -887,7 +909,7 @@ float tanhf(float x);
  * @brief hyperbolic tangent functions
  * @details @b #include <tinyara/math.h> \n
  * POSIX API (refer to : http://pubs.opengroup.org/onlinepubs/9699919799/)
- * @since Tizen RT v1.1
+ * @since TizenRT v1.1
  */
 double tanh(double x);
 #endif
@@ -897,7 +919,7 @@ double tanh(double x);
  * @brief hyperbolic tangent functions
  * @details @b #include <tinyara/math.h> \n
  * POSIX API (refer to : http://pubs.opengroup.org/onlinepubs/9699919799/)
- * @since Tizen RT v1.1
+ * @since TizenRT v1.1
  */
 long double tanhl(long double x);
 #endif
@@ -906,7 +928,7 @@ long double tanhl(long double x);
  * @brief inverse hyperbolic sine functions
  * @details @b #include <tinyara/math.h> \n
  * POSIX API (refer to : http://pubs.opengroup.org/onlinepubs/9699919799/)
- * @since Tizen RT v1.1
+ * @since TizenRT v1.1
  */
 float asinhf(float x);
 #ifdef CONFIG_HAVE_DOUBLE
@@ -915,7 +937,7 @@ float asinhf(float x);
  * @brief inverse hyperbolic sine functions
  * @details @b #include <tinyara/math.h> \n
  * POSIX API (refer to : http://pubs.opengroup.org/onlinepubs/9699919799/)
- * @since Tizen RT v1.1
+ * @since TizenRT v1.1
  */
 double asinh(double x);
 #endif
@@ -925,7 +947,7 @@ double asinh(double x);
  * @brief inverse hyperbolic sine functions
  * @details @b #include <tinyara/math.h> \n
  * POSIX API (refer to : http://pubs.opengroup.org/onlinepubs/9699919799/)
- * @since Tizen RT v1.1
+ * @since TizenRT v1.1
  */
 long double asinhl(long double x);
 #endif
@@ -934,7 +956,7 @@ long double asinhl(long double x);
  * @brief inverse hyperbolic cosine functions
  * @details @b #include <tinyara/math.h> \n
  * POSIX API (refer to : http://pubs.opengroup.org/onlinepubs/9699919799/)
- * @since Tizen RT v1.1
+ * @since TizenRT v1.1
  */
 float acoshf(float x);
 #ifdef CONFIG_HAVE_DOUBLE
@@ -943,7 +965,7 @@ float acoshf(float x);
  * @brief inverse hyperbolic cosine functions
  * @details @b #include <tinyara/math.h> \n
  * POSIX API (refer to : http://pubs.opengroup.org/onlinepubs/9699919799/)
- * @since Tizen RT v1.1
+ * @since TizenRT v1.1
  */
 double acosh(double x);
 #endif
@@ -953,7 +975,7 @@ double acosh(double x);
  * @brief inverse hyperbolic cosine functions
  * @details @b #include <tinyara/math.h> \n
  * POSIX API (refer to : http://pubs.opengroup.org/onlinepubs/9699919799/)
- * @since Tizen RT v1.1
+ * @since TizenRT v1.1
  */
 long double acoshl(long double x);
 #endif
@@ -962,7 +984,7 @@ long double acoshl(long double x);
  * @brief inverse hyperbolic tangent functions
  * @details @b #include <tinyara/math.h> \n
  * POSIX API (refer to : http://pubs.opengroup.org/onlinepubs/9699919799/)
- * @since Tizen RT v1.1
+ * @since TizenRT v1.1
  */
 float atanhf(float x);
 #ifdef CONFIG_HAVE_DOUBLE
@@ -971,7 +993,7 @@ float atanhf(float x);
  * @brief inverse hyperbolic tangent functions
  * @details @b #include <tinyara/math.h> \n
  * POSIX API (refer to : http://pubs.opengroup.org/onlinepubs/9699919799/)
- * @since Tizen RT v1.1
+ * @since TizenRT v1.1
  */
 double atanh(double x);
 #endif
@@ -981,7 +1003,7 @@ double atanh(double x);
  * @brief inverse hyperbolic tangent functions
  * @details @b #include <tinyara/math.h> \n
  * POSIX API (refer to : http://pubs.opengroup.org/onlinepubs/9699919799/)
- * @since Tizen RT v1.1
+ * @since TizenRT v1.1
  */
 long double atanhl(long double x);
 #endif
@@ -990,7 +1012,7 @@ long double atanhl(long double x);
  * @brief error functions
  * @details @b #include <tinyara/math.h> \n
  * POSIX API (refer to : http://pubs.opengroup.org/onlinepubs/9699919799/)
- * @since Tizen RT v1.1
+ * @since TizenRT v1.1
  */
 float erff(float x);
 /**
@@ -1007,7 +1029,7 @@ float erff(float x);
  * @brief error functions
  * @details @b #include <tinyara/math.h> \n
  * POSIX API (refer to : http://pubs.opengroup.org/onlinepubs/9699919799/)
- * @since Tizen RT v1.1
+ * @since TizenRT v1.1
  */
 double erf(double x);
 #define     erfc(x) (1 - erf(x))
@@ -1018,7 +1040,7 @@ double erf(double x);
  * @brief error functions
  * @details @b #include <tinyara/math.h> \n
  * POSIX API (refer to : http://pubs.opengroup.org/onlinepubs/9699919799/)
- * @since Tizen RT v1.1
+ * @since TizenRT v1.1
  */
 long double erfl(long double x);
 #define     erfcl(x) (1 - erfl(x))
@@ -1028,7 +1050,7 @@ long double erfl(long double x);
  * @brief number manipulation function
  * @details @b #include <tinyara/math.h> \n
  * POSIX API (refer to : http://pubs.opengroup.org/onlinepubs/9699919799/)
- * @since Tizen RT v1.1
+ * @since TizenRT v1.1
  */
 float copysignf(float x, float y);
 #ifdef CONFIG_HAVE_DOUBLE
@@ -1037,7 +1059,7 @@ float copysignf(float x, float y);
  * @brief number manipulation function
  * @details @b #include <tinyara/math.h> \n
  * POSIX API (refer to : http://pubs.opengroup.org/onlinepubs/9699919799/)
- * @since Tizen RT v1.1
+ * @since TizenRT v1.1
  */
 double copysign(double x, double y);
 #endif
@@ -1047,7 +1069,7 @@ double copysign(double x, double y);
  * @brief number manipulation function
  * @details @b #include <tinyara/math.h> \n
  * POSIX API (refer to : http://pubs.opengroup.org/onlinepubs/9699919799/)
- * @since Tizen RT v1.1
+ * @since TizenRT v1.1
  */
 long double copysignl(long double x, long double y);
 #endif
@@ -1056,7 +1078,7 @@ long double copysignl(long double x, long double y);
  * @brief round to truncated integer value
  * @details @b #include <tinyara/math.h> \n
  * POSIX API (refer to : http://pubs.opengroup.org/onlinepubs/9699919799/)
- * @since Tizen RT v1.1
+ * @since TizenRT v1.1
  */
 float truncf(float x);
 #ifdef CONFIG_HAVE_DOUBLE
@@ -1065,7 +1087,7 @@ float truncf(float x);
  * @brief round to truncated integer value
  * @details @b #include <tinyara/math.h> \n
  * POSIX API (refer to : http://pubs.opengroup.org/onlinepubs/9699919799/)
- * @since Tizen RT v1.1
+ * @since TizenRT v1.1
  */
 double trunc(double x);
 #endif
@@ -1075,7 +1097,7 @@ double trunc(double x);
  * @brief round to truncated integer value
  * @details @b #include <tinyara/math.h> \n
  * POSIX API (refer to : http://pubs.opengroup.org/onlinepubs/9699919799/)
- * @since Tizen RT v1.1
+ * @since TizenRT v1.1
  */
 long double truncl(long double x);
 #endif
@@ -1084,7 +1106,7 @@ long double truncl(long double x);
  * @brief compute positive difference between two floating-point numbers
  * @details @b #include <tinyara/math.h> \n
  * POSIX API (refer to : http://pubs.opengroup.org/onlinepubs/9699919799/)
- * @since Tizen RT v1.1
+ * @since TizenRT v1.1
  */
 float fdimf(float x, float y);
 #ifdef CONFIG_HAVE_DOUBLE
@@ -1093,7 +1115,7 @@ float fdimf(float x, float y);
  * @brief compute positive difference between two floating-point numbers
  * @details @b #include <tinyara/math.h> \n
  * POSIX API (refer to : http://pubs.opengroup.org/onlinepubs/9699919799/)
- * @since Tizen RT v1.1
+ * @since TizenRT v1.1
  */
 double fdim(double x, double y);
 #endif
@@ -1103,7 +1125,7 @@ double fdim(double x, double y);
  * @brief compute positive difference between two floating-point numbers
  * @details @b #include <tinyara/math.h> \n
  * POSIX API (refer to : http://pubs.opengroup.org/onlinepubs/9699919799/)
- * @since Tizen RT v1.1
+ * @since TizenRT v1.1
  */
 long double fdiml(long double x, long double y);
 #endif
@@ -1112,7 +1134,7 @@ long double fdiml(long double x, long double y);
  * @brief 
  * @details @b #include <tinyara/math.h> \n
  * POSIX API (refer to : http://pubs.opengroup.org/onlinepubs/9699919799/)
- * @since Tizen RT v1.1
+ * @since TizenRT v1.1
  */
 float fmaxf(float x, float y);
 #ifdef CONFIG_HAVE_DOUBLE
@@ -1121,7 +1143,7 @@ float fmaxf(float x, float y);
  * @brief determine maximum numeric value of two floating-point numbers
  * @details @b #include <tinyara/math.h> \n
  * POSIX API (refer to : http://pubs.opengroup.org/onlinepubs/9699919799/)
- * @since Tizen RT v1.1
+ * @since TizenRT v1.1
  */
 double fmax(double x, double y);
 #endif
@@ -1131,7 +1153,7 @@ double fmax(double x, double y);
  * @brief determine maximum numeric value of two floating-point numbers
  * @details @b #include <tinyara/math.h> \n
  * POSIX API (refer to : http://pubs.opengroup.org/onlinepubs/9699919799/)
- * @since Tizen RT v1.1
+ * @since TizenRT v1.1
  */
 long double fmaxl(long double x, long double y);
 #endif
@@ -1140,7 +1162,7 @@ long double fmaxl(long double x, long double y);
  * @brief determine minimum numeric value of two floating-point numbers
  * @details @b #include <tinyara/math.h> \n
  * POSIX API (refer to : http://pubs.opengroup.org/onlinepubs/9699919799/)
- * @since Tizen RT v1.1
+ * @since TizenRT v1.1
  */
 float fminf(float x, float y);
 #ifdef CONFIG_HAVE_DOUBLE
@@ -1149,7 +1171,7 @@ float fminf(float x, float y);
  * @brief determine minimum numeric value of two floating-point numbers
  * @details @b #include <tinyara/math.h> \n
  * POSIX API (refer to : http://pubs.opengroup.org/onlinepubs/9699919799/)
- * @since Tizen RT v1.1
+ * @since TizenRT v1.1
  */
 double fmin(double x, double y);
 #endif
@@ -1159,7 +1181,7 @@ double fmin(double x, double y);
  * @brief determine minimum numeric value of two floating-point numbers
  * @details @b #include <tinyara/math.h> \n
  * POSIX API (refer to : http://pubs.opengroup.org/onlinepubs/9699919799/)
- * @since Tizen RT v1.1
+ * @since TizenRT v1.1
  */
 long double fminl(long double x, long double y);
 #endif
@@ -1168,7 +1190,7 @@ long double fminl(long double x, long double y);
  * @brief Euclidean distance function
  * @details @b #include <tinyara/math.h> \n
  * POSIX API (refer to : http://pubs.opengroup.org/onlinepubs/9699919799/)
- * @since Tizen RT v1.1
+ * @since TizenRT v1.1
  */
 float hypotf(float x, float y);
 #ifdef CONFIG_HAVE_DOUBLE
@@ -1177,7 +1199,7 @@ float hypotf(float x, float y);
  * @brief Euclidean distance function
  * @details @b #include <tinyara/math.h> \n
  * POSIX API (refer to : http://pubs.opengroup.org/onlinepubs/9699919799/)
- * @since Tizen RT v1.1
+ * @since TizenRT v1.1
  */
 double hypot(double x, double y);
 #endif
@@ -1187,7 +1209,7 @@ double hypot(double x, double y);
  * @brief Euclidean distance function
  * @details @b #include <tinyara/math.h> \n
  * POSIX API (refer to : http://pubs.opengroup.org/onlinepubs/9699919799/)
- * @since Tizen RT v1.1
+ * @since TizenRT v1.1
  */
 long double hypotl(long double x, long double y);
 #endif
@@ -1196,7 +1218,7 @@ long double hypotl(long double x, long double y);
  * @brief compute exponent using FLT_RADIX
  * @details @b #include <tinyara/math.h> \n
  * POSIX API (refer to : http://pubs.opengroup.org/onlinepubs/9699919799/)
- * @since Tizen RT v1.1
+ * @since TizenRT v1.1
  */
 float scalbnf(float x, int exp);
 #ifdef CONFIG_HAVE_DOUBLE
@@ -1205,7 +1227,7 @@ float scalbnf(float x, int exp);
  * @brief compute exponent using FLT_RADIX
  * @details @b #include <tinyara/math.h> \n
  * POSIX API (refer to : http://pubs.opengroup.org/onlinepubs/9699919799/)
- * @since Tizen RT v1.1
+ * @since TizenRT v1.1
  */
 double scalbn(double x, int exp);
 #endif
@@ -1215,7 +1237,7 @@ double scalbn(double x, int exp);
  * @brief compute exponent using FLT_RADIX
  * @details @b #include <tinyara/math.h> \n
  * POSIX API (refer to : http://pubs.opengroup.org/onlinepubs/9699919799/)
- * @since Tizen RT v1.1
+ * @since TizenRT v1.1
  */
 long double scalbnl(long double x, int exp);
 #endif
@@ -1226,7 +1248,7 @@ long double scalbnl(long double x, int exp);
  * @param[in] x float type value which wants to calc j0
  * @return If x is a NaN, a NaN is returned. If x is too large in magnitude, or the result underflows,
  *  a range error occurs, and the return value is 0.
- * @since Tizen RT v1.1
+ * @since TizenRT v1.1
  */
 float j0f(float x);
 /**
@@ -1236,7 +1258,7 @@ float j0f(float x);
  * @param[in] x float type value which wants to calc j1
  * @return If x is a NaN, a NaN is returned. If x is too large in magnitude, or the result underflows,
  *  a range error occurs, and the return value is 0.
- * @since Tizen RT v1.1
+ * @since TizenRT v1.1
  */
 float j1f(float x);
 /**
@@ -1247,7 +1269,7 @@ float j1f(float x);
  * @param[in] x float type value which wants to calc jn
  * @return If x is a NaN, a NaN is returned. If x is too large in magnitude, or the result underflows,
  *  a range error occurs, and the return value is 0.
- * @since Tizen RT v1.1
+ * @since TizenRT v1.1
  */
 float jnf(int n, float x);
 #ifdef CONFIG_HAVE_DOUBLE
@@ -1256,7 +1278,7 @@ float jnf(int n, float x);
  * @brief Bessel functions of the first kind
  * @details @b #include <tinyara/math.h> \n
  * POSIX API (refer to : http://pubs.opengroup.org/onlinepubs/9699919799/)
- * @since Tizen RT v1.1
+ * @since TizenRT v1.1
  */
 double j0(double x);
 /**
@@ -1264,7 +1286,7 @@ double j0(double x);
  * @brief Bessel functions of the first kind
  * @details @b #include <tinyara/math.h> \n
  * POSIX API (refer to : http://pubs.opengroup.org/onlinepubs/9699919799/)
- * @since Tizen RT v1.1
+ * @since TizenRT v1.1
  */
 double j1(double x);
 /**
@@ -1272,7 +1294,7 @@ double j1(double x);
  * @brief Bessel functions of the first kind
  * @details @b #include <tinyara/math.h> \n
  * POSIX API (refer to : http://pubs.opengroup.org/onlinepubs/9699919799/)
- * @since Tizen RT v1.1
+ * @since TizenRT v1.1
  */
 double jn(int n, double x);
 #endif
@@ -1284,7 +1306,7 @@ double jn(int n, double x);
  * @return If x is a NaN, a NaN is returned. If x is negative, it returns -HUGE_VALF.
  *  If x is 0.0, it returns -HUGE_VALF. If the result underflows, it returns 0.0.
  *  If the result overflows, it returns -HUGE_VALF.
- * @since Tizen RT v1.1
+ * @since TizenRT v1.1
  */
 float y0f(float x);
 /**
@@ -1295,7 +1317,7 @@ float y0f(float x);
  * @return If x is a NaN, a NaN is returned. If x is negative, it returns -HUGE_VALF.
  *  If x is 0.0, it returns -HUGE_VALF. If the result underflows, it returns 0.0.
  *  If the result overflows, it returns -HUGE_VALF.
- * @since Tizen RT v1.1
+ * @since TizenRT v1.1
  */
 float y1f(float x);
 /**
@@ -1307,7 +1329,7 @@ float y1f(float x);
  * @return If x is a NaN, a NaN is returned. If x is negative, it returns -HUGE_VALF.
  *  If x is 0.0, it returns -HUGE_VALF. If the result underflows, it returns 0.0.
  *  If the result overflows, it returns -HUGE_VALF.
- * @since Tizen RT v1.1
+ * @since TizenRT v1.1
  */
 float ynf(int n, float x);
 #ifdef CONFIG_HAVE_DOUBLE
@@ -1316,7 +1338,7 @@ float ynf(int n, float x);
  * @brief Bessel functions of the second kind
  * @details @b #include <tinyara/math.h> \n
  * POSIX API (refer to : http://pubs.opengroup.org/onlinepubs/9699919799/)
- * @since Tizen RT v1.1
+ * @since TizenRT v1.1
  */
 double y0(double x);
 /**
@@ -1324,7 +1346,7 @@ double y0(double x);
  * @brief Bessel functions of the second kind
  * @details @b #include <tinyara/math.h> \n
  * POSIX API (refer to : http://pubs.opengroup.org/onlinepubs/9699919799/)
- * @since Tizen RT v1.1
+ * @since TizenRT v1.1
  */
 double y1(double x);
 /**
@@ -1332,7 +1354,7 @@ double y1(double x);
  * @brief Bessel functions of the second kind
  * @details @b #include <tinyara/math.h> \n
  * POSIX API (refer to : http://pubs.opengroup.org/onlinepubs/9699919799/)
- * @since Tizen RT v1.1
+ * @since TizenRT v1.1
  */
 double yn(int n, double x);
 #endif
@@ -1342,7 +1364,7 @@ double yn(int n, double x);
  * @brief next representable floating-point number
  * @details @b #include <tinyara/math.h> \n
  * POSIX API (refer to : http://pubs.opengroup.org/onlinepubs/9699919799/)
- * @since Tizen RT v1.1
+ * @since TizenRT v1.1
  */
 double nextafter(double x, double y);
 #endif
@@ -1351,7 +1373,7 @@ double nextafter(double x, double y);
  * @brief next representable floating-point number
  * @details @b #include <tinyara/math.h> \n
  * POSIX API (refer to : http://pubs.opengroup.org/onlinepubs/9699919799/)
- * @since Tizen RT v1.1
+ * @since TizenRT v1.1
  */
 float nextafterf(float x, float y);
 #ifdef CONFIG_HAVE_LONG_DOUBLE
@@ -1360,7 +1382,7 @@ float nextafterf(float x, float y);
  * @brief next representable floating-point number
  * @details @b #include <tinyara/math.h> \n
  * POSIX API (refer to : http://pubs.opengroup.org/onlinepubs/9699919799/)
- * @since Tizen RT v1.1
+ * @since TizenRT v1.1
  */
 long double nextafterl(long double x, long double y);
 #endif
@@ -1370,7 +1392,7 @@ long double nextafterl(long double x, long double y);
  * @brief next representable floating-point number
  * @details @b #include <tinyara/math.h> \n
  * POSIX API (refer to : http://pubs.opengroup.org/onlinepubs/9699919799/)
- * @since Tizen RT v1.1
+ * @since TizenRT v1.1
  */
 double nexttoward(double x, long double y);
 #endif
@@ -1379,7 +1401,7 @@ double nexttoward(double x, long double y);
  * @brief next representable floating-point number
  * @details @b #include <tinyara/math.h> \n
  * POSIX API (refer to : http://pubs.opengroup.org/onlinepubs/9699919799/)
- * @since Tizen RT v1.1
+ * @since TizenRT v1.1
  */
 float nexttowardf(float x, long double y);
 #ifdef CONFIG_HAVE_LONG_DOUBLE
@@ -1388,7 +1410,7 @@ float nexttowardf(float x, long double y);
  * @brief next representable floating-point number
  * @details @b #include <tinyara/math.h> \n
  * POSIX API (refer to : http://pubs.opengroup.org/onlinepubs/9699919799/)
- * @since Tizen RT v1.1
+ * @since TizenRT v1.1
  */
 long double nexttowardl(long double x, long double y);
 #endif
@@ -1398,7 +1420,7 @@ long double nexttowardl(long double x, long double y);
  * @brief remainder function
  * @details @b #include <tinyara/math.h> \n
  * POSIX API (refer to : http://pubs.opengroup.org/onlinepubs/9699919799/)
- * @since Tizen RT v1.1
+ * @since TizenRT v1.1
  */
 double remainder(double x, double y);
 #endif
@@ -1407,7 +1429,7 @@ double remainder(double x, double y);
  * @brief remainder function
  * @details @b #include <tinyara/math.h> \n
  * POSIX API (refer to : http://pubs.opengroup.org/onlinepubs/9699919799/)
- * @since Tizen RT v1.1
+ * @since TizenRT v1.1
  */
 float remainderf(float x, float y);
 #ifdef CONFIG_HAVE_LONG_DOUBLE
@@ -1416,7 +1438,7 @@ float remainderf(float x, float y);
  * @brief remainder function
  * @details @b #include <tinyara/math.h> \n
  * POSIX API (refer to : http://pubs.opengroup.org/onlinepubs/9699919799/)
- * @since Tizen RT v1.1
+ * @since TizenRT v1.1
  */
 long double remainderl(long double x, long double y);
 #endif
@@ -1426,7 +1448,7 @@ long double remainderl(long double x, long double y);
  * @brief remainder functions
  * @details @b #include <tinyara/math.h> \n
  * POSIX API (refer to : http://pubs.opengroup.org/onlinepubs/9699919799/)
- * @since Tizen RT v1.1
+ * @since TizenRT v1.1
  */
 double remquo(double x, double y, int *quo);
 #endif
@@ -1435,7 +1457,7 @@ double remquo(double x, double y, int *quo);
  * @brief remainder functions
  * @details @b #include <tinyara/math.h> \n
  * POSIX API (refer to : http://pubs.opengroup.org/onlinepubs/9699919799/)
- * @since Tizen RT v1.1
+ * @since TizenRT v1.1
  */
 float remquof(float x, float y, int *quo);
 #ifdef CONFIG_HAVE_LONG_DOUBLE
@@ -1444,7 +1466,7 @@ float remquof(float x, float y, int *quo);
  * @brief remainder functions
  * @details @b #include <tinyara/math.h> \n
  * POSIX API (refer to : http://pubs.opengroup.org/onlinepubs/9699919799/)
- * @since Tizen RT v1.1
+ * @since TizenRT v1.1
  */
 long double remquol(long double x, long double y, int *quo);
 #endif

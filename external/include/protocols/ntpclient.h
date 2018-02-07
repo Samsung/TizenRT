@@ -137,15 +137,15 @@ extern "C" {
 /**
  * @brief ntpc_start() starts the NTP client daemon.
  *
- * @param[in] server_list the array of struct ntpc_server_conn_s
+ * @param[in] server_list the array of struct ntpc_server_conn_s (If NULL is entered, it operates as the default NTP server set in the system)
  *                                   - server_list[n]->hostname : ntp server's hostname
  *                                   - server_list[n]->port : ntp server's port number
- * @param[in] num_of_servers number of servers
- * @param[in] interval_secs polling interval seconds
+ * @param[in] num_of_servers number of servers (If 0 is entered, it operates as the default NTP server set in the system)
+ * @param[in] interval_secs polling interval seconds (If 0 is entered, it operates as the default interval set in the system)
  * @param[in] link_error_cb callback function for link error case
  * @return On success, the non-negative task ID of the NTPC daemon is returned.
  *             On failure, a negative value is returned.
- * @since Tizen RT v1.0
+ * @since TizenRT v1.0
  */
 int ntpc_start(struct ntpc_server_conn_s *server_list, uint32_t num_of_servers, uint32_t interval_secs, void *link_error_cb);
 
@@ -154,7 +154,7 @@ int ntpc_start(struct ntpc_server_conn_s *server_list, uint32_t num_of_servers, 
  *
  * @param[in] none
  * @return On success, 0 is returned. On failure, a negative value is returned.
- * @since Tizen RT v1.0
+ * @since TizenRT v1.0
  */
 #ifndef CONFIG_DISABLE_SIGNALS
 int ntpc_stop(void);
@@ -165,7 +165,7 @@ int ntpc_stop(void);
  *
  * @param[in] none
  * @return ntpc daemon's status value is returned (please, refer to enum ntpc_daemon_e definition).
- * @since Tizen RT v1.0
+ * @since TizenRT v1.0
  */
 int ntpc_get_status(void);
 

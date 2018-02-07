@@ -293,28 +293,6 @@ void itc_arastorage_db_init_deinit_p_multi_time(void)
 }
 
 /**
-* @testcase             itc_arastorage_db_print_header_n_after_deinit
-* @brief                To check print of the related information : relation, attribute name
-* @scenario             If used api returns DB_OK
-* @apicovered           db_print_header, db_query
-* @precondition         Database resource must be deinitialized
-* @postcondition        none
-*/
-void itc_arastorage_db_print_header_n_after_deinit(void)
-{
-	const char *rel_name = RELATION_NAME2;
-	db_insert(rel_name);
-	TC_ASSERT_EQ("db_insert", g_flag, true);
-
-	TC_ASSERT_NEQ_CLEANUP("db_print_header", db_print_header(g_cursor), DB_OK, db_cursor_free(g_cursor); db_cleanup(rel_name));
-	db_cursor_free(g_cursor);
-	g_cursor = NULL;
-	db_cleanup(rel_name);
-
-	TC_SUCCESS_RESULT();
-}
-
-/**
 * @testcase             itc_arastorage_db_print_tuple_n_after_deinit
 * @brief                To check print the tuple data
 * @scenario             If used api returns DB_OK
@@ -349,49 +327,6 @@ void itc_arastorage_db_print_value_n_after_deinit(void)
 	TC_ASSERT_EQ("db_insert", g_flag, true);
 
 	TC_ASSERT_EQ_CLEANUP("db_print_value", db_print_value(g_cursor, 2), DB_CURSOR_ERROR, db_cleanup(rel_name));
-	db_cleanup(rel_name);
-
-	TC_SUCCESS_RESULT();
-}
-
-/**
-* @testcase             itc_arastorage_cursor_get_count_n_after_deinit
-* @brief                To check get count of total row of cursor
-* @scenario             If used api returns DB_OK
-* @apicovered           cursor_get_count
-* @precondition         Database resource must be deinitialized
-* @postcondition        none
-*/
-void itc_arastorage_cursor_get_count_n_after_deinit(void)
-{
-	const char *rel_name = RELATION_NAME2;
-	db_insert(rel_name);
-	TC_ASSERT_EQ("db_insert", g_flag, true);
-
-	TC_ASSERT_EQ_CLEANUP("cursor_get_count", cursor_get_count(g_cursor), INVALID_CURSOR_VALUE, db_cleanup(rel_name));
-	db_cleanup(rel_name);
-
-	TC_SUCCESS_RESULT();
-}
-
-/**
-* @testcase         itc_arastorage_cursor_get_row_n_after_deinit
-* @brief            Get current row in cursor after deinit
-* @scenario         Get current row in cursor after db deinit
-* @apicovered       cursor_get_row
-* @precondition     Database resource must be initialized
-* @postcondition    none
-*/
-void itc_arastorage_cursor_get_row_n_after_deinit(void)
-{
-	const char *rel_name = RELATION_NAME2;
-	db_insert(rel_name);
-	TC_ASSERT_EQ("db_insert", g_flag, true);
-
-	tuple_id_t id = 3;
-	cursor_move_to(g_cursor, id);
-
-	TC_ASSERT_NEQ_CLEANUP("cursor_get_row", cursor_get_row(g_cursor), id, db_cleanup(rel_name));
 	db_cleanup(rel_name);
 
 	TC_SUCCESS_RESULT();
@@ -1851,11 +1786,8 @@ int itc_arastorage_launcher(int argc, FAR char *argv[])
 	//Scenario ITCs called after db_deinit
 	itc_arastorage_db_init_deinit_p();
 	itc_arastorage_db_init_deinit_p_multi_time();
-	itc_arastorage_db_print_header_n_after_deinit();
 	itc_arastorage_db_print_tuple_n_after_deinit();
 	itc_arastorage_db_print_value_n_after_deinit();
-	itc_arastorage_cursor_get_count_n_after_deinit();
-	itc_arastorage_cursor_get_row_n_after_deinit();
 
 	return 0;
 }

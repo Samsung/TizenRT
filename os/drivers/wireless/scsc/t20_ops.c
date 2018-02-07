@@ -1256,7 +1256,7 @@ int slsi_get_signal_poll(void *priv, struct wpa_signal_info *si)
 	SLSI_MUTEX_LOCK(ndev_vif->vif_mutex);
 	if (!ndev_vif->activated) {
 		SLSI_ERR_NODEV("STA Not Connected\n");
-		return -EINVAL;
+		res = -EINVAL;
 		goto exit;
 	}
 	memset(si, 0, sizeof(*si));

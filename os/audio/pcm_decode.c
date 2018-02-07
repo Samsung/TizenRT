@@ -19,7 +19,7 @@
  * audio/pcm_decode.c
  *
  *   Copyright (C) 2014 Gregory Nutt. All rights reserved.
- *   Author:  Gregory Nutt <gnutt@tinyara.org>
+ *   Author:  Gregory Nutt <gnutt@nuttx.org>
  *
  * Based on the original audio framework from:
  *

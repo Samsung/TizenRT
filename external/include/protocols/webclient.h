@@ -170,7 +170,7 @@ extern "C" {
  * @param[in] response a structure pointer of response message.
  * @return On success, OK(0) is returned.
  *         On failure, negative value is returned.
- * @since Tizen RT v1.0
+ * @since TizenRT v1.0
  */
 
 int http_client_send_request(struct http_client_request_t *request, void *ssl_config, struct http_client_response_t *response);
@@ -184,7 +184,7 @@ int http_client_send_request(struct http_client_request_t *request, void *ssl_co
  * @param[in] cb a function pointer called when receive response.
  * @return On success, OK(0) is returned.
  *         On failure, negative value is returned.
- * @since Tizen RT v1.0
+ * @since TizenRT v1.0
  */
 
 int http_client_send_request_async(struct http_client_request_t *request, void *ssl_config, wget_callback_t cb);
@@ -195,7 +195,7 @@ int http_client_send_request_async(struct http_client_request_t *request, void *
  * @param[in] response a structure pointer of response message.
  * @return On success, OK(0) is returned.
  *         On failure, negative value is returned.
- * @since Tizen RT v1.0
+ * @since TizenRT v1.0
  */
 
 int http_client_response_init(struct http_client_response_t *response);
@@ -205,7 +205,7 @@ int http_client_response_init(struct http_client_response_t *response);
  *
  * @param[in] response a structure pointer of response message.
  * @return N/A.
- * @since Tizen RT v1.0
+ * @since TizenRT v1.0
  */
 
 void http_client_response_release(struct http_client_response_t *response);

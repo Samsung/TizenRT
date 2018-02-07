@@ -33,7 +33,7 @@
 
 /**
  * @brief Enumeration for ST Things error code.
- * @since Tizen RT v1.1
+ * @since TizenRT v1.1
  */
 typedef enum {
 	ST_THINGS_ERROR_NONE = 0,						   /**< Successful */
@@ -47,7 +47,7 @@ typedef enum {
 
 /**
  * @brief Enumeration for ST Things status.
- * @since Tizen RT v1.1
+ * @since TizenRT v1.1
  */
 typedef enum {
 	ST_THINGS_STATUS_INIT = 0,						   /**< Initial state of ST Things */
@@ -65,7 +65,7 @@ typedef enum {
 
 /**
  * @brief Structure for Representation.
- * @since Tizen RT v1.1
+ * @since TizenRT v1.1
  */
 typedef struct _st_things_representation {
 	void *payload;	 /**< Payload of representation */
@@ -79,7 +79,7 @@ typedef struct _st_things_representation {
 	* @param[in]  key Property Name which represents the value.
 	* @param[out] value String value
 	* @return @c true if value exist, otherwise @c false
-	* @since Tizen RT v1.1
+	* @since TizenRT v1.1
 	*/
 	bool (*get_str_value)(struct _st_things_representation *rep, const char *key, char **value);
 
@@ -91,7 +91,7 @@ typedef struct _st_things_representation {
 	* @param[in]  key Property Name which represents the value.
 	* @param[out] value Bool value
 	* @return @c true if value exist, otherwise @c false
-	* @since Tizen RT v1.1
+	* @since TizenRT v1.1
 	*/
 	bool (*get_bool_value)(struct _st_things_representation *rep, const char *key, bool *value);
 
@@ -103,7 +103,7 @@ typedef struct _st_things_representation {
 	* @param[in]  key Property Name which represents the value.
 	* @param[out] value Integer value
 	* @return @c true if value exist, otherwise @c false
-	* @since Tizen RT v1.1
+	* @since TizenRT v1.1
 	*/
 	bool (*get_int_value)(struct _st_things_representation *rep, const char *key, int64_t *value);
 
@@ -115,7 +115,7 @@ typedef struct _st_things_representation {
 	* @param[in]  key Property Name which represents the value.
 	* @param[out] value Double value
 	* @return @c true if value exist, otherwise @c false
-	* @since Tizen RT v1.1
+	* @since TizenRT v1.1
 	*/
 	bool (*get_double_value)(struct _st_things_representation *rep, const char *key, double *value);
 
@@ -129,7 +129,7 @@ typedef struct _st_things_representation {
 	* @param[out] value Byte value
 	* @param[out] size Size of Byte value
 	* @return @c true if value exist, otherwise @c false
-	* @since Tizen RT v1.1
+	* @since TizenRT v1.1
 	*/
 	bool (*get_byte_value)(struct _st_things_representation *rep, const char *key, uint8_t **value, size_t *size);
 
@@ -143,7 +143,7 @@ typedef struct _st_things_representation {
 	* @param[in]  key Property Name which represents the value.
 	* @param[out] value Object value
 	* @return @c true if value exist, otherwise @c false
-	* @since Tizen RT v1.1
+	* @since TizenRT v1.1
 	*/
 	bool (*get_object_value)(struct _st_things_representation *rep, const char *key, struct _st_things_representation **value);
 
@@ -156,7 +156,7 @@ typedef struct _st_things_representation {
 	* @param[in]  key Property Name which will represent the value.
 	* @param[in]  value String value.
 	* @return @c true if setting value is successful, otherwise @c false
-	* @since Tizen RT v1.1
+	* @since TizenRT v1.1
 	*/
 	bool (*set_str_value)(struct _st_things_representation *rep, const char *key, const char *value);
 
@@ -168,7 +168,7 @@ typedef struct _st_things_representation {
 	* @param[in]  key Property Name which will represent the value.
 	* @param[in]  value Bool value.
 	* @return @c true if setting value is successful, otherwise @c false
-	* @since Tizen RT v1.1
+	* @since TizenRT v1.1
 	*/
 	bool (*set_bool_value)(struct _st_things_representation *rep, const char *key, bool value);
 
@@ -180,7 +180,7 @@ typedef struct _st_things_representation {
 	* @param[in]  key Property Name which will represent the value.
 	* @param[in]  value Integer value.
 	* @return @c true if setting value is successful, otherwise @c false
-	* @since Tizen RT v1.1
+	* @since TizenRT v1.1
 	*/
 	bool (*set_int_value)(struct _st_things_representation *rep, const char *key, int64_t value);
 
@@ -192,7 +192,7 @@ typedef struct _st_things_representation {
 	* @param[in]  key Property Name which will represent the value.
 	* @param[in]  value Double value.
 	* @return @c true if setting value is successful, otherwise @c false
-	* @since Tizen RT v1.1
+	* @since TizenRT v1.1
 	*/
 	bool (*set_double_value)(struct _st_things_representation *rep, const char *key, double value);
 
@@ -206,7 +206,7 @@ typedef struct _st_things_representation {
 	* @param[in]  value Byte value.
 	* @param[in]  size Size of Byte value.
 	* @return @c true if setting value is successful, otherwise @c false
-	* @since Tizen RT v1.1
+	* @since TizenRT v1.1
 	*/
 	bool (*set_byte_value)(struct _st_things_representation *rep, const char *key, const uint8_t *value, size_t size);
 
@@ -219,7 +219,7 @@ typedef struct _st_things_representation {
 	* @param[in]  key Property Name which will represent the value.
 	* @param[in]  value Object value.
 	* @return @c true if value exist, otherwise @c false
-	* @since Tizen RT v1.1
+	* @since TizenRT v1.1
 	*/
 	bool (*set_object_value)(struct _st_things_representation *rep, const char *key, const struct _st_things_representation *value);
 
@@ -233,7 +233,7 @@ typedef struct _st_things_representation {
 	* @param[out] array Reference of the string array to where the value will be copied.
 	* @param[out] length Total number of elements in the array.
 	* @return @c true if value exist, otherwise @c false
-	* @since Tizen RT v1.1
+	* @since TizenRT v1.1
 	*/
 	bool (*get_str_array_value)(struct _st_things_representation *rep, const char *key, char ***array, size_t *length);
 
@@ -247,7 +247,7 @@ typedef struct _st_things_representation {
 	* @param[out] array Reference of the integer array where the value will be copied.
 	* @param[out] length Total number of elements in the array.
 	* @return @c true if value exist, otherwise @c false
-	* @since Tizen RT v1.1
+	* @since TizenRT v1.1
 	*/
 	bool (*get_int_array_value)(struct _st_things_representation *rep, const char *key, int64_t **array, size_t *length);
 
@@ -261,7 +261,7 @@ typedef struct _st_things_representation {
 	* @param[out] array Reference of the double array where the value will be copied.
 	* @param[out] length Total number of elements in the array.
 	* @return @c true if value exist, otherwise @c false
-	* @since Tizen RT v1.1
+	* @since TizenRT v1.1
 	*/
 	bool (*get_double_array_value)(struct _st_things_representation *rep, const char *key, double **array, size_t *length);
 
@@ -276,7 +276,7 @@ typedef struct _st_things_representation {
 	* @param[out] array Reference of the object array where the value will be copied.
 	* @param[out] length Total number of elements in the array.
 	* @return @c true if value exist, otherwise @c false
-	* @since Tizen RT v1.1
+	* @since TizenRT v1.1
 	*/
 	bool (*get_object_array_value)(struct _st_things_representation *rep, const char *key, struct _st_things_representation ***array, size_t *length);
 
@@ -290,7 +290,7 @@ typedef struct _st_things_representation {
 	* @param[in]  array String array type value.
 	* @param[in]  length Total number of elements in the array.
 	* @return @c true if setting value is successful, otherwise @c false
-	* @since Tizen RT v1.1
+	* @since TizenRT v1.1
 	*/
 	bool (*set_str_array_value)(struct _st_things_representation *rep, const char *key, const char **array, size_t length);
 
@@ -304,7 +304,7 @@ typedef struct _st_things_representation {
 	* @param[in]  array Integer array type value.
 	* @param[in]  length Total number of elements in the array.
 	* @return @c true if setting value is successful, otherwise @c false
-	* @since Tizen RT v1.1
+	* @since TizenRT v1.1
 	*/
 	bool (*set_int_array_value)(struct _st_things_representation *rep, const char *key, const int64_t *array, size_t length);
 
@@ -318,7 +318,7 @@ typedef struct _st_things_representation {
 	* @param[in]  array Double array type value.
 	* @param[in]  length Total number of elements in the array.
 	* @return @c true if setting value is successful, otherwise @c false
-	* @since Tizen RT v1.1
+	* @since TizenRT v1.1
 	*/
 	bool (*set_double_array_value)(struct _st_things_representation *rep, const char *key, const double *array, size_t length);
 
@@ -332,7 +332,7 @@ typedef struct _st_things_representation {
 	* @param[in]  array Object array type value.
 	* @param[in]  length Total number of elements in the array.
 	* @return @c true if setting value is successful, otherwise @c false
-	* @since Tizen RT v1.1
+	* @since TizenRT v1.1
 	*/
 	bool (*set_object_array_value)(struct _st_things_representation *rep, const char *key, const struct _st_things_representation **array, size_t length);
 
@@ -340,7 +340,7 @@ typedef struct _st_things_representation {
 
 /**
  * @brief Structure for representing the Get Request Message.
- * @since Tizen RT v1.1
+ * @since TizenRT v1.1
  */
 typedef struct _st_things_get_request_message {
 	char *resource_uri;									/**< Resource URI */
@@ -355,7 +355,7 @@ typedef struct _st_things_get_request_message {
 	* @param[in]  key Name of the query.(ex: key1, key2, etc)
 	* @param[out] value Value of the query.(value1, value2, etc)
 	* @return @c true if query exist, otherwise @c false
-	* @since Tizen RT v1.1
+	* @since TizenRT v1.1
 	*/
 	bool (*get_query_value)(struct _st_things_get_request_message *req_msg, const char *key, char **value);
 
@@ -366,7 +366,7 @@ typedef struct _st_things_get_request_message {
 	* @param[in]  req_msg Instance of get request message.
 	* @param[in]  key Name of the property.
 	* @return @c true if the property key exists, otherwise @c false
-	* @since Tizen RT v1.1
+	* @since TizenRT v1.1
 	*/
 	bool (*has_property_key)(struct _st_things_get_request_message *req_msg, const char *key);
 
@@ -374,7 +374,7 @@ typedef struct _st_things_get_request_message {
 
 /**
  * @brief Structure for representing the Set Request Message.
- * @since Tizen RT v1.1
+ * @since TizenRT v1.1
  */
 typedef struct _st_things_set_request_message {
 	char *resource_uri;									/**< Resource URI */
@@ -389,7 +389,7 @@ typedef struct _st_things_set_request_message {
 	* @param[in]  key Name of the query.(ex: key1, key2, etc)
 	* @param[out] value Value of the query.(value1, value2, etc)
 	* @return @c true if query exist, otherwise @c false
-	* @since Tizen RT v1.1
+	* @since TizenRT v1.1
 	*/
 	bool (*get_query_value)(struct _st_things_set_request_message *req_msg, const char *key, char **value);
 

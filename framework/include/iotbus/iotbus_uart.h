@@ -50,9 +50,9 @@ typedef enum {
 struct _iotbus_uart_s;
 
 /**
- * @brief Pointer definition to the internal struct _iotbus_uart_s
+ * @brief Pointer definition to the internal struct _iotbus_uart_wrapper_s
  */
-typedef struct _iotbus_uart_s *iotbus_uart_context_h;
+typedef struct _iotbus_uart_wrapper_s *iotbus_uart_context_h;
 
 #ifdef __cplusplus
 extern "C" {
@@ -64,7 +64,7 @@ extern "C" {
  * @details @b #include <iotbus/iotbus_uart.h>
  * @param[in] path uart device node path
  * @return On success, handle of uart_context is returned. On failure, NULL is returned.
- * @since Tizen RT v1.0
+ * @since TizenRT v1.0
  */
 iotbus_uart_context_h iotbus_uart_init(const char *path);
 
@@ -74,7 +74,7 @@ iotbus_uart_context_h iotbus_uart_init(const char *path);
  * @details @b #include <iotbus/iotbus_uart.h>
  * @param[in] hnd handle of uart_context
  * @return On success, 0 is returned. On failure, a negative value is returned.
- * @since Tizen RT v1.0
+ * @since TizenRT v1.0
  */
 int iotbus_uart_stop(iotbus_uart_context_h hnd);
 
@@ -84,7 +84,7 @@ int iotbus_uart_stop(iotbus_uart_context_h hnd);
  * @details @b #include <iotbus/iotbus_uart.h>
  * @param[in] hnd handle of uart_context
  * @return On success, 0 is returned. On failure, a negative value is returned.
- * @since Tizen RT v1.0
+ * @since TizenRT v1.0
  */
 int iotbus_uart_flush(iotbus_uart_context_h hnd);
 
@@ -95,7 +95,7 @@ int iotbus_uart_flush(iotbus_uart_context_h hnd);
  * @param[in] hnd handle of uart_context
  * @param[in] baud uart baud rate
  * @return On success, 0 is returned. On failure, a negative value is returned.
- * @since Tizen RT v1.0
+ * @since TizenRT v1.0
  */
 int iotbus_uart_set_baudrate(iotbus_uart_context_h hnd, unsigned int baud);
 
@@ -108,7 +108,7 @@ int iotbus_uart_set_baudrate(iotbus_uart_context_h hnd, unsigned int baud);
  * @param[in] parity uart parity type
  * @param[in] stopbits uart stop bits
  * @return On success, 0 is returned. On failure, a negative value is returned.
- * @since Tizen RT v1.0
+ * @since TizenRT v1.0
  */
 int iotbus_uart_set_mode(iotbus_uart_context_h hnd, int bytesize, iotbus_uart_parity_e parity, int stopbits);
 
@@ -120,7 +120,7 @@ int iotbus_uart_set_mode(iotbus_uart_context_h hnd, int bytesize, iotbus_uart_pa
  * @param[in] xonxoff ixon/ixoff
  * @param[in] rtscts rts/cts
  * @return On success, 0 is returned. On failure, a negative value is returned.
- * @since Tizen RT v1.0
+ * @since TizenRT v1.0
  */
 int iotbus_uart_set_flowcontrol(iotbus_uart_context_h hnd, int xonxoff, int rtscts);
 
@@ -132,7 +132,7 @@ int iotbus_uart_set_flowcontrol(iotbus_uart_context_h hnd, int xonxoff, int rtsc
  * @param[in] buf the pointer of data buffer
  * @param[in] length size to read
  * @return On success, size is returned. On failure, a negative value is returned.
- * @since Tizen RT v1.0
+ * @since TizenRT v1.0
  */
 int iotbus_uart_read(iotbus_uart_context_h hnd, char *buf, unsigned int length);
 
@@ -144,7 +144,7 @@ int iotbus_uart_read(iotbus_uart_context_h hnd, char *buf, unsigned int length);
  * @param[in] buf the pointer of data buffer
  * @param[in] length size to write
  * @return On success, size is returned. On failure, a negative value is returned.
- * @since Tizen RT v1.0
+ * @since TizenRT v1.0
  */
 int iotbus_uart_write(iotbus_uart_context_h hnd, const char *buf, unsigned int length);
 

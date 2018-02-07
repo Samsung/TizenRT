@@ -245,4 +245,65 @@ static void spi_select(struct spi_dev_s *dev, enum spi_dev_e devid, bool selecte
 
 ## I2C
 
+Each board, shall;  
+
+Implement and expose an instanse of struct i2c_dev_s.     
+Implement the supported operations on i2c struct i2c_op_s.  
+
+
+```
+struct i2c_dev_s {
+	const struct i2c_ops_s *ops;	/* I2C vtable */
+	FAR void *priv;			/* Used by the arch-specific logic */
+}; 
+``` 
+  
+```
+struct i2c_ops_s {
+	uint32_t (*setfrequency)(FAR struct i2c_dev_s *dev, uint32_t frequency);
+	int (*setaddress)(FAR struct i2c_dev_s *dev, int addr, int nbits);
+	int (*write)(FAR struct i2c_dev_s *dev, const uint8_t *buffer, int buflen);
+	int (*read)(FAR struct i2c_dev_s *dev, uint8_t *buffer, int buflen);
+#ifdef CONFIG_I2C_WRITEREAD
+	int (*writeread)(FAR struct i2c_dev_s *inst, const uint8_t *wbuffer, int wbuflen, uint8_t *rbuffer, int rbuflen);
+#endif
+
+#ifdef CONFIG_I2C_TRANSFER
+	int (*transfer)(FAR struct i2c_dev_s *dev, FAR struct i2c_msg_s *msgs, int count);
+#endif
+#ifdef CONFIG_I2C_SLAVE
+	int (*setownaddress)(FAR struct i2c_dev_s *dev, int addr, int nbits);
+
+	int (*registercallback)(FAR struct i2c_dev_s *dev, int (*callback)(void));
+#endif
+};
+```
+
+Above declarations are present in **[i2c.h](../os/include/tinyara/i2c.h)**.  
+  
+In addition to above, each board level logic shall implement the other functions listed in **[i2c.h](../os/include/tinyara/i2c.h)**.  
+
+```
+1. EXTERN FAR struct i2c_dev_s *up_i2cinitialize(int port);
+2. EXTERN int up_i2cuninitialize(FAR struct i2c_dev_s *dev);
+3. EXTERN int up_i2creset(FAR struct i2c_dev_s *dev);
+```  
+
+### I2C user level io
+If user level io is needed on i2c port, then board level logic should provide the following for registration and fs operations(read, write, writeread) as mentioned in i2c_ops above.  
+
+```
+#ifdef CONFIG_I2C_USERIO
+int i2c_uioregister(FAR const char *path, FAR struct i2c_dev_s *dev);
+#endif
+```
+>NOTE:Be aware that i2c user io is at premature stage  
+
+### I2C Initialization  
+I2C is initialzed by invoking up_i2cinitialize.  
+Initialization takes one i2c port and returns a i2c device structure.  
+Initialization is done either as part of _up_intitialize()_ or as part of _board_initialize()_.  
+
+Please refer to **[i2c.h](../os/include/tinyara/i2c.h)** to know more about the i2c functions and declarations.  
+
 ## I2S

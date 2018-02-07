@@ -89,7 +89,7 @@ extern "C" {
  * @param[in] len length for calculation
  * @param[in] crc8val value for calculation
  * @return On success, calculated 8-bit CRC is returned.
- * @since Tizen RT v1.0
+ * @since TizenRT v1.0
  */
 uint8_t crc8part(FAR const uint8_t *src, size_t len, uint8_t crc8val);
 
@@ -101,7 +101,7 @@ uint8_t crc8part(FAR const uint8_t *src, size_t len, uint8_t crc8val);
  * @param[in] src source number for crc8
  * @param[in] len length for calculation
  * @return On success, calculated 8-bit CRC is returned.
- * @since Tizen RT v1.0
+ * @since TizenRT v1.0
  */
 
 uint8_t crc8(FAR const uint8_t *src, size_t len);

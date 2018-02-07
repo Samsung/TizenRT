@@ -88,7 +88,7 @@
 
 static inline int is_real(double x)
 {
-	const double_t infinite = 1.0 / 0.0;
+	const double infinite = 1.0 / 0.0;
 	return (x < infinite) && (x >= -infinite);
 }
 
@@ -104,17 +104,17 @@ static inline int is_real(double x)
  *
  ****************************************************************************/
 
-double_t strtod(const char *str, char **endptr)
+double strtod(const char *str, char **endptr)
 {
-	double_t number;
+	double number;
 	int exponent;
 	int negative;
-	char *p = (char *)str;
+	FAR char *p = (char *)str;
 	double p10;
 	int n;
 	int num_digits;
 	int num_decimals;
-	const double_t infinite = 1.0 / 0.0;
+	const double infinite = 1.0 / 0.0;
 
 	/* Skip leading whitespace */
 

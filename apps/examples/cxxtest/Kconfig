@@ -1,0 +1,28 @@
+#
+# For a description of the syntax of this configuration file,
+# see kconfig-language at https://www.kernel.org/doc/Documentation/kbuild/kconfig-language.txt
+#
+
+config EXAMPLES_CXXTEST
+	bool "C++ test program"
+	default n
+	depends on HAVE_CXX
+	---help---
+		Enable the C++ Test program
+
+if EXAMPLES_CXXTEST
+
+config EXAMPLES_CXXTEST_CXXINITIALIZE
+	bool "C++ Initialization"
+	default y
+	depends on HAVE_CXX && HAVE_CXXINITIALIZE
+	---help---
+		By default, if CONFIG_HAVE_CXX and CONFIG_HAVE_CXXINITIALIZE are
+		defined, then this example will call the NuttX function to
+		initialize static C++ constructors.  This option may be disabled,
+		however, if that static initialization was performed elsewhere.
+
+endif
+config USER_ENTRYPOINT
+	string
+	default "cxxtest_main" if ENTRY_CXXTEST

@@ -151,7 +151,7 @@ Once LOGM is approved, each module should have its own index
 /**
  * @brief  Error debug
  * @details @b #include <debug.h>
- * @since Tizen RT v1.0
+ * @since TizenRT v1.0
  */
 #define dbg(format, ...) \
 	syslog(LOG_ERR, EXTRA_FMT format EXTRA_ARG, ##__VA_ARGS__)
@@ -162,7 +162,7 @@ Once LOGM is approved, each module should have its own index
 /**
  * @brief  Error debug for low-level
  * @details @b #include <debug.h>
- * @since Tizen RT v1.0
+ * @since TizenRT v1.0
  */
 #define lldbg(format, ...) \
 	lowsyslog(LOG_ERR, EXTRA_FMT format EXTRA_ARG, ##__VA_ARGS__)
@@ -188,7 +188,7 @@ Once LOGM is approved, each module should have its own index
 /**
  * @brief  Warning debug
  * @details @b #include <debug.h>
- * @since Tizen RT v1.0
+ * @since TizenRT v1.0
  */
 #define wdbg(format, ...) \
 	syslog(LOG_WARNING, EXTRA_FMT format EXTRA_ARG, ##__VA_ARGS__)
@@ -197,7 +197,7 @@ Once LOGM is approved, each module should have its own index
 /**
  * @brief  Warning debug for low-level
  * @details @b #include <debug.h>
- * @since Tizen RT v1.0
+ * @since TizenRT v1.0
  */
 #define llwdbg(format, ...) \
 	lowsyslog(LOG_WARNING, EXTRA_FMT format EXTRA_ARG, ##__VA_ARGS__)
@@ -223,7 +223,7 @@ Once LOGM is approved, each module should have its own index
 /**
  * @brief  Informational(Verbose) debug
  * @details @b #include <debug.h>
- * @since Tizen RT v1.0
+ * @since TizenRT v1.0
  */
 #define vdbg(format, ...) \
 	syslog(LOG_INFO, EXTRA_FMT format EXTRA_ARG, ##__VA_ARGS__)
@@ -232,7 +232,7 @@ Once LOGM is approved, each module should have its own index
 /**
  * @brief  Informational(Verbose) debug for low-level
  * @details @b #include <debug.h>
- * @since Tizen RT v1.0
+ * @since TizenRT v1.0
  */
 #define llvdbg(format, ...) \
 	lowsyslog(LOG_INFO, EXTRA_FMT format EXTRA_ARG, ##__VA_ARGS__)
@@ -1169,7 +1169,7 @@ extern "C" {
  * @param[in] buffer buffer
  * @param[in] buflen length for buffer
  * @return void
- * @since Tizen RT v1.1
+ * @since TizenRT v1.1
  */
 
 void lib_dumpbuffer(FAR const char *msg, FAR const uint8_t *buffer, unsigned int buflen);

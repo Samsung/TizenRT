@@ -104,10 +104,21 @@
 #  undef CONFIG_CODECS_BASE64
 #endif
 
+#ifndef CONFIG_WEBCLIENT_MAXHTTPLINE
 #define CONFIG_WEBCLIENT_MAXHTTPLINE 200
+#endif
+
+#ifndef CONFIG_WEBCLIENT_MAXMIMESIZE
 #define CONFIG_WEBCLIENT_MAXMIMESIZE 32
-#define CONFIG_WEBCLIENT_MAXHOSTNAME 40
-#define CONFIG_WEBCLIENT_MAXFILENAME 100
+#endif
+
+#ifndef CONFIG_WEBCLIENT_MAXHOSTNAME
+#define CONFIG_WEBCLIENT_MAXHOSTNAME 128
+#endif
+
+#ifndef CONFIG_WEBCLIENT_MAXFILENAME
+#define CONFIG_WEBCLIENT_MAXFILENAME 128
+#endif
 
 #ifndef CONFIG_WGET_USERAGENT
 # define CONFIG_WGET_USERAGENT "TinyARA"
@@ -187,12 +198,6 @@ static const char g_httpget[] = "GET ";
 static const char g_httppost[] = "POST ";
 static const char g_httpput[] = "PUT ";
 static const char g_httpdelete[] = "DELETE ";
-
-static const char g_httpuseragentfields[] = "Connection: close\r\n"
-		"User-Agent: "
-		CONFIG_WGET_USERAGENT
-		"\r\n\r\n";
-
 static const char g_http200[] = "200 ";
 static const char g_http301[] = "301 ";
 static const char g_http302[] = "302 ";

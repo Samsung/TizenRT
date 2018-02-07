@@ -57,12 +57,11 @@ static void tc_net_netdb_p(void)
 	hints.ai_socktype = SOCK_DGRAM;
 
 	ret = getaddrinfo(NULL, port, &hints, &res);
-	TC_ASSERT_EQ("getaddrinfo", ret, 0)
-
 	/*
 	* This API has no way to check errors.
 	*/
 	freeaddrinfo(res);
+	TC_ASSERT_EQ("getaddrinfo", ret, 0);
 	TC_SUCCESS_RESULT()
 }
 #endif

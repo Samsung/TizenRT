@@ -16,7 +16,9 @@
  *
  ****************************************************************************/
 
+#include <tinyara/config.h>
 #include <tinyara/irq.h>
+#include <sys/types.h>
 
 
 int kdbg_irqinfo(int argc, char **args)

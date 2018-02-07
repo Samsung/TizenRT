@@ -38,6 +38,7 @@ typedef enum {
 	WIFI_UTILS_INVALID_ARGS,
 	WIFI_UTILS_TIMEOUT,
 	WIFI_UTILS_BUSY,
+	WIFI_UTILS_FILE_ERROR,
 } wifi_utils_result_e;
 
 

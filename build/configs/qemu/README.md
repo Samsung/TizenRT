@@ -8,7 +8,7 @@ Targets Supported:
 
 1. lm3s6963-ek  
 NOTE:  
-Tizen RT supports three memory options for lm3s6963-ek board;
+TizenRT supports three memory options for lm3s6963-ek board;
 - 64KB RAM requirement configuration which matches with real memory of lm3s6963-ek board
 - 1MB RAM requirement which can be run on QEMU only with the patch in TizenRT/build/configs/qemu/qemu-2.10.0-rc2_1m_ram_size.patch
 - 16MB RAM requirement which can be run on QEMU only with the patch in TizenRT/build/configs/qemu/qemu-2.10.0-rc2_16m_ram_size.patch
@@ -32,7 +32,7 @@ sudo ln qemu-system-arm /usr/local/bin/qemu-system-arm
 ## How to program a binary
 
 There are two methods, using QEMU command or make command.  
-After building Tizen RT, follow below steps at $TIZENRT_BASEDIR/os folder.  
+After building TizenRT, follow below steps at $TIZENRT_BASEDIR/os folder.  
 TIZENRT_BASEDIR was set at [[Getting the sources]](../../../README.md#getting-the-sources) tab of Quick Start.
 
 ### Using QEMU command
@@ -49,7 +49,7 @@ make download
 
 ## How to debug
 
-To debug Tizen RT on QEMU, GDB should be connected through below commands.
+To debug TizenRT on QEMU, GDB should be connected through below commands.
 
 ```
 arm-none-eabi-gdb
@@ -75,3 +75,6 @@ Enter `Board Selection` -> `Build for qemu hardware`
 Select `NONE`(64KB) or `Build for SRAM increased QEMU Hardware`(16MB)  
 Enter `Chip Selection` -> `Boot Memory Configuration`  
 Set `Primary RAM size` to `65536`(64KB) or `16777216`(16MB)
+
+### How to run Network Stack on QEMU
+To run the Network stack on QEMU please refer [How to run network stack on Qemu](HowToRunNetworkStackOnQemu.md). 

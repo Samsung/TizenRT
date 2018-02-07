@@ -124,7 +124,7 @@ SUBSYSTEMS=="usb",ATTRS{idVendor}=="0403",ATTRS{idProduct}=="6010",MODE="0666" R
 
 There are two methods, using OpenOCD or script.
 
-After building Tizen RT, follow below steps at $TIZENRT_BASEDIR/os folder.
+After building TizenRT, follow below steps at $TIZENRT_BASEDIR/os folder.
 
 TIZENRT_BASEDIR was set at [[Getting the sources]](../../../README.md#getting-the-sources) tab of Quick Start.
 
@@ -176,6 +176,7 @@ You can download it using OpenOCD. You compress the compiled firmware and downlo
 ```bash
 gzip -c tinyara_head.bin-signed > factoryimage.gz
 openocd -f artik05x.cfg -s ../build/configs/artik05x/scripts -c ' \
+    flash erase_part ota ; \
     flash_write factory    ../build/configs/artik055s/bin/factoryimage.gz;      \
     exit'
 ```
@@ -219,4 +220,4 @@ Before executing below board-specific steps, execute [generic steps](../../../to
         ```bash
         Hardware Configuration -> Board Selection -> Automount partitions -> Automount romfs partiton to y
         ````
-4. Build Tizen RT and flash a binary [using download script](#using-download-script)
+4. Build TizenRT and flash a binary [using download script](#using-download-script)

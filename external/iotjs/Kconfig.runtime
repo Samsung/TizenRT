@@ -6,6 +6,7 @@
 config ENABLE_IOTJS
 	bool "IoT.js"
 	default n
+	select SPI_EXCHANGE
 	---help---
 		Enable IoT.js framework
 
