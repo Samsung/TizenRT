@@ -520,7 +520,9 @@ int things_start_stack()
 			}
 		} else {				// Alread Owned.
 			wifi_manager_ap_config_s *ap_config = dm_get_homeap_wifi_config();
-			try_connect_home_ap(ap_config);
+			if (!try_connect_home_ap(ap_config)) {
+				return 0;
+			}
 		}
 	} else if (dm_get_easysetup_connectivity_type() == es_conn_type_ble) {
 		//TO DO
