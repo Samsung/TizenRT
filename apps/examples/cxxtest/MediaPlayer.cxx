@@ -86,7 +86,6 @@ void MediaPlayer::_prepare()
 void MediaPlayer::_start()
 {	
 	std::cout << "start playing" << std::endl;
-	curState = 
 }
 
 void MediaPlayer::_stop()

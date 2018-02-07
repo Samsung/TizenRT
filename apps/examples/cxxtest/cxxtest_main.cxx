@@ -130,7 +130,6 @@ void test()
 	p.create();
 	p.start();
 	p.pause();
-	p.resume();
 	p.stop();
 	p.destroy();
 
@@ -138,7 +137,6 @@ void test()
 	r.create();
 	r.start();
 	r.pause();
-	r.resume();
 	r.stop();
 	r.destroy();
 }
