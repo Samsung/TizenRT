@@ -433,21 +433,21 @@ static int pcm_areas_copy(struct pcm *pcm, unsigned int pcm_offset, void *pcm_bu
 static int pcm_mmap_transfer_areas(struct pcm *pcm, char *buf, unsigned int offset, unsigned int size)
 {
 	void *pcm_areas;
-	int commit;
 	unsigned int pcm_offset, frames, count = 0;
+	int ret;
 
 	while (size > 0) {
 		frames = size;
 		pcm_mmap_begin(pcm, &pcm_areas, &pcm_offset, &frames);
 		pcm_areas_copy(pcm, pcm_offset, pcm_areas, buf, offset, frames);
-		commit = pcm_mmap_commit(pcm, pcm_offset, frames);
-		if (commit < 0) {
-			return oops(pcm, -commit, "failed to commit %d frames\n", frames);
+		ret = pcm_mmap_commit(pcm, pcm_offset, frames);
+		if (ret < 0) {
+			return ret;
 		}
 
-		offset += commit;
-		count += commit;
-		size -= commit;
+		offset += frames;
+		count += frames;
+		size -= frames;
 	}
 	return count;
 }
@@ -1244,7 +1244,7 @@ int pcm_drain(struct pcm *pcm)
  */
 int pcm_mmap_begin(struct pcm *pcm, void **areas, unsigned int *offset, unsigned int *frames)
 {
-	if (pcm == NULL || *areas == NULL || offset == NULL || frames == NULL) {
+	if (pcm == NULL || areas == NULL || offset == NULL || frames == NULL) {
 		return -EINVAL;
 	}
 
@@ -1450,7 +1450,7 @@ int pcm_wait(struct pcm *pcm, int timeout)
 
 	/* If PCM is opened for recording, then start it */
 	if ((pcm->flags & PCM_IN) && !pcm->running && !pcm->draining) {
-		if(pcm_start(pcm) < 0) {
+		if (pcm_start(pcm) < 0) {
 			return oops(pcm, -1, "Failed to start PCM");
 		}
 	}
@@ -1488,6 +1488,7 @@ int pcm_wait(struct pcm *pcm, int timeout)
 		apb = (struct ap_buffer_s *)msg.u.pPtr;
 		apb->flags &= ~AUDIO_APB_MMAP_ENQUEUED;
 		apb->curbyte = 0;
+
 		return 1;
 	} else if (msg.msgId == AUDIO_MSG_XRUN) {
 		/* Underrun to be handled by client */
@@ -1507,13 +1508,6 @@ int pcm_mmap_transfer(struct pcm *pcm, const void *buffer, unsigned int bytes)
 		return 0;
 	}
 
-	/* Start the PCM, if required */
-	if (pcm->flags & PCM_IN && !pcm->running) {
-		if (pcm_start(pcm) < 0) {
-			return oops(pcm, errno, "start error\n");
-		}
-	}
-
 	count = pcm_bytes_to_frames(pcm, bytes);
 	while (count > 0) {
 		/* get the available space for writing new frames */
@@ -1526,9 +1520,7 @@ int pcm_mmap_transfer(struct pcm *pcm, const void *buffer, unsigned int bytes)
 		if ((unsigned int)avail == 0) {
 			err = pcm_wait(pcm, -1);
 			if (err < 0) {
-				pcm->prepared = 0;
-				pcm->running = 0;
-				return oops(pcm, errno, "wait error: avail 0x%x\n", avail);
+				return err;
 			}
 			continue;
 		}
