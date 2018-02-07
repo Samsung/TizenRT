@@ -78,6 +78,11 @@ void MediaPlayer::setDataSource(DataSource dataSource)
 	lock_guard<mutex> lock(*cMtx);
 }
 
+player_state_t MediaPlayer::getState()
+{
+	return curState;
+}
+
 void MediaPlayer::_prepare()
 {	
 

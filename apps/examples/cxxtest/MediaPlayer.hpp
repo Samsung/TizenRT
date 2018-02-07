@@ -48,6 +48,8 @@ public:
 
 	void setDataSource(DataSource dataSource);
 
+	player_state_t getState();
+
 private:
 	template<typename _Callable, typename... _Args>
 	void enqueue(_Callable&& __f, _Args&&... __args)
