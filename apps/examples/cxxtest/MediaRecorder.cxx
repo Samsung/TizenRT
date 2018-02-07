@@ -42,14 +42,6 @@ recorder_result_t MediaRecorder::start()
 	return RECORDER_OK;
 }
 
-recorder_result_t MediaRecorder::resume()
-{
-	lock_guard<mutex> lock(*cMtx);
-	enqueue([this](){_resume(); });
-
-	return RECORDER_OK;
-}
-
 recorder_result_t MediaRecorder::stop()
 {
 	lock_guard<mutex> lock(*cMtx);
