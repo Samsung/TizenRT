@@ -1,3 +1,8 @@
+#
+# For a description of the syntax of this configuration file,
+# see kconfig-language at https://www.kernel.org/doc/Documentation/kbuild/kconfig-language.txt
+#
+
 config ARTIK05X_BOOT_FAILURE_DETECTION
 	bool "Clear bootcount when boot completes"
 	default y
@@ -149,6 +154,14 @@ config ARTIK05X_RAMMTD_DEV_POINT
 config ARTIK05X_RAMMTD_MOUNT_POINT
 	string "Mountpoint of the partition for ramfs r/w file system"
 	default "/ramfs"
+endif
+
+if NET_SLIP
+config ARTIK05X_SLIP_DEVNAME
+	string "Device name of the serial for SLIP"
+	default "/dev/ttyS4" if S5J_UART3
+	---help---
+		Specifies the device name (/dev/ttySX) of the serial for SLIP
 endif
 
 config ARTIK05X_SECURE

@@ -81,6 +81,10 @@ ifeq ($(CONFIG_S5J_ADC),y)
 CSRCS += artik05x_adc.c
 endif
 
+ifeq ($(CONFIG_NET_SLIP),y)
+CSRCS += artik05x_slip.c
+endif
+
 # boardctl support
 ifeq ($(CONFIG_LIB_BOARDCTL),y)
 DEPPATH += --dep-path $(TOPDIR)/arch
