@@ -1,3 +1,6 @@
+#ifndef __MEIDAFRAMEWORK_MEDIAPLAYER_HPP
+#define __MEIDAFRAMEWORK_MEDIAPLAYER_HPP
+
 #include <thread>
 #include <mutex>
 #include <condition_variable>
@@ -75,3 +78,5 @@ private:
 	int curVolume;
 
 };
+
+#endif
