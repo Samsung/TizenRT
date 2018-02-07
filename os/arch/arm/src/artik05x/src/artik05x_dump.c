@@ -127,26 +127,46 @@ struct arm_mode_regs_s {
 	uint32_t spsr_und;
 };
 
-struct dump_header {
+typedef enum {
+	PRESENT_DUMP_INFO	= 0x01,
+	PRESENT_BIN_INFO	= 0x02,
+	PRESENT_REGS		= 0x04,
+	PRESENT_STACK		= 0x08,
+	PRESENT_TCB			= 0x10,
+	PRESENT_RAM			= 0x20,
+} dump_flags_t;
+
+
+struct dump_header_s {
 	uint32_t	magic;
+	uint32_t	dump_flag;
 	uint32_t	len;
 };
 
-struct dump_data {
-	struct dump_header	h;
+struct dump_data_s {
+	struct dump_header_s	h;
 	uint32_t	*data;
 	uint32_t	magic;
 };
 
-extern struct arm_mode_regs_s cpu_ctxt_regs;	/* Global variable to store the register context */
-extern volatile uint32_t *current_regs;
+struct dump_info_s {
+	uint32_t flag;
+	uint32_t dfar;
+	uint32_t dfsr;
+};
 
 #ifdef CONFIG_BOARD_CRASHDUMP
-static int artik05x_dump_write(uint32_t addr, struct dump_data *data)
-{
+extern struct arm_mode_regs_s cpu_ctxt_regs;	/* Global variable to store the register context */
+extern volatile uint32_t *current_regs;
+extern uint32_t g_dfar;
+extern uint32_t g_dfsr;
+#endif
 
-	s5j_direct_write(addr, &(data->h), sizeof(struct dump_header));
-	addr += sizeof(struct dump_header);
+#ifdef CONFIG_BOARD_CRASHDUMP
+static int artik05x_dump_write(uint32_t addr, struct dump_data_s *data)
+{
+	s5j_direct_write(addr, &(data->h), sizeof(struct dump_header_s));
+	addr += sizeof(struct dump_header_s);
 	s5j_direct_write(addr, data->data, data->h.len);
 	addr += data->h.len;
 	s5j_direct_write(addr, &data->magic, CRASHDUMP_MAGIC_LEN);
@@ -157,7 +177,8 @@ static int artik05x_dump_write(uint32_t addr, struct dump_data *data)
 
 void board_crashdump(uint32_t currentsp, void *tcb, uint8_t *filename, int lineno)
 {
-	struct dump_data data;
+	struct dump_data_s data;
+	struct dump_info_s info;
 	uint32_t addr;
 
 	s5j_watchdog_disable();
@@ -165,10 +186,27 @@ void board_crashdump(uint32_t currentsp, void *tcb, uint8_t *filename, int linen
 	lldbg("Erase Flash for RAM dump!!\n");
 	s5j_direct_erase(CRASHDUMP_PARTITION_START_ADDR, CRASHDUMP_PARTION_SIZE);
 
-	/*RAM dump to Flash */
+	lldbg("Crash Dump info\n");
+	data.h.magic = CRASHDUMP_COMMON_START_MAGIC;
+	data.h.dump_flag = PRESENT_DUMP_INFO;
+
+	info.dfar = g_dfar;
+	info.dfsr = g_dfsr;
+
+	info.flag = PRESENT_REGS;
+	info.flag |= PRESENT_RAM;
+	data.h.len = sizeof(struct dump_info_s);
+
+	/*Write Crash dump information */
 	addr = CRASHDUMO_START_ADDR;
+	data.magic = CRASHDUMP_COMMON_END_MAGIC;
+	data.data  = (uint32_t *) &info;
+	addr = artik05x_dump_write(addr, &data);
+
+	/*RAM dump to Flash */
 	lldbg("RAM DUMP to Flash....\n");
 	data.h.magic = CRASHDUMP_COMMON_START_MAGIC;
+	data.h.dump_flag = PRESENT_RAM;
 	data.h.len = CONFIG_RAM_SIZE;
 	data.data = (uint32_t *) CONFIG_RAM_START;
 	addr = artik05x_dump_write(addr, &data);
@@ -176,6 +214,8 @@ void board_crashdump(uint32_t currentsp, void *tcb, uint8_t *filename, int linen
 	/*Register dump to Flash */
 	lldbg("REG DUMP to Flash....\n");
 	data.h.magic = CRASHDUMP_COMMON_START_MAGIC;
+	data.h.dump_flag = PRESENT_REGS;
+
 	if (current_regs) {
 		data.h.len = REG_R15 * 4;
 		data.data = (uint32_t *)current_regs;
@@ -183,6 +223,7 @@ void board_crashdump(uint32_t currentsp, void *tcb, uint8_t *filename, int linen
 		data.h.len = sizeof(struct arm_mode_regs_s);
 		data.data = (uint32_t *) &cpu_ctxt_regs;
 	}
+
 	addr = artik05x_dump_write(addr, &data);
 
 	lldbg("Crash dump done\n");
