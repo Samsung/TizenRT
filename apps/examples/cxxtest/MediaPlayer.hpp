@@ -14,74 +14,75 @@
 
 using namespace std;
 
-typedef enum player_state_e
+namespace Media 
 {
-	PLAYER_STATE_NONE,
-	PLAYER_STATE_IDLE,
-	PLAYER_STATE_READY,
-	PLAYER_STATE_PLAYING,
-	PLAYER_STATE_PAUSED
-} player_state_t;
-
-typedef enum player_result_e
-{
-	PLAYER_ERROR,
-	PLAYER_OK
-} player_result_t;
-
-class MediaPlayer
-{
-public:
-	MediaPlayer();
-	~MediaPlayer();
-	
-	player_result_t create();
-	player_result_t destroy();
-	
-	player_result_t prepare();
-	player_result_t start();
-	player_result_t pause();
-	player_result_t stop();
-
-	player_result_t getVolume() const;
-	void setVolume(int vol);
-
-	void setDataSource(DataSource dataSource);
-
-	player_state_t getState();
-
-private:
-	template<typename _Callable, typename... _Args>
-	void enqueue(_Callable&& __f, _Args&&... __args)
+	typedef enum player_state_e
 	{
-		unique_lock<std::mutex> lock(*qMtx);
-		std::function<void()> func = std::bind(std::forward<_Callable>(__f), std::forward<_Args>(__args)...);	
-		cmdQueue.push(func);
-		cvQueue.notify_one();
-	}
-	
-	thread *worker;
-	int worker_thread();
+		PLAYER_STATE_NONE,
+		PLAYER_STATE_IDLE,
+		PLAYER_STATE_READY,
+		PLAYER_STATE_PLAYING,
+		PLAYER_STATE_PAUSED
+	} player_state_t;
 
-	void _create();
-	void _destroy();
-	void _prepare();
-	void _start();
-	void _pause();
-	void _stop();
+	typedef enum player_result_e
+	{
+		PLAYER_ERROR,
+		PLAYER_OK
+	} player_result_t;
 
-private:
-	player_state_t curState;
-	mutex *cMtx; // command mutex
-	mutex *qMtx; // queue mutex
+	class MediaPlayer
+	{
+	public:
+		MediaPlayer();
+		~MediaPlayer();
 
-	std::condition_variable cvQueue;
-	std::condition_variable cvStart;
-	std::queue<std::function<void()>> cmdQueue;
+		player_result_t create();
+		player_result_t destroy();
 
-	bool isRunning;
-	int curVolume;
+		player_result_t prepare();
+		player_result_t start();
+		player_result_t pause();
+		player_result_t stop();
 
-};
+		player_result_t getVolume() const;
+		void setVolume(int vol);
 
+		void setDataSource(DataSource dataSource);
+
+		player_state_t getState();
+
+	private:
+		template<typename _Callable, typename... _Args>
+		void enqueue(_Callable&& __f, _Args&&... __args) {
+			unique_lock<std::mutex> lock(*qMtx);
+			std::function<void()> func = std::bind(std::forward<_Callable>(__f), std::forward<_Args>(__args)...);	
+			cmdQueue.push(func);
+			cvQueue.notify_one();
+		}
+
+		thread *worker;
+		int worker_thread();
+
+		void _create();
+		void _destroy();
+		void _prepare();
+		void _start();
+		void _pause();
+		void _stop();
+
+	private:
+		player_state_t curState;
+		mutex *cMtx; // command mutex
+		mutex *qMtx; // queue mutex
+
+		std::condition_variable cvQueue;
+		std::condition_variable cvStart;
+		std::queue<std::function<void()>> cmdQueue;
+
+		bool isRunning;
+		int curVolume;
+
+	};
+}
 #endif
