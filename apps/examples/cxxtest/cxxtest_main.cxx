@@ -80,6 +80,7 @@
 #include "jsdosa.h"
 
 using namespace std;
+using namespace Media;
 
 //***************************************************************************
 // Definitions
@@ -126,7 +127,7 @@ JSDOSA jsdosa;
 //***************************************************************************
 void test()
 {
-  MediaPlayer p;
+	MediaPlayer p;
 	p.create();
 	p.start();
 	p.pause();
@@ -136,6 +137,7 @@ void test()
 	MediaRecorder r;
 	r.create();
 	r.start();
+
 	r.pause();
 	r.stop();
 	r.destroy();
