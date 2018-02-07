@@ -142,7 +142,7 @@ extern "C" {
  * @param[in] node node to be added
  * @param[in] queue queue
  * @return none
- * @since Tizen RT v1.0
+ * @since TizenRT v1.0
  */
 void sq_addfirst(FAR sq_entry_t *node, FAR sq_queue_t *queue);
 /**
@@ -151,7 +151,7 @@ void sq_addfirst(FAR sq_entry_t *node, FAR sq_queue_t *queue);
  * @param[in] node node to be added
  * @param[in] queue queue
  * @return none
- * @since Tizen RT v1.0
+ * @since TizenRT v1.0
  */
 void dq_addfirst(FAR dq_entry_t *node, FAR dq_queue_t *queue);
 /**
@@ -160,7 +160,7 @@ void dq_addfirst(FAR dq_entry_t *node, FAR dq_queue_t *queue);
  * @param[in] node node to be added
  * @param[in] queue queue
  * @return none
- * @since Tizen RT v1.0
+ * @since TizenRT v1.0
  */
 void sq_addlast(FAR sq_entry_t *node, FAR sq_queue_t *queue);
 /**
@@ -169,7 +169,7 @@ void sq_addlast(FAR sq_entry_t *node, FAR sq_queue_t *queue);
  * @param[in] node node to be added
  * @param[in] queue queue
  * @return none
- * @since Tizen RT v1.0
+ * @since TizenRT v1.0
  */
 void dq_addlast(FAR dq_entry_t *node, FAR dq_queue_t *queue);
 /**
@@ -178,7 +178,7 @@ void dq_addlast(FAR dq_entry_t *node, FAR dq_queue_t *queue);
  * @param[in] node node to be added
  * @param[in] queue queue
  * @return none
- * @since Tizen RT v1.0
+ * @since TizenRT v1.0
  */
 void sq_addafter(FAR sq_entry_t *prev, FAR sq_entry_t *node, FAR sq_queue_t *queue);
 /**
@@ -188,7 +188,7 @@ void sq_addafter(FAR sq_entry_t *prev, FAR sq_entry_t *node, FAR sq_queue_t *que
  * @param[in] node node to be added
  * @param[in] queue queue
  * @return none
- * @since Tizen RT v1.0
+ * @since TizenRT v1.0
  */
 void dq_addafter(FAR dq_entry_t *prev, FAR dq_entry_t *node, FAR dq_queue_t *queue);
 /**
@@ -198,7 +198,7 @@ void dq_addafter(FAR dq_entry_t *prev, FAR dq_entry_t *node, FAR dq_queue_t *que
  * @param[in] node node to be added
  * @param[in] queue queue
  * @return none
- * @since Tizen RT v1.0
+ * @since TizenRT v1.0
  */
 void dq_addbefore(FAR dq_entry_t *next, FAR dq_entry_t *node, FAR dq_queue_t *queue);
 
@@ -208,7 +208,7 @@ void dq_addbefore(FAR dq_entry_t *next, FAR dq_entry_t *node, FAR dq_queue_t *qu
  * @param[in] node node to be removed
  * @param[in] queue queue
  * @return a reference to the removed entry
- * @since Tizen RT v1.0
+ * @since TizenRT v1.0
  */
 FAR sq_entry_t *sq_remafter(FAR sq_entry_t *node, FAR sq_queue_t *queue);
 /**
@@ -217,7 +217,7 @@ FAR sq_entry_t *sq_remafter(FAR sq_entry_t *node, FAR sq_queue_t *queue);
  * @param[in] node node to be removed
  * @param[in] queue queue
  * @return void
- * @since Tizen RT v1.0
+ * @since TizenRT v1.0
  */
 void sq_rem(FAR sq_entry_t *node, FAR sq_queue_t *queue);
 /**
@@ -226,7 +226,7 @@ void sq_rem(FAR sq_entry_t *node, FAR sq_queue_t *queue);
  * @param[in] node node to be removed
  * @param[in] queue queue
  * @return void
- * @since Tizen RT v1.0
+ * @since TizenRT v1.0
  */
 void dq_rem(FAR dq_entry_t *node, FAR dq_queue_t *queue);
 /**
@@ -234,7 +234,7 @@ void dq_rem(FAR dq_entry_t *node, FAR dq_queue_t *queue);
  * @details @b #include <queue.h>
  * @param[in] queue singly-linked queue
  * @return node to be removed
- * @since Tizen RT v1.0
+ * @since TizenRT v1.0
  */
 FAR sq_entry_t *sq_remlast(FAR sq_queue_t *queue);
 /**
@@ -242,7 +242,7 @@ FAR sq_entry_t *sq_remlast(FAR sq_queue_t *queue);
  * @details @b #include <queue.h>
  * @param[in] queue singly-linked queue
  * @return node to be removed
- * @since Tizen RT v1.0
+ * @since TizenRT v1.0
  */
 FAR dq_entry_t *dq_remlast(FAR dq_queue_t *queue);
 /**
@@ -250,7 +250,7 @@ FAR dq_entry_t *dq_remlast(FAR dq_queue_t *queue);
  * @details @b #include <queue.h>
  * @param[in] queue singly-linked queue
  * @return node to be removed
- * @since Tizen RT v1.0
+ * @since TizenRT v1.0
  */
 FAR sq_entry_t *sq_remfirst(FAR sq_queue_t *queue);
 /**
@@ -258,7 +258,7 @@ FAR sq_entry_t *sq_remfirst(FAR sq_queue_t *queue);
  * @details @b #include <queue.h>
  * @param[in] queue singly-linked queue
  * @return node to be removed
- * @since Tizen RT v1.0
+ * @since TizenRT v1.0
  */
 FAR dq_entry_t *dq_remfirst(FAR dq_queue_t *queue);
 

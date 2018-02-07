@@ -416,7 +416,7 @@ extern "C" {
  * @param[in] src source to create accept key.
  * @param[in] slen source buffer length.
  * @return none
- * @since Tizen RT v1.0
+ * @since TizenRT v1.0
  */
 void websocket_create_accept_key(unsigned char *dst, size_t dlen, const unsigned char *src, size_t slen);
 
@@ -424,7 +424,7 @@ void websocket_create_accept_key(unsigned char *dst, size_t dlen, const unsigned
  * @brief websocket_count_table() returns amount of working websocket server.
  * @param[in] none.
  * @return return amount of working websocket server
- * @since Tizen RT v1.0
+ * @since TizenRT v1.0
  */
 int websocket_count_table(void);
 
@@ -435,7 +435,7 @@ int websocket_count_table(void);
  *        The maximum number of client that websocket can handle is defined WEBSOCKET_MAX_CLIENT.
  * @param[in] none.
  * @return On success, return websocket_t *. On failure, return NULL.
- * @since Tizen RT v1.0
+ * @since TizenRT v1.0
  */
 websocket_t *websocket_find_table(void);
 
@@ -450,7 +450,7 @@ websocket_t *websocket_find_table(void);
  * @param[in] port websocket server port number. usually 80 is normal websocket, 443 is secured websocket.
  * @param[in] path uri path.
  * @return On success, return WEBSOCKET_SUCCESS. On failure, return values defined in websocket_return_t.
- * @since Tizen RT v1.0
+ * @since TizenRT v1.0
  */
 websocket_return_t websocket_client_open(websocket_t *client, char *addr, char *port, char *path);
 
@@ -463,7 +463,7 @@ websocket_return_t websocket_client_open(websocket_t *client, char *addr, char *
  * @param[in] server websocket strucutre manages file descriptor, websocket context and TLS context.
  *               users must give a pointer of websocket callback structure in websocket_t *server
  * @return On success, return WEBSOCKET_SUCCESS. On failure, return values defined in websocket_return_t.
- * @since Tizen RT v1.0
+ * @since TizenRT v1.0
  */
 websocket_return_t websocket_server_open(websocket_t *server);
 
@@ -475,7 +475,7 @@ websocket_return_t websocket_server_open(websocket_t *server);
  * @param[in] server websocket structure manages file descriptor, websocket context and TLS context.
  *               users must give a pointer of websocket callback structure in websocket_t *server
  * @return On success, return WEBSOCKET_SUCCESS. On failure, return values defined in websocket_return_t.
- * @since Tizen RT v1.0
+ * @since TizenRT v1.0
  */
 websocket_return_t websocket_server_init(websocket_t *server);
 
@@ -487,7 +487,7 @@ websocket_return_t websocket_server_init(websocket_t *server);
  * @param[in] websocket websocket structure to store callbacks.
  * @param[in] cb callbacks structure pointer to change
  * @return On success, return WEBSOCKET_SUCCESS. On failure, return values defined in websocket_return_t.
- * @since Tizen RT v1.0
+ * @since TizenRT v1.0
  */
 websocket_return_t websocket_register_cb(websocket_t *websocket, websocket_cb_t *cb);
 
@@ -498,7 +498,7 @@ websocket_return_t websocket_register_cb(websocket_t *websocket, websocket_cb_t 
  * @param[in] ctx message queue is in websocket context
  * @param[in] frame message frame to be sent
  * @return On success return WEBSOCKET_SUCCESS, On failure return values defined in websocket_return_t
- * @since Tizen RT v1.0
+ * @since TizenRT v1.0
  */
 websocket_return_t websocket_queue_msg(websocket_t *websocket, websocket_frame_t *tx_frame);
 
@@ -510,7 +510,7 @@ websocket_return_t websocket_queue_msg(websocket_t *websocket, websocket_frame_t
  *        and sending through socket file descriptor.
  * @param[in] websocket websocket structure manages websocket context.
  * @return On success, return WEBSOCKET_SUCCESS. On failure, return values defined in websocket_return_t.
- * @since Tizen RT v1.0
+ * @since TizenRT v1.0
  */
 websocket_return_t websocket_queue_ping(websocket_t *websocket);
 
@@ -523,7 +523,7 @@ websocket_return_t websocket_queue_ping(websocket_t *websocket);
  * @param[in] websocket websocket structure manages websocket context.
  * @param[in] close_message close message to be sent.
  * @return On success, return WEBSOCKET_SUCCESS. On failure, return values defined in websocket_return_t.
- * @since Tizen RT v1.0
+ * @since TizenRT v1.0
  */
 websocket_return_t websocket_queue_close(websocket_t *websocket, const char *close_message);
 
@@ -535,7 +535,7 @@ websocket_return_t websocket_queue_close(websocket_t *websocket, const char *clo
  * @param[in] websocket websocket structure.
  * @param[in] state websocket state.
  * @return On success, return WEBSOCKET_SUCCESS. On failure, return values defined in websocket_return_t.
- * @since Tizen RT v1.0
+ * @since TizenRT v1.0
  */
 websocket_return_t websocket_update_state(websocket_t *websocket, int state);
 
@@ -547,7 +547,7 @@ websocket_return_t websocket_update_state(websocket_t *websocket, int state);
  * @param[in] websocket websocket structure manages websocket context.
  * @param[in] val error value to be set.
  * @return On success, return WEBSOCKET_SUCCESS. On failure, return values defined in websocket_return_t.
- * @since Tizen RT v1.0
+ * @since TizenRT v1.0
  */
 websocket_return_t websocket_set_error(websocket_t *websocket, int val);
 

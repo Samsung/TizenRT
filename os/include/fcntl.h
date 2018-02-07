@@ -199,7 +199,7 @@ extern "C" {
  * @details @b #include <fcntl.h> \n
  * SYSTEM CALL API \n
  * POSIX API (refer to : http://pubs.opengroup.org/onlinepubs/9699919799/)
- * @since Tizen RT v1.0
+ * @since TizenRT v1.0
  */
 int open(const char *path, int oflag, ...);
 /**
@@ -208,7 +208,7 @@ int open(const char *path, int oflag, ...);
  * @details @b #include <fcntl.h> \n
  * SYSTEM CALL API \n
  * POSIX API (refer to : http://pubs.opengroup.org/onlinepubs/9699919799/)
- * @since Tizen RT v1.0
+ * @since TizenRT v1.0
  */
 int fcntl(int fd, int cmd, ...);
 

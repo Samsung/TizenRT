@@ -210,7 +210,7 @@ struct http_server_t {
  * @param[in] port number of port that executes the webserver.
  * @return On success, address of created struct http_server_t is returned.
  *         On failure, NULL is returned.
- * @since Tizen RT v1.0
+ * @since TizenRT v1.0
  */
 struct http_server_t *http_server_init(int port);
 
@@ -220,7 +220,7 @@ struct http_server_t *http_server_init(int port);
  * @param[in] server http_server_t structure pointer returned by http_server_init().
  * @return On success, HTTP_OK(0) is returned.
  *         On failure, HTTP_ERROR(-1) is returned.
- * @since Tizen RT v1.0
+ * @since TizenRT v1.0
  */
 int http_server_start(struct http_server_t *server);
 
@@ -231,7 +231,7 @@ int http_server_start(struct http_server_t *server);
  * @param[in] server pointer of the webserver to be stopped.
  * @return On success, HTTP_OK(0) is returned.
  *         On failure, HTTP_ERROR(-1) is returned.
- * @since Tizen RT v1.0
+ * @since TizenRT v1.0
  */
 int http_server_stop(struct http_server_t *server);
 
@@ -240,7 +240,7 @@ int http_server_stop(struct http_server_t *server);
  *
  * @param[in] server http_server_t structure pointer of the webserver.
  * @return none
- * @since Tizen RT v1.0
+ * @since TizenRT v1.0
  */
 void http_server_release(struct http_server_t **server);
 
@@ -257,7 +257,7 @@ void http_server_release(struct http_server_t **server);
  * @param[in] func pointer of the callback function.
  * @return On success, HTTP_OK(0) is returned.
  *         On failure, HTTP_ERROR(-1) is returned.
- * @since Tizen RT v1.0
+ * @since TizenRT v1.0
  */
 int http_server_register_cb(struct http_server_t *server, int method, const char *url_format, http_cb_t func);
 
@@ -273,7 +273,7 @@ int http_server_register_cb(struct http_server_t *server, int method, const char
  * @param[in] url_format url to deregister cb.
  * @return On success, HTTP_OK(0) is returned.
  *         On failure, HTTP_ERROR(-1) is returned.
- * @since Tizen RT v1.0
+ * @since TizenRT v1.0
  */
 int http_server_deregister_cb(struct http_server_t *server, int method, const char *url_format);
 
@@ -288,7 +288,7 @@ int http_server_deregister_cb(struct http_server_t *server, int method, const ch
  * @param[in] headers HTTP headers of a response.
  * @return On success, HTTP_OK(0) is returned.
  *         On failure, HTTP_ERROR(-1) is returned.
- * @since Tizen RT v1.0
+ * @since TizenRT v1.0
  */
 int http_send_response(struct http_client_t *client, int status, const char *body, struct http_keyvalue_list_t *headers);
 
@@ -300,7 +300,7 @@ int http_send_response(struct http_client_t *client, int status, const char *bod
  * @param[in] ssl_config ssl_config_t structure pointer of the certification.
  * @return On success, HTTP_OK(0) is returned.
  *         On failure, HTTP_ERROR(-1) is returned.
- * @since Tizen RT v1.0
+ * @since TizenRT v1.0
  */
 int http_tls_init(struct http_server_t *server, struct ssl_config_t *ssl_config);
 #endif

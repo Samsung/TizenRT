@@ -169,7 +169,7 @@ typedef struct {
  * @details @b #include <wifi_manager/wifi_manager.h>
  * @param[in] callback functions called when wi-fi events happen
  * @return On success, WIFI_MANAGER_SUCCESS (i.e., 0) is returned. On failure, non-zero value is returned.
- * @since Tizen RT v1.1
+ * @since TizenRT v1.1
  */
 wifi_manager_result_e wifi_manager_init(wifi_manager_cb_s *wmcb);
 
@@ -178,7 +178,7 @@ wifi_manager_result_e wifi_manager_init(wifi_manager_cb_s *wmcb);
  * @details @b #include <wifi_manager/wifi_manager.h>
  * @param[in] none
  * @return On success, WIFI_MANAGER_SUCCESS (i.e., 0) is returned. On failure, non-zero value is returned.
- * @since Tizen RT v1.1
+ * @since TizenRT v1.1
  */
 wifi_manager_result_e wifi_manager_deinit(void);
 
@@ -188,7 +188,7 @@ wifi_manager_result_e wifi_manager_deinit(void);
  * @param[in] Wi-Fi mode (station or AP)
  * @param[in] In case of AP mode, AP configuration infomation should be given including ssid, channel, and passphrase.
  * @return On success, WIFI_MANAGER_SUCCESS (i.e., 0) is returned. On failure, non-zero value is returned.
- * @since Tizen RT v1.1
+ * @since TizenRT v1.1
  */
 wifi_manager_result_e wifi_manager_set_mode(wifi_manager_mode_e mode, wifi_manager_softap_config_s *config);
 
@@ -197,7 +197,7 @@ wifi_manager_result_e wifi_manager_set_mode(wifi_manager_mode_e mode, wifi_manag
  * @details @b #include <wifi_manager/wifi_manager.h>
  * @param[out] retrieved information including  mode, connection status, ssid, received signal strengh indication, and ip address.
  * @return On success, WIFI_MANAGER_SUCCESS (i.e., 0) is returned. On failure, non-zero value is returned.
- * @since Tizen RT v1.1
+ * @since TizenRT v1.1
  */
 wifi_manager_result_e wifi_manager_get_info(wifi_manager_info_s *info);
 
@@ -206,7 +206,7 @@ wifi_manager_result_e wifi_manager_get_info(wifi_manager_info_s *info);
  * @details @b #include <wifi_manager/wifi_manager.h>
  * @param[in] ssid, passphrase, authentication type, and cryto type of the access point which the wi-fi interface connect to.
  * @return On success, WIFI_MANAGER_SUCCESS (i.e., 0) is returned. On failure, non-zero value is returned.
- * @since Tizen RT v1.1
+ * @since TizenRT v1.1
  */
 wifi_manager_result_e wifi_manager_connect_ap(wifi_manager_ap_config_s *config);
 
@@ -215,7 +215,7 @@ wifi_manager_result_e wifi_manager_connect_ap(wifi_manager_ap_config_s *config);
  * @details @b #include <wifi_manager/wifi_manager.h>
  * @param[in] none
  * @return On success, WIFI_MANAGER_SUCCESS (i.e., 0) is returned. On failure, non-zero value is returned.
- * @since Tizen RT v1.1
+ * @since TizenRT v1.1
  */
 wifi_manager_result_e wifi_manager_disconnect_ap(void);
 
@@ -224,7 +224,7 @@ wifi_manager_result_e wifi_manager_disconnect_ap(void);
  * @details @b #include <wifi_manager/wifi_manager.h>
  * @param[in] none
  * @return On success, WIFI_MANAGER_SUCCESS (i.e., 0) is returned. On failure, non-zero value is returned.
- * @since Tizen RT v1.1
+ * @since TizenRT v1.1
  */
 wifi_manager_result_e wifi_manager_scan_ap(void);
 
@@ -233,7 +233,7 @@ wifi_manager_result_e wifi_manager_scan_ap(void);
  * @details @b #include <wifi_manager/wifi_manager.h>
  * @param[in] config AP configuration infomation should be given including ssid, channel, and passphrase.
  * @return On success, WIFI_MANAGER_SUCCESS (i.e., 0) is returned. On failure, non-zero value is returned.
- * @since Tizen RT v1.x
+ * @since TizenRT v1.x
  */
 wifi_manager_result_e wifi_manager_save_config(wifi_manager_ap_config_s *config);
 
@@ -242,7 +242,7 @@ wifi_manager_result_e wifi_manager_save_config(wifi_manager_ap_config_s *config)
  * @details @b #include <wifi_manager/wifi_manager.h>
  * @param[in] config The pointer of AP configuration infomation which will be filled
  * @return On success, WIFI_MANAGER_SUCCESS (i.e., 0) is returned. On failure, non-zero value is returned.
- * @since Tizen RT v1.x
+ * @since TizenRT v1.x
  */
 
 wifi_manager_result_e wifi_manager_get_config(wifi_manager_ap_config_s *config);
@@ -251,7 +251,7 @@ wifi_manager_result_e wifi_manager_get_config(wifi_manager_ap_config_s *config);
  * @brief Remove the AP configuration which was saved
  * @details @b #include <wifi_manager/wifi_manager.h>
  * @return On success, WIFI_MANAGER_SUCCESS (i.e., 0) is returned. On failure, non-zero value is returned.
- * @since Tizen RT v1.x
+ * @since TizenRT v1.x
  */
 wifi_manager_result_e wifi_manager_remove_config(void);
 

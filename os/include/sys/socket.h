@@ -98,7 +98,7 @@ extern "C" {
 * @param[in] type  the type of socket to be created
 * @param[in] protocol the protocol to be used with the socket
 * @return On success, a non negative integer is returned. On failure, -1 is returned.
-* @since Tizen RT v1.0
+* @since TizenRT v1.0
 */
 int socket(int domain, int type, int protocol);
 
@@ -112,7 +112,7 @@ int socket(int domain, int type, int protocol);
 * @param[in] addr  pointer to a sockaddr structure containing the address to be bound to the socket
 * @param[in] addrlen the length of the sockaddr structure
 * @return On success, 0 is returned. On failure, -1 is returned.
-* @since Tizen RT v1.0
+* @since TizenRT v1.0
 */
 int bind(int sockfd, FAR const struct sockaddr *addr, socklen_t addrlen);
 
@@ -126,7 +126,7 @@ int bind(int sockfd, FAR const struct sockaddr *addr, socklen_t addrlen);
 * @param[in] addr  pointer to a sockaddr structure containing the peer address
 * @param[in] addrlen the length of the sockaddr structure
 * @return On success, 0 is returned. On failure, -1 is returned.
-* @since Tizen RT v1.0
+* @since TizenRT v1.0
 */
 int connect(int sockfd, FAR const struct sockaddr *addr, socklen_t addrlen);
 
@@ -139,7 +139,7 @@ int connect(int sockfd, FAR const struct sockaddr *addr, socklen_t addrlen);
 * @param[in] sockfd the file descriptor associated with the socket.
 * @param[in] backlog  the number of outstanding connections in the socket's listen queue
 * @return On success, 0 is returned. On failure, -1 is returned.
-* @since Tizen RT v1.0
+* @since TizenRT v1.0
 */
 int listen(int sockfd, int backlog);
 
@@ -153,7 +153,7 @@ int listen(int sockfd, int backlog);
 * @param[inout] addr  null or pointer to a sockaddr structure where the address of the connecting socket will be returned
 * @param[inout] addrlen on input specifies the length of the supplied sockaddr structure, and on output specifies the length of the stored address.
 * @return On success, 0 is returned. On failure, -1 is returned.
-* @since Tizen RT v1.0
+* @since TizenRT v1.0
 */
 int accept(int sockfd, struct sockaddr *addr, socklen_t *addrlen);
 
@@ -168,7 +168,7 @@ int accept(int sockfd, struct sockaddr *addr, socklen_t *addrlen);
 * @param[in] len the length of the message in bytes.
 * @param[in] flags the type of message transmission
 * @return On success, returns the number of bytes sent, On failure, -1 is returned.
-* @since Tizen RT v1.0
+* @since TizenRT v1.0
 */
 ssize_t send(int sockfd, FAR const void *buf, size_t len, int flags);
 /**
@@ -184,7 +184,7 @@ ssize_t send(int sockfd, FAR const void *buf, size_t len, int flags);
 * @param[in] to pointer to a sockaddr structure containing the destination address
 * @param[in] tolen  the length of the sockaddr structure
 * @return On success, returns the number of bytes sent, On failure, -1 is returned.
-* @since Tizen RT v1.0
+* @since TizenRT v1.0
 */
 ssize_t sendto(int sockfd, FAR const void *buf, size_t len, int flags, FAR const struct sockaddr *to, socklen_t tolen);
 
@@ -199,7 +199,7 @@ ssize_t sendto(int sockfd, FAR const void *buf, size_t len, int flags, FAR const
 * @param[out] len the length in bytes of the buffer
 * @param[in] flags the type of message reception.
 * @return On success, returns  the length of the message in bytes, On failure, -1 is returned.
-* @since Tizen RT v1.0
+* @since TizenRT v1.0
 */
 ssize_t recv(int sockfd, FAR void *buf, size_t len, int flags);
 
@@ -216,7 +216,7 @@ ssize_t recv(int sockfd, FAR void *buf, size_t len, int flags);
 * @param[inout] from  A null pointer, or pointer to  sockaddr structure in which the sending address is to be stored
 * @param[inout] fromlen  null or the length of the sockaddr structure
 * @return On success, returns the length of the message in bytes, On failure, -1 is returned.
-* @since Tizen RT v1.0
+* @since TizenRT v1.0
 */
 ssize_t recvfrom(int sockfd, FAR void *buf, size_t len, int flags, FAR struct sockaddr *from, FAR socklen_t *fromlen);
 
@@ -229,7 +229,7 @@ ssize_t recvfrom(int sockfd, FAR void *buf, size_t len, int flags, FAR struct so
 * @param[in] sockfd the file descriptor of the socket
 * @param[in] how the type of shutdown
 * @return On success, 0 is returned. On failure, -1 is returned.
-* @since Tizen RT v1.0
+* @since TizenRT v1.0
 */
 int shutdown(int sockfd, int how);
 
@@ -239,7 +239,7 @@ int shutdown(int sockfd, int how);
 *
 * @param[in] s the file descriptor of the socket
 * @return On success, 0 is returned. On failure, -1 is returned.
-* @since Tizen RT v1.0
+* @since TizenRT v1.0
 * @internal
 */
 int closesocket(int s);
@@ -257,7 +257,7 @@ int closesocket(int s);
 * @param[in] value pointer to value of the option
 * @param[in] value_len the length of the value
 * @return On success, 0 is returned. On failure, -1 is returned.
-* @since Tizen RT v1.0
+* @since TizenRT v1.0
 */
 int setsockopt(int sockfd, int level, int option, FAR const void *value, socklen_t value_len);
 
@@ -273,7 +273,7 @@ int setsockopt(int sockfd, int level, int option, FAR const void *value, socklen
 * @param[out] value pointer to value of the option retrieved
 * @param[out] value_len the length of the value retrieved
 * @return On success, 0 is returned. On failure, -1 is returned.
-* @since Tizen RT v1.0
+* @since TizenRT v1.0
 */
 int getsockopt(int sockfd, int level, int option, FAR void *value, FAR socklen_t *value_len);
 /**
@@ -285,7 +285,7 @@ int getsockopt(int sockfd, int level, int option, FAR void *value, FAR socklen_t
 * @param[inout] addr  null or pointer to a sockaddr structure where the address of the local socket will be returned
 * @param[inout] addrlen on input specifies the length of the supplied sockaddr structure, and on output specifies the length of the stored address.
 * @return On success, 0 is returned. On failure, -1 is returned.
-* @since Tizen RT v1.0
+* @since TizenRT v1.0
 */
 int getsockname(int sockfd, FAR struct sockaddr *addr, FAR socklen_t *addrlen);
 
@@ -298,7 +298,7 @@ int getsockname(int sockfd, FAR struct sockaddr *addr, FAR socklen_t *addrlen);
 * @param[inout] name  null or pointer to a sockaddr structure where the address of the peer socket will be returned
 * @param[inout] namelen on input specifies the length of the supplied sockaddr structure, and on output specifies the length of the stored address.
 * @return On success, 0 is returned. On failure, -1 is returned.
-* @since Tizen RT v1.0
+* @since TizenRT v1.0
 */
 int getpeername(int s, struct sockaddr *name, socklen_t *namelen);
 

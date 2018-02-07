@@ -6,7 +6,7 @@ Adding static library or expanding driver will be provided later.
 ## Arch
 
 Changes in *arch* directory for a new board includes chip architecture and BSP for board.  
-Currently, Tizen RT supports only ARM architecture.  
+Currently, TizenRT supports only ARM architecture.  
 But if new board is another architecture, new architecture folder should be added in this path.
 
 ### BSP
@@ -97,7 +97,7 @@ mkdir build/configs/<board-name>/<program-name>
 ### defconfig
 
 This is a configurations set of representing folder name.  
-This is moved to .config at executing configure.sh and used to build Tizen RT.
+This is moved to .config at executing configure.sh and used to build TizenRT.
 
 ### Make.defs
 

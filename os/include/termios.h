@@ -328,7 +328,7 @@ int tcflush(int fd, int cmd);
  * @brief get the parameters associated with the terminal
  * @details @b #include <termios.h> \n
  * POSIX API (refer to : http://pubs.opengroup.org/onlinepubs/9699919799/)
- * @since Tizen RT v1.0
+ * @since TizenRT v1.0
  */
 int tcgetattr(int fd, FAR struct termios *termiosp);
 
@@ -354,7 +354,7 @@ int tcsendbreak(int fd, int duration);
  * @brief set the parameters associated with the terminal
  * @details @b #include <termios.h> \n
  * POSIX API (refer to : http://pubs.opengroup.org/onlinepubs/9699919799/)
- * @since Tizen RT v1.0
+ * @since TizenRT v1.0
  */
 int tcsetattr(int fd, int options, FAR const struct termios *termiosp);
 

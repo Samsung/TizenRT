@@ -123,7 +123,7 @@ extern "C" {
  *     EFAULT optional arg1 is not a valid address.
  *     ESRCH  No task/thread can be found corresponding to that specified
  *       by optional arg1.
- * @since Tizen RT v1.0
+ * @since TizenRT v1.0
  */
 int prctl(int option, ...);
 
