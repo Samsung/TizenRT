@@ -58,11 +58,9 @@
 #include <errno.h>
 #include <tinyara/board.h>
 #include <chip/s5j_memorymap.h>
+#include <tinyara/version.h>
 
-
-#define CRASHDUMP_COMMON_START_MAGIC		0x49545241   //ARTI
-#define CRASHDUMP_RAM_DUMP_START_MAGIC		0x4D41524B   //KRAM
-#define CRASHDUMP_REG_DUMP_START_MAGIC		0x4745524B   //KREG
+#define CRASHDUMP_COMMON_START_MAGIC		0x4B545241   //ARTK
 #define CRASHDUMP_COMMON_END_MAGIC			0x454E4F44   //DONE
 #define CRASHDUMP_MAGIC_LEN					4
 
@@ -71,6 +69,9 @@
 
 #define CRASHDUMO_START_ADDR				(CRASHDUMP_PARTITION_START_ADDR + 16)
 
+#define MAX_COMMIT_LEN	41
+#define MAX_BUILD_TIME	20
+#define MAX_FILE_NAME	32
 
 
 struct arm_mode_regs_s {
@@ -127,15 +128,14 @@ struct arm_mode_regs_s {
 	uint32_t spsr_und;
 };
 
-typedef enum {
+enum dump_flags_t {
 	PRESENT_DUMP_INFO	= 0x01,
 	PRESENT_BIN_INFO	= 0x02,
 	PRESENT_REGS		= 0x04,
 	PRESENT_STACK		= 0x08,
 	PRESENT_TCB			= 0x10,
 	PRESENT_RAM			= 0x20,
-} dump_flags_t;
-
+};
 
 struct dump_header_s {
 	uint32_t	magic;
@@ -155,14 +155,68 @@ struct dump_info_s {
 	uint32_t dfsr;
 };
 
-#ifdef CONFIG_BOARD_CRASHDUMP
+struct dump_bin_info_s {
+	char commit[MAX_COMMIT_LEN];
+	char buildtime[MAX_BUILD_TIME];
+	char file_name[MAX_FILE_NAME];
+	int lineno;
+} __attribute__ ((packed));
+
+struct dump_task_info_s {
+	pid_t		pid;
+	char		name[CONFIG_TASK_NAME_SIZE + 1];
+	uint32_t	sched_priority;
+#ifdef CONFIG_PRIORITY_INHERITANCE
+	uint8_t		base_priority;
+#endif
+	uint8_t		task_state;
+	int32_t		errno_;
+	uint32_t	stack_size;
+	uint32_t	stack_used;
+} __attribute__ ((packed));
+
+#ifdef CONFIG_ARTIK05X_CRASHDUMP_REG
 extern struct arm_mode_regs_s cpu_ctxt_regs;	/* Global variable to store the register context */
 extern volatile uint32_t *current_regs;
+#endif
+
+#ifdef CONFIG_BOARD_CRASHDUMP
 extern uint32_t g_dfar;
 extern uint32_t g_dfsr;
 #endif
 
 #ifdef CONFIG_BOARD_CRASHDUMP
+#ifdef CONFIG_ARTIK05X_CRASHDUMP_TCB
+static void count_tcb(FAR struct tcb_s *tcb, FAR void *arg)
+{
+	uint32_t *count  = (uint32_t *)(arg);
+
+	(*count)++;
+}
+static void write_tcb(FAR struct tcb_s *tcb, FAR void *arg)
+{
+	uint32_t *addr = (uint32_t *)arg;
+	struct dump_task_info_s tinfo;
+
+	memset(tinfo.name, 0, sizeof(tinfo.name));
+
+	tinfo.pid = tcb->pid;
+	snprintf(tinfo.name, CONFIG_TASK_NAME_SIZE, "%s", tcb->name);
+	tinfo.sched_priority = tcb->sched_priority;
+#ifdef CONFIG_PRIORITY_INHERITANCE
+	tinfo.base_priority = tcb->base_priority;
+#endif
+	tinfo.task_state = tcb->task_state;
+	tinfo.stack_size = (uint32_t)(tcb->adj_stack_size);
+	tinfo.stack_used = (uint32_t)up_check_tcbstack(tcb);
+	tinfo.errno_ = tcb->pterrno;
+
+	s5j_direct_write((uint32_t)(*addr), &tinfo, sizeof(struct dump_task_info_s));
+
+	*addr += sizeof(struct dump_task_info_s);
+}
+#endif
+
 static int artik05x_dump_write(uint32_t addr, struct dump_data_s *data)
 {
 	s5j_direct_write(addr, &(data->h), sizeof(struct dump_header_s));
@@ -193,8 +247,27 @@ void board_crashdump(uint32_t currentsp, void *tcb, uint8_t *filename, int linen
 	info.dfar = g_dfar;
 	info.dfsr = g_dfsr;
 
-	info.flag = PRESENT_REGS;
+	info.flag = 0;
+#ifdef CONFIG_ARTIK05X_CRASHDUMP_BININFO
+	info.flag |= PRESENT_BIN_INFO;
+#endif
+
+#ifdef CONFIG_ARTIK05X_CRASHDUMP_REG
+	info.flag |= PRESENT_REGS;
+#endif
+
+#ifdef CONFIG_ARTIK05X_CRASHDUMP_STACK
+	info.flag |= PRESENT_STACK;
+#endif
+
+#ifdef CONFIG_ARTIK05X_CRASHDUMP_TCB
+	info.flag |= PRESENT_TCB;
+#endif
+
+#ifdef CONFIG_ARTIK05X_CRASHDUMP_RAM
 	info.flag |= PRESENT_RAM;
+#endif
+
 	data.h.len = sizeof(struct dump_info_s);
 
 	/*Write Crash dump information */
@@ -203,21 +276,33 @@ void board_crashdump(uint32_t currentsp, void *tcb, uint8_t *filename, int linen
 	data.data  = (uint32_t *) &info;
 	addr = artik05x_dump_write(addr, &data);
 
-	/*RAM dump to Flash */
-	lldbg("RAM DUMP to Flash....\n");
-	data.h.magic = CRASHDUMP_COMMON_START_MAGIC;
-	data.h.dump_flag = PRESENT_RAM;
-	data.h.len = CONFIG_RAM_SIZE;
-	data.data = (uint32_t *) CONFIG_RAM_START;
-	addr = artik05x_dump_write(addr, &data);
+#ifdef CONFIG_ARTIK05X_CRASHDUMP_BININFO
+	struct dump_bin_info_s bin_info;
 
-	/*Register dump to Flash */
+	lldbg("Bininfo to Flash....\n");
+
+	data.h.magic = CRASHDUMP_COMMON_START_MAGIC;
+	data.h.dump_flag = PRESENT_BIN_INFO;
+	data.h.len = sizeof(struct dump_bin_info_s);
+	data.data = (uint32_t *)&bin_info;
+
+	memset(&bin_info, 0, sizeof(struct dump_bin_info_s));
+
+	strncpy(bin_info.file_name, (FAR const char *)filename, sizeof(bin_info.file_name));
+	snprintf(bin_info.commit, sizeof(bin_info.commit), "%s", CONFIG_VERSION_BUILD);
+	snprintf(bin_info.buildtime, sizeof(bin_info.buildtime), "%s", CONFIG_VERSION_BUILD_TIME);
+	bin_info.lineno = lineno;
+
+	addr = artik05x_dump_write(addr, &data);
+#endif
+
+#ifdef CONFIG_ARTIK05X_CRASHDUMP_REG
 	lldbg("REG DUMP to Flash....\n");
 	data.h.magic = CRASHDUMP_COMMON_START_MAGIC;
 	data.h.dump_flag = PRESENT_REGS;
 
 	if (current_regs) {
-		data.h.len = REG_R15 * 4;
+		data.h.len = (REG_CPSR + 1) * 4;
 		data.data = (uint32_t *)current_regs;
 	} else {
 		data.h.len = sizeof(struct arm_mode_regs_s);
@@ -225,6 +310,76 @@ void board_crashdump(uint32_t currentsp, void *tcb, uint8_t *filename, int linen
 	}
 
 	addr = artik05x_dump_write(addr, &data);
+#endif
+
+#ifdef CONFIG_ARTIK05X_CRASHDUMP_STACK
+	lldbg("Stack DUMP to Flash....\n");
+	extern const uint32_t g_idle_topstack;
+
+	struct tcb_s *rtcb = (struct tcb_s *)tcb;
+	uint32_t ustackbase;
+	uint32_t ustacksize;
+	uint32_t sp;
+#ifdef CONFIG_MPU_STACKGUARD
+	uint32_t uguardsize = 0;
+#endif
+
+	data.h.magic = CRASHDUMP_COMMON_START_MAGIC;
+	data.h.dump_flag = PRESENT_STACK;
+
+	if (rtcb->pid == 0) {
+		ustackbase = g_idle_topstack - 4;
+		ustacksize = CONFIG_IDLETHREAD_STACKSIZE;
+	} else {
+		ustackbase = (uint32_t)rtcb->adj_stack_ptr;
+		ustacksize = (uint32_t)rtcb->adj_stack_size;
+#ifdef CONFIG_MPU_STACKGUARD
+		uguardsize = (uint32_t)rtcb->guard_size;
+#endif
+	}
+
+	sp  = currentsp  & ~0x1f;
+	data.h.len = 0;
+
+#ifdef CONFIG_MPU_STACKGUARD
+	if (sp > (ustackbase - ustacksize - uguardsize) && data.data < ustackbase) {
+#else
+	if (sp > ustackbase - ustacksize && sp < ustackbase) {
+#endif
+		data.h.len = ustackbase - sp;
+		data.data = (uint32_t *)sp;
+		addr = artik05x_dump_write(addr, &data);
+	}
+#endif
+
+#ifdef CONFIG_ARTIK05X_CRASHDUMP_TCB
+	uint32_t tcb_cnt = 0;
+
+	lldbg("TCB DUMP to Flash....\n");
+	data.h.magic = CRASHDUMP_COMMON_START_MAGIC;
+	data.h.dump_flag = PRESENT_TCB;
+
+	sched_foreach(count_tcb, &tcb_cnt);
+
+	data.h.len = tcb_cnt * sizeof(struct dump_task_info_s);
+
+	s5j_direct_write(addr, &(data.h), sizeof(struct dump_header_s));
+	addr += sizeof(struct dump_header_s);
+
+	sched_foreach(write_tcb, &addr);
+
+	s5j_direct_write(addr, &data.magic, CRASHDUMP_MAGIC_LEN);
+	addr += CRASHDUMP_MAGIC_LEN;
+#endif
+
+#ifdef CONFIG_ARTIK05X_CRASHDUMP_RAM
+	lldbg("RAM DUMP to Flash....\n");
+	data.h.magic = CRASHDUMP_COMMON_START_MAGIC;
+	data.h.dump_flag = PRESENT_RAM;
+	data.h.len = CONFIG_RAM_SIZE;
+	data.data = (uint32_t *) CONFIG_RAM_START;
+	addr = artik05x_dump_write(addr, &data);
+#endif
 
 	lldbg("Crash dump done\n");
 #ifdef CONFIG_S5J_WATCHDOG

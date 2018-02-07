@@ -164,6 +164,40 @@ config ARTIK05X_SLIP_DEVNAME
 		Specifies the device name (/dev/ttySX) of the serial for SLIP
 endif
 
+if BOARD_CRASHDUMP
+menu "ARTIK05X crash dump configuration"
+config ARTIK05X_CRASHDUMP_BININFO
+	bool "Enable binary information dump to flash"
+	default n
+	---help---
+		If selected it will save dump information to flash.
+
+config ARTIK05X_CRASHDUMP_REG
+	bool "Enable register dump to flash"
+	default n
+	---help---
+		If selected it will dump register to flash.
+
+config ARTIK05X_CRASHDUMP_STACK
+	bool "Enable stack dump to flash"
+	default n
+	---help---
+		If selected it will dump task stack to flash.
+
+config ARTIK05X_CRASHDUMP_TCB
+	bool "Enable TCB dump to flash"
+	default n
+	---help---
+		If selected it will dump the task information to flash.
+
+config ARTIK05X_CRASHDUMP_RAM
+	bool "Enable RAM dump to flash"
+	default n
+	---help---
+		If selected it will dump the RAM contents to flash.
+endmenu #ARTIK05X crash dump configuration
+endif
+
 config ARTIK05X_SECURE
     bool
     default n
