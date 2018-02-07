@@ -5,6 +5,7 @@ MediaPlayer::MediaPlayer()
 	qMtx = new mutex();
 	cMtx = new mutex();
 	curState = PLAYER_STATE_NONE;
+	worker = nullptr;
 }
 
 player_result_t MediaPlayer::create()  // sync call
@@ -13,7 +14,9 @@ player_result_t MediaPlayer::create()  // sync call
 	
 	isRunning = true;
 	worker = new thread(&MediaPlayer::worker_thread, this);
-	
+	enqueue([this](){_create(); });
+	cvStart.wait(lock);
+
 	return PLAYER_OK;
 }
 
@@ -21,7 +24,7 @@ player_result_t MediaPlayer::destroy() // sync call
 {
 	lock_guard<mutex> lock(*cMtx);
 
-	isRunning = false;
+	enqueue([this](){_destroy(); });
 	worker->join();
 	delete worker;
 	worker = nullptr;
@@ -83,6 +86,19 @@ player_state_t MediaPlayer::getState()
 	return curState;
 }
 
+void MediaPlayer::_create()
+{
+	unique_lock<mutex> lock(*cMtx);
+	std::cout << "Player create" << std::endl;
+	cvStart.notify_one();
+}
+
+void MediaPlayer::_destroy()
+{
+	std::cout << "Player destroy" << std::endl;
+	isRunning = false;
+}
+
 void MediaPlayer::_prepare()
 {	
 
@@ -111,19 +127,19 @@ MediaPlayer::~MediaPlayer()
 int MediaPlayer::worker_thread(void)
 {
 	while (isRunning)
-	{ 
+	{
 		unique_lock<mutex> lock(*qMtx);
 
 		if (cmdQueue.empty())
 		{
-			cv.wait(lock);
+			cvQueue.wait(lock);
 		}
 
 		std::function<void()> run = cmdQueue.front();
 		cmdQueue.pop();
 
 		run();
-	}	
+	}
 
 	return 0;
 }

@@ -57,12 +57,14 @@ private:
 		unique_lock<std::mutex> lock(*qMtx);
 		std::function<void()> func = std::bind(std::forward<_Callable>(__f), std::forward<_Args>(__args)...);	
 		cmdQueue.push(func);
-		cv.notify_one();
+		cvQueue.notify_one();
 	}
 	
 	thread *worker;
 	int worker_thread();
 
+	void _create();
+	void _destroy();
 	void _prepare();
 	void _start();
 	void _pause();
@@ -73,7 +75,8 @@ private:
 	mutex *cMtx; // command mutex
 	mutex *qMtx; // queue mutex
 
-	std::condition_variable cv;
+	std::condition_variable cvQueue;
+	std::condition_variable cvStart;
 	std::queue<std::function<void()>> cmdQueue;
 
 	bool isRunning;
