@@ -1,3 +1,6 @@
+#ifndef __MEIDAFRAMEWORK_MEDIAPLAYER_HPP
+#define __MEIDAFRAMEWORK_MEDIAPLAYER_HPP
+
 #include <thread>
 #include <mutex>
 #include <condition_variable>
@@ -18,13 +21,13 @@ typedef enum player_state_e
 	PLAYER_STATE_READY,
 	PLAYER_STATE_PLAYING,
 	PLAYER_STATE_PAUSED
-} play_state_t;
+} player_state_t;
 
 typedef enum player_result_e
 {
 	PLAYER_ERROR,
 	PLAYER_OK
-} play_result_t;
+} player_result_t;
 
 class MediaPlayer
 {
@@ -32,18 +35,20 @@ public:
 	MediaPlayer();
 	~MediaPlayer();
 	
-	play_result_t create();
-	play_result_t destroy();
+	player_result_t create();
+	player_result_t destroy();
 	
-	play_result_t prepare();
-	play_result_t start();
-	play_result_t pause();
-	play_result_t stop();
+	player_result_t prepare();
+	player_result_t start();
+	player_result_t pause();
+	player_result_t stop();
 
-	play_result_t getVolume() const;
+	player_result_t getVolume() const;
 	void setVolume(int vol);
 
 	void setDataSource(DataSource dataSource);
+
+	player_state_t getState();
 
 private:
 	template<typename _Callable, typename... _Args>
@@ -64,7 +69,7 @@ private:
 	void _stop();
 
 private:
-	play_state_t curState;
+	player_state_t curState;
 	mutex *cMtx; // command mutex
 	mutex *qMtx; // queue mutex
 
@@ -75,3 +80,5 @@ private:
 	int curVolume;
 
 };
+
+#endif

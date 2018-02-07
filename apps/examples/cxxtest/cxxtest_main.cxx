@@ -130,14 +130,15 @@ void test()
 	MediaPlayer p;
 	p.create();
 	p.start();
-	p.pause();	
+	p.pause();
 	p.stop();
 	p.destroy();
 
 	MediaRecorder r;
 	r.create();
 	r.start();
-	r.pause();	
+
+	r.pause();
 	r.stop();
 	r.destroy();
 }
