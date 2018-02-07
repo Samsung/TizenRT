@@ -29,7 +29,7 @@ namespace Media
 	{
 		lock_guard<mutex> lock(*cMtx);
 
-		isRunning = false;
+		enqueue([this](){_destroy(); });
 		worker->join();
 		delete worker;
 
@@ -97,7 +97,7 @@ namespace Media
 	}
 
 	void MediaRecorder::_prepare()
-	{
+	{		
 		std::cout << "prepare recording" << std::endl;			
 	}
 
@@ -111,8 +111,15 @@ namespace Media
 		config.rate = sampleRate;
 		config.format = (pcm_format)pcmFormat;
 
+		//cardnum,  getDeviceCard
 		pcmIn = pcm_open(0, 0, PCM_IN, &config);		
 		cvStart.notify_one();
+	}
+
+	void MediaRecorder::_destroy()
+	{
+		std::cout << "destroy Recorder" << std::endl;
+		isRunning = false;
 	}
 
 	void MediaRecorder::_start()
