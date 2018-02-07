@@ -317,6 +317,8 @@ bool try_turn_on_soft_ap()
 	wifi_manager_info_s info;
 	wifi_manager_get_info(&info);
 
+	wifi_manager_remove_config();
+
 	if (info.mode != SOFTAP_MODE) {
 		wifi_manager_softap_config_s *ap_config = dm_get_softap_wifi_config();
 		if (wifi_manager_set_mode(SOFTAP_MODE, ap_config) != WIFI_MANAGER_SUCCESS) {
