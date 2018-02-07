@@ -1144,7 +1144,7 @@ int pcm_stop(struct pcm *pcm)
 
 	/* Remove any pending messages from the message queue */
 	struct audio_msg_s msg;
-	unsigned int size;
+	int size;
 	int prio;
 	struct timespec st_time;
 	do {
