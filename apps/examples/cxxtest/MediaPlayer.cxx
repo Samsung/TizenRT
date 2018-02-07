@@ -7,7 +7,7 @@ MediaPlayer::MediaPlayer()
 	curState = PLAYER_STATE_NONE;
 }
 
-play_result_t MediaPlayer::create()  // sync call
+player_result_t MediaPlayer::create()  // sync call
 {
 	lock_guard<mutex> lock(*cMtx);
 	
@@ -17,7 +17,7 @@ play_result_t MediaPlayer::create()  // sync call
 	return PLAYER_OK;
 }
 
-play_result_t MediaPlayer::destroy() // sync call
+player_result_t MediaPlayer::destroy() // sync call
 {
 	lock_guard<mutex> lock(*cMtx);
 
@@ -29,7 +29,7 @@ play_result_t MediaPlayer::destroy() // sync call
 	return PLAYER_OK;	
 }
 
-play_result_t MediaPlayer::prepare()
+player_result_t MediaPlayer::prepare()
 {	
 	lock_guard<mutex> lock(*cMtx);
 	enqueue([this](){_prepare(); });
@@ -37,7 +37,7 @@ play_result_t MediaPlayer::prepare()
 	return PLAYER_OK;
 }
 
-play_result_t MediaPlayer::start()
+player_result_t MediaPlayer::start()
 {
 	lock_guard<mutex> lock(*cMtx);
 	enqueue([this](){_start(); });
@@ -45,7 +45,7 @@ play_result_t MediaPlayer::start()
 	return PLAYER_OK;
 }
 
-play_result_t MediaPlayer::stop()
+player_result_t MediaPlayer::stop()
 {
 	lock_guard<mutex> lock(*cMtx);
 	enqueue([this](){_stop(); });	
@@ -53,7 +53,7 @@ play_result_t MediaPlayer::stop()
 	return PLAYER_OK;
 }
 
-play_result_t MediaPlayer::pause()
+player_result_t MediaPlayer::pause()
 {
 	lock_guard<mutex> lock(*cMtx);
 	enqueue([this](){_pause(); });
@@ -61,7 +61,7 @@ play_result_t MediaPlayer::pause()
 	return PLAYER_OK;
 }
 
-play_result_t MediaPlayer::getVolume() const
+player_result_t MediaPlayer::getVolume() const
 {
 	lock_guard<mutex> lock(*cMtx);	
 	return PLAYER_OK;
