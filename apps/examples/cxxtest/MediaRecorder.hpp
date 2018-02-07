@@ -66,6 +66,7 @@ namespace Media
 		void _init();
 		void _prepare();
 		void _create();
+		void _destroy();
 		void _start();
 		void _pause();
 		void _stop();
