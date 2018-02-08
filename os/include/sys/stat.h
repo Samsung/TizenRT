@@ -159,7 +159,7 @@ extern "C" {
  * @brief  POSIX API (refer to : http://pubs.opengroup.org/onlinepubs/9699919799/)
  * @details @b #include <sys/stat.h> \n
  * SYSTEM CALL API
- * @since Tizen RT v1.0
+ * @since TizenRT v1.0
  */
 int mkdir(FAR const char *pathname, mode_t mode);
 /**
@@ -167,7 +167,7 @@ int mkdir(FAR const char *pathname, mode_t mode);
  * @brief  POSIX API (refer to : http://pubs.opengroup.org/onlinepubs/9699919799/)
  * @details @b #include <sys/stat.h> \n
  * SYSTEM CALL API
- * @since Tizen RT v1.0
+ * @since TizenRT v1.0
  */
 int mkfifo(FAR const char *pathname, mode_t mode);
 /**
@@ -175,7 +175,7 @@ int mkfifo(FAR const char *pathname, mode_t mode);
  * @brief  POSIX API (refer to : http://pubs.opengroup.org/onlinepubs/9699919799/)
  * @details @b #include <sys/stat.h> \n
  * SYSTEM CALL API
- * @since Tizen RT v1.0
+ * @since TizenRT v1.0
  */
 int stat(const char *path, FAR struct stat *buf);
 /**

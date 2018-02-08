@@ -14,4 +14,7 @@ config PLATFORM_CONFIGDATA
 		storage mechanism is not visible to applications so underlying non-
 		volatile storage can be used:  A file, EEPROM, hardcoded values in
 		FLASH, etc.
+
+source "$APPSDIR/platform/gnu/Kconfig"
+
 endmenu

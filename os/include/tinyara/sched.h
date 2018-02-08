@@ -691,7 +691,7 @@ extern "C" {
  *   head of the ready-to-run list and manages access to the TCB from outside
  *   of the sched/ sub-directory.
  * @return TCB structure
- * @since Tizen RT v1.0
+ * @since TizenRT v1.0
  */
 FAR struct tcb_s *sched_self(void);
 
@@ -707,7 +707,7 @@ FAR struct tcb_s *sched_self(void);
  * @param[in] handler The function to be called with the TCB of each task
  * @param[in] arg param
  * @return none
- * @since Tizen RT v1.0
+ * @since TizenRT v1.0
  */
 void sched_foreach(sched_foreach_t handler, FAR void *arg);
 
@@ -720,7 +720,7 @@ void sched_foreach(sched_foreach_t handler, FAR void *arg);
  *   is no such task ID).
  * @param[in] pid Pid for tcb
  * @return TCB structure about pid
- * @since Tizen RT v1.0
+ * @since TizenRT v1.0
  */
 FAR struct tcb_s *sched_gettcb(pid_t pid);
 
@@ -744,7 +744,7 @@ FAR struct filelist *sched_getfiles(void);
  * @brief Return a pointer to the streams list for this thread
  * @details @b #include <tinyara/sched.h>
  * @return A pointer to the errno
- * @since Tizen RT v1.0
+ * @since TizenRT v1.0
  */
 FAR struct streamlist *sched_getstreams(void);
 #endif							/* CONFIG_NFILE_STREAMS */

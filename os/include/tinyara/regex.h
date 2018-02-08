@@ -89,7 +89,7 @@ extern "C" {
  * @param[in] pattern, only '?', '*' and '**', and multiple patterns separated by '|'.
  * @param[in] string to match pattern
  * @return Returns 1 (match) or 0 (no-match)
- * @since Tizen RT v1.1
+ * @since TizenRT v1.1
  */
 EXTERN int match(const char *pattern, const char *string);
 

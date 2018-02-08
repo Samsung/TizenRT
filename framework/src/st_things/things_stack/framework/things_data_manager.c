@@ -180,9 +180,6 @@ static bool is_there_cloud_data = false;
 static const char *origin_cloud_json_str = "{\n\
 		\"cloud\":    {\n\
 			\"address\":    \"52.40.216.160:5683\"\n\
-		},\n\
-		\"wifi\": {\n\
-			\"ssid\": \"unknown\"\n\
 		}\n\
 }";
 
@@ -700,6 +697,13 @@ wifi_manager_softap_config_s *dm_get_softap_wifi_config(void)
 
 wifi_manager_ap_config_s *dm_get_homeap_wifi_config(void)
 {
+	wifi_manager_result_e res = wifi_manager_get_config(&g_homeap_info);
+
+	if (res != WIFI_MANAGER_SUCCESS) {
+		THINGS_LOG_V(THINGS_ERROR, TAG, "Get AP configuration failed [error code : %d]", res);
+	} else {
+		THINGS_LOG_D(THINGS_DEBUG, TAG, "[WIFI] Saved SSID : %s", g_homeap_info.ssid);
+	}
 	return &g_homeap_info;
 }
 
@@ -745,9 +749,8 @@ RETRY_JSON:
 		}
 
 		cJSON *cloud = cJSON_GetObjectItem(root, KEY_CLOUD);
-		cJSON *wifi = cJSON_GetObjectItem(root, KEY_WIFI);
 
-		if (NULL != wifi && NULL != cloud) {
+		if (NULL != cloud) {
 			/***** Cloud *****/
 			cJSON *address = cJSON_GetObjectItem(cloud, KEY_CLOUD_ADDRESS);
 			if (NULL != address) {
@@ -762,35 +765,7 @@ RETRY_JSON:
 			cJSON *user_id = cJSON_GetObjectItem(cloud, KEY_ID_USER);
 			cJSON *expire_time = cJSON_GetObjectItem(cloud, KEY_EXPIRE_TIME);
 
-			/***** Wifi *****/
-			cJSON *ssid = cJSON_GetObjectItem(wifi, KEY_WIFI_SSID);
-			if (NULL != ssid) {
-				memcpy(g_homeap_info.ssid, ssid->valuestring, strlen(ssid->valuestring) + 1);
-				THINGS_LOG_D(THINGS_DEBUG, TAG, "[WIFI] SSID Address : %s", g_homeap_info.ssid);
-				ret = 1;
-				g_homeap_info.ssid_length = strlen(g_homeap_info.ssid);
-			}
-
-			cJSON *passphrase = cJSON_GetObjectItem(wifi, KEY_WIFI_PASSPHARASE);
-			if (NULL != passphrase) {
-				memcpy(g_homeap_info.passphrase, passphrase->valuestring, strlen(passphrase->valuestring) + 1);
-				THINGS_LOG_D(THINGS_DEBUG, TAG, "[WIFI] PASSPHRASE Address : %s", g_homeap_info.passphrase);
-				ret = 1;
-				g_homeap_info.passphrase_length = strlen(g_homeap_info.passphrase);
-			}
-
-			cJSON *auth_type = cJSON_GetObjectItem(wifi, KEY_WIFI_AUTH_TYPE);
-
-			if (NULL != auth_type) {
-				g_homeap_info.ap_auth_type = auth_type->valueint;
-			}
-
-			cJSON *crypto_type = cJSON_GetObjectItem(wifi, KEY_WIFI_CRYPTO_TYPE);
-			if (NULL != crypto_type) {
-				g_homeap_info.ap_crypto_type = crypto_type->valueint;
-			}
-
-			if (address == NULL || accesstoken == NULL || refresh_accesstoken == NULL || user_id == NULL || expire_time == NULL || ssid == NULL || passphrase == NULL || auth_type == NULL || crypto_type == NULL) {
+			if (address == NULL || accesstoken == NULL || refresh_accesstoken == NULL || user_id == NULL || expire_time == NULL) {
 				THINGS_LOG_D(THINGS_DEBUG, TAG, "[ProvisionInfo] address = %d, accesstoken = %d, refresh_accesstoken = %d, user_id = %d, expire_time = %d", address, accesstoken, refresh_accesstoken, user_id, expire_time);
 				is_there_cloud_data = false;
 			} else {
@@ -1404,70 +1379,6 @@ static int get_signup_data_from_json(const char *filename, es_cloud_signup_s **c
 	}
 
 	THINGS_LOG_D(THINGS_DEBUG, TAG, THINGS_FUNC_EXIT);
-	return ret;
-}
-
-int save_acces_point_info(wifi_manager_ap_config_s *connect_config)
-{
-	THINGS_LOG_D(THINGS_INFO, TAG, THINGS_FUNC_ENTRY);
-
-	char *filename = g_things_cloud_file_path;
-
-	int ret = 0;
-	cJSON *root = NULL;
-	char *json_update = NULL;
-	char *json_str = get_json_string_from_file(filename);
-
-	if (json_str != NULL && strlen(json_str) > 0) {
-		root = cJSON_Parse((const char *)json_str);
-
-		cJSON *wifi = cJSON_GetObjectItem(root, KEY_WIFI);
-		if (wifi == NULL) {
-			THINGS_LOG_V_ERROR(THINGS_ERROR, TAG, "cloud cJSON is NULL.");
-			goto GOTO_OUT;
-		}
-
-		cJSON_DeleteItemFromObject(wifi, KEY_WIFI_SSID);
-		cJSON_DeleteItemFromObject(wifi, KEY_WIFI_PASSPHARASE);
-		cJSON_DeleteItemFromObject(wifi, KEY_WIFI_AUTH_TYPE);
-		cJSON_DeleteItemFromObject(wifi, KEY_WIFI_CRYPTO_TYPE);
-
-		if (strlen(connect_config->ssid) > 0) {
-			cJSON_AddStringToObject(wifi, KEY_WIFI_SSID, connect_config->ssid);
-		}
-		if (strlen(connect_config->passphrase) > 0) {
-			cJSON_AddStringToObject(wifi, KEY_WIFI_PASSPHARASE, connect_config->passphrase);
-		}
-		cJSON_AddNumberToObject(wifi, KEY_WIFI_AUTH_TYPE, connect_config->ap_auth_type);
-		cJSON_AddNumberToObject(wifi, KEY_WIFI_CRYPTO_TYPE, connect_config->ap_crypto_type);
-
-		json_update = cJSON_Print(root);
-
-		if (set_json_string_into_file(filename, json_update) == 0) {
-			THINGS_LOG_V_ERROR(THINGS_ERROR, TAG, "Fail : Store data to info file.");
-			goto GOTO_OUT;
-		}
-
-		ret = 1;
-	}							// End of if
-
-	THINGS_LOG_D(THINGS_INFO, TAG, "Update Success in \"%s\" file.", filename);
-
-GOTO_OUT:
-	if (root) {
-		cJSON_Delete(root);
-		root = NULL;
-	}
-
-	if (json_str != NULL) {
-		things_free(json_str);
-	}
-
-	if (json_update != NULL) {
-		things_free(json_update);
-	}
-
-	THINGS_LOG_D(THINGS_INFO, TAG, THINGS_FUNC_EXIT);
 	return ret;
 }
 

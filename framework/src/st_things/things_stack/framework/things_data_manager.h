@@ -117,7 +117,6 @@ bool dm_register_user_define_device_id(const int seq_thing_info, const char *dev
 bool dm_register_device_id(void);
 int dm_register_resource(things_server_builder_s *builder);
 
-int save_acces_point_info(wifi_manager_ap_config_s *connect_config);
 int dm_update_things_cloud(es_cloud_signup_s *cl_data);
 int dm_load_legacy_cloud_data(es_cloud_signup_s **cl_data);
 

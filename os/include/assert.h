@@ -120,7 +120,7 @@
  * @details @b #include <assert.h>
  * @param[in] f assertion condition which shall have a scalar type
  * @return none
- * @since Tizen RT v1.0
+ * @since TizenRT v1.0
  */
 #define ASSERT(f)        { if (!(f)) up_assert(); }
 /**
@@ -129,7 +129,7 @@
  * @details @b #include <assert.h>
  * @param[in] f assertion condition which shall have a scalar type
  * @return none
- * @since Tizen RT v1.0
+ * @since TizenRT v1.0
  */
 #define VERIFY(f)        { if ((f) < 0) up_assert(); }
 /**
@@ -137,7 +137,7 @@
  *
  * @details @b #include <assert.h>
  * @return none
- * @since Tizen RT v1.0
+ * @since TizenRT v1.0
  */
 #define PANIC()          up_assert()
 
@@ -149,7 +149,7 @@
  * @details @b #include <assert.h>
  * @param[in] f assertion condition which shall have a scalar type
  * @return none
- * @since Tizen RT v1.0
+ * @since TizenRT v1.0
  */
 #define DEBUGASSERT(f) { if (!(f)) up_assert(); }
 /**
@@ -158,7 +158,7 @@
  * @details @b #include <assert.h>
  * @param[in] f assertion condition which shall have a scalar type
  * @return none
- * @since Tizen RT v1.0
+ * @since TizenRT v1.0
  */
 #define DEBUGVERIFY(f) { if ((f) < 0) up_assert(); }
 /**
@@ -166,7 +166,7 @@
  *
  * @details @b #include <assert.h>
  * @return none
- * @since Tizen RT v1.0
+ * @since TizenRT v1.0
  */
 #define DEBUGPANIC()   up_assert()
 
