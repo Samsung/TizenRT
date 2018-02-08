@@ -73,6 +73,8 @@
 #ifdef CONFIG_NET_LWIP
 #include <net/lwip/sockets.h>
 #include <net/lwip/api.h>
+#else
+#include <sys/sock_internal.h>
 #endif /* CONFIG_NET_LWIP */
 
 /****************************************************************************

@@ -60,65 +60,10 @@
 #include <tinyara/config.h>
 #include <sys/types.h>
 
-#include <uio.h>
-
-#ifndef CONFIG_NET_LWIP
-
-struct msghdr {
-	void *msg_name;				/* Socket name      */
-	int msg_namelen;			/* Length of name   */
-	struct iovec *msg_iov;		/* Data blocks      */
-	__kernel_size_t msg_iovlen;	/* Number of blocks   */
-	void *msg_control;			/* Per protocol magic (eg BSD file descriptor passing) */
-	__kernel_size_t msg_controllen;	/* Length of cmsg list */
-	unsigned int msg_flags;
-};
-
-/*
- *  POSIX 1003.1g - ancillary data object information
- *  Ancillary data consits of a sequence of pairs of
- *  (cmsghdr, cmsg_data[])
+/* Note that,
+   This header is only used to when CONFIG_NET_LWIP is not used
  */
-
-struct cmsghdr {
-	__kernel_size_t cmsg_len;	/* data byte count, including hdr */
-	int cmsg_level;				/* originating protocol */
-	int cmsg_type;				/* protocol-specific type */
-};
-
-#define CMSG_NXTHDR(mhdr, cmsg) cmsg_nxthdr((mhdr), (cmsg))
-
-#define CMSG_ALIGN(len) (((len)+sizeof(long)-1) & ~(sizeof(long)-1))
-
-#define CMSG_DATA(cmsg) ((void *)((char *)(cmsg) + CMSG_ALIGN(sizeof(struct cmsghdr))))
-#define CMSG_SPACE(len) (CMSG_ALIGN(sizeof(struct cmsghdr)) + CMSG_ALIGN(len))
-#define CMSG_LEN(len) (CMSG_ALIGN(sizeof(struct cmsghdr)) + (len))
-
-#define __CMSG_FIRSTHDR(ctl, len) ((len) >= sizeof(struct cmsghdr) ? \
-								  (struct cmsghdr *)(ctl) : \
-								  (struct cmsghdr *)NULL)
-#define CMSG_FIRSTHDR(msg)  __CMSG_FIRSTHDR((msg)->msg_control, (msg)->msg_controllen)
-
-static inline struct cmsghdr *__cmsg_nxthdr(void *__ctl, __kernel_size_t __size, struct cmsghdr *__cmsg)
-{
-	struct cmsghdr *__ptr;
-
-	__ptr = (struct cmsghdr *)(((unsigned char *)__cmsg) + CMSG_ALIGN(__cmsg->cmsg_len));
-	if ((unsigned long)((char *)(__ptr + 1) - (char *)__ctl) > __size) {
-		return (struct cmsghdr *)0;
-	}
-
-	return __ptr;
-}
-
-static inline struct cmsghdr *cmsg_nxthdr(struct msghdr *__msg, struct cmsghdr *__cmsg)
-{
-	return __cmsg_nxthdr(__msg->msg_control, __msg->msg_controllen, __cmsg);
-}
-
-ssize_t recvmsg(int sockfd, struct msghdr *msg, int flags);
-ssize_t sendmsg(int sockfd, struct msghdr *msg, int flags);
-
+#ifndef CONFIG_NET_LWIP
 
 /****************************************************************************
  * Definitions
@@ -250,27 +195,10 @@ ssize_t sendmsg(int sockfd, struct msghdr *msg, int flags);
  * the fields of those structures without alignment problems
  */
 
-#ifdef CONFIG_NET_IPv6
 struct sockaddr_storage {
-#ifdef CONFIG_NET_LWIP
-	uint8_t ss_len;
-	uint8_t ss_family;			/* Address family */
-#else
 	sa_family_t ss_family;		/* Address family: See AF_* definitions */
-#endif
-	char ss_data[18];			/* 18-bytes of address data */
-};
-#else
-struct sockaddr_storage {
-#ifdef CONFIG_NET_LWIP
-	uint8_t ss_len;
-	uint8_t ss_family;			/* Address family */
-#else
-	sa_family_t ss_family;		/* Address family: See AF_* definitions */
-#endif
 	char ss_data[14];			/* 14-bytes of address data */
 };
-#endif
 
 /* The sockaddr structure is used to define a socket address which is used
  * in the bind(), connect(), getpeername(), getsockname(), recvfrom(), and
@@ -278,12 +206,7 @@ struct sockaddr_storage {
  */
 
 struct sockaddr {
-#ifdef CONFIG_NET_LWIP
-	uint8_t sa_len;
-	uint8_t sa_family;			/* Address family */
-#else
 	sa_family_t sa_family;		/* Address family: See AF_* definitions */
-#endif
 	char sa_data[14];			/* 14-bytes of address data */
 };
 
@@ -294,6 +217,6 @@ struct linger {
 	int l_linger;				/* Linger time, in seconds. */
 };
 
-#endif							/* CONFIG_NET_LWIP */
+#endif /* !CONFIG_NET_LWIP */
 
 #endif							/* __INCLUDE_SYS_SOCK_INTERNAL_H */
