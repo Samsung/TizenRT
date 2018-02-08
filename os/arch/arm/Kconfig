@@ -40,6 +40,8 @@ config ARCH_CORTEXR4
 	default n
 	select ARCH_HAVE_MPU
 	select ARCH_HAVE_COHERENT_DCACHE if ELF || MODULE
+	select ARCH_HAVE_DABORTSTACK
+	select ARCH_HAVE_THUMB
 
 config ARCH_FAMILY
 	string
@@ -74,6 +76,17 @@ config ARMV7M_CMNVECTOR
 		the common vector logic.  Some can use either their own built-in vector
 		logic or the common vector logic.  This applies only to ARMv7-M
 		architectures.
+
+config ARCH_HAVE_THUMB
+	bool
+	default n
+
+config ARCH_THUMB
+	bool "Thumb instruction set support"
+	default n
+	depends on ARCH_HAVE_THUMB
+	---help---
+		Build all in Thumb mode.
 
 config ARCH_HAVE_FPU
 	bool

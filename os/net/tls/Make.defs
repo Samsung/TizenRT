@@ -80,6 +80,12 @@ SRC_TLS_CSRCS =       debug.c         net.c           ssl_cache.c     \
                       ssl_cli.c       ssl_cookie.c    ssl_srv.c       \
                       ssl_ticket.c    easy_tls.c
 
+ifeq ($(CONFIG_FRAME_POINTER),y)
+ifeq ($(CONFIG_ARCH_THUMB),y)
+CFLAGS += -DMULADDC_CANNOT_USE_R7
+endif
+endif
+
 ifeq ($(CONFIG_TLS_WITH_SSS),y)
 SRC_SEE_CSRCS += see_api.c	see_internal.c	see_misc.c
 endif

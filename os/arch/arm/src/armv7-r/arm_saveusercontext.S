@@ -56,6 +56,7 @@
 
 #include <tinyara/irq.h>
 #include "up_internal.h"
+#include "arm.h"
 
 /****************************************************************************
  * Public Symbols
@@ -108,6 +109,9 @@ up_saveusercontext:
 	/* Save the current cpsr */
 
 	mrs		r2, cpsr		/* R3 = CPSR value */
+#ifdef CONFIG_ARCH_THUMB
+	orr		r2, #(PSR_T_BIT)
+#endif
 	add		r1, r0, #(4*REG_CPSR)
 	str		r2, [r1]
 
@@ -153,6 +157,7 @@ up_saveusercontext:
 
 	/* Return 0 now indicating that this return is not a context switch */
 	mov		r0, #0			/* Return value == 0 */
-	mov		pc, lr			/* Return */
+	bx		lr			/* Return */
+
 	.size	up_saveusercontext, . - up_saveusercontext
 	.end

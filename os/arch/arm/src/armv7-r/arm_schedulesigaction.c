@@ -176,6 +176,9 @@ void up_schedule_sigaction(struct tcb_s *tcb, sig_deliver_t sigdeliver)
 
 				current_regs[REG_PC] = (uint32_t)up_sigdeliver;
 				current_regs[REG_CPSR] = (PSR_MODE_SVC | PSR_I_BIT | PSR_F_BIT);
+#ifdef CONFIG_ARCH_THUMB
+				current_regs[REG_CPSR] |= PSR_T_BIT;
+#endif
 
 				/* And make sure that the saved context in the TCB is the same
 				 * as the interrupt return context.
@@ -206,6 +209,9 @@ void up_schedule_sigaction(struct tcb_s *tcb, sig_deliver_t sigdeliver)
 
 			tcb->xcp.regs[REG_PC] = (uint32_t)up_sigdeliver;
 			tcb->xcp.regs[REG_CPSR] = (PSR_MODE_SVC | PSR_I_BIT | PSR_F_BIT);
+#ifdef CONFIG_ARCH_THUMB
+			tcb->xcp.regs[REG_CPSR] |= PSR_T_BIT;
+#endif
 		}
 	}
 

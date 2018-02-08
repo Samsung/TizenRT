@@ -106,6 +106,14 @@ endif
 
 ARCHCFLAGS = -fno-builtin -mcpu=cortex-r4 -mfpu=vfpv3
 ARCHCXXFLAGS = -fno-builtin -fexceptions -mcpu=cortex-r4 -mfpu=vfpv3
+ifeq ($(CONFIG_ARCH_THUMB),y)
+ARCHCFLAGS += -mthumb
+ARCHCXXFLAGS += -mthumb
+else
+ARCHCFLAGS += -marm
+ARCHCXXFLAGS += -marm
+endif
+
 ifeq ($(QUICKBUILD),y)
 ARCHWARNINGS = -Wall -Werror -Wstrict-prototypes -Wshadow -Wundef -Wno-implicit-function-declaration -Wno-unused-function -Wno-unused-but-set-variable
 ARCHWARNINGSXX = -Wall -Werror -Wshadow -Wundef

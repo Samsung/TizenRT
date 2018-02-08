@@ -251,12 +251,12 @@ arm_vectorirq:
 	str		r0, [sp]				/* Save the user stack pointer */
 	mov		r4, sp					/* Save the SP in a preserved register */
 	bic		sp, sp, #7				/* Force 8-byte alignment */
-	bl		arm_decodeirq			/* Call the handler */
+	blx		arm_decodeirq			/* Call the handler */
 	ldr		sp, [r4]				/* Restore the user stack pointer */
 #else
 	mov		r4, sp					/* Save the SP in a preserved register */
 	bic		sp, sp, #7				/* Force 8-byte alignment */
-	bl		arm_decodeirq			/* Call the handler */
+	blx		arm_decodeirq			/* Call the handler */
 	mov		sp, r4					/* Restore the possibly unaligned stack pointer */
 #endif
 
@@ -425,7 +425,7 @@ arm_vectorsvc:
 	mov		r0, sp					/* Get r0=xcp */
 	mov		r4, sp					/* Save the SP in a preserved register */
 	bic		sp, sp, #7				/* Force 8-byte alignment */
-	bl		arm_syscall				/* Call the handler */
+	blx		arm_syscall				/* Call the handler */
 	mov		sp, r4					/* Restore the possibly unaligned stack pointer */
 
 	/* Upon return from arm_syscall, r0 holds the pointer to the register
@@ -591,7 +591,7 @@ arm_vectordata:
 	mrc		CP15_DFSR(r2)			/* Get r2=DFSR */
 	mov		r4, sp					/* Save the SP in a preserved register */
 	bic		sp, sp, #7				/* Force 8-byte alignment */
-	bl		arm_dataabort			/* Call the handler */
+	blx		arm_dataabort			/* Call the handler */
 	mov		sp, r4					/* Restore the possibly unaligned stack pointer */
 
 #if defined(CONFIG_ARCH_DABORTSTACK) && CONFIG_ARCH_DABORTSTACK >= 512
@@ -747,7 +747,7 @@ arm_vectorprefetch:
 	mrc		CP15_IFSR(r2)			/* Get r2=IFSR */
 	mov		r4, sp					/* Save the SP in a preserved register */
 	bic		sp, sp, #7				/* Force 8-byte alignment */
-	bl		arm_prefetchabort		/* Call the handler */
+	blx		arm_prefetchabort		/* Call the handler */
 	mov		sp, r4					/* Restore the possibly unaligned stack pointer */
 
 	/* Upon return from arm_prefetchabort, r0 holds the pointer to the register
@@ -888,7 +888,7 @@ arm_vectorundefinsn:
 	mov		r0, sp					/* Get r0=xcp */
 	mov		r4, sp					/* Save the SP in a preserved register */
 	bic		sp, sp, #7				/* Force 8-byte alignment */
-	bl		arm_undefinedinsn		/* Call the handler */
+	blx		arm_undefinedinsn		/* Call the handler */
 	mov		sp, r4					/* Restore the possibly unaligned stack pointer */
 
 	/* Upon return from arm_undefinedinsn, r0 holds the pointer to the register
@@ -1033,12 +1033,12 @@ arm_vectorfiq:
 	str		r0, [sp]				/* Save the user stack pointer */
 	mov		r4, sp					/* Save the SP in a preserved register */
 	bic		sp, sp, #7				/* Force 8-byte alignment */
-	bl		arm_decodefiq			/* Call the handler */
+	blx		arm_decodefiq			/* Call the handler */
 	ldr		sp, [r4]				/* Restore the user stack pointer */
 #else
 	mov		r4, sp					/* Save the SP in a preserved register */
 	bic		sp, sp, #7				/* Force 8-byte alignment */
-	bl		arm_decodefiq			/* Call the handler */
+	blx		arm_decodefiq			/* Call the handler */
 	mov		sp, r4					/* Restore the possibly unaligned stack pointer */
 #endif
 
