@@ -148,6 +148,7 @@ struct http_client_response_t {
 	char *message;
 	char *entity;
 	unsigned int entity_len;
+	unsigned int total_len;
 };
 
 /****************************************************************************

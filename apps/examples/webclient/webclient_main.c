@@ -204,6 +204,7 @@ static void callback(struct http_client_response_t *response)
 {
 	printf("----------async response----------\n");
 	printf("status %d %s\n", response->status, response->phrase);
+	printf("len : %d total len : %d\n", response->entity_len, response->total_len);
 	printf("%s\n", response->entity);
 	printf("---------------------------------\n");
 }
@@ -245,7 +246,7 @@ int webclient_init_request(void *arg, struct http_client_request_t *request)
 	argc = input->argc;
 	argv = input->argv;
 
-	g_async = 0;
+	g_async = 1;
 	g_testentity = 0;
 	memset(request, 0, sizeof(struct http_client_request_t));
 
