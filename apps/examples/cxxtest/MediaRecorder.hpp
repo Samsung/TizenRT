@@ -1,3 +1,6 @@
+#ifndef __MEIDAFRAMEWORK_MEDIARECORDER_HPP
+#define __MEIDAFRAMEWORK_MEDIARECORDER_HPP
+
 #include <thread>
 #include <mutex>
 #include <condition_variable>
@@ -89,3 +92,5 @@ namespace Media
 		int pcmFormat;
 	};
 }
+
+#endif
