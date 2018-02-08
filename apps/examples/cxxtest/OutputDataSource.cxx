@@ -1,11 +1,13 @@
 #include "OutputDataSource.hpp"
 
-
-OutputDataSource::OutputDataSource()
+namespace Media
 {
+	OutputDataSource::OutputDataSource()
+	{
+	}
+
+	OutputDataSource::~OutputDataSource()
+	{
+	}
 }
 
-
-OutputDataSource::~OutputDataSource()
-{
-}

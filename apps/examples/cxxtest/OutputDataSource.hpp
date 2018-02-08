@@ -2,9 +2,13 @@
 
 #include "DataSource.hpp"
 
-class OutputDataSource : public DataSource
+namespace Media
 {
-public:
-	OutputDataSource();
-	~OutputDataSource();
-};
+	class OutputDataSource : public DataSource
+	{
+	public:
+		OutputDataSource();
+		~OutputDataSource();
+	};
+}
+

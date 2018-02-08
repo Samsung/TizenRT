@@ -1,11 +1,11 @@
-#pragma once
-
 #include "DataSource.hpp"
 
-class InputDataSource : public DataSource
+namespace Media
 {
-public:
-	InputDataSource();
-	~InputDataSource();
-};
-
+	class InputDataSource : public DataSource
+	{
+	public:
+		InputDataSource();
+		~InputDataSource();
+	};
+}
