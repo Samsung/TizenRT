@@ -43,6 +43,7 @@ namespace Media
 		recorder_result_t destroy();
 		
 		recorder_result_t prepare();
+		recorder_result_t unprepare();
 		recorder_result_t start();
 		recorder_result_t pause();
 		recorder_result_t stop();
@@ -68,6 +69,7 @@ namespace Media
 
 		void _init();
 		void _prepare();
+		void _unprepare();
 		void _create();
 		void _destroy();
 		void _start();

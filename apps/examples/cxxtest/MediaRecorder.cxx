@@ -22,6 +22,8 @@ namespace Media
 		enqueue([this](){_create(); });
 		cvStart.wait(lock);
 
+		curState = RECORDER_STATE_IDLE;
+
 		return RECORDER_OK;
 	}
 
@@ -32,8 +34,9 @@ namespace Media
 		enqueue([this](){_destroy(); });
 		worker->join();
 		delete worker;
-
 		worker = nullptr;
+
+		curState = RECORDER_STATE_NONE;
 
 		return RECORDER_OK;
 	}
@@ -42,6 +45,14 @@ namespace Media
 	{
 		lock_guard<mutex> lock(*cMtx);
 		enqueue([this](){_prepare(); });
+
+		return RECORDER_OK;
+	}
+
+	recorder_result_t MediaRecorder::unprepare()
+	{
+		lock_guard<mutex> lock(*cMtx);
+		enqueue([this]() {_unprepare(); });
 
 		return RECORDER_OK;
 	}
@@ -97,8 +108,15 @@ namespace Media
 	}
 
 	void MediaRecorder::_prepare()
-	{		
-		std::cout << "prepare recording" << std::endl;			
+	{
+		std::cout << "prepare recording" << std::endl;
+		curState = RECORDER_STATE_READY;
+	}
+
+	void MediaRecorder::_unprepare()
+	{
+		std::cout << "unprepare recording" << std::endl;
+		curState = RECORDER_STATE_IDLE;
 	}
 
 	void MediaRecorder::_create()
@@ -119,22 +137,27 @@ namespace Media
 	void MediaRecorder::_destroy()
 	{
 		std::cout << "destroy Recorder" << std::endl;
+		pcm_close(pcmIn);
+
 		isRunning = false;
 	}
 
 	void MediaRecorder::_start()
 	{
-		std::cout << "start recording" << std::endl;	
+		std::cout << "start recording" << std::endl;
+		curState = RECORDER_STATE_RECORDING;
 	}
 
 	void MediaRecorder::_stop()
 	{
 		std::cout << "stop recording" << std::endl;
+		curState = RECORDER_STATE_READY;
 	}
 
 	void MediaRecorder::_pause()
 	{
 		std::cout << "pause recording" << std::endl;
+		curState = RECORDER_STATE_PAUSED;
 	}
 
 	MediaRecorder::~MediaRecorder()
