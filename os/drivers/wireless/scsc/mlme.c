@@ -2174,13 +2174,14 @@ int slsi_mlme_set_key(struct slsi_dev *sdev, struct netif *dev, u16 key_id, u16 
 
 		SLSI_NET_DBG3(dev, SLSI_MLME, "mlme_setkeys_req(key->seq_len:%d)\n", key->seq_len);
 
-		/* Sequence would be in little endian format (sent as part of get_key_sequence).
-		 * If sequence is say 0x01 0x02 0x03 0x04 with 0x01 as MSB and 0x04 as LSB then
-		 * it would be encoded as: 0x0304 0x0102 for firmware
+		/* Sequence would be in little endian format
+		 * If sequence is say key->seq is
+		 * 04 03 02 01 00 00 00 00, it would be encoded as :
+		 * 0x0304 0x0102 0x0000 0x0000 for firmware
 		 */
 		for (i = 0; i < key->seq_len; i += 2) {
 			temp_seq = (u16)(key->seq[i + 1] << 8) | (u16)(key->seq[i]);
-			fapi_set_u16(req, u.mlme_setkeys_req.sequence_number[i], temp_seq);
+			fapi_set_u16(req, u.mlme_setkeys_req.sequence_number[i / 2], temp_seq);
 		}
 	}
 
