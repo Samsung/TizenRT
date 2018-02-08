@@ -132,7 +132,7 @@ static int http_recv_and_handle_request(struct http_client_t *client, struct htt
 		buf_len += len;
 		remain -= len;
 
-		read_finish = http_parse_message(buf, len, &method, url, &body, &enc, &state, &mlen, request_params, client, NULL, &req);
+		read_finish = http_parse_message(buf, buf_len, &method, url, &body, &enc, &state, &mlen, request_params, client, NULL, &req);
 		if (read_finish == HTTP_ERROR) {
 			goto errout;
 		}
