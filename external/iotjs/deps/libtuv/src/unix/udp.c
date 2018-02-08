@@ -437,6 +437,7 @@ static int uv__udp_maybe_deferred_bind(uv_udp_t* handle,
     addrlen = sizeof *addr;
     break;
   }
+#if defined(__TIZENRT__) && defined(CONFIG_NET_IPv6)
   case AF_INET6:
   {
     struct sockaddr_in6* addr = (void*)&taddr;
@@ -446,6 +447,7 @@ static int uv__udp_maybe_deferred_bind(uv_udp_t* handle,
     addrlen = sizeof *addr;
     break;
   }
+#endif
   default:
     assert(0 && "unsupported address family");
     abort();
@@ -767,7 +769,7 @@ static int uv__setsockopt(uv_udp_t* handle,
                          const void* val,
                          size_t size) {
   int r;
-
+#if defined(__TIZENRT__) && defined(CONFIG_NET_IPv6)
   if (handle->flags & UV_HANDLE_IPV6)
     r = setsockopt(handle->io_watcher.fd,
                    IPPROTO_IPV6,
@@ -775,6 +777,7 @@ static int uv__setsockopt(uv_udp_t* handle,
                    val,
                    size);
   else
+#endif
     r = setsockopt(handle->io_watcher.fd,
                    IPPROTO_IP,
                    option4,
@@ -930,7 +933,9 @@ int uv_udp_set_multicast_interface(uv_udp_t* handle, const char* interface_addr)
                    sizeof(addr4->sin_addr)) == -1) {
       return -errno;
     }
-  } else if (addr_st.ss_family == AF_INET6) {
+  }
+#if defined(__TIZENRT__) && defined(CONFIG_NET_IPv6)
+  else if (addr_st.ss_family == AF_INET6) {
     if (setsockopt(handle->io_watcher.fd,
                    IPPROTO_IPV6,
                    IPV6_MULTICAST_IF,
@@ -938,7 +943,9 @@ int uv_udp_set_multicast_interface(uv_udp_t* handle, const char* interface_addr)
                    sizeof(addr6->sin6_scope_id)) == -1) {
       return -errno;
     }
-  } else {
+  }
+#endif
+  else {
     assert(0 && "unexpected address family");
     abort();
   }
