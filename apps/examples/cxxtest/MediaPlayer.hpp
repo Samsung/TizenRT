@@ -41,6 +41,7 @@ namespace Media
 		player_result_t destroy();
 
 		player_result_t prepare();
+		player_result_t unprepare();
 		player_result_t start();
 		player_result_t pause();
 		player_result_t stop();
@@ -67,6 +68,7 @@ namespace Media
 		void _create();
 		void _destroy();
 		void _prepare();
+		void _unprepare();
 		void _start();
 		void _pause();
 		void _stop();

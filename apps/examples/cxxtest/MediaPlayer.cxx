@@ -42,6 +42,14 @@ namespace Media
 		return PLAYER_OK;
 	}
 
+	player_result_t MediaPlayer::unprepare()
+	{
+		lock_guard<mutex> lock(*cMtx);
+		enqueue([this]() {_unprepare(); });
+
+		return PLAYER_OK;
+	}
+
 	player_result_t MediaPlayer::start()
 	{
 		lock_guard<mutex> lock(*cMtx);
@@ -102,6 +110,11 @@ namespace Media
 	}
 
 	void MediaPlayer::_prepare()
+	{
+
+	}
+
+	void MediaPlayer::_unprepare()
 	{
 
 	}
