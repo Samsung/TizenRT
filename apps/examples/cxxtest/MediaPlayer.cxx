@@ -19,6 +19,7 @@ namespace Media
 		enqueue([this]() {_create(); });
 		cvStart.wait(lock);
 
+		curState = PLAYER_STATE_IDLE;
 		return PLAYER_OK;
 	}
 
@@ -31,6 +32,7 @@ namespace Media
 		delete worker;
 		worker = nullptr;
 
+		curState = PLAYER_STATE_NONE;
 		return PLAYER_OK;
 	}
 
@@ -111,27 +113,29 @@ namespace Media
 
 	void MediaPlayer::_prepare()
 	{
-
+		curState = PLAYER_STATE_READY;
 	}
 
 	void MediaPlayer::_unprepare()
 	{
-
+		curState = PLAYER_STATE_IDLE;
 	}
 
 	void MediaPlayer::_start()
 	{
 		std::cout << "start playing" << std::endl;
+		curState = PLAYER_STATE_PLAYING;
 	}
 
 	void MediaPlayer::_stop()
 	{
+		curState = PLAYER_STATE_READY;
 	}
 
 	void MediaPlayer::_pause()
 	{
+		curState = PLAYER_STATE_PAUSED;
 	}
-
 
 	MediaPlayer::~MediaPlayer()
 	{
