@@ -56,6 +56,13 @@
 
 #include <tinyara/config.h>
 
+#ifdef CONFIG_ARCH_FPU
+	.cpu	cortex-r4
+#else
+	.cpu	cortex-r4f
+#endif
+	.syntax	unified
+	.arm
 	.file	"arm_vectortab.S"
 
 /****************************************************************************

@@ -71,6 +71,7 @@
 	.cpu	cortex-r4f
 #endif
 	.syntax	unified
+	.arm
 	.file	"arm_signal_handler.S"
 
 /****************************************************************************

@@ -70,6 +70,13 @@
 
 #include "cp15.h"
 
+#ifdef CONFIG_ARCH_FPU
+	.cpu	cortex-r4
+#else
+	.cpu	cortex-r4f
+#endif
+	.syntax	unified
+	.arm
 	.file	"cp15_invalidate_dcache_all.S"
 
 /****************************************************************************
@@ -117,7 +124,7 @@ way_loop:
 	mov		r3, #0					/* r3 = set loop counter */
 set_loop:
 	mov		r2, r1, lsl #30			/* r2 = way loop counter << 30 */
-	orr		r2, r3, lsl #5			/* r2 = set/way cache operation format */
+	orr		r2, r2, r3, lsl #5			/* r2 = set/way cache operation format */
 	mcr		CP15_DCISW(r2)			/* Data Cache Invalidate by Set/Way */
 	add		r3, r3, #1				/* Increment set counter */
 	cmp		r0, r3					/* Last set? */

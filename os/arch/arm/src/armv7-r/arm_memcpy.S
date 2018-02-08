@@ -82,6 +82,7 @@
 	.cpu	cortex-r4f
 #endif
 	.syntax	unified
+	.arm
 	.file	"arm_memcpy.S"
 
 /************************************************************************************
@@ -170,6 +171,7 @@ MEM_LongCopyTable:
 
 	.align 4
 
+	.type	memcpy, function
 memcpy:
 	push	{r14}
 	push    {r0}
@@ -179,6 +181,7 @@ memcpy:
 
 	.align 4
 
+	.type	_do_memcpy, function
 _do_memcpy:
 	push    {r14}
 

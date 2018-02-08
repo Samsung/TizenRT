@@ -77,6 +77,7 @@
 	.cpu	cortex-r4f
 #endif
 	.syntax	unified
+	.arm
 	.file	"arm_fullcontextrestore.S"
 
 /****************************************************************************
