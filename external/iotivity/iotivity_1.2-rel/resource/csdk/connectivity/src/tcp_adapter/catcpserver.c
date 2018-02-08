@@ -670,11 +670,13 @@ static CAResult_t CATCPConvertNameToAddr(int family, const char *host, uint16_t 
     int r = getaddrinfo(host, NULL, &hints, &addrs);
     if (r)
     {
+#if defined (EAI_SYSTEM)
         if (EAI_SYSTEM == r)
         {
             OIC_LOG_V(ERROR, TAG, "getaddrinfo failed: errno %s", strerror(errno));
         }
         else
+#endif /* EAI_SYSTEM */
         {
             OIC_LOG_V(ERROR, TAG, "getaddrinfo failed: %s", gai_strerror(r));
         }
@@ -785,7 +787,7 @@ static CASocketFd_t CACreateAcceptSocket(int family, CASocket_t *sock)
         // the socket is restricted to sending and receiving IPv6 packets only.
         int on = 1;
 //TODO: enable once IPv6 is supported
-#ifndef __TIZENRT__
+#if !defined(__TIZENRT__) || defined(CONFIG_NET_IPv6)
         if (-1 == setsockopt(fd, IPPROTO_IPV6, IPV6_V6ONLY, &on, sizeof (on)))
         {
             OIC_LOG_V(ERROR, TAG, "IPV6_V6ONLY failed: %s", strerror(errno));

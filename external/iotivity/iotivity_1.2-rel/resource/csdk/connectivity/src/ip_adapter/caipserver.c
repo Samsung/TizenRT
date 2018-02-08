@@ -79,7 +79,7 @@
 #include "oic_string.h"
 
 #define USE_IP_MREQN
-#if defined(_WIN32)
+#if defined(_WIN32) || defined (__TIZENRT__)
 #undef USE_IP_MREQN
 #endif
 
@@ -592,7 +592,7 @@ static CAResult_t CAReceiveMessage(CASocketFd_t fd, CATransportFlags_t flags)
         struct cmsghdr cmsg;
         unsigned char data[CMSG_SPACE(sizeof (struct in6_pktinfo))];
     } cmsg;
-
+#if defined (CONFIG_NET_IPv6)
     if (flags & CA_IPV6)
     {
         namelen = sizeof (struct sockaddr_in6);
@@ -601,6 +601,7 @@ static CAResult_t CAReceiveMessage(CASocketFd_t fd, CATransportFlags_t flags)
         len = sizeof (struct in6_pktinfo);
     }
     else
+#endif
     {
         namelen = sizeof (struct sockaddr_in);
         level = IPPROTO_IP;
@@ -641,6 +642,7 @@ static CAResult_t CAReceiveMessage(CASocketFd_t fd, CATransportFlags_t flags)
     } cmsg;
     memset(&cmsg, 0, sizeof(cmsg));
 
+#if defined (CONFIG_NET_IPv6)
     if (flags & CA_IPV6)
     {
         namelen  = sizeof (struct sockaddr_in6);
@@ -648,6 +650,7 @@ static CAResult_t CAReceiveMessage(CASocketFd_t fd, CATransportFlags_t flags)
         type = IPV6_PKTINFO;
     }
     else
+#endif
     {
         namelen = sizeof (struct sockaddr_in);
         level = IPPROTO_IP;
@@ -769,6 +772,7 @@ static CASocketFd_t CACreateSocket(int family, uint16_t *port, bool isMulticast)
     struct sockaddr_storage sa = { .ss_family = family };
     socklen_t socklen = 0;
 
+#if defined (CONFIG_NET_IPv6)
     if (family == AF_INET6)
     {
         int on = 1;
@@ -794,6 +798,7 @@ static CASocketFd_t CACreateSocket(int family, uint16_t *port, bool isMulticast)
         socklen = sizeof (struct sockaddr_in6);
     }
     else
+#endif /* CONFIG_NET_IPv6 */
     {
         if (isMulticast && *port) // only do this for multicast ports
         {
@@ -1187,7 +1192,7 @@ static void applyMulticast6(int fd, struct in6_addr *addr, uint32_t ifindex)
             OIC_LOG_V(ERROR, TAG, "IPv6 IPV6_JOIN_GROUP failed: %s", CAIPS_GET_ERROR);
         }
     }
-#endif
+#endif /* ! __TIZENRT__ */
 }
 
 static void applyMulticastToInterface6(uint32_t ifindex)
@@ -1423,6 +1428,7 @@ static void sendMulticastData6(const u_arraylist_t *iflist,
                                CAEndpoint_t *endpoint,
                                const void *data, uint32_t datalen)
 {
+#ifndef __TIZENRT__
     if (!endpoint)
     {
         OIC_LOG(DEBUG, TAG, "endpoint is null");
@@ -1477,15 +1483,14 @@ static void sendMulticastData6(const u_arraylist_t *iflist,
             return;
         }
 
-#ifndef __TIZENRT__
         // Set multicast packet TTL; default TTL is 1
         if (setsockopt(fd, IPPROTO_IPV6, IPV6_MULTICAST_HOPS, &multicastTTL, sizeof(multicastTTL)))
         {
             OIC_LOG_V(ERROR, TAG, "IPV6_MULTICAST_HOPS failed: %s", CAIPS_GET_ERROR);
         }
-#endif
         sendData(fd, endpoint, data, datalen, "multicast", "ipv6");
     }
+#endif /* ! __TIZENRT__*/
 }
 
 static void sendMulticastData4(const u_arraylist_t *iflist,
