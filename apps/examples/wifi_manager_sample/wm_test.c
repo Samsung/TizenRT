@@ -311,7 +311,7 @@ wm_signal_deinit(void)
  */
 void wm_sta_connected(wifi_manager_result_e res)
 {
-	printf(" T%d --> %s\n", getpid(), __FUNCTION__);
+	printf(" T%d --> %s res(%d)\n", getpid(), __FUNCTION__, res);
 	WM_TEST_SIGNAL;
 }
 
