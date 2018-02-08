@@ -159,12 +159,24 @@ struct lwip_setgetsockopt_data {
 };
 #endif							/* !LWIP_TCPIP_CORE_LOCKING */
 
+#if !defined IOV_MAX
+#define IOV_MAX 0xFFFF
+#elif IOV_MAX > 0xFFFF
+#error "IOV_MAX larger than supported by lwIP"
+#endif /* IOV_MAX */
+
+#define LWIP_HAVE_UIO	1
+#ifdef LWIP_HAVE_UIO
+/* To prevent duplicated definition of iovec */
+#include <uio.h>
+#else
 #if !defined(iovec)
 struct iovec {
 	void *iov_base;
 	size_t iov_len;
 };
 #endif
+#endif /* LWIP_HAVE_UIO */
 
 struct msghdr {
 	void *msg_name;
@@ -175,6 +187,50 @@ struct msghdr {
 	socklen_t msg_controllen;
 	int msg_flags;
 };
+
+/* struct msghdr->msg_flags bit field values */
+#define MSG_TRUNC   0x04
+#define MSG_CTRUNC  0x08
+
+/* RFC 3542, Section 20: Ancillary Data */
+struct cmsghdr {
+	socklen_t  cmsg_len;   /* number of bytes, including header */
+	int        cmsg_level; /* originating protocol */
+	int        cmsg_type;  /* protocol-specific type */
+};
+/* Data section follows header and possible padding, typically referred to as
+         unsigned char cmsg_data[]; */
+
+/* cmsg header/data alignment. NOTE: we align to native word size (double word
+   size on 16-bit arch) so structures are not placed at an unaligned address.
+   16-bit arch needs double word to ensure 32-bit alignment because socklen_t
+   could be 32 bits. If we ever have cmsg data with a 64-bit variable, alignment
+   will need to increase long long */
+#define ALIGN_H(size) (((size) + sizeof(long) - 1U) & ~(sizeof(long)-1U))
+#define ALIGN_D(size) ALIGN_H(size)
+
+#define CMSG_FIRSTHDR(mhdr) \
+			((mhdr)->msg_controllen >= sizeof(struct cmsghdr) ? \
+			 (struct cmsghdr *)(mhdr)->msg_control : \
+			 (struct cmsghdr *)NULL)
+
+#define CMSG_NXTHDR(mhdr, cmsg) \
+			(((cmsg) == NULL) ? CMSG_FIRSTHDR(mhdr) : \
+			 (((u8_t *)(cmsg) + ALIGN_H((cmsg)->cmsg_len) \
+							    + ALIGN_D(sizeof(struct cmsghdr)) > \
+			   (u8_t *)((mhdr)->msg_control) + (mhdr)->msg_controllen) ? \
+			  (struct cmsghdr *)NULL : \
+			  (struct cmsghdr *)((void*)((u8_t *)(cmsg) + \
+							  ALIGN_H((cmsg)->cmsg_len)))))
+
+#define CMSG_DATA(cmsg) ((void*)((u8_t *)(cmsg) + \
+						ALIGN_D(sizeof(struct cmsghdr))))
+
+#define CMSG_SPACE(length) (ALIGN_D(sizeof(struct cmsghdr)) + \
+							ALIGN_H(length))
+
+#define CMSG_LEN(length) (ALIGN_D(sizeof(struct cmsghdr)) + \
+							length)
 
 /* Socket protocol types (TCP/UDP/RAW) */
 #define SOCK_STREAM     1

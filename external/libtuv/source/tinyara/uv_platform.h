@@ -45,6 +45,7 @@
 #include "uv__unix_platform.h"
 
 #include <netdb.h>
+#include <uio.h>
 
 /* for testing */
 #define TUV_POLL_EVENTS_SIZE  32
@@ -117,14 +118,6 @@ typedef sem_t uv_sem_t;
 typedef pthread_cond_t uv_cond_t;
 typedef pthread_mutex_t uv_rwlock_t;	// no rwlock for nuttx
 
-#ifndef CONFIG_ENABLE_IOTIVITY
-//-----------------------------------------------------------------------------
-// uio
-struct iovec {
-	void *iov_base;
-	size_t iov_len;
-};
-#endif
 ssize_t readv(int __fd, const struct iovec *__iovec, int __count);
 ssize_t writev(int __fd, const struct iovec *__iovec, int __count);
 
