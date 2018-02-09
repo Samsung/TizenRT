@@ -1,6 +1,6 @@
 ###########################################################################
 #
-# Copyright 2017 Samsung Electronics All Rights Reserved.
+# Copyright 2018 Samsung Electronics All Rights Reserved.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -16,15 +16,4 @@
 #
 ###########################################################################
 
-ifeq ($(CONFIG_WIFI_MANAGER), y)
-CSRCS += wifi_manager.c wifi_net.c
-CSRCS += wifi_profile.c
-
-ifeq ($(CONFIG_WPA_SUPPLICANT), y)
-CSRCS += wpa_wifi_utils.c
-endif
-
-DEPPATH += --dep-path src/wifi_manager
-VPATH += :src/wifi_manager
-endif
-
+include $(wildcard src/network/*/Make.defs)

@@ -26,36 +26,17 @@ ASRCS =
 CSRCS =
 VPATH = .
 
-CFLAGS += -I$(TOPDIR)/../framework/include/iotbus
-include src$(DELIM)iotbus$(DELIM)Make.defs
+# Framework Directories
 
-ifeq ($(CONFIG_DM), y)
-include src$(DELIM)dm$(DELIM)Make.defs
-endif
+# BUILDIRS is the list of top-level directories containing Make.defs files
 
-ifeq ($(CONFIG_ARASTORAGE), y)
-include src$(DELIM)arastorage$(DELIM)Make.defs
-endif
+BUILDIRS   := $(dir $(wildcard src/*/Make.defs))
 
-ifeq ($(CONFIG_NETUTILS_MQTT), y)
-include src$(DELIM)network$(DELIM)mqtt$(DELIM)Make.defs
-endif
+define Add_Framework
+  include $(1)Make.defs
+endef
 
-ifeq ($(CONFIG_WIFI_MANAGER), y)
-include src$(DELIM)wifi_manager$(DELIM)Make.defs
-endif
-
-ifeq ($(CONFIG_ST_THINGS), y)
-include src$(DELIM)st_things$(DELIM)Make.defs
-endif
-
-ifeq ($(CONFIG_AUDIO), y)
-include src$(DELIM)tinyalsa$(DELIM)Make.defs
-endif
-
-ifeq ($(CONFIG_MEDIA), y)
-include src$(DELIM)media$(DELIM)Make.defs
-endif
+$(foreach BDIR, $(BUILDIRS), $(eval $(call Add_Framework,$(BDIR))))
 
 AOBJS = $(ASRCS:.S=$(OBJEXT))
 COBJS = $(CSRCS:.c=$(OBJEXT))

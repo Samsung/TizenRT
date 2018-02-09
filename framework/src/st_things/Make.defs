@@ -16,6 +16,7 @@
 #
 ###########################################################################
 
+ifeq ($(CONFIG_ST_THINGS), y)
 THINGS_LIB_DIR = $(TOPDIR)/../framework/src/st_things
 THINGS_STACK_DIR = $(TOPDIR)/../framework/src/st_things/things_stack
 IOTIVITY_RELEASE=${shell echo $(CONFIG_IOTIVITY_RELEASE_VERSION) | sed 's/"//g'}
@@ -94,3 +95,4 @@ endif
 
 DEPPATH += --dep-path src/st_things
 VPATH += :src/st_things
+endif
