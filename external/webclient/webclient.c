@@ -1161,6 +1161,8 @@ static pthread_addr_t wget_base(void *arg)
 		goto errout_before_init;
 	}
 
+	nvdbg("Length Info: sndlen : %d buf_len : %d param->buglen : %d\n", strlen(ws.buffer), strlen(param->buffer), param->buflen);
+	nvdbg("Send Data: %s\n", param->buffer);
 	if ((sockfd = wget_socket_connect(&ws)) < 0) {
 		ndbg("ERROR: socket failed: %d\n", errno);
 		goto errout_before_init;
@@ -1168,6 +1170,7 @@ static pthread_addr_t wget_base(void *arg)
 
 	buf_len = 0;
 	while (sndlen > 0) {
+		nvdbg("INFO: sndlen : %d buf_len : %d\n", sndlen, buf_len);
 		ret = send(sockfd, param->buffer + buf_len, sndlen, 0);
 		if (ret < 1) {
 			ndbg("ERROR: send failed: %d\n", ret);
