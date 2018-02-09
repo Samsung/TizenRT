@@ -79,7 +79,7 @@ namespace Media
 		mutex *qMtx; // queue mutex
 
 		std::condition_variable cvQueue;
-		std::condition_variable cvStart;
+		std::condition_variable cvSync;
 		std::queue<std::function<void()>> cmdQueue;
 
 		bool isRunning;

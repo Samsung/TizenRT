@@ -17,7 +17,7 @@ namespace Media
 		isRunning = true;
 		worker = new thread(&MediaPlayer::worker_thread, this);
 		enqueue([this]() {_create(); });
-		cvStart.wait(lock);
+		cvSync.wait(lock);
 
 		curState = PLAYER_STATE_IDLE;
 		return PLAYER_OK;
@@ -38,17 +38,21 @@ namespace Media
 
 	player_result_t MediaPlayer::prepare()
 	{
-		lock_guard<mutex> lock(*cMtx);
+		unique_lock<mutex> lock(*cMtx);
 		enqueue([this]() {_prepare(); });
+		cvSync.wait(lock);
 
+		curState = PLAYER_STATE_READY;
 		return PLAYER_OK;
 	}
 
 	player_result_t MediaPlayer::unprepare()
 	{
-		lock_guard<mutex> lock(*cMtx);
+		unique_lock<mutex> lock(*cMtx);
 		enqueue([this]() {_unprepare(); });
+		cvSync.wait(lock);
 
+		curState = PLAYER_STATE_IDLE;
 		return PLAYER_OK;
 	}
 
@@ -102,7 +106,7 @@ namespace Media
 	{
 		unique_lock<mutex> lock(*cMtx);
 		std::cout << "Player create" << std::endl;
-		cvStart.notify_one();
+		cvSync.notify_one();
 	}
 
 	void MediaPlayer::_destroy()
@@ -113,12 +117,16 @@ namespace Media
 
 	void MediaPlayer::_prepare()
 	{
-		curState = PLAYER_STATE_READY;
+		unique_lock<mutex> lock(*cMtx);
+		std::cout << "Player prepare" << std::endl;
+		cvSync.notify_one();
 	}
 
 	void MediaPlayer::_unprepare()
 	{
-		curState = PLAYER_STATE_IDLE;
+		unique_lock<mutex> lock(*cMtx);
+		std::cout << "Player unprepare" << std::endl;
+		cvSync.notify_one();
 	}
 
 	void MediaPlayer::_start()
