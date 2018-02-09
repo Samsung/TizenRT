@@ -446,7 +446,7 @@ int webclient_main(int argc, char *argv[])
 			WEBCLIENT_FREE_INPUT(input, i);
 			return -1;
 		}
-		strncpy(input->argv[i], argv[i], strlen(argv[i]));
+		strncpy(input->argv[i], argv[i], strlen(argv[i]) + 1);
 	}
 
 	status = pthread_create(&tid, &attr, webclient_cb, input);
