@@ -6,6 +6,8 @@
 config EXAMPLES_ST_THINGS
 	bool "SmartThings Things example"
 	default n
+	select IOTBUS
+	select IOTBUS_GPIO
 	---help---
 		Enable the SmartThings Things example
 
