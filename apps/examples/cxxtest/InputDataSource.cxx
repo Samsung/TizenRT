@@ -1,11 +1,12 @@
 #include "InputDataSource.hpp"
 
-
-InputDataSource::InputDataSource()
+namespace Media
 {
-}
+	InputDataSource::InputDataSource()
+	{
+	}
 
-
-InputDataSource::~InputDataSource()
-{
+	InputDataSource::~InputDataSource()
+	{
+	}
 }

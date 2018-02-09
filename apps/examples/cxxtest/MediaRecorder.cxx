@@ -2,17 +2,11 @@
 
 namespace Media 
 {
-	MediaRecorder::MediaRecorder() : channels(2), sampleRate(16000), pcmFormat(0)
+	MediaRecorder::MediaRecorder()
 	{
 		_init();
 	}
-
-	MediaRecorder::MediaRecorder(int _channels, int _sampleRate, int _pcmFormat)
-	: channels(_channels), sampleRate(_sampleRate), pcmFormat(_pcmFormat)
-	{
-		_init();
-	}
-
+	
 	recorder_result_t MediaRecorder::create()  // sync call
 	{
 		unique_lock<mutex> lock(*cMtx);
@@ -93,9 +87,11 @@ namespace Media
 		curVolume = vol;
 	}
 
-	void MediaRecorder::setDataSource(DataSource dataSource)
+	void MediaRecorder::setOutputDataSource(OutputDataSource *_outputDataSource)
 	{
 		lock_guard<mutex> lock(*cMtx);
+
+		outputDataSource = _outputDataSource;
 	}
 
 	void MediaRecorder::_init()
@@ -111,6 +107,15 @@ namespace Media
 	{
 		std::cout << "prepare recording" << std::endl;
 		curState = RECORDER_STATE_READY;
+
+		struct pcm_config config;
+		memset(&config, 0, sizeof(struct pcm_config));
+		config.channels = outputDataSource->getChannels();
+		config.rate = outputDataSource->getSampleRate();
+		config.format = (pcm_format)outputDataSource->getPcmFormat();
+
+		//cardnum,  getDeviceCard
+		pcmIn = pcm_open(0, 0, PCM_IN, &config);	
 	}
 
 	void MediaRecorder::_unprepare()
@@ -121,16 +126,7 @@ namespace Media
 
 	void MediaRecorder::_create()
 	{
-		std::cout << "create Recorder" << std::endl;
-
-		struct pcm_config config;
-		memset(&config, 0, sizeof(struct pcm_config));
-		config.channels = channels;
-		config.rate = sampleRate;
-		config.format = (pcm_format)pcmFormat;
-
-		//cardnum,  getDeviceCard
-		pcmIn = pcm_open(0, 0, PCM_IN, &config);		
+		std::cout << "create Recorder" << std::endl;	
 		cvStart.notify_one();
 	}
 
