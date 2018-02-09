@@ -78,6 +78,9 @@
 #define DNS_CLOCK CLOCK_REALTIME
 #endif
 
+#ifndef CONFIG_NETDB_DNSCLIENT_NAMESIZE
+#define CONFIG_NETDB_DNSCLIENT_NAMESIZE 512
+#endif
 /****************************************************************************
  * Private Types
  ****************************************************************************/
