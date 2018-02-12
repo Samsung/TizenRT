@@ -14,7 +14,7 @@ namespace Media
 		isRunning = true;
 		worker = new thread(&MediaRecorder::worker_thread, this);
 		enqueue([this](){_create(); });
-		cvStart.wait(lock);
+		cvSync.wait(lock);
 
 		curState = RECORDER_STATE_IDLE;
 
@@ -37,17 +37,21 @@ namespace Media
 
 	recorder_result_t MediaRecorder::prepare()
 	{
-		lock_guard<mutex> lock(*cMtx);
+		unique_lock<mutex> lock(*cMtx);
 		enqueue([this](){_prepare(); });
+		cvSync.wait(lock);
 
+		curState = RECORDER_STATE_READY;
 		return RECORDER_OK;
 	}
 
 	recorder_result_t MediaRecorder::unprepare()
 	{
-		lock_guard<mutex> lock(*cMtx);
+		unique_lock<mutex> lock(*cMtx);
 		enqueue([this]() {_unprepare(); });
+		cvSync.wait(lock);
 
+		curState = RECORDER_STATE_IDLE;
 		return RECORDER_OK;
 	}
 
@@ -105,8 +109,7 @@ namespace Media
 
 	void MediaRecorder::_prepare()
 	{
-		std::cout << "prepare recording" << std::endl;
-		curState = RECORDER_STATE_READY;
+		std::cout << "prepare recording" << std::endl;		
 
 		struct pcm_config config;
 		memset(&config, 0, sizeof(struct pcm_config));
@@ -116,18 +119,20 @@ namespace Media
 
 		//cardnum,  getDeviceCard
 		pcmIn = pcm_open(0, 0, PCM_IN, &config);	
+
+		cvSync.notify_one();
 	}
 
 	void MediaRecorder::_unprepare()
 	{
 		std::cout << "unprepare recording" << std::endl;
-		curState = RECORDER_STATE_IDLE;
+		cvSync.notify_one();
 	}
 
 	void MediaRecorder::_create()
 	{
 		std::cout << "create Recorder" << std::endl;	
-		cvStart.notify_one();
+		cvSync.notify_one();
 	}
 
 	void MediaRecorder::_destroy()
