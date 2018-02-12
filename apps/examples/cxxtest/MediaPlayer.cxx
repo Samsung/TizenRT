@@ -10,10 +10,11 @@ namespace Media
 		worker = nullptr;
 	}
 
-	player_result_t MediaPlayer::create()  // sync call
+	player_result_t MediaPlayer::create(std::function<void(int, int)> _user_cb = nullptr)  // sync call
 	{
 		unique_lock<mutex> lock(*cMtx);
 
+		user_cb = _user_cb;
 		isRunning = true;
 		worker = new thread(&MediaPlayer::worker_thread, this);
 		enqueue([this]() {_create(); });
@@ -133,16 +134,25 @@ namespace Media
 	{
 		std::cout << "start playing" << std::endl;
 		curState = PLAYER_STATE_PLAYING;
+		if (user_cb) {
+			user_cb(PLAYER_STATE_PLAYING, PLAYER_OK);
+		}
 	}
 
 	void MediaPlayer::_stop()
 	{
 		curState = PLAYER_STATE_READY;
+		if (user_cb) {
+			user_cb(PLAYER_STATE_READY, PLAYER_OK);
+		}
 	}
 
 	void MediaPlayer::_pause()
 	{
 		curState = PLAYER_STATE_PAUSED;
+		if (user_cb) {
+			user_cb(PLAYER_STATE_PAUSED, PLAYER_OK);
+		}
 	}
 
 	MediaPlayer::~MediaPlayer()

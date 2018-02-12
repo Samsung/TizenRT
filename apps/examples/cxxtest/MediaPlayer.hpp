@@ -74,6 +74,7 @@ namespace Media
 		void _stop();
 
 	private:
+		std::function<void(int state, int err)> user_cb;
 		player_state_t curState;
 		mutex *cMtx; // command mutex
 		mutex *qMtx; // queue mutex
