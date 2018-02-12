@@ -6,6 +6,6 @@
 config SYSTEM_FLASH_ERASEALL
 	bool "FLASH eraseall tool"
 	default n
-	depends on MTD && NSH_BUILTIN_APPS && !BUILD_PROTECTED && !BUILD_KERNEL
+	depends on MTD && BUILTIN_APPS && !BUILD_PROTECTED && !BUILD_KERNEL
 	---help---
 		Enable support for the FLASH eraseall tool.
