@@ -10,7 +10,7 @@
 #include <iostream>
 
 #include <tinyalsa/tinyalsa.h>
-#include "OutputDataSource.hpp"
+#include "RecorderDataSource.hpp"
 
 using namespace std;
 
@@ -50,7 +50,7 @@ namespace Media
 		recorder_result_t getVolume() const;
 		void setVolume(int vol);
 
-		void setOutputDataSource(OutputDataSource *_outputDataSource);
+		void setDataSource(RecorderDataSource *_recorderDataSource);
 
 	private:
 
@@ -88,7 +88,7 @@ namespace Media
 		bool isRunning;
 		int curVolume;
 
-		OutputDataSource *outputDataSource;
+		RecorderDataSource *recorderDataSource;
 	};
 }
 

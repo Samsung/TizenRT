@@ -91,11 +91,11 @@ namespace Media
 		curVolume = vol;
 	}
 
-	void MediaRecorder::setOutputDataSource(OutputDataSource *_outputDataSource)
+	void MediaRecorder::setDataSource(RecorderDataSource *_recorderDataSource)
 	{
 		lock_guard<mutex> lock(*cMtx);
 
-		outputDataSource = _outputDataSource;
+		recorderDataSource = _recorderDataSource;
 	}
 
 	void MediaRecorder::_init()
@@ -113,9 +113,9 @@ namespace Media
 
 		struct pcm_config config;
 		memset(&config, 0, sizeof(struct pcm_config));
-		config.channels = outputDataSource->getChannels();
-		config.rate = outputDataSource->getSampleRate();
-		config.format = (pcm_format)outputDataSource->getPcmFormat();
+		config.channels = recorderDataSource->getChannels();
+		config.rate = recorderDataSource->getSampleRate();
+		config.format = (pcm_format)recorderDataSource->getPcmFormat();
 
 		//cardnum,  getDeviceCard
 		pcmIn = pcm_open(0, 0, PCM_IN, &config);	
