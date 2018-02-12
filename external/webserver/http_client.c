@@ -325,9 +325,6 @@ int http_parse_message(char *buf, int buf_len, int *method, char *url,
 						*body = buf + len->sentence_start + 5;
 						buf[buf_len + len->message_len - 2] = '\0';
 
-						if (response->entity) {
-							response->entity_len = strlen(response->entity);
-						}
 						HTTP_LOGD("buf_len : %d len->sentence_start : %d len->message_len : %d len->content_len %d\n", buf_len, len->sentence_start, len->message_len, len->content_len);
 						read_finish = true;
 					}
@@ -336,9 +333,15 @@ int http_parse_message(char *buf, int buf_len, int *method, char *url,
 					response->total_len = len->content_len;
 					response->entity_len = buf_len;
 
-					if(is_header == true && !is_chunked) {
+					if (is_chunked) {
+						if (response->entity) {
+							response->entity_len = len->content_len;
+						}
+					}
+
+					if (is_header == true && !is_chunked) {
 						response->entity_len = 0;
-						HTTP_LOGD("[HEADER_BODY]buf_len : %d len->sentence_start : %d len->message_len : %d len->content_len %d\n", buf_len, len->sentence_start, len->message_len, len->content_len);
+						HTTP_LOGD("[HEADER_BODY]buf_len : %d len->sentence_start : %d len->message_len : %d len->content_len %d entity_len : %d\n", buf_len, len->sentence_start, len->message_len, len->content_len);
 					}
 
 					entity = *body;
