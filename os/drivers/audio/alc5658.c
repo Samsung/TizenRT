@@ -974,8 +974,31 @@ static int alc5658_ioctl(FAR struct audio_lowerhalf_s *dev, int cmd, unsigned lo
 	switch (cmd) {
 
 	case AUDIOIOC_PREPARE: {
-		/* TODO: Need to be implemented later */
-		audvdbg("AUDIOIOC_PREPARE: No Action Would be taken now \n");
+		/* This is to aid audio prepare, this would stop dma, i2s and
+		cleanup all queues. Idea behind is to use this in xrun cases to stop
+		followed by (restart) but restart is not part of this */
+		audvdbg("AUDIOIOC_PREPARE: Stop dma,i2s and cleanup qs\n");
+
+		/* Take semaphore */
+		alc5658_takesem(&priv->devsem);
+
+		/* Stop dma, i2s */
+		I2S_STOP(priv->i2s);
+
+		/* Switch alc status */
+		priv->running = false;
+
+		/* Clean up alc queue */
+		sq_entry_t *tmp = NULL;
+		for (tmp = (sq_entry_t *)sq_peek(&priv->pendq); tmp; tmp = sq_next(tmp)) {
+			sq_rem(tmp, &priv->pendq);
+		}
+		sq_init(&priv->pendq);
+
+		/* TOCHECK: Do we need to run stop alc stop script? ??? for now no */
+
+		/* Give semaphore */
+		alc5658_givesem(&priv->devsem);
 	}
 	break;
 	case AUDIOIOC_HWRESET: {
