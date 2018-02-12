@@ -187,6 +187,8 @@ static int g_running;
 static int g_https;
 static int g_async;
 static int g_testentity;
+static int g_total_received_size;
+static int g_callback_call_count;
 
 static const char headerfield_connect[] = "Connect";
 static const char headerfield_close[] = "close";
@@ -202,9 +204,11 @@ static const char headerfield_tinyara[] = "TinyARA";
 
 static void callback(struct http_client_response_t *response)
 {
+	g_total_received_size += response->entity_len;
+	g_callback_call_count++;
 	printf("----------async response----------\n");
 	printf("status %d %s\n", response->status, response->phrase);
-	printf("len : %d total len : %d\n", response->entity_len, response->total_len);
+	printf("len : %d Received len : %d total len : %d callback_call count : %d\n", response->entity_len, g_total_received_size, response->total_len, g_callback_call_count);
 	printf("%s\n", response->entity);
 	printf("---------------------------------\n");
 }
@@ -406,6 +410,8 @@ int webclient_main(int argc, char *argv[])
 	struct sched_param sparam;
 	pthread_t tid;
 	struct webclient_input *input = NULL;
+	g_total_received_size = 0;
+	g_callback_call_count = 0;
 
 	if (g_running) {
 		printf("Previous request is in process, Please wait.\n");

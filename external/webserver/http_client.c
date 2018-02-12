@@ -279,13 +279,21 @@ int http_parse_message(char *buf, int buf_len, int *method, char *url,
 				break;
 			}
 			if (*enc == HTTP_CONTENT_LENGTH) {
+				bool is_header = false;
 				if (!len->message_len) {
+					is_header = true;
 					*body = buf + len->sentence_start;
+					HTTP_LOGD("[HEADER] buf_len : %d len->sentence_start : %d len->message_len : %d len->content_len %d\n", buf_len, len->sentence_start, len->message_len, len->content_len);
 				}
 				if (buf_len - len->sentence_start + len->message_len == len->content_len) {
 					buf[buf_len + len->message_len] = '\0';
-					HTTP_LOGD("buf_len : %d len->sentence_start : %d len->message_len : %d len->content_len %d\n", buf_len, len->sentence_start, len->message_len, len->content_len);
+					HTTP_LOGD("[BODY_END]buf_len : %d len->sentence_start : %d len->message_len : %d len->content_len %d\n", buf_len, len->sentence_start, len->message_len, len->content_len);
 					//HTTP_LOGD("All body readed : \n%s\n", *body);
+
+					response->total_len = len->content_len;
+					response->entity_len = buf_len;
+
+					entity = *body;
 					read_finish = true;
 				} else {
 					if (is_chunked == true) {
@@ -314,15 +322,27 @@ int http_parse_message(char *buf, int buf_len, int *method, char *url,
 							len->content_len += cha;
 						}
 
-						response->total_len = len->content_len;
 						*body = buf + len->sentence_start + 5;
 						buf[buf_len + len->message_len - 2] = '\0';
 
+						if (response->entity) {
+							response->entity_len = strlen(response->entity);
+						}
 						HTTP_LOGD("buf_len : %d len->sentence_start : %d len->message_len : %d len->content_len %d\n", buf_len, len->sentence_start, len->message_len, len->content_len);
 						read_finish = true;
 					}
 					len->message_len += buf_len;
 
+					response->total_len = len->content_len;
+					response->entity_len = buf_len;
+
+					if(is_header == true && !is_chunked) {
+						response->entity_len = 0;
+						HTTP_LOGD("[HEADER_BODY]buf_len : %d len->sentence_start : %d len->message_len : %d len->content_len %d\n", buf_len, len->sentence_start, len->message_len, len->content_len);
+					}
+
+					entity = *body;
+					HTTP_LOGD("[BODY]buf_len : %d len->sentence_start : %d len->message_len : %d len->content_len %d\n", buf_len, len->sentence_start, len->message_len, len->content_len);
 					HTTP_LOGD("Not all body readed\n");
 				}
 				process_finish = true;
