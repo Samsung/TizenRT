@@ -1,7 +1,7 @@
-From a9f770243ccb354e99b9ff33ecfecbeca73b1b03 Mon Sep 17 00:00:00 2001
+From 23caf033c718dd932efd225a01d00587b88b081a Mon Sep 17 00:00:00 2001
 From: Manohara HK <manohara.hk@samsung.com>
 Date: Mon, 20 Mar 2017 19:13:02 +0530
-Subject: [PATCH v2] arm : stellaris : Increase sram and flash size and support
+Subject: [PATCH] arm : stellaris : Increase sram and flash size and support
  sdram
 
 This patch increase's the sram and flash size of stellaris lm3s6965 board.
@@ -10,11 +10,11 @@ It also adds a sdram of 512MB to the board.
 Signed-off-by: Manohara HK <manohara.hk@samsung.com>
 Signed-off-by: pradeep.ns <pradeep.ns@samsung.com>
 ---
- hw/arm/stellaris.c | 29 +++++++++++++++++++++++++++++
- 1 file changed, 29 insertions(+)
+ hw/arm/stellaris.c | 35 +++++++++++++++++++++++++++++++++--
+ 1 file changed, 33 insertions(+), 2 deletions(-)
 
 diff --git a/hw/arm/stellaris.c b/hw/arm/stellaris.c
-index 408c1a1..d9ebac8 100644
+index 408c1a1..171fe0c 100644
 --- a/hw/arm/stellaris.c
 +++ b/hw/arm/stellaris.c
 @@ -55,6 +55,16 @@ typedef const struct {
@@ -48,7 +48,7 @@ index 408c1a1..d9ebac8 100644
      0x001133ff,
      0x030f5317,
      0x0f0f87ff,
-@@ -1282,6 +1298,9 @@ static void stellaris_init(const char *kernel_filename, const char *cpu_model,
+@@ -1282,21 +1298,36 @@ static void stellaris_init(const char *kernel_filename, const char *cpu_model,
  
      MemoryRegion *sram = g_new(MemoryRegion, 1);
      MemoryRegion *flash = g_new(MemoryRegion, 1);
@@ -58,7 +58,16 @@ index 408c1a1..d9ebac8 100644
      MemoryRegion *system_memory = get_system_memory();
  
      flash_size = (((board->dc0 & 0xffff) + 1) << 1) * 1024;
-@@ -1297,6 +1316,19 @@ static void stellaris_init(const char *kernel_filename, const char *cpu_model,
+     sram_size = ((board->dc0 >> 18) + 1) * 1024;
+ 
+-    /* Flash programming is done via the SCU, so pretend it is ROM.  */
++    /* Flash is read/writable */
+     memory_region_init_ram(flash, NULL, "stellaris.flash", flash_size,
+                            &error_fatal);
+-    memory_region_set_readonly(flash, true);
+     memory_region_add_subregion(system_memory, 0, flash);
+ 
+     memory_region_init_ram(sram, NULL, "stellaris.sram", sram_size,
                             &error_fatal);
      memory_region_add_subregion(system_memory, 0x20000000, sram);
  
