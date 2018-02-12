@@ -9,18 +9,6 @@ config EXAMPLES_HELLO
 	---help---
 		Enable the \"Hello, World!\" example
 
-if EXAMPLES_HELLO
-
-config EXAMPLES_HELLO_PROGNAME
-	string "Program name"
-	default "hello"
-	depends on BUILD_KERNEL
-	---help---
-		This is the name of the program that will be use when the NSH ELF
-		program is installed.
-
-endif
-
 config USER_ENTRYPOINT
 	string
 	default "hello_main" if ENTRY_HELLO

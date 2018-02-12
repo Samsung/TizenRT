@@ -165,7 +165,7 @@ int chdir(FAR const char *path)
 	_trimdir(path);
 
 	/* Replace any preceding OLDPWD with the current PWD (this is to
-	 * support 'cd -' in NSH)
+	 * support 'cd -' in TASH)
 	 */
 
 	sched_lock();

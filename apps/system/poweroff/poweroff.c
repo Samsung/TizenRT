@@ -65,19 +65,6 @@ int main(int argc, FAR char *argv[])
 int poweroff_main(int argc, char *argv[])
 #endif
 {
-	/* TODO:
-	 *  - replace this by sending general system signal to shutdown, where i.e. nsh
-	 *    must issue down script (it may check whether nsh is running before spawning
-	 *    a new process with nsh poweroff)
-	 *  - wait for some time (~0.5 second for VSN), that SDcard is flashed and synced
-	 *  - call poweroff
-	 *
-	 * TODO on boot:
-	 *  - if external key is pressed, do not start the nsh! but wait until it is released
-	 *    (to get rid of bad mounts of the sdcard etc.) this could be handled in the
-	 *    button driver immediately on system boot
-	 */
-
 	board_power_off();
 	return 0;
 }

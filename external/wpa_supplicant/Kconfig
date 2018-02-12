@@ -13,14 +13,6 @@ config WPA_SUPPLICANT
 
 if WPA_SUPPLICANT
 
-config WPA_SUPPLICANT_PROGNAME
-	string "Program name"
-	default "wpa_supplicant"
-	depends on BUILD_KERNEL
-	---help---
-		This is the name of the program that will be use when the NSH ELF
-		program is installed.
-
 config WPA_SUPPLICANT_PRIORITY
 	int "wpa_supplicant task priority"
 	default 100

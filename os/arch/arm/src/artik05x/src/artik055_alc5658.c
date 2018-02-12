@@ -256,7 +256,7 @@ int s5j_alc5658_initialize(int minor)
 
 	/* Have we already initialized?  Since we never uninitialize we must prevent
 	 * multiple initializations.  This is necessary, for example, when the
-	 * touchscreen example is used as a built-in application in NSH and can be
+	 * touchscreen example is used as a built-in application in TASH and can be
 	 * called numerous time.  It will attempt to initialize each time.
 	 */
 

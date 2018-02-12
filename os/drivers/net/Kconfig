@@ -376,7 +376,6 @@ config NETDEV_PHY_DEBUG
 		may generate a LOT of debug output, especially if DEBUG_VERBOSE is
 		also selected.  This option is intended to force VERVOSE debug
 		output from certain PHY-related even if DEBUG_NET or DEBUG_VERBOSE
-		are not selected.  This allows for focused, unit-level debug of
-		the NSH network initialization logic.
+		are not selected.
 
 endif # ARCH_HAVE_PHY
