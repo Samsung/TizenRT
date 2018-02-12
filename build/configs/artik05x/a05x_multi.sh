@@ -57,7 +57,8 @@ Options:
     [--flash]
     [--dev[=serial]]
     [--list[=file]]
-        [--set[="partition file"]]
+    [--opt[=file]]
+    [--set[="partition file"]]
     [--exec-path[=<path>]]
     [--config-path[=<path>]]
 
@@ -76,6 +77,7 @@ Options:
                             devices.
    --dev[=serial]           Choose the device corresponding to 'serial'.
    --list[=file]            Read the list of target devices from input file.
+   --opt[=file]             Read the list of download options from input file.
    --set[=partition file]   Choose the partition what do you want.
    --exec-path[=<path..>]   Specifies the path to the executables. If you don't use this
                             option, the default path is specified.
