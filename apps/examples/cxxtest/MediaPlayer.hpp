@@ -9,7 +9,7 @@
 #include <functional>
 #include <iostream>
 
-#include "InputDataSource.hpp"
+#include "PlayerDataSource.hpp"
 #include <tinyalsa/tinyalsa.h>
 
 using namespace std;
@@ -37,7 +37,8 @@ namespace Media
 		MediaPlayer();
 		~MediaPlayer();
 
-		player_result_t create();
+		//player_result_t create();
+		player_result_t create(std::function<void(int, int)> _user_cb);
 		player_result_t destroy();
 
 		player_result_t prepare();
