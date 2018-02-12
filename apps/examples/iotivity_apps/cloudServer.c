@@ -1072,9 +1072,9 @@ static OCStackResult saveTrustCert(void)
 
 #if defined(CONFIG_TLS_WITH_SSS) && defined(CONFIG_HW_ECDSA)
 	unsigned char *buf = NULL;
-	unsigned int buflen = SEE_BUF_MAX_SIZE;
+	unsigned int buflen = SEE_MAX_BUF_SIZE;
 
-	buf = malloc(SEE_BUF_MAX_SIZE);
+	buf = malloc(SEE_MAX_BUF_SIZE);
 
 	if (buf == NULL) {
 		OIC_LOG(ERROR, TAG, "Failed to allocate buffer");
@@ -1350,7 +1350,7 @@ int OCGetOwnCertFromHw(const void *keyContext, uint8_t **certChain, size_t *cert
 {
 	int ret;
 	unsigned char *buf;
-	unsigned int buflen = SEE_BUF_MAX_SIZE;
+	unsigned int buflen = SEE_MAX_BUF_SIZE;
 
 	(void *)keyContext;
 

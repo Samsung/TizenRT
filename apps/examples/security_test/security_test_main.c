@@ -616,7 +616,7 @@ unsigned int TC_see_generate_certificate(void)
 
 	ret = see_setup_key(test_rsa_ca, sizeof(test_rsa_ca), SECURE_STORAGE_TYPE_KEY_RSA, 1);
 	ret += see_setup_key(test_rsa_dev, sizeof(test_rsa_dev), SECURE_STORAGE_TYPE_KEY_RSA, 2);
-	c_opt.cert_index = MIN_CERT_INDEX;
+	c_opt.cert_index = SEE_MIN_CERT_INDEX;
 	c_opt.issuer_key_index = 1;
 	c_opt.subject_key_index = 2;
 
@@ -641,7 +641,7 @@ unsigned int TC_see_generate_certificate(void)
 	printf("  TESTCASE : see_set/get_certificate\n");
 	printf("----------------------------------------\n");
 
-	for (i = MIN_CERT_INDEX; i < MAX_CERT_INDEX + 1; i++) {
+	for (i = SEE_MIN_CERT_INDEX; i < SEE_MAX_CERT_INDEX + 1; i++) {
 		see_selfprintf("[%d] ", i);
 
 		c_bufoutlen = 2000;
@@ -649,7 +649,7 @@ unsigned int TC_see_generate_certificate(void)
 		ret = see_set_certificate(c_buf, c_buflen, i, CERT_PEM);
 		ret += see_get_certificate(c_buf_out, &c_bufoutlen, i, CERT_PEM);
 
-		if (i == MAX_CERT_INDEX && ret) {
+		if (i == SEE_MAX_CERT_INDEX && ret) {
 			see_selfprintf(" success\n");
 		} else if (ret || c_buflen != c_bufoutlen || memcmp(c_buf, c_buf_out, c_buflen)) {
 			test_result |= 0x100;
@@ -980,8 +980,8 @@ unsigned int TC_see_iotivity_read_write(void)
 				   SEE_IOTIVITY_MAXSIZE, SEE_IOTIVITY_MAXSIZE + 1
 				 };
 	unsigned int outlen = 0;
-	unsigned char inbuf[SEE_BUF_MAX_SIZE * 2 + 100];
-	unsigned char outbuf[SEE_BUF_MAX_SIZE * 2 + 100];
+	unsigned char inbuf[SEE_MAX_BUF_SIZE * 2 + 100];
+	unsigned char outbuf[SEE_MAX_BUF_SIZE * 2 + 100];
 
 	printf("------------------------------------------\n");
 	printf("TESTCASE : see_iotivity_read_write\n");
@@ -990,7 +990,7 @@ unsigned int TC_see_iotivity_read_write(void)
 	for (i = 0; i < 9; i++) {
 		see_selfprintf("[%d] ", i);
 
-		memset(inbuf, i, SEE_BUF_MAX_SIZE * 2 + 100);
+		memset(inbuf, i, SEE_MAX_BUF_SIZE * 2 + 100);
 
 		ret = see_write_iotivity_storage(inbuf, buflen[i]);
 
@@ -1006,7 +1006,7 @@ unsigned int TC_see_iotivity_read_write(void)
 		}
 
 		outlen = 0;
-		memset(outbuf, 0, SEE_BUF_MAX_SIZE * 2 + 100);
+		memset(outbuf, 0, SEE_MAX_BUF_SIZE * 2 + 100);
 
 		ret = see_read_iotivity_storage(outbuf, buflen[i], &outlen);
 

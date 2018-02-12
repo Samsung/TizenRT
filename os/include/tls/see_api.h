@@ -71,9 +71,6 @@ typedef enum {
  */
 #define SEE_MAX_RANDOM_SIZE		(256)
 #define SEE_MAX_BUF_SIZE		(4096)
-#define SEE_MAX_KEY_INDEX		(0x08)
-#define SEE_MAX_CERT_INDEX		(0x08)
-#define ECC_KEY				(0x040000)
 
 #if defined(SEE_API_DEBUG)
 #define SEE_DEBUG printf
@@ -90,9 +87,10 @@ typedef enum {
 #ifdef CONFIG_SUPPORT_FULL_SECURITY
 
 /* Key type */
-#define AES_KEY           0x010000
-#define HMAC_KEY          0x020000
-#define RSA_KEY           0x030000
+#define AES_KEY		0x010000
+#define HMAC_KEY	0x020000
+#define RSA_KEY		0x030000
+#define ECC_KEY		0x040000
 
 #define AES_KEY_128       ((AES_KEY)  | (0x1))
 #define AES_KEY_256       ((AES_KEY)  | (0x2))
@@ -114,17 +112,14 @@ typedef enum {
 #define CERT_PEM      0x02
 
 /* index */
-#define MAX_DATA_INDEX	32
-#define MIN_DATA_INDEX	0
-#define MAX_KEY_INDEX	8
-#define MIN_KEY_INDEX	0
-#define MAX_CERT_INDEX	6
-#define MIN_CERT_INDEX	0
+#define SEE_MAX_DATA_INDEX	32
+#define SEE_MAX_KEY_INDEX	8
+#define SEE_MIN_CERT_INDEX	0
+#define SEE_MAX_CERT_INDEX	6
 
-#define MAX_DATA_SIZE	(208)
-#define SEE_BUF_MAX_SIZE	(4096)
+#define SEE_MAX_DATA_SIZE	(208)
 
-#define SEE_IOTIVITY_MAXSIZE	   (SEE_BUF_MAX_SIZE * 2)
+#define SEE_IOTIVITY_MAXSIZE	   (SEE_MAX_BUF_SIZE * 2)
 #define SEE_IOTIVITY_SLOT	   (7)
 
 /**
