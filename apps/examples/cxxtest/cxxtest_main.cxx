@@ -89,11 +89,6 @@ using namespace std;
 #undef CXXTEST_ISTREAM
 #undef CXXTEST_EXCEPTION
 
-#ifdef CONFIG_UCLIBCXX_EXCEPTION
-#define CXXTEST_EXCEPTION
-#endif
-
-
 //***************************************************************************
 // Private Classes
 //***************************************************************************

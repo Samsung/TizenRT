@@ -1,6 +1,5 @@
 /Make.dep
 /.depend
-/uClibc++
 /*.asm
 /*.obj
 /*.rel
