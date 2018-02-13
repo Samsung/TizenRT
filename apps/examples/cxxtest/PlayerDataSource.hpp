@@ -1,3 +1,6 @@
+#ifndef __MEDIA_PLAYERDATASOURCE_HPP
+#define __MEDIA_PLAYERDATASOURCE_HPP
+
 #include "DataSource.hpp"
 
 namespace Media
@@ -9,3 +12,5 @@ namespace Media
 		~PlayerDataSource();
 	};
 }
+
+#endif

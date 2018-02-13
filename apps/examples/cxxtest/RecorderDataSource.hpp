@@ -1,4 +1,5 @@
-#pragma once
+#ifndef __MEDIA_RECORDDATASOURCE_HPP
+#define __MEDIA_RECORDDATASOURCE_HPP
 
 #include "DataSource.hpp"
 
@@ -11,4 +12,6 @@ namespace Media
 		~RecorderDataSource();
 	};
 }
+
+#endif
 

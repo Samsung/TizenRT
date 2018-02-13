@@ -1,5 +1,5 @@
-#ifndef __MEIDAFRAMEWORK_MEDIAPLAYER_HPP
-#define __MEIDAFRAMEWORK_MEDIAPLAYER_HPP
+#ifndef __MEDIA_MEDIAPLAYER_HPP
+#define __MEDIA_MEDIAPLAYER_HPP
 
 #include <thread>
 #include <mutex>
