@@ -67,7 +67,7 @@ namespace Media
 		thread *worker;
 		int worker_thread();
 
-		player_result_t createWorker(std::unique_lock<mutex> &&);
+		player_result_t createWorker(std::unique_lock<mutex> &);
 		void _create();
 		void _destroy();
 		void _prepare();
