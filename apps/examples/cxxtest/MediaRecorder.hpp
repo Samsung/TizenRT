@@ -37,8 +37,10 @@ namespace Media
 		MediaRecorder();
 		MediaRecorder(int, int, int );
 		~MediaRecorder();
-
+		
 		recorder_result_t create();
+		recorder_result_t create(std::function<void(int, int)> &&);
+		recorder_result_t create(std::function<void(int, int)> &);
 		recorder_result_t destroy();
 		
 		recorder_result_t prepare();
@@ -66,6 +68,7 @@ namespace Media
 		thread *worker;
 		int worker_thread();
 
+		recorder_result_t createWorker(std::unique_lock<mutex> &&);
 		void _init();
 		void _prepare();
 		void _unprepare();
@@ -76,6 +79,7 @@ namespace Media
 		void _stop();
 
 	private:
+		std::function<void(int state, int err)> user_cb;
 		struct pcm *pcmIn;
 		recorder_state_t curState;
 		mutex *cMtx; // command mutex
