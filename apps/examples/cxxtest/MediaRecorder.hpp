@@ -1,5 +1,5 @@
-#ifndef __MEIDAFRAMEWORK_MEDIARECORDER_HPP
-#define __MEIDAFRAMEWORK_MEDIARECORDER_HPP
+#ifndef __MEDIA_MEDIARECORDER_HPP
+#define __MEDIA_MEDIARECORDER_HPP
 
 #include <thread>
 #include <mutex>
