@@ -10,18 +10,36 @@ namespace Media
 		worker = nullptr;
 	}
 
-	player_result_t MediaPlayer::create(std::function<void(int, int)> _user_cb = nullptr)  // sync call
+	player_result_t MediaPlayer::createWorker(unique_lock<mutex> &&lock)
 	{
-		unique_lock<mutex> lock(*cMtx);
-
-		user_cb = _user_cb;
-		isRunning = true;
+		isRunning = true;		
 		worker = new thread(&MediaPlayer::worker_thread, this);
 		enqueue([this]() {_create(); });
 		cvSync.wait(lock);
 
-		curState = PLAYER_STATE_IDLE;
+		curState = PLAYER_STATE_IDLE;		
 		return PLAYER_OK;
+	}
+
+	player_result_t MediaPlayer::create()
+	{
+		unique_lock<mutex> lock(*cMtx);
+		user_cb = nullptr;
+		return createWorker(std::move(lock));
+	}
+
+	player_result_t MediaPlayer::create(std::function<void(int, int)> &&_user_cb)
+	{
+		unique_lock<mutex> lock(*cMtx);
+		user_cb = std::move(_user_cb);
+		return createWorker(std::move(lock));
+	}
+
+	player_result_t MediaPlayer::create(std::function<void(int, int)> &_user_cb)
+	{
+		unique_lock<mutex> lock(*cMtx);
+		user_cb = _user_cb;
+		return createWorker(std::move(lock));
 	}
 
 	player_result_t MediaPlayer::destroy() // sync call

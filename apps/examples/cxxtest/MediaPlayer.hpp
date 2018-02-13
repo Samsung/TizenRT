@@ -36,9 +36,10 @@ namespace Media
 	public:
 		MediaPlayer();
 		~MediaPlayer();
-
-		//player_result_t create();
-		player_result_t create(std::function<void(int, int)> _user_cb);
+				
+		player_result_t create();
+		player_result_t create(std::function<void(int, int)> &&);
+		player_result_t create(std::function<void(int, int)> &);
 		player_result_t destroy();
 
 		player_result_t prepare();
@@ -58,7 +59,7 @@ namespace Media
 		template<typename _Callable, typename... _Args>
 		void enqueue(_Callable&& __f, _Args&&... __args) {
 			unique_lock<std::mutex> lock(*qMtx);
-			std::function<void()> func = std::bind(std::forward<_Callable>(__f), std::forward<_Args>(__args)...);	
+			std::function<void()> func = std::bind(std::forward<_Callable>(__f), std::forward<_Args>(__args)...);
 			cmdQueue.push(func);
 			cvQueue.notify_one();
 		}
@@ -66,6 +67,7 @@ namespace Media
 		thread *worker;
 		int worker_thread();
 
+		player_result_t createWorker(std::unique_lock<mutex> &&);
 		void _create();
 		void _destroy();
 		void _prepare();
@@ -74,7 +76,7 @@ namespace Media
 		void _pause();
 		void _stop();
 
-	private:
+	private:		
 		std::function<void(int state, int err)> user_cb;
 		player_state_t curState;
 		mutex *cMtx; // command mutex
