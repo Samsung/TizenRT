@@ -90,6 +90,8 @@ typedef struct st_device_s {
 	struct things_resource_s *pchild_resources[MAX_DEVICE_CAPABILTY_CNT];
 } st_device_s;
 
+size_t get_json_file_size(const char *filename);
+char *get_json_string_from_file(const char *filename);
 int dm_init_module(const char *info_Path);
 
 int dm_termiate_module(void);
@@ -130,6 +132,11 @@ char *dm_get_mnid(void);
 
 int dm_validate_attribute_in_request(char *res_type, const void *payload);
 
+char *dm_get_firmware_version();
+char *dm_get_vendor_id();
+char *dm_get_model_number();
+char *get_json_string_from_file(const char *filename);
+int set_json_string_into_file(const char *filename, const char *json_str);
 typedef enum {
 	es_conn_type_none = 0,
 	es_conn_type_softap = 1,

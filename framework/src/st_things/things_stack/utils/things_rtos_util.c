@@ -36,6 +36,7 @@ static char thingsStackthreadName[THINGS_STACK_MAX_INDEX][40] = { {"THINGS_STACK
 	{"THINGS_STACK_BASE_TIME_OUT"},	/*THINGS_STACK_BASE_TIME_OUT_THREAD */
 	{"THINGS_STACK_OICABORT"},		/*THINGS_STACK_OICABORT_THREAD */
 	{"THINGS_STACK_WIFI_JOIN"},		/*THINGS_STACK_WIFI_JOIN_THREAD */
+	{"THINGS_STACK_UPDATE_THREAD"},	/*THINGS_STACK_FOTA_THREAD */
 	{"THINGS_STACK_MAX_INDEX"}		/*THINGS_STACK_MAX_INDEX */
 };
 
@@ -77,7 +78,9 @@ char *GetPthreadAttrDetails(things_stack_thread_name ethreadName, pthread_attr_t
 			pthread_attr_setstacksize(pstThread, 6 * 1024);
 			/* its the main process thread for all request */
 			break;
-
+		case THGINS_STACK_FOTA_UPDATE_THREAD:
+			pthread_attr_setstacksize(pstThread, 6 * 1024);
+			break;
 		default:
 			pthread_attr_setstacksize(pstThread, 8193);
 			break;
