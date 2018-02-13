@@ -11,7 +11,12 @@ namespace Media
 	{
 		isRunning = true;		
 		worker = new thread(&MediaRecorder::worker_thread, this);
-		enqueue([this]() {_create(); });
+		if (worker == nullptr) {
+			user_cb = nullptr;
+			return RECORDER_ERROR;
+		}
+		
+		enqueue([this]() {_sync(); });
 		cvSync.wait(lock);
 
 		curState = RECORDER_STATE_IDLE;		
@@ -21,7 +26,13 @@ namespace Media
 	recorder_result_t MediaRecorder::create()
 	{
 		unique_lock<mutex> lock(*cMtx);
+
 		std::cout << "create Recorder" << std::endl;
+
+		if (curState != RECORDER_STATE_NONE) {
+			return RECORDER_ERROR;
+		}
+
 		user_cb = nullptr;
 		return createWorker(lock);
 	}
@@ -29,6 +40,11 @@ namespace Media
 	recorder_result_t MediaRecorder::create(std::function<void(int, int)> &&_user_cb)
 	{
 		unique_lock<mutex> lock(*cMtx);
+
+		if (curState != RECORDER_STATE_NONE) {
+			return RECORDER_ERROR;
+		}
+
 		user_cb = std::move(_user_cb);
 		return createWorker(lock);
 	}
@@ -36,19 +52,32 @@ namespace Media
 	recorder_result_t MediaRecorder::create(std::function<void(int, int)> &_user_cb)
 	{
 		unique_lock<mutex> lock(*cMtx);
+
+		if (curState != RECORDER_STATE_NONE) {
+			return RECORDER_ERROR;
+		}
+
 		user_cb = _user_cb;
 		return createWorker(lock);
 	}
 
 	recorder_result_t MediaRecorder::destroy() // sync call
 	{
-		lock_guard<mutex> lock(*cMtx);
+		unique_lock<mutex> lock(*cMtx);
 
-		enqueue([this](){_destroy(); });
+		if (curState != RECORDER_STATE_IDLE) {
+			return RECORDER_ERROR;
+		}
+
+		isRunning = false;
+		enqueue([this]() {_sync(); });
+		cvSync.wait(lock);
+		
 		worker->join();
 		delete worker;
 		worker = nullptr;
 
+		pcm_close(pcmIn);
 		curState = RECORDER_STATE_NONE;
 
 		return RECORDER_OK;
@@ -57,9 +86,26 @@ namespace Media
 	recorder_result_t MediaRecorder::prepare()
 	{
 		unique_lock<mutex> lock(*cMtx);
-		enqueue([this](){_prepare(); });
-		cvSync.wait(lock);
 
+		if (curState != RECORDER_STATE_IDLE) {
+			return RECORDER_ERROR;
+		}
+
+		enqueue([this](){_sync(); });
+
+		struct pcm_config config;
+		memset(&config, 0, sizeof(struct pcm_config));
+		config.channels = recorderDataSource->getChannels();
+		config.rate = recorderDataSource->getSampleRate();
+		config.format = (pcm_format)recorderDataSource->getPcmFormat();
+
+		//cardnum,  getDeviceCard
+		pcmIn = pcm_open(0, 0, PCM_IN, &config);	
+		if (!pcmIn) {
+			return RECORDER_ERROR;
+		}
+
+		cvSync.wait(lock);
 		curState = RECORDER_STATE_READY;
 		return RECORDER_OK;
 	}
@@ -67,8 +113,12 @@ namespace Media
 	recorder_result_t MediaRecorder::unprepare()
 	{
 		unique_lock<mutex> lock(*cMtx);
-		enqueue([this]() {_unprepare(); });
+		enqueue([this]() {_sync(); });
 		cvSync.wait(lock);
+
+		if (curState == RECORDER_STATE_NONE || curState == RECORDER_STATE_IDLE) {
+			return RECORDER_ERROR;
+		}
 
 		curState = RECORDER_STATE_IDLE;
 		return RECORDER_OK;
@@ -126,58 +176,63 @@ namespace Media
 		pcmIn = nullptr;
 	}
 
-	void MediaRecorder::_prepare()
+	void MediaRecorder::_sync()
 	{
-		std::cout << "prepare recording" << std::endl;		
-
-		struct pcm_config config;
-		memset(&config, 0, sizeof(struct pcm_config));
-		config.channels = recorderDataSource->getChannels();
-		config.rate = recorderDataSource->getSampleRate();
-		config.format = (pcm_format)recorderDataSource->getPcmFormat();
-
-		//cardnum,  getDeviceCard
-		pcmIn = pcm_open(0, 0, PCM_IN, &config);	
-
+		unique_lock<mutex> lock(*cMtx);
+		std::cout << "__sync" << std::endl;		
 		cvSync.notify_one();
-	}
-
-	void MediaRecorder::_unprepare()
-	{
-		std::cout << "unprepare recording" << std::endl;
-		cvSync.notify_one();
-	}
-
-	void MediaRecorder::_create()
-	{
-		std::cout << "create Recorder" << std::endl;	
-		cvSync.notify_one();
-	}
-
-	void MediaRecorder::_destroy()
-	{
-		std::cout << "destroy Recorder" << std::endl;
-		pcm_close(pcmIn);
-
-		isRunning = false;
 	}
 
 	void MediaRecorder::_start()
 	{
 		std::cout << "start recording" << std::endl;
+				
+		if (curState != RECORDER_STATE_READY) {
+			if (user_cb) {
+				user_cb(curState, RECORDER_ERROR);
+			}
+			return;
+		}
+
+		curState = RECORDER_STATE_RECORDING;
+		if (user_cb) {
+			user_cb(RECORDER_STATE_RECORDING, RECORDER_OK);
+		}
 		curState = RECORDER_STATE_RECORDING;
 	}
 
 	void MediaRecorder::_stop()
 	{
-		std::cout << "stop recording" << std::endl;
+		std::cout << "stop recording" << std::endl;		
+
+		if (curState != RECORDER_STATE_RECORDING && curState != RECORDER_STATE_PAUSED) {
+			if (user_cb) {
+				user_cb(curState, RECORDER_ERROR);
+			}
+			return;
+		}
+
 		curState = RECORDER_STATE_READY;
+		if (user_cb) {
+			user_cb(RECORDER_STATE_READY, RECORDER_OK);
+		}
 	}
 
 	void MediaRecorder::_pause()
 	{
 		std::cout << "pause recording" << std::endl;
+
+		if (curState != RECORDER_STATE_RECORDING) {
+			if (user_cb) {
+				user_cb(curState, RECORDER_ERROR);
+			}
+			return;
+		}
+
 		curState = RECORDER_STATE_PAUSED;
+		if (user_cb) {
+			user_cb(RECORDER_STATE_PAUSED, RECORDER_OK);
+		}
 	}
 
 	MediaRecorder::~MediaRecorder()
@@ -192,8 +247,7 @@ namespace Media
 		{
 			unique_lock<mutex> lock(*qMtx);
 
-			if (cmdQueue.empty())
-			{
+			if (cmdQueue.empty()) {
 				cvQueue.wait(lock);
 			}
 
