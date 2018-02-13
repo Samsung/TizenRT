@@ -291,9 +291,15 @@ int http_parse_message(char *buf, int buf_len, int *method, char *url,
 					//HTTP_LOGD("All body readed : \n%s\n", *body);
 
 					response->total_len = len->content_len;
-					response->entity_len = buf_len;
 
-					entity = *body;
+					if (is_header == true) {
+						response->entity_len = buf_len - len->sentence_start;
+						response->entity = buf + len->sentence_start;
+					} else {
+						response->entity_len = buf_len;
+						response->entity = buf;
+					}	
+
 					read_finish = true;
 				} else {
 					if (is_chunked == true) {
@@ -331,20 +337,21 @@ int http_parse_message(char *buf, int buf_len, int *method, char *url,
 					len->message_len += buf_len;
 
 					response->total_len = len->content_len;
-					response->entity_len = buf_len;
 
 					if (is_chunked) {
 						if (response->entity) {
+							response->entity = *body;
 							response->entity_len = len->content_len;
 						}
+					} else if (is_header == true && !is_chunked) {
+						response->entity_len = buf_len - len->sentence_start;
+						response->entity = buf + len->sentence_start;
+						HTTP_LOGD("[HEADER_BODY]buf_len : %d len->sentence_start : %d len->message_len : %d len->content_len %d entity_len : %d\n", buf_len, len->sentence_start, len->message_len, len->content_len, response->entity_len);
+					} else {
+						response->entity = buf;
+						response->entity_len = buf_len;
 					}
-
-					if (is_header == true && !is_chunked) {
-						response->entity_len = 0;
-						HTTP_LOGD("[HEADER_BODY]buf_len : %d len->sentence_start : %d len->message_len : %d len->content_len %d entity_len : %d\n", buf_len, len->sentence_start, len->message_len, len->content_len);
-					}
-
-					entity = *body;
+					
 					HTTP_LOGD("[BODY]buf_len : %d len->sentence_start : %d len->message_len : %d len->content_len %d\n", buf_len, len->sentence_start, len->message_len, len->content_len);
 					HTTP_LOGD("Not all body readed\n");
 				}

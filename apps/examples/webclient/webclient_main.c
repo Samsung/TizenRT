@@ -211,6 +211,8 @@ static void callback(struct http_client_response_t *response)
 	printf("len : %d Received len : %d total len : %d callback_call count : %d\n", response->entity_len, g_total_received_size, response->total_len, g_callback_call_count);
 	printf("%s\n", response->entity);
 	printf("---------------------------------\n");
+	printf("%s\n", response->message);
+	printf("---------------------------------\n");
 }
 
 static void dump_webclient_usage(void)
