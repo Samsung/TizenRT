@@ -371,7 +371,8 @@ static int connect_command(int argc, char *argv[])
 		goto exit;
 	}
 
-	ssl.verify_cert = ARTIK_SSL_VERIFY_REQUIRED;
+	ssl.verify_cert = ssl.se_config.use_se ? ARTIK_SSL_VERIFY_NONE :
+			ARTIK_SSL_VERIFY_REQUIRED;
 	ssl.ca_cert.data = (char *)akc_root_ca;
 	ssl.ca_cert.len = sizeof(akc_root_ca);
 
@@ -827,7 +828,8 @@ static int dm_command(int argc, char *argv[])
 		ssl_config->se_config.use_se = (argc == 7) && !strncmp(argv[6], "use_se", strlen("use_se"));
 		ssl_config->ca_cert.data = (char *)akc_root_ca;
 		ssl_config->ca_cert.len = sizeof(akc_root_ca);
-		ssl_config->verify_cert = ARTIK_SSL_VERIFY_REQUIRED;
+		ssl_config->verify_cert = ssl_config->se_config.use_se ?
+			ARTIK_SSL_VERIFY_NONE : ARTIK_SSL_VERIFY_REQUIRED;
 		g_dm_config->ssl_config = ssl_config;
 
 		g_dm_config->server_id = 123;
