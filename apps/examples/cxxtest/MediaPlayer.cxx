@@ -18,7 +18,7 @@ namespace Media
 			user_cb = nullptr;
 			return PLAYER_ERROR;
 		}
-		
+
 		enqueue([this]() {_sync(); });
 		cvSync.wait(lock);
 
@@ -29,7 +29,6 @@ namespace Media
 	player_result_t MediaPlayer::create()
 	{
 		unique_lock<mutex> lock(*cMtx);
-
 		if (curState != PLAYER_STATE_NONE) {
 			return PLAYER_ERROR;
 		}
@@ -41,7 +40,6 @@ namespace Media
 	player_result_t MediaPlayer::create(std::function<void(int, int)> &&_user_cb)
 	{
 		unique_lock<mutex> lock(*cMtx);
-
 		if (curState != PLAYER_STATE_NONE) {
 			return PLAYER_ERROR;
 		}
@@ -53,7 +51,6 @@ namespace Media
 	player_result_t MediaPlayer::create(std::function<void(int, int)> &_user_cb)
 	{
 		unique_lock<mutex> lock(*cMtx);
-
 		if (curState != PLAYER_STATE_NONE) {
 			return PLAYER_ERROR;
 		}
@@ -65,6 +62,10 @@ namespace Media
 	player_result_t MediaPlayer::destroy()
 	{
 		unique_lock<mutex> lock(*cMtx);
+		if (curState != PLAYER_STATE_IDLE) {
+			return PLAYER_ERROR;
+		}
+
 		enqueue([this]() {isRunning = false; _sync(); });
 		cvSync.wait(lock);
 
@@ -79,12 +80,12 @@ namespace Media
 	player_result_t MediaPlayer::prepare()
 	{
 		unique_lock<mutex> lock(*cMtx);
-		enqueue([this]() {_sync(); });
-		cvSync.wait(lock);
-
 		if (curState != PLAYER_STATE_IDLE) {
 			return PLAYER_ERROR;
 		}
+
+		enqueue([this]() {_sync(); });
+		cvSync.wait(lock);
 
 		curState = PLAYER_STATE_READY;
 		return PLAYER_OK;
@@ -93,12 +94,12 @@ namespace Media
 	player_result_t MediaPlayer::unprepare()
 	{
 		unique_lock<mutex> lock(*cMtx);
-		enqueue([this]() {_sync(); });
-		cvSync.wait(lock);
-
 		if (curState == PLAYER_STATE_NONE || curState == PLAYER_STATE_IDLE) {
 			return PLAYER_ERROR;
 		}
+
+		enqueue([this]() {_sync(); });
+		cvSync.wait(lock);
 
 		curState = PLAYER_STATE_IDLE;
 		return PLAYER_OK;
