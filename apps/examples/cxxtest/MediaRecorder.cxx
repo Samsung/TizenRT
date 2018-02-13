@@ -7,7 +7,7 @@ namespace Media
 		_init();
 	}
 	
-	recorder_result_t MediaRecorder::createWorker(unique_lock<mutex> &&lock)
+	recorder_result_t MediaRecorder::createWorker(unique_lock<mutex> &lock)
 	{
 		isRunning = true;		
 		worker = new thread(&MediaRecorder::worker_thread, this);
@@ -23,21 +23,21 @@ namespace Media
 		unique_lock<mutex> lock(*cMtx);
 		std::cout << "create Recorder" << std::endl;
 		user_cb = nullptr;
-		return createWorker(std::move(lock));
+		return createWorker(lock);
 	}
 
 	recorder_result_t MediaRecorder::create(std::function<void(int, int)> &&_user_cb)
 	{
 		unique_lock<mutex> lock(*cMtx);
 		user_cb = std::move(_user_cb);
-		return createWorker(std::move(lock));
+		return createWorker(lock);
 	}
 
 	recorder_result_t MediaRecorder::create(std::function<void(int, int)> &_user_cb)
 	{
 		unique_lock<mutex> lock(*cMtx);
 		user_cb = _user_cb;
-		return createWorker(std::move(lock));
+		return createWorker(lock);
 	}
 
 	recorder_result_t MediaRecorder::destroy() // sync call

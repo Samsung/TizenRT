@@ -10,7 +10,7 @@ namespace Media
 		worker = nullptr;
 	}
 
-	player_result_t MediaPlayer::createWorker(unique_lock<mutex> &&lock)
+	player_result_t MediaPlayer::createWorker(unique_lock<mutex> &lock)
 	{
 		isRunning = true;		
 		worker = new thread(&MediaPlayer::worker_thread, this);
@@ -25,21 +25,21 @@ namespace Media
 	{
 		unique_lock<mutex> lock(*cMtx);
 		user_cb = nullptr;
-		return createWorker(std::move(lock));
+		return createWorker(lock);
 	}
 
 	player_result_t MediaPlayer::create(std::function<void(int, int)> &&_user_cb)
 	{
 		unique_lock<mutex> lock(*cMtx);
 		user_cb = std::move(_user_cb);
-		return createWorker(std::move(lock));
+		return createWorker(lock);
 	}
 
 	player_result_t MediaPlayer::create(std::function<void(int, int)> &_user_cb)
 	{
 		unique_lock<mutex> lock(*cMtx);
 		user_cb = _user_cb;
-		return createWorker(std::move(lock));
+		return createWorker(lock);
 	}
 
 	player_result_t MediaPlayer::destroy() // sync call
