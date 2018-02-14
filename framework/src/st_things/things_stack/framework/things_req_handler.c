@@ -560,6 +560,10 @@ static OCEntityHandlerResult process_post_request(things_resource_s **target_res
 	if (strstr(target_resource->uri, URI_SEC) != NULL && strstr(target_resource->uri, URI_PROVINFO) != NULL) {
 		// 1. Post request for the Easy-Setup reset
 		eh_result = set_provisioning_info(target_resource);
+#ifdef CONFIG_ST_THINGS_FOTA
+	} else if (strstr(target_resource->uri, URI_FIRMWARE) != NULL) {
+		eh_result = fmwup_set_data(target_resource);
+#endif
 	}
 #ifndef __ST_THINGS_RTOS__
 	else if (strstr(target_resource->uri, URI_INFORMATION) != NULL) {
@@ -645,6 +649,10 @@ static OCEntityHandlerResult process_get_request(things_resource_s *target_resou
 	if (strstr(target_resource->uri, URI_SEC) != NULL && strstr(target_resource->uri, URI_PROVINFO) != NULL) {
 		// 1. Get request for the Access point list
 		eh_result = get_provisioning_info(target_resource);
+#ifdef CONFIG_ST_THINGS_FOTA
+	} else if (strstr(target_resource->uri, URI_FIRMWARE) != NULL) {
+		eh_result = fmwup_get_data(target_resource);
+#endif
 	}
 #ifndef __ST_THINGS_RTOS__
 	else if (strstr(target_resource->uri, URI_INFORMATION) != NULL) {

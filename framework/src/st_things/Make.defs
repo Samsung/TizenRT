@@ -41,7 +41,6 @@ CFLAGS += -I$(THINGS_LIB_DIR)
 ####################################
 CFLAGS += -DWITH_POSIX -DIP_ADAPTER
 CFLAGS += -DWITH_BWT
-#CFLAGS += -D_EXCLUDE_TEST_KEY_
 
 include $(THINGS_STACK_DIR)/Make.defs
 include $(THINGS_STACK_DIR)/utils/Make.defs
@@ -51,6 +50,9 @@ include $(THINGS_STACK_DIR)/cloud/Make.defs
 include $(THINGS_STACK_DIR)/security/Make.defs
 include $(THINGS_STACK_DIR)/logging/Make.defs
 include $(THINGS_STACK_DIR)/memory/Make.defs
+ifeq ($(CONFIG_ST_THINGS_FOTA),y)
+include $(THINGS_STACK_DIR)/fota/Make.defs
+endif
 
 ####################################
 # IOTIVITY
