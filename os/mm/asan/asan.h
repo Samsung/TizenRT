@@ -15,27 +15,55 @@
  * language governing permissions and limitations under the License.
  *
  ****************************************************************************/
+/****************************************************************************
+ * This file is based on Linux kernel KASan implementation
+ *
+ * Copyright (c) 2014 Samsung Electronics Co., Ltd.
+ * Author: Andrey Ryabinin <ryabinin.a.a@gmail.com>
+ *
+ * Some code borrowed from https://github.com/xairy/kasan-prototype by
+ *        Andrey Konovalov <adech.fo@gmail.com>
+ *
+ * This program is free software; you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License version 2 as
+ * published by the Free Software Foundation.
+ *
+ ****************************************************************************/
 
-#ifndef __MM_ASAN_H
-#define __MM_ASAN_H
+#ifndef __INCLUDE_MM_ASAN_H
+#define __INCLUDE_MM_ASAN_H
+
+/****************************************************************************
+ * Included Files
+ ****************************************************************************/
+
 #include <tinyara/config.h>
 #include <stdbool.h>
+#include <asan.h>
+
+/****************************************************************************
+ * Pre-processor Definitions
+ ****************************************************************************/
 
 #ifdef CONFIG_MM_ASAN_RT
 
-#define ASAN_SHADOW_OFFSET         (unsigned long) CONFIG_MM_ASAN_SHADOW_OFFSET
+#define ASAN_SHADOW_OFFSET         (unsigned long)CONFIG_MM_ASAN_SHADOW_OFFSET
 #define ASAN_SHADOW_SCALE_SHIFT    3
 #define ASAN_SHADOW_SCALE_SIZE     (1UL << ASAN_SHADOW_SCALE_SHIFT)
 #define ASAN_SHADOW_MASK           (ASAN_SHADOW_SCALE_SIZE - 1)
-#define _RET_IP_		   (unsigned long)__builtin_return_address(0)
-#define __alias(symbol)		   __attribute__((alias(#symbol)))
+#define _RET_IP_                   (unsigned long)__builtin_return_address(0)
+#define __alias(symbol)            __attribute__((alias(#symbol)))
 #define BITS_PER_LONG              sizeof(long) * 8
-#define __round_mask(x, y)         ((__typeof__(x))((y)-1))
-#define round_up(x, y)             ((((x)-1) | __round_mask(x, y))+1)
+#define __round_mask(x, y)         ((__typeof__(x))((y) - 1))
+#define round_up(x, y)             ((((x) - 1) | __round_mask(x, y)) + 1)
 #define round_down(x, y)           ((x) & ~__round_mask(x, y))
 
 #define ASAN_MALLOC_REDZONE        0xFC	/* redzone inside heap object */
 #define ASAN_MALLOC_FREE           0xFB	/* object was freed */
+
+/****************************************************************************
+ * Type Definitions
+ ****************************************************************************/
 
 struct asan_access_info {
 	const void *access_addr;
@@ -44,6 +72,10 @@ struct asan_access_info {
 	bool is_write;
 	unsigned long ip;
 };
+
+/****************************************************************************
+ * Public Function Prototypes
+ ****************************************************************************/
 
 static inline void *asan_mem_to_shadow(const void *addr)
 {
@@ -59,10 +91,6 @@ static inline const void *asan_shadow_to_mem(const void *shadow_addr)
 
 void asan_report_error(struct asan_access_info *info);
 void asan_report_user_access(struct asan_access_info *info);
-void asan_unpoison_shadow(const void *address, size_t size);
-
-void asan_poison_heap(const void *address, size_t size);
 
 #endif							/* CONFIG_MM_ASAN_RT */
-
-#endif							/* __MM_ASAN_H */
+#endif							/* __INCLUDE_MM_ASAN_H */

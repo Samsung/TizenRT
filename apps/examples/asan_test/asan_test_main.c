@@ -15,40 +15,6 @@
  * language governing permissions and limitations under the License.
  *
  ****************************************************************************/
-/****************************************************************************
- * examples/asan_test/asan_test_main.c
- *
- *   Copyright (C) 2008, 2011-2012 Gregory Nutt. All rights reserved.
- *   Author: Gregory Nutt <gnutt@nuttx.org>
- *
- * Redistribution and use in source and binary forms, with or without
- * modification, are permitted provided that the following conditions
- * are met:
- *
- * 1. Redistributions of source code must retain the above copyright
- *    notice, this list of conditions and the following disclaimer.
- * 2. Redistributions in binary form must reproduce the above copyright
- *    notice, this list of conditions and the following disclaimer in
- *    the documentation and/or other materials provided with the
- *    distribution.
- * 3. Neither the name NuttX nor the names of its contributors may be
- *    used to endorse or promote products derived from this software
- *    without specific prior written permission.
- *
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
- * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
- * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS
- * FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE
- * COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT,
- * INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING,
- * BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS
- * OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED
- * AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT
- * LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN
- * ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
- * POSSIBILITY OF SUCH DAMAGE.
- *
- ****************************************************************************/
 
 /****************************************************************************
  * Included Files
@@ -57,6 +23,7 @@
 #include <tinyara/config.h>
 #include <tinyara/mm/mm.h>
 #include <stdio.h>
+#include <stdlib.h>
 
 /****************************************************************************
  * asan_test_main
@@ -69,9 +36,10 @@ int asan_test_main(int argc, char *argv[])
 #endif
 {
 	int *a = (int *)malloc(3 * sizeof(int));
-	int *b = (int *)malloc(3 * sizeof(int));
-	int x;
+	int *b = (int *)malloc(4 * sizeof(int));
+	int x, y;
 	int c[3];
+	srand(x);
 	c[0] = 0xdeadbeef;
 	char *xp = (char *)&x;
 	xp[0] = 0x1;
@@ -80,9 +48,18 @@ int asan_test_main(int argc, char *argv[])
 	printf("a[0]@%08p: %x\n", &a[0], (int)a[1]);
 	printf("a[2]@%08p: %x\n", &a[2], (int)a[2]);
 	printf("a[3]@%08p: %x\n", &a[3], (int)a[3]);
-	printf("b[3]@%08p: %x\n", &b[3], (int)b[3]);
+	printf("b[3]@%08p: %x\n", &b[4], (int)b[4]);
 	printf("c[3]@%08p: %x\n", &c[3], (int)c[3]);
+	printf("======================================================\n\n");
+	y = rand();
+	int *d = a;
+	for (x = 0; x < 5; ++x) {
+		y = rand() % 4096;
+		d = (int *)realloc(d, y * sizeof(int));
+		printf("Reallocated %d ints (%d bytes) at %x\n", y, y * sizeof(int), d);
+	}
+	free(b);
+	free(d);
 	printf("\nLast line\n");
-	free(a);
 	return 0;
 }

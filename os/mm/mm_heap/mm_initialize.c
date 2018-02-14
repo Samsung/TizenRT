@@ -63,7 +63,7 @@
 #include <tinyara/mm/mm.h>
 
 #ifdef CONFIG_MM_ASAN_RT
-#include <asan/asan.h>
+#include <asan.h>
 #endif
 
 /****************************************************************************

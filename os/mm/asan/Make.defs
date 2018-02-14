@@ -22,7 +22,7 @@ ifeq ($(CONFIG_MM_ASAN_RT),y)
 CSRCS += asan.c report.c
 CFLAGS+=-I$(TOPDIR)/kernel/
 
-# Add the kasan directory to the build
+# Add the asan directory to the build
 
 DEPPATH += --dep-path asan
 VPATH += :asan

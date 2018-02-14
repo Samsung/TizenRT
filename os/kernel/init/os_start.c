@@ -272,9 +272,6 @@ static FAR char *g_idleargv[2];
  *
  ****************************************************************************/
 
-#ifdef CONFIG_ASAN_ENABLE
-void asan_unpoison_shadow(const void *address, size_t size);
-#endif
 void os_start(void)
 {
 	int i;

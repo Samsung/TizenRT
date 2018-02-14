@@ -84,7 +84,9 @@
  *   adjacent free chunks if possible.
  *
  ****************************************************************************/
+#ifdef CONFIG_ASAN_ENABLE
 __attribute__((no_sanitize_address))
+#endif
 void mm_free(FAR struct mm_heap_s *heap, FAR void *mem)
 {
 	FAR struct mm_freenode_s *node;
@@ -121,11 +123,6 @@ void mm_free(FAR struct mm_heap_s *heap, FAR void *mem)
 	/* Map the memory chunk into a free node */
 
 	node = (FAR struct mm_freenode_s *)((char *)mem - SIZEOF_MM_ALLOCNODE);
-#ifdef CONFIG_MM_ASAN_RT
-	mvdbg("Poisoning freed part %p, size %u for heap %p\n", mem, node->size, heap);
-	asan_poison_free(mem, node->size);
-#endif
-
 #ifdef CONFIG_DEBUG_DOUBLE_FREE
 	/* Assert on following logical error scenarios
 	 * 1) Attempt to free an unallocated memory or
@@ -179,10 +176,6 @@ void mm_free(FAR struct mm_heap_s *heap, FAR void *mem)
 
 		node->size          += next->size;
 		andbeyond->preceding = node->size | (andbeyond->preceding & MM_ALLOC_BIT);
-#ifdef CONFIG_MM_ASAN_RT
-		asan_poison_free(next, SIZEOF_MM_ALLOCNODE);
-		asan_unpoison_heap(next, SIZEOF_MM_FREENODE);
-#endif
 		next                 = (FAR struct mm_freenode_s *)andbeyond;
 	}
 
@@ -206,9 +199,6 @@ void mm_free(FAR struct mm_heap_s *heap, FAR void *mem)
 
 		prev->size     += node->size;
 		next->preceding = prev->size | (next->preceding & MM_ALLOC_BIT);
-#ifdef CONFIG_MM_ASAN_RT
-		asan_poison_free(mem, node->size);
-#endif
 		node            = prev;
 	}
 

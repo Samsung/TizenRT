@@ -44,6 +44,11 @@
 #define SEC_3 3
 #define SEC_5 5
 #define VAL_100 100
+#ifdef CONFIG_ASAN_ENABLE
+#define TASK_STACKSIZE  2048
+#else
+#define TASK_STACKSIZE  512
+#endif
 
 pid_t g_sig_pid;
 
@@ -131,7 +136,7 @@ static void tc_signal_sigwaitinfo(void)
 
 	g_sig_pid = getpid();
 
-	task_create("sigwaitinfo", SCHED_PRIORITY_DEFAULT, 512, sigusr1_func, (char * const *)NULL);
+	task_create("sigwaitinfo", SCHED_PRIORITY_DEFAULT, TASK_STACKSIZE, sigusr1_func, (char * const *)NULL);
 
 	/* Wait for a signal */
 
@@ -279,8 +284,8 @@ static void tc_signal_pause(void)
 	TC_ASSERT_EQ("sigprocmask", ret_chk, OK);
 
 	clock_gettime(clock_id, &st_init_timespec);
-	task_create("sigpause1", SCHED_PRIORITY_DEFAULT, 512, sigusr1_func, (char * const *)NULL);
-	task_create("sigpause2", SCHED_PRIORITY_DEFAULT, 512, sigusr2_func, (char * const *)NULL);
+	task_create("sigpause1", SCHED_PRIORITY_DEFAULT, TASK_STACKSIZE, sigusr1_func, (char * const *)NULL);
+	task_create("sigpause2", SCHED_PRIORITY_DEFAULT, TASK_STACKSIZE, sigusr2_func, (char * const *)NULL);
 
 	/* Wait for a signal */
 
@@ -335,8 +340,8 @@ static void tc_signal_sigsuspend(void)
 						);
 
 	clock_gettime(clock_id, &st_init_timespec);
-	task_create("sigsuspend1", SCHED_PRIORITY_DEFAULT, 512, sigusr1_func, (char * const *)NULL);
-	task_create("sigsuspend2", SCHED_PRIORITY_DEFAULT, 512, sigusr2_func, (char * const *)NULL);
+	task_create("sigsuspend1", SCHED_PRIORITY_DEFAULT, TASK_STACKSIZE, sigusr1_func, (char * const *)NULL);
+	task_create("sigsuspend2", SCHED_PRIORITY_DEFAULT, TASK_STACKSIZE, sigusr2_func, (char * const *)NULL);
 
 	/* Wait for a signal */
 
@@ -503,7 +508,7 @@ static void tc_signal_sigtimedwait(void)
 	sigemptyset(&sigset);
 	sigaddset(&sigset, SIGUSR1);
 
-	task_create("tc_sig_time", SCHED_PRIORITY_DEFAULT - 1, 512, sigusr1_func, (char * const *)NULL);
+	task_create("tc_sig_time", SCHED_PRIORITY_DEFAULT - 1, TASK_STACKSIZE, sigusr1_func, (char * const *)NULL);
 
 	clock_gettime(clock_id, &st_init_timespec);
 	ret_chk = sigtimedwait(&sigset, &value, &st_timeout);

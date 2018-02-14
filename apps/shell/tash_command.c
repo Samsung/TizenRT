@@ -337,9 +337,6 @@ void tash_cmdlist_install(const tash_cmdlist_t list[])
 
 void tash_register_basic_cmds(void)
 {
-#ifdef CONFIG_MM_ASAN_RT
-  asan_unpoison_shadow(&tash_cmds_info, sizeof(struct tash_cmd_info_s));
-#endif
 	tash_cmdlist_install(tash_basic_cmds);
 }
 

@@ -15,31 +15,30 @@
  * language governing permissions and limitations under the License.
  *
  ****************************************************************************/
+/****************************************************************************
+ * This file is based on Linux kernel KASan implementation
+ *
+ * Copyright (c) 2014 Samsung Electronics Co., Ltd.
+ * Author: Andrey Ryabinin <ryabinin.a.a@gmail.com>
+ *
+ * Some code borrowed from https://github.com/xairy/kasan-prototype by
+ *        Andrey Konovalov <adech.fo@gmail.com>
+ *
+ * This program is free software; you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License version 2 as
+ * published by the Free Software Foundation.
+ *
+ ****************************************************************************/
 
-/// @file tc_asan.c
-/// @brief Test Case Example for Address Sanitizer
-#include <stdio.h>
-#include "tc_common.h"
-#include <errno.h>
-
-void __asan_load4(unsigned long addr, size_t size);
-
-void tc_asan_load_call_test(void)
-{
-	int a[3];
-	__asan_load4((ulong)&a, (size_t)&a[3]);
-	TC_SUCCESS_RESULT();
-}
+#ifndef __INCLUDE_ASAN_H
+#define __INCLUDE_ASAN_H
 
 /****************************************************************************
- * Name: Address Sanitizer test
+ * Public Function Prototypes
  ****************************************************************************/
-#ifdef CONFIG_BUILD_KERNEL
-int main(int argc, FAR char *argv[])
-#else
-int tc_asan_main(int argc, char *argv[])
-#endif
-{
-	tc_asan_load_call_test();
-	return 0;
-}
+
+void asan_poison_heap(const void *address, size_t size);
+void asan_poison_free(const void *address, size_t size);
+void asan_unpoison_shadow(const void *address, size_t size);
+
+#endif							/* __INCLUDE_ASAN_H */

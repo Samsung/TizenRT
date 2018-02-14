@@ -36,6 +36,12 @@
 #define TEST_TIMES 100
 #define ALL_FREE 0
 #define TOTAL_ALLOC_SIZE (MM_ALIGN_UP((sizeof(int) * ALLOC_SIZE_VAL) + SIZEOF_MM_ALLOCNODE)) * ALLOC_FREE_TIMES
+#ifdef CONFIG_ASAN_ENABLE
+#define TASK_STACKSIZE  4096
+#else
+#define TASK_STACKSIZE  2048
+#endif
+
 /****************************************************************************
  * Definitions
  ****************************************************************************/
@@ -290,7 +296,7 @@ static int umm_task(int argc, char *argv[])
 
 int umm_heap_main(void)
 {
-	task_create("umm_task", 150, 2048, umm_task, (char * const *)NULL);
+	task_create("umm_task", 150, TASK_STACKSIZE, umm_task, (char * const *)NULL);
 	sleep(1);
 
 	return 0;

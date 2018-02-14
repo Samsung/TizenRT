@@ -57,8 +57,12 @@
 #include <tinyara/config.h>
 
 #include <assert.h>
+#include <debug.h>
 
 #include <tinyara/mm/mm.h>
+#ifdef CONFIG_MM_ASAN_RT
+#include <asan.h>
+#endif
 
 /****************************************************************************
  * Pre-processor Definitions
@@ -90,6 +94,10 @@ void mm_shrinkchunk(FAR struct mm_heap_s *heap, FAR struct mm_allocnode_s *node,
 	/* Get a reference to the next node */
 
 	next = (FAR struct mm_freenode_s *)((char *)node + node->size);
+#ifdef CONFIG_MM_ASAN_RT
+	mvdbg("Unpoisoning next freenode %08p, size %u for heap %p\n", (uint8_t *)next, SIZEOF_MM_FREENODE, heap);
+	asan_unpoison_shadow((uint8_t *)next, SIZEOF_MM_FREENODE);
+#endif
 
 	/* Check if it is free */
 
@@ -100,6 +108,10 @@ void mm_shrinkchunk(FAR struct mm_heap_s *heap, FAR struct mm_allocnode_s *node,
 		/* Get the chunk next the next node (which could be the tail chunk) */
 
 		andbeyond = (FAR struct mm_allocnode_s *)((char *)next + next->size);
+#ifdef CONFIG_MM_ASAN_RT
+		mvdbg("Unpoisoning andbeyond %08p for heap %p\n", (uint8_t *)andbeyond, heap);
+		asan_unpoison_shadow((uint8_t *)andbeyond, SIZEOF_MM_ALLOCNODE);
+#endif
 
 		/* Remove the next node.  There must be a predecessor, but there may
 		 * not be a successor node.
@@ -117,8 +129,9 @@ void mm_shrinkchunk(FAR struct mm_heap_s *heap, FAR struct mm_allocnode_s *node,
 
 		newnode = (FAR struct mm_freenode_s *)((char *)node + size);
 #ifdef CONFIG_MM_ASAN_RT
-	asan_unpoison_shadow((void*) newnode, SIZEOF_MM_FREENODE);
-	asan_unpoison_shadow((void*) andbeyond, SIZEOF_MM_ALLOCNODE);
+		mvdbg("Unpoisoning new freenode %08p-%08p, size %u for heap %p\n",
+		      (uint8_t *)newnode, SIZEOF_MM_FREENODE, heap);
+		asan_unpoison_shadow((uint8_t *)newnode, SIZEOF_MM_FREENODE);
 #endif
 
 		/* Set up the size of the new node */
@@ -128,6 +141,12 @@ void mm_shrinkchunk(FAR struct mm_heap_s *heap, FAR struct mm_allocnode_s *node,
 		node->size           = size;
 		andbeyond->preceding = newnode->size | (andbeyond->preceding & MM_ALLOC_BIT);
 
+#ifdef CONFIG_MM_ASAN_RT
+		mvdbg("Poisoning newly created %08p-%08p, size %u for heap %p\n",
+		      (uint8_t *)newnode + SIZEOF_MM_FREENODE,
+		      newnode + newnode->size - SIZEOF_MM_FREENODE, heap);
+		asan_poison_free((uint8_t *)newnode + SIZEOF_MM_FREENODE, newnode->size - SIZEOF_MM_FREENODE);
+#endif
 		/* Add the new node to the freenodelist */
 
 		mm_addfreechunk(heap, newnode);
@@ -146,6 +165,12 @@ void mm_shrinkchunk(FAR struct mm_heap_s *heap, FAR struct mm_allocnode_s *node,
 
 		newnode = (FAR struct mm_freenode_s *)((char *)node + size);
 
+#ifdef CONFIG_MM_ASAN_RT
+		mvdbg("Unpoisoning new freenode %08p-%08p, size %u for heap %p\n",
+		      (uint8_t *)newnode, SIZEOF_MM_FREENODE, heap);
+		asan_unpoison_shadow((uint8_t *)newnode, SIZEOF_MM_FREENODE);
+#endif
+
 		/* Set up the size of the new node */
 
 		newnode->size      = node->size - size;
@@ -153,6 +178,13 @@ void mm_shrinkchunk(FAR struct mm_heap_s *heap, FAR struct mm_allocnode_s *node,
 		node->size         = size;
 		next->preceding    = newnode->size | MM_ALLOC_BIT;
 
+#ifdef CONFIG_MM_ASAN_RT
+		mvdbg("Poisoning newly created %08p-%08p, size %u for heap %p\n",
+		      (uint8_t *)newnode + SIZEOF_MM_FREENODE,
+		      newnode + newnode->size - SIZEOF_MM_FREENODE, heap);
+		asan_poison_free((uint8_t *)newnode + SIZEOF_MM_FREENODE,
+				 newnode->size - SIZEOF_MM_FREENODE);
+#endif
 		/* Add the new node to the freenodelist */
 
 		mm_addfreechunk(heap, newnode);
