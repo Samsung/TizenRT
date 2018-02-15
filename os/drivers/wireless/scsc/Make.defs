@@ -41,10 +41,7 @@ CSRCS += \
 	mib_text_convert.c \
 	mlme.c \
 	mgt.c \
-	utils_scsc.c \
-	log_clients.c \
-	udi.c \
-	fw_test.c
+	utils_scsc.c
 
 #Build for h/w
 CSRCS += hip.c \
@@ -59,6 +56,14 @@ CSRCS += \
 # TinyARA Wrappers
 CSRCS += \
 	tinyara_wrapper.c
+
+# WlanLite driver files
+ifeq ($(CONFIG_SCSC_WLANLITE),y)
+CSRCS += \
+	log_clients.c \
+	udi.c \
+	fw_test.c
+endif
 
 # Include wireless devices build support
 

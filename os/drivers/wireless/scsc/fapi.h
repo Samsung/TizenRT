@@ -2353,6 +2353,15 @@ static inline struct max_buff *fapi_alloc_f(size_t sig_size, size_t data_size, u
 	header->vif = vif;
 	return mbuf;
 }
+
+#ifdef CONFIG_SCSC_WLANLITE
+#define fapi_alloc_udi(__sig_size, __mp_id, __mp_vif, __mp_datalen) ({ \
+	struct max_buff *___mbuf = mbuf_alloc(SLSI_NETIF_MBUF_HEADROOM + SLSI_NETIF_MBUF_TAILROOM + __sig_size + __mp_datalen); \
+	fapi_alloc_f(___mbuf, __sig_size, __mp_id, __mp_vif); \
+	___mbuf; \
+})
+#endif
+
 #define fapi_sig_size(mp_name)                  ((u16)offsetof(struct fapi_signal, u.mp_name.dr))
 #define fapi_alloc(mp_name, mp_id, mp_vif, mp_datalen) fapi_alloc_f(fapi_sig_size(mp_name), mp_datalen, mp_id, mp_vif, __FILE__, __LINE__)
 #define fapi_get_buff(mp_mbuf, mp_name) (((struct fapi_signal *)slsi_mbuf_get_data(mp_mbuf))->mp_name)

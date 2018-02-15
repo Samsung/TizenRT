@@ -21,7 +21,6 @@
 #include "mgt.h"
 #include "mlme.h"
 #include "netif.h"
-#include "unifiio.h"
 #include "mib.h"
 #include "netif.h"
 #include "wpa_driver_copy.h"

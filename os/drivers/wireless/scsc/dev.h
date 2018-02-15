@@ -35,8 +35,9 @@
 #include "fapi.h"
 #include "utils_scsc.h"
 #include "hip.h"
+#ifdef CONFIG_SCSC_WLANLITE
 #include "log_clients.h"
-#include "unifiio.h"
+#endif
 #include "scsc_wifi_fcq.h"
 #include "scsc_wifi_cm_if.h"
 #include "hip4.h"
@@ -572,6 +573,7 @@ struct slsi_dev {
 	/* Locking used to control Starting and stopping the chip */
 	pthread_mutex_t start_stop_mutex;
 
+#ifdef CONFIG_SCSC_WLANLITE
 	/* UDI Logging */
 	struct slsi_log_clients log_clients;
 	void *uf_cdev;
@@ -579,6 +581,7 @@ struct slsi_dev {
 	/* ProcFS */
 	int procfs_instance;
 	struct proc_dir_entry *procfs_dir;
+#endif
 
 	/* Configuration */
 	u8 hw_addr[ETH_ALEN];

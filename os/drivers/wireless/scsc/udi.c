@@ -26,7 +26,7 @@
 #include <semaphore.h>
 
 #include "dev.h"
-
+#include "unifiio.h"
 #include "hip.h"
 #include "log_clients.h"
 #include "mlme.h"
@@ -154,7 +154,7 @@ int slsi_kernel_to_user_space_event(struct slsi_log_client *log_client, u16 even
 		return 0;
 	}
 
-	mbuf = fapi_alloc_f(sizeof(struct fapi_signal_header), data_length, event, 0, __FILE__, __LINE__);
+	mbuf = fapi_alloc_udi(sizeof(struct fapi_signal_header), event, 0, data_length);
 	if (WARN_ON(!mbuf)) {
 		return -ENOMEM;
 	}

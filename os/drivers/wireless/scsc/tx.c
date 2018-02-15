@@ -21,7 +21,6 @@
 #include "mgt.h"
 #include "mlme.h"
 #include "netif.h"
-#include "log_clients.h"
 #include <tinyara/wdog.h>
 #include "tinyara/wdog.h"
 #include "hip4.h"

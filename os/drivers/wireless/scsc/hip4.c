@@ -26,6 +26,9 @@
 #ifdef CONFIG_SLSI_WLAN_HCF_ENABLE
 #include "mif_reg.h"
 #endif
+#ifdef CONFIG_SCSC_WLANLITE
+#include "log_clients.h"
+#endif
 
 #ifdef CONFIG_SCSC_PLATFORM
 #define SCSC_SCOREBOARD_VER  (1)
@@ -933,8 +936,10 @@ int scsc_wifi_transmit_frame(struct slsi_hip4 *hip, bool ctrl_packet, struct max
 		return ERR_BUF;
 	}
 
+#ifdef CONFIG_SCSC_WLANLITE
 	/* slsi_log_clients_log_signal_fast: mbuf is copied to all the log clients */
 	slsi_log_clients_log_signal_fast(sdev, &sdev->log_clients, mbuf, SLSI_LOG_DIRECTION_FROM_HOST);
+#endif
 
 #ifdef CONFIG_SLSI_WLAN_FAPI_LOG
 	if ((fapi_get_sigid(mbuf) & FAPI_SAP_TYPE_MASK) != FAPI_SAP_TYPE_MA) {

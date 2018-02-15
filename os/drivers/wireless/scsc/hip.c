@@ -21,6 +21,9 @@
 #include "hydra.h"
 #include "sap.h"
 #include "utils_scsc.h"
+#ifdef CONFIG_SCSC_WLANLITE
+#include "log_clients.h"
+#endif
 #include <tinyara/config.h>
 
 #include <sys/types.h>
@@ -216,12 +219,15 @@ int slsi_hip_start(struct slsi_dev *sdev, struct slsi_hip_card_params *hip_param
 /* SAP rx proxy */
 int slsi_hip_rx(struct slsi_dev *sdev, struct max_buff *mbuf)
 {
+#ifdef CONFIG_SCSC_WLANLITE
 	u16 pid;
+#endif
 
 	/* We enforce that all the SAPs are registered at this point */
 	if ((!hip_sap_cont.sap[SAP_MLME]) || (!hip_sap_cont.sap[SAP_MA]) || (!hip_sap_cont.sap[SAP_DBG]) || (!hip_sap_cont.sap[SAP_TST])) {
 		return -ENODEV;
 	}
+#ifdef CONFIG_SCSC_WLANLITE
 	/* Udi test : If pid in UDI range then pass to UDI and ignore */
 	slsi_log_clients_log_signal_fast(sdev, &sdev->log_clients, mbuf, SLSI_LOG_DIRECTION_TO_HOST);
 	pid = fapi_get_u16(mbuf, receiver_pid);
@@ -229,6 +235,8 @@ int slsi_hip_rx(struct slsi_dev *sdev, struct max_buff *mbuf)
 		slsi_kfree_mbuf(mbuf);
 		return 0;
 	}
+#endif
+
 #ifdef CONFIG_SLSI_WLAN_UDI
 	if (udi_enabled) {
 		if (!(skip_scan_ind && (fapi_get_sigid(mbuf) == MLME_SCAN_IND))) {

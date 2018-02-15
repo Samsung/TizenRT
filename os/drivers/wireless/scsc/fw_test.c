@@ -24,6 +24,7 @@
 #include "netif.h"
 #include "ba.h"
 #include "utils_scsc.h"
+#include "unifiio.h"
 #include "wpa_driver_copy.h"
 
 #define netif_carrier_on(dev)           while (0) {}
