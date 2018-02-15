@@ -121,7 +121,7 @@
 /**
  * @brief SSL/TLS hostname check option
  */
-#define WEBCLIENT_CONF_CHECK_TLS_HOSTNAME 0
+#define WEBCLIENT_CONF_CHECK_TLS_HOSTNAME 1
 
 /**
  * @brief SSL/TLS certificate verify option
