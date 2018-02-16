@@ -162,9 +162,10 @@ static inline void gpio_givesem(sem_t *sem)
 static void gpio_sample(FAR struct gpio_upperhalf_s *priv)
 {
 	FAR struct gpio_lowerhalf_s *lower;
-	FAR struct gpio_open_s *opriv;
+	bool sample;
 #if !defined(CONFIG_DISABLE_POLL) || !defined(CONFIG_DISABLE_SIGNALS)
-	bool sample, change, falling, rising;
+	FAR struct gpio_open_s *opriv;
+	bool change, falling, rising;
 #endif
 	irqstate_t flags;
 #ifndef CONFIG_DISABLE_POLL
@@ -359,8 +360,11 @@ static int gpio_ioctl(FAR struct file *filep, int cmd, unsigned long arg)
 	int ret = OK;
 	FAR struct inode *inode = filep->f_inode;
 	FAR struct gpio_upperhalf_s *priv = inode->i_private;
-	FAR struct gpio_open_s *opriv = filep->f_priv;
 	FAR struct gpio_lowerhalf_s *lower = priv->gu_lower;
+
+#if !defined(CONFIG_DISABLE_POLL) || !defined(CONFIG_DISABLE_SIGNALS)
+	FAR struct gpio_open_s *opriv = filep->f_priv;
+#endif
 
 	switch (cmd) {
 	case GPIOIOC_SET_DIRECTION:
