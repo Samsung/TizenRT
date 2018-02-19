@@ -12,5 +12,5 @@ config EXAMPLES_WEBSOCKET
 
 config USER_ENTRYPOINT
 	string
-	default "websocket_main" if ENTRY_WEBSOCKET
+	default "websocket_test_main" if ENTRY_WEBSOCKET
 

@@ -56,14 +56,14 @@ include $(APPDIR)/Make.defs
 
 # Websocket built-in application info
 
-APPNAME = websocket
+APPNAME = websocket_test
 THREADEXEC = TASH_EXECMD_ASYNC
 
 # Websocket Example
 
 ASRCS =
 CSRCS =
-MAINSRC = websocket_main.c
+MAINSRC = websocket_test_main.c
 
 AOBJS = $(ASRCS:.S=$(OBJEXT))
 COBJS = $(CSRCS:.c=$(OBJEXT))

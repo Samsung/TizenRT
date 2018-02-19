@@ -16,7 +16,7 @@
  *
  ****************************************************************************/
 /****************************************************************************
- * examples/websocket/websocket_main.c
+ * examples/websocket/websocket_test_main.c
  *
  *   Copyright (C) 2016 SAMSUNG ELECTRONICS CO., LTD. All rights reserved.
  *   Author: Jisuu Kim <jisuu.kim@samsung.com>
@@ -129,19 +129,19 @@
 #define WEBSOCKET_EXAMPLE_STACKSIZE (1024 * 10)
 
 #define WEBSOCKET_SERVER_USAGE															\
-	"  websocket server usage:\n"														\
-	"    open  - $ websocket server [tls option]\n"										\
-	"    close - $ websocket server close\n"											\
+	"  websocket_test server usage:\n"														\
+	"    open  - $ websocket_test server [tls option]\n"										\
+	"    close - $ websocket_test server close\n"											\
 	"\n"																				\
 	"    [tls option] : %%d (0 - disable / 1 - enable)\n"								\
 	"\n"																				\
 	"  examples:\n"																		\
-	"    $ websocket server 1\n"														\
+	"    $ websocket_test server 1\n"														\
 
 #define WEBSOCKET_CLIENT_USAGE															\
 	"  websocket client usage:\n"														\
-	"    open  - $ websocket client [addr] [port] [path] [tls option] [size] [num]\n"	\
-	"    close - $ websocket client close\n"											\
+	"    open  - $ websocket_test client [addr] [port] [path] [tls option] [size] [num]\n"	\
+	"    close - $ websocket_test client close\n"											\
 	"\n"																				\
 	"    [addr]       : %%s (IPv4 address or Domain name)\n"							\
 	"    [port]       : %%s (Port number)\n"											\
@@ -151,7 +151,7 @@
 	"    [num]        : %%d (Test packet receive and send count, minimum 1)\n"			\
 	"\n"																				\
 	"  examples:\n"																		\
-	"    $ websocket client 127.0.0.1 443 0 1 100 10\n"
+	"    $ websocket_test client 127.0.0.1 443 0 1 100 10\n"
 
 /****************************************************************************
  * Private Data
@@ -550,7 +550,7 @@ WEB_SRV_EXIT:
 #ifdef CONFIG_BUILD_KERNEL
 int main(int argc, FAR char *argv[])
 #else
-int websocket_main(int argc, char *argv[])
+int websocket_test_main(int argc, char *argv[])
 #endif
 {
 	pthread_attr_t attr;
