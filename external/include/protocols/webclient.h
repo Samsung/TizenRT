@@ -97,6 +97,7 @@ struct http_client_tls_t {
 	mbedtls_ssl_config        tls_conf;
 	mbedtls_entropy_context   tls_entropy;
 	mbedtls_ctr_drbg_context  tls_ctr_drbg;
+	mbedtls_x509_crt          tls_rootca;
 	mbedtls_x509_crt          tls_clicert;
 	mbedtls_pk_context        tls_pkey;
 	mbedtls_ssl_session       tls_session;

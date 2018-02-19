@@ -481,6 +481,7 @@ int webclient_tls_init(struct http_client_tls_t *client, struct http_client_ssl_
 	}
 
 	mbedtls_ssl_config_init(&(client->tls_conf));
+	mbedtls_x509_crt_init(&(client->tls_rootca));
 	mbedtls_x509_crt_init(&(client->tls_clicert));
 	mbedtls_pk_init(&(client->tls_pkey));
 	mbedtls_entropy_init(&(client->tls_entropy));
@@ -547,12 +548,11 @@ int webclient_tls_init(struct http_client_tls_t *client, struct http_client_ssl_
 	}
 
 	if (ssl_config->root_ca) {
-		mbedtls_x509_crt *chain;
 
 		/* 3. Load the CA certificate */
 		ndbg("  . Loading the CA cert...");
 
-		if ((result = mbedtls_x509_crt_parse(&(client->tls_clicert),
+		if ((result = mbedtls_x509_crt_parse(&(client->tls_rootca),
 											 (const unsigned char *)ssl_config->root_ca,
 											 ssl_config->root_ca_len)) != 0) {
 			ndbg("Error: CA_cert parse fail, returned -%4x\n", -result);
@@ -560,8 +560,7 @@ int webclient_tls_init(struct http_client_tls_t *client, struct http_client_ssl_
 		}
 
 		/* CA cert may be first or second in chain depending if client cert was loaded */
-		chain = client->tls_clicert.next ? client->tls_clicert.next : &client->tls_clicert;
-		mbedtls_ssl_conf_ca_chain(&(client->tls_conf), chain, NULL);
+		mbedtls_ssl_conf_ca_chain(&(client->tls_conf), &(client->tls_rootca), NULL);
 
 		ndbg("Ok\n");
 	}
@@ -578,6 +577,7 @@ static void wget_tls_release(struct http_client_tls_t *client)
 		return;
 	}
 
+	mbedtls_x509_crt_free(&(client->tls_rootca));
 	mbedtls_x509_crt_free(&(client->tls_clicert));
 	mbedtls_pk_free(&(client->tls_pkey));
 	mbedtls_ssl_config_free(&(client->tls_conf));
