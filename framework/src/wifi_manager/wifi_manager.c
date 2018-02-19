@@ -18,6 +18,8 @@
 
 #include <tinyara/config.h>
 #include <pthread.h>
+#include <sys/select.h>
+#include <sys/socket.h>
 #include <wifi_manager/wifi_manager.h>
 #include <protocols/dhcpc.h>
 #include <protocols/dhcpd.h>
@@ -28,14 +30,21 @@
 #include "wifi_utils.h"
 #include "wifi_profile.h"
 
-#define NUM_OF_STATE_HANDLER 8 // the number of states
+#undef ndbg
+#define ndbg printf
+#undef nvdbg
+#define nvdbg printf
+
+#define NUM_OF_STATE_HANDLER 10 // the number of states
 enum _wifimgr_state {
 	WIFIMGR_UNINITIALIZED,
 	WIFIMGR_STA_DISCONNECTED,
 	WIFIMGR_STA_DISCONNECTING,
 	WIFIMGR_STA_CONNECTING,
 	WIFIMGR_STA_CONNECTED,
-	WIFIMGR_STA_RECONNECTING, // 5
+	WIFIMGR_STA_RECONNECT, // 5
+	WIFIMGR_STA_RECONNECTING,
+	WIFIMGR_STA_CONNECT_CANCEL,
 	WIFIMGR_SOFTAP,
 	WIFIMGR_SCANNING,
 	WIFIMGR_NONE, // it is used for prev state only
@@ -51,6 +60,7 @@ enum _wifimgr_evt {
 	EVT_DISCONNECT,		// Command to Disconnect from a connected WiFi AP
 	EVT_SCAN,				// Command to perform WiFi Scanning over WLAN channels
 	EVT_GETINFO,			// Command to get WiFi Manager information
+	EVT_RECONNECT,		  // Command to reconnect to WiFi AP. If we use EVT_CONNECT, then we can't distinguish it's from application request
 	EVT_STA_CONNECTED,		// Event that STA is connected
 	EVT_STA_CONNECT_FAILED,	// Event that STA connect failed
 	EVT_STA_DISCONNECTED,	// Event that external STA disconnected from WiFi AP
@@ -76,6 +86,7 @@ typedef enum _wifimgr_usr_cb_type _wifimgr_usr_cb_type_e;
 struct _wifimgr_conn_info_msg {
 	wifi_manager_ap_config_s *config;
 	wifi_manager_reconnect_config_s *conn_config;
+	int fd;
 };
 typedef struct _wifimgr_conn_info_msg _wifimgr_conn_info_msg_s;
 struct _wifimgr_msg {
@@ -115,6 +126,8 @@ typedef struct _wifimgr_info _wifimgr_info_s;
 
 #define CTRL_IFNAME "wl1" // ToDo: interface name should be configurable.
 #define WIFIMGR_MAX_CONN_RETRIES 10
+#define WIFIMGR_IPC_PORT 9098
+#define WIFIDRIVER_SUPPORT_AUTOCONNECT 1
 
 #define WIFIMGR_CHECK_STATE(s) ((s) != g_manager_info.state)
 #define WIFIMGR_IS_STATE(s) ((s) == g_manager_info.state)
@@ -123,7 +136,6 @@ typedef struct _wifimgr_info _wifimgr_info_s;
 #define WIFIMGR_SET_NO_CBK (g_manager_info.chk_cbk = 1)
 #define WIFIMGR_RESET_CBK_CHK (g_manager_info.chk_cbk = 0)
 #define WIFIMGR_CHECK_CBK (g_manager_info.chk_cbk == 0)
-
 #define WIFIMGR_TRIGGER_RECONNECT_WORKER		\
 	do {										\
 		g_manager_info.conn_tries++;			\
@@ -137,23 +149,22 @@ typedef struct _wifimgr_info _wifimgr_info_s;
 		pthread_mutex_lock(&g_reconn_mutex);					\
 		pthread_cond_wait(&g_reconn_signal, &g_reconn_mutex);	\
 		pthread_mutex_unlock(&g_reconn_mutex);					\
+		nvdbg("[WM] T%d wake up\n", getpid());						\
 	} while (0)
 
 #define WIFIMGR_TERMINATE_RECONN_WORKER									\
 	do {																\
-		nvdbg("send terminate signal to worker(%d/%d)\n", g_manager_info.conn_tries, g_manager_info.max_tries); \
-		g_manager_info.conn_tries = 0;									\
+		nvdbg("[WM] send terminate signal to worker(%d/%d)\n", g_manager_info.conn_tries, g_manager_info.max_tries); \
 		pthread_mutex_lock(&g_reconn_mutex);							\
 		g_manager_info.terminate = true;								\
 		pthread_cond_signal(&g_reconn_signal);							\
 		pthread_mutex_unlock(&g_reconn_mutex);							\
-		nvdbg("wait worker to terminate\n");								\
+		nvdbg("[WM] wait worker to terminate\n");							\
 		pthread_join(g_manager_info.reconn_id, NULL);					\
 	} while (0)
 
 #define WIFIMGR_GET_PREVSTATE g_manager_info.prev_state
 #define WIFIMGR_STORE_PREV_STATE (g_manager_info.prev_state = g_manager_info.state)
-
 #define WIFIMGR_RESTORE_STATE								\
 	do {													\
 		g_manager_info.state = g_manager_info.prev_state;	\
@@ -181,7 +192,6 @@ typedef struct _wifimgr_info _wifimgr_info_s;
 		(dest).interval = (src).interval;			\
 		(dest).max_interval = (src).max_interval;	\
 	} while (0)
-
 
 #define WIFIMGR_SET_IP4ADDR(intf, ip, netmask, gateway)	\
 	do {												\
@@ -223,6 +233,7 @@ typedef struct _wifimgr_info _wifimgr_info_s;
 		wifi_utils_result_e res = func;				\
 		if (res != WIFI_UTILS_SUCCESS) {			\
 			ndbg(msg);								\
+			ndbg("error code(%d)\n", res);\
 			return ret;								\
 		}											\
 	} while (0)
@@ -231,7 +242,6 @@ typedef struct _wifimgr_info _wifimgr_info_s;
 #define UNLOCK_WIFIMGR pthread_mutex_unlock(&g_manager_info.state_lock)
 #define LOCK_RECONN pthread_mutex_lock(&g_reconn_mutex);
 #define UNLOCK_RECONN pthread_mutex_unlock(&g_reconn_mutex);
-
 #define WIFIMGR_FREE_CONNMSG(msg)				\
 	do {										\
 		free(msg->config);						\
@@ -239,17 +249,19 @@ typedef struct _wifimgr_info _wifimgr_info_s;
 		free(msg->conn_config);					\
 		msg->conn_config = NULL;				\
 		free(msg);								\
+		close(msg->fd);							\
 	} while (0)
 
-//
-// Debugging
-//
+/**
+ * Debugging
+ */
 #define WM_LOG_START nvdbg("[WM] T%d\t%s:%d\n", getpid(), __FUNCTION__, __LINE__);
 #define WM_LOG_HANDLER_START nvdbg("[WM] T%d %s:%d state(%d) evt(%d)\n", getpid(), __FUNCTION__, __LINE__, g_manager_info.state, msg->event);
 #define WM_APINFO_INITIALIZER {{0,}, 0, {0,}, 0, WIFI_MANAGER_AUTH_UNKNOWN, WIFI_MANAGER_CRYPTO_UNKNOWN}
 #define WM_RECONN_INITIALIZER {WIFI_RECONN_NONE, -1, -1}
-#define WIFIMGR_DEFAULT_CONN_CONFIG {WIFI_RECONN_INTERVAL, 10, 128}
-/*
+#define WIFIMGR_DEFAULT_CONN_CONFIG {WIFI_RECONN_INTERVAL, 77, 128}
+
+/**
  * global variables
  */
 static _wifimgr_info_s g_manager_info = {{0}, {0}, 0, 0, 0,
@@ -261,16 +273,14 @@ static _wifimgr_info_s g_manager_info = {{0}, {0}, 0, 0, 0,
 										 WM_APINFO_INITIALIZER,
 										 WM_RECONN_INITIALIZER,
 										 0, 0, 10};
-
 static pthread_mutex_t g_reconn_mutex = PTHREAD_MUTEX_INITIALIZER;
 static pthread_cond_t g_reconn_signal = PTHREAD_COND_INITIALIZER;
-
 #ifdef CONFIG_ENABLE_IOTIVITY
 static mqd_t g_dw_nwevent_mqfd;
 #endif
 
-/*
- * internal functions
+/**
+ * Internal functions
  */
 //
 // wifi utils callbacks registered
@@ -298,7 +308,7 @@ static wifi_manager_result_e _wifimgr_disconnect_ap(void);
 static wifi_manager_result_e _wifimgr_run_softap(wifi_manager_softap_config_s *config);
 static wifi_manager_result_e _wifimgr_stop_softap(void);
 static wifi_manager_result_e _wifimgr_scan(void);
-
+static wifi_manager_result_e _wifi_manager_reconnect_ap(wifi_manager_ap_config_s *config);
 //
 // user callback handler
 //
@@ -314,6 +324,8 @@ static wifi_manager_result_e _handler_on_disconnecting_state(_wifimgr_msg_s *msg
 static wifi_manager_result_e _handler_on_connecting_state(_wifimgr_msg_s *msg);
 static wifi_manager_result_e _handler_on_connected_state(_wifimgr_msg_s *msg);
 static wifi_manager_result_e _handler_on_reconnecting_state(_wifimgr_msg_s *msg);
+static wifi_manager_result_e _handler_on_reconnect_state(_wifimgr_msg_s *msg);
+static wifi_manager_result_e _handler_on_connect_cancel_state(_wifimgr_msg_s *msg);
 static wifi_manager_result_e _handler_on_softap_state(_wifimgr_msg_s *msg);
 static wifi_manager_result_e _handler_on_scanning_state(_wifimgr_msg_s *msg);
 
@@ -328,7 +340,9 @@ wifimgr_handler g_handler[NUM_OF_STATE_HANDLER] = {
 	_handler_on_disconnecting_state,
 	_handler_on_connecting_state,
 	_handler_on_connected_state,
+	_handler_on_reconnect_state,
 	_handler_on_reconnecting_state,
+	_handler_on_connect_cancel_state,
 	_handler_on_softap_state,
 	_handler_on_scanning_state,
 };
@@ -351,34 +365,75 @@ static void *_reconn_worker(void *arg)
 	_wifimgr_conn_info_msg_s *msg = (_wifimgr_conn_info_msg_s *)arg;
 	wifi_manager_ap_config_s *apinfo = msg->config;
 	wifi_manager_reconnect_config_s *conn_config = msg->conn_config;
-	WIFIMGR_CHECK_RESULT_CLEANUP(_wifimgr_connect_ap(apinfo), "connecting to ap fail\n", NULL, WIFIMGR_FREE_CONNMSG(msg));
+	struct sockaddr_in servaddr;
+	fd_set rfds;
+	fd_set fds;
+
+	int s = socket(PF_INET, SOCK_DGRAM, 0);
+	if (s < 0) {
+		perror("socket fail");
+		WIFIMGR_FREE_CONNMSG(msg);
+		return NULL;
+	}
+	memset(&servaddr, 0, sizeof(struct sockaddr_in));
+	servaddr.sin_family = AF_INET;
+	servaddr.sin_addr.s_addr = inet_addr("127.0.0.1");
+	servaddr.sin_port = htons(WIFIMGR_IPC_PORT);
+
+	int ret = bind(s, (struct sockaddr *)&servaddr, sizeof(struct sockaddr_in));
+	if (ret < 0) { // critical error
+		perror("bind fail\n");
+		goto EXIT;
+	}
+	FD_ZERO(&fds);
+	FD_SET(s, &fds);
+
 	while (true) {
-		nvdbg("T%d wait signal\n", getpid());
-		WIFIMGR_WAIT_RECONNECT_EVENT;
-		nvdbg("T%d wake up\n", getpid());
-
 		LOCK_RECONN;
-
 		if (g_manager_info.terminate) {		// check terminate
 			UNLOCK_RECONN;
-			nvdbg("T%d exit while loop\n");
-			break;
+			nvdbg("[WM] T%d exit while loop\n", getpid());
+			goto EXIT;
 		}
 		UNLOCK_RECONN;
 
 		// get next interval
 		uint32_t interval = conn_config->interval;
 
-		// check wait time
-		nvdbg("wait for %d seconds\n", interval);
-		sleep(interval);
+		// wait to next interval, if disconnect request is received then terminate the thread immediately
+		struct timeval tv = {0, 0};
+		tv.tv_sec = interval;
+		rfds = fds;
+		nvdbg("Wait interval(%d) fd(%d)\n", interval, s);
+		ret = select(s + 1, &rfds, NULL, NULL, &tv);
 
-		// send do reconnect using wifi_utils
-		nvdbg("send do reconnect using wifi_utils\n");
-		WIFIMGR_CHECK_RESULT_CLEANUP(_wifimgr_connect_ap(apinfo), "connecting to ap fail\n", NULL, WIFIMGR_FREE_CONNMSG(msg));
+		if (ret < 0) {
+			ndbg("[WM] wait interval error(%d) (%d)\n", ret, errno);
+			goto EXIT;
+		}
+		if (ret == 0) {
+			nvdbg("[WM] timeout (%d)seconds\n", interval);
+		} else if (FD_ISSET(s, &rfds)) {
+			nvdbg("[WM] Terminate thread while waiting interval\n");
+			goto EXIT;
+		} else { // critical error
+			ndbg("[WM] it should not happen\n");
+		}
+
+		wifi_manager_result_e res = _wifi_manager_reconnect_ap(apinfo);
+		if (res == WIFI_MANAGER_SUCCESS) {
+			WIFIMGR_WAIT_RECONNECT_EVENT;
+		} else if (res == WIFI_MANAGER_ALREADY_CONNECTED) {
+			ndbg("[WM] already connected(connected by driver)\n");
+			goto EXIT;
+		} else {
+			ndbg("[WM] Calling connect API fails\n");
+		}
 	}
+ EXIT:
 	WIFIMGR_FREE_CONNMSG(msg);
-	nvdbg("reconnect func terminated\n");
+	close(s);
+	nvdbg("[WM] reconnect func terminated\n");
 	return NULL;
 }
 
@@ -552,8 +607,12 @@ wifi_manager_result_e _wifimgr_connect_ap(wifi_manager_ap_config_s *config)
 	util_config.ap_auth_type = config->ap_auth_type;
 	util_config.ap_crypto_type = config->ap_crypto_type;
 
-	WIFIMGR_CHECK_UTILRESULT(wifi_utils_connect_ap(&util_config, NULL), "[WM] Wifi AP connect fail", WIFI_MANAGER_FAIL);
-
+	wifi_utils_result_e wres = wifi_utils_connect_ap(&util_config, NULL);
+	if (wres == WIFI_UTILS_ALREADY_CONNECTED) {
+		return WIFI_MANAGER_ALREADY_CONNECTED;
+	} else if (wres != WIFI_UTILS_SUCCESS) {
+		return WIFI_MANAGER_FAIL;
+	}
 	strncpy(g_manager_info.ssid, config->ssid, config->ssid_length + 1);
 
 	return WIFI_MANAGER_SUCCESS;
@@ -611,6 +670,14 @@ wifi_manager_result_e _wifimgr_scan(void)
 	WM_LOG_START;
 	WIFIMGR_CHECK_UTILRESULT(wifi_utils_scan_ap(NULL), "[WM] request scan to wifi utils is fail\n", WIFI_MANAGER_FAIL);
 	return WIFI_MANAGER_SUCCESS;
+}
+
+
+wifi_manager_result_e _wifi_manager_reconnect_ap(wifi_manager_ap_config_s *config)
+{
+	_wifimgr_msg_s msg = {EVT_RECONNECT, config};
+	wifi_manager_result_e res = _handle_request(&msg);
+	return res;
 }
 
 
@@ -723,7 +790,7 @@ wifi_manager_result_e _handler_on_disconnected_state(_wifimgr_msg_s *msg)
 		_wifimgr_conn_info_msg_s *conn_msg = (_wifimgr_conn_info_msg_s *)msg->param;
 		wifi_manager_ap_config_s *apinfo = conn_msg->config;
 		wifi_manager_reconnect_config_s *conn_config = conn_msg->conn_config;
-		// store wifi ap info to reconnect when the device is disconnected abnormaly
+		/* store wifi ap info to reconnect when the device is disconnected abnormaly*/
 		WIFIMGR_COPY_AP_INFO(g_manager_info.connected_ap, *apinfo);
 		WIFIMGR_COPY_RECONN_INFO(g_manager_info.conn_config, *conn_config);
 		WIFIMGR_CHECK_RESULT(_wifimgr_connect_ap(apinfo), "connect ap fail\n", WIFI_MANAGER_FAIL);
@@ -770,7 +837,7 @@ wifi_manager_result_e _handler_on_connecting_state(_wifimgr_msg_s *msg)
 		res = _get_ipaddr_dhcp();
 		if (res != WIFI_MANAGER_SUCCESS) {
 			_handle_user_cb(CB_STA_CONNECT_FAILED, NULL);
-			WIFIMGR_CHECK_RESULT(_wifimgr_disconnect_ap(), "critical error\n", WIFI_MANAGER_FAIL);			
+			WIFIMGR_CHECK_RESULT(_wifimgr_disconnect_ap(), "critical error\n", WIFI_MANAGER_FAIL);
 			WIFIMGR_SET_NO_CBK;
 			WIFIMGR_SET_STATE(WIFIMGR_STA_DISCONNECTING);
 			return WIFI_MANAGER_FAIL;
@@ -796,18 +863,19 @@ wifi_manager_result_e _handler_on_connected_state(_wifimgr_msg_s *msg)
 	} else if (msg->event == EVT_STA_DISCONNECTED) {
 		/* STA is disconnected from AP */
 		_handle_user_cb(CB_STA_DISCONNECTED, NULL);
+#if WIFIDRIVER_SUPPORT_AUTOCONNECT == 0
 		if (g_manager_info.conn_config.type == WIFI_RECONN_NONE) {
 			WIFIMGR_SET_STATE(WIFIMGR_STA_DISCONNECTED);
 		} else {
 			_wifimgr_conn_info_msg_s *rmsg = (_wifimgr_conn_info_msg_s *)malloc(sizeof(_wifimgr_conn_info_msg_s));
 			if (!rmsg) {				// critical error
-				ndbg("allocate memory for reconn msg fail\n");
+				ndbg("[WM] allocate memory for reconn msg fail\n");
 				return WIFI_MANAGER_FAIL;
 			}
 			rmsg->config = (wifi_manager_ap_config_s *)malloc(sizeof(wifi_manager_ap_config_s));
 			if (!rmsg->config) {				// critical error
 				free(rmsg);
-				ndbg("allocate memory for reconnmsg apconfig is fail\n");
+				ndbg("[WM] allocate memory for reconnmsg apconfig is fail\n");
 				return WIFI_MANAGER_FAIL;
 			}
 
@@ -815,18 +883,28 @@ wifi_manager_result_e _handler_on_connected_state(_wifimgr_msg_s *msg)
 			if (!rmsg->conn_config) {				// critical error
 				free(rmsg->config);
 				free(rmsg);
-				ndbg("allocate memory for reonnmsg conn_config is fail\n");
+				ndbg("[WM] allocate memory for reonnmsg conn_config is fail\n");
 				return WIFI_MANAGER_FAIL;
 			}
 			WIFIMGR_COPY_AP_INFO(*(rmsg->config), g_manager_info.connected_ap);
 			WIFIMGR_COPY_RECONN_INFO(*(rmsg->conn_config), g_manager_info.conn_config);
 
+			g_manager_info.conn_tries = 0;
+			g_manager_info.terminate = false;
 			int ret = pthread_create(&g_manager_info.reconn_id, NULL, _reconn_worker, (pthread_addr_t)rmsg);
 			if (ret != 0) {				// critical error
-				ndbg("[error] pthread_create fail\n");
+				ndbg("[WM] [error] pthread_create fail\n");
 			}
-			WIFIMGR_SET_STATE(WIFIMGR_STA_RECONNECTING);
+			WIFIMGR_SET_STATE(WIFIMGR_STA_RECONNECT);
 		}
+#else /* WIFIDRIVER_SUPPORT_AUTOCONNECT */
+		if (g_manager_info.conn_config.type == WIFI_RECONN_NONE) {
+			WIFIMGR_CHECK_RESULT(_wifimgr_disconnect_ap(), "critical error", WIFI_MANAGER_FAIL);
+			WIFIMGR_SET_STATE(WIFIMGR_STA_DISCONNECTED);
+		} else {
+			WIFIMGR_SET_STATE(WIFIMGR_STA_RECONNECT);
+		}
+#endif /* WIFIDRIVER_SUPPORT_AUTOCONNECT */
 	} else if (msg->event == EVT_SET_SOFTAP) {
 		wifi_manager_result_e res = _wifimgr_run_softap((wifi_manager_softap_config_s *)msg->param);
 		if (res != WIFI_MANAGER_SUCCESS) {
@@ -849,25 +927,99 @@ wifi_manager_result_e _handler_on_connected_state(_wifimgr_msg_s *msg)
 }
 
 
+wifi_manager_result_e _handler_on_reconnect_state(_wifimgr_msg_s *msg)
+{
+	WM_LOG_HANDLER_START;
+#if WIFIDRIVER_SUPPORT_AUTOCONNECT == 0
+	if (msg->event == EVT_DISCONNECT) {
+		nvdbg("[WM] disconnect\n");
+		pthread_mutex_lock(&g_reconn_mutex);
+		g_manager_info.terminate = true;
+		pthread_mutex_unlock(&g_reconn_mutex);
+
+		struct sockaddr_in serveraddr;
+		int sd = socket(PF_INET, SOCK_DGRAM, 0);
+		if (sd < 0) {
+			ndbg("[WM] socket create fail\n");
+		}
+		bzero(&serveraddr, sizeof(serveraddr));
+		serveraddr.sin_family = AF_INET;
+		serveraddr.sin_addr.s_addr = inet_addr("127.0.0.1");
+		serveraddr.sin_port = htons(WIFIMGR_IPC_PORT);
+
+		int res = sendto(sd, "term", 5, 0, (struct sockaddr *)&serveraddr, sizeof(serveraddr));
+		if (res < 0) { // critical error
+			ndbg("send signal result(%d) (%d)\n", res, errno);
+		}
+		close(sd);
+		pthread_join(g_manager_info.reconn_id, NULL);
+
+		WIFIMGR_SET_STATE(WIFIMGR_STA_DISCONNECTED);
+	} else if (msg->event == EVT_RECONNECT) {
+		wifi_manager_ap_config_s *apinfo = (wifi_manager_ap_config_s *)msg->param;
+		wifi_manager_result_e wres = _wifimgr_connect_ap(apinfo);
+		if (wres == WIFI_MANAGER_ALREADY_CONNECTED) {
+			/* some wifi drivers try to reconnect by itself.*/
+			ndbg("[WM] reconnect state already connected\n");
+			_handle_user_cb(CB_STA_CONNECTED, NULL);
+			WIFIMGR_SET_STATE(WIFIMGR_STA_CONNECTED);
+			return WIFI_MANAGER_ALREADY_CONNECTED;
+		}
+		if (wres != WIFI_MANAGER_SUCCESS) {
+			ndbg("[WM] Reconnect AP fail disconnect AP for initializing it(%d)\n", wres);
+			_wifimgr_disconnect_ap();
+			return wres;
+		}
+		WIFIMGR_SET_STATE(WIFIMGR_STA_RECONNECTING);
+	}
+#else /* WIFIDRIVER_SUPPORT_AUTOCONNECT*/
+	if (msg->event == EVT_DISCONNECT) {
+		nvdbg("[WM] disconnect\n");
+		WIFIMGR_SET_STATE(WIFIMGR_STA_DISCONNECTED);
+	} else if (msg->event == EVT_STA_CONNECT_FAILED) {
+		nvdbg("[WM] reconnect\n");
+	} else if (msg->event == EVT_STA_CONNECTED) {
+		nvdbg("[WM] connected\n");
+		WIFIMGR_SET_STATE(WIFIMGR_STA_CONNECTED);
+	}
+#endif /* WIFIDRIVER_SUPPORT_AUTOCONNECT*/
+	return WIFI_MANAGER_SUCCESS;
+}
+
+
 wifi_manager_result_e _handler_on_reconnecting_state(_wifimgr_msg_s *msg)
 {
 	WM_LOG_HANDLER_START;
 	if (msg->event == EVT_STA_CONNECT_FAILED) {
-		nvdbg("reconnect fail\n");
+		nvdbg("[WM] reconnect fail\n");
 		if (g_manager_info.conn_tries == g_manager_info.max_tries) {
-			ndbg("Stop to reconnect because of reaching to max tries\n");
+			ndbg("[WM] Stop to reconnect because of reaching to max tries\n");
 			WIFIMGR_TERMINATE_RECONN_WORKER;
 		} else {
 			WIFIMGR_TRIGGER_RECONNECT_WORKER;
 		}
+		WIFIMGR_SET_STATE(WIFIMGR_STA_RECONNECT);
 	} else if (msg->event == EVT_DISCONNECT) {
-		nvdbg("disconnect\n");
-		WIFIMGR_TERMINATE_RECONN_WORKER;		
-		WIFIMGR_SET_STATE(WIFIMGR_STA_DISCONNECTED);
+		nvdbg("[WM] disconnect\n");
+		WIFIMGR_TERMINATE_RECONN_WORKER;
+		WIFIMGR_SET_STATE(WIFIMGR_STA_CONNECT_CANCEL);
 	} else if (msg->event == EVT_STA_CONNECTED) {
 		WIFIMGR_TERMINATE_RECONN_WORKER;
 		_handle_user_cb(CB_STA_CONNECTED, NULL);
 		WIFIMGR_SET_STATE(WIFIMGR_STA_CONNECTED);
+	}
+	return WIFI_MANAGER_SUCCESS;
+}
+
+
+wifi_manager_result_e _handler_on_connect_cancel_state(_wifimgr_msg_s *msg)
+{
+	WM_LOG_HANDLER_START;
+	if (msg->event == EVT_STA_CONNECTED) {
+		WIFIMGR_CHECK_RESULT(_wifimgr_disconnect_ap(), "critical error", WIFI_MANAGER_FAIL);
+		WIFIMGR_SET_STATE(WIFIMGR_STA_DISCONNECTING);
+	} else if (msg->event == EVT_STA_CONNECT_FAILED) {
+		WIFIMGR_SET_STATE(WIFIMGR_STA_DISCONNECTED);
 	}
 	return WIFI_MANAGER_SUCCESS;
 }
@@ -885,7 +1037,7 @@ wifi_manager_result_e _handler_on_softap_state(_wifimgr_msg_s *msg)
 		WIFIMGR_STORE_PREV_STATE;
 		WIFIMGR_SET_STATE(WIFIMGR_SCANNING);
 	} else if (msg->event == EVT_JOINED) {
-		// wifi manager passes the callback after the dhcp server gives a station an IP address
+		/* wifi manager passes the callback after the dhcp server gives a station an IP address*/
 	} else if (msg->event == EVT_DHCPD_GET_IP) {
 		WIFIMGR_INC_NUM_CLIENT;
 		_handle_user_cb(CB_STA_JOINED, NULL);
@@ -922,28 +1074,28 @@ void _handle_user_cb(_wifimgr_usr_cb_type_e evt, void *arg)
 	wifi_manager_cb_s *cbk = &g_manager_info.cb;
 	switch (evt) {
 	case CB_STA_CONNECTED:
-		nvdbg("call sta connect success event\n");
+		nvdbg("[WM] call sta connect success event\n");
 		cbk->sta_connected(WIFI_MANAGER_SUCCESS);
 		break;
 	case CB_STA_CONNECT_FAILED:
-		nvdbg("call sta connect fail event\n");
+		nvdbg("[WM] call sta connect fail event\n");
 		cbk->sta_connected(WIFI_MANAGER_FAIL);
 		break;
 	case CB_STA_DISCONNECTED:
-		nvdbg("call sta disconnect event\n");
+		nvdbg("[WM] call sta disconnect event\n");
 		cbk->sta_disconnected();
 		break;
 	case CB_STA_JOINED:
-		nvdbg("call sta join event\n");
+		nvdbg("[WM] call sta join event\n");
 		cbk->softap_sta_joined();
 		break;
 	case CB_STA_LEFT:
-		nvdbg("call sta leave event\n");
+		nvdbg("[WM] call sta leave event\n");
 		cbk->softap_sta_left();
 		break;
 	case CB_SCAN_DONE:
-		nvdbg("call sta scan event\n");
-		// convert scan data.
+		nvdbg("[WM] call sta scan event\n");
+		/* convert scan data.*/
 		wifi_manager_scan_info_s *info = NULL;
 		wifi_utils_scan_list_s *list = (wifi_utils_scan_list_s *)arg;
 		if (list) {
@@ -1037,7 +1189,7 @@ wifi_manager_result_e wifi_manager_get_info(wifi_manager_info_s *info)
 
 
 wifi_manager_result_e wifi_manager_connect_ap_config(wifi_manager_ap_config_s *config,
-											  wifi_manager_reconnect_config_s *conn_config)
+													 wifi_manager_reconnect_config_s *conn_config)
 {
 	if (!config || !conn_config) {
 		return WIFI_MANAGER_INVALID_ARGS;
@@ -1089,11 +1241,13 @@ wifi_manager_result_e wifi_manager_save_config(wifi_manager_ap_config_s *config)
 	return WIFI_MANAGER_SUCCESS;
 }
 
+
 wifi_manager_result_e wifi_manager_get_config(wifi_manager_ap_config_s *config)
 {
 	WIFIMGR_CHECK_UTILRESULT(wifi_profile_read(config), "wifimgr get config fail\n", WIFI_MANAGER_FAIL);
 	return WIFI_MANAGER_SUCCESS;
 }
+
 
 wifi_manager_result_e wifi_manager_remove_config(void)
 {

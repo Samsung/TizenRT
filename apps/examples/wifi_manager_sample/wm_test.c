@@ -39,6 +39,7 @@
 	"	 wm_test sta\n"													\
 	"	 wm_test join [ssid] [security mode] [password]\n"				\
 	"	 wm_test leave\n"												\
+	"	 wm_test cancel\n"												\
 	"\n run scan:\n"													\
 	"	 wm_test scan\n"												\
 	"\n get current state:\n"											\
@@ -85,6 +86,7 @@ static void wm_stop(void *arg);
 static void wm_softap_start(void *arg);
 static void wm_connect(void *arg);
 static void wm_disconnect(void *arg);
+static void wm_cancel(void *arg); // stop reconnecting to wifi AP. it doesn't expect to receive a signal because AP is already disconnected
 static void wm_scan(void *arg);
 static void wm_display_state(void *arg);
 static void wm_process(int argc, char *argv[]);
@@ -211,9 +213,9 @@ print_wifi_ap_profile(wifi_manager_ap_config_s *config, char *title)
 	printf("------------------------------------\n");
 	printf("SSID: %s\n", config->ssid);
 	printf("SECURITY TYPE: %s\n", wifi_test_auth_method[config->ap_auth_type]);
-	if (config->ap_auth_type != WIFI_MANAGER_AUTH_OPEN) {
+	/*if (config->ap_auth_type != WIFI_MANAGER_AUTH_OPEN) {
 		printf("PASSWORD: %s\n", config->passphrase);
-	}
+		}*/
 	printf("====================================\n");
 }
 
@@ -227,7 +229,7 @@ print_wifi_softap_profile(wifi_manager_softap_config_s *config, char *title)
 	printf("------------------------------------\n");
 	printf("SSID: %s\n", config->ssid);
 	printf("channel: %d\n", config->channel);
-	printf("PASSWORD: %s\n", config->passphrase);
+	/*printf("PASSWORD: %s\n", config->passphrase);*/
 	printf("====================================\n");
 }
 
@@ -557,6 +559,21 @@ wm_disconnect(void *arg)
 
 
 void
+wm_cancel(void *arg)
+{
+	WM_TEST_LOG_START;
+	wifi_manager_result_e res = WIFI_MANAGER_SUCCESS;
+	/* Disconnect AP */
+	res = wifi_manager_disconnect_ap();
+	if (res != WIFI_MANAGER_SUCCESS) {
+		printf("disconnect fail (%d)\n", res);
+		return;
+	}
+	WM_TEST_LOG_END;
+}
+
+
+void
 wm_softap_start(void *arg)
 {
 	WM_TEST_LOG_START;
@@ -691,6 +708,8 @@ wm_parse_commands(struct options *opt, int argc, char *argv[])
 		opt->func = wm_softap_start;
 		opt->ssid = argv[3];
 		opt->password = argv[4];
+	} else if (strcmp(argv[2], "sta") == 0) {
+		opt->func = wm_sta_start;
 	} else if (strcmp(argv[2], "join") == 0) {
 		if (argc < 5) {
 			return -1;
@@ -727,6 +746,8 @@ wm_parse_commands(struct options *opt, int argc, char *argv[])
 		opt->func = wm_reset_info;
 	} else if (strcmp(argv[2], "leave") == 0) {
 		opt->func = wm_disconnect;
+	} else if (strcmp(argv[2], "cancel") == 0) {
+		opt->func = wm_cancel;
 	} else if (strcmp(argv[2], "mode") == 0) {
 		opt->func = wm_display_state;
 	} else if (strcmp(argv[2], "scan") == 0) {
