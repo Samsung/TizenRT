@@ -4,8 +4,17 @@
  *
  * This software may be distributed under the terms of the BSD license.
  * See README for more details.
+ *
+ * NOTE: This file has a potential CVE issue (CVE-2015-5314)
+ * at lines 852 and 869 (eap_pwd_process function). However, we have
+ * disabled this file for build, by setting a
+ * default value n for CONFIG_ENABLE_EAP_FOR_SUPPLICANT.
+ *
+ * If you choose to build this file, you are advised to
+ * set CONFIG_ENABLE_EAP_FOR_SUPPLICANT=y in your config,
+ * and also fix the CVE issues described above.
  */
-#ifndef CONFIG_DISABLE_EAP_FOR_SUPPLICANT
+#ifdef CONFIG_ENABLE_EAP_FOR_SUPPLICANT
 #include "includes.h"
 
 #include "common.h"
