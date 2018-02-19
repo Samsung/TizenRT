@@ -35,7 +35,7 @@
 #undef nvdbg
 #define nvdbg printf
 
-#define NUM_OF_STATE_HANDLER 11 // the number of states
+#define NUM_OF_STATE_HANDLER 10 // the number of states
 enum _wifimgr_state {
 	WIFIMGR_UNINITIALIZED,
 	WIFIMGR_STA_DISCONNECTED,
@@ -127,6 +127,8 @@ typedef struct _wifimgr_info _wifimgr_info_s;
 #define CTRL_IFNAME "wl1" // ToDo: interface name should be configurable.
 #define WIFIMGR_MAX_CONN_RETRIES 10
 #define WIFIMGR_IPC_PORT 9098
+#define WIFIDRIVER_SUPPORT_AUTOCONNECT 1
+
 #define WIFIMGR_CHECK_STATE(s) ((s) != g_manager_info.state)
 #define WIFIMGR_IS_STATE(s) ((s) == g_manager_info.state)
 #define WIFIMGR_GET_STATE g_manager_info.state
@@ -861,6 +863,7 @@ wifi_manager_result_e _handler_on_connected_state(_wifimgr_msg_s *msg)
 	} else if (msg->event == EVT_STA_DISCONNECTED) {
 		/* STA is disconnected from AP */
 		_handle_user_cb(CB_STA_DISCONNECTED, NULL);
+#if WIFIDRIVER_SUPPORT_AUTOCONNECT == 0
 		if (g_manager_info.conn_config.type == WIFI_RECONN_NONE) {
 			WIFIMGR_SET_STATE(WIFIMGR_STA_DISCONNECTED);
 		} else {
@@ -894,6 +897,14 @@ wifi_manager_result_e _handler_on_connected_state(_wifimgr_msg_s *msg)
 			}
 			WIFIMGR_SET_STATE(WIFIMGR_STA_RECONNECT);
 		}
+#else /* WIFIDRIVER_SUPPORT_AUTOCONNECT */
+		if (g_manager_info.conn_config.type == WIFI_RECONN_NONE) {
+			WIFIMGR_CHECK_RESULT(_wifimgr_disconnect_ap(), "critical error", WIFI_MANAGER_FAIL);
+			WIFIMGR_SET_STATE(WIFIMGR_STA_DISCONNECTED);
+		} else {
+			WIFIMGR_SET_STATE(WIFIMGR_STA_RECONNECT);
+		}
+#endif /* WIFIDRIVER_SUPPORT_AUTOCONNECT */
 	} else if (msg->event == EVT_SET_SOFTAP) {
 		wifi_manager_result_e res = _wifimgr_run_softap((wifi_manager_softap_config_s *)msg->param);
 		if (res != WIFI_MANAGER_SUCCESS) {
@@ -919,6 +930,7 @@ wifi_manager_result_e _handler_on_connected_state(_wifimgr_msg_s *msg)
 wifi_manager_result_e _handler_on_reconnect_state(_wifimgr_msg_s *msg)
 {
 	WM_LOG_HANDLER_START;
+#if WIFIDRIVER_SUPPORT_AUTOCONNECT == 0
 	if (msg->event == EVT_DISCONNECT) {
 		nvdbg("[WM] disconnect\n");
 		pthread_mutex_lock(&g_reconn_mutex);
@@ -960,6 +972,17 @@ wifi_manager_result_e _handler_on_reconnect_state(_wifimgr_msg_s *msg)
 		}
 		WIFIMGR_SET_STATE(WIFIMGR_STA_RECONNECTING);
 	}
+#else /* WIFIDRIVER_SUPPORT_AUTOCONNECT*/
+	if (msg->event == EVT_DISCONNECT) {
+		nvdbg("[WM] disconnect\n");
+		WIFIMGR_SET_STATE(WIFIMGR_STA_DISCONNECTED);
+	} else if (msg->event == EVT_STA_CONNECT_FAILED) {
+		nvdbg("[WM] reconnect\n");
+	} else if (msg->event == EVT_STA_CONNECTED) {
+		nvdbg("[WM] connected\n");
+		WIFIMGR_SET_STATE(WIFIMGR_STA_CONNECTED);
+	}
+#endif /* WIFIDRIVER_SUPPORT_AUTOCONNECT*/
 	return WIFI_MANAGER_SUCCESS;
 }
 
