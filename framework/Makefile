@@ -36,10 +36,6 @@ CFLAGS += -I$(TOPDIR)/../framework/include/dm
 include src$(DELIM)dm$(DELIM)Make.defs
 endif
 
-ifeq ($(CONFIG_ARASTORAGE), y)
-include src$(DELIM)arastorage$(DELIM)Make.defs
-endif
-
 AOBJS = $(ASRCS:.S=$(OBJEXT))
 COBJS = $(CSRCS:.c=$(OBJEXT))
 

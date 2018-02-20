@@ -978,15 +978,6 @@ CONFIG_MTD_SMART_WEAR_LEVEL=y
 # CONFIG_SYSLOG_TIMESTAMP is not set
 
 #
-# Arastorage
-#
-
-#
-# AraStorage database configuration
-#
-# CONFIG_ARASTORAGE is not set
-
-#
 # Memory Management
 #
 # CONFIG_DISABLE_REALLOC_NEIGHBOR_EXTENSION is not set

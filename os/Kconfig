@@ -1002,10 +1002,6 @@ menu "File Systems"
 source fs/Kconfig
 endmenu
 
-menu "Arastorage"
-source "$FRAMEWORK_DIR/src/arastorage/Kconfig"
-endmenu
-
 menu "Memory Management"
 source mm/Kconfig
 endmenu
