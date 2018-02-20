@@ -487,6 +487,7 @@ int webclient_tls_init(struct http_client_tls_t *client, struct http_client_ssl_
 	mbedtls_entropy_init(&(client->tls_entropy));
 	mbedtls_ctr_drbg_init(&(client->tls_ctr_drbg));
 	mbedtls_ssl_session_init(&(client->tls_session));
+	mbedtls_ssl_conf_authmode(&(client->tls_conf), ssl_config->auth_mode);
 #ifdef MBEDTLS_DEBUG_C
 	mbedtls_debug_set_threshold(MBED_DEBUG_LEVEL);
 #endif
@@ -600,8 +601,6 @@ void wget_tls_ssl_release(struct http_client_tls_t *client)
 int wget_tls_handshake(struct http_client_tls_t *client, const char *hostname)
 {
 	int result = 0;
-
-	mbedtls_ssl_conf_authmode(&(client->tls_conf), MBEDTLS_SSL_VERIFY_REQUIRED);
 
 	mbedtls_net_init(&(client->tls_client_fd));
 	mbedtls_ssl_init(&(client->tls_ssl));

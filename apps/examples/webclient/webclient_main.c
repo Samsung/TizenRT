@@ -154,7 +154,7 @@ const char c_ca_crt_rsa[] =
 
 struct http_client_ssl_config_t g_config = {
 	(char *)c_ca_crt_rsa, NULL, NULL,
-	sizeof(c_ca_crt_rsa), 0, 0, 2
+	sizeof(c_ca_crt_rsa), 0, 0, WEBCLIENT_SSL_VERIFY_REQUIRED
 };
 
 static int g_running;

@@ -77,6 +77,11 @@
 
 #define WEBCLIENT_CONF_HANDSHAKE_RETRY    3
 #define WEBCLIENT_CONF_CHECK_TLS_HOSTNAME 0
+
+#define WEBCLIENT_SSL_VERIFY_NODE         0
+#define WEBCLIENT_SSL_VERIFY_OPTIONAL     1
+#define WEBCLIENT_SSL_VERIFY_REQUIRED     2
+#define WEBCLIENT_SSL_VERIFY_UNSET        3
 /****************************************************************************
  * Public types
  ****************************************************************************/
