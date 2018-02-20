@@ -9,7 +9,7 @@ namespace Media
 	{
 	public:
 		RecorderDataSource();
-		RecorderDataSource(int _channels, int _sampleRate, int _pcmFormat);
+		RecorderDataSource(int _channels, int _sampleRate, int _pcmFormat, std::string &);
 		~RecorderDataSource();
 	};
 }
