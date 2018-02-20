@@ -161,7 +161,11 @@ ifeq ($(BOARDMAKE),y)
   LDLIBS += -lboard
 endif
 
+ifneq ($(TOOLCHAIN_LIBGCC_FLAG), )
+LIBGCC = "${shell "$(CC)" $(TOOLCHAIN_LIBGCC_FLAG) -print-libgcc-file-name}"
+else
 LIBGCC = "${shell "$(CC)" $(ARCHCPUFLAGS) -print-libgcc-file-name}"
+endif
 GCC_LIBDIR := ${shell dirname $(LIBGCC)}
 
 VPATH += chip

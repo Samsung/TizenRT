@@ -178,3 +178,9 @@ ifeq ($(CONFIG_ARMV7R_TOOLCHAIN),GNU_EABIW)
     WINTOOL = y
   endif
 endif
+
+# Thumb-Mode
+
+ifeq ($(CONFIG_ARCH_THUMB),y)
+  TOOLCHAIN_LIBGCC_FLAG = -mthumb -march=armv7-r
+endif
