@@ -34,8 +34,6 @@ Apps include:
   ntpclient - This is a fragmentary NTP client. It neither well-tested
               nor mature nor complete at this point in time.
               See apps/include/netutils/ntpclient.h for interface information.
-  smtp      - Simple Mail Transfer Protocol (SMTP) client.
-              See apps/include/netutils/smtp.h for interface information.
   telnetd   - TELNET server.
               See apps/include/netutils/telnetd.h for interface information.
   tftpc     - TFTP client.
