@@ -1,0 +1,38 @@
+#
+# For a description of the syntax of this configuration file,
+# see kconfig-language at https://www.kernel.org/doc/Documentation/kbuild/kconfig-language.txt
+#
+
+
+config SYSTEM_ADB
+	bool "ADB"
+	default n
+	---help---
+		Enable support for the ADB.
+
+if SYSTEM_ADB
+config SYSTEM_ADB_DEBUG
+	bool "Debug ADB"
+	default n
+	---help---
+		Enable debug for the ADB.
+
+config SYSTEM_ADB_SHELL_STACKSIZE
+	int "ADB shell stack size"
+	default 2048
+	---help---
+		ADB shell stack size
+
+config SYSTEM_ADB_SHELL_PRIORITY
+	int "ADB shell schedule priority"
+	default 100
+	---help---
+		ADB shell priority
+
+config SYSTEM_ADB_PORT
+	int "ADB server port"
+	default 5555
+	---help---
+		ADB server port number
+
+endif

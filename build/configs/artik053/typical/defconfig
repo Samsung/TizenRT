@@ -1231,6 +1231,7 @@ CONFIG_TASH_CMDTASK_PRIORITY=100
 #
 # System Libraries and Add-Ons
 #
+# CONFIG_SYSTEM_ADB is not set
 # CONFIG_SYSTEM_CLE is not set
 # CONFIG_SYSTEM_CUTERM is not set
 # CONFIG_SYSTEM_FOTA_HAL is not set

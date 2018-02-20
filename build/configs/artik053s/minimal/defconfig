@@ -1069,6 +1069,7 @@ CONFIG_SLSI_WIFI_DEFAULT_WLAN_TX_POWER=30
 #
 # System Libraries and Add-Ons
 #
+# CONFIG_SYSTEM_ADB is not set
 # CONFIG_SYSTEM_CLE is not set
 # CONFIG_SYSTEM_CUTERM is not set
 # CONFIG_SYSTEM_FOTA_HAL is not set
