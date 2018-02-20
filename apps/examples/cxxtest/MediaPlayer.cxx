@@ -208,6 +208,22 @@ namespace Media
 
 	MediaPlayer::~MediaPlayer()
 	{
+		player_result_t ret;
+
+		if (curState > PLAYER_STATE_IDLE) {
+			ret = unprepare();
+			if (ret != PLAYER_OK) {
+				std::cout << "MediaPlayer::unprepare FAILED" << std::endl;
+			}
+		}
+
+		if (curState == PLAYER_STATE_IDLE) {
+			ret = destroy();
+			if (ret != PLAYER_OK) {
+				std::cout << "MediaPlayer::destroy FAILED" << std::endl;
+			}
+		}
+
 		delete qMtx;
 		delete cMtx;
 	}
