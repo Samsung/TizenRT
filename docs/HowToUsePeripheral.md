@@ -307,3 +307,88 @@ Initialization is done either as part of _up_intitialize()_ or as part of _board
 Please refer to **[i2c.h](../os/include/tinyara/i2c.h)** to know more about the i2c functions and declarations.  
 
 ## I2S
+
+I2S port for a board involves the following;
+1. I2S Device Structure and its Operations.
+2. I2S Initialization and Device Access.  
+
+### I2S Device Structure and Operations
+Each board, shall;  
+
+Implement and expose an instanse of struct i2s_dev_s for each port.     
+Implement the supported operations on i2s, ie struct i2s_op_s. 
+Data structures below; 
+
+```
+/* I2S private data.  This structure only defines the initial fields of the
+ * structure visible to the I2S client.  The specific implementation may
+ * add additional, device specific fields
+ */
+
+struct i2s_dev_s {
+	FAR const struct i2s_ops_s *ops;
+};
+
+struct i2s_ops_s {
+	/* Receiver methods */
+
+	CODE uint32_t (*i2s_rxsamplerate)(FAR struct i2s_dev_s *dev, uint32_t rate);
+	CODE uint32_t (*i2s_rxdatawidth)(FAR struct i2s_dev_s *dev, int bits);
+	CODE int (*i2s_receive)(FAR struct i2s_dev_s *dev, FAR struct ap_buffer_s *apb, i2s_callback_t callback, FAR void *arg, uint32_t timeout);
+
+	/* Transmitter methods */
+
+	CODE uint32_t (*i2s_txsamplerate)(FAR struct i2s_dev_s *dev, uint32_t rate);
+	CODE uint32_t (*i2s_txdatawidth)(FAR struct i2s_dev_s *dev, int bits);
+	CODE int (*i2s_send)(FAR struct i2s_dev_s *dev, FAR struct ap_buffer_s *apb, i2s_callback_t callback, FAR void *arg, uint32_t timeout);
+
+	/* Errors handling methods */
+
+	CODE int (*i2s_err_cb_register)(FAR struct i2s_dev_s *dev, i2s_err_cb_t cb, FAR void *arg);
+
+	/* Generic stop method */
+	CODE int (*i2s_stop)(FAR struct i2s_dev_s *dev);
+};
+```
+
+Above declarations are present in **[i2s.h](../os/include/tinyara/audio/i2s.h)**.  
+Each board should implement each of the above operations.
+
+Refer **[s5j_i2s.c](../os/arch/arm/src/s5j/s5j_i2s.c)** for sample implementation of i2s operations on s5j chipset.
+Sample code from s5j_i2s.c below, all operations implemented as static functions
+are attached to the i2s device operations.
+```
+	/* static function to set sample rate */
+static uint32_t i2s_samplerate(struct i2s_dev_s *dev, uint32_t rate)
+{
+	...
+}
+	/* Static function to set each sample data width */
+static uint32_t i2s_txdatawidth(struct i2s_dev_s *dev, int bits)
+{
+	...
+}
+	/* Wrapping static implementation of i2s operations with i2s device */
+static const struct i2s_ops_s g_i2sops = {
+	/* Receiver methods */
+
+	.i2s_rxsamplerate = i2s_samplerate,
+	.i2s_rxdatawidth = i2s_rxdatawidth,
+	.i2s_receive = i2s_receive,
+
+	/* Transmitter methods */
+
+	.i2s_txsamplerate = i2s_samplerate,
+	.i2s_txdatawidth = i2s_txdatawidth,
+	.i2s_send = i2s_send,
+
+	.i2s_stop = i2s_stop,
+	.i2s_err_cb_register = i2s_err_cb_register,
+};
+```
+### I2S Initialization and Device Access
+Board shall export ```struct i2s_dev_s* xxx_i2s_initialize(uint16_t port)``` to initialize a i2s port and get the corresponding device structure.    
+**NOTE**: Current code in s5j_i2s.c has initialize function as ```struct i2s_dev_s* s5j_i2s_initialize(uint16_t port)```.
+
+This i2s initialize function shall be called with the port number to get the corresponding device structure.
+
