@@ -94,6 +94,7 @@
 #define POSIX_SPAWN_SETSCHEDULER  (1 << 3)	/* 1: Set task's scheduler policy */
 #define POSIX_SPAWN_SETSIGDEF     (1 << 4)	/* 1: Set default signal actions */
 #define POSIX_SPAWN_SETSIGMASK    (1 << 5)	/* 1: Set sigmask */
+#define POSIX_SPAWN_ALLFLAG       (POSIX_SPAWN_RESETIDS | POSIX_SPAWN_SETPGROUP | POSIX_SPAWN_SETSCHEDPARAM | POSIX_SPAWN_SETSCHEDULER | POSIX_SPAWN_SETSIGDEF | POSIX_SPAWN_SETSIGMASK)
 
 /****************************************************************************
  * Type Definitions

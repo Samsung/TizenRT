@@ -58,7 +58,7 @@
 
 #include <sched.h>
 #include <spawn.h>
-#include <assert.h>
+#include <errno.h>
 
 /****************************************************************************
  * Global Functions
@@ -84,7 +84,10 @@
 
 int posix_spawnattr_getschedparam(FAR const posix_spawnattr_t *attr, FAR struct sched_param *param)
 {
-	DEBUGASSERT(attr && param);
+	if (!attr || !param) {
+		return EINVAL;
+	}
+
 	param->sched_priority = attr->priority;
 	return OK;
 }
