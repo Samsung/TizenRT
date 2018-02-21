@@ -92,6 +92,7 @@ namespace Media
 		}
 
 		enqueue([this](){_sync(); });
+		cvSync.wait(lock);
 
 		struct pcm_config config;
 		memset(&config, 0, sizeof(struct pcm_config));
@@ -101,11 +102,26 @@ namespace Media
 
 		//cardnum,  getDeviceCard
 		pcmIn = pcm_open(0, 0, PCM_IN, &config);	
-		if (!pcmIn) {
+		if (!pcm_is_ready(pcmIn)) {
 			return RECORDER_ERROR;
 		}
 
-		cvSync.wait(lock);
+		fsOut.open(recorderDataSource->getDataPath(), std::fstream::out | std::fstream::trunc);
+
+		if (!fsOut.is_open())
+		{
+			std::cout << "file open failed" << std::endl;
+			return RECORDER_ERROR;
+		}
+
+		buffSize = pcm_frames_to_bytes(pcmIn, pcm_get_buffer_size(pcmIn));
+		buffer = new char[buffSize];
+		if (!buffer)
+		{
+			std::cout << "alloc buffer failed" << std::endl;
+			return RECORDER_ERROR;
+		}
+		
 		curState = RECORDER_STATE_READY;
 		return RECORDER_OK;
 	}
@@ -113,13 +129,29 @@ namespace Media
 	recorder_result_t MediaRecorder::unprepare()
 	{
 		unique_lock<mutex> lock(*cMtx);
-		enqueue([this]() {_sync(); });
-		cvSync.wait(lock);
 
 		if (curState == RECORDER_STATE_NONE || curState == RECORDER_STATE_IDLE) {
 			return RECORDER_ERROR;
 		}
 
+		enqueue([this]() {_sync(); });
+		cvSync.wait(lock);
+
+		if (buffer) {
+			delete []buffer;
+			buffer = nullptr;
+		}
+		
+		buffSize = 0;
+		
+		if (fsOut.is_open()) {
+			fsOut.close();
+		}
+		
+		if (!pcmIn) {
+			pcm_close(pcmIn);
+		}
+		
 		curState = RECORDER_STATE_IDLE;
 		return RECORDER_OK;
 	}
@@ -174,6 +206,7 @@ namespace Media
 		curState = RECORDER_STATE_NONE;
 		worker = nullptr;
 		pcmIn = nullptr;
+		buffer = nullptr;
 	}
 
 	void MediaRecorder::_sync()
@@ -248,7 +281,30 @@ namespace Media
 			unique_lock<mutex> lock(*qMtx);
 
 			if (cmdQueue.empty()) {
-				cvQueue.wait(lock);
+				if (curState == RECORDER_STATE_RECORDING) {
+					int frames = 0, size = 0;
+					frames = pcm_readi(pcmIn, buffer, pcm_bytes_to_frames(pcmIn, buffSize));
+					
+					if (frames == -EPIPE) {
+						if (pcm_prepare(pcmIn) != OK) {
+							_stop();
+						}
+
+						continue;
+					}
+
+					if (frames > 0) {
+						size = pcm_frames_to_bytes(pcmIn, frames);	
+
+						int ret = fsOut.write(buffer, size);
+						if (ret < 0) {
+							std::cout << "write file failed" << std::endl;
+						}
+					}
+				} else {
+					std::cout << "wait Queue" << std::endl;
+					cvQueue.wait(lock);
+				}
 			}
 
 			std::function<void()> run = cmdQueue.front();
@@ -256,8 +312,6 @@ namespace Media
 
 			run();
 		}
-
 		return 0;
 	}
-
 }
