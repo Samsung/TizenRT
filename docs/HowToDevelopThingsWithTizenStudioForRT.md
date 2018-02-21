@@ -94,7 +94,7 @@ When the project is created, template code for the selected device and resources
 If you edit the SmartThings resources in your project later on, the Model Manager automatically backs the existing source files with a **.bak** extension.  
 ![Backup files](media/rt_model_manage_backups.png)
 
-### 4. Build and Flash the Project
+### 4. Build the Project
 You must build your project before flashing or debugging it.  
 You can build a TizenRT project in 2 ways: [using a batch build](#Using-Batch-Build) or [build project command](#Using-Build-Project).
 
