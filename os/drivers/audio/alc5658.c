@@ -135,6 +135,8 @@ static const struct sample_rate_entry_s g_sample_entry[] = {
 	{AUDIO_SAMP_RATE_48K, codec_init_pll_48K, sizeof(codec_init_pll_48K)}
 };
 
+static unsigned int g_volume;
+
 /****************************************************************************
  * Name: delay
  *
@@ -239,8 +241,8 @@ static void alc5658_setregs(struct alc5658_dev_s *priv)
 {
 	alc5658_writereg(priv, ALC5658_IN1, (0 + 16) << 8);
 	alc5658_writereg(priv, ALC5658_HPOUT, 0);
-	alc5658_writereg(priv, ALC5658_HPOUT_L, 0xd00);
-	alc5658_writereg(priv, ALC5658_HPOUT_R, 0x700);
+	alc5658_writereg(priv, ALC5658_HPOUT_L, g_volume);
+	alc5658_writereg(priv, ALC5658_HPOUT_R, g_volume);
 }
 
 static void alc5658_getregs(struct alc5658_dev_s *priv)
@@ -255,7 +257,7 @@ static void alc5658_getregs(struct alc5658_dev_s *priv)
  * Name: alc5658_exec_i2c_script
  *
  * Description:
- *   Executes given script through i2c to configuure ALC5658 device.
+ *   Executes given script through i2c to configure ALC5658 device.
  *
  ************************************************************************************/
 static void alc5658_exec_i2c_script(FAR struct alc5658_dev_s *priv, t_codec_init_script_entry *script, uint32_t size)
@@ -317,12 +319,10 @@ static void alc5658_takesem(sem_t *sem)
 #ifndef CONFIG_AUDIO_EXCLUDE_VOLUME
 static void alc5658_setvolume(FAR struct alc5658_dev_s *priv, uint16_t volume, bool mute)
 {
-
-	audvdbg(" alc5658_setvolume volume=%u mute=%u\n", volume, mute);
-
-	priv->volume = volume;
-	priv->mute = mute;
-
+	/** TODO: Need to process balance and mute **/
+	if (mute == false) {
+		g_volume = volume << 8;
+	}
 }
 #endif							/* CONFIG_AUDIO_EXCLUDE_VOLUME */
 
@@ -582,17 +582,6 @@ static int alc5658_configure(FAR struct audio_lowerhalf_s *dev, FAR const struct
 #ifndef CONFIG_AUDIO_EXCLUDE_VOLUME
 		case AUDIO_FU_VOLUME: {
 			/* Set the volume */
-
-			uint16_t volume = caps->ac_controls.hw[0];
-			audvdbg("    Volume: %d\n", volume);
-
-			if (volume >= 0 && volume <= 1000) {
-				/* Scale the volume setting to the range {0.. 63} */
-
-				alc5658_setvolume(priv, (63 * volume / 1000), priv->mute);
-			} else {
-				ret = -EDOM;
-			}
 		}
 		break;
 #endif							/* CONFIG_AUDIO_EXCLUDE_VOLUME */
@@ -672,9 +661,6 @@ static int alc5658_configure(FAR struct audio_lowerhalf_s *dev, FAR const struct
 	case AUDIO_TYPE_PROCESSING:
 		break;
 	}
-
-	alc5658_setregs(priv);
-	alc5658_getregs(priv);
 
 	return ret;
 }
@@ -1000,6 +986,13 @@ static int alc5658_ioctl(FAR struct audio_lowerhalf_s *dev, int cmd, unsigned lo
 #endif
 	}
 	break;
+	case AUDIOIOC_SETVOLUME: {
+		unsigned int volume = arg;
+		printf("\t\tVolume = %d\n", volume);
+		alc5658_setvolume(priv, volume, priv->mute);
+	}
+	break;
+
 	default:
 		audvdbg("alc5658_ioctl received unkown cmd 0x%x\n", cmd);
 		break;

@@ -62,7 +62,7 @@ THREADEXEC = TASH_EXECMD_ASYNC
 
 # C++ Test Example
 ASRCS		=
-CSRCS		=
+CSRCS		= audio/audio_manager.c
 CXXSRCS		= MediaPlayer.cxx MediaRecorder.cxx DataSource.cxx PlayerDataSource.cxx RecorderDataSource.cxx
 MAINSRC		= cxxtest_main.cxx
 
