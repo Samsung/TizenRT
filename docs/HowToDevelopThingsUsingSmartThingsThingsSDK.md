@@ -20,6 +20,12 @@ Then, follow the steps.
 1. Get your MNID - Manufacturer ID - on [My Page](https://smartthings.developer.samsung.com/partner/dashboard)  
 2. Create a cloud-connected device [[Details]](https://smartthings.developer.samsung.com/develop/workspace/ide/create-a-cloud-connected-device.html)  
 3. Generate the Certificate Signing Request and issue a new Signing key for the device certificate [[Details]](https://smartthings.developer.samsung.com/develop/workspace/ide/about-common-tools.html)  
+4. Add `certificate.pem` and `privateKey.der` file to `$TIZENRT_BASEDIR/tools/fs/contents/` 
+5. Edit Json file to match the following: json
+   ```
+    "certificate": "certificate.pem",  
+    "privateKey": "privateKey.der"
+   ```
 
 To develop App(Samsung Connect) UI and functionality, use the SmartThings SDK. Please refer to [SmartThings SDK](https://smartthings.developer.samsung.com/develop/workspace/sdk/overview.html) site.
 
