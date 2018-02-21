@@ -298,6 +298,8 @@ static uint32_t i2s_samplerate(struct i2s_dev_s *dev, uint32_t rate);
 static uint32_t i2s_txdatawidth(struct i2s_dev_s *dev, int bits);
 static int i2s_send(struct i2s_dev_s *dev, struct ap_buffer_s *apb, i2s_callback_t callback, void *arg, uint32_t timeout);
 static int i2s_stop(struct i2s_dev_s *dev);
+static int i2s_pause(struct i2s_dev_s *dev);
+static int i2s_resume(struct i2s_dev_s *dev);
 
 
 static int i2s_err_cb_register(struct i2s_dev_s *dev, i2s_err_cb_t cb, void *arg);	
@@ -336,6 +338,8 @@ static const struct i2s_ops_s g_i2sops = {
 	.i2s_send = i2s_send,
 
 	.i2s_stop = i2s_stop,
+	.i2s_pause = i2s_pause,
+	.i2s_resume = i2s_resume,
 	.i2s_err_cb_register = i2s_err_cb_register,
 };
 
@@ -1592,6 +1596,55 @@ static uint32_t i2s_txdatawidth(struct i2s_dev_s *dev, int bits)
 
 /***************************************************************************
 ****************************************************************************/
+static int i2s_pause(struct i2s_dev_s *dev)
+{
+	struct s5j_i2s_s *priv = (struct s5j_i2s_s *)dev;
+	irqstate_t flags;
+	DEBUGASSERT(priv);
+
+#ifdef I2S_HAVE_TX_P
+	if (priv->txpenab) {
+		flags = irqsave();
+		modifyreg32(priv->base + S5J_I2S_CON, 0, I2S_CR_TXCHPAUSE);
+		irqrestore(flags);
+	}
+#endif
+
+#ifdef I2S_HAVE_RX
+	if (priv->rxenab) {
+		flags = irqsave();
+		modifyreg32(priv->base + S5J_I2S_CON, 0, I2S_CR_RXCHPAUSE);
+		irqrestore(flags);
+	}
+#endif
+	return 0;
+}
+
+static int i2s_resume(struct i2s_dev_s *dev)
+{
+	struct s5j_i2s_s *priv = (struct s5j_i2s_s *)dev;
+	irqstate_t flags;
+	DEBUGASSERT(priv);
+
+#ifdef I2S_HAVE_TX_P
+	if (priv->txpenab) {
+		flags = irqsave();
+		modifyreg32(priv->base + S5J_I2S_CON, I2S_CR_TXCHPAUSE, 0);
+		irqrestore(flags);
+	}
+#endif
+
+#ifdef I2S_HAVE_RX
+	if (priv->rxenab) {
+		flags = irqsave();
+		modifyreg32(priv->base + S5J_I2S_CON, I2S_CR_RXCHPAUSE, 0);
+		irqrestore(flags);
+	}
+#endif
+
+	return 0;
+}
+
 static int i2s_stop(struct i2s_dev_s *dev)
 {
 	struct s5j_i2s_s *priv = (struct s5j_i2s_s *)dev;
