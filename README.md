@@ -22,6 +22,7 @@ Untar the gcc-arm-none-eabi-4_9-2015q3-20150921-linux.tar.bz2 and export the pat
 tar xvjf gcc-arm-none-eabi-4_9-2015q3-20150921-linux.tar.bz2
 export PATH=<Your Toolchain PATH>:$PATH
 ```
+Be aware that recommanded toolchain is fully working on 32bits machine. 64bits machine needs additional packages.
 
 ### Getting the sources
 
