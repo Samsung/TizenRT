@@ -38,9 +38,14 @@ Configure the build from *$TIZENRT_BASEDIR/os/tools* directory
 cd os/tools
 ./configure.sh <board>/<configuration_set>
 ```
-For list of boards and configuration set supported, refer belows.  
-Above copies the canned configuration-set for the particular board, into the *$TIZENRT_BASEDIR/os* directory.  
-Configuration can be modified through *make menuconfig* from *$TIZENRT_BASEDIR/os*.
+The configuration file is named *defconfig*,  
+and resides under the relative path \<board\>/\<configuration_set\> rooted at *build/configs*.  
+To check the different \<board\>/\<configuration_set\> combinations supported, type below:
+```bash
+./configure.sh --help
+```
+
+After configuring above, configuration can be modified through *make menuconfig* from *$TIZENRT_BASEDIR/os*.
 ```bash
 cd ..
 make menuconfig

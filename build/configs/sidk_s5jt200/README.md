@@ -17,6 +17,9 @@ Samsung IoT Development Kit for S5JT200 chipset.
 will be updated
 
 ## Environment Set-up
+This section covers board-specific environment set-up.  
+Please set TizenRT common environment, [quick start](https://github.com/Samsung/TizenRT#quick-start), first before doing below.
+
 ### On Chip Debugger installation
 
 on Ubuntu 13.10 ~ 14.xx version
@@ -102,9 +105,8 @@ SUBSYSTEMS=="usb",ATTRS{idVendor}=="0403",ATTRS{idProduct}=="6010",MODE="0666" R
 
 ## How to program a binary
 
-After buiding a TizenRT, execute below at $TIZENRT_BASEDIR/os folder.
-
-TIZENRT_BASEDIR was set at [[Getting the sources]](../../../README.md#getting-the-sources) tab of Quick Start.
+After buiding a TizenRT, execute below at $TIZENRT_BASEDIR/os folder.  
+See [[Getting the sources]](https://github.com/Samsung/TizenRT#getting-the-sources) for how to set *TIZENRT_BASEDIR*.
 ```bash
 make download ALL
 ```

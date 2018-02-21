@@ -85,6 +85,9 @@ Aimed especially at power-sensitive devices needing Wi-Fi®, the ARTIK053S Modul
 8MB is allocated to the SPI Flash area. 1280 KB is prepared for operation in SRAM. Here is the physical memory address, see [[here]](../artik05x/README.md#memory-map-artik05x).
 
 ## Environment Set-up
+This section covers board-specific environment set-up.  
+Please set TizenRT common environment, [quick start](https://github.com/Samsung/TizenRT#quick-start), first before doing below.
+
 ### On Chip Debugger installation
 
 OpenOCD is used to program and debug.
@@ -116,11 +119,9 @@ SUBSYSTEMS=="usb",ATTRS{idVendor}=="0403",ATTRS{idProduct}=="6010",MODE="0666" R
 
 ## How to program a binary
 
-There are two methods, using OpenOCD or script.
-
-After building TizenRT, follow below steps at $TIZENRT_BASEDIR/os folder.
-
-TIZENRT_BASEDIR was set at [[Getting the sources]](../../../README.md#getting-the-sources) tab of Quick Start.
+There are two methods, using OpenOCD or script.  
+After building TizenRT, follow below steps at $TIZENRT_BASEDIR/os folder.  
+See [[Getting the sources]](https://github.com/Samsung/TizenRT#getting-the-sources) for how to set *TIZENRT_BASEDIR*.
 
 ### Using download script
 
@@ -131,8 +132,7 @@ This makes complete set of binaries programmed.
 
 ### Using OpenOCD
 
-This is used to program a partial binary.
-
+This is used to program a partial binary.  
 Export 'OPENOCD_SCRIPTS' to environment variable.
 
 ```bash
