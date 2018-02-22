@@ -57,7 +57,8 @@
 #include <tinyara/config.h>
 
 #include <spawn.h>
-#include <assert.h>
+#include <sched.h>
+#include <errno.h>
 
 /****************************************************************************
  * Global Functions
@@ -83,7 +84,10 @@
 
 int posix_spawnattr_setschedpolicy(FAR posix_spawnattr_t *attr, int policy)
 {
-	DEBUGASSERT(attr && (policy == SCHED_FIFO || policy == SCHED_RR));
+	if (!attr || (policy != SCHED_FIFO && policy != SCHED_RR)) {
+		return EINVAL;
+	}
+
 	attr->policy = (uint8_t)policy;
 	return OK;
 }

@@ -12,14 +12,6 @@ config EXAMPLES_SLSIWIFI
 
 if EXAMPLES_SLSIWIFI
 
-config EXAMPLES_SLSIWIFI_PROGNAME
-	string "Program name"
-	default "slsiwifi"
-	depends on BUILD_KERNEL
-	---help---
-		This is the name of the program that will be use when the NSH ELF
-		program is installed.
-
 config EXAMPLES_SLSIWIFI_PRIORITY
 	int "wifi app task priority"
 	default 50

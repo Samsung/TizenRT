@@ -120,7 +120,7 @@ int ess_process(void)
 #endif
 
 	bool easysetup_complete = false;
-	st_things_initialize("/rom/sampleDevice.json", &easysetup_complete);
+	st_things_initialize("sampleDevice.json", &easysetup_complete);
 
 	st_things_register_request_cb(handle_get_request, handle_set_request);
 	st_things_register_reset_cb(handle_reset_request, handle_reset_result);

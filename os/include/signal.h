@@ -298,7 +298,7 @@ extern "C" {
  * @details @b #include <signal.h> \n
  * SYSTEM CALL API \n
  * POSIX API (refer to : http://pubs.opengroup.org/onlinepubs/9699919799/)
- * @since Tizen RT v1.0
+ * @since TizenRT v1.0
  */
 int kill(pid_t pid, int sig);
 
@@ -310,84 +310,84 @@ int kill(pid_t pid, int sig);
  * @brief initialize and empty a signal set
  * @details @b #include <signal.h> \n
  * POSIX APIs (refer to : http://pubs.pengroup.org/onlinepubs/9699919799/)
- * @since Tizen RT v1.0
+ * @since TizenRT v1.0
  */
 int sigemptyset(FAR sigset_t *set);
 /**
  * @brief initialize and fill a signal set
  * @details @b #include <signal.h> \n
  * POSIX API (refer to : http://pubs.opengroup.org/onlinepubs/9699919799/)
- * @since Tizen RT v1.0
+ * @since TizenRT v1.0
  */
 int sigfillset(FAR sigset_t *set);
 /**
  * @brief add a signal to a signal set
  * @details @b #include <signal.h> \n
  * POSIX API (refer to : http://pubs.opengroup.org/onlinepubs/9699919799/)
- * @since Tizen RT v1.0
+ * @since TizenRT v1.0
  */
 int sigaddset(FAR sigset_t *set, int signo);
 /**
  * @brief delete a signal from a signal set
  * @details @b #include <signal.h> \n
  * POSIX API (refer to : http://pubs.opengroup.org/onlinepubs/9699919799/)
- * @since Tizen RT v1.0
+ * @since TizenRT v1.0
  */
 int sigdelset(FAR sigset_t *set, int signo);
 /**
  * @brief test for a signal in a signal set
  * @details @b #include <signal.h> \n
  * POSIX API (refer to : http://pubs.opengroup.org/onlinepubs/9699919799/)
- * @since Tizen RT v1.0
+ * @since TizenRT v1.0
  */
 int sigismember(FAR const sigset_t *set, int signo);
 /**
  * @brief signal management
  * @details @b #include <signal.h> \n
  * POSIX API (refer to : http://pubs.opengroup.org/onlinepubs/9699919799/)
- * @since Tizen RT v1.0
+ * @since TizenRT v1.0
  */
 int sighold(int sig);
 /**
  * @brief signal management
  * @details @b #include <signal.h> \n
  * POSIX API (refer to : http://pubs.opengroup.org/onlinepubs/9699919799/)
- * @since Tizen RT v1.1
+ * @since TizenRT v1.1
  */
 int sigignore(int sig);
 /**
  * @brief signal management
  * @details @b #include <signal.h> \n
  * POSIX API (refer to : http://pubs.opengroup.org/onlinepubs/9699919799/)
- * @since Tizen RT v1.1
+ * @since TizenRT v1.1
  */
 int sigpause(int sig);
 /**
  * @brief send a signal to the executing process
  * @details @b #include <signal.h> \n
  * POSIX API (refer to : http://pubs.opengroup.org/onlinepubs/9699919799/)
- * @since Tizen RT v1.1
+ * @since TizenRT v1.1
  */
 int raise(int sig);
 /**
  * @brief signal management
  * @details @b #include <signal.h> \n
  * POSIX API (refer to : http://pubs.opengroup.org/onlinepubs/9699919799/)
- * @since Tizen RT v1.0
+ * @since TizenRT v1.0
  */
 int sigrelse(int sig);
 /**
  * @brief signal management
  * @details @b #include <signal.h> \n
  * POSIX API (refer to : http://pubs.opengroup.org/onlinepubs/9699919799/)
- * @since Tizen RT v1.1
+ * @since TizenRT v1.1
  */
 CODE void (*sigset(int sig, CODE void (*func)(int sig)))(int sig);
 /**
  * @brief signal management
  * @details @b #include <signal.h> \n
  * POSIX API (refer to : http://pubs.opengroup.org/onlinepubs/9699919799/)
- * @since Tizen RT v1.1
+ * @since TizenRT v1.1
  */
 CODE void (*signal(int sig, CODE void (*func)(int sig)))(int sig);
 /**
@@ -400,7 +400,7 @@ CODE void (*signal(int sig, CODE void (*func)(int sig)))(int sig);
  * @details @b #include <signal.h> \n
  * SYSTEM CALL API \n
  * POSIX API (refer to : http://pubs.opengroup.org/onlinepubs/9699919799/)
- * @since Tizen RT v1.0
+ * @since TizenRT v1.0
  */
 int sigaction(int sig, FAR const struct sigaction *act, FAR struct sigaction *oact);
 /**
@@ -409,7 +409,7 @@ int sigaction(int sig, FAR const struct sigaction *act, FAR struct sigaction *oa
  * @details @b #include <signal.h> \n
  * SYSTEM CALL API \n
  * POSIX API (refer to : http://pubs.opengroup.org/onlinepubs/9699919799/)
- * @since Tizen RT v1.0
+ * @since TizenRT v1.0
  */
 int sigprocmask(int how, FAR const sigset_t *set, FAR sigset_t *oset);
 /**
@@ -418,7 +418,7 @@ int sigprocmask(int how, FAR const sigset_t *set, FAR sigset_t *oset);
  * @details @b #include <signal.h> \n
  * SYSTEM CALL API \n
  * POSIX API (refer to : http://pubs.opengroup.org/onlinepubs/9699919799/)
- * @since Tizen RT v1.0
+ * @since TizenRT v1.0
  */
 int sigpending(FAR sigset_t *set);
 /**
@@ -427,7 +427,7 @@ int sigpending(FAR sigset_t *set);
  * @details @b #include <signal.h> \n
  * SYSTEM CALL API \n
  * POSIX API (refer to : http://pubs.opengroup.org/onlinepubs/9699919799/)
- * @since Tizen RT v1.0
+ * @since TizenRT v1.0
  */
 int sigsuspend(FAR const sigset_t *sigmask);
 /**
@@ -436,7 +436,7 @@ int sigsuspend(FAR const sigset_t *sigmask);
  * @details @b #include <signal.h> \n
  * SYSTEM CALL API \n
  * POSIX API (refer to : http://pubs.opengroup.org/onlinepubs/9699919799/)
- * @since Tizen RT v1.0
+ * @since TizenRT v1.0
  */
 int sigwaitinfo(FAR const sigset_t *set, FAR struct siginfo *value);
 /**
@@ -445,7 +445,7 @@ int sigwaitinfo(FAR const sigset_t *set, FAR struct siginfo *value);
  * @details @b #include <signal.h> \n
  * SYSTEM CALL API \n
  * POSIX API (refer to : http://pubs.opengroup.org/onlinepubs/9699919799/)
- * @since Tizen RT v1.0
+ * @since TizenRT v1.0
  */
 int sigtimedwait(FAR const sigset_t *set, FAR struct siginfo *value, FAR const struct timespec *timeout);
 /**
@@ -454,7 +454,7 @@ int sigtimedwait(FAR const sigset_t *set, FAR struct siginfo *value, FAR const s
  * @details @b #include <signal.h> \n
  * SYSTEM CALL API \n
  * POSIX API (refer to : http://pubs.opengroup.org/onlinepubs/9699919799/)
- * @since Tizen RT v1.0
+ * @since TizenRT v1.0
  */
 #ifdef CONFIG_CAN_PASS_STRUCTS
 int sigqueue(int pid, int signo, union sigval value);

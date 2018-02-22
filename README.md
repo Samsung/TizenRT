@@ -1,4 +1,4 @@
-# Tizen RT
+# TizenRT
 
 [![License](https://img.shields.io/badge/licence-Apache%202.0-brightgreen.svg?style=flat)](LICENSE)
 [![Build Status](https://travis-ci.org/Samsung/TizenRT.svg?branch=master)](https://travis-ci.org/Samsung/TizenRT)
@@ -22,6 +22,7 @@ Untar the gcc-arm-none-eabi-4_9-2015q3-20150921-linux.tar.bz2 and export the pat
 tar xvjf gcc-arm-none-eabi-4_9-2015q3-20150921-linux.tar.bz2
 export PATH=<Your Toolchain PATH>:$PATH
 ```
+Be aware that recommanded toolchain is fully working on 32bits machine. 64bits machine needs additional packages.
 
 ### Getting the sources
 
@@ -38,9 +39,14 @@ Configure the build from *$TIZENRT_BASEDIR/os/tools* directory
 cd os/tools
 ./configure.sh <board>/<configuration_set>
 ```
-For list of boards and configuration set supported, refer belows.  
-Above copies the canned configuration-set for the particular board, into the *$TIZENRT_BASEDIR/os* directory.  
-Configuration can be modified through *make menuconfig* from *$TIZENRT_BASEDIR/os*.
+The configuration file is named *defconfig*,  
+and resides under the relative path \<board\>/\<configuration_set\> rooted at *build/configs*.  
+To check the different \<board\>/\<configuration_set\> combinations supported, type below:
+```bash
+./configure.sh --help
+```
+
+After configuring above, configuration can be modified through *make menuconfig* from *$TIZENRT_BASEDIR/os*.
 ```bash
 cd ..
 make menuconfig
@@ -69,7 +75,7 @@ QEMU [[details]](build/configs/qemu/README.md)
 
 ## Configuration Sets
 
-To build a Tizen RT application, use the default configuration files named *defconfig* under *build/configs/\<board\>/\<configuration_set\>* folder.  
+To build a TizenRT application, use the default configuration files named *defconfig* under *build/configs/\<board\>/\<configuration_set\>* folder.  
 To customize your application with specific configuration settings, using the menuconfig tool is recommended at *os* folder as shown:
 ```bash
 make menuconfig

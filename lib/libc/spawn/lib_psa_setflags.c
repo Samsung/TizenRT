@@ -57,7 +57,7 @@
 #include <tinyara/config.h>
 
 #include <spawn.h>
-#include <assert.h>
+#include <errno.h>
 
 /****************************************************************************
  * Global Functions
@@ -82,7 +82,10 @@
 
 int posix_spawnattr_setflags(FAR posix_spawnattr_t *attr, short flags)
 {
-	DEBUGASSERT(attr && (flags & ~0xff) == 0);
+	if (!attr || !(flags & POSIX_SPAWN_ALLFLAG)) {
+		return EINVAL;
+	}
+
 	attr->flags = (uint8_t)flags;
 	return OK;
 }

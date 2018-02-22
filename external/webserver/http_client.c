@@ -156,6 +156,7 @@ int http_parse_message(char *buf, int buf_len, int *method, char *url,
 	int process_finish = false;
 	int read_finish = false;
 	char *entity = *body;
+	bool is_chunked = false;
 
 	while (!process_finish) {
 		/* At this point, we read a line of http request */
@@ -236,6 +237,7 @@ int http_parse_message(char *buf, int buf_len, int *method, char *url,
 					}
 					if (strcmp(key, "Content-Length") == 0) {
 						len->content_len = HTTP_ATOI(value);
+						response->total_len = len->content_len;
 
 						HTTP_LOGD("This request contains contents, length : %d\n", len->content_len);
 					}
@@ -253,7 +255,8 @@ int http_parse_message(char *buf, int buf_len, int *method, char *url,
 							*body = entity;
 							HTTP_LOGD("This request contains chunked encoding contents\n");
 						} else {
-							HTTP_LOGD("Weblient cannot support chunked encoding.\n");
+							is_chunked = true;
+							HTTP_LOGD("Transfer-Encoding is chunked!!!!!\n");
 						}
 					}
 				} else {
@@ -276,17 +279,80 @@ int http_parse_message(char *buf, int buf_len, int *method, char *url,
 				break;
 			}
 			if (*enc == HTTP_CONTENT_LENGTH) {
+				bool is_header = false;
 				if (!len->message_len) {
+					is_header = true;
 					*body = buf + len->sentence_start;
+					HTTP_LOGD("[HEADER] buf_len : %d len->sentence_start : %d len->message_len : %d len->content_len %d\n", buf_len, len->sentence_start, len->message_len, len->content_len);
 				}
 				if (buf_len - len->sentence_start + len->message_len == len->content_len) {
 					buf[buf_len + len->message_len] = '\0';
+					HTTP_LOGD("[BODY_END]buf_len : %d len->sentence_start : %d len->message_len : %d len->content_len %d\n", buf_len, len->sentence_start, len->message_len, len->content_len);
+					//HTTP_LOGD("All body readed : \n%s\n", *body);
 
-					HTTP_LOGD("All body readed : \n%s\n", *body);
+					response->total_len = len->content_len;
+
+					if (is_header == true) {
+						response->entity_len = buf_len - len->sentence_start;
+						response->entity = buf + len->sentence_start;
+					} else {
+						response->entity_len = buf_len;
+						response->entity = buf;
+					}	
+
 					read_finish = true;
 				} else {
+					if (is_chunked == true) {
+						int i, j, cha;
+						len->content_len = 0;
+						sentence_end = http_find_first_crlf(buf, buf_len, len->sentence_start);
+
+						if (sentence_end < 0) {
+							HTTP_LOGE("Error: Cannot find body\n");
+							process_finish = true;
+							read_finish = true;
+							break;
+						}
+
+						/* calculate chunked size */
+						for (i = 1; sentence_end - i >= len->sentence_start; ++i) {
+							cha = (int)*(buf + sentence_end - i);
+							if (cha > '9') {
+								cha = cha - 'a' + 10;
+							} else {
+								cha = cha - '0';
+							}
+							for (j = 1; j < i; ++j) {
+								cha *= 16;
+							}
+							len->content_len += cha;
+						}
+
+						*body = buf + len->sentence_start + 5;
+						buf[buf_len + len->message_len - 2] = '\0';
+
+						HTTP_LOGD("buf_len : %d len->sentence_start : %d len->message_len : %d len->content_len %d\n", buf_len, len->sentence_start, len->message_len, len->content_len);
+						read_finish = true;
+					}
 					len->message_len += buf_len;
 
+					response->total_len = len->content_len;
+
+					if (is_chunked) {
+						if (response->entity) {
+							response->entity = *body;
+							response->entity_len = len->content_len;
+						}
+					} else if (is_header == true && !is_chunked) {
+						response->entity_len = buf_len - len->sentence_start;
+						response->entity = buf + len->sentence_start;
+						HTTP_LOGD("[HEADER_BODY]buf_len : %d len->sentence_start : %d len->message_len : %d len->content_len %d entity_len : %d\n", buf_len, len->sentence_start, len->message_len, len->content_len, response->entity_len);
+					} else {
+						response->entity = buf;
+						response->entity_len = buf_len;
+					}
+					
+					HTTP_LOGD("[BODY]buf_len : %d len->sentence_start : %d len->message_len : %d len->content_len %d\n", buf_len, len->sentence_start, len->message_len, len->content_len);
 					HTTP_LOGD("Not all body readed\n");
 				}
 				process_finish = true;

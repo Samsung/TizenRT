@@ -518,3 +518,6 @@ menu "Things Management"
 source Kconfig.things
 endmenu
 
+menu "IoTBus Framework"
+source "$FRAMEWORK_DIR/src/iotbus/Kconfig"
+endmenu

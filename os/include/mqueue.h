@@ -114,7 +114,7 @@ extern "C" {
  * @details @b #include <mqueue.h> \n
  * SYSTEM CALL API \n
  * POSIX API (refer to : http://pubs.opengroup.org/onlinepubs/9699919799/)
- * @since Tizen RT v1.0
+ * @since TizenRT v1.0
  */
 mqd_t mq_open(FAR const char *mq_name, int oflags, ...);
 /**
@@ -122,7 +122,7 @@ mqd_t mq_open(FAR const char *mq_name, int oflags, ...);
  * @details @b #include <mqueue.h> \n
  * SYSTEM CALL API \n
  * POSIX API (refer to : http://pubs.opengroup.org/onlinepubs/9699919799/)
- * @since Tizen RT v1.0
+ * @since TizenRT v1.0
  */
 int mq_close(mqd_t mqdes);
 /**
@@ -130,7 +130,7 @@ int mq_close(mqd_t mqdes);
  * @details @b #include <mqueue.h> \n
  * SYSTEM CALL API \n
  * POSIX API (refer to : http://pubs.opengroup.org/onlinepubs/9699919799/)
- * @since Tizen RT v1.0
+ * @since TizenRT v1.0
  */
 int mq_unlink(FAR const char *mq_name);
 /**
@@ -138,7 +138,7 @@ int mq_unlink(FAR const char *mq_name);
  * @details @b #include <mqueue.h> \n
  * SYSTEM CALL API \n
  * POSIX API (refer to : http://pubs.opengroup.org/onlinepubs/9699919799/)
- * @since Tizen RT v1.0
+ * @since TizenRT v1.0
  */
 int mq_send(mqd_t mqdes, FAR const char *msg, size_t msglen, int prio);
 /**
@@ -146,7 +146,7 @@ int mq_send(mqd_t mqdes, FAR const char *msg, size_t msglen, int prio);
  * @details @b #include <mqueue.h> \n
  * SYSTEM CALL API \n
  * POSIX API (refer to : http://pubs.opengroup.org/onlinepubs/9699919799/)
- * @since Tizen RT v1.0
+ * @since TizenRT v1.0
  */
 int mq_timedsend(mqd_t mqdes, FAR const char *msg, size_t msglen, int prio, FAR const struct timespec *abstime);
 /**
@@ -154,7 +154,7 @@ int mq_timedsend(mqd_t mqdes, FAR const char *msg, size_t msglen, int prio, FAR 
  * @details @b #include <mqueue.h> \n
  * SYSTEM CALL API \n
  * POSIX API (refer to : http://pubs.opengroup.org/onlinepubs/9699919799/)
- * @since Tizen RT v1.0
+ * @since TizenRT v1.0
  */
 ssize_t mq_receive(mqd_t mqdes, FAR char *msg, size_t msglen, FAR int *prio);
 /**
@@ -162,7 +162,7 @@ ssize_t mq_receive(mqd_t mqdes, FAR char *msg, size_t msglen, FAR int *prio);
  * @details @b #include <mqueue.h> \n
  * SYSTEM CALL API \n
  * POSIX API (refer to : http://pubs.opengroup.org/onlinepubs/9699919799/)
- * @since Tizen RT v1.0
+ * @since TizenRT v1.0
  */
 ssize_t mq_timedreceive(mqd_t mqdes, FAR char *msg, size_t msglen, FAR int *prio, FAR const struct timespec *abstime);
 /**
@@ -170,7 +170,7 @@ ssize_t mq_timedreceive(mqd_t mqdes, FAR char *msg, size_t msglen, FAR int *prio
  * @details @b #include <mqueue.h> \n
  * SYSTEM CALL API \n
  * POSIX API (refer to : http://pubs.opengroup.org/onlinepubs/9699919799/)
- * @since Tizen RT v1.0
+ * @since TizenRT v1.0
  */
 int mq_notify(mqd_t mqdes, const struct sigevent *notification);
 
@@ -178,14 +178,14 @@ int mq_notify(mqd_t mqdes, const struct sigevent *notification);
  * @brief set message queue attributes
  * @details @b #include <mqueue.h> \n
  * POSIX API (refer to : http://pubs.opengroup.org/onlinepubs/9699919799/)
- * @since Tizen RT v1.0
+ * @since TizenRT v1.0
  */
 int mq_setattr(mqd_t mqdes, FAR const struct mq_attr *mq_stat, FAR struct mq_attr *oldstat);
 /**
  * @brief get message queue attributes
  * @details @b #include <mqueue.h> \n
  * POSIX API (refer to : http://pubs.opengroup.org/onlinepubs/9699919799/)
- * @since Tizen RT v1.0
+ * @since TizenRT v1.0
  */
 int mq_getattr(mqd_t mqdes, FAR struct mq_attr *mq_stat);
 

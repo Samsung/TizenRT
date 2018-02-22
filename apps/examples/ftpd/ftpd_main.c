@@ -166,7 +166,7 @@ int ftpd_daemon(int s_argc, char **s_argv)
 	}
 
 	/* Close the FTPD server and exit (we can get here only if
-	 * CONFIG_NSH_BUILTIN_APPS is defined).
+	 * CONFIG_BUILTIN_APPS is defined).
 	 */
 
 	printf("FTP daemon [%d] stopping\n", g_ftpdglob.pid);

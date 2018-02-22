@@ -306,7 +306,7 @@ extern "C" {
  * @param[in] bufstart Address of the beginning of the fixed-size memory buffer
  * @param[in] buflen Size of the fixed-sized memory buffer in bytes
  * @return None
- * @since Tizen RT v1.1
+ * @since TizenRT v1.1
  */
 void lib_meminstream(FAR struct lib_meminstream_s *instream, FAR const char *bufstart, int buflen);
 /**
@@ -317,7 +317,7 @@ void lib_meminstream(FAR struct lib_meminstream_s *instream, FAR const char *buf
  * @param[in] bufstart Address of the beginning of the fixed-size memory buffer
  * @param[in] buflen Size of the fixed-sized memory buffer in bytes
  * @return None
- * @since Tizen RT v1.1
+ * @since TizenRT v1.1
  */
 void lib_memoutstream(FAR struct lib_memoutstream_s *outstream, FAR char *bufstart, int buflen);
 /**
@@ -328,7 +328,7 @@ void lib_memoutstream(FAR struct lib_memoutstream_s *outstream, FAR char *bufsta
  * @param[in] bufstart Address of the beginning of the fixed-size memory buffer
  * @param[in] buflen Size of the fixed-sized memory buffer in bytes
  * @return None
- * @since Tizen RT v1.1
+ * @since TizenRT v1.1
  */
 void lib_memsistream(FAR struct lib_memsistream_s *instream, FAR const char *bufstart, int buflen);
 /**
@@ -339,7 +339,7 @@ void lib_memsistream(FAR struct lib_memsistream_s *instream, FAR const char *buf
  * @param[in] bufstart Address of the beginning of the fixed-size memory buffer
  * @param[in] buflen Size of the fixed-sized memory buffer in bytes
  * @return None
- * @since Tizen RT v1.1
+ * @since TizenRT v1.1
  */
 void lib_memsostream(FAR struct lib_memsostream_s *outstream, FAR char *bufstart, int buflen);
 
@@ -370,7 +370,7 @@ void lib_memsostream(FAR struct lib_memsostream_s *outstream, FAR char *bufstart
  * @param[in] instream User allocated, uninitialized instance of struct lib_stdinstream_s
  * @param[in] stream Stream provided by user
  * @return None
- * @since Tizen RT v1.1
+ * @since TizenRT v1.1
  */
 void lib_stdinstream(FAR struct lib_stdinstream_s *instream, FAR FILE *stream);
 /**
@@ -380,7 +380,7 @@ void lib_stdinstream(FAR struct lib_stdinstream_s *instream, FAR FILE *stream);
  * @param[in] outstream User allocated, uninitialized instance of struct lib_stdoutstream_s
  * @param[in] stream Stream provided by user
  * @return None
- * @since Tizen RT v1.1
+ * @since TizenRT v1.1
  */
 void lib_stdoutstream(FAR struct lib_stdoutstream_s *outstream, FAR FILE *stream);
 /**
@@ -390,7 +390,7 @@ void lib_stdoutstream(FAR struct lib_stdoutstream_s *outstream, FAR FILE *stream
  * @param[in] instream User allocated, uninitialized instance of struct lib_stdsistream_s
  * @param[in] stream Stream provided by user
  * @return None
- * @since Tizen RT v1.1
+ * @since TizenRT v1.1
  */
 void lib_stdsistream(FAR struct lib_stdsistream_s *instream, FAR FILE *stream);
 /**
@@ -400,7 +400,7 @@ void lib_stdsistream(FAR struct lib_stdsistream_s *instream, FAR FILE *stream);
  * @param[in] outstream User allocated, uninitialized instance of struct lib_stdsostream_s
  * @param[in] stream Stream provided by user
  * @return None
- * @since Tizen RT v1.1
+ * @since TizenRT v1.1
  */
 void lib_stdsostream(FAR struct lib_stdsostream_s *outstream, FAR FILE *stream);
 
@@ -433,7 +433,7 @@ void lib_stdsostream(FAR struct lib_stdsostream_s *outstream, FAR FILE *stream);
  * @param[in] instream User allocated, uninitialized instance of struct lib_rawinstream_s
  * @param[in] fd file/socket descriptor provided by user
  * @return None
- * @since Tizen RT v1.1
+ * @since TizenRT v1.1
  */
 void lib_rawinstream(FAR struct lib_rawinstream_s *instream, int fd);
 /**
@@ -443,7 +443,7 @@ void lib_rawinstream(FAR struct lib_rawinstream_s *instream, int fd);
  * @param[in] outstream User allocated, uninitialized instance of struct lib_rawoutstream_s
  * @param[in] fd file/socket descriptor provided by user
  * @return None
- * @since Tizen RT v1.1
+ * @since TizenRT v1.1
  */
 void lib_rawoutstream(FAR struct lib_rawoutstream_s *outstream, int fd);
 /**
@@ -453,7 +453,7 @@ void lib_rawoutstream(FAR struct lib_rawoutstream_s *outstream, int fd);
  * @param[in] instream User allocated, uninitialized instance of struct lib_rawsistream_s
  * @param[in] fd file/socket descriptor provided by user
  * @return None
- * @since Tizen RT v1.1
+ * @since TizenRT v1.1
  */
 void lib_rawsistream(FAR struct lib_rawsistream_s *instream, int fd);
 /**
@@ -463,7 +463,7 @@ void lib_rawsistream(FAR struct lib_rawsistream_s *instream, int fd);
  * @param[in] outstream User allocated, uninitialized instance of struct lib_rawsostream_s
  * @param[in] fd file/socket descriptor provided by user
  * @return None
- * @since Tizen RT v1.1
+ * @since TizenRT v1.1
  */
 void lib_rawsostream(FAR struct lib_rawsostream_s *outstream, int fd);
 
@@ -492,7 +492,7 @@ void lib_rawsostream(FAR struct lib_rawsostream_s *outstream, int fd);
  * @details @b #include <tinyara/streams.h>
  * @param[in] lowinstream User allocated, uninitialized instance of struct lib_lowinstream_s
  * @return None
- * @since Tizen RT v1.1
+ * @since TizenRT v1.1
  */
 void lib_lowinstream(FAR struct lib_instream_s *lowinstream);
 #endif
@@ -503,7 +503,7 @@ void lib_lowinstream(FAR struct lib_instream_s *lowinstream);
  * @details @b #include <tinyara/streams.h>
  * @param[in] lowoutstream User allocated, uninitialized instance of struct lib_lowoutstream_s
  * @return None
- * @since Tizen RT v1.1
+ * @since TizenRT v1.1
  */
 void lib_lowoutstream(FAR struct lib_outstream_s *lowoutstream);
 #endif
@@ -539,7 +539,7 @@ void lib_lowoutstream(FAR struct lib_outstream_s *lowoutstream);
  * @details @b #include <tinyara/streams.h>
  * @param[in] zeroinstream User allocated, uninitialized instance of struct lib_instream_s
  * @return None
- * @since Tizen RT v1.1
+ * @since TizenRT v1.1
  */
 void lib_zeroinstream(FAR struct lib_instream_s *zeroinstream);
 /**
@@ -548,7 +548,7 @@ void lib_zeroinstream(FAR struct lib_instream_s *zeroinstream);
  * @details @b #include <tinyara/streams.h>
  * @param[in] nullinstream User allocated, uninitialized instance of struct lib_instream_s
  * @return None
- * @since Tizen RT v1.1
+ * @since TizenRT v1.1
  */
 void lib_nullinstream(FAR struct lib_instream_s *nullinstream);
 /**
@@ -557,7 +557,7 @@ void lib_nullinstream(FAR struct lib_instream_s *nullinstream);
  * @details @b #include <tinyara/streams.h>
  * @param[in] nulloutstream User allocated, uninitialized instance of struct lib_outstream_s
  * @return None
- * @since Tizen RT v1.1
+ * @since TizenRT v1.1
  */
 void lib_nulloutstream(FAR struct lib_outstream_s *nulloutstream);
 

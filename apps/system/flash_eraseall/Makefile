@@ -63,10 +63,9 @@ ifeq ($(WINTOOL),y)
 INCDIROPT = -w
 endif
 
-# Hello Application
-# TODO: appname can be automatically extracted from the directory name
-
 APPNAME = flash_eraseall
+FUNCNAME = $(APPNAME)_main
+THREADEXEC = TASH_EXECMD_SYNC
 PRIORITY = SCHED_PRIORITY_DEFAULT
 STACKSIZE = 1024
 
@@ -138,7 +137,16 @@ endif
 
 # Register application
 
+ifeq ($(CONFIG_BUILTIN_APPS)$(CONFIG_SYSTEM_FLASH_ERASEALL),yy)
+$(BUILTIN_REGISTRY)$(DELIM)$(FUNCNAME).bdat: $(DEPCONFIG) Makefile
+	$(Q) $(call REGISTER,$(APPNAME),$(FUNCNAME),$(THREADEXEC),$(PRIORITY),$(STACKSIZE))
+
+context: $(BUILTIN_REGISTRY)$(DELIM)$(FUNCNAME).bdat
+
+else
 context:
+
+endif
 
 # Create dependencies
 

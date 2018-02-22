@@ -94,6 +94,7 @@
 #define POSIX_SPAWN_SETSCHEDULER  (1 << 3)	/* 1: Set task's scheduler policy */
 #define POSIX_SPAWN_SETSIGDEF     (1 << 4)	/* 1: Set default signal actions */
 #define POSIX_SPAWN_SETSIGMASK    (1 << 5)	/* 1: Set sigmask */
+#define POSIX_SPAWN_ALLFLAG       (POSIX_SPAWN_RESETIDS | POSIX_SPAWN_SETPGROUP | POSIX_SPAWN_SETSCHEDPARAM | POSIX_SPAWN_SETSCHEDULER | POSIX_SPAWN_SETSIGDEF | POSIX_SPAWN_SETSIGMASK)
 
 /****************************************************************************
  * Type Definitions
@@ -183,14 +184,14 @@ int task_spawn(FAR pid_t *pid, FAR const char *name, main_t entry, FAR const pos
  * @brief initialize spawn file actions object
  * @details @b #include <spawn.h> \n
  * POSIX API (refer to : http://pubs.opengroup.org/onlinepubs/9699919799/)
- * @since Tizen RT v1.0
+ * @since TizenRT v1.0
  */
 int posix_spawn_file_actions_init(FAR posix_spawn_file_actions_t *file_actions);
 /**
  * @brief destroy spawn file actions object
  * @details @b #include <spawn.h> \n
  * POSIX API (refer to : http://pubs.opengroup.org/onlinepubs/9699919799/)
- * @since Tizen RT v1.0
+ * @since TizenRT v1.0
  */
 int posix_spawn_file_actions_destroy(FAR posix_spawn_file_actions_t *file_actions);
 
@@ -199,21 +200,21 @@ int posix_spawn_file_actions_destroy(FAR posix_spawn_file_actions_t *file_action
  * @brief add close or open action to spawn file actions object
  * @details @b #include <spawn.h> \n
  * POSIX API (refer to : http://pubs.opengroup.org/onlinepubs/9699919799/)
- * @since Tizen RT v1.0
+ * @since TizenRT v1.0
  */
 int posix_spawn_file_actions_addclose(FAR posix_spawn_file_actions_t *file_actions, int fd);
 /**
  * @brief add dup2 action to spawn file actions object
  * @details @b #include <spawn.h> \n
  * POSIX API (refer to : http://pubs.opengroup.org/onlinepubs/9699919799/)
- * @since Tizen RT v1.1
+ * @since TizenRT v1.1
  */
 int posix_spawn_file_actions_adddup2(FAR posix_spawn_file_actions_t *file_actions, int fd1, int fd2);
 /**
  * @brief add close or open action to spawn file actions object
  * @details @b #include <spawn.h> \n
  * POSIX API (refer to : http://pubs.opengroup.org/onlinepubs/9699919799/)
- * @since Tizen RT v1.0
+ * @since TizenRT v1.0
  */
 int posix_spawn_file_actions_addopen(FAR posix_spawn_file_actions_t *file_actions, int fd, FAR const char *path, int oflags, mode_t mode);
 
@@ -223,7 +224,7 @@ int posix_spawn_file_actions_addopen(FAR posix_spawn_file_actions_t *file_action
  * @brief initialize spawn attributes object
  * @details @b #include <spawn.h> \n
  * POSIX API (refer to : http://pubs.opengroup.org/onlinepubs/9699919799/)
- * @since Tizen RT v1.0
+ * @since TizenRT v1.0
  */
 int posix_spawnattr_init(FAR posix_spawnattr_t *attr);
 
@@ -239,7 +240,7 @@ int posix_spawnattr_init(FAR posix_spawnattr_t *attr);
  * @brief get and set the spawn-flags attribute of a spawn attributes object
  * @details @b #include <spawn.h> \n
  * POSIX API (refer to : http://pubs.opengroup.org/onlinepubs/9699919799/)
- * @since Tizen RT v1.0
+ * @since TizenRT v1.0
  */
 int posix_spawnattr_getflags(FAR const posix_spawnattr_t *attr, FAR short *flags);
 #define posix_spawnattr_getpgroup(attr, group) (ENOSYS)
@@ -247,14 +248,14 @@ int posix_spawnattr_getflags(FAR const posix_spawnattr_t *attr, FAR short *flags
  * @brief get the spawn-schedparam attribute of a spawn attributes object
  * @details @b #include <spawn.h> \n
  * POSIX API (refer to : http://pubs.opengroup.org/onlinepubs/9699919799/)
- * @since Tizen RT v1.0
+ * @since TizenRT v1.0
  */
 int posix_spawnattr_getschedparam(FAR const posix_spawnattr_t *attr, FAR struct sched_param *param);
 /**
  * @brief get the spawn-schedpolicy attribute of a spawn attributes object
  * @details @b #include <spawn.h> \n
  * POSIX API (refer to : http://pubs.opengroup.org/onlinepubs/9699919799/)
- * @since Tizen RT v1.0
+ * @since TizenRT v1.0
  */
 int posix_spawnattr_getschedpolicy(FAR const posix_spawnattr_t *attr, FAR int *policy);
 #define posix_spawnattr_getsigdefault(attr, sigdefault) (ENOSYS)
@@ -263,7 +264,7 @@ int posix_spawnattr_getschedpolicy(FAR const posix_spawnattr_t *attr, FAR int *p
  * @brief get the spawn-sigmask attribute of a spawn attributes object
  * @details @b #include <spawn.h> \n
  * POSIX API (refer to : http://pubs.opengroup.org/onlinepubs/9699919799/)
- * @since Tizen RT v1.0
+ * @since TizenRT v1.0
  */
 int posix_spawnattr_getsigmask(FAR const posix_spawnattr_t *attr, FAR sigset_t *sigmask);
 #else
@@ -275,7 +276,7 @@ int posix_spawnattr_getsigmask(FAR const posix_spawnattr_t *attr, FAR sigset_t *
  * @brief set the spawn-flags attribute of a spawn attributes object
  * @details @b #include <spawn.h> \n
  * POSIX API (refer to : http://pubs.opengroup.org/onlinepubs/9699919799/)
- * @since Tizen RT v1.0
+ * @since TizenRT v1.0
  */
 int posix_spawnattr_setflags(FAR posix_spawnattr_t *attr, short flags);
 #define posix_spawnattr_setpgroup(attr, group) (ENOSYS)
@@ -283,14 +284,14 @@ int posix_spawnattr_setflags(FAR posix_spawnattr_t *attr, short flags);
  * @brief set the spawn-schedparam attribute of a spawn attributes object
  * @details @b #include <spawn.h> \n
  * POSIX API (refer to : http://pubs.opengroup.org/onlinepubs/9699919799/)
- * @since Tizen RT v1.0
+ * @since TizenRT v1.0
  */
 int posix_spawnattr_setschedparam(FAR posix_spawnattr_t *attr, FAR const struct sched_param *param);
 /**
  * @brief set the spawn-schedpolicy attribute of a spawn attributes object
  * @details @b #include <spawn.h> \n
  * POSIX API (refer to : http://pubs.opengroup.org/onlinepubs/9699919799/)
- * @since Tizen RT v1.0
+ * @since TizenRT v1.0
  */
 int posix_spawnattr_setschedpolicy(FAR posix_spawnattr_t *attr, int policy);
 #define posix_spawnattr_setsigdefault(attr, sigdefault) (ENOSYS)
@@ -299,7 +300,7 @@ int posix_spawnattr_setschedpolicy(FAR posix_spawnattr_t *attr, int policy);
  * @brief set the spawn-sigmask attribute of a spawn attributes object
  * @details @b #include <spawn.h> \n
  * POSIX API (refer to : http://pubs.opengroup.org/onlinepubs/9699919799/)
- * @since Tizen RT v1.0
+ * @since TizenRT v1.0
  */
 int posix_spawnattr_setsigmask(FAR posix_spawnattr_t *attr, FAR const sigset_t *sigmask);
 #else
@@ -318,7 +319,7 @@ int posix_spawnattr_setsigmask(FAR posix_spawnattr_t *attr, FAR const sigset_t *
  * @param[in] attr The address spawn attributes to be queried.
  * @param[in] stacksize The location to return the spawn-stacksize value.
  * @return On success, these functions return 0; on failure they return an errno
- * @since Tizen RT v1.0
+ * @since TizenRT v1.0
  */
 int task_spawnattr_getstacksize(FAR const posix_spawnattr_t *attr, size_t *stacksize);
 /**
@@ -330,7 +331,7 @@ int task_spawnattr_getstacksize(FAR const posix_spawnattr_t *attr, size_t *stack
  * @param[in] attr The address spawn attributes to be used.
  * @param[in] stacksize The new stacksize to set.
  * @return On success, these functions return 0; on failure they return an errno
- * @since Tizen RT v1.0
+ * @since TizenRT v1.0
  */
 int task_spawnattr_setstacksize(FAR posix_spawnattr_t *attr, size_t stacksize);
 
@@ -341,14 +342,14 @@ int task_spawnattr_setstacksize(FAR posix_spawnattr_t *attr, size_t stacksize);
  * @brief Show the entryent file actions.
  * @details @b #include <spawn.h> \n
  * @param[in] file_actions The address of the file_actions to be dumped.
- * @since Tizen RT v1.0
+ * @since TizenRT v1.0
  */
 void posix_spawn_file_actions_dump(FAR posix_spawn_file_actions_t *file_actions);
 /**
  * @brief Show the current attributes
  * @details @b #include <spawn.h> \n
  * @param[in] attr The address of the spawn attributes to be dumped.
- * @since Tizen RT v1.0
+ * @since TizenRT v1.0
  */
 void posix_spawnattr_dump(FAR posix_spawnattr_t *attr);
 #else

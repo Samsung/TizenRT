@@ -85,7 +85,7 @@ extern "C" {
  * @param[in] len length for calculation
  * @param[in] crc16val value for calculation
  * @return On success, calculated 16-bit CRC is returned.
- * @since Tizen RT v1.0
+ * @since TizenRT v1.0
  */
 
 uint16_t crc16part(FAR const uint8_t *src, size_t len, uint16_t crc16val);
@@ -97,7 +97,7 @@ uint16_t crc16part(FAR const uint8_t *src, size_t len, uint16_t crc16val);
  * @param[in] src source number for crc16
  * @param[in] len length for calculation
  * @return On success, calculated 16-bit CRC is returned.
- * @since Tizen RT v1.0
+ * @since TizenRT v1.0
  */
 
 uint16_t crc16(FAR const uint8_t *src, size_t len);

@@ -57,7 +57,7 @@
 #include <tinyara/config.h>
 
 #include <spawn.h>
-#include <assert.h>
+#include <errno.h>
 
 /****************************************************************************
  * Global Functions
@@ -83,7 +83,10 @@
 
 int posix_spawnattr_getschedpolicy(FAR const posix_spawnattr_t *attr, FAR int *policy)
 {
-	DEBUGASSERT(attr && policy);
+	if (!attr || !policy) {
+		return EINVAL;
+	}
+
 	*policy = (int)attr->policy;
 	return OK;
 }

@@ -97,11 +97,26 @@ using namespace Media;
 #undef CXXTEST_ISTREAM
 #undef CXXTEST_EXCEPTION
 
+<<<<<<< HEAD
 #ifdef CONFIG_UCLIBCXX_EXCEPTION
 #define CXXTEST_EXCEPTION
 #endif
 
 void printString()
+=======
+//***************************************************************************
+// Private Classes
+//***************************************************************************
+
+#ifdef CXXTEST_RTTI
+class Base
+{
+public:
+	virtual void printBase(void) {};
+};
+
+class Extend : public Base
+>>>>>>> 0ad35eaf94266754a0b21d9e83e1b8d409acd352
 {
 	std::cout << "printstring: " << std::endl;
 }

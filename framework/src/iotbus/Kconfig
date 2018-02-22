@@ -1,0 +1,43 @@
+#
+# For a description of the syntax of this configuration file,
+# see kconfig-language at https://www.kernel.org/doc/Documentation/kbuild/kconfig-language.txt
+#
+
+config IOTBUS
+	bool "IoTbus framework Support"
+	default y
+	---help---
+		Enables IoTBus (GPIO, I2C, PWM, SPI, UART) framework.
+
+if IOTBUS
+
+config IOTBUS_GPIO
+	bool "IoTbus GPIO"
+	default y
+	---help---
+		Enables IoTbus GPIO
+
+config IOTBUS_I2C
+	bool "IoTbus I2C"
+	default y
+	---help---
+		Enables IoTbus I2C
+
+config IOTBUS_PWM
+	bool "IoTbus PWM"
+	default y
+	---help---
+		Enables IoTbus PWM
+
+config IOTBUS_SPI
+	bool "IoTbus SPI"
+	default y
+	---help---
+		Enables IoTbus SPI
+
+config IOTBUS_UART
+	bool "IoTbus UART"
+	default y
+	---help---
+		Enables IoTbus Uart
+endif

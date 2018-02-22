@@ -176,7 +176,7 @@ extern "C" {
  * @details @b #include <stdlib.h>
  * @param[in] seed An integer value to be used as seed
  * @return none
- * @since Tizen RT v1.0
+ * @since TizenRT v1.0
  */
 void srand(unsigned int seed);
 /**
@@ -184,7 +184,7 @@ void srand(unsigned int seed);
  * @brief pseudo-random number generator
  * @details @b #include <stdlib.h> \n
  * POSIX API (refer to : http://pubs.opengroup.org/onlinepubs/9699919799/)
- * @since Tizen RT v1.0
+ * @since TizenRT v1.0
  */
 int rand(void);
 
@@ -199,7 +199,7 @@ int rand(void);
  *         so this API is in Stdlib for ease.
  * @param[in] envsize A pointer to notify a size of environ variable
  * @return A pointer to the current thread environ variable
- * @since Tizen RT v1.0
+ * @since TizenRT v1.0
  */
 FAR char *get_environ_ptr(size_t *envsize);
 /**
@@ -208,7 +208,7 @@ FAR char *get_environ_ptr(size_t *envsize);
  * @details @b #include <stdlib.h> \n
  * SYSTEM CALL API \n
  * POSIX API (refer to : http://pubs.opengroup.org/onlinepubs/9699919799/)
- * @since Tizen RT v1.0
+ * @since TizenRT v1.0
  */
 FAR char *getenv(FAR const char *name);
 /**
@@ -217,7 +217,7 @@ FAR char *getenv(FAR const char *name);
  * @details @b #include <stdlib.h> \n
  * SYSTEM CALL API \n
  * POSIX API (refer to : http://pubs.opengroup.org/onlinepubs/9699919799/)
- * @since Tizen RT v1.0
+ * @since TizenRT v1.0
  */
 int putenv(FAR const char *string);
 /**
@@ -226,7 +226,7 @@ int putenv(FAR const char *string);
  *        and sets the value of the external variable environ to NULL
  * @details @b #include <stdlib.h> \n
  * SYSTEM CALL API
- * @since Tizen RT v1.0
+ * @since TizenRT v1.0
  */
 int clearenv(void);
 /**
@@ -235,7 +235,7 @@ int clearenv(void);
  * @details @b #include <stdlib.h> \n
  * SYSTEM CALL API \n
  * POSIX API (refer to : http://pubs.opengroup.org/onlinepubs/9699919799/)
- * @since Tizen RT v1.0
+ * @since TizenRT v1.0
  */
 int setenv(const char *name, const char *value, int overwrite);
 /**
@@ -244,7 +244,7 @@ int setenv(const char *name, const char *value, int overwrite);
  * @details @b #include <stdlib.h> \n
  * SYSTEM CALL API \n
  * POSIX API (refer to : http://pubs.opengroup.org/onlinepubs/9699919799/)
- * @since Tizen RT v1.0
+ * @since TizenRT v1.0
  */
 int unsetenv(const char *name);
 #endif
@@ -256,7 +256,7 @@ int unsetenv(const char *name);
  * @details @b #include <stdlib.h> \n
  * SYSTEM CALL API \n
  * POSIX API (refer to : http://pubs.opengroup.org/onlinepubs/9699919799/)
- * @since Tizen RT v1.0
+ * @since TizenRT v1.0
  */
 void exit(int status) noreturn_function;
 /**
@@ -264,7 +264,7 @@ void exit(int status) noreturn_function;
  * @brief generate an abnormal process abort
  * @details @b #include <stdlib.h> \n
  * POSIX API (refer to : http://pubs.opengroup.org/onlinepubs/9699919799/)
- * @since Tizen RT v1.0
+ * @since TizenRT v1.0
  */
 void abort(void) noreturn_function;
 #ifdef CONFIG_SCHED_ATEXIT
@@ -274,7 +274,7 @@ void abort(void) noreturn_function;
  * @details @b #include <stdlib.h> \n
  * SYSTEM CALL API \n
  * POSIX API (refer to : http://pubs.opengroup.org/onlinepubs/9699919799/)
- * @since Tizen RT v1.0
+ * @since TizenRT v1.0
  */
 int atexit(CODE void (*func)(void));
 #endif
@@ -289,7 +289,7 @@ int atexit(CODE void (*func)(void));
  * @param[in] arg An argument that will be provided to the on_exit() function when
  *                the task exits.
  * @return On success, 0 is returned. On failure, none-zero is returned.
- * @since Tizen RT v1.0
+ * @since TizenRT v1.0
  */
 int on_exit(CODE void (*func)(int, FAR void *), FAR void *arg);
 #endif
@@ -311,7 +311,7 @@ void _exit(int status);			/* See unistd.h */
  * @brief convert a string to a long integer
  * @details @b #include <stdlib.h> \n
  * POSIX API (refer to : http://pubs.opengroup.org/onlinepubs/9699919799/)
- * @since Tizen RT v1.0
+ * @since TizenRT v1.0
  */
 long strtol(const char *, char **, int);
 /**
@@ -319,7 +319,7 @@ long strtol(const char *, char **, int);
  * @brief convert a string to an unsigned long
  * @details @b #include <stdlib.h> \n
  * POSIX API (refer to : http://pubs.opengroup.org/onlinepubs/9699919799/)
- * @since Tizen RT v1.0
+ * @since TizenRT v1.0
  */
 unsigned long strtoul(const char *, char **, int);
 #ifdef CONFIG_HAVE_LONG_LONG
@@ -328,7 +328,7 @@ unsigned long strtoul(const char *, char **, int);
  * @brief convert a string to a long integer
  * @details @b #include <stdlib.h> \n
  * POSIX API (refer to : http://pubs.opengroup.org/onlinepubs/9699919799/)
- * @since Tizen RT v1.0
+ * @since TizenRT v1.0
  */
 long long strtoll(const char *, char **, int);
 /**
@@ -336,7 +336,7 @@ long long strtoll(const char *, char **, int);
  * @brief convert a string to an unsigned long
  * @details @b #include <stdlib.h> \n
  * POSIX API (refer to : http://pubs.opengroup.org/onlinepubs/9699919799/)
- * @since Tizen RT v1.0
+ * @since TizenRT v1.0
  */
 unsigned long long strtoull(const char *, char **, int);
 #endif
@@ -346,7 +346,7 @@ unsigned long long strtoull(const char *, char **, int);
  * @brief convert a string to a double-precision number
  * @details @b #include <stdlib.h> \n
  * POSIX API (refer to : http://pubs.opengroup.org/onlinepubs/9699919799/)
- * @since Tizen RT v1.0
+ * @since TizenRT v1.0
  */
 double strtod(FAR const char *str, FAR char **endptr);
 #endif
@@ -370,7 +370,7 @@ float strtof(FAR const char *str, FAR char **endptr);
  * @brief convert a string to an integer
  * @details @b #include <stdlib.h> \n
  * POSIX API (refer to : http://pubs.opengroup.org/onlinepubs/9699919799/)
- * @since Tizen RT v1.0
+ * @since TizenRT v1.0
  */
 #define atoi(nptr)  strtol((nptr), NULL, 10)
 /**
@@ -378,7 +378,7 @@ float strtof(FAR const char *str, FAR char **endptr);
  * @brief convert a string to a long integer
  * @details @b #include <stdlib.h> \n
  * POSIX API (refer to : http://pubs.opengroup.org/onlinepubs/9699919799/)
- * @since Tizen RT v1.0
+ * @since TizenRT v1.0
  */
 #define atol(nptr)  strtol((nptr), NULL, 10)
 #ifdef CONFIG_HAVE_LONG_LONG
@@ -387,7 +387,7 @@ float strtof(FAR const char *str, FAR char **endptr);
  * @brief convert a string to a long integer
  * @details @b #include <stdlib.h> \n
  * POSIX API (refer to : http://pubs.opengroup.org/onlinepubs/9699919799/)
- * @since Tizen RT v1.0
+ * @since TizenRT v1.0
  */
 #define atoll(nptr) strtoll((nptr), NULL, 10)
 #endif
@@ -396,7 +396,7 @@ float strtof(FAR const char *str, FAR char **endptr);
  * @brief convert a string to a double-precision number
  * @details @b #include <stdlib.h> \n
  * POSIX API (refer to : http://pubs.opengroup.org/onlinepubs/9699919799/)
- * @since Tizen RT v1.0
+ * @since TizenRT v1.0
  */
 #define atof(nptr)  strtod((nptr), NULL)
 
@@ -410,7 +410,7 @@ float strtof(FAR const char *str, FAR char **endptr);
  * @param[out] str String where store the result
  * @param[in] base Numerical base
  * @return A pointer to the resulting null-terminated string, same as parameter str.
- * @since Tizen RT v1.0
+ * @since TizenRT v1.0
  */
 char *itoa(int value, char *str, int base);
 
@@ -437,7 +437,7 @@ int wctomb(FAR char *s, wchar_t wchar);
  * @brief a memory allocator
  * @details @b #include <stdlib.h> \n
  * POSIX API (refer to : http://pubs.opengroup.org/onlinepubs/9699919799/)
- * @since Tizen RT v1.0
+ * @since TizenRT v1.0
  */
 FAR void *malloc(size_t);
 /**
@@ -445,7 +445,7 @@ FAR void *malloc(size_t);
  * @brief free allocated memory
  * @details @b #include <stdlib.h> \n
  * POSIX API (refer to : http://pubs.opengroup.org/onlinepubs/9699919799/)
- * @since Tizen RT v1.0
+ * @since TizenRT v1.0
  */
 void free(FAR void *);
 /**
@@ -453,7 +453,7 @@ void free(FAR void *);
  * @brief memory reallocator
  * @details @b #include <stdlib.h> \n
  * POSIX API (refer to : http://pubs.opengroup.org/onlinepubs/9699919799/)
- * @since Tizen RT v1.0
+ * @since TizenRT v1.0
  */
 FAR void *realloc(FAR void *, size_t);
 /**
@@ -464,7 +464,7 @@ FAR void *realloc(FAR void *, size_t);
  * @param[in] alignment A power of two
  * @param[in] size Allocated memory size
  * @return On success, A pointer to the allocated memory is returned. On failure, NULL is returned.
- * @since Tizen RT v1.0
+ * @since TizenRT v1.0
  */
 FAR void *memalign(size_t, size_t);
 /**
@@ -474,7 +474,7 @@ FAR void *memalign(size_t, size_t);
  * @details @b #include <stdlib.h>
  * @param[in] size Size (in bytes) of the memory region to be allocated.
  * @return On success, A pointer to the allocated memory is returned. On failure, NULL is returned.
- * @since Tizen RT v1.0
+ * @since TizenRT v1.0
  */
 FAR void *zalloc(size_t);
 /**
@@ -482,7 +482,7 @@ FAR void *zalloc(size_t);
  * @brief a memory allocator
  * @details @b #include <stdlib.h> \n
  * POSIX API (refer to : http://pubs.opengroup.org/onlinepubs/9699919799/)
- * @since Tizen RT v1.0
+ * @since TizenRT v1.0
  */
 FAR void *calloc(size_t, size_t);
 
@@ -492,7 +492,7 @@ FAR void *calloc(size_t, size_t);
  * @brief return an integer absolute value
  * @details @b #include <stdlib.h> \n
  * POSIX API (refer to : http://pubs.opengroup.org/onlinepubs/9699919799/)
- * @since Tizen RT v1.0
+ * @since TizenRT v1.0
  */
 int abs(int j);
 /**
@@ -500,7 +500,7 @@ int abs(int j);
  * @brief return a long integer absolute value
  * @details @b #include <stdlib.h> \n
  * POSIX API (refer to : http://pubs.opengroup.org/onlinepubs/9699919799/)
- * @since Tizen RT v1.0
+ * @since TizenRT v1.0
  */
 long int labs(long int j);
 #ifdef CONFIG_HAVE_LONG_LONG
@@ -509,7 +509,7 @@ long int labs(long int j);
  * @brief return a long integer absolute value
  * @details @b #include <stdlib.h> \n
  * POSIX API (refer to : http://pubs.opengroup.org/onlinepubs/9699919799/)
- * @since Tizen RT v1.0
+ * @since TizenRT v1.0
  */
 long long int llabs(long long int j);
 #endif
@@ -520,7 +520,7 @@ long long int llabs(long long int j);
  * @brief compute the quotient and remainder of an integer division
  * @details @b #include <stdlib.h> \n
  * POSIX API (refer to : http://pubs.opengroup.org/onlinepubs/9699919799/)
- * @since Tizen RT v1.1
+ * @since TizenRT v1.1
  */
 div_t div(int numer, int denom);
 /**
@@ -558,7 +558,7 @@ int mkstemp(FAR char *path_template);
  * @brief sort a table of data
  * @details @b #include <stdlib.h> \n
  * POSIX API (refer to : http://pubs.opengroup.org/onlinepubs/9699919799/)
- * @since Tizen RT v1.0
+ * @since TizenRT v1.0
  */
 void qsort(void *base, size_t nmemb, size_t size, int (*compar)(const void *, const void *));
 
@@ -568,7 +568,7 @@ void qsort(void *base, size_t nmemb, size_t size, int (*compar)(const void *, co
  * @brief binary search a sorted table
  * @details @b #include <stdlib.h> \n
  * POSIX API (refer to : http://pubs.opengroup.org/onlinepubs/9699919799/)
- * @since Tizen RT v1.1
+ * @since TizenRT v1.1
  */
 FAR void *bsearch(FAR const void *key, FAR const void *base, size_t nel, size_t width, CODE int (*compar)(FAR const void *, FAR const void *));
 
@@ -578,7 +578,7 @@ FAR void *bsearch(FAR const void *key, FAR const void *base, size_t nel, size_t 
  * @brief returns a copy of updated current heap information for the user heap
  * @details @b #include <stdlib.h>
  * @return Current mallinfo structure returned.
- * @since Tizen RT v1.0
+ * @since TizenRT v1.0
  */
 struct mallinfo mallinfo(void);
 #else
@@ -588,7 +588,7 @@ struct mallinfo mallinfo(void);
  * @details @b #include <stdlib.h>
  * @param[out] info mallinfo structure to be updated
  * @return OK returned.
- * @since Tizen RT v1.0
+ * @since TizenRT v1.0
  */
 int mallinfo(struct mallinfo *info);
 #endif

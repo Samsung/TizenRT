@@ -69,7 +69,7 @@ extern "C" {
  * @retval #ST_THINGS_ERROR_STACK_RUNNING Stack is currently running.
  *         To initialize again, stack should be stopped first by calling st_things_stop()
  *         and then deinitialized by calling st_things_deinitialize().
- * @since Tizen RT v1.1
+ * @since TizenRT v1.1
  */
 int st_things_initialize(const char *json_path, bool *easysetup_complete);
 
@@ -97,7 +97,7 @@ int st_things_deinitialize(void);
  * @param[in]  req_msg  GET request message.
  * @param[out] resp_rep Representation that will be set to payload of response.
  * @return @c true in case of success, otherwise @c false
- * @since Tizen RT v1.1
+ * @since TizenRT v1.1
  */
 typedef bool (*st_things_get_request_cb)(st_things_get_request_message_s *req_msg, st_things_representation_s *resp_rep);
 
@@ -108,7 +108,7 @@ typedef bool (*st_things_get_request_cb)(st_things_get_request_message_s *req_ms
  * @param[in]  req_msg  SET request message.
  * @param[out] resp_rep Representation that will be set to payload of response.
  * @return @c true in case of success, otherwise @c false
- * @since Tizen RT v1.1
+ * @since TizenRT v1.1
  */
 typedef bool (*st_things_set_request_cb)(st_things_set_request_message_s *req_msg, st_things_representation_s *resp_rep);
 
@@ -127,7 +127,7 @@ typedef bool (*st_things_set_request_cb)(st_things_set_request_message_s *req_ms
  * @retval #ST_THINGS_ERROR_NONE Successful
  * @retval #ST_THINGS_ERROR_INVALID_PARAMETER Invalid parameter
  * @retval #ST_THINGS_ERROR_OPERATION_FAILED Operation failed
- * @since Tizen RT v1.1
+ * @since TizenRT v1.1
  */
 int st_things_register_request_cb(st_things_get_request_cb get_cb, st_things_set_request_cb set_cb);
 
@@ -148,7 +148,7 @@ int st_things_register_request_cb(st_things_get_request_cb get_cb, st_things_set
  * @retval #ST_THINGS_ERROR_OPERATION_FAILED Operation failed
  * @retval #ST_THINGS_ERROR_STACK_NOT_INITIALIZED Stack is not initialized.
  *         Initialize the stack by calling st_things_initialize().
- * @since Tizen RT v1.1
+ * @since TizenRT v1.1
  */
 int st_things_start(void);
 
@@ -157,7 +157,7 @@ int st_things_start(void);
  *
  * @details @b #include <st_things/st_things.h>
  * @return @c true to confirm, otherwise @c to deny
- * @since Tizen RT v1.1
+ * @since TizenRT v1.1
  */
 typedef bool (*st_things_reset_confirm_cb)(void);
 
@@ -166,7 +166,7 @@ typedef bool (*st_things_reset_confirm_cb)(void);
  *
  * @details @b #include <st_things/st_things.h>
  * @param[in] is_success Result of Stack-reset. (true : success, false : failure)
- * @since Tizen RT v1.1
+ * @since TizenRT v1.1
  */
 typedef void (*st_things_reset_result_cb)(bool is_success);
 
@@ -185,7 +185,7 @@ typedef void (*st_things_reset_result_cb)(bool is_success);
  * @retval #ST_THINGS_ERROR_NONE Successful
  * @retval #ST_THINGS_ERROR_INVALID_PARAMETER Invalid parameter
  * @retval #ST_THINGS_ERROR_OPERATION_FAILED Operation failed
- * @since Tizen RT v1.1
+ * @since TizenRT v1.1
  */
 int st_things_register_reset_cb(st_things_reset_confirm_cb confirm_cb, st_things_reset_result_cb result_cb);
 
@@ -201,7 +201,7 @@ int st_things_register_reset_cb(st_things_reset_confirm_cb confirm_cb, st_things
  *         Initialize the stack by calling st_things_initialize().
  * @retval #ST_THINGS_ERROR_STACK_NOT_STARTED Stack is not started.
  *         Start the stack by calling st_things_start().
- * @since Tizen RT v1.1
+ * @since TizenRT v1.1
  */
 int st_things_reset(void);
 
@@ -212,7 +212,7 @@ int st_things_reset(void);
  * @details Device should show the PIN on display.
  * @param[in] pin_data PIN data in string format.
  * @param[in] pin_size Length of the PIN String.
- * @since Tizen RT v1.1
+ * @since TizenRT v1.1
  */
 typedef void (*st_things_pin_generated_cb)(const char *pin_data, const size_t pin_size);
 
@@ -220,7 +220,7 @@ typedef void (*st_things_pin_generated_cb)(const char *pin_data, const size_t pi
  * @brief Callback for informing the application to close the PIN display.
  *
  * @details @b #include <st_things/st_things.h>
- * @since Tizen RT v1.1
+ * @since TizenRT v1.1
  */
 typedef void (*st_things_pin_display_close_cb)(void);
 
@@ -249,7 +249,7 @@ int st_things_register_pin_handling_cb(st_things_pin_generated_cb generated_cb, 
  *
  * @details @b #include <st_things/st_things.h>
  * @return @c true true in cse of confirmed, otherwise @c false
- * @since Tizen RT v1.1
+ * @since TizenRT v1.1
  */
 typedef bool (*st_things_user_confirm_cb)(void);
 
@@ -266,7 +266,7 @@ typedef bool (*st_things_user_confirm_cb)(void);
  * @retval #ST_THINGS_ERROR_NONE Successful
  * @retval #ST_THINGS_ERROR_INVALID_PARAMETER Invalid parameter
  * @retval #ST_THINGS_ERROR_OPERATION_FAILED Operation failed
- * @since Tizen RT v1.1
+ * @since TizenRT v1.1
  */
 int st_things_register_user_confirm_cb(st_things_user_confirm_cb confirm_cb);
 
@@ -275,7 +275,7 @@ int st_things_register_user_confirm_cb(st_things_user_confirm_cb confirm_cb);
  *
  * @details @b #include <st_things/st_things.h>
  * @param[in] things_status ST Things State
- * @since Tizen RT v1.1
+ * @since TizenRT v1.1
  */
 typedef void (*st_things_status_change_cb)(st_things_status_e things_status);
 
@@ -292,7 +292,7 @@ typedef void (*st_things_status_change_cb)(st_things_status_e things_status);
  * @retval #ST_THINGS_ERROR_NONE Successful
  * @retval #ST_THINGS_ERROR_INVALID_PARAMETER Invalid parameter
  * @retval #ST_THINGS_ERROR_OPERATION_FAILED Operation failed
- * @since Tizen RT v1.1
+ * @since TizenRT v1.1
  */
 int st_things_register_things_status_change_cb(st_things_status_change_cb status_cb);
 
@@ -310,7 +310,7 @@ int st_things_register_things_status_change_cb(st_things_status_change_cb status
  *         Initialize the stack by calling st_things_initialize().
  * @retval #ST_THINGS_ERROR_STACK_NOT_STARTED Stack is not started.
  *         Start the stack by calling st_things_start().
- * @since Tizen RT v1.1
+ * @since TizenRT v1.1
  */
 int st_things_notify_observers(const char *resource_uri);
 
@@ -320,7 +320,7 @@ int st_things_notify_observers(const char *resource_uri);
  * @details @b #include <st_things/st_things.h>
  * @remarks To destroy an instance, st_things_destroy_representation_inst() should be used.
  * @return a pointer of the created representation, otherwise a null pointer if the memory is insufficient.
- * @since Tizen RT v1.1
+ * @since TizenRT v1.1
  */
 st_things_representation_s *st_things_create_representation_inst(void);
 
@@ -329,7 +329,7 @@ st_things_representation_s *st_things_create_representation_inst(void);
  *
  * @details @b #include <st_things/st_things.h>
  * @param[in] rep Representation that will be destroyed.
- * @since Tizen RT v1.1
+ * @since TizenRT v1.1
  */
 void st_things_destroy_representation_inst(st_things_representation_s *rep);
 

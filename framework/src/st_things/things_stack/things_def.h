@@ -116,6 +116,7 @@
 #define URI_PROVIDER                    "/provider"
 #define URI_RENDERER                    "/renderer"
 #define URI_PROVINFO                    "/provisioninginfo"
+#define URI_FIRMWARE                    "/firmware"
 
 /* Temperature Type Resources */
 #define URI_FRIDGE_COOLER               "/cooler"

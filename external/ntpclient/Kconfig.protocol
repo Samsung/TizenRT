@@ -27,7 +27,7 @@ config NETUTILS_NTPCLIENT_SIGWAKEUP
 
 config NETUTILS_NTPCLIENT_DEFAULT_SERVER
 	string "NTP client default server"
-	default "0.ubuntu.pool.ntp.org"
+	default "time.google.com"
 
 config NETUTILS_NTPCLIENT_DEFAULT_SERVER_PORT
 	int "NTP client default server port"
