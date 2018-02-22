@@ -9,6 +9,7 @@ namespace Media
 	{
 	public:
 		PlayerDataSource();
+		PlayerDataSource(int _channels, int _sampleRate, int _pcmFormat, std::string &);
 		~PlayerDataSource();
 	};
 }
