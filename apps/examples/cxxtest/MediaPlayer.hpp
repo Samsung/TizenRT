@@ -8,6 +8,7 @@
 #include <atomic>
 #include <functional>
 #include <iostream>
+#include <fstream>
 
 #include "PlayerDataSource.hpp"
 #include <tinyalsa/tinyalsa.h>
@@ -73,7 +74,12 @@ namespace Media
 		void _pause();
 		void _stop();
 
-	private:		
+	private:
+		struct pcm *pcmOut;
+		std::ifstream ifs;
+		char *buffer;
+		unsigned int size;
+
 		std::function<void(int state, int err)> user_cb;
 		player_state_t curState;
 		mutex *cMtx; // command mutex

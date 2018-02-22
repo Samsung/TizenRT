@@ -1,3 +1,4 @@
+#include <stdlib.h>
 #include "MediaPlayer.hpp"
 
 namespace Media
@@ -87,6 +88,25 @@ namespace Media
 		enqueue([this]() {_sync(); });
 		cvSync.wait(lock);
 
+		pcmOut = pcm_open(0, 0, PCM_OUT, NULL);
+		if (!pcm_is_ready(pcmOut)) {
+			std::cout << "MediaPlayer::preare : pcm is not ready" << std::endl;
+			return PLAYER_ERROR;
+		}
+
+		ifs.open("/mnt/record", ios::in);
+		if (!ifs.is_open()) {
+			std::cout << "MediaPlayer::prepare : open fail" << std::endl;
+			return PLAYER_ERROR;
+		}
+
+		size = pcm_frames_to_bytes(pcmOut, pcm_get_buffer_size(pcmOut));
+		buffer = (char *)malloc(size);
+		if (!buffer) {
+			std::cout << "MediaPlayer::prepare : buffer malloc fail" << std::endl;
+			return PLAYER_ERROR;
+		}
+
 		curState = PLAYER_STATE_READY;
 		return PLAYER_OK;
 	}
@@ -100,6 +120,11 @@ namespace Media
 
 		enqueue([this]() {_sync(); });
 		cvSync.wait(lock);
+
+		free(buffer);
+		buffer = nullptr;
+		ifs.close();
+		pcm_close(pcmOut);
 
 		curState = PLAYER_STATE_IDLE;
 		return PLAYER_OK;
@@ -234,12 +259,33 @@ namespace Media
 			unique_lock<mutex> lock(*qMtx);
 
 			if (cmdQueue.empty()) {
-				cvQueue.wait(lock);
+				if (curState == PLAYER_STATE_PLAYING) {
+					ifs.read(buffer, size);
+					std::streamsize num_read = ifs.gcount();
+					std::cout << "MediaPlayer Worker : num_read = " << num_read << std::endl;
+					if (num_read > 0) {
+						int ret;
+						ret = pcm_writei(pcmOut, buffer, pcm_bytes_to_frames(pcmOut, num_read));
+						if (ret == -EPIPE) {
+							ret = pcm_prepare(pcmOut);
+							if (ret != OK) {
+								std::cout << "MediaPlayer Worker : pcm_prepare fail" << std::endl;
+							}
+							pcm_writei(pcmOut, buffer, pcm_bytes_to_frames(pcmOut, num_read));
+						}
+					} else {
+						_stop();
+					}
+					continue;
+				} else {
+					std::cout << "MediaPlayer Worker : SLEEP" << std::endl;
+					cvQueue.wait(lock);
+					std::cout << "MediaPlayer Worker : WAKEUP" << std::endl;
+				}
 			}
 
 			std::function<void()> run = cmdQueue.front();
 			cmdQueue.pop();
-
 			run();
 		}
 
