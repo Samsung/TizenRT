@@ -12,6 +12,14 @@ config SUPPORT_FULL_SECURITY
 	---help---
 		Supports security features with secure storage.
 
+config TLS_MPI_MAX_SIZE
+	int "TLS MPI Max Size (bytes)"
+	default 512
+	---help---
+		Specify the maximum ram size to use when encrypting.
+		You can find this value in the information for the certificate to use.
+		ex) Server public key is 2048 bit
+
 if TLS_WITH_SSS
 
 menu "HW Selection"
