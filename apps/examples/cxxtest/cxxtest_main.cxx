@@ -70,12 +70,20 @@
 #include <list>
 
 
-
 #include <tinyara/init.h>
 #include <apps/platform/cxxinitialize.h>
+#include <thread>
+#include <mutex>
+#include <condition_variable>
+#include <queue>
+#include <atomic>
+#include <functional>
+#include <iostream>
+#include <fstream>
 
-#include "MediaPlayer.hpp"
-#include "MediaRecorder.hpp"
+
+#include <media/MediaPlayer.hpp>
+#include <media/MediaRecorder.hpp>
 
 using namespace std;
 using namespace Media;
@@ -129,7 +137,9 @@ public:
 //***************************************************************************
 void test()
 {
+
 	MediaPlayer p;
+
 	p.create();
 	p.start();
 	p.pause();
@@ -143,6 +153,7 @@ void test()
 	r.pause();
 	r.stop();
 	r.destroy();
+
 }
 
 //***************************************************************************

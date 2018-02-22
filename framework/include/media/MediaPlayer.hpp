@@ -1,3 +1,6 @@
+#ifndef __MEDIA_MEDIAPLAYER_HPP
+#define __MEDIA_MEDIAPLAYER_HPP
+
 #include <thread>
 #include <mutex>
 #include <condition_variable>
@@ -5,76 +8,90 @@
 #include <atomic>
 #include <functional>
 #include <iostream>
+#include <fstream>
 
-#include <media/InputDataSource.hpp>
+#include "PlayerDataSource.hpp"
+#include <tinyalsa/tinyalsa.h>
 
 using namespace std;
 
-typedef enum player_state_e
+namespace Media 
 {
-	PLAYER_STATE_NONE,
-	PLAYER_STATE_IDLE,
-	PLAYER_STATE_READY,
-	PLAYER_STATE_PLAYING,
-	PLAYER_STATE_PAUSED
-} play_state_t;
-
-typedef enum player_result_e
-{
-	PLAYER_ERROR,
-	PLAYER_OK
-} play_result_t;
-
-class MediaPlayer
-{
-public:
-	MediaPlayer();
-	~MediaPlayer();
-	
-	play_result_t create();
-	play_result_t destroy();
-	
-	play_result_t prepare();
-	play_result_t start();
-	play_result_t pause();
-	play_result_t resume();
-	play_result_t stop();
-
-	play_result_t getVolume() const;
-	void setVolume(int vol);
-
-	void setDataSource(DataSource dataSource);
-
-private:
-	template<typename _Callable, typename... _Args>
-	void enqueue(_Callable&& __f, _Args&&... __args)
+	typedef enum player_state_e
 	{
-		unique_lock<std::mutex> lock(*qMtx);
-		std::function<void()> func = std::bind(std::forward<_Callable>(__f), std::forward<_Args>(__args)...);	
-		cmdQueue.push(func);
-		cv.notify_one();
-	}
-	
-	thread *worker;
-	int worker_thread();
+		PLAYER_STATE_NONE,
+		PLAYER_STATE_IDLE,
+		PLAYER_STATE_READY,
+		PLAYER_STATE_PLAYING,
+		PLAYER_STATE_PAUSED
+	} player_state_t;
 
-	void _prepare();
-	void _start();
-	void _pause();
-	void _resume();
-	void _stop();
+	typedef enum player_result_e
+	{
+		PLAYER_ERROR,
+		PLAYER_OK
+	} player_result_t;
 
+	class MediaPlayer
+	{
+	public:
+		MediaPlayer();
+		~MediaPlayer();
+				
+		player_result_t create();
+		player_result_t create(std::function<void(int, int)> &&);
+		player_result_t create(std::function<void(int, int)> &);
+		player_result_t destroy();
 
+		player_result_t prepare();
+		player_result_t unprepare();
+		player_result_t start();
+		player_result_t pause();
+		player_result_t stop();
 
-private:
-	play_state_t curState;
-	mutex *cMtx; // command mutex
-	mutex *qMtx; // queue mutex
+		player_result_t getVolume() const;
+		void setVolume(int vol);
 
-	std::condition_variable cv;
-	std::queue<std::function<void()>> cmdQueue;
+		void setDataSource(DataSource dataSource);
 
-	bool isRunning;
-	int curVolume;
+		player_state_t getState();
 
-};
+	private:
+		template<typename _Callable, typename... _Args>
+		void enqueue(_Callable&& __f, _Args&&... __args) {
+			unique_lock<std::mutex> lock(*qMtx);
+			std::function<void()> func = std::bind(std::forward<_Callable>(__f), std::forward<_Args>(__args)...);
+			cmdQueue.push(func);
+			cvQueue.notify_one();
+		}
+
+		thread *worker;
+		int worker_thread();
+
+		player_result_t createWorker(std::unique_lock<mutex> &);
+		void _sync();
+		void _start();
+		void _pause();
+		void _stop();
+
+	private:
+		struct pcm *pcmOut;
+		std::ifstream ifs;
+		char *buffer;
+		unsigned int size;
+
+		std::function<void(int state, int err)> user_cb;
+		player_state_t curState;
+		mutex *cMtx; // command mutex
+		mutex *qMtx; // queue mutex
+
+		std::condition_variable cvQueue;
+		std::condition_variable cvSync;
+		std::queue<std::function<void()>> cmdQueue;
+
+		bool isRunning;
+		int curVolume;
+
+	};
+}
+#endif
