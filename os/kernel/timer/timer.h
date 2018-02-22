@@ -69,7 +69,12 @@
  * Definitions
  ********************************************************************************/
 
-#define PT_FLAGS_PREALLOCATED 0x01	/* Timer comes from a pool of preallocated timers */
+/* PT_FLAGS_* definitions */
+#define PT_FLAGS_ALLOC_MASK   (0)
+#define PT_FLAGS_USE_MASK     (1)
+
+#define PT_FLAGS_PREALLOCATED (1 << PT_FLAGS_ALLOC_MASK)    /* Timer comes from a pool of preallocated timers */
+#define PT_FLAGS_INUSE        (1 << PT_FLAGS_USE_MASK)      /* Timer is in use */
 
 /********************************************************************************
  * Public Types
@@ -89,6 +94,8 @@ struct posix_timer_s {
 	WDOG_ID pt_wdog;			/* The watchdog that provides the timing */
 	union sigval pt_value;		/* Data passed with notification */
 };
+
+#define PT_ISVALID(x)         (((x) != NULL) && (((struct posix_timer_s *)(x))->pt_flags & PT_FLAGS_INUSE))
 
 /********************************************************************************
  * Public Data
