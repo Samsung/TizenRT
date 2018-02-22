@@ -106,9 +106,9 @@ namespace Media
 			return RECORDER_ERROR;
 		}
 
-		fsOut.open(recorderDataSource->getDataPath(), std::fstream::out | std::fstream::trunc);
+		ofs.open(recorderDataSource->getDataPath(), std::fstream::out | std::fstream::trunc);
 
-		if (!fsOut.is_open())
+		if (!ofs.is_open())
 		{
 			std::cout << "file open failed" << std::endl;
 			return RECORDER_ERROR;
@@ -144,8 +144,8 @@ namespace Media
 		
 		buffSize = 0;
 		
-		if (fsOut.is_open()) {
-			fsOut.close();
+		if (ofs.is_open()) {
+			ofs.close();
 		}
 		
 		if (!pcmIn) {
@@ -296,7 +296,7 @@ namespace Media
 					if (frames > 0) {
 						size = pcm_frames_to_bytes(pcmIn, frames);	
 
-						int ret = fsOut.write(buffer, size);
+						int ret = ofs.write(buffer, size);
 						if (ret < 0) {
 							std::cout << "write file failed" << std::endl;
 						}

@@ -90,7 +90,7 @@ namespace Media
 		bool isRunning;
 		int curVolume;
 		
-		std::ofstream fs;
+		std::ofstream ofs;
 		char *buffer;
 		unsigned int buffSize;
 
