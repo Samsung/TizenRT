@@ -77,8 +77,6 @@
 #include "MediaPlayer.hpp"
 #include "MediaRecorder.hpp"
 
-#include "jsdosa.h"
-
 using namespace std;
 using namespace Media;
 
@@ -110,24 +108,21 @@ public:
 
 class Extend : public Base
 {
-	std::cout << "printstring: " << std::endl;
-}
+public:
+	void printExtend(void)
+	{
+		cout << "extend" << endl;
+	}
+};
+#endif
 
-/*
-template<typename _Callable, typename... _Args>
-void enqueue(_Callable&& __f, _Args&&... __args)
-{
-	//unique_lock<std::mutex> lock(*qMtx);
-	//std::function<void()> func = std::bind(std::forward<_Callable>(__f), std::forward<_Args>(__args)...);	
-	//cmdQueue.push(func);
-	//cv.notify_one();
-	std::cout << "18: " << std::endl;
-}*/
 //***************************************************************************
-// Private Classes
+// Private Data
 //***************************************************************************
 
-JSDOSA jsdosa;
+//***************************************************************************
+// Private Functions
+//***************************************************************************
 
 //***************************************************************************
 // Public Functions
