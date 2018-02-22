@@ -8,6 +8,7 @@
 #include <atomic>
 #include <functional>
 #include <iostream>
+#include <fstream>
 
 #include <tinyalsa/tinyalsa.h>
 #include "RecorderDataSource.hpp"
@@ -35,7 +36,7 @@ namespace Media
 	{
 	public:
 		MediaRecorder();
-		MediaRecorder(int, int, int );
+		MediaRecorder(int, int, int);
 		~MediaRecorder();
 		
 		recorder_result_t create();
@@ -88,6 +89,10 @@ namespace Media
 
 		bool isRunning;
 		int curVolume;
+		
+		std::ofstream fs;
+		char *buffer;
+		unsigned int buffSize;
 
 		RecorderDataSource *recorderDataSource;
 	};
