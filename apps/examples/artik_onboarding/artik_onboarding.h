@@ -23,7 +23,7 @@
 #ifndef _ARTIK_ONBOARDING_H_
 #define _ARTIK_ONBOARDING_H_
 
-#define ONBOARDING_VERSION "1.7.1"
+#define ONBOARDING_VERSION "1.8.0"
 
 /*
  * Service states

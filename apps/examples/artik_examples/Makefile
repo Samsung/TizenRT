@@ -110,6 +110,7 @@ ifeq ($(CONFIG_EXAMPLES_ARTIK_WEBSOCKET), y)
   MAINSRC += websocket-api.c
 endif
 ifeq ($(CONFIG_EXAMPLES_ARTIK_WIFI), y)
+  THREADEXEC_wifictl = TASH_EXECMD_SYNC
   TASH_APPS += wifictl
   MAINSRC += wifi-api.c
 endif

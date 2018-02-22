@@ -32,12 +32,20 @@ static int module_version(int argc, char *argv[]);
 static int module_platform(int argc, char *argv[]);
 static int module_info(int argc, char *argv[]);
 static int module_modules(int argc, char *argv[]);
+static int module_macaddress(int argc, char *argv[]);
+static int module_manufacturer(int argc, char *argv[]);
+static int module_modelnumber(int argc, char *argv[]);
+static int module_uptime(int argc, char *argv[]);
 
 static struct command module_commands[] = {
 	{ "version", "Display the version of the ARTIK SDK", module_version },
 	{ "platform", "Display the platform", module_platform },
 	{ "info", "Display information about the ARTIK SDK", module_info },
 	{ "modules", "Lists all the SDK modules available for this platform", module_modules },
+	{ "macaddress", "Display the platform macaddress", module_macaddress },
+	{ "manufacturer", "Display the platform manufacturer", module_manufacturer },
+	{ "modelnumber", "Display the plaform model number", module_modelnumber },
+	{ "uptime", "Display the plaform uptime", module_uptime },
 	{ "", "", NULL }
 };
 
@@ -107,6 +115,70 @@ exit:
 	return ret;
 }
 
+static int module_macaddress(int argc, char *argv[])
+{
+	artik_error ret = S_OK;
+	char wifiaddr[MAX_WIFI_ADDR+1] = {0};
+
+	if (artik_get_wifi_mac_address(wifiaddr) != S_OK) {
+		fprintf(stderr, "Failed to get plaform wifi mac address\n");
+		ret = -1;
+		goto exit;
+	}
+
+	fprintf(stdout, "Platform Wifi MAC address: %s\n", wifiaddr);
+
+exit:
+	return ret;
+}
+
+static int module_manufacturer(int argc, char *argv[])
+{
+	artik_error ret = S_OK;
+	char manu[MAX_PLATFORM_MANUFACT+1] = {0};
+
+	if (artik_get_platform_manufacturer(manu) != S_OK) {
+		ret = -1;
+		goto exit;
+	}
+
+	fprintf(stdout, "Platform Manufacturer: %s\n", manu);
+
+exit:
+	return ret;
+}
+
+static int module_modelnumber(int argc, char *argv[])
+{
+	artik_error ret = S_OK;
+	char modelnum[MAX_PLATFORM_MODELNUM+1] = {0};
+
+	if (artik_get_platform_model_number(modelnum) != S_OK) {
+		ret = -1;
+		goto exit;
+	}
+
+	fprintf(stdout, "Platform model number: %s\n", modelnum);
+
+exit:
+	return ret;
+}
+
+static int module_uptime(int argc, char *argv[])
+{
+	int64_t uptime = 0;
+	artik_error ret = S_OK;
+
+	if (artik_get_platform_uptime(&uptime) != S_OK) {
+		ret = -1;
+		goto exit;
+	}
+
+	fprintf(stdout, "Platform uptime time: %d\n", uptime);
+
+exit:
+	return ret;
+}
 
 #ifdef CONFIG_BUILD_KERNEL
 int main(int argc, FAR char *argv[])
