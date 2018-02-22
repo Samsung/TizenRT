@@ -24,6 +24,10 @@
 #include <unistd.h>
 #include <signal.h>
 #include <pthread.h>
+#ifdef CONFIG_ST_THINGS_FOTA
+#include "octypes.h"
+#include <json/cJSON.h>
+#endif
 #include "things_api.h"
 #include "things_types.h"
 #include "things_def.h"
@@ -49,6 +53,13 @@
 #include "utils/things_thread.h"
 #ifdef __ST_THINGS_RTOS__
 #include "utils/things_rtos_util.h"
+#endif
+#ifdef CONFIG_ST_THINGS_FOTA
+#include "fota/fmwup_api.h"
+#include "deviceDef.h"
+#define DEVICE_DEF_FILE_ROOT "/mnt/"
+#else
+#define DEVICE_DEF_FILE_ROOT "/rom/"
 #endif
 
 #ifdef CONFIG_NETUTILS_NTPCLIENT
@@ -206,7 +217,7 @@ static void sync_time_from_ntp(int guarantee_secs)
 				} else if ((init_tp.tv_sec + guarantee_secs) < sync_tp.tv_sec) {
 					break;
 				}
-				usleep(100000);				
+				usleep(100000);
 			}
 			if (time_sync) {
 				THINGS_LOG(THINGS_INFO, TAG, "ntpc_time sync done");
@@ -232,10 +243,7 @@ static void *__attribute__((optimize("O0"))) t_things_wifi_join_loop(void *args)
 	wifi_manager_info_s wifi_info;
 	wifi_manager_get_info(&wifi_info);
 
-	char cur_device_ip_address[18 + 1];
-	wifi_net_ip4_addr_to_ip4_str(wifi_info.ip4_address, cur_device_ip_address);
-
-	things_wifi_changed_call_func(1, wifi_info.ssid, cur_device_ip_address);
+	things_wifi_changed_call_func(1, wifi_info.ssid, wifi_info.ip4_address);
 
 	return NULL;
 }
@@ -246,6 +254,7 @@ void things_wifi_sta_connected(wifi_manager_result_e res)
 		THINGS_LOG_ERROR(THINGS_ERROR, TAG, "Failed to connect to the AP");
 		return;
 	}
+
 	THINGS_LOG_D(THINGS_INFO, TAG, "T%d --> %s", getpid(), __FUNCTION__);
 
 	pthread_create_rtos(&h_thread_things_wifi_join, NULL, (pthread_func_type) t_things_wifi_join_loop, NULL, THINGS_STACK_WIFI_JOIN_THREAD);
@@ -255,6 +264,7 @@ void things_wifi_sta_connected(wifi_manager_result_e res)
 void things_wifi_sta_disconnected(void)
 {
 	THINGS_LOG_D(THINGS_INFO, TAG, "T%d --> %s", getpid(), __FUNCTION__);
+	things_wifi_changed_call_func(0, NULL, NULL);
 }
 
 void things_wifi_soft_ap_sta_joined(void)
@@ -289,8 +299,11 @@ typedef int8_t INT8;
 
 bool try_connect_home_ap(wifi_manager_ap_config_s *connect_config)
 {
-	wifi_manager_result_e result = WIFI_MANAGER_SUCCESS;
+	if (connect_config != NULL && connect_config->ssid != NULL) {
+		THINGS_LOG_V(THINGS_INFO, TAG, "Try_connect_home_ap [ssid : %s]", connect_config->ssid);
+	}
 
+	wifi_manager_result_e result = WIFI_MANAGER_SUCCESS;
 	int retry_count = 0;
 
 	for (; retry_count < 3; retry_count++) {
@@ -299,7 +312,7 @@ bool try_connect_home_ap(wifi_manager_ap_config_s *connect_config)
 		if (result == WIFI_MANAGER_SUCCESS) {
 			break;
 		} else {
-			THINGS_LOG_ERROR(THINGS_ERROR, TAG, "Failed to connect WiFi");
+			THINGS_LOG_V(THINGS_ERROR, TAG, "Failed to connect WiFi [Error Code : %d, Retry count : %d]", result, retry_count);
 		}
 	}
 
@@ -358,19 +371,15 @@ bool things_handle_stop_soft_ap(wifi_manager_ap_config_s *connect_config)
 		return false;
 	}
 
-	if (connect_config != NULL) {
-		save_acces_point_info(connect_config);
-	}
-
 	return true;
 }
 
 INT8 things_wifi_connection_cb(access_point_info_s *p_info, char *p_cmd_id)
 {
-	THINGS_LOG_D(THINGS_INFO, TAG, "T%d --> %s", getpid(), __FUNCTION__);
+	THINGS_LOG_D(THINGS_DEBUG, TAG, "T%d --> %s", getpid(), __FUNCTION__);
 
 	if (p_info == NULL) {
-		THINGS_LOG_D(THINGS_INFO, TAG, "Invalid params");
+		THINGS_LOG_ERROR(THINGS_ERROR, TAG, "Invalid params");
 		return -1;
 	}
 
@@ -382,8 +391,7 @@ INT8 things_wifi_connection_cb(access_point_info_s *p_info, char *p_cmd_id)
 
 	connect_config.passphrase_length = strlen(connect_config.passphrase);
 
-	THINGS_LOG_D(THINGS_INFO, TAG, "[%s] ssid : %s", __FUNCTION__, connect_config.ssid);
-	THINGS_LOG_D(THINGS_INFO, TAG, "[%s] passphrase : %s", __FUNCTION__, connect_config.passphrase);
+	THINGS_LOG_V(THINGS_INFO, TAG, "[%s] ssid : %s", __FUNCTION__, connect_config.ssid);
 
 	// set auth type
 	if (strncmp(p_info->auth_type, "WEP", strlen("WEP")) == 0) {
@@ -406,31 +414,26 @@ INT8 things_wifi_connection_cb(access_point_info_s *p_info, char *p_cmd_id)
 		connect_config.ap_crypto_type = WIFI_MANAGER_CRYPTO_TKIP_AND_AES;
 	}
 
-	int ret = things_handle_stop_soft_ap(&connect_config);
-	if (ret != 1) {
+	wifi_manager_result_e res = wifi_manager_save_config(&connect_config);
+
+	if (res != WIFI_MANAGER_SUCCESS) {
+		THINGS_LOG_V(THINGS_ERROR, TAG, "Failed to save AP configuration : [%d]", res);
+		return -1;
+	} else {
+		THINGS_LOG_V(THINGS_INFO, TAG, "Success to save AP configuration");
+	}
+
+	if (!things_handle_stop_soft_ap(&connect_config)) {
 		return -1;
 	}
 
 	return 1;
 }
 
-access_point_info_s *create_access_info()
-{
-	access_point_info_s *info = (access_point_info_s *) things_malloc(sizeof(access_point_info_s));
-	memset(info->e_ssid, 0, MAX_ESSID);
-	memset(info->security_key, 0, MAX_SECUIRTYKEY);
-	memset(info->auth_type, 0, MAX_TYPE_AUTH);
-	memset(info->enc_type, 0, MAX_TYPE_ENC);
-	memset(info->channel, 0, MAX_CHANNEL);
-	memset(info->signal_level, 0, MAX_LEVEL_SIGNAL);
-	memset(info->bss_id, 0, MAX_BSSID);
-	return info;
-}
-
 int things_wifi_search_cb(access_point_info_s *** p_info, int *p_count)
 {
-	THINGS_LOG_V(THINGS_INFO, TAG, THINGS_FUNC_ENTRY);
-//TO DO
+	THINGS_LOG_D(THINGS_DEBUG, TAG, THINGS_FUNC_ENTRY);
+	//TO DO
 	(*p_count) = 0;
 
 	return 1;
@@ -464,10 +467,102 @@ static void otm_event_cb(const char *addr, uint16_t port, const char *uuid, int 
 	}
 }
 
+static bool things_has_abs_device_def_path(const char *json_path)
+{
+	if (json_path != NULL) {
+		if (json_path[0] == '/') {
+			return true;
+		} else {
+			return false;
+		}
+	} else {
+		return false;
+	}
+}
+static char *things_make_abs_device_def_path(const char *json_path)
+{
+	char *abs_json_path = NULL;
+	int len_of_path = -1;
+	if (!things_has_abs_device_def_path(json_path)) {
+		len_of_path = strlen(DEVICE_DEF_FILE_ROOT) + strlen(json_path) + 1;
+		abs_json_path = (char *)things_malloc(len_of_path * sizeof(char));
+		strncpy(abs_json_path, DEVICE_DEF_FILE_ROOT, len_of_path);
+		strncat(abs_json_path, json_path, len_of_path);
+	} else {
+		len_of_path = strlen(json_path) + 1;
+		abs_json_path = (char *)things_malloc(len_of_path * sizeof(char));
+		strncpy(abs_json_path, json_path, len_of_path);
+	}
+	abs_json_path[len_of_path] = NULL;
+	return abs_json_path;
+}
 int things_initialize_stack(const char *json_path, bool *easysetup_completed)
 {
 	THINGS_LOG_D(THINGS_DEBUG, TAG, THINGS_FUNC_ENTRY);
 
+	THINGS_LOG_D(THINGS_DEBUG, TAG, "Make a file path to match device type.");
+	char *abs_json_path = NULL;
+	if (json_path == NULL) {
+		THINGS_LOG_D_DEBUG(THINGS_DEBUG, TAG, "json_path could not be null.");
+		return 0;
+	} else {
+		abs_json_path = things_make_abs_device_def_path(json_path);
+		THINGS_LOG_D_DEBUG(THINGS_DEBUG, TAG, "Origin path(%s), converted path(%s).", json_path, abs_json_path);
+	}
+#if CONFIG_ST_THINGS_FOTA
+	THINGS_LOG_D(THINGS_DEBUG, TAG, "Create a file regarding the device's resource");
+	int ret = 0;
+	int size_d = sizeof(deviceDef);
+	FILE *fp;
+	char *json_str = NULL;
+	cJSON *root;
+	cJSON *h_root;
+	fp = fopen(abs_json_path, "r");
+	if (fp) {
+		THINGS_LOG_D(THINGS_INFO, TAG, "File is exist...");
+		fclose(fp);
+		json_str = get_json_string_from_file(abs_json_path);
+		h_root = cJSON_Parse(deviceDef);
+		if (json_str != NULL && strlen(json_str) > 0) {
+			root = cJSON_Parse((const char *)json_str);
+			if (root == NULL) {
+				THINGS_LOG_D(THINGS_DEBUG, TAG, "Failed to parse a device resource file");
+			}
+		}
+		if (!cJSON_Compare(h_root, root, 1)) {
+			THINGS_LOG_D(THINGS_DEBUG, TAG, "Modify the device resource file");
+			fp = fopen(abs_json_path, "w+");
+			if (!fp) {
+				THINGS_LOG_D(THINGS_ERROR, TAG, "fopen() failed");
+				return -1;
+			}
+			ret = fwrite(deviceDef, size_d, 1, fp);
+			if (ret < 0) {
+				THINGS_LOG_D(THINGS_ERROR, TAG, "fwrite() failed");
+				return -1;
+			}
+			fclose(fp);
+			THINGS_LOG_D(THINGS_INFO, TAG, "Success to modify the device resource file");
+		} else {
+			THINGS_LOG_D(THINGS_INFO, TAG, "A resource file alreasy exists");
+		}
+	} else {
+		fclose(fp);
+		THINGS_LOG_D(THINGS_INFO, TAG, "File did not exist...Create file");
+		fp = fopen(abs_json_path, "w+");
+		if (!fp) {
+			THINGS_LOG_D(THINGS_ERROR, TAG, "fopen() failed");
+			return -1;
+		}
+		ret = fwrite(deviceDef, size_d, 1, fp);
+		if (ret < 0) {
+			THINGS_LOG_D(THINGS_ERROR, TAG, "fwrite() failed");
+			return -1;
+		}
+		fclose(fp);
+		THINGS_LOG_D(THINGS_INFO, TAG, "Success to create the device resource file");
+	}
+#endif
 	if (is_things_module_inited) {
 		THINGS_LOG(THINGS_ERROR, TAG, "Stack already initialized");
 		return 0;
@@ -476,13 +571,19 @@ int things_initialize_stack(const char *json_path, bool *easysetup_completed)
 	things_log_init();
 	things_log_set_version(ST_THINGS_STACK_VERSION);
 
-	if (!dm_init_module(json_path)) {
+	if (!dm_init_module(abs_json_path)) {
 		THINGS_LOG(THINGS_ERROR, TAG, "dm_init_module() failed");
 		return 0;
 	}
 	is_things_module_inited = 1;
 
 	*easysetup_completed = dm_is_there_things_cloud();
+#ifdef CONFIG_ST_THINGS_FOTA
+	if (fmwup_initialize() < 0) {
+		THINGS_LOG(THINGS_ERROR, TAG, "fmwup_initizlize() failed");
+	}
+#endif
+	things_free(abs_json_path);
 
 	return 1;
 }
@@ -529,7 +630,9 @@ int things_start_stack()
 			}
 		} else {				// Alread Owned.
 			wifi_manager_ap_config_s *ap_config = dm_get_homeap_wifi_config();
-			try_connect_home_ap(ap_config);
+			if (!try_connect_home_ap(ap_config)) {
+				return 0;
+			}
 		}
 	} else if (dm_get_easysetup_connectivity_type() == es_conn_type_ble) {
 		//TO DO

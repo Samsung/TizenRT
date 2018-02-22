@@ -10,18 +10,6 @@ config EXAMPLES_MDNS_TEST
 	---help---
 		Enable the \"Multicast DNS Test\" example
 
-if EXAMPLES_MDNS_TEST
-
-config EXAMPLES_MDNS_TEST_PROGNAME
-	string "Program name"
-	default "mdns"
-	depends on BUILD_KERNEL
-	---help---
-		This is the name of the program that will be use when the NSH ELF
-		program is installed.
-
-endif
-
 config USER_ENTRYPOINT
 	string
 	default "mdns_main" if ENTRY_MDNS_TEST

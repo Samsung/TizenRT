@@ -15,9 +15,26 @@
 # language governing permissions and limitations under the License.
 #
 ###########################################################################
-CSRCS += iotapi_evt_handler.c
-CSRCS += iotbus_gpio.c iotbus_i2c.c iotbus_spi.c iotbus_pwm.c iotbus_uart.c
 
+ifeq ($(CONFIG_IOTBUS), y)
+CSRCS += iotapi_evt_handler.c
+
+ifeq ($(CONFIG_IOTBUS_GPIO), y)
+CSRCS += iotbus_gpio.c
+endif
+ifeq ($(CONFIG_IOTBUS_I2C), y)
+CSRCS += iotbus_i2c.c
+endif
+ifeq ($(CONFIG_IOTBUS_SPI), y)
+CSRCS += iotbus_spi.c
+endif
+ifeq ($(CONFIG_IOTBUS_PWM), y)
+CSRCS += iotbus_pwm.c
+endif
+ifeq ($(CONFIG_IOTBUS_UART), y)
+CSRCS += iotbus_uart.c
+endif
 
 DEPPATH += --dep-path src/iotbus
 VPATH += :src/iotbus
+endif

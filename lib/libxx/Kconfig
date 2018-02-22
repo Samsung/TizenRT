@@ -58,31 +58,4 @@ config LIBCXX_HAVE_LIBSUPCXX
 
 endif
 
-comment "uClibc++ Standard C++ Library"
-
-config UCLIBCXX
-	bool "Build uClibc++ (must be installed)"
-	default n
-	---help---
-		If you have installed uClibc++ into the TinyAra source try, then it can
-		be built by selecting this option.
-
-if UCLIBCXX
-
-config UCLIBCXX_EXCEPTION
-	bool "Enable Exception Suppport"
-	default y
-
-config UCLIBCXX_IOSTREAM_BUFSIZE
-	int "IO Stream Buffer Size"
-	default 32
-
-config UCLIBCXX_HAVE_LIBSUPCXX
-	bool "Have libsupc++ (required)"
-	default y
-	---help---
-		Select if your toolchain provides libsupc++.  This option is required
-		at present because the built-in libsupc++ support is incomplete.
-
-endif
 endif

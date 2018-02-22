@@ -22,8 +22,9 @@
 #include <fcntl.h>
 #include <tinyara/config.h>
 #include <tinyara/fs/ioctl.h>
-#ifdef CONFIG_TASH
-#include <apps/shell/tash.h>
+#ifdef CONFIG_BOARDCTL_RESET
+#include <sys/boardctl.h>
+#include <stdlib.h>
 #endif
 #include <apps/system/fota_hal.h>
 
@@ -44,9 +45,15 @@ typedef struct priv_fotahal_handle_s priv_fotahal_handle_t;
  * Private Data
  ****************************************************************************/
 static uint32_t g_fota_fd;
+#ifdef CONFIG_SYSTEM_FOTA_SET_SPECIFIC
 static bool g_partition_set = false;
 static bool g_binary_set = false;
+#endif
+#ifdef CONFIG_SYSTEM_FOTA_DEVNAME
+static char fota_driver_path[20] = CONFIG_SYSTEM_FOTA_DEVNAME;
+#else
 static char fota_driver_path[20] = "/dev/fota";
+#endif
 static priv_fotahal_handle_t g_priv_handle;
 
 /****************************************************************************
@@ -86,12 +93,15 @@ fotahal_handle_t fotahal_open(void)
 	g_fota_fd = fota_fd;
 	g_priv_handle.priv = &g_fota_fd;
 
+#ifdef CONFIG_SYSTEM_FOTA_SET_SPECIFIC
 	g_partition_set = false;
 	g_binary_set = false;
+#endif
 
 	return (fotahal_handle_t)&g_priv_handle;
 }
 
+#ifdef CONFIG_SYSTEM_FOTA_SET_SPECIFIC
 /****************************************************************************
  * Name: fotahal_get_partition
  *
@@ -159,6 +169,7 @@ fotahal_return_t fotahal_set_binary(fotahal_handle_t handle, uint32_t bin_id)
 	g_binary_set = true;
 	return FOTAHAL_RETURN_SUCCESS;
 }
+#endif
 
 /****************************************************************************
  * Name: fotahal_write
@@ -174,6 +185,7 @@ fotahal_return_t fotahal_write(fotahal_handle_t handle, const char *buffer, uint
 		return FOTAHAL_RETURN_WRONGHANDLE;
 	}
 
+#ifdef CONFIG_SYSTEM_FOTA_SET_SPECIFIC
 	if (g_partition_set == false) {
 		return FOTAHAL_RETURN_PART_NOTSET;
 	}
@@ -181,11 +193,41 @@ fotahal_return_t fotahal_write(fotahal_handle_t handle, const char *buffer, uint
 	if (g_binary_set == false) {
 		return FOTAHAL_RETURN_BIN_NOTSET;
 	}
+#endif
 
 	ret = write(g_fota_fd, buffer, bin_size);
 	if (ret != bin_size) {
 		dbg("%s: fota driver write failed\n", __func__);
 		return FOTAHAL_RETURN_WRITEFAIL;
+	}
+
+	return FOTAHAL_RETURN_SUCCESS;
+}
+
+/****************************************************************************
+ * Name: fotahal_erase
+ *
+ * Description:
+ *   erase fota partition
+ ****************************************************************************/
+fotahal_return_t fotahal_erase(fotahal_handle_t handle)
+{
+	int ret;
+
+	if (verify_fotahal_handle(handle) != OK) {
+		return FOTAHAL_RETURN_WRONGHANDLE;
+	}
+
+#ifdef CONFIG_SYSTEM_FOTA_SET_SPECIFIC
+	if (g_partition_set == false) {
+		return FOTAHAL_RETURN_PART_NOTSET;
+	}
+#endif
+
+	ret = ioctl(g_fota_fd, MTDIOC_BULKERASE, 0);
+	if (ret != OK) {
+		dbg("%s: fota driver erase failed\n", __func__);
+		return FOTAHAL_RETURN_ERASEFAIL;
 	}
 
 	return FOTAHAL_RETURN_SUCCESS;
@@ -229,8 +271,29 @@ fotahal_return_t fotahal_close(fotahal_handle_t handle)
 
 	close(g_fota_fd);
 
+#ifdef CONFIG_SYSTEM_FOTA_SET_SPECIFIC
 	g_partition_set = false;
 	g_binary_set = false;
+#endif
 	priv_handle->priv = NULL;
 	return FOTAHAL_RETURN_SUCCESS;
 }
+
+/****************************************************************************
+ * Name: fotahal_update
+ *
+ * Description:
+ *   update to new
+ ****************************************************************************/
+#ifdef CONFIG_BOARDCTL_RESET
+int fotahal_update(void)
+{
+	boardctl(BOARDIOC_RESET, EXIT_SUCCESS);
+
+	/*
+	 * boarctl() will not return in this case.  It if does, it means that
+	 * there was a problem with the reset operaion.
+	 */
+	return ERROR;
+}
+#endif

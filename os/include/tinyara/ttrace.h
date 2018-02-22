@@ -117,7 +117,7 @@ extern "C" {
  * @param[in] tag number for tag
  * @param[in] str unique strings like function name for distinguishing events
  * @return On success, TTRACE_VALID is returned. On failure, ERROR is returned and errno is set appropriately.
- * @since Tizen RT v1.1
+ * @since TizenRT v1.1
  */
 int trace_begin(int tag, char *str, ...);
 
@@ -128,7 +128,7 @@ int trace_begin(int tag, char *str, ...);
  * @param[in] tag number for tag
  * @param[in] uniqueid unique id for distinguishing events
  * @return On success, TTRACE_VALID is returned. On failure, TTRACE_INVALID is returned and errno is set appropriately.
- * @since Tizen RT v1.1
+ * @since TizenRT v1.1
  */
 int trace_begin_uid(int tag, int8_t uniqueid);
 
@@ -138,7 +138,7 @@ int trace_begin_uid(int tag, int8_t uniqueid);
  * @details @b #include <tinyara/ttrace.h>
  * @param[in] tag number for tag
  * @return On success, TTRACE_VALID is returned. On failure, TTRACE_INVALID is returned and errno is set appropriately.
- * @since Tizen RT v1.1
+ * @since TizenRT v1.1
  */
 int trace_end(int tag);
 
@@ -148,7 +148,7 @@ int trace_end(int tag);
  * @details @b #include <tinyara/ttrace.h>
  * @param[in] tag number for tag
  * @return On success, TTRACE_VALID is returned. On failure, TTRACE_INVALID is returned and errno is set appropriately.
- * @since Tizen RT v1.1
+ * @since TizenRT v1.1
  */
 int trace_end_uid(int tag);
 
@@ -159,7 +159,7 @@ int trace_end_uid(int tag);
  * @param[in] prev tcb of current task
  * @param[in] next tcb of next task which will be switched
  * @return On success, TTRACE_VALID is returned. On failure, TTRACE_INVALID is returned and errno is set appropriately.
- * @since Tizen RT v1.1
+ * @since TizenRT v1.1
  */
 int trace_sched(struct tcb_s *prev, struct tcb_s *next);
 #else

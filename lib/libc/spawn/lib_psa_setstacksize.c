@@ -56,11 +56,10 @@
 
 #include <tinyara/config.h>
 
-#include <sched.h>
-#include <spawn.h>
-#include <assert.h>
-
 #ifndef CONFIG_BUILD_KERNEL
+#include <sys/types.h>
+#include <spawn.h>
+#include <errno.h>
 
 /****************************************************************************
  * Public Functions
@@ -86,7 +85,10 @@
 
 int task_spawnattr_setstacksize(FAR posix_spawnattr_t *attr, size_t stacksize)
 {
-	DEBUGASSERT(attr);
+	if (!attr) {
+		return EINVAL;
+	}
+
 	attr->stacksize = stacksize;
 	return OK;
 }

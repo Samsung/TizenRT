@@ -205,6 +205,9 @@ download()
 erase()
 {
 	case $optarg in
+		OTA|ota)
+			PART_NAME=ota
+			;;
 		USERFS|userfs)
 			PART_NAME=user
 			;;

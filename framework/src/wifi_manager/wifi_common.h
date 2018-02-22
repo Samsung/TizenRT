@@ -39,6 +39,7 @@ typedef enum {
 	WIFI_UTILS_TIMEOUT,
 	WIFI_UTILS_BUSY,
 	WIFI_UTILS_FILE_ERROR,
+	WIFI_UTILS_ALREADY_CONNECTED,
 } wifi_utils_result_e;
 
 

@@ -75,7 +75,7 @@ struct http_keyvalue_list_t {
  * @param[in] list the keyvalue list to be initialized.
  * @return On success, HTTP_OK(0) is returned.
  *         On failure, HTTP_ERROR(-1) is returned.
- * @since Tizen RT v1.0
+ * @since TizenRT v1.0
  */
 int   http_keyvalue_list_init(struct http_keyvalue_list_t *list);
 
@@ -85,7 +85,7 @@ int   http_keyvalue_list_init(struct http_keyvalue_list_t *list);
  * @param[in] list the keyvalue list to be freed.
  * @return On success, HTTP_OK(0) is returned.
  *         On failure, HTTP_ERROR(-1) is returned.
- * @since Tizen RT v1.0
+ * @since TizenRT v1.0
  */
 int   http_keyvalue_list_release(struct http_keyvalue_list_t *list);
 
@@ -97,7 +97,7 @@ int   http_keyvalue_list_release(struct http_keyvalue_list_t *list);
  * @param[in] value the string to be a value.
  * @return On success, HTTP_OK(0) is returned.
  *         On failure, HTTP_ERROR(-1) is returned.
- * @since Tizen RT v1.0
+ * @since TizenRT v1.0
  */
 int   http_keyvalue_list_add(struct http_keyvalue_list_t *list, const char *key, const char *value);
 
@@ -108,7 +108,7 @@ int   http_keyvalue_list_add(struct http_keyvalue_list_t *list, const char *key,
  * @param[in] list the list that has keyvalue to be deleted.
  * @return On success, HTTP_OK(0) is returned.
  *         On failure, HTTP_ERROR(-1) is returned.
- * @since Tizen RT v1.0
+ * @since TizenRT v1.0
  */
 int   http_keyvalue_list_delete_tail(struct http_keyvalue_list_t *list);
 
@@ -119,7 +119,7 @@ int   http_keyvalue_list_delete_tail(struct http_keyvalue_list_t *list);
  * @param[in] key the key to find a value.
  * @return On success, a value is returned.
  *         On failure, "(null)" is returned.
- * @since Tizen RT v1.0
+ * @since TizenRT v1.0
  */
 char *http_keyvalue_list_find(struct http_keyvalue_list_t *list, const char *key);
 

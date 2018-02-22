@@ -8,12 +8,15 @@ Targets Supported:
 
 1. lm3s6963-ek  
 NOTE:  
-Tizen RT supports three memory options for lm3s6963-ek board;
+TizenRT supports three memory options for lm3s6963-ek board;
 - 64KB RAM requirement configuration which matches with real memory of lm3s6963-ek board
 - 1MB RAM requirement which can be run on QEMU only with the patch in TizenRT/build/configs/qemu/qemu-2.10.0-rc2_1m_ram_size.patch
 - 16MB RAM requirement which can be run on QEMU only with the patch in TizenRT/build/configs/qemu/qemu-2.10.0-rc2_16m_ram_size.patch
 
 ## Environment Set-up
+This section covers board-specific environment set-up.  
+Please set TizenRT common environment, [quick start](https://github.com/Samsung/TizenRT#quick-start), first before doing below.
+
 ### QEMU installation
 
 ```
@@ -32,8 +35,8 @@ sudo ln qemu-system-arm /usr/local/bin/qemu-system-arm
 ## How to program a binary
 
 There are two methods, using QEMU command or make command.  
-After building Tizen RT, follow below steps at $TIZENRT_BASEDIR/os folder.  
-TIZENRT_BASEDIR was set at [[Getting the sources]](../../../README.md#getting-the-sources) tab of Quick Start.
+After building TizenRT, follow below steps at $TIZENRT_BASEDIR/os folder.  
+See [[Getting the sources]](https://github.com/Samsung/TizenRT#getting-the-sources) for how to set *TIZENRT_BASEDIR*.
 
 ### Using QEMU command
 
@@ -49,7 +52,7 @@ make download
 
 ## How to debug
 
-To debug Tizen RT on QEMU, GDB should be connected through below commands.
+To debug TizenRT on QEMU, GDB should be connected through below commands.
 
 ```
 arm-none-eabi-gdb

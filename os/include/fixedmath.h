@@ -245,7 +245,7 @@ extern "C" {
  * @param[in] m1 first operand
  * @param[in] m2 second operand
  * @return the result of two multiplication
- * @since Tizen RT v1.1
+ * @since TizenRT v1.1
  */
 b16_t b16mulb16(b16_t m1, b16_t m2);
 /**
@@ -254,7 +254,7 @@ b16_t b16mulb16(b16_t m1, b16_t m2);
  * @param[in] m1 first operand
  * @param[in] m2 second operand
  * @return the result of two multiplication
- * @since Tizen RT v1.1
+ * @since TizenRT v1.1
  */
 ub16_t ub16mulub16(ub16_t m1, ub16_t m2);
 
@@ -264,7 +264,7 @@ ub16_t ub16mulub16(ub16_t m1, ub16_t m2);
  * @details @b #include <fixedmath.h>
  * @param[in] a first operand
  * @return the result of square
- * @since Tizen RT v1.1
+ * @since TizenRT v1.1
  */
 b16_t b16sqr(b16_t a);
 /**
@@ -272,7 +272,7 @@ b16_t b16sqr(b16_t a);
  * @details @b #include <fixedmath.h>
  * @param[in] a first operand
  * @return the result of square
- * @since Tizen RT v1.1
+ * @since TizenRT v1.1
  */
 ub16_t ub16sqr(ub16_t a);
 
@@ -283,7 +283,7 @@ ub16_t ub16sqr(ub16_t a);
  * @param[in] num a dividend
  * @param[in] denom a divisor
  * @return the result of divide
- * @since Tizen RT v1.1
+ * @since TizenRT v1.1
  */
 b16_t b16divb16(b16_t num, b16_t denom);
 /**
@@ -292,7 +292,7 @@ b16_t b16divb16(b16_t num, b16_t denom);
  * @param[in] num a dividend
  * @param[in] denom a divisor
  * @return the result of divide
- * @since Tizen RT v1.1
+ * @since TizenRT v1.1
  */
 ub16_t ub16divub16(ub16_t num, ub16_t denom);
 #endif
@@ -303,7 +303,7 @@ ub16_t ub16divub16(ub16_t num, ub16_t denom);
  * @details @b #include <fixedmath.h>
  * @param[in] rad a radian value
  * @return the result of sine operation
- * @since Tizen RT v1.1
+ * @since TizenRT v1.1
  */
 b16_t b16sin(b16_t rad);
 /**
@@ -311,7 +311,7 @@ b16_t b16sin(b16_t rad);
  * @details @b #include <fixedmath.h>
  * @param[in] rad a radian value
  * @return the result of cosine operation
- * @since Tizen RT v1.1
+ * @since TizenRT v1.1
  */
 b16_t b16cos(b16_t rad);
 /**
@@ -321,7 +321,7 @@ b16_t b16cos(b16_t rad);
  * @param[in] y a radian y value
  * @param[in] x a radian x value
  * @return the result of tangent operation
- * @since Tizen RT v1.1
+ * @since TizenRT v1.1
  */
 b16_t b16atan2(b16_t y, b16_t x);
 

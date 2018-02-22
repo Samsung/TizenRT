@@ -33,8 +33,8 @@
 #include <fcntl.h>
 #include <stdbool.h>
 
-#include <include/iotbus/iotbus_gpio.h>
-#include <include/iotbus/iotbus_error.h>
+#include <iotbus/iotbus_gpio.h>
+#include <iotbus/iotbus_error.h>
 #include "iotapi_evt_handler.h"
 
 #define zdbg printf

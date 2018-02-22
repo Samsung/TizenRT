@@ -32,8 +32,8 @@ config EXAMPLES_I2SCHAR_TXBUFFERS
 	---help---
 		This is the default number of audio buffers to send before the TX
 		transfers terminate.  When both TX and RX transfers terminate, the
-		task exits (and, if an NSH builtin, the i2schar command returns).
-		This number can be changed from the NSH command line.
+		task exits (and, if a builtin, the i2schar command returns).
+		This number can be changed from the TASH command line.
 
 config EXAMPLES_I2SCHAR_TXSTACKSIZE
 	int "Transmitter thread stack size"
@@ -57,8 +57,8 @@ config EXAMPLES_I2SCHAR_RXBUFFERS
 	---help---
 		This is the default number of audio buffers to receive before the RX
 		transfers terminate.  When both TX and RX transfers terminate, the
-		task exits (and, if an NSH builtin, the i2schar command returns).
-		This number can be changed from the NSH command line.
+		task exits (and, if a builtin, the i2schar command returns).
+		This number can be changed from the TASH command line.
 
 config EXAMPLES_I2SCHAR_RXSTACKSIZE
 	int "Receiver thread stack size"

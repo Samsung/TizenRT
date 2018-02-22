@@ -932,7 +932,7 @@
 #define ADC_PP_APSHT             0x01000000	/* Application-Programmable Sample-and-Hold Time */
 #define ADC_PP_TS                0x00800000	/* Temperature Sensor */
 #define ADC_PP_TYPE_SAR          0x00000000	/* SAR */
-#define ADC_PP_MCR_FULL          0x00000007	/* Full conversion rate (FCONV) as defined by TADC and NSH */
+#define ADC_PP_MCR_FULL          0x00000007	/* Full conversion rate (FCONV) as defined by TADC */
 #define ADC_PP_MSR_125K          0x00000001	/* 125 ksps */
 #define ADC_PP_MSR_250K          0x00000003	/* 250 ksps */
 #define ADC_PP_MSR_500K          0x00000005	/* 500 ksps */
@@ -949,7 +949,7 @@
 #define ADC_PC_MCR_1_8           0x00000001	/* Eighth conversion rate. After a conversion completes, the logic pauses for 112 TADC periods before starting the next conversion */
 #define ADC_PC_MCR_1_4           0x00000003	/* Quarter conversion rate. After a conversion completes, the logic pauses for 48 TADC periods before starting the next conversion */
 #define ADC_PC_MCR_1_2           0x00000005	/* Half conversion rate. After a conversion completes, the logic pauses for 16 TADC periods before starting the next conversion */
-#define ADC_PC_MCR_FULL          0x00000007	/* Full conversion rate (FCONV) as defined by TADC and NSH */
+#define ADC_PC_MCR_FULL          0x00000007	/* Full conversion rate (FCONV) as defined by TADC */
 
 /* Bit fields in the TIVA_ADC_CC register. */
 

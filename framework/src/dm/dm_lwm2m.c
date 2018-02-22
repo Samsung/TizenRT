@@ -242,7 +242,7 @@ int dm_lwm2m_get_client_state(dm_lwm2m_client_state_e *state)
  *
  * @return     On success, 0 is returned.
  *             On failure, a negative value is returned.
- * @since Tizen RT v1.0
+ * @since TizenRT v1.0
  */
 int dm_lwm2m_display_client_resource(char *buffer)
 {

@@ -108,7 +108,7 @@ extern "C" {
  * @param[in] mac_addr the mac address of network interface
  * @param[in] mac_len the length of mac address
  * @return On success, handle. On failure, returns null
- * @since Tizen RT v1.0
+ * @since TizenRT v1.0
  */
 void *dhcpc_open(const char *intf);
 
@@ -118,7 +118,7 @@ void *dhcpc_open(const char *intf);
  * @param[in] handle generic data structure that contains dhcpc information
  * @param[out] presult dhcp informations that contain ip address, netmask and gateway
  * @return On success, 0. On failure, returns negative
- * @since Tizen RT v1.0
+ * @since TizenRT v1.0
  */
 int dhcpc_request(void *handle, struct dhcpc_state *presult);
 
@@ -127,7 +127,7 @@ int dhcpc_request(void *handle, struct dhcpc_state *presult);
  *
  * @param[in] handle generic data structure that contains dhcpc information
  * @return none
- * @since Tizen RT v1.0
+ * @since TizenRT v1.0
 */
 void dhcpc_close(void *handle);
 

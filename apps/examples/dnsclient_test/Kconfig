@@ -12,14 +12,6 @@ config EXAMPLES_DNSCLIENT_TEST
 
 if EXAMPLES_DNSCLIENT_TEST
 
-config EXAMPLES_DNSCLIENT_TEST_PROGNAME
-	string "Program name"
-	default "dnsclient"
-	depends on BUILD_KERNEL
-	---help---
-		This is the name of the program that will be use when the NSH ELF
-		program is installed.
-
 config EXAMPLES_DNSCLIENT_TEST_SERVER_PORT
 	int "DNS server port number"
 	default 53

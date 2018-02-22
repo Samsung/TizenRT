@@ -157,7 +157,7 @@ typedef struct _mqtt_client_s mqtt_client_t;
  * @details @b #include <network/mqtt/mqtt_api.h>
  * @param[in] config the information of MQTT client object configuration
  * @return On success, the handle of MQTT client object is returned. On failure, NULL is returned.
- * @since Tizen RT v1.1
+ * @since TizenRT v1.1
  */
 mqtt_client_t *mqtt_init_client(mqtt_client_config_t *config);
 
@@ -167,7 +167,7 @@ mqtt_client_t *mqtt_init_client(mqtt_client_config_t *config);
  * @details @b #include <network/mqtt/mqtt_api.h>
  * @param[in] handle the handle of MQTT client object
  * @return On success, 0 is returned. On failure, a negative value is returned.
- * @since Tizen RT v1.1
+ * @since TizenRT v1.1
  */
 int mqtt_deinit_client(mqtt_client_t *handle);
 
@@ -180,7 +180,7 @@ int mqtt_deinit_client(mqtt_client_t *handle);
  * @param[in] port MQTT broker port
  * @param[in] keep_alive MQTT keep-alive time in second
  * @return On success, 0 is returned. On failure, a negative value is returned.
- * @since Tizen RT v1.1
+ * @since TizenRT v1.1
  */
 int mqtt_connect(mqtt_client_t *handle, char *addr, int port, int keep_alive);
 
@@ -190,7 +190,7 @@ int mqtt_connect(mqtt_client_t *handle, char *addr, int port, int keep_alive);
  * @details @b #include <network/mqtt/mqtt_api.h>
  * @param[in] handle the handle of MQTT client object
  * @return On success, 0 is returned. On failure, a negative value is returned.
- * @since Tizen RT v1.1
+ * @since TizenRT v1.1
  */
 int mqtt_disconnect(mqtt_client_t *handle);
 
@@ -205,7 +205,7 @@ int mqtt_disconnect(mqtt_client_t *handle);
  * @param[in] qos the Quality of Service to be used for the message. QoS value should be 0,1 or 2.
  * @param[in] retain the flag to make the message retained.
  * @return On success, 0 is returned. On failure, a negative value is returned.
- * @since Tizen RT v1.1
+ * @since TizenRT v1.1
  */
 int mqtt_publish(mqtt_client_t *handle, char *topic, char *data, uint32_t data_len, uint8_t qos, uint8_t retain);
 
@@ -217,7 +217,7 @@ int mqtt_publish(mqtt_client_t *handle, char *topic, char *data, uint32_t data_l
  * @param[in] topic the topic on which the message to be unsubscribed
  * @param[in] qos the Quality of Service for the subscription.  QoS value should be 0,1 or 2.
  * @return On success, 0 is returned. On failure, a negative value is returned.
- * @since Tizen RT v1.1
+ * @since TizenRT v1.1
  */
 int mqtt_subscribe(mqtt_client_t *handle, char *topic, uint8_t qos);
 
@@ -228,7 +228,7 @@ int mqtt_subscribe(mqtt_client_t *handle, char *topic, uint8_t qos);
  * @param[in] handle the handle of MQTT client object
  * @param[in] topic the topic on which the message to be unsubscribed
  * @return On success, 0 is returned. On failure, a negative value is returned.
- * @since Tizen RT v1.1
+ * @since TizenRT v1.1
  */
 int mqtt_unsubscribe(mqtt_client_t *handle, char *topic);
 

@@ -58,7 +58,6 @@
 
 #include <sched.h>
 #include <spawn.h>
-#include <assert.h>
 #include <errno.h>
 
 /****************************************************************************
@@ -91,9 +90,7 @@ int posix_spawnattr_init(posix_spawnattr_t *attr)
 	struct sched_param param;
 	int ret;
 
-	DEBUGASSERT(attr);
-
-	if (attr == NULL) {
+	if (!attr) {
 		return EINVAL;
 	}
 

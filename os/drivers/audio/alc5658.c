@@ -726,7 +726,6 @@ static void alc5658_io_err_cb(FAR struct i2s_dev_s *dev, FAR void *arg, int flag
 	/* Call upper callback, let it post msg to user q
 	 * apb is set NULL, okay? Rethink
 	*/
-	lldbg("alc5658_io_err_cb flags: 0x%x\n", flags);
 	priv->dev.upper(priv->dev.priv, AUDIO_CALLBACK_IOERR, NULL, flags);
 	
 }
@@ -974,6 +973,11 @@ static int alc5658_ioctl(FAR struct audio_lowerhalf_s *dev, int cmd, unsigned lo
 
 	switch (cmd) {
 
+	case AUDIOIOC_PREPARE: {
+		/* TODO: Need to be implemented later */
+		audvdbg("AUDIOIOC_PREPARE: No Action Would be taken now \n");
+	}
+	break;
 	case AUDIOIOC_HWRESET: {
 		/* This should put ALC5658 in default state, reconfiguration needed */
 		audvdbg("AUDIOIOC_HWRESET: No Action Would be taken now \n");

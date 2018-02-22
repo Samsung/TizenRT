@@ -72,7 +72,7 @@
 #define KEY_DEVICE_SPECIFICATION_PLATFORM_PLATFORMVERSION   "platformVersion"
 #define KEY_DEVICE_SPECIFICATION_PLATFORM_OSVERSION     "osVersion"
 #define KEY_DEVICE_SPECIFICATION_PLATFORM_HARDWAREVERSION   "hardwareVersion"
-#define KEY_DEVICE_SPECIFICATION_PLATFORM_FIRMWAREVERSION   "v"
+#define KEY_DEVICE_SPECIFICATION_PLATFORM_FIRMWAREVERSION   "firmwareVersion"
 #define KEY_DEVICE_SPECIFICATION_PLATFORM_VENDORID  "vendorId"
 
 #define KEY_RESOURCES       "resources"
@@ -159,6 +159,9 @@ static char g_certificate_file_path[MAX_FILE_PATH_LENGTH + 1] = { 0 };
 static char g_private_key_file_path[MAX_FILE_PATH_LENGTH + 1] = { 0 };
 
 static char g_cloud_address[MAX_CLOUD_ADDRESS] = { 0 };
+static char *g_firmware_version;
+static char *g_vendor_id;
+static char *g_model_number;
 
 static char *g_manufacturer_name;
 static char *g_setup_id;
@@ -180,9 +183,6 @@ static bool is_there_cloud_data = false;
 static const char *origin_cloud_json_str = "{\n\
 		\"cloud\":    {\n\
 			\"address\":    \"52.40.216.160:5683\"\n\
-		},\n\
-		\"wifi\": {\n\
-			\"ssid\": \"unknown\"\n\
 		}\n\
 }";
 
@@ -239,6 +239,94 @@ const struct things_attribute_info_s const gstAttr_x_com_samsung_accesspointlist
 	}
 };
 
+#ifdef CONFIG_ST_THINGS_FOTA
+const struct things_attribute_info_s const gstAttr_oic_r_firmware[] = {
+	{
+		.key = "version",
+		.type = 3,
+		.mandatory = false,
+		.rw = 1
+	},
+	{
+		.key = "newversion",
+		.type = 3,
+		.mandatory = false,
+		.rw = 3
+	},
+	{
+		.key = "packageuri",
+		.type = 3,
+		.mandatory = false,
+		.rw = 3
+	},
+	{
+		.key = "packagesize",
+		.type = 1,
+		.mandatory = false,
+		.rw = 3
+	},
+	{
+		.key = "packagemd5",
+		.type = 3,
+		.mandatory = false,
+		.rw = 3
+	},
+	{
+		.key = "activecheck",
+		.type = 1,
+		.mandatory = false,
+		.rw = 1
+	},
+	{
+		.key = "update",
+		.type = 3,
+		.mandatory = false,
+		.rw = 3
+	},
+	{
+		.key = "vender",
+		.type = 3,
+		.mandatory = false,
+		.rw = 1
+	},
+	{
+		.key = "model",
+		.type = 3,
+		.mandatory = false,
+		.rw = 1
+	},
+	{
+		.key = "state",
+		.type = 1,
+		.mandatory = false,
+		.rw = 1
+	},
+	{
+		.key = "progress",
+		.type = 1,
+		.mandatory = false,
+		.rw = 1
+	},
+	{
+		.key = "result",
+		.type = 1,
+		.mandatory = false,
+		.rw = 1
+	},
+	{
+		.key = "updatetime",
+		.type = 3,
+		.mandatory = false,
+		.rw = 3
+	},
+	{
+		.key = "description",
+		.type = 3,
+		.mandatory = false,
+		.rw = 3
+	}
+};
+#endif
 static const struct st_resource_type_s const gst_resource_types[] = {
 	{
 		.rt = "x.com.samsung.provisioninginfo",
@@ -254,6 +342,26 @@ static const struct st_resource_type_s const gst_resource_types[] = {
 		.prop_cnt = 1,
 		.prop[0] = &gstAttr_x_com_samsung_accesspointlist[0]
 	}
+#ifdef CONFIG_ST_THINGS_FOTA
+	, {
+		.rt = "oic.r.firmware",
+		.prop_cnt = 14,
+		.prop[0] = &gstAttr_oic_r_firmware[0],
+		.prop[1] = &gstAttr_oic_r_firmware[1],
+		.prop[2] = &gstAttr_oic_r_firmware[2],
+		.prop[3] = &gstAttr_oic_r_firmware[3],
+		.prop[4] = &gstAttr_oic_r_firmware[4],
+		.prop[5] = &gstAttr_oic_r_firmware[5],
+		.prop[6] = &gstAttr_oic_r_firmware[6],
+		.prop[7] = &gstAttr_oic_r_firmware[7],
+		.prop[8] = &gstAttr_oic_r_firmware[8],
+		.prop[9] = &gstAttr_oic_r_firmware[9],
+		.prop[10] = &gstAttr_oic_r_firmware[10],
+		.prop[11] = &gstAttr_oic_r_firmware[11],
+		.prop[12] = &gstAttr_oic_r_firmware[12],
+		.prop[13] = &gstAttr_oic_r_firmware[13]
+	}
+#endif
 };
 
 static const struct things_resource_info_s const gstResources[] = {
@@ -273,6 +381,16 @@ static const struct things_resource_info_s const gstResources[] = {
 		.rt_cnt = 1,
 		.policy = 3
 	}
+#ifdef CONFIG_ST_THINGS_FOTA
+	, {
+		.uri = "/firmware",
+		.interface_types = {"oic.if.baseline"},
+		.resource_types = {"oic.r.firmware"},
+		.if_cnt = 1,
+		.rt_cnt = 1,
+		.policy = 3
+	}
+#endif
 };
 
 /**
@@ -374,7 +492,7 @@ static st_device_s *create_device()
 	return device;
 }
 
-static size_t get_json_file_size(const char *filename)
+size_t get_json_file_size(const char *filename)
 {
 	size_t size = 0;
 	FILE *fp = fopen(filename, "r");
@@ -389,7 +507,7 @@ static size_t get_json_file_size(const char *filename)
 	return size;
 }
 
-static char *get_json_string_from_file(const char *filename)
+char *get_json_string_from_file(const char *filename)
 {
 	FILE *fp = NULL;
 	char *json_str = NULL;
@@ -437,7 +555,7 @@ static char *get_json_string_from_file(const char *filename)
 	return json_str;
 }
 
-static int set_json_string_into_file(const char *filename, const char *json_str)
+int set_json_string_into_file(const char *filename, const char *json_str)
 {
 	FILE *fp = NULL;
 	// 1. File Read
@@ -700,6 +818,13 @@ wifi_manager_softap_config_s *dm_get_softap_wifi_config(void)
 
 wifi_manager_ap_config_s *dm_get_homeap_wifi_config(void)
 {
+	wifi_manager_result_e res = wifi_manager_get_config(&g_homeap_info);
+
+	if (res != WIFI_MANAGER_SUCCESS) {
+		THINGS_LOG_V(THINGS_ERROR, TAG, "Get AP configuration failed [error code : %d]", res);
+	} else {
+		THINGS_LOG_D(THINGS_DEBUG, TAG, "[WIFI] Saved SSID : %s", g_homeap_info.ssid);
+	}
 	return &g_homeap_info;
 }
 
@@ -745,9 +870,8 @@ RETRY_JSON:
 		}
 
 		cJSON *cloud = cJSON_GetObjectItem(root, KEY_CLOUD);
-		cJSON *wifi = cJSON_GetObjectItem(root, KEY_WIFI);
 
-		if (NULL != wifi && NULL != cloud) {
+		if (NULL != cloud) {
 			/***** Cloud *****/
 			cJSON *address = cJSON_GetObjectItem(cloud, KEY_CLOUD_ADDRESS);
 			if (NULL != address) {
@@ -762,35 +886,7 @@ RETRY_JSON:
 			cJSON *user_id = cJSON_GetObjectItem(cloud, KEY_ID_USER);
 			cJSON *expire_time = cJSON_GetObjectItem(cloud, KEY_EXPIRE_TIME);
 
-			/***** Wifi *****/
-			cJSON *ssid = cJSON_GetObjectItem(wifi, KEY_WIFI_SSID);
-			if (NULL != ssid) {
-				memcpy(g_homeap_info.ssid, ssid->valuestring, strlen(ssid->valuestring) + 1);
-				THINGS_LOG_D(THINGS_DEBUG, TAG, "[WIFI] SSID Address : %s", g_homeap_info.ssid);
-				ret = 1;
-				g_homeap_info.ssid_length = strlen(g_homeap_info.ssid);
-			}
-
-			cJSON *passphrase = cJSON_GetObjectItem(wifi, KEY_WIFI_PASSPHARASE);
-			if (NULL != passphrase) {
-				memcpy(g_homeap_info.passphrase, passphrase->valuestring, strlen(passphrase->valuestring) + 1);
-				THINGS_LOG_D(THINGS_DEBUG, TAG, "[WIFI] PASSPHRASE Address : %s", g_homeap_info.passphrase);
-				ret = 1;
-				g_homeap_info.passphrase_length = strlen(g_homeap_info.passphrase);
-			}
-
-			cJSON *auth_type = cJSON_GetObjectItem(wifi, KEY_WIFI_AUTH_TYPE);
-
-			if (NULL != auth_type) {
-				g_homeap_info.ap_auth_type = auth_type->valueint;
-			}
-
-			cJSON *crypto_type = cJSON_GetObjectItem(wifi, KEY_WIFI_CRYPTO_TYPE);
-			if (NULL != crypto_type) {
-				g_homeap_info.ap_crypto_type = crypto_type->valueint;
-			}
-
-			if (address == NULL || accesstoken == NULL || refresh_accesstoken == NULL || user_id == NULL || expire_time == NULL || ssid == NULL || passphrase == NULL || auth_type == NULL || crypto_type == NULL) {
+			if (address == NULL || accesstoken == NULL || refresh_accesstoken == NULL || user_id == NULL || expire_time == NULL) {
 				THINGS_LOG_D(THINGS_DEBUG, TAG, "[ProvisionInfo] address = %d, accesstoken = %d, refresh_accesstoken = %d, user_id = %d, expire_time = %d", address, accesstoken, refresh_accesstoken, user_id, expire_time);
 				is_there_cloud_data = false;
 			} else {
@@ -903,6 +999,8 @@ static int parse_things_info_json(const char *filename)
 					}
 					if (NULL != model_number) {
 						memcpy(node->model_num, model_number->valuestring, strlen(model_number->valuestring) + 1);
+						g_model_number = things_malloc(sizeof(char) * strlen(model_number->valuestring) + 1);
+						strncpy(g_model_number, model_number->valuestring, strlen(model_number->valuestring) + 1);
 					}
 					if (NULL != platform_version) {
 						memcpy(node->ver_p, platform_version->valuestring, strlen(platform_version->valuestring) + 1);
@@ -915,9 +1013,13 @@ static int parse_things_info_json(const char *filename)
 					}
 					if (NULL != firmware_version) {
 						memcpy(node->ver_fw, firmware_version->valuestring, strlen(firmware_version->valuestring) + 1);
+						g_firmware_version = things_malloc(sizeof(char) * strlen(firmware_version->valuestring) + 1);
+						strncpy(g_firmware_version, firmware_version->valuestring, strlen(firmware_version->valuestring) + 1);
 					}
 					if (NULL != vendor_id) {
 						memcpy(node->vender_id, vendor_id->valuestring, strlen(vendor_id->valuestring) + 1);
+						g_vendor_id = things_malloc(sizeof(char) * strlen(vendor_id->valuestring) + 1);
+						strncpy(g_vendor_id, vendor_id->valuestring, strlen(vendor_id->valuestring) + 1);
 					}
 				}
 			}
@@ -1404,70 +1506,6 @@ static int get_signup_data_from_json(const char *filename, es_cloud_signup_s **c
 	}
 
 	THINGS_LOG_D(THINGS_DEBUG, TAG, THINGS_FUNC_EXIT);
-	return ret;
-}
-
-int save_acces_point_info(wifi_manager_ap_config_s *connect_config)
-{
-	THINGS_LOG_D(THINGS_INFO, TAG, THINGS_FUNC_ENTRY);
-
-	char *filename = g_things_cloud_file_path;
-
-	int ret = 0;
-	cJSON *root = NULL;
-	char *json_update = NULL;
-	char *json_str = get_json_string_from_file(filename);
-
-	if (json_str != NULL && strlen(json_str) > 0) {
-		root = cJSON_Parse((const char *)json_str);
-
-		cJSON *wifi = cJSON_GetObjectItem(root, KEY_WIFI);
-		if (wifi == NULL) {
-			THINGS_LOG_V_ERROR(THINGS_ERROR, TAG, "cloud cJSON is NULL.");
-			goto GOTO_OUT;
-		}
-
-		cJSON_DeleteItemFromObject(wifi, KEY_WIFI_SSID);
-		cJSON_DeleteItemFromObject(wifi, KEY_WIFI_PASSPHARASE);
-		cJSON_DeleteItemFromObject(wifi, KEY_WIFI_AUTH_TYPE);
-		cJSON_DeleteItemFromObject(wifi, KEY_WIFI_CRYPTO_TYPE);
-
-		if (strlen(connect_config->ssid) > 0) {
-			cJSON_AddStringToObject(wifi, KEY_WIFI_SSID, connect_config->ssid);
-		}
-		if (strlen(connect_config->passphrase) > 0) {
-			cJSON_AddStringToObject(wifi, KEY_WIFI_PASSPHARASE, connect_config->passphrase);
-		}
-		cJSON_AddNumberToObject(wifi, KEY_WIFI_AUTH_TYPE, connect_config->ap_auth_type);
-		cJSON_AddNumberToObject(wifi, KEY_WIFI_CRYPTO_TYPE, connect_config->ap_crypto_type);
-
-		json_update = cJSON_Print(root);
-
-		if (set_json_string_into_file(filename, json_update) == 0) {
-			THINGS_LOG_V_ERROR(THINGS_ERROR, TAG, "Fail : Store data to info file.");
-			goto GOTO_OUT;
-		}
-
-		ret = 1;
-	}							// End of if
-
-	THINGS_LOG_D(THINGS_INFO, TAG, "Update Success in \"%s\" file.", filename);
-
-GOTO_OUT:
-	if (root) {
-		cJSON_Delete(root);
-		root = NULL;
-	}
-
-	if (json_str != NULL) {
-		things_free(json_str);
-	}
-
-	if (json_update != NULL) {
-		things_free(json_update);
-	}
-
-	THINGS_LOG_D(THINGS_INFO, TAG, THINGS_FUNC_EXIT);
 	return ret;
 }
 
@@ -2336,4 +2374,16 @@ bool dm_get_easy_setup_use_artik_crt()
 char *dm_get_mnid()
 {
 	return g_manufacturer_name;
+}
+char *dm_get_firmware_version()
+{
+	return g_firmware_version;
+}
+char *dm_get_vendor_id()
+{
+	return g_vendor_id;
+}
+char *dm_get_model_number()
+{
+	return g_model_number;
 }

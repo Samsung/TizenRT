@@ -1,5 +1,5 @@
 # extra
-   This can be used to use full functionality of Tizen RT on ARTIK053.
+   This can be used to use full functionality of TizenRT on ARTIK053.
 
 ## Enabled Feature
 ### File system

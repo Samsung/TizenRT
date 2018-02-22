@@ -1,6 +1,6 @@
 # How to add new application
 
-The following files are required to integrate a new application with the Tizen RT build system:  
+The following files are required to integrate a new application with the TizenRT build system:  
 - **Source file**  
 - [**Kconfig**](#kconfig)  
 - [**Kconfig_ENTRY**](#kconfig_entry)  

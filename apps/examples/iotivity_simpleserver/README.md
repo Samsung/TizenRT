@@ -18,8 +18,8 @@ Select the 'Enable build IoTivity Samples' example in menuconfig.
 
 
 ## How to test
-### Server (Tizen RT)
-Flash Tizen RT binary to the board.
+### Server (TizenRT)
+Flash TizenRT binary to the board.
 
 Run the TASH
 ```bash

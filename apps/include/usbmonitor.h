@@ -88,13 +88,13 @@ extern "C" {
  *   Start and top the USB monitor daemon.  These are normally controlled
  *   from the USB command line, but the ability to control these
  *   programmatically is also helpful (for example, so that the daemon is
- *   running before NSH starts).
+ *   running before TASH starts).
  *
  * Input Parameters:
  *   Standard task parameters.  These can be called or spawned.  Since the
  *   return almost immediately, it is fine to just call the functions.  The
  *   parameters are not used so you can pass 0 and NULL, respectivley; this
- *   is done this way so that these functions can be NSH builtin
+ *   is done this way so that these functions can be TASH builtin
  *   applications.
  *
  * Returned values:
