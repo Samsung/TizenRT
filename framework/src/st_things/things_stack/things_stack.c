@@ -217,7 +217,7 @@ static void sync_time_from_ntp(int guarantee_secs)
 				} else if ((init_tp.tv_sec + guarantee_secs) < sync_tp.tv_sec) {
 					break;
 				}
-				usleep(100000);				
+				usleep(100000);
 			}
 			if (time_sync) {
 				THINGS_LOG(THINGS_INFO, TAG, "ntpc_time sync done");
@@ -264,6 +264,7 @@ void things_wifi_sta_connected(wifi_manager_result_e res)
 void things_wifi_sta_disconnected(void)
 {
 	THINGS_LOG_D(THINGS_INFO, TAG, "T%d --> %s", getpid(), __FUNCTION__);
+	things_wifi_changed_call_func(0, NULL, NULL);
 }
 
 void things_wifi_soft_ap_sta_joined(void)
