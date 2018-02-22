@@ -114,6 +114,10 @@ static inline void timer_free(struct posix_timer_s *timer)
 		irqrestore(flags);
 		sched_kfree(timer);
 	}
+
+	/* Mark this timer is not in use */
+
+	timer->pt_flags &= ~PT_FLAGS_INUSE;
 }
 
 /********************************************************************************
