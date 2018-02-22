@@ -123,4 +123,14 @@ To build your project using the build project command:
 You can check the build logs in the **Console** view.  
 ![Build logs](media/rt_build_logs_smartthings.png)  
 
+### 5. Flash the Project  
+To upload your project to the board, you need to flash it:  
+1. Connect the board to your computer.  
+2. Select the project in the **Project Exploer** view.  
+3. To flash the TizenRT project:  
+     i. In the Tizen Studio for RT toolbar, click the **Flash** icon.  
+    ii. Select a flash option **'ALL'** and click **OK**.  
+![Flash option](media/rt_flash_option.png)  
+You can see the status in the **Console** view.
+![Flash logs](media/rt_flash_logs.png)  
 
