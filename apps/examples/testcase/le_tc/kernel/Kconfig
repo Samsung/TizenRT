@@ -48,6 +48,7 @@ config TC_KN_ALL
 	select TC_KERNEL_TASK
 	select TC_KERNEL_TIMER
 	select TC_KERNEL_UMM_HEAP
+	select TC_KERNEL_WORK_QUEUE
 	select ITC_KERNEL_ENVIRON
 	select ITC_KERNEL_LIBC_PTHREAD
 	select ITC_KERNEL_LIBC_SEMAPHORE
@@ -208,9 +209,14 @@ config TC_KERNEL_TASH_STACKMONITOR
 	bool "StackMonitor"
 	default n
 
+config TC_KERNEL_WORK_QUEUE
+	bool "wqueue"
+	default n
+
 config ITC_KERNEL_ENVIRON
 	bool "ITC Environ"
 	default n
+
 if ITC_KERNEL_ENVIRON
 config ITC_ENV_LOOP_SIZE
 	int "Iterator Count"

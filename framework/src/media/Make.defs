@@ -15,17 +15,16 @@
 # language governing permissions and limitations under the License.
 #
 ###########################################################################
+
+ifeq ($(CONFIG_MEDIA), y)
 ifeq ($(CONFIG_MEDIA_PLAYER), y)
-#CSRCS += media_player.c
-CXXSRCS += MediaPlayer.cxx
+CXXSRCS += MediaPlayer.cxx DataSource.cxx PlayerDataSource.cxx
 endif
 
 ifeq ($(CONFIG_MEDIA_RECORDER), y)
-#CSRCS += media_recorder.c
-CXXSRCS += MediaRecorder.cxx
+CXXSRCS += MediaRecorder.cxx DataSource.cxx RecorderDataSource.cxx
 endif
-
-#CSRCS += media_utils.c
 
 DEPPATH += --dep-path src/media
 VPATH += :src/media
+endif

@@ -60,6 +60,7 @@
 #include <sched.h>
 #include <debug.h>
 
+#include <tinyara/irq.h>
 #include <tinyara/arch.h>
 
 #include "psr.h"
@@ -121,17 +122,18 @@
 
 void up_schedule_sigaction(struct tcb_s *tcb, sig_deliver_t sigdeliver)
 {
-	/* Refuse to handle nested signal actions */
+	irqstate_t flags;
+
+	/* Make sure that interrupts are disabled */
+
+	flags = irqsave();
 
 	svdbg("tcb=0x%p sigdeliver=0x%p\n", tcb, sigdeliver);
+	DEBUGASSERT(tcb != NULL && sigdeliver != NULL);
+
+	/* Refuse to handle nested signal actions */
 
 	if (!tcb->xcp.sigdeliver) {
-		irqstate_t flags;
-
-		/* Make sure that interrupts are disabled */
-
-		flags = irqsave();
-
 		/* First, handle some special cases when the signal is being delivered
 		 * to the currently executing task.
 		 */
@@ -162,7 +164,7 @@ void up_schedule_sigaction(struct tcb_s *tcb, sig_deliver_t sigdeliver)
 				 * delivered.
 				 */
 
-				tcb->xcp.sigdeliver = sigdeliver;
+				tcb->xcp.sigdeliver = (FAR void *)sigdeliver;
 				tcb->xcp.saved_pc = current_regs[REG_PC];
 #ifdef CONFIG_ARMV7M_USEBASEPRI
 				tcb->xcp.saved_basepri = current_regs[REG_BASEPRI];
@@ -207,7 +209,7 @@ void up_schedule_sigaction(struct tcb_s *tcb, sig_deliver_t sigdeliver)
 			 * by the signal trampoline after the signal has been delivered.
 			 */
 
-			tcb->xcp.sigdeliver = sigdeliver;
+			tcb->xcp.sigdeliver = (FAR void *)sigdeliver;
 			tcb->xcp.saved_pc = tcb->xcp.regs[REG_PC];
 #ifdef CONFIG_ARMV7M_USEBASEPRI
 			tcb->xcp.saved_basepri = tcb->xcp.regs[REG_BASEPRI];
@@ -234,9 +236,9 @@ void up_schedule_sigaction(struct tcb_s *tcb, sig_deliver_t sigdeliver)
 			tcb->xcp.regs[REG_LR] = EXC_RETURN_PRIVTHR;
 #endif
 		}
-
-		irqrestore(flags);
 	}
+
+	irqrestore(flags);
 }
 
 #endif							/* !CONFIG_DISABLE_SIGNALS */

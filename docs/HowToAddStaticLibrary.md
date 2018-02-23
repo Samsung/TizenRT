@@ -18,7 +18,7 @@ VPATH += chip/abc
 EXTRA_LIBS += chip/abc/libnew.a
 ```
 
-This change makes it add to Tizen RT binary by Makefile which is at *os/arch/arm/src* folder.
+This change makes it add to TizenRT binary by Makefile which is at *os/arch/arm/src* folder.
 ```
 $(BIN_DIR)/tinyara$(EXEEXT): $(HEAD_OBJ) board/libboard$(LIBEXT)
 	$(Q) echo "LD: tinyara"
@@ -29,7 +29,7 @@ $(BIN_DIR)/tinyara$(EXEEXT): $(HEAD_OBJ) board/libboard$(LIBEXT)
 
 ## Adding it as a new library
 
-Tizen RT includes it as separated library, not merge it to existed library.
+TizenRT includes it as separated library, not merge it to existed library.
 
 1. Add it in *Libtargets.mk*.  
     ```
@@ -50,6 +50,6 @@ Tizen RT includes it as separated library, not merge it to existed library.
     ```
 
     In flat build, there is no difference between TINYARALIBS and USERLIBS.  
-    But in protected build and kernel build, Tizen RT splits kernel space and user space. So, new static library should be included at appropriate space.
+    But in protected build and kernel build, TizenRT splits kernel space and user space. So, new static library should be included at appropriate space.
 
 The *LIB_PATH* should be a relative path from *os*.

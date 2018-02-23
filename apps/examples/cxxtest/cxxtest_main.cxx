@@ -70,14 +70,20 @@
 #include <list>
 
 
-
 #include <tinyara/init.h>
 #include <apps/platform/cxxinitialize.h>
+#include <thread>
+#include <mutex>
+#include <condition_variable>
+#include <queue>
+#include <atomic>
+#include <functional>
+#include <iostream>
+#include <fstream>
 
-#include "MediaPlayer.hpp"
-#include "MediaRecorder.hpp"
 
-#include "jsdosa.h"
+#include <media/MediaPlayer.hpp>
+#include <media/MediaRecorder.hpp>
 
 using namespace std;
 using namespace Media;
@@ -97,37 +103,43 @@ using namespace Media;
 #undef CXXTEST_ISTREAM
 #undef CXXTEST_EXCEPTION
 
-#ifdef CONFIG_UCLIBCXX_EXCEPTION
-#define CXXTEST_EXCEPTION
-#endif
-
-void printString()
-{
-	std::cout << "printstring: " << std::endl;
-}
-
-/*
-template<typename _Callable, typename... _Args>
-void enqueue(_Callable&& __f, _Args&&... __args)
-{
-	//unique_lock<std::mutex> lock(*qMtx);
-	//std::function<void()> func = std::bind(std::forward<_Callable>(__f), std::forward<_Args>(__args)...);	
-	//cmdQueue.push(func);
-	//cv.notify_one();
-	std::cout << "18: " << std::endl;
-}*/
 //***************************************************************************
 // Private Classes
 //***************************************************************************
 
-JSDOSA jsdosa;
+#ifdef CXXTEST_RTTI
+class Base
+{
+public:
+	virtual void printBase(void) {};
+};
+
+class Extend : public Base
+{
+public:
+	void printExtend(void)
+	{
+		cout << "extend" << endl;
+	}
+};
+#endif
+
+//***************************************************************************
+// Private Data
+//***************************************************************************
+
+//***************************************************************************
+// Private Functions
+//***************************************************************************
 
 //***************************************************************************
 // Public Functions
 //***************************************************************************
 void test()
 {
+
 	MediaPlayer p;
+
 	p.create();
 	p.start();
 	p.pause();
@@ -141,6 +153,7 @@ void test()
 	r.pause();
 	r.stop();
 	r.destroy();
+
 }
 
 //***************************************************************************

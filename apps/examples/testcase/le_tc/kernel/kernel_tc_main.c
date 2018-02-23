@@ -194,6 +194,10 @@ int tc_kernel_main(int argc, char *argv[])
 	umm_heap_main();
 #endif
 
+#ifdef CONFIG_TC_KERNEL_WORK_QUEUE
+	wqueue_main();
+#endif
+
 #ifdef CONFIG_ITC_KERNEL_ENVIRON
 	itc_environ_main();
 #endif

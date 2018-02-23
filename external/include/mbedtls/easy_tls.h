@@ -101,7 +101,7 @@ typedef struct tls_session_context {
  * @param[in] cred     a structure pointer of key and certificates
  * @return On success, a structure pointer of tls context will be returned.
  *         On failure, NULL will be returned.
- * @since Tizen RT v1.0
+ * @since TizenRT v1.0
  *
  */
 tls_ctx *TLSCtx(tls_cred *cred);
@@ -113,7 +113,7 @@ tls_ctx *TLSCtx(tls_cred *cred);
  * @param[in] ctx	a structure pointer of tls context.
  * @return On success,	TLS_SUCCESS(0) will be returned.
  *         On failure,	positive value will be returned.
- * @since Tizen RT v1.0
+ * @since TizenRT v1.0
  *
  */
 int TLSCtx_free(tls_ctx *ctx);
@@ -128,7 +128,7 @@ int TLSCtx_free(tls_ctx *ctx);
  * @param[in] opt	a structure pointer including several tls options.
  * @return On success,	a structure pointer of tls session context will be returned.
  *         On failure,	positive value will be returned.
- * @since Tizen RT v1.0
+ * @since TizenRT v1.0
  *
  */
 tls_session *TLSSession(int fd, tls_ctx *ctx, tls_opt *opt);
@@ -140,7 +140,7 @@ tls_session *TLSSession(int fd, tls_ctx *ctx, tls_opt *opt);
  * @param[in] session	a structure pointer of tls session context.
  * @return On success,	TLS_SUCCESS(0) will be returned.
  *         On failure,	positive value will be returned.
- * @since Tizen RT v1.0
+ * @since TizenRT v1.0
  *
  */
 int TLSSession_free(tls_session *session);
@@ -154,7 +154,7 @@ int TLSSession_free(tls_session *session);
  * @param[in] size	send data size.
  * @return On success,	sent size will be returned.
  *         On failure,	0 or negative value will be returned.
- * @since Tizen RT v1.0
+ * @since TizenRT v1.0
  *
  */
 int TLSSend(tls_session *session, unsigned char *buf, size_t size);
@@ -168,7 +168,7 @@ int TLSSend(tls_session *session, unsigned char *buf, size_t size);
  * @param[in] size	received data size.
  * @return On success,	received size will be returned.
  *         On failure,	0 or negative value will be returned.
- * @since Tizen RT v1.0
+ * @since TizenRT v1.0
  *
  */
 int TLSRecv(tls_session *session, unsigned char *buf, size_t size);

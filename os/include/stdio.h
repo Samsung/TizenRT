@@ -121,28 +121,28 @@
  * @brief put a byte on a stream
  * @details @b #include <stdio.h> \n
  * POSIX API (refer to : http://pubs.opengroup.org/onlinepubs/9699919799/)
- * @since Tizen RT v1.0
+ * @since TizenRT v1.0
  */
 #define putc(c, s) fputc((c), (s))
 /**
  * @brief put a byte on a stdout stream
  * @details @b #include <stdio.h> \n
  * POSIX API (refer to : http://pubs.opengroup.org/onlinepubs/9699919799/)
- * @since Tizen RT v1.0
+ * @since TizenRT v1.0
  */
 #define putchar(c) fputc(c, stdout)
 /**
  * @brief get a byte from a stream
  * @details @b #include <stdio.h> \n
  * POSIX API (refer to : http://pubs.opengroup.org/onlinepubs/9699919799/)
- * @since Tizen RT v1.0
+ * @since TizenRT v1.0
  */
 #define getc(s)    fgetc(s)
 /**
  * @brief get a byte from a stdin stream
  * @details @b #include <stdio.h> \n
  * POSIX API (refer to : http://pubs.opengroup.org/onlinepubs/9699919799/)
- * @since Tizen RT v1.0
+ * @since TizenRT v1.0
  */
 #define getchar()  fgetc(stdin)
 /**
@@ -213,147 +213,147 @@ void clearerr(register FILE *stream);
  * @brief close a stream
  * @details @b #include <stdio.h> \n
  * POSIX API (refer to : http://pubs.opengroup.org/onlinepubs/9699919799/)
- * @since Tizen RT v1.0
+ * @since TizenRT v1.0
  */
 int fclose(FAR FILE *stream);
 /**
  * @brief flush a stream
  * @details @b #include <stdio.h> \n
  * POSIX API (refer to : http://pubs.opengroup.org/onlinepubs/9699919799/)
- * @since Tizen RT v1.0
+ * @since TizenRT v1.0
  */
 int fflush(FAR FILE *stream);
 /**
  * @brief test end-of-file indicator on a stream
  * @details @b #include <stdio.h> \n
  * POSIX API (refer to : http://pubs.opengroup.org/onlinepubs/9699919799/)
- * @since Tizen RT v1.0
+ * @since TizenRT v1.0
  */
 int feof(FAR FILE *stream);
 /**
  * @brief test error indicator on a stream
  * @details @b #include <stdio.h> \n
  * POSIX API (refer to : http://pubs.opengroup.org/onlinepubs/9699919799/)
- * @since Tizen RT v1.0
+ * @since TizenRT v1.0
  */
 int ferror(FAR FILE *stream);
 /**
  * @brief map a stream pointer to a file descriptor
  * @details @b #include <stdio.h> \n
  * POSIX API (refer to : http://pubs.opengroup.org/onlinepubs/9699919799/)
- * @since Tizen RT v1.0
+ * @since TizenRT v1.0
  */
 int fileno(FAR FILE *stream);
 /**
  * @brief get a byte from a stream
  * @details @b #include <stdio.h> \n
  * POSIX API (refer to : http://pubs.opengroup.org/onlinepubs/9699919799/)
- * @since Tizen RT v1.0
+ * @since TizenRT v1.0
  */
 int fgetc(FAR FILE *stream);
 /**
  * @brief get current file position information
  * @details @b #include <stdio.h> \n
  * POSIX API (refer to : http://pubs.opengroup.org/onlinepubs/9699919799/)
- * @since Tizen RT v1.0
+ * @since TizenRT v1.0
  */
 int fgetpos(FAR FILE *stream, FAR fpos_t *pos);
 /**
  * @brief get a string from a stream
  * @details @b #include <stdio.h> \n
  * POSIX API (refer to : http://pubs.opengroup.org/onlinepubs/9699919799/)
- * @since Tizen RT v1.0
+ * @since TizenRT v1.0
  */
 char *fgets(FAR char *s, int n, FAR FILE *stream);
 /**
  * @brief open a stream
  * @details @b #include <stdio.h> \n
  * POSIX API (refer to : http://pubs.opengroup.org/onlinepubs/9699919799/)
- * @since Tizen RT v1.0
+ * @since TizenRT v1.0
  */
 FAR FILE *fopen(FAR const char *path, FAR const char *type);
 /**
  * @brief open a stream
  * @details @b #include <stdio.h> \n
  * POSIX API (refer to : http://pubs.opengroup.org/onlinepubs/9699919799/)
- * @since Tizen RT v1.1
+ * @since TizenRT v1.1
  */
 FAR FILE *freopen(FAR const char *path, FAR const char *mode, FAR FILE *stream);
 /**
  * @brief assign buffering to a stream
  * @details @b #include <stdio.h> \n
  * POSIX API (refer to : http://pubs.opengroup.org/onlinepubs/9699919799/)
- * @since Tizen RT v1.1
+ * @since TizenRT v1.1
  */
 void   setbuf(FAR FILE *stream, FAR char *buf);
 /**
  * @brief assign buffering to a stream
  * @details @b #include <stdio.h> \n
  * POSIX API (refer to : http://pubs.opengroup.org/onlinepubs/9699919799/)
- * @since Tizen RT v1.1
+ * @since TizenRT v1.1
  */
 int    setvbuf(FAR FILE *stream, FAR char *buffer, int mode, size_t size);
 /**
  * @brief print formatted output
  * @details @b #include <stdio.h> \n
  * POSIX API (refer to : http://pubs.opengroup.org/onlinepubs/9699919799/)
- * @since Tizen RT v1.0
+ * @since TizenRT v1.0
  */
 int fprintf(FAR FILE *stream, FAR const char *format, ...);
 /**
  * @brief put a byte on a stream
  * @details @b #include <stdio.h> \n
  * POSIX API (refer to : http://pubs.opengroup.org/onlinepubs/9699919799/)
- * @since Tizen RT v1.0
+ * @since TizenRT v1.0
  */
 int fputc(int c, FAR FILE *stream);
 /**
  * @brief put a string on a stream
  * @details @b #include <stdio.h> \n
  * POSIX API (refer to : http://pubs.opengroup.org/onlinepubs/9699919799/)
- * @since Tizen RT v1.0
+ * @since TizenRT v1.0
  */
 int fputs(FAR const char *s, FAR FILE *stream);
 /**
  * @brief binary input
  * @details @b #include <stdio.h> \n
  * POSIX API (refer to : http://pubs.opengroup.org/onlinepubs/9699919799/)
- * @since Tizen RT v1.0
+ * @since TizenRT v1.0
  */
 size_t fread(FAR void *ptr, size_t size, size_t n_items, FAR FILE *stream);
 /**
  * @brief reposition a file-position indicator in a stream
  * @details @b #include <stdio.h> \n
  * POSIX API (refer to : http://pubs.opengroup.org/onlinepubs/9699919799/)
- * @since Tizen RT v1.0
+ * @since TizenRT v1.0
  */
 int fseek(FAR FILE *stream, long int offset, int whence);
 /**
  * @brief set current file position
  * @details @b #include <stdio.h> \n
  * POSIX API (refer to : http://pubs.opengroup.org/onlinepubs/9699919799/)
- * @since Tizen RT v1.0
+ * @since TizenRT v1.0
  */
 int fsetpos(FAR FILE *stream, FAR fpos_t *pos);
 /**
  * @brief return a file offset in a stream
  * @details @b #include <stdio.h> \n
  * POSIX API (refer to : http://pubs.opengroup.org/onlinepubs/9699919799/)
- * @since Tizen RT v1.0
+ * @since TizenRT v1.0
  */
 long ftell(FAR FILE *stream);
 /**
  * @brief binary output
  * @details @b #include <stdio.h> \n
  * POSIX API (refer to : http://pubs.opengroup.org/onlinepubs/9699919799/)
- * @since Tizen RT v1.0
+ * @since TizenRT v1.0
  */
 size_t fwrite(FAR const void *ptr, size_t size, size_t n_items, FAR FILE *stream);
 /**
  * @brief get a string from a stdin stream
  * @details @b #include <stdio.h> \n
  * POSIX API (refer to : http://pubs.opengroup.org/onlinepubs/9699919799/)
- * @since Tizen RT v1.0
+ * @since TizenRT v1.0
  */
 FAR char *gets(FAR char *s);
 /**
@@ -379,14 +379,14 @@ FAR char *gets(FAR char *s);
  * @param[out] s buffer to save string from stdin
  * @param[in] n size of string to save
  * @return On success, a pointer of buffer is returned. On failure, NULL is returned.
- * @since Tizen RT v1.0
+ * @since TizenRT v1.0
  */
 FAR char *gets_s(FAR char *s, rsize_t n);
 /**
  * @brief push byte back into input stream
  * @details @b #include <stdio.h> \n
  * POSIX API (refer to : http://pubs.opengroup.org/onlinepubs/9699919799/)
- * @since Tizen RT v1.0
+ * @since TizenRT v1.0
  */
 int ungetc(int c, FAR FILE *stream);
 
@@ -396,14 +396,14 @@ int ungetc(int c, FAR FILE *stream);
  * @brief print formatted output
  * @details @b #include <stdio.h> \n
  * POSIX API (refer to : http://pubs.opengroup.org/onlinepubs/9699919799/)
- * @since Tizen RT v1.0
+ * @since TizenRT v1.0
  */
 int printf(FAR const char *format, ...);
 /**
  * @brief put a string on standard output
  * @details @b #include <stdio.h> \n
  * POSIX API (refer to : http://pubs.opengroup.org/onlinepubs/9699919799/)
- * @since Tizen RT v1.0
+ * @since TizenRT v1.0
  */
 int puts(FAR const char *s);
 /**
@@ -418,7 +418,7 @@ int rename(FAR const char *oldpath, FAR const char *newpath);
  * @brief print formatted output
  * @details @b #include <stdio.h> \n
  * POSIX API (refer to : http://pubs.opengroup.org/onlinepubs/9699919799/)
- * @since Tizen RT v1.0
+ * @since TizenRT v1.0
  */
 int sprintf(FAR char *buf, FAR const char *format, ...);
 /**
@@ -433,28 +433,28 @@ int sprintf(FAR char *buf, FAR const char *format, ...);
  * @return The returned value is the number of characters allocated for the buffer,
  * or less than zero if an error occurred. Usually this means that the buffer
  * could not be allocated.
- * @since Tizen RT v1.0
+ * @since TizenRT v1.0
  */
 int asprintf(FAR char **ptr, FAR const char *fmt, ...);
 /**
  * @brief print formatted output
  * @details @b #include <stdio.h> \n
  * POSIX API (refer to : http://pubs.opengroup.org/onlinepubs/9699919799/)
- * @since Tizen RT v1.0
+ * @since TizenRT v1.0
  */
 int snprintf(FAR char *buf, size_t size, FAR const char *format, ...);
 /**
  * @brief convert formatted input
  * @details @b #include <stdio.h> \n
  * POSIX API (refer to : http://pubs.opengroup.org/onlinepubs/9699919799/)
- * @since Tizen RT v1.0
+ * @since TizenRT v1.0
  */
 int sscanf(FAR const char *buf, FAR const char *fmt, ...);
 /**
  * @brief write error messages to standard error
  * @details @b #include <stdio.h> \n
  * POSIX API (refer to : http://pubs.opengroup.org/onlinepubs/9699919799/)
- * @since Tizen RT v1.0
+ * @since TizenRT v1.0
  */
 void perror(FAR const char *s);
 
@@ -462,21 +462,21 @@ void perror(FAR const char *s);
  * @brief format output of a stdarg argument list
  * @details @b #include <stdio.h> \n
  * POSIX API (refer to : http://pubs.opengroup.org/onlinepubs/9699919799/)
- * @since Tizen RT v1.0
+ * @since TizenRT v1.0
  */
 int vprintf(FAR const char *format, va_list ap);
 /**
  * @brief format output of a stdarg argument list
  * @details @b #include <stdio.h> \n
  * POSIX API (refer to : http://pubs.opengroup.org/onlinepubs/9699919799/)
- * @since Tizen RT v1.0
+ * @since TizenRT v1.0
  */
 int vfprintf(FAR FILE *stream, const char *format, va_list ap);
 /**
  * @brief format output of a stdarg argument list
  * @details @b #include <stdio.h> \n
  * POSIX API (refer to : http://pubs.opengroup.org/onlinepubs/9699919799/)
- * @since Tizen RT v1.0
+ * @since TizenRT v1.0
  */
 int vsprintf(FAR char *buf, const char *format, va_list ap);
 /**
@@ -491,14 +491,14 @@ int vasprintf(FAR char **ptr, const char *fmt, va_list ap);
  * @brief format output of a stdarg argument list
  * @details @b #include <stdio.h> \n
  * POSIX API (refer to : http://pubs.opengroup.org/onlinepubs/9699919799/)
- * @since Tizen RT v1.0
+ * @since TizenRT v1.0
  */
 int vsnprintf(FAR char *buf, size_t size, const char *format, va_list ap);
 /**
  * @brief format input of a stdarg argument list
  * @details @b #include <stdio.h> \n
  * POSIX API (refer to : http://pubs.opengroup.org/onlinepubs/9699919799/)
- * @since Tizen RT v1.0
+ * @since TizenRT v1.0
  */
 int vsscanf(FAR const char *buf, FAR const char *s, va_list ap);
 
@@ -512,7 +512,7 @@ int vsscanf(FAR const char *buf, FAR const char *s, va_list ap);
  * @brief associate a stream with a file descriptor
  * @details @b #include <stdio.h> \n
  * POSIX API (refer to : http://pubs.opengroup.org/onlinepubs/9699919799/)
- * @since Tizen RT v1.0
+ * @since TizenRT v1.0
  */
 FAR FILE *fdopen(int fd, FAR const char *type);
 /**
@@ -538,7 +538,7 @@ FAR char *tempnam(FAR const char *dir, FAR const char *pfx);
  * @brief remove a file
  * @details @b #include <stdio.h> \n
  * POSIX API (refer to : http://pubs.opengroup.org/onlinepubs/9699919799/)
- * @since Tizen RT v1.1
+ * @since TizenRT v1.1
  */
 int remove(FAR const char *path);
 

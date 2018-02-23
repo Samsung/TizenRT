@@ -56,9 +56,10 @@
 
 #include <tinyara/config.h>
 
+#include <sys/types.h>
 #include <sched.h>
 #include <spawn.h>
-#include <assert.h>
+#include <errno.h>
 
 /****************************************************************************
  * Global Functions
@@ -84,7 +85,10 @@
 
 int posix_spawnattr_setschedparam(FAR posix_spawnattr_t *attr, FAR const struct sched_param *param)
 {
-	DEBUGASSERT(attr && param && (unsigned)param->sched_priority <= 0xff);
+	if (!attr || !param || (unsigned)param->sched_priority > SCHED_PRIORITY_MAX) {
+		return EINVAL;
+	}
+
 	attr->priority = (uint8_t)param->sched_priority;
 	return OK;
 }

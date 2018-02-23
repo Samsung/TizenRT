@@ -1,10 +1,10 @@
-# How to develop things using SmartThings Things SDK based Tizen RT
+# How to develop things using SmartThings Things SDK based TizenRT
 
-SmartThings Things(ST-Things) SDK is lightweight OCF development framework based Tizen RT.  
+SmartThings Things(ST-Things) SDK is lightweight OCF development framework based TizenRT.  
 It provides APIs to develop OCF devices and supports Samsung Connect Services provided by Samsung mobile devices to easily connect Samsung Cloud.
 
 ## Prerequisites
-### 1. To use Tizen RT
+### 1. To use TizenRT
 Please refer to each details.  
 
 - Toolchain installation [[Details]](../README.md#getting-the-toolchain)  
@@ -14,7 +14,7 @@ Please refer to each details.
 
 
 ### 2. To use Samsung Cloud
-A device developed using ST-Things SDK based Tizen RT can connect to Samsung Cloud.  
+A device developed using ST-Things SDK based TizenRT can connect to Samsung Cloud.  
 In order to work with the cloud, it is necessary to sign up Samsung Account at [SmartThings Developers](https://smartthings.developer.samsung.com/) site.  
 Then, follow the steps.  
 1. Get your MNID - Manufacturer ID - on [My Page](https://smartthings.developer.samsung.com/partner/dashboard)  

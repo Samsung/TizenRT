@@ -96,7 +96,7 @@ If you edit the SmartThings resources in your project later on, the Model Manage
 
 ### 4. Build and Flash the Project
 You must build your project before flashing or debugging it.  
-You can build a Tizen RT project in 2 ways: [using a batch build](#Using-Batch-Build) or [build project command](#Using-Build-Project).
+You can build a TizenRT project in 2 ways: [using a batch build](#Using-Batch-Build) or [build project command](#Using-Build-Project).
 
 #### Using Batch Build
 To build your project using the batch build command:  

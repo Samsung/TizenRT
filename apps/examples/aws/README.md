@@ -89,7 +89,7 @@ Built binary can be written into flash, using OpenOCD.
 
 Please see the [Environment Set-up](../../../build/configs/sidk_s5jt200/README.md#environment-set-up) to use OpenOCD.
 
-After building Tizen RT, follow below steps at $TIZENRT_BASEDIR/os folder.
+After building TizenRT, follow below steps at $TIZENRT_BASEDIR/os folder.
 
 ### Using download script
 

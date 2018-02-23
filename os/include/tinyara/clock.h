@@ -310,7 +310,7 @@ void clock_synchronize(void);
  * SYSTEM CALL API
  *
  * @return The current value of the system timer counter is returned.
- * @since Tizen RT v1.0
+ * @since TizenRT v1.0
  */
 systime_t clock_systimer(void);
 #endif

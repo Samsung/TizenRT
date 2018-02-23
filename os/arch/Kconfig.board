@@ -113,6 +113,14 @@ config BOARD_CRASHDUMP
 		"machine state" in a place where on the next reset can write it
 		to more sophisticated storage in a sane operating environment.
 
+config BOARD_ASSERT_AUTORESET
+	bool "Reset a board on assert status automatically"
+	default n
+	depends on BOARDCTL_RESET
+	---help---
+		Some cases do not need to stay assert status. This supports
+		board reset.
+
 config LIB_BOARDCTL
 	bool "Enable boardctl() interface"
 	default n

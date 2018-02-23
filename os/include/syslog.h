@@ -196,7 +196,7 @@ void closelog(void);
  * @brief control system log
  * @details @b #include <syslog.h> \n
  * POSIX API (refer to : http://pubs.opengroup.org/onlinepubs/9699919799/)
- * @since Tizen RT v1.0
+ * @since TizenRT v1.0
  */
 int syslog(int priority, FAR const char *format, ...);
 /**
@@ -208,7 +208,7 @@ int syslog(int priority, FAR const char *format, ...);
  * @param[in] src output format
  * @param[in] ap stdarg variable argument list macros
  * @return On success, number of characters written is returned. On failure, ERROR is returned.
- * @since Tizen RT v1.0
+ * @since TizenRT v1.0
  */
 int vsyslog(int priority, FAR const char *src, va_list ap);
 
@@ -246,7 +246,7 @@ int vsyslog(int priority, FAR const char *src, va_list ap);
  * @param[in] priority priority of lowsyslog
  * @param[in] format output format
  * @return On success, number of characters written is returned. On failure, ERROR is returned.
- * @since Tizen RT v1.0
+ * @since TizenRT v1.0
  */
 int lowsyslog(int priority, FAR const char *format, ...);
 /**
@@ -258,7 +258,7 @@ int lowsyslog(int priority, FAR const char *format, ...);
  * @param[in] format output format
  * @param[in] ap stdarg variable argument list macros
  * @return On success, number of characters written is returned. On failure, ERROR is returned.
- * @since Tizen RT v1.0
+ * @since TizenRT v1.0
  */
 int lowvsyslog(int priority, FAR const char *format, va_list ap);
 
@@ -302,7 +302,7 @@ int lowvsyslog(int priority, FAR const char *format, va_list ap);
  * @brief set the log priority mask
  * @details @b #include <syslog.h> \n
  * POSIX API (refer to : http://pubs.opengroup.org/onlinepubs/9699919799/)
- * @since Tizen RT v1.0
+ * @since TizenRT v1.0
  */
 int setlogmask(int mask);
 

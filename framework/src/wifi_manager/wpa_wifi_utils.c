@@ -394,7 +394,7 @@ wifi_utils_result_e wifi_utils_connect_ap(wifi_utils_ap_config_s *ap_connect_con
 	if (ret != SLSI_STATUS_SUCCESS) {
 		if (ret == SLSI_STATUS_ALREADY_CONNECTED) {
 			nvdbg("[WU] WiFiNetworkJoin already connected\n");
-			result = WIFI_UTILS_SUCCESS;
+			result = WIFI_UTILS_ALREADY_CONNECTED;
 		} else {
 			ndbg("[WU] WiFiNetworkJoin failed: %d, %s\n", ret, ap_connect_config->ssid);
 			goto connect_ap_fail;

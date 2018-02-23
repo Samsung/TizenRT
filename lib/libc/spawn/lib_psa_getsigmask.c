@@ -56,11 +56,10 @@
 
 #include <tinyara/config.h>
 
+#ifndef CONFIG_DISABLE_SIGNALS
 #include <signal.h>
 #include <spawn.h>
-#include <assert.h>
-
-#ifndef CONFIG_DISABLE_SIGNALS
+#include <errno.h>
 
 /****************************************************************************
  * Global Functions
@@ -86,7 +85,10 @@
 
 int posix_spawnattr_getsigmask(FAR const posix_spawnattr_t *attr, FAR sigset_t *sigmask)
 {
-	DEBUGASSERT(attr && sigmask);
+	if (!attr || !sigmask) {
+		return EINVAL;
+	}
+
 	*sigmask = attr->sigmask;
 	return OK;
 }

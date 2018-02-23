@@ -81,6 +81,9 @@
 #include <tinyara/arch.h>
 
 #include <arch/board/board.h>
+#ifdef CONFIG_BOARD_ASSERT_AUTORESET
+#include <sys/boardctl.h>
+#endif
 
 #include "up_arch.h"
 #include "sched/sched.h"
@@ -428,5 +431,8 @@ void up_assert(const uint8_t *filename, int lineno)
 #endif
 
 	up_dumpstate();
+#ifdef CONFIG_BOARD_ASSERT_AUTORESET
+	(void)boardctl(BOARDIOC_RESET, 0);
+#endif
 	_up_assert(EXIT_FAILURE);
 }

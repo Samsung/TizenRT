@@ -1,15 +1,15 @@
 /**
- \mainpage Tizen RT Libs&Environment
+ \mainpage TizenRT Libs&Environment
  
- This document is the Public API specification for version 1.1 of the Tizen RT.
+ This document is the Public API specification for version 1.1 of the TizenRT.
 
  The API Reference provides descriptions for all Libs and Environment APIs such as Kernel, File System, Network APIs.
 
- > This documentation covers the Tizen RT source code under '1.1_Public_M1' tag.
+ > This documentation covers the TizenRT source code under '1.1_Public_M1' tag.
 
- For Additional information of Tizen RT, please see below Documentation.
+ For Additional information of TizenRT, please see below Documentation.
 
  ### Documentation
 
- - Tizen RT Getting Started [page](https://github.com/Samsung/TizenRT)
+ - TizenRT Getting Started [page](https://github.com/Samsung/TizenRT)
 */

@@ -44,4 +44,10 @@ config ST_THINGS_STG_MODE
 	---help---
 		Build ST Things for STG Server
 
+config ST_THINGS_FOTA
+	bool "Enable ST Things FOTA Service"
+	depends on SYSTEM_FOTA_HAL
+	default n
+	---help---
+		Enable a FOTA service for ST Things
 endif # ST_THINGS

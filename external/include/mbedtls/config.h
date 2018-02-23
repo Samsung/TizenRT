@@ -2520,7 +2520,11 @@
 
 /* MPI / BIGNUM options */
 //#define MBEDTLS_MPI_WINDOW_SIZE            6 /**< Maximum windows size used. */
-#define MBEDTLS_MPI_MAX_SIZE            256	/**< Maximum number of bytes for usable MPIs. */
+#ifdef CONFIG_TLS_MPI_MAX_SIZE
+#define MBEDTLS_MPI_MAX_SIZE            CONFIG_TLS_MPI_MAX_SIZE	/**< Maximum number of bytes for usable MPIs. */
+#else
+#define MBEDTLS_MPI_MAX_SIZE            512
+#endif
 
 /* CTR_DRBG options */
 //#define MBEDTLS_CTR_DRBG_ENTROPY_LEN               48 /**< Amount of entropy used per seed by default (48 with SHA-512, 32 with SHA-256) */
