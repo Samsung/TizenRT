@@ -135,8 +135,6 @@ static const struct sample_rate_entry_s g_sample_entry[] = {
 	{AUDIO_SAMP_RATE_48K, codec_init_pll_48K, sizeof(codec_init_pll_48K)}
 };
 
-static unsigned int g_volume;
-
 /****************************************************************************
  * Name: delay
  *
@@ -241,8 +239,8 @@ static void alc5658_setregs(struct alc5658_dev_s *priv)
 {
 	alc5658_writereg(priv, ALC5658_IN1, (0 + 16) << 8);
 	alc5658_writereg(priv, ALC5658_HPOUT, 0);
-	alc5658_writereg(priv, ALC5658_HPOUT_L, g_volume);
-	alc5658_writereg(priv, ALC5658_HPOUT_R, g_volume);
+	alc5658_writereg(priv, ALC5658_HPOUT_L, priv->volume << 8);
+	alc5658_writereg(priv, ALC5658_HPOUT_R, priv->volume << 8);
 }
 
 static void alc5658_getregs(struct alc5658_dev_s *priv)
@@ -321,7 +319,7 @@ static void alc5658_setvolume(FAR struct alc5658_dev_s *priv, uint16_t volume, b
 {
 	/** TODO: Need to process balance and mute **/
 	if (mute == false) {
-		g_volume = volume << 8;
+		priv->volume = volume;
 	}
 }
 #endif							/* CONFIG_AUDIO_EXCLUDE_VOLUME */
@@ -992,7 +990,6 @@ static int alc5658_ioctl(FAR struct audio_lowerhalf_s *dev, int cmd, unsigned lo
 	break;
 	case AUDIOIOC_SETVOLUME: {
 		unsigned int volume = arg;
-		printf("\t\tVolume = %d\n", volume);
 		alc5658_setvolume(priv, volume, priv->mute);
 	}
 	break;
