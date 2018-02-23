@@ -4,7 +4,7 @@
 #
 
 config SYSTEM_CLE
-	bool "Tiny VI work-alike command line editor"
+	bool "EMACS-like Command Line Editor"
 	default n
 	---help---
 		Enable support for TinyAra tiny EMACS-like command line editor.
