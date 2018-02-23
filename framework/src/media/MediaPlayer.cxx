@@ -1,5 +1,4 @@
 #include <stdlib.h>
-//#include "../../include/media/MediaPlayer.hpp"
 #include <media/MediaPlayer.hpp>
 
 namespace Media
