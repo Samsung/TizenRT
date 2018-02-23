@@ -276,7 +276,7 @@ void netif_register_with_initial_ip(struct netif *netif, netif_init_fn netif_ini
 	   The init function pointer must point to a initialization function for
 	   your ethernet netif interface. The following code illustrates it's use. */
 
-	netif_add(netif, &ipaddr, &netmask, &gw, NULL, netif_init, &tcpip_input);
+	netif_add(netif, &ipaddr, &netmask, &gw, NULL, netif_init, tcpip_input);
 
 	/*  Registers the default network interface. */
 	netif_set_default(netif);
