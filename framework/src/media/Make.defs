@@ -18,11 +18,11 @@
 
 ifeq ($(CONFIG_MEDIA), y)
 ifeq ($(CONFIG_MEDIA_PLAYER), y)
-CXXSRCS += MediaPlayer.cxx
+CXXSRCS += MediaPlayer.cxx DataSource.cxx PlayerDataSource.cxx
 endif
 
 ifeq ($(CONFIG_MEDIA_RECORDER), y)
-CXXSRCS += MediaRecorder.cxx
+CXXSRCS += MediaRecorder.cxx DataSource.cxx RecorderDataSource.cxx
 endif
 
 DEPPATH += --dep-path src/media

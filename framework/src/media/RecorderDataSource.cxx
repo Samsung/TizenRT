@@ -1,8 +1,9 @@
-#include "RecorderDataSource.hpp"
+#include <media/RecorderDataSource.hpp>
 
 namespace Media
 {
 	RecorderDataSource::RecorderDataSource()
+		: DataSource()
 	{
 	}
 
