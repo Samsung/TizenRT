@@ -65,10 +65,11 @@
 #include <net/lwip/stats.h>
 #if ENABLE_LOOPBACK
 #include <net/lwip/sys.h>
-#if LWIP_NETIF_LOOPBACK_MULTITHREADING
-#include <net/lwip/tcpip.h>
-#endif							/* LWIP_NETIF_LOOPBACK_MULTITHREADING */
 #endif							/* ENABLE_LOOPBACK */
+#if (ENABLE_LOOPBACK && LWIP_NETIF_LOOPBACK_MULTITHREADING) || (!NO_SYS)
+#include <net/lwip/tcpip.h>
+#endif							/* (ENABLE_LOOPBACK && LWIP_NETIF_LOOPBACK_MULTITHREADING) || (!NO_SYS) */
+
 
 #if LWIP_AUTOIP
 #include <net/lwip/ipv4/autoip.h>
@@ -276,7 +277,11 @@ void netif_register_with_initial_ip(struct netif *netif, netif_init_fn netif_ini
 	   The init function pointer must point to a initialization function for
 	   your ethernet netif interface. The following code illustrates it's use. */
 
-	netif_add(netif, &ipaddr, &netmask, &gw, NULL, netif_init, &tcpip_input);
+#if NO_SYS
+	netif_add(netif, &ipaddr, &netmask, &gw, NULL, netif_init, ip_input);
+#else
+	netif_add(netif, &ipaddr, &netmask, &gw, NULL, netif_init, tcpip_input);
+#endif
 
 	/*  Registers the default network interface. */
 	netif_set_default(netif);
