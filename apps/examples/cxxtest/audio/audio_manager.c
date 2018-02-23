@@ -79,13 +79,9 @@ audio_manager_result_t audio_manager_init(void)
 	return AUDIO_MANAGER_SUCCESS;
 }
 
-audio_manager_result_t set_audio_volume(int fd, audio_volume_t volume)
+audio_manager_result_t set_audio_volume(int fd, uint16_t volume)
 {
 	audio_manager_result_t ret = AUDIO_MANAGER_SUCCESS;
-
-	if (!(volume == AUDIO_VOLUME_LOW || volume == AUDIO_VOLUME_MEDIUM || volume == AUDIO_VOLUME_HIGH)) {
-		return AUDIO_MANAGER_INVALID_PARAMS;
-	}
 
 	ret = ioctl(fd, AUDIOIOC_SETVOLUME, (unsigned int)volume);
 	if (ret < 0) {

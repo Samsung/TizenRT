@@ -237,10 +237,10 @@ static uint16_t alc5658_modifyreg(FAR struct alc5658_dev_s *priv, uint16_t regad
 
 static void alc5658_setregs(struct alc5658_dev_s *priv)
 {
-	alc5658_writereg(priv, ALC5658_IN1, (0 + 16) << 8);
 	alc5658_writereg(priv, ALC5658_HPOUT, 0);
-	alc5658_writereg(priv, ALC5658_HPOUT_L, priv->volume << 8);
-	alc5658_writereg(priv, ALC5658_HPOUT_R, priv->volume << 8);
+
+	alc5658_writereg(priv, ALC5658_HPOUT_L, priv->volume);
+	alc5658_writereg(priv, ALC5658_HPOUT_R, priv->volume);
 }
 
 static void alc5658_getregs(struct alc5658_dev_s *priv)
@@ -319,6 +319,9 @@ static void alc5658_setvolume(FAR struct alc5658_dev_s *priv, uint16_t volume, b
 {
 	/** TODO: Need to process balance and mute **/
 	if (mute == false) {
+		if (volume > 31) {
+			volume = 31;
+		}
 		priv->volume = volume;
 	}
 }

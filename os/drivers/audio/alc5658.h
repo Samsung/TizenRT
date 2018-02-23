@@ -119,7 +119,7 @@ struct alc5658_dev_s {
 #ifndef CONFIG_AUDIO_EXCLUDE_BALANCE
 	uint16_t balance;			/* Current balance level (b16) */
 #endif							/* CONFIG_AUDIO_EXCLUDE_BALANCE */
-	uint16_t volume;				/* Current volume level {0..63} */
+	uint8_t volume;				/* Current volume level {0..31} */
 #endif							/* CONFIG_AUDIO_EXCLUDE_VOLUME */
 	uint8_t nchannels;			/* Number of channels (1 or 2) */
 	uint8_t bpsamp;				/* Bits per sample (8 or 16) */

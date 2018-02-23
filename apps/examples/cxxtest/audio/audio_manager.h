@@ -96,7 +96,7 @@ typedef enum audio_volume_e audio_volume_t;
  * Public Function Prototypes
  ****************************************************************************/
 audio_manager_result_t audio_manager_init(void);
-audio_manager_result_t set_audio_volume(int fd, audio_volume_t volume);
+audio_manager_result_t set_audio_volume(int fd, uint16_t volume);
 int get_avail_audio_card_id(void);
 int get_avail_audio_device_id(void);
 
