@@ -24,6 +24,7 @@ DELIM ?= $(strip /)
 DEPPATH = --dep-path .
 ASRCS =
 CSRCS =
+CXXSRCS =
 VPATH = .
 
 # Framework Directories
@@ -40,9 +41,10 @@ $(foreach BDIR, $(BUILDIRS), $(eval $(call Add_Framework,$(BDIR))))
 
 AOBJS = $(ASRCS:.S=$(OBJEXT))
 COBJS = $(CSRCS:.c=$(OBJEXT))
+CXXOBJS = $(patsubst %.cxx,%$(OBJEXT),$(patsubst %.cpp,%$(OBJEXT),$(CXXSRCS)))
 
-SRCS = $(ASRCS) $(CSRCS)
-OBJS = $(AOBJS) $(COBJS)
+SRCS = $(ASRCS) $(CSRCS) $(CXXSRCS)
+OBJS = $(AOBJS) $(COBJS) $(CXXOBJS)
 
 BIN		= libframework$(LIBEXT)
 
@@ -54,11 +56,16 @@ $(AOBJS): %$(OBJEXT): %.S
 $(COBJS): %$(OBJEXT): %.c
 	$(call COMPILE, $<, $@)
 
+$(CXXOBJS): %$(OBJEXT): %.cxx %.cpp
+	$(call COMPILEXX, $<, $@)
+
 $(BIN): $(OBJS)
 	$(call ARCHIVE, $@, $(OBJS))
 
 .depend: Makefile $(SRCS)
-	$(Q) $(MKDEP) $(DEPPATH) "$(CC)" -- $(CFLAGS) -- $(SRCS) >Make.dep
+	$(Q) $(MKDEP) $(DEPPATH) "$(CC)" -- $(CFLAGS) -- $(ASRCS) >Make.dep
+	$(Q) $(MKDEP) $(DEPPATH) "$(CC)" -- $(CFLAGS) -- $(CSRCS) >Make.dep
+	$(Q) $(MKDEP) $(DEPPATH) "$(CXX)" -- $(CXXFLAGS) -- $(CXXSRCS) >Make.dep
 	$(Q) touch $@
 
 depend: .depend
