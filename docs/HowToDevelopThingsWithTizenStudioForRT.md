@@ -19,9 +19,9 @@ More details can find at [Guide page](https://developer.tizen.org/development/ti
  
 ### 2. Create a Project
 You can create a new SmartThings project from remote Git repositories as well as local templates. To create a new project:  
-- When creating a project from a template, click the **Check if you want Smart Things functionality** check box when selecting a template:  
+- When creating a project from a template, click the **Check if you want SmartThings functionality** check box when selecting a template:  
 ![template - Check box](media/rt_smartthings_template.png)  
-- When importing a project from a Git repository, click the **Check if you want Smart Things functionality** check box:  
+- When importing a project from a Git repository, click the **Check if you want SmartThings functionality** check box:  
 ![git - Check box](media/rt_smartthings_git.png)
 
 ### 3. Manage Device/ Resource Model
