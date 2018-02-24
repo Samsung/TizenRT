@@ -57,12 +57,23 @@ CSRCS += \
 CSRCS += \
 	tinyara_wrapper.c
 
-# WlanLite driver files
+# UDI node is required for WLANLITE, test_engine and slsi_wlan_mib
 ifeq ($(CONFIG_SCSC_WLANLITE),y)
+SLSI_ENABLE_UDI_NODE=y
+endif
+ifeq ($(CONFIG_TEST_ENGINE),y)
+SLSI_ENABLE_UDI_NODE=y
+endif
+ifeq ($(CONFIG_SLSI_WLAN_MIB),y)
+SLSI_ENABLE_UDI_NODE=y
+endif
+
+ifeq ($(SLSI_ENABLE_UDI_NODE),y)
 CSRCS += \
 	log_clients.c \
 	udi.c \
 	fw_test.c
+CFLAGS += -DSLSI_ENABLE_UDI_NODE
 endif
 
 # Include wireless devices build support

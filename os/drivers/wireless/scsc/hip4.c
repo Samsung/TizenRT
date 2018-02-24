@@ -26,7 +26,7 @@
 #ifdef CONFIG_SLSI_WLAN_HCF_ENABLE
 #include "mif_reg.h"
 #endif
-#ifdef CONFIG_SCSC_WLANLITE
+#ifdef SLSI_ENABLE_UDI_NODE
 #include "log_clients.h"
 #endif
 
@@ -936,7 +936,7 @@ int scsc_wifi_transmit_frame(struct slsi_hip4 *hip, bool ctrl_packet, struct max
 		return ERR_BUF;
 	}
 
-#ifdef CONFIG_SCSC_WLANLITE
+#ifdef SLSI_ENABLE_UDI_NODE
 	/* slsi_log_clients_log_signal_fast: mbuf is copied to all the log clients */
 	slsi_log_clients_log_signal_fast(sdev, &sdev->log_clients, mbuf, SLSI_LOG_DIRECTION_FROM_HOST);
 #endif

@@ -2354,7 +2354,7 @@ static inline struct max_buff *fapi_alloc_f(size_t sig_size, size_t data_size, u
 	return mbuf;
 }
 
-#ifdef CONFIG_SCSC_WLANLITE
+#ifdef SLSI_ENABLE_UDI_NODE
 #define fapi_alloc_udi(__sig_size, __mp_id, __mp_vif, __mp_datalen) ({ \
 	struct max_buff *___mbuf = mbuf_alloc(SLSI_NETIF_MBUF_HEADROOM + SLSI_NETIF_MBUF_TAILROOM + __sig_size + __mp_datalen); \
 	fapi_alloc_f(___mbuf, __sig_size, __mp_id, __mp_vif); \

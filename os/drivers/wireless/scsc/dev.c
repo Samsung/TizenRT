@@ -20,7 +20,7 @@
 #include "hip.h"
 #include "mgt.h"
 #include "debug_scsc.h"
-#ifdef CONFIG_SCSC_WLANLITE
+#ifdef SLSI_ENABLE_UDI_NODE
 #include "udi.h"
 #endif
 #include "hydra.h"
@@ -156,7 +156,7 @@ struct slsi_dev *slsi_dev_attach(struct scsc_mx *core, struct scsc_service_clien
 	memset(&sdev->chip_info_mib, 0xFF, sizeof(struct slsi_chip_info_mib));
 
 	sdev->scan_init_24g = true;
-#ifdef CONFIG_SCSC_WLANLITE
+#ifdef SLSI_ENABLE_UDI_NODE
 	slsi_log_clients_init(sdev);
 #endif
 	sdev->recovery_next_state = 0;
@@ -181,7 +181,7 @@ struct slsi_dev *slsi_dev_attach(struct scsc_mx *core, struct scsc_service_clien
 		goto err_netif_init;
 	}
 
-#ifdef CONFIG_SCSC_WLANLITE
+#ifdef SLSI_ENABLE_UDI_NODE
 	if (slsi_udi_node_init(sdev) != 0) {
 		SLSI_ERR(sdev, "failed to init UDI\n");
 		goto err_hip_init;
@@ -227,7 +227,7 @@ err_netif_registered:
 	slsi_netif_remove(sdev, sdev->netdev[SLSI_NET_INDEX_P2P]);
 #endif
 	slsi_netif_remove(sdev, sdev->netdev[SLSI_NET_INDEX_WLAN]);
-#ifdef CONFIG_SCSC_WLANLITE
+#ifdef SLSI_ENABLE_UDI_NODE
 	slsi_udi_node_deinit(sdev);
 err_hip_init:
 #endif
@@ -258,7 +258,7 @@ void slsi_dev_detach(struct slsi_dev *sdev)
 	SLSI_DBG2(sdev, SLSI_INIT_DEINIT, "Unregister netif\n");
 	slsi_netif_remove_all(sdev);
 
-#ifdef CONFIG_SCSC_WLANLITE
+#ifdef SLSI_ENABLE_UDI_NODE
 	SLSI_DBG2(sdev, SLSI_INIT_DEINIT, "De-initialise the UDI\n");
 	slsi_log_clients_terminate(sdev);
 
@@ -291,6 +291,9 @@ int slsi_dev_load(void)
 	SLSI_INFO_NODEV("Loading Maxwell Wi-Fi driver\n");
 #ifdef CONFIG_SCSC_WLANLITE
 	SLSI_INFO_NODEV("--- WLANLITE mode ---\n");
+#endif
+
+#ifdef SLSI_ENABLE_UDI_NODE
 	if (slsi_udi_init()) {
 		SLSI_INFO_NODEV("Failed to init udi - continuing\n");
 	}
@@ -331,7 +334,7 @@ void slsi_dev_unload(void)
 	slsi_sm_service_driver_unregister();
 	mx_mmap_deinit();
 
-#ifdef CONFIG_SCSC_WLANLITE
+#ifdef SLSI_ENABLE_UDI_NODE
 	slsi_udi_deinit();
 #endif
 

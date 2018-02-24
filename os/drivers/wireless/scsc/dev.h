@@ -35,7 +35,7 @@
 #include "fapi.h"
 #include "utils_scsc.h"
 #include "hip.h"
-#ifdef CONFIG_SCSC_WLANLITE
+#ifdef SLSI_ENABLE_UDI_NODE
 #include "log_clients.h"
 #endif
 #include "scsc_wifi_fcq.h"
@@ -573,7 +573,7 @@ struct slsi_dev {
 	/* Locking used to control Starting and stopping the chip */
 	pthread_mutex_t start_stop_mutex;
 
-#ifdef CONFIG_SCSC_WLANLITE
+#ifdef SLSI_ENABLE_UDI_NODE
 	/* UDI Logging */
 	struct slsi_log_clients log_clients;
 	void *uf_cdev;
