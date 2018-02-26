@@ -266,7 +266,7 @@ static void scsc_wpa_ctrl_iface_init(void)
 int board_app_initialize(void)
 {
 	int ret;
-#if defined(CONFIG_RAMMTD) && defined(CONFIG_FS_SMARTFS)
+#if defined(CONFIG_ARTIK05X_AUTOMOUNT) && defined(CONFIG_RAMMTD) && defined(CONFIG_FS_SMARTFS)
 	int bufsize = CONFIG_RAMMTD_ERASESIZE * CONFIG_ARTIK05X_RAMMTD_NEBLOCKS;
 	static uint8_t *rambuf;
 	struct mtd_dev_s *mtd;
@@ -274,6 +274,7 @@ int board_app_initialize(void)
 
 	artik05x_configure_partitions();
 
+#ifdef CONFIG_ARTIK05X_AUTOMOUNT
 #ifdef CONFIG_ARTIK05X_AUTOMOUNT_USERFS
 	/* Initialize and mount user partition (if we have) */
 #ifdef CONFIG_SMARTFS_MULTI_ROOT_DIRS
@@ -368,6 +369,7 @@ int board_app_initialize(void)
 		}
 	}
 #endif /* CONFIG_RAMMTD */
+#endif /* CONFIG_ARTIK05X_AUTOMOUNT */
 
 #if defined(CONFIG_RTC_DRIVER)
 	{
