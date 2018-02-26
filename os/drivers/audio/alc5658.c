@@ -238,9 +238,10 @@ static uint16_t alc5658_modifyreg(FAR struct alc5658_dev_s *priv, uint16_t regad
 static void alc5658_setregs(struct alc5658_dev_s *priv)
 {
 	alc5658_writereg(priv, ALC5658_HPOUT, 0);
-
+#ifndef CONFIG_AUDIO_EXCLUDE_VOLUME
 	alc5658_writereg(priv, ALC5658_HPOUT_L, priv->volume);
 	alc5658_writereg(priv, ALC5658_HPOUT_R, priv->volume);
+#endif
 }
 
 static void alc5658_getregs(struct alc5658_dev_s *priv)
@@ -828,7 +829,9 @@ static int alc5658_pause(FAR struct audio_lowerhalf_s *dev)
 		/* Disable interrupts to prevent us from suppling any more data */
 
 		priv->paused = true;
+#ifndef CONFIG_AUDIO_EXCLUDE_VOLUME
 		alc5658_setvolume(priv, priv->volume, true);
+#endif
 		ALC5658_DISABLE(priv->lower);	/* Need inputs from REALTEK */
 	}
 
@@ -853,7 +856,9 @@ static int alc5658_resume(FAR struct audio_lowerhalf_s *dev)
 
 	if (priv->running && priv->paused) {
 		priv->paused = false;
+#ifndef CONFIG_AUDIO_EXCLUDE_VOLUME
 		alc5658_setvolume(priv, priv->volume, false);
+#endif
 
 		/* Enable interrupts to allow sampling data */
 		/* Need resume logic later. Need to know if alc5658 dma can be paused and resumed */
@@ -992,8 +997,10 @@ static int alc5658_ioctl(FAR struct audio_lowerhalf_s *dev, int cmd, unsigned lo
 	}
 	break;
 	case AUDIOIOC_SETVOLUME: {
+#ifndef CONFIG_AUDIO_EXCLUDE_VOLUME
 		unsigned int volume = arg;
 		alc5658_setvolume(priv, volume, priv->mute);
+#endif
 	}
 	break;
 
