@@ -111,7 +111,7 @@ void __slsi_rx_blockack_ind(struct slsi_dev *sdev, struct netif *dev, struct max
 	struct netdev_vif *ndev_vif = netdev_priv(dev);
 	struct slsi_peer *peer;
 
-	SLSI_NET_DBG1(dev, SLSI_MLME, "ma_blockack_ind(vif:%d, peer_qsta_address:" SLSI_MAC_FORMAT ", parameter_set:%d, sequence_number:%d, reason_code:%d, direction:%d)\n", fapi_get_vif(mbuf), SLSI_MAC_STR(fapi_get_buff(mbuf, u.ma_blockack_ind.peer_qsta_address)), fapi_get_u16(mbuf, u.ma_blockack_ind.blockack_parameter_set), fapi_get_u16(mbuf, u.ma_blockack_ind.sequence_number), fapi_get_u16(mbuf, u.ma_blockack_ind.reason_code), fapi_get_u16(mbuf, u.ma_blockack_ind.direction));
+	SLSI_NET_DBG2(dev, SLSI_MLME, "ma_blockack_ind(vif:%d, peer_qsta_address:" SLSI_MAC_FORMAT ", parameter_set:%d, sequence_number:%d, reason_code:%d, direction:%d)\n", fapi_get_vif(mbuf), SLSI_MAC_STR(fapi_get_buff(mbuf, u.ma_blockack_ind.peer_qsta_address)), fapi_get_u16(mbuf, u.ma_blockack_ind.blockack_parameter_set), fapi_get_u16(mbuf, u.ma_blockack_ind.sequence_number), fapi_get_u16(mbuf, u.ma_blockack_ind.reason_code), fapi_get_u16(mbuf, u.ma_blockack_ind.direction));
 
 	peer = slsi_get_peer_from_mac(sdev, dev, fapi_get_buff(mbuf, u.ma_blockack_ind.peer_qsta_address));
 	WARN_ON(!peer);
