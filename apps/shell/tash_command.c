@@ -97,7 +97,7 @@ static struct tash_cmd_info_s tash_cmds_info = {PTHREAD_MUTEX_INITIALIZER};
 const static tash_cmdlist_t tash_basic_cmds[] = {
 	{"exit",  tash_exit,   TASH_EXECMD_SYNC},
 	{"help",  tash_help,   TASH_EXECMD_SYNC},
-#ifndef CONFIG_DISABLE_ENVIRON
+#ifdef CONFIG_TASH_SCRIPT
 	{"sh",    tash_script, TASH_EXECMD_SYNC},
 #endif
 #ifndef CONFIG_DISABLE_SIGNALS
