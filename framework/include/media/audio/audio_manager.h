@@ -28,39 +28,6 @@
 #include <stddef.h>
 #include <stdint.h>
 
-/****************************************************************************
- * Private Declarations
- ****************************************************************************/
-enum audio_device_status_e {
-	AUDIO_DEVICE_STATE_UNIDENTIFIED = -1,
-	AUDIO_DEVICE_STATE_IDENTIFIED,
-	AUDIO_DEVICE_STATE_RESERVED
-};
-
-enum manufacturer_type_e {
-	AUDIO_DEVICE_EARPIECE,
-	AUDIO_DEVICE_SPEAKER,
-	HEADSET
-};
-
-struct audio_config_s {
-	unsigned int volume;
-	char *manufacturer_name;
-	enum manufacturer_type_e manufacturer_type;
-};
-
-struct audio_dev_info_s {
-//  int audio_dev_id;
-	char *dev_name;
-	enum audio_device_status_e status;
-	struct audio_config_s config;
-//  audio_dev_type_e direction;
-};
-
-typedef enum audio_device_status_e audio_device_status_t;
-typedef struct audio_config_s audio_config_t;
-typedef struct audio_dev_info_s audio_dev_info_t;
-
 #if defined(__cplusplus)
 extern "C" {
 #endif
@@ -83,14 +50,7 @@ enum audio_manager_result_e {
 	AUDIO_MANAGER_INVALID_PARAMS
 };
 
-enum audio_volume_e {
-	AUDIO_VOLUME_LOW = 30,
-	AUDIO_VOLUME_MEDIUM = 80,
-	AUDIO_VOLUME_HIGH = 100
-};
-
 typedef enum audio_manager_result_e audio_manager_result_t;
-typedef enum audio_volume_e audio_volume_t;
 
 /****************************************************************************
  * Public Function Prototypes

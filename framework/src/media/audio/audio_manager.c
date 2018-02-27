@@ -32,6 +32,34 @@
 /****************************************************************************
  * Private Declarations
  ****************************************************************************/
+enum audio_device_status_e {
+	AUDIO_DEVICE_STATE_UNIDENTIFIED = -1,
+	AUDIO_DEVICE_STATE_IDENTIFIED,
+	AUDIO_DEVICE_STATE_RESERVED
+};
+
+enum manufacturer_type_e {
+	AUDIO_DEVICE_EARPIECE,
+	AUDIO_DEVICE_SPEAKER,
+	HEADSET
+};
+
+struct audio_config_s {
+	unsigned int volume;
+	char *manufacturer_name;
+	enum manufacturer_type_e manufacturer_type;
+};
+
+struct audio_dev_info_s {
+	char *dev_name;
+	enum audio_device_status_e status;
+	struct audio_config_s config;
+};
+
+typedef enum audio_device_status_e audio_device_status_t;
+typedef struct audio_config_s audio_config_t;
+typedef struct audio_dev_info_s audio_dev_info_t;
+
 audio_dev_info_t g_input_audio_devices[MAX_IN_AUDIO_DEV_NUM];
 audio_dev_info_t g_output_audio_devices[MAX_OUT_AUDIO_DEV_NUM];
 
@@ -102,7 +130,7 @@ uint16_t get_audio_volume(int fd)
 	ret = ioctl(fd, AUDIOIOC_GETVOLUME, (unsigned long)&audio_volume);
 	if (ret < 0) {
 		printf("AUDIOIOC_GETVOLUME ioctl failed, ret = %d\n", ret);
-		return -1;
+		return AUDIO_MANAGER_FAIL;
 	}
 
 	return audio_volume;
