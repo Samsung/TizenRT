@@ -1,22 +1,35 @@
 # How to use Shell Commands
 
-This document shows the list of shell coammands like ps, free and so on.
+This document shows the list of shell commands like ps, free and so on.  
+These commands can be used in shell, and can be used without shell also like remote monitoring functionality.  
+*Dependency* should be enabled first for using each commands.  
+Most of the commands support *--help* option to show how to use.  
 
 ## List of Commands
 > [exit](#exit)  
 > [help](#help)  
+> [date](#date)  
+> [dmesg](#dmesg)  
+> [free](#free)  
+> [getenv/setenv/unsetenv](#getenvsetenvunsetenv)  
+> [heapinfo](#heapinfo)  
+> [irqinfo](#irqinfo)  
+> [kill/killall](#killkillall)  
+> [ps](#ps)  
 > [reboot](#reboot)  
 > [sh](#sh)  
 > [sleep](#sleep)  
+> [stkmon](#stkmon)  
+> [uptime](#uptime)  
 
-### exit
+## exit
 This command supports exiting shell.
 ```
 TASH>>exit
 TASH: Good bye!!
 ```
 
-### help
+## help
 This command shows list of commands.
 ```
 TASH>>help
@@ -35,7 +48,275 @@ stkmon           tftpc            ttrace           umount
 unsetenv         uptime           vi               wifi
 ```
 
-### reboot
+## date
+This command prints the date. This has an argument which sets system time and date information.
+```
+TASH>>date --help
+
+Usage: date
+   or: date [-s FORMAT]
+Display, or Set system time and date information
+
+Options:
+ -s FORMAT     Set system time in the given FORMAT
+               FORMAT: MMM DD HH:MM:SS YYYY
+                'month', 'day', 'hour':'minute':'second' 'year'
+                Example: Apr 21 10:35:22 1991
+
+TASH>>date
+Jan 01 00:00:09 2010
+
+TASH>>date -s Feb 27 14:41:05 2018
+TASH>>date
+Feb 27 14:41:06 2018
+```
+### How to Enable
+Enable *CONFIG_ENABLE_DATE* to use this command on menuconfig as shown below:
+```
+Application Configuration -> System Libraries and Add-Ons -> date to y
+```
+
+## dmesg
+This command shows all debug messages which saved in RAM log buffer.
+```
+TASH>>dmesg
+s5j_sflash_init: FLASH Quad Enabled
+uart_register: Registering /dev/console
+uart_register: Registering /dev/ttyS0
+uart_register: Registering /dev/ttyS1
+uart_register: Registering /dev/ttyS2
+uart_register: Registering /dev/ttyS3
+uart_register: Registering /dev/ttyS4
+i2c_uioregister: Registering /dev/i2c-0
+i2c_uioregister: Registering /dev/i2c-1
+```
+### How to Enable
+Enable *CONFIG_ENABLE_DMESG* to use this command on menuconfig as shown below:
+```
+Application Configuration -> System Libraries and Add-Ons -> dmesg to y
+```
+#### Dependency
+Enable CONFIG_SYSLOG.
+```
+File System -> Advanced SYSLOG features to y
+```
+Enable CONFIG_RAMLOG_SYSLOG.
+```
+Device Drivers -> RAM log device support to y
+```
+
+## free
+This command shows heap information.
+```
+TASH>>free
+              total       used       free    largest
+Data:        959312      44144     915168     909296
+```
+### How to Enable
+Enable *CONFIG_ENABLE_FREE* to use this command on menuconfig as shown below:
+```
+Application Configuration -> System Libraries and Add-Ons -> free to y
+```
+
+## getenv/setenv/unsetenv
+These commands are related with setting or getting the environment variables.  
+The **getenv** prints all of environment variables. If specific environment name is given, this prints the value of given envionment.   
+The **setenv** save new environment variable with given value.  
+The **unsetenv** unsets environment variable with NAME.
+```
+TASH>>getenv --help
+
+Usage : getenv [NAME]
+Display the value of a variable, NAME or all environment variables
+If NAME is not specified, 'name=value' pairs of all environment variables will be displayed
+
+TASH>>setenv --help
+Usage : setenv NAME VALUE
+
+TASH>>unsetenv --help
+
+Usage : unsetenv NAME
+Remove the variable, NAME from the environment
+
+TASH>>setenv TEST1 1
+env "TEST1=1" is SET
+TASH>>setenv TEST2 2
+env "TEST2=2" is SET
+TASH>>setenv TEST3 3
+env "TEST3=3" is SET
+TASH>>getenv
+TEST1=1
+TEST2=2
+TEST3=3
+TASH>>getenv TEST2
+TEST2=2
+TASH>>unsetenv TEST2
+env "TEST2" is UNSET
+TASH>>getenv TEST2
+GET is failed, err (2)
+
+```
+### How to Enable
+Enable *CONFIG_ENABLE_ENV_GET/SET/UNSET* to use this command on menuconfig as shown below:
+```
+Application Configuration -> System Libraries and Add-Ons -> env get/env set/env unset to y
+```
+#### Dependency
+Disable CONFIG_DISABLE_ENVIRON.
+```
+Kernel Features -> Disable TinyAra interfaces -> Disable environment variable support to n
+```
+
+## heapinfo
+This command shows heap memory usage per thread. This has arguments which configure the printing format.
+```
+TASH>>heapinfo --help
+
+Usage: heapinfo [OPTIONS]
+Display information of heap memory
+
+Options:
+ -i           Initialize the heapinfo
+ -a           Show the all allocation details
+ -p PID       Show the specific PID allocation details
+ -f           Show the free list
+
+TASH>>heapinfo
+
+****************************************************************
+Heap Allocation Summary(Size in Bytes)
+****************************************************************
+Heap Size                      : 959312
+Current Allocated Node Size    : 44144
+Peak Allocated Node Size       : 56416
+Free Size                      : 915168
+Largest Free Node Size         : 909296
+Number of Free Node            : 4
+
+Stack Resources                : 6176
+Non Scheduled Task Resources   : 2192
+
+PID |  PPID | STACK | CURR_HEAP | PEAK_HEAP | NAME
+----|-------|-------|-----------|-----------|----------
+  0 |     0 |  1024 |     35600 |     43952 | Idle Task()
+  1 |     0 |  2064 |         0 |         0 | hpwork()
+  3 |     2 |  4112 |       144 |       176 | tash()
+
+** NOTED **
+* Idle Task's stack is not allocated in heap region
+* And another stack size is allocated stack size + alloc node size(task:32/pthread:20)
+```
+
+#### Term
+- CURR_HEAP : The current allocated heap size until running this command(bytes)  
+- PEAK_HEAP : The peak allocated heap size until running this command(bytes)  
+- MemAddr : The address of allocation  
+- Owner : The holder who allocate the memory  
+
+### How to Enable
+Enable *CONFIG_ENABLE_HEAPINFO* to use this command on menuconfig as shown below:
+```
+Application Configuration -> System Libraries and Add-Ons -> heapinfo to y
+```
+
+#### Dependency
+Enable CONFIG_DEBUG_MM_HEAPINFO.
+```
+Debug options -> Enable Debug Output Features to y
+```
+
+## irqinfo
+This command shows the number of registered interrupts, it's occurrence counts and corresponding isr.
+```
+TASH>>irqinfo
+ INDEX | IRQ_NUM | INT_COUNT | ISR_NAME
+-------|---------|-----------|----------
+     1 |      36 |         0 | gic_interrupt
+     2 |      37 |         0 | gic_interrupt
+     3 |      58 |       228 | up_timerisr
+     4 |      90 |        36 | up_interrupt
+```
+### How to Enable
+Enable *CONFIG_ENABLE_HEAPINFO* to use this command on menuconfig as shown below:
+```
+Application Configuration -> System Libraries and Add-Ons -> irqinfo to y
+```
+#### Dependency
+Enable CONFIG_DEBUG.
+```
+Debug Options -> Enable Debug Output Features to y
+```
+Enable CONFIG_DEBUG_IRQ_INFO.
+```
+Debug Options -> Enable Debug Output Features -> Interrupt Debug information to y
+```
+
+## kill/killall
+These commands send a signal to specific or all threads.  
+kill sends a signal to specific thread.  
+killall sends a signal to all threads which have a same name.
+```
+TASH>>kill --help
+
+Usage: kill [-SIGNAME|SIGNUM] PID
+   or: kill -l
+Send a signal SIGNAME or SIGNUM to a process PID
+If no signal is specified, SIGKILL is sent because we don't support SIGTERM
+* Caution: SIGKILL terminates task/thread without any operations
+
+Options:
+ -l             List all signal names
+
+TASH>>killall --help
+
+Usage: killall [-SIGNAME|SIGNUM] NAME
+   or: killall -l
+Send a signal specified by SIGNAME or SIGNUM to a processes named NAME
+If no signal is specified, SIGKILL is sent because we don't support SIGTERM
+* Caution: SIGKILL terminates task/thread without any operations
+
+Options:
+ -l           List all signal names
+```
+### How to Enable
+Enable *CONFIG_ENABLE_KILL/KILLALL* to use this command on menuconfig as shown below:
+```
+Application Configuration -> System Libraries and Add-Ons -> kill/killall to y
+```
+#### Dependency
+Disable CONFIG_DISABLE_SIGNALS.
+```
+Kernel Features -> Disable TinyAra interfaces -> Disable signal support to n
+```
+The *CONFIG_TASK_NAME_SIZE* should be greater than 0 to use killall.
+```
+Kernel Features -> Tasks and Scheduling -> Maximum task name size to greater than 0
+```
+
+## ps
+This command shows information about a selection of the active threads.
+```
+TASH>>ps
+
+  PID | PRIO | FLAG |  TYPE   | NP |  STATUS  | NAME
+------|------|------|---------|----|----------|----------
+    0 |    0 | FIFO | KTHREAD |    | READY    | Idle Task
+    1 |  224 | RR   | KTHREAD |    | WAITSIG  | hpwork
+    3 |  125 | RR   | TASK    |    | RUNNING  | tash
+```
+
+#### Term
+- FLAG : The policy of scheduling for each task/thread.  
+- TYPE : The type of task/thread. It can be KTHREAD(kernel thread), PTHREAD(user pthread) and TASK.  
+- NP : The flag of cancelable.  
+
+### How to Enable
+Enable *CONFIG_ENABLE_PS* to use this command on menuconfig as shown below:
+```
+Application Configuration -> System Libraries and Add-Ons -> ps to y
+```
+
+## reboot
 This command supports rebooting a board.
 ```
 TASH>>reboot
@@ -61,13 +342,14 @@ Hello, World!!
 TASH>>
 ```
 
+### How to Enable
 Enable *CONFIG_BOARDCTL_RESET* on menuconfig.
 ```
 Hardware Configuration -> Board Selection -> Enable boardctl() interface to y -> Enable reset interface to y
 ```
 
-### sh
-This comamand supports executing shell script.  
+## sh
+This command supports executing shell script.  
 There is an argument to give path and name of script file.
 ```
 TASH>>sh /rom/print_hello2_help1_hello1.sh
@@ -93,25 +375,73 @@ Hello, World!!
 Hello, World!!
 ```
 
+### How to Enable
 Enable *CONFIG_TASH_SCRIPT* to use this command on menuconfig as shown below:
 ```
 Application Configuration -> Shell -> enable shell script to y
 ```
 
-### sleep
+## sleep
 This command supports sleeping of shell. This has an argument which shows sleeping seconds.  
-The *CONFIG_DISABLE_SIGNALS* should not be enabled to use this.
+#### Dependency
+Disable CONFIG_DISABLE_SIGNALS.
+```
+Kernel Features -> Disable TinyAra interfaces -> Disable signal support to n
+```
 
-### date
+## stkmon
+This command shows stack information per thread periodically. This has an argument which stops the stack monitor daemon.
+```
+TASH>>stkmon --help
 
-### dmesg
-### getenv / setenv / unsetenv
-### free
-### heapinfo
-### irqinfo
-### kill / killall
-### ps
-### stkmon
-### uptime
+Usage: stkmon
+   or: stkmon stop
+Start, or Stop stack monitor daemon
 
-### 
+TASH>>stkmon
+TASH>>Stack Monitor: Running
+
+=============================================================================
+  PID |   STATUS |     SIZE | PEAK_STACK |  PEAK_HEAP |    TIME | THREAD NAME
+------|----------|----------|------------|------------|---------|------------
+    2 | INACTIVE |     2028 |        452 |      14496 |     375 | appinit
+    4 | INACTIVE |     2028 |        308 |          0 |     375 | appmain
+------|----------|----------|------------|------------|---------|------------
+    0 |   ACTIVE |     1024 |        548 |      43952 |  153570 | Idle Task
+    1 |   ACTIVE |     2028 |        164 |          0 |  153571 | hpwork
+    3 |   ACTIVE |     4076 |        876 |       3680 |  153571 | tash
+    5 |   ACTIVE |     1020 |        516 |          0 |  153571 | StackMonitor
+
+TASH>>stkmon stop
+Stack Monitor: Stopping, not stopped yet
+TASH>>Stack Monitor: Stopped well
+```
+
+#### Term
+- STATUS : The status of each task/thread. *INACTIVE* is for finished task/thread. *ACTIVE* is living task/thread.  
+- PEAK_STACK : The peak used stack size of each task/thread when run this command.  
+- PEAK_HEAP : The peak allocated heap siz of each task/thread when run this command.  
+
+### How to Enable
+Enable *CONFIG_ENABLE_STACKMONITOR* to use this command on menuconfig as shown below:
+```
+Application Configuration -> System Libraries and Add-Ons -> Stack monitor to y
+```
+
+#### Dependency
+Enable CONFIG_STACK_COLORATION.
+```
+Debug Options -> Stack coloration to y
+```
+
+## uptime
+This command shows how long the system has been running.
+```
+TASH>>uptime
+Uptime : 1502.82
+```
+### How to Enable
+Enable *CONFIG_ENABLE_STACKMONITOR* to use this command on menuconfig as shown below:
+```
+Application Configuration -> System Libraries and Add-Ons -> uptime to y
+``` 
