@@ -197,10 +197,10 @@ nu_ping_recv(int s, struct timespec *ping_time)
 		if (len < 0) {
 			printf("nu_ping_recv: error [%d]\n", errno);
 			break;
-		}
-		else if (len == 0) {
+		} else if (len == 0) {
 			printf("nu_ping_recv: timeout\n");
 		}
+
 		if (len >= (int)(sizeof(struct ip_hdr) + sizeof(struct icmp_echo_hdr))) {
 
 			iphdr = (struct ip_hdr *)buf;
