@@ -15,6 +15,8 @@
  * language governing permissions and limitations under the License.
  *
  ****************************************************************************/
+
+
 #include <tinyara/config.h>
 
 #include <stdio.h>
@@ -24,8 +26,8 @@
 #include <errno.h>
 #include <fcntl.h>
 #include <sys/time.h>
+#include <media/audio/audio_manager.h>
 #include <tinyara/audio/audio.h>
-#include "audio_manager.h"
 
 /****************************************************************************
  * Private Declarations

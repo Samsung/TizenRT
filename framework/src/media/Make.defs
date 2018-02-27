@@ -15,6 +15,12 @@
 # language governing permissions and limitations under the License.
 #
 ###########################################################################
+ifeq ($(CONFIG_AUDIO), y)
+CSRCS += audio_manager.c 
+
+DEPPATH += --dep-path src/media/audio 
+VPATH += :src/media/audio
+endif
 
 ifeq ($(CONFIG_MEDIA), y)
 ifeq ($(CONFIG_MEDIA_PLAYER), y)
