@@ -91,6 +91,19 @@ audio_manager_result_t set_audio_volume(int fd, uint16_t volume)
 	return ret;
 }
 
+uint16_t get_audio_volume(int fd)
+{
+	int ret;
+	uint16_t *audio_volume = (uint16_t *)malloc(sizeof(uint16_t));
+
+	ret = ioctl(fd, AUDIOIOC_GETVOLUME, (unsigned int *)audio_volume);
+	if (ret < 0) {
+		printf("AUDIOIOC_GETVOLUME ioctl failed, ret = %d\n", ret);
+		return -1;
+	}
+	return *audio_volume;
+}
+
 int get_avail_audio_card_id(void)
 {
 	printf("[audio_manager] get_avail_audio_card_id() is called\n");

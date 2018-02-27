@@ -97,6 +97,7 @@ typedef enum audio_volume_e audio_volume_t;
  ****************************************************************************/
 audio_manager_result_t audio_manager_init(void);
 audio_manager_result_t set_audio_volume(int fd, uint16_t volume);
+uint16_t get_audio_volume(int fd);
 int get_avail_audio_card_id(void);
 int get_avail_audio_device_id(void);
 

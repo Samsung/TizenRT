@@ -1003,6 +1003,14 @@ static int alc5658_ioctl(FAR struct audio_lowerhalf_s *dev, int cmd, unsigned lo
 #endif
 	}
 	break;
+	case AUDIOIOC_GETVOLUME: {
+#ifndef CONFIG_AUDIO_EXCLUDE_VOLUME
+		unsigned int *volume;
+		volume = (unsigned int *)arg;
+		*volume = priv->volume;
+#endif
+	}
+	break;
 
 	default:
 		audvdbg("alc5658_ioctl received unkown cmd 0x%x\n", cmd);
