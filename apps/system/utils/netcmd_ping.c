@@ -66,6 +66,10 @@
 #define PING_DELAY     1000
 #define PING_RESULT(ping_ok)
 
+#ifndef CONFIG_NET_PING_CMD_ICOUNT
+#define CONFIG_NET_PING_CMD_ICOUNT 5
+#endif
+
 static int g_ping_recv_counter;
 static uint16_t g_ping_seq_num;
 
@@ -329,7 +333,7 @@ int cmd_ping(int argc, char **argv)
 {
 	char *staddr;
 	uint32_t dsec = 10;
-	int count = 10;
+	int count = CONFIG_NET_PING_CMD_ICOUNT;
 
 	/* Get the ping options */
 
