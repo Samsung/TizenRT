@@ -999,6 +999,7 @@ static int alc5658_ioctl(FAR struct audio_lowerhalf_s *dev, int cmd, unsigned lo
 	case AUDIOIOC_SETVOLUME: {
 #ifndef CONFIG_AUDIO_EXCLUDE_VOLUME
 		unsigned int volume = arg;
+		DEBUGASSERT(volume >= 0);
 		alc5658_setvolume(priv, volume, priv->mute);
 #endif
 	}
@@ -1007,6 +1008,7 @@ static int alc5658_ioctl(FAR struct audio_lowerhalf_s *dev, int cmd, unsigned lo
 #ifndef CONFIG_AUDIO_EXCLUDE_VOLUME
 		unsigned int *volume;
 		volume = (unsigned int *)arg;
+		DEBUGASSERT(priv->volume >= 0 && priv->volume < 32);
 		*volume = priv->volume;
 #endif
 	}
