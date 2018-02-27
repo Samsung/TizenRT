@@ -82,3 +82,5 @@ reboot           sh               sleep
 TASH>>exit
 TASH: Good bye!!
 ```
+
+See all of [shell commands list](https://github.com/Samsung/TizenRT/blob/master/apps/system/utils/README.md) supported.
