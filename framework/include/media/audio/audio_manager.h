@@ -57,9 +57,9 @@ typedef enum audio_manager_result_e audio_manager_result_t;
  ****************************************************************************/
 audio_manager_result_t audio_manager_init(void);
 audio_manager_result_t set_audio_volume(int fd, uint16_t volume);
-uint16_t get_audio_volume(int fd);
-int get_avail_audio_card_id(void);
-int get_avail_audio_device_id(void);
+audio_manager_result_t get_audio_volume(int fd, uint16_t *volume);
+audio_manager_result_t get_avail_audio_card_id(unsigned int *card_id);
+audio_manager_result_t get_avail_audio_device_id(unsigned int *device_id);
 
 #if defined(__cplusplus)
 }								/* extern "C" */

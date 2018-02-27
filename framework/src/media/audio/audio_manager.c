@@ -122,29 +122,28 @@ audio_manager_result_t set_audio_volume(int fd, uint16_t volume)
 	return ret;
 }
 
-uint16_t get_audio_volume(int fd)
+audio_manager_result_t get_audio_volume(int fd, uint16_t *volume)
 {
-	int ret;
-	uint16_t audio_volume = -1;
-
-	ret = ioctl(fd, AUDIOIOC_GETVOLUME, (unsigned long)&audio_volume);
+	int ret = ioctl(fd, AUDIOIOC_GETVOLUME, (unsigned long)volume);
 	if (ret < 0) {
 		printf("AUDIOIOC_GETVOLUME ioctl failed, ret = %d\n", ret);
 		return AUDIO_MANAGER_FAIL;
 	}
 
-	return audio_volume;
+	return AUDIO_MANAGER_SUCCESS;
 }
 
-int get_avail_audio_card_id(void)
+audio_manager_result_t get_avail_audio_card_id(unsigned int *card_id)
 {
 	printf("[audio_manager] get_avail_audio_card_id() is called\n");
-	return 0;
+	*card_id = 0;
+	return AUDIO_MANAGER_SUCCESS;
 }
 
-int get_avail_audio_device_id(void)
+audio_manager_result_t get_avail_audio_device_id(unsigned int *device_id)
 {
 	printf("[audio_manager] get_avail_audio_device_id() is called\n");
-	return 0;
+	*device_id = 0;
+	return AUDIO_MANAGER_SUCCESS;
 }
 
