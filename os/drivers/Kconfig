@@ -223,6 +223,7 @@ menuconfig BCH
 menuconfig RTC
 	bool "RTC Driver Support"
 	default n
+	depends on NFILE_DESCRIPTORS != 0
 	---help---
 		This selection enables configuration of a real time clock (RTCdriver.
 		See include/tinyara/rtc.h for further watchdog timer driver information.

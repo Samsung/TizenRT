@@ -283,6 +283,7 @@ int ee_test_main(int argc, char **args);
 int board_app_initialize(void)
 {
 	int ret;
+#ifdef CONFIG_SIDK_S5JT200_AUTOMOUNT
 #if defined(CONFIG_RAMMTD) && defined(CONFIG_FS_SMARTFS)
 	int bufsize = CONFIG_RAMMTD_ERASESIZE * CONFIG_SIDK_S5JT200_RAMMTD_NEBLOCKS;
 	static uint8_t *rambuf;
@@ -291,9 +292,11 @@ int board_app_initialize(void)
 #if defined(CONFIG_FS_ROMFS)
 	char rommtd_devname[16];
 #endif
+#endif /* CONFIG_SIDK_S5JT200_AUTOMOUNT */
 
 	sidk_s5jt200_configure_partitions();
 
+#ifdef CONFIG_SIDK_S5JT200_AUTOMOUNT
 #if defined(CONFIG_SIDK_S5JT200_AUTOMOUNT_ROMFS)
 	if (rommtd_device_exist) {
 		snprintf(rommtd_devname, 16, "/dev/mtdblock%d", rommtd_partno);
@@ -388,6 +391,7 @@ int board_app_initialize(void)
 		}
 	}
 #endif /* CONFIG_RAMMTD */
+#endif /* CONFIG_SIDK_S5JT200_AUTOMOUNT */
 
 #ifdef CONFIG_S5J_I2C
 	s5j_i2c_register(0);

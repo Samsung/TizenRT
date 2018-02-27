@@ -1,8 +1,13 @@
+#
+# For a description of the syntax of this configuration file,
+# see kconfig-language at https://www.kernel.org/doc/Documentation/kbuild/kconfig-language.txt
+#
 
 menu "Shell"
 config TASH
 	bool "Enable shell"
 	default y
+	depends on NFILE_DESCRIPTORS != 0
 
 if TASH
 config TASH_MAX_COMMANDS
@@ -35,5 +40,13 @@ config TASH_CMDTASK_PRIORITY
 	default 100
 	---help---
 		The priority set for TASH command task
+
+config TASH_SCRIPT
+	bool "enable shell script"
+	default n
+	depends on !DISABLE_ENVIRON
+	---help---
+		This suppors parsing and executing shell script.
+		See "sh" on TASH help command.
 endif
 endmenu

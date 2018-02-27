@@ -108,10 +108,15 @@
 #define EOF        (-1)
 
 /* The first three _iob entries are reserved for standard I/O */
-
+#if CONFIG_NFILE_DESCRIPTORS > 0 && CONFIG_NFILE_STREAMS > 0
 #define stdin  (&sched_getstreams()->sl_streams[0])
 #define stdout (&sched_getstreams()->sl_streams[1])
 #define stderr (&sched_getstreams()->sl_streams[2])
+#else
+#define stdin  (NULL)
+#define stdout (NULL)
+#define stderr (NULL)
+#endif
 
 /* These APIs are not implemented and/or can be synthesized from
  * supported APIs.
