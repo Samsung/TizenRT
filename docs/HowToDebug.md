@@ -3,4 +3,4 @@
 Here are several debug methods.
 
 > [How to use RAMDUMP](../tools/ramdump/HowToUseRamdump.md)  
-> Debug utils like ps, stackmonitor and etc on TASH (will be updated)
+> [How to use Shell Commands](../apps/system/utils/README.md)
