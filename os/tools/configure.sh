@@ -49,7 +49,7 @@
 # POSSIBILITY OF SUCH DAMAGE.
 #
 
-WD=`pwd`
+WD=`test -d ${0%/*} && cd ${0%/*}; pwd`
 TOPDIR="${WD}/.."
 USAGE="
 
@@ -58,7 +58,7 @@ USAGE: ${0} [-d] [-a <app-dir>] <board-name>/<config-name>
 Where:
   <board-name> is the name of the board in the configs directory
   <config-name> is the name of the board configuration sub-directory
-  <add-dir> is the path to the apps/ directory, relative to the tinyara directory
+  <app-dir> is the path to the apps/ directory, relative to the tinyara directory
 
 "
 
@@ -150,6 +150,14 @@ if [ ! -r "${src_config}" ]; then
   exit 6
 fi
 
+if [ -r ${dest_config} ]; then
+  if [ -r "${TOPDIR}/.version" ]; then
+    echo "Already configured and compiled!"
+    echo "Do 'make distclean' and try again."
+    exit 7
+  fi
+fi
+
 # Extract values needed from the defconfig file.  We need:
 # (1) The CONFIG_WINDOWS_NATIVE setting to know it this is target for a
 #     native Windows (meaning that we want setenv.bat vs setenv.sh and we need
@@ -183,8 +191,6 @@ if [ -z "${appdir}" ]; then
 
   if [ -d "${TOPDIR}/../apps" ]; then
     appdir="../apps"
-    
-
   else
     # Check for a versioned apps/ directory
 
@@ -209,6 +215,7 @@ fi
 
 # Okay... Everything looks good.  Setup the configuration
 
+echo "  Copy files"
 install -m 644 "${src_makedefs}" "${dest_makedefs}" || \
   { echo "Failed to copy \"${src_makedefs}\"" ; exit 7 ; }
 if [ "X${have_setenv}" = "Xy" ]; then
@@ -238,3 +245,4 @@ if [ "X${defappdir}" = "Xy" ]; then
     echo "CONFIG_APPS_DIR=\"$posappdir\"" >> "${dest_config}"
   fi
 fi
+echo "  Configuartion is Done!"
