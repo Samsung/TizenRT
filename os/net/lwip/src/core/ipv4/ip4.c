@@ -107,7 +107,7 @@
 #if LWIP_DHCP && defined(LWIP_IP_ACCEPT_UDP_PORT)
 /* accept DHCP client port and custom port */
 #define IP_ACCEPT_LINK_LAYER_ADDRESSED_PORT(port) (((port) == PP_NTOHS(DHCP_CLIENT_PORT)) \
-         || (LWIP_IP_ACCEPT_UDP_PORT(port)))
+				|| (LWIP_IP_ACCEPT_UDP_PORT(port)))
 #elif defined(LWIP_IP_ACCEPT_UDP_PORT)	/* LWIP_DHCP && defined(LWIP_IP_ACCEPT_UDP_PORT) */
 /* accept custom port only */
 #define IP_ACCEPT_LINK_LAYER_ADDRESSED_PORT(port) (LWIP_IP_ACCEPT_UDP_PORT(port))
@@ -719,8 +719,8 @@ err_t ip4_input(struct pbuf *p, struct netif *inp)
  * include an IP header and p->payload points to it instead of the data.
  *
  * @param p the packet to send (p->payload points to the data, e.g. next
-            protocol header; if dest == LWIP_IP_HDRINCL, p already includes an
-            IP header and p->payload points to that IP header)
+			protocol header; if dest == LWIP_IP_HDRINCL, p already includes an
+			IP header and p->payload points to that IP header)
  * @param src the source IP address to send from (if src == IP4_ADDR_ANY, the
  *         IP  address of the netif used to send is used as source address)
  * @param dest the destination IP address to send the packet to
@@ -935,8 +935,8 @@ err_t ip4_output_if_opt_src(struct pbuf *p, const ip4_addr_t *src, const ip4_add
  * interface and calls upon ip_output_if to do the actual work.
  *
  * @param p the packet to send (p->payload points to the data, e.g. next
-            protocol header; if dest == LWIP_IP_HDRINCL, p already includes an
-            IP header and p->payload points to that IP header)
+			protocol header; if dest == LWIP_IP_HDRINCL, p already includes an
+			IP header and p->payload points to that IP header)
  * @param src the source IP address to send from (if src == IP4_ADDR_ANY, the
  *         IP  address of the netif used to send is used as source address)
  * @param dest the destination IP address to send the packet to
@@ -967,8 +967,8 @@ err_t ip4_output(struct pbuf *p, const ip4_addr_t *src, const ip4_addr_t *dest, 
  *  before calling ip_output_if.
  *
  * @param p the packet to send (p->payload points to the data, e.g. next
-            protocol header; if dest == LWIP_IP_HDRINCL, p already includes an
-            IP header and p->payload points to that IP header)
+			protocol header; if dest == LWIP_IP_HDRINCL, p already includes an
+			IP header and p->payload points to that IP header)
  * @param src the source IP address to send from (if src == IP4_ADDR_ANY, the
  *         IP  address of the netif used to send is used as source address)
  * @param dest the destination IP address to send the packet to

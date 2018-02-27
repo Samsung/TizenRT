@@ -199,7 +199,7 @@ struct cmsghdr {
 	int        cmsg_type;  /* protocol-specific type */
 };
 /* Data section follows header and possible padding, typically referred to as
-         unsigned char cmsg_data[]; */
+	unsigned char cmsg_data[]; */
 
 /* cmsg header/data alignment. NOTE: we align to native word size (double word
    size on 16-bit arch) so structures are not placed at an unaligned address.
@@ -425,11 +425,11 @@ typedef struct ip_mreq {
 #define IOC_INOUT       (IOC_IN|IOC_OUT)
 	/* 0x20000000 distinguishes new &
 	   old ioctl's */
-#define _IO(x,y)        (IOC_VOID|((x)<<8)|(y))
+#define _IO(x, y)        (IOC_VOID | ((x) << 8) | (y))
 
-#define _IOR(x,y,t)     (IOC_OUT|(((long)sizeof(t)&IOCPARM_MASK)<<16)|((x)<<8)|(y))
+#define _IOR(x, y, t)     (IOC_OUT | (((long)sizeof(t) & IOCPARM_MASK) << 16) | ((x) << 8) | (y))
 
-#define _IOW(x,y,t)     (IOC_IN|(((long)sizeof(t)&IOCPARM_MASK)<<16)|((x)<<8)|(y))
+#define _IOW(x, y, t)     (IOC_IN | (((long)sizeof(t) & IOCPARM_MASK) << 16) | ((x) << 8) | (y))
 #endif							/* !defined(FIONREAD) || !defined(FIONBIO) */
 
 #ifndef FIONREAD
@@ -469,13 +469,13 @@ typedef struct ip_mreq {
 /* Make FD_SETSIZE match NUM_SOCKETS in socket.c */
 #define FD_SETSIZE    (LWIP_SOCKET_OFFSET + MEMP_NUM_NETCONN)
 #define FDSETSAFESET(n, code) do { \
-  if (((n) - LWIP_SOCKET_OFFSET < MEMP_NUM_NETCONN) && (((int)(n) - LWIP_SOCKET_OFFSET) >= 0)) { \
-  code; }} while(0)
+		if (((n) - LWIP_SOCKET_OFFSET < MEMP_NUM_NETCONN) && (((int)(n) - LWIP_SOCKET_OFFSET) >= 0)) { \
+		code; } } while (0)
 #define FDSETSAFEGET(n, code) (((n) - LWIP_SOCKET_OFFSET < MEMP_NUM_NETCONN) && (((int)(n) - LWIP_SOCKET_OFFSET) >= 0) ?\
-  (code) : 0)
+		(code) : 0)
 #define FD_SET(n, p)  FDSETSAFESET(n, (p)->fd_bits[((n)-LWIP_SOCKET_OFFSET)/8] |=  (1 << (((n)-LWIP_SOCKET_OFFSET) & 7)))
 #define FD_CLR(n, p)  FDSETSAFESET(n, (p)->fd_bits[((n)-LWIP_SOCKET_OFFSET)/8] &= ~(1 << (((n)-LWIP_SOCKET_OFFSET) & 7)))
-#define FD_ISSET(n,p) FDSETSAFEGET(n, (p)->fd_bits[((n)-LWIP_SOCKET_OFFSET)/8] &   (1 << (((n)-LWIP_SOCKET_OFFSET) & 7)))
+#define FD_ISSET(n, p) FDSETSAFEGET(n, (p)->fd_bits[((n)-LWIP_SOCKET_OFFSET)/8] &   (1 << (((n)-LWIP_SOCKET_OFFSET) & 7)))
 #define FD_ZERO(p)    memset((void*)(p), 0, sizeof(*(p)))
 
 #elif LWIP_SOCKET_OFFSET

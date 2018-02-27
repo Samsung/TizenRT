@@ -75,7 +75,7 @@ struct raw_pcb;
  * If returning 1, the callback is responsible for freeing the pbuf
  * if it's not used any more.
  */
-typedef u8_t(*raw_recv_fn) (void *arg, struct raw_pcb * pcb, struct pbuf * p, const ip_addr_t * addr);
+typedef u8_t (*raw_recv_fn)(void *arg, struct raw_pcb * pcb, struct pbuf * p, const ip_addr_t * addr);
 
 /** the RAW protocol control block */
 struct raw_pcb {

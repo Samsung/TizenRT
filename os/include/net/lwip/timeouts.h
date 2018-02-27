@@ -70,7 +70,7 @@ extern "C" {
 
 /** Function prototype for a stack-internal timer function that has to be
  * called at a defined interval */
-typedef void (*lwip_cyclic_timer_handler) (void);
+typedef void (*lwip_cyclic_timer_handler)(void);
 
 /** This struct contains information about a stack-internal timer function
  that has to be called at a defined interval */
@@ -93,7 +93,7 @@ struct lwip_cyclic_timer {
  *
  * @param arg Additional argument to pass to the function - set up by sys_timeout()
  */
-typedef void (*sys_timeout_handler) (void *arg);
+typedef void (*sys_timeout_handler)(void *arg);
 
 struct sys_timeo {
 	struct sys_timeo *next;

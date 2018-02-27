@@ -83,7 +83,7 @@ typedef struct ip4_addr ip4_addr_t;
 PACK_STRUCT_BEGIN struct ip4_addr2 {
 	PACK_STRUCT_FIELD(u16_t addrw[2]);
 } PACK_STRUCT_STRUCT;
- PACK_STRUCT_END
+PACK_STRUCT_END
 #ifdef PACK_STRUCT_USE_INCLUDES
 #include "arch/epstruct.h"
 #endif
@@ -132,7 +132,7 @@ PACK_STRUCT_BEGIN struct ip4_addr2 {
 #define IP_LOOPBACKNET      127	/* official! */
 
 /** Set an IP address given by the four byte-parts */
-#define IP4_ADDR(ipaddr, a,b,c,d)  (ipaddr)->addr = PP_HTONL(LWIP_MAKEU32(a,b,c,d))
+#define IP4_ADDR(ipaddr, a, b, c, d)  (ipaddr)->addr = PP_HTONL(LWIP_MAKEU32(a, b, c, d))
 
 /** MEMCPY-like copying of IP addresses where addresses are known to be
  * 16-bit-aligned if the port is correctly configured (so a port could define
@@ -145,8 +145,8 @@ PACK_STRUCT_BEGIN struct ip4_addr2 {
 #define ip4_addr_copy(dest, src) ((dest).addr = (src).addr)
 /** Safely copy one IP address to another (src may be NULL) */
 #define ip4_addr_set(dest, src) ((dest)->addr = \
-                                    ((src) == NULL ? 0 : \
-                                    (src)->addr))
+				((src) == NULL ? 0 : \
+				 (src)->addr))
 /** Set complete address to zero */
 #define ip4_addr_set_zero(ipaddr)     ((ipaddr)->addr = 0)
 /** Set address to IPADDR_ANY (no need for lwip_htonl()) */
@@ -158,15 +158,15 @@ PACK_STRUCT_BEGIN struct ip4_addr2 {
 /** Safely copy one IP address to another and change byte order
  * from host- to network-order. */
 #define ip4_addr_set_hton(dest, src) ((dest)->addr = \
-                               ((src) == NULL ? 0:\
-                               lwip_htonl((src)->addr)))
+				((src) == NULL ? 0 : \
+				 lwip_htonl((src)->addr)))
 /** IPv4 only: set the IP address given as an u32_t */
 #define ip4_addr_set_u32(dest_ipaddr, src_u32) ((dest_ipaddr)->addr = (src_u32))
 /** IPv4 only: get the IP address as an u32_t */
 #define ip4_addr_get_u32(src_ipaddr) ((src_ipaddr)->addr)
 
 /** Get the network address by combining host address with netmask */
-#define ip4_addr_get_network(target, host, netmask) do { ((target)->addr = ((host)->addr) & ((netmask)->addr)); } while(0)
+#define ip4_addr_get_network(target, host, netmask) do { ((target)->addr = ((host)->addr) & ((netmask)->addr)); } while (0)
 
 /**
  * Determine if two address are on the same network.
@@ -177,9 +177,9 @@ PACK_STRUCT_BEGIN struct ip4_addr2 {
  * @return !0 if the network identifiers of both address match
  */
 #define ip4_addr_netcmp(addr1, addr2, mask) (((addr1)->addr & \
-                                              (mask)->addr) == \
-                                             ((addr2)->addr & \
-                                              (mask)->addr))
+						(mask)->addr) == \
+						((addr2)->addr & \
+						 (mask)->addr))
 #define ip4_addr_cmp(addr1, addr2) ((addr1)->addr == (addr2)->addr)
 
 #define ip4_addr_isany_val(addr1)   ((addr1).addr == IPADDR_ANY)
@@ -196,19 +196,19 @@ u8_t ip4_addr_netmask_valid(u32_t netmask);
 #define ip4_addr_islinklocal(addr1) (((addr1)->addr & PP_HTONL(0xffff0000UL)) == PP_HTONL(0xa9fe0000UL))
 
 #define ip4_addr_debug_print_parts(debug, a, b, c, d) \
-  LWIP_DEBUGF(debug, ("%" U16_F ".%" U16_F ".%" U16_F ".%" U16_F, a, b, c, d))
+		LWIP_DEBUGF(debug, ("%" U16_F ".%" U16_F ".%" U16_F ".%" U16_F, a, b, c, d))
 #define ip4_addr_debug_print(debug, ipaddr) \
-  ip4_addr_debug_print_parts(debug, \
-                      (u16_t)((ipaddr) != NULL ? ip4_addr1_16(ipaddr) : 0),       \
-                      (u16_t)((ipaddr) != NULL ? ip4_addr2_16(ipaddr) : 0),       \
-                      (u16_t)((ipaddr) != NULL ? ip4_addr3_16(ipaddr) : 0),       \
-                      (u16_t)((ipaddr) != NULL ? ip4_addr4_16(ipaddr) : 0))
+		ip4_addr_debug_print_parts(debug, \
+						(u16_t)((ipaddr) != NULL ? ip4_addr1_16(ipaddr) : 0),       \
+						(u16_t)((ipaddr) != NULL ? ip4_addr2_16(ipaddr) : 0),       \
+						(u16_t)((ipaddr) != NULL ? ip4_addr3_16(ipaddr) : 0),       \
+						(u16_t)((ipaddr) != NULL ? ip4_addr4_16(ipaddr) : 0))
 #define ip4_addr_debug_print_val(debug, ipaddr) \
-  ip4_addr_debug_print_parts(debug, \
-                      ip4_addr1_16(&(ipaddr)),       \
-                      ip4_addr2_16(&(ipaddr)),       \
-                      ip4_addr3_16(&(ipaddr)),       \
-                      ip4_addr4_16(&(ipaddr)))
+		ip4_addr_debug_print_parts(debug, \
+						ip4_addr1_16(&(ipaddr)),       \
+						ip4_addr2_16(&(ipaddr)),       \
+						ip4_addr3_16(&(ipaddr)),       \
+						ip4_addr4_16(&(ipaddr)))
 
 /* Get one byte from the 4-byte address */
 #define ip4_addr1(ipaddr) (((const u8_t*)(&(ipaddr)->addr))[0])

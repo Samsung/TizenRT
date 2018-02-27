@@ -83,11 +83,11 @@
 #include <net/lwip/ip6_frag.h>
 #include <net/lwip/mld6.h>
 
-#define LWIP_MEMPOOL(name,num,size,desc) LWIP_MEMPOOL_DECLARE(name,num,size,desc)
+#define LWIP_MEMPOOL(name, num, size, desc) LWIP_MEMPOOL_DECLARE(name, num, size, desc)
 #include <net/lwip/priv/memp_std.h>
 
 const struct memp_desc *const memp_pools[MEMP_MAX] = {
-#define LWIP_MEMPOOL(name,num,size,desc) &memp_ ## name,
+#define LWIP_MEMPOOL(name, num, size, desc) &memp_ ## name,
 #include <net/lwip/priv/memp_std.h>
 };
 

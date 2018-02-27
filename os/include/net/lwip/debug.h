@@ -94,7 +94,7 @@
 
 #ifndef LWIP_NOASSERT
 #define LWIP_ASSERT(message, assertion) do { if (!(assertion)) { \
-  LWIP_PLATFORM_ASSERT(message); }} while(0)
+		LWIP_PLATFORM_ASSERT(message); } } while (0)
 #ifndef LWIP_PLATFORM_ASSERT
 #error "If you want to use LWIP_ASSERT, LWIP_PLATFORM_ASSERT(message) needs to be defined in your arch/cc.h"
 #endif
@@ -113,7 +113,7 @@
 
 /* if "expression" isn't true, then print "message" and execute "handler" expression */
 #define LWIP_ERROR(message, expression, handler) do { if (!(expression)) { \
-  LWIP_PLATFORM_ERROR(message); handler;}} while(0)
+		LWIP_PLATFORM_ERROR(message); handler; } } while (0)
 #endif							/* LWIP_ERROR */
 
 #ifdef LWIP_DEBUG
@@ -121,16 +121,16 @@
 #error "If you want to use LWIP_DEBUG, LWIP_PLATFORM_DIAG(message) needs to be defined in your arch/cc.h"
 #endif
 #define LWIP_DEBUGF(debug, message) do { \
-                               if ( \
-                                   ((debug) & LWIP_DBG_ON) && \
-                                   ((debug) & LWIP_DBG_TYPES_ON) && \
-                                   ((s16_t)((debug) & LWIP_DBG_MASK_LEVEL) >= LWIP_DBG_MIN_LEVEL)) { \
-                                 LWIP_PLATFORM_DIAG(message); \
-                                 if ((debug) & LWIP_DBG_HALT) { \
-                                   while(1); \
-                                 } \
-                               } \
-                             } while(0)
+		if ( \
+			((debug) & LWIP_DBG_ON) && \
+			((debug) & LWIP_DBG_TYPES_ON) && \
+			((s16_t)((debug) & LWIP_DBG_MASK_LEVEL) >= LWIP_DBG_MIN_LEVEL)) { \
+				LWIP_PLATFORM_DIAG(message); \
+				if ((debug) & LWIP_DBG_HALT) { \
+					while (1); \
+				} \
+		} \
+	} while (0)
 
 #else							/* LWIP_DEBUG */
 #define LWIP_DEBUGF(debug, message)

@@ -218,10 +218,10 @@ void pbuf_free_ooseq(void);
 /** When not using sys_check_timeouts(), call PBUF_CHECK_FREE_OOSEQ()
     at regular intervals from main level to check if ooseq pbufs need to be
     freed! */
-#define PBUF_CHECK_FREE_OOSEQ() do { if(pbuf_free_ooseq_pending) { \
-  /* pbuf_alloc() reported PBUF_POOL to be empty -> try to free some \
-     ooseq queued pbufs now */ \
-  pbuf_free_ooseq(); }}while(0)
+#define PBUF_CHECK_FREE_OOSEQ() do { if (pbuf_free_ooseq_pending) { \
+		/* pbuf_alloc() reported PBUF_POOL to be empty -> try to free some \
+		   ooseq queued pbufs now */ \
+		pbuf_free_ooseq(); } } while (0)
 #else							/* LWIP_TCP && TCP_QUEUE_OOSEQ && NO_SYS && PBUF_POOL_FREE_OOSEQ */
 	/* Otherwise declare an empty PBUF_CHECK_FREE_OOSEQ */
 #define PBUF_CHECK_FREE_OOSEQ()

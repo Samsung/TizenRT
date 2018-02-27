@@ -109,13 +109,13 @@ extern "C" {
 #endif							/* LWIP_IPV6 */
 
 /* Helpers to process several netconn_types by the same code */
-#define NETCONNTYPE_GROUP(t)         ((t)&0xF0)
-#define NETCONNTYPE_DATAGRAM(t)      ((t)&0xE0)
+#define NETCONNTYPE_GROUP(t)         ((t) & 0xF0)
+#define NETCONNTYPE_DATAGRAM(t)      ((t) & 0xE0)
 #if LWIP_IPV6
 #define NETCONN_TYPE_IPV6            0x08
-#define NETCONNTYPE_ISIPV6(t)        (((t)&NETCONN_TYPE_IPV6) != 0)
-#define NETCONNTYPE_ISUDPLITE(t)     (((t)&0xF3) == NETCONN_UDPLITE)
-#define NETCONNTYPE_ISUDPNOCHKSUM(t) (((t)&0xF3) == NETCONN_UDPNOCHKSUM)
+#define NETCONNTYPE_ISIPV6(t)        (((t) & NETCONN_TYPE_IPV6) != 0)
+#define NETCONNTYPE_ISUDPLITE(t)     (((t) & 0xF3) == NETCONN_UDPLITE)
+#define NETCONNTYPE_ISUDPNOCHKSUM(t) (((t) & 0xF3) == NETCONN_UDPNOCHKSUM)
 #else							/* LWIP_IPV6 */
 #define NETCONNTYPE_ISIPV6(t)        (0)
 #define NETCONNTYPE_ISUDPLITE(t)     ((t) == NETCONN_UDPLITE)
@@ -227,7 +227,7 @@ struct netconn;
 struct api_msg;
 
 /* A callback prototype to inform about events for a netconn */
-typedef void (*netconn_callback) (struct netconn *, enum netconn_evt, u16_t len);
+typedef void (*netconn_callback)(struct netconn *, enum netconn_evt, u16_t len);
 
 /* A netconn descriptor */
 struct netconn {
@@ -264,7 +264,7 @@ struct netconn {
 #if LWIP_SOCKET
 	int socket;
 	struct socketlist *slist;
-	/* interoperability with tinyara network stack * */
+	/* interoperability with tinyara network stack */
 	int crefs;				/* for dup */
 #endif							/* LWIP_SOCKET */
 #if LWIP_SO_SNDTIMEO
@@ -325,7 +325,7 @@ struct netconn {
 #define netconn_new(t)                  netconn_new_with_proto_and_callback(t, 0, NULL)
 #define netconn_new_with_callback(t, c) netconn_new_with_proto_and_callback(t, 0, c)
 struct netconn *netconn_new_with_proto_and_callback(enum netconn_type t, u8_t proto, netconn_callback callback);
-	err_t netconn_delete(struct netconn *conn);
+err_t netconn_delete(struct netconn *conn);
 /* Get the type of a netconn (as enum netconn_type). */
 #define netconn_type(conn) (conn->type)
 

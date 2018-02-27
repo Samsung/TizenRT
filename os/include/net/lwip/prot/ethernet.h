@@ -74,14 +74,14 @@ extern "C" {
 PACK_STRUCT_BEGIN struct eth_addr {
 	PACK_STRUCT_FLD_8(u8_t addr[ETH_HWADDR_LEN]);
 } PACK_STRUCT_STRUCT;
- PACK_STRUCT_END
+PACK_STRUCT_END
 #ifdef PACK_STRUCT_USE_INCLUDES
 #include "arch/epstruct.h"
 #endif
 #ifdef PACK_STRUCT_USE_INCLUDES
 #include "arch/bpstruct.h"
 #endif
- PACK_STRUCT_BEGIN
+PACK_STRUCT_BEGIN
 /** Ethernet header */
 struct eth_hdr {
 #if ETH_PAD_SIZE
@@ -91,7 +91,7 @@ struct eth_hdr {
 	 PACK_STRUCT_FLD_S(struct eth_addr src);
 	 PACK_STRUCT_FIELD(u16_t type);
 } PACK_STRUCT_STRUCT;
- PACK_STRUCT_END
+PACK_STRUCT_END
 #ifdef PACK_STRUCT_USE_INCLUDES
 #include "arch/epstruct.h"
 #endif
@@ -99,7 +99,7 @@ struct eth_hdr {
 #ifdef PACK_STRUCT_USE_INCLUDES
 #include "arch/bpstruct.h"
 #endif
- PACK_STRUCT_BEGIN
+PACK_STRUCT_BEGIN
 /** VLAN header inserted between ethernet header and payload
  * if 'type' in ethernet header is ETHTYPE_VLAN.
  * See IEEE802.Q */
@@ -107,7 +107,7 @@ struct eth_vlan_hdr {
 	PACK_STRUCT_FIELD(u16_t prio_vid);
 	PACK_STRUCT_FIELD(u16_t tpid);
 } PACK_STRUCT_STRUCT;
- PACK_STRUCT_END
+PACK_STRUCT_END
 #ifdef PACK_STRUCT_USE_INCLUDES
 #include "arch/epstruct.h"
 #endif

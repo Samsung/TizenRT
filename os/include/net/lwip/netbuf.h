@@ -97,8 +97,8 @@ s8_t netbuf_next(struct netbuf *buf);
 void netbuf_first(struct netbuf *buf);
 
 #define netbuf_copy_partial(buf, dataptr, len, offset) \
-  pbuf_copy_partial((buf)->p, (dataptr), (len), (offset))
-#define netbuf_copy(buf,dataptr,len) netbuf_copy_partial(buf, dataptr, len, 0)
+		pbuf_copy_partial((buf)->p, (dataptr), (len), (offset))
+#define netbuf_copy(buf, dataptr, len) netbuf_copy_partial(buf, dataptr, len, 0)
 #define netbuf_take(buf, dataptr, len) pbuf_take((buf)->p, dataptr, len)
 #define netbuf_len(buf)              ((buf)->p->tot_len)
 #define netbuf_fromaddr(buf)         (&((buf)->addr))
@@ -115,7 +115,7 @@ void netbuf_first(struct netbuf *buf);
 #endif							/* LWIP_NETBUF_RECVINFO */
 #if LWIP_CHECKSUM_ON_COPY
 #define netbuf_set_chksum(buf, chksum) do { (buf)->flags = NETBUF_FLAG_CHKSUM; \
-                                            (buf)->toport_chksum = chksum; } while(0)
+		(buf)->toport_chksum = chksum; } while (0)
 #endif							/* LWIP_CHECKSUM_ON_COPY */
 
 #ifdef __cplusplus

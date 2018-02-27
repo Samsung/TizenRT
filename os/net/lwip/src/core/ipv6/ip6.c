@@ -752,8 +752,8 @@ ip6_input_cleanup:
  * p->payload points to it instead of the data.
  *
  * @param p the packet to send (p->payload points to the data, e.g. next
-            protocol header; if dest == LWIP_IP_HDRINCL, p already includes an
-            IPv6 header and p->payload points to that IPv6 header)
+			protocol header; if dest == LWIP_IP_HDRINCL, p already includes an
+			IPv6 header and p->payload points to that IPv6 header)
  * @param src the source IPv6 address to send from (if src == IP6_ADDR_ANY, an
  *         IP address of the netif is selected and used as source address.
  *         if src == NULL, IP6_ADDR_ANY is used as source)
@@ -866,8 +866,8 @@ err_t ip6_output_if_src(struct pbuf *p, const ip6_addr_t *src, const ip6_addr_t 
  * interface and calls upon ip6_output_if to do the actual work.
  *
  * @param p the packet to send (p->payload points to the data, e.g. next
-            protocol header; if dest == LWIP_IP_HDRINCL, p already includes an
-            IPv6 header and p->payload points to that IPv6 header)
+			protocol header; if dest == LWIP_IP_HDRINCL, p already includes an
+			IPv6 header and p->payload points to that IPv6 header)
  * @param src the source IPv6 address to send from (if src == IP6_ADDR_ANY, an
  *         IP address of the netif is selected and used as source address.
  *         if src == NULL, IP6_ADDR_ANY is used as source)
@@ -911,8 +911,8 @@ err_t ip6_output(struct pbuf *p, const ip6_addr_t *src, const ip6_addr_t *dest, 
  *  before calling ip6_output_if.
  *
  * @param p the packet to send (p->payload points to the data, e.g. next
-            protocol header; if dest == LWIP_IP_HDRINCL, p already includes an
-            IPv6 header and p->payload points to that IPv6 header)
+			protocol header; if dest == LWIP_IP_HDRINCL, p already includes an
+			IPv6 header and p->payload points to that IPv6 header)
  * @param src the source IPv6 address to send from (if src == IP6_ADDR_ANY, an
  *         IP address of the netif is selected and used as source address.
  *         if src == NULL, IP6_ADDR_ANY is used as source)

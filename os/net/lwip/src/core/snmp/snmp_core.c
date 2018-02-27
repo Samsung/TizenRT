@@ -196,7 +196,7 @@
 
 #include "snmp_core_priv.h"
 
-#if (LWIP_SNMP && (SNMP_TRAP_DESTINATIONS<=0))
+#if (LWIP_SNMP && (SNMP_TRAP_DESTINATIONS <= 0))
 #error "If you want to use SNMP, you have to define SNMP_TRAP_DESTINATIONS>=1 in your lwipopts.h"
 #endif
 #if (!LWIP_UDP && LWIP_SNMP)

@@ -55,12 +55,12 @@ extern "C" {
 #endif
 
 /* run once with empty definition to handle all custom includes in lwippools.h */
-#define LWIP_MEMPOOL(name,num,size,desc)
+#define LWIP_MEMPOOL(name, num, size, desc)
 #include <net/lwip/priv/memp_std.h>
 
 /** Create the list of all memory pools managed by memp. MEMP_MAX represents a NULL pool at the end */
 typedef enum {
-#define LWIP_MEMPOOL(name,num,size,desc)  MEMP_##name,
+#define LWIP_MEMPOOL(name, num, size, desc)  MEMP_##name,
 #include <net/lwip/priv/memp_std.h>
 	MEMP_MAX
 } memp_t;
@@ -78,13 +78,13 @@ extern const struct memp_desc *const memp_pools[MEMP_MAX];
 
 #if MEMP_MEM_MALLOC
 
-#define LWIP_MEMPOOL_DECLARE(name,num,size,desc) \
-  LWIP_MEMPOOL_DECLARE_STATS_INSTANCE(memp_stats_ ## name) \
-  const struct memp_desc memp_ ## name = { \
-    DECLARE_LWIP_MEMPOOL_DESC(desc) \
-    LWIP_MEMPOOL_DECLARE_STATS_REFERENCE(memp_stats_ ## name) \
-    LWIP_MEM_ALIGN_SIZE(size) \
-  };
+#define LWIP_MEMPOOL_DECLARE(name, num, size, desc) \
+		LWIP_MEMPOOL_DECLARE_STATS_INSTANCE(memp_stats_ ## name) \
+		const struct memp_desc memp_ ## name = { \
+			DECLARE_LWIP_MEMPOOL_DESC(desc) \
+				LWIP_MEMPOOL_DECLARE_STATS_REFERENCE(memp_stats_ ## name) \
+				LWIP_MEM_ALIGN_SIZE(size) \
+		};
 
 #else							/* MEMP_MEM_MALLOC */
 
@@ -102,21 +102,21 @@ extern const struct memp_desc *const memp_pools[MEMP_MAX];
  * To relocate a pool, declare it as extern in cc.h. Example for GCC:
  *   extern u8_t __attribute__((section(".onchip_mem"))) memp_memory_my_private_pool[];
  */
-#define LWIP_MEMPOOL_DECLARE(name,num,size,desc) \
-  LWIP_DECLARE_MEMORY_ALIGNED(memp_memory_ ## name ## _base, ((num) * (MEMP_SIZE + MEMP_ALIGN_SIZE(size)))); \
-    \
-  LWIP_MEMPOOL_DECLARE_STATS_INSTANCE(memp_stats_ ## name) \
-    \
-  static struct memp *memp_tab_ ## name; \
-    \
-  const struct memp_desc memp_ ## name = { \
-    DECLARE_LWIP_MEMPOOL_DESC(desc) \
-    LWIP_MEMPOOL_DECLARE_STATS_REFERENCE(memp_stats_ ## name) \
-    LWIP_MEM_ALIGN_SIZE(size), \
-    (num), \
-    memp_memory_ ## name ## _base, \
-    &memp_tab_ ## name \
-  };
+#define LWIP_MEMPOOL_DECLARE(name, num, size, desc) \
+	LWIP_DECLARE_MEMORY_ALIGNED(memp_memory_ ## name ## _base, ((num) * (MEMP_SIZE + MEMP_ALIGN_SIZE(size)))); \
+	\
+	LWIP_MEMPOOL_DECLARE_STATS_INSTANCE(memp_stats_ ## name) \
+	\
+	static struct memp *memp_tab_ ## name; \
+	\
+	const struct memp_desc memp_ ## name = { \
+			DECLARE_LWIP_MEMPOOL_DESC(desc) \
+			LWIP_MEMPOOL_DECLARE_STATS_REFERENCE(memp_stats_ ## name) \
+			LWIP_MEM_ALIGN_SIZE(size), \
+			(num), \
+			memp_memory_ ## name ## _base, \
+			&memp_tab_ ## name \
+	};
 
 #endif							/* MEMP_MEM_MALLOC */
 

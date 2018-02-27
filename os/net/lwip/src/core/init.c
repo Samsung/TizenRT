@@ -140,7 +140,7 @@ PACK_STRUCT_END
 #if (LWIP_MULTICAST_TX_OPTIONS && !LWIP_IPV4)
 #error "LWIP_MULTICAST_TX_OPTIONS needs LWIP_IPV4 enabled in your lwipopts.h"
 #endif
-#if ((LWIP_NETCONN || LWIP_SOCKET) && (MEMP_NUM_TCPIP_MSG_API<=0))
+#if ((LWIP_NETCONN || LWIP_SOCKET) && (MEMP_NUM_TCPIP_MSG_API <= 0))
 #error "If you want to use Sequential API, you have to define MEMP_NUM_TCPIP_MSG_API>=1 in your lwipopts.h"
 #endif
 /* There must be sufficient timeouts, taking into account requirements of the subsystems. */
@@ -187,10 +187,10 @@ PACK_STRUCT_END
 #if ((LWIP_SOCKET || LWIP_NETCONN) && (NO_SYS == 1))
 #error "If you want to use Sequential API, you have to define NO_SYS=0 in your lwipopts.h"
 #endif
-#if (LWIP_PPP_API && (NO_SYS==1))
+#if (LWIP_PPP_API && (NO_SYS == 1))
 #error "If you want to use PPP API, you have to define NO_SYS=0 in your lwipopts.h"
 #endif
-#if (LWIP_PPP_API && (PPP_SUPPORT==0))
+#if (LWIP_PPP_API && (PPP_SUPPORT == 0))
 #error "If you want to use PPP API, you have to enable PPP_SUPPORT in your lwipopts.h"
 #endif
 #if (((!LWIP_DHCP) || (!LWIP_AUTOIP)) && LWIP_DHCP_AUTOIP_COOP)

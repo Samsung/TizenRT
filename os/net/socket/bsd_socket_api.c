@@ -245,12 +245,12 @@ FAR const char *inet_ntop(int af, FAR const void *src, FAR char *dest, socklen_t
 
 #ifdef CONFIG_NET_IPv4
 	if (af == AF_INET)
-		return ip4addr_ntoa_r((const ip4_addr_t*)(src),((char *)(dest)),(size));
+		return ip4addr_ntoa_r((const ip4_addr_t*)(src), ((char *)(dest)), (size));
 	else
 #endif
 #ifdef CONFIG_NET_IPv6
 	if (af == AF_INET6)
-		return ip6addr_ntoa_r((const ip6_addr_t*)(src),((char *)(dest)),(size));
+		return ip6addr_ntoa_r((const ip6_addr_t*)(src), ((char *)(dest)), (size));
 	else
 #endif
 		return NULL;
@@ -260,12 +260,12 @@ int inet_pton(int af, FAR const char *src, FAR void *dest)
 {
 #ifdef CONFIG_NET_IPv4
 	if (af == AF_INET)
-		return ip4addr_aton(((const char *)(src)),(ip4_addr_t*)((char *)(dest)));
+		return ip4addr_aton(((const char *)(src)), (ip4_addr_t*)((char *)(dest)));
 	else
 #endif
 #ifdef CONFIG_NET_IPv6
 	if (af == AF_INET6)
-		return ip6addr_aton(((const char *)(src)),((ip6_addr_t*)(dest)));
+		return ip6addr_aton(((const char *)(src)), ((ip6_addr_t*)(dest)));
 	else
 #endif
 		return 0;

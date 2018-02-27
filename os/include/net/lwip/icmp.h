@@ -103,12 +103,12 @@ void icmp_time_exceeded(struct pbuf *p, enum icmp_te_type t);
 #if LWIP_IPV4 && LWIP_IPV6
 #if LWIP_ICMP && LWIP_ICMP6
 #define icmp_port_unreach(isipv6, pbuf) ((isipv6) ? \
-                                         icmp6_dest_unreach(pbuf, ICMP6_DUR_PORT) : \
-                                         icmp_dest_unreach(pbuf, ICMP_DUR_PORT))
+				icmp6_dest_unreach(pbuf, ICMP6_DUR_PORT) : \
+				icmp_dest_unreach(pbuf, ICMP_DUR_PORT))
 #elif LWIP_ICMP
-#define icmp_port_unreach(isipv6, pbuf) do{ if(!(isipv6)) { icmp_dest_unreach(pbuf, ICMP_DUR_PORT);}}while(0)
+#define icmp_port_unreach(isipv6, pbuf) do { if (!(isipv6)) { icmp_dest_unreach(pbuf, ICMP_DUR_PORT); } } while (0)
 #elif LWIP_ICMP6
-#define icmp_port_unreach(isipv6, pbuf) do{ if(isipv6) { icmp6_dest_unreach(pbuf, ICMP6_DUR_PORT);}}while(0)
+#define icmp_port_unreach(isipv6, pbuf) do { if (isipv6) { icmp6_dest_unreach(pbuf, ICMP6_DUR_PORT); } } while (0)
 #else
 #define icmp_port_unreach(isipv6, pbuf)
 #endif

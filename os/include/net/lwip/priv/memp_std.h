@@ -75,7 +75,7 @@ LWIP_MEMPOOL(RAW_PCB, MEMP_NUM_RAW_PCB, sizeof(struct raw_pcb), "RAW_PCB")
 	LWIP_MEMPOOL(NETBUF, MEMP_NUM_NETBUF, sizeof(struct netbuf), "NETBUF")
 	LWIP_MEMPOOL(NETCONN, MEMP_NUM_NETCONN, sizeof(struct netconn), "NETCONN")
 #endif							/* LWIP_NETCONN || LWIP_SOCKET */
-#if NO_SYS==0
+#if NO_SYS == 0
 	LWIP_MEMPOOL(TCPIP_MSG_API, MEMP_NUM_TCPIP_MSG_API, sizeof(struct tcpip_msg), "TCPIP_MSG_API")
 #if LWIP_MPU_COMPATIBLE
 	LWIP_MEMPOOL(API_MSG, MEMP_NUM_API_MSG, sizeof(struct api_msg), "API_MSG")

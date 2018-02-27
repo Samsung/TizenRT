@@ -539,8 +539,8 @@ void update_link_stats(int u);	/* Get stats at link termination */
 /*
  * System dependent definitions for user-level 4.3BSD UNIX implementation.
  */
-#define TIMEOUT(f, a, t)        do { sys_untimeout((f), (a)); sys_timeout((t)*1000, (f), (a)); } while(0)
-#define TIMEOUTMS(f, a, t)      do { sys_untimeout((f), (a)); sys_timeout((t), (f), (a)); } while(0)
+#define TIMEOUT(f, a, t)        do { sys_untimeout((f), (a)); sys_timeout((t)*1000, (f), (a)); } while (0)
+#define TIMEOUTMS(f, a, t)      do { sys_untimeout((f), (a)); sys_timeout((t), (f), (a)); } while (0)
 #define UNTIMEOUT(f, a)         sys_untimeout((f), (a))
 
 #define BZERO(s, n)		memset(s, 0, n)
@@ -552,9 +552,9 @@ void update_link_stats(int u);	/* Get stats at link termination */
  * MAKEHEADER - Add Header fields to a packet.
  */
 #define MAKEHEADER(p, t) { \
-    PUTCHAR(PPP_ALLSTATIONS, p); \
-    PUTCHAR(PPP_UI, p); \
-    PUTSHORT(t, p); }
+		PUTCHAR(PPP_ALLSTATIONS, p); \
+		PUTCHAR(PPP_UI, p); \
+		PUTSHORT(t, p); }
 
 /* Procedures exported from auth.c */
 void link_required(ppp_pcb * pcb);	/* we are starting to use the link */

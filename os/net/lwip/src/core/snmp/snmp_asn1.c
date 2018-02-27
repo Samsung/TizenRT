@@ -59,9 +59,9 @@
 #include "snmp_asn1.h"
 
 #define PBUF_OP_EXEC(code) \
-  if ((code) != ERR_OK) { \
-    return ERR_BUF; \
-  }
+		if ((code) != ERR_OK) { \
+			return ERR_BUF; \
+		}
 
 /**
  * Encodes a TLV into a pbuf stream.

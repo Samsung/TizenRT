@@ -73,17 +73,17 @@ struct netif;
 #define API_VAR_REF(name)               (*(name))
 #define API_VAR_DECLARE(type, name)     type * name
 #define API_VAR_ALLOC(type, pool, name, errorval) do { \
-                                          name = (type *)memp_malloc(pool); \
-                                          if (name == NULL) { \
-                                            return errorval; \
-                                          } \
-                                        } while(0)
+		name = (type *)memp_malloc(pool); \
+		if (name == NULL) { \
+			return errorval; \
+		} \
+	} while (0)
 #define API_VAR_ALLOC_POOL(type, pool, name, errorval) do { \
-                                          name = (type *)LWIP_MEMPOOL_ALLOC(pool); \
-                                          if (name == NULL) { \
-                                            return errorval; \
-                                          } \
-                                        } while(0)
+		name = (type *)LWIP_MEMPOOL_ALLOC(pool); \
+		if (name == NULL) { \
+			return errorval; \
+		} \
+	} while (0)
 #define API_VAR_FREE(pool, name)        memp_free(pool, name)
 #define API_VAR_FREE_POOL(pool, name)   LWIP_MEMPOOL_FREE(pool, name)
 #define API_EXPR_REF(expr)              (&(expr))
@@ -122,7 +122,7 @@ struct tcpip_api_call_data {
 #endif							/* !LWIP_TCPIP_CORE_LOCKING */
 };
 
-typedef err_t(*tcpip_api_call_fn) (struct tcpip_api_call_data * call);
+typedef err_t (*tcpip_api_call_fn)(struct tcpip_api_call_data * call);
 err_t tcpip_api_call(tcpip_api_call_fn fn, struct tcpip_api_call_data *call);
 
 enum tcpip_msg_type {

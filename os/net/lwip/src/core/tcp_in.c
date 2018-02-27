@@ -515,8 +515,7 @@ aborted:
 			pbuf_free(inseg.p);
 			inseg.p = NULL;
 		}
-	}
-	else {
+	} else {
 
 		/* If no matching PCB was found, send a TCP RST (reset) to the
 		   sender. */

@@ -126,7 +126,7 @@ struct dns_hdr {
 	PACK_STRUCT_FIELD(u16_t numauthrr);
 	PACK_STRUCT_FIELD(u16_t numextrarr);
 } PACK_STRUCT_STRUCT;
- PACK_STRUCT_END
+PACK_STRUCT_END
 #ifdef PACK_STRUCT_USE_INCLUDES
 #include "arch/epstruct.h"
 #endif
@@ -138,11 +138,11 @@ struct dns_hdr {
 #endif
 /* IPv4 group for multicast DNS queries: 224.0.0.251 */
 #ifndef DNS_MQUERY_IPV4_GROUP_INIT
-#define DNS_MQUERY_IPV4_GROUP_INIT  IPADDR4_INIT_BYTES(224,0,0,251)
+#define DNS_MQUERY_IPV4_GROUP_INIT  IPADDR4_INIT_BYTES(224, 0, 0, 251)
 #endif
 /* IPv6 group for multicast DNS queries: FF02::FB */
 #ifndef DNS_MQUERY_IPV6_GROUP_INIT
-#define DNS_MQUERY_IPV6_GROUP_INIT  IPADDR6_INIT_HOST(0xFF020000,0,0,0xFB)
+#define DNS_MQUERY_IPV6_GROUP_INIT  IPADDR6_INIT_HOST(0xFF020000, 0, 0, 0xFB)
 #endif
 #ifdef __cplusplus
 }

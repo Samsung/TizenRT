@@ -112,7 +112,7 @@ struct rs_header {
 	PACK_STRUCT_FIELD(u32_t reserved);
 	/* Options follow. */
 } PACK_STRUCT_STRUCT;
- PACK_STRUCT_END
+PACK_STRUCT_END
 #ifdef PACK_STRUCT_USE_INCLUDES
 #include "arch/epstruct.h"
 #endif

@@ -59,7 +59,7 @@
 
 #include <stdint.h>
 
-#if CONFIG_NET_LWIP
+#ifdef CONFIG_NET_LWIP
 #include <net/lwip/opt.h>
 #include <net/lwip/pbuf.h>
 #include <net/lwip/prot/ethernet.h>

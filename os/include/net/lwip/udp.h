@@ -155,7 +155,7 @@ void udp_init(void);
 #if LWIP_MULTICAST_TX_OPTIONS
 #define udp_set_multicast_netif_addr(pcb, ip4addr) ip_addr_copy_from_ip4((pcb)->multicast_ip, *(ip4addr))
 #define udp_get_multicast_netif_addr(pcb)          ip_2_ip4(&(pcb)->multicast_ip)
-#define udp_set_multicast_ttl(pcb, value)      do { (pcb)->mcast_ttl = value; } while(0)
+#define udp_set_multicast_ttl(pcb, value)      do { (pcb)->mcast_ttl = value; } while (0)
 #define udp_get_multicast_ttl(pcb)                 ((pcb)->mcast_ttl)
 #endif							/* LWIP_MULTICAST_TX_OPTIONS */
 

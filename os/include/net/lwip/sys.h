@@ -66,7 +66,7 @@ typedef u8_t sys_mbox_t;
 #define sys_sem_new(s, c) ERR_OK
 #define sys_sem_signal(s)
 #define sys_sem_wait(s)
-#define sys_arch_sem_wait(s,t)
+#define sys_arch_sem_wait(s, t)
 #define sys_sem_free(s)
 #define sys_sem_valid(s) 0
 #define sys_sem_valid_val(s) 0
@@ -79,17 +79,17 @@ typedef u8_t sys_mbox_t;
 #define sys_mutex_valid(mu) 0
 #define sys_mutex_set_invalid(mu)
 #define sys_mbox_new(m, s) ERR_OK
-#define sys_mbox_fetch(m,d)
-#define sys_mbox_tryfetch(m,d)
-#define sys_mbox_post(m,d)
-#define sys_mbox_trypost(m,d)
+#define sys_mbox_fetch(m, d)
+#define sys_mbox_tryfetch(m, d)
+#define sys_mbox_post(m, d)
+#define sys_mbox_trypost(m, d)
 #define sys_mbox_free(m)
 #define sys_mbox_valid(m)
 #define sys_mbox_valid_val(m)
 #define sys_mbox_set_invalid(m)
 #define sys_mbox_set_invalid_val(m)
 
-#define sys_thread_new(n,t,a,s,p)
+#define sys_thread_new(n, t, a, s, p)
 
 #define sys_msleep(t)
 
@@ -108,7 +108,7 @@ typedef u8_t sys_mbox_t;
 #include <net/lwip/arch/sys_arch.h>
 
 /** Function prototype for thread functions */
-typedef void (*lwip_thread_fn) (void *arg);
+typedef void (*lwip_thread_fn)(void *arg);
 
 /* Function prototypes for functions to be implemented by platform ports
    (in sys_arch.c) */
@@ -278,7 +278,7 @@ err_t sys_mbox_trypost(sys_mbox_t * mbox, void *msg);
  * @param msg pointer where the message is stored
  * @param timeout maximum time (in milliseconds) to wait for a message (0 = wait forever)
  * @return time (in milliseconds) waited for a message, may be 0 if not waited
-           or SYS_ARCH_TIMEOUT on timeout
+			or SYS_ARCH_TIMEOUT on timeout
  *         The returned time has to be accurate to prevent timer jitter!
  */
 u32_t sys_arch_mbox_fetch(sys_mbox_t * mbox, void **msg, u32_t timeout);
@@ -427,38 +427,38 @@ void sys_arch_unprotect(sys_prot_t pval);
 
 #ifndef SYS_ARCH_INC
 #define SYS_ARCH_INC(var, val) do { \
-                                SYS_ARCH_DECL_PROTECT(old_level); \
-                                SYS_ARCH_PROTECT(old_level); \
-                                var += val; \
-                                SYS_ARCH_UNPROTECT(old_level); \
-                              } while(0)
+		SYS_ARCH_DECL_PROTECT(old_level); \
+		SYS_ARCH_PROTECT(old_level); \
+		var += val; \
+		SYS_ARCH_UNPROTECT(old_level); \
+	} while (0)
 #endif							/* SYS_ARCH_INC */
 
 #ifndef SYS_ARCH_DEC
 #define SYS_ARCH_DEC(var, val) do { \
-                                SYS_ARCH_DECL_PROTECT(old_level); \
-                                SYS_ARCH_PROTECT(old_level); \
-                                var -= val; \
-                                SYS_ARCH_UNPROTECT(old_level); \
-                              } while(0)
+		SYS_ARCH_DECL_PROTECT(old_level); \
+		SYS_ARCH_PROTECT(old_level); \
+		var -= val; \
+		SYS_ARCH_UNPROTECT(old_level); \
+	} while (0)
 #endif							/* SYS_ARCH_DEC */
 
 #ifndef SYS_ARCH_GET
 #define SYS_ARCH_GET(var, ret) do { \
-                                SYS_ARCH_DECL_PROTECT(old_level); \
-                                SYS_ARCH_PROTECT(old_level); \
-                                ret = var; \
-                                SYS_ARCH_UNPROTECT(old_level); \
-                              } while(0)
+		SYS_ARCH_DECL_PROTECT(old_level); \
+		SYS_ARCH_PROTECT(old_level); \
+		ret = var; \
+		SYS_ARCH_UNPROTECT(old_level); \
+	} while (0)
 #endif							/* SYS_ARCH_GET */
 
 #ifndef SYS_ARCH_SET
 #define SYS_ARCH_SET(var, val) do { \
-                                SYS_ARCH_DECL_PROTECT(old_level); \
-                                SYS_ARCH_PROTECT(old_level); \
-                                var = val; \
-                                SYS_ARCH_UNPROTECT(old_level); \
-                              } while(0)
+		SYS_ARCH_DECL_PROTECT(old_level); \
+		SYS_ARCH_PROTECT(old_level); \
+		var = val; \
+		SYS_ARCH_UNPROTECT(old_level); \
+	} while (0)
 #endif							/* SYS_ARCH_SET */
 
 #ifdef __cplusplus

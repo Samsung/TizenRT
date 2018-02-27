@@ -77,9 +77,9 @@ struct pbuf;
 struct netif;
 
 /** Function prototype for the init_done function passed to tcpip_init */
-typedef void (*tcpip_init_done_fn) (void *arg);
+typedef void (*tcpip_init_done_fn)(void *arg);
 /** Function prototype for functions passed to tcpip_callback() */
-typedef void (*tcpip_callback_fn) (void *ctx);
+typedef void (*tcpip_callback_fn)(void *ctx);
 
 /* Forward declarations */
 struct tcpip_callback_msg;

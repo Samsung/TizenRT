@@ -91,7 +91,7 @@
 
 /* Build a CI from mppe opts (see RFC 3078) */
 #define MPPE_OPTS_TO_CI(opts, ci)		\
-    do {					\
+	do {					\
 	u_char *ptr = ci; /* u_char[4] */	\
 						\
 	/* H bit */				\
@@ -109,11 +109,11 @@
 	if (opts & MPPE_OPT_40)			\
 	    *ptr |= MPPE_L_BIT;			\
 	/* M,D,C bits not supported */		\
-    } while (/* CONSTCOND */ 0)
+	} while (/* CONSTCOND */ 0)
 
 /* The reverse of the above */
 #define MPPE_CI_TO_OPTS(ci, opts)		\
-    do {					\
+	do {					\
 	const u_char *ptr = ci; /* u_char[4] */	\
 						\
 	opts = 0;				\
@@ -143,7 +143,7 @@
 	    opts |= MPPE_OPT_UNKNOWN;		\
 	if (ptr[3] & ~MPPE_ALL_BITS)		\
 	    opts |= MPPE_OPT_UNKNOWN;		\
-    } while (/* CONSTCOND */ 0)
+	} while (/* CONSTCOND */ 0)
 
 /* Shared MPPE padding between MSCHAP and MPPE */
 #define SHA1_PAD_SIZE 40

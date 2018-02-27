@@ -185,7 +185,7 @@ static u16_t dns_txid;
 #define LWIP_DNS_ADDRTYPE_MATCH_IP(t, ip) (IP_IS_V6_VAL(ip) ? LWIP_DNS_ADDRTYPE_IS_IPV6(t) : (!LWIP_DNS_ADDRTYPE_IS_IPV6(t)))
 #define LWIP_DNS_ADDRTYPE_ARG(x) , x
 #define LWIP_DNS_ADDRTYPE_ARG_OR_ZERO(x) x
-#define LWIP_DNS_SET_ADDRTYPE(x, y) do { x = y; } while(0)
+#define LWIP_DNS_SET_ADDRTYPE(x, y) do { x = y; } while (0)
 #else
 #if LWIP_IPV6
 #define LWIP_DNS_ADDRTYPE_IS_IPV6(t) 1

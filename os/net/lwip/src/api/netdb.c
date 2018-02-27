@@ -494,7 +494,7 @@ int lwip_getnameinfo(const struct sockaddr *sa, size_t salen, char *host, size_t
 				struct sockaddr_in6 *sin6 = (struct sockaddr_in6 *)sa;
 				tmpservlen = snprintf(tmpserv, sizeof(tmpserv), "%d", ntohs(sin6->sin6_port));
 				break;
-                        }
+			}
 #endif
 			default:
 				return EAI_FAMILY;

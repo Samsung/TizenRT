@@ -494,7 +494,7 @@ void ppp_set_auth(ppp_pcb * pcb, u8_t authtype, const char *user, const char *pa
  * Default is unset (0.0.0.0).
  */
 #define ppp_set_ipcp_ouraddr(ppp, addr) do { ppp->ipcp_wantoptions.ouraddr = ip4_addr_get_u32(addr); \
-                                             ppp->ask_for_local = ppp->ipcp_wantoptions.ouraddr != 0; } while(0)
+		ppp->ask_for_local = ppp->ipcp_wantoptions.ouraddr != 0; } while (0)
 #define ppp_set_ipcp_hisaddr(ppp, addr) (ppp->ipcp_wantoptions.hisaddr = ip4_addr_get_u32(addr))
 #if LWIP_DNS
 /*
@@ -566,7 +566,7 @@ void ppp_set_mppe(ppp_pcb * pcb, u8_t flags);
  * Default is true.
  */
 #define ppp_set_neg_pcomp(ppp, boolval) (ppp->lcp_wantoptions.neg_pcompression = \
-                                         ppp->lcp_allowoptions.neg_pcompression = boolval)
+				ppp->lcp_allowoptions.neg_pcompression = boolval)
 
 /*
  * If set, enable Address/Control compression in both the receive and the transmit
@@ -575,7 +575,7 @@ void ppp_set_mppe(ppp_pcb * pcb, u8_t flags);
  * Default is true.
  */
 #define ppp_set_neg_accomp(ppp, boolval) (ppp->lcp_wantoptions.neg_accompression = \
-                                          ppp->lcp_allowoptions.neg_accompression = boolval)
+				ppp->lcp_allowoptions.neg_accompression = boolval)
 
 /*
  * If set, enable asyncmap negotiation. Otherwise forcing all control characters to
@@ -584,7 +584,7 @@ void ppp_set_mppe(ppp_pcb * pcb, u8_t flags);
  * Default is true.
  */
 #define ppp_set_neg_asyncmap(ppp, boolval) (ppp->lcp_wantoptions.neg_asyncmap = \
-                                            ppp->lcp_allowoptions.neg_asyncmap = boolval)
+				ppp->lcp_allowoptions.neg_asyncmap = boolval)
 
 /*
  * This option sets the Async-Control-Character-Map (ACCM) for this end of the link.
@@ -696,11 +696,11 @@ err_t ppp_ioctl(ppp_pcb * pcb, u8_t cmd, void *arg);
 
 /* Set an lwIP-style status-callback for the selected PPP device */
 #define ppp_set_netif_statuscallback(ppp, status_cb)       \
-        netif_set_status_callback(ppp->netif, status_cb);
+		netif_set_status_callback(ppp->netif, status_cb);
 
 /* Set an lwIP-style link-callback for the selected PPP device */
 #define ppp_set_netif_linkcallback(ppp, link_cb)           \
-        netif_set_link_callback(ppp->netif, link_cb);
+		netif_set_link_callback(ppp->netif, link_cb);
 
 #endif							/* PPP_H */
 

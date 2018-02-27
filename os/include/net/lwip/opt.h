@@ -118,7 +118,7 @@
  * one included in your C library
  */
 #ifndef MEMCPY
-#define MEMCPY(dst,src,len)             memcpy(dst,src,len)
+#define MEMCPY(dst, src, len)             memcpy(dst, src, len)
 #endif
 
 /**
@@ -126,7 +126,7 @@
  * call to memcpy() if the length is known at compile time and is small.
  */
 #ifndef SMEMCPY
-#define SMEMCPY(dst,src,len)            memcpy(dst,src,len)
+#define SMEMCPY(dst, src, len)            memcpy(dst, src, len)
 #endif
 /**
  * @}
@@ -1252,7 +1252,7 @@
  * suggested values are:
  *
  * 0:         Disable oversized allocation. Each tcp_write() allocates a new
-              pbuf (old behaviour).
+				pbuf (old behaviour).
  * 1:         Allocate size-aligned pbufs with minimal excess. Use this if your
  *            scatter-gather DMA requires aligned fragments.
  * 128:       Limit the pbuf/memory overhead to 20%.

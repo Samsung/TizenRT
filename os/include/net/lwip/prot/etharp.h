@@ -82,7 +82,7 @@ struct etharp_hdr {
 	PACK_STRUCT_FLD_S(struct eth_addr dhwaddr);
 	PACK_STRUCT_FLD_S(struct ip4_addr2 dipaddr);
 } PACK_STRUCT_STRUCT;
- PACK_STRUCT_END
+PACK_STRUCT_END
 #ifdef PACK_STRUCT_USE_INCLUDES
 #include "arch/epstruct.h"
 #endif

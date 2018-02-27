@@ -174,7 +174,7 @@ struct icmp6_echo_hdr {
 	PACK_STRUCT_FIELD(u16_t id);
 	PACK_STRUCT_FIELD(u16_t seqno);
 } PACK_STRUCT_STRUCT;
- PACK_STRUCT_END
+PACK_STRUCT_END
 #ifdef PACK_STRUCT_USE_INCLUDES
 #include "arch/epstruct.h"
 #endif

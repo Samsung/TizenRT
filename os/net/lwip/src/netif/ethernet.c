@@ -262,7 +262,8 @@ free_and_return:
  * @param eth_type ethernet type (@ref eth_type)
  * @return ERR_OK if the packet was sent, any other err_t on failure
  */
-err_t ethernet_output(struct netif * netif, struct pbuf * p, const struct eth_addr * src, const struct eth_addr * dst, u16_t eth_type) {
+err_t ethernet_output(struct netif * netif, struct pbuf * p, const struct eth_addr * src, const struct eth_addr * dst, u16_t eth_type)
+{
 	struct eth_hdr *ethhdr;
 	u16_t eth_type_be = lwip_htons(eth_type);
 

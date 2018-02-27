@@ -108,95 +108,95 @@
 
 #if LWIP_IPV4
 #define IP4ADDR_PORT_TO_SOCKADDR(sin, ipaddr, port) do { \
-      (sin)->sin_len = sizeof(struct sockaddr_in); \
-      (sin)->sin_family = AF_INET; \
-      (sin)->sin_port = lwip_htons((port)); \
-      inet_addr_from_ip4addr(&(sin)->sin_addr, ipaddr); \
-      memset((sin)->sin_zero, 0, SIN_ZERO_LEN); }while(0)
+		(sin)->sin_len = sizeof(struct sockaddr_in); \
+		(sin)->sin_family = AF_INET; \
+		(sin)->sin_port = lwip_htons((port)); \
+		inet_addr_from_ip4addr(&(sin)->sin_addr, ipaddr); \
+		memset((sin)->sin_zero, 0, SIN_ZERO_LEN); } while (0)
 #define SOCKADDR4_TO_IP4ADDR_PORT(sin, ipaddr, port) do { \
-    inet_addr_to_ip4addr(ip_2_ip4(ipaddr), &((sin)->sin_addr)); \
-    (port) = lwip_ntohs((sin)->sin_port); }while(0)
+		inet_addr_to_ip4addr(ip_2_ip4(ipaddr), &((sin)->sin_addr)); \
+		(port) = lwip_ntohs((sin)->sin_port); } while (0)
 #endif							/* LWIP_IPV4 */
 
 #if LWIP_IPV6
 #define IP6ADDR_PORT_TO_SOCKADDR(sin6, ipaddr, port) do { \
-      (sin6)->sin6_len = sizeof(struct sockaddr_in6); \
-      (sin6)->sin6_family = AF_INET6; \
-      (sin6)->sin6_port = lwip_htons((port)); \
-      (sin6)->sin6_flowinfo = 0; \
-      inet6_addr_from_ip6addr(&(sin6)->sin6_addr, ipaddr); \
-      (sin6)->sin6_scope_id = 0; }while(0)
+		(sin6)->sin6_len = sizeof(struct sockaddr_in6); \
+		(sin6)->sin6_family = AF_INET6; \
+		(sin6)->sin6_port = lwip_htons((port)); \
+		(sin6)->sin6_flowinfo = 0; \
+		inet6_addr_from_ip6addr(&(sin6)->sin6_addr, ipaddr); \
+		(sin6)->sin6_scope_id = 0; } while (0)
 #define SOCKADDR6_TO_IP6ADDR_PORT(sin6, ipaddr, port) do { \
-    inet6_addr_to_ip6addr(ip_2_ip6(ipaddr), &((sin6)->sin6_addr)); \
-    (port) = lwip_ntohs((sin6)->sin6_port); }while(0)
+		inet6_addr_to_ip6addr(ip_2_ip6(ipaddr), &((sin6)->sin6_addr)); \
+		(port) = lwip_ntohs((sin6)->sin6_port); } while (0)
 #endif							/* LWIP_IPV6 */
 
 #if LWIP_IPV4 && LWIP_IPV6
 static void sockaddr_to_ipaddr_port(const struct sockaddr *sockaddr, ip_addr_t *ipaddr, u16_t *port);
 
 #define IS_SOCK_ADDR_LEN_VALID(namelen)  (((namelen) == sizeof(struct sockaddr_in)) || \
-                                         ((namelen) == sizeof(struct sockaddr_in6)))
+				((namelen) == sizeof(struct sockaddr_in6)))
 #define IS_SOCK_ADDR_TYPE_VALID(name)    (((name)->sa_family == AF_INET) || \
-                                         ((name)->sa_family == AF_INET6))
+				((name)->sa_family == AF_INET6))
 #define SOCK_ADDR_TYPE_MATCH(name, sock) \
-       ((((name)->sa_family == AF_INET) && !(NETCONNTYPE_ISIPV6((sock)->conn->type))) || \
-       (((name)->sa_family == AF_INET6) && (NETCONNTYPE_ISIPV6((sock)->conn->type))))
+		((((name)->sa_family == AF_INET) && !(NETCONNTYPE_ISIPV6((sock)->conn->type))) || \
+		 (((name)->sa_family == AF_INET6) && (NETCONNTYPE_ISIPV6((sock)->conn->type))))
 #define IPADDR_PORT_TO_SOCKADDR(sockaddr, ipaddr, port) do { \
-    if (IP_IS_V6(ipaddr)) { \
-      IP6ADDR_PORT_TO_SOCKADDR((struct sockaddr_in6*)(void*)(sockaddr), ip_2_ip6(ipaddr), port); \
-    } else { \
-      IP4ADDR_PORT_TO_SOCKADDR((struct sockaddr_in*)(void*)(sockaddr), ip_2_ip4(ipaddr), port); \
-    } } while(0)
+		if (IP_IS_V6(ipaddr)) { \
+			IP6ADDR_PORT_TO_SOCKADDR((struct sockaddr_in6*)(void*)(sockaddr), ip_2_ip6(ipaddr), port); \
+		} else { \
+			IP4ADDR_PORT_TO_SOCKADDR((struct sockaddr_in*)(void*)(sockaddr), ip_2_ip4(ipaddr), port); \
+		} } while (0)
 #define SOCKADDR_TO_IPADDR_PORT(sockaddr, ipaddr, port) sockaddr_to_ipaddr_port(sockaddr, ipaddr, &(port))
 #define DOMAIN_TO_NETCONN_TYPE(domain, type) (((domain) == AF_INET) ? \
-  (type) : (enum netconn_type)((type) | NETCONN_TYPE_IPV6))
+				(type) : (enum netconn_type)((type) | NETCONN_TYPE_IPV6))
 #elif LWIP_IPV6					/* LWIP_IPV4 && LWIP_IPV6 */
 #define IS_SOCK_ADDR_LEN_VALID(namelen)  ((namelen) == sizeof(struct sockaddr_in6))
 #define IS_SOCK_ADDR_TYPE_VALID(name)    ((name)->sa_family == AF_INET6)
 #define SOCK_ADDR_TYPE_MATCH(name, sock) 1
 #define IPADDR_PORT_TO_SOCKADDR(sockaddr, ipaddr, port) \
-        IP6ADDR_PORT_TO_SOCKADDR((struct sockaddr_in6*)(void*)(sockaddr), ip_2_ip6(ipaddr), port)
+		IP6ADDR_PORT_TO_SOCKADDR((struct sockaddr_in6*)(void*)(sockaddr), ip_2_ip6(ipaddr), port)
 #define SOCKADDR_TO_IPADDR_PORT(sockaddr, ipaddr, port) \
-        SOCKADDR6_TO_IP6ADDR_PORT((const struct sockaddr_in6*)(const void*)(sockaddr), ipaddr, port)
+		SOCKADDR6_TO_IP6ADDR_PORT((const struct sockaddr_in6*)(const void*)(sockaddr), ipaddr, port)
 #define DOMAIN_TO_NETCONN_TYPE(domain, netconn_type) (netconn_type)
 #else /*-> LWIP_IPV4: LWIP_IPV4 && LWIP_IPV6 */
 #define IS_SOCK_ADDR_LEN_VALID(namelen)  ((namelen) == sizeof(struct sockaddr_in))
 #define IS_SOCK_ADDR_TYPE_VALID(name)    ((name)->sa_family == AF_INET)
 #define SOCK_ADDR_TYPE_MATCH(name, sock) 1
 #define IPADDR_PORT_TO_SOCKADDR(sockaddr, ipaddr, port) \
-        IP4ADDR_PORT_TO_SOCKADDR((struct sockaddr_in*)(void*)(sockaddr), ip_2_ip4(ipaddr), port)
+		IP4ADDR_PORT_TO_SOCKADDR((struct sockaddr_in*)(void*)(sockaddr), ip_2_ip4(ipaddr), port)
 #define SOCKADDR_TO_IPADDR_PORT(sockaddr, ipaddr, port) \
-        SOCKADDR4_TO_IP4ADDR_PORT((const struct sockaddr_in*)(const void*)(sockaddr), ipaddr, port)
+		SOCKADDR4_TO_IP4ADDR_PORT((const struct sockaddr_in*)(const void*)(sockaddr), ipaddr, port)
 #define DOMAIN_TO_NETCONN_TYPE(domain, netconn_type) (netconn_type)
 #endif							/* LWIP_IPV6 */
 
 #define IS_SOCK_ADDR_TYPE_VALID_OR_UNSPEC(name)    (((name)->sa_family == AF_UNSPEC) || \
-                                                    IS_SOCK_ADDR_TYPE_VALID(name))
+				IS_SOCK_ADDR_TYPE_VALID(name))
 #define SOCK_ADDR_TYPE_MATCH_OR_UNSPEC(name, sock) (((name)->sa_family == AF_UNSPEC) || \
-                                                    SOCK_ADDR_TYPE_MATCH(name, sock))
+				SOCK_ADDR_TYPE_MATCH(name, sock))
 #define IS_SOCK_ADDR_ALIGNED(name)      ((((mem_ptr_t)(name)) % 4) == 0)
 
-#define LWIP_SOCKOPT_CHECK_OPTLEN(optlen, opttype) do { if ((optlen) < sizeof(opttype)) { return EINVAL; }}while(0)
+#define LWIP_SOCKOPT_CHECK_OPTLEN(optlen, opttype) do { if ((optlen) < sizeof(opttype)) { return EINVAL; } } while (0)
 #define LWIP_SOCKOPT_CHECK_OPTLEN_CONN(sock, optlen, opttype) do { \
-  LWIP_SOCKOPT_CHECK_OPTLEN(optlen, opttype); \
-  if ((sock)->conn == NULL) { return EINVAL; } }while(0)
+		LWIP_SOCKOPT_CHECK_OPTLEN(optlen, opttype); \
+		if ((sock)->conn == NULL) { return EINVAL; } } while (0)
 #define LWIP_SOCKOPT_CHECK_OPTLEN_CONN_PCB(sock, optlen, opttype) do { \
-  LWIP_SOCKOPT_CHECK_OPTLEN(optlen, opttype); \
-  if (((sock)->conn == NULL) || ((sock)->conn->pcb.tcp == NULL)) { return EINVAL; } }while(0)
+		LWIP_SOCKOPT_CHECK_OPTLEN(optlen, opttype); \
+		if (((sock)->conn == NULL) || ((sock)->conn->pcb.tcp == NULL)) { return EINVAL; } } while (0)
 #define LWIP_SOCKOPT_CHECK_OPTLEN_CONN_PCB_TYPE(sock, optlen, opttype, netconntype) do { \
-  LWIP_SOCKOPT_CHECK_OPTLEN_CONN_PCB(sock, optlen, opttype); \
-  if (NETCONNTYPE_GROUP(netconn_type((sock)->conn)) != netconntype) { return ENOPROTOOPT; } }while(0)
+		LWIP_SOCKOPT_CHECK_OPTLEN_CONN_PCB(sock, optlen, opttype); \
+		if (NETCONNTYPE_GROUP(netconn_type((sock)->conn)) != netconntype) { return ENOPROTOOPT; } } while (0)
 
 #define LWIP_SETGETSOCKOPT_DATA_VAR_REF(name)     API_VAR_REF(name)
 #define LWIP_SETGETSOCKOPT_DATA_VAR_DECLARE(name) API_VAR_DECLARE(struct lwip_setgetsockopt_data, name)
 #define LWIP_SETGETSOCKOPT_DATA_VAR_FREE(name)    API_VAR_FREE(MEMP_SOCKET_SETGETSOCKOPT_DATA, name)
 #if LWIP_MPU_COMPATIBLE
 #define LWIP_SETGETSOCKOPT_DATA_VAR_ALLOC(name, sock) do { \
-  name = (struct lwip_setgetsockopt_data *)memp_malloc(MEMP_SOCKET_SETGETSOCKOPT_DATA); \
-  if (name == NULL) { \
-    sock_set_errno(sock, ENOMEM); \
-    return -1; \
-  } }while(0)
+		name = (struct lwip_setgetsockopt_data *)memp_malloc(MEMP_SOCKET_SETGETSOCKOPT_DATA); \
+		if (name == NULL) { \
+			sock_set_errno(sock, ENOMEM); \
+			return -1; \
+		} } while (0)
 #else							/* LWIP_MPU_COMPATIBLE */
 #define LWIP_SETGETSOCKOPT_DATA_VAR_ALLOC(name, sock)
 #endif							/* LWIP_MPU_COMPATIBLE */
@@ -208,9 +208,9 @@ static void sockaddr_to_ipaddr_port(const struct sockaddr *sockaddr, ip_addr_t *
 #else
 #define LWIP_SO_SNDRCVTIMEO_OPTTYPE struct timeval
 #define LWIP_SO_SNDRCVTIMEO_SET(optval, val)  do { \
-  s32_t loc = (val); \
-  ((struct timeval *)(optval))->tv_sec = (loc) / 1000U; \
-  ((struct timeval *)(optval))->tv_usec = ((loc) % 1000U) * 1000U; }while(0)
+		s32_t loc = (val); \
+		((struct timeval *)(optval))->tv_sec = (loc) / 1000U; \
+		((struct timeval *)(optval))->tv_usec = ((loc) % 1000U) * 1000U; } while (0)
 #define LWIP_SO_SNDRCVTIMEO_GET_MS(optval) ((((const struct timeval *)(optval))->tv_sec * 1000U) + (((const struct timeval *)(optval))->tv_usec / 1000U))
 #endif
 
@@ -330,7 +330,7 @@ static volatile int select_cb_ctr;
 #if LWIP_SOCKET_SET_ERRNO
 #ifdef ERRNO
 #ifndef set_errno
-#define set_errno(err) do { if (err) { errno = (err); } } while(0)
+#define set_errno(err) do { if (err) { errno = (err); } } while (0)
 #endif
 #else							/* LWIP_SOCKET_SET_ERRNO */
 #ifndef set_errno
@@ -340,10 +340,10 @@ static volatile int select_cb_ctr;
 #endif							/* LWIP_SOCKET_SET_ERRNO */
 
 #define sock_set_errno(sk, e) do { \
-  const int sockerr = (e); \
-  sk->err = (u8_t)sockerr; \
-  set_errno(sockerr); \
-} while (0)
+		const int sockerr = (e); \
+		sk->err = (u8_t)sockerr; \
+		set_errno(sockerr); \
+	} while (0)
 
 /* Forward delcaration of some functions */
 static void event_callback(struct netconn *conn, enum netconn_evt evt, u16_t len);

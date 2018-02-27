@@ -184,14 +184,14 @@ enum netif_mac_filter_action {
  *
  * @param netif The netif to initialize
  */
-typedef err_t(*netif_init_fn) (struct netif * netif);
+typedef err_t (*netif_init_fn)(struct netif * netif);
 /** Function prototype for netif->input functions. This function is saved as 'input'
  * callback function in the netif struct. Call it when a packet has been received.
  *
  * @param p The received packet, copied into a pbuf
  * @param inp The netif which received the packet
  */
-typedef err_t(*netif_input_fn) (struct pbuf * p, struct netif * inp);
+typedef err_t (*netif_input_fn)(struct pbuf * p, struct netif * inp);
 
 #if LWIP_IPV4
 /** Function prototype for netif->output functions. Called by lwIP when a packet
@@ -202,7 +202,7 @@ typedef err_t(*netif_input_fn) (struct pbuf * p, struct netif * inp);
  * @param p The packet to send (p->payload points to IP header)
  * @param ipaddr The IP address to which the packet shall be sent
  */
-typedef err_t(*netif_output_fn) (struct netif * netif, struct pbuf * p, const ip4_addr_t * ipaddr);
+typedef err_t (*netif_output_fn)(struct netif * netif, struct pbuf * p, const ip4_addr_t * ipaddr);
 #endif							/* LWIP_IPV4 */
 
 #if LWIP_IPV6
@@ -214,7 +214,7 @@ typedef err_t(*netif_output_fn) (struct netif * netif, struct pbuf * p, const ip
  * @param p The packet to send (p->payload points to IP header)
  * @param ipaddr The IPv6 address to which the packet shall be sent
  */
-typedef err_t(*netif_output_ip6_fn) (struct netif * netif, struct pbuf * p, const ip6_addr_t * ipaddr);
+typedef err_t (*netif_output_ip6_fn)(struct netif * netif, struct pbuf * p, const ip6_addr_t * ipaddr);
 #endif							/* LWIP_IPV6 */
 
 /** Function prototype for netif->linkoutput functions. Only used for ethernet
@@ -223,16 +223,16 @@ typedef err_t(*netif_output_ip6_fn) (struct netif * netif, struct pbuf * p, cons
  * @param netif The netif which shall send a packet
  * @param p The packet to send (raw ethernet packet)
  */
-typedef err_t(*netif_linkoutput_fn) (struct netif * netif, struct pbuf * p);
+typedef err_t (*netif_linkoutput_fn)(struct netif * netif, struct pbuf * p);
 /** Function prototype for netif status- or link-callback functions. */
-typedef void (*netif_status_callback_fn) (struct netif * netif);
+typedef void (*netif_status_callback_fn)(struct netif * netif);
 #if LWIP_IPV4 && LWIP_IGMP
 /** Function prototype for netif igmp_mac_filter functions */
-typedef err_t(*netif_igmp_mac_filter_fn) (struct netif * netif, const ip4_addr_t * group, enum netif_mac_filter_action action);
+typedef err_t (*netif_igmp_mac_filter_fn)(struct netif * netif, const ip4_addr_t * group, enum netif_mac_filter_action action);
 #endif							/* LWIP_IPV4 && LWIP_IGMP */
 #if LWIP_IPV6 && LWIP_IPV6_MLD
 /** Function prototype for netif mld_mac_filter functions */
-typedef err_t(*netif_mld_mac_filter_fn) (struct netif * netif, const ip6_addr_t * group, enum netif_mac_filter_action action);
+typedef err_t (*netif_mld_mac_filter_fn)(struct netif * netif, const ip6_addr_t * group, enum netif_mac_filter_action action);
 #endif							/* LWIP_IPV6 && LWIP_IPV6_MLD */
 
 #if LWIP_DHCP || LWIP_AUTOIP || LWIP_IGMP || LWIP_IPV6_MLD || (LWIP_NUM_NETIF_CLIENT_DATA > 0)
@@ -400,7 +400,7 @@ struct netif {
 
 #if LWIP_CHECKSUM_CTRL_PER_NETIF
 #define NETIF_SET_CHECKSUM_CTRL(netif, chksumflags) do { \
-  (netif)->chksum_flags = chksumflags; } while(0)
+		(netif)->chksum_flags = chksumflags; } while (0)
 #define IF__NETIF_CHECKSUM_ENABLED(netif, chksumflag) if (((netif) == NULL) || (((netif)->chksum_flags & (chksumflag)) != 0))
 #else							/* LWIP_CHECKSUM_CTRL_PER_NETIF */
 #define NETIF_SET_CHECKSUM_CTRL(netif, chksumflags)
@@ -481,22 +481,22 @@ void netif_set_link_callback(struct netif *netif, netif_status_callback_fn link_
 
 #if LWIP_NETIF_HOSTNAME
 /** @ingroup netif */
-#define netif_set_hostname(netif, name) do { if((netif) != NULL) { (netif)->hostname = name; }}while(0)
+#define netif_set_hostname(netif, name) do { if ((netif) != NULL) { (netif)->hostname = name; } } while (0)
 /** @ingroup netif */
 #define netif_get_hostname(netif) (((netif) != NULL) ? ((netif)->hostname) : NULL)
 #endif							/* LWIP_NETIF_HOSTNAME */
 
 #if LWIP_IGMP
 /** @ingroup netif */
-#define netif_set_igmp_mac_filter(netif, function) do { if((netif) != NULL) { (netif)->igmp_mac_filter = function; }}while(0)
+#define netif_set_igmp_mac_filter(netif, function) do { if ((netif) != NULL) { (netif)->igmp_mac_filter = function; } } while (0)
 #define netif_get_igmp_mac_filter(netif) (((netif) != NULL) ? ((netif)->igmp_mac_filter) : NULL)
 #endif							/* LWIP_IGMP */
 
 #if LWIP_IPV6 && LWIP_IPV6_MLD
 /** @ingroup netif */
-#define netif_set_mld_mac_filter(netif, function) do { if((netif) != NULL) { (netif)->mld_mac_filter = function; }}while(0)
+#define netif_set_mld_mac_filter(netif, function) do { if ((netif) != NULL) { (netif)->mld_mac_filter = function; } } while (0)
 #define netif_get_mld_mac_filter(netif) (((netif) != NULL) ? ((netif)->mld_mac_filter) : NULL)
-#define netif_mld_mac_filter(netif, addr, action) do { if((netif) && (netif)->mld_mac_filter) { (netif)->mld_mac_filter((netif), (addr), (action)); }}while(0)
+#define netif_mld_mac_filter(netif, addr, action) do { if ((netif) && (netif)->mld_mac_filter) { (netif)->mld_mac_filter((netif), (addr), (action)); } } while (0)
 #endif							/* LWIP_IPV6 && LWIP_IPV6_MLD */
 
 #if ENABLE_LOOPBACK
@@ -521,7 +521,7 @@ void netif_ip6_addr_set_state(struct netif *netif, s8_t addr_idx, u8_t state);
 s8_t netif_get_ip6_addr_match(struct netif *netif, const ip6_addr_t * ip6addr);
 void netif_create_ip6_linklocal_address(struct netif *netif, u8_t from_mac_48bit);
 err_t netif_add_ip6_address(struct netif *netif, const ip6_addr_t * ip6addr, s8_t * chosen_idx);
-#define netif_set_ip6_autoconfig_enabled(netif, action) do { if(netif) { (netif)->ip6_autoconfig_enabled = (action); }}while(0)
+#define netif_set_ip6_autoconfig_enabled(netif, action) do { if (netif) { (netif)->ip6_autoconfig_enabled = (action); } } while (0)
 #endif							/* LWIP_IPV6 */
 
 #if LWIP_NETIF_HWADDRHINT

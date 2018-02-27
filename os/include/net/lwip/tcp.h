@@ -76,7 +76,7 @@ struct tcp_pcb;
  *            Only return ERR_ABRT if you have called tcp_abort from within the
  *            callback function!
  */
-typedef err_t(*tcp_accept_fn) (void *arg, struct tcp_pcb * newpcb, err_t err);
+typedef err_t (*tcp_accept_fn)(void *arg, struct tcp_pcb * newpcb, err_t err);
 
 /** Function prototype for tcp receive callback functions. Called when data has
  * been received.
@@ -88,7 +88,7 @@ typedef err_t(*tcp_accept_fn) (void *arg, struct tcp_pcb * newpcb, err_t err);
  *            Only return ERR_ABRT if you have called tcp_abort from within the
  *            callback function!
  */
-typedef err_t(*tcp_recv_fn) (void *arg, struct tcp_pcb * tpcb, struct pbuf * p, err_t err);
+typedef err_t (*tcp_recv_fn)(void *arg, struct tcp_pcb * tpcb, struct pbuf * p, err_t err);
 
 /** Function prototype for tcp sent callback functions. Called when sent data has
  * been acknowledged by the remote side. Use it to free corresponding resources.
@@ -101,7 +101,7 @@ typedef err_t(*tcp_recv_fn) (void *arg, struct tcp_pcb * tpcb, struct pbuf * p, 
  *            Only return ERR_ABRT if you have called tcp_abort from within the
  *            callback function!
  */
-typedef err_t(*tcp_sent_fn) (void *arg, struct tcp_pcb * tpcb, u16_t len);
+typedef err_t (*tcp_sent_fn)(void *arg, struct tcp_pcb * tpcb, u16_t len);
 
 /** Function prototype for tcp poll callback functions. Called periodically as
  * specified by @see tcp_poll.
@@ -112,7 +112,7 @@ typedef err_t(*tcp_sent_fn) (void *arg, struct tcp_pcb * tpcb, u16_t len);
  *            Only return ERR_ABRT if you have called tcp_abort from within the
  *            callback function!
  */
-typedef err_t(*tcp_poll_fn) (void *arg, struct tcp_pcb * tpcb);
+typedef err_t (*tcp_poll_fn)(void *arg, struct tcp_pcb * tpcb);
 
 /** Function prototype for tcp error callback functions. Called when the pcb
  * receives a RST or is unexpectedly closed for any other reason.
@@ -124,7 +124,7 @@ typedef err_t(*tcp_poll_fn) (void *arg, struct tcp_pcb * tpcb);
  *            ERR_ABRT: aborted through tcp_abort or by a TCP timer
  *            ERR_RST: the connection was reset by the remote host
  */
-typedef void (*tcp_err_fn) (void *arg, err_t err);
+typedef void (*tcp_err_fn)(void *arg, err_t err);
 
 /** Function prototype for tcp connected callback functions. Called when a pcb
  * is connected to the remote side after initiating a connection attempt by
@@ -138,7 +138,7 @@ typedef void (*tcp_err_fn) (void *arg, err_t err);
  *
  * @note When a connection attempt fails, the error callback is currently called!
  */
-typedef err_t(*tcp_connected_fn) (void *arg, struct tcp_pcb * tpcb, err_t err);
+typedef err_t (*tcp_connected_fn)(void *arg, struct tcp_pcb * tpcb, err_t err);
 
 #if LWIP_WND_SCALE
 #define RCV_WND_SCALE(pcb, wnd) (((wnd) >> (pcb)->rcv_scale))
@@ -178,12 +178,12 @@ enum tcp_state {
  * members common to struct tcp_pcb and struct tcp_listen_pcb
  */
 #define TCP_PCB_COMMON(type) \
-  type *next; /* for the linked list */ \
-  void *callback_arg; \
-  enum tcp_state state; /* TCP state */ \
-  u8_t prio; \
-  /* ports are in host byte order */ \
-  u16_t local_port
+		type *next; /* for the linked list */ \
+		void *callback_arg; \
+		enum tcp_state state; /* TCP state */ \
+		u8_t prio; \
+		/* ports are in host byte order */ \
+		u16_t local_port
 
 /** the TCP protocol control block for listening pcbs */
 struct tcp_pcb_listen {
@@ -380,8 +380,8 @@ void tcp_poll(struct tcp_pcb *pcb, tcp_poll_fn poll, u8_t interval);
 
 #if TCP_LISTEN_BACKLOG
 #define          tcp_backlog_set(pcb, new_backlog) do { \
-  LWIP_ASSERT("pcb->state == LISTEN (called for wrong pcb?)", (pcb)->state == LISTEN); \
-  ((struct tcp_pcb_listen *)(pcb))->backlog = ((new_backlog) ? (new_backlog) : 1); } while(0)
+		LWIP_ASSERT("pcb->state == LISTEN (called for wrong pcb?)", (pcb)->state == LISTEN); \
+		((struct tcp_pcb_listen *)(pcb))->backlog = ((new_backlog) ? (new_backlog) : 1); } while (0)
 void tcp_backlog_delayed(struct tcp_pcb *pcb);
 void tcp_backlog_accepted(struct tcp_pcb *pcb);
 #else							/* TCP_LISTEN_BACKLOG */

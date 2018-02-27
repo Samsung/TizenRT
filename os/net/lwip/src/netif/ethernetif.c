@@ -106,8 +106,8 @@ static void low_level_init(struct netif *netif)
 	netif->hwaddr_len = ETHARP_HWADDR_LEN;
 
 	/* set MAC hardware address */
-	netif->hwaddr[0] =;
-	... netif->hwaddr[5] =;
+	netif->hwaddr[0] = ;
+	... netif->hwaddr[5] = ;
 
 	/* maximum transfer unit */
 	netif->mtu = 1500;
@@ -203,7 +203,7 @@ static struct pbuf *low_level_input(struct netif *netif)
 
 	/* Obtain the size of the packet and put it into the "len"
 	   variable. */
-	len =;
+	len = ;
 
 #if ETH_PAD_SIZE
 	len += ETH_PAD_SIZE;		/* allow room for Ethernet padding */
