@@ -746,7 +746,6 @@ static int alc5658_start(FAR struct audio_lowerhalf_s *dev)
 {
 
 	FAR struct alc5658_dev_s *priv = (FAR struct alc5658_dev_s *)dev;
-	int entry;
 
 	audvdbg(" alc5658_start Entry\n");
 	alc5658_takesem(&priv->devsem);
@@ -754,18 +753,6 @@ static int alc5658_start(FAR struct audio_lowerhalf_s *dev)
 	if (priv->running) {
 		goto alcstart_withsem;
 	}
-	/* Set first set of registers */
-	alc5658_exec_i2c_script(priv, codec_init_inout_script1, sizeof(codec_init_inout_script1) / sizeof(t_codec_init_script_entry));
-
-	/* Get configured sample rate and set it here - valdiation done in configure itself */
-	entry = alc5658_get_sample_rate_script(priv->samprate);
-	alc5658_exec_i2c_script(priv, g_sample_entry[entry].script, g_sample_entry[entry].size / sizeof(t_codec_init_script_entry));
-
-	/* Set second set of registers */
-	alc5658_exec_i2c_script(priv, codec_init_inout_script2, sizeof(codec_init_inout_script2) / sizeof(t_codec_init_script_entry));
-
-	alc5658_setregs(priv);
-	alc5658_getregs(priv);
 
 	/* Register cb for io error */
 	I2S_ERR_CB_REG(priv->i2s, alc5658_io_err_cb, priv);
@@ -974,8 +961,34 @@ static int alc5658_ioctl(FAR struct audio_lowerhalf_s *dev, int cmd, unsigned lo
 	switch (cmd) {
 
 	case AUDIOIOC_PREPARE: {
-		/* TODO: Need to be implemented later */
-		audvdbg("AUDIOIOC_PREPARE: No Action Would be taken now \n");
+		audvdbg("AUDIOIOC_PREPARE: alc5658 prepare\n");
+		int entry;
+
+		/* Take semaphore */
+		alc5658_takesem(&priv->devsem);
+
+		/* Pause i2s channel */
+		I2S_PAUSE(priv->i2s);
+
+		/*Reconfigure alc5658 */
+		/* Set first set of registers */
+		alc5658_exec_i2c_script(priv, codec_init_inout_script1, sizeof(codec_init_inout_script1) / sizeof(t_codec_init_script_entry));
+
+		/* Get configured sample rate and set it here - valdiation done in configure itself */
+		entry = alc5658_get_sample_rate_script(priv->samprate);
+		alc5658_exec_i2c_script(priv, g_sample_entry[entry].script, g_sample_entry[entry].size / sizeof(t_codec_init_script_entry));
+
+		/* Set second set of registers */
+		alc5658_exec_i2c_script(priv, codec_init_inout_script2, sizeof(codec_init_inout_script2) / sizeof(t_codec_init_script_entry));
+
+		/* TOCHECK: Possible to cut the two level execution of alc scritps so as to cut the time? */
+		alc5658_setregs(priv);
+
+		/* Resume I2S */
+		I2S_RESUME(priv->i2s);
+
+		/* Give semaphore */
+		alc5658_givesem(&priv->devsem);
 	}
 	break;
 	case AUDIOIOC_HWRESET: {

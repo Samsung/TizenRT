@@ -628,6 +628,11 @@ static void utc_audio_pcm_readi_p(void)
 
 	while (remain > 0) {
 		frames_read = pcm_readi(g_pcm, buffer, pcm_get_buffer_size(g_pcm));
+		if (frames_read == -EPIPE) {
+			pcm_prepare(g_pcm);
+			continue;
+		}
+
 		if (frames_read < 0) {
 			break;
 		}
@@ -818,13 +823,19 @@ static void utc_audio_pcm_writei_p(void)
 	TC_ASSERT_GEQ_CLEANUP("pcm_writei", fd, 0, clean_all_data(0, buffer));
 
 	printf("Playback start!!\n");
-	do {
+
+	for (;;) {
 		num_read = read(fd, buffer, size);
-		if (num_read > 0) {
-			ret = pcm_writei(g_pcm, buffer, pcm_bytes_to_frames(g_pcm, num_read));
-			TC_ASSERT_GEQ_CLEANUP("pcm_writei", ret, 0, clean_all_data(fd, buffer));
+		if (num_read <= 0) {
+			break;
 		}
-	} while (num_read > 0);
+		ret = pcm_writei(g_pcm, buffer, pcm_bytes_to_frames(g_pcm, num_read));
+		if (ret == -EPIPE) {
+			pcm_prepare(g_pcm);
+			ret = pcm_writei(g_pcm, buffer, pcm_bytes_to_frames(g_pcm, num_read));
+		}
+		TC_ASSERT_GEQ_CLEANUP("pcm_writei", ret, 0, clean_all_data(fd, buffer));
+	}
 
 	if (buffer != NULL) {
 		free(buffer);
