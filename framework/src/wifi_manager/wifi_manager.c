@@ -980,6 +980,7 @@ wifi_manager_result_e _handler_on_reconnect_state(_wifimgr_msg_s *msg)
 		nvdbg("[WM] reconnect\n");
 	} else if (msg->event == EVT_STA_CONNECTED) {
 		nvdbg("[WM] connected\n");
+		_handle_user_cb(CB_STA_CONNECTED, NULL);
 		WIFIMGR_SET_STATE(WIFIMGR_STA_CONNECTED);
 	}
 #endif /* WIFIDRIVER_SUPPORT_AUTOCONNECT*/
