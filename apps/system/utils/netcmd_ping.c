@@ -323,9 +323,9 @@ int ping_process(int count, const char *taddr)
 	close(s);
 
 	printf("--- %s ping statistics ---\n", taddr);
-	printf("%d packets transmitted, %d received, %f\%% packet loss,\n", ping_send_counter,
-		   g_ping_recv_counter,
-		   (100.0f * (float)(g_ping_recv_counter - ping_send_counter))/(float)g_ping_recv_counter);
+	printf("%d packets transmitted, %d received, %f%% packet loss\n", ping_send_counter,
+		g_ping_recv_counter,
+		(100.0f * (float)(ping_send_counter - g_ping_recv_counter) / (float)ping_send_counter));
 
 	return OK;
 }
