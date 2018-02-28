@@ -324,6 +324,8 @@ static void alc5658_setvolume(FAR struct alc5658_dev_s *priv, uint16_t volume, b
 			volume = 31;
 		}
 		priv->volume = volume;
+
+		alc5658_setregs(priv);
 	}
 }
 #endif							/* CONFIG_AUDIO_EXCLUDE_VOLUME */
