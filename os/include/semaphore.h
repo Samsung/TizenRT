@@ -69,6 +69,7 @@
 
 #include <stdint.h>
 #include <limits.h>
+#include <queue.h>
 
 /****************************************************************************
  * Pre-processor Definitions
@@ -106,6 +107,7 @@ struct semholder_s {
 #endif
 #endif							/* CONFIG_PRIORITY_INHERITANCE */
 
+#define SEM_WAITLIST_INIT {NULL, NULL}
 /**
  * @ingroup SEMAPHORE_KERNEL
  * @brief Structure of generic semaphore
@@ -116,7 +118,7 @@ struct sem_s {
 	/* If priority inheritance is enabled, then we have to keep track of which
 	 * tasks hold references to the semaphore.
 	 */
-
+	dq_queue_t waiting_tasklist;
 #ifdef CONFIG_PRIORITY_INHERITANCE
 	uint8_t flags;			/* See PRIOINHERIT_FLAGS_* definitions */
 #if CONFIG_SEM_PREALLOCHOLDERS > 0
@@ -136,12 +138,12 @@ typedef struct sem_s sem_t;
  */
 #ifdef CONFIG_PRIORITY_INHERITANCE
 #if CONFIG_SEM_PREALLOCHOLDERS > 0
-#define SEM_INITIALIZER(c) {(c), 0, NULL} /* semcount, flags, hhead */
+#define SEM_INITIALIZER(c) {(c), SEM_WAITLIST_INIT, 0, NULL} /* semcount, flags, hhead */
 #else
-#define SEM_INITIALIZER(c) {(c), 0, SEMHOLDER_INITIALIZER} /* semcount, flags, holder */
+#define SEM_INITIALIZER(c) {(c), SEM_WAITLIST_INIT, 0, SEMHOLDER_INITIALIZER} /* semcount, flags, holder */
 #endif
 #else
-#define SEM_INITIALIZER(c) {(c)}	/* semcount */
+#define SEM_INITIALIZER(c) {(c), SEM_WAITLIST_INIT}	/* semcount */
 #endif
 
 /****************************************************************************

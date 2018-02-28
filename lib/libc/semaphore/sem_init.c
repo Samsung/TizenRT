@@ -108,6 +108,9 @@ int sem_init(FAR sem_t *sem, int pshared, unsigned int value)
 		save_semaphore_history(sem, (void *)NULL, SEM_INIT);
 #endif
 
+		/* Initialize the waiting task list */
+		dq_init(&(sem->waiting_tasklist));
+
 		/* Initialize to support priority inheritance */
 
 #ifdef CONFIG_PRIORITY_INHERITANCE

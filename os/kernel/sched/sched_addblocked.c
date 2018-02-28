@@ -111,12 +111,19 @@ void sched_addblocked(FAR struct tcb_s *btcb, tstate_t task_state)
 
 	ASSERT(task_state >= FIRST_BLOCKED_STATE && task_state <= LAST_BLOCKED_STATE);
 
-	/* Add the TCB to the blocked task list associated with this state.
+
+	if (task_state == TSTATE_WAIT_SEM) {
+		/* Add the TCB to waiting_tasklist of watsem */
+		sched_addprioritized(btcb, (FAR dq_queue_t *)&(btcb->waitsem->waiting_tasklist));
+	}
+
+	/* Other than TSTATE_WAIT_SEM state, Add the TCB to the blocked task
+	 * list associated with this state.
 	 * First, determine if the task is to be added to a prioritized task
 	 * list
 	 */
 
-	if (g_tasklisttable[task_state].prioritized) {
+	else if (g_tasklisttable[task_state].prioritized) {
 		/* Add the task to a prioritized list */
 
 		sched_addprioritized(btcb, (FAR dq_queue_t *)g_tasklisttable[task_state].list);
