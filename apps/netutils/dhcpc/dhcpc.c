@@ -455,7 +455,7 @@ void *dhcpc_open(const char *intf)
 
 	/* Configure for read timeouts */
 
-	tv.tv_sec = 10;
+	tv.tv_sec = 5;
 	tv.tv_usec = 0;
 	ret = setsockopt(pdhcpc->sockfd, SOL_SOCKET, SO_RCVTIMEO, &tv, sizeof(struct timeval));
 	if (ret < 0) {
