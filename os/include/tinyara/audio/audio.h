@@ -248,7 +248,6 @@
 
 #define AUDIO_FU_UNDEF              0x0000
 #define AUDIO_FU_MUTE               0x0001
-#define AUDIO_FU_VOLUME             0x0002
 #define AUDIO_FU_BASS               0x0004
 #define AUDIO_FU_MID                0x0008
 #define AUDIO_FU_TREBLE             0x0010
