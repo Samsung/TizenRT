@@ -63,21 +63,44 @@ static const char akc_root_ca[] =
 
 
 #define OTA_FIRMWARE_HEADER_SIZE		4096
+#define OTA_SIGNATURE_SIZE				3192
 #define UUID_MAX_LEN					64
 #define LWM2M_RES_DEVICE_REBOOT		"/3/0/4"
 #define LWM2M_CONNECTION_MAX_RETRIES	5
+#define PKCS7_BEGIN					"-----BEGIN PKCS7-----\n"
+#define PKCS7_END						"-----END PKCS7-----\n"
+#define END_CERT						"-----END CERTIFICATE-----\n"
+
+enum ota_error {
+	OTA_ERROR_SUCCESS = 0,
+	OTA_ERROR_VERIFY,
+};
+
+struct ota_signature {
+	artik_security_handle handle;
+	artik_time signing_time;
+	char data[OTA_SIGNATURE_SIZE];
+	size_t offset;
+	bool found;
+};
+
+struct ota_header {
+	char data[OTA_FIRMWARE_HEADER_SIZE];
+	size_t offset;
+};
 
 struct ota_info {
-	char header[OTA_FIRMWARE_HEADER_SIZE];
-	size_t remaining_header_size;
-	size_t offset;
+	struct ota_header header;
+	struct ota_signature sig;
+	enum ota_error error;
 	int fd;
 };
 
 static artik_lwm2m_handle g_lwm2m_handle;
 static struct ota_info *g_ota_info;
-struct Lwm2mState lwm2m_state;
 static int g_lwm2m_connection_retries;
+
+struct Lwm2mConfig lwm2m_config;
 
 static void on_error(void *data, void *user_data)
 {
@@ -138,30 +161,152 @@ static void on_execute_resource(void *data, void *user_data)
 
 		int fd =  open("/dev/mtdblock7", O_RDWR);
 
-		write(fd, g_ota_info->header, OTA_FIRMWARE_HEADER_SIZE);
+		write(fd, g_ota_info->header.data, OTA_FIRMWARE_HEADER_SIZE);
 		close(fd);
 
-		lwm2m_state.is_ota_update = 1;
+		lwm2m_config.is_ota_update = 1;
 		SaveConfiguration();
 		reboot();
 	}
 }
 
+static char *locate_substring(const char *big, const char *token, size_t len)
+{
+	size_t tokenlen = strlen(token);
+	const char *p;
+
+	if (tokenlen == 0) {
+		return (char *)big;
+	}
+
+	for (p = big; *p && (p + tokenlen <= big + len); p++) {
+		if ((*p == *token) && (strncmp(p, token, tokenlen) == 0)) {
+			return (char *)p;
+		}
+	}
+
+	return NULL;
+}
+
 static int write_firmware(char *data, size_t len, void *user_data)
 {
 	int header_size = 0;
+	int sig_size = 0;
+	char *end = NULL;
 
-	if (g_ota_info->remaining_header_size > 0) {
-		header_size = len > g_ota_info->remaining_header_size ? g_ota_info->remaining_header_size : len;
-		memcpy(g_ota_info->header + g_ota_info->offset, data, header_size);
-		len -= header_size;
-		g_ota_info->remaining_header_size -= header_size;
-		g_ota_info->offset += header_size;
-		printf("Skip OTA header (header_size %d, len %d, remaining_header_size %d)\n", header_size, len, g_ota_info->remaining_header_size);
+	if (g_ota_info->error != OTA_ERROR_SUCCESS)
+		return len;
+
+	/* Enable OTA package signature verification for secure device type. */
+	if (cloud_secure_dt && !g_ota_info->sig.found) {
+		if (g_ota_info->sig.offset == 0 && !locate_substring(data, PKCS7_BEGIN, len)) {
+			fprintf(stderr, "Failed to download firmware: Signature not found\n");
+			g_ota_info->error = OTA_ERROR_VERIFY;
+			return len;
+		}
+
+		end = locate_substring(data, PKCS7_END, len);
+		if (!end) {
+			sig_size = len;
+		} else {
+			g_ota_info->sig.found = true;
+			sig_size = end + strlen(PKCS7_END) - data;
+		}
+
+		if (sig_size + g_ota_info->sig.offset + 1 > OTA_SIGNATURE_SIZE) {
+			g_ota_info->error = OTA_ERROR_VERIFY;
+			fprintf(stderr, "Failed to download firmware: The signature is too long\n");
+			return len;
+		}
+
+		memcpy(g_ota_info->sig.data + g_ota_info->sig.offset, data, sig_size);
+		len -= sig_size;
+		g_ota_info->sig.offset += sig_size;
+
+		if (g_ota_info->sig.found) {
+			char *a053_root_ca = NULL;
+			char *end_ca_cert = NULL;
+			artik_time *signing_time_in = &lwm2m_config.signing_time;
+			artik_error err;
+			artik_security_handle handle;
+			artik_security_module *security = artik_request_api_module("security");
+
+			g_ota_info->sig.data[g_ota_info->sig.offset + sig_size] = '\0';
+			security->request(&handle);
+			security->get_ca_chain(handle, CERT_ID_ARTIK, &a053_root_ca);
+			end_ca_cert = strstr(a053_root_ca, END_CERT);
+			end_ca_cert += strlen(END_CERT);
+			*end_ca_cert = '\0';
+
+			if (lwm2m_config.signing_time.month == 0 && lwm2m_config.signing_time.year == 0 &&
+				lwm2m_config.signing_time.day == 0 && lwm2m_config.signing_time.minute == 0 &&
+				lwm2m_config.signing_time.hour == 0 && lwm2m_config.signing_time.second == 0)
+				signing_time_in = NULL;
+
+			err = security->verify_signature_init(&g_ota_info->sig.handle,
+											g_ota_info->sig.data,
+											a053_root_ca,
+											signing_time_in,
+											&g_ota_info->sig.signing_time);
+			if (err != S_OK) {
+				fprintf(stderr, "Verify signature failed: %s", error_msg(err));
+				g_ota_info->error = OTA_ERROR_VERIFY;
+				return len;
+			}
+
+			free(a053_root_ca);
+			artik_release_api_module(security);
+		}
 	}
 
-	if (len > 0)
-		write(g_ota_info->fd, data+header_size, len);
+	if (len > 0 && OTA_FIRMWARE_HEADER_SIZE - g_ota_info->header.offset > 0) {
+		size_t remaining_header_size = OTA_FIRMWARE_HEADER_SIZE - g_ota_info->header.offset;
+
+		header_size = len > remaining_header_size ? remaining_header_size : len;
+		memcpy(g_ota_info->header.data + g_ota_info->header.offset, data + sig_size, header_size);
+
+		if (cloud_secure_dt) {
+			artik_error err;
+			artik_security_module *security = artik_request_api_module("security");
+
+			err = security->verify_signature_update(
+				g_ota_info->sig.handle,
+				(unsigned char *)(g_ota_info->header.data + g_ota_info->header.offset),
+				header_size);
+			if (err != S_OK) {
+				fprintf(stderr, "Verify signature failed: %s", error_msg(err));
+				g_ota_info->error = OTA_ERROR_VERIFY;
+				return len;
+			}
+		}
+
+		len -= header_size;
+		g_ota_info->header.offset += header_size;
+
+		printf("Skip OTA header (header_size %d, len %d, remaining_header_size %d)\n",
+			   header_size, len, remaining_header_size);
+	}
+
+	if (len > 0) {
+		write(g_ota_info->fd, data + sig_size + header_size, len);
+
+		if (cloud_secure_dt) {
+			artik_error err;
+			artik_security_module *security = artik_request_api_module("security");
+
+			err = security->verify_signature_update(
+				g_ota_info->sig.handle,
+				(unsigned char *)(data + sig_size + header_size),
+				len);
+
+			if (err != S_OK) {
+				fprintf(stderr, "Verify signature failed: %s", error_msg(err));
+				g_ota_info->error = OTA_ERROR_VERIFY;
+				return len;
+			}
+		}
+
+	}
 
 	return len;
 }
@@ -170,6 +315,7 @@ static int download_firmware(int argc, char *argv[])
 {
 	artik_lwm2m_module *lwm2m = (artik_lwm2m_module *)artik_request_api_module("lwm2m");
 	artik_http_module *http = (artik_http_module *)artik_request_api_module("http");
+	artik_security_module *security;
 	artik_ssl_config ssl_conf;
 	int status = 0;
 
@@ -181,7 +327,6 @@ static int download_firmware(int argc, char *argv[])
 
 	g_ota_info = malloc(sizeof(struct ota_info));
 	memset(g_ota_info, 0, sizeof(struct ota_info));
-	g_ota_info->remaining_header_size = OTA_FIRMWARE_HEADER_SIZE;
 
 	if (!lwm2m) {
 		fprintf(stderr, "Failed to request LWM2M module\n");
@@ -201,6 +346,7 @@ static int download_firmware(int argc, char *argv[])
 			(unsigned char *)ARTIK_LWM2M_FIRMWARE_STATE_IDLE,
 			strlen(ARTIK_LWM2M_FIRMWARE_STATE_IDLE));
 		artik_release_api_module(lwm2m);
+		free(g_ota_info);
 		return 1;
 	}
 
@@ -226,7 +372,54 @@ static int download_firmware(int argc, char *argv[])
 		artik_release_api_module(lwm2m);
 		artik_release_api_module(http);
 		close(g_ota_info->fd);
+		free(g_ota_info);
 		return 1;
+	}
+
+	if (g_ota_info->error != OTA_ERROR_SUCCESS) {
+		lwm2m->client_write_resource(
+			g_lwm2m_handle,
+			ARTIK_LWM2M_URI_FIRMWARE_UPDATE_RES,
+			(unsigned char *)ARTIK_LWM2M_FIRMWARE_UPD_RES_PKG_ERR,
+			strlen(ARTIK_LWM2M_FIRMWARE_UPD_RES_PKG_ERR));
+
+		lwm2m->client_write_resource(
+			g_lwm2m_handle,
+			ARTIK_LWM2M_URI_FIRMWARE_STATE,
+			(unsigned char *)ARTIK_LWM2M_FIRMWARE_STATE_IDLE,
+			strlen(ARTIK_LWM2M_FIRMWARE_STATE_IDLE));
+		artik_release_api_module(lwm2m);
+		artik_release_api_module(http);
+		close(g_ota_info->fd);
+		free(g_ota_info);
+		return 1;
+	}
+
+	if (cloud_secure_dt) {
+		security = artik_request_api_module("security");
+		ret = security->verify_signature_final(g_ota_info->sig.handle);
+		if (ret != S_OK) {
+			lwm2m->client_write_resource(
+				g_lwm2m_handle,
+				ARTIK_LWM2M_URI_FIRMWARE_UPDATE_RES,
+				(unsigned char *)ARTIK_LWM2M_FIRMWARE_UPD_RES_CRC_ERR,
+				strlen(ARTIK_LWM2M_FIRMWARE_UPD_RES_CRC_ERR));
+
+			lwm2m->client_write_resource(
+				g_lwm2m_handle,
+				ARTIK_LWM2M_URI_FIRMWARE_STATE,
+				(unsigned char *)ARTIK_LWM2M_FIRMWARE_STATE_IDLE,
+				strlen(ARTIK_LWM2M_FIRMWARE_STATE_IDLE));
+			artik_release_api_module(lwm2m);
+			artik_release_api_module(http);
+			artik_release_api_module(security);
+			close(g_ota_info->fd);
+			free(g_ota_info);
+			return 1;
+		}
+		memcpy(&lwm2m_config.signing_time_tmp, &g_ota_info->sig.signing_time, sizeof(artik_time));
+		SaveConfiguration();
+		printf("Signature OK\n");
 	}
 
 	lwm2m->client_write_resource(
@@ -334,7 +527,10 @@ static void finish_ota(void)
 		(unsigned char *)ONBOARDING_VERSION,
 		strlen(ONBOARDING_VERSION));
 
-	lwm2m_state.is_ota_update = 0;
+	lwm2m_config.is_ota_update = 0;
+	if (cloud_secure_dt) {
+		memcpy(&lwm2m_config.signing_time, &lwm2m_config.signing_time_tmp, sizeof(artik_time));
+	}
 	SaveConfiguration();
 }
 
@@ -405,7 +601,7 @@ static pthread_addr_t lwm2m_start_cb(void *arg)
 	lwm2m->set_callback(g_lwm2m_handle, ARTIK_LWM2M_EVENT_RESOURCE_CHANGED,
 			on_changed_resource, (void *)g_lwm2m_handle);
 
-	if (lwm2m_state.is_ota_update) {
+	if (lwm2m_config.is_ota_update) {
 		finish_ota();
 	}
 
@@ -520,5 +716,7 @@ exit:
 
 void Lwm2mResetConfig(void)
 {
-	lwm2m_state.is_ota_update = 0;
+	lwm2m_config.is_ota_update = 0;
+	memset(&lwm2m_config.signing_time, 0, sizeof(artik_time));
+	memset(&lwm2m_config.signing_time_tmp, 0, sizeof(artik_time));
 }
