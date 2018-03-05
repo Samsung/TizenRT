@@ -459,7 +459,7 @@ typedef CODE void (*audio_callback_t)(FAR void *priv, uint16_t reason, FAR struc
 typedef CODE void (*audio_callback_t)(FAR void *priv, uint16_t reason, FAR struct ap_buffer_s *apb, uint16_t status);
 #endif
 
-/* This structure is a set a callback functions used to call from the upper-
+/* This structure is a set of callback functions used to call from the upper-
  * half, generic Audio driver into lower-half, platform-specific logic that
  * supports the low-level functionality.
  */

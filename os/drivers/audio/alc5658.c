@@ -496,7 +496,7 @@ static int alc5658_getcaps(FAR struct audio_lowerhalf_s *dev, int type, FAR stru
 		if (caps->ac_subtype == AUDIO_FU_UNDEF) {
 			/* Fill in the ac_controls section with the Feature Units we have */
 
-			caps->ac_controls.b[0] = AUDIO_FU_VOLUME | AUDIO_FU_BASS | AUDIO_FU_TREBLE;
+			caps->ac_controls.b[0] = AUDIO_FU_BASS | AUDIO_FU_TREBLE;
 			caps->ac_controls.b[1] = AUDIO_FU_BALANCE >> 8;
 		} else {
 			/* TODO:  Do we need to provide specific info for the Feature Units,
