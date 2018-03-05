@@ -72,7 +72,7 @@
 #define KEY_DEVICE_SPECIFICATION_PLATFORM_PLATFORMVERSION   "platformVersion"
 #define KEY_DEVICE_SPECIFICATION_PLATFORM_OSVERSION     "osVersion"
 #define KEY_DEVICE_SPECIFICATION_PLATFORM_HARDWAREVERSION   "hardwareVersion"
-#define KEY_DEVICE_SPECIFICATION_PLATFORM_FIRMWAREVERSION   "v"
+#define KEY_DEVICE_SPECIFICATION_PLATFORM_FIRMWAREVERSION   "firmwareVersion"
 #define KEY_DEVICE_SPECIFICATION_PLATFORM_VENDORID  "vendorId"
 
 #define KEY_RESOURCES       "resources"
@@ -159,6 +159,9 @@ static char g_certificate_file_path[MAX_FILE_PATH_LENGTH + 1] = { 0 };
 static char g_private_key_file_path[MAX_FILE_PATH_LENGTH + 1] = { 0 };
 
 static char g_cloud_address[MAX_CLOUD_ADDRESS] = { 0 };
+static char *g_firmware_version;
+static char *g_vendor_id;
+static char *g_model_number;
 
 static char *g_manufacturer_name;
 static char *g_setup_id;
@@ -236,6 +239,94 @@ const struct things_attribute_info_s const gstAttr_x_com_samsung_accesspointlist
 	}
 };
 
+#ifdef CONFIG_ST_THINGS_FOTA
+const struct things_attribute_info_s const gstAttr_oic_r_firmware[] = {
+	{
+		.key = "version",
+		.type = 3,
+		.mandatory = false,
+		.rw = 1
+	},
+	{
+		.key = "newversion",
+		.type = 3,
+		.mandatory = false,
+		.rw = 3
+	},
+	{
+		.key = "packageuri",
+		.type = 3,
+		.mandatory = false,
+		.rw = 3
+	},
+	{
+		.key = "packagesize",
+		.type = 1,
+		.mandatory = false,
+		.rw = 3
+	},
+	{
+		.key = "packagemd5",
+		.type = 3,
+		.mandatory = false,
+		.rw = 3
+	},
+	{
+		.key = "activecheck",
+		.type = 1,
+		.mandatory = false,
+		.rw = 1
+	},
+	{
+		.key = "update",
+		.type = 3,
+		.mandatory = false,
+		.rw = 3
+	},
+	{
+		.key = "vender",
+		.type = 3,
+		.mandatory = false,
+		.rw = 1
+	},
+	{
+		.key = "model",
+		.type = 3,
+		.mandatory = false,
+		.rw = 1
+	},
+	{
+		.key = "state",
+		.type = 1,
+		.mandatory = false,
+		.rw = 1
+	},
+	{
+		.key = "progress",
+		.type = 1,
+		.mandatory = false,
+		.rw = 1
+	},
+	{
+		.key = "result",
+		.type = 1,
+		.mandatory = false,
+		.rw = 1
+	},
+	{
+		.key = "updatetime",
+		.type = 3,
+		.mandatory = false,
+		.rw = 3
+	},
+	{
+		.key = "description",
+		.type = 3,
+		.mandatory = false,
+		.rw = 3
+	}
+};
+#endif
 static const struct st_resource_type_s const gst_resource_types[] = {
 	{
 		.rt = "x.com.samsung.provisioninginfo",
@@ -251,6 +342,26 @@ static const struct st_resource_type_s const gst_resource_types[] = {
 		.prop_cnt = 1,
 		.prop[0] = &gstAttr_x_com_samsung_accesspointlist[0]
 	}
+#ifdef CONFIG_ST_THINGS_FOTA
+	, {
+		.rt = "oic.r.firmware",
+		.prop_cnt = 14,
+		.prop[0] = &gstAttr_oic_r_firmware[0],
+		.prop[1] = &gstAttr_oic_r_firmware[1],
+		.prop[2] = &gstAttr_oic_r_firmware[2],
+		.prop[3] = &gstAttr_oic_r_firmware[3],
+		.prop[4] = &gstAttr_oic_r_firmware[4],
+		.prop[5] = &gstAttr_oic_r_firmware[5],
+		.prop[6] = &gstAttr_oic_r_firmware[6],
+		.prop[7] = &gstAttr_oic_r_firmware[7],
+		.prop[8] = &gstAttr_oic_r_firmware[8],
+		.prop[9] = &gstAttr_oic_r_firmware[9],
+		.prop[10] = &gstAttr_oic_r_firmware[10],
+		.prop[11] = &gstAttr_oic_r_firmware[11],
+		.prop[12] = &gstAttr_oic_r_firmware[12],
+		.prop[13] = &gstAttr_oic_r_firmware[13]
+	}
+#endif
 };
 
 static const struct things_resource_info_s const gstResources[] = {
@@ -270,6 +381,16 @@ static const struct things_resource_info_s const gstResources[] = {
 		.rt_cnt = 1,
 		.policy = 3
 	}
+#ifdef CONFIG_ST_THINGS_FOTA
+	, {
+		.uri = "/firmware",
+		.interface_types = {"oic.if.baseline"},
+		.resource_types = {"oic.r.firmware"},
+		.if_cnt = 1,
+		.rt_cnt = 1,
+		.policy = 3
+	}
+#endif
 };
 
 /**
@@ -371,7 +492,7 @@ static st_device_s *create_device()
 	return device;
 }
 
-static size_t get_json_file_size(const char *filename)
+size_t get_json_file_size(const char *filename)
 {
 	size_t size = 0;
 	FILE *fp = fopen(filename, "r");
@@ -386,7 +507,7 @@ static size_t get_json_file_size(const char *filename)
 	return size;
 }
 
-static char *get_json_string_from_file(const char *filename)
+char *get_json_string_from_file(const char *filename)
 {
 	FILE *fp = NULL;
 	char *json_str = NULL;
@@ -434,7 +555,7 @@ static char *get_json_string_from_file(const char *filename)
 	return json_str;
 }
 
-static int set_json_string_into_file(const char *filename, const char *json_str)
+int set_json_string_into_file(const char *filename, const char *json_str)
 {
 	FILE *fp = NULL;
 	// 1. File Read
@@ -878,6 +999,8 @@ static int parse_things_info_json(const char *filename)
 					}
 					if (NULL != model_number) {
 						memcpy(node->model_num, model_number->valuestring, strlen(model_number->valuestring) + 1);
+						g_model_number = things_malloc(sizeof(char) * strlen(model_number->valuestring) + 1);
+						strncpy(g_model_number, model_number->valuestring, strlen(model_number->valuestring) + 1);
 					}
 					if (NULL != platform_version) {
 						memcpy(node->ver_p, platform_version->valuestring, strlen(platform_version->valuestring) + 1);
@@ -890,9 +1013,13 @@ static int parse_things_info_json(const char *filename)
 					}
 					if (NULL != firmware_version) {
 						memcpy(node->ver_fw, firmware_version->valuestring, strlen(firmware_version->valuestring) + 1);
+						g_firmware_version = things_malloc(sizeof(char) * strlen(firmware_version->valuestring) + 1);
+						strncpy(g_firmware_version, firmware_version->valuestring, strlen(firmware_version->valuestring) + 1);
 					}
 					if (NULL != vendor_id) {
 						memcpy(node->vender_id, vendor_id->valuestring, strlen(vendor_id->valuestring) + 1);
+						g_vendor_id = things_malloc(sizeof(char) * strlen(vendor_id->valuestring) + 1);
+						strncpy(g_vendor_id, vendor_id->valuestring, strlen(vendor_id->valuestring) + 1);
 					}
 				}
 			}
@@ -2247,4 +2374,16 @@ bool dm_get_easy_setup_use_artik_crt()
 char *dm_get_mnid()
 {
 	return g_manufacturer_name;
+}
+char *dm_get_firmware_version()
+{
+	return g_firmware_version;
+}
+char *dm_get_vendor_id()
+{
+	return g_vendor_id;
+}
+char *dm_get_model_number()
+{
+	return g_model_number;
 }

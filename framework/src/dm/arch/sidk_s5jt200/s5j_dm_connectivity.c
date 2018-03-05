@@ -200,7 +200,7 @@ int dm_conn_get_address(char *ipAddr)
 	ifcfg.ifc_buf = NULL;
 	ifcfg.ifc_len = sizeof(struct ifreq) * numreqs;
 	ifcfg.ifc_buf = malloc(ifcfg.ifc_len);
-	if (ioctl(fd, SIOCGIFCONF, (void *)&ifcfg) < 0) {
+	if (ioctl(fd, SIOCGIFCONF, (unsigned long)&ifcfg) < 0) {
 		perror("SIOCGIFCONF ");
 		goto DONE;
 	}
@@ -243,7 +243,7 @@ int dm_conn_get_interface(char *interface)
 	ifcfg.ifc_buf = NULL;
 	ifcfg.ifc_len = sizeof(struct ifreq) * numreqs;
 	ifcfg.ifc_buf = malloc(ifcfg.ifc_len);
-	if (ioctl(fd, SIOCGIFCONF, (void *)&ifcfg) < 0) {
+	if (ioctl(fd, SIOCGIFCONF, (unsigned long)&ifcfg) < 0) {
 		perror("SIOCGIFCONF ");
 		goto DONE;
 	}

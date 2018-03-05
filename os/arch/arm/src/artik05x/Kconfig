@@ -46,6 +46,7 @@ config ARTIK05X_FLASH_PART
 	select MTD_PARTITION
 	select MTD_PROGMEM
 	depends on S5J_SFLASH
+	depends on NFILE_DESCRIPTORS != 0
 	---help---
 		Enables creation of partitions on the FLASH
 

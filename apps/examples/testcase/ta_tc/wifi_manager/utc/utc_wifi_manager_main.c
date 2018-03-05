@@ -40,7 +40,7 @@ do {										\
 	pthread_cond_wait(&g_wifi_manager_test_cond, &g_wifi_manager_test_mutex);	\
 	pthread_mutex_unlock(&g_wifi_manager_test_mutex);			\
 } while (0)
-void wifi_sta_connected(void);		// in station mode, connected to ap
+void wifi_sta_connected(wifi_manager_result_e result);		// in station mode, connected to ap
 void wifi_sta_disconnected(void);	// in station mode, disconnected from ap
 void wifi_softap_sta_joined(void);	// in softap mode, a station joined
 void wifi_softap_sta_left(void);		// in softap mode, a station left
@@ -62,9 +62,9 @@ static wifi_manager_cb_s wifi_null_callbacks = {
 	NULL,	// in station mode, this callback function is called when scanning ap is done.
 };
 
-void wifi_sta_connected(void)
+void wifi_sta_connected(wifi_manager_result_e result)
 {
-	printf("wifi_sta_connected: send signal!!! \n");
+	printf("wifi_sta_connected: send signal!!!(%d) \n", result);
 	WIFITEST_SIGNAL;
 }
 

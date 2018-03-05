@@ -20,6 +20,8 @@
 /****************************************************************************
 * Included Files
 ****************************************************************************/
+#include <tinyara/config.h>
+#include <sys/types.h>
 
 /****************************************************************************
 * Pre-processor Definitions
@@ -53,6 +55,7 @@ enum fotahal_return_e {
 	FOTAHAL_RETURN_ERROR,
 	FOTAHAL_RETURN_OPENFAIL,
 	FOTAHAL_RETURN_WRITEFAIL,
+	FOTAHAL_RETURN_ERASEFAIL,
 	FOTAHAL_RETURN_CLOSEFAIL,
 	FOTAHAL_RETURN_CHECKSUMFAIL,
 	FOTAHAL_RETURN_WRONGMAGIC,
@@ -92,6 +95,7 @@ extern "C" {
  ****************************************************************************/
 fotahal_handle_t fotahal_open(void);
 
+#ifdef CONFIG_SYSTEM_FOTA_SET_SPECIFIC
 /****************************************************************************
  * Name: fotahal_get_partition
  *
@@ -116,6 +120,7 @@ fotahal_return_t fotahal_set_partition(fotahal_handle_t handle, fota_partition_i
  *   Set a binary type for fota write
  ****************************************************************************/
 fotahal_return_t fotahal_set_binary(fotahal_handle_t handle, uint32_t bin_id);
+#endif
 
 /****************************************************************************
  * Name: fotahal_write
@@ -124,6 +129,14 @@ fotahal_return_t fotahal_set_binary(fotahal_handle_t handle, uint32_t bin_id);
  *   write binary chunck in buffer to fota partition
  ****************************************************************************/
 fotahal_return_t fotahal_write(fotahal_handle_t handle, const char *buffer, uint32_t bin_size);
+
+/****************************************************************************
+ * Name: fotahal_erase
+ *
+ * Description:
+ *   erase fota partition
+ ****************************************************************************/
+fotahal_return_t fotahal_erase(fotahal_handle_t handle);
 
 /****************************************************************************
  * Name: fotahal_update_bootparam
@@ -140,6 +153,16 @@ fotahal_return_t fotahal_update_bootparam(fotahal_handle_t handle);
  *   close fotahal
  ****************************************************************************/
 fotahal_return_t fotahal_close(fotahal_handle_t handle);
+
+/****************************************************************************
+ * Name: fotahal_update
+ *
+ * Description:
+ *   update to new
+ ****************************************************************************/
+#ifdef CONFIG_BOARDCTL_RESET
+int fotahal_update(void);
+#endif
 #undef EXTERN
 #ifdef __cplusplus
 }

@@ -6,8 +6,9 @@
 config SYSTEM_POWEROFF
 	bool "Power-Off command"
 	default n
+	depends on BOARDCTL_POWEROFF
 	---help---
-		Enable support for the NSH poweroff command.  NOTE: This option
-		provides the NSH power-off command only.  It requires board-specific
+		Enable support for the TASH poweroff command.  NOTE: This option
+		provides the TASH power-off command only.  It requires board-specific
 		support to actually implement the power-off.
 

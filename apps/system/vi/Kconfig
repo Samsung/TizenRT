@@ -6,6 +6,7 @@
 config SYSTEM_VI
 	bool "Tiny VI work-alike text editor"
 	default n
+	depends on (NFILE_DESCRIPTORS != 0) && (NFILE_STREAMS != 0)
 	---help---
 		Enable support for TinyAra tiny VI work-alike editor.
 

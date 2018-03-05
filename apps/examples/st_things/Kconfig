@@ -6,18 +6,12 @@
 config EXAMPLES_ST_THINGS
 	bool "SmartThings Things example"
 	default n
+	select IOTBUS
+	select IOTBUS_GPIO
 	---help---
 		Enable the SmartThings Things example
 
 if EXAMPLES_ST_THINGS
-
-config EXAMPLES_THINGSEASYSETUP_PROGNAME
-	string "Program name"
-	default "st_things_sample"
-	depends on BUILD_KERNEL
-	---help---
-		This is the name of the program that will be use when the NSH ELF
-		program is installed.
 
 config RESET_BUTTON
 	bool "Reset_Button"

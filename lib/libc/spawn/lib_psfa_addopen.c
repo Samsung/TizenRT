@@ -59,7 +59,6 @@
 #include <stdlib.h>
 #include <string.h>
 #include <spawn.h>
-#include <assert.h>
 #include <errno.h>
 
 #include <tinyara/spawn.h>
@@ -102,7 +101,12 @@ int posix_spawn_file_actions_addopen(FAR posix_spawn_file_actions_t *file_action
 	size_t len;
 	size_t alloc;
 
-	DEBUGASSERT(file_actions && path && fd >= 0 && fd < CONFIG_NFILE_DESCRIPTORS);
+	if (!file_actions || !path) {
+		return EINVAL;
+	}
+	if (fd < 0 || fd >= CONFIG_NFILE_DESCRIPTORS) {
+		return EBADF;
+	}
 
 	/* Get the size of the action including storage for the path plus its NUL
 	 * terminating character.

@@ -15,6 +15,8 @@
 # language governing permissions and limitations under the License.
 #
 ###########################################################################
+
+ifeq ($(CONFIG_MEDIA), y)
 ifeq ($(CONFIG_MEDIA_PLAYER), y)
 CSRCS += media_player.c
 endif
@@ -27,3 +29,4 @@ CSRCS += media_utils.c
 
 DEPPATH += --dep-path src/media
 VPATH += :src/media
+endif

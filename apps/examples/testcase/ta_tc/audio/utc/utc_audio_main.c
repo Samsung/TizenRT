@@ -628,6 +628,11 @@ static void utc_audio_pcm_readi_p(void)
 
 	while (remain > 0) {
 		frames_read = pcm_readi(g_pcm, buffer, pcm_get_buffer_size(g_pcm));
+		if (frames_read == -EPIPE) {
+			pcm_prepare(g_pcm);
+			continue;
+		}
+
 		if (frames_read < 0) {
 			break;
 		}
@@ -818,13 +823,19 @@ static void utc_audio_pcm_writei_p(void)
 	TC_ASSERT_GEQ_CLEANUP("pcm_writei", fd, 0, clean_all_data(0, buffer));
 
 	printf("Playback start!!\n");
-	do {
+
+	for (;;) {
 		num_read = read(fd, buffer, size);
-		if (num_read > 0) {
-			ret = pcm_writei(g_pcm, buffer, pcm_bytes_to_frames(g_pcm, num_read));
-			TC_ASSERT_GEQ_CLEANUP("pcm_writei", ret, 0, clean_all_data(fd, buffer));
+		if (num_read <= 0) {
+			break;
 		}
-	} while (num_read > 0);
+		ret = pcm_writei(g_pcm, buffer, pcm_bytes_to_frames(g_pcm, num_read));
+		if (ret == -EPIPE) {
+			pcm_prepare(g_pcm);
+			ret = pcm_writei(g_pcm, buffer, pcm_bytes_to_frames(g_pcm, num_read));
+		}
+		TC_ASSERT_GEQ_CLEANUP("pcm_writei", ret, 0, clean_all_data(fd, buffer));
+	}
 
 	if (buffer != NULL) {
 		free(buffer);
@@ -949,7 +960,6 @@ static void utc_audio_pcm_avail_update_n(void)
 
 	g_pcm = pcm_open(0, 0, PCM_IN | PCM_MMAP, NULL);
 	TC_ASSERT_GT("pcm_avail_update", pcm_is_ready(g_pcm), 0);
-
 	ret = pcm_avail_update(g_pcm);
 	TC_ASSERT_EQ_CLEANUP("pcm_avail_update", ret, 0, pcm_close(g_pcm));
 
@@ -969,11 +979,16 @@ static void utc_audio_pcm_avail_update_n(void)
 static void utc_audio_pcm_avail_update_p(void)
 {
 	int ret;
+	unsigned int retry = 20;
 
 	g_pcm = pcm_open(0, 0, PCM_IN | PCM_MMAP, NULL);
 	TC_ASSERT_GT("pcm_avail_update", pcm_is_ready(g_pcm), 0);
 
-	ret = pcm_wait(g_pcm, -1);
+	do {
+		ret = pcm_wait(g_pcm, -1);
+		TC_ASSERT_CLEANUP("pcm_avail_update", ret > 0 || ret == -EPIPE, pcm_close(g_pcm));
+	} while (ret == -EPIPE && retry--);
+
 	TC_ASSERT_GT_CLEANUP("pcm_avail_update", ret, 0, pcm_close(g_pcm));
 
 	ret = pcm_avail_update(g_pcm);
@@ -1012,12 +1027,6 @@ static void utc_audio_pcm_wait_n(void)
 	TC_ASSERT_LT_CLEANUP("pcm_wait", ret, 0, pcm_close(g_pcm));
 	pcm_close(g_pcm);
 
-	g_pcm = pcm_open(0, 0, PCM_IN | PCM_MMAP, NULL);
-	TC_ASSERT_GT("pcm_avail_update", pcm_is_ready(g_pcm), 0);
-	ret = pcm_wait(g_pcm, 0);
-	TC_ASSERT_LT_CLEANUP("pcm_wait", ret, 0, pcm_close(g_pcm));
-
-	pcm_close(g_pcm);
 	TC_SUCCESS_RESULT();
 }
 
@@ -1038,17 +1047,17 @@ static void utc_audio_pcm_wait_p(void)
 	TC_ASSERT_GT("pcm_wait", pcm_is_ready(g_pcm), 0);
 
 	ret = pcm_wait(g_pcm, -1);
-	TC_ASSERT_GT_CLEANUP("pcm_wait", ret, 0, pcm_close(g_pcm));
+	TC_ASSERT_CLEANUP("pcm_wait", ret > 0 || ret == -EPIPE, pcm_close(g_pcm));
 
 	sleep(1);
 	ret = pcm_wait(g_pcm, -1);
-	TC_ASSERT_GT_CLEANUP("pcm_wait", ret, 0, pcm_close(g_pcm));
+	TC_ASSERT_CLEANUP("pcm_wait", ret > 0 || ret == -EPIPE, pcm_close(g_pcm));
 
 	ret = pcm_drain(g_pcm);
 	TC_ASSERT_GEQ_CLEANUP("pcm_drain", ret, 0, pcm_close(g_pcm));
 
 	ret = pcm_wait(g_pcm, -1);
-	TC_ASSERT_GT_CLEANUP("pcm_wait", ret, 0, pcm_close(g_pcm));
+	TC_ASSERT_CLEANUP("pcm_wait", ret > 0 || ret == -EPIPE, pcm_close(g_pcm));
 
 	pcm_close(g_pcm);
 
@@ -1058,7 +1067,7 @@ static void utc_audio_pcm_wait_p(void)
 /**
 * @testcase         audio_pcm_begin_n
 * @brief            get the next mmap buffer along with its size and offset
-* @scenario         try to get next buffer when pcm is not opened or opened without MMAP flag or passing null pointer values for output params
+* @scenario         get next buffer when pcm is not opened or opened without MMAP flag or passing null pointers for output params
 * @apicovered       pcm_mmap_begin
 * @precondition     NA
 * @postcondition    NA
@@ -1083,13 +1092,13 @@ static void utc_audio_pcm_begin_n(void)
 	g_pcm = pcm_open(0, 0, PCM_IN | PCM_MMAP, NULL);
 	TC_ASSERT_GT("pcm_mmap_begin", pcm_is_ready(g_pcm), 0);
 
-	ret = pcm_mmap_begin(g_pcm, 0, &offset, &frames);
+	ret = pcm_mmap_begin(g_pcm, NULL, &offset, &frames);
 	TC_ASSERT_LT_CLEANUP("pcm_mmap_begin", ret, 0, pcm_close(g_pcm));
 
-	ret = pcm_mmap_begin(g_pcm, (void **)&areas, 0, &frames);
+	ret = pcm_mmap_begin(g_pcm, (void **)&areas, NULL, &frames);
 	TC_ASSERT_LT_CLEANUP("pcm_mmap_begin", ret, 0, pcm_close(g_pcm));
 
-	ret = pcm_mmap_begin(g_pcm, (void **)&areas, &offset, 0);
+	ret = pcm_mmap_begin(g_pcm, (void **)&areas, &offset, NULL);
 	TC_ASSERT_LT_CLEANUP("pcm_mmap_begin", ret, 0, pcm_close(g_pcm));
 
 	pcm_close(g_pcm);
@@ -1099,7 +1108,7 @@ static void utc_audio_pcm_begin_n(void)
 /**
 * @testcase         audio_pcm_begin_p
 * @brief            get the next mmap buffer along with its size and offset
-* @scenario         try to get next buffer when pcm is not opened or opened without MMAP flag or passing null pointer values for output params
+* @scenario         try to get next buffer
 * @apicovered       pcm_mmap_begin
 * @precondition     NA
 * @postcondition    NA
@@ -1111,11 +1120,16 @@ static void utc_audio_pcm_begin_p(void)
 	char *areas = NULL;
 	unsigned int offset;
 	unsigned int frames;
+	unsigned int retry = 20;
 
 	g_pcm = pcm_open(0, 0, PCM_IN | PCM_MMAP, NULL);
 	TC_ASSERT_GT("pcm_mmap_begin",  pcm_is_ready(g_pcm), 0);
 
-	ret = pcm_wait(g_pcm, -1);
+	do {
+		ret = pcm_wait(g_pcm, -1);
+		TC_ASSERT_CLEANUP("pcm_mmap_begin", ret > 0 || ret == -EPIPE, pcm_close(g_pcm));
+	} while (ret == -EPIPE && retry--);
+
 	TC_ASSERT_GT_CLEANUP("pcm_mmap_begin", ret, 0, pcm_close(g_pcm));
 
 	ret = pcm_mmap_begin(g_pcm, (void **)&areas, &offset, &frames);
@@ -1142,7 +1156,7 @@ static void utc_audio_pcm_begin_p(void)
 * @testcase         audio_pcm_commit_n
 * @brief            return a mmap buffer after read / write
 * @scenario         try to return a buffer when pcm is not open or opened without MMAP flag
-* @apicovered       pcm_wait
+* @apicovered       pcm_mmap_commit
 * @precondition     NA
 * @postcondition    NA
 */
@@ -1167,8 +1181,8 @@ static void utc_audio_pcm_commit_n(void)
 /**
 * @testcase         audio_pcm_commit_p
 * @brief            return a mmap buffer after read / write
-* @scenario         try to return a buffer when pcm is not open or opened without MMAP flag
-* @apicovered       pcm_wait
+* @scenario         try to return a buffer
+* @apicovered       pcm_mmap_commit
 * @precondition     NA
 * @postcondition    NA
 */
@@ -1179,11 +1193,16 @@ static void utc_audio_pcm_commit_p(void)
 	char *areas = NULL;
 	unsigned int offset;
 	unsigned int frames;
+	unsigned int retry = 20;
 
 	g_pcm = pcm_open(0, 0, PCM_IN | PCM_MMAP, NULL);
 	TC_ASSERT_GT("pcm_mmap_commit",  pcm_is_ready(g_pcm), 0);
 
-	ret = pcm_wait(g_pcm, -1);
+	do {
+		ret = pcm_wait(g_pcm, -1);
+		TC_ASSERT_CLEANUP("pcm_mmap_commit", ret > 0 || ret == -EPIPE, pcm_close(g_pcm));
+	} while (ret == -EPIPE && retry--);
+
 	TC_ASSERT_GT_CLEANUP("pcm_mmap_commit", ret, 0, pcm_close(g_pcm));
 
 	ret = pcm_mmap_begin(g_pcm, (void **)&areas, &offset, &frames);
@@ -1278,15 +1297,17 @@ static void utc_audio_pcm_mmap_read_p(void)
 	int remain;
 	char *buffer;
 	int numread;
-
-	buffer = malloc(pcm_frames_to_bytes(g_pcm, pcm_get_buffer_size(g_pcm)));
-	TC_ASSERT_NEQ_CLEANUP("pcm_mmap_read", buffer, NULL, clean_all_data(0, NULL));
+	int buflen;
 
 	fd = open(AUDIO_TEST_FILE, O_RDWR | O_CREAT | O_TRUNC);
-	TC_ASSERT_GEQ_CLEANUP("pcm_mmap_read", fd, 0, pcm_close(g_pcm));
+	TC_ASSERT_GEQ("pcm_mmap_read", fd, 0);
 
 	g_pcm = pcm_open(0, 0, PCM_IN | PCM_MMAP, NULL);
-	TC_ASSERT_GT_CLEANUP("pcm_mmap_read", pcm_is_ready(g_pcm), 0, clean_all_data(fd, buffer));
+	TC_ASSERT_GT_CLEANUP("pcm_mmap_read", pcm_is_ready(g_pcm), 0, clean_all_data(fd, NULL));
+
+	buflen = pcm_frames_to_bytes(g_pcm, pcm_get_buffer_size(g_pcm));
+	buffer = malloc(buflen);
+	TC_ASSERT_NEQ_CLEANUP("pcm_mmap_read", buffer, NULL, clean_all_data(fd, NULL));
 
 	bytes_per_frame = pcm_frames_to_bytes(g_pcm, 1);
 	remain = AUDIO_DEFAULT_RATE * AUDIO_RECORD_DURATION;
@@ -1297,8 +1318,12 @@ static void utc_audio_pcm_mmap_read_p(void)
 	TC_ASSERT_NEQ_CLEANUP("pcm_mmap_read", str, NULL, clean_all_data(fd, buffer));
 
 	while (remain > 0) {
-		numread = pcm_mmap_read(g_pcm, buffer, pcm_get_buffer_size(g_pcm));
-		TC_ASSERT_GEQ_CLEANUP("pcm_mmap_read", numread, 0, clean_all_data(fd, buffer));
+		numread = pcm_mmap_read(g_pcm, buffer, buflen);
+		TC_ASSERT_CLEANUP("pcm_mmap_read", numread >= 0 || numread == -EPIPE, clean_all_data(fd, buffer));
+
+		if (numread == -EPIPE) {
+			continue;
+		}
 
 		remain -= numread;
 		ret = write(fd, buffer, bytes_per_frame * numread);
@@ -1380,8 +1405,8 @@ static void utc_audio_pcm_mmap_write_p(void)
 	do {
 		num_read = read(fd, buffer, size);
 		if (num_read > 0) {
-			ret = pcm_mmap_write(g_pcm, buffer, pcm_bytes_to_frames(g_pcm, num_read));
-			TC_ASSERT_GEQ_CLEANUP("pcm_mmap_write", ret, 0, clean_all_data(fd, buffer));
+			ret = pcm_mmap_write(g_pcm, buffer, num_read);
+			TC_ASSERT_CLEANUP("pcm_mmap_write", ret >= 0 || ret == -EPIPE, clean_all_data(fd, buffer));
 		}
 	} while (num_read > 0);
 

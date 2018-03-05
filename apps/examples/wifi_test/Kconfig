@@ -11,18 +11,6 @@ config EXAMPLES_WIFI_TEST
 		of DM API calls to start WiFi, connect to an Access Point,
 		perform DHCP, as well as channel scanning.
 
-if EXAMPLES_WIFI_TEST
-
-config EXAMPLES_WIFI_TEST_PROGNAME
-	string "Program name"
-	default "wifi_test"
-	depends on BUILD_KERNEL
-	---help---
-		This is the name of the program that will be use when the NSH ELF
-		program is installed.
-
-endif
-
 config USER_ENTRYPOINT
 	string
 	default "wifi_test_main" if ENTRY_WIFI_TEST

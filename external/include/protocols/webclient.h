@@ -77,6 +77,11 @@
 
 #define WEBCLIENT_CONF_HANDSHAKE_RETRY    3
 #define WEBCLIENT_CONF_CHECK_TLS_HOSTNAME 0
+
+#define WEBCLIENT_SSL_VERIFY_NODE         0
+#define WEBCLIENT_SSL_VERIFY_OPTIONAL     1
+#define WEBCLIENT_SSL_VERIFY_REQUIRED     2
+#define WEBCLIENT_SSL_VERIFY_UNSET        3
 /****************************************************************************
  * Public types
  ****************************************************************************/
@@ -97,6 +102,7 @@ struct http_client_tls_t {
 	mbedtls_ssl_config        tls_conf;
 	mbedtls_entropy_context   tls_entropy;
 	mbedtls_ctr_drbg_context  tls_ctr_drbg;
+	mbedtls_x509_crt          tls_rootca;
 	mbedtls_x509_crt          tls_clicert;
 	mbedtls_pk_context        tls_pkey;
 	mbedtls_ssl_session       tls_session;
@@ -148,6 +154,7 @@ struct http_client_response_t {
 	char *message;
 	char *entity;
 	unsigned int entity_len;
+	unsigned int total_len;
 };
 
 /****************************************************************************

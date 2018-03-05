@@ -69,9 +69,6 @@ SConscript(build_dir + 'cloud/SConscript')
 if target_os not in ['tizenrt']:
 	SConscript(build_dir + 'plugins/SConscript')
 
-if target_os == 'tizenrt':
-	SConscript('../../../apps/examples/iotivity_simpleserver' + '/SConscript')
-
 # Append targets information to the help information, to see help info, execute command line:
 #     $ scon [options] -h
 env.PrintTargets()

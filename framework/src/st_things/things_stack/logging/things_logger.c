@@ -36,7 +36,7 @@ static const char *LEVEL[] __attribute__((unused)) = {
 static char ts_buf[64] = { 0 };
 
 char *p_version = NULL;
-things_log_level_e glevel = THINGS_INFO;
+things_log_level_e glevel = THINGS_DEBUG;
 void set_things_log_level(int level)
 {
 	if (level > 4) {

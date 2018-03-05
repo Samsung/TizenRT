@@ -76,23 +76,18 @@ ifeq ($(WINTOOL),y)
 INCDIROPT = -w
 endif
 
-include le_tc/drivers/Make.defs
-include le_tc/filesystem/Make.defs
-include le_tc/kernel/Make.defs
-include le_tc/network/Make.defs
-include le_tc/ttrace/Make.defs
-include ta_tc/systemio/utc/Make.defs
-include ta_tc/systemio/itc/Make.defs
-include ta_tc/arastorage/utc/Make.defs
-include ta_tc/arastorage/itc/Make.defs
-include ta_tc/device_management/utc/Make.defs
-include ta_tc/device_management/itc/Make.defs
-include ta_tc/wifi_manager/utc/Make.defs
-include ta_tc/wifi_manager/itc/Make.defs
-include ta_tc/mqtt/utc/Make.defs
-include ta_tc/mqtt/itc/Make.defs
-include ta_tc/audio/utc/Make.defs
-include ta_tc/audio/itc/Make.defs
+# Testcase Directories
+
+# BUILDIRS is the list of top-level directories containing Make.defs files
+
+BUILDIRS   := $(dir $(wildcard */*/Make.defs))
+BUILDIRS   += $(dir $(wildcard */*/*/Make.defs))
+
+define Add_Test
+  include $(1)Make.defs
+endef
+
+$(foreach BDIR, $(BUILDIRS), $(eval $(call Add_Test,$(BDIR))))
 
 endif
 

@@ -24,6 +24,9 @@
 #include "cloud/cloud_manager.h"
 #include "things_api.h"
 
+#ifdef CONFIG_ST_THINGS_FOTA
+#include "fota/fmwup_api.h"
+#endif
 
 #define ES_ENROLLEE_TAG "[easysetup]"
 
@@ -207,6 +210,14 @@ es_result_e es_set_state(things_es_enrollee_state_e es_state)
 
 	if (g_notify_easysetup_state != NULL && res == OC_STACK_OK) {
 		THINGS_LOG_D(THINGS_DEBUG, ES_ENROLLEE_TAG, "Notify Easy-Setup State to THINGS_APP. %d", es_state);
+#ifdef CONFIG_ST_THINGS_FOTA
+		if (es_state == ES_STATE_PUBLISHED_RESOURCES_TO_CLOUD) {
+			int ret = fmwup_check_firmware_upgraded();
+			if (ret != 0) {
+				THINGS_LOG_D(THINGS_DEBUG, "fmwup_check_firmware_upgraded : [%d]", ret);
+			}
+		}
+#endif
 		g_notify_easysetup_state(es_state);
 	}
 

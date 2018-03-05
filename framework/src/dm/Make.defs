@@ -16,11 +16,12 @@
 #
 ###########################################################################
 
+ifeq ($(CONFIG_DM), y)
 ifeq ($(CONFIG_LWM2M_CLIENT_MODE),y)
 CSRCS += dm_lwm2m.c
 endif
 CSRCS += dm_common_interface.c
-ifeq ($(CONFIG_ARCH_CHIP_S5JT200),y)
+ifeq ($(CONFIG_NETUTILS_WIFI),y)
 CSRCS += s5j_dm_connectivity.c
 else
 CSRCS += dm_connectivity.c
@@ -40,4 +41,5 @@ VPATH += :src/dm
 ifeq ($(CONFIG_ARCH_CHIP_S5JT200),y)
 DEPPATH += --dep-path src/dm/arch/sidk_s5jt200
 VPATH += src/dm/arch/sidk_s5jt200
+endif
 endif

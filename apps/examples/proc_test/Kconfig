@@ -10,18 +10,6 @@ config EXAMPLES_PROC_TEST
 	---help---
 		Enable the \"Procfs\" example
 
-if EXAMPLES_PROC_TEST
-
-config EXAMPLES_PROC_TEST_PROGNAME
-	string "Program name"
-	default "proc"
-	depends on BUILD_KERNEL
-	---help---
-		This is the name of the program that will be use when the NSH ELF
-		program is installed.
-
-endif
-
 config USER_ENTRYPOINT
 	string
 	default "proc_test_main" if ENTRY_PROC_TEST

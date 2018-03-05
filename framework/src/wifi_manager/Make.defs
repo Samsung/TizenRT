@@ -16,6 +16,7 @@
 #
 ###########################################################################
 
+ifeq ($(CONFIG_WIFI_MANAGER), y)
 CSRCS += wifi_manager.c wifi_net.c
 CSRCS += wifi_profile.c
 
@@ -25,4 +26,5 @@ endif
 
 DEPPATH += --dep-path src/wifi_manager
 VPATH += :src/wifi_manager
+endif
 

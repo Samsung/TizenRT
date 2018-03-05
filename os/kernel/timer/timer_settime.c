@@ -313,7 +313,7 @@ int timer_settime(timer_t timerid, int flags, FAR const struct itimerspec *value
 
 	/* Some sanity checks */
 
-	if (!timer || !value) {
+	if (!PT_ISVALID(timer) || !value) {
 		set_errno(EINVAL);
 		return ERROR;
 	}

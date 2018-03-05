@@ -122,6 +122,10 @@ static struct posix_timer_s *timer_allocate(void)
 	/* If we have a timer, then put it into the allocated timer list */
 
 	if (ret) {
+		/* Mark this timer is in use */
+
+		pt_flags |= PT_FLAGS_INUSE;
+
 		/* Initialize the timer structure */
 
 		memset(ret, 0, sizeof(struct posix_timer_s));

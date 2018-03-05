@@ -19,16 +19,15 @@ choice
 
 config SELECT_WPA_SUPPLICANT
 	bool "select wpa_supplicant"
-	default y
 	select WPA_SUPPLICANT
 	---help---
 		Select the wpa_supplicant
 
 config SELECT_PROPIETARY_SUPPLICANT
 	bool "Select external vendor supplicant"
-	default n
 	---help---
 		select the third party supplicant
+
 endchoice # WiFi supplicant library
 
 choice
@@ -37,12 +36,11 @@ choice
 
 config SELECT_SCSC_WLAN
 	bool "Enable SCSC Wireless Module"
-	default n
 	select SCSC_WLAN
 
 config SELECT_PROPIETARY_WLAN
 	bool "Enable vendor-specific Wireless Module"
-	default n
+
 endchoice # WiFi driver choice
 
 if SELECT_WPA_SUPPLICANT

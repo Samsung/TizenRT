@@ -91,7 +91,9 @@
 #include "mpu.h"
 #endif
 #include <stdbool.h>
-
+#ifdef CONFIG_BOARD_ASSERT_AUTORESET
+#include <sys/boardctl.h>
+#endif
 #ifdef CONFIG_DEBUG_DISPLAY_SYMBOL
 #include <stdio.h>
 bool abort_mode = false;
@@ -948,6 +950,10 @@ void up_assert(const uint8_t *filename, int lineno)
 
 #ifdef CONFIG_BOARD_CRASHDUMP
 	board_crashdump(up_getsp(), this_task(), (uint8_t *)filename, lineno);
+#endif
+
+#ifdef CONFIG_BOARD_ASSERT_AUTORESET
+	(void)boardctl(BOARDIOC_RESET, 0);
 #endif
 
 	_up_assert(EXIT_FAILURE);

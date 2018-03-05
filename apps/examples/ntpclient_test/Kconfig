@@ -12,14 +12,6 @@ config EXAMPLES_NTPCLIENT_TEST
 
 if EXAMPLES_NTPCLIENT_TEST
 
-config EXAMPLES_NTPCLIENT_TEST_PROGNAME
-	string "Program name"
-	default "ntpclient"
-	depends on BUILD_KERNEL
-	---help---
-		This is the name of the program that will be use when the NSH ELF
-		program is installed.
-
 config EXAMPLES_NTPCLIENT_TEST_SERVER_PORT
 	int "NTP server port number"
 	default 123

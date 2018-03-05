@@ -58,7 +58,7 @@
 
 #include <stdlib.h>
 #include <spawn.h>
-#include <assert.h>
+#include <errno.h>
 
 #include <tinyara/spawn.h>
 
@@ -94,7 +94,9 @@ int posix_spawn_file_actions_destroy(FAR posix_spawn_file_actions_t *file_action
 	FAR struct spawn_general_file_action_s *curr;
 	FAR struct spawn_general_file_action_s *next;
 
-	DEBUGASSERT(file_actions);
+	if (!file_actions) {
+		return EINVAL;
+	}
 
 	/* Destroy each file action, one at a time */
 

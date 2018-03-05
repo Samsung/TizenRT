@@ -58,6 +58,7 @@ typedef enum {
 	WIFI_MANAGER_DEINITIALIZED,
 	WIFI_MANAGER_TIMEOUT,
 	WIFI_MANAGER_BUSY,
+	WIFI_MANAGER_ALREADY_CONNECTED,
 } wifi_manager_result_e;
 
 /**
@@ -72,6 +73,15 @@ typedef enum {
 	WIFI_DEINITIALIZING,
 	WIFI_FAILURE
 } wifi_manager_mode_e;
+
+/**
+ * @brief Reconnection mode of Wi-Fi interface
+ */
+typedef enum {
+	WIFI_RECONN_INTERVAL,
+	WIFI_RECONN_EXPONENT,
+	WIFI_RECONN_NONE,
+} wifi_manager_reconn_type_e;
 
 /**
  * @brief Result types of nearby access point scanning
@@ -128,6 +138,19 @@ typedef struct {
 } wifi_manager_softap_config_s;
 
 /**
+ * @brief Specify the policy of reconnect when the device is disconnected
+ */
+typedef struct {
+	wifi_manager_reconn_type_e type;
+	// interval: if type is INTERVAL, it will try to connect AP every interval second
+	//           if type is EXPONENTIAL, it is initial wait time.
+	int interval;
+	// max_interval: it is the maximum wait time if type is EXPONENTIAL
+	//             : it is not used if type is INTERVAL
+	int max_interval; // 
+} wifi_manager_reconnect_config_s;
+
+/**
  * @brief Wi-Fi authentication type such as WPA, WPA2, or WPS
  */
 typedef enum {
@@ -167,7 +190,7 @@ typedef struct {
 /**
  * @brief Initialize Wi-Fi Manager including starting Wi-Fi interface.
  * @details @b #include <wifi_manager/wifi_manager.h>
- * @param[in] callback functions called when wi-fi events happen
+ * @param[in] wmcb callback functions called when wi-fi events happen
  * @return On success, WIFI_MANAGER_SUCCESS (i.e., 0) is returned. On failure, non-zero value is returned.
  * @since TizenRT v1.1
  */
@@ -185,8 +208,8 @@ wifi_manager_result_e wifi_manager_deinit(void);
 /**
  * @brief Change the Wi-Fi mode to station or AP.
  * @details @b #include <wifi_manager/wifi_manager.h>
- * @param[in] Wi-Fi mode (station or AP)
- * @param[in] In case of AP mode, AP configuration infomation should be given including ssid, channel, and passphrase.
+ * @param[in] mode Wi-Fi mode (station or AP)
+ * @param[in] config In case of AP mode, AP configuration infomation should be given including ssid, channel, and passphrase.
  * @return On success, WIFI_MANAGER_SUCCESS (i.e., 0) is returned. On failure, non-zero value is returned.
  * @since TizenRT v1.1
  */
@@ -204,11 +227,23 @@ wifi_manager_result_e wifi_manager_get_info(wifi_manager_info_s *info);
 /**
  * @brief Connect to an access point.
  * @details @b #include <wifi_manager/wifi_manager.h>
- * @param[in] ssid, passphrase, authentication type, and cryto type of the access point which the wi-fi interface connect to.
+ * @param[in] config ssid, passphrase, authentication type, and cryto type of the access point which the wi-fi interface connect to.
+ * @param[in] reconn_config reconnect type, interval, minimum or maximun intervalis set
+ * @return On success, WIFI_MANAGER_SUCCESS (i.e., 0) is returned. On failure, non-zero value is returned.
+ * @since TizenRT v1.1
+ */
+wifi_manager_result_e wifi_manager_connect_ap_config(wifi_manager_ap_config_s *config, wifi_manager_reconnect_config_s *reconn_config);
+
+/**
+ * @brief Connect to an access point.
+ * @details @b #include <wifi_manager/wifi_manager.h>
+ * @param[in] config ssid, passphrase, authentication type, and cryto type of the access point which the wi-fi interface connect to.
+ * @param[in] conn_config reconnect type, interval, minimum or maximun intervalis set 
  * @return On success, WIFI_MANAGER_SUCCESS (i.e., 0) is returned. On failure, non-zero value is returned.
  * @since TizenRT v1.1
  */
 wifi_manager_result_e wifi_manager_connect_ap(wifi_manager_ap_config_s *config);
+
 
 /**
  * @brief Disconnect from the connected access point

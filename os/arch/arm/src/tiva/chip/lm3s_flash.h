@@ -70,11 +70,19 @@
 	defined(CONFIG_ARCH_CHIP_TM4C123GH6ZRB) || defined(CONFIG_ARCH_CHIP_TM4C123GH6PMI) || \
 	defined(CONFIG_ARCH_CHIP_CC3200)
 
+
+#if defined(CONFIG_QEMU_SRAM) || defined (CONFIG_QEMU_SDRAM)
+/* These parts all support a 1KiB erase page size and a total FLASH memory size
+ * of 128MB or 128K pages.
+ */
+#define TIVA_FLASH_NPAGES        (128*1024)
+#else
 /* These parts all support a 1KiB erase page size and a total FLASH memory size
  * of 256Kib or 256 pages.
  */
-
 #define TIVA_FLASH_NPAGES        256
+#endif
+
 #define TIVA_FLASH_PAGESIZE      1024
 
 #else
