@@ -108,7 +108,7 @@ int i2c_write(FAR struct i2c_dev_s *dev, FAR const struct i2c_config_s *config, 
 		ret = I2C_TRANSFER(dev, &msg, 1);
 	}
 
-	return ret;
+	return (ret >= 0) ? OK : ret;
 }
 
 #endif							/* CONFIG_I2C_TRANSFER */

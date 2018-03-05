@@ -130,7 +130,7 @@ int i2c_writeread(FAR struct i2c_dev_s *dev, FAR const struct i2c_config_s *conf
 		ret = I2C_TRANSFER(dev, msg, 2);
 	}
 
-	return ret;
+	return (ret >= 0) ? OK : ret;
 }
 
 #endif							/* CONFIG_I2C_TRANSFER */

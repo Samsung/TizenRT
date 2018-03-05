@@ -792,14 +792,6 @@ int s5j_i2c_setaddress(FAR struct i2c_dev_s *dev, int addr, int nbits)
 	return OK;
 }
 
-/**
- * @brief    Generic I2C transfer function
- * @param    struct i2c_master_s *dev : structure visible to the I2C client
- * @param    struct i2c_msg_s *msgv : I2C transaction segment
- * @param    int msgc :  length
- * @return   int : ==0 :OK
- * @note
- */
 int s5j_i2c_transfer(struct i2c_dev_s *dev, struct i2c_msg_s *msgv, int msgc)
 {
 	struct s5j_i2c_priv_s *priv = (struct s5j_i2c_priv_s *)dev;
