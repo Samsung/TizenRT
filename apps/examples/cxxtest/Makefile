@@ -63,7 +63,7 @@ THREADEXEC = TASH_EXECMD_ASYNC
 # C++ Test Example
 ASRCS		=
 CSRCS		=
-CXXSRCS		=
+CXXSRCS		= 
 MAINSRC		= cxxtest_main.cxx
 
 AOBJS		= $(ASRCS:.S=$(OBJEXT))

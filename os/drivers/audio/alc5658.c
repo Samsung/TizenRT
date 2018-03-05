@@ -237,10 +237,11 @@ static uint16_t alc5658_modifyreg(FAR struct alc5658_dev_s *priv, uint16_t regad
 
 static void alc5658_setregs(struct alc5658_dev_s *priv)
 {
-	alc5658_writereg(priv, ALC5658_IN1, (0 + 16) << 8);
 	alc5658_writereg(priv, ALC5658_HPOUT, 0);
-	alc5658_writereg(priv, ALC5658_HPOUT_L, 0xd00);
-	alc5658_writereg(priv, ALC5658_HPOUT_R, 0x700);
+#ifndef CONFIG_AUDIO_EXCLUDE_VOLUME
+	alc5658_writereg(priv, ALC5658_HPOUT_L, priv->volume);
+	alc5658_writereg(priv, ALC5658_HPOUT_R, priv->volume);
+#endif
 }
 
 static void alc5658_getregs(struct alc5658_dev_s *priv)
@@ -255,7 +256,7 @@ static void alc5658_getregs(struct alc5658_dev_s *priv)
  * Name: alc5658_exec_i2c_script
  *
  * Description:
- *   Executes given script through i2c to configuure ALC5658 device.
+ *   Executes given script through i2c to configure ALC5658 device.
  *
  ************************************************************************************/
 static void alc5658_exec_i2c_script(FAR struct alc5658_dev_s *priv, t_codec_init_script_entry *script, uint32_t size)
@@ -317,12 +318,15 @@ static void alc5658_takesem(sem_t *sem)
 #ifndef CONFIG_AUDIO_EXCLUDE_VOLUME
 static void alc5658_setvolume(FAR struct alc5658_dev_s *priv, uint16_t volume, bool mute)
 {
+	/** TODO: Need to process balance and mute **/
+	if (mute == false) {
+		if (volume > 31) {
+			volume = 31;
+		}
+		priv->volume = volume;
 
-	audvdbg(" alc5658_setvolume volume=%u mute=%u\n", volume, mute);
-
-	priv->volume = volume;
-	priv->mute = mute;
-
+		alc5658_setregs(priv);
+	}
 }
 #endif							/* CONFIG_AUDIO_EXCLUDE_VOLUME */
 
@@ -492,7 +496,7 @@ static int alc5658_getcaps(FAR struct audio_lowerhalf_s *dev, int type, FAR stru
 		if (caps->ac_subtype == AUDIO_FU_UNDEF) {
 			/* Fill in the ac_controls section with the Feature Units we have */
 
-			caps->ac_controls.b[0] = AUDIO_FU_VOLUME | AUDIO_FU_BASS | AUDIO_FU_TREBLE;
+			caps->ac_controls.b[0] = AUDIO_FU_BASS | AUDIO_FU_TREBLE;
 			caps->ac_controls.b[1] = AUDIO_FU_BALANCE >> 8;
 		} else {
 			/* TODO:  Do we need to provide specific info for the Feature Units,
@@ -579,24 +583,6 @@ static int alc5658_configure(FAR struct audio_lowerhalf_s *dev, FAR const struct
 
 		/* Inner swich case: Process based on Feature Unit */
 		switch (caps->ac_format.hw) {
-#ifndef CONFIG_AUDIO_EXCLUDE_VOLUME
-		case AUDIO_FU_VOLUME: {
-			/* Set the volume */
-
-			uint16_t volume = caps->ac_controls.hw[0];
-			audvdbg("    Volume: %d\n", volume);
-
-			if (volume >= 0 && volume <= 1000) {
-				/* Scale the volume setting to the range {0.. 63} */
-
-				alc5658_setvolume(priv, (63 * volume / 1000), priv->mute);
-			} else {
-				ret = -EDOM;
-			}
-		}
-		break;
-#endif							/* CONFIG_AUDIO_EXCLUDE_VOLUME */
-
 #ifndef CONFIG_AUDIO_EXCLUDE_TONE
 		case AUDIO_FU_BASS: {
 			/* Set the bass.  The percentage level (0-100) is in the
@@ -672,9 +658,6 @@ static int alc5658_configure(FAR struct audio_lowerhalf_s *dev, FAR const struct
 	case AUDIO_TYPE_PROCESSING:
 		break;
 	}
-
-	alc5658_setregs(priv);
-	alc5658_getregs(priv);
 
 	return ret;
 }
@@ -828,7 +811,9 @@ static int alc5658_pause(FAR struct audio_lowerhalf_s *dev)
 		/* Disable interrupts to prevent us from suppling any more data */
 
 		priv->paused = true;
+#ifndef CONFIG_AUDIO_EXCLUDE_VOLUME
 		alc5658_setvolume(priv, priv->volume, true);
+#endif
 		ALC5658_DISABLE(priv->lower);	/* Need inputs from REALTEK */
 	}
 
@@ -853,7 +838,9 @@ static int alc5658_resume(FAR struct audio_lowerhalf_s *dev)
 
 	if (priv->running && priv->paused) {
 		priv->paused = false;
+#ifndef CONFIG_AUDIO_EXCLUDE_VOLUME
 		alc5658_setvolume(priv, priv->volume, false);
+#endif
 
 		/* Enable interrupts to allow sampling data */
 		/* Need resume logic later. Need to know if alc5658 dma can be paused and resumed */
@@ -1017,6 +1004,19 @@ static int alc5658_ioctl(FAR struct audio_lowerhalf_s *dev, int cmd, unsigned lo
 #endif
 	}
 	break;
+	case AUDIOIOC_SETVOLUME: {
+#ifndef CONFIG_AUDIO_EXCLUDE_VOLUME
+		alc5658_setvolume(priv, arg, priv->mute);
+#endif
+	}
+	break;
+	case AUDIOIOC_GETVOLUME: {
+#ifndef CONFIG_AUDIO_EXCLUDE_VOLUME
+		*(unsigned int *)arg = priv->volume;
+#endif
+	}
+	break;
+
 	default:
 		audvdbg("alc5658_ioctl received unkown cmd 0x%x\n", cmd);
 		break;
