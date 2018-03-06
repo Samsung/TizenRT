@@ -219,7 +219,7 @@ void things_tcp_session_state_cb(const CAEndpoint_t *info, bool connected)
 
 	if (connected == true) {
 		THINGS_LOG_D(THINGS_DEBUG, TAG, "CONNECTED");
-		oic_ping_set_mask(info->addr, info->port, PING_ST_TCPCONNECT);
+		things_ping_set_mask(info->addr, info->port, PING_ST_TCPCONNECT);
 		return;
 	}
 
