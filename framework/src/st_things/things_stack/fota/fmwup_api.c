@@ -49,7 +49,7 @@ int fmwup_get_data(things_resource_s *target_resource)
 	char *update;
 	update = fmwup_data_get_update_string(fmwup_data->update);
 
-	rep->things_set_int_value(rep, FIRMWARE_PROPERTY_UPDATE, update);
+	rep->things_set_value(rep, FIRMWARE_PROPERTY_UPDATE, update);
 	rep->things_set_value(rep, FIRMWARE_PROPERTY_UPDATE_TIME, fmwup_data->update_time);
 	rep->things_set_int_value(rep, FIRMWARE_PROPERTY_STATE, (int64_t)fmwup_data->state);
 	rep->things_set_int_value(rep, FIRMWARE_PROPERTY_RESULT, (int64_t)fmwup_data->result);
