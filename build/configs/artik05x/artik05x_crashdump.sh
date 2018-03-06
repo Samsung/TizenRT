@@ -40,7 +40,7 @@ usage() {
 USAGE: `basename $0` ["<partition>"] ["<filename>"]
 
 For examples:
-    `basename $0` "OTA download" crash_dump.bin
+    `basename $0` "ota" crash_dump.bin
 
 EOF
 }
@@ -77,8 +77,7 @@ get_idx() {
 }
 
 
-crash_dump()
-{
+crash_dump() {
     local SYSTEM_TYPE=`getconf LONG_BIT`
     local strcmd=""
     local bin=
@@ -93,9 +92,13 @@ crash_dump()
                    "init; flash_dump $DUMP_PARTITION $FILE_NAME; reset; exit"
 }
 
+dump_parser() {
+    python tools/crash_dump_parser.py -i "$FILE_NAME"
+}
+
 #read partition table
 partition
-if test $# -eq 0; then
+if test $# -lt 3; then
     usage 1>&2
     exit 1
 fi
@@ -106,3 +109,4 @@ DUMP_PARTITION=$2
 FILE_NAME=$OUTPUT_BINARY_PATH/$3
 
 crash_dump
+dump_parser
