@@ -971,7 +971,7 @@ errout:
  * Name: tash_umount
  *
  * Description:
- *   Unount specific file system.
+ *   Unmount specific file system.
  *
  * Usage:
  *   umount <mounted directory>
