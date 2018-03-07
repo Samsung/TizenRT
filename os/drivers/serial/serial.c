@@ -1360,8 +1360,6 @@ int uart_register(FAR const char *path, FAR uart_dev_t *dev)
 	sem_setprotocol(&dev->xmitsem, SEM_PRIO_NONE);
 	sem_setprotocol(&dev->recvsem, SEM_PRIO_NONE);
 
-	/* Register the serial driver */
-	dbg("Registering %s\n", path);
 	return register_driver(path, &g_serialops, 0666, dev);
 }
 
