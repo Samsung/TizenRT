@@ -284,6 +284,18 @@ void SRMRequestHandler(const CAEndpoint_t *endPoint, const CARequestInfo_t *requ
         goto exit;
     }
 
+#if defined(__TIZENRT__)
+    int i;
+
+    printf("request: method=%d, tokenLength=%d, token=", requestInfo->method,
+        requestInfo->info.tokenLength);
+    for (i = 0; i < requestInfo->info.tokenLength; i++)
+    {
+        printf("%02X", requestInfo->info.token[i]);
+    }
+    printf(", uri=%s\n", requestInfo->info.resourceUri);
+#endif
+
     ctx->endPoint = endPoint;
     ctx->requestInfo = requestInfo;
     ctx->requestedPermission = GetPermissionFromCAMethod_t(requestInfo->method);

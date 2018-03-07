@@ -2297,16 +2297,6 @@ OCStackResult
 ProcessRequest(ResourceHandling resHandling, OCResource *resource, OCServerRequest *request)
 {
     OCStackResult ret = OC_STACK_OK;
-#if defined(__TIZENRT__)
-    int i;
-
-    printf("request info: tokenLength=%d, token=", request->tokenLength);
-    for (i = 0; i < request->tokenLength; i++)
-    {
-        printf("%02X", request->requestToken[i]);
-    }
-    printf("\n");
-#endif
 
     switch (resHandling)
     {
