@@ -73,6 +73,7 @@
 /****************************************************************************
  * Preprocessor Definitions
  ****************************************************************************/
+#define MAX(a, b) (a > b ? a : b)
 
 /****************************************************************************
  * Private Type Declarations
@@ -128,6 +129,11 @@ static int thread_create(FAR const char *name, uint8_t ttype, int priority, int 
 	pid_t pid;
 	int errcode;
 	int ret;
+	int tcb_size = sizeof(struct task_tcb_s);
+
+#ifndef CONFIG_DISABLE_PTHREAD
+	tcb_size = MAX(sizeof(struct task_tcb_s), sizeof(struct pthread_tcb_s));
+#endif
 
 	trace_begin(TTRACE_TAG_TASK, "thread_create");
 
@@ -140,7 +146,7 @@ static int thread_create(FAR const char *name, uint8_t ttype, int priority, int 
 
 	/* Allocate a TCB for the new task. */
 
-	tcb = (FAR struct task_tcb_s *)kmm_zalloc(sizeof(struct task_tcb_s));
+	tcb = (FAR struct task_tcb_s *)kmm_zalloc(tcb_size);
 	if (!tcb) {
 		sdbg("ERROR: Failed to allocate TCB\n");
 		errcode = ENOMEM;
