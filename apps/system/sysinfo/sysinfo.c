@@ -67,6 +67,10 @@
 #include <SEGGER_RTT.h>
 #endif
 
+#ifdef CONFIG_ARTIK_SDK
+#include <artik_module.h>
+#endif
+
 /****************************************************************************
  * Definitions
  ****************************************************************************/
@@ -127,6 +131,13 @@ void sysinfo(void)
 
 #ifdef CONFIG_SYSVIEW
 	printf("\tSYSVIEW RTT Control Block: 0x%08x\n", &_SEGGER_RTT);
+#endif
+
+#ifdef CONFIG_ARTIK_SDK
+	artik_api_version version;
+
+	artik_get_api_version(&version);
+	printf("\tARTIK SDK version: %s\n", version.version);
 #endif
 }
 

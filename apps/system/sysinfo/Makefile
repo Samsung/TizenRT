@@ -97,6 +97,11 @@ endif
 # SYSVIEW
 CFLAGS += -I$(TOPDIR)/../external/sysview
 
+# ARTIK SDK
+ifeq ($(CONFIG_ARTIK_SDK),y)
+CFLAGS += -I$(TOPDIR)/../external/artik-sdk/inc/base
+endif
+
 ROOTDEPPATH = --dep-path .
 
 # Common build
