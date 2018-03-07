@@ -157,7 +157,11 @@ struct dhcpc_state_s {
  * Private Data
  ****************************************************************************/
 
+#ifdef CONFIG_NETUTILS_DHCPC_RAND_XID
+static int32_t g_dhcpc_xid;
+#else
 static const uint8_t g_dhcpc_xid[4] = { 0xad, 0xde, 0x12, 0x23 };
+#endif
 static const uint8_t magic_cookie[4] = { 99, 130, 83, 99 };
 
 static int g_dhcpc_state;
@@ -239,7 +243,11 @@ static int dhcpc_sendmsg(struct dhcpc_state_s *pdhcpc, struct dhcpc_state *presu
 	pdhcpc->packet.op = DHCP_REQUEST;
 	pdhcpc->packet.htype = DHCP_HTYPE_ETHERNET;
 	pdhcpc->packet.hlen = pdhcpc->ds_maclen;
+#ifdef CONFIG_NETUTILS_DHCPC_RAND_XID
+	memcpy(pdhcpc->packet.xid, &g_dhcpc_xid, 4);
+#else
 	memcpy(pdhcpc->packet.xid, g_dhcpc_xid, 4);
+#endif
 	memcpy(pdhcpc->packet.chaddr, pdhcpc->ds_macaddr, pdhcpc->ds_maclen);
 	memset(&pdhcpc->packet.chaddr[pdhcpc->ds_maclen], 0, 16 - pdhcpc->ds_maclen);
 	memcpy(pdhcpc->packet.options, magic_cookie, sizeof(magic_cookie));
@@ -374,7 +382,11 @@ static uint8_t dhcpc_parseoptions(struct dhcpc_state *presult, uint8_t *optptr, 
 
 static uint8_t dhcpc_parsemsg(struct dhcpc_state_s *pdhcpc, int buflen, struct dhcpc_state *presult)
 {
+#ifdef CONFIG_NETUTILS_DHCPC_RAND_XID
+	if (pdhcpc->packet.op == DHCP_REPLY && memcmp(pdhcpc->packet.xid, &g_dhcpc_xid, sizeof(g_dhcpc_xid)) == 0 && memcmp(pdhcpc->packet.chaddr, pdhcpc->ds_macaddr, pdhcpc->ds_maclen) == 0) {
+#else
 	if (pdhcpc->packet.op == DHCP_REPLY && memcmp(pdhcpc->packet.xid, g_dhcpc_xid, sizeof(g_dhcpc_xid)) == 0 && memcmp(pdhcpc->packet.chaddr, pdhcpc->ds_macaddr, pdhcpc->ds_maclen) == 0) {
+#endif
 		int remain = buflen - (sizeof(struct dhcp_msg) - 312);
 		memcpy(&presult->ipaddr.s_addr, pdhcpc->packet.yiaddr, 4);
 		return dhcpc_parseoptions(presult, &pdhcpc->packet.options[4], remain);
@@ -472,6 +484,10 @@ void dhcpc_close(void *handle)
 
 		free(pdhcpc);
 	}
+
+#ifdef CONFIG_NETUTILS_DHCPC_RAND_XID
+	g_dhcpc_xid = 0;
+#endif
 }
 
 static struct dhcpc_state *g_pResult;
@@ -510,6 +526,14 @@ int dhcpc_request(void *handle, struct dhcpc_state *presult)
 	if (netlib_set_ipv4addr(intf, &newaddr) == ERROR) {
 		ndbg("netlib_set_ipv4addr failed\n");
 	}
+
+#ifdef CONFIG_NETUTILS_DHCPC_RAND_XID
+	/* Reset Transaction ID (xid) whenever dhcpc_request is invoked */
+	srand(time(NULL));
+	g_dhcpc_xid = rand();
+	/* rand() has 32768 as its limit value. This is to make full 4 bytes xid */
+	g_dhcpc_xid |= (rand() << 16);
+#endif
 
 	/* Loop sending DISCOVER until we receive an OFFER from a DHCP
 	 * server.  We will lock on to the first OFFER and decline any

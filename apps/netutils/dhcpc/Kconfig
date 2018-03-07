@@ -19,4 +19,11 @@ config NETUTILS_DHCPC_CLIENTID
 		Enable Client ID(61) field in DHCP Discover and Request.
 		Some DHCP server doesn't send response if this option does not exist.
 
+config NETUTILS_DHCPC_RAND_XID
+	bool "DHCP Client random XID"
+	default y
+	---help---
+		Enable random XID(Transaction ID) for DHCP Message.
+		It has to have unique random id for each DHCP transaction.
+
 endif
