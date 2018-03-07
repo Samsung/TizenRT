@@ -23,6 +23,9 @@
 #include <apps/netutils/wifi/slsi_wifi_api.h>
 #include <apps/netutils/dhcpc.h>
 #include <apps/netutils/netlib.h>
+#ifdef CONFIG_NET_IPv6
+#include <net/lwip/mld6.h>
+#endif
 
 #include "ocf_mylight.h"
 
@@ -204,6 +207,51 @@ static int _wifi_join(const char *ssid, size_t ssid_len, const char *pwd,
 	return 0;
 }
 
+#ifdef CONFIG_NET_IPv6
+/**
+ * code from apps/system/utils/netcmd.c
+ */
+static int _ipv6_setup(void)
+{
+	struct netif *netif;
+#ifdef CONFIG_NET_IPv6_MLD
+	ip6_addr_t solicit_addr;
+#endif
+
+	netif = netif_find("wl1");
+	if (!netif)
+		return -1;
+
+#ifdef CONFIG_NET_IPv6_AUTOCONFIG
+	/* enable IPv6 address stateless autoconfiguration */
+	netif_set_ip6_autoconfig_enabled(netif, 1);
+#endif
+
+	netif_create_ip6_linklocal_address(netif, 1);
+
+	MSG("IPv6 linklocal\t%X:%X:%X:%X",
+			PP_HTONL(ip_2_ip6(&netif->ip6_addr[0])->addr[0]),
+			PP_HTONL(ip_2_ip6(&netif->ip6_addr[0])->addr[1]),
+			PP_HTONL(ip_2_ip6(&netif->ip6_addr[0])->addr[2]),
+			PP_HTONL(ip_2_ip6(&netif->ip6_addr[0])->addr[3]));
+
+#ifdef CONFIG_NET_IPv6_MLD
+	/* set MLD6 group to receive solicit multicast message */
+	ip6_addr_set_solicitednode(&solicit_addr,
+			ip_2_ip6(&netif->ip6_addr[0])->addr[3]);
+	mld6_joingroup_netif(netif, &solicit_addr);
+
+	MSG("MLD6 group\t%X:%X:%X:%X",
+			PP_HTONL(solicit_addr.addr[0]),
+			PP_HTONL(solicit_addr.addr[1]),
+			PP_HTONL(solicit_addr.addr[2]),
+			PP_HTONL(solicit_addr.addr[3]));
+#endif
+
+	return 0;
+}
+#endif
+
 static int _dhcp_setup(void)
 {
 	void *handle;
@@ -282,6 +330,11 @@ int ocf_mylight_wifi_connect(void)
 
 	if (_wifi_join(ssid, ssid_len, pwd, pwd_len, sec) < 0)
 		return -1;
+
+#ifdef CONFIG_NET_IPv6
+	if (_ipv6_setup() < 0)
+		return -1;
+#endif
 
 	if (_dhcp_setup() < 0)
 		return -1;
