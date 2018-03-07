@@ -227,13 +227,8 @@ static int server_cb(int argc, char *argv[])
 
 	MSG("Entering ocserver main loop...");
 
-#ifdef LOOPDELAY_0_1_SECS
 	timeout.tv_sec = 0;
 	timeout.tv_nsec = 100000000L; /* 0.1 sec */
-#else
-	timeout.tv_sec = 0;
-	timeout.tv_nsec = 10000000L; /* 0.01 sec */
-#endif
 
 	_time_measurement(&timeout);
 
