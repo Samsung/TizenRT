@@ -3,8 +3,8 @@
 [![License](https://img.shields.io/badge/licence-Apache%202.0-brightgreen.svg?style=flat)](LICENSE)
 [![Build Status](https://travis-ci.org/Samsung/TizenRT.svg?branch=master)](https://travis-ci.org/Samsung/TizenRT)
 
-lightweight RTOS-based platform to support low-end IoT devices.  
-Please find project details at [Wiki](https://github.com/Samsung/TizenRT/wiki) especially [documentations page](https://github.com/Samsung/TizenRT/wiki/Documentations).
+TizenRT is lightweight RTOS-based platform to support low-end IoT devices.  
+Please find project details at [Wiki](https://github.com/Samsung/TizenRT/wiki) especially **[documentations page](https://github.com/Samsung/TizenRT/wiki/Documentations)**.
 
 ## Contents
 
@@ -61,7 +61,11 @@ make
 
 Built binaries are in *$TIZENRT_BASEDIR/build/output/bin*.
 
+See [Trouble Shooting](docs/TroubleShooting.md) to resolve any issue on TizenRT usages.
+
 ## Supported Board / Emulator
+Here are supported boards and emulator list.  
+Refer belows to know board-specifc environments, programming method and board information.
 
 ARTIK053 [[details]](build/configs/artik053/README.md)
 
