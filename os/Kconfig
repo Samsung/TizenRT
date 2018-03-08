@@ -465,7 +465,7 @@ source audio/Kconfig
 endmenu
 
 menu "Media Support"
-source media/Kconfig
+source "$FRAMEWORK_DIR/src/media/Kconfig"
 endmenu
 
 menu "File Systems"
