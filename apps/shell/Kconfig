@@ -6,7 +6,8 @@
 menu "Shell"
 config TASH
 	bool "Enable shell"
-	default y
+	default y if !TIZENRT_LITTLE_PROFILE
+	default n if TIZENRT_LITTLE_PROFILE
 	depends on NFILE_DESCRIPTORS != 0
 
 if TASH
@@ -31,7 +32,8 @@ config TASH_COMMAND_INTERFACE
 
 config TASH_CMDTASK_STACKSIZE
 	int "TASH task stack size to run command with ASYNC type"
-	default 4096
+	default 4096 if !TIZENRT_LITTLE_PROFILE
+	default 2048 if TIZENRT_LITTLE_PROFILE
 	---help---
 		The stack size allocated for TASH command task
 

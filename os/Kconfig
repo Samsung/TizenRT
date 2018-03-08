@@ -22,6 +22,12 @@ menu "Build Setup"
 config EXPERIMENTAL
 	bool "Prompt for development and/or incomplete code/drivers"
 
+config TIZENRT_LITTLE_PROFILE
+	bool "TizenRT Little Profile"
+	default n
+	---help---
+		This profile is selected by the user at build time according to the memory requirements, (16KB to 64KB)
+
 config DEFAULT_SMALL
 	bool "Default to smallest size"
 	default n

@@ -212,6 +212,9 @@ config TC_KERNEL_TASH_STACKMONITOR
 config TC_KERNEL_WORK_QUEUE
 	bool "wqueue"
 	default n
+	depends on SCHED_WORKQUEUE
+	depends on SCHED_HPWORK
+	depends on SCHED_LPWORK
 
 config ITC_KERNEL_ENVIRON
 	bool "ITC Environ"
