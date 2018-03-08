@@ -1892,17 +1892,17 @@ static int8_t slsi_set_security(const slsi_security_config_t *sec_config, const 
 			keymgmt = WPA_PARAM_KEY_MGMT_NONE;
 		} else if (sec_config->secmode == SLSI_SEC_MODE_WEP || sec_config->secmode == SLSI_SEC_MODE_WEP_SHARED) {
 			if (slsi_get_op_mode() == SLSI_WIFI_SOFT_AP_IF) {
-				DPRINT("SLSI_API set_security - WEP in AP mode - wrong parameter\n");
+				EPRINT("SLSI_API set_security - WEP in AP mode - wrong parameter\n");
 				result = SLSI_STATUS_PARAM_FAILED;
 				goto errout;
 			}
 			keymgmt = WPA_PARAM_KEY_MGMT_WEP;
 		} else if (sec_config->secmode == SLSI_SEC_MODE_EAP) {
-			DPRINT("SLSI_API set_security - EAP - wrong parameter\n");
+			EPRINT("SLSI_API set_security - EAP - wrong parameter\n");
 			result = SLSI_STATUS_PARAM_FAILED;
 			goto errout;
 		} else if (sec_config->secmode == (SLSI_SEC_MODE_WEP | SLSI_SEC_MODE_WEP_SHARED)) {
-			DPRINT("SLSI_API set_security - " "WEP OPEN/SHARED cannot be set together - wrong parameter\n");
+			EPRINT("SLSI_API set_security - WEP OPEN/SHARED cannot be set together - wrong parameter\n");
 			result = SLSI_STATUS_PARAM_FAILED;
 			goto errout;
 		} else if (sec_config->secmode & (SLSI_SEC_MODE_WPA_MIXED | SLSI_SEC_MODE_WPA2_MIXED)) {
@@ -1945,7 +1945,7 @@ static int8_t slsi_set_security(const slsi_security_config_t *sec_config, const 
 				}
 			}
 		} else {
-			DPRINT("SLSI_API set_security - wrong parameter\n");
+			EPRINT("SLSI_API set_security - wrong parameter\n");
 			result = SLSI_STATUS_PARAM_FAILED;
 			goto errout;
 		}
@@ -1976,7 +1976,7 @@ static int8_t slsi_set_security(const slsi_security_config_t *sec_config, const 
 					if (len >= SLSI_WIFI_WEP_ASCII_KEY_MIN + 2 && len <= SLSI_WIFI_WEP_ASCII_KEY_MAX + 2) {
 						snprintf(command, WPA_COMMAND_MAX_SIZE, "%s%s %s%s", WPA_COMMAND_SET_NETWORK, network_id, WPA_PARAM_WEPKEY, sec_config->passphrase);
 					} else {
-						DPRINT("SLSI_API set_security WEP - wrong ASCII key length\n");
+						EPRINT("SLSI_API set_security WEP - wrong ASCII key length\n");
 						result = SLSI_STATUS_PARAM_FAILED;
 						goto errout;
 					}
@@ -1985,7 +1985,7 @@ static int8_t slsi_set_security(const slsi_security_config_t *sec_config, const 
 					if (len >= SLSI_WIFI_WEP_HEX_KEY_MIN && len <= SLSI_WIFI_WEP_HEX_KEY_MAX) {
 						snprintf(command, WPA_COMMAND_MAX_SIZE, "%s%s %s%s", WPA_COMMAND_SET_NETWORK, network_id, WPA_PARAM_WEPKEY, sec_config->passphrase);
 					} else {
-						DPRINT("SLSI_API set_security WEP - wrong HEX key length\n");
+						EPRINT("SLSI_API set_security WEP - wrong HEX key length\n");
 						result = SLSI_STATUS_PARAM_FAILED;
 						goto errout;
 					}
@@ -1997,7 +1997,7 @@ static int8_t slsi_set_security(const slsi_security_config_t *sec_config, const 
 				if (len >= SLSI_WIFI_WPA_ASCII_KEY_MIN && len <= SLSI_WIFI_WPA_ASCII_KEY_MAX) {
 					snprintf(command, WPA_COMMAND_MAX_SIZE, "%s%s %s\"%s\"", WPA_COMMAND_SET_NETWORK, network_id, WPA_PARAM_PSK, sec_config->passphrase);
 				} else {
-					DPRINT("SLSI_API set_security WPA - wrong key length\n");
+					EPRINT("SLSI_API set_security WPA - wrong key length\n");
 					result = SLSI_STATUS_PARAM_FAILED;
 					goto errout;
 				}
@@ -2011,7 +2011,7 @@ static int8_t slsi_set_security(const slsi_security_config_t *sec_config, const 
 				}
 			}
 		} else {
-			DPRINT("SLSI_API set_security key missing (or set but not needed)\n");
+			EPRINT("SLSI_API set_security key missing (or set but not needed)\n");
 			goto errout;
 		}
 	}
