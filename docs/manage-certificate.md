@@ -1,14 +1,9 @@
 
 # Managing SmartThings&trade; Certificates
 
-## Dependencies
--   Ubuntu Only
-
 SmartThings&trade; uses OpenSSL for security. To ensure that only trusted developers and manufactures can develop devices that communicate with the SmartThings Cloud, you must get certificates for devices to use the SmartThings&trade; service.
 
 In the Tizen RT IDE, you can perform various certificate-related tasks, such as creation, removal, import, and activation, by using the **SmartThings Certificate Manager**.
-
-**Figure: SmartThings Certificate Manager**
 
 ![SmartThings Certificate Manager](media/rt_cert_manager.png)
 
