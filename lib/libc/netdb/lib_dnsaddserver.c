@@ -103,10 +103,11 @@ int dns_add_nameserver(FAR const struct sockaddr *addr, socklen_t addrlen)
 #endif
 	int status;
 	int ret;
+	int errcode = 0;
 
 	stream = fopen(CONFIG_NETDB_RESOLVCONF_PATH, "at");
 	if (stream == NULL) {
-		int errcode = errno;
+		errcode = errno;
 		ndbg("ERROR: Failed to open %s: %d\n", CONFIG_NETDB_RESOLVCONF_PATH, errcode);
 		DEBUGASSERT(errcode > 0);
 		return -errcode;
@@ -122,7 +123,7 @@ int dns_add_nameserver(FAR const struct sockaddr *addr, socklen_t addrlen)
 			FAR struct sockaddr_in *in4 = (FAR struct sockaddr_in *)addr;
 
 			if (inet_ntop(AF_INET, &in4->sin_addr, addrstr, DNS_MAX_ADDRSTR) == NULL) {
-				ret = -errno;
+				ret = -(errcode = errno);
 				ndbg("ERROR: inet_ntop failed: %d\n", errcode);
 				DEBUGASSERT(errcode < 0);
 				goto errout;
