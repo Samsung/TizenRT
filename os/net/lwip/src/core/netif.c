@@ -156,6 +156,8 @@ static err_t netif_loopif_init(struct netif *netif)
 #if LWIP_LOOPIF_MULTICAST
 	netif->flags |= NETIF_FLAG_IGMP;
 #endif
+	netif->d_flags |= (NETIF_FLAG_LINK_UP | NETIF_FLAG_UP | NETIF_FLAG_LOOPBACK);
+
 	/* d_ifname is used by netdev_foreach to print out interface name */
 	snprintf(netif->d_ifname, 6, "%c%c%d", netif->name[0], netif->name[1], netif->num);
 

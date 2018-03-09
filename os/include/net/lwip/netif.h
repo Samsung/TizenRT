@@ -132,6 +132,10 @@ extern "C" {
  * Set by the netif driver in its init function.
  */
 #define NETIF_FLAG_MLD6         0x40U
+/** If set, the netif has loopback capability.
+ * Set by the netif driver in its init function.
+ */
+#define NETIF_FLAG_LOOPBACK     0x80U
 
 /**
  * @}
