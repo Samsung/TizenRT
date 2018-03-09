@@ -71,12 +71,12 @@
 
 /* Interface flag bits */
 
-#define IFF_DOWN           (1 << 0)	/* Interface is down */
-#define IFF_UP             (1 << 1)	/* Interface is up */
+#define IFF_DOWN           (0)		/* Interface is down */
+#define IFF_UP             (1 << 0)	/* Interface is up */
 #define IFF_RUNNING        (1 << 2)	/* Carrier is available */
 #define IFF_IPv6           (1 << 3)	/* Configured for IPv6 packet (vs ARP or IPv4) */
-#define IFF_LOOPBACK       (1 << 4)	/* is a loopback net */
-#define IFF_NOARP          (1 << 7)	/* ARP is not required for this packet */
+#define IFF_LOOPBACK       (1 << 7)	/* is a loopback net */
+#define IFF_NOARP          (1 << 8)	/* ARP is not required for this packet */
 
 /* Interface flag helpers */
 
