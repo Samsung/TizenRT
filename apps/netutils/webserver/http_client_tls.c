@@ -61,7 +61,6 @@ int http_client_tls_release(struct http_client_t *client)
 {
 	HTTP_LOGD("Client TLS Release...\n");
 
-	mbedtls_net_free(&(client->tls_client_fd));
 	mbedtls_ssl_free(&(client->tls_ssl));
 
 	HTTP_LOGD("Release success Ok\n");
