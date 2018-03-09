@@ -140,6 +140,7 @@ static void nic_display_state(void)
 		printf("\tMTU: %d\n", ifr.ifr_mtu);
 
 		ioctl(fd, SIOCGIFADDR, (char *)&ifr);
+		sin = (struct sockaddr_in *)&ifr.ifr_addr;
 		printf("\tinet addr: %s", inet_ntoa(sin->sin_addr));
 
 		ioctl(fd, SIOCGIFNETMASK, (char *)&ifr);
