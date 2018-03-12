@@ -25,14 +25,14 @@ GENCXXEXT ?= .pb.cc
 SERVICECXXEXT ?= .grpc.pb.cc
 MSG_PREFIX ?= .pb
 SERVICE_PREFIX ?= .grpc.pb
-# Protocol Buffers Example
+
+# Route Guide Client Example
 
 APPNAME = route_client
 
 FUNCNAME = route_client_main
 THREADEXEC = TASH_EXECMD_ASYNC
 
-# Protocol Buffers Example
 CXXPROTO	= route_guide.proto
 ASRCS		=
 CSRCS		=
@@ -72,8 +72,8 @@ else
 endif
 endif
 
-CONFIG_EXAMPLES_ROUTEGUIDE_PROGNAME ?= protobuf$(EXEEXT)
-PROGNAME	= $(CONFIG_EXAMPLES_ROUTEGUIDE_PROGNAME)
+CONFIG_EXAMPLES_ROUTE_CLIENT_PROGNAME ?= route_client$(EXEEXT)
+PROGNAME	= $(CONFIG_EXAMPLES_ROUTE_CLIENT_PROGNAME)
 
 ROOTDEPPATH	= --dep-path .
 
@@ -130,7 +130,7 @@ install:
 
 endif
 
-ifeq ($(CONFIG_BUILTIN_APPS)$(CONFIG_EXAMPLES_PROTOBUF),yy)
+ifeq ($(CONFIG_BUILTIN_APPS)$(CONFIG_EXAMPLES_ROUTE_CLIENT),yy)
 
 $(BUILTIN_REGISTRY)$(DELIM)$(FUNCNAME).bdat: $(DEPCONFIG) Makefile
 	$(Q) $(call REGISTER,$(APPNAME),$(FUNCNAME),$(THREADEXEC),$(PRIORITY),$(STACKSIZE))

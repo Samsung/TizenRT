@@ -1,6 +1,6 @@
 ###########################################################################
 #
-# Copyright 2017 Samsung Electronics All Rights Reserved.
+# Copyright 2018 Samsung Electronics All Rights Reserved.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -16,7 +16,7 @@
 #
 ###########################################################################
 ############################################################################
-# build/configs/qemu/tc_16m/Make.defs
+# build/configs/qemu/tc_16m_grpc/Make.defs
 #
 #   Copyright (C) 2010 Gregory Nutt. All rights reserved.
 #   Author: Gregory Nutt <gnutt@nuttx.org>

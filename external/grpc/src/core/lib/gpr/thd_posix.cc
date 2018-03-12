@@ -55,6 +55,8 @@ static void* thread_body(void* v) {
 #if GPR_APPLE_PTHREAD_NAME
     /* Apple supports 64 characters, and will truncate if it's longer. */
     pthread_setname_np(a.name);
+#elif GPR_TIZENRT_PTHREAD_NAME    
+    pthread_setname_np(pthread_self(), a.name);
 #elif GPR_LINUX_PTHREAD_NAME
     /* Linux supports 16 characters max, and will error if it's longer. */
     char buf[16];

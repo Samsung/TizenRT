@@ -18,5 +18,5 @@
 
 ifeq ($(CONFIG_EXAMPLES_GREETER_CLIENT),y)
 CFLAGS += -I$(TOPDIR)/kernel/environ/
-CONFIGURED_APPS += examples/greeter_client
+CONFIGURED_APPS += examples/grpc_greeter_client
 endif

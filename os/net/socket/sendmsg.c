@@ -1,6 +1,6 @@
 /****************************************************************************
  *
- * Copyright 2016 Samsung Electronics All Rights Reserved.
+ * Copyright 2018 Samsung Electronics All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -96,9 +96,7 @@ ssize_t sendmsg(int sockfd, struct msghdr *msg, int flags)
 	struct sockaddr *to = (struct sockaddr *)msg->msg_name;
 	int *addrlen = &(msg->msg_namelen);
 
-	//printf("\n[Received IOTIVITY Packet][%s:%d] \n", __FUNCTION__, __LINE__);
-
 	return sendto(sockfd, buf, len, flags, to, (socklen_t) *addrlen);
 }
-#endif							/* CONFIG_ENABLE_IOTIVITY */
+#endif							/* CONFIG_ENABLE_IOTIVITY || CONFIG_GRPC */
 #endif							/* CONFIG_NET */

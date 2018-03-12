@@ -322,6 +322,7 @@
 #define GPR_POSIX_TIME 1
 #define GPR_GETPID_IN_UNISTD_H 1
 #define GPR_SUPPORT_CHANNELS_FROM_FD 1
+#define GPR_TIZENRT_PTHREAD_NAME 1
 // TODO(TizenRT) : not implemented
 // {
 #define SOMAXCONN 8

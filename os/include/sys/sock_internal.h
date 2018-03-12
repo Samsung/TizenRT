@@ -115,6 +115,10 @@ static inline struct cmsghdr *cmsg_nxthdr(struct msghdr *__msg, struct cmsghdr *
 {
 	return __cmsg_nxthdr(__msg->msg_control, __msg->msg_controllen, __cmsg);
 }
+
+ssize_t recvmsg(int sockfd, struct msghdr *msg, int flags);
+ssize_t sendmsg(int sockfd, struct msghdr *msg, int flags);
+
 #endif							/* CONFIG_ENABLE_IOTIVITY */
 
 /****************************************************************************
@@ -290,9 +294,5 @@ struct linger {
 	int l_onoff;				/* Indicates whether linger option is enabled. */
 	int l_linger;				/* Linger time, in seconds. */
 };
-
-// TODO(TizenRT)
-ssize_t recvmsg(int sockfd, struct msghdr *msg, int flags);
-ssize_t sendmsg(int sockfd, struct msghdr *msg, int flags);
 
 #endif							/* __INCLUDE_SYS_SOCK_INTERNAL_H */

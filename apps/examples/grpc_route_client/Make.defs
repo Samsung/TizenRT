@@ -18,5 +18,5 @@
 
 ifeq ($(CONFIG_EXAMPLES_ROUTE_CLIENT),y)
 CFLAGS += -I$(TOPDIR)/kernel/environ/
-CONFIGURED_APPS += examples/route_client
+CONFIGURED_APPS += examples/grpc_route_client
 endif

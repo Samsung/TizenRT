@@ -100,5 +100,5 @@ ssize_t recvmsg(int sockfd, struct msghdr *msg, int flags)
 
 	return recvfrom(sockfd, buf, len, flags, from, (socklen_t *) addrlen);
 }
-#endif							/* CONFIG_ENABLE_IOTIVITY */
+#endif							/* CONFIG_ENABLE_IOTIVITY || CONFIG_GRPC */
 #endif							/* CONFIG_NET */

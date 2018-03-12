@@ -25,14 +25,14 @@ GENCXXEXT ?= .pb.cc
 SERVICECXXEXT ?= .grpc.pb.cc
 MSG_PREFIX ?= .pb
 SERVICE_PREFIX ?= .grpc.pb
-# Protocol Buffers Example
+
+# Greeter Client Example
 
 APPNAME = grpc_client
 
 FUNCNAME = greeter_client_main
 THREADEXEC = TASH_EXECMD_ASYNC
 
-# Protocol Buffers Example
 CXXPROTO	= helloworld.proto
 ASRCS		=
 CSRCS		=
@@ -70,8 +70,8 @@ else
 endif
 endif
 
-CONFIG_EXAMPLES_PROTOBUF_PROGNAME ?= protobuf$(EXEEXT)
-PROGNAME	= $(CONFIG_EXAMPLES_PROTOBUF_PROGNAME)
+CONFIG_EXAMPLES_GREETER_CLIENT_PROGNAME ?= grpc_client$(EXEEXT)
+PROGNAME	= $(CONFIG_EXAMPLES_GREETER_CLIENT_PROGNAME)
 
 ROOTDEPPATH	= --dep-path .
 
@@ -125,7 +125,7 @@ install:
 
 endif
 
-ifeq ($(CONFIG_BUILTIN_APPS)$(CONFIG_EXAMPLES_PROTOBUF),yy)
+ifeq ($(CONFIG_BUILTIN_APPS)$(CONFIG_EXAMPLES_GREETER_CLIENT),yy)
 
 $(BUILTIN_REGISTRY)$(DELIM)$(FUNCNAME).bdat: $(DEPCONFIG) Makefile
 	$(Q) $(call REGISTER,$(APPNAME),$(FUNCNAME),$(THREADEXEC),$(PRIORITY),$(STACKSIZE))
