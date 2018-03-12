@@ -46,7 +46,7 @@ esm_result_e esm_init_easysetup(int restart_flag, things_server_builder_s *serve
 
 esm_result_e esm_terminate_easysetup(void);
 
-esm_result_e esm_set_wifi_conn_rrr(void);
+esm_result_e esm_set_wifi_conn_err(void);
 
 bool esm_get_network_status(void);
 

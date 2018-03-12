@@ -654,7 +654,7 @@ OCStackApplicationResult handle_login_cb(void *ctx, OCDoHandle handle, OCClientR
 			return OC_STACK_DELETE_TRANSACTION;
 		}
 
-		oic_ping_set_mask(g_cloud_ip, atoi(g_cloud_port), PING_ST_SIGNIN);
+		things_ping_set_mask(g_cloud_ip, atoi(g_cloud_port), PING_ST_SIGNIN);
 
 		// [ysy] Plublish resources to cloud
 		THINGS_LOG(THINGS_DEBUG, TAG, "Start OCCloudPUblish");
@@ -1365,7 +1365,7 @@ OCStackResult log_in_out_to_cloud(bool value, timeout_s *timeout)
 		THINGS_LOG_D(THINGS_INFO, TAG, "sid : %s", signed_up_data->sid);
 
 		if (value == true) {
-			oic_ping_set_mask(g_cloud_ip, port, PING_ST_ISCLOUD);
+			things_ping_set_mask(g_cloud_ip, port, PING_ST_ISCLOUD);
 		} else {
 			oic_ping_unset_mask(g_cloud_ip, PING_ST_ISCLOUD | PING_ST_SIGNIN | PING_ST_TCPCONNECT);
 		}
@@ -1488,7 +1488,7 @@ static OCStackResult register_server_into_cloud(es_cloud_prov_data_s *event_data
 		return res;
 	}
 
-	oic_ping_set_mask(g_cloud_ip, (uint16_t) port, PING_ST_ISCLOUD);
+	things_ping_set_mask(g_cloud_ip, (uint16_t) port, PING_ST_ISCLOUD);
 
 	// Get Session Key
 	res = things_cloud_signup(g_cloud_address, OCGetServerInstanceIDString(), event_data, handle_register_cb, handle_signup_timeout, timeout);
@@ -2231,7 +2231,7 @@ void *es_cloud_init(things_server_builder_s *server_builder)
 		srand(time_v);
 	}
 
-	if (oic_ping_init() == false) {
+	if (things_ping_init() == false) {
 		THINGS_LOG_D(THINGS_DEBUG, TAG, "OICPing init is failed.");
 		return NULL;
 	}
@@ -2277,7 +2277,7 @@ void es_cloud_terminate(void)
 	send_cnt_sign_up = 0;
 	retranslate_rsc_publish_cnt = 0;
 
-	oic_ping_terminate();
+	things_ping_terminate();
 }
 static int get_cloud_code(OCClientResponse *response, OCMethod method, ci_error_code_e *err)
 {

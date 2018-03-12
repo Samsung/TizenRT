@@ -168,7 +168,7 @@ int esm_set_device_property_by_app(char *name, const wifi_mode_e *mode, int ea_m
 
 	int i = 0;
 
-	if (mode == NULL || ea_mode < 1 || freq >= WiFi_FREQ_EOF) {
+	if (mode == NULL || ea_mode < 1 || freq < WiFi_24G || freq >= WiFi_FREQ_EOF) {
 		THINGS_LOG_V_ERROR(THINGS_ERROR, TAG, "Invalid Input Arguments.(mode=0x%X, ea_mode=%d, freq=%d)", mode, ea_mode, freq);
 		return 0;
 	}
@@ -235,33 +235,13 @@ esm_result_e esm_init_easysetup(int restart_flag, things_server_builder_s *serve
 		THINGS_LOG_D(THINGS_INFO, TAG, "Restart EasySetup");
 		esm_continue = 0;
 		if (gthread_id_cloud_refresh_check) {
-#ifdef __ST_THINGS_RTOS__
-			if (ci_token_expire_fds[1] != -1) {
-				ssize_t len = 0;
-				do {
-					len = write(ci_token_expire_fds[1], "w", 1);
-				} while ((len == -1) && (errno == EINTR));
-				if ((len == -1) && (errno != EINTR) && (errno != EPIPE)) {
-					THINGS_LOG_D_ERROR(THINGS_ERROR, TAG, "write failed: %s", strerror(errno));
-					return ESM_ERROR;
-				}
-			}
+			pthread_cancel(gthread_id_cloud_refresh_check);
 			pthread_join(gthread_id_cloud_refresh_check, NULL);
-			if (ci_token_expire_fds[0] != -1) {
-				close(ci_token_expire_fds[0]);
-				ci_token_expire_fds[0] = -1;
-			}
-			if (ci_token_expire_fds[1] != -1) {
-				close(ci_token_expire_fds[1]);
-				ci_token_expire_fds[1] = -1;
-			}
-#else
-			pthread_join(gthread_id_cloud_refresh_check, NULL);
-#endif
 			gthread_id_cloud_refresh_check = 0;
 		}
 
 		if (gthread_id_network_status_check) {
+			pthread_cancel(gthread_id_network_status_check);
 			pthread_join(gthread_id_network_status_check, NULL);
 			gthread_id_network_status_check = 0;
 		}
@@ -339,19 +319,6 @@ esm_result_e esm_init_easysetup(int restart_flag, things_server_builder_s *serve
 
 #endif							//#ifdef __SECURED__
 	if (gthread_id_cloud_refresh_check == 0) {
-		int ret = pipe(ci_token_expire_fds);
-		if (-1 == ret) {
-			if (ci_token_expire_fds[0] != -1)  {
-				close(ci_token_expire_fds[0]);
-				ci_token_expire_fds[0] = -1;
-			}
-			if (ci_token_expire_fds[1] != -1)  {
-				close(ci_token_expire_fds[1]);
-				ci_token_expire_fds[1] = -1;
-			}
-			THINGS_LOG_D_ERROR(THINGS_ERROR, TAG, "pipe failed: %s", strerror(errno));
-			return ESM_ERROR;
-		}
 		esm_continue = 1;
 		THINGS_LOG_D(THINGS_DEBUG, TAG, "Create cloud_refresh_check_loop thread");
 #ifdef __ST_THINGS_RTOS__
@@ -369,32 +336,12 @@ esm_result_e esm_terminate_easysetup()
 	THINGS_LOG_D(THINGS_DEBUG, TAG, "Terminate EasySetup");
 	esm_continue = 0;
 	if (gthread_id_cloud_refresh_check) {
-#ifdef __ST_THINGS_RTOS__
-		if (ci_token_expire_fds[1] != -1) {
-			ssize_t len = 0;
-			do {
-				len = write(ci_token_expire_fds[1], "w", 1);
-			} while ((len == -1) && (errno == EINTR));
-			if ((len == -1) && (errno != EINTR) && (errno != EPIPE)) {
-				THINGS_LOG_D_ERROR(THINGS_ERROR, TAG, "write failed: %s", strerror(errno));
-				return ESM_ERROR;
-			}
-		}
+		pthread_cancel(gthread_id_cloud_refresh_check);
 		pthread_join(gthread_id_cloud_refresh_check, NULL);
-		if (ci_token_expire_fds[0] != -1) {
-			close(ci_token_expire_fds[0]);
-			ci_token_expire_fds[0] = -1;
-		}
-		if (ci_token_expire_fds[1] != -1) {
-			close(ci_token_expire_fds[1]);
-			ci_token_expire_fds[1] = -1;
-		}
-#else
-		pthread_join(gthread_id_cloud_refresh_check, NULL);
-#endif
 		gthread_id_cloud_refresh_check = 0;
 	}
 	if (gthread_id_network_status_check) {
+		pthread_cancel(gthread_id_network_status_check);
 		pthread_join(gthread_id_network_status_check, NULL);
 		gthread_id_network_status_check = 0;
 	}
@@ -455,71 +402,6 @@ static int checkRefresh(int *hour_cnt_24)
 
 static void *cloud_refresh_check_loop(void *param)
 {
-#ifdef __ST_THINGS_RTOS__
-	THINGS_LOG_D(THINGS_DEBUG, TAG, "cloud_refresh_check_loop Close Loop Enter.");
-	int i_failed_cnt = 0;
-	int *i_continue = (int *)param;
-	int hour_cnt_24 = 0;
-	int ret = -1;
-	fd_set readFds;
-	struct timeval timeout;
-
-	timeout.tv_sec = i_common_sleep_sec;
-	timeout.tv_usec = 0;
-	int maxFd = ci_token_expire_fds[0];
-	THINGS_LOG_D(THINGS_DEBUG, TAG, "device ID = %s", OCGetServerInstanceIDString());
-
-	// Close Loop Thread.
-	while (*i_continue) {
-		if (es_get_state() != ES_STATE_PUBLISHED_RESOURCES_TO_CLOUD) {
-			hour_cnt_24++;
-			timeout.tv_sec = i_common_sleep_sec;
-			FD_ZERO(&readFds);
-			FD_SET(ci_token_expire_fds[0], &readFds);
-			ret = select(maxFd + 1, &readFds, NULL, NULL, &timeout);
-			if (ret == 0) {
-				continue;
-			}
-			if (FD_ISSET(ci_token_expire_fds[0], &readFds)) {
-				char buf[2] = { 0 };
-				ssize_t len = read(ci_token_expire_fds[0], buf, sizeof(buf));
-				if (len > 0 && buf[0] == 'w') {
-					break;
-				}
-				continue;
-			}
-			continue;
-		}
-		if ((timeout.tv_sec = checkRefresh(&hour_cnt_24)) == i_fail_sleep_sec) {
-			i_failed_cnt++;
-		} else {
-			i_failed_cnt = 0;
-		}
-
-		if (i_failed_cnt >= MAX_REFRESHCHECK_CNT) {
-			THINGS_LOG_D(THINGS_INFO, TAG, "Refresh checking routin is Failed. Return cloud state to INIT.");
-			i_failed_cnt = 0;
-			esm_get_network_status();	// State return
-		}
-		FD_ZERO(&readFds);
-		FD_SET(ci_token_expire_fds[0], &readFds);
-		ret = select(maxFd + 1, &readFds, NULL, NULL, &timeout);
-		if (ret == 0) {
-			continue;
-		}
-		if (FD_ISSET(ci_token_expire_fds[0], &readFds)) {
-			char buf[2] = { 0 };
-			ssize_t len = read(ci_token_expire_fds[0], buf, sizeof(buf));
-			if (len > 0 && buf[0] == 'w') {
-				break;
-			}
-		}
-	}
-	FD_CLR(ci_token_expire_fds[0], &readFds);
-	FD_CLR(ci_token_expire_fds[1], &readFds);
-	THINGS_LOG_D(THINGS_DEBUG, TAG, "cloud_refresh_check_loop Close Loop Exit.");
-	return NULL;
-#else
 	THINGS_LOG_D(THINGS_DEBUG, TAG, "cloud_refresh_check_loop Close Loop Enter.");
 
 	int i_failed_cnt = 0;
@@ -556,7 +438,6 @@ static void *cloud_refresh_check_loop(void *param)
 	THINGS_LOG_D(THINGS_DEBUG, TAG, "cloud_refresh_check_loop Close Loop Exit.");
 
 	return NULL;
-#endif
 }
 
 static int OICUpdateDevProvData(es_dev_conf_prov_data_s *dev_prov_data)
@@ -683,10 +564,12 @@ int esm_wifi_prov_check_cb(int enabled, char *ssid, char *addr)
 		set_wifi_prov_state(WIFI_DONE);
 		THINGS_LOG(THINGS_DEBUG, TAG, "es_set_state ES_STATE_CONNECTED_TO_ENROLLER");
 
+#ifndef __ST_THINGS_RTOS__
 		if (g_server_builder->broadcast_presence(g_server_builder, 20) == 1) {
 			THINGS_LOG_D_ERROR(THINGS_ERROR, TAG, "Broadcast Presence Failed.");
 			ret = 0;
 		}
+#endif
 
 		del_all_request_handle();	// clear time-out thread.
 		PROFILING_TIME("WiFi Provisioning End.");
@@ -915,11 +798,17 @@ bool esm_get_network_status(void)
 		THINGS_LOG_V(THINGS_INFO, TAG, "Connected to AP");
 		es_set_state(ES_STATE_CONNECTED_TO_ENROLLER);
 
-		if (g_server_builder != NULL && g_server_builder->broadcast_presence != NULL) {
-			if (g_server_builder->broadcast_presence(g_server_builder, 20) == 1) {
-				THINGS_LOG_V_ERROR(THINGS_ERROR, TAG, "Broadcast Presence Failed.");
-				return is_ok;
+		if (g_server_builder != NULL) {
+#ifndef __ST_THINGS_RTOS__
+			if (g_server_builder->broadcast_presence != NULL) {
+				if (g_server_builder->broadcast_presence(g_server_builder, 20) == 1) {
+					THINGS_LOG_V_ERROR(THINGS_ERROR, TAG, "Broadcast Presence Failed.");
+					return is_ok;
+				}
+			} else {
+				THINGS_LOG_V(THINGS_INFO, TAG, "ServerBuilder Broadcast Presence is null.");
 			}
+#endif
 		} else {
 			THINGS_LOG_V(THINGS_INFO, TAG, "ServerBuilder is not initialized.");
 		}
@@ -939,7 +828,7 @@ void *esm_register_cloud_cb(void *func)
 	return NULL;
 }
 
-esm_result_e esm_set_wifi_conn_rrr(void)
+esm_result_e esm_set_wifi_conn_err(void)
 {
 	es_set_state(ES_STATE_FAILED_TO_CONNECT_TO_ENROLLER);
 	es_set_error_code(ES_ERRCODE_UNKNOWN);
