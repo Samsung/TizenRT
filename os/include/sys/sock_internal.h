@@ -60,7 +60,7 @@
 #include <tinyara/config.h>
 #include <sys/types.h>
 
-#ifdef CONFIG_ENABLE_IOTIVITY
+#if defined(CONFIG_ENABLE_IOTIVITY) || defined(CONFIG_GRPC)
 
 #include <uio.h>
 
@@ -290,5 +290,9 @@ struct linger {
 	int l_onoff;				/* Indicates whether linger option is enabled. */
 	int l_linger;				/* Linger time, in seconds. */
 };
+
+// TODO(TizenRT)
+ssize_t recvmsg(int sockfd, struct msghdr *msg, int flags);
+ssize_t sendmsg(int sockfd, struct msghdr *msg, int flags);
 
 #endif							/* __INCLUDE_SYS_SOCK_INTERNAL_H */

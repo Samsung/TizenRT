@@ -17,7 +17,7 @@
  ****************************************************************************/
 
 /****************************************************************************
- * net/socket/recvmsg.c
+ * net/socket/sendmsg.c
  *
  *   Copyright (C) 2007, 2008, 2012 Gregory Nutt. All rights reserved.
  *   Author: Gregory Nutt <gnutt@nuttx.org>
@@ -71,34 +71,34 @@
  ****************************************************************************/
 
 /****************************************************************************
- * Function: recvmsg
+ * Function: sendmsg
  *
  * Description:
- *   The recvmsg() call is identical to recvfrom() with a NULL from parameter.
+ *   The sendmsg() call is identical to sendto() with a NULL from parameter.
  *
  * Parameters:
  *   sockfd   Socket descriptor of socket
- *   buf      Buffer to receive data
+ *   buf      Buffer to send data
  *   len      Length of buffer
  *   flags    Receive flags
  *
  * Returned Value:
- *  (see recvfrom)
+ *  (see sendto)
  *
  * Assumptions:
  *
  ****************************************************************************/
 
-ssize_t recvmsg(int sockfd, struct msghdr *msg, int flags)
+ssize_t sendmsg(int sockfd, struct msghdr *msg, int flags)
 {
 	uint8_t *buf = (uint8_t *)(msg->msg_iov->iov_base);
 	size_t len = msg->msg_iov->iov_len;
-	struct sockaddr *from = (struct sockaddr *)msg->msg_name;
+	struct sockaddr *to = (struct sockaddr *)msg->msg_name;
 	int *addrlen = &(msg->msg_namelen);
 
 	//printf("\n[Received IOTIVITY Packet][%s:%d] \n", __FUNCTION__, __LINE__);
 
-	return recvfrom(sockfd, buf, len, flags, from, (socklen_t *) addrlen);
+	return sendto(sockfd, buf, len, flags, to, (socklen_t) *addrlen);
 }
 #endif							/* CONFIG_ENABLE_IOTIVITY */
 #endif							/* CONFIG_NET */

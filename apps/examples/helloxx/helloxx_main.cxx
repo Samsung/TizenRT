@@ -1,6 +1,6 @@
 /****************************************************************************
  *
- * Copyright 2016 Samsung Electronics All Rights Reserved.
+ * Copyright 2017 Samsung Electronics All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,7 +18,7 @@
 //***************************************************************************
 // examples/helloxx/helloxx_main.cxx
 //
-//   Copyright (C) 2009, 2011-2013 Gregory Nutt. All rights reserved.
+//   Copyright (C) 2009, 2011-2013, 2017 Gregory Nutt. All rights reserved.
 //   Author: Gregory Nutt <gnutt@nuttx.org>
 //
 // Redistribution and use in source and binary forms, with or without
@@ -60,7 +60,8 @@
 #include <debug.h>
 
 #include <tinyara/init.h>
-#include <tinyara/arch.h>
+
+#include <apps/platform/cxxinitialize.h>
 
 //***************************************************************************
 // Definitions
@@ -86,14 +87,14 @@
 #    define cxxvdbg           vdbg
 #    define cxxllvdbg         llvdbg
 #  else
-#    define cxxvdbg(x...)
-#    define cxxllvdbg(x...)
+#    define cxxvdbg(...)	printf(__VA_ARGS__)
+#    define cxxllvdbg(...) printf(__VA_ARGS__)
 #  endif
 #else
-#  define cxxdbg(x...)
-#  define cxxlldbg(x...)
-#  define cxxvdbg(x...)
-#  define cxxllvdbg(x...)
+#  define cxxdbg(...)		printf(__VA_ARGS__)
+#  define cxxlldbg(...)	printf(__VA_ARGS__)
+#  define cxxvdbg(...)		printf(__VA_ARGS__)
+#  define cxxllvdbg(...)	printf(__VA_ARGS__)
 #endif
 
 //***************************************************************************

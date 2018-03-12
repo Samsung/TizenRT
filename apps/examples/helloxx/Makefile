@@ -1,6 +1,6 @@
 ###########################################################################
 #
-# Copyright 2016 Samsung Electronics All Rights Reserved.
+# Copyright 2017 Samsung Electronics All Rights Reserved.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -49,7 +49,6 @@
 # POSSIBILITY OF SUCH DAMAGE.
 #
 ############################################################################
-
 -include $(TOPDIR)/.config
 -include $(TOPDIR)/Make.defs
 include $(APPDIR)/Make.defs
@@ -80,11 +79,11 @@ SRCS		= $(ASRCS) $(CSRCS) $(CXXSRCS) $(MAINSRC)
 OBJS		= $(AOBJS) $(COBJS) $(CXXOBJS)
 
 ifneq ($(CONFIG_BUILD_KERNEL),y)
-  OBJS		+= $(MAINOBJ)
+OBJS		+= $(MAINOBJ)
 endif
 
 ifeq ($(CONFIG_WINDOWS_NATIVE),y)
-  BIN		= ..\..\libapps$(LIBEXT)
+BIN		= ..\..\libapps$(LIBEXT)
 else
 ifeq ($(WINTOOL),y)
   BIN		= ..\\..\\libapps$(LIBEXT)
