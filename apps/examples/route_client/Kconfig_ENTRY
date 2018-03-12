@@ -1,0 +1,3 @@
+config ENTRY_ROUTE_CLIENT
+	bool "Route Client example"
+	depends on EXAMPLES_ROUTE_CLIENT
