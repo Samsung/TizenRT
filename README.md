@@ -15,9 +15,9 @@ This project is forking [TizenRT 1.0](https://github.com/Samsung/TizenRT) from [
 
 > * Home
 >   * [Overview](#overview)
->   * [ARTIK053](./build/config/artik053/README.md)
->   * [ARTIK053s](./build/config/artik053s/README.md)
->   * [ARTIK055s](./build/config/artik055s/README.md)
+>   * [ARTIK053](./build/configs/artik053/README.md)
+>   * [ARTIK053s](./build/configs/artik053s/README.md)
+>   * [ARTIK055s](./build/configs/artik055s/README.md)
 > * Setup Environment
 >   * [Ubuntu Development Setting](#ubuntu-development-setting)
 >   * [Getting the toolchain](#getting-the-toolchain)
