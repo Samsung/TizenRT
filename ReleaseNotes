@@ -99,3 +99,47 @@ v1.0.10
 * WiFi: remove duplicate calling mq_close
 * Serial: enable uart PULLUP in console mode
 * SysView: add sysview target initial sources
+
+v1.0.11
+-------
+
+* pipe: modify pipe build condition, and increase pipe size to 4K
+* ETC: remove sercomm driver
+* SPI: clean spi driver
+* I2C: clean i2c driver
+* math: fix wrong output math apis
+* pthread: fix semaphore count above in mutex
+* wifi: refactoing wlan utils
+* iotivity: clean iotivity 1.2.1 sources, update 1.3.1 sources
+* SysView: fix task running trace
+* DHCPC: fix error handling for mx retry of request
+* DEBUG: add stack smash protection
+* DEBUG: add stack overflow check
+* pipe: disable priority inheritance on semaphore
+* SysView: fix semaphore trace
+* SysView: add user annotation, missing task trace
+* SysView: task priority boosting trace, display semaphore name when it exists
+* Serial: fix uart register
+* DHCPD: make dhcpd run irrespective of caller task's priority
+* ETC: delete duplicate codecs library
+* Boot: modify boot sequence
+* DEBUG: add crash dump to falsh, crash dump to file using openocd
+* Boot: modify watchdog initialize
+* ETC: add TASH shell password mode
+* SysView: add sem holer trace
+* SysView: fix task tace in merge pending task & addreadytorun
+* Sched: add missing stack overflow check at task running
+* CodeSigner: update app codesigner to 1.3
+* Semaphore: fix avoid overwriting the first error set
+* Security: refactoring SEE api definitions
+* ETC: remove smtp driver
+* libc: update math library
+* I2C: modify i2c return value
+* SLIP: enable SLIP(Serial IP) feature
+* arch: enable Thumb-mode build (default: arm-mode)
+* wifi: fix some errors
+* pthread: fix different return value
+* DHCPC: use ramdon xid value
+* iotivity: fix loop delay time about ocf examples
+* Webserber: fix double close socket
+* Support ARTIK-SDK 1.8.0
