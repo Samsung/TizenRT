@@ -1,0 +1,3 @@
+config ENTRY_PROTOBUF
+	bool "Protocol Buffers example"
+	depends on EXAMPLES_PROTOBUF
