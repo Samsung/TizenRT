@@ -39,6 +39,7 @@ This project is forking [TizenRT 1.0](https://github.com/Samsung/TizenRT) from [
 >   * [How to test OCF certification](#how-to-test-ocf-certification)
 >   * [How to enable SLIP](#how-to-enable-slip)
 >   * [Thumb Mode Build](#thumb-mode-build)
+>   * [Crash Dump Analysis Tool](#crash-dump-analysis-tool)
 > * Support Tool
 >   * [TRACE32](#trace32)
 >   * [J-Link](#j-link)
@@ -459,7 +460,7 @@ For more information on OCF certification, click [here](https://openconnectivity
 
 ARTIK05x supports SLIP (Serial Line IP) interface. To test your SLIP interface, you need to make the following menuconfig changes:
 
-> * Device Drivers > Network Device/PHY Support > Enable "SLIP (serial line) suupport"
+> * Device Drivers > Network Device/PHY Support > Enable "SLIP (serial line) support"
 > * Networking Support > LwIP options > Enable "Support serial line IP interface"
 
 The following is the default setting of the ARTIK05x IP to "10.0.0.2". The Linux PC as the host is set to "10.0.0.1" as an example.
@@ -554,6 +555,150 @@ PING 10.0.0.1 (10.0.0.1) 32 bytes of data. count(10)
 
 You can enable THUMB mode by setting it in menuconfig as follows.
 > * Chip Selection > Enable "Thumb instruction set support"
+
+## Crash Dump Analysis Tool
+
+In your development with ARTIK05x, you may experience `CRASH`. You do not need to be embarrassed.
+So we prepared you to do `RAMDUMP` and `DEBUGGING` in the following way.
+
+To do RAMDUMP and DEBUGGING, you must first set it in menuconfig as follows.
+> * Board Selection > Enable "Enable Board level logging of crash dumps"
+> * Board Selection > ARTIK05X crash dump configuration > Enable All Items [Recommands]
+
+#### Download dump file and paring
+
+The following is a forced CRASH. (For Example)
+
+```bash
+$ make crashdump ota dump.bin
+Open On-Chip Debugger 0.10.0-dirty (2017-09-02-08:32)
+Licensed under GNU GPL v2
+For bug reports, read
+        http://openocd.org/doc/doxygen/bugs.html
+adapter speed: 2000 kHz
+Info : auto-selecting first available session transport "jtag". To override use 'transport select <transport>'.
+force hard breakpoints
+trst_and_srst separate srst_gates_jtag trst_push_pull srst_push_pull connect_deassert_srst
+adapter_nsrst_assert_width: 50
+adapter_nsrst_delay: 100
+debug_level: 0
+target halted in ARM state due to debug-request, current mode: Supervisor
+cpsr: 0x200001d3 pc: 0x040239f8
+D-Cache: disabled, I-Cache: enabled
+Read OTA download to /TizenRT/build/configs/artik05x/../../output/bin/dump.bin
+dumped 1572864 bytes in 29.090637s (52.800 KiB/s)
+
+================fault information================
+outfile : /TizenRT/build/configs/artik05x/../../output/bin/dump_info.txt
+Dump Present Flag : 0x0000003e
+DFAR : 0x00000000
+DFSR : 0x00000000
+
+================binary information================
+outfile : /TizenRT/build/configs/artik05x/../../output/bin/dump_info.txt
+commit : 51203fcf2c4c128baddcb57578d3fff5b3fd630f
+build_time : 2018-03-08 14:36:13
+file_name : http.c
+line : 154
+
+================register dump================
+outfile : /TizenRT/build/configs/artik05x/../../output/bin/reg.cmm
+R0 0x020264e8
+R1 0x00000000
+R2 0x80180000
+R3 0x020264e8
+R4 0x020264e8
+R5 0x02021ae0
+R6 0x020265e0
+R7 0x0000009a
+R8 0x041cb660
+R9 0x020265c8
+R10 0x0205eee0
+R11 0x02063f68
+R12 0x00000000
+R13 0x02063ee8
+R14 0x040c9748
+PC 0x040c9558
+SPSR 0x60000053
+CPSR 0x60000053
+R13_USR 0x4e820501
+R14_USR 0x8005a402
+R8_FIQ 0x05425598
+R9_FIQ 0x2d02654f
+R10_FIQ 0x80b68608
+R11_FIQ 0x45605065
+R12_FIQ 0x8883aa2f
+R13_FIQ 0x0210ca72
+R14_FIQ 0x0920bcc2
+SPSR_FIQ 0x0800381c
+R13_IRQ 0x02020400
+R14_IRQ 0x600000d3
+SPSR_IRQ 0x60000053
+R13_ABT 0x2440042c
+R14_ABT 0x00204806
+SPSR_ABT 0x1402c058
+R13_UND 0x500c1553
+R14_UND 0xf9121008
+SPSR_UND 0x8a0ae243
+
+================stack dump================
+outfile : /TizenRT/build/configs/artik05x/../../output/bin/dump_info.txt
+0x020265c8 0x040c9938 0x041cb660 0x020265c8 0x0205eee0 0x02063f68 0x00000000 0x02063ee8
+0x040c9748 0x040c9558 0x00000026 0x04160c94 0x00000001 0x00000007 0x00000001 0xffffffff
+0xdeadbeef 0x00000010 0x00000000 0x00000000 0xdeadbe01 0x00000012 0x00000005 0x00000000
+0x00000000 0x000186a0 0xc3c00210 0x0701a8c0 0x00000000 0x00000000 0x0000000a 0x00000008
+0x00000007 0x00000000 0x00000013 0x00000012 0x00000014 0x00000015 0x00000016 0x00000017
+0x00000018 0x00000019 0x0000001a 0x0000001b 0x0000001c 0x0000001d 0x0000001e 0x0000001f
+0x00000020 0x00000021 0x00000022 0x00000023 0x00000024 0x00000025 0x0205d2a0 0x02055c50
+0x0205d3c0 0x0205eee0 0x0205d3cc 0x00000000 0x00000000 0x00000000 0x00000000 0x041774d0
+0x00000000 0x00000000 0x00000000 0x00000000 0x00000000 0x00000000
+
+================task information================
+outfile : /TizenRT/build/configs/artik05x/../../output/bin/dump_info.txt
+ pid         name         sch_pri   bas_pri       state       errno    stk_size  stk_used
+  0       Idle Task          0         0      ready to run     -22        0         0
+  1         hpwork          224       224       wait_sig        4        2028      636
+  2         lpwork          176       176       wait_sig        0        2028      596
+  3      LWIP_TCP/IP        110       110       wait_sem        0        4068      940
+  5          tash           125       125       wait_sem        0        4076      1628
+  7     WPA Supplicant      100       100       wait_sem        0        4036      1748
+  8   WLAN Driver mxmgmt    100       100       wait_sem        0        2044      220
+  9   Wi-Fi API callback    100       100     wait_mq_emty      0        2044      772
+ 10  WPA Ctrl Iface FIFO    100       100       wait_sem        0        2044      532
+ 11   Wi-Fi API monitor     100       100       wait_sem        0        2044      556
+ 13  listening webserver    100       100        running        0        4092      876
+ 14     client handler      100       100     wait_mq_emty      0        8188      3260
+ 15  listening webserver    100       100       wait_sem        0        4092      732
+ 16     client handler      100       100     wait_mq_emty      0        4092      676
+
+================ram dump data================
+outfile : /TizenRT/build/configs/artik05x/../../output/bin/ramdump_0x02020400--0x215FFFF.bin
+
+================make archive================
+outfile : /TizenRT/build/configs/artik05x/../../output/bin/crash_dump.zip
+include files :  ['tinyara', 'dump_info.txt', 'reg.cmm', 'ramdump_0x02020400--0x215FFFF.bin']
+```
+
+#### Install Trace32 Simulator
+
+ * Download : simarm.zip from below website
+   - http://www.lauterbach.com/frames.html?home.html
+   - http://www.lauterbach.com/cgi-bin/download.pl?file=simarm.zip
+
+#### Load dump file for Debugging
+
+ * Load Register
+   - Excute CMM : ../build/output/bin/reg.cmm
+ * Load RAM data
+   - d.load.binary  ramdump_0x02020400--0x215FFFF.bin  D:0x02020400--0x215FFFF /long /noclear
+ * Load ELF
+   - d.load.elf tinyara
+
+#### Analysis
+
+You can see call stack : Menu -> View -> Stack frame with local
+
+![SIMARM](./external/docs/media/ramdump_simarm.png)
 
 <!-- Support Tool -->
 

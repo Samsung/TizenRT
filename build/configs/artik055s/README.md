@@ -92,7 +92,7 @@ $ make -C os download ALL
 
 The hardware pull status is as follows. The default values set in the TizenRT software can be found [s5jt200_pinconfig.h](../../../os/arch/arm/src/s5j/chip/s5jt200_pinconfig.h).
 
-| PinNo |   Pin Nmae   | Module Internal PULL | Module External PULL | RESET | PUD |                FEATURE               |
+| PinNo |   Pin Name   | Module Internal PULL | Module External PULL | RESET | PUD |                FEATURE               |
 |:-----:|:------------:|:--------------------:|:--------------------:|:-----:|:---:|:------------------------------------:|
 |   35  |   XSPI0_CLK  |           -          |           -          |   I   |  PD |                                      |
 |   37  |   XSPI0_CSN  |           -          |           -          |   I   |  PD |                                      |
