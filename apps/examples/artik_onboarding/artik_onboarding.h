@@ -46,12 +46,13 @@ struct Lwm2mConfig {
 	char is_ota_update;
 	artik_time signing_time;
 	artik_time signing_time_tmp;
+	char ota_signature_verification;
 };
 
 extern struct Lwm2mConfig lwm2m_config;
 
 artik_error StartLwm2m(bool start);
-void Lwm2mResetConfig(void);
+void Lwm2mResetConfig(bool force);
 /*
  * WiFi related exports
  */

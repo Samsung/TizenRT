@@ -197,8 +197,7 @@ static int write_firmware(char *data, size_t len, void *user_data)
 	if (g_ota_info->error != OTA_ERROR_SUCCESS)
 		return len;
 
-	/* Enable OTA package signature verification for secure device type. */
-	if (cloud_secure_dt && !g_ota_info->sig.found) {
+	if (lwm2m_config.ota_signature_verification && !g_ota_info->sig.found) {
 		if (g_ota_info->sig.offset == 0 && !locate_substring(data, PKCS7_BEGIN, len)) {
 			fprintf(stderr, "Failed to download firmware: Signature not found\n");
 			g_ota_info->error = OTA_ERROR_VERIFY;
@@ -265,7 +264,7 @@ static int write_firmware(char *data, size_t len, void *user_data)
 		header_size = len > remaining_header_size ? remaining_header_size : len;
 		memcpy(g_ota_info->header.data + g_ota_info->header.offset, data + sig_size, header_size);
 
-		if (cloud_secure_dt) {
+		if (lwm2m_config.ota_signature_verification) {
 			artik_error err;
 			artik_security_module *security = artik_request_api_module("security");
 
@@ -290,7 +289,7 @@ static int write_firmware(char *data, size_t len, void *user_data)
 	if (len > 0) {
 		write(g_ota_info->fd, data + sig_size + header_size, len);
 
-		if (cloud_secure_dt) {
+		if (lwm2m_config.ota_signature_verification) {
 			artik_error err;
 			artik_security_module *security = artik_request_api_module("security");
 
@@ -395,7 +394,7 @@ static int download_firmware(int argc, char *argv[])
 		return 1;
 	}
 
-	if (cloud_secure_dt) {
+	if (lwm2m_config.ota_signature_verification) {
 		security = artik_request_api_module("security");
 		ret = security->verify_signature_final(g_ota_info->sig.handle);
 		if (ret != S_OK) {
@@ -528,7 +527,7 @@ static void finish_ota(void)
 		strlen(ONBOARDING_VERSION));
 
 	lwm2m_config.is_ota_update = 0;
-	if (cloud_secure_dt) {
+	if (lwm2m_config.ota_signature_verification) {
 		memcpy(&lwm2m_config.signing_time, &lwm2m_config.signing_time_tmp, sizeof(artik_time));
 	}
 	SaveConfiguration();
@@ -714,8 +713,12 @@ exit:
 	return ret;
 }
 
-void Lwm2mResetConfig(void)
+void Lwm2mResetConfig(bool force)
 {
+	if (force) {
+		lwm2m_config.ota_signature_verification = 1;
+	}
+
 	lwm2m_config.is_ota_update = 0;
 	memset(&lwm2m_config.signing_time, 0, sizeof(artik_time));
 	memset(&lwm2m_config.signing_time_tmp, 0, sizeof(artik_time));

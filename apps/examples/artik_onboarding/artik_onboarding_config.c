@@ -46,8 +46,11 @@ void PrintConfiguration(void)
 
 	printf("Lwm2m:\n");
 	printf("\tis_ota_update: %d\n", lwm2m_config.is_ota_update);
+	printf("\tota_signature_verification: %d\n", lwm2m_config.ota_signature_verification);
 	printf("\tsigning_time: %d/%d/%d\n", lwm2m_config.signing_time.day,
 		   lwm2m_config.signing_time.month, lwm2m_config.signing_time.year);
+	printf("\tsigning_time_tmp: %d/%d/%d\n", lwm2m_config.signing_time_tmp.day,
+		   lwm2m_config.signing_time_tmp.month, lwm2m_config.signing_time_tmp.year);
 
 }
 
@@ -115,7 +118,7 @@ artik_error ResetConfiguration(bool force)
 {
 	WifiResetConfig(force);
 	CloudResetConfig(force);
-	Lwm2mResetConfig();
+	Lwm2mResetConfig(force);
 
 	return SaveConfiguration();
 }

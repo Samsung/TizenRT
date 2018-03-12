@@ -124,6 +124,29 @@ int artik_onboarding_main(int argc, char *argv[])
 			strncpy(cloud_config.device_type_id, argv[2], AKC_DTID_LEN);
 			SaveConfiguration();
 			goto exit;
+
+		} else if (!strcmp(argv[1], "ota-sig-verif")) {
+			if (argc < 3) {
+				printf("Missing parameter\n");
+				printf("Usage: onboard ota-sig-verif <enable|disable>\n");
+				goto exit;
+			}
+
+			if (!strcmp(argv[2], "enable")) {
+				printf("Signature verification enabled\n");
+				lwm2m_config.ota_signature_verification = 1;
+			} else if (!strcmp(argv[2], "disable")) {
+				printf("Signature verification disabled\n");
+				lwm2m_config.ota_signature_verification = 0;
+			} else {
+				printf("Bad argument\n");
+				printf("Usage: onboard ota-sig-verif <enable|disable>\n");
+				goto exit;
+			}
+
+			SaveConfiguration();
+			goto exit;
+
 		} else if (!strcmp(argv[1], "config")) {
 			PrintConfiguration();
 			goto exit;
