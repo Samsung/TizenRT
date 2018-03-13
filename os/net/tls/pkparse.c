@@ -811,6 +811,9 @@ static int pk_parse_key_sec1_der( mbedtls_ecp_keypair *eck,
          * Is 'publickey' present? If not, or if we can't read it (eg because it
          * is compressed), create it from the private key.
          */
+#if defined(MBEDTLS_OCF_PATCH)
+        if( p != end) {
+#endif
         if( ( ret = mbedtls_asn1_get_tag( &p, end, &len,
                         MBEDTLS_ASN1_CONTEXT_SPECIFIC | MBEDTLS_ASN1_CONSTRUCTED | 1 ) ) == 0 )
         {
@@ -840,6 +843,9 @@ static int pk_parse_key_sec1_der( mbedtls_ecp_keypair *eck,
             mbedtls_ecp_keypair_free( eck );
             return( MBEDTLS_ERR_PK_KEY_INVALID_FORMAT + ret );
         }
+#if defined(MBEDTLS_OCF_PATCH)
+        }
+#endif
     }
 
     if( ! pubkey_done &&

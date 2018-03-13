@@ -568,10 +568,19 @@ static inline mbedtls_x509_crt *mbedtls_ssl_own_cert( mbedtls_ssl_context *ssl )
  *
  * Return 0 if everything is OK, -1 if not.
  */
+#if defined(MBEDTLS_OCF_PATCH) && defined(MBEDTLS_X509_CHECK_EXTENDED_KEY_USAGE)
+int mbedtls_ssl_check_cert_usage( const mbedtls_x509_crt *cert,
+                          const mbedtls_ssl_ciphersuite_t *ciphersuite,
+                          int cert_endpoint,
+                          const char *client_oid, size_t client_oid_len,
+                          const char *server_oid, size_t server_oid_len,
+                          uint32_t *flags );
+#else
 int mbedtls_ssl_check_cert_usage( const mbedtls_x509_crt *cert,
                           const mbedtls_ssl_ciphersuite_t *ciphersuite,
                           int cert_endpoint,
                           uint32_t *flags );
+#endif /* MBEDTLS_OCF_PATCH && MBEDTLS_X509_CHECK_EXTENDED_KEY_USAGE */
 #endif /* MBEDTLS_X509_CRT_PARSE_C */
 
 void mbedtls_ssl_write_version( int major, int minor, int transport,
@@ -627,6 +636,16 @@ static inline int mbedtls_ssl_safer_memcmp( const void *a, const void *b, size_t
     return( diff );
 }
 
+#if defined(MBEDTLS_OCF_PATCH)
+/* SSL message type validation */
+static inline int mbedtls_ssl_message_type_valid(int message_type)
+{
+    return( message_type == MBEDTLS_SSL_MSG_CHANGE_CIPHER_SPEC ||
+            message_type == MBEDTLS_SSL_MSG_ALERT ||
+            message_type == MBEDTLS_SSL_MSG_HANDSHAKE ||
+            message_type == MBEDTLS_SSL_MSG_APPLICATION_DATA );
+}
+#endif
 #ifdef __cplusplus
 }
 #endif

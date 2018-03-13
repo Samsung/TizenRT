@@ -1378,8 +1378,20 @@ static int ssl_encrypt_buf( mbedtls_ssl_context *ssl )
         unsigned char taglen = ssl->transform_out->ciphersuite_info->flags &
                                MBEDTLS_CIPHERSUITE_SHORT_TAG ? 8 : 16;
 
+#if defined(MBEDTLS_OCF_PATCH)
+        if ( !mbedtls_ssl_message_type_valid(ssl->out_msgtype) )
+        {
+            MBEDTLS_SSL_DEBUG_MSG( 1, ( "should never happen" ) );
+            return( MBEDTLS_ERR_SSL_INTERNAL_ERROR );
+        }
+#endif
+
         memcpy( add_data, ssl->out_ctr, 8 );
+#if defined(MBEDTLS_OCF_PATCH)
+        add_data[8]  = (unsigned char)ssl->out_msgtype;
+#else
         add_data[8]  = ssl->out_msgtype;
+#endif
         mbedtls_ssl_write_version( ssl->major_ver, ssl->minor_ver,
                            ssl->conf->transport, add_data + 9 );
         add_data[11] = ( ssl->out_msglen >> 8 ) & 0xFF;
@@ -1648,6 +1660,14 @@ static int ssl_decrypt_buf( mbedtls_ssl_context *ssl )
         size_t explicit_iv_len = ssl->transform_in->ivlen -
                                  ssl->transform_in->fixed_ivlen;
 
+#if defined(MBEDTLS_OCF_PATCH)
+        if ( !mbedtls_ssl_message_type_valid(ssl->in_msgtype) )
+        {
+            MBEDTLS_SSL_DEBUG_MSG( 1, ( "should never happen" ) );
+            return( MBEDTLS_ERR_SSL_INTERNAL_ERROR );
+        }
+#endif
+
         if( ssl->in_msglen < explicit_iv_len + taglen )
         {
             MBEDTLS_SSL_DEBUG_MSG( 1, ( "msglen (%d) < explicit_iv_len (%d) "
@@ -1662,7 +1682,11 @@ static int ssl_decrypt_buf( mbedtls_ssl_context *ssl )
         ssl->in_msglen = dec_msglen;
 
         memcpy( add_data, ssl->in_ctr, 8 );
+#if defined(MBEDTLS_OCF_PATCH)
+        add_data[8]  = (unsigned char)ssl->in_msgtype;
+#else
         add_data[8]  = ssl->in_msgtype;
+#endif
         mbedtls_ssl_write_version( ssl->major_ver, ssl->minor_ver,
                            ssl->conf->transport, add_data + 9 );
         add_data[11] = ( ssl->in_msglen >> 8 ) & 0xFF;
@@ -2491,6 +2515,14 @@ static int ssl_flight_append( mbedtls_ssl_context *ssl )
 {
     mbedtls_ssl_flight_item *msg;
 
+#if defined(MBEDTLS_OCF_PATCH)
+    if ( !mbedtls_ssl_message_type_valid(ssl->out_msgtype) )
+    {
+        MBEDTLS_SSL_DEBUG_MSG( 1, ( "should never happen" ) );
+        return( MBEDTLS_ERR_SSL_INTERNAL_ERROR );
+    }
+#endif
+
     /* Allocate space for current message */
     if( ( msg = mbedtls_calloc( 1, sizeof(  mbedtls_ssl_flight_item ) ) ) == NULL )
     {
@@ -2509,7 +2541,7 @@ static int ssl_flight_append( mbedtls_ssl_context *ssl )
     /* Copy current handshake message with headers */
     memcpy( msg->p, ssl->out_msg, ssl->out_msglen );
     msg->len = ssl->out_msglen;
-    msg->type = ssl->out_msgtype;
+    msg->type = (unsigned char)ssl->out_msgtype;
     msg->next = NULL;
 
     /* Append to the current flight */
@@ -4177,7 +4209,8 @@ int mbedtls_ssl_write_certificate( mbedtls_ssl_context *ssl )
     if( ciphersuite_info->key_exchange == MBEDTLS_KEY_EXCHANGE_PSK ||
         ciphersuite_info->key_exchange == MBEDTLS_KEY_EXCHANGE_DHE_PSK ||
         ciphersuite_info->key_exchange == MBEDTLS_KEY_EXCHANGE_ECDHE_PSK ||
-        ciphersuite_info->key_exchange == MBEDTLS_KEY_EXCHANGE_ECJPAKE )
+        ciphersuite_info->key_exchange == MBEDTLS_KEY_EXCHANGE_ECJPAKE ||
+        ciphersuite_info->key_exchange == MBEDTLS_KEY_EXCHANGE_ECDH_ANON )
     {
         MBEDTLS_SSL_DEBUG_MSG( 2, ( "<= skip write certificate" ) );
         ssl->state++;
@@ -4197,7 +4230,8 @@ int mbedtls_ssl_parse_certificate( mbedtls_ssl_context *ssl )
     if( ciphersuite_info->key_exchange == MBEDTLS_KEY_EXCHANGE_PSK ||
         ciphersuite_info->key_exchange == MBEDTLS_KEY_EXCHANGE_DHE_PSK ||
         ciphersuite_info->key_exchange == MBEDTLS_KEY_EXCHANGE_ECDHE_PSK ||
-        ciphersuite_info->key_exchange == MBEDTLS_KEY_EXCHANGE_ECJPAKE )
+        ciphersuite_info->key_exchange == MBEDTLS_KEY_EXCHANGE_ECJPAKE ||
+        ciphersuite_info->key_exchange == MBEDTLS_KEY_EXCHANGE_ECDH_ANON )
     {
         MBEDTLS_SSL_DEBUG_MSG( 2, ( "<= skip parse certificate" ) );
         ssl->state++;
@@ -4223,7 +4257,8 @@ int mbedtls_ssl_write_certificate( mbedtls_ssl_context *ssl )
     if( ciphersuite_info->key_exchange == MBEDTLS_KEY_EXCHANGE_PSK ||
         ciphersuite_info->key_exchange == MBEDTLS_KEY_EXCHANGE_DHE_PSK ||
         ciphersuite_info->key_exchange == MBEDTLS_KEY_EXCHANGE_ECDHE_PSK ||
-        ciphersuite_info->key_exchange == MBEDTLS_KEY_EXCHANGE_ECJPAKE )
+        ciphersuite_info->key_exchange == MBEDTLS_KEY_EXCHANGE_ECJPAKE ||
+        ciphersuite_info->key_exchange == MBEDTLS_KEY_EXCHANGE_ECDH_ANON )
     {
         MBEDTLS_SSL_DEBUG_MSG( 2, ( "<= skip write certificate" ) );
         ssl->state++;
@@ -4340,7 +4375,8 @@ int mbedtls_ssl_parse_certificate( mbedtls_ssl_context *ssl )
     if( ciphersuite_info->key_exchange == MBEDTLS_KEY_EXCHANGE_PSK ||
         ciphersuite_info->key_exchange == MBEDTLS_KEY_EXCHANGE_DHE_PSK ||
         ciphersuite_info->key_exchange == MBEDTLS_KEY_EXCHANGE_ECDHE_PSK ||
-        ciphersuite_info->key_exchange == MBEDTLS_KEY_EXCHANGE_ECJPAKE )
+        ciphersuite_info->key_exchange == MBEDTLS_KEY_EXCHANGE_ECJPAKE ||
+        ciphersuite_info->key_exchange == MBEDTLS_KEY_EXCHANGE_ECDH_ANON )
     {
         MBEDTLS_SSL_DEBUG_MSG( 2, ( "<= skip parse certificate" ) );
         ssl->state++;
@@ -4626,10 +4662,19 @@ int mbedtls_ssl_parse_certificate( mbedtls_ssl_context *ssl )
         }
 #endif /* MBEDTLS_ECP_C */
 
+#if defined(MBEDTLS_OCF_PATCH) && defined(MBEDTLS_X509_CHECK_EXTENDED_KEY_USAGE)
+        if( mbedtls_ssl_check_cert_usage( ssl->session_negotiate->peer_cert,
+                                  ciphersuite_info,
+                                  ! ssl->conf->endpoint,
+                                  ssl->conf->client_oid, ssl->conf->client_oid_len,
+                                  ssl->conf->server_oid, ssl->conf->server_oid_len,
+                                  &ssl->session_negotiate->verify_result ) != 0 )
+#else
         if( mbedtls_ssl_check_cert_usage( ssl->session_negotiate->peer_cert,
                                  ciphersuite_info,
                                  ! ssl->conf->endpoint,
                                  &ssl->session_negotiate->verify_result ) != 0 )
+#endif /* !MBEDTLS_OCF_PATCH */
         {
             MBEDTLS_SSL_DEBUG_MSG( 1, ( "bad certificate (usage extensions)" ) );
             if( ret == 0 )
@@ -5990,6 +6035,28 @@ int mbedtls_ssl_conf_own_cert( mbedtls_ssl_config *conf,
     return( ssl_append_key_cert( &conf->key_cert, own_cert, pk_key ) );
 }
 
+#if defined(MBEDTLS_OCF_PATCH) && defined(MBEDTLS_X509_CHECK_EXTENDED_KEY_USAGE)
+int mbedtls_ssl_conf_ekus( mbedtls_ssl_config *conf,
+                           const char *client_oid, size_t client_oid_len,
+                           const char *server_oid, size_t server_oid_len )
+{
+    if( ( client_oid_len == 0 && client_oid )  ||
+        ( client_oid_len != 0 && !client_oid ) ||
+        ( server_oid_len == 0 && server_oid )  ||
+        ( server_oid_len != 0 && !server_oid ) )
+    {
+        return( MBEDTLS_ERR_SSL_BAD_INPUT_DATA );
+    }
+
+    conf->client_oid = client_oid;
+    conf->client_oid_len = client_oid_len;
+    conf->server_oid = server_oid;
+    conf->server_oid_len = server_oid_len;
+
+    return( 0 );
+}
+#endif /* MBEDTLS_X509_CHECK_EXTENDED_KEY_USAGE */
+
 void mbedtls_ssl_conf_ca_chain( mbedtls_ssl_config *conf,
                                mbedtls_x509_crt *ca_chain,
                                mbedtls_x509_crl *ca_crl )
@@ -6264,14 +6331,14 @@ const char *mbedtls_ssl_get_alpn_protocol( const mbedtls_ssl_context *ssl )
 
 void mbedtls_ssl_conf_max_version( mbedtls_ssl_config *conf, int major, int minor )
 {
-    conf->max_major_ver = major;
-    conf->max_minor_ver = minor;
+    conf->max_major_ver = (unsigned char)major;
+    conf->max_minor_ver = (unsigned char)minor;
 }
 
 void mbedtls_ssl_conf_min_version( mbedtls_ssl_config *conf, int major, int minor )
 {
-    conf->min_major_ver = major;
-    conf->min_minor_ver = minor;
+    conf->min_major_ver = (unsigned char)major;
+    conf->min_minor_ver = (unsigned char)minor;
 }
 
 #if defined(MBEDTLS_SSL_FALLBACK_SCSV) && defined(MBEDTLS_SSL_CLI_C)
@@ -7557,6 +7624,15 @@ int mbedtls_ssl_config_defaults( mbedtls_ssl_config *conf,
             }
 #endif
 
+#if defined(MBEDTLS_OCF_PATCH)
+#if defined(MBEDTLS_X509_CRT_PARSE_C) && defined(MBEDTLS_X509_CHECK_EXTENDED_KEY_USAGE)
+    conf->client_oid = MBEDTLS_OID_CLIENT_AUTH;
+    conf->client_oid_len = MBEDTLS_OID_SIZE( MBEDTLS_OID_CLIENT_AUTH );
+    conf->server_oid = MBEDTLS_OID_SERVER_AUTH;
+    conf->server_oid_len = MBEDTLS_OID_SIZE( MBEDTLS_OID_SERVER_AUTH );
+#endif /* MBEDTLS_X509_CRT_PARSE_C && MBEDTLS_X509_CHECK_EXTENDED_KEY_USAGE */
+#endif
+
     /*
      * Preset-specific defaults
      */
@@ -7865,10 +7941,19 @@ int mbedtls_ssl_check_sig_hash( const mbedtls_ssl_context *ssl,
 #endif /* MBEDTLS_KEY_EXCHANGE__WITH_CERT__ENABLED */
 
 #if defined(MBEDTLS_X509_CRT_PARSE_C)
+#if defined(MBEDTLS_OCF_PATCH) && defined(MBEDTLS_X509_CHECK_EXTENDED_KEY_USAGE)
+int mbedtls_ssl_check_cert_usage( const mbedtls_x509_crt *cert,
+                          const mbedtls_ssl_ciphersuite_t *ciphersuite,
+                          int cert_endpoint,
+                          const char *client_oid, size_t client_oid_len,
+                          const char *server_oid, size_t server_oid_len,
+                          uint32_t *flags )
+#else
 int mbedtls_ssl_check_cert_usage( const mbedtls_x509_crt *cert,
                           const mbedtls_ssl_ciphersuite_t *ciphersuite,
                           int cert_endpoint,
                           uint32_t *flags )
+#endif
 {
     int ret = 0;
 #if defined(MBEDTLS_X509_CHECK_KEY_USAGE)
@@ -7914,6 +7999,7 @@ int mbedtls_ssl_check_cert_usage( const mbedtls_x509_crt *cert,
             case MBEDTLS_KEY_EXCHANGE_DHE_PSK:
             case MBEDTLS_KEY_EXCHANGE_ECDHE_PSK:
             case MBEDTLS_KEY_EXCHANGE_ECJPAKE:
+            case MBEDTLS_KEY_EXCHANGE_ECDH_ANON:
                 usage = 0;
         }
     }
@@ -7935,13 +8021,23 @@ int mbedtls_ssl_check_cert_usage( const mbedtls_x509_crt *cert,
 #if defined(MBEDTLS_X509_CHECK_EXTENDED_KEY_USAGE)
     if( cert_endpoint == MBEDTLS_SSL_IS_SERVER )
     {
+#if defined(MBEDTLS_OCF_PATCH)
+        ext_oid = server_oid;
+        ext_len = server_oid_len;
+#else
         ext_oid = MBEDTLS_OID_SERVER_AUTH;
         ext_len = MBEDTLS_OID_SIZE( MBEDTLS_OID_SERVER_AUTH );
+#endif
     }
     else
     {
+#if defined(MBEDTLS_OCF_PATCH)
+        ext_oid = client_oid;
+        ext_len = client_oid_len;
+#else
         ext_oid = MBEDTLS_OID_CLIENT_AUTH;
         ext_len = MBEDTLS_OID_SIZE( MBEDTLS_OID_CLIENT_AUTH );
+#endif
     }
 
     if( mbedtls_x509_crt_check_extended_key_usage( cert, ext_oid, ext_len ) != 0 )

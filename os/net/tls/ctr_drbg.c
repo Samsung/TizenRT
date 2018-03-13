@@ -196,7 +196,11 @@ static int block_cipher_df( unsigned char *output,
     buf_len = MBEDTLS_CTR_DRBG_BLOCKSIZE + 8 + data_len + 1;
 
     for( i = 0; i < MBEDTLS_CTR_DRBG_KEYSIZE; i++ )
+#if defined(MBEDTLS_OCF_PATCH)
+        key[i] = (unsigned char) i;
+#else
         key[i] = i;
+#endif
 
     mbedtls_aes_setkey_enc( &aes_ctx, key, MBEDTLS_CTR_DRBG_KEYBITS );
 
