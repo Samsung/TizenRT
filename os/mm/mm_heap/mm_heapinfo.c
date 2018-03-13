@@ -57,15 +57,15 @@
 #include <tinyara/mm/mm.h>
 #include <tinyara/arch.h>
 #include <unistd.h>
+#include <stdint.h>
 #include <stdio.h>
 
 /****************************************************************************
  * Pre-processor Definitions
  ****************************************************************************/
 #define MM_PIDHASH(pid) ((pid) & (CONFIG_MAX_TASKS - 1))
-#define HEAPINFO_INT -1
-#define HEAPINFO_STACK -2
-#define HEAPINFO_NONSCHED -3
+#define HEAPINFO_INT INT16_MAX
+#define HEAPINFO_NONSCHED (INT16_MAX - 1)
 
 /****************************************************************************
  * Public Functions
@@ -126,8 +126,8 @@ void heapinfo_parse(FAR struct mm_heap_s *heap, int mode, pid_t pid)
 			printf("****************************************************************\n");
 			printf("Allocation Info- (Size in Bytes)\n");
 			printf("****************************************************************\n");
-			printf("  MemAddr |   Size   | Status |   Owner   | Pid |\n");
-			printf("----------|----------|--------|-----------|-----|\n");
+			printf("  MemAddr |   Size   | Status |    Owner   |  Pid  |\n");
+			printf("----------|----------|--------|------------|-------|\n");
 		}
 
 		for (node = heap->mm_heapstart[region]; node < heap->mm_heapend[region]; node = (struct mm_allocnode_s *)((char *)node + node->size)) {
@@ -135,13 +135,17 @@ void heapinfo_parse(FAR struct mm_heap_s *heap, int mode, pid_t pid)
 			/* Check if the node corresponds to an allocated memory chunk */
 			if ((pid == HEAPINFO_PID_NOTNEEDED || node->pid == pid) && (node->preceding & MM_ALLOC_BIT) != 0) {
 				if (mode == HEAPINFO_DETAIL_ALL || mode == HEAPINFO_DETAIL_PID) {
-					printf("0x%x | %8u |   %c    | 0x%x | %3d |\n", node, node->size, 'A', node->alloc_call_addr, node->pid);
+					if (node->pid >= 0) {
+						printf("0x%x | %8u |   %c    | 0x%8x | %3d   |\n", node, node->size, 'A', node->alloc_call_addr, node->pid);
+					} else {
+						printf("0x%x | %8u |   %c    | 0x%8x | %3d(S)|\n", node, node->size, 'A', node->alloc_call_addr, -(node->pid));
+					}
 				}
 
 #if CONFIG_TASK_NAME_SIZE > 0
 				if (node->pid == HEAPINFO_INT && mode != HEAPINFO_SIMPLE) {
 					printf("INT Context\n");
-				} else if (node->pid == HEAPINFO_STACK) {
+				} else if (node->pid < 0) {
 					stack_resource += node->size;
 				} else if (sched_gettcb(node->pid) == NULL) {
 					nonsched_list[MM_PIDHASH(node->pid)] = node->pid;
@@ -158,9 +162,13 @@ void heapinfo_parse(FAR struct mm_heap_s *heap, int mode, pid_t pid)
 					mxordblk = node->size;
 				}
 				if (mode == HEAPINFO_DETAIL_ALL || mode == HEAPINFO_DETAIL_FREE) {
-					printf("0x%x | %8d |   %c    |           |     |\n", node, node->size, 'F');
+					printf("0x%x | %8d |   %c    |            |       |\n", node, node->size, 'F');
 				}
 			}
+		}
+
+		if (mode != HEAPINFO_SIMPLE) {
+			printf("** PID(S) in Pid colum means that mem is used for stack of PID\n");
 		}
 		printf("\n");
 		mm_givesemaphore(heap);
@@ -274,6 +282,5 @@ void heapinfo_exclude_stacksize(void *stack_ptr)
 
 	ASSERT(rtcb);
 	rtcb->curr_alloc_size -= node->size;
-	node->pid = HEAPINFO_STACK;
 }
 #endif
