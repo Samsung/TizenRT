@@ -4745,6 +4745,8 @@ int mbedtls_ssl_parse_certificate( mbedtls_ssl_context *ssl )
             MBEDTLS_SSL_DEBUG_MSG( 3, ( "Certificate verification flags clear" ) );
         }
 #endif /* MBEDTLS_DEBUG_C */
+    } else {
+        MBEDTLS_SSL_DEBUG_MSG( 1, ("skip verify certificate") );
     }
 
     MBEDTLS_SSL_DEBUG_MSG( 2, ( "<= parse certificate" ) );
