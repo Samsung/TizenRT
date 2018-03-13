@@ -1,0 +1,12 @@
+#
+# For a description of the syntax of this configuration file,
+# see kconfig-language at https://www.kernel.org/doc/Documentation/kbuild/kconfig-language.txt
+#
+
+config GRPC
+	bool "gRPC"
+	default n
+	depends on NET
+	depends on HAVE_CXX
+	---help---
+		Enable support for the gRPC.

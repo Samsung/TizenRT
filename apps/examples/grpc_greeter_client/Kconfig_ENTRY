@@ -1,0 +1,3 @@
+config ENTRY_GREETER_CLIENT
+	bool "Greeter Client example"
+	depends on EXAMPLES_GREETER_CLIENT
