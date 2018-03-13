@@ -60,6 +60,10 @@
 #define MBED_TIZENRT
 #endif
 
+#ifdef MBED_TIZENRT
+#define MBEDTLS_MAXIMUM_HANDSHAKE_MEMORY_USAGE ( 60 * 1024 )
+#endif
+
 /**
  * \def MBEDTLS_OCF_PATCH
  *
