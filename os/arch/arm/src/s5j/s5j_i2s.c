@@ -297,9 +297,9 @@ static uint32_t i2s_samplerate(struct i2s_dev_s *dev, uint32_t rate);
 
 static uint32_t i2s_txdatawidth(struct i2s_dev_s *dev, int bits);
 static int i2s_send(struct i2s_dev_s *dev, struct ap_buffer_s *apb, i2s_callback_t callback, void *arg, uint32_t timeout);
-static int i2s_stop(struct i2s_dev_s *dev);
-static int i2s_pause(struct i2s_dev_s *dev);
-static int i2s_resume(struct i2s_dev_s *dev);
+static int i2s_stop(struct i2s_dev_s *dev, i2s_ch_dir_t dir);
+static int i2s_pause(struct i2s_dev_s *dev, i2s_ch_dir_t dir);
+static int i2s_resume(struct i2s_dev_s *dev, i2s_ch_dir_t dir);
 
 
 static int i2s_err_cb_register(struct i2s_dev_s *dev, i2s_err_cb_t cb, void *arg);	
@@ -1596,117 +1596,128 @@ static uint32_t i2s_txdatawidth(struct i2s_dev_s *dev, int bits)
 
 /***************************************************************************
 ****************************************************************************/
-static int i2s_pause(struct i2s_dev_s *dev)
+static int i2s_pause(struct i2s_dev_s *dev, i2s_ch_dir_t dir)
 {
 	struct s5j_i2s_s *priv = (struct s5j_i2s_s *)dev;
-	irqstate_t flags;
+	volatile u32 reg = 0;
 	DEBUGASSERT(priv);
 
+	reg = getreg32(priv->base + S5J_I2S_CON);
 #ifdef I2S_HAVE_TX_P
-	if (priv->txpenab) {
-		flags = irqsave();
+	if (dir == I2S_TX && priv->txpenab && (reg & I2S_CR_TXDMACTIVE)) {
 		modifyreg32(priv->base + S5J_I2S_CON, 0, I2S_CR_TXCHPAUSE);
-		irqrestore(flags);
 	}
 #endif
 
 #ifdef I2S_HAVE_RX
-	if (priv->rxenab) {
-		flags = irqsave();
+	if (dir == I2S_RX && priv->rxenab && (reg & I2S_CR_RXDMACTIVE)) {
 		modifyreg32(priv->base + S5J_I2S_CON, 0, I2S_CR_RXCHPAUSE);
-		irqrestore(flags);
 	}
 #endif
 	return 0;
 }
 
-static int i2s_resume(struct i2s_dev_s *dev)
+static int i2s_resume(struct i2s_dev_s *dev, i2s_ch_dir_t dir)
 {
 	struct s5j_i2s_s *priv = (struct s5j_i2s_s *)dev;
-	irqstate_t flags;
+	volatile u32 reg;
 	DEBUGASSERT(priv);
 
+	reg = getreg32(priv->base + S5J_I2S_CON);
 #ifdef I2S_HAVE_TX_P
-	if (priv->txpenab) {
-		flags = irqsave();
+	if (dir == I2S_TX && priv->txpenab  && (reg & I2S_CR_TXDMACTIVE)) {
 		modifyreg32(priv->base + S5J_I2S_CON, I2S_CR_TXCHPAUSE, 0);
-		irqrestore(flags);
 	}
 #endif
 
 #ifdef I2S_HAVE_RX
-	if (priv->rxenab) {
-		flags = irqsave();
+	if (dir == I2S_RX && priv->rxenab  && (reg & I2S_CR_RXDMACTIVE)) {
 		modifyreg32(priv->base + S5J_I2S_CON, I2S_CR_RXCHPAUSE, 0);
-		irqrestore(flags);
 	}
 #endif
 
 	return 0;
 }
 
-static int i2s_stop(struct i2s_dev_s *dev)
+static int i2s_stop(struct i2s_dev_s *dev, i2s_ch_dir_t dir)
 {
 	struct s5j_i2s_s *priv = (struct s5j_i2s_s *)dev;
 	irqstate_t flags;
 	struct s5j_buffer_s *bfcontainer;
+	volatile u32 reg;
 	DEBUGASSERT(priv);
 
 #ifdef I2S_HAVE_TX_P
-	while (sq_peek(&priv->txp.pend) != NULL) {
-		flags = irqsave();
-		bfcontainer = (struct s5j_buffer_s *)sq_remfirst(&priv->txp.pend);
-		irqrestore(flags);
-		apb_free(bfcontainer->apb);
-		i2s_buf_tx_free(priv, bfcontainer);
-	}
+	if (dir == I2S_TX) {
+		modifyreg32(priv->base + S5J_I2S_CON, I2S_CR_FTXURINTEN, 0);
+		modifyreg32(priv->base + S5J_I2S_CON, I2S_CR_TXDMACTIVE, 0);
+		s5j_dmastop(priv->txp.dma);
 
-	s5j_dmastop(priv->txp.dma);
+		while (sq_peek(&priv->txp.pend) != NULL) {
+			flags = irqsave();
+			bfcontainer = (struct s5j_buffer_s *)sq_remfirst(&priv->txp.pend);
+			irqrestore(flags);
+			apb_free(bfcontainer->apb);
+			i2s_buf_tx_free(priv, bfcontainer);
+		}
 
-	while (sq_peek(&priv->txp.act) != NULL) {
-		flags = irqsave();
-		bfcontainer = (struct s5j_buffer_s *)sq_remfirst(&priv->txp.act);
-		irqrestore(flags);
-		apb_free(bfcontainer->apb);
-		i2s_buf_tx_free(priv, bfcontainer);
-	}
+		while (sq_peek(&priv->txp.act) != NULL) {
+			flags = irqsave();
+			bfcontainer = (struct s5j_buffer_s *)sq_remfirst(&priv->txp.act);
+			irqrestore(flags);
+			apb_free(bfcontainer->apb);
+			i2s_buf_tx_free(priv, bfcontainer);
+		}
 
-	while (sq_peek(&priv->txp.done) != NULL) {
-		flags = irqsave();
-		bfcontainer = (struct s5j_buffer_s *)sq_remfirst(&priv->txp.done);
-		irqrestore(flags);
-		apb_free(bfcontainer->apb);
-		i2s_buf_tx_free(priv, bfcontainer);
+		while (sq_peek(&priv->txp.done) != NULL) {
+			flags = irqsave();
+			bfcontainer = (struct s5j_buffer_s *)sq_remfirst(&priv->txp.done);
+			irqrestore(flags);
+			apb_free(bfcontainer->apb);
+			i2s_buf_tx_free(priv, bfcontainer);
+		}
 	}
 #endif
 
 #ifdef I2S_HAVE_RX
-	while (sq_peek(&priv->rx.pend) != NULL) {
-		flags = irqsave();
-		bfcontainer = (struct s5j_buffer_s *)sq_remfirst(&priv->rx.pend);
-		irqrestore(flags);
-		apb_free(bfcontainer->apb);
-		i2s_buf_rx_free(priv, bfcontainer);
-	}
+	if (dir == I2S_RX) {
+		modifyreg32(priv->base + S5J_I2S_CON, I2S_CR_RXDMACTIVE, 0);
+		modifyreg32(priv->base + S5J_I2S_CON, I2S_CR_RXDMACTIVE, 0);
+		s5j_dmastop(priv->rx.dma);
 
-	s5j_dmastop(priv->rx.dma);
+		while (sq_peek(&priv->rx.pend) != NULL) {
+			flags = irqsave();
+			bfcontainer = (struct s5j_buffer_s *)sq_remfirst(&priv->rx.pend);
+			irqrestore(flags);
+			apb_free(bfcontainer->apb);
+			i2s_buf_rx_free(priv, bfcontainer);
+		}
 
-	while (sq_peek(&priv->rx.act) != NULL) {
-		flags = irqsave();
-		bfcontainer = (struct s5j_buffer_s *)sq_remfirst(&priv->rx.act);
-		irqrestore(flags);
-		apb_free(bfcontainer->apb);
-		i2s_buf_rx_free(priv, bfcontainer);
-	}
+		while (sq_peek(&priv->rx.act) != NULL) {
+			flags = irqsave();
+			bfcontainer = (struct s5j_buffer_s *)sq_remfirst(&priv->rx.act);
+			irqrestore(flags);
+			apb_free(bfcontainer->apb);
+			i2s_buf_rx_free(priv, bfcontainer);
+		}
 
-	while (sq_peek(&priv->rx.done) != NULL) {
-		flags = irqsave();
-		bfcontainer = (struct s5j_buffer_s *)sq_remfirst(&priv->rx.done);
-		irqrestore(flags);
-		apb_free(bfcontainer->apb);
-		i2s_buf_rx_free(priv, bfcontainer);
+		while (sq_peek(&priv->rx.done) != NULL) {
+			flags = irqsave();
+			bfcontainer = (struct s5j_buffer_s *)sq_remfirst(&priv->rx.done);
+			irqrestore(flags);
+			apb_free(bfcontainer->apb);
+			i2s_buf_rx_free(priv, bfcontainer);
+		}
 	}
 #endif
+
+
+	reg = getreg32(priv->base + S5J_I2S_CON);
+
+	if ((reg & (I2S_CR_TXDMACTIVE | I2S_CR_RXDMACTIVE)) == 0) {
+		modifyreg32(priv->base + S5J_I2S_CON, I2S_CR_I2SACTIVE, 0);
+	}
+
 	return 0;
 }
 

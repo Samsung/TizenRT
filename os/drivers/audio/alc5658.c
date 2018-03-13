@@ -793,7 +793,11 @@ static int alc5658_stop(FAR struct audio_lowerhalf_s *dev)
 {
 	FAR struct alc5658_dev_s *priv = (FAR struct alc5658_dev_s *)dev;
 
-	I2S_STOP(priv->i2s);
+	if (priv->inout) {
+		I2S_STOP(priv->i2s, I2S_RX);
+	} else {
+		I2S_STOP(priv->i2s, I2S_TX);
+	}
 
 	/* Need to run the stop script here */
 	alc5658_exec_i2c_script(priv, codec_stop_script, sizeof(codec_stop_script) / sizeof(t_codec_init_script_entry));
@@ -968,7 +972,11 @@ static int alc5658_ioctl(FAR struct audio_lowerhalf_s *dev, int cmd, unsigned lo
 		alc5658_takesem(&priv->devsem);
 
 		/* Pause i2s channel */
-		I2S_PAUSE(priv->i2s);
+		if (priv->inout) {
+			I2S_PAUSE(priv->i2s, I2S_RX);
+		} else {
+			I2S_PAUSE(priv->i2s, I2S_TX);
+		}
 
 		/*Reconfigure alc5658 */
 		/* Set first set of registers */
@@ -985,7 +993,11 @@ static int alc5658_ioctl(FAR struct audio_lowerhalf_s *dev, int cmd, unsigned lo
 		alc5658_setregs(priv);
 
 		/* Resume I2S */
-		I2S_RESUME(priv->i2s);
+		if (priv->inout) {
+			I2S_RESUME(priv->i2s, I2S_RX);
+		} else {
+			I2S_RESUME(priv->i2s, I2S_TX);
+		}
 
 		/* Give semaphore */
 		alc5658_givesem(&priv->devsem);
