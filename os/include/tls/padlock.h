@@ -1,6 +1,6 @@
 /****************************************************************************
  *
- * Copyright 2016 Samsung Electronics All Rights Reserved.
+ * Copyright 2017 Samsung Electronics All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -53,7 +53,7 @@
 
 /* Some versions of ASan result in errors about not enough registers */
 #if defined(MBEDTLS_HAVE_ASM) && defined(__GNUC__) && defined(__i386__) && \
-	!defined(MBEDTLS_HAVE_ASAN)
+    !defined(MBEDTLS_HAVE_ASAN)
 
 #ifndef MBEDTLS_HAVE_X86
 #define MBEDTLS_HAVE_X86
@@ -66,7 +66,7 @@
 #define MBEDTLS_PADLOCK_PHE 0x0C00
 #define MBEDTLS_PADLOCK_PMM 0x3000
 
-#define MBEDTLS_PADLOCK_ALIGN16(x) (uint32_t *)(16 + ((int32_t)x & ~15))
+#define MBEDTLS_PADLOCK_ALIGN16(x) (uint32_t *) (16 + ((int32_t) x & ~15))
 
 #ifdef __cplusplus
 extern "C" {
@@ -79,7 +79,7 @@ extern "C" {
  *
  * \return         1 if CPU has support for the feature, 0 otherwise
  */
-int mbedtls_padlock_has_support(int feature);
+int mbedtls_padlock_has_support( int feature );
 
 /**
  * \brief          PadLock AES-ECB block en(de)cryption
@@ -91,7 +91,10 @@ int mbedtls_padlock_has_support(int feature);
  *
  * \return         0 if success, 1 if operation failed
  */
-int mbedtls_padlock_xcryptecb(mbedtls_aes_context *ctx, int mode, const unsigned char input[16], unsigned char output[16]);
+int mbedtls_padlock_xcryptecb( mbedtls_aes_context *ctx,
+                       int mode,
+                       const unsigned char input[16],
+                       unsigned char output[16] );
 
 /**
  * \brief          PadLock AES-CBC buffer en(de)cryption
@@ -105,10 +108,17 @@ int mbedtls_padlock_xcryptecb(mbedtls_aes_context *ctx, int mode, const unsigned
  *
  * \return         0 if success, 1 if operation failed
  */
-int mbedtls_padlock_xcryptcbc(mbedtls_aes_context *ctx, int mode, size_t length, unsigned char iv[16], const unsigned char *input, unsigned char *output);
+int mbedtls_padlock_xcryptcbc( mbedtls_aes_context *ctx,
+                       int mode,
+                       size_t length,
+                       unsigned char iv[16],
+                       const unsigned char *input,
+                       unsigned char *output );
 
 #ifdef __cplusplus
 }
 #endif
-#endif							/* HAVE_X86  */
-#endif							/* padlock.h */
+
+#endif /* HAVE_X86  */
+
+#endif /* padlock.h */

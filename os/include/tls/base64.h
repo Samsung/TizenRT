@@ -1,6 +1,6 @@
 /****************************************************************************
  *
- * Copyright 2016 Samsung Electronics All Rights Reserved.
+ * Copyright 2017 Samsung Electronics All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -68,7 +68,8 @@ extern "C" {
  * \note           Call this function with dlen = 0 to obtain the
  *                 required buffer size in *olen
  */
-int mbedtls_base64_encode(unsigned char *dst, size_t dlen, size_t *olen, const unsigned char *src, size_t slen);
+int mbedtls_base64_encode( unsigned char *dst, size_t dlen, size_t *olen,
+                   const unsigned char *src, size_t slen );
 
 /**
  * \brief          Decode a base64-formatted buffer
@@ -87,16 +88,18 @@ int mbedtls_base64_encode(unsigned char *dst, size_t dlen, size_t *olen, const u
  * \note           Call this function with *dst = NULL or dlen = 0 to obtain
  *                 the required buffer size in *olen
  */
-int mbedtls_base64_decode(unsigned char *dst, size_t dlen, size_t *olen, const unsigned char *src, size_t slen);
+int mbedtls_base64_decode( unsigned char *dst, size_t dlen, size_t *olen,
+                   const unsigned char *src, size_t slen );
 
 /**
  * \brief          Checkup routine
  *
  * \return         0 if successful, or 1 if the test failed
  */
-int mbedtls_base64_self_test(int verbose);
+int mbedtls_base64_self_test( int verbose );
 
 #ifdef __cplusplus
 }
 #endif
-#endif							/* base64.h */
+
+#endif /* base64.h */

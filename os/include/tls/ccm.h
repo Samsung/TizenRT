@@ -1,6 +1,6 @@
 /****************************************************************************
  *
- * Copyright 2016 Samsung Electronics All Rights Reserved.
+ * Copyright 2017 Samsung Electronics All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -53,8 +53,9 @@ extern "C" {
  * \brief          CCM context structure
  */
 typedef struct {
-	mbedtls_cipher_context_t cipher_ctx;	/*!< cipher context used */
-} mbedtls_ccm_context;
+    mbedtls_cipher_context_t cipher_ctx;    /*!< cipher context used */
+}
+mbedtls_ccm_context;
 
 /**
  * \brief           Initialize CCM context (just makes references valid)
@@ -63,7 +64,7 @@ typedef struct {
  *
  * \param ctx       CCM context to initialize
  */
-void mbedtls_ccm_init(mbedtls_ccm_context *ctx);
+void mbedtls_ccm_init( mbedtls_ccm_context *ctx );
 
 /**
  * \brief           CCM initialization (encryption and decryption)
@@ -75,14 +76,17 @@ void mbedtls_ccm_init(mbedtls_ccm_context *ctx);
  *
  * \return          0 if successful, or a cipher specific error code
  */
-int mbedtls_ccm_setkey(mbedtls_ccm_context *ctx, mbedtls_cipher_id_t cipher, const unsigned char *key, unsigned int keybits);
+int mbedtls_ccm_setkey( mbedtls_ccm_context *ctx,
+                        mbedtls_cipher_id_t cipher,
+                        const unsigned char *key,
+                        unsigned int keybits );
 
 /**
  * \brief           Free a CCM context and underlying cipher sub-context
  *
  * \param ctx       CCM context to free
  */
-void mbedtls_ccm_free(mbedtls_ccm_context *ctx);
+void mbedtls_ccm_free( mbedtls_ccm_context *ctx );
 
 /**
  * \brief           CCM buffer encryption
@@ -109,7 +113,11 @@ void mbedtls_ccm_free(mbedtls_ccm_context *ctx);
  *
  * \return          0 if successful
  */
-int mbedtls_ccm_encrypt_and_tag(mbedtls_ccm_context *ctx, size_t length, const unsigned char *iv, size_t iv_len, const unsigned char *add, size_t add_len, const unsigned char *input, unsigned char *output, unsigned char *tag, size_t tag_len);
+int mbedtls_ccm_encrypt_and_tag( mbedtls_ccm_context *ctx, size_t length,
+                         const unsigned char *iv, size_t iv_len,
+                         const unsigned char *add, size_t add_len,
+                         const unsigned char *input, unsigned char *output,
+                         unsigned char *tag, size_t tag_len );
 
 /**
  * \brief           CCM buffer authenticated decryption
@@ -128,7 +136,11 @@ int mbedtls_ccm_encrypt_and_tag(mbedtls_ccm_context *ctx, size_t length, const u
  * \return         0 if successful and authenticated,
  *                 MBEDTLS_ERR_CCM_AUTH_FAILED if tag does not match
  */
-int mbedtls_ccm_auth_decrypt(mbedtls_ccm_context *ctx, size_t length, const unsigned char *iv, size_t iv_len, const unsigned char *add, size_t add_len, const unsigned char *input, unsigned char *output, const unsigned char *tag, size_t tag_len);
+int mbedtls_ccm_auth_decrypt( mbedtls_ccm_context *ctx, size_t length,
+                      const unsigned char *iv, size_t iv_len,
+                      const unsigned char *add, size_t add_len,
+                      const unsigned char *input, unsigned char *output,
+                      const unsigned char *tag, size_t tag_len );
 
 #if defined(MBEDTLS_SELF_TEST) && defined(MBEDTLS_AES_C)
 /**
@@ -136,10 +148,11 @@ int mbedtls_ccm_auth_decrypt(mbedtls_ccm_context *ctx, size_t length, const unsi
  *
  * \return         0 if successful, or 1 if the test failed
  */
-int mbedtls_ccm_self_test(int verbose);
-#endif							/* MBEDTLS_SELF_TEST && MBEDTLS_AES_C */
+int mbedtls_ccm_self_test( int verbose );
+#endif /* MBEDTLS_SELF_TEST && MBEDTLS_AES_C */
 
 #ifdef __cplusplus
 }
 #endif
-#endif							/* MBEDTLS_CCM_H */
+
+#endif /* MBEDTLS_CCM_H */

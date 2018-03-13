@@ -1,6 +1,6 @@
 /****************************************************************************
  *
- * Copyright 2016 Samsung Electronics All Rights Reserved.
+ * Copyright 2017 Samsung Electronics All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -61,7 +61,7 @@
 #error "MBEDTLS_ECP_MAX_BYTES bigger than expected, please fix MBEDTLS_ECDSA_MAX_LEN"
 #endif
 /** Maximum size of an ECDSA signature in bytes */
-#define MBEDTLS_ECDSA_MAX_LEN  (3 + 2 * (3 + MBEDTLS_ECP_MAX_BYTES))
+#define MBEDTLS_ECDSA_MAX_LEN  ( 3 + 2 * ( 3 + MBEDTLS_ECP_MAX_BYTES ) )
 
 /**
  * \brief           ECDSA context structure
@@ -86,10 +86,16 @@ extern "C" {
  * \param f_rng     RNG function
  * \param p_rng     RNG parameter
  *
+ * \note            If the bitlength of the message hash is larger than the
+ *                  bitlength of the group order, then the hash is truncated as
+ *                  prescribed by SEC1 4.1.3 step 5.
+ *
  * \return          0 if successful,
  *                  or a MBEDTLS_ERR_ECP_XXX or MBEDTLS_MPI_XXX error code
  */
-int mbedtls_ecdsa_sign(mbedtls_ecp_group *grp, mbedtls_mpi *r, mbedtls_mpi *s, const mbedtls_mpi *d, const unsigned char *buf, size_t blen, int (*f_rng)(void *, unsigned char *, size_t), void *p_rng);
+int mbedtls_ecdsa_sign( mbedtls_ecp_group *grp, mbedtls_mpi *r, mbedtls_mpi *s,
+                const mbedtls_mpi *d, const unsigned char *buf, size_t blen,
+                int (*f_rng)(void *, unsigned char *, size_t), void *p_rng );
 
 #if defined(MBEDTLS_ECDSA_DETERMINISTIC)
 /**
@@ -104,11 +110,17 @@ int mbedtls_ecdsa_sign(mbedtls_ecp_group *grp, mbedtls_mpi *r, mbedtls_mpi *s, c
  * \param blen      Length of buf
  * \param md_alg    MD algorithm used to hash the message
  *
+ * \note            If the bitlength of the message hash is larger than the
+ *                  bitlength of the group order, then the hash is truncated as
+ *                  prescribed by SEC1 4.1.3 step 5.
+ *
  * \return          0 if successful,
  *                  or a MBEDTLS_ERR_ECP_XXX or MBEDTLS_MPI_XXX error code
  */
-int mbedtls_ecdsa_sign_det(mbedtls_ecp_group *grp, mbedtls_mpi *r, mbedtls_mpi *s, const mbedtls_mpi *d, const unsigned char *buf, size_t blen, mbedtls_md_type_t md_alg);
-#endif							/* MBEDTLS_ECDSA_DETERMINISTIC */
+int mbedtls_ecdsa_sign_det( mbedtls_ecp_group *grp, mbedtls_mpi *r, mbedtls_mpi *s,
+                    const mbedtls_mpi *d, const unsigned char *buf, size_t blen,
+                    mbedtls_md_type_t md_alg );
+#endif /* MBEDTLS_ECDSA_DETERMINISTIC */
 
 /**
  * \brief           Verify ECDSA signature of a previously hashed message
@@ -120,11 +132,17 @@ int mbedtls_ecdsa_sign_det(mbedtls_ecp_group *grp, mbedtls_mpi *r, mbedtls_mpi *
  * \param r         First integer of the signature
  * \param s         Second integer of the signature
  *
+ * \note            If the bitlength of the message hash is larger than the
+ *                  bitlength of the group order, then the hash is truncated as
+ *                  prescribed by SEC1 4.1.4 step 3.
+ *
  * \return          0 if successful,
  *                  MBEDTLS_ERR_ECP_BAD_INPUT_DATA if signature is invalid
  *                  or a MBEDTLS_ERR_ECP_XXX or MBEDTLS_MPI_XXX error code
  */
-int mbedtls_ecdsa_verify(mbedtls_ecp_group *grp, const unsigned char *buf, size_t blen, const mbedtls_ecp_point *Q, const mbedtls_mpi *r, const mbedtls_mpi *s);
+int mbedtls_ecdsa_verify( mbedtls_ecp_group *grp,
+                  const unsigned char *buf, size_t blen,
+                  const mbedtls_ecp_point *Q, const mbedtls_mpi *r, const mbedtls_mpi *s);
 
 /**
  * \brief           Convert ecdsa signature to asn.1 type.
@@ -146,7 +164,7 @@ int ecdsa_signature_to_asn1( const mbedtls_mpi *r, const mbedtls_mpi *s,
  *                  serialized as defined in RFC 4492 page 20.
  *                  (Not thread-safe to use same context in multiple threads)
  *
- * \note            The deterministice version (RFC 6979) is used if
+ * \note            The deterministic version (RFC 6979) is used if
  *                  MBEDTLS_ECDSA_DETERMINISTIC is defined.
  *
  * \param ctx       ECDSA context
@@ -162,11 +180,19 @@ int ecdsa_signature_to_asn1( const mbedtls_mpi *r, const mbedtls_mpi *s,
  *                  size of the curve used, plus 9 (eg. 73 bytes if a 256-bit
  *                  curve is used). MBEDTLS_ECDSA_MAX_LEN is always safe.
  *
+ * \note            If the bitlength of the message hash is larger than the
+ *                  bitlength of the group order, then the hash is truncated as
+ *                  prescribed by SEC1 4.1.3 step 5.
+ *
  * \return          0 if successful,
  *                  or a MBEDTLS_ERR_ECP_XXX, MBEDTLS_ERR_MPI_XXX or
  *                  MBEDTLS_ERR_ASN1_XXX error code
  */
-int mbedtls_ecdsa_write_signature(mbedtls_ecdsa_context *ctx, mbedtls_md_type_t md_alg, const unsigned char *hash, size_t hlen, unsigned char *sig, size_t *slen, int (*f_rng)(void *, unsigned char *, size_t), void *p_rng);
+int mbedtls_ecdsa_write_signature( mbedtls_ecdsa_context *ctx, mbedtls_md_type_t md_alg,
+                           const unsigned char *hash, size_t hlen,
+                           unsigned char *sig, size_t *slen,
+                           int (*f_rng)(void *, unsigned char *, size_t),
+                           void *p_rng );
 
 #if defined(MBEDTLS_ECDSA_DETERMINISTIC)
 #if ! defined(MBEDTLS_DEPRECATED_REMOVED)
@@ -194,14 +220,21 @@ int mbedtls_ecdsa_write_signature(mbedtls_ecdsa_context *ctx, mbedtls_md_type_t 
  *                  size of the curve used, plus 9 (eg. 73 bytes if a 256-bit
  *                  curve is used). MBEDTLS_ECDSA_MAX_LEN is always safe.
  *
+ * \note            If the bitlength of the message hash is larger than the
+ *                  bitlength of the group order, then the hash is truncated as
+ *                  prescribed by SEC1 4.1.3 step 5.
+ *
  * \return          0 if successful,
  *                  or a MBEDTLS_ERR_ECP_XXX, MBEDTLS_ERR_MPI_XXX or
  *                  MBEDTLS_ERR_ASN1_XXX error code
  */
-int mbedtls_ecdsa_write_signature_det(mbedtls_ecdsa_context *ctx, const unsigned char *hash, size_t hlen, unsigned char *sig, size_t *slen, mbedtls_md_type_t md_alg) MBEDTLS_DEPRECATED;
+int mbedtls_ecdsa_write_signature_det( mbedtls_ecdsa_context *ctx,
+                               const unsigned char *hash, size_t hlen,
+                               unsigned char *sig, size_t *slen,
+                               mbedtls_md_type_t md_alg ) MBEDTLS_DEPRECATED;
 #undef MBEDTLS_DEPRECATED
-#endif							/* MBEDTLS_DEPRECATED_REMOVED */
-#endif							/* MBEDTLS_ECDSA_DETERMINISTIC */
+#endif /* MBEDTLS_DEPRECATED_REMOVED */
+#endif /* MBEDTLS_ECDSA_DETERMINISTIC */
 
 /**
  * \brief           Read and verify an ECDSA signature
@@ -212,13 +245,19 @@ int mbedtls_ecdsa_write_signature_det(mbedtls_ecdsa_context *ctx, const unsigned
  * \param sig       Signature to read and verify
  * \param slen      Size of sig
  *
+ * \note            If the bitlength of the message hash is larger than the
+ *                  bitlength of the group order, then the hash is truncated as
+ *                  prescribed by SEC1 4.1.4 step 3.
+ *
  * \return          0 if successful,
  *                  MBEDTLS_ERR_ECP_BAD_INPUT_DATA if signature is invalid,
  *                  MBEDTLS_ERR_ECP_SIG_LEN_MISMATCH if the signature is
  *                  valid but its actual length is less than siglen,
  *                  or a MBEDTLS_ERR_ECP_XXX or MBEDTLS_ERR_MPI_XXX error code
  */
-int mbedtls_ecdsa_read_signature(mbedtls_ecdsa_context *ctx, const unsigned char *hash, size_t hlen, const unsigned char *sig, size_t slen);
+int mbedtls_ecdsa_read_signature( mbedtls_ecdsa_context *ctx,
+                          const unsigned char *hash, size_t hlen,
+                          const unsigned char *sig, size_t slen );
 
 /**
  * \brief           Generate an ECDSA keypair on the given curve
@@ -231,7 +270,8 @@ int mbedtls_ecdsa_read_signature(mbedtls_ecdsa_context *ctx, const unsigned char
  *
  * \return          0 on success, or a MBEDTLS_ERR_ECP_XXX code.
  */
-int mbedtls_ecdsa_genkey(mbedtls_ecdsa_context *ctx, mbedtls_ecp_group_id gid, int (*f_rng)(void *, unsigned char *, size_t), void *p_rng);
+int mbedtls_ecdsa_genkey( mbedtls_ecdsa_context *ctx, mbedtls_ecp_group_id gid,
+                  int (*f_rng)(void *, unsigned char *, size_t), void *p_rng );
 
 /**
  * \brief           Set an ECDSA context from an EC key pair
@@ -241,23 +281,24 @@ int mbedtls_ecdsa_genkey(mbedtls_ecdsa_context *ctx, mbedtls_ecp_group_id gid, i
  *
  * \return          0 on success, or a MBEDTLS_ERR_ECP_XXX code.
  */
-int mbedtls_ecdsa_from_keypair(mbedtls_ecdsa_context *ctx, const mbedtls_ecp_keypair *key);
+int mbedtls_ecdsa_from_keypair( mbedtls_ecdsa_context *ctx, const mbedtls_ecp_keypair *key );
 
 /**
  * \brief           Initialize context
  *
  * \param ctx       Context to initialize
  */
-void mbedtls_ecdsa_init(mbedtls_ecdsa_context *ctx);
+void mbedtls_ecdsa_init( mbedtls_ecdsa_context *ctx );
 
 /**
  * \brief           Free context
  *
  * \param ctx       Context to free
  */
-void mbedtls_ecdsa_free(mbedtls_ecdsa_context *ctx);
+void mbedtls_ecdsa_free( mbedtls_ecdsa_context *ctx );
 
 #ifdef __cplusplus
 }
 #endif
-#endif							/* ecdsa.h */
+
+#endif /* ecdsa.h */

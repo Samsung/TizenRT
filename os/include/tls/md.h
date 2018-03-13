@@ -1,6 +1,6 @@
 /****************************************************************************
  *
- * Copyright 2016 Samsung Electronics All Rights Reserved.
+ * Copyright 2017 Samsung Electronics All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -54,22 +54,22 @@ extern "C" {
 #endif
 
 typedef enum {
-	MBEDTLS_MD_NONE = 0,
-	MBEDTLS_MD_MD2,
-	MBEDTLS_MD_MD4,
-	MBEDTLS_MD_MD5,
-	MBEDTLS_MD_SHA1,
-	MBEDTLS_MD_SHA224,
-	MBEDTLS_MD_SHA256,
-	MBEDTLS_MD_SHA384,
-	MBEDTLS_MD_SHA512,
-	MBEDTLS_MD_RIPEMD160,
+    MBEDTLS_MD_NONE=0,
+    MBEDTLS_MD_MD2,
+    MBEDTLS_MD_MD4,
+    MBEDTLS_MD_MD5,
+    MBEDTLS_MD_SHA1,
+    MBEDTLS_MD_SHA224,
+    MBEDTLS_MD_SHA256,
+    MBEDTLS_MD_SHA384,
+    MBEDTLS_MD_SHA512,
+    MBEDTLS_MD_RIPEMD160,
 } mbedtls_md_type_t;
 
 #if defined(MBEDTLS_SHA512_C)
-#define MBEDTLS_MD_MAX_SIZE         64	/* longest known is SHA512 */
+#define MBEDTLS_MD_MAX_SIZE         64  /* longest known is SHA512 */
 #else
-#define MBEDTLS_MD_MAX_SIZE         32	/* longest known is SHA256 or less */
+#define MBEDTLS_MD_MAX_SIZE         32  /* longest known is SHA256 or less */
 #endif
 
 /**
@@ -81,14 +81,14 @@ typedef struct mbedtls_md_info_t mbedtls_md_info_t;
  * Generic message digest context.
  */
 typedef struct {
-	/** Information about the associated message digest */
-	const mbedtls_md_info_t *md_info;
+    /** Information about the associated message digest */
+    const mbedtls_md_info_t *md_info;
 
-	/** Digest-specific context */
-	void *md_ctx;
+    /** Digest-specific context */
+    void *md_ctx;
 
-	/** HMAC part of the context */
-	void *hmac_ctx;
+    /** HMAC part of the context */
+    void *hmac_ctx;
 } mbedtls_md_context_t;
 
 /**
@@ -97,7 +97,7 @@ typedef struct {
  * \return          a statically allocated array of digests, the last entry
  *                  is 0.
  */
-const int *mbedtls_md_list(void);
+const int *mbedtls_md_list( void );
 
 /**
  * \brief           Returns the message digest information associated with the
@@ -108,7 +108,7 @@ const int *mbedtls_md_list(void);
  * \return          The message digest information associated with md_name or
  *                  NULL if not found.
  */
-const mbedtls_md_info_t *mbedtls_md_info_from_string(const char *md_name);
+const mbedtls_md_info_t *mbedtls_md_info_from_string( const char *md_name );
 
 /**
  * \brief           Returns the message digest information associated with the
@@ -119,21 +119,21 @@ const mbedtls_md_info_t *mbedtls_md_info_from_string(const char *md_name);
  * \return          The message digest information associated with md_type or
  *                  NULL if not found.
  */
-const mbedtls_md_info_t *mbedtls_md_info_from_type(mbedtls_md_type_t md_type);
+const mbedtls_md_info_t *mbedtls_md_info_from_type( mbedtls_md_type_t md_type );
 
 /**
  * \brief           Initialize a md_context (as NONE)
  *                  This should always be called first.
  *                  Prepares the context for mbedtls_md_setup() or mbedtls_md_free().
  */
-void mbedtls_md_init(mbedtls_md_context_t *ctx);
+void mbedtls_md_init( mbedtls_md_context_t *ctx );
 
 /**
  * \brief           Free and clear the internal structures of ctx.
  *                  Can be called at any time after mbedtls_md_init().
  *                  Mandatory once mbedtls_md_setup() has been called.
  */
-void mbedtls_md_free(mbedtls_md_context_t *ctx);
+void mbedtls_md_free( mbedtls_md_context_t *ctx );
 
 #if ! defined(MBEDTLS_DEPRECATED_REMOVED)
 #if defined(MBEDTLS_DEPRECATED_WARNING)
@@ -155,9 +155,9 @@ void mbedtls_md_free(mbedtls_md_context_t *ctx);
  *                  \c MBEDTLS_ERR_MD_BAD_INPUT_DATA on parameter failure,
  *                  \c MBEDTLS_ERR_MD_ALLOC_FAILED memory allocation failure.
  */
-int mbedtls_md_init_ctx(mbedtls_md_context_t *ctx, const mbedtls_md_info_t *md_info) MBEDTLS_DEPRECATED;
+int mbedtls_md_init_ctx( mbedtls_md_context_t *ctx, const mbedtls_md_info_t *md_info ) MBEDTLS_DEPRECATED;
 #undef MBEDTLS_DEPRECATED
-#endif							/* MBEDTLS_DEPRECATED_REMOVED */
+#endif /* MBEDTLS_DEPRECATED_REMOVED */
 
 /**
  * \brief           Select MD to use and allocate internal structures.
@@ -173,7 +173,7 @@ int mbedtls_md_init_ctx(mbedtls_md_context_t *ctx, const mbedtls_md_info_t *md_i
  *                  \c MBEDTLS_ERR_MD_BAD_INPUT_DATA on parameter failure,
  *                  \c MBEDTLS_ERR_MD_ALLOC_FAILED memory allocation failure.
  */
-int mbedtls_md_setup(mbedtls_md_context_t *ctx, const mbedtls_md_info_t *md_info, int hmac);
+int mbedtls_md_setup( mbedtls_md_context_t *ctx, const mbedtls_md_info_t *md_info, int hmac );
 
 /**
  * \brief           Clone the state of an MD context
@@ -189,7 +189,8 @@ int mbedtls_md_setup(mbedtls_md_context_t *ctx, const mbedtls_md_info_t *md_info
  * \return          \c 0 on success,
  *                  \c MBEDTLS_ERR_MD_BAD_INPUT_DATA on parameter failure.
  */
-int mbedtls_md_clone(mbedtls_md_context_t *dst, const mbedtls_md_context_t *src);
+int mbedtls_md_clone( mbedtls_md_context_t *dst,
+                      const mbedtls_md_context_t *src );
 
 /**
  * \brief           Returns the size of the message digest output.
@@ -198,7 +199,7 @@ int mbedtls_md_clone(mbedtls_md_context_t *dst, const mbedtls_md_context_t *src)
  *
  * \return          size of the message digest output in bytes.
  */
-unsigned char mbedtls_md_get_size(const mbedtls_md_info_t *md_info);
+unsigned char mbedtls_md_get_size( const mbedtls_md_info_t *md_info );
 
 /**
  * \brief           Returns the type of the message digest output.
@@ -207,7 +208,7 @@ unsigned char mbedtls_md_get_size(const mbedtls_md_info_t *md_info);
  *
  * \return          type of the message digest output.
  */
-mbedtls_md_type_t mbedtls_md_get_type(const mbedtls_md_info_t *md_info);
+mbedtls_md_type_t mbedtls_md_get_type( const mbedtls_md_info_t *md_info );
 
 /**
  * \brief           Returns the name of the message digest output.
@@ -216,7 +217,7 @@ mbedtls_md_type_t mbedtls_md_get_type(const mbedtls_md_info_t *md_info);
  *
  * \return          name of the message digest output.
  */
-const char *mbedtls_md_get_name(const mbedtls_md_info_t *md_info);
+const char *mbedtls_md_get_name( const mbedtls_md_info_t *md_info );
 
 /**
  * \brief           Prepare the context to digest a new message.
@@ -228,7 +229,7 @@ const char *mbedtls_md_get_name(const mbedtls_md_info_t *md_info);
  * \returns         0 on success, MBEDTLS_ERR_MD_BAD_INPUT_DATA if parameter
  *                  verification fails.
  */
-int mbedtls_md_starts(mbedtls_md_context_t *ctx);
+int mbedtls_md_starts( mbedtls_md_context_t *ctx );
 
 /**
  * \brief           Generic message digest process buffer
@@ -242,7 +243,7 @@ int mbedtls_md_starts(mbedtls_md_context_t *ctx);
  * \returns         0 on success, MBEDTLS_ERR_MD_BAD_INPUT_DATA if parameter
  *                  verification fails.
  */
-int mbedtls_md_update(mbedtls_md_context_t *ctx, const unsigned char *input, size_t ilen);
+int mbedtls_md_update( mbedtls_md_context_t *ctx, const unsigned char *input, size_t ilen );
 
 /**
  * \brief           Generic message digest final digest
@@ -255,7 +256,7 @@ int mbedtls_md_update(mbedtls_md_context_t *ctx, const unsigned char *input, siz
  * \returns         0 on success, MBEDTLS_ERR_MD_BAD_INPUT_DATA if parameter
  *                  verification fails.
  */
-int mbedtls_md_finish(mbedtls_md_context_t *ctx, unsigned char *output);
+int mbedtls_md_finish( mbedtls_md_context_t *ctx, unsigned char *output );
 
 /**
  * \brief          Output = message_digest( input buffer )
@@ -268,7 +269,8 @@ int mbedtls_md_finish(mbedtls_md_context_t *ctx, unsigned char *output);
  * \returns        0 on success, MBEDTLS_ERR_MD_BAD_INPUT_DATA if parameter
  *                 verification fails.
  */
-int mbedtls_md(const mbedtls_md_info_t *md_info, const unsigned char *input, size_t ilen, unsigned char *output);
+int mbedtls_md( const mbedtls_md_info_t *md_info, const unsigned char *input, size_t ilen,
+        unsigned char *output );
 
 #if defined(MBEDTLS_FS_IO)
 /**
@@ -282,8 +284,9 @@ int mbedtls_md(const mbedtls_md_info_t *md_info, const unsigned char *input, siz
  *                 MBEDTLS_ERR_MD_FILE_IO_ERROR if file input failed,
  *                 MBEDTLS_ERR_MD_BAD_INPUT_DATA if md_info was NULL.
  */
-int mbedtls_md_file(const mbedtls_md_info_t *md_info, const char *path, unsigned char *output);
-#endif							/* MBEDTLS_FS_IO */
+int mbedtls_md_file( const mbedtls_md_info_t *md_info, const char *path,
+                     unsigned char *output );
+#endif /* MBEDTLS_FS_IO */
 
 /**
  * \brief           Set HMAC key and prepare to authenticate a new message.
@@ -296,7 +299,8 @@ int mbedtls_md_file(const mbedtls_md_info_t *md_info, const char *path, unsigned
  * \returns         0 on success, MBEDTLS_ERR_MD_BAD_INPUT_DATA if parameter
  *                  verification fails.
  */
-int mbedtls_md_hmac_starts(mbedtls_md_context_t *ctx, const unsigned char *key, size_t keylen);
+int mbedtls_md_hmac_starts( mbedtls_md_context_t *ctx, const unsigned char *key,
+                    size_t keylen );
 
 /**
  * \brief           Generic HMAC process buffer.
@@ -311,7 +315,8 @@ int mbedtls_md_hmac_starts(mbedtls_md_context_t *ctx, const unsigned char *key, 
  * \returns         0 on success, MBEDTLS_ERR_MD_BAD_INPUT_DATA if parameter
  *                  verification fails.
  */
-int mbedtls_md_hmac_update(mbedtls_md_context_t *ctx, const unsigned char *input, size_t ilen);
+int mbedtls_md_hmac_update( mbedtls_md_context_t *ctx, const unsigned char *input,
+                    size_t ilen );
 
 /**
  * \brief           Output HMAC.
@@ -325,7 +330,7 @@ int mbedtls_md_hmac_update(mbedtls_md_context_t *ctx, const unsigned char *input
  * \returns         0 on success, MBEDTLS_ERR_MD_BAD_INPUT_DATA if parameter
  *                  verification fails.
  */
-int mbedtls_md_hmac_finish(mbedtls_md_context_t *ctx, unsigned char *output);
+int mbedtls_md_hmac_finish( mbedtls_md_context_t *ctx, unsigned char *output);
 
 /**
  * \brief           Prepare to authenticate a new message with the same key.
@@ -337,7 +342,7 @@ int mbedtls_md_hmac_finish(mbedtls_md_context_t *ctx, unsigned char *output);
  * \returns         0 on success, MBEDTLS_ERR_MD_BAD_INPUT_DATA if parameter
  *                  verification fails.
  */
-int mbedtls_md_hmac_reset(mbedtls_md_context_t *ctx);
+int mbedtls_md_hmac_reset( mbedtls_md_context_t *ctx );
 
 /**
  * \brief          Output = Generic_HMAC( hmac key, input buffer )
@@ -352,12 +357,15 @@ int mbedtls_md_hmac_reset(mbedtls_md_context_t *ctx);
  * \returns        0 on success, MBEDTLS_ERR_MD_BAD_INPUT_DATA if parameter
  *                 verification fails.
  */
-int mbedtls_md_hmac(const mbedtls_md_info_t *md_info, const unsigned char *key, size_t keylen, const unsigned char *input, size_t ilen, unsigned char *output);
+int mbedtls_md_hmac( const mbedtls_md_info_t *md_info, const unsigned char *key, size_t keylen,
+                const unsigned char *input, size_t ilen,
+                unsigned char *output );
 
 /* Internal use */
-int mbedtls_md_process(mbedtls_md_context_t *ctx, const unsigned char *data);
+int mbedtls_md_process( mbedtls_md_context_t *ctx, const unsigned char *data );
 
 #ifdef __cplusplus
 }
 #endif
-#endif							/* MBEDTLS_MD_H */
+
+#endif /* MBEDTLS_MD_H */

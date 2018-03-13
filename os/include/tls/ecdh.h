@@ -1,6 +1,6 @@
 /****************************************************************************
  *
- * Copyright 2016 Samsung Electronics All Rights Reserved.
+ * Copyright 2017 Samsung Electronics All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -49,25 +49,28 @@ extern "C" {
 /**
  * When importing from an EC key, select if it is our key or the peer's key
  */
-typedef enum {
-	MBEDTLS_ECDH_OURS,
-	MBEDTLS_ECDH_THEIRS,
+typedef enum
+{
+    MBEDTLS_ECDH_OURS,
+    MBEDTLS_ECDH_THEIRS,
 } mbedtls_ecdh_side;
 
 /**
  * \brief           ECDH context structure
  */
-typedef struct {
-	mbedtls_ecp_group grp;	/*!<  elliptic curve used                           */
-	mbedtls_mpi d;			/*!<  our secret value (private key)                */
-	mbedtls_ecp_point Q;	/*!<  our public value (public key)                 */
-	mbedtls_ecp_point Qp;	/*!<  peer's public value (public key)              */
-	mbedtls_mpi z;			/*!<  shared secret                                 */
-	int point_format;		/*!<  format for point export in TLS messages       */
-	mbedtls_ecp_point Vi;	/*!<  blinding value (for later)                    */
-	mbedtls_ecp_point Vf;	/*!<  un-blinding value (for later)                 */
-	mbedtls_mpi _d;			/*!<  previous d (for later)                        */
-} mbedtls_ecdh_context;
+typedef struct
+{
+    mbedtls_ecp_group grp;      /*!<  elliptic curve used                           */
+    mbedtls_mpi d;              /*!<  our secret value (private key)                */
+    mbedtls_ecp_point Q;        /*!<  our public value (public key)                 */
+    mbedtls_ecp_point Qp;       /*!<  peer's public value (public key)              */
+    mbedtls_mpi z;              /*!<  shared secret                                 */
+    int point_format;   /*!<  format for point export in TLS messages       */
+    mbedtls_ecp_point Vi;       /*!<  blinding value (for later)                    */
+    mbedtls_ecp_point Vf;       /*!<  un-blinding value (for later)                 */
+    mbedtls_mpi _d;             /*!<  previous d (for later)                        */
+}
+mbedtls_ecdh_context;
 
 /**
  * \brief           Generate a public key.
@@ -82,7 +85,9 @@ typedef struct {
  * \return          0 if successful,
  *                  or a MBEDTLS_ERR_ECP_XXX or MBEDTLS_MPI_XXX error code
  */
-int mbedtls_ecdh_gen_public(mbedtls_ecp_group *grp, mbedtls_mpi *d, mbedtls_ecp_point *Q, int (*f_rng)(void *, unsigned char *, size_t), void *p_rng);
+int mbedtls_ecdh_gen_public( mbedtls_ecp_group *grp, mbedtls_mpi *d, mbedtls_ecp_point *Q,
+                     int (*f_rng)(void *, unsigned char *, size_t),
+                     void *p_rng );
 
 /**
  * \brief           Compute shared secret
@@ -102,21 +107,24 @@ int mbedtls_ecdh_gen_public(mbedtls_ecp_group *grp, mbedtls_mpi *d, mbedtls_ecp_
  *                  countermeasures against potential elaborate timing
  *                  attacks, see \c mbedtls_ecp_mul() for details.
  */
-int mbedtls_ecdh_compute_shared(mbedtls_ecp_group *grp, mbedtls_mpi *z, const mbedtls_ecp_point *Q, const mbedtls_mpi *d, int (*f_rng)(void *, unsigned char *, size_t), void *p_rng);
+int mbedtls_ecdh_compute_shared( mbedtls_ecp_group *grp, mbedtls_mpi *z,
+                         const mbedtls_ecp_point *Q, const mbedtls_mpi *d,
+                         int (*f_rng)(void *, unsigned char *, size_t),
+                         void *p_rng );
 
 /**
  * \brief           Initialize context
  *
  * \param ctx       Context to initialize
  */
-void mbedtls_ecdh_init(mbedtls_ecdh_context *ctx);
+void mbedtls_ecdh_init( mbedtls_ecdh_context *ctx );
 
 /**
  * \brief           Free context
  *
  * \param ctx       Context to free
  */
-void mbedtls_ecdh_free(mbedtls_ecdh_context *ctx);
+void mbedtls_ecdh_free( mbedtls_ecdh_context *ctx );
 
 /**
  * \brief           Generate a public key and a TLS ServerKeyExchange payload.
@@ -134,7 +142,10 @@ void mbedtls_ecdh_free(mbedtls_ecdh_context *ctx);
  *
  * \return          0 if successful, or an MBEDTLS_ERR_ECP_XXX error code
  */
-int mbedtls_ecdh_make_params(mbedtls_ecdh_context *ctx, size_t *olen, unsigned char *buf, size_t blen, int (*f_rng)(void *, unsigned char *, size_t), void *p_rng);
+int mbedtls_ecdh_make_params( mbedtls_ecdh_context *ctx, size_t *olen,
+                      unsigned char *buf, size_t blen,
+                      int (*f_rng)(void *, unsigned char *, size_t),
+                      void *p_rng );
 
 /**
  * \brief           Parse and procress a TLS ServerKeyExhange payload.
@@ -146,7 +157,8 @@ int mbedtls_ecdh_make_params(mbedtls_ecdh_context *ctx, size_t *olen, unsigned c
  *
  * \return          0 if successful, or an MBEDTLS_ERR_ECP_XXX error code
  */
-int mbedtls_ecdh_read_params(mbedtls_ecdh_context *ctx, const unsigned char **buf, const unsigned char *end);
+int mbedtls_ecdh_read_params( mbedtls_ecdh_context *ctx,
+                      const unsigned char **buf, const unsigned char *end );
 
 /**
  * \brief           Setup an ECDH context from an EC key.
@@ -160,7 +172,8 @@ int mbedtls_ecdh_read_params(mbedtls_ecdh_context *ctx, const unsigned char **bu
  *
  * \return          0 if successful, or an MBEDTLS_ERR_ECP_XXX error code
  */
-int mbedtls_ecdh_get_params(mbedtls_ecdh_context *ctx, const mbedtls_ecp_keypair *key, mbedtls_ecdh_side side);
+int mbedtls_ecdh_get_params( mbedtls_ecdh_context *ctx, const mbedtls_ecp_keypair *key,
+                     mbedtls_ecdh_side side );
 
 /**
  * \brief           Generate a public key and a TLS ClientKeyExchange payload.
@@ -175,7 +188,10 @@ int mbedtls_ecdh_get_params(mbedtls_ecdh_context *ctx, const mbedtls_ecp_keypair
  *
  * \return          0 if successful, or an MBEDTLS_ERR_ECP_XXX error code
  */
-int mbedtls_ecdh_make_public(mbedtls_ecdh_context *ctx, size_t *olen, unsigned char *buf, size_t blen, int (*f_rng)(void *, unsigned char *, size_t), void *p_rng);
+int mbedtls_ecdh_make_public( mbedtls_ecdh_context *ctx, size_t *olen,
+                      unsigned char *buf, size_t blen,
+                      int (*f_rng)(void *, unsigned char *, size_t),
+                      void *p_rng );
 
 /**
  * \brief           Parse and process a TLS ClientKeyExchange payload.
@@ -187,7 +203,8 @@ int mbedtls_ecdh_make_public(mbedtls_ecdh_context *ctx, size_t *olen, unsigned c
  *
  * \return          0 if successful, or an MBEDTLS_ERR_ECP_XXX error code
  */
-int mbedtls_ecdh_read_public(mbedtls_ecdh_context *ctx, const unsigned char *buf, size_t blen);
+int mbedtls_ecdh_read_public( mbedtls_ecdh_context *ctx,
+                      const unsigned char *buf, size_t blen );
 
 /**
  * \brief           Derive and export the shared secret.
@@ -202,7 +219,10 @@ int mbedtls_ecdh_read_public(mbedtls_ecdh_context *ctx, const unsigned char *buf
  *
  * \return          0 if successful, or an MBEDTLS_ERR_ECP_XXX error code
  */
-int mbedtls_ecdh_calc_secret(mbedtls_ecdh_context *ctx, size_t *olen, unsigned char *buf, size_t blen, int (*f_rng)(void *, unsigned char *, size_t), void *p_rng);
+int mbedtls_ecdh_calc_secret( mbedtls_ecdh_context *ctx, size_t *olen,
+                      unsigned char *buf, size_t blen,
+                      int (*f_rng)(void *, unsigned char *, size_t),
+                      void *p_rng );
 
 #if defined(CONFIG_HW_ECDH_PARAM)
 int hw_ecp_gen_keypair(mbedtls_ecp_group *grp, mbedtls_mpi *d, mbedtls_ecp_point *Q);
@@ -212,4 +232,5 @@ int hw_ecdh_compute_shared(mbedtls_ecp_group *grp, mbedtls_mpi *z, const mbedtls
 #ifdef __cplusplus
 }
 #endif
-#endif							/* ecdh.h */
+
+#endif /* ecdh.h */

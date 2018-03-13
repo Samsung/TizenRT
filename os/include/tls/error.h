@@ -1,6 +1,6 @@
 /****************************************************************************
  *
- * Copyright 2016 Samsung Electronics All Rights Reserved.
+ * Copyright 2017 Samsung Electronics All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -115,9 +115,10 @@ extern "C" {
  * \param buffer    buffer to place representation in
  * \param buflen    length of the buffer
  */
-void mbedtls_strerror(int errnum, char *buffer, size_t buflen);
+void mbedtls_strerror( int errnum, char *buffer, size_t buflen );
 
 #ifdef __cplusplus
 }
 #endif
-#endif							/* error.h */
+
+#endif /* error.h */

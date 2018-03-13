@@ -1,6 +1,6 @@
 /****************************************************************************
  *
- * Copyright 2016 Samsung Electronics All Rights Reserved.
+ * Copyright 2017 Samsung Electronics All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -37,7 +37,11 @@
  *  This file is part of mbed TLS (https://tls.mbed.org)
  */
 
+#if !defined(MBEDTLS_CONFIG_FILE)
 #include "tls/config.h"
+#else
+#include MBEDTLS_CONFIG_FILE
+#endif
 
 #if defined(MBEDTLS_VERSION_C)
 
@@ -46,17 +50,19 @@
 
 unsigned int mbedtls_version_get_number()
 {
-	return (MBEDTLS_VERSION_NUMBER);
+    return( MBEDTLS_VERSION_NUMBER );
 }
 
-void mbedtls_version_get_string(char *string)
+void mbedtls_version_get_string( char *string )
 {
-	memcpy(string, MBEDTLS_VERSION_STRING, sizeof(MBEDTLS_VERSION_STRING));
+    memcpy( string, MBEDTLS_VERSION_STRING,
+            sizeof( MBEDTLS_VERSION_STRING ) );
 }
 
-void mbedtls_version_get_string_full(char *string)
+void mbedtls_version_get_string_full( char *string )
 {
-	memcpy(string, MBEDTLS_VERSION_STRING_FULL, sizeof(MBEDTLS_VERSION_STRING_FULL));
+    memcpy( string, MBEDTLS_VERSION_STRING_FULL,
+            sizeof( MBEDTLS_VERSION_STRING_FULL ) );
 }
 
-#endif							/* MBEDTLS_VERSION_C */
+#endif /* MBEDTLS_VERSION_C */
