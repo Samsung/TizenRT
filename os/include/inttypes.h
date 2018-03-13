@@ -237,6 +237,13 @@ uintmax_t wcstoumax(FAR const wchar_t *nptr, FAR wchar_t **endptr, int base);
 #define __PRIPTR_PREFIX
 #endif
 
+# define PRIdPTR	__PRIPTR_PREFIX "d"
+# define PRIiPTR	__PRIPTR_PREFIX "i"
+# define PRIoPTR	__PRIPTR_PREFIX "o"
+# define PRIuPTR	__PRIPTR_PREFIX "u"
+# define PRIxPTR	__PRIPTR_PREFIX "x"
+# define PRIXPTR	__PRIPTR_PREFIX "X"
+
 #define PRId64   __PRI64_PREFIX "d"
 
 #define PRIu8       "u"
@@ -244,6 +251,10 @@ uintmax_t wcstoumax(FAR const wchar_t *nptr, FAR wchar_t **endptr, int base);
 #define PRIu32      "u"
 #define PRIu64      __PRI64_PREFIX "u"
 
+#define PRIx8       "x"
+#define PRIx16      "x"
+#define PRIx32      "x"
+#define PRIx64      __PRI64_PREFIX "x"
 
 #define PRIi8       "i"
 #define PRIi16      "i"

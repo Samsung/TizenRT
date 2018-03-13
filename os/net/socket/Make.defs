@@ -64,6 +64,10 @@ ifeq ($(CONFIG_ENABLE_IOTIVITY),y)
 SOCK_CSRCS += recvmsg.c
 endif
 
+ifeq ($(CONFIG_GRPC),y)
+SOCK_CSRCS += recvmsg.c sendmsg.c
+endif
+
 
 # Support for network access using streams
 
