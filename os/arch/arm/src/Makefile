@@ -91,6 +91,11 @@ else
 endif
 endif
 
+ifeq ($(CONFIG_ASAN_STACK),y)
+  TMPCFL := $(shell echo $(CFLAGS) | sed -e 's,${SHADOW_OFFSET_FLAGS}, ,')
+  CFLAGS = $(TMPCFL)
+endif
+
 # The "head" object
 
 HEAD_OBJ = $(HEAD_ASRC:.S=$(OBJEXT))

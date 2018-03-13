@@ -166,3 +166,52 @@ config MM_SHM
 	---help---
 		Build in support for the shared memory interfaces shmget(), shmat(),
 		shmctl(), and shmdt().
+
+menuconfig MM_ASAN
+	bool "Address Sanitizer Support"
+	default n
+	---help---
+		Build in support for Address Sanitizer tool which detects
+		memory access errors in run-time.
+
+if MM_ASAN
+
+config MM_ASAN_RT
+       bool "Build Address Sanitizer Run-Time library"
+       default y
+       ---help---
+		Build in support for Address Sanitizer run-time support
+		library.
+
+config MM_ASAN_SHADOW_OFFSET
+       hex "Shadow Memory Offset"
+       depends on MM_ASAN_RT
+       default 0x20100000
+       ---help---
+		Offset of shadow memory.
+
+config ASAN_ENABLE
+       bool "Enable Sanitized build"
+       default n
+       depends on MM_ASAN_RT
+       ---help---
+		Add compiler flags to build the whole TizenRT with Address
+		Sanitizer enabled.
+
+config ASAN_INLINE
+       bool "Enable inline instrumentation"
+       default n
+       depends on ASAN_ENABLE
+       ---help---
+		Use inline instrumentation instead of outline one.
+		This increases performance by trade-off to code size.
+
+config ASAN_STACK
+       bool "Enable stack memory instrumentation"
+       default n
+       depends on MM_ASAN_RT
+       ---help---
+		Instument stack memory as well as heap one.
+		Requires -fasan-shadow-offset support from compiler.
+
+endif # MM_ASAN

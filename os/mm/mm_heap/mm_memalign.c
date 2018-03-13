@@ -57,8 +57,13 @@
 #include <tinyara/config.h>
 
 #include <assert.h>
+#include <debug.h>
 
 #include <tinyara/mm/mm.h>
+
+#ifdef CONFIG_MM_ASAN_RT
+#include <asan.h>
+#endif
 
 /****************************************************************************
  * Pre-processor Definitions
@@ -135,6 +140,11 @@ FAR void *mm_memalign(FAR struct mm_heap_s *heap, size_t alignment, size_t size)
 		return NULL;
 	}
 
+#ifdef CONFIG_MM_ASAN_RT
+	mvdbg("Poisoning raw chunk %p, size %u\n", rawchunk, allocsize);
+	asan_poison_heap((void *)rawchunk, allocsize);
+#endif
+
 	/* We need to hold the MM semaphore while we muck with the chunks and
 	 * nodelist.
 	 */
@@ -165,6 +175,10 @@ FAR void *mm_memalign(FAR struct mm_heap_s *heap, size_t alignment, size_t size)
 		/* Get the node the next node after the allocation. */
 
 		next = (FAR struct mm_allocnode_s *)((char *)node + node->size);
+#ifdef CONFIG_MM_ASAN_RT
+		mlldbg("Unpoisoning next 0x%08p\n", next);
+		asan_unpoison_shadow((void *)next, SIZEOF_MM_ALLOCNODE);
+#endif
 
 		/* Make sure that there is space to convert the preceding mm_allocnode_s
 		 * into an mm_freenode_s.  I think that this should always be true
@@ -195,6 +209,10 @@ FAR void *mm_memalign(FAR struct mm_heap_s *heap, size_t alignment, size_t size)
 		}
 
 		/* Set up the size of the new node */
+#ifdef CONFIG_MM_ASAN_RT
+		mlldbg("Unpoisoning newnode 0x%08p\n", newnode);
+		asan_unpoison_shadow((void *)newnode, SIZEOF_MM_ALLOCNODE);
+#endif
 
 		newnode->size = (size_t)next - (size_t)newnode;
 		newnode->preceding = precedingsize | MM_ALLOC_BIT;
@@ -231,6 +249,10 @@ FAR void *mm_memalign(FAR struct mm_heap_s *heap, size_t alignment, size_t size)
 		 * internal chunk sizes that include SIZEOF_MM_ALLOCNODE, and not the
 		 * malloc-compatible sizes that we have.
 		 */
+#ifdef CONFIG_MM_ASAN_RT
+		mlldbg("Unpoisoning newnode 0x%08p\n", (uint8_t *) node);
+		asan_unpoison_shadow((void *)node, SIZEOF_MM_ALLOCNODE);
+#endif
 		mm_shrinkchunk(heap, node, size + SIZEOF_MM_ALLOCNODE);
 	}
 #ifdef CONFIG_DEBUG_MM_HEAPINFO
@@ -240,5 +262,11 @@ FAR void *mm_memalign(FAR struct mm_heap_s *heap, size_t alignment, size_t size)
 	heapinfo_update_total_size(heap, node->size);
 #endif
 	mm_givesemaphore(heap);
+
+#ifdef CONFIG_MM_ASAN_RT
+	mvdbg("Unpoisoning aligned chunk %p, size %u\n", alignedchunk, size);
+	asan_unpoison_heap((FAR void *)alignedchunk, size);
+#endif
+
 	return (FAR void *)alignedchunk;
 }

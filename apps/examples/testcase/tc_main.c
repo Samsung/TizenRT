@@ -97,6 +97,9 @@ extern int itc_audio_main(int argc, char *argv[]);
 /* Not yet */
 extern int tc_mpu_main(int argc, char *argv[]);
 
+/* ASan */
+extern int tc_asan_main(int argc, char *argv[]);
+
 #ifdef CONFIG_TASH
 static const tash_cmdlist_t tc_cmds[] = {
 #ifdef CONFIG_EXAMPLES_TESTCASE_ARASTORAGE_UTC
@@ -152,6 +155,9 @@ static const tash_cmdlist_t tc_cmds[] = {
 #endif
 #ifdef CONFIG_EXAMPLES_TESTCASE_AUDIO_ITC
 	{"audio_itc", itc_audio_main, TASH_EXECMD_ASYNC},
+#endif
+#ifdef CONFIG_EXAMPLES_TESTCASE_ASAN
+	{"asan_tc", tc_asan_main, TASH_EXECMD_ASYNC},
 #endif
 	{NULL, NULL, 0}
 };

@@ -84,12 +84,15 @@
  *   adjacent free chunks if possible.
  *
  ****************************************************************************/
+#ifdef CONFIG_ASAN_ENABLE
+__attribute__((no_sanitize_address))
+#endif
 void mm_free(FAR struct mm_heap_s *heap, FAR void *mem)
 {
 	FAR struct mm_freenode_s *node;
 	FAR struct mm_freenode_s *prev;
 	FAR struct mm_freenode_s *next;
-#ifdef CONFIG_DEBUG_MM_HEAPINFO
+#if defined(CONFIG_DEBUG_MM_HEAPINFO) && !defined(CONFIG_MM_ASAN_RT)
 	struct mm_allocnode_s *alloc_node;
 #endif
 
@@ -136,7 +139,7 @@ void mm_free(FAR struct mm_heap_s *heap, FAR void *mem)
 	}
 
 #endif
-#ifdef CONFIG_DEBUG_MM_HEAPINFO
+#if defined(CONFIG_DEBUG_MM_HEAPINFO) && !defined(CONFIG_MM_ASAN_RT)
 	alloc_node = (struct mm_allocnode_s *)node;
 
 	if ((alloc_node->preceding & MM_ALLOC_BIT) != 0) {
@@ -202,5 +205,6 @@ void mm_free(FAR struct mm_heap_s *heap, FAR void *mem)
 	/* Add the merged node to the nodelist */
 
 	mm_addfreechunk(heap, node);
+
 	mm_givesemaphore(heap);
 }

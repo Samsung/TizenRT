@@ -40,6 +40,11 @@
 #define USEC_10         10
 #define PR_INVALID      -1
 #define PID_INVALID     -1
+#ifdef CONFIG_ASAN_ENABLE
+#define TASK_STACKSIZE  4096
+#else
+#define TASK_STACKSIZE  1024
+#endif
 
 static int g_callback;
 #ifndef CONFIG_BUILD_PROTECTED
@@ -208,7 +213,7 @@ static int vfork_task(int argc, char *argv[])
 
 	/* intentionally creates more than CONFIG_MAX_TASKS */
 	for (vfork_cnt = 0; vfork_cnt < CONFIG_MAX_TASKS - task_cnt; vfork_cnt++) {
-		task_create("tc_vfork_temp", SCHED_PRIORITY_MAX - 1, 1024, vfork_temp_task, (char * const *)NULL);
+		task_create("tc_vfork_temp", SCHED_PRIORITY_MAX - 1, TASK_STACKSIZE, vfork_temp_task, (char * const *)NULL);
 	}
 
 	pid = vfork();
@@ -240,13 +245,13 @@ static void tc_task_task_create(void)
 
 	/* Inavlid priority value check */
 
-	pid = task_create("tc_task_create", SCHED_PRIORITY_MIN - 1, 1024, create_task, (char * const *)task_param);
+	pid = task_create("tc_task_create", SCHED_PRIORITY_MIN - 1, TASK_STACKSIZE, create_task, (char * const *)task_param);
 	TC_ASSERT_EQ("task_create", pid, ERROR);
 	TC_ASSERT_EQ("task_create", errno, EINVAL);
 
 	/* Regular functionality check */
 
-	pid = task_create("tc_task_create", SCHED_PRIORITY_MAX - 1, 1024, create_task, (char * const *)task_param);
+	pid = task_create("tc_task_create", SCHED_PRIORITY_MAX - 1, TASK_STACKSIZE, create_task, (char * const *)task_param);
 	TC_ASSERT_GT("task_create", pid, 0);
 	TC_ASSERT_EQ("task_create", g_callback, OK);
 
@@ -267,8 +272,7 @@ static void tc_task_task_delete(void)
 	int pid;
 	int ret_chk;
 	g_callback = ERROR;
-
-	pid = task_create("tc_task_del", SCHED_PRIORITY_MAX - 1, 1024, delete_task, (char * const *)NULL);
+	pid = task_create("tc_task_del", SCHED_PRIORITY_MAX - 1, TASK_STACKSIZE, delete_task, (char * const *)NULL);
 	TC_ASSERT_GT("task_create", pid, 0);
 
 	ret_chk = task_delete(pid);
@@ -294,7 +298,7 @@ static void tc_task_task_restart(void)
 
 	/* Check for NULL pid parameter  */
 
-	pid = task_create("tc_task_re", SCHED_PRIORITY_MAX - 1, 1024, restart_task, (char * const *)NULL);
+	pid = task_create("tc_task_re", SCHED_PRIORITY_MAX - 1, TASK_STACKSIZE, restart_task, (char * const *)NULL);
 	TC_ASSERT_GT("task_create", pid, 0);
 
 	g_callback = 0;
@@ -306,7 +310,7 @@ static void tc_task_task_restart(void)
 
 	/* Check for reinitialization of task using task_restart */
 
-	pid = task_create("tc_task_re", SCHED_PRIORITY_MAX - 1, 1024, restart_task, (char * const *)NULL);
+	pid = task_create("tc_task_re", SCHED_PRIORITY_MAX - 1, TASK_STACKSIZE, restart_task, (char * const *)NULL);
 	TC_ASSERT_GT("task_create", pid, 0);
 
 	ret_chk = task_restart(pid);
@@ -336,7 +340,7 @@ static void tc_task_exit(void)
 {
 	int pid;
 	g_callback = ERROR;
-	pid = task_create("tc_exit", SCHED_PRIORITY_MAX - 1, 1024, exit_task, (char * const *)NULL);
+	pid = task_create("tc_exit", SCHED_PRIORITY_MAX - 1, TASK_STACKSIZE, exit_task, (char * const *)NULL);
 	TC_ASSERT_GT("task_create", pid, 0);
 	TC_ASSERT_EQ("task_exit", g_callback, OK);
 	TC_SUCCESS_RESULT();
@@ -355,7 +359,7 @@ static void tc_task_atexit(void)
 {
 	int pid;
 	g_callback = ERROR;
-	pid = task_create("tc_atexit", SCHED_PRIORITY_MAX - 1, 1024, atexit_task, (char * const *)NULL);
+	pid = task_create("tc_atexit", SCHED_PRIORITY_MAX - 1, TASK_STACKSIZE, atexit_task, (char * const *)NULL);
 	TC_ASSERT_GT("task_create", pid, 0);
 	TC_ASSERT_EQ("task_atexit", g_callback, OK);
 	TC_SUCCESS_RESULT();
@@ -377,7 +381,7 @@ static void tc_task_on_exit(void)
 	int pid;
 	g_callback = ERROR;
 
-	pid = task_create("tc_on_exit", SCHED_PRIORITY_MAX - 1, 1024, onexit_task, (char * const *)NULL);
+	pid = task_create("tc_on_exit", SCHED_PRIORITY_MAX - 1, TASK_STACKSIZE, onexit_task, (char * const *)NULL);
 	TC_ASSERT_GT("task_create", pid, 0);
 	TC_ASSERT_EQ("on_exit", g_callback, OK);
 	TC_SUCCESS_RESULT();
@@ -455,7 +459,7 @@ static void tc_task_getpid(void)
 {
 	int pid;
 	g_callback = ERROR;
-	pid = task_create("tc_getpid", SCHED_PRIORITY_MAX - 1, 1024, getpid_task, (char * const *)NULL);
+	pid = task_create("tc_getpid", SCHED_PRIORITY_MAX - 1, TASK_STACKSIZE, getpid_task, (char * const *)NULL);
 	TC_ASSERT_GT("task_create", pid, 0);
 	TC_ASSERT_EQ("getpid", pid, g_callback);
 	TC_SUCCESS_RESULT();
@@ -476,7 +480,7 @@ static void tc_task_vfork(void)
 {
 	int pid;
 	g_callback = OK;
-	pid = task_create("tc_vfork", SCHED_PRIORITY_MAX - 1, 1024, vfork_task, (char * const *)NULL);
+	pid = task_create("tc_vfork", SCHED_PRIORITY_MAX - 1, TASK_STACKSIZE, vfork_task, (char * const *)NULL);
 	TC_ASSERT_GT("task_create", pid, 0);
 	TC_ASSERT_EQ("vfork", g_callback, OK);
 

@@ -43,6 +43,13 @@
 #endif
 #define MAX_TASKS_MASK      (CONFIG_MAX_TASKS-1)
 #define PIDHASH(pid)        ((pid) & MAX_TASKS_MASK)
+#ifdef CONFIG_ASAN_ENABLE
+#define TASK_STACKSIZE  4096
+#define TASK_ATTR_STACKSIZE  1024
+#else
+#define TASK_STACKSIZE  1024
+#define TASK_ATTR_STACKSIZE  512
+#endif
 /****************************************************************************
 * Private Data
 ****************************************************************************/
@@ -67,7 +74,7 @@ struct sched_param param;
 static int pthread_attr_set(void)
 {
 	int status;
-	if (attr.stacksize == 512 && attr.policy == SCHED_RR && attr.inheritsched == PTHREAD_EXPLICIT_SCHED) {
+	if (attr.stacksize == TASK_ATTR_STACKSIZE && attr.policy == SCHED_RR && attr.inheritsched == PTHREAD_EXPLICIT_SCHED) {
 		return OK;
 	} else {
 		status = pthread_attr_init(&attr);
@@ -75,7 +82,7 @@ static int pthread_attr_set(void)
 			return ERROR;
 		}
 
-		status = pthread_attr_setstacksize(&attr, 512);
+		status = pthread_attr_setstacksize(&attr, TASK_ATTR_STACKSIZE);
 		if (status != OK) {
 			return ERROR;
 		}
@@ -273,7 +280,7 @@ static void tc_roundrobin_rr_task(void)
 		start = created = 0;
 		sleep(1);
 		for (task_cnt = 0; task_cnt < NTHREAD; task_cnt++) {
-			task_pid[task_cnt] = task_create("rrtask", priority[tc][task_cnt], 1024, task_func, NULL);
+			task_pid[task_cnt] = task_create("rrtask", priority[tc][task_cnt], TASK_STACKSIZE, task_func, NULL);
 			TC_ASSERT_NEQ("task_create", task_pid[task_cnt], ERROR);
 
 			created++;
@@ -316,7 +323,7 @@ static void tc_roundrobin_rr_taskNpthread(void)
 		logidx = 0;
 		start = created = 0;
 		sleep(1);
-		task_pid = task_create("rrtaskpth", priority[tc][0], 1024, taskNpthread_func, (FAR char * const *)argv);
+		task_pid = task_create("rrtaskpth", priority[tc][0], TASK_STACKSIZE, taskNpthread_func, (FAR char * const *)argv);
 		TC_ASSERT_NEQ("task_create", task_pid, ERROR);
 
 		created++;

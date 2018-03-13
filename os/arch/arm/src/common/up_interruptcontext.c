@@ -81,6 +81,7 @@
  * the interrupt handler context.
  ****************************************************************************/
 
+__attribute__((no_sanitize_address))
 bool up_interrupt_context(void)
 {
 	return current_regs != NULL;

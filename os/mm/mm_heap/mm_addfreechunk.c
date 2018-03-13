@@ -58,6 +58,11 @@
 
 #include <tinyara/mm/mm.h>
 
+#ifdef CONFIG_MM_ASAN_RT
+#include <asan.h>
+#include <debug.h>
+#endif
+
 /****************************************************************************
  * Pre-processor Definitions
  ****************************************************************************/
@@ -79,11 +84,20 @@
  *
  ****************************************************************************/
 
+#ifdef CONFIG_ASAN_ENABLE
+__attribute__((no_sanitize_address))
+#endif
 void mm_addfreechunk(FAR struct mm_heap_s *heap, FAR struct mm_freenode_s *node)
 {
 	FAR struct mm_freenode_s *next;
 	FAR struct mm_freenode_s *prev;
 
+#ifdef CONFIG_MM_ASAN_RT
+	mvdbg("Poisoning freed chunk %08p-%08p, size %u for heap %p\n",
+	      (uint8_t *)node + SIZEOF_MM_FREENODE,
+	      node + node->size - SIZEOF_MM_FREENODE, node->size, heap);
+	asan_poison_free((uint8_t *)node + SIZEOF_MM_FREENODE, node->size);
+#endif
 	/* Convert the size to a nodelist index */
 
 	int ndx = mm_size2ndx(node->size);

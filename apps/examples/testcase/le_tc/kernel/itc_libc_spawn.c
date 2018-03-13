@@ -32,8 +32,11 @@
 #include <unistd.h>
 #include <sys/types.h>
 
-
+#ifdef CONFIG_ASAN_ENABLE
+#define ITC_SPAWN_STACKSIZE 4096
+#else
 #define ITC_SPAWN_STACKSIZE 2048
+#endif
 #define WAIT_TIME 3
 
 /**

@@ -69,7 +69,9 @@
 #if defined(CONFIG_ENABLE_STACKMONITOR) && defined(CONFIG_DEBUG)
 #include <apps/system/utils.h>
 #endif
-
+#ifdef CONFIG_ASAN_ENABLE
+#include <asan.h>
+#endif
 /************************************************************************
  * Private Functions
  ************************************************************************/
@@ -136,6 +138,11 @@ int sched_releasetcb(FAR struct tcb_s *tcb, uint8_t ttype)
 	int ret = OK;
 
 	if (tcb) {
+#ifdef CONFIG_ASAN_ENABLE
+		void * stack_ptr = tcb->stack_alloc_ptr;
+		uint32_t stack_size = tcb->adj_stack_size;
+#endif
+
 #if defined(CONFIG_ENABLE_STACKMONITOR) && defined(CONFIG_DEBUG)
 		stkmon_logging(tcb);
 #endif
@@ -183,6 +190,9 @@ int sched_releasetcb(FAR struct tcb_s *tcb, uint8_t ttype)
 #endif
 			{
 				up_release_stack(tcb, ttype);
+#ifdef CONFIG_ASAN_ENABLE
+				asan_unpoison_shadow(stack_ptr, stack_size);
+#endif
 			}
 		}
 #ifdef CONFIG_PIC
@@ -201,6 +211,9 @@ int sched_releasetcb(FAR struct tcb_s *tcb, uint8_t ttype)
 		/* Release the kernel stack */
 
 		(void)up_addrenv_kstackfree(tcb);
+#ifdef CONFIG_ASAN_ENABLE
+		asan_unpoison_shadow(stack_ptr, stack_size);
+#endif
 #endif
 
 #ifdef CONFIG_ARCH_ADDRENV
@@ -218,6 +231,9 @@ int sched_releasetcb(FAR struct tcb_s *tcb, uint8_t ttype)
 		/* And, finally, release the TCB itself */
 
 		sched_kfree(tcb);
+#ifdef CONFIG_ASAN_ENABLE
+		asan_poison_free(stack_ptr, stack_size);
+#endif
 	}
 
 	return ret;

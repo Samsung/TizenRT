@@ -39,7 +39,11 @@
 #define ARRLEN          2
 #define VAL_3           3
 #define VAL_5           5
-#define TASK_STACKSIZE 2048
+#ifdef CONFIG_ASAN_ENABLE
+#define TASK_STACKSIZE  4096
+#else
+#define TASK_STACKSIZE  2048
+#endif
 #define PID_INVAL       -1
 #define PID_IDLE        0
 #define TASK_CANCEL_INVALID  -1

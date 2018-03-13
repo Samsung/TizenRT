@@ -62,6 +62,10 @@
 
 #include <tinyara/mm/mm.h>
 
+#ifdef CONFIG_MM_ASAN_RT
+#include <asan.h>
+#endif
+
 /****************************************************************************
  * Pre-processor Definitions
  ****************************************************************************/
@@ -126,6 +130,12 @@ void mm_addregion(FAR struct mm_heap_s *heap, FAR void *heapstart, size_t heapsi
 
 	mlldbg("Region %d: base=%p size=%u\n", IDX + 1, heapstart, heapsize);
 
+#ifdef CONFIG_ASAN_ENABLE
+	mlldbg("Unpoisoning heapstart 0x%08p, heapend 0x%08p and node 0x%08p\n", heapbase, heapend, heapbase + SIZEOF_MM_ALLOCNODE);
+	asan_unpoison_shadow((void*) heapbase, sizeof(struct mm_allocnode_s));
+	asan_unpoison_shadow((void*) heapend - SIZEOF_MM_ALLOCNODE, SIZEOF_MM_ALLOCNODE);
+	asan_unpoison_shadow((void*) heapbase + SIZEOF_MM_ALLOCNODE, SIZEOF_MM_ALLOCNODE);
+#endif
 	/* Add the size of this region to the total size of the heap */
 
 	heap->mm_heapsize += heapsize;
@@ -194,6 +204,11 @@ void mm_initialize(FAR struct mm_heap_s *heap, FAR void *heapstart, size_t heaps
 
 	mlldbg("Heap: start=%p size=%u\n", heapstart, heapsize);
 
+#ifdef CONFIG_MM_ASAN_RT
+	mlldbg("Poisoning heap %p, size %u\n", heapstart, heapsize);
+	asan_poison_heap(heapstart, heapsize);
+#endif
+
 	/* The following two lines have cause problems for some older ZiLog
 	 * compilers in the past (but not the more recent).  Life is easier if we
 	 * just the suppress them altogther for those tools.
@@ -213,7 +228,10 @@ void mm_initialize(FAR struct mm_heap_s *heap, FAR void *heapstart, size_t heaps
 #endif
 
 	/* Initialize the node array */
-
+#ifdef CONFIG_MM_ASAN_RT
+	mlldbg("Unpoisoning heap %p, size %u\n", heap->mm_nodelist, sizeof(struct mm_freenode_s) * MM_NNODES);
+	asan_unpoison_shadow(heap->mm_nodelist, sizeof(struct mm_freenode_s) * MM_NNODES);
+#endif
 	memset(heap->mm_nodelist, 0, sizeof(struct mm_freenode_s) * MM_NNODES);
 	for (i = 1; i < MM_NNODES; i++) {
 		heap->mm_nodelist[i - 1].flink = &heap->mm_nodelist[i];

@@ -129,6 +129,7 @@ static inline uint32_t up_getsp(void)
  ****************************************************************************/
 
 #ifdef CONFIG_ARCH_STACKDUMP
+__attribute__((no_sanitize_address))
 static void up_stackdump(uint32_t sp, uint32_t stack_base)
 {
 	uint32_t stack;
@@ -252,7 +253,7 @@ static int assert_tracecallback(FAR struct usbtrace_s *trace, FAR void *arg)
  ****************************************************************************/
 
 #ifdef CONFIG_ARCH_STACKDUMP
-static void up_dumpstate(void)
+void up_dumpstate(void)
 {
 	struct tcb_s *rtcb = this_task();
 	uint32_t sp = up_getsp();

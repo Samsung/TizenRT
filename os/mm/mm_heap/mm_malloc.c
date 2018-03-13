@@ -64,6 +64,10 @@
 #ifdef CONFIG_DEBUG_MM_HEAPINFO
 #include  <tinyara/sched.h>
 #endif
+
+#ifdef CONFIG_MM_ASAN_RT
+#include <asan.h>
+#endif
 /****************************************************************************
  * Pre-processor Definitions
  ****************************************************************************/
@@ -102,6 +106,9 @@
  *  8-byte alignment of the allocated data is assured.
  *
  ****************************************************************************/
+#ifdef CONFIG_ASAN_ENABLE
+__attribute__((no_sanitize_address))
+#endif
 #ifdef CONFIG_DEBUG_MM_HEAPINFO
 FAR void *mm_malloc(FAR struct mm_heap_s *heap, size_t size, mmaddress_t caller_retaddr)
 #else
@@ -111,7 +118,9 @@ FAR void *mm_malloc(FAR struct mm_heap_s *heap, size_t size)
 	FAR struct mm_freenode_s *node;
 	void *ret = NULL;
 	int ndx;
-
+#ifdef CONFIG_MM_ASAN_RT
+	const size_t real_size = size;
+#endif
 	/* Handle bad sizes */
 
 	if (size < 1) {
@@ -188,6 +197,9 @@ FAR void *mm_malloc(FAR struct mm_heap_s *heap, size_t size)
 			/* Create the remainder node */
 
 			remainder = (FAR struct mm_freenode_s *)(((char *)node) + size);
+#ifdef CONFIG_MM_ASAN_RT
+			asan_unpoison_shadow((void *)remainder, SIZEOF_MM_FREENODE);
+#endif
 			remainder->size = remaining;
 			remainder->preceding = size;
 
@@ -207,6 +219,9 @@ FAR void *mm_malloc(FAR struct mm_heap_s *heap, size_t size)
 		}
 
 		/* Handle the case of an exact size match */
+#ifdef CONFIG_MM_ASAN_RT
+		asan_unpoison_heap(node, SIZEOF_MM_ALLOCNODE);
+#endif
 
 		node->preceding |= MM_ALLOC_BIT;
 
@@ -235,5 +250,11 @@ FAR void *mm_malloc(FAR struct mm_heap_s *heap, size_t size)
 	}
 #endif
 
+#ifdef CONFIG_MM_ASAN_RT
+	mvdbg("Poisoning chunk %08p-%08p, size %u for heap %p\n", (uint8_t *)ret, ret + size, size, heap);
+	asan_poison_heap((uint8_t *)ret, size);
+	mvdbg("Unpoisoning object %08p-%08p, size %u for heap %p\n", (uint8_t *)ret, ret + real_size, real_size, heap);
+	asan_unpoison_heap((uint8_t *)ret, real_size);
+#endif
 	return ret;
 }
