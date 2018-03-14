@@ -8,7 +8,8 @@ The ARTIK055S is a SOC for Wi-Fi™ IoT solutions. The ARTIK055S has a Wi-Fi sub
 > [Configuration Sets](#configuration-sets)  
 > [Environment Set-up](#environment-set-up)  
 > [How to program a binary](#how-to-program-a-binary)  
-> [ROMFS](#romfs)
+> [ROMFS](#romfs)  
+> [Appendix](#appendix)
 
 ## Information
 
@@ -94,22 +95,6 @@ This can be used to test network functionality.
 This section covers board-specific environment set-up.  
 Please set TizenRT common environment, [quick start](https://github.com/Samsung/TizenRT#quick-start), first before doing below.
 
-### On Chip Debugger installation
-
-OpenOCD is used to program and debug.
-
-OpenOCD v0.10.0 is recommended and can be installed like below,
-but pre-built OpenOCD binaray on tools/openocd/linux64(or 32) can be used without installing.
-```bash
-sudo apt-get build-dep openocd
-git clone --depth 1 -b v0.10.0 https://git.code.sf.net/p/openocd/code openocd-code
-cd openocd-code
-./bootstrap
-./configure
-make
-sudo make install
-```
-
 ### Add USB device Rules
 
 This is an optional environment.  
@@ -125,47 +110,20 @@ SUBSYSTEMS=="usb",ATTRS{idVendor}=="0403",ATTRS{idProduct}=="6010",MODE="0666" R
 
 ## How to program a binary
 
-There are two methods, using OpenOCD or script.  
-After building TizenRT, follow below steps at $TIZENRT_BASEDIR/os folder.  
+After building TizenRT, execute below command at $TIZENRT_BASEDIR/os folder.  
 See [[Getting the sources]](https://github.com/Samsung/TizenRT#getting-the-sources) for how to set *TIZENRT_BASEDIR*.
 
-### Using download script
+```bash
+make download [Programming Option]
+```
 
+For example, *ALL* option makes complete set of binaries programmed.
 ```bash
 make download ALL
 ```
-This makes complete set of binaries programmed.
+See programming options list which is pre-defined at [.flashSpec.xml](.flashSpec.xml).
 
-### Using OpenOCD
-
-This is used to program a partial binary.  
-Export 'OPENOCD_SCRIPTS' to environment variable.
-
-```bash
-export OPENOCD_SCRIPTS=$TIZENRT_BASEDIR/build/tools/openocd
-```
-
-At first, programming the complete set of binaries are needed.
-
-#### ARTIK055S
-```bash
-../build/configs/artik05x/tools/codesigner/artik05x_AppCodesigner ../build/configs/artik05x/tools/codesigner/rsa_private.key ../build/output/bin/tinyara_head.bin
-
-openocd -f artik05x.cfg -s ../build/configs/artik05x/scripts -c ' \
-    flash_write bl1    ../build/configs/artik055s/bin/bl1.bin;  \
-    flash_write bl2    ../build/configs/artik055s/bin/bl2.bin;         \
-    flash_write sssfw  ../build/configs/artik055s/bin/sssfw.bin;       \
-    flash_write wlanfw ../build/configs/artik055s/bin/wlanfw.bin;      \
-    flash_write os     ../build/output/bin/tinyara_head.bin-signed;   \
-    exit'
-```
-
-Once the complete binaries are successfully programmed, each partition can be updated separately with new one.
-
-```bash
-openocd -f artik05x.cfg -s ../build/configs/artik05x/scripts -c ' \
-    flash_write os ../build/output/bin/tinyara_head.bin-signed; exit'
-```
+Refer [How to program using OpenOCD](#how-to-program-using-openocd) to make user-specific programming seqeunce.
 
 ### Factory Reset
 If you can not boot normally, you can change os to the initial version. This is possible if there is an initialization binary in memory.
@@ -221,3 +179,40 @@ Before executing below board-specific steps, execute [generic steps](../../../to
         Hardware Configuration -> Board Selection -> Automount partitions -> Automount romfs partiton to y
         ````
 4. Build TizenRT and flash a binary [using download script](#using-download-script)
+
+## Appendix
+### On Chip Debugger installation
+
+OpenOCD is used to program and debug.
+
+OpenOCD v0.10.0 is recommended and can be installed like below,
+but **pre-built OpenOCD binaray on tools/openocd/linux64(or 32) can be used without installing**.
+```bash
+sudo apt-get build-dep openocd
+git clone --depth 1 -b v0.10.0 https://git.code.sf.net/p/openocd/code openocd-code
+cd openocd-code
+./bootstrap
+./configure
+make
+sudo make install
+```
+
+### How to program using OpenOCD
+```bash
+../build/configs/artik05x/tools/codesigner/artik05x_AppCodesigner ../build/configs/artik05x/tools/codesigner/rsa_private.key ../build/output/bin/tinyara_head.bin
+
+openocd -f artik05x.cfg -s ../build/configs/artik05x/scripts -c ' \
+    flash_write bl1    ../build/configs/artik055s/bin/bl1.bin;  \
+    flash_write bl2    ../build/configs/artik055s/bin/bl2.bin;         \
+    flash_write sssfw  ../build/configs/artik055s/bin/sssfw.bin;       \
+    flash_write wlanfw ../build/configs/artik055s/bin/wlanfw.bin;      \
+    flash_write os     ../build/output/bin/tinyara_head.bin-signed;   \
+    exit'
+```
+
+Once the complete binaries are successfully programmed, each partition can be updated separately with new one.
+
+```bash
+openocd -f artik05x.cfg -s ../build/configs/artik05x/scripts -c ' \
+    flash_write os ../build/output/bin/tinyara_head.bin-signed; exit'
+```
