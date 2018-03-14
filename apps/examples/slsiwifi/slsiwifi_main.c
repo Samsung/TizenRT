@@ -28,6 +28,8 @@
 #include <math.h>
 #include <slsi_wifi/slsi_wifi_utils.h>
 #include "output_functions.h"
+#include <protocols/dhcpc.h>
+
 // the mm functions are badly guarded with CONFIG_DEBUG
 #ifndef CONFIG_DEBUG
 #undef CONFIG_EXAMPLES_SLSIDEMO_MEM_CHECK
@@ -42,6 +44,7 @@
 /* connections states */
 #define STATE_DISCONNECTED          0
 #define STATE_CONNECTED             1
+#define WLAN_INTF_NAME              "wl1"
 
 //static bool wifiStarted = false;
 //static bool inAuto = false;
@@ -156,6 +159,9 @@ static bool check_security_str(char *sec)
 
 void sw_linkUpHandler(slsi_reason_t *reason)
 {
+	void *dhcp_handle = NULL;
+	struct dhcpc_state state;
+
 	g_connection_state = STATE_CONNECTED;
 	if (g_mode == SLSI_WIFI_STATION_IF) {
 		g_join_result = reason->reason_code;	// store result code for main thread
@@ -164,6 +170,23 @@ void sw_linkUpHandler(slsi_reason_t *reason)
 		printf_encode(connectedApName, WPA_MAX_SSID_LEN, reason->ssid, reason->ssid_len);
 		printf("Connected to network: bssid: %s, ssid: %s\n", reason->bssid, connectedApName);
 		sem_post(&g_sem_join);	//tell the main thread to move on
+
+		/*
+		 Start DHCP client procedures after STA is connected to AP
+		 Aftrer successful DHCP, IP address will be assigned to the WLAN Interface
+		*/
+		dhcp_handle = dhcpc_open(WLAN_INTF_NAME);
+		if (dhcp_handle == NULL) {
+			dmdbg("Invalid dhcp handle\n");
+			return;
+		}
+		if (dhcpc_request(dhcp_handle, &state) != OK) {
+			dhcpc_close(dhcp_handle);
+			return;
+		}
+		netlib_set_ipv4addr(WLAN_INTF_NAME, &state.ipaddr);
+		netlib_set_ipv4netmask(WLAN_INTF_NAME, &state.netmask);
+		netlib_set_dripv4addr(WLAN_INTF_NAME, &state.default_router);
 	} else {
 		printf("New Station connected bssid: %s \n", reason->bssid);
 		WiFiIsConnected(&numStations, NULL);
