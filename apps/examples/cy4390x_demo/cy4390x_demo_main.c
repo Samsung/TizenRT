@@ -78,14 +78,12 @@ int read_wlan_chip_console_log(int argc, char* argv[])
 	const unsigned buffer_size = 200;
 	int result = -1;
 
-	char* buffer = (char *)malloc_named("console",buffer_size );
-	if (buffer == NULL)
-	{
+	char* buffer = (char *)malloc_named ("console",buffer_size);
+	if (buffer == NULL) {
 		return result;
 	}
 
-	if (wwd_wifi_read_wlan_log(buffer, buffer_size) == WWD_SUCCESS)
-	{
+	if (wwd_wifi_read_wlan_log(buffer, buffer_size) == WWD_SUCCESS) {
 		result = 0;
 	}
 
@@ -106,12 +104,9 @@ static void show_wlan_firmware_version(void)
 	memset(fw_ver_buf, 0x0, sizeof(fw_ver_buf));
 	fw_ver_result = wwd_wifi_get_wifi_version(fw_ver_buf, sizeof(fw_ver_buf));
 
-	if (fw_ver_result == OK)
-	{
+	if (fw_ver_result == OK) {
 		printf("WLAN Firmware Version: %s \n", fw_ver_buf);
-	}
-	else
-	{
+	} else {
 		printf("Failed to get WLAN FW version (err: %d)\n", fw_ver_result);
 	}
 }
