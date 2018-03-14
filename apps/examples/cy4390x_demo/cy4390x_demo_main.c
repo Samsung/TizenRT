@@ -56,15 +56,15 @@ static void show_wlan_firmware_version(void);
 /****************************************************************************
  * External Function Protoype
  ****************************************************************************/
-int read_wlan_chip_console_log( int argc, char* argv[] );
+int read_wlan_chip_console_log(int argc, char* argv[]);
 
 static tash_cmdlist_t peripheral_cmds[] = {
-    {"wlog", read_wlan_chip_console_log, TASH_EXECMD_ASYNC},
-    {NULL, NULL, 0}
+	{"wlog", read_wlan_chip_console_log, TASH_EXECMD_ASYNC},
+	{NULL, NULL, 0}
 };
 
-extern wwd_result_t wwd_wifi_read_wlan_log( char* buffer, uint32_t buffer_size );
-extern wwd_result_t wwd_wifi_get_wifi_version( char* version, uint8_t length );
+extern wwd_result_t wwd_wifi_read_wlan_log(char* buffer, uint32_t buffer_size);
+extern wwd_result_t wwd_wifi_get_wifi_version(char* version, uint8_t length);
 
 /*!
  ******************************************************************************
@@ -73,25 +73,25 @@ extern wwd_result_t wwd_wifi_get_wifi_version( char* version, uint8_t length );
  * @return  0 for success, otherwise error
  */
 
-int read_wlan_chip_console_log( int argc, char* argv[] )
+int read_wlan_chip_console_log(int argc, char* argv[])
 {
-    const unsigned buffer_size = 200;
-    int result = -1;
+	const unsigned buffer_size = 200;
+	int result = -1;
 
-    char* buffer = (char *)malloc_named("console",buffer_size );
-    if ( buffer == NULL )
-    {
-        return result;
-    }
+	char* buffer = (char *)malloc_named("console",buffer_size );
+	if (buffer == NULL)
+	{
+		return result;
+	}
 
-    if ( wwd_wifi_read_wlan_log( buffer, buffer_size ) == WWD_SUCCESS )
-    {
-        result = 0;
-    }
+	if (wwd_wifi_read_wlan_log(buffer, buffer_size) == WWD_SUCCESS)
+	{
+		result = 0;
+	}
 
-    free( buffer );
+	free(buffer);
 
-    return result;
+	return result;
 }
 
 /****************************************************************************
@@ -100,20 +100,20 @@ int read_wlan_chip_console_log( int argc, char* argv[] )
 
 static void show_wlan_firmware_version(void)
 {
-    char fw_ver_buf[200];
-    int fw_ver_result = 0;
+	char fw_ver_buf[200];
+	int fw_ver_result = 0;
 
-    memset(fw_ver_buf, 0x0, sizeof(fw_ver_buf));
-    fw_ver_result = wwd_wifi_get_wifi_version(fw_ver_buf, sizeof(fw_ver_buf));
+	memset(fw_ver_buf, 0x0, sizeof(fw_ver_buf));
+	fw_ver_result = wwd_wifi_get_wifi_version(fw_ver_buf, sizeof(fw_ver_buf));
 
-    if ( fw_ver_result == OK )
-    {
-        printf("WLAN Firmware Version: %s \n", fw_ver_buf);
-    }
-    else
-    {
-        printf("Failed to get WLAN FW version (err: %d)\n", fw_ver_result);
-    }
+	if (fw_ver_result == OK)
+	{
+		printf("WLAN Firmware Version: %s \n", fw_ver_buf);
+	}
+	else
+	{
+		printf("Failed to get WLAN FW version (err: %d)\n", fw_ver_result);
+	}
 }
 
 #ifdef CONFIG_BUILD_KERNEL
@@ -122,12 +122,12 @@ int main(int argc, FAR char *argv[])
 int cy4390x_demo_main(int argc, char *argv[])
 #endif
 {
-	int i=0;
+	int i = 0;
 
-    printf("\nApplication(%s) is launched@0x%08p\n", __func__, cy4390x_demo_main);
+	printf("\nApplication(%s) is launched@0x%08p\n", __func__, cy4390x_demo_main);
 
-    /* Print WLAN firmware version */
-    show_wlan_firmware_version();
+	/* Print WLAN firmware version */
+	show_wlan_firmware_version();
 
 #ifdef CONFIG_TASH
 	/* add tash command */
@@ -136,7 +136,7 @@ int cy4390x_demo_main(int argc, char *argv[])
 
 	printf("CY4390X Demo n");
 
-	while(1) {
+	while (1) {
 		sleep(30);
 		printf("alive ! count : %d\n", i);
 		i++;
