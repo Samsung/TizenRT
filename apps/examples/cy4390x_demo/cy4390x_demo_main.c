@@ -1,8 +1,8 @@
 /****************************************************************************
  *
- * Copyright 2017, Cypress Semiconductor Corporation or a subsidiary of 
+ * Copyright 2017, Cypress Semiconductor Corporation or a subsidiary of
  * Cypress Semiconductor Corporation. All Rights Reserved.
- * 
+ *
  * This software, associated documentation and materials ("Software"),
  * is owned by Cypress Semiconductor Corporation
  * or one of its subsidiaries ("Cypress") and is protected by and subject to
@@ -56,15 +56,15 @@ static void show_wlan_firmware_version(void);
 /****************************************************************************
  * External Function Protoype
  ****************************************************************************/
-int read_wlan_chip_console_log(int argc, char* argv[]);
+int read_wlan_chip_console_log(int argc, char *argv[]);
 
 static tash_cmdlist_t peripheral_cmds[] = {
 	{"wlog", read_wlan_chip_console_log, TASH_EXECMD_ASYNC},
 	{NULL, NULL, 0}
 };
 
-extern wwd_result_t wwd_wifi_read_wlan_log(char* buffer, uint32_t buffer_size);
-extern wwd_result_t wwd_wifi_get_wifi_version(char* version, uint8_t length);
+extern wwd_result_t wwd_wifi_read_wlan_log(char *buffer, uint32_t buffer_size);
+extern wwd_result_t wwd_wifi_get_wifi_version(char *version, uint8_t length);
 
 /*!
  ******************************************************************************
@@ -73,12 +73,12 @@ extern wwd_result_t wwd_wifi_get_wifi_version(char* version, uint8_t length);
  * @return  0 for success, otherwise error
  */
 
-int read_wlan_chip_console_log(int argc, char* argv[])
+int read_wlan_chip_console_log(int argc, char *argv[])
 {
 	const unsigned buffer_size = 200;
 	int result = -1;
 
-	char* buffer = (char *)malloc_named ("console",buffer_size);
+	char *buffer = (char *)malloc_named("console", buffer_size);
 	if (buffer == NULL) {
 		return result;
 	}
@@ -139,4 +139,3 @@ int cy4390x_demo_main(int argc, char *argv[])
 
 	return 0;
 }
-
