@@ -29,7 +29,6 @@
 #include "logging/things_logger.h"
 #include "memory/things_malloc.h"
 #include "utils/things_string_util.h"
-#include "oic_malloc.h"
 #include "ocpayload.h"
 #include "things_resource.h"
 #include "octypes.h"
@@ -200,7 +199,7 @@ bool things_get_arrayvalue(struct things_representation_s *mother, char *key, in
 			}
 			/*! Added by st_things for memory Leak fix
 			 */
-			OICFree(payload_values);
+			things_free(payload_values);
 			*length = mother->num_children = dimension_size;
 		}
 	} else {

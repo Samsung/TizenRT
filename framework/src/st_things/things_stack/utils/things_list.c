@@ -21,7 +21,7 @@
 #include <stdlib.h>
 #include <pthread.h>
 #include "logging/things_logger.h"
-#include "oic_malloc.h"
+#include "memory/things_malloc.h"
 #include "things_list.h"
 
 #define TAG "[things_list]"
@@ -109,7 +109,7 @@ static void link_node(list_s *p_list, things_node_s *p_prev_node, things_node_s 
 void insert(list_s *p_list, void *item)
 {
 //    THINGS_LOG_D(THINGS_DEBUG, TAG, THINGS_FUNC_ENTRY);
-	things_node_s *p_new_node = (things_node_s *) OICMalloc(sizeof(things_node_s));
+	things_node_s *p_new_node = (things_node_s *) things_malloc(sizeof(things_node_s));
 	if (NULL == p_new_node) {
 		//THINGS_LOG_ERROR(THINGS_ERROR, TAG, THINGS_MEMORY_ERROR);
 		return;
@@ -154,7 +154,7 @@ static void *erase(list_s *p_list, things_node_s *p_prev_node, things_node_s *p_
 	void *item = p_del_node->item;
 	p_del_node->item = NULL;
 	p_del_node->next = NULL;
-	OICFree(p_del_node);
+	things_free(p_del_node);
 	p_list->size--;
 
 //    THINGS_LOG_D(THINGS_DEBUG, TAG, THINGS_FUNC_EXIT);
@@ -238,7 +238,7 @@ things_node_s *find_by_key(list_s *p_list, key_compare compare, const void *key)
 list_s *create_list(void)
 {
 	// THINGS_LOG_D(THINGS_DEBUG, TAG, THINGS_FUNC_ENTRY);
-	list_s *list = (list_s *) OICMalloc(sizeof(list_s));
+	list_s *list = (list_s *) things_malloc(sizeof(list_s));
 	if (list == NULL) {
 		THINGS_LOG_V_ERROR(THINGS_ERROR, TAG, "memory allocation is failed.");
 		return NULL;
@@ -272,5 +272,5 @@ void terminate_list(list_s *list)
 
 	list->clear(list);
 	pthread_mutex_destroy(&(list->q_mutex));
-	OICFree(list);
+	things_free(list);
 }

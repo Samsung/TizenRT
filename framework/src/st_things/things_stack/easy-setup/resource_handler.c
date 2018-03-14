@@ -138,7 +138,7 @@ static bool compare_resource_interface(const char *from, const char *iface)
 		ptr = NULL;
 	}
 
-	free(str);
+	things_free(str);
 	return ret;
 }
 
@@ -183,10 +183,10 @@ static OCRepPayload *make_rep_payload(OCResourceHandle rsc_handle, OCDevAddr *de
 	OCRepPayloadSetStringArray(add, OC_RSRVD_INTERFACE, (const char **)resource_interface, dimensions);
 	/*! Added by st_things for Memory leak fix */
 	if (resource_type[0]) {
-		free(resource_type[0]);
+		things_free(resource_type[0]);
 	}
 	if (resource_interface[0]) {
-		free(resource_interface[0]);
+		things_free(resource_interface[0]);
 	}
 
 	OCResourceProperty p = OCGetResourceProperties(rsc_handle);
@@ -490,7 +490,7 @@ void update_wifi_resource(OCRepPayload *input)
 	THINGS_LOG_D(THINGS_DEBUG, ES_RH_TAG, "Current AP SSID: %s", g_wifi_resource.ssid);
 	if (strncmp(ssid, g_wifi_resource.ssid, strlen(ssid)) == 0) {
 		THINGS_LOG_D(THINGS_DEBUG, ES_RH_TAG, "Already connected SSID(%s).", ssid);
-		free(ssid);
+		things_free(ssid);
 		return;
 	}
 
@@ -536,10 +536,10 @@ void update_wifi_resource(OCRepPayload *input)
 	/*! Added by st_things for memory Leak fix
 	 */
 	if (ssid) {
-		free(ssid);
+		things_free(ssid);
 	}
 	if (cred) {
-		free(cred);
+		things_free(cred);
 	}
 }
 
@@ -761,13 +761,13 @@ void update_dev_conf_resource(OCRepPayload *input)
 	/*! Added by st_things for memory Leak fix
 	 */
 	if (country) {
-		free(country);
+		things_free(country);
 	}
 	if (language) {
-		free(language);
+		things_free(language);
 	}
 	if (datetime) {
-		free(datetime);
+		things_free(datetime);
 	}
 }
 
@@ -807,10 +807,10 @@ OCRepPayload *construct_response_of_wifi(const char *interface)
 		/*! Added by st_things for memory Leak fix
 		 */
 		if (interfaces[0]) {
-			free(interfaces[0]);
+			things_free(interfaces[0]);
 		}
 		if (resource_types[0]) {
-			free(resource_types[0]);
+			things_free(resource_types[0]);
 		}
 	} else {
 		OCRepPayloadAddInterface(payload, OC_RSRVD_INTERFACE_DEFAULT);
@@ -818,7 +818,7 @@ OCRepPayload *construct_response_of_wifi(const char *interface)
 	}
 
 	size_t dimensions[MAX_REP_ARRAY_DEPTH] = { g_wifi_resource.num_mode, 0, 0 };
-	int64_t *modes_64 = (int64_t *)malloc(g_wifi_resource.num_mode * sizeof(int64_t));
+	int64_t *modes_64 = (int64_t *)things_malloc(g_wifi_resource.num_mode * sizeof(int64_t));
 	for (int i = 0; i < g_wifi_resource.num_mode; ++i) {
 		modes_64[i] = g_wifi_resource.supported_mode[i];
 	}
@@ -846,7 +846,7 @@ OCRepPayload *construct_response_of_wifi(const char *interface)
 	/*! Added by st_things for memory Leak fix
 	 */
 	if (modes_64 != NULL) {
-		free(modes_64);
+		things_free(modes_64);
 	}
 
 	return payload;
@@ -896,10 +896,10 @@ OCRepPayload *construct_response_of_cloud(const char *interface)
 		/*! Added by st_things for memory Leak fix
 		 */
 		if (interfaces[0]) {
-			free(interfaces[0]);
+			things_free(interfaces[0]);
 		}
 		if (resource_types[0]) {
-			free(resource_types[0]);
+			things_free(resource_types[0]);
 		}
 	} else {
 		OCRepPayloadAddInterface(payload, OC_RSRVD_INTERFACE_DEFAULT);
@@ -976,10 +976,10 @@ OCRepPayload *construct_response_of_dev_conf(const char *interface)
 		/*! Added by st_things for memory Leak fix
 		 */
 		if (interfaces[0]) {
-			free(interfaces[0]);
+			things_free(interfaces[0]);
 		}
 		if (resource_types[0]) {
-			free(resource_types[0]);
+			things_free(resource_types[0]);
 		}
 	} else {
 		OCRepPayloadAddInterface(payload, OC_RSRVD_INTERFACE_DEFAULT);
@@ -1108,19 +1108,19 @@ OCRepPayload *construct_response_of_prov(OCEntityHandlerRequest *eh_request)
 		/*! Added by st_things for memory Leak fix
 		 */
 		if (interfaces[0]) {
-			free(interfaces[0]);
+			things_free(interfaces[0]);
 		}
 		if (interfaces[1]) {
-			free(interfaces[1]);
+			things_free(interfaces[1]);
 		}
 		if (interfaces[2]) {
-			free(interfaces[2]);
+			things_free(interfaces[2]);
 		}
 		if (resource_types[0]) {
-			free(resource_types[0]);
+			things_free(resource_types[0]);
 		}
 		if (resource_types[1]) {
-			free(resource_types[1]);
+			things_free(resource_types[1]);
 		}
 	}
 

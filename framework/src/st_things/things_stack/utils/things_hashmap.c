@@ -19,6 +19,7 @@
 #include "things_hashmap.h"
 #include <stdio.h>
 #include <stdlib.h>
+#include "memory/things_malloc.h"
 
 /* this should be prime */
 #define TABLE_STARTSIZE 1021
@@ -71,7 +72,7 @@ static void rehash(struct hashmap_s *hm)
 	h_entry_s *table = hm->table;
 
 	hm->size = find_prime_greater_than(size << 1);
-	hm->table = (h_entry_s *) calloc(sizeof(h_entry_s), hm->size);
+	hm->table = (h_entry_s *) things_calloc(sizeof(h_entry_s), hm->size);
 	hm->count = 0;
 
 	while (--size >= 0) {
@@ -80,12 +81,12 @@ static void rehash(struct hashmap_s *hm)
 		}
 	}
 
-	free(table);
+	things_free(table);
 }
 
 struct hashmap_s *hashmap_create(int startsize)
 {
-	struct hashmap_s *hm = (struct hashmap_s *)malloc(sizeof(struct hashmap_s));
+	struct hashmap_s *hm = (struct hashmap_s *)things_malloc(sizeof(struct hashmap_s));
 
 	if (hm == NULL) {
 		return NULL;
@@ -97,7 +98,7 @@ struct hashmap_s *hashmap_create(int startsize)
 		startsize = find_prime_greater_than(startsize - 2);
 	}
 
-	hm->table = (h_entry_s *) calloc(sizeof(h_entry_s), startsize);
+	hm->table = (h_entry_s *) things_calloc(sizeof(h_entry_s), startsize);
 	hm->size = startsize;
 	hm->count = 0;
 
@@ -171,9 +172,9 @@ long hashmap_count(struct hashmap_s *hash)
 void hashmap_delete(struct hashmap_s *hash)
 {
 	if (hash != NULL) {
-		free(hash->table);
+		things_free(hash->table);
 	}
-	free(hash);
+	things_free(hash);
 }
 
 /*

@@ -376,8 +376,8 @@ void set_device_info(things_server_builder_s *builder, char *device_name, char *
 
 	// OCSetPropertyValue(PAYLOAD_TYPE_DEVICE, KEY_ATTR_DEVICE_NAME, device_name);
 
-	free(device_info.deviceName);
-	free(device_info.specVersion);
+	things_free(device_info.deviceName);
+	things_free(device_info.specVersion);
 	OCFreeOCStringLL(device_info.dataModelVersions);
 	OCFreeOCStringLL(device_info.types);
 

@@ -26,7 +26,6 @@
 
 #include "ocstack.h"
 #include "ocpayload.h"
-#include "oic_malloc.h"
 #include "cautilinterface.h"
 
 #include "easy-setup/es_common.h"
@@ -827,9 +826,9 @@ OCStackApplicationResult handle_refresh_token_cb(void *ctx, OCDoHandle handle, O
 			return OC_STACK_DELETE_TRANSACTION;
 		}
 
-		OICFree(signed_up_data->access_token);
-		OICFree(signed_up_data->refresh_token);
-		OICFree(signed_up_data->token_type);
+		things_free(signed_up_data->access_token);
+		things_free(signed_up_data->refresh_token);
+		things_free(signed_up_data->token_type);
 		signed_up_data->expire_time = 0;
 
 		OCRepPayloadGetPropString(((OCRepPayload *) client_response->payload), KEY_TOKEN_ACCESS, &signed_up_data->access_token);
