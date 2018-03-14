@@ -7,7 +7,6 @@
 # Build Setup
 #
 # CONFIG_EXPERIMENTAL is not set
-# CONFIG_DEFAULT_SMALL is not set
 CONFIG_HOST_LINUX=y
 # CONFIG_HOST_OSX is not set
 # CONFIG_HOST_WINDOWS is not set
@@ -31,8 +30,6 @@ CONFIG_BUILD_FLAT=y
 CONFIG_RAW_BINARY=y
 CONFIG_SAMSUNG_NS2=y
 # CONFIG_UBOOT_UIMAGE is not set
-# CONFIG_DOWNLOAD_IMAGE is not set
-# CONFIG_SMARTFS_IMAGE is not set
 
 #
 # Customize Header Files
