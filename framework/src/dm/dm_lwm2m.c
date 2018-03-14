@@ -164,7 +164,7 @@ int dm_lwm2m_get_server_address(char *server_ipAddr)
 		fprintf(stderr, "%s: No data\n", __FUNCTION__);
 		return DM_ERROR_NO_DATA;
 	}
-	strncpy(server_ipAddr, g_dm_context.server_info.ipAddress, strlen(g_dm_context.server_info.ipAddress));
+	strncpy(server_ipAddr, g_dm_context.server_info.ipAddress, strlen(g_dm_context.server_info.ipAddress) + 1);
 	return DM_ERROR_NONE;
 }
 
@@ -191,7 +191,7 @@ int dm_lwm2m_get_server_port(char *server_port)
 		return DM_ERROR_NO_DATA;
 	}
 
-	strncpy(server_port, g_dm_context.server_info.port, strlen(g_dm_context.server_info.port));
+	strncpy(server_port, g_dm_context.server_info.port, strlen(g_dm_context.server_info.port) + 1);
 	return DM_ERROR_NONE;
 }
 
