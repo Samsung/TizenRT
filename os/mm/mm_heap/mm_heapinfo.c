@@ -145,7 +145,7 @@ void heapinfo_parse(FAR struct mm_heap_s *heap, int mode, pid_t pid)
 #if CONFIG_TASK_NAME_SIZE > 0
 				if (node->pid == HEAPINFO_INT && mode != HEAPINFO_SIMPLE) {
 					printf("INT Context\n");
-				} else if (node->pid < 0) {
+				} else if (node->pid < 0 && sched_gettcb((-1) * (node->pid)) != NULL) {
 					stack_resource += node->size;
 				} else if (sched_gettcb(node->pid) == NULL) {
 					nonsched_list[MM_PIDHASH(node->pid)] = node->pid;

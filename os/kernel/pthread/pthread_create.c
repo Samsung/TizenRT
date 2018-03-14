@@ -66,6 +66,10 @@
 #include <errno.h>
 #include <queue.h>
 
+#ifdef CONFIG_DEBUG_MM_HEAPINFO
+#include <tinyara/mm/mm.h>
+#endif
+
 #include <tinyara/arch.h>
 #include <tinyara/semaphore.h>
 #include <tinyara/kmalloc.h>
@@ -346,6 +350,14 @@ int pthread_create(FAR pthread_t *thread, FAR const pthread_attr_t *attr, pthrea
 		errcode = get_errno();
 		goto errout_with_join;
 	}
+
+#ifdef CONFIG_DEBUG_MM_HEAPINFO
+	/* Update the pid information in stack node */
+	struct mm_allocnode_s *node;
+
+	node = (struct mm_allocnode_s *)(ptcb->cmn.stack_alloc_ptr - SIZEOF_MM_ALLOCNODE);
+	node->pid = (-1) * (ptcb->cmn.pid);
+#endif
 
 	/* Configure the TCB for a pthread receiving on parameter
 	 * passed by value
