@@ -125,7 +125,7 @@ int sem_trywait(FAR sem_t *sem)
 
 	DEBUGASSERT(sem != NULL && up_interrupt_context() == false);
 
-	if (sem != NULL) {
+	if ((sem != NULL) && ((sem->flags & FLAGS_INITIALIZED) != 0)) {
 		/* The following operations must be performed with interrupts disabled
 		 * because sem_post() may be called from an interrupt handler.
 		 */

@@ -57,7 +57,7 @@
 #include <tinyara/config.h>
 
 #include <sys/types.h>
-#include <assert.h>
+#include <errno.h>
 
 #include <tinyara/semaphore.h>
 
@@ -85,7 +85,10 @@
 
 int sem_getprotocol(FAR sem_t *sem, FAR int *protocol)
 {
-	DEBUGASSERT(sem != NULL && protocol != NULL);
+	if ((sem == NULL) || (protocol == NULL) || ((sem->flags & FLAGS_INITIALIZED) == 0)) {
+		set_errno(EINVAL);
+		return ERROR;
+	}
 
 #ifdef CONFIG_PRIORITY_INHERITANCE
 	if ((sem->flags & PRIOINHERIT_FLAGS_DISABLE) != 0) {

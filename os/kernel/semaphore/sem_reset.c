@@ -59,6 +59,7 @@
 #include <semaphore.h>
 #include <sched.h>
 #include <assert.h>
+#include <errno.h>
 
 #include <tinyara/irq.h>
 
@@ -80,7 +81,8 @@
  *   count - The requested semaphore count
  *
  * Return Value:
- *   0 (OK) or a negated errno value if unsuccessful
+ *   0 if successful.  Otherwise, -1 is returned and the errno value is set
+ *   appropriately.
  *
  ****************************************************************************/
 
@@ -88,7 +90,10 @@ int sem_reset(FAR sem_t *sem, int16_t count)
 {
 	irqstate_t flags;
 
-	DEBUGASSERT(sem != NULL && count >= 0);
+	if ((sem == NULL) || ((sem->flags & FLAGS_INITIALIZED) == 0) || (count < 0)) {
+		set_errno(EINVAL);
+		return ERROR;
+	}
 
 	/*
 	 * Don't allow any context switches that may result from the following

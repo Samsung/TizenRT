@@ -119,6 +119,12 @@ int sem_destroy(FAR sem_t *sem)
 	/* Assure a valid semaphore is specified */
 
 	if (sem) {
+		/* Already destroyed? */
+
+		if ((sem->flags & FLAGS_INITIALIZED) == 0) {
+			return OK;
+		}
+
 		/* There is really no particular action that we need
 		 * take to destroy a semaphore.  We will just reset
 		 * the count to some reasonable value (1) and release
@@ -138,6 +144,8 @@ int sem_destroy(FAR sem_t *sem)
 		/* Release holders of the semaphore */
 
 		sem_destroyholder(sem);
+
+		sem->flags &= ~FLAGS_INITIALIZED;
 		return OK;
 	} else {
 		set_errno(EINVAL);
