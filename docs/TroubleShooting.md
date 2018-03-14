@@ -5,8 +5,8 @@
 > [Board-Specific](#board-specific)
 
 ## Common
-### Trouble on using our toolchain
-When 64 bit machine tries to use 32 bit package like GDB, you can meet below:
+### Issues on GNU toolchain
+When 64 bit machine tries to use 32 bit package like GDB, someone meets below:
 ```
 'Launching XXX' has envountered a problem.
 Could not determine GDB version after sending: /home/.../arm-none-eabi-gdb --version
@@ -20,10 +20,25 @@ Installing *lib32ncurses5* package resolves it.
 sudo apt-get install lib32ncurses5
 ```
 
+### Issues on Kconfig-frontend
+When ```make menuconfig``` excutes after installing Kconfig-frontend, someone meets below:
+```
+kconfig-mconf: error while loading shared libraries: libkconfig-parser-x.xx.0.so: cannot open shared object file: No such file or directory
+Makefile.unix:579: recipe for target 'menuconfig' failed
+make: *** [menuconfig] Error 127
+```
+To resolve:
+```
+cd <Kconfig-frontend_package_PATH>
+./configure --prefix=/usr
+make
+sudo make install
+```
+
 ## Board-Specific
 ### ARTIK
-#### Trouble on programming
-When USB connection is not established, you can meet below:
+#### Issues on Programming
+When USB connection is not established, someone meets below:
 ```
 [Command] make download ALL
 Generating partition map ... Done
