@@ -1,0 +1,8 @@
+#
+# For a description of the syntax of this configuration file,
+# see the file kconfig-language.txt in the TinyAra tools repository.
+#
+
+if ARCH_BOARD_CY4390X
+
+endif # ARCH_BOARD_CY4390X
