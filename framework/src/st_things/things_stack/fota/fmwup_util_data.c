@@ -277,7 +277,7 @@ fmwup_data_s *fmwup_data_get_properties()
 	THINGS_LOG_D(THINGS_DEBUG, TAG, THINGS_FUNC_ENTRY);
 
 	fmwup_data_s *fmwup_get_data = NULL;
-	fmwup_get_data = (fmwup_data_s *) calloc(1, sizeof(fmwup_data_s));
+	fmwup_get_data = (fmwup_data_s *) things_calloc(1, sizeof(fmwup_data_s));
 
 	char *temp = NULL;
 

@@ -35,7 +35,6 @@
 #include "security/ss_sha2.h"
 #include "oxmverifycommon.h"
 #include "oic_string.h"
-#include "oic_malloc.h"
 #include "utlist.h"
 #include "aclresource.h"
 #include "srmutility.h"
@@ -560,7 +559,7 @@ static int sm_generate_mac_based_device_id(void)
 		return OIC_SEC_ERROR;
 	}
 	THINGS_LOG_D(THINGS_INFO, TAG, "MACbased UUID : %s", uuid_str);
-	OICFree(uuid_str);
+	things_free(uuid_str);
 
 	if (sm_secure_resource_check(&device_id) != OC_STACK_OK) {
 		return OIC_SEC_ERROR;
