@@ -78,7 +78,7 @@
 
 #define PRIOINHERIT_FLAGS_DISABLE (1 << 0) /* Bit 0: Priority inheritance
 					    * is disabled for this semaphore */
-
+#define FLAGS_INITIALIZED         (1 << 1) /* Bit 1: This semaphore initialized */
 /****************************************************************************
  * Public Type Declarations
  ****************************************************************************/
@@ -117,8 +117,8 @@ struct sem_s {
 	 * tasks hold references to the semaphore.
 	 */
 
+	uint8_t flags;			/* See definitions for the struct sem_s flags */
 #ifdef CONFIG_PRIORITY_INHERITANCE
-	uint8_t flags;			/* See PRIOINHERIT_FLAGS_* definitions */
 #if CONFIG_SEM_PREALLOCHOLDERS > 0
 	FAR struct semholder_s *hhead;	/* List of holders of semaphore counts */
 #else
