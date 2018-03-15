@@ -29,17 +29,20 @@ OUTPUT_BINARY_PATH=${BUILD_DIR_PATH}/output/bin
 OPENOCD_DIR_PATH=${BUILD_DIR_PATH}/tools/openocd
 ARTIK05X_DIR_PATH=${CONFIGS_DIR_PATH}/artik05x
 SCRIPTS_PATH=${ARTIK05X_DIR_PATH}/scripts
-CODESIGNER_PATH=${ARTIK05X_DIR_PATH}/tools/codesigner
+CODESIGNER_DIR_PATH=${ARTIK05X_DIR_PATH}/tools/codesigner
 
-if [[ $CONFIG_HOST_OSX == 'y' ]]; then
-    OPENOCD_BIN_PATH=${OPENOCD_DIR_PATH}/macos
+if [ $CONFIG_HOST_OSX == 'y' ]; then
+	OPENOCD_BIN_PATH=${OPENOCD_DIR_PATH}/macos
+	CODESIGNER_PATH=${CODESIGNER_DIR_PATH}/macos
 else
-    SYSTEM_TYPE=`getconf LONG_BIT`
-    if [ "$SYSTEM_TYPE" = "64" ]; then
-    	OPENOCD_BIN_PATH=${OPENOCD_DIR_PATH}/linux64
-    else
-    	OPENOCD_BIN_PATH=${OPENOCD_DIR_PATH}/linux32
-    fi
+	SYSTEM_TYPE=`getconf LONG_BIT`
+	if [ "$SYSTEM_TYPE" = "64" ]; then
+		OPENOCD_BIN_PATH=${OPENOCD_DIR_PATH}/linux64
+		CODESIGNER_PATH=${CODESIGNER_DIR_PATH}/linux64
+	else
+		OPENOCD_BIN_PATH=${OPENOCD_DIR_PATH}/linux32
+		CODESIGNER_PATH=${CODESIGNER_DIR_PATH}/linux32
+	fi
 fi
 OPENOCD=${OPENOCD_BIN_PATH}/openocd
 
@@ -49,29 +52,29 @@ TIZENRT_BIN=$OUTPUT_BINARY_PATH/tinyara_head.bin
 CODESIGNER_TOOL=artik05x_AppCodesigner
 
 usage() {
-    cat <<EOF
+	cat <<EOF
 USAGE: `basename $0` [OPTIONS]
 OPTIONS:
-    [--board[="<board-name>"]]
-    [--secure]
-    [ALL | ROMFS | BL1 | BL2 | SSSFW | WLANFW]
+	[--board[="<board-name>"]]
+	[--secure]
+	[ALL | ROMFS | BL1 | BL2 | SSSFW | WLANFW]
 
 For examples:
-    `basename $0` --board=artik053 ALL
-    `basename $0` --board=artik053 OS ROMFS
-    `basename $0` --board=artik053s --verify
-    `basename $0` --board=artik055s --secure
+	`basename $0` --board=artik053 ALL
+	`basename $0` --board=artik053 OS ROMFS
+	`basename $0` --board=artik053s --verify
+	`basename $0` --board=artik055s --secure
 
 Options:
-    --board[="<board-name>"]      select target board-name
-    --secure                      choose secure mode
-    --verify                      verify downloaded image if you need
-    ALL                           write each firmware image into FLASH
-    ROMFS                         write ROM File System image into FLASH
-    BL1                           write Primary Bootloader image into FLASH
-    BL2                           write Secondary Bootloader image into FLASH
-    SSSFW                         write Secure Element Firmware image into FLASH
-    WLANFW                        write WiFi Firmware image into FLASH
+	--board[="<board-name>"]      select target board-name
+	--secure                      choose secure mode
+	--verify                      verify downloaded image if you need
+	ALL                           write each firmware image into FLASH
+	ROMFS                         write ROM File System image into FLASH
+	BL1                           write Primary Bootloader image into FLASH
+	BL2                           write Secondary Bootloader image into FLASH
+	SSSFW                         write Secure Element Firmware image into FLASH
+	WLANFW                        write WiFi Firmware image into FLASH
 
 EOF
 }
@@ -230,55 +233,55 @@ erase()
 }
 
 signing() {
-    if [ ! -f ${CODESIGNER_PATH}/${CODESIGNER_TOOL} ]; then
-        echo "${CODESIGNER_TOOL} should be in ${CODESIGNER_PATH} to use secure boards like ARTIK053S, ARTIK055S."
-        exit 1
-    fi
+	if [ ! -f ${CODESIGNER_PATH}/${CODESIGNER_TOOL} ]; then
+		echo "${CODESIGNER_TOOL} should be in ${CODESIGNER_PATH} to use secure boards like ARTIK053S, ARTIK055S."
+		exit 1
+	fi
 
-    ${CODESIGNER_PATH}/${CODESIGNER_TOOL} ${CODESIGNER_PATH}/rsa_private.key $TIZENRT_BIN
-    TIZENRT_BIN=${TIZENRT_BIN}-signed
+	${CODESIGNER_PATH}/${CODESIGNER_TOOL} ${CODESIGNER_PATH}/rsa_private.key $TIZENRT_BIN
+	TIZENRT_BIN=${TIZENRT_BIN}-signed
 }
 
 if test $# -eq 0; then
-    usage 1>&2
-    exit 1
+	usage 1>&2
+	exit 1
 fi
 
 while test $# -gt 0; do
-    case "$1" in
-        -*=*) optarg=`echo "$1" | sed 's/[-_a-zA-Z0-9]*=//'` ;;
-        ERASE_*) optarg=`echo "$1" | sed 's/ERASE_//'` ;;
-        *) optarg= ;;
-    esac
+	case "$1" in
+		-*=*) optarg=`echo "$1" | sed 's/[-_a-zA-Z0-9]*=//'` ;;
+		ERASE_*) optarg=`echo "$1" | sed 's/ERASE_//'` ;;
+		*) optarg= ;;
+	esac
 
-    case $1 in
-        --board*)
-            BOARD_NAME=$optarg
-            BOARD_DIR_PATH=${BUILD_DIR_PATH}/configs/$BOARD_NAME
-            FW_DIR_PATH=${BOARD_DIR_PATH}/bin
-            if [ ! -d $BOARD_DIR_PATH ]; then
-                usage 1>&2
-                exit 1
-            fi
-            ;;
-        --secure)
-            signing
-            ;;
-        --verify)
-            VERIFY=verify
-            ;;
-        ALL|OS|ROMFS|BL1|BL2|SSSFW|WLANFW|all|os|romfs|bl1|bl2|sssfw|wlanfw)
-            download $1
-            ;;
-        ERASE_*)
-            erase
-            ;;
-        *)
-            usage 1>&2
-            exit 1
-            ;;
-    esac
-    shift
+	case $1 in
+		--board*)
+			BOARD_NAME=$optarg
+			BOARD_DIR_PATH=${BUILD_DIR_PATH}/configs/$BOARD_NAME
+			FW_DIR_PATH=${BOARD_DIR_PATH}/bin
+			if [ ! -d $BOARD_DIR_PATH ]; then
+				usage 1>&2
+				exit 1
+			fi
+			;;
+		--secure)
+			signing
+			;;
+		--verify)
+			VERIFY=verify
+			;;
+		ALL|OS|ROMFS|BL1|BL2|SSSFW|WLANFW|all|os|romfs|bl1|bl2|sssfw|wlanfw)
+			download $1
+			;;
+		ERASE_*)
+			erase
+			;;
+		*)
+			usage 1>&2
+			exit 1
+			;;
+	esac
+	shift
 done
 
 
