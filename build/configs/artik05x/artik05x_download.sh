@@ -121,6 +121,8 @@ make-target-bin() {
     local bin=
     local obj=
     local optarg=
+    local trgsize=
+    local objsize=
 
     while test $# -gt 0; do
         optarg=`echo "$1" | sed 's/[-_a-zA-Z0-9]*=//'`
@@ -147,11 +149,25 @@ make-target-bin() {
                 test ! -e $bin && return 1;
             else
                 obj=`make-target-bin --target=factory --bin=tmp --make=y` || return 1
+                # zero padding
+                trgsize=$(cat $obj | wc -c)
+                dd if=/dev/zero bs=1 \
+                    count=`expr $(expr $(expr $(expr $trgsize + 3) / 4) \* 4) - $trgsize` >> $obj
+                objsize=$(cat $obj | wc -c)
+                # add binary
                 dd if=$obj of=$bin bs=1024 seek=4;
-                echo $(printf "%08x" $(cat $obj | wc -c)) | tac -rs .. | xxd -r -p | \
+                # add start magic
+                echo -n $(printf "TIZE") | \
                     dd of=$bin bs=1 seek=0 conv=notrunc
-                echo $(crc32 $obj) | tac -rs .. | xxd -r -p | \
+                # add size
+                echo -n $(printf "%08x" $objsize) | tac -rs .. | xxd -r -p | \
                     dd of=$bin bs=1 seek=4 conv=notrunc
+                # add crc
+                echo -n $(crc32 $obj) | tac -rs .. | xxd -r -p | \
+                    dd of=$bin bs=1 seek=8 conv=notrunc
+                # add end magic
+                echo -n $(printf "NRTA") | \
+                    dd of=$bin bs=1 seek=`expr $objsize + 4096` conv=notrunc
                 rm -rf $obj
             fi ;;
         *)
