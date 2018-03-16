@@ -41,10 +41,11 @@ $(foreach BDIR, $(BUILDIRS), $(eval $(call Add_Framework,$(BDIR))))
 
 AOBJS = $(ASRCS:.S=$(OBJEXT))
 COBJS = $(CSRCS:.c=$(OBJEXT))
-CXXOBJS = $(patsubst %.cxx,%$(OBJEXT),$(patsubst %.cpp,%$(OBJEXT),$(CXXSRCS)))
+CPPOBJS = $(patsubst %.cpp,%$(OBJEXT),$(filter %.cpp,$(CXXSRCS)))
+CXXOBJS = $(patsubst %.cxx,%$(OBJEXT),$(filter %.cxx,$(CXXSRCS)))
 
 SRCS = $(ASRCS) $(CSRCS) $(CXXSRCS)
-OBJS = $(AOBJS) $(COBJS) $(CXXOBJS)
+OBJS = $(AOBJS) $(COBJS) $(CPPOBJS) $(CXXOBJS)
 
 BIN		= libframework$(LIBEXT)
 
@@ -56,7 +57,10 @@ $(AOBJS): %$(OBJEXT): %.S
 $(COBJS): %$(OBJEXT): %.c
 	$(call COMPILE, $<, $@)
 
-$(CXXOBJS): %$(OBJEXT): %.cxx %.cpp
+$(CPPOBJS): %$(OBJEXT): %.cpp
+	$(call COMPILEXX, $<, $@)
+
+$(CXXOBJS): %$(OBJEXT): %.cxx
 	$(call COMPILEXX, $<, $@)
 
 $(BIN): $(OBJS)
