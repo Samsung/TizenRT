@@ -235,15 +235,20 @@
 #define I2S_ERR_CB_REG(d, b, c) ((d)->ops->i2s_err_cb_register(d, b, c))
 
 /***********************************************************/
-#define I2S_STOP(d)		((d)->ops->i2s_stop(d))
-#define I2S_PAUSE(d)		((d)->ops->i2s_pause(d))
-#define I2S_RESUME(d)		((d)->ops->i2s_resume(d))
+#define I2S_STOP(d, t)		((d)->ops->i2s_stop(d, t))
+#define I2S_PAUSE(d, t)		((d)->ops->i2s_pause(d, t))
+#define I2S_RESUME(d, t)	((d)->ops->i2s_resume(d, t))
 /************************************************************/
 
 /****************************************************************************
  * Public Types
  ****************************************************************************/
 /* Transfer complete and error callbacks */
+
+typedef enum {
+	I2S_RX = 1,
+	I2S_TX
+} i2s_ch_dir_t;
 
 struct i2s_dev_s;
 typedef CODE void (*i2s_callback_t)(FAR struct i2s_dev_s *dev, FAR struct ap_buffer_s *apb, FAR void *arg, int result);
@@ -271,9 +276,9 @@ struct i2s_ops_s {
 	CODE int (*i2s_err_cb_register)(FAR struct i2s_dev_s *dev, i2s_err_cb_t cb, FAR void *arg);
 
 	/* Generic methods */
-	CODE int (*i2s_stop)(FAR struct i2s_dev_s *dev);
-	CODE int (*i2s_pause)(FAR struct i2s_dev_s *dev);
-	CODE int (*i2s_resume)(FAR struct i2s_dev_s *dev);
+	CODE int (*i2s_stop)(FAR struct i2s_dev_s *dev, i2s_ch_dir_t dir);
+	CODE int (*i2s_pause)(FAR struct i2s_dev_s *dev, i2s_ch_dir_t dir);
+	CODE int (*i2s_resume)(FAR struct i2s_dev_s *dev, i2s_ch_dir_t dir);
 };
 
 /* I2S private data.  This structure only defines the initial fields of the

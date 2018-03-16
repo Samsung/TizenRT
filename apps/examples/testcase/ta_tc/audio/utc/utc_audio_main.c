@@ -48,6 +48,8 @@
 #define AUDIO_DEFAULT_FORMAT PCM_FORMAT_S16_LE
 
 #define AUDIO_RECORD_DURATION 3	//3sec
+
+#define PREPARE_RETRY_COUNT 10
 /****************************************************************************
  * Global Variables
  ****************************************************************************/
@@ -610,6 +612,7 @@ static void utc_audio_pcm_readi_p(void)
 	unsigned int bytes_per_frame;
 	int frames_read;
 	int remain;
+	int retry = PREPARE_RETRY_COUNT;
 
 	buffer = malloc(pcm_frames_to_bytes(g_pcm, pcm_get_buffer_size(g_pcm)));
 	TC_ASSERT_NEQ_CLEANUP("pcm_readi", buffer, NULL, clean_all_data(0, NULL));
@@ -629,13 +632,20 @@ static void utc_audio_pcm_readi_p(void)
 	while (remain > 0) {
 		frames_read = pcm_readi(g_pcm, buffer, pcm_get_buffer_size(g_pcm));
 		if (frames_read == -EPIPE) {
-			pcm_prepare(g_pcm);
-			continue;
+			if (retry--) {
+				pcm_prepare(g_pcm);
+				continue;
+			} else {
+				printf("ERROR: read failed due to multiple xrun \n");
+				TC_ASSERT_CLEANUP("pcm_readi", 0, clean_all_data(fd, buffer));
+			}
 		}
 
 		if (frames_read < 0) {
 			break;
 		}
+
+		retry = PREPARE_RETRY_COUNT;
 		remain -= frames_read;
 		ret = write(fd, buffer, bytes_per_frame * frames_read);
 		TC_ASSERT_EQ_CLEANUP("pcm_readi", ret, (bytes_per_frame * frames_read), clean_all_data(fd, buffer));
@@ -707,6 +717,7 @@ static void utc_audio_pcm_drop_p(void)
 	int size;
 	int total_frames;
 	int num_read;
+	int retry = PREPARE_RETRY_COUNT;
 
 	g_pcm = pcm_open(0, 0, PCM_IN, NULL);
 	TC_ASSERT_GT("pcm_drop", pcm_is_ready(g_pcm), 0);
@@ -728,9 +739,20 @@ static void utc_audio_pcm_drop_p(void)
 
 	while (remain > 0) {
 		frames_read = pcm_readi(g_pcm, buffer, pcm_get_buffer_size(g_pcm));
+		if (frames_read == -EPIPE) {
+			if (retry--) {
+				pcm_prepare(g_pcm);
+				continue;
+			} else {
+				printf("ERROR: readi failed due to multiple xrun \n");
+				TC_ASSERT_CLEANUP("pcm_drop", 0, clean_all_data(fd, buffer));
+			}
+		}
 		if (frames_read < 0) {
 			break;
 		}
+
+		retry = PREPARE_RETRY_COUNT;
 		remain -= frames_read;
 		ret = write(fd, buffer, bytes_per_frame * frames_read);
 		TC_ASSERT_EQ_CLEANUP("pcm_drop", ret, (bytes_per_frame * frames_read), clean_all_data(fd, buffer));
@@ -756,11 +778,25 @@ static void utc_audio_pcm_drop_p(void)
 
 	printf("Check now for recorded part. Nothing after drop should be heard\n");
 	total_frames = 0;
+	retry = PREPARE_RETRY_COUNT;
 	do {
-		num_read = read(fd, buffer, size);
+		if (retry == PREPARE_RETRY_COUNT) {
+			num_read = read(fd, buffer, size);
+		}
 		if (num_read > 0) {
-			total_frames += num_read;
 			ret = pcm_writei(g_pcm, buffer, pcm_bytes_to_frames(g_pcm, num_read));
+			if (ret == -EPIPE) {
+				if (retry--) {
+					pcm_prepare(g_pcm);
+					continue;
+				} else {
+					printf("ERROR: writei failed due to multiple xrun \n");
+					TC_ASSERT_CLEANUP("pcm_drop", 0, clean_all_data(fd, buffer));
+				}
+			}
+
+			retry = PREPARE_RETRY_COUNT;
+			total_frames += num_read;
 			TC_ASSERT_GEQ_CLEANUP("pcm_drop", ret, 0, clean_all_data(fd, buffer));
 		}
 	} while (num_read > 0);
@@ -810,6 +846,7 @@ static void utc_audio_pcm_writei_p(void)
 	char *buffer;
 	int num_read;
 	unsigned int size;
+	int retry = PREPARE_RETRY_COUNT;
 
 	/* use default config here */
 	g_pcm = pcm_open(0, 0, PCM_OUT, NULL);
@@ -825,15 +862,25 @@ static void utc_audio_pcm_writei_p(void)
 	printf("Playback start!!\n");
 
 	for (;;) {
-		num_read = read(fd, buffer, size);
+		if (retry == PREPARE_RETRY_COUNT) {
+			num_read = read(fd, buffer, size);
+		}
+
 		if (num_read <= 0) {
 			break;
 		}
 		ret = pcm_writei(g_pcm, buffer, pcm_bytes_to_frames(g_pcm, num_read));
 		if (ret == -EPIPE) {
-			pcm_prepare(g_pcm);
-			ret = pcm_writei(g_pcm, buffer, pcm_bytes_to_frames(g_pcm, num_read));
+			if (retry--) {
+				pcm_prepare(g_pcm);
+				continue;
+			} else {
+				printf("ERROR: writei failed due to multiple xrun \n");
+				TC_ASSERT_CLEANUP("pcm_writei", 0, clean_all_data(fd, buffer));
+			}
 		}
+
+		retry = PREPARE_RETRY_COUNT;
 		TC_ASSERT_GEQ_CLEANUP("pcm_writei", ret, 0, clean_all_data(fd, buffer));
 	}
 
@@ -861,7 +908,7 @@ static void utc_audio_pcm_writei_n(void)
 	ssize_t size;
 	char *buffer;
 
-	g_pcm = pcm_open(0, 0, PCM_IN, NULL);
+	g_pcm = pcm_open(0, 0, PCM_OUT, NULL);
 	TC_ASSERT_GT("pcm_writei", pcm_get_file_descriptor(g_pcm), 0);
 
 	size = pcm_frames_to_bytes(g_pcm, pcm_get_buffer_size(g_pcm));
@@ -979,7 +1026,7 @@ static void utc_audio_pcm_avail_update_n(void)
 static void utc_audio_pcm_avail_update_p(void)
 {
 	int ret;
-	unsigned int retry = 20;
+	unsigned int retry = PREPARE_RETRY_COUNT;
 
 	g_pcm = pcm_open(0, 0, PCM_IN | PCM_MMAP, NULL);
 	TC_ASSERT_GT("pcm_avail_update", pcm_is_ready(g_pcm), 0);
@@ -1120,7 +1167,7 @@ static void utc_audio_pcm_begin_p(void)
 	char *areas = NULL;
 	unsigned int offset;
 	unsigned int frames;
-	unsigned int retry = 20;
+	unsigned int retry = PREPARE_RETRY_COUNT;
 
 	g_pcm = pcm_open(0, 0, PCM_IN | PCM_MMAP, NULL);
 	TC_ASSERT_GT("pcm_mmap_begin",  pcm_is_ready(g_pcm), 0);
@@ -1193,7 +1240,7 @@ static void utc_audio_pcm_commit_p(void)
 	char *areas = NULL;
 	unsigned int offset;
 	unsigned int frames;
-	unsigned int retry = 20;
+	unsigned int retry = PREPARE_RETRY_COUNT;
 
 	g_pcm = pcm_open(0, 0, PCM_IN | PCM_MMAP, NULL);
 	TC_ASSERT_GT("pcm_mmap_commit",  pcm_is_ready(g_pcm), 0);
