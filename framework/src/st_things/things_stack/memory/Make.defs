@@ -16,7 +16,7 @@
 #
 ###########################################################################
 
-CSRCS += things_malloc.c
+CSRCS += things_malloc.c things_string.c
 
 DEPPATH += --dep-path src/st_things/things_stack/memory
 VPATH += :src/st_things/things_stack/memory

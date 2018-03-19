@@ -35,6 +35,7 @@
 #include "cloud/cloud_manager.h"
 #include "utils/things_string_util.h"
 #include "memory/things_malloc.h"
+#include "memory/things_string.h"
 #include "cautilinterface.h"
 #include "framework/things_common.h"
 
@@ -112,8 +113,8 @@ static bool compare_resource_interface(const char *from, const char *iface)
 
 	THINGS_LOG_D(THINGS_DEBUG, ES_RH_TAG, "Input data.(from=%s, iface=%s)", from, iface);
 
-	if ((str = OICStrdup(from)) == NULL) {
-		THINGS_LOG_D_ERROR(THINGS_ERROR, ES_RH_TAG, "OICStrdup function is failed.");
+	if ((str = things_strdup(from)) == NULL) {
+		THINGS_LOG_D_ERROR(THINGS_ERROR, ES_RH_TAG, "things_strdup function is failed.");
 		return ret;
 	}
 
@@ -162,16 +163,16 @@ static OCRepPayload *make_rep_payload(OCResourceHandle rsc_handle, OCDevAddr *de
 	add->base.type = PAYLOAD_TYPE_REPRESENTATION;
 
 	if (rsc_handle == g_wifi_resource.handle) {
-		resource_type[0] = OICStrdup(OC_RSRVD_ES_RES_TYPE_WIFI);
-		resource_interface[0] = OICStrdup(OC_RSRVD_INTERFACE_DEFAULT);
+		resource_type[0] = things_strdup(OC_RSRVD_ES_RES_TYPE_WIFI);
+		resource_interface[0] = things_strdup(OC_RSRVD_INTERFACE_DEFAULT);
 		OCRepPayloadSetPropString(add, OC_RSRVD_HREF, OC_RSRVD_ES_URI_WIFI);
 	} else if (rsc_handle == g_dev_conf_resource.handle) {
-		resource_type[0] = OICStrdup(OC_RSRVD_ES_RES_TYPE_DEVCONF);
-		resource_interface[0] = OICStrdup(OC_RSRVD_INTERFACE_DEFAULT);
+		resource_type[0] = things_strdup(OC_RSRVD_ES_RES_TYPE_DEVCONF);
+		resource_interface[0] = things_strdup(OC_RSRVD_INTERFACE_DEFAULT);
 		OCRepPayloadSetPropString(add, OC_RSRVD_HREF, OC_RSRVD_ES_URI_DEVCONF);
 	} else if (rsc_handle == g_cloud_resource.handle) {
-		resource_type[0] = OICStrdup(OC_RSRVD_ES_RES_TYPE_CLOUDSERVER);
-		resource_interface[0] = OICStrdup(OC_RSRVD_INTERFACE_DEFAULT);
+		resource_type[0] = things_strdup(OC_RSRVD_ES_RES_TYPE_CLOUDSERVER);
+		resource_interface[0] = things_strdup(OC_RSRVD_INTERFACE_DEFAULT);
 		OCRepPayloadSetPropString(add, OC_RSRVD_HREF, OC_RSRVD_ES_URI_CLOUDSERVER);
 	} else {
 		THINGS_LOG_D_ERROR(THINGS_ERROR, ES_RH_TAG, "Not supported resource handler(rsc_handle=0x%X)", rsc_handle);
@@ -799,10 +800,10 @@ OCRepPayload *construct_response_of_wifi(const char *interface)
 		tempPayload = payload;
 		payload = rep_payload;
 
-		interfaces[0] = OICStrdup(OC_RSRVD_INTERFACE_DEFAULT);
+		interfaces[0] = things_strdup(OC_RSRVD_INTERFACE_DEFAULT);
 		OCRepPayloadSetStringArray(payload, OC_RSRVD_INTERFACE, (const char **)interfaces, interfacesDimensions);
 
-		resource_types[0] = OICStrdup(OC_RSRVD_ES_RES_TYPE_WIFI);
+		resource_types[0] = things_strdup(OC_RSRVD_ES_RES_TYPE_WIFI);
 		OCRepPayloadSetStringArray(payload, OC_RSRVD_RESOURCE_TYPE, (const char **)resource_types, resourceTypesDimensions);
 		/*! Added by st_things for memory Leak fix
 		 */
@@ -888,10 +889,10 @@ OCRepPayload *construct_response_of_cloud(const char *interface)
 		tempPayload = payload;
 		payload = rep_payload;
 
-		interfaces[0] = OICStrdup(OC_RSRVD_INTERFACE_DEFAULT);
+		interfaces[0] = things_strdup(OC_RSRVD_INTERFACE_DEFAULT);
 		OCRepPayloadSetStringArray(payload, OC_RSRVD_INTERFACE, (const char **)interfaces, interfacesDimensions);
 
-		resource_types[0] = OICStrdup(OC_RSRVD_ES_RES_TYPE_CLOUDSERVER);
+		resource_types[0] = things_strdup(OC_RSRVD_ES_RES_TYPE_CLOUDSERVER);
 		OCRepPayloadSetStringArray(payload, OC_RSRVD_RESOURCE_TYPE, (const char **)resource_types, resourceTypesDimensions);
 		/*! Added by st_things for memory Leak fix
 		 */
@@ -968,10 +969,10 @@ OCRepPayload *construct_response_of_dev_conf(const char *interface)
 		tempPayload = payload;
 		payload = rep_payload;
 
-		interfaces[0] = OICStrdup(OC_RSRVD_INTERFACE_DEFAULT);
+		interfaces[0] = things_strdup(OC_RSRVD_INTERFACE_DEFAULT);
 		OCRepPayloadSetStringArray(payload, OC_RSRVD_INTERFACE, (const char **)interfaces, interfacesDimensions);
 
-		resource_types[0] = OICStrdup(OC_RSRVD_ES_RES_TYPE_DEVCONF);
+		resource_types[0] = things_strdup(OC_RSRVD_ES_RES_TYPE_DEVCONF);
 		OCRepPayloadSetStringArray(payload, OC_RSRVD_RESOURCE_TYPE, (const char **)resource_types, resourceTypesDimensions);
 		/*! Added by st_things for memory Leak fix
 		 */
@@ -1090,13 +1091,13 @@ OCRepPayload *construct_response_of_prov(OCEntityHandlerRequest *eh_request)
 			goto GOTO_FAILED;
 		}
 
-		interfaces[0] = OICStrdup(OC_RSRVD_INTERFACE_DEFAULT);
-		interfaces[1] = OICStrdup(OC_RSRVD_INTERFACE_LL);
-		interfaces[2] = OICStrdup(OC_RSRVD_INTERFACE_BATCH);
+		interfaces[0] = things_strdup(OC_RSRVD_INTERFACE_DEFAULT);
+		interfaces[1] = things_strdup(OC_RSRVD_INTERFACE_LL);
+		interfaces[2] = things_strdup(OC_RSRVD_INTERFACE_BATCH);
 		OCRepPayloadSetStringArray(rep_payload, OC_RSRVD_INTERFACE, (const char **)interfaces, interfacesDimensions);
 
-		resource_types[0] = OICStrdup(OC_RSRVD_ES_RES_TYPE_PROV);
-		resource_types[1] = OICStrdup(OC_RSRVD_RESOURCE_TYPE_COLLECTION);
+		resource_types[0] = things_strdup(OC_RSRVD_ES_RES_TYPE_PROV);
+		resource_types[1] = things_strdup(OC_RSRVD_RESOURCE_TYPE_COLLECTION);
 		OCRepPayloadSetStringArray(rep_payload, OC_RSRVD_RESOURCE_TYPE, (const char **)resource_types, resourceTypesDimensions);
 
 		OCRepPayloadSetPropInt(rep_payload, OC_RSRVD_ES_PROVSTATUS, get_enrollee_state());
