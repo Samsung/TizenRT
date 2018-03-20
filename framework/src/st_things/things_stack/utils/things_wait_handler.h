@@ -21,7 +21,7 @@
 
 #include <octypes.h>
 
-#define DEFAULT_TIMEOUT     60	// default 20 second wait.
+#define DEFAULT_TIMEOUT     30	// default 20 second wait.
 
 typedef struct timeout_s {
 	int cur_counter;			// current time-out counter
