@@ -39,7 +39,7 @@ Understanding the TizenRT code structure and adhering to the structure helps in 
 2. [How to port TizenRT on new WiFi chipset](HowToPortTizenRTOnWiFiChipset.md)
 
 ## Audio
-Will be updated
+[How to use audio](HowToUseAudio.md)
 
 ## Confirmation of Porting
 Will be updated
