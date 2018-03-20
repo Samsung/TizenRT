@@ -6,6 +6,7 @@
 config EXAMPLES_GREETER_CLIENT
 	bool "grpc client example"
 	default n
+	depends on GRPC
 	---help---
 		Enable the grpc client example
 

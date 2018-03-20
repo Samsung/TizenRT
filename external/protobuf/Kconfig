@@ -6,6 +6,7 @@
 config PROTOBUF
 	bool "protocol buffer"
 	default n
+	depends on LIBCXX
 	---help---
 		enable Protocol Buffer
 

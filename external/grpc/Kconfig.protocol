@@ -6,7 +6,7 @@
 config GRPC
 	bool "gRPC"
 	default n
-	depends on NET
-	depends on HAVE_CXX
+	select PROTOBUF
+	depends on NET && LIBCXX
 	---help---
 		Enable support for the gRPC.
