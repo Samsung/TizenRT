@@ -5,8 +5,9 @@
 
 source "$EXTERNALDIR/aws/Kconfig"
 source "$EXTERNALDIR/codecs/Kconfig"
+source "$EXTERNALDIR/curl/Kconfig"
 source "$EXTERNALDIR/iotivity/Kconfig"
 source "$EXTERNALDIR/json/Kconfig"
 source "$EXTERNALDIR/libtuv/Kconfig"
-source "$EXTERNALDIR/wakaama/Kconfig"
 source "$EXTERNALDIR/protobuf/Kconfig"
+source "$EXTERNALDIR/wakaama/Kconfig"
