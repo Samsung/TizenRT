@@ -751,6 +751,7 @@ static void adb_poll(void)
 	uint16_t idx = 0;
 	amsg msg;
 #endif
+	aconnection *conn;
 
 	sockfd = t->fd;
 
@@ -769,6 +770,11 @@ static void adb_poll(void)
 			if (read_packet(p, t)) {
 				put_apacket(p);
 				D("failed to read packet from fd %d\n", t->fd);
+
+				conn = getconn();
+				conn->status = ADB_OFFLINE;
+
+				break;
 			} else {
 #ifdef ADB_USE_POLLWORKER
 				msg.msgId = idx++;

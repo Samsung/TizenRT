@@ -71,7 +71,10 @@ int net_read(int fd, uint16_t len, uint8_t *data)
 	D("about to read (fd=%d, len=%d)\n", fd, len);
 
 	while (true) {
-		r = read(fd, (p + idx), size);
+		if ((r = read(fd, (p + idx), size)) <= 0) {
+			D("fd(%d) has been closed\n", fd);
+			return -1;
+		}
 		size -= r;
 		idx += r;
 
