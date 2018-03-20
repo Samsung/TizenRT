@@ -434,6 +434,12 @@ void os_start(void)
 		wd_initialize();
 	}
 
+#if CONFIG_NFILE_DESCRIPTORS > 0
+	/* Initialize the file system (needed to support device drivers) */
+
+	fs_initialize();
+#endif
+
 	/* Initialize the POSIX timer facility (if included in the link) */
 
 #ifdef CONFIG_HAVE_WEAKFUNCTIONS
@@ -482,12 +488,6 @@ void os_start(void)
 	{
 		pthread_initialize();
 	}
-#endif
-
-#if CONFIG_NFILE_DESCRIPTORS > 0
-	/* Initialize the file system (needed to support device drivers) */
-
-	fs_initialize();
 #endif
 
 #ifdef CONFIG_NET
