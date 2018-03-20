@@ -468,20 +468,53 @@ static tsi_result peer_from_x509(mbedtls_x509_crt* cert, int include_certificate
 }
 
 /* Performs an SSL_read and handle errors. */
+static tsi_result do_ssl_handshake(tsi_ssl_ctx *ctx) {
+  int ret;
+  while (MBEDTLS_SSL_HANDSHAKE_OVER != ctx->ssl.state) {
+    ret = mbedtls_ssl_handshake_step(&(ctx->ssl));
+    tsi_mbedtls_log("mbedtls_ssl_handshake_step() State : %d / returned -0x%x\n", ctx->ssl.state, -ret);
+
+    if (ctx->ssl.state == MBEDTLS_SSL_HANDSHAKE_OVER) {
+      tsi_mbedtls_log("\t[ Protocol is %s ]\n\t[ Ciphersuite is %s ]\n", mbedtls_ssl_get_version(&ctx->ssl), mbedtls_ssl_get_ciphersuite(&ctx->ssl));
+      break;
+    }
+
+    if (ret == MBEDTLS_ERR_SSL_WANT_READ) {
+      break;
+    }
+
+    if (ret < 0) {
+      if (ret != MBEDTLS_ERR_SSL_WANT_READ && ret != MBEDTLS_ERR_SSL_WANT_WRITE) {
+        gpr_log(GPR_ERROR, "failed! : mbedtls_ssl_handshake returned -0x%x\n", -ret);
+        if (ret == MBEDTLS_ERR_X509_CERT_VERIFY_FAILED) {
+          gpr_log(GPR_ERROR, "Unable to verify the certificate. " "Either it is invalid,\n" "    or you didn't set ca_file or ca_path " "to an appropriate value.\n" "    Alternatively, you may want to use " "auth_mode=optional for testing purposes.");
+        }
+        return TSI_PROTOCOL_FAILURE;
+      }
+    }
+  }
+  return TSI_OK;
+}
+
 static int do_ssl_read(void *val, unsigned char *buf, size_t len) {
   tsi_ssl_ctx *ctx = (tsi_ssl_ctx *)val;
+  if (ctx->in_ssl.data == nullptr) {
+    tsi_mbedtls_log("do_ssl_read() data is nullptr\n");
+    return MBEDTLS_ERR_SSL_WANT_READ;
+  }
   size_t remained = ctx->in_ssl.len - *(ctx->in_ssl.offset);
 
   tsi_mbedtls_log("do_ssl_read() len : %ld\n", len);
   tsi_mbedtls_log("do_ssl_read() ctx->in_ssl.len : %ld\n", ctx->in_ssl.len);
   tsi_mbedtls_log("do_ssl_read() ctx->in_ssl.offset : %ld\n", *(ctx->in_ssl.offset));
-  tsi_mbedtls_log("do_ssl_read() remained : %ld\n\n", remained);
+  tsi_mbedtls_log("do_ssl_read() remained : %ld\n", remained);
 
   if (len < remained) {
     remained = len;
   } 
   if (remained == 0) {
     tsi_mbedtls_log("do_ssl_read() Need more received data.\n");
+    return MBEDTLS_ERR_SSL_WANT_READ;
   }
   memcpy(buf, ctx->in_ssl.data + *(ctx->in_ssl.offset), remained);
   *(ctx->in_ssl.offset) += remained;
@@ -874,7 +907,6 @@ static tsi_result ssl_protector_unprotect(
     size_t* protected_frames_bytes_size, unsigned char* unprotected_bytes,
     size_t* unprotected_bytes_size) {
   tsi_mbedtls_log("IN\t : %s[%ld]\n", __func__, *protected_frames_bytes_size);
-  tsi_result result = TSI_OK;
   tsi_ssl_frame_protector* impl = (tsi_ssl_frame_protector*)self;
   size_t buf_size = MBEDTLS_BUF_MAX_SIZE;
   char buf[MBEDTLS_BUF_MAX_SIZE] = { 0, };
@@ -896,10 +928,7 @@ static tsi_result ssl_protector_unprotect(
     }
 
     if (ret == MBEDTLS_ERR_SSL_WANT_READ || ret == MBEDTLS_ERR_SSL_WANT_WRITE) {
-      *unprotected_bytes_size = 0;
-      // *protected_frames_bytes_size = *(ctx->in_ssl.offset);
-      tsi_mbedtls_log("OUT[1]\t : %s\n", __func__);
-      return TSI_OK;
+      break;
     }
     if (ret < 0) {
       mbedtls_strerror(ret, buf, buf_size);
@@ -913,7 +942,7 @@ static tsi_result ssl_protector_unprotect(
   *unprotected_bytes_size = output_bytes_offset;
 
   tsi_mbedtls_log("OUT\t : %s\n", __func__);
-  return result;
+  return TSI_OK;
 }
 
 /* TODO : Checking leak of memory */
@@ -1041,7 +1070,6 @@ static tsi_result ssl_handshaker_process_bytes_from_peer(
   GPR_ASSERT(*bytes_size <= INT_MAX);
 
   tsi_ssl_handshaker* impl = (tsi_ssl_handshaker*)self;
-  int ret;
 
   tsi_ssl_ctx *ctx = impl->ssl_ctx;
   ctx->in_ssl.data = (unsigned char *)bytes;
@@ -1055,67 +1083,13 @@ static tsi_result ssl_handshaker_process_bytes_from_peer(
   }
 
   /* Get ready to get some bytes from SSL. */
-  size_t remained = 0;
-  if (ctx->conf.endpoint == MBEDTLS_SSL_IS_CLIENT) {
-	  while (MBEDTLS_SSL_HANDSHAKE_OVER != ctx->ssl.state) {
-      ret = mbedtls_ssl_handshake_step(&(ctx->ssl));
-
-      if (ret < 0) {
-        if (ret != MBEDTLS_ERR_SSL_WANT_READ && ret != MBEDTLS_ERR_SSL_WANT_WRITE) {
-          gpr_log(GPR_ERROR, "failed! : mbedtls_ssl_handshake returned -0x%x\n", -ret);
-          impl->result = TSI_PROTOCOL_FAILURE;
-          return impl->result; 
-        }
-      }
-
-      remained = ctx->in_ssl.len - *(ctx->in_ssl.offset);
-      tsi_mbedtls_log("mbedtls_ssl_handshake_step() State : %d[%ld] / returned -0x%x\n", ctx->ssl.state, remained, -ret);
-
-      if (remained > 0) {
-        continue;
-      }
-
-      if (ctx->ssl.state == MBEDTLS_SSL_HANDSHAKE_OVER) {
-        tsi_mbedtls_log("\t[ Protocol is %s ]\n\t[ Ciphersuite is %s ]\n", mbedtls_ssl_get_version(&ctx->ssl), mbedtls_ssl_get_ciphersuite(&ctx->ssl));
-        break;
-      }
-
-      if (ctx->ssl.state == MBEDTLS_SSL_SERVER_CHANGE_CIPHER_SPEC) {
-        break;
-      }
-    }
-  } else {
-    while (MBEDTLS_SSL_HANDSHAKE_OVER != ctx->ssl.state) {
-      ret = mbedtls_ssl_handshake_step(&(ctx->ssl));
-
-      if (ret < 0) {
-        if (ret != MBEDTLS_ERR_SSL_WANT_READ && ret != MBEDTLS_ERR_SSL_WANT_WRITE) {
-          gpr_log(GPR_ERROR, "failed\n  ! mbedtls_ssl_handshake returned -0x%x\n", -ret);
-          impl->result = TSI_PROTOCOL_FAILURE;
-          return impl->result; 
-        }
-      }
-
-      remained = ctx->in_ssl.len - *(ctx->in_ssl.offset);
-      tsi_mbedtls_log("mbedtls_ssl_handshake_step() State : %d[%ld] / returned -0x%x\n", ctx->ssl.state, remained, -ret);
-
-      if (remained > 0) {
-        continue;
-      }
-
-      if (ctx->ssl.state == MBEDTLS_SSL_HANDSHAKE_OVER) {
-        tsi_mbedtls_log("\t[ Protocol is %s ]\n\t[ Ciphersuite is %s ]\n", mbedtls_ssl_get_version(&ctx->ssl), mbedtls_ssl_get_ciphersuite(&ctx->ssl));
-        break;
-      }
-
-      if (ctx->ssl.state == MBEDTLS_SSL_CLIENT_CERTIFICATE) {
-        break;
-      }
-    }
+  tsi_result ssl_result = do_ssl_handshake(ctx);
+  if (ssl_result != TSI_OK) {
+    gpr_log(GPR_ERROR, "Handshake failed with fatal error.");
   }
 
   tsi_mbedtls_log("OUT\t : %s\n", __func__);
-  return TSI_OK;
+  return ssl_result;
 }
 
 static tsi_result ssl_handshaker_extract_peer(tsi_handshaker* self,
@@ -1248,7 +1222,8 @@ static tsi_result create_tsi_ssl_handshaker(tsi_ssl_ctx* ctx, int is_client,
     gpr_log(GPR_ERROR, "SSL Context is null. Should never happen.");
     return TSI_INTERNAL_ERROR;
   }
- 
+
+  mbedtls_ssl_set_bio(ssl, ctx, do_ssl_write, do_ssl_read, nullptr); 
   if (is_client) {
     if ((ret = mbedtls_ssl_setup(ssl, conf)) != 0) {
       gpr_log(GPR_ERROR, "mbedtls_ssl_setup returned -0x%x\n\n", -ret);
@@ -1264,40 +1239,17 @@ static tsi_result create_tsi_ssl_handshaker(tsi_ssl_ctx* ctx, int is_client,
         return TSI_INTERNAL_ERROR;
       }
     }
-    mbedtls_ssl_set_bio(ssl, ctx, do_ssl_write, do_ssl_read, nullptr);
-
-    while (MBEDTLS_SSL_HANDSHAKE_OVER != ssl->state) {
-      ret = mbedtls_ssl_handshake_step(ssl);
-      tsi_mbedtls_log("mbedtls_ssl_handshake_step() State : %d / returned -0x%x\n", ssl->state, -ret);
-
-      if (ret < 0) {
-        if (ret != MBEDTLS_ERR_SSL_WANT_READ && ret != MBEDTLS_ERR_SSL_WANT_WRITE) {
-          gpr_log(GPR_ERROR, "failed\n  ! mbedtls_ssl_handshake returned -0x%x\n", -ret);
-          impl->result = TSI_PROTOCOL_FAILURE;
-          if (ret == MBEDTLS_ERR_X509_CERT_VERIFY_FAILED) {
-            gpr_log(GPR_ERROR, "Unable to verify the server's certificate. " "Either it is invalid,\n" "    or you didn't set ca_file or ca_path " "to an appropriate value.\n" "    Alternatively, you may want to use " "auth_mode=optional for testing purposes.");
-          }
-          // TODo : ssl_free
-          SSL_CTX_free(ctx);
-          return impl->result; 
-        }
-      }
-
-      if (ssl->state == MBEDTLS_SSL_HANDSHAKE_OVER) {
-        tsi_mbedtls_log("\t[ Protocol is %s ]\n\t[ Ciphersuite is %s ]\n", mbedtls_ssl_get_version(ssl), mbedtls_ssl_get_ciphersuite(ssl));
-        break;
-      }
-
-      if (ssl->state == MBEDTLS_SSL_SERVER_HELLO) {
-        break;
-      }
+    tsi_result ssl_result = do_ssl_handshake(ctx);
+    if (ssl_result != TSI_OK) {
+      gpr_log(GPR_ERROR, "Handshake failed with fatal error.");
+      SSL_CTX_free(ctx);
+      return ssl_result;
     }
   } else {
     if ((ret = mbedtls_ssl_setup(ssl, conf)) != 0) {
       gpr_log(GPR_ERROR, "mbedtls_ssl_setup returned -0x%x\n\n", -ret);
       return TSI_INTERNAL_ERROR;
     }
-    mbedtls_ssl_set_bio(ssl, ctx, do_ssl_write, do_ssl_read, nullptr);
   }
 
   impl = (tsi_ssl_handshaker*)gpr_zalloc(sizeof(*impl));
