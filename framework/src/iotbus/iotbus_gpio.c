@@ -355,7 +355,7 @@ int iotbus_gpio_register_cb(iotbus_gpio_context_h dev, iotbus_gpio_edge_e edge, 
 	iotapi_elem elm;
 	struct _iotbus_gpio_s *handle;
 
-	if (isr_cb == NULL || user_data == NULL) {
+	if (isr_cb == NULL) {
 		return IOTBUS_ERROR_INVALID_PARAMETER;
 	}
 
