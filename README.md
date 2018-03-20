@@ -40,6 +40,7 @@ This project is forking [TizenRT 1.0](https://github.com/Samsung/TizenRT) from [
 >   * [How to enable SLIP](#how-to-enable-slip)
 >   * [Thumb Mode Build](#thumb-mode-build)
 >   * [Crash Dump Analysis Tool](#crash-dump-analysis-tool)
+>   * [ADB(Artik Debug Bridge)](#adbartik-debug-bridge)
 > * Support Tool
 >   * [TRACE32](#trace32)
 >   * [J-Link](#j-link)
@@ -700,6 +701,185 @@ You can see call stack : Menu -> View -> Stack frame with local
 
 ![SIMARM](./external/docs/media/ramdump_simarm.png)
 
+## ADB(Artik Debug Bridge)
+
+ADB(Android Debug Bridge) is a command-line utility included with Google’s Android SDK. ADB can control your device over USB from a computer, copy files back and forth, install and uninstall apps, run shell commands, and more. Our ADB(Artik Debug Bridge) is compatible to original ADB(Android Debug Bridge) to communicate with a device on TizenRT.Unlike android, our ADB is only accessed by network connection. (Unfortunately our ARTIK05x doesn't have USB interface)
+
+#### How adb works
+
+Our artik05x series is adb device, can connect adb server over WIFI or SLIP(Serial Line IP). Basically Android ADB is normally working with USB interface, can notice device is being connected or not. But connection over WIFI can't notice device is connected or alive, That's why we should connect device by enforce. For more specific says, after artik05x has been booted, adb device is waiting for connection. And next, Linux, Win or MAC's adb clients can connect device over WIFI.
+
+![ADB01](./external/docs/media/adb01.png)
+
+#### Build ADB
+
+ADB is not enabled by default, you should enable feature. ADB server port is default port by android, if you change port, you should enter correct port number while connecting adb.
+
+ADB shell stack size is related to executed command, if stack size is too short, it can be occurred stack overflow.
+
+![ADB02](./external/docs/media/adb02.png)
+
+#### Connect to a device over Wi-Fi
+
+Adb usually communicates with the device over USB, but Artik05x can't support USB interface, so you should use adb over Wi-Fi or SLIP.
+
+ 1. Set the target device to listen for a TCP/IP connection on port 5555.
+```
+TASH>> adb
+```
+
+ 2. Connect to the device by its IP address. (If ADB port is 5555, port number can be passed)
+```
+TASH>> adb connect device_ip_address
+```
+
+ 3. Confirm that your host computer is connected to the target device:
+```bash
+$ adb devices
+List of devices attached
+device_ip_address:5555 device
+```
+
+You're now good to go!
+
+If the adb connection is ever lost:
+
+ 1. Make sure that your host is still connected to the same Wi-Fi network your Android device is.
+ 2. Reconnect by executing the adb connect step again.
+ 3. Or if that doesn't work, reset your adb host:
+```bash
+$ adb kill-server
+```
+or
+```bash
+$ adb disconnect
+```
+or
+```bash
+$ adb disconnect device_ip_address
+```
+
+Then start over from the beginning.
+
+#### Query for devices
+
+Before issuing adb commands, it is helpful to know what device instances are connected to the adb server. You can generate a list of attached devices using the devices command.
+```bash
+$ adb devices -l
+```
+
+In response, adb prints this status information for each device:
+
+* Serial number: A string created by adb to uniquely identify the device by its port number. Here's an example ip address: 10.0.0.2:5555
+* State: The connection state of the device can be one of the following:
+  * offline: The device is not connected to adb or is not responding.
+  * device: The device is now connected to the adb server. Note that this state does not imply that the Android system is fully booted and operational because the device connects to adb while the system is still booting. However, after boot-up, this is the normal operational state of an device.
+  * no device: There is no device connected.
+* Description: If you include the -l option, the devices command tells you what the device is. This information is helpful when you have multiple devices connected so that you can tell them apart.
+The following example shows the `devices -l` command and its output.
+```bash
+$ adb devices -l
+List of devices attached
+10.0.0.2:5555          device product:ARTIK model:ARTIK053 device:1.0.11
+```
+
+#### Copy files to/from a device
+
+Use the pull and push commands to copy files to and from an device. The pull and push commands let you copy arbitrary directories and files to any location in a device.
+
+To copy a file or directory and its sub-directories from the device, do the following:
+```bash
+$ adb pull remote local
+```
+
+To copy a file or directory and its sub-directories to the device, do the following:
+```bash
+$ adb push local remote
+```
+Replace local and remote with the paths to the target files/directory on your development machine (local) and on the device (remote). For example:
+```bash
+# Host(foo.txt) → TizenRT(/mnt/foo.txt)
+$ ls -al foo.txt
+-rw-r--r-- 1 bt.cho bt.cho 26199  Mar 8 19:28 foo.txt
+
+$ adb push foo.txt /mnt/foo.txt
+9 KB/s (26199 bytes in 2.747s)
+
+$ adb shell ls -l /mnt
+/mnt:
+ -rw-rw-rw-   26199 foo.txt
+
+# TizenRT(/mnt/foo.txt) → Host(bar.txt)
+$ adb pull /mnt/foo.txt bar.txt
+200 KB/s (26199 bytes in 0.127s)
+
+# Check file
+$ diff foo.txt bar.txt
+```
+
+#### Issue shell commands
+
+You can use the shell command to issue device commands through adb, with or without entering the adb remote shell on the device. To issue a single command without entering a remote shell, use the shell command like this:
+```bash
+# adb shell shell_command
+$ adb shell ls
+/:
+ dev/
+ mnt/
+ proc/
+ var/
+$ adb shell cd mnt
+$ adb shell ls
+/mnt:
+```
+
+Or enter a remote shell on a device like this:
+```bash
+$ adb shell
+TASH>> ls
+/:
+ dev/
+ mnt/
+ proc/
+ var/
+TASH>> cd proc
+TASH>> ls
+/proc:
+ 0/
+ 1/
+ 2/
+ 3/
+ 4/
+ 6/
+ 8/
+ 9/
+ 10/
+ 11/
+ 12/
+ fs/
+ mtd
+ partitions
+ uptime
+ version
+TASH>> cat version
+ Board: ARTIK053
+ Version: 1.0.11
+ Commit Hash: 928ba17fd2f117bc3de307f43e608942a0dc41b8
+ Build User: root@testbed
+ Build Time: 2018-03-14 19:34:37
+TASH>> exit
+```
+When you are ready to exit the remote shell, press Control + D or type exit.
+
+#### Stop the adb server
+
+In some cases, you might need to terminate the adb server process and then restart it to resolve the problem (e.g., if adb does not respond to a command).
+
+To stop the adb server, use the adb kill-server command. You can then restart the server by issuing any other adb command.
+```bash
+$ adb kill-server
+```
+
 <!-- Support Tool -->
 
 ## TRACE32
@@ -748,13 +928,64 @@ To make debugging easier, you can change the compilation options for TizenRT in 
 
 SEGGER [J-Links](https://www.segger.com/products/debug-probes/j-link/) are the most widely used line of debug probes available today. They've proven their worth for more than 10 years. This popularity stems from the unparalleled performance, extensive feature set, large number of supported CPUs, and compatibility with all popular development environments.
 
-#### How to Use J-Link Software
+#### Download Ozone & SystemView Software
 
-We tested the ARTIK05x Starter Kit using `J-link` equipment. **You need a small hardware fix in the Starter Kit.** And you use the latest version of J-Link software. (Since `version 6.22g`, ARTIK05x is officially supported.)
+ * J-Link Software and Documentation Pack [J-link](https://www.segger.com/downloads/jlink/#J-LinkSoftwareAndDocumentationPack)
+ * The J-Link Debugger [Ozone](https://www.segger.com/downloads/jlink/#Ozone)
+ * Real-time Analysis and Visualization [SystemView](https://www.segger.com/downloads/jlink/#SystemView)
 
- * Fix Starter Kit Board : Add a resistor to the NC of `XJTAG_TRST_N` in the figure below. (ex. 47K)
+#### How to use Ozone
 
-![Schematic](./external/docs/media/jlink01.png)
+![JLink00](./external/docs/media/jlink00.png)
+
+First, connect J-Link and ARTIK05X. To connect, a debug cable is required. The required cables are as follows.
+
+![JLink01](./external/docs/media/jlink01.png)
+
+ * JTAG (2x10 2.54mm) to SWD (2x5 1.27mm) Cable Adapter Board
+ * 10-pin 2x5 Socket-Socket 1.27mm IDC (SWD) Cable
+
+Then, run the Ozone program that you installed. Connect in the following order.
+> * File > New > New Project Wizard
+> * Target Device > Device > Select "ARTIK05X"
+
+![JLink02](./external/docs/media/jlink02.png)
+
+And attach it to the target module. If it is properly attached, you can check the console log.
+
+![JLink03](./external/docs/media/jlink03.png)
+
+Sometimes Ozone does not find few file paths correctly. In the ozone program, press f1 to view the user manual pdf file. Refer to Section 6.4 for more precise routing.
+
+We can debug using the Ozone, but can not fusing new TizenRT Binary. If you want to fuse binaries, please use an IDE or type “make download $(partition)” in Linux shell.
+
+#### How to use SystemView
+
+First, copy the support file so that SystemView can recognize TizenRT.
+ * From TizenRT: $(TOPDIR)/external/sysview/SYSVIEW_TizenRT.txt
+ * To SystemView: C:\Program Files (x86)\SEGGER\SystemView_V252a\Description
+
+![SysView01](./external/docs/media/sysview01.png)
+
+You enable SystemView in menuconfig in the following order:
+> * External Functions > Select "SystemView"
+> * Chip Selection > S5J Peripheral Support > Enable "TIMER2"
+
+You can choose your preferences in SystemView.
+
+![SysView02](./external/docs/media/sysview02.png)
+
+ARTIK05x now supports Single-Shot Recording only. SEGGER will support Continuous Recording in April 2018.
+
+![SysView03](./external/docs/media/sysview03.png)
+![SysView04](./external/docs/media/sysview04.png)
+![SysView05](./external/docs/media/sysview05.png)
+
+Enter the RTT address value to be output at boot time.
+
+If the connection is successful, you can check it using the SystemView tool as follows.
+
+![SysView06](./external/docs/media/sysview06.png)
 
 <!-- ETC -->
 
