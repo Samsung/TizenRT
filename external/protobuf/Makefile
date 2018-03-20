@@ -126,8 +126,7 @@ CXXSRCS +=	src/google/protobuf/any.cc\
 #
 # protobuf_lite
 #
-CXXSRCS +=	src/google/protobuf/stubs/common.cc\
-	src/google/protobuf/arena.cc\
+CXXSRCS +=	src/google/protobuf/arena.cc\
 	src/google/protobuf/arenastring.cc\
 	src/google/protobuf/extension_set.cc\
 	src/google/protobuf/generated_message_table_driven_lite.cc\
