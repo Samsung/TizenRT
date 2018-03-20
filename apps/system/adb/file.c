@@ -266,6 +266,16 @@ static int do_send(int rfd, int wfd, char *path, char *buffer)
 	return ret;
 }
 
+static void sync_quit(int fd)
+{
+	syncmsg msg;
+
+	msg.req.id = ID_QUIT;
+	msg.req.namelen = 0;
+
+	write(fd, &msg.req, sizeof(msg.req));
+}
+
 void execute_fsync(const char *data, int len)
 {
 	int r;
@@ -338,6 +348,7 @@ int adb_fsync(int argc, char **argv)
 			D("got msg\n");
 
 			if (msg.req.id == ID_QUIT) {
+				sync_quit(wfd);
 				break;
 			}
 
