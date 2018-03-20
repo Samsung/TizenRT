@@ -105,7 +105,7 @@ endif
 ARCHCFLAGS = -fno-builtin
 ARCHCXXFLAGS = -fno-builtin -fexceptions -mcpu=cortex-r4 -mfpu=vfpv3 -fpermissive -std=c++11 -fno-rtti
 ARCHWARNINGS = -Wall -Werror -Wstrict-prototypes -Wshadow -Wundef -Wno-implicit-function-declaration -Wno-unused-function -Wno-unused-but-set-variable
-ARCHWARNINGSXX = -Wall -Wshadow -Wundef
+ARCHWARNINGSXX = -Wall -Wno-sign-compare
 
 # only version 4.9 supports color diagnostics
 ifeq "$(ARCHMAJOR)" "4"
@@ -124,7 +124,7 @@ CXXFLAGS = $(ARCHCXXFLAGS) $(ARCHWARNINGSXX) $(ARCHOPTIMIZATION) $(ARCHCPUFLAGS)
 
 CXXFLAGS += -std=c++11 -D__TINYARA__
 CXXFLAGS += -fno-builtin -fno-exceptions -fcheck-new
-CXXFLAGS += -pedantic -D_DEBUG -D_LIBCPP_BUILD_STATIC -D_LIBCPP_NO_EXCEPTIONS -ffunction-sections -fdata-sections
+CXXFLAGS += -D_DEBUG -D_LIBCPP_BUILD_STATIC -D_LIBCPP_NO_EXCEPTIONS -ffunction-sections -fdata-sections
 
 CXXPICFLAGS = $(ARCHPICFLAGS) $(CXXFLAGS)
 CPPFLAGS = $(ARCHINCLUDES) $(ARCHDEFINES) $(EXTRADEFINES)
