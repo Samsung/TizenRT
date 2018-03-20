@@ -218,9 +218,6 @@ int vsscanf(FAR const char *buf, FAR const char *fmt, va_list ap)
 	/* Parse the format, extracting values from the input buffer as needed */
 
 	count = 0;
-	width = 0;
-	noassign = false;
-	lflag = false;
 
 	/* Loop until all characters in the fmt string have been processed.  We
 	 * may have to continue loop after reaching the end the input data in
@@ -228,6 +225,10 @@ int vsscanf(FAR const char *buf, FAR const char *fmt, va_list ap)
 	 */
 
 	while (*fmt) {
+                width = 0;
+                noassign = false;
+                lflag = false;
+
 		/* Skip over white space */
 
 		while (isspace(*fmt)) {
@@ -235,7 +236,6 @@ int vsscanf(FAR const char *buf, FAR const char *fmt, va_list ap)
 		}
 
 		/* Check for a conversion specifier */
-
 		if (*fmt == '%') {
 			lvdbg("vsscanf: Specifier found\n");
 
@@ -261,11 +261,40 @@ int vsscanf(FAR const char *buf, FAR const char *fmt, va_list ap)
 					tmp[fmt - tc] = '\0';
 					width = MIN(sizeof(tmp) - 1, atoi(tmp));
 					fmt--;
-				}
+				} else if (*fmt == '[') {
+                                        lvdbg("vsscanf: Regular expression \n");
+                                        tv = va_arg(ap, char *);
+                                        tv[0] = '\0';
+                                        bool complementary = false;
+                                        int size = 0;
+                                        const char *end;
+                                        if (width <= 0)
+						width = INT_MAX;
+
+                                        if (*++fmt == '^') {
+						complementary = true;
+						++fmt;
+					}
+                                        end = strchr((*fmt == ']') ? fmt + 1 : fmt, ']');
+                                        if (!end)
+						return EOF;
+                                        size = end - fmt;
+                                        while (width && *buf) {
+                                                if (!complementary && !memchr(fmt, *buf, size))
+							break;
+                                                if (complementary && memchr(fmt, *buf, size))
+							break;
+                                                *tv++ = *buf++;
+						width--;
+                                        }
+                                        *tv = '\0';
+					++count;
+                                        fmt = end + 1;
+                                        break;
+                                }
 			}
 
 			/* Process %s:  String conversion */
-
 			if (*fmt == 's') {
 				lvdbg("vsscanf: Performing string conversion\n");
 
@@ -312,6 +341,7 @@ int vsscanf(FAR const char *buf, FAR const char *fmt, va_list ap)
 
 					buf += width;
 				}
+				fmt++;
 			}
 
 			/* Process %c:  Character conversion */
@@ -357,6 +387,7 @@ int vsscanf(FAR const char *buf, FAR const char *fmt, va_list ap)
 
 					buf += width;
 				}
+				fmt++;
 			}
 
 			/* Process %d, %o, %b, %x, %u:  Various integer conversions */
@@ -488,6 +519,7 @@ int vsscanf(FAR const char *buf, FAR const char *fmt, va_list ap)
 						count++;
 					}
 				}
+				fmt++;
 			}
 
 			/* Process %f:  Floating point conversion */
@@ -593,6 +625,7 @@ int vsscanf(FAR const char *buf, FAR const char *fmt, va_list ap)
 					}
 				}
 #endif
+				fmt++;
 			}
 
 			/* Process %n:  Character count */
@@ -613,20 +646,33 @@ int vsscanf(FAR const char *buf, FAR const char *fmt, va_list ap)
 						*pint = (int)nchars;
 					}
 				}
+				fmt++;
+			} else if (*buf) {
+				/* Skip over any leading spaces in the input buffer */
+
+				while (isspace(*buf)) {
+					buf++;
+				}
+
+				/* Skip over matching characters in the buffer and format */
+				if (*fmt != *buf) {
+					continue;
+				} else {
+					fmt++;
+					buf++;
+				}
+			} else {
+				/* NULL terminator encountered */
+
+				break;
 			}
 
-			width = 0;
-			noassign = false;
-			lflag = false;
-
-			fmt++;
 		}
 
 		/* It is not a conversion specifier */
 
 		else if (*buf) {
 			/* Skip over any leading spaces in the input buffer */
-
 			while (isspace(*buf)) {
 				buf++;
 			}
