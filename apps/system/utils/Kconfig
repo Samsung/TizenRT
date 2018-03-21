@@ -89,7 +89,6 @@ config ENABLE_IRQINFO
 	---help---
 		List the registered interrupts, it's occurrence counts and corresponding isr.
 
-if !DISABLE_SIGNALS
 config ENABLE_KILL
 	bool "kill"
 	default y
@@ -103,7 +102,6 @@ config ENABLE_KILLALL
 	depends on !BUILD_PROTECTED
 	---help---
 		Send a signal to all processes running any of the specified commands
-endif #!DISABLE_SIGNALS
 
 config ENABLE_PS
 	bool "ps"
