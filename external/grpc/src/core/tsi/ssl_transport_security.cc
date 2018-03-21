@@ -71,19 +71,22 @@ extern "C" {
    SSL structure. This is what we would ultimately want though... */
 #define TSI_SSL_MAX_PROTECTION_OVERHEAD 100
 
-
 /* For mbedtls */
 static const char *pers = "TizenRT";
 
 #define PEM_BEGIN_CRT           "-----BEGIN CERTIFICATE-----\n"
 #define PEM_END_CRT             "-----END CERTIFICATE-----\n"
 
-#define MBEDTLS_BUF_MAX_SIZE  128
+#define TSI_BUF_SIZE  128
 
 #define DEBUG_LEVEL 0
 
 // #define tsi_mbedtls_log(...) printf(__VA_ARGS__)
+#ifndef tsi_mbedtls_log
 #define tsi_mbedtls_log(...) (void)0
+#endif
+
+static char MBEDTLS_ERR_STR[TSI_BUF_SIZE] = { 0, };
 
 /* --- Structure definitions. ---*/
 
@@ -355,7 +358,7 @@ static tsi_result peer_property_from_x509_common_name(
       common_name = nullptr;
       common_name_size = 0;
     } else {
-      tsi_mbedtls_log("OUT[X]\t : %s\n", __func__);
+      tsi_mbedtls_log("OUT[-1]\t : %s\n", __func__);
       return result;
     }
   }
@@ -380,7 +383,7 @@ static tsi_result add_pem_certificate(mbedtls_x509_crt* cert, tsi_peer_property*
   size_t len = 0;
 
   if ((ret = mbedtls_pem_write_buffer(PEM_BEGIN_CRT, PEM_END_CRT, cert->raw.p, cert->raw.len, contents, size, &len)) != 0) {
-    tsi_mbedtls_log("OUT[X]\t : %s\n", __func__);
+    tsi_mbedtls_log("OUT[-1]\t : %s\n", __func__);
 		return TSI_INTERNAL_ERROR;
 	}
 
@@ -509,19 +512,17 @@ static int do_ssl_read(void *val, unsigned char *buf, size_t len) {
   tsi_mbedtls_log("do_ssl_read() ctx->in_ssl.offset : %ld\n", *(ctx->in_ssl.offset));
   tsi_mbedtls_log("do_ssl_read() remained : %ld\n", remained);
 
-  if (len < remained) {
-    remained = len;
-  } 
-  if (remained == 0) {
+  if (len > remained) {
     tsi_mbedtls_log("do_ssl_read() Need more received data.\n");
     return MBEDTLS_ERR_SSL_WANT_READ;
   }
-  memcpy(buf, ctx->in_ssl.data + *(ctx->in_ssl.offset), remained);
-  *(ctx->in_ssl.offset) += remained;
+
+  memcpy(buf, ctx->in_ssl.data + *(ctx->in_ssl.offset), len);
+  *(ctx->in_ssl.offset) += len;
   if (ctx->in_ssl.len == *(ctx->in_ssl.offset)) {
     ctx->in_ssl.data = nullptr;
   }
-  return (int)remained;
+  return (int)len;
 }
 
 /* Performs an SSL_write and handle errors. */
@@ -642,11 +643,10 @@ static const tsi_ciphersuite_t ciphersuite_mbedtls[] = {
 
 static int set_cipher_list_from_string(tsi_ssl_ctx *ssl_ctx, const char* cipher_list) {
   tsi_mbedtls_log("IN\t : %s\n", __func__);
-  // int *cipher = ssl_ctx->ciphersuites;
   int cnt = 0;
   size_t i, j;
 
-  char buf[MBEDTLS_BUF_MAX_SIZE];
+  char buf[TSI_BUF_SIZE];
   size_t len = strlen(cipher_list);
 
   if (cipher_list == nullptr || len <= 0) {
@@ -775,10 +775,8 @@ static tsi_result ssl_protector_protect(tsi_frame_protector* self,
                                         size_t* unprotected_bytes_size,
                                         unsigned char* protected_output_frames,
                                         size_t* protected_output_frames_size) {
-  tsi_mbedtls_log("IN\t : %s[%ld]\n", __func__, *unprotected_bytes_size);
+  tsi_mbedtls_log("IN\t : %s[%ld/%ld]\n", __func__, *unprotected_bytes_size, *protected_output_frames_size);
   tsi_ssl_frame_protector* impl = (tsi_ssl_frame_protector*)self;
-  size_t buf_size = MBEDTLS_BUF_MAX_SIZE;
-  char buf[MBEDTLS_BUF_MAX_SIZE] = { 0, };
 
   int ret;
   tsi_ssl_ctx *ctx = impl->ssl_ctx;
@@ -823,8 +821,8 @@ static tsi_result ssl_protector_protect(tsi_frame_protector* self,
       return TSI_UNIMPLEMENTED;
     }
     if (ret < 0) {
-      mbedtls_strerror(ret, buf, buf_size);
-      gpr_log(GPR_ERROR, "%s", buf);
+      mbedtls_strerror(ret, MBEDTLS_ERR_STR, sizeof(MBEDTLS_ERR_STR));
+      gpr_log(GPR_ERROR, "%s", MBEDTLS_ERR_STR);
       tsi_mbedtls_log("OUT[-1]\t : %s\n", __func__);
       return TSI_DATA_CORRUPTED; 
     }
@@ -856,8 +854,6 @@ static tsi_result ssl_protector_protect_flush(
   size_t read_from_ssl = 0;
   size_t pending;
   int ret;
-  size_t buf_size = MBEDTLS_BUF_MAX_SIZE;
-  char buf[MBEDTLS_BUF_MAX_SIZE] = { 0, };
 
   if (impl->buffer_offset != 0) {
     do {
@@ -867,12 +863,13 @@ static tsi_result ssl_protector_protect_flush(
       }
       if (ret == MBEDTLS_ERR_SSL_WANT_READ || ret == MBEDTLS_ERR_SSL_WANT_WRITE) {
         gpr_log(GPR_ERROR, "Peer tried to renegotiate SSL connection. This is unsupported.");
+        tsi_mbedtls_log("OUT[-1]\t : %s\n", __func__);
         return TSI_UNIMPLEMENTED;
       }
       if (ret < 0) {
-        mbedtls_strerror(ret, buf, buf_size);
-        gpr_log(GPR_ERROR, "%s", buf);
-        tsi_mbedtls_log("OUT[-1]\t : %s\n", __func__);
+        mbedtls_strerror(ret, MBEDTLS_ERR_STR, sizeof(MBEDTLS_ERR_STR));
+        gpr_log(GPR_ERROR, "%s", MBEDTLS_ERR_STR);
+        tsi_mbedtls_log("OUT[-2]\t : %s\n", __func__);
         return TSI_DATA_CORRUPTED; 
       }
       read_from_ssl += (size_t)ret;
@@ -906,10 +903,8 @@ static tsi_result ssl_protector_unprotect(
     tsi_frame_protector* self, const unsigned char* protected_frames_bytes,
     size_t* protected_frames_bytes_size, unsigned char* unprotected_bytes,
     size_t* unprotected_bytes_size) {
-  tsi_mbedtls_log("IN\t : %s[%ld]\n", __func__, *protected_frames_bytes_size);
+  tsi_mbedtls_log("IN\t : %s[%ld/%ld]\n", __func__, *protected_frames_bytes_size, *unprotected_bytes_size);
   tsi_ssl_frame_protector* impl = (tsi_ssl_frame_protector*)self;
-  size_t buf_size = MBEDTLS_BUF_MAX_SIZE;
-  char buf[MBEDTLS_BUF_MAX_SIZE] = { 0, };
 
   size_t output_bytes_size = *unprotected_bytes_size;
   size_t output_bytes_offset = 0;
@@ -931,9 +926,9 @@ static tsi_result ssl_protector_unprotect(
       break;
     }
     if (ret < 0) {
-      mbedtls_strerror(ret, buf, buf_size);
-      gpr_log(GPR_ERROR, "%s", buf);
-      tsi_mbedtls_log("OUT[2]\t : %s\n", __func__);
+      mbedtls_strerror(ret, MBEDTLS_ERR_STR, sizeof(MBEDTLS_ERR_STR));
+      gpr_log(GPR_ERROR, "%s", MBEDTLS_ERR_STR);
+      tsi_mbedtls_log("OUT[-1]\t : %s\n", __func__);
       return TSI_DATA_CORRUPTED; 
     }
     output_bytes_offset += (size_t)ret;
@@ -1029,7 +1024,7 @@ static tsi_result ssl_handshaker_get_bytes_to_send_to_peer(tsi_handshaker* self,
   size_t available;
   if (bytes == nullptr || bytes_size == nullptr || *bytes_size == 0 ||
       *bytes_size > INT_MAX) {
-    tsi_mbedtls_log("OUT[1]\t : %s\n", __func__);
+    tsi_mbedtls_log("OUT[-1]\t : %s\n", __func__);
     return TSI_INVALID_ARGUMENT;
   }
 
@@ -1039,7 +1034,7 @@ static tsi_result ssl_handshaker_get_bytes_to_send_to_peer(tsi_handshaker* self,
   if (available > *bytes_size) {
     memcpy(bytes, ctx->buf + ctx->buf_offset, *bytes_size);
     ctx->buf_offset += *bytes_size;    
-    tsi_mbedtls_log("OUT[2]\t : %s\n", __func__);
+    tsi_mbedtls_log("OUT[-2]\t : %s\n", __func__);
     return TSI_INCOMPLETE_DATA;
   }
   memcpy(bytes, ctx->buf + ctx->buf_offset, available);
