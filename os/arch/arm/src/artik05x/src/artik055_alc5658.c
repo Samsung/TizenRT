@@ -64,7 +64,6 @@
 
 #include <tinyara/irq.h>
 #include <tinyara/audio/i2s.h>
-#include <tinyara/audio/pcm.h>
 #include <tinyara/audio/alc5658.h>
 
 #include <arch/board/board.h>
@@ -244,7 +243,6 @@ static int alc5658_interrupt(int irq, FAR void *context)
 int s5j_alc5658_initialize(int minor)
 {
 	FAR struct audio_lowerhalf_s *alc5658;
-	FAR struct audio_lowerhalf_s *pcm;
 	FAR struct i2c_dev_s *i2c;
 	FAR struct i2s_dev_s *i2s;
 	static bool initialized;
@@ -296,19 +294,8 @@ int s5j_alc5658_initialize(int minor)
 			goto errout_with_irq;
 		}
 
-		/* No we can embed the ALC5658/I2C/I2S conglomerate into a PCM decoder
-		 * instance so that we will have a PCM front end for the the ALC5658
-		 * driver.
-		 */
 
-		pcm = pcm_decode_initialize(alc5658);
-		if (!pcm) {
-			auddbg("ERROR: Failed create the PCM decoder\n");
-			ret = -ENODEV;
-			goto errout_with_alc5658;
-		}
-
-		ret = audio_register(devname, pcm);
+		ret = audio_register(devname, alc5658);
 		if (ret < 0) {
 			auddbg("ERROR: Failed to register /dev/%s device: %d\n", devname, ret);
 			goto errout_with_pcm;
@@ -323,24 +310,13 @@ int s5j_alc5658_initialize(int minor)
 			goto errout_with_irq;
 		}
 
-		/* No we can embed the ALC5658/I2C/I2S conglomerate into a PCM decoder
-		 * instance so that we will have a PCM front end for the the ALC5658
-		 * driver.
-		 */
-
-		pcm = pcm_decode_initialize(alc5658);
-		if (!pcm) {
-			auddbg("ERROR: Failed create the PCM decoder\n");
-			ret = -ENODEV;
-			goto errout_with_alc5658;
-		}
 
 		/* Finally, we can register the PCM/ALC5658/I2C/I2S audio device.
 		 *
 		 * Is anyone young enough to remember Rube Goldberg?
 		 */
 
-		ret = audio_register(devname, pcm);
+		ret = audio_register(devname, alc5658);
 		if (ret < 0) {
 			auddbg("ERROR: Failed to register /dev/%s device: %d\n", devname, ret);
 			goto errout_with_pcm;
@@ -358,7 +334,6 @@ int s5j_alc5658_initialize(int minor)
 	 */
 
 errout_with_pcm:
-errout_with_alc5658:
 errout_with_irq:
 errout_with_i2c:
 errout:

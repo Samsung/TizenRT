@@ -106,7 +106,6 @@
 
 #include <tinyara/audio/audio.h>
 #include <tinyalsa/tinyalsa.h>
-#include <tinyara/audio/pcm.h>
 
 #define MILLI_TO_NANO	1000000
 
@@ -912,39 +911,6 @@ struct pcm *pcm_open(unsigned int card, unsigned int device, unsigned int flags,
 		pcm->pBuffers[x]->flags = 0;
 	}
 
-#ifdef CONFIG_AUDIO_FORMAT_PCM
-	if (pcm->flags & PCM_IN) {
-		struct ap_buffer_s *apb = (struct ap_buffer_s *)pcm->pBuffers[0];
-		apb->flags = AUDIO_APB_TYPE_INPUT;
-		if (apb->nmaxbytes - apb->nbytes >= sizeof(struct wav_header_s)) {
-			struct wav_header_s *wav = (struct wav_header_s *)(&apb->samp[0]);
-
-			/* Transfer the purported WAV file header into our stack storage,
-			 * correcting for endian issues as needed.
-			 */
-
-			wav->hdr.chunkid = pcm_leuint32(WAV_HDR_CHUNKID);
-			wav->hdr.chunklen = 0;
-			wav->hdr.format = pcm_leuint32(WAV_HDR_FORMAT);
-
-			wav->fmt.chunkid = pcm_leuint32(WAV_FMT_CHUNKID);
-			wav->fmt.chunklen = pcm_leuint32(WAV_FMT_CHUNKLEN);
-			wav->fmt.format = pcm_leuint16(WAV_FMT_FORMAT);
-			wav->fmt.nchannels = pcm_leuint16(pcm->config.channels);
-			wav->fmt.samprate = pcm_leuint32(pcm->config.rate);
-			wav->fmt.byterate = pcm_leuint32(pcm->config.rate * pcm->config.channels * pcm_format_to_bits(pcm->config.format) / 8);
-			wav->fmt.align = pcm_leuint16(pcm->config.channels * pcm_format_to_bits(pcm->config.format) / 8);
-			wav->fmt.bpsamp = pcm_leuint16(pcm_format_to_bits(pcm->config.format));
-
-			wav->data.chunkid = pcm_leuint32(WAV_DATA_CHUNKID);
-			wav->data.chunklen = 0;
-
-			apb->nbytes = sizeof(struct wav_header_s);
-		} else {
-			goto fail_cleanup_buffers;
-		}
-	}
-#endif
 	pcm->prepared = 0;
 	pcm->running = 0;
 	pcm->draining = 0;

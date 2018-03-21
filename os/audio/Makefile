@@ -66,10 +66,6 @@ VPATH = .
 # files to the source file list, add its DEPPATH info, and will add
 # the appropriate paths to the VPATH variable
 
-ifeq ($(CONFIG_AUDIO_FORMAT_PCM),y)
-  CSRCS += pcm_decode.c
-endif
-
 AOBJS = $(ASRCS:.S=$(OBJEXT))
 COBJS = $(CSRCS:.c=$(OBJEXT))
 
