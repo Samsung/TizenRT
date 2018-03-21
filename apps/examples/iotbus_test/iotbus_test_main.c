@@ -61,6 +61,28 @@
 #include <iotbus/iotbus_gpio.h>
 #include <iotbus/iotbus_error.h>
 
+
+/* To work this sample, below GPIO numbers should be provided.
+   Refer Kconfig of this sample.
+ */
+#if !defined(CONFIG_EXAMPLES_IOTBUS_TEST_RED_LED_GPIO_NUM) ||\
+	!defined(CONFIG_EXAMPLES_IOTBUS_TEST_BLUE_LED_GPIO_NUM) ||\
+	!defined(CONFIG_EXAMPLES_IOTBUS_TEST_LEFT_BUTTON_GPIO_NUM) ||\
+	!defined(CONFIG_EXAMPLES_IOTBUS_TEST_RIGHT_BUTTON_GPIO_NUM)
+#error To run this sample, input GPIO numbers on menuconfig.
+#endif
+
+#define RED_LED_GPIO      CONFIG_EXAMPLES_IOTBUS_TEST_RED_LED_GPIO_NUM
+#define BLUE_LED_GPIO     CONFIG_EXAMPLES_IOTBUS_TEST_BLUE_LED_GPIO_NUM
+#define LEFT_BUTTON_GPIO  CONFIG_EXAMPLES_IOTBUS_TEST_LEFT_BUTTON_GPIO_NUM
+#define RIGHT_BUTTON_GPIO CONFIG_EXAMPLES_IOTBUS_TEST_RIGHT_BUTTON_GPIO_NUM
+
+#define BUTTON_RELEASE 0
+#define BUTTON_PRESS   1
+
+#define LED_ON  0
+#define LED_OFF 1
+
 /****************************************************************************
  * iotbus_main
  ****************************************************************************/
@@ -76,18 +98,18 @@ static void gpio_event_callback(void *user_data)
 	if (hnd == left_btn) {
 		int left_btn_read = iotbus_gpio_read(left_btn);
 
-		if (left_btn_read == 0) {
-			iotbus_gpio_write(r_led, 1);
-		} else if (left_btn_read == 1) {
-			iotbus_gpio_write(r_led, 0);
+		if (left_btn_read == BUTTON_PRESS) {
+			iotbus_gpio_write(r_led, LED_ON);
+		} else if (left_btn_read == BUTTON_RELEASE) {
+			iotbus_gpio_write(r_led, LED_OFF);
 		}
 	} else if (hnd == right_btn) {
 		int right_btn_read = iotbus_gpio_read(right_btn);
 
-		if (right_btn_read == 0) {
-			iotbus_gpio_write(b_led, 1);
-		} else if (right_btn_read == 1) {
-			iotbus_gpio_write(b_led, 0);
+		if (right_btn_read == BUTTON_PRESS) {
+			iotbus_gpio_write(b_led, LED_ON);
+		} else if (right_btn_read == BUTTON_RELEASE) {
+			iotbus_gpio_write(b_led, LED_OFF);
 		}
 	}
 	return;
@@ -105,13 +127,13 @@ int iotbus_test_main(int argc, char *argv[])
 
 	iotapi_initialize();
 
-	r_led = iotbus_gpio_open(45);
+	r_led = iotbus_gpio_open(RED_LED_GPIO);
 	iotbus_gpio_set_direction(r_led, GPIO_DIRECTION_OUT);
-	b_led = iotbus_gpio_open(49);
+	b_led = iotbus_gpio_open(BLUE_LED_GPIO);
 	iotbus_gpio_set_direction(b_led, GPIO_DIRECTION_OUT);
-	left_btn = iotbus_gpio_open(42);
+	left_btn = iotbus_gpio_open(LEFT_BUTTON_GPIO);
 	iotbus_gpio_set_direction(left_btn, GPIO_DIRECTION_IN);
-	right_btn = iotbus_gpio_open(44);
+	right_btn = iotbus_gpio_open(RIGHT_BUTTON_GPIO);
 	iotbus_gpio_set_direction(right_btn, GPIO_DIRECTION_IN);
 
 	printf("Press R/B Test Button!!!\n");
