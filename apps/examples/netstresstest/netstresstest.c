@@ -563,7 +563,7 @@ int udp_client_thread_cb(int argc, char *argv[])
 	}
 	printf("\n[UDPCLIENT] socket create\n");
 
-	bzero(&serveraddr, sizeof(serveraddr));
+	memset(&serveraddr, 0, sizeof(serveraddr));
 	serveraddr.sin_family = AF_INET;
 	serveraddr.sin_addr.s_addr = inet_addr(targetip_addr);
 	serveraddr.sin_port = htons(target_port);

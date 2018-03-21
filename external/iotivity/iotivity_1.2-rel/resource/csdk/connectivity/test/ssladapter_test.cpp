@@ -1051,7 +1051,7 @@ static void socketOpen_server()
     sockfd = socket(AF_INET, SOCK_STREAM, 0);
     if (sockfd < 0)
         error("\nERROR opening socket");
-    //bzero((char *) &serv_addr, sizeof(serv_addr));
+
     memset((void*)&serv_addr, 0, sizeof(serv_addr));
     serv_addr.sin_family = AF_INET;
     serv_addr.sin_addr.s_addr = INADDR_ANY;

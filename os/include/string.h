@@ -74,13 +74,6 @@
 /****************************************************************************
  * Pre-processor Definitions
  ****************************************************************************/
-/* Compatibility definitions */
-
-#ifndef CONFIG_ARCH_BZERO
-#define bzero(s, n) (void)memset(s, 0, n)
-#endif
-
-#define bcopy(b1, b2, len) (void)memmove(b2, b1, len)
 
 /****************************************************************************
  * Global Function Prototypes

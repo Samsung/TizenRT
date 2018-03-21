@@ -963,7 +963,7 @@ static bool socketOpen_server()
         error("\nERROR opening socket");
         return false;
     }
-    //bzero((char *) &serv_addr, sizeof(serv_addr));
+
     memset((void*)&serv_addr, 0, sizeof(serv_addr));
     serv_addr.sin_family = AF_INET;
     serv_addr.sin_addr.s_addr = INADDR_ANY;

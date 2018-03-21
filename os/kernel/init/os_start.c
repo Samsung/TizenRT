@@ -315,7 +315,7 @@ void os_start(void)
 	 * that has pid == 0 and sched_priority == 0.
 	 */
 
-	bzero((void *)&g_idletcb, sizeof(struct task_tcb_s));
+	memset((void *)&g_idletcb, 0, sizeof(struct task_tcb_s));
 	g_idletcb.cmn.task_state = TSTATE_TASK_RUNNING;
 	g_idletcb.cmn.entry.main = (main_t)os_start;
 	g_idletcb.cmn.flags = TCB_FLAG_TTYPE_KERNEL;
