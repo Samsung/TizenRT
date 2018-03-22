@@ -650,6 +650,7 @@ static pthread_addr_t lwm2m_stop_cb(void *arg)
 artik_error StartLwm2m(bool start)
 {
 	artik_error ret = S_OK;
+	int num_retries = LWM2M_CONNECTION_MAX_RETRIES;
 
 	if (start) {
 		static pthread_t tid;
@@ -663,6 +664,7 @@ artik_error StartLwm2m(bool start)
 			goto exit;
 		}
 
+retry:
 		pthread_attr_init(&attr);
 		sparam.sched_priority = 100;
 		status = pthread_attr_setschedparam(&attr, &sparam);
@@ -676,7 +678,17 @@ artik_error StartLwm2m(bool start)
 		}
 
 		pthread_setname_np(tid, "onboarding-lwm2m");
-		pthread_join(tid, (void **)ret);
+		pthread_join(tid, (void **)&ret);
+
+		if ((ret != S_OK) && num_retries--) {
+			printf("Failed to connect to lwm2m (%d), retrying...\n", ret);
+			goto retry;
+		}
+
+		if (num_retries < 1) {
+			ret = E_LWM2M_ERROR;
+			goto exit;
+		}
 
 		if (ret == S_OK)
 			g_lwm2m_connection_retries = 0;
@@ -706,7 +718,7 @@ artik_error StartLwm2m(bool start)
 		}
 
 		pthread_setname_np(tid, "onboarding-lwm2m");
-		pthread_join(tid, (void **)ret);
+		pthread_join(tid, (void **)&ret);
 	}
 
 exit:
