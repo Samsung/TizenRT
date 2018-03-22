@@ -49,6 +49,27 @@
 
 static OCRepPayload *make_dev_profile_payload(const st_device_s *dev_info);
 
+char *things_cloud_domain_name_to_ip(const char *p_dns)
+{
+	if (p_dns == NULL) {
+		THINGS_LOG_D(THINGS_ERROR, TAG, "p_dns is NULL", p_dns);
+		return NULL;
+	}
+
+	struct hostent *shost;
+
+	shost = gethostbyname((const char *)p_dns);
+
+	if (shost == NULL || shost->h_addr_list == NULL) {
+		THINGS_LOG_D(THINGS_ERROR, TAG, "p_dns=%s fail", p_dns);
+		return NULL;
+	} else {
+		THINGS_LOG_D(THINGS_INFO, TAG, "DNS SUCCESS %s to %s", p_dns, ip_ntoa((ip_addr_t *)shost->h_addr_list[0]));
+	}
+
+	return strdup(ip_ntoa((ip_addr_t *)shost->h_addr_list[0]));
+}
+
 int CICheckDomain(const char *DomainName, char **pIP)
 {
 
@@ -75,7 +96,7 @@ int CICheckDomain(const char *DomainName, char **pIP)
 			*pIP = strdup(ipbuffer);
 		}
 	} else {
-		THINGS_LOG_D_ERROR(THINGS_ERROR, TAG, " Failed to get the IP, hard coding the ip");
+		THINGS_LOG_D(THINGS_ERROR, TAG, " Failed to get the IP, hard coding the ip");
 		snprintf(ipbuffer, sizeof(ipbuffer), "%s", "13.124.51.231");
 
 		usleep(500);
@@ -138,7 +159,7 @@ OCStackResult things_cloud_signup(const char *host, const char *device_id, const
 	char *mnid = NULL;	
 
 	if (host == NULL || device_id == NULL || event_data == NULL || (event_data->accesstoken[0] == 0 && event_data->auth_code[0] == 0)) {
-		THINGS_LOG_D_ERROR(THINGS_ERROR, TAG, "Invalid event_data.");
+		THINGS_LOG_D(THINGS_ERROR, TAG, "Invalid event_data.");
 		goto no_memory;
 	}
 
@@ -271,7 +292,7 @@ OCStackResult things_cloud_session(const char *host, const char *uId, const char
 	if (OCGetPropertyValue(PAYLOAD_TYPE_DEVICE, OC_RSRVD_SPEC_VERSION, (void **)&coreVer) != OC_STACK_OK || (IoTivityVer = strdup(IOTIVITY_VERSION)) == NULL)
 //            OCGetPropertyValue(PAYLOAD_TYPE_PLATFORM, OC_RSRVD_PLATFORM_VERSION, (void**)&IoTivityVer) != OC_STACK_OK )
 	{
-		THINGS_LOG_D_ERROR(THINGS_ERROR, TAG, "Getting Core_Spec_Ver or IoTivity_Ver is failed.");
+		THINGS_LOG_D(THINGS_ERROR, TAG, "Getting Core_Spec_Ver or IoTivity_Ver is failed.");
 		goto no_memory;
 	}
 

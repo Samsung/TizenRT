@@ -55,7 +55,7 @@
 #define RESOURCE_DISCOVERY_QUERY_DI "/oic/res?di="
 
 #define ERR_UPPER_UNIT  10000	//!< Unit of Network-State for Cloud Error-Code
-#define MAX_SIGNUP_SENDNUM  1	//!< Max re-transmission count of send_cnt_sign_up variable.
+#define MAX_SIGNUP_SENDNUM  3	//!< Max re-transmission count of send_cnt_sign_up variable.
 #define MAX_RETRY_RSCPUBLISH    10	//!< Max re-transmission count of retranslate_rsc_publish_cnt variable.
 
 #define TAG "[cloudmnger]"
@@ -140,8 +140,6 @@ static void *handle_signup_timeout(timeout_s *timeout)
 	if (send_cnt_sign_up > MAX_SIGNUP_SENDNUM) {
 		THINGS_LOG_V(THINGS_INFO, TAG, "Sign-UP Re-Try Request Send is failed.");
 
-		oic_ping_unset_mask(g_cloud_ip, PING_ST_ISCLOUD | PING_ST_SIGNIN);
-
 		if (es_cloud_state_set_and_notify(ES_STATE_FAILED_TO_REGISTER_TO_CLOUD, ES_ERRCODE_NO_RESPONSE_FROM_CLOUD_SERVER, NULL, NULL) != 0) {
 			THINGS_LOG_D(THINGS_DEBUG, TAG, "StateAndNotify is failed.");
 		}
@@ -163,29 +161,12 @@ static void *handle_signin_timeout(timeout_s *timeout)
 		return 0;
 	}
 
-	int thres_hold = timeout->ori_num * 10;	// PDF thres_hold 0.2 --> 5
+	timeout->cur_counter = timeout->cur_num;;
 
-	if (timeout->cur_num < thres_hold && (timeout->cur_num = (int)next_time_out((long long)timeout->ori_num, (long long)timeout->cur_num)) != -1) {
-		if (timeout->cur_num > thres_hold) {
-			timeout->cur_num = thres_hold;
-		}
-		timeout->cur_counter = timeout->cur_num;
+	THINGS_LOG_V(THINGS_INFO, TAG, "Sign-IN Request Send is re-tryed. (time out : %d)", timeout->cur_num);
 
-		THINGS_LOG_V(THINGS_INFO, TAG, "Sign-IN Request Send is re-tryed. (PDF interval:%d)", timeout->cur_num);
-
-		force_session_stop(CISESS_SIGNOUT);
-		cloud_request_retry_trigger(timeout);
-	} else {
-		THINGS_LOG_V(THINGS_INFO, TAG, "Sign-IN Re-Try Request Send is failed.");
-
-		oic_ping_unset_mask(g_cloud_ip, PING_ST_ISCLOUD | PING_ST_SIGNIN);
-
-		if (es_cloud_state_set_and_notify(ES_STATE_FAILED_TO_REGISTER_TO_CLOUD, ES_ERRCODE_NO_RESPONSE_FROM_CLOUD_SERVER, NULL, NULL) != 0) {
-			THINGS_LOG_D(THINGS_DEBUG, TAG, "StateAndNotify is failed.");
-		}
-
-		force_session_stop(CISESS_NULL);
-	}
+	disconnect_cloud_session();
+	cloud_request_retry_trigger(timeout);
 
 	THINGS_LOG_D(THINGS_DEBUG, TAG, "Exit.");
 	return 0;
@@ -259,7 +240,7 @@ static int set_def_cloud_info(es_cloud_signup_s *cloud_info, const char *cloud_a
 	char *t_domain = NULL;
 
 	if (cloud_info == NULL || cloud_addr == NULL || cloud_addr[0] == 0) {
-		THINGS_LOG_D_ERROR(THINGS_ERROR, TAG, "Parameter value is invalid.(cloud_info=0x%X, coud_addr=%s)", cloud_info, cloud_addr);
+		THINGS_LOG_D(THINGS_ERROR, TAG, "Parameter value is invalid.(cloud_info=0x%X, coud_addr=%s)", cloud_info, cloud_addr);
 		return 0;
 	}
 
@@ -282,13 +263,13 @@ static int set_def_cloud_info(es_cloud_signup_s *cloud_info, const char *cloud_a
 
 	ip_port = strstr(cloud_addr, "://");
 	if (ip_port == NULL) {
-		THINGS_LOG_D_ERROR(THINGS_ERROR, TAG, "cloud_addr is invalid.");
+		THINGS_LOG_D(THINGS_ERROR, TAG, "cloud_addr is invalid.");
 		return 0;
 	}
 	ip_port = ip_port + 3;
 
 	if ((cloud_info->address = (char *)things_malloc(sizeof(char) * MAX_CI_ADDRESS)) == NULL) {
-		THINGS_LOG_D_ERROR(THINGS_ERROR, TAG, "Cloud_info address memory allocation is Failed.");
+		THINGS_LOG_D(THINGS_ERROR, TAG, "Cloud_info address memory allocation is Failed.");
 		return 0;
 	}
 
@@ -321,21 +302,21 @@ static int set_def_cloud_info(es_cloud_signup_s *cloud_info, const char *cloud_a
 			}
 			ip_port++;
 		}
-
-		THINGS_LOG_D(THINGS_DEBUG, TAG, "m_domain = %s", t_domain);
+		
+		THINGS_LOG_D(THINGS_DEBUG, TAG, "t_domain = %s", t_domain);
 		THINGS_LOG_D(THINGS_DEBUG, TAG, "Port   = %s", ip_port);
 
 		int length_port = strlen(ip_port) + 1;
 		int length_domain = strlen(t_domain) + 1;
 
 		if ((cloud_info->port = (char *)things_malloc(sizeof(char) * length_port)) == NULL) {
-			THINGS_LOG_D_ERROR(THINGS_ERROR, TAG, "Cloud_info port memory allocation is Failed.");
+			THINGS_LOG_D(THINGS_ERROR, TAG, "Cloud_info port memory allocation is Failed.");
 			result = 0;
 			goto GOTO_OUT;
 		}
 
 		if ((cloud_info->domain = (char *)things_malloc(sizeof(char) * length_domain)) == NULL) {
-			THINGS_LOG_D_ERROR(THINGS_ERROR, TAG, "Cloud_info domain-name memory allocation is Failed.");
+			THINGS_LOG_D(THINGS_ERROR, TAG, "Cloud_info domain-name memory allocation is Failed.");
 			result = 0;
 			goto GOTO_OUT;
 		}
@@ -347,7 +328,7 @@ static int set_def_cloud_info(es_cloud_signup_s *cloud_info, const char *cloud_a
 
 	if (cloud_info->refresh_token == NULL) {
 		if (prov_data == NULL || prov_data->refreshtoken[0] == 0) {
-			THINGS_LOG_D_ERROR(THINGS_ERROR, TAG, "Not exist Refresh Token. please check your system.");
+			THINGS_LOG_D(THINGS_ERROR, TAG, "Not exist Refresh Token. please check your system.");
 			result = 0;
 			goto GOTO_OUT;
 		}
@@ -357,7 +338,7 @@ static int set_def_cloud_info(es_cloud_signup_s *cloud_info, const char *cloud_a
 		int length_refresh = strlen(prov_data->refreshtoken) + 1;
 
 		if ((cloud_info->refresh_token = (char *)things_malloc(sizeof(char) * length_refresh)) == NULL) {
-			THINGS_LOG_D_ERROR(THINGS_ERROR, TAG, "Cloud_info port memory allocation is Failed.");
+			THINGS_LOG_D(THINGS_ERROR, TAG, "Cloud_info port memory allocation is Failed.");
 			result = 0;
 			goto GOTO_OUT;
 		}
@@ -403,16 +384,21 @@ OCStackApplicationResult handle_register_cb(void *ctx, OCDoHandle handle, OCClie
 		THINGS_LOG_D(THINGS_DEBUG, TAG, "Invalid Register callback received");
 	}
 
-	THINGS_LOG_D(THINGS_DEBUG, TAG, "Register response received code: %s(%d)", get_result(client_response->result), client_response->result);
+	if (client_response->result == OC_STACK_RESOURCE_CHANGED) {
+		THINGS_LOG_D(THINGS_INFO, TAG, "\e[35mCLOUD SIGNUP SUCCESS\e[m", get_result(client_response->result), client_response->result);
+	} else {
+		THINGS_LOG_D(THINGS_INFO, TAG, "\e[31mCLOUD SIGNUP FAIL: %s(%d)\e[m", get_result(client_response->result), client_response->result);
+	}
+
 	if ((proved_data = if_failed_then_retry(handle, client_response->result, &n_err)) == NULL) {
 		if (n_err == 1 || n_err == 4) {	// OC_STACK_COMM_ERROR or Handle is invalid.
 			THINGS_LOG_D(THINGS_DEBUG, TAG, "OC_STACK_COMM_ERROR(1) or Handle InValid(4) : %d", n_err);
 			return OC_STACK_DELETE_TRANSACTION;
 		}
 
-		THINGS_LOG_D_ERROR(THINGS_ERROR, TAG, "System Error occurred.(proved_data=0x%X, n_err=%d)", proved_data, n_err);
+		THINGS_LOG_D(THINGS_ERROR, TAG, "System Error occurred.(proved_data=0x%X, n_err=%d)", proved_data, n_err);
 		if (es_cloud_state_set_and_notify(ES_STATE_FAILED_TO_REGISTER_TO_CLOUD, ER_ERRCODE_SYSTEM_ERROR, NULL, NULL) != 0) {
-			THINGS_LOG_V_ERROR(THINGS_ERROR, TAG, "StateAndNotify is failed.");
+			THINGS_LOG_V(THINGS_ERROR, TAG, "StateAndNotify is failed.");
 		}
 
 		return OC_STACK_DELETE_TRANSACTION;
@@ -440,8 +426,6 @@ OCStackApplicationResult handle_register_cb(void *ctx, OCDoHandle handle, OCClie
 		if (client_response->result != OC_STACK_RESOURCE_CHANGED) {
 			ci_error_code_e ci_err = ERRCI_NO_ERROR;
 
-			oic_ping_unset_mask(g_cloud_ip, PING_ST_ISCLOUD | PING_ST_SIGNIN);
-
 			if (es_cloud_state_set_and_notify(ES_STATE_FAILED_TO_REGISTER_TO_CLOUD, (ci_error_code_e) NULL, client_response, &ci_err) != 0) {
 				THINGS_LOG_D(THINGS_DEBUG, TAG, "StateAndNotify is failed.");
 				res = OC_STACK_DELETE_TRANSACTION;
@@ -465,7 +449,7 @@ OCStackApplicationResult handle_register_cb(void *ctx, OCDoHandle handle, OCClie
 			case ERRCI_USER_NOT_FOUND:
 				THINGS_LOG_D(THINGS_DEBUG, TAG, "[ERRCODE] %d : fix the information and try again.", ci_err);
 				if (cloud_retry_sign_in(NULL) != 0) {
-					THINGS_LOG_D_ERROR(THINGS_ERROR, TAG, "Cloud connection Re-try is failed.");
+					THINGS_LOG_D(THINGS_ERROR, TAG, "Cloud connection Re-try is failed.");
 				}
 				res = OC_STACK_DELETE_TRANSACTION;
 				break;
@@ -485,7 +469,7 @@ OCStackApplicationResult handle_register_cb(void *ctx, OCDoHandle handle, OCClie
 
 		if (es_cloud_signup_init(&signed_up_data) == false) {
 			es_cloud_state_set_and_notify(ES_STATE_FAILED_TO_REGISTER_TO_CLOUD, ER_ERRCODE_SYSTEM_ERROR, NULL, NULL);
-			THINGS_LOG_D_ERROR(THINGS_ERROR, TAG, "signed_up_data-memory allocation is Failed, try again.");
+			THINGS_LOG_D(THINGS_ERROR, TAG, "signed_up_data-memory allocation is Failed, try again.");
 			res = OC_STACK_DELETE_TRANSACTION;
 			goto GOTO_OUT;
 		}
@@ -510,7 +494,7 @@ OCStackApplicationResult handle_register_cb(void *ctx, OCDoHandle handle, OCClie
 
 		if (set_def_cloud_info(signed_up_data, g_cloud_address, proved_data) == 0) {
 			es_cloud_state_set_and_notify(ES_STATE_FAILED_TO_REGISTER_TO_CLOUD, ER_ERRCODE_SYSTEM_ERROR, NULL, NULL);
-			THINGS_LOG_D_ERROR(THINGS_ERROR, TAG, "signed_up_data default setting is Failed.");
+			THINGS_LOG_D(THINGS_ERROR, TAG, "signed_up_data default setting is Failed.");
 			res = OC_STACK_DELETE_TRANSACTION;
 			goto GOTO_OUT;
 		}
@@ -575,8 +559,13 @@ OCStackApplicationResult handle_login_cb(void *ctx, OCDoHandle handle, OCClientR
 	if (ctx != (void *)DEFAULT_CONTEXT_VALUE) {
 		THINGS_LOG_D(THINGS_DEBUG, TAG, "Invalid Login callback received");
 	}
+	
+	if (client_response->result == OC_STACK_RESOURCE_CHANGED) { 
+		THINGS_LOG_D(THINGS_INFO, TAG, "\e[35mCLOUD SIGN-IN SUCCESS\e[m", get_result(client_response->result), client_response->result); 
+	} else { 
+		THINGS_LOG_D(THINGS_ERROR, TAG, "\e[31mCLOUD SIGN-IN FAIL: %s(%d)\e[m", get_result(client_response->result), client_response->result);
+	} 
 
-	THINGS_LOG_D(THINGS_DEBUG, TAG, "Login response received code: %s(%d)", get_result(client_response->result), client_response->result);
 	proved_data = if_failed_then_retry(handle, client_response->result, &n_err);
 
 	if (proved_data) {
@@ -608,8 +597,6 @@ OCStackApplicationResult handle_login_cb(void *ctx, OCDoHandle handle, OCClientR
 		if (client_response->result != OC_STACK_RESOURCE_CHANGED) {
 			ci_error_code_e ci_err = ERRCI_NO_ERROR;
 
-			oic_ping_unset_mask(g_cloud_ip, PING_ST_SIGNIN);
-
 			if (es_cloud_state_set_and_notify(ES_STATE_FAILED_TO_REGISTER_TO_CLOUD, (ci_error_code_e) NULL, client_response, &ci_err) != 0) {
 				THINGS_LOG_D(THINGS_DEBUG, TAG, "StateAndNotify is failed.");
 				return OC_STACK_DELETE_TRANSACTION;
@@ -618,7 +605,6 @@ OCStackApplicationResult handle_login_cb(void *ctx, OCDoHandle handle, OCClientR
 			switch (ci_err) {
 			case ERRCI_INTERNAL_SERVER_ERROR:
 				THINGS_LOG_D(THINGS_DEBUG, TAG, "[ERRCODE]Cloud Server has a issue, Check your Cloud Server.");
-				oic_ping_unset_mask(g_cloud_ip, PING_ST_ISCLOUD);
 				esm_get_network_status();	// State return
 				break;
 			case ERRCI_TOKEN_VALIDATION_FAILED:
@@ -632,15 +618,13 @@ OCStackApplicationResult handle_login_cb(void *ctx, OCDoHandle handle, OCClientR
 				break;
 			case ERRCI_DEVICE_NOT_FOUND:
 				THINGS_LOG_D(THINGS_DEBUG, TAG, "[ERRCODE]Device Not Found, Check your device ID and User ID coupling.");
-				oic_ping_unset_mask(g_cloud_ip, PING_ST_ISCLOUD);
 				esm_get_network_status();	// State return
 				if (things_reset(NULL, RST_AUTO_RESET) == -1) {
-					THINGS_LOG_V_ERROR(THINGS_ERROR, TAG, "[Error] things_reset is failed.");
+					THINGS_LOG_V(THINGS_ERROR, TAG, "[Error] things_reset is failed.");
 				}
 				break;
 			default:
 				THINGS_LOG_D(THINGS_DEBUG, TAG, "Not Support This Cloud-Error-Code(%d) Exception", ci_err);
-				oic_ping_unset_mask(g_cloud_ip, PING_ST_ISCLOUD);
 				esm_get_network_status();	// State return
 				break;
 			}
@@ -653,9 +637,8 @@ OCStackApplicationResult handle_login_cb(void *ctx, OCDoHandle handle, OCClientR
 			return OC_STACK_DELETE_TRANSACTION;
 		}
 
-		things_ping_set_mask(g_cloud_ip, atoi(g_cloud_port), PING_ST_SIGNIN);
+		things_ping_set_mask(g_cloud_ip, atoi(g_cloud_port), PING_ST_ISCLOUD|PING_ST_SIGNIN|PING_ST_TCPCONNECT);
 
-		// [ysy] Plublish resources to cloud
 		THINGS_LOG(THINGS_DEBUG, TAG, "Start OCCloudPUblish");
 		retranslate_rsc_publish_cnt = 0;
 		publish_resource_into_cloud(RSC_PUB_MAIN_ONLY, NULL);
@@ -841,11 +824,16 @@ OCStackApplicationResult handle_refresh_token_cb(void *ctx, OCDoHandle handle, O
 		if (signed_up_data->access_token == NULL || strlen(signed_up_data->access_token) < 1) {
 			THINGS_LOG_ERROR(THINGS_ERROR, TAG, "Session Key is NULL. Refresh Token Failed.");
 		} else {
+#ifdef __SECURED__
+			if (sm_save_cloud_acl(signed_up_data->sid) != 0) {
+				es_cloud_state_set_and_notify(ES_STATE_FAILED_TO_REGISTER_TO_CLOUD, ER_ERRCODE_SYSTEM_ERROR, NULL, NULL);
+				THINGS_LOG_V(THINGS_ERROR, TAG, "It's failed to save Cloud UUID to ACL list.");
+			}
+#endif
 			THINGS_LOG(THINGS_DEBUG, TAG, "Write Sign-Up data to file.");
 			if (dm_update_things_cloud(signed_up_data) == 1) {
 				THINGS_LOG_D(THINGS_DEBUG, TAG, "Re-Try Sign-IN step.");
-				force_session_stop(CISESS_SIGNOUT);
-				log_in_out_to_cloud(true, NULL);
+				disconnect_cloud_session();
 			} else {
 				THINGS_LOG_ERROR(THINGS_ERROR, TAG, "Refreshed Sign-UP data can not write to info file.");
 			}
@@ -1186,12 +1174,7 @@ static OCStackResult publish_resource_main_dev_into_cloud(things_resource_s **li
 			return res;
 		}
 
-		if (ci_connection_pre_check(NULL, NULL) == 0) {
-			res = things_cloud_rsc_publish(g_cloud_address, list, length, handle_main_dev_publish_cb, handle_publish_timeout, timeout);
-		} else {
-			THINGS_LOG_V(THINGS_INFO, TAG, "AP is not connected to internet.");
-			es_err = ES_ERRCODE_NO_INTERNETCONNECTION;
-		}
+		res = things_cloud_rsc_publish(g_cloud_address, list, length, handle_main_dev_publish_cb, handle_publish_timeout, timeout);
 
 		if (res != OC_STACK_OK) {
 			THINGS_LOG_D(THINGS_DEBUG, TAG, "Unable to publish user resources to cloud : %d", res);
@@ -1292,19 +1275,19 @@ OCStackResult log_in_out_to_cloud(bool value, timeout_s *timeout)
 {
 	int port = 0;
 	char *ci_ip = NULL;
-	char *ci_domian = NULL;
+	char *ci_domain = NULL;
 	es_error_code_e es_err = ES_ERRCODE_UNKNOWN;
 	OCStackResult res = OC_STACK_ERROR;
 	OCClientResponseHandler callback = NULL;
 	check_time_out_call_func calltimeout = NULL;
 
 	if (signed_up_data == NULL || signed_up_data->access_token == NULL || strlen(signed_up_data->access_token) < 1) {
-		THINGS_LOG_V_ERROR(THINGS_ERROR, TAG, "No Session Key Retrived from the Cloud ");
+		THINGS_LOG_V(THINGS_ERROR, TAG, "No Session Key Retrived from the Cloud ");
 		return res;
 	}
 
 	if (signed_up_data->domain != NULL && (signed_up_data->port == NULL || signed_up_data->port[0] == 0)) {
-		THINGS_LOG_D_ERROR(THINGS_ERROR, TAG, "domain=%s but, not exist port number.(%s)", signed_up_data->domain, signed_up_data->port);
+		THINGS_LOG_D(THINGS_ERROR, TAG, "domain=%s but, not exist port number.(%s)", signed_up_data->domain, signed_up_data->port);
 		return res;
 	}
 
@@ -1317,9 +1300,10 @@ OCStackResult log_in_out_to_cloud(bool value, timeout_s *timeout)
 		}
 
 		if (signed_up_data->domain != NULL) {
-			ci_domian = strdup(signed_up_data->domain);
+			ci_domain = strdup(signed_up_data->domain);
 		}
-		THINGS_LOG_D(THINGS_DEBUG, TAG, "*********** Start Sign-IN ********** ci_domian : %s", ci_domian);
+		THINGS_LOG_D(THINGS_DEBUG, TAG, "\e[35mSTART SIGN-IN\e[m");
+		THINGS_LOG_D(THINGS_DEBUG, TAG, "\e[35mCIDomain : %s\e[m", ci_domain);
 	} else {
 		callback = handle_logout_cb;
 		calltimeout = NULL;
@@ -1331,50 +1315,32 @@ OCStackResult log_in_out_to_cloud(bool value, timeout_s *timeout)
 		THINGS_LOG_D(THINGS_DEBUG, TAG, "*********** Start Sign-OUT **********");
 	}
 
-	if (ci_connection_pre_check(ci_domian, &ci_ip) == 0) {
-		if (ci_ip != NULL) {
-			if (make_cloud_address(ci_ip, signed_up_data->port, NULL) == NULL) {
-				THINGS_LOG_D_ERROR(THINGS_ERROR, TAG, "Making CloudAddress is failed.");
-				goto GOTO_OUT;
-			}
-			things_strncpy(g_cloud_ip, ci_ip, IP_PORT);
-			things_strncpy(g_cloud_port, signed_up_data->port, IP_PORT);
-
-			port = atoi(g_cloud_port);
-			if (g_cloud_ip[0] == NULL || g_cloud_port[0] == NULL || 0 >= port || port > 65535) {
-				THINGS_LOG_V_ERROR(THINGS_ERROR, TAG, "Cloud info is invalid.(g_cloud_ip=%s, g_cloud_port=%s, port=%d)", g_cloud_ip, g_cloud_port, port);
-				goto GOTO_OUT;
-			}
+	if ((ci_ip = things_cloud_domain_name_to_ip(ci_domain)) != NULL) {
+		if (make_cloud_address(ci_ip, signed_up_data->port, NULL) == NULL) {
+			THINGS_LOG_D(THINGS_ERROR, TAG, "Making CloudAddress is failed.");
+			goto GOTO_OUT;
 		}
+		things_strncpy(g_cloud_ip, ci_ip, IP_PORT);
+		things_strncpy(g_cloud_port, signed_up_data->port, IP_PORT);
 
-		if (g_cloud_address[0] == 0) {
-			THINGS_LOG_V_ERROR(THINGS_ERROR, TAG, "g_cloud_address is invalid.(0x%X)", g_cloud_address);
+		port = atoi(g_cloud_port);
+		if (g_cloud_ip[0] == NULL || g_cloud_port[0] == NULL || 0 >= port || port > 65535) {
+			THINGS_LOG_V(THINGS_ERROR, TAG, "Cloud info is invalid.(g_cloud_ip=%s, g_cloud_port=%s, port=%d)", g_cloud_ip, g_cloud_port, port);
 			goto GOTO_OUT;
 		}
 
-		THINGS_LOG_D(THINGS_INFO, TAG, "Cloud Addr : %s", g_cloud_address);
-		THINGS_LOG_D(THINGS_INFO, TAG, "device ID : %s", OCGetServerInstanceIDString());
-		THINGS_LOG_D(THINGS_INFO, TAG, "access_token : %s", signed_up_data->access_token);
-		THINGS_LOG_D(THINGS_INFO, TAG, "refresh token : %s", signed_up_data->refresh_token);
-		THINGS_LOG_D(THINGS_INFO, TAG, "user ID : %s", signed_up_data->uid);
-		THINGS_LOG_D(THINGS_INFO, TAG, "toke type : %s", signed_up_data->token_type);
-		THINGS_LOG_D(THINGS_INFO, TAG, "expire Time : %lld", signed_up_data->expire_time);
-		THINGS_LOG_D(THINGS_INFO, TAG, "certificate : %s", signed_up_data->certificate);
-		THINGS_LOG_D(THINGS_INFO, TAG, "redirect URI : %s", signed_up_data->redirect_uri);
-		THINGS_LOG_D(THINGS_INFO, TAG, "sid : %s", signed_up_data->sid);
-
-		if (value == true) {
-			things_ping_set_mask(g_cloud_ip, port, PING_ST_ISCLOUD);
-		} else {
-			oic_ping_unset_mask(g_cloud_ip, PING_ST_ISCLOUD | PING_ST_SIGNIN | PING_ST_TCPCONNECT);
+		if (g_cloud_address[0] == 0) {
+			THINGS_LOG_V(THINGS_ERROR, TAG, "g_cloud_address is invalid.(0x%X)", g_cloud_address);
+			goto GOTO_OUT;
 		}
 
 		res = things_cloud_session(g_cloud_address, signed_up_data->uid, OCGetServerInstanceIDString(), signed_up_data->access_token, value, callback, calltimeout, timeout);
 
 		THINGS_LOG_D(THINGS_DEBUG, TAG, "OCCloudLogInOut return : %d", res);
 	} else {
-		THINGS_LOG_V(THINGS_INFO, TAG, "AP is not connected to internet.");
-		es_err = ES_ERRCODE_NO_INTERNETCONNECTION;
+		res = OC_STACK_ERROR;
+		THINGS_LOG_V(THINGS_INFO, TAG, "things_cloud_domain_name_to_ip fail");
+		goto GOTO_OUT;
 	}
 
 GOTO_OUT:
@@ -1383,15 +1349,13 @@ GOTO_OUT:
 		ci_ip = NULL;
 	}
 
-	if (ci_domian != NULL) {
-		things_free(ci_domian);
-		ci_domian = NULL;
+	if (ci_domain != NULL) {
+		things_free(ci_domain);
+		ci_domain = NULL;
 	}
 
 	if (res != OC_STACK_OK) {
 		if (value == true) {
-			oic_ping_unset_mask(g_cloud_ip, PING_ST_ISCLOUD);
-
 			THINGS_LOG_V_ERROR(THINGS_ERROR, TAG, "Cloud Server LogIn Failed : %d", res);
 			if (es_cloud_state_set_and_notify(ES_STATE_FAILED_TO_REGISTER_TO_CLOUD, es_err, NULL, NULL) != 0) {
 				THINGS_LOG_D(THINGS_DEBUG, TAG, "StateAndNotify is failed.");
@@ -1425,7 +1389,7 @@ OCStackResult find_cloud_resource(void)
 	length_query = sizeof(char) * (length + 2);
 
 	if ((sz_query_uri = (char *)things_malloc(length_query)) == NULL) {
-		THINGS_LOG_D_ERROR(THINGS_ERROR, TAG, "sz_query_uri memory allocation is failed.");
+		THINGS_LOG_D(THINGS_ERROR, TAG, "sz_query_uri memory allocation is failed.");
 		return OC_STACK_ERROR;
 	}
 
@@ -1451,7 +1415,7 @@ OCStackResult find_cloud_resource(void)
 	}
 
 	if (ret != OC_STACK_OK) {
-		THINGS_LOG_D_ERROR(THINGS_ERROR, TAG, "Find Resource in Cloud is failed.");
+		THINGS_LOG_D(THINGS_ERROR, TAG, "Find Resource in Cloud is failed.");
 	}
 
 	things_free(sz_query_uri);
@@ -1461,16 +1425,41 @@ OCStackResult find_cloud_resource(void)
 
 static OCStackResult register_server_into_cloud(es_cloud_prov_data_s *event_data, timeout_s *timeout)
 {
+	THINGS_LOG_D(THINGS_INFO, TAG, "\e[35mCLOUD SIGNUP START\e[m");
+
 	OCStackResult res = OC_STACK_ERROR;
 
-	if (event_data == NULL || (event_data->auth_code[0] == 0 && event_data->accesstoken[0] == 0)) {
-		THINGS_LOG_D_ERROR(THINGS_ERROR, TAG, "Invalid event_data.");
+	if (event_data == NULL || (event_data->host_name[0] == 0 && inet_aton(event_data->ip, 0) == 0 || event_data->auth_code[0] == 0 && event_data->accesstoken[0] == 0)) {
+		THINGS_LOG_D(THINGS_ERROR, TAG, "Invalid event_data.");
 		return res;
 	}
 
+	char *cloud_ip = NULL;
+
+	if (event_data->host_name[0] != 0) {
+		THINGS_LOG_D(THINGS_DEBUG, TAG, "hostname is valid.(%s)", event_data->host_name);
+		for (int dns_try = 1; dns_try < 3; dns_try++) {
+			cloud_ip = things_cloud_domain_name_to_ip(event_data->host_name);
+			if (cloud_ip != NULL) {
+				break;
+			} else if (dns_try == 2) {
+				return OC_STACK_ERROR;
+			}
+		}
+	} else {
+		THINGS_LOG_D(THINGS_DEBUG, TAG, "IP addr is valid.(%s)", event_data->ip);
+		cloud_ip = event_data->ip;
+	}
+
+	things_strncpy(g_cloud_ip, cloud_ip, IP_PORT);
+	things_strncpy(g_cloud_port, event_data->port, IP_PORT);
+	make_cloud_address(cloud_ip, g_cloud_port, NULL);
+
+	THINGS_LOG_D(THINGS_DEBUG, TAG, "HostName     : %s", event_data->host_name);
+	THINGS_LOG_D(THINGS_DEBUG, TAG, "Port         : %s", event_data->port);
 	THINGS_LOG_D(THINGS_DEBUG, TAG, "AuthCode     : %s", event_data->auth_code);
 	THINGS_LOG_D(THINGS_DEBUG, TAG, "Access Token : %s", event_data->accesstoken);
-
+	
 	if (signed_up_data != NULL) {
 		es_cloud_signup_clear(signed_up_data);
 		signed_up_data = NULL;
@@ -1478,23 +1467,20 @@ static OCStackResult register_server_into_cloud(es_cloud_prov_data_s *event_data
 
 	int port = atoi(g_cloud_port);
 	if (g_cloud_ip[0] == NULL || g_cloud_port[0] == NULL || 0 >= port || port > 65535) {
-		THINGS_LOG_V_ERROR(THINGS_ERROR, TAG, "Cloud info is invalid.(g_cloud_ip=%s, g_cloud_port=%s, port=%d)", g_cloud_ip, g_cloud_port, port);
+		THINGS_LOG_V(THINGS_ERROR, TAG, "Cloud info is invalid.(g_cloud_ip=%s, g_cloud_port=%s, port=%d)", g_cloud_ip, g_cloud_port, port);
 		return res;
 	}
 
 	if (es_cloud_state_set_and_notify(ES_STATE_REGISTERING_TO_CLOUD, ES_ERRCODE_NO_ERROR, NULL, NULL) != 0) {
-		THINGS_LOG_V_ERROR(THINGS_ERROR, TAG, "StateAndNotify is failed.");
+		THINGS_LOG_V(THINGS_ERROR, TAG, "StateAndNotify is failed.");
 		return res;
 	}
-
-	things_ping_set_mask(g_cloud_ip, (uint16_t) port, PING_ST_ISCLOUD);
 
 	// Get Session Key
 	res = things_cloud_signup(g_cloud_address, OCGetServerInstanceIDString(), event_data, handle_register_cb, handle_signup_timeout, timeout);
 
 	if (res != OC_STACK_OK) {
-		THINGS_LOG_V_ERROR(THINGS_ERROR, TAG, "Cloud Server Registration Failed : %d", res);
-		oic_ping_unset_mask(g_cloud_ip, PING_ST_ISCLOUD);
+		THINGS_LOG_V(THINGS_ERROR, TAG, "Cloud Server Registration Failed : %d", res);
 		if (es_cloud_state_set_and_notify(ES_STATE_FAILED_TO_REGISTER_TO_CLOUD, ES_ERRCODE_UNKNOWN, NULL, NULL) != 0) {
 			THINGS_LOG_D(THINGS_DEBUG, TAG, "StateAndNotify is failed.");
 			return res;
@@ -1584,18 +1570,10 @@ static char *make_cloud_address(char *ip, char *port, const char *ci_addr)
 	return g_cloud_address;
 }
 
-static int start_ci_connection(const char *cloud_adress, es_cloud_prov_data_s *event_data, things_resource_s **list, int length, timeout_s *timeout)
+static int start_ci_connection(const char *cloud_adress, es_cloud_prov_data_s *event_data, timeout_s *timeout)
 {
 	int ret = 0;
 	OCStackResult result = OC_STACK_ERROR;
-
-	g_resource_lists = list;
-	g_len = length;
-
-	if (make_cloud_address(NULL, NULL, cloud_adress) == NULL) {
-		THINGS_LOG_V_ERROR(THINGS_ERROR, TAG, "Making Cloud Address is failed.");
-		result = OC_STACK_NO_MEMORY;
-	}
 
 	THINGS_LOG_D(THINGS_DEBUG, TAG, "CI Svr Addr         : %s", g_cloud_address);
 	THINGS_LOG_D(THINGS_DEBUG, TAG, "CI Svr AuthCode     : %s", event_data->auth_code);
@@ -1623,7 +1601,7 @@ static int start_ci_connection(const char *cloud_adress, es_cloud_prov_data_s *e
 	}
 
 	if (OC_STACK_OK != result) {
-		THINGS_LOG_V_ERROR(THINGS_ERROR, TAG, "start_ci_connection() is failed.");
+		THINGS_LOG_V(THINGS_ERROR, TAG, "start_ci_connection() is failed.");
 	} else {
 		ret = 1;				// Success.
 	}
@@ -1672,44 +1650,38 @@ static void *ci_connection_init_loop(es_cloud_event_timeout_s *param)
 			THINGS_LOG_V(THINGS_INFO, TAG, "  Start Cloud Connection ");
 			THINGS_LOG_V(THINGS_INFO, TAG, "##########################");
 
-			if (ci_connection_pre_check(ci_host, &ci_ip) == 0) {
-				ci_ip_port = make_ip_port(ci_ip, event_data->port);
-				things_strncpy(g_cloud_ip, ci_ip, IP_PORT);
-				things_strncpy(g_cloud_port, event_data->port, IP_PORT);
+			pthread_mutex_lock(&g_es_mutex);
+			
+			res = start_ci_connection(dm_get_things_cloud_address(ci_ip_port), event_data, &param->timeOut);
+			switch (res) {
+			case 1:		// Success
+				usleep(500000);	// 0.5 sec wait (need for Cloud CI Server cooling.)
+				break;
+			case 0:		// Fail start_ci_connection.
+				es_err = ES_ERRCODE_UNKNOWN;
+				break;
+			case -1:		// Json Parsing error. or Memory Alloc error. or Invalid argument error.
+				es_err = ER_ERRCODE_SYSTEM_ERROR;
+				break;
+			case -2:		// Invalid Contents of Json file.
+				es_err = ER_ERRCODE_INVALID_SAVED_CLOUD_DATA;
+				break;
+			}
+			THINGS_LOG_D(THINGS_DEBUG, TAG, "res = %d, es_err = %d", res, es_err);
 
-				pthread_mutex_lock(&g_es_mutex);
-				res = start_ci_connection(dm_get_things_cloud_address(ci_ip_port), event_data, g_server_builder->gres_arr, g_server_builder->res_num, &param->timeOut);
-				switch (res) {
-				case 1:		// Success
-					usleep(500000);	// 0.5 sec wait (need for Cloud CI Server cooling.)
-					break;
-				case 0:		// Fail start_ci_connection.
-					es_err = ES_ERRCODE_UNKNOWN;
-					break;
-				case -1:		// Json Parsing error. or Memory Alloc error. or Invalid argument error.
-					es_err = ER_ERRCODE_SYSTEM_ERROR;
-					break;
-				case -2:		// Invalid Contents of Json file.
-					es_err = ER_ERRCODE_INVALID_SAVED_CLOUD_DATA;
-					break;
-				}
-				THINGS_LOG_D(THINGS_DEBUG, TAG, "res = %d, es_err = %d", res, es_err);
-				pthread_mutex_unlock(&g_es_mutex);
+			pthread_mutex_unlock(&g_es_mutex);
 
-				if (ci_ip_port) {
-					things_free(ci_ip_port);
-					ci_ip_port = NULL;
-				}
-				if (ci_ip) {
-					things_free(ci_ip);
-					ci_ip = NULL;
-				}
-			} else {
-				THINGS_LOG_V_ERROR(THINGS_ERROR, TAG, "AP is Not Connected to Internet.");
-				es_err = ES_ERRCODE_NO_INTERNETCONNECTION;
+			if (ci_ip_port) {
+				things_free(ci_ip_port);
+				ci_ip_port = NULL;
+			}
+
+			if (ci_ip) {
+				things_free(ci_ip);
+				ci_ip = NULL;
 			}
 		} else {
-			THINGS_LOG_V_ERROR(THINGS_ERROR, TAG, "ServerBuilder is NULL.");
+			THINGS_LOG_V(THINGS_ERROR, TAG, "ServerBuilder is NULL.");
 			es_err = ER_ERRCODE_SYSTEM_ERROR;
 		}
 	} else {
@@ -1773,12 +1745,12 @@ void *cloud_data_cb_esm(es_cloud_prov_data_s *event_data)
 
 	pthread_t cthread_handler;
 	es_cloud_event_timeout_s *cloned_data = NULL;
-#if 0							// pkcloud
+
 	if (ci_cp_cas_is_there_cp_if_false() == true) {
 		THINGS_LOG_D(THINGS_DEBUG, TAG, "Already exist data of Cloud Provisioning.");
 		return NULL;
 	}
-#endif
+
 	switch (g_qis_cloud_thread_running) {
 	case CISESS_APDISCON:
 		// Backup loose try..
@@ -1977,6 +1949,12 @@ void ci_stop_cloud_connection(void *CBfunc)
 		things_res_cb_function = (things_cloud_con_result_func_type *) CBfunc;
 	}
 }
+
+void disconnect_cloud_session(void)
+{
+	CAUtilTCPDisconnectSession(g_cloud_ip, 443, 64);
+}
+
 static void force_session_stop(ci_session_level_e state)
 {
 	del_all_request_handle();
@@ -2032,7 +2010,6 @@ int ci_retry_stop_by_tcp_cb(const char *addr_ip, const int port)
 		THINGS_LOG_V(THINGS_INFO, TAG, "We Support IP:Port is \"%s:%s\"", g_cloud_ip, g_cloud_port);
 		if (strncmp(g_cloud_ip, addr_ip, strlen(addr_ip)) != 0) {
 			THINGS_LOG_D(THINGS_DEBUG, TAG, "Delete OIC_Ping for IP=%s.(Cur_Cloud=%s)", addr_ip, g_cloud_ip);
-			oic_ping_unset_mask(addr_ip, PING_ST_ISCLOUD);
 		}
 		ret = 0;
 		goto GOTO_OUT;
@@ -2066,7 +2043,7 @@ bool es_cloud_session_stop_trigger(things_es_enrollee_state_e es_state)
 
 		THINGS_LOG_D(THINGS_DEBUG, TAG, "es_state=%s, get_enrollee_state()=%s", get_prov_status(es_state), get_prov_status(get_enrollee_state()));
 
-		if (es_state <= ES_STATE_CONNECTED_TO_ENROLLER) {
+		if (ES_STATE_INIT <= es_state && es_state <= ES_STATE_CONNECTED_TO_ENROLLER) {
 			if (g_qis_cloud_thread_running != CISESS_BUSY && g_qis_cloud_thread_running != CISESS_APDISCON && es_get_cloud_login_state() == false) {
 				THINGS_LOG_D(THINGS_DEBUG, TAG, "Setting Cloud Semaphore init.");
 				g_qis_cloud_thread_running = CISESS_STOP;

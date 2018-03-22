@@ -93,5 +93,7 @@ extern OCStackResult things_cloud_topic_publish_topic(const char *host,
 		OCRepPayload *payload,
 		OCClientResponseHandler response);
 
+char *things_cloud_domain_name_to_ip(const char *p_dns);
+
 #endif	/* 
  */

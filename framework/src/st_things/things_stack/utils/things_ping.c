@@ -378,14 +378,14 @@ bool things_ping_set_interval(const char *remote_addr, int64_t *intervals, int i
  ***************************************************************************************/
 static void *__attribute__((optimize("O0"))) thd_ping_loop(things_ping_s *ping)
 {
-	THINGS_LOG(THINGS_DEBUG, TAG, "Enter.");
-
 	int sleepMinute = 0;
 
 	if (ping == NULL || ping->addr == NULL) {
 		THINGS_LOG_V_ERROR(THINGS_ERROR, TAG, "[Error]: Invalid arguments.(pint=0x%X)", ping);
 		return NULL;
 	}
+
+	THINGS_LOG_V(THIINGS_INFO, TAG, "\e[35mSTART PING THREAD / TARGET : %s\e[m", ping->addr);
 
 	THINGS_LOG_D(THINGS_DEBUG, TAG, "IP=%s, handle=0x%X, State=0x%X", ping->addr, ping->handle_thread, ping->bit_mask_state);
 
@@ -459,7 +459,6 @@ static void *__attribute__((optimize("O0"))) thd_ping_loop(things_ping_s *ping)
 	set_def_interval(ping);
 	p_ping = NULL;
 	THINGS_LOG_V(THINGS_INFO, TAG, "\e[35mSTOP PING THREAD / TARGET : %s\e[m", ping->addr);
-	THINGS_LOG(THINGS_DEBUG, TAG, "Exit.");
 	return (void *)1;
 }
 
