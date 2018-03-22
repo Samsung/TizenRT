@@ -30,7 +30,6 @@
 #include "things_api.h"
 #include "octypes.h"
 #include "ocpayload.h"
-#include "oic_string.h"
 #include "logging/things_logger.h"
 #include "cloud/cloud_manager.h"
 #include "utils/things_string_util.h"
@@ -39,7 +38,6 @@
 #include "framework/things_common.h"
 
 #include "utils/things_network.h"
-#include <time.h>
 
 #define ES_RH_TAG "[ezsetup-RH]"
 
@@ -162,17 +160,17 @@ static OCRepPayload *make_rep_payload(OCResourceHandle rsc_handle, OCDevAddr *de
 	add->base.type = PAYLOAD_TYPE_REPRESENTATION;
 
 	if (rsc_handle == g_wifi_resource.handle) {
-		resource_type[0] = OICStrdup(OC_RSRVD_ES_RES_TYPE_WIFI);
+		resource_type[0] = OICStrdup(THINGS_RSRVD_ES_RES_TYPE_WIFI);
 		resource_interface[0] = OICStrdup(OC_RSRVD_INTERFACE_DEFAULT);
-		OCRepPayloadSetPropString(add, OC_RSRVD_HREF, OC_RSRVD_ES_URI_WIFI);
+		OCRepPayloadSetPropString(add, OC_RSRVD_HREF, THINGS_RSRVD_ES_URI_WIFI);
 	} else if (rsc_handle == g_dev_conf_resource.handle) {
-		resource_type[0] = OICStrdup(OC_RSRVD_ES_RES_TYPE_DEVCONF);
+		resource_type[0] = OICStrdup(THINGS_RSRVD_ES_RES_TYPE_DEVCONF);
 		resource_interface[0] = OICStrdup(OC_RSRVD_INTERFACE_DEFAULT);
-		OCRepPayloadSetPropString(add, OC_RSRVD_HREF, OC_RSRVD_ES_URI_DEVCONF);
+		OCRepPayloadSetPropString(add, OC_RSRVD_HREF, THINGS_RSRVD_ES_URI_DEVCONF);
 	} else if (rsc_handle == g_cloud_resource.handle) {
-		resource_type[0] = OICStrdup(OC_RSRVD_ES_RES_TYPE_CLOUDSERVER);
+		resource_type[0] = OICStrdup(THINGS_RSRVD_ES_RES_TYPE_CLOUDSERVER);
 		resource_interface[0] = OICStrdup(OC_RSRVD_INTERFACE_DEFAULT);
-		OCRepPayloadSetPropString(add, OC_RSRVD_HREF, OC_RSRVD_ES_URI_CLOUDSERVER);
+		OCRepPayloadSetPropString(add, OC_RSRVD_HREF, THINGS_RSRVD_ES_URI_CLOUDSERVER);
 	} else {
 		THINGS_LOG_D_ERROR(THINGS_ERROR, ES_RH_TAG, "Not supported resource handler(rsc_handle=0x%X)", rsc_handle);
 		OCPayloadDestroy((OCPayload *) add);
@@ -259,7 +257,7 @@ void get_target_network_info_from_prov_resource(char *name, char *pass)
 	}
 }
 
-OCStackResult initProvResource(bool is_secured)
+OCStackResult init_prov_resource(bool is_secured)
 {
 	es_set_state(ES_STATE_INIT);
 	g_prov_resource.last_err_code = ES_ERRCODE_NO_ERROR;
@@ -267,10 +265,11 @@ OCStackResult initProvResource(bool is_secured)
 
 	OCStackResult res = OC_STACK_ERROR;
 	if (is_secured) {
-		res = OCCreateResource(&g_prov_resource.handle, OC_RSRVD_ES_RES_TYPE_PROV, OC_RSRVD_INTERFACE_DEFAULT, OC_RSRVD_ES_URI_PROV, things_entity_handler_cb, NULL, OC_DISCOVERABLE | OC_OBSERVABLE | OC_SECURE);
+		res = OCCreateResource(&g_prov_resource.handle, THINGS_RSRVD_ES_RES_TYPE_PROV, OC_RSRVD_INTERFACE_DEFAULT, THINGS_RSRVD_ES_URI_PROV, things_entity_handler_cb, NULL, OC_DISCOVERABLE | OC_OBSERVABLE | OC_SECURE);
 	} else {
-		res = OCCreateResource(&g_prov_resource.handle, OC_RSRVD_ES_RES_TYPE_PROV, OC_RSRVD_INTERFACE_DEFAULT, OC_RSRVD_ES_URI_PROV, things_entity_handler_cb, NULL, OC_DISCOVERABLE | OC_OBSERVABLE);
+		res = OCCreateResource(&g_prov_resource.handle, THINGS_RSRVD_ES_RES_TYPE_PROV, OC_RSRVD_INTERFACE_DEFAULT, THINGS_RSRVD_ES_URI_PROV, things_entity_handler_cb, NULL, OC_DISCOVERABLE | OC_OBSERVABLE);
 	}
+
 	if (res) {
 		THINGS_LOG_D(THINGS_DEBUG, ES_RH_TAG, "Created Prov resource with result: %s", get_result(res));
 		return res;
@@ -287,6 +286,7 @@ OCStackResult initProvResource(bool is_secured)
 		THINGS_LOG_D(THINGS_DEBUG, ES_RH_TAG, "Created Prov resource with result: %s", get_result(res));
 		return res;
 	}
+
 	res = OCBindResourceInterfaceToResource(g_prov_resource.handle, OC_RSRVD_INTERFACE_BATCH);
 	if (res) {
 		THINGS_LOG_D(THINGS_DEBUG, ES_RH_TAG, "Created Prov resource with result: %s", get_result(res));
@@ -297,7 +297,7 @@ OCStackResult initProvResource(bool is_secured)
 	return res;
 }
 
-OCStackResult initWiFiResource(bool is_secured)
+OCStackResult init_wifi_resource(bool is_secured)
 {
 	OCStackResult res = OC_STACK_ERROR;
 
@@ -315,19 +315,18 @@ OCStackResult initWiFiResource(bool is_secured)
 	g_wifi_resource.discovery_channel = 1;
 
 	if (is_secured) {
-		res = OCCreateResource(&g_wifi_resource.handle, OC_RSRVD_ES_RES_TYPE_WIFI, OC_RSRVD_INTERFACE_DEFAULT, OC_RSRVD_ES_URI_WIFI, things_entity_handler_cb, NULL, OC_DISCOVERABLE | OC_OBSERVABLE | OC_SECURE);
+		res = OCCreateResource(&g_wifi_resource.handle, THINGS_RSRVD_ES_RES_TYPE_WIFI, OC_RSRVD_INTERFACE_DEFAULT, THINGS_RSRVD_ES_URI_WIFI, things_entity_handler_cb, NULL, OC_DISCOVERABLE | OC_OBSERVABLE | OC_SECURE);
 	} else {
-		res = OCCreateResource(&g_wifi_resource.handle, OC_RSRVD_ES_RES_TYPE_WIFI, OC_RSRVD_INTERFACE_DEFAULT, OC_RSRVD_ES_URI_WIFI, things_entity_handler_cb, NULL, OC_DISCOVERABLE | OC_OBSERVABLE);
+		res = OCCreateResource(&g_wifi_resource.handle, THINGS_RSRVD_ES_RES_TYPE_WIFI, OC_RSRVD_INTERFACE_DEFAULT, THINGS_RSRVD_ES_URI_WIFI, things_entity_handler_cb, NULL, OC_DISCOVERABLE | OC_OBSERVABLE);
 	}
 
 	things_apply_current_ap();
 
 	THINGS_LOG_D(THINGS_DEBUG, ES_RH_TAG, "Created WiFi resource with result: %s", get_result(res));
 	return res;
-
 }
 
-static void initCloudResourceData(cloud_resource_s *p_cloud_resource)
+static void init_cloud_resource_data(cloud_resource_s *p_cloud_resource)
 {
 	if (p_cloud_resource == NULL) {
 		return;
@@ -385,7 +384,7 @@ void clone_es_cloud_prov_data(es_cloud_prov_data_s *des, es_cloud_prov_data_s *s
 	memcpy(des->uid, src->uid, sizeof(char) *THINGS_STRING_MAX_VALUE);
 }
 
-static void initESWiFiProvData(es_wifi_prov_data_s *p_wifi_data)
+static void init_es_wifi_prov_data(es_wifi_prov_data_s *p_wifi_data)
 {
 	if (p_wifi_data == NULL) {
 		return;
@@ -425,24 +424,23 @@ void set_ssid_in_wifi_resource(const char *ssid)
 	THINGS_LOG_D(THINGS_DEBUG, ES_RH_TAG, "g_wifi_resource.ssid=%s", g_wifi_resource.ssid);
 }
 
-OCStackResult initCloudServerResource(bool is_secured)
+OCStackResult init_cloud_server_resource(bool is_secured)
 {
 	OCStackResult res = OC_STACK_ERROR;
 
-	initCloudResourceData(&g_cloud_resource);
+	init_cloud_resource_data(&g_cloud_resource);
 
 	if (is_secured) {
-		res = OCCreateResource(&g_cloud_resource.handle, OC_RSRVD_ES_RES_TYPE_CLOUDSERVER, OC_RSRVD_INTERFACE_DEFAULT, OC_RSRVD_ES_URI_CLOUDSERVER, things_entity_handler_cb, NULL, OC_DISCOVERABLE | OC_OBSERVABLE | OC_SECURE);
+		res = OCCreateResource(&g_cloud_resource.handle, THINGS_RSRVD_ES_RES_TYPE_CLOUDSERVER, OC_RSRVD_INTERFACE_DEFAULT, THINGS_RSRVD_ES_URI_CLOUDSERVER, things_entity_handler_cb, NULL, OC_DISCOVERABLE | OC_OBSERVABLE | OC_SECURE);
 	} else {
-		res = OCCreateResource(&g_cloud_resource.handle, OC_RSRVD_ES_RES_TYPE_CLOUDSERVER, OC_RSRVD_INTERFACE_DEFAULT, OC_RSRVD_ES_URI_CLOUDSERVER, things_entity_handler_cb, NULL, OC_DISCOVERABLE | OC_OBSERVABLE);
+		res = OCCreateResource(&g_cloud_resource.handle, THINGS_RSRVD_ES_RES_TYPE_CLOUDSERVER, OC_RSRVD_INTERFACE_DEFAULT, THINGS_RSRVD_ES_URI_CLOUDSERVER, things_entity_handler_cb, NULL, OC_DISCOVERABLE | OC_OBSERVABLE);
 	}
 
 	THINGS_LOG_D(THINGS_DEBUG, ES_RH_TAG, "Created CloudServer resource with result: %s", get_result(res));
 	return res;
-
 }
 
-OCStackResult initDevConfResource(bool is_secured)
+OCStackResult init_dev_conf_resource(bool is_secured)
 {
 	OCStackResult res = OC_STACK_ERROR;
 
@@ -454,14 +452,13 @@ OCStackResult initDevConfResource(bool is_secured)
 	memset(g_dev_conf_resource.datetime, 0, sizeof(char) *THINGS_STRING_MAX_VALUE);
 
 	if (is_secured) {
-		res = OCCreateResource(&g_dev_conf_resource.handle, OC_RSRVD_ES_RES_TYPE_DEVCONF, OC_RSRVD_INTERFACE_DEFAULT, OC_RSRVD_ES_URI_DEVCONF, things_entity_handler_cb, NULL, OC_DISCOVERABLE | OC_OBSERVABLE | OC_SECURE);
+		res = OCCreateResource(&g_dev_conf_resource.handle, THINGS_RSRVD_ES_RES_TYPE_DEVCONF, OC_RSRVD_INTERFACE_DEFAULT, THINGS_RSRVD_ES_URI_DEVCONF, things_entity_handler_cb, NULL, OC_DISCOVERABLE | OC_OBSERVABLE | OC_SECURE);
 	} else {
-		res = OCCreateResource(&g_dev_conf_resource.handle, OC_RSRVD_ES_RES_TYPE_DEVCONF, OC_RSRVD_INTERFACE_DEFAULT, OC_RSRVD_ES_URI_DEVCONF, things_entity_handler_cb, NULL, OC_DISCOVERABLE | OC_OBSERVABLE);
+		res = OCCreateResource(&g_dev_conf_resource.handle, THINGS_RSRVD_ES_RES_TYPE_DEVCONF, OC_RSRVD_INTERFACE_DEFAULT, THINGS_RSRVD_ES_URI_DEVCONF, things_entity_handler_cb, NULL, OC_DISCOVERABLE | OC_OBSERVABLE);
 	}
 
 	THINGS_LOG_D(THINGS_DEBUG, ES_RH_TAG, "Created dev_conf_s resource with result: %s", get_result(res));
 	return res;
-
 }
 
 void update_prov_resource(OCEntityHandlerRequest *eh_request, OCRepPayload *input)
@@ -480,10 +477,10 @@ void update_prov_resource(OCEntityHandlerRequest *eh_request, OCRepPayload *inpu
 
 void update_wifi_resource(OCRepPayload *input)
 {
-	initESWiFiProvData(&g_wifi_data);
+	init_es_wifi_prov_data(&g_wifi_data);
 
 	char *ssid = NULL;
-	if (OCRepPayloadGetPropString(input, OC_RSRVD_ES_SSID, &ssid) == false || ssid == NULL) {
+	if (OCRepPayloadGetPropString(input, THINGS_RSRVD_ES_SSID, &ssid) == false || ssid == NULL) {
 		return;
 	}
 
@@ -498,25 +495,25 @@ void update_wifi_resource(OCRepPayload *input)
 	THINGS_LOG_D(THINGS_DEBUG, ES_RH_TAG, "g_wifi_data.ssid : %s", g_wifi_data.ssid);
 
 	char *cred = NULL;
-	if (OCRepPayloadGetPropString(input, OC_RSRVD_ES_CRED, &cred)) {
+	if (OCRepPayloadGetPropString(input, THINGS_RSRVD_ES_CRED, &cred)) {
 		things_strncpy(g_wifi_data.pwd, cred, sizeof(g_wifi_data.pwd));
 		THINGS_LOG_D(THINGS_DEBUG, ES_RH_TAG, "g_wifi_data.pwd %s", g_wifi_data.pwd);
 	}
 
 	int64_t auth_type = -1;
-	if (OCRepPayloadGetPropInt(input, OC_RSRVD_ES_AUTHTYPE, &auth_type)) {
+	if (OCRepPayloadGetPropInt(input, THINGS_RSRVD_ES_AUTHTYPE, &auth_type)) {
 		g_wifi_data.authtype = auth_type;
 		THINGS_LOG_D(THINGS_DEBUG, ES_RH_TAG, "g_wifi_data.authtype %u", g_wifi_data.authtype);
 	}
 
 	int64_t enc_type = -1;
-	if (OCRepPayloadGetPropInt(input, OC_RSRVD_ES_ENCTYPE, &enc_type)) {
+	if (OCRepPayloadGetPropInt(input, THINGS_RSRVD_ES_ENCTYPE, &enc_type)) {
 		g_wifi_data.enctype = enc_type;
 		THINGS_LOG_D(THINGS_DEBUG, ES_RH_TAG, "g_wifi_data.enctype %u", g_wifi_data.enctype);
 	}
 
 	int64_t channel = -1;
-	if (OCRepPayloadGetPropInt(input, OC_RSRVD_ES_VENDOR_DISCOVERYCHANNEL, &channel)) {
+	if (OCRepPayloadGetPropInt(input, THINGS_RSRVD_ES_VENDOR_DISCOVERYCHANNEL, &channel)) {
 		g_wifi_data.discovery_channel = channel;
 		THINGS_LOG_D(THINGS_DEBUG, ES_RH_TAG, "g_wifi_data.discovery_channel %u", g_wifi_data.discovery_channel);
 	}
@@ -546,25 +543,25 @@ void update_wifi_resource(OCRepPayload *input)
 bool update_cloud_resource(OCRepPayload *input)
 {
 	bool res = false;
-	initCloudResourceData(&g_cloud_resource);
+	init_cloud_resource_data(&g_cloud_resource);
 	init_es_cloud_prov_data(&g_cloud_data);
 
 	char *auth_code = NULL;
-	if (OCRepPayloadGetPropString(input, OC_RSRVD_ES_AUTHCODE, &auth_code)) {
+	if (OCRepPayloadGetPropString(input, THINGS_RSRVD_ES_AUTHCODE, &auth_code)) {
 		things_strncpy(g_cloud_resource.auth_code, auth_code, sizeof(g_cloud_resource.auth_code));
 		things_strncpy(g_cloud_data.auth_code, auth_code, sizeof(g_cloud_data.auth_code));
 		THINGS_LOG_D(THINGS_DEBUG, ES_RH_TAG, "g_cloud_resource.auth_code %s", g_cloud_resource.auth_code);
 	}
 
 	char *accesstoken = NULL;
-	if (OCRepPayloadGetPropString(input, OC_RSRVD_ES_VENDOR_ACCESS_TOKEN, &accesstoken)) {
+	if (OCRepPayloadGetPropString(input, THINGS_RSRVD_ES_VENDOR_ACCESS_TOKEN, &accesstoken)) {
 		things_strncpy(g_cloud_resource.accesstoken, accesstoken, sizeof(g_cloud_resource.accesstoken));
 		things_strncpy(g_cloud_data.accesstoken, accesstoken, sizeof(g_cloud_data.accesstoken));
 		THINGS_LOG_D(THINGS_DEBUG, ES_RH_TAG, "g_cloud_resource.accesstoken %s", g_cloud_resource.accesstoken);
 	}
 
 	int accesstokenType = NULL;
-	if (OCRepPayloadGetPropInt(input, OC_RSRVD_ES_VENDOR_ACCESS_TOKEN_TYPE, &accesstokenType)) {
+	if (OCRepPayloadGetPropInt(input, THINGS_RSRVD_ES_VENDOR_ACCESS_TOKEN_TYPE, &accesstokenType)) {
 		g_cloud_resource.actoken_type = accesstokenType;
 		g_cloud_data.actoken_type = accesstokenType;
 		THINGS_LOG_D(THINGS_DEBUG, ES_RH_TAG, "g_cloud_resource.actoken_type %d", g_cloud_resource.actoken_type);
@@ -578,21 +575,21 @@ bool update_cloud_resource(OCRepPayload *input)
 	}
 
 	char *uid = NULL;
-	if (OCRepPayloadGetPropString(input, OC_RSRVD_ES_VENDOR_USER_ID, &uid)) {
+	if (OCRepPayloadGetPropString(input, THINGS_RSRVD_ES_VENDOR_USER_ID, &uid)) {
 		things_strncpy(g_cloud_resource.uid, uid, sizeof(g_cloud_resource.uid));
 		things_strncpy(g_cloud_data.uid, uid, sizeof(g_cloud_data.uid));
 		THINGS_LOG_D(THINGS_DEBUG, ES_RH_TAG, "g_cloud_resource.uid %s", g_cloud_resource.uid);
 	}
 
 	char *auth_provider = NULL;
-	if (OCRepPayloadGetPropString(input, OC_RSRVD_ES_AUTHPROVIDER, &auth_provider)) {
+	if (OCRepPayloadGetPropString(input, THINGS_RSRVD_ES_AUTHPROVIDER, &auth_provider)) {
 		things_strncpy(g_cloud_resource.auth_provider, auth_provider, sizeof(g_cloud_resource.auth_provider));
 		things_strncpy(g_cloud_data.auth_provider, auth_provider, sizeof(g_cloud_data.auth_provider));
 		THINGS_LOG_D(THINGS_DEBUG, ES_RH_TAG, "g_cloud_resource.auth_provider %s", g_cloud_resource.auth_provider);
 	}
 
 	char *ci_server = NULL;
-	if (OCRepPayloadGetPropString(input, OC_RSRVD_ES_CISERVER, &ci_server)) {
+	if (OCRepPayloadGetPropString(input, THINGS_RSRVD_ES_CISERVER, &ci_server)) {
 		if (check_ci_server_ipv4(ci_server, &g_cloud_data) == 1) {
 			things_strncpy(g_cloud_resource.ci_server, ci_server, sizeof(g_cloud_resource.ci_server));
 			THINGS_LOG_D(THINGS_DEBUG, ES_RH_TAG, "g_cloud_resource.ci_server %s", g_cloud_resource.ci_server);
@@ -604,14 +601,14 @@ bool update_cloud_resource(OCRepPayload *input)
 	}
 
 	char *server_id = NULL;
-	if (OCRepPayloadGetPropString(input, OC_RSRVD_ES_SERVERID, &server_id)) {
+	if (OCRepPayloadGetPropString(input, THINGS_RSRVD_ES_SERVERID, &server_id)) {
 		things_strncpy(g_cloud_resource.server_id, server_id, sizeof(g_cloud_resource.server_id));
 		things_strncpy(g_cloud_data.server_id, server_id, sizeof(g_cloud_data.server_id));
 		THINGS_LOG_D(THINGS_DEBUG, ES_RH_TAG, "g_cloud_resource.server_id %s", g_cloud_resource.server_id);
 	}
 
 	char *client_id = NULL;
-	if (OCRepPayloadGetPropString(input, OC_RSRVD_ES_VENDOR_CLIENTID, &client_id)) {
+	if (OCRepPayloadGetPropString(input, THINGS_RSRVD_ES_VENDOR_CLIENTID, &client_id)) {
 		things_strncpy(g_cloud_resource.client_id, client_id, sizeof(g_cloud_resource.client_id));
 		things_strncpy(g_cloud_data.client_id, client_id, sizeof(g_cloud_data.client_id));
 		THINGS_LOG_D(THINGS_DEBUG, ES_RH_TAG, "g_cloud_resource.client_id %s", g_cloud_resource.client_id);
@@ -675,76 +672,24 @@ bool update_cloud_resource(OCRepPayload *input)
 void update_dev_conf_resource(OCRepPayload *input)
 {
 	char *country = NULL;
-	if (OCRepPayloadGetPropString(input, OC_RSRVD_ES_COUNTRY, &country)) {
+	if (OCRepPayloadGetPropString(input, THINGS_RSRVD_ES_COUNTRY, &country)) {
 		things_strncpy(g_dev_conf_resource.country, country, sizeof(g_dev_conf_resource.country));
 		things_strncpy(g_dev_conf_data.country, country, sizeof(g_dev_conf_data.country));
 		THINGS_LOG_D(THINGS_DEBUG, ES_RH_TAG, "g_dev_conf_resource.country %s", g_dev_conf_resource.country);
 	}
 
 	char *language = NULL;
-	if (OCRepPayloadGetPropString(input, OC_RSRVD_ES_LANGUAGE, &language)) {
+	if (OCRepPayloadGetPropString(input, THINGS_RSRVD_ES_LANGUAGE, &language)) {
 		things_strncpy(g_dev_conf_resource.language, language, sizeof(g_dev_conf_resource.language));
 		things_strncpy(g_dev_conf_data.language, language, sizeof(g_dev_conf_data.language));
 		THINGS_LOG_D(THINGS_DEBUG, ES_RH_TAG, "g_dev_conf_resource.language %s", g_dev_conf_resource.language);
 	}
 
 	char *datetime = NULL;
-	if (OCRepPayloadGetPropString(input, OC_RSRVD_ES_VENDOR_UTC_DATE_TIME, &datetime)) {
+	if (OCRepPayloadGetPropString(input, THINGS_RSRVD_ES_VENDOR_UTC_DATE_TIME, &datetime)) {
 		things_strncpy(g_dev_conf_resource.datetime, datetime, sizeof(g_dev_conf_resource.datetime));
 		things_strncpy(g_dev_conf_data.datetime, datetime, sizeof(g_dev_conf_data.datetime));
 		THINGS_LOG_D(THINGS_DEBUG, ES_RH_TAG, "g_dev_conf_resource.datetime %s", g_dev_conf_resource.datetime);
-
-		//Added by THINGS to set time in appliance yyyy-mm-ddThh-mm-ss
-		char chYear[5], chMonth[3], chDay[3], chHour[3], chMin[3], chSec[3];
-		struct tm stTime;
-		memset(&stTime, 0, sizeof(stTime));
-
-		int itr = 0;
-		for (; itr < 4; itr++) {
-			chYear[itr] = g_dev_conf_resource.datetime[itr];
-		}
-		chYear[itr] = '\0';
-		stTime.tm_year = (atoi(chYear) - 1900);
-
-		chMonth[0] = g_dev_conf_resource.datetime[++itr];
-		chMonth[1] = g_dev_conf_resource.datetime[++itr];
-		chMonth[2] = '\0';
-		stTime.tm_mon = (atoi(chMonth) - 1);
-
-		itr++;
-		chDay[0] = g_dev_conf_resource.datetime[++itr];
-		chDay[1] = g_dev_conf_resource.datetime[++itr];
-		chDay[2] = '\0';
-		stTime.tm_mday = atoi(chDay);
-
-		itr++;
-		chHour[0] = g_dev_conf_resource.datetime[++itr];
-		chHour[1] = g_dev_conf_resource.datetime[++itr];
-		chHour[2] = '\0';
-		stTime.tm_hour = atoi(chHour);
-
-		itr++;
-		chMin[0] = g_dev_conf_resource.datetime[++itr];
-		chMin[1] = g_dev_conf_resource.datetime[++itr];
-		chMin[2] = '\0';
-		stTime.tm_min = atoi(chMin);
-
-		itr++;
-		chSec[0] = g_dev_conf_resource.datetime[++itr];
-		chSec[1] = g_dev_conf_resource.datetime[++itr];
-		chSec[2] = '\0';
-		stTime.tm_sec = atoi(chSec);
-
-		unsigned int epTime = (unsigned int)mktime(&stTime);
-
-		struct timespec current_time;
-
-		current_time.tv_sec = epTime;
-		current_time.tv_nsec = 0;
-
-		if (clock_settime(CLOCK_REALTIME, &current_time) != 0) {
-			THINGS_LOG_ERROR(THINGS_ERROR, ES_RH_TAG, "Failed to clock_settime");
-		}
 	}
 
 	if (country || language || datetime) {
@@ -780,15 +725,15 @@ OCRepPayload *construct_response_of_wifi(const char *interface)
 	}
 
 	THINGS_LOG_D(THINGS_DEBUG, ES_RH_TAG, "constructResponse wifi res");
-	OCRepPayloadSetUri(payload, OC_RSRVD_ES_URI_WIFI);
+	OCRepPayloadSetUri(payload, THINGS_RSRVD_ES_URI_WIFI);
 
 	OCRepPayload *rep_payload = NULL;
-	OCRepPayload *tempPayload = NULL;
+	OCRepPayload *temp_payload = NULL;
 	if (interface != NULL && !strncmp(interface, OC_RSRVD_INTERFACE_BATCH, strlen(OC_RSRVD_INTERFACE_BATCH))) {	// Temporary Code.
 		char *interfaces[1] = { NULL, };
 		char *resource_types[1] = { NULL, };
-		size_t interfacesDimensions[MAX_REP_ARRAY_DEPTH] = { 1, 0, 0 };
-		size_t resourceTypesDimensions[MAX_REP_ARRAY_DEPTH] = { 1, 0, 0 };
+		size_t interfaces_dimensions[MAX_REP_ARRAY_DEPTH] = { 1, 0, 0 };
+		size_t resource_types_dimensions[MAX_REP_ARRAY_DEPTH] = { 1, 0, 0 };
 
 		rep_payload = OCRepPayloadCreate();
 		if (!rep_payload) {
@@ -796,14 +741,14 @@ OCRepPayload *construct_response_of_wifi(const char *interface)
 			goto GOTO_ERROR;
 		}
 		// Swap
-		tempPayload = payload;
+		temp_payload = payload;
 		payload = rep_payload;
 
 		interfaces[0] = OICStrdup(OC_RSRVD_INTERFACE_DEFAULT);
-		OCRepPayloadSetStringArray(payload, OC_RSRVD_INTERFACE, (const char **)interfaces, interfacesDimensions);
+		OCRepPayloadSetStringArray(payload, OC_RSRVD_INTERFACE, (const char **)interfaces, interfaces_dimensions);
 
-		resource_types[0] = OICStrdup(OC_RSRVD_ES_RES_TYPE_WIFI);
-		OCRepPayloadSetStringArray(payload, OC_RSRVD_RESOURCE_TYPE, (const char **)resource_types, resourceTypesDimensions);
+		resource_types[0] = OICStrdup(THINGS_RSRVD_ES_RES_TYPE_WIFI);
+		OCRepPayloadSetStringArray(payload, OC_RSRVD_RESOURCE_TYPE, (const char **)resource_types, resource_types_dimensions);
 		/*! Added by st_things for memory Leak fix
 		 */
 		if (interfaces[0]) {
@@ -814,7 +759,7 @@ OCRepPayload *construct_response_of_wifi(const char *interface)
 		}
 	} else {
 		OCRepPayloadAddInterface(payload, OC_RSRVD_INTERFACE_DEFAULT);
-		OCRepPayloadAddResourceType(payload, OC_RSRVD_ES_RES_TYPE_WIFI);
+		OCRepPayloadAddResourceType(payload, THINGS_RSRVD_ES_RES_TYPE_WIFI);
 	}
 
 	size_t dimensions[MAX_REP_ARRAY_DEPTH] = { g_wifi_resource.num_mode, 0, 0 };
@@ -823,25 +768,25 @@ OCRepPayload *construct_response_of_wifi(const char *interface)
 		modes_64[i] = g_wifi_resource.supported_mode[i];
 	}
 
-	OCRepPayloadSetIntArray(payload, OC_RSRVD_ES_SUPPORTEDWIFIMODE, (int64_t *) modes_64, dimensions);
-	OCRepPayloadSetPropInt(payload, OC_RSRVD_ES_SUPPORTEDWIFIFREQ, g_wifi_resource.supported_freq);
-	OCRepPayloadSetPropString(payload, OC_RSRVD_ES_SSID, g_wifi_resource.ssid);
-	OCRepPayloadSetPropString(payload, OC_RSRVD_ES_CRED, g_wifi_resource.cred);
-	OCRepPayloadSetPropInt(payload, OC_RSRVD_ES_AUTHTYPE, (int)g_wifi_resource.auth_type);
-	OCRepPayloadSetPropInt(payload, OC_RSRVD_ES_ENCTYPE, (int)g_wifi_resource.enc_type);
-	OCRepPayloadSetPropInt(payload, OC_RSRVD_ES_VENDOR_DISCOVERYCHANNEL, (int)g_wifi_resource.discovery_channel);
+	OCRepPayloadSetIntArray(payload, THINGS_RSRVD_ES_SUPPORTEDWIFIMODE, (int64_t *) modes_64, dimensions);
+	OCRepPayloadSetPropInt(payload, THINGS_RSRVD_ES_SUPPORTEDWIFIFREQ, g_wifi_resource.supported_freq);
+	OCRepPayloadSetPropString(payload, THINGS_RSRVD_ES_SSID, g_wifi_resource.ssid);
+	OCRepPayloadSetPropString(payload, THINGS_RSRVD_ES_CRED, g_wifi_resource.cred);
+	OCRepPayloadSetPropInt(payload, THINGS_RSRVD_ES_AUTHTYPE, (int)g_wifi_resource.auth_type);
+	OCRepPayloadSetPropInt(payload, THINGS_RSRVD_ES_ENCTYPE, (int)g_wifi_resource.enc_type);
+	OCRepPayloadSetPropInt(payload, THINGS_RSRVD_ES_VENDOR_DISCOVERYCHANNEL, (int)g_wifi_resource.discovery_channel);
 
 	if (interface != NULL && !strncmp(interface, OC_RSRVD_INTERFACE_BATCH, strlen(OC_RSRVD_INTERFACE_BATCH))) {
-		payload = tempPayload;
+		payload = temp_payload;
 		OCRepPayloadSetPropObject(payload, OC_RSRVD_REPRESENTATION, rep_payload);
 		OCPayloadDestroy((OCPayload *) rep_payload);
 		rep_payload = NULL;
-		tempPayload = NULL;
+		temp_payload = NULL;
 	}
 	/*! Added by st_things for memory Leak fix
 	 */
-	if (tempPayload != NULL) {
-		OCPayloadDestroy((OCPayload *) tempPayload);
+	if (temp_payload != NULL) {
+		OCPayloadDestroy((OCPayload *) temp_payload);
 	}
 	/*! Added by st_things for memory Leak fix
 	 */
@@ -869,15 +814,15 @@ OCRepPayload *construct_response_of_cloud(const char *interface)
 	}
 
 	THINGS_LOG(THINGS_INFO, ES_RH_TAG, "constructResponse cloud res");
-	OCRepPayloadSetUri(payload, OC_RSRVD_ES_URI_CLOUDSERVER);
+	OCRepPayloadSetUri(payload, THINGS_RSRVD_ES_URI_CLOUDSERVER);
 
 	OCRepPayload *rep_payload = NULL;
-	OCRepPayload *tempPayload = NULL;
+	OCRepPayload *temp_payload = NULL;
 	if (interface != NULL && !strncmp(interface, OC_RSRVD_INTERFACE_BATCH, strlen(OC_RSRVD_INTERFACE_BATCH))) {	// Temporary Code.
 		char *interfaces[1] = { NULL, };
 		char *resource_types[1] = { NULL, };
-		size_t interfacesDimensions[MAX_REP_ARRAY_DEPTH] = { 1, 0, 0 };
-		size_t resourceTypesDimensions[MAX_REP_ARRAY_DEPTH] = { 1, 0, 0 };
+		size_t interfaces_dimensions[MAX_REP_ARRAY_DEPTH] = { 1, 0, 0 };
+		size_t resource_types_dimensions[MAX_REP_ARRAY_DEPTH] = { 1, 0, 0 };
 
 		rep_payload = OCRepPayloadCreate();
 		if (!rep_payload) {
@@ -885,14 +830,14 @@ OCRepPayload *construct_response_of_cloud(const char *interface)
 			goto GOTO_ERROR;
 		}
 		// Swap
-		tempPayload = payload;
+		temp_payload = payload;
 		payload = rep_payload;
 
 		interfaces[0] = OICStrdup(OC_RSRVD_INTERFACE_DEFAULT);
-		OCRepPayloadSetStringArray(payload, OC_RSRVD_INTERFACE, (const char **)interfaces, interfacesDimensions);
+		OCRepPayloadSetStringArray(payload, OC_RSRVD_INTERFACE, (const char **)interfaces, interfaces_dimensions);
 
-		resource_types[0] = OICStrdup(OC_RSRVD_ES_RES_TYPE_CLOUDSERVER);
-		OCRepPayloadSetStringArray(payload, OC_RSRVD_RESOURCE_TYPE, (const char **)resource_types, resourceTypesDimensions);
+		resource_types[0] = OICStrdup(THINGS_RSRVD_ES_RES_TYPE_CLOUDSERVER);
+		OCRepPayloadSetStringArray(payload, OC_RSRVD_RESOURCE_TYPE, (const char **)resource_types, resource_types_dimensions);
 		/*! Added by st_things for memory Leak fix
 		 */
 		if (interfaces[0]) {
@@ -903,30 +848,30 @@ OCRepPayload *construct_response_of_cloud(const char *interface)
 		}
 	} else {
 		OCRepPayloadAddInterface(payload, OC_RSRVD_INTERFACE_DEFAULT);
-		OCRepPayloadAddResourceType(payload, OC_RSRVD_ES_RES_TYPE_CLOUDSERVER);
+		OCRepPayloadAddResourceType(payload, THINGS_RSRVD_ES_RES_TYPE_CLOUDSERVER);
 	}
 
-	OCRepPayloadSetPropString(payload, OC_RSRVD_ES_AUTHCODE, g_cloud_resource.auth_code);
-	OCRepPayloadSetPropString(payload, OC_RSRVD_ES_AUTHPROVIDER, g_cloud_resource.auth_provider);
-	OCRepPayloadSetPropString(payload, OC_RSRVD_ES_CISERVER, g_cloud_resource.ci_server);
-	OCRepPayloadSetPropString(payload, OC_RSRVD_ES_SERVERID, g_cloud_resource.server_id);
-	OCRepPayloadSetPropString(payload, OC_RSRVD_ES_VENDOR_CLIENTID, g_cloud_resource.client_id);
-	OCRepPayloadSetPropString(payload, OC_RSRVD_ES_VENDOR_ACCESS_TOKEN, g_cloud_resource.accesstoken);
-	OCRepPayloadSetPropInt(payload, OC_RSRVD_ES_VENDOR_ACCESS_TOKEN_TYPE, g_cloud_resource.actoken_type);
+	OCRepPayloadSetPropString(payload, THINGS_RSRVD_ES_AUTHCODE, g_cloud_resource.auth_code);
+	OCRepPayloadSetPropString(payload, THINGS_RSRVD_ES_AUTHPROVIDER, g_cloud_resource.auth_provider);
+	OCRepPayloadSetPropString(payload, THINGS_RSRVD_ES_CISERVER, g_cloud_resource.ci_server);
+	OCRepPayloadSetPropString(payload, THINGS_RSRVD_ES_SERVERID, g_cloud_resource.server_id);
+	OCRepPayloadSetPropString(payload, THINGS_RSRVD_ES_VENDOR_CLIENTID, g_cloud_resource.client_id);
+	OCRepPayloadSetPropString(payload, THINGS_RSRVD_ES_VENDOR_ACCESS_TOKEN, g_cloud_resource.accesstoken);
+	OCRepPayloadSetPropInt(payload, THINGS_RSRVD_ES_VENDOR_ACCESS_TOKEN_TYPE, g_cloud_resource.actoken_type);
 	OCRepPayloadSetPropString(payload, SC_RSRVD_ES_VENDOR_REFRESH_TOKEN, g_cloud_resource.refreshtoken);
-	OCRepPayloadSetPropString(payload, OC_RSRVD_ES_VENDOR_USER_ID, g_cloud_resource.uid);
+	OCRepPayloadSetPropString(payload, THINGS_RSRVD_ES_VENDOR_USER_ID, g_cloud_resource.uid);
 
 	if (interface != NULL && !strncmp(interface, OC_RSRVD_INTERFACE_BATCH, strlen(OC_RSRVD_INTERFACE_BATCH))) {
-		payload = tempPayload;
+		payload = temp_payload;
 		OCRepPayloadSetPropObject(payload, OC_RSRVD_REPRESENTATION, rep_payload);
 		OCPayloadDestroy((OCPayload *) rep_payload);
 		rep_payload = NULL;
-		tempPayload = NULL;
+		temp_payload = NULL;
 	}
 	/*! Added by st_things for memory Leak fix
 	 */
-	if (tempPayload != NULL) {
-		OCPayloadDestroy((OCPayload *) tempPayload);
+	if (temp_payload != NULL) {
+		OCPayloadDestroy((OCPayload *) temp_payload);
 	}
 
 	return payload;
@@ -949,15 +894,15 @@ OCRepPayload *construct_response_of_dev_conf(const char *interface)
 	}
 
 	THINGS_LOG(THINGS_INFO, ES_RH_TAG, "constructResponse devConf res");
-	OCRepPayloadSetUri(payload, OC_RSRVD_ES_URI_DEVCONF);
+	OCRepPayloadSetUri(payload, THINGS_RSRVD_ES_URI_DEVCONF);
 
 	OCRepPayload *rep_payload = NULL;
-	OCRepPayload *tempPayload = NULL;
+	OCRepPayload *temp_payload = NULL;
 	if (interface != NULL && !strncmp(interface, OC_RSRVD_INTERFACE_BATCH, strlen(OC_RSRVD_INTERFACE_BATCH))) {	// Temporary Code.
 		char *interfaces[1] = { NULL, };
 		char *resource_types[1] = { NULL, };
-		size_t interfacesDimensions[MAX_REP_ARRAY_DEPTH] = { 1, 0, 0 };
-		size_t resourceTypesDimensions[MAX_REP_ARRAY_DEPTH] = { 1, 0, 0 };
+		size_t interfaces_dimensions[MAX_REP_ARRAY_DEPTH] = { 1, 0, 0 };
+		size_t resource_types_dimensions[MAX_REP_ARRAY_DEPTH] = { 1, 0, 0 };
 
 		rep_payload = OCRepPayloadCreate();
 		if (!rep_payload) {
@@ -965,14 +910,14 @@ OCRepPayload *construct_response_of_dev_conf(const char *interface)
 			goto GOTO_ERROR;
 		}
 		// Swap
-		tempPayload = payload;
+		temp_payload = payload;
 		payload = rep_payload;
 
 		interfaces[0] = OICStrdup(OC_RSRVD_INTERFACE_DEFAULT);
-		OCRepPayloadSetStringArray(payload, OC_RSRVD_INTERFACE, (const char **)interfaces, interfacesDimensions);
+		OCRepPayloadSetStringArray(payload, OC_RSRVD_INTERFACE, (const char **)interfaces, interfaces_dimensions);
 
-		resource_types[0] = OICStrdup(OC_RSRVD_ES_RES_TYPE_DEVCONF);
-		OCRepPayloadSetStringArray(payload, OC_RSRVD_RESOURCE_TYPE, (const char **)resource_types, resourceTypesDimensions);
+		resource_types[0] = OICStrdup(THINGS_RSRVD_ES_RES_TYPE_DEVCONF);
+		OCRepPayloadSetStringArray(payload, OC_RSRVD_RESOURCE_TYPE, (const char **)resource_types, resource_types_dimensions);
 		/*! Added by st_things for memory Leak fix
 		 */
 		if (interfaces[0]) {
@@ -983,27 +928,27 @@ OCRepPayload *construct_response_of_dev_conf(const char *interface)
 		}
 	} else {
 		OCRepPayloadAddInterface(payload, OC_RSRVD_INTERFACE_DEFAULT);
-		OCRepPayloadAddResourceType(payload, OC_RSRVD_ES_RES_TYPE_DEVCONF);
+		OCRepPayloadAddResourceType(payload, THINGS_RSRVD_ES_RES_TYPE_DEVCONF);
 	}
 
-	OCRepPayloadSetPropString(payload, OC_RSRVD_ES_DEVNAME, g_dev_conf_resource.devName);
-	OCRepPayloadSetPropString(payload, OC_RSRVD_ES_LANGUAGE, g_dev_conf_resource.language);
-	OCRepPayloadSetPropString(payload, OC_RSRVD_ES_COUNTRY, g_dev_conf_resource.country);
-	OCRepPayloadSetPropString(payload, OC_RSRVD_ES_VENDOR_DEVTYPE, g_dev_conf_resource.device_type);
-	OCRepPayloadSetPropString(payload, OC_RSRVD_ES_VENDOR_DEVSUBTYPE, g_dev_conf_resource.device_sub_type);
-	OCRepPayloadSetPropString(payload, OC_RSRVD_ES_VENDOR_UTC_DATE_TIME, g_dev_conf_resource.datetime);
+	OCRepPayloadSetPropString(payload, THINGS_RSRVD_ES_DEVNAME, g_dev_conf_resource.devName);
+	OCRepPayloadSetPropString(payload, THINGS_RSRVD_ES_LANGUAGE, g_dev_conf_resource.language);
+	OCRepPayloadSetPropString(payload, THINGS_RSRVD_ES_COUNTRY, g_dev_conf_resource.country);
+	OCRepPayloadSetPropString(payload, THINGS_RSRVD_ES_VENDOR_DEVTYPE, g_dev_conf_resource.device_type);
+	OCRepPayloadSetPropString(payload, THINGS_RSRVD_ES_VENDOR_DEVSUBTYPE, g_dev_conf_resource.device_sub_type);
+	OCRepPayloadSetPropString(payload, THINGS_RSRVD_ES_VENDOR_UTC_DATE_TIME, g_dev_conf_resource.datetime);
 
 	if (interface != NULL && !strncmp(interface, OC_RSRVD_INTERFACE_BATCH, strlen(OC_RSRVD_INTERFACE_BATCH))) {
-		payload = tempPayload;
+		payload = temp_payload;
 		OCRepPayloadSetPropObject(payload, OC_RSRVD_REPRESENTATION, rep_payload);
 		OCPayloadDestroy((OCPayload *) rep_payload);
 		rep_payload = NULL;
-		tempPayload = NULL;
+		temp_payload = NULL;
 	}
 	/*! Added by st_things for memory Leak fix
 	 */
-	if (tempPayload != NULL) {
-		OCPayloadDestroy((OCPayload *) tempPayload);
+	if (temp_payload != NULL) {
+		OCPayloadDestroy((OCPayload *) temp_payload);
 	}
 
 	return payload;
@@ -1056,19 +1001,19 @@ OCRepPayload *construct_response_of_prov(OCEntityHandlerRequest *eh_request)
 
 		if (!eh_request->query || !strncmp(eh_request->query, "", strlen("")) || compare_resource_interface(eh_request->query, OC_RSRVD_INTERFACE_LL) == false) {
 			THINGS_LOG(THINGS_INFO, ES_RH_TAG, "constructResponse prov res");
-			OCRepPayloadSetUri(payload, OC_RSRVD_ES_URI_PROV);
+			OCRepPayloadSetUri(payload, THINGS_RSRVD_ES_URI_PROV);
 			OCRepPayloadAddInterface(payload, OC_RSRVD_INTERFACE_DEFAULT);
 			OCRepPayloadAddInterface(payload, OC_RSRVD_INTERFACE_LL);
 			OCRepPayloadAddInterface(payload, OC_RSRVD_INTERFACE_BATCH);
-			OCRepPayloadAddResourceType(payload, OC_RSRVD_ES_RES_TYPE_PROV);
+			OCRepPayloadAddResourceType(payload, THINGS_RSRVD_ES_RES_TYPE_PROV);
 			OCRepPayloadAddResourceType(payload, OC_RSRVD_RESOURCE_TYPE_COLLECTION);
 
-			OCRepPayloadSetPropInt(payload, OC_RSRVD_ES_PROVSTATUS, get_enrollee_state());
-			OCRepPayloadSetPropInt(payload, OC_RSRVD_ES_LAST_ERRORCODE, g_prov_resource.last_err_code);
-			OCRepPayloadSetPropInt(payload, OC_RSRVD_ES_VENDOR_ERRORCODE, g_prov_resource.vd_err_code);
+			OCRepPayloadSetPropInt(payload, THINGS_RSRVD_ES_PROVSTATUS, get_enrollee_state());
+			OCRepPayloadSetPropInt(payload, THINGS_RSRVD_ES_LAST_ERRORCODE, g_prov_resource.last_err_code);
+			OCRepPayloadSetPropInt(payload, THINGS_RSRVD_ES_VENDOR_ERRORCODE, g_prov_resource.vd_err_code);
 		}
 
-		OCRepPayloadSetPropObjectArray(payload, OC_RSRVD_ES_LINKS, arrayPayload, dimensions);
+		OCRepPayloadSetPropObjectArray(payload, THINGS_RSRVD_ES_LINKS, arrayPayload, dimensions);
 
 		for (int i = 0; i < childResCnt; i++) {
 			OCPayloadDestroy((OCPayload *) arrayPayload[i]);
@@ -1076,13 +1021,13 @@ OCRepPayload *construct_response_of_prov(OCEntityHandlerRequest *eh_request)
 
 	} else if (eh_request->query && compare_resource_interface(eh_request->query, OC_RSRVD_INTERFACE_BATCH)) {
 		THINGS_LOG(THINGS_INFO, ES_RH_TAG, "constructResponse prov res");
-		OCRepPayloadSetUri(payload, OC_RSRVD_ES_URI_PROV);
+		OCRepPayloadSetUri(payload, THINGS_RSRVD_ES_URI_PROV);
 
 		OCRepPayload *rep_payload = NULL;
 		char *interfaces[3] = { NULL, };
 		char *resource_types[2] = { NULL, };
-		size_t interfacesDimensions[MAX_REP_ARRAY_DEPTH] = { 3, 0, 0 };
-		size_t resourceTypesDimensions[MAX_REP_ARRAY_DEPTH] = { 2, 0, 0 };
+		size_t interfaces_dimensions[MAX_REP_ARRAY_DEPTH] = { 3, 0, 0 };
+		size_t resource_types_dimensions[MAX_REP_ARRAY_DEPTH] = { 2, 0, 0 };
 
 		rep_payload = OCRepPayloadCreate();
 		if (!rep_payload) {
@@ -1093,15 +1038,15 @@ OCRepPayload *construct_response_of_prov(OCEntityHandlerRequest *eh_request)
 		interfaces[0] = OICStrdup(OC_RSRVD_INTERFACE_DEFAULT);
 		interfaces[1] = OICStrdup(OC_RSRVD_INTERFACE_LL);
 		interfaces[2] = OICStrdup(OC_RSRVD_INTERFACE_BATCH);
-		OCRepPayloadSetStringArray(rep_payload, OC_RSRVD_INTERFACE, (const char **)interfaces, interfacesDimensions);
+		OCRepPayloadSetStringArray(rep_payload, OC_RSRVD_INTERFACE, (const char **)interfaces, interfaces_dimensions);
 
-		resource_types[0] = OICStrdup(OC_RSRVD_ES_RES_TYPE_PROV);
+		resource_types[0] = OICStrdup(THINGS_RSRVD_ES_RES_TYPE_PROV);
 		resource_types[1] = OICStrdup(OC_RSRVD_RESOURCE_TYPE_COLLECTION);
-		OCRepPayloadSetStringArray(rep_payload, OC_RSRVD_RESOURCE_TYPE, (const char **)resource_types, resourceTypesDimensions);
+		OCRepPayloadSetStringArray(rep_payload, OC_RSRVD_RESOURCE_TYPE, (const char **)resource_types, resource_types_dimensions);
 
-		OCRepPayloadSetPropInt(rep_payload, OC_RSRVD_ES_PROVSTATUS, get_enrollee_state());
-		OCRepPayloadSetPropInt(rep_payload, OC_RSRVD_ES_LAST_ERRORCODE, g_prov_resource.last_err_code);
-		OCRepPayloadSetPropInt(rep_payload, OC_RSRVD_ES_VENDOR_ERRORCODE, g_prov_resource.vd_err_code);
+		OCRepPayloadSetPropInt(rep_payload, THINGS_RSRVD_ES_PROVSTATUS, get_enrollee_state());
+		OCRepPayloadSetPropInt(rep_payload, THINGS_RSRVD_ES_LAST_ERRORCODE, g_prov_resource.last_err_code);
+		OCRepPayloadSetPropInt(rep_payload, THINGS_RSRVD_ES_VENDOR_ERRORCODE, g_prov_resource.vd_err_code);
 
 		OCRepPayloadSetPropObject(payload, OC_RSRVD_REPRESENTATION, rep_payload);
 		OCPayloadDestroy((OCPayload *) rep_payload);
@@ -1168,19 +1113,19 @@ OCStackResult create_easysetup_resources(bool is_secured, es_resource_mask_e res
 	OCStackResult res = OC_STACK_ERROR;
 	bool maskFlag = false;
 
-	res = initProvResource(is_secured);
+	res = init_prov_resource(is_secured);
 	if (res != OC_STACK_OK) {
 		// TODO: destroy logic will be added
-		THINGS_LOG_V_ERROR(THINGS_ERROR, ES_RH_TAG, "initProvResource result: %s", get_result(res));
+		THINGS_LOG_V_ERROR(THINGS_ERROR, ES_RH_TAG, "init_prov_resource result: %s", get_result(res));
 
 		return res;
 	}
 
 	if ((resource_mask & ES_WIFI_RESOURCE) == ES_WIFI_RESOURCE) {
 		maskFlag = true;
-		res = initWiFiResource(is_secured);
+		res = init_wifi_resource(is_secured);
 		if (res != OC_STACK_OK) {
-			THINGS_LOG_V_ERROR(THINGS_ERROR, ES_RH_TAG, "initWiFiResource result: %s", get_result(res));
+			THINGS_LOG_V_ERROR(THINGS_ERROR, ES_RH_TAG, "init_wifi_resource result: %s", get_result(res));
 			return res;
 		}
 
@@ -1194,7 +1139,7 @@ OCStackResult create_easysetup_resources(bool is_secured, es_resource_mask_e res
 
 	if ((resource_mask & ES_CLOUD_RESOURCE) == ES_CLOUD_RESOURCE) {
 		maskFlag = true;
-		res = initCloudServerResource(is_secured);
+		res = init_cloud_server_resource(is_secured);
 		if (res != OC_STACK_OK) {
 			THINGS_LOG_V_ERROR(THINGS_ERROR, ES_RH_TAG, "initCloudResource result: %s", get_result(res));
 			return res;
@@ -1209,7 +1154,7 @@ OCStackResult create_easysetup_resources(bool is_secured, es_resource_mask_e res
 
 	if ((resource_mask & ES_DEVCONF_RESOURCE) == ES_DEVCONF_RESOURCE) {
 		maskFlag = true;
-		res = initDevConfResource(is_secured);
+		res = init_dev_conf_resource(is_secured);
 		if (res != OC_STACK_OK) {
 			THINGS_LOG_V_ERROR(THINGS_ERROR, ES_RH_TAG, "initDevConf result: %s", get_result(res));
 			return res;
@@ -1421,23 +1366,7 @@ OCEntityHandlerResult things_entity_handler_cb(OCEntityHandlerFlag flag, OCEntit
 
 				eh_ret = process_get_request(entity_handler_request, &payload);
 
-			}
-//        else if (OC_REST_PUT == entity_handler_request->method)
-//        {
-//            THINGS_LOG(THINGS_INFO, ES_RH_TAG, "Received PUT request");
-//
-//            //PUT request will be handled in the internal implementation
-//            if (g_prov_resource.handle != NULL)
-//            {
-//                eh_ret = process_put_request(entity_handler_request, &payload);
-//            }
-//            else
-//            {
-//                THINGS_LOG_ERROR(THINGS_ERROR, ES_RH_TAG, "Cannot process put");
-//                eh_ret = OC_EH_ERROR;
-//            }
-//        }
-			else if (OC_REST_POST == entity_handler_request->method) {
+			} else if (OC_REST_POST == entity_handler_request->method) {
 				THINGS_LOG(THINGS_INFO, ES_RH_TAG, "Received OC_REST_POST from client");
 
 				eh_ret = process_post_request(entity_handler_request, &payload);
@@ -1448,42 +1377,32 @@ OCEntityHandlerResult things_entity_handler_cb(OCEntityHandlerFlag flag, OCEntit
 		} else {
 			THINGS_LOG_ERROR(THINGS_ERROR, ES_RH_TAG, "EZ-Setup Resource not Registered Yet~!!!!!");
 		}
-		// By default it is ==> eh_ret = OC_EH_ERROR;
-		//
+		
+		THINGS_LOG_V(THINGS_INFO, ES_RH_TAG, "\t\tRespone : (%d) ", (int)eh_ret);
 
-		// If the result isn't an error or forbidden, send response
-		//if (!((eh_ret == OC_EH_ERROR) || (eh_ret == OC_EH_FORBIDDEN)))
-		{
-			THINGS_LOG_V(THINGS_INFO, ES_RH_TAG, "\t\tRespone : (%d) ", (int)eh_ret);
+		response.numSendVendorSpecificHeaderOptions = 0;
+		memset(response.sendVendorSpecificHeaderOptions, 0, sizeof(response.sendVendorSpecificHeaderOptions));
+		memset(response.resourceUri, 0, sizeof(response.resourceUri));
 
-			response.numSendVendorSpecificHeaderOptions = 0;
-			memset(response.sendVendorSpecificHeaderOptions, 0, sizeof(response.sendVendorSpecificHeaderOptions));
-			memset(response.resourceUri, 0, sizeof(response.resourceUri));
+		// Format the response.  Note this requires some info about the request
+		response.requestHandle = entity_handler_request->requestHandle;
+		response.resourceHandle = entity_handler_request->resource;
+		response.ehResult = eh_ret;
+		response.payload = (OCPayload *)(payload);
+		// Indicate that response is NOT in a persistent buffer
+		response.persistentBufferFlag = 0;
 
-			// Format the response.  Note this requires some info about the request
-			response.requestHandle = entity_handler_request->requestHandle;
-			response.resourceHandle = entity_handler_request->resource;
-			response.ehResult = eh_ret;
-			response.payload = (OCPayload *)(payload);
-			// Indicate that response is NOT in a persistent buffer
-			response.persistentBufferFlag = 0;
-
-			// Send the response
-			if (OCDoResponse(&response) != OC_STACK_OK) {
-				THINGS_LOG_ERROR(THINGS_ERROR, ES_RH_TAG, "Error sending response");
-				eh_ret = OC_EH_ERROR;
-			}
-			/*! Added by st_things for memory Leak fix
-			 */
-			if (payload) {
-				OCPayloadDestroy((OCPayload *) payload);
-			}
-			payload = NULL;
+		// Send the response
+		if (OCDoResponse(&response) != OC_STACK_OK) {
+			THINGS_LOG_ERROR(THINGS_ERROR, ES_RH_TAG, "Error sending response");
+			eh_ret = OC_EH_ERROR;
 		}
-		// else
-		// {
-		//     THINGS_LOG_D_ERROR(THINGS_ERROR, ES_RH_TAG, "Return value of Request Process has a error(%d).", eh_ret);
-		// }
+		/*! Added by st_things for memory Leak fix
+			*/
+		if (payload) {
+			OCPayloadDestroy((OCPayload *) payload);
+		}
+		payload = NULL;
 	}
 
 	if (flag & OC_OBSERVE_FLAG) {
@@ -1927,14 +1846,14 @@ bool start_cloud_provisioning(void *cloud_info)
 
 	THINGS_LOG_D(THINGS_DEBUG, ES_RH_TAG, "CIServer = %s", CIServer);
 
-	if (OCRepPayloadSetPropString(payload, OC_RSRVD_ES_VENDOR_ACCESS_TOKEN, CIinfo->access_token) == false) {
-		THINGS_LOG_D(THINGS_DEBUG, ES_RH_TAG, "Inserting \"%s\" property is failed.(value=\"%s\")", OC_RSRVD_ES_VENDOR_ACCESS_TOKEN, CIinfo->access_token);
+	if (OCRepPayloadSetPropString(payload, THINGS_RSRVD_ES_VENDOR_ACCESS_TOKEN, CIinfo->access_token) == false) {
+		THINGS_LOG_D(THINGS_DEBUG, ES_RH_TAG, "Inserting \"%s\" property is failed.(value=\"%s\")", THINGS_RSRVD_ES_VENDOR_ACCESS_TOKEN, CIinfo->access_token);
 		goto GOTO_OUT;
 	}
 
 	if (CIinfo->access_token_type != NULL) {
-		if (OCRepPayloadSetPropString(payload, OC_RSRVD_ES_VENDOR_ACCESS_TOKEN_TYPE, CIinfo->access_token_type) == false) {
-			THINGS_LOG_D(THINGS_DEBUG, ES_RH_TAG, "Inserting \"%s\" property is failed.(value=\"%s\")", OC_RSRVD_ES_VENDOR_ACCESS_TOKEN_TYPE, CIinfo->access_token_type);
+		if (OCRepPayloadSetPropString(payload, THINGS_RSRVD_ES_VENDOR_ACCESS_TOKEN_TYPE, CIinfo->access_token_type) == false) {
+			THINGS_LOG_D(THINGS_DEBUG, ES_RH_TAG, "Inserting \"%s\" property is failed.(value=\"%s\")", THINGS_RSRVD_ES_VENDOR_ACCESS_TOKEN_TYPE, CIinfo->access_token_type);
 			goto GOTO_OUT;
 		}
 	}
@@ -1944,23 +1863,23 @@ bool start_cloud_provisioning(void *cloud_info)
 		goto GOTO_OUT;
 	}
 
-	if (OCRepPayloadSetPropString(payload, OC_RSRVD_ES_VENDOR_USER_ID, CIinfo->user_id) == false) {
-		THINGS_LOG_D(THINGS_DEBUG, ES_RH_TAG, "Inserting \"%s\" property is failed.(value=\"%s\")", OC_RSRVD_ES_VENDOR_USER_ID, CIinfo->user_id);
+	if (OCRepPayloadSetPropString(payload, THINGS_RSRVD_ES_VENDOR_USER_ID, CIinfo->user_id) == false) {
+		THINGS_LOG_D(THINGS_DEBUG, ES_RH_TAG, "Inserting \"%s\" property is failed.(value=\"%s\")", THINGS_RSRVD_ES_VENDOR_USER_ID, CIinfo->user_id);
 		goto GOTO_OUT;
 	}
 
-	if (OCRepPayloadSetPropString(payload, OC_RSRVD_ES_AUTHPROVIDER, CIinfo->auth_provider) == false) {
-		THINGS_LOG_D(THINGS_DEBUG, ES_RH_TAG, "Inserting \"%s\" property is failed.(value=\"%s\")", OC_RSRVD_ES_AUTHPROVIDER, CIinfo->auth_provider);
+	if (OCRepPayloadSetPropString(payload, THINGS_RSRVD_ES_AUTHPROVIDER, CIinfo->auth_provider) == false) {
+		THINGS_LOG_D(THINGS_DEBUG, ES_RH_TAG, "Inserting \"%s\" property is failed.(value=\"%s\")", THINGS_RSRVD_ES_AUTHPROVIDER, CIinfo->auth_provider);
 		goto GOTO_OUT;
 	}
 
-	if (OCRepPayloadSetPropString(payload, OC_RSRVD_ES_CISERVER, CIServer) == false) {
-		THINGS_LOG_D(THINGS_DEBUG, ES_RH_TAG, "Inserting \"%s\" property is failed.(value=\"%s\")", OC_RSRVD_ES_CISERVER, CIServer);
+	if (OCRepPayloadSetPropString(payload, THINGS_RSRVD_ES_CISERVER, CIServer) == false) {
+		THINGS_LOG_D(THINGS_DEBUG, ES_RH_TAG, "Inserting \"%s\" property is failed.(value=\"%s\")", THINGS_RSRVD_ES_CISERVER, CIServer);
 		goto GOTO_OUT;
 	}
 
-	if (OCRepPayloadSetPropString(payload, OC_RSRVD_ES_VENDOR_CLIENTID, CIinfo->client_id) == false) {
-		THINGS_LOG_D(THINGS_DEBUG, ES_RH_TAG, "Inserting \"%s\" property is failed.(value=\"%s\")", OC_RSRVD_ES_VENDOR_CLIENTID, CIinfo->client_id);
+	if (OCRepPayloadSetPropString(payload, THINGS_RSRVD_ES_VENDOR_CLIENTID, CIinfo->client_id) == false) {
+		THINGS_LOG_D(THINGS_DEBUG, ES_RH_TAG, "Inserting \"%s\" property is failed.(value=\"%s\")", THINGS_RSRVD_ES_VENDOR_CLIENTID, CIinfo->client_id);
 		goto GOTO_OUT;
 	}
 
