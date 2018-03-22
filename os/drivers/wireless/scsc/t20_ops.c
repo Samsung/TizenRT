@@ -232,12 +232,14 @@ int slsi_add_key(const char *ifname, void *priv, enum slsi_wpa_alg alg, const u8
 	}
 
 	if (key_type == FAPI_KEYTYPE_GROUP) {
-		if ((ndev_vif->sta.group_key_set == false) && (ndev_vif->sta.wpa_proto == SLSI_WPA_PROTOCOL_WPA)) {
-			SLSI_NET_DBG3(dev, SLSI_T20_80211, "Link UP for WPA connection\n");
-			slsi_netif_set_link_up(dev);
+		if (ndev_vif->vif_type == FAPI_VIFTYPE_STATION) {
+			if ((ndev_vif->sta.group_key_set == false) &&
+				(ndev_vif->sta.wpa_proto == SLSI_WPA_PROTOCOL_WPA)) {
+				SLSI_NET_DBG3(dev, SLSI_T20_80211, "Link UP for WPA connection\n");
+				slsi_netif_set_link_up(dev);
+			}
+			ndev_vif->sta.group_key_set = true;
 		}
-		ndev_vif->sta.group_key_set = true;
-		ndev_vif->ap.cipher = params.cipher;
 	} else if (key_type == FAPI_KEYTYPE_PAIRWISE) {
 		peer->pairwise_key_set = true;
 	}
@@ -2494,7 +2496,7 @@ int slsi_start_ap(void *priv, struct wpa_driver_ap_params *settings)
 
 	SLSI_NET_DBG2(dev, SLSI_T20_80211, "slsi_read_disconnect_ind_timeout: timeout = %d", sdev->device_config.ap_disconnect_ind_timeout);
 
-	slsi_netif_set_link_up(dev);
+	netif_set_link_up(dev);
 	goto exit_with_vif_mutex;
 
 exit_with_vif:
@@ -2583,9 +2585,6 @@ int slsi_stop_ap(void *priv)
 		ndev_vif->ap.p2p_gc_keys_set = false;
 	}
 #endif
-
-	/* Inform upper layers */
-	wpa_supplicant_event_send(ndev_vif->ctx, EVENT_LINK_DOWN, NULL);
 
 exit:
 	SLSI_MUTEX_UNLOCK(ndev_vif->vif_mutex);

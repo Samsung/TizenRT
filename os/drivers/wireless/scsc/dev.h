@@ -366,7 +366,6 @@ struct slsi_vif_ap {
 	bool non_ht_bss_present;	/* Non HT BSS observed in HT20 OBSS scan */
 #endif
 	struct scsc_wifi_fcq_data_qset group_data_qs;
-	u32 cipher;
 };
 
 struct netdev_vif {

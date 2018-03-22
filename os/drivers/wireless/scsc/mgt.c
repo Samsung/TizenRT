@@ -318,7 +318,6 @@ void slsi_vif_cleanup(struct slsi_dev *sdev, struct netif *dev, bool hw_availabl
 				SLSI_P2P_STATE_CHANGE(sdev, P2P_IDLE_NO_VIF);
 			}
 #endif
-			wpa_supplicant_event_send(ndev_vif->ctx, EVENT_LINK_DOWN, NULL);
 		}
 #ifdef CONFIG_SLSI_WLAN_P2P
 		if (ndev_vif->vif_type == FAPI_VIFTYPE_UNSYNCHRONISED) {
