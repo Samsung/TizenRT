@@ -1,6 +1,6 @@
 ###########################################################################
 #
-# Copyright 2016 Samsung Electronics All Rights Reserved.
+# Copyright 2018 Samsung Electronics All Rights Reserved.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -16,7 +16,7 @@
 #
 ###########################################################################
 ############################################################################
-# libxx/Makefile
+# external/libcxx/Makefile
 #
 #   Copyright (C) 2009, 2012 Gregory Nutt. All rights reserved.
 #   Author: Gregory Nutt <gnutt@nuttx.org>
@@ -57,23 +57,26 @@
 ASRCS =
 CSRCS =
 
-CXXSRCS  = libxx_cxapurevirtual.cxx libxx_eabi_atexit.cxx  libxx_cxa_atexit.cxx
+# Add the libcxx sources
 
-ifneq ($(CONFIG_LIBCXX),y)
-CXXSRCS += libxx_delete.cxx libxx_delete_sized.cxx libxx_deletea.cxx
-CXXSRCS += libxx_deletea_sized.cxx libxx_new.cxx libxx_newa.cxx
-CXXSRCS += libxx_stdthrow.cxx libxx_cxa_guard.cxx
-else
-ifneq ($(CONFIG_LIBCXX_EXCEPTION),y)
-CXXSRCS += libxx_stdthrow.cxx
+CXXSRCS = algorithm.cxx any.cxx bind.cxx chrono.cxx condition_variable.cxx
+CXXSRCS += debug.cxx future.cxx hash.cxx ios.cxx iostream.cxx
+CXXSRCS += memory.cxx mutex.cxx new.cxx optional.cxx random.cxx regex.cxx
+CXXSRCS += shared_mutex.cxx string.cxx strstream.cxx system_error.cxx
+CXXSRCS += thread.cxx typeinfo.cxx utility.cxx valarray.cxx vector.cxx
+CXXSRCS += locale.cxx
+
+# Exception handling logic
+
+ifeq ($(CONFIG_LIBCXX_EXCEPTION),y)
+CXXSRCS += exception.cxx stdexcept.cxx
 endif
-CXXSRCS += libxx_cxa_guard.cxx
+
+# libsupc++ replacement
+
+ifneq ($(CONFIG_LIBCXX_HAVE_LIBSUPCXX),y)
+CXXSRCS +=
 endif
-
-# Paths
-
-DEPPATH = --dep-path .
-VPATH = .
 
 # Object Files
 
@@ -84,7 +87,7 @@ CXXOBJS = $(CXXSRCS:.cxx=$(OBJEXT))
 SRCS = $(ASRCS) $(CSRCS) $(CXXSRCS)
 OBJS = $(AOBJS) $(COBJS) $(CXXOBJS)
 
-BIN = libcxx$(LIBEXT)
+BIN = $(TOPDIR)/../lib/libxx/libcxx$(LIBEXT)
 
 all: $(BIN)
 .PHONY: depend clean distclean
