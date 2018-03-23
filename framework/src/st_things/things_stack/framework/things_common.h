@@ -41,6 +41,4 @@ typedef enum {
 //-----------------------------------------------------------------------------
 bool things_get_reset_mask(rst_state_e value);
 
-void things_control_queue_empty(void);
-
 #endif							// _THINGS_COMMON_H_

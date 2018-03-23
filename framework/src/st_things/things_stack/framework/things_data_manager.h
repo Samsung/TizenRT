@@ -78,7 +78,7 @@ typedef struct st_device_s {
 	char *ver_fw;	// mnfv
 	char *device_id;	// mnfv
 	char *vender_id;	// mnfv
-	// char description[MAX_DEVICE_DESCRIPTION_LENGTH];
+
 	col_resource_s *collection;
 	things_resource_info_s *single;
 

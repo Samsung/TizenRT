@@ -140,15 +140,12 @@
 
 #define MAX_FILE_PATH_LENGTH        (250)
 
-// #define MAX_SUBDEVICE_EA            (100)
-
 #define MAX_SOFTAP_SSID				(64)
 
 #define PATH_MNT "/mnt/"
 #define PATH_ROM "/rom/"
 
 static bool is_support_user_def_dev_list = true;	// It's allow to apply user-defined device-ID only when start Stack.
-// static char *user_def_dev_list[MAX_SUBDEVICE_EA + 1] = { 0, };
 
 static volatile int resource_type_cnt = 0;
 
@@ -227,15 +224,6 @@ struct things_attribute_info_s const gstAttr_x_com_samsung_provisioninginfo[] = 
 		.type = 0,
 		.mandatory = false,
 		.rw = 3
-	}
-};
-
-const struct things_attribute_info_s const gstAttr_x_com_samsung_accesspointlist[] = {
-	{
-		.key = "x.com.samsung.accesspoint.items",
-		.type = 9,
-		.mandatory = true,
-		.rw = 1
 	}
 };
 
@@ -337,11 +325,6 @@ static const struct st_resource_type_s const gst_resource_types[] = {
 		.prop[3] = &gstAttr_x_com_samsung_provisioninginfo[3],
 		.prop[4] = &gstAttr_x_com_samsung_provisioninginfo[4]
 	},
-	{
-		.rt = "x.com.samsung.accesspointlist",
-		.prop_cnt = 1,
-		.prop[0] = &gstAttr_x_com_samsung_accesspointlist[0]
-	}
 #ifdef CONFIG_ST_THINGS_FOTA
 	, {
 		.rt = "oic.r.firmware",
@@ -373,14 +356,6 @@ static const struct things_resource_info_s const gstResources[] = {
 		.rt_cnt = 1,
 		.policy = 3
 	},
-	{
-		.uri = "/sec/accesspointlist",
-		.interface_types = {"oic.if.s"},
-		.resource_types = {"x.com.samsung.accesspointlist"},
-		.if_cnt = 1,
-		.rt_cnt = 1,
-		.policy = 3
-	}
 #ifdef CONFIG_ST_THINGS_FOTA
 	, {
 		.uri = "/firmware",
@@ -1876,16 +1851,6 @@ st_device_s *dm_get_info_of_dev(unsigned long number)
 	return (st_device_s *)hashmap_get(g_device_hmap, number);
 }
 
-static void dm_delete_user_define_device_id(void)
-{
-	// int i = 0;
-
-	// for (i = 0; i < MAX_SUBDEVICE_EA; i++) {
-	// 	things_free(user_def_dev_list[i]);
-	// 	user_def_dev_list[i] = NULL;
-	// }
-}
-
 bool dm_register_device_id(void)
 {
 	int i = 0;
@@ -1909,6 +1874,7 @@ bool dm_register_device_id(void)
 		THINGS_LOG_V_ERROR(THINGS_ERROR, TAG, "Error : id = %s, Main-device =0x%X", id, dev_list[0]);
 		goto GOTO_ERROR;
 	}
+
 	if (dev_list[0]->device_id != NULL) {
 		things_free(dev_list[0]->device_id);
 	}
@@ -1917,7 +1883,6 @@ bool dm_register_device_id(void)
 
 	is_support_user_def_dev_list = false;	//  It's allow permission to apply user defined device-ID only when start THINGS_STACK.
 
-	dm_delete_user_define_device_id();
 	things_free(dev_list);
 	dev_list = NULL;
 	return true;

@@ -23,6 +23,7 @@
 
 #include "logging/things_logger.h"
 #include "memory/things_malloc.h"
+#include "memory/things_string.h"
 #include "things_api.h"
 #include "things_network.h"
 
@@ -33,7 +34,6 @@
 
 #define TAG "[things_network]"
 
-static things_get_ap_search_list_func_type gGetAPSearchList = NULL;
 static things_set_ap_connection_func_type gSetAPConnection = NULL;
 
 static int app_state = -1;
@@ -81,12 +81,12 @@ static int check_cb_skip(int state, char *ap_name, char *ip_addr)
 		app_state = state;
 		if (ap_name) {
 			things_free(app_ap_name);
-			app_ap_name = strdup(ap_name);
+			app_ap_name = things_strdup(ap_name);
 		}
 
 		if (ip_addr) {
 			things_free(app_ip_addr);
-			app_ip_addr = strdup(ip_addr);
+			app_ip_addr = things_strdup(ip_addr);
 		}
 	}
 
@@ -244,16 +244,6 @@ int things_set_ap_connection(access_point_info_s *APinfo)
 	return gSetAPConnection(APinfo, "0");
 }
 
-int things_get_ap_list(access_point_info_s ***p_info, int *p_count)
-{
-	if (things_is_net_initialize() == 0 || p_info == NULL || p_count == NULL) {
-		THINGS_LOG_V_ERROR(THINGS_ERROR, TAG, "Can't Call GetAPSearchList(p_info=0x%X, p_count=0x%X).", p_info, p_count);
-		return 0;
-	}
-
-	return gGetAPSearchList(p_info, p_count);
-}
-
 /*******************************************************************
  *
  * st_things API Function register
@@ -262,11 +252,6 @@ int things_get_ap_list(access_point_info_s ***p_info, int *p_count)
 void things_register_set_ap_conn_func(things_set_ap_connection_func_type func)
 {
 	gSetAPConnection = func;
-}
-
-void things_register_get_ap_list_func(things_get_ap_search_list_func_type func)
-{
-	gGetAPSearchList = func;
 }
 
 /*****************************************************************************
@@ -280,9 +265,9 @@ void things_register_get_ap_list_func(things_get_ap_search_list_func_type func)
  *****************************************************************************/
 int things_is_net_initialize(void)
 {
-	if (gSetAPConnection == NULL || gGetAPSearchList == NULL) {
+	if (gSetAPConnection == NULL) {
 		THINGS_LOG_V_ERROR(THINGS_ERROR, TAG, "[Error] Not Initialized Network API.");
-		THINGS_LOG_V_ERROR(THINGS_ERROR, TAG, "[Error] gSetAPConnection = 0x%X, gGetAPSearchList = 0x%X", gSetAPConnection, gGetAPSearchList);
+		THINGS_LOG_V_ERROR(THINGS_ERROR, TAG, "[Error] gSetAPConnection = 0x%X", gSetAPConnection);
 		return 0;
 	}
 

@@ -34,6 +34,7 @@
 #include "things_def.h"
 #include "logging/things_logger.h"
 #include "memory/things_malloc.h"
+#include "memory/things_string.h"
 #include "framework/things_data_manager.h"
 #include "cloud_connector.h"
 #include "cloud_manager.h"
@@ -296,9 +297,9 @@ static int set_def_cloud_info(es_cloud_signup_s *cloud_info, const char *cloud_a
 
 	// if exist Cloud m_domain Name, then Save Name and Port.
 	if (cloud_info->redirect_uri != NULL && strlen(cloud_info->redirect_uri) > 0) {
-		m_domain = strdup(cloud_info->redirect_uri);
+		m_domain = things_strdup(cloud_info->redirect_uri);
 	} else if (prov_data != NULL) {
-		m_domain = strdup(prov_data->host_name);
+		m_domain = things_strdup(prov_data->host_name);
 	}
 
 	if (m_domain != NULL && strlen(m_domain) != 0) {
@@ -1317,7 +1318,7 @@ OCStackResult log_in_out_to_cloud(bool value, timeout_s *timeout)
 		}
 
 		if (signed_up_data->domain != NULL) {
-			ci_domian = strdup(signed_up_data->domain);
+			ci_domian = things_strdup(signed_up_data->domain);
 		}
 		THINGS_LOG_D(THINGS_DEBUG, TAG, "*********** Start Sign-IN ********** ci_domian : %s", ci_domian);
 	} else {
@@ -2459,10 +2460,10 @@ static void ci_finish_cloud_con(int result)
 		dm_load_legacy_cloud_data(&Cloud_data);	// TODO read Cloud-Data.
 		if (Cloud_data != NULL) {
 			if (Cloud_data->domain != NULL) {
-				domain = strdup(Cloud_data->domain);
+				domain = things_strdup(Cloud_data->domain);
 			}
 			if (Cloud_data->access_token != NULL) {
-				access_token = strdup(Cloud_data->access_token);
+				access_token = things_strdup(Cloud_data->access_token);
 			}
 		}
 
