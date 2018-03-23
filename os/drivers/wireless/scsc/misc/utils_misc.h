@@ -22,6 +22,7 @@
 #include <errno.h>
 #include <debug.h>
 #include <math.h>
+#include <stddef.h>
 #include <tinyara/compiler.h>
 #include <arch/chip/irq.h>
 #include <tinyara/kmalloc.h>
@@ -249,10 +250,6 @@ static inline void prefetch(__attribute__((unused))
 {
 	;
 }
-
-#define container_of(ptr, type, member) ({				\
-		const typeof(((type*)0)->member) *__mptr = (ptr);	\
-		(type *)((char *)__mptr - offsetof(type, member)); })
 
 /**
  * dlist_entry - get the struct for this entry

@@ -63,6 +63,7 @@
 #include <stdint.h>
 #include <stdbool.h>
 #include <semaphore.h>
+#include <stddef.h>
 
 #include <tinyara/fs/mtd.h>
 #include <tinyara/fs/smart.h>
@@ -226,9 +227,6 @@
 #define SMARTFS_ERASEDSTATE_16BIT (uint16_t)((CONFIG_SMARTFS_ERASEDSTATE << 8) | \
 								  CONFIG_SMARTFS_ERASEDSTATE)
 
-#ifndef offsetof
-#define offsetof(type, member)   ((size_t)&(((type *)0)->member))
-#endif
 #define UINT8_TO_UINT16(UINT8_ARRAY)                    ((uint16_t)(((uint16_t)UINT8_ARRAY[1] << 8) & 0xFF00) | UINT8_ARRAY[0])
 #define SMARTFS_NEXTSECTOR(h)   (UINT8_TO_UINT16(h->nextsector))
 #define SMARTFS_USED(h)                 (UINT8_TO_UINT16(h->used))

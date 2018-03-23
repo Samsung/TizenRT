@@ -9,6 +9,8 @@
 #ifndef LIST_H
 #define LIST_H
 
+#include <stddef.h>
+
 /**
  * struct dl_list - Doubly-linked list
  */
@@ -60,10 +62,6 @@ static inline unsigned int dl_list_len(struct dl_list *list)
 	}
 	return count;
 }
-
-#ifndef offsetof
-#define offsetof(type, member) ((long) &((type *) 0)->member)
-#endif
 
 #define dl_list_entry(item, type, member) \
 	((type *) ((char *) item - offsetof(type, member)))

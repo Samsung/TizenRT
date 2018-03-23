@@ -62,9 +62,6 @@ extern int snprintf(char*, size_t, const char*, ...);
 
 #define ARRAY_SIZE(a) (sizeof(a) / sizeof((a)[0]))
 
-#define container_of(ptr, type, member) \
-  ((type *) ((char *) (ptr) - offsetof(type, member)))
-
 #define STATIC_ASSERT(expr)                                                   \
   void uv__static_assert(int static_assert_failed[1 - 2 * !(expr)])
 
