@@ -11,7 +11,7 @@ Tizen RT's audio framework has 4 components namely;
 ## Audio Subsystem  
 Audio Subsystem binds the upper half of audio devices exposed to the application to  
 the lower half through POSIX like system APIs.  
-[os/Audio](../os/audio) has the audio & pcm interfaces to support POSIX standard APIs on audio and pcm devices.  
+[os/Audio](../os/audio) has the audio interfaces to support POSIX standard APIs on audio devices.
 [lib/libc/audio](../lib/libc/audio) has the audio pipeline buffer implementation.  
 
 
@@ -48,20 +48,13 @@ void board_initialize()
 
 ## Audio Device Registration
 
-After setting up audio codec, the codec's lowerhalf is wrapped around a PCM decoder device  
-and which is again wrapped around a audio device.  
+After setting up audio codec, the codec's lowerhalf is wrapped around in an audio device upperhalf.
 
 Psuedocode
 
 ```
-	/* No we can embed the ALC5658/I2C/I2S conglomerate into a PCM decoder
-	 * instance so that we will have a PCM front end for the the ALC5658
-	 * driver.
-	*/
-	pcm = pcm_decode_initialize(alc5658);
-
-	/*Embed PCM device witin audio device */
-	ret = audio_register(devname, pcm);
+	/*Embed codec device witin audio device */
+	ret = audio_register(devname, codec_lowerhalf);
 ```
 
 Example: [os/arch/arm/src/artik05x/src/artik055_alc5658.c](../os/arch/arm/src/artik05x/src/artik055_alc5658.c)
