@@ -36,8 +36,7 @@
 #include <iotbus/iotbus_gpio.h>
 #include <iotbus/iotbus_error.h>
 #include "iotapi_evt_handler.h"
-
-#define zdbg printf
+#include "iotbus_internal.h"
 
 /**
  * @brief Struct for iotbus_gpio_s
@@ -82,7 +81,7 @@ iotbus_gpio_context_h iotbus_gpio_open(int gpiopin)
 
 	fd = open(gpio_dev, O_RDWR);
 	if (fd < 0) {
-		zdbg("open %s failed: %d\n", gpio_dev, errno);
+		ibdbg("open %s failed: %d\n", gpio_dev, errno);
 		return NULL;
 	}
 
@@ -172,13 +171,13 @@ int iotbus_gpio_set_direction(iotbus_gpio_context_h dev, iotbus_gpio_direction_e
 	if (ret != 0) {
 		switch (errno) {
 		case EPERM:
-			zdbg("unsupported command \n");
+			ibdbg("unsupported command \n");
 			return IOTBUS_ERROR_NOT_SUPPORTED;
 		case EINVAL:
-			zdbg("invalid parameter \n");
+			ibdbg("invalid parameter \n");
 			return IOTBUS_ERROR_INVALID_PARAMETER;
 		default:
-			zdbg("ioctl failed \n");
+			ibdbg("ioctl failed \n");
 			return IOTBUS_ERROR_UNKNOWN;
 		}
 	}
@@ -230,13 +229,13 @@ int iotbus_gpio_register_signal(iotbus_gpio_context_h dev, iotbus_gpio_edge_e ed
 	if (ret != 0) {
 		switch (errno) {
 		case EPERM:
-			zdbg("unsupported command \n");
+			ibdbg("unsupported command \n");
 			return IOTBUS_ERROR_NOT_SUPPORTED;
 		case EINVAL:
-			zdbg("invalid parameter \n");
+			ibdbg("invalid parameter \n");
 			return IOTBUS_ERROR_INVALID_PARAMETER;
 		default:
-			zdbg("ioctl failed \n");
+			ibdbg("ioctl failed \n");
 			return IOTBUS_ERROR_UNKNOWN;
 		}
 	}
@@ -284,13 +283,13 @@ int iotbus_gpio_set_edge_mode(iotbus_gpio_context_h dev, iotbus_gpio_edge_e edge
 	if (ret != 0) {
 		switch (errno) {
 		case EPERM:
-			zdbg("unsupported command \n");
+			ibdbg("unsupported command \n");
 			return IOTBUS_ERROR_NOT_SUPPORTED;
 		case EINVAL:
-			zdbg("invalid parameter \n");
+			ibdbg("invalid parameter \n");
 			return IOTBUS_ERROR_INVALID_PARAMETER;
 		default:
-			zdbg("ioctl failed \n");
+			ibdbg("ioctl failed \n");
 			return IOTBUS_ERROR_UNKNOWN;
 		}
 	}
@@ -329,13 +328,13 @@ int iotbus_gpio_set_drive_mode(iotbus_gpio_context_h dev, iotbus_gpio_drive_e dr
 	if (ret != 0) {
 		switch (errno) {
 		case EPERM:
-			zdbg("unsupported command \n");
+			ibdbg("unsupported command \n");
 			return IOTBUS_ERROR_NOT_SUPPORTED;
 		case EINVAL:
-			zdbg("invalid parameter \n");
+			ibdbg("invalid parameter \n");
 			return IOTBUS_ERROR_INVALID_PARAMETER;
 		default:
-			zdbg("ioctl failed \n");
+			ibdbg("ioctl failed \n");
 			return IOTBUS_ERROR_UNKNOWN;
 		}
 	}

@@ -30,10 +30,6 @@
 #include <iotbus/iotbus_error.h>
 #include <iotbus/iotbus_uart.h>
 
-// debugging
-#include <stdio.h>
-#define zdbg printf   // adbg, idbg are already defined
-
 struct _iotbus_uart_s {
 	int fd;
 };
