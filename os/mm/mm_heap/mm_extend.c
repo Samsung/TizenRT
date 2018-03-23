@@ -59,6 +59,7 @@
 #include <assert.h>
 
 #include <tinyara/mm/mm.h>
+#include <tinyara/mm/kasan.h>
 
 /****************************************************************************
  * Pre-processor Definitions
@@ -102,10 +103,14 @@ void mm_extend(FAR struct mm_heap_s *heap, FAR void *mem, size_t size, int regio
 
 	DEBUGASSERT(MM_ALIGN_UP(blockstart) == blockstart);
 	DEBUGASSERT(MM_ALIGN_DOWN(blockend) == blockend);
+#ifdef CONFIG_KASAN
+	DEBUGASSERT(blockend <= KASAN_SHADOW_START);
+#endif
 
 	/* Take the memory manager semaphore */
-
 	mm_takesemaphore(heap);
+
+	kasan_unpoison_heap(blockstart, size);
 
 	/* Get the terminal node in the old heap.  The block to extend must
 	 * immediately follow this node.
@@ -113,6 +118,8 @@ void mm_extend(FAR struct mm_heap_s *heap, FAR void *mem, size_t size, int regio
 
 	oldnode = heap->mm_heapend[region];
 	DEBUGASSERT((uintptr_t)oldnode + SIZEOF_MM_ALLOCNODE == (uintptr_t)mem);
+
+	kasan_unpoison_allocnode(oldnode);
 
 	/* The size of the old node now extends to the new terminal node.
 	 * This is the old size (SIZEOF_MM_ALLOCNODE) plus the size of
@@ -131,6 +138,8 @@ void mm_extend(FAR struct mm_heap_s *heap, FAR void *mem, size_t size, int regio
 	newnode            = (FAR struct mm_allocnode_s *)(blockend - SIZEOF_MM_ALLOCNODE);
 	newnode->size      = SIZEOF_MM_ALLOCNODE;
 	newnode->preceding = oldnode->size | MM_ALLOC_BIT;
+
+	kasan_poison_allocnode(newnode);
 
 	heap->mm_heapend[region] = newnode;
 	mm_givesemaphore(heap);

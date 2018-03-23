@@ -65,6 +65,7 @@
 #include <tinyara/sched.h>
 #endif
 #include <tinyara/mm/mm.h>
+#include <tinyara/mm/kasan.h>
 
 /****************************************************************************
  * Pre-processor Definitions
@@ -145,6 +146,7 @@ FAR void *mm_realloc(FAR struct mm_heap_s *heap, FAR void *oldmem, size_t size)
 	/* Map the memory chunk into an allocated node structure */
 
 	oldnode = (FAR struct mm_allocnode_s *)((FAR char *)oldmem - SIZEOF_MM_ALLOCNODE);
+	kasan_unpoison_allocnode(oldnode);
 
 	/* We need to hold the MM semaphore while we muck with the nodelist. */
 
@@ -177,6 +179,9 @@ FAR void *mm_realloc(FAR struct mm_heap_s *heap, FAR void *oldmem, size_t size)
 #endif
 		}
 
+		kasan_unpoison_allocnode_chunk_size(oldnode, size);
+		kasan_poison_allocnode(oldnode);
+
 		/* Then return the original address */
 
 		mm_givesemaphore(heap);
@@ -189,11 +194,15 @@ FAR void *mm_realloc(FAR struct mm_heap_s *heap, FAR void *oldmem, size_t size)
 	 */
 
 	next = (FAR struct mm_freenode_s *)((FAR char *)oldnode + oldnode->size);
+	kasan_unpoison_freenode(next);
+
 	if ((next->preceding & MM_ALLOC_BIT) == 0) {
 		nextsize = next->size;
 	}
 
 	prev = (FAR struct mm_freenode_s *)((FAR char *)oldnode - (oldnode->preceding & ~MM_ALLOC_BIT));
+	kasan_unpoison_freenode(prev);
+
 	if ((prev->preceding & MM_ALLOC_BIT) == 0) {
 		prevsize = prev->size;
 	}
@@ -267,11 +276,15 @@ FAR void *mm_realloc(FAR struct mm_heap_s *heap, FAR void *oldmem, size_t size)
 			 * there may not be a successor node.
 			 */
 
+			kasan_unpoison_freenode_neighbours_only(prev);
+
 			DEBUGASSERT(prev->blink);
 			prev->blink->flink = prev->flink;
 			if (prev->flink) {
 				prev->flink->blink = prev->blink;
 			}
+
+			kasan_poison_freenode_neighbours_only(prev);
 
 			/* Extend the node into the previous free chunk */
 			/* Did we consume the entire preceding chunk? */
@@ -281,6 +294,8 @@ FAR void *mm_realloc(FAR struct mm_heap_s *heap, FAR void *oldmem, size_t size)
 				 * it back into the free list
 				 */
 				newnode            = (FAR struct mm_allocnode_s *)((FAR char *)oldnode - takeprev);
+				kasan_unpoison_allocnode(newnode);
+
 				prev->size        -= takeprev;
 				newnode->size      = oldsize + takeprev;
 				newnode->preceding = prev->size | MM_ALLOC_BIT;
@@ -292,7 +307,11 @@ FAR void *mm_realloc(FAR struct mm_heap_s *heap, FAR void *oldmem, size_t size)
 			} else {
 				/* Yes.. update its size (newnode->preceding is already set) */
 				takeprev            = prev->size;
+				kasan_poison_freenode(prev);
+
 				newnode             = (FAR struct mm_allocnode_s *)((FAR char *)oldnode - takeprev);
+				kasan_unpoison_allocnode(newnode);
+
 				newnode->size      += oldsize;
 				newnode->preceding |= MM_ALLOC_BIT;
 				next->preceding     = newnode->size | (next->preceding & MM_ALLOC_BIT);
@@ -306,6 +325,8 @@ FAR void *mm_realloc(FAR struct mm_heap_s *heap, FAR void *oldmem, size_t size)
 			 */
 
 			newmem = (FAR void *)((FAR char *)newnode + SIZEOF_MM_ALLOCNODE);
+
+			kasan_unpoison_allocnode_chunk_all(oldnode);
 			memcpy(newmem, oldmem, oldsize - SIZEOF_MM_ALLOCNODE);
 		}
 
@@ -320,16 +341,21 @@ FAR void *mm_realloc(FAR struct mm_heap_s *heap, FAR void *oldmem, size_t size)
 			 */
 
 			andbeyond = (FAR struct mm_allocnode_s *)((char *)next + nextsize);
+			kasan_unpoison_allocnode(andbeyond);
 
 			/* Remove the next node.  There must be a predecessor, but there
 			 * may not be a successor node.
 			 */
+
+			kasan_unpoison_freenode_neighbours(next);
 
 			DEBUGASSERT(next->blink);
 			next->blink->flink = next->flink;
 			if (next->flink) {
 				next->flink->blink = next->blink;
 			}
+
+			kasan_poison_freenode_neighbours(next);
 
 			/* Extend the node into the next chunk */
 			/* Did we consume the entire preceding chunk? */
@@ -340,6 +366,8 @@ FAR void *mm_realloc(FAR struct mm_heap_s *heap, FAR void *oldmem, size_t size)
 				 */
 				oldnode->size        = oldsize + takenext;
 				newnode              = (FAR struct mm_freenode_s *)((char *)oldnode + oldnode->size);
+				kasan_unpoison_freenode(newnode);
+
 				newnode->size        = nextsize - takenext;
 				newnode->preceding   = oldnode->size;
 				andbeyond->preceding = newnode->size | (andbeyond->preceding & MM_ALLOC_BIT);
@@ -353,6 +381,8 @@ FAR void *mm_realloc(FAR struct mm_heap_s *heap, FAR void *oldmem, size_t size)
 				oldnode->size        = oldsize + takenext;
 				andbeyond->preceding = oldnode->size | (andbeyond->preceding & MM_ALLOC_BIT);
 			}
+
+			kasan_poison_allocnode(andbeyond);
 		}
 #ifdef CONFIG_DEBUG_MM_HEAPINFO
 		/* update the chunk to realloc task information */
@@ -361,6 +391,9 @@ FAR void *mm_realloc(FAR struct mm_heap_s *heap, FAR void *oldmem, size_t size)
 		heapinfo_add_size(oldnode->pid, oldnode->size);
 		heapinfo_update_total_size(heap, oldnode->size, oldnode->pid);
 #endif
+
+		kasan_unpoison_allocnode_chunk_size(oldnode, size);
+		kasan_poison_allocnode(oldnode);
 
 		mm_givesemaphore(heap);
 		return newmem;
@@ -374,14 +407,21 @@ FAR void *mm_realloc(FAR struct mm_heap_s *heap, FAR void *oldmem, size_t size)
 		/* Allocate a new block.  On failure, realloc must return NULL but
 		 * leave the original memory in place.
 		 */
+
+		kasan_poison_freenode(next);
+		kasan_poison_freenode(prev);
+
 		mm_givesemaphore(heap);
+
 #ifdef CONFIG_DEBUG_MM_HEAPINFO
 		newmem = (FAR void *)mm_malloc(heap, size, caller_retaddr);
 #else
 		newmem = (FAR void *)mm_malloc(heap, size);
 #endif
 		if (newmem) {
-			memcpy(newmem, oldmem, oldsize);
+			kasan_unpoison_allocnode_chunk_all(oldnode);
+
+			memcpy(newmem, oldmem, oldsize - SIZEOF_MM_ALLOCNODE);
 			mm_free(heap, oldmem);
 		}
 

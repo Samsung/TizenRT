@@ -59,6 +59,7 @@
 #include <unistd.h>
 #include <stdint.h>
 #include <stdio.h>
+#include <tinyara/mm/kasan.h>
 #ifdef CONFIG_HEAPINFO_USER_GROUP
 #include <string.h>
 #include <tinyara/mm/heapinfo_internal.h>
@@ -86,6 +87,7 @@ struct heapinfo_group_info_s group_info[HEAPINFO_THREAD_NUM];
  * Description:
  *   This function walk through heap and displays alloc info.
  ****************************************************************************/
+no_sanitize_address
 void heapinfo_parse(FAR struct mm_heap_s *heap, int mode, pid_t pid)
 {
 	struct mm_allocnode_s *node;
@@ -321,6 +323,8 @@ void heapinfo_exclude_stacksize(void *stack_ptr)
 	struct tcb_s *rtcb;
 
 	node = (struct mm_allocnode_s *)(stack_ptr - SIZEOF_MM_ALLOCNODE);
+	kasan_unpoison_allocnode(node);
+
 	rtcb = sched_gettcb(node->pid);
 
 	ASSERT(rtcb);
@@ -339,6 +343,8 @@ void heapinfo_exclude_stacksize(void *stack_ptr)
 		}
 	}
 #endif
+
+	kasan_poison_allocnode(node);
 }
 
 #ifdef CONFIG_HEAPINFO_USER_GROUP
@@ -346,7 +352,7 @@ void heapinfo_exclude_stacksize(void *stack_ptr)
  * Name: heapinfo_update_group_info
  *
  * Description:
- * when create or release task/thread, check that the task/thread is 
+ * when create or release task/thread, check that the task/thread is
  * in group list
  ****************************************************************************/
 void heapinfo_update_group_info(pid_t pid, int group, int type)
