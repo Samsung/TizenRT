@@ -121,6 +121,13 @@ $(KBIN):
 	$(Q) $(MAKE) $(KBIN) BIN=$(KBIN) BINDIR=kbin TOPDIR=$(TOPDIR) EXTRADEFINES=$(EXTRADEFINES)
 endif
 
+ifeq ($(CONFIG_HEAPINFO_GROUP),y)
+  GROUP_DELIM_NUM = "${shell echo $(CONFIG_HEAPINFO_PER_GROUP) | grep -o '/' | wc -l}"
+  THREAD_DELIM_NUM = "${shell echo $(CONFIG_HEAPINFO_PER_GROUP) | grep -o ',' | wc -l}"
+
+  ${shell echo '#define HEAPINFO_GROUP_DELIM_NUM' "$(GROUP_DELIM_NUM)\n"'#define HEAPINFO_THREAD_DELIM_NUM' "$(THREAD_DELIM_NUM)\n"'#define HEAPINFO_GROUP_NUM (HEAPINFO_GROUP_DELIM_NUM + 1)\n#define HEAPINFO_THREAD_NUM (HEAPINFO_GROUP_NUM + HEAPINFO_THREAD_DELIM_NUM)' > $(TOPDIR)$(DELIM)include$(DELIM)tinyara$(DELIM)mm$(DELIM)heapinfo_internal.h}
+endif
+
 # Dependencies
 
 .depend: Makefile $(SRCS)
@@ -143,6 +150,9 @@ clean:
 	$(call DELFILE, $(BIN))
 	$(call DELFILE, $(UBIN))
 	$(call DELFILE, $(KBIN))
+ifeq ($(CONFIG_HEAPINFO_GROUP),y)
+	$(call DELFILE, $(TOPDIR)$(DELIM)include$(DELIM)tinyara$(DELIM)mm$(DELIM)heapinfo_internal.h)
+endif
 	$(call CLEAN)
 
 # Deep clean -- removes all traces of the configuration

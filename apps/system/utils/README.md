@@ -288,6 +288,8 @@ Options:
  -a           Show the all allocation details
  -p PID       Show the specific PID allocation details
  -f           Show the free list
+ -g           Show the User defined group allocation details
+              (for -g option, CONFIG_HEAPINFO_GROUP is needed)
 
 TASH>>heapinfo
 
@@ -332,6 +334,30 @@ Enable CONFIG_DEBUG_MM_HEAPINFO.
 ```
 Debug options -> Enable Debug Output Features to y
 ```
+
+### Heapinfo for User defined Group
+With specified task/thread name, heapinfo can show User defined group heap memory usage.
+
+Enable *CONFIG_HEAPINFO_GROUP* to use this option.
+```
+Application Configuration -> System Libraries and Add-Ons -> heapinfo -> Enable User defined Group Memory Usage -> set Thread Name List for measuring Alloc size
+```
+
+- Thread Name List for measuring Alloc size can be set like below:  
+  Task/Thread name is separated with ',' and Group is separated with '/'.  
+  For example, "abc,def/ghi,jklmn/opqr".
+
+```
+****************************************************************
+Heap Allocation Information per User defined Group
+****************************************************************
+ PEAK | HEAP_ON_PEAK | STACK_ON_PEAK | THREADS_IN_GROUP
+----------------------------------------------------------------
+ 4572 |         3568 |          1004 | jckim,jckim2
+ 5772 |         4768 |          1004 | jckim3
+ 2940 |          896 |          2044 | asdf
+```
+
 
 
 ## irqinfo
