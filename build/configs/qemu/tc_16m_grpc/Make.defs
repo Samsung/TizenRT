@@ -71,13 +71,13 @@ ifeq ($(WINTOOL),y)
   DIRUNLINK = $(TOPDIR)/tools/unlink.sh
   MKDEP = $(TOPDIR)/tools/mknulldeps.sh
   ARCHINCLUDES = -I. -isystem "${shell cygpath -w $(TOPDIR)/include}" -isystem "${shell cygpath -w $(TOPDIR)/../framework/include}" -isystem "${shell cygpath -w $(TOPDIR)/../external/include}"
-  ARCHXXINCLUDES = -I. -isystem "${shell cygpath -w $(TOPDIR)/include}" -isystem "${shell cygpath -w $(TOPDIR)/include/cxx}" -isystem "${shell cygpath -w $(TOPDIR)/../external/include}"
+  ARCHXXINCLUDES = -I. -isystem "${shell cygpath -w $(TOPDIR)/include}" -isystem "${shell cygpath -w $(TOPDIR)/../external/include}" -isystem "${shell cygpath -w $(TOPDIR)/../external/include/libcxx}"
   ARCHSCRIPT = -T "${shell cygpath -w $(TOPDIR)/../build/configs/qemu/scripts/$(LDSCRIPT)}"
 else
   # Linux/Cygwin-native toolchain
   MKDEP = $(TOPDIR)/tools/mkdeps.sh
   ARCHINCLUDES = -I. -isystem $(TOPDIR)/include -isystem $(TOPDIR)/../framework/include -isystem $(TOPDIR)/../external/include
-  ARCHXXINCLUDES = -I. -isystem $(TOPDIR)/include -I $(TOPDIR)/../external/include -isystem $(TOPDIR)/include/cxx -isystem $(TOPDIR)/include/libcxx
+  ARCHXXINCLUDES = -I. -isystem $(TOPDIR)/include -I $(TOPDIR)/../external/include -isystem $(TOPDIR)/../external/include/libcxx
   ARCHSCRIPT = -T$(TOPDIR)/../build/configs/qemu/scripts/$(LDSCRIPT)
 endif
 

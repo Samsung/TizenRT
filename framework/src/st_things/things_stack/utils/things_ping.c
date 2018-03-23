@@ -25,6 +25,7 @@
 #include "octypes.h"
 #include "easy-setup/es_common.h"
 #include "memory/things_malloc.h"
+#include "memory/things_string.h"
 #include "logging/things_logger.h"
 #include "things_list.h"
 #include "things_ping.h"
@@ -682,7 +683,7 @@ static things_ping_s *create_things_ping_s(const char *remote_addr, const uint16
 		return NULL;
 	}
 
-	ping->addr = strdup(remote_addr);
+	ping->addr = things_strdup(remote_addr);
 	ping->port = port;
 	ping->continue_thread = false;
 	pthread_mutex_init(&ping->mutex_int, NULL);

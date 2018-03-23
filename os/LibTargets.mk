@@ -147,6 +147,9 @@ $(LIBRARIES_DIR)$(DELIM)libuarch$(LIBEXT): $(ARCH_SRC)$(DELIM)libuarch$(LIBEXT)
 
 libxx$(DELIM)libcxx$(LIBEXT): context
 	$(Q) $(MAKE) -C $(LIB_DIR)$(DELIM)libxx TOPDIR="$(TOPDIR)" libcxx$(LIBEXT) KERNEL=n
+ifeq ($(CONFIG_LIBCXX),y)
+	$(Q) $(MAKE) -C $(EXTDIR)$(DELIM)libcxx TOPDIR="$(TOPDIR)" all KERNEL=n
+endif
 
 $(LIBRARIES_DIR)$(DELIM)libcxx$(LIBEXT): libxx$(DELIM)libcxx$(LIBEXT)
 	$(Q) install $(LIB_DIR)$(DELIM)libxx$(DELIM)libcxx$(LIBEXT) $(LIBRARIES_DIR)$(DELIM)libcxx$(LIBEXT)

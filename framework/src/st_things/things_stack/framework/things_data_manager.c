@@ -140,15 +140,12 @@
 
 #define MAX_FILE_PATH_LENGTH        (250)
 
-#define MAX_SUBDEVICE_EA            (100)
-
 #define MAX_SOFTAP_SSID				(64)
 
 #define PATH_MNT "/mnt/"
 #define PATH_ROM "/rom/"
 
 static bool is_support_user_def_dev_list = true;	// It's allow to apply user-defined device-ID only when start Stack.
-static char *user_def_dev_list[MAX_SUBDEVICE_EA + 1] = { 0, };
 
 static volatile int resource_type_cnt = 0;
 
@@ -1799,16 +1796,6 @@ st_device_s *dm_get_info_of_dev(unsigned long number)
 	return (st_device_s *)hashmap_get(g_device_hmap, number);
 }
 
-static void dm_delete_user_define_device_id(void)
-{
-	int i = 0;
-
-	for (i = 0; i < MAX_SUBDEVICE_EA; i++) {
-		things_free(user_def_dev_list[i]);
-		user_def_dev_list[i] = NULL;
-	}
-}
-
 bool dm_register_device_id(void)
 {
 	int i = 0;
@@ -1834,44 +1821,8 @@ bool dm_register_device_id(void)
 	}
 	memcpy(dev_list[0]->device_id, id, strlen(id) + 1);
 
-	// Set Sub-Device ID
-	for (i = 1; i < device_cnt; i++) {
-		dev_list[i] = (st_device_s *)hashmap_get(g_device_hmap, (unsigned long)i);
-		if (dev_list[i] == NULL) {
-			THINGS_LOG_V_ERROR(THINGS_ERROR, TAG, "Error : device[%d] =0x%X", i, dev_list[i]);
-			goto GOTO_ERROR;
-		}
-
-		if (user_def_dev_list[i] != NULL || strlen(dev_list[i]->device_id) == 0) {
-			// a. If logical device is in a hosting(physical) device.
-			if (dev_list[i]->is_physical == 1) {
-				OCRandomUuidResult idGenRet = RAND_UUID_CONVERT_ERROR;
-
-				if (user_def_dev_list[i]) {
-					THINGS_LOG_D(THINGS_DEBUG, TAG, "Set Sub-device ID with user-defined device ID.");
-					memcpy(dev_list[i]->device_id, user_def_dev_list[i], strlen(user_def_dev_list[i]) + 1);
-					idGenRet = RAND_UUID_OK;
-				} else {
-					THINGS_LOG_D(THINGS_DEBUG, TAG, "Set Sub-device ID with Auto-Generated device ID.");
-					idGenRet = OCGenerateUuidString(dev_list[i]->device_id);
-				}
-
-				if (idGenRet != RAND_UUID_OK) {
-					THINGS_LOG_D_ERROR(THINGS_ERROR, TAG, "[DEVICE] Device ID Creation Failed : %d", idGenRet);
-				} else {
-					THINGS_LOG_D(THINGS_DEBUG, TAG, "[DEVICE] ID Created : %s", (dev_list[i]->device_id));
-				}
-			}
-			// b. If logical device is in the other physical device
-			else {
-				THINGS_LOG_D(THINGS_INFO, TAG, "[DEVICE] Not Physically Separated Device ");
-			}
-		}
-	}
-
 	is_support_user_def_dev_list = false;	//  It's allow permission to apply user defined device-ID only when start THINGS_STACK.
 
-	dm_delete_user_define_device_id();
 	things_free(dev_list);
 	dev_list = NULL;
 	return true;

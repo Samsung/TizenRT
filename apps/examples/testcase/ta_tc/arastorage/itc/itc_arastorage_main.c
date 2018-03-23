@@ -1780,8 +1780,8 @@ int itc_arastorage_launcher(int argc, FAR char *argv[])
 	itc_arastorage_db_cursor_free_p();
 	itc_arastorage_db_cursor_free_n();
 
-	deinit_db();
 	db_cleanup(RELATION_NAME1);
+	deinit_db();
 
 	//Scenario ITCs called after db_deinit
 	itc_arastorage_db_init_deinit_p();
