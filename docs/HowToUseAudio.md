@@ -20,7 +20,7 @@ the lower half through POSIX like system APIs.
 
 
 ##  Tinyalsa  
-[framework/src/tinyalsa](../framework/src/tinyalsa) has the Tiny library similar to ALSA in Linux. Refer [link to TINYALSA !](https://github.com/tinyalsa/tinyalsa)  
+[framework/src/tinyalsa](../framework/src/tinyalsa) has the Tiny library to provide audio API similar to ALSA in Linux. Refer [HowToUseTinyAlsa](HowToUseTinyalsa.md) to find out how to develop audio applications using TinyAlsa
 
 ## Device Drivers  
 Most commonly, audio devices use I2S port for audio data path and 
