@@ -138,9 +138,9 @@
 #define MAX_CLOUD_ADDRESS           (256)	//   Need to match with the Cloud Spec.
 #define MAX_CLOUD_SESSIONKEY        (128)	//   Need to match with the Cloud Spec.
 
-#define MAX_FILE_PATH_LENGTH        (250)
+#define MAX_FILE_PATH_LENGTH        (33)
 
-#define MAX_SOFTAP_SSID				(64)
+#define MAX_SOFTAP_SSID				(33)
 
 #define PATH_MNT "/mnt/"
 #define PATH_ROM "/rom/"
@@ -443,16 +443,18 @@ static st_device_s *create_device()
 		return NULL;
 	}
 
-	memset(device->type, 0, (size_t) MAX_DEVICE_TYPE_LENGTH);
-	memset(device->name, 0, (size_t) MAX_DEVICE_NAME_LENGTH);
-	memset(device->model_num, 0, (size_t) MAX_DEVICE_MODEL_ID_LENGTH);
-	memset(device->ver_p, 0, (size_t) MAX_DEVICE_VER_P);
-	memset(device->ver_os, 0, (size_t) MAX_DEVICE_VER_OS);
-	memset(device->ver_hw, 0, (size_t) MAX_DEVICE_VER_HW);
-	memset(device->ver_fw, 0, (size_t) MAX_DEVICE_VER_FW);
-	memset(device->device_id, 0, (size_t) MAX_DEVICE_ID_LENGTH);
-	memset(device->vender_id, 0, (size_t) MAX_DEVICE_VENDER_ID);
-	memset(device->description, 0, (size_t) MAX_DEVICE_DESCRIPTION_LENGTH);
+	device->type = NULL;
+	device->name = NULL;
+	device->manufacturer_name = NULL;
+	device->manufacturer_url = NULL;
+	device->manufacturing_date = NULL;
+	device->model_num = NULL;
+	device->ver_p = NULL;
+	device->ver_os = NULL;
+	device->ver_hw = NULL;
+	device->ver_fw = NULL;
+	device->device_id = NULL;
+	device->vender_id = NULL;
 
 	device->no = -1;
 	device->capa_cnt = 0;
@@ -460,11 +462,36 @@ static st_device_s *create_device()
 	device->sig_cnt = 0;
 	device->is_physical = 0;
 
-	for (int index = 0; index < MAX_DEVICE_CAPABILTY_CNT; index++) {
-		device->pchild_resources[index] = NULL;
-	}
+	device->collection = NULL;
+	device->single = NULL;
+	device->pchild_resources = NULL;	
 
 	return device;
+}
+
+static void delete_device(st_device_s *device) {
+
+	if(device != NULL) {
+
+		things_free(device->type);
+		things_free(device->name);
+		things_free(device->manufacturer_name);
+		things_free(device->manufacturer_url);
+		things_free(device->manufacturing_date);
+		things_free(device->model_num);
+		things_free(device->ver_p);
+		things_free(device->ver_os);
+		things_free(device->ver_hw);
+		things_free(device->ver_fw);
+		things_free(device->device_id);
+		things_free(device->vender_id);
+
+		things_free(device->collection);
+		things_free(device->single);
+
+		things_free(device);
+	}
+
 }
 
 size_t get_json_file_size(const char *filename)
@@ -939,11 +966,13 @@ static int parse_things_info_json(const char *filename)
 					cJSON *data_model_version = cJSON_GetObjectItem(spec_device, KEY_DEVICE_SPECIFICATION_DEVICE_DATAMODELVERSION);
 
 					if (NULL != device_type) {
-						memcpy(node->type, device_type->valuestring, strlen(device_type->valuestring) + 1);
+						node->type = (char *) things_malloc(sizeof(char) * (strlen(device_type->valuestring) + 1));
+						strncpy(node->type, device_type->valuestring, strlen(device_type->valuestring) + 1);
 					}
 
 					if (NULL != device_name) {
-						memcpy(node->name, device_name->valuestring, strlen(device_name->valuestring) + 1);
+						node->name = (char *) things_malloc(sizeof(char) * (strlen(device_name->valuestring) + 1));
+						strncpy(node->name, device_name->valuestring, strlen(device_name->valuestring) + 1);
 					}
 				}
 
@@ -964,36 +993,48 @@ static int parse_things_info_json(const char *filename)
 							THINGS_LOG_V_ERROR(THINGS_ERROR, TAG, "manufacturer_name exceeds 4 bytes. please check (4 bytes are fixed sizes.)");
 							return 0;
 						}
-						memcpy(node->manufacturer_name, manufacturer_name->valuestring, strlen(manufacturer_name->valuestring) + 1);
+						node->manufacturer_name = (char *) things_malloc(sizeof(char) * (strlen(manufacturer_name->valuestring) + 1));
+						strncpy(node->manufacturer_name, manufacturer_name->valuestring, strlen(manufacturer_name->valuestring) + 1);
 					}
 					if (NULL != manufacturer_url) {
-						memcpy(node->manufacturer_url, manufacturer_url->valuestring, strlen(manufacturer_url->valuestring) + 1);
+						node->manufacturer_url = (char *) things_malloc(sizeof(char) * (strlen(manufacturer_url->valuestring) + 1));
+						strncpy(node->manufacturer_url, manufacturer_url->valuestring, strlen(manufacturer_url->valuestring) + 1);
 					}
 					if (NULL != manufacturing_date) {
-						memcpy(node->manufacturing_date, manufacturing_date->valuestring, strlen(manufacturing_date->valuestring) + 1);
+						node->manufacturing_date = (char *) things_malloc(sizeof(char) * (strlen(manufacturing_date->valuestring) + 1));
+						strncpy(node->manufacturing_date, manufacturing_date->valuestring, strlen(manufacturing_date->valuestring) + 1);
 					}
 					if (NULL != model_number) {
-						memcpy(node->model_num, model_number->valuestring, strlen(model_number->valuestring) + 1);
-						g_model_number = things_malloc(sizeof(char) * strlen(model_number->valuestring) + 1);
+						node->model_num = (char *) things_malloc(sizeof(char) * (strlen(model_number->valuestring) + 1));
+						strncpy(node->model_num, model_number->valuestring, strlen(model_number->valuestring) + 1);
+
+						g_model_number = (char *) things_malloc(sizeof(char) * strlen(model_number->valuestring) + 1);
 						strncpy(g_model_number, model_number->valuestring, strlen(model_number->valuestring) + 1);
 					}
 					if (NULL != platform_version) {
-						memcpy(node->ver_p, platform_version->valuestring, strlen(platform_version->valuestring) + 1);
+						node->ver_p = (char *) things_malloc(sizeof(char) * (strlen(platform_version->valuestring) + 1));
+						strncpy(node->ver_p, platform_version->valuestring, strlen(platform_version->valuestring) + 1);
 					}
 					if (NULL != os_version) {
-						memcpy(node->ver_os, os_version->valuestring, strlen(os_version->valuestring) + 1);
+						node->ver_os = (char *) things_malloc(sizeof(char) + (strlen(os_version->valuestring) + 1));
+						strncpy(node->ver_os, os_version->valuestring, strlen(os_version->valuestring) + 1);
 					}
 					if (NULL != hardware_version) {
-						memcpy(node->ver_hw, hardware_version->valuestring, strlen(hardware_version->valuestring) + 1);
+						node->ver_hw = (char *) things_malloc(sizeof(char) * (strlen(hardware_version->valuestring) + 1));
+						strncpy(node->ver_hw, hardware_version->valuestring, strlen(hardware_version->valuestring) + 1);
 					}
 					if (NULL != firmware_version) {
-						memcpy(node->ver_fw, firmware_version->valuestring, strlen(firmware_version->valuestring) + 1);
-						g_firmware_version = things_malloc(sizeof(char) * strlen(firmware_version->valuestring) + 1);
+						node->ver_fw = (char *) things_malloc(sizeof(char) * (strlen(firmware_version->valuestring) + 1));
+						strncpy(node->ver_fw, firmware_version->valuestring, strlen(firmware_version->valuestring) + 1);
+
+						g_firmware_version = (char *) things_malloc(sizeof(char) * strlen(firmware_version->valuestring) + 1);
 						strncpy(g_firmware_version, firmware_version->valuestring, strlen(firmware_version->valuestring) + 1);
 					}
 					if (NULL != vendor_id) {
-						memcpy(node->vender_id, vendor_id->valuestring, strlen(vendor_id->valuestring) + 1);
-						g_vendor_id = things_malloc(sizeof(char) * strlen(vendor_id->valuestring) + 1);
+						node->vender_id = (char *) things_malloc(sizeof(char) * (strlen(vendor_id->valuestring) + 1));
+						strncpy(node->vender_id, vendor_id->valuestring, strlen(vendor_id->valuestring) + 1);
+
+						g_vendor_id = (char *) things_malloc(sizeof(char) * strlen(vendor_id->valuestring) + 1);
 						strncpy(g_vendor_id, vendor_id->valuestring, strlen(vendor_id->valuestring) + 1);
 					}
 				}
@@ -1015,6 +1056,11 @@ static int parse_things_info_json(const char *filename)
 				if (collection) {
 					node->col_cnt = cJSON_GetArraySize(collection);
 					THINGS_LOG_D(THINGS_DEBUG, TAG, "[DEVICE] Resources for Collection Cnt : %d", node->col_cnt);
+
+					node->collection = (col_resource_s *) things_malloc(sizeof(col_resource_s) * node->col_cnt);
+					if (node->collection == NULL) {
+						return 0;
+					}
 
 					for (int iter = 0; iter < node->col_cnt; iter++) {
 						cJSON *res = cJSON_GetArrayItem(collection, iter);
@@ -1133,6 +1179,14 @@ static int parse_things_info_json(const char *filename)
 					node->sig_cnt = cJSON_GetArraySize(single);
 					THINGS_LOG_D(THINGS_DEBUG, TAG, "[DEVICE] Resources for Single Usage Cnt : %d", node->sig_cnt);
 
+					// Add 2 single resources for to support accesslist, provisioning.
+					/***** additional resource(provisininginfo / accesspointlist) *****/
+					int resCnt = sizeof(gstResources) / sizeof(things_resource_info_s);
+					node->single = (things_resource_info_s *)things_malloc(sizeof(things_resource_info_s) * (node->sig_cnt + resCnt));
+					if(node->single == NULL) {
+						return 0;
+					}
+
 					for (int iter = 0; iter < node->sig_cnt; iter++) {
 						cJSON *res = cJSON_GetArrayItem(single, iter);
 						if (res->type != NULL) {
@@ -1176,7 +1230,6 @@ static int parse_things_info_json(const char *filename)
 					}
 
 					/***** register additional resource(provisininginfo / accesspointlist) *****/
-					int resCnt = sizeof(gstResources) / sizeof(things_resource_info_s);
 					for (int itr = 0; itr < resCnt; itr++) {
 						memcpy(node->single[node->sig_cnt].uri, gstResources[itr].uri, strlen(gstResources[itr].uri) + 1);
 						int type_cnt = gstResources[itr].rt_cnt;
@@ -1682,7 +1735,9 @@ static things_resource_s *register_resource(things_server_builder_s *p_builder, 
 		memset(res_uri, 0, (size_t) MAX_URI_LENGTH);
 		strncat(res_uri, resource->uri, MAX_URI_LENGTH);
 
-		ret = p_builder->create_resource(p_builder, res_uri, resource->resource_types[0], resource->interface_types[0], CHECK_DISCOVERABLE(resource->policy), CHECK_OBSERVABLE(resource->policy), CHECK_SECURE(resource->policy));
+		ret = p_builder->create_resource(p_builder, res_uri, resource->resource_types[0],
+			resource->interface_types[0], CHECK_DISCOVERABLE(resource->policy), 
+			CHECK_OBSERVABLE(resource->policy), CHECK_SECURE(resource->policy));
 
 		THINGS_LOG_D(THINGS_DEBUG, TAG, "add_resource_type : %s", resource->resource_types[0]);
 		THINGS_LOG_D(THINGS_DEBUG, TAG, "add_interface_type : %s", resource->interface_types[0]);
@@ -1819,7 +1874,12 @@ bool dm_register_device_id(void)
 		THINGS_LOG_V_ERROR(THINGS_ERROR, TAG, "Error : id = %s, Main-device =0x%X", id, dev_list[0]);
 		goto GOTO_ERROR;
 	}
-	memcpy(dev_list[0]->device_id, id, strlen(id) + 1);
+
+	if (dev_list[0]->device_id != NULL) {
+		things_free(dev_list[0]->device_id);
+	}
+	dev_list[0]->device_id = things_malloc(sizeof(char) * (strlen(id) + 1));
+	strncpy(dev_list[0]->device_id, id, strlen(id) + 1);
 
 	is_support_user_def_dev_list = false;	//  It's allow permission to apply user defined device-ID only when start THINGS_STACK.
 
@@ -1870,10 +1930,12 @@ int dm_register_resource(things_server_builder_s *p_builder)
 			snprintf(id, sizeof(id), "%d", device->no);
 			THINGS_LOG_D(THINGS_DEBUG, TAG, "==================== Device (%s) ====================", id);
 
+			device->pchild_resources = things_malloc(sizeof(things_resource_s *) * (device->col_cnt + device->sig_cnt));
+
 			if (device->col_cnt < 1) {
 				THINGS_LOG_D(THINGS_DEBUG, TAG, "NO COLLECTION & ITS CHILDREN RESOURCE(S)");
 			} else {
-				THINGS_LOG_D(THINGS_INFO, TAG, "COLLECTION CHILDREN RESOURCE(S) CNT : %d", device->col_cnt);
+				THINGS_LOG_D(THINGS_INFO, TAG, "COLLECTION CHILDREN RESOURCE(S) CNT : %d", device->col_cnt);				
 
 				memset(res_uri, 0, (size_t) MAX_URI_LENGTH);
 				strncat(res_uri, device->collection[0].uri, MAX_URI_LENGTH);
@@ -1905,7 +1967,6 @@ int dm_register_resource(things_server_builder_s *p_builder)
 			}
 
 			THINGS_LOG_D(THINGS_DEBUG, TAG, "SINGLE RESOURCE(S) CNT : %d", device->sig_cnt);
-
 			for (int capa_num = 0; capa_num < device->sig_cnt; capa_num++) {
 				resource = &device->single[capa_num];
 				device->pchild_resources[n_count_of_children++] = register_resource(p_builder, resource, id);
@@ -1915,7 +1976,9 @@ int dm_register_resource(things_server_builder_s *p_builder)
 			// ex) Aircon Multi-Model
 			if (device_num < 1) {
 				// for hosting device
+				THINGS_LOG_D(THINGS_DEBUG, TAG, "REGISTERGING DEVICE INFO. TO DEVICE(/oic/d).");
 				p_builder->set_device_info(p_builder, device->name, device->type);
+				THINGS_LOG_D(THINGS_DEBUG, TAG, "REGISTERGING DEVICE INFO. TO PLATFORM(/oic/p).");
 				p_builder->set_platform_info(p_builder, device->model_num,	// gDeviceModel,
 											 device->ver_p,	// gPlatformVersion,
 											 device->ver_os,	// gOSVersion,
@@ -1924,18 +1987,11 @@ int dm_register_resource(things_server_builder_s *p_builder)
 											 device->vender_id,	// gVenderId
 											 device->manufacturer_name,	// manufacturer_name
 											 device->manufacturer_url);	// manufacturer_url
-			} else {
-				if (device->is_physical == 1) {
-					THINGS_LOG_V(THINGS_INFO, TAG, "It's Physically Separated Device : %s", device->device_id);
-					// for those physically separated devices
-					// a. /oic/d/# resource
-					device->pchild_resources[n_count_of_children++] = register_device_resource(p_builder, device, id);
-					// b. /oic/p/# resource
-					device->pchild_resources[n_count_of_children++] = register_platform_resource(p_builder, device, id);
-				} else {
-					THINGS_LOG_V(THINGS_INFO, TAG, "It's Logical Device in One Physical Device : [%d]", device_num);
-				}
-			}
+			} 
+
+			THINGS_LOG_D(THINGS_DEBUG, TAG, 
+				"[n_count_of_children : %d] : [device_cnt : %d]",
+			 n_count_of_children, (device->col_cnt + device->sig_cnt));
 
 			// Total Size of the device->pChildresources : col_cnt + sig_cnt + 1(/device) + a(/oic/d & /oic/p)
 			device->capa_cnt = n_count_of_children;
@@ -2290,6 +2346,14 @@ int dm_init_module(const char *devJsonPath)
 int dm_termiate_module()
 {
 	//  Need to backup all the keys in order to delete from the map.
+	unsigned long* keyset = hashmap_get_keyset(g_device_hmap);
+	long key_cnt = hashmap_count(g_device_hmap);
+	long dev_iter = 0;
+	for ( dev_iter = 0; dev_iter < key_cnt; ++dev_iter ) {
+		st_device_s *device = hashmap_get(g_device_hmap, keyset[dev_iter]);
+		delete_device(device);
+	}
+
 	hashmap_delete(g_device_hmap);
 	hashmap_delete(g_resource_type_hmap);
 	return 1;
