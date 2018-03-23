@@ -26,6 +26,7 @@
 #include <pthread.h>
 #include <errno.h>
 #include <sys/select.h>
+#include <time.h>
 
 #include "utils/things_network.h"
 #include "utils/things_wait_handler.h"
@@ -195,7 +196,7 @@ int esm_set_device_property_by_app(char *name, const wifi_mode_e *mode, int ea_m
 	}
 
 	THINGS_LOG_D(THINGS_DEBUG, TAG, "Exit.(result=%d)", is_set_device_property);
-	return 1;
+	return ESM_OK;
 }
 
 esm_result_e esm_init_easysetup(int restart_flag, things_server_builder_s *server_builder)
@@ -340,6 +341,7 @@ esm_result_e esm_terminate_easysetup()
 		pthread_join(gthread_id_cloud_refresh_check, NULL);
 		gthread_id_cloud_refresh_check = 0;
 	}
+
 	if (gthread_id_network_status_check) {
 		pthread_cancel(gthread_id_network_status_check);
 		pthread_join(gthread_id_network_status_check, NULL);
@@ -440,7 +442,7 @@ static void *cloud_refresh_check_loop(void *param)
 	return NULL;
 }
 
-static int OICUpdateDevProvData(es_dev_conf_prov_data_s *dev_prov_data)
+static int things_update_dev_prov_data(es_dev_conf_prov_data_s *dev_prov_data)
 {
 	THINGS_LOG_D(THINGS_DEBUG, TAG, "Enter.");
 
@@ -480,7 +482,7 @@ static void *wifi_prov_set_loop(void *param)
 		return 0;
 	}
 	// Notify DevConfProvData to THINGS_App.
-	OICUpdateDevProvData(g_dev_conf_prov_data);
+	things_update_dev_prov_data(g_dev_conf_prov_data);
 
 	usleep(50000);
 
@@ -727,6 +729,63 @@ void dev_conf_prov_cb_in_app(es_dev_conf_prov_data_s *event_data)
 		// check payload
 		THINGS_LOG_D(THINGS_DEBUG, TAG, "Datetime : %s", event_data->datetime);
 	}
+
+	//Added by THINGS to set time in appliance yyyy-mm-ddThh-mm-ss
+	char ch_year[5];
+	char ch_month[3];
+	char ch_day[3];
+	char ch_hour[3];
+	char ch_min[3];
+	char ch_sec[3];
+	struct tm st_time;
+	memset(&st_time, 0, sizeof(st_time));
+
+	int itr = 0;
+	for (; itr < 4; itr++) {
+		ch_year[itr] = event_data->datetime[itr];
+	}
+	ch_year[itr] = '\0';
+	st_time.tm_year = (atoi(ch_year) - 1900);
+
+	ch_month[0] = event_data->datetime[++itr];
+	ch_month[1] = event_data->datetime[++itr];
+	ch_month[2] = '\0';
+	st_time.tm_mon = (atoi(ch_month) - 1);
+
+	itr++;
+	ch_day[0] = event_data->datetime[++itr];
+	ch_day[1] = event_data->datetime[++itr];
+	ch_day[2] = '\0';
+	st_time.tm_mday = atoi(ch_day);
+
+	itr++;
+	ch_hour[0] = event_data->datetime[++itr];
+	ch_hour[1] = event_data->datetime[++itr];
+	ch_hour[2] = '\0';
+	st_time.tm_hour = atoi(ch_hour);
+
+	itr++;
+	ch_min[0] = event_data->datetime[++itr];
+	ch_min[1] = event_data->datetime[++itr];
+	ch_min[2] = '\0';
+	st_time.tm_min = atoi(ch_min);
+
+	itr++;
+	ch_sec[0] = event_data->datetime[++itr];
+	ch_sec[1] = event_data->datetime[++itr];
+	ch_sec[2] = '\0';
+	st_time.tm_sec = atoi(ch_sec);
+
+	unsigned int ep_time = (unsigned int)mktime(&st_time);
+
+	struct timespec current_time;
+
+	current_time.tv_sec = ep_time;
+	current_time.tv_nsec = 0;
+
+	if (clock_settime(CLOCK_REALTIME, &current_time) != 0) {
+		THINGS_LOG_V(THINGS_ERROR, TAG, "Failed to clock_settime");
+	}
 }
 
 void cloud_data_prov_cb_in_app(es_cloud_prov_data_s *event_data)
@@ -797,21 +856,6 @@ bool esm_get_network_status(void)
 	if (things_is_connected_ap() == true) {
 		THINGS_LOG_V(THINGS_INFO, TAG, "Connected to AP");
 		es_set_state(ES_STATE_CONNECTED_TO_ENROLLER);
-
-		if (g_server_builder != NULL) {
-#ifndef __ST_THINGS_RTOS__
-			if (g_server_builder->broadcast_presence != NULL) {
-				if (g_server_builder->broadcast_presence(g_server_builder, 20) == 1) {
-					THINGS_LOG_V_ERROR(THINGS_ERROR, TAG, "Broadcast Presence Failed.");
-					return is_ok;
-				}
-			} else {
-				THINGS_LOG_V(THINGS_INFO, TAG, "ServerBuilder Broadcast Presence is null.");
-			}
-#endif
-		} else {
-			THINGS_LOG_V(THINGS_INFO, TAG, "ServerBuilder is not initialized.");
-		}
 
 		is_ok = true;
 	} else {

@@ -432,16 +432,6 @@ INT8 things_wifi_connection_cb(access_point_info_s *p_info, char *p_cmd_id)
 	return 1;
 }
 
-int things_wifi_search_cb(access_point_info_s *** p_info, int *p_count)
-{
-	THINGS_LOG_D(THINGS_DEBUG, TAG, THINGS_FUNC_ENTRY);
-	//TO DO
-	(*p_count) = 0;
-
-	return 1;
-
-}
-
 static void otm_event_cb(const char *addr, uint16_t port, const char *uuid, int event)
 {
 	switch (event) {
@@ -617,7 +607,6 @@ int things_deinitialize_stack()
 int things_start_stack()
 {
 	things_register_set_ap_connection_func(things_wifi_connection_cb);
-	things_register_get_ap_list_func(things_wifi_search_cb);
 
 	if (wifi_manager_init(&wifi_callbacks) != WIFI_MANAGER_SUCCESS) {
 		THINGS_LOG_ERROR(THINGS_ERROR, TAG, "Failed to initialize WiFi manager");
@@ -971,13 +960,6 @@ static void things_set_reset_mask(rst_state_e value)
 bool things_get_reset_mask(rst_state_e value)
 {
 	return (int)(m_reset_bit_mask & value) != 0 ? true : false;
-}
-
-void things_control_queue_empty(void)
-{
-	if (things_get_reset_mask(RST_CONTROL_MODULE_DISABLE) == true) {
-		things_set_reset_mask(RST_CONTROL_QUEUE_EMPTY);
-	}
 }
 
 int things_return_user_opinion_for_reset(int b_reset_start)	// b_reset_start : User opinion.

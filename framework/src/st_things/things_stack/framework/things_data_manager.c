@@ -227,15 +227,6 @@ struct things_attribute_info_s const gstAttr_x_com_samsung_provisioninginfo[] = 
 	}
 };
 
-const struct things_attribute_info_s const gstAttr_x_com_samsung_accesspointlist[] = {
-	{
-		.key = "x.com.samsung.accesspoint.items",
-		.type = 9,
-		.mandatory = true,
-		.rw = 1
-	}
-};
-
 #ifdef CONFIG_ST_THINGS_FOTA
 const struct things_attribute_info_s const gstAttr_oic_r_firmware[] = {
 	{
@@ -334,11 +325,6 @@ static const struct st_resource_type_s const gst_resource_types[] = {
 		.prop[3] = &gstAttr_x_com_samsung_provisioninginfo[3],
 		.prop[4] = &gstAttr_x_com_samsung_provisioninginfo[4]
 	},
-	{
-		.rt = "x.com.samsung.accesspointlist",
-		.prop_cnt = 1,
-		.prop[0] = &gstAttr_x_com_samsung_accesspointlist[0]
-	}
 #ifdef CONFIG_ST_THINGS_FOTA
 	, {
 		.rt = "oic.r.firmware",
@@ -370,14 +356,6 @@ static const struct things_resource_info_s const gstResources[] = {
 		.rt_cnt = 1,
 		.policy = 3
 	},
-	{
-		.uri = "/sec/accesspointlist",
-		.interface_types = {"oic.if.s"},
-		.resource_types = {"x.com.samsung.accesspointlist"},
-		.if_cnt = 1,
-		.rt_cnt = 1,
-		.policy = 3
-	}
 #ifdef CONFIG_ST_THINGS_FOTA
 	, {
 		.uri = "/firmware",
