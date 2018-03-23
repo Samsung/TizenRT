@@ -101,7 +101,7 @@
 FAR void *kmm_malloc(size_t size)
 {
 #ifdef CONFIG_DEBUG_MM_HEAPINFO
-	return mm_malloc(&g_kmmheap, size, __builtin_return_address(0));
+	return mm_malloc(&g_kmmheap, size, RET_IP);
 #else
 	return mm_malloc(&g_kmmheap, size);
 #endif
