@@ -46,13 +46,13 @@
 #define MAX_FILE_PATH_LENGTH            (250)
 #define MAX_PROPERTY_LENGTH_OCF         (64)
 
-typedef struct st_resource_type_s {
+struct st_resource_type_s {
 	char rt[MAX_PROPERTY_LENGTH_OCF];
 	int prop_cnt;
 	struct things_attribute_info_s *prop[MAX_PROPERTY_CNT];
 } st_resource_type_s;
 
-typedef struct col_resource_s {
+struct col_resource_s {
 	char uri[MAX_URI_LENGTH_OCF];
 	char *interface_types[MAX_IT_CNT];
 	struct things_resource_info_s *links[MAX_DEVICE_CAPABILTY_CNT];
@@ -66,28 +66,28 @@ typedef struct col_resource_s {
 
 typedef struct st_device_s {
 	int no;
-	char *type;
-	char *name;
-	char *manufacturer_name;
-	char *manufacturer_url;
-	char *manufacturing_date;
-	char *model_num;
-	char *ver_p;	// mnpv
-	char *ver_os;	// mnhw
-	char *ver_hw;	// mnhw
-	char *ver_fw;	// mnfv
-	char *device_id;	// mnfv
-	char *vender_id;	// mnfv
-
-	col_resource_s *collection;
-	things_resource_info_s *single;
+	char type[MAX_DEVICE_TYPE_LENGTH];
+	char name[MAX_DEVICE_NAME_LENGTH];
+	char manufacturer_name[MAX_DEVICE_MANUFACTURER_NAME_LENGTH];
+	char manufacturer_url[MAX_DEVICE_MANUFACTURER_URL_LENGTH];
+	char manufacturing_date[MAX_DEVICE_MANUFACTURER_DATE_LENGTH];
+	char model_num[MAX_DEVICE_MODEL_ID_LENGTH];
+	char ver_p[MAX_DEVICE_VER_P];	// mnpv
+	char ver_os[MAX_DEVICE_VER_OS];	// mnhw
+	char ver_hw[MAX_DEVICE_VER_HW];	// mnhw
+	char ver_fw[MAX_DEVICE_VER_FW];	// mnfv
+	char device_id[MAX_DEVICE_ID_LENGTH];	// mnfv
+	char vender_id[MAX_DEVICE_VENDER_ID];	// mnfv
+	char description[MAX_DEVICE_DESCRIPTION_LENGTH];
+	struct col_resource_s collection[MAX_DEVICE_CAPABILTY_CNT];
+	struct things_resource_info_s single[MAX_DEVICE_CAPABILTY_CNT];
 
 	int capa_cnt;
 	int col_cnt;
 	int sig_cnt;
 	int is_physical;
 
-	things_resource_s **pchild_resources;
+	struct things_resource_s *pchild_resources[MAX_DEVICE_CAPABILTY_CNT];
 } st_device_s;
 
 size_t get_json_file_size(const char *filename);
