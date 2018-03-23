@@ -233,12 +233,7 @@ unsigned long int create_time_out_process(OCDoHandle hadler, check_time_out_call
 		pTimeOutManager->timeout.cur_num = timeOut->cur_num;
 	}
 
-#ifdef __ST_THINGS_RTOS__
-	if (pthread_create_rtos(&pTimeOutManager->gthreadId, NULL, (PthreadFunc) handle_base_timeout_loop, (void *)pTimeOutManager, THINGS_STACK_BASE_TIME_OUT_THREAD) != 0)
-#else
-	if (things_thread_create(&pTimeOutManager->gthreadId, NULL, (PthreadFunc) handle_base_timeout_loop, (void *)pTimeOutManager) != 0)
-#endif
-	{
+	if (pthread_create_rtos(&pTimeOutManager->gthreadId, NULL, (PthreadFunc) handle_base_timeout_loop, (void *)pTimeOutManager, 1024 * 4, "ST_THINGS_STACK_TIMEOUT_CHECKE") != 0) {
 		THINGS_LOG_V_ERROR(THINGS_ERROR, TAG, "Create thread is failed.");
 		things_free(pTimeOutManager);
 		return 0;

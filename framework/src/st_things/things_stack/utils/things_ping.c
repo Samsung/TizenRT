@@ -1220,7 +1220,7 @@ static bool things_ping_create_thread(things_ping_s *ping)
 	pthread_mutex_lock(&ping->mutex_thread);
 	if (ping->handle_thread == 0) {
 #ifdef __ST_THINGS_RTOS__
-		if (pthread_create_rtos(&ping->handle_thread, NULL, (pthread_func_type) thd_ping_loop, ping, THINGS_STACK_PING_THREAD) != 0)
+		if (pthread_create_rtos(&ping->handle_thread, NULL, (pthread_func_type) thd_ping_loop, ping, 1024 * 4, "ST_THINGS_STACK_PING") != 0)
 #else
 		if (things_thread_create(&ping->handle_thread, NULL, (pthread_func_type) thd_ping_loop, ping) != 0)
 #endif

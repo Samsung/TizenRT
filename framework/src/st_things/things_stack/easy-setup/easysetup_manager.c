@@ -321,11 +321,7 @@ esm_result_e esm_init_easysetup(int restart_flag, things_server_builder_s *serve
 	if (gthread_id_cloud_refresh_check == 0) {
 		esm_continue = 1;
 		THINGS_LOG_D(THINGS_DEBUG, TAG, "Create cloud_refresh_check_loop thread");
-#ifdef __ST_THINGS_RTOS__
-		pthread_create_rtos(&gthread_id_cloud_refresh_check, NULL, cloud_refresh_check_loop, (void *)&esm_continue, THINGS_STACK_CLOUD_REFRESH_THREAD);
-#else
-		things_thread_create(&gthread_id_cloud_refresh_check, NULL, cloud_refresh_check_loop, (void *)&esm_continue);
-#endif
+		pthread_create_rtos(&gthread_id_cloud_refresh_check, NULL, cloud_refresh_check_loop, (void *)&esm_continue, 1024 * 4, "ST_THINGS_STACK_CLOUD_TOKEN_CHECK");
 	}
 	THINGS_LOG_D(THINGS_DEBUG, TAG, THINGS_FUNC_EXIT);
 	return ESM_OK;
@@ -690,11 +686,7 @@ void wifi_prov_cb_in_app(es_wifi_prov_data_s *event_data)
 		del_all_request_handle();	// clear time-out thread.
 		set_wifi_prov_state(WIFI_INIT);
 
-#ifdef __ST_THINGS_RTOS__
-		pthread_create_rtos(&gthread_id_network_status_check, NULL, wifi_prov_set_loop, (void *)p_info, THINGS_STACK_CLOUD_REFRESH_THREAD);
-#else
-		things_thread_create(&gthread_id_network_status_check, NULL, wifi_prov_set_loop, (void *)p_info);
-#endif
+		pthread_create_rtos(&gthread_id_network_status_check, NULL, wifi_prov_set_loop, (void *)p_info, 1024 * 4, "ST_THINGS_STACK_AP_INFO_SET");
 		set_wifi_prov_state(WIFI_READY);
 	} else {
 		things_free(p_info);

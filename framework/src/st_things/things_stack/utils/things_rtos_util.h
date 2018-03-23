@@ -19,22 +19,7 @@
 #ifndef THINGS_RTOS_UTIL_H_
 #define THINGS_RTOS_UTIL_H_
 #include "pthread.h"
-typedef enum {
-	THINGS_STACK_PING_THREAD = 0,
-	THINGS_STACK_RESETLOOP_THREAD,
-	THINGS_STACK_CICONNETION_INIT_THREAD,
-	THINGS_STACK_CICONNETION_WAIT_THREAD,
-	THINGS_STACK_WIFI_PROV_SET_THREAD,
-	THINGS_STACK_CLOUD_REFRESH_THREAD,
-	THINGS_STACK_PRESENCE_NOTI_THREAD,
-	THINGS_STACK_SERVEREXCETUE_LOOP_THREAD,
-	THINGS_STACK_BASE_TIME_OUT_THREAD,
-	THINGS_STACK_OICABORT_THREAD,
-	THINGS_STACK_WIFI_JOIN_THREAD,
-	THGINS_STACK_FOTA_UPDATE_THREAD,
-	THINGS_STACK_MAX_INDEX,
-} things_stack_thread_name;
 
-int pthread_create_rtos(FAR pthread_t *thread, FAR const pthread_attr_t *attr, pthread_startroutine_t start_routine, pthread_addr_t arg, things_stack_thread_name eThreadname);
+int pthread_create_rtos(FAR pthread_t *thread, FAR const pthread_attr_t *attr, pthread_startroutine_t start_routine, pthread_addr_t arg, long stack_size, char *thread_name);
 
 #endif							/* THINGS_RTOS_UTIL_H_ */

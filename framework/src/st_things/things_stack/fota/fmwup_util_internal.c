@@ -205,7 +205,7 @@ int fmwup_internal_update_command(int64_t update_type)
 	*update = update_type;
 
 	pthread_t fota_thread_handler;
-	if (pthread_create_rtos(&fota_thread_handler, NULL, _update_worker, (void *)update, THGINS_STACK_FOTA_UPDATE_THREAD) != 0) {
+	if (pthread_create_rtos(&fota_thread_handler, NULL, _update_worker, (void *)update, 1024 * 6, ST_THINGS_STACK_FOTA_UPDATE_THREAD) != 0) {
 		THINGS_LOG_V_ERROR(THINGS_ERROR, TAG, "Create thread is failed.");
 		return FMWUP_ERROR_OPERATION_FAILED;
 	}

@@ -22,83 +22,49 @@
 #include <sched.h>
 
 #include "things_rtos_util.h"
+#include "logging/things_logger.h"
 
 #define TAG "[things_rtos_util]"
 
-static char thingsStackthreadName[THINGS_STACK_MAX_INDEX][40] = { {"THINGS_STACK_PING"},	/*THINGS_STACK_PING_THREAD */
-	{"THINGS_STACK_RESETLOOP"},		/*THINGS_STACK_RESETLOOP_THREAD */
-	{"THINGS_STACK_CICONN_INIT"},	/*THINGS_STACK_CICONNETION_INIT_THREAD */
-	{"THINGS_STACK_CICONN_WAIT"},	/*THINGS_STACK_CICONNETION_WAIT_THREAD */
-	{"THINGS_STACK_WIFIPROV_SET"},	/*THINGS_STACK_WIFI_PROV_SET_THREAD */
-	{"THINGS_STACK_CLOUD_REFRESH"},	/*THINGS_STACK_CLOUD_REFRESH_THREAD */
-	{"THINGS_STACK_PRESENCE_NOTI"},	/*THINGS_STACK_PRESENCE_NOTI_THREAD */
-	{"THINGS_STACK_SERVEREXCE_LOOP"},	/*THINGS_STACK_SERVEREXCETUE_LOOP_THREAD */
-	{"THINGS_STACK_BASE_TIME_OUT"},	/*THINGS_STACK_BASE_TIME_OUT_THREAD */
-	{"THINGS_STACK_OICABORT"},		/*THINGS_STACK_OICABORT_THREAD */
-	{"THINGS_STACK_WIFI_JOIN"},		/*THINGS_STACK_WIFI_JOIN_THREAD */
-	{"THINGS_STACK_UPDATE_THREAD"},	/*THINGS_STACK_FOTA_THREAD */
-	{"THINGS_STACK_MAX_INDEX"}		/*THINGS_STACK_MAX_INDEX */
-};
+#define THINGS_STACK_PTHREAD_STACK_DEFAULT		2048
+#define THINGS_STACK_PTHREAD_DEFAULT_PRIORITY	100
+#define THINGS_STACK_PTHREAD_DEFAULT_POLICY		SCHED_RR
+#define THINGS_STACK_PTHREAD_EXPLICIT_SCHED		SCHED_FIFO
 
-/**
- *
- * @param ethreadName
- * @param pstThread
- * @return
- */
-char *GetPthreadAttrDetails(things_stack_thread_name ethreadName, pthread_attr_t *pstThread)
+void pthread_init_rtos(pthread_attr_t *thread_attr)
 {
-	if (ethreadName >= THINGS_STACK_MAX_INDEX) {
-		ethreadName = THINGS_STACK_MAX_INDEX;
-	}
-
-	if (pstThread != NULL) {
-		pthread_attr_init(pstThread);
-		struct sched_param sparam;
-		pthread_attr_init(pstThread);
-		pthread_attr_setschedpolicy(pstThread, SCHED_RR);
-		sparam.sched_priority = PTHREAD_DEFAULT_PRIORITY;
-		pthread_attr_setschedparam(pstThread, &sparam);
-
-		pthread_attr_setstacksize(pstThread, 8193);	/**Default Stack Size**/
-		switch (ethreadName) {
-		case THINGS_STACK_RESETLOOP_THREAD:
-		case THINGS_STACK_PING_THREAD:
-		case THINGS_STACK_CICONNETION_INIT_THREAD:
-		case THINGS_STACK_CLOUD_REFRESH_THREAD:
-		case THINGS_STACK_PRESENCE_NOTI_THREAD:
-		case THINGS_STACK_BASE_TIME_OUT_THREAD:
-			pthread_attr_setstacksize(pstThread, 4 * 1024);
-			break;
-
-		case THINGS_STACK_CICONNETION_WAIT_THREAD:
-			pthread_attr_setstacksize(pstThread, 6 * 1024);
-			break;
-		case THINGS_STACK_SERVEREXCETUE_LOOP_THREAD:
-			pthread_attr_setstacksize(pstThread, 6 * 1024);
-			/* its the main process thread for all request */
-			break;
-		case THGINS_STACK_FOTA_UPDATE_THREAD:
-			pthread_attr_setstacksize(pstThread, 6 * 1024);
-			break;
-		default:
-			pthread_attr_setstacksize(pstThread, 8193);
-			break;
-		}
-	}
-
-	return thingsStackthreadName[ethreadName];
-
+	thread_attr->stacksize = THINGS_STACK_PTHREAD_STACK_DEFAULT;
+	thread_attr->priority = THINGS_STACK_PTHREAD_DEFAULT_PRIORITY;
+	thread_attr->policy = THINGS_STACK_PTHREAD_DEFAULT_POLICY;
+	thread_attr->inheritsched = THINGS_STACK_PTHREAD_EXPLICIT_SCHED;
 }
 
-int pthread_create_rtos(FAR pthread_t *thread, FAR const pthread_attr_t *attr, pthread_startroutine_t start_routine, pthread_addr_t arg, things_stack_thread_name eThreadname)
+int pthread_create_rtos(FAR pthread_t *thread, FAR const pthread_attr_t *attr, pthread_startroutine_t start_routine, pthread_addr_t arg, long stack_size, char *thread_name)
 {
-	pthread_attr_t stPtr;
-	char *pchTname = GetPthreadAttrDetails(eThreadname, &stPtr);
-	int ret = pthread_create(thread, &stPtr, start_routine, (void *)arg);
+	int ret;
+
+	pthread_attr_t thread_attr;
+	memset(&thread_attr, 0, sizeof(thread_attr));
+	pthread_init_rtos(&thread_attr);
+
+	ret = pthread_attr_setstacksize(&thread_attr, stack_size);
 	if (ret == 0) {
-		pthread_setname_np(*thread, pchTname);
-		pthread_detach(*thread);
+		ret = pthread_create(thread, &thread_attr, start_routine, (void *)arg);
+	} else {
+		THINGS_LOG_D(THINGS_ERROR, TAG, "malloc fail for stack ERROR : %d", ret);
+		ret = pthread_create(thread, NULL, start_routine, (void *)arg);
 	}
+
+	if (ret == 0) {
+		pthread_setname_np(*thread, thread_name);
+		pthread_detach(*thread);
+	} else {
+		if (thread_name == NULL) {
+			THINGS_LOG_D(THINGS_ERROR, TAG, "pthread_create ERROR : %d", ret);
+		} else {
+			THINGS_LOG_D(THINGS_ERROR, TAG, "pthread_create thread_name : %s , ERROR : %d", thread_name, ret);
+		}
+	}
+	
 	return ret;
 }
