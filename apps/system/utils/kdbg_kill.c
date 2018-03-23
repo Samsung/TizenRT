@@ -68,30 +68,26 @@ struct kdbg_sig_s {
 };
 
 static const struct kdbg_sig_s kdbg_sig[] = {
-#ifdef SIGUSR1
+#ifndef CONFIG_DISABLE_SIGNALS
 	{"SIGUSR1",         SIGUSR1},
-#endif
-#ifdef SIGUSR2
 	{"SIGUSR2",         SIGUSR2},
-#endif
-#ifdef SIGALRM
 	{"SIGALRM",         SIGALRM},
-#endif
 #ifdef SIGCHLD
 	{"SIGCHLD",         SIGCHLD},
 #endif
 #ifdef SIGPOLL
 	{"SIGPOLL",         SIGPOLL},
 #endif
-#ifdef SIGKILL
+#endif /* CONFIG_DISABLE_SIGNALS */
 	{"SIGKILL",         SIGKILL},
-#endif
+#ifndef CONFIG_DISABLE_SIGNALS
 #ifdef SIGCONDTIMEDOUT
 	{"SIGCONDTIMEDOUT", SIGCONDTIMEDOUT},
 #endif
 #ifdef SIGWORK
 	{"SIGWORK",         SIGWORK},
 #endif
+#endif /* CONFIG_DISABLE_SIGNALS */
 	{NULL,              0}
 };
 
@@ -140,7 +136,7 @@ static int find_signal(char *ptr)
 
 static int send_signal(pid_t pid, int signo)
 {
-	int ret = OK;
+	int ret = ERROR;
 	FAR struct tcb_s *tcb;
 
 	/* Send the signal.  Kill return values:
@@ -164,19 +160,24 @@ static int send_signal(pid_t pid, int signo)
 				/* tasks and kernel threads has to use this interface */
 				ret = task_delete(pid) == OK ? OK : ERROR;
 				break;
+#ifndef CONFIG_DISABLE_PTHREAD
 			case TCB_FLAG_TTYPE_PTHREAD:
 				ret = pthread_cancel(pid) == OK ? OK : ERROR;
 				pthread_join(pid, NULL);
 				break;
+#endif
 			default:
 				set_errno(EINVAL);
 				ret = ERROR;
 				break;
 			}
 		}
-	} else if (kill(pid, signo) != OK) {
+	}
+#ifndef CONFIG_DISABLE_SIGNALS
+	else if (kill(pid, signo) != OK) {
 		ret = ERROR;
 	}
+#endif
 
 	if (ret == ERROR) {
 		printf("send_signal failed. errno : %d\n", get_errno());
