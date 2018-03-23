@@ -1,0 +1,30 @@
+#
+# For a description of the syntax of this configuration file,
+# see the file kconfig-language.txt in the NuttX tools repository.
+#
+
+config WL_BCM4390X
+        bool "BCM4390X Wireless Module support"
+        select NET_NOINTS
+        select WICED
+        select BOARD_INITTHREAD
+        select BCM4390X_WIRELESS
+        default y
+        ---help---
+                Enable support for BCM4390X WiFi driver
+config WIRELESS_FIRMWARE_FILESYSTEM
+        bool "BCM43909B0 wireless firmware can be loaded from file system"
+	select MTD_PARTITION
+	select FS_ROMFS
+        default n
+        ---help---
+                Enable when file system includes its wireless module firmware
+
+menuconfig NET_NOINTS
+    bool "NOINTS Support"
+    default y
+
+menuconfig WICED
+    bool "WICED code Support"
+    default y
+

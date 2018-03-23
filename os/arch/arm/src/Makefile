@@ -91,6 +91,10 @@ else
 endif
 endif
 
+ifeq ($(CONFIG_ARCH_BOARD_CY4390X),y)
+	CFLAGS+=-I$(TOPDIR)/../external/WICED/bcm4390x/include
+endif
+
 # The "head" object
 
 HEAD_OBJ = $(HEAD_ASRC:.S=$(OBJEXT))
@@ -143,7 +147,6 @@ ifeq ($(WINTOOL),y)
 ifeq ($(BOARDMAKE),y)
   LIBPATHS += -L"${shell cygpath -w "$(TOPDIR)/arch/$(CONFIG_ARCH)/src/board"}"
 endif
-
 else
   LIBPATHS += -L"$(TOPDIR)/$(LIBRARIES_DIR)"
 ifeq ($(BOARDMAKE),y)
@@ -156,6 +159,25 @@ LDLIBS = $(patsubst %.a,%,$(patsubst lib%,-l%,$(LINKLIBS)))
 ifeq ($(BOARDMAKE),y)
   LDLIBS += -lboard
 endif
+
+ifeq ($(CONFIG_ARCH_BOARD_CY4390X),y)
+  CY4309XBOARDMAKE = $(if $(wildcard ./board/libboard.a),y,)
+  BCM4390XMAKE = $(if $(wildcard ./chip/libbcmarch.a),y,)
+ifeq ($(BCM4390XMAKE),y)
+  LIBPATHS += -L"$(TOPDIR)/arch/$(CONFIG_ARCH)/src/chip"
+  LDLIBS += -lbcmarch
+endif
+$(info board $(CY4309XBOARDMAKE))
+$(info ldlibs  $(LDLIBS))
+ifeq ($(CY4309XBOARDMAKE),y)
+$(info 1 ldlibs  $(LDLIBS))
+  LIBPATHS += -L"$(TOPDIR)/arch/$(CONFIG_ARCH)/src/board"
+  LDLIBS += -lboard
+endif
+endif
+$(info 2 ldlibs  $(LDLIBS))
+
+
 
 LIBGCC = "${shell "$(CC)" $(ARCHCPUFLAGS) -print-libgcc-file-name}"
 GCC_LIBDIR := ${shell dirname $(LIBGCC)}
@@ -180,6 +202,12 @@ $(BIN) $(KBIN): $(OBJS)
 $(UBIN): $(UOBJS)
 	$(call ARCHIVE, $@, $(UOBJS))
 
+ifeq ($(CONFIG_ARCH_BOARD_CY4390X),y)
+$(BIN_DIR)/tinyara$(EXEEXT): $(HEAD_OBJ)
+	$(Q) $(LD) --entry=__start $(LDFLAGS) $(LIBPATHS) $(EXTRA_LIBPATHS) \
+		-o $(TINYARA) $(HEAD_OBJ) $(EXTRA_OBJS) \
+		--start-group $(LDLIBS) $(EXTRA_LIBS) $(LIBGCC) --end-group -Map $(TOPDIR)/../build/output/bin/tinyara.map
+else
 board/libboard$(LIBEXT):
 	$(Q) $(MAKE) -C board TOPDIR="$(TOPDIR)" libboard$(LIBEXT) EXTRADEFINES=$(EXTRADEFINES)
 
@@ -193,6 +221,8 @@ ifneq ($(CONFIG_WINDOWS_NATIVE),y)
 	grep -v '\(compiled\)\|\(\$(OBJEXT)$$\)\|\( [aUw] \)\|\(\.\.ng$$\)\|\(LASH[RL]DI\)' | \
 	sort > $(TOPDIR)/$(BIN_DIR)/System.map
 endif
+endif
+
 
 # This is part of the top-level export target
 # Note that there may not be a head object if layout is handled

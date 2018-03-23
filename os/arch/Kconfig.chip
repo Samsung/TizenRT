@@ -707,6 +707,11 @@ endchoice
 
 menu "Boot Memory Configuration"
 
+config DDR
+	bool "Use DDR memory"
+	default n
+	depends on ARCH_CHIP_BCM4390X
+
 config RAM_START
 	hex "Primary RAM start address (physical)"
 	default 0x0
@@ -734,6 +739,15 @@ config RAM_SIZE
 		refers to the RAM that you link program code into.  If program code
 		does not execute out of RAM but from FLASH, then you may designate
 		any block of RAM as "primary."
+
+config RAM_DDR_START
+	hex "DDR RAM start address"
+	default 0x0
+
+config RAM_DDR_SIZE
+	hex "DDR RAM size"
+	default 0
+
 
 if BOOT_RUNFROMFLASH && ARCH_USE_MMU
 

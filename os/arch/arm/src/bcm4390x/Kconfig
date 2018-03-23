@@ -1,0 +1,161 @@
+#
+# For a description of the syntax of this configuration file,
+# see the file kconfig-language.txt in the TinyAra tools repository.
+#
+
+if ARCH_CHIP_BCM4390X
+
+comment "BCM4390x Configuration Options"
+
+# Summary Configurations
+
+# Chip Selection
+
+choice
+	prompt "Cypress BCM4390x Chip Selection"
+	default ARCH_CHIP_BCM43907
+
+config ARCH_CHIP_BCM43907
+	bool "Cypress BCM43907"
+	select BCM4390X_BCM43907
+	select BOOT_RESULT
+
+config ARCH_CHIP_BCM43909
+	bool "Cypress BCM43909"
+	select BCM4390X_BCM43909
+	select BOOT_RESULT
+
+endchoice # Cypress BCM4390X Chip Selection
+
+# These hidden selections represent automatically selected MCU families and,
+# in turn, select general capabilities of the MCU family
+
+config BOOT_RESULT
+	bool
+	default y
+
+
+config BCM4390X_BCM43907
+	bool
+	default n
+	select ARCH_CORTEXR4
+	select ARMV7R_ICACHE
+	select ARMV7R_DCACHE
+
+
+config BCM4390X_BOOT_RESULT_ADDR
+	hex "boot result address (physical)"
+	default 0x6A0000
+	depends on BOOT_RESULT
+
+config BCM4390X_BCM43909
+	bool
+	default n
+	select ARCH_CORTEXR4
+	select ARMV7R_HAVE_ICACHE
+	select ARMV7R_HAVE_DCACHE
+
+config ARMCR4_CYCLE_COUNTER_REG
+	hex "Cpu clock Register address"
+	default 0x18003028
+
+menu "BCM4390x Peripheral Support"
+
+# These "hidden" settings determine peripheral options
+# that are available for the selected MCU.
+
+# BCM43907 and BCM43909 are almost identical and
+# we have no features different between them for now.
+
+config BCM4390X_UART0
+	bool "UART0 (Slow UART)"
+	default n
+	select ARCH_HAVE_UART0
+	select ARCH_HAVE_SERIAL_TERMIOS
+
+config BCM4390X_UART1
+	bool "UART1 (Fast UART)"
+	default n
+	select ARCH_HAVE_UART1
+	select ARCH_HAVE_SERIAL_TERMIOS
+
+config BCM4390X_UART2
+	bool "UART2 (GCI UART)"
+	default n
+	select ARCH_HAVE_UART2
+	select ARCH_HAVE_SERIAL_TERMIOS
+
+config BCM4390X_I2C
+	bool
+	depends on BCM4390X_I2C0 || BCM4390X_I2C1
+	default n
+
+config BCM4390X_I2C0
+	bool "I2C0"
+	depends on I2C
+	select BCM4390X_I2C
+	default n
+
+config BCM4390X_I2C1
+	bool "I2C1"
+	depends on I2C
+	select BCM4390X_I2C
+	default n
+
+config BCM4390X_PWM
+	bool "PWM"
+	depends on PWM
+	default n
+
+config BCM4390X_SPI
+	bool
+	depends on BCM4390X_SPI0 || BCM4390X_SPI1
+	default n
+
+config BCM4390X_SPI0
+	bool "SPI0"
+	depends on SPI
+        select BCM4390X_SPI
+	default y
+
+config BCM4390X_SPI1
+	bool "SPI1"
+	depends on SPI
+        select BCM4390X_SPI
+	default n
+
+config BCM4390X_GPIO
+	bool "GPIO"
+	depends on GPIO
+	default y
+
+config BCM4390X_GPIO_COUNT
+	int "Number of GPIO"
+	depends on BCM4390X_GPIO
+	default 16
+
+config BCM4390X_SFLASH
+	bool "Serial Flash controller"
+	default n
+
+config BCM4390X_BOOTLOADER_REGION_SIZE
+	int "Bootloader size(KB)"
+	depends on BCM4390X_SFLASH
+	default 4128
+
+config BCM4390X_WDT
+	bool "WATCHDOG"
+	select WATCHDOG
+	default y
+
+config BCM4390X_WIRELESS
+	bool "Wireless"
+	default n
+
+config BCM4390X_M2M
+	bool "M2M"
+	default y
+
+endmenu # BCM4390x Peripheral Support
+
+endif # ARCH_CHIP_BCM4390X
