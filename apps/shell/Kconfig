@@ -23,6 +23,18 @@ config DEBUG_TASH
 	---help---
 		Enable debugging message in TASH.
 
+if DEBUG_TASH
+config DEBUG_TASH_ERROR
+	bool "Print error messages in TASH"
+	default y
+	depends on DEBUG_ERROR
+
+config DEBUG_TASH_VERBOSE
+	bool "Print informational messages in TASH"
+	default n
+	depends on DEBUG_VERBOSE
+endif
+
 config TASH_COMMAND_INTERFACE
 	bool "enable command interface to TASH"
 	default n
