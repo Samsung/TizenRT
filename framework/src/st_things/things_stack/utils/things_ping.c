@@ -1220,12 +1220,7 @@ static bool things_ping_create_thread(things_ping_s *ping)
 
 	pthread_mutex_lock(&ping->mutex_thread);
 	if (ping->handle_thread == 0) {
-#ifdef __ST_THINGS_RTOS__
-		if (pthread_create_rtos(&ping->handle_thread, NULL, (pthread_func_type) thd_ping_loop, ping, THINGS_STACK_PING_THREAD) != 0)
-#else
-		if (things_thread_create(&ping->handle_thread, NULL, (pthread_func_type) thd_ping_loop, ping) != 0)
-#endif
-		{
+		if (pthread_create_rtos(&ping->handle_thread, NULL, (pthread_func_type) thd_ping_loop, ping, THINGS_STACK_PING_THREAD) != 0) {
 			THINGS_LOG_V_ERROR(THINGS_ERROR, TAG, "Create thd_ping_loop thread is failed.");
 			ping->handle_thread = 0;
 			goto GOTO_OUT;
