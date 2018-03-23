@@ -138,7 +138,7 @@
 #define MAX_CLOUD_ADDRESS           (256)	//   Need to match with the Cloud Spec.
 #define MAX_CLOUD_SESSIONKEY        (128)	//   Need to match with the Cloud Spec.
 
-#define MAX_FILE_PATH_LENGTH        (250)
+#define MAX_FILE_PATH_LENGTH        (33)
 
 #define MAX_SOFTAP_SSID				(64)
 
