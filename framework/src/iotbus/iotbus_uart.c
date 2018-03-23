@@ -121,11 +121,9 @@ int iotbus_uart_stop(iotbus_uart_context_h hnd)
 	return IOTBUS_ERROR_NONE;
 }
 
+#ifdef CONFIG_SERIAL_TERMIOS
 int iotbus_uart_flush(iotbus_uart_context_h hnd)
 {
-#ifndef CONFIG_SERIAL_TERMIOS
-	return IOTBUS_ERROR_NOT_SUPPORTED;
-#else
 	// tcdrain is not working even CONFIG_SERIAL_TERMIOS is defined.
 	int fd;
 	int ret;
@@ -144,14 +142,10 @@ int iotbus_uart_flush(iotbus_uart_context_h hnd)
 	}
 
 	return IOTBUS_ERROR_NONE;
-#endif
 }
 
 int iotbus_uart_set_baudrate(iotbus_uart_context_h hnd, unsigned int baud)
 {
-#ifndef CONFIG_SERIAL_TERMIOS
-	return IOTBUS_ERROR_NOT_SUPPORTED;
-#else
 	int fd;
 	int ret;
 	struct termios tio;
@@ -180,15 +174,11 @@ int iotbus_uart_set_baudrate(iotbus_uart_context_h hnd, unsigned int baud)
 	}
 
 	return IOTBUS_ERROR_NONE;
-#endif
 }
 
 // 8N1 would be set by calling "iotbus_uart_set_mode(hnd, 8,MRAA_UART_PARITY_NONE , 1)"
 int iotbus_uart_set_mode(iotbus_uart_context_h hnd, int bytesize, iotbus_uart_parity_e parity, int stopbits)
 {
-#ifndef CONFIG_SERIAL_TERMIOS
-	return IOTBUS_ERROR_NOT_SUPPORTED;
-#else
 	int fd;
 	int ret;
 	struct termios tio;
@@ -250,16 +240,12 @@ int iotbus_uart_set_mode(iotbus_uart_context_h hnd, int bytesize, iotbus_uart_pa
 	}
 
 	return IOTBUS_ERROR_NONE;
-#endif
 }
 
 // parameter
 // rtscts => 1: rts/cts on, 0: off
 int iotbus_uart_set_flowcontrol(iotbus_uart_context_h hnd, int xonxoff, int rtscts)
 {
-#ifndef CONFIG_SERIAL_TERMIOS
-	return IOTBUS_ERROR_NOT_SUPPORTED;
-#else
 	int fd;
 	int ret;
 	struct termios tio;
@@ -302,8 +288,8 @@ int iotbus_uart_set_flowcontrol(iotbus_uart_context_h hnd, int xonxoff, int rtsc
 	}
 
 	return IOTBUS_ERROR_NONE;
-#endif
 }
+#endif
 
 int iotbus_uart_read(iotbus_uart_context_h hnd, char *buf, unsigned int length)
 {

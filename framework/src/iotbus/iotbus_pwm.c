@@ -44,22 +44,17 @@
 struct _iotbus_pwm_s {
 	int fd;
 	int enabled;
-#ifdef CONFIG_PWM
 	struct pwm_info_s config;
-#endif
 };
 
 struct _iotbus_pwm_wrapper_s {
 	struct _iotbus_pwm_s *handle;
 };
 
-//int g_board_init = 0;
-
 #ifdef __cplusplus
 extern "C" {
 #endif
 
-#ifdef CONFIG_PWM
 iotbus_pwm_context_h iotbus_pwm_open(int device, int channel)
 {
 	int fd;
@@ -288,58 +283,6 @@ int iotbus_pwm_get_period(iotbus_pwm_context_h pwm)
 
 	return (int)(IOTBUS_PWM_MAX_PERIOD / info->frequency);
 }
-
-#else // CONFIG_PWM
-iotbus_pwm_context_h
-iotbus_pwm_open(int device, int channel)
-{
-	zdbg("pwm is not supported\n");
-	return NULL;
-}
-int
-iotbus_pwm_close(iotbus_pwm_context_h pwm)
-{
-	zdbg("pwm is not supported\n");
-	return IOTBUS_ERROR_NOT_SUPPORTED;
-}
-int
-iotbus_pwm_set_duty_cycle(iotbus_pwm_context_h pwm, percent_t duty_cycle)
-{
-	zdbg("pwm is not supported\n");
-	return IOTBUS_ERROR_NOT_SUPPORTED;
-}
-int
-iotbus_pwm_set_period(iotbus_pwm_context_h pwm, uint32_t period)
-{
-	zdbg("pwm is not supported\n");
-	return IOTBUS_ERROR_NOT_SUPPORTED;
-}
-int
-iotbus_pwm_set_enabled(iotbus_pwm_context_h pwm, iotbus_pwm_state_e enable)
-{
-	zdbg("pwm is not supported\n");
-	return IOTBUS_ERROR_NOT_SUPPORTED;
-}
-int
-iotbus_pwm_is_enabled(iotbus_pwm_context_h pwm)
-{
-	zdbg("pwm is not supported\n");
-	return IOTBUS_ERROR_NOT_SUPPORTED;
-}
-int
-iotbus_pwm_get_duty_cycle(iotbus_pwm_context_h pwm)
-{
-	zdbg("pwm is not supported\n");
-	return IOTBUS_ERROR_NOT_SUPPORTED;
-}
-int
-iotbus_pwm_get_period(iotbus_pwm_context_h pwm)
-{
-	zdbg("pwm is not supported\n");
-	return IOTBUS_ERROR_NOT_SUPPORTED;
-}
-
-#endif // CONFIG_PWM
 
 #ifdef __cplusplus
 }

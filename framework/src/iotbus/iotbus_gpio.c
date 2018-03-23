@@ -58,7 +58,6 @@ struct _iotbus_gpio_wrapper_s {
 
 #ifdef __cplusplus
 extern "C" {
-#else
 #endif
 
 void gpio_async_handler(void *data)
