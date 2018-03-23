@@ -164,6 +164,28 @@ void *hashmap_get(struct hashmap_s *hash, unsigned long key)
 	return 0;
 }
 
+unsigned long* hashmap_get_keyset(struct hashmap_s *hash)
+{
+	unsigned long* keyset = NULL;
+	int idx = 0;
+
+	if (hash->count) {
+		int i;
+
+		keyset = things_malloc(sizeof(unsigned long) * hash->count);
+
+		for (i = 0; i < hash->size; i++) {
+			if (hash->table[i].flags & ACTIVE) {
+
+				keyset[idx] = hash->table[i].key;
+
+			}
+		}
+	}
+
+	return keyset;
+}
+
 long hashmap_count(struct hashmap_s *hash)
 {
 	return hash->count;
