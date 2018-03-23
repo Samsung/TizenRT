@@ -40,13 +40,12 @@
  * Here we implement a very basic LWM2M Security Object which only knows NoSec security mode.
  */
 
-#include "liblwm2m.h"
-
-#include "pem_utils.h"
-
 #include <stdlib.h>
 #include <string.h>
 #include <stdio.h>
+
+#include "liblwm2m.h"
+#include "pem_utils.h"
 
 #define LWM2M_SECURITY_URI_ID                 0
 #define LWM2M_SECURITY_BOOTSTRAP_ID           1
@@ -635,4 +634,16 @@ char * get_server_uri(lwm2m_object_t * objectP,
     }
 
     return NULL;
+}
+
+uint16_t get_server_id(lwm2m_object_t * objectP, uint16_t secObjInstID)
+{
+    security_instance_t *targetP = (security_instance_t *)LWM2M_LIST_FIND(objectP->instanceList, secObjInstID);
+
+    if (NULL != targetP)
+    {
+        return targetP->shortID;
+    }
+
+    return LWM2M_MAX_ID;
 }

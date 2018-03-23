@@ -592,7 +592,6 @@ void observe_step(lwm2m_context_t * contextP,
                     {
                         notify = true;
                     }
-                    LOG("observation_step(/%d/%d/%d) notify[6] = %s\n", targetP->uri.objectId, targetP->uri.instanceId, targetP->uri.resourceId, notify ? "TRUE" : "FALSE");
                 }
 
                 if (notify == true)

@@ -35,7 +35,13 @@
 #include <openssl/x509.h>
 #include <openssl/x509_vfy.h>
 #else
-#include <tls/easy_tls.h>
+#include <tls/ssl.h>
+#include <tls/net.h>
+#include <tls/pem.h>
+#include <tls/net.h>
+#include <tls/ctr_drbg.h>
+#include <tls/entropy.h>
+#include <tls/timing.h>
 #include <tls/certs.h>
 #endif
 
@@ -82,8 +88,8 @@ typedef struct _connection_t
     int                     address_family;
     lwm2m_object_t        * sec_obj;
     int                     sec_inst;
-    bool                    connected;
     bool                    use_se;
+    int                     timeout;
 } connection_t;
 
 #define MAX_DTLS_INFO_LEN    128
@@ -104,9 +110,7 @@ connection_t *connection_find(connection_t *connList, struct sockaddr_storage *a
 
 connection_t *connection_create(coap_protocol_t protocol, char *root_ca, bool verify_cert,
         bool use_se, int sock, char *host, char *local_port, char *remote_port, int addressFamily,
-        lwm2m_object_t * obj, int instanceId);
-
-int connection_restart(connection_t *conn);
+        lwm2m_object_t * obj, int instanceId, int timeout);
 
 void connection_free(connection_t * connList);
 

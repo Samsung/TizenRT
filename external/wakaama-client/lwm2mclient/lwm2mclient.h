@@ -7,6 +7,7 @@ extern "C" {
 
 #include <stdint.h>
 #include <stdbool.h>
+#include <time.h>
 
 #define LWM2M_MAX_URI_LEN 16
 #define LWM2M_MAX_STR_LEN 100
@@ -107,6 +108,7 @@ enum lwm2m_sec_mode_type {
     int serverId;                        /*serverId*/
     bool verifyCert;                     /*verify server certificate*/
     int localPort;                       /*local source port - random if set to 0*/
+    int connect_timeout;                 /*timeout in ms for connecting to server*/
 } object_security_server_t;
 
 /*
@@ -462,6 +464,20 @@ int lwm2m_serialize_tlv_string(int num, char **strs, lwm2m_resource_t* res);
  *
  */
 int lwm2m_serialize_tlv_int(int num, int *ints, lwm2m_resource_t* res);
+
+/*!
+ *  \brief Return the timestamp of the last successful registration
+ *
+ *  This function returns the timestamp in seconds of the last successful
+ *  registration or registration update.
+ *
+ *  \param[in] handle returned by "lwm2m_client_start"
+ *
+ *  \return a positive value corresponding to the timestamp, or 0 if no
+ *  registration was performed or if there was an error.
+ *
+ */
+time_t lwm2m_last_succesful_registration(client_handle_t* handle);
 
 #ifdef __cplusplus
 }

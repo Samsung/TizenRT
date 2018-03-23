@@ -120,7 +120,7 @@ void lwm2m_printf(const char * format, ...);
 // Returns a session handle that MUST uniquely identify a peer.
 // secObjInstID: ID of the Securty Object instance to open a connection to
 // userData: parameter to lwm2m_init()
-void * lwm2m_connect_server(uint16_t secObjInstID, void * userData);
+void * lwm2m_connect_server(uint16_t secObjInstID, void * userData, int timeout);
 // Close a session created by lwm2m_connect_server()
 // sessionH: session handle identifying the peer (opaque to the core)
 // userData: parameter to lwm2m_init()
@@ -680,6 +680,7 @@ int lwm2m_remove_object(lwm2m_context_t * contextP, uint16_t id);
 // or all if the ID is 0.
 // If withObjects is true, the registration update contains the object list.
 int lwm2m_update_registration(lwm2m_context_t * contextP, uint16_t shortServerID, bool withObjects);
+time_t lwm2m_last_registration(lwm2m_context_t * contextP, uint16_t shortServerID);
 
 void lwm2m_resource_value_changed(lwm2m_context_t * contextP, lwm2m_uri_t * uriP);
 #endif

@@ -143,13 +143,15 @@ static void prv_handleRegistrationReply(lwm2m_transaction_t * transacP,
 
     if (targetP->status == STATE_REG_PENDING)
     {
-        time_t tv_sec = lwm2m_gettime();
-        if (tv_sec >= 0)
-        {
-            targetP->registration = tv_sec;
-        }
         if (packet != NULL && packet->code == COAP_201_CREATED)
         {
+            time_t tv_sec = lwm2m_gettime();
+
+            if (tv_sec >= 0)
+            {
+                targetP->registration = tv_sec;
+            }
+
             targetP->status = STATE_REGISTERED;
             if (NULL != targetP->location)
             {
@@ -171,7 +173,7 @@ static void prv_handleRegistrationReply(lwm2m_transaction_t * transacP,
 
 // send the registration for a single server
 static uint8_t prv_register(lwm2m_context_t * contextP,
-                            lwm2m_server_t * server)
+                            lwm2m_server_t * server, time_t timeout)
 {
     char query[200];
     int query_length;
@@ -200,7 +202,7 @@ static uint8_t prv_register(lwm2m_context_t * contextP,
 
     if (server->sessionH == NULL)
     {
-        server->sessionH = lwm2m_connect_server(server->secObjInstID, contextP->userData);
+        server->sessionH = lwm2m_connect_server(server->secObjInstID, contextP->userData, (int)timeout);
     }
 
     if (NULL == server->sessionH) return COAP_503_SERVICE_UNAVAILABLE;
@@ -237,13 +239,14 @@ static void prv_handleRegistrationUpdateReply(lwm2m_transaction_t * transacP,
 
     if (targetP->status == STATE_REG_UPDATE_PENDING)
     {
-        time_t tv_sec = lwm2m_gettime();
-        if (tv_sec >= 0)
-        {
-            targetP->registration = tv_sec;
-        }
         if (packet != NULL && packet->code == COAP_204_CHANGED)
         {
+            time_t tv_sec = lwm2m_gettime();
+
+            if (tv_sec >= 0)
+            {
+                targetP->registration = tv_sec;
+            }
             targetP->status = STATE_REGISTERED;
             LOG("    => REGISTERED: %s\r\n", contextP->endpointName);
         }
@@ -337,7 +340,36 @@ int lwm2m_update_registration(lwm2m_context_t * contextP,
     return result;
 }
 
-uint8_t registration_start(lwm2m_context_t * contextP)
+time_t lwm2m_last_registration(lwm2m_context_t * contextP,
+        uint16_t shortServerID)
+{
+    lwm2m_server_t * targetP;
+
+    if (shortServerID == 0)
+        return 0;
+
+    targetP = contextP->serverList;
+    if (targetP == NULL)
+    {
+        if (object_getServers(contextP) == -1)
+        {
+            return 0;
+        }
+    }
+    while (targetP != NULL)
+    {
+        if (targetP->shortID == shortServerID)
+        {
+            // found the server, return its last registration timestamp
+            return targetP->registration;
+        }
+        targetP = targetP->next;
+    }
+
+    return 0;
+}
+
+uint8_t registration_start(lwm2m_context_t * contextP, time_t * timeoutP)
 {
     lwm2m_server_t * targetP;
     uint8_t result;
@@ -350,7 +382,7 @@ uint8_t registration_start(lwm2m_context_t * contextP)
         if (targetP->status == STATE_DEREGISTERED
          || targetP->status == STATE_REG_FAILED)
         {
-            result = prv_register(contextP, targetP);
+            result = prv_register(contextP, targetP, *timeoutP);
         }
         targetP = targetP->next;
     }
@@ -697,7 +729,7 @@ static int prv_getId(uint8_t * data,
     {
         data += 1;
         length -= 2;
-    } 
+    }
     else
     {
         return 0;
@@ -1126,11 +1158,9 @@ void registration_step(lwm2m_context_t * contextP,
             time_t nextUpdate;
             time_t interval;
 
-            nextUpdate = targetP->lifetime;
-            if (30 < nextUpdate)
-            {
-                nextUpdate -= 15; // update 15s earlier to have a chance to resend
-            }
+            // Set next update to half of the lifetime to make sure we start
+            // sending before the lifetime expires
+            nextUpdate = targetP->lifetime / 2;
 
             interval = targetP->registration + nextUpdate - currentTime;
             if (0 >= interval)
@@ -1194,4 +1224,3 @@ void registration_step(lwm2m_context_t * contextP,
 #endif
 
 }
-

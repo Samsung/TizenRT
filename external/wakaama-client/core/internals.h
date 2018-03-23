@@ -237,7 +237,7 @@ lwm2m_observed_t * observe_findByUri(lwm2m_context_t * contextP, lwm2m_uri_t * u
 coap_status_t registration_handleRequest(lwm2m_context_t * contextP, lwm2m_uri_t * uriP, void * fromSessionH, coap_packet_t * message, coap_packet_t * response);
 void registration_deregister(lwm2m_context_t * contextP, lwm2m_server_t * serverP);
 void registration_freeClient(lwm2m_client_t * clientP);
-uint8_t registration_start(lwm2m_context_t * contextP);
+uint8_t registration_start(lwm2m_context_t * contextP, time_t * timeoutP);
 void registration_step(lwm2m_context_t * contextP, time_t currentTime, time_t * timeoutP);
 lwm2m_status_t registration_getStatus(lwm2m_context_t * contextP);
 

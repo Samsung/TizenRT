@@ -58,6 +58,7 @@ CFLAGS+=-DLWM2M_CLIENT_MODE
 CFLAGS+=-DLWM2M_LITTLE_ENDIAN
 #CFLAGS+=-DWITH_LOGS
 #CFLAGS+=-DLWM2M_WITH_LOGS
+#CFLAGS+=-DLWM2M_MEMORY_TRACE
 CFLAGS+=-DWITH_MBEDTLS
 
 DEPPATH += --dep-path wakaama-client/core --dep-path wakaama-client/core/er-coap-13 --dep-path wakaama-client/shared --dep-path wakaama-client/lwm2mclient

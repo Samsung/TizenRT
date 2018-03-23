@@ -27,8 +27,10 @@
 #include <tls/see_api.h>
 #include <tls/base64.h>
 #include <tls/pem.h>
+#include <tls/platform.h>
 
 #include "connection.h"
+#include "liblwm2m.h"
 
 /* Needed for Mac OS X */
 #ifndef SOL_TCP
@@ -90,24 +92,24 @@ static void context_ssl_free(context_ssl_t *ssl)
 
     if (ssl->clicert) {
         mbedtls_x509_crt_free(ssl->clicert);
-        free(ssl->clicert);
+        lwm2m_free(ssl->clicert);
         ssl->clicert = NULL;
     }
 
     if (ssl->device_cert) {
         mbedtls_x509_crt_free(ssl->device_cert);
-        free(ssl->device_cert);
+        lwm2m_free(ssl->device_cert);
         ssl->device_cert = NULL;
     }
 
     if (ssl->pkey) {
         mbedtls_pk_free(ssl->pkey);
-        free(ssl->pkey);
+        lwm2m_free(ssl->pkey);
         ssl->pkey = NULL;
     }
 
     if (ssl->timer) {
-        free(ssl->timer);
+        lwm2m_free(ssl->timer);
         ssl->timer = NULL;
     }
 }
@@ -318,7 +320,7 @@ static bool ssl_mbedtls_init(context_ssl_t *ssl, lwm2m_config_ssl_t *lwm2m_ssl_c
     }
 
     if (lwm2m_ssl_config->transport == MBEDTLS_SSL_TRANSPORT_DATAGRAM) {
-        ssl->timer = malloc(sizeof(mbedtls_timing_delay_context));
+        ssl->timer = lwm2m_malloc(sizeof(mbedtls_timing_delay_context));
         mbedtls_ssl_set_timer_cb(&ssl->session, ssl->timer, mbedtls_timing_set_delay, mbedtls_timing_get_delay);
         mbedtls_ssl_set_bio(&ssl->session, &ssl->net, mbedtls_net_send, mbedtls_net_recv, mbedtls_net_recv_timeout);
     } else {
@@ -376,7 +378,7 @@ static bool ssl_configure_certificate_mode(connection_t *conn)
 
     if (!conn->use_se) {
         int device_private_key_der_len = 0;
-        unsigned char *device_private_key_der = 
+        unsigned char *device_private_key_der =
             (unsigned char *)security_get_secret_key(conn->sec_obj, conn->sec_inst,
                                                      &device_private_key_der_len);
         if (!device_private_key_der) {
@@ -393,7 +395,7 @@ static bool ssl_configure_certificate_mode(connection_t *conn)
                                      NULL,
                                      0,
                                      &lwm2m_ssl_config.device_private_key_len)
-			!= MBEDTLS_ERR_BASE64_BUFFER_TOO_SMALL) {
+            != MBEDTLS_ERR_BASE64_BUFFER_TOO_SMALL) {
 #ifdef WITH_LOGS
             fprintf(stderr, "Failed to parse private key\r\n");
 #endif
@@ -451,7 +453,7 @@ static bool ssl_configure_pre_shared_key(connection_t *conn)
     ciphersuites[0] = MBEDTLS_TLS_PSK_WITH_AES_128_CCM_8;
     ciphersuites[1] = 0;
 
-    conn->ssl = malloc(sizeof(context_ssl_t));
+    conn->ssl = lwm2m_malloc(sizeof(context_ssl_t));
     if (!conn->ssl) {
 #ifdef WITH_LOGS
         fprintf(stderr, "Failed to allocate memory for ssl context\r\n");
@@ -513,7 +515,7 @@ static bool ssl_configure_pre_shared_key(connection_t *conn)
     return true;
 
 error:
-    free(conn->ssl);
+    lwm2m_free(conn->ssl);
 
     return false;
 }
@@ -568,9 +570,9 @@ static bool ssl_init(connection_t * conn)
 
 error:
     context_ssl_free(conn->ssl);
-    free(conn->ssl);
+    lwm2m_free(conn->ssl);
     if (cert)
-        free(cert);
+        lwm2m_free(cert);
     return false;
 }
 
@@ -616,71 +618,6 @@ static char *security_get_secret_key(lwm2m_object_t * obj, int instanceId, int *
         lwm2m_free(dataP);
         return NULL;
     }
-}
-
-int connection_restart(connection_t *conn)
-{
-    int sock;
-    connection_t *newConn = NULL;
-
-    conn->connected = false;
-
-    /* Close previous connection */
-    close(conn->sock);
-
-    if (conn->ssl) {
-        context_ssl_free(conn->ssl);
-        free(conn->ssl);
-        conn->ssl = NULL;
-    }
-
-    /* Increase port in case of TCP connections to avoid TIME_WAIT issue */
-    if ((conn->protocol == COAP_TCP) || (conn->protocol == COAP_TCP_TLS))
-    {
-        char portStr[16];
-        snprintf(portStr, 16, "%d", atoi(conn->local_port) + 1);
-        strncpy(conn->local_port, portStr, 16);
-    }
-
-    sock = create_socket(conn->protocol, conn->local_port, conn->address_family);
-    if (sock <= 0)
-    {
-#ifdef WITH_LOGS
-        fprintf(stderr, "Failed to create new socket\n");
-#endif
-        return -1;
-    }
-
-    newConn = connection_create(conn->protocol,
-                                conn->root_ca,
-                                conn->verify_cert,
-                                conn->use_se,
-                                sock,
-                                conn->host,
-                                conn->local_port,
-                                conn->remote_port,
-                                conn->address_family,
-                                conn->sec_obj,
-                                conn->sec_inst);
-
-    if (!newConn)
-    {
-#ifdef WITH_LOGS
-        fprintf(stderr, "Failed to create new connection\n");
-#endif
-        close(sock);
-        return -1;
-    }
-
-    /*
-     * Copy new connection on top of the old one to keep same pointer,
-     * then dispose of the newly allocated memory
-     */
-    free(conn->host);
-    memcpy(conn, newConn, sizeof(connection_t));
-    free(newConn);
-
-    return 0;
 }
 
 int create_socket(coap_protocol_t protocol, const char * portStr, int addressFamily)
@@ -761,15 +698,19 @@ connection_t * connection_create(coap_protocol_t protocol,
                                  char *remote_port,
                                  int addressFamily,
                                  lwm2m_object_t * sec_obj,
-                                 int sec_inst)
+                                 int sec_inst,
+                                 int timeout)
 {
     struct addrinfo hints;
     struct addrinfo *servinfo = NULL;
     struct addrinfo *p;
-    int s;
+    int s, ret;
     struct sockaddr *sa = NULL;
     socklen_t sl = 0;
     connection_t * connP = NULL;
+    int flags = 0;
+    fd_set rset, wset;
+    struct timeval  ts;
 
     memset(&hints, 0, sizeof(hints));
     hints.ai_family = addressFamily;
@@ -803,11 +744,52 @@ connection_t * connection_create(coap_protocol_t protocol,
             sa = p->ai_addr;
             sl = p->ai_addrlen;
 
-            if (-1 == connect(s, p->ai_addr, p->ai_addrlen))
+                        /* We go non-blocking mode to set timeout on connect */
+            flags = fcntl(s, F_GETFL, 0);
+            fcntl(s, F_SETFL, flags | O_NONBLOCK);
+
+#ifdef WITH_LOGS
+            fprintf(stderr, "Try to connect to server with timeout %d ms\n", timeout);
+#endif
+                        ret = connect(s, p->ai_addr, p->ai_addrlen);
+            if (ret < 0)
             {
-                close(s);
-                s = -1;
+                if (errno != EINPROGRESS)
+                {
+#ifdef WITH_LOGS
+                    fprintf(stderr, "Connect to socket failed (err=%d)\n", errno);
+#endif
+                    goto fail;
+                }
+
+                FD_ZERO(&rset);
+                FD_ZERO(&wset);
+                FD_SET(s, &rset);
+                FD_SET(s, &wset);
+                ts.tv_sec = timeout / 1000;
+                ts.tv_usec = (timeout - (ts.tv_sec * 1000)) * 1000;
+                ret = select(s + 1, &rset, &wset, NULL, (timeout) ? &ts : NULL);
+                if (ret <= 0)
+                {
+#ifdef WITH_LOGS
+                    fprintf(stderr, "Waiting for socket failed (err=%d)\n", ret);
+#endif
+                    goto fail;
+                }
+
+                if (!FD_ISSET(s, &rset) && !FD_ISSET(s, &wset))
+                {
+#ifdef WITH_LOGS
+                    fprintf(stderr, "No fd was set\n");
+#endif
+                    goto fail;
+                }
             }
+
+            continue;
+fail:
+            close(s);
+            s = -1;
         }
     }
 
@@ -821,18 +803,18 @@ connection_t * connection_create(coap_protocol_t protocol,
                 fprintf(stderr, "Failed to connect to socket: %s\n", strerror(errno));
 #endif
                 close(sock);
-                return NULL;
+                goto error;
             }
         }
 
         /* Allocate and fill up connection structure */
-        connP = (connection_t *)malloc(sizeof(connection_t));
+        connP = (connection_t *)lwm2m_malloc(sizeof(connection_t));
         if (connP == NULL)
         {
 #ifdef WITH_LOGS
             fprintf(stderr, "Failed to allocate memory for connection\n");
 #endif
-            return NULL;
+            goto error;
         }
 
         memset(connP, 0, sizeof(connection_t));
@@ -852,6 +834,7 @@ connection_t * connection_create(coap_protocol_t protocol,
         connP->sec_obj = sec_obj;
         connP->sec_inst = sec_inst;
         connP->use_se = use_se;
+        connP->timeout = timeout;
 
         if ((protocol == COAP_TCP_TLS) ||
             (protocol == COAP_UDP_DTLS))
@@ -877,8 +860,6 @@ connection_t * connection_create(coap_protocol_t protocol,
     if (servinfo)
         freeaddrinfo(servinfo);
 
-    connP->connected = true;
-
     return connP;
 
 error:
@@ -888,7 +869,7 @@ error:
     if (connP)
     {
         free(connP->host);
-        free(connP);
+        lwm2m_free(connP);
         connP = NULL;
     }
 
@@ -905,10 +886,10 @@ void connection_free(connection_t * connList)
 
         if (connList->ssl) {
             context_ssl_free(connList->ssl);
-            free(connList->ssl);
+            lwm2m_free(connList->ssl);
         }
 
-        free(connList);
+        lwm2m_free(connList);
 
         connList = nextP;
     }
@@ -920,9 +901,6 @@ int connection_send(connection_t *connP,
 {
     int nbSent = 0;
     size_t offset;
-
-    if (!connP->connected)
-        return -1;
 
 #ifdef WITH_LOGS
     char s[INET6_ADDRSTRLEN];
@@ -1010,7 +988,7 @@ uint8_t lwm2m_buffer_send(void * sessionH,
 #ifdef WITH_LOGS
         fprintf(stderr, "#> failed sending %lu bytes, try reconnecting\r\n", length);
 #endif
-        connP->connected = false;
+
         return COAP_500_INTERNAL_SERVER_ERROR;
     }
 

@@ -102,12 +102,26 @@ static int g_lwm2m_connection_retries;
 
 struct Lwm2mConfig lwm2m_config;
 
+static pthread_addr_t restart_lwm2m(pthread_addr_t arg)
+{
+	StartLwm2m(false);
+	StartLwm2m(true);
+	pthread_exit(0);
+}
+
 static void on_error(void *data, void *user_data)
 {
 	if (g_lwm2m_connection_retries++ < LWM2M_CONNECTION_MAX_RETRIES) {
+		pthread_t tid;
+		pthread_attr_t attr;
+		struct sched_param sparam;
+
 		fprintf(stderr, "LWM2M error, reconnecting...\n");
-		StartLwm2m(false);
-		StartLwm2m(true);
+		sparam.sched_priority = 100;
+		pthread_attr_setschedparam(&attr, &sparam);
+		pthread_attr_setschedpolicy(&attr, SCHED_RR);
+		pthread_attr_setstacksize(&attr, 1024 * 4);
+		pthread_create(&tid, &attr, restart_lwm2m, NULL);
 	} else {
 		fprintf(stderr, "Could not reconnect to LWM2M server, giving up\n");
 	}
@@ -639,6 +653,10 @@ static pthread_addr_t lwm2m_stop_cb(void *arg)
 		return NULL;
 	}
 
+	if (!g_lwm2m_handle) {
+		return NULL;
+	}
+
 	lwm2m->client_disconnect(g_lwm2m_handle);
 	lwm2m->client_release(g_lwm2m_handle);
 	g_lwm2m_handle = NULL;
@@ -677,7 +695,7 @@ retry:
 			goto exit;
 		}
 
-		pthread_setname_np(tid, "onboarding-lwm2m");
+		pthread_setname_np(tid, "onboarding-lwm2m-start");
 		pthread_join(tid, (void **)&ret);
 
 		if ((ret != S_OK) && num_retries--) {
@@ -717,7 +735,7 @@ retry:
 			goto exit;
 		}
 
-		pthread_setname_np(tid, "onboarding-lwm2m");
+		pthread_setname_np(tid, "onboarding-lwm2m-stop");
 		pthread_join(tid, (void **)&ret);
 	}
 

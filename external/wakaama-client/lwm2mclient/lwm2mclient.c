@@ -86,6 +86,7 @@
 
 #define MAX_PACKET_SIZE            1024
 #define MAX_CONNECTION_RETRIES     5
+#define MAX_NUMBER_CLIENTS         128
 
 typedef struct {
     coap_protocol_t proto;
@@ -111,6 +112,8 @@ typedef struct
     int connection_retries;
     char *root_ca;
     bool use_se;
+    int connect_timeout;
+    bool is_random_local_port;
 } client_data_t;
 
 static coap_uri_protocol protocols[] = {
@@ -137,6 +140,7 @@ extern void free_object_conn_s(lwm2m_object_t *object);
 extern void free_object_conn_m(lwm2m_object_t *object);
 extern void acl_ctrl_free_object(lwm2m_object_t *object);
 extern char *get_server_uri(lwm2m_object_t *object, uint16_t secObjInstID);
+extern uint16_t get_server_id(lwm2m_object_t * objectP, uint16_t secObjInstID);
 extern lwm2m_object_t *acc_ctrl_create_object(void);
 extern bool acc_ctrl_obj_add_inst(lwm2m_object_t *accCtrlObjP, uint16_t instId, uint16_t acObjectId, uint16_t acObjInstId,
         uint16_t acOwner);
@@ -151,7 +155,7 @@ extern uint8_t firmware_change_object(lwm2m_data_t *dataArray, lwm2m_object_t *o
 extern uint8_t location_change_object(lwm2m_data_t *dataArray, lwm2m_object_t *object);
 extern uint8_t connectivity_moni_change(lwm2m_data_t *dataArray, lwm2m_object_t *object);
 
-void * lwm2m_connect_server(uint16_t secObjInstID, void * userData)
+void * lwm2m_connect_server(uint16_t secObjInstID, void * userData, int timeout)
 {
     client_data_t * dataP = NULL;
     char * uri = NULL;
@@ -198,15 +202,28 @@ void * lwm2m_connect_server(uint16_t secObjInstID, void * userData)
     port++;
 
 #ifdef WITH_LOGS
-    fprintf(stdout, "\r\nOpening connection to server at %s:%s\r\n", host, port);
+    fprintf(stdout, "\r\nOpening connection to server at %s:%s with timeout %d ms\r\n",
+            host, port, timeout);
 #endif
 
     // If secure connection, make sure we have a security object
     instance = LWM2M_LIST_FIND(dataP->securityObjP->instanceList, secObjInstID);
     if (instance == NULL) goto exit;
 
-    conn = connection_create(protocol, dataP->root_ca, dataP->verify_cert, dataP->use_se,
-            dataP->sock, host, dataP->local_port, port, dataP->addressFamily, securityObj, instance->id);
+    if (dataP->is_random_local_port) {
+        snprintf(dataP->local_port, 16, "%d", (rand() % (CLIENT_PORT_RANGE_END - CLIENT_PORT_RANGE_START)) + CLIENT_PORT_RANGE_START);
+    }
+    dataP->sock = create_socket(dataP->proto, dataP->local_port, dataP->addressFamily);
+    if (dataP->sock < 0)
+    {
+        fprintf(stderr, "Failed to open socket: %d %s\r\n", errno, strerror(errno));
+        goto exit;
+    }
+
+    conn = connection_create(protocol, dataP->root_ca, dataP->verify_cert,
+            dataP->use_se, dataP->sock, host, dataP->local_port, port,
+            dataP->addressFamily, securityObj, instance->id,
+            dataP->connect_timeout);
     if (!conn)
     {
 #ifdef WITH_LOGS
@@ -222,6 +239,10 @@ void * lwm2m_connect_server(uint16_t secObjInstID, void * userData)
     dataP->connList = (void*)conn;
 
 exit:
+    if (dataP->sock > 0 && !conn) {
+        close(dataP->sock);
+        dataP->sock = -1;
+    }
     lwm2m_free(uri);
     return (void *)conn;
 }
@@ -231,28 +252,23 @@ void lwm2m_close_connection(void * sessionH,
 {
     client_data_t *app_data = (client_data_t *)userData;
     connection_t *targetP = (connection_t *)sessionH;
+    connection_t *parentP = app_data->connList;
 
-    if (targetP == app_data->connList)
+    while ((parentP != NULL) && (parentP != targetP))
     {
-        app_data->connList = targetP->next;
-        if (targetP == app_data->conn)
-            app_data->conn = targetP->next;
-
-        lwm2m_free(targetP);
-
+        parentP = parentP->next;
     }
-    else
+
+    if (parentP != NULL)
     {
-        connection_t *parentP = app_data->connList;
-        while ((parentP != NULL) && (parentP->next != targetP))
-        {
-            parentP = parentP->next;
-        }
-        if (parentP != NULL)
-        {
-            parentP->next = targetP->next;
-            lwm2m_free(targetP);
-        }
+        parentP->next = targetP->next;
+        targetP->next = NULL;
+        app_data->conn = NULL;
+        app_data->connList = NULL;
+
+        connection_free(targetP);
+        close(app_data->sock);
+        app_data->sock = -1;
     }
 }
 
@@ -287,6 +303,7 @@ static void poll_lwm2m_sockets(client_data_t **clients, int number_clients, int 
 #ifdef WITH_LOGS
         fprintf(stderr, "Error in poll(): %d %s\r\n", errno, strerror(errno));
 #endif
+        free(pfds);
         return;
     }
 
@@ -346,6 +363,8 @@ static void poll_lwm2m_sockets(client_data_t **clients, int number_clients, int 
 #ifdef WITH_LOGS
             fprintf(stderr, "server has closed the connection\r\n");
 #endif
+            close(data->sock);
+            data->sock = -1;
         }
     }
 
@@ -431,6 +450,7 @@ client_handle_t* lwm2m_client_start(object_container_t *init_val, char *root_ca,
     data->lwm2mH = ctx;
     data->root_ca = root_ca;
     data->use_se = use_se;
+    data->connect_timeout = init_val->server->connect_timeout;
 
     /*
      * If valid local port is not provided, then randomize one based on a predefined range.
@@ -438,23 +458,17 @@ client_handle_t* lwm2m_client_start(object_container_t *init_val, char *root_ca,
      * twice the same port across the TIME_WAIT period after
      * closing the socket.
      */
-    if (init_val->server->localPort > 0)
+    if (init_val->server->localPort > 0) {
         snprintf(data->local_port, 16, "%d", init_val->server->localPort);
-    else
+        data->is_random_local_port = false;
+    } else {
         snprintf(data->local_port, 16, "%d", (rand() % (CLIENT_PORT_RANGE_END - CLIENT_PORT_RANGE_START)) + CLIENT_PORT_RANGE_START);
+        data->is_random_local_port = true;
+    }
 
 #ifdef WITH_LOGS
     fprintf(stdout, "Trying to bind LWM2M Client to port %s\r\n", data->local_port);
 #endif
-
-    data->sock = create_socket(data->proto, data->local_port, data->addressFamily);
-    if (data->sock < 0)
-    {
-#ifdef WITH_LOGS
-        fprintf(stderr, "Failed to open socket: %d %s\r\n", errno, strerror(errno));
-#endif
-        goto error;
-    }
 
     /*
      * Now the main function fill an array with each object, this list will be later passed to liblwm2m.
@@ -653,15 +667,6 @@ client_handle_t* lwm2m_client_start(object_container_t *init_val, char *root_ca,
         goto error;
     }
 
-    /* Service once to initialize the first steps */
-    if (lwm2m_client_service(handle, 0) <= LWM2M_CLIENT_OK)
-    {
-#ifdef WITH_LOGS
-        printf("Failed to connect LWM2M server.\n");
-#endif
-        goto error;
-    }
-
     return handle;
 
 error:
@@ -774,21 +779,13 @@ int lwm2m_client_service(client_handle_t *handle, int timeout_ms)
 int lwm2m_clients_service(client_handle_t **handles, int number_handles, int timeout_ms)
 {
     time_t min_timeout = 60;
-    client_data_t **clients = NULL;
+    client_data_t *clients[MAX_NUMBER_CLIENTS];
     int number_clients = 0;
     int i = 0;
 
-    if (!handles || number_handles <= 0) {
+    if (!handles || number_handles <= 0 || number_handles > MAX_NUMBER_CLIENTS) {
 #ifdef WITH_LOGS
         fprintf(stderr, "lwm2m_clients_service: wrong parameters\r\n");
-#endif
-        return LWM2M_CLIENT_ERROR;
-    }
-
-    clients = lwm2m_malloc(sizeof(client_data_t *)*number_handles);
-    if (!clients) {
-#ifdef WITH_LOGS
-        fprintf(stderr, "lwm2m_clients_service: Out of memory");
 #endif
         return LWM2M_CLIENT_ERROR;
     }
@@ -796,28 +793,22 @@ int lwm2m_clients_service(client_handle_t **handles, int number_handles, int tim
     for (i = 0; i < number_handles; i++)
     {
         int result;
-        time_t timeout = 60;
+        time_t timeout = timeout_ms;
         client_data_t *data =  (client_data_t *)handles[i]->client;
         result = lwm2m_step(data->lwm2mH, &timeout);
         min_timeout = min_timeout > timeout ? timeout : min_timeout;
         handles[i]->error = 0;
 
-        if (!data->conn) {
-            handles[i]->error = LWM2M_CLIENT_ERROR;
-            continue;
-        }
-
         if ((result != 0) || (registration_getStatus(data->lwm2mH) == STATE_REG_FAILED))
         {
             /* Try reconnecting */
-            data->conn->connected = false;
-        } else if (registration_getStatus(data->lwm2mH) == STATE_REGISTERED) {
-            data->connection_retries = 0;
-        }
+            if (data->conn)
+                continue;
 
-        if (!data->conn->connected)
-        {
             data->lwm2mH->state = STATE_REGISTER_REQUIRED;
+#ifdef WITH_LOGS
+            fprintf(stderr, "Try reconnection %d/%d\r\n", data->connection_retries, MAX_CONNECTION_RETRIES);
+#endif
             if (data->connection_retries > MAX_CONNECTION_RETRIES)
             {
 #ifdef WITH_LOGS
@@ -826,10 +817,11 @@ int lwm2m_clients_service(client_handle_t **handles, int number_handles, int tim
                 handles[i]->error = LWM2M_CLIENT_ERROR;
                 continue;
             }
-            connection_restart(data->conn);
             min_timeout = 0;
             data->connection_retries++;
             continue;
+        } else if (registration_getStatus(data->lwm2mH) == STATE_REGISTERED) {
+            data->connection_retries = 0;
         }
 
         clients[number_clients] = data;
@@ -838,7 +830,16 @@ int lwm2m_clients_service(client_handle_t **handles, int number_handles, int tim
 
     min_timeout = min_timeout * 1000 < timeout_ms || timeout_ms == 0 ? min_timeout * 1000 : timeout_ms;
     poll_lwm2m_sockets(clients, number_clients, min_timeout);
-    lwm2m_free(clients);
+
+    /* Check if some connections got closed, set error accordingly */
+    for (i = 0; i < number_handles; i++)
+    {
+        client_data_t *data =  (client_data_t *)handles[i]->client;
+
+        if (data->sock <= 0 && data->connection_retries > MAX_CONNECTION_RETRIES) {
+            handles[i]->error = LWM2M_CLIENT_ERROR;
+        }
+    }
     return min_timeout;
 }
 
@@ -1264,4 +1265,23 @@ int lwm2m_serialize_tlv_int(int num, int *ints, lwm2m_resource_t* res)
     }
 
     return LWM2M_CLIENT_OK;
+}
+
+time_t lwm2m_last_succesful_registration(client_handle_t* handle)
+{
+    client_data_t *client = NULL;
+    uint16_t id;
+
+    if (!handle)
+        return 0;
+
+    client = (client_data_t *)handle->client;
+
+    /* Get instance 0 of the instance list */
+    id = get_server_id(client->objArray[LWM2M_OBJ_SECURITY], 0);
+
+    if (id == LWM2M_MAX_ID)
+        return 0;
+
+    return lwm2m_last_registration(client->lwm2mH, id);
 }

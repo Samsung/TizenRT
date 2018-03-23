@@ -37,10 +37,10 @@ pid_t onboarding_service_pid = -1;
 
 static void StopOnboardingService(void)
 {
-	StopWifi();
 	StartWebServer(false, API_SET_WIFI | API_SET_CLOUD);
 	StartCloudWebsocket(false);
 	StartLwm2m(false);
+	StopWifi();
 
 	printf("ARTIK Onboarding Service stopped\n");
 	current_service_state = STATE_IDLE;

@@ -53,7 +53,7 @@
 
 #include <stdlib.h>
 #include <string.h>
-
+#include <time.h>
 #include <stdio.h>
 
 static int rand_initialized = false;
@@ -67,7 +67,8 @@ lwm2m_context_t * lwm2m_init(void * userData, const char * token)
     {
         memset(contextP, 0, sizeof(lwm2m_context_t));
         contextP->userData = userData;
-        contextP->token = strdup(token);
+        contextP->token = lwm2m_malloc(strlen(token)+1);
+        strcpy(contextP->token, token);
         if (!contextP->token) {
             free(contextP);
             return NULL;
@@ -415,7 +416,7 @@ next_step:
         break;
 #endif
     case STATE_REGISTER_REQUIRED:
-        result = registration_start(contextP);
+        result = registration_start(contextP, timeoutP);
         if (COAP_NO_ERROR != result) return result;
         contextP->state = STATE_REGISTERING;
         break;
