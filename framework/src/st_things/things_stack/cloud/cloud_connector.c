@@ -33,6 +33,7 @@
 #include "rd_client.h"
 
 #include "memory/things_malloc.h"
+#include "memory/things_string.h"
 #include "logging/things_logger.h"
 #include "easy-setup/es_common.h"
 #include "cloud_connector.h"
@@ -72,7 +73,7 @@ int CICheckDomain(const char *DomainName, char **pIP)
 		THINGS_LOG_D(THINGS_DEBUG, TAG, "DNS resolved IP for[%s] is =%s", DomainName, ipbuffer);
 
 		if (pIP != NULL) {
-			*pIP = strdup(ipbuffer);
+			*pIP = things_strdup(ipbuffer);
 		}
 	} else {
 		THINGS_LOG_D_ERROR(THINGS_ERROR, TAG, " Failed to get the IP, hard coding the ip");
@@ -80,7 +81,7 @@ int CICheckDomain(const char *DomainName, char **pIP)
 
 		usleep(500);
 		if (pIP != NULL) {
-			*pIP = strdup(ipbuffer);
+			*pIP = things_strdup(ipbuffer);
 		}
 	}
 
@@ -268,7 +269,7 @@ OCStackResult things_cloud_session(const char *host, const char *uId, const char
 		goto no_memory;
 	}
 
-	if (OCGetPropertyValue(PAYLOAD_TYPE_DEVICE, OC_RSRVD_SPEC_VERSION, (void **)&coreVer) != OC_STACK_OK || (IoTivityVer = strdup(IOTIVITY_VERSION)) == NULL)
+	if (OCGetPropertyValue(PAYLOAD_TYPE_DEVICE, OC_RSRVD_SPEC_VERSION, (void **)&coreVer) != OC_STACK_OK || (IoTivityVer = things_strdup(IOTIVITY_VERSION)) == NULL)
 //            OCGetPropertyValue(PAYLOAD_TYPE_PLATFORM, OC_RSRVD_PLATFORM_VERSION, (void**)&IoTivityVer) != OC_STACK_OK )
 	{
 		THINGS_LOG_D_ERROR(THINGS_ERROR, TAG, "Getting Core_Spec_Ver or IoTivity_Ver is failed.");
@@ -654,7 +655,7 @@ static OCRepPayload *make_dev_profile_payload(const st_device_s *dev_info)
 		goto GOTO_OUT;
 	}
 
-	IoTivityVer = strdup(IOTIVITY_VERSION);
+	IoTivityVer = things_strdup(IOTIVITY_VERSION);
 
 	if (OCGetPropertyValue(PAYLOAD_TYPE_PLATFORM, OC_RSRVD_MFG_NAME, (void **)&manuFactory) != OC_STACK_OK) {
 		THINGS_LOG_V_ERROR(THINGS_ERROR, TAG, "Getting manufacturer-name is failed.");

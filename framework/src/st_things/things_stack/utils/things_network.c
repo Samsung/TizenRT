@@ -23,6 +23,7 @@
 
 #include "logging/things_logger.h"
 #include "memory/things_malloc.h"
+#include "memory/things_string.h"
 #include "things_api.h"
 #include "things_network.h"
 
@@ -81,12 +82,12 @@ static int check_cb_skip(int state, char *ap_name, char *ip_addr)
 		app_state = state;
 		if (ap_name) {
 			things_free(app_ap_name);
-			app_ap_name = strdup(ap_name);
+			app_ap_name = things_strdup(ap_name);
 		}
 
 		if (ip_addr) {
 			things_free(app_ip_addr);
-			app_ip_addr = strdup(ip_addr);
+			app_ip_addr = things_strdup(ip_addr);
 		}
 	}
 
