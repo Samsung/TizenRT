@@ -1796,12 +1796,7 @@ void *cloud_data_cb_esm(es_cloud_prov_data_s *event_data)
 		g_qis_cloud_thread_running = CISESS_BUSY;
 
 		if ((cloned_data = clone_data_add_timeout(event_data, NULL)) != NULL) {
-#ifdef __ST_THINGS_RTOS__
-			int retp = pthread_create_rtos(&cthread_handler, NULL, (pthread_func_type) ci_connection_init_loop, (void *)cloned_data, THINGS_STACK_CICONNETION_INIT_THREAD);
-#else
-
-			int retp = things_thread_create(&cthread_handler, NULL, (pthread_func_type) ci_connection_init_loop, (void *)cloned_data) != 0)
-#endif
+			int retp = pthread_create_rtos(&cthread_handler, NULL, (pthread_func_type)ci_connection_init_loop, (void *)cloned_data, 1024 * 4, "ST_THINGS_STACK_CLOUD_CONNECT");
 			if (retp != 0) {
 				THINGS_LOG_V_ERROR(THINGS_ERROR, TAG, "Create thread is failed.");
 				things_free(cloned_data);
@@ -1856,13 +1851,7 @@ int cloud_retry_sign_in(timeout_s *timeout)
 		// cloud_data setting.
 		init_es_cloud_prov_data(&dummy_data);
 
-		if ((cloned_data = clone_data_add_timeout(&dummy_data, timeout)) == NULL ||
-#ifdef __ST_THINGS_RTOS__
-			pthread_create_rtos(&cthread_handler, NULL, (pthread_func_type) ci_connection_init_loop, (void *)cloned_data, THINGS_STACK_CICONNETION_INIT_THREAD) != 0)
-#else
-			things_thread_create(&cthread_handler, NULL, (pthread_func_type) ci_connection_init_loop, (void *)cloned_data) != 0)
-#endif
-		{
+		if ((cloned_data = clone_data_add_timeout(&dummy_data, timeout)) == NULL || pthread_create_rtos(&cthread_handler, NULL, (pthread_func_type) ci_connection_init_loop, (void *)cloned_data, 1024 * 4, "ST_THINGS_STACK_CLOUD_CONNECT") != 0) {
 			THINGS_LOG_V_ERROR(THINGS_ERROR, TAG, "Create thread is failed.");
 			things_free(cloned_data);
 			cloned_data = NULL;
@@ -1891,13 +1880,7 @@ static int cloud_retry_sign_up(es_cloud_prov_data_s *event_data, timeout_s *time
 	g_qis_cloud_thread_running = CISESS_STOP_TRIGGER;
 	esm_get_network_status();	// State return
 
-	if ((cloned_data = clone_data_add_timeout(event_data, timeout)) == NULL ||
-#ifdef __ST_THINGS_RTOS__
-		pthread_create_rtos(&cthread_handler, NULL, (pthread_func_type) ci_connection_waiting_loop, (void *)cloned_data, THINGS_STACK_CICONNETION_WAIT_THREAD) != 0)
-#else
-		things_thread_create(&cthread_handler, NULL, (pthread_func_type) ci_connection_waiting_loop, (void *)cloned_data) != 0)
-#endif
-	{
+	if ((cloned_data = clone_data_add_timeout(event_data, timeout)) == NULL || pthread_create_rtos(&cthread_handler, NULL, (pthread_func_type) ci_connection_waiting_loop, (void *)cloned_data, 1024 * 4, "ST_THINGS_STACK_CLOUD_WAIT_CONNECT") != 0)	{
 		THINGS_LOG_V_ERROR(THINGS_ERROR, TAG, "Create thread is failed.");
 		things_free(cloned_data);
 		cloned_data = NULL;
