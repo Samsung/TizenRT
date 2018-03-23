@@ -720,7 +720,7 @@ TEST_F(IoTest, StringIo) {
   }
 }
 
-
+#if 0
 // To test files, we create a temporary file, write, read, truncate, repeat.
 TEST_F(IoTest, FileIo) {
   string filename = TestTempDir() + "/zero_copy_stream_test_file";
@@ -751,7 +751,7 @@ TEST_F(IoTest, FileIo) {
     }
   }
 }
-
+#endif
 #if HAVE_ZLIB
 TEST_F(IoTest, GzipFileIo) {
   string filename = TestTempDir() + "/zero_copy_stream_test_file";
