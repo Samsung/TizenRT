@@ -25,31 +25,32 @@
 
 #define TAG "[things_rtos_util]"
 
-static char thingsStackthreadName[THINGS_STACK_MAX_INDEX][40] = { {"THINGS_STACK_PING"},	/*THINGS_STACK_PING_THREAD */
-	{"THINGS_STACK_RESETLOOP"},		/*THINGS_STACK_RESETLOOP_THREAD */
-	{"THINGS_STACK_CICONN_INIT"},	/*THINGS_STACK_CICONNETION_INIT_THREAD */
-	{"THINGS_STACK_CICONN_WAIT"},	/*THINGS_STACK_CICONNETION_WAIT_THREAD */
-	{"THINGS_STACK_WIFIPROV_SET"},	/*THINGS_STACK_WIFI_PROV_SET_THREAD */
-	{"THINGS_STACK_CLOUD_REFRESH"},	/*THINGS_STACK_CLOUD_REFRESH_THREAD */
-	{"THINGS_STACK_PRESENCE_NOTI"},	/*THINGS_STACK_PRESENCE_NOTI_THREAD */
-	{"THINGS_STACK_SERVEREXCE_LOOP"},	/*THINGS_STACK_SERVEREXCETUE_LOOP_THREAD */
-	{"THINGS_STACK_BASE_TIME_OUT"},	/*THINGS_STACK_BASE_TIME_OUT_THREAD */
-	{"THINGS_STACK_OICABORT"},		/*THINGS_STACK_OICABORT_THREAD */
-	{"THINGS_STACK_WIFI_JOIN"},		/*THINGS_STACK_WIFI_JOIN_THREAD */
-	{"THINGS_STACK_UPDATE_THREAD"},	/*THINGS_STACK_FOTA_THREAD */
-	{"THINGS_STACK_MAX_INDEX"}		/*THINGS_STACK_MAX_INDEX */
+#define THINGS_STACK_MAX_THREAD_NAME_LEN 40
+
+typedef const struct thread_info_s {
+	char thread_name[THINGS_STACK_MAX_THREAD_NAME_LEN];
+	int thread_size;
+} thread_info_s;
+
+static const thread_info_s things_stack_thread_name[THINGS_STACK_MAX_INDEX] = { {"THINGS_STACK_PING", 4 * 1024},	/*THINGS_STACK_PING_THREAD */
+	{"THINGS_STACK_RESET", 4 * 1024},		/*THINGS_STACK_RESETLOOP_THREAD */
+	{"THINGS_STACK_CLOUD_CONNECT", 4 * 1024},	/*THINGS_STACK_CICONNETION_INIT_THREAD */
+	{"THINGS_STACK_CICONN_WAIT", 6 * 1024},	/*THINGS_STACK_CICONNETION_WAIT_THREAD */
+	{"THINGS_STACK_CLOUD_TOKEN_CHECK", 4 * 1024},	/*THINGS_STACK_CLOUD_TOKEN_CHECK_THREAD */
+	{"THINGS_STACK_PRESENCE_NOTI", 4 * 1024},	/*THINGS_STACK_PRESENCE_NOTI_THREAD */
+	{"THINGS_STACK_SERVEREXCE_LOOP", 8 * 1024},	/*THINGS_STACK_SERVEREXCETUE_LOOP_THREAD */
+	{"THINGS_STACK_TIME_OUT", 4 * 1024},	/*THINGS_STACK_TIME_OUT_THREAD */
+	{"THINGS_STACK_ABORT", 4 * 1024},		/*THINGS_STACK_ABORT_THREAD */
+	{"THINGS_STACK_WIFI_JOIN", 8 * 1024},		/*THINGS_STACK_WIFI_JOIN_THREAD */
+	{"THINGS_STACK_FOTA_UPDATE", 6 * 1024},	/*THINGS_STACK_FOTA_THREAD */
+	{"THINGS_STACK_AP_INFO_SET", 4 * 1024},/*THINGS_STACK_AP_INFO_SET_THREAD */
+	{"THINGS_STACK_MAX_INDEX", 8 * 1024}		/*THINGS_STACK_MAX_INDEX */
 };
 
-/**
- *
- * @param ethreadName
- * @param pstThread
- * @return
- */
-char *GetPthreadAttrDetails(things_stack_thread_name ethreadName, pthread_attr_t *pstThread)
+char *get_pthread_attr_details(things_stack_thread_name_e e_thread_name, pthread_attr_t *pstThread)
 {
-	if (ethreadName >= THINGS_STACK_MAX_INDEX) {
-		ethreadName = THINGS_STACK_MAX_INDEX;
+	if (e_thread_name >= THINGS_STACK_MAX_INDEX) {
+		e_thread_name = THINGS_STACK_MAX_INDEX;
 	}
 
 	if (pstThread != NULL) {
@@ -60,44 +61,19 @@ char *GetPthreadAttrDetails(things_stack_thread_name ethreadName, pthread_attr_t
 		sparam.sched_priority = PTHREAD_DEFAULT_PRIORITY;
 		pthread_attr_setschedparam(pstThread, &sparam);
 
-		pthread_attr_setstacksize(pstThread, 8193);	/**Default Stack Size**/
-		switch (ethreadName) {
-		case THINGS_STACK_RESETLOOP_THREAD:
-		case THINGS_STACK_PING_THREAD:
-		case THINGS_STACK_CICONNETION_INIT_THREAD:
-		case THINGS_STACK_CLOUD_REFRESH_THREAD:
-		case THINGS_STACK_PRESENCE_NOTI_THREAD:
-		case THINGS_STACK_BASE_TIME_OUT_THREAD:
-			pthread_attr_setstacksize(pstThread, 4 * 1024);
-			break;
-
-		case THINGS_STACK_CICONNETION_WAIT_THREAD:
-			pthread_attr_setstacksize(pstThread, 6 * 1024);
-			break;
-		case THINGS_STACK_SERVEREXCETUE_LOOP_THREAD:
-			pthread_attr_setstacksize(pstThread, 6 * 1024);
-			/* its the main process thread for all request */
-			break;
-		case THGINS_STACK_FOTA_UPDATE_THREAD:
-			pthread_attr_setstacksize(pstThread, 6 * 1024);
-			break;
-		default:
-			pthread_attr_setstacksize(pstThread, 8193);
-			break;
-		}
+		pthread_attr_setstacksize(pstThread, things_stack_thread_name[e_thread_name].thread_size);
 	}
 
-	return thingsStackthreadName[ethreadName];
-
+	return things_stack_thread_name[e_thread_name].thread_name;
 }
 
-int pthread_create_rtos(FAR pthread_t *thread, FAR const pthread_attr_t *attr, pthread_startroutine_t start_routine, pthread_addr_t arg, things_stack_thread_name eThreadname)
+int pthread_create_rtos(FAR pthread_t *thread, FAR const pthread_attr_t *attr, pthread_startroutine_t start_routine, pthread_addr_t arg, things_stack_thread_name_e e_thread_name)
 {
-	pthread_attr_t stPtr;
-	char *pchTname = GetPthreadAttrDetails(eThreadname, &stPtr);
-	int ret = pthread_create(thread, &stPtr, start_routine, (void *)arg);
+	pthread_attr_t st_ptr;
+	char *pch_tname = get_pthread_attr_details(e_thread_name, &st_ptr);
+	int ret = pthread_create(thread, &st_ptr, start_routine, (void *)arg);
 	if (ret == 0) {
-		pthread_setname_np(*thread, pchTname);
+		pthread_setname_np(*thread, pch_tname);
 		pthread_detach(*thread);
 	}
 	return ret;

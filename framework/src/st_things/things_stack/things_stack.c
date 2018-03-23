@@ -258,7 +258,6 @@ void things_wifi_sta_connected(wifi_manager_result_e res)
 	THINGS_LOG_D(THINGS_INFO, TAG, "T%d --> %s", getpid(), __FUNCTION__);
 
 	pthread_create_rtos(&h_thread_things_wifi_join, NULL, (pthread_func_type) t_things_wifi_join_loop, NULL, THINGS_STACK_WIFI_JOIN_THREAD);
-	pthread_detach(h_thread_things_wifi_join);
 }
 
 void things_wifi_sta_disconnected(void)
@@ -747,12 +746,8 @@ int things_reset(void *remote_owner, things_es_enrollee_reset_e resetType)
 		args->resetType = resetType;
 
 		b_reset_continue_flag = true;
-#ifdef __ST_THINGS_RTOS__
-		if (pthread_create_rtos(&h_thread_things_reset, NULL, (pthread_func_type) t_things_reset_loop, args, THINGS_STACK_RESETLOOP_THREAD) != 0)
-#else
-		if (things_thread_create(&h_thread_things_reset, NULL, (pthread_func_type) t_things_reset_loop, args) != 0)
-#endif
-		{
+
+		if (pthread_create_rtos(&h_thread_things_reset, NULL, (pthread_func_type) t_things_reset_loop, args, THINGS_STACK_RESETLOOP_THREAD) != 0) {
 			THINGS_LOG_V_ERROR(THINGS_ERROR, TAG, "Failed to create thread");
 			h_thread_things_reset = 0;
 			things_free(args);
@@ -1136,13 +1131,8 @@ OCEntityHandlerResult things_abort(pthread_t *h_thread_abort, things_es_enrollee
 		ARGs->level = level;
 
 		eh_result = OC_EH_OK;
-#ifdef __ST_THINGS_RTOS__
-		if (pthread_create_rtos(h_thread_abort, NULL, (pthread_func_type) t_things_abort_loop, ARGs, THINGS_STACK_OICABORT_THREAD) != 0)
-#else
-		if (things_thread_create(h_thread_abort, NULL, (pthread_func_type) t_things_abort_loop, ARGs) != 0)
-#endif
 
-		{
+		if (pthread_create_rtos(h_thread_abort, NULL, (pthread_func_type) t_things_abort_loop, ARGs, THINGS_STACK_ABORT_THREAD) != 0) {
 			THINGS_LOG_V_ERROR(THINGS_ERROR, TAG, "Create thread is failed.(for abort Thread)");
 			*h_thread_abort = 0;
 			things_free(ARGs);
