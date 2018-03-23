@@ -163,35 +163,6 @@ static void *task_thread(void *param)
  ****************************************************************************/
 
 /**
-* @fn                   :itc_pthread_pthread_barrier_destroy_n_redestory
-* @brief                :The pthread_barrier_init() function allocates any resources required to use
-*                        the barrier referenced by 'barrier' and initialized the barrier with the
-*                        attributes referenced by attr.
-*                        barrier_wait synchronizse participating threads at the barrier referenced by 'barrier'.
-* @Scenario             :pthread_barrier_destroy re-destroying the object as already being destroyed
-* API's covered         :pthread_barrier_init, pthread_barrier_wait , pthread_barrier_destroy
-* Preconditions         :none
-* Postconditions        :none
-*/
-static void itc_pthread_pthread_barrier_destroy_n_redestory(void)
-{
-	int ret;
-	pthread_barrier_t pthread_barrier;
-	int cnt = 1;
-	
-	ret = pthread_barrier_init(&pthread_barrier, 0, cnt);
-	TC_ASSERT_EQ("pthread_barrier_init", ret, OK);
-
-	ret = pthread_barrier_destroy(&pthread_barrier);
-	TC_ASSERT_EQ("pthread_barrier_destroy", ret, OK);
-
-	ret = pthread_barrier_destroy(&pthread_barrier);
-	TC_ASSERT_EQ("pthread_barrier_destroy", ret, EINVAL);
-
-	TC_SUCCESS_RESULT();
-}
-
-/**
 * @fn                   :itc_pthread_pthread_kill_n_rekill
 * @brief                :send a signal to a thread
 * @Scenario             :The pthread_kill() call again when it's already being called for same thread
@@ -249,72 +220,14 @@ static void itc_pthread_pthread_cond_init_destroy_n(void)
 	TC_ASSERT_EQ("pthread_cond_init", ret_chk, OK);
 
 	ret_chk = pthread_cond_destroy(&cond_attrparam);
-	TC_ASSERT_EQ("pthread_cond_destroy", ret_chk, EINVAL);
-
-	ret_chk = pthread_condattr_destroy(&attr);
-	TC_ASSERT_EQ("pthread_condattr_destroy", ret_chk, OK);
-
-	TC_SUCCESS_RESULT();
-}
-
-/**
-* @fn                   :itc_pthread_pthread_cond_destroy_n_redestroy
-* @brief                :pthread_cond_init initialises the condition variable referenced by cond with attributes referenced by attr
-*                        pthread_cond_destroy destroy the given condition variable specified by cond
-* @Scenario             :pthread_cond_destroy re-destroying the object as already being destroyed
-* API's covered         :pthread_cond_init, pthread_cond_destroy
-* Preconditions         :none
-* Postconditions        :none
-*/
-static void itc_pthread_pthread_cond_destroy_n_redestroy(void)
-{
-	int ret_chk;
-	pthread_condattr_t attr;
-	pthread_cond_t cond_attrparam;
-
-	ret_chk = pthread_condattr_init(&attr);
-	TC_ASSERT_EQ("pthread_condattr_init", ret_chk, OK);
-
-	ret_chk = pthread_cond_init(&cond_attrparam, &attr);
-	TC_ASSERT_EQ("pthread_cond_init", ret_chk, OK);
-
-	ret_chk = pthread_cond_destroy(&cond_attrparam);
 	TC_ASSERT_EQ("pthread_cond_destroy", ret_chk, OK);
 
-	ret_chk = pthread_cond_destroy(&cond_attrparam);
-	TC_ASSERT_EQ("pthread_cond_destroy", ret_chk, EINVAL);
-
 	ret_chk = pthread_condattr_destroy(&attr);
 	TC_ASSERT_EQ("pthread_condattr_destroy", ret_chk, OK);
 
 	TC_SUCCESS_RESULT();
 }
 
-/**
-* @fn                   :itc_pthread_pthread_cond_broadcast_n_after_destroy
-* @brief                :broadcast or signal a condition
-* @Scenario             :pthread_cond_broadcast when object as already being destroyed.
-* API's covered         :pthread_cond_broadcast ,pthread_cond_init , pthread_cond_destroy , pthread_cond_wait
-* Preconditions         :none
-* Postconditions        :none
-*/
-static void itc_pthread_pthread_cond_broadcast_n_after_destroy(void)
-{
-	int ret_chk;
-	pthread_cond_t cond_attrparam;
-	pthread_condattr_t attr;
-
-	ret_chk = pthread_cond_init(&cond_attrparam, &attr);
-	TC_ASSERT_EQ("pthread_cond_init", ret_chk, OK);
-
-	ret_chk = pthread_cond_destroy(&cond_attrparam);
-	TC_ASSERT_EQ("pthread_cond_destroy", ret_chk, EINVAL);
-
-	ret_chk = pthread_cond_broadcast(&cond_attrparam);
-	TC_ASSERT_EQ("pthread_cond_broadcast", ret_chk, EINVAL);
-
-	TC_SUCCESS_RESULT();
-}
 
 /**
 * @fn                   :itc_pthread_setgetname_np_p_reset_name
@@ -417,61 +330,6 @@ static void itc_pthread_mutex_init_destroy_p_multitime(void)
 	TC_SUCCESS_RESULT();
 }
 
-/**
-* @fn                   :itc_pthread_mutex_lock_n_after_mutex_destroy
-* @brief                :Locks the mutex
-* @Scenario             :initialise mutex, destory mutex and then try to lock mutex
-* API's covered         :pthread_mutex_init, pthread_mutex_destroy, pthread_mutex_lock
-* Preconditions         :none
-* Postconditions        :none
-*/
-static void itc_pthread_mutex_lock_n_after_mutex_destroy(void)
-{
-	pthread_mutexattr_t attr;
-	int ret_chk;
-
-	ret_chk = pthread_mutexattr_init(&attr);
-	TC_ASSERT_EQ("pthread_mutexattr_init", ret_chk, OK);
-
-	ret_chk = pthread_mutex_init(&g_mutex, &attr);
-	TC_ASSERT_EQ("pthread_mutex_init", ret_chk, OK);
-
-	ret_chk = pthread_mutex_destroy(&g_mutex);
-	TC_ASSERT_EQ("pthread_mutex_destroy", ret_chk, OK);
-
-	ret_chk = pthread_mutex_lock(&g_mutex);
-	TC_ASSERT_NEQ("pthread_mutex_lock", ret_chk, OK);
-
-	TC_SUCCESS_RESULT();
-}
-
-/**
-* @fn                   :itc_pthread_mutex_destroy_n_redestroy
-* @brief                :destroy mutex
-* @Scenario             :initialise mutex, destory mutex and then resestroy mutex
-* API's covered         :pthread_mutex_init, pthread_mutex_destroy
-* Preconditions         :none
-* Postconditions        :none
-*/
-static void itc_pthread_mutex_destroy_n_redestroy(void)
-{
-	pthread_mutexattr_t attr;
-	int ret_chk;
-
-	ret_chk = pthread_mutexattr_init(&attr);
-	TC_ASSERT_EQ("pthread_mutexattr_init", ret_chk, OK);
-
-	ret_chk = pthread_mutex_init(&g_mutex, &attr);
-	TC_ASSERT_EQ("pthread_mutex_init", ret_chk, OK);
-
-	ret_chk = pthread_mutex_destroy(&g_mutex);
-	TC_ASSERT_EQ("pthread_mutex_destroy", ret_chk, OK);
-
-	ret_chk = pthread_mutex_destroy(&g_mutex);
-	TC_ASSERT_NEQ("pthread_mutex_destroy", ret_chk, OK);
-
-	TC_SUCCESS_RESULT();
-}
 
 /**
 * @fn                   :itc_pthread_key_create_set_getspecific_p_multitime
@@ -508,16 +366,11 @@ static void itc_pthread_key_create_set_getspecific_p_multitime(void)
 
 int itc_pthread_main(void)
 {
-	itc_pthread_pthread_barrier_destroy_n_redestory();
 	itc_pthread_pthread_kill_n_rekill();
 	itc_pthread_pthread_cond_init_destroy_n();
-	itc_pthread_pthread_cond_destroy_n_redestroy();
-	itc_pthread_pthread_cond_broadcast_n_after_destroy();
 	itc_pthread_setgetname_np_p_reset_name();
 	itc_pthread_equal_pthread_self_p();
 	itc_pthread_mutex_init_destroy_p_multitime();
-	itc_pthread_mutex_lock_n_after_mutex_destroy();
-	itc_pthread_mutex_destroy_n_redestroy();
 	itc_pthread_key_create_set_getspecific_p_multitime();
 	return 0;
 }

@@ -47,6 +47,7 @@ static void itc_libc_semaphore_getprotocol_n_no_sem_init(void)
 	int protocol;
 	int ret_chk;
 
+	sem.flags = 0;
 	// sem is not initialized
 	ret_chk = sem_getprotocol(&sem, &protocol);
 	TC_ASSERT_EQ("sem_getprotocol", ret_chk, ERROR);
