@@ -25,12 +25,25 @@ config ARCH_CHIP_S5J
 	select ARMV7R_MEMINIT
 	---help---
 		Samsung IoT SoC architectures (ARM Cortex R)
+
+config ARCH_CHIP_BCM4390X
+	bool "CY 4390X series"
+	select ARCH_CORTEXR4
+	select ARCH_HAVE_MPU
+	select ARMV7M_MPU
+	select ARCH_HAVE_LOWVECTORS
+	select ARCH_LOWVECTORS
+	select ARM_UNWIND
+	---help---
+		Cypress BCM4390x SoC architectures (ARM Cortex-R)
+
 endchoice
 
 config ARCH_CHIP
 	string
 	default "s5j"       if ARCH_CHIP_S5J
 	default "tiva"      if ARCH_CHIP_LM
+	default "bcm4390x"  if ARCH_CHIP_BCM4390X
 
 comment "ARM Options"
 
@@ -53,7 +66,7 @@ config ARCH_CORTEXR4
 	default n
 	select ARCH_HAVE_MPU
 	select ARCH_HAVE_COHERENT_DCACHE if ELF || MODULE
-	select ARCH_HAVE_DABORTSTACK
+	select ARCH_HAVE_DABORTSTACK if !ARCH_CHIP_BCM4390X
 
 config ARCH_FAMILY
 	string
@@ -167,6 +180,9 @@ source arch/arm/src/tiva/Kconfig
 endif
 if ARCH_CHIP_S5J
 source arch/arm/src/s5j/Kconfig
+endif
+if ARCH_CHIP_BCM4390X
+source arch/arm/src/bcm4390x/Kconfig
 endif
 
 endif

@@ -52,6 +52,13 @@ config ARCH_BOARD_SIDK_S5JT200
 	select ARCH_HAVE_IRQBUTTONS
 	---help---
 		Samsung S5JT200 IoT wifi MCU
+
+config ARCH_BOARD_CY4390x
+	bool "Cypress 4390x board"
+	depends on ARCH_CHIP_BCM4390X
+	---help---
+		Cypress 4390x IoT wifi MCU
+
 endchoice
 
 config ARCH_BOARD_ARTIK05X_FAMILY
@@ -63,6 +70,7 @@ config ARCH_BOARD
 	default "artik05x"           if ARCH_BOARD_ARTIK05X_FAMILY
 	default "lm3s6965-ek"        if ARCH_BOARD_LM3S6965EK
 	default "sidk_s5jt200"       if ARCH_BOARD_SIDK_S5JT200
+	default "cy4390x"            if ARCH_BOARD_CY4390x
 
 comment "Common Board Options"
 
