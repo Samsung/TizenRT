@@ -181,7 +181,6 @@ struct http_client_ssl_config_t {
 	unsigned int root_ca_len;       ///< Length of ca certificate
 	unsigned int dev_cert_len;      ///< Length of device certificate
 	unsigned int private_key_len;   ///< Length of private key
-	int auth_mode;                  ///< Authentication mode (0:none, 1:optional, 2:mandatory)
 	mbedtls_ssl_config * tls_conf;  ///< Custom SSL configuration (useful when using Secure Element)
 };
 

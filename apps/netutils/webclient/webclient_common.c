@@ -425,6 +425,9 @@ int webclient_tls_init(struct http_client_tls_t *client, struct http_client_ssl_
 		ndbg("Ok\n");
 	}
 
+	/* Set certificate verification level */
+	mbedtls_ssl_conf_authmode(&(client->tls_conf), WEBCLIENT_CONF_SSL_VERIFY_LEVEL);
+
 	return 0;
 TLS_INIT_EXIT:
 	wget_tls_release(client);
@@ -465,7 +468,6 @@ int wget_tls_handshake(struct http_client_tls_t *client, const char *hostname)
 	int i;
 #endif
 
-	mbedtls_ssl_conf_authmode(&(client->tls_conf), WEBCLIENT_CONF_SSL_VERIFY_LEVEL);
 #if defined(MBEDTLS_SSL_ALPN) && defined(CONFIG_ENABLE_HTTP20)
 
 	memset(alpn_list, 0, sizeof(const char *) * (WEBCLIENT_CONF_ALPN_LIST_NUM + 1));

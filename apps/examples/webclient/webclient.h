@@ -134,8 +134,7 @@ struct http_client_ssl_config_t g_config = {
 	(char *)c_cli_key_rsa,
 	sizeof(c_ca_crt_rsa),
 	sizeof(c_cli_crt_rsa),
-	sizeof(c_cli_key_rsa),
-	2
+	sizeof(c_cli_key_rsa)
 };
 
 static int g_running;
