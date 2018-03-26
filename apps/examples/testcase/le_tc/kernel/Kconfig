@@ -269,6 +269,10 @@ config ITC_KERN_PTHREAD_LOOP_SIZE
 	default 100
 endif
 
+config TC_KERNEL_KASAN
+	bool "KASan"
+	default n
+	depends on KASAN
+
 
 endif #EXAMPLES_TESTCASE_KERNEL
-
