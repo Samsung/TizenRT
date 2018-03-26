@@ -151,6 +151,12 @@ TINYARALIBS += $(LIBRARIES_DIR)$(DELIM)libtuv$(LIBEXT)
 TINYARALIBS += $(LIBRARIES_DIR)$(DELIM)libjerry-libm$(LIBEXT)
 endif
 
-# Export all libraries
+# Add library for external bcm support.
+# External WICED Lib builds
+ifeq ($(CONFIG_WL_BCM4390X),y)
+TINYARALIBS += $(LIBRARIES_DIR)$(DELIM)libbcmexternal$(LIBEXT)
+endif
 
+# Export all libraries
 EXPORTLIBS = $(TINYARALIBS)
+
