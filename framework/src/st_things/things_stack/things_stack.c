@@ -6,7 +6,7 @@
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *      http://www.apache.org/licenses/LICENSE-2.0
+ *	  http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -769,6 +769,56 @@ GOTO_OUT:
 	THINGS_LOG_D(THINGS_DEBUG, TAG, THINGS_FUNC_EXIT);
 
 	return res;
+}
+
+int things_stop(void)
+{
+	pthread_mutex_lock(&g_things_stop_mutex);
+
+	THINGS_LOG_D(THINGS_DEBUG, TAG, THINGS_FUNC_ENTRY);
+	g_quit_flag = 1;
+	is_things_module_inited = 0;
+
+	pthread_mutex_lock(&m_thread_oic_reset);
+	if (b_thread_things_reset == true) {
+		b_reset_continue_flag = false;
+
+		pthread_join(h_thread_things_reset, NULL);
+		pthread_detach(h_thread_things_reset);
+		h_thread_things_reset = 0;
+		b_thread_things_reset = false;
+	}
+
+	pthread_mutex_unlock(&m_thread_oic_reset);
+
+	THINGS_LOG_D(THINGS_DEBUG, TAG, "Terminate Cloud Session Managing");
+	es_cloud_terminate();
+
+	THINGS_LOG_D(THINGS_DEBUG, TAG, "Terminate EasySetup");
+	esm_terminate_easysetup();
+
+#ifdef __SECURED__
+	THINGS_LOG_D(THINGS_DEBUG, TAG, "Terminate OIC Security Manager");
+#endif
+
+	if (g_server_builder != NULL) {
+		release_builder_instance(g_server_builder);
+		g_server_builder = NULL;
+	}
+
+	if (g_req_handler != NULL) {
+		g_req_handler->deinit_module();
+		release_handler_instance(g_req_handler);
+		g_req_handler = NULL;
+	}
+
+	dm_termiate_module();
+
+	// [Jay] Need to add memory release for the Queue..
+	THINGS_LOG_D(THINGS_DEBUG, TAG, THINGS_FUNC_EXIT);
+
+	pthread_mutex_unlock(&g_things_stop_mutex);
+	return 1;
 }
 
 int things_register_confirm_reset_start_func(things_reset_confirm_func_type func)

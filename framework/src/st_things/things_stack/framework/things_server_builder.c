@@ -27,11 +27,14 @@
 #include "things_def.h"
 #include "things_common.h"
 #include "logging/things_logger.h"
+#include "memory/things_string.h"
 #include "memory/things_malloc.h"
 #include "utils/things_string_util.h"
 #include "ocpayload.h"
 #include "things_resource.h"
 #include "things_server_builder.h"
+
+
 #include "easy-setup/resource_handler.h"
 
 #include "utils/things_thread.h"
@@ -143,7 +146,7 @@ struct things_resource_s *create_resource(struct things_server_builder_s *builde
 		return res;
 	}
 
-	res->res_type = type;
+	res->res_type = things_strdup(type);
 
 	builder->gres_arr[builder->res_num++] = res;
 
@@ -151,6 +154,7 @@ struct things_resource_s *create_resource(struct things_server_builder_s *builde
 	THINGS_LOG_D(THINGS_DEBUG, TAG, "DISCOVERABLE : %s", (isDiscoverable == 1 ? "YES" : "NO"));
 	THINGS_LOG_D(THINGS_DEBUG, TAG, "OBSERABLE : %s", (isObserable == 1 ? "YES" : "NO"));
 	THINGS_LOG_D(THINGS_DEBUG, TAG, "SECURE : %s", (isSecure == 1 ? "YES" : "NO"));
+
 	return res;
 }
 
@@ -191,7 +195,7 @@ struct things_resource_s *create_collection_resource(struct things_server_builde
 		return res;
 	}
 
-	res->res_type = type;
+	res->res_type = things_strdup(type);
 
 	builder->gres_arr[builder->res_num++] = res;
 
@@ -334,7 +338,6 @@ void deinit_builder(things_server_builder_s *builder)
 		// 1.    Need to unregister those registered resource in the Stack
 		// 2.    Free the payload of each resources
 		for (size_t iter = 0; iter < builder->res_num; iter++) {
-
 			if (builder->gres_arr[iter]->rep != NULL) {
 				things_release_representation_inst(builder->gres_arr[iter]->rep);
 			}
@@ -461,8 +464,7 @@ void release_builder_instance(things_server_builder_s *builder)
 		if (builder->res_num > 0) {
 			for (size_t iter = 0; iter < builder->res_num; iter++) {
 				if (builder->gres_arr[iter] != NULL) {
-					/*! Added by st_things for memory Leak fix
-					 */
+					/*! Added by st_things for memory Leak fix*/
 					release_resource_inst_impl(builder->gres_arr[iter]);
 					builder->gres_arr[iter] = NULL;
 				}
