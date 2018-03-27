@@ -58,7 +58,9 @@ CSRCS += pthread_mutexinit.c pthread_mutexdestroy.c
 CSRCS += pthread_mutexlock.c pthread_mutextrylock.c pthread_mutexunlock.c
 CSRCS += pthread_condwait.c pthread_condsignal.c pthread_condbroadcast.c
 CSRCS += pthread_cancel.c
+ifneq ($(CONFIG_NPTHREAD_KEYS),0)
 CSRCS += pthread_keycreate.c pthread_setspecific.c pthread_getspecific.c pthread_keydelete.c
+endif
 CSRCS += pthread_initialize.c pthread_completejoin.c pthread_findjoininfo.c
 CSRCS += pthread_release.c pthread_setschedprio.c
 

@@ -59,7 +59,9 @@
 #include <sched.h>
 #include <errno.h>
 #include <debug.h>
+#include <assert.h>
 
+#include "sched/sched.h"
 #include "pthread/pthread.h"
 
 /************************************************************************
@@ -98,7 +100,7 @@
  *   key = the key to delete
  *
  * Return Value:
- *   Always returns ENOSYS.
+ *   If successful, return zero. Return error number on failure.
  *
  * Assumptions:
  *
@@ -108,5 +110,18 @@
 
 int pthread_key_delete(pthread_key_t key)
 {
-	return ENOSYS;
+	struct pthread_tcb_s *rtcb = (FAR struct pthread_tcb_s *)this_task();
+	struct task_group_s *group = rtcb->cmn.group;
+
+	DEBUGASSERT(group);
+
+	if (key < PTHREAD_KEYS_MAX && group->tg_keys[key] == IN_USE) {
+		rtcb->pthread_data[key].data = NULL;
+		rtcb->pthread_data[key].destructor = NULL;
+		group->tg_keys[key] = NOT_IN_USE;
+
+		return OK;
+	}
+
+	return EINVAL;
 }
