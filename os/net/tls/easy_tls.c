@@ -18,6 +18,7 @@
 
 #include <tinyara/config.h>
 #include <stdio.h>
+#include <string.h>
 
 #include <tls/easy_tls.h>
 
@@ -40,6 +41,8 @@
 		free(buf);					\
 		buf = NULL;					\
 	}
+
+#define PEM_END_CERTIFICATE	"-----END CERTIFICATE-----\r\n"
 
 /****************************************************************************
  * Static Functions
@@ -129,6 +132,8 @@ static int tls_set_cred(tls_ctx *ctx, tls_cred *cred)
 #if defined(CONFIG_TLS_WITH_SSS)
 	const mbedtls_pk_info_t *pk_info = NULL;
 #endif
+	char *start = NULL, *end = NULL, *copy = NULL;
+	int remain = 0;
 
 	if (cred == NULL) {
 		return TLS_INVALID_CRED;
@@ -144,10 +149,30 @@ static int tls_set_cred(tls_ctx *ctx, tls_cred *cred)
 
 	/* Mandatory */
 	if (cred->ca_cert) {
-		ret = mbedtls_x509_crt_parse(ctx->crt, cred->ca_cert, cred->ca_certlen);
-		if (ret) {
-			return TLS_INVALID_CACERT;
-		}
+		/* CA certs may come as a bundle, parse them all */
+		start = (char *)cred->ca_cert;
+		end = start;
+		remain = cred->ca_certlen - 1;
+		do {
+			end = strstr(start, PEM_END_CERTIFICATE);
+			if (!end)
+				break;
+
+			end += strlen(PEM_END_CERTIFICATE);
+			copy = strndup(start, end - start);
+			if (!copy)
+				return TLS_ALLOC_FAIL;
+
+			if (mbedtls_x509_crt_parse(ctx->crt, (const unsigned char *)copy,
+						end - start + 1) != 0) {
+				free(copy);
+				return TLS_INVALID_CACERT;
+			}
+			remain -= end - start;
+			start = end;
+			free(copy);
+		} while (remain);
+
 		mbedtls_ssl_conf_ca_chain(ctx->conf, ctx->crt, NULL);
 	}
 
