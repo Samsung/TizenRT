@@ -35,6 +35,8 @@
 #define SOL_TCP IPPROTO_TCP
 #endif
 
+#define PEM_END_CERTIFICATE	"-----END CERTIFICATE-----\r\n"
+
 typedef struct {
     int transport;
     int auth_mode;
@@ -141,6 +143,9 @@ static void lwm2m_tls_debug(void *ctx, int level, const char *file, int line, co
 
 static bool ssl_mbedtls_init(context_ssl_t *ssl, lwm2m_config_ssl_t *lwm2m_ssl_config)
 {
+    char *start = NULL, *end = NULL, *copy = NULL;
+    int remain = 0, ret = 0;
+
     mbedtls_ssl_config_init(&ssl->config);
     mbedtls_entropy_init(&ssl->entropy);
     mbedtls_ctr_drbg_init(&ssl->ctr_drbg);
@@ -210,7 +215,7 @@ static bool ssl_mbedtls_init(context_ssl_t *ssl, lwm2m_config_ssl_t *lwm2m_ssl_c
             goto error;
         }
 
-        int ret = mbedtls_pk_parse_key(ssl->pkey,
+        ret = mbedtls_pk_parse_key(ssl->pkey,
                                        lwm2m_ssl_config->device_private_key,
                                        lwm2m_ssl_config->device_private_key_len,
                                        NULL, 0);
@@ -258,17 +263,39 @@ static bool ssl_mbedtls_init(context_ssl_t *ssl, lwm2m_config_ssl_t *lwm2m_ssl_c
     }
 
     if (lwm2m_ssl_config->root_ca) {
-        int ret = mbedtls_x509_crt_parse(ssl->clicert,
-                                   (unsigned char*)lwm2m_ssl_config->root_ca,
-                                   strlen(lwm2m_ssl_config->root_ca)+1);
-        if (ret != 0) {
-#ifdef WITH_LOGS
-            fprintf(stderr, "Failed to parse Root CA (%d) (%s)\n", ret, lwm2m_ssl_config->root_ca);
-#endif
-            goto error;
-        }
+        /* CA certs may come as a bundle, parse them all */
+        start = lwm2m_ssl_config->root_ca;
+        end = start;
+        remain = strlen(lwm2m_ssl_config->root_ca);
+        do {
+            end = strstr(start, PEM_END_CERTIFICATE);
+            if (!end)
+                break;
 
-        mbedtls_ssl_conf_ca_chain(&ssl->config, ssl->clicert,NULL);
+            end += strlen(PEM_END_CERTIFICATE);
+            copy = strndup(start, end - start);
+            if (!copy) {
+#ifdef WITH_LOGS
+                fprintf(stderr, "Failed to allocate memory for root CA\n");
+#endif
+                goto error;
+            }
+
+            ret = mbedtls_x509_crt_parse(ssl->clicert,
+                    (const unsigned char *)copy, end - start + 1);
+            if (ret != 0) {
+#ifdef WITH_LOGS
+                fprintf(stderr, "Failed to parse Root CA (%d) (%s)\n", ret, copy);
+#endif
+                free(copy);
+                goto error;
+            }
+            remain -= end - start;
+            start = end;
+            free(copy);
+        } while (remain);
+
+        mbedtls_ssl_conf_ca_chain(&ssl->config, ssl->clicert, NULL);
     }
 
     if (mbedtls_ctr_drbg_seed(&ssl->ctr_drbg, mbedtls_entropy_func, &ssl->entropy, NULL, 0) != 0) {
