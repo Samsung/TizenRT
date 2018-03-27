@@ -26,11 +26,6 @@ ASRCS =
 CSRCS =
 VPATH = .
 
-ifeq ($(CONFIG_IOTBUS), y)
-CFLAGS += -I$(TOPDIR)/../framework/include/iotbus
-include src$(DELIM)iotbus$(DELIM)Make.defs
-endif
-
 ifeq ($(CONFIG_DM)$(CONFIG_LWM2M_WAKAAMA), yy)
 CFLAGS += -I$(TOPDIR)/../framework/include/dm
 include src$(DELIM)dm$(DELIM)Make.defs

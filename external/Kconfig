@@ -255,10 +255,4 @@ config ARTIK_SDK
 	---help---
 		include the ARTIK SDK
 
-config IOTBUS
-	bool "IoTBUS api"
-	default n
-	---help---
-		Enable the IoTBUS api
-
 source "$EXTERNALDIR/sysview/Kconfig"
