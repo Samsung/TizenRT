@@ -96,6 +96,43 @@ struct ota_info {
 	int fd;
 };
 
+typedef struct {
+	artik_list node;
+	mbedtls_md_context_t md_ctx;
+	mbedtls_asn1_buf data_digest;
+	mbedtls_asn1_buf signed_digest;
+	mbedtls_asn1_buf message_data;
+	mbedtls_md_type_t digest_alg_id;
+
+	mbedtls_x509_crt *chain;
+	mbedtls_x509_crt *cert;
+} verify_node;
+
+typedef struct {
+	mbedtls_x509_time signing_time;
+	mbedtls_asn1_buf digest;
+	mbedtls_asn1_buf raw;
+} authenticated_attributes;
+
+typedef struct {
+	mbedtls_x509_name issuer;
+	mbedtls_x509_buf serial;
+	mbedtls_md_type_t digest_alg_id;
+	authenticated_attributes authenticated_attributes;
+	mbedtls_asn1_buf encrypted_digest;
+} signer_info;
+
+typedef struct {
+	artik_list node;
+	mbedtls_md_type_t md_alg_id;
+} digest_algo_id;
+
+typedef struct {
+	mbedtls_x509_crt *chain;
+	mbedtls_x509_crt *cert;
+	signer_info signer;
+} signed_data;
+
 static artik_lwm2m_handle g_lwm2m_handle;
 static struct ota_info *g_ota_info;
 
@@ -201,6 +238,163 @@ static char *locate_substring(const char *big, const char *token, size_t len)
 	return NULL;
 }
 
+/*
+ * Compare two X.509 Names (aka rdnSequence).
+ *
+ * See RFC 5280 section 7.1, though we don't implement the whole algorithm:
+ * we sometimes return unequal when the full algorithm would return equal,
+ * but never the other way. (In particular, we don't do Unicode normalisation
+ * or space folding.)
+ *
+ * Return 0 if equal, -1 otherwise.
+ */
+static int x509_name_cmp(const mbedtls_x509_name *a, const mbedtls_x509_name *b)
+{
+	/* Avoid recursion, it might not be optimised by the compiler */
+	while (a != NULL || b != NULL) {
+		if (a == NULL || b == NULL)
+			return -1;
+
+		/* type */
+		if (a->oid.tag != b->oid.tag
+			|| a->oid.len != b->oid.len
+			|| memcmp(a->oid.p, b->oid.p, b->oid.len) != 0)
+			return -1;
+
+		/* value */
+		if (a->val.tag != b->val.tag
+			|| a->val.len != b->val.len
+			|| memcmp(a->val.p, b->val.p, b->val.len) != 0)
+			return -1;
+
+		/* structure of the list of sets */
+		if (a->next_merged != b->next_merged)
+			return -1;
+
+		a = a->next;
+		b = b->next;
+	}
+
+	/* a == NULL == b */
+	return 0;
+}
+
+static int check_pkcs7_validity(signed_data *sig_data)
+{
+	mbedtls_x509_crt *cert = sig_data->chain;
+
+	while (cert != NULL) {
+		if (x509_name_cmp(&sig_data->signer.issuer, &cert->issuer) != 0) {
+			char info[1024];
+
+			mbedtls_x509_dn_gets(info, 1024, &cert->issuer);
+			fprintf(stderr, "Issuer is: %s", info);
+
+			mbedtls_x509_dn_gets(info, 1024, &sig_data->signer.issuer);
+			fprintf(stderr, "Expected issuer is: %s", info);
+			cert = cert->next;
+			continue;
+		}
+
+		if (sig_data->signer.serial.len == cert->issuer_id.len
+			&& memcmp(sig_data->signer.serial.p,
+					  cert->issuer_id.p, cert->issuer_id.len) == 0) {
+			fprintf(stderr, "Issuer serial number does not match.");
+			cert = cert->next;
+			continue;
+		}
+
+		if ((cert->ext_types & MBEDTLS_X509_EXT_EXTENDED_KEY_USAGE) == 0) {
+			fprintf(stderr, "Extended key usage extension not found.");
+			cert = cert->next;
+			continue;
+		}
+
+		if (mbedtls_x509_crt_check_extended_key_usage(
+				cert,
+				MBEDTLS_OID_CODE_SIGNING,
+				MBEDTLS_OID_SIZE(MBEDTLS_OID_CODE_SIGNING)) != 0) {
+			fprintf(stderr, "Signer certificate verification failed: The purpose of the certificate is not digitalSignature.");
+			cert = cert->next;
+			continue;
+		}
+
+		break;
+	}
+
+	if (cert == NULL) {
+		fprintf(stderr, "Issuer certificate not found.");
+		return E_SECURITY_INVALID_PKCS7;
+	}
+
+	if (sig_data->signer.digest_alg_id != MBEDTLS_MD_SHA256) {
+		fprintf(stderr, "Only verification with SHA256 is supported.");
+		return E_NOT_SUPPORTED;
+	}
+
+	sig_data->cert = cert;
+	return S_OK;
+}
+
+static int initialize_md_context(verify_node *node, signed_data *sig_data)
+{
+	const mbedtls_md_info_t *md_info = mbedtls_md_info_from_type(sig_data->signer.digest_alg_id);
+
+	if (!md_info) {
+		fprintf(stderr, "SHA256 is not supported by mbedtls.");
+		return E_SECURITY_INVALID_PKCS7;
+	}
+
+	mbedtls_md_init(&node->md_ctx);
+	if (mbedtls_md_setup(&node->md_ctx, md_info, 0) != 0) {
+		fprintf(stderr, "Failed to initialize digest context.");
+		return E_BAD_ARGS;
+	}
+
+	if (mbedtls_md_starts(&node->md_ctx) != 0) {
+		fprintf(stderr, "Failed to prepare digest context.");
+		mbedtls_md_free(&node->md_ctx);
+		return E_BAD_ARGS;
+	}
+
+	return S_OK;
+}
+
+static int copy_node_data(verify_node *node, signed_data *sig_data)
+{
+	size_t data_digest_len =  sig_data->signer.authenticated_attributes.digest.len;
+	size_t signed_digest_len = sig_data->signer.encrypted_digest.len;
+	size_t message_data_len = sig_data->signer.authenticated_attributes.raw.len;
+
+	node->data_digest.p = malloc(sizeof(unsigned char) * data_digest_len);
+	node->signed_digest.p = malloc(sizeof(unsigned char) * signed_digest_len);
+	node->message_data.p = malloc(sizeof(unsigned char) * message_data_len);
+
+	if (!node->data_digest.p || !node->signed_digest.p || !node->message_data.p) {
+		if (node->data_digest.p)
+			free(node->data_digest.p);
+
+		if (node->signed_digest.p)
+			free(node->signed_digest.p);
+
+		if (node->message_data.p)
+			free(node->message_data.p);
+
+		return E_NO_MEM;
+	}
+
+	node->data_digest.len = data_digest_len;
+	node->signed_digest.len = signed_digest_len;
+	node->message_data.len = message_data_len;
+
+	memcpy(node->data_digest.p, sig_data->signer.authenticated_attributes.digest.p, data_digest_len);
+	memcpy(node->signed_digest.p, sig_data->signer.encrypted_digest.p, signed_digest_len);
+	memcpy(node->message_data.p, sig_data->signer.authenticated_attributes.raw.p, message_data_len);
+	*(node->message_data.p) = 0x31;
+
+	return S_OK;
+}
+
 static int write_firmware(char *data, size_t len, void *user_data)
 {
 	int header_size = 0;
@@ -236,8 +430,7 @@ static int write_firmware(char *data, size_t len, void *user_data)
 		g_ota_info->sig.offset += sig_size;
 
 		if (g_ota_info->sig.found) {
-			char *a053_root_ca = NULL;
-			char *end_ca_cert = NULL;
+			artik_list *ca_chain = NULL;
 			artik_time *signing_time_in = &lwm2m_config.signing_time;
 			artik_error err;
 			artik_security_handle handle;
@@ -245,15 +438,7 @@ static int write_firmware(char *data, size_t len, void *user_data)
 
 			g_ota_info->sig.data[g_ota_info->sig.offset + sig_size] = '\0';
 			security->request(&handle);
-			security->get_ca_chain(handle, CERT_ID_ARTIK, &a053_root_ca);
-			if (a053_root_ca == NULL) {
-				return -1;
-			}
-			end_ca_cert = strstr(a053_root_ca, END_CERT);
-			end_ca_cert += strlen(END_CERT);
-			if (end_ca_cert != NULL) {
-				*end_ca_cert = '\0';
-			}
+			security->get_certificate_pem_chain(handle, "ARTIK", &ca_chain);
 
 			if (lwm2m_config.signing_time.month == 0 && lwm2m_config.signing_time.year == 0 &&
 				lwm2m_config.signing_time.day == 0 && lwm2m_config.signing_time.minute == 0 &&
@@ -261,17 +446,18 @@ static int write_firmware(char *data, size_t len, void *user_data)
 				signing_time_in = NULL;
 
 			err = security->verify_signature_init(&g_ota_info->sig.handle,
-											g_ota_info->sig.data,
-											a053_root_ca,
-											signing_time_in,
-											&g_ota_info->sig.signing_time);
+					g_ota_info->sig.data,
+					(char *)artik_list_get_by_pos(ca_chain, 2)->data,
+					signing_time_in, &g_ota_info->sig.signing_time);
 			if (err != S_OK) {
+				artik_list_delete_all(&ca_chain);
+				artik_release_api_module(security);
 				fprintf(stderr, "Verify signature failed: %s", error_msg(err));
 				g_ota_info->error = OTA_ERROR_VERIFY;
 				return len;
 			}
 
-			free(a053_root_ca);
+			artik_list_delete_all(&ca_chain);
 			artik_release_api_module(security);
 		}
 	}
@@ -318,7 +504,6 @@ static int write_firmware(char *data, size_t len, void *user_data)
 				g_ota_info->sig.handle,
 				(unsigned char *)(data + sig_size + header_size),
 				len);
-
 			if (err != S_OK) {
 				fprintf(stderr, "Verify signature failed: %s", error_msg(err));
 				g_ota_info->error = OTA_ERROR_VERIFY;
@@ -592,7 +777,7 @@ static pthread_addr_t lwm2m_start_cb(void *arg)
 			"1.0", "1.0", "A05x", 0, 5000, 1500, 100, 1000000, 200000,
 			"Europe/Paris", "+01:00", "U");
 
-	ssl_config.se_config.use_se = CloudIsSecureDeviceType();
+	ssl_config.secure = CloudIsSecureDeviceType();
 	ssl_config.ca_cert.data = (char *)akc_root_ca;
 	ssl_config.ca_cert.len = sizeof(akc_root_ca);
 	ssl_config.verify_cert = ARTIK_SSL_VERIFY_REQUIRED;

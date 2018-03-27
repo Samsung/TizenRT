@@ -82,6 +82,12 @@ endif
 
 TINYARALIBS += $(LIBRARIES_DIR)$(DELIM)libexternal$(LIBEXT)
 
+# Add library for ARTIK Security API
+
+ifeq ($(CONFIG_ARTIK_SDK),y)
+TINYARALIBS += $(LIBRARIES_DIR)$(DELIM)libsecurity-api$(LIBEXT)
+endif
+
 # Add libraries for network support
 
 ifeq ($(CONFIG_NET),y)

@@ -357,7 +357,7 @@ static int connect_command(int argc, char *argv[])
 	memset(&ssl, 0, sizeof(ssl));
 
 	if ((argc == 6) && !strncmp(argv[5], "use_se", strlen("use_se")))
-		ssl.se_config.use_se = true;
+		ssl.secure = true;
 
 	if (!cloud) {
 		fprintf(stderr, "Failed to request cloud module\n");
@@ -365,7 +365,7 @@ static int connect_command(int argc, char *argv[])
 		goto exit;
 	}
 
-	ssl.verify_cert = ssl.se_config.use_se ? ARTIK_SSL_VERIFY_NONE :
+	ssl.verify_cert = ssl.secure ? ARTIK_SSL_VERIFY_NONE :
 			ARTIK_SSL_VERIFY_REQUIRED;
 	ssl.ca_cert.data = (char *)akc_root_ca;
 	ssl.ca_cert.len = sizeof(akc_root_ca);
@@ -481,7 +481,7 @@ static int sdr_command(int argc, char *argv[])
 			goto exit;
 		}
 
-		cloud->sdr_start_registration(CERT_ID_ARTIK, argv[4], argv[5],
+		cloud->sdr_start_registration("ARTIK/0", argv[4], argv[5],
 				&response);
 
 		if (response) {
@@ -502,7 +502,7 @@ static int sdr_command(int argc, char *argv[])
 			goto exit;
 		}
 
-		cloud->sdr_registration_status(CERT_ID_ARTIK, argv[4], &response);
+		cloud->sdr_registration_status("ARTIK/0", argv[4], &response);
 
 		if (response) {
 			fprintf(stdout, "Response: %s\n", response);
@@ -522,7 +522,7 @@ static int sdr_command(int argc, char *argv[])
 			goto exit;
 		}
 
-		cloud->sdr_complete_registration(CERT_ID_ARTIK, argv[4], argv[5],
+		cloud->sdr_complete_registration("ARTIK/0", argv[4], argv[5],
 				&response);
 
 		if (response) {
@@ -862,15 +862,15 @@ static int dm_command(int argc, char *argv[])
 			goto exit;
 		}
 
-		ssl_config->se_config.use_se = (argc == 7) && !strncmp(argv[6], "use_se", strlen("use_se"));
+		ssl_config->secure = (argc == 7) && !strncmp(argv[6], "use_se", strlen("use_se"));
 		ssl_config->ca_cert.data = (char *)akc_root_ca;
 		ssl_config->ca_cert.len = sizeof(akc_root_ca);
-		ssl_config->verify_cert = ssl_config->se_config.use_se ?
-			ARTIK_SSL_VERIFY_NONE : ARTIK_SSL_VERIFY_REQUIRED;
+		ssl_config->verify_cert = ssl_config->secure ? ARTIK_SSL_VERIFY_NONE :
+				ARTIK_SSL_VERIFY_REQUIRED;
 
 		dm_config.ssl_config = ssl_config;
 		dm_config.server_id = 123;
-		dm_config.server_uri = ssl_config->se_config.use_se ?
+		dm_config.server_uri = ssl_config->secure ?
 				"coaps+tcp://coaps-api.artik.cloud:5689" :
 				"coaps://coaps-api.artik.cloud:5686";
 		dm_config.lifetime = 30;

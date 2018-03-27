@@ -38,6 +38,7 @@
 
 #define AKC_DEFAULT_DTID    "dt2d93bdb9c8fa446eb4a35544e66150f7"
 #define LED_ID              ARTIK_A05x_XGPIO20
+#define CERT_ID_ARTIK       "ARTIK/0"
 
 #define RESP_ERROR_TPL      RESP_ERROR("%d", "%s")
 #define RESP_INVALID_TPL    RESP_ERROR(API_ERROR_COMMUNICATION, "Device Communication Error")
@@ -247,7 +248,7 @@ static pthread_addr_t websocket_start_cb(void *arg)
 	printf("Start websocket to ARTIK Cloud\n");
 
 	memset(&ssl, 0, sizeof(ssl));
-	ssl.se_config.use_se = CloudIsSecureDeviceType();
+	ssl.secure = CloudIsSecureDeviceType();
 
 	ret = cloud->websocket_open_stream(&g_ws_handle, cloud_config.device_token,
 					   cloud_config.device_id, 30000, 10000, &ssl);
@@ -453,6 +454,9 @@ static pthread_addr_t start_sdr_registration_cb(void *arg)
 	cJSON *jresp = NULL;
 	unsigned char serial_num[ARTIK_CERT_SN_MAXLEN];
 	unsigned int sn_len = ARTIK_CERT_SN_MAXLEN;
+	unsigned char *se_cert = NULL;
+	char *se_cert_pem = NULL;
+	unsigned int se_cert_size = 0;
 	char vdid[AKC_VDID_LEN + 1] = "";
 	int i = 0;
 	artik_cloud_module *cloud = (artik_cloud_module *)artik_request_api_module("cloud");
@@ -467,9 +471,30 @@ static pthread_addr_t start_sdr_registration_cb(void *arg)
 	}
 
 	/* Generate the vendor ID based on the certificate serial number */
-	security->request(&handle);
-	ret = security->get_certificate_sn(handle, CERT_ID_ARTIK, serial_num,
-			&sn_len);
+	ret = security->request(&handle);
+	if (ret != S_OK) {
+		status = 500;
+		*resp = strdup(RESP_UNAVAIL_TPL);
+		goto exit;
+	}
+
+	ret = security->get_certificate(handle, CERT_ID_ARTIK,
+			ARTIK_SECURITY_CERT_TYPE_PEM, &se_cert, &se_cert_size);
+	if (ret != S_OK) {
+		status = 500;
+		*resp = strdup(RESP_UNAVAIL_TPL);
+		goto exit;
+	}
+
+	se_cert_pem = strndup((char *)se_cert, se_cert_size);
+	if (!se_cert_pem) {
+		free(se_cert);
+		status = 500;
+		*resp = strdup(RESP_UNAVAIL_TPL);
+		goto exit;
+	}
+
+	ret = security->get_certificate_sn(se_cert_pem, serial_num,	&sn_len);
 	if ((ret != S_OK) || !sn_len) {
 		strncpy(vdid, "vdid_default1234", AKC_VDID_LEN + 1);
 	} else {
@@ -482,6 +507,8 @@ static pthread_addr_t start_sdr_registration_cb(void *arg)
 		}
 	}
 
+	free(se_cert);
+	free(se_cert_pem);
 	security->release(handle);
 
 	/* Start SDR registration to ARTIK Cloud */

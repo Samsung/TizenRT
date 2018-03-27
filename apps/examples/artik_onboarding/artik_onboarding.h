@@ -27,6 +27,12 @@
 
 #define ONBOARDING_VERSION "1.9.0"
 
+#include <tls/see_api.h>
+#include <tls/x509_crt.h>
+#include <tls/pk.h>
+#include <tls/pem.h>
+#include <tls/oid.h>
+
 /*
  * Service states
  */
@@ -126,14 +132,14 @@ artik_error SaveConfiguration(void);
 artik_error ResetConfiguration(bool force);
 void PrintConfiguration(void);
 
-#define API_ERROR_OK				"0"
-#define API_ERROR_INVALID_JSON		"100"
-#define API_ERROR_INTERNAL			"102"
-#define API_ERROR_INVALID_PARAMS	"106"
-#define API_ERROR_INVALID_UUID		"108"
-#define API_ERROR_MISSING_PARAM	"109"
-#define API_ERROR_COMMUNICATION	"111"
-#define API_ERROR_CLOUD_BASE		50000
+#define API_ERROR_OK             "0"
+#define API_ERROR_INVALID_JSON   "100"
+#define API_ERROR_INTERNAL       "102"
+#define API_ERROR_INVALID_PARAMS "106"
+#define API_ERROR_INVALID_UUID   "108"
+#define API_ERROR_MISSING_PARAM  "109"
+#define API_ERROR_COMMUNICATION  "111"
+#define API_ERROR_CLOUD_BASE     50000
 
 #define RESP_ERROR_OK									\
 	"{\"error\":false,"								\
@@ -151,5 +157,13 @@ void PrintConfiguration(void);
 	extra"}"
 
 #define ARRAY_SIZE(a) (sizeof(a)/sizeof((a)[0]))
+
+#define PEM_BEGIN_CRT          "-----BEGIN CERTIFICATE-----\n"
+#define PEM_END_CRT            "-----END CERTIFICATE-----\n"
+#define PEM_BEGIN_PUBKEY       "-----BEGIN PUBLIC KEY-----"
+#define PEM_END_PUBKEY         "-----END PUBLIC KEY-----"
+#define PEM_BEGIN_EC_PRIV_KEY  "-----BEGIN EC PRIVATE KEY-----"
+#define PEM_END_EC_PRIV_KEY    "-----END EC PRIVATE KEY-----"
+
 
 #endif /* _ARTIK_ONBOARDING_H_ */

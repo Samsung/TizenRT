@@ -440,8 +440,6 @@ static void put_akc_registration_callback(struct http_client_t *client, struct h
 
 #ifndef WEBSERVER_DISABLE_HTTPS
 
-#define PEM_END_CRT             "-----END CERTIFICATE-----\n"
-
 static void http_tls_debug(void *ctx, int level, const char *file, int line,
 		const char *str)
 {
@@ -450,9 +448,8 @@ static void http_tls_debug(void *ctx, int level, const char *file, int line,
 
 static artik_error ssl_init_context(struct http_server_t *server)
 {
-	char *server_cert = NULL;
-	char *ca_chain = NULL;
-	char *index = NULL;
+	artik_list *ca_chain = NULL;
+	char *cert_pem = NULL;
 	const mbedtls_pk_info_t *pk_info;
 	artik_security_handle handle = NULL;
 	artik_security_module *security = NULL;
@@ -507,40 +504,25 @@ static artik_error ssl_init_context(struct http_server_t *server)
 		goto exit;
 	}
 
-	ret = security->get_certificate(handle, CERT_ID_ARTIK, &server_cert);
-	if ((ret != S_OK) || !server_cert) {
-		printf("Failed to get certificate from SE (err=%d)\n", ret);
+	ret = security->get_certificate_pem_chain(handle, "ARTIK", &ca_chain);
+	if ((ret != S_OK) || !ca_chain || !artik_list_size(ca_chain)) {
+		printf("Failed to get CA chain from SE (err=%d)\n", ret);
+		ret = E_BAD_ARGS;
 		goto exit;
 	}
 
+	cert_pem = artik_list_get_by_pos(ca_chain, 0)->data;
 	err = mbedtls_x509_crt_parse(&server->tls_srvcert,
-			(const unsigned char *)server_cert, strlen(server_cert) + 1);
+			(const unsigned char *)cert_pem, strlen(cert_pem) + 1);
 	if (err) {
 		printf("Failed to parse server certificate (err=%d)\n", err);
 		ret = E_BAD_ARGS;
 		goto exit;
 	}
 
-	ret = security->get_ca_chain(handle, CERT_ID_ARTIK, &ca_chain);
-	if ((ret != S_OK) || !ca_chain) {
-		printf("Failed to get CA chain from SE (err=%d)\n", ret);
-		ret = E_BAD_ARGS;
-		goto exit;
-	}
-
-	/* Split after the first certificate to only keep the intermediate */
-	index = strstr(ca_chain, PEM_END_CRT);
-	if (!index) {
-		printf("Wrong certificate format\n");
-		ret = E_BAD_ARGS;
-		goto exit;
-	}
-
-	index += strlen(PEM_END_CRT);
-	*index = '\0';
-
+	cert_pem = artik_list_get_by_pos(ca_chain, 1)->data;
 	err = mbedtls_x509_crt_parse(&server->tls_srvcert,
-			(const unsigned char *)ca_chain, strlen(ca_chain) + 1);
+			(const unsigned char *)cert_pem, strlen(cert_pem) + 1);
 	if (err) {
 		printf("Failed to parse server certificate (err=%d)\n", err);
 		ret = E_BAD_ARGS;
@@ -588,10 +570,8 @@ exit:
 		security->release(handle);
 	if (security)
 		artik_release_api_module(security);
-	if (server_cert)
-		free(server_cert);
 	if (ca_chain)
-		free(ca_chain);
+		artik_list_delete_all(&ca_chain);
 
 	return S_OK;
 }

@@ -175,6 +175,12 @@ $(EXTDIR)$(DELIM)libexternal$(LIBEXT): context
 $(LIBRARIES_DIR)$(DELIM)libexternal$(LIBEXT): $(EXTDIR)$(DELIM)libexternal$(LIBEXT)
 	$(Q) install $(EXTDIR)$(DELIM)libexternal$(LIBEXT) $(LIBRARIES_DIR)$(DELIM)libexternal$(LIBEXT)
 
+# ARTIK Security API lib
+ifeq ($(CONFIG_ARTIK_SDK),y)
+$(LIBRARIES_DIR)$(DELIM)libsecurity-api$(LIBEXT): $(ARTIKSDKDIR)$(DELIM)src$(DELIM)modules$(DELIM)base$(DELIM)security$(DELIM)tizenrt$(DELIM)libsecurity-api$(LIBEXT)
+	$(Q) install $(ARTIKSDKDIR)$(DELIM)src$(DELIM)modules$(DELIM)base$(DELIM)security$(DELIM)tizenrt$(DELIM)libsecurity-api$(LIBEXT) $(LIBRARIES_DIR)$(DELIM)libsecurity-api$(LIBEXT)
+endif
+
 #Iotivity Libs
 
 ifeq ($(CONFIG_ENABLE_IOTIVITY),y)
