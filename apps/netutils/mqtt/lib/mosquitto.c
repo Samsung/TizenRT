@@ -77,6 +77,10 @@ typedef int ssize_t;
 #endif
 #endif
 
+#ifdef WITH_MBEDTLS
+#define PEM_END_CERTIFICATE	"-----END CERTIFICATE-----\r\n"
+#endif
+
 void _mosquitto_destroy(struct mosquitto *mosq);
 static int _mosquitto_reconnect(struct mosquitto *mosq, bool blocking);
 static int _mosquitto_connect_init(struct mosquitto *mosq, const char *host, int port, int keepalive, const char *bind_address);
@@ -921,6 +925,9 @@ int mosquitto_tls_set(struct mosquitto *mosq, const char *cafile, const char *ca
 	return MOSQ_ERR_SUCCESS;
 #else
 #ifdef WITH_MBEDTLS
+	char *start = NULL, *end = NULL, *copy = NULL;
+	int remain = 0;
+
 	if (!mosq || !cafile) {
 		return MOSQ_ERR_INVAL;
 	}
@@ -954,10 +961,31 @@ int mosquitto_tls_set(struct mosquitto *mosq, const char *cafile, const char *ca
 		}
 	}
 
-	if (mbedtls_x509_crt_parse(mosq->cert, (const unsigned char *)mosq->tls_ca_cert, mosq->tls_ca_cert_len) != 0) {
-		_mosquitto_log_printf(mosq, MOSQ_LOG_ERR, "Error: mbedtls_x509_crt_parse_ca fail");
-		return MOSQ_ERR_TLS;
-	}
+	/* CA certs may come as a bundle, parse them all */
+	start = mosq->tls_ca_cert;
+	end = start;
+	remain = strlen(mosq->tls_ca_cert);
+	do {
+		end = strstr(start, PEM_END_CERTIFICATE);
+		if (!end)
+			break;
+
+		end += strlen(PEM_END_CERTIFICATE);
+		copy = strndup(start, end - start);
+		if (!copy) {
+			_mosquitto_log_printf(mosq, MOSQ_LOG_ERR, "Error: fail to allocate memory for root CA");
+			return MOSQ_ERR_TLS;
+		}
+		if (mbedtls_x509_crt_parse(mosq->cert, (const unsigned char *)copy,
+				end - start + 1) != 0) {
+			_mosquitto_log_printf(mosq, MOSQ_LOG_ERR, "Error: mbedtls_x509_crt_parse_ca fail");
+			free(copy);
+			return MOSQ_ERR_TLS;
+		}
+		remain -= end - start;
+		start = end;
+		free(copy);
+	} while (remain);
 
 	if (mosq->tls_key) {
 		if (mbedtls_pk_parse_key(mosq->pkey, (const unsigned char *)mosq->tls_key, mosq->tls_key_len, NULL, 0) != 0) {
