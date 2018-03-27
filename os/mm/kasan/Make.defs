@@ -1,0 +1,8 @@
+CSRCS += kasan.c kasan_error.c kasan_report.c kasan_quarantine.c
+
+KASAN_AVOID_SANITIZE_kasan = y
+KASAN_AVOID_SANITIZE_kasan_error = y
+KASAN_AVOID_SANITIZE_kasan_report = y
+
+DEPPATH += --dep-path kasan
+VPATH += :kasan

@@ -78,6 +78,7 @@ include umm_heap/Make.defs
 include kmm_heap/Make.defs
 include mm_gran/Make.defs
 include shm/Make.defs
+include kasan/Make.defs
 
 BINDIR ?= bin
 
@@ -99,7 +100,9 @@ $(AOBJS): $(BINDIR)$(DELIM)%$(OBJEXT): %.S
 	$(call MOVEOBJ,$(patsubst $(BINDIR)$(DELIM)%$(OBJEXT),%,$@),$(BINDIR))
 
 $(COBJS): $(BINDIR)$(DELIM)%$(OBJEXT): %.c
-	$(call COMPILE, $<, $@)
+	$(if $(KASAN_AVOID_SANITIZE_$*),\
+		$(call COMPILE, $<, $@),\
+		$(call COMPILE_SANITIZE, $<, $@))
 	$(call MOVEOBJ,$(patsubst $(BINDIR)$(DELIM)%$(OBJEXT),%,$@),$(BINDIR))
 
 # Memory manager for the flat build

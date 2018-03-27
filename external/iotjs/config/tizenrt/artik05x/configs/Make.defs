@@ -84,10 +84,6 @@ NM = $(CROSSDEV)nm
 OBJCOPY = $(CROSSDEV)objcopy
 OBJDUMP = $(CROSSDEV)objdump
 
-ARCHCCVERSION = ${shell $(CC) -v 2>&1 | sed -n '/^gcc version/p' | sed -e 's/^gcc version \([0-9\.]\)/\1/g' -e 's/[-\ ].*//g' -e '1q'}
-ARCHCCMAJOR = ${shell echo $(ARCHCCVERSION) | cut -d'.' -f1}
-ARCHCCMINOR = ${shell echo $(ARCHCCVERSION) | cut -d'.' -f2}
-
 ifeq ($(CONFIG_DEBUG_SYMBOLS),y)
   ARCHOPTIMIZATION = -g
 endif
@@ -155,4 +151,3 @@ HOSTLDFLAGS =
 define DOWNLOAD
        @$(TOPDIR)/../build/configs/artik053/artik053_download.sh $(1)
 endef
-

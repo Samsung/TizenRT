@@ -118,7 +118,9 @@ endif
 
 ifneq ($(CSRCS),)
 $(COBJS): bin/%$(OBJEXT): %.c
-	$(call COMPILE, $<, $@)
+	$(if $(KASAN_AVOID_SANITIZE_$*),\
+		$(call COMPILE, $<, $@),\
+		$(call COMPILE_SANITIZE, $<, $@))
 endif
 
 .built: $(OBJS)

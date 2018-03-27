@@ -62,6 +62,11 @@ CONFIG_ARCH       := $(patsubst "%",%,$(strip $(CONFIG_ARCH)))
 CONFIG_ARCH_CHIP  := $(patsubst "%",%,$(strip $(CONFIG_ARCH_CHIP)))
 CONFIG_ARCH_BOARD := $(patsubst "%",%,$(strip $(CONFIG_ARCH_BOARD)))
 
+# define variables for GCC version check here
+ARCHCCVERSION = ${shell $(CROSSDEV)gcc -v 2>&1 | sed -n '/^gcc version/p' | sed -e 's/^gcc version \([0-9\.]\)/\1/g' -e 's/[-\ ].*//g' -e '1q'}
+ARCHCCMAJOR = ${shell echo $(ARCHCCVERSION) | cut -d'.' -f1}
+ARCHCCMINOR = ${shell echo $(ARCHCCVERSION) | cut -d'.' -f2}
+
 # Some defaults just to prohibit some bad behavior if for some reason they
 # are not defined
 
@@ -129,9 +134,72 @@ endef
 #   CC - The command to invoke the C compiler
 #   CFLAGS - Options to pass to the C compiler
 
+CFLAGS =
+ifeq ($(ARCHCCMAJOR),6)
+	CFLAGS += -Wno-error=unused-const-variable -Wno-error=bool-compare -Wno-error=unused-variable
+endif
+ifeq ($(ARCHCCMAJOR),7)
+	CFLAGS += -Wno-error=unused-const-variable -Wno-error=bool-compare -Wno-error=int-in-bool-context -Wno-error=unused-variable
+endif
+
 define COMPILE
 	@echo "CC: $1"
-	$(Q) $(CC) -c $(CFLAGS) $1 -o $2
+	$(Q) $(CC) -c $(CFLAGS) $(KASAN_DEFINES) $1 -o $2
+endef
+
+KASAN_FLAGS =
+KASAN_DEFINES =
+ifeq ($(CONFIG_KASAN),y)
+
+call_threshold = 0
+ifeq ($(CONFIG_KASAN_INSTR_INLINE),y)
+	call_threshold = 10000
+endif
+
+CONFIG_RAM_END ?= $(shell echo "$$(( $(CONFIG_RAM_START) + $(CONFIG_RAM_SIZE) ))")
+
+KASAN_SHADOW_SCALE_SHIFT = 3
+KASAN_SHADOW_SCALE_SIZE	= $(shell echo "$$(( 1 << $(KASAN_SHADOW_SCALE_SHIFT) ))")
+KASAN_SHADOW_MASK = $(shell echo "$$(( $(KASAN_SHADOW_SCALE_SIZE) - 1 ))")
+KASAN_SHADOW_SIZE = $(shell echo "$$(( $(CONFIG_RAM_SIZE) >> $(KASAN_SHADOW_SCALE_SHIFT) ))")
+KASAN_SHADOW_MASK_NEG = $(shell echo "$$(( ~ $(KASAN_SHADOW_MASK) ))")
+KASAN_SHADOW_END = $(shell echo "$$(( $(CONFIG_RAM_END) & $(KASAN_SHADOW_MASK_NEG) ))")
+KASAN_SHADOW_START = $(shell echo "$$(( $(KASAN_SHADOW_END) - $(KASAN_SHADOW_SIZE) ))")
+KASAN_SHADOW_OFFSET = $(shell echo "$$(( $(KASAN_SHADOW_START) - ( $(CONFIG_RAM_START) >> $(KASAN_SHADOW_SCALE_SHIFT) ) ))")
+
+KASAN_DEFINES += -DKASAN_SHADOW_SCALE_SHIFT=$(KASAN_SHADOW_SCALE_SHIFT)
+KASAN_DEFINES += -DKASAN_SHADOW_SCALE_SIZE=$(KASAN_SHADOW_SCALE_SIZE)
+KASAN_DEFINES += -DKASAN_SHADOW_MASK=$(KASAN_SHADOW_MASK)
+KASAN_DEFINES += -DKASAN_SHADOW_SIZE=$(KASAN_SHADOW_SIZE)
+KASAN_DEFINES += -DKASAN_SHADOW_END=$(KASAN_SHADOW_END)
+KASAN_DEFINES += -DKASAN_SHADOW_START=$(KASAN_SHADOW_START)
+KASAN_DEFINES += -DKASAN_SHADOW_OFFSET=$(KASAN_SHADOW_OFFSET)
+KASAN_DEFINES += -DARCHCCMAJOR=$(ARCHCCMAJOR)
+
+KASAN_FLAGS += -fsanitize=kernel-address --param asan-instrumentation-with-call-threshold=$(call_threshold)
+
+ifeq ($(CONFIG_KASAN_GLOBALS),y)
+KASAN_FLAGS += --param asan-globals=1 -fno-common
+endif
+
+ifeq ($(CONFIG_KASAN_STACK),y)
+KASAN_FLAGS += --param asan-stack=1 -fasan-shadow-offset=$(KASAN_SHADOW_OFFSET)
+
+ifeq ($(ARCHCCMAJOR),7)
+KASAN_FLAGS += -fsanitize-address-use-after-scope
+endif
+
+endif   # CONFIG_KASAN_STACK
+endif	# CONFIG_KASAN
+
+define COMPILE_SANITIZE
+	@echo "CC: $1"
+
+	$(if $(CONFIG_KASAN_STACK),\
+		$(if $(shell test $(ARCHCCMAJOR) -lt 5; if [ $$? -eq "0" ]; then echo 1; else echo ""; fi),\
+			$(error KASAN_STACK feature require GCC 5 at least)))
+
+	$(Q) $(CC) -c $(CFLAGS) $(KASAN_DEFINES) $(KASAN_FLAGS) $1 -o $2
 endef
 
 # COMPILEXX - Default macro to compile one C++ file
@@ -166,7 +234,7 @@ endef
 
 define ASSEMBLE
 	@echo "AS: $1"
-	$(Q) $(CC) -c $(AFLAGS) $1 -o $2
+	$(Q) $(CC) -c $(AFLAGS) $(KASAN_DEFINES) $1 -o $2
 endef
 
 # MOVEOBJ - Default macro to move an object file to the correct location

@@ -51,10 +51,18 @@
 ############################################################################
 
 include ${TOPDIR}/.config
-include ${TOPDIR}/tools/Config.mk
 include ${TOPDIR}/arch/arm/src/armv7-r/Toolchain.defs
+include ${TOPDIR}/tools/Config.mk
 
+ifeq ($(CONFIG_KASAN),y)
+ifeq ($(CONFIG_KASAN_OS_ENLARGE),y)
+LDSCRIPT = flash_kasan_enlarge.ld
+else
+LDSCRIPT = flash_kasan.ld
+endif
+else
 LDSCRIPT = flash.ld
+endif
 
 ifeq ($(WINTOOL),y)
   # Windows-native toolchains
@@ -82,10 +90,6 @@ NM = $(CROSSDEV)nm
 OBJCOPY = $(CROSSDEV)objcopy
 OBJDUMP = $(CROSSDEV)objdump
 
-ARCHCCVERSION = ${shell $(CC) -v 2>&1 | sed -n '/^gcc version/p' | sed -e 's/^gcc version \([0-9\.]\)/\1/g' -e 's/[-\ ].*//g' -e '1q'}
-ARCHCCMAJOR = ${shell echo $(ARCHCCVERSION) | cut -d'.' -f1}
-ARCHCCMINOR = ${shell echo $(ARCHCCVERSION) | cut -d'.' -f2}
-
 ifeq ($(CONFIG_DEBUG_SYMBOLS),y)
   ARCHOPTIMIZATION = -g
 endif
@@ -105,7 +109,7 @@ ARCHWARNINGS = -Wall -Werror -Wstrict-prototypes -Wshadow -Wundef -Wno-implicit-
 ARCHWARNINGSXX = -Wall -Wshadow -Wundef
 else
 ARCHWARNINGS = -Wall -Werror -Wstrict-prototypes -Wshadow -Wundef -Wno-implicit-function-declaration -Wno-unused-function -Wno-unused-but-set-variable
-ARCHWARNINGSXX = -Wall -Wshadow -Wundef 
+ARCHWARNINGSXX = -Wall -Wshadow -Wundef
 # only version 4.9 supports color diagnostics
 ifeq "$(ARCHMAJOR)" "4"
 ifeq "$(ARCHMINOR)" "9"
@@ -119,7 +123,7 @@ endif
 ARCHDEFINES =
 ARCHPICFLAGS = -fpic -msingle-pic-base -mpic-register=r10
 
-CFLAGS = $(ARCHCFLAGS) $(ARCHWARNINGS) $(ARCHOPTIMIZATION) $(ARCHCPUFLAGS) $(ARCHINCLUDES) $(ARCHDEFINES) $(EXTRADEFINES) -pipe -ffunction-sections -fdata-sections
+CFLAGS += $(ARCHCFLAGS) $(ARCHWARNINGS) $(ARCHOPTIMIZATION) $(ARCHCPUFLAGS) $(ARCHINCLUDES) $(ARCHDEFINES) $(EXTRADEFINES) -pipe -ffunction-sections -fdata-sections
 CPICFLAGS = $(ARCHPICFLAGS) $(CFLAGS)
 CXXFLAGS  = $(ARCHCXXFLAGS) $(ARCHWARNINGSXX) $(ARCHOPTIMIZATION) $(ARCHCPUFLAGS) $(ARCHXXINCLUDES)
 CXXFLAGS += $(ARCHDEFINES) $(EXTRADEFINES) -pipe -std=c++11 -DCLOCK_MONOTONIC -D__TINYARA__

@@ -132,7 +132,9 @@ $(AOBJS): %$(OBJEXT): %.S
 	$(call ASSEMBLE, $<, $@)
 
 $(COBJS) $(MAINOBJ): %$(OBJEXT): %.c
-	$(call COMPILE, $<, $@)
+	$(if $(KASAN_AVOID_SANITIZE_$*),\
+		$(call COMPILE, $<, $@),\
+		$(call COMPILE_SANITIZE, $<, $@))
 
 .built: $(OBJS) check_iotjs
 	$(call ARCHIVE, $(BIN), $(OBJS))

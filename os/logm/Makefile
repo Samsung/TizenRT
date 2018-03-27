@@ -47,7 +47,9 @@ $(AOBJS): %$(OBJEXT): %.S
 	$(call ASSEMBLE, $<, $(notdir $@))
 
 $(COBJS): %$(OBJEXT): %.c
-	$(call COMPILE, $<, $(notdir $@))
+	$(if $(KASAN_AVOID_SANITIZE_$*),\
+		$(call COMPILE, $<, $@),\
+		$(call COMPILE_SANITIZE, $<, $@))
 
 $(BIN):	$(OBJS)
 	$(call ARCHIVE, $@, $(notdir $(OBJS)))

@@ -510,7 +510,9 @@ $(AOBJS): %$(GRPC_OBJEXT): %.S
 	$(call ASSEMBLE, $<, $@)
 
 $(COBJS): %$(GRPC_OBJEXT): %.c
-	$(call COMPILE, $<, $@)
+	$(if $(KASAN_AVOID_SANITIZE_$*),\
+		$(call COMPILE, $<, $@),\
+		$(call COMPILE_SANITIZE, $<, $@))
 
 $(CXXOBJS) $(MAINOBJ): %$(GRPC_OBJEXT): %.cc
 	$(call COMPILEXX, $<, $@)
