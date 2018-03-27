@@ -43,7 +43,7 @@
 #define MAX_FILE_ACCESS_CNT             (10)
 #define MAX_URI_LENGTH_OCF              (128)
 #define MAX_PROPERTY_CNT                (20)
-#define MAX_FILE_PATH_LENGTH            (250)
+#define MAX_FILE_PATH_LENGTH            (33)
 #define MAX_PROPERTY_LENGTH_OCF         (64)
 
 typedef struct st_resource_type_s {
@@ -68,6 +68,8 @@ typedef struct st_device_s {
 	int no;
 	char *type;
 	char *name;
+	char *spec_ver;
+	char *dm_ver;
 	char *manufacturer_name;
 	char *manufacturer_url;
 	char *manufacturing_date;
