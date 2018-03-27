@@ -265,6 +265,7 @@ bool add_common_props(things_resource_s *rsrc, bool collection, OCRepPayload *re
 			return false;
 		}
 	}
+	util_free(res_types);
 
 	// Set interface types.
 	int if_count = 0;
@@ -282,6 +283,7 @@ bool add_common_props(things_resource_s *rsrc, bool collection, OCRepPayload *re
 			return false;
 		}
 	}
+	util_free(if_types);
 
 	// Set "links"(only for collection).
 	if (collection) {
