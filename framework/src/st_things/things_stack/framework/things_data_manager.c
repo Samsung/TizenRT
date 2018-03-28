@@ -469,7 +469,15 @@ static void delete_device(st_device_s *device)
 		things_free(device->ver_fw);
 		things_free(device->device_id);
 		things_free(device->vender_id);
+
+		for (int col_iter = 0; col_iter < device->col_cnt; ++col_iter) {
+			for (int link_iter = 0; link_iter < device->collection->link_cnt; ++link_iter) {
+				things_free(device->collection->links[link_iter]);
+			}
+			things_free(device->collection->links);
+		}
 		things_free(device->collection);
+
 		things_free(device->single);
 		things_free(device);
 	}
@@ -1160,7 +1168,10 @@ static int parse_things_info_json(const char *filename)
 							cJSON *links = cJSON_GetObjectItem(res, KEY_DEVICE_RESOURCE_COLLECTION_LINKS);
 							if (links != NULL) {
 								int linkCnt = cJSON_GetArraySize(links);
+
 								node->collection[iter].link_cnt = linkCnt;
+								node->collection[iter].links = (things_attribute_info_s**)things_malloc(sizeof(things_attribute_info_s*) * linkCnt);
+
 								THINGS_LOG_D(THINGS_INFO, TAG, "[COLLECTION] collection[iter].link_cnt : %d", (node->collection[iter].link_cnt));
 								for (int linkiter = 0; linkiter < linkCnt; linkiter++) {
 									cJSON *link = cJSON_GetArrayItem(links, linkiter);
@@ -1931,7 +1942,6 @@ int dm_register_resource(things_server_builder_s *p_builder)
 
 		st_device_s *device = NULL;
 		struct things_resource_info_s *resource = NULL;
-		struct col_resource_s *col_resource_s = NULL;
 		struct things_resource_s *p_collection_resource = NULL;
 
 		// 2. Device Capability Resources Registration
@@ -2031,7 +2041,7 @@ struct things_resource_s *dm_get_resource_instance(const char *uri, const int id
 		st_device_s *device = (st_device_s *)hashmap_get(g_device_hmap, (unsigned long)(id));
 
 		if (device) {
-			for (int index = 0; index < MAX_DEVICE_CAPABILTY_CNT; index++) {
+			for (int index = 0; index < device->capa_cnt; index++) {
 				if (device->pchild_resources[index] == NULL) {
 					THINGS_LOG_V_ERROR(THINGS_ERROR, TAG, "Resource with URI : %s not exist !!!!", uri);
 					break;
