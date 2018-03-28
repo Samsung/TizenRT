@@ -89,9 +89,9 @@
  * Private Data
  ****************************************************************************/
 /* <esc>[K is the VT100 command erases to the end of the line. */
-
+#ifdef CONFIG_READLINE_ECHO
 static const char g_erasetoeol[] = VT100_CLEAREOL;
-
+#endif
 /****************************************************************************
  * Private Functions
  ****************************************************************************/
