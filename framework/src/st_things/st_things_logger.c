@@ -26,9 +26,9 @@
 #include <stdlib.h>
 
 #include "st_things_logger.h"
+#include "st_things_util.h"
 #include "string.h"
 
-#ifndef __TIZEN__
 static const uint16_t LINE_BUFFER_SIZE = 255;
 static const char *LEVEL[] __attribute__((unused)) = {
 	"DEBUG", "INFO", "WARNING", "ERROR", "FATAL"
@@ -45,7 +45,7 @@ void st_things_log_init()
 void st_things_log_shutdown()
 {
 	/* Free the memory allocated for p_version */
-	free(p_version);
+	util_free(p_version);
 }
 
 void st_things_log_set_version(char *version)
@@ -55,11 +55,11 @@ void st_things_log_set_version(char *version)
 	}
 
 	if (NULL != p_version) {
-		free(p_version);
+		util_free(p_version);
 	}
 
 	/* Allocate memory for p_version and set the version information */
-	p_version = (char *)malloc(strlen(version) + 1);
+	p_version = (char *)util_malloc(strlen(version) + 1);
 	if (NULL == p_version) {
 		printf("Error while allocating memory for version");
 		return;
@@ -121,4 +121,3 @@ void st_things_log_v(st_things_log_level_e level, const char *tag, const char *f
 	va_end(args);
 	st_things_log(level, tag, func_name, line_num, buffer);
 }
-#endif							//#ifndef __TIZEN__

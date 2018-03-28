@@ -23,10 +23,6 @@
 #include <stdio.h>
 #include <stdarg.h>
 
-#ifdef __TIZEN__
-#include <dlog.h>
-#endif
-
 #ifdef __cplusplus
 extern "C" {
 #endif							/* __cplusplus */
@@ -42,17 +38,6 @@ extern "C" {
 #define MAX_LOG_V_BUFFER_SIZE (256)
 
 // Log levels
-#ifdef __TIZEN__
-typedef enum {
-	ST_DEBUG = DLOG_DEBUG,
-	ST_INFO = DLOG_INFO,
-	ST_WARNING = DLOG_WARN,
-	ST_ERROR = DLOG_ERROR,
-	ST_FATAL = DLOG_FATAL
-} st_things_log_level_e;
-#endif
-
-#ifndef __TIZEN__				/* Linux */
 typedef enum {
 	ST_DEBUG,
 	ST_INFO,
@@ -94,24 +79,14 @@ void st_things_log(st_things_log_level_e level, const char *tag, const char *fun
  * @param format - variadic log string
  */
 void st_things_log_v(st_things_log_level_e level, const char *tag, const char *func_name, const int16_t line_num, const char *format, ...);
-#endif							//#ifndef __TIZEN__
 
 #ifdef FEATURE_LOGGING
-#ifdef __TIZEN__
-#define ST_LOG_INIT()
-#define ST_LOG_DEINIT()
-#define ST_LOG(level, log_str) dlog_print(level, ST_THINGS_TAG, "%s : %s(%d) > " log_str, __FILE__, __FUNCTION__, __LINE__)
-#define ST_LOG_V(level, fmt, ...) dlog_print(level, ST_THINGS_TAG, "%s : %s(%d) > " fmt, __FILE__, __FUNCTION__, __LINE__, __VA_ARGS__)
-#define ST_LOG_ENTRY(level) dlog_print(level, ST_THINGS_TAG, "%s : %s(%d) > " ST_THINGS_FUNC_ENTRY, __FILE__, __FUNCTION__, __LINE__)
-#define ST_LOG_EXIT(level) dlog_print(level, ST_THINGS_TAG, "%s : %s(%d) > " ST_THINGS_FUNC_EXIT, __FILE__, __FUNCTION__, __LINE__)
-#else							/* Linux */
 #define ST_LOG_INIT()   st_things_log_init()
 #define ST_LOG_DEINIT()   st_things_log_shutdown()
 #define ST_LOG(level, log_str)  st_things_log((level), ST_THINGS_TAG, __FUNCTION__, __LINE__, (log_str))
 #define ST_LOG_V(level, fmt, ...)   st_things_log_v((level), ST_THINGS_TAG, __FUNCTION__, __LINE__, fmt, __VA_ARGS__)
 #define ST_LOG_ENTRY(level) st_things_log((level), ST_THINGS_TAG, __FUNCTION__, __LINE__, (ST_THINGS_FUNC_ENTRY))
 #define ST_LOG_EXIT(level) st_things_log((level), ST_THINGS_TAG, __FUNCTION__, __LINE__, (ST_THINGS_FUNC_EXIT))
-#endif
 #else							//DISABLE LOGGING
 #define ST_LOG_INIT()
 #define ST_LOG_DEINIT()
