@@ -105,7 +105,6 @@ USERLIBS += $(LIBRARIES_DIR)$(DELIM)libocsrm$(LIBEXT)
 USERLIBS += $(LIBRARIES_DIR)$(DELIM)libroutingmanager$(LIBEXT)
 ifeq ($(CONFIG_ENABLE_IOTIVITY_CLOUD),y)
 USERLIBS += $(LIBRARIES_DIR)$(DELIM)libresource_directory$(LIBEXT)
-USERLIBS += $(LIBRARIES_DIR)$(DELIM)libresource_directory_internal$(LIBEXT)
 endif
 ifeq ($(CONFIG_ENABLE_IOTIVITY_SECURED),y)
 #TINYARALIBS += $(LIBRARIES_DIR)$(DELIM)libtinydtls$(LIBEXT)
