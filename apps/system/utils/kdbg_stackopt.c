@@ -49,7 +49,7 @@
  * Extern Data
  ****************************************************************************/
 extern struct stkmon_save_s stkmon_arr[CONFIG_MAX_TASKS * 2];
-extern tash_taskinfo_t tash_taskinfo_list[];
+extern const tash_taskinfo_t tash_taskinfo_list[];
 
 static bool find_app(TASH_CMD_CALLBACK *cb, char *name)
 {

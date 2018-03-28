@@ -70,7 +70,7 @@
 /****************************************************************************
  * Public Data
  ****************************************************************************/
-tash_taskinfo_t tash_taskinfo_list[] = {
+const tash_taskinfo_t tash_taskinfo_list[] = {
 #include "builtin_taskinfo.h"
 	{ NULL, 0, 0 }
 };
