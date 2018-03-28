@@ -143,13 +143,15 @@ static char *tash_read_input_line(int fd)
 								shdbg("TASH: echo failed (errno = %d)\n", get_errno());
 							}
 						}
-					}
-#else
-					/* echo */
-					if (write(fd, &buffer[pos], 1) <= 0) {
-						shdbg("TASH: echo failed (errno = %d)\n", get_errno());
-					}
+					} else
 #endif
+					{
+						/* echo */
+						if (write(fd, &buffer[pos], 1) <= 0) {
+							shdbg("TASH: echo failed (errno = %d)\n", get_errno());
+						}
+					}
+
 
 					pos++;
 					if (pos >= TASH_LINEBUFLEN) {
