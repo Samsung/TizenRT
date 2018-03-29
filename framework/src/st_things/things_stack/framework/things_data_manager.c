@@ -392,10 +392,15 @@ static struct st_resource_type_s *create_resource_type()
 	}
 
 	memset(type->rt, 0, (size_t) MAX_ATTRIBUTE_LENGTH);
-	memset(type->prop, 0, (size_t) MAX_PROPERTY_CNT);
+	memset(type->prop, 0, (size_t)(sizeof(things_attribute_info_s*) * MAX_PROPERTY_CNT));
 	type->prop_cnt = 0;
 
 	return type;
+}
+
+static void delete_resource_type(st_resource_type_s *type)
+{
+	things_free(type);
 }
 
 static struct things_resource_info_s *create_resource()
@@ -2358,17 +2363,29 @@ int dm_init_module(const char *devJsonPath)
 
 int dm_termiate_module()
 {
-	//  Need to backup all the keys in order to delete from the map.
-	unsigned long* keyset = hashmap_get_keyset(g_device_hmap);
-	long key_cnt = hashmap_count(g_device_hmap);
-	long dev_iter = 0;
-	for (dev_iter = 0; dev_iter < key_cnt; ++dev_iter) {
+	long key_cnt;
+	unsigned long *keyset;
+
+	// Delete devices;
+	keyset = hashmap_get_keyset(g_device_hmap);
+	key_cnt = hashmap_count(g_device_hmap);
+	for (long dev_iter = 0; dev_iter < key_cnt; ++dev_iter) {
 		st_device_s *device = hashmap_get(g_device_hmap, keyset[dev_iter]);
 		delete_device(device);
 	}
-
 	hashmap_delete(g_device_hmap);
+	things_free(keyset);
+
+	// Delete resource types;
+	keyset = hashmap_get_keyset(g_resource_type_hmap);
+	key_cnt = hashmap_count(g_resource_type_hmap);
+	for (long type_iter = 0; type_iter < key_cnt; ++type_iter) {
+		st_resource_type_s *type = hashmap_get(g_resource_type_hmap, keyset[type_iter]);
+		delete_resource_type(type);
+	}
 	hashmap_delete(g_resource_type_hmap);
+	things_free(keyset);
+
 	return 1;
 }
 
