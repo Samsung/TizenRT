@@ -18,11 +18,12 @@ This section covers board-specific environment set-up.
 Please set TizenRT common environment, [quick start](https://github.com/Samsung/TizenRT#quick-start), first before doing below.
 
 ### QEMU installation
+#Qemu version used 2.12.0-rc1
 
 ```
-wget http://download.qemu-project.org/qemu-2.10.0-rc2.tar.xz
-tar xvJf qemu-2.10.0-rc2.tar.xz
-cd qemu-2.10.0-rc2
+wget https://download.qemu.org/qemu-2.12.0-rc1.tar.xz
+tar xvJf qemu-2.12.0-rc1.tar.xz
+cd qemu-2.12.0-rc1
 /* If you want to use 1MB RAM, copy qemu-2.10.0-rc2_1m_ram_size.patch from TizenRT/build/configs/qemu */
 patch -p1 < qemu-2.10.0-rc2_1m_ram_size.patch
 /* If you want to use 16MB RAM, copy qemu-2.10.0-rc2_16m_ram_size.patch from TizenRT/build/configs/qemu */
