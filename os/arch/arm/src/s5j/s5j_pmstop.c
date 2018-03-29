@@ -71,8 +71,20 @@
  * Description:
  *   Enter STOP mode.
  *
+ * Input Parameters:
+ *   None
+ *
+ * Returned Value.
+ *   In case of failure a negated errno value is returned to indicate the
+ *   cause of the failure.
+ *
  ****************************************************************************/
-void s5j_pmstop(void)
+int s5j_pmstop(void)
 {
-	s5j_clk_pll_select_mux(false);
+	/* FIXME: implement me */
+	asm("wfi");
+
+	/* won't get here */
+
+	return OK;
 }

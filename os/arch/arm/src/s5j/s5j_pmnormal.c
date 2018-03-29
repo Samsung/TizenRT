@@ -59,6 +59,7 @@
 
 #include "up_arch.h"
 #include "s5j_clock.h"
+#include "s5j_pm.h"
 
 /****************************************************************************
  * Public Functions
@@ -70,8 +71,14 @@
  * Description:
  *   Enter NORMAL mode.
  *
+ * Returned Value.
+ *   In case of failure a negated errno value is returned to indicate the
+ *   cause of the failure.
+ *
  ****************************************************************************/
-void s5j_pmnormal(void)
+int s5j_pmnormal(void)
 {
 	s5j_clk_pll_select_mux(true);
+
+	return OK;
 }

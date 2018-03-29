@@ -58,8 +58,9 @@ config ARCH_BOARD_CY4390x
 endchoice
 
 config ARCH_BOARD_ARTIK05X_FAMILY
-    bool
-    default n
+	bool
+	default n
+	select ARCH_USE_PM
 
 config ARCH_BOARD
 	string

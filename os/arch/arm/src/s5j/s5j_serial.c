@@ -70,6 +70,7 @@
 
 #include "s5j_gpio.h"
 #include "s5j_clock.h"
+#include "s5j_pm.h"
 #include "up_arch.h"
 #include "up_internal.h"
 
@@ -728,22 +729,18 @@ static bool up_txempty(struct uart_dev_s *dev)
  *
  ****************************************************************************/
 static void up_pm_notify(struct pm_callback_s *cb, int domain,
-				enum pm_state_e pmstate)
+				int pmstate)
 {
 	switch (pmstate) {
-	case PM_NORMAL:
+	case S5J_NORMAL:
 		/* Logic for PM_NORMAL goes here */
 		break;
 
-	case PM_IDLE:
-		/* Logic for PM_IDLE goes here */
-		break;
-
-	case PM_STANDBY:
+	case S5J_STANDBY:
 		/* Logic for PM_STANDBY goes here */
 		break;
 
-	case PM_SLEEP:
+	case S5J_STOP:
 		/* Logic for PM_SLEEP goes here */
 		break;
 
@@ -786,7 +783,7 @@ static void up_pm_notify(struct pm_callback_s *cb, int domain,
  *
  ****************************************************************************/
 static int up_pm_prepare(struct pm_callback_s *cb, int domain,
-		enum pm_state_e pmstate)
+		int pmstate)
 {
 	/* Logic to prepare for a reduced power state goes here. */
 	return OK;

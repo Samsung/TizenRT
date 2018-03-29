@@ -74,16 +74,13 @@
  *   None
  *
  * Returned Value.
- *   On success, this function will not return (STANDBY mode can only be
- *   terminated with a reset event).  Otherwise, STANDBY mode did not occur
- *   and a negated errno value is returned to indicate the cause of the
- *   failure.
+ *   In case of failure a negated errno value is returned to indicate the
+ *   cause of the failure.
  *
  ****************************************************************************/
-void s5j_pmstandby(void)
+int s5j_pmstandby(void)
 {
-	/* FIXME: implement me */
-	asm("wfi");
+	s5j_clk_pll_select_mux(false);
 
-	/* won't get here */
+	return OK;
 }
