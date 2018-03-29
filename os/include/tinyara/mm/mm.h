@@ -183,6 +183,14 @@
 #define MM_ALIGN_UP(a)   (((a) + MM_GRAN_MASK) & ~MM_GRAN_MASK)
 #define MM_ALIGN_DOWN(a) ((a) & ~MM_GRAN_MASK)
 
+#define MM_ALIGN_MASK(x, a)	   ((typeof(x))(a) - 1)
+#define MM_IS_ALIGNED(x, a)	   (((x) & MM_ALIGN_MASK(x, a)) == 0)
+#define MM_ALIGN_UP_COMMON(x, a)   (((x) + MM_ALIGN_MASK(x, a)) & ~MM_ALIGN_MASK(x, a))
+#define MM_ALIGN_DOWN_COMMON(x, a) ((x) & ~MM_ALIGN_MASK(x, a))
+
+#define MM_IS_RAM_ADDR(addr)	    ((CONFIG_RAM_START <= (addr)) &&	\
+					((addr) < CONFIG_RAM_END))
+
 /* An allocated chunk is distinguished from a free chunk by bit 31 (or 15)
  * of the 'preceding' chunk size.  If set, then this is an allocated chunk.
  */
