@@ -263,6 +263,10 @@ EXTERN uint32_t _sdata;			/* Start of .data */
 EXTERN uint32_t _edata;			/* End+1 of .data */
 EXTERN uint32_t _sbss;			/* Start of .bss */
 EXTERN uint32_t _ebss;			/* End+1 of .bss */
+#ifdef CONFIG_KASAN
+EXTERN uint32_t _sinit;			/* Start of .init */
+EXTERN uint32_t _einit;			/* End+1 of .init */
+#endif
 EXTERN uint32_t __ksram_segment_start__[];
 EXTERN uint32_t __ksram_segment_size__[];
 

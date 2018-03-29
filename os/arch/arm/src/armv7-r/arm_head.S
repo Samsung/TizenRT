@@ -148,6 +148,10 @@
 	.global	_sramfuncs			/* Where RAM functions needs to reside in RAM */
 	.global	_eramfuncs
 #endif
+#ifdef CONFIG_KASAN
+	.global _sinit
+	.global _einit
+#endif
 
 /* Exported symbols */
 
@@ -186,6 +190,11 @@ __start:
 
 	mov		r0, #(PSR_MODE_SVC | PSR_I_BIT | PSR_F_BIT)
 	msr		cpsr_c, r0
+
+	/* clear shadow mem */
+#ifdef CONFIG_KASAN
+	bl shadow_init
+#endif
 
 	/* Set up the stack pointer and clear the frame pointer. */
 
@@ -497,6 +506,21 @@ arm_data_initialize:
 	/* Return to the caller */
 
 	bx		lr
+#endif
+
+#ifdef CONFIG_KASAN
+	.type	shadow_init, #function
+shadow_init:
+	ldr 	r0, =KASAN_SHADOW_START
+	ldr 	r1, =KASAN_SHADOW_END
+	mov     r2, #0
+
+shadow_loop:
+	cmp	r0, r1
+	strcc	r2, [r0], #4
+	bcc	shadow_loop
+
+	bx 	lr
 #endif
 
 	/* .text Data:

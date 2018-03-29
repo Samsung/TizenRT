@@ -64,6 +64,9 @@
 #include <tinyara/arch.h>
 #include <tinyara/userspace.h>
 
+#include <tinyara/mm/mm.h>
+#include <tinyara/mm/kasan.h>
+
 #include <arch/board/board.h>
 
 #if CONFIG_MM_REGIONS > 1
@@ -76,6 +79,10 @@
 
 #include "up_arch.h"
 #include "up_internal.h"
+
+#ifndef KASAN_SHADOW_START
+#define KASAN_SHADOW_START CONFIG_RAM_END
+#endif
 
 /****************************************************************************
  * Private Definitions
@@ -177,8 +184,9 @@ void up_allocate_heap(FAR void **heap_start, size_t *heap_size)
 	/* Return the heap settings */
 
 	board_led_on(LED_HEAPALLOCATE);
-	*heap_start = (FAR void *)(g_idle_topstack & ~(0x7));
-	*heap_size = CONFIG_RAM_END - (uint32_t)(*heap_start);
+
+	*heap_start = (FAR void *)MM_ALIGN_DOWN_COMMON(g_idle_topstack, 8);
+	*heap_size  = KASAN_SHADOW_START - (uint32_t)(*heap_start);
 #endif
 
 	up_memorymap(*heap_start, *heap_size);
