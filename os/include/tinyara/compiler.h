@@ -78,6 +78,21 @@
 
 #define UNUSED(a) ((void)(a))
 
+#define RET_IP __builtin_return_address(0)
+#define __compiler_offsetof(type, member) __builtin_offsetof(type, member)
+
+#define GCC_VERSION (__GNUC__ * 10000		\
+		     + __GNUC_MINOR__ * 100	\
+		     + __GNUC_PATCHLEVEL__)
+
+#if GCC_VERSION >= 70000
+#define KASAN_ABI_VERSION 5
+#elif GCC_VERSION >= 50000
+#define KASAN_ABI_VERSION 4
+#elif GCC_VERSION >= 40902
+#define KASAN_ABI_VERSION 3
+#endif
+
 /* Attributes
  *
  * GCC supports weak symbols which can be used to reduce code size because
@@ -90,12 +105,17 @@
 	extern __typeof(name) aliasname __attribute__ ((weak, alias(#name)));
 #define weak_function __attribute__ ((weak))
 #define weak_const_function __attribute__ ((weak, __const__))
+#define alias(name) __attribute__ ((alias(#name)))
 #else
 #undef  CONFIG_HAVE_WEAKFUNCTIONS
 #define weak_alias(name, aliasname)
 #define weak_function
 #define weak_const_function
+#define alias(name)
 #endif
+
+/* avoid KASan instrumentation for individual function */
+#define no_sanitize_address __attribute__ ((no_sanitize_address))
 
 /* The noreturn attribute informs GCC that the function will not return. */
 
