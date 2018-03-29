@@ -55,8 +55,9 @@ typedef struct st_resource_type_s {
 typedef struct col_resource_s {
 	char uri[MAX_URI_LENGTH_OCF];
 	char *interface_types[MAX_IT_CNT];
-	struct things_resource_info_s *links[MAX_DEVICE_CAPABILTY_CNT];
 	char *resource_types[MAX_RT_CNT];
+
+	struct things_resource_info_s **links;
 
 	int if_cnt;
 	int rt_cnt;
