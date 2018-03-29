@@ -69,6 +69,9 @@
 #if defined(CONFIG_ENABLE_STACKMONITOR) && defined(CONFIG_DEBUG)
 #include <apps/system/utils.h>
 #endif
+#ifdef CONFIG_DEBUG_MM_HEAPINFO
+#include <tinyara/mm/mm.h>
+#endif
 
 /************************************************************************
  * Private Functions
@@ -138,6 +141,10 @@ int sched_releasetcb(FAR struct tcb_s *tcb, uint8_t ttype)
 	if (tcb) {
 #if defined(CONFIG_ENABLE_STACKMONITOR) && defined(CONFIG_DEBUG)
 		stkmon_logging(tcb);
+#endif
+
+#ifdef CONFIG_HEAPINFO_GROUP
+		heapinfo_update_group_info(tcb->pid, -1, HEAPINFO_DEL_INFO);
 #endif
 
 #ifndef CONFIG_DISABLE_POSIX_TIMERS

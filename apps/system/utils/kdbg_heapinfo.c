@@ -22,6 +22,13 @@
 #include <tinyara/sched.h>
 #include <tinyara/config.h>
 #include <tinyara/mm/mm.h>
+#ifdef CONFIG_HEAPINFO_GROUP
+#include <stdbool.h>
+#include <tinyara/mm/heapinfo_internal.h>
+extern struct heapinfo_group_info_s group_info[HEAPINFO_THREAD_NUM];
+static char *ptr = CONFIG_HEAPINFO_PER_GROUP;
+const static char *end_list = CONFIG_HEAPINFO_PER_GROUP + sizeof(CONFIG_HEAPINFO_PER_GROUP);
+#endif
 
 #ifdef CONFIG_DEBUG_MM_HEAPINFO
 static void kdbg_heapinfo_init(FAR struct tcb_s *tcb, FAR void *arg)
@@ -57,10 +64,27 @@ static void kdbg_heapinfo_task(FAR struct tcb_s *tcb, FAR void *arg)
 	printf(")\n");
 }
 #endif
+
+#ifdef CONFIG_HEAPINFO_GROUP
+static void kdbg_heapinfo_group_threadlist(void)
+{
+	while (*ptr != '/') {
+		printf("%c", *ptr++);
+		if (ptr == end_list) {
+			ptr = CONFIG_HEAPINFO_PER_GROUP - 1;
+			break;
+		}
+	}
+	printf("\n");
+	ptr++;
+}
+#endif
+
 int kdbg_heapinfo(int argc, char **args)
 {
 #ifdef CONFIG_DEBUG_MM_HEAPINFO
 	int option;
+	bool show_group = false;
 	int mode = HEAPINFO_SIMPLE;
 	int pid = HEAPINFO_PID_NOTNEEDED;
 
@@ -69,7 +93,7 @@ int kdbg_heapinfo(int argc, char **args)
 	}
 
 	struct mm_heap_s *user_heap = mm_get_heap_info();
-	while ((option = getopt(argc, args, "iap:f")) != ERROR) {
+	while ((option = getopt(argc, args, "iap:fg")) != ERROR) {
 		switch (option) {
 		case 'i':
 			sched_foreach(kdbg_heapinfo_init, NULL);
@@ -86,6 +110,9 @@ int kdbg_heapinfo(int argc, char **args)
 		case 'f':
 			mode = HEAPINFO_DETAIL_FREE;
 			pid = HEAPINFO_PID_NOTNEEDED;
+			break;
+		case 'g':
+			show_group = true;
 			break;
 		case '?':
 		default:
@@ -110,6 +137,26 @@ int kdbg_heapinfo(int argc, char **args)
 	printf("\n** NOTED **\n");
 	printf("* Idle Task's stack is not allocated in heap region\n");
 	printf("* And another stack size is allocated stack size + alloc node size(task:32/pthread:20)\n\n");
+
+#ifdef CONFIG_HEAPINFO_GROUP
+	if (show_group == true) {
+		int group_idx;
+		printf("****************************************************************\n");
+		printf("Heap Allocation Information per User defined Group\n");
+		printf("****************************************************************\n");
+		printf(" PEAK | HEAP_ON_PEAK | STACK_ON_PEAK | THREADS_IN_GROUP \n");
+		printf("----------------------------------------------------------------\n");
+
+		for (group_idx = 0; group_idx <= user_heap->max_group; group_idx++) {
+			printf(" %4d | %12d | %13d | ", user_heap->group[group_idx].peak_size, user_heap->group[group_idx].heap_size, user_heap->group[group_idx].stack_size);
+			kdbg_heapinfo_group_threadlist();
+		}
+	}
+#else
+	if (show_group == true) {
+		printf("NOT supported!! Please enable CONFIG_HEAPINFO_GROUP\n");
+	}
+#endif
 	return OK;
 
 usage:
@@ -120,6 +167,9 @@ usage:
 	printf(" -a           Show the all allocation details\n");
 	printf(" -p PID       Show the specific PID allocation details \n");
 	printf(" -f           Show the free list \n");
+#ifdef CONFIG_HEAPINFO_GROUP
+	printf(" -g           Show the User defined group allocation details \n");
+#endif
 #endif
 	return ERROR;
 }
