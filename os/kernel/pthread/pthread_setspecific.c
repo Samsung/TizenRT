@@ -131,27 +131,22 @@
 
 int pthread_setspecific(pthread_key_t key, FAR const void *value)
 {
-#if CONFIG_NPTHREAD_KEYS > 0
 	FAR struct pthread_tcb_s *rtcb = (FAR struct pthread_tcb_s *)this_task();
 	FAR struct task_group_s *group = rtcb->cmn.group;
-	int ret = EINVAL;
 
 	DEBUGASSERT(group && (rtcb->cmn.flags & TCB_FLAG_TTYPE_MASK) == TCB_FLAG_TTYPE_PTHREAD);
 
 	/* Check if the key is valid. */
 
-	if (key < group->tg_nkeys) {
+	if (key < PTHREAD_KEYS_MAX && group->tg_keys[key] == IN_USE) {
 		/* Store the data in the TCB. */
 
-		rtcb->pthread_data[key] = (FAR void *)value;
+		rtcb->pthread_data[key].data = (FAR void *)value;
 
 		/* Return success. */
 
-		ret = OK;
+		return OK;
 	}
 
-	return ret;
-#else
-	return ENOSYS;
-#endif
+	return EINVAL;
 }

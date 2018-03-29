@@ -244,7 +244,7 @@ extern "C" {
 
 /* pthread-specific types */
 
-typedef int pthread_key_t;
+typedef unsigned int pthread_key_t;
 typedef FAR void *pthread_addr_t;
 
 typedef pthread_addr_t(*pthread_startroutine_t)(pthread_addr_t);
