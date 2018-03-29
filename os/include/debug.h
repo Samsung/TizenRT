@@ -685,6 +685,30 @@ Once LOGM is approved, each module should have its own index
 #define ttdbg(format, ...)
 #endif
 
+#ifdef CONFIG_DEBUG_KASAN_ERROR
+#define kdbg(format, ...)   dbg(format, ##__VA_ARGS__)
+#define klldbg(format, ...) lldbg(format, ##__VA_ARGS__)
+#else
+#define kdbg(x...)
+#define klldbg(x...)
+#endif	/* CONFIG_DEBUG_KASAN_ERRORR */
+
+#ifdef CONFIG_DEBUG_KASAN_WARN
+#define kwdbg(format, ...)   wdbg(format, ##__VA_ARGS__)
+#define kllwdbg(format, ...) llwdbg(format, ##__VA_ARGS__)
+#else
+#define kwdbg(x...)
+#define kllwdbg(x...)
+#endif	/* CONFIG_DEBUG_KASAN_WARN */
+
+#ifdef CONFIG_DEBUG_KASAN_INFO
+#define kvdbg(format, ...)   vdbg(format, ##__VA_ARGS__)
+#define kllvdbg(format, ...) llvdbg(format, ##__VA_ARGS__)
+#else
+#define kvdbg(x...)
+#define kllvdbg(x...)
+#endif	/* CONFIG_DEBUG_KASAN_INFO */
+
 #else							/* CONFIG_CPP_HAVE_VARARGS */
 
 /* Variadic macros NOT supported */
