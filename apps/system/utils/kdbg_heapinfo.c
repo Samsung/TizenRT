@@ -43,6 +43,7 @@ static void kdbg_heapinfo_task(FAR struct tcb_s *tcb, FAR void *arg)
 {
 	struct mm_allocnode_s *node;
 	node = (struct mm_allocnode_s *)(tcb->stack_alloc_ptr - SIZEOF_MM_ALLOCNODE);
+	kasan_unpoison_allocnode(node);
 
 	printf("%3d", tcb->pid);
 #if defined(CONFIG_SCHED_HAVE_PARENT) && !defined(HAVE_GROUP_MEMBERS)
@@ -54,6 +55,8 @@ static void kdbg_heapinfo_task(FAR struct tcb_s *tcb, FAR void *arg)
 		printf(" | %5d", node->size);
 	}
 	printf(" | %9d | %9d", tcb->curr_alloc_size, tcb->peak_alloc_size);
+
+	kasan_poison_allocnode(node);
 
 	/* Show task name and arguments */
 #if CONFIG_TASK_NAME_SIZE > 0

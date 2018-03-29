@@ -356,7 +356,9 @@ int pthread_create(FAR pthread_t *thread, FAR const pthread_attr_t *attr, pthrea
 	struct mm_allocnode_s *node;
 
 	node = (struct mm_allocnode_s *)(ptcb->cmn.stack_alloc_ptr - SIZEOF_MM_ALLOCNODE);
+	kasan_unpoison_allocnode(node);
 	node->pid = (-1) * (ptcb->cmn.pid);
+	kasan_poison_allocnode(node);
 #endif
 
 	/* Configure the TCB for a pthread receiving on parameter
