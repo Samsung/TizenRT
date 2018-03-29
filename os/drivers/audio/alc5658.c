@@ -235,22 +235,6 @@ static uint16_t alc5658_modifyreg(FAR struct alc5658_dev_s *priv, uint16_t regad
 	return alc5658_readreg(priv, regaddr);
 }
 
-static void alc5658_setregs(struct alc5658_dev_s *priv)
-{
-	alc5658_writereg(priv, ALC5658_IN1, (0 + 16) << 8);
-	alc5658_writereg(priv, ALC5658_HPOUT, 0);
-	alc5658_writereg(priv, ALC5658_HPOUT_L, 0xd00);
-	alc5658_writereg(priv, ALC5658_HPOUT_R, 0x700);
-}
-
-static void alc5658_getregs(struct alc5658_dev_s *priv)
-{
-	audvdbg("MIC GAIN 0x%x\n", (uint32_t)alc5658_readreg(priv, ALC5658_IN1));
-	audvdbg("MUTE HPOUT MUTE %x\n", (uint32_t)alc5658_readreg(priv, ALC5658_HPOUT));
-	audvdbg("VOLL 0x%x\n", (uint32_t)alc5658_readreg(priv, ALC5658_HPOUT_L));
-	audvdbg("VOLR 0x%x\n", (uint32_t)alc5658_readreg(priv, ALC5658_HPOUT_R));
-}
-
 /************************************************************************************
  * Name: alc5658_exec_i2c_script
  *
@@ -307,6 +291,21 @@ static void alc5658_takesem(sem_t *sem)
 }
 
 /************************************************************************************
+ * Name: alc5658_dumpregs
+ *
+ * Description:
+ *  Print a set of alc5658 registers for debugging.
+ *
+ ************************************************************************************/
+static void alc5658_dumpregs(struct alc5658_dev_s *priv)
+{
+	audvdbg("MIC GAIN 0x%x\n", (uint32_t)alc5658_readreg(priv, ALC5658_IN1));
+	audvdbg("MUTE HPOUT MUTE %x\n", (uint32_t)alc5658_readreg(priv, ALC5658_HPOUT));
+	audvdbg("VOLL 0x%x\n", (uint32_t)alc5658_readreg(priv, ALC5658_HPOUT_L));
+	audvdbg("VOLR 0x%x\n", (uint32_t)alc5658_readreg(priv, ALC5658_HPOUT_R));
+}
+
+/************************************************************************************
  * Name: alc5658_setvolume
  *
  * Description:
@@ -315,14 +314,19 @@ static void alc5658_takesem(sem_t *sem)
  *
  ************************************************************************************/
 #ifndef CONFIG_AUDIO_EXCLUDE_VOLUME
-static void alc5658_setvolume(FAR struct alc5658_dev_s *priv, uint16_t volume, bool mute)
+static void alc5658_setvolume(FAR struct alc5658_dev_s *priv)
 {
+	/* Bits 8:12; 00000: 0dB,  00001: -0.75dB, 11111: -23.25dB, (-0.75dB/step) */
 
-	audvdbg(" alc5658_setvolume volume=%u mute=%u\n", volume, mute);
-
-	priv->volume = volume;
-	priv->mute = mute;
-
+	if (!priv->mute) {
+		alc5658_writereg(priv, ALC5658_IN1, IN1_PORT_GAIN);
+		alc5658_writereg(priv, ALC5658_HPOUT, UNMUTE_HP_LR);
+		alc5658_writereg(priv, ALC5658_HPOUT_L, priv->volume);
+		alc5658_writereg(priv, ALC5658_HPOUT_R, priv->volume);
+	} else {
+		alc5658_writereg(priv, ALC5658_HPOUT, MUTE_HP_LR);
+	}
+	alc5658_dumpregs(priv);
 }
 #endif							/* CONFIG_AUDIO_EXCLUDE_VOLUME */
 
@@ -584,15 +588,13 @@ static int alc5658_configure(FAR struct audio_lowerhalf_s *dev, FAR const struct
 			/* Set the volume */
 
 			uint16_t volume = caps->ac_controls.hw[0];
-			audvdbg("    Volume: %d\n", volume);
 
-			if (volume >= 0 && volume <= 1000) {
-				/* Scale the volume setting to the range {0.. 63} */
-
-				alc5658_setvolume(priv, (63 * volume / 1000), priv->mute);
-			} else {
+			if (volume >= ALC5658_HP_VOL_MIN && volume <= ALC5658_HP_VOL_MAX) {
+				audvdbg("    Volume: 0x%x\n", volume);
+				priv->volume = volume;
+				alc5658_setvolume(priv);
+			} else
 				ret = -EDOM;
-			}
 		}
 		break;
 #endif							/* CONFIG_AUDIO_EXCLUDE_VOLUME */
@@ -672,10 +674,6 @@ static int alc5658_configure(FAR struct audio_lowerhalf_s *dev, FAR const struct
 	case AUDIO_TYPE_PROCESSING:
 		break;
 	}
-
-	alc5658_setregs(priv);
-	alc5658_getregs(priv);
-
 	return ret;
 }
 
@@ -832,7 +830,7 @@ static int alc5658_pause(FAR struct audio_lowerhalf_s *dev)
 		/* Disable interrupts to prevent us from suppling any more data */
 
 		priv->paused = true;
-		alc5658_setvolume(priv, priv->volume, true);
+		alc5658_setvolume(priv);
 		ALC5658_DISABLE(priv->lower);	/* Need inputs from REALTEK */
 	}
 
@@ -857,7 +855,7 @@ static int alc5658_resume(FAR struct audio_lowerhalf_s *dev)
 
 	if (priv->running && priv->paused) {
 		priv->paused = false;
-		alc5658_setvolume(priv, priv->volume, false);
+		alc5658_setvolume(priv);
 
 		/* Enable interrupts to allow sampling data */
 		/* Need resume logic later. Need to know if alc5658 dma can be paused and resumed */
@@ -990,7 +988,7 @@ static int alc5658_ioctl(FAR struct audio_lowerhalf_s *dev, int cmd, unsigned lo
 		alc5658_exec_i2c_script(priv, codec_init_inout_script2, sizeof(codec_init_inout_script2) / sizeof(t_codec_init_script_entry));
 
 		/* TOCHECK: Possible to cut the two level execution of alc scritps so as to cut the time? */
-		alc5658_setregs(priv);
+		alc5658_setvolume(priv);
 
 		/* Resume I2S */
 		if (priv->inout) {
