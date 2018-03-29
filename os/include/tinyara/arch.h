@@ -226,12 +226,27 @@ void board_initialize(void);
  *   idle time and will continue until some interrupt occurs to
  *   cause a context switch from the idle task.
  *
- *   Processing in this state may be processor-specific. e.g.,
- *   this is where power management operations might be performed.
+ *   Processing in this state may be processor-specific.
  *
  ****************************************************************************/
 
 void up_idle(void);
+
+/****************************************************************************
+ * Name: up_pm_switch_state
+ *
+ * Description:
+ *   up_pm_switch_state() is the logic that will be executed when a new
+ *   sleep state is suggested by the power management framework while
+ *   running the idle task.
+ *
+ * Inputs:
+ *   - state_ID: The ID of the recommended sleep state
+ *
+ ****************************************************************************/
+
+/* Function to switch to new SoC sleep state */
+int up_pm_switch_state(int state_ID);
 
 /****************************************************************************
  * Name: up_initial_state

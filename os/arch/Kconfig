@@ -469,6 +469,10 @@ config ENDIAN_BIG
 	---help---
 		Select if architecture operates using big-endian byte ordering.
 
+config ARCH_USE_PM
+	bool
+	default n
+
 config ARCH_IDLE_CUSTOM
 	bool "Custom IDLE loop"
 	default n

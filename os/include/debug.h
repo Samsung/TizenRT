@@ -852,6 +852,30 @@ Once LOGM is approved, each module should have its own index
 #define sllvdbg     (void)
 #endif
 
+#ifdef CONFIG_DEBUG_PM_ERROR
+#define pmdbg        dbg
+#define pmlldbg      lldbg
+#else
+#define pmdbg        (void)
+#define pmlldbg      (void)
+#endif
+
+#ifdef CONFIG_DEBUG_PM_WARN
+#define pmwdbg       wdbg
+#define pmllwdbg     llwdbg
+#else
+#define pmwdbg       (void)
+#define pmllwdbg     (void)
+#endif
+
+#ifdef CONFIG_DEBUG_PM_INFO
+#define pmvdbg       vdbg
+#define pmllvdbg     llvdbg
+#else
+#define pmvdbg       (void)
+#define pmllvdbg     (void)
+#endif
+
 #ifdef CONFIG_DEBUG_PAGING_ERROR
 #define pgdbg       dbg
 #define pglldbg     lldbg

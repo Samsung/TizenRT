@@ -70,6 +70,7 @@
 #include  <tinyara/mm/shm.h>
 #include  <tinyara/kmalloc.h>
 #include  <tinyara/init.h>
+#include  <tinyara/pm/pm.h>
 
 #include  "sched/sched.h"
 #include  "signal/signal.h"
@@ -602,6 +603,11 @@ void os_start(void)
 #endif
 
 		/* Perform any processor-specific idle state operations */
+
+#ifdef CONFIG_PM
+		pm_process_idle();
+#endif
+		/* Sleep until an interrupt occurs */
 
 		up_idle();
 	}

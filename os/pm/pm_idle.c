@@ -1,6 +1,6 @@
 /****************************************************************************
  *
- * Copyright 2016 Samsung Electronics All Rights Reserved.
+ * Copyright 2018 Samsung Electronics All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,9 +16,7 @@
  *
  ****************************************************************************/
 /****************************************************************************
- *  arch/arm/src/common/up_idle.c
- *
- *   Copyright (C) 2007-2009, 2011 Gregory Nutt. All rights reserved.
+ *   Copyright (C) 2011-2012, 2015-2016 Gregory Nutt. All rights reserved.
  *   Author: Gregory Nutt <gnutt@nuttx.org>
  *
  * Redistribution and use in source and binary forms, with or without
@@ -49,48 +47,74 @@
  * POSSIBILITY OF SUCH DAMAGE.
  *
  ****************************************************************************/
+/****************************************************************************
+ * os/pm/pm_idle.c
+ ****************************************************************************/
 
 /****************************************************************************
  * Included Files
  ****************************************************************************/
 
 #include <tinyara/config.h>
+#include <debug.h>
 
-#include <tinyara/arch.h>
-#include "up_internal.h"
+#include <tinyara/board.h>
+#include <tinyara/pm/pm.h>
+
+#include <tinyara/irq.h>
 
 /****************************************************************************
  * Pre-processor Definitions
  ****************************************************************************/
 
-/****************************************************************************
- * Private Data
- ****************************************************************************/
+#define PM_IDLE_DOMAIN	0
 
 /****************************************************************************
  * Private Functions
  ****************************************************************************/
-
 /****************************************************************************
  * Public Functions
  ****************************************************************************/
 
 /****************************************************************************
- * Name: up_idle
+ * Name: pm_process_idle
  *
  * Description:
- *   up_idle() is the logic that will be executed when there is no other
- *   ready-to-run task & no PM framework.  This is processor idle time and
- *   will continue until some interrupt occurs to cause a context switch
- *   from the idle task.
- *
- *   Processing in this state may be processor-specific.
+ *   pm_process_idle() is the logic that performs IDLE state power management.
+ *   It decides whether or not to switch to the next low power state.
+ *   If switch is required, it calls SoC specific switch state API with the
+ *   the respective state number.
  *
  ****************************************************************************/
-
-void up_idle(void)
+void pm_process_idle(void)
 {
-	/* Sleep until an interrupt occurs to save power */
+	static int oldstate = PM_NORMAL;
+	int newstate;
+	irqstate_t flags;
+	int ret;
 
-	asm("WFI");
+	/* Decide, which power saving level can be obtained */
+	newstate = pm_checkstate(PM_IDLE_DOMAIN);
+
+	/* Check for state changes */
+	if (newstate != oldstate) {
+		flags = irqsave();
+
+		/* Then force the global state change */
+		ret = pm_changestate(PM_IDLE_DOMAIN, newstate);
+
+		/* Switching to the next low power state */
+		ret = up_pm_switch_state(newstate);
+		if (ret < 0) {
+			/* Staying in same state */
+			ret = up_pm_switch_state(oldstate);
+		} else {
+			/* Save the new state */
+			oldstate = newstate;
+		}
+#ifdef CONFIG_DEBUG_PM_INFO
+		pmvdbg("Switched to state : %d \n", newstate);
+#endif
+		irqrestore(flags);
+	}
 }

@@ -353,6 +353,38 @@ config DEBUG_ST_THINGS_INFO
 
 endif #DEBUG_ST_THINGS
 
+config DEBUG_PM
+	bool "PM Debug Output"
+	default n
+	depends on PM
+	---help---
+		Enable PM debug SYSLOG output (disabled by default)
+
+if DEBUG_PM
+
+config DEBUG_PM_ERROR
+	bool "PM Error Output"
+	default n
+	depends on DEBUG_ERROR
+	---help---
+		Enable PM error debug SYSLOG output.
+
+config DEBUG_PM_WARN
+	bool "PM Warning Output"
+	default n
+	depends on DEBUG_WARN
+	---help---
+		Enable PM warning debug SYSLOG output.
+
+config DEBUG_PM_INFO
+	bool "PM Informational Debug Output"
+	default n
+	depends on DEBUG_VERBOSE
+	---help---
+		Enable PM informational debug SYSLOG output.
+
+endif #DEBUG_PM
+
 config DEBUG_SYSCALL
 	bool "SYSCALL Debug Output"
 	default n

@@ -57,6 +57,7 @@
 #include <tinyara/config.h>
 #include <stdlib.h>
 #include <semaphore.h>
+#include <assert.h>
 #include <debug.h>
 #include <tinyara/pm/pm.h>
 #include <time.h>
@@ -66,6 +67,13 @@
 
 #ifdef CONFIG_PM
 
+/* PM initialization data: */
+enum {
+	SWITCH_THRESHOLD = 1,
+	ENTER_THRESHOLD,
+	EXIT_THRESHOLD
+};
+
 /****************************************************************************
  * Public Data
  ****************************************************************************/
@@ -73,6 +81,108 @@
 /* All PM global data: */
 
 struct pm_global_s g_pmglobals;
+
+/* Sleep state count threshold array. These values are used to enter the next reduced power state */
+int g_pm_switch_thresholds[CONFIG_PM_NSTATE];
+
+/* Sleep state activity threshold array. These values are used to enter any sleep state */
+int g_pm_enter_thresholds[CONFIG_PM_NSTATE];
+
+/* Sleep state activity threshold array. These values are used to exit any sleep state */
+int g_pm_exit_thresholds[CONFIG_PM_NSTATE];
+
+/****************************************************************************
+ * Private Functions
+ ****************************************************************************/
+
+/****************************************************************************
+ * Name: pm_parse_thresholds
+ *
+ * Description:
+ *   Parse the switch, enter & exit threshold values to the global arrays.
+ *   If not provided by the SoC initilaize them with default values.
+ *
+ ****************************************************************************/
+
+static void pm_parse_thresholds(int array_type, const char *thr_str, int threshold_array[])
+{
+	/* Initialize state threshold value to be read from thresh_str */
+	int threshold = 0;
+	/* Variable to track number of tick count threshold provided by the SOC */
+	int index = 0;
+
+	/* Parse the sleep state tick count thresholds from the Kconfig */
+
+	while (thr_str && *thr_str) {
+
+		/* Extract thresholds from string input in config as integer value */
+		threshold = strtoul(thr_str, NULL, 0);
+		DEBUGASSERT(threshold >= 0);
+
+		while (*thr_str != ',' && *thr_str) {
+			thr_str++;
+		}
+
+		if (*thr_str == ',') {
+			thr_str++;
+		}
+
+		index++;
+
+		/* Case when more state threshold values are provided by PM_STATE_COUNT_THRESH*/
+		if (index > (CONFIG_PM_NSTATE - 1)) {
+			DEBUGASSERT(!(index > (CONFIG_PM_NSTATE - 1)));
+		}
+
+		/* Update sleep state threshold array with extracted integer value */
+		threshold_array[index] = threshold;
+	}
+
+	/* Check if all the state entering tick count thresholds are provided by the SOC */
+
+	if ((index > 0 && index < (CONFIG_PM_NSTATE - 1))) {
+
+		/* Case when less state threshold values are provided by PM_STATE_COUNT_THRESH*/
+		DEBUGASSERT(!(index > 0 && index < CONFIG_PM_NSTATE));
+
+	} else if (index == 0) {
+
+		/* Case when no state threshold values are provided assign default threshold values */
+		for (index = 0; index < CONFIG_PM_NSTATE; index++) {
+			switch (array_type) {
+			case SWITCH_THRESHOLD:
+				g_pm_switch_thresholds[index] = PM_DEFAULT_STATE_SWITCH_THRESH * index;
+				break;
+			case ENTER_THRESHOLD:
+				g_pm_enter_thresholds[index] = PM_DEFAULT_STATE_ENTER_THRESH;
+				break;
+			case EXIT_THRESHOLD:
+				g_pm_exit_thresholds[index] = PM_DEFAULT_STATE_EXIT_THRESH;
+				break;
+			default:
+				break;
+			}
+		}
+	}
+}
+
+
+/****************************************************************************
+ * Name: pm_thresholds_init
+ *
+ * Description:
+ *   Map the CPU IDLE power states & their transition timings to the TizenRT
+ *   power management framework. If threshold counts are not provided by SOC,
+ *   initialize them with default PM values of thresholds.
+ *
+ ****************************************************************************/
+
+void pm_thresholds_init(void)
+{
+	pm_parse_thresholds(SWITCH_THRESHOLD, CONFIG_PM_STATE_SWITCH_THRESH, g_pm_switch_thresholds);
+	pm_parse_thresholds(ENTER_THRESHOLD, CONFIG_PM_STATE_ENTER_THRESH, g_pm_enter_thresholds);
+	pm_parse_thresholds(EXIT_THRESHOLD, CONFIG_PM_STATE_EXIT_THRESH, g_pm_exit_thresholds);
+}
 
 /****************************************************************************
  * Public Functions
@@ -132,6 +242,10 @@ void pm_initialize(void)
 		/* Add the initial state change node to the head of the history queue */
 
 		sq_addlast((&initnode->entry), &g_pmglobals.domain[domain_indx].history);
+#endif
+#if CONFIG_PM_NSTATE > 0
+		/* Initialize the sleep states' tick count threshold values */
+		pm_thresholds_init();
 #endif
 	}
 	pmtest_init();

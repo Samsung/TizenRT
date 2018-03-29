@@ -176,71 +176,6 @@
 #warning "This logic needs to be extended"
 #endif
 
-/* State changes then occur when the weight activity account crosses
- * threshold values for certain periods of time (time slice count).
- *
- * CONFIG_PM_xxxENTER_THRESH is the threshold value for entering state xxx.
- * CONFIG_PM_xxxENTER_COUNT is the count for entering state xxx.
- *
- * Resuming to normal state, on the other hand, is usually immediate and
- * controlled by wakeup conditions established by the platform.  The PM
- * module only recommends reduced power states.
- */
-
-#ifndef CONFIG_PM_IDLEENTER_THRESH
-#define CONFIG_PM_IDLEENTER_THRESH    1	/* <=1: Essentially no activity */
-#endif
-
-#ifndef CONFIG_PM_IDLEEXIT_THRESH
-#define CONFIG_PM_IDLEEXIT_THRESH     2	/* >=2: Active */
-#endif
-
-#if CONFIG_PM_IDLEENTER_THRESH >= CONFIG_PM_IDLEEXIT_THRESH
-#error "Must have CONFIG_PM_IDLEENTER_THRESH < CONFIG_PM_IDLEEXIT_THRESH"
-#endif
-
-#ifndef CONFIG_PM_IDLEENTER_COUNT
-#define CONFIG_PM_IDLEENTER_COUNT     30	/* Thirty IDLE slices to enter
-											 * IDLE mode from normal
-											 */
-#endif
-
-#ifndef CONFIG_PM_STANDBYENTER_THRESH
-#define CONFIG_PM_STANDBYENTER_THRESH 1	/*  <=1: Essentially no activity */
-#endif
-
-#ifndef CONFIG_PM_STANDBYEXIT_THRESH
-#define CONFIG_PM_STANDBYEXIT_THRESH  2	/* >=2: Active */
-#endif
-
-#if CONFIG_PM_STANDBYENTER_THRESH >= CONFIG_PM_STANDBYEXIT_THRESH
-#error "Must have CONFIG_PM_STANDBYENTER_THRESH < CONFIG_PM_STANDBYEXIT_THRESH"
-#endif
-
-#ifndef CONFIG_PM_STANDBYENTER_COUNT
-#define CONFIG_PM_STANDBYENTER_COUNT  50	/* Fifty IDLE slices to enter
-											 * STANDBY mode from IDLE
-											 */
-#endif
-
-#ifndef CONFIG_PM_SLEEPENTER_THRESH
-#define CONFIG_PM_SLEEPENTER_THRESH   1	/*  <=1: Essentially no activity */
-#endif
-
-#ifndef CONFIG_PM_SLEEPEXIT_THRESH
-#define CONFIG_PM_SLEEPEXIT_THRESH    2	/* >=2: Active */
-#endif
-
-#if CONFIG_PM_SLEEPENTER_THRESH >= CONFIG_PM_SLEEPEXIT_THRESH
-#error "Must have CONFIG_PM_SLEEPENTER_THRESH < CONFIG_PM_SLEEPEXIT_THRESH"
-#endif
-
-#ifndef CONFIG_PM_SLEEPENTER_COUNT
-#define CONFIG_PM_SLEEPENTER_COUNT    70	/* 70 IDLE slices to enter SLEEP
-											 * mode from STANDBY
-											 */
-#endif
-
 /* Defines max length of device driver name for PM callback. */
 #define MAX_PM_CALLBACK_NAME    32
 
@@ -248,43 +183,28 @@
  * Public Types
  ****************************************************************************/
 
-/* This enumeration provides all power management states.  Receipt of the
- * state indication is the state transition event.
+/* Defines the normal state for PM framework */
+#define PM_NORMAL		0
+
+/* State changes when occur when the weight accumulator count crosses
+ * threshold values for certain periods of time (time slice count).
+ *
+ * CONFIG_PM_STATE_SWITCH_THRESH is the time slices after which SoC should switch to next low power sleep state xxx.
+ * CONFIG_PM_STATE_ENTER_THRESH is the activity threshold for entering any sleep state xxx in case of low activity.
+ * CONFIG_PM_STATE_EXIT_THRESH is the activity threshold for exiting any sleep state xxx in case of interrupt/task.
+ *
+ * Resuming to normal state, on the other hand, is usually immediate and
+ * controlled by wakeup conditions established by the platform.  The PM
+ * module only recommends reduced power states. But before deciding the next
+ * reduced power state the exit activity threshold is checked for.
+ *
+ * If these values are not provided, then the PM considers below values
+ * for switching states.
  */
 
-enum pm_state_e {
-	PM_NORMAL = 0,				/* Normal full power operating mode.  If the driver is in
-								 * a reduced power usage mode, it should immediately re-
-								 * initialize for normal operatin.
-								 *
-								 * PM_NORMAL may be followed by PM_IDLE.
-								 */
-	PM_IDLE,					/* Drivers will receive this state change if it is
-								 * appropriate to enter a simple IDLE power state.  This
-								 * would include simple things such as reducing display back-
-								 * lighting.  The driver should be ready to resume normal
-								 * activity instantly.
-								 *
-								 * PM_IDLE may be followed by PM_STANDBY or PM_NORMAL.
-								 */
-	PM_STANDBY,					/* The system is entering standby mode. Standby is a lower
-								 * power consumption mode that may involve more extensive
-								 * power management steps such has disabling clocking or
-								 * setting the processor into reduced power consumption
-								 * modes. In this state, the system should still be able
-								 * to resume normal activity almost immediately.
-								 *
-								 * PM_STANDBY may be followed PM_SLEEP or by PM_NORMAL
-								 */
-	PM_SLEEP,					/* The system is entering deep sleep mode.  The most drastic
-								 * power reduction measures possible should be taken in this
-								 * state. It may require some time to get back to normal
-								 * operation from SLEEP (some MCUs may even require going
-								 * through reset).
-								 *
-								 * PM_SLEEP may be following by PM_NORMAL
-								 */
-};
+#define PM_DEFAULT_STATE_SWITCH_THRESH	10	/* 10 time slice counts: 10 * 100msec = 1sec */
+#define PM_DEFAULT_STATE_ENTER_THRESH	1	/* Default activity threshold to enter any state */
+#define PM_DEFAULT_STATE_EXIT_THRESH	2	/* Default activity threshold to exit any state */
 
 /* This structure contain pointers callback functions in the driver.  These
  * callback functions can be used to provide power management information
@@ -325,7 +245,7 @@ struct pm_callback_s {
 	 *
 	 **************************************************************************/
 
-	int (*prepare)(FAR struct pm_callback_s *cb, int domain, enum pm_state_e pmstate);
+	int (*prepare)(FAR struct pm_callback_s *cb, int domain, int pmstate);
 
 	/**************************************************************************
 	 * Name: notify
@@ -350,8 +270,21 @@ struct pm_callback_s {
 	 *
 	 **************************************************************************/
 
-	void (*notify)(FAR struct pm_callback_s *cb, int domain, enum pm_state_e pmstate);
+	void (*notify)(FAR struct pm_callback_s *cb, int domain, int pmstate);
 };
+
+#if defined(CONFIG_PM) && !defined(CONFIG_PM_NSTATE)
+#error "SoC specific PM not enabled, for example CONFIG_PM_NSTATE should be provided by CONFIG_S5J_PM, when enabled"
+#endif
+
+/* Sleep state count threshold array. These values are used to enter the next reduced power state */
+extern int g_pm_switch_thresholds[CONFIG_PM_NSTATE];
+
+/* Sleep state activity threshold array. These values are used to enter any sleep state */
+extern int g_pm_enter_thresholds[CONFIG_PM_NSTATE];
+
+/* Sleep state activity threshold array. These values are used to exit any sleep state */
+extern int g_pm_exit_thresholds[CONFIG_PM_NSTATE];
 
 /****************************************************************************
  * Public Data
@@ -388,6 +321,27 @@ extern "C" {
  ****************************************************************************/
 
 void pm_initialize(void);
+
+/****************************************************************************
+ * Name: pm_process_idle
+ *
+ * Description:
+ *   pm_process_idle() is the logic that will be executed when there is no other
+ *   ready-to-run task.  This is processor idle time and will continue until
+ *   some interrupt occurs to cause a context switch from the idle task.
+ *
+ *   Processing in this state may be processor-specific. e.g., this is where
+ *   power management operations might be performed.
+ *
+ * Input Parameters:
+ *   None
+ *
+ * Returned value:
+ *   None
+ *
+ ****************************************************************************/
+
+void pm_process_idle(void);
 
 /****************************************************************************
  * Name: pm_register
@@ -485,7 +439,7 @@ void pm_activity(int domain, int priority);
  *
  ****************************************************************************/
 
-enum pm_state_e pm_checkstate(int domain);
+int pm_checkstate(int domain);
 
 /****************************************************************************
  * Name: pm_changestate
@@ -515,7 +469,7 @@ enum pm_state_e pm_checkstate(int domain);
  *
  ****************************************************************************/
 
-int pm_changestate(int domain, enum pm_state_e newstate);
+int pm_changestate(int domain, int newstate);
 
 /****************************************************************************
  * Name: pm_querystate

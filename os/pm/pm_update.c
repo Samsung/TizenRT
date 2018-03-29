@@ -110,36 +110,6 @@ static const int16_t g_pmcoeffs[CONFIG_PM_MEMORY - 1] = {
 };
 #endif
 
-/* Threshold activity values to enter into the next lower power consumption
- * state. Indexing is next state 0:IDLE, 1:STANDBY, 2:SLEEP.
- */
-
-static const int16_t g_pmenterthresh[3] = {
-	CONFIG_PM_IDLEENTER_THRESH,
-	CONFIG_PM_STANDBYENTER_THRESH,
-	CONFIG_PM_SLEEPENTER_THRESH
-};
-
-/* Threshold activity values to leave the current low power consdumption
- * state. Indexing is current state 0:IDLE, 1: STANDBY, 2: SLEEP.
- */
-
-static const int16_t g_pmexitthresh[3] = {
-	CONFIG_PM_IDLEEXIT_THRESH,
-	CONFIG_PM_STANDBYEXIT_THRESH,
-	CONFIG_PM_SLEEPEXIT_THRESH
-};
-
-/* Threshold time slice count to enter the next low power consdumption
- * state. Indexing is next state 0:IDLE, 1: STANDBY, 2: SLEEP.
- */
-
-static const uint16_t g_pmcount[3] = {
-	CONFIG_PM_IDLEENTER_COUNT,
-	CONFIG_PM_STANDBYENTER_COUNT,
-	CONFIG_PM_SLEEPENTER_COUNT
-};
-
 /****************************************************************************
  * Public Data
  ****************************************************************************/
@@ -268,7 +238,7 @@ void pm_worker(FAR void *arg)
 		 * exceeded?
 		 */
 
-		if (Y > g_pmexitthresh[index]) {
+		if (Y > g_pm_exit_thresholds[index]) {
 			/* Yes... reset the count and recommend the normal state. */
 
 			pdom->thrcnt      = 0;
@@ -283,7 +253,7 @@ void pm_worker(FAR void *arg)
 	 * surprised to be executing!).
 	 */
 
-	if (pdom->state < PM_SLEEP) {
+	if (pdom->state < (CONFIG_PM_NSTATE - 1)) {
 		unsigned int nextstate;
 
 		/* Get the next state and the table index for the next state (which will
@@ -297,7 +267,7 @@ void pm_worker(FAR void *arg)
 		 * been exceeded?
 		 */
 
-		if (Y > g_pmenterthresh[index]) {
+		if (Y > g_pm_enter_thresholds[index]) {
 			/* No... reset the count and recommend the current state */
 
 			pdom->thrcnt      = 0;
@@ -311,7 +281,7 @@ void pm_worker(FAR void *arg)
 			 * for a state transition?
 			 */
 
-			if (++pdom->thrcnt >= g_pmcount[index]) {
+			if (++pdom->thrcnt >= g_pm_switch_thresholds[index]) {
 				/* Yes, recommend the new state and set up for the next
 				 * transition.
 				 */
