@@ -95,6 +95,7 @@ CMN_CSRCS += arm_schedulesigaction.c arm_sigdeliver.c arm_syscall.c
 CMN_CSRCS += arm_unblocktask.c arm_undefinedinsn.c
 CMN_CSRCS += arm_copyarmstate.c
 CMN_CSRCS += up_checkstack.c
+CMN_CSRCS += up_memorymap.c
 
 # Configuration dependent C files
 ifeq ($(CONFIG_ARMV7M_MPU),y)

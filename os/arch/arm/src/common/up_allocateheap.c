@@ -180,6 +180,8 @@ void up_allocate_heap(FAR void **heap_start, size_t *heap_size)
 	*heap_start = (FAR void *)(g_idle_topstack & ~(0x7));
 	*heap_size = CONFIG_RAM_END - (uint32_t)(*heap_start);
 #endif
+
+	up_memorymap(*heap_start, *heap_size);
 }
 
 /****************************************************************************
