@@ -433,8 +433,6 @@ static st_device_s *create_device()
 
 	device->type = NULL;
 	device->name = NULL;
-	device->spec_ver = NULL;
-	device->dm_ver = NULL;
 	device->manufacturer_name = NULL;
 	device->manufacturer_url = NULL;
 	device->manufacturing_date = NULL;
@@ -919,8 +917,7 @@ static int parse_things_info_json(const char *filename)
 				if (spec_device != NULL) {
 					cJSON *device_type = cJSON_GetObjectItem(spec_device, KEY_DEVICE_SPECIFICATION_DEVICE_DEVICETYPE);
 					cJSON *device_name = cJSON_GetObjectItem(spec_device, KEY_DEVICE_SPECIFICATION_DEVICE_DEVICENAME);
-					cJSON *spec_version = cJSON_GetObjectItem(spec_device, KEY_DEVICE_SPECIFICATION_DEVICE_SPECVERSION);
-					cJSON *data_model_version = cJSON_GetObjectItem(spec_device, KEY_DEVICE_SPECIFICATION_DEVICE_DATAMODELVERSION);
+					/* spec_ver & data_model_ver is not supported */
 
 					if (device_type != NULL) {
 						node->type = (char *) things_malloc(sizeof(char) * (strlen(device_type->valuestring) + 1));
@@ -930,16 +927,6 @@ static int parse_things_info_json(const char *filename)
 					if (device_name != NULL) {
 						node->name = (char *) things_malloc(sizeof(char) * (strlen(device_name->valuestring) + 1));
 						strncpy(node->name, device_name->valuestring, strlen(device_name->valuestring) + 1);
-					}
-
-					if (spec_version != NULL) {
-						node->spec_ver = (char *) things_malloc(sizeof(char) * (strlen(spec_version->valuestring) + 1));
-						strncpy(node->spec_ver, spec_version->valuestring, strlen(spec_version->valuestring) + 1);
-					}
-
-					if (data_model_version != NULL) {
-						node->dm_ver = (char *) things_malloc(sizeof(char) * (strlen(data_model_version->valuestring) + 1));
-						strncpy(node->dm_ver, data_model_version->valuestring, strlen(data_model_version->valuestring) + 1);
 					}
 				}
 
@@ -1010,8 +997,6 @@ static int parse_things_info_json(const char *filename)
 			THINGS_LOG_D(THINGS_DEBUG, TAG, "[DEVICE] No. : %d", (node->no));
 			THINGS_LOG_D(THINGS_DEBUG, TAG, "[DEVICE] type : %s", (node->type));
 			THINGS_LOG_D(THINGS_DEBUG, TAG, "[DEVICE] name : %s", (node->name));
-			THINGS_LOG_D(THINGS_DEBUG, TAG, "[DEVICE] spec_ver : %s", (node->spec_ver));
-			THINGS_LOG_D(THINGS_DEBUG, TAG, "[DEVICE] dm_ver : %s", (node->dm_ver));
 			THINGS_LOG_D(THINGS_DEBUG, TAG, "[DEVICE] mf_name : %s", (node->manufacturer_name));
 			THINGS_LOG_D(THINGS_DEBUG, TAG, "[DEVICE] mf_url : %s", (node->manufacturer_url));
 			THINGS_LOG_D(THINGS_DEBUG, TAG, "[DEVICE] mf_date : %s", (node->manufacturing_date));
@@ -1807,6 +1792,8 @@ static things_resource_s *register_device_resource(things_server_builder_s *p_bu
 		if (ret->rep) {
 			THINGS_LOG_D(THINGS_DEBUG, TAG, "[/oic/d] name :%s", device->name);
 			THINGS_LOG_D(THINGS_DEBUG, TAG, "[/oic/d] type :%s", device->type);
+			THINGS_LOG_D(THINGS_DEBUG, TAG, "[/oic/d] ver. Spec :%s", OC_SPEC_VERSION);
+			THINGS_LOG_D(THINGS_DEBUG, TAG, "[/oic/d] ver. data_model :%s", OC_DATA_MODEL_VERSION);
 
 			ret->rep->things_set_value(ret->rep, OC_RSRVD_DEVICE_NAME, device->name);
 
@@ -1838,7 +1825,9 @@ static things_resource_s *register_platform_resource(things_server_builder_s *p_
 
 		ret->rep = things_create_representation_inst(NULL);
 		if (ret->rep) {
+			THINGS_LOG_D(THINGS_DEBUG, TAG, "[/oic/p] platform ID :%s", device->device_id);
 			THINGS_LOG_D(THINGS_DEBUG, TAG, "[/oic/p] Manufacturer :%s", device->manufacturer_name);
+			THINGS_LOG_D(THINGS_DEBUG, TAG, "[/oic/p] Manufacturer_url :%s", device->manufacturer_url);
 			THINGS_LOG_D(THINGS_DEBUG, TAG, "[/oic/p] Model Name :%s", device->model_num);
 			THINGS_LOG_D(THINGS_DEBUG, TAG, "[/oic/p] Ver. Plaform :%s", device->ver_p);
 			THINGS_LOG_D(THINGS_DEBUG, TAG, "[/oic/p] Ver. OS :%s", device->ver_os);

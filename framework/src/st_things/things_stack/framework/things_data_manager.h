@@ -69,8 +69,6 @@ typedef struct st_device_s {
 	int no;
 	char *type;
 	char *name;
-	char *spec_ver;
-	char *dm_ver;
 	char *manufacturer_name;
 	char *manufacturer_url;
 	char *manufacturing_date;
