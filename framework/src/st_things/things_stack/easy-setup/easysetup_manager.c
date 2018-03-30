@@ -35,7 +35,7 @@
 #include "cloud/cloud_manager.h"
 #include "easysetup.h"
 #include "logging/things_logger.h"
-#include "memory/things_malloc.h"
+#include "utils/things_malloc.h"
 
 #include "utils/things_thread.h"
 #include "utils/things_rtos_util.h"

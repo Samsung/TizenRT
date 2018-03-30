@@ -19,7 +19,7 @@
 #include "things_hashmap.h"
 #include <stdio.h>
 #include <stdlib.h>
-#include "memory/things_malloc.h"
+#include "things_malloc.h"
 
 /* this should be prime */
 #define TABLE_STARTSIZE 1021

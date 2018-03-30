@@ -27,9 +27,9 @@
 #include "things_def.h"
 #include "things_common.h"
 #include "logging/things_logger.h"
-#include "memory/things_string.h"
-#include "memory/things_malloc.h"
-#include "utils/things_string_util.h"
+#include "utils/things_string.h"
+#include "utils/things_malloc.h"
+#include "utils/things_string.h"
 #include "ocpayload.h"
 #include "things_resource.h"
 #include "things_server_builder.h"
@@ -275,7 +275,7 @@ struct things_resource_s *get_resource(things_server_builder_s *builder, const c
 	for (size_t iter = 0; iter < builder->res_num; iter++) {
 		const char *rURI = OCGetResourceUri((OCResourceHandle)(builder->gres_arr[iter]->resource_handle));
 
-		if (compare_strings(rURI, uri) == 0) {
+		if (things_string_compare(rURI, uri) == 0) {
 			THINGS_LOG_D(THINGS_DEBUG, TAG, "URI Compare : %s , %s", uri, rURI);
 			ret = builder->gres_arr[iter];
 			break;
@@ -362,8 +362,8 @@ void set_device_info(things_server_builder_s *builder, char *device_name, char *
 	device_info.specVersion = NULL;
 	device_info.dataModelVersions = NULL;
 
-	duplicate_string(device_name, &device_info.deviceName);
-	duplicate_string(OC_SPEC_VERSION, &device_info.specVersion);
+	things_string_duplicate(device_name, &device_info.deviceName);
+	things_string_duplicate(OC_SPEC_VERSION, &device_info.specVersion);
 	device_info.dataModelVersions = OCCreateOCStringLL(DEFAULT_DATA_MODEL_VERSIONS);
 	device_info.types = OCCreateOCStringLL(device_type);
 	OCResourcePayloadAddStringLL(&device_info.types, OC_RSRVD_RESOURCE_TYPE_DEVICE);

@@ -1,6 +1,6 @@
 /****************************************************************************
  *
- * Copyright 2017 Samsung Electronics All Rights Reserved.
+ * Copyright 2018 Samsung Electronics All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,21 +16,32 @@
  *
  ****************************************************************************/
 
-#ifndef THIGNS_STRING_UTIL_H
-#define THIGNS_STRING_UTIL_H
+#ifndef THINGS_STRING_H_
+#define THINGS_STRING_H_
 
-#include <stdlib.h>
-#include <unistd.h>
+#include <stddef.h>
 
 #define MAX_BUF_LEN 512
 #define MAX_INPUT_QUERY_LEN 100
 
-int compare_strings(const char *src, const char *dst);
-int duplicate_string(const char *src, char **dst);
-void concat_string(char **target, char *attach);
-int hex_string_to_int(const char *hex, int *num);
-int get_id_value_from_query(char id_value[], char *input_query, int size);
+#ifndef ENABLE_THINGS_MALLOC
+
+#define things_strdup(x) strdup(x)
+
+#else
+
+char *things_strdup(const char *str);
+
+#endif
+
+char *things_clone_string(const char *str);
+void things_free_str_array(char **ptr, size_t size);
+int things_string_compare(const char *src, const char *dst);
+int things_string_duplicate(const char *src, char **dst);
+void things_string_concat(char **target, char *attach);
+int things_string_hex_to_int(const char *hex, int *num);
+int things_get_id_value_from_query(char id_value[], char *input_query, int size);
 char *things_strcat(char *dest, size_t dest_size, const char *src);
 char *things_strncpy(char *destination, const char *source, size_t num);
 
-#endif
+#endif // THINGS_STRING_H_

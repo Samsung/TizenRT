@@ -24,7 +24,7 @@
 #include "framework/things_req_handler.h"
 #include "octypes.h"
 #include "ocpayload.h"
-#include "memory/things_malloc.h"
+#include "utils/things_malloc.h"
 #include "oic_string.h"
 #include "framework/things_server_builder.h"
 

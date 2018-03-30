@@ -25,7 +25,7 @@
 #include <stdlib.h>
 #include <signal.h>
 #include "logging/things_logger.h"
-#include "memory/things_malloc.h"
+#include "utils/things_malloc.h"
 #include "things_common.h"
 #include "securevirtualresourcetypes.h"
 #include "octypes.h"
