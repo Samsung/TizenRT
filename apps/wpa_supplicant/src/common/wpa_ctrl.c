@@ -492,6 +492,8 @@ char *wpa_ctrl_get_remote_ifname(struct wpa_ctrl *ctrl)
 void wpa_ctrl_close(struct wpa_ctrl *ctrl)
 {
 #ifdef CONFIG_CTRL_IFACE_FIFO
+	int ret;
+
 	if (ctrl->ifname != NULL) {
 		os_free(ctrl->ifname);
 		ctrl->ifname = NULL;
@@ -505,7 +507,17 @@ void wpa_ctrl_close(struct wpa_ctrl *ctrl)
 
 	ctrl->write_stop = true;
 	sem_post(&ctrl->write_start);
-	pthread_join(ctrl->write_thread, 0);
+	ret = pthread_join(ctrl->write_thread, 0);
+	if (ret != OK) {
+		wpa_printf(MSG_WARNING, "pthread_join returned %d", ret);
+		/* This is workaround code.
+		 * When it's executed not in the parent thread, pthread_join is failed
+		 * as it's not in the same group.
+		 * In this case, it give some time to write_thread so that it can send
+		 * sem_post(write_complete) before destruction and execute pthread_exit as a workaround.
+		 */
+		os_sleep(0, 20000);
+	}
 	sem_destroy(&ctrl->write_start);
 	sem_destroy(&ctrl->write_complete);
 
