@@ -68,10 +68,19 @@
  ****************************************************************************/
 /* Helpers ******************************************************************/
 #ifdef CONFIG_S5J_MCT
-#  define CONFIG_S5J_MCT_NUM    4
+#  define CONFIG_S5J_MCT_NUM    5 /* 1 (Global) + 4 (Local) Timers */
 #else
 #  define CONFIG_S5J_MCT_NUM    0
 #endif
+
+/****************************************************************************
+ * Private Types
+ ****************************************************************************/
+struct s5j_mct_priv_s {
+	/* mct base address */
+	uint32_t base_addr;
+	int	irq_id;
+};
 
 /****************************************************************************
  * Public Types
@@ -87,11 +96,21 @@ extern "C"
 #define EXTERN extern
 #endif
 
+/* MCT Timers */
 enum s5j_mct_channel_e {
+	S5J_MCT_GLOBAL,
 	S5J_MCT_CHANNEL0,
 	S5J_MCT_CHANNEL1,
 	S5J_MCT_CHANNEL2,
 	S5J_MCT_CHANNEL3,
+};
+
+/* Global MCT Timer supports 4 match interrupts */
+enum {
+	MCT_G0,
+	MCT_G1,
+	MCT_G2,
+	MCT_G3,
 };
 
 /****************************************************************************
@@ -110,6 +129,17 @@ void s5j_mct_disableint(FAR struct s5j_mct_priv_s *priv);
 
 /* Power-up timer and get its structure */
 FAR struct s5j_mct_priv_s *s5j_mct_init(int timer);
+
+u64 s5j_mct_global_get_frc_cnt(FAR struct s5j_mct_priv_s *priv);
+void s5j_mct_global_set_frc_cnt(FAR struct s5j_mct_priv_s *priv, u64 count);
+void s5j_mct_global_start_frc(FAR struct s5j_mct_priv_s *priv);
+void s5j_mct_global_stop_frc(FAR struct s5j_mct_priv_s *priv);
+void s5j_mct_global_set_comp_cnt(FAR struct s5j_mct_priv_s *priv, int mct_id, uint32_t gmct_offset, u64 count);
+void s5j_mct_global_disable_comp(FAR struct s5j_mct_priv_s *priv, int mct_id, uint32_t gmct_offset);
+void s5j_mct_global_enable_comp(FAR struct s5j_mct_priv_s *priv, int mct_id, uint32_t gmct_offset);
+void s5j_mct_global_enable_int(FAR struct s5j_mct_priv_s *priv, uint32_t gmct_int);
+static void s5j_mct_global_disable_int(FAR struct s5j_mct_priv_s *priv, uint32_t gmct_int);
+void s5j_mct_clear_pending(FAR struct s5j_mct_priv_s *priv, int mct_id, uint32_t gmct_offset);
 
 /****************************************************************************
  * Name: s5j_timer_initialize
