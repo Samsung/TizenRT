@@ -994,7 +994,7 @@ CONFIG_ENTRY_MANUAL=y
 #
 # Application entry point list
 #
-CONFIG_USER_ENTRYPOINT=""
+CONFIG_USER_ENTRYPOINT="apps_entry_main"
 
 #
 # Examples

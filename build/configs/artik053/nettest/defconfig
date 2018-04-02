@@ -1067,7 +1067,7 @@ CONFIG_ENTRY_MANUAL=y
 # Application entry point list
 #
 # CONFIG_ENTRY_IPERF is not set
-CONFIG_USER_ENTRYPOINT=""
+CONFIG_USER_ENTRYPOINT="apps_entry_main"
 CONFIG_BUILTIN_APPS=y
 
 #
