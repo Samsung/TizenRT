@@ -1604,6 +1604,62 @@ int up_timer_start(FAR const struct timespec *ts);
 #endif
 
 /****************************************************************************
+ * Name: up_start_ticksuppress
+ *
+ * Description:
+ *	Periodic timer tick interrupts are suppressed and reschedules timer tick
+ *  interrupt to a much later time (either when the next known tasks are
+ *  scheduled to run or to a maximum possible tick timer value).
+ *	This function is called from platform specific idle interface
+ *	up_idle() or up_idlepm().
+
+ *	Provided by platform-specific code and called from the architecture-
+ *	specific logic.
+ *
+ * Input Parameters:
+ *   None
+ *
+ * Returned Value:
+ *   None
+ *
+ * Assumptions:
+ *	Called from interrupt context, interrupts may need to be disabled
+ *	internally to assure non-reentrancy.
+ *
+ ****************************************************************************/
+
+#ifdef CONFIG_SCHED_TICKSUPPRESS
+void up_start_ticksuppress(void);
+#endif
+
+/****************************************************************************
+ * Name: up_stop_ticksuppress
+ *
+ * Description:
+ *  Periodic timer tick interrupts are re-enabled.
+ *  This function is called from platform timer isr, up_timerisr() or
+ *	from context switch logic in interrupt context.
+ *
+ *  Provided by platform-specific code and called from the architecture-
+ *  specific logic.
+ *
+ * Input Parameters:
+ *   None
+ *
+ * Returned Value:
+ *   None
+ *
+ * Assumptions:
+ *  Called from interrupt context, interrupts may need to be disabled
+ *  internally to assure non-reentrancy.
+ *
+ ****************************************************************************/
+
+#ifdef CONFIG_SCHED_TICKSUPPRESS
+void up_stop_ticksuppress(void);
+#endif
+
+/****************************************************************************
  * Name: up_romgetc
  *
  * Description:

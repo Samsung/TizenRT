@@ -110,7 +110,13 @@ CMN_CSRCS += up_task_start.c up_pthread_start.c arm_signal_dispatch.c
 endif
 
 ifneq ($(CONFIG_SCHED_TICKLESS),y)
+ifneq ($(CONFIG_SCHED_TICKSUPPRESS),y)
 CHIP_CSRCS += s5j_timerisr.c
+endif
+endif
+
+ifeq ($(CONFIG_SCHED_TICKSUPPRESS),y)
+CHIP_CSRCS += s5j_ticksuppress.c
 endif
 
 CHIP_CSRCS += s5j_idle.c

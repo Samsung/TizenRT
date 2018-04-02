@@ -21,6 +21,7 @@ config ARCH_CHIP_S5J
 	select ARCH_CORTEXR4
 	select ARCH_HAVE_MPU
 	select ARCH_HAVE_TICKLESS
+	select ARCH_HAVE_TICKSUPPRESS
 	select ARM_HAVE_MPU_UNIFIED
 	select ARMV7R_MEMINIT
 	---help---

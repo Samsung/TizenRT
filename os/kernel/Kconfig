@@ -94,6 +94,25 @@ config SCHED_TICKLESS_LIMIT_MAX_SLEEP
 
 endif
 
+config ARCH_HAVE_TICKSUPPRESS
+	bool
+	default n
+
+config SCHED_TICKSUPPRESS
+	bool "Support Tick Suppression"
+	default n
+	depends on ARCH_HAVE_TICKSUPPRESS
+	---help---
+		The OS task scheduler has a periodic timer tick interrupt
+		occurring at a fixed interval in order to perform task scheduling,
+		even when the CPU is in idle. Due to which effective power save
+		by Idle PM reduces. This can be avoided by enabling tick suppression feature.
+		Tick suppression allows CPU to stay idle for a much longer time.
+		Longer the CPU is in idle, more the power save by Idle PM.
+		If the tick suppression is selected, then there are additional
+		platform specific interfaces that must be provided as
+		defined in include/tinyara/arch.h
+
 config USEC_PER_TICK
 	int "System timer tick period (microseconds)"
 	default 10000 if !SCHED_TICKLESS
