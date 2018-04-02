@@ -490,6 +490,14 @@ void os_start(void)
 	}
 #endif
 
+	/* The processor specific details of running the operating system
+	 * will be handled here.  Such things as setting up interrupt
+	 * service routines and starting the clock are some of the things
+	 * that are different for each  processor and hardware platform.
+	 */
+
+	up_initialize();
+
 #ifdef CONFIG_NET
 	/* Initialize the networking system.  Network initialization is
 	 * performed in two steps:  (1) net_setup() initializes static
@@ -502,14 +510,6 @@ void os_start(void)
 	net_setup();
 
 #endif							/* CONFIG_NET */
-
-	/* The processor specific details of running the operating system
-	 * will be handled here.  Such things as setting up interrupt
-	 * service routines and starting the clock are some of the things
-	 * that are different for each  processor and hardware platform.
-	 */
-
-	up_initialize();
 
 #ifdef CONFIG_KERNEL_TEST_DRV
 	test_drv_register();
