@@ -1,0 +1,3 @@
+config ENTRY_TICKLESS_TEST
+	bool "Tickless Kernel test application"
+	depends on EXAMPLES_TICKLESS_TEST
