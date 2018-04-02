@@ -202,15 +202,19 @@ config S5J_MCT
 		The local timers are 32-bit free running down-counters and
 		generate an interrupt when the counter expires.
 
+if SCHED_TICKLESS
+
 config S5J_GTIMER
 	bool "MCT Global TIMER"
-	default n
+	default y
 	depends on S5J_HAVE_MCT
 	select S5J_MCT
 	---help---
 		This is a free-running timer which the capability to generate
 		a compare interrupt when the timer matches a comparison value.
 		So this timer is used to support tickless OS.
+
+endif # SCHED_TICKLESS
 
 config S5J_TIMER0
 	bool "TIMER0"

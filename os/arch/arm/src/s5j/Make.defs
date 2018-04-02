@@ -113,6 +113,10 @@ ifneq ($(CONFIG_SCHED_TICKLESS),y)
 CHIP_CSRCS += s5j_timerisr.c
 endif
 
+ifeq ($(CONFIG_SCHED_TICKLESS),y)
+CHIP_CSRCS += s5j_tickless.c
+endif
+
 CHIP_CSRCS += s5j_idle.c
 CHIP_CSRCS += s5j_boot.c s5j_irq.c
 CHIP_CSRCS += s5j_serial.c
