@@ -321,6 +321,10 @@ static struct timeval g_select_timeout = {10, 0};
 static int g_sockfd;
 #endif
 
+#ifdef CONFIG_NETUTILS_DHCPD_CLIENT_CALLBACK
+dhcpd_client_callback g_client_join_cb;
+#endif
+
 /****************************************************************************
  * Private Functions
  ****************************************************************************/
@@ -1152,6 +1156,14 @@ int dhcpd_sendack(in_addr_t ipaddr)
 	}
 
 	dhcpd_setlease(g_state.ds_inpacket.chaddr, ipaddr, leasetime);
+
+#ifdef CONFIG_NETUTILS_DHCPD_CLIENT_CALLBACK
+	if (g_client_join_cb) {
+		ndbg("Invoke client join callback\n");
+		g_client_join_cb();
+	}
+#endif
+
 	return OK;
 }
 
@@ -1572,9 +1584,13 @@ void dhcpd_stop(void)
 	}
 
 #endif
+
+#ifdef CONFIG_NETUTILS_DHCPD_CLIENT_CALLBACK
+	g_client_join_cb = NULL;
+#endif
+
 	sem_wait(&g_sem_quit);
 }
-
 
 /****************************************************************************
  * Public Functions
@@ -1745,6 +1761,18 @@ int dhcpd_run(void *arg)
 #define DHCPD_SCHED_PRI			100
 #define DHCPD_SCHED_POLICY		SCHED_RR
 
+#ifdef CONFIG_NETUTILS_DHCPD_CLIENT_CALLBACK
+int dhcpd_start_inform_client(char *intf, dhcpd_client_callback dhcpd_client_cb)
+{
+	if (dhcpd_client_cb == NULL)
+		nwdbg("dhcpd_client_cb is NULL\n");
+
+	g_client_join_cb = dhcpd_client_cb;
+
+	return dhcpd_start(intf);
+}
+#endif
+
 int dhcpd_start(char *intf)
 {
 	pthread_attr_t attr;
@@ -1802,5 +1830,10 @@ int dhcpd_start(char *intf)
 
 	return 0;
 err_exit:
+
+#ifdef CONFIG_NETUTILS_DHCPD_CLIENT_CALLBACK
+	g_client_join_cb = NULL;
+#endif
+
 	return -1;
 }

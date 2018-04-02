@@ -81,4 +81,10 @@ config NETUTILS_DHCPD_DECLINETIME
 	---help---
 	Default: 1 hour
 
+config NETUTILS_DHCPD_CLIENT_CALLBACK
+	bool "Callback function for joining of client"
+	default n
+	---help---
+		Enable callback function when client is joined to the DHCP server.
+
 endif

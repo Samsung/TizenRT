@@ -88,6 +88,10 @@ extern "C" {
 #define EXTERN extern
 #endif
 
+#ifdef CONFIG_NETUTILS_DHCPD_CLIENT_CALLBACK
+typedef void (*dhcpd_client_callback)(void);
+#endif
+
 /*
  * @brief dhcpd_run() run DHCP server which is attached given network interface.
  *
@@ -104,6 +108,17 @@ int dhcpd_run(void *arg);
  * @return On success, 0 is returned. On failure, -1 is returned.
 */
 int dhcpd_start(char *intf);
+
+#ifdef CONFIG_NETUTILS_DHCPD_CLIENT_CALLBACK
+/**
+ * @brief Create DHCP server daemon with a given network interface.
+ *
+ * @param[in] intf The name of network interface to run DHCP server
+ * @param[in] dhcp_join_cb The callback function when DHCP client is joined
+ * @return On success, 0 is returned. On failure, -1 is returned.
+*/
+int dhcpd_start_inform_client(char *intf, dhcpd_client_callback dhcpd_client_cb);
+#endif
 
 /**
  * @brief Terminate DHCP server daemon.
