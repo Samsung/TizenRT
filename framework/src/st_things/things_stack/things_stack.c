@@ -569,6 +569,14 @@ int things_initialize_stack(const char *json_path, bool *easysetup_completed)
 	is_things_module_inited = 1;
 
 	*easysetup_completed = dm_is_there_things_cloud();
+
+	things_register_set_ap_connection_func(things_wifi_connection_cb);
+
+	if (wifi_manager_init(&wifi_callbacks) != WIFI_MANAGER_SUCCESS) {
+		THINGS_LOG_ERROR(THINGS_ERROR, TAG, "Failed to initialize WiFi manager");
+		return 0;
+	}
+	
 #ifdef CONFIG_ST_THINGS_FOTA
 	if (fmwup_initialize() < 0) {
 		THINGS_LOG(THINGS_ERROR, TAG, "fmwup_initizlize() failed");
@@ -605,12 +613,6 @@ int things_deinitialize_stack()
 
 int things_start_stack()
 {
-	things_register_set_ap_connection_func(things_wifi_connection_cb);
-
-	if (wifi_manager_init(&wifi_callbacks) != WIFI_MANAGER_SUCCESS) {
-		THINGS_LOG_ERROR(THINGS_ERROR, TAG, "Failed to initialize WiFi manager");
-		return 0;
-	}
 	THINGS_LOG_D(THINGS_INFO, TAG, "ST_Things SDK version : %s", ST_THINGS_STACK_VERSION);
 
 	if (dm_get_easysetup_connectivity_type() == es_conn_type_softap) {
