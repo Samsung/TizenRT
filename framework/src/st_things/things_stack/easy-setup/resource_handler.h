@@ -75,7 +75,9 @@ typedef struct {
 	char language[THINGS_STRING_MAX_VALUE];
 	char country[THINGS_STRING_MAX_VALUE];
 	char device_type[THINGS_STRING_MAX_VALUE];
+#ifdef CONFIG_ST_THINGS_SUPPORT_SUB_DEVICE
 	char device_sub_type[THINGS_STRING_MAX_VALUE];
+#endif
 	char datetime[THINGS_STRING_MAX_VALUE];
 } dev_conf_resource_s;
 

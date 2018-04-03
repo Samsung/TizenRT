@@ -949,8 +949,9 @@ OCStackApplicationResult handle_main_dev_publish_cb(void *ctx, OCDoHandle handle
 			PROFILING_TIME("Cloud Provisioning End.");
 			return OC_STACK_DELETE_TRANSACTION;
 		}
-
+#ifdef CONFIG_ST_THINGS_SUPPORT_SUB_DEVICE
 		publish_resource_into_cloud(RSC_PUB_SUB_ALL, NULL);
+#endif
 		publish_dev_profile_into_cloud(NULL);
 	}
 
@@ -958,6 +959,7 @@ OCStackApplicationResult handle_main_dev_publish_cb(void *ctx, OCDoHandle handle
 	return OC_STACK_DELETE_TRANSACTION;
 }
 
+#ifdef CONFIG_ST_THINGS_SUPPORT_SUB_DEVICE
 OCStackApplicationResult handle_sub_dev_publish_cb(void *ctx, OCDoHandle handle, OCClientResponse *client_response)
 {
 	THINGS_LOG_D(THINGS_DEBUG, TAG, "Sub-Device resource Publish callback received");
@@ -1014,6 +1016,7 @@ OCStackApplicationResult handle_sub_dev_publish_cb(void *ctx, OCDoHandle handle,
 
 	return OC_STACK_DELETE_TRANSACTION;
 }
+#endif
 
 OCStackApplicationResult handle_dev_profile_cb(void *ctx, OCDoHandle handle, OCClientResponse *client_response)
 {
@@ -1213,7 +1216,9 @@ OCStackResult publish_resource_into_cloud(rp_target_e target, timeout_s *timeout
 {
 	THINGS_LOG_D(THINGS_DEBUG, TAG, "Enter.");
 
+#ifdef CONFIG_ST_THINGS_SUPPORT_SUB_DEVICE
 	int sub_dev_pub_fail = -1;
+#endif
 	OCStackResult res = OC_STACK_OK;
 
 	if (target == RSC_PUB_ALL || target == RSC_PUB_MAIN_ONLY) {
@@ -1222,6 +1227,7 @@ OCStackResult publish_resource_into_cloud(rp_target_e target, timeout_s *timeout
 		usleep(10000);			// 1 device resource-publish per 10 msec.
 	}
 
+#ifdef CONFIG_ST_THINGS_SUPPORT_SUB_DEVICE
 	if (res == OC_STACK_OK && target != RSC_PUB_MAIN_ONLY) {
 		THINGS_LOG(THINGS_DEBUG, TAG, "Sub-Devices Resource Publish Start.");
 		int device_cnt = 0;
@@ -1284,6 +1290,7 @@ OCStackResult publish_resource_into_cloud(rp_target_e target, timeout_s *timeout
 			}
 		}
 	}
+#endif
 
 	THINGS_LOG_D(THINGS_DEBUG, TAG, "Exit.");
 	return res;

@@ -449,7 +449,9 @@ OCStackResult init_dev_conf_resource(bool is_secured)
 	memset(g_dev_conf_resource.country, 0, sizeof(char) *THINGS_STRING_MAX_VALUE);
 	memset(g_dev_conf_resource.language, 0, sizeof(char) *THINGS_STRING_MAX_VALUE);
 	memset(g_dev_conf_resource.device_type, 0, sizeof(char) *THINGS_STRING_MAX_VALUE);
+#ifdef CONFIG_ST_THINGS_SUPPORT_SUB_DEVICE
 	memset(g_dev_conf_resource.device_sub_type, 0, sizeof(char) *THINGS_STRING_MAX_VALUE);
+#endif
 	memset(g_dev_conf_resource.datetime, 0, sizeof(char) *THINGS_STRING_MAX_VALUE);
 
 	if (is_secured) {
@@ -938,7 +940,9 @@ OCRepPayload *construct_response_of_dev_conf(const char *interface)
 	OCRepPayloadSetPropString(payload, THINGS_RSRVD_ES_LANGUAGE, g_dev_conf_resource.language);
 	OCRepPayloadSetPropString(payload, THINGS_RSRVD_ES_COUNTRY, g_dev_conf_resource.country);
 	OCRepPayloadSetPropString(payload, THINGS_RSRVD_ES_VENDOR_DEVTYPE, g_dev_conf_resource.device_type);
+#ifdef CONFIG_ST_THINGS_SUPPORT_SUB_DEVICE
 	OCRepPayloadSetPropString(payload, THINGS_RSRVD_ES_VENDOR_DEVSUBTYPE, g_dev_conf_resource.device_sub_type);
+#endif
 	OCRepPayloadSetPropString(payload, THINGS_RSRVD_ES_VENDOR_UTC_DATE_TIME, g_dev_conf_resource.datetime);
 
 	if (interface != NULL && !strncmp(interface, OC_RSRVD_INTERFACE_BATCH, strlen(OC_RSRVD_INTERFACE_BATCH))) {
@@ -1489,8 +1493,10 @@ OCStackResult set_device_property(es_device_property *device_property)
 	things_strncpy(g_dev_conf_resource.device_type, (device_property->dev_conf_s).device_type, THINGS_STRING_MAX_VALUE);
 	THINGS_LOG_D(THINGS_DEBUG, ES_RH_TAG, "Device device_type : %s", g_dev_conf_resource.device_type);
 
+#ifdef CONFIG_ST_THINGS_SUPPORT_SUB_DEVICE
 	things_strncpy(g_dev_conf_resource.device_sub_type, (device_property->dev_conf_s).device_sub_type, THINGS_STRING_MAX_VALUE);
-	THINGS_LOG_D(THINGS_DEBUG, ES_RH_TAG, "Device device_sub_type : %s", g_dev_conf_resource.device_sub_type);
+	THINGS_LOG_D(THINGS_DEBUG, ES_RH_TAG, "Sub Device device_type : %s", g_dev_conf_resource.device_sub_type);
+#endif
 
 	THINGS_LOG_D(THINGS_DEBUG, ES_RH_TAG, "set_device_property OUT");
 	return OC_STACK_OK;
