@@ -60,6 +60,7 @@
 #include <stdint.h>
 #include <stdio.h>
 #ifdef CONFIG_HEAPINFO_GROUP
+#include <string.h>
 #include <tinyara/mm/heapinfo_internal.h>
 #endif
 
