@@ -743,6 +743,7 @@ config RAM_SIZE
 config RAM_DDR_START
 	hex "DDR RAM start address"
 	default 0x0
+	depends on DDR
 	--help--
 		If the board using external DDR RAM memory, you need to define
 		the start address of DDR RAM
@@ -750,6 +751,7 @@ config RAM_DDR_START
 config RAM_DDR_SIZE
 	hex "DDR RAM size"
 	default 0
+	depends on DDR
 	--help--
 		If the board using external DDR RAM memory, you need to define
 		the size of DDR RAM
@@ -801,3 +803,4 @@ config BOOT_SDRAM_DATA
 		.data and .bss sections can be initialized.
 
 endmenu # Boot Memory Configuration
+
