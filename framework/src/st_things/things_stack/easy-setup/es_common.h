@@ -48,7 +48,9 @@
 #define THINGS_RSRVD_ES_LANGUAGE               "lang"
 #define THINGS_RSRVD_ES_COUNTRY                "ctry"
 #define THINGS_RSRVD_ES_VENDOR_DEVTYPE         "x.com.samsung.dt"
+#ifdef CONFIG_ST_THINGS_SUPPORT_SUB_DEVICE
 #define THINGS_RSRVD_ES_VENDOR_DEVSUBTYPE      "x.com.samsung.sdt"
+#endif
 #define THINGS_RSRVD_ES_VENDOR_DISCOVERYCHANNEL "x.com.samsung.chn"
 #define THINGS_RSRVD_ES_VENDOR_CLIENTID         "x.com.samsung.clientid"
 #define THINGS_RSRVD_ES_VENDOR_ERRORCODE        "x.com.samsung.vd.errcode"
@@ -102,7 +104,9 @@ typedef struct {
 	struct {
 		char device_name[MAX_DEVICELEN];
 		char device_type[THINGS_STRING_MAX_VALUE];
+#ifdef CONFIG_ST_THINGS_SUPPORT_SUB_DEVICE
 		char device_sub_type[THINGS_STRING_MAX_VALUE];
+#endif
 	} dev_conf_s;
 } es_device_property;
 

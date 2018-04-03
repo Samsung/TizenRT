@@ -184,6 +184,9 @@ es_result_e es_set_device_property(es_device_property *device_property)
 	things_strncpy((g_es_device_property.dev_conf_s).device_name, (device_property->dev_conf_s).device_name, MAX_DEVICELEN);
 	THINGS_LOG_D(THINGS_DEBUG, ES_ENROLLEE_TAG, "Device Name : %s", (g_es_device_property.dev_conf_s).device_name);
 
+	things_strncpy((g_es_device_property.dev_conf_s).device_type, (device_property->dev_conf_s).device_type, MAX_DEVICELEN);
+	THINGS_LOG_D(THINGS_DEBUG, ES_ENROLLEE_TAG, "Device Type : %s", (g_es_device_property.dev_conf_s).device_type);
+
 	THINGS_LOG_D(THINGS_DEBUG, ES_ENROLLEE_TAG, "es_set_device_property OUT");
 	return ES_OK;
 }

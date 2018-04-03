@@ -39,6 +39,7 @@
 
 #include "utils/things_thread.h"
 #include "utils/things_rtos_util.h"
+#include "framework/things_data_manager.h"
 
 #ifdef __SECURED__
 #include "pinoxmcommon.h"
@@ -182,7 +183,16 @@ int esm_set_device_property_by_app(char *name, const wifi_mode_e *mode, int ea_m
 		ea_mode = NUM_WIFIMODE - 1;
 	}
 
+	char *device_type = dm_get_info_of_dev(0)->type;
+
+	if (device_type == NULL) {
+		THINGS_LOG_V_ERROR(THINGS_ERROR, TAG, "device type is NULL");
+		return ESM_ERROR;
+	}
+
 	things_strncpy(device_property.dev_conf_s.device_name, name, sizeof(device_property.dev_conf_s.device_name));
+	things_strncpy(device_property.dev_conf_s.device_type, device_type, sizeof(device_property.dev_conf_s.device_type));
+
 	device_property.WiFi.freq = freq;
 	for (i = 0; i < ea_mode; i++) {
 		device_property.WiFi.mode[i] = mode[i];
