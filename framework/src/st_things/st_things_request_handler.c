@@ -261,7 +261,7 @@ bool add_common_props(things_resource_s *rsrc, bool collection, OCRepPayload *re
 	}
 
 	for (int i = 0; i < rt_count; i++) {
-		if (!OCRepPayloadAddResourceTypeAsOwner(resp_payload, res_types[i])) {
+		if (!OCRepPayloadAddResourceType(resp_payload, res_types[i])) {
 			THINGS_LOG(THINGS_ERROR, TAG, "Failed to add the resource type in the response payload.");
 			// Release memory allocated for resource types.
 			things_free_str_array(res_types, rt_count);
@@ -278,7 +278,7 @@ bool add_common_props(things_resource_s *rsrc, bool collection, OCRepPayload *re
 	}
 
 	for (int i = 0; i < if_count; i++) {
-		if (!OCRepPayloadAddInterfaceAsOwner(resp_payload, if_types[i])) {
+		if (!OCRepPayloadAddInterface(resp_payload, if_types[i])) {
 			THINGS_LOG(THINGS_ERROR, TAG, "Failed to add the interface type in the response payload.");
 			// Release memory allocated for interface types.
 			things_free_str_array(if_types, if_count);
@@ -297,7 +297,7 @@ bool add_common_props(things_resource_s *rsrc, bool collection, OCRepPayload *re
 
 		THINGS_LOG(THINGS_DEBUG, TAG, "Formed links for collection.");
 		size_t dimensions[MAX_REP_ARRAY_DEPTH] = { count, 0, 0 };
-		bool result = OCRepPayloadSetPropObjectArrayAsOwner(resp_payload, OC_RSRVD_LINKS, links, dimensions);
+		bool result = OCRepPayloadSetPropObjectArray(resp_payload, OC_RSRVD_LINKS, links, dimensions);
 		if (!result) {
 			THINGS_LOG(THINGS_ERROR, TAG, "Failed to add the links in the response payload.");
 			for (size_t i = 0; i < count && NULL != links[i]; i++) {
@@ -522,7 +522,7 @@ static bool add_property_in_post_req_msg(st_things_set_request_message_s *req_ms
 	case STRING_ID: {
 		char *value = NULL;
 		if (OCRepPayloadGetPropString(req_payload, prop->key, &value)) {
-			result = OCRepPayloadSetPropStringAsOwner(resp_payload, prop->key, value);
+			result = OCRepPayloadSetPropString(resp_payload, prop->key, value);
 			if (!result) {
 				THINGS_LOG_V(THINGS_ERROR, TAG, "Failed to set the string value of '%s' in request message", prop->key);
 				things_free(value);
@@ -535,7 +535,7 @@ static bool add_property_in_post_req_msg(st_things_set_request_message_s *req_ms
 	case OBJECT_ID: {
 		OCRepPayload *value = NULL;
 		if (OCRepPayloadGetPropObject(req_payload, prop->key, &value)) {
-			result = OCRepPayloadSetPropObjectAsOwner(resp_payload, prop->key, value);
+			result = OCRepPayloadSetPropObject(resp_payload, prop->key, value);
 			if (!result) {
 				THINGS_LOG_V(THINGS_ERROR, TAG, "Failed to set the object value of '%s' in request message", prop->key);
 				OCRepPayloadDestroy(value);
@@ -546,24 +546,15 @@ static bool add_property_in_post_req_msg(st_things_set_request_message_s *req_ms
 	}
 	break;
 	case BYTE_ID: {
-		OCByteString *byte_value = (OCByteString *)things_calloc(1, sizeof(OCByteString));
-		if (NULL == byte_value) {
-			THINGS_LOG_V(THINGS_ERROR, TAG, "Failed to allocate memory for byte string value of '%s' in request message", prop->key);
-			break;
-		}
-
-		if (OCRepPayloadGetPropByteString(req_payload, prop->key, byte_value)) {
-			result = OCRepPayloadSetPropByteStringAsOwner(resp_payload, prop->key, byte_value);
+		OCByteString byte_value;
+		if (OCRepPayloadGetPropByteString(req_payload, prop->key, &byte_value)) {
+			result = OCRepPayloadSetPropByteString(resp_payload, prop->key, byte_value);
 			if (!result) {
 				THINGS_LOG_V(THINGS_ERROR, TAG, "Failed to set the byte string value of '%s' in request message", prop->key);
-				things_free(byte_value->bytes);
+				things_free(byte_value.bytes);
 			}
 		} else {
 			THINGS_LOG_V(THINGS_ERROR, TAG, "Failed to get the byte string value of '%s' for request message", prop->key);
-		}
-
-		if (!result) {
-			things_free(byte_value);
 		}
 	}
 	break;
@@ -571,7 +562,7 @@ static bool add_property_in_post_req_msg(st_things_set_request_message_s *req_ms
 		int64_t *value = NULL;
 		size_t dimensions[MAX_REP_ARRAY_DEPTH] = { 0 };
 		if (OCRepPayloadGetIntArray(req_payload, prop->key, &value, dimensions)) {
-			result = OCRepPayloadSetIntArrayAsOwner(resp_payload, prop->key, value, dimensions);
+			result = OCRepPayloadSetIntArray(resp_payload, prop->key, value, dimensions);
 			if (!result) {
 				THINGS_LOG_V(THINGS_ERROR, TAG, "Failed to set the integer array value of '%s' in request message", prop->key);
 				things_free(value);
@@ -585,7 +576,7 @@ static bool add_property_in_post_req_msg(st_things_set_request_message_s *req_ms
 		double *value = NULL;
 		size_t dimensions[MAX_REP_ARRAY_DEPTH] = { 0 };
 		if (OCRepPayloadGetDoubleArray(req_payload, prop->key, &value, dimensions)) {
-			result = OCRepPayloadSetDoubleArrayAsOwner(resp_payload, prop->key, value, dimensions);
+			result = OCRepPayloadSetDoubleArray(resp_payload, prop->key, value, dimensions);
 			if (!result) {
 				THINGS_LOG_V(THINGS_ERROR, TAG, "Failed to set the double array value of '%s' in request message", prop->key);
 				things_free(value);
@@ -599,7 +590,7 @@ static bool add_property_in_post_req_msg(st_things_set_request_message_s *req_ms
 		char **value = NULL;
 		size_t dimensions[MAX_REP_ARRAY_DEPTH] = { 0 };
 		if (OCRepPayloadGetStringArray(req_payload, prop->key, &value, dimensions)) {
-			result = OCRepPayloadSetStringArrayAsOwner(resp_payload, prop->key, value, dimensions);
+			result = OCRepPayloadSetStringArray(resp_payload, prop->key, value, dimensions);
 			if (!result) {
 				THINGS_LOG_V(THINGS_ERROR, TAG, "Failed to set the string array value of '%s' in request message", prop->key);
 				size_t len = calcDimTotal(dimensions);
@@ -614,7 +605,7 @@ static bool add_property_in_post_req_msg(st_things_set_request_message_s *req_ms
 		OCRepPayload **value = NULL;
 		size_t dimensions[MAX_REP_ARRAY_DEPTH] = { 0 };
 		if (OCRepPayloadGetPropObjectArray(req_payload, prop->key, &value, dimensions)) {
-			result = OCRepPayloadSetPropObjectArrayAsOwner(resp_payload, prop->key, value, dimensions);
+			result = OCRepPayloadSetPropObjectArray(resp_payload, prop->key, value, dimensions);
 			if (!result) {
 				THINGS_LOG_V(THINGS_ERROR, TAG, "Failed to set the object array value of '%s' in request message", prop->key);
 				size_t len = calcDimTotal(dimensions);
