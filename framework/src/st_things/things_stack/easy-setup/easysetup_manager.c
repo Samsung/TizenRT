@@ -35,6 +35,7 @@
 #include "cloud/cloud_manager.h"
 #include "easysetup.h"
 #include "logging/things_logger.h"
+#include "framework/things_data_manager.h"
 #include "utils/things_malloc.h"
 
 #include "utils/things_thread.h"
@@ -70,7 +71,6 @@ static const int i_common_sleep_sec = CI_TOKEN_EXPIRECHECK_TIME;
 static const int i_fail_sleep_sec = 60;	// 60 sec
 static pthread_mutex_t g_es_mutex = PTHREAD_MUTEX_INITIALIZER;
 
-static bool is_set_device_property = false;
 static es_device_property device_property;
 static const char *def_device_name = "ST_Things Device";
 
@@ -164,7 +164,7 @@ void esm_register_update_dev_prov_data_func(things_update_dev_prov_data_func_typ
 	g_update_dev_prov_data = func;
 }
 
-int esm_set_device_property_by_app(char *name, const wifi_mode_e *mode, int ea_mode, const wifi_freq_e freq)
+int esm_set_device_property(char *name, const wifi_mode_e *mode, int ea_mode, const wifi_freq_e freq)
 {
 	THINGS_LOG_D(THINGS_DEBUG, TAG, "Enter.");
 
@@ -172,7 +172,7 @@ int esm_set_device_property_by_app(char *name, const wifi_mode_e *mode, int ea_m
 
 	if (mode == NULL || ea_mode < 1 || freq < WiFi_24G || freq >= WiFi_FREQ_EOF) {
 		THINGS_LOG_V_ERROR(THINGS_ERROR, TAG, "Invalid Input Arguments.(mode=0x%X, ea_mode=%d, freq=%d)", mode, ea_mode, freq);
-		return 0;
+		return ESM_ERROR;
 	}
 
 	if (name == NULL) {
@@ -198,14 +198,12 @@ int esm_set_device_property_by_app(char *name, const wifi_mode_e *mode, int ea_m
 		device_property.WiFi.mode[i] = mode[i];
 	}
 	device_property.WiFi.mode[ea_mode] = WiFi_EOF;
-	is_set_device_property = true;
-
 	THINGS_LOG_D(THINGS_DEBUG, TAG, "device_name=%s, WiFi_frequence=%d, count of WiFi_mode=%d", device_property.dev_conf_s.device_name, device_property.WiFi.freq, ea_mode);
 	for (i = 0; i <= ea_mode; i++) {
 		THINGS_LOG_D(THINGS_DEBUG, TAG, "WiFi_mode[%d]=%d", i, device_property.WiFi.mode[i]);
 	}
 
-	THINGS_LOG_D(THINGS_DEBUG, TAG, "Exit.(result=%d)", is_set_device_property);
+	THINGS_LOG_D(THINGS_DEBUG, TAG, "Exit.");
 	return ESM_OK;
 }
 
@@ -217,6 +215,7 @@ esm_result_e esm_init_easysetup(int restart_flag, things_server_builder_s *serve
 	wifi_freq_e wifi_freq = dm_get_wifi_property_freq();
 	int wifiIntf = dm_get_wifi_property_interface();
 	int mode_count = 0;
+	char *device_name = dm_get_info_of_dev(0)->name;
 
 	if (wifiIntf) {
 		if (wifiIntf & 0x01) {
@@ -235,10 +234,7 @@ esm_result_e esm_init_easysetup(int restart_flag, things_server_builder_s *serve
 			wifi_mode[mode_count++] = WiFi_11AC;
 		}
 	}
-	esm_set_device_property_by_app(NULL, wifi_mode, mode_count, wifi_freq);
-
-	if (is_set_device_property == false) {
-		THINGS_LOG_ERROR(THINGS_ERROR, TAG, "[Error] Please Check whether you call \"OICSetDeviceProperty\" API.(We need value of WiFi-property.)");
+	if (esm_set_device_property(device_name, wifi_mode, mode_count, wifi_freq) == ESM_ERROR) {
 		return ESM_ERROR;
 	}
 
@@ -295,6 +291,7 @@ esm_result_e esm_init_easysetup(int restart_flag, things_server_builder_s *serve
 		THINGS_LOG_V_ERROR(THINGS_ERROR, TAG, "[Error] g_server_builder is NULL.");
 		return ESM_ERROR;
 	}
+	
 #ifdef __SECURED__
 	bool g_is_secured = true;
 #else
@@ -309,14 +306,12 @@ esm_result_e esm_init_easysetup(int restart_flag, things_server_builder_s *serve
 		return ESM_ERROR;
 	}
 
-	es_set_state(ES_STATE_INIT);
-	es_set_error_code(ES_ERRCODE_NO_ERROR);
-
 	if (es_set_device_property(&device_property) == ES_ERROR) {
 		THINGS_LOG_ERROR(THINGS_ERROR, TAG, "es_set_device_property funtion Failed");
+		return ESM_ERROR;
 	}
-#ifdef __SECURED__
 
+#ifdef __SECURED__
 	if (OC_STACK_OK != SetRandomPinPolicy(8, NUM_PIN)) {
 		THINGS_LOG_ERROR(THINGS_ERROR, TAG, "Set to Non-Numerical PIN Generation~!!!!!");
 	} else {
@@ -327,13 +322,17 @@ esm_result_e esm_init_easysetup(int restart_flag, things_server_builder_s *serve
 	SetClosePinDisplayCB(&pin_close_cb);
 	SetUserConfirmCB(NULL, get_user_confirmation);
 	SetVerifyOption(USER_CONFIRM);
+#endif //#ifdef __SECURED__
 
-#endif							//#ifdef __SECURED__
+	es_set_state(ES_STATE_INIT);
+	es_set_error_code(ES_ERRCODE_NO_ERROR);
+
 	if (gthread_id_cloud_refresh_check == 0) {
 		esm_continue = 1;
 		THINGS_LOG_D(THINGS_DEBUG, TAG, "Create cloud_refresh_check_loop thread");
 		pthread_create_rtos(&gthread_id_cloud_refresh_check, NULL, cloud_refresh_check_loop, (void *)&esm_continue, THINGS_STACK_CLOUD_TOKEN_CHECK_THREAD);
 	}
+
 	THINGS_LOG_D(THINGS_DEBUG, TAG, THINGS_FUNC_EXIT);
 	return ESM_OK;
 }
