@@ -30,7 +30,6 @@
 #include <errno.h>
 #include <sys/types.h>
 #include "../../../../../os/kernel/group/group.h"
-#include "../../../../../os/kernel/pthread/pthread.h"
 #include "tc_internal.h"
 
 #define SEC_1                   1
@@ -330,49 +329,6 @@ static void *cancel_state_func(void *param)
 	return NULL;
 }
 
-/**
-* @fn                   :findjoininfo_callback
-* @brief                :utilify function for tc_pthread_pthread_findjoininfo_destroyjoin
-* @return               :void*
-*/
-#if !defined(CONFIG_BUILD_PROTECTED)
-static void *findjoininfo_callback(void *param)
-{
-	int ret_chk = 0;
-	FAR struct task_group_s *group;
-	FAR struct join_s *st_pjoininfo;
-
-	g_bpthreadcallback = true;
-
-	pid_t pid = getpid();
-	group = task_getgroup(pid);
-
-	st_pjoininfo = pthread_findjoininfo(group, pid);
-	if (st_pjoininfo == NULL) {
-		printf("pthread_findjoininfo: Fail \n");
-		g_bpthreadcallback = false;
-		goto err;
-	}
-	ret_chk = pthread_equal((pid_t)st_pjoininfo->thread, pid);
-	if (ret_chk != 1) {
-		printf("tc_pthread_pthread_findjoininfo_destroyjoin pthread_equal fail\n");
-		g_bpthreadcallback = false;
-		goto err;
-	}
-
-	pthread_destroyjoin(group, st_pjoininfo);
-
-	st_pjoininfo = pthread_findjoininfo(group, pid);
-	if (st_pjoininfo != NULL) {
-		printf("pthread_findjoininfo: st_pjoininfo Fail \n");
-		g_bpthreadcallback = false;
-		goto err;
-	}
-err:
-	pthread_exit(NULL);
-	return NULL;
-}
-#endif
 /**
 * @fn                   :run_once
 * @brief                :utilify function for tc_pthread_pthread_once
@@ -875,39 +831,6 @@ static void tc_pthread_pthread_cancel_setcancelstate(void)
 }
 
 /**
-* @fn                   :tc_pthread_pthread_take_give_semaphore
-* @brief                :Support managed access to the private data sets.
-* @Scenario             :Support managed access to the private data sets.
-* API's covered         :pthread_sem_take, pthread_sem_give
-* Preconditions         :none
-* Postconditions        :none
-* @return               :void
- */
-#if !defined(CONFIG_BUILD_PROTECTED)
-static void tc_pthread_pthread_sem_take_give(void)
-{
-	int ret_chk;
-	int get_value;
-	sem_t sem;
-	sem_init(&sem, 0, VAL_THREE);
-
-	ret_chk = pthread_sem_take(&sem, false);
-	TC_ASSERT_EQ("pthread_sem_take", ret_chk, OK);
-
-	sem_getvalue(&sem, &get_value);
-	/* if get_value is not matched with VAL_TWO, then TC fails. but we will not use sem anymore, so destroy it */
-	TC_ASSERT_EQ_CLEANUP("sem_getvalue", get_value, VAL_TWO, sem_destroy(&sem));
-
-	ret_chk = pthread_sem_give(&sem);
-	TC_ASSERT_EQ("pthread_sem_give", ret_chk, OK);
-
-	sem_getvalue(&sem, &get_value);
-	TC_ASSERT_EQ("sem_getvalue", get_value, VAL_THREE);
-
-	TC_SUCCESS_RESULT();
-}
-#endif
-/**
 * @fn                   :tc_pthread_pthread_timed_wait
 * @brief                :function shall block on a condition variable.
 * @Scenario             :function is called with mutex locked by the calling thread or undefined behavior results.
@@ -961,36 +884,6 @@ static void tc_pthread_pthread_timed_wait(void)
 	TC_SUCCESS_RESULT();
 }
 
-/**
-* @fn                   :tc_pthread_pthread_findjoininfo_destroyjoin
-* @brief                :Find a join structure in a local data set.
-*                        pthread_destroyjoin is called from pthread_completejoin if the join info was
-*                        detached or from pthread_join when the last waiting thread has received
-*                        the thread exit info.
-* @scenario             :Find a join structure in a local data set.
-*                        pthread_destroyjoin is called from pthread_completejoin if the join info was
-*                        detached or from pthread_join when the last waiting thread has received
-*                        the thread exit info.
-* API's covered         :pthread_findjoininfo, pthread_destroyjoin
-* Preconditions         :none
-* Postconditions        :none
-* @return               :void
-*/
-#if !defined(CONFIG_BUILD_PROTECTED)
-static void tc_pthread_pthread_findjoininfo_destroyjoin(void)
-{
-	int ret_chk;
-	g_bpthreadcallback = false;
-
-	ret_chk = pthread_create(&g_thread1, NULL, findjoininfo_callback, NULL);
-	TC_ASSERT_EQ_CLEANUP("pthread_create", ret_chk, OK, pthread_detach(g_thread1));
-
-	pthread_join(g_thread1, NULL);
-	TC_ASSERT_EQ_CLEANUP("pthread_join", g_bpthreadcallback, true, pthread_detach(g_thread1));
-
-	TC_SUCCESS_RESULT();
-}
-#endif
 /**
 * @fn                   :tc_pthread_pthread_mutex_lock_unlock_trylock
 * @brief                :The mutex object referenced by mutex is locked/unlocked by calling
@@ -1536,8 +1429,6 @@ int pthread_main(void)
 	tc_pthread_pthread_key_create_set_getspecific();
 	tc_pthread_pthread_cancel_setcancelstate();
 #if !defined(CONFIG_BUILD_PROTECTED)
-	tc_pthread_pthread_sem_take_give();
-	tc_pthread_pthread_findjoininfo_destroyjoin();
 	tc_pthread_pthread_setschedprio();
 #endif
 	tc_pthread_pthread_timed_wait();
