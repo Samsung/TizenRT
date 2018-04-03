@@ -20,6 +20,7 @@
 #include "things_malloc.h"
 
 #include "logging/things_logger.h"
+#include "things_util.h"
 
 #ifdef ENABLE_MALLOC_DEBUG
 #define TAG "[things_malloc]"
@@ -32,9 +33,7 @@ static uint32_t count;
 #ifdef ENABLE_THINGS_MALLOC
 void *things_malloc(size_t size)
 {
-	if (0 == size) {
-		return NULL;
-	}
+	RET_NULL_IF_PARAM_EXPR_IS_TRUE(TAG, size < 1);
 
 	/* Allocating Memory for given size using malloc API
 	 */
@@ -50,9 +49,8 @@ void *things_malloc(size_t size)
 
 void *things_calloc(size_t num, size_t size)
 {
-	if (0 == size || 0 == num) {
-		return NULL;
-	}
+	RET_NULL_IF_PARAM_EXPR_IS_TRUE(TAG, num < 1);
+	RET_NULL_IF_PARAM_EXPR_IS_TRUE(TAG, size < 1);
 
 	/* Allocating Memory for given size using calloc API
 	 */
@@ -101,3 +99,4 @@ void things_free(void *ptr)
 	ptr = NULL;
 }
 #endif
+

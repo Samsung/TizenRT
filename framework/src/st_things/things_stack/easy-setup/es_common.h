@@ -31,7 +31,7 @@
  * Attributes used to form a proper easysetup conforming JSON message.
  */
 #define THINGS_RSRVD_ES_PROVSTATUS             "ps"
-#define THINGS_RSRVD_ES_LAST_ERRORCODE         "lec"
+#define THINGS_RSRVD_ES_LATHINGS_ERRORCODE         "lec"
 #define THINGS_RSRVD_ES_LINKS                  "links"
 #define THINGS_RSRVD_ES_SUPPORTEDWIFIMODE      "swmt"
 #define THINGS_RSRVD_ES_SUPPORTEDWIFIFREQ      "swf"

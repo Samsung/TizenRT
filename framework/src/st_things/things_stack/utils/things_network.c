@@ -22,8 +22,8 @@
 #include <pthread.h>
 
 #include "logging/things_logger.h"
-#include "memory/things_malloc.h"
-#include "memory/things_string.h"
+#include "utils/things_malloc.h"
+#include "utils/things_string.h"
 #include "things_api.h"
 #include "things_network.h"
 

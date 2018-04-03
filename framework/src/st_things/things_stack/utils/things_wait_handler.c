@@ -21,7 +21,7 @@
 #include <stdlib.h>
 #include <pthread.h>
 
-#include "memory/things_malloc.h"
+#include "utils/things_malloc.h"
 #include "logging/things_logger.h"
 #include "things_wait_handler.h"
 

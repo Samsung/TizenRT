@@ -22,7 +22,7 @@
 #include "fmwup_util_data.h"
 #include "fmwup_api.h"
 
-#include "memory/things_malloc.h"
+#include "utils/things_malloc.h"
 #include "framework/things_data_manager.h"
 
 #include "logging/things_logger.h"

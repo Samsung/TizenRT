@@ -32,8 +32,8 @@
 #include "ocpayload.h"
 #include "rd_client.h"
 
-#include "memory/things_malloc.h"
-#include "memory/things_string.h"
+#include "utils/things_malloc.h"
+#include "utils/things_string.h"
 #include "logging/things_logger.h"
 #include "easy-setup/es_common.h"
 #include "cloud_connector.h"

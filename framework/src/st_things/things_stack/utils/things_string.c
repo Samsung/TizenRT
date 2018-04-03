@@ -1,6 +1,6 @@
 /****************************************************************************
  *
- * Copyright 2017 Samsung Electronics All Rights Reserved.
+ * Copyright 2018 Samsung Electronics All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,16 +16,59 @@
  *
  ****************************************************************************/
 
-#include <stdio.h>
+#include "things_string.h"
+
 #include <string.h>
+#include "things_malloc.h"
+#include "things_util.h"
 
-#include "things_string_util.h"
-#include "memory/things_malloc.h"
-#include "logging/things_logger.h"
+#define TAG "[things_string]"
 
-#define TAG "[things_string_util]"
+#ifdef ENABLE_THINGS_MALLOC
+char *things_strdup(const char *str)
+{
+	if (str == NULL) {
+		return NULL;
+	}
 
-int compare_strings(const char *src, const char *dst)
+	/* Allocate memory for original string length and 1 extra byte for '\0' */
+	size_t length = strlen(str);
+	char *dup = (char *)things_malloc(length + 1);
+	if (dup != NULL) {
+		memcpy(dup, str, length + 1);
+	}
+
+	return dup;
+}
+#endif
+
+char *things_clone_string(const char *str)
+{
+	RET_NULL_IF_PARAM_IS_NULL(TAG, str);
+
+	int len = strlen(str);
+	char *dest_str = (char *)things_malloc(sizeof(char) *len + 1);
+	if (NULL != dest_str) {
+		strncpy(dest_str, str, len + 1);
+	} else {
+		THINGS_LOG(THINGS_ERROR, TAG, "Memory allocation failed.");
+	}
+
+	return dest_str;
+}
+
+void things_free_str_array(char **ptr, size_t size)
+{
+	RET_IF_PARAM_IS_NULL(TAG, ptr);
+	RET_IF_PARAM_EXPR_IS_TRUE(TAG, size < 1);
+
+	for (size_t index = 0; index < size; index++) {
+		things_free(ptr[index]);
+	}
+	things_free(ptr);
+}
+
+int things_string_compare(const char *src, const char *dst)
 {
 	if ((NULL == src) || (NULL == dst)) {
 		return -1;
@@ -41,7 +84,7 @@ int compare_strings(const char *src, const char *dst)
 	return strncmp(src, dst, dstLen);
 }
 
-int duplicate_string(const char *src, char **dst)
+int things_string_duplicate(const char *src, char **dst)
 {
 	if (NULL == src) {
 		return 0;
@@ -49,7 +92,7 @@ int duplicate_string(const char *src, char **dst)
 		int len = strlen(src);
 		*dst = (char *)things_malloc(len + 1);
 		if (NULL == *dst) {
-			printf("memory allocation failed!\n");
+			THINGS_LOG(THINGS_ERROR, TAG, "memory allocation failed.");
 			return 0;
 		}
 
@@ -60,7 +103,7 @@ int duplicate_string(const char *src, char **dst)
 }
 
 // Memory Leakage Should be check
-void concat_string(char **target, char *attach)
+void things_string_concat(char **target, char *attach)
 {
 	char buf[MAX_BUF_LEN] = { 0 };
 
@@ -89,12 +132,12 @@ void concat_string(char **target, char *attach)
 	things_strncpy(*target, buf, strlen(buf) + 1);
 }
 
-int hex_string_to_int(const char *hex, int *num)
+int things_string_hex_to_int(const char *hex, int *num)
 {
 	return sscanf(hex, "%x", num);
 }
 
-int get_id_value_from_query(char idvalue[], char *inputQuery, int size)
+int things_get_id_value_from_query(char idvalue[], char *inputQuery, int size)
 {
 	THINGS_LOG_D(THINGS_DEBUG, TAG, "Input query => %s", inputQuery);
 

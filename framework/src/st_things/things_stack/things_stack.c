@@ -33,8 +33,8 @@
 #include "things_def.h"
 #include "framework/things_common.h"
 #include "logging/things_logger.h"
-#include "memory/things_malloc.h"
-#include "utils/things_string_util.h"
+#include "utils/things_malloc.h"
+#include "utils/things_string.h"
 
 #include "things_resource.h"
 #include "framework/things_server_builder.h"

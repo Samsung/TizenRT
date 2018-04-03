@@ -27,7 +27,7 @@
 #include <sys/time.h>
 
 #include "things_logger.h"
-#include "memory/things_malloc.h"
+#include "utils/things_malloc.h"
 #include "string.h"
 
 static const char *LEVEL[] __attribute__((unused)) = {

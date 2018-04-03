@@ -32,9 +32,9 @@
 #include "ocpayload.h"
 #include "logging/things_logger.h"
 #include "cloud/cloud_manager.h"
-#include "utils/things_string_util.h"
-#include "memory/things_malloc.h"
-#include "memory/things_string.h"
+#include "utils/things_string.h"
+#include "utils/things_malloc.h"
+#include "utils/things_string.h"
 #include "cautilinterface.h"
 #include "framework/things_common.h"
 
@@ -1012,7 +1012,7 @@ OCRepPayload *construct_response_of_prov(OCEntityHandlerRequest *eh_request)
 			OCRepPayloadAddResourceType(payload, OC_RSRVD_RESOURCE_TYPE_COLLECTION);
 
 			OCRepPayloadSetPropInt(payload, THINGS_RSRVD_ES_PROVSTATUS, get_enrollee_state());
-			OCRepPayloadSetPropInt(payload, THINGS_RSRVD_ES_LAST_ERRORCODE, g_prov_resource.last_err_code);
+			OCRepPayloadSetPropInt(payload, THINGS_RSRVD_ES_LATHINGS_ERRORCODE, g_prov_resource.last_err_code);
 			OCRepPayloadSetPropInt(payload, THINGS_RSRVD_ES_VENDOR_ERRORCODE, g_prov_resource.vd_err_code);
 		}
 
@@ -1048,7 +1048,7 @@ OCRepPayload *construct_response_of_prov(OCEntityHandlerRequest *eh_request)
 		OCRepPayloadSetStringArray(rep_payload, OC_RSRVD_RESOURCE_TYPE, (const char **)resource_types, resource_types_dimensions);
 
 		OCRepPayloadSetPropInt(rep_payload, THINGS_RSRVD_ES_PROVSTATUS, get_enrollee_state());
-		OCRepPayloadSetPropInt(rep_payload, THINGS_RSRVD_ES_LAST_ERRORCODE, g_prov_resource.last_err_code);
+		OCRepPayloadSetPropInt(rep_payload, THINGS_RSRVD_ES_LATHINGS_ERRORCODE, g_prov_resource.last_err_code);
 		OCRepPayloadSetPropInt(rep_payload, THINGS_RSRVD_ES_VENDOR_ERRORCODE, g_prov_resource.vd_err_code);
 
 		OCRepPayloadSetPropObject(payload, OC_RSRVD_REPRESENTATION, rep_payload);
