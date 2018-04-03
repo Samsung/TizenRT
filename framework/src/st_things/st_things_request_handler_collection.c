@@ -186,7 +186,7 @@ bool form_collection_links(things_resource_s *collection_rsrc, OCRepPayload ***l
 			break;
 		}
 		dimensions[0] = rt_count;
-		result = OCRepPayloadSetStringArrayAsOwner(link_arr[index], OC_RSRVD_RESOURCE_TYPE, res_types, dimensions);
+		result = OCRepPayloadSetStringArray(link_arr[index], OC_RSRVD_RESOURCE_TYPE, res_types, dimensions);
 		if (!result) {
 			THINGS_LOG_V(THINGS_ERROR, TAG, "Failed to set the resource types of child(%s) for links in collection.", children[index]->uri);
 			result = false;
@@ -203,7 +203,7 @@ bool form_collection_links(things_resource_s *collection_rsrc, OCRepPayload ***l
 			break;
 		}
 		dimensions[0] = if_count;
-		result = OCRepPayloadSetStringArrayAsOwner(link_arr[index], OC_RSRVD_INTERFACE, if_types, dimensions);
+		result = OCRepPayloadSetStringArray(link_arr[index], OC_RSRVD_INTERFACE, if_types, dimensions);
 		if (!result) {
 			THINGS_LOG_V(THINGS_ERROR, TAG, "Failed to set the interface types of child(%s) for links in collection.", children[index]->uri);
 			result = false;
@@ -282,7 +282,7 @@ static bool handle_get_req_on_collection_linkslist(things_resource_s *collection
 	bool result = false;
 	if (form_collection_links(collection_rsrc, &links, &count)) {
 		size_t dimensions[MAX_REP_ARRAY_DEPTH] = { count, 0, 0 };
-		result = OCRepPayloadSetPropObjectArrayAsOwner(payload, OC_RSRVD_LINKS, links, dimensions);
+		result = OCRepPayloadSetPropObjectArray(payload, OC_RSRVD_LINKS, links, dimensions);
 		if (!result) {
 			THINGS_LOG(THINGS_ERROR, TAG, "Failed to add the links in the response payload.");
 			for (size_t i = 0; i < count && NULL != links[i]; i++) {
@@ -459,7 +459,7 @@ static bool handle_get_req_on_collection_batch(things_resource_s *collection_rsr
 		THINGS_LOG(THINGS_DEBUG, TAG, "Corresponding payload in response will be empty.");
 	}
 
-	result = OCRepPayloadSetPropObjectAsOwner(payload_head, OC_RSRVD_REPRESENTATION, rep_payload);
+	result = OCRepPayloadSetPropObject(payload_head, OC_RSRVD_REPRESENTATION, rep_payload);
 	if (!result) {
 		THINGS_LOG(THINGS_ERROR, TAG, "Failed to set 'rep' for collection in response payload.");
 		OCRepPayloadDestroy(rep_payload);
@@ -527,7 +527,7 @@ static bool handle_get_req_on_collection_batch(things_resource_s *collection_rsr
 			break;
 		}
 		dimensions[0] = rt_count;
-		if (!OCRepPayloadSetStringArrayAsOwner(rep_payload, OC_RSRVD_RESOURCE_TYPE, res_types, dimensions)) {
+		if (!OCRepPayloadSetStringArray(rep_payload, OC_RSRVD_RESOURCE_TYPE, res_types, dimensions)) {
 			THINGS_LOG(THINGS_ERROR, TAG, "Failed to set the resource types of child in response representation.");
 			result = false;
 			break;
@@ -541,7 +541,7 @@ static bool handle_get_req_on_collection_batch(things_resource_s *collection_rsr
 			break;
 		}
 		dimensions[0] = if_count;
-		if (!OCRepPayloadSetStringArrayAsOwner(rep_payload, OC_RSRVD_INTERFACE, if_types, dimensions)) {
+		if (!OCRepPayloadSetStringArray(rep_payload, OC_RSRVD_INTERFACE, if_types, dimensions)) {
 			THINGS_LOG(THINGS_ERROR, TAG, "Failed to set the inteface types of child in response representation.");
 			result = false;
 			break;
@@ -580,8 +580,7 @@ static bool handle_get_req_on_collection_batch(things_resource_s *collection_rsr
 			THINGS_LOG_V(THINGS_DEBUG, TAG, "Failed to get the child resource(%s) properties from application.", children[index]->uri);
 			THINGS_LOG(THINGS_DEBUG, TAG, "Corresponding payload in response will be empty.");
 		}
-
-		if (!OCRepPayloadSetPropObjectAsOwner(child_payload, OC_RSRVD_REPRESENTATION, rep_payload)) {
+		if (!OCRepPayloadSetPropObject(child_payload, OC_RSRVD_REPRESENTATION, rep_payload)) {
 			THINGS_LOG(THINGS_ERROR, TAG, "Failed to set the child representation in response representation.");
 			things_free(query);
 			result = false;
@@ -813,7 +812,7 @@ static bool handle_post_req_on_collection_batch(things_resource_s *collection_rs
 		THINGS_LOG(THINGS_DEBUG, TAG, "Corresponding payload in response will be empty.");
 	}
 
-	result = OCRepPayloadSetPropObjectAsOwner(payload_head, OC_RSRVD_REPRESENTATION, rep_payload);
+	result = OCRepPayloadSetPropObject(payload_head, OC_RSRVD_REPRESENTATION, rep_payload);
 	if (!result) {
 		THINGS_LOG(THINGS_ERROR, TAG, "Failed to set the representation for collection in response payload.");
 		OCRepPayloadDestroy(rep_payload);
@@ -882,7 +881,7 @@ static bool handle_post_req_on_collection_batch(things_resource_s *collection_rs
 			break;
 		}
 		dimensions[0] = rt_count;
-		if (!OCRepPayloadSetStringArrayAsOwner(rep_payload, OC_RSRVD_RESOURCE_TYPE, res_types, dimensions)) {
+		if (!OCRepPayloadSetStringArray(rep_payload, OC_RSRVD_RESOURCE_TYPE, res_types, dimensions)) {
 			THINGS_LOG(THINGS_ERROR, TAG, "Failed to set the resource types of child in response representation.");
 			result = false;
 			break;
@@ -896,7 +895,7 @@ static bool handle_post_req_on_collection_batch(things_resource_s *collection_rs
 			break;
 		}
 		dimensions[0] = if_count;
-		if (!OCRepPayloadSetStringArrayAsOwner(rep_payload, OC_RSRVD_INTERFACE, if_types, dimensions)) {
+		if (!OCRepPayloadSetStringArray(rep_payload, OC_RSRVD_INTERFACE, if_types, dimensions)) {
 			THINGS_LOG(THINGS_ERROR, TAG, "Failed to set the inteface types of child in response representation.");
 			result = false;
 			break;
@@ -936,7 +935,7 @@ static bool handle_post_req_on_collection_batch(things_resource_s *collection_rs
 			THINGS_LOG(THINGS_DEBUG, TAG, "Corresponding payload in response will be empty.");
 		}
 
-		if (!OCRepPayloadSetPropObjectAsOwner(payload, OC_RSRVD_REPRESENTATION, rep_payload)) {
+		if (!OCRepPayloadSetPropObject(payload, OC_RSRVD_REPRESENTATION, rep_payload)) {
 			THINGS_LOG(THINGS_ERROR, TAG, "Failed to set the child representation in response representation.");
 			result = false;
 			break;
