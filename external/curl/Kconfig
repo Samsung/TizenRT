@@ -4,6 +4,7 @@ config ENABLE_CURL
 	bool "Enable CURL"
 	default n
 	select LIBC_LOCALTIME
+	select LIBC_SCANSET
 	---help---
 		Libcurl supports various Application level protocols.
 		HTTP, FTP, Gopher etc.
