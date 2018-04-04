@@ -350,6 +350,23 @@ config S5J_RTC
 	depends on S5J_HAVE_RTC
 	default y
 
+choice
+	prompt "Change MUX to RTC clock"
+	default S5J_RTC_CLKSEL_EXTRTC
+	depends on S5J_RTC
+
+config S5J_RTC_CLKSEL_RCOSC
+	bool "RC-OSC clock"
+	---help---
+		RC-OSC clock
+
+config S5J_RTC_CLKSEL_EXTRTC
+	bool "Crystal RTC clock"
+	---help---
+		Crystal RTC clock
+
+endchoice
+
 config S5J_SSS
 	bool "SSS"
 	depends on S5J_HAVE_SSS
