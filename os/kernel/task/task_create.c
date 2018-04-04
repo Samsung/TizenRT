@@ -67,6 +67,10 @@
 #include <tinyara/ttrace.h>
 #ifdef CONFIG_DEBUG_MM_HEAPINFO
 #include <tinyara/mm/mm.h>
+#ifdef CONFIG_HEAPINFO_GROUP
+#include <tinyara/sched.h>
+#include <string.h>
+#endif
 #endif
 
 #include "sched/sched.h"
@@ -212,6 +216,10 @@ static int thread_create(FAR const char *name, uint8_t ttype, int priority, int 
 	/* Get the assigned pid before we start the task */
 
 	pid = (int)tcb->cmn.pid;
+
+#ifdef CONFIG_HEAPINFO_GROUP
+	heapinfo_check_group_list(pid, tcb->cmn.name);
+#endif
 
 	/* Activate the task */
 

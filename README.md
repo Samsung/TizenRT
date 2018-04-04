@@ -73,6 +73,8 @@ ARTIK053S [[details]](build/configs/artik053s/README.md)
 
 ARTIK055S [[details]](build/configs/artik055s/README.md)
 
+CY4390X [[details]](build/configs/cy4390x/README.txt)
+
 SIDK_S5JT200 [[details]](build/configs/sidk_s5jt200/README.md)
 
 QEMU [[details]](build/configs/qemu/README.md)

@@ -34,10 +34,6 @@ extern "C" {
 #define THINGS_MEMORY_ERROR "Memory Error"
 #define THINGS_INVALID_PARAM "Invalid Parameter"
 
-#define THINGS_OIC "OIC"
-
-#define PCF(str) str
-
 // Max buffer size used in variable argument log function
 #define MAX_LOG_V_BUFFER_SIZE (256)
 

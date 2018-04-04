@@ -1,0 +1,62 @@
+#
+# For a description of the syntax of this configuration file,
+# see kconfig-language at https://www.kernel.org/doc/Documentation/kbuild/kconfig-language.txt
+#
+
+if ARCH_CHIP_BCM4390X
+
+comment "BCM4390x Configuration Options"
+
+# Summary Configurations
+
+# Chip Selection
+
+choice
+	prompt "Cypress BCM4390x Chip Selection"
+	default ARCH_CHIP_BCM43907
+
+config ARCH_CHIP_BCM43907
+	bool "Cypress BCM43907"
+	select BCM4390X_BCM43907
+	select BOOT_RESULT
+
+config ARCH_CHIP_BCM43909
+	bool "Cypress BCM43909"
+	select BCM4390X_BCM43909
+	select BOOT_RESULT
+
+endchoice # Cypress BCM4390X Chip Selection
+
+# These hidden selections represent automatically selected MCU families and,
+# in turn, select general capabilities of the MCU family
+
+config BOOT_RESULT
+	bool
+	default y
+
+
+config BCM4390X_BCM43907
+	bool
+	default n
+	select ARCH_CORTEXR4
+	select ARMV7R_ICACHE
+	select ARMV7R_DCACHE
+
+
+config BCM4390X_BOOT_RESULT_ADDR
+	hex "boot result address (physical)"
+	default 0x6A0000
+	depends on BOOT_RESULT
+
+config BCM4390X_BCM43909
+	bool
+	default n
+	select ARCH_CORTEXR4
+	select ARMV7R_HAVE_ICACHE
+	select ARMV7R_HAVE_DCACHE
+
+config ARMCR4_CYCLE_COUNTER_REG
+	hex "Cpu clock Register address"
+	default 0x18003028
+
+endif # ARCH_CHIP_BCM4390X

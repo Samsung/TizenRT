@@ -6,6 +6,7 @@
 config EXAMPLES_ROUTE_CLIENT
 	bool "route client example"
 	default n
+	depends on GRPC
 	---help---
 		Enable the grpc client example
 

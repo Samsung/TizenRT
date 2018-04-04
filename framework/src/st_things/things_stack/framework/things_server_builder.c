@@ -27,11 +27,14 @@
 #include "things_def.h"
 #include "things_common.h"
 #include "logging/things_logger.h"
-#include "memory/things_malloc.h"
-#include "utils/things_string_util.h"
+#include "utils/things_string.h"
+#include "utils/things_malloc.h"
+#include "utils/things_string.h"
 #include "ocpayload.h"
 #include "things_resource.h"
 #include "things_server_builder.h"
+
+
 #include "easy-setup/resource_handler.h"
 
 #include "utils/things_thread.h"
@@ -143,7 +146,7 @@ struct things_resource_s *create_resource(struct things_server_builder_s *builde
 		return res;
 	}
 
-	res->res_type = type;
+	res->res_type = things_strdup(type);
 
 	builder->gres_arr[builder->res_num++] = res;
 
@@ -151,6 +154,7 @@ struct things_resource_s *create_resource(struct things_server_builder_s *builde
 	THINGS_LOG_D(THINGS_DEBUG, TAG, "DISCOVERABLE : %s", (isDiscoverable == 1 ? "YES" : "NO"));
 	THINGS_LOG_D(THINGS_DEBUG, TAG, "OBSERABLE : %s", (isObserable == 1 ? "YES" : "NO"));
 	THINGS_LOG_D(THINGS_DEBUG, TAG, "SECURE : %s", (isSecure == 1 ? "YES" : "NO"));
+
 	return res;
 }
 
@@ -191,7 +195,7 @@ struct things_resource_s *create_collection_resource(struct things_server_builde
 		return res;
 	}
 
-	res->res_type = type;
+	res->res_type = things_strdup(type);
 
 	builder->gres_arr[builder->res_num++] = res;
 
@@ -271,7 +275,7 @@ struct things_resource_s *get_resource(things_server_builder_s *builder, const c
 	for (size_t iter = 0; iter < builder->res_num; iter++) {
 		const char *rURI = OCGetResourceUri((OCResourceHandle)(builder->gres_arr[iter]->resource_handle));
 
-		if (compare_strings(rURI, uri) == 0) {
+		if (things_string_compare(rURI, uri) == 0) {
 			THINGS_LOG_D(THINGS_DEBUG, TAG, "URI Compare : %s , %s", uri, rURI);
 			ret = builder->gres_arr[iter];
 			break;
@@ -291,11 +295,7 @@ int broadcast_presence(things_server_builder_s *builder, int max_cnt)
 		is_presence = true;
 		g_presence_flag = 0;
 		g_presence_duration = max_cnt;
-#ifdef __ST_THINGS_RTOS__
 		pthread_create_rtos(&g_thread_id_presence, NULL, presence_noti_loop, (void *)NULL, THINGS_STACK_PRESENCE_NOTI_THREAD);
-#else
-		things_thread_create(&g_thread_id_presence, NULL, presence_noti_loop, (void *)NULL);
-#endif
 	} else if ((uint) g_presence_duration < g_presence_flag + ((uint) max_cnt)) {
 		g_presence_duration = max_cnt;
 		g_presence_flag = 0;
@@ -316,11 +316,7 @@ void init_builder(struct things_server_builder_s *builder, request_handler_cb cb
 
 	g_quit_flag = 0;
 
-#ifdef __ST_THINGS_RTOS__
 	pthread_create_rtos(&g_thread_id_server, NULL, server_execute_loop, (void *)NULL, THINGS_STACK_SERVEREXCETUE_LOOP_THREAD);
-#else
-	things_thread_create(&g_thread_id_server, NULL, server_execute_loop, (void *)NULL);
-#endif
 
 	register_req_handler(builder, cb);
 }
@@ -342,7 +338,6 @@ void deinit_builder(things_server_builder_s *builder)
 		// 1.    Need to unregister those registered resource in the Stack
 		// 2.    Free the payload of each resources
 		for (size_t iter = 0; iter < builder->res_num; iter++) {
-
 			if (builder->gres_arr[iter]->rep != NULL) {
 				things_release_representation_inst(builder->gres_arr[iter]->rep);
 			}
@@ -367,8 +362,8 @@ void set_device_info(things_server_builder_s *builder, char *device_name, char *
 	device_info.specVersion = NULL;
 	device_info.dataModelVersions = NULL;
 
-	duplicate_string(device_name, &device_info.deviceName);
-	duplicate_string(OC_SPEC_VERSION, &device_info.specVersion);
+	things_string_duplicate(device_name, &device_info.deviceName);
+	things_string_duplicate(OC_SPEC_VERSION, &device_info.specVersion);
 	device_info.dataModelVersions = OCCreateOCStringLL(DEFAULT_DATA_MODEL_VERSIONS);
 	device_info.types = OCCreateOCStringLL(device_type);
 	OCResourcePayloadAddStringLL(&device_info.types, OC_RSRVD_RESOURCE_TYPE_DEVICE);
@@ -469,8 +464,7 @@ void release_builder_instance(things_server_builder_s *builder)
 		if (builder->res_num > 0) {
 			for (size_t iter = 0; iter < builder->res_num; iter++) {
 				if (builder->gres_arr[iter] != NULL) {
-					/*! Added by st_things for memory Leak fix
-					 */
+					/*! Added by st_things for memory Leak fix*/
 					release_resource_inst_impl(builder->gres_arr[iter]);
 					builder->gres_arr[iter] = NULL;
 				}

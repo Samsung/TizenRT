@@ -1,10 +1,13 @@
 # How to Use Ramdump
+Here we explain how to enable build support for RAMDUMP upload,  
+and how to actually upload and parse it in the event of a crash during runtime.
 
 ## Contents
-> [Ramdump Upload Steps](#ramdump-upload-steps)  
-> [Ramdump Parsing Steps](#ramdump-parsing-steps)  
+> [Build Steps](#how-to-enable-ramdump)  
+> [Upload Steps](#how-to-upload-ramdump)  
+> [Parsing Steps](#how-to-parse-ramdump)  
 
-## Ramdump Upload Steps
+## How to enable RAMDUMP
 Below configuration must be enabled to support ramdump upload  
 1. Enable crashdump support (CONFIG_BOARD_CRASHDUMP=y)
 ```
@@ -27,6 +30,7 @@ Debug Options -> Enable Debug Output Features to y
 Debug Options -> Enable backtracking using Frame pointer register  to y
 ```
 
+## How to upload RAMDUMP
 Run ramdump tool from host after target crashed.  
 1. If target got PANIC (asserted), below messages will be promted.
 ```
@@ -41,7 +45,7 @@ Run ramdump tool from host after target crashed.
 cd $TIZENRT_BASEDIR/tools/ramdump/
 ./ramdump.sh
 ```
-4. Ramdump Tool recieves the ram contents from target.
+4. Ramdump Tool receives the ram contents from target.
 ```
 Target Handshake successful do_handshake
 Target entered to ramdump mode
@@ -52,7 +56,7 @@ Ramdump received successfully
 copying ramdump_0x02020000_0x0210c800.bin to  $TIZENRT_BASEDIR/build/output/bin
 ```
 
-## Ramdump Parsing Steps
+## How to parse RAMDUMP
 DumpParser Script privodes two interfaces: CUI and GUI
 
 ### DumpParser using CUI

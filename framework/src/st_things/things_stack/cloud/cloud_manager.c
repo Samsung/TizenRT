@@ -30,10 +30,11 @@
 
 #include "easy-setup/es_common.h"
 #include "cacommon.h"
-#include "utils/things_string_util.h"
+#include "utils/things_string.h"
 #include "things_def.h"
 #include "logging/things_logger.h"
-#include "memory/things_malloc.h"
+#include "utils/things_malloc.h"
+#include "utils/things_string.h"
 #include "framework/things_data_manager.h"
 #include "cloud_connector.h"
 #include "cloud_manager.h"
@@ -296,9 +297,9 @@ static int set_def_cloud_info(es_cloud_signup_s *cloud_info, const char *cloud_a
 
 	// if exist Cloud m_domain Name, then Save Name and Port.
 	if (cloud_info->redirect_uri != NULL && strlen(cloud_info->redirect_uri) > 0) {
-		m_domain = strdup(cloud_info->redirect_uri);
+		m_domain = things_strdup(cloud_info->redirect_uri);
 	} else if (prov_data != NULL) {
-		m_domain = strdup(prov_data->host_name);
+		m_domain = things_strdup(prov_data->host_name);
 	}
 
 	if (m_domain != NULL && strlen(m_domain) != 0) {
@@ -948,8 +949,9 @@ OCStackApplicationResult handle_main_dev_publish_cb(void *ctx, OCDoHandle handle
 			PROFILING_TIME("Cloud Provisioning End.");
 			return OC_STACK_DELETE_TRANSACTION;
 		}
-
+#ifdef CONFIG_ST_THINGS_SUPPORT_SUB_DEVICE
 		publish_resource_into_cloud(RSC_PUB_SUB_ALL, NULL);
+#endif
 		publish_dev_profile_into_cloud(NULL);
 	}
 
@@ -957,6 +959,7 @@ OCStackApplicationResult handle_main_dev_publish_cb(void *ctx, OCDoHandle handle
 	return OC_STACK_DELETE_TRANSACTION;
 }
 
+#ifdef CONFIG_ST_THINGS_SUPPORT_SUB_DEVICE
 OCStackApplicationResult handle_sub_dev_publish_cb(void *ctx, OCDoHandle handle, OCClientResponse *client_response)
 {
 	THINGS_LOG_D(THINGS_DEBUG, TAG, "Sub-Device resource Publish callback received");
@@ -1013,6 +1016,7 @@ OCStackApplicationResult handle_sub_dev_publish_cb(void *ctx, OCDoHandle handle,
 
 	return OC_STACK_DELETE_TRANSACTION;
 }
+#endif
 
 OCStackApplicationResult handle_dev_profile_cb(void *ctx, OCDoHandle handle, OCClientResponse *client_response)
 {
@@ -1212,7 +1216,9 @@ OCStackResult publish_resource_into_cloud(rp_target_e target, timeout_s *timeout
 {
 	THINGS_LOG_D(THINGS_DEBUG, TAG, "Enter.");
 
+#ifdef CONFIG_ST_THINGS_SUPPORT_SUB_DEVICE
 	int sub_dev_pub_fail = -1;
+#endif
 	OCStackResult res = OC_STACK_OK;
 
 	if (target == RSC_PUB_ALL || target == RSC_PUB_MAIN_ONLY) {
@@ -1221,6 +1227,7 @@ OCStackResult publish_resource_into_cloud(rp_target_e target, timeout_s *timeout
 		usleep(10000);			// 1 device resource-publish per 10 msec.
 	}
 
+#ifdef CONFIG_ST_THINGS_SUPPORT_SUB_DEVICE
 	if (res == OC_STACK_OK && target != RSC_PUB_MAIN_ONLY) {
 		THINGS_LOG(THINGS_DEBUG, TAG, "Sub-Devices Resource Publish Start.");
 		int device_cnt = 0;
@@ -1283,6 +1290,7 @@ OCStackResult publish_resource_into_cloud(rp_target_e target, timeout_s *timeout
 			}
 		}
 	}
+#endif
 
 	THINGS_LOG_D(THINGS_DEBUG, TAG, "Exit.");
 	return res;
@@ -1317,7 +1325,7 @@ OCStackResult log_in_out_to_cloud(bool value, timeout_s *timeout)
 		}
 
 		if (signed_up_data->domain != NULL) {
-			ci_domian = strdup(signed_up_data->domain);
+			ci_domian = things_strdup(signed_up_data->domain);
 		}
 		THINGS_LOG_D(THINGS_DEBUG, TAG, "*********** Start Sign-IN ********** ci_domian : %s", ci_domian);
 	} else {
@@ -1795,12 +1803,7 @@ void *cloud_data_cb_esm(es_cloud_prov_data_s *event_data)
 		g_qis_cloud_thread_running = CISESS_BUSY;
 
 		if ((cloned_data = clone_data_add_timeout(event_data, NULL)) != NULL) {
-#ifdef __ST_THINGS_RTOS__
 			int retp = pthread_create_rtos(&cthread_handler, NULL, (pthread_func_type) ci_connection_init_loop, (void *)cloned_data, THINGS_STACK_CICONNETION_INIT_THREAD);
-#else
-
-			int retp = things_thread_create(&cthread_handler, NULL, (pthread_func_type) ci_connection_init_loop, (void *)cloned_data) != 0)
-#endif
 			if (retp != 0) {
 				THINGS_LOG_V_ERROR(THINGS_ERROR, TAG, "Create thread is failed.");
 				things_free(cloned_data);
@@ -1855,13 +1858,7 @@ int cloud_retry_sign_in(timeout_s *timeout)
 		// cloud_data setting.
 		init_es_cloud_prov_data(&dummy_data);
 
-		if ((cloned_data = clone_data_add_timeout(&dummy_data, timeout)) == NULL ||
-#ifdef __ST_THINGS_RTOS__
-			pthread_create_rtos(&cthread_handler, NULL, (pthread_func_type) ci_connection_init_loop, (void *)cloned_data, THINGS_STACK_CICONNETION_INIT_THREAD) != 0)
-#else
-			things_thread_create(&cthread_handler, NULL, (pthread_func_type) ci_connection_init_loop, (void *)cloned_data) != 0)
-#endif
-		{
+		if ((cloned_data = clone_data_add_timeout(&dummy_data, timeout)) == NULL || pthread_create_rtos(&cthread_handler, NULL, (pthread_func_type) ci_connection_init_loop, (void *)cloned_data, THINGS_STACK_CICONNETION_INIT_THREAD) != 0) {
 			THINGS_LOG_V_ERROR(THINGS_ERROR, TAG, "Create thread is failed.");
 			things_free(cloned_data);
 			cloned_data = NULL;
@@ -1890,13 +1887,7 @@ static int cloud_retry_sign_up(es_cloud_prov_data_s *event_data, timeout_s *time
 	g_qis_cloud_thread_running = CISESS_STOP_TRIGGER;
 	esm_get_network_status();	// State return
 
-	if ((cloned_data = clone_data_add_timeout(event_data, timeout)) == NULL ||
-#ifdef __ST_THINGS_RTOS__
-		pthread_create_rtos(&cthread_handler, NULL, (pthread_func_type) ci_connection_waiting_loop, (void *)cloned_data, THINGS_STACK_CICONNETION_WAIT_THREAD) != 0)
-#else
-		things_thread_create(&cthread_handler, NULL, (pthread_func_type) ci_connection_waiting_loop, (void *)cloned_data) != 0)
-#endif
-	{
+	if ((cloned_data = clone_data_add_timeout(event_data, timeout)) == NULL || pthread_create_rtos(&cthread_handler, NULL, (pthread_func_type) ci_connection_waiting_loop, (void *)cloned_data, THINGS_STACK_CICONNETION_WAIT_THREAD) != 0) {
 		THINGS_LOG_V_ERROR(THINGS_ERROR, TAG, "Create thread is failed.");
 		things_free(cloned_data);
 		cloned_data = NULL;
@@ -2459,10 +2450,10 @@ static void ci_finish_cloud_con(int result)
 		dm_load_legacy_cloud_data(&Cloud_data);	// TODO read Cloud-Data.
 		if (Cloud_data != NULL) {
 			if (Cloud_data->domain != NULL) {
-				domain = strdup(Cloud_data->domain);
+				domain = things_strdup(Cloud_data->domain);
 			}
 			if (Cloud_data->access_token != NULL) {
-				access_token = strdup(Cloud_data->access_token);
+				access_token = things_strdup(Cloud_data->access_token);
 			}
 		}
 

@@ -51,6 +51,12 @@ config LIBC_FLOATINGPOINT
 		By default, floating point
 		support in printf, sscanf, etc. is disabled.
 
+config LIBC_SCANSET
+        bool "Scanset support"
+        default n 
+        ---help---
+                Add scanset support to sscanf().
+
 config NOPRINTF_LONGLONG_TO_ASCII
 	bool "Disable long long type in printf"
 	default n

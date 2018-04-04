@@ -20,7 +20,7 @@
 #include <stdlib.h>
 
 #include "logging/things_logger.h"
-#include "memory/things_malloc.h"
+#include "utils/things_malloc.h"
 
 #include "things_thread.h"
 

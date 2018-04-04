@@ -100,11 +100,13 @@
 #include <netinet/in.h>
 #include <arpa/inet.h>
 #include <semaphore.h>
+#include <pthread.h>
 
 /****************************************************************************
  * Global Data
  ****************************************************************************/
 sem_t g_dhcpd_sem;
+
 
 /****************************************************************************
  * Private Data
@@ -321,7 +323,8 @@ static char DHCPD_IFNAME[IFNAMSIZ] = { 0, };
 static struct timeval g_select_timeout = { 1, 0 };
 #endif
 
-static dhcp_sta_joined g_dhcp_sta_joined;
+static dhcp_sta_joined g_dhcp_sta_joined = NULL;
+static pthread_mutex_t g_dhcpd_lock = PTHREAD_MUTEX_INITIALIZER; // protect a write operation in g_dhcpd_running
 
 /****************************************************************************
  * Private Functions
@@ -1095,7 +1098,9 @@ int dhcpd_sendack(in_addr_t ipaddr)
 	/* TODO: new callback way up to application to inform a new STA has called
 	 * dhcp client
 	 */
-	g_dhcp_sta_joined();
+	if (g_dhcp_sta_joined) {
+		g_dhcp_sta_joined();
+	}
 	return OK;
 }
 
@@ -1480,9 +1485,12 @@ int dhcpd_status(void)
 void dhcpd_stop(void)
 {
 	int ret = -1;
+	pthread_mutex_lock(&g_dhcpd_lock);
 	if (g_dhcpd_running == 0) {
+		pthread_mutex_unlock(&g_dhcpd_lock);
 		return;
 	}
+	pthread_mutex_unlock(&g_dhcpd_lock);
 
 	g_dhcpd_quit = 1;
 	while (ret != OK) {
@@ -1536,9 +1544,7 @@ int dhcpd_run(void *arg)
 	/* Now loop indefinitely, reading packets from the DHCP server socket */
 
 	g_dhcpd_sockfd = -1;
-
 	g_dhcpd_quit = 0;
-	g_dhcpd_running = 1;
 
 	/* Create a socket to listen for requests from DHCP clients */
 	/* TODO : Need to add cancellation point */
@@ -1636,8 +1642,8 @@ int dhcpd_run(void *arg)
 	sem_post(&g_dhcpd_sem);
 
 exit_with_error:
-	g_dhcpd_running = 0;
-
+	/* We don't need to de-initialize g_dhcp_sta_joined
+       because it will be initialized at dhcpd_start*/
 	/* de-initialize netif address (ip address, netmask, default gateway) */
 
 	if (dhcpd_netif_deinit(DHCPD_IFNAME) < 0) {
@@ -1660,10 +1666,21 @@ exit_with_error:
 
 int dhcpd_start(char *intf, dhcp_sta_joined dhcp_join_cb)
 {
+	pthread_mutex_lock(&g_dhcpd_lock);
+	if (g_dhcpd_running == 1) {
+		pthread_mutex_unlock(&g_dhcpd_lock);
+		return -1;
+	}
+	g_dhcpd_running = 1;
+	pthread_mutex_unlock(&g_dhcpd_lock);
+
 	pthread_attr_t attr;
 	int status;
 	int ret;
 	struct sched_param sparam;
+
+	g_dhcp_sta_joined = 0;
+
 	ret = sem_init(&g_dhcpd_sem, 0, 0);
 	if (ret != OK) {
 		ndbg("failed to initialize semaphore\n");
@@ -1716,5 +1733,9 @@ int dhcpd_start(char *intf, dhcp_sta_joined dhcp_join_cb)
 
 	return 0;
 err_exit:
+	pthread_mutex_lock(&g_dhcpd_lock);
+	g_dhcpd_running = 0;
+	pthread_mutex_unlock(&g_dhcpd_lock);
+
 	return -1;
 }

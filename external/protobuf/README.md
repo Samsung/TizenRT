@@ -1,88 +1,62 @@
-Protocol Buffers - Google's data interchange format
-===================================================
+# Introduce
 
-[![Build Status](https://travis-ci.org/google/protobuf.svg?branch=master)](https://travis-ci.org/google/protobuf) [![Build status](https://ci.appveyor.com/api/projects/status/73ctee6ua4w2ruin?svg=true)](https://ci.appveyor.com/project/protobuf/protobuf) [![Build Status](https://grpc-testing.appspot.com/buildStatus/icon?job=protobuf_branch)](https://grpc-testing.appspot.com/job/protobuf_branch) [![Build Status](https://grpc-testing.appspot.com/job/protobuf_branch_32/badge/icon)](https://grpc-testing.appspot.com/job/protobuf_branch_32) [![Build Status](http://ci.bazel.io/buildStatus/icon?job=protobuf)](http://ci.bazel.io/job/protobuf/)
+Protocol Buffers (a.k.a. `protobuf`) is Google's language-neutral, platform-neutral, extensible mechanism for serializing structured data. TizenRT features a port for `protobuf` version 3.5.1, with support for C++ language. 
+You can find details of `protobuf` at https://github.com/google/protobuf.
 
-Copyright 2008 Google Inc.
+The following sections detail the steps required to build `protobuf` on TizenRT, and to build and run TizenRT applications that use `protobuf`.
 
-https://developers.google.com/protocol-buffers/
+# Build `protobuf` 
 
-Overview
---------
+`protobuf` takes in specifications for services and messages in a special `proto` file (with file extension `.proto`), and translates these specifications to actual C++ code that can be used by applications.
+For the translation to happen, `protobuf` needs a protocol complier called `protoc` to compile the specification `.proto` file. Below are mentioned two appproaches for installing `protoc` in your build environment (host OS):
 
-Protocol Buffers (a.k.a., protobuf) are Google's language-neutral,
-platform-neutral, extensible mechanism for serializing structured data. You
-can find [protobuf's documentation on the Google Developers site](https://developers.google.com/protocol-buffers/).
+## Installing `protoc` from source
 
-This README file contains protobuf installation instructions. To install
-protobuf, you need to install the protocol compiler (used to compile .proto
-files) and the protobuf runtime for your chosen programming language.
+`protoc` can be installed from source by using the link below:
 
-Protocol Compiler Installation
-------------------------------
+- https://github.com/google/protobuf
 
-The protocol compiler is written in C++. If you are using C++, please follow
-the [C++ Installation Instructions](src/README.md) to install protoc along
-with the C++ runtime.
+## Installing `protoc` release from GitHub
 
-For non-C++ users, the simplest way to install the protocol compiler is to
-download a pre-built binary from our release page:
+The appropriate `protoc` release can be fetched and installed using the steps below:
 
-  [https://github.com/google/protobuf/releases](https://github.com/google/protobuf/releases)
+- http://google.github.io/proto-lens/installing-protoc.html
 
-In the downloads section of each release, you can find pre-built binaries in
-zip packages: protoc-$VERSION-$PLATFORM.zip. It contains the protoc binary
-as well as a set of standard .proto files distributed along with protobuf.
+ Having installed `protoc` in the build environment, the following steps are detailed for configuring TizenRT's `menuconfig` for building `protobuf`
 
-If you are looking for an old version that is not available in the release
-page, check out the maven repo here:
+## Build `protobuf` on TizenRT
 
-  [https://repo1.maven.org/maven2/com/google/protobuf/protoc/](https://repo1.maven.org/maven2/com/google/protobuf/protoc/)
+protocol buffer in menuconfig should be selected under [`External Libraries > protocol buffer`].
+Currently, `protobuf` configuration is supported only for applications that use `gRPC`(see `artik053/grpc` under `build/configs` directory). In the future, `protobuf` configurations will be extended to cover applications that
+do not strictly require `gRPC`.
 
-These pre-built binaries are only provided for released versions. If you want
-to use the github master version at HEAD, or you need to modify protobuf code,
-or you are using C++, it's recommended to build your own protoc binary from
-source.
+The following sections describes how to quickly verify the working of `protobuf` on TizenRT, and how to build a new application that uses `protobuf`.
 
-If you would like to build protoc binary from source, see the [C++ Installation
-Instructions](src/README.md).
+# Quick Start
 
-Protobuf Runtime Installation
------------------------------
+TizenRT provides a sample program for protobuf, named `addressbook_main` that serializes and deserializes user data.
+`addressbook_main` program could be selected under below menuconfig
 
-Protobuf supports several different programming languages. For each programming
-language, you can find instructions in the corresponding source directory about
-how to install protobuf runtime for that specific language:
+[`Application Configuration > Examples > Protocol Buffers exmaple`]
 
-| Language                             | Source                                                      |
-|--------------------------------------|-------------------------------------------------------------|
-| C++ (include C++ runtime and protoc) | [src](src)                                                  |
-| Java                                 | [java](java)                                                |
-| Python                               | [python](python)                                            |
-| Objective-C                          | [objectivec](objectivec)                                    |
-| C#                                   | [csharp](csharp)                                            |
-| JavaNano                             | [javanano](javanano)                                        |
-| JavaScript                           | [js](js)                                                    |
-| Ruby                                 | [ruby](ruby)                                                |
-| Go                                   | [golang/protobuf](https://github.com/golang/protobuf)       |
-| PHP                                  | [php](php)                                                  |
-| Dart                                 | [dart-lang/protobuf](https://github.com/dart-lang/protobuf) |
+Having selected the application as shown above, build it as follows:
+```
+$ make
+```
+ 
 
-Quick Start
------------
+# Add new application for protocol buffer
 
-The best way to learn how to use protobuf is to follow the tutorials in our
-developer guide:
+In general, steps for adding new application to TizenRT is explained in this link: https://github.com/Samsung/TizenRT/blob/master/apps/HowtoAddNewApp.md.
+More specifically, applications using `protobuf` require the additional build options:
+1. Application should point the header file path for protobuf, as shown:
+```
+CXXFLAGS  += -I$(TOPDIR)/../external/protobuf/src/
+```
 
-https://developers.google.com/protocol-buffers/docs/tutorials
+2. TizenRT doesn't support RTTI now so a `no rtti` option should be set accordingly, as shown.
+```
+CXXFLAGS  += -DGOOGLE_PROTOBUF_NO_RTTI -D__TizenRT__
+```
 
-If you want to learn from code examples, take a look at the examples in the
-[examples](examples) directory.
-
-Documentation
--------------
-
-The complete documentation for Protocol Buffers is available via the
-web at:
-
-https://developers.google.com/protocol-buffers/
+Interested developers can refer to `example/protbuf/Makefile` for additional details.

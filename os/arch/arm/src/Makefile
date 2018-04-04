@@ -143,7 +143,6 @@ ifeq ($(WINTOOL),y)
 ifeq ($(BOARDMAKE),y)
   LIBPATHS += -L"${shell cygpath -w "$(TOPDIR)/arch/$(CONFIG_ARCH)/src/board"}"
 endif
-
 else
   LIBPATHS += -L"$(TOPDIR)/$(LIBRARIES_DIR)"
 ifeq ($(BOARDMAKE),y)

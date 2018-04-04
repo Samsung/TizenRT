@@ -18,7 +18,7 @@
 
 #include <stdio.h>
 
-#include "memory/things_malloc.h"
+#include "utils/things_malloc.h"
 #include "things_resource.h"
 #include "framework/things_data_manager.h"
 

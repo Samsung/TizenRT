@@ -22,7 +22,6 @@ include $(APPDIR)/Make.defs
 CXXEXT ?= .cc
 PROTOEXT ?= .proto
 GENCXXEXT ?= .pb.cc
-SERVICECXXEXT ?= .grpc.pb.cc
 MSG_PREFIX ?= .pb
 SERVICE_PREFIX ?= .grpc.pb
 # Protocol Buffers Example
@@ -42,19 +41,18 @@ CXXFLAGS 	+= -DGOOGLE_PROTOBUF_NO_RTTI -D__TizenRT__
 MAINSRC		= addressbook_main.cc
 
 CXXSRCS 	= $(CXXPROTO:$(PROTOEXT)=$(GENCXXEXT))
-CXXSRCS2	= $(CXXPROTO:$(PROTOEXT)=$(SERVICECXXEXT))
 AOBJS		= $(ASRCS:.S=$(OBJEXT))
 COBJS 		= $(CSRCS:.c=$(OBJEXT))
 CXXOBJS 	= $(CXXSRCS:$(GENCXXEXT)=$(MSG_PREFIX)$(OBJEXT))
-CXXOBJS2	= $(CXXSRCS2:$(SERVICECXXEXT)=$(SERVICE_PREFIX)$(OBJEXT))
+
 ifeq ($(suffix $(MAINSRC)),$(CXXEXT))
 MAINOBJ 	= $(MAINSRC:$(CXXEXT)=$(OBJEXT))
 else
 MAINOBJ 	= $(MAINSRC:.c=$(OBJEXT))
 endif
 
-SRCS		= $(ASRCS) $(CSRCS) $(CXXSRCS) $(CXXSRCS2) $(MAINSRC)
-OBJS		= $(AOBJS) $(COBJS) $(CXXOBJS) $(CXXOBJS2)
+SRCS		= $(ASRCS) $(CSRCS) $(CXXSRCS) $(MAINSRC)
+OBJS		= $(AOBJS) $(COBJS) $(CXXOBJS)
 
 ifneq ($(CONFIG_BUILD_KERNEL),y)
 OBJS		+= $(MAINOBJ)
@@ -85,9 +83,6 @@ all: .built
 $(CXXSRCS): %$(GENCXXEXT): %$(PROTOEXT)
 	protoc -I . --cpp_out=. $<
 
-$(CXXSRCS2): %$(SERVICECXXEXT): %$(PROTOEXT)
-	protoc -I . --grpc_out=. --plugin=protoc-gen-grpc=`which grpc_cpp_plugin` $<
-
 $(AOBJS): %$(OBJEXT): %.S
 	$(call ASSEMBLE, $<, $@)
 
@@ -95,9 +90,6 @@ $(COBJS): %$(OBJEXT): %.c
 	$(call COMPILE, $<, $@)
 
 $(CXXOBJS): %$(MSG_PREFIX)$(OBJEXT): %$(GENCXXEXT)
-	$(call COMPILEXX, $<, $@)
-
-$(CXXOBJS2): %$(SERVICE_PREFIX)$(OBJEXT): %$(SERVICECXXEXT)
 	$(call COMPILEXX, $<, $@)
 
 ifeq ($(suffix $(MAINSRC)),$(CXXEXT))

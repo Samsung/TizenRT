@@ -60,52 +60,6 @@ config AUDIO_DRIVER_SPECIFIC_BUFFERS
 
 endmenu # Audio Buffer Configuration
 
-menu "Supported Audio Formats"
-
-config AUDIO_FORMAT_AC3
-	bool "AC3 Format"
-	default n
-	---help---
-		Build in support for AC3 (Dolby Digital) Audio format.
-
-config AUDIO_FORMAT_DTS
-	bool "DTS Format"
-	default n
-	---help---
-		Add in support for DTS format.
-
-config AUDIO_FORMAT_PCM
-	bool "PCM Audio"
-	default y
-	---help---
-		Build in support for PCM Audio format.
-
-config AUDIO_FORMAT_MP3
-	bool "MPEG 3 Layer 1"
-	default n
-	---help---
-		Build in support for MP3 Audio format.
-
-config AUDIO_FORMAT_MIDI
-	bool "Midi Format"
-	default n
-	---help---
-		Add in support for MIDI format.
-
-config AUDIO_FORMAT_WMA
-	bool "WMA Format (see copyright notice)"
-	default n
-	---help---
-		Add in support for Microsoft Windows Media format.
-
-config AUDIO_FORMAT_OGG_VORBIS
-	bool "Ogg Vorbis format"
-	default n
-	---help---
-		Build in support for the Open Source Ogg Vorbis format.
-
-endmenu
-
 menu "Exclude Specific Audio Features"
 
 config AUDIO_EXCLUDE_VOLUME

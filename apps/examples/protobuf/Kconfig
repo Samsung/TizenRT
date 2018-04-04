@@ -6,6 +6,7 @@
 config EXAMPLES_PROTOBUF
 	bool "Protocol Buffers example"
 	default n
+	depends on PROTOBUF
 	---help---
 		Enable the Protocol Buffers example
 

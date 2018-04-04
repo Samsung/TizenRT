@@ -110,6 +110,7 @@ int iotbus_spi_write(iotbus_spi_context_h hnd, uint8_t *txbuf, size_t length);
  */
 int iotbus_spi_recv(iotbus_spi_context_h hnd, uint8_t *rxbuf, size_t length);
 
+#ifdef CONFIG_SPI_EXCHANGE
 /**
  * @brief transfers rx and tx data over spi bus.
  *
@@ -122,6 +123,7 @@ int iotbus_spi_recv(iotbus_spi_context_h hnd, uint8_t *rxbuf, size_t length);
  * @since TizenRT v1.0
  */
 int iotbus_spi_transfer_buf(iotbus_spi_context_h hnd, uint8_t *txbuf, uint8_t *rxbuf, size_t length);
+#endif
 
 /**
  * @brief closes spi_context.

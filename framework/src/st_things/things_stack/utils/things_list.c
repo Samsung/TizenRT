@@ -21,7 +21,7 @@
 #include <stdlib.h>
 #include <pthread.h>
 #include "logging/things_logger.h"
-#include "memory/things_malloc.h"
+#include "things_malloc.h"
 #include "things_list.h"
 
 #define TAG "[things_list]"

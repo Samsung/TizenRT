@@ -57,7 +57,6 @@
 
 #include <tinyara/config.h>
 #ifdef CONFIG_NET
-#if defined(CONFIG_ENABLE_IOTIVITY) || defined(CONFIG_GRPC)
 
 #include <sys/types.h>
 #include <sys/socket.h>
@@ -98,5 +97,4 @@ ssize_t sendmsg(int sockfd, struct msghdr *msg, int flags)
 
 	return sendto(sockfd, buf, len, flags, to, (socklen_t) *addrlen);
 }
-#endif							/* CONFIG_ENABLE_IOTIVITY || CONFIG_GRPC */
 #endif							/* CONFIG_NET */

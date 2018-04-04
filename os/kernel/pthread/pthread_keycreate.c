@@ -125,33 +125,40 @@
  *
  ****************************************************************************/
 
-int pthread_key_create(FAR pthread_key_t *key, CODE void (*destructor)(void *))
+int pthread_key_create(FAR pthread_key_t *key, pthread_destructor_t destructor)
 {
-#if CONFIG_NPTHREAD_KEYS > 0
-	FAR struct tcb_s *rtcb = this_task();
-	FAR struct task_group_s *group = rtcb->group;
-	int ret = EAGAIN;
+	struct pthread_tcb_s *rtcb = (struct pthread_tcb_s *)this_task();
+	struct task_group_s *group = rtcb->cmn.group;
+	int key_index = 0;
 
 	DEBUGASSERT(group);
 
-	/* Check if we have exceeded the system-defined number of keys. */
-
-	if (group->tg_nkeys < PTHREAD_KEYS_MAX) {
-		/* Return the key value */
-
-		*key = group->tg_nkeys;
-
-		/* Increment the count of global keys. */
-
-		group->tg_nkeys++;
-
-		/* Return success. */
-
-		ret = OK;
+	if (!key) {
+		return EINVAL;
 	}
 
-	return ret;
-#else
-	return ENOSYS;
-#endif
+	/* Check if we have exceeded the system-defined number of keys. */
+
+	while (key_index < PTHREAD_KEYS_MAX) {
+		/* Find not in-use key */
+
+		if (!group->tg_keys[key_index]) {
+			/* Mark it is in-use */
+
+			group->tg_keys[key_index] = IN_USE;
+
+			/* Save desctructor */
+
+			rtcb->pthread_data[key_index].destructor = destructor;
+
+			/* Return the key value */
+
+			*key = key_index;
+
+			return OK;
+		}
+		key_index++;
+	};
+
+	return EAGAIN;
 }

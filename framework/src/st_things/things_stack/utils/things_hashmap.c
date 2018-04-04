@@ -19,7 +19,7 @@
 #include "things_hashmap.h"
 #include <stdio.h>
 #include <stdlib.h>
-#include "memory/things_malloc.h"
+#include "things_malloc.h"
 
 /* this should be prime */
 #define TABLE_STARTSIZE 1021
@@ -162,6 +162,28 @@ void *hashmap_get(struct hashmap_s *hash, unsigned long key)
 	}
 
 	return 0;
+}
+
+unsigned long* hashmap_get_keyset(struct hashmap_s *hash)
+{
+	unsigned long* keyset = NULL;
+	int idx = 0;
+
+	if (hash->count) {
+		int i;
+
+		keyset = things_malloc(sizeof(unsigned long) * hash->count);
+
+		for (i = 0; i < hash->size; i++) {
+			if (hash->table[i].flags & ACTIVE) {
+
+				keyset[idx] = hash->table[i].key;
+
+			}
+		}
+	}
+
+	return keyset;
 }
 
 long hashmap_count(struct hashmap_s *hash)

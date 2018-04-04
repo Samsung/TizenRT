@@ -141,7 +141,7 @@ typedef struct sem_s sem_t;
 #define SEM_INITIALIZER(c) {(c), FLAGS_INITIALIZED, SEMHOLDER_INITIALIZER} /* semcount, flags, holder */
 #endif
 #else
-#define SEM_INITIALIZER(c) {(c)}	/* semcount */
+#define SEM_INITIALIZER(c) {(c), FLAGS_INITIALIZED}	/* semcount, flags */
 #endif
 
 /****************************************************************************

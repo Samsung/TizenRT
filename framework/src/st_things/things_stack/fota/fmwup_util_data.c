@@ -22,7 +22,7 @@
 #include "fmwup_util_data.h"
 #include "fmwup_api.h"
 
-#include "memory/things_malloc.h"
+#include "utils/things_malloc.h"
 #include "framework/things_data_manager.h"
 
 #include "logging/things_logger.h"
@@ -142,17 +142,17 @@ char *key_manager_set_default_data(const char *name)
 	char *default_data = NULL;
 
 	if (strcmp(name, FIRMWARE_PROPERTY_UPDATE) == 0) {
-		default_data = strdup(KEY_MANAGER_INT_DEFAULT_DATA);
+		default_data = things_strdup(KEY_MANAGER_INT_DEFAULT_DATA);
 	} else if (strcmp(name, FIRMWARE_PROPERTY_UPDATE_TIME) == 0) {
-		default_data = strdup(KEY_MANAGER_STR_DEFAULT_DATA);
+		default_data = things_strdup(KEY_MANAGER_STR_DEFAULT_DATA);
 	} else if (strcmp(name, FIRMWARE_PROPERTY_STATE) == 0) {
-		default_data = strdup(KEY_MANAGER_INT_DEFAULT_DATA);
+		default_data = things_strdup(KEY_MANAGER_INT_DEFAULT_DATA);
 	} else if (strcmp(name, FIRMWARE_PROPERTY_RESULT) == 0) {
-		default_data = strdup(KEY_MANAGER_INT_DEFAULT_DATA);
+		default_data = things_strdup(KEY_MANAGER_INT_DEFAULT_DATA);
 	} else if (strcmp(name, FIRMWARE_PROPERTY_NEW_VERSION) == 0) {
-		default_data = strdup(KEY_MANAGER_STR_DEFAULT_DATA);
+		default_data = things_strdup(KEY_MANAGER_STR_DEFAULT_DATA);
 	} else if (strcmp(name, FIRMWARE_PROPERTY_PACKAGE_URI) == 0) {
-		default_data = strdup(KEY_MANAGER_STR_DEFAULT_DATA);
+		default_data = things_strdup(KEY_MANAGER_STR_DEFAULT_DATA);
 	} else {
 		THINGS_LOG_D(THINGS_DEBUG, TAG, "Invalid key[%s]", name);
 		return NULL;

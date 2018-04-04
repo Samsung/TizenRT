@@ -6,7 +6,7 @@
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *      http://www.apache.org/licenses/LICENSE-2.0
+ *	  http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -33,8 +33,8 @@
 #include "things_def.h"
 #include "framework/things_common.h"
 #include "logging/things_logger.h"
-#include "memory/things_malloc.h"
-#include "utils/things_string_util.h"
+#include "utils/things_malloc.h"
+#include "utils/things_string.h"
 
 #include "things_resource.h"
 #include "framework/things_server_builder.h"
@@ -258,7 +258,6 @@ void things_wifi_sta_connected(wifi_manager_result_e res)
 	THINGS_LOG_D(THINGS_INFO, TAG, "T%d --> %s", getpid(), __FUNCTION__);
 
 	pthread_create_rtos(&h_thread_things_wifi_join, NULL, (pthread_func_type) t_things_wifi_join_loop, NULL, THINGS_STACK_WIFI_JOIN_THREAD);
-	pthread_detach(h_thread_things_wifi_join);
 }
 
 void things_wifi_sta_disconnected(void)
@@ -432,16 +431,6 @@ INT8 things_wifi_connection_cb(access_point_info_s *p_info, char *p_cmd_id)
 	return 1;
 }
 
-int things_wifi_search_cb(access_point_info_s *** p_info, int *p_count)
-{
-	THINGS_LOG_D(THINGS_DEBUG, TAG, THINGS_FUNC_ENTRY);
-	//TO DO
-	(*p_count) = 0;
-
-	return 1;
-
-}
-
 static void otm_event_cb(const char *addr, uint16_t port, const char *uuid, int event)
 {
 	switch (event) {
@@ -580,6 +569,14 @@ int things_initialize_stack(const char *json_path, bool *easysetup_completed)
 	is_things_module_inited = 1;
 
 	*easysetup_completed = dm_is_there_things_cloud();
+
+	things_register_set_ap_connection_func(things_wifi_connection_cb);
+
+	if (wifi_manager_init(&wifi_callbacks) != WIFI_MANAGER_SUCCESS) {
+		THINGS_LOG_ERROR(THINGS_ERROR, TAG, "Failed to initialize WiFi manager");
+		return 0;
+	}
+	
 #ifdef CONFIG_ST_THINGS_FOTA
 	if (fmwup_initialize() < 0) {
 		THINGS_LOG(THINGS_ERROR, TAG, "fmwup_initizlize() failed");
@@ -616,13 +613,6 @@ int things_deinitialize_stack()
 
 int things_start_stack()
 {
-	things_register_set_ap_connection_func(things_wifi_connection_cb);
-	things_register_get_ap_list_func(things_wifi_search_cb);
-
-	if (wifi_manager_init(&wifi_callbacks) != WIFI_MANAGER_SUCCESS) {
-		THINGS_LOG_ERROR(THINGS_ERROR, TAG, "Failed to initialize WiFi manager");
-		return 0;
-	}
 	THINGS_LOG_D(THINGS_INFO, TAG, "ST_Things SDK version : %s", ST_THINGS_STACK_VERSION);
 
 	if (dm_get_easysetup_connectivity_type() == es_conn_type_softap) {
@@ -758,12 +748,8 @@ int things_reset(void *remote_owner, things_es_enrollee_reset_e resetType)
 		args->resetType = resetType;
 
 		b_reset_continue_flag = true;
-#ifdef __ST_THINGS_RTOS__
-		if (pthread_create_rtos(&h_thread_things_reset, NULL, (pthread_func_type) t_things_reset_loop, args, THINGS_STACK_RESETLOOP_THREAD) != 0)
-#else
-		if (things_thread_create(&h_thread_things_reset, NULL, (pthread_func_type) t_things_reset_loop, args) != 0)
-#endif
-		{
+
+		if (pthread_create_rtos(&h_thread_things_reset, NULL, (pthread_func_type) t_things_reset_loop, args, THINGS_STACK_RESETLOOP_THREAD) != 0) {
 			THINGS_LOG_V_ERROR(THINGS_ERROR, TAG, "Failed to create thread");
 			h_thread_things_reset = 0;
 			things_free(args);
@@ -785,6 +771,56 @@ GOTO_OUT:
 	THINGS_LOG_D(THINGS_DEBUG, TAG, THINGS_FUNC_EXIT);
 
 	return res;
+}
+
+int things_stop(void)
+{
+	pthread_mutex_lock(&g_things_stop_mutex);
+
+	THINGS_LOG_D(THINGS_DEBUG, TAG, THINGS_FUNC_ENTRY);
+	g_quit_flag = 1;
+	is_things_module_inited = 0;
+
+	pthread_mutex_lock(&m_thread_oic_reset);
+	if (b_thread_things_reset == true) {
+		b_reset_continue_flag = false;
+
+		pthread_join(h_thread_things_reset, NULL);
+		pthread_detach(h_thread_things_reset);
+		h_thread_things_reset = 0;
+		b_thread_things_reset = false;
+	}
+
+	pthread_mutex_unlock(&m_thread_oic_reset);
+
+	THINGS_LOG_D(THINGS_DEBUG, TAG, "Terminate Cloud Session Managing");
+	es_cloud_terminate();
+
+	THINGS_LOG_D(THINGS_DEBUG, TAG, "Terminate EasySetup");
+	esm_terminate_easysetup();
+
+#ifdef __SECURED__
+	THINGS_LOG_D(THINGS_DEBUG, TAG, "Terminate OIC Security Manager");
+#endif
+
+	if (g_server_builder != NULL) {
+		release_builder_instance(g_server_builder);
+		g_server_builder = NULL;
+	}
+
+	if (g_req_handler != NULL) {
+		g_req_handler->deinit_module();
+		release_handler_instance(g_req_handler);
+		g_req_handler = NULL;
+	}
+
+	dm_termiate_module();
+
+	// [Jay] Need to add memory release for the Queue..
+	THINGS_LOG_D(THINGS_DEBUG, TAG, THINGS_FUNC_EXIT);
+
+	pthread_mutex_unlock(&g_things_stop_mutex);
+	return 1;
 }
 
 int things_register_confirm_reset_start_func(things_reset_confirm_func_type func)
@@ -973,13 +1009,6 @@ bool things_get_reset_mask(rst_state_e value)
 	return (int)(m_reset_bit_mask & value) != 0 ? true : false;
 }
 
-void things_control_queue_empty(void)
-{
-	if (things_get_reset_mask(RST_CONTROL_MODULE_DISABLE) == true) {
-		things_set_reset_mask(RST_CONTROL_QUEUE_EMPTY);
-	}
-}
-
 int things_return_user_opinion_for_reset(int b_reset_start)	// b_reset_start : User opinion.
 {
 	THINGS_LOG(THINGS_DEBUG, TAG, "Enter.");
@@ -1154,13 +1183,8 @@ OCEntityHandlerResult things_abort(pthread_t *h_thread_abort, things_es_enrollee
 		ARGs->level = level;
 
 		eh_result = OC_EH_OK;
-#ifdef __ST_THINGS_RTOS__
-		if (pthread_create_rtos(h_thread_abort, NULL, (pthread_func_type) t_things_abort_loop, ARGs, THINGS_STACK_OICABORT_THREAD) != 0)
-#else
-		if (things_thread_create(h_thread_abort, NULL, (pthread_func_type) t_things_abort_loop, ARGs) != 0)
-#endif
 
-		{
+		if (pthread_create_rtos(h_thread_abort, NULL, (pthread_func_type) t_things_abort_loop, ARGs, THINGS_STACK_ABORT_THREAD) != 0) {
 			THINGS_LOG_V_ERROR(THINGS_ERROR, TAG, "Create thread is failed.(for abort Thread)");
 			*h_thread_abort = 0;
 			things_free(ARGs);

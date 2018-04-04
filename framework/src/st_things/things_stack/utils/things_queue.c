@@ -22,7 +22,7 @@
 #include <pthread.h>
 #include "things_queue.h"
 #include "logging/things_logger.h"
-#include "memory/things_malloc.h"
+#include "utils/things_malloc.h"
 
 //#include "oicrequest.h"
 
