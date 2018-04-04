@@ -75,7 +75,7 @@ typedef enum {
 
 /*! Provisioned Data + Time-Out Data. */
 typedef struct es_cloud_event_timeout_s {
-	timeout_s timeOut;			//!< Time-Out value(unit: seconds)
+	things_timeout_s timeOut;			//!< Time-Out value(unit: seconds)
 	es_cloud_prov_data_s event;	//!< Cloud Provisioned Data
 } es_cloud_event_timeout_s;
 
@@ -99,21 +99,21 @@ static int g_len = 0;			//!< EA of Resources in "g_resource_lists" variable.
 
 static things_cloud_con_result_func_type things_res_cb_function = NULL;	//!< call-back Function pointer : it's called when finish Cloud-Connection.
 
-static OCStackResult publish_resource_main_dev_into_cloud(things_resource_s **list, int length, timeout_s *timeout);
-static int cloud_retry_sign_up(es_cloud_prov_data_s *event_data, timeout_s *timeout);
+static OCStackResult publish_resource_main_dev_into_cloud(things_resource_s **list, int length, things_timeout_s *timeout);
+static int cloud_retry_sign_up(es_cloud_prov_data_s *event_data, things_timeout_s *timeout);
 static char *make_cloud_address(char *ip, char *port, const char *ci_addr);
-static void cloud_request_retry_trigger(timeout_s *timeout);
+static void cloud_request_retry_trigger(things_timeout_s *timeout);
 static es_cloud_prov_data_s *if_failed_then_retry(OCDoHandle handle, OCStackResult result, int *n_err);
 static void force_session_stop(ci_session_level_e state);
 static int es_cloud_state_set_and_notify(things_cloud_status_e state, es_error_code_e es_err, OCClientResponse *response, ci_error_code_e *ci_err);
 static int get_cloud_code(OCClientResponse *response, OCMethod method, ci_error_code_e *err);
 static CAResponseResult_t things_result_to_network_result(OCStackResult oc_code, OCMethod method);
 static char *make_ip_port(char *p_ip, char *p_port);
-static es_cloud_event_timeout_s *clone_data_add_timeout(es_cloud_prov_data_s *cloud_data, timeout_s *timeout);
+static es_cloud_event_timeout_s *clone_data_add_timeout(es_cloud_prov_data_s *cloud_data, things_timeout_s *timeout);
 static void ci_finish_cloud_con(int result);
-static void publish_dev_profile_into_cloud(timeout_s *timeout);
+static void publish_dev_profile_into_cloud(things_timeout_s *timeout);
 
-static void *handle_signup_timeout(timeout_s *timeout)
+static void *handle_signup_timeout(things_timeout_s *timeout)
 {
 	THINGS_LOG_D(THINGS_DEBUG, TAG, "Sign-UP is Time-Out.");
 
@@ -141,7 +141,7 @@ static void *handle_signup_timeout(timeout_s *timeout)
 	if (send_cnt_sign_up > MAX_SIGNUP_SENDNUM) {
 		THINGS_LOG_V(THINGS_INFO, TAG, "Sign-UP Re-Try Request Send is failed.");
 
-		oic_ping_unset_mask(g_cloud_ip, PING_ST_ISCLOUD | PING_ST_SIGNIN);
+		things_ping_unset_mask(g_cloud_ip, PING_ST_ISCLOUD | PING_ST_SIGNIN);
 
 		if (es_cloud_state_set_and_notify(ES_STATE_FAILED_TO_REGISTER_TO_CLOUD, ES_ERRCODE_NO_RESPONSE_FROM_CLOUD_SERVER, NULL, NULL) != 0) {
 			THINGS_LOG_D(THINGS_DEBUG, TAG, "StateAndNotify is failed.");
@@ -155,7 +155,7 @@ static void *handle_signup_timeout(timeout_s *timeout)
 	return 0;
 }
 
-static void *handle_signin_timeout(timeout_s *timeout)
+static void *handle_signin_timeout(things_timeout_s *timeout)
 {
 	THINGS_LOG_D(THINGS_DEBUG, TAG, "Sign-IN is Time-Out.");
 
@@ -166,7 +166,7 @@ static void *handle_signin_timeout(timeout_s *timeout)
 
 	int thres_hold = timeout->ori_num * 10;	// PDF thres_hold 0.2 --> 5
 
-	if (timeout->cur_num < thres_hold && (timeout->cur_num = (int)next_time_out((long long)timeout->ori_num, (long long)timeout->cur_num)) != -1) {
+	if (timeout->cur_num < thres_hold && (timeout->cur_num = (int)things_next_time_out((long long)timeout->ori_num, (long long)timeout->cur_num)) != -1) {
 		if (timeout->cur_num > thres_hold) {
 			timeout->cur_num = thres_hold;
 		}
@@ -179,7 +179,7 @@ static void *handle_signin_timeout(timeout_s *timeout)
 	} else {
 		THINGS_LOG_V(THINGS_INFO, TAG, "Sign-IN Re-Try Request Send is failed.");
 
-		oic_ping_unset_mask(g_cloud_ip, PING_ST_ISCLOUD | PING_ST_SIGNIN);
+		things_ping_unset_mask(g_cloud_ip, PING_ST_ISCLOUD | PING_ST_SIGNIN);
 
 		if (es_cloud_state_set_and_notify(ES_STATE_FAILED_TO_REGISTER_TO_CLOUD, ES_ERRCODE_NO_RESPONSE_FROM_CLOUD_SERVER, NULL, NULL) != 0) {
 			THINGS_LOG_D(THINGS_DEBUG, TAG, "StateAndNotify is failed.");
@@ -192,7 +192,7 @@ static void *handle_signin_timeout(timeout_s *timeout)
 	return 0;
 }
 
-static void *handle_publish_timeout(timeout_s *timeout)
+static void *handle_publish_timeout(things_timeout_s *timeout)
 {
 	THINGS_LOG_D(THINGS_DEBUG, TAG, "Resource-Publish is Time-Out.");
 
@@ -203,7 +203,7 @@ static void *handle_publish_timeout(timeout_s *timeout)
 
 	int thres_hold = timeout->ori_num * 5;	// PDF thres_hold 0.2 --> 5
 
-	if (timeout->cur_num < thres_hold && (timeout->cur_num = (int)next_time_out((long long)timeout->ori_num, (long long)timeout->cur_num)) != -1) {
+	if (timeout->cur_num < thres_hold && (timeout->cur_num = (int)things_next_time_out((long long)timeout->ori_num, (long long)timeout->cur_num)) != -1) {
 		if (timeout->cur_num > thres_hold) {
 			timeout->cur_num = thres_hold;
 		}
@@ -225,7 +225,7 @@ static void *handle_publish_timeout(timeout_s *timeout)
 	return 0;
 }
 
-static void *handle_dev_profile_timeout(timeout_s *timeout)
+static void *handle_dev_profile_timeout(things_timeout_s *timeout)
 {
 	THINGS_LOG_D(THINGS_DEBUG, TAG, "Device Profile Publish is Time-Out.");
 
@@ -236,7 +236,7 @@ static void *handle_dev_profile_timeout(timeout_s *timeout)
 
 	int thres_hold = timeout->ori_num * 5;	// PDF thres_hold 0.2 --> 5
 
-	if (timeout->cur_num < thres_hold && (timeout->cur_num = (int)next_time_out((long long)timeout->ori_num, (long long)timeout->cur_num)) != -1) {
+	if (timeout->cur_num < thres_hold && (timeout->cur_num = (int)things_next_time_out((long long)timeout->ori_num, (long long)timeout->cur_num)) != -1) {
 		if (timeout->cur_num > thres_hold) {
 			timeout->cur_num = thres_hold;
 		}
@@ -441,7 +441,7 @@ OCStackApplicationResult handle_register_cb(void *ctx, OCDoHandle handle, OCClie
 		if (client_response->result != OC_STACK_RESOURCE_CHANGED) {
 			ci_error_code_e ci_err = ERRCI_NO_ERROR;
 
-			oic_ping_unset_mask(g_cloud_ip, PING_ST_ISCLOUD | PING_ST_SIGNIN);
+			things_ping_unset_mask(g_cloud_ip, PING_ST_ISCLOUD | PING_ST_SIGNIN);
 
 			if (es_cloud_state_set_and_notify(ES_STATE_FAILED_TO_REGISTER_TO_CLOUD, (ci_error_code_e) NULL, client_response, &ci_err) != 0) {
 				THINGS_LOG_D(THINGS_DEBUG, TAG, "StateAndNotify is failed.");
@@ -609,7 +609,7 @@ OCStackApplicationResult handle_login_cb(void *ctx, OCDoHandle handle, OCClientR
 		if (client_response->result != OC_STACK_RESOURCE_CHANGED) {
 			ci_error_code_e ci_err = ERRCI_NO_ERROR;
 
-			oic_ping_unset_mask(g_cloud_ip, PING_ST_SIGNIN);
+			things_ping_unset_mask(g_cloud_ip, PING_ST_SIGNIN);
 
 			if (es_cloud_state_set_and_notify(ES_STATE_FAILED_TO_REGISTER_TO_CLOUD, (ci_error_code_e) NULL, client_response, &ci_err) != 0) {
 				THINGS_LOG_D(THINGS_DEBUG, TAG, "StateAndNotify is failed.");
@@ -619,7 +619,7 @@ OCStackApplicationResult handle_login_cb(void *ctx, OCDoHandle handle, OCClientR
 			switch (ci_err) {
 			case ERRCI_INTERNAL_SERVER_ERROR:
 				THINGS_LOG_D(THINGS_DEBUG, TAG, "[ERRCODE]Cloud Server has a issue, Check your Cloud Server.");
-				oic_ping_unset_mask(g_cloud_ip, PING_ST_ISCLOUD);
+				things_ping_unset_mask(g_cloud_ip, PING_ST_ISCLOUD);
 				esm_get_network_status();	// State return
 				break;
 			case ERRCI_TOKEN_VALIDATION_FAILED:
@@ -633,7 +633,7 @@ OCStackApplicationResult handle_login_cb(void *ctx, OCDoHandle handle, OCClientR
 				break;
 			case ERRCI_DEVICE_NOT_FOUND:
 				THINGS_LOG_D(THINGS_DEBUG, TAG, "[ERRCODE]Device Not Found, Check your device ID and User ID coupling.");
-				oic_ping_unset_mask(g_cloud_ip, PING_ST_ISCLOUD);
+				things_ping_unset_mask(g_cloud_ip, PING_ST_ISCLOUD);
 				esm_get_network_status();	// State return
 				if (things_reset(NULL, RST_AUTO_RESET) == -1) {
 					THINGS_LOG_V_ERROR(THINGS_ERROR, TAG, "[Error] things_reset is failed.");
@@ -641,7 +641,7 @@ OCStackApplicationResult handle_login_cb(void *ctx, OCDoHandle handle, OCClientR
 				break;
 			default:
 				THINGS_LOG_D(THINGS_DEBUG, TAG, "Not Support This Cloud-Error-Code(%d) Exception", ci_err);
-				oic_ping_unset_mask(g_cloud_ip, PING_ST_ISCLOUD);
+				things_ping_unset_mask(g_cloud_ip, PING_ST_ISCLOUD);
 				esm_get_network_status();	// State return
 				break;
 			}
@@ -867,8 +867,8 @@ OCStackApplicationResult handle_main_dev_publish_cb(void *ctx, OCDoHandle handle
 	}
 
 	THINGS_LOG_D(THINGS_DEBUG, TAG, "Publish resource response received, code: %s(%d)", get_result(client_response->result), client_response->result);
-	if (cas_request_handle(handle, NULL) == 1) {
-		del_all_request_handle();
+	if (things_cas_request_handle(handle, NULL) == 1) {
+		things_del_all_request_handle();
 
 		if (check_comm_error_retrans(client_response->result) == true) {
 			THINGS_LOG_D(THINGS_DEBUG, TAG, "Re-Start publish_resource_into_cloud");
@@ -1026,7 +1026,7 @@ OCStackApplicationResult handle_dev_profile_cb(void *ctx, OCDoHandle handle, OCC
 		THINGS_LOG_D(THINGS_DEBUG, TAG, "Invalid Publish callback received");
 	}
 
-	del_all_request_handle();
+	things_del_all_request_handle();
 
 	THINGS_LOG_D(THINGS_DEBUG, TAG, "Device Profile Publish response received, code: %s(%d)", get_result(client_response->result), client_response->result);
 	if (check_comm_error_retrans(client_response->result) == true) {
@@ -1175,7 +1175,7 @@ OCStackApplicationResult handle_publish_topic_cb(void *ctx, OCDoHandle handle, O
 	return res;
 }
 
-static OCStackResult publish_resource_main_dev_into_cloud(things_resource_s **list, int length, timeout_s *timeout)
+static OCStackResult publish_resource_main_dev_into_cloud(things_resource_s **list, int length, things_timeout_s *timeout)
 {
 	es_error_code_e es_err = ES_ERRCODE_UNKNOWN;
 	OCStackResult res = OC_STACK_ERROR;
@@ -1212,7 +1212,7 @@ static OCStackResult publish_resource_main_dev_into_cloud(things_resource_s **li
 	return res;
 }
 
-OCStackResult publish_resource_into_cloud(rp_target_e target, timeout_s *timeout)
+OCStackResult publish_resource_into_cloud(rp_target_e target, things_timeout_s *timeout)
 {
 	THINGS_LOG_D(THINGS_DEBUG, TAG, "Enter.");
 
@@ -1296,7 +1296,7 @@ OCStackResult publish_resource_into_cloud(rp_target_e target, timeout_s *timeout
 	return res;
 }
 
-OCStackResult log_in_out_to_cloud(bool value, timeout_s *timeout)
+OCStackResult log_in_out_to_cloud(bool value, things_timeout_s *timeout)
 {
 	int port = 0;
 	char *ci_ip = NULL;
@@ -1304,7 +1304,7 @@ OCStackResult log_in_out_to_cloud(bool value, timeout_s *timeout)
 	es_error_code_e es_err = ES_ERRCODE_UNKNOWN;
 	OCStackResult res = OC_STACK_ERROR;
 	OCClientResponseHandler callback = NULL;
-	check_time_out_call_func calltimeout = NULL;
+	things_check_time_out_call_func calltimeout = NULL;
 
 	if (signed_up_data == NULL || signed_up_data->access_token == NULL || strlen(signed_up_data->access_token) < 1) {
 		THINGS_LOG_V_ERROR(THINGS_ERROR, TAG, "No Session Key Retrived from the Cloud ");
@@ -1374,7 +1374,7 @@ OCStackResult log_in_out_to_cloud(bool value, timeout_s *timeout)
 		if (value == true) {
 			things_ping_set_mask(g_cloud_ip, port, PING_ST_ISCLOUD);
 		} else {
-			oic_ping_unset_mask(g_cloud_ip, PING_ST_ISCLOUD | PING_ST_SIGNIN | PING_ST_TCPCONNECT);
+			things_ping_unset_mask(g_cloud_ip, PING_ST_ISCLOUD | PING_ST_SIGNIN | PING_ST_TCPCONNECT);
 		}
 
 		res = things_cloud_session(g_cloud_address, signed_up_data->uid, OCGetServerInstanceIDString(), signed_up_data->access_token, value, callback, calltimeout, timeout);
@@ -1398,7 +1398,7 @@ GOTO_OUT:
 
 	if (res != OC_STACK_OK) {
 		if (value == true) {
-			oic_ping_unset_mask(g_cloud_ip, PING_ST_ISCLOUD);
+			things_ping_unset_mask(g_cloud_ip, PING_ST_ISCLOUD);
 
 			THINGS_LOG_V_ERROR(THINGS_ERROR, TAG, "Cloud Server LogIn Failed : %d", res);
 			if (es_cloud_state_set_and_notify(ES_STATE_FAILED_TO_REGISTER_TO_CLOUD, es_err, NULL, NULL) != 0) {
@@ -1467,7 +1467,7 @@ OCStackResult find_cloud_resource(void)
 	return ret;
 }
 
-static OCStackResult register_server_into_cloud(es_cloud_prov_data_s *event_data, timeout_s *timeout)
+static OCStackResult register_server_into_cloud(es_cloud_prov_data_s *event_data, things_timeout_s *timeout)
 {
 	OCStackResult res = OC_STACK_ERROR;
 
@@ -1502,7 +1502,7 @@ static OCStackResult register_server_into_cloud(es_cloud_prov_data_s *event_data
 
 	if (res != OC_STACK_OK) {
 		THINGS_LOG_V_ERROR(THINGS_ERROR, TAG, "Cloud Server Registration Failed : %d", res);
-		oic_ping_unset_mask(g_cloud_ip, PING_ST_ISCLOUD);
+		things_ping_unset_mask(g_cloud_ip, PING_ST_ISCLOUD);
 		if (es_cloud_state_set_and_notify(ES_STATE_FAILED_TO_REGISTER_TO_CLOUD, ES_ERRCODE_UNKNOWN, NULL, NULL) != 0) {
 			THINGS_LOG_D(THINGS_DEBUG, TAG, "StateAndNotify is failed.");
 			return res;
@@ -1592,7 +1592,7 @@ static char *make_cloud_address(char *ip, char *port, const char *ci_addr)
 	return g_cloud_address;
 }
 
-static int start_ci_connection(const char *cloud_adress, es_cloud_prov_data_s *event_data, things_resource_s **list, int length, timeout_s *timeout)
+static int start_ci_connection(const char *cloud_adress, es_cloud_prov_data_s *event_data, things_resource_s **list, int length, things_timeout_s *timeout)
 {
 	int ret = 0;
 	OCStackResult result = OC_STACK_ERROR;
@@ -1797,7 +1797,7 @@ void *cloud_data_cb_esm(es_cloud_prov_data_s *event_data)
 	case CISESS_SIGNOUT:		// doing Auto Log-Out
 		break;
 	case CISESS_STOP:			// can start.
-		del_all_request_handle();
+		things_del_all_request_handle();
 		send_cnt_sign_up = 0;
 		ci_cp_pend_event_data(event_data);
 		g_qis_cloud_thread_running = CISESS_BUSY;
@@ -1820,7 +1820,7 @@ void *cloud_data_cb_esm(es_cloud_prov_data_s *event_data)
 		return NULL;
 	}
 
-	del_all_request_handle();
+	things_del_all_request_handle();
 	send_cnt_sign_up = 0;
 
 	if (cloud_retry_sign_up(event_data, NULL) == 0) {
@@ -1835,7 +1835,7 @@ void *cloud_data_cb_esm(es_cloud_prov_data_s *event_data)
 	return NULL;
 }
 
-int cloud_retry_sign_in(timeout_s *timeout)
+int cloud_retry_sign_in(things_timeout_s *timeout)
 {
 	THINGS_LOG_D(THINGS_DEBUG, TAG, THINGS_FUNC_ENTRY);
 
@@ -1872,7 +1872,7 @@ int cloud_retry_sign_in(timeout_s *timeout)
 	return 0;
 }
 
-static int cloud_retry_sign_up(es_cloud_prov_data_s *event_data, timeout_s *timeout)
+static int cloud_retry_sign_up(es_cloud_prov_data_s *event_data, things_timeout_s *timeout)
 {
 	THINGS_LOG_D(THINGS_DEBUG, TAG, "Enter.");
 
@@ -1898,7 +1898,7 @@ static int cloud_retry_sign_up(es_cloud_prov_data_s *event_data, timeout_s *time
 	return 1;
 }
 
-static void cloud_request_retry_trigger(timeout_s *timeout)
+static void cloud_request_retry_trigger(things_timeout_s *timeout)
 {
 	// Stored Backup data is base on time-out.
 	es_cloud_prov_data_s *pendedEvent = NULL;
@@ -1912,21 +1912,21 @@ static void cloud_request_retry_trigger(timeout_s *timeout)
 
 static es_cloud_prov_data_s *if_failed_then_retry(OCDoHandle handle, OCStackResult result, int *n_err)
 {
-	THINGS_LOG_D(THINGS_DEBUG, TAG, "latestRequest 0x%X, RespCB:0x%X]", get_request_handle(), handle);
+	THINGS_LOG_D(THINGS_DEBUG, TAG, "latestRequest 0x%X, RespCB:0x%X]", things_get_request_handle(), handle);
 
 	es_cloud_prov_data_s *pended_data = NULL;
 	es_cloud_prov_data_s *clone_data = NULL;
 	*n_err = 0;
 
 	ci_cp_enter_pend_data_block();
-	if (cas_request_handle(handle, NULL) == 1) {
+	if (things_cas_request_handle(handle, NULL) == 1) {
 		if (result == OC_STACK_COMM_ERROR) {	// Don't Send Request Message.
 			if (g_qis_cloud_thread_running != CISESS_APDISCON) {
 				cloud_request_retry_trigger(NULL);
 			}
 			*n_err = 1;			// communication error.
 		} else {
-			del_all_request_handle();
+			things_del_all_request_handle();
 
 			if ((pended_data = ci_cp_get_pended_data()) == NULL) {
 				THINGS_LOG_V(THINGS_INFO, TAG, "Not exist Pended Event Data.");
@@ -1970,7 +1970,7 @@ void ci_stop_cloud_connection(void *CBfunc)
 }
 static void force_session_stop(ci_session_level_e state)
 {
-	del_all_request_handle();
+	things_del_all_request_handle();
 	if (state == CISESS_SIGNOUT) {
 		g_qis_cloud_thread_running = CISESS_SIGNOUT;
 	} else {
@@ -1982,11 +1982,11 @@ static void force_session_stop(ci_session_level_e state)
 int ci_retry_stop_by_wifi_cb(bool is_retry)
 {
 	if (is_retry == true) {		// Last Failed Cloud Connection Retry. (Permanent setting)
-		del_all_request_handle();
+		things_del_all_request_handle();
 		g_qis_cloud_thread_running = CISESS_STOP;
 		cloud_request_retry_trigger(NULL);
 	} else if (is_retry == false) {	// if Cloud Session valid, then Stop Cloud Connection. And Don't Retry.
-		del_all_request_handle();
+		things_del_all_request_handle();
 		g_qis_cloud_thread_running = CISESS_APDISCON;
 		esm_get_network_status();	// State return
 	}
@@ -2023,7 +2023,7 @@ int ci_retry_stop_by_tcp_cb(const char *addr_ip, const int port)
 		THINGS_LOG_V(THINGS_INFO, TAG, "We Support IP:Port is \"%s:%s\"", g_cloud_ip, g_cloud_port);
 		if (strncmp(g_cloud_ip, addr_ip, strlen(addr_ip)) != 0) {
 			THINGS_LOG_D(THINGS_DEBUG, TAG, "Delete OIC_Ping for IP=%s.(Cur_Cloud=%s)", addr_ip, g_cloud_ip);
-			oic_ping_unset_mask(addr_ip, PING_ST_ISCLOUD);
+			things_ping_unset_mask(addr_ip, PING_ST_ISCLOUD);
 		}
 		ret = 0;
 		goto GOTO_OUT;
@@ -2226,7 +2226,7 @@ void *es_cloud_init(things_server_builder_s *server_builder)
 		return NULL;
 	}
 
-	del_all_request_handle();
+	things_del_all_request_handle();
 	memset(g_cloud_ip, 0, IP_PORT);
 	memset(g_cloud_port, 0, IP_PORT);
 	g_server_builder = server_builder;
@@ -2404,7 +2404,7 @@ static char *make_ip_port(char *p_ip, char *p_port)
 	return ipport;
 }
 
-static es_cloud_event_timeout_s *clone_data_add_timeout(es_cloud_prov_data_s *cloud_data, timeout_s *timeout)
+static es_cloud_event_timeout_s *clone_data_add_timeout(es_cloud_prov_data_s *cloud_data, things_timeout_s *timeout)
 {
 	THINGS_LOG_D(THINGS_DEBUG, TAG, THINGS_FUNC_ENTRY);
 
@@ -2472,7 +2472,7 @@ static void ci_finish_cloud_con(int result)
 	}
 }
 
-static void publish_dev_profile_into_cloud(timeout_s *timeout)
+static void publish_dev_profile_into_cloud(things_timeout_s *timeout)
 {
 	if (things_cloud_dev_profile_publish(g_cloud_address, handle_dev_profile_cb, handle_dev_profile_timeout, timeout) != OC_STACK_OK) {
 		THINGS_LOG_V_ERROR(THINGS_ERROR, TAG, "Publish Device Profile request is failed.");
