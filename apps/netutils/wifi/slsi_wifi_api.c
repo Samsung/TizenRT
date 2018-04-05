@@ -3976,19 +3976,19 @@ int8_t WiFiGetChannel(int8_t *channel)
 
 int8_t WiFiIsConnected(uint8_t *ret, slsi_reason_t *details)
 {
-	ENTER_CRITICAL;
 	int8_t result = SLSI_STATUS_NOT_CONNECTED;
 	uint8_t count = 0;
 	if (details != NULL) {
 		memset(details, 0, sizeof(slsi_reason_t));
 	}
-
 	if (g_state == SLSI_WIFIAPI_STATE_STA_CONNECTED) {
+		ENTER_CRITICAL;
 		count = 1;
 		result = SLSI_STATUS_SUCCESS;
 		if (details != NULL) {
 			result = slsi_check_status(details->ssid, &details->ssid_len, details->bssid);
 		}
+		LEAVE_CRITICAL;
 	} else if (g_state == SLSI_WIFIAPI_STATE_AP_CONNECTED) {
 		count = g_num_sta_connected;
 		result = SLSI_STATUS_SUCCESS;
@@ -3996,8 +3996,9 @@ int8_t WiFiIsConnected(uint8_t *ret, slsi_reason_t *details)
 		result = SLSI_STATUS_NOT_STARTED;
 	}
 
+	VPRINT("WiFiIsConnected result %d (9 = not connected) count %d\n", result, count);
+
 	*ret = count;
-	LEAVE_CRITICAL;
 	return result;
 }
 
