@@ -1,0 +1,188 @@
+menu "CURL Options"
+
+config ENABLE_CURL
+	bool "Enable CURL"
+	default n
+	select LIBC_LOCALTIME
+	select LIBC_SCANSET
+	---help---
+		Libcurl supports various Application level protocols.
+		HTTP, FTP, Gopher etc.
+
+if ENABLE_CURL
+config DISABLE_HTTP
+	bool "Disable HTTP"
+	default n
+
+if !DISABLE_HTTP
+config USE_NGHTTP2
+	bool "Use NGHTTP2"
+	default n
+
+config USE_ZLIB
+	bool "Use Zlib Compression"
+	default n
+
+config DISABLE_COOKIES
+	bool "Disable COOKIES"
+	default n
+endif #DISABLE_HTTP
+
+config DISABLE_DICT
+	bool "Disable DICT"
+	default y
+
+config DISABLE_FILE
+	bool "Disable FILE"
+	default y
+
+config DISABLE_FTP
+	bool "Disable FTP"
+	default y
+
+config DISABLE_TFTP
+	bool "Disable TFTP"
+	default y
+
+config DISABLE_GOPHER
+	bool "Disable GOPHER"
+	default y
+
+config DISABLE_SCP
+	bool "Disable SCP"
+	default y
+
+config DISABLE_TELNET
+	bool "Disable TELNET"
+	default y
+
+config DISABLE_LDAP
+	bool "Disable LDAP"
+	default y
+
+if !DISABLE_LDAP
+config USE_OPENLDAP
+	bool "Use Open LDAP"
+	default n
+endif
+
+config DISABLE_SMB
+	bool "Disable SMB"
+	default y
+
+config DISABLE_SMTP
+	bool "Disable SMTP"
+	default y
+
+config DISABLE_POP3
+	bool "Disable POP3"
+	default y
+
+config DISABLE_PROXY
+	bool "Disable Proxy"
+	default y
+
+config DISABLE_IMAP
+	bool "Disable IMAP"
+	default y
+
+config DISABLE_RTSP
+	bool "Disable RTSP"
+	default y
+
+config DISABLE_NTLM
+	bool "Disable NTLM"
+	default y
+
+config DISABLE_CRYPTO_AUTH
+	bool "Disable Crypto Authentication"
+	default n
+
+if !DISABLE_CRYPTO_AUTH
+config CA_PATH
+    string "Certificate Path"
+    default "/rom"
+
+config CA_BUNDLE
+    string "Certificate Bundle"
+    default "/rom/curl-certificates.crt"
+
+config CA_FALLBACK
+	bool "CA Fallback"
+	default n
+endif #DISABLE_CRYPTO_AUTH
+
+config SSL_SUPPORT
+	bool "SSL Support"
+	default y
+
+if SSL_SUPPORT
+config AXTLS
+	bool "AX TLS"
+	default n
+
+config CYASSL
+	bool "Cya SSL"
+	default n
+
+config DARWINSSL
+	bool "Darwin SSL"
+	default n
+
+config GNUTLS
+	bool "GNU TLS"
+	default n
+if GNUTLS
+config GNUTLS_NETTLE
+	bool "GNU TLS NETTLE"
+	default n
+endif #GNUTLS
+
+config GSKIT
+	bool "GSKIT"
+	default n
+
+config MBEDTLS
+	bool "Mbed TLS"
+	default y
+
+config NSS
+	bool "NSS"
+	default n
+
+config OPENSSL
+	bool "Open SSL"
+	default n
+
+config POLARSSL
+	bool "Polar SSL"
+	default n
+
+config SCHANNEL
+	bool "SChannel"
+	default n
+endif #SSL_SUPPORT
+
+config CURL_DEBUG
+	bool "Curl Debug"
+	default n
+
+if CURL_DEBUG
+config LOG_CURL_FAIL
+	bool "Fail Logs"
+	default y
+
+config LOG_CURL_INFO
+	bool "Info Logs"
+	default y
+
+config LOG_CURL_DEBUG
+	bool "Debug Logs"
+	default y
+
+config AGGRESSIVE_TEST
+	bool "Aggressive Test"
+	default n
+endif #CURL_DEBUG
+endif #ENABLE_CURL
+endmenu #CURL Options

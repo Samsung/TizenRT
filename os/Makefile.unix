@@ -126,6 +126,10 @@ LIBRARIES_DIR = $(OUTPUT_DIR)/libraries
 BIN_DIR = $(OUTPUT_DIR)/bin
 LIB_DIR = ../lib
 
+ifeq ($(CONFIG_ENABLE_CURL),y)
+CURL_DIR=$(EXTDIR)/curl
+endif
+
 ifeq ($(CONFIG_ENABLE_IOTIVITY),y)
 ifeq ($(CONFIG_IOTIVITY_RELEASE),y)
 IOTIVITY_LIBS=release
