@@ -27,6 +27,8 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <sched.h>
+#include <pthread.h>
 #include <errno.h>
 #include <sys/types.h>
 #include "../../../../../os/kernel/group/group.h"
@@ -134,25 +136,22 @@ static void *do_nothing_thread(void *param)
 * @return               :void*
 */
 
-#if !defined(CONFIG_BUILD_PROTECTED)
 static void *setschedprio_test_thread(void *param)
 {
-	volatile struct tcb_s *set_tcb;
+	struct sched_param param_info;
 
-	/*if this thread's priority is changed, we can terminate the loop */
-	while (1) {
-		set_tcb = sched_gettcb((pid_t)pthread_self());
-		if (set_tcb != NULL && set_tcb->sched_priority == 101) {
-			break;
-		}
-		sleep(1);
-	}
+	/* sleep to guarantee running of pthread_setschedprio() */
+	sleep(1);
 
-	check_prio = set_tcb->sched_priority;
-	pthread_exit(0);
+	/* get current priority */
+	(void)sched_getparam(0, &param_info);
+
+	/* give getting value to global variable to compare it in another function */
+	check_prio = param_info.sched_priority;
+
 	return NULL;
 }
-#endif
+
 /**
 * @fn                   :task_barrier
 * @brief                :utility function for tc_pthread_pthread_barrier_init_destroy_wait
@@ -1362,7 +1361,6 @@ static void tc_pthread_pthread_equal(void)
 	TC_SUCCESS_RESULT();
 }
 
-#if !defined(CONFIG_BUILD_PROTECTED)
 static void tc_pthread_pthread_setschedprio(void)
 {
 	int ret_chk;
@@ -1374,15 +1372,14 @@ static void tc_pthread_pthread_setschedprio(void)
 
 	/* change set_th PID's priority to set_prio */
 	ret_chk = pthread_setschedprio(set_th, set_prio);
-	TC_ASSERT_EQ("pthread_setschedprio", ret_chk, OK);
+	TC_ASSERT_EQ_CLEANUP("pthread_setschedprio", ret_chk, OK, pthread_detach(set_th));
 
 	ret_chk = pthread_join(set_th, NULL);
-	TC_ASSERT_EQ("pthread_join", ret_chk, OK);
+	TC_ASSERT_EQ_CLEANUP("pthread_join", ret_chk, OK, pthread_detach(set_th));
 	TC_ASSERT_EQ("pthread_setschedprio", check_prio, set_prio);
 
 	TC_SUCCESS_RESULT();
 }
-#endif
 
 static void tc_pthread_pthread_setgetname_np(void)
 {
@@ -1475,9 +1472,7 @@ int pthread_main(void)
 	tc_pthread_pthread_set_get_schedparam();
 	tc_pthread_pthread_key_create_delete_set_getspecific();
 	tc_pthread_pthread_cancel_setcancelstate();
-#if !defined(CONFIG_BUILD_PROTECTED)
 	tc_pthread_pthread_setschedprio();
-#endif
 	tc_pthread_pthread_timed_wait();
 	tc_pthread_pthread_mutex_init();
 	tc_pthread_pthread_mutex_destroy();
