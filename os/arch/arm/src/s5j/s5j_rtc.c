@@ -474,11 +474,11 @@ int s5j_rtc_rdalarm(FAR struct alm_rdalarm_s *alminfo)
 int up_rtc_initialize(void)
 {
 	/* Change MUX to RTC clock */
-#ifdef CONFIG_S5J_RTC_CLKSEL_EXTRTC
+#if defined(CONFIG_S5J_RTC_CLKSEL_EXTRTC)
 	modifyreg32(S5J_SYSREG_OSC_CON,
 				SYSREG_OSC_CON_RTCSEL_MASK,
 				SYSREG_OSC_CON_RTCSEL_EXTRTC);
-#elif CONFIG_S5J_RTC_CLKSEL_RCOSC
+#elif defined(CONFIG_S5J_RTC_CLKSEL_RCOSC)
 	modifyreg32(S5J_SYSREG_OSC_CON,
 				SYSREG_OSC_CON_RTCSEL_MASK,
 				SYSREG_OSC_CON_RTCSEL_RCOSC);
