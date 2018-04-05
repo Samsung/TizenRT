@@ -1192,18 +1192,24 @@ wifi_manager_result_e wifi_manager_get_info(wifi_manager_info_s *info)
 wifi_manager_result_e wifi_manager_connect_ap_config(wifi_manager_ap_config_s *config,
 													 wifi_manager_reconnect_config_s *conn_config)
 {
+
+	wifi_manager_result_e res = WIFI_MANAGER_SUCCESS;
+
 	if (!config || !conn_config) {
 		return WIFI_MANAGER_INVALID_ARGS;
 	}
 
-	if ((config->ssid_length > 31) || (config->passphrase_length > 63)) {
+
+	if ((config->ssid_length > 31)
+			|| ((config->ap_auth_type != WIFI_MANAGER_AUTH_OPEN)
+				&& (config->passphrase_length > 63))) {
 		ndbg("[WM] AP configuration fails: too long ssid or passphrase\n");
 		ndbg("[WM] Make sure that length of SSID < 32 and length of passphrase < 64\n");
 		return WIFI_MANAGER_INVALID_ARGS;
 	}
-	_wifimgr_conn_info_msg_s conninfo = {config, conn_config};
-	_wifimgr_msg_s msg = {EVT_CONNECT, &conninfo};
-	wifi_manager_result_e res = _handle_request(&msg);
+	_wifimgr_conn_info_msg_s conninfo = { config, conn_config };
+	_wifimgr_msg_s msg = { EVT_CONNECT, &conninfo };
+	res = _handle_request(&msg);
 	return res;
 }
 

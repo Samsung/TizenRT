@@ -346,6 +346,10 @@ void wm_scan_done(wifi_manager_scan_info_s **scan_result, wifi_manager_scan_resu
 	/* Make sure you copy the scan results onto a local data structure.
 	 * It will be deleted soon eventually as you exit this function.
 	 */
+	if (scan_result == NULL) {
+		WM_TEST_SIGNAL;
+		return;
+	}
 	wifi_manager_scan_info_s *wifi_scan_iter = *scan_result;
 	while (wifi_scan_iter != NULL) {
 		printf("WiFi AP SSID: %-20s, WiFi AP BSSID: %-20s, WiFi Rssi: %d\n",
@@ -525,6 +529,10 @@ wm_connect(void *arg)
 		strncpy(apconfig.passphrase, ap_info->password, 64);
 		apconfig.passphrase_length = strlen(ap_info->password);
 		apconfig.ap_crypto_type = ap_info->crypto_type;
+	} else {
+		apconfig.passphrase_length = 0;
+		memset(apconfig.passphrase, 0x0, 64);
+		apconfig.ap_crypto_type = WIFI_MANAGER_CRYPTO_NONE;
 	}
 
 	print_wifi_ap_profile(&apconfig, "Connecting AP Info");
