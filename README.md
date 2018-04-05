@@ -61,6 +61,7 @@ make
 
 Built binaries are in *$TIZENRT_BASEDIR/build/output/bin*.
 
+See [Clean commands](docs/HowtoClean.md) to clean built files.  
 See [Trouble Shooting](docs/TroubleShooting.md) to resolve any issue on TizenRT usages.
 
 ## Supported Board / Emulator
