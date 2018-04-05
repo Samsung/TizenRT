@@ -175,8 +175,8 @@ struct things_resource_s *create_collection_resource(struct things_server_builde
 #endif							//#ifdef __SECURED__
 
 	OCStackResult ret = OCCreateResource(&hd,
-										 uri,
 										 type,
+										 interface,
 										 uri,
 										 builder->handler,
 										 NULL,
