@@ -57,7 +57,6 @@ pthread_t thread[PTHREAD_CNT];
 
 pthread_mutex_t g_mutex = PTHREAD_MUTEX_INITIALIZER;
 pthread_cond_t g_cond;
-pthread_key_t g_tlskey;
 static pthread_once_t g_once;
 static bool g_bpthreadcallback = false;
 
@@ -269,32 +268,87 @@ static void *threadfunc_sched(void *param)
 }
 
 /**
-* @fn                   :func_set_get_callback
-* @brief                :utility function for tc_pthread_pthread_key_create_set_getspecific
+* @fn                   :pthread_key_test
+* @brief                :utility function for tc_pthread_pthread_key_create_delete_set_getspecific
 * @return               :void*
 */
-static void *func_set_get_callback(void *param)
+static void *pthread_key_test(void *param)
 {
-	int *pret_chk;
-	int ret_chk = 0;
-	int check_val = VAL_TEN;
+	int key_index;
+	pthread_key_t key_val[PTHREAD_KEYS_MAX + 1];
+	int ret_chk;
+	int *get_val;
+
 	g_bpthreadcallback = false;
-	pthread_setname_np(0, "func_set_get_callback");
+	pthread_setname_np(0, "pthread_key_test");
 
-	ret_chk = pthread_setspecific(g_tlskey, &check_val);
+	/* delete all of pthread key and init key_val with invalid value before testing */
+	for (key_index = 0; key_index <= PTHREAD_KEYS_MAX; key_index++) {
+		(void)pthread_key_delete(key_index);
+		key_val[key_index] = PTHREAD_KEYS_MAX;
+	}
+
+	/* valid creation within PTHREAD_KEYS_MAX */
+	for (key_index = 0; key_index < PTHREAD_KEYS_MAX; key_index++) {
+		ret_chk = pthread_key_create(&key_val[key_index], NULL);
+		if (ret_chk != OK) {
+			printf("pthread_key_test positive create FAIL! index: %d, ret: %d\n", key_index, ret_chk);
+			goto test_out;
+		}
+	}
+
+	/* invalid creation out of range of key max */
+	ret_chk = pthread_key_create(&key_val[PTHREAD_KEYS_MAX], NULL);
+	if (ret_chk != EAGAIN) {
+		printf("pthread_key_test negative create FAIL! index: %d, ret: %d\n", PTHREAD_KEYS_MAX, ret_chk);
+		goto test_out;
+	}
+
+	/* set value on each key */
+	for (key_index = 0; key_index < PTHREAD_KEYS_MAX; key_index++) {
+		ret_chk = pthread_setspecific(key_val[key_index], &key_index);
+		if (ret_chk != OK) {
+			printf("pthread_key_test setspecific FAIL ret: %d\n", ret_chk);
+			goto test_out;
+		}
+	}
+
+	/* get value */
+	for (key_index = 0; key_index < PTHREAD_KEYS_MAX; key_index++) {
+		get_val = pthread_getspecific(key_val[key_index]);
+		if (*(int *)get_val != key_index) {
+			printf("pthread_key_test getspecific FAIL ret val: %d, expected: %d\n", *(int *)get_val, key_index);
+			goto test_out;
+		}
+	}
+
+	/* valid delete key */
+	ret_chk = pthread_key_delete(key_val[PTHREAD_KEYS_MAX - 1]);
 	if (ret_chk != OK) {
-		printf("tc_pthread_pthread_key_create_set_getspecific: TC FAIL\n Error No: %d\n", errno);
-		return NULL;
+		printf("pthread_key_test delete FAIL! ret: %d\n", ret_chk);
+		goto test_out;
 	}
 
-	pret_chk = pthread_getspecific(g_tlskey);
-	if (*pret_chk != VAL_TEN) {
-		printf("tc_pthread_pthread_key_create_set_getspecific: TC FAIL\n Error No: %d\n", errno);
-		return NULL;
+	/* invalid delete key */
+	ret_chk = pthread_key_delete(PTHREAD_KEYS_MAX + 1);
+	if (ret_chk == OK) {
+		printf("pthread_key_test delete FAIL! ret: %d\n", ret_chk);
+		goto test_out;
 	}
-	sleep(SEC_3);
+
+	/* valid creation after delete */
+	ret_chk = pthread_key_create(&key_val[PTHREAD_KEYS_MAX - 1], NULL);
+	if (ret_chk != OK) {
+		printf("pthread_key_test create after delete FAIL! ret: %d\n", ret_chk);
+		goto test_out;
+	}
+
 	g_bpthreadcallback = true;
-	pthread_exit((pthread_addr_t)1);
+
+test_out:
+	for (key_index = 0; key_index < PTHREAD_KEYS_MAX; key_index++) {
+		(void)pthread_key_delete(key_val[key_index]);
+	}
 	return NULL;
 }
 
@@ -761,31 +815,24 @@ static void tc_pthread_pthread_set_get_schedparam(void)
 }
 
 /**
-* @fn                   :tc_pthread_pthread_set_getspecific
+* @fn                   :tc_pthread_pthread_key_create_delete_set_getspecific
 * @brief                :thread-specific data management
 * @Scenario             :The pthread_getspecific() function shall return the value currently bound
 *                        to the specified key on behalf of the calling thread.
 *                        The pthread_setspecific() function shall associate a thread-specific value
 *                        with a key obtained via a previous call to pthread_key_create().
-* API's covered         :pthread_setspecific, pthread_getspecific, pthread_key_create
+* API's covered         :pthread_setspecific, pthread_getspecific, pthread_key_create, pthread_key_delete
 * Preconditions         :pthread_key_create
 * Postconditions        :none
 * @return               :void
 */
-static void tc_pthread_pthread_key_create_set_getspecific(void)
+static void tc_pthread_pthread_key_create_delete_set_getspecific(void)
 {
 	int ret_chk;
 	g_bpthreadcallback = false;
-	g_tlskey = 0;
 
-	/* Cannot create keys more than PTHREAD_KEYS_MAX, Not able to delete key */
-	ret_chk = pthread_key_create(&g_tlskey, NULL);
-	TC_ASSERT_EQ("pthread_key_create", ret_chk, OK);
-
-	sleep(SEC_2);
-
-	ret_chk = pthread_create(&g_thread1, NULL, func_set_get_callback, NULL);
-	TC_ASSERT_EQ_CLEANUP("pthread_create", ret_chk, OK, pthread_detach(g_thread1));
+	ret_chk = pthread_create(&g_thread1, NULL, pthread_key_test, NULL);
+	TC_ASSERT_EQ("pthread_create", ret_chk, OK);
 
 	ret_chk = pthread_join(g_thread1, NULL);
 	TC_ASSERT_EQ_CLEANUP("pthread_join", ret_chk, OK, pthread_detach(g_thread1));
@@ -1426,7 +1473,7 @@ int pthread_main(void)
 	tc_pthread_pthread_cond_broadcast();
 	tc_pthread_pthread_cond_init_destroy();
 	tc_pthread_pthread_set_get_schedparam();
-	tc_pthread_pthread_key_create_set_getspecific();
+	tc_pthread_pthread_key_create_delete_set_getspecific();
 	tc_pthread_pthread_cancel_setcancelstate();
 #if !defined(CONFIG_BUILD_PROTECTED)
 	tc_pthread_pthread_setschedprio();
