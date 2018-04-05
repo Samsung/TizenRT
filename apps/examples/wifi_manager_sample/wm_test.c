@@ -529,6 +529,10 @@ wm_connect(void *arg)
 		strncpy(apconfig.passphrase, ap_info->password, 64);
 		apconfig.passphrase_length = strlen(ap_info->password);
 		apconfig.ap_crypto_type = ap_info->crypto_type;
+	} else {
+		apconfig.passphrase_length = 0;
+		memset(apconfig.passphrase, 0x0, 64);
+		apconfig.ap_crypto_type = WIFI_MANAGER_CRYPTO_NONE;
 	}
 
 	print_wifi_ap_profile(&apconfig, "Connecting AP Info");
