@@ -307,7 +307,7 @@ static const struct st_resource_type_s const gst_resource_types[] = {
 		.prop[2] = &gstAttr_x_com_samsung_provisioninginfo[2],
 		.prop[3] = &gstAttr_x_com_samsung_provisioninginfo[3],
 		.prop[4] = &gstAttr_x_com_samsung_provisioninginfo[4]
-	},
+	}
 #ifdef CONFIG_ST_THINGS_FOTA
 	, {
 		.rt = "oic.r.firmware",
@@ -338,7 +338,7 @@ static const struct things_resource_info_s const gstResources[] = {
 		.if_cnt = 1,
 		.rt_cnt = 1,
 		.policy = 3
-	},
+	}
 #ifdef CONFIG_ST_THINGS_FOTA
 	, {
 		.uri = "/firmware",
