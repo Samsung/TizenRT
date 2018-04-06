@@ -24,3 +24,5 @@ cd kconfig-frontends-x.xx.x.x
 make
 sudo make install
 ```
+
+### [Trouble Shooting](https://github.com/Samsung/TizenRT/blob/master/docs/TroubleShooting.md)
