@@ -168,9 +168,55 @@ int sendto(int s, const void *data, size_t size, int flags, const struct sockadd
 	return result;
 }
 
+static int socket_argument_validation(int domain, int type, int protocol)
+{
+	if (domain != AF_INET && domain != AF_INET6 && domain != AF_UNSPEC) {
+		return -1;
+	}
+
+	switch(type) {
+		case SOCK_STREAM:
+			if (protocol == IPPROTO_UDP) {
+				return -1;
+			}
+			break;
+		case SOCK_DGRAM:
+			if (protocol == IPPROTO_TCP) {
+				return -1;
+			}
+			break;
+		case SOCK_RAW:
+			break;
+		default:
+			return -1;
+	}
+
+	switch (protocol) {
+		case IPPROTO_IP:
+		case IPPROTO_ICMP:
+		case IPPROTO_TCP:
+		case IPPROTO_UDP:
+#ifdef CONFIG_NET_IPv6
+		case IPPROTO_IPV6:
+		case IPPROTO_ICMPV6:
+#endif
+		case IPPROTO_UDPLITE:
+		case IPPROTO_RAW:
+			break;
+		default:
+			return -1;
+	}
+
+	return 0;
+}
+
 int socket(int domain, int type, int protocol)
 {
-	return lwip_socket(domain, type, protocol);
+	if (!socket_argument_validation(domain, type, protocol)) {
+		return lwip_socket(domain, type, protocol);
+	}
+
+	return -1;
 }
 
 #ifdef CONFIG_DISABLE_POLL
