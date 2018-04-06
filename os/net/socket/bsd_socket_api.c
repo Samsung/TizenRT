@@ -314,7 +314,9 @@ int inet_pton(int af, FAR const char *src, FAR void *dest)
 		return ip6addr_aton(((const char *)(src)), ((ip6_addr_t*)(dest)));
 	else
 #endif
-		return 0;
+	{
+		return -1;
+	}
 }
 
 #ifdef CONFIG_NET_LWIP_NETDB

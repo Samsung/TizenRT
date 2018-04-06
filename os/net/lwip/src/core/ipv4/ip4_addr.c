@@ -226,6 +226,7 @@ int ip4addr_aton(const char *cp, ip4_addr_t *addr)
 	if (c != '\0' && !isspace(c)) {
 		return 0;
 	}
+
 	/*
 	 * Concoct the address according to
 	 * the number of parts specified.
@@ -236,7 +237,7 @@ int ip4addr_aton(const char *cp, ip4_addr_t *addr)
 		return 0;				/* initial nondigit */
 
 	case 1:					/* a -- 32 bits */
-		break;
+		return 0;
 
 	case 2:					/* a.b -- 8.24 bits */
 		if (val > 0xffffffUL) {
