@@ -5,21 +5,22 @@
 
 config WL_BCM4390X
 	bool "BCM4390X Wireless Module support"
-	default y
+	default n
 	select WICED
-	select BOARD_INITTHREAD
 	select BCM4390X_WIRELESS
 	select NET_NOINTS
+	depends on ARCH_BOARD_CY4390x
 	---help---
-			Enable support for BCM4390X WiFi driver
+		Enable support for BCM4390X WiFi driver
 
+if WL_BCM4390X
 config WIRELESS_FIRMWARE_FILESYSTEM
 	bool "BCM43909B0 wireless firmware can be loaded from file system"
 	default n
 	select MTD_PARTITION
 	select FS_ROMFS
-    ---help---
-        	Enable when file system includes its wireless module firmware
+	---help---
+		Enable when file system includes its wireless module firmware
 
 config WICED
 	bool "WICED code Support"
@@ -28,3 +29,4 @@ config WICED
 config NET_NOINTS
 	bool "NOINTS Support"
 	default n
+endif
