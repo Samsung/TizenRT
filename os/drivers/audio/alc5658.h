@@ -73,7 +73,7 @@
 #define ALC5658_DEFAULT_NCHANNELS	2
 #define ALC5658_DEFAULT_BPSAMP		16
 #define FAIL						0xFFFF
-#define MUTE_HP_LR					0x8010
+#define MUTE_HP_LR					0x8080
 #define UNMUTE_HP_LR				0x0
 #define IN1_PORT_GAIN				(0 + 16) << 8
 #define ALC5658_HP_VOL_MIN			0x0

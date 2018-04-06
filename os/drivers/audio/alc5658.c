@@ -78,6 +78,7 @@
 #include <tinyara/math.h>
 #include <math.h>
 #include <tinyara/i2c.h>
+#include <stdbool.h>
 
 #include "alc5658.h"
 #include "alc5658scripts.h"
@@ -595,6 +596,16 @@ static int alc5658_configure(FAR struct audio_lowerhalf_s *dev, FAR const struct
 				alc5658_setvolume(priv);
 			} else
 				ret = -EDOM;
+		}
+		break;
+
+		case AUDIO_FU_MUTE: {
+			/* Mute or unmute:  true(1) or false(0) */
+
+			bool mute = caps->ac_controls.b[0];
+			audvdbg("mute: 0x%x\n", mute);
+			priv->mute = mute;
+			alc5658_setvolume(priv);
 		}
 		break;
 #endif							/* CONFIG_AUDIO_EXCLUDE_VOLUME */
