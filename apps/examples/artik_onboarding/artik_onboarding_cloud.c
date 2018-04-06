@@ -217,6 +217,7 @@ static void cloud_websocket_conn_cb(void *user_data, void *result)
 
 	switch(state) {
 	case ARTIK_WEBSOCKET_CLOSED:
+	case ARTIK_WEBSOCKET_CONNECTION_ERROR:
 		printf("Websocket to ARTIK Cloud closed, try to reconnect in %d seconds\n", WEBSOCKET_RETRY_PERIOD);
 		StartCloudWebsocket(false, websocket_reconnect_cb);
 		break;
@@ -249,7 +250,7 @@ static pthread_addr_t websocket_start_cb(void *arg)
 	ssl.se_config.use_se = CloudIsSecureDeviceType();
 
 	ret = cloud->websocket_open_stream(&g_ws_handle, cloud_config.device_token,
-					   cloud_config.device_id, &ssl);
+					   cloud_config.device_id, 30000, 10000, &ssl);
 	if (ret != S_OK) {
 		printf("Failed to open websocket to cloud (err=%d)\n", ret);
 		goto exit;

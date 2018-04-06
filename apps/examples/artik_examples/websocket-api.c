@@ -83,6 +83,8 @@ static int websocket_connect(int argc, char *argv[])
 
 	memset(&g_config, 0, sizeof(artik_websocket_config));
 	g_config.uri = argv[3];
+	g_config.ping_period = 30000;
+	g_config.pong_timeout = 10000;
 
 	ret = g_websocket->websocket_request(&g_handle, &g_config);
 	if (ret != S_OK) {

@@ -149,6 +149,12 @@ int websocket_handler(websocket_t *websocket)
 	fd_set write_fds;
 	wslay_event_context_ptr ctx = (wslay_event_context_ptr) websocket->ctx;
 	struct timeval tv;
+	int websocket_ping_interval = 0;
+
+	if (!websocket->ping_interval)
+		websocket_ping_interval = WEBSOCKET_PING_INTERVAL;
+	else
+		websocket_ping_interval = websocket->ping_interval;
 
 	while (websocket->state != WEBSOCKET_STOP) {
 		FD_ZERO(&read_fds);
@@ -179,12 +185,11 @@ int websocket_handler(websocket_t *websocket)
 		} else if (r == 0) {
 			if (WEBSOCKET_HANDLER_TIMEOUT != 0) {
 				timeout++;
-				if ((WEBSOCKET_HANDLER_TIMEOUT * timeout) >= (WEBSOCKET_PING_INTERVAL * 10)) {
+				if ((WEBSOCKET_HANDLER_TIMEOUT * timeout) >= websocket_ping_interval) {
 					timeout = 0;
 					if (websocket_ping_counter(websocket) != WEBSOCKET_SUCCESS) {
 						if (websocket->cb->on_connectivity_change_callback) {
 							struct websocket_info_t data = { .data = websocket };
-
 							websocket->cb->on_connectivity_change_callback(websocket->ctx,
 												WEBSOCKET_CLOSED, &data);
 						}

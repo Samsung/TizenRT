@@ -131,9 +131,9 @@
  */
 #define WEBSOCKET_MAX_PING_IGNORE                    (3)	//times
 /**
- * @brief Websocket ping message interval, MSEC_PER_TICK
+ * @brief Websocket ping message interval, milliseconds
  */
-#define WEBSOCKET_PING_INTERVAL                      (20 * 100)	//MSEC_PER_TICK
+#define WEBSOCKET_PING_INTERVAL                      (20 * 100)	//milliseconds
 
 /**
  * @brief The maximum length of websocket messages to be stored in queue
@@ -415,6 +415,8 @@ typedef struct {
 ///< Websocket event handler thread ID
 	pthread_attr_t thread_attr;
 ///< Websocket event handler thread attribute
+	int ping_interval;
+///< Websocket ping message interval, milliseconds
 } websocket_t;
 
 /**

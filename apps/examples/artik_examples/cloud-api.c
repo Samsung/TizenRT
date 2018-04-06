@@ -370,7 +370,8 @@ static int connect_command(int argc, char *argv[])
 	ssl.ca_cert.data = (char *)akc_root_ca;
 	ssl.ca_cert.len = sizeof(akc_root_ca);
 
-	err = cloud->websocket_open_stream(&ws_handle, argv[3], argv[4], &ssl);
+	err = cloud->websocket_open_stream(&ws_handle, argv[3], argv[4], 30000,
+			10000, &ssl);
 	if (err != S_OK) {
 		fprintf(stderr, "Failed to connect websocket\n");
 		ws_handle = NULL;
