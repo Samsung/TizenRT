@@ -475,9 +475,7 @@ static inline int mbedtls_ssl_ciphersuite_uses_ecdhe( const mbedtls_ssl_ciphersu
         case MBEDTLS_KEY_EXCHANGE_ECDHE_ECDSA:
         case MBEDTLS_KEY_EXCHANGE_ECDHE_RSA:
         case MBEDTLS_KEY_EXCHANGE_ECDHE_PSK:
-#if defined(MBEDTLS_OCF_PATCH)
         case MBEDTLS_KEY_EXCHANGE_ECDH_ANON:
-#endif
             return( 1 );
 
         default:

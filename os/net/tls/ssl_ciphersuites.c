@@ -1880,9 +1880,7 @@ int mbedtls_ssl_ciphersuite_uses_ec( const mbedtls_ssl_ciphersuite_t *info )
         case MBEDTLS_KEY_EXCHANGE_ECDHE_PSK:
         case MBEDTLS_KEY_EXCHANGE_ECDH_RSA:
         case MBEDTLS_KEY_EXCHANGE_ECDH_ECDSA:
-#if defined(MBEDTLS_OCF_PATCH)
         case MBEDTLS_KEY_EXCHANGE_ECDH_ANON:
-#endif
             return( 1 );
 
         default:
