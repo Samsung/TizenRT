@@ -73,16 +73,6 @@ static void *thread_setgetname(void *param)
 	}
 	return NULL;
 }
-/**
- *@fn					:thread_setget
- *@breif				:utility function for creating thread
- *@return               :void*
- */
-static void *thread_setget(void *param)
-{
-	sleep(WAIT_TIME_2);
-	return NULL;
-}
 
 /**
 * @fn                   :thread_equal_check
