@@ -61,7 +61,7 @@
 #include <sys/types.h>
 #include <stdbool.h>
 #include <semaphore.h>
-#ifdef CONFIG_HEAPINFO_GROUP
+#ifdef CONFIG_HEAPINFO_USER_GROUP
 #include <tinyara/mm/heapinfo_internal.h>
 #endif
 
@@ -307,7 +307,7 @@ struct mm_freenode_s {
 #define CHECK_FREENODE_SIZE \
 	DEBUGASSERT(sizeof(struct mm_freenode_s) == SIZEOF_MM_FREENODE)
 
-#ifdef CONFIG_HEAPINFO_GROUP
+#ifdef CONFIG_HEAPINFO_USER_GROUP
 struct heapinfo_group_info_s {
 	int pid;
 	int group;
@@ -338,9 +338,9 @@ struct mm_heap_s {
 #ifdef CONFIG_DEBUG_MM_HEAPINFO
 	size_t peak_alloc_size;
 	size_t total_alloc_size;
-#ifdef CONFIG_HEAPINFO_GROUP
+#ifdef CONFIG_HEAPINFO_USER_GROUP
 	int max_group;
-	struct heapinfo_group_s group[HEAPINFO_GROUP_NUM];
+	struct heapinfo_group_s group[HEAPINFO_USER_GROUP_NUM];
 #endif
 #endif
 
@@ -633,7 +633,7 @@ void heapinfo_add_size(pid_t pid, mmsize_t size);
 void heapinfo_subtract_size(pid_t pid, mmsize_t size);
 void heapinfo_update_total_size(struct mm_heap_s *heap, mmsize_t size, pid_t pid);
 void heapinfo_exclude_stacksize(void *stack_ptr);
-#ifdef CONFIG_HEAPINFO_GROUP
+#ifdef CONFIG_HEAPINFO_USER_GROUP
 void heapinfo_update_group_info(pid_t pid, int group, int type);
 void heapinfo_check_group_list(pid_t pid, char *name);
 #endif

@@ -22,12 +22,12 @@
 #include <tinyara/sched.h>
 #include <tinyara/config.h>
 #include <tinyara/mm/mm.h>
-#ifdef CONFIG_HEAPINFO_GROUP
+#ifdef CONFIG_HEAPINFO_USER_GROUP
 #include <stdbool.h>
 #include <tinyara/mm/heapinfo_internal.h>
 extern struct heapinfo_group_info_s group_info[HEAPINFO_THREAD_NUM];
-static char *ptr = CONFIG_HEAPINFO_PER_GROUP;
-const static char *end_list = CONFIG_HEAPINFO_PER_GROUP + sizeof(CONFIG_HEAPINFO_PER_GROUP);
+static char *ptr = CONFIG_HEAPINFO_USER_GROUP_LIST;
+const static char *end_list = CONFIG_HEAPINFO_USER_GROUP_LIST + sizeof(CONFIG_HEAPINFO_USER_GROUP_LIST);
 #endif
 
 #ifdef CONFIG_DEBUG_MM_HEAPINFO
@@ -65,13 +65,13 @@ static void kdbg_heapinfo_task(FAR struct tcb_s *tcb, FAR void *arg)
 }
 #endif
 
-#ifdef CONFIG_HEAPINFO_GROUP
+#ifdef CONFIG_HEAPINFO_USER_GROUP
 static void kdbg_heapinfo_group_threadlist(void)
 {
 	while (*ptr != '/') {
 		printf("%c", *ptr++);
 		if (ptr == end_list) {
-			ptr = CONFIG_HEAPINFO_PER_GROUP - 1;
+			ptr = CONFIG_HEAPINFO_USER_GROUP_LIST - 1;
 			break;
 		}
 	}
@@ -138,7 +138,7 @@ int kdbg_heapinfo(int argc, char **args)
 	printf("* Idle Task's stack is not allocated in heap region\n");
 	printf("* And another stack size is allocated stack size + alloc node size(task:32/pthread:20)\n\n");
 
-#ifdef CONFIG_HEAPINFO_GROUP
+#ifdef CONFIG_HEAPINFO_USER_GROUP
 	if (show_group == true) {
 		int group_idx;
 		printf("****************************************************************\n");
@@ -154,7 +154,7 @@ int kdbg_heapinfo(int argc, char **args)
 	}
 #else
 	if (show_group == true) {
-		printf("NOT supported!! Please enable CONFIG_HEAPINFO_GROUP\n");
+		printf("NOT supported!! Please enable CONFIG_HEAPINFO_USER_GROUP\n");
 	}
 #endif
 	return OK;
@@ -167,7 +167,7 @@ usage:
 	printf(" -a           Show the all allocation details\n");
 	printf(" -p PID       Show the specific PID allocation details \n");
 	printf(" -f           Show the free list \n");
-#ifdef CONFIG_HEAPINFO_GROUP
+#ifdef CONFIG_HEAPINFO_USER_GROUP
 	printf(" -g           Show the User defined group allocation details \n");
 #endif
 #endif

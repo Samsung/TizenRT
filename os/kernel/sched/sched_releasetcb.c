@@ -143,7 +143,7 @@ int sched_releasetcb(FAR struct tcb_s *tcb, uint8_t ttype)
 		stkmon_logging(tcb);
 #endif
 
-#ifdef CONFIG_HEAPINFO_GROUP
+#ifdef CONFIG_HEAPINFO_USER_GROUP
 		heapinfo_update_group_info(tcb->pid, -1, HEAPINFO_DEL_INFO);
 #endif
 

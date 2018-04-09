@@ -67,7 +67,7 @@
 #include <tinyara/ttrace.h>
 #ifdef CONFIG_DEBUG_MM_HEAPINFO
 #include <tinyara/mm/mm.h>
-#ifdef CONFIG_HEAPINFO_GROUP
+#ifdef CONFIG_HEAPINFO_USER_GROUP
 #include <tinyara/sched.h>
 #include <string.h>
 #endif
@@ -217,7 +217,7 @@ static int thread_create(FAR const char *name, uint8_t ttype, int priority, int 
 
 	pid = (int)tcb->cmn.pid;
 
-#ifdef CONFIG_HEAPINFO_GROUP
+#ifdef CONFIG_HEAPINFO_USER_GROUP
 	heapinfo_check_group_list(pid, tcb->cmn.name);
 #endif
 
