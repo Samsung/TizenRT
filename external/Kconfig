@@ -5,6 +5,7 @@
 
 source "$EXTERNALDIR/aws/Kconfig"
 source "$EXTERNALDIR/codecs/Kconfig"
+source "$EXTERNALDIR/gmock/Kconfig"
 source "$EXTERNALDIR/iotivity/Kconfig"
 source "$EXTERNALDIR/json/Kconfig"
 source "$EXTERNALDIR/libtuv/Kconfig"
