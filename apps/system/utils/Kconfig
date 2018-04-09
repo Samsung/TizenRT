@@ -82,12 +82,12 @@ config ENABLE_HEAPINFO
 		Show information about memory status per thread
 
 if ENABLE_HEAPINFO
-config HEAPINFO_GROUP
+config HEAPINFO_USER_GROUP
 	bool "Enable User defined Group Memory Usage"
 	default n
 
-if HEAPINFO_GROUP
-config HEAPINFO_PER_GROUP
+if HEAPINFO_USER_GROUP
+config HEAPINFO_USER_GROUP_LIST
 	string "Thread Name List for measuring Alloc Size"
 	default ""
 	---help---
