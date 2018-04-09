@@ -59,7 +59,7 @@
 #include <unistd.h>
 #include <stdint.h>
 #include <stdio.h>
-#ifdef CONFIG_HEAPINFO_GROUP
+#ifdef CONFIG_HEAPINFO_USER_GROUP
 #include <string.h>
 #include <tinyara/mm/heapinfo_internal.h>
 #endif
@@ -71,7 +71,7 @@
 #define HEAPINFO_INT INT16_MAX
 #define HEAPINFO_NONSCHED (INT16_MAX - 1)
 
-#ifdef CONFIG_HEAPINFO_GROUP
+#ifdef CONFIG_HEAPINFO_USER_GROUP
 struct heapinfo_group_info_s group_info[HEAPINFO_THREAD_NUM];
 #endif
 
@@ -212,7 +212,7 @@ void heapinfo_parse(FAR struct mm_heap_s *heap, int mode, pid_t pid)
  * Description:
  * Update Peak heap size for Group
  ****************************************************************************/
-#ifdef CONFIG_HEAPINFO_GROUP
+#ifdef CONFIG_HEAPINFO_USER_GROUP
 static void heapinfo_update_group(mmsize_t size, pid_t pid)
 {
 	int check_idx;
@@ -286,7 +286,7 @@ void heapinfo_update_total_size(struct mm_heap_s *heap, mmsize_t size, pid_t pid
 	if (heap->total_alloc_size > heap->peak_alloc_size) {
 		heap->peak_alloc_size = heap->total_alloc_size;
 	}
-#ifdef CONFIG_HEAPINFO_GROUP
+#ifdef CONFIG_HEAPINFO_USER_GROUP
 	heapinfo_update_group(size, pid);
 #endif
 }
@@ -326,7 +326,7 @@ void heapinfo_exclude_stacksize(void *stack_ptr)
 	ASSERT(rtcb);
 	rtcb->curr_alloc_size -= node->size;
 
-#ifdef CONFIG_HEAPINFO_GROUP
+#ifdef CONFIG_HEAPINFO_USER_GROUP
 	int check_idx;
 	int group_num;
 	struct mm_heap_s *heap = mm_get_heap_info();
@@ -341,7 +341,7 @@ void heapinfo_exclude_stacksize(void *stack_ptr)
 #endif
 }
 
-#ifdef CONFIG_HEAPINFO_GROUP
+#ifdef CONFIG_HEAPINFO_USER_GROUP
 /****************************************************************************
  * Name: heapinfo_update_group_info
  *
@@ -402,7 +402,7 @@ void heapinfo_update_group_info(pid_t pid, int group, int type)
  ****************************************************************************/
 void heapinfo_check_group_list(pid_t pid, char *name)
 {
-	char *thread_list = CONFIG_HEAPINFO_PER_GROUP;
+	char *thread_list = CONFIG_HEAPINFO_USER_GROUP_LIST;
 
 	int group_num = 0;
 
@@ -433,5 +433,5 @@ void heapinfo_check_group_list(pid_t pid, char *name)
 		}
 	}
 }
-#endif /* CONFIG_HEAPINFO_GROUP */
+#endif /* CONFIG_HEAPINFO_USER_GROUP */
 #endif

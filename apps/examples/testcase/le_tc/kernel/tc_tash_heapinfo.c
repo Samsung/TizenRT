@@ -39,7 +39,7 @@
 
 static char *str = "tc-heapinfo";
 static int malloc_num;
-#ifdef CONFIG_HEAPINFO_GROUP
+#ifdef CONFIG_HEAPINFO_USER_GROUP
 #define HEAPINFO_ALLOC 0
 #define HEAPINFO_FREE 1
 #define HEAPINFO_STACK_ALLOC 2
@@ -72,7 +72,7 @@ static void *heapinfo_thread(void *arg)
 
 	return NULL;
 }
-#ifdef CONFIG_HEAPINFO_GROUP
+#ifdef CONFIG_HEAPINFO_USER_GROUP
 static void calc_group_size(int *mem, int info[4], int type)
 {
 	struct mm_allocnode_s *node;
@@ -190,7 +190,7 @@ static int tc_tash_heapinfo(int argc, char **args)
 		tc_thread_attr.stacksize = DEFAULT_STKSIZE;
 		malloc_num = DEFAULT_MALLOC_NUM;
 	}
-#ifdef CONFIG_HEAPINFO_GROUP
+#ifdef CONFIG_HEAPINFO_USER_GROUP
 	else if (argc == 2 && strcmp(args[1], "-g") == 0) {
 		/* Test heapinfo group functionality,
 		 * Group A : heapinfo_task, heapinfo_task2
