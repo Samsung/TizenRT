@@ -79,6 +79,7 @@ namespace std
   using ::float64;
 #endif
   using ::mode_t;
+  using ::ptrdiff_t;
   using ::size_t;
   using ::ssize_t;
   using ::off_t;

@@ -77,7 +77,12 @@ namespace std
   using ::clock_settime;
   using ::clock_gettime;
   using ::mktime;
+  using ::time;
+  using ::asctime;
+  using ::ctime;
+  using ::gmtime;
   using ::gmtime_r;
+  using ::localtime;
   using ::timer_create;
   using ::timer_delete;
   using ::timer_settime;

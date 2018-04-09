@@ -123,6 +123,7 @@ namespace std
   using ::statfs;
   using ::tmpnam;
   using ::tempnam;
+  using ::remove;
 }
 
 #endif // __INCLUDE_CXX_CSTDIO
