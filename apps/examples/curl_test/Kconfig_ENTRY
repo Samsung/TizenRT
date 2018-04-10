@@ -1,0 +1,3 @@
+config ENTRY_CURLTEST
+        bool "curl example"
+        depends on EXAMPLES_CURLTEST
