@@ -165,7 +165,7 @@ extern const ip_addr_t ip_addr_any_type;
 #define IP_ADDR6_HOST(ipaddr, i0, i1, i2, i3)  IP_ADDR6(ipaddr, PP_HTONL(i0), PP_HTONL(i1), PP_HTONL(i2), PP_HTONL(i3))
 
 /** @ingroup ipaddr */
-#define ip_addr_copy(dest, src)      do { IP_SET_TYPE_VAL(dest, IP_GET_TYPE(&src)); if (IP_IS_V6_VAL(src)) { \
+#define ip_addr_copy(dest, src)      do { IP_SET_TYPE_VAL(dest, IP_GET_TYPE(&src)); if (IP_IS_ANY_TYPE_VAL(src) || IP_IS_V6_VAL(src)) { \
 	ip6_addr_copy(*ip_2_ip6(&(dest)), *ip_2_ip6(&(src))); } else { \
 	ip4_addr_copy(*ip_2_ip4(&(dest)), *ip_2_ip4(&(src))); } \
 } while (0)
