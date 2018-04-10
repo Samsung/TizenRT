@@ -66,12 +66,21 @@
 #include <queue.h>
 #include <signal.h>
 
+#if (CONFIG_NFILE_DESCRIPTORS == 0) && !defined(CONFIG_DISABLE_MQUEUE)
+#define MQUEUE_NO_FS 1
+#else
+#define MQUEUE_NO_FS 0
+#endif
+
 #if CONFIG_MQ_MAXMSGSIZE > 0
 
 /****************************************************************************
  * Pre-processor Definitions
  ****************************************************************************/
-
+#if MQUEUE_NO_FS
+#define MAX_MQUEUE_PATH 64
+#define MQNODEFLAG_DELETED 0x08
+#endif
 /****************************************************************************
  * Global Type Declarations
  ****************************************************************************/
@@ -80,8 +89,23 @@
 
 struct mq_des;					/* forward reference */
 
+#if MQUEUE_NO_FS
+struct mq_info {
+	struct mq_info *flink;
+	char name[MAX_MQUEUE_PATH];
+	struct mqueue_inode_s *msgq;
+	int16_t crefs;
+	uint8_t flags;
+};
+
+#endif
+
 struct mqueue_inode_s {
+#if MQUEUE_NO_FS
+	FAR struct mq_info *info;
+#else
 	FAR struct inode *inode;	/* Containing inode */
+#endif
 	sq_queue_t msglist;			/* Prioritized message list */
 	int16_t maxmsgs;			/* Maximum number of messages in the queue */
 	int16_t nmsgs;				/* Number of message in the queue */

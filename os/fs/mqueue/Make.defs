@@ -53,8 +53,15 @@
 # Include POSIX message queue support
 
 ifneq ($(CONFIG_DISABLE_MQUEUE),y)
+ifneq ($(CONFIG_NFILE_DESCRIPTORS),0)
 
 CSRCS += mq_open.c mq_close.c mq_unlink.c
+
+else
+
+CSRCS += mq_utils.c
+
+endif
 
 # Include POSIX message queue build support
 
