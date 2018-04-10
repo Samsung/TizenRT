@@ -252,6 +252,10 @@ typedef CODE void (*atexitfunc_t)(void);
 typedef CODE void (*onexitfunc_t)(int exitcode, FAR void *arg);
 #endif
 
+#if CONFIG_NPTHREAD_KEYS > 0
+typedef CODE void (*pthread_destructor_t)(void *arg);
+#endif
+
 /* struct child_status_s *********************************************************/
 /** @brief This structure is used to maintin information about child tasks.
  * pthreads work differently, they have join information.  This is
@@ -299,6 +303,14 @@ struct dspace_s {
 	 */
 
 	FAR uint8_t *region;
+};
+#endif
+
+/* struct pthread_key_s **********************************************************/
+#if CONFIG_NPTHREAD_KEYS > 0
+struct pthread_key_s {
+	void *data;
+	pthread_destructor_t destructor;
 };
 #endif
 
@@ -395,7 +407,9 @@ struct task_group_s {
 	sem_t tg_joinsem;			/*   Mutually exclusive access to join data */
 	FAR struct join_s *tg_joinhead;	/*   Head of a list of join data            */
 	FAR struct join_s *tg_jointail;	/*   Tail of a list of join data            */
-	uint8_t tg_nkeys;			/* Number pthread keys allocated            */
+#if CONFIG_NPTHREAD_KEYS > 0
+	uint8_t tg_keys[CONFIG_NPTHREAD_KEYS];	/* Information of pthread keys allocated */
+#endif
 #endif
 
 #ifndef CONFIG_DISABLE_SIGNALS
@@ -649,7 +663,7 @@ struct pthread_tcb_s {
 	/* POSIX Thread Specific Data ************************************************ */
 
 #if CONFIG_NPTHREAD_KEYS > 0
-	FAR void *pthread_data[CONFIG_NPTHREAD_KEYS];
+	struct pthread_key_s pthread_data[CONFIG_NPTHREAD_KEYS];
 #endif
 #if defined(CONFIG_BUILD_PROTECTED)
 	struct pthread_region_s *region;

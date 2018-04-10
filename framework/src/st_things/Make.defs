@@ -22,7 +22,7 @@ THINGS_STACK_DIR = $(TOPDIR)/../framework/src/st_things/things_stack
 IOTIVITY_RELEASE=${shell echo $(CONFIG_IOTIVITY_RELEASE_VERSION) | sed 's/"//g'}
 IOTIVITY_BASE_DIR = $(TOPDIR)/../external/iotivity/iotivity_$(IOTIVITY_RELEASE)
 
-CSRCS += st_things.c st_things_util.c st_things_request_handler.c st_things_request_handler_collection.c st_things_representation.c st_things_logger.c 
+CSRCS += st_things.c st_things_request_handler.c st_things_request_handler_collection.c st_things_representation.c
 
 CFLAGS += -D__TIZENRT__
 CFLAGS += -D__TINYARA__
@@ -49,7 +49,6 @@ include $(THINGS_STACK_DIR)/easy-setup/Make.defs
 include $(THINGS_STACK_DIR)/cloud/Make.defs
 include $(THINGS_STACK_DIR)/security/Make.defs
 include $(THINGS_STACK_DIR)/logging/Make.defs
-include $(THINGS_STACK_DIR)/memory/Make.defs
 ifeq ($(CONFIG_ST_THINGS_FOTA),y)
 include $(THINGS_STACK_DIR)/fota/Make.defs
 endif

@@ -61,7 +61,7 @@
 #include <net/lwip/netif.h>
 #include <netinet/in.h>
 
-#if defined(CONFIG_ARCH_CHIP_S5JT200) || defined(CONFIG_ARCH_CHIP_LM3S6965)
+#if defined(CONFIG_ARCH_CHIP_S5JT200) || defined(CONFIG_ARCH_CHIP_LM3S6965) || defined(CONFIG_ARCH_CHIP_BCM4390X)
 #if LWIP_HAVE_LOOPIF
 #define NET_DEVNAME "wl1"
 #else

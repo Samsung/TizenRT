@@ -27,10 +27,11 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <sched.h>
+#include <pthread.h>
 #include <errno.h>
 #include <sys/types.h>
 #include "../../../../../os/kernel/group/group.h"
-#include "../../../../../os/kernel/pthread/pthread.h"
 #include "tc_internal.h"
 
 #define SEC_1                   1
@@ -58,7 +59,6 @@ pthread_t thread[PTHREAD_CNT];
 
 pthread_mutex_t g_mutex = PTHREAD_MUTEX_INITIALIZER;
 pthread_cond_t g_cond;
-pthread_key_t g_tlskey;
 static pthread_once_t g_once;
 static bool g_bpthreadcallback = false;
 
@@ -136,25 +136,22 @@ static void *do_nothing_thread(void *param)
 * @return               :void*
 */
 
-#if !defined(CONFIG_BUILD_PROTECTED)
 static void *setschedprio_test_thread(void *param)
 {
-	volatile struct tcb_s *set_tcb;
+	struct sched_param param_info;
 
-	/*if this thread's priority is changed, we can terminate the loop */
-	while (1) {
-		set_tcb = sched_gettcb((pid_t)pthread_self());
-		if (set_tcb != NULL && set_tcb->sched_priority == 101) {
-			break;
-		}
-		sleep(1);
-	}
+	/* sleep to guarantee running of pthread_setschedprio() */
+	sleep(1);
 
-	check_prio = set_tcb->sched_priority;
-	pthread_exit(0);
+	/* get current priority */
+	(void)sched_getparam(0, &param_info);
+
+	/* give getting value to global variable to compare it in another function */
+	check_prio = param_info.sched_priority;
+
 	return NULL;
 }
-#endif
+
 /**
 * @fn                   :task_barrier
 * @brief                :utility function for tc_pthread_pthread_barrier_init_destroy_wait
@@ -270,32 +267,87 @@ static void *threadfunc_sched(void *param)
 }
 
 /**
-* @fn                   :func_set_get_callback
-* @brief                :utility function for tc_pthread_pthread_key_create_set_getspecific
+* @fn                   :pthread_key_test
+* @brief                :utility function for tc_pthread_pthread_key_create_delete_set_getspecific
 * @return               :void*
 */
-static void *func_set_get_callback(void *param)
+static void *pthread_key_test(void *param)
 {
-	int *pret_chk;
-	int ret_chk = 0;
-	int check_val = VAL_TEN;
+	int key_index;
+	pthread_key_t key_val[PTHREAD_KEYS_MAX + 1];
+	int ret_chk;
+	int *get_val;
+
 	g_bpthreadcallback = false;
-	pthread_setname_np(0, "func_set_get_callback");
+	pthread_setname_np(0, "pthread_key_test");
 
-	ret_chk = pthread_setspecific(g_tlskey, &check_val);
+	/* delete all of pthread key and init key_val with invalid value before testing */
+	for (key_index = 0; key_index <= PTHREAD_KEYS_MAX; key_index++) {
+		(void)pthread_key_delete(key_index);
+		key_val[key_index] = PTHREAD_KEYS_MAX;
+	}
+
+	/* valid creation within PTHREAD_KEYS_MAX */
+	for (key_index = 0; key_index < PTHREAD_KEYS_MAX; key_index++) {
+		ret_chk = pthread_key_create(&key_val[key_index], NULL);
+		if (ret_chk != OK) {
+			printf("pthread_key_test positive create FAIL! index: %d, ret: %d\n", key_index, ret_chk);
+			goto test_out;
+		}
+	}
+
+	/* invalid creation out of range of key max */
+	ret_chk = pthread_key_create(&key_val[PTHREAD_KEYS_MAX], NULL);
+	if (ret_chk != EAGAIN) {
+		printf("pthread_key_test negative create FAIL! index: %d, ret: %d\n", PTHREAD_KEYS_MAX, ret_chk);
+		goto test_out;
+	}
+
+	/* set value on each key */
+	for (key_index = 0; key_index < PTHREAD_KEYS_MAX; key_index++) {
+		ret_chk = pthread_setspecific(key_val[key_index], &key_index);
+		if (ret_chk != OK) {
+			printf("pthread_key_test setspecific FAIL ret: %d\n", ret_chk);
+			goto test_out;
+		}
+	}
+
+	/* get value */
+	for (key_index = 0; key_index < PTHREAD_KEYS_MAX; key_index++) {
+		get_val = pthread_getspecific(key_val[key_index]);
+		if (*(int *)get_val != key_index) {
+			printf("pthread_key_test getspecific FAIL ret val: %d, expected: %d\n", *(int *)get_val, key_index);
+			goto test_out;
+		}
+	}
+
+	/* valid delete key */
+	ret_chk = pthread_key_delete(key_val[PTHREAD_KEYS_MAX - 1]);
 	if (ret_chk != OK) {
-		printf("tc_pthread_pthread_key_create_set_getspecific: TC FAIL\n Error No: %d\n", errno);
-		return NULL;
+		printf("pthread_key_test delete FAIL! ret: %d\n", ret_chk);
+		goto test_out;
 	}
 
-	pret_chk = pthread_getspecific(g_tlskey);
-	if (*pret_chk != VAL_TEN) {
-		printf("tc_pthread_pthread_key_create_set_getspecific: TC FAIL\n Error No: %d\n", errno);
-		return NULL;
+	/* invalid delete key */
+	ret_chk = pthread_key_delete(PTHREAD_KEYS_MAX + 1);
+	if (ret_chk == OK) {
+		printf("pthread_key_test delete FAIL! ret: %d\n", ret_chk);
+		goto test_out;
 	}
-	sleep(SEC_3);
+
+	/* valid creation after delete */
+	ret_chk = pthread_key_create(&key_val[PTHREAD_KEYS_MAX - 1], NULL);
+	if (ret_chk != OK) {
+		printf("pthread_key_test create after delete FAIL! ret: %d\n", ret_chk);
+		goto test_out;
+	}
+
 	g_bpthreadcallback = true;
-	pthread_exit((pthread_addr_t)1);
+
+test_out:
+	for (key_index = 0; key_index < PTHREAD_KEYS_MAX; key_index++) {
+		(void)pthread_key_delete(key_val[key_index]);
+	}
 	return NULL;
 }
 
@@ -330,49 +382,6 @@ static void *cancel_state_func(void *param)
 	return NULL;
 }
 
-/**
-* @fn                   :findjoininfo_callback
-* @brief                :utilify function for tc_pthread_pthread_findjoininfo_destroyjoin
-* @return               :void*
-*/
-#if !defined(CONFIG_BUILD_PROTECTED)
-static void *findjoininfo_callback(void *param)
-{
-	int ret_chk = 0;
-	FAR struct task_group_s *group;
-	FAR struct join_s *st_pjoininfo;
-
-	g_bpthreadcallback = true;
-
-	pid_t pid = getpid();
-	group = task_getgroup(pid);
-
-	st_pjoininfo = pthread_findjoininfo(group, pid);
-	if (st_pjoininfo == NULL) {
-		printf("pthread_findjoininfo: Fail \n");
-		g_bpthreadcallback = false;
-		goto err;
-	}
-	ret_chk = pthread_equal((pid_t)st_pjoininfo->thread, pid);
-	if (ret_chk != 1) {
-		printf("tc_pthread_pthread_findjoininfo_destroyjoin pthread_equal fail\n");
-		g_bpthreadcallback = false;
-		goto err;
-	}
-
-	pthread_destroyjoin(group, st_pjoininfo);
-
-	st_pjoininfo = pthread_findjoininfo(group, pid);
-	if (st_pjoininfo != NULL) {
-		printf("pthread_findjoininfo: st_pjoininfo Fail \n");
-		g_bpthreadcallback = false;
-		goto err;
-	}
-err:
-	pthread_exit(NULL);
-	return NULL;
-}
-#endif
 /**
 * @fn                   :run_once
 * @brief                :utilify function for tc_pthread_pthread_once
@@ -805,31 +814,24 @@ static void tc_pthread_pthread_set_get_schedparam(void)
 }
 
 /**
-* @fn                   :tc_pthread_pthread_set_getspecific
+* @fn                   :tc_pthread_pthread_key_create_delete_set_getspecific
 * @brief                :thread-specific data management
 * @Scenario             :The pthread_getspecific() function shall return the value currently bound
 *                        to the specified key on behalf of the calling thread.
 *                        The pthread_setspecific() function shall associate a thread-specific value
 *                        with a key obtained via a previous call to pthread_key_create().
-* API's covered         :pthread_setspecific, pthread_getspecific, pthread_key_create
+* API's covered         :pthread_setspecific, pthread_getspecific, pthread_key_create, pthread_key_delete
 * Preconditions         :pthread_key_create
 * Postconditions        :none
 * @return               :void
 */
-static void tc_pthread_pthread_key_create_set_getspecific(void)
+static void tc_pthread_pthread_key_create_delete_set_getspecific(void)
 {
 	int ret_chk;
 	g_bpthreadcallback = false;
-	g_tlskey = 0;
 
-	/* Cannot create keys more than PTHREAD_KEYS_MAX, Not able to delete key */
-	ret_chk = pthread_key_create(&g_tlskey, NULL);
-	TC_ASSERT_EQ("pthread_key_create", ret_chk, OK);
-
-	sleep(SEC_2);
-
-	ret_chk = pthread_create(&g_thread1, NULL, func_set_get_callback, NULL);
-	TC_ASSERT_EQ_CLEANUP("pthread_create", ret_chk, OK, pthread_detach(g_thread1));
+	ret_chk = pthread_create(&g_thread1, NULL, pthread_key_test, NULL);
+	TC_ASSERT_EQ("pthread_create", ret_chk, OK);
 
 	ret_chk = pthread_join(g_thread1, NULL);
 	TC_ASSERT_EQ_CLEANUP("pthread_join", ret_chk, OK, pthread_detach(g_thread1));
@@ -874,39 +876,6 @@ static void tc_pthread_pthread_cancel_setcancelstate(void)
 	TC_SUCCESS_RESULT();
 }
 
-/**
-* @fn                   :tc_pthread_pthread_take_give_semaphore
-* @brief                :Support managed access to the private data sets.
-* @Scenario             :Support managed access to the private data sets.
-* API's covered         :pthread_sem_take, pthread_sem_give
-* Preconditions         :none
-* Postconditions        :none
-* @return               :void
- */
-#if !defined(CONFIG_BUILD_PROTECTED)
-static void tc_pthread_pthread_sem_take_give(void)
-{
-	int ret_chk;
-	int get_value;
-	sem_t sem;
-	sem_init(&sem, 0, VAL_THREE);
-
-	ret_chk = pthread_sem_take(&sem, false);
-	TC_ASSERT_EQ("pthread_sem_take", ret_chk, OK);
-
-	sem_getvalue(&sem, &get_value);
-	/* if get_value is not matched with VAL_TWO, then TC fails. but we will not use sem anymore, so destroy it */
-	TC_ASSERT_EQ_CLEANUP("sem_getvalue", get_value, VAL_TWO, sem_destroy(&sem));
-
-	ret_chk = pthread_sem_give(&sem);
-	TC_ASSERT_EQ("pthread_sem_give", ret_chk, OK);
-
-	sem_getvalue(&sem, &get_value);
-	TC_ASSERT_EQ("sem_getvalue", get_value, VAL_THREE);
-
-	TC_SUCCESS_RESULT();
-}
-#endif
 /**
 * @fn                   :tc_pthread_pthread_timed_wait
 * @brief                :function shall block on a condition variable.
@@ -961,36 +930,6 @@ static void tc_pthread_pthread_timed_wait(void)
 	TC_SUCCESS_RESULT();
 }
 
-/**
-* @fn                   :tc_pthread_pthread_findjoininfo_destroyjoin
-* @brief                :Find a join structure in a local data set.
-*                        pthread_destroyjoin is called from pthread_completejoin if the join info was
-*                        detached or from pthread_join when the last waiting thread has received
-*                        the thread exit info.
-* @scenario             :Find a join structure in a local data set.
-*                        pthread_destroyjoin is called from pthread_completejoin if the join info was
-*                        detached or from pthread_join when the last waiting thread has received
-*                        the thread exit info.
-* API's covered         :pthread_findjoininfo, pthread_destroyjoin
-* Preconditions         :none
-* Postconditions        :none
-* @return               :void
-*/
-#if !defined(CONFIG_BUILD_PROTECTED)
-static void tc_pthread_pthread_findjoininfo_destroyjoin(void)
-{
-	int ret_chk;
-	g_bpthreadcallback = false;
-
-	ret_chk = pthread_create(&g_thread1, NULL, findjoininfo_callback, NULL);
-	TC_ASSERT_EQ_CLEANUP("pthread_create", ret_chk, OK, pthread_detach(g_thread1));
-
-	pthread_join(g_thread1, NULL);
-	TC_ASSERT_EQ_CLEANUP("pthread_join", g_bpthreadcallback, true, pthread_detach(g_thread1));
-
-	TC_SUCCESS_RESULT();
-}
-#endif
 /**
 * @fn                   :tc_pthread_pthread_mutex_lock_unlock_trylock
 * @brief                :The mutex object referenced by mutex is locked/unlocked by calling
@@ -1422,7 +1361,6 @@ static void tc_pthread_pthread_equal(void)
 	TC_SUCCESS_RESULT();
 }
 
-#if !defined(CONFIG_BUILD_PROTECTED)
 static void tc_pthread_pthread_setschedprio(void)
 {
 	int ret_chk;
@@ -1434,15 +1372,14 @@ static void tc_pthread_pthread_setschedprio(void)
 
 	/* change set_th PID's priority to set_prio */
 	ret_chk = pthread_setschedprio(set_th, set_prio);
-	TC_ASSERT_EQ("pthread_setschedprio", ret_chk, OK);
+	TC_ASSERT_EQ_CLEANUP("pthread_setschedprio", ret_chk, OK, pthread_detach(set_th));
 
 	ret_chk = pthread_join(set_th, NULL);
-	TC_ASSERT_EQ("pthread_join", ret_chk, OK);
+	TC_ASSERT_EQ_CLEANUP("pthread_join", ret_chk, OK, pthread_detach(set_th));
 	TC_ASSERT_EQ("pthread_setschedprio", check_prio, set_prio);
 
 	TC_SUCCESS_RESULT();
 }
-#endif
 
 static void tc_pthread_pthread_setgetname_np(void)
 {
@@ -1533,13 +1470,9 @@ int pthread_main(void)
 	tc_pthread_pthread_cond_broadcast();
 	tc_pthread_pthread_cond_init_destroy();
 	tc_pthread_pthread_set_get_schedparam();
-	tc_pthread_pthread_key_create_set_getspecific();
+	tc_pthread_pthread_key_create_delete_set_getspecific();
 	tc_pthread_pthread_cancel_setcancelstate();
-#if !defined(CONFIG_BUILD_PROTECTED)
-	tc_pthread_pthread_sem_take_give();
-	tc_pthread_pthread_findjoininfo_destroyjoin();
 	tc_pthread_pthread_setschedprio();
-#endif
 	tc_pthread_pthread_timed_wait();
 	tc_pthread_pthread_mutex_init();
 	tc_pthread_pthread_mutex_destroy();

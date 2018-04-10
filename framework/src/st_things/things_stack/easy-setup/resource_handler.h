@@ -49,8 +49,8 @@ typedef struct {
 	wifi_mode_e supported_mode[NUM_WIFIMODE];
 	uint8_t num_mode;			// the number of device's supported wifi modes
 	wifi_freq_e supported_freq;
-	char ssid[MAX_SSIDLEN];		// target network name, i.e. SSID for WLAN, MAC address for BT.
-	char cred[MAX_CREDLEN];		// credential information.
+	char ssid[MAX_SSID_LEN];		// target network name, i.e. SSID for WLAN, MAC address for BT.
+	char cred[MAX_SECUIRTYKEY_LEN];		// credential information.
 	wifi_auth_type_e auth_type;
 	wifi_enc_type_e enc_type;
 	int discovery_channel;
@@ -75,7 +75,9 @@ typedef struct {
 	char language[THINGS_STRING_MAX_VALUE];
 	char country[THINGS_STRING_MAX_VALUE];
 	char device_type[THINGS_STRING_MAX_VALUE];
+#ifdef CONFIG_ST_THINGS_SUPPORT_SUB_DEVICE
 	char device_sub_type[THINGS_STRING_MAX_VALUE];
+#endif
 	char datetime[THINGS_STRING_MAX_VALUE];
 } dev_conf_resource_s;
 

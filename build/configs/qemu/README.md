@@ -6,12 +6,15 @@ QEMU is a generic and open source machine emulator and virtualizer.
 
 Targets Supported:
 
-1. lm3s6963-ek  
-NOTE:  
-TizenRT supports three memory options for lm3s6963-ek board;
-- 64KB RAM requirement configuration which matches with real memory of lm3s6963-ek board
-- 1MB RAM requirement which can be run on QEMU only with the patch in TizenRT/build/configs/qemu/qemu-2.10.0-rc2_1m_ram_size.patch
-- 16MB RAM requirement which can be run on QEMU only with the patch in TizenRT/build/configs/qemu/qemu-2.10.0-rc2_16m_ram_size.patch
+- **lm3s6963-ek**
+
+ ***NOTE:*** TizenRT supports three memory options for lm3s6963-ek board.
+
+  - 64KB RAM requirement configuration which matches with real memory of ***lm3s6963-ek*** board
+
+  - 1MB RAM requirement which can be run on QEMU only with the [qemu-2.12.0-rc1_1m_ram_size.patch](https://github.com/Samsung/TizenRT/blob/master/build/configs/qemu/qemu-2.12.0-rc1_1m_ram_size.patch)
+
+  - 16MB RAM requirement which can be run on QEMU only with the [qemu-2.12.0-rc1_16m_ram_size.patch](https://github.com/Samsung/TizenRT/blob/master/build/configs/qemu/qemu-2.12.0-rc1_16m_ram_size.patch)
 
 ## Environment Set-up
 This section covers board-specific environment set-up.  
@@ -19,23 +22,43 @@ Please set TizenRT common environment, [quick start](https://github.com/Samsung/
 
 ### QEMU installation
 
+#### Qemu version used 2.12.0-rc1
+
 ```
-wget http://download.qemu-project.org/qemu-2.10.0-rc2.tar.xz
-tar xvJf qemu-2.10.0-rc2.tar.xz
-cd qemu-2.10.0-rc2
-/* If you want to use 1MB RAM, copy qemu-2.10.0-rc2_1m_ram_size.patch from TizenRT/build/configs/qemu */
-patch -p1 < qemu-2.10.0-rc2_1m_ram_size.patch
-/* If you want to use 16MB RAM, copy qemu-2.10.0-rc2_16m_ram_size.patch from TizenRT/build/configs/qemu */
-patch -p1 < qemu-2.10.0-rc2_16m_ram_size.patch
+wget https://download.qemu.org/qemu-2.12.0-rc1.tar.xz
+
+tar xvJf qemu-2.12.0-rc1.tar.xz
+
+cd qemu-2.12.0-rc1
+```
+
+To Run **QEMU with 1MB RAM**, copy **qemu-2.12.0-rc1_1m_ram_size.patch** from **TizenRT/build/configs/qemu** to **PWD**
+
+```
+patch -p1 < qemu-2.12.0-rc1_1m_ram_size.patch
+```
+To Run **QEMU with 16MB RAM**, copy **qemu-2.12.0-rc1_16m_ram_size.patch** from **TizenRT/build/configs/qemu** to **PWD**
+```
+patch -p1 < qemu-2.12.0-rc1_16m_ram_size.patch
+```
+```
 ./configure --target-list=arm-softmmu
+
 make -j 4
+
 cd arm-softmmu/
+
 sudo ln qemu-system-arm /usr/local/bin/qemu-system-arm
 ```
 ## How to program a binary
 
-There are two methods, using QEMU command or make command.  
-After building TizenRT, follow below steps at $TIZENRT_BASEDIR/os folder.  
+There are two methods,
+- Using **qemu** command
+
+- Using **make** command.  
+
+After building TizenRT, follow below steps at $TIZENRT_BASEDIR/os folder.
+
 See [[Getting the sources]](https://github.com/Samsung/TizenRT#getting-the-sources) for how to set *TIZENRT_BASEDIR*.
 
 ### Using QEMU command
@@ -73,11 +96,13 @@ for running tc under 128MB flash and 16MB sram
 ## APPENDIX
 ### How to change memory size
 If you want to set your sram to 64KB or 16MB, follow these steps.  
-`make menuconfig`  
+`make menuconfig`
+
 Enter `Board Selection` -> `Build for qemu hardware`  
-Select `NONE`(64KB) or `Build for SRAM increased QEMU Hardware`(16MB)  
+Select `NONE`(64KB) or `Build for SRAM increased QEMU Hardware`(16MB)
+
 Enter `Chip Selection` -> `Boot Memory Configuration`  
 Set `Primary RAM size` to `65536`(64KB) or `16777216`(16MB)
 
 ### How to run Network Stack on QEMU
-To run the Network stack on QEMU please refer [How to run network stack on Qemu](HowToRunNetworkStackOnQemu.md). 
+To run the Network stack on QEMU please refer [How to run network stack on Qemu](HowToRunNetworkStackOnQemu.md).

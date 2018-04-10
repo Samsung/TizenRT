@@ -141,7 +141,7 @@ void mm_free(FAR struct mm_heap_s *heap, FAR void *mem)
 
 	if ((alloc_node->preceding & MM_ALLOC_BIT) != 0) {
 		heapinfo_subtract_size(alloc_node->pid, alloc_node->size);
-		heapinfo_update_total_size(heap, ((-1) * alloc_node->size));
+		heapinfo_update_total_size(heap, ((-1) * alloc_node->size), alloc_node->pid);
 	}
 #endif
 	node->preceding &= ~MM_ALLOC_BIT;

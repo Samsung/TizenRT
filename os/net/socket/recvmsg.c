@@ -57,7 +57,6 @@
 
 #include <tinyara/config.h>
 #ifdef CONFIG_NET
-#ifdef CONFIG_ENABLE_IOTIVITY
 
 #include <sys/types.h>
 #include <sys/socket.h>
@@ -100,5 +99,4 @@ ssize_t recvmsg(int sockfd, struct msghdr *msg, int flags)
 
 	return recvfrom(sockfd, buf, len, flags, from, (socklen_t *) addrlen);
 }
-#endif							/* CONFIG_ENABLE_IOTIVITY */
 #endif							/* CONFIG_NET */

@@ -21,7 +21,7 @@
 #include <stdlib.h>
 #include <pthread.h>
 
-#include "memory/things_malloc.h"
+#include "utils/things_malloc.h"
 #include "logging/things_logger.h"
 #include "things_wait_handler.h"
 
@@ -233,12 +233,8 @@ unsigned long int create_time_out_process(OCDoHandle hadler, check_time_out_call
 		pTimeOutManager->timeout.cur_num = timeOut->cur_num;
 	}
 
-#ifdef __ST_THINGS_RTOS__
-	if (pthread_create_rtos(&pTimeOutManager->gthreadId, NULL, (PthreadFunc) handle_base_timeout_loop, (void *)pTimeOutManager, THINGS_STACK_BASE_TIME_OUT_THREAD) != 0)
-#else
-	if (things_thread_create(&pTimeOutManager->gthreadId, NULL, (PthreadFunc) handle_base_timeout_loop, (void *)pTimeOutManager) != 0)
-#endif
-	{
+
+	if (pthread_create_rtos(&pTimeOutManager->gthreadId, NULL, (PthreadFunc) handle_base_timeout_loop, (void *)pTimeOutManager, THINGS_STACK_TIME_OUT_THREAD) != 0)	{
 		THINGS_LOG_V_ERROR(THINGS_ERROR, TAG, "Create thread is failed.");
 		things_free(pTimeOutManager);
 		return 0;

@@ -72,7 +72,12 @@
 #define ALC5658_DEFAULT_SAMPRATE	16000
 #define ALC5658_DEFAULT_NCHANNELS	2
 #define ALC5658_DEFAULT_BPSAMP		16
-#define FAIL				0xFFFF
+#define FAIL						0xFFFF
+#define MUTE_HP_LR					0x8080
+#define UNMUTE_HP_LR				0x0
+#define IN1_PORT_GAIN				(0 + 16) << 8
+#define ALC5658_HP_VOL_MIN			0x0
+#define ALC5658_HP_VOL_MAX			0x1F
 #define alc5658_givesem(s) sem_post(s)
 
 /* Commonly defined and redefined macros */
@@ -119,7 +124,7 @@ struct alc5658_dev_s {
 #ifndef CONFIG_AUDIO_EXCLUDE_BALANCE
 	uint16_t balance;			/* Current balance level (b16) */
 #endif							/* CONFIG_AUDIO_EXCLUDE_BALANCE */
-	uint8_t volume;				/* Current volume level {0..63} */
+	uint16_t volume;				/* Current volume level {0..31} */
 #endif							/* CONFIG_AUDIO_EXCLUDE_VOLUME */
 	uint8_t nchannels;			/* Number of channels (1 or 2) */
 	uint8_t bpsamp;				/* Bits per sample (8 or 16) */
@@ -156,7 +161,7 @@ static uint16_t alc5658_modifyreg(FAR struct alc5658_dev_s *priv, uint16_t regad
 
 #ifndef CONFIG_AUDIO_EXCLUDE_VOLUME
 static inline uint16_t alc5658_scalevolume(uint16_t volume, b16_t scale);
-static void alc5658_setvolume(FAR struct alc5658_dev_s *priv, uint16_t volume, bool mute);
+static void alc5658_setvolume(FAR struct alc5658_dev_s *priv);
 #endif
 
 #ifndef CONFIG_AUDIO_EXCLUDE_TONE

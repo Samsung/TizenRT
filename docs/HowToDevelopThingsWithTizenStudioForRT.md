@@ -19,18 +19,20 @@ More details can find at [Guide page](https://developer.tizen.org/development/ti
  
 ### 2. Create a Project
 You can create a new SmartThings project from remote Git repositories as well as local templates. To create a new project:  
-- When creating a project from a template, click the **Check if you want Smart Things functionality** check box when selecting a template:  
+- When creating a project from a template, click the **Check if you want SmartThings functionality** check box when selecting a template:  
 ![template - Check box](media/rt_smartthings_template.png)  
-- When importing a project from a Git repository, click the **Check if you want Smart Things functionality** check box:  
+- When importing a project from a Git repository, click the **Check if you want SmartThings functionality** check box:  
 ![git - Check box](media/rt_smartthings_git.png)
 
-### 3. Manage Device/ Resource Model
+### 3. Manage Device / Resource Model
 You can use the Device/Resource Model Manager to select a device model for interworking with the SmartThings service.  
 With the Model Manager, you can:  
 - [Check device, resource, and property information](#checking-device-resource-and-property-information)  
 - [Select, add, and restore resources](#managing-resources)  
 - [Import and export device models](#importing-and-exporting-device-models)  
 - [Generate stub code](#generating-stub-code)  
+- [Manage device model](HowToManageDeviceModel.md)
+- [Manage Certificate](manage-certificate.md)
 
 The Model Manager is displayed while creating a new project with SmartThings functionality. If you want to access the Model Manager later again, in the **Project Explorer** view, right-click the project and select **Manage ST-Things Resource**.
 
@@ -40,8 +42,9 @@ To access information:
 - Select a resource in the left panel of the **Resource/Property** section to see the its description and property information.  
 - Select a property in the right panel of the **Resource/Property** section to see its description.  
 ![Viewing information](media/rt_model_select_property.png)  
-- Input your MNID assigned by SmartThings website. Refer to [here](HowToDevelopThingsUsingSmartThingsThingsSDK.md#2-to-use-samsung-cloud).  
-![Input a MNID](media/rt_model_input_mnid.png)
+- Input your MNID & Vender ID assigned by SmartThings website. Refer [[here]](https://smartthings.developer.samsung.com/develop/workspace/ide/create-a-cloud-connected-device.html).  
+- if you want to connect the device through cloud, should register your device info first.
+![Input a MNID & Vender ID](media/rt_model_input_mnid_n_vid.png)
 
 #### **Managing Resources**
 You can select, add, and restore resources:  
@@ -54,21 +57,6 @@ You can select, add, and restore resources:
    ![Add Resource](media/rt_model_add_resource_window.png)  
    The new resource appears in the list in the **Resource/Property** section of the Model Manager main view.  
 - To restore the resources, click **Restore default**. This restores the initial resource state of the device, deleting all changes that have been made.
-
-#### **Importing and Exporting Device Models**
-To import a device model:  
-1. Click **Import** on the **Device/Platform** toolbar.  
-![Import the JSON file](media/rt_model_import_model.png)  
-2. Select the JSON file containing the device model to be imported and click **OK**.  
-![Select the JSON file](media/rt_model_import_model_window.png)  
-3. The imported device shows up in the device list with the **Custom** type.  
-![The imported device shows up](media/rt_model_import_model_finished.png)  
-
-To export a device model:  
-1. Select the model to be exported and click **Export** on the **Device/Platform** toolbar.  
-![Export the model](media/rt_model_export_model.png)  
-2. The device model is exported ad a JSON file. Enter a file name for the exported model and click **OK**.  
-![Exported as a JSON file](media/rt_model_export_model_window.png)
 
 #### **Generating Stub Code**
 When you click **Finish** in the Model Manager, the code for processing the resource is automatically created for the selected device.  
@@ -94,7 +82,7 @@ When the project is created, template code for the selected device and resources
 If you edit the SmartThings resources in your project later on, the Model Manager automatically backs the existing source files with a **.bak** extension.  
 ![Backup files](media/rt_model_manage_backups.png)
 
-### 4. Build and Flash the Project
+### 4. Build the Project
 You must build your project before flashing or debugging it.  
 You can build a TizenRT project in 2 ways: [using a batch build](#Using-Batch-Build) or [build project command](#Using-Build-Project).
 
@@ -123,4 +111,14 @@ To build your project using the build project command:
 You can check the build logs in the **Console** view.  
 ![Build logs](media/rt_build_logs_smartthings.png)  
 
+### 5. Flash the Project  
+To upload your project to the board, you need to flash it:  
+1. Connect the board to your computer.  
+2. Select the project in the **Project Exploer** view.  
+3. To flash the TizenRT project:  
+     i. In the Tizen Studio for RT toolbar, click the **Flash** icon.  
+    ii. Select a flash option **'ALL'** and click **OK**.  
+![Flash option](media/rt_flash_option.png)  
+You can see the status in the **Console** view.
+![Flash logs](media/rt_flash_logs.png)  
 

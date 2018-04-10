@@ -61,6 +61,9 @@
 #include <sys/types.h>
 #include <stdbool.h>
 #include <semaphore.h>
+#ifdef CONFIG_HEAPINFO_USER_GROUP
+#include <tinyara/mm/heapinfo_internal.h>
+#endif
 
 /****************************************************************************
  * Pre-Processor Definitions
@@ -200,6 +203,9 @@
 #define HEAPINFO_DETAIL_PID 3
 #define HEAPINFO_DETAIL_FREE 4
 #define HEAPINFO_PID_NOTNEEDED -1
+#define HEAPINFO_INIT_INFO 0
+#define HEAPINFO_ADD_INFO 1
+#define HEAPINFO_DEL_INFO 2
 
 /* Determines the size of the chunk size/offset type */
 
@@ -301,6 +307,20 @@ struct mm_freenode_s {
 #define CHECK_FREENODE_SIZE \
 	DEBUGASSERT(sizeof(struct mm_freenode_s) == SIZEOF_MM_FREENODE)
 
+#ifdef CONFIG_HEAPINFO_USER_GROUP
+struct heapinfo_group_info_s {
+	int pid;
+	int group;
+	int stack_size;
+};
+
+struct heapinfo_group_s {
+	int curr_size;
+	int peak_size;
+	int stack_size;
+	int heap_size;
+};
+#endif
 /* This describes one heap (possibly with multiple regions) */
 
 struct mm_heap_s {
@@ -318,6 +338,10 @@ struct mm_heap_s {
 #ifdef CONFIG_DEBUG_MM_HEAPINFO
 	size_t peak_alloc_size;
 	size_t total_alloc_size;
+#ifdef CONFIG_HEAPINFO_USER_GROUP
+	int max_group;
+	struct heapinfo_group_s group[HEAPINFO_USER_GROUP_NUM];
+#endif
 #endif
 
 	/* This is the first and last nodes of the heap */
@@ -607,8 +631,12 @@ void heapinfo_update_node(FAR struct mm_allocnode_s *node, mmaddress_t caller_re
 
 void heapinfo_add_size(pid_t pid, mmsize_t size);
 void heapinfo_subtract_size(pid_t pid, mmsize_t size);
-void heapinfo_update_total_size(struct mm_heap_s *heap, mmsize_t size);
+void heapinfo_update_total_size(struct mm_heap_s *heap, mmsize_t size, pid_t pid);
 void heapinfo_exclude_stacksize(void *stack_ptr);
+#ifdef CONFIG_HEAPINFO_USER_GROUP
+void heapinfo_update_group_info(pid_t pid, int group, int type);
+void heapinfo_check_group_list(pid_t pid, char *name);
+#endif
 #endif
 
 #ifdef CONFIG_DEBUG_MM_HEAPINFO

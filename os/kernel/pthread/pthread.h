@@ -70,6 +70,14 @@
 /****************************************************************************
  * Pre-processor Definitions
  ****************************************************************************/
+#define NOT_IN_USE                     0  /* Pthread key is not in-use */
+#define IN_USE                         1  /* Pthread key is in-use     */
+/* Max Number of calling destructor */
+#ifdef CONFIG_NPTHREAD_DESTRUCTOR_ITERATIONS
+#define PTHREAD_DESTRUCTOR_ITERATIONS  CONFIG_NPTHREAD_DESTRUCTOR_ITERATIONS
+#else
+#define PTHREAD_DESTRUCTOR_ITERATIONS  2
+#endif
 
 /****************************************************************************
  * Public Type Declarations

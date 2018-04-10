@@ -27,7 +27,7 @@
 #include <semaphore.h>
 #include "tc_common.h"
 
-#if CONFIG_TASH
+#ifdef CONFIG_TASH
 #include <apps/shell/tash.h>
 #else
 #if defined(CONFIG_EXAMPLES_TESTCASE_ARASTORAGE_UTC) || defined(CONFIG_EXAMPLES_TESTCASE_ARASTORAGE_ITC)

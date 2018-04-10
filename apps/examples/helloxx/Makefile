@@ -49,7 +49,6 @@
 # POSSIBILITY OF SUCH DAMAGE.
 #
 ############################################################################
-
 -include $(TOPDIR)/.config
 -include $(TOPDIR)/Make.defs
 include $(APPDIR)/Make.defs
@@ -80,11 +79,11 @@ SRCS		= $(ASRCS) $(CSRCS) $(CXXSRCS) $(MAINSRC)
 OBJS		= $(AOBJS) $(COBJS) $(CXXOBJS)
 
 ifneq ($(CONFIG_BUILD_KERNEL),y)
-  OBJS		+= $(MAINOBJ)
+OBJS		+= $(MAINOBJ)
 endif
 
 ifeq ($(CONFIG_WINDOWS_NATIVE),y)
-  BIN		= ..\..\libapps$(LIBEXT)
+BIN		= ..\..\libapps$(LIBEXT)
 else
 ifeq ($(WINTOOL),y)
   BIN		= ..\\..\\libapps$(LIBEXT)

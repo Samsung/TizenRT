@@ -81,6 +81,21 @@ config ENABLE_HEAPINFO
 	---help---
 		Show information about memory status per thread
 
+if ENABLE_HEAPINFO
+config HEAPINFO_USER_GROUP
+	bool "Enable User defined Group Memory Usage"
+	default n
+
+if HEAPINFO_USER_GROUP
+config HEAPINFO_USER_GROUP_LIST
+	string "Thread Name List for measuring Alloc Size"
+	default ""
+	---help---
+		Task/Thread name is separated with ',' and Group is separated with '/'.
+		For example, "abc,def/ghi,jklmn/opqr".
+endif
+endif
+
 config ENABLE_IRQINFO
 	bool "irqinfo"
 	default n
@@ -89,7 +104,6 @@ config ENABLE_IRQINFO
 	---help---
 		List the registered interrupts, it's occurrence counts and corresponding isr.
 
-if !DISABLE_SIGNALS
 config ENABLE_KILL
 	bool "kill"
 	default y
@@ -103,7 +117,6 @@ config ENABLE_KILLALL
 	depends on !BUILD_PROTECTED
 	---help---
 		Send a signal to all processes running any of the specified commands
-endif #!DISABLE_SIGNALS
 
 config ENABLE_PS
 	bool "ps"

@@ -60,8 +60,6 @@
 #include <tinyara/config.h>
 #include <sys/types.h>
 
-#ifdef CONFIG_ENABLE_IOTIVITY
-
 #include <uio.h>
 
 struct msghdr {
@@ -115,7 +113,10 @@ static inline struct cmsghdr *cmsg_nxthdr(struct msghdr *__msg, struct cmsghdr *
 {
 	return __cmsg_nxthdr(__msg->msg_control, __msg->msg_controllen, __cmsg);
 }
-#endif							/* CONFIG_ENABLE_IOTIVITY */
+
+ssize_t recvmsg(int sockfd, struct msghdr *msg, int flags);
+ssize_t sendmsg(int sockfd, struct msghdr *msg, int flags);
+
 
 /****************************************************************************
  * Definitions

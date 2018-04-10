@@ -180,8 +180,8 @@ endif
 
 iotjs_build:
 ifeq ($(CONFIG_ENABLE_IOTJS),y)
-	python $(IOTJS_ROOT_DIR)/tools/build.py --target-arch=arm --target-os=tizenrt \
-	--sysroot=../os --target-board=artik05x --jerry-heaplimit=$(CONFIG_IOTJS_JERRY_HEAP) \
+	python $(IOTJS_ROOT_DIR)/tools/build.py --target-arch=$(CONFIG_ARCH) --target-os=tizenrt \
+	--sysroot=$(TOPDIR) --target-board=$(CONFIG_ARCH_BOARD) --jerry-heaplimit=$(CONFIG_IOTJS_JERRY_HEAP) \
 	--buildtype=$(IOTJS_BUILDTYPE) --no-init-submodule $(IOTJS_BUILD_OPTION)
 endif
 

@@ -1,0 +1,28 @@
+#
+# For a description of the syntax of this configuration file,
+# see kconfig-language at https://www.kernel.org/doc/Documentation/kbuild/kconfig-language.txt
+#
+
+config GRPC
+	bool "gRPC"
+	default n
+	select PROTOBUF
+	depends on NET && LIBCXX
+	---help---
+		Enable support for the gRPC.
+
+if GRPC
+
+config TSI_LOG
+	bool "Enable TSI Layer Log"
+	default n
+	---help---
+		Show function calls process in TSI Layer
+
+config TSI_MBEDTLS_LOG
+	int "Set mbedTLS Log Level(0:NONE - 5:ALL)"
+	default 0
+	---help---
+		Set Log levels for mbedtls debugging log
+
+endif # GRPC

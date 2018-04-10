@@ -65,6 +65,13 @@
 #include <tinyara/kmalloc.h>
 #include <tinyara/kthread.h>
 #include <tinyara/ttrace.h>
+#ifdef CONFIG_DEBUG_MM_HEAPINFO
+#include <tinyara/mm/mm.h>
+#ifdef CONFIG_HEAPINFO_USER_GROUP
+#include <tinyara/sched.h>
+#include <string.h>
+#endif
+#endif
 
 #include "sched/sched.h"
 #include "group/group.h"
@@ -184,6 +191,13 @@ static int thread_create(FAR const char *name, uint8_t ttype, int priority, int 
 		errcode = get_errno();
 		goto errout_with_tcb;
 	}
+#ifdef CONFIG_DEBUG_MM_HEAPINFO
+	/* Update the pid information in stack node */
+	struct mm_allocnode_s *node;
+
+	node = (struct mm_allocnode_s *)(tcb->cmn.stack_alloc_ptr - SIZEOF_MM_ALLOCNODE);
+	node->pid = (-1) * (tcb->cmn.pid);
+#endif
 
 	/* Setup to pass parameters to the new task */
 
@@ -202,6 +216,10 @@ static int thread_create(FAR const char *name, uint8_t ttype, int priority, int 
 	/* Get the assigned pid before we start the task */
 
 	pid = (int)tcb->cmn.pid;
+
+#ifdef CONFIG_HEAPINFO_USER_GROUP
+	heapinfo_check_group_list(pid, tcb->cmn.name);
+#endif
 
 	/* Activate the task */
 

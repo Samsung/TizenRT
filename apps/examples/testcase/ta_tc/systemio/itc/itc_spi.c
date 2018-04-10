@@ -229,11 +229,9 @@ void itc_systemio_spi_write_recv_trasfer_p(void)
 	ret = iotbus_spi_recv(h_spi, sz_rxbuf, 8);
 	TC_ASSERT_EQ_CLEANUP("iotbus_spi_recv", ret, IOTBUS_ERROR_NONE, iotbus_spi_close(h_spi));
 
-	ret = iotbus_spi_transfer_buf(h_spi, sz_txbuf, sz_rxbuf, 16);
 #ifdef CONFIG_SPI_EXCHANGE
+	ret = iotbus_spi_transfer_buf(h_spi, sz_txbuf, sz_rxbuf, 16);
 	TC_ASSERT_EQ_CLEANUP("iotbus_spi_transfer_buf", ret, IOTBUS_ERROR_NONE, iotbus_spi_close(h_spi));
-#else
-	TC_ASSERT_EQ_CLEANUP("iotbus_spi_transfer_buf", ret, IOTBUS_ERROR_NOT_SUPPORTED, iotbus_spi_close(h_spi));
 #endif
 
 	ret = iotbus_spi_close(h_spi);

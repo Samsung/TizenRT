@@ -78,6 +78,7 @@ iotbus_uart_context_h iotbus_uart_init(const char *path);
  */
 int iotbus_uart_stop(iotbus_uart_context_h hnd);
 
+#ifdef CONFIG_SERIAL_TERMIOS
 /**
  * @brief flushes uart buffer.
  *
@@ -123,6 +124,7 @@ int iotbus_uart_set_mode(iotbus_uart_context_h hnd, int bytesize, iotbus_uart_pa
  * @since TizenRT v1.0
  */
 int iotbus_uart_set_flowcontrol(iotbus_uart_context_h hnd, int xonxoff, int rtscts);
+#endif /* CONFIG_SERIAL_TERMIOS */
 
 /**
  * @brief reads data over uart bus.

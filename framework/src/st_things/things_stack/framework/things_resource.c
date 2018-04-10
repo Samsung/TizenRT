@@ -27,9 +27,8 @@
 #include "things_def.h"
 #include "things_common.h"
 #include "logging/things_logger.h"
-#include "memory/things_malloc.h"
-#include "utils/things_string_util.h"
-#include "oic_malloc.h"
+#include "utils/things_malloc.h"
+#include "utils/things_string.h"
 #include "ocpayload.h"
 #include "things_resource.h"
 #include "octypes.h"
@@ -200,7 +199,7 @@ bool things_get_arrayvalue(struct things_representation_s *mother, char *key, in
 			}
 			/*! Added by st_things for memory Leak fix
 			 */
-			OICFree(payload_values);
+			things_free(payload_values);
 			*length = mother->num_children = dimension_size;
 		}
 	} else {
@@ -471,7 +470,7 @@ bool get_query(struct things_resource_s *res, char *key, char **value)
 		if (strncmp(p_ptr2, key, strlen(key)) == 0) {
 			THINGS_LOG_D(THINGS_DEBUG, TAG, "\tFind Query : %s", p_ptr2 + strlen(key) + 1);
 
-			duplicate_string(p_ptr2 + strlen(key) + 1, value);
+			things_string_duplicate(p_ptr2 + strlen(key) + 1, value);
 			if (NULL == *value) {
 				things_free(p_origin);
 				return 1;
@@ -638,7 +637,7 @@ bool is_supporting_resource_type(struct things_resource_s *res, char *query)
 
 void set_command_id(things_resource_s *res, char *cmd_id)
 {
-	duplicate_string(cmd_id, &res->cmd_id);
+	things_string_duplicate(cmd_id, &res->cmd_id);
 }
 
 things_resource_s *get_next(things_resource_s *res)
@@ -775,7 +774,7 @@ things_resource_s *create_resource_inst_impl(void *requesthd, void *resourcehd, 
 	res->size = 1;
 
 	if (NULL != query) {
-		duplicate_string((char *)query, &(res->query));
+		things_string_duplicate((char *)query, &(res->query));
 	}
 
 	if (NULL != rep_payload) {

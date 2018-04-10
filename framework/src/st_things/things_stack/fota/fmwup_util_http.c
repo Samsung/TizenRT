@@ -23,7 +23,7 @@
 #include <stdbool.h>
 #include <string.h>
 #include <unistd.h>
-#include "memory/things_malloc.h"
+#include "utils/things_malloc.h"
 #include "logging/things_logger.h"
 
 #define TAG "[things_fota]"

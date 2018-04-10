@@ -56,7 +56,6 @@
 
 #include <tinyara/config.h>
 
-#include <assert.h>
 #include <errno.h>
 
 #include <tinyara/semaphore.h>
@@ -105,22 +104,22 @@
 
 int sem_setprotocol(FAR sem_t *sem, int protocol)
 {
-	int errcode;
+	int errcode = EINVAL;
 
-	DEBUGASSERT(sem != NULL);
+	if ((sem != NULL) && ((sem->flags & FLAGS_INITIALIZED) != 0)) {
+		switch (protocol) {
+		case SEM_PRIO_NONE:
+			return OK;
 
-	switch (protocol) {
-	case SEM_PRIO_NONE:
-		return OK;
+		case SEM_PRIO_INHERIT:
+		case SEM_PRIO_PROTECT:
+			errcode = ENOSYS;
+			break;
 
-	case SEM_PRIO_INHERIT:
-	case SEM_PRIO_PROTECT:
-		errcode = ENOSYS;
-		break;
-
-	default:
-		errcode = EINVAL;
-		break;
+		default:
+			errcode = EINVAL;
+			break;
+		}
 	}
 
 	set_errno(errcode);

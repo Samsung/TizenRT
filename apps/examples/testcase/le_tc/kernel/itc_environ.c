@@ -89,7 +89,6 @@ static void itc_environ_getenv_n(void)
 
 	memset(var_buf, 0, BUFF_LEN);
 	snprintf(var_buf, BUFF_LEN, "%s%d=%s%d", VAR_STR, 0, VALUE_STR, 0);
-	snprintf(var_buf + strlen(var_buf) + 1, BUFF_LEN, "%s%d", VAR_STR, 1);
 
 	result = getenv(var_buf);
 	TC_ASSERT_EQ_CLEANUP("getenv", result, NULL, clearenv());

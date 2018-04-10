@@ -3,4 +3,4 @@
 # see kconfig-language at https://www.kernel.org/doc/Documentation/kbuild/kconfig-language.txt
 #
 
-source "$EXTERNALDIR/iotjs/Kconfig.runtime"
+source "$EXTERNALDIR/iotjs/config/tizenrt/Kconfig.runtime"

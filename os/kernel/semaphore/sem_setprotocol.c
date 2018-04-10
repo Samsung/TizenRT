@@ -107,36 +107,36 @@
 
 int sem_setprotocol(FAR sem_t *sem, int protocol)
 {
-	int errcode;
+	int errcode = EINVAL;
 
-	DEBUGASSERT(sem != NULL);
+	if ((sem != NULL) && ((sem->flags & FLAGS_INITIALIZED) != 0)) {
+		switch (protocol) {
+		case SEM_PRIO_NONE:
+			/* Disable priority inheritance */
 
-	switch (protocol) {
-	case SEM_PRIO_NONE:
-		/* Disable priority inheritance */
+			sem->flags |= PRIOINHERIT_FLAGS_DISABLE;
 
-		sem->flags |= PRIOINHERIT_FLAGS_DISABLE;
+			/* Remove any current holders */
 
-		/* Remove any current holders */
+			sem_destroyholder(sem);
+			return OK;
 
-		sem_destroyholder(sem);
-		return OK;
+		case SEM_PRIO_INHERIT:
+			/* Enable priority inheritance (dangerous) */
 
-	case SEM_PRIO_INHERIT:
-		/* Enable priority inheritance (dangerous) */
+			sem->flags &= ~PRIOINHERIT_FLAGS_DISABLE;
+			return OK;
 
-		sem->flags &= ~PRIOINHERIT_FLAGS_DISABLE;
-		return OK;
+		case SEM_PRIO_PROTECT:
+			/* Not yet supported */
 
-	case SEM_PRIO_PROTECT:
-		/* Not yet supported */
+			errcode = ENOSYS;
+			break;
 
-		errcode = ENOSYS;
-		break;
-
-	default:
-		errcode = EINVAL;
-		break;
+		default:
+			errcode = EINVAL;
+			break;
+		}
 	}
 
 	set_errno(errcode);

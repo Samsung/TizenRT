@@ -1,0 +1,29 @@
+#
+# For a description of the syntax of this configuration file,
+# see kconfig-language at https://www.kernel.org/doc/Documentation/kbuild/kconfig-language.txt
+#
+
+config EXAMPLES_GREETER_CLIENT
+	bool "grpc client example"
+	default n
+	depends on GRPC
+	---help---
+		Enable the grpc client example
+
+if EXAMPLES_GREETER_CLIENT
+
+config EXAMPLES_GREETER_CLIENT_CXXINITIALIZE
+	bool "C++ Initialization"
+	default y
+	depends on HAVE_CXX && HAVE_CXXINITIALIZE
+	---help---
+		By default, if CONFIG_HAVE_CXX and CONFIG_HAVE_CXXINITIALIZE are
+		defined, then this example will call the TinyAra function to
+		initialize static C++ constructors.  This option may be disabled,
+		however, if that static initialization was preformed elsewhere.
+
+endif
+
+config USER_ENTRYPOINT
+	string
+	default "greeter_client_main" if ENTRY_GREETER_CLIENT

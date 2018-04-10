@@ -22,7 +22,7 @@
  */
 
 #include <tinyara/config.h>
-
+#include <stdio.h>
 #include <stdlib.h>
 #include <fcntl.h>
 #include <sys/ioctl.h>
@@ -30,10 +30,6 @@
 #include <tinyara/i2c.h>
 #include <iotbus/iotbus_error.h>
 #include <iotbus/iotbus_i2c.h>
-
-// debugging
-#include <stdio.h>
-#define zdbg printf   // adbg, idbg are already defined
 
 struct _iotbus_i2c_s {
 	int fd;

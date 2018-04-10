@@ -75,11 +75,6 @@ endif
 DEPPATH = --dep-path .
 VPATH = .
 
-# Include the llvm libcxx Make.defs file if selected.
-ifeq ($(CONFIG_LIBCXX),y)
-include libcxx/Make.defs
-endif
-
 # Object Files
 
 AOBJS = $(ASRCS:.S=$(OBJEXT))

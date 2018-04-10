@@ -27,7 +27,8 @@
 #include "srmresourcestrings.h"
 
 #include "logging/things_logger.h"
-#include "memory/things_malloc.h"
+#include "utils/things_malloc.h"
+#include "utils/things_string.h"
 #include "things_security_manager.h"
 #include "things_common.h"
 #include "things_sss_manager.h"
@@ -35,7 +36,6 @@
 #include "security/ss_sha2.h"
 #include "oxmverifycommon.h"
 #include "oic_string.h"
-#include "oic_malloc.h"
 #include "utlist.h"
 #include "aclresource.h"
 #include "srmutility.h"
@@ -560,7 +560,7 @@ static int sm_generate_mac_based_device_id(void)
 		return OIC_SEC_ERROR;
 	}
 	THINGS_LOG_D(THINGS_INFO, TAG, "MACbased UUID : %s", uuid_str);
-	OICFree(uuid_str);
+	things_free(uuid_str);
 
 	if (sm_secure_resource_check(&device_id) != OC_STACK_OK) {
 		return OIC_SEC_ERROR;
@@ -958,9 +958,9 @@ int sm_save_cloud_acl(const char *cloud_uuid)
 		DeleteACLList(acl);
 		return OIC_SEC_ERROR;
 	}
-	rsrc->types[0] = OICStrdup("x.com.samsung.cloudconnection");	// ignore
+	rsrc->types[0] = things_strdup("x.com.samsung.cloudconnection");	// ignore
 	if (!rsrc->types[0]) {
-		THINGS_LOG_D_ERROR(THINGS_ERROR, TAG, "%s : OICStrdup error return", __func__);
+		THINGS_LOG_D_ERROR(THINGS_ERROR, TAG, "%s : things_strdup error return", __func__);
 		FreeRsrc(rsrc);
 		DeleteACLList(acl);
 		return OIC_SEC_ERROR;
@@ -974,9 +974,9 @@ int sm_save_cloud_acl(const char *cloud_uuid)
 		DeleteACLList(acl);
 		return OIC_SEC_ERROR;
 	}
-	rsrc->interfaces[0] = OICStrdup("oic.if.baseline");	// ignore
+	rsrc->interfaces[0] = things_strdup("oic.if.baseline");	// ignore
 	if (!rsrc->interfaces[0]) {
-		THINGS_LOG_D_ERROR(THINGS_ERROR, TAG, "%s : OICStrdup error return", __func__);
+		THINGS_LOG_D_ERROR(THINGS_ERROR, TAG, "%s : things_strdup error return", __func__);
 		FreeRsrc(rsrc);
 		DeleteACLList(acl);
 		return OIC_SEC_ERROR;
@@ -989,7 +989,7 @@ int sm_save_cloud_acl(const char *cloud_uuid)
 	if (OC_STACK_DUPLICATE_REQUEST == installRes) {
 		THINGS_LOG_D(THINGS_WARNING, TAG, "%s : [%s]'s ACL already installed.", __func__, cloud_uuid);
 	} else if (OC_STACK_OK != installRes) {
-		THINGS_LOG_D_ERROR(THINGS_ERROR, TAG, "%s : OICStrdup error return", __func__);
+		THINGS_LOG_D_ERROR(THINGS_ERROR, TAG, "%s : things_strdup error return", __func__);
 		/*SVACE warning fix */
 		DeleteACLList(acl);
 		return OIC_SEC_ERROR;

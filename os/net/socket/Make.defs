@@ -56,14 +56,8 @@
 ifeq ($(CONFIG_NET_SOCKET),y)
 SOCK_CSRCS += net_sockets.c net_close.c net_dupsd.c net_dupsd2.c
 SOCK_CSRCS += net_clone.c net_vfcntl.c bsd_socket_api.c
-
+SOCK_CSRCS += recvmsg.c sendmsg.c
 endif
-
-# Iotivity Support
-ifeq ($(CONFIG_ENABLE_IOTIVITY),y)
-SOCK_CSRCS += recvmsg.c
-endif
-
 
 # Support for network access using streams
 

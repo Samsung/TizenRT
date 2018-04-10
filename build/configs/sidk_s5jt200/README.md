@@ -68,7 +68,7 @@ sudo ln -s /usr/local/lib/libftdi.so.1.19.0 libftdi.so.1
 
 ### FT2232 interface driver installation
 
-Get the package, [libftd2xxx1.0.4](https://github.com/psi46/HDItest/tree/master/FTDI-1.0.4/libftd2xx1.0.4)
+Get the package, [libftd2xxx1.0.4](https://github.com/psi46/HDItest/blob/master/FTDI-1.0.4/libftd2xx1.0.4.tar.gz)
 
 Untar the downloaded package
 ```bash

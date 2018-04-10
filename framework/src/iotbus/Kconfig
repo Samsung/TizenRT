@@ -14,30 +14,42 @@ if IOTBUS
 config IOTBUS_GPIO
 	bool "IoTbus GPIO"
 	default y
+	select GPIO
 	---help---
 		Enables IoTbus GPIO
 
 config IOTBUS_I2C
 	bool "IoTbus I2C"
 	default y
+	depends on I2C
 	---help---
 		Enables IoTbus I2C
 
 config IOTBUS_PWM
 	bool "IoTbus PWM"
 	default y
+	depends on PWM
 	---help---
 		Enables IoTbus PWM
 
 config IOTBUS_SPI
 	bool "IoTbus SPI"
 	default y
+	depends on SPI
 	---help---
 		Enables IoTbus SPI
 
 config IOTBUS_UART
 	bool "IoTbus UART"
 	default y
+	depends on SERIAL
 	---help---
 		Enables IoTbus Uart
+
+config DEBUG_IOTBUS
+	bool "Enable IoTbus debug messages"
+	default n
+	depends on DEBUG
+	---help---
+		This config makes ibdbg printing messages.
 endif

@@ -131,7 +131,7 @@ int sem_post(FAR sem_t *sem)
 
 	/* Make sure we were supplied with a valid semaphore. */
 
-	if (sem) {
+	if (sem && ((sem->flags & FLAGS_INITIALIZED) != 0)) {
 		/* The following operations must be performed with interrupts
 		 * disabled because sem_post() may be called from an interrupt
 		 * handler.

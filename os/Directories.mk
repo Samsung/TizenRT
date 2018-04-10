@@ -76,9 +76,17 @@ endif
 
 ifeq ($(CONFIG_BUILD_PROTECTED),y)
 USER_ADDONS += $(EXTDIR)
+ifeq ($(CONFIG_HAVE_CXX),y)
+# libc++ library is added in external directory as an add-on.
+USER_ADDONS += $(EXTDIR)$(DELIM)libcxx
+endif
 else
 ifneq ($(CONFIG_BUILD_KERNEL),y)
 TINYARA_ADDONS += $(EXTDIR)
+ifeq ($(CONFIG_HAVE_CXX),y)
+# libc++ library is added in external directory as an add-on.
+TINYARA_ADDONS += $(EXTDIR)$(DELIM)libcxx
+endif
 endif
 endif
 

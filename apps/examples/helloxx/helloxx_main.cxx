@@ -60,7 +60,8 @@
 #include <debug.h>
 
 #include <tinyara/init.h>
-#include <tinyara/arch.h>
+
+#include <apps/platform/cxxinitialize.h>
 
 //***************************************************************************
 // Definitions

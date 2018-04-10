@@ -22,7 +22,7 @@
 #include <pthread.h>
 #include <errno.h>
 #include "utils/things_rtos_util.h"
-#include "memory/things_malloc.h"
+#include "utils/things_malloc.h"
 #include "logging/things_logger.h"
 
 #define TAG "[things_fota]"

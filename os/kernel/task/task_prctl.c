@@ -149,6 +149,9 @@ int prctl(int option, ...)
 
 			strncpy(tcb->name, name, CONFIG_TASK_NAME_SIZE);
 			tcb->name[CONFIG_TASK_NAME_SIZE] = '\0';
+#ifdef CONFIG_HEAPINFO_USER_GROUP
+			heapinfo_check_group_list(tcb->pid, tcb->name);
+#endif
 		} else {
 			/* The returned value will be null-terminated, truncating if necessary */
 

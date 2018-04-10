@@ -432,6 +432,14 @@ config NPTHREAD_KEYS
 		The number of items of thread-
 		specific data that can be retained
 
+config NPTHREAD_DESTRUCTOR_ITERATIONS
+	int "Maximum number of calling pthread destructor"
+	default 4
+	depends on NPTHREAD_KEYS != 0
+	---help---
+		The number of destructor of thread-
+		specific data that can be called
+
 config PTHREAD_CLEANUP
 	bool "pthread cleanup stack"
 	default n

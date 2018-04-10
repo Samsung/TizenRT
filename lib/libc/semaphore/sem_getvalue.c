@@ -112,7 +112,7 @@
 
 int sem_getvalue(FAR sem_t *sem, FAR int *sval)
 {
-	if (sem && sval) {
+	if (sem && sval && ((sem->flags & FLAGS_INITIALIZED) != 0)) {
 		*sval = sem->semcount;
 		return OK;
 	} else {

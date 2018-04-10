@@ -1,0 +1,83 @@
+From 56d2f3a419cd7304ec7a14c2031f233645229e3b Mon Sep 17 00:00:00 2001
+From: "pradeep.ns" <pradeep.ns@samsung.com>
+Date: Mon, 2 Apr 2018 21:57:32 +0530
+Subject: [PATCH] qemu/hw/arm: stellaris: Increase sram and flash size and
+ support sdram
+
+This patch increases the sram and flash size of stellaris lm3s6965 board.
+It also adds a sdram of 512MB to the board.
+
+Signed-off-by: pradeep.ns <pradeep.ns@samsung.com>
+Signed-off-by: manohara.hk <manohara.hk@samsung.com>
+---
+ hw/arm/stellaris.c | 32 ++++++++++++++++++++++++++++++++
+ 1 file changed, 32 insertions(+)
+
+diff --git a/hw/arm/stellaris.c b/hw/arm/stellaris.c
+index de7c0fc..3a0f928 100644
+--- a/hw/arm/stellaris.c
++++ b/hw/arm/stellaris.c
+@@ -56,6 +56,16 @@ typedef const struct {
+ #define STELLARIS_GPTM(obj) \
+     OBJECT_CHECK(gptm_state, (obj), TYPE_STELLARIS_GPTM)
+ 
++#define SRAM_16M_FLASH_128M	0 /*Increase the SRAM and FLASH to 16M and 128M*/
++#define SRAM_1M_FLASH_32M	1 /*Increase the SRAM and FLASH to 1M and 32M*/
++#define SUPPORT_SDARAM		1 /*Add a sdram @cortexm3 default extranal RAM map */
++
++
++#if SUPPORT_SDARAM
++#define CORTEXM3_SDRAM_SIZE	(512 * 1024 * 1024)
++#define CORTEXM3_SDRAM_ADDR	(0x60000000)
++#endif
++
+ typedef struct gptm_state {
+     SysBusDevice parent_obj;
+ 
+@@ -1217,7 +1227,13 @@ static stellaris_board_info stellaris_boards[] = {
+   { "LM3S6965EVB",
+     0x10010002,
+     0x1073402e,
++#if SRAM_16M_FLASH_128M
++    0xffffffff, /* dc0 : flash(128M) sram(16M) */
++#elif SRAM_1M_FLASH_32M
++    0x0fffffff, /* dc0 : flash(32M) sram(1M) */
++#else
+     0x00ff007f, /* dc0 */
++#endif
+     0x001133ff,
+     0x030f5317,
+     0x0f0f87ff,
+@@ -1282,6 +1298,9 @@ static void stellaris_init(MachineState *ms, stellaris_board_info *board)
+ 
+     MemoryRegion *sram = g_new(MemoryRegion, 1);
+     MemoryRegion *flash = g_new(MemoryRegion, 1);
++#if SUPPORT_SDARAM
++    MemoryRegion *sdram = g_new(MemoryRegion, 1);
++#endif
+     MemoryRegion *system_memory = get_system_memory();
+ 
+     flash_size = (((board->dc0 & 0xffff) + 1) << 1) * 1024;
+@@ -1297,6 +1316,19 @@ static void stellaris_init(MachineState *ms, stellaris_board_info *board)
+                            &error_fatal);
+     memory_region_add_subregion(system_memory, 0x20000000, sram);
+ 
++#if SUPPORT_SDARAM
++    // Extranal RAM(SDRAM) of max CORTEXM3_SDRAM_SIZE @ CORTEXM3_SDRAM_ADDR
++    memory_region_init_ram(sdram, NULL, "stellaris.sdram", CORTEXM3_SDRAM_SIZE,
++				&error_fatal);
++
++    memory_region_add_subregion(system_memory, CORTEXM3_SDRAM_ADDR, sdram);
++    printf("%s : FLASH (B) = %d : SRAM (B) = %d : SDRAM (B) = %d\n",
++		board->name, flash_size, sram_size, CORTEXM3_SDRAM_SIZE);
++#else
++    printf("%s : FLASH (B) = %d : SRAM (B) = %d\n",
++		board->name, flash_size, sram_size);
++#endif
++
+     nvic = armv7m_init(system_memory, flash_size, NUM_IRQ_LINES,
+                        ms->kernel_filename, ms->cpu_type);
+ 
+-- 
+1.9.1
+

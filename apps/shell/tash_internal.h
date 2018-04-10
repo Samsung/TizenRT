@@ -29,29 +29,29 @@
 
 #ifdef CONFIG_CPP_HAVE_VARARGS
 #ifdef CONFIG_DEBUG_TASH
+#ifdef CONFIG_DEBUG_TASH_ERROR
 #define shdbg(format, ...)        dbg(format, ##__VA_ARGS__)
-#define shlldbg(format, ...)      lldbg(format, ##__VA_ARGS__)
+#endif
+#ifdef CONFIG_DEBUG_TASH_VERBOSE
 #define shvdbg(format, ...)       vdbg(format, ##__VA_ARGS__)
-#define shllvdbg(format, ...)     llvdbg(format, ##__VA_ARGS__)
-#else
+#endif
+#else  /* !CONFIG_DEBUG_TASH */
 #define shdbg(x...)
-#define shlldbg(x...)
 #define shvdbg(x...)
-#define shllvdbg(x...)
-#endif
-#else							/* !CONFIG_CPP_HAVE_VARARGS */
+#endif /* CONFIG_DEBUG_TASH */
+#else  /* !CONFIG_CPP_HAVE_VARARGS */
 #ifdef CONFIG_DEBUG_TASH
+#ifdef CONFIG_DEBUG_TASH_ERROR
 #define shdbg        dbg
-#define shlldbg      lldbg
-#define shvdbg       vdbg
-#define shllvdbg     llvdbg
-#else
-#define shdbg        (void)
-#define shlldbg      (void)
-#define shvdbg       (void)
-#define shllvdbg     (void)
 #endif
-#endif							/* CONFIG_CPP_HAVE_VARARGS */
+#ifdef CONFIG_DEBUG_TASH_VERBOSE
+#define shvdbg       vdbg
+#endif
+#else  /* !CONFIG_DEBUG_TASH */
+#define shdbg        (void)
+#define shvdbg       (void)
+#endif /* CONFIG_DEBUG_TASH */
+#endif /* CONFIG_CPP_HAVE_VARARGS */
 
 extern void tash_register_basic_cmds(void);
 extern int tash_execute_cmdline(char *buff);
