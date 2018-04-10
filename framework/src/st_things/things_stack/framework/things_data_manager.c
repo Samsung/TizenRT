@@ -172,7 +172,6 @@ static const char *origin_cloud_json_str = "{\n\
 
 static wifi_manager_softap_config_s ap_config;
 static easysetup_connectivity_type_e es_conn_type = es_conn_type_none;
-static wifi_manager_ap_config_s g_homeap_info;
 
 static es_cloud_signup_s *gpst_cloud_data = NULL;
 static char g_ci_cloud_address[MAX_CI_CLOUD_ADDRESS] = { 0 };
@@ -766,18 +765,6 @@ wifi_manager_softap_config_s *dm_get_softap_wifi_config(void)
 	ap_config.channel = g_easysetup_softap_channel;
 
 	return &ap_config;
-}
-
-wifi_manager_ap_config_s *dm_get_homeap_wifi_config(void)
-{
-	wifi_manager_result_e res = wifi_manager_get_config(&g_homeap_info);
-
-	if (res != WIFI_MANAGER_SUCCESS) {
-		THINGS_LOG_V(THINGS_ERROR, TAG, "Get AP configuration failed [error code : %d]", res);
-	} else {
-		THINGS_LOG_D(THINGS_DEBUG, TAG, "[WIFI] Saved SSID : %s", g_homeap_info.ssid);
-	}
-	return &g_homeap_info;
 }
 
 int parse_things_cloud_json(const char *filename)

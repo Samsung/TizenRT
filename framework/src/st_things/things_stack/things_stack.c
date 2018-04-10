@@ -31,39 +31,33 @@
 #include "things_api.h"
 #include "things_types.h"
 #include "things_def.h"
-#include "framework/things_common.h"
-#include "logging/things_logger.h"
-#include "utils/things_malloc.h"
-#include "utils/things_string.h"
-
 #include "things_resource.h"
+
+#include "framework/things_common.h"
 #include "framework/things_server_builder.h"
 #include "framework/things_security_manager.h"
 #include "framework/things_req_handler.h"
-
 #include "framework/things_data_manager.h"
 
+#include "logging/things_logger.h"
+#include "utils/things_malloc.h"
+#include "utils/things_string.h"
 #include "utils/things_network.h"
+#include "utils/things_thread.h"
+#include "utils/things_rtos_util.h"
+#include "utils/things_network.h"
+
 #include "easy-setup/easysetup_manager.h"
+
 #include "cloud/cloud_manager.h"
 #include "cloud/cloud_evtpend.h"
 
-#include <wifi_manager/wifi_manager.h>
-
-#include "utils/things_thread.h"
-#ifdef __ST_THINGS_RTOS__
-#include "utils/things_rtos_util.h"
-#endif
 #ifdef CONFIG_ST_THINGS_FOTA
 #include "fota/fmwup_api.h"
 #include "deviceDef.h"
 #define DEVICE_DEF_FILE_ROOT "/mnt/"
 #else
 #define DEVICE_DEF_FILE_ROOT "/rom/"
-#endif
-
-#ifdef CONFIG_NETUTILS_NTPCLIENT
-#include <protocols/ntpclient.h>
 #endif
 
 #define TAG "[things_stack]"
@@ -91,32 +85,11 @@ things_request_handler_s *g_req_handler = NULL;
 things_reset_confirm_func_type g_confirm_reset_start = NULL;
 things_sec_otm_state_func_type g_otm_event_handler = NULL;
 
-static pthread_mutex_t g_app_cb_mutex = PTHREAD_MUTEX_INITIALIZER;
 static pthread_mutex_t g_things_stop_mutex = PTHREAD_MUTEX_INITIALIZER;
-
-static pthread_mutex_t g_wifi_mutex = PTHREAD_MUTEX_INITIALIZER;
-static pthread_cond_t g_wifi_cond;
-static wifi_manager_scan_info_s *g_wifi_scan_info;
-static int g_wifi_scan_count;
-
-#define WIFI_SCAN_SIGNAL			\
-do {										\
-	pthread_mutex_lock(&g_wifi_mutex);		\
-	pthread_cond_signal(&g_wifi_cond);		\
-	pthread_mutex_unlock(&g_wifi_mutex);		\
-} while (0)
-
-#define WIFI_SCAN_WAIT						\
-do {										\
-	pthread_mutex_lock(&g_wifi_mutex);			\
-	pthread_cond_wait(&g_wifi_cond, &g_wifi_mutex);	\
-	pthread_mutex_unlock(&g_wifi_mutex);			\
-} while (0)
 
 bool b_reset_continue_flag = false;
 static bool b_thread_things_reset = false;
 static pthread_t h_thread_things_reset = NULL;
-static pthread_t h_thread_things_wifi_join = NULL;
 static pthread_mutex_t m_thread_oic_reset = PTHREAD_MUTEX_INITIALIZER;
 static volatile rst_state_e m_reset_bit_mask = RST_COMPLETE;
 
@@ -181,254 +154,6 @@ int things_register_easysetup_state_func(things_get_easysetup_state_func_type fu
 	}
 
 	return res;
-}
-
-#ifdef CONFIG_NETUTILS_NTPCLIENT
-static void ntp_link_error(void)
-{
-	THINGS_LOG_D(THINGS_DEBUG, TAG, "ntp_link_error() callback is called");
-}
-
-static void sync_time_from_ntp(int guarantee_secs)
-{
-	THINGS_LOG_D(THINGS_INFO, TAG, "T%d --> %s", getpid(), __FUNCTION__);
-
-	if (ntpc_get_status() != NTP_RUNNING) {
-		struct timespec pre_tp;
-		clock_gettime(CLOCK_REALTIME, &pre_tp);
-
-		struct timespec init_tp;
-		init_tp.tv_sec = 0;
-		init_tp.tv_nsec = 0;
-		clock_settime(CLOCK_REALTIME, &init_tp);
-
-		if (ntpc_start(NULL, 0, 0, ntp_link_error) < 0) {
-			THINGS_LOG_ERROR(THINGS_ERROR, TAG, "ntpc_start() failed");
-		} else {
-			THINGS_LOG(THINGS_INFO, TAG, "ntpc_start() OK");
-			int time_sync = 0;
-
-			while (1) {
-				struct timespec sync_tp;
-				clock_gettime(CLOCK_REALTIME, &sync_tp);
-				if ((init_tp.tv_sec + 1000) < sync_tp.tv_sec) {
-					time_sync = 1;
-					break;
-				} else if ((init_tp.tv_sec + guarantee_secs) < sync_tp.tv_sec) {
-					break;
-				}
-				usleep(100000);
-			}
-			if (time_sync) {
-				THINGS_LOG(THINGS_INFO, TAG, "ntpc_time sync done");
-			} else {
-				THINGS_LOG(THINGS_ERROR, TAG, "ntpc_time sync fail");
-				clock_settime(CLOCK_REALTIME, &pre_tp);
-			}
-		}
-	} else {
-		THINGS_LOG(THINGS_INFO, TAG, "ntpc already running");
-	}
-}
-#endif
-
-static void *__attribute__((optimize("O0"))) t_things_wifi_join_loop(void *args)
-{
-#ifdef CONFIG_NETUTILS_NTPCLIENT
-	sync_time_from_ntp(10);
-#else
-	THINGS_LOG_D(THINGS_INFO, TAG, "CONFIG_NETUTILS_NTPCLIENT is not set");
-#endif
-
-	wifi_manager_info_s wifi_info;
-	wifi_manager_get_info(&wifi_info);
-
-	things_wifi_changed_call_func(1, wifi_info.ssid, wifi_info.ip4_address);
-
-	return NULL;
-}
-
-void things_wifi_sta_connected(wifi_manager_result_e res)
-{
-	if (res == WIFI_MANAGER_FAIL) {
-		THINGS_LOG_ERROR(THINGS_ERROR, TAG, "Failed to connect to the AP");
-		return;
-	}
-
-	THINGS_LOG_D(THINGS_INFO, TAG, "T%d --> %s", getpid(), __FUNCTION__);
-
-	pthread_create_rtos(&h_thread_things_wifi_join, NULL, (pthread_func_type) t_things_wifi_join_loop, NULL, THINGS_STACK_WIFI_JOIN_THREAD);
-}
-
-void things_wifi_sta_disconnected(void)
-{
-	THINGS_LOG_D(THINGS_INFO, TAG, "T%d --> %s", getpid(), __FUNCTION__);
-	things_wifi_changed_call_func(0, NULL, NULL);
-}
-
-void things_wifi_soft_ap_sta_joined(void)
-{
-	THINGS_LOG_D(THINGS_INFO, TAG, "T%d --> %s", getpid(), __FUNCTION__);
-
-}
-
-void things_wifi_soft_ap_sta_left(void)
-{
-	THINGS_LOG_D(THINGS_INFO, TAG, "T%d --> %s", getpid(), __FUNCTION__);
-}
-
-void things_wifi_scan_done(wifi_manager_scan_info_s **scan_result, int res)
-{
-	THINGS_LOG_D(THINGS_INFO, TAG, "T%d --> %s", getpid(), __FUNCTION__);
-	/* Make sure you copy the scan results onto a local data structure.
-	 * It will be deleted soon eventually as you exit this function.
-	 */
-//TO DO
-}
-
-static const wifi_manager_cb_s wifi_callbacks = {
-	things_wifi_sta_connected,
-	things_wifi_sta_disconnected,
-	things_wifi_soft_ap_sta_joined,
-	things_wifi_soft_ap_sta_left,
-	things_wifi_scan_done,
-};
-
-typedef int8_t INT8;
-
-bool try_connect_home_ap(wifi_manager_ap_config_s *connect_config)
-{
-	if (connect_config != NULL && connect_config->ssid != NULL) {
-		THINGS_LOG_V(THINGS_INFO, TAG, "Try_connect_home_ap [ssid : %s]", connect_config->ssid);
-	}
-
-	wifi_manager_result_e result = WIFI_MANAGER_SUCCESS;
-	int retry_count = 0;
-
-	for (; retry_count < 3; retry_count++) {
-		result = wifi_manager_connect_ap(connect_config);
-
-		if (result == WIFI_MANAGER_SUCCESS) {
-			break;
-		} else {
-			THINGS_LOG_V(THINGS_ERROR, TAG, "Failed to connect WiFi [Error Code : %d, Retry count : %d]", result, retry_count);
-		}
-	}
-
-	if (retry_count == 3) {
-		THINGS_LOG_ERROR(THINGS_ERROR, TAG, "Failed to connect WiFi 3 times");
-		return false;
-	}
-
-	return true;
-}
-
-bool try_turn_on_soft_ap()
-{
-	wifi_manager_info_s info;
-	wifi_manager_get_info(&info);
-
-	wifi_manager_remove_config();
-
-	if (info.mode != SOFTAP_MODE) {
-		wifi_manager_softap_config_s *ap_config = dm_get_softap_wifi_config();
-		if (wifi_manager_set_mode(SOFTAP_MODE, ap_config) != WIFI_MANAGER_SUCCESS) {
-			THINGS_LOG_ERROR(THINGS_ERROR, TAG, "Failed to change to SOFTAP mode");
-			return false;
-		}
-	}
-	THINGS_LOG(THINGS_INFO, TAG, "In SOFTAP mode");
-	return true;
-}
-
-bool things_handle_stop_soft_ap(wifi_manager_ap_config_s *connect_config)
-{
-	wifi_manager_result_e result = WIFI_MANAGER_SUCCESS;
-	wifi_manager_info_s info;
-	wifi_manager_get_info(&info);
-
-	if (info.mode == SOFTAP_MODE) {
-		if (wifi_manager_set_mode(STA_MODE, NULL) != WIFI_MANAGER_SUCCESS) {
-			THINGS_LOG_ERROR(THINGS_ERROR, TAG, "Failed to change to STA mode)");
-			return false;
-		}
-		usleep(100000);
-	}
-
-	int retry_count = 0;
-
-	for (; retry_count < 3; retry_count++) {
-		result = wifi_manager_connect_ap(connect_config);
-
-		if (result == WIFI_MANAGER_SUCCESS) {
-			break;
-		} else {
-			THINGS_LOG_ERROR(THINGS_ERROR, TAG, "Failed to connect WiFi");
-		}
-	}
-
-	if (retry_count == 3) {
-		THINGS_LOG_ERROR(THINGS_ERROR, TAG, "Failed to connect WiFi 3 times");
-		return false;
-	}
-
-	return true;
-}
-
-INT8 things_wifi_connection_cb(access_point_info_s *p_info, char *p_cmd_id)
-{
-	THINGS_LOG_D(THINGS_DEBUG, TAG, "T%d --> %s", getpid(), __FUNCTION__);
-
-	if (p_info == NULL) {
-		THINGS_LOG_ERROR(THINGS_ERROR, TAG, "Invalid params");
-		return -1;
-	}
-
-	wifi_manager_ap_config_s connect_config;
-
-	strncpy(connect_config.ssid, p_info->e_ssid, sizeof(connect_config.ssid));
-	connect_config.ssid_length = strlen(connect_config.ssid);
-	strncpy(connect_config.passphrase, p_info->security_key, sizeof(connect_config.passphrase));
-
-	connect_config.passphrase_length = strlen(connect_config.passphrase);
-
-	THINGS_LOG_V(THINGS_INFO, TAG, "[%s] ssid : %s", __FUNCTION__, connect_config.ssid);
-
-	// set auth type
-	if (strncmp(p_info->auth_type, "WEP", strlen("WEP")) == 0) {
-		connect_config.ap_auth_type = WIFI_MANAGER_AUTH_WEP_SHARED;
-	} else if (strncmp(p_info->auth_type, "WPA-PSK", strlen("WPA-PSK")) == 0) {
-		connect_config.ap_auth_type = WIFI_MANAGER_AUTH_WPA_PSK;
-	} else if (strncmp(p_info->auth_type, "WPA2-PSK", strlen("WPA2-PSK")) == 0) {
-		connect_config.ap_auth_type = WIFI_MANAGER_AUTH_WPA2_PSK;
-	}
-	// set encryption crypto type
-	if (strncmp(p_info->enc_type, "WEP-64", strlen("WEP-64")) == 0) {
-		connect_config.ap_crypto_type = WIFI_MANAGER_CRYPTO_WEP_64;
-	} else if (strncmp(p_info->enc_type, "WEP-128", strlen("WEP-128")) == 0) {
-		connect_config.ap_crypto_type = WIFI_MANAGER_CRYPTO_WEP_128;
-	} else if (strncmp(p_info->enc_type, "TKIP", strlen("TKIP")) == 0) {
-		connect_config.ap_crypto_type = WIFI_MANAGER_CRYPTO_TKIP;
-	} else if (strncmp(p_info->enc_type, "AES", strlen("AES")) == 0) {
-		connect_config.ap_crypto_type = WIFI_MANAGER_CRYPTO_AES;
-	} else if (strncmp(p_info->enc_type, "TKIP_AES", strlen("TKIP_AES")) == 0) {
-		connect_config.ap_crypto_type = WIFI_MANAGER_CRYPTO_TKIP_AND_AES;
-	}
-
-	wifi_manager_result_e res = wifi_manager_save_config(&connect_config);
-
-	if (res != WIFI_MANAGER_SUCCESS) {
-		THINGS_LOG_V(THINGS_ERROR, TAG, "Failed to save AP configuration : [%d]", res);
-		return -1;
-	} else {
-		THINGS_LOG_V(THINGS_INFO, TAG, "Success to save AP configuration");
-	}
-
-	if (!things_handle_stop_soft_ap(&connect_config)) {
-		return -1;
-	}
-
-	return 1;
 }
 
 static void otm_event_cb(const char *addr, uint16_t port, const char *uuid, int event)
@@ -559,6 +284,11 @@ int things_initialize_stack(const char *json_path, bool *easysetup_completed)
 		return 0;
 	}
 
+	if (things_network_initialize() != 0) {
+		THINGS_LOG(THINGS_ERROR, TAG, "ERROR things_network initialize");
+		return 0;
+	}
+
 	things_log_init();
 	things_log_set_version(ST_THINGS_STACK_VERSION);
 
@@ -569,13 +299,6 @@ int things_initialize_stack(const char *json_path, bool *easysetup_completed)
 	is_things_module_inited = 1;
 
 	*easysetup_completed = dm_is_there_things_cloud();
-
-	things_register_set_ap_connection_func(things_wifi_connection_cb);
-
-	if (wifi_manager_init(&wifi_callbacks) != WIFI_MANAGER_SUCCESS) {
-		THINGS_LOG_ERROR(THINGS_ERROR, TAG, "Failed to initialize WiFi manager");
-		return 0;
-	}
 	
 #ifdef CONFIG_ST_THINGS_FOTA
 	if (fmwup_initialize() < 0) {
@@ -617,14 +340,11 @@ int things_start_stack()
 
 	if (dm_get_easysetup_connectivity_type() == es_conn_type_softap) {
 		if (dm_is_there_things_cloud() == false) {
-			if (!try_turn_on_soft_ap()) {
+			if (!things_network_turn_on_soft_ap()) {
 				return 0;
 			}
-		} else {				// Alread Owned.
-			wifi_manager_ap_config_s *ap_config = dm_get_homeap_wifi_config();
-			if (!try_connect_home_ap(ap_config)) {
-				return 0;
-			}
+		} else if (!things_network_connect_home_ap()) {
+			return 0;
 		}
 	} else if (dm_get_easysetup_connectivity_type() == es_conn_type_ble) {
 		//TO DO
@@ -715,7 +435,7 @@ int things_reset(void *remote_owner, things_es_enrollee_reset_e resetType)
 	THINGS_LOG_D(THINGS_DEBUG, TAG, THINGS_FUNC_ENTRY);
 
 	if (resetType == RST_AUTO_RESET) {
-		try_turn_on_soft_ap();
+		things_network_turn_on_soft_ap();
 	}
 
 	int res = -1;
@@ -850,39 +570,6 @@ int things_register_update_dev_prov_data_func(things_update_dev_prov_data_func_t
 	} else {
 		return 0;
 	}
-}
-
-int things_register_set_ap_connection_func(things_set_ap_connection_func_type func)
-{
-	// Stack (Easy-setup) can request device to access specific AP
-	// with this registered callback
-	if (func != NULL) {
-		things_register_set_ap_conn_func(func);
-		return 1;
-	} else {
-		return 0;
-	}
-}
-
-int things_wifi_changed_call_func(int state, char *ap_name, char *ip_addr)
-{
-	int ret = 0;
-
-	if (is_things_module_inited == 0) {
-		return ret;
-	}
-
-	pthread_mutex_lock(&g_app_cb_mutex);
-#ifdef __ST_THINGS_RTOS__
-	pthread_mutex_lock(&m_thread_oic_reset);
-	ret = things_wifi_state_changed_cb(state, ap_name, ip_addr);
-	pthread_mutex_unlock(&m_thread_oic_reset);
-#else
-	ret = things_wifi_state_changed_cb(state, ap_name, ip_addr);
-#endif
-	pthread_mutex_unlock(&g_app_cb_mutex);
-
-	return ret;
 }
 
 int things_register_stop_soft_ap_func(things_stop_soft_ap_func_type func)
@@ -1222,4 +909,9 @@ GOTO_OUT:
 
 	THINGS_LOG(THINGS_DEBUG, TAG, "Exit.");
 	return NULL;
+}
+
+int things_is_things_module_inited(void)
+{
+	return is_things_module_inited;
 }

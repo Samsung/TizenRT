@@ -253,8 +253,8 @@ void unregister_resource_event_callback()
 void get_target_network_info_from_prov_resource(char *name, char *pass)
 {
 	if (name != NULL && pass != NULL) {
-		things_strncpy(name, g_wifi_resource.ssid, MAX_SSIDLEN);
-		things_strncpy(pass, g_wifi_resource.cred, MAX_CREDLEN);
+		things_strncpy(name, g_wifi_resource.ssid, MAX_SSID_LEN);
+		things_strncpy(pass, g_wifi_resource.cred, MAX_SECUIRTYKEY_LEN);
 	}
 }
 
@@ -311,8 +311,8 @@ OCStackResult init_wifi_resource(bool is_secured)
 	g_wifi_resource.num_mode = 5;
 	g_wifi_resource.auth_type = NONE_AUTH;
 	g_wifi_resource.enc_type = NONE_ENC;
-	memset(g_wifi_resource.ssid, 0, sizeof(char) *MAX_SSIDLEN);
-	memset(g_wifi_resource.cred, 0, sizeof(char) *MAX_CREDLEN);
+	memset(g_wifi_resource.ssid, 0, sizeof(char) *MAX_SSID_LEN);
+	memset(g_wifi_resource.cred, 0, sizeof(char) *MAX_SECUIRTYKEY_LEN);
 	g_wifi_resource.discovery_channel = 1;
 
 	if (is_secured) {
@@ -320,8 +320,6 @@ OCStackResult init_wifi_resource(bool is_secured)
 	} else {
 		res = OCCreateResource(&g_wifi_resource.handle, THINGS_RSRVD_ES_RES_TYPE_WIFI, OC_RSRVD_INTERFACE_DEFAULT, THINGS_RSRVD_ES_URI_WIFI, things_entity_handler_cb, NULL, OC_DISCOVERABLE | OC_OBSERVABLE);
 	}
-
-	things_apply_current_ap();
 
 	THINGS_LOG_D(THINGS_DEBUG, ES_RH_TAG, "Created WiFi resource with result: %s", get_result(res));
 	return res;
@@ -391,8 +389,8 @@ static void init_es_wifi_prov_data(es_wifi_prov_data_s *p_wifi_data)
 		return;
 	}
 
-	memset(p_wifi_data->ssid, 0, sizeof(char) *MAX_SSIDLEN);
-	memset(p_wifi_data->pwd, 0, sizeof(char) *MAX_CREDLEN);
+	memset(p_wifi_data->ssid, 0, sizeof(char) *MAX_SSID_LEN);
+	memset(p_wifi_data->pwd, 0, sizeof(char) *MAX_SECUIRTYKEY_LEN);
 	p_wifi_data->authtype = -1;
 	p_wifi_data->enctype = -1;
 	p_wifi_data->discovery_channel = -1;
@@ -401,20 +399,20 @@ static void init_es_wifi_prov_data(es_wifi_prov_data_s *p_wifi_data)
 void set_ssid_in_wifi_resource(const char *ssid)
 {
 	if (ssid == NULL) {
-		memset(g_wifi_resource.ssid, 0, sizeof(char) *MAX_SSIDLEN);
-		memset(g_wifi_resource.cred, 0, sizeof(char) *MAX_CREDLEN);
+		memset(g_wifi_resource.ssid, 0, sizeof(char) *MAX_SSID_LEN);
+		memset(g_wifi_resource.cred, 0, sizeof(char) *MAX_SECUIRTYKEY_LEN);
 		g_wifi_resource.auth_type = NONE_AUTH;
 		g_wifi_resource.enc_type = NONE_ENC;
 		g_wifi_resource.discovery_channel = 0;
 	} else if (strncmp(ssid, g_wifi_data.ssid, strlen(ssid)) == 0) {
-		things_strncpy(g_wifi_resource.ssid, g_wifi_data.ssid, sizeof(char) *MAX_SSIDLEN);
-		things_strncpy(g_wifi_resource.cred, g_wifi_data.pwd, sizeof(char) *MAX_CREDLEN);
+		things_strncpy(g_wifi_resource.ssid, g_wifi_data.ssid, sizeof(char) *MAX_SSID_LEN);
+		things_strncpy(g_wifi_resource.cred, g_wifi_data.pwd, sizeof(char) *MAX_SECUIRTYKEY_LEN);
 		g_wifi_resource.auth_type = g_wifi_data.authtype;
 		g_wifi_resource.enc_type = g_wifi_data.enctype;
 		g_wifi_resource.discovery_channel = g_wifi_data.discovery_channel;
 	} else {
-		things_strncpy(g_wifi_resource.ssid, ssid, sizeof(char) *MAX_SSIDLEN);
-		memset(g_wifi_resource.cred, 0, sizeof(char) *MAX_CREDLEN);
+		things_strncpy(g_wifi_resource.ssid, ssid, sizeof(char) *MAX_SSID_LEN);
+		memset(g_wifi_resource.cred, 0, sizeof(char) *MAX_SECUIRTYKEY_LEN);
 		g_wifi_resource.auth_type = NONE_AUTH;
 		g_wifi_resource.enc_type = NONE_ENC;
 		g_wifi_resource.discovery_channel = 1;

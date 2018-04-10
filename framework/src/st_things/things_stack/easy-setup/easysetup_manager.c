@@ -502,7 +502,6 @@ static void *wifi_prov_set_loop(void *param)
 		return 0;
 	}
 
-	things_wifi_state_changed_cb_init();
 	set_wifi_prov_state(WIFI_SET);
 	things_free((access_point_info_s *) param);
 
@@ -597,11 +596,6 @@ void wifi_prov_cb_in_app(es_wifi_prov_data_s *event_data)
 		return;
 	}
 
-	if (things_is_net_initialize() != 1) {
-		THINGS_LOG_D_ERROR(THINGS_ERROR, TAG, "Network API Is not ready.");
-		return;
-	}
-
 	p_info = (access_point_info_s *) things_malloc(sizeof(access_point_info_s));
 	if (p_info == NULL) {
 		THINGS_LOG_V_ERROR(THINGS_ERROR, TAG, "access_point_info_s memory allocation is failed.");
@@ -615,12 +609,12 @@ void wifi_prov_cb_in_app(es_wifi_prov_data_s *event_data)
 	// Attention : when 64bit linux Build, runtime-error occur. (memset () at ../sysdeps/x86_64/memset.S: Not Found File or Directory)
 	// It's because of p_info.(64 bit malloc internal code flow is not support that character array data-type of access_point_info_s)
 	// TODO : Fix Bug for 64bit support.
-	memset(p_info->e_ssid, 0, MAX_ESSID);
-	memset(p_info->security_key, 0, MAX_SECUIRTYKEY);
+	memset(p_info->e_ssid, 0, MAX_SSID_LEN);
+	memset(p_info->security_key, 0, MAX_SECUIRTYKEY_LEN);
 	memset(p_info->enc_type, 0, MAX_TYPE_ENC);
 	memset(p_info->auth_type, 0, MAX_TYPE_AUTH);
 	memset(p_info->channel, 0, MAX_CHANNEL);
-	memset(p_info->bss_id, 0, MAX_BSSID);
+	memset(p_info->bss_id, 0, MAX_SSID_LEN);
 	memset(p_info->signal_level, 0, MAX_LEVEL_SIGNAL);
 
 	if (strlen(event_data->ssid) > 0) {
@@ -848,11 +842,6 @@ void cloud_data_prov_cb_in_app(es_cloud_prov_data_s *event_data)
 bool esm_get_network_status(void)
 {
 	bool is_ok = false;
-
-	if (things_is_net_initialize() != 1) {
-		THINGS_LOG_D_ERROR(THINGS_ERROR, TAG, "Network API is not initialized.");
-		return false;
-	}
 
 	if (things_is_connected_ap() == true) {
 		THINGS_LOG_V(THINGS_INFO, TAG, "Connected to AP");

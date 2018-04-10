@@ -22,9 +22,27 @@
 #define THINGS_STRING_MAX_DNSNAME  256
 #define THINGS_STRING_MAX_LENGTH   100
 
-#define MAX_SSIDLEN     33
-#define MAX_CREDLEN     64
-#define IP_PORT                 22
+#define IP_PORT               22
+
+#define MAX_DEVICEID_LEN      8
+#define MAX_RESOURCE_LEN      128
+#define MAX_URI_LEN           128
+#define MAX_QUERY_LEN         100
+#define MAX_ATTRIBUTE_LEN     64
+#define MAX_VALUETYPE_LEN     32
+#define MAX_ATTRVALUE_LEN     512
+#define MAX_KEY_LENGTH        50
+#define MAX_SPEC_LENGTH       7
+#define MAX_RID_LENGTH        10
+#define MAX_IT_CNT            5
+#define MAX_RT_CNT            10
+
+#define MAX_SSID_LEN          33
+#define MAX_SECUIRTYKEY_LEN   64
+#define MAX_TYPE_AUTH         16
+#define MAX_TYPE_ENC          16
+#define MAX_CHANNEL           8
+#define MAX_LEVEL_SIGNAL      12
 
 typedef enum {
 	WiFi_11A = 0,
@@ -59,8 +77,8 @@ typedef enum {
 } wifi_enc_type_e;
 
 typedef struct {
-	char ssid[MAX_SSIDLEN];	/**< ssid of the Enroller**/
-	char pwd[MAX_CREDLEN]; /**< pwd of the Enroller**/
+	char ssid[MAX_SSID_LEN];	/**< ssid of the Enroller**/
+	char pwd[MAX_SECUIRTYKEY_LEN]; /**< pwd of the Enroller**/
 	wifi_auth_type_e authtype;	/**< auth type of the Enroller**/
 	wifi_enc_type_e enctype; /**< encryption type of the Enroller**/
 	int discovery_channel;		// samsung specific property
@@ -98,19 +116,6 @@ typedef struct things_cloud_info_s {
 	char *user_id;			// mandatory
 	char *client_id;		// mandatory
 } things_cloud_info_s;
-
-#define MAX_DEVICEID_LEN 8
-#define MAX_RESOURCE_LEN 128
-#define MAX_URI_LEN 128
-#define MAX_QUERY_LEN 100
-#define MAX_ATTRIBUTE_LEN 64
-#define MAX_VALUETYPE_LEN 32
-#define MAX_ATTRVALUE_LEN 512
-#define MAX_KEY_LENGTH    50
-#define MAX_SPEC_LENGTH       7
-#define MAX_RID_LENGTH       10
-#define MAX_IT_CNT        5
-#define MAX_RT_CNT        10
 
 typedef struct things_info_s {
 	char device_id[MAX_DEVICEID_LEN];
@@ -240,5 +245,15 @@ typedef enum {
 	 */
 	ES_STATE_EOF = 255
 } things_es_enrollee_state_e, things_prov_status_e, things_cloud_status_e;
+
+typedef struct access_point_info_s {
+	char e_ssid[MAX_SSID_LEN];		// mandatory
+	char security_key[MAX_SECUIRTYKEY_LEN];	// mandatory
+	char auth_type[MAX_TYPE_AUTH];	// mandatory (None | WEP | WPA-PSK | WPA2-PSK)
+	char enc_type[MAX_TYPE_ENC];	// mandatory (WEP-64 | WEP-128 | TKIP | AES | TKIP_AES)
+	char channel[MAX_CHANNEL];	// optional
+	char signal_level[MAX_LEVEL_SIGNAL];	// optional
+	char bss_id[MAX_SSID_LEN];		// optional
+} access_point_info_s;
 
 #endif							/* _THINGS_TYPES_H_ */
