@@ -155,6 +155,7 @@ static void tc_clock_clock_gettimeofday(void)
 	TC_SUCCESS_RESULT();
 }
 
+#ifndef CONFIG_SCHED_TICKLESS
 /**
 * @fn                   :tc_clock_clock_timer
 * @brief                :This function must be called once every time the real time clock interrupt occurs
@@ -175,6 +176,7 @@ static void tc_clock_clock_timer(void)
 
 	TC_SUCCESS_RESULT();
 }
+#endif
 
 /**
 * @fn                   :tc_clock_clock_systimer
@@ -252,7 +254,9 @@ static void tc_clock_clock_abstime2ticks(void)
 
 int clock_main(void)
 {
+#ifndef CONFIG_SCHED_TICKLESS
 	tc_clock_clock_timer();
+#endif
 	tc_clock_clock_systimer();
 	tc_clock_clock_systimer64();
 	tc_clock_clock_gettimeofday();
