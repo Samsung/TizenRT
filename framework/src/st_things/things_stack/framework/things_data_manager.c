@@ -1944,7 +1944,7 @@ int dm_register_resource(things_server_builder_s *p_builder)
 				memset(res_uri, 0, (size_t) MAX_URI_LENGTH);
 				strncat(res_uri, device->collection[0].uri, MAX_URI_LENGTH);
 
-				p_collection_resource = p_builder->create_collection_resource(p_builder, res_uri, device->collection[0].resource_types[0], device->collection[0].interface_types[0]);
+				p_collection_resource = p_builder->create_collection_resource(p_builder, res_uri, device->collection[0].resource_types[0]);
 
 				for (int rt_num = 1; rt_num < device->collection[0].rt_cnt; rt_num++) {
 					OCBindResourceTypeToResource(p_builder, device->collection[0].resource_types[rt_num]);
@@ -2003,10 +2003,12 @@ int dm_register_resource(things_server_builder_s *p_builder)
 	}							// End of for device loop
 	THINGS_LOG_D(THINGS_DEBUG, TAG, "=====================================================");
 
+#if 0
 	if (p_builder->broadcast_presence(p_builder, 20) == 1) {
 		THINGS_LOG_V_ERROR(THINGS_ERROR, TAG, "Broadcast Presence Failed.");
 		return 0;
 	}
+#endif
 
 	THINGS_LOG_D(THINGS_DEBUG, TAG, THINGS_FUNC_EXIT);
 

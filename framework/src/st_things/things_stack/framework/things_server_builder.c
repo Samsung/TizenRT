@@ -75,21 +75,6 @@ void *server_execute_loop(void *param)
 	return NULL;
 }
 
-void *presence_noti_loop(void *param)
-{
-	THINGS_LOG_D(THINGS_DEBUG, TAG, THINGS_FUNC_ENTRY);
-
-	if (OCStartPresence(0) == OC_STACK_OK) {
-		THINGS_LOG_D(THINGS_DEBUG, TAG, "OC Stack is available");
-	} else {
-		THINGS_LOG_ERROR(THINGS_ERROR, TAG, "OCStartPresence Error");
-	}
-
-	THINGS_LOG_D(THINGS_DEBUG, TAG, THINGS_FUNC_EXIT);
-
-	return NULL;
-}
-
 void register_req_handler(struct things_server_builder_s *builder, request_handler_cb handler)
 {
 	if (handler == NULL || builder == NULL) {
@@ -158,7 +143,7 @@ struct things_resource_s *create_resource(struct things_server_builder_s *builde
 	return res;
 }
 
-struct things_resource_s *create_collection_resource(struct things_server_builder_s *builder, char *uri, char *type, char *interface)
+struct things_resource_s *create_collection_resource(struct things_server_builder_s *builder, char *uri, char *type)
 {
 	things_resource_s *res = NULL;
 	OCResourceHandle hd = NULL;
@@ -175,8 +160,8 @@ struct things_resource_s *create_collection_resource(struct things_server_builde
 #endif							//#ifdef __SECURED__
 
 	OCStackResult ret = OCCreateResource(&hd,
-										 uri,
 										 type,
+										 OIC_INTERFACE_LINKEDLIST,
 										 uri,
 										 builder->handler,
 										 NULL,
@@ -186,7 +171,9 @@ struct things_resource_s *create_collection_resource(struct things_server_builde
 		THINGS_LOG_V_ERROR(THINGS_ERROR, TAG, "Resource Creation Failed - ret = %d, %s", ret, uri);
 		return NULL;
 	}
-	//    Baseline interface will be binded automatically by IoTivity Stack.
+	
+	OCBindResourceTypeToResource( hd, OIC_RTYPE_COLLECTION_WK );
+	OCBindResourceInterfaceToResource( hd, OIC_INTERFACE_BATCH);
 
 	res = things_create_resource_inst(NULL, hd, NULL, NULL);
 
@@ -282,26 +269,6 @@ struct things_resource_s *get_resource(things_server_builder_s *builder, const c
 		}
 	}
 	return ret;
-}
-
-int broadcast_presence(things_server_builder_s *builder, int max_cnt)
-{
-	if (max_cnt <= 0) {
-		THINGS_LOG_ERROR(THINGS_ERROR, TAG, "check your max_cnt value.(must max_cnt > 0)");
-		return 1;
-	}
-
-	if (!is_presence) {
-		is_presence = true;
-		g_presence_flag = 0;
-		g_presence_duration = max_cnt;
-		pthread_create_rtos(&g_thread_id_presence, NULL, presence_noti_loop, (void *)NULL, THINGS_STACK_PRESENCE_NOTI_THREAD);
-	} else if ((uint) g_presence_duration < g_presence_flag + ((uint) max_cnt)) {
-		g_presence_duration = max_cnt;
-		g_presence_flag = 0;
-	}
-
-	return 0;
 }
 
 void init_builder(struct things_server_builder_s *builder, request_handler_cb cb)
@@ -436,7 +403,7 @@ things_server_builder_s *get_builder_instance()
 			g_builder->add_resource_type = &add_resource_type;
 			g_builder->bind = &things_bind;
 			g_builder->bind_all = &bind_all;
-			g_builder->broadcast_presence = &broadcast_presence;
+			g_builder->broadcast_presence = NULL; //&BroadcastPresence;
 			g_builder->res_num = 0;
 			g_builder->handler = NULL;
 
