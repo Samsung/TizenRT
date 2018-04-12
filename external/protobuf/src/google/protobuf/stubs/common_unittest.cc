@@ -83,7 +83,7 @@ void CaptureLog(LogLevel level, const char* filename, int line,
     strings::Substitute("$0 $1:$2: $3",
       implicit_cast<int>(level), filename, line, message));
 }
-
+#if 0
 TEST(LoggingTest, DefaultLogging) {
   CaptureTestStderr();
   int line = __LINE__;
@@ -112,7 +112,7 @@ TEST(LoggingTest, NullLogging) {
   string text = GetCapturedTestStderr();
   EXPECT_EQ("", text);
 }
-
+#endif
 TEST(LoggingTest, CaptureLogging) {
   captured_messages_.clear();
 

@@ -90,7 +90,7 @@ using ::testing::Args;
 
 
 namespace {
-string GetTypeUrl(const Descriptor* descriptor) {
+string ProtoGetTypeUrl(const Descriptor* descriptor) {
   return string(kTypeServiceBaseUrl) + "/" + descriptor->full_name();
 }
 }  // namespace
@@ -132,7 +132,7 @@ class BaseProtoStreamObjectWriterTest
   void ResetTypeInfo(std::vector<const Descriptor*> descriptors) {
     GOOGLE_CHECK(!descriptors.empty()) << "Must have at least one descriptor!";
     helper_.ResetTypeInfo(descriptors);
-    ow_.reset(helper_.NewProtoWriter(GetTypeUrl(descriptors[0]), output_.get(),
+    ow_.reset(helper_.NewProtoWriter(ProtoGetTypeUrl(descriptors[0]), output_.get(),
                                      &listener_, options_));
   }
 
@@ -165,7 +165,7 @@ class BaseProtoStreamObjectWriterTest
   void CheckOutput(const Message& expected) { CheckOutput(expected, -1); }
 
   const google::protobuf::Type* GetType(const Descriptor* descriptor) {
-    return helper_.GetTypeInfo()->GetTypeByTypeUrl(GetTypeUrl(descriptor));
+    return helper_.GetTypeInfo()->GetTypeByTypeUrl(ProtoGetTypeUrl(descriptor));
   }
 
   testing::TypeInfoTestHelper helper_;
