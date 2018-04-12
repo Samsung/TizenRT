@@ -476,6 +476,30 @@ static void tc_libc_timer_clock_daysbeforemonth(void)
 	TC_SUCCESS_RESULT();
 }
 
+/**
+* @fn                   :tc_libc_timer_clock
+* @brief                :Get an approximation of processor time used by the program
+* @Scenario             :Returns the implementation's best approximation to the processor time
+*						 used by the process since the beginning of a implementation-defined era
+*						 related only to the process invocation.
+*						 to get the number of seconds used, divide by CLOCKS_PER_SEC.
+* API's covered         :clock
+* Preconditions         :none
+* Postconditions        :none
+* @return               :Returns the CPU time used so far as a clock_t.
+*						 If the processor time used is not available or its value cannot
+*						 be represented, the function returns the value (clock_t) -1.
+*/
+static void tc_libc_timer_clock(void)
+{
+	clock_t ret_time = ERROR;
+
+	ret_time = clock();
+	TC_ASSERT_GEQ("clock", ret_time, 0);
+
+	TC_SUCCESS_RESULT();
+}
+
 /****************************************************************************
  * Name: libc_timer
  ****************************************************************************/
@@ -492,6 +516,7 @@ int libc_timer_main(void)
 	tc_libc_timer_strftime();
 	tc_libc_timer_time();
 	tc_libc_timer_clock_daysbeforemonth();
+	tc_libc_timer_clock();
 
 	return 0;
 }

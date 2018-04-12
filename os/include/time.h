@@ -247,7 +247,7 @@ int clock_getres(clockid_t clockid, FAR struct timespec *res);
 
 /**
  * @ingroup TIME_KERNEL
- * @brief returns the implementation's best approximation to thei
+ * @brief returns the implementation's best approximation to the
  * processor time used by the process since the beginning of a
  * implementation-defined era related only to the process invocation.
  * @details @b #include <time.h> \n

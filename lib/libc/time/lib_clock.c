@@ -77,7 +77,7 @@
  *   None
  *
  * Returned Value:
- *   The system time in units of clock ticks is returend.  If the processor
+ *   The system time in units of clock ticks is returned.  If the processor
  *   time used is not available or its value cannot be represented, the
  *   function will return the value (clock_t)-1.
  *
