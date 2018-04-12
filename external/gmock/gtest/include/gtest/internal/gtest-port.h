@@ -193,8 +193,11 @@
 //   Int32FromGTestEnv()  - parses an Int32 environment variable.
 //   StringFromGTestEnv() - parses a string environment variable.
 
-#if defined(__TIZENRT__) && defined(CONFIG_SERIAL_TERMIOS)
+#if defined(__TIZENRT__)
+#include <tinyara/config.h>
+#if defined(CONFIG_SERIAL_TERMIOS)
 #include <termios.h>
+#endif
 #endif
 #include <ctype.h>   // for isspace, etc
 #include <stddef.h>  // for ptrdiff_t
@@ -481,7 +484,7 @@
 //
 // To disable threading support in Google Test, add -DGTEST_HAS_PTHREAD=0
 // to your compiler flags.
-# define GTEST_HAS_PTHREAD (GTEST_OS_LINUX || GTEST_OS_MAC || GTEST_OS_HPUX \
+#define GTEST_HAS_PTHREAD (GTEST_OS_LINUX || GTEST_OS_MAC || GTEST_OS_HPUX \
     || GTEST_OS_QNX)
 #endif  // GTEST_HAS_PTHREAD
 
@@ -684,7 +687,7 @@ using ::std::tuple_size;
     (GTEST_OS_WINDOWS || GTEST_OS_CYGWIN || GTEST_OS_SYMBIAN || GTEST_OS_AIX)
 
 // Determines whether test results can be streamed to a socket.
-#if GTEST_OS_LINUX
+#if (GTEST_OS_TIZENRT || GTEST_OS_LINUX)
 # define GTEST_CAN_STREAM_RESULTS_ 1
 #endif
 
