@@ -47,7 +47,7 @@
 #define ISNOTLEAPYEAR 2001
 
 /**
-* @fn                   :tc_clock_calendar2utc
+* @fn                   :tc_libc_timer_clock_calendar2utc
 * @brief                :UTC conversion routines. Calendar/UTC conversion based on algorithms from p. 604 of Seidelman, P. K. 1992.
 *                        Explanatory Supplement to the Astronomical Almanac.  University Science Books, Mill Valley.
 * @Scenario             :calculated time for 2 consecutive days and checked their difference. It should be equal to 1day time
@@ -81,7 +81,7 @@ static void tc_libc_timer_clock_calendar2utc(void)
 }
 
 /**
-* @fn                   :tc_gmtime_r
+* @fn                   :tc_libc_timer_gmtime_r
 * @brief                :Time conversion (based on the POSIX API)
 * @Scenario             :The gmtime_r function converts the calendar time timep to broken-down time representation
 * API's covered         :gmtime_r
@@ -119,7 +119,7 @@ static void tc_libc_timer_gmtime_r(void)
 }
 
 /**
-* @fn                   :tc_gmtime
+* @fn                   :tc_libc_timer_gmtime
 * @brief                :Time conversion, Not thread safe
 * @Scenario             :The gmtime function converts the calendar time timep to broken-down time representation
 * API's covered         :gmtime
@@ -166,7 +166,7 @@ static void tc_libc_timer_gmtime(void)
 }
 
 /**
-* @fn                   :tc_clock_isleapyear
+* @fn                   :tc_libc_timer_clock_isleapyear
 * @brief                :Return true if the specified year is a leap year
 * @Scenario             :Return true if the specified year is a leap year
 * API's covered         :clock_isleapyear
@@ -195,7 +195,7 @@ static void tc_libc_timer_clock_isleapyear(void)
 }
 
 /**
-* @fn                   :tc_localtime
+* @fn                   :tc_libc_timer_localtime
 * @brief                :take an argument of data type time_t which represents calendar time.
 *                        When interpreted as an absolute time value, it represents the number of seconds
 *                        elapsed since the Epoch, 1970-01-01 00:00:00 +0000 (UTC).
@@ -225,7 +225,7 @@ static void tc_libc_timer_localtime(void)
 }
 
 /**
-* @fn                   :tc_localtime_r
+* @fn                   :tc_libc_timer_localtime_r
 * @brief                :take an argument of data type time_t which represents calendar time.
 *                        When interpreted as an absolute time value, it represents the number of seconds
 *                        elapsed since the Epoch, 1970-01-01 00:00:00 +0000 (UTC).
@@ -262,7 +262,7 @@ static void tc_libc_timer_localtime_r(void)
 }
 
 /**
-* @fn                   :tc_mktime
+* @fn                   :tc_libc_timer_mktime
 * @brief                :converts the structure pointed to by timeptr(input parameter) into a
 *                        time_t value according to the local time zone.
 * @Scenario             :The mktime() function converts a broken-down time structure, expressed
@@ -296,7 +296,7 @@ static void tc_libc_timer_mktime(void)
 }
 
 /**
-* @fn                   :tc_strftime
+* @fn                   :tc_libc_timer_strftime
 * @brief                :Format time as string
 * @Scenario             :Copies into Source pointer the content of format, expanding its format specifiers
 *                        into the corresponding values that represent the time described in timeptr structure,
@@ -411,7 +411,7 @@ static void tc_libc_timer_strftime(void)
 }
 
 /**
-* @fn                   :tc_time
+* @fn                   :tc_libc_timer_time
 * @brief                :Get the current calendar time as a value of type time_t.
 * @Scenario             :The function returns this value, and if the argument is not a null
 *                        pointer, it also sets this value to the object pointed by timer.
