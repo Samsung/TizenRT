@@ -25,7 +25,7 @@
 #include <sys/types.h>
 
 struct stkmon_save_s {
-	systime_t timestamp;
+	clock_t timestamp;
 	pid_t chk_pid;
 	size_t chk_stksize;
 	size_t chk_peaksize;
