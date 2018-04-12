@@ -89,7 +89,7 @@ es_provisioning_callbacks_s g_callbacks = {
 
 static void *wifi_prov_set_loop(void *param);
 static void *cloud_refresh_check_loop(void *param);
-static void *wifi_prov_timeout_handler(timeout_s *param);
+static void *wifi_prov_timeout_handler(things_timeout_s *param);
 
 #ifdef __SECURED__
 void generate_pin_cb(char *pin, size_t pin_size)
@@ -470,7 +470,7 @@ static void *wifi_prov_set_loop(void *param)
 	THINGS_LOG_D(THINGS_DEBUG, TAG, "Open Loop Enter.");
 
 	static int timeout_handle_num = 100;
-	timeout_s timeout;
+	things_timeout_s timeout;
 
 	es_set_state(ES_STATE_CONNECTING_TO_ENROLLER);
 	set_wifi_prov_state(WIFI_READY);
@@ -505,10 +505,10 @@ static void *wifi_prov_set_loop(void *param)
 	set_wifi_prov_state(WIFI_SET);
 	things_free((access_point_info_s *) param);
 
-	if (add_request_handle((OCDoHandle) timeout_handle_num) != NULL) {
+	if (things_add_request_handle((OCDoHandle) timeout_handle_num) != NULL) {
 		timeout.cur_num = 300;	// 5 min    because, st_things-App wait AP-Connecting for 5 min.
 		timeout.cur_counter = timeout.cur_num;
-		create_time_out_process((OCDoHandle) timeout_handle_num++, wifi_prov_timeout_handler, &timeout);
+		things_create_time_out_process((OCDoHandle) timeout_handle_num++, wifi_prov_timeout_handler, &timeout);
 	}
 
 	gthread_id_network_status_check = 0;
@@ -517,7 +517,7 @@ static void *wifi_prov_set_loop(void *param)
 	return NULL;
 }
 
-static void *wifi_prov_timeout_handler(timeout_s *param)
+static void *wifi_prov_timeout_handler(things_timeout_s *param)
 {
 	THINGS_LOG_D(THINGS_DEBUG, TAG, "WiFi Setting of Provisioning data was Time-Out.");
 
@@ -577,7 +577,7 @@ int esm_wifi_prov_check_cb(int enabled, char *ssid, char *addr)
 		}
 #endif
 
-		del_all_request_handle();	// clear time-out thread.
+		things_del_all_request_handle();	// clear time-out thread.
 		PROFILING_TIME("WiFi Provisioning End.");
 
 		set_wifi_prov_state(WIFI_INIT);
@@ -688,7 +688,7 @@ void wifi_prov_cb_in_app(es_wifi_prov_data_s *event_data)
 	// Connect to AP
 	if (gthread_id_network_status_check == 0) {
 		THINGS_LOG(THINGS_DEBUG, TAG, "Create NetworkStatusCheck thread");
-		del_all_request_handle();	// clear time-out thread.
+		things_del_all_request_handle();	// clear time-out thread.
 		set_wifi_prov_state(WIFI_INIT);
 
 		pthread_create_rtos(&gthread_id_network_status_check, NULL, wifi_prov_set_loop, (void *)p_info, THINGS_STACK_AP_INFO_SET_THREAD);

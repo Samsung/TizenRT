@@ -16,7 +16,7 @@
  *
  ****************************************************************************/
 
-#define OICPING_ENABLE      1
+#define THINGS_PING_ENABLE      1
 
 #include <stdbool.h>
 #include <unistd.h>
@@ -34,7 +34,7 @@
 #include "things_rtos_util.h"
 #endif
 
-#ifdef OICPING_ENABLE
+#ifdef THINGS_PING_ENABLE
 #include "oickeepalive.h"
 #endif
 #include "easy-setup/resource_handler.h"
@@ -97,7 +97,7 @@ static void things_rep_payload_value_print(OCRepPayloadValue *value);
 static char *make_host_addr(const char *ip, const uint16_t port);
 static OCStackResult send_keep_alive_update_request(const char *host, int64_t *intervals, int int_ea, OCCallbackData *cb);
 
-#ifdef OICPING_ENABLE
+#ifdef THINGS_PING_ENABLE
 bool things_ping_init(void)
 {
 	THINGS_LOG(THINGS_DEBUG, TAG, "Enter.");
@@ -226,7 +226,7 @@ int things_ping_get_mask(const char* remote_addr, ping_state_e state)
 }
 
 
-bool oic_ping_unset_mask(const char *remote_addr, ping_state_e state)
+bool things_ping_unset_mask(const char *remote_addr, ping_state_e state)
 {
 	THINGS_LOG(THINGS_DEBUG, TAG, "Enter.");
 	things_node_s *node = NULL;
@@ -881,7 +881,7 @@ static void unset_mask(things_ping_s *ping, ping_state_e state)
 	THINGS_LOG(THINGS_DEBUG, TAG, "Exit.");
 }
 
-#ifdef OICPING_ENABLE
+#ifdef THINGS_PING_ENABLE
 static int find_resource_oic_ping(things_ping_s *ping)
 {
 	THINGS_LOG(THINGS_DEBUG, TAG, "Enter.");

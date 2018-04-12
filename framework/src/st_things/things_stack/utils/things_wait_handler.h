@@ -23,26 +23,26 @@
 
 #define DEFAULT_TIMEOUT     60	// default 20 second wait.
 
-typedef struct timeout_s {
+typedef struct things_timeout_s {
 	int cur_counter;			// current time-out counter
 	int cur_num;				// current time-out number
 	int ori_num;				// initial time-out number
-} timeout_s;
+} things_timeout_s;
 
-typedef void *(*check_time_out_call_func)(timeout_s *param);
+typedef void *(*things_check_time_out_call_func)(things_timeout_s *param);
 
-OCDoHandle get_request_handle(void);
+OCDoHandle things_get_request_handle(void);
 
-int cas_request_handle(OCDoHandle EqualVal, OCDoHandle writeHandleVal);
+int things_cas_request_handle(OCDoHandle EqualVal, OCDoHandle writeHandleVal);
 
-bool is_empty_request_handle(void);
+bool things_is_empty_request_handle(void);
 
-OCDoHandle add_request_handle(OCDoHandle HandleVal);
+OCDoHandle things_add_request_handle(OCDoHandle HandleVal);
 
-void del_all_request_handle(void);
+void things_del_all_request_handle(void);
 
-long long next_time_out(const long long ori_num, const long long cur_num);	// PDF Gaussian Distribution Time-Out Calculator.
+long long things_next_time_out(const long long ori_num, const long long cur_num);	// PDF Gaussian Distribution Time-Out Calculator.
 
-unsigned long int create_time_out_process(OCDoHandle hadler, check_time_out_call_func call_func, timeout_s *time_out);
+unsigned long int things_create_time_out_process(OCDoHandle hadler, things_check_time_out_call_func call_func, things_timeout_s *time_out);
 
 #endif							/* _THINGS_WAIT_HANDLER_H_ */

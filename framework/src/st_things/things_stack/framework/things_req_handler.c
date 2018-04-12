@@ -57,7 +57,6 @@ static handle_request_func_type g_handle_request_set_cb = NULL;
 
 extern things_server_builder_s *g_builder;
 
-static queue_s *gp_oic_req_queue;
 static int g_handle_res_cnt = 0;
 static char **g_handle_res_list = NULL;
 static handle_request_func_type g_handle_req_cb = NULL;

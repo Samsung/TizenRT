@@ -128,7 +128,7 @@ int ci_connection_pre_check(const char *DomainName, char **pIP)
  * @return                 success : OC_STACK_OK \n
  *                         failure : other value
  */
-OCStackResult things_cloud_signup(const char *host, const char *device_id, const es_cloud_prov_data_s *event_data, OCClientResponseHandler response, check_time_out_call_func timeoutHandler, timeout_s *timeout)
+OCStackResult things_cloud_signup(const char *host, const char *device_id, const es_cloud_prov_data_s *event_data, OCClientResponseHandler response, things_check_time_out_call_func timeoutHandler, things_timeout_s *timeout)
 {
 	OCDoHandle g_req_handle = NULL;
 	OCStackResult result = OC_STACK_ERROR;
@@ -205,16 +205,16 @@ OCStackResult things_cloud_signup(const char *host, const char *device_id, const
 	//CASelectCipherSuite(0x35, (1 << 4));
 #endif
 
-	if (is_empty_request_handle() == true) {
+	if (things_is_empty_request_handle() == true) {
 		result = OCDoResource(&g_req_handle, OC_REST_POST, targetUri, NULL, (OCPayload *) registerPayload, CT_ADAPTER_TCP, OC_LOW_QOS, &cb_data, NULL, 0);
 
 		if (result == OC_STACK_OK && timeoutHandler != NULL) {
-			if (add_request_handle(g_req_handle) == NULL) {
+			if (things_add_request_handle(g_req_handle) == NULL) {
 				THINGS_LOG_V_ERROR(THINGS_ERROR, TAG, "[Error] ReqHandles array space is small.");
 				goto no_memory;
 			}
 
-			create_time_out_process(g_req_handle, timeoutHandler, timeout);
+			things_create_time_out_process(g_req_handle, timeoutHandler, timeout);
 		}
 	} else {
 		OCRepPayloadDestroy(registerPayload);
@@ -241,7 +241,7 @@ no_memory:
  * @return                 success : OC_STACK_OK \n
  *                         failure : other value
  */
-OCStackResult things_cloud_session(const char *host, const char *uId, const char *device_id, const char *accesstoken, bool isLogin, OCClientResponseHandler response, check_time_out_call_func timeoutHandler, timeout_s *timeout)
+OCStackResult things_cloud_session(const char *host, const char *uId, const char *device_id, const char *accesstoken, bool isLogin, OCClientResponseHandler response, things_check_time_out_call_func timeoutHandler, things_timeout_s *timeout)
 {
 	OCDoHandle g_req_handle = NULL;
 	OCStackResult result = OC_STACK_ERROR;
@@ -292,16 +292,16 @@ OCStackResult things_cloud_session(const char *host, const char *uId, const char
 	//CASelectCipherSuite(0x35, (1 << 4));
 #endif
 
-	if (is_empty_request_handle() == true) {
+	if (things_is_empty_request_handle() == true) {
 		result = OCDoResource(&g_req_handle, OC_REST_POST, targetUri, NULL, (OCPayload *) loginoutPayload, CT_ADAPTER_TCP, OC_LOW_QOS, &cb_data, NULL, 0);
 
 		if (result == OC_STACK_OK && timeoutHandler != NULL) {
-			if (add_request_handle(g_req_handle) == NULL) {
+			if (things_add_request_handle(g_req_handle) == NULL) {
 				THINGS_LOG_V_ERROR(THINGS_ERROR, TAG, "[Error] ReqHandles array space is small.");
 				goto no_memory;
 			}
 
-			create_time_out_process(g_req_handle, timeoutHandler, timeout);
+			things_create_time_out_process(g_req_handle, timeoutHandler, timeout);
 		}
 	} else {
 		OCRepPayloadDestroy(loginoutPayload);
@@ -342,7 +342,7 @@ no_memory:
  * @return                 success : OC_STACK_OK \n
  *                         failure : other value
  */
-OCStackResult things_cloud_rsc_publish(char *host, things_resource_s **list, int length, OCClientResponseHandler response, check_time_out_call_func timeoutHandler, timeout_s *timeout)
+OCStackResult things_cloud_rsc_publish(char *host, things_resource_s **list, int length, OCClientResponseHandler response, things_check_time_out_call_func timeoutHandler, things_timeout_s *timeout)
 {
 	OCStackResult result = OC_STACK_ERROR;
 	THINGS_LOG_D(THINGS_INFO, TAG, "Resource Publish Start.");
@@ -378,23 +378,23 @@ OCStackResult things_cloud_rsc_publish(char *host, things_resource_s **list, int
 		}
 	}
 
-	if (is_empty_request_handle() == true) {
+	if (things_is_empty_request_handle() == true) {
 		result = OCRDPublish(&g_req_handle, host, CT_ADAPTER_TCP, resourceHandles, iter, &cb_data, OC_LOW_QOS);
 
 		if (result == OC_STACK_OK && timeoutHandler != NULL) {
-			if (add_request_handle(g_req_handle) == NULL) {
+			if (things_add_request_handle(g_req_handle) == NULL) {
 				THINGS_LOG_V_ERROR(THINGS_ERROR, TAG, "[Error] ReqHandles array space is small.");
 				return OC_STACK_ERROR;
 			}
 
-			create_time_out_process(g_req_handle, timeoutHandler, timeout);
+			things_create_time_out_process(g_req_handle, timeoutHandler, timeout);
 		}
 	}
 
 	return result;
 }
 
-OCStackResult things_cloud_rsc_publish_with_device_id(char *host, const char *id, things_resource_s **list, int length, OCClientResponseHandler response, check_time_out_call_func timeoutHandler, timeout_s *timeout)
+OCStackResult things_cloud_rsc_publish_with_device_id(char *host, const char *id, things_resource_s **list, int length, OCClientResponseHandler response, things_check_time_out_call_func timeoutHandler, things_timeout_s *timeout)
 {
 	OCStackResult result = OC_STACK_ERROR;
 	THINGS_LOG_D(THINGS_INFO, TAG, "Resource Publish Start.");
@@ -421,13 +421,13 @@ OCStackResult things_cloud_rsc_publish_with_device_id(char *host, const char *id
 	}
 //    if(result == OC_STACK_OK && timeoutHandler != NULL )
 //    {
-//        if( add_request_handle(g_req_handle) == NULL )
+//        if( things_add_request_handle(g_req_handle) == NULL )
 //        {
 //            THINGS_LOG_V_ERROR(THINGS_ERROR, TAG, "[Error] ReqHandles array space is small.");
 //            return OC_STACK_ERROR;
 //        }
 //
-//        create_time_out_process(g_req_handle, timeoutHandler, timeout);
+//        things_create_time_out_process(g_req_handle, timeoutHandler, timeout);
 //    }
 
 	return result;
@@ -443,7 +443,7 @@ OCStackResult things_cloud_rsc_publish_with_device_id(char *host, const char *id
  * @return                 success : OC_STACK_OK \n
  *                         failure : other value
  */
-OCStackResult things_cloud_dev_profile_publish(char *host, OCClientResponseHandler response, check_time_out_call_func timeoutHandler, timeout_s *timeout)
+OCStackResult things_cloud_dev_profile_publish(char *host, OCClientResponseHandler response, things_check_time_out_call_func timeoutHandler, things_timeout_s *timeout)
 {
 	THINGS_LOG_D(THINGS_DEBUG, TAG, "Device-profile Publish Start.");
 
@@ -506,11 +506,11 @@ OCStackResult things_cloud_dev_profile_publish(char *host, OCClientResponseHandl
 	size_t dimensions[MAX_REP_ARRAY_DEPTH] = { cntArrayPayload, 0, 0 };
 	OCRepPayloadSetPropObjectArray(payload, "devices", arrayPayload, dimensions);
 
-	if (is_empty_request_handle() == true) {
+	if (things_is_empty_request_handle() == true) {
 		result = OCDoResource(&g_req_handle, OC_REST_POST, targetUri, NULL, (OCPayload *) payload, CT_ADAPTER_TCP, OC_LOW_QOS, &cb_data, NULL, 0);
 
 		if (result == OC_STACK_OK && timeoutHandler != NULL) {
-			if (add_request_handle((OCDoHandle) 1) == NULL) {
+			if (things_add_request_handle((OCDoHandle) 1) == NULL) {
 				THINGS_LOG_V_ERROR(THINGS_ERROR, TAG, "[Error] ReqHandles array space is small.");
 				/*for SVACE Warning */
 				if (arrayPayload) {
@@ -523,7 +523,7 @@ OCStackResult things_cloud_dev_profile_publish(char *host, OCClientResponseHandl
 				return OC_STACK_ERROR;
 			}
 
-			create_time_out_process((OCDoHandle) 1, timeoutHandler, timeout);
+			things_create_time_out_process((OCDoHandle) 1, timeoutHandler, timeout);
 		}
 	}
 
