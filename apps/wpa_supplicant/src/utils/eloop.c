@@ -9,11 +9,7 @@
 #include "includes.h"
 #include <assert.h>
 #include <sys/select.h>
-#ifdef CONFIG_OS_NUTTX
-#include <nuttx/arch.h>
-#else
 #include <tinyara/arch.h>
-#endif
 #include "common.h"
 #include "trace.h"
 #include "list.h"
@@ -109,6 +105,7 @@ struct eloop_data {
 extern void wpa_supplicant_free_event_data(void *udata);
 
 static struct eloop_data eloop;
+static pthread_mutex_t eloop_lock;
 
 #ifdef WPA_TRACE
 
@@ -152,6 +149,7 @@ static void eloop_trace_sock_remove_ref(struct eloop_sock_table *table)
 int eloop_init(void)
 {
 	os_memset(&eloop, 0, sizeof(eloop));
+	pthread_mutex_init(&eloop_lock, NULL);
 	dl_list_init(&eloop.timeout);
 #ifdef CONFIG_ELOOP_EPOLL
 	eloop.epollfd = epoll_create1(0);
@@ -592,21 +590,26 @@ int eloop_register_timeout(unsigned int secs, unsigned int usecs, eloop_timeout_
 	wpa_trace_add_ref(timeout, user, user_data);
 	wpa_trace_record(timeout);
 
+	pthread_mutex_lock(&eloop_lock);
 	/* Maintain timeouts in order of increasing time */
 	dl_list_for_each(tmp, &eloop.timeout, struct eloop_timeout, list) {
 		if (os_reltime_before(&timeout->time, &tmp->time)) {
 			dl_list_add(tmp->list.prev, &timeout->list);
+			pthread_mutex_unlock(&eloop_lock);
 			return 0;
 		}
 	}
 	dl_list_add_tail(&eloop.timeout, &timeout->list);
+	pthread_mutex_unlock(&eloop_lock);
 
 	return 0;
 }
 
 static void eloop_remove_timeout(struct eloop_timeout *timeout)
 {
+	pthread_mutex_lock(&eloop_lock);
 	dl_list_del(&timeout->list);
+	pthread_mutex_unlock(&eloop_lock);
 	wpa_trace_remove_ref(timeout, eloop, timeout->eloop_data);
 	wpa_trace_remove_ref(timeout, user, timeout->user_data);
 	os_free(timeout);
@@ -986,6 +989,7 @@ void eloop_destroy(void)
 	os_free(eloop.epoll_events);
 	close(eloop.epollfd);
 #endif							/* CONFIG_ELOOP_EPOLL */
+	pthread_mutex_destroy(&eloop_lock);
 }
 
 int eloop_terminated(void)
