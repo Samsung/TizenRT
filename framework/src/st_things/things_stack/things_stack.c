@@ -28,6 +28,8 @@
 #include "octypes.h"
 #include <json/cJSON.h>
 #endif
+#include <errno.h>
+
 #include "things_api.h"
 #include "things_types.h"
 #include "things_def.h"
@@ -55,9 +57,9 @@
 #ifdef CONFIG_ST_THINGS_FOTA
 #include "fota/fmwup_api.h"
 #include "deviceDef.h"
-#define DEVICE_DEF_FILE_ROOT "/mnt/"
+#define DEVICE_DEF_FILE_ROOT PATH_MNT
 #else
-#define DEVICE_DEF_FILE_ROOT "/rom/"
+#define DEVICE_DEF_FILE_ROOT PATH_ROM
 #endif
 
 #define TAG "[things_stack]"
@@ -298,7 +300,18 @@ int things_initialize_stack(const char *json_path, bool *easysetup_completed)
 	}
 	is_things_module_inited = 1;
 
-	*easysetup_completed = dm_is_there_things_cloud();
+	int es_state = esm_read_easysetup_state();
+	*easysetup_completed = ((es_state == ES_COMPLETE) ? true : false);
+
+	if (es_state != ES_COMPLETE) {
+		esm_save_easysetup_state(ES_NOT_COMPLETE);
+		THINGS_LOG_D(THINGS_DEBUG, TAG, "delete svrdb");
+		int ret = unlink(dm_get_svrdb_file_path());
+		if (ret < 0) {
+			THINGS_LOG_D(THINGS_ERROR, TAG, "delete svrdb fail(%d)", errno);
+			return 0;
+		}
+	}
 	
 #ifdef CONFIG_ST_THINGS_FOTA
 	if (fmwup_initialize() < 0) {
@@ -339,7 +352,7 @@ int things_start_stack()
 	THINGS_LOG_D(THINGS_INFO, TAG, "ST_Things SDK version : %s", ST_THINGS_STACK_VERSION);
 
 	if (dm_get_easysetup_connectivity_type() == es_conn_type_softap) {
-		if (dm_is_there_things_cloud() == false) {
+		if (dm_is_es_complete() == false) {
 			if (!things_network_turn_on_soft_ap()) {
 				return 0;
 			}

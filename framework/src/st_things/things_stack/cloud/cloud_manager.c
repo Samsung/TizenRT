@@ -654,6 +654,8 @@ OCStackApplicationResult handle_login_cb(void *ctx, OCDoHandle handle, OCClientR
 			return OC_STACK_DELETE_TRANSACTION;
 		}
 
+		esm_save_easysetup_state(ES_COMPLETE);
+
 		things_ping_set_mask(g_cloud_ip, atoi(g_cloud_port), PING_ST_SIGNIN);
 
 		// [ysy] Plublish resources to cloud
