@@ -52,4 +52,15 @@ config WIFI_PROFILE_SECURESTORAGE
 	bool "Store the Wi-Fi Profile in a Secure Storage"
 	depends on SUPPORT_FULL_SECURITY
 	default n
+
+
+config WIFIMGR_SOFTAP_IFNAME
+	string "interface name of softap mode"
+	default "wl1"
+
+config WIFIMGR_STA_IFNAME
+	string "interface name of station mode"
+	default "wl1"
+
 endif #WIFI_MANAGER
+
