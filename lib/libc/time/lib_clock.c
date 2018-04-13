@@ -1,6 +1,6 @@
 /****************************************************************************
  *
- * Copyright 2016 Samsung Electronics All Rights Reserved.
+ * Copyright 2018 Samsung Electronics All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,9 +16,9 @@
  *
  ****************************************************************************/
 /****************************************************************************
- * syscall/syscall_clock_systimer.c
+ * libc/time/lib_clock.c
  *
- *   Copyright (C) 2011-2012, 2014 Gregory Nutt. All rights reserved.
+ *   Copyright (C) 2015 Gregory Nutt. All rights reserved.
  *   Author: Gregory Nutt <gnutt@nuttx.org>
  *
  * Redistribution and use in source and binary forms, with or without
@@ -54,44 +54,36 @@
  * Included Files
  ****************************************************************************/
 
-#include <tinyara/config.h>
-
-#include <stdint.h>
-
+#include <time.h>
+#include <sys/types.h>
 #include <tinyara/clock.h>
-
-/****************************************************************************
- * Pre-processor definitions
- ****************************************************************************/
-
-/****************************************************************************
- * Public Data
- ****************************************************************************/
-
-/****************************************************************************
- * Private Functions
- ****************************************************************************/
 
 /****************************************************************************
  * Public Functions
  ****************************************************************************/
 
 /****************************************************************************
- * Name: syscall_clock_systimer
+ * Name:  clock
  *
  * Description:
- *   In the kernel build, proxying for clock_systimer() must be handled
- *   specially.  In the kernel phase of the build, clock_systimer() is
- *   macro that simply accesses a global variable.  In the user phase of
- *   the kernel build, clock_systimer() is a proxy function.
+ *   The clock() function returns the implementation's best approximation to
+ *   the processor time used by the process since the beginning of a
+ *   implementation-defined era related only to the process invocation.
  *
- *   In order to fill out the table g_funclookup[], this function will stand
- *   in during the kernel phase of the build so that clock_systemer() will
- *   have an address that can be included in the g_funclookup[] table.
+ *   To determine the time in seconds, the value returned by clock() should
+ *   be divided by the value of the macro CLOCKS_PER_SEC as defined in <time.h>.
+ *
+ * Input Parameters:
+ *   None
+ *
+ * Returned Value:
+ *   The system time in units of clock ticks is returned.  If the processor
+ *   time used is not available or its value cannot be represented, the
+ *   function will return the value (clock_t)-1.
  *
  ****************************************************************************/
 
-systime_t syscall_clock_systimer(void)
+clock_t clock(void)
 {
-	return clock_systimer();
+	return (clock_t)clock_systimer();
 }

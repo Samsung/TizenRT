@@ -198,24 +198,6 @@ static void tc_clock_clock_systimer(void)
 }
 
 /**
-* @fn                   :tc_clock_clock_systimer64
-* @brief                :Returns the current value of 64 bit system timer counter
-* @scenario             :Returns the current value of 64 bit system timer counter
-* API's covered         :clock_systimer64
-* Preconditions         :none
-* Postconditions        :none
-* @return               :void
- */
-static void tc_clock_clock_systimer64(void)
-{
-	systime_t itime = ERROR;
-	itime = clock_systimer();
-	TC_ASSERT_GEQ("clock_systimer", itime, 0);
-
-	TC_SUCCESS_RESULT();
-}
-
-/**
 * @fn                   :tc_clock_clock_abstime2ticks
 * @brief                :Convert an absolute timespec to ticks
 * @scenario             :Compare two conversions to ticks with some calculation
@@ -258,7 +240,6 @@ int clock_main(void)
 	tc_clock_clock_timer();
 #endif
 	tc_clock_clock_systimer();
-	tc_clock_clock_systimer64();
 	tc_clock_clock_gettimeofday();
 	tc_clock_clock_set_get_time();
 	tc_clock_clock_getres();

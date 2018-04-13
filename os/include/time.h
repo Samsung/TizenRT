@@ -247,6 +247,16 @@ int clock_getres(clockid_t clockid, FAR struct timespec *res);
 
 /**
  * @ingroup TIME_KERNEL
+ * @brief returns the implementation's best approximation to the
+ * processor time used by the process since the beginning of a
+ * implementation-defined era related only to the process invocation.
+ * @details @b #include <time.h> \n
+ * POSIX API (refer to : http://pubs.opengroup.org/onlinepubs/9699919799/)
+ * @since TizenRT v2.0
+ */
+clock_t clock(void);
+/**
+ * @ingroup TIME_KERNEL
  * @brief convert broken-down time into time since the Epoch
  * @details @b #include <time.h> \n
  * POSIX API (refer to : http://pubs.opengroup.org/onlinepubs/9699919799/)
