@@ -210,6 +210,9 @@ enum tstate_e {
 #ifdef CONFIG_PAGING
 	TSTATE_WAIT_PAGEFILL,		/* BLOCKED      - Waiting for page fill */
 #endif
+#ifdef CONFIG_DISABLE_SIGNALS
+	TSTATE_SLEEP_NOSIGNAL,		/*BLOCKED	- Waiting for sleep timeout without SIGNALs */
+#endif
 	NUM_TASK_STATES				/* Must be last */
 };
 typedef enum tstate_e tstate_t;

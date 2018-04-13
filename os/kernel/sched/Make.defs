@@ -81,6 +81,10 @@ else
 CSRCS += sched_processtimer.c
 endif
 
+ifeq ($(CONFIG_DISABLE_SIGNALS),y)
+CSRCS += sched_nanosleep.c
+endif
+
 # Include sched build support
 
 DEPPATH += --dep-path sched

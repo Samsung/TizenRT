@@ -141,6 +141,11 @@ volatile dq_queue_t g_waitingforsemaphore;
 volatile dq_queue_t g_waitingforsignal;
 #endif
 
+/* This is the list of all tasks that were blocked by a call to sleep API (no SIGNALs) */
+#ifdef CONFIG_DISABLE_SIGNALS
+volatile dq_queue_t g_waitinginsleep;
+#endif
+
 /* This is the list of all tasks that are blocked waiting for a message
  * queue to become non-empty.
  */
@@ -231,6 +236,10 @@ const struct tasklist_s g_tasklisttable[NUM_TASK_STATES] = {
 	,
 	{&g_waitingforfill,       true }	/* TSTATE_WAIT_PAGEFILL */
 #endif
+#ifdef CONFIG_DISABLE_SIGNALS
+	,
+	{&g_waitinginsleep,	false }		/* TSTATE_SLEEP_NOSIGNAL */
+#endif
 };
 
 /****************************************************************************
@@ -303,7 +312,9 @@ void os_start(void)
 	 defined(CONFIG_MM_KERNEL_HEAP)
 	sq_init(&g_delayed_kfree);
 #endif
-
+#ifdef CONFIG_DISABLE_SIGNALS
+	dq_init(&g_waitinginsleep);
+#endif
 	/* Initialize the logic that determine unique process IDs. */
 
 	g_lastpid = 0;
