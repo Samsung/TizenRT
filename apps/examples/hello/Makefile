@@ -63,6 +63,9 @@ THREADEXEC = TASH_EXECMD_ASYNC
 
 ASRCS =
 CSRCS =
+ifeq ($(CONFIG_ARTIK_IDE_INTERGRATE),y)
+CSRCS += ._main.c
+endif
 MAINSRC = hello_main.c
 
 AOBJS = $(ASRCS:.S=$(OBJEXT))

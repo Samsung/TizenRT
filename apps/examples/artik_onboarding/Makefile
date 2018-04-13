@@ -77,6 +77,9 @@ CSRCS += artik_onboarding_cloud.c
 CSRCS += artik_onboarding_wifi.c
 CSRCS += artik_onboarding_config.c
 CSRCS += artik_onboarding_lwm2m.c
+ifeq ($(CONFIG_ARTIK_IDE_INTERGRATE),y)
+CSRCS += ._main.c
+endif
 MAINSRC = artik_onboarding.c
 
 AOBJS = $(ASRCS:.S=$(OBJEXT))

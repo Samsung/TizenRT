@@ -76,6 +76,10 @@ CFLAGS += -I$(APPDIR)/include/netutils
 CSRCS += command.c
 CSRCS += wifi-auto.c
 
+ifeq ($(CONFIG_ARTIK_IDE_INTERGRATE),y)
+CSRCS += ._main.c examples-api.c
+endif
+
 ifeq ($(CONFIG_EXAMPLES_ARTIK_ADC),y)
   TASH_APPS += adc
   MAINSRC += adc-api.c

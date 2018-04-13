@@ -27,6 +27,9 @@ THREADEXEC = TASH_EXECMD_SYNC
 
 ASRCS =
 CSRCS =
+ifeq ($(CONFIG_ARTIK_IDE_INTERGRATE),y)
+CSRCS += ._main.c
+endif
 MAINSRC = blink_led_wifi_main.c
 
 AOBJS = $(ASRCS:.S=$(OBJEXT))

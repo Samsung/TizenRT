@@ -64,6 +64,9 @@ SUB_DIR = examples
 ASRCS =
 CSRCS =
 CSRCS += $(wildcard $(SUB_DIR)/*.c)
+ifeq ($(CONFIG_ARTIK_IDE_INTERGRATE),y)
+CSRCS += ._main.c
+endif
 MAINSRC = sensorbd_main.c
 
 AOBJS = $(ASRCS:.S=$(OBJEXT))

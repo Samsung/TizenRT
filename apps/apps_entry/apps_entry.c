@@ -67,5 +67,9 @@ int apps_entry_main(int argc, char *argv[])
 	printf("apps_entry_main\n");
 #endif
 
+#ifdef CONFIG_ARTIK_IDE_INTERGRATE
+	_main(argc, argv);
+#endif
+
 	return 0;
 }
