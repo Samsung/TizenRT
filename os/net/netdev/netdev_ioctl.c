@@ -676,7 +676,7 @@ static int netdev_ifrioctl(FAR struct socket *sock, int cmd, FAR struct ifreq *r
 
 			/* Is this a request to take the interface down? */
 
-			else if (req->ifr_flags & IFF_DOWN) {
+			else {
 				/* Yes.. take the interface down */
 
 				netdev_ifdown(dev);
