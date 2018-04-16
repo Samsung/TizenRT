@@ -1490,7 +1490,6 @@ void dhcpd_stop(void)
 		pthread_mutex_unlock(&g_dhcpd_lock);
 		return;
 	}
-	pthread_mutex_unlock(&g_dhcpd_lock);
 
 	g_dhcpd_quit = 1;
 	while (ret != OK) {
@@ -1501,17 +1500,21 @@ void dhcpd_stop(void)
 				ndbg("ERR: EINTR for sem_wait in dhcpd\n");
 				continue;
 			}
+			pthread_mutex_unlock(&g_dhcpd_lock);			
 			return;
 		}
 	}
+	g_dhcpd_running = 0;
 	ret = sem_destroy(&g_dhcpd_sem);
 	if (ret != OK) {
 		ndbg("ERR: sem_destroy for dhcpd failed\n");
+		pthread_mutex_unlock(&g_dhcpd_lock);
 		return;
 	}
 #if DHCPD_SELECT
 	ndbg("WARN : dhcpd will be stopped after %d seconds\n", g_select_timeout.tv_sec);
 #endif
+	pthread_mutex_unlock(&g_dhcpd_lock);
 }
 
 /****************************************************************************
