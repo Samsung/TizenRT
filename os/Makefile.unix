@@ -329,9 +329,11 @@ include/tinyara/config.h: $(TOPDIR)/.config tools/mkconfig$(HOSTEXEEXT)
 	$(Q) tools/mkconfig $(TOPDIR) > include/tinyara/config.h
 
 submodules_check:
+ifeq ($(NO_SUBMODULES_UPDATE),)
 ifeq ($(CONFIG_ARTIK_SDK),y)
 	$(Q) if [ ! -f $(ARTIKSDKDIR)/.git ]; then git submodule init; fi
 	$(Q) git submodule update $(ARTIKSDKDIR)
+endif
 endif
 
 # Targets used to create dependencies
