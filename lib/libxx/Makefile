@@ -70,6 +70,11 @@ endif
 CXXSRCS += libxx_cxa_guard.cxx
 endif
 
+# Support newlib impure pointer
+ifeq ($(CONFIG_LIBCXX_HAVE_LIBSUPCXX),y)
+CSRCS += libxx_newlib_impure.c
+endif
+
 # Paths
 
 DEPPATH = --dep-path .

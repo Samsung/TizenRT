@@ -85,9 +85,9 @@ using namespace std;
 #  undef CONFIG_EXAMPLES_CXXTEST_CXXINITIALIZE
 #endif
 
-#undef CXXTEST_RTTI
+#define CXXTEST_RTTI
 #undef CXXTEST_ISTREAM
-#undef CXXTEST_EXCEPTION
+#define CXXTEST_EXCEPTION
 
 //***************************************************************************
 // Private Classes
@@ -98,6 +98,7 @@ class Base
 {
 public:
 	virtual void printBase(void) {};
+	virtual ~Base() {};
 };
 
 class Extend : public Base
