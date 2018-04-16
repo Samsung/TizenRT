@@ -81,6 +81,7 @@ ifeq ($(CONFIG_EXAMPLES_ARTIK_ADC),y)
   MAINSRC += adc-api.c
 endif
 ifeq ($(CONFIG_EXAMPLES_ARTIK_CLOUD), y)
+  THREADEXEC_cloud = TASH_EXECMD_SYNC
   TASH_APPS += cloud
   MAINSRC += cloud-api.c
 endif
