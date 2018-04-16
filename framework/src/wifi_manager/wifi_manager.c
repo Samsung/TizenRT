@@ -124,7 +124,9 @@ struct _wifimgr_info {
 };
 typedef struct _wifimgr_info _wifimgr_info_s;
 
-#define CTRL_IFNAME "wl1" // ToDo: interface name should be configurable.
+#define WIFIMGR_SOFTAP_IFNAME CONFIG_WIFIMGR_SOFTAP_IFNAME
+#define WIFIMGR_STA_IFNAME CONFIG_WIFIMGR_STA_IFNAME
+
 #define WIFIMGR_MAX_CONN_RETRIES 10
 #define WIFIMGR_IPC_PORT 9098
 #define WIFIDRIVER_SUPPORT_AUTOCONNECT 1
@@ -515,9 +517,9 @@ wifi_manager_result_e _start_dhcpd(void)
 	struct in_addr ip = {.s_addr = 0x012fa8c0 };
 	struct in_addr netmask = {.s_addr = 0x00ffffff};
 	struct in_addr gw = {.s_addr = 0x012fa8c0};
-	WIFIMGR_SET_IP4ADDR(CTRL_IFNAME, ip, netmask, gw);
+	WIFIMGR_SET_IP4ADDR(WIFIMGR_SOFTAP_IFNAME, ip, netmask, gw);
 
-	if (dhcpd_start(CTRL_IFNAME, _wifi_dhcpd_event) < 0) {
+	if (dhcpd_start(WIFIMGR_SOFTAP_IFNAME, _wifi_dhcpd_event) < 0) {
 		ndbg("[WM] DHCP Server - started fail\n");
 		return WIFI_MANAGER_FAIL;
 	}
@@ -532,7 +534,7 @@ wifi_manager_result_e _start_dhcpd(void)
 wifi_manager_result_e _stop_dhcpd(void)
 {
 	struct in_addr in = { .s_addr = INADDR_NONE };
-	WIFIMGR_SET_IP4ADDR(CTRL_IFNAME, in, in, in);
+	WIFIMGR_SET_IP4ADDR(WIFIMGR_SOFTAP_IFNAME, in, in, in);
 
 	dhcpd_stop();
 
@@ -549,7 +551,7 @@ wifi_manager_result_e _get_ipaddr_dhcp(void)
 	int ret;
 	void *dhcp_hnd = NULL;
 
-	dhcp_hnd = dhcpc_open(CTRL_IFNAME);
+	dhcp_hnd = dhcpc_open(WIFIMGR_STA_IFNAME);
 	if (dhcp_hnd == NULL) {
 		ndbg("[WM] Invalid dhcp handle\n");
 		return WIFI_MANAGER_FAIL;
@@ -560,7 +562,7 @@ wifi_manager_result_e _get_ipaddr_dhcp(void)
 		dhcpc_close(dhcp_hnd);
 		return WIFI_MANAGER_FAIL;
 	}
-	WIFIMGR_SET_IP4ADDR(CTRL_IFNAME, state.ipaddr, state.netmask, state.default_router);
+	WIFIMGR_SET_IP4ADDR(WIFIMGR_STA_IFNAME, state.ipaddr, state.netmask, state.default_router);
 #ifdef CONFIG_ENABLE_IOTIVITY
 	__tizenrt_manual_linkset("gen");
 #endif
