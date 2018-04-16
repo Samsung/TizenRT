@@ -143,9 +143,13 @@ static void cloud_websocket_rx_cb(void *user_data, void *result)
 			if (data && (data->type == cJSON_String)) {
 				printf("Websocket error %d - %s\n", code->valueint,
 				       data->valuestring);
-				if (code->valueint == 404) {
-					g_ws_registration_result = false;
-					sem_post(&g_sem_ws_registered);
+				if (code->valueint >= 400) {
+					if (g_ws_registration_result) {
+						StartCloudWebsocket(false);
+					} else {
+						g_ws_registration_result = false;
+						sem_post(&g_sem_ws_registered);
+					}
 				}
 				goto exit;
 			}
