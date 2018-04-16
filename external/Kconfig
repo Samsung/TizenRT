@@ -257,3 +257,11 @@ config ARTIK_SDK
 		include the ARTIK SDK
 
 source "$EXTERNALDIR/sysview/Kconfig"
+
+config ARTIK_IDE_INTERGRATE
+	bool "intergrate ARTIK IDE main functions"
+	default n
+	---help---
+		intergrate ARTIK IDE main functions
+		This option is for the example provided by default on ARTIK_IDE.
+		Do not enable it in CLI environment.

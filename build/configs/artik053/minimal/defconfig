@@ -965,6 +965,7 @@ CONFIG_MEMCPY_INDEXED_COPY=y
 # CONFIG_ENABLE_IOTIVITY is not set
 # CONFIG_ARTIK_SDK is not set
 # CONFIG_SYSVIEW is not set
+# CONFIG_ARTIK_IDE_INTERGRATE is not set
 
 #
 # Application Configuration
