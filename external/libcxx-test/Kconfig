@@ -1,0 +1,11 @@
+#
+# For a description of the syntax of this configuration file,
+# see kconfig-language at https://www.kernel.org/doc/Documentation/kbuild/kconfig-language.txt
+#
+
+config LIBCXX_UTC
+	bool "Unit Test for LLVM Libc++"
+	default n
+	depends on LIBCXX
+	---help---
+		Enables unit test for LLVM Libc++.
