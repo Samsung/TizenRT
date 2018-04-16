@@ -71,6 +71,10 @@
 #endif
 #endif
 
+#ifdef CONFIG_LIBCXX_UTC
+#define TC_LIBCXX_STACK  4096
+#endif
+
 sem_t tc_sem;
 int working_tc;
 int total_pass;
@@ -100,6 +104,10 @@ extern int utc_media_main(int argc, char *argv[]);
 
 /* Not yet */
 extern int tc_mpu_main(int argc, char *argv[]);
+
+#ifdef CONFIG_LIBCXX_UTC
+extern int utc_libcxx_main(int argc, char *argv[]);
+#endif
 
 #ifdef CONFIG_TASH
 static const tash_cmdlist_t tc_cmds[] = {
@@ -159,6 +167,9 @@ static const tash_cmdlist_t tc_cmds[] = {
 #endif
 #ifdef CONFIG_EXAMPLES_TESTCASE_MEDIA_UTC
 	{"media_utc", utc_media_main, TASH_EXECMD_ASYNC},
+#endif
+#ifdef CONFIG_LIBCXX_UTC
+	{"libcxx_utc", utc_libcxx_main, TASH_EXECMD_ASYNC},
 #endif
 	{NULL, NULL, 0}
 };
@@ -331,6 +342,13 @@ int tc_main(int argc, char *argv[])
 	pid = task_create("mediautc", SCHED_PRIORITY_DEFAULT, TC_MEDIA_STACK, utc_media_main, argv);
 	if (pid < 0) {
 		printf("Media utc is not started, err = %d\n", pid);
+	}
+#endif
+
+#ifdef CONFIG_LIBCXX_UTC
+	pid = task_create("libcxxutc", SCHED_PRIORITY_DEFAULT, TC_LIBCXX_STACK, utc_libcxx_main, argv);
+	if (pid < 0) {
+		printf("Libcxx utc is not started, err = %d\n", pid);
 	}
 #endif
 
