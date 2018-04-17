@@ -309,10 +309,11 @@ bool things_encrypt_artik_uuid(unsigned char *output)
 	// 6. url safe
 	int i;
 	for (i = 0; i < 8; i++) {
-		if (output[i] == '+')
+		if (output[i] == '+') {
 			output[i] = '-';
-		else if (output[i] == '/')
+		} else if (output[i] == '/') {
 			output[i] = '_';
+		}
 	}
 	THINGS_LOG_D(THINGS_DEBUG, TAG, "urlsafe output len [%d][%s]", strlen((char *)output), output);
 
