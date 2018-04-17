@@ -28,8 +28,8 @@
 #include <stdlib.h>
 #include <string.h>
 #include <termios.h>
-#include <iotbus_uart.h>
-#include <iotbus_error.h>
+#include <iotbus/iotbus_uart.h>
+#include <iotbus/iotbus_error.h>
 #include "utc_internal.h"
 
 #if !defined(CONFIG_SYSIO_UTC_UART_FILE_PATH)

@@ -24,8 +24,8 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <unistd.h>
-#include <iotbus_gpio.h>
-#include <iotbus_error.h>
+#include <iotbus/iotbus_gpio.h>
+#include <iotbus/iotbus_error.h>
 #include "utc_internal.h"
 
 #if !defined(CONFIG_SYSIO_UTC_GPIO1_NUM) || !defined(CONFIG_SYSIO_UTC_GPIO2_NUM)
