@@ -65,7 +65,7 @@ static pthread_addr_t start_websocket(pthread_addr_t arg)
 {
 	StartMDNSService(false);
 	StartWebServer(false, API_SET_CLOUD);
-	if (StartCloudWebsocket(true) == S_OK)
+	if (StartCloudWebsocket(true, NULL) == S_OK)
 		printf("ARTIK Cloud connection started\n");
 	if (StartLwm2m(true) == S_OK)
 		printf("LWM2M connection started\n");

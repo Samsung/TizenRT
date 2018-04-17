@@ -45,6 +45,7 @@
 #define RESP_PIN_TPL        RESP_ERROR_EXTRA(API_ERROR_OK, "none", "\"pin\":\"%s\"")
 
 #define WEBSOCKET_REGISTER_TIMEOUT  30  /* seconds */
+#define WEBSOCKET_RETRY_PERIOD       5  /* seconds */
 
 struct ArtikCloudConfig cloud_config;
 
@@ -91,7 +92,7 @@ static void set_led_state(bool state)
 
 static pthread_addr_t wifi_onboarding_start(pthread_addr_t arg)
 {
-	StartCloudWebsocket(false);
+	StartCloudWebsocket(false, NULL);
 	StartLwm2m(false);
 
 	if (StartSoftAP(true) != S_OK) {
@@ -145,7 +146,7 @@ static void cloud_websocket_rx_cb(void *user_data, void *result)
 				       data->valuestring);
 				if (code->valueint >= 400) {
 					if (g_ws_registration_result) {
-						StartCloudWebsocket(false);
+						StartCloudWebsocket(false, NULL);
 					} else {
 						g_ws_registration_result = false;
 						sem_post(&g_sem_ws_registered);
@@ -204,9 +205,34 @@ out:
 	free(result);
 }
 
+static void websocket_reconnect_cb(void)
+{
+	sleep(WEBSOCKET_RETRY_PERIOD);
+	StartCloudWebsocket(true, NULL);
+}
+
+static void cloud_websocket_conn_cb(void *user_data, void *result)
+{
+	artik_websocket_connection_state state = (artik_websocket_connection_state)result;
+
+	switch(state) {
+	case ARTIK_WEBSOCKET_CLOSED:
+		printf("Websocket to ARTIK Cloud closed, try to reconnect in %d seconds\n", WEBSOCKET_RETRY_PERIOD);
+		StartCloudWebsocket(false, websocket_reconnect_cb);
+		break;
+	case ARTIK_WEBSOCKET_HANDSHAKE_ERROR:
+		printf("Websocket to ARTIK Cloud connection failed: handshake error\n");
+		break;
+	case ARTIK_WEBSOCKET_CONNECTED:
+		printf("Websocket to ARTIK Cloud connected\n");
+		break;
+	}
+}
+
 static pthread_addr_t websocket_start_cb(void *arg)
 {
 	artik_cloud_module *cloud = (artik_cloud_module *)artik_request_api_module("cloud");
+	on_ws_start_cb callback = (on_ws_start_cb)arg;
 	artik_error ret = S_OK;
 	artik_ssl_config ssl;
 
@@ -230,7 +256,11 @@ static pthread_addr_t websocket_start_cb(void *arg)
 	}
 
 	cloud->websocket_set_receive_callback(g_ws_handle, cloud_websocket_rx_cb, NULL);
+	cloud->websocket_set_connection_callback(g_ws_handle, cloud_websocket_conn_cb, NULL);
 	current_service_state = STATE_CONNECTED;
+
+	if (callback)
+		callback();
 
 exit:
 	pthread_exit((void *)ret);
@@ -242,6 +272,7 @@ static pthread_addr_t websocket_stop_cb(void *arg)
 {
 	int ret = 0;
 	artik_cloud_module *cloud = (artik_cloud_module *)artik_request_api_module("cloud");
+	on_ws_start_cb callback = (on_ws_start_cb)arg;
 
 	if (!cloud) {
 		printf("Cloud module is not available\n");
@@ -249,27 +280,31 @@ static pthread_addr_t websocket_stop_cb(void *arg)
 		goto exit;
 	}
 
+	printf("Stopping websocket to ARTIK Cloud\n");
+
 	cloud->websocket_set_receive_callback(g_ws_handle, NULL, NULL);
+	cloud->websocket_set_connection_callback(g_ws_handle, NULL, NULL);
 
 	ret = cloud->websocket_close_stream(g_ws_handle);
 	if (ret != S_OK) {
-		artik_release_api_module(cloud);
 		printf("Failed to close websocket to cloud (err=%d)\n", ret);
 		goto exit;
 	}
 
 	g_ws_handle = NULL;
-	artik_release_api_module(cloud);
 	current_service_state = STATE_IDLE;
 
+	if (callback)
+		callback();
+
 exit:
+	artik_release_api_module(cloud);
 	return NULL;
 }
 
-artik_error StartCloudWebsocket(bool start)
+artik_error StartCloudWebsocket(bool start, on_ws_start_cb cb)
 {
 	artik_error ret = S_OK;
-	int num_retries = 5;
 
 	if (start) {
 		static pthread_t tid;
@@ -283,16 +318,16 @@ artik_error StartCloudWebsocket(bool start)
 			goto exit;
 		}
 
+retry:
 		g_ws_registration_result = false;
 		sem_init(&g_sem_ws_registered, 0, 0);
 
-retry:
 		pthread_attr_init(&attr);
 		sparam.sched_priority = 100;
 		status = pthread_attr_setschedparam(&attr, &sparam);
 		status = pthread_attr_setschedpolicy(&attr, SCHED_RR);
 		status = pthread_attr_setstacksize(&attr, 1024 * 8);
-		status = pthread_create(&tid, &attr, websocket_start_cb, NULL);
+		status = pthread_create(&tid, &attr, websocket_start_cb, (void *)cb);
 		if (status) {
 			sem_destroy(&g_sem_ws_registered);
 			printf("Failed to create thread for websocket\n");
@@ -300,19 +335,22 @@ retry:
 			goto exit;
 		}
 
-		pthread_attr_destroy(&attr);
-		pthread_setname_np(tid, "cloud-websocket");
-		pthread_join(tid, (void **)&ret);
+		pthread_setname_np(tid, "websocket-start");
 
-		if ((ret != S_OK) && num_retries--) {
-			printf("Failed to connect to websocket (%d), retrying...\n", ret);
-			goto retry;
+		if (cb) {
+			sem_destroy(&g_sem_ws_registered);
+			pthread_detach(tid);
+			goto exit;
 		}
 
-		if (num_retries < 1) {
+		pthread_join(tid, (void **)&ret);
+
+		if (ret != S_OK) {
 			sem_destroy(&g_sem_ws_registered);
-			ret = E_WEBSOCKET_ERROR;
-			goto exit;
+			printf("Failed to connect to websocket (%d), retrying in %d secs\n",
+					ret, WEBSOCKET_RETRY_PERIOD);
+			sleep(WEBSOCKET_RETRY_PERIOD);
+			goto retry;
 		}
 
 		/* Wait for registration status message */
@@ -320,7 +358,7 @@ retry:
 		timeout.tv_sec += WEBSOCKET_REGISTER_TIMEOUT;
 		if (sem_timedwait(&g_sem_ws_registered, &timeout) == -1) {
 			sem_destroy(&g_sem_ws_registered);
-			StartCloudWebsocket(false);
+			StartCloudWebsocket(false, NULL);
 			printf("Failure while waiting websocket to register (err=%d)\n", errno);
 			ret = E_ACCESS_DENIED;
 			goto exit;
@@ -328,7 +366,7 @@ retry:
 
 		if (!g_ws_registration_result) {
 			sem_destroy(&g_sem_ws_registered);
-			StartCloudWebsocket(false);
+			StartCloudWebsocket(false, NULL);
 			printf("Websocket failed to register AKC device\n");
 			ret = E_ACCESS_DENIED;
 			goto exit;
@@ -354,15 +392,21 @@ retry:
 		status = pthread_attr_setschedparam(&attr, &sparam);
 		status = pthread_attr_setschedpolicy(&attr, SCHED_RR);
 		status = pthread_attr_setstacksize(&attr, 1024 * 4);
-		status = pthread_create(&tid, &attr, websocket_stop_cb, NULL);
+		status = pthread_create(&tid, &attr, websocket_stop_cb, (void *)cb);
 		if (status) {
 			ret = E_ACCESS_DENIED;
 			printf("Failed to create thread for closing websocket\n");
 			goto exit;
 		}
 
+		pthread_setname_np(tid, "websocket-stop");
+
+		if (cb) {
+			pthread_detach(tid);
+			goto exit;
+		}
+
 		pthread_join(tid, NULL);
-		pthread_attr_destroy(&attr);
 	}
 
 exit:

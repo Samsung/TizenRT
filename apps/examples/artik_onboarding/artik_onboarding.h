@@ -96,9 +96,10 @@ struct ArtikCloudConfig {
 };
 
 extern struct ArtikCloudConfig cloud_config;
+typedef void (*on_ws_start_cb)(void);
 
 void CloudResetConfig(bool reset_dtid);
-artik_error StartCloudWebsocket(bool start);
+artik_error StartCloudWebsocket(bool start, on_ws_start_cb cb);
 artik_error SendMessageToCloud(char *message);
 int StartSDRRegistration(char **resp);
 int CompleteSDRRegistration(char **resp);
