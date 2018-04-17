@@ -27,28 +27,25 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <errno.h>
 #include <termios.h>
-
 #include <iotbus_uart.h>
+#include <iotbus_error.h>
 #include "utc_internal.h"
-#include "iotbus_error.h"
+
+#if !defined(CONFIG_SYSIO_UTC_UART_FILE_PATH)
+#error To run system I/O testcase, kindly set file path of uart on menuconfig.
+#endif
+
+#define UART_FILE_PATH   CONFIG_SYSIO_UTC_UART_FILE_PATH
 
 iotbus_uart_context_h uart;
 
 static void utc_systemio_uart_initialize_p(void)
 {
-#ifdef CONFIG_ARCH_CHIP_STM32
-	iotbus_uart_context_h m_uart = iotbus_uart_init("/dev/ttyS1");
+	iotbus_uart_context_h m_uart = iotbus_uart_init(UART_FILE_PATH);
 	TC_ASSERT_NEQ("iotbus_uart_init", m_uart, NULL);
 	uart = m_uart;
 	TC_SUCCESS_RESULT();
-#elif CONFIG_ARCH_CHIP_S5J
-	iotbus_uart_context_h m_uart = iotbus_uart_init("/dev/ttyS2");
-	TC_ASSERT_NEQ("iotbus_uart_init", m_uart, NULL);
-	uart = m_uart;
-	TC_SUCCESS_RESULT();
-#endif
 }
 
 static void utc_systemio_uart_initialize_n(void)

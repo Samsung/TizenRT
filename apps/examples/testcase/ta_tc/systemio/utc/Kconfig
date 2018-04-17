@@ -14,6 +14,12 @@ config SYSIO_UTC_UART
 	bool "Sysio UART TC"
 	default n
 
+if SYSIO_UTC_UART
+config SYSIO_UTC_UART_FILE_PATH
+	string "Virtual File path of uart to run testcase"
+	default "/dev/ttyS2"
+endif
+
 config SYSIO_UTC_SPI
 	bool "Sysio SPI TC"
 	default n
@@ -30,5 +36,15 @@ config SYSIO_UTC_PWM
 config SYSIO_UTC_GPIO
 	bool "Sysio GPIO TC"
 	default n
+
+if SYSIO_UTC_GPIO
+config SYSIO_UTC_GPIO1_NUM
+	int "1st GPIO Number to run testcase"
+	default 41
+
+config SYSIO_UTC_GPIO2_NUM
+	int "2nd GPIO Number to run testcase"
+	default 57
+endif
 endif
 
