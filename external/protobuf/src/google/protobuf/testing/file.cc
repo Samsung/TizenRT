@@ -179,7 +179,7 @@ void File::DeleteRecursively(const string& name,
   // Use opendir()!  Yay!
   // lstat = Don't follow symbolic links.
   struct stat stats;
-  if (lstat(name.c_str(), &stats) != 0) return;
+  // if (lstat(name.c_str(), &stats) != 0) return;
 
   if (S_ISDIR(stats.st_mode)) {
     DIR* dir = opendir(name.c_str());
