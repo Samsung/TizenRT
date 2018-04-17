@@ -196,7 +196,9 @@ static int thread_create(FAR const char *name, uint8_t ttype, int priority, int 
 	struct mm_allocnode_s *node;
 
 	node = (struct mm_allocnode_s *)(tcb->cmn.stack_alloc_ptr - SIZEOF_MM_ALLOCNODE);
+	kasan_unpoison_allocnode(node);
 	node->pid = (-1) * (tcb->cmn.pid);
+	kasan_poison_allocnode(node);
 #endif
 
 	/* Setup to pass parameters to the new task */

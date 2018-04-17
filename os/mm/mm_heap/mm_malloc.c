@@ -60,6 +60,7 @@
 #include <debug.h>
 
 #include <tinyara/mm/mm.h>
+#include <tinyara/mm/kasan.h>
 
 #ifdef CONFIG_DEBUG_MM_HEAPINFO
 #include  <tinyara/sched.h>
@@ -88,6 +89,26 @@
  * Private Functions
  ****************************************************************************/
 
+static no_sanitize_address inline
+void find_place(struct mm_heap_s *heap, mmsize_t size,
+	   struct mm_freenode_s **node)
+{
+	int ndx;
+
+	/* Get the location in the node list to start the search. Special case
+	 * really big allocations
+	 */
+
+	if (size >= MM_MAX_CHUNK) {
+		ndx = MM_NNODES - 1;
+	} else {
+		ndx = mm_size2ndx(size);
+	}
+
+	for (*node = heap->mm_nodelist[ndx].flink;
+	     *node && (*node)->size < size; *node = (*node)->flink) ;
+}
+
 /****************************************************************************
  * Public Functions
  ****************************************************************************/
@@ -110,13 +131,7 @@ FAR void *mm_malloc(FAR struct mm_heap_s *heap, size_t size)
 {
 	FAR struct mm_freenode_s *node;
 	void *ret = NULL;
-	int ndx;
-
-	/* Handle bad sizes */
-
-	if (size < 1) {
-		return NULL;
-	}
+	size_t size_orig;
 
 	if (size > MM_ALIGN_DOWN(MMSIZE_MAX) - SIZEOF_MM_ALLOCNODE) {
 		mvdbg("Because of mm_allocnode, %u cannot be allocated. The maximun allocable size is (MM_ALIGN_DOWN(MMSIZE_MAX) - SIZEOF_MM_ALLOCNODE) : %u\n.", size, (MM_ALIGN_DOWN(MMSIZE_MAX) - SIZEOF_MM_ALLOCNODE));
@@ -127,30 +142,24 @@ FAR void *mm_malloc(FAR struct mm_heap_s *heap, size_t size)
 	 * (2) to make sure that it is an even multiple of our granule size.
 	 */
 
+	size_orig = size;
 	size = MM_ALIGN_UP(size + SIZEOF_MM_ALLOCNODE);
+
+	/* Handle bad sizes */
+	if (size_orig < 1 || size < size_orig) {
+		return NULL;
+	}
 
 	/* We need to hold the MM semaphore while we muck with the nodelist. */
 
 	mm_takesemaphore(heap);
 
-	/* Get the location in the node list to start the search. Special case
-	 * really big allocations
-	 */
-
-	if (size >= MM_MAX_CHUNK) {
-		ndx = MM_NNODES - 1;
-	} else {
-		/* Convert the request size into a nodelist index */
-
-		ndx = mm_size2ndx(size);
-	}
-
 	/* Search for a large enough chunk in the list of nodes. This list is
 	 * ordered by size, but will have occasional zero sized nodes as we visit
 	 * other mm_nodelist[] entries.
 	 */
-
-	for (node = heap->mm_nodelist[ndx].flink; node && node->size < size; node = node->flink) ;
+	find_place(heap, size, &node);
+	kasan_unpoison_freenode(node);
 
 	/* If we found a node with non-zero size, then this is one to use. Since
 	 * the list is ordered, we know that is must be best fitting chunk
@@ -166,11 +175,15 @@ FAR void *mm_malloc(FAR struct mm_heap_s *heap, size_t size)
 		 * a successor node.
 		 */
 
+		kasan_unpoison_freenode_neighbours_only(node);
+
 		DEBUGASSERT(node->blink);
 		node->blink->flink = node->flink;
 		if (node->flink) {
 			node->flink->blink = node->blink;
 		}
+
+		kasan_poison_freenode_neighbours_only(node);
 
 		/* Check if we have to split the free node into one of the allocated
 		 * size and another smaller freenode.  In some cases, the remaining
@@ -184,12 +197,17 @@ FAR void *mm_malloc(FAR struct mm_heap_s *heap, size_t size)
 			/* Get a pointer to the next node in physical memory */
 
 			next = (FAR struct mm_freenode_s *)(((char *)node) + node->size);
+			kasan_unpoison_freenode(next);
 
 			/* Create the remainder node */
 
 			remainder = (FAR struct mm_freenode_s *)(((char *)node) + size);
+			kasan_unpoison_freenode(remainder);
+
 			remainder->size = remaining;
 			remainder->preceding = size;
+
+			kasan_poison_freenode(remainder);
 
 			/* Adjust the size of the node under consideration */
 
@@ -200,6 +218,7 @@ FAR void *mm_malloc(FAR struct mm_heap_s *heap, size_t size)
 			 */
 
 			next->preceding = remaining | (next->preceding & MM_ALLOC_BIT);
+			kasan_poison_freenode(next);
 
 			/* Add the remainder back into the nodelist */
 
@@ -234,6 +253,9 @@ FAR void *mm_malloc(FAR struct mm_heap_s *heap, size_t size)
 		mvdbg("Allocated %p, size %u\n", ret, size);
 	}
 #endif
+
+	kasan_unpoison_allocnode_chunk_size(node, size_orig);
+	kasan_poison_allocnode((struct mm_allocnode_s *)node);
 
 	return ret;
 }

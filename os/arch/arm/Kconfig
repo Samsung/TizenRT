@@ -152,6 +152,10 @@ config DEBUG_HARDFAULT
 		output is sometimes helpful when debugging difficult hard fault problems,
 		but may be more than you typcially want to see.
 
+config ARCH_HAVE_KASAN
+	bool
+	default n
+
 comment "Exception stack options"
 
 config ARCH_HAVE_DABORTSTACK

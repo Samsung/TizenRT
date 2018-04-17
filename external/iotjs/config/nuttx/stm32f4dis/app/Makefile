@@ -119,7 +119,9 @@ $(AOBJS): %$(OBJEXT): %.S
 	$(call ASSEMBLE, $<, $@)
 
 $(COBJS): %$(OBJEXT): %.c
-	$(call COMPILE, $<, $@)
+	$(if $(KASAN_AVOID_SANITIZE_$*),\
+		$(call COMPILE, $<, $@),\
+		$(call COMPILE_SANITIZE, $<, $@))
 
 copylibs :
 	cp $(IOTJS_ABSOLUTE_ROOT_DIR)/build/arm-nuttx/$(BUILD_TYPE)/lib/lib*.a .

@@ -61,6 +61,7 @@
 #include <debug.h>
 
 #include <tinyara/mm/mm.h>
+#include <tinyara/mm/kasan.h>
 
 /****************************************************************************
  * Pre-processor Definitions
@@ -124,7 +125,12 @@ void mm_addregion(FAR struct mm_heap_s *heap, FAR void *heapstart, size_t heapsi
 	heapend  = MM_ALIGN_DOWN((uintptr_t)heapstart + (uintptr_t)heapsize);
 	heapsize = heapend - heapbase;
 
-	mlldbg("Region %d: base=%p size=%u\n", IDX + 1, heapstart, heapsize);
+#ifdef CONFIG_KASAN
+	kasan_set_heapbounds(heapbase, heapend);
+	kasan_qrnt_init(heapsize);
+#endif
+
+	mlldbg("Region %d: base=%p size=%u\n", IDX + 1, heapbase, heapsize);
 
 	/* Add the size of this region to the total size of the heap */
 
@@ -139,24 +145,32 @@ void mm_addregion(FAR struct mm_heap_s *heap, FAR void *heapstart, size_t heapsi
 	 */
 
 	heap->mm_heapstart[IDX]            = (FAR struct mm_allocnode_s *)heapbase;
+
+	kasan_unpoison_allocnode(heap->mm_heapstart[IDX]);
 	heap->mm_heapstart[IDX]->size      = SIZEOF_MM_ALLOCNODE;
 	heap->mm_heapstart[IDX]->preceding = MM_ALLOC_BIT;
 #ifdef CONFIG_DEBUG_MM_HEAPINFO
 	/* fill magic number 0xDEAD as malloc info for head node */
 	heapinfo_update_node((FAR struct mm_allocnode_s *)heap->mm_heapstart[IDX], 0xDEAD);
 #endif
+	kasan_poison_allocnode(heap->mm_heapstart[IDX]);
 
 	node            = (FAR struct mm_freenode_s *)(heapbase + SIZEOF_MM_ALLOCNODE);
+
+	kasan_unpoison_freenode(node);
 	node->size      = heapsize - 2 * SIZEOF_MM_ALLOCNODE;
 	node->preceding = SIZEOF_MM_ALLOCNODE;
 
 	heap->mm_heapend[IDX]            = (FAR struct mm_allocnode_s *)(heapend - SIZEOF_MM_ALLOCNODE);
+
+	kasan_unpoison_allocnode(heap->mm_heapend[IDX]);
 	heap->mm_heapend[IDX]->size      = SIZEOF_MM_ALLOCNODE;
 	heap->mm_heapend[IDX]->preceding = node->size | MM_ALLOC_BIT;
 #ifdef CONFIG_DEBUG_MM_HEAPINFO
 	/* Fill magic number 0xDEADDEAD as malloc info for tail node */
 	heapinfo_update_node((FAR struct mm_allocnode_s *)heap->mm_heapend[IDX], 0xDEADDEAD);
 #endif
+	kasan_poison_allocnode(heap->mm_heapend[IDX]);
 
 #undef IDX
 
@@ -165,7 +179,6 @@ void mm_addregion(FAR struct mm_heap_s *heap, FAR void *heapstart, size_t heapsi
 #endif
 
 	/* Add the single, large free node to the nodelist */
-
 	mm_addfreechunk(heap, node);
 }
 
@@ -214,7 +227,7 @@ void mm_initialize(FAR struct mm_heap_s *heap, FAR void *heapstart, size_t heaps
 
 	/* Initialize the node array */
 
-	memset(heap->mm_nodelist, 0, sizeof(struct mm_freenode_s) * MM_NNODES);
+	memset(heap->mm_nodelist, 0, SIZEOF_MM_FREENODE * MM_NNODES);
 	for (i = 1; i < MM_NNODES; i++) {
 		heap->mm_nodelist[i - 1].flink = &heap->mm_nodelist[i];
 		heap->mm_nodelist[i].blink = &heap->mm_nodelist[i - 1];

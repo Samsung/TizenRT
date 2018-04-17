@@ -82,7 +82,34 @@
  * Reference: Opengroup.org
  */
 
-#define offsetof(a, b) ((size_t)(&(((a *)(0))->b)))
+#ifdef __compiler_offsetof
+#define offsetof(type, member) __compiler_offsetof(type, member)
+#else
+#define offsetof(type, member) ((size_t)(&(((type *)(0))->member)))
+#endif
+
+/****************************************************************************
+ * Name: container_of
+ *
+ * Description:
+ *  cast a member of a structure out to the containing structure
+ *
+ * Input Parameters:
+ *   ptr    - pointer to the member
+ *   type   - type of the container struct
+ *   member - name of the member within struct
+ *
+ * Returned Value:
+ *   pointer to containing struct
+ *
+ * Assumption:
+ *   None
+ *
+ ****************************************************************************/
+#define container_of(ptr, type, member) ({				\
+			void *__ptr = (void *)(ptr);			\
+			((type *)(__ptr - offsetof(type, member)));	\
+		})
 
 /****************************************************************************
  * Type Definitions

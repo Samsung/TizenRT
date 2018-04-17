@@ -45,9 +45,6 @@
 
 #define ARRAY_SIZE(a) (sizeof(a) / sizeof((a)[0]))
 
-#define container_of(ptr, type, member) \
-  ((type *) ((char *) (ptr) - offsetof(type, member)))
-
 #include "uv__types.h"			// types should be placed in the first
 #include "uv_platform.h"		// platform should be placed before extension
 #include "uv_extension.h"		// extension should be placed before others

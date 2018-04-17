@@ -2106,6 +2106,25 @@ int up_getc(void);
 
 void up_puts(FAR const char *str);
 
+/****************************************************************************
+ * Name: up_memorymap
+ *
+ * Description:
+ *  Print memory map
+ *
+ * Input Parameters:
+ *  heap_start - first address of heap region
+ *  heap_size  - size of a heap
+ *
+ * Returned Value:
+ *  None
+ *
+ * Assumption:
+ *  None
+ *
+ ****************************************************************************/
+void up_memorymap(void *heap_start, size_t heap_size);
+
 #undef EXTERN
 #ifdef __cplusplus
 }

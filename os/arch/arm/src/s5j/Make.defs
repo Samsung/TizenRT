@@ -95,6 +95,11 @@ CMN_CSRCS += arm_schedulesigaction.c arm_sigdeliver.c arm_syscall.c
 CMN_CSRCS += arm_unblocktask.c arm_undefinedinsn.c
 CMN_CSRCS += arm_copyarmstate.c
 CMN_CSRCS += up_checkstack.c
+CMN_CSRCS += up_memorymap.c
+
+KASAN_AVOID_SANITIZE_arm_dataabort = y
+KASAN_AVOID_SANITIZE_arm_prefetchabort = y
+KASAN_AVOID_SANITIZE_arm_sigdeliver = y
 
 # Configuration dependent C files
 ifeq ($(CONFIG_ARMV7M_MPU),y)
@@ -119,8 +124,11 @@ CHIP_CSRCS += s5j_serial.c
 CHIP_CSRCS += s5j_mac.c
 CHIP_CSRCS += s5j_systemreset.c
 
+KASAN_AVOID_SANITIZE_s5j_boot = y
+
 ifeq ($(CONFIG_S5J_WATCHDOG),y)
 CHIP_CSRCS += s5j_watchdog.c
+KASAN_AVOID_SANITIZE_s5j_watchdog = y
 ifeq ($(CONFIG_WATCHDOG),y)
 CHIP_CSRCS += s5j_watchdog_lowerhalf.c
 endif

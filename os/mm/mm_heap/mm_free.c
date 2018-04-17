@@ -60,6 +60,7 @@
 #include <debug.h>
 
 #include <tinyara/mm/mm.h>
+#include <tinyara/mm/kasan.h>
 
 #ifdef CONFIG_DEBUG_MM_HEAPINFO
 #include  <tinyara/sched.h>
@@ -77,14 +78,19 @@
  ****************************************************************************/
 
 /****************************************************************************
- * Name: mm_free
+ * Name: _mm_free
  *
  * Description:
  *   Returns a chunk of memory to the list of free nodes,  merging with
  *   adjacent free chunks if possible.
  *
  ****************************************************************************/
-void mm_free(FAR struct mm_heap_s *heap, FAR void *mem)
+#ifndef CONFIG_KASAN_QRNT
+static
+#else
+inline inline_function
+#endif
+void _mm_free(FAR struct mm_heap_s *heap, FAR void *mem)
 {
 	FAR struct mm_freenode_s *node;
 	FAR struct mm_freenode_s *prev;
@@ -120,6 +126,8 @@ void mm_free(FAR struct mm_heap_s *heap, FAR void *mem)
 	/* Map the memory chunk into a free node */
 
 	node = (FAR struct mm_freenode_s *)((char *)mem - SIZEOF_MM_ALLOCNODE);
+	kasan_unpoison_freenode(node);
+
 #ifdef CONFIG_DEBUG_DOUBLE_FREE
 	/* Assert on following logical error scenarios
 	 * 1) Attempt to free an unallocated memory or
@@ -149,6 +157,8 @@ void mm_free(FAR struct mm_heap_s *heap, FAR void *mem)
 	/* Check if the following node is free and, if so, merge it */
 
 	next = (FAR struct mm_freenode_s *)((char *)node + node->size);
+	kasan_unpoison_freenode(next);
+
 	if ((next->preceding & MM_ALLOC_BIT) == 0) {
 		FAR struct mm_allocnode_s *andbeyond;
 
@@ -158,16 +168,21 @@ void mm_free(FAR struct mm_heap_s *heap, FAR void *mem)
 		 */
 
 		andbeyond = (FAR struct mm_allocnode_s *)((char *)next + next->size);
+		kasan_unpoison_allocnode(andbeyond);
 
 		/* Remove the next node.  There must be a predecessor,
 		 * but there may not be a successor node.
 		 */
+
+		kasan_unpoison_freenode_neighbours_only(next);
 
 		DEBUGASSERT(next->blink);
 		next->blink->flink = next->flink;
 		if (next->flink) {
 			next->flink->blink = next->blink;
 		}
+
+		kasan_poison_freenode_neighbours_only(next);
 
 		/* Then merge the two chunks */
 
@@ -181,16 +196,22 @@ void mm_free(FAR struct mm_heap_s *heap, FAR void *mem)
 	 */
 
 	prev = (FAR struct mm_freenode_s *)((char *)node - node->preceding);
+	kasan_unpoison_freenode(prev);
+
 	if ((prev->preceding & MM_ALLOC_BIT) == 0) {
 		/* Remove the node.  There must be a predecessor, but there may
 		 * not be a successor node.
 		 */
+
+		kasan_unpoison_freenode_neighbours_only(prev);
 
 		DEBUGASSERT(prev->blink);
 		prev->blink->flink = prev->flink;
 		if (prev->flink) {
 			prev->flink->blink = prev->blink;
 		}
+
+		kasan_poison_freenode_neighbours_only(prev);
 
 		/* Then merge the two chunks */
 
@@ -199,8 +220,27 @@ void mm_free(FAR struct mm_heap_s *heap, FAR void *mem)
 		node            = prev;
 	}
 
+	kasan_poison_freenode(next);
+
 	/* Add the merged node to the nodelist */
 
 	mm_addfreechunk(heap, node);
 	mm_givesemaphore(heap);
+}
+
+/****************************************************************************
+ * Name: mm_free
+ *
+ * Description:
+ *   If use-after-free detection enabled (CONFIG_KASAN_QRNT), then memory chunk
+ *   placed in quarantine. Otherwise, equivalent to _mm_free.
+ *
+ ****************************************************************************/
+void mm_free(FAR struct mm_heap_s *heap, FAR void *mem)
+{
+#ifdef CONFIG_KASAN_QRNT
+	kasan_qrnt_enq(mem);
+#else
+	_mm_free(heap, mem);
+#endif
 }

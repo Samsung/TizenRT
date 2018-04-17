@@ -60,6 +60,7 @@
 #include <debug.h>
 
 #include <tinyara/init.h>
+#include <tinyara/mm/kasan.h>
 
 #include "up_arch.h"
 #include "up_internal.h"
@@ -173,6 +174,17 @@ int s5j_mpu_initialize(void)
 }
 #endif
 
+#ifdef CONFIG_KASAN
+typedef void(*ctor_fn_t)(void);
+static void invoke_ctors(void)
+{
+	ctor_fn_t *fn;
+
+	for (fn = (ctor_fn_t *)&_sinit; fn < (ctor_fn_t *)&_einit; fn++)
+		(*fn)();
+}
+#endif
+
 void arm_boot(void)
 {
 	up_copyvectorblock();
@@ -190,6 +202,17 @@ void arm_boot(void)
 	 * performed after returning from tms570_board_initialize()
 	 */
 	arm_data_initialize();
+#endif
+
+#ifdef CONFIG_KASAN
+	kasan_set_databounds((unsigned long)&_sdata, (unsigned long)&_edata);
+	kasan_set_bssbounds((unsigned long)&_sbss, (unsigned long)&_ebss);
+	kasan_set_idlestackbounds(
+		(unsigned long)g_idle_topstack - CONFIG_IDLETHREAD_STACKSIZE,
+		g_idle_topstack);
+
+	kasan_init();
+	invoke_ctors();
 #endif
 
 #ifdef CONFIG_ARMV7M_MPU

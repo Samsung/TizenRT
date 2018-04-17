@@ -150,10 +150,6 @@
 #define  CONFIG_MTD_SMART_SECTOR_SIZE 1024
 #endif
 
-#ifndef offsetof
-#define offsetof(type, member) ((size_t)&(((type *)0)->member))
-#endif
-
 #define SMART_MAX_ALLOCS        6
 //#define CONFIG_MTD_SMART_PACK_COUNTS
 

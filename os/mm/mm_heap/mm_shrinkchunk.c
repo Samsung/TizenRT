@@ -59,6 +59,7 @@
 #include <assert.h>
 
 #include <tinyara/mm/mm.h>
+#include <tinyara/mm/kasan.h>
 
 /****************************************************************************
  * Pre-processor Definitions
@@ -80,6 +81,8 @@
  *   NOTES:
  *     (1) size is the whole chunk size (payload and header)
  *     (2) the caller must hold the MM semaphore.
+ *     (3) the node must be unpoisoned by kasan_unpoison_allocnode
+ *         before this function is called.
  *
  ****************************************************************************/
 
@@ -90,6 +93,7 @@ void mm_shrinkchunk(FAR struct mm_heap_s *heap, FAR struct mm_allocnode_s *node,
 	/* Get a reference to the next node */
 
 	next = (FAR struct mm_freenode_s *)((char *)node + node->size);
+	kasan_unpoison_freenode(next);
 
 	/* Check if it is free */
 
@@ -100,10 +104,13 @@ void mm_shrinkchunk(FAR struct mm_heap_s *heap, FAR struct mm_allocnode_s *node,
 		/* Get the chunk next the next node (which could be the tail chunk) */
 
 		andbeyond = (FAR struct mm_allocnode_s *)((char *)next + next->size);
+		kasan_unpoison_allocnode(andbeyond);
 
 		/* Remove the next node.  There must be a predecessor, but there may
 		 * not be a successor node.
 		 */
+
+		kasan_unpoison_freenode_neighbours_only(next);
 
 		DEBUGASSERT(next->blink);
 		next->blink->flink = next->flink;
@@ -111,11 +118,14 @@ void mm_shrinkchunk(FAR struct mm_heap_s *heap, FAR struct mm_allocnode_s *node,
 			next->flink->blink = next->blink;
 		}
 
+		kasan_poison_freenode_neighbours_only(next);
+
 		/* Create a new chunk that will hold both the next chunk and the
 		 * tailing memory from the aligned chunk.
 		 */
 
 		newnode = (FAR struct mm_freenode_s *)((char *)node + size);
+		kasan_unpoison_freenode(newnode);
 
 		/* Set up the size of the new node */
 
@@ -123,6 +133,8 @@ void mm_shrinkchunk(FAR struct mm_heap_s *heap, FAR struct mm_allocnode_s *node,
 		newnode->preceding   = size;
 		node->size           = size;
 		andbeyond->preceding = newnode->size | (andbeyond->preceding & MM_ALLOC_BIT);
+
+		kasan_poison_allocnode(andbeyond);
 
 		/* Add the new node to the freenodelist */
 
@@ -141,6 +153,7 @@ void mm_shrinkchunk(FAR struct mm_heap_s *heap, FAR struct mm_allocnode_s *node,
 		 */
 
 		newnode = (FAR struct mm_freenode_s *)((char *)node + size);
+		kasan_unpoison_freenode(newnode);
 
 		/* Set up the size of the new node */
 
@@ -151,6 +164,16 @@ void mm_shrinkchunk(FAR struct mm_heap_s *heap, FAR struct mm_allocnode_s *node,
 
 		/* Add the new node to the freenodelist */
 
+		kasan_poison_allocnode((struct mm_allocnode_s *)next);
 		mm_addfreechunk(heap, newnode);
+	}
+
+	/* Do not change the current node size but change
+	 * poisoned memory size.
+	 */
+
+	else {
+		kasan_poison_allocnode_chunk(node);
+		kasan_unpoison_allocnode_chunk_size(node, size);
 	}
 }

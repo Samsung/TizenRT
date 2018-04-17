@@ -144,7 +144,8 @@ static inline uint32_t up_getsp(void)
  ****************************************************************************/
 
 #ifdef CONFIG_ARCH_STACKDUMP
-static void up_stackdump(uint32_t sp, uint32_t stack_base)
+static no_sanitize_address
+void up_stackdump(uint32_t sp, uint32_t stack_base)
 {
 	uint32_t stack;
 
@@ -320,7 +321,8 @@ int get_symbol(unsigned long search_addr, char *buffer, size_t buflen)
  * Name: unwind_frame_with_fp
  ****************************************************************************/
 
-static int unwind_frame_with_fp(struct stackframe *stack_frame, uint32_t stacksize)
+static no_sanitize_address
+int unwind_frame_with_fp(struct stackframe *stack_frame, uint32_t stacksize)
 {
 	uint32_t high, low, stack_align_mask;
 	uint32_t fp = stack_frame->framePointer;	/* Read the frame pointer */

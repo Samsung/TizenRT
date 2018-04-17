@@ -59,6 +59,7 @@
 #include <assert.h>
 
 #include <tinyara/mm/mm.h>
+#include <tinyara/mm/kasan.h>
 
 /****************************************************************************
  * Pre-processor Definitions
@@ -146,6 +147,7 @@ FAR void *mm_memalign(FAR struct mm_heap_s *heap, size_t alignment, size_t size)
 	 */
 
 	node = (FAR struct mm_allocnode_s *)(rawchunk - SIZEOF_MM_ALLOCNODE);
+	kasan_unpoison_allocnode(node);
 
 #ifdef CONFIG_DEBUG_MM_HEAPINFO
 		heapinfo_subtract_size(node->pid, node->size);
@@ -165,6 +167,7 @@ FAR void *mm_memalign(FAR struct mm_heap_s *heap, size_t alignment, size_t size)
 		/* Get the node the next node after the allocation. */
 
 		next = (FAR struct mm_allocnode_s *)((char *)node + node->size);
+		kasan_unpoison_allocnode(next);
 
 		/* Make sure that there is space to convert the preceding mm_allocnode_s
 		 * into an mm_freenode_s.  I think that this should always be true
@@ -216,6 +219,8 @@ FAR void *mm_memalign(FAR struct mm_heap_s *heap, size_t alignment, size_t size)
 
 		/* Add the original, newly freed node to the free nodelist */
 
+		kasan_poison_allocnode(next);
+
 		mm_addfreechunk(heap, (FAR struct mm_freenode_s *)node);
 
 		/* Replace the original node with the newlay realloaced,
@@ -234,11 +239,15 @@ FAR void *mm_memalign(FAR struct mm_heap_s *heap, size_t alignment, size_t size)
 		mm_shrinkchunk(heap, node, size + SIZEOF_MM_ALLOCNODE);
 	}
 #ifdef CONFIG_DEBUG_MM_HEAPINFO
+	kasan_unpoison_allocnode(node);
+
 	heapinfo_update_node(node, caller_retaddr);
 
 	heapinfo_add_size(node->pid, node->size);
 	heapinfo_update_total_size(heap, node->size, node->pid);
 #endif
+	kasan_poison_allocnode(node);
+
 	mm_givesemaphore(heap);
 	return (FAR void *)alignedchunk;
 }

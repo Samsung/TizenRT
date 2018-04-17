@@ -61,6 +61,7 @@
 #include <sys/types.h>
 #include <stdbool.h>
 #include <semaphore.h>
+#include <tinyara/mm/kasan.h>
 #ifdef CONFIG_HEAPINFO_USER_GROUP
 #include <tinyara/mm/heapinfo_internal.h>
 #endif
@@ -182,6 +183,14 @@
 #define MM_GRAN_MASK     (MM_MIN_CHUNK-1)
 #define MM_ALIGN_UP(a)   (((a) + MM_GRAN_MASK) & ~MM_GRAN_MASK)
 #define MM_ALIGN_DOWN(a) ((a) & ~MM_GRAN_MASK)
+
+#define MM_ALIGN_MASK(x, a)	   ((typeof(x))(a) - 1)
+#define MM_IS_ALIGNED(x, a)	   (((x) & MM_ALIGN_MASK(x, a)) == 0)
+#define MM_ALIGN_UP_COMMON(x, a)   (((x) + MM_ALIGN_MASK(x, a)) & ~MM_ALIGN_MASK(x, a))
+#define MM_ALIGN_DOWN_COMMON(x, a) ((x) & ~MM_ALIGN_MASK(x, a))
+
+#define MM_IS_RAM_ADDR(addr)	    ((CONFIG_RAM_START <= (addr)) &&	\
+					((addr) < CONFIG_RAM_END))
 
 /* An allocated chunk is distinguished from a free chunk by bit 31 (or 15)
  * of the 'preceding' chunk size.  If set, then this is an allocated chunk.
@@ -395,6 +404,138 @@ EXTERN struct mm_heap_s g_kmmheap;
 #endif
 
 /****************************************************************************
+ * Private Functions
+ ****************************************************************************/
+
+#ifdef CONFIG_KASAN_HEAP
+
+/****************************************************************************
+ * Name: kasan_(un)poison_freenode*, kasan_(un)poison_allocnode*
+ *
+ * Description:
+ *  Useful functions for instrumentation memory allocator.
+ *  They helps in poisoning and unpoisoning freenode and allocnode structs,
+ *  which are used as redzones.
+ *
+ * Returned Value:
+ *   None
+ *
+ ****************************************************************************/
+
+static inline inline_function void
+kasan_poison_freenode(const struct mm_freenode_s *node)
+{
+	kasan_poison_heap(node, SIZEOF_MM_FREENODE, KASAN_REDZONE);
+}
+
+static inline inline_function void
+kasan_poison_freenode_neighbours_only(const struct mm_freenode_s *node)
+{
+	if (node->blink)
+		kasan_poison_freenode(node->blink);
+
+	if (node->flink)
+		kasan_poison_freenode(node->flink);
+}
+
+static inline inline_function void
+kasan_poison_freenode_neighbours(const struct mm_freenode_s *node)
+{
+	kasan_poison_freenode_neighbours_only(node);
+	kasan_poison_freenode(node);
+}
+
+static inline inline_function void
+kasan_unpoison_freenode(const struct mm_freenode_s *node)
+{
+	kasan_unpoison_heap(node, SIZEOF_MM_FREENODE);
+}
+
+static inline inline_function void
+kasan_unpoison_freenode_neighbours_only(const struct mm_freenode_s *node)
+{
+	if (node->blink)
+		kasan_unpoison_freenode(node->blink);
+
+	if (node->flink)
+		kasan_unpoison_freenode(node->flink);
+}
+
+static inline inline_function void
+kasan_unpoison_freenode_neighbours(const struct mm_freenode_s *node)
+{
+	kasan_unpoison_freenode(node);
+	kasan_unpoison_freenode_neighbours_only(node);
+}
+
+static inline inline_function void
+kasan_unpoison_freenode_chunk(const void *node)
+{
+	kasan_unpoison_heap(node + SIZEOF_MM_FREENODE,
+				((struct mm_freenode_s *)node)->size - SIZEOF_MM_FREENODE);
+}
+
+static inline inline_function void
+kasan_poison_freenode_chunk(const void *node)
+{
+	kasan_poison_heap(node + SIZEOF_MM_FREENODE,
+				((struct mm_freenode_s *)node)->size - SIZEOF_MM_FREENODE,
+				KASAN_REDZONE);
+}
+
+static inline inline_function void
+kasan_poison_allocnode(const struct mm_allocnode_s *node)
+{
+	kasan_poison_heap(node, SIZEOF_MM_ALLOCNODE, KASAN_REDZONE);
+}
+
+static inline inline_function void
+kasan_unpoison_allocnode(const struct mm_allocnode_s *node)
+{
+	kasan_unpoison_heap(node, SIZEOF_MM_ALLOCNODE);
+}
+
+static inline inline_function void
+kasan_poison_allocnode_chunk(const void *node)
+{
+	kasan_poison_heap(node + SIZEOF_MM_ALLOCNODE,
+				((struct mm_allocnode_s *)node)->size - SIZEOF_MM_ALLOCNODE,
+				KASAN_REDZONE);
+}
+
+static inline inline_function void
+kasan_unpoison_allocnode_chunk_all(const void *node)
+{
+	kasan_unpoison_heap(node + SIZEOF_MM_ALLOCNODE,
+				((struct mm_allocnode_s *)node)->size - SIZEOF_MM_ALLOCNODE);
+}
+
+static inline inline_function void
+kasan_unpoison_allocnode_chunk_size(const void *node, size_t size)
+{
+	kasan_poison_allocnode_chunk(node);
+	kasan_unpoison_heap(node + SIZEOF_MM_ALLOCNODE, size);
+}
+
+#else  /* CONFIG_KASAN_HEAP */
+
+#define kasan_poison_freenode(a)
+#define kasan_poison_freenode_neighbours_only(a)
+#define kasan_poison_freenode_neighbours(a)
+#define kasan_unpoison_freenode(a)
+#define kasan_unpoison_freenode_neighbours_only(a)
+#define kasan_unpoison_freenode_neighbours(a)
+#define kasan_unpoison_freenode_chunk(a)
+#define kasan_poison_freenode_chunk(a)
+#define kasan_poison_allocnode(a)
+#define kasan_unpoison_allocnode(a)
+#define kasan_poison_allocnode_chunk(a)
+#define kasan_unpoison_allocnode_chunk_all(a)
+#define kasan_unpoison_allocnode_chunk_size(a, b)
+
+#endif	/* CONFIG_KASAN_HEAP */
+
+/****************************************************************************
  * Public Function Prototypes
  ****************************************************************************/
 
@@ -466,6 +607,9 @@ FAR void *kmm_malloc(size_t size);
 
 /* Functions contained in mm_free.c *****************************************/
 
+#ifdef CONFIG_KASAN_QRNT
+void _mm_free(FAR struct mm_heap_s *heap, FAR void *mem);
+#endif
 void mm_free(FAR struct mm_heap_s *heap, FAR void *mem);
 
 /* Functions contained in kmm_free.c ****************************************/

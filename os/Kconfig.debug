@@ -307,6 +307,38 @@ config DEBUG_SYSCALL_INFO
 
 endif #DEBUG_SYSCALL
 
+config DEBUG_KASAN
+	bool "Kernel address sanitizer Debug Output"
+	default n
+	depends on KASAN
+	---help---
+		Enable KASan debug SYSLOG output (disabled by default)
+
+if DEBUG_KASAN
+
+config DEBUG_KASAN_ERROR
+	bool "Kernel address sanitizer Error Output"
+	default n
+	depends on DEBUG_ERROR
+	---help---
+		Enable KASan error debug SYSLOG output.
+
+config DEBUG_KASAN_WARN
+	bool "Kernel address sanitizer Warning Output"
+	default n
+	depends on DEBUG_WARN
+	---help---
+		Enable KASan Warning debug SYSLOG output.
+
+config DEBUG_KASAN_INFO
+	bool "Kernel address sanitizer Informational Debug Output"
+	default n
+	depends on DEBUG_VERBOSE
+	---help---
+		Enable KASan informational debug SYSLOG output.
+
+endif #DEBUG_KASAN
+
 config DEBUG_WLAN
 	bool "WLAN Debug Output"
 	default y

@@ -233,6 +233,10 @@ int tc_kernel_main(int argc, char *argv[])
 	itc_pthread_main();
 #endif
 
+#ifdef CONFIG_TC_KERNEL_KASAN
+	kasan_main();
+#endif
+
 	(void)tc_handler(TC_END, "Kernel TC");
 
 	return 0;

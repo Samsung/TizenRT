@@ -98,7 +98,8 @@ static size_t do_stackcheck(uintptr_t alloc, size_t size);
  *
  ****************************************************************************/
 
-static size_t do_stackcheck(uintptr_t alloc, size_t size)
+static no_sanitize_address
+size_t do_stackcheck(uintptr_t alloc, size_t size)
 {
 	FAR uintptr_t start;
 	FAR uintptr_t end;

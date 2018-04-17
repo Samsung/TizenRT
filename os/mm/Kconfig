@@ -166,3 +166,133 @@ config MM_SHM
 	---help---
 		Build in support for the shared memory interfaces shmget(), shmat(),
 		shmctl(), and shmdt().
+
+config KASAN
+	bool "KASan: runtime memory debugger"
+	default n
+	depends on ARCH_HAVE_KASAN && !BUILD_KERNEL && !MM_SMALL
+	select FRAME_POINTER
+       ---help---
+		Enables kernel address sanitizer - runtime memory debugger,
+		designed to find out-of-bounds accesses and use-after-free bugs.
+		This is strictly a debugging feature and it requires a gcc version
+		of 4.9.2 or later. Detection of out of bounds accesses to stack or
+		global variables requires gcc 5.0 or later.
+		This feature consumes about 1/8 of available memory.
+
+config KASAN_FUNCS_INLINE
+       bool "Inlining of KASan functions"
+       default y
+       depends on KASAN
+       ---help---
+		Enable inlining of KASan functions. Disabling this options makes all functions
+		outline and convenient for debugging. This options affects functions without
+		'__asan_' prefix.
+
+config KASAN_SHADOW_SCOPE
+       int "Printing scope around incorrect accessed address"
+       default 8
+       depends on KASAN
+
+config KASAN_GLOBALS
+	bool "Check global variables accesses"
+	default n
+	depends on KASAN
+	---help---
+		Check memory addresses which belongs to global variables
+
+config KASAN_STACK
+       bool "Check stack memory accesses"
+       default n
+       depends on KASAN && KASAN_HEAP
+       ---help---
+               Check memory addresses which belongs to stack
+
+config KASAN_IDLESTACK
+       bool "Check idle thread stack memory accesses"
+       default n
+       depends on KASAN && KASAN_STACK
+       ---help---
+		Check memory addresses which belongs to idle thread stack
+
+config KASAN_HEAP
+       bool "Check heap memory accesses"
+       default y
+       depends on KASAN && !DEBUG_DOUBLE_FREE
+       ---help---
+               Check memory addresses which belongs to heap memory range
+
+config KASAN_ALL
+       bool "Check globals, stack and heap memory"
+       default n
+       depends on KASAN
+       select KASAN_GLOBALS
+       select KASAN_STACK
+       select KASAN_IDLESTACK
+       select KASAN_HEAP
+       select KASAN_QRNT
+       ---help---
+               Check memory addresses which belongs to global variables, stack and heap
+
+config KASAN_MIN_STACK
+       int "Minimal size of idle thread, main user and pthread stacks"
+       default 4096
+       depends on KASAN_STACK
+       ---help---
+		Needed for correct working of stack memory sanitizing
+
+config KASAN_QRNT
+       bool "Enable KASan quarantine for detection use-after-free"
+       default y
+       depends on KASAN && KASAN_HEAP
+       ---help---
+		After freeing, memory chunk is placed in quarantine queue.
+		This allow us to catch use-after-free errors.
+
+config KASAN_QRNT_MAX
+       int "Percentage from heap size for calculating max watermark"
+       default 10
+       depends on KASAN_QRNT
+
+config KASAN_QRNT_LOW
+       int "Percentage from max watermark for calculating low watermark"
+       default 70
+       depends on KASAN_QRNT
+
+config KASAN_QRNT_CALC_AVR
+       bool "Calculate average time spended in quarantine for memory chunks"
+       default n
+       depends on KASAN_QRNT
+       ---help---
+
+config KASAN_OS_ENLARGE
+       bool "Enalrge OS partition"
+       default n
+       depends on KASAN && !OTA_WRITE_IMAGE
+       ---help---
+       May be useful when image with KASan doesn't fit into standard OS partition
+
+choice
+	prompt "Instrumentation type"
+	depends on KASAN
+	default KASAN_INSTR_OUTLINE
+
+	config KASAN_INSTR_OUTLINE
+	bool "Outline instrumentation"
+	---help---
+		Before every memory access compiler insert function call
+		__asan_load*/__asan_store*. These functions performs check
+		of shadow memory. This is slower than inline instrumentation,
+		however it doesn't bloat size of kernel's .text section so
+		much as inline does.
+
+	config KASAN_INSTR_INLINE
+	bool "Inline instrumentation"
+	---help---
+		Compiler directly inserts code checking shadow memory before
+		memory accesses. This is faster than outline (in some workloads
+		it gives about x2 boost over outline instrumentation), but
+		make kernel's .text size much bigger.
+		This requires a gcc version of 5.0 or later.
+
+endchoice

@@ -57,6 +57,7 @@
 #include <tinyara/config.h>
 
 #include <tinyara/mm/mm.h>
+#include <tinyara/mm/kasan.h>
 
 /****************************************************************************
  * Pre-processor Definitions
@@ -65,6 +66,18 @@
 /****************************************************************************
  * Private Functions
  ****************************************************************************/
+
+static no_sanitize_address inline
+void find_place(struct mm_heap_s *heap, struct mm_freenode_s *node,
+	   struct mm_freenode_s **prev, struct mm_freenode_s **next)
+{
+	/* Convert the size to a nodelist index */
+	int ndx = mm_size2ndx(node->size);
+
+	for (*prev = &heap->mm_nodelist[ndx], *next = heap->mm_nodelist[ndx].flink;
+	     *next && (*next)->size && (*next)->size < node->size;
+	     *prev = *next, *next = (*next)->flink) ;
+}
 
 /****************************************************************************
  * Global Functions
@@ -81,16 +94,17 @@
 
 void mm_addfreechunk(FAR struct mm_heap_s *heap, FAR struct mm_freenode_s *node)
 {
-	FAR struct mm_freenode_s *next;
-	FAR struct mm_freenode_s *prev;
+	FAR struct mm_freenode_s *prev = NULL;
+	FAR struct mm_freenode_s *next = NULL;
 
-	/* Convert the size to a nodelist index */
-
-	int ndx = mm_size2ndx(node->size);
+	kasan_unpoison_freenode(node);
 
 	/* Now put the new node int the next */
 
-	for (prev = &heap->mm_nodelist[ndx], next = heap->mm_nodelist[ndx].flink; next && next->size && next->size < node->size; prev = next, next = next->flink) ;
+	find_place(heap, node, &prev, &next);
+
+	kasan_unpoison_freenode(prev);
+	kasan_unpoison_freenode(next);
 
 	/* Does it go in mid next or at the end? */
 
@@ -100,7 +114,9 @@ void mm_addfreechunk(FAR struct mm_heap_s *heap, FAR struct mm_freenode_s *node)
 
 	if (next) {
 		/* The new node goes between prev and next */
-
 		next->blink = node;
 	}
+
+	kasan_poison_freenode_chunk(node);
+	kasan_poison_freenode_neighbours(node);
 }

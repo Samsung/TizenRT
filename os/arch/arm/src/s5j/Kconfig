@@ -18,6 +18,7 @@ config ARCH_CHIP_S5JT200
 	select ARMV7R_DCACHE
 	select S5J_S5JT200
 	select ARCH_HAVE_RESET
+	select ARCH_HAVE_KASAN
 
 endchoice
 
