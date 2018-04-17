@@ -27,7 +27,10 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <unistd.h>
+#ifdef CONFIG_SERIAL_TERMIOS
 #include <termios.h>
+#endif
 #include <iotbus/iotbus_uart.h>
 #include <iotbus/iotbus_error.h>
 #include "utc_internal.h"
@@ -54,6 +57,7 @@ static void utc_systemio_uart_initialize_n(void)
 	TC_SUCCESS_RESULT();
 }
 
+#ifdef CONFIG_SERIAL_TERMIOS
 static void utc_systemio_uart_set_baudrate_p(void)
 {
 	TC_ASSERT_EQ("iotbus_uart_set_baudrate", iotbus_uart_set_baudrate(uart, 115200), IOTBUS_ERROR_NONE);
@@ -107,6 +111,7 @@ static void utc_systemio_uart_set_flowcontrol_n(void)
 	TC_ASSERT_EQ("iotbus_uart_set_flowcontrol", iotbus_uart_set_flowcontrol(uart, -1, -1), IOTBUS_ERROR_INVALID_PARAMETER);
 	TC_SUCCESS_RESULT();
 }
+#endif
 
 static void utc_systemio_uart_write_p(void)
 {
@@ -135,6 +140,7 @@ static void utc_systemio_uart_read_n(void)
 	TC_SUCCESS_RESULT();
 }
 
+#ifdef CONFIG_SERIAL_TERMIOS
 static void utc_systemio_uart_flush_p(void)
 {
 	TC_ASSERT_EQ("iotbus_uart_flush", iotbus_uart_flush(uart), IOTBUS_ERROR_NONE);
@@ -146,6 +152,7 @@ static void utc_systemio_uart_flush_n(void)
 	TC_ASSERT_EQ("iotbus_uart_flush", iotbus_uart_flush(NULL), IOTBUS_ERROR_INVALID_PARAMETER);
 	TC_SUCCESS_RESULT();
 }
+#endif
 
 static void utc_systemio_uart_stop_p(void)
 {
@@ -163,6 +170,7 @@ int utc_uart_main(void)
 {
 	utc_systemio_uart_initialize_p();
 	utc_systemio_uart_initialize_n();
+#ifdef CONFIG_SERIAL_TERMIOS
 	utc_systemio_uart_set_baudrate_p();
 	utc_systemio_uart_set_baudrate_n();	
 	utc_systemio_uart_set_mode_P_IOTBUS_UART_PARITY_NONE();
@@ -172,12 +180,15 @@ int utc_uart_main(void)
 	utc_systemio_uart_set_flowcontrol_p_START_STOP();
 	utc_systemio_uart_set_flowcontrol_p_RTC_CTC();
 	utc_systemio_uart_set_flowcontrol_n();
+#endif
 	utc_systemio_uart_write_p();
 	utc_systemio_uart_write_n();
 	utc_systemio_uart_read_p();
 	utc_systemio_uart_read_n();
+#ifdef CONFIG_SERIAL_TERMIOS
 	utc_systemio_uart_flush_p();
 	utc_systemio_uart_flush_n();
+#endif
 	utc_systemio_uart_stop_n();
 	utc_systemio_uart_stop_p();
 
