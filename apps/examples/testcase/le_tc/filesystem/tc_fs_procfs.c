@@ -50,7 +50,7 @@
 #define SMARTFS_DEV_PATH CONFIG_ARTIK05X_AUTOMOUNT_USERFS_DEVNAME
 
 #else
-#define MOUNT_DEV_DIR "/dev/smart1"
+#define SMARTFS_DEV_PATH "/dev/smart1"
 #endif
 
 #define PROC_SMARTFS_PATH "/proc/fs/smartfs"
