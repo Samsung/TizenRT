@@ -1,0 +1,15 @@
+#
+# For a description of the syntax of this configuration file,
+# see kconfig-language at https://www.kernel.org/doc/Documentation/kbuild/kconfig-language.txt
+#
+
+config EXAMPLES_PROTOBUF_TEST
+	bool "Protocol Buffers test"
+	default n
+	depends on HAVE_CXXINITIALIZE && LIBCXX && PROTOBUF && GMOCK
+	---help---
+		Enable the Protocol Buffers test
+
+config USER_ENTRYPOINT
+	string
+	default "gtest_main" if ENTRY_PROTOBUF_TEST
