@@ -44,9 +44,6 @@ int tc_kernel_main(int argc, char *argv[])
 #endif
 
 #ifdef CONFIG_TC_KERNEL_CLOCK
-#if (!defined CONFIG_SYSTEM_TIME64)
-#error CONFIG_SYSTEM_TIME64 is needed for testing CLOCK TC
-#endif
 	clock_main();
 #endif
 

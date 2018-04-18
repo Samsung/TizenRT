@@ -61,7 +61,6 @@ config TC_KN_ALL
 config TC_KERNEL_CLOCK
 	bool "Clock"
 	default n
-	select SYSTEM_TIME64
 
 config TC_KERNEL_ENVIRON
 	bool "Environ"
