@@ -66,6 +66,7 @@
 #include <arch/irq.h>
 #endif
 
+#include <tinyara/arch.h>
 #include <tinyara/clock.h>
 #include <tinyara/time.h>
 #include <tinyara/rtc.h>

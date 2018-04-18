@@ -106,6 +106,7 @@ db_result_t storage_write_to(db_storage_id_t, void *, unsigned long, unsigned);
 db_result_t storage_write_buffer_init(void);
 void storage_write_buffer_deinit(void);
 db_result_t storage_flush_insert_buffer(void);
+void storage_write_buffer_clean(void);
 #endif
 
 db_storage_id_t storage_open(const char *, int);

@@ -91,6 +91,9 @@
 #ifdef CONFIG_DEBUG_SYSTEM
 #include <tinyara/debug/sysdbg.h>
 #endif
+#ifdef CONFIG_KERNEL_TEST_DRV
+#include <tinyara/testcase_drv.h>
+#endif
 
 /****************************************************************************
  * Pre-processor Definitions
