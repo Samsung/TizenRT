@@ -73,10 +73,6 @@ int kdbg_ps(int argc, char **args);
 int kdbg_stackmonitor(int argc, char **args);
 #endif
 
-#if defined(CONFIG_ENABLE_STACKOPT)
-int kdbg_stackopt(int argc, char **args);
-#endif
-
 #if defined(CONFIG_TTRACE)
 int kdbg_ttrace(int argc, char **args);
 #endif
