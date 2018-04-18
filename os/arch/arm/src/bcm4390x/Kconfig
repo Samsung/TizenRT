@@ -34,14 +34,26 @@ config BOOT_RESULT
 	bool
 	default y
 
-
 config BCM4390X_BCM43907
 	bool
 	default n
 	select ARCH_CORTEXR4
 	select ARMV7R_ICACHE
 	select ARMV7R_DCACHE
-
+	select BCM4390X_UART0
+	select BCM4390X_UART1
+	select BCM4390X_I2C
+	select BCM4390X_I2C0
+	select BCM4390X_I2C1
+	select BCM4390X_PWM
+	select BCM4390X_SPI
+	select BCM4390X_SPI0
+	select BCM4390X_SPI1
+	select BCM4390X_GPIO
+	select BCM4390X_SFLASH
+	select BCM4390X_WDT
+	select BCM4390X_WIRELESS
+	select BCM4390X_M2M
 
 config BCM4390X_BOOT_RESULT_ADDR
 	hex "boot result address (physical)"
@@ -52,11 +64,87 @@ config BCM4390X_BCM43909
 	bool
 	default n
 	select ARCH_CORTEXR4
-	select ARMV7R_HAVE_ICACHE
-	select ARMV7R_HAVE_DCACHE
+	select ARMV7R_ICACHE
+	select ARMV7R_DCACHE
 
 config ARMCR4_CYCLE_COUNTER_REG
 	hex "Cpu clock Register address"
 	default 0x18003028
 
+comment "BCM4390x Peripheral Support"
+config BCM4390X_UART0
+	bool
+	default n
+	select ARCH_HAVE_UART0
+	select ARCH_HAVE_SERIAL_TERMIOS
+
+config BCM4390X_UART1
+	bool
+	default n
+	select ARCH_HAVE_UART1
+	select ARCH_HAVE_SERIAL_TERMIOS
+
+config BCM4390X_UART2
+	bool
+	default n
+	select ARCH_HAVE_UART2
+	select ARCH_HAVE_SERIAL_TERMIOS
+
+config BCM4390X_I2C
+	bool
+	default n
+
+config BCM4390X_I2C0
+	bool
+	default n
+
+config BCM4390X_I2C1
+	bool
+	default n
+
+config BCM4390X_PWM
+	bool
+	default n
+
+config BCM4390X_SPI
+	bool
+	default n
+
+config BCM4390X_SPI0
+	bool
+	default n
+
+config BCM4390X_SPI1
+	bool
+	default n
+
+config BCM4390X_GPIO
+	bool
+	default n
+
+if BCM4390X_GPIO
+config BCM4390X_GPIO_COUNT
+	int
+	default 17
+endif
+
+config BCM4390X_SFLASH
+	bool
+	default n
+
+config BCM4390X_BOOTLOADER_REGION_SIZE
+	int
+	default 4128
+
+config BCM4390X_WDT
+	bool
+	default n
+
+config BCM4390X_WIRELESS
+	bool
+	default n
+
+config BCM4390X_M2M
+	bool
+	default n
 endif # ARCH_CHIP_BCM4390X

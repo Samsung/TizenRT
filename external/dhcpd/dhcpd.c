@@ -101,6 +101,7 @@
 #include <arpa/inet.h>
 #include <semaphore.h>
 #include <pthread.h>
+#include <netutils/netlib.h>
 
 /****************************************************************************
  * Global Data
@@ -1411,7 +1412,7 @@ static int dhcpd_netif_init(char *intf)
 		return -1;
 	}
 
-	if (netlib_set_ipv4netmask(intf, &netmask_ipaddr.s_addr) == ERROR) {
+	if (netlib_set_ipv4netmask(intf, &netmask_ipaddr) == ERROR) {
 		ndbg("failed to set netmask\n");
 		return -1;
 	}
@@ -1452,7 +1453,7 @@ static int dhcpd_netif_deinit(char *intf)
 		return -1;
 	}
 
-	if (netlib_set_ipv4netmask(intf, &netmask_ipaddr.s_addr) == ERROR) {
+	if (netlib_set_ipv4netmask(intf, &netmask_ipaddr) == ERROR) {
 		ndbg("failed to set netmask\n");
 		return -1;
 	}

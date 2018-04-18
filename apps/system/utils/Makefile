@@ -138,10 +138,6 @@ ifeq ($(CONFIG_ENABLE_STACKMONITOR),y)
 CSRCS += kdbg_stackmonitor.c
 endif
 
-ifeq ($(CONFIG_ENABLE_STACKOPT),y)
-CSRCS += kdbg_stackopt.c
-endif
-
 ifeq ($(CONFIG_TTRACE),y)
 CSRCS += kdbg_ttrace.c
 endif

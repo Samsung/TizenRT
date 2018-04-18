@@ -39,14 +39,14 @@ struct rw_lock_s {
 /****************************************************************************
 * Global Function Prototypes
 ****************************************************************************/
-void RW_Init(struct rw_lock_s *rwLock);
-void RW_Lock_Read(struct rw_lock_s *rwLock);
-void RW_Unlock_Read(struct rw_lock_s *rwLock);
+void rw_init(struct rw_lock_s *rwLock);
+void rw_lock_read(struct rw_lock_s *rwLock);
+void rw_unlock_read(struct rw_lock_s *rwLock);
 
-int RW_Trylock_Write(struct rw_lock_s *rwLock);
+int rw_trylock_write(struct rw_lock_s *rwLock);
 
-void RW_Lock_Write(struct rw_lock_s *rwLock);
+void rw_lock_write(struct rw_lock_s *rwLock);
 
-void RW_Unlock_Write(struct rw_lock_s *rwLock);
+void rw_unlock_write(struct rw_lock_s *rwLock);
 
 #endif							/* __RW_LOCKS_H__ */

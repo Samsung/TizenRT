@@ -23,12 +23,9 @@
 #include <tinyara/config.h>
 #include <stdio.h>
 #include <stdlib.h>
-#include <errno.h>
-#include <tinyara/time.h>
-#include <sys/time.h>
+#include <iotbus/iotbus_spi.h>
+#include <iotbus/iotbus_error.h>
 #include "utc_internal.h"
-#include <iotbus_spi.h>
-#include <iotbus_error.h>
 
 iotbus_spi_context_h spi;
 
