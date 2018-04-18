@@ -43,6 +43,7 @@ void PrintConfiguration(void)
 	printf("\tdevice_id: %s\n", cloud_config.device_id);
 	printf("\tdevice_token: %s\n", cloud_config.device_token);
 	printf("\tdevice_type_id: %s\n", cloud_config.device_type_id);
+	printf("\tis_secure_device_type: %d\n", cloud_config.is_secure_device_type);
 
 	printf("Lwm2m:\n");
 	printf("\tis_ota_update: %d\n", lwm2m_config.is_ota_update);

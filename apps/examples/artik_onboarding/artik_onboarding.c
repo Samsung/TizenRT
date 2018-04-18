@@ -53,9 +53,6 @@ static pthread_addr_t start_onboarding(pthread_addr_t arg)
 
 	current_service_state = STATE_ONBOARDING;
 
-	/* Check if AKC device type requires secure communication */
-	cloud_secure_dt = CloudIsSecureDeviceType(cloud_config.device_type_id);
-
 	/* If we already have Wifi credentials, try to connect to the hotspot */
 	if (strlen(wifi_config.ssid) > 0) {
 		if (StartStationConnection(true) == S_OK) {

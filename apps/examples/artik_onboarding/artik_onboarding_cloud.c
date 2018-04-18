@@ -51,7 +51,6 @@ struct ArtikCloudConfig cloud_config;
 static artik_websocket_handle g_ws_handle;
 static sem_t g_sem_ws_registered;
 static bool g_ws_registration_result;
-bool cloud_secure_dt;
 
 void CloudResetConfig(bool reset_dtid)
 {
@@ -59,6 +58,7 @@ void CloudResetConfig(bool reset_dtid)
 	strncpy(cloud_config.device_token, "null", AKC_TOKEN_LEN);
 	strncpy(cloud_config.reg_id, "", AKC_REG_ID_LEN);
 	strncpy(cloud_config.reg_nonce, "", AKC_REG_NONCE_LEN);
+	cloud_config.is_secure_device_type = false;
 
 	if (reset_dtid)
 		strncpy(cloud_config.device_type_id, AKC_DEFAULT_DTID, AKC_DTID_LEN);
@@ -220,7 +220,7 @@ static pthread_addr_t websocket_start_cb(void *arg)
 	printf("Start websocket to ARTIK Cloud\n");
 
 	memset(&ssl, 0, sizeof(ssl));
-	ssl.se_config.use_se = cloud_secure_dt;
+	ssl.se_config.use_se = CloudIsSecureDeviceType();
 
 	ret = cloud->websocket_open_stream(&g_ws_handle, cloud_config.device_token,
 					   cloud_config.device_id, &ssl);
@@ -690,13 +690,7 @@ exit:
 	return status;
 }
 
-bool CloudIsSecureDeviceType(const char *dtid)
+bool CloudIsSecureDeviceType(void)
 {
-	/* It would be better to read the device type
-	 * characteristics from the cloud to figure
-	 * out if the DT is SDR-enabled. For now
-	 * we just consider the default DTID is
-	 * the only one considered as secure.
-	 */
-	return !strncmp(dtid, AKC_DEFAULT_DTID, AKC_DTID_LEN);
+	return cloud_config.is_secure_device_type;
 }
