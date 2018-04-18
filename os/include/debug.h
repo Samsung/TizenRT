@@ -685,6 +685,30 @@ Once LOGM is approved, each module should have its own index
 #define ttdbg(format, ...)
 #endif
 
+#ifdef CONFIG_DEBUG_MEDIA_ERROR
+#define meddbg(format, ...)    dbg(format, ##__VA_ARGS__)
+#define medlldbg(format, ...)  lldbg(format, ##__VA_ARGS__)
+#else
+#define meddbg(x...)
+#define medlldbg(x...)
+#endif
+
+#ifdef CONFIG_DEBUG_MEDIA_WARN
+#define medwdbg(format, ...)    wdbg(format, ##__VA_ARGS__)
+#define medllwdbg(format, ...)  llwdbg(format, ##__VA_ARGS__)
+#else
+#define medwdbg(x...)
+#define medllwdbg(x...)
+#endif
+
+#ifdef CONFIG_DEBUG_MEDIA_INFO
+#define medvdbg(format, ...)    vdbg(format, ##__VA_ARGS__)
+#define medllvdbg(format, ...)  llvdbg(format, ##__VA_ARGS__)
+#else
+#define medvdbg(x...)
+#define medllvdbg(x...)
+#endif
+
 #else							/* CONFIG_CPP_HAVE_VARARGS */
 
 /* Variadic macros NOT supported */
@@ -717,8 +741,8 @@ Once LOGM is approved, each module should have its own index
 #else
 #define dbg         (void)
 #define lldbg       (void)
-#define wdbg         (void)
-#define llwdbg       (void)
+#define wdbg        (void)
+#define llwdbg      (void)
 #define vdbg        (void)
 #define llvdbg      (void)
 #endif
@@ -734,11 +758,11 @@ Once LOGM is approved, each module should have its own index
 #endif
 
 #ifdef CONFIG_DEBUG_MM_WARN
-#define mwdbg        wdbg
-#define mllwdbg      llwdbg
+#define mwdbg       wdbg
+#define mllwdbg     llwdbg
 #else
-#define mwdbg        (void)
-#define mlwldbg      (void)
+#define mwdbg       (void)
+#define mlwldbg     (void)
 #endif
 
 #ifdef CONFIG_DEBUG_MM_INFO
@@ -758,11 +782,11 @@ Once LOGM is approved, each module should have its own index
 #endif
 
 #ifdef CONFIG_DEBUG_SCHED_WARN
-#define swdbg        wdbg
-#define sllwdbg      llwdbg
+#define swdbg       wdbg
+#define sllwdbg     llwdbg
 #else
-#define swdbg        (void)
-#define sllwdbg      (void)
+#define swdbg       (void)
+#define sllwdbg     (void)
 #endif
 
 #ifdef CONFIG_DEBUG_SCHED_INFO
@@ -782,11 +806,11 @@ Once LOGM is approved, each module should have its own index
 #endif
 
 #ifdef CONFIG_DEBUG_PAGING_WARN
-#define pgwdbg       wdbg
-#define pgllwdbg     llwdbg
+#define pgwdbg      wdbg
+#define pgllwdbg    llwdbg
 #else
-#define pgwdbg       (void)
-#define pgllwdbg     (void)
+#define pgwdbg      (void)
+#define pgllwdbg    (void)
 #endif
 
 #ifdef CONFIG_DEBUG_PAGING_INFO
@@ -806,11 +830,11 @@ Once LOGM is approved, each module should have its own index
 #endif
 
 #ifdef CONFIG_DEBUG_DMA_WARN
-#define dmawdbg      wdbg
-#define dmallwdbg    llwdbg
+#define dmawdbg     wdbg
+#define dmallwdbg   llwdbg
 #else
-#define dmawdbg      (void)
-#define dmallwdbg    (void)
+#define dmawdbg     (void)
+#define dmallwdbg   (void)
 #endif
 
 #ifdef CONFIG_DEBUG_DMA_INFO
@@ -830,11 +854,11 @@ Once LOGM is approved, each module should have its own index
 #endif
 
 #ifdef CONFIG_DEBUG_NET_WARN
-#define nwdbg        wdbg
-#define nllwdbg      llwdbg
+#define nwdbg       wdbg
+#define nllwdbg     llwdbg
 #else
-#define nwdbg        (void)
-#define nllwdbg      (void)
+#define nwdbg       (void)
+#define nllwdbg     (void)
 #endif
 
 #ifdef CONFIG_DEBUG_NET_INFO
@@ -854,11 +878,11 @@ Once LOGM is approved, each module should have its own index
 #endif
 
 #ifdef CONFIG_DEBUG_USB_WARN
-#define uwdbg        wdbg
-#define ullwdbg      llwdbg
+#define uwdbg       wdbg
+#define ullwdbg     llwdbg
 #else
-#define uwdbg        (void)
-#define ullwdbg      (void)
+#define uwdbg       (void)
+#define ullwdbg     (void)
 #endif
 
 #ifdef CONFIG_DEBUG_USB_INFO
@@ -878,11 +902,11 @@ Once LOGM is approved, each module should have its own index
 #endif
 
 #ifdef CONFIG_DEBUG_FS_WARN
-#define fwdbg        wdbg
-#define fllwdbg      llwdbg
+#define fwdbg       wdbg
+#define fllwdbg     llwdbg
 #else
-#define fwdbg        (void)
-#define fllwdbg      (void)
+#define fwdbg       (void)
+#define fllwdbg     (void)
 #endif
 
 #ifdef CONFIG_DEBUG_FS_INFO
@@ -902,11 +926,11 @@ Once LOGM is approved, each module should have its own index
 #endif
 
 #ifdef CONFIG_DEBUG_INPUT_WARN
-#define iwdbg        wdbg
-#define illwdbg      llwdbg
+#define iwdbg       wdbg
+#define illwdbg     llwdbg
 #else
-#define iwdbg        (void)
-#define illwdbg      (void)
+#define iwdbg       (void)
+#define illwdbg     (void)
 #endif
 
 #ifdef CONFIG_DEBUG_INPUT_INFO
@@ -918,27 +942,27 @@ Once LOGM is approved, each module should have its own index
 #endif
 
 #ifdef CONFIG_DEBUG_SENSORS_ERROR
-#define sndbg        dbg
-#define snlldbg      lldbg
+#define sndbg       dbg
+#define snlldbg     lldbg
 #else
-#define sndbg        (void)
-#define snlldbg      (void)
+#define sndbg       (void)
+#define snlldbg     (void)
 #endif
 
 #ifdef CONFIG_DEBUG_SENSORS_WARN
-#define snwdbg        wdbg
-#define snllwdbg      llwdbg
+#define snwdbg      wdbg
+#define snllwdbg    llwdbg
 #else
-#define snwdbg        (void)
-#define snllwdbg      (void)
+#define snwdbg      (void)
+#define snllwdbg    (void)
 #endif
 
 #ifdef CONFIG_DEBUG_SENSORS_INFO
-#define snvdbg       vdbg
-#define snllvdbg     llvdbg
+#define snvdbg      vdbg
+#define snllvdbg    llvdbg
 #else
-#define snvdbg       (void)
-#define snllvdbg     (void)
+#define snvdbg      (void)
+#define snllvdbg    (void)
 #endif
 
 #ifdef CONFIG_DEBUG_ANALOG_ERROR
@@ -950,11 +974,11 @@ Once LOGM is approved, each module should have its own index
 #endif
 
 #ifdef CONFIG_DEBUG_ANALOG_WARN
-#define awdbg        wdbg
-#define allwdbg      llwdbg
+#define awdbg       wdbg
+#define allwdbg     llwdbg
 #else
-#define awdbg        (void)
-#define allwdbg      (void)
+#define awdbg       (void)
+#define allwdbg     (void)
 #endif
 
 #ifdef CONFIG_DEBUG_ANALOG_INFO
@@ -974,11 +998,11 @@ Once LOGM is approved, each module should have its own index
 #endif
 
 #ifdef CONFIG_DEBUG_GRAPHICS_WARN
-#define gwdbg        wdbg
-#define gllwdbg      llwdbg
+#define gwdbg       wdbg
+#define gllwdbg     llwdbg
 #else
-#define gwdbg        (void)
-#define gllwdbg      (void)
+#define gwdbg       (void)
+#define gllwdbg     (void)
 #endif
 
 #ifdef CONFIG_DEBUG_GRAPHICS_INFO
@@ -998,11 +1022,11 @@ Once LOGM is approved, each module should have its own index
 #endif
 
 #ifdef CONFIG_DEBUG_LIB_WARN
-#define lwdbg        wdbg
-#define lllwdbg      llwdbg
+#define lwdbg       wdbg
+#define lllwdbg     llwdbg
 #else
-#define lwdbg        (void)
-#define lllwdbg      (void)
+#define lwdbg       (void)
+#define lllwdbg     (void)
 #endif
 
 #ifdef CONFIG_DEBUG_LIB_INFO
@@ -1014,28 +1038,53 @@ Once LOGM is approved, each module should have its own index
 #endif
 
 #ifdef CONFIG_DEBUG_AUDIO_ERROR
-#define auddbg		dbg
-#define audlldbg	lldbg
+#define auddbg      dbg
+#define audlldbg    lldbg
 #else
-#define auddbg		(void)
-#define audlldbg	(void)
+#define auddbg      (void)
+#define audlldbg    (void)
 #endif
 
 #ifdef CONFIG_DEBUG_AUDIO_WARN
-#define audwdbg		wdbg
-#define audllwdbg	llwdbg
+#define audwdbg     wdbg
+#define audllwdbg   llwdbg
 #else
-#define audwdbg		(void)
-#define audllwdbg	(void)
+#define audwdbg     (void)
+#define audllwdbg   (void)
 #endif
 
 #ifdef CONFIG_DEBUG_AUDIO_INFO
-#define audvdbg		vdbg
-#define audllvdbg	llvdbg
+#define audvdbg     vdbg
+#define audllvdbg   llvdbg
 #else
-#define audvdbg		(void)
-#define audllvdbg	(void)
+#define audvdbg     (void)
+#define audllvdbg   (void)
 #endif
+
+#ifdef CONFIG_DEBUG_MEDIA_ERROR
+#define meddbg      dbg
+#define medlldbg    lldbg
+#else
+#define meddbg      (void)
+#define medlldbg    (void)
+#endif
+
+#ifdef CONFIG_DEBUG_MEDIA_WARN
+#define medwdbg     wdbg
+#define medllwdbg   llwdbg
+#else
+#define medwdbg     (void)
+#define medllwdbg   (void)
+#endif
+
+#ifdef CONFIG_DEBUG_MEDIA_INFO
+#define medvdbg     vdbg
+#define medllvdbg   llvdbg
+#else
+#define medllvdbg   (void)
+#define medllvdbg   (x...)
+#endif
+
 #endif							/* CONFIG_CPP_HAVE_VARARGS */
 
 /* Buffer dumping macros do not depend on varargs */

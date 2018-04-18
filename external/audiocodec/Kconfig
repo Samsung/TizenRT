@@ -1,0 +1,18 @@
+#
+# For a description of the syntax of this configuration file,
+# see kconfig-language at https://www.kernel.org/doc/Documentation/kbuild/kconfig-language.txt
+#
+
+config AUDIO_CODEC
+	bool "Software Audio Codec Support"
+	default n
+	depends on AUDIO
+	---help---
+		Enable software audio codec functions
+
+config AUDIO_CODEC_RINGBUFFER_SIZE
+	int "Audio Decoder Ringbuffer Size"
+	default 16384
+	depends on AUDIO_CODEC
+	---help---
+		Ring buffer size that used for decoding MP3/AAC

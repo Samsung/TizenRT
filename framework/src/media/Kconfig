@@ -7,18 +7,44 @@ config MEDIA
 	bool "Media Support"
 	default n
 	depends on AUDIO
+	select HAVE_CXX
+	select HAVE_CXXINITIALIZE
 	---help---
 		Enables overall support for Media library.
 
 if MEDIA
 
-config MEDIA_PRIORITY
-	int "Media Priority"
-	default 150
+config DEBUG_MEDIA
+	bool "Media Debug Output"
+	depends on DEBUG
+	default n
+	---help---
+		Enable Media debug SYSLOG output(disable by default)
 
-config MEDIA_STACK_SIZE
-	int "Media Stack Size"
-	default 8192
+if DEBUG_MEDIA
+
+config DEBUG_MEDIA_ERROR
+	bool "Media Error Output"
+	depends on DEBUG_ERROR
+	default n
+	---help---
+		Enable Media error SYSLOG output
+
+config DEBUG_MEDIA_WARN
+	bool "Media Warning Output"
+	depends on DEBUG_WARN
+	default n
+	---help---
+		Enable Media warning SYSLOG output
+
+config DEBUG_MEDIA_INFO
+	bool "Media Informational Output"
+	depends on DEBUG_VERBOSE
+	default n
+	---help---
+		Enable Media informational SYSLOG output
+
+endif #DEBUG_MEDIA
 
 config MEDIA_PLAYER
 	bool "Support Media player"
@@ -32,4 +58,18 @@ config MEDIA_RECORDER
 	---help---
 		Enable media recoreder functions
 
-endif
+endif #MEDIA
+
+config AUDIO_CODEC
+	bool "Software Audio Codec Support"
+	default n
+	depends on AUDIO
+	---help---
+		Enable software audio codec functions
+
+config AUDIO_CODEC_RINGBUFFER_SIZE
+	int "Audio Decoder Ringbuffer Size"
+	default 16384
+	depends on AUDIO_CODEC
+	---help---
+		Ring buffer size that used for decoding MP3/AAC

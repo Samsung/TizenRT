@@ -1,0 +1,3 @@
+config ENTRY_MEDIAPLAYER
+	bool "MediaPlayer example"
+	depends on EXAMPLES_MEDIAPLAYER

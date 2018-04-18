@@ -240,7 +240,7 @@ static uint16_t alc5658_modifyreg(FAR struct alc5658_dev_s *priv, uint16_t regad
  * Name: alc5658_exec_i2c_script
  *
  * Description:
- *   Executes given script through i2c to configuure ALC5658 device.
+ *   Executes given script through i2c to configure ALC5658 device.
  *
  ************************************************************************************/
 static void alc5658_exec_i2c_script(FAR struct alc5658_dev_s *priv, t_codec_init_script_entry *script, uint32_t size)
@@ -837,13 +837,26 @@ static int alc5658_pause(FAR struct audio_lowerhalf_s *dev)
 {
 	FAR struct alc5658_dev_s *priv = (FAR struct alc5658_dev_s *)dev;
 
+	alc5658_takesem(&priv->devsem);
+
 	if (priv->running && !priv->paused) {
 		/* Disable interrupts to prevent us from suppling any more data */
 
 		priv->paused = true;
+		priv->mute = true;
 		alc5658_setvolume(priv);
+
+		if (priv->inout) {
+			I2S_PAUSE(priv->i2s, I2S_RX);    
+		} else {    
+			I2S_PAUSE(priv->i2s, I2S_TX);    
+		}
+#ifdef ALC5658_USE_FFLOCK_INT
 		ALC5658_DISABLE(priv->lower);	/* Need inputs from REALTEK */
+#endif
 	}
+
+	alc5658_givesem(&priv->devsem);
 
 	return OK;
 }
@@ -864,17 +877,25 @@ static int alc5658_resume(FAR struct audio_lowerhalf_s *dev)
 {
 	FAR struct alc5658_dev_s *priv = (FAR struct alc5658_dev_s *)dev;
 
+	alc5658_takesem(&priv->devsem);
+
 	if (priv->running && priv->paused) {
 		priv->paused = false;
+		priv->mute = false;
 		alc5658_setvolume(priv);
 
-		/* Enable interrupts to allow sampling data */
-		/* Need resume logic later. Need to know if alc5658 dma can be paused and resumed */
+	if (priv->inout) {
+	    I2S_RESUME(priv->i2s, I2S_RX);    
+	} else {    
+	    I2S_RESUME(priv->i2s, I2S_TX);    
+	}
+
 #ifdef ALC5658_USE_FFLOCK_INT
-		ALC5658_ENABLE(priv->lower);
+	ALC5658_ENABLE(priv->lower); /* Need inputs from REALTEK */
 #endif
 	}
 
+	alc5658_givesem(&priv->devsem);
 	return OK;
 }
 #endif							/* CONFIG_AUDIO_EXCLUDE_PAUSE_RESUME */

@@ -345,12 +345,6 @@ static int null_configure(FAR struct audio_lowerhalf_s *dev, FAR const struct au
 		/* Process based on Feature Unit */
 
 		switch (caps->ac_format.hw) {
-#ifndef CONFIG_AUDIO_EXCLUDE_VOLUME
-		case AUDIO_FU_VOLUME:
-			audinfo("    Volume: %d\n", caps->ac_controls.hw[0]);
-			break;
-#endif							/* CONFIG_AUDIO_EXCLUDE_VOLUME */
-
 #ifndef CONFIG_AUDIO_EXCLUDE_TONE
 		case AUDIO_FU_BASS:
 			audinfo("    Bass: %d\n", caps->ac_controls.b[0]);
