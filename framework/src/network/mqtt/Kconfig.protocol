@@ -6,7 +6,7 @@
 config NETUTILS_MQTT
 	bool "MQTT"
 	default n
-	depends on LIBC_NETDB
+	depends on NET_LWIP_NETDB
 	---help---
 		Enable support for MQTT. MQTT provides a lightweight method of
 		carrying out messaging using a publish/subscribe model. This makes

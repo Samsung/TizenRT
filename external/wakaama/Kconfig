@@ -6,7 +6,7 @@
 config LWM2M_WAKAAMA
 	bool "LWM2M_WAKAAMA"
 	default n
-	depends on LIBC_NETDB
+	depends on NET_LWIP_NETDB
 	---help---
 		enable LWM2M WAKAAMA external feature
 

@@ -30,10 +30,9 @@
 #include "slsiwifi_main.h"
 
 #ifdef CONFIG_NET_LWIP
-#include <sys/socket.h>
-#include "net/lwip/mem.h"
-#include "net/lwip/raw.h"
-#include <net/lwip/ipv4/inet.h>
+#include <net/lwip/mem.h>
+#include <net/lwip/raw.h>
+#include <net/lwip/inet.h>
 #include <net/lwip/dhcp.h>
 #include <net/lwip/sys.h>
 #include <netutils/netlib.h>
@@ -41,13 +40,12 @@
 #include <net/lwip/netif.h>
 #include <net/lwip/arch/sys_arch.h>
 #include <net/lwip/dhcp.h>
-#include <tinyara/config.h>
-#include "net/lwip/ipv4/icmp.h"
-#include "net/lwip/ipv4/ip.h"
-#include "net/lwip/timers.h"
-#include "net/lwip/ipv4/inet_chksum.h"
-#include "net/lwip/err.h"
-#include "net/lwip/opt.h"
+#include <net/lwip/icmp.h>
+#include <net/lwip/ip.h>
+#include <net/lwip/timeouts.h>
+#include <net/lwip/inet_chksum.h>
+#include <net/lwip/err.h>
+#include <net/lwip/opt.h>
 #endif
 
 #define SLSI_SANITY_DHCP_TIMEOUT 15000

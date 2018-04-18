@@ -88,12 +88,6 @@ extern "C" {
 #define EXTERN extern
 #endif
 
-#ifdef CONFIG_LIBC_NETDB
-/* Local loopback hostname */
-
-EXTERN const char g_lo_hostname[];
-#endif
-
 /* Local loopback addresses */
 
 EXTERN const in_addr_t g_lo_ipv4addr;

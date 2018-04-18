@@ -68,13 +68,14 @@
  ****************************************************************************/
 
 #include <tinyara/config.h>
-#include <sys/sock_internal.h>
 #include <sys/types.h>
 
-#ifdef CONFIG_NET_SOCKET
+#ifdef CONFIG_NET_LWIP
 #include <net/lwip/sockets.h>
 #include <net/lwip/api.h>
-#endif	/* CONFIG_NET_SOCKET */
+#else
+#include <sys/sock_internal.h>
+#endif /* CONFIG_NET_LWIP */
 
 /****************************************************************************
  * Public Function Prototypes

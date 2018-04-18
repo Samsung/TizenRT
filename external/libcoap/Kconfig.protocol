@@ -6,7 +6,8 @@
 config NETUTILS_LIBCOAP
 	bool "libcoap 4.1.1"
 	default n
-	depends on LIBC_NETDB
+	depends on NET_LWIP
+	depends on NET_LWIP_NETDB
 	---help---
 		Enable support for the libcoap library 
 

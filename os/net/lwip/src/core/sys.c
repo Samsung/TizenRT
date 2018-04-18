@@ -56,6 +56,7 @@
 #include <net/lwip/opt.h>
 
 #include <net/lwip/sys.h>
+#include <tinyara/clock.h>
 
 /* Most of the functions defined in sys.h must be implemented in the
  * architecture-dependent file sys_arch.c */
@@ -74,6 +75,8 @@ void sys_msleep(u32_t ms)
 		sys_sem_t delaysem;
 		err_t err = sys_sem_new(&delaysem, 0);
 		if (err == ERR_OK) {
+			if (ms < MSEC_PER_TICK)
+				ms = MSEC_PER_TICK;
 			sys_arch_sem_wait(&delaysem, ms);
 			sys_sem_free(&delaysem);
 		}

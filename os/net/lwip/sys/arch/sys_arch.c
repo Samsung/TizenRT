@@ -255,6 +255,7 @@ u32_t sys_arch_mbox_fetch(sys_mbox_t *mbox, void **msg, u32_t timeout)
 
 	/* The mutex lock is quick so we don't bother with the timeout
 	   stuff here. */
+
 	status = sys_arch_sem_wait(&(mbox->mutex), 0);
 	if (status == SYS_ARCH_CANCELED) {
 		return SYS_ARCH_CANCELED;
@@ -268,6 +269,10 @@ u32_t sys_arch_mbox_fetch(sys_mbox_t *mbox, void **msg, u32_t timeout)
 		/* We block while waiting for a mail to arrive in the mailbox. We
 		   must be prepared to timeout. */
 		if (timeout != 0) {
+
+			if (timeout < MSEC_PER_TICK)
+				timeout = MSEC_PER_TICK;
+
 			time = sys_arch_sem_wait(&(mbox->mail), timeout);
 
 			if (time == SYS_ARCH_TIMEOUT) {
@@ -421,6 +426,8 @@ err_t sys_sem_new(sys_sem_t *sem, u8_t count)
 	if (count == 0)
 		sem_setprotocol(sem, SEM_PRIO_NONE);
 
+	sem_setprotocol(sem, SEM_PRIO_NONE);
+
 	return ERR_OK;
 }
 
@@ -452,6 +459,7 @@ u32_t sys_arch_sem_wait(sys_sem_t *sem, u32_t timeout)
 {
 	systime_t start = clock_systimer();
 	int status = OK;
+	int remaining_time;
 
 	if (timeout == 0) {
 
@@ -468,21 +476,25 @@ u32_t sys_arch_sem_wait(sys_sem_t *sem, u32_t timeout)
 		}
 		status = OK;
 	} else {
-		while (sem_tickwait(sem, clock_systimer(), MSEC2TICK(timeout)) != OK) {
+		remaining_time = timeout;
+		while ((status = sem_tickwait(sem, clock_systimer(), MSEC2TICK(remaining_time))) != OK) {
 			/* Handle the special case where the semaphore wait was
 			 * awakened by the receipt of a signal.
 			 * Restart If signal is EINTR else break if ETIMEDOUT
 			 */
-			status = get_errno();
-			if (status == ECANCELED) {
+			if (status == -ECANCELED) {
 				return SYS_ARCH_CANCELED;
-			} else if (status == ETIMEDOUT) {
+			} else if (status == -ETIMEDOUT) {
 				return SYS_ARCH_TIMEOUT;
 			} else {
 				/* calculate remaining timeout */
-				timeout -= TICK2MSEC(clock_systimer() - start);
+				remaining_time -= TICK2MSEC(clock_systimer() - start);
+				if (remaining_time < MSEC_PER_TICK) {
+					return SYS_ARCH_TIMEOUT;
+				}
 			}
 		}
+
 	}
 
 	systime_t end = clock_systimer();
@@ -627,7 +639,7 @@ void sys_mutex_unlock(sys_mutex_t *mutex)
 #endif							/*LWIP_COMPAT_MUTEX */
 /*-----------------------------------------------------------------------------------*/
 
-systime_t sys_now(void)
+u32_t sys_now(void)
 {
 	return TICK2MSEC(clock_systimer());
 }
@@ -655,7 +667,7 @@ sys_thread_t sys_thread_new(const char *name, lwip_thread_fn entry_function, voi
 
 	if (s_nextthread < SYS_THREAD_MAX) {
 		sys_thread_t new_thread;
-		new_thread = kernel_thread(name, priority, stacksize, (main_t)entry_function, (char * const *)NULL);
+		new_thread = task_create(name, priority, stacksize, (main_t) entry_function, (char *const *)NULL);
 		if (new_thread < 0) {
 			int errval = errno;
 			LWIP_DEBUGF(SYS_DEBUG, ("Failed to create new_thread: %d", errval));
@@ -692,7 +704,7 @@ sys_thread_t sys_kernel_thread_new(const char *name, lwip_thread_fn entry_functi
 
 	if (s_nextthread < SYS_THREAD_MAX) {
 		sys_thread_t new_thread;
-		new_thread = kernel_thread(name, priority, stacksize, (main_t)entry_function, (char * const *)NULL);
+		new_thread = kernel_thread(name, priority, stacksize, (main_t) entry_function, (char *const *)NULL);
 		if (new_thread < 0) {
 			int errval = errno;
 			LWIP_DEBUGF(SYS_DEBUG, ("Failed to create new_thread: %d", errval));
@@ -709,7 +721,7 @@ sys_thread_t sys_kernel_thread_new(const char *name, lwip_thread_fn entry_functi
 sys_prot_t sys_arch_protect(void)
 {
 	sched_lock();
-	return (sys_prot_t)1;
+	return (sys_prot_t) 1;
 }
 
 void sys_arch_unprotect(sys_prot_t p)

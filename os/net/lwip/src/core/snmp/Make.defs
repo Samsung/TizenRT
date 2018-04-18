@@ -22,7 +22,9 @@
 ############################################################################
 
 
-LWIP_CSRCS += asn1_dec.c asn1_enc.c mib2.c mib_structs.c msg_in.c msg_out.c
+LWIP_CSRCS += snmp_asn1.c snmp_core.c
+LWIP_CSRCS += snmp_mib2.c snmp_mib2_icmp.c snmp_mib2_interfaces.c snmp_mib2_ip.c snmp_mib2_snmp.c snmp_mib2_system.c snmp_mib2_tcp.c snmp_mib2_udp.c
+LWIP_CSRCS += snmp_msg.c snmp_netconn.c snmp_pbuf_stream.c snmp_raw.c snmp_scalar.c snmp_table.c snmp_threadsync.c snmp_traps.c
 
 # Include snmp build support
 

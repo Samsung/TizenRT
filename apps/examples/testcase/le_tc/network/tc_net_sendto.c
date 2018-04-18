@@ -92,7 +92,7 @@ void tc_net_sendto_n(void)
 	TC_SUCCESS_RESULT();
 
 }
-
+#ifdef AF_UNIX
 /**
    * @testcase		   :tc_net_sendto_af_unix_n
    * @brief		   :negative testcase for sendto api using udp
@@ -118,7 +118,8 @@ void tc_net_sendto_af_unix_n(int fd)
 	TC_SUCCESS_RESULT();
 
 }
-
+#endif
+#ifdef AF_UNIX
 /**
    * @testcase		   :tc_net_sendto_shutdown_n
    * @brief		   :negative testcase for sendto api using udp
@@ -145,7 +146,7 @@ void tc_net_sendto_shutdown_n(int fd)
 	TC_SUCCESS_RESULT();
 
 }
-
+#endif
 /**
    * @fn                   :sendto_server
    * @brief                :udp server
@@ -194,8 +195,10 @@ void *sendto_udpclient(void *args)
 	mysocket = socket(PF_INET, SOCK_DGRAM, IPPROTO_UDP);
 	tc_net_sendto_p(mysocket);
 	tc_net_sendto_n();
+#ifdef AF_UNIX
 	tc_net_sendto_af_unix_n(mysocket);
 	tc_net_sendto_shutdown_n(mysocket);
+#endif
 	close(mysocket);
 
 	return 0;

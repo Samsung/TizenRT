@@ -111,11 +111,6 @@
  * CONFIG_NETDB_HOSTFILE.  That might not always be true, however.
  */
 
-#undef HAVE_GETHOSTBYADDR
-#ifdef CONFIG_NETDB_HOSTFILE
-#define HAVE_GETHOSTBYADDR 1
-#endif
-
 /****************************************************************************
  * Private Functions
  ****************************************************************************/

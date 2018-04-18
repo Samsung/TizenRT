@@ -91,6 +91,8 @@
 
 #if PPP_SUPPORT					/* don't build if not configured for use in lwipopts.h */
 
+#include <net/lwip/netif/ppp/ppp_opts.h>
+
 #if MSCHAP_SUPPORT				/* don't build if not configured for use in lwipopts.h */
 
 #include "ppp_impl.h"

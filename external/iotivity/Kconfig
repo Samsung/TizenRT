@@ -6,7 +6,7 @@
 menuconfig ENABLE_IOTIVITY
 	bool "enable / disable iotivity stack"
 	default n
-	select LIBC_NETDB
+	select NET_LWIP_NETDB
 	select TIME_EXTENDED
 	select ARCH_STDARG_H
 	---help---

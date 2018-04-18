@@ -23,13 +23,13 @@
 #include <sys/types.h>
 #include <sys/socket.h>
 #include <tinyara/config.h>
-#ifdef CONFIG_LIBC_NETDB
+#ifdef CONFIG_NET_LWIP_NETDB
 #include <netdb.h>
 #endif
 
 #include "tc_internal.h"
 
-#ifdef CONFIG_LIBC_NETDB
+#ifdef CONFIG_NET_LWIP_NETDB
 
 /**
 * @testcase          :itc_net_netdb_getaddrinfo_n
@@ -63,7 +63,7 @@ static void itc_net_netdb_getaddrinfo_n(void)
 
 int itc_net_netdb_main(void)
 {
-#ifdef CONFIG_LIBC_NETDB
+#ifdef CONFIG_NET_LWIP_NETDB
 	itc_net_netdb_getaddrinfo_n();
 #endif
 	return 0;

@@ -54,8 +54,9 @@
 #include <stdlib.h>
 #include <sys/socket.h>
 #include <arpa/inet.h>
-#include <net/lwip/ipv4/icmp.h>
-#include <net/lwip/ipv4/ip.h>
+#include <net/lwip/icmp.h>
+#include <net/lwip/ip.h>
+#include <net/lwip/arch.h>
 #include "netcmd.h"
 #include "netcmd_ping.h"
 
@@ -193,7 +194,12 @@ nu_ping_recv(int s, struct timespec *ping_time)
 
 	while (1) {
 		len = recvfrom(s, buf, sizeof(buf), 0, (struct sockaddr *)&from, (socklen_t *)&fromlen);
-		if (len <= 0) break;
+		if (len < 0) {
+			printf("nu_ping_recv: error [%d]\n", errno);
+			break;
+		} else if (len == 0) {
+			printf("nu_ping_recv: timeout\n");
+		}
 
 		if (len >= (int)(sizeof(struct ip_hdr) + sizeof(struct icmp_echo_hdr))) {
 
@@ -205,7 +211,7 @@ nu_ping_recv(int s, struct timespec *ping_time)
 				clock_gettime(CLOCK_REALTIME, &now);
 				g_ping_recv_counter++;
 				uint32_t elapsed = (now.tv_sec - ping_time->tv_sec) * 1000 + (now.tv_nsec - ping_time->tv_nsec) / 1000000;
-				printf(" %d bytes from %s: icmp_seq=%d ttl=255 time=%" U32_F " ms\n",
+				printf(" %d bytes from %s: icmp_seq=%d ttl=255 time=%" U32_F "ms\n",
 					   len, inet_ntoa(from.sin_addr), g_ping_seq_num, elapsed);
 
 				if ((iecho->id == PING_ID) && (iecho->seqno == htons(g_ping_seq_num))) {
@@ -215,9 +221,6 @@ nu_ping_recv(int s, struct timespec *ping_time)
 				} else printf("drop\n");
 			}
 		}
-	}
-	if (len == 0) {
-		printf("ping: recv - timeout\n");
 	}
 }
 
@@ -244,8 +247,7 @@ nu_ping_prepare_echo(struct icmp_echo_hdr *iecho, u16_t len)
 }
 
 
-static int
-nu_ping_send(int s, struct sockaddr_in *to)
+static int nu_ping_send(int s, struct sockaddr_in *to)
 {
 	int err;
 	struct icmp_echo_hdr *iecho;
@@ -261,13 +263,16 @@ nu_ping_send(int s, struct sockaddr_in *to)
 	nu_ping_prepare_echo(iecho, (u16_t)ping_size);
 
 	err = sendto(s, iecho, ping_size, 0, (struct sockaddr *)to, sizeof(struct sockaddr_in));
+	if (err <= 0) {
+		free(iecho);
+		return err;
+	}
 	free(iecho);
 
 	return 0;
 }
 
-int
-nu_ping_process(int count, const char *taddr)
+int nu_ping_process(int count, const char *taddr)
 {
 	int s;
 	struct timeval tv;
@@ -279,15 +284,18 @@ nu_ping_process(int count, const char *taddr)
 
 	printf("PING %s (%s) 60(88) bytes of data. count(%d)\n", taddr, taddr, count);
 	if ((s = socket(AF_INET, SOCK_RAW, IP_PROTO_ICMP)) < 0) {
-		printf("fail to create raw socket...\n");
+		printf("nu_ping_process: fail to create raw socket...\n");
 		return -1;
 	}
 
 	tv.tv_sec = 1;
 	tv.tv_usec = 0;
 
-	setsockopt(s, SOL_SOCKET, SO_RCVTIMEO, (struct timeval *)&tv,
-			   sizeof(struct timeval));
+	if (setsockopt(s, SOL_SOCKET, SO_RCVTIMEO, (struct timeval *)&tv,
+			   sizeof(struct timeval)) != ERR_OK) {
+		printf("nu_ping_process: setsockopt error\n");
+		return -1;
+	}
 
 	to.sin_len = sizeof(to);
 	to.sin_family = AF_INET;
@@ -295,11 +303,10 @@ nu_ping_process(int count, const char *taddr)
 
 	while (1) {
 		if (nu_ping_send(s, &to) == ERR_OK) {
-			// printf("ping : send %d\n", ping_send_counter);
 			clock_gettime(CLOCK_REALTIME, &ping_time);
 			nu_ping_recv(s, &ping_time);
 		} else {
-			printf("ping: send error\n");
+			printf("nu_ping_process: send error\n");
 			break;
 		}
 
