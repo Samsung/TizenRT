@@ -140,6 +140,8 @@
 #define AUDIOIOC_HWRESET            _AUDIOIOC(16)
 #define AUDIOIOC_DEQUEUEBUFFER      _AUDIOIOC(17)
 #define AUDIOIOC_PREPARE            _AUDIOIOC(18)
+#define AUDIOIOC_SETVOLUME          _AUDIOIOC(19)
+#define AUDIOIOC_GETVOLUME          _AUDIOIOC(20)
 
 /* Audio Device Types *******************************************************/
 /* The NuttX audio interface support different types of audio devices for
@@ -387,7 +389,6 @@ struct ap_buffer_info_s {
 	apb_samp_t buffer_size;		/* Preferred size of the buffers */
 };
 
-
 /* This structure describes an Audio Pipeline Buffer */
 
 struct ap_buffer_s {
@@ -459,8 +460,8 @@ typedef CODE void (*audio_callback_t)(FAR void *priv, uint16_t reason, FAR struc
 typedef CODE void (*audio_callback_t)(FAR void *priv, uint16_t reason, FAR struct ap_buffer_s *apb, uint16_t status);
 #endif
 
-/* This structure is a set a callback functions used to call from the upper-
- * half, generic Audo driver into lower-half, platform-specific logic that
+/* This structure is a set of callback functions used to call from the upper-
+ * half, generic Audio driver into lower-half, platform-specific logic that
  * supports the low-level functionality.
  */
 
