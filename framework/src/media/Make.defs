@@ -19,21 +19,9 @@ ifeq ($(CONFIG_AUDIO), y)
 CSRCS += audio_manager.c 
 DEPPATH += --dep-path src/media/audio 
 VPATH += :src/media/audio
-endif
-
-ifeq ($(CONFIG_AUDIO_CODEC), y)
-CSRCS += $(notdir $(wildcard src/media/codecs/mp3dec/*.c))
-CSRCS += $(notdir $(wildcard src/media/codecs/aacdec/*.c))
-CSRCS += $(notdir $(wildcard src/media/codecs/resample/*.c))
-CSRCS += $(notdir $(wildcard src/media/codecs/streaming/*.c))
-DEPPATH += --dep-path src/media/codecs/mp3dec
-VPATH += :src/media/codecs/mp3dec
-DEPPATH += --dep-path src/media/codecs/aacdec
-VPATH += :src/media/codecs/aacdec
-DEPPATH += --dep-path src/media/codecs/resample
-VPATH += :src/media/codecs/resample
-DEPPATH += --dep-path src/media/codecs/streaming
-VPATH += :src/media/codecs/streaming
+CSRCS += samplerate.c
+DEPPATH += --dep-path src/media/audio/resample
+VPATH += :src/media/audio/resample
 CFLAGS += -std=c99
 endif
 
