@@ -39,12 +39,12 @@
 
 #include "gtest/internal/gtest-port.h"
 
-#if GTEST_OS_LINUX
+#if (GTEST_OS_TIZENRT || GTEST_OS_LINUX)
 # include <stdlib.h>
 # include <sys/types.h>
 # include <sys/wait.h>
 # include <unistd.h>
-#endif  // GTEST_OS_LINUX
+#endif  // (GTEST_OS_TIZENRT || GTEST_OS_LINUX)
 
 #if GTEST_HAS_EXCEPTIONS
 # include <stdexcept>
