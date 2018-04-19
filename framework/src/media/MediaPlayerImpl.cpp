@@ -21,7 +21,6 @@
 #include "MediaPlayerImpl.h"
 
 #include <debug.h>
-#include "audio/audio_manager.h"
 
 namespace media {
 MediaPlayerImpl::MediaPlayerImpl()
@@ -98,13 +97,13 @@ player_result_t MediaPlayerImpl::prepare()
 		return PLAYER_ERROR;
 	}
 
-	if (set_audio_stream_out(mInputDataSource->getChannels(), mInputDataSource->getSampleRate(),
-							 mInputDataSource->getPcmFormat()) != AUDIO_MANAGER_SUCCESS) {
+	if (mAudioManager.set_audio_stream_out(mInputDataSource->getChannels(), mInputDataSource->getSampleRate(),
+										   mInputDataSource->getPcmFormat()) != AUDIO_MANAGER_SUCCESS) {
 		meddbg("MediaPlayer prepare fail : set_audio_stream_out fail\n");
 		return PLAYER_ERROR;
 	}
 
-	mBufSize = get_output_frames_byte_size(get_output_frame_count());
+	mBufSize = mAudioManager.get_output_frames_byte_size(mAudioManager.get_output_frame_count());
 	medvdbg("MediaPlayer mBuffer size : %d\n", mBufSize);
 
 	mBuffer = new unsigned char[mBufSize];
@@ -136,12 +135,12 @@ player_result_t MediaPlayerImpl::unprepare()
 	}
 	mBufSize = 0;
 
-	if (reset_audio_stream_out() != AUDIO_MANAGER_SUCCESS) {
+	if (mAudioManager.reset_audio_stream_out() != AUDIO_MANAGER_SUCCESS) {
 		meddbg("MediaPlayer unprepare fail : reset_audio_stream_out fail\n");
 		return PLAYER_ERROR;
 	}
 
-	if (destroy_audio_stream_out() != AUDIO_MANAGER_SUCCESS) {
+	if (mAudioManager.destroy_audio_stream_out() != AUDIO_MANAGER_SUCCESS) {
 		meddbg("MediaPlayer unprepare fail : destroy_audio_stream_out fail\n");
 		return PLAYER_ERROR;
 	}
@@ -191,7 +190,7 @@ int MediaPlayerImpl::getVolume()
 		return -1;
 	}
 
-	return get_audio_volume();
+	return mAudioManager.get_audio_volume();
 }
 
 player_result_t MediaPlayerImpl::setVolume(int vol)
@@ -208,7 +207,7 @@ player_result_t MediaPlayerImpl::setVolume(int vol)
 		return PLAYER_ERROR;
 	}
 
-	if (!set_audio_volume(vol)) {
+	if (!mAudioManager.set_audio_volume(vol)) {
 		mCurVolume = vol;
 		return PLAYER_OK;
 	} else {
@@ -273,7 +272,7 @@ void MediaPlayerImpl::notifyObserver(player_observer_command_t cmd)
 
 int MediaPlayerImpl::playback(int size)
 {
-	return start_audio_stream_out(mBuffer, get_output_bytes_frame_count(size));
+	return mAudioManager.start_audio_stream_out(mBuffer, mAudioManager.get_output_bytes_frame_count(size));
 }
 
 MediaPlayerImpl::~MediaPlayerImpl()
