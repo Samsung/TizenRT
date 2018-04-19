@@ -8,22 +8,22 @@ services:
 - docker
 
 env:
-- BUILD_CONFIG=artik053/minimal
-- BUILD_CONFIG=artik053/tc
-- BUILD_CONFIG=artik053/st_things
-- BUILD_CONFIG=artik053/iotjs
 - BUILD_CONFIG=artik055s/audio
+- BUILD_CONFIG=artik053/grpc
+- BUILD_CONFIG=artik053/st_things
+- BUILD_CONFIG=artik053/tc
+- BUILD_CONFIG=artik053/iotjs
+- BUILD_CONFIG=artik053/minimal
 - BUILD_CONFIG=qemu/tc_64k
 
-
 before_install:
-- docker pull tizenrt/tizenrt:1.2
+- docker pull tizenrt/tizenrt:1.4.4
 - echo "${TRAVIS_BUILD_DIR}"
 
 script:
-- docker run -d -it --name tizenrt_docker -v ${TRAVIS_BUILD_DIR}:/root/tizenrt -w /root/tizenrt/os tizenrt/tizenrt:1.2 /bin/bash
+- docker run -d -it --name tizenrt_docker -v ${TRAVIS_BUILD_DIR}:/root/tizenrt -w /root/tizenrt/os tizenrt/tizenrt:1.4.4 /bin/bash
+- docker exec tizenrt_docker arm-none-eabi-gcc --version
 - docker exec tizenrt_docker make distclean
 
 - docker exec -it tizenrt_docker bash -c "cd tools; ./configure.sh ${BUILD_CONFIG}"
-- docker exec -it tizenrt_docker bash -c "export PATH=/root/gcc-arm-none-eabi-4_9-2015q3/bin:$PATH;make;"
-
+- docker exec -it tizenrt_docker bash -c "make"
