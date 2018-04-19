@@ -303,6 +303,9 @@ int getsockname(int sockfd, FAR struct sockaddr *addr, FAR socklen_t *addrlen);
 */
 int getpeername(int s, struct sockaddr *name, socklen_t *namelen);
 
+ssize_t recvmsg(int sockfd, struct msghdr *msg, int flags);
+ssize_t sendmsg(int sockfd, struct msghdr *msg, int flags);
+
 #undef EXTERN
 #if defined(__cplusplus)
 }
