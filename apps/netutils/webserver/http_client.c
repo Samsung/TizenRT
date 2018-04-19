@@ -98,7 +98,7 @@ static int http_recv_and_handle_request(struct http_client_t *client, struct htt
 		close(client->client_fd);
 		return HTTP_ERROR;
 	}
-
+	HTTP_MEMSET(buf, 0, HTTP_CONF_MAX_REQUEST_LENGTH);
 	if (getpeername(client->client_fd, (struct sockaddr *)&addr, &addr_len) < 0) {
 		HTTP_LOGE("Error: Fail to getpeername\n");
 		goto errout;
