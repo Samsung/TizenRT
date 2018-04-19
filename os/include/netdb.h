@@ -82,6 +82,47 @@
 #include <netinet/in.h>
 #include <sys/socket.h>
 
+ /****************************************************************************
+ * Public Types
+ ****************************************************************************/
+#define h_addr h_addr_list[0]	/* For backward compatibility */
+
+struct netent {
+	FAR char *n_name;			/* Official, fully-qualified (including the domain)
+								 * name of the host. */
+	FAR char **n_aliases;		/* A pointer to an array of pointers to alternative
+								 * network names, terminated by a null pointer. */
+	int n_addrtype;				/* The address type of the network. */
+	uint32_t n_net;				/* The network number, in host byte order. */
+};
+
+struct protoent {
+	FAR char *p_name;			/* Official name of the protocol. */
+	FAR char **p_aliases;		/* A pointer to an array of pointers to
+								 * alternative protocol names, terminated by a
+								 * null pointer. */
+	int p_proto;				/* The protocol number. */
+};
+
+struct servent {
+	FAR char *s_name;			/* Official name of the service. */
+	FAR char **s_aliases;		/* A pointer to an array of pointers to
+								 * alternative service names, terminated by a
+								 * null pointer.  */
+	int s_port;					/* The port number at which the service resides,
+								 * in network byte order. */
+	FAR char *s_proto;			/* The name of the protocol to use when
+								 * contacting the service. */
+};
+
+struct servent_data {
+	void *fp;
+	char **aliases;
+	int maxaliases;
+	int stayopen;
+	char *line;
+};
+
 /****************************************************************************
  * Public Data
  ****************************************************************************/

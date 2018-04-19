@@ -214,7 +214,9 @@ const char* grpc_sockaddr_get_uri_scheme(
       return "ipv4";
     case AF_INET6:
       return "ipv6";
+#if GRPC_HAVE_UNIX_SOCKET
     case AF_UNIX:
+#endif
       return "unix";
   }
   return nullptr;
