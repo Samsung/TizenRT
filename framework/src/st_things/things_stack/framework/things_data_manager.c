@@ -733,7 +733,7 @@ wifi_manager_softap_config_s *dm_get_softap_wifi_config(void)
 {
 	st_device_s *device = dm_get_info_of_dev(0);
 	int ssid_type = (is_artik == true ? 1 : 0);
-	unsigned char ext_value[16] = { 0, };
+	unsigned char ext_value[9] = { 0, };
 	char ssid_device_name[17];
 
 	memset(ext_value, 0, sizeof(ext_value));
