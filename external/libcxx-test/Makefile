@@ -124,6 +124,54 @@ CXXSRCS += std/depr/tc_depr.cpp
 CXXSRCS += std/language.support/tc_language_support.cpp
 endif
 
+#Thread Sources
+CXXSRCS += std/thread/thread.mutex/thread.lock.algorithm/lock.pass.cpp
+CXXSRCS += std/thread/thread.mutex/thread.lock.algorithm/try_lock.pass.cpp
+CXXSRCS += std/thread/thread.mutex/thread.mutex.requirements/thread.mutex.requirements.mutex/thread.mutex.recursive/lock.pass.cpp
+CXXSRCS += std/thread/thread.mutex/thread.mutex.requirements/thread.mutex.requirements.mutex/thread.mutex.recursive/try_lock.pass.cpp
+CXXSRCS += std/thread/thread.mutex/thread.mutex.requirements/thread.mutex.requirements.mutex/thread.mutex.recursive/default.pass.cpp
+CXXSRCS += std/thread/thread.mutex/thread.mutex.requirements/thread.mutex.requirements.mutex/thread.mutex.class/lock.pass.cpp
+CXXSRCS += std/thread/thread.mutex/thread.mutex.requirements/thread.mutex.requirements.mutex/thread.mutex.class/try_lock.pass.cpp
+CXXSRCS += std/thread/thread.mutex/thread.mutex.requirements/thread.mutex.requirements.mutex/thread.mutex.class/default.pass.cpp
+CXXSRCS += std/thread/thread.mutex/thread.mutex.requirements/thread.timedmutex.requirements/thread.timedmutex.recursive/lock.pass.cpp
+CXXSRCS += std/thread/thread.mutex/thread.mutex.requirements/thread.timedmutex.requirements/thread.timedmutex.recursive/try_lock_for.pass.cpp
+CXXSRCS += std/thread/thread.mutex/thread.mutex.requirements/thread.timedmutex.requirements/thread.timedmutex.recursive/try_lock.pass.cpp
+CXXSRCS += std/thread/thread.mutex/thread.mutex.requirements/thread.timedmutex.requirements/thread.timedmutex.recursive/default.pass.cpp
+CXXSRCS += std/thread/thread.mutex/thread.mutex.requirements/thread.timedmutex.requirements/thread.timedmutex.recursive/try_lock_until.pass.cpp
+CXXSRCS += std/thread/thread.mutex/thread.mutex.requirements/thread.timedmutex.requirements/thread.timedmutex.class/lock.pass.cpp
+CXXSRCS += std/thread/thread.mutex/thread.mutex.requirements/thread.timedmutex.requirements/thread.timedmutex.class/try_lock_for.pass.cpp
+CXXSRCS += std/thread/thread.mutex/thread.mutex.requirements/thread.timedmutex.requirements/thread.timedmutex.class/try_lock.pass.cpp
+CXXSRCS += std/thread/thread.mutex/thread.mutex.requirements/thread.timedmutex.requirements/thread.timedmutex.class/default.pass.cpp
+CXXSRCS += std/thread/thread.mutex/thread.mutex.requirements/thread.timedmutex.requirements/thread.timedmutex.class/try_lock_until.pass.cpp
+CXXSRCS += std/thread/thread.mutex/thread.once/thread.once.onceflag/default.pass.cpp
+CXXSRCS += std/thread/thread.mutex/thread.once/thread.once.callonce/call_once.pass.cpp
+CXXSRCS += std/thread/thread.mutex/thread.lock/thread.lock.guard/adopt_lock.pass.cpp
+CXXSRCS += std/thread/thread.mutex/thread.lock/thread.lock.guard/mutex.pass.cpp
+CXXSRCS += std/thread/thread.mutex/thread.lock/thread.lock.guard/types.pass.cpp
+CXXSRCS += std/thread/thread.mutex/thread.lock/thread.lock.unique/thread.lock.unique.cons/mutex_try_to_lock.pass.cpp
+CXXSRCS += std/thread/thread.mutex/thread.lock/thread.lock.unique/thread.lock.unique.cons/move_assign.pass.cpp
+CXXSRCS += std/thread/thread.mutex/thread.lock/thread.lock.unique/thread.lock.unique.cons/mutex_defer_lock.pass.cpp
+CXXSRCS += std/thread/thread.mutex/thread.lock/thread.lock.unique/thread.lock.unique.cons/mutex_time_point.pass.cpp
+CXXSRCS += std/thread/thread.mutex/thread.lock/thread.lock.unique/thread.lock.unique.cons/mutex.pass.cpp
+CXXSRCS += std/thread/thread.mutex/thread.lock/thread.lock.unique/thread.lock.unique.cons/move_ctor.pass.cpp
+CXXSRCS += std/thread/thread.mutex/thread.lock/thread.lock.unique/thread.lock.unique.cons/mutex_duration.pass.cpp
+CXXSRCS += std/thread/thread.mutex/thread.lock/thread.lock.unique/thread.lock.unique.cons/default.pass.cpp
+CXXSRCS += std/thread/thread.mutex/thread.lock/thread.lock.unique/thread.lock.unique.cons/mutex_adopt_lock.pass.cpp
+CXXSRCS += std/thread/thread.mutex/thread.lock/thread.lock.unique/thread.lock.unique.locking/lock.pass.cpp
+CXXSRCS += std/thread/thread.mutex/thread.lock/thread.lock.unique/thread.lock.unique.locking/try_lock_for.pass.cpp
+CXXSRCS += std/thread/thread.mutex/thread.lock/thread.lock.unique/thread.lock.unique.locking/unlock.pass.cpp
+CXXSRCS += std/thread/thread.mutex/thread.lock/thread.lock.unique/thread.lock.unique.locking/try_lock.pass.cpp
+CXXSRCS += std/thread/thread.mutex/thread.lock/thread.lock.unique/thread.lock.unique.locking/try_lock_until.pass.cpp
+CXXSRCS += std/thread/thread.mutex/thread.lock/thread.lock.unique/thread.lock.unique.obs/owns_lock.pass.cpp
+CXXSRCS += std/thread/thread.mutex/thread.lock/thread.lock.unique/thread.lock.unique.obs/op_bool.pass.cpp
+CXXSRCS += std/thread/thread.mutex/thread.lock/thread.lock.unique/thread.lock.unique.obs/mutex.pass.cpp
+CXXSRCS += std/thread/thread.mutex/thread.lock/thread.lock.unique/thread.lock.unique.mod/member_swap.pass.cpp
+CXXSRCS += std/thread/thread.mutex/thread.lock/thread.lock.unique/thread.lock.unique.mod/release.pass.cpp
+CXXSRCS += std/thread/thread.mutex/thread.lock/thread.lock.unique/thread.lock.unique.mod/nonmember_swap.pass.cpp
+CXXSRCS += std/thread/thread.mutex/thread.lock/thread.lock.unique/types.pass.cpp
+CXXSRCS += std/thread/thread.mutex/thread.lock/types.pass.cpp
+
+
 AOBJS		= $(ASRCS:.S=$(OBJEXT))
 COBJS		= $(CSRCS:.c=$(OBJEXT))
 CXXOBJS		= $(CXXSRCS:.cpp=$(OBJEXT))
