@@ -34,16 +34,18 @@
 #include <iterator>
 #include <list>
 #include <cassert>
+#include "libcxx_tc_common.h"
 #include "nasty_containers.hpp"
 
 template <class C>
-void
+static int
 test(C c)
 {
     const typename C::value_type v = typename C::value_type();
     std::front_insert_iterator<C> i(c);
     i = v;
-    assert(c.front() == v);
+    TC_ASSERT_EXPR(c.front() == v);
+    return 0;
 }
 
 class Copyable
@@ -57,8 +59,10 @@ public:
         {return x.data_ == y.data_;}
 };
 
-int main()
+int tc_libcxx_iterators_front_insert_iter_op__lv_value(void)
 {
-    test(std::list<Copyable>());
-    test(nasty_list<Copyable>());
+    TC_ASSERT_FUNC((test(std::list<Copyable>())));
+    TC_ASSERT_FUNC((test(nasty_list<Copyable>())));
+    TC_SUCCESS_RESULT();
+    return 0;
 }

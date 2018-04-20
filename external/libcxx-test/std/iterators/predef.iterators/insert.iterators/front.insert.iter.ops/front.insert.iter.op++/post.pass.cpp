@@ -33,21 +33,25 @@
 #include <iterator>
 #include <list>
 #include <cassert>
+#include "libcxx_tc_common.h"
 #include "nasty_containers.hpp"
 
 template <class C>
-void
+static int
 test(C c)
 {
     std::front_insert_iterator<C> i(c);
     std::front_insert_iterator<C> r = i++;
     r = 0;
-    assert(c.size() == 1);
-    assert(c.back() == 0);
+    TC_ASSERT_EXPR(c.size() == 1);
+    TC_ASSERT_EXPR(c.back() == 0);
+    return 0;
 }
 
-int main()
+int tc_libcxx_iterators_front_insert_iter_op___post(void)
 {
-    test(std::list<int>());
-    test(nasty_list<int>());
+    TC_ASSERT_FUNC((test(std::list<int>())));
+    TC_ASSERT_FUNC((test(nasty_list<int>())));
+    TC_SUCCESS_RESULT();
+    return 0;
 }

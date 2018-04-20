@@ -34,15 +34,18 @@
 #include <iterator>
 #include <sstream>
 #include <cassert>
+#include "libcxx_tc_common.h"
 
-int main()
+int tc_libcxx_iterators_istreambuf_iterator_op_astrk_pre_increment(void)
 {
     {
         std::istringstream inf("abc");
         std::istreambuf_iterator<char> i(inf);
-        assert(*i == 'a');
-        assert(*++i == 'b');
-        assert(*++i == 'c');
-        assert(++i == std::istreambuf_iterator<char>());
+        TC_ASSERT_EXPR(*i == 'a');
+        TC_ASSERT_EXPR(*++i == 'b');
+        TC_ASSERT_EXPR(*++i == 'c');
+        TC_ASSERT_EXPR(++i == std::istreambuf_iterator<char>());
     }
+    TC_SUCCESS_RESULT();
+    return 0;
 }

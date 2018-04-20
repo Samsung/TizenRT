@@ -33,11 +33,14 @@
 #include <iterator>
 #include <sstream>
 #include <cassert>
+#include "libcxx_tc_common.h"
 
-int main()
+int tc_libcxx_iterators_ostream_iterator_ops_dereference(void)
 {
     std::ostringstream os;
     std::ostream_iterator<int> i(os);
     std::ostream_iterator<int>& iref = *i;
-    assert(&iref == &i);
+    TC_ASSERT_EXPR(&iref == &i);
+    TC_SUCCESS_RESULT();
+    return 0;
 }

@@ -33,6 +33,7 @@
 #include <iterator>
 #include <sstream>
 #include <cassert>
+#include "libcxx_tc_common.h"
 
 struct MyTraits : std::char_traits<char> {};
 
@@ -41,16 +42,18 @@ typedef std::basic_ostream<char, MyTraits> BasicStream;
 
 void operator&(BasicStream const&) {}
 
-int main()
+int tc_libcxx_iterators_ostream_iterator_cons_des_ostream(void)
 {
     {
         std::ostringstream outf;
         std::ostream_iterator<int> i(outf);
-        assert(outf.good());
+        TC_ASSERT_EXPR(outf.good());
     }
     {
         StringStream outf;
         std::ostream_iterator<int, char, MyTraits> i(outf);
-        assert(outf.good());
+        TC_ASSERT_EXPR(outf.good());
     }
+    TC_SUCCESS_RESULT();
+    return 0;
 }

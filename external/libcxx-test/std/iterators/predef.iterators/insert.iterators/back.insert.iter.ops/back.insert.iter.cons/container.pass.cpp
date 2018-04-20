@@ -33,16 +33,20 @@
 #include <iterator>
 #include <vector>
 #include "nasty_containers.hpp"
+#include "libcxx_tc_common.h"
 
 template <class C>
-void
+static int
 test(C c)
 {
     std::back_insert_iterator<C> i(c);
+    return 0;
 }
 
-int main()
+int tc_libcxx_iterators_back_insert_iter_cons_container(void)
 {
-    test(std::vector<int>());
-    test(nasty_vector<int>());
+    TC_ASSERT_FUNC((test(std::vector<int>())));
+    TC_ASSERT_FUNC((test(nasty_vector<int>())));
+    TC_SUCCESS_RESULT();
+    return 0;
 }

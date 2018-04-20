@@ -34,15 +34,18 @@
 #include <iterator>
 #include <sstream>
 #include <cassert>
+#include "libcxx_tc_common.h"
 
-int main()
+int tc_libcxx_iterators_ostreambuf_iter_ops_assign_c(void)
 {
     {
         std::ostringstream outf;
         std::ostreambuf_iterator<char> i(outf);
         i = 'a';
-        assert(outf.str() == "a");
+        TC_ASSERT_EXPR(outf.str() == "a");
         i = 'b';
-        assert(outf.str() == "ab");
+        TC_ASSERT_EXPR(outf.str() == "ab");
     }
+    TC_SUCCESS_RESULT();
+    return 0;
 }

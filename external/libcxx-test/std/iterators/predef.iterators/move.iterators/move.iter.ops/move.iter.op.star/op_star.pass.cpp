@@ -34,6 +34,7 @@
 
 #include <iterator>
 #include <cassert>
+#include "libcxx_tc_common.h"
 #include <memory>
 
 #include "test_macros.h"
@@ -50,13 +51,14 @@ public:
 };
 
 template <class It>
-void
+static int
 test(It i, typename std::iterator_traits<It>::value_type x)
 {
     std::move_iterator<It> r(i);
-    assert(*r == x);
+    TC_ASSERT_EXPR(*r == x);
     typename std::iterator_traits<It>::value_type x2 = *r;
-    assert(x2 == x);
+    TC_ASSERT_EXPR(x2 == x);
+    return 0;
 }
 
 struct do_nothing
@@ -65,7 +67,7 @@ struct do_nothing
 };
 
 
-int main()
+int tc_libcxx_iterators_move_iter_op_star_op_star(void)
 {
     {
         A a;
@@ -88,4 +90,6 @@ int main()
     static_assert(*it2 == p[1], "");
     }
 #endif
+    TC_SUCCESS_RESULT();
+    return 0;
 }

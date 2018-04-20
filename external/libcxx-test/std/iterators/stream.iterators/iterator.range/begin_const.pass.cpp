@@ -30,11 +30,14 @@
 
 #include <vector>
 #include <cassert>
+#include "libcxx_tc_common.h"
 
-int main()
+int tc_libcxx_iterators_iterator_range_begin_const(void)
 {
     int ia[] = {1, 2, 3};
     const std::vector<int> v(ia, ia + sizeof(ia)/sizeof(ia[0]));
     std::vector<int>::const_iterator i = begin(v);
-    assert(*i == 1);
+    TC_ASSERT_EXPR(*i == 1);
+    TC_SUCCESS_RESULT();
+    return 0;
 }

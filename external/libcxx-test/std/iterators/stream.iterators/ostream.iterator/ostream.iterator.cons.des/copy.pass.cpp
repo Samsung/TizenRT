@@ -33,12 +33,15 @@
 #include <iterator>
 #include <sstream>
 #include <cassert>
+#include "libcxx_tc_common.h"
 
-int main()
+int tc_libcxx_iterators_ostream_iterator_cons_des_copy(void)
 {
     std::ostringstream outf;
     std::ostream_iterator<int> i(outf);
     std::ostream_iterator<int> j = i;
-    assert(outf.good());
+    TC_ASSERT_EXPR(outf.good());
     ((void)j);
+    TC_SUCCESS_RESULT();
+    return 0;
 }

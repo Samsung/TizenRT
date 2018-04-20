@@ -35,20 +35,22 @@
 
 #include <iterator>
 #include <cassert>
+#include "libcxx_tc_common.h"
 #include <memory>
 
 #include "test_macros.h"
 #include "test_iterators.h"
 
 template <class It>
-void
+static int
 test(It i, typename std::iterator_traits<It>::difference_type n,
      typename std::iterator_traits<It>::value_type x)
 {
     typedef typename std::iterator_traits<It>::value_type value_type;
     const std::move_iterator<It> r(i);
     value_type rr = r[n];
-    assert(rr == x);
+    TC_ASSERT_EXPR(rr == x);
+    return 0;
 }
 
 struct do_nothing
@@ -56,7 +58,7 @@ struct do_nothing
     void operator()(void*) const {}
 };
 
-int main()
+int tc_libcxx_iterators_move_iter_op_index_difference_type(void)
 {
     {
         char s[] = "1234567890";
@@ -82,4 +84,6 @@ int main()
     static_assert(it1[5] == '6', "");
     }
 #endif
+    TC_SUCCESS_RESULT();
+    return 0;
 }

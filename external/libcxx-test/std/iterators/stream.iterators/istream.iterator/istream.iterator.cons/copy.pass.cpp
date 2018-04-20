@@ -35,23 +35,26 @@
 #include <iterator>
 #include <sstream>
 #include <cassert>
+#include "libcxx_tc_common.h"
 
 #include "test_macros.h"
 
-int main()
+int tc_libcxx_iterators_istream_iterator_cons_copy(void)
 {
     {
         std::istream_iterator<int> io;
         std::istream_iterator<int> i = io;
-        assert(i == std::istream_iterator<int>());
+        TC_ASSERT_EXPR(i == std::istream_iterator<int>());
     }
     {
         std::istringstream inf(" 1 23");
         std::istream_iterator<int> io(inf);
         std::istream_iterator<int> i = io;
-        assert(i != std::istream_iterator<int>());
+        TC_ASSERT_EXPR(i != std::istream_iterator<int>());
         int j = 0;
         j = *i;
-        assert(j == 1);
+        TC_ASSERT_EXPR(j == 1);
     }
+    TC_SUCCESS_RESULT();
+    return 0;
 }

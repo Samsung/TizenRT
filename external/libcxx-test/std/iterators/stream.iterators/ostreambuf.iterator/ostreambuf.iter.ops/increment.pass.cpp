@@ -34,23 +34,26 @@
 #include <iterator>
 #include <sstream>
 #include <cassert>
+#include "libcxx_tc_common.h"
 
-int main()
+int tc_libcxx_iterators_ostreambuf_iter_ops_increment(void)
 {
     {
         std::ostringstream outf;
         std::ostreambuf_iterator<char> i(outf);
         std::ostreambuf_iterator<char>& iref = ++i;
-        assert(&iref == &i);
+        TC_ASSERT_EXPR(&iref == &i);
         std::ostreambuf_iterator<char>& iref2 = i++;
-        assert(&iref2 == &i);
+        TC_ASSERT_EXPR(&iref2 == &i);
     }
     {
         std::wostringstream outf;
         std::ostreambuf_iterator<wchar_t> i(outf);
         std::ostreambuf_iterator<wchar_t>& iref = ++i;
-        assert(&iref == &i);
+        TC_ASSERT_EXPR(&iref == &i);
         std::ostreambuf_iterator<wchar_t>& iref2 = i++;
-        assert(&iref2 == &i);
+        TC_ASSERT_EXPR(&iref2 == &i);
     }
+    TC_SUCCESS_RESULT();
+    return 0;
 }

@@ -32,6 +32,7 @@
 // };
 
 #include <iterator>
+#include "libcxx_tc_common.h"
 
 struct not_an_iterator
 {
@@ -48,8 +49,10 @@ public:
     static const bool value = sizeof(test<T>(0)) == 1;
 };
 
-int main()
+int tc_libcxx_iterators_iterator_traits_empty(void)
 {
     typedef std::iterator_traits<not_an_iterator> It;
     static_assert(!(has_value_type<It>::value), "");
+    TC_SUCCESS_RESULT();
+    return 0;
 }

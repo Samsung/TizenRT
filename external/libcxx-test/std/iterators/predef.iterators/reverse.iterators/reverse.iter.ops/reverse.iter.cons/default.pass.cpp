@@ -36,21 +36,23 @@
 
 #include "test_macros.h"
 #include "test_iterators.h"
+#include "libcxx_tc_common.h"
 
 template <class It>
-void
+static int
 test()
 {
     std::reverse_iterator<It> r;
     (void)r;
+    return 0;
 }
 
-int main()
+int tc_libcxx_iterators_reverse_iter_cons_default(void)
 {
-    test<bidirectional_iterator<const char*> >();
-    test<random_access_iterator<char*> >();
-    test<char*>();
-    test<const char*>();
+    TC_ASSERT_FUNC((test<bidirectional_iterator<const char*> >()));
+    TC_ASSERT_FUNC((test<random_access_iterator<char*> >()));
+    TC_ASSERT_FUNC((test<char*>()));
+    TC_ASSERT_FUNC((test<const char*>()));
 
 #if TEST_STD_VER > 14
     {
@@ -58,4 +60,6 @@ int main()
         (void)it;
     }
 #endif
+    TC_SUCCESS_RESULT();
+    return 0;
 }

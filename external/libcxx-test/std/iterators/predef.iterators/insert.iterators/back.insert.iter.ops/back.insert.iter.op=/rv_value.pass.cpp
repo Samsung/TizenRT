@@ -39,17 +39,21 @@
 #include <vector>
 #include <memory>
 #include <cassert>
+#include "libcxx_tc_common.h"
 
 template <class C>
-void
+static int
 test(C c)
 {
     std::back_insert_iterator<C> i(c);
     i = typename C::value_type();
-    assert(c.back() == typename C::value_type());
+    TC_ASSERT_EXPR(c.back() == typename C::value_type());
+    return 0;
 }
 
-int main()
+int tc_libcxx_iterators_back_insert_iter_op__rv_value(void)
 {
-    test(std::vector<std::unique_ptr<int> >());
+    TC_ASSERT_FUNC((test(std::vector<std::unique_ptr<int> >())));
+    TC_SUCCESS_RESULT();
+    return 0;
 }

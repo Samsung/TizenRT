@@ -33,6 +33,7 @@
 #include <iterator>
 #include <sstream>
 #include <cassert>
+#include "libcxx_tc_common.h"
 
 struct A
 {
@@ -47,10 +48,12 @@ std::istream& operator>>(std::istream& is, A& a)
     return is >> a.d_ >> a.i_;
 }
 
-int main()
+int tc_libcxx_iterators_istream_iterator_ops_arrow(void)
 {
     std::istringstream inf("1.5  23 ");
     std::istream_iterator<A> i(inf);
-    assert(i->d_ == 1.5);
-    assert(i->i_ == 23);
+    TC_ASSERT_EXPR(i->d_ == 1.5);
+    TC_ASSERT_EXPR(i->i_ == 23);
+    TC_SUCCESS_RESULT();
+    return 0;
 }

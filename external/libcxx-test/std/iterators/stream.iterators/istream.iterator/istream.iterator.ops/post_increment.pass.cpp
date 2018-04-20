@@ -33,17 +33,20 @@
 #include <iterator>
 #include <sstream>
 #include <cassert>
+#include "libcxx_tc_common.h"
 
-int main()
+int tc_libcxx_iterators_istream_iterator_ops_post_increment(void)
 {
     std::istringstream inf(" 1 23");
     std::istream_iterator<int> i(inf);
     std::istream_iterator<int> icopy = i++;
-    assert(icopy == i);
+    TC_ASSERT_EXPR(icopy == i);
     int j = 0;
     j = *i;
-    assert(j == 23);
+    TC_ASSERT_EXPR(j == 23);
     j = 0;
     j = *icopy;
-    assert(j == 1);
+    TC_ASSERT_EXPR(j == 1);
+    TC_SUCCESS_RESULT();
+    return 0;
 }

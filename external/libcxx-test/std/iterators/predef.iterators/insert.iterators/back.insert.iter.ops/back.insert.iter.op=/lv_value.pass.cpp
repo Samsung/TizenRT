@@ -35,15 +35,17 @@
 #include <iterator>
 #include <vector>
 #include <cassert>
+#include "libcxx_tc_common.h"
 
 template <class C>
-void
+static int
 test(C c)
 {
     const typename C::value_type v = typename C::value_type();
     std::back_insert_iterator<C> i(c);
     i = v;
-    assert(c.back() == v);
+    TC_ASSERT_EXPR(c.back() == v);
+    return 0;
 }
 
 class Copyable
@@ -57,7 +59,9 @@ public:
         {return x.data_ == y.data_;}
 };
 
-int main()
+int tc_libcxx_iterators_back_insert_iter_op__lv_value(void)
 {
-    test(std::vector<Copyable>());
+    TC_ASSERT_FUNC((test(std::vector<Copyable>())));
+    TC_SUCCESS_RESULT();
+    return 0;
 }

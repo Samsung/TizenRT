@@ -24,6 +24,9 @@
 //
 //===----------------------------------------------------------------------===//
 
-int main()
+#include "libcxx_tc_common.h"
+int tc_libcxx_iterators_move_iter_op_conv_tested_elsewhere(void)
 {
+    TC_SUCCESS_RESULT();
+    return 0;
 }

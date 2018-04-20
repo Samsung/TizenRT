@@ -33,26 +33,28 @@
 
 #include <iterator>
 #include <cassert>
+#include "libcxx_tc_common.h"
 
 #include "test_macros.h"
 #include "test_iterators.h"
 
 template <class It>
-void
+static int
 test(It i, typename std::iterator_traits<It>::difference_type n,
      typename std::iterator_traits<It>::value_type x)
 {
     typedef typename std::iterator_traits<It>::value_type value_type;
     const std::reverse_iterator<It> r(i);
     value_type rr = r[n];
-    assert(rr == x);
+    TC_ASSERT_EXPR(rr == x);
+    return 0;
 }
 
-int main()
+int tc_libcxx_iterators_reverse_iter_opindex_difference_type(void)
 {
     const char* s = "1234567890";
-    test(random_access_iterator<const char*>(s+5), 4, '1');
-    test(s+5, 4, '1');
+    TC_ASSERT_FUNC((test(random_access_iterator<const char*>(s+5), 4, '1')));
+    TC_ASSERT_FUNC((test(s+5, 4, '1')));
 
 #if TEST_STD_VER > 14
     {
@@ -63,4 +65,6 @@ int main()
     static_assert(it1[4] == '1', "");
     }
 #endif
+    TC_SUCCESS_RESULT();
+    return 0;
 }

@@ -38,10 +38,11 @@
 
 #include <iterator>
 #include <type_traits>
+#include "libcxx_tc_common.h"
 
 struct A {};
 
-int main()
+int tc_libcxx_iterators_iterator_traits_const_pointer(void)
 {
     typedef std::iterator_traits<const A*> It;
     static_assert((std::is_same<It::difference_type, std::ptrdiff_t>::value), "");
@@ -49,4 +50,6 @@ int main()
     static_assert((std::is_same<It::pointer, const A*>::value), "");
     static_assert((std::is_same<It::reference, const A&>::value), "");
     static_assert((std::is_same<It::iterator_category, std::random_access_iterator_tag>::value), "");
+    TC_SUCCESS_RESULT();
+    return 0;
 }

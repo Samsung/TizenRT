@@ -40,9 +40,10 @@
 #include <vector>
 #include <memory>
 #include <cassert>
+#include "libcxx_tc_common.h"
 
 template <class C>
-void
+static int
 test(C c1, typename C::difference_type j,
      typename C::value_type x1, typename C::value_type x2,
      typename C::value_type x3, const C& c2)
@@ -51,11 +52,12 @@ test(C c1, typename C::difference_type j,
     q = std::move(x1);
     q = std::move(x2);
     q = std::move(x3);
-    assert(c1 == c2);
+    TC_ASSERT_EXPR(c1 == c2);
+    return 0;
 }
 
 template <class C>
-void
+static int
 insert3at(C& c, typename C::iterator i,
      typename C::value_type x1, typename C::value_type x2,
      typename C::value_type x3)
@@ -63,6 +65,7 @@ insert3at(C& c, typename C::iterator i,
     i = c.insert(i, std::move(x1));
     i = c.insert(++i, std::move(x2));
     c.insert(++i, std::move(x3));
+    return 0;
 }
 
 struct do_nothing
@@ -70,7 +73,7 @@ struct do_nothing
     void operator()(void*) const {}
 };
 
-int main()
+int tc_libcxx_iterators_insert_iter_op__rv_value(void)
 {
     {
     typedef std::unique_ptr<int, do_nothing> Ptr;
@@ -83,7 +86,7 @@ int main()
     for (int i = 0; i < 3; ++i)
         c2.push_back(Ptr(x+i));
     insert3at(c2, c2.begin(), Ptr(x+3), Ptr(x+4), Ptr(x+5));
-    test(std::move(c1), 0, Ptr(x+3), Ptr(x+4), Ptr(x+5), c2);
+    TC_ASSERT_FUNC((test(std::move(c1), 0, Ptr(x+3), Ptr(x+4), Ptr(x+5), c2)));
     c1.clear();
     for (int i = 0; i < 3; ++i)
         c1.push_back(Ptr(x+i));
@@ -91,7 +94,7 @@ int main()
     for (int i = 0; i < 3; ++i)
         c2.push_back(Ptr(x+i));
     insert3at(c2, c2.begin()+1, Ptr(x+3), Ptr(x+4), Ptr(x+5));
-    test(std::move(c1), 1, Ptr(x+3), Ptr(x+4), Ptr(x+5), c2);
+    TC_ASSERT_FUNC((test(std::move(c1), 1, Ptr(x+3), Ptr(x+4), Ptr(x+5), c2)));
     c1.clear();
     for (int i = 0; i < 3; ++i)
         c1.push_back(Ptr(x+i));
@@ -99,7 +102,7 @@ int main()
     for (int i = 0; i < 3; ++i)
         c2.push_back(Ptr(x+i));
     insert3at(c2, c2.begin()+2, Ptr(x+3), Ptr(x+4), Ptr(x+5));
-    test(std::move(c1), 2, Ptr(x+3), Ptr(x+4), Ptr(x+5), c2);
+    TC_ASSERT_FUNC((test(std::move(c1), 2, Ptr(x+3), Ptr(x+4), Ptr(x+5), c2)));
     c1.clear();
     for (int i = 0; i < 3; ++i)
         c1.push_back(Ptr(x+i));
@@ -107,6 +110,8 @@ int main()
     for (int i = 0; i < 3; ++i)
         c2.push_back(Ptr(x+i));
     insert3at(c2, c2.begin()+3, Ptr(x+3), Ptr(x+4), Ptr(x+5));
-    test(std::move(c1), 3, Ptr(x+3), Ptr(x+4), Ptr(x+5), c2);
+    TC_ASSERT_FUNC((test(std::move(c1), 3, Ptr(x+3), Ptr(x+4), Ptr(x+5), c2)));
     }
+    TC_SUCCESS_RESULT();
+    return 0;
 }

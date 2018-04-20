@@ -44,3 +44,10 @@ config LIBCXX_UTC_THREAD
 	depends on LIBCXX_UTC
 	---help---
 		UTC for Libc++ Thread(Mutex)
+
+config LIBCXX_UTC_ITERATORS
+	bool "UTC for Libc++ Iterators"
+	default y
+	depends on LIBCXX_UTC
+	---help---
+		UTC for Libc++ Iterators

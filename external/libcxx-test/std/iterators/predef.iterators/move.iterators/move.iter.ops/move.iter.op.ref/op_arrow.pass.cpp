@@ -34,21 +34,23 @@
 
 #include <iterator>
 #include <cassert>
+#include "libcxx_tc_common.h"
 
 #include "test_macros.h"
 
 template <class It>
-void
+static int
 test(It i)
 {
     std::move_iterator<It> r(i);
-    assert(r.operator->() == i);
+    TC_ASSERT_EXPR(r.operator->() == i);
+    return 0;
 }
 
-int main()
+int tc_libcxx_iterators_move_iter_op_ref_op_arrow(void)
 {
     char s[] = "123";
-    test(s);
+    TC_ASSERT_FUNC((test(s)));
 
 #if TEST_STD_VER > 14
     {
@@ -60,4 +62,6 @@ int main()
     static_assert(it2.operator->() == p + 1, "");
     }
 #endif
+    TC_SUCCESS_RESULT();
+    return 0;
 }

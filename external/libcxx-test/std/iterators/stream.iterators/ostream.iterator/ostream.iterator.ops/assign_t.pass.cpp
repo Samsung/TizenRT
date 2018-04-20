@@ -33,6 +33,7 @@
 #include <iterator>
 #include <sstream>
 #include <cassert>
+#include "libcxx_tc_common.h"
 
 #include "test_macros.h"
 
@@ -44,18 +45,20 @@
 #pragma warning(disable: 4244) // conversion from 'X' to 'Y', possible loss of data
 #endif
 
-int main()
+int tc_libcxx_iterators_ostream_iterator_ops_assign_t(void)
 {
     {
         std::ostringstream outf;
         std::ostream_iterator<int> i(outf);
         i = 2.4;
-        assert(outf.str() == "2");
+        TC_ASSERT_EXPR(outf.str() == "2");
     }
     {
         std::ostringstream outf;
         std::ostream_iterator<int> i(outf, ", ");
         i = 2.4;
-        assert(outf.str() == "2, ");
+        TC_ASSERT_EXPR(outf.str() == "2, ");
     }
+    TC_SUCCESS_RESULT();
+    return 0;
 }

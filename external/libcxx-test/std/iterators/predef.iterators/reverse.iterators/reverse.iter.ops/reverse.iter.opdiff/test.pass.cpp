@@ -38,28 +38,30 @@
 #include <iterator>
 #include <cstddef>
 #include <cassert>
+#include "libcxx_tc_common.h"
 
 #include "test_macros.h"
 #include "test_iterators.h"
 
 template <class It1, class It2>
-void
+static int
 test(It1 l, It2 r, std::ptrdiff_t x)
 {
     const std::reverse_iterator<It1> r1(l);
     const std::reverse_iterator<It2> r2(r);
-    assert((r1 - r2) == x);
+    TC_ASSERT_EXPR((r1 - r2) == x);
+    return 0;
 }
 
-int main()
+int tc_libcxx_iterators_reverse_iter_opdiff_test(void)
 {
     char s[3] = {0};
-    test(random_access_iterator<const char*>(s), random_access_iterator<char*>(s), 0);
-    test(random_access_iterator<char*>(s), random_access_iterator<const char*>(s+1), 1);
-    test(random_access_iterator<const char*>(s+1), random_access_iterator<char*>(s), -1);
-    test(s, s, 0);
-    test(s, s+1, 1);
-    test(s+1, s, -1);
+    TC_ASSERT_FUNC((test(random_access_iterator<const char*>(s), random_access_iterator<char*>(s), 0)));
+    TC_ASSERT_FUNC((test(random_access_iterator<char*>(s), random_access_iterator<const char*>(s+1), 1)));
+    TC_ASSERT_FUNC((test(random_access_iterator<const char*>(s+1), random_access_iterator<char*>(s), -1)));
+    TC_ASSERT_FUNC((test(s, s, 0)));
+    TC_ASSERT_FUNC((test(s, s+1, 1)));
+    TC_ASSERT_FUNC((test(s+1, s, -1)));
 
 #if TEST_STD_VER > 14
     {
@@ -71,4 +73,6 @@ int main()
         static_assert( it2 - it1 == -1, "");
     }
 #endif
+    TC_SUCCESS_RESULT();
+    return 0;
 }

@@ -36,27 +36,29 @@
 
 #include <iterator>
 #include <cassert>
+#include "libcxx_tc_common.h"
 
 #include "test_macros.h"
 #include "test_iterators.h"
 
 template <class It>
-void
+static int
 test(It i)
 {
     const std::move_iterator<It> r(i);
-    assert(std::make_move_iterator(i) == r);
+    TC_ASSERT_EXPR(std::make_move_iterator(i) == r);
+    return 0;
 }
 
-int main()
+int tc_libcxx_iterators_move_iter_nonmember_make_move_iterator(void)
 {
     {
     char s[] = "1234567890";
-    test(input_iterator<char*>(s+5));
-    test(forward_iterator<char*>(s+5));
-    test(bidirectional_iterator<char*>(s+5));
-    test(random_access_iterator<char*>(s+5));
-    test(s+5);
+    TC_ASSERT_FUNC((test(input_iterator<char*>(s+5))));
+    TC_ASSERT_FUNC((test(forward_iterator<char*>(s+5))));
+    TC_ASSERT_FUNC((test(bidirectional_iterator<char*>(s+5))));
+    TC_ASSERT_FUNC((test(random_access_iterator<char*>(s+5))));
+    TC_ASSERT_FUNC((test(s+5)));
     }
     {
     int a[] = {1,2,3,4};
@@ -71,4 +73,6 @@ int main()
     static_assert(iter.base() == p);
     }
 #endif
+    TC_SUCCESS_RESULT();
+    return 0;
 }

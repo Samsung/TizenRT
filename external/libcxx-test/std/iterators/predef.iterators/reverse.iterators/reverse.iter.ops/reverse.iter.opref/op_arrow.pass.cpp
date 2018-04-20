@@ -41,6 +41,7 @@
 #include <iterator>
 #include <list>
 #include <cassert>
+#include "libcxx_tc_common.h"
 
 #include "test_macros.h"
 
@@ -58,11 +59,12 @@ public:
 };
 
 template <class It>
-void
+static int
 test(It i, typename std::iterator_traits<It>::value_type x)
 {
     std::reverse_iterator<It> r(i);
-    assert(r->get() == x.get());
+    TC_ASSERT_EXPR(r->get() == x.get());
+    return 0;
 }
 
 class B
@@ -94,10 +96,10 @@ public:
 
 TEST_CONSTEXPR  C gC;
 
-int main()
+int tc_libcxx_iterators_reverse_iter_opref_op_arrow(void)
 {
     A a;
-    test(&a+1, A());
+    TC_ASSERT_FUNC((test(&a+1, A())));
 
     {
     std::list<B> l;
@@ -107,18 +109,18 @@ int main()
 
     {
     std::list<B>::const_iterator i = l.begin();
-    assert ( i->get() == 0 );  ++i;
-    assert ( i->get() == 1 );  ++i;
-    assert ( i->get() == 2 );  ++i;
-    assert ( i == l.end ());
+    TC_ASSERT_EXPR ( i->get() == 0 );  ++i;
+    TC_ASSERT_EXPR ( i->get() == 1 );  ++i;
+    TC_ASSERT_EXPR ( i->get() == 2 );  ++i;
+    TC_ASSERT_EXPR ( i == l.end ());
     }
 
     {
     std::list<B>::const_reverse_iterator ri = l.rbegin();
-    assert ( ri->get() == 2 );  ++ri;
-    assert ( ri->get() == 1 );  ++ri;
-    assert ( ri->get() == 0 );  ++ri;
-    assert ( ri == l.rend ());
+    TC_ASSERT_EXPR ( ri->get() == 2 );  ++ri;
+    TC_ASSERT_EXPR ( ri->get() == 1 );  ++ri;
+    TC_ASSERT_EXPR ( ri->get() == 0 );  ++ri;
+    TC_ASSERT_EXPR ( ri == l.rend ());
     }
     }
 
@@ -133,4 +135,6 @@ int main()
     {
         ((void)gC);
     }
+    TC_SUCCESS_RESULT();
+    return 0;
 }
