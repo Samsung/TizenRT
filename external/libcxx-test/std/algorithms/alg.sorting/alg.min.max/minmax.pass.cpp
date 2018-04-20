@@ -34,35 +34,37 @@
 #include <cassert>
 
 #include "test_macros.h"
+#include "libcxx_tc_common.h"
 
 template <class T>
-void
+static int
 test(const T& a, const T& b, const T& x, const T& y)
 {
     std::pair<const T&, const T&> p = std::minmax(a, b);
-    assert(&p.first == &x);
-    assert(&p.second == &y);
+    TC_ASSERT_EXPR(&p.first == &x);
+    TC_ASSERT_EXPR(&p.second == &y);
+    return 0;
 }
 
-int main()
+int tc_libcxx_algorithms_alg_min_max_minmax(void)
 {
     {
     int x = 0;
     int y = 0;
-    test(x, y, x, y);
-    test(y, x, y, x);
+    TC_ASSERT_FUNC((test(x, y, x, y)));
+    TC_ASSERT_FUNC((test(y, x, y, x)));
     }
     {
     int x = 0;
     int y = 1;
-    test(x, y, x, y);
-    test(y, x, x, y);
+    TC_ASSERT_FUNC((test(x, y, x, y)));
+    TC_ASSERT_FUNC((test(y, x, x, y)));
     }
     {
     int x = 1;
     int y = 0;
-    test(x, y, y, x);
-    test(y, x, y, x);
+    TC_ASSERT_FUNC((test(x, y, y, x)));
+    TC_ASSERT_FUNC((test(y, x, y, x)));
     }
 #if TEST_STD_VER >= 14
     {
@@ -78,4 +80,6 @@ int main()
     static_assert(p2.second == x, "");
     }
 #endif
+    TC_SUCCESS_RESULT();
+    return 0;
 }

@@ -9,3 +9,10 @@ config LIBCXX_UTC
 	depends on LIBCXX
 	---help---
 		Enables unit test for LLVM Libc++.
+
+config LIBCXX_UTC_ALGORITHMS
+	bool "UTC for Libc++ Algorithms"
+	default y
+	depends on LIBCXX_UTC
+	---help---
+		UTC for Libc++ Algorithms

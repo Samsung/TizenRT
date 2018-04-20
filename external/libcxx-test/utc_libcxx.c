@@ -29,6 +29,10 @@ int utc_libcxx_main(int argc, char *argv[])
 		return ERROR;
 	}
 
+#if defined(CONFIG_LIBCXX_UTC_ALGORITHMS)
+	tc_algorithms_main();
+#endif
+
 	tc_handler(TC_END, "Libc++ TC");
 
 	return OK;
