@@ -37,3 +37,10 @@ config LIBCXX_UTC_STDBOOL
 	depends on LIBCXX_UTC
 	---help---
 		UTC for Libc++ stdbool
+
+config LIBCXX_UTC_THREAD
+	bool "UTC for Libc++ Thread(Mutex)"
+	default y
+	depends on LIBCXX_UTC
+	---help---
+		UTC for Libc++ Thread(Mutex)

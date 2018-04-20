@@ -21,9 +21,12 @@
 
 #include <mutex>
 #include <type_traits>
+#include "libcxx_tc_common.h"
 
-int main()
+int tc_libcxx_thread_thread_lock_unique_types(void)
 {
     static_assert((std::is_same<std::unique_lock<std::mutex>::mutex_type,
                    std::mutex>::value), "");
+    TC_SUCCESS_RESULT();
+    return 0;
 }

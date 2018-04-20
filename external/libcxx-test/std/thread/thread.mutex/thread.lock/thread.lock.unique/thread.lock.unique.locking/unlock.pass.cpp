@@ -13,14 +13,15 @@
 
 // template <class Mutex> class unique_lock;
 
-// void unlock();
+// static int unlock();
 
 #include <mutex>
 #include <cassert>
+#include "libcxx_tc_common.h"
 
 #include "test_macros.h"
 
-bool unlock_called = false;
+static bool unlock_called = false;
 
 struct mutex
 {
@@ -28,23 +29,23 @@ struct mutex
     void unlock() {unlock_called = true;}
 };
 
-mutex m;
+static mutex m;
 
-int main()
+int tc_libcxx_thread_thread_lock_unique_locking_unlock(void)
 {
     std::unique_lock<mutex> lk(m);
     lk.unlock();
-    assert(unlock_called == true);
-    assert(lk.owns_lock() == false);
+    TC_ASSERT_EXPR(unlock_called == true);
+    TC_ASSERT_EXPR(lk.owns_lock() == false);
 #ifndef TEST_HAS_NO_EXCEPTIONS
     try
     {
         lk.unlock();
-        assert(false);
+        TC_ASSERT_EXPR(false);
     }
     catch (std::system_error& e)
     {
-        assert(e.code().value() == EPERM);
+        TC_ASSERT_EXPR(e.code().value() == EPERM);
     }
 #endif
     lk.release();
@@ -52,11 +53,13 @@ int main()
     try
     {
         lk.unlock();
-        assert(false);
+        TC_ASSERT_EXPR(false);
     }
     catch (std::system_error& e)
     {
-        assert(e.code().value() == EPERM);
+        TC_ASSERT_EXPR(e.code().value() == EPERM);
     }
 #endif
+    TC_SUCCESS_RESULT();
+    return 0;
 }

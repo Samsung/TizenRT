@@ -15,8 +15,9 @@
 
 #include <mutex>
 #include "test_macros.h"
+#include "libcxx_tc_common.h"
 
-int main()
+int tc_libcxx_thread_thread_once_onceflag_default(void)
 {
     {
     std::once_flag f;
@@ -28,4 +29,6 @@ int main()
     (void)f;
     }
 #endif
+    TC_SUCCESS_RESULT();
+    return 0;
 }

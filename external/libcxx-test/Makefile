@@ -124,6 +124,7 @@ CXXSRCS += std/depr/tc_depr.cpp
 CXXSRCS += std/language.support/tc_language_support.cpp
 endif
 
+ifeq ($(CONFIG_LIBCXX_UTC_THREAD),y)
 #Thread Sources
 CXXSRCS += std/thread/thread.mutex/thread.lock.algorithm/lock.pass.cpp
 CXXSRCS += std/thread/thread.mutex/thread.lock.algorithm/try_lock.pass.cpp
@@ -170,6 +171,10 @@ CXXSRCS += std/thread/thread.mutex/thread.lock/thread.lock.unique/thread.lock.un
 CXXSRCS += std/thread/thread.mutex/thread.lock/thread.lock.unique/thread.lock.unique.mod/nonmember_swap.pass.cpp
 CXXSRCS += std/thread/thread.mutex/thread.lock/thread.lock.unique/types.pass.cpp
 CXXSRCS += std/thread/thread.mutex/thread.lock/types.pass.cpp
+
+#Thread TC Main
+CXXSRCS += std/thread/tc_thread.cpp
+endif
 
 
 AOBJS		= $(ASRCS:.S=$(OBJEXT))
