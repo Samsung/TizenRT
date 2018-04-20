@@ -36,31 +36,33 @@
 
 #include <iterator>
 #include <cassert>
+#include "libcxx_tc_common.h"
 
 #include "test_macros.h"
 #include "test_iterators.h"
 
 template <class It, class U>
-void
+static int
 test(U u)
 {
     const std::move_iterator<U> r2(u);
     std::move_iterator<It> r1 = r2;
-    assert(r1.base() == u);
+    TC_ASSERT_EXPR(r1.base() == u);
+    return 0;
 }
 
 struct Base {};
 struct Derived : Base {};
 
-int main()
+int tc_libcxx_iterators_move_iter_op_const_convert(void)
 {
     Derived d;
 
-    test<input_iterator<Base*> >(input_iterator<Derived*>(&d));
-    test<forward_iterator<Base*> >(forward_iterator<Derived*>(&d));
-    test<bidirectional_iterator<Base*> >(bidirectional_iterator<Derived*>(&d));
-    test<random_access_iterator<const Base*> >(random_access_iterator<Derived*>(&d));
-    test<Base*>(&d);
+    TC_ASSERT_FUNC((test<input_iterator<Base*> >(input_iterator<Derived*>(&d))));
+    TC_ASSERT_FUNC((test<forward_iterator<Base*> >(forward_iterator<Derived*>(&d))));
+    TC_ASSERT_FUNC((test<bidirectional_iterator<Base*> >(bidirectional_iterator<Derived*>(&d))));
+    TC_ASSERT_FUNC((test<random_access_iterator<const Base*> >(random_access_iterator<Derived*>(&d))));
+    TC_ASSERT_FUNC((test<Base*>(&d)));
 
 #if TEST_STD_VER > 14
     {
@@ -70,4 +72,6 @@ int main()
     static_assert(it2.base() == p);
     }
 #endif
+    TC_SUCCESS_RESULT();
+    return 0;
 }

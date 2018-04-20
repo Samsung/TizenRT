@@ -176,6 +176,7 @@ CXXSRCS += std/thread/thread.mutex/thread.lock/types.pass.cpp
 CXXSRCS += std/thread/tc_thread.cpp
 endif
 
+ifeq ($(CONFIG_LIBCXX_UTC_ITERATORS),y)
 #Iterators Source
 CXXSRCS += std/iterators/predef.iterators/reverse.iterators/reverse.iter.ops/reverse.iter.opref/op_arrow.pass.cpp
 CXXSRCS += std/iterators/predef.iterators/reverse.iterators/reverse.iter.ops/reverse.iter.op++/post.pass.cpp
@@ -300,6 +301,11 @@ CXXSRCS += std/iterators/stream.iterators/ostream.iterator/ostream.iterator.cons
 CXXSRCS += std/iterators/stream.iterators/ostream.iterator/ostream.iterator.ops/increment.pass.cpp
 CXXSRCS += std/iterators/stream.iterators/ostream.iterator/ostream.iterator.ops/assign_t.pass.cpp
 CXXSRCS += std/iterators/stream.iterators/ostream.iterator/ostream.iterator.ops/dereference.pass.cpp
+
+#Iterators TC Main
+CXXSRCS += std/iterators/tc_iterators.cpp
+endif
+
 
 
 AOBJS		= $(ASRCS:.S=$(OBJEXT))

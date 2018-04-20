@@ -34,13 +34,16 @@
 #include <iterator>
 #include <sstream>
 #include <cassert>
+#include "libcxx_tc_common.h"
 
-int main()
+int tc_libcxx_iterators_ostream_iterator_ops_increment(void)
 {
     std::ostringstream os;
     std::ostream_iterator<int> i(os);
     std::ostream_iterator<int>& iref1 = ++i;
-    assert(&iref1 == &i);
+    TC_ASSERT_EXPR(&iref1 == &i);
     std::ostream_iterator<int>& iref2 = i++;
-    assert(&iref2 == &i);
+    TC_ASSERT_EXPR(&iref2 == &i);
+    TC_SUCCESS_RESULT();
+    return 0;
 }

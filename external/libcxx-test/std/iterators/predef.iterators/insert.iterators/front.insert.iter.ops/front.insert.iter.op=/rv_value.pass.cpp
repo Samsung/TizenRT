@@ -37,17 +37,21 @@
 #include <list>
 #include <memory>
 #include <cassert>
+#include "libcxx_tc_common.h"
 
 template <class C>
-void
+static int
 test(C c)
 {
     std::front_insert_iterator<C> i(c);
     i = typename C::value_type();
-    assert(c.front() == typename C::value_type());
+    TC_ASSERT_EXPR(c.front() == typename C::value_type());
+    return 0;
 }
 
-int main()
+int tc_libcxx_iterators_front_insert_iter_op__rv_value(void)
 {
-    test(std::list<std::unique_ptr<int> >());
+    TC_ASSERT_FUNC((test(std::list<std::unique_ptr<int> >())));
+    TC_SUCCESS_RESULT();
+    return 0;
 }

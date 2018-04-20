@@ -33,15 +33,18 @@
 #include <iterator>
 #include <sstream>
 #include <cassert>
+#include "libcxx_tc_common.h"
 
-int main()
+int tc_libcxx_iterators_istream_iterator_cons_istream(void)
 {
     std::istringstream inf(" 1 23");
     std::istream_iterator<int> i(inf);
-    assert(i != std::istream_iterator<int>());
-    assert(inf.peek() == ' ');
-    assert(inf.good());
+    TC_ASSERT_EXPR(i != std::istream_iterator<int>());
+    TC_ASSERT_EXPR(inf.peek() == ' ');
+    TC_ASSERT_EXPR(inf.good());
     int j = 0;
     inf >> j;
-    assert(j == 23);
+    TC_ASSERT_EXPR(j == 23);
+    TC_SUCCESS_RESULT();
+    return 0;
 }

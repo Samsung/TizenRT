@@ -30,11 +30,14 @@
 
 #include <iterator>
 #include <type_traits>
+#include "libcxx_tc_common.h"
 
-int main()
+int tc_libcxx_iterators_std_iterator_tags_input_iterator_tag(void)
 {
     std::input_iterator_tag tag;
     ((void)tag); // Prevent unused warning
     static_assert((!std::is_base_of<std::output_iterator_tag,
                                     std::input_iterator_tag>::value), "");
+    TC_SUCCESS_RESULT();
+    return 0;
 }

@@ -39,11 +39,12 @@
 
 #include <iterator>
 #include <type_traits>
+#include "libcxx_tc_common.h"
 
 struct A {};
 
 template <class T>
-void
+static int
 test2()
 {
     typedef std::iterator<std::forward_iterator_tag, T> It;
@@ -52,10 +53,11 @@ test2()
     static_assert((std::is_same<typename It::pointer, T*>::value), "");
     static_assert((std::is_same<typename It::reference, T&>::value), "");
     static_assert((std::is_same<typename It::iterator_category, std::forward_iterator_tag>::value), "");
+    return 0;
 }
 
 template <class T>
-void
+static int
 test3()
 {
     typedef std::iterator<std::bidirectional_iterator_tag, T, short> It;
@@ -64,10 +66,11 @@ test3()
     static_assert((std::is_same<typename It::pointer, T*>::value), "");
     static_assert((std::is_same<typename It::reference, T&>::value), "");
     static_assert((std::is_same<typename It::iterator_category, std::bidirectional_iterator_tag>::value), "");
+    return 0;
 }
 
 template <class T>
-void
+static int
 test4()
 {
     typedef std::iterator<std::random_access_iterator_tag, T, int, const T*> It;
@@ -76,10 +79,11 @@ test4()
     static_assert((std::is_same<typename It::pointer, const T*>::value), "");
     static_assert((std::is_same<typename It::reference, T&>::value), "");
     static_assert((std::is_same<typename It::iterator_category, std::random_access_iterator_tag>::value), "");
+    return 0;
 }
 
 template <class T>
-void
+static int
 test5()
 {
     typedef std::iterator<std::input_iterator_tag, T, long, const T*, const T&> It;
@@ -88,12 +92,15 @@ test5()
     static_assert((std::is_same<typename It::pointer, const T*>::value), "");
     static_assert((std::is_same<typename It::reference, const T&>::value), "");
     static_assert((std::is_same<typename It::iterator_category, std::input_iterator_tag>::value), "");
+    return 0;
 }
 
-int main()
+int tc_libcxx_iterators_iterator_basic_iterator(void)
 {
-    test2<A>();
-    test3<A>();
-    test4<A>();
-    test5<A>();
+    TC_ASSERT_FUNC((test2<A>()));
+    TC_ASSERT_FUNC((test3<A>()));
+    TC_ASSERT_FUNC((test4<A>()));
+    TC_ASSERT_FUNC((test5<A>()));
+    TC_SUCCESS_RESULT();
+    return 0;
 }

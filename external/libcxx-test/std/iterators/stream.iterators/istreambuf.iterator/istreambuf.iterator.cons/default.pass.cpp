@@ -36,15 +36,16 @@
 #include <iterator>
 #include <sstream>
 #include <cassert>
+#include "libcxx_tc_common.h"
 
 #include "test_macros.h"
 
-int main()
+int tc_libcxx_iterators_istreambuf_iterator_cons_default(void)
 {
     {
         typedef std::istreambuf_iterator<char> T;
         T it;
-        assert(it == T());
+        TC_ASSERT_EXPR(it == T());
 #if TEST_STD_VER >= 11
         constexpr T it2;
         (void)it2;
@@ -53,10 +54,12 @@ int main()
     {
         typedef std::istreambuf_iterator<wchar_t> T;
         T it;
-        assert(it == T());
+        TC_ASSERT_EXPR(it == T());
 #if TEST_STD_VER >= 11
         constexpr T it2;
         (void)it2;
 #endif
     }
+    TC_SUCCESS_RESULT();
+    return 0;
 }

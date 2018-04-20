@@ -23,7 +23,10 @@
 // Source Licenses. See LICENSE.TXT for details.
 //
 //===----------------------------------------------------------------------===//
+#include "libcxx_tc_common.h"
 
-int main()
+int tc_libcxx_iterators_reverse_iter_requirements_nothing_to_do(void)
 {
+    TC_SUCCESS_RESULT();
+    return 0;
 }

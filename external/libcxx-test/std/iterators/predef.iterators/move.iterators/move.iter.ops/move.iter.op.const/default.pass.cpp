@@ -36,22 +36,24 @@
 
 #include "test_macros.h"
 #include "test_iterators.h"
+#include "libcxx_tc_common.h"
 
 template <class It>
-void
+static int
 test()
 {
     std::move_iterator<It> r;
     (void)r;
+    return 0;
 }
 
-int main()
+int tc_libcxx_iterators_move_iter_op_const_default(void)
 {
-    test<input_iterator<char*> >();
-    test<forward_iterator<char*> >();
-    test<bidirectional_iterator<char*> >();
-    test<random_access_iterator<char*> >();
-    test<char*>();
+    TC_ASSERT_FUNC((test<input_iterator<char*> >()));
+    TC_ASSERT_FUNC((test<forward_iterator<char*> >()));
+    TC_ASSERT_FUNC((test<bidirectional_iterator<char*> >()));
+    TC_ASSERT_FUNC((test<random_access_iterator<char*> >()));
+    TC_ASSERT_FUNC((test<char*>()));
 
 #if TEST_STD_VER > 14
     {
@@ -59,4 +61,6 @@ int main()
     (void)it;
     }
 #endif
+    TC_SUCCESS_RESULT();
+    return 0;
 }

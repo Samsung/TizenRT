@@ -45,17 +45,20 @@
 #include <iterator>
 #include <sstream>
 #include <cassert>
+#include "libcxx_tc_common.h"
 
-int main()
+int tc_libcxx_iterators_istreambuf_iterator_proxy_proxy(void)
 {
     {
         std::istringstream inf("abc");
         std::istreambuf_iterator<char> i(inf);
-        assert(*i++ == 'a');
+        TC_ASSERT_EXPR(*i++ == 'a');
     }
     {
         std::wistringstream inf(L"abc");
         std::istreambuf_iterator<wchar_t> i(inf);
-        assert(*i++ == L'a');
+        TC_ASSERT_EXPR(*i++ == L'a');
     }
+    TC_SUCCESS_RESULT();
+    return 0;
 }

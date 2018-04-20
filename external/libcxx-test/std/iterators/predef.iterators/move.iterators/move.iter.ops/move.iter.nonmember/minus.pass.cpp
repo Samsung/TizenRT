@@ -38,24 +38,26 @@
 
 #include <iterator>
 #include <cassert>
+#include "libcxx_tc_common.h"
 
 #include "test_macros.h"
 #include "test_iterators.h"
 
 template <class It>
-void
+static int
 test(It l, It r, typename std::iterator_traits<It>::difference_type x)
 {
     const std::move_iterator<It> r1(l);
     const std::move_iterator<It> r2(r);
-    assert(r1 - r2 == x);
+    TC_ASSERT_EXPR(r1 - r2 == x);
+    return 0;
 }
 
-int main()
+int tc_libcxx_iterators_move_iter_nonmember_minus(void)
 {
     char s[] = "1234567890";
-    test(random_access_iterator<char*>(s+5), random_access_iterator<char*>(s), 5);
-    test(s+5, s, 5);
+    TC_ASSERT_FUNC((test(random_access_iterator<char*>(s+5), random_access_iterator<char*>(s), 5)));
+    TC_ASSERT_FUNC((test(s+5, s, 5)));
 
 #if TEST_STD_VER > 14
     {
@@ -67,4 +69,6 @@ int main()
     static_assert( it2 - it1 ==  1, "");
     }
 #endif
+    TC_SUCCESS_RESULT();
+    return 0;
 }

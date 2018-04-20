@@ -39,6 +39,7 @@
 
 #include <iterator>
 #include <cassert>
+#include "libcxx_tc_common.h"
 
 #include "test_macros.h"
 
@@ -54,17 +55,18 @@ public:
 };
 
 template <class It>
-void
+static int
 test(It i, typename std::iterator_traits<It>::value_type x)
 {
     std::reverse_iterator<It> r(i);
-    assert(*r == x);
+    TC_ASSERT_EXPR(*r == x);
+    return 0;
 }
 
-int main()
+int tc_libcxx_iterators_reverse_iter_op_star_op_star(void)
 {
     A a;
-    test(&a+1, A());
+    TC_ASSERT_FUNC((test(&a+1, A())));
 
 #if TEST_STD_VER > 14
     {
@@ -76,4 +78,6 @@ int main()
         static_assert(*it2 == p[1], "");
     }
 #endif
+    TC_SUCCESS_RESULT();
+    return 0;
 }

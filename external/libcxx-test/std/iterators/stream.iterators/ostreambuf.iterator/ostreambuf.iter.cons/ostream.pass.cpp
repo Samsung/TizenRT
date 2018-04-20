@@ -33,17 +33,20 @@
 #include <iterator>
 #include <sstream>
 #include <cassert>
+#include "libcxx_tc_common.h"
 
-int main()
+int tc_libcxx_iterators_ostreambuf_iter_cons_ostream(void)
 {
     {
         std::ostringstream outf;
         std::ostreambuf_iterator<char> i(outf);
-        assert(!i.failed());
+        TC_ASSERT_EXPR(!i.failed());
     }
     {
         std::wostringstream outf;
         std::ostreambuf_iterator<wchar_t> i(outf);
-        assert(!i.failed());
+        TC_ASSERT_EXPR(!i.failed());
     }
+    TC_SUCCESS_RESULT();
+    return 0;
 }

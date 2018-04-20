@@ -37,28 +37,30 @@
 
 #include <iterator>
 #include <cassert>
+#include "libcxx_tc_common.h"
 
 #include "test_macros.h"
 #include "test_iterators.h"
 
 template <class It>
-void
+static int
 test(It l, It r, bool x)
 {
     const std::reverse_iterator<It> r1(l);
     const std::reverse_iterator<It> r2(r);
-    assert((r1 == r2) == x);
+    TC_ASSERT_EXPR((r1 == r2) == x);
+    return 0;
 }
 
-int main()
+int tc_libcxx_iterators_reverse_iter_op___test(void)
 {
     const char* s = "1234567890";
-    test(bidirectional_iterator<const char*>(s), bidirectional_iterator<const char*>(s), true);
-    test(bidirectional_iterator<const char*>(s), bidirectional_iterator<const char*>(s+1), false);
-    test(random_access_iterator<const char*>(s), random_access_iterator<const char*>(s), true);
-    test(random_access_iterator<const char*>(s), random_access_iterator<const char*>(s+1), false);
-    test(s, s, true);
-    test(s, s+1, false);
+    TC_ASSERT_FUNC((test(bidirectional_iterator<const char*>(s), bidirectional_iterator<const char*>(s), true)));
+    TC_ASSERT_FUNC((test(bidirectional_iterator<const char*>(s), bidirectional_iterator<const char*>(s+1), false)));
+    TC_ASSERT_FUNC((test(random_access_iterator<const char*>(s), random_access_iterator<const char*>(s), true)));
+    TC_ASSERT_FUNC((test(random_access_iterator<const char*>(s), random_access_iterator<const char*>(s+1), false)));
+    TC_ASSERT_FUNC((test(s, s, true)));
+    TC_ASSERT_FUNC((test(s, s+1, false)));
 
 #if TEST_STD_VER > 14
     {
@@ -72,4 +74,6 @@ int main()
     }
 #endif
 
+    TC_SUCCESS_RESULT();
+    return 0;
 }

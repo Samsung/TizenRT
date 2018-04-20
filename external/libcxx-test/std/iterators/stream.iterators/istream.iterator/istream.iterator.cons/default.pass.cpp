@@ -38,6 +38,7 @@
 
 #include <iterator>
 #include <cassert>
+#include "libcxx_tc_common.h"
 #include <string>
 
 #include "test_macros.h"
@@ -60,12 +61,12 @@ void operator ()() const {}
 #endif
 
 
-int main()
+int tc_libcxx_iterators_istream_iterator_cons_default(void)
 {
     {
     typedef std::istream_iterator<int> T;
     T it;
-    assert(it == T());
+    TC_ASSERT_EXPR(it == T());
 #if TEST_STD_VER >= 11
     constexpr T it2;
     (void)it2;
@@ -73,10 +74,12 @@ int main()
     }
 
 #if TEST_STD_VER > 14
-    test_trivial<int>()();
-    test_trivial<char>()();
-    test_trivial<double>()();
-    test_trivial<S>()();
-    test_trivial<std::string>()();
+    TC_ASSERT_FUNC((test_trivial<int>()()));
+    TC_ASSERT_FUNC((test_trivial<char>()()));
+    TC_ASSERT_FUNC((test_trivial<double>()()));
+    TC_ASSERT_FUNC((test_trivial<S>()()));
+    TC_ASSERT_FUNC((test_trivial<std::string>()()));
 #endif
+    TC_SUCCESS_RESULT();
+    return 0;
 }

@@ -30,12 +30,15 @@
 
 #include <iterator>
 #include <cassert>
+#include "libcxx_tc_common.h"
 
-int main()
+int tc_libcxx_iterators_iterator_range_end_array(void)
 {
     int ia[] = {1, 2, 3};
     int* i = std::begin(ia);
     int* e = std::end(ia);
-    assert(e == ia + 3);
-    assert(e - i == 3);
+    TC_ASSERT_EXPR(e == ia + 3);
+    TC_ASSERT_EXPR(e - i == 3);
+    TC_SUCCESS_RESULT();
+    return 0;
 }

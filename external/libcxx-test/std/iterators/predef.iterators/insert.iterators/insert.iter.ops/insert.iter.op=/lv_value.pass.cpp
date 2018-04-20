@@ -35,10 +35,11 @@
 #include <iterator>
 #include <vector>
 #include <cassert>
+#include "libcxx_tc_common.h"
 #include "nasty_containers.hpp"
 
 template <class C>
-void
+static int
 test(C c1, typename C::difference_type j,
      typename C::value_type x1, typename C::value_type x2,
      typename C::value_type x3, const C& c2)
@@ -47,11 +48,12 @@ test(C c1, typename C::difference_type j,
     q = x1;
     q = x2;
     q = x3;
-    assert(c1 == c2);
+    TC_ASSERT_EXPR(c1 == c2);
+    return 0;
 }
 
 template <class C>
-void
+static int
 insert3at(C& c, typename C::iterator i,
      typename C::value_type x1, typename C::value_type x2,
      typename C::value_type x3)
@@ -59,9 +61,10 @@ insert3at(C& c, typename C::iterator i,
     i = c.insert(i, x1);
     i = c.insert(++i, x2);
     c.insert(++i, x3);
+    return 0;
 }
 
-int main()
+int tc_libcxx_iterators_insert_iter_op__lv_value(void)
 {
     {
     typedef std::vector<int> C;
@@ -70,16 +73,16 @@ int main()
         c1.push_back(i);
     C c2 = c1;
     insert3at(c2, c2.begin(), 'a', 'b', 'c');
-    test(c1, 0, 'a', 'b', 'c', c2);
+    TC_ASSERT_FUNC((test(c1, 0, 'a', 'b', 'c', c2)));
     c2 = c1;
     insert3at(c2, c2.begin()+1, 'a', 'b', 'c');
-    test(c1, 1, 'a', 'b', 'c', c2);
+    TC_ASSERT_FUNC((test(c1, 1, 'a', 'b', 'c', c2)));
     c2 = c1;
     insert3at(c2, c2.begin()+2, 'a', 'b', 'c');
-    test(c1, 2, 'a', 'b', 'c', c2);
+    TC_ASSERT_FUNC((test(c1, 2, 'a', 'b', 'c', c2)));
     c2 = c1;
     insert3at(c2, c2.begin()+3, 'a', 'b', 'c');
-    test(c1, 3, 'a', 'b', 'c', c2);
+    TC_ASSERT_FUNC((test(c1, 3, 'a', 'b', 'c', c2)));
     }
     {
     typedef nasty_vector<int> C;
@@ -88,15 +91,17 @@ int main()
         c1.push_back(i);
     C c2 = c1;
     insert3at(c2, c2.begin(), 'a', 'b', 'c');
-    test(c1, 0, 'a', 'b', 'c', c2);
+    TC_ASSERT_FUNC((test(c1, 0, 'a', 'b', 'c', c2)));
     c2 = c1;
     insert3at(c2, c2.begin()+1, 'a', 'b', 'c');
-    test(c1, 1, 'a', 'b', 'c', c2);
+    TC_ASSERT_FUNC((test(c1, 1, 'a', 'b', 'c', c2)));
     c2 = c1;
     insert3at(c2, c2.begin()+2, 'a', 'b', 'c');
-    test(c1, 2, 'a', 'b', 'c', c2);
+    TC_ASSERT_FUNC((test(c1, 2, 'a', 'b', 'c', c2)));
     c2 = c1;
     insert3at(c2, c2.begin()+3, 'a', 'b', 'c');
-    test(c1, 3, 'a', 'b', 'c', c2);
+    TC_ASSERT_FUNC((test(c1, 3, 'a', 'b', 'c', c2)));
     }
+    TC_SUCCESS_RESULT();
+    return 0;
 }

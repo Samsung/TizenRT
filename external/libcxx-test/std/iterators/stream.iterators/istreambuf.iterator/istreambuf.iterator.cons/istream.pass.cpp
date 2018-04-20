@@ -33,27 +33,30 @@
 #include <iterator>
 #include <sstream>
 #include <cassert>
+#include "libcxx_tc_common.h"
 
-int main()
+int tc_libcxx_iterators_istreambuf_iterator_cons_istream(void)
 {
     {
         std::istringstream inf;
         std::istreambuf_iterator<char> i(inf);
-        assert(i == std::istreambuf_iterator<char>());
+        TC_ASSERT_EXPR(i == std::istreambuf_iterator<char>());
     }
     {
         std::istringstream inf("a");
         std::istreambuf_iterator<char> i(inf);
-        assert(i != std::istreambuf_iterator<char>());
+        TC_ASSERT_EXPR(i != std::istreambuf_iterator<char>());
     }
     {
         std::wistringstream inf;
         std::istreambuf_iterator<wchar_t> i(inf);
-        assert(i == std::istreambuf_iterator<wchar_t>());
+        TC_ASSERT_EXPR(i == std::istreambuf_iterator<wchar_t>());
     }
     {
         std::wistringstream inf(L"a");
         std::istreambuf_iterator<wchar_t> i(inf);
-        assert(i != std::istreambuf_iterator<wchar_t>());
+        TC_ASSERT_EXPR(i != std::istreambuf_iterator<wchar_t>());
     }
+    TC_SUCCESS_RESULT();
+    return 0;
 }

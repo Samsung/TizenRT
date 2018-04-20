@@ -31,26 +31,29 @@
 
 #include <iterator>
 #include <cassert>
+#include "libcxx_tc_common.h"
 
 #include "test_iterators.h"
 
 template <class It>
-void
+static int
 test(It i, typename std::iterator_traits<It>::difference_type n, It x)
 {
-    assert(std::prev(i, n) == x);
+    TC_ASSERT_EXPR(std::prev(i, n) == x);
 
    /* Fix:
     It (*prev)(It, typename std::iterator_traits<It>::difference_type) = std::prev;
-    assert(prev(i, n) == x);
+    TC_ASSERT_EXPR(prev(i, n) == x);
     */
+    return 0;
 }
 
 template <class It>
-void
+static int
 test(It i, It x)
 {
-    assert(std::prev(i) == x);
+    TC_ASSERT_EXPR(std::prev(i) == x);
+    return 0;
 }
 
 #if TEST_STD_VER > 14
@@ -59,6 +62,7 @@ constexpr bool
 constexpr_test(It i, typename std::iterator_traits<It>::difference_type n, It x)
 {
     return std::prev(i, n) == x;
+    return 0;
 }
 
 template <class It>
@@ -66,20 +70,21 @@ constexpr bool
 constexpr_test(It i, It x)
 {
     return std::prev(i) == x;
+    return 0;
 }
 #endif
 
-int main()
+int tc_libcxx_iterators_iterator_operations_prev(void)
 {
     {
     const char* s = "1234567890";
-    test(bidirectional_iterator<const char*>(s+10), 10, bidirectional_iterator<const char*>(s));
-    test(random_access_iterator<const char*>(s+10), 10, random_access_iterator<const char*>(s));
-    test(s+10, 10, s);
+    TC_ASSERT_FUNC((test(bidirectional_iterator<const char*>(s+10), 10, bidirectional_iterator<const char*>(s))));
+    TC_ASSERT_FUNC((test(random_access_iterator<const char*>(s+10), 10, random_access_iterator<const char*>(s))));
+    TC_ASSERT_FUNC((test(s+10, 10, s)));
 
-    test(bidirectional_iterator<const char*>(s+1), bidirectional_iterator<const char*>(s));
-    test(random_access_iterator<const char*>(s+1), random_access_iterator<const char*>(s));
-    test(s+1, s);
+    TC_ASSERT_FUNC((test(bidirectional_iterator<const char*>(s+1), bidirectional_iterator<const char*>(s))));
+    TC_ASSERT_FUNC((test(random_access_iterator<const char*>(s+1), random_access_iterator<const char*>(s))));
+    TC_ASSERT_FUNC((test(s+1, s)));
     }
 #if TEST_STD_VER > 14
     {
@@ -94,4 +99,6 @@ int main()
     }
 #endif
 
+    TC_SUCCESS_RESULT();
+    return 0;
 }

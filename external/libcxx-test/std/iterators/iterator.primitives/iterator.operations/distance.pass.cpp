@@ -36,14 +36,16 @@
 
 #include <iterator>
 #include <cassert>
+#include "libcxx_tc_common.h"
 
 #include "test_iterators.h"
 
 template <class It>
-void
+static int
 test(It first, It last, typename std::iterator_traits<It>::difference_type x)
 {
-    assert(std::distance(first, last) == x);
+    TC_ASSERT_EXPR(std::distance(first, last) == x);
+    return 0;
 }
 
 #if TEST_STD_VER > 14
@@ -52,18 +54,19 @@ constexpr bool
 constexpr_test(It first, It last, typename std::iterator_traits<It>::difference_type x)
 {
     return std::distance(first, last) == x;
+    return 0;
 }
 #endif
 
-int main()
+int tc_libcxx_iterators_iterator_operations_distance(void)
 {
     {
     const char* s = "1234567890";
-    test(input_iterator<const char*>(s), input_iterator<const char*>(s+10), 10);
-    test(forward_iterator<const char*>(s), forward_iterator<const char*>(s+10), 10);
-    test(bidirectional_iterator<const char*>(s), bidirectional_iterator<const char*>(s+10), 10);
-    test(random_access_iterator<const char*>(s), random_access_iterator<const char*>(s+10), 10);
-    test(s, s+10, 10);
+    TC_ASSERT_FUNC((test(input_iterator<const char*>(s), input_iterator<const char*>(s+10), 10)));
+    TC_ASSERT_FUNC((test(forward_iterator<const char*>(s), forward_iterator<const char*>(s+10), 10)));
+    TC_ASSERT_FUNC((test(bidirectional_iterator<const char*>(s), bidirectional_iterator<const char*>(s+10), 10)));
+    TC_ASSERT_FUNC((test(random_access_iterator<const char*>(s), random_access_iterator<const char*>(s+10), 10)));
+    TC_ASSERT_FUNC((test(s, s+10, 10)));
     }
 #if TEST_STD_VER > 14
     {
@@ -75,4 +78,6 @@ int main()
     static_assert( constexpr_test(s, s+10, 10), "");
     }
 #endif
+    TC_SUCCESS_RESULT();
+    return 0;
 }

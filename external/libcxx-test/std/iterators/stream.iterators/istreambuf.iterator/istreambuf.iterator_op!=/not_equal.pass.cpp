@@ -35,8 +35,9 @@
 #include <iterator>
 #include <sstream>
 #include <cassert>
+#include "libcxx_tc_common.h"
 
-int main()
+int tc_libcxx_iterators_istreambuf_iterator_op___not_equal(void)
 {
     {
         std::istringstream inf1("abc");
@@ -47,35 +48,35 @@ int main()
         std::istreambuf_iterator<char> i4;
         std::istreambuf_iterator<char> i5(nullptr);
 
-        assert(!(i1 != i1));
-        assert(!(i1 != i2));
-        assert( (i1 != i3));
-        assert( (i1 != i4));
-        assert( (i1 != i5));
+        TC_ASSERT_EXPR(!(i1 != i1));
+        TC_ASSERT_EXPR(!(i1 != i2));
+        TC_ASSERT_EXPR( (i1 != i3));
+        TC_ASSERT_EXPR( (i1 != i4));
+        TC_ASSERT_EXPR( (i1 != i5));
 
-        assert(!(i2 != i1));
-        assert(!(i2 != i2));
-        assert( (i2 != i3));
-        assert( (i2 != i4));
-        assert( (i2 != i5));
+        TC_ASSERT_EXPR(!(i2 != i1));
+        TC_ASSERT_EXPR(!(i2 != i2));
+        TC_ASSERT_EXPR( (i2 != i3));
+        TC_ASSERT_EXPR( (i2 != i4));
+        TC_ASSERT_EXPR( (i2 != i5));
 
-        assert( (i3 != i1));
-        assert( (i3 != i2));
-        assert(!(i3 != i3));
-        assert(!(i3 != i4));
-        assert(!(i3 != i5));
+        TC_ASSERT_EXPR( (i3 != i1));
+        TC_ASSERT_EXPR( (i3 != i2));
+        TC_ASSERT_EXPR(!(i3 != i3));
+        TC_ASSERT_EXPR(!(i3 != i4));
+        TC_ASSERT_EXPR(!(i3 != i5));
 
-        assert( (i4 != i1));
-        assert( (i4 != i2));
-        assert(!(i4 != i3));
-        assert(!(i4 != i4));
-        assert(!(i4 != i5));
+        TC_ASSERT_EXPR( (i4 != i1));
+        TC_ASSERT_EXPR( (i4 != i2));
+        TC_ASSERT_EXPR(!(i4 != i3));
+        TC_ASSERT_EXPR(!(i4 != i4));
+        TC_ASSERT_EXPR(!(i4 != i5));
 
-        assert( (i5 != i1));
-        assert( (i5 != i2));
-        assert(!(i5 != i3));
-        assert(!(i5 != i4));
-        assert(!(i5 != i5));
+        TC_ASSERT_EXPR( (i5 != i1));
+        TC_ASSERT_EXPR( (i5 != i2));
+        TC_ASSERT_EXPR(!(i5 != i3));
+        TC_ASSERT_EXPR(!(i5 != i4));
+        TC_ASSERT_EXPR(!(i5 != i5));
     }
     {
         std::wistringstream inf1(L"abc");
@@ -86,34 +87,36 @@ int main()
         std::istreambuf_iterator<wchar_t> i4;
         std::istreambuf_iterator<wchar_t> i5(nullptr);
 
-        assert(!(i1 != i1));
-        assert(!(i1 != i2));
-        assert( (i1 != i3));
-        assert( (i1 != i4));
-        assert( (i1 != i5));
+        TC_ASSERT_EXPR(!(i1 != i1));
+        TC_ASSERT_EXPR(!(i1 != i2));
+        TC_ASSERT_EXPR( (i1 != i3));
+        TC_ASSERT_EXPR( (i1 != i4));
+        TC_ASSERT_EXPR( (i1 != i5));
 
-        assert(!(i2 != i1));
-        assert(!(i2 != i2));
-        assert( (i2 != i3));
-        assert( (i2 != i4));
-        assert( (i2 != i5));
+        TC_ASSERT_EXPR(!(i2 != i1));
+        TC_ASSERT_EXPR(!(i2 != i2));
+        TC_ASSERT_EXPR( (i2 != i3));
+        TC_ASSERT_EXPR( (i2 != i4));
+        TC_ASSERT_EXPR( (i2 != i5));
 
-        assert( (i3 != i1));
-        assert( (i3 != i2));
-        assert(!(i3 != i3));
-        assert(!(i3 != i4));
-        assert(!(i3 != i5));
+        TC_ASSERT_EXPR( (i3 != i1));
+        TC_ASSERT_EXPR( (i3 != i2));
+        TC_ASSERT_EXPR(!(i3 != i3));
+        TC_ASSERT_EXPR(!(i3 != i4));
+        TC_ASSERT_EXPR(!(i3 != i5));
 
-        assert( (i4 != i1));
-        assert( (i4 != i2));
-        assert(!(i4 != i3));
-        assert(!(i4 != i4));
-        assert(!(i4 != i5));
+        TC_ASSERT_EXPR( (i4 != i1));
+        TC_ASSERT_EXPR( (i4 != i2));
+        TC_ASSERT_EXPR(!(i4 != i3));
+        TC_ASSERT_EXPR(!(i4 != i4));
+        TC_ASSERT_EXPR(!(i4 != i5));
 
-        assert( (i5 != i1));
-        assert( (i5 != i2));
-        assert(!(i5 != i3));
-        assert(!(i5 != i4));
-        assert(!(i5 != i5));
+        TC_ASSERT_EXPR( (i5 != i1));
+        TC_ASSERT_EXPR( (i5 != i2));
+        TC_ASSERT_EXPR(!(i5 != i3));
+        TC_ASSERT_EXPR(!(i5 != i4));
+        TC_ASSERT_EXPR(!(i5 != i5));
     }
+    TC_SUCCESS_RESULT();
+    return 0;
 }

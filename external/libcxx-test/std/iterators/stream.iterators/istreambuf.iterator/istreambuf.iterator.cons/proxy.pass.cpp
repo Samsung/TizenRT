@@ -33,14 +33,17 @@
 #include <iterator>
 #include <sstream>
 #include <cassert>
+#include "libcxx_tc_common.h"
 
-int main()
+int tc_libcxx_iterators_istreambuf_iterator_cons_proxy(void)
 {
     {
         std::istringstream inf("abc");
         std::istreambuf_iterator<char> j(inf);
         std::istreambuf_iterator<char> i = j++;
-        assert(i != std::istreambuf_iterator<char>());
-        assert(*i == 'b');
+        TC_ASSERT_EXPR(i != std::istreambuf_iterator<char>());
+        TC_ASSERT_EXPR(*i == 'b');
     }
+    TC_SUCCESS_RESULT();
+    return 0;
 }

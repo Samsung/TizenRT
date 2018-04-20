@@ -38,6 +38,7 @@
 
 #include <iterator>
 #include <type_traits>
+#include "libcxx_tc_common.h"
 
 struct A {};
 
@@ -50,11 +51,13 @@ struct test_iterator
     typedef std::forward_iterator_tag iterator_category;
 };
 
-int main()
+int tc_libcxx_iterators_iterator_traits_iterator(void)
 {
     typedef std::iterator_traits<test_iterator> It;
     static_assert((std::is_same<It::difference_type, int>::value), "");
     static_assert((std::is_same<It::value_type, A>::value), "");
     static_assert((std::is_same<It::pointer, A*>::value), "");
     static_assert((std::is_same<It::iterator_category, std::forward_iterator_tag>::value), "");
+    TC_SUCCESS_RESULT();
+    return 0;
 }
