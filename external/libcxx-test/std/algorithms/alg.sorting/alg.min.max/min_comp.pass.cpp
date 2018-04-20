@@ -36,33 +36,35 @@
 #include <cassert>
 
 #include "test_macros.h"
+#include "libcxx_tc_common.h"
 
 template <class T, class C>
-void
+static int
 test(const T& a, const T& b, C c, const T& x)
 {
-    assert(&std::min(a, b, c) == &x);
+    TC_ASSERT_EXPR(&std::min(a, b, c) == &x);
+    return 0;
 }
 
-int main()
+int tc_libcxx_algorithms_alg_min_max_min_comp(void)
 {
     {
     int x = 0;
     int y = 0;
-    test(x, y, std::greater<int>(), x);
-    test(y, x, std::greater<int>(), y);
+    TC_ASSERT_FUNC((test(x, y, std::greater<int>(), x)));
+    TC_ASSERT_FUNC((test(y, x, std::greater<int>(), y)));
     }
     {
     int x = 0;
     int y = 1;
-    test(x, y, std::greater<int>(), y);
-    test(y, x, std::greater<int>(), y);
+    TC_ASSERT_FUNC((test(x, y, std::greater<int>(), y)));
+    TC_ASSERT_FUNC((test(y, x, std::greater<int>(), y)));
     }
     {
     int x = 1;
     int y = 0;
-    test(x, y, std::greater<int>(), x);
-    test(y, x, std::greater<int>(), x);
+    TC_ASSERT_FUNC((test(x, y, std::greater<int>(), x)));
+    TC_ASSERT_FUNC((test(y, x, std::greater<int>(), x)));
     }
 #if TEST_STD_VER >= 14
     {
@@ -72,4 +74,6 @@ int main()
     static_assert(std::min(y, x, std::greater<int>()) == x, "" );
     }
 #endif
+    TC_SUCCESS_RESULT();
+    return 0;
 }

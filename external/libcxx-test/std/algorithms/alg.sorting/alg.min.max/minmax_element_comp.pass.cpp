@@ -37,12 +37,13 @@
 #include <cassert>
 
 #include "test_macros.h"
+#include "libcxx_tc_common.h"
 #include "test_iterators.h"
 
 std::mt19937 randomness;
 
 template <class Iter>
-void
+static int
 test(Iter first, Iter last)
 {
     typedef std::greater<int> Compare;
@@ -52,39 +53,41 @@ test(Iter first, Iter last)
     {
         for (Iter j = first; j != last; ++j)
         {
-            assert(!comp(*j, *p.first));
-            assert(!comp(*p.second, *j));
+            TC_ASSERT_EXPR(!comp(*j, *p.first));
+            TC_ASSERT_EXPR(!comp(*p.second, *j));
         }
     }
     else
     {
-        assert(p.first == last);
-        assert(p.second == last);
+        TC_ASSERT_EXPR(p.first == last);
+        TC_ASSERT_EXPR(p.second == last);
     }
+    return 0;
 }
 
 template <class Iter>
-void
+static int
 test(int N)
 {
     int* a = new int[N];
     for (int i = 0; i < N; ++i)
         a[i] = i;
     std::shuffle(a, a+N, randomness);
-    test(Iter(a), Iter(a+N));
+    TC_ASSERT_FUNC((test(Iter(a), Iter(a+N))));
     delete [] a;
+    return 0;
 }
 
 template <class Iter>
-void
+static int
 test()
 {
-    test<Iter>(0);
-    test<Iter>(1);
-    test<Iter>(2);
-    test<Iter>(3);
-    test<Iter>(10);
-    test<Iter>(1000);
+    TC_ASSERT_FUNC((test<Iter>(0)));
+    TC_ASSERT_FUNC((test<Iter>(1)));
+    TC_ASSERT_FUNC((test<Iter>(2)));
+    TC_ASSERT_FUNC((test<Iter>(3)));
+    TC_ASSERT_FUNC((test<Iter>(10)));
+    TC_ASSERT_FUNC((test<Iter>(1000)));
     {
     const int N = 100;
     int* a = new int[N];
@@ -94,10 +97,11 @@ test()
     typedef std::greater<int> Compare;
     Compare comp;
     std::pair<Iter, Iter> p = std::minmax_element(Iter(a), Iter(a+N), comp);
-    assert(base(p.first) == a);
-    assert(base(p.second) == a+N-1);
+    TC_ASSERT_EXPR(base(p.first) == a);
+    TC_ASSERT_EXPR(base(p.second) == a+N-1);
     delete [] a;
     }
+    return 0;
 }
 
 #if TEST_STD_VER >= 14
@@ -105,7 +109,7 @@ constexpr int il[] = { 2, 4, 6, 8, 7, 5, 3, 1 };
 struct less { constexpr bool operator ()( const int &x, const int &y) const { return x < y; }};
 #endif
 
-void constexpr_test()
+static void constexpr_test()
 {
 #if TEST_STD_VER >= 14
     constexpr auto p = std::minmax_element(il, il+8, less());
@@ -114,12 +118,14 @@ void constexpr_test()
 #endif
 }
 
-int main()
+int tc_libcxx_algorithms_alg_min_max_minmax_element_comp(void)
 {
-    test<forward_iterator<const int*> >();
-    test<bidirectional_iterator<const int*> >();
-    test<random_access_iterator<const int*> >();
-    test<const int*>();
+    TC_ASSERT_FUNC((test<forward_iterator<const int*> >()));
+    TC_ASSERT_FUNC((test<bidirectional_iterator<const int*> >()));
+    TC_ASSERT_FUNC((test<random_access_iterator<const int*> >()));
+    TC_ASSERT_FUNC((test<const int*>()));
 
     constexpr_test();
+    TC_SUCCESS_RESULT();
+    return 0;
 }

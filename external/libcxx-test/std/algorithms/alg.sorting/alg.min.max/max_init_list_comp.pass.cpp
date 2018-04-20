@@ -37,21 +37,22 @@
 #include <cassert>
 
 #include "test_macros.h"
+#include "libcxx_tc_common.h"
 
-int main()
+int tc_libcxx_algorithms_alg_min_max_max_init_list_comp(void)
 {
     int i = std::max({2, 3, 1}, std::greater<int>());
-    assert(i == 1);
+    TC_ASSERT_EXPR(i == 1);
     i = std::max({2, 1, 3}, std::greater<int>());
-    assert(i == 1);
+    TC_ASSERT_EXPR(i == 1);
     i = std::max({3, 1, 2}, std::greater<int>());
-    assert(i == 1);
+    TC_ASSERT_EXPR(i == 1);
     i = std::max({3, 2, 1}, std::greater<int>());
-    assert(i == 1);
+    TC_ASSERT_EXPR(i == 1);
     i = std::max({1, 2, 3}, std::greater<int>());
-    assert(i == 1);
+    TC_ASSERT_EXPR(i == 1);
     i = std::max({1, 3, 2}, std::greater<int>());
-    assert(i == 1);
+    TC_ASSERT_EXPR(i == 1);
 #if TEST_STD_VER >= 14
     {
     static_assert(std::max({1, 3, 2}, std::greater<int>()) == 1, "");
@@ -59,4 +60,6 @@ int main()
     static_assert(std::max({3, 2, 1}, std::greater<int>()) == 1, "");
     }
 #endif
+    TC_SUCCESS_RESULT();
+    return 0;
 }

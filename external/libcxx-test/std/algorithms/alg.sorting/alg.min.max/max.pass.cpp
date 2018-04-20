@@ -34,33 +34,35 @@
 #include <cassert>
 
 #include "test_macros.h"
+#include "libcxx_tc_common.h"
 
 template <class T>
-void
+static int
 test(const T& a, const T& b, const T& x)
 {
-    assert(&std::max(a, b) == &x);
+    TC_ASSERT_EXPR(&std::max(a, b) == &x);
+    return 0;
 }
 
-int main()
+int tc_libcxx_algorithms_alg_min_max_max(void)
 {
     {
     int x = 0;
     int y = 0;
-    test(x, y, x);
-    test(y, x, y);
+    TC_ASSERT_FUNC((test(x, y, x)));
+    TC_ASSERT_FUNC((test(y, x, y)));
     }
     {
     int x = 0;
     int y = 1;
-    test(x, y, y);
-    test(y, x, y);
+    TC_ASSERT_FUNC((test(x, y, y)));
+    TC_ASSERT_FUNC((test(y, x, y)));
     }
     {
     int x = 1;
     int y = 0;
-    test(x, y, x);
-    test(y, x, x);
+    TC_ASSERT_FUNC((test(x, y, x)));
+    TC_ASSERT_FUNC((test(y, x, x)));
     }
 #if TEST_STD_VER >= 14
     {
@@ -70,4 +72,6 @@ int main()
     static_assert(std::max(y, x) == x, "" );
     }
 #endif
+    TC_SUCCESS_RESULT();
+    return 0;
 }

@@ -32,6 +32,7 @@ CXXFLAGS += -I ../../apps/examples/testcase/
 #Add Support Headers
 CXXFLAGS += -I. -I support/
 
+ifeq ($(CONFIG_LIBCXX_UTC_ALGORITHMS),y)
 #Algorithms Source
 CXXSRCS += std/algorithms/alg.sorting/alg.min.max/minmax_init_list_comp.pass.cpp
 CXXSRCS += std/algorithms/alg.sorting/alg.min.max/max_comp.pass.cpp
@@ -51,6 +52,10 @@ CXXSRCS += std/algorithms/alg.sorting/alg.min.max/minmax.pass.cpp
 CXXSRCS += std/algorithms/alg.sorting/alg.min.max/minmax_init_list.pass.cpp
 CXXSRCS += std/algorithms/alg.sorting/alg.min.max/max.pass.cpp
 CXXSRCS += std/algorithms/alg.sorting/alg.min.max/min_init_list.pass.cpp
+
+#Algorithms TC Main
+CXXSRCS += std/algorithms/tc_algorithms.cpp
+endif
 
 AOBJS		= $(ASRCS:.S=$(OBJEXT))
 COBJS		= $(CSRCS:.c=$(OBJEXT))

@@ -36,15 +36,16 @@
 #include <cassert>
 
 #include "test_macros.h"
+#include "libcxx_tc_common.h"
 
-int main()
+int tc_libcxx_algorithms_alg_min_max_minmax_init_list(void)
 {
-    assert((std::minmax({1, 2, 3}) == std::pair<int, int>(1, 3)));
-    assert((std::minmax({1, 3, 2}) == std::pair<int, int>(1, 3)));
-    assert((std::minmax({2, 1, 3}) == std::pair<int, int>(1, 3)));
-    assert((std::minmax({2, 3, 1}) == std::pair<int, int>(1, 3)));
-    assert((std::minmax({3, 1, 2}) == std::pair<int, int>(1, 3)));
-    assert((std::minmax({3, 2, 1}) == std::pair<int, int>(1, 3)));
+    TC_ASSERT_EXPR((std::minmax({1, 2, 3}) == std::pair<int, int>(1, 3)));
+    TC_ASSERT_EXPR((std::minmax({1, 3, 2}) == std::pair<int, int>(1, 3)));
+    TC_ASSERT_EXPR((std::minmax({2, 1, 3}) == std::pair<int, int>(1, 3)));
+    TC_ASSERT_EXPR((std::minmax({2, 3, 1}) == std::pair<int, int>(1, 3)));
+    TC_ASSERT_EXPR((std::minmax({3, 1, 2}) == std::pair<int, int>(1, 3)));
+    TC_ASSERT_EXPR((std::minmax({3, 2, 1}) == std::pair<int, int>(1, 3)));
 #if TEST_STD_VER >= 14
     {
     static_assert((std::minmax({1, 2, 3}) == std::pair<int, int>(1, 3)), "");
@@ -55,4 +56,6 @@ int main()
     static_assert((std::minmax({3, 2, 1}) == std::pair<int, int>(1, 3)), "");
     }
 #endif
+    TC_SUCCESS_RESULT();
+    return 0;
 }
