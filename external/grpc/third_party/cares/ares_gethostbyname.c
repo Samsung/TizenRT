@@ -87,9 +87,7 @@ void ares_gethostbyname(ares_channel channel, const char *name, int family,
      means try both basically. */
   switch (family) {
   case AF_INET:
-#if defined(CONFIG_NET_IPv6)
   case AF_INET6:
-#endif
   case AF_UNSPEC:
     break;
   default:

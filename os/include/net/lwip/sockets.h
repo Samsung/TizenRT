@@ -294,8 +294,10 @@ struct linger {
 #define IPPROTO_ICMP    1
 #define IPPROTO_TCP     6
 #define IPPROTO_UDP     17
+#if LWIP_IPV6
 #define IPPROTO_IPV6    41
 #define IPPROTO_ICMPV6  58
+#endif							/* LWIP_IPV6 */
 #define IPPROTO_UDPLITE 136
 #define IPPROTO_RAW     255
 
