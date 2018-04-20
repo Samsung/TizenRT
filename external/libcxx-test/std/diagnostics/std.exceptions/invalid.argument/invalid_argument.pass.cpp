@@ -31,8 +31,9 @@
 #include <cstring>
 #include <string>
 #include <cassert>
+#include "libcxx_tc_common.h"
 
-int main()
+int tc_libcxx_diagnostics_stdexcept_invalid_argument(void)
 {
     static_assert((std::is_base_of<std::logic_error, std::invalid_argument>::value),
                  "std::is_base_of<std::logic_error, std::invalid_argument>::value");
@@ -41,19 +42,21 @@ int main()
     {
     const char* msg = "invalid_argument message";
     std::invalid_argument e(msg);
-    assert(std::strcmp(e.what(), msg) == 0);
+    TC_ASSERT_EXPR(std::strcmp(e.what(), msg) == 0);
     std::invalid_argument e2(e);
-    assert(std::strcmp(e2.what(), msg) == 0);
+    TC_ASSERT_EXPR(std::strcmp(e2.what(), msg) == 0);
     e2 = e;
-    assert(std::strcmp(e2.what(), msg) == 0);
+    TC_ASSERT_EXPR(std::strcmp(e2.what(), msg) == 0);
     }
     {
     std::string msg("another invalid_argument message");
     std::invalid_argument e(msg);
-    assert(e.what() == msg);
+    TC_ASSERT_EXPR(e.what() == msg);
     std::invalid_argument e2(e);
-    assert(e2.what() == msg);
+    TC_ASSERT_EXPR(e2.what() == msg);
     e2 = e;
-    assert(e2.what() == msg);
+    TC_ASSERT_EXPR(e2.what() == msg);
     }
+    TC_SUCCESS_RESULT();
+    return 0;
 }

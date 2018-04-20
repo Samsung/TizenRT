@@ -23,3 +23,10 @@ config LIBCXX_UTC_UTILITIES
 	depends on LIBCXX_UTC
 	---help---
 		UTC for Libc++ Utilities
+
+config LIBCXX_UTC_DIAGNOSTICS
+	bool "UTC for Libc++ Diagnostics(stdexcept)"
+	default y
+	depends on LIBCXX_UTC
+	---help---
+		UTC for Libc++ Diagnostics(stdexcept)

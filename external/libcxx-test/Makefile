@@ -98,6 +98,7 @@ CXXSRCS += std/utilities/utility/pairs/pairs.pair/rv_pair_U_V.pass.cpp
 CXXSRCS += std/utilities/tc_utilities.cpp
 endif
 
+ifeq ($(CONFIG_LIBCXX_UTC_DIAGNOSTICS),y)
 #Diagnostics Sources
 CXXSRCS += std/diagnostics/std.exceptions/out.of.range/out_of_range.pass.cpp
 CXXSRCS += std/diagnostics/std.exceptions/overflow.error/overflow_error.pass.cpp
@@ -108,6 +109,10 @@ CXXSRCS += std/diagnostics/std.exceptions/length.error/length_error.pass.cpp
 CXXSRCS += std/diagnostics/std.exceptions/range.error/range_error.pass.cpp
 CXXSRCS += std/diagnostics/std.exceptions/underflow.error/underflow_error.pass.cpp
 CXXSRCS += std/diagnostics/std.exceptions/logic.error/logic_error.pass.cpp
+
+#Diagnostics TC Main
+CXXSRCS += std/diagnostics/tc_diagnostics.cpp
+endif
 
 
 AOBJS		= $(ASRCS:.S=$(OBJEXT))
