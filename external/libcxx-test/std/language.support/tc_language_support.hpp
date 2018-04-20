@@ -16,37 +16,8 @@
  *
  ****************************************************************************/
 
-#include "utc_libcxx.h"
+#ifndef __EXTERNAL_LIBCXX_TEST_TC_LANGUAGE_SUPPORT_H
+#define __EXTERNAL_LIBCXX_TEST_TC_LANGUAGE_SUPPORT_H
+int tc_libcxx_language_support_support_runtime_cstdbool(void);
+#endif /* __EXTERNAL_LIBCXX_TEST_TC_LANGUAGE_SUPPORT_H */
 
-int utc_libcxx_main(int argc, char *argv[])
-{
-
-#if defined(CONFIG_HAVE_CXXINITIALIZE)
-	up_cxxinitialize();
-#endif
-
-	if (tc_handler(TC_START, "Libc++ TC") == ERROR) {
-		return ERROR;
-	}
-
-#if defined(CONFIG_LIBCXX_UTC_ALGORITHMS)
-	tc_algorithms_main();
-#endif
-
-#if defined(CONFIG_LIBCXX_UTC_UTILITIES)
-	tc_utilities_main();
-#endif
-
-#if defined(CONFIG_LIBCXX_UTC_DIAGNOSTICS)
-	tc_diagnostics_main();
-#endif
-
-#if defined(CONFIG_LIBCXX_UTC_STDBOOL)
-	tc_depr_main();
-	tc_language_support_main();
-#endif
-
-	tc_handler(TC_END, "Libc++ TC");
-
-	return OK;
-}

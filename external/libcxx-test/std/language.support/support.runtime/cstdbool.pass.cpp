@@ -27,6 +27,7 @@
 // test <cstdbool>
 
 #include <cstdbool>
+#include "libcxx_tc_common.h"
 
 #ifdef bool
 #error bool should not be defined
@@ -40,6 +41,8 @@
 #error false should not be defined
 #endif
 
-int main()
+int tc_libcxx_language_support_support_runtime_cstdbool(void)
 {
+    TC_SUCCESS_RESULT();
+    return 0;
 }

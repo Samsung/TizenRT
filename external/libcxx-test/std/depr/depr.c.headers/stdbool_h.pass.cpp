@@ -27,6 +27,7 @@
 // test <stdbool.h>
 
 #include <stdbool.h>
+#include "libcxx_tc_common.h"
 
 #ifdef bool
 #error bool should not be defined
@@ -40,6 +41,8 @@
 #error false should not be defined
 #endif
 
-int main()
+int tc_libcxx_depr_depr_c_headers_stdbool_h(void)
 {
+    TC_SUCCESS_RESULT();
+    return 0;
 }
