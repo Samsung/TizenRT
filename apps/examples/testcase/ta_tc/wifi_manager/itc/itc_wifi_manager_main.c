@@ -423,8 +423,8 @@ static void itc_wifi_manager_connect_long_ssid_p(void)
 	wifi_manager_ap_config_s config;
 	config.ssid_length = strlen(ssid);
 	config.passphrase_length = strlen(passphrase);
-	strncpy(config.ssid, ssid, config.ssid_length + 1);
-	strncpy(config.passphrase, passphrase, config.passphrase_length + 1);
+	strncpy(config.ssid, ssid, sizeof(config.ssid));
+	strncpy(config.passphrase, passphrase, sizeof(config.passphrase));
 	config.ap_auth_type = (wifi_manager_ap_auth_type_e)TEST_AUTH_TYPE;
 	config.ap_crypto_type = (wifi_manager_ap_crypto_type_e)TEST_CRYPTO_TYPE;
 	printf("AP config: %s(%d), %s(%d), %d %d\n", config.ssid, config.ssid_length, config.passphrase, \
