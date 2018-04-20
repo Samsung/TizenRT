@@ -94,6 +94,17 @@ CXXSRCS += std/utilities/utility/pairs/pairs.pair/rv_pair_U_V.pass.cpp
 CXXSRCS += std/utilities/tc_utilities.cpp
 endif
 
+#Diagnostics Sources
+CXXSRCS += std/diagnostics/std.exceptions/out.of.range/out_of_range.pass.cpp
+CXXSRCS += std/diagnostics/std.exceptions/overflow.error/overflow_error.pass.cpp
+CXXSRCS += std/diagnostics/std.exceptions/runtime.error/runtime_error.pass.cpp
+CXXSRCS += std/diagnostics/std.exceptions/invalid.argument/invalid_argument.pass.cpp
+CXXSRCS += std/diagnostics/std.exceptions/domain.error/domain_error.pass.cpp
+CXXSRCS += std/diagnostics/std.exceptions/length.error/length_error.pass.cpp
+CXXSRCS += std/diagnostics/std.exceptions/range.error/range_error.pass.cpp
+CXXSRCS += std/diagnostics/std.exceptions/underflow.error/underflow_error.pass.cpp
+CXXSRCS += std/diagnostics/std.exceptions/logic.error/logic_error.pass.cpp
+
 
 AOBJS		= $(ASRCS:.S=$(OBJEXT))
 COBJS		= $(CSRCS:.c=$(OBJEXT))
