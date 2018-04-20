@@ -92,8 +92,7 @@ player_result_t MediaPlayerImpl::prepare()
 		return PLAYER_ERROR;
 	}
 
-	mInputDataSource->open();
-	if (!mInputDataSource->isPrepare()) {
+	if (!mInputDataSource->open()) {
 		meddbg("MediaPlayer prepare fail : file open fail\n");
 		return PLAYER_ERROR;
 	}
