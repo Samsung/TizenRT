@@ -110,6 +110,9 @@ CXXSRCS += std/diagnostics/std.exceptions/logic.error/logic_error.pass.cpp
 CXXSRCS += std/diagnostics/tc_diagnostics.cpp
 endif
 
+#stdbool sources
+CXXSRCS += std/depr/depr.c.headers/stdbool_h.pass.cpp
+CXXSRCS += std/language.support/support.runtime/cstdbool.pass.cpp
 
 AOBJS		= $(ASRCS:.S=$(OBJEXT))
 COBJS		= $(CSRCS:.c=$(OBJEXT))
