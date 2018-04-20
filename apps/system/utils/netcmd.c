@@ -44,15 +44,14 @@
 #include <tinyara/net/net.h>
 #include <net/lwip/netif.h>
 #include <net/lwip/dhcp.h>
+#include <net/lwip/mld6.h>
 #include <net/lwip/stats.h>
 #include <tinyara/net/ip.h>
-#include <protocols/dhcpc.h>
 
 #ifdef CONFIG_NETUTILS_NETLIB
 #include <netutils/netlib.h>
 #endif
 
-#include <netutils/netlib.h>
 #include <protocols/tftp.h>
 
 #ifdef CONFIG_HAVE_GETHOSTBYNAME
@@ -86,19 +85,18 @@ extern int netdb_main(int argc, char *argv[]);
 
 static void nic_display_state(void)
 {
-	struct ifreq *ifr;
-	struct sockaddr_in *sin;
-	struct sockaddr *sa;
 	struct ifconf ifcfg;
-	int fd;
+	struct ifreq *if_list;
+	int i;
+	int fd = -1;
 	int numreqs = 3;
 	int num_nic = 0;
+
 	fd = socket(AF_INET, SOCK_DGRAM, 0);
 	memset(&ifcfg, 0, sizeof(ifcfg));
-	ifcfg.ifc_buf = NULL;
 	ifcfg.ifc_len = sizeof(struct ifreq) * numreqs;
 	ifcfg.ifc_buf = malloc(ifcfg.ifc_len);
-	if (ioctl(fd, SIOCGIFCONF, (unsigned long)&ifcfg) < 0) {
+	if (ioctl(fd, SIOCGIFCONF, (void *)&ifcfg) < 0) {
 		perror("SIOCGIFCONF ");
 		goto DONE;
 	}
@@ -145,13 +143,7 @@ static void nic_display_state(void)
 				printf("\tinet6 addr: %s\n", ip6addr_ntoa(ip_2_ip6(&netif->ip6_addr[j])));
 			}
 		}
-		printf("\tinet addr: %s\t", inet_ntoa(sin->sin_addr));
-
-		ioctl(fd, SIOCGIFNETMASK, (unsigned long)ifr);
-		sin = (struct sockaddr_in *)&ifr->ifr_addr;
-		printf("Mask: %s\t", inet_ntoa(sin->sin_addr));
-		ioctl(fd, SIOCGIFMTU, (unsigned long)ifr);
-		printf("MTU: %d\n", ifr->ifr_mtu);
+#endif /* CONFIG_NET_IPv6_NUM_ADDRESSES */
 		printf("\n");
 	}
 DONE:
@@ -329,8 +321,6 @@ int cmd_ifconfig(int argc, char **argv)
 		} else {
 			/* Set host IP address */
 			ndbg("Host IP: %s\n", hostip);
-			gip = addr.s_addr = inet_addr(hostip);
-		}
 
 			if (strstr(hostip, ".") != NULL) {
 				gip = addr.s_addr = inet_addr(hostip);
@@ -376,8 +366,18 @@ int cmd_ifconfig(int argc, char **argv)
 #endif /* CONFIG_NET_IPv6_MLD */
 				}
 
+				return OK;
+			}
+#endif /* CONFIG_NET_IPv6 */
+			else {
+				ndbg("hostip is not valid\n");
+
+				return ERROR;
+			}
+		}
 	} else {
 		printf("hostip is not provided\n");
+
 		return ERROR;
 	}
 
