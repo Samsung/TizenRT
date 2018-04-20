@@ -16,32 +16,15 @@
  *
  ****************************************************************************/
 
-#include "utc_libcxx.h"
-
-int utc_libcxx_main(int argc, char *argv[])
-{
-
-#if defined(CONFIG_HAVE_CXXINITIALIZE)
-	up_cxxinitialize();
-#endif
-
-	if (tc_handler(TC_START, "Libc++ TC") == ERROR) {
-		return ERROR;
-	}
-
-#if defined(CONFIG_LIBCXX_UTC_ALGORITHMS)
-	tc_algorithms_main();
-#endif
-
-#if defined(CONFIG_LIBCXX_UTC_UTILITIES)
-	tc_utilities_main();
-#endif
-
-#if defined(CONFIG_LIBCXX_UTC_DIAGNOSTICS)
-	tc_diagnostics_main();
-#endif
-
-	tc_handler(TC_END, "Libc++ TC");
-
-	return OK;
-}
+#ifndef __EXTERNAL_LIBCXX_TEST_TC_DIAGNOSTICS_H
+#define __EXTERNAL_LIBCXX_TEST_TC_DIAGNOSTICS_H
+int tc_libcxx_diagnostics_stdexcept_domain_error(void);
+int tc_libcxx_diagnostics_stdexcept_invalid_argument(void);
+int tc_libcxx_diagnostics_stdexcept_length_error(void);
+int tc_libcxx_diagnostics_stdexcept_logic_error(void);
+int tc_libcxx_diagnostics_stdexcept_out_of_range(void);
+int tc_libcxx_diagnostics_stdexcept_overflow_error(void);
+int tc_libcxx_diagnostics_stdexcept_range_error(void);
+int tc_libcxx_diagnostics_stdexcept_runtime_error(void);
+int tc_libcxx_diagnostics_stdexcept_underflow_error(void);
+#endif /* __EXTERNAL_LIBCXX_TEST_TC_DIAGNOSTICS_H */

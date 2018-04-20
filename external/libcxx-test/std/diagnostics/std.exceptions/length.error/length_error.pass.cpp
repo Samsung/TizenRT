@@ -31,8 +31,9 @@
 #include <cstring>
 #include <string>
 #include <cassert>
+#include "libcxx_tc_common.h"
 
-int main()
+int tc_libcxx_diagnostics_stdexcept_length_error(void)
 {
     static_assert((std::is_base_of<std::logic_error, std::length_error>::value),
                  "std::is_base_of<std::logic_error, std::length_error>::value");
@@ -41,19 +42,21 @@ int main()
     {
     const char* msg = "length_error message";
     std::length_error e(msg);
-    assert(std::strcmp(e.what(), msg) == 0);
+    TC_ASSERT_EXPR(std::strcmp(e.what(), msg) == 0);
     std::length_error e2(e);
-    assert(std::strcmp(e2.what(), msg) == 0);
+    TC_ASSERT_EXPR(std::strcmp(e2.what(), msg) == 0);
     e2 = e;
-    assert(std::strcmp(e2.what(), msg) == 0);
+    TC_ASSERT_EXPR(std::strcmp(e2.what(), msg) == 0);
     }
     {
     std::string msg("another length_error message");
     std::length_error e(msg);
-    assert(e.what() == msg);
+    TC_ASSERT_EXPR(e.what() == msg);
     std::length_error e2(e);
-    assert(e2.what() == msg);
+    TC_ASSERT_EXPR(e2.what() == msg);
     e2 = e;
-    assert(e2.what() == msg);
+    TC_ASSERT_EXPR(e2.what() == msg);
     }
+    TC_SUCCESS_RESULT();
+    return 0;
 }
