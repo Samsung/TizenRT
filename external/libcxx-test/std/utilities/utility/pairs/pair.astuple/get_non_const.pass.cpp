@@ -34,6 +34,7 @@
 
 #include <utility>
 #include <cassert>
+#include "libcxx_tc_common.h"
 
 #include "test_macros.h"
 
@@ -47,17 +48,17 @@ struct S {
 constexpr std::pair<int, int> getP () { return { 3, 4 }; }
 #endif
 
-int main()
+int tc_libcxx_utilities_pair_astuple_get_non_const(void)
 {
     {
         typedef std::pair<int, short> P;
         P p(3, static_cast<short>(4));
-        assert(std::get<0>(p) == 3);
-        assert(std::get<1>(p) == 4);
+        TC_ASSERT_EXPR(std::get<0>(p) == 3);
+        TC_ASSERT_EXPR(std::get<1>(p) == 4);
         std::get<0>(p) = 5;
         std::get<1>(p) = 6;
-        assert(std::get<0>(p) == 5);
-        assert(std::get<1>(p) == 6);
+        TC_ASSERT_EXPR(std::get<0>(p) == 5);
+        TC_ASSERT_EXPR(std::get<1>(p) == 6);
     }
 
 #if TEST_STD_VER > 11
@@ -67,4 +68,6 @@ int main()
     }
 #endif
 
+    TC_SUCCESS_RESULT();
+    return 0;
 }

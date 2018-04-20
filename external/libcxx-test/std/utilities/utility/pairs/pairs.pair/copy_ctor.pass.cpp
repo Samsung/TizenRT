@@ -32,17 +32,18 @@
 
 #include <utility>
 #include <cassert>
+#include "libcxx_tc_common.h"
 
 #include "test_macros.h"
 
-int main()
+int tc_libcxx_utilities_pairs_pair_copy_ctor(void)
 {
     {
         typedef std::pair<int, short> P1;
         P1 p1(3, static_cast<short>(4));
         P1 p2 = p1;
-        assert(p2.first == 3);
-        assert(p2.second == 4);
+        TC_ASSERT_EXPR(p2.first == 3);
+        TC_ASSERT_EXPR(p2.second == 4);
     }
 #if TEST_STD_VER > 11
     {
@@ -53,4 +54,6 @@ int main()
         static_assert(p2.second == 4, "");
     }
 #endif
+    TC_SUCCESS_RESULT();
+    return 0;
 }

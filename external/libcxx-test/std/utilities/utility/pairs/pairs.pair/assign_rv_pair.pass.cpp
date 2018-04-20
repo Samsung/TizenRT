@@ -35,6 +35,7 @@
 #include <utility>
 #include <memory>
 #include <cassert>
+#include "libcxx_tc_common.h"
 
 
 struct NonAssignable {
@@ -63,15 +64,15 @@ struct CountAssign {
 int CountAssign::copied = 0;
 int CountAssign::moved = 0;
 
-int main()
+int tc_libcxx_utilities_pairs_pair_assign_rv_pair(void)
 {
     {
         typedef std::pair<std::unique_ptr<int>, int> P;
         P p1(std::unique_ptr<int>(new int(3)), 4);
         P p2;
         p2 = std::move(p1);
-        assert(*p2.first == 3);
-        assert(p2.second == 4);
+        TC_ASSERT_EXPR(*p2.first == 3);
+        TC_ASSERT_EXPR(p2.second == 4);
     }
     {
         using P = std::pair<int&, int&&>;
@@ -82,8 +83,8 @@ int main()
         P p1(x, std::move(y));
         P p2(x2, std::move(y2));
         p1 = std::move(p2);
-        assert(p1.first == x2);
-        assert(p1.second == y2);
+        TC_ASSERT_EXPR(p1.first == x2);
+        TC_ASSERT_EXPR(p1.second == y2);
     }
     {
         using P = std::pair<int, NonAssignable>;
@@ -97,8 +98,8 @@ int main()
         P p;
         P p2;
         p = std::move(p2);
-        assert(CountAssign::moved == 0);
-        assert(CountAssign::copied == 1);
+        TC_ASSERT_EXPR(CountAssign::moved == 0);
+        TC_ASSERT_EXPR(CountAssign::copied == 1);
     }
     {
         CountAssign::reset();
@@ -107,7 +108,9 @@ int main()
         P p;
         P p2;
         p = std::move(p2);
-        assert(CountAssign::moved == 1);
-        assert(CountAssign::copied == 0);
+        TC_ASSERT_EXPR(CountAssign::moved == 1);
+        TC_ASSERT_EXPR(CountAssign::copied == 0);
     }
+    TC_SUCCESS_RESULT();
+    return 0;
 }

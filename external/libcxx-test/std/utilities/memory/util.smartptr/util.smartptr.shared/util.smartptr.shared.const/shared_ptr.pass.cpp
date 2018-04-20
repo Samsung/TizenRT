@@ -32,48 +32,42 @@
 
 #include <memory>
 #include <cassert>
+#include "libcxx_tc_common.h"
+#include "smartptr_shared_common.hpp"
 
-struct A
+int tc_libcxx_utilities_util_smartptr_shared_const_shared_ptr(void)
 {
-    static int count;
-
-    A() {++count;}
-    A(const A&) {++count;}
-    ~A() {--count;}
-};
-
-int A::count = 0;
-
-int main()
-{
+    A::count = 0;
     {
         std::shared_ptr<A> pA(new A);
-        assert(pA.use_count() == 1);
-        assert(A::count == 1);
+        TC_ASSERT_EXPR(pA.use_count() == 1);
+        TC_ASSERT_EXPR(A::count == 1);
         {
             std::shared_ptr<A> pA2(pA);
-            assert(A::count == 1);
-            assert(pA.use_count() == 2);
-            assert(pA2.use_count() == 2);
-            assert(pA2.get() == pA.get());
+            TC_ASSERT_EXPR(A::count == 1);
+            TC_ASSERT_EXPR(pA.use_count() == 2);
+            TC_ASSERT_EXPR(pA2.use_count() == 2);
+            TC_ASSERT_EXPR(pA2.get() == pA.get());
         }
-        assert(pA.use_count() == 1);
-        assert(A::count == 1);
+        TC_ASSERT_EXPR(pA.use_count() == 1);
+        TC_ASSERT_EXPR(A::count == 1);
     }
-    assert(A::count == 0);
+    TC_ASSERT_EXPR(A::count == 0);
     {
         std::shared_ptr<A> pA;
-        assert(pA.use_count() == 0);
-        assert(A::count == 0);
+        TC_ASSERT_EXPR(pA.use_count() == 0);
+        TC_ASSERT_EXPR(A::count == 0);
         {
             std::shared_ptr<A> pA2(pA);
-            assert(A::count == 0);
-            assert(pA.use_count() == 0);
-            assert(pA2.use_count() == 0);
-            assert(pA2.get() == pA.get());
+            TC_ASSERT_EXPR(A::count == 0);
+            TC_ASSERT_EXPR(pA.use_count() == 0);
+            TC_ASSERT_EXPR(pA2.use_count() == 0);
+            TC_ASSERT_EXPR(pA2.get() == pA.get());
         }
-        assert(pA.use_count() == 0);
-        assert(A::count == 0);
+        TC_ASSERT_EXPR(pA.use_count() == 0);
+        TC_ASSERT_EXPR(A::count == 0);
     }
-    assert(A::count == 0);
+    TC_ASSERT_EXPR(A::count == 0);
+    TC_SUCCESS_RESULT();
+    return 0;
 }

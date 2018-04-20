@@ -37,65 +37,66 @@
 
 #include <utility>
 #include <cassert>
+#include "libcxx_tc_common.h"
 
 #include "test_macros.h"
 
-int main()
+int tc_libcxx_utilities_pairs_spec_comparison(void)
 {
     {
         typedef std::pair<int, short> P;
         P p1(3, static_cast<short>(4));
         P p2(3, static_cast<short>(4));
-        assert( (p1 == p2));
-        assert(!(p1 != p2));
-        assert(!(p1 <  p2));
-        assert( (p1 <= p2));
-        assert(!(p1 >  p2));
-        assert( (p1 >= p2));
+        TC_ASSERT_EXPR( (p1 == p2));
+        TC_ASSERT_EXPR(!(p1 != p2));
+        TC_ASSERT_EXPR(!(p1 <  p2));
+        TC_ASSERT_EXPR( (p1 <= p2));
+        TC_ASSERT_EXPR(!(p1 >  p2));
+        TC_ASSERT_EXPR( (p1 >= p2));
     }
     {
         typedef std::pair<int, short> P;
         P p1(2, static_cast<short>(4));
         P p2(3, static_cast<short>(4));
-        assert(!(p1 == p2));
-        assert( (p1 != p2));
-        assert( (p1 <  p2));
-        assert( (p1 <= p2));
-        assert(!(p1 >  p2));
-        assert(!(p1 >= p2));
+        TC_ASSERT_EXPR(!(p1 == p2));
+        TC_ASSERT_EXPR( (p1 != p2));
+        TC_ASSERT_EXPR( (p1 <  p2));
+        TC_ASSERT_EXPR( (p1 <= p2));
+        TC_ASSERT_EXPR(!(p1 >  p2));
+        TC_ASSERT_EXPR(!(p1 >= p2));
     }
     {
         typedef std::pair<int, short> P;
         P p1(3, static_cast<short>(2));
         P p2(3, static_cast<short>(4));
-        assert(!(p1 == p2));
-        assert( (p1 != p2));
-        assert( (p1 <  p2));
-        assert( (p1 <= p2));
-        assert(!(p1 >  p2));
-        assert(!(p1 >= p2));
+        TC_ASSERT_EXPR(!(p1 == p2));
+        TC_ASSERT_EXPR( (p1 != p2));
+        TC_ASSERT_EXPR( (p1 <  p2));
+        TC_ASSERT_EXPR( (p1 <= p2));
+        TC_ASSERT_EXPR(!(p1 >  p2));
+        TC_ASSERT_EXPR(!(p1 >= p2));
     }
     {
         typedef std::pair<int, short> P;
         P p1(3, static_cast<short>(4));
         P p2(2, static_cast<short>(4));
-        assert(!(p1 == p2));
-        assert( (p1 != p2));
-        assert(!(p1 <  p2));
-        assert(!(p1 <= p2));
-        assert( (p1 >  p2));
-        assert( (p1 >= p2));
+        TC_ASSERT_EXPR(!(p1 == p2));
+        TC_ASSERT_EXPR( (p1 != p2));
+        TC_ASSERT_EXPR(!(p1 <  p2));
+        TC_ASSERT_EXPR(!(p1 <= p2));
+        TC_ASSERT_EXPR( (p1 >  p2));
+        TC_ASSERT_EXPR( (p1 >= p2));
     }
     {
         typedef std::pair<int, short> P;
         P p1(3, static_cast<short>(4));
         P p2(3, static_cast<short>(2));
-        assert(!(p1 == p2));
-        assert( (p1 != p2));
-        assert(!(p1 <  p2));
-        assert(!(p1 <= p2));
-        assert( (p1 >  p2));
-        assert( (p1 >= p2));
+        TC_ASSERT_EXPR(!(p1 == p2));
+        TC_ASSERT_EXPR( (p1 != p2));
+        TC_ASSERT_EXPR(!(p1 <  p2));
+        TC_ASSERT_EXPR(!(p1 <= p2));
+        TC_ASSERT_EXPR( (p1 >  p2));
+        TC_ASSERT_EXPR( (p1 >= p2));
     }
 
 #if TEST_STD_VER > 11
@@ -111,4 +112,6 @@ int main()
         static_assert( (p1 >= p2), "");
     }
 #endif
+    TC_SUCCESS_RESULT();
+    return 0;
 }

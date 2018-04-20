@@ -57,7 +57,10 @@ CXXSRCS += std/algorithms/alg.sorting/alg.min.max/min_init_list.pass.cpp
 CXXSRCS += std/algorithms/tc_algorithms.cpp
 endif
 
+ifeq ($(CONFIG_LIBCXX_UTC_UTILITIES),y)
 #Utilities Source
+CXXFLAGS += -I std/utilities/memory/
+CXXSRCS += std/utilities/memory/smartptr_shared_common.cpp
 CXXSRCS += std/utilities/memory/util.smartptr/util.smartptr.shared/util.smartptr.shared.const/shared_ptr_pointer.pass.cpp
 CXXSRCS += std/utilities/memory/util.smartptr/util.smartptr.shared/util.smartptr.shared.const/shared_ptr_Y_rv.pass.cpp
 CXXSRCS += std/utilities/memory/util.smartptr/util.smartptr.shared/util.smartptr.shared.const/shared_ptr_Y.pass.cpp
@@ -90,6 +93,10 @@ CXXSRCS += std/utilities/utility/pairs/pairs.pair/swap.pass.cpp
 CXXSRCS += std/utilities/utility/pairs/pairs.pair/types.pass.cpp
 CXXSRCS += std/utilities/utility/pairs/pairs.pair/default.pass.cpp
 CXXSRCS += std/utilities/utility/pairs/pairs.pair/rv_pair_U_V.pass.cpp
+
+#Utilities TC Main
+CXXSRCS += std/utilities/tc_utilities.cpp
+endif
 
 
 AOBJS		= $(ASRCS:.S=$(OBJEXT))

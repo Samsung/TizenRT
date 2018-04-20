@@ -32,47 +32,31 @@
 
 #include <memory>
 #include <cassert>
+#include "libcxx_tc_common.h"
+#include "smartptr_shared_common.hpp"
 
-struct B
+int tc_libcxx_utilities_util_smartptr_shared_const_shared_ptr_pointer(void)
 {
-    static int count;
-
-    B() {++count;}
-    B(const B&) {++count;}
-    ~B() {--count;}
-};
-
-int B::count = 0;
-
-struct A
-{
-    static int count;
-
-    A() {++count;}
-    A(const A&) {++count;}
-    ~A() {--count;}
-};
-
-int A::count = 0;
-
-int main()
-{
+    B::count = 0;
+    A::count = 0;
     {
         std::shared_ptr<A> pA(new A);
-        assert(pA.use_count() == 1);
+        TC_ASSERT_EXPR(pA.use_count() == 1);
         {
             B b;
             std::shared_ptr<B> pB(pA, &b);
-            assert(A::count == 1);
-            assert(B::count == 1);
-            assert(pA.use_count() == 2);
-            assert(pB.use_count() == 2);
-            assert(pB.get() == &b);
+            TC_ASSERT_EXPR(A::count == 1);
+            TC_ASSERT_EXPR(B::count == 2);
+            TC_ASSERT_EXPR(pA.use_count() == 2);
+            TC_ASSERT_EXPR(pB.use_count() == 2);
+            TC_ASSERT_EXPR(pB.get() == &b);
         }
-        assert(pA.use_count() == 1);
-        assert(A::count == 1);
-        assert(B::count == 0);
+        TC_ASSERT_EXPR(pA.use_count() == 1);
+        TC_ASSERT_EXPR(A::count == 1);
+        TC_ASSERT_EXPR(B::count == 1);
     }
-    assert(A::count == 0);
-    assert(B::count == 0);
+    TC_ASSERT_EXPR(A::count == 0);
+    TC_ASSERT_EXPR(B::count == 0);
+    TC_SUCCESS_RESULT();
+    return 0;
 }

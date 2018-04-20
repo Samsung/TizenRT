@@ -31,30 +31,31 @@
 #include <utility>
 #include <memory>
 #include <cassert>
+#include "libcxx_tc_common.h"
 
 #include "test_macros.h"
 
-int main()
+int tc_libcxx_utilities_pairs_spec_make_pair(void)
 {
     {
         typedef std::pair<int, short> P1;
         P1 p1 = std::make_pair(3, static_cast<short>(4));
-        assert(p1.first == 3);
-        assert(p1.second == 4);
+        TC_ASSERT_EXPR(p1.first == 3);
+        TC_ASSERT_EXPR(p1.second == 4);
     }
 
 #if TEST_STD_VER >= 11
     {
         typedef std::pair<std::unique_ptr<int>, short> P1;
         P1 p1 = std::make_pair(std::unique_ptr<int>(new int(3)), static_cast<short>(4));
-        assert(*p1.first == 3);
-        assert(p1.second == 4);
+        TC_ASSERT_EXPR(*p1.first == 3);
+        TC_ASSERT_EXPR(p1.second == 4);
     }
     {
         typedef std::pair<std::unique_ptr<int>, short> P1;
         P1 p1 = std::make_pair(nullptr, static_cast<short>(4));
-        assert(p1.first == nullptr);
-        assert(p1.second == 4);
+        TC_ASSERT_EXPR(p1.first == nullptr);
+        TC_ASSERT_EXPR(p1.second == 4);
     }
 #endif
 #if TEST_STD_VER >= 14
@@ -66,4 +67,6 @@ int main()
     }
 #endif
 
+    TC_SUCCESS_RESULT();
+    return 0;
 }

@@ -31,9 +31,10 @@
 // tuple_element<I, pair<T1, T2> >::type
 
 #include <utility>
+ #include "libcxx_tc_common.h"
 
 template <class T1, class T2>
-void test()
+static int test()
 {
     {
     typedef T1 Exp1;
@@ -63,10 +64,13 @@ void test()
     static_assert((std::is_same<typename std::tuple_element<0, P>::type, Exp1>::value), "");
     static_assert((std::is_same<typename std::tuple_element<1, P>::type, Exp2>::value), "");
     }
+    return 0;
 }
 
-int main()
+int tc_libcxx_utilities_pair_astuple_tuple_element(void)
 {
-    test<int, short>();
-    test<int*, char>();
+    TC_ASSERT_FUNC((test<int, short>()));
+    TC_ASSERT_FUNC((test<int*, char>()));
+    TC_SUCCESS_RESULT();
+    return 0;
 }

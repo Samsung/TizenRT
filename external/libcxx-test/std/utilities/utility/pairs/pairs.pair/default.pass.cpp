@@ -42,19 +42,20 @@
 #include <utility>
 #include <type_traits>
 #include <cassert>
+#include "libcxx_tc_common.h"
 
 #include "test_macros.h"
 #include "archetypes.hpp"
 
-int main()
+int tc_libcxx_utilities_pairs_pair_default(void)
 {
     {
         typedef std::pair<float, short*> P;
         P p;
-        assert(p.first == 0.0f);
-        assert(p.second == nullptr);
+        TC_ASSERT_EXPR(p.first == 0.0f);
+        TC_ASSERT_EXPR(p.second == nullptr);
     }
-#if TEST_STD_VER >= 11
+#if TEST_STD_VER > 11
     {
         typedef std::pair<float, short*> P;
         constexpr P p;
@@ -69,4 +70,6 @@ int main()
         static_assert(!std::is_default_constructible<P2>::value, "");
     }
 #endif
+    TC_SUCCESS_RESULT();
+    return 0;
 }

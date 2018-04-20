@@ -36,6 +36,7 @@
 #include <utility>
 #include <tuple>
 #include <cassert>
+#include "libcxx_tc_common.h"
 
 class A
 {
@@ -59,14 +60,16 @@ public:
     unsigned get_u2() const {return u2_;}
 };
 
-int main()
+int tc_libcxx_utilities_pair_piecewise_piecewise_construct(void)
 {
     std::pair<A, B> p(std::piecewise_construct,
                       std::make_tuple(4, 'a'),
                       std::make_tuple(3.5, 6u, 2u));
-    assert(p.first.get_i() == 4);
-    assert(p.first.get_c() == 'a');
-    assert(p.second.get_d() == 3.5);
-    assert(p.second.get_u1() == 6u);
-    assert(p.second.get_u2() == 2u);
+    TC_ASSERT_EXPR(p.first.get_i() == 4);
+    TC_ASSERT_EXPR(p.first.get_c() == 'a');
+    TC_ASSERT_EXPR(p.second.get_d() == 3.5);
+    TC_ASSERT_EXPR(p.second.get_u1() == 6u);
+    TC_ASSERT_EXPR(p.second.get_u2() == 2u);
+    TC_SUCCESS_RESULT();
+    return 0;
 }

@@ -16,10 +16,8 @@
  *
  ****************************************************************************/
 
-#ifndef __EXTERNAL_LIBCXX_TEST_UTC_LIBCXX_H
-#define __EXTERNAL_LIBCXX_TEST_UTC_LIBCXX_H
-#include "libcxx_tc_common.h"
+#include "smartptr_shared_common.hpp"
 
-int tc_algorithms_main(void);
-int tc_utilities_main(void);
-#endif /* __EXTERNAL_LIBCXX_TEST_UTC_LIBCXX_H */
+int B::count = 0;
+int A::count = 0;
+int C::count = 0;

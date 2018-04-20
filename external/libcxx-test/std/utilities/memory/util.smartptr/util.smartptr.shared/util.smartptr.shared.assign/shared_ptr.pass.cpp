@@ -33,106 +33,89 @@
 #include <memory>
 #include <type_traits>
 #include <cassert>
+#include "libcxx_tc_common.h"
+#include "smartptr_shared_common.hpp"
 
-struct B
+int tc_libcxx_utilities_util_smartptr_shared_assign_shared_ptr(void)
 {
-    static int count;
-
-    B() {++count;}
-    B(const B&) {++count;}
-    virtual ~B() {--count;}
-};
-
-int B::count = 0;
-
-struct A
-    : public B
-{
-    static int count;
-
-    A() {++count;}
-    A(const A&) {++count;}
-    ~A() {--count;}
-};
-
-int A::count = 0;
-
-int main()
-{
+    A::count = 0;
+    B::count = 0;
     {
         const std::shared_ptr<A> pA(new A);
         A* ptrA = pA.get();
         {
             std::shared_ptr<A> pB(new A);
             pB = pA;
-            assert(B::count == 1);
-            assert(A::count == 1);
-            assert(pB.use_count() == 2);
-            assert(pA.use_count() == 2);
-            assert(pA.get() == pB.get());
-            assert(pB.get() == ptrA);
+            TC_ASSERT_EXPR(B::count == 1);
+            TC_ASSERT_EXPR(A::count == 1);
+            TC_ASSERT_EXPR(pB.use_count() == 2);
+            TC_ASSERT_EXPR(pA.use_count() == 2);
+            TC_ASSERT_EXPR(pA.get() == pB.get());
+            TC_ASSERT_EXPR(pB.get() == ptrA);
         }
-        assert(pA.use_count() == 1);
-        assert(B::count == 1);
-        assert(A::count == 1);
+        TC_ASSERT_EXPR(pA.use_count() == 1);
+        TC_ASSERT_EXPR(B::count == 1);
+        TC_ASSERT_EXPR(A::count == 1);
     }
-    assert(B::count == 0);
-    assert(A::count == 0);
+    TC_ASSERT_EXPR(B::count == 0);
+    TC_ASSERT_EXPR(A::count == 0);
     {
         const std::shared_ptr<A> pA;
         A* ptrA = pA.get();
         {
             std::shared_ptr<A> pB(new A);
             pB = pA;
-            assert(B::count == 0);
-            assert(A::count == 0);
-            assert(pB.use_count() == 0);
-            assert(pA.use_count() == 0);
-            assert(pA.get() == pB.get());
-            assert(pB.get() == ptrA);
+            TC_ASSERT_EXPR(B::count == 0);
+            TC_ASSERT_EXPR(A::count == 0);
+            TC_ASSERT_EXPR(pB.use_count() == 0);
+            TC_ASSERT_EXPR(pA.use_count() == 0);
+            TC_ASSERT_EXPR(pA.get() == pB.get());
+            TC_ASSERT_EXPR(pB.get() == ptrA);
         }
-        assert(pA.use_count() == 0);
-        assert(B::count == 0);
-        assert(A::count == 0);
+        TC_ASSERT_EXPR(pA.use_count() == 0);
+        TC_ASSERT_EXPR(B::count == 0);
+        TC_ASSERT_EXPR(A::count == 0);
     }
-    assert(B::count == 0);
-    assert(A::count == 0);
+    TC_ASSERT_EXPR(B::count == 0);
+    TC_ASSERT_EXPR(A::count == 0);
     {
         const std::shared_ptr<A> pA(new A);
         A* ptrA = pA.get();
         {
             std::shared_ptr<A> pB;
             pB = pA;
-            assert(B::count == 1);
-            assert(A::count == 1);
-            assert(pB.use_count() == 2);
-            assert(pA.use_count() == 2);
-            assert(pA.get() == pB.get());
-            assert(pB.get() == ptrA);
+            TC_ASSERT_EXPR(B::count == 1);
+            TC_ASSERT_EXPR(A::count == 1);
+            TC_ASSERT_EXPR(pB.use_count() == 2);
+            TC_ASSERT_EXPR(pA.use_count() == 2);
+            TC_ASSERT_EXPR(pA.get() == pB.get());
+            TC_ASSERT_EXPR(pB.get() == ptrA);
         }
-        assert(pA.use_count() == 1);
-        assert(B::count == 1);
-        assert(A::count == 1);
+        TC_ASSERT_EXPR(pA.use_count() == 1);
+        TC_ASSERT_EXPR(B::count == 1);
+        TC_ASSERT_EXPR(A::count == 1);
     }
-    assert(B::count == 0);
-    assert(A::count == 0);
+    TC_ASSERT_EXPR(B::count == 0);
+    TC_ASSERT_EXPR(A::count == 0);
     {
         const std::shared_ptr<A> pA;
         A* ptrA = pA.get();
         {
             std::shared_ptr<A> pB;
             pB = pA;
-            assert(B::count == 0);
-            assert(A::count == 0);
-            assert(pB.use_count() == 0);
-            assert(pA.use_count() == 0);
-            assert(pA.get() == pB.get());
-            assert(pB.get() == ptrA);
+            TC_ASSERT_EXPR(B::count == 0);
+            TC_ASSERT_EXPR(A::count == 0);
+            TC_ASSERT_EXPR(pB.use_count() == 0);
+            TC_ASSERT_EXPR(pA.use_count() == 0);
+            TC_ASSERT_EXPR(pA.get() == pB.get());
+            TC_ASSERT_EXPR(pB.get() == ptrA);
         }
-        assert(pA.use_count() == 0);
-        assert(B::count == 0);
-        assert(A::count == 0);
+        TC_ASSERT_EXPR(pA.use_count() == 0);
+        TC_ASSERT_EXPR(B::count == 0);
+        TC_ASSERT_EXPR(A::count == 0);
     }
-    assert(B::count == 0);
-    assert(A::count == 0);
+    TC_ASSERT_EXPR(B::count == 0);
+    TC_ASSERT_EXPR(A::count == 0);
+    TC_SUCCESS_RESULT();
+    return 0;
 }
