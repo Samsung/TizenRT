@@ -17,10 +17,13 @@
 
 #include <mutex>
 #include <cassert>
+#include "libcxx_tc_common.h"
 
-int main()
+int tc_libcxx_thread_thread_lock_unique_cons_default(void)
 {
     std::unique_lock<std::mutex> ul;
-    assert(!ul.owns_lock());
-    assert(ul.mutex() == nullptr);
+    TC_ASSERT_EXPR(!ul.owns_lock());
+    TC_ASSERT_EXPR(ul.mutex() == nullptr);
+    TC_SUCCESS_RESULT();
+    return 0;
 }

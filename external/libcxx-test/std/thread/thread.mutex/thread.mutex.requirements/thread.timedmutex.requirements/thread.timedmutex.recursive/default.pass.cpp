@@ -16,8 +16,11 @@
 // recursive_timed_mutex();
 
 #include <mutex>
+#include "libcxx_tc_common.h"
 
-int main()
+int tc_libcxx_thread_thread_timedmutex_recursive_default(void)
 {
-    std::recursive_timed_mutex m;
+    static std::recursive_timed_mutex m;
+    TC_SUCCESS_RESULT();
+    return 0;
 }

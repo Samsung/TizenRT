@@ -22,10 +22,11 @@
 #include <thread>
 #include <cstdlib>
 #include <cassert>
+#include "libcxx_tc_common.h"
 
 #include "test_macros.h"
 
-std::mutex m;
+static std::mutex m;
 
 typedef std::chrono::system_clock Clock;
 typedef Clock::time_point time_point;
@@ -33,7 +34,7 @@ typedef Clock::duration duration;
 typedef std::chrono::milliseconds ms;
 typedef std::chrono::nanoseconds ns;
 
-void f()
+static int f()
 {
     time_point t0 = Clock::now();
     time_point t1;
@@ -42,10 +43,11 @@ void f()
     t1 = Clock::now();
     }
     ns d = t1 - t0 - ms(250);
-    assert(d < ms(50));  // within 50ms
+    TC_ASSERT_EXPR(d < ms(50));  // within 50ms
+    return 0;
 }
 
-int main()
+int tc_libcxx_thread_thread_lock_unique_cons_mutex(void)
 {
     m.lock();
     std::thread t(f);
@@ -57,4 +59,6 @@ int main()
     std::unique_lock ul(m);
     static_assert((std::is_same<decltype(ul), std::unique_lock<decltype(m)>>::value), "" );
 #endif
+    TC_SUCCESS_RESULT();
+    return 0;
 }

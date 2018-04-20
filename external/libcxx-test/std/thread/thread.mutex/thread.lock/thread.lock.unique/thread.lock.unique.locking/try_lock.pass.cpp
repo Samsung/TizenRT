@@ -17,10 +17,11 @@
 
 #include <mutex>
 #include <cassert>
+#include "libcxx_tc_common.h"
 
 #include "test_macros.h"
 
-bool try_lock_called = false;
+static bool try_lock_called = false;
 
 struct mutex
 {
@@ -32,39 +33,41 @@ struct mutex
     void unlock() {}
 };
 
-mutex m;
+static mutex m;
 
-int main()
+int tc_libcxx_thread_thread_lock_unique_locking_try_lock(void)
 {
     std::unique_lock<mutex> lk(m, std::defer_lock);
-    assert(lk.try_lock() == true);
-    assert(try_lock_called == true);
-    assert(lk.owns_lock() == true);
+    TC_ASSERT_EXPR(lk.try_lock() == true);
+    TC_ASSERT_EXPR(try_lock_called == true);
+    TC_ASSERT_EXPR(lk.owns_lock() == true);
 #ifndef TEST_HAS_NO_EXCEPTIONS
     try
     {
         TEST_IGNORE_NODISCARD lk.try_lock();
-        assert(false);
+        TC_ASSERT_EXPR(false);
     }
     catch (std::system_error& e)
     {
-        assert(e.code().value() == EDEADLK);
+        TC_ASSERT_EXPR(e.code().value() == EDEADLK);
     }
 #endif
     lk.unlock();
-    assert(lk.try_lock() == false);
-    assert(try_lock_called == false);
-    assert(lk.owns_lock() == false);
+    TC_ASSERT_EXPR(lk.try_lock() == false);
+    TC_ASSERT_EXPR(try_lock_called == false);
+    TC_ASSERT_EXPR(lk.owns_lock() == false);
     lk.release();
 #ifndef TEST_HAS_NO_EXCEPTIONS
     try
     {
         TEST_IGNORE_NODISCARD lk.try_lock();
-        assert(false);
+        TC_ASSERT_EXPR(false);
     }
     catch (std::system_error& e)
     {
-        assert(e.code().value() == EPERM);
+        TC_ASSERT_EXPR(e.code().value() == EPERM);
     }
 #endif
+    TC_SUCCESS_RESULT();
+    return 0;
 }

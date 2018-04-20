@@ -14,11 +14,12 @@
 // struct once_flag;
 
 // template<class Callable, class ...Args>
-//   void call_once(once_flag& flag, Callable&& func, Args&&... args);
+//   static int call_once(once_flag& flag, Callable&& func, Args&&... args);
 
 #include <mutex>
 #include <thread>
 #include <cassert>
+#include "libcxx_tc_common.h"
 
 #include "test_macros.h"
 
@@ -28,15 +29,17 @@ std::once_flag flg0;
 
 int init0_called = 0;
 
-void init0()
+static int init0()
 {
     std::this_thread::sleep_for(ms(250));
     ++init0_called;
+    return 0;
 }
 
-void f0()
+static int f0()
 {
     std::call_once(flg0, init0);
+    return 0;
 }
 
 std::once_flag flg3;
@@ -44,16 +47,17 @@ std::once_flag flg3;
 int init3_called = 0;
 int init3_completed = 0;
 
-void init3()
+static int init3()
 {
     ++init3_called;
     std::this_thread::sleep_for(ms(250));
     if (init3_called == 1)
         TEST_THROW(1);
     ++init3_completed;
+    return 0;
 }
 
-void f3()
+static int f3()
 {
 #ifndef TEST_HAS_NO_EXCEPTIONS
     try
@@ -64,6 +68,7 @@ void f3()
     {
     }
 #endif
+    return 0;
 }
 
 #if TEST_STD_VER >= 11
@@ -79,9 +84,10 @@ int init1::called = 0;
 
 std::once_flag flg1;
 
-void f1()
+static int f1()
 {
     std::call_once(flg1, init1(), 1);
+    return 0;
 }
 
 struct init2
@@ -95,10 +101,11 @@ int init2::called = 0;
 
 std::once_flag flg2;
 
-void f2()
+static int f2()
 {
     std::call_once(flg2, init2(), 2, 3);
     std::call_once(flg2, init2(), 4, 5);
+    return 0;
 }
 
 #endif  // TEST_STD_VER >= 11
@@ -109,30 +116,34 @@ std::once_flag flg42;
 int init41_called = 0;
 int init42_called = 0;
 
-void init42();
+static int init42();
 
-void init41()
+static int init41()
 {
     std::this_thread::sleep_for(ms(250));
     ++init41_called;
+    return 0;
 }
 
-void init42()
+static int init42()
 {
     std::this_thread::sleep_for(ms(250));
     ++init42_called;
+    return 0;
 }
 
-void f41()
+static int f41()
 {
     std::call_once(flg41, init41);
     std::call_once(flg42, init42);
+    return 0;
 }
 
-void f42()
+static int f42()
 {
     std::call_once(flg42, init42);
     std::call_once(flg41, init41);
+    return 0;
 }
 
 #if TEST_STD_VER >= 11
@@ -187,7 +198,7 @@ struct RefQual
 
 #endif // TEST_STD_VER >= 11
 
-int main()
+int tc_libcxx_thread_thread_once_callonce_call_once(void)
 {
     // check basic functionality
     {
@@ -195,7 +206,7 @@ int main()
         std::thread t1(f0);
         t0.join();
         t1.join();
-        assert(init0_called == 1);
+        TC_ASSERT_EXPR(init0_called == 1);
     }
 #ifndef TEST_HAS_NO_EXCEPTIONS
     // check basic exception safety
@@ -204,18 +215,18 @@ int main()
         std::thread t1(f3);
         t0.join();
         t1.join();
-        assert(init3_called == 2);
-        assert(init3_completed == 1);
+        TC_ASSERT_EXPR(init3_called == 2);
+        TC_ASSERT_EXPR(init3_completed == 1);
     }
 #endif
-    // check deadlock avoidance
+    // check deadlock astatic intance
     {
         std::thread t0(f41);
         std::thread t1(f42);
         t0.join();
         t1.join();
-        assert(init41_called == 1);
-        assert(init42_called == 1);
+        TC_ASSERT_EXPR(init41_called == 1);
+        TC_ASSERT_EXPR(init42_called == 1);
     }
 #if TEST_STD_VER >= 11
     // check functors with 1 arg
@@ -224,7 +235,7 @@ int main()
         std::thread t1(f1);
         t0.join();
         t1.join();
-        assert(init1::called == 1);
+        TC_ASSERT_EXPR(init1::called == 1);
     }
     // check functors with 2 args
     {
@@ -232,7 +243,7 @@ int main()
         std::thread t1(f2);
         t0.join();
         t1.join();
-        assert(init2::called == 5);
+        TC_ASSERT_EXPR(init2::called == 5);
     }
     {
         std::once_flag f;
@@ -249,9 +260,11 @@ int main()
         std::once_flag f1, f2;
         RefQual rq;
         std::call_once(f1, rq);
-        assert(rq.lv_called == 1);
+        TC_ASSERT_EXPR(rq.lv_called == 1);
         std::call_once(f2, std::move(rq));
-        assert(rq.rv_called == 1);
+        TC_ASSERT_EXPR(rq.rv_called == 1);
     }
 #endif  // TEST_STD_VER >= 11
+    TC_SUCCESS_RESULT();
+    return 0;
 }

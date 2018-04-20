@@ -17,15 +17,18 @@
 
 #include <mutex>
 #include <cassert>
+#include "libcxx_tc_common.h"
 
-std::mutex m;
+static std::mutex m;
 
-int main()
+int tc_libcxx_thread_thread_lock_unique_obs_owns_lock(void)
 {
     std::unique_lock<std::mutex> lk0;
-    assert(lk0.owns_lock() == false);
+    TC_ASSERT_EXPR(lk0.owns_lock() == false);
     std::unique_lock<std::mutex> lk1(m);
-    assert(lk1.owns_lock() == true);
+    TC_ASSERT_EXPR(lk1.owns_lock() == true);
     lk1.unlock();
-    assert(lk1.owns_lock() == false);
+    TC_ASSERT_EXPR(lk1.owns_lock() == false);
+    TC_SUCCESS_RESULT();
+    return 0;
 }

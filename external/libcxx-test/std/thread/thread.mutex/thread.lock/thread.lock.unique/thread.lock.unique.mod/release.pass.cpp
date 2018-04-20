@@ -17,6 +17,7 @@
 
 #include <mutex>
 #include <cassert>
+#include "libcxx_tc_common.h"
 
 struct mutex
 {
@@ -29,18 +30,20 @@ struct mutex
 int mutex::lock_count = 0;
 int mutex::unlock_count = 0;
 
-mutex m;
+static mutex m;
 
-int main()
+int tc_libcxx_thread_thread_lock_unique_mod_release(void)
 {
     std::unique_lock<mutex> lk(m);
-    assert(lk.mutex() == &m);
-    assert(lk.owns_lock() == true);
-    assert(mutex::lock_count == 1);
-    assert(mutex::unlock_count == 0);
-    assert(lk.release() == &m);
-    assert(lk.mutex() == nullptr);
-    assert(lk.owns_lock() == false);
-    assert(mutex::lock_count == 1);
-    assert(mutex::unlock_count == 0);
+    TC_ASSERT_EXPR(lk.mutex() == &m);
+    TC_ASSERT_EXPR(lk.owns_lock() == true);
+    TC_ASSERT_EXPR(mutex::lock_count == 1);
+    TC_ASSERT_EXPR(mutex::unlock_count == 0);
+    TC_ASSERT_EXPR(lk.release() == &m);
+    TC_ASSERT_EXPR(lk.mutex() == nullptr);
+    TC_ASSERT_EXPR(lk.owns_lock() == false);
+    TC_ASSERT_EXPR(mutex::lock_count == 1);
+    TC_ASSERT_EXPR(mutex::unlock_count == 0);
+    TC_SUCCESS_RESULT();
+    return 0;
 }

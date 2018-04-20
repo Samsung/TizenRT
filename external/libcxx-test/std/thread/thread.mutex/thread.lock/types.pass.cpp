@@ -21,8 +21,9 @@
 
 #include <mutex>
 #include <type_traits>
+#include "libcxx_tc_common.h"
 
-int main()
+int tc_libcxx_thread_thread_lock_types(void)
 {
     typedef std::defer_lock_t T1;
     typedef std::try_to_lock_t T2;
@@ -31,4 +32,6 @@ int main()
     T1 t1 = std::defer_lock; ((void)t1);
     T2 t2 = std::try_to_lock; ((void)t2);
     T3 t3 = std::adopt_lock; ((void)t3);
+    TC_SUCCESS_RESULT();
+    return 0;
 }

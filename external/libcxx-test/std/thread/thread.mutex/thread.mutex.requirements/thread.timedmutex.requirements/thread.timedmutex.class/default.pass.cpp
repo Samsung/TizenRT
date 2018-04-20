@@ -16,8 +16,11 @@
 // timed_mutex();
 
 #include <mutex>
+#include "libcxx_tc_common.h"
 
-int main()
+int tc_libcxx_thread_thread_timedmutex_class_default(void)
 {
-    std::timed_mutex m;
+    static std::timed_mutex m;
+    TC_SUCCESS_RESULT();
+    return 0;
 }
