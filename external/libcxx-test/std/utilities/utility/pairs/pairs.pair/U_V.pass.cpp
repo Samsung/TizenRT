@@ -36,6 +36,7 @@
 #include <utility>
 #include <memory>
 #include <cassert>
+#include "libcxx_tc_common.h"
 
 #include "archetypes.hpp"
 #include "test_convertible.hpp"
@@ -43,7 +44,7 @@ using namespace ImplicitTypes; // Get implicitly archetypes
 
 template <class T1, class T1Arg,
           bool CanCopy = true, bool CanConvert = CanCopy>
-void test_sfinae() {
+static int test_sfinae() {
     using P1 = std::pair<T1, int>;
     using P2 = std::pair<int, T1>;
     using T2 = int const&;
@@ -51,6 +52,7 @@ void test_sfinae() {
     static_assert(test_convertible<P1,   T1Arg, T2>() == CanConvert, "");
     static_assert(std::is_constructible<P2, T2,   T1Arg>::value == CanCopy, "");
     static_assert(test_convertible<P2,   T2,   T1Arg>() == CanConvert, "");
+    return 0;
 }
 
 struct ExplicitT {
@@ -64,43 +66,43 @@ struct ImplicitT {
 };
 
 
-int main()
+int tc_libcxx_utilities_pairs_pair_U_V(void)
 {
     {
         typedef std::pair<std::unique_ptr<int>, short*> P;
         P p(std::unique_ptr<int>(new int(3)), nullptr);
-        assert(*p.first == 3);
-        assert(p.second == nullptr);
+        TC_ASSERT_EXPR(*p.first == 3);
+        TC_ASSERT_EXPR(p.second == nullptr);
     }
     {
         // Test non-const lvalue and rvalue types
-        test_sfinae<AllCtors, AllCtors&>();
-        test_sfinae<AllCtors, AllCtors&&>();
-        test_sfinae<ExplicitTypes::AllCtors, ExplicitTypes::AllCtors&, true, false>();
-        test_sfinae<ExplicitTypes::AllCtors, ExplicitTypes::AllCtors&&, true, false>();
-        test_sfinae<CopyOnly, CopyOnly&>();
-        test_sfinae<CopyOnly, CopyOnly&&>();
-        test_sfinae<ExplicitTypes::CopyOnly, ExplicitTypes::CopyOnly&, true, false>();
-        test_sfinae<ExplicitTypes::CopyOnly, ExplicitTypes::CopyOnly&&, true, false>();
-        test_sfinae<MoveOnly, MoveOnly&, false>();
-        test_sfinae<MoveOnly, MoveOnly&&>();
-        test_sfinae<ExplicitTypes::MoveOnly, ExplicitTypes::MoveOnly&, false>();
-        test_sfinae<ExplicitTypes::MoveOnly, ExplicitTypes::MoveOnly&&, true, false>();
-        test_sfinae<NonCopyable, NonCopyable&, false>();
-        test_sfinae<NonCopyable, NonCopyable&&, false>();
-        test_sfinae<ExplicitTypes::NonCopyable, ExplicitTypes::NonCopyable&, false>();
-        test_sfinae<ExplicitTypes::NonCopyable, ExplicitTypes::NonCopyable&&, false>();
+    TC_ASSERT_FUNC((test_sfinae<AllCtors, AllCtors&>()));
+    TC_ASSERT_FUNC((test_sfinae<AllCtors, AllCtors&&>()));
+    TC_ASSERT_FUNC((test_sfinae<ExplicitTypes::AllCtors, ExplicitTypes::AllCtors&, true, false>()));
+    TC_ASSERT_FUNC((test_sfinae<ExplicitTypes::AllCtors, ExplicitTypes::AllCtors&&, true, false>()));
+    TC_ASSERT_FUNC((test_sfinae<CopyOnly, CopyOnly&>()));
+    TC_ASSERT_FUNC((test_sfinae<CopyOnly, CopyOnly&&>()));
+    TC_ASSERT_FUNC((test_sfinae<ExplicitTypes::CopyOnly, ExplicitTypes::CopyOnly&, true, false>()));
+    TC_ASSERT_FUNC((test_sfinae<ExplicitTypes::CopyOnly, ExplicitTypes::CopyOnly&&, true, false>()));
+    TC_ASSERT_FUNC((test_sfinae<MoveOnly, MoveOnly&, false>()));
+    TC_ASSERT_FUNC((test_sfinae<MoveOnly, MoveOnly&&>()));
+    TC_ASSERT_FUNC((test_sfinae<ExplicitTypes::MoveOnly, ExplicitTypes::MoveOnly&, false>()));
+    TC_ASSERT_FUNC((test_sfinae<ExplicitTypes::MoveOnly, ExplicitTypes::MoveOnly&&, true, false>()));
+    TC_ASSERT_FUNC((test_sfinae<NonCopyable, NonCopyable&, false>()));
+    TC_ASSERT_FUNC((test_sfinae<NonCopyable, NonCopyable&&, false>()));
+    TC_ASSERT_FUNC((test_sfinae<ExplicitTypes::NonCopyable, ExplicitTypes::NonCopyable&, false>()));
+    TC_ASSERT_FUNC((test_sfinae<ExplicitTypes::NonCopyable, ExplicitTypes::NonCopyable&&, false>()));
     }
     {
         // Test converting types
-        test_sfinae<ConvertingType, int&>();
-        test_sfinae<ConvertingType, const int&>();
-        test_sfinae<ConvertingType, int&&>();
-        test_sfinae<ConvertingType, const int&&>();
-        test_sfinae<ExplicitTypes::ConvertingType, int&, true, false>();
-        test_sfinae<ExplicitTypes::ConvertingType, const int&, true, false>();
-        test_sfinae<ExplicitTypes::ConvertingType, int&&, true, false>();
-        test_sfinae<ExplicitTypes::ConvertingType, const int&&, true, false>();
+    TC_ASSERT_FUNC((test_sfinae<ConvertingType, int&>()));
+    TC_ASSERT_FUNC((test_sfinae<ConvertingType, const int&>()));
+    TC_ASSERT_FUNC((test_sfinae<ConvertingType, int&&>()));
+    TC_ASSERT_FUNC((test_sfinae<ConvertingType, const int&&>()));
+    TC_ASSERT_FUNC((test_sfinae<ExplicitTypes::ConvertingType, int&, true, false>()));
+    TC_ASSERT_FUNC((test_sfinae<ExplicitTypes::ConvertingType, const int&, true, false>()));
+    TC_ASSERT_FUNC((test_sfinae<ExplicitTypes::ConvertingType, int&&, true, false>()));
+    TC_ASSERT_FUNC((test_sfinae<ExplicitTypes::ConvertingType, const int&&, true, false>()));
     }
 #if TEST_STD_VER > 11
     { // explicit constexpr test
@@ -114,4 +116,6 @@ int main()
         static_assert(p.second.value == 43, "");
     }
 #endif
+    TC_SUCCESS_RESULT();
+    return 0;
 }

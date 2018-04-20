@@ -16,10 +16,30 @@
  *
  ****************************************************************************/
 
-#ifndef __EXTERNAL_LIBCXX_TEST_UTC_LIBCXX_H
-#define __EXTERNAL_LIBCXX_TEST_UTC_LIBCXX_H
-#include "libcxx_tc_common.h"
+struct B
+{
+    static int count;
 
-int tc_algorithms_main(void);
-int tc_utilities_main(void);
-#endif /* __EXTERNAL_LIBCXX_TEST_UTC_LIBCXX_H */
+    B() {++count;}
+    B(const B&) {++count;}
+    virtual ~B() {--count;}
+};
+
+struct A
+    : public B
+{
+    static int count;
+
+    A() {++count;}
+    A(const A&) {++count;}
+    ~A() {--count;}
+};
+
+struct C
+{
+    static int count;
+
+    C() {++count;}
+    C(const C&) {++count;}
+    virtual ~C() {--count;}
+};

@@ -34,16 +34,17 @@
 
 #include <utility>
 #include <cassert>
+#include "libcxx_tc_common.h"
 
 #include "test_macros.h"
 
-int main()
+int tc_libcxx_utilities_pair_astuple_get_const(void)
 {
     {
         typedef std::pair<int, short> P;
         const P p(3, static_cast<short>(4));
-        assert(std::get<0>(p) == 3);
-        assert(std::get<1>(p) == 4);
+        TC_ASSERT_EXPR(std::get<0>(p) == 3);
+        TC_ASSERT_EXPR(std::get<1>(p) == 4);
     }
 
 #if TEST_STD_VER > 11
@@ -54,4 +55,6 @@ int main()
         static_assert(std::get<1>(p1) == 4, "");
     }
 #endif
+    TC_SUCCESS_RESULT();
+    return 0;
 }

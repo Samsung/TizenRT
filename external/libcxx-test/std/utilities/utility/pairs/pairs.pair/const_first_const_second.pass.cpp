@@ -34,6 +34,7 @@
 
 #include <utility>
 #include <cassert>
+#include "libcxx_tc_common.h"
 
 #include "archetypes.hpp"
 #include "test_convertible.hpp"
@@ -53,7 +54,7 @@ struct ImplicitT {
 
 template <class T1,
           bool CanCopy = true, bool CanConvert = CanCopy>
-void test_sfinae() {
+static int test_sfinae() {
     using P1 = std::pair<T1, int>;
     using P2 = std::pair<int, T1>;
     using T1Arg = T1 const&;
@@ -62,31 +63,32 @@ void test_sfinae() {
     static_assert(test_convertible<P1,   T1Arg, T2>() == CanConvert, "");
     static_assert(std::is_constructible<P2, T2,   T1Arg>::value == CanCopy, "");
     static_assert(test_convertible<P2,   T2,   T1Arg>() == CanConvert, "");
+    return 0;
 }
 
-int main()
+int tc_libcxx_utilities_pairs_pair_const_first_const_second(void)
 {
     {
         typedef std::pair<float, short*> P;
         P p(3.5f, 0);
-        assert(p.first == 3.5f);
-        assert(p.second == nullptr);
+        TC_ASSERT_EXPR(p.first == 3.5f);
+        TC_ASSERT_EXPR(p.second == nullptr);
     }
     {
         typedef std::pair<ImplicitT, int> P;
         P p(1, 2);
-        assert(p.first.value == 1);
-        assert(p.second == 2);
+        TC_ASSERT_EXPR(p.first.value == 1);
+        TC_ASSERT_EXPR(p.second == 2);
     }
     {
-        test_sfinae<AllCtors>();
-        test_sfinae<ExplicitTypes::AllCtors, true, false>();
-        test_sfinae<CopyOnly>();
-        test_sfinae<ExplicitTypes::CopyOnly, true, false>();
-        test_sfinae<MoveOnly, false>();
-        test_sfinae<ExplicitTypes::MoveOnly, false>();
-        test_sfinae<NonCopyable, false>();
-        test_sfinae<ExplicitTypes::NonCopyable, false>();
+    TC_ASSERT_FUNC((test_sfinae<AllCtors>()));
+    TC_ASSERT_FUNC((test_sfinae<ExplicitTypes::AllCtors, true, false>()));
+    TC_ASSERT_FUNC((test_sfinae<CopyOnly>()));
+    TC_ASSERT_FUNC((test_sfinae<ExplicitTypes::CopyOnly, true, false>()));
+    TC_ASSERT_FUNC((test_sfinae<MoveOnly, false>()));
+    TC_ASSERT_FUNC((test_sfinae<ExplicitTypes::MoveOnly, false>()));
+    TC_ASSERT_FUNC((test_sfinae<NonCopyable, false>()));
+    TC_ASSERT_FUNC((test_sfinae<ExplicitTypes::NonCopyable, false>()));
     }
 #if TEST_STD_VER > 11
     {
@@ -112,4 +114,6 @@ int main()
         static_assert(p.second == 10, "");
     }
 #endif
+    TC_SUCCESS_RESULT();
+    return 0;
 }

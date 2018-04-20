@@ -32,17 +32,20 @@
 
 #include <utility>
 #include <cassert>
+#include "libcxx_tc_common.h"
 
-int main()
+int tc_libcxx_utilities_pairs_spec_non_member_swap(void)
 {
     {
         typedef std::pair<int, short> P1;
         P1 p1(3, static_cast<short>(4));
         P1 p2(5, static_cast<short>(6));
         swap(p1, p2);
-        assert(p1.first == 5);
-        assert(p1.second == 6);
-        assert(p2.first == 3);
-        assert(p2.second == 4);
+        TC_ASSERT_EXPR(p1.first == 5);
+        TC_ASSERT_EXPR(p1.second == 6);
+        TC_ASSERT_EXPR(p2.first == 3);
+        TC_ASSERT_EXPR(p2.second == 4);
     }
+    TC_SUCCESS_RESULT();
+    return 0;
 }

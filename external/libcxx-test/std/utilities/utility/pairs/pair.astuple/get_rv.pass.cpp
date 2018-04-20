@@ -37,13 +37,16 @@
 #include <utility>
 #include <memory>
 #include <cassert>
+#include "libcxx_tc_common.h"
 
-int main()
+int tc_libcxx_utilities_pair_astuple_get_rv(void)
 {
     {
         typedef std::pair<std::unique_ptr<int>, short> P;
         P p(std::unique_ptr<int>(new int(3)), static_cast<short>(4));
         std::unique_ptr<int> ptr = std::get<0>(std::move(p));
-        assert(*ptr == 3);
+        TC_ASSERT_EXPR(*ptr == 3);
     }
+    TC_SUCCESS_RESULT();
+    return 0;
 }

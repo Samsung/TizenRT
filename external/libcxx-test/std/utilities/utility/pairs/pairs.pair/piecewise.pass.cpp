@@ -37,8 +37,9 @@
 #include <utility>
 #include <tuple>
 #include <cassert>
+#include "libcxx_tc_common.h"
 
-int main()
+int tc_libcxx_utilities_pairs_pair_piecewise(void)
 {
     {
         typedef std::pair<int, int*> P1;
@@ -46,7 +47,9 @@ int main()
         typedef std::pair<P1, P2> P3;
         P3 p3(std::piecewise_construct, std::tuple<int, int*>(3, nullptr),
                                         std::tuple<int*, int>(nullptr, 4));
-        assert(p3.first == P1(3, nullptr));
-        assert(p3.second == P2(nullptr, 4));
+        TC_ASSERT_EXPR(p3.first == P1(3, nullptr));
+        TC_ASSERT_EXPR(p3.second == P2(nullptr, 4));
     }
+    TC_SUCCESS_RESULT();
+    return 0;
 }

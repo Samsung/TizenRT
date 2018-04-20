@@ -34,10 +34,13 @@
 
 #include <utility>
 #include <type_traits>
+#include "libcxx_tc_common.h"
 
-int main()
+int tc_libcxx_utilities_pairs_pair_types(void)
 {
     typedef std::pair<float, short*> P;
     static_assert((std::is_same<P::first_type, float>::value), "");
     static_assert((std::is_same<P::second_type, short*>::value), "");
+    TC_SUCCESS_RESULT();
+    return 0;
 }

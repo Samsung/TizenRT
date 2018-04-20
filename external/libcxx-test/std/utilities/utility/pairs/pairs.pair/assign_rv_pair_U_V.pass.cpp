@@ -35,6 +35,7 @@
 #include <utility>
 #include <memory>
 #include <cassert>
+#include "libcxx_tc_common.h"
 #include <archetypes.hpp>
 
 struct Base
@@ -47,7 +48,7 @@ struct Derived
 {
 };
 
-int main()
+int tc_libcxx_utilities_pairs_pair_assign_rv_pair_U_V(void)
 {
     {
         typedef std::pair<std::unique_ptr<Derived>, short> P1;
@@ -55,8 +56,8 @@ int main()
         P1 p1(std::unique_ptr<Derived>(), static_cast<short>(4));
         P2 p2;
         p2 = std::move(p1);
-        assert(p2.first == nullptr);
-        assert(p2.second == 4);
+        TC_ASSERT_EXPR(p2.first == nullptr);
+        TC_ASSERT_EXPR(p2.second == 4);
     }
     {
        using C = TestTypes::TestType;
@@ -66,11 +67,13 @@ int main()
        P p(101, 101);
        C::reset_constructors();
        p = std::move(t);
-       assert(C::constructed == 0);
-       assert(C::assigned == 1);
-       assert(C::copy_assigned == 0);
-       assert(C::move_assigned == 1);
-       assert(p.first == 42);
-       assert(p.second.value == -42);
+       TC_ASSERT_EXPR(C::constructed == 0);
+       TC_ASSERT_EXPR(C::assigned == 1);
+       TC_ASSERT_EXPR(C::copy_assigned == 0);
+       TC_ASSERT_EXPR(C::move_assigned == 1);
+       TC_ASSERT_EXPR(p.first == 42);
+       TC_ASSERT_EXPR(p.second.value == -42);
     }
+    TC_SUCCESS_RESULT();
+    return 0;
 }

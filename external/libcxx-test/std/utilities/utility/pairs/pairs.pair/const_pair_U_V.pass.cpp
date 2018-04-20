@@ -34,6 +34,7 @@
 
 #include <utility>
 #include <cassert>
+#include "libcxx_tc_common.h"
 
 #include "archetypes.hpp"
 #include "test_convertible.hpp"
@@ -41,7 +42,7 @@ using namespace ImplicitTypes; // Get implicitly archetypes
 
 template <class T1, class U1,
           bool CanCopy = true, bool CanConvert = CanCopy>
-void test_pair_const()
+static int test_pair_const()
 {
     using P1 = std::pair<T1, int>;
     using P2 = std::pair<int, T1>;
@@ -51,6 +52,7 @@ void test_pair_const()
     static_assert(test_convertible<P1, UP1>() == CanConvert, "");
     static_assert(std::is_constructible<P2, UP2>::value == CanCopy, "");
     static_assert(test_convertible<P2,  UP2>() == CanConvert, "");
+    return 0;
 }
 
 template <class T, class U>
@@ -71,15 +73,15 @@ struct ImplicitT {
   int value;
 };
 
-int main()
+int tc_libcxx_utilities_pairs_pair_const_pair_U_V(void)
 {
     {
         typedef std::pair<int, int> P1;
         typedef std::pair<double, long> P2;
         const P1 p1(3, 4);
         const P2 p2 = p1;
-        assert(p2.first == 3);
-        assert(p2.second == 4);
+        TC_ASSERT_EXPR(p2.first == 3);
+        TC_ASSERT_EXPR(p2.second == 4);
     }
     {
         // We allow derived types to use this constructor
@@ -87,87 +89,87 @@ int main()
         using P2 = std::pair<int, int>;
         P1 p1(42, 101);
         P2 p2(p1);
-        assert(p2.first == 42);
-        assert(p2.second == 101);
+        TC_ASSERT_EXPR(p2.first == 42);
+        TC_ASSERT_EXPR(p2.second == 101);
     }
     {
         test_pair_const<AllCtors, AllCtors>(); // copy construction
-        test_pair_const<AllCtors, AllCtors&>();
-        test_pair_const<AllCtors, AllCtors&&>();
-        test_pair_const<AllCtors, const AllCtors&>();
-        test_pair_const<AllCtors, const AllCtors&&>();
+    TC_ASSERT_FUNC((test_pair_const<AllCtors, AllCtors&>()));
+    TC_ASSERT_FUNC((test_pair_const<AllCtors, AllCtors&&>()));
+    TC_ASSERT_FUNC((test_pair_const<AllCtors, const AllCtors&>()));
+    TC_ASSERT_FUNC((test_pair_const<AllCtors, const AllCtors&&>()));
 
         test_pair_const<ExplicitTypes::AllCtors, ExplicitTypes::AllCtors>(); // copy construction
-        test_pair_const<ExplicitTypes::AllCtors, ExplicitTypes::AllCtors&, true, false>();
-        test_pair_const<ExplicitTypes::AllCtors, ExplicitTypes::AllCtors&&, true, false>();
-        test_pair_const<ExplicitTypes::AllCtors, const ExplicitTypes::AllCtors&, true, false>();
-        test_pair_const<ExplicitTypes::AllCtors, const ExplicitTypes::AllCtors&&, true, false>();
+    TC_ASSERT_FUNC((test_pair_const<ExplicitTypes::AllCtors, ExplicitTypes::AllCtors&, true, false>()));
+    TC_ASSERT_FUNC((test_pair_const<ExplicitTypes::AllCtors, ExplicitTypes::AllCtors&&, true, false>()));
+    TC_ASSERT_FUNC((test_pair_const<ExplicitTypes::AllCtors, const ExplicitTypes::AllCtors&, true, false>()));
+    TC_ASSERT_FUNC((test_pair_const<ExplicitTypes::AllCtors, const ExplicitTypes::AllCtors&&, true, false>()));
 
         test_pair_const<MoveOnly, MoveOnly, false>(); // copy construction
-        test_pair_const<MoveOnly, MoveOnly&, false>();
-        test_pair_const<MoveOnly, MoveOnly&&, false>();
+    TC_ASSERT_FUNC((test_pair_const<MoveOnly, MoveOnly&, false>()));
+    TC_ASSERT_FUNC((test_pair_const<MoveOnly, MoveOnly&&, false>()));
 
         test_pair_const<ExplicitTypes::MoveOnly, ExplicitTypes::MoveOnly, false>(); // copy construction
-        test_pair_const<ExplicitTypes::MoveOnly, ExplicitTypes::MoveOnly&, false>();
-        test_pair_const<ExplicitTypes::MoveOnly, ExplicitTypes::MoveOnly&&, false>();
+    TC_ASSERT_FUNC((test_pair_const<ExplicitTypes::MoveOnly, ExplicitTypes::MoveOnly&, false>()));
+    TC_ASSERT_FUNC((test_pair_const<ExplicitTypes::MoveOnly, ExplicitTypes::MoveOnly&&, false>()));
 
-        test_pair_const<CopyOnly, CopyOnly>();
-        test_pair_const<CopyOnly, CopyOnly&>();
-        test_pair_const<CopyOnly, CopyOnly&&>();
+    TC_ASSERT_FUNC((test_pair_const<CopyOnly, CopyOnly>()));
+    TC_ASSERT_FUNC((test_pair_const<CopyOnly, CopyOnly&>()));
+    TC_ASSERT_FUNC((test_pair_const<CopyOnly, CopyOnly&&>()));
 
-        test_pair_const<ExplicitTypes::CopyOnly, ExplicitTypes::CopyOnly>();
-        test_pair_const<ExplicitTypes::CopyOnly, ExplicitTypes::CopyOnly&, true, false>();
-        test_pair_const<ExplicitTypes::CopyOnly, ExplicitTypes::CopyOnly&&, true, false>();
+    TC_ASSERT_FUNC((test_pair_const<ExplicitTypes::CopyOnly, ExplicitTypes::CopyOnly>()));
+    TC_ASSERT_FUNC((test_pair_const<ExplicitTypes::CopyOnly, ExplicitTypes::CopyOnly&, true, false>()));
+    TC_ASSERT_FUNC((test_pair_const<ExplicitTypes::CopyOnly, ExplicitTypes::CopyOnly&&, true, false>()));
 
-        test_pair_const<NonCopyable, NonCopyable, false>();
-        test_pair_const<NonCopyable, NonCopyable&, false>();
-        test_pair_const<NonCopyable, NonCopyable&&, false>();
-        test_pair_const<NonCopyable, const NonCopyable&, false>();
-        test_pair_const<NonCopyable, const NonCopyable&&, false>();
+    TC_ASSERT_FUNC((test_pair_const<NonCopyable, NonCopyable, false>()));
+    TC_ASSERT_FUNC((test_pair_const<NonCopyable, NonCopyable&, false>()));
+    TC_ASSERT_FUNC((test_pair_const<NonCopyable, NonCopyable&&, false>()));
+    TC_ASSERT_FUNC((test_pair_const<NonCopyable, const NonCopyable&, false>()));
+    TC_ASSERT_FUNC((test_pair_const<NonCopyable, const NonCopyable&&, false>()));
     }
 
     { // Test construction of references
-        test_pair_const<NonCopyable&, NonCopyable&>();
-        test_pair_const<NonCopyable&, NonCopyable&&>();
-        test_pair_const<NonCopyable&, NonCopyable const&, false>();
-        test_pair_const<NonCopyable const&, NonCopyable&&>();
-        test_pair_const<NonCopyable&&, NonCopyable&&, false>();
+    TC_ASSERT_FUNC((test_pair_const<NonCopyable&, NonCopyable&>()));
+    TC_ASSERT_FUNC((test_pair_const<NonCopyable&, NonCopyable&&>()));
+    TC_ASSERT_FUNC((test_pair_const<NonCopyable&, NonCopyable const&, false>()));
+    TC_ASSERT_FUNC((test_pair_const<NonCopyable const&, NonCopyable&&>()));
+    TC_ASSERT_FUNC((test_pair_const<NonCopyable&&, NonCopyable&&, false>()));
 
-        test_pair_const<ConvertingType&, int, false>();
-        test_pair_const<ExplicitTypes::ConvertingType&, int, false>();
+    TC_ASSERT_FUNC((test_pair_const<ConvertingType&, int, false>()));
+    TC_ASSERT_FUNC((test_pair_const<ExplicitTypes::ConvertingType&, int, false>()));
         // Unfortunately the below conversions are allowed and create dangling
         // references.
         //test_pair_const<ConvertingType&&, int>();
         //test_pair_const<ConvertingType const&, int>();
         //test_pair_const<ConvertingType const&&, int>();
         // But these are not because the converting constructor is explicit.
-        test_pair_const<ExplicitTypes::ConvertingType&&, int, false>();
-        test_pair_const<ExplicitTypes::ConvertingType const&, int, false>();
-        test_pair_const<ExplicitTypes::ConvertingType const&&, int, false>();
+    TC_ASSERT_FUNC((test_pair_const<ExplicitTypes::ConvertingType&&, int, false>()));
+    TC_ASSERT_FUNC((test_pair_const<ExplicitTypes::ConvertingType const&, int, false>()));
+    TC_ASSERT_FUNC((test_pair_const<ExplicitTypes::ConvertingType const&&, int, false>()));
 
     }
     {
-        test_pair_const<AllCtors, int, false>();
-        test_pair_const<ExplicitTypes::AllCtors, int, false>();
-        test_pair_const<ConvertingType, int>();
-        test_pair_const<ExplicitTypes::ConvertingType, int, true, false>();
+    TC_ASSERT_FUNC((test_pair_const<AllCtors, int, false>()));
+    TC_ASSERT_FUNC((test_pair_const<ExplicitTypes::AllCtors, int, false>()));
+    TC_ASSERT_FUNC((test_pair_const<ConvertingType, int>()));
+    TC_ASSERT_FUNC((test_pair_const<ExplicitTypes::ConvertingType, int, true, false>()));
 
-        test_pair_const<ConvertingType, int>();
-        test_pair_const<ConvertingType, ConvertingType>();
-        test_pair_const<ConvertingType, ConvertingType const&>();
-        test_pair_const<ConvertingType, ConvertingType&>();
-        test_pair_const<ConvertingType, ConvertingType&&>();
+    TC_ASSERT_FUNC((test_pair_const<ConvertingType, int>()));
+    TC_ASSERT_FUNC((test_pair_const<ConvertingType, ConvertingType>()));
+    TC_ASSERT_FUNC((test_pair_const<ConvertingType, ConvertingType const&>()));
+    TC_ASSERT_FUNC((test_pair_const<ConvertingType, ConvertingType&>()));
+    TC_ASSERT_FUNC((test_pair_const<ConvertingType, ConvertingType&&>()));
 
-        test_pair_const<ExplicitTypes::ConvertingType, int, true, false>();
-        test_pair_const<ExplicitTypes::ConvertingType, int&, true, false>();
-        test_pair_const<ExplicitTypes::ConvertingType, const int&, true, false>();
-        test_pair_const<ExplicitTypes::ConvertingType, int&&, true, false>();
-        test_pair_const<ExplicitTypes::ConvertingType, const int&&, true, false>();
+    TC_ASSERT_FUNC((test_pair_const<ExplicitTypes::ConvertingType, int, true, false>()));
+    TC_ASSERT_FUNC((test_pair_const<ExplicitTypes::ConvertingType, int&, true, false>()));
+    TC_ASSERT_FUNC((test_pair_const<ExplicitTypes::ConvertingType, const int&, true, false>()));
+    TC_ASSERT_FUNC((test_pair_const<ExplicitTypes::ConvertingType, int&&, true, false>()));
+    TC_ASSERT_FUNC((test_pair_const<ExplicitTypes::ConvertingType, const int&&, true, false>()));
 
-        test_pair_const<ExplicitTypes::ConvertingType, ExplicitTypes::ConvertingType>();
-        test_pair_const<ExplicitTypes::ConvertingType, ExplicitTypes::ConvertingType const&, true, false>();
-        test_pair_const<ExplicitTypes::ConvertingType, ExplicitTypes::ConvertingType&, true, false>();
-        test_pair_const<ExplicitTypes::ConvertingType, ExplicitTypes::ConvertingType&&, true, false>();
+    TC_ASSERT_FUNC((test_pair_const<ExplicitTypes::ConvertingType, ExplicitTypes::ConvertingType>()));
+    TC_ASSERT_FUNC((test_pair_const<ExplicitTypes::ConvertingType, ExplicitTypes::ConvertingType const&, true, false>()));
+    TC_ASSERT_FUNC((test_pair_const<ExplicitTypes::ConvertingType, ExplicitTypes::ConvertingType&, true, false>()));
+    TC_ASSERT_FUNC((test_pair_const<ExplicitTypes::ConvertingType, ExplicitTypes::ConvertingType&&, true, false>()));
     }
 #if TEST_STD_VER > 11
     {
@@ -195,4 +197,6 @@ int main()
         static_assert(p2.second.value == 101, "");
     }
 #endif
+    TC_SUCCESS_RESULT();
+    return 0;
 }
