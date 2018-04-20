@@ -123,7 +123,7 @@ void tc_net_recv_shutdown_n(int fd)
 	int ret = recv(fd, buffer, MAXRCVLEN, 0);
 	buffer[ret] = '\0';
 
-	TC_ASSERT_EQ("recv", ret, -1);
+	TC_ASSERT_EQ("recv", ret, 0);
 	TC_SUCCESS_RESULT();
 
 }

@@ -69,29 +69,6 @@ void getpeername_signal(void)
 }
 
 /**
-   * @testcase		   :tc_net_getpeername_p1
-   * @brief		   :positive test cases without client server model
-   * @scenario		   :
-   * @apicovered	   :getpeername()
-   * @precondition	   :
-   * @postcondition	   :
-   */
-static void tc_net_getpeername_p1(void)
-{
-	int sock;
-	int len = sizeof(struct sockaddr);
-	struct sockaddr foo;
-
-	sock = socket(AF_INET, SOCK_STREAM, 0);
-	int ret = getpeername(sock, &foo, (socklen_t *)&len);
-
-	TC_ASSERT_NEQ("getpeername", ret, -1);
-	TC_SUCCESS_RESULT();
-
-	close(sock);
-}
-
-/**
    * @testcase		   :tc_net_getpeername_sock_n
    * @brief		   :negative test case wthout client server model
    * @scenario		   :
@@ -154,28 +131,6 @@ static void tc_net_getpeername_unix_p(void)
 	TC_SUCCESS_RESULT();
 }
 #endif
-/**
-   * @testcase		   :tc_net_getpeername_udp_p
-   * @brief		   :
-   * @scenario		   :
-   * @apicovered	   :getpeername()
-   * @precondition	   :
-   * @postcondition	   :
-   */
-static void tc_net_getpeername_udp_p(void)
-{
-	int sock;
-	int len = sizeof(struct sockaddr);
-	struct sockaddr foo;
-
-	sock = socket(AF_INET, SOCK_DGRAM, IPPROTO_UDP);
-	int ret = getpeername(sock, &foo, (socklen_t *)&len);
-
-	close(sock);
-
-	TC_ASSERT_NEQ("getpeername", ret, -1);
-	TC_SUCCESS_RESULT();
-}
 
 /**
    * @testcase		   :tc_net_getpeername_p
@@ -295,12 +250,10 @@ int net_getpeername_main(void)
 	pthread_join(Server, NULL);
 
 	pthread_join(Client, NULL);
-	tc_net_getpeername_p1();
 	tc_net_getpeername_sock_n();
 	tc_net_getpeername_close_n();
 #ifdef AF_UNIX
 	tc_net_getpeername_unix_p();
 #endif
-	tc_net_getpeername_udp_p();
 	return 0;
 }

@@ -134,6 +134,8 @@ static void *server_connect(void *ptr_num_clients)
 			pthread_exit(pret);
 		}
 		printf("Server thread : finished with client\n");
+		recv_len = 0;
+		send_len = 0;
 	}
 	ret = close(server_socket);
 	if (ret != OK) {
