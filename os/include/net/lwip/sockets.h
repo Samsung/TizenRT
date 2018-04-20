@@ -289,6 +289,8 @@ struct linger {
 #define PF_INET         AF_INET
 #define PF_INET6        AF_INET6
 #define PF_UNSPEC       AF_UNSPEC
+#define PF_UNIX         1		/* Local communication */
+#define AF_UNIX         PF_UNIX
 
 #define IPPROTO_IP      0
 #define IPPROTO_ICMP    1
@@ -305,6 +307,7 @@ struct linger {
 #define MSG_OOB        0x04		/* Unimplemented: Requests out-of-band data. The significance and semantics of out-of-band data are protocol-specific */
 #define MSG_DONTWAIT   0x08		/* Nonblocking i/o for this operation only */
 #define MSG_MORE       0x10		/* Sender will send more */
+#define MSG_NOSIGNAL   0x4000	/* Do not generate SIGPIPE.  */
 
 /*
  * Options for level IPPROTO_IP
