@@ -98,9 +98,9 @@ void get_router_ip_address(char *routerIPAddr)
 		inet_ntop(AF_INET, &addr, routerIPAddr, INET_ADDRSTRLEN);
 #endif
 #ifdef CONFIG_NET_IPv6
-		struct in6_addr addr;
-		netlib_get_dripv6addr(mac,addr);
-		inet_ntop(AF_INET6, &addr, routerIPAddr, INET6_ADDRSTRLEN);
+		struct in6_addr addr6;
+		netlib_get_dripv6addr(mac, addr6 );
+		inet_ntop(AF_INET6, &addr6, routerIPAddr, INET6_ADDRSTRLEN);
 #endif
 }
 
