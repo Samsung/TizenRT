@@ -57,6 +57,41 @@ CXXSRCS += std/algorithms/alg.sorting/alg.min.max/min_init_list.pass.cpp
 CXXSRCS += std/algorithms/tc_algorithms.cpp
 endif
 
+#Utilities Source
+CXXSRCS += std/utilities/memory/util.smartptr/util.smartptr.shared/util.smartptr.shared.const/shared_ptr_pointer.pass.cpp
+CXXSRCS += std/utilities/memory/util.smartptr/util.smartptr.shared/util.smartptr.shared.const/shared_ptr_Y_rv.pass.cpp
+CXXSRCS += std/utilities/memory/util.smartptr/util.smartptr.shared/util.smartptr.shared.const/shared_ptr_Y.pass.cpp
+CXXSRCS += std/utilities/memory/util.smartptr/util.smartptr.shared/util.smartptr.shared.const/shared_ptr.pass.cpp
+CXXSRCS += std/utilities/memory/util.smartptr/util.smartptr.shared/util.smartptr.shared.const/shared_ptr_rv.pass.cpp
+CXXSRCS += std/utilities/memory/util.smartptr/util.smartptr.shared/util.smartptr.shared.assign/auto_ptr_Y.pass.cpp
+CXXSRCS += std/utilities/memory/util.smartptr/util.smartptr.shared/util.smartptr.shared.assign/shared_ptr_Y_rv.pass.cpp
+CXXSRCS += std/utilities/memory/util.smartptr/util.smartptr.shared/util.smartptr.shared.assign/unique_ptr_Y.pass.cpp
+CXXSRCS += std/utilities/memory/util.smartptr/util.smartptr.shared/util.smartptr.shared.assign/shared_ptr_Y.pass.cpp
+CXXSRCS += std/utilities/memory/util.smartptr/util.smartptr.shared/util.smartptr.shared.assign/shared_ptr.pass.cpp
+CXXSRCS += std/utilities/memory/util.smartptr/util.smartptr.shared/util.smartptr.shared.assign/shared_ptr_rv.pass.cpp
+CXXSRCS += std/utilities/utility/pairs/pair.astuple/tuple_element.pass.cpp
+CXXSRCS += std/utilities/utility/pairs/pair.astuple/get_rv.pass.cpp
+CXXSRCS += std/utilities/utility/pairs/pair.astuple/tuple_size.pass.cpp
+CXXSRCS += std/utilities/utility/pairs/pair.astuple/get_const.pass.cpp
+CXXSRCS += std/utilities/utility/pairs/pair.astuple/get_non_const.pass.cpp
+CXXSRCS += std/utilities/utility/pairs/pair.piecewise/piecewise_construct.pass.cpp
+CXXSRCS += std/utilities/utility/pairs/pairs.spec/non_member_swap.pass.cpp
+CXXSRCS += std/utilities/utility/pairs/pairs.spec/comparison.pass.cpp
+CXXSRCS += std/utilities/utility/pairs/pairs.spec/make_pair.pass.cpp
+CXXSRCS += std/utilities/utility/pairs/pairs.pair/copy_ctor.pass.cpp
+CXXSRCS += std/utilities/utility/pairs/pairs.pair/piecewise.pass.cpp
+CXXSRCS += std/utilities/utility/pairs/pairs.pair/assign_rv_pair_U_V.pass.cpp
+CXXSRCS += std/utilities/utility/pairs/pairs.pair/assign_rv_pair.pass.cpp
+CXXSRCS += std/utilities/utility/pairs/pairs.pair/U_V.pass.cpp
+CXXSRCS += std/utilities/utility/pairs/pairs.pair/const_pair_U_V.pass.cpp
+CXXSRCS += std/utilities/utility/pairs/pairs.pair/const_first_const_second.pass.cpp
+CXXSRCS += std/utilities/utility/pairs/pairs.pair/assign_const_pair_U_V.pass.cpp
+CXXSRCS += std/utilities/utility/pairs/pairs.pair/swap.pass.cpp
+CXXSRCS += std/utilities/utility/pairs/pairs.pair/types.pass.cpp
+CXXSRCS += std/utilities/utility/pairs/pairs.pair/default.pass.cpp
+CXXSRCS += std/utilities/utility/pairs/pairs.pair/rv_pair_U_V.pass.cpp
+
+
 AOBJS		= $(ASRCS:.S=$(OBJEXT))
 COBJS		= $(CSRCS:.c=$(OBJEXT))
 CXXOBJS		= $(CXXSRCS:.cpp=$(OBJEXT))
