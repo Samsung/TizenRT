@@ -68,6 +68,13 @@ public:
 	 */
 	virtual size_t read(unsigned char* buf, size_t size) = 0;
 
+  	/**
+	 * @brief Gets the stream data from offset
+	 * @details @b #include <media/InputDataSource.h>
+	 * @since TizenRT v2.0
+	 */
+	virtual int readAt(long offset, int origin, unsigned char* buf, size_t size) = 0;
+
 	/**
 	 * @brief Gets current audio decoder. The audio decoder is set by each data source.
 	 * @details @b #include <media/InputDataSource.h>

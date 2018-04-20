@@ -97,6 +97,18 @@ public:
 	 */
 	size_t read(unsigned char* buf, size_t size) override;
 
+	/**
+	 * @brief Gets the file data
+	 * @details @b #include <media/FileInputDataSource.h>
+	 * @param[in] offset The offset from origin
+	 * @param[in] origin Position used as reference
+	 * @param[out] buf The buf that read the data and fill it into the buffer
+	 * @param[in] size The size that the size of the buffer
+	 * @return if failed, it returns -1, else readead size returns
+	 * @since TizenRT v2.0
+	 */
+	int readAt(long offset, int origin, unsigned char* buf, size_t size) override;
+
 private:
 	std::string mDataPath;
 	FILE* mFp;
