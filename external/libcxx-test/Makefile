@@ -114,9 +114,15 @@ CXXSRCS += std/diagnostics/std.exceptions/logic.error/logic_error.pass.cpp
 CXXSRCS += std/diagnostics/tc_diagnostics.cpp
 endif
 
+ifeq ($(CONFIG_LIBCXX_UTC_STDBOOL),y)
 #stdbool sources
 CXXSRCS += std/depr/depr.c.headers/stdbool_h.pass.cpp
 CXXSRCS += std/language.support/support.runtime/cstdbool.pass.cpp
+
+#stdbool TC
+CXXSRCS += std/depr/tc_depr.cpp
+CXXSRCS += std/language.support/tc_language_support.cpp
+endif
 
 AOBJS		= $(ASRCS:.S=$(OBJEXT))
 COBJS		= $(CSRCS:.c=$(OBJEXT))
