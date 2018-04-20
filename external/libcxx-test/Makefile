@@ -29,6 +29,29 @@ CSRCS += utc_libcxx.c
 CFLAGS += -I ../../apps/examples/testcase/
 CXXFLAGS += -I ../../apps/examples/testcase/
 
+#Add Support Headers
+CXXFLAGS += -I. -I support/
+
+#Algorithms Source
+CXXSRCS += std/algorithms/alg.sorting/alg.min.max/minmax_init_list_comp.pass.cpp
+CXXSRCS += std/algorithms/alg.sorting/alg.min.max/max_comp.pass.cpp
+CXXSRCS += std/algorithms/alg.sorting/alg.min.max/max_init_list_comp.pass.cpp
+CXXSRCS += std/algorithms/alg.sorting/alg.min.max/min_element_comp.pass.cpp
+CXXSRCS += std/algorithms/alg.sorting/alg.min.max/minmax_element_comp.pass.cpp
+CXXSRCS += std/algorithms/alg.sorting/alg.min.max/min_comp.pass.cpp
+CXXSRCS += std/algorithms/alg.sorting/alg.min.max/min_init_list_comp.pass.cpp
+CXXSRCS += std/algorithms/alg.sorting/alg.min.max/max_init_list.pass.cpp
+CXXSRCS += std/algorithms/alg.sorting/alg.min.max/minmax_element.pass.cpp
+CXXSRCS += std/algorithms/alg.sorting/alg.min.max/max_element.pass.cpp
+CXXSRCS += std/algorithms/alg.sorting/alg.min.max/minmax_comp.pass.cpp
+CXXSRCS += std/algorithms/alg.sorting/alg.min.max/min_element.pass.cpp
+CXXSRCS += std/algorithms/alg.sorting/alg.min.max/min.pass.cpp
+CXXSRCS += std/algorithms/alg.sorting/alg.min.max/max_element_comp.pass.cpp
+CXXSRCS += std/algorithms/alg.sorting/alg.min.max/minmax.pass.cpp
+CXXSRCS += std/algorithms/alg.sorting/alg.min.max/minmax_init_list.pass.cpp
+CXXSRCS += std/algorithms/alg.sorting/alg.min.max/max.pass.cpp
+CXXSRCS += std/algorithms/alg.sorting/alg.min.max/min_init_list.pass.cpp
+
 AOBJS		= $(ASRCS:.S=$(OBJEXT))
 COBJS		= $(CSRCS:.c=$(OBJEXT))
 CXXOBJS		= $(CXXSRCS:.cpp=$(OBJEXT))
