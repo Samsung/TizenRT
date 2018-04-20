@@ -670,6 +670,13 @@ wifi_manager_result_e _wifimgr_stop_softap(void)
 wifi_manager_result_e _wifimgr_scan(void)
 {
 	WM_LOG_START;
+	wifi_manager_cb_s *cbk = &g_manager_info.cb;
+	
+	if (!cbk->scan_ap_done) {
+		ndbg("[WM] Callback funciton should be defined.\n");
+		return WIFI_MANAGER_FAIL;
+	}
+	
 	WIFIMGR_CHECK_UTILRESULT(wifi_utils_scan_ap(NULL), "[WM] request scan to wifi utils is fail\n", WIFI_MANAGER_FAIL);
 	return WIFI_MANAGER_SUCCESS;
 }
@@ -973,6 +980,10 @@ wifi_manager_result_e _handler_on_reconnect_state(_wifimgr_msg_s *msg)
 			return wres;
 		}
 		WIFIMGR_SET_STATE(WIFIMGR_STA_RECONNECTING);
+	} else if (msg->event == EVT_DEINIT) {
+		nvdbg("[WM] deinit\n");
+		WIFIMGR_CHECK_RESULT(_wifimgr_deinit(), "critical error\n", WIFI_MANAGER_FAIL);
+		WIFIMGR_SET_STATE(WIFIMGR_UNINITIALIZED);
 	}
 #else /* WIFIDRIVER_SUPPORT_AUTOCONNECT*/
 	if (msg->event == EVT_DISCONNECT) {
@@ -984,6 +995,10 @@ wifi_manager_result_e _handler_on_reconnect_state(_wifimgr_msg_s *msg)
 		nvdbg("[WM] connected\n");
 		_handle_user_cb(CB_STA_CONNECTED, NULL);
 		WIFIMGR_SET_STATE(WIFIMGR_STA_CONNECTED);
+	} else if (msg->event == EVT_DEINIT) {
+		nvdbg("[WM] deinit\n");
+		WIFIMGR_CHECK_RESULT(_wifimgr_deinit(), "critical error\n", WIFI_MANAGER_FAIL);
+		WIFIMGR_SET_STATE(WIFIMGR_UNINITIALIZED);
 	}
 #endif /* WIFIDRIVER_SUPPORT_AUTOCONNECT*/
 	return WIFI_MANAGER_SUCCESS;
@@ -1175,6 +1190,9 @@ wifi_manager_result_e wifi_manager_set_mode(wifi_manager_mode_e mode, wifi_manag
 
 wifi_manager_result_e wifi_manager_get_info(wifi_manager_info_s *info)
 {
+	if (info == NULL) {
+		return WIFI_MANAGER_INVALID_ARGS;
+	}
 	LOCK_WIFIMGR;
 	uint8_t *ip = (uint8_t *)&g_manager_info.ip4_address;
 	snprintf(info->ip4_address, 18, "%d.%d.%d.%d", ip[0], ip[1], ip[2], ip[3]);
