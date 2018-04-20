@@ -460,6 +460,7 @@ static void tc_net_setsockopt_reuseaddr_p(int s)
 
 }
 
+#if 0
 /**
    * @testcase		   :tc_net_setsockopt_reuseport_p
    * @brief		   :
@@ -479,6 +480,7 @@ static void tc_net_setsockopt_reuseport_p(int s)
 	TC_SUCCESS_RESULT();
 
 }
+#endif
 
 /**
 * @fn                   :tc_net_setsockopt_rcvbuf_p
@@ -682,7 +684,7 @@ int net_setsockopt_main(void)
 	//tc_net_setsockopt_ipproto_ip_ip_pktinfo_p(fd);
 	tc_net_setsockopt_keepalive_p(fd);
 	//tc_net_setsockopt_rcvbuf_p(fd);
-	tc_net_setsockopt_reuseport_p(fd);
+	//tc_net_setsockopt_reuseport_p(fd);
 	tc_net_setsockopt_reuseaddr_p(fd);
 	tc_net_setsockopt_rcvtimo_p(fd);
 	//tc_net_setsockopt_sndtimo_p(fd);
