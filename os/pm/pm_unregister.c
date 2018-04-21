@@ -1,6 +1,6 @@
 /****************************************************************************
  *
- * Copyright 2016 Samsung Electronics All Rights Reserved.
+ * Copyright 2018 Samsung Electronics All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,10 +16,10 @@
  *
  ****************************************************************************/
 /****************************************************************************
- * pm/pm_register.c
+ * pm/pm_unregister.c
  *
- *   Copyright (C) 2011-2012 Gregory Nutt. All rights reserved.
- *   Author: Gregory Nutt <gnutt@nuttx.org>
+ *   Copyright (C) 2018 Gregory Nutt. All rights reserved.
+ *   Author: Juha Niskanen <juha.niskanen@haltian.com>
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -68,11 +68,11 @@
  ****************************************************************************/
 
 /****************************************************************************
- * Name: pm_register
+ * Name: pm_unregister
  *
  * Description:
- *   This function is called by a device driver in order to register to
- *   receive power management event callbacks.
+ *   This function is called by a device driver in order to unregister
+ *   previously registered power management event callbacks.
  *
  * Input parameters:
  *   callbacks - An instance of struct pm_callback_s providing the driver
@@ -83,19 +83,20 @@
  *
  ****************************************************************************/
 
-int pm_register(int domain_indx, FAR struct pm_callback_s *callbacks)
+int pm_unregister(int domain_indx, FAR struct pm_callback_s *callbacks)
 {
 	int ret;
 
 	DEBUGASSERT(callbacks);
 
-	/* Add the new entry to the end of the list of registered callbacks */
+	/* Remove entry from the list of registered callbacks. */
 
 	ret = pm_lock(domain_indx);
 	if (ret == OK) {
-		sq_addlast(&callbacks->entry, &g_pmglobals.domain[domain_indx].registry);
+		sq_rem(&callbacks->entry, &g_pmglobals.domain[domain_indx].registry);
+		pm_unlock(domain_indx);
 	}
-	pm_unlock(domain_indx);
+
 	return ret;
 }
 
