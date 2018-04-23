@@ -27,14 +27,15 @@
 // <forward_list>
 
 // template <class T, class Allocator>
-//     void swap(forward_list<T, Allocator>& x, forward_list<T, Allocator>& y);
+//     static int swap(forward_list<T, Allocator>& x, forward_list<T, Allocator>& y);
 
 #include <forward_list>
 #include <cassert>
+#include "libcxx_tc_common.h"
 
 #include "test_allocator.h"
 
-int main()
+int tc_libcxx_containers_forwardlist_spec_non_member_swap(void)
 {
     {
         typedef int T;
@@ -46,20 +47,20 @@ int main()
         C c2(std::begin(t2), std::end(t2), A(1, 2));
         swap(c1, c2);
 
-        assert(distance(c1.begin(), c1.end()) == 3);
-        assert(*next(c1.begin(), 0) == 10);
-        assert(*next(c1.begin(), 1) == 11);
-        assert(*next(c1.begin(), 2) == 12);
-        assert(c1.get_allocator().get_id() == 1);
+        TC_ASSERT_EXPR(distance(c1.begin(), c1.end()) == 3);
+        TC_ASSERT_EXPR(*next(c1.begin(), 0) == 10);
+        TC_ASSERT_EXPR(*next(c1.begin(), 1) == 11);
+        TC_ASSERT_EXPR(*next(c1.begin(), 2) == 12);
+        TC_ASSERT_EXPR(c1.get_allocator().get_id() == 1);
 
-        assert(distance(c2.begin(), c2.end()) == 6);
-        assert(*next(c2.begin(), 0) == 0);
-        assert(*next(c2.begin(), 1) == 1);
-        assert(*next(c2.begin(), 2) == 2);
-        assert(*next(c2.begin(), 3) == 3);
-        assert(*next(c2.begin(), 4) == 4);
-        assert(*next(c2.begin(), 5) == 5);
-        assert(c2.get_allocator().get_id() == 2);
+        TC_ASSERT_EXPR(distance(c2.begin(), c2.end()) == 6);
+        TC_ASSERT_EXPR(*next(c2.begin(), 0) == 0);
+        TC_ASSERT_EXPR(*next(c2.begin(), 1) == 1);
+        TC_ASSERT_EXPR(*next(c2.begin(), 2) == 2);
+        TC_ASSERT_EXPR(*next(c2.begin(), 3) == 3);
+        TC_ASSERT_EXPR(*next(c2.begin(), 4) == 4);
+        TC_ASSERT_EXPR(*next(c2.begin(), 5) == 5);
+        TC_ASSERT_EXPR(c2.get_allocator().get_id() == 2);
     }
     {
         typedef int T;
@@ -70,17 +71,17 @@ int main()
         C c2(A(1, 2));
         swap(c1, c2);
 
-        assert(distance(c1.begin(), c1.end()) == 0);
-        assert(c1.get_allocator().get_id() == 1);
+        TC_ASSERT_EXPR(distance(c1.begin(), c1.end()) == 0);
+        TC_ASSERT_EXPR(c1.get_allocator().get_id() == 1);
 
-        assert(distance(c2.begin(), c2.end()) == 6);
-        assert(*next(c2.begin(), 0) == 0);
-        assert(*next(c2.begin(), 1) == 1);
-        assert(*next(c2.begin(), 2) == 2);
-        assert(*next(c2.begin(), 3) == 3);
-        assert(*next(c2.begin(), 4) == 4);
-        assert(*next(c2.begin(), 5) == 5);
-        assert(c2.get_allocator().get_id() == 2);
+        TC_ASSERT_EXPR(distance(c2.begin(), c2.end()) == 6);
+        TC_ASSERT_EXPR(*next(c2.begin(), 0) == 0);
+        TC_ASSERT_EXPR(*next(c2.begin(), 1) == 1);
+        TC_ASSERT_EXPR(*next(c2.begin(), 2) == 2);
+        TC_ASSERT_EXPR(*next(c2.begin(), 3) == 3);
+        TC_ASSERT_EXPR(*next(c2.begin(), 4) == 4);
+        TC_ASSERT_EXPR(*next(c2.begin(), 5) == 5);
+        TC_ASSERT_EXPR(c2.get_allocator().get_id() == 2);
     }
     {
         typedef int T;
@@ -91,14 +92,14 @@ int main()
         C c2(std::begin(t2), std::end(t2), A(1, 2));
         swap(c1, c2);
 
-        assert(distance(c1.begin(), c1.end()) == 3);
-        assert(*next(c1.begin(), 0) == 10);
-        assert(*next(c1.begin(), 1) == 11);
-        assert(*next(c1.begin(), 2) == 12);
-        assert(c1.get_allocator().get_id() == 1);
+        TC_ASSERT_EXPR(distance(c1.begin(), c1.end()) == 3);
+        TC_ASSERT_EXPR(*next(c1.begin(), 0) == 10);
+        TC_ASSERT_EXPR(*next(c1.begin(), 1) == 11);
+        TC_ASSERT_EXPR(*next(c1.begin(), 2) == 12);
+        TC_ASSERT_EXPR(c1.get_allocator().get_id() == 1);
 
-        assert(distance(c2.begin(), c2.end()) == 0);
-        assert(c2.get_allocator().get_id() == 2);
+        TC_ASSERT_EXPR(distance(c2.begin(), c2.end()) == 0);
+        TC_ASSERT_EXPR(c2.get_allocator().get_id() == 2);
     }
     {
         typedef int T;
@@ -108,11 +109,11 @@ int main()
         C c2(A(1, 2));
         swap(c1, c2);
 
-        assert(distance(c1.begin(), c1.end()) == 0);
-        assert(c1.get_allocator().get_id() == 1);
+        TC_ASSERT_EXPR(distance(c1.begin(), c1.end()) == 0);
+        TC_ASSERT_EXPR(c1.get_allocator().get_id() == 1);
 
-        assert(distance(c2.begin(), c2.end()) == 0);
-        assert(c2.get_allocator().get_id() == 2);
+        TC_ASSERT_EXPR(distance(c2.begin(), c2.end()) == 0);
+        TC_ASSERT_EXPR(c2.get_allocator().get_id() == 2);
     }
 
     {
@@ -125,20 +126,20 @@ int main()
         C c2(std::begin(t2), std::end(t2), A(2));
         swap(c1, c2);
 
-        assert(distance(c1.begin(), c1.end()) == 3);
-        assert(*next(c1.begin(), 0) == 10);
-        assert(*next(c1.begin(), 1) == 11);
-        assert(*next(c1.begin(), 2) == 12);
-        assert(c1.get_allocator() == A(2));
+        TC_ASSERT_EXPR(distance(c1.begin(), c1.end()) == 3);
+        TC_ASSERT_EXPR(*next(c1.begin(), 0) == 10);
+        TC_ASSERT_EXPR(*next(c1.begin(), 1) == 11);
+        TC_ASSERT_EXPR(*next(c1.begin(), 2) == 12);
+        TC_ASSERT_EXPR(c1.get_allocator() == A(2));
 
-        assert(distance(c2.begin(), c2.end()) == 6);
-        assert(*next(c2.begin(), 0) == 0);
-        assert(*next(c2.begin(), 1) == 1);
-        assert(*next(c2.begin(), 2) == 2);
-        assert(*next(c2.begin(), 3) == 3);
-        assert(*next(c2.begin(), 4) == 4);
-        assert(*next(c2.begin(), 5) == 5);
-        assert(c2.get_allocator() == A(1));
+        TC_ASSERT_EXPR(distance(c2.begin(), c2.end()) == 6);
+        TC_ASSERT_EXPR(*next(c2.begin(), 0) == 0);
+        TC_ASSERT_EXPR(*next(c2.begin(), 1) == 1);
+        TC_ASSERT_EXPR(*next(c2.begin(), 2) == 2);
+        TC_ASSERT_EXPR(*next(c2.begin(), 3) == 3);
+        TC_ASSERT_EXPR(*next(c2.begin(), 4) == 4);
+        TC_ASSERT_EXPR(*next(c2.begin(), 5) == 5);
+        TC_ASSERT_EXPR(c2.get_allocator() == A(1));
     }
     {
         typedef int T;
@@ -149,17 +150,17 @@ int main()
         C c2(A(2));
         swap(c1, c2);
 
-        assert(distance(c1.begin(), c1.end()) == 0);
-        assert(c1.get_allocator() == A(2));
+        TC_ASSERT_EXPR(distance(c1.begin(), c1.end()) == 0);
+        TC_ASSERT_EXPR(c1.get_allocator() == A(2));
 
-        assert(distance(c2.begin(), c2.end()) == 6);
-        assert(*next(c2.begin(), 0) == 0);
-        assert(*next(c2.begin(), 1) == 1);
-        assert(*next(c2.begin(), 2) == 2);
-        assert(*next(c2.begin(), 3) == 3);
-        assert(*next(c2.begin(), 4) == 4);
-        assert(*next(c2.begin(), 5) == 5);
-        assert(c2.get_allocator() == A(1));
+        TC_ASSERT_EXPR(distance(c2.begin(), c2.end()) == 6);
+        TC_ASSERT_EXPR(*next(c2.begin(), 0) == 0);
+        TC_ASSERT_EXPR(*next(c2.begin(), 1) == 1);
+        TC_ASSERT_EXPR(*next(c2.begin(), 2) == 2);
+        TC_ASSERT_EXPR(*next(c2.begin(), 3) == 3);
+        TC_ASSERT_EXPR(*next(c2.begin(), 4) == 4);
+        TC_ASSERT_EXPR(*next(c2.begin(), 5) == 5);
+        TC_ASSERT_EXPR(c2.get_allocator() == A(1));
     }
     {
         typedef int T;
@@ -170,14 +171,14 @@ int main()
         C c2(std::begin(t2), std::end(t2), A(2));
         swap(c1, c2);
 
-        assert(distance(c1.begin(), c1.end()) == 3);
-        assert(*next(c1.begin(), 0) == 10);
-        assert(*next(c1.begin(), 1) == 11);
-        assert(*next(c1.begin(), 2) == 12);
-        assert(c1.get_allocator() == A(2));
+        TC_ASSERT_EXPR(distance(c1.begin(), c1.end()) == 3);
+        TC_ASSERT_EXPR(*next(c1.begin(), 0) == 10);
+        TC_ASSERT_EXPR(*next(c1.begin(), 1) == 11);
+        TC_ASSERT_EXPR(*next(c1.begin(), 2) == 12);
+        TC_ASSERT_EXPR(c1.get_allocator() == A(2));
 
-        assert(distance(c2.begin(), c2.end()) == 0);
-        assert(c2.get_allocator() == A(1));
+        TC_ASSERT_EXPR(distance(c2.begin(), c2.end()) == 0);
+        TC_ASSERT_EXPR(c2.get_allocator() == A(1));
     }
     {
         typedef int T;
@@ -187,10 +188,12 @@ int main()
         C c2(A(2));
         swap(c1, c2);
 
-        assert(distance(c1.begin(), c1.end()) == 0);
-        assert(c1.get_allocator() == A(2));
+        TC_ASSERT_EXPR(distance(c1.begin(), c1.end()) == 0);
+        TC_ASSERT_EXPR(c1.get_allocator() == A(2));
 
-        assert(distance(c2.begin(), c2.end()) == 0);
-        assert(c2.get_allocator() == A(1));
+        TC_ASSERT_EXPR(distance(c2.begin(), c2.end()) == 0);
+        TC_ASSERT_EXPR(c2.get_allocator() == A(1));
     }
+    TC_SUCCESS_RESULT();
+    return 0;
 }

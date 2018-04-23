@@ -44,11 +44,11 @@
 
 #include <forward_list>
 #include <type_traits>
-
+#include "libcxx_tc_common.h"
 
 struct A { std::forward_list<A> v; }; // incomplete type support
 
-int main()
+int tc_libcxx_containers_forwardlist_types(void)
 {
     {
     typedef std::forward_list<char> C;
@@ -68,4 +68,6 @@ int main()
     static_assert((std::is_same<typename C::difference_type,
         typename std::iterator_traits<typename C::const_iterator>::difference_type>::value), "");
     }
+    TC_SUCCESS_RESULT();
+    return 0;
 }

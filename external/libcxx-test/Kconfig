@@ -38,6 +38,13 @@ config LIBCXX_UTC_CONTAINERS_VECTOR
 	---help---
 		UTC for Libc++ Containers(Vector)
 
+config LIBCXX_UTC_CONTAINERS_LIST
+	bool "UTC for Libc++ List"
+	default y
+	depends on LIBCXX_UTC_CONTAINERS
+	---help---
+		UTC for Libc++ Containers(List)
+
 config LIBCXX_UTC_UTILITIES
 	bool "UTC for Libc++ Utilities"
 	default y

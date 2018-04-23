@@ -26,11 +26,12 @@
 
 // <forward_list>
 
-// void splice_after(const_iterator p, forward_list&& x,
+// static int splice_after(const_iterator p, forward_list&& x,
 //                   const_iterator first, const_iterator last);
 
 #include <forward_list>
 #include <cassert>
+#include "libcxx_tc_common.h"
 #include <iterator>
 
 
@@ -41,22 +42,23 @@ const int size_t1 = std::end(t1) - std::begin(t1);
 const int size_t2 = std::end(t2) - std::begin(t2);
 
 template <class C>
-void
+static int
 testd(const C& c, int p, int f, int l)
 {
     typename C::const_iterator i = c.begin();
     int n1 = 0;
     for (; n1 < p; ++n1, ++i)
-        assert(*i == t1[n1]);
+        TC_ASSERT_EXPR(*i == t1[n1]);
     for (int n2 = f; n2 < l-1; ++n2, ++i)
-        assert(*i == t2[n2]);
+        TC_ASSERT_EXPR(*i == t2[n2]);
     for (; n1 < size_t1; ++n1, ++i)
-        assert(*i == t1[n1]);
-    assert(distance(c.begin(), c.end()) == size_t1 + (l > f+1 ? l-1-f : 0));
+        TC_ASSERT_EXPR(*i == t1[n1]);
+    TC_ASSERT_EXPR(distance(c.begin(), c.end()) == size_t1 + (l > f+1 ? l-1-f : 0));
+    return 0;
 }
 
 template <class C>
-void
+static int
 tests(const C& c, int p, int f, int l)
 {
     typename C::const_iterator i = c.begin();
@@ -65,34 +67,35 @@ tests(const C& c, int p, int f, int l)
     if (d == 0 || p == f)
     {
         for (n = 0; n < size_t1; ++n, ++i)
-            assert(*i == t1[n]);
+            TC_ASSERT_EXPR(*i == t1[n]);
     }
     else if (p < f)
     {
         for (n = 0; n < p; ++n, ++i)
-            assert(*i == t1[n]);
+            TC_ASSERT_EXPR(*i == t1[n]);
         for (n = f; n < l-1; ++n, ++i)
-            assert(*i == t1[n]);
+            TC_ASSERT_EXPR(*i == t1[n]);
         for (n = p; n < f; ++n, ++i)
-            assert(*i == t1[n]);
+            TC_ASSERT_EXPR(*i == t1[n]);
         for (n = l-1; n < size_t1; ++n, ++i)
-            assert(*i == t1[n]);
+            TC_ASSERT_EXPR(*i == t1[n]);
     }
     else // p > f
     {
         for (n = 0; n < f; ++n, ++i)
-            assert(*i == t1[n]);
+            TC_ASSERT_EXPR(*i == t1[n]);
         for (n = l-1; n < p; ++n, ++i)
-            assert(*i == t1[n]);
+            TC_ASSERT_EXPR(*i == t1[n]);
         for (n = f; n < l-1; ++n, ++i)
-            assert(*i == t1[n]);
+            TC_ASSERT_EXPR(*i == t1[n]);
         for (n = p; n < size_t1; ++n, ++i)
-            assert(*i == t1[n]);
+            TC_ASSERT_EXPR(*i == t1[n]);
     }
-    assert(distance(c.begin(), c.end()) == size_t1);
+    TC_ASSERT_EXPR(distance(c.begin(), c.end()) == size_t1);
+    return 0;
 }
 
-int main()
+int tc_libcxx_containers_forwardlist_ops_splice_after_range(void)
 {
     {
     // splicing different containers
@@ -137,4 +140,6 @@ int main()
         }
     }
     }
+    TC_SUCCESS_RESULT();
+    return 0;
 }

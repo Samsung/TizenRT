@@ -26,11 +26,12 @@
 
 // <forward_list>
 
-// void remove(const value_type& v);
+// static int remove(const value_type& v);
 
 #include <forward_list>
 #include <iterator>
 #include <cassert>
+#include "libcxx_tc_common.h"
 
 
 struct S {
@@ -44,7 +45,7 @@ struct S {
     };
 
 
-int main()
+int tc_libcxx_containers_forwardlist_ops_remove(void)
 {
     {
         typedef int T;
@@ -54,7 +55,7 @@ int main()
         C c1(std::begin(t1), std::end(t1));
         C c2(std::begin(t2), std::end(t2));
         c1.remove(0);
-        assert(c1 == c2);
+        TC_ASSERT_EXPR(c1 == c2);
     }
     {
         typedef int T;
@@ -63,7 +64,7 @@ int main()
         C c1(std::begin(t1), std::end(t1));
         C c2;
         c1.remove(0);
-        assert(c1 == c2);
+        TC_ASSERT_EXPR(c1 == c2);
     }
     {
         typedef int T;
@@ -73,7 +74,7 @@ int main()
         C c1(std::begin(t1), std::end(t1));
         C c2(std::begin(t2), std::end(t2));
         c1.remove(0);
-        assert(c1 == c2);
+        TC_ASSERT_EXPR(c1 == c2);
     }
     {
         typedef int T;
@@ -81,7 +82,7 @@ int main()
         C c1;
         C c2;
         c1.remove(0);
-        assert(c1 == c2);
+        TC_ASSERT_EXPR(c1 == c2);
     }
     {
         typedef int T;
@@ -91,7 +92,7 @@ int main()
         C c1(std::begin(t1), std::end(t1));
         C c2(std::begin(t2), std::end(t2));
         c1.remove(0);
-        assert(c1 == c2);
+        TC_ASSERT_EXPR(c1 == c2);
     }
     {  // LWG issue #526
     typedef int T;
@@ -101,7 +102,7 @@ int main()
     C c1(std::begin(t1), std::end(t1));
     C c2(std::begin(t2), std::end(t2));
     c1.remove(c1.front());
-    assert(c1 == c2);
+    TC_ASSERT_EXPR(c1 == c2);
     }
     {
     typedef S T;
@@ -114,9 +115,11 @@ int main()
     c.remove(c.front());
     C::const_iterator it = c.begin();
     for(int *ip = std::begin(t2); ip != std::end(t2); ++ip, ++it) {
-        assert ( it != c.end());
-        assert ( *ip == it->get());
+        TC_ASSERT_EXPR ( it != c.end());
+        TC_ASSERT_EXPR ( *ip == it->get());
         }
-    assert ( it == c.end ());
+    TC_ASSERT_EXPR ( it == c.end ());
     }
+    TC_SUCCESS_RESULT();
+    return 0;
 }

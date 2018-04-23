@@ -30,11 +30,12 @@
 
 #include <forward_list>
 #include <cassert>
+#include "libcxx_tc_common.h"
 #include <iterator>
 
 #include "test_allocator.h"
 
-int main()
+int tc_libcxx_containers_forwardlist_cons_assign_copy(void)
 {
     {
         typedef int T;
@@ -45,8 +46,8 @@ int main()
         C c0(std::begin(t0), std::end(t0), A(10));
         C c1(std::begin(t1), std::end(t1), A(10));
         c1 = c0;
-        assert(c1 == c0);
-        assert(c1.get_allocator() == A(10));
+        TC_ASSERT_EXPR(c1 == c0);
+        TC_ASSERT_EXPR(c1.get_allocator() == A(10));
     }
     {
         typedef int T;
@@ -57,8 +58,8 @@ int main()
         C c0(std::begin(t0), std::end(t0), A(10));
         C c1(std::begin(t1), std::end(t1), A(11));
         c1 = c0;
-        assert(c1 == c0);
-        assert(c1.get_allocator() == A(11));
+        TC_ASSERT_EXPR(c1 == c0);
+        TC_ASSERT_EXPR(c1.get_allocator() == A(11));
     }
     {
         typedef int T;
@@ -69,8 +70,8 @@ int main()
         C c0(std::begin(t0), std::end(t0), A(10));
         C c1(std::begin(t1), std::end(t1), A(10));
         c1 = c0;
-        assert(c1 == c0);
-        assert(c1.get_allocator() == A(10));
+        TC_ASSERT_EXPR(c1 == c0);
+        TC_ASSERT_EXPR(c1.get_allocator() == A(10));
     }
     {
         typedef int T;
@@ -81,8 +82,8 @@ int main()
         C c0(std::begin(t0), std::end(t0), A(10));
         C c1(std::begin(t1), std::end(t1), A(11));
         c1 = c0;
-        assert(c1 == c0);
-        assert(c1.get_allocator() == A(11));
+        TC_ASSERT_EXPR(c1 == c0);
+        TC_ASSERT_EXPR(c1.get_allocator() == A(11));
     }
 
     {
@@ -94,8 +95,8 @@ int main()
         C c0(std::begin(t0), std::end(t0), A(10));
         C c1(std::begin(t1), std::end(t1), A(10));
         c1 = c0;
-        assert(c1 == c0);
-        assert(c1.get_allocator() == A(10));
+        TC_ASSERT_EXPR(c1 == c0);
+        TC_ASSERT_EXPR(c1.get_allocator() == A(10));
     }
     {
         typedef int T;
@@ -106,8 +107,8 @@ int main()
         C c0(std::begin(t0), std::end(t0), A(10));
         C c1(std::begin(t1), std::end(t1), A(11));
         c1 = c0;
-        assert(c1 == c0);
-        assert(c1.get_allocator() == A(10));
+        TC_ASSERT_EXPR(c1 == c0);
+        TC_ASSERT_EXPR(c1.get_allocator() == A(10));
     }
     {
         typedef int T;
@@ -118,8 +119,8 @@ int main()
         C c0(std::begin(t0), std::end(t0), A(10));
         C c1(std::begin(t1), std::end(t1), A(10));
         c1 = c0;
-        assert(c1 == c0);
-        assert(c1.get_allocator() == A(10));
+        TC_ASSERT_EXPR(c1 == c0);
+        TC_ASSERT_EXPR(c1.get_allocator() == A(10));
     }
     {
         typedef int T;
@@ -130,7 +131,9 @@ int main()
         C c0(std::begin(t0), std::end(t0), A(10));
         C c1(std::begin(t1), std::end(t1), A(11));
         c1 = c0;
-        assert(c1 == c0);
-        assert(c1.get_allocator() == A(10));
+        TC_ASSERT_EXPR(c1 == c0);
+        TC_ASSERT_EXPR(c1.get_allocator() == A(10));
     }
+    TC_SUCCESS_RESULT();
+    return 0;
 }

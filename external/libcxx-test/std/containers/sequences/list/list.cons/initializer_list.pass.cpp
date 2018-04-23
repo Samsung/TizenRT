@@ -32,17 +32,20 @@
 
 #include <list>
 #include <cassert>
+#include "libcxx_tc_common.h"
 
 
-int main()
+int tc_libcxx_containers_list_cons_initializer_list(void)
 {
     {
     std::list<int> d = {3, 4, 5, 6};
-    assert(d.size() == 4);
+    TC_ASSERT_EXPR(d.size() == 4);
     std::list<int>::iterator i = d.begin();
-    assert(*i++ == 3);
-    assert(*i++ == 4);
-    assert(*i++ == 5);
-    assert(*i++ == 6);
+    TC_ASSERT_EXPR(*i++ == 3);
+    TC_ASSERT_EXPR(*i++ == 4);
+    TC_ASSERT_EXPR(*i++ == 5);
+    TC_ASSERT_EXPR(*i++ == 6);
     }
+    TC_SUCCESS_RESULT();
+    return 0;
 }

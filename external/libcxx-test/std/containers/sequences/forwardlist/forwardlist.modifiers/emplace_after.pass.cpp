@@ -33,10 +33,11 @@
 
 #include <forward_list>
 #include <cassert>
+#include "libcxx_tc_common.h"
 
 #include "Emplaceable.h"
 
-int main()
+int tc_libcxx_containers_forwardlist_modifiers_emplace_after(void)
 {
     {
         typedef Emplaceable T;
@@ -44,29 +45,31 @@ int main()
         typedef C::iterator I;
         C c;
         I i = c.emplace_after(c.cbefore_begin());
-        assert(i == c.begin());
-        assert(c.front() == Emplaceable());
-        assert(distance(c.begin(), c.end()) == 1);
+        TC_ASSERT_EXPR(i == c.begin());
+        TC_ASSERT_EXPR(c.front() == Emplaceable());
+        TC_ASSERT_EXPR(distance(c.begin(), c.end()) == 1);
 
         i = c.emplace_after(c.cbegin(), 1, 2.5);
-        assert(i == next(c.begin()));
-        assert(c.front() == Emplaceable());
-        assert(*next(c.begin()) == Emplaceable(1, 2.5));
-        assert(distance(c.begin(), c.end()) == 2);
+        TC_ASSERT_EXPR(i == next(c.begin()));
+        TC_ASSERT_EXPR(c.front() == Emplaceable());
+        TC_ASSERT_EXPR(*next(c.begin()) == Emplaceable(1, 2.5));
+        TC_ASSERT_EXPR(distance(c.begin(), c.end()) == 2);
 
         i = c.emplace_after(next(c.cbegin()), 2, 3.5);
-        assert(i == next(c.begin(), 2));
-        assert(c.front() == Emplaceable());
-        assert(*next(c.begin()) == Emplaceable(1, 2.5));
-        assert(*next(c.begin(), 2) == Emplaceable(2, 3.5));
-        assert(distance(c.begin(), c.end()) == 3);
+        TC_ASSERT_EXPR(i == next(c.begin(), 2));
+        TC_ASSERT_EXPR(c.front() == Emplaceable());
+        TC_ASSERT_EXPR(*next(c.begin()) == Emplaceable(1, 2.5));
+        TC_ASSERT_EXPR(*next(c.begin(), 2) == Emplaceable(2, 3.5));
+        TC_ASSERT_EXPR(distance(c.begin(), c.end()) == 3);
 
         i = c.emplace_after(c.cbegin(), 3, 4.5);
-        assert(i == next(c.begin()));
-        assert(c.front() == Emplaceable());
-        assert(*next(c.begin(), 1) == Emplaceable(3, 4.5));
-        assert(*next(c.begin(), 2) == Emplaceable(1, 2.5));
-        assert(*next(c.begin(), 3) == Emplaceable(2, 3.5));
-        assert(distance(c.begin(), c.end()) == 4);
+        TC_ASSERT_EXPR(i == next(c.begin()));
+        TC_ASSERT_EXPR(c.front() == Emplaceable());
+        TC_ASSERT_EXPR(*next(c.begin(), 1) == Emplaceable(3, 4.5));
+        TC_ASSERT_EXPR(*next(c.begin(), 2) == Emplaceable(1, 2.5));
+        TC_ASSERT_EXPR(*next(c.begin(), 3) == Emplaceable(2, 3.5));
+        TC_ASSERT_EXPR(distance(c.begin(), c.end()) == 4);
     }
+    TC_SUCCESS_RESULT();
+    return 0;
 }

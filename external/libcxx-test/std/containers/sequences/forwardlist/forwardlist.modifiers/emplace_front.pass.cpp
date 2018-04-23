@@ -29,16 +29,17 @@
 // <forward_list>
 
 // template <class... Args> reference emplace_front(Args&&... args);
-// return type is 'reference' in C++17; 'void' before
+// return type is 'reference' in C++17; 'static int' before
 
 #include <forward_list>
 #include <cassert>
+#include "libcxx_tc_common.h"
 
 #include "test_macros.h"
 
 #include "Emplaceable.h"
 
-int main()
+int tc_libcxx_containers_forwardlist_modifiers_emplace_front(void)
 {
     {
         typedef Emplaceable T;
@@ -46,20 +47,22 @@ int main()
         C c;
 #if TEST_STD_VER > 14
         T& r1 = c.emplace_front();
-        assert(c.front() == Emplaceable());
-        assert(&r1 == &c.front());
-        assert(distance(c.begin(), c.end()) == 1);
+        TC_ASSERT_EXPR(c.front() == Emplaceable());
+        TC_ASSERT_EXPR(&r1 == &c.front());
+        TC_ASSERT_EXPR(distance(c.begin(), c.end()) == 1);
         T& r2 = c.emplace_front(1, 2.5);
-        assert(c.front() == Emplaceable(1, 2.5));
-        assert(&r2 == &c.front());
+        TC_ASSERT_EXPR(c.front() == Emplaceable(1, 2.5));
+        TC_ASSERT_EXPR(&r2 == &c.front());
 #else
         c.emplace_front();
-        assert(c.front() == Emplaceable());
-        assert(distance(c.begin(), c.end()) == 1);
+        TC_ASSERT_EXPR(c.front() == Emplaceable());
+        TC_ASSERT_EXPR(distance(c.begin(), c.end()) == 1);
         c.emplace_front(1, 2.5);
-        assert(c.front() == Emplaceable(1, 2.5));
+        TC_ASSERT_EXPR(c.front() == Emplaceable(1, 2.5));
 #endif
-        assert(*next(c.begin()) == Emplaceable());
-        assert(distance(c.begin(), c.end()) == 2);
+        TC_ASSERT_EXPR(*next(c.begin()) == Emplaceable());
+        TC_ASSERT_EXPR(distance(c.begin(), c.end()) == 2);
     }
+    TC_SUCCESS_RESULT();
+    return 0;
 }

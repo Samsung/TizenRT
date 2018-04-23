@@ -30,54 +30,56 @@
 
 #include <list>
 #include <cassert>
+#include "libcxx_tc_common.h"
 #include <cstddef>
 #include "test_macros.h"
 #include "DefaultOnly.h"
 #include "test_allocator.h"
 
 template <class T, class Allocator>
-void
+static int
 test3(unsigned n, Allocator const &alloc = Allocator())
 {
 #if TEST_STD_VER > 11
     typedef std::list<T, Allocator> C;
     {
     C d(n, alloc);
-    assert(d.size() == n);
-    assert(static_cast<std::size_t>(std::distance(d.begin(), d.end())) == n);
-    assert(d.get_allocator() == alloc);
+    TC_ASSERT_EXPR(d.size() == n);
+    TC_ASSERT_EXPR(static_cast<std::size_t>(std::distance(d.begin(), d.end())) == n);
+    TC_ASSERT_EXPR(d.get_allocator() == alloc);
     }
 #else
     ((void)n);
     ((void)alloc);
 #endif
+    return 0;
 }
 
 
-int main()
+int tc_libcxx_containers_list_cons_size_type(void)
 {
     {
         std::list<int> l(3);
-        assert(l.size() == 3);
-        assert(std::distance(l.begin(), l.end()) == 3);
+        TC_ASSERT_EXPR(l.size() == 3);
+        TC_ASSERT_EXPR(std::distance(l.begin(), l.end()) == 3);
         std::list<int>::const_iterator i = l.begin();
-        assert(*i == 0);
+        TC_ASSERT_EXPR(*i == 0);
         ++i;
-        assert(*i == 0);
+        TC_ASSERT_EXPR(*i == 0);
         ++i;
-        assert(*i == 0);
+        TC_ASSERT_EXPR(*i == 0);
     }
     {
         // Add 2 for implementations that dynamically allocate a sentinel node and container proxy.
         std::list<int, limited_allocator<int, 3 + 2> > l(3);
-        assert(l.size() == 3);
-        assert(std::distance(l.begin(), l.end()) == 3);
+        TC_ASSERT_EXPR(l.size() == 3);
+        TC_ASSERT_EXPR(std::distance(l.begin(), l.end()) == 3);
         std::list<int>::const_iterator i = l.begin();
-        assert(*i == 0);
+        TC_ASSERT_EXPR(*i == 0);
         ++i;
-        assert(*i == 0);
+        TC_ASSERT_EXPR(*i == 0);
         ++i;
-        assert(*i == 0);
+        TC_ASSERT_EXPR(*i == 0);
     }
 #if TEST_STD_VER > 11
     {
@@ -86,8 +88,10 @@ int main()
 #if TEST_STD_VER >= 11
     {
         std::list<DefaultOnly> l(3);
-        assert(l.size() == 3);
-        assert(std::distance(l.begin(), l.end()) == 3);
+        TC_ASSERT_EXPR(l.size() == 3);
+        TC_ASSERT_EXPR(std::distance(l.begin(), l.end()) == 3);
     }
 #endif
+    TC_SUCCESS_RESULT();
+    return 0;
 }

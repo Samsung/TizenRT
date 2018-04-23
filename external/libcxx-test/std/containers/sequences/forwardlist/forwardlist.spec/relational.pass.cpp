@@ -46,11 +46,12 @@
 #include <iterator>
 #include <algorithm>
 #include <cassert>
+#include "libcxx_tc_common.h"
 
 #include "test_macros.h"
 
 template <class C>
-void test(int N, int M)
+static int test(int N, int M)
 {
     C c1;
     for (int i = 0; i < N; ++i)
@@ -59,18 +60,21 @@ void test(int N, int M)
     for (int i = 0; i < M; ++i)
         c2.push_front(i);
     if (N < M)
-        assert(c1 < c2);
+        TC_ASSERT_EXPR(c1 < c2);
     if (N <= M)
-        assert(c1 <= c2);
+        TC_ASSERT_EXPR(c1 <= c2);
     if (N >= M)
-        assert(c1 >= c2);
+        TC_ASSERT_EXPR(c1 >= c2);
     if (N > M)
-        assert(c1 > c2);
+        TC_ASSERT_EXPR(c1 > c2);
+    return 0;
 }
 
-int main()
+int tc_libcxx_containers_forwardlist_spec_relational(void)
 {
     for (int i = 0; i < 10; ++i)
         for (int j = 0; j < 10; ++j)
             test<std::forward_list<int> >(i, j);
+    TC_SUCCESS_RESULT();
+    return 0;
 }

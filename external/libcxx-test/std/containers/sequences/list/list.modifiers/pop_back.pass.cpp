@@ -26,23 +26,26 @@
 
 // <list>
 
-// void pop_back();
+// static int pop_back();
 
 #include <list>
 #include <cassert>
+#include "libcxx_tc_common.h"
 
 #include "test_macros.h"
 
-int main()
+int tc_libcxx_containers_list_modifiers_pop_back(void)
 {
     {
     int a[] = {1, 2, 3};
     std::list<int> c(a, a+3);
     c.pop_back();
-    assert(c == std::list<int>(a, a+2));
+    TC_ASSERT_EXPR(c == std::list<int>(a, a+2));
     c.pop_back();
-    assert(c == std::list<int>(a, a+1));
+    TC_ASSERT_EXPR(c == std::list<int>(a, a+1));
     c.pop_back();
-    assert(c.empty());
+    TC_ASSERT_EXPR(c.empty());
     }
+    TC_SUCCESS_RESULT();
+    return 0;
 }

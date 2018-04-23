@@ -30,39 +30,42 @@
 
 #include <list>
 #include <cassert>
+#include "libcxx_tc_common.h"
 
 
-int main()
+int tc_libcxx_containers_list_modifiers_erase_iter_iter(void)
 {
     int a1[] = {1, 2, 3};
     {
         std::list<int> l1(a1, a1+3);
         std::list<int>::iterator i = l1.erase(l1.cbegin(), l1.cbegin());
-        assert(l1.size() == 3);
-        assert(distance(l1.cbegin(), l1.cend()) == 3);
-        assert(i == l1.begin());
+        TC_ASSERT_EXPR(l1.size() == 3);
+        TC_ASSERT_EXPR(distance(l1.cbegin(), l1.cend()) == 3);
+        TC_ASSERT_EXPR(i == l1.begin());
     }
     {
         std::list<int> l1(a1, a1+3);
         std::list<int>::iterator i = l1.erase(l1.cbegin(), next(l1.cbegin()));
-        assert(l1.size() == 2);
-        assert(distance(l1.cbegin(), l1.cend()) == 2);
-        assert(i == l1.begin());
-        assert(l1 == std::list<int>(a1+1, a1+3));
+        TC_ASSERT_EXPR(l1.size() == 2);
+        TC_ASSERT_EXPR(distance(l1.cbegin(), l1.cend()) == 2);
+        TC_ASSERT_EXPR(i == l1.begin());
+        TC_ASSERT_EXPR(l1 == std::list<int>(a1+1, a1+3));
     }
     {
         std::list<int> l1(a1, a1+3);
         std::list<int>::iterator i = l1.erase(l1.cbegin(), next(l1.cbegin(), 2));
-        assert(l1.size() == 1);
-        assert(distance(l1.cbegin(), l1.cend()) == 1);
-        assert(i == l1.begin());
-        assert(l1 == std::list<int>(a1+2, a1+3));
+        TC_ASSERT_EXPR(l1.size() == 1);
+        TC_ASSERT_EXPR(distance(l1.cbegin(), l1.cend()) == 1);
+        TC_ASSERT_EXPR(i == l1.begin());
+        TC_ASSERT_EXPR(l1 == std::list<int>(a1+2, a1+3));
     }
     {
         std::list<int> l1(a1, a1+3);
         std::list<int>::iterator i = l1.erase(l1.cbegin(), next(l1.cbegin(), 3));
-        assert(l1.size() == 0);
-        assert(distance(l1.cbegin(), l1.cend()) == 0);
-        assert(i == l1.begin());
+        TC_ASSERT_EXPR(l1.size() == 0);
+        TC_ASSERT_EXPR(distance(l1.cbegin(), l1.cend()) == 0);
+        TC_ASSERT_EXPR(i == l1.begin());
     }
+    TC_SUCCESS_RESULT();
+    return 0;
 }

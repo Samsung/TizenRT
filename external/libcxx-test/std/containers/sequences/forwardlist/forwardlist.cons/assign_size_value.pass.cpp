@@ -26,14 +26,15 @@
 
 // <forward_list>
 
-// void assign(size_type n, const value_type& v);
+// static int assign(size_type n, const value_type& v);
 
 #include <forward_list>
 #include <cassert>
+#include "libcxx_tc_common.h"
 #include <iterator>
 
 
-int main()
+int tc_libcxx_containers_forwardlist_cons_assign_size_value(void)
 {
     {
         typedef int T;
@@ -43,8 +44,8 @@ int main()
         c.assign(10, 1);
         int n = 0;
         for (C::const_iterator i = c.cbegin(); i != c.cend(); ++i, ++n)
-            assert(*i == 1);
-        assert(n == 10);
+            TC_ASSERT_EXPR(*i == 1);
+        TC_ASSERT_EXPR(n == 10);
     }
     {
         typedef int T;
@@ -54,7 +55,9 @@ int main()
         c.assign(4, 10);
         int n = 0;
         for (C::const_iterator i = c.cbegin(); i != c.cend(); ++i, ++n)
-            assert(*i == 10);
-        assert(n == 4);
+            TC_ASSERT_EXPR(*i == 10);
+        TC_ASSERT_EXPR(n == 4);
     }
+    TC_SUCCESS_RESULT();
+    return 0;
 }

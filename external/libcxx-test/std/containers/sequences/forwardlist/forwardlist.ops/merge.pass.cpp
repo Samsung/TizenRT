@@ -26,14 +26,15 @@
 
 // <forward_list>
 
-// void merge(forward_list&& x);
+// static int merge(forward_list&& x);
 
 #include <forward_list>
 #include <iterator>
 #include <cassert>
+#include "libcxx_tc_common.h"
 
 
-int main()
+int tc_libcxx_containers_forwardlist_ops_merge(void)
 {
     {
         typedef int T;
@@ -45,6 +46,8 @@ int main()
         C c2(std::begin(t2), std::end(t2));
         c1.merge(c2);
         C c3(std::begin(t3), std::end(t3));
-        assert(c1 == c3);
+        TC_ASSERT_EXPR(c1 == c3);
     }
+    TC_SUCCESS_RESULT();
+    return 0;
 }

@@ -30,9 +30,10 @@
 
 #include <forward_list>
 #include <cassert>
+#include "libcxx_tc_common.h"
 
 
-int main()
+int tc_libcxx_containers_forwardlist_modifiers_erase_after_many(void)
 {
     {
         typedef int T;
@@ -41,63 +42,65 @@ int main()
         C c(std::begin(t), std::end(t));
 
         C::iterator i = c.erase_after(next(c.cbefore_begin(), 4), next(c.cbefore_begin(), 4));
-        assert(i == next(c.cbefore_begin(), 4));
-        assert(distance(c.begin(), c.end()) == 10);
-        assert(*next(c.begin(), 0) == 0);
-        assert(*next(c.begin(), 1) == 1);
-        assert(*next(c.begin(), 2) == 2);
-        assert(*next(c.begin(), 3) == 3);
-        assert(*next(c.begin(), 4) == 4);
-        assert(*next(c.begin(), 5) == 5);
-        assert(*next(c.begin(), 6) == 6);
-        assert(*next(c.begin(), 7) == 7);
-        assert(*next(c.begin(), 8) == 8);
-        assert(*next(c.begin(), 9) == 9);
+        TC_ASSERT_EXPR(i == next(c.cbefore_begin(), 4));
+        TC_ASSERT_EXPR(distance(c.begin(), c.end()) == 10);
+        TC_ASSERT_EXPR(*next(c.begin(), 0) == 0);
+        TC_ASSERT_EXPR(*next(c.begin(), 1) == 1);
+        TC_ASSERT_EXPR(*next(c.begin(), 2) == 2);
+        TC_ASSERT_EXPR(*next(c.begin(), 3) == 3);
+        TC_ASSERT_EXPR(*next(c.begin(), 4) == 4);
+        TC_ASSERT_EXPR(*next(c.begin(), 5) == 5);
+        TC_ASSERT_EXPR(*next(c.begin(), 6) == 6);
+        TC_ASSERT_EXPR(*next(c.begin(), 7) == 7);
+        TC_ASSERT_EXPR(*next(c.begin(), 8) == 8);
+        TC_ASSERT_EXPR(*next(c.begin(), 9) == 9);
 
         i = c.erase_after(next(c.cbefore_begin(), 2), next(c.cbefore_begin(), 5));
-        assert(i == next(c.begin(), 2));
-        assert(distance(c.begin(), c.end()) == 8);
-        assert(*next(c.begin(), 0) == 0);
-        assert(*next(c.begin(), 1) == 1);
-        assert(*next(c.begin(), 2) == 4);
-        assert(*next(c.begin(), 3) == 5);
-        assert(*next(c.begin(), 4) == 6);
-        assert(*next(c.begin(), 5) == 7);
-        assert(*next(c.begin(), 6) == 8);
-        assert(*next(c.begin(), 7) == 9);
+        TC_ASSERT_EXPR(i == next(c.begin(), 2));
+        TC_ASSERT_EXPR(distance(c.begin(), c.end()) == 8);
+        TC_ASSERT_EXPR(*next(c.begin(), 0) == 0);
+        TC_ASSERT_EXPR(*next(c.begin(), 1) == 1);
+        TC_ASSERT_EXPR(*next(c.begin(), 2) == 4);
+        TC_ASSERT_EXPR(*next(c.begin(), 3) == 5);
+        TC_ASSERT_EXPR(*next(c.begin(), 4) == 6);
+        TC_ASSERT_EXPR(*next(c.begin(), 5) == 7);
+        TC_ASSERT_EXPR(*next(c.begin(), 6) == 8);
+        TC_ASSERT_EXPR(*next(c.begin(), 7) == 9);
 
         i = c.erase_after(next(c.cbefore_begin(), 2), next(c.cbefore_begin(), 3));
-        assert(i == next(c.begin(), 2));
-        assert(distance(c.begin(), c.end()) == 8);
-        assert(*next(c.begin(), 0) == 0);
-        assert(*next(c.begin(), 1) == 1);
-        assert(*next(c.begin(), 2) == 4);
-        assert(*next(c.begin(), 3) == 5);
-        assert(*next(c.begin(), 4) == 6);
-        assert(*next(c.begin(), 5) == 7);
-        assert(*next(c.begin(), 6) == 8);
-        assert(*next(c.begin(), 7) == 9);
+        TC_ASSERT_EXPR(i == next(c.begin(), 2));
+        TC_ASSERT_EXPR(distance(c.begin(), c.end()) == 8);
+        TC_ASSERT_EXPR(*next(c.begin(), 0) == 0);
+        TC_ASSERT_EXPR(*next(c.begin(), 1) == 1);
+        TC_ASSERT_EXPR(*next(c.begin(), 2) == 4);
+        TC_ASSERT_EXPR(*next(c.begin(), 3) == 5);
+        TC_ASSERT_EXPR(*next(c.begin(), 4) == 6);
+        TC_ASSERT_EXPR(*next(c.begin(), 5) == 7);
+        TC_ASSERT_EXPR(*next(c.begin(), 6) == 8);
+        TC_ASSERT_EXPR(*next(c.begin(), 7) == 9);
 
         i = c.erase_after(next(c.cbefore_begin(), 5), next(c.cbefore_begin(), 9));
-        assert(i == c.end());
-        assert(distance(c.begin(), c.end()) == 5);
-        assert(*next(c.begin(), 0) == 0);
-        assert(*next(c.begin(), 1) == 1);
-        assert(*next(c.begin(), 2) == 4);
-        assert(*next(c.begin(), 3) == 5);
-        assert(*next(c.begin(), 4) == 6);
+        TC_ASSERT_EXPR(i == c.end());
+        TC_ASSERT_EXPR(distance(c.begin(), c.end()) == 5);
+        TC_ASSERT_EXPR(*next(c.begin(), 0) == 0);
+        TC_ASSERT_EXPR(*next(c.begin(), 1) == 1);
+        TC_ASSERT_EXPR(*next(c.begin(), 2) == 4);
+        TC_ASSERT_EXPR(*next(c.begin(), 3) == 5);
+        TC_ASSERT_EXPR(*next(c.begin(), 4) == 6);
 
         i = c.erase_after(next(c.cbefore_begin(), 0), next(c.cbefore_begin(), 2));
-        assert(i == c.begin());
-        assert(distance(c.begin(), c.end()) == 4);
-        assert(*next(c.begin(), 0) == 1);
-        assert(*next(c.begin(), 1) == 4);
-        assert(*next(c.begin(), 2) == 5);
-        assert(*next(c.begin(), 3) == 6);
+        TC_ASSERT_EXPR(i == c.begin());
+        TC_ASSERT_EXPR(distance(c.begin(), c.end()) == 4);
+        TC_ASSERT_EXPR(*next(c.begin(), 0) == 1);
+        TC_ASSERT_EXPR(*next(c.begin(), 1) == 4);
+        TC_ASSERT_EXPR(*next(c.begin(), 2) == 5);
+        TC_ASSERT_EXPR(*next(c.begin(), 3) == 6);
 
         i = c.erase_after(next(c.cbefore_begin(), 0), next(c.cbefore_begin(), 5));
-        assert(i == c.begin());
-        assert(i == c.end());
-        assert(distance(c.begin(), c.end()) == 0);
+        TC_ASSERT_EXPR(i == c.begin());
+        TC_ASSERT_EXPR(i == c.end());
+        TC_ASSERT_EXPR(distance(c.begin(), c.end()) == 0);
     }
+    TC_SUCCESS_RESULT();
+    return 0;
 }

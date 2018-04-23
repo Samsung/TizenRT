@@ -30,9 +30,10 @@
 
 #include <forward_list>
 #include <cassert>
+#include "libcxx_tc_common.h"
 
 
-int main()
+int tc_libcxx_containers_forwardlist_modifiers_erase_after_one(void)
 {
     {
         typedef int T;
@@ -41,34 +42,36 @@ int main()
         C c(std::begin(t), std::end(t));
 
         C::iterator i = c.erase_after(next(c.cbefore_begin(), 4));
-        assert(i == c.end());
-        assert(distance(c.begin(), c.end()) == 4);
-        assert(*next(c.begin(), 0) == 0);
-        assert(*next(c.begin(), 1) == 1);
-        assert(*next(c.begin(), 2) == 2);
-        assert(*next(c.begin(), 3) == 3);
+        TC_ASSERT_EXPR(i == c.end());
+        TC_ASSERT_EXPR(distance(c.begin(), c.end()) == 4);
+        TC_ASSERT_EXPR(*next(c.begin(), 0) == 0);
+        TC_ASSERT_EXPR(*next(c.begin(), 1) == 1);
+        TC_ASSERT_EXPR(*next(c.begin(), 2) == 2);
+        TC_ASSERT_EXPR(*next(c.begin(), 3) == 3);
 
         i = c.erase_after(next(c.cbefore_begin(), 0));
-        assert(i == c.begin());
-        assert(distance(c.begin(), c.end()) == 3);
-        assert(*next(c.begin(), 0) == 1);
-        assert(*next(c.begin(), 1) == 2);
-        assert(*next(c.begin(), 2) == 3);
+        TC_ASSERT_EXPR(i == c.begin());
+        TC_ASSERT_EXPR(distance(c.begin(), c.end()) == 3);
+        TC_ASSERT_EXPR(*next(c.begin(), 0) == 1);
+        TC_ASSERT_EXPR(*next(c.begin(), 1) == 2);
+        TC_ASSERT_EXPR(*next(c.begin(), 2) == 3);
 
         i = c.erase_after(next(c.cbefore_begin(), 1));
-        assert(i == next(c.begin()));
-        assert(distance(c.begin(), c.end()) == 2);
-        assert(*next(c.begin(), 0) == 1);
-        assert(*next(c.begin(), 1) == 3);
+        TC_ASSERT_EXPR(i == next(c.begin()));
+        TC_ASSERT_EXPR(distance(c.begin(), c.end()) == 2);
+        TC_ASSERT_EXPR(*next(c.begin(), 0) == 1);
+        TC_ASSERT_EXPR(*next(c.begin(), 1) == 3);
 
         i = c.erase_after(next(c.cbefore_begin(), 1));
-        assert(i == c.end());
-        assert(distance(c.begin(), c.end()) == 1);
-        assert(*next(c.begin(), 0) == 1);
+        TC_ASSERT_EXPR(i == c.end());
+        TC_ASSERT_EXPR(distance(c.begin(), c.end()) == 1);
+        TC_ASSERT_EXPR(*next(c.begin(), 0) == 1);
 
         i = c.erase_after(next(c.cbefore_begin(), 0));
-        assert(i == c.begin());
-        assert(i == c.end());
-        assert(distance(c.begin(), c.end()) == 0);
+        TC_ASSERT_EXPR(i == c.begin());
+        TC_ASSERT_EXPR(i == c.end());
+        TC_ASSERT_EXPR(distance(c.begin(), c.end()) == 0);
     }
+    TC_SUCCESS_RESULT();
+    return 0;
 }

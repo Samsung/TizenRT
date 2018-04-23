@@ -27,15 +27,16 @@
 // <forward_list>
 
 // template <class InputIterator>
-//     void assign(InputIterator first, InputIterator last);
+//     static int assign(InputIterator first, InputIterator last);
 
 #include <forward_list>
 #include <cassert>
+#include "libcxx_tc_common.h"
 #include <iterator>
 
 #include "test_iterators.h"
 
-int main()
+int tc_libcxx_containers_forwardlist_cons_assign_range(void)
 {
     {
         typedef int T;
@@ -47,8 +48,8 @@ int main()
         c.assign(I(std::begin(t0)), I(std::end(t0)));
         int n = 0;
         for (C::const_iterator i = c.cbegin(); i != c.cend(); ++i, ++n)
-            assert(*i == n);
-        assert(n == 10);
+            TC_ASSERT_EXPR(*i == n);
+        TC_ASSERT_EXPR(n == 10);
     }
     {
         typedef int T;
@@ -60,7 +61,9 @@ int main()
         c.assign(I(std::begin(t0)), I(std::end(t0)));
         int n = 0;
         for (C::const_iterator i = c.cbegin(); i != c.cend(); ++i, ++n)
-            assert(*i == 10+n);
-        assert(n == 4);
+            TC_ASSERT_EXPR(*i == 10+n);
+        TC_ASSERT_EXPR(n == 4);
     }
+    TC_SUCCESS_RESULT();
+    return 0;
 }

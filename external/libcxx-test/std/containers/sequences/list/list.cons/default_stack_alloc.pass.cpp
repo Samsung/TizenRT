@@ -30,23 +30,26 @@
 
 #include <list>
 #include <cassert>
+#include "libcxx_tc_common.h"
 #include "test_allocator.h"
 
-int main()
+int tc_libcxx_containers_list_cons_default_stack_alloc(void)
 {
     {
         std::list<int> l;
-        assert(l.size() == 0);
-        assert(std::distance(l.begin(), l.end()) == 0);
+        TC_ASSERT_EXPR(l.size() == 0);
+        TC_ASSERT_EXPR(std::distance(l.begin(), l.end()) == 0);
     }
     {
         std::list<int> l((std::allocator<int>()));
-        assert(l.size() == 0);
-        assert(std::distance(l.begin(), l.end()) == 0);
+        TC_ASSERT_EXPR(l.size() == 0);
+        TC_ASSERT_EXPR(std::distance(l.begin(), l.end()) == 0);
     }
     {
         std::list<int, limited_allocator<int, 4> > l;
-        assert(l.size() == 0);
-        assert(std::distance(l.begin(), l.end()) == 0);
+        TC_ASSERT_EXPR(l.size() == 0);
+        TC_ASSERT_EXPR(std::distance(l.begin(), l.end()) == 0);
     }
+    TC_SUCCESS_RESULT();
+    return 0;
 }

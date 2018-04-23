@@ -26,14 +26,15 @@
 
 // <forward_list>
 
-// void unique();
+// static int unique();
 
 #include <forward_list>
 #include <iterator>
 #include <cassert>
+#include "libcxx_tc_common.h"
 
 
-int main()
+int tc_libcxx_containers_forwardlist_ops_unique(void)
 {
     {
         typedef int T;
@@ -43,7 +44,7 @@ int main()
         C c1(std::begin(t1), std::end(t1));
         C c2(std::begin(t2), std::end(t2));
         c1.unique();
-        assert(c1 == c2);
+        TC_ASSERT_EXPR(c1 == c2);
     }
     {
         typedef int T;
@@ -53,7 +54,7 @@ int main()
         C c1(std::begin(t1), std::end(t1));
         C c2(std::begin(t2), std::end(t2));
         c1.unique();
-        assert(c1 == c2);
+        TC_ASSERT_EXPR(c1 == c2);
     }
     {
         typedef int T;
@@ -63,7 +64,7 @@ int main()
         C c1(std::begin(t1), std::end(t1));
         C c2(std::begin(t2), std::end(t2));
         c1.unique();
-        assert(c1 == c2);
+        TC_ASSERT_EXPR(c1 == c2);
     }
     {
         typedef int T;
@@ -71,7 +72,7 @@ int main()
         C c1;
         C c2;
         c1.unique();
-        assert(c1 == c2);
+        TC_ASSERT_EXPR(c1 == c2);
     }
     {
         typedef int T;
@@ -81,6 +82,8 @@ int main()
         C c1(std::begin(t1), std::end(t1));
         C c2(std::begin(t2), std::end(t2));
         c1.unique();
-        assert(c1 == c2);
+        TC_ASSERT_EXPR(c1 == c2);
     }
+    TC_SUCCESS_RESULT();
+    return 0;
 }

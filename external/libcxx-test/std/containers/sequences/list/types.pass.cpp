@@ -41,11 +41,11 @@
 
 #include <list>
 #include <type_traits>
-
+#include "libcxx_tc_common.h"
 
 struct A { std::list<A> v; }; // incomplete type support
 
-int main()
+int tc_libcxx_containers_list_types(void)
 {
     {
     typedef std::list<int> C;
@@ -64,4 +64,6 @@ int main()
         typename std::iterator_traits<typename C::const_iterator>::difference_type>::value), "");
     }
 
+    TC_SUCCESS_RESULT();
+    return 0;
 }

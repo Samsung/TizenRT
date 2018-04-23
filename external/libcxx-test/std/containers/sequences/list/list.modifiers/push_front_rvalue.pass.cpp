@@ -28,23 +28,26 @@
 
 // <list>
 
-// void push_front(value_type&& x);
+// static int push_front(value_type&& x);
 
 #include <list>
 #include <cassert>
+#include "libcxx_tc_common.h"
 
 #include "MoveOnly.h"
 
-int main()
+int tc_libcxx_containers_list_modifiers_push_front_rvalue(void)
 {
     {
     std::list<MoveOnly> l1;
     l1.push_front(MoveOnly(1));
-    assert(l1.size() == 1);
-    assert(l1.front() == MoveOnly(1));
+    TC_ASSERT_EXPR(l1.size() == 1);
+    TC_ASSERT_EXPR(l1.front() == MoveOnly(1));
     l1.push_front(MoveOnly(2));
-    assert(l1.size() == 2);
-    assert(l1.front() == MoveOnly(2));
-    assert(l1.back() == MoveOnly(1));
+    TC_ASSERT_EXPR(l1.size() == 2);
+    TC_ASSERT_EXPR(l1.front() == MoveOnly(2));
+    TC_ASSERT_EXPR(l1.back() == MoveOnly(1));
     }
+    TC_SUCCESS_RESULT();
+    return 0;
 }

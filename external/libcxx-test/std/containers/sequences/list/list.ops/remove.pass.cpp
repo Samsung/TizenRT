@@ -26,10 +26,11 @@
 
 // <list>
 
-// void remove(const value_type& value);
+// static int remove(const value_type& value);
 
 #include <list>
 #include <cassert>
+#include "libcxx_tc_common.h"
 
 #include "test_macros.h"
 
@@ -49,20 +50,20 @@ struct S {
   int *i_;
 };
 
-int main() {
+int tc_libcxx_containers_list_ops_remove(void) {
   {
     int a1[] = {1, 2, 3, 4};
     int a2[] = {1, 2, 4};
     std::list<int> c(a1, a1 + 4);
     c.remove(3);
-    assert(c == std::list<int>(a2, a2 + 3));
+    TC_ASSERT_EXPR(c == std::list<int>(a2, a2 + 3));
   }
   { // LWG issue #526
     int a1[] = {1, 2, 1, 3, 5, 8, 11};
     int a2[] = {2, 3, 5, 8, 11};
     std::list<int> c(a1, a1 + 7);
     c.remove(c.front());
-    assert(c == std::list<int>(a2, a2 + 5));
+    TC_ASSERT_EXPR(c == std::list<int>(a2, a2 + 5));
   }
   {
     int a1[] = {1, 2, 1, 3, 5, 8, 11, 1};
@@ -73,11 +74,13 @@ int main() {
     c.remove(c.front());
     std::list<S>::const_iterator it = c.begin();
     for (int *ip = a2; ip < a2 + 5; ++ip, ++it) {
-      assert(it != c.end());
-      assert(*ip == it->get());
+      TC_ASSERT_EXPR(it != c.end());
+      TC_ASSERT_EXPR(*ip == it->get());
     }
-    assert(it == c.end());
+    TC_ASSERT_EXPR(it == c.end());
   }
   {
   }
+    TC_SUCCESS_RESULT();
+    return 0;
 }

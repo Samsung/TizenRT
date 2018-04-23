@@ -32,29 +32,32 @@
 
 #include <list>
 #include <cassert>
+#include "libcxx_tc_common.h"
 
 
-int main()
+int tc_libcxx_containers_list_modifiers_insert_iter_initializer_list(void)
 {
     {
     std::list<int> d(10, 1);
     std::list<int>::iterator i = d.insert(next(d.cbegin(), 2), {3, 4, 5, 6});
-    assert(d.size() == 14);
-    assert(i == next(d.begin(), 2));
+    TC_ASSERT_EXPR(d.size() == 14);
+    TC_ASSERT_EXPR(i == next(d.begin(), 2));
     i = d.begin();
-    assert(*i++ == 1);
-    assert(*i++ == 1);
-    assert(*i++ == 3);
-    assert(*i++ == 4);
-    assert(*i++ == 5);
-    assert(*i++ == 6);
-    assert(*i++ == 1);
-    assert(*i++ == 1);
-    assert(*i++ == 1);
-    assert(*i++ == 1);
-    assert(*i++ == 1);
-    assert(*i++ == 1);
-    assert(*i++ == 1);
-    assert(*i++ == 1);
+    TC_ASSERT_EXPR(*i++ == 1);
+    TC_ASSERT_EXPR(*i++ == 1);
+    TC_ASSERT_EXPR(*i++ == 3);
+    TC_ASSERT_EXPR(*i++ == 4);
+    TC_ASSERT_EXPR(*i++ == 5);
+    TC_ASSERT_EXPR(*i++ == 6);
+    TC_ASSERT_EXPR(*i++ == 1);
+    TC_ASSERT_EXPR(*i++ == 1);
+    TC_ASSERT_EXPR(*i++ == 1);
+    TC_ASSERT_EXPR(*i++ == 1);
+    TC_ASSERT_EXPR(*i++ == 1);
+    TC_ASSERT_EXPR(*i++ == 1);
+    TC_ASSERT_EXPR(*i++ == 1);
+    TC_ASSERT_EXPR(*i++ == 1);
     }
+    TC_SUCCESS_RESULT();
+    return 0;
 }

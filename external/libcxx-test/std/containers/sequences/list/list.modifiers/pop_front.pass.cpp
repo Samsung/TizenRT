@@ -26,22 +26,25 @@
 
 // <list>
 
-// void pop_front();
+// static int pop_front();
 
 #include <list>
 #include <cassert>
+#include "libcxx_tc_common.h"
 
 
-int main()
+int tc_libcxx_containers_list_modifiers_pop_front(void)
 {
     {
     int a[] = {1, 2, 3};
     std::list<int> c(a, a+3);
     c.pop_front();
-    assert(c == std::list<int>(a+1, a+3));
+    TC_ASSERT_EXPR(c == std::list<int>(a+1, a+3));
     c.pop_front();
-    assert(c == std::list<int>(a+2, a+3));
+    TC_ASSERT_EXPR(c == std::list<int>(a+2, a+3));
     c.pop_front();
-    assert(c.empty());
+    TC_ASSERT_EXPR(c.empty());
     }
+    TC_SUCCESS_RESULT();
+    return 0;
 }

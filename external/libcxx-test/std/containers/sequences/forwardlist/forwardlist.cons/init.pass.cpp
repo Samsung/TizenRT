@@ -32,9 +32,10 @@
 
 #include <forward_list>
 #include <cassert>
+#include "libcxx_tc_common.h"
 
 
-int main()
+int tc_libcxx_containers_forwardlist_cons_init(void)
 {
     {
         typedef int T;
@@ -42,7 +43,9 @@ int main()
         C c = {0, 1, 2, 3, 4, 5, 6, 7, 8, 9};
         int n = 0;
         for (C::const_iterator i = c.begin(), e = c.end(); i != e; ++i, ++n)
-            assert(*i == n);
-        assert(n == 10);
+            TC_ASSERT_EXPR(*i == n);
+        TC_ASSERT_EXPR(n == 10);
     }
+    TC_SUCCESS_RESULT();
+    return 0;
 }

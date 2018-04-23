@@ -31,26 +31,28 @@
 
 #include <forward_list>
 #include <cassert>
+#include "libcxx_tc_common.h"
 #include <cstddef>
 
 #include "test_macros.h"
 #include "DefaultOnly.h"
 
 template <class T, class Allocator>
-void check_allocator(unsigned n, Allocator const &alloc = Allocator())
+static int check_allocator(unsigned n, Allocator const &alloc = Allocator())
 {
 #if TEST_STD_VER > 11
     typedef std::forward_list<T, Allocator> C;
     C d(n, alloc);
-    assert(d.get_allocator() == alloc);
-    assert(static_cast<std::size_t>(std::distance(d.begin(), d.end())) == n);
+    TC_ASSERT_EXPR(d.get_allocator() == alloc);
+    TC_ASSERT_EXPR(static_cast<std::size_t>(std::distance(d.begin(), d.end())) == n);
 #else
     ((void)n);
     ((void)alloc);
 #endif
+    return 0;
 }
 
-int main()
+int tc_libcxx_containers_forwardlist_cons_size(void)
 {
     { // test that the ctor is explicit
       typedef std::forward_list<DefaultOnly> C;
@@ -66,11 +68,13 @@ int main()
 
         for (C::const_iterator i = c.begin(), e = c.end(); i != e; ++i, ++n) {
 #if TEST_STD_VER >= 11
-            assert(*i == T());
+            TC_ASSERT_EXPR(*i == T());
 #else
-            ((void)0);
+            ((static int)0);
 #endif
         }
-        assert(n == N);
+        TC_ASSERT_EXPR(n == N);
     }
+    TC_SUCCESS_RESULT();
+    return 0;
 }

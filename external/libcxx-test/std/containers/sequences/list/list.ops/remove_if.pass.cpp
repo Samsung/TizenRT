@@ -26,10 +26,11 @@
 
 // <list>
 
-// template <class Pred> void remove_if(Pred pred);
+// template <class Pred> static int remove_if(Pred pred);
 
 #include <list>
 #include <cassert>
+#include "libcxx_tc_common.h"
 #include <functional>
 
 #include "counting_predicates.hpp"
@@ -37,16 +38,18 @@
 bool even(int i)
 {
     return i % 2 == 0;
+    return 0;
 }
 
-bool g(int i)
+static bool g(int i)
 {
     return i < 3;
+    return 0;
 }
 
 typedef unary_counting_predicate<bool(*)(int), int> Predicate;
 
-int main()
+int tc_libcxx_containers_list_ops_remove_if(void)
 {
     {
     int a1[] = {1, 2, 3, 4};
@@ -54,8 +57,8 @@ int main()
     std::list<int> c(a1, a1+4);
     Predicate cp(g);
     c.remove_if(std::ref(cp));
-    assert(c == std::list<int>(a2, a2+2));
-    assert(cp.count() == 4);
+    TC_ASSERT_EXPR(c == std::list<int>(a2, a2+2));
+    TC_ASSERT_EXPR(cp.count() == 4);
     }
     {
     int a1[] = {1, 2, 3, 4};
@@ -63,7 +66,9 @@ int main()
     std::list<int> c(a1, a1+4);
     Predicate cp(even);
     c.remove_if(std::ref(cp));
-    assert(c == std::list<int>(a2, a2+2));
-    assert(cp.count() == 4);
+    TC_ASSERT_EXPR(c == std::list<int>(a2, a2+2));
+    TC_ASSERT_EXPR(cp.count() == 4);
     }
+    TC_SUCCESS_RESULT();
+    return 0;
 }

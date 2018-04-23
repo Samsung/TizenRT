@@ -32,19 +32,22 @@
 
 #include <list>
 #include <cassert>
+#include "libcxx_tc_common.h"
 
 #include "MoveOnly.h"
 
-int main()
+int tc_libcxx_containers_list_modifiers_insert_iter_rvalue(void)
 {
     {
     std::list<MoveOnly> l1;
     l1.insert(l1.cend(), MoveOnly(1));
-    assert(l1.size() == 1);
-    assert(l1.front() == MoveOnly(1));
+    TC_ASSERT_EXPR(l1.size() == 1);
+    TC_ASSERT_EXPR(l1.front() == MoveOnly(1));
     l1.insert(l1.cbegin(), MoveOnly(2));
-    assert(l1.size() == 2);
-    assert(l1.front() == MoveOnly(2));
-    assert(l1.back() == MoveOnly(1));
+    TC_ASSERT_EXPR(l1.size() == 2);
+    TC_ASSERT_EXPR(l1.front() == MoveOnly(2));
+    TC_ASSERT_EXPR(l1.back() == MoveOnly(1));
     }
+    TC_SUCCESS_RESULT();
+    return 0;
 }

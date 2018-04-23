@@ -30,18 +30,21 @@
 
 #include <forward_list>
 #include <cassert>
+#include "libcxx_tc_common.h"
 
 #include "test_allocator.h"
 #include "NotConstructible.h"
 
-int main()
+int tc_libcxx_containers_forwardlist_cons_alloc_pass(void)
 {
     {
         typedef test_allocator<NotConstructible> A;
         typedef A::value_type T;
         typedef std::forward_list<T, A> C;
         C c(A(12));
-        assert(c.get_allocator() == A(12));
-        assert(c.empty());
+        TC_ASSERT_EXPR(c.get_allocator() == A(12));
+        TC_ASSERT_EXPR(c.empty());
     }
+    TC_SUCCESS_RESULT();
+    return 0;
 }
