@@ -122,7 +122,6 @@ static int procfs_uptime_ops(char *dirpath)
 	fd = open(PROC_UPTIME_PATH, O_RDONLY);
 	if (fd < 0) {
 		printf("Failed to open \n" );
-		close(fd);
 		return ERROR;
 	}
 
@@ -142,7 +141,6 @@ static int procfs_uptime_ops(char *dirpath)
 	ret = close(fd);
 	if (ret != OK) {
 		printf("failed to close \n");
-		close(fd);
 		return ERROR;
 	}
 
@@ -160,7 +158,6 @@ static int procfs_version_ops(char *dirpath)
 	fd = open(PROC_VERSION_PATH, O_RDONLY);
 	if (fd < 0) {
 		printf("Failed to open \n");
-		close(fd);
 		return ERROR;
 	}
 
