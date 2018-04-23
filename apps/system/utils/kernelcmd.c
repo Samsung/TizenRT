@@ -43,11 +43,13 @@ const static tash_cmdlist_t kdbg_cmds[] = {
 #if defined(CONFIG_ENABLE_IRQINFO)
 	{"irqinfo",   kdbg_irqinfo,      TASH_EXECMD_SYNC},
 #endif
+#if ! defined(CONFIG_DISABLE_SIGNALS)
 #if defined(CONFIG_ENABLE_KILL)
 	{"kill",     kdbg_kill,         TASH_EXECMD_SYNC},
 #endif
 #if defined(CONFIG_ENABLE_KILLALL)
 	{"killall",  kdbg_killall,      TASH_EXECMD_SYNC},
+#endif
 #endif
 #if defined(CONFIG_ENABLE_PS)
 	{"ps",       kdbg_ps,           TASH_EXECMD_SYNC},
