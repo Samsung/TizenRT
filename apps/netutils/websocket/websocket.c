@@ -71,6 +71,11 @@ websocket_return_t websocket_config_socket(int fd)
 	int opt = 1;
 	struct timeval tv;
 
+	if (fd < 0) {
+		WEBSOCKET_DEBUG("invalid file descriptor\n");
+		return WEBSOCKET_SOCKET_ERROR;
+	}
+
 	flags = fcntl(fd, F_GETFL, 0);
 	if (flags == -1) {
 		WEBSOCKET_DEBUG("fcntl GET failed\n");
@@ -350,7 +355,7 @@ int connect_socket(websocket_t *client, const char *host, const char *port)
 	}
 #endif
 	fd = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP);
-	if (fd == -1) {
+	if (fd < 0) {
 		WEBSOCKET_DEBUG("fail to open socket\n");
 		return WEBSOCKET_CONNECT_ERROR;
 	}
@@ -600,7 +605,7 @@ int websocket_accept_handler(websocket_t *init_server)
 			if (server_handler == NULL) {
 				WEBSOCKET_DEBUG("fail to find empty server table\n");
 				r = WEBSOCKET_INIT_ERROR;
-				goto EXIT_ACCEPT;
+				goto EXIT_INIT_SERVER;
 			}
 
 			/* To copy TLS context and websocket_call backs from init_server to server_handler */
@@ -698,7 +703,7 @@ int websocket_listen(int *listen_fd, int port)
 	struct sockaddr_in serveraddr;
 
 	*listen_fd = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP);
-	if (*listen_fd == -1) {
+	if (*listen_fd < 0) {
 		WEBSOCKET_DEBUG("fail to open socket\n");
 		return WEBSOCKET_SOCKET_ERROR;
 	}
@@ -784,10 +789,12 @@ websocket_t *websocket_find_table(void)
 static void websocket_on_msg_recv_callback(websocket_context_ptr ctx, const websocket_on_msg_arg *arg, void *user_data)
 {
 	struct websocket_info_t *info = user_data;
-	websocket_t *websocket = info->data;
+	websocket_t *websocket = NULL;
 
 	if (!info)
 		return;
+
+	websocket = info->data;
 
 	if (WEBSOCKET_CHECK_CTRL_CLOSE(arg->opcode)) {
 		if (websocket->cb->on_connectivity_change_callback) {
@@ -857,7 +864,6 @@ websocket_return_t websocket_client_open(websocket_t *client, char *host, char *
 
 	if (wslay_event_context_client_init(&client->ctx, &wslay_callbacks, socket_data) != WEBSOCKET_SUCCESS) {
 		WEBSOCKET_DEBUG("fail to init websocket client context\n");
-		WEBSOCKET_FREE(socket_data);
 		r = WEBSOCKET_INIT_ERROR;
 		goto EXIT_CLIENT_OPEN;
 	}
@@ -910,6 +916,7 @@ websocket_return_t websocket_client_open(websocket_t *client, char *host, char *
 	return r;
 
 EXIT_CLIENT_OPEN:
+	WEBSOCKET_FREE(socket_data);
 	WEBSOCKET_CLOSE(client->fd);
 
 	if (client->ctx) {
