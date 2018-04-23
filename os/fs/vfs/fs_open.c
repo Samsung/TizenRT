@@ -164,7 +164,7 @@ int open(const char *path, int oflags, ...)
 		/* Get the file descriptor of the opened character driver proxy */
 		fd = block_proxy(path, oflags);
 		if (fd < 0) {
-			ret = fd;
+			ret = -fd;
 			goto errout;
 		}
 
