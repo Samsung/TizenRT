@@ -96,8 +96,8 @@ void RecorderWorker::startRecorder(std::shared_ptr<MediaRecorderImpl> mr)
 	if (mr->getState() != RECORDER_STATE_READY) {
 
 		mr->notifyObserver(OBSERVER_COMMAND_ERROR);
-		meddbg("RecorderWorker::startRecorder(std::shared_ptr<MediaRecorderImpl> mr) \
-				- mr->getState() != RECORDER_STATE_READY\n");
+		meddbg("RecorderWorker::startRecorder(std::shared_ptr<MediaRecorderImpl> mr) \n "
+			"- mr->getState() != RECORDER_STATE_READY\n");
 		return;
 	}
 
@@ -107,6 +107,7 @@ void RecorderWorker::startRecorder(std::shared_ptr<MediaRecorderImpl> mr)
 	mCurRecorder = mr;
 
 	mr->setState(RECORDER_STATE_RECORDING);
+	mr->notifyObserver(OBSERVER_COMMAND_STARTED);
 }
 
 void RecorderWorker::stopRecorder(std::shared_ptr<MediaRecorderImpl> mr, bool completed)
