@@ -28,7 +28,7 @@ namespace stream {
  * @class
  * @brief This class is file input data structure
  * @details @b #include <media/FileInputDataSource.h>
- * @since TizenRT v2.0
+ * @since TizenRT v2.0 PRE
  */
 class FileInputDataSource : public InputDataSource
 {
@@ -36,32 +36,32 @@ public:
 	/**
 	 * @brief Constructs an empty FileInputDataSource.
 	 * @details @b #include <media/FileInputDataSource.h>
-	 * @since TizenRT v2.0
+	 * @since TizenRT v2.0 PRE
 	 */
 	FileInputDataSource();
 	/**
 	 * @brief Deconstructs an empty FileInputDataSource.
 	 * @details @b #include <media/FileInputDataSource.h>
-	 * @since TizenRT v2.0
+	 * @since TizenRT v2.0 PRE
 	 */
 	virtual ~FileInputDataSource();
 	/**
 	 * @brief Constructs a new object provide with path
 	 * @details @b #include <media/FileInputDataSource.h>
 	 * param[in] dataPath The dataPath that the path of data
-	 * @since TizenRT v2.0
+	 * @since TizenRT v2.0 PRE
 	 */
 	FileInputDataSource(const std::string& dataPath);
 	/**
 	 * @brief Copy constructs for FileInputDataSource.
 	 * @details @b #include <media/FileInputDataSource.h>
-	 * @since TizenRT v2.0
+	 * @since TizenRT v2.0 PRE
 	 */
 	FileInputDataSource(const FileInputDataSource& source);
 	/**
 	 * @brief Operator= for FileInputDataSource.
 	 * @details @b #include <media/FileInputDataSource.h>
-	 * @since TizenRT v2.0
+	 * @since TizenRT v2.0 PRE
 	 */
 	FileInputDataSource& operator=(const FileInputDataSource& source);
 
@@ -69,21 +69,21 @@ public:
 	 * @brief Whether file is ready to be read.
 	 * @details @b #include <media/FileInputDataSource.h>
 	 * @return True is ready, False is not ready
-	 * @since TizenRT v2.0
+	 * @since TizenRT v2.0 PRE
 	 */
 	bool isPrepare() override;
 	/**
 	 * @brief Open the file
 	 * @details @b #include <media/FileInputDataSource.h>
 	 * @return True is Success, False is Fail
-	 * @since TizenRT v2.0
+	 * @since TizenRT v2.0 PRE
 	 */
 	bool open() override;
 	/**
 	 * @brief Close the file
 	 * @details @b #include <media/FileInputDataSource.h>
 	 * @return True is Success, False is Fail
-	 * @since TizenRT v2.0
+	 * @since TizenRT v2.0 PRE
 	 */
 	void close() override;
 
@@ -93,7 +93,7 @@ public:
 	 * @param[out] buf The buf that read the data and fill it into the buffer
 	 * @param[in] size The size that the size of the buffer
 	 * @return if there is nothing to read, it returns 0, else readead size returns
-	 * @since TizenRT v2.0
+	 * @since TizenRT v2.0 PRE
 	 */
 	size_t read(unsigned char* buf, size_t size) override;
 

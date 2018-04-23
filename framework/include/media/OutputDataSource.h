@@ -27,7 +27,7 @@ namespace stream {
  * @class
  * @brief This class is output data structure
  * @details @b #include <media/OutputDataSource.h>
- * @since TizenRT v2.0
+ * @since TizenRT v2.0 PRE
  */
 class OutputDataSource : public DataSource
 {
@@ -35,7 +35,7 @@ public:
 	/**
 	 * @brief Constructs an empty OutputDataSource.
 	 * @details @b #include <media/OutputDataSource.h>
-	 * @since TizenRT v2.0
+	 * @since TizenRT v2.0 PRE
 	 */
 	OutputDataSource();
 	/**
@@ -44,26 +44,26 @@ public:
 	 * param[in] channels   The channels that the channels of audio
 	 * param[in] sampleRate The sampleRate that the sample rate of audio
 	 * param[in] pcmFormat  The pcmFormat that the pcm format of audio	
-	 * @since TizenRT v2.0
+	 * @since TizenRT v2.0 PRE
 	 */
 	OutputDataSource(unsigned short channels, unsigned int sampleRate, int pcmFormat);
 	
 	/**
 	 * @brief Copy constructs for OutputDataSource.
 	 * @details @b #include <media/OutputDataSource.h>
-	 * @since TizenRT v2.0
+	 * @since TizenRT v2.0 PRE
 	 */
 	OutputDataSource(const OutputDataSource& source);
 	/**
 	 * @brief Operator= for OutputDataSource.
 	 * @details @b #include <media/OutputDataSource.h>
-	 * @since TizenRT v2.0
+	 * @since TizenRT v2.0 PRE
 	 */
 	OutputDataSource& operator=(const OutputDataSource& source);
 	/**
 	 * @brief Deconstructs an empty OutputDataSource.
 	 * @details @b #include <media/OutputDataSource.h>
-	 * @since TizenRT v2.0
+	 * @since TizenRT v2.0 PRE
 	 */
 	virtual ~OutputDataSource();
 
@@ -71,7 +71,7 @@ public:
 	/**
 	 * @brief Puts the stream data
 	 * @details @b #include <media/OutputDataSource.h>
-	 * @since TizenRT v2.0
+	 * @since TizenRT v2.0 PRE
 	 */
 	virtual size_t write(unsigned char* buf, size_t size) = 0;
 };

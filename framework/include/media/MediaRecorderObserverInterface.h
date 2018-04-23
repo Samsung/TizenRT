@@ -26,7 +26,7 @@ namespace media {
  * @details @b #include <media/MediaRecorderObserverInterface.h>
  * This class informs the user of the recording state of MediaRecorder
  * This class informs the user of the error state of MediaRecorder
- * @since TizenRT v2.0
+ * @since TizenRT v2.0 PRE
  */
 class MediaRecorderObserverInterface
 {
@@ -35,25 +35,25 @@ public:
 	 * @brief Id means unique id of MediaRecorder.
 	 * @details @b #include <media/MediaRecorderObserverInterface.h>
 	 * support multi-recorders according to device specifications
-	 * @since TizenRT v2.0
+	 * @since TizenRT v2.0 PRE
 	 */
 	using Id = uint64_t;
 	/**
 	 * @brief informs the user of the recording has begun.
 	 * @details @b #include <media/MediaRecorderObserverInterface.h>
-	 * @since TizenRT v2.0
+	 * @since TizenRT v2.0 PRE
 	 */
 	virtual void onRecordStarted(Id id) = 0;
 	/**
 	 * @brief informs the user of the recording has finished.
 	 * @details @b #include <media/MediaRecorderObserverInterface.h>
-	 * @since TizenRT v2.0
+	 * @since TizenRT v2.0 PRE
 	 */
 	virtual void onRecordFinished(Id id) = 0;
 	/**
 	 * @brief informs the user of the error state of recorder operation
 	 * @details @b #include <media/MediaRecorderObserverInterface.h>
-	 * @since TizenRT v2.0
+	 * @since TizenRT v2.0 PRE
 	 */
 	virtual void onRecordError(Id id) = 0;
 };

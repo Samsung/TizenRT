@@ -27,7 +27,7 @@ namespace utils {
 /**
  * @brief Audio type.
  * @details @b #include <media/MediaUtils.h>
- * @since TizenRT v2.0
+ * @since TizenRT v2.0 PRE
  */
 typedef enum audio_type_e {
 	/** Audio type is invalid */
@@ -48,14 +48,14 @@ typedef enum audio_type_e {
  * @brief Replace string with lowercase string.
  * @details @b #include <media/MediaUtils.h>
  * @param[out] str The str that lowercase string
- * @since TizenRT v2.0
+ * @since TizenRT v2.0 PRE
  */
 void toLowerString(std::string& str);
 /**
  * @brief Replace string with uppercase string.
  * @details @b #include <media/MediaUtils.h>
  * @param[out] str The str that uppercase string
- * @since TizenRT v2.0
+ * @since TizenRT v2.0 PRE
  */
 void toUpperString(std::string& str);
 /**
@@ -63,7 +63,7 @@ void toUpperString(std::string& str);
  * @details @b #include <media/MediaUtils.h>
  * @param[in] path The path of audio data
  * @return The audio type
- * @since TizenRT v2.0
+ * @since TizenRT v2.0 PRE
  */
 audio_type_t getAudioTypeFromPath(std::string path);
 } // namespace utils

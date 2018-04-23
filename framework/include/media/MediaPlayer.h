@@ -27,7 +27,7 @@ namespace media {
 /**
  * @brief current state of MediaPlayer.
  * @details @b #include <media/MediaPlayer.h>
- * @since TizenRT v2.0
+ * @since TizenRT v2.0 PRE
  */
 typedef enum player_state_e
 {
@@ -46,7 +46,7 @@ typedef enum player_state_e
 /**
  * @brief result of call the apis
  * @details @b #include <media/MediaPlayer.h>
- * @since TizenRT v2.0
+ * @since TizenRT v2.0 PRE
  */
 typedef enum player_result_e
 {
@@ -62,7 +62,7 @@ class MediaPlayerImpl;
  * @class 
  * @brief This class implements the MediaPlayer capability agent.
  * @details @b #include <media/MediaPlayer.h>
- * @since TizenRT v2.0
+ * @since TizenRT v2.0 PRE
 */
 class MediaPlayer
 {
@@ -70,13 +70,13 @@ public:
 	/**
 	 * @brief Constructs an empty MediaPlayer.
 	 * @details @b #include <media/MediaPlayer.h>
-	 * @since TizenRT v2.0
+	 * @since TizenRT v2.0 PRE
 	 */
 	MediaPlayer();
 	/**
 	 * @brief Deconstructs an empty MediaPlayer.
 	 * @details @b #include <media/MediaPlayer.h>
-	 * @since TizenRT v2.0
+	 * @since TizenRT v2.0 PRE
 	 */
 	~MediaPlayer();
 	/**
@@ -84,7 +84,7 @@ public:
 	 * @details @b #include <media/MediaPlayer.h>
 	 * This function is sync call apis
 	 * @return The result of the create operation
-	 * @since TizenRT v2.0
+	 * @since TizenRT v2.0 PRE
 	 */
 	player_result_t create();
 	/**
@@ -92,7 +92,7 @@ public:
 	 * @details @b #include <media/MediaPlayer.h>
 	 * This function is sync call apis
 	 * @return The result of the destroy operation
-	 * @since TizenRT v2.0
+	 * @since TizenRT v2.0 PRE
 	 */
 	player_result_t destroy();
 	/**
@@ -100,7 +100,7 @@ public:
 	 * @details @b #include <media/MediaPlayer.h>
 	 * This function is sync call apis
 	 * @return The result of the prepare operation
-	 * @since TizenRT v2.0
+	 * @since TizenRT v2.0 PRE
 	 */
 	player_result_t prepare();
 	/**
@@ -108,7 +108,7 @@ public:
 	 * @details @b #include <media/MediaPlayer.h>
 	 * This function is sync call apis
 	 * @return The result of the unpreapre operation
-	 * @since TizenRT v2.0
+	 * @since TizenRT v2.0 PRE
 	 */
 	player_result_t unprepare();
 	/**
@@ -117,7 +117,7 @@ public:
 	 * This function is async call apis
 	 * Order to MediaPlayerWorker begin playback through the queue
 	 * @return The result of the unpreapre operation
-	 * @since TizenRT v2.0
+	 * @since TizenRT v2.0 PRE
 	 */
 	player_result_t start();
 	/**
@@ -126,7 +126,7 @@ public:
 	 * This function is async call apis
 	 * Order to MediaPlayerWorker pause playback through the queue
 	 * @return The result of the pause operation
-	 * @since TizenRT v2.0
+	 * @since TizenRT v2.0 PRE
 	 */
 	player_result_t pause();
 	/**
@@ -135,7 +135,7 @@ public:
 	 * This function is async call apis
 	 * Order to MediaPlayerWorker stop playback through the queue
 	 * @return The result of the stop operation
-	 * @since TizenRT v2.0
+	 * @since TizenRT v2.0 PRE
 	 */
 	player_result_t stop();
 	/**
@@ -143,7 +143,7 @@ public:
 	 * @details @b #include <media/MediaPlayer.h>
 	 * This function is sync call apis
 	 * @return The value of current volume
-	 * @since TizenRT v2.0
+	 * @since TizenRT v2.0 PRE
 	 */
 	int getVolume();
 	/**
@@ -151,7 +151,7 @@ public:
 	 * @details @b #include <media/MediaPlayer.h>
 	 * This function is sync call apis
 	 * @param[in] vol The vol that the value of mic volume
-	 * @since TizenRT v2.0
+	 * @since TizenRT v2.0 PRE
 	 */
 	player_result_t setVolume(int);
 	/**
@@ -159,7 +159,7 @@ public:
 	 * @details @b #include <media/MediaPlayer.h>
 	 * This function is sync call apis
 	 * @param[in] dataSource The dataSource that the config of input data
-	 * @since TizenRT v2.0
+	 * @since TizenRT v2.0 PRE
 	 */
 	void setDataSource(std::unique_ptr<stream::InputDataSource>);
 	/**
@@ -167,7 +167,7 @@ public:
 	 * @details @b #include <media/MediaPlayer.h>
 	 * This function is sync call apis
 	 * It sets the user's function
-	 * @since TizenRT v2.0
+	 * @since TizenRT v2.0 PRE
 	 */
 	void setObserver(std::shared_ptr<MediaPlayerObserverInterface>);
 	/**
@@ -175,7 +175,7 @@ public:
 	 * @details @b #include <media/MediaPlayer.h>
 	 * This function is sync call apis
 	 * @return The value of current state
-	 * @since TizenRT v2.0
+	 * @since TizenRT v2.0 PRE
 	 */
 	player_state_t getState();	
 	/**
@@ -183,7 +183,7 @@ public:
 	 * @details @b #include <media/MediaPlayer.h>
 	 * This function is sync call apis
 	 * @return The value of current state
-	 * @since TizenRT v2.0
+	 * @since TizenRT v2.0 PRE
 	 */
 	
 	player_result_t seekTo(int);
