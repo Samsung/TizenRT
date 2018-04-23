@@ -945,7 +945,9 @@ static void tc_pthread_pthread_mutex_lock_unlock_trylock(void)
 {
 	int ret_chk;
 	pthread_mutexattr_t attr;
-	pthread_mutexattr_init(&attr);
+	
+	ret_chk = pthread_mutexattr_init(&attr);
+	TC_ASSERT_EQ("pthread_mutexattr_init", ret_chk, OK);
 	pthread_mutexattr_settype(&attr, PTHREAD_MUTEX_RECURSIVE);
 
 	pthread_mutex_init(&g_mutex, NULL);

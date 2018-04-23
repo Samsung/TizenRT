@@ -267,6 +267,8 @@ static void tc_driver_loop_losetup(void)
 
 	/* Positive test cases */
 	FILE *fp = fopen("/mnt/loopfile", "w");
+	TC_ASSERT_NEQ("fopen", fp, NULL);
+
 	int i;
 	for (i = 0; i < 1024; i++) {
 		fputc('a', fp);
