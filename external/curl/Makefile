@@ -51,6 +51,7 @@ OBJS		= $(AOBJS) $(COBJS)
 # Make Own Archive for CURL
 BIN		= ../libexternal$(LIBEXT)
 
+CFLAGS+= -D__TIZENRT__
 CFLAGS+= -Wno-error
 
 all: .built
