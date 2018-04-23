@@ -22,12 +22,12 @@ namespace media {
 namespace stream {
 
 FileOutputDataSource::FileOutputDataSource(const std::string& dataPath) 
-	: OutputDataSource(), mDataPath(dataPath)
+	: OutputDataSource(), mDataPath(dataPath), mFp(nullptr)
 {	
 }
 
 FileOutputDataSource::FileOutputDataSource(unsigned short channels, unsigned int sampleRate, int pcmFormat, const std::string& dataPath)
-	: OutputDataSource(channels, sampleRate, pcmFormat), mDataPath(dataPath)
+	: OutputDataSource(channels, sampleRate, pcmFormat), mDataPath(dataPath), mFp(nullptr)
 {
 }
 
@@ -43,8 +43,13 @@ FileOutputDataSource& FileOutputDataSource::operator=(const FileOutputDataSource
 
 bool FileOutputDataSource::open()
 {
-	mFp = fopen(mDataPath.c_str(), "w+");
-	return isPrepare();
+	if (!mFp) {
+		mFp = fopen(mDataPath.c_str(), "w+");
+		return true;
+	} 
+
+	medvdbg("file is already open\n");
+	return false;
 }
 
 void FileOutputDataSource::close()
