@@ -49,38 +49,41 @@
 #include <string>
 #include <utility>
 #include <cassert>
+#include "libcxx_tc_common.h"
 
 #include "test_macros.h"
 
 template <class S>
-void test0(const S& lhs, const S& rhs, const S& x) {
-  assert(lhs + rhs == x);
+static int test0(const S& lhs, const S& rhs, const S& x) {
+  TC_ASSERT_EXPR(lhs + rhs == x);
+    return 0;
 }
 
 
-int main() {
-  {
+int tc_libcxx_strings_string_op__string_string(void)
+{
     typedef std::string S;
-    test0(S(""), S(""), S(""));
-    test0(S(""), S("12345"), S("12345"));
-    test0(S(""), S("1234567890"), S("1234567890"));
-    test0(S(""), S("12345678901234567890"), S("12345678901234567890"));
-    test0(S("abcde"), S(""), S("abcde"));
-    test0(S("abcde"), S("12345"), S("abcde12345"));
-    test0(S("abcde"), S("1234567890"), S("abcde1234567890"));
+    TC_ASSERT_FUNC((test0(S(""), S(""), S(""))));
+    TC_ASSERT_FUNC((test0(S(""), S("12345"), S("12345"))));
+    TC_ASSERT_FUNC((test0(S(""), S("1234567890"), S("1234567890"))));
+    TC_ASSERT_FUNC((test0(S(""), S("12345678901234567890"), S("12345678901234567890"))));
+    TC_ASSERT_FUNC((test0(S("abcde"), S(""), S("abcde"))));
+    TC_ASSERT_FUNC((test0(S("abcde"), S("12345"), S("abcde12345"))));
+    TC_ASSERT_FUNC((test0(S("abcde"), S("1234567890"), S("abcde1234567890"))));
     test0(S("abcde"), S("12345678901234567890"),
           S("abcde12345678901234567890"));
-    test0(S("abcdefghij"), S(""), S("abcdefghij"));
-    test0(S("abcdefghij"), S("12345"), S("abcdefghij12345"));
-    test0(S("abcdefghij"), S("1234567890"), S("abcdefghij1234567890"));
+    TC_ASSERT_FUNC((test0(S("abcdefghij"), S(""), S("abcdefghij"))));
+    TC_ASSERT_FUNC((test0(S("abcdefghij"), S("12345"), S("abcdefghij12345"))));
+    TC_ASSERT_FUNC((test0(S("abcdefghij"), S("1234567890"), S("abcdefghij1234567890"))));
     test0(S("abcdefghij"), S("12345678901234567890"),
           S("abcdefghij12345678901234567890"));
-    test0(S("abcdefghijklmnopqrst"), S(""), S("abcdefghijklmnopqrst"));
+    TC_ASSERT_FUNC((test0(S("abcdefghijklmnopqrst"), S(""), S("abcdefghijklmnopqrst"))));
     test0(S("abcdefghijklmnopqrst"), S("12345"),
           S("abcdefghijklmnopqrst12345"));
     test0(S("abcdefghijklmnopqrst"), S("1234567890"),
           S("abcdefghijklmnopqrst1234567890"));
     test0(S("abcdefghijklmnopqrst"), S("12345678901234567890"),
           S("abcdefghijklmnopqrst12345678901234567890"));
-  }
+    TC_SUCCESS_RESULT();
+    return 0;
 }

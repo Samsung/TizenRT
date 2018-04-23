@@ -31,46 +31,48 @@
 
 #include <string>
 #include <cassert>
+#include "libcxx_tc_common.h"
 
 #include "test_iterators.h"
 
 template <class S, class It>
-void
+static int
 test(S s, It first, It last, S expected)
 {
     s.append(first, last);
     LIBCPP_ASSERT(s.__invariants());
-    assert(s == expected);
+    TC_ASSERT_EXPR(s == expected);
+    return 0;
 }
 
-int main()
+int tc_libcxx_strings_string_append_iterator(void)
 {
     {
     typedef std::string S;
     const char* s = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz";
-    test(S(), s, s, S());
-    test(S(), s, s+1, S("A"));
-    test(S(), s, s+10, S("ABCDEFGHIJ"));
-    test(S(), s, s+52, S("ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz"));
+    TC_ASSERT_FUNC((test(S(), s, s, S())));
+    TC_ASSERT_FUNC((test(S(), s, s+1, S("A"))));
+    TC_ASSERT_FUNC((test(S(), s, s+10, S("ABCDEFGHIJ"))));
+    TC_ASSERT_FUNC((test(S(), s, s+52, S("ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz"))));
 
-    test(S("12345"), s, s, S("12345"));
-    test(S("12345"), s, s+1, S("12345A"));
-    test(S("12345"), s, s+10, S("12345ABCDEFGHIJ"));
-    test(S("12345"), s, s+52, S("12345ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz"));
+    TC_ASSERT_FUNC((test(S("12345"), s, s, S("12345"))));
+    TC_ASSERT_FUNC((test(S("12345"), s, s+1, S("12345A"))));
+    TC_ASSERT_FUNC((test(S("12345"), s, s+10, S("12345ABCDEFGHIJ"))));
+    TC_ASSERT_FUNC((test(S("12345"), s, s+52, S("12345ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz"))));
 
-    test(S("1234567890"), s, s, S("1234567890"));
-    test(S("1234567890"), s, s+1, S("1234567890A"));
-    test(S("1234567890"), s, s+10, S("1234567890ABCDEFGHIJ"));
-    test(S("1234567890"), s, s+52, S("1234567890ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz"));
+    TC_ASSERT_FUNC((test(S("1234567890"), s, s, S("1234567890"))));
+    TC_ASSERT_FUNC((test(S("1234567890"), s, s+1, S("1234567890A"))));
+    TC_ASSERT_FUNC((test(S("1234567890"), s, s+10, S("1234567890ABCDEFGHIJ"))));
+    TC_ASSERT_FUNC((test(S("1234567890"), s, s+52, S("1234567890ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz"))));
 
-    test(S("12345678901234567890"), s, s, S("12345678901234567890"));
-    test(S("12345678901234567890"), s, s+1, S("12345678901234567890""A"));
-    test(S("12345678901234567890"), s, s+10, S("12345678901234567890""ABCDEFGHIJ"));
+    TC_ASSERT_FUNC((test(S("12345678901234567890"), s, s, S("12345678901234567890"))));
+    TC_ASSERT_FUNC((test(S("12345678901234567890"), s, s+1, S("12345678901234567890""A"))));
+    TC_ASSERT_FUNC((test(S("12345678901234567890"), s, s+10, S("12345678901234567890""ABCDEFGHIJ"))));
     test(S("12345678901234567890"), s, s+52,
          S("12345678901234567890""ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz"));
 
-    test(S(), input_iterator<const char*>(s), input_iterator<const char*>(s), S());
-    test(S(), input_iterator<const char*>(s), input_iterator<const char*>(s+1), S("A"));
+    TC_ASSERT_FUNC((test(S(), input_iterator<const char*>(s), input_iterator<const char*>(s), S())));
+    TC_ASSERT_FUNC((test(S(), input_iterator<const char*>(s), input_iterator<const char*>(s+1), S("A"))));
     test(S(), input_iterator<const char*>(s), input_iterator<const char*>(s+10),
          S("ABCDEFGHIJ"));
     test(S(), input_iterator<const char*>(s), input_iterator<const char*>(s+52),
@@ -103,4 +105,6 @@ int main()
     test(S("12345678901234567890"), input_iterator<const char*>(s), input_iterator<const char*>(s+52),
          S("12345678901234567890""ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz"));
     }
+    TC_SUCCESS_RESULT();
+    return 0;
 }

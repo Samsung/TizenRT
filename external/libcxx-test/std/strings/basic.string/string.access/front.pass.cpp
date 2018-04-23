@@ -35,31 +35,35 @@
 
 #include <string>
 #include <cassert>
+#include "libcxx_tc_common.h"
 
 
 template <class S>
-void
+static int
 test(S s)
 {
     const S& cs = s;
-    assert(&cs.front() == &cs[0]);
-    assert(&s.front() == &s[0]);
+    TC_ASSERT_EXPR(&cs.front() == &cs[0]);
+    TC_ASSERT_EXPR(&s.front() == &s[0]);
     s.front() = typename S::value_type('z');
-    assert(s.front() == typename S::value_type('z'));
+    TC_ASSERT_EXPR(s.front() == typename S::value_type('z'));
+    return 0;
 }
 
-int main()
+int tc_libcxx_strings_string_access_front(void)
 {
     {
     typedef std::string S;
-    test(S("1"));
-    test(S("1234567890123456789012345678901234567890"));
+    TC_ASSERT_FUNC((test(S("1"))));
+    TC_ASSERT_FUNC((test(S("1234567890123456789012345678901234567890"))));
     }
 #ifdef _LIBCPP_DEBUG
     {
         std::string s;
         char c = s.front();
-        assert(false);
+        TC_ASSERT_EXPR(false);
     }
 #endif
+    TC_SUCCESS_RESULT();
+    return 0;
 }

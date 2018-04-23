@@ -28,6 +28,9 @@ CSRCS += utc_libcxx.c
 #Add Support Headers
 CXXFLAGS += -I. -I support/
 
+#Add test llocator initialization code
+CXXSRCS += support/test_allocator.cpp
+
 ifeq ($(CONFIG_LIBCXX_UTC_ALGORITHMS),y)
 #Algorithms Source
 CXXSRCS += std/algorithms/alg.sorting/alg.min.max/minmax_init_list_comp.pass.cpp
@@ -302,6 +305,7 @@ CXXSRCS += std/iterators/stream.iterators/ostream.iterator/ostream.iterator.ops/
 CXXSRCS += std/iterators/tc_iterators.cpp
 endif
 
+ifeq ($(CONFIG_LIBCXX_UTC_STRINGS),y)
 #String Sources
 CXXSRCS += std/strings/char.traits/char.traits.specializations/char.traits.specializations.wchar.t/eq_int_type.pass.cpp
 CXXSRCS += std/strings/char.traits/char.traits.specializations/char.traits.specializations.wchar.t/not_eof.pass.cpp
@@ -387,33 +391,23 @@ CXXSRCS += std/strings/basic.string/string.nonmembers/string.special/swap.pass.c
 CXXSRCS += std/strings/basic.string/string.ops/string_substr/substr.pass.cpp
 CXXSRCS += std/strings/basic.string/string.ops/string_find.last.of/string_size.pass.cpp
 CXXSRCS += std/strings/basic.string/string.ops/string_find.last.of/pointer_size.pass.cpp
-CXXSRCS += std/strings/basic.string/string.ops/string_find.last.of/pointer_size_size.pass.cpp
 CXXSRCS += std/strings/basic.string/string.ops/string_find.last.of/char_size.pass.cpp
 CXXSRCS += std/strings/basic.string/string.ops/string_find.first.not.of/string_size.pass.cpp
 CXXSRCS += std/strings/basic.string/string.ops/string_find.first.not.of/pointer_size.pass.cpp
-CXXSRCS += std/strings/basic.string/string.ops/string_find.first.not.of/pointer_size_size.pass.cpp
 CXXSRCS += std/strings/basic.string/string.ops/string_find.first.not.of/char_size.pass.cpp
 CXXSRCS += std/strings/basic.string/string.ops/string_compare/string.pass.cpp
-#CXXSRCS += std/strings/basic.string/string.ops/string_compare/size_size_string_size_size.pass.cpp
-CXXSRCS += std/strings/basic.string/string.ops/string_compare/size_size_string.pass.cpp
-CXXSRCS += std/strings/basic.string/string.ops/string_compare/size_size_pointer.pass.cpp
-CXXSRCS += std/strings/basic.string/string.ops/string_compare/size_size_pointer_size.pass.cpp
 CXXSRCS += std/strings/basic.string/string.ops/string_compare/pointer.pass.cpp
 CXXSRCS += std/strings/basic.string/string.ops/string_find/string_size.pass.cpp
 CXXSRCS += std/strings/basic.string/string.ops/string_find/pointer_size.pass.cpp
-CXXSRCS += std/strings/basic.string/string.ops/string_find/pointer_size_size.pass.cpp
 CXXSRCS += std/strings/basic.string/string.ops/string_find/char_size.pass.cpp
 CXXSRCS += std/strings/basic.string/string.ops/string_rfind/string_size.pass.cpp
 CXXSRCS += std/strings/basic.string/string.ops/string_rfind/pointer_size.pass.cpp
-CXXSRCS += std/strings/basic.string/string.ops/string_rfind/pointer_size_size.pass.cpp
 CXXSRCS += std/strings/basic.string/string.ops/string_rfind/char_size.pass.cpp
 CXXSRCS += std/strings/basic.string/string.ops/string_find.last.not.of/string_size.pass.cpp
 CXXSRCS += std/strings/basic.string/string.ops/string_find.last.not.of/pointer_size.pass.cpp
-CXXSRCS += std/strings/basic.string/string.ops/string_find.last.not.of/pointer_size_size.pass.cpp
 CXXSRCS += std/strings/basic.string/string.ops/string_find.last.not.of/char_size.pass.cpp
 CXXSRCS += std/strings/basic.string/string.ops/string_find.first.of/string_size.pass.cpp
 CXXSRCS += std/strings/basic.string/string.ops/string_find.first.of/pointer_size.pass.cpp
-CXXSRCS += std/strings/basic.string/string.ops/string_find.first.of/pointer_size_size.pass.cpp
 CXXSRCS += std/strings/basic.string/string.ops/string_find.first.of/char_size.pass.cpp
 CXXSRCS += std/strings/basic.string/string.ops/string.accessors/get_allocator.pass.cpp
 CXXSRCS += std/strings/basic.string/string.ops/string.accessors/c_str.pass.cpp
@@ -440,14 +434,11 @@ CXXSRCS += std/strings/basic.string/string.capacity/size.pass.cpp
 CXXSRCS += std/strings/basic.string/string.capacity/reserve.pass.cpp
 CXXSRCS += std/strings/basic.string/string.capacity/shrink_to_fit.pass.cpp
 CXXSRCS += std/strings/basic.string/string.capacity/max_size.pass.cpp
-#CXXSRCS += std/strings/basic.string/string.modifiers/string_insert/size_size_char.pass.cpp #VM exhaust : compilation failed : large size
 CXXSRCS += std/strings/basic.string/string.modifiers/string_insert/iter_size_char.pass.cpp
 CXXSRCS += std/strings/basic.string/string.modifiers/string_insert/iter_initializer_list.pass.cpp
 CXXSRCS += std/strings/basic.string/string.modifiers/string_insert/size_pointer.pass.cpp
-CXXSRCS += std/strings/basic.string/string.modifiers/string_insert/size_pointer_size.pass.cpp
 CXXSRCS += std/strings/basic.string/string.modifiers/string_insert/iter_iter_iter.pass.cpp
 CXXSRCS += std/strings/basic.string/string.modifiers/string_insert/size_string.pass.cpp
-CXXSRCS += std/strings/basic.string/string.modifiers/string_insert/size_string_size_size.pass.cpp
 CXXSRCS += std/strings/basic.string/string.modifiers/string_insert/iter_char.pass.cpp
 CXXSRCS += std/strings/basic.string/string.modifiers/string_swap/swap.pass.cpp
 CXXSRCS += std/strings/basic.string/string.modifiers/string_assign/string.pass.cpp
@@ -455,30 +446,45 @@ CXXSRCS += std/strings/basic.string/string.modifiers/string_assign/rv_string.pas
 CXXSRCS += std/strings/basic.string/string.modifiers/string_assign/pointer_size.pass.cpp
 CXXSRCS += std/strings/basic.string/string.modifiers/string_assign/initializer_list.pass.cpp
 CXXSRCS += std/strings/basic.string/string.modifiers/string_assign/iterator.pass.cpp
-CXXSRCS += std/strings/basic.string/string.modifiers/string_assign/string_size_size.pass.cpp
 CXXSRCS += std/strings/basic.string/string.modifiers/string_assign/pointer.pass.cpp
 CXXSRCS += std/strings/basic.string/string.modifiers/string_assign/size_char.pass.cpp
 CXXSRCS += std/strings/basic.string/string.modifiers/string_append/string.pass.cpp
 CXXSRCS += std/strings/basic.string/string.modifiers/string_append/pointer_size.pass.cpp
 CXXSRCS += std/strings/basic.string/string.modifiers/string_append/initializer_list.pass.cpp
 CXXSRCS += std/strings/basic.string/string.modifiers/string_append/iterator.pass.cpp
-CXXSRCS += std/strings/basic.string/string.modifiers/string_append/string_size_size.pass.cpp
 CXXSRCS += std/strings/basic.string/string.modifiers/string_append/pointer.pass.cpp
 CXXSRCS += std/strings/basic.string/string.modifiers/string_append/push_back.pass.cpp
 CXXSRCS += std/strings/basic.string/string.modifiers/string_append/size_char.pass.cpp
 CXXSRCS += std/strings/basic.string/string.modifiers/string_erase/iter.pass.cpp
 CXXSRCS += std/strings/basic.string/string.modifiers/string_erase/pop_back.pass.cpp
-CXXSRCS += std/strings/basic.string/string.modifiers/string_erase/size_size.pass.cpp
 CXXSRCS += std/strings/basic.string/string.modifiers/string_erase/iter_iter.pass.cpp
 CXXSRCS += std/strings/basic.string/string.modifiers/string_replace/iter_iter_string.pass.cpp
-#CXXSRCS += std/strings/basic.string/string.modifiers/string_replace/size_size_string_size_size.pass.cpp #VM exhaust : compilation failed : large size
+ifeq ($(CONFIG_LIBCXX_UTC_STRINGS_LARGESIZE),y)
+CXXSRCS += std/strings/basic.string/string.modifiers/string_insert/size_pointer_size.pass.cpp
+CXXSRCS += std/strings/basic.string/string.ops/string_find.last.of/pointer_size_size.pass.cpp
+CXXSRCS += std/strings/basic.string/string.ops/string_find.first.not.of/pointer_size_size.pass.cpp
+CXXSRCS += std/strings/basic.string/string.ops/string_find/pointer_size_size.pass.cpp
+CXXSRCS += std/strings/basic.string/string.ops/string_rfind/pointer_size_size.pass.cpp
+CXXSRCS += std/strings/basic.string/string.ops/string_find.last.not.of/pointer_size_size.pass.cpp
+CXXSRCS += std/strings/basic.string/string.ops/string_find.first.of/pointer_size_size.pass.cpp
+CXXSRCS += std/strings/basic.string/string.modifiers/string_assign/string_size_size.pass.cpp
+CXXSRCS += std/strings/basic.string/string.modifiers/string_insert/size_string_size_size.pass.cpp
+CXXSRCS += std/strings/basic.string/string.modifiers/string_append/string_size_size.pass.cpp
+CXXSRCS += std/strings/basic.string/string.modifiers/string_erase/size_size.pass.cpp
+CXXSRCS += std/strings/basic.string/string.ops/string_compare/size_size_string_size_size.pass.cpp
+CXXSRCS += std/strings/basic.string/string.ops/string_compare/size_size_string.pass.cpp
+CXXSRCS += std/strings/basic.string/string.ops/string_compare/size_size_pointer.pass.cpp
+CXXSRCS += std/strings/basic.string/string.ops/string_compare/size_size_pointer_size.pass.cpp
+CXXSRCS += std/strings/basic.string/string.modifiers/string_insert/size_size_char.pass.cpp
+CXXSRCS += std/strings/basic.string/string.modifiers/string_replace/size_size_string_size_size.pass.cpp #VM exhaust : compilation failed : large size
 CXXSRCS += std/strings/basic.string/string.modifiers/string_replace/size_size_string.pass.cpp
 CXXSRCS += std/strings/basic.string/string.modifiers/string_replace/size_size_pointer.pass.cpp
 CXXSRCS += std/strings/basic.string/string.modifiers/string_replace/size_size_pointer_size.pass.cpp
 CXXSRCS += std/strings/basic.string/string.modifiers/string_replace/size_size_size_char.pass.cpp
+CXXSRCS += std/strings/basic.string/string.modifiers/string_replace/iter_iter_iter_iter.pass.cpp
+endif
 CXXSRCS += std/strings/basic.string/string.modifiers/string_replace/iter_iter_size_char.pass.cpp
 CXXSRCS += std/strings/basic.string/string.modifiers/string_replace/iter_iter_initializer_list.pass.cpp
-CXXSRCS += std/strings/basic.string/string.modifiers/string_replace/iter_iter_iter_iter.pass.cpp
 CXXSRCS += std/strings/basic.string/string.modifiers/string_replace/iter_iter_pointer.pass.cpp
 CXXSRCS += std/strings/basic.string/string.modifiers/string_replace/iter_iter_pointer_size.pass.cpp
 CXXSRCS += std/strings/basic.string/string.modifiers/string_op_plus_equal/string.pass.cpp
@@ -508,6 +514,11 @@ CXXSRCS += std/strings/basic.string/string.cons/initializer_list_assignment.pass
 CXXSRCS += std/strings/basic.string/types.pass.cpp
 CXXSRCS += std/strings/c.strings/cctype.pass.cpp
 CXXSRCS += std/strings/basic.string.hash/strings.pass.cpp
+
+#Strings TC Main
+CXXSRCS += std/strings/tc_strings.cpp
+endif
+
 
 AOBJS		= $(ASRCS:.S=$(OBJEXT))
 COBJS		= $(CSRCS:.c=$(OBJEXT))

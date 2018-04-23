@@ -40,12 +40,13 @@
 #include <vector>
 #include <scoped_allocator>
 #include <cassert>
+#include "libcxx_tc_common.h"
 
 #include "test_macros.h"
 #include "test_allocator.h"
 
 template <class S>
-void
+static int
 test(S str, unsigned pos)
 {
     typedef typename S::traits_type T;
@@ -56,10 +57,10 @@ test(S str, unsigned pos)
         S s2(str, pos);
         LIBCPP_ASSERT(s2.__invariants());
         typename S::size_type rlen = str.size() - pos;
-        assert(s2.size() == rlen);
-        assert(T::compare(s2.data(), str.data() + pos, rlen) == 0);
-        assert(s2.get_allocator() == A());
-        assert(s2.capacity() >= s2.size());
+        TC_ASSERT_EXPR(s2.size() == rlen);
+        TC_ASSERT_EXPR(T::compare(s2.data(), str.data() + pos, rlen) == 0);
+        TC_ASSERT_EXPR(s2.get_allocator() == A());
+        TC_ASSERT_EXPR(s2.capacity() >= s2.size());
     }
 #ifndef TEST_HAS_NO_EXCEPTIONS
     else
@@ -67,18 +68,19 @@ test(S str, unsigned pos)
         try
         {
             S s2(str, pos);
-            assert(false);
+            TC_ASSERT_EXPR(false);
         }
         catch (std::out_of_range&)
         {
-            assert(pos > str.size());
+            TC_ASSERT_EXPR(pos > str.size());
         }
     }
 #endif
+    return 0;
 }
 
 template <class S>
-void
+static int
 test(S str, unsigned pos, unsigned n)
 {
     typedef typename S::traits_type T;
@@ -88,10 +90,10 @@ test(S str, unsigned pos, unsigned n)
         S s2(str, pos, n);
         LIBCPP_ASSERT(s2.__invariants());
         typename S::size_type rlen = std::min<typename S::size_type>(str.size() - pos, n);
-        assert(s2.size() == rlen);
-        assert(T::compare(s2.data(), str.data() + pos, rlen) == 0);
-        assert(s2.get_allocator() == A());
-        assert(s2.capacity() >= s2.size());
+        TC_ASSERT_EXPR(s2.size() == rlen);
+        TC_ASSERT_EXPR(T::compare(s2.data(), str.data() + pos, rlen) == 0);
+        TC_ASSERT_EXPR(s2.get_allocator() == A());
+        TC_ASSERT_EXPR(s2.capacity() >= s2.size());
     }
 #ifndef TEST_HAS_NO_EXCEPTIONS
     else
@@ -99,18 +101,19 @@ test(S str, unsigned pos, unsigned n)
         try
         {
             S s2(str, pos, n);
-            assert(false);
+            TC_ASSERT_EXPR(false);
         }
         catch (std::out_of_range&)
         {
-            assert(pos > str.size());
+            TC_ASSERT_EXPR(pos > str.size());
         }
     }
 #endif
+    return 0;
 }
 
 template <class S>
-void
+static int
 test(S str, unsigned pos, unsigned n, const typename S::allocator_type& a)
 {
     typedef typename S::traits_type T;
@@ -120,10 +123,10 @@ test(S str, unsigned pos, unsigned n, const typename S::allocator_type& a)
         S s2(str, pos, n, a);
         LIBCPP_ASSERT(s2.__invariants());
         typename S::size_type rlen = std::min<typename S::size_type>(str.size() - pos, n);
-        assert(s2.size() == rlen);
-        assert(T::compare(s2.data(), str.data() + pos, rlen) == 0);
-        assert(s2.get_allocator() == a);
-        assert(s2.capacity() >= s2.size());
+        TC_ASSERT_EXPR(s2.size() == rlen);
+        TC_ASSERT_EXPR(T::compare(s2.data(), str.data() + pos, rlen) == 0);
+        TC_ASSERT_EXPR(s2.get_allocator() == a);
+        TC_ASSERT_EXPR(s2.capacity() >= s2.size());
     }
 #ifndef TEST_HAS_NO_EXCEPTIONS
     else
@@ -131,54 +134,57 @@ test(S str, unsigned pos, unsigned n, const typename S::allocator_type& a)
         try
         {
             S s2(str, pos, n, a);
-            assert(false);
+            TC_ASSERT_EXPR(false);
         }
         catch (std::out_of_range&)
         {
-            assert(pos > str.size());
+            TC_ASSERT_EXPR(pos > str.size());
         }
     }
 #endif
+    return 0;
 }
 
-int main()
+int tc_libcxx_strings_string_cons_substr(void)
 {
     {
     typedef test_allocator<char> A;
     typedef std::basic_string<char, std::char_traits<char>, A> S;
 
-    test(S(A(3)), 0);
-    test(S(A(3)), 1);
-    test(S("1", A(5)), 0);
-    test(S("1", A(5)), 1);
-    test(S("1", A(5)), 2);
-    test(S("1234567890123456789012345678901234567890123456789012345678901234567890", A(7)), 0);
-    test(S("1234567890123456789012345678901234567890123456789012345678901234567890", A(7)), 5);
-    test(S("1234567890123456789012345678901234567890123456789012345678901234567890", A(7)), 50);
-    test(S("1234567890123456789012345678901234567890123456789012345678901234567890", A(7)), 500);
+    TC_ASSERT_FUNC((test(S(A(3)), 0)));
+    TC_ASSERT_FUNC((test(S(A(3)), 1)));
+    TC_ASSERT_FUNC((test(S("1", A(5)), 0)));
+    TC_ASSERT_FUNC((test(S("1", A(5)), 1)));
+    TC_ASSERT_FUNC((test(S("1", A(5)), 2)));
+    TC_ASSERT_FUNC((test(S("1234567890123456789012345678901234567890123456789012345678901234567890", A(7)), 0)));
+    TC_ASSERT_FUNC((test(S("1234567890123456789012345678901234567890123456789012345678901234567890", A(7)), 5)));
+    TC_ASSERT_FUNC((test(S("1234567890123456789012345678901234567890123456789012345678901234567890", A(7)), 50)));
+    TC_ASSERT_FUNC((test(S("1234567890123456789012345678901234567890123456789012345678901234567890", A(7)), 500)));
 
-    test(S(A(3)), 0, 0);
-    test(S(A(3)), 0, 1);
-    test(S(A(3)), 1, 0);
-    test(S(A(3)), 1, 1);
-    test(S(A(3)), 1, 2);
-    test(S("1", A(5)), 0, 0);
-    test(S("1", A(5)), 0, 1);
-    test(S("1234567890123456789012345678901234567890123456789012345678901234567890", A(7)), 50, 0);
-    test(S("1234567890123456789012345678901234567890123456789012345678901234567890", A(7)), 50, 1);
-    test(S("1234567890123456789012345678901234567890123456789012345678901234567890", A(7)), 50, 10);
-    test(S("1234567890123456789012345678901234567890123456789012345678901234567890", A(7)), 50, 100);
+    TC_ASSERT_FUNC((test(S(A(3)), 0, 0)));
+    TC_ASSERT_FUNC((test(S(A(3)), 0, 1)));
+    TC_ASSERT_FUNC((test(S(A(3)), 1, 0)));
+    TC_ASSERT_FUNC((test(S(A(3)), 1, 1)));
+    TC_ASSERT_FUNC((test(S(A(3)), 1, 2)));
+    TC_ASSERT_FUNC((test(S("1", A(5)), 0, 0)));
+    TC_ASSERT_FUNC((test(S("1", A(5)), 0, 1)));
+    TC_ASSERT_FUNC((test(S("1234567890123456789012345678901234567890123456789012345678901234567890", A(7)), 50, 0)));
+    TC_ASSERT_FUNC((test(S("1234567890123456789012345678901234567890123456789012345678901234567890", A(7)), 50, 1)));
+    TC_ASSERT_FUNC((test(S("1234567890123456789012345678901234567890123456789012345678901234567890", A(7)), 50, 10)));
+    TC_ASSERT_FUNC((test(S("1234567890123456789012345678901234567890123456789012345678901234567890", A(7)), 50, 100)));
 
-    test(S(A(3)), 0, 0, A(4));
-    test(S(A(3)), 0, 1, A(4));
-    test(S(A(3)), 1, 0, A(4));
-    test(S(A(3)), 1, 1, A(4));
-    test(S(A(3)), 1, 2, A(4));
-    test(S("1", A(5)), 0, 0, A(6));
-    test(S("1", A(5)), 0, 1, A(6));
-    test(S("1234567890123456789012345678901234567890123456789012345678901234567890", A(7)), 50, 0, A(8));
-    test(S("1234567890123456789012345678901234567890123456789012345678901234567890", A(7)), 50, 1, A(8));
-    test(S("1234567890123456789012345678901234567890123456789012345678901234567890", A(7)), 50, 10, A(8));
-    test(S("1234567890123456789012345678901234567890123456789012345678901234567890", A(7)), 50, 100, A(8));
+    TC_ASSERT_FUNC((test(S(A(3)), 0, 0, A(4))));
+    TC_ASSERT_FUNC((test(S(A(3)), 0, 1, A(4))));
+    TC_ASSERT_FUNC((test(S(A(3)), 1, 0, A(4))));
+    TC_ASSERT_FUNC((test(S(A(3)), 1, 1, A(4))));
+    TC_ASSERT_FUNC((test(S(A(3)), 1, 2, A(4))));
+    TC_ASSERT_FUNC((test(S("1", A(5)), 0, 0, A(6))));
+    TC_ASSERT_FUNC((test(S("1", A(5)), 0, 1, A(6))));
+    TC_ASSERT_FUNC((test(S("1234567890123456789012345678901234567890123456789012345678901234567890", A(7)), 50, 0, A(8))));
+    TC_ASSERT_FUNC((test(S("1234567890123456789012345678901234567890123456789012345678901234567890", A(7)), 50, 1, A(8))));
+    TC_ASSERT_FUNC((test(S("1234567890123456789012345678901234567890123456789012345678901234567890", A(7)), 50, 10, A(8))));
+    TC_ASSERT_FUNC((test(S("1234567890123456789012345678901234567890123456789012345678901234567890", A(7)), 50, 100, A(8))));
     }
+    TC_SUCCESS_RESULT();
+    return 0;
 }

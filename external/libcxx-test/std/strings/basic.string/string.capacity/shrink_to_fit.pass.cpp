@@ -26,39 +26,43 @@
 
 // <string>
 
-// void shrink_to_fit();
+// static int shrink_to_fit();
 
 #include <string>
 #include <cassert>
+#include "libcxx_tc_common.h"
 
 #include "test_macros.h"
 
 template <class S>
-void
+static int
 test(S s)
 {
     typename S::size_type old_cap = s.capacity();
     S s0 = s;
     s.shrink_to_fit();
     LIBCPP_ASSERT(s.__invariants());
-    assert(s == s0);
-    assert(s.capacity() <= old_cap);
-    assert(s.capacity() >= s.size());
+    TC_ASSERT_EXPR(s == s0);
+    TC_ASSERT_EXPR(s.capacity() <= old_cap);
+    TC_ASSERT_EXPR(s.capacity() >= s.size());
+    return 0;
 }
 
-int main()
+int tc_libcxx_strings_string_capacity_shrink_to_fit(void)
 {
     {
     typedef std::string S;
     S s;
-    test(s);
+    TC_ASSERT_FUNC((test(s)));
 
     s.assign(10, 'a');
     s.erase(5);
-    test(s);
+    TC_ASSERT_FUNC((test(s)));
 
     s.assign(100, 'a');
     s.erase(50);
-    test(s);
+    TC_ASSERT_FUNC((test(s)));
     }
+    TC_SUCCESS_RESULT();
+    return 0;
 }

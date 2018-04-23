@@ -30,25 +30,29 @@
 
 #include <string>
 #include <cassert>
+#include "libcxx_tc_common.h"
 
 
 template <class S>
-void
+static int
 test(const S& s)
 {
     typename S::const_reverse_iterator cb = s.crbegin();
     if (!s.empty())
     {
-        assert(*cb == s.back());
+        TC_ASSERT_EXPR(*cb == s.back());
     }
-    assert(cb == s.rbegin());
+    TC_ASSERT_EXPR(cb == s.rbegin());
+    return 0;
 }
 
-int main()
+int tc_libcxx_strings_string_iterators_crbegin(void)
 {
     {
     typedef std::string S;
-    test(S());
-    test(S("123"));
+    TC_ASSERT_FUNC((test(S())));
+    TC_ASSERT_FUNC((test(S("123"))));
     }
+    TC_SUCCESS_RESULT();
+    return 0;
 }

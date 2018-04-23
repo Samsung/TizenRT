@@ -32,13 +32,16 @@
 
 #include <string>
 #include <cassert>
+#include "libcxx_tc_common.h"
 
 
-int main()
+int tc_libcxx_strings_string_replace_iter_iter_initializer_list(void)
 {
     {
         std::string s("123def456");
         s.replace(s.cbegin() + 3, s.cbegin() + 6, {'a', 'b', 'c'});
-        assert(s == "123abc456");
+        TC_ASSERT_EXPR(s == "123abc456");
     }
+    TC_SUCCESS_RESULT();
+    return 0;
 }

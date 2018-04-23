@@ -26,33 +26,37 @@
 
 // <string>
 
-// void clear();
+// static int clear();
 
 #include <string>
 #include <cassert>
+#include "libcxx_tc_common.h"
 
 
 template <class S>
-void
+static int
 test(S s)
 {
     s.clear();
-    assert(s.size() == 0);
+    TC_ASSERT_EXPR(s.size() == 0);
+    return 0;
 }
 
-int main()
+int tc_libcxx_strings_string_capacity_clear(void)
 {
     {
     typedef std::string S;
     S s;
-    test(s);
+    TC_ASSERT_FUNC((test(s)));
 
     s.assign(10, 'a');
     s.erase(5);
-    test(s);
+    TC_ASSERT_FUNC((test(s)));
 
     s.assign(100, 'a');
     s.erase(50);
-    test(s);
+    TC_ASSERT_FUNC((test(s)));
     }
+    TC_SUCCESS_RESULT();
+    return 0;
 }

@@ -32,6 +32,7 @@
 
 #include <string>
 #include <cassert>
+#include "libcxx_tc_common.h"
 
 #include "test_macros.h"
 #include "test_allocator.h"
@@ -49,7 +50,7 @@ struct some_alloc
 std::string s;
 std::wstring ws;
 
-int main()
+int tc_libcxx_strings_string_cons_dtor_noexcept(void)
 {
     {
         typedef std::string C;
@@ -65,4 +66,6 @@ int main()
         static_assert(!std::is_nothrow_destructible<C>::value, "");
     }
 #endif // _LIBCPP_VERSION
+    TC_SUCCESS_RESULT();
+    return 0;
 }

@@ -30,23 +30,27 @@
 
 #include <string>
 #include <cassert>
+#include "libcxx_tc_common.h"
 
 #include "test_macros.h"
 
 template <class S>
-void
+static int
 test(const S& s)
 {
     ASSERT_NOEXCEPT(s.empty());
-    assert(s.empty() == (s.size() == 0));
+    TC_ASSERT_EXPR(s.empty() == (s.size() == 0));
+    return 0;
 }
 
-int main()
+int tc_libcxx_strings_string_capacity_empty(void)
 {
     {
     typedef std::string S;
-    test(S());
-    test(S("123"));
-    test(S("12345678901234567890123456789012345678901234567890"));
+    TC_ASSERT_FUNC((test(S())));
+    TC_ASSERT_FUNC((test(S("123"))));
+    TC_ASSERT_FUNC((test(S("12345678901234567890123456789012345678901234567890"))));
     }
+    TC_SUCCESS_RESULT();
+    return 0;
 }

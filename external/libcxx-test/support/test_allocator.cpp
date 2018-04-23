@@ -15,33 +15,10 @@
  * language governing permissions and limitations under the License.
  *
  ****************************************************************************/
-//===----------------------------------------------------------------------===//
-//
-//                     The LLVM Compiler Infrastructure
-//
-// This file is dual licensed under the MIT and the University of Illinois Open
-// Source Licenses. See LICENSE.TXT for details.
-//
-//===----------------------------------------------------------------------===//
 
-// UNSUPPORTED: c++98, c++03
+#include "test_allocator.h"
 
-// <string>
-
-// basic_string& operator+=(initializer_list<charT> il);
-
-#include <string>
-#include <cassert>
-#include "libcxx_tc_common.h"
-
-
-int tc_libcxx_strings_string_op_plus_equal_initializer_list(void)
-{
-    {
-        std::string s("123");
-        s += {'a', 'b', 'c'};
-        TC_ASSERT_EXPR(s == "123abc");
-    }
-    TC_SUCCESS_RESULT();
-    return 0;
-}
+int test_alloc_base::count = 0;
+int test_alloc_base::time_to_throw = 0;
+int test_alloc_base::alloc_count = 0;
+int test_alloc_base::throw_after = INT_MAX;

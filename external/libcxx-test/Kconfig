@@ -51,3 +51,17 @@ config LIBCXX_UTC_ITERATORS
 	depends on LIBCXX_UTC
 	---help---
 		UTC for Libc++ Iterators
+
+config LIBCXX_UTC_STRINGS
+	bool "UTC for Libc++ Strings"
+	default n
+	depends on LIBCXX_UTC
+	---help---
+		UTC for Libc++ Strings
+
+config LIBCXX_UTC_STRINGS_LARGESIZE
+	bool "UTC for Libc++ Strings Large size tests"
+	default n
+	depends on LIBCXX_UTC_STRINGS
+	---help---
+		UTC for Libc++ Strings Large size tests

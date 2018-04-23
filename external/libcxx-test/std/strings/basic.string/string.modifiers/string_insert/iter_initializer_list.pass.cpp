@@ -33,14 +33,17 @@
 
 #include <string>
 #include <cassert>
+#include "libcxx_tc_common.h"
 
 
-int main()
+int tc_libcxx_strings_string_insert_iter_initializer_list(void)
 {
     {
         std::string s("123456");
         std::string::iterator i = s.insert(s.begin() + 3, {'a', 'b', 'c'});
-        assert(i - s.begin() == 3);
-        assert(s == "123abc456");
+        TC_ASSERT_EXPR(i - s.begin() == 3);
+        TC_ASSERT_EXPR(s == "123abc456");
     }
+    TC_SUCCESS_RESULT();
+    return 0;
 }

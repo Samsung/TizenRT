@@ -32,8 +32,11 @@
 
 #include <string>
 #include <cassert>
+#include "libcxx_tc_common.h"
 
-int main()
+int tc_libcxx_strings_char_traits_specializations_char_eof(void)
 {
-    assert(std::char_traits<char>::eof() == EOF);
+    TC_ASSERT_EXPR(std::char_traits<char>::eof() == EOF);
+    TC_SUCCESS_RESULT();
+    return 0;
 }

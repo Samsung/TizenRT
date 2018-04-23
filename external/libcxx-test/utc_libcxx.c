@@ -53,6 +53,11 @@ int utc_libcxx_main(int argc, char *argv[])
 #if defined(CONFIG_LIBCXX_UTC_ITERATORS)
 	tc_iterators_main();
 #endif
+
+#if defined(CONFIG_LIBCXX_UTC_STRINGS)
+	tc_strings_main();
+#endif
+
 	tc_handler(TC_END, "Libc++ TC");
 
 	return OK;

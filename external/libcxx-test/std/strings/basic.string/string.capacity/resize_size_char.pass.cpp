@@ -26,23 +26,24 @@
 
 // <string>
 
-// void resize(size_type n, charT c);
+// static int resize(size_type n, charT c);
 
 #include <string>
 #include <stdexcept>
 #include <cassert>
+#include "libcxx_tc_common.h"
 
 #include "test_macros.h"
 
 template <class S>
-void
+static int
 test(S s, typename S::size_type n, typename S::value_type c, S expected)
 {
     if (n <= s.max_size())
     {
         s.resize(n, c);
         LIBCPP_ASSERT(s.__invariants());
-        assert(s == expected);
+        TC_ASSERT_EXPR(s == expected);
     }
 #ifndef TEST_HAS_NO_EXCEPTIONS
     else
@@ -50,35 +51,38 @@ test(S s, typename S::size_type n, typename S::value_type c, S expected)
         try
         {
             s.resize(n, c);
-            assert(false);
+            TC_ASSERT_EXPR(false);
         }
         catch (std::length_error&)
         {
-            assert(n > s.max_size());
+            TC_ASSERT_EXPR(n > s.max_size());
         }
     }
 #endif
+    return 0;
 }
 
-int main()
+int tc_libcxx_strings_string_capacity_resize_size_char(void)
 {
     {
     typedef std::string S;
-    test(S(), 0, 'a', S());
-    test(S(), 1, 'a', S("a"));
-    test(S(), 10, 'a', S(10, 'a'));
-    test(S(), 100, 'a', S(100, 'a'));
-    test(S("12345"), 0, 'a', S());
-    test(S("12345"), 2, 'a', S("12"));
-    test(S("12345"), 5, 'a', S("12345"));
-    test(S("12345"), 15, 'a', S("12345aaaaaaaaaa"));
-    test(S("12345678901234567890123456789012345678901234567890"), 0, 'a', S());
+    TC_ASSERT_FUNC((test(S(), 0, 'a', S())));
+    TC_ASSERT_FUNC((test(S(), 1, 'a', S("a"))));
+    TC_ASSERT_FUNC((test(S(), 10, 'a', S(10, 'a'))));
+    TC_ASSERT_FUNC((test(S(), 100, 'a', S(100, 'a'))));
+    TC_ASSERT_FUNC((test(S("12345"), 0, 'a', S())));
+    TC_ASSERT_FUNC((test(S("12345"), 2, 'a', S("12"))));
+    TC_ASSERT_FUNC((test(S("12345"), 5, 'a', S("12345"))));
+    TC_ASSERT_FUNC((test(S("12345"), 15, 'a', S("12345aaaaaaaaaa"))));
+    TC_ASSERT_FUNC((test(S("12345678901234567890123456789012345678901234567890"), 0, 'a', S())));
     test(S("12345678901234567890123456789012345678901234567890"), 10, 'a',
          S("1234567890"));
     test(S("12345678901234567890123456789012345678901234567890"), 50, 'a',
          S("12345678901234567890123456789012345678901234567890"));
     test(S("12345678901234567890123456789012345678901234567890"), 60, 'a',
          S("12345678901234567890123456789012345678901234567890aaaaaaaaaa"));
-    test(S(), S::npos, 'a', S("not going to happen"));
+    TC_ASSERT_FUNC((test(S(), S::npos, 'a', S("not going to happen"))));
     }
+    TC_SUCCESS_RESULT();
+    return 0;
 }

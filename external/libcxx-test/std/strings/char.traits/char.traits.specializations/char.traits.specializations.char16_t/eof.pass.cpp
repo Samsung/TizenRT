@@ -32,11 +32,14 @@
 
 #include <string>
 #include <cassert>
+#include "libcxx_tc_common.h"
 
-int main()
+int tc_libcxx_strings_char_traits_specializations_char16_t_eof(void)
 {
 #ifndef _LIBCPP_HAS_NO_UNICODE_CHARS
     std::char_traits<char16_t>::int_type i = std::char_traits<char16_t>::eof();
     ((void)i); // Prevent unused warning
 #endif
+    TC_SUCCESS_RESULT();
+    return 0;
 }

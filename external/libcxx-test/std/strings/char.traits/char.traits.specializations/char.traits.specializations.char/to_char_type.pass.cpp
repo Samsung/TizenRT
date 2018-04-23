@@ -32,10 +32,13 @@
 
 #include <string>
 #include <cassert>
+#include "libcxx_tc_common.h"
 
-int main()
+int tc_libcxx_strings_char_traits_specializations_char_to_char_type(void)
 {
-    assert(std::char_traits<char>::to_char_type('a') == 'a');
-    assert(std::char_traits<char>::to_char_type('A') == 'A');
-    assert(std::char_traits<char>::to_char_type(0) == 0);
+    TC_ASSERT_EXPR(std::char_traits<char>::to_char_type('a') == 'a');
+    TC_ASSERT_EXPR(std::char_traits<char>::to_char_type('A') == 'A');
+    TC_ASSERT_EXPR(std::char_traits<char>::to_char_type(0) == 0);
+    TC_SUCCESS_RESULT();
+    return 0;
 }

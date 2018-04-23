@@ -30,55 +30,60 @@
 
 #include <string>
 #include <cassert>
+#include "libcxx_tc_common.h"
 
 
 template <class S>
-void
+static int
 test(const S& s, typename S::value_type c, typename S::size_type pos,
      typename S::size_type x)
 {
-    assert(s.find_last_of(c, pos) == x);
+    TC_ASSERT_EXPR(s.find_last_of(c, pos) == x);
     if (x != S::npos)
-        assert(x <= pos && x < s.size());
+        TC_ASSERT_EXPR(x <= pos && x < s.size());
+    return 0;
 }
 
 template <class S>
-void
+static int
 test(const S& s, typename S::value_type c, typename S::size_type x)
 {
-    assert(s.find_last_of(c) == x);
+    TC_ASSERT_EXPR(s.find_last_of(c) == x);
     if (x != S::npos)
-        assert(x < s.size());
+        TC_ASSERT_EXPR(x < s.size());
+    return 0;
 }
 
-int main()
+int tc_libcxx_strings_string_find_last_of_char_size(void)
 {
     {
     typedef std::string S;
-    test(S(""), 'm', 0, S::npos);
-    test(S(""), 'm', 1, S::npos);
-    test(S("kitcj"), 'm', 0, S::npos);
-    test(S("qkamf"), 'm', 1, S::npos);
-    test(S("nhmko"), 'm', 2, 2);
-    test(S("tpsaf"), 'm', 4, S::npos);
-    test(S("lahfb"), 'm', 5, S::npos);
-    test(S("irkhs"), 'm', 6, S::npos);
-    test(S("gmfhdaipsr"), 'm', 0, S::npos);
-    test(S("kantesmpgj"), 'm', 1, S::npos);
-    test(S("odaftiegpm"), 'm', 5, S::npos);
-    test(S("oknlrstdpi"), 'm', 9, S::npos);
-    test(S("eolhfgpjqk"), 'm', 10, S::npos);
-    test(S("pcdrofikas"), 'm', 11, S::npos);
-    test(S("nbatdlmekrgcfqsophij"), 'm', 0, S::npos);
-    test(S("bnrpehidofmqtcksjgla"), 'm', 1, S::npos);
-    test(S("jdmciepkaqgotsrfnhlb"), 'm', 10, 2);
-    test(S("jtdaefblsokrmhpgcnqi"), 'm', 19, 12);
-    test(S("hkbgspofltajcnedqmri"), 'm', 20, 17);
-    test(S("oselktgbcapndfjihrmq"), 'm', 21, 18);
+    TC_ASSERT_FUNC((test(S(""), 'm', 0, S::npos)));
+    TC_ASSERT_FUNC((test(S(""), 'm', 1, S::npos)));
+    TC_ASSERT_FUNC((test(S("kitcj"), 'm', 0, S::npos)));
+    TC_ASSERT_FUNC((test(S("qkamf"), 'm', 1, S::npos)));
+    TC_ASSERT_FUNC((test(S("nhmko"), 'm', 2, 2)));
+    TC_ASSERT_FUNC((test(S("tpsaf"), 'm', 4, S::npos)));
+    TC_ASSERT_FUNC((test(S("lahfb"), 'm', 5, S::npos)));
+    TC_ASSERT_FUNC((test(S("irkhs"), 'm', 6, S::npos)));
+    TC_ASSERT_FUNC((test(S("gmfhdaipsr"), 'm', 0, S::npos)));
+    TC_ASSERT_FUNC((test(S("kantesmpgj"), 'm', 1, S::npos)));
+    TC_ASSERT_FUNC((test(S("odaftiegpm"), 'm', 5, S::npos)));
+    TC_ASSERT_FUNC((test(S("oknlrstdpi"), 'm', 9, S::npos)));
+    TC_ASSERT_FUNC((test(S("eolhfgpjqk"), 'm', 10, S::npos)));
+    TC_ASSERT_FUNC((test(S("pcdrofikas"), 'm', 11, S::npos)));
+    TC_ASSERT_FUNC((test(S("nbatdlmekrgcfqsophij"), 'm', 0, S::npos)));
+    TC_ASSERT_FUNC((test(S("bnrpehidofmqtcksjgla"), 'm', 1, S::npos)));
+    TC_ASSERT_FUNC((test(S("jdmciepkaqgotsrfnhlb"), 'm', 10, 2)));
+    TC_ASSERT_FUNC((test(S("jtdaefblsokrmhpgcnqi"), 'm', 19, 12)));
+    TC_ASSERT_FUNC((test(S("hkbgspofltajcnedqmri"), 'm', 20, 17)));
+    TC_ASSERT_FUNC((test(S("oselktgbcapndfjihrmq"), 'm', 21, 18)));
 
-    test(S(""), 'm', S::npos);
-    test(S("csope"), 'm', S::npos);
-    test(S("gfsmthlkon"), 'm', 3);
-    test(S("laenfsbridchgotmkqpj"), 'm', 15);
+    TC_ASSERT_FUNC((test(S(""), 'm', S::npos)));
+    TC_ASSERT_FUNC((test(S("csope"), 'm', S::npos)));
+    TC_ASSERT_FUNC((test(S("gfsmthlkon"), 'm', 3)));
+    TC_ASSERT_FUNC((test(S("laenfsbridchgotmkqpj"), 'm', 15)));
     }
+    TC_SUCCESS_RESULT();
+    return 0;
 }

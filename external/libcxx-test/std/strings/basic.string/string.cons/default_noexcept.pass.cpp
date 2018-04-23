@@ -35,6 +35,7 @@
 
 #include <string>
 #include <cassert>
+#include "libcxx_tc_common.h"
 
 #include "test_macros.h"
 #include "test_allocator.h"
@@ -46,7 +47,7 @@ struct some_alloc
     some_alloc(const some_alloc&);
 };
 
-int main()
+int tc_libcxx_strings_string_cons_default_noexcept(void)
 {
     {
         typedef std::string C;
@@ -60,4 +61,6 @@ int main()
         typedef std::basic_string<char, std::char_traits<char>, some_alloc<char>> C;
         static_assert(!std::is_nothrow_default_constructible<C>::value, "");
     }
+    TC_SUCCESS_RESULT();
+    return 0;
 }

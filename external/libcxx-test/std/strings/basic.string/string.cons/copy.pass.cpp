@@ -30,28 +30,32 @@
 
 #include <string>
 #include <cassert>
+#include "libcxx_tc_common.h"
 
 #include "test_macros.h"
 #include "test_allocator.h"
 
 template <class S>
-void
+static int
 test(S s1)
 {
     S s2 = s1;
     LIBCPP_ASSERT(s2.__invariants());
-    assert(s2 == s1);
-    assert(s2.capacity() >= s2.size());
-    assert(s2.get_allocator() == s1.get_allocator());
+    TC_ASSERT_EXPR(s2 == s1);
+    TC_ASSERT_EXPR(s2.capacity() >= s2.size());
+    TC_ASSERT_EXPR(s2.get_allocator() == s1.get_allocator());
+    return 0;
 }
 
-int main()
+int tc_libcxx_strings_string_cons_copy(void)
 {
     {
     typedef test_allocator<char> A;
     typedef std::basic_string<char, std::char_traits<char>, A> S;
-    test(S(A(3)));
-    test(S("1", A(5)));
-    test(S("1234567890123456789012345678901234567890123456789012345678901234567890", A(7)));
+    TC_ASSERT_FUNC((test(S(A(3)))));
+    TC_ASSERT_FUNC((test(S("1", A(5)))));
+    TC_ASSERT_FUNC((test(S("1234567890123456789012345678901234567890123456789012345678901234567890", A(7)))));
     }
+    TC_SUCCESS_RESULT();
+    return 0;
 }

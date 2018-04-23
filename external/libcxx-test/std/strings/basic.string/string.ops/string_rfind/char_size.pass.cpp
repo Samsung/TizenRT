@@ -30,55 +30,60 @@
 
 #include <string>
 #include <cassert>
+#include "libcxx_tc_common.h"
 
 
 template <class S>
-void
+static int
 test(const S& s, typename S::value_type c, typename S::size_type pos,
      typename S::size_type x)
 {
-    assert(s.rfind(c, pos) == x);
+    TC_ASSERT_EXPR(s.rfind(c, pos) == x);
     if (x != S::npos)
-        assert(x <= pos && x + 1 <= s.size());
+        TC_ASSERT_EXPR(x <= pos && x + 1 <= s.size());
+    return 0;
 }
 
 template <class S>
-void
+static int
 test(const S& s, typename S::value_type c, typename S::size_type x)
 {
-    assert(s.rfind(c) == x);
+    TC_ASSERT_EXPR(s.rfind(c) == x);
     if (x != S::npos)
-        assert(x + 1 <= s.size());
+        TC_ASSERT_EXPR(x + 1 <= s.size());
+    return 0;
 }
 
-int main()
+int tc_libcxx_strings_string_rfind_char_size(void)
 {
     {
     typedef std::string S;
-    test(S(""), 'b', 0, S::npos);
-    test(S(""), 'b', 1, S::npos);
-    test(S("abcde"), 'b', 0, S::npos);
-    test(S("abcde"), 'b', 1, 1);
-    test(S("abcde"), 'b', 2, 1);
-    test(S("abcde"), 'b', 4, 1);
-    test(S("abcde"), 'b', 5, 1);
-    test(S("abcde"), 'b', 6, 1);
-    test(S("abcdeabcde"), 'b', 0, S::npos);
-    test(S("abcdeabcde"), 'b', 1, 1);
-    test(S("abcdeabcde"), 'b', 5, 1);
-    test(S("abcdeabcde"), 'b', 9, 6);
-    test(S("abcdeabcde"), 'b', 10, 6);
-    test(S("abcdeabcde"), 'b', 11, 6);
-    test(S("abcdeabcdeabcdeabcde"), 'b', 0, S::npos);
-    test(S("abcdeabcdeabcdeabcde"), 'b', 1, 1);
-    test(S("abcdeabcdeabcdeabcde"), 'b', 10, 6);
-    test(S("abcdeabcdeabcdeabcde"), 'b', 19, 16);
-    test(S("abcdeabcdeabcdeabcde"), 'b', 20, 16);
-    test(S("abcdeabcdeabcdeabcde"), 'b', 21, 16);
+    TC_ASSERT_FUNC((test(S(""), 'b', 0, S::npos)));
+    TC_ASSERT_FUNC((test(S(""), 'b', 1, S::npos)));
+    TC_ASSERT_FUNC((test(S("abcde"), 'b', 0, S::npos)));
+    TC_ASSERT_FUNC((test(S("abcde"), 'b', 1, 1)));
+    TC_ASSERT_FUNC((test(S("abcde"), 'b', 2, 1)));
+    TC_ASSERT_FUNC((test(S("abcde"), 'b', 4, 1)));
+    TC_ASSERT_FUNC((test(S("abcde"), 'b', 5, 1)));
+    TC_ASSERT_FUNC((test(S("abcde"), 'b', 6, 1)));
+    TC_ASSERT_FUNC((test(S("abcdeabcde"), 'b', 0, S::npos)));
+    TC_ASSERT_FUNC((test(S("abcdeabcde"), 'b', 1, 1)));
+    TC_ASSERT_FUNC((test(S("abcdeabcde"), 'b', 5, 1)));
+    TC_ASSERT_FUNC((test(S("abcdeabcde"), 'b', 9, 6)));
+    TC_ASSERT_FUNC((test(S("abcdeabcde"), 'b', 10, 6)));
+    TC_ASSERT_FUNC((test(S("abcdeabcde"), 'b', 11, 6)));
+    TC_ASSERT_FUNC((test(S("abcdeabcdeabcdeabcde"), 'b', 0, S::npos)));
+    TC_ASSERT_FUNC((test(S("abcdeabcdeabcdeabcde"), 'b', 1, 1)));
+    TC_ASSERT_FUNC((test(S("abcdeabcdeabcdeabcde"), 'b', 10, 6)));
+    TC_ASSERT_FUNC((test(S("abcdeabcdeabcdeabcde"), 'b', 19, 16)));
+    TC_ASSERT_FUNC((test(S("abcdeabcdeabcdeabcde"), 'b', 20, 16)));
+    TC_ASSERT_FUNC((test(S("abcdeabcdeabcdeabcde"), 'b', 21, 16)));
 
-    test(S(""), 'b', S::npos);
-    test(S("abcde"), 'b', 1);
-    test(S("abcdeabcde"), 'b', 6);
-    test(S("abcdeabcdeabcdeabcde"), 'b', 16);
+    TC_ASSERT_FUNC((test(S(""), 'b', S::npos)));
+    TC_ASSERT_FUNC((test(S("abcde"), 'b', 1)));
+    TC_ASSERT_FUNC((test(S("abcdeabcde"), 'b', 6)));
+    TC_ASSERT_FUNC((test(S("abcdeabcdeabcdeabcde"), 'b', 16)));
     }
+    TC_SUCCESS_RESULT();
+    return 0;
 }

@@ -32,12 +32,15 @@
 
 #include <string>
 #include <cassert>
+#include "libcxx_tc_common.h"
 
-int main()
+int tc_libcxx_strings_char_traits_specializations_wchar_t_eq_int_type(void)
 {
-    assert( std::char_traits<wchar_t>::eq_int_type(L'a', L'a'));
-    assert(!std::char_traits<wchar_t>::eq_int_type(L'a', L'A'));
-    assert(!std::char_traits<wchar_t>::eq_int_type(std::char_traits<wchar_t>::eof(), L'A'));
-    assert( std::char_traits<wchar_t>::eq_int_type(std::char_traits<wchar_t>::eof(),
+    TC_ASSERT_EXPR( std::char_traits<wchar_t>::eq_int_type(L'a', L'a'));
+    TC_ASSERT_EXPR(!std::char_traits<wchar_t>::eq_int_type(L'a', L'A'));
+    TC_ASSERT_EXPR(!std::char_traits<wchar_t>::eq_int_type(std::char_traits<wchar_t>::eof(), L'A'));
+    TC_ASSERT_EXPR( std::char_traits<wchar_t>::eq_int_type(std::char_traits<wchar_t>::eof(),
                                                    std::char_traits<wchar_t>::eof()));
+    TC_SUCCESS_RESULT();
+    return 0;
 }

@@ -32,12 +32,13 @@
 #include <stdexcept>
 #include <algorithm>
 #include <cassert>
+#include "libcxx_tc_common.h"
 
 #include "test_macros.h"
 #include "test_allocator.h"
 
 template <class charT>
-void
+static int
 test(const charT* s, unsigned n)
 {
     typedef std::basic_string<charT, std::char_traits<charT>, test_allocator<charT> > S;
@@ -45,41 +46,45 @@ test(const charT* s, unsigned n)
     typedef typename S::allocator_type A;
     S s2(s, n);
     LIBCPP_ASSERT(s2.__invariants());
-    assert(s2.size() == n);
-    assert(T::compare(s2.data(), s, n) == 0);
-    assert(s2.get_allocator() == A());
-    assert(s2.capacity() >= s2.size());
+    TC_ASSERT_EXPR(s2.size() == n);
+    TC_ASSERT_EXPR(T::compare(s2.data(), s, n) == 0);
+    TC_ASSERT_EXPR(s2.get_allocator() == A());
+    TC_ASSERT_EXPR(s2.capacity() >= s2.size());
+    return 0;
 }
 
 template <class charT, class A>
-void
+static int
 test(const charT* s, unsigned n, const A& a)
 {
     typedef std::basic_string<charT, std::char_traits<charT>, A> S;
     typedef typename S::traits_type T;
     S s2(s, n, a);
     LIBCPP_ASSERT(s2.__invariants());
-    assert(s2.size() == n);
-    assert(T::compare(s2.data(), s, n) == 0);
-    assert(s2.get_allocator() == a);
-    assert(s2.capacity() >= s2.size());
+    TC_ASSERT_EXPR(s2.size() == n);
+    TC_ASSERT_EXPR(T::compare(s2.data(), s, n) == 0);
+    TC_ASSERT_EXPR(s2.get_allocator() == a);
+    TC_ASSERT_EXPR(s2.capacity() >= s2.size());
+    return 0;
 }
 
-int main()
+int tc_libcxx_strings_string_cons_pointer_size_alloc(void)
 {
     {
     typedef test_allocator<char> A;
 
-    test("", 0);
-    test("", 0, A(2));
+    TC_ASSERT_FUNC((test("", 0)));
+    TC_ASSERT_FUNC((test("", 0, A(2))));
 
-    test("1", 1);
-    test("1", 1, A(2));
+    TC_ASSERT_FUNC((test("1", 1)));
+    TC_ASSERT_FUNC((test("1", 1, A(2))));
 
-    test("1234567980", 10);
-    test("1234567980", 10, A(2));
+    TC_ASSERT_FUNC((test("1234567980", 10)));
+    TC_ASSERT_FUNC((test("1234567980", 10, A(2))));
 
-    test("123456798012345679801234567980123456798012345679801234567980", 60);
-    test("123456798012345679801234567980123456798012345679801234567980", 60, A(2));
+    TC_ASSERT_FUNC((test("123456798012345679801234567980123456798012345679801234567980", 60)));
+    TC_ASSERT_FUNC((test("123456798012345679801234567980123456798012345679801234567980", 60, A(2))));
     }
+    TC_SUCCESS_RESULT();
+    return 0;
 }

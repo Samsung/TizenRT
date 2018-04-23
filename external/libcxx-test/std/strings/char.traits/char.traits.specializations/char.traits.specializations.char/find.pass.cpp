@@ -33,6 +33,7 @@
 
 #include <string>
 #include <cassert>
+#include "libcxx_tc_common.h"
 
 #include "test_macros.h"
 
@@ -44,20 +45,23 @@ constexpr bool test_constexpr()
         && std::char_traits<char>::find(p, 3, '2') == p + 1
         && std::char_traits<char>::find(p, 3, '3') == p + 2
         && std::char_traits<char>::find(p, 3, '4') == nullptr;
+    return 0;
 }
 #endif
 
-int main()
+int tc_libcxx_strings_char_traits_specializations_char_find(void)
 {
     char s1[] = {1, 2, 3};
-    assert(std::char_traits<char>::find(s1, 3, char(1)) == s1);
-    assert(std::char_traits<char>::find(s1, 3, char(2)) == s1+1);
-    assert(std::char_traits<char>::find(s1, 3, char(3)) == s1+2);
-    assert(std::char_traits<char>::find(s1, 3, char(4)) == 0);
-    assert(std::char_traits<char>::find(s1, 3, char(0)) == 0);
-    assert(std::char_traits<char>::find(NULL, 0, char(0)) == 0);
+    TC_ASSERT_EXPR(std::char_traits<char>::find(s1, 3, char(1)) == s1);
+    TC_ASSERT_EXPR(std::char_traits<char>::find(s1, 3, char(2)) == s1+1);
+    TC_ASSERT_EXPR(std::char_traits<char>::find(s1, 3, char(3)) == s1+2);
+    TC_ASSERT_EXPR(std::char_traits<char>::find(s1, 3, char(4)) == 0);
+    TC_ASSERT_EXPR(std::char_traits<char>::find(s1, 3, char(0)) == 0);
+    TC_ASSERT_EXPR(std::char_traits<char>::find(NULL, 0, char(0)) == 0);
 
 #if TEST_STD_VER > 14
     static_assert(test_constexpr(), "" );
 #endif
+    TC_SUCCESS_RESULT();
+    return 0;
 }

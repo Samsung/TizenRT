@@ -31,47 +31,50 @@
 
 #include <string>
 #include <cassert>
+#include "libcxx_tc_common.h"
 
 #include "test_macros.h"
 
 template <class S>
-void
+static int
 test_const(const S& s)
 {
     typedef typename S::traits_type T;
     const typename S::value_type* str = s.data();
     if (s.size() > 0)
     {
-        assert(T::compare(str, &s[0], s.size()) == 0);
-        assert(T::eq(str[s.size()], typename S::value_type()));
+        TC_ASSERT_EXPR(T::compare(str, &s[0], s.size()) == 0);
+        TC_ASSERT_EXPR(T::eq(str[s.size()], typename S::value_type()));
     }
     else
-        assert(T::eq(str[0], typename S::value_type()));
+        TC_ASSERT_EXPR(T::eq(str[0], typename S::value_type()));
+    return 0;
 }
 
 template <class S>
-void
+static int
 test_nonconst(S& s)
 {
     typedef typename S::traits_type T;
     typename S::value_type* str = s.data();
     if (s.size() > 0)
     {
-        assert(T::compare(str, &s[0], s.size()) == 0);
-        assert(T::eq(str[s.size()], typename S::value_type()));
+        TC_ASSERT_EXPR(T::compare(str, &s[0], s.size()) == 0);
+        TC_ASSERT_EXPR(T::eq(str[s.size()], typename S::value_type()));
     }
     else
-        assert(T::eq(str[0], typename S::value_type()));
+        TC_ASSERT_EXPR(T::eq(str[0], typename S::value_type()));
+    return 0;
 }
 
-int main()
+int tc_libcxx_strings_string_accessors_data(void)
 {
     {
     typedef std::string S;
-    test_const(S(""));
-    test_const(S("abcde"));
-    test_const(S("abcdefghij"));
-    test_const(S("abcdefghijklmnopqrst"));
+    TC_ASSERT_FUNC((test_const(S(""))));
+    TC_ASSERT_FUNC((test_const(S("abcde"))));
+    TC_ASSERT_FUNC((test_const(S("abcdefghij"))));
+    TC_ASSERT_FUNC((test_const(S("abcdefghijklmnopqrst"))));
     }
 #if TEST_STD_VER > 14
     {
@@ -82,4 +85,6 @@ int main()
     S s4("abcdefghijklmnopqrst"); test_nonconst(s4);
     }
 #endif
+    TC_SUCCESS_RESULT();
+    return 0;
 }

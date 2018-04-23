@@ -31,67 +31,70 @@
 
 #include <string>
 #include <cassert>
+#include "libcxx_tc_common.h"
 
 #include "test_macros.h"
 #include "test_allocator.h"
 
 template <class S>
-void
+static int
 test(S s, S str, S expected)
 {
     s.assign(str);
     LIBCPP_ASSERT(s.__invariants());
-    assert(s == expected);
+    TC_ASSERT_EXPR(s == expected);
+    return 0;
 }
 
 template <class S>
-void
+static int
 testAlloc(S s, S str, const typename S::allocator_type& a)
 {
     s.assign(str);
     LIBCPP_ASSERT(s.__invariants());
-    assert(s == str);
-    assert(s.get_allocator() == a);
+    TC_ASSERT_EXPR(s == str);
+    TC_ASSERT_EXPR(s.get_allocator() == a);
+    return 0;
 }
 
-int main()
+int tc_libcxx_strings_string_assign_string(void)
 {
     {
     typedef std::string S;
-    test(S(), S(), S());
-    test(S(), S("12345"), S("12345"));
-    test(S(), S("1234567890"), S("1234567890"));
-    test(S(), S("12345678901234567890"), S("12345678901234567890"));
+    TC_ASSERT_FUNC((test(S(), S(), S())));
+    TC_ASSERT_FUNC((test(S(), S("12345"), S("12345"))));
+    TC_ASSERT_FUNC((test(S(), S("1234567890"), S("1234567890"))));
+    TC_ASSERT_FUNC((test(S(), S("12345678901234567890"), S("12345678901234567890"))));
 
-    test(S("12345"), S(), S());
-    test(S("12345"), S("12345"), S("12345"));
-    test(S("12345"), S("1234567890"), S("1234567890"));
-    test(S("12345"), S("12345678901234567890"), S("12345678901234567890"));
+    TC_ASSERT_FUNC((test(S("12345"), S(), S())));
+    TC_ASSERT_FUNC((test(S("12345"), S("12345"), S("12345"))));
+    TC_ASSERT_FUNC((test(S("12345"), S("1234567890"), S("1234567890"))));
+    TC_ASSERT_FUNC((test(S("12345"), S("12345678901234567890"), S("12345678901234567890"))));
 
-    test(S("1234567890"), S(), S());
-    test(S("1234567890"), S("12345"), S("12345"));
-    test(S("1234567890"), S("1234567890"), S("1234567890"));
-    test(S("1234567890"), S("12345678901234567890"), S("12345678901234567890"));
+    TC_ASSERT_FUNC((test(S("1234567890"), S(), S())));
+    TC_ASSERT_FUNC((test(S("1234567890"), S("12345"), S("12345"))));
+    TC_ASSERT_FUNC((test(S("1234567890"), S("1234567890"), S("1234567890"))));
+    TC_ASSERT_FUNC((test(S("1234567890"), S("12345678901234567890"), S("12345678901234567890"))));
 
-    test(S("12345678901234567890"), S(), S());
-    test(S("12345678901234567890"), S("12345"), S("12345"));
-    test(S("12345678901234567890"), S("1234567890"), S("1234567890"));
+    TC_ASSERT_FUNC((test(S("12345678901234567890"), S(), S())));
+    TC_ASSERT_FUNC((test(S("12345678901234567890"), S("12345"), S("12345"))));
+    TC_ASSERT_FUNC((test(S("12345678901234567890"), S("1234567890"), S("1234567890"))));
     test(S("12345678901234567890"), S("12345678901234567890"),
          S("12345678901234567890"));
 
-    testAlloc(S(), S(), std::allocator<char>());
-    testAlloc(S(), S("12345"), std::allocator<char>());
-    testAlloc(S(), S("1234567890"), std::allocator<char>());
-    testAlloc(S(), S("12345678901234567890"), std::allocator<char>());
+    TC_ASSERT_FUNC((testAlloc(S(), S(), std::allocator<char>())));
+    TC_ASSERT_FUNC((testAlloc(S(), S("12345"), std::allocator<char>())));
+    TC_ASSERT_FUNC((testAlloc(S(), S("1234567890"), std::allocator<char>())));
+    TC_ASSERT_FUNC((testAlloc(S(), S("12345678901234567890"), std::allocator<char>())));
     }
 
     { //  LWG#5579 make sure assign takes the allocators where appropriate
     typedef other_allocator<char> A;  // has POCCA --> true
     typedef std::basic_string<char, std::char_traits<char>, A> S;
-    testAlloc(S(A(5)), S(A(3)), A(3));
-    testAlloc(S(A(5)), S("1"), A());
-    testAlloc(S(A(5)), S("1", A(7)), A(7));
-    testAlloc(S(A(5)), S("1234567890123456789012345678901234567890123456789012345678901234567890", A(7)), A(7));
+    TC_ASSERT_FUNC((testAlloc(S(A(5)), S(A(3)), A(3))));
+    TC_ASSERT_FUNC((testAlloc(S(A(5)), S("1"), A())));
+    TC_ASSERT_FUNC((testAlloc(S(A(5)), S("1", A(7)), A(7))));
+    TC_ASSERT_FUNC((testAlloc(S(A(5)), S("1234567890123456789012345678901234567890123456789012345678901234567890", A(7)), A(7))));
     }
 
 #if TEST_STD_VER > 14
@@ -100,4 +103,6 @@ int main()
     static_assert(noexcept(S().assign(S())), "");  // LWG#2063
     }
 #endif
+    TC_SUCCESS_RESULT();
+    return 0;
 }

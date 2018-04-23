@@ -32,14 +32,17 @@
 
 #include <string>
 #include <cassert>
+#include "libcxx_tc_common.h"
 
 #include "test_macros.h"
 
-int main()
+int tc_libcxx_strings_string_append_initializer_list(void)
 {
     {
         std::string s("123");
         s.append({'a', 'b', 'c'});
-        assert(s == "123abc");
+        TC_ASSERT_EXPR(s == "123abc");
     }
+    TC_SUCCESS_RESULT();
+    return 0;
 }

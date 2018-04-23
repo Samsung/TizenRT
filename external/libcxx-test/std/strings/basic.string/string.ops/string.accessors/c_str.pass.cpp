@@ -30,30 +30,34 @@
 
 #include <string>
 #include <cassert>
+#include "libcxx_tc_common.h"
 
 
 template <class S>
-void
+static int
 test(const S& s)
 {
     typedef typename S::traits_type T;
     const typename S::value_type* str = s.c_str();
     if (s.size() > 0)
     {
-        assert(T::compare(str, &s[0], s.size()) == 0);
-        assert(T::eq(str[s.size()], typename S::value_type()));
+        TC_ASSERT_EXPR(T::compare(str, &s[0], s.size()) == 0);
+        TC_ASSERT_EXPR(T::eq(str[s.size()], typename S::value_type()));
     }
     else
-        assert(T::eq(str[0], typename S::value_type()));
+        TC_ASSERT_EXPR(T::eq(str[0], typename S::value_type()));
+    return 0;
 }
 
-int main()
+int tc_libcxx_strings_string_accessors_c_str(void)
 {
     {
     typedef std::string S;
-    test(S(""));
-    test(S("abcde"));
-    test(S("abcdefghij"));
-    test(S("abcdefghijklmnopqrst"));
+    TC_ASSERT_FUNC((test(S(""))));
+    TC_ASSERT_FUNC((test(S("abcde"))));
+    TC_ASSERT_FUNC((test(S("abcdefghij"))));
+    TC_ASSERT_FUNC((test(S("abcdefghijklmnopqrst"))));
     }
+    TC_SUCCESS_RESULT();
+    return 0;
 }

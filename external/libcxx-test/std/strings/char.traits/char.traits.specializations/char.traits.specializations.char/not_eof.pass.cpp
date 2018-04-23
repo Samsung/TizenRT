@@ -32,12 +32,15 @@
 
 #include <string>
 #include <cassert>
+#include "libcxx_tc_common.h"
 
-int main()
+int tc_libcxx_strings_char_traits_specializations_char_not_eof(void)
 {
-    assert(std::char_traits<char>::not_eof('a') == 'a');
-    assert(std::char_traits<char>::not_eof('A') == 'A');
-    assert(std::char_traits<char>::not_eof(0) == 0);
-    assert(std::char_traits<char>::not_eof(std::char_traits<char>::eof()) !=
+    TC_ASSERT_EXPR(std::char_traits<char>::not_eof('a') == 'a');
+    TC_ASSERT_EXPR(std::char_traits<char>::not_eof('A') == 'A');
+    TC_ASSERT_EXPR(std::char_traits<char>::not_eof(0) == 0);
+    TC_ASSERT_EXPR(std::char_traits<char>::not_eof(std::char_traits<char>::eof()) !=
            std::char_traits<char>::eof());
+    TC_SUCCESS_RESULT();
+    return 0;
 }

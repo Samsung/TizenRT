@@ -32,53 +32,41 @@
 #include <string>
 #include <stdexcept>
 #include <cassert>
+#include "libcxx_tc_common.h"
 
 #include "test_macros.h"
 
 template <class S>
-void
+static int
 test(S s, const typename S::value_type* str, typename S::size_type n, S expected)
 {
     s.append(str, n);
     LIBCPP_ASSERT(s.__invariants());
-    assert(s == expected);
+    TC_ASSERT_EXPR(s == expected);
+    return 0;
 }
 
-int main()
+int tc_libcxx_strings_string_append_pointer_size(void)
 {
     {
     typedef std::string S;
-    test(S(), "", 0, S());
-    test(S(), "12345", 3, S("123"));
-    test(S(), "12345", 4, S("1234"));
-    test(S(), "12345678901234567890", 0, S());
-    test(S(), "12345678901234567890", 1, S("1"));
-    test(S(), "12345678901234567890", 3, S("123"));
-    test(S(), "12345678901234567890", 20, S("12345678901234567890"));
+    TC_ASSERT_FUNC((test(S(), "", 0, S())));
+    TC_ASSERT_FUNC((test(S(), "12345", 3, S("123"))));
+    TC_ASSERT_FUNC((test(S(), "12345", 4, S("1234"))));
+    TC_ASSERT_FUNC((test(S(), "12345678901234567890", 0, S())));
+    TC_ASSERT_FUNC((test(S(), "12345678901234567890", 1, S("1"))));
+    TC_ASSERT_FUNC((test(S(), "12345678901234567890", 3, S("123"))));
+    TC_ASSERT_FUNC((test(S(), "12345678901234567890", 20, S("12345678901234567890"))));
 
-    test(S("12345"), "", 0, S("12345"));
-    test(S("12345"), "12345", 5, S("1234512345"));
-    test(S("12345"), "1234567890", 10, S("123451234567890"));
+    TC_ASSERT_FUNC((test(S("12345"), "", 0, S("12345"))));
+    TC_ASSERT_FUNC((test(S("12345"), "12345", 5, S("1234512345"))));
+    TC_ASSERT_FUNC((test(S("12345"), "1234567890", 10, S("123451234567890"))));
 
-    test(S("12345678901234567890"), "", 0, S("12345678901234567890"));
-    test(S("12345678901234567890"), "12345", 5, S("1234567890123456789012345"));
+    TC_ASSERT_FUNC((test(S("12345678901234567890"), "", 0, S("12345678901234567890"))));
+    TC_ASSERT_FUNC((test(S("12345678901234567890"), "12345", 5, S("1234567890123456789012345"))));
     test(S("12345678901234567890"), "12345678901234567890", 20,
          S("1234567890123456789012345678901234567890"));
     }
-
-    { // test appending to self
-    typedef std::string S;
-    S s_short = "123/";
-    S s_long  = "Lorem ipsum dolor sit amet, consectetur/";
-
-    s_short.append(s_short.data(), s_short.size());
-    assert(s_short == "123/123/");
-    s_short.append(s_short.data(), s_short.size());
-    assert(s_short == "123/123/123/123/");
-    s_short.append(s_short.data(), s_short.size());
-    assert(s_short == "123/123/123/123/123/123/123/123/");
-
-    s_long.append(s_long.data(), s_long.size());
-    assert(s_long == "Lorem ipsum dolor sit amet, consectetur/Lorem ipsum dolor sit amet, consectetur/");
-    }
+    TC_SUCCESS_RESULT();
+    return 0;
 }

@@ -29,6 +29,7 @@
 #include <cctype>
 #include <type_traits>
 #include <cassert>
+#include "libcxx_tc_common.h"
 
 #ifdef isalnum
 #error isalnum defined
@@ -86,7 +87,7 @@
 #error toupper defined
 #endif
 
-int main()
+int tc_libcxx_strings_c_strings_cctype(void)
 {
     static_assert((std::is_same<decltype(std::isalnum(0)), int>::value), "");
     static_assert((std::is_same<decltype(std::isalpha(0)), int>::value), "");
@@ -103,18 +104,20 @@ int main()
     static_assert((std::is_same<decltype(std::tolower(0)), int>::value), "");
     static_assert((std::is_same<decltype(std::toupper(0)), int>::value), "");
 
-    assert(std::isalnum('a'));
-    assert(std::isalpha('a'));
-    assert(std::isblank(' '));
-    assert(!std::iscntrl(' '));
-    assert(!std::isdigit('a'));
-    assert(std::isgraph('a'));
-    assert(std::islower('a'));
-    assert(std::isprint('a'));
-    assert(!std::ispunct('a'));
-    assert(!std::isspace('a'));
-    assert(!std::isupper('a'));
-    assert(std::isxdigit('a'));
-    assert(std::tolower('A') == 'a');
-    assert(std::toupper('a') == 'A');
+    TC_ASSERT_EXPR(std::isalnum('a'));
+    TC_ASSERT_EXPR(std::isalpha('a'));
+    TC_ASSERT_EXPR(std::isblank(' '));
+    TC_ASSERT_EXPR(!std::iscntrl(' '));
+    TC_ASSERT_EXPR(!std::isdigit('a'));
+    TC_ASSERT_EXPR(std::isgraph('a'));
+    TC_ASSERT_EXPR(std::islower('a'));
+    TC_ASSERT_EXPR(std::isprint('a'));
+    TC_ASSERT_EXPR(!std::ispunct('a'));
+    TC_ASSERT_EXPR(!std::isspace('a'));
+    TC_ASSERT_EXPR(!std::isupper('a'));
+    TC_ASSERT_EXPR(std::isxdigit('a'));
+    TC_ASSERT_EXPR(std::tolower('A') == 'a');
+    TC_ASSERT_EXPR(std::toupper('a') == 'A');
+    TC_SUCCESS_RESULT();
+    return 0;
 }

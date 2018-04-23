@@ -33,6 +33,7 @@
 
 #include <string>
 #include <cassert>
+#include "libcxx_tc_common.h"
 
 #include "test_macros.h"
 
@@ -41,19 +42,22 @@ constexpr bool test_constexpr()
 {
     return std::char_traits<char>::length("") == 0
         && std::char_traits<char>::length("abcd") == 4;
+    return 0;
 }
 #endif
 
 
-int main()
+int tc_libcxx_strings_char_traits_specializations_char_length(void)
 {
-    assert(std::char_traits<char>::length("") == 0);
-    assert(std::char_traits<char>::length("a") == 1);
-    assert(std::char_traits<char>::length("aa") == 2);
-    assert(std::char_traits<char>::length("aaa") == 3);
-    assert(std::char_traits<char>::length("aaaa") == 4);
+    TC_ASSERT_EXPR(std::char_traits<char>::length("") == 0);
+    TC_ASSERT_EXPR(std::char_traits<char>::length("a") == 1);
+    TC_ASSERT_EXPR(std::char_traits<char>::length("aa") == 2);
+    TC_ASSERT_EXPR(std::char_traits<char>::length("aaa") == 3);
+    TC_ASSERT_EXPR(std::char_traits<char>::length("aaaa") == 4);
 
 #if TEST_STD_VER > 14
     static_assert(test_constexpr(), "" );
 #endif
+    TC_SUCCESS_RESULT();
+    return 0;
 }

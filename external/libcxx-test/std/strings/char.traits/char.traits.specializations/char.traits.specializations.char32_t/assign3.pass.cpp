@@ -32,15 +32,18 @@
 
 #include <string>
 #include <cassert>
+#include "libcxx_tc_common.h"
 
-int main()
+int tc_libcxx_strings_char_traits_specializations_char32_t_assign3(void)
 {
 #ifndef _LIBCPP_HAS_NO_UNICODE_CHARS
     char32_t s2[3] = {0};
-    assert(std::char_traits<char32_t>::assign(s2, 3, char32_t(5)) == s2);
-    assert(s2[0] == char32_t(5));
-    assert(s2[1] == char32_t(5));
-    assert(s2[2] == char32_t(5));
-    assert(std::char_traits<char32_t>::assign(NULL, 0, char32_t(5)) == NULL);
+    TC_ASSERT_EXPR(std::char_traits<char32_t>::assign(s2, 3, char32_t(5)) == s2);
+    TC_ASSERT_EXPR(s2[0] == char32_t(5));
+    TC_ASSERT_EXPR(s2[1] == char32_t(5));
+    TC_ASSERT_EXPR(s2[2] == char32_t(5));
+    TC_ASSERT_EXPR(std::char_traits<char32_t>::assign(NULL, 0, char32_t(5)) == NULL);
 #endif  // _LIBCPP_HAS_NO_UNICODE_CHARS
+    TC_SUCCESS_RESULT();
+    return 0;
 }

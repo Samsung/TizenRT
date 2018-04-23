@@ -26,17 +26,18 @@
 
 // <string>
 
-// void swap(basic_string& s);
+// static int swap(basic_string& s);
 
 #include <string>
 #include <stdexcept>
 #include <algorithm>
 #include <cassert>
+#include "libcxx_tc_common.h"
 
 #include "test_macros.h"
 
 template <class S>
-void
+static int
 test(S s1, S s2)
 {
     S s1_ = s1;
@@ -44,29 +45,32 @@ test(S s1, S s2)
     s1.swap(s2);
     LIBCPP_ASSERT(s1.__invariants());
     LIBCPP_ASSERT(s2.__invariants());
-    assert(s1 == s2_);
-    assert(s2 == s1_);
+    TC_ASSERT_EXPR(s1 == s2_);
+    TC_ASSERT_EXPR(s2 == s1_);
+    return 0;
 }
 
-int main()
+int tc_libcxx_strings_string_swap_swap(void)
 {
     {
     typedef std::string S;
-    test(S(""), S(""));
-    test(S(""), S("12345"));
-    test(S(""), S("1234567890"));
-    test(S(""), S("12345678901234567890"));
-    test(S("abcde"), S(""));
-    test(S("abcde"), S("12345"));
-    test(S("abcde"), S("1234567890"));
-    test(S("abcde"), S("12345678901234567890"));
-    test(S("abcdefghij"), S(""));
-    test(S("abcdefghij"), S("12345"));
-    test(S("abcdefghij"), S("1234567890"));
-    test(S("abcdefghij"), S("12345678901234567890"));
-    test(S("abcdefghijklmnopqrst"), S(""));
-    test(S("abcdefghijklmnopqrst"), S("12345"));
-    test(S("abcdefghijklmnopqrst"), S("1234567890"));
-    test(S("abcdefghijklmnopqrst"), S("12345678901234567890"));
+    TC_ASSERT_FUNC((test(S(""), S(""))));
+    TC_ASSERT_FUNC((test(S(""), S("12345"))));
+    TC_ASSERT_FUNC((test(S(""), S("1234567890"))));
+    TC_ASSERT_FUNC((test(S(""), S("12345678901234567890"))));
+    TC_ASSERT_FUNC((test(S("abcde"), S(""))));
+    TC_ASSERT_FUNC((test(S("abcde"), S("12345"))));
+    TC_ASSERT_FUNC((test(S("abcde"), S("1234567890"))));
+    TC_ASSERT_FUNC((test(S("abcde"), S("12345678901234567890"))));
+    TC_ASSERT_FUNC((test(S("abcdefghij"), S(""))));
+    TC_ASSERT_FUNC((test(S("abcdefghij"), S("12345"))));
+    TC_ASSERT_FUNC((test(S("abcdefghij"), S("1234567890"))));
+    TC_ASSERT_FUNC((test(S("abcdefghij"), S("12345678901234567890"))));
+    TC_ASSERT_FUNC((test(S("abcdefghijklmnopqrst"), S(""))));
+    TC_ASSERT_FUNC((test(S("abcdefghijklmnopqrst"), S("12345"))));
+    TC_ASSERT_FUNC((test(S("abcdefghijklmnopqrst"), S("1234567890"))));
+    TC_ASSERT_FUNC((test(S("abcdefghijklmnopqrst"), S("12345678901234567890"))));
     }
+    TC_SUCCESS_RESULT();
+    return 0;
 }

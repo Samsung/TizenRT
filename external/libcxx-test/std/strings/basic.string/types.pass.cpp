@@ -52,12 +52,13 @@
 #include <string>
 #include <iterator>
 #include <type_traits>
+#include "libcxx_tc_common.h"
 
 #include "test_traits.h"
 #include "test_allocator.h"
 
 template <class Traits, class Allocator>
-void
+static int
 test()
 {
     typedef std::basic_string<typename Traits::char_type, Traits, Allocator> S;
@@ -85,14 +86,17 @@ test()
         typename S::const_reverse_iterator,
         std::reverse_iterator<typename S::const_iterator> >::value), "");
     static_assert(S::npos == -1, "");
+    return 0;
 }
 
-int main()
+int tc_libcxx_strings_basic_string_types(void)
 {
-    test<test_traits<char>, test_allocator<char> >();
-    test<std::char_traits<wchar_t>, std::allocator<wchar_t> >();
+    TC_ASSERT_FUNC((test<test_traits<char>, test_allocator<char> >()));
+    TC_ASSERT_FUNC((test<std::char_traits<wchar_t>, std::allocator<wchar_t> >()));
     static_assert((std::is_same<std::basic_string<char>::traits_type,
                                 std::char_traits<char> >::value), "");
     static_assert((std::is_same<std::basic_string<char>::allocator_type,
                                 std::allocator<char> >::value), "");
+    TC_SUCCESS_RESULT();
+    return 0;
 }

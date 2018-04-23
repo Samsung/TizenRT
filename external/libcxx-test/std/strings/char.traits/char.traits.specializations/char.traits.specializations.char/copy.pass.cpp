@@ -32,15 +32,18 @@
 
 #include <string>
 #include <cassert>
+#include "libcxx_tc_common.h"
 
-int main()
+int tc_libcxx_strings_char_traits_specializations_char_copy(void)
 {
     char s1[] = {1, 2, 3};
     char s2[3] = {0};
-    assert(std::char_traits<char>::copy(s2, s1, 3) == s2);
-    assert(s2[0] == char(1));
-    assert(s2[1] == char(2));
-    assert(s2[2] == char(3));
-    assert(std::char_traits<char>::copy(NULL, s1, 0) == NULL);
-    assert(std::char_traits<char>::copy(s1, NULL, 0) == s1);
+    TC_ASSERT_EXPR(std::char_traits<char>::copy(s2, s1, 3) == s2);
+    TC_ASSERT_EXPR(s2[0] == char(1));
+    TC_ASSERT_EXPR(s2[1] == char(2));
+    TC_ASSERT_EXPR(s2[2] == char(3));
+    TC_ASSERT_EXPR(std::char_traits<char>::copy(NULL, s1, 0) == NULL);
+    TC_ASSERT_EXPR(std::char_traits<char>::copy(s1, NULL, 0) == s1);
+    TC_SUCCESS_RESULT();
+    return 0;
 }

@@ -31,63 +31,66 @@
 
 #include <string>
 #include <cassert>
+#include "libcxx_tc_common.h"
 
 #include "test_macros.h"
 #include "test_iterators.h"
 
 template <class S, class It>
-void
+static int
 test(S s, It first, It last, S expected)
 {
     s.assign(first, last);
     LIBCPP_ASSERT(s.__invariants());
-    assert(s == expected);
+    TC_ASSERT_EXPR(s == expected);
+    return 0;
 }
 
 #ifndef TEST_HAS_NO_EXCEPTIONS
 template <class S, class It>
-void
+static int
 test_exceptions(S s, It first, It last)
 {
     S aCopy = s;
     try {
         s.assign(first, last);
-        assert(false);
+        TC_ASSERT_EXPR(false);
     }
     catch (...) {}
     LIBCPP_ASSERT(s.__invariants());
-    assert(s == aCopy);
+    TC_ASSERT_EXPR(s == aCopy);
+    return 0;
 }
 #endif
 
-int main()
+int tc_libcxx_strings_string_assign_iterator(void)
 {
     {
     typedef std::string S;
     const char* s = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz";
-    test(S(), s, s, S());
-    test(S(), s, s+1, S("A"));
-    test(S(), s, s+10, S("ABCDEFGHIJ"));
-    test(S(), s, s+52, S("ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz"));
+    TC_ASSERT_FUNC((test(S(), s, s, S())));
+    TC_ASSERT_FUNC((test(S(), s, s+1, S("A"))));
+    TC_ASSERT_FUNC((test(S(), s, s+10, S("ABCDEFGHIJ"))));
+    TC_ASSERT_FUNC((test(S(), s, s+52, S("ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz"))));
 
-    test(S("12345"), s, s, S());
-    test(S("12345"), s, s+1, S("A"));
-    test(S("12345"), s, s+10, S("ABCDEFGHIJ"));
-    test(S("12345"), s, s+52, S("ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz"));
+    TC_ASSERT_FUNC((test(S("12345"), s, s, S())));
+    TC_ASSERT_FUNC((test(S("12345"), s, s+1, S("A"))));
+    TC_ASSERT_FUNC((test(S("12345"), s, s+10, S("ABCDEFGHIJ"))));
+    TC_ASSERT_FUNC((test(S("12345"), s, s+52, S("ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz"))));
 
-    test(S("1234567890"), s, s, S());
-    test(S("1234567890"), s, s+1, S("A"));
-    test(S("1234567890"), s, s+10, S("ABCDEFGHIJ"));
-    test(S("1234567890"), s, s+52, S("ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz"));
+    TC_ASSERT_FUNC((test(S("1234567890"), s, s, S())));
+    TC_ASSERT_FUNC((test(S("1234567890"), s, s+1, S("A"))));
+    TC_ASSERT_FUNC((test(S("1234567890"), s, s+10, S("ABCDEFGHIJ"))));
+    TC_ASSERT_FUNC((test(S("1234567890"), s, s+52, S("ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz"))));
 
-    test(S("12345678901234567890"), s, s, S());
-    test(S("12345678901234567890"), s, s+1, S("A"));
-    test(S("12345678901234567890"), s, s+10, S("ABCDEFGHIJ"));
+    TC_ASSERT_FUNC((test(S("12345678901234567890"), s, s, S())));
+    TC_ASSERT_FUNC((test(S("12345678901234567890"), s, s+1, S("A"))));
+    TC_ASSERT_FUNC((test(S("12345678901234567890"), s, s+10, S("ABCDEFGHIJ"))));
     test(S("12345678901234567890"), s, s+52,
          S("ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz"));
 
-    test(S(), input_iterator<const char*>(s), input_iterator<const char*>(s), S());
-    test(S(), input_iterator<const char*>(s), input_iterator<const char*>(s+1), S("A"));
+    TC_ASSERT_FUNC((test(S(), input_iterator<const char*>(s), input_iterator<const char*>(s), S())));
+    TC_ASSERT_FUNC((test(S(), input_iterator<const char*>(s), input_iterator<const char*>(s+1), S("A"))));
     test(S(), input_iterator<const char*>(s), input_iterator<const char*>(s+10),
          S("ABCDEFGHIJ"));
     test(S(), input_iterator<const char*>(s), input_iterator<const char*>(s+52),
@@ -126,13 +129,13 @@ int main()
     typedef ThrowingIterator<char> TIter;
     typedef input_iterator<TIter> IIter;
     const char* s = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz";
-    test_exceptions(S(), IIter(TIter(s, s+10, 4, TIter::TAIncrement)), IIter());
-    test_exceptions(S(), IIter(TIter(s, s+10, 5, TIter::TADereference)), IIter());
-    test_exceptions(S(), IIter(TIter(s, s+10, 6, TIter::TAComparison)), IIter());
+    TC_ASSERT_FUNC((test_exceptions(S(), IIter(TIter(s, s+10, 4, TIter::TAIncrement)), IIter())));
+    TC_ASSERT_FUNC((test_exceptions(S(), IIter(TIter(s, s+10, 5, TIter::TADereference)), IIter())));
+    TC_ASSERT_FUNC((test_exceptions(S(), IIter(TIter(s, s+10, 6, TIter::TAComparison)), IIter())));
 
-    test_exceptions(S(), TIter(s, s+10, 4, TIter::TAIncrement), TIter());
-    test_exceptions(S(), TIter(s, s+10, 5, TIter::TADereference), TIter());
-    test_exceptions(S(), TIter(s, s+10, 6, TIter::TAComparison), TIter());
+    TC_ASSERT_FUNC((test_exceptions(S(), TIter(s, s+10, 4, TIter::TAIncrement), TIter())));
+    TC_ASSERT_FUNC((test_exceptions(S(), TIter(s, s+10, 5, TIter::TADereference), TIter())));
+    TC_ASSERT_FUNC((test_exceptions(S(), TIter(s, s+10, 6, TIter::TAComparison), TIter())));
     }
 #endif
 
@@ -142,15 +145,15 @@ int main()
     S s_long  = "Lorem ipsum dolor sit amet, consectetur/";
 
     s_short.assign(s_short.begin(), s_short.end());
-    assert(s_short == "123/");
+    TC_ASSERT_EXPR(s_short == "123/");
     s_short.assign(s_short.begin() + 2, s_short.end());
-    assert(s_short == "3/");
+    TC_ASSERT_EXPR(s_short == "3/");
 
     s_long.assign(s_long.begin(), s_long.end());
-    assert(s_long == "Lorem ipsum dolor sit amet, consectetur/");
+    TC_ASSERT_EXPR(s_long == "Lorem ipsum dolor sit amet, consectetur/");
 
     s_long.assign(s_long.begin() + 30, s_long.end());
-    assert(s_long == "nsectetur/");
+    TC_ASSERT_EXPR(s_long == "nsectetur/");
     }
 
     { // test assigning a different type
@@ -159,6 +162,8 @@ int main()
 
     S s;
     s.assign(p, p + 4);
-    assert(s == "ABCD");
+    TC_ASSERT_EXPR(s == "ABCD");
     }
+    TC_SUCCESS_RESULT();
+    return 0;
 }

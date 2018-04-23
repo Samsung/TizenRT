@@ -36,12 +36,15 @@
 
 #include <string>
 #include <type_traits>
+#include "libcxx_tc_common.h"
 
-int main()
+int tc_libcxx_strings_char_traits_specializations_char_types(void)
 {
     static_assert((std::is_same<std::char_traits<char>::char_type, char>::value), "");
     static_assert((std::is_same<std::char_traits<char>::int_type, int>::value), "");
     static_assert((std::is_same<std::char_traits<char>::off_type, std::streamoff>::value), "");
     static_assert((std::is_same<std::char_traits<char>::pos_type, std::streampos>::value), "");
     static_assert((std::is_same<std::char_traits<char>::state_type, std::mbstate_t>::value), "");
+    TC_SUCCESS_RESULT();
+    return 0;
 }
