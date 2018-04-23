@@ -26,93 +26,15 @@
 
 #ifndef COMMON_H_INCLUDED
 #define COMMON_H_INCLUDED
-#if 0
-#ifdef HAVE_STDINT_H
+
 #include <stdint.h>
-#elif (SIZEOF_INT == 4)
-typedef	int		int32_t ;
-#elif (SIZEOF_LONG == 4)
-typedef	long	int32_t ;
-#endif
-#endif
-#define	SRC_MAX_RATIO			16
-#define	SRC_MAX_RATIO_STR		"256"
 
-#define	SRC_MIN_RATIO_DIFF		(1e-20)
 
-#define	MAX(a,b)	(((a) > (b)) ? (a) : (b))
-#define	MIN(a,b)	(((a) < (b)) ? (a) : (b))
+#define SRC_MAX_RATIO   ((float)3)
+#define SRC_MIN_RATIO   ((float)1 / SRC_MAX_RATIO)
 
-#define	ARRAY_LEN(x)			((int) (sizeof (x) / sizeof ((x) [0])))
-#define OFFSETOF(type,member)	((int) (&((type*) 0)->member))
-
-#define	MAKE_MAGIC(a,b,c,d,e,f)	((a) + ((b) << 4) + ((c) << 8) + ((d) << 12) + ((e) << 16) + ((f) << 20))
-
-/*
-** Inspiration : http://sourcefrog.net/weblog/software/languages/C/unused.html
-*/
-#ifdef UNUSED
-#elif defined (__GNUC__)
-#	define UNUSED(x) UNUSED_ ## x __attribute__ ((unused))
-#elif defined (__LCLINT__)
-#	define UNUSED(x) /*@unused@*/ x
-#else
-#	define UNUSED(x) x
-#endif
-
-#ifdef __GNUC__
-#	define WARN_UNUSED	__attribute__ ((warn_unused_result))
-#else
-#	define WARN_UNUSED
-#endif
-
-#include "samplerate.h"
-
-enum {
-	SRC_FALSE	= 0,
-	SRC_TRUE	= 1,
-
-	SRC_MODE_PROCESS	= 555,
-	SRC_MODE_CALLBACK	= 556
-} ;
-
-enum {
-	SRC_ERR_NO_ERROR = 0,
-
-	SRC_ERR_MALLOC_FAILED,
-	SRC_ERR_BAD_STATE,
-	SRC_ERR_BAD_DATA,
-	SRC_ERR_BAD_DATA_PTR,
-	SRC_ERR_NO_PRIVATE,
-	SRC_ERR_BAD_SRC_RATIO,
-	SRC_ERR_BAD_PROC_PTR,
-	SRC_ERR_SHIFT_BITS,
-	SRC_ERR_FILTER_LEN,
-	SRC_ERR_BAD_CONVERTER,
-	SRC_ERR_BAD_CHANNEL_COUNT,
-	SRC_ERR_SINC_BAD_BUFFER_LEN,
-	SRC_ERR_SIZE_INCOMPATIBILITY,
-	SRC_ERR_BAD_PRIV_PTR,
-	SRC_ERR_BAD_SINC_STATE,
-	SRC_ERR_DATA_OVERLAP,
-	SRC_ERR_BAD_CALLBACK,
-	SRC_ERR_BAD_MODE,
-	SRC_ERR_NULL_CALLBACK,
-	SRC_ERR_NO_VARIABLE_RATIO,
-	SRC_ERR_SINC_PREPARE_DATA_BAD_LEN,
-	SRC_ERR_BAD_INTERNAL_STATE,
-
-	/* This must be the last error number. */
-	SRC_ERR_MAX_ERROR
-} ;
-enum {
-	SRC_TYPE_INVALID = 0,
-	SRC_TYPE_NO_RESAMPLE,
-	SRC_TYPE_DOWN_INT,
-	SRC_TYPE_DOWN_FRAC,
-	SRC_TYPE_UP_INT,
-	SRC_TYPE_UP_FRAC,
-} ;
+#define MAX(a,b)        (((a) > (b)) ? (a) : (b))
+#define MIN(a,b)        (((a) < (b)) ? (a) : (b))
 
 static const int32_t filter_16khz_coeff[] = {
 	2057290, -2973608, 1880478, 4362037,
@@ -136,6 +58,33 @@ static const int32_t filter_22khz_coeff[] = {
 
 #define NUM_COEFF_16KHZ (sizeof(filter_16khz_coeff) / sizeof(filter_16khz_coeff[0]))
 #define OVERLAP_16KHZ (NUM_COEFF_16KHZ - 1)
+
+// at least remain one frame (one sample for each channel)
+#define OVERLAP_DEFAULT                 (1)
+
+// calculate new sample data
+#define CALC_NEW_SAMPLE(s1, s2, part)   ((s1) + ((((s2) - (s1)) * (int32_t)(part)) >> 16))
+
+// fraction part bits
+#define FRACBITS                        (16)
+
+// convert to 16.16 fixed point value
+#define TO_16_16_FIXED(x)               ((uint32_t)((float)(x) * (float)(1 << FRACBITS) + 0.5f))
+
+// int part value: 16.0 fixed point
+#define INTPART_VALUE(x)                ((x) >> FRACBITS)
+
+// fraction part value: 0.16 fixed point
+#define FRACPART_VALUE(x)               ((x) & 0xffff)
+
+// convert sample width in bytes
+#define BYTES_PER_SAMPLE(bits_per_sample)   ((bits_per_sample) >> 3)
+
+// Round the given positive float number to the nearest integer
+#define LRINTPF(pf)                     ((long)((float)(pf) + 0.5f))
+
+// Max channel num supported for SRC
+#define SRC_MAX_CH                      (2)
 
 #endif	/* COMMON_H_INCLUDED */
 
