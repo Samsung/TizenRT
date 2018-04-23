@@ -26,19 +26,21 @@
 
 // <forward_list>
 
-// template <class BinaryPredicate> void unique(BinaryPredicate binary_pred);
+// template <class BinaryPredicate> static int unique(BinaryPredicate binary_pred);
 
 #include <forward_list>
 #include <iterator>
 #include <cassert>
+#include "libcxx_tc_common.h"
 
 
 bool g(int x, int y)
 {
     return x == y;
+    return 0;
 }
 
-int main()
+int tc_libcxx_containers_forwardlist_ops_unique_pred(void)
 {
     {
         typedef int T;
@@ -48,7 +50,7 @@ int main()
         C c1(std::begin(t1), std::end(t1));
         C c2(std::begin(t2), std::end(t2));
         c1.unique(g);
-        assert(c1 == c2);
+        TC_ASSERT_EXPR(c1 == c2);
     }
     {
         typedef int T;
@@ -58,7 +60,7 @@ int main()
         C c1(std::begin(t1), std::end(t1));
         C c2(std::begin(t2), std::end(t2));
         c1.unique(g);
-        assert(c1 == c2);
+        TC_ASSERT_EXPR(c1 == c2);
     }
     {
         typedef int T;
@@ -68,7 +70,7 @@ int main()
         C c1(std::begin(t1), std::end(t1));
         C c2(std::begin(t2), std::end(t2));
         c1.unique(g);
-        assert(c1 == c2);
+        TC_ASSERT_EXPR(c1 == c2);
     }
     {
         typedef int T;
@@ -76,7 +78,7 @@ int main()
         C c1;
         C c2;
         c1.unique(g);
-        assert(c1 == c2);
+        TC_ASSERT_EXPR(c1 == c2);
     }
     {
         typedef int T;
@@ -86,6 +88,8 @@ int main()
         C c1(std::begin(t1), std::end(t1));
         C c2(std::begin(t2), std::end(t2));
         c1.unique(g);
-        assert(c1 == c2);
+        TC_ASSERT_EXPR(c1 == c2);
     }
+    TC_SUCCESS_RESULT();
+    return 0;
 }

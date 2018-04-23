@@ -26,29 +26,30 @@
 
 // <forward_list>
 
-// void resize(size_type n);
+// static int resize(size_type n);
 
 #include <forward_list>
 #include <cassert>
+#include "libcxx_tc_common.h"
 
 #include "DefaultOnly.h"
 
-int main()
+int tc_libcxx_containers_forwardlist_modifiers_resize_size(void)
 {
     {
         typedef DefaultOnly T;
         typedef std::forward_list<T> C;
         C c;
         c.resize(0);
-        assert(distance(c.begin(), c.end()) == 0);
+        TC_ASSERT_EXPR(distance(c.begin(), c.end()) == 0);
         c.resize(10);
-        assert(distance(c.begin(), c.end()) == 10);
+        TC_ASSERT_EXPR(distance(c.begin(), c.end()) == 10);
         c.resize(20);
-        assert(distance(c.begin(), c.end()) == 20);
+        TC_ASSERT_EXPR(distance(c.begin(), c.end()) == 20);
         c.resize(5);
-        assert(distance(c.begin(), c.end()) == 5);
+        TC_ASSERT_EXPR(distance(c.begin(), c.end()) == 5);
         c.resize(0);
-        assert(distance(c.begin(), c.end()) == 0);
+        TC_ASSERT_EXPR(distance(c.begin(), c.end()) == 0);
     }
     {
         typedef int T;
@@ -57,27 +58,29 @@ int main()
         C c(std::begin(t), std::end(t));
 
         c.resize(3);
-        assert(distance(c.begin(), c.end()) == 3);
-        assert(*next(c.begin(), 0) == 0);
-        assert(*next(c.begin(), 1) == 1);
-        assert(*next(c.begin(), 2) == 2);
+        TC_ASSERT_EXPR(distance(c.begin(), c.end()) == 3);
+        TC_ASSERT_EXPR(*next(c.begin(), 0) == 0);
+        TC_ASSERT_EXPR(*next(c.begin(), 1) == 1);
+        TC_ASSERT_EXPR(*next(c.begin(), 2) == 2);
 
         c.resize(6);
-        assert(distance(c.begin(), c.end()) == 6);
-        assert(*next(c.begin(), 0) == 0);
-        assert(*next(c.begin(), 1) == 1);
-        assert(*next(c.begin(), 2) == 2);
-        assert(*next(c.begin(), 3) == 0);
-        assert(*next(c.begin(), 4) == 0);
-        assert(*next(c.begin(), 5) == 0);
+        TC_ASSERT_EXPR(distance(c.begin(), c.end()) == 6);
+        TC_ASSERT_EXPR(*next(c.begin(), 0) == 0);
+        TC_ASSERT_EXPR(*next(c.begin(), 1) == 1);
+        TC_ASSERT_EXPR(*next(c.begin(), 2) == 2);
+        TC_ASSERT_EXPR(*next(c.begin(), 3) == 0);
+        TC_ASSERT_EXPR(*next(c.begin(), 4) == 0);
+        TC_ASSERT_EXPR(*next(c.begin(), 5) == 0);
 
         c.resize(6);
-        assert(distance(c.begin(), c.end()) == 6);
-        assert(*next(c.begin(), 0) == 0);
-        assert(*next(c.begin(), 1) == 1);
-        assert(*next(c.begin(), 2) == 2);
-        assert(*next(c.begin(), 3) == 0);
-        assert(*next(c.begin(), 4) == 0);
-        assert(*next(c.begin(), 5) == 0);
+        TC_ASSERT_EXPR(distance(c.begin(), c.end()) == 6);
+        TC_ASSERT_EXPR(*next(c.begin(), 0) == 0);
+        TC_ASSERT_EXPR(*next(c.begin(), 1) == 1);
+        TC_ASSERT_EXPR(*next(c.begin(), 2) == 2);
+        TC_ASSERT_EXPR(*next(c.begin(), 3) == 0);
+        TC_ASSERT_EXPR(*next(c.begin(), 4) == 0);
+        TC_ASSERT_EXPR(*next(c.begin(), 5) == 0);
     }
+    TC_SUCCESS_RESULT();
+    return 0;
 }

@@ -31,24 +31,28 @@
 #include <list>
 #include <cstdlib>
 #include <cassert>
+#include "libcxx_tc_common.h"
 
 #include "test_macros.h"
 
 template <class List>
-void test()
+static int test()
 {
     int a1[] = {1, 2, 3};
     int a2[] = {1, 4, 2, 3};
     List l1(a1, a1+3);
     typename List::iterator i = l1.insert(next(l1.cbegin()), 4);
-    assert(i == next(l1.begin()));
-    assert(l1.size() == 4);
-    assert(distance(l1.begin(), l1.end()) == 4);
-    assert(l1 == List(a2, a2+4));
+    TC_ASSERT_EXPR(i == next(l1.begin()));
+    TC_ASSERT_EXPR(l1.size() == 4);
+    TC_ASSERT_EXPR(distance(l1.begin(), l1.end()) == 4);
+    TC_ASSERT_EXPR(l1 == List(a2, a2+4));
 
+    return 0;
 }
 
-int main()
+int tc_libcxx_containers_list_modifiers_insert_iter_value(void)
 {
-    test<std::list<int> >();
+    TC_ASSERT_FUNC((test<std::list<int> >()));
+    TC_SUCCESS_RESULT();
+    return 0;
 }

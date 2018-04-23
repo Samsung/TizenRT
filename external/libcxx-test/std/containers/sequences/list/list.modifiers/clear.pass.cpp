@@ -26,18 +26,21 @@
 
 // <list>
 
-// void clear();
+// static int clear();
 
 #include <list>
 #include <cassert>
+#include "libcxx_tc_common.h"
 
 
-int main()
+int tc_libcxx_containers_list_modifiers_clear(void)
 {
     {
     int a[] = {1, 2, 3};
     std::list<int> c(a, a+3);
     c.clear();
-    assert(c.empty());
+    TC_ASSERT_EXPR(c.empty());
     }
+    TC_SUCCESS_RESULT();
+    return 0;
 }

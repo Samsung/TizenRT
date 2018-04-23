@@ -28,25 +28,28 @@
 
 // <forward_list>
 
-// void push_front(value_type&& v);
+// static int push_front(value_type&& v);
 
 #include <forward_list>
 #include <cassert>
+#include "libcxx_tc_common.h"
 
 #include "MoveOnly.h"
 
-int main()
+int tc_libcxx_containers_forwardlist_modifiers_push_front_rv(void)
 {
     {
         typedef MoveOnly T;
         typedef std::forward_list<T> C;
         C c;
         c.push_front(1);
-        assert(c.front() == 1);
-        assert(distance(c.begin(), c.end()) == 1);
+        TC_ASSERT_EXPR(c.front() == 1);
+        TC_ASSERT_EXPR(distance(c.begin(), c.end()) == 1);
         c.push_front(3);
-        assert(c.front() == 3);
-        assert(*next(c.begin()) == 1);
-        assert(distance(c.begin(), c.end()) == 2);
+        TC_ASSERT_EXPR(c.front() == 3);
+        TC_ASSERT_EXPR(*next(c.begin()) == 1);
+        TC_ASSERT_EXPR(distance(c.begin(), c.end()) == 2);
     }
+    TC_SUCCESS_RESULT();
+    return 0;
 }

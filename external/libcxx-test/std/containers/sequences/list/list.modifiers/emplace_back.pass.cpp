@@ -29,10 +29,11 @@
 // <list>
 
 // template <class... Args> reference emplace_back(Args&&... args);
-// return type is 'reference' in C++17; 'void' before
+// return type is 'reference' in C++17; 'static int' before
 
 #include <list>
 #include <cassert>
+#include "libcxx_tc_common.h"
 
 #include "test_macros.h"
 
@@ -51,30 +52,32 @@ public:
     double getd() const {return d_;}
 };
 
-int main()
+int tc_libcxx_containers_list_modifiers_emplace_back(void)
 {
     {
     std::list<A> c;
 #if TEST_STD_VER > 14
     A& r1 = c.emplace_back(2, 3.5);
-    assert(c.size() == 1);
-    assert(&r1 == &c.back());
-    assert(c.front().geti() == 2);
-    assert(c.front().getd() == 3.5);
+    TC_ASSERT_EXPR(c.size() == 1);
+    TC_ASSERT_EXPR(&r1 == &c.back());
+    TC_ASSERT_EXPR(c.front().geti() == 2);
+    TC_ASSERT_EXPR(c.front().getd() == 3.5);
     A& r2 = c.emplace_back(3, 4.5);
-    assert(c.size() == 2);
-    assert(&r2 == &c.back());
+    TC_ASSERT_EXPR(c.size() == 2);
+    TC_ASSERT_EXPR(&r2 == &c.back());
 #else
     c.emplace_back(2, 3.5);
-    assert(c.size() == 1);
-    assert(c.front().geti() == 2);
-    assert(c.front().getd() == 3.5);
+    TC_ASSERT_EXPR(c.size() == 1);
+    TC_ASSERT_EXPR(c.front().geti() == 2);
+    TC_ASSERT_EXPR(c.front().getd() == 3.5);
     c.emplace_back(3, 4.5);
-    assert(c.size() == 2);
+    TC_ASSERT_EXPR(c.size() == 2);
 #endif
-    assert(c.front().geti() == 2);
-    assert(c.front().getd() == 3.5);
-    assert(c.back().geti() == 3);
-    assert(c.back().getd() == 4.5);
+    TC_ASSERT_EXPR(c.front().geti() == 2);
+    TC_ASSERT_EXPR(c.front().getd() == 3.5);
+    TC_ASSERT_EXPR(c.back().geti() == 3);
+    TC_ASSERT_EXPR(c.back().getd() == 4.5);
     }
+    TC_SUCCESS_RESULT();
+    return 0;
 }

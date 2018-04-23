@@ -32,19 +32,22 @@
 
 #include <list>
 #include <cassert>
+#include "libcxx_tc_common.h"
 
 #include "test_allocator.h"
 
-int main()
+int tc_libcxx_containers_list_cons_initializer_list_alloc(void)
 {
     {
     std::list<int, test_allocator<int>> d({3, 4, 5, 6}, test_allocator<int>(3));
-    assert(d.get_allocator() == test_allocator<int>(3));
-    assert(d.size() == 4);
+    TC_ASSERT_EXPR(d.get_allocator() == test_allocator<int>(3));
+    TC_ASSERT_EXPR(d.size() == 4);
     std::list<int, test_allocator<int>>::iterator i = d.begin();
-    assert(*i++ == 3);
-    assert(*i++ == 4);
-    assert(*i++ == 5);
-    assert(*i++ == 6);
+    TC_ASSERT_EXPR(*i++ == 3);
+    TC_ASSERT_EXPR(*i++ == 4);
+    TC_ASSERT_EXPR(*i++ == 5);
+    TC_ASSERT_EXPR(*i++ == 6);
     }
+    TC_SUCCESS_RESULT();
+    return 0;
 }

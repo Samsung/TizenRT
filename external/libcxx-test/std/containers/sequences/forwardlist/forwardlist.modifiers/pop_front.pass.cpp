@@ -26,14 +26,15 @@
 
 // <forward_list>
 
-// void pop_front();
+// static int pop_front();
 
 #include <forward_list>
 #include <cassert>
+#include "libcxx_tc_common.h"
 
 #include "MoveOnly.h"
 
-int main()
+int tc_libcxx_containers_forwardlist_modifiers_pop_front(void)
 {
     {
         typedef int T;
@@ -43,10 +44,10 @@ int main()
         c.push_front(1);
         c.push_front(3);
         c.pop_front();
-        assert(distance(c.begin(), c.end()) == 1);
-        assert(c.front() == 1);
+        TC_ASSERT_EXPR(distance(c.begin(), c.end()) == 1);
+        TC_ASSERT_EXPR(c.front() == 1);
         c.pop_front();
-        assert(distance(c.begin(), c.end()) == 0);
+        TC_ASSERT_EXPR(distance(c.begin(), c.end()) == 0);
     }
 #if TEST_STD_VER >= 11
     {
@@ -56,10 +57,12 @@ int main()
         c.push_front(1);
         c.push_front(3);
         c.pop_front();
-        assert(distance(c.begin(), c.end()) == 1);
-        assert(c.front() == 1);
+        TC_ASSERT_EXPR(distance(c.begin(), c.end()) == 1);
+        TC_ASSERT_EXPR(c.front() == 1);
         c.pop_front();
-        assert(distance(c.begin(), c.end()) == 0);
+        TC_ASSERT_EXPR(distance(c.begin(), c.end()) == 0);
     }
 #endif
+    TC_SUCCESS_RESULT();
+    return 0;
 }

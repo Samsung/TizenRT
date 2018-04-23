@@ -31,27 +31,30 @@
 
 #include <forward_list>
 #include <cassert>
+#include "libcxx_tc_common.h"
 #include <iterator>
 
 
-int main()
+int tc_libcxx_containers_forwardlist_access_front(void)
 {
     {
         typedef int T;
         typedef std::forward_list<T> C;
         const T t[] = {0, 1, 2, 3, 4, 5, 6, 7, 8, 9};
         C c(std::begin(t), std::end(t));
-        assert(c.front() == 0);
+        TC_ASSERT_EXPR(c.front() == 0);
         c.front() = 10;
-        assert(c.front() == 10);
-        assert(*c.begin() == 10);
+        TC_ASSERT_EXPR(c.front() == 10);
+        TC_ASSERT_EXPR(*c.begin() == 10);
     }
     {
         typedef int T;
         typedef std::forward_list<T> C;
         const T t[] = {0, 1, 2, 3, 4, 5, 6, 7, 8, 9};
         const C c(std::begin(t), std::end(t));
-        assert(c.front() == 0);
-        assert(*c.begin() == 0);
+        TC_ASSERT_EXPR(c.front() == 0);
+        TC_ASSERT_EXPR(*c.begin() == 0);
     }
+    TC_SUCCESS_RESULT();
+    return 0;
 }

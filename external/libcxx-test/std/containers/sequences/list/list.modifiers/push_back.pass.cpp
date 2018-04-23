@@ -26,19 +26,22 @@
 
 // <list>
 
-// void push_back(const value_type& x);
+// static int push_back(const value_type& x);
 
 #include <list>
 #include <cassert>
+#include "libcxx_tc_common.h"
 
 
-int main()
+int tc_libcxx_containers_list_modifiers_push_back(void)
 {
     {
     std::list<int> c;
     for (int i = 0; i < 5; ++i)
         c.push_back(i);
     int a[] = {0, 1, 2, 3, 4};
-    assert(c == std::list<int>(a, a+5));
+    TC_ASSERT_EXPR(c == std::list<int>(a, a+5));
     }
+    TC_SUCCESS_RESULT();
+    return 0;
 }

@@ -32,10 +32,11 @@
 
 #include <list>
 #include <cassert>
+#include "libcxx_tc_common.h"
 #include "MoveOnly.h"
 #include "test_allocator.h"
 
-int main()
+int tc_libcxx_containers_list_cons_assign_move(void)
 {
     {
         std::list<MoveOnly, test_allocator<MoveOnly> > l(test_allocator<MoveOnly>(5));
@@ -47,9 +48,9 @@ int main()
         }
         std::list<MoveOnly, test_allocator<MoveOnly> > l2(test_allocator<MoveOnly>(5));
         l2 = std::move(l);
-        assert(l2 == lo);
-        assert(l.empty());
-        assert(l2.get_allocator() == lo.get_allocator());
+        TC_ASSERT_EXPR(l2 == lo);
+        TC_ASSERT_EXPR(l.empty());
+        TC_ASSERT_EXPR(l2.get_allocator() == lo.get_allocator());
     }
     {
         std::list<MoveOnly, test_allocator<MoveOnly> > l(test_allocator<MoveOnly>(5));
@@ -61,9 +62,9 @@ int main()
         }
         std::list<MoveOnly, test_allocator<MoveOnly> > l2(test_allocator<MoveOnly>(6));
         l2 = std::move(l);
-        assert(l2 == lo);
-        assert(!l.empty());
-        assert(l2.get_allocator() == test_allocator<MoveOnly>(6));
+        TC_ASSERT_EXPR(l2 == lo);
+        TC_ASSERT_EXPR(!l.empty());
+        TC_ASSERT_EXPR(l2.get_allocator() == test_allocator<MoveOnly>(6));
     }
     {
         std::list<MoveOnly, other_allocator<MoveOnly> > l(other_allocator<MoveOnly>(5));
@@ -75,8 +76,10 @@ int main()
         }
         std::list<MoveOnly, other_allocator<MoveOnly> > l2(other_allocator<MoveOnly>(6));
         l2 = std::move(l);
-        assert(l2 == lo);
-        assert(l.empty());
-        assert(l2.get_allocator() == lo.get_allocator());
+        TC_ASSERT_EXPR(l2 == lo);
+        TC_ASSERT_EXPR(l.empty());
+        TC_ASSERT_EXPR(l2.get_allocator() == lo.get_allocator());
     }
+    TC_SUCCESS_RESULT();
+    return 0;
 }

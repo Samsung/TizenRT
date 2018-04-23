@@ -31,11 +31,12 @@
 
 #include <forward_list>
 #include <cassert>
+#include "libcxx_tc_common.h"
 #include <iterator>
 
 #include "test_iterators.h"
 
-int main()
+int tc_libcxx_containers_forwardlist_cons_range(void)
 {
     {
         typedef int T;
@@ -45,7 +46,9 @@ int main()
         C c(I(std::begin(t)), I(std::end(t)));
         int n = 0;
         for (C::const_iterator i = c.begin(), e = c.end(); i != e; ++i, ++n)
-            assert(*i == n);
-        assert(n == std::end(t) - std::begin(t));
+            TC_ASSERT_EXPR(*i == n);
+        TC_ASSERT_EXPR(n == std::end(t) - std::begin(t));
     }
+    TC_SUCCESS_RESULT();
+    return 0;
 }

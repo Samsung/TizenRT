@@ -30,12 +30,13 @@
 
 #include <forward_list>
 #include <cassert>
+#include "libcxx_tc_common.h"
 #include <iterator>
 
 #include "test_macros.h"
 #include "test_allocator.h"
 
-int main()
+int tc_libcxx_containers_forwardlist_cons_copy(void)
 {
     {
         typedef int T;
@@ -46,10 +47,10 @@ int main()
         C c = c0;
         int n = 0;
         for (C::const_iterator i = c.begin(), e = c.end(); i != e; ++i, ++n)
-            assert(*i == n);
-        assert(n == std::end(t) - std::begin(t));
-        assert(c == c0);
-        assert(c.get_allocator() == A(10));
+            TC_ASSERT_EXPR(*i == n);
+        TC_ASSERT_EXPR(n == std::end(t) - std::begin(t));
+        TC_ASSERT_EXPR(c == c0);
+        TC_ASSERT_EXPR(c.get_allocator() == A(10));
     }
 #if TEST_STD_VER >= 11
     {
@@ -61,10 +62,12 @@ int main()
         C c = c0;
         int n = 0;
         for (C::const_iterator i = c.begin(), e = c.end(); i != e; ++i, ++n)
-            assert(*i == n);
-        assert(n == std::end(t) - std::begin(t));
-        assert(c == c0);
-        assert(c.get_allocator() == A(-2));
+            TC_ASSERT_EXPR(*i == n);
+        TC_ASSERT_EXPR(n == std::end(t) - std::begin(t));
+        TC_ASSERT_EXPR(c == c0);
+        TC_ASSERT_EXPR(c.get_allocator() == A(-2));
     }
 #endif
+    TC_SUCCESS_RESULT();
+    return 0;
 }

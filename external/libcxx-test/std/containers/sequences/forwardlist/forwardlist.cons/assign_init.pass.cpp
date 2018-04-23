@@ -28,14 +28,15 @@
 
 // <forward_list>
 
-// void assign(initializer_list<value_type> il);
+// static int assign(initializer_list<value_type> il);
 
 #include <forward_list>
 #include <cassert>
+#include "libcxx_tc_common.h"
 #include <iterator>
 
 
-int main()
+int tc_libcxx_containers_forwardlist_cons_assign_init(void)
 {
     {
         typedef int T;
@@ -45,8 +46,8 @@ int main()
         c.assign({0, 1, 2, 3, 4, 5, 6, 7, 8, 9});
         int n = 0;
         for (C::const_iterator i = c.cbegin(); i != c.cend(); ++i, ++n)
-            assert(*i == n);
-        assert(n == 10);
+            TC_ASSERT_EXPR(*i == n);
+        TC_ASSERT_EXPR(n == 10);
     }
     {
         typedef int T;
@@ -56,7 +57,9 @@ int main()
         c.assign({10, 11, 12, 13});
         int n = 0;
         for (C::const_iterator i = c.cbegin(); i != c.cend(); ++i, ++n)
-            assert(*i == 10+n);
-        assert(n == 4);
+            TC_ASSERT_EXPR(*i == 10+n);
+        TC_ASSERT_EXPR(n == 4);
     }
+    TC_SUCCESS_RESULT();
+    return 0;
 }

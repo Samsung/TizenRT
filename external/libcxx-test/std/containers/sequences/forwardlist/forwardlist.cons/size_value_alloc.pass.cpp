@@ -30,10 +30,11 @@
 
 #include <forward_list>
 #include <cassert>
+#include "libcxx_tc_common.h"
 
 #include "test_allocator.h"
 
-int main()
+int tc_libcxx_containers_forwardlist_cons_size_value_alloc(void)
 {
     {
         typedef test_allocator<int> A;
@@ -44,8 +45,10 @@ int main()
         C c(N, v, A(12));
         unsigned n = 0;
         for (C::const_iterator i = c.begin(), e = c.end(); i != e; ++i, ++n)
-            assert(*i == v);
-        assert(n == N);
-        assert(c.get_allocator() == A(12));
+            TC_ASSERT_EXPR(*i == v);
+        TC_ASSERT_EXPR(n == N);
+        TC_ASSERT_EXPR(c.get_allocator() == A(12));
     }
+    TC_SUCCESS_RESULT();
+    return 0;
 }

@@ -31,21 +31,24 @@
 #include <forward_list>
 #include <cassert>
 #include "test_macros.h"
+#include "libcxx_tc_common.h"
 
-int main()
+int tc_libcxx_containers_forwardlist_cons_default(void)
 {
     {
         typedef int T;
         typedef std::forward_list<T> C;
         C c;
-        assert(c.empty());
+        TC_ASSERT_EXPR(c.empty());
     }
 #if TEST_STD_VER >= 11
     {
         typedef int T;
         typedef std::forward_list<T> C;
         C c = {};
-        assert(c.empty());
+        TC_ASSERT_EXPR(c.empty());
     }
 #endif
+    TC_SUCCESS_RESULT();
+    return 0;
 }

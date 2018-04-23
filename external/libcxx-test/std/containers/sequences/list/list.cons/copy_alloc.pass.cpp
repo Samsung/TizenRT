@@ -30,21 +30,24 @@
 
 #include <list>
 #include <cassert>
+#include "libcxx_tc_common.h"
 #include "DefaultOnly.h"
 #include "test_allocator.h"
 
-int main()
+int tc_libcxx_containers_list_cons_copy_alloc(void)
 {
     {
         std::list<int, test_allocator<int> > l(3, 2, test_allocator<int>(5));
         std::list<int, test_allocator<int> > l2(l, test_allocator<int>(3));
-        assert(l2 == l);
-        assert(l2.get_allocator() == test_allocator<int>(3));
+        TC_ASSERT_EXPR(l2 == l);
+        TC_ASSERT_EXPR(l2.get_allocator() == test_allocator<int>(3));
     }
     {
         std::list<int, other_allocator<int> > l(3, 2, other_allocator<int>(5));
         std::list<int, other_allocator<int> > l2(l, other_allocator<int>(3));
-        assert(l2 == l);
-        assert(l2.get_allocator() == other_allocator<int>(3));
+        TC_ASSERT_EXPR(l2 == l);
+        TC_ASSERT_EXPR(l2.get_allocator() == other_allocator<int>(3));
     }
+    TC_SUCCESS_RESULT();
+    return 0;
 }

@@ -802,6 +802,7 @@ CXXSRCS += std/containers/sequences/vector.bool/resize_size_value.pass.cpp
 CXXSRCS += std/containers/sequences/vector.bool/construct_size.pass.cpp
 endif
 
+ifeq ($(CONFIG_LIBCXX_UTC_CONTAINERS_LIST),y)
 #Containers(List)
 CXXSRCS += std/containers/sequences/list/types.pass.cpp
 CXXSRCS += std/containers/sequences/list/list.modifiers/pop_back.pass.cpp
@@ -914,6 +915,7 @@ CXXSRCS += std/containers/sequences/forwardlist/forwardlist.spec/member_swap.pas
 CXXSRCS += std/containers/sequences/forwardlist/forwardlist.spec/non_member_swap.pass.cpp
 CXXSRCS += std/containers/sequences/forwardlist/forwardlist.spec/relational.pass.cpp
 CXXSRCS += std/containers/sequences/forwardlist/forwardlist.spec/swap_noexcept.pass.cpp
+endif
 
 #Containers TC Main
 CXXSRCS += std/containers/tc_containers.cpp

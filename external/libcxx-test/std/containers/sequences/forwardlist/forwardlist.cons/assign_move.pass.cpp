@@ -32,12 +32,13 @@
 
 #include <forward_list>
 #include <cassert>
+#include "libcxx_tc_common.h"
 #include <iterator>
 
 #include "test_allocator.h"
 #include "MoveOnly.h"
 
-int main()
+int tc_libcxx_containers_forwardlist_cons_assign_move(void)
 {
     {
         typedef MoveOnly T;
@@ -51,10 +52,10 @@ int main()
         c1 = std::move(c0);
         int n = 0;
         for (C::const_iterator i = c1.cbegin(); i != c1.cend(); ++i, ++n)
-            assert(*i == n);
-        assert(n == 10);
-        assert(c1.get_allocator() == A(10));
-        assert(c0.empty());
+            TC_ASSERT_EXPR(*i == n);
+        TC_ASSERT_EXPR(n == 10);
+        TC_ASSERT_EXPR(c1.get_allocator() == A(10));
+        TC_ASSERT_EXPR(c0.empty());
     }
     {
         typedef MoveOnly T;
@@ -68,10 +69,10 @@ int main()
         c1 = std::move(c0);
         int n = 0;
         for (C::const_iterator i = c1.cbegin(); i != c1.cend(); ++i, ++n)
-            assert(*i == n);
-        assert(n == 10);
-        assert(c1.get_allocator() == A(11));
-        assert(!c0.empty());
+            TC_ASSERT_EXPR(*i == n);
+        TC_ASSERT_EXPR(n == 10);
+        TC_ASSERT_EXPR(c1.get_allocator() == A(11));
+        TC_ASSERT_EXPR(!c0.empty());
     }
     {
         typedef MoveOnly T;
@@ -85,10 +86,10 @@ int main()
         c1 = std::move(c0);
         int n = 0;
         for (C::const_iterator i = c1.cbegin(); i != c1.cend(); ++i, ++n)
-            assert(*i == 10+n);
-        assert(n == 4);
-        assert(c1.get_allocator() == A(10));
-        assert(c0.empty());
+            TC_ASSERT_EXPR(*i == 10+n);
+        TC_ASSERT_EXPR(n == 4);
+        TC_ASSERT_EXPR(c1.get_allocator() == A(10));
+        TC_ASSERT_EXPR(c0.empty());
     }
     {
         typedef MoveOnly T;
@@ -102,10 +103,10 @@ int main()
         c1 = std::move(c0);
         int n = 0;
         for (C::const_iterator i = c1.cbegin(); i != c1.cend(); ++i, ++n)
-            assert(*i == 10+n);
-        assert(n == 4);
-        assert(c1.get_allocator() == A(11));
-        assert(!c0.empty());
+            TC_ASSERT_EXPR(*i == 10+n);
+        TC_ASSERT_EXPR(n == 4);
+        TC_ASSERT_EXPR(c1.get_allocator() == A(11));
+        TC_ASSERT_EXPR(!c0.empty());
     }
 
     {
@@ -120,10 +121,10 @@ int main()
         c1 = std::move(c0);
         int n = 0;
         for (C::const_iterator i = c1.cbegin(); i != c1.cend(); ++i, ++n)
-            assert(*i == n);
-        assert(n == 10);
-        assert(c1.get_allocator() == A(10));
-        assert(c0.empty());
+            TC_ASSERT_EXPR(*i == n);
+        TC_ASSERT_EXPR(n == 10);
+        TC_ASSERT_EXPR(c1.get_allocator() == A(10));
+        TC_ASSERT_EXPR(c0.empty());
     }
     {
         typedef MoveOnly T;
@@ -137,10 +138,10 @@ int main()
         c1 = std::move(c0);
         int n = 0;
         for (C::const_iterator i = c1.cbegin(); i != c1.cend(); ++i, ++n)
-            assert(*i == n);
-        assert(n == 10);
-        assert(c1.get_allocator() == A(10));
-        assert(c0.empty());
+            TC_ASSERT_EXPR(*i == n);
+        TC_ASSERT_EXPR(n == 10);
+        TC_ASSERT_EXPR(c1.get_allocator() == A(10));
+        TC_ASSERT_EXPR(c0.empty());
     }
     {
         typedef MoveOnly T;
@@ -154,10 +155,10 @@ int main()
         c1 = std::move(c0);
         int n = 0;
         for (C::const_iterator i = c1.cbegin(); i != c1.cend(); ++i, ++n)
-            assert(*i == 10+n);
-        assert(n == 4);
-        assert(c1.get_allocator() == A(10));
-        assert(c0.empty());
+            TC_ASSERT_EXPR(*i == 10+n);
+        TC_ASSERT_EXPR(n == 4);
+        TC_ASSERT_EXPR(c1.get_allocator() == A(10));
+        TC_ASSERT_EXPR(c0.empty());
     }
     {
         typedef MoveOnly T;
@@ -171,9 +172,11 @@ int main()
         c1 = std::move(c0);
         int n = 0;
         for (C::const_iterator i = c1.cbegin(); i != c1.cend(); ++i, ++n)
-            assert(*i == 10+n);
-        assert(n == 4);
-        assert(c1.get_allocator() == A(10));
-        assert(c0.empty());
+            TC_ASSERT_EXPR(*i == 10+n);
+        TC_ASSERT_EXPR(n == 4);
+        TC_ASSERT_EXPR(c1.get_allocator() == A(10));
+        TC_ASSERT_EXPR(c0.empty());
     }
+    TC_SUCCESS_RESULT();
+    return 0;
 }

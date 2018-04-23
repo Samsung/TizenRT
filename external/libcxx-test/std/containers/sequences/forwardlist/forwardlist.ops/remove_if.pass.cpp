@@ -26,11 +26,12 @@
 
 // <forward_list>
 
-// template <class Predicate> void remove_if(Predicate pred);
+// template <class Predicate> static int remove_if(Predicate pred);
 
 #include <forward_list>
 #include <iterator>
 #include <cassert>
+#include "libcxx_tc_common.h"
 #include <cstddef>
 
 #include "counting_predicates.hpp"
@@ -39,9 +40,10 @@
 bool g(int i)
 {
     return i < 3;
+    return 0;
 }
 
-int main()
+int tc_libcxx_containers_forwardlist_ops_remove_if(void)
 {
     {
         typedef int T;
@@ -53,8 +55,8 @@ int main()
         C c2(std::begin(t2), std::end(t2));
         Predicate cp(g);
         c1.remove_if(std::ref(cp));
-        assert(c1 == c2);
-        assert(cp.count() == static_cast<std::size_t>(std::distance(std::begin(t1), std::end(t1))));
+        TC_ASSERT_EXPR(c1 == c2);
+        TC_ASSERT_EXPR(cp.count() == static_cast<std::size_t>(std::distance(std::begin(t1), std::end(t1))));
     }
     {
         typedef int T;
@@ -65,8 +67,8 @@ int main()
         C c2;
         Predicate cp(g);
         c1.remove_if(std::ref(cp));
-        assert(c1 == c2);
-        assert(cp.count() == static_cast<std::size_t>(std::distance(std::begin(t1), std::end(t1))));
+        TC_ASSERT_EXPR(c1 == c2);
+        TC_ASSERT_EXPR(cp.count() == static_cast<std::size_t>(std::distance(std::begin(t1), std::end(t1))));
     }
     {
         typedef int T;
@@ -78,8 +80,8 @@ int main()
         C c2(std::begin(t2), std::end(t2));
         Predicate cp(g);
         c1.remove_if(std::ref(cp));
-        assert(c1 == c2);
-        assert(cp.count() == static_cast<std::size_t>(std::distance(std::begin(t1), std::end(t1))));
+        TC_ASSERT_EXPR(c1 == c2);
+        TC_ASSERT_EXPR(cp.count() == static_cast<std::size_t>(std::distance(std::begin(t1), std::end(t1))));
     }
     {
         typedef int T;
@@ -89,8 +91,8 @@ int main()
         C c2;
         Predicate cp(g);
         c1.remove_if(std::ref(cp));
-        assert(c1 == c2);
-        assert(cp.count() == 0);
+        TC_ASSERT_EXPR(c1 == c2);
+        TC_ASSERT_EXPR(cp.count() == 0);
     }
     {
         typedef int T;
@@ -102,7 +104,9 @@ int main()
         C c2(std::begin(t2), std::end(t2));
         Predicate cp(g);
         c1.remove_if(std::ref(cp));
-        assert(c1 == c2);
-        assert(cp.count() == static_cast<std::size_t>(std::distance(std::begin(t1), std::end(t1))));
+        TC_ASSERT_EXPR(c1 == c2);
+        TC_ASSERT_EXPR(cp.count() == static_cast<std::size_t>(std::distance(std::begin(t1), std::end(t1))));
     }
+    TC_SUCCESS_RESULT();
+    return 0;
 }

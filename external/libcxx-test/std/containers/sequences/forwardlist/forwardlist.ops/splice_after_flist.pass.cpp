@@ -26,10 +26,11 @@
 
 // <forward_list>
 
-// void splice_after(const_iterator p, forward_list&& x);
+// static int splice_after(const_iterator p, forward_list&& x);
 
 #include <forward_list>
 #include <cassert>
+#include "libcxx_tc_common.h"
 #include <iterator>
 #include <cstddef>
 
@@ -41,21 +42,22 @@ const std::ptrdiff_t size_t1 = std::end(t1) - std::begin(t1);
 const std::ptrdiff_t size_t2 = std::end(t2) - std::begin(t2);
 
 template <class C>
-void
+static int
 testd(const C& c, int p, int l)
 {
     typename C::const_iterator i = c.begin();
     int n1 = 0;
     for (; n1 < p; ++n1, ++i)
-        assert(*i == t1[n1]);
+        TC_ASSERT_EXPR(*i == t1[n1]);
     for (int n2 = 0; n2 < l; ++n2, ++i)
-        assert(*i == t2[n2]);
+        TC_ASSERT_EXPR(*i == t2[n2]);
     for (; n1 < size_t1; ++n1, ++i)
-        assert(*i == t1[n1]);
-    assert(distance(c.begin(), c.end()) == size_t1 + l);
+        TC_ASSERT_EXPR(*i == t1[n1]);
+    TC_ASSERT_EXPR(distance(c.begin(), c.end()) == size_t1 + l);
+    return 0;
 }
 
-int main()
+int tc_libcxx_containers_forwardlist_ops_splice_after_flist(void)
 {
     {
     // splicing different containers
@@ -72,4 +74,6 @@ int main()
         }
     }
     }
+    TC_SUCCESS_RESULT();
+    return 0;
 }

@@ -26,15 +26,16 @@
 
 // <forward_list>
 
-// template <class Compare> void merge(forward_list&& x, Compare comp);
+// template <class Compare> static int merge(forward_list&& x, Compare comp);
 
 #include <forward_list>
 #include <iterator>
 #include <functional>
 #include <cassert>
+#include "libcxx_tc_common.h"
 
 
-int main()
+int tc_libcxx_containers_forwardlist_ops_merge_pred(void)
 {
     {
         typedef int T;
@@ -46,6 +47,8 @@ int main()
         C c2(std::begin(t2), std::end(t2));
         c1.merge(c2, std::greater<T>());
         C c3(std::begin(t3), std::end(t3));
-        assert(c1 == c3);
+        TC_ASSERT_EXPR(c1 == c3);
     }
+    TC_SUCCESS_RESULT();
+    return 0;
 }

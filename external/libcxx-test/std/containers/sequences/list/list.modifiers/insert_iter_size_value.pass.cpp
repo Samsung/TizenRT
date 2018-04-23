@@ -33,20 +33,24 @@
 #include <list>
 #include <cstdlib>
 #include <cassert>
+#include "libcxx_tc_common.h"
 
 #include "test_macros.h"
 
 template <class List>
-void test() {
+static int test() {
     int a1[] = {1, 2, 3};
     int a2[] = {1, 4, 4, 4, 4, 4, 2, 3};
     List l1(a1, a1+3);
     typename List::iterator i = l1.insert(next(l1.cbegin()), 5, 4);
-    assert(i == next(l1.begin()));
-    assert(l1 == List(a2, a2+8));
+    TC_ASSERT_EXPR(i == next(l1.begin()));
+    TC_ASSERT_EXPR(l1 == List(a2, a2+8));
+    return 0;
 }
 
-int main()
+int tc_libcxx_containers_list_modifiers_insert_iter_size_value(void)
 {
-    test<std::list<int> >();
+    TC_ASSERT_FUNC((test<std::list<int> >()));
+    TC_SUCCESS_RESULT();
+    return 0;
 }

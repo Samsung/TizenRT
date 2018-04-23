@@ -28,11 +28,12 @@
 
 // <list>
 
-// template <class... Args> void emplace(const_iterator p, Args&&... args);
+// template <class... Args> static int emplace(const_iterator p, Args&&... args);
 
 
 #include <list>
 #include <cassert>
+#include "libcxx_tc_common.h"
 
 #include "test_macros.h"
 
@@ -51,19 +52,21 @@ public:
     double getd() const {return d_;}
 };
 
-int main()
+int tc_libcxx_containers_list_modifiers_emplace(void)
 {
     {
     std::list<A> c;
     c.emplace(c.cbegin(), 2, 3.5);
-    assert(c.size() == 1);
-    assert(c.front().geti() == 2);
-    assert(c.front().getd() == 3.5);
+    TC_ASSERT_EXPR(c.size() == 1);
+    TC_ASSERT_EXPR(c.front().geti() == 2);
+    TC_ASSERT_EXPR(c.front().getd() == 3.5);
     c.emplace(c.cend(), 3, 4.5);
-    assert(c.size() == 2);
-    assert(c.front().geti() == 2);
-    assert(c.front().getd() == 3.5);
-    assert(c.back().geti() == 3);
-    assert(c.back().getd() == 4.5);
+    TC_ASSERT_EXPR(c.size() == 2);
+    TC_ASSERT_EXPR(c.front().geti() == 2);
+    TC_ASSERT_EXPR(c.front().getd() == 3.5);
+    TC_ASSERT_EXPR(c.back().geti() == 3);
+    TC_ASSERT_EXPR(c.back().getd() == 4.5);
     }
+    TC_SUCCESS_RESULT();
+    return 0;
 }

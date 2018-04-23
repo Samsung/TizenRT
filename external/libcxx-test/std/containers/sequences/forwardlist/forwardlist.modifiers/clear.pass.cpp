@@ -26,21 +26,22 @@
 
 // <forward_list>
 
-// void clear();
+// static int clear();
 
 #include <forward_list>
 #include <cassert>
+#include "libcxx_tc_common.h"
 
 #include "NotConstructible.h"
 
-int main()
+int tc_libcxx_containers_forwardlist_modifiers_clear(void)
 {
     {
         typedef NotConstructible T;
         typedef std::forward_list<T> C;
         C c;
         c.clear();
-        assert(distance(c.begin(), c.end()) == 0);
+        TC_ASSERT_EXPR(distance(c.begin(), c.end()) == 0);
     }
     {
         typedef int T;
@@ -49,9 +50,11 @@ int main()
         C c(std::begin(t), std::end(t));
 
         c.clear();
-        assert(distance(c.begin(), c.end()) == 0);
+        TC_ASSERT_EXPR(distance(c.begin(), c.end()) == 0);
 
         c.clear();
-        assert(distance(c.begin(), c.end()) == 0);
+        TC_ASSERT_EXPR(distance(c.begin(), c.end()) == 0);
     }
+    TC_SUCCESS_RESULT();
+    return 0;
 }

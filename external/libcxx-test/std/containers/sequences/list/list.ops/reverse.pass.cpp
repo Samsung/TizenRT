@@ -26,19 +26,22 @@
 
 // <list>
 
-// void reverse();
+// static int reverse();
 
 #include <list>
 #include <cassert>
+#include "libcxx_tc_common.h"
 
 
-int main()
+int tc_libcxx_containers_list_ops_reverse(void)
 {
     {
     int a1[] = {11, 10, 9, 8, 7, 6, 5, 4, 3, 2, 1, 0};
     int a2[] = {0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11};
     std::list<int> c1(a1, a1+sizeof(a1)/sizeof(a1[0]));
     c1.reverse();
-    assert(c1 == std::list<int>(a2, a2+sizeof(a2)/sizeof(a2[0])));
+    TC_ASSERT_EXPR(c1 == std::list<int>(a2, a2+sizeof(a2)/sizeof(a2[0])));
     }
+    TC_SUCCESS_RESULT();
+    return 0;
 }
