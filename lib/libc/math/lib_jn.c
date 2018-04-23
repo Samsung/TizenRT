@@ -226,7 +226,14 @@ double jn(int n, double x)
 			 * When Q(k) > 1e17     good for quadruple
 			 */
 			/* determine k */
-			double t, q0, q1, w, h, z, tmp, nf;
+			double t;
+			double q0;
+			double q1;
+			double w;
+			double h;
+			double z;
+			double tmp;
+			double nf;
 			int k;
 
 			nf = nm1 + 1.0;

@@ -55,7 +55,10 @@
 
 float logf(float x)
 {
-	float y, y_old, ey, epsilon;
+	float y;
+	float y_old;
+	float ey;
+	float epsilon;
 
 	y = 0.0;
 	y_old = 1.0;

@@ -55,7 +55,9 @@
 
 float asinf(float x)
 {
-	long double y, y_sin, y_cos;
+	long double y;
+	long double y_sin;
+	long double y_cos;
 
 	y = 0;
 

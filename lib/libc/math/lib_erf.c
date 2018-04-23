@@ -72,7 +72,12 @@ double erf(double x)
 
 	char sign;
 	double t;
-	double a1, a2, a3, a4, a5, p;
+	double a1;
+	double a2;
+	double a3;
+	double a4;
+	double a5;
+	double p;
 
 	a1 = 0.254829592;
 	a2 = -0.284496736;

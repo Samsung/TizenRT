@@ -69,7 +69,12 @@ float erff(float x)
 
 	char sign;
 	float t;
-	float a1, a2, a3, a4, a5, p;
+	float a1;
+	float a2;
+	float a3;
+	float a4;
+	float a5;
+	float p;
 
 	a1 = 0.254829592;
 	a2 = -0.284496736;
