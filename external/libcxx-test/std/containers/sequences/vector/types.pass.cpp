@@ -49,14 +49,14 @@
 #include <vector>
 #include <iterator>
 #include <type_traits>
-
+#include "libcxx_tc_common.h"
 #include "test_allocator.h"
 #include "Copyable.h"
 
 struct A { std::vector<A> v; }; // incomplete type support
 
 template <class T, class Allocator>
-void
+static int
 test()
 {
     typedef std::vector<T, Allocator> C;
@@ -93,13 +93,16 @@ test()
     static_assert((std::is_same<
         typename C::const_reverse_iterator,
         std::reverse_iterator<typename C::const_iterator> >::value), "");
+    return 0;
 }
 
-int main()
+int tc_libcxx_containers_vector_types(void)
 {
-    test<int, test_allocator<int> >();
-    test<int*, std::allocator<int*> >();
-    test<Copyable, test_allocator<Copyable> >();
+    TC_ASSERT_FUNC((test<int, test_allocator<int> >()));
+    TC_ASSERT_FUNC((test<int*, std::allocator<int*> >()));
+    TC_ASSERT_FUNC((test<Copyable, test_allocator<Copyable> >()));
     static_assert((std::is_same<std::vector<char>::allocator_type,
                                 std::allocator<char> >::value), "");
+    TC_SUCCESS_RESULT();
+    return 0;
 }

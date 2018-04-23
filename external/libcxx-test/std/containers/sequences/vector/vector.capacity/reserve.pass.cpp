@@ -26,42 +26,45 @@
 
 // <vector>
 
-// void reserve(size_type n);
+// static int reserve(size_type n);
 
 #include <vector>
 #include <cassert>
+#include "libcxx_tc_common.h"
 #include "test_allocator.h"
 #include "asan_testing.h"
 
-int main()
+int tc_libcxx_containers_vector_capacity_reserve(void)
 {
     {
         std::vector<int> v;
         v.reserve(10);
-        assert(v.capacity() >= 10);
-        assert(is_contiguous_container_asan_correct(v));
+        TC_ASSERT_EXPR(v.capacity() >= 10);
+        TC_ASSERT_EXPR(is_contiguous_container_asan_correct(v));
     }
     {
         std::vector<int> v(100);
-        assert(v.capacity() == 100);
+        TC_ASSERT_EXPR(v.capacity() == 100);
         v.reserve(50);
-        assert(v.size() == 100);
-        assert(v.capacity() == 100);
+        TC_ASSERT_EXPR(v.size() == 100);
+        TC_ASSERT_EXPR(v.capacity() == 100);
         v.reserve(150);
-        assert(v.size() == 100);
-        assert(v.capacity() == 150);
-        assert(is_contiguous_container_asan_correct(v));
+        TC_ASSERT_EXPR(v.size() == 100);
+        TC_ASSERT_EXPR(v.capacity() == 150);
+        TC_ASSERT_EXPR(is_contiguous_container_asan_correct(v));
     }
     {
         // Add 1 for implementations that dynamically allocate a container proxy.
         std::vector<int, limited_allocator<int, 250 + 1> > v(100);
-        assert(v.capacity() == 100);
+        TC_ASSERT_EXPR(v.capacity() == 100);
         v.reserve(50);
-        assert(v.size() == 100);
-        assert(v.capacity() == 100);
+        TC_ASSERT_EXPR(v.size() == 100);
+        TC_ASSERT_EXPR(v.capacity() == 100);
         v.reserve(150);
-        assert(v.size() == 100);
-        assert(v.capacity() == 150);
-        assert(is_contiguous_container_asan_correct(v));
+        TC_ASSERT_EXPR(v.size() == 100);
+        TC_ASSERT_EXPR(v.capacity() == 150);
+        TC_ASSERT_EXPR(is_contiguous_container_asan_correct(v));
     }
+    TC_SUCCESS_RESULT();
+    return 0;
 }

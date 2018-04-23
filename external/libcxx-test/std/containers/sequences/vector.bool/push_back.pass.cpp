@@ -27,14 +27,15 @@
 // <vector>
 // vector<bool>
 
-// void push_back(const value_type& x);
+// static int push_back(const value_type& x);
 
 #include <vector>
 #include <cassert>
+#include "libcxx_tc_common.h"
 #include <cstddef>
 
 
-int main()
+int tc_libcxx_containers_vector_bool_push_back(void)
 {
     {
         bool a[] = {0, 1, 1, 0, 1, 0, 0};
@@ -43,9 +44,11 @@ int main()
         for (unsigned i = 0; i < N; ++i)
         {
             c.push_back(a[i]);
-            assert(c.size() == i+1);
+            TC_ASSERT_EXPR(c.size() == i+1);
             for (std::size_t j = 0; j < c.size(); ++j)
-                assert(c[j] == a[j]);
+                TC_ASSERT_EXPR(c[j] == a[j]);
         }
     }
+    TC_SUCCESS_RESULT();
+    return 0;
 }

@@ -28,7 +28,7 @@
 
 // <vector>
 
-// void swap(vector& c)
+// static int swap(vector& c)
 //     noexcept(!allocator_type::propagate_on_container_swap::value ||
 //              __is_nothrow_swappable<allocator_type>::value);
 //
@@ -41,6 +41,7 @@
 #include <vector>
 #include <utility>
 #include <cassert>
+#include "libcxx_tc_common.h"
 
 #include "test_macros.h"
 #include "MoveOnly.h"
@@ -71,7 +72,7 @@ struct some_alloc2
     typedef std::true_type is_always_equal;
 };
 
-int main()
+int tc_libcxx_containers_vector_special_swap_noexcept(void)
 {
     {
         typedef std::vector<MoveOnly> C;
@@ -103,4 +104,6 @@ int main()
         static_assert( noexcept(swap(std::declval<C&>(), std::declval<C&>())), "");
     }
 #endif
+    TC_SUCCESS_RESULT();
+    return 0;
 }

@@ -31,52 +31,58 @@
 
 #include <vector>
 #include <cassert>
+#include "libcxx_tc_common.h"
 
 #include "test_macros.h"
 #include "test_allocator.h"
 
 template <class C>
-void
+static int
 test2(typename C::size_type n,
       typename C::allocator_type const& a = typename C::allocator_type ())
 {
 #if TEST_STD_VER >= 14
     C c(n, a);
     LIBCPP_ASSERT(c.__invariants());
-    assert(c.size() == n);
-    assert(c.get_allocator() == a);
+    TC_ASSERT_EXPR(c.size() == n);
+    TC_ASSERT_EXPR(c.get_allocator() == a);
     for (typename C::const_iterator i = c.cbegin(), e = c.cend(); i != e; ++i)
-        assert(*i == typename C::value_type());
+        TC_ASSERT_EXPR(*i == typename C::value_type());
 #else
   ((void)n);
   ((void)a);
 #endif
+    return 0;
 }
 
 template <class C>
-void
+static int
 test1(typename C::size_type n)
 {
     C c(n);
     LIBCPP_ASSERT(c.__invariants());
-    assert(c.size() == n);
-    assert(c.get_allocator() == typename C::allocator_type());
+    TC_ASSERT_EXPR(c.size() == n);
+    TC_ASSERT_EXPR(c.get_allocator() == typename C::allocator_type());
     for (typename C::const_iterator i = c.cbegin(), e = c.cend(); i != e; ++i)
-        assert(*i == typename C::value_type());
+        TC_ASSERT_EXPR(*i == typename C::value_type());
+    return 0;
 }
 
 template <class C>
-void
+static int
 test(typename C::size_type n)
 {
-    test1<C> ( n );
-    test2<C> ( n );
+    TC_ASSERT_FUNC((test1<C> ( n )));
+    TC_ASSERT_FUNC((test2<C> ( n )));
+    return 0;
 }
 
-int main()
+int tc_libcxx_containers_vector_bool_construct_size(void)
 {
-    test<std::vector<bool> >(50);
+    TC_ASSERT_FUNC((test<std::vector<bool> >(50)));
 #if TEST_STD_VER >= 11
-    test2<std::vector<bool, test_allocator<bool>> >( 100, test_allocator<bool>(23));
+    TC_ASSERT_FUNC((test2<std::vector<bool, test_allocator<bool>> >( 100, test_allocator<bool>(23))));
 #endif
+    TC_SUCCESS_RESULT();
+    return 0;
 }

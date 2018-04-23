@@ -37,6 +37,7 @@
 
 #include <vector>
 #include <cassert>
+#include "libcxx_tc_common.h"
 
 #include "MoveOnly.h"
 #include "test_allocator.h"
@@ -75,7 +76,7 @@ struct some_alloc3
 };
 
 
-int main()
+int tc_libcxx_containers_vector_cons_move_assign_noexcept(void)
 {
     {
         typedef std::vector<MoveOnly> C;
@@ -109,4 +110,6 @@ int main()
         static_assert(!std::is_nothrow_move_assignable<C>::value, "");
     }
 #endif
+    TC_SUCCESS_RESULT();
+    return 0;
 }

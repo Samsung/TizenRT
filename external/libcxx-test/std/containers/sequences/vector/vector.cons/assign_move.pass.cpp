@@ -32,11 +32,12 @@
 
 #include <vector>
 #include <cassert>
+#include "libcxx_tc_common.h"
 #include "MoveOnly.h"
 #include "test_allocator.h"
 #include "asan_testing.h"
 
-int main()
+int tc_libcxx_containers_vector_cons_assign_move(void)
 {
     {
         std::vector<MoveOnly, test_allocator<MoveOnly> > l(test_allocator<MoveOnly>(5));
@@ -46,51 +47,53 @@ int main()
             l.push_back(i);
             lo.push_back(i);
         }
-        assert(is_contiguous_container_asan_correct(l));
-        assert(is_contiguous_container_asan_correct(lo));
+        TC_ASSERT_EXPR(is_contiguous_container_asan_correct(l));
+        TC_ASSERT_EXPR(is_contiguous_container_asan_correct(lo));
         std::vector<MoveOnly, test_allocator<MoveOnly> > l2(test_allocator<MoveOnly>(5));
         l2 = std::move(l);
-        assert(l2 == lo);
-        assert(l.empty());
-        assert(l2.get_allocator() == lo.get_allocator());
-        assert(is_contiguous_container_asan_correct(l2));
+        TC_ASSERT_EXPR(l2 == lo);
+        TC_ASSERT_EXPR(l.empty());
+        TC_ASSERT_EXPR(l2.get_allocator() == lo.get_allocator());
+        TC_ASSERT_EXPR(is_contiguous_container_asan_correct(l2));
     }
     {
         std::vector<MoveOnly, test_allocator<MoveOnly> > l(test_allocator<MoveOnly>(5));
         std::vector<MoveOnly, test_allocator<MoveOnly> > lo(test_allocator<MoveOnly>(5));
-        assert(is_contiguous_container_asan_correct(l));
-        assert(is_contiguous_container_asan_correct(lo));
+        TC_ASSERT_EXPR(is_contiguous_container_asan_correct(l));
+        TC_ASSERT_EXPR(is_contiguous_container_asan_correct(lo));
         for (int i = 1; i <= 3; ++i)
         {
             l.push_back(i);
             lo.push_back(i);
         }
-        assert(is_contiguous_container_asan_correct(l));
-        assert(is_contiguous_container_asan_correct(lo));
+        TC_ASSERT_EXPR(is_contiguous_container_asan_correct(l));
+        TC_ASSERT_EXPR(is_contiguous_container_asan_correct(lo));
         std::vector<MoveOnly, test_allocator<MoveOnly> > l2(test_allocator<MoveOnly>(6));
         l2 = std::move(l);
-        assert(l2 == lo);
-        assert(!l.empty());
-        assert(l2.get_allocator() == test_allocator<MoveOnly>(6));
-        assert(is_contiguous_container_asan_correct(l2));
+        TC_ASSERT_EXPR(l2 == lo);
+        TC_ASSERT_EXPR(!l.empty());
+        TC_ASSERT_EXPR(l2.get_allocator() == test_allocator<MoveOnly>(6));
+        TC_ASSERT_EXPR(is_contiguous_container_asan_correct(l2));
     }
     {
         std::vector<MoveOnly, other_allocator<MoveOnly> > l(other_allocator<MoveOnly>(5));
         std::vector<MoveOnly, other_allocator<MoveOnly> > lo(other_allocator<MoveOnly>(5));
-        assert(is_contiguous_container_asan_correct(l));
-        assert(is_contiguous_container_asan_correct(lo));
+        TC_ASSERT_EXPR(is_contiguous_container_asan_correct(l));
+        TC_ASSERT_EXPR(is_contiguous_container_asan_correct(lo));
         for (int i = 1; i <= 3; ++i)
         {
             l.push_back(i);
             lo.push_back(i);
         }
-        assert(is_contiguous_container_asan_correct(l));
-        assert(is_contiguous_container_asan_correct(lo));
+        TC_ASSERT_EXPR(is_contiguous_container_asan_correct(l));
+        TC_ASSERT_EXPR(is_contiguous_container_asan_correct(lo));
         std::vector<MoveOnly, other_allocator<MoveOnly> > l2(other_allocator<MoveOnly>(6));
         l2 = std::move(l);
-        assert(l2 == lo);
-        assert(l.empty());
-        assert(l2.get_allocator() == lo.get_allocator());
-        assert(is_contiguous_container_asan_correct(l2));
+        TC_ASSERT_EXPR(l2 == lo);
+        TC_ASSERT_EXPR(l.empty());
+        TC_ASSERT_EXPR(l2.get_allocator() == lo.get_allocator());
+        TC_ASSERT_EXPR(is_contiguous_container_asan_correct(l2));
     }
+    TC_SUCCESS_RESULT();
+    return 0;
 }

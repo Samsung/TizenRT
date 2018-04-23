@@ -30,6 +30,7 @@
 
 #include <vector>
 #include <cassert>
+#include "libcxx_tc_common.h"
 
 #include "asan_testing.h"
 
@@ -38,25 +39,27 @@ struct Nasty {
     Nasty(int i) : i_(i) {}
     ~Nasty() {}
 
-    Nasty * operator&() const { assert(false); return nullptr; }
+//    Nasty * operator&() const { TC_ASSERT_EXPR(false); return nullptr; }
     int i_;
     };
 
-int main()
+int tc_libcxx_containers_vector_data_data(void)
 {
     {
         std::vector<int> v;
-        assert(v.data() == 0);
-        assert(is_contiguous_container_asan_correct(v));
+        TC_ASSERT_EXPR(v.data() == 0);
+        TC_ASSERT_EXPR(is_contiguous_container_asan_correct(v));
     }
     {
         std::vector<int> v(100);
-        assert(v.data() == std::addressof(v.front()));
-        assert(is_contiguous_container_asan_correct(v));
+        TC_ASSERT_EXPR(v.data() == std::addressof(v.front()));
+        TC_ASSERT_EXPR(is_contiguous_container_asan_correct(v));
     }
     {
         std::vector<Nasty> v(100);
-        assert(v.data() == std::addressof(v.front()));
-        assert(is_contiguous_container_asan_correct(v));
+        TC_ASSERT_EXPR(v.data() == std::addressof(v.front()));
+        TC_ASSERT_EXPR(is_contiguous_container_asan_correct(v));
     }
+    TC_SUCCESS_RESULT();
+    return 0;
 }

@@ -30,22 +30,24 @@
 
 #include <vector>
 #include <cassert>
+#include "libcxx_tc_common.h"
 
 #include "test_macros.h"
 #include "test_allocator.h"
 
 template <class C>
-void
+static int
 test(const C& x, const typename C::allocator_type& a)
 {
     typename C::size_type s = x.size();
     C c(x, a);
     LIBCPP_ASSERT(c.__invariants());
-    assert(c.size() == s);
-    assert(c == x);
+    TC_ASSERT_EXPR(c.size() == s);
+    TC_ASSERT_EXPR(c == x);
+    return 0;
 }
 
-int main()
+int tc_libcxx_containers_vector_bool_copy_alloc(void)
 {
     {
         bool a[] = {0, 1, 0, 0, 1, 1, 1, 0, 0, 1, 0, 0, 0, 1, 1, 0, 1, 0};
@@ -55,13 +57,15 @@ int main()
     {
         std::vector<bool, test_allocator<bool> > l(3, true, test_allocator<bool>(5));
         std::vector<bool, test_allocator<bool> > l2(l, test_allocator<bool>(3));
-        assert(l2 == l);
-        assert(l2.get_allocator() == test_allocator<bool>(3));
+        TC_ASSERT_EXPR(l2 == l);
+        TC_ASSERT_EXPR(l2.get_allocator() == test_allocator<bool>(3));
     }
     {
         std::vector<bool, other_allocator<bool> > l(3, true, other_allocator<bool>(5));
         std::vector<bool, other_allocator<bool> > l2(l, other_allocator<bool>(3));
-        assert(l2 == l);
-        assert(l2.get_allocator() == other_allocator<bool>(3));
+        TC_ASSERT_EXPR(l2 == l);
+        TC_ASSERT_EXPR(l2.get_allocator() == other_allocator<bool>(3));
     }
+    TC_SUCCESS_RESULT();
+    return 0;
 }

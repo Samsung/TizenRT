@@ -35,6 +35,7 @@
 
 #include <vector>
 #include <cassert>
+#include "libcxx_tc_common.h"
 
 #include "test_macros.h"
 #include "test_allocator.h"
@@ -46,7 +47,7 @@ struct some_alloc
     some_alloc(const some_alloc&);
 };
 
-int main()
+int tc_libcxx_containers_vector_bool_default_noexcept(void)
 {
 #if defined(_LIBCPP_VERSION)
     {
@@ -66,4 +67,6 @@ int main()
         typedef std::vector<bool, some_alloc<bool>> C;
         static_assert(!std::is_nothrow_default_constructible<C>::value, "");
     }
+    TC_SUCCESS_RESULT();
+    return 0;
 }

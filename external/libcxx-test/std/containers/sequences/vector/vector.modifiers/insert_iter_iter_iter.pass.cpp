@@ -31,6 +31,7 @@
 
 #include <vector>
 #include <cassert>
+#include "libcxx_tc_common.h"
 #include <cstddef>
 
 #include "test_macros.h"
@@ -38,7 +39,7 @@
 #include "test_iterators.h"
 #include "asan_testing.h"
 
-int main()
+int tc_libcxx_containers_vector_modifiers_insert_iter_iter_iter(void)
 {
     {
         std::vector<int> v(100);
@@ -46,16 +47,16 @@ int main()
         const int N = sizeof(a)/sizeof(a[0]);
         std::vector<int>::iterator i = v.insert(v.cbegin() + 10, input_iterator<const int*>(a),
                                         input_iterator<const int*>(a+N));
-        assert(v.size() == 100 + N);
-        assert(is_contiguous_container_asan_correct(v));
-        assert(i == v.begin() + 10);
+        TC_ASSERT_EXPR(v.size() == 100 + N);
+        TC_ASSERT_EXPR(is_contiguous_container_asan_correct(v));
+        TC_ASSERT_EXPR(i == v.begin() + 10);
         int j;
         for (j = 0; j < 10; ++j)
-            assert(v[j] == 0);
+            TC_ASSERT_EXPR(v[j] == 0);
         for (std::size_t k = 0; k < N; ++j, ++k)
-            assert(v[j] == a[k]);
+            TC_ASSERT_EXPR(v[j] == a[k]);
         for (; j < 105; ++j)
-            assert(v[j] == 0);
+            TC_ASSERT_EXPR(v[j] == 0);
     }
     {
         std::vector<int> v(100);
@@ -63,16 +64,16 @@ int main()
         const int N = sizeof(a)/sizeof(a[0]);
         std::vector<int>::iterator i = v.insert(v.cbegin() + 10, forward_iterator<const int*>(a),
                                         forward_iterator<const int*>(a+N));
-        assert(v.size() == 100 + N);
-        assert(is_contiguous_container_asan_correct(v));
-        assert(i == v.begin() + 10);
+        TC_ASSERT_EXPR(v.size() == 100 + N);
+        TC_ASSERT_EXPR(is_contiguous_container_asan_correct(v));
+        TC_ASSERT_EXPR(i == v.begin() + 10);
         int j;
         for (j = 0; j < 10; ++j)
-            assert(v[j] == 0);
+            TC_ASSERT_EXPR(v[j] == 0);
         for (std::size_t k = 0; k < N; ++j, ++k)
-            assert(v[j] == a[k]);
+            TC_ASSERT_EXPR(v[j] == a[k]);
         for (; j < 105; ++j)
-            assert(v[j] == 0);
+            TC_ASSERT_EXPR(v[j] == 0);
     }
     {
         std::vector<int> v(100);
@@ -82,15 +83,15 @@ int main()
         const unsigned N = sizeof(a)/sizeof(a[0]);
         std::vector<int>::iterator i = v.insert(v.cbegin() + 10, forward_iterator<const int*>(a),
                                         forward_iterator<const int*>(a+N));
-        assert(v.size() == sz + N);
-        assert(i == v.begin() + 10);
+        TC_ASSERT_EXPR(v.size() == sz + N);
+        TC_ASSERT_EXPR(i == v.begin() + 10);
         std::size_t j;
         for (j = 0; j < 10; ++j)
-            assert(v[j] == 0);
+            TC_ASSERT_EXPR(v[j] == 0);
         for (std::size_t k = 0; k < N; ++j, ++k)
-            assert(v[j] == a[k]);
+            TC_ASSERT_EXPR(v[j] == a[k]);
         for (; j < v.size(); ++j)
-            assert(v[j] == 0);
+            TC_ASSERT_EXPR(v[j] == 0);
     }
     {
         std::vector<int> v(100);
@@ -100,15 +101,15 @@ int main()
         const unsigned N = sizeof(a)/sizeof(a[0]);
         std::vector<int>::iterator i = v.insert(v.cbegin() + 10, forward_iterator<const int*>(a),
                                         forward_iterator<const int*>(a+N));
-        assert(v.size() == sz + N);
-        assert(i == v.begin() + 10);
+        TC_ASSERT_EXPR(v.size() == sz + N);
+        TC_ASSERT_EXPR(i == v.begin() + 10);
         std::size_t j;
         for (j = 0; j < 10; ++j)
-            assert(v[j] == 0);
+            TC_ASSERT_EXPR(v[j] == 0);
         for (std::size_t k = 0; k < N; ++j, ++k)
-            assert(v[j] == a[k]);
+            TC_ASSERT_EXPR(v[j] == a[k]);
         for (; j < v.size(); ++j)
-            assert(v[j] == 0);
+            TC_ASSERT_EXPR(v[j] == 0);
     }
     {
         std::vector<int, limited_allocator<int, 308> > v(100);
@@ -116,16 +117,16 @@ int main()
         const int N = sizeof(a)/sizeof(a[0]);
         std::vector<int>::iterator i = v.insert(v.cbegin() + 10, input_iterator<const int*>(a),
                                         input_iterator<const int*>(a+N));
-        assert(v.size() == 100 + N);
-        assert(is_contiguous_container_asan_correct(v));
-        assert(i == v.begin() + 10);
+        TC_ASSERT_EXPR(v.size() == 100 + N);
+        TC_ASSERT_EXPR(is_contiguous_container_asan_correct(v));
+        TC_ASSERT_EXPR(i == v.begin() + 10);
         int j;
         for (j = 0; j < 10; ++j)
-            assert(v[j] == 0);
+            TC_ASSERT_EXPR(v[j] == 0);
         for (std::size_t k = 0; k < N; ++j, ++k)
-            assert(v[j] == a[k]);
+            TC_ASSERT_EXPR(v[j] == a[k]);
         for (; j < 105; ++j)
-            assert(v[j] == 0);
+            TC_ASSERT_EXPR(v[j] == 0);
     }
     {
         std::vector<int, limited_allocator<int, 300> > v(100);
@@ -133,15 +134,17 @@ int main()
         const int N = sizeof(a)/sizeof(a[0]);
         std::vector<int>::iterator i = v.insert(v.cbegin() + 10, forward_iterator<const int*>(a),
                                         forward_iterator<const int*>(a+N));
-        assert(v.size() == 100 + N);
-        assert(is_contiguous_container_asan_correct(v));
-        assert(i == v.begin() + 10);
+        TC_ASSERT_EXPR(v.size() == 100 + N);
+        TC_ASSERT_EXPR(is_contiguous_container_asan_correct(v));
+        TC_ASSERT_EXPR(i == v.begin() + 10);
         int j;
         for (j = 0; j < 10; ++j)
-            assert(v[j] == 0);
+            TC_ASSERT_EXPR(v[j] == 0);
         for (std::size_t k = 0; k < N; ++j, ++k)
-            assert(v[j] == a[k]);
+            TC_ASSERT_EXPR(v[j] == a[k]);
         for (; j < 105; ++j)
-            assert(v[j] == 0);
+            TC_ASSERT_EXPR(v[j] == 0);
     }
+    TC_SUCCESS_RESULT();
+    return 0;
 }

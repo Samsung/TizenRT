@@ -27,27 +27,30 @@
 // <vector>
 // vector<bool>
 
-// void reserve(size_type n);
+// static int reserve(size_type n);
 
 #include <vector>
 #include <cassert>
+#include "libcxx_tc_common.h"
 
 
-int main()
+int tc_libcxx_containers_vector_bool_reserve(void)
 {
     {
         std::vector<bool> v;
         v.reserve(10);
-        assert(v.capacity() >= 10);
+        TC_ASSERT_EXPR(v.capacity() >= 10);
     }
     {
         std::vector<bool> v(100);
-        assert(v.capacity() >= 100);
+        TC_ASSERT_EXPR(v.capacity() >= 100);
         v.reserve(50);
-        assert(v.size() == 100);
-        assert(v.capacity() >= 100);
+        TC_ASSERT_EXPR(v.size() == 100);
+        TC_ASSERT_EXPR(v.capacity() >= 100);
         v.reserve(150);
-        assert(v.size() == 100);
-        assert(v.capacity() >= 150);
+        TC_ASSERT_EXPR(v.size() == 100);
+        TC_ASSERT_EXPR(v.capacity() >= 150);
     }
+    TC_SUCCESS_RESULT();
+    return 0;
 }

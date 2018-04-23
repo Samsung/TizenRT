@@ -35,6 +35,7 @@
 
 #include <vector>
 #include <cassert>
+#include "libcxx_tc_common.h"
 #include <iterator>
 
 #include "test_macros.h"
@@ -45,7 +46,7 @@ struct A
     int second;
 };
 
-int main()
+int tc_libcxx_containers_vector_iterators(void)
 {
     {
         typedef int T;
@@ -53,8 +54,8 @@ int main()
         C c;
         C::iterator i = c.begin();
         C::iterator j = c.end();
-        assert(std::distance(i, j) == 0);
-        assert(i == j);
+        TC_ASSERT_EXPR(std::distance(i, j) == 0);
+        TC_ASSERT_EXPR(i == j);
     }
     {
         typedef int T;
@@ -62,8 +63,8 @@ int main()
         const C c;
         C::const_iterator i = c.begin();
         C::const_iterator j = c.end();
-        assert(std::distance(i, j) == 0);
-        assert(i == j);
+        TC_ASSERT_EXPR(std::distance(i, j) == 0);
+        TC_ASSERT_EXPR(i == j);
     }
     {
         typedef int T;
@@ -71,9 +72,9 @@ int main()
         C c;
         C::const_iterator i = c.cbegin();
         C::const_iterator j = c.cend();
-        assert(std::distance(i, j) == 0);
-        assert(i == j);
-        assert(i == c.end());
+        TC_ASSERT_EXPR(std::distance(i, j) == 0);
+        TC_ASSERT_EXPR(i == j);
+        TC_ASSERT_EXPR(i == c.end());
     }
     {
         typedef int T;
@@ -81,12 +82,12 @@ int main()
         const T t[] = {0, 1, 2, 3, 4, 5, 6, 7, 8, 9};
         C c(std::begin(t), std::end(t));
         C::iterator i = c.begin();
-        assert(*i == 0);
+        TC_ASSERT_EXPR(*i == 0);
         ++i;
-        assert(*i == 1);
+        TC_ASSERT_EXPR(*i == 1);
         *i = 10;
-        assert(*i == 10);
-        assert(std::distance(c.begin(), c.end()) == 10);
+        TC_ASSERT_EXPR(*i == 10);
+        TC_ASSERT_EXPR(std::distance(c.begin(), c.end()) == 10);
     }
     {
         typedef int T;
@@ -100,25 +101,27 @@ int main()
         C::iterator ii1{}, ii2{};
         C::iterator ii4 = ii1;
         C::const_iterator cii{};
-        assert ( ii1 == ii2 );
-        assert ( ii1 == ii4 );
+        TC_ASSERT_EXPR ( ii1 == ii2 );
+        TC_ASSERT_EXPR ( ii1 == ii4 );
 
-        assert (!(ii1 != ii2 ));
+        TC_ASSERT_EXPR (!(ii1 != ii2 ));
 
-        assert ( (ii1 == cii ));
-        assert ( (cii == ii1 ));
-        assert (!(ii1 != cii ));
-        assert (!(cii != ii1 ));
-        assert (!(ii1 <  cii ));
-        assert (!(cii <  ii1 ));
-        assert ( (ii1 <= cii ));
-        assert ( (cii <= ii1 ));
-        assert (!(ii1 >  cii ));
-        assert (!(cii >  ii1 ));
-        assert ( (ii1 >= cii ));
-        assert ( (cii >= ii1 ));
-        assert (cii - ii1 == 0);
-        assert (ii1 - cii == 0);
+        TC_ASSERT_EXPR ( (ii1 == cii ));
+        TC_ASSERT_EXPR ( (cii == ii1 ));
+        TC_ASSERT_EXPR (!(ii1 != cii ));
+        TC_ASSERT_EXPR (!(cii != ii1 ));
+        TC_ASSERT_EXPR (!(ii1 <  cii ));
+        TC_ASSERT_EXPR (!(cii <  ii1 ));
+        TC_ASSERT_EXPR ( (ii1 <= cii ));
+        TC_ASSERT_EXPR ( (cii <= ii1 ));
+        TC_ASSERT_EXPR (!(ii1 >  cii ));
+        TC_ASSERT_EXPR (!(cii >  ii1 ));
+        TC_ASSERT_EXPR ( (ii1 >= cii ));
+        TC_ASSERT_EXPR ( (cii >= ii1 ));
+        TC_ASSERT_EXPR (cii - ii1 == 0);
+        TC_ASSERT_EXPR (ii1 - cii == 0);
     }
 #endif
+    TC_SUCCESS_RESULT();
+    return 0;
 }

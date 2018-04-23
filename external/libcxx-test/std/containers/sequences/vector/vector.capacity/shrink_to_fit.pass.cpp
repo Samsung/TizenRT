@@ -26,42 +26,45 @@
 
 // <vector>
 
-// void shrink_to_fit();
+// static int shrink_to_fit();
 
 #include <vector>
 #include <cassert>
+#include "libcxx_tc_common.h"
 #include "test_allocator.h"
 #include "asan_testing.h"
 
-int main()
+int tc_libcxx_containers_vector_capacity_shrink_to_fit(void)
 {
     {
         std::vector<int> v(100);
         v.push_back(1);
-        assert(is_contiguous_container_asan_correct(v));
+        TC_ASSERT_EXPR(is_contiguous_container_asan_correct(v));
         v.shrink_to_fit();
-        assert(v.capacity() == 101);
-        assert(v.size() == 101);
-        assert(is_contiguous_container_asan_correct(v));
+        TC_ASSERT_EXPR(v.capacity() == 101);
+        TC_ASSERT_EXPR(v.size() == 101);
+        TC_ASSERT_EXPR(is_contiguous_container_asan_correct(v));
     }
     {
         std::vector<int, limited_allocator<int, 401> > v(100);
         v.push_back(1);
-        assert(is_contiguous_container_asan_correct(v));
+        TC_ASSERT_EXPR(is_contiguous_container_asan_correct(v));
         v.shrink_to_fit();
-        assert(v.capacity() == 101);
-        assert(v.size() == 101);
-        assert(is_contiguous_container_asan_correct(v));
+        TC_ASSERT_EXPR(v.capacity() == 101);
+        TC_ASSERT_EXPR(v.size() == 101);
+        TC_ASSERT_EXPR(is_contiguous_container_asan_correct(v));
     }
 #ifndef _LIBCPP_NO_EXCEPTIONS
     {
         std::vector<int, limited_allocator<int, 400> > v(100);
         v.push_back(1);
-        assert(is_contiguous_container_asan_correct(v));
+        TC_ASSERT_EXPR(is_contiguous_container_asan_correct(v));
         v.shrink_to_fit();
         LIBCPP_ASSERT(v.capacity() == 200); // assumes libc++'s 2x growth factor
-        assert(v.size() == 101);
-        assert(is_contiguous_container_asan_correct(v));
+        TC_ASSERT_EXPR(v.size() == 101);
+        TC_ASSERT_EXPR(is_contiguous_container_asan_correct(v));
     }
 #endif
+    TC_SUCCESS_RESULT();
+    return 0;
 }

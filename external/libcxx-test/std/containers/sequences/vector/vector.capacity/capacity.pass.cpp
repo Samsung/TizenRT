@@ -30,21 +30,24 @@
 
 #include <vector>
 #include <cassert>
+#include "libcxx_tc_common.h"
 
 #include "asan_testing.h"
 
-int main()
+int tc_libcxx_containers_vector_capacity_capacity(void)
 {
     {
         std::vector<int> v;
-        assert(v.capacity() == 0);
-        assert(is_contiguous_container_asan_correct(v));
+        TC_ASSERT_EXPR(v.capacity() == 0);
+        TC_ASSERT_EXPR(is_contiguous_container_asan_correct(v));
     }
     {
         std::vector<int> v(100);
-        assert(v.capacity() == 100);
+        TC_ASSERT_EXPR(v.capacity() == 100);
         v.push_back(0);
-        assert(v.capacity() > 101);
-        assert(is_contiguous_container_asan_correct(v));
+        TC_ASSERT_EXPR(v.capacity() > 101);
+        TC_ASSERT_EXPR(is_contiguous_container_asan_correct(v));
     }
+    TC_SUCCESS_RESULT();
+    return 0;
 }
