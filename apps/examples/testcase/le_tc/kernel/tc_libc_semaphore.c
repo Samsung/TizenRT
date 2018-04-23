@@ -51,7 +51,9 @@ static void tc_libc_semaphore_sem_init(void)
 	sem_t sem;
 	unsigned int value = SEM_VALUE;
 	int ret_chk;
+#ifdef CONFIG_PRIORITY_INHERITANCE
 	uint8_t sem_flag;
+#endif
 
 	ret_chk = sem_init(NULL, PSHARED, 0);
 	TC_ASSERT_EQ("sem_init", ret_chk, ERROR);
