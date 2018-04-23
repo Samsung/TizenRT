@@ -109,6 +109,8 @@ CAResult_t CAQueueingThreadStop(CAQueueingThread_t *thread);
 
 CAResult_t CAQueueingThreadDestroy(CAQueueingThread_t *thread);
 
+uint32_t CAQueueingThreadGetQueueSize(CAQueueingThread_t *thread);
+
 #ifdef __cplusplus
 } /* extern "C" */
 #endif
