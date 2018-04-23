@@ -32,15 +32,18 @@
 
 #include <string>
 #include <cassert>
+#include "libcxx_tc_common.h"
 
 #include "test_macros.h"
 
-int main()
+int tc_libcxx_strings_char_traits_specializations_char32_t_lt(void)
 {
 #ifndef _LIBCPP_HAS_NO_UNICODE_CHARS
 #if TEST_STD_VER >= 11
-    assert(!std::char_traits<char32_t>::lt(U'a', U'a'));
-    assert( std::char_traits<char32_t>::lt(U'A', U'a'));
+    TC_ASSERT_EXPR(!std::char_traits<char32_t>::lt(U'a', U'a'));
+    TC_ASSERT_EXPR( std::char_traits<char32_t>::lt(U'A', U'a'));
 #endif
 #endif  // _LIBCPP_HAS_NO_UNICODE_CHARS
+    TC_SUCCESS_RESULT();
+    return 0;
 }

@@ -26,29 +26,31 @@
 
 // <string>
 
-// void reserve(size_type res_arg=0);
+// static int reserve(size_type res_arg=0);
 
 #include <string>
 #include <stdexcept>
 #include <cassert>
+#include "libcxx_tc_common.h"
 
 #include "test_macros.h"
 
 template <class S>
-void
+static int
 test(S s)
 {
     typename S::size_type old_cap = s.capacity();
     S s0 = s;
     s.reserve();
     LIBCPP_ASSERT(s.__invariants());
-    assert(s == s0);
-    assert(s.capacity() <= old_cap);
-    assert(s.capacity() >= s.size());
+    TC_ASSERT_EXPR(s == s0);
+    TC_ASSERT_EXPR(s.capacity() <= old_cap);
+    TC_ASSERT_EXPR(s.capacity() >= s.size());
+    return 0;
 }
 
 template <class S>
-void
+static int
 test(S s, typename S::size_type res_arg)
 {
     typename S::size_type old_cap = s.capacity();
@@ -57,9 +59,9 @@ test(S s, typename S::size_type res_arg)
     if (res_arg <= s.max_size())
     {
         s.reserve(res_arg);
-        assert(s == s0);
-        assert(s.capacity() >= res_arg);
-        assert(s.capacity() >= s.size());
+        TC_ASSERT_EXPR(s == s0);
+        TC_ASSERT_EXPR(s.capacity() >= res_arg);
+        TC_ASSERT_EXPR(s.capacity() >= s.size());
     }
 #ifndef TEST_HAS_NO_EXCEPTIONS
     else
@@ -67,46 +69,49 @@ test(S s, typename S::size_type res_arg)
         try
         {
             s.reserve(res_arg);
-            assert(false);
+            TC_ASSERT_EXPR(false);
         }
         catch (std::length_error&)
         {
-            assert(res_arg > s.max_size());
+            TC_ASSERT_EXPR(res_arg > s.max_size());
         }
     }
 #endif
+    return 0;
 }
 
-int main()
+int tc_libcxx_strings_string_capacity_reserve(void)
 {
     {
     typedef std::string S;
     {
     S s;
-    test(s);
+    TC_ASSERT_FUNC((test(s)));
 
     s.assign(10, 'a');
     s.erase(5);
-    test(s);
+    TC_ASSERT_FUNC((test(s)));
 
     s.assign(100, 'a');
     s.erase(50);
-    test(s);
+    TC_ASSERT_FUNC((test(s)));
     }
     {
     S s;
-    test(s, 5);
-    test(s, 10);
-    test(s, 50);
+    TC_ASSERT_FUNC((test(s, 5)));
+    TC_ASSERT_FUNC((test(s, 10)));
+    TC_ASSERT_FUNC((test(s, 50)));
     }
     {
     S s(100, 'a');
     s.erase(50);
-    test(s, 5);
-    test(s, 10);
-    test(s, 50);
-    test(s, 100);
-    test(s, S::npos);
+    TC_ASSERT_FUNC((test(s, 5)));
+    TC_ASSERT_FUNC((test(s, 10)));
+    TC_ASSERT_FUNC((test(s, 50)));
+    TC_ASSERT_FUNC((test(s, 100)));
+    TC_ASSERT_FUNC((test(s, S::npos)));
     }
     }
+    TC_SUCCESS_RESULT();
+    return 0;
 }

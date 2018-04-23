@@ -28,7 +28,7 @@
 
 // <string>
 
-// void swap(basic_string& c)
+// static int swap(basic_string& c)
 //     noexcept(!allocator_type::propagate_on_container_swap::value ||
 //              __is_nothrow_swappable<allocator_type>::value);
 //
@@ -41,6 +41,7 @@
 #include <string>
 #include <utility>
 #include <cassert>
+#include "libcxx_tc_common.h"
 
 #include "test_macros.h"
 #include "test_allocator.h"
@@ -52,7 +53,7 @@ struct some_alloc
 
     some_alloc() {}
     some_alloc(const some_alloc&);
-    void deallocate(void*, unsigned) {}
+    static void deallocate(void*, unsigned) {}
 
     typedef std::true_type propagate_on_container_swap;
 };
@@ -64,13 +65,13 @@ struct some_alloc2
 
     some_alloc2() {}
     some_alloc2(const some_alloc2&);
-    void deallocate(void*, unsigned) {}
+    static void deallocate(void*, unsigned) {}
 
     typedef std::false_type propagate_on_container_swap;
     typedef std::true_type is_always_equal;
 };
 
-int main()
+int tc_libcxx_strings_string_special_swap_noexcept(void)
 {
     {
         typedef std::string C;
@@ -98,4 +99,6 @@ int main()
         static_assert( noexcept(swap(std::declval<C&>(), std::declval<C&>())), "");
     }
 #endif
+    TC_SUCCESS_RESULT();
+    return 0;
 }

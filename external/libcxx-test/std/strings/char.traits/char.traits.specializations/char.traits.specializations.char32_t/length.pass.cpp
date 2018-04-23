@@ -33,6 +33,7 @@
 
 #include <string>
 #include <cassert>
+#include "libcxx_tc_common.h"
 
 #include "test_macros.h"
 
@@ -41,22 +42,25 @@ constexpr bool test_constexpr()
 {
     return std::char_traits<char32_t>::length(U"") == 0
         && std::char_traits<char32_t>::length(U"abcd") == 4;
+    return 0;
 }
 #endif
 
-int main()
+int tc_libcxx_strings_char_traits_specializations_char32_t_length(void)
 {
 #ifndef _LIBCPP_HAS_NO_UNICODE_CHARS
 #if TEST_STD_VER >= 11
-    assert(std::char_traits<char32_t>::length(U"") == 0);
-    assert(std::char_traits<char32_t>::length(U"a") == 1);
-    assert(std::char_traits<char32_t>::length(U"aa") == 2);
-    assert(std::char_traits<char32_t>::length(U"aaa") == 3);
-    assert(std::char_traits<char32_t>::length(U"aaaa") == 4);
+    TC_ASSERT_EXPR(std::char_traits<char32_t>::length(U"") == 0);
+    TC_ASSERT_EXPR(std::char_traits<char32_t>::length(U"a") == 1);
+    TC_ASSERT_EXPR(std::char_traits<char32_t>::length(U"aa") == 2);
+    TC_ASSERT_EXPR(std::char_traits<char32_t>::length(U"aaa") == 3);
+    TC_ASSERT_EXPR(std::char_traits<char32_t>::length(U"aaaa") == 4);
 #endif
 
 #if TEST_STD_VER > 14
     static_assert(test_constexpr(), "" );
 #endif
 #endif  // _LIBCPP_HAS_NO_UNICODE_CHARS
+    TC_SUCCESS_RESULT();
+    return 0;
 }

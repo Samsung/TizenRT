@@ -32,17 +32,20 @@
 
 #include <string>
 #include <cassert>
+#include "libcxx_tc_common.h"
 
-int main()
+int tc_libcxx_strings_char_traits_specializations_char16_t_copy(void)
 {
 #ifndef _LIBCPP_HAS_NO_UNICODE_CHARS
     char16_t s1[] = {1, 2, 3};
     char16_t s2[3] = {0};
-    assert(std::char_traits<char16_t>::copy(s2, s1, 3) == s2);
-    assert(s2[0] == char16_t(1));
-    assert(s2[1] == char16_t(2));
-    assert(s2[2] == char16_t(3));
-    assert(std::char_traits<char16_t>::copy(NULL, s1, 0) == NULL);
-    assert(std::char_traits<char16_t>::copy(s1, NULL, 0) == s1);
+    TC_ASSERT_EXPR(std::char_traits<char16_t>::copy(s2, s1, 3) == s2);
+    TC_ASSERT_EXPR(s2[0] == char16_t(1));
+    TC_ASSERT_EXPR(s2[1] == char16_t(2));
+    TC_ASSERT_EXPR(s2[2] == char16_t(3));
+    TC_ASSERT_EXPR(std::char_traits<char16_t>::copy(NULL, s1, 0) == NULL);
+    TC_ASSERT_EXPR(std::char_traits<char16_t>::copy(s1, NULL, 0) == s1);
 #endif  // _LIBCPP_HAS_NO_UNICODE_CHARS
+    TC_SUCCESS_RESULT();
+    return 0;
 }

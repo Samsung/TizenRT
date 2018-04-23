@@ -32,19 +32,22 @@
 
 #include <string>
 #include <cassert>
+#include "libcxx_tc_common.h"
 
-int main()
+int tc_libcxx_strings_char_traits_specializations_char_lt(void)
 {
-    assert( std::char_traits<char>::lt('\0', 'A'));
-    assert(!std::char_traits<char>::lt('A', '\0'));
+    TC_ASSERT_EXPR( std::char_traits<char>::lt('\0', 'A'));
+    TC_ASSERT_EXPR(!std::char_traits<char>::lt('A', '\0'));
 
-    assert(!std::char_traits<char>::lt('a', 'a'));
-    assert( std::char_traits<char>::lt('A', 'a'));
-    assert(!std::char_traits<char>::lt('a', 'A'));
+    TC_ASSERT_EXPR(!std::char_traits<char>::lt('a', 'a'));
+    TC_ASSERT_EXPR( std::char_traits<char>::lt('A', 'a'));
+    TC_ASSERT_EXPR(!std::char_traits<char>::lt('a', 'A'));
 
-    assert( std::char_traits<char>::lt('a', 'z'));
-    assert( std::char_traits<char>::lt('A', 'Z'));
+    TC_ASSERT_EXPR( std::char_traits<char>::lt('a', 'z'));
+    TC_ASSERT_EXPR( std::char_traits<char>::lt('A', 'Z'));
 
-    assert( std::char_traits<char>::lt(' ', 'A'));
-    assert( std::char_traits<char>::lt('A', '~'));
+    TC_ASSERT_EXPR( std::char_traits<char>::lt(' ', 'A'));
+    TC_ASSERT_EXPR( std::char_traits<char>::lt('A', '~'));
+    TC_SUCCESS_RESULT();
+    return 0;
 }

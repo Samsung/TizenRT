@@ -35,9 +35,10 @@
 
 #include <string>
 #include <cassert>
+#include "libcxx_tc_common.h"
 
 
-int main()
+int tc_libcxx_strings_string_access_index(void)
 {
     {
     typedef std::string S;
@@ -45,20 +46,22 @@ int main()
     const S& cs = s;
     for (S::size_type i = 0; i < cs.size(); ++i)
     {
-        assert(s[i] == static_cast<char>('0' + i));
-        assert(cs[i] == s[i]);
+        TC_ASSERT_EXPR(s[i] == static_cast<char>('0' + i));
+        TC_ASSERT_EXPR(cs[i] == s[i]);
     }
-    assert(cs[cs.size()] == '\0');
+    TC_ASSERT_EXPR(cs[cs.size()] == '\0');
     const S s2 = S();
-    assert(s2[0] == '\0');
+    TC_ASSERT_EXPR(s2[0] == '\0');
     }
 #ifdef _LIBCPP_DEBUG
     {
         std::string s;
         char c = s[0];
-        assert(c == '\0');
+        TC_ASSERT_EXPR(c == '\0');
         c = s[1];
-        assert(false);
+        TC_ASSERT_EXPR(false);
     }
 #endif
+    TC_SUCCESS_RESULT();
+    return 0;
 }

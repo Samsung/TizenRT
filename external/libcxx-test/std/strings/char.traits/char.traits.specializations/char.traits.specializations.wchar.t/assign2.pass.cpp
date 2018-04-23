@@ -28,11 +28,12 @@
 
 // template<> struct char_traits<wchar_t>
 
-// static void assign(char_type& c1, const char_type& c2);
+// static static int assign(char_type& c1, const char_type& c2);
 // constexpr in C++17
 
 #include <string>
 #include <cassert>
+#include "libcxx_tc_common.h"
 
 #include "test_macros.h"
 
@@ -42,16 +43,19 @@ constexpr bool test_constexpr()
     wchar_t c = L'1';
     std::char_traits<wchar_t>::assign(c, L'a');
     return c == L'a';
+    return 0;
 }
 #endif
 
-int main()
+int tc_libcxx_strings_char_traits_specializations_wchar_t_assign2(void)
 {
     wchar_t c = L'\0';
     std::char_traits<wchar_t>::assign(c, L'a');
-    assert(c == L'a');
+    TC_ASSERT_EXPR(c == L'a');
 
 #if TEST_STD_VER > 14
     static_assert(test_constexpr(), "" );
 #endif
+    TC_SUCCESS_RESULT();
+    return 0;
 }

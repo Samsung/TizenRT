@@ -30,55 +30,60 @@
 
 #include <string>
 #include <cassert>
+#include "libcxx_tc_common.h"
 
 
 template <class S>
-void
+static int
 test(const S& s, typename S::value_type c, typename S::size_type pos,
      typename S::size_type x)
 {
-    assert(s.find_last_not_of(c, pos) == x);
+    TC_ASSERT_EXPR(s.find_last_not_of(c, pos) == x);
     if (x != S::npos)
-        assert(x <= pos && x < s.size());
+        TC_ASSERT_EXPR(x <= pos && x < s.size());
+    return 0;
 }
 
 template <class S>
-void
+static int
 test(const S& s, typename S::value_type c, typename S::size_type x)
 {
-    assert(s.find_last_not_of(c) == x);
+    TC_ASSERT_EXPR(s.find_last_not_of(c) == x);
     if (x != S::npos)
-        assert(x < s.size());
+        TC_ASSERT_EXPR(x < s.size());
+    return 0;
 }
 
-int main()
+int tc_libcxx_strings_string_find_last_not_of_char_size(void)
 {
     {
     typedef std::string S;
-    test(S(""), 'i', 0, S::npos);
-    test(S(""), 'i', 1, S::npos);
-    test(S("kitcj"), 'i', 0, 0);
-    test(S("qkamf"), 'i', 1, 1);
-    test(S("nhmko"), 'i', 2, 2);
-    test(S("tpsaf"), 'i', 4, 4);
-    test(S("lahfb"), 'i', 5, 4);
-    test(S("irkhs"), 'i', 6, 4);
-    test(S("gmfhdaipsr"), 'i', 0, 0);
-    test(S("kantesmpgj"), 'i', 1, 1);
-    test(S("odaftiegpm"), 'i', 5, 4);
-    test(S("oknlrstdpi"), 'i', 9, 8);
-    test(S("eolhfgpjqk"), 'i', 10, 9);
-    test(S("pcdrofikas"), 'i', 11, 9);
-    test(S("nbatdlmekrgcfqsophij"), 'i', 0, 0);
-    test(S("bnrpehidofmqtcksjgla"), 'i', 1, 1);
-    test(S("jdmciepkaqgotsrfnhlb"), 'i', 10, 10);
-    test(S("jtdaefblsokrmhpgcnqi"), 'i', 19, 18);
-    test(S("hkbgspofltajcnedqmri"), 'i', 20, 18);
-    test(S("oselktgbcapndfjihrmq"), 'i', 21, 19);
+    TC_ASSERT_FUNC((test(S(""), 'i', 0, S::npos)));
+    TC_ASSERT_FUNC((test(S(""), 'i', 1, S::npos)));
+    TC_ASSERT_FUNC((test(S("kitcj"), 'i', 0, 0)));
+    TC_ASSERT_FUNC((test(S("qkamf"), 'i', 1, 1)));
+    TC_ASSERT_FUNC((test(S("nhmko"), 'i', 2, 2)));
+    TC_ASSERT_FUNC((test(S("tpsaf"), 'i', 4, 4)));
+    TC_ASSERT_FUNC((test(S("lahfb"), 'i', 5, 4)));
+    TC_ASSERT_FUNC((test(S("irkhs"), 'i', 6, 4)));
+    TC_ASSERT_FUNC((test(S("gmfhdaipsr"), 'i', 0, 0)));
+    TC_ASSERT_FUNC((test(S("kantesmpgj"), 'i', 1, 1)));
+    TC_ASSERT_FUNC((test(S("odaftiegpm"), 'i', 5, 4)));
+    TC_ASSERT_FUNC((test(S("oknlrstdpi"), 'i', 9, 8)));
+    TC_ASSERT_FUNC((test(S("eolhfgpjqk"), 'i', 10, 9)));
+    TC_ASSERT_FUNC((test(S("pcdrofikas"), 'i', 11, 9)));
+    TC_ASSERT_FUNC((test(S("nbatdlmekrgcfqsophij"), 'i', 0, 0)));
+    TC_ASSERT_FUNC((test(S("bnrpehidofmqtcksjgla"), 'i', 1, 1)));
+    TC_ASSERT_FUNC((test(S("jdmciepkaqgotsrfnhlb"), 'i', 10, 10)));
+    TC_ASSERT_FUNC((test(S("jtdaefblsokrmhpgcnqi"), 'i', 19, 18)));
+    TC_ASSERT_FUNC((test(S("hkbgspofltajcnedqmri"), 'i', 20, 18)));
+    TC_ASSERT_FUNC((test(S("oselktgbcapndfjihrmq"), 'i', 21, 19)));
 
-    test(S(""), 'i', S::npos);
-    test(S("csope"), 'i', 4);
-    test(S("gfsmthlkon"), 'i', 9);
-    test(S("laenfsbridchgotmkqpj"), 'i', 19);
+    TC_ASSERT_FUNC((test(S(""), 'i', S::npos)));
+    TC_ASSERT_FUNC((test(S("csope"), 'i', 4)));
+    TC_ASSERT_FUNC((test(S("gfsmthlkon"), 'i', 9)));
+    TC_ASSERT_FUNC((test(S("laenfsbridchgotmkqpj"), 'i', 19)));
     }
+    TC_SUCCESS_RESULT();
+    return 0;
 }

@@ -30,24 +30,28 @@
 
 #include <string>
 #include <cassert>
+#include "libcxx_tc_common.h"
 
 #include "test_allocator.h"
 
 template <class S>
-void
+static int
 test(const S& s, const typename S::allocator_type& a)
 {
-    assert(s.get_allocator() == a);
+    TC_ASSERT_EXPR(s.get_allocator() == a);
+    return 0;
 }
 
-int main()
+int tc_libcxx_strings_string_accessors_get_allocator(void)
 {
     {
     typedef test_allocator<char> A;
     typedef std::basic_string<char, std::char_traits<char>, A> S;
-    test(S(""), A());
-    test(S("abcde", A(1)), A(1));
-    test(S("abcdefghij", A(2)), A(2));
-    test(S("abcdefghijklmnopqrst", A(3)), A(3));
+    TC_ASSERT_FUNC((test(S(""), A())));
+    TC_ASSERT_FUNC((test(S("abcde", A(1)), A(1))));
+    TC_ASSERT_FUNC((test(S("abcdefghij", A(2)), A(2))));
+    TC_ASSERT_FUNC((test(S("abcdefghijklmnopqrst", A(3)), A(3))));
     }
+    TC_SUCCESS_RESULT();
+    return 0;
 }

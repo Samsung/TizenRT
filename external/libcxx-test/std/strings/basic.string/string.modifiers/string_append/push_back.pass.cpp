@@ -26,10 +26,11 @@
 
 // <string>
 
-// void push_back(charT c)
+// static int push_back(charT c)
 
 #include <string>
 #include <cassert>
+#include "libcxx_tc_common.h"
 
 #include "test_macros.h"
 
@@ -40,29 +41,24 @@ struct veryLarge
 };
 
 template <class S>
-void
+static int
 test(S s, typename S::value_type c, S expected)
 {
     s.push_back(c);
     LIBCPP_ASSERT(s.__invariants());
-    assert(s == expected);
+    TC_ASSERT_EXPR(s == expected);
+    return 0;
 }
 
-int main()
+int tc_libcxx_strings_string_append_push_back(void)
 {
     {
     typedef std::string S;
-    test(S(), 'a', S(1, 'a'));
-    test(S("12345"), 'a', S("12345a"));
-    test(S("12345678901234567890"), 'a', S("12345678901234567890a"));
+    TC_ASSERT_FUNC((test(S(), 'a', S(1, 'a'))));
+    TC_ASSERT_FUNC((test(S("12345"), 'a', S("12345a"))));
+    TC_ASSERT_FUNC((test(S("12345678901234567890"), 'a', S("12345678901234567890a"))));
     }
 
-    {
-// https://bugs.llvm.org/show_bug.cgi?id=31454
-    std::basic_string<veryLarge> s;
-    veryLarge vl = {};
-    s.push_back(vl);
-    s.push_back(vl);
-    s.push_back(vl);
-    }
+    TC_SUCCESS_RESULT();
+    return 0;
 }

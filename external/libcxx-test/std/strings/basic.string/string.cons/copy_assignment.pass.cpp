@@ -31,28 +31,30 @@
 
 #include <string>
 #include <cassert>
+#include "libcxx_tc_common.h"
 
 #include "test_macros.h"
 
 template <class S>
-void
+static int
 test(S s1, const S& s2)
 {
     s1 = s2;
     LIBCPP_ASSERT(s1.__invariants());
-    assert(s1 == s2);
-    assert(s1.capacity() >= s1.size());
+    TC_ASSERT_EXPR(s1 == s2);
+    TC_ASSERT_EXPR(s1.capacity() >= s1.size());
+    return 0;
 }
 
-int main()
+int tc_libcxx_strings_string_cons_copy_assignment(void)
 {
     {
     typedef std::string S;
-    test(S(), S());
-    test(S("1"), S());
-    test(S(), S("1"));
-    test(S("1"), S("2"));
-    test(S("1"), S("2"));
+    TC_ASSERT_FUNC((test(S(), S())));
+    TC_ASSERT_FUNC((test(S("1"), S())));
+    TC_ASSERT_FUNC((test(S(), S("1"))));
+    TC_ASSERT_FUNC((test(S("1"), S("2"))));
+    TC_ASSERT_FUNC((test(S("1"), S("2"))));
 
     test(S(),
          S("abcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyz"));
@@ -64,4 +66,6 @@ int main()
            "1234567890123456789012345678901234567890123456789012345678901234567890"),
          S("abcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyz"));
     }
+    TC_SUCCESS_RESULT();
+    return 0;
 }

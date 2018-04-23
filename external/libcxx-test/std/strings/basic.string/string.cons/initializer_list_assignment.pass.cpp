@@ -32,13 +32,16 @@
 
 #include <string>
 #include <cassert>
+#include "libcxx_tc_common.h"
 
 
-int main()
+int tc_libcxx_strings_string_cons_initializer_list_assignment(void)
 {
     {
         std::string s;
         s = {'a', 'b', 'c'};
-        assert(s == "abc");
+        TC_ASSERT_EXPR(s == "abc");
     }
+    TC_SUCCESS_RESULT();
+    return 0;
 }

@@ -30,12 +30,13 @@
 
 #include <string>
 #include <cassert>
+#include "libcxx_tc_common.h"
 
 #include "test_macros.h"
 #include "test_allocator.h"
 
 template <class S>
-void
+static int
 test()
 {
     {
@@ -46,10 +47,10 @@ test()
 #endif
     S s;
     LIBCPP_ASSERT(s.__invariants());
-    assert(s.data());
-    assert(s.size() == 0);
-    assert(s.capacity() >= s.size());
-    assert(s.get_allocator() == typename S::allocator_type());
+    TC_ASSERT_EXPR(s.data());
+    TC_ASSERT_EXPR(s.size() == 0);
+    TC_ASSERT_EXPR(s.capacity() >= s.size());
+    TC_ASSERT_EXPR(s.get_allocator() == typename S::allocator_type());
     }
     {
 #if TEST_STD_VER > 14
@@ -59,14 +60,17 @@ test()
 #endif
     S s(typename S::allocator_type(5));
     LIBCPP_ASSERT(s.__invariants());
-    assert(s.data());
-    assert(s.size() == 0);
-    assert(s.capacity() >= s.size());
-    assert(s.get_allocator() == typename S::allocator_type(5));
+    TC_ASSERT_EXPR(s.data());
+    TC_ASSERT_EXPR(s.size() == 0);
+    TC_ASSERT_EXPR(s.capacity() >= s.size());
+    TC_ASSERT_EXPR(s.get_allocator() == typename S::allocator_type(5));
     }
+    return 0;
 }
 
-int main()
+int tc_libcxx_strings_string_cons_alloc(void)
 {
-    test<std::basic_string<char, std::char_traits<char>, test_allocator<char> > >();
+    TC_ASSERT_FUNC((test<std::basic_string<char, std::char_traits<char>, test_allocator<char> > >()));
+    TC_SUCCESS_RESULT();
+    return 0;
 }

@@ -31,34 +31,38 @@
 
 #include <string>
 #include <cassert>
+#include "libcxx_tc_common.h"
 
 
 template <class S>
-void
+static int
 test(const typename S::value_type* lhs, const S& rhs, bool x)
 {
-    assert((lhs >= rhs) == x);
+    TC_ASSERT_EXPR((lhs >= rhs) == x);
+    return 0;
 }
 
-int main()
+int tc_libcxx_strings_string_opgt__pointer_string(void)
 {
     {
     typedef std::string S;
-    test("", S(""), true);
-    test("", S("abcde"), false);
-    test("", S("abcdefghij"), false);
-    test("", S("abcdefghijklmnopqrst"), false);
-    test("abcde", S(""), true);
-    test("abcde", S("abcde"), true);
-    test("abcde", S("abcdefghij"), false);
-    test("abcde", S("abcdefghijklmnopqrst"), false);
-    test("abcdefghij", S(""), true);
-    test("abcdefghij", S("abcde"), true);
-    test("abcdefghij", S("abcdefghij"), true);
-    test("abcdefghij", S("abcdefghijklmnopqrst"), false);
-    test("abcdefghijklmnopqrst", S(""), true);
-    test("abcdefghijklmnopqrst", S("abcde"), true);
-    test("abcdefghijklmnopqrst", S("abcdefghij"), true);
-    test("abcdefghijklmnopqrst", S("abcdefghijklmnopqrst"), true);
+    TC_ASSERT_FUNC((test("", S(""), true)));
+    TC_ASSERT_FUNC((test("", S("abcde"), false)));
+    TC_ASSERT_FUNC((test("", S("abcdefghij"), false)));
+    TC_ASSERT_FUNC((test("", S("abcdefghijklmnopqrst"), false)));
+    TC_ASSERT_FUNC((test("abcde", S(""), true)));
+    TC_ASSERT_FUNC((test("abcde", S("abcde"), true)));
+    TC_ASSERT_FUNC((test("abcde", S("abcdefghij"), false)));
+    TC_ASSERT_FUNC((test("abcde", S("abcdefghijklmnopqrst"), false)));
+    TC_ASSERT_FUNC((test("abcdefghij", S(""), true)));
+    TC_ASSERT_FUNC((test("abcdefghij", S("abcde"), true)));
+    TC_ASSERT_FUNC((test("abcdefghij", S("abcdefghij"), true)));
+    TC_ASSERT_FUNC((test("abcdefghij", S("abcdefghijklmnopqrst"), false)));
+    TC_ASSERT_FUNC((test("abcdefghijklmnopqrst", S(""), true)));
+    TC_ASSERT_FUNC((test("abcdefghijklmnopqrst", S("abcde"), true)));
+    TC_ASSERT_FUNC((test("abcdefghijklmnopqrst", S("abcdefghij"), true)));
+    TC_ASSERT_FUNC((test("abcdefghijklmnopqrst", S("abcdefghijklmnopqrst"), true)));
     }
+    TC_SUCCESS_RESULT();
+    return 0;
 }

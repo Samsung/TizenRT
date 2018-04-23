@@ -26,29 +26,33 @@
 
 // <string>
 
-// void pop_back();
+// static int pop_back();
 
 #include <string>
 #include <cassert>
+#include "libcxx_tc_common.h"
 
 #include "test_macros.h"
 
 template <class S>
-void
+static int
 test(S s, S expected)
 {
     s.pop_back();
     LIBCPP_ASSERT(s.__invariants());
-    assert(s[s.size()] == typename S::value_type());
-    assert(s == expected);
+    TC_ASSERT_EXPR(s[s.size()] == typename S::value_type());
+    TC_ASSERT_EXPR(s == expected);
+    return 0;
 }
 
-int main()
+int tc_libcxx_strings_string_erase_pop_back(void)
 {
     {
     typedef std::string S;
-    test(S("abcde"), S("abcd"));
-    test(S("abcdefghij"), S("abcdefghi"));
-    test(S("abcdefghijklmnopqrst"), S("abcdefghijklmnopqrs"));
+    TC_ASSERT_FUNC((test(S("abcde"), S("abcd"))));
+    TC_ASSERT_FUNC((test(S("abcdefghij"), S("abcdefghi"))));
+    TC_ASSERT_FUNC((test(S("abcdefghijklmnopqrst"), S("abcdefghijklmnopqrs"))));
     }
+    TC_SUCCESS_RESULT();
+    return 0;
 }

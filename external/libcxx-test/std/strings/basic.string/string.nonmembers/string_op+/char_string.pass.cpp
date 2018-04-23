@@ -37,21 +37,24 @@
 #include <string>
 #include <utility>
 #include <cassert>
+#include "libcxx_tc_common.h"
 
 #include "test_macros.h"
 
 template <class S>
-void test0(typename S::value_type lhs, const S& rhs, const S& x) {
-  assert(lhs + rhs == x);
+static int test0(typename S::value_type lhs, const S& rhs, const S& x) {
+  TC_ASSERT_EXPR(lhs + rhs == x);
+    return 0;
 }
 
 
-int main() {
-  {
+int tc_libcxx_strings_string_op__char_string(void)
+{
     typedef std::string S;
-    test0('a', S(""), S("a"));
-    test0('a', S("12345"), S("a12345"));
-    test0('a', S("1234567890"), S("a1234567890"));
-    test0('a', S("12345678901234567890"), S("a12345678901234567890"));
-  }
+    TC_ASSERT_FUNC((test0('a', S(""), S("a"))));
+    TC_ASSERT_FUNC((test0('a', S("12345"), S("a12345"))));
+    TC_ASSERT_FUNC((test0('a', S("1234567890"), S("a1234567890"))));
+    TC_ASSERT_FUNC((test0('a', S("12345678901234567890"), S("a12345678901234567890"))));
+    TC_SUCCESS_RESULT();
+    return 0;
 }

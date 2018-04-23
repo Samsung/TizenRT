@@ -30,13 +30,14 @@
 
 #include <string>
 #include <cassert>
+#include "libcxx_tc_common.h"
 
 #include "test_allocator.h"
 
 #include "test_macros.h"
 
 template <class S>
-void
+static int
 test(S s)
 {
     S::allocator_type::throw_after = 0;
@@ -46,28 +47,31 @@ test(S s)
     {
         while (s.size() < s.capacity())
             s.push_back(typename S::value_type());
-        assert(s.size() == s.capacity());
+        TC_ASSERT_EXPR(s.size() == s.capacity());
     }
 #ifndef TEST_HAS_NO_EXCEPTIONS
     catch (...)
     {
-        assert(false);
+        TC_ASSERT_EXPR(false);
     }
 #endif
     S::allocator_type::throw_after = INT_MAX;
+    return 0;
 }
 
-int main()
+int tc_libcxx_strings_string_capacity_capacity(void)
 {
     {
     typedef std::basic_string<char, std::char_traits<char>, test_allocator<char> > S;
     S s;
-    test(s);
+    TC_ASSERT_FUNC((test(s)));
     s.assign(10, 'a');
     s.erase(5);
-    test(s);
+    TC_ASSERT_FUNC((test(s)));
     s.assign(100, 'a');
     s.erase(50);
-    test(s);
+    TC_ASSERT_FUNC((test(s)));
     }
+    TC_SUCCESS_RESULT();
+    return 0;
 }

@@ -37,12 +37,13 @@
 
 #include <string>
 #include <cassert>
+#include "libcxx_tc_common.h"
 #include <type_traits>
 
 #include "test_macros.h"
 
 template <class T>
-void
+static int
 test()
 {
     typedef std::hash<T> H;
@@ -55,15 +56,18 @@ test()
     std::string g2 = "1234567891";
     T s1(g1.begin(), g1.end());
     T s2(g2.begin(), g2.end());
-    assert(h(s1) != h(s2));
+    TC_ASSERT_EXPR(h(s1) != h(s2));
+    return 0;
 }
 
-int main()
+int tc_libcxx_strings_basic_string_hash_strings(void)
 {
-    test<std::string>();
+    TC_ASSERT_FUNC((test<std::string>()));
 #ifndef _LIBCPP_HAS_NO_UNICODE_CHARS
-    test<std::u16string>();
-    test<std::u32string>();
+    TC_ASSERT_FUNC((test<std::u16string>()));
+    TC_ASSERT_FUNC((test<std::u32string>()));
 #endif  // _LIBCPP_HAS_NO_UNICODE_CHARS
-    test<std::wstring>();
+    TC_ASSERT_FUNC((test<std::wstring>()));
+    TC_SUCCESS_RESULT();
+    return 0;
 }

@@ -31,32 +31,34 @@
 #include <string>
 #include <stdexcept>
 #include <cassert>
+#include "libcxx_tc_common.h"
 
 #include "test_macros.h"
 
 template <class S>
-void
+static int
 test(S s, const typename S::value_type* str, S expected)
 {
     s.append(str);
     LIBCPP_ASSERT(s.__invariants());
-    assert(s == expected);
+    TC_ASSERT_EXPR(s == expected);
+    return 0;
 }
 
-int main()
+int tc_libcxx_strings_string_append_pointer(void)
 {
     {
     typedef std::string S;
-    test(S(), "", S());
-    test(S(), "12345", S("12345"));
-    test(S(), "12345678901234567890", S("12345678901234567890"));
+    TC_ASSERT_FUNC((test(S(), "", S())));
+    TC_ASSERT_FUNC((test(S(), "12345", S("12345"))));
+    TC_ASSERT_FUNC((test(S(), "12345678901234567890", S("12345678901234567890"))));
 
-    test(S("12345"), "", S("12345"));
-    test(S("12345"), "12345", S("1234512345"));
-    test(S("12345"), "1234567890", S("123451234567890"));
+    TC_ASSERT_FUNC((test(S("12345"), "", S("12345"))));
+    TC_ASSERT_FUNC((test(S("12345"), "12345", S("1234512345"))));
+    TC_ASSERT_FUNC((test(S("12345"), "1234567890", S("123451234567890"))));
 
-    test(S("12345678901234567890"), "", S("12345678901234567890"));
-    test(S("12345678901234567890"), "12345", S("1234567890123456789012345"));
+    TC_ASSERT_FUNC((test(S("12345678901234567890"), "", S("12345678901234567890"))));
+    TC_ASSERT_FUNC((test(S("12345678901234567890"), "12345", S("1234567890123456789012345"))));
     test(S("12345678901234567890"), "12345678901234567890",
          S("1234567890123456789012345678901234567890"));
     }
@@ -67,13 +69,15 @@ int main()
     S s_long  = "Lorem ipsum dolor sit amet, consectetur/";
 
     s_short.append(s_short.c_str());
-    assert(s_short == "123/123/");
+    TC_ASSERT_EXPR(s_short == "123/123/");
     s_short.append(s_short.c_str());
-    assert(s_short == "123/123/123/123/");
+    TC_ASSERT_EXPR(s_short == "123/123/123/123/");
     s_short.append(s_short.c_str());
-    assert(s_short == "123/123/123/123/123/123/123/123/");
+    TC_ASSERT_EXPR(s_short == "123/123/123/123/123/123/123/123/");
 
     s_long.append(s_long.c_str());
-    assert(s_long == "Lorem ipsum dolor sit amet, consectetur/Lorem ipsum dolor sit amet, consectetur/");
+    TC_ASSERT_EXPR(s_long == "Lorem ipsum dolor sit amet, consectetur/Lorem ipsum dolor sit amet, consectetur/");
     }
+    TC_SUCCESS_RESULT();
+    return 0;
 }

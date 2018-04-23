@@ -38,45 +38,51 @@
 
 #include <string>
 #include <cassert>
+#include "libcxx_tc_common.h"
 
 
 template <class S>
-void
+static int
 test1(const S& s)
 {
     S s2(s);
     const size_t sz = s2.max_size() - 1;
     try { s2.resize(sz, 'x'); }
-    catch ( const std::bad_alloc & ) { return ; }
-    assert ( s2.size() ==  sz );
+    catch ( const std::bad_alloc & ) { return 0; }
+    TC_ASSERT_EXPR ( s2.size() ==  sz );
+    return 0;
 }
 
 template <class S>
-void
+static int
 test2(const S& s)
 {
     S s2(s);
     const size_t sz = s2.max_size();
     try { s2.resize(sz, 'x'); }
-    catch ( const std::bad_alloc & ) { return ; }
-    assert ( s.size() ==  sz );
+    catch ( const std::bad_alloc & ) { return 0; }
+    TC_ASSERT_EXPR ( s.size() ==  sz );
+    return 0;
 }
 
 template <class S>
-void
+static int
 test(const S& s)
 {
-    assert(s.max_size() >= s.size());
-    test1(s);
-    test2(s);
+    TC_ASSERT_EXPR(s.max_size() >= s.size());
+    TC_ASSERT_FUNC((test1(s)));
+    TC_ASSERT_FUNC((test2(s)));
+    return 0;
 }
 
-int main()
+int tc_libcxx_strings_string_capacity_max_size(void)
 {
     {
     typedef std::string S;
-    test(S());
-    test(S("123"));
-    test(S("12345678901234567890123456789012345678901234567890"));
+    TC_ASSERT_FUNC((test(S())));
+    TC_ASSERT_FUNC((test(S("123"))));
+    TC_ASSERT_FUNC((test(S("12345678901234567890123456789012345678901234567890"))));
     }
+    TC_SUCCESS_RESULT();
+    return 0;
 }

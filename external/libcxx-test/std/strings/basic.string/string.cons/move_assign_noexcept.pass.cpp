@@ -40,6 +40,7 @@
 
 #include <string>
 #include <cassert>
+#include "libcxx_tc_common.h"
 
 #include "test_macros.h"
 #include "test_allocator.h"
@@ -77,7 +78,7 @@ struct some_alloc3
     typedef std::false_type is_always_equal;
 };
 
-int main()
+int tc_libcxx_strings_string_cons_move_assign_noexcept(void)
 {
     {
         typedef std::string C;
@@ -108,4 +109,6 @@ int main()
         static_assert(!std::is_nothrow_move_assignable<C>::value, "");
     }
 #endif
+    TC_SUCCESS_RESULT();
+    return 0;
 }

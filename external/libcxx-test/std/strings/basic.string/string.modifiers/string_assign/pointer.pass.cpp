@@ -31,32 +31,34 @@
 #include <string>
 #include <stdexcept>
 #include <cassert>
+#include "libcxx_tc_common.h"
 
 #include "test_macros.h"
 
 template <class S>
-void
+static int
 test(S s, const typename S::value_type* str, S expected)
 {
     s.assign(str);
     LIBCPP_ASSERT(s.__invariants());
-    assert(s == expected);
+    TC_ASSERT_EXPR(s == expected);
+    return 0;
 }
 
-int main()
+int tc_libcxx_strings_string_assign_pointer(void)
 {
     {
     typedef std::string S;
-    test(S(), "", S());
-    test(S(), "12345", S("12345"));
-    test(S(), "12345678901234567890", S("12345678901234567890"));
+    TC_ASSERT_FUNC((test(S(), "", S())));
+    TC_ASSERT_FUNC((test(S(), "12345", S("12345"))));
+    TC_ASSERT_FUNC((test(S(), "12345678901234567890", S("12345678901234567890"))));
 
-    test(S("12345"), "", S());
-    test(S("12345"), "12345", S("12345"));
-    test(S("12345"), "1234567890", S("1234567890"));
+    TC_ASSERT_FUNC((test(S("12345"), "", S())));
+    TC_ASSERT_FUNC((test(S("12345"), "12345", S("12345"))));
+    TC_ASSERT_FUNC((test(S("12345"), "1234567890", S("1234567890"))));
 
-    test(S("12345678901234567890"), "", S());
-    test(S("12345678901234567890"), "12345", S("12345"));
+    TC_ASSERT_FUNC((test(S("12345678901234567890"), "", S())));
+    TC_ASSERT_FUNC((test(S("12345678901234567890"), "12345", S("12345"))));
     test(S("12345678901234567890"), "12345678901234567890",
          S("12345678901234567890"));
     }
@@ -67,11 +69,13 @@ int main()
     S s_long  = "Lorem ipsum dolor sit amet, consectetur/";
 
     s_short.assign(s_short.c_str());
-    assert(s_short == "123/");
+    TC_ASSERT_EXPR(s_short == "123/");
     s_short.assign(s_short.c_str() + 2);
-    assert(s_short == "3/");
+    TC_ASSERT_EXPR(s_short == "3/");
 
     s_long.assign(s_long.c_str() + 30);
-    assert(s_long == "nsectetur/");
+    TC_ASSERT_EXPR(s_long == "nsectetur/");
     }
+    TC_SUCCESS_RESULT();
+    return 0;
 }

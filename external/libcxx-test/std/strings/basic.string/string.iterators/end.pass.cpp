@@ -31,11 +31,12 @@
 
 #include <string>
 #include <cassert>
+#include "libcxx_tc_common.h"
 #include <cstddef>
 
 
 template <class S>
-void
+static int
 test(S s)
 {
     const S& cs = s;
@@ -43,18 +44,21 @@ test(S s)
     typename S::const_iterator ce = cs.end();
     if (s.empty())
     {
-        assert(e == s.begin());
-        assert(ce == cs.begin());
+        TC_ASSERT_EXPR(e == s.begin());
+        TC_ASSERT_EXPR(ce == cs.begin());
     }
-    assert(static_cast<std::size_t>(e - s.begin()) == s.size());
-    assert(static_cast<std::size_t>(ce - cs.begin()) == cs.size());
+    TC_ASSERT_EXPR(static_cast<std::size_t>(e - s.begin()) == s.size());
+    TC_ASSERT_EXPR(static_cast<std::size_t>(ce - cs.begin()) == cs.size());
+    return 0;
 }
 
-int main()
+int tc_libcxx_strings_string_iterators_end(void)
 {
     {
     typedef std::string S;
-    test(S());
-    test(S("123"));
+    TC_ASSERT_FUNC((test(S())));
+    TC_ASSERT_FUNC((test(S("123"))));
     }
+    TC_SUCCESS_RESULT();
+    return 0;
 }

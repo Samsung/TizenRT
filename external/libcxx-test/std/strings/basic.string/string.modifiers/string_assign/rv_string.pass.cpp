@@ -32,41 +32,45 @@
 #include <string>
 #include <utility>
 #include <cassert>
+#include "libcxx_tc_common.h"
 
 #include "test_macros.h"
 
 template <class S>
-void
+static int
 test(S s, S str, S expected)
 {
     s.assign(std::move(str));
     LIBCPP_ASSERT(s.__invariants());
-    assert(s == expected);
+    TC_ASSERT_EXPR(s == expected);
+    return 0;
 }
 
-int main()
+int tc_libcxx_strings_string_assign_rv_string(void)
 {
     {
     typedef std::string S;
-    test(S(), S(), S());
-    test(S(), S("12345"), S("12345"));
-    test(S(), S("1234567890"), S("1234567890"));
-    test(S(), S("12345678901234567890"), S("12345678901234567890"));
+    TC_ASSERT_FUNC((test(S(), S(), S())));
+    TC_ASSERT_FUNC((test(S(), S("12345"), S("12345"))));
+    TC_ASSERT_FUNC((test(S(), S("1234567890"), S("1234567890"))));
+    TC_ASSERT_FUNC((test(S(), S("12345678901234567890"), S("12345678901234567890"))));
 
-    test(S("12345"), S(), S());
-    test(S("12345"), S("12345"), S("12345"));
-    test(S("12345"), S("1234567890"), S("1234567890"));
-    test(S("12345"), S("12345678901234567890"), S("12345678901234567890"));
+    TC_ASSERT_FUNC((test(S("12345"), S(), S())));
+    TC_ASSERT_FUNC((test(S("12345"), S("12345"), S("12345"))));
+    TC_ASSERT_FUNC((test(S("12345"), S("1234567890"), S("1234567890"))));
+    TC_ASSERT_FUNC((test(S("12345"), S("12345678901234567890"), S("12345678901234567890"))));
 
-    test(S("1234567890"), S(), S());
-    test(S("1234567890"), S("12345"), S("12345"));
-    test(S("1234567890"), S("1234567890"), S("1234567890"));
-    test(S("1234567890"), S("12345678901234567890"), S("12345678901234567890"));
+    TC_ASSERT_FUNC((test(S("1234567890"), S(), S())));
+    TC_ASSERT_FUNC((test(S("1234567890"), S("12345"), S("12345"))));
+    TC_ASSERT_FUNC((test(S("1234567890"), S("1234567890"), S("1234567890"))));
+    TC_ASSERT_FUNC((test(S("1234567890"), S("12345678901234567890"), S("12345678901234567890"))));
 
-    test(S("12345678901234567890"), S(), S());
-    test(S("12345678901234567890"), S("12345"), S("12345"));
-    test(S("12345678901234567890"), S("1234567890"), S("1234567890"));
+    TC_ASSERT_FUNC((test(S("12345678901234567890"), S(), S())));
+    TC_ASSERT_FUNC((test(S("12345678901234567890"), S("12345"), S("12345"))));
+    TC_ASSERT_FUNC((test(S("12345678901234567890"), S("1234567890"), S("1234567890"))));
     test(S("12345678901234567890"), S("12345678901234567890"),
          S("12345678901234567890"));
     }
+    TC_SUCCESS_RESULT();
+    return 0;
 }

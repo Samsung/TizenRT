@@ -37,8 +37,9 @@
 #include <string>
 #include <type_traits>
 #include <cstdint>
+#include "libcxx_tc_common.h"
 
-int main()
+int tc_libcxx_strings_char_traits_specializations_char32_t_types(void)
 {
 #ifndef _LIBCPP_HAS_NO_UNICODE_CHARS
     static_assert((std::is_same<std::char_traits<char32_t>::char_type, char32_t>::value), "");
@@ -47,4 +48,6 @@ int main()
     static_assert((std::is_same<std::char_traits<char32_t>::pos_type, std::u32streampos>::value), "");
     static_assert((std::is_same<std::char_traits<char32_t>::state_type, std::mbstate_t>::value), "");
 #endif  // _LIBCPP_HAS_NO_UNICODE_CHARS
+    TC_SUCCESS_RESULT();
+    return 0;
 }

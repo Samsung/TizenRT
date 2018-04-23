@@ -28,11 +28,12 @@
 
 // template<> struct char_traits<char>
 
-// static constexpr void assign(char_type& c1, const char_type& c2); // constexpr in C++17
+// static constexpr static int assign(char_type& c1, const char_type& c2); // constexpr in C++17
 // constexpr in C++17
 
 #include <string>
 #include <cassert>
+#include "libcxx_tc_common.h"
 
 #include "test_macros.h"
 
@@ -42,16 +43,19 @@ constexpr bool test_constexpr()
     char c = '1';
     std::char_traits<char>::assign(c, 'a');
     return c == 'a';
+    return 0;
 }
 #endif
 
-int main()
+int tc_libcxx_strings_char_traits_specializations_char_assign2(void)
 {
     char c = '\0';
     std::char_traits<char>::assign(c, 'a');
-    assert(c == 'a');
+    TC_ASSERT_EXPR(c == 'a');
 
 #if TEST_STD_VER > 14
     static_assert(test_constexpr(), "" );
 #endif
+    TC_SUCCESS_RESULT();
+    return 0;
 }

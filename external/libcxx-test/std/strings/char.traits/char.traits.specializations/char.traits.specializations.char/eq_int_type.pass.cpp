@@ -32,12 +32,15 @@
 
 #include <string>
 #include <cassert>
+#include "libcxx_tc_common.h"
 
-int main()
+int tc_libcxx_strings_char_traits_specializations_char_eq_int_type(void)
 {
-    assert( std::char_traits<char>::eq_int_type('a', 'a'));
-    assert(!std::char_traits<char>::eq_int_type('a', 'A'));
-    assert(!std::char_traits<char>::eq_int_type(std::char_traits<char>::eof(), 'A'));
-    assert( std::char_traits<char>::eq_int_type(std::char_traits<char>::eof(),
+    TC_ASSERT_EXPR( std::char_traits<char>::eq_int_type('a', 'a'));
+    TC_ASSERT_EXPR(!std::char_traits<char>::eq_int_type('a', 'A'));
+    TC_ASSERT_EXPR(!std::char_traits<char>::eq_int_type(std::char_traits<char>::eof(), 'A'));
+    TC_ASSERT_EXPR( std::char_traits<char>::eq_int_type(std::char_traits<char>::eof(),
                                                 std::char_traits<char>::eof()));
+    TC_SUCCESS_RESULT();
+    return 0;
 }

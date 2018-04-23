@@ -36,18 +36,21 @@
 #include <string>
 #include <sstream>
 #include <cassert>
+#include "libcxx_tc_common.h"
 
 
-int main()
+int tc_libcxx_strings_string_io_get_line_delim_rv(void)
 {
     {
         std::string s("initial text");
         getline(std::istringstream(" abc*  def*   ghij"), s, '*');
-        assert(s == " abc");
+        TC_ASSERT_EXPR(s == " abc");
     }
     {
         std::wstring s(L"initial text");
         getline(std::wistringstream(L" abc*  def*   ghij"), s, L'*');
-        assert(s == L" abc");
+        TC_ASSERT_EXPR(s == L" abc");
     }
+    TC_SUCCESS_RESULT();
+    return 0;
 }

@@ -32,13 +32,16 @@
 
 #include <string>
 #include <cassert>
+#include "libcxx_tc_common.h"
 
-int main()
+int tc_libcxx_strings_char_traits_specializations_char_assign3(void)
 {
     char s2[3] = {0};
-    assert(std::char_traits<char>::assign(s2, 3, char(5)) == s2);
-    assert(s2[0] == char(5));
-    assert(s2[1] == char(5));
-    assert(s2[2] == char(5));
-    assert(std::char_traits<char>::assign(NULL, 0, char(5)) == NULL);
+    TC_ASSERT_EXPR(std::char_traits<char>::assign(s2, 3, char(5)) == s2);
+    TC_ASSERT_EXPR(s2[0] == char(5));
+    TC_ASSERT_EXPR(s2[1] == char(5));
+    TC_ASSERT_EXPR(s2[2] == char(5));
+    TC_ASSERT_EXPR(std::char_traits<char>::assign(NULL, 0, char(5)) == NULL);
+    TC_SUCCESS_RESULT();
+    return 0;
 }
