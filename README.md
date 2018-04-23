@@ -15,14 +15,14 @@ Please find project details at [Wiki](https://github.com/Samsung/TizenRT/wiki) e
 ## Quick Start
 ### Getting the toolchain
 
-Get the build in binaries and libraries, [gcc-arm-none-eabi-4_9-2015q3-20150921-linux.tar.bz2](https://launchpad.net/gcc-arm-embedded/4.9/4.9-2015-q3-update)  
-Untar the gcc-arm-none-eabi-4_9-2015q3-20150921-linux.tar.bz2 and export the path like
+Get the build in binaries and libraries, [gcc-arm-none-eabi-6-2017-q1-update-linux.tar.bz2](https://developer.arm.com/open-source/gnu-toolchain/gnu-rm/downloads/6-2017-q1-update)  
+Untar the gcc-arm-none-eabi-6-2017-q1-update-linux.tar.bz2 and export the path like
 
 ```bash
-tar xvjf gcc-arm-none-eabi-4_9-2015q3-20150921-linux.tar.bz2
+tar xvjf gcc-arm-none-eabi-6-2017-q1-update-linux.tar.bz2
 export PATH=<Your Toolchain PATH>:$PATH
 ```
-Be aware that recommanded toolchain is fully working on 32bits machine. 64bits machine needs additional packages.
+Be aware that recommanded toolchain is fully working on 64bits machine.
 
 ### Getting the sources
 
