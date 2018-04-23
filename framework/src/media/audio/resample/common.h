@@ -36,29 +36,6 @@
 #define MAX(a,b)        (((a) > (b)) ? (a) : (b))
 #define MIN(a,b)        (((a) < (b)) ? (a) : (b))
 
-static const int32_t filter_16khz_coeff[] = {
-	2057290, -2973608, 1880478, 4362037,
-	-14639744, 18523609, -1609189, -38502470,
-	78073125, -68353935, -59103896, 617555440,
-	617555440, -59103896, -68353935, 78073125,
-	-38502470, -1609189, 18523609, -14639744,
-	4362037, 1880478, -2973608, 2057290,
-};
-static const int32_t filter_22khz_coeff[] = {
-	2089257, 2898328, -5820678, -10484531,
-	19038724, 30542725, -50469415, -81505260,
-	152544464, 478517512, 478517512, 152544464,
-	-81505260, -50469415, 30542725, 19038724,
-	-10484531, -5820678, 2898328, 2089257,
-};
-
-#define NUM_COEFF_22KHZ (sizeof(filter_22khz_coeff) / sizeof(filter_22khz_coeff[0]))
-#define OVERLAP_22KHZ (NUM_COEFF_22KHZ - 2)
-
-
-#define NUM_COEFF_16KHZ (sizeof(filter_16khz_coeff) / sizeof(filter_16khz_coeff[0]))
-#define OVERLAP_16KHZ (NUM_COEFF_16KHZ - 1)
-
 // at least remain one frame (one sample for each channel)
 #define OVERLAP_DEFAULT                 (1)
 
