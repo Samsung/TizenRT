@@ -426,6 +426,8 @@ tls_session *TLSSession(int fd, tls_ctx *ctx, tls_opt *opt)
 		return NULL;
 	}
 
+	mbedtls_net_init(&listen_ctx);
+
 	if ((ret = tls_set_default(session, ctx, opt)) != TLS_SUCCESS) {
 		EASY_TLS_DEBUG("tls_set_default fail 0x%x\n", ret);
 		goto errout;
