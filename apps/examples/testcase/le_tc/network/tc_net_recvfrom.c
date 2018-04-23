@@ -72,6 +72,10 @@ void tc_net_recvfrom_sock_n(void)
 	struct sockaddr_storage serverStorage;
 	socklen_t addr_size;
 	int fd = socket(AF_INET, SOCK_STREAM, IPPROTO_UDP);
+	if (fd < 0) {
+		printf("socket fail %s:%d", __FUNCTION__, __LINE__);
+		return;
+	}
 	int ret = recvfrom(fd, buffer, MAXRCVLEN, 0, (struct sockaddr *)&serverStorage, &addr_size);
 
 	TC_ASSERT_EQ_CLEANUP("recvfrom", ret, -1, close(fd));
@@ -114,6 +118,10 @@ void *recvfrom_udpserver(void *args)
 {
 	struct sockaddr_in sa;
 	int SocketFD = socket(PF_INET, SOCK_DGRAM, IPPROTO_UDP);
+	if (SocketFD < 0) {
+		printf("socket fail %s :%d\n", __FUNCTION__, __LINE__);
+		return 0;
+	}
 
 	memset(&sa, 0, sizeof(sa));
 
@@ -121,7 +129,12 @@ void *recvfrom_udpserver(void *args)
 	sa.sin_port = htons(PORTNUM);
 	sa.sin_addr.s_addr = inet_addr("127.0.0.1");
 
-	bind(SocketFD, (struct sockaddr *)&sa, sizeof(sa));
+	int ret = bind(SocketFD, (struct sockaddr *)&sa, sizeof(sa));
+	if (ret < 0) {
+		printf("bind fail %s:%d", __FUNCTION__, __LINE__);
+		close(SocketFD);
+		return 0;
+	}
 
 	tc_net_recvfrom_p(SocketFD);
 	tc_net_recvfrom_sock_n();
@@ -143,9 +156,13 @@ void *recvfrom_udpserver(void *args)
    */
 void *recvfrom_udpclient(void *args)
 {
-
 	int mysocket;
 	mysocket = socket(PF_INET, SOCK_DGRAM, IPPROTO_UDP);
+	if (mysocket < 0) {
+		printf("socket creation error (%s) line:%d\n", __FUNCTION__, __LINE__);
+		return 0;
+	}
+
 	char *buffer = "hello";
 	int len = strlen(buffer) + 1;
 	struct sockaddr_in dest;
@@ -155,11 +172,13 @@ void *recvfrom_udpclient(void *args)
 	dest.sin_addr.s_addr = inet_addr("127.0.0.1");
 	dest.sin_port = htons(PORTNUM);
 	fromlen = sizeof(dest);
-	sendto(mysocket, buffer, len, 0, (struct sockaddr *)&dest, fromlen);
+	int ret = sendto(mysocket, buffer, len, 0, (struct sockaddr *)&dest, fromlen);
+	if (ret < 0) {
+		printf("sendto fail %s:%d\n", __FUNCTION__, __LINE__);
+	}
 	close(mysocket);
 
 	return 0;
-
 }
 
 /**
@@ -286,21 +305,45 @@ void *recvfrom_tcpserver(void *args)
 	char *msg = "Hello World !\n";
 	struct sockaddr_in sa;
 	int SocketFD = socket(PF_INET, SOCK_STREAM, IPPROTO_TCP);
-
+	if (SocketFD < 0) {
+		printf("Socket creation fail %s:%d\n", __FUNCTION__,  __LINE__);
+		return 0;
+	}
 	memset(&sa, 0, sizeof(sa));
 
 	sa.sin_family = PF_INET;
 	sa.sin_port = htons(PORTNUM);
 	sa.sin_addr.s_addr = inet_addr("127.0.0.1");
 
-	bind(SocketFD, (struct sockaddr *)&sa, sizeof(sa));
+	int ret = bind(SocketFD, (struct sockaddr *)&sa, sizeof(sa));
+	if (ret < 0) {
+		close(SocketFD);
+		printf("fail %s:%d\n", __FUNCTION__, __LINE__);
+		return 0;
+	}
 
-	listen(SocketFD, 1);
+	ret = listen(SocketFD, 1);
+	if (ret < 0) {
+		close(SocketFD);
+		printf("fail %s:%d\n", __FUNCTION__, __LINE__);
+		return 0;
+	}
+
 	recvfrom_signal();
 	int ConnectFD = accept(SocketFD, NULL, NULL);
+	if (ConnectFD < 0) {
+		printf("accept error (%s) line:%d\n", __FUNCTION__, __LINE__);
+		close(SocketFD);
+		return 0;
+	}
+
 	int i;
-	for (i = 0; i < 4; i++)
-		sendto(ConnectFD, msg, strlen(msg), 0, (struct sockaddr *)&sa, sizeof(sa));
+	for (i = 0; i < 4; i++) {
+		ret = sendto(ConnectFD, msg, strlen(msg), 0, (struct sockaddr *)&sa, sizeof(sa));
+		if (ret < 0) {
+			printf("sendto fail %s:%d", __FUNCTION__, __LINE__);
+		}
+	}
 
 	close(ConnectFD);
 
@@ -324,15 +367,22 @@ void *recvfrom_tcpclient(void *args)
 	struct sockaddr_in dest;
 
 	mysocket = socket(PF_INET, SOCK_STREAM, IPPROTO_TCP);
-
+	if (mysocket < 0) {
+		printf("socket() fail %s:%d", __FUNCTION__, __LINE__);
+		return 0;
+	}
 	memset(&dest, 0, sizeof(dest));
 	dest.sin_family = PF_INET;
 	dest.sin_addr.s_addr = inet_addr("127.0.0.1");
 	dest.sin_port = htons(1111);
 
 	recvfrom_wait();
-	connect(mysocket, (struct sockaddr *)&dest, sizeof(struct sockaddr));
-
+	int ret = connect(mysocket, (struct sockaddr *)&dest, sizeof(struct sockaddr));
+	if (ret < 0) {
+		printf("connect fail %s:%d", __FUNCTION__, __LINE__);
+		close(mysocket);
+		return 0;
+	}
 	tc_net_recvfrom_tcp_p(mysocket);
 
 	tc_net_recvfrom_tcp_n();

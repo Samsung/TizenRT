@@ -45,7 +45,10 @@ static void tc_net_bind_p(void)
 {
 	struct sockaddr_in sa;
 	int SocketFD = socket(PF_INET, SOCK_STREAM, IPPROTO_TCP);
-
+	if (SocketFD < 0) {
+		printf("Socket creation fail(%d)\n", __LINE__);
+		return;
+	}
 	memset(&sa, 0, sizeof sa);
 
 	sa.sin_family = AF_INET;
@@ -72,7 +75,10 @@ static void tc_net_bind_udp_p(void)
 {
 	struct sockaddr_in sa;
 	int SocketFD = socket(PF_INET, SOCK_DGRAM, IPPROTO_UDP);
-
+	if (SocketFD < 0) {
+		printf("Socket creation fail(%d)\n", __LINE__);
+		return;
+	}
 	memset(&sa, 0, sizeof sa);
 
 	sa.sin_family = AF_INET;
@@ -99,7 +105,10 @@ static void tc_net_bind_broadcast_p(void)
 
 	struct sockaddr_in sa;
 	int SocketFD = socket(PF_INET, SOCK_STREAM, IPPROTO_TCP);
-
+	if (SocketFD < 0) {
+		printf("Socket creation fail(%d)\n", __LINE__);
+		return;
+	}
 	memset(&sa, 0, sizeof sa);
 
 	sa.sin_family = AF_INET;
@@ -136,8 +145,8 @@ static void tc_net_bind_fd_n(void)
 
 	TC_ASSERT_NEQ("bind", ret, 0);
 	TC_SUCCESS_RESULT();
-	
 }
+
 #ifdef AF_UNIX
 /**
    * @testcase		   :tc_net_bind_addrfamily_n
@@ -177,7 +186,10 @@ static void tc_net_bind_size_n(void)
 {
 	struct sockaddr_in sa;
 	int SocketFD = socket(PF_INET, SOCK_STREAM, IPPROTO_TCP);
-
+	if (SocketFD < 0) {
+		printf("Socket creation fail(%d)\n", __LINE__);
+		return;
+	}
 	memset(&sa, 0, sizeof sa);
 
 	sa.sin_family = AF_INET;
@@ -215,7 +227,6 @@ static void tc_net_bind_fd_size_n(void)
 
 	TC_ASSERT_NEQ("bind", ret, 0);
 	TC_SUCCESS_RESULT();
-	
 }
 
 /****************************************************************************

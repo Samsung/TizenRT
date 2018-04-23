@@ -45,6 +45,10 @@ static void tc_net_close_p(void)
 
 	int fd = -1;
 	fd = socket(AF_INET, SOCK_STREAM, 0);
+	if (fd < 0) {
+		printf("socket creation error line:%d\n", __LINE__);
+		return;
+	}
 	int ret = close(fd);
 
 	TC_ASSERT_NEQ("close", ret, -1);

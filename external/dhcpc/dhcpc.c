@@ -476,7 +476,10 @@ int dhcpc_request(void *handle, struct dhcpc_state *presult)
 	oldaddr.s_addr = 0;
 
 	intf = pdhcpc->nic;
-	netlib_get_ipv4addr(intf, &oldaddr);
+	int ret = netlib_get_ipv4addr(intf, &oldaddr);
+	if (ret == -1) {
+		printf("Set IPv4 fail\n");
+	}
 
 	/* Loop until we receive the lease (or an error occurs) */
 	/* Set the IP address to INADDR_ANY. */
@@ -529,7 +532,10 @@ int dhcpc_request(void *handle, struct dhcpc_state *presult)
 			 * out of the loop.
 			 */
 
-			(void)netlib_set_ipv4addr(intf, &presult->ipaddr);
+			ret = netlib_set_ipv4addr(intf, &presult->ipaddr);
+			if (ret == -1) {
+				ndbg("Set IPv4 fail\n");
+			}
 			g_dhcpc_state = STATE_HAVE_OFFER;
 			break;
 		} else {
