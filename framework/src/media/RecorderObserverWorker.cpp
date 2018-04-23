@@ -32,6 +32,7 @@ RecorderObserverWorker::~RecorderObserverWorker()
 int RecorderObserverWorker::entry()
 {
 	medvdbg("RecorderObserverWorker::entry()\n");
+
 	while (mIsRunning) {
 		unique_lock<mutex> lock(mObserverQueue.getMutex());
 
@@ -91,6 +92,7 @@ void RecorderObserverWorker::increaseRef()
 
 void RecorderObserverWorker::decreaseRef()
 {
-	mRefCnt--;
+	if (mRefCnt > 0)
+		mRefCnt--;
 }
 } // namespace media
