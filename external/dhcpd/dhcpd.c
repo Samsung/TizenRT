@@ -1675,8 +1675,6 @@ int dhcpd_start(char *intf, dhcp_sta_joined dhcp_join_cb)
 		pthread_mutex_unlock(&g_dhcpd_lock);
 		return -1;
 	}
-	g_dhcpd_running = 1;
-	pthread_mutex_unlock(&g_dhcpd_lock);
 
 	pthread_attr_t attr;
 	int status;
@@ -1735,9 +1733,11 @@ int dhcpd_start(char *intf, dhcp_sta_joined dhcp_join_cb)
 	pthread_setname_np(g_tid, "dhcpd");
 	pthread_detach(g_tid);
 
+	g_dhcpd_running = 1;
+	pthread_mutex_unlock(&g_dhcpd_lock);
+
 	return 0;
 err_exit:
-	pthread_mutex_lock(&g_dhcpd_lock);
 	g_dhcpd_running = 0;
 	pthread_mutex_unlock(&g_dhcpd_lock);
 
