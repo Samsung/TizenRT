@@ -22,7 +22,6 @@ VPATH += :src/media/audio
 CSRCS += samplerate.c
 DEPPATH += --dep-path src/media/audio/resample
 VPATH += :src/media/audio/resample
-CFLAGS += -std=c99
 endif
 
 CFLAGS += -D__TINYARA__
