@@ -158,9 +158,6 @@ int tc_kernel_main(int argc, char *argv[])
 #endif
 
 #ifdef CONFIG_TC_KERNEL_SEMAPHORE
-#if (!defined CONFIG_DEBUG) || (!defined CONFIG_SEM_PREALLOCHOLDERS) || (!defined CONFIG_PRIORITY_INHERITANCE)
-#error CONFIG_DEBUG, CONFIG_SEM_PHDEBUG, CONFIG_SEM_PREALLOCHOLDERS and CONFIG_PRIORITY_INHERITANCE are needed for testing SEMAPHORE TC
-#endif
 	semaphore_main();
 #endif
 
