@@ -32,17 +32,20 @@
 
 #include <vector>
 #include <cassert>
+#include "libcxx_tc_common.h"
 #include "asan_testing.h"
 
-int main()
+int tc_libcxx_containers_vector_cons_initializer_list(void)
 {
     {
     std::vector<int> d = {3, 4, 5, 6};
-    assert(d.size() == 4);
-    assert(is_contiguous_container_asan_correct(d));
-    assert(d[0] == 3);
-    assert(d[1] == 4);
-    assert(d[2] == 5);
-    assert(d[3] == 6);
+    TC_ASSERT_EXPR(d.size() == 4);
+    TC_ASSERT_EXPR(is_contiguous_container_asan_correct(d));
+    TC_ASSERT_EXPR(d[0] == 3);
+    TC_ASSERT_EXPR(d[1] == 4);
+    TC_ASSERT_EXPR(d[2] == 5);
+    TC_ASSERT_EXPR(d[3] == 6);
     }
+    TC_SUCCESS_RESULT();
+    return 0;
 }

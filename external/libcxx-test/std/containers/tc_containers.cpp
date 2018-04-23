@@ -222,6 +222,88 @@ extern "C"
 		tc_libcxx_containers_unord_multimap_modifiers_insert_hint_const_lvalue();
 		tc_libcxx_containers_unord_multimap_local_iterators();
 #endif
+
+#ifdef CONFIG_LIBCXX_UTC_CONTAINERS_VECTOR
+		//Vector TC's
+		tc_libcxx_containers_vector_types();
+		tc_libcxx_containers_vector_iterators();
+		tc_libcxx_containers_vector_capacity_resize_size();
+		tc_libcxx_containers_vector_capacity_shrink_to_fit();
+		tc_libcxx_containers_vector_capacity_swap();
+		tc_libcxx_containers_vector_capacity_capacity();
+		tc_libcxx_containers_vector_capacity_reserve();
+		tc_libcxx_containers_vector_capacity_resize_size_value();
+		tc_libcxx_containers_vector_data_data_const();
+		tc_libcxx_containers_vector_data_data();
+		tc_libcxx_containers_vector_cons_construct_default();
+		tc_libcxx_containers_vector_cons_copy_alloc();
+		tc_libcxx_containers_vector_cons_move_assign_noexcept();
+		tc_libcxx_containers_vector_cons_initializer_list();
+		tc_libcxx_containers_vector_cons_initializer_list_alloc();
+		tc_libcxx_containers_vector_cons_move();
+		tc_libcxx_containers_vector_cons_assign_copy();
+		tc_libcxx_containers_vector_cons_dtor_noexcept();
+		tc_libcxx_containers_vector_cons_move_alloc();
+		tc_libcxx_containers_vector_cons_assign_initializer_list();
+		tc_libcxx_containers_vector_cons_move_noexcept();
+		tc_libcxx_containers_vector_cons_construct_size_value();
+		tc_libcxx_containers_vector_cons_copy();
+		tc_libcxx_containers_vector_cons_op_equal_initializer_list();
+		tc_libcxx_containers_vector_cons_default_noexcept();
+		tc_libcxx_containers_vector_cons_assign_move();
+		tc_libcxx_containers_vector_cons_construct_size_value_alloc();
+		tc_libcxx_containers_vector_cons_construct_size();
+		tc_libcxx_containers_vector_modifiers_emplace_back();
+		tc_libcxx_containers_vector_modifiers_push_back_rvalue();
+		tc_libcxx_containers_vector_modifiers_push_back();
+		tc_libcxx_containers_vector_modifiers_erase_iter();
+		tc_libcxx_containers_vector_modifiers_insert_iter_iter_iter();
+		tc_libcxx_containers_vector_modifiers_insert_iter_rvalue();
+		tc_libcxx_containers_vector_modifiers_emplace();
+		tc_libcxx_containers_vector_modifiers_insert_iter_value();
+		tc_libcxx_containers_vector_modifiers_insert_iter_initializer_list();
+		tc_libcxx_containers_vector_modifiers_erase_iter_iter();
+		tc_libcxx_containers_vector_modifiers_emplace_extra();
+		tc_libcxx_containers_vector_special_swap();
+		tc_libcxx_containers_vector_special_swap_noexcept();
+		tc_libcxx_containers_vector_bool_resize_size();
+		tc_libcxx_containers_vector_bool_construct_default();
+		tc_libcxx_containers_vector_bool_shrink_to_fit();
+		tc_libcxx_containers_vector_bool_copy_alloc();
+		tc_libcxx_containers_vector_bool_types();
+		tc_libcxx_containers_vector_bool_swap();
+		tc_libcxx_containers_vector_bool_move_assign_noexcept();
+		tc_libcxx_containers_vector_bool_initializer_list();
+		tc_libcxx_containers_vector_bool_iterators();
+		tc_libcxx_containers_vector_bool_push_back();
+		tc_libcxx_containers_vector_bool_erase_iter();
+		tc_libcxx_containers_vector_bool_initializer_list_alloc();
+		tc_libcxx_containers_vector_bool_insert_iter_iter_iter();
+		tc_libcxx_containers_vector_bool_construct_iter_iter();
+		tc_libcxx_containers_vector_bool_insert_iter_value();
+		tc_libcxx_containers_vector_bool_insert_iter_size_value();
+		tc_libcxx_containers_vector_bool_move();
+		tc_libcxx_containers_vector_bool_assign_copy();
+		tc_libcxx_containers_vector_bool_dtor_noexcept();
+		tc_libcxx_containers_vector_bool_capacity();
+		tc_libcxx_containers_vector_bool_move_alloc();
+		tc_libcxx_containers_vector_bool_assign_initializer_list();
+		tc_libcxx_containers_vector_bool_move_noexcept();
+		tc_libcxx_containers_vector_bool_insert_iter_initializer_list();
+		tc_libcxx_containers_vector_bool_reserve();
+		tc_libcxx_containers_vector_bool_construct_size_value();
+		tc_libcxx_containers_vector_bool_copy();
+		tc_libcxx_containers_vector_bool_construct_iter_iter_alloc();
+		tc_libcxx_containers_vector_bool_op_equal_initializer_list();
+		tc_libcxx_containers_vector_bool_default_noexcept();
+		tc_libcxx_containers_vector_bool_assign_move();
+		tc_libcxx_containers_vector_bool_erase_iter_iter();
+		tc_libcxx_containers_vector_bool_swap_noexcept();
+		tc_libcxx_containers_vector_bool_construct_size_value_alloc();
+		tc_libcxx_containers_vector_bool_resize_size_value();
+		tc_libcxx_containers_vector_bool_construct_size();
+#endif
 		return 0;
 	}
 }
+

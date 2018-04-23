@@ -721,6 +721,7 @@ CXXSRCS += std/containers/unord/unord.multimap/unord.multimap.modifiers/insert_h
 CXXSRCS += std/containers/unord/unord.multimap/local_iterators.pass.cpp
 endif
 
+ifeq ($(CONFIG_LIBCXX_UTC_CONTAINERS_VECTOR),y)
 #Containers(Vectors)
 CXXSRCS += std/containers/sequences/vector/types.pass.cpp
 CXXSRCS += std/containers/sequences/vector/iterators.pass.cpp
@@ -799,7 +800,7 @@ CXXSRCS += std/containers/sequences/vector.bool/swap_noexcept.pass.cpp
 CXXSRCS += std/containers/sequences/vector.bool/construct_size_value_alloc.pass.cpp
 CXXSRCS += std/containers/sequences/vector.bool/resize_size_value.pass.cpp
 CXXSRCS += std/containers/sequences/vector.bool/construct_size.pass.cpp
-
+endif
 
 #Containers TC Main
 CXXSRCS += std/containers/tc_containers.cpp

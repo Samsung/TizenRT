@@ -24,11 +24,19 @@ config LIBCXX_UTC_CONTAINERS
 	---help---
 		UTC for Libc++ Containers
 
-config LIBCXX_UTC_CONTAiNERS_MAP
+config LIBCXX_UTC_CONTAINERS_MAP
 	bool "UTC for Libc++ Map"
 	default y
+	depends on LIBCXX_UTC_CONTAINERS
 	---help---
 		UTC for Libc++ Containers(Map)
+
+config LIBCXX_UTC_CONTAINERS_VECTOR
+	bool "UTC for Libc++ Vector"
+	default y
+	depends on LIBCXX_UTC_CONTAINERS
+	---help---
+		UTC for Libc++ Containers(Vector)
 
 config LIBCXX_UTC_UTILITIES
 	bool "UTC for Libc++ Utilities"

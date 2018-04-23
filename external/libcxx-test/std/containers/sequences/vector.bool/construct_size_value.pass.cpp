@@ -31,21 +31,25 @@
 
 #include <vector>
 #include <cassert>
+#include "libcxx_tc_common.h"
 
 #include "test_macros.h"
 
 template <class C>
-void
+static int
 test(typename C::size_type n, const typename C::value_type& x)
 {
     C c(n, x);
     LIBCPP_ASSERT(c.__invariants());
-    assert(c.size() == n);
+    TC_ASSERT_EXPR(c.size() == n);
     for (typename C::const_iterator i = c.cbegin(), e = c.cend(); i != e; ++i)
-        assert(*i == x);
+        TC_ASSERT_EXPR(*i == x);
+    return 0;
 }
 
-int main()
+int tc_libcxx_containers_vector_bool_construct_size_value(void)
 {
-    test<std::vector<bool> >(50, true);
+    TC_ASSERT_FUNC((test<std::vector<bool> >(50, true)));
+    TC_SUCCESS_RESULT();
+    return 0;
 }

@@ -27,19 +27,22 @@
 // <vector>
 // vector<bool>
 
-// void shrink_to_fit();
+// static int shrink_to_fit();
 
 #include <vector>
 #include <cassert>
+#include "libcxx_tc_common.h"
 
 
-int main()
+int tc_libcxx_containers_vector_bool_shrink_to_fit(void)
 {
     {
         std::vector<bool> v(100);
         v.push_back(1);
         v.shrink_to_fit();
-        assert(v.capacity() >= 101);
-        assert(v.size() >= 101);
+        TC_ASSERT_EXPR(v.capacity() >= 101);
+        TC_ASSERT_EXPR(v.size() >= 101);
     }
+    TC_SUCCESS_RESULT();
+    return 0;
 }

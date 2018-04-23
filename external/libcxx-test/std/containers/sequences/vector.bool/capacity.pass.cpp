@@ -31,18 +31,21 @@
 
 #include <vector>
 #include <cassert>
+#include "libcxx_tc_common.h"
 
 
-int main()
+int tc_libcxx_containers_vector_bool_capacity(void)
 {
     {
         std::vector<bool> v;
-        assert(v.capacity() == 0);
+        TC_ASSERT_EXPR(v.capacity() == 0);
     }
     {
         std::vector<bool> v(100);
-        assert(v.capacity() >= 100);
+        TC_ASSERT_EXPR(v.capacity() >= 100);
         v.push_back(0);
-        assert(v.capacity() >= 101);
+        TC_ASSERT_EXPR(v.capacity() >= 101);
     }
+    TC_SUCCESS_RESULT();
+    return 0;
 }

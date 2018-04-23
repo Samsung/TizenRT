@@ -32,6 +32,7 @@
 
 #include <vector>
 #include <cassert>
+#include "libcxx_tc_common.h"
 
 #include "test_macros.h"
 #include "test_allocator.h"
@@ -69,60 +70,62 @@ public:
     double getd() const {return d_;}
 };
 
-int main()
+int tc_libcxx_containers_vector_modifiers_emplace(void)
 {
     {
         std::vector<A> c;
         std::vector<A>::iterator i = c.emplace(c.cbegin(), 2, 3.5);
-        assert(i == c.begin());
-        assert(c.size() == 1);
-        assert(c.front().geti() == 2);
-        assert(c.front().getd() == 3.5);
-        assert(is_contiguous_container_asan_correct(c));
+        TC_ASSERT_EXPR(i == c.begin());
+        TC_ASSERT_EXPR(c.size() == 1);
+        TC_ASSERT_EXPR(c.front().geti() == 2);
+        TC_ASSERT_EXPR(c.front().getd() == 3.5);
+        TC_ASSERT_EXPR(is_contiguous_container_asan_correct(c));
         i = c.emplace(c.cend(), 3, 4.5);
-        assert(i == c.end()-1);
-        assert(c.size() == 2);
-        assert(c.front().geti() == 2);
-        assert(c.front().getd() == 3.5);
-        assert(c.back().geti() == 3);
-        assert(c.back().getd() == 4.5);
-        assert(is_contiguous_container_asan_correct(c));
+        TC_ASSERT_EXPR(i == c.end()-1);
+        TC_ASSERT_EXPR(c.size() == 2);
+        TC_ASSERT_EXPR(c.front().geti() == 2);
+        TC_ASSERT_EXPR(c.front().getd() == 3.5);
+        TC_ASSERT_EXPR(c.back().geti() == 3);
+        TC_ASSERT_EXPR(c.back().getd() == 4.5);
+        TC_ASSERT_EXPR(is_contiguous_container_asan_correct(c));
         i = c.emplace(c.cbegin()+1, 4, 6.5);
-        assert(i == c.begin()+1);
-        assert(c.size() == 3);
-        assert(c.front().geti() == 2);
-        assert(c.front().getd() == 3.5);
-        assert(c[1].geti() == 4);
-        assert(c[1].getd() == 6.5);
-        assert(c.back().geti() == 3);
-        assert(c.back().getd() == 4.5);
-        assert(is_contiguous_container_asan_correct(c));
+        TC_ASSERT_EXPR(i == c.begin()+1);
+        TC_ASSERT_EXPR(c.size() == 3);
+        TC_ASSERT_EXPR(c.front().geti() == 2);
+        TC_ASSERT_EXPR(c.front().getd() == 3.5);
+        TC_ASSERT_EXPR(c[1].geti() == 4);
+        TC_ASSERT_EXPR(c[1].getd() == 6.5);
+        TC_ASSERT_EXPR(c.back().geti() == 3);
+        TC_ASSERT_EXPR(c.back().getd() == 4.5);
+        TC_ASSERT_EXPR(is_contiguous_container_asan_correct(c));
     }
     {
         std::vector<A, limited_allocator<A, 7> > c;
         std::vector<A, limited_allocator<A, 7> >::iterator i = c.emplace(c.cbegin(), 2, 3.5);
-        assert(i == c.begin());
-        assert(c.size() == 1);
-        assert(c.front().geti() == 2);
-        assert(c.front().getd() == 3.5);
-        assert(is_contiguous_container_asan_correct(c));
+        TC_ASSERT_EXPR(i == c.begin());
+        TC_ASSERT_EXPR(c.size() == 1);
+        TC_ASSERT_EXPR(c.front().geti() == 2);
+        TC_ASSERT_EXPR(c.front().getd() == 3.5);
+        TC_ASSERT_EXPR(is_contiguous_container_asan_correct(c));
         i = c.emplace(c.cend(), 3, 4.5);
-        assert(i == c.end()-1);
-        assert(c.size() == 2);
-        assert(c.front().geti() == 2);
-        assert(c.front().getd() == 3.5);
-        assert(c.back().geti() == 3);
-        assert(c.back().getd() == 4.5);
-        assert(is_contiguous_container_asan_correct(c));
+        TC_ASSERT_EXPR(i == c.end()-1);
+        TC_ASSERT_EXPR(c.size() == 2);
+        TC_ASSERT_EXPR(c.front().geti() == 2);
+        TC_ASSERT_EXPR(c.front().getd() == 3.5);
+        TC_ASSERT_EXPR(c.back().geti() == 3);
+        TC_ASSERT_EXPR(c.back().getd() == 4.5);
+        TC_ASSERT_EXPR(is_contiguous_container_asan_correct(c));
         i = c.emplace(c.cbegin()+1, 4, 6.5);
-        assert(i == c.begin()+1);
-        assert(c.size() == 3);
-        assert(c.front().geti() == 2);
-        assert(c.front().getd() == 3.5);
-        assert(c[1].geti() == 4);
-        assert(c[1].getd() == 6.5);
-        assert(c.back().geti() == 3);
-        assert(c.back().getd() == 4.5);
-        assert(is_contiguous_container_asan_correct(c));
+        TC_ASSERT_EXPR(i == c.begin()+1);
+        TC_ASSERT_EXPR(c.size() == 3);
+        TC_ASSERT_EXPR(c.front().geti() == 2);
+        TC_ASSERT_EXPR(c.front().getd() == 3.5);
+        TC_ASSERT_EXPR(c[1].geti() == 4);
+        TC_ASSERT_EXPR(c[1].getd() == 6.5);
+        TC_ASSERT_EXPR(c.back().geti() == 3);
+        TC_ASSERT_EXPR(c.back().getd() == 4.5);
+        TC_ASSERT_EXPR(is_contiguous_container_asan_correct(c));
     }
+    TC_SUCCESS_RESULT();
+    return 0;
 }

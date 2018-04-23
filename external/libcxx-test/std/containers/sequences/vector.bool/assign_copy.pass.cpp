@@ -30,22 +30,25 @@
 
 #include <vector>
 #include <cassert>
+#include "libcxx_tc_common.h"
 #include "test_allocator.h"
 
-int main()
+int tc_libcxx_containers_vector_bool_assign_copy(void)
 {
     {
         std::vector<bool, test_allocator<bool> > l(3, true, test_allocator<bool>(5));
         std::vector<bool, test_allocator<bool> > l2(l, test_allocator<bool>(3));
         l2 = l;
-        assert(l2 == l);
-        assert(l2.get_allocator() == test_allocator<bool>(3));
+        TC_ASSERT_EXPR(l2 == l);
+        TC_ASSERT_EXPR(l2.get_allocator() == test_allocator<bool>(3));
     }
     {
         std::vector<bool, other_allocator<bool> > l(3, true, other_allocator<bool>(5));
         std::vector<bool, other_allocator<bool> > l2(l, other_allocator<bool>(3));
         l2 = l;
-        assert(l2 == l);
-        assert(l2.get_allocator() == other_allocator<bool>(5));
+        TC_ASSERT_EXPR(l2 == l);
+        TC_ASSERT_EXPR(l2.get_allocator() == other_allocator<bool>(5));
     }
+    TC_SUCCESS_RESULT();
+    return 0;
 }

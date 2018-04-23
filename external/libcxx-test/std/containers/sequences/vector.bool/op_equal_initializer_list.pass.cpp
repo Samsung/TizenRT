@@ -32,16 +32,19 @@
 
 #include <vector>
 #include <cassert>
+#include "libcxx_tc_common.h"
 
-int main()
+int tc_libcxx_containers_vector_bool_op_equal_initializer_list(void)
 {
     {
     std::vector<bool> d;
     d = {true, false, false, true};
-    assert(d.size() == 4);
-    assert(d[0] == true);
-    assert(d[1] == false);
-    assert(d[2] == false);
-    assert(d[3] == true);
+    TC_ASSERT_EXPR(d.size() == 4);
+    TC_ASSERT_EXPR(d[0] == true);
+    TC_ASSERT_EXPR(d[1] == false);
+    TC_ASSERT_EXPR(d[2] == false);
+    TC_ASSERT_EXPR(d[3] == true);
     }
+    TC_SUCCESS_RESULT();
+    return 0;
 }

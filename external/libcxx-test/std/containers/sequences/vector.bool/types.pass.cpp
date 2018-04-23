@@ -47,12 +47,13 @@
 #include <vector>
 #include <iterator>
 #include <type_traits>
+#include "libcxx_tc_common.h"
 
 #include "test_allocator.h"
 #include "Copyable.h"
 
 template <class Allocator>
-void
+static int
 test()
 {
     typedef std::vector<bool, Allocator> C;
@@ -82,12 +83,15 @@ test()
     static_assert((std::is_same<
         typename C::const_reverse_iterator,
         std::reverse_iterator<typename C::const_iterator> >::value), "");
+    return 0;
 }
 
-int main()
+int tc_libcxx_containers_vector_bool_types(void)
 {
-    test<test_allocator<bool> >();
-    test<std::allocator<bool> >();
+    TC_ASSERT_FUNC((test<test_allocator<bool> >()));
+    TC_ASSERT_FUNC((test<std::allocator<bool> >()));
     static_assert((std::is_same<std::vector<bool>::allocator_type,
                                 std::allocator<bool> >::value), "");
+    TC_SUCCESS_RESULT();
+    return 0;
 }

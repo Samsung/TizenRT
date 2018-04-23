@@ -26,43 +26,44 @@
 
 // <vector>
 
-// void push_back(const value_type& x);
+// static int push_back(const value_type& x);
 
 #include <vector>
 #include <cassert>
+#include "libcxx_tc_common.h"
 #include <cstddef>
 #include "test_allocator.h"
 #include "asan_testing.h"
 
-int main()
+int tc_libcxx_containers_vector_modifiers_push_back(void)
 {
     {
         std::vector<int> c;
         c.push_back(0);
-        assert(c.size() == 1);
-        assert(is_contiguous_container_asan_correct(c));
+        TC_ASSERT_EXPR(c.size() == 1);
+        TC_ASSERT_EXPR(is_contiguous_container_asan_correct(c));
         for (int j = 0; static_cast<std::size_t>(j) < c.size(); ++j)
-            assert(c[j] == j);
+            TC_ASSERT_EXPR(c[j] == j);
         c.push_back(1);
-        assert(c.size() == 2);
-        assert(is_contiguous_container_asan_correct(c));
+        TC_ASSERT_EXPR(c.size() == 2);
+        TC_ASSERT_EXPR(is_contiguous_container_asan_correct(c));
         for (int j = 0; static_cast<std::size_t>(j) < c.size(); ++j)
-            assert(c[j] == j);
+            TC_ASSERT_EXPR(c[j] == j);
         c.push_back(2);
-        assert(c.size() == 3);
-        assert(is_contiguous_container_asan_correct(c));
+        TC_ASSERT_EXPR(c.size() == 3);
+        TC_ASSERT_EXPR(is_contiguous_container_asan_correct(c));
         for (int j = 0; static_cast<std::size_t>(j) < c.size(); ++j)
-            assert(c[j] == j);
+            TC_ASSERT_EXPR(c[j] == j);
         c.push_back(3);
-        assert(c.size() == 4);
-        assert(is_contiguous_container_asan_correct(c));
+        TC_ASSERT_EXPR(c.size() == 4);
+        TC_ASSERT_EXPR(is_contiguous_container_asan_correct(c));
         for (int j = 0; static_cast<std::size_t>(j) < c.size(); ++j)
-            assert(c[j] == j);
+            TC_ASSERT_EXPR(c[j] == j);
         c.push_back(4);
-        assert(c.size() == 5);
-        assert(is_contiguous_container_asan_correct(c));
+        TC_ASSERT_EXPR(c.size() == 5);
+        TC_ASSERT_EXPR(is_contiguous_container_asan_correct(c));
         for (int j = 0; static_cast<std::size_t>(j) < c.size(); ++j)
-            assert(c[j] == j);
+            TC_ASSERT_EXPR(c[j] == j);
     }
     {
         // libc++ needs 15 because it grows by 2x (1 + 2 + 4 + 8).
@@ -70,29 +71,31 @@ int main()
         // and grow by 1.5x (1 for proxy + 1 + 2 + 3 + 4 + 6).
         std::vector<int, limited_allocator<int, 17> > c;
         c.push_back(0);
-        assert(c.size() == 1);
-        assert(is_contiguous_container_asan_correct(c));
+        TC_ASSERT_EXPR(c.size() == 1);
+        TC_ASSERT_EXPR(is_contiguous_container_asan_correct(c));
         for (int j = 0; static_cast<std::size_t>(j) < c.size(); ++j)
-            assert(c[j] == j);
+            TC_ASSERT_EXPR(c[j] == j);
         c.push_back(1);
-        assert(c.size() == 2);
-        assert(is_contiguous_container_asan_correct(c));
+        TC_ASSERT_EXPR(c.size() == 2);
+        TC_ASSERT_EXPR(is_contiguous_container_asan_correct(c));
         for (int j = 0; static_cast<std::size_t>(j) < c.size(); ++j)
-            assert(c[j] == j);
+            TC_ASSERT_EXPR(c[j] == j);
         c.push_back(2);
-        assert(c.size() == 3);
-        assert(is_contiguous_container_asan_correct(c));
+        TC_ASSERT_EXPR(c.size() == 3);
+        TC_ASSERT_EXPR(is_contiguous_container_asan_correct(c));
         for (int j = 0; static_cast<std::size_t>(j) < c.size(); ++j)
-            assert(c[j] == j);
+            TC_ASSERT_EXPR(c[j] == j);
         c.push_back(3);
-        assert(c.size() == 4);
-        assert(is_contiguous_container_asan_correct(c));
+        TC_ASSERT_EXPR(c.size() == 4);
+        TC_ASSERT_EXPR(is_contiguous_container_asan_correct(c));
         for (int j = 0; static_cast<std::size_t>(j) < c.size(); ++j)
-            assert(c[j] == j);
+            TC_ASSERT_EXPR(c[j] == j);
         c.push_back(4);
-        assert(c.size() == 5);
-        assert(is_contiguous_container_asan_correct(c));
+        TC_ASSERT_EXPR(c.size() == 5);
+        TC_ASSERT_EXPR(is_contiguous_container_asan_correct(c));
         for (int j = 0; static_cast<std::size_t>(j) < c.size(); ++j)
-            assert(c[j] == j);
+            TC_ASSERT_EXPR(c[j] == j);
     }
+    TC_SUCCESS_RESULT();
+    return 0;
 }

@@ -27,25 +27,28 @@
 // <vector>
 // vector<bool>
 
-// void resize(size_type sz);
+// static int resize(size_type sz);
 
 #include <vector>
 #include <cassert>
+#include "libcxx_tc_common.h"
 
 
-int main()
+int tc_libcxx_containers_vector_bool_resize_size(void)
 {
     {
         std::vector<bool> v(100);
         v.resize(50);
-        assert(v.size() == 50);
-        assert(v.capacity() >= 100);
+        TC_ASSERT_EXPR(v.size() == 50);
+        TC_ASSERT_EXPR(v.capacity() >= 100);
         v.resize(200);
-        assert(v.size() == 200);
-        assert(v.capacity() >= 200);
+        TC_ASSERT_EXPR(v.size() == 200);
+        TC_ASSERT_EXPR(v.capacity() >= 200);
         v.reserve(400);
         v.resize(300);  // check the case when resizing and we already have room
-        assert(v.size() == 300);
-        assert(v.capacity() >= 400);
+        TC_ASSERT_EXPR(v.size() == 300);
+        TC_ASSERT_EXPR(v.capacity() >= 400);
     }
+    TC_SUCCESS_RESULT();
+    return 0;
 }

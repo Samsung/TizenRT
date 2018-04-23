@@ -26,26 +26,29 @@
 
 // <vector>
 
-// void swap(vector& x);
+// static int swap(vector& x);
 
 #include <vector>
 #include <cassert>
+#include "libcxx_tc_common.h"
 
 #include "asan_testing.h"
 
-int main()
+int tc_libcxx_containers_vector_capacity_swap(void)
 {
     {
         std::vector<int> v1(100);
         std::vector<int> v2(200);
-        assert(is_contiguous_container_asan_correct(v1));
-        assert(is_contiguous_container_asan_correct(v2));
+        TC_ASSERT_EXPR(is_contiguous_container_asan_correct(v1));
+        TC_ASSERT_EXPR(is_contiguous_container_asan_correct(v2));
         v1.swap(v2);
-        assert(v1.size() == 200);
-        assert(v1.capacity() == 200);
-        assert(is_contiguous_container_asan_correct(v1));
-        assert(v2.size() == 100);
-        assert(v2.capacity() == 100);
-        assert(is_contiguous_container_asan_correct(v2));
+        TC_ASSERT_EXPR(v1.size() == 200);
+        TC_ASSERT_EXPR(v1.capacity() == 200);
+        TC_ASSERT_EXPR(is_contiguous_container_asan_correct(v1));
+        TC_ASSERT_EXPR(v2.size() == 100);
+        TC_ASSERT_EXPR(v2.capacity() == 100);
+        TC_ASSERT_EXPR(is_contiguous_container_asan_correct(v2));
     }
+    TC_SUCCESS_RESULT();
+    return 0;
 }

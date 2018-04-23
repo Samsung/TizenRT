@@ -37,6 +37,7 @@
 
 #include <vector>
 #include <cassert>
+#include "libcxx_tc_common.h"
 
 #include "test_macros.h"
 #include "test_allocator.h"
@@ -74,7 +75,7 @@ struct some_alloc3
     typedef std::false_type is_always_equal;
 };
 
-int main()
+int tc_libcxx_containers_vector_bool_move_assign_noexcept(void)
 {
 #if defined(_LIBCPP_VERSION)
     {
@@ -115,4 +116,6 @@ int main()
         static_assert(!std::is_nothrow_move_assignable<C>::value, "");
     }
 #endif
+    TC_SUCCESS_RESULT();
+    return 0;
 }

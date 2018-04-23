@@ -28,44 +28,45 @@
 
 // <vector>
 
-// void push_back(value_type&& x);
+// static int push_back(value_type&& x);
 
 #include <vector>
 #include <cassert>
+#include "libcxx_tc_common.h"
 #include <cstddef>
 #include "MoveOnly.h"
 #include "test_allocator.h"
 #include "asan_testing.h"
 
-int main()
+int tc_libcxx_containers_vector_modifiers_push_back_rvalue(void)
 {
     {
         std::vector<MoveOnly> c;
         c.push_back(MoveOnly(0));
-        assert(c.size() == 1);
-        assert(is_contiguous_container_asan_correct(c));
+        TC_ASSERT_EXPR(c.size() == 1);
+        TC_ASSERT_EXPR(is_contiguous_container_asan_correct(c));
         for (int j = 0; static_cast<std::size_t>(j) < c.size(); ++j)
-            assert(c[j] == MoveOnly(j));
+            TC_ASSERT_EXPR(c[j] == MoveOnly(j));
         c.push_back(MoveOnly(1));
-        assert(c.size() == 2);
-        assert(is_contiguous_container_asan_correct(c));
+        TC_ASSERT_EXPR(c.size() == 2);
+        TC_ASSERT_EXPR(is_contiguous_container_asan_correct(c));
         for (int j = 0; static_cast<std::size_t>(j) < c.size(); ++j)
-            assert(c[j] == MoveOnly(j));
+            TC_ASSERT_EXPR(c[j] == MoveOnly(j));
         c.push_back(MoveOnly(2));
-        assert(c.size() == 3);
-        assert(is_contiguous_container_asan_correct(c));
+        TC_ASSERT_EXPR(c.size() == 3);
+        TC_ASSERT_EXPR(is_contiguous_container_asan_correct(c));
         for (int j = 0; static_cast<std::size_t>(j) < c.size(); ++j)
-            assert(c[j] == MoveOnly(j));
+            TC_ASSERT_EXPR(c[j] == MoveOnly(j));
         c.push_back(MoveOnly(3));
-        assert(c.size() == 4);
-        assert(is_contiguous_container_asan_correct(c));
+        TC_ASSERT_EXPR(c.size() == 4);
+        TC_ASSERT_EXPR(is_contiguous_container_asan_correct(c));
         for (int j = 0; static_cast<std::size_t>(j) < c.size(); ++j)
-            assert(c[j] == MoveOnly(j));
+            TC_ASSERT_EXPR(c[j] == MoveOnly(j));
         c.push_back(MoveOnly(4));
-        assert(c.size() == 5);
-        assert(is_contiguous_container_asan_correct(c));
+        TC_ASSERT_EXPR(c.size() == 5);
+        TC_ASSERT_EXPR(is_contiguous_container_asan_correct(c));
         for (int j = 0; static_cast<std::size_t>(j) < c.size(); ++j)
-            assert(c[j] == MoveOnly(j));
+            TC_ASSERT_EXPR(c[j] == MoveOnly(j));
     }
     {
         // libc++ needs 15 because it grows by 2x (1 + 2 + 4 + 8).
@@ -73,29 +74,31 @@ int main()
         // and grow by 1.5x (1 for proxy + 1 + 2 + 3 + 4 + 6).
         std::vector<MoveOnly, limited_allocator<MoveOnly, 17> > c;
         c.push_back(MoveOnly(0));
-        assert(c.size() == 1);
-        assert(is_contiguous_container_asan_correct(c));
+        TC_ASSERT_EXPR(c.size() == 1);
+        TC_ASSERT_EXPR(is_contiguous_container_asan_correct(c));
         for (int j = 0; static_cast<std::size_t>(j) < c.size(); ++j)
-            assert(c[j] == MoveOnly(j));
+            TC_ASSERT_EXPR(c[j] == MoveOnly(j));
         c.push_back(MoveOnly(1));
-        assert(c.size() == 2);
-        assert(is_contiguous_container_asan_correct(c));
+        TC_ASSERT_EXPR(c.size() == 2);
+        TC_ASSERT_EXPR(is_contiguous_container_asan_correct(c));
         for (int j = 0; static_cast<std::size_t>(j) < c.size(); ++j)
-            assert(c[j] == MoveOnly(j));
+            TC_ASSERT_EXPR(c[j] == MoveOnly(j));
         c.push_back(MoveOnly(2));
-        assert(c.size() == 3);
-        assert(is_contiguous_container_asan_correct(c));
+        TC_ASSERT_EXPR(c.size() == 3);
+        TC_ASSERT_EXPR(is_contiguous_container_asan_correct(c));
         for (int j = 0; static_cast<std::size_t>(j) < c.size(); ++j)
-            assert(c[j] == MoveOnly(j));
+            TC_ASSERT_EXPR(c[j] == MoveOnly(j));
         c.push_back(MoveOnly(3));
-        assert(c.size() == 4);
-        assert(is_contiguous_container_asan_correct(c));
+        TC_ASSERT_EXPR(c.size() == 4);
+        TC_ASSERT_EXPR(is_contiguous_container_asan_correct(c));
         for (int j = 0; static_cast<std::size_t>(j) < c.size(); ++j)
-            assert(c[j] == MoveOnly(j));
+            TC_ASSERT_EXPR(c[j] == MoveOnly(j));
         c.push_back(MoveOnly(4));
-        assert(c.size() == 5);
-        assert(is_contiguous_container_asan_correct(c));
+        TC_ASSERT_EXPR(c.size() == 5);
+        TC_ASSERT_EXPR(is_contiguous_container_asan_correct(c));
         for (int j = 0; static_cast<std::size_t>(j) < c.size(); ++j)
-            assert(c[j] == MoveOnly(j));
+            TC_ASSERT_EXPR(c[j] == MoveOnly(j));
     }
+    TC_SUCCESS_RESULT();
+    return 0;
 }

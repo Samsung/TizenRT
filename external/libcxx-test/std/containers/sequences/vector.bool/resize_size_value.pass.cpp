@@ -27,26 +27,29 @@
 // <vector>
 // vector<bool>
 
-// void resize(size_type sz, const value_type& x);
+// static int resize(size_type sz, const value_type& x);
 
 #include <vector>
 #include <cassert>
+#include "libcxx_tc_common.h"
 
 
-int main()
+int tc_libcxx_containers_vector_bool_resize_size_value(void)
 {
     {
         std::vector<bool> v(100);
         v.resize(50, 1);
-        assert(v.size() == 50);
-        assert(v.capacity() >= 100);
-        assert(v == std::vector<bool>(50));
+        TC_ASSERT_EXPR(v.size() == 50);
+        TC_ASSERT_EXPR(v.capacity() >= 100);
+        TC_ASSERT_EXPR(v == std::vector<bool>(50));
         v.resize(200, 1);
-        assert(v.size() == 200);
-        assert(v.capacity() >= 200);
+        TC_ASSERT_EXPR(v.size() == 200);
+        TC_ASSERT_EXPR(v.capacity() >= 200);
         for (unsigned i = 0; i < 50; ++i)
-            assert(v[i] == 0);
+            TC_ASSERT_EXPR(v[i] == 0);
         for (unsigned i = 50; i < 200; ++i)
-            assert(v[i] == 1);
+            TC_ASSERT_EXPR(v[i] == 1);
     }
+    TC_SUCCESS_RESULT();
+    return 0;
 }

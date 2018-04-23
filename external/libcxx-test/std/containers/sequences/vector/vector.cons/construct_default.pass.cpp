@@ -31,6 +31,7 @@
 
 #include <vector>
 #include <cassert>
+#include "libcxx_tc_common.h"
 
 #include "test_macros.h"
 #include "test_allocator.h"
@@ -38,7 +39,7 @@
 #include "asan_testing.h"
 
 template <class C>
-void
+static int
 test0()
 {
 #if TEST_STD_VER > 14
@@ -48,20 +49,21 @@ test0()
 #endif
     C c;
     LIBCPP_ASSERT(c.__invariants());
-    assert(c.empty());
-    assert(c.get_allocator() == typename C::allocator_type());
+    TC_ASSERT_EXPR(c.empty());
+    TC_ASSERT_EXPR(c.get_allocator() == typename C::allocator_type());
     LIBCPP_ASSERT(is_contiguous_container_asan_correct(c));
 #if TEST_STD_VER >= 11
     C c1 = {};
     LIBCPP_ASSERT(c1.__invariants());
-    assert(c1.empty());
-    assert(c1.get_allocator() == typename C::allocator_type());
+    TC_ASSERT_EXPR(c1.empty());
+    TC_ASSERT_EXPR(c1.get_allocator() == typename C::allocator_type());
     LIBCPP_ASSERT(is_contiguous_container_asan_correct(c1));
 #endif
+    return 0;
 }
 
 template <class C>
-void
+static int
 test1(const typename C::allocator_type& a)
 {
 #if TEST_STD_VER > 14
@@ -71,22 +73,25 @@ test1(const typename C::allocator_type& a)
 #endif
     C c(a);
     LIBCPP_ASSERT(c.__invariants());
-    assert(c.empty());
-    assert(c.get_allocator() == a);
+    TC_ASSERT_EXPR(c.empty());
+    TC_ASSERT_EXPR(c.get_allocator() == a);
     LIBCPP_ASSERT(is_contiguous_container_asan_correct(c));
+    return 0;
 }
 
-int main()
+int tc_libcxx_containers_vector_cons_construct_default(void)
 {
     {
-    test0<std::vector<int> >();
-    test0<std::vector<NotConstructible> >();
-    test1<std::vector<int, test_allocator<int> > >(test_allocator<int>(3));
+    TC_ASSERT_FUNC((test0<std::vector<int> >()));
+    TC_ASSERT_FUNC((test0<std::vector<NotConstructible> >()));
+    TC_ASSERT_FUNC((test1<std::vector<int, test_allocator<int> > >(test_allocator<int>(3))));
     test1<std::vector<NotConstructible, test_allocator<NotConstructible> > >
         (test_allocator<NotConstructible>(5));
     }
     {
         std::vector<int, limited_allocator<int, 10> > v;
-        assert(v.empty());
+        TC_ASSERT_EXPR(v.empty());
     }
+    TC_SUCCESS_RESULT();
+    return 0;
 }

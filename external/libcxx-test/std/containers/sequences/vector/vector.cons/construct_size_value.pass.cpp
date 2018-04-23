@@ -30,26 +30,30 @@
 
 #include <vector>
 #include <cassert>
+#include "libcxx_tc_common.h"
 
 #include "test_macros.h"
 #include "test_allocator.h"
 #include "asan_testing.h"
 
 template <class C>
-void
+static int
 test(typename C::size_type n, const typename C::value_type& x)
 {
     C c(n, x);
     LIBCPP_ASSERT(c.__invariants());
-    assert(c.size() == n);
+    TC_ASSERT_EXPR(c.size() == n);
     LIBCPP_ASSERT(is_contiguous_container_asan_correct(c));
     for (typename C::const_iterator i = c.cbegin(), e = c.cend(); i != e; ++i)
-        assert(*i == x);
+        TC_ASSERT_EXPR(*i == x);
+    return 0;
 }
 
-int main()
+int tc_libcxx_containers_vector_cons_construct_size_value(void)
 {
-    test<std::vector<int> >(50, 3);
+    TC_ASSERT_FUNC((test<std::vector<int> >(50, 3)));
     // Add 1 for implementations that dynamically allocate a container proxy.
-    test<std::vector<int, limited_allocator<int, 50 + 1> > >(50, 5);
+    TC_ASSERT_FUNC((test<std::vector<int, limited_allocator<int, 50 + 1> > >(50, 5)));
+    TC_SUCCESS_RESULT();
+    return 0;
 }

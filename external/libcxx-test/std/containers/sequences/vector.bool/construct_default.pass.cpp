@@ -31,12 +31,13 @@
 
 #include <vector>
 #include <cassert>
+#include "libcxx_tc_common.h"
 
 #include "test_macros.h"
 #include "test_allocator.h"
 
 template <class C>
-void
+static int
 test0()
 {
 #if TEST_STD_VER > 14
@@ -46,18 +47,19 @@ test0()
 #endif
     C c;
     LIBCPP_ASSERT(c.__invariants());
-    assert(c.empty());
-    assert(c.get_allocator() == typename C::allocator_type());
+    TC_ASSERT_EXPR(c.empty());
+    TC_ASSERT_EXPR(c.get_allocator() == typename C::allocator_type());
 #if TEST_STD_VER >= 11
     C c1 = {};
     LIBCPP_ASSERT(c1.__invariants());
-    assert(c1.empty());
-    assert(c1.get_allocator() == typename C::allocator_type());
+    TC_ASSERT_EXPR(c1.empty());
+    TC_ASSERT_EXPR(c1.get_allocator() == typename C::allocator_type());
 #endif
+    return 0;
 }
 
 template <class C>
-void
+static int
 test1(const typename C::allocator_type& a)
 {
 #if TEST_STD_VER > 14
@@ -67,14 +69,17 @@ test1(const typename C::allocator_type& a)
 #endif
     C c(a);
     LIBCPP_ASSERT(c.__invariants());
-    assert(c.empty());
-    assert(c.get_allocator() == a);
+    TC_ASSERT_EXPR(c.empty());
+    TC_ASSERT_EXPR(c.get_allocator() == a);
+    return 0;
 }
 
-int main()
+int tc_libcxx_containers_vector_bool_construct_default(void)
 {
     {
-    test0<std::vector<bool> >();
-    test1<std::vector<bool, test_allocator<bool> > >(test_allocator<bool>(3));
+    TC_ASSERT_FUNC((test0<std::vector<bool> >()));
+    TC_ASSERT_FUNC((test1<std::vector<bool, test_allocator<bool> > >(test_allocator<bool>(3))));
     }
+    TC_SUCCESS_RESULT();
+    return 0;
 }

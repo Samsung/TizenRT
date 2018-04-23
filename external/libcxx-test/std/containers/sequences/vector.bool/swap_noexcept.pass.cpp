@@ -28,7 +28,7 @@
 
 // <vector>
 
-// void swap(vector& c)
+// static int swap(vector& c)
 //     noexcept(!allocator_type::propagate_on_container_swap::value ||
 //              __is_nothrow_swappable<allocator_type>::value);
 //
@@ -41,6 +41,7 @@
 #include <vector>
 #include <utility>
 #include <cassert>
+#include "libcxx_tc_common.h"
 
 #include "test_macros.h"
 #include "test_allocator.h"
@@ -70,7 +71,7 @@ struct some_alloc2
     typedef std::true_type is_always_equal;
 };
 
-int main()
+int tc_libcxx_containers_vector_bool_swap_noexcept(void)
 {
 #if defined(_LIBCPP_VERSION)
     {
@@ -107,4 +108,6 @@ int main()
     }
 #endif // _LIBCPP_VERSION
 #endif
+    TC_SUCCESS_RESULT();
+    return 0;
 }

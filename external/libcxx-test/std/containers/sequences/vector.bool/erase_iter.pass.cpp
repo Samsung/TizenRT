@@ -31,9 +31,10 @@
 
 #include <vector>
 #include <cassert>
+#include "libcxx_tc_common.h"
 
 
-int main()
+int tc_libcxx_containers_vector_bool_erase_iter(void)
 {
     bool a1[] = {1, 0, 1};
     {
@@ -41,19 +42,21 @@ int main()
     std::vector<bool>::const_iterator i = l1.begin();
     ++i;
     std::vector<bool>::iterator j = l1.erase(i);
-    assert(l1.size() == 2);
-    assert(distance(l1.begin(), l1.end()) == 2);
-    assert(*j == true);
-    assert(*l1.begin() == 1);
-    assert(*next(l1.begin()) == true);
+    TC_ASSERT_EXPR(l1.size() == 2);
+    TC_ASSERT_EXPR(distance(l1.begin(), l1.end()) == 2);
+    TC_ASSERT_EXPR(*j == true);
+    TC_ASSERT_EXPR(*l1.begin() == 1);
+    TC_ASSERT_EXPR(*next(l1.begin()) == true);
     j = l1.erase(j);
-    assert(j == l1.end());
-    assert(l1.size() == 1);
-    assert(distance(l1.begin(), l1.end()) == 1);
-    assert(*l1.begin() == true);
+    TC_ASSERT_EXPR(j == l1.end());
+    TC_ASSERT_EXPR(l1.size() == 1);
+    TC_ASSERT_EXPR(distance(l1.begin(), l1.end()) == 1);
+    TC_ASSERT_EXPR(*l1.begin() == true);
     j = l1.erase(l1.begin());
-    assert(j == l1.end());
-    assert(l1.size() == 0);
-    assert(distance(l1.begin(), l1.end()) == 0);
+    TC_ASSERT_EXPR(j == l1.end());
+    TC_ASSERT_EXPR(l1.size() == 0);
+    TC_ASSERT_EXPR(distance(l1.begin(), l1.end()) == 0);
     }
+    TC_SUCCESS_RESULT();
+    return 0;
 }
