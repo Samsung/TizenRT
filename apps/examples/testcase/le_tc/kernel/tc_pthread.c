@@ -139,15 +139,19 @@ static void *do_nothing_thread(void *param)
 static void *setschedprio_test_thread(void *param)
 {
 	struct sched_param param_info;
+	int ret_chk;
 
 	/* sleep to guarantee running of pthread_setschedprio() */
 	sleep(1);
 
 	/* get current priority */
-	(void)sched_getparam(0, &param_info);
-
-	/* give getting value to global variable to compare it in another function */
-	check_prio = param_info.sched_priority;
+	ret_chk = sched_getparam(0, &param_info);
+	if (ret_chk == ERROR) {
+		check_prio = 0;	// Fail to get current priority
+	} else {
+		/* give getting value to global variable to compare it in another function */
+		check_prio = param_info.sched_priority;
+	}
 
 	return NULL;
 }

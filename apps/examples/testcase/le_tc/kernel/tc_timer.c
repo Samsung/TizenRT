@@ -257,6 +257,7 @@ static void tc_timer_timer_set_get_time(void)
 */
 static void tc_timer_timer_initialize(void)
 {
+	int ret_chk;
 	timer_t timer_id;
 	clockid_t clockid = CLOCK_REALTIME;
 	struct sigevent st_sigevent;
@@ -289,7 +290,9 @@ static void tc_timer_timer_initialize(void)
 	}
 
 	/* check the count for g_alloctimers and g_freetimers after create now they change */
-	timer_create(clockid, &st_sigevent, &timer_id);
+	ret_chk = timer_create(clockid, &st_sigevent, &timer_id);
+	TC_ASSERT_NEQ("timer_create", ret_chk, ERROR);
+	TC_ASSERT_NEQ("timer_create", timer_id, NULL);
 
 	for (timer = (FAR struct posix_timer_s *)g_alloctimers.head; timer; timer = next) {
 		next = timer->flink;
