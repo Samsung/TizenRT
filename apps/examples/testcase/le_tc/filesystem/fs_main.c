@@ -379,7 +379,7 @@ static void tc_fs_vfs_write(void)
 	close(fd);
 
 	/* Nagative case with invalid argument, fd. It will return ERROR */
-	ret = write(CONFIG_NFILE_DESCRIPTORS, buf, sizeof(buf));
+	ret = write(CONFIG_NFILE_DESCRIPTORS, buf, strlen(buf));
 	TC_ASSERT_EQ("write", ret, ERROR);
 
 	TC_SUCCESS_RESULT();
