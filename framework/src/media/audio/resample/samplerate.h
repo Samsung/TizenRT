@@ -39,6 +39,9 @@
 extern "C" {
 #endif	/* __cplusplus */
 
+/****************************************************************************
+ * Public Data
+ ****************************************************************************/
 /**
  * @enum  Define error codes.
  * @brief SRC_ERR_NO_ERROR means success, others mean failure.
@@ -55,7 +58,6 @@ enum {
 	/* This must be the last error number. */
 	SRC_ERR_MAX_ERROR
 };
-
 
 /**
  * @enum  Define sample width types, the value means the bits per sample.
@@ -81,7 +83,7 @@ typedef void *src_handle_t;
  *            Each sample data take 16bits.
  *            src_ratio should be in a range, see src_is_valid_ratio()
  */
-struct src_data {
+struct src_data_s {
 	/* input params */
 	const void *data_in;        // pointer to input sample frames buffer (user buffer)
 	int input_frames;           // number of input frames
@@ -100,7 +102,12 @@ struct src_data {
 	float src_ratio;            // desired_sample_rate/origin_sample_rate;
 };
 
-typedef struct src_data src_data_t;
+typedef struct src_data_s src_data_t;
+
+
+/****************************************************************************
+ * Public Function Prototypes
+ ****************************************************************************/
 
 /**
  * @brief   SRC converting function

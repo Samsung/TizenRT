@@ -28,16 +28,76 @@
 #include	<stdint.h>
 #include	<stdlib.h>
 #include	<string.h>
+#include	<math.h>
 #include	"samplerate.h"
-#include	"common.h"
 
 
+/****************************************************************************
+ * Pre-processor Definitions
+ ****************************************************************************/
+// Range of ratio supported for sample rate conversion
+#define SRC_MAX_RATIO   ((float)3)
+#define SRC_MIN_RATIO   ((float)1 / SRC_MAX_RATIO)
+
+#define MAXIMUM(a, b)   (((a) > (b)) ? (a) : (b))
+#define MINIMUM(a, b)   (((a) < (b)) ? (a) : (b))
+
+// Fraction part bits
+#define FRACBITS            (16)
+
+// Convert to 16.16 fixed point value
+#define TO_16_16_FIXED(x)   ((uint32_t)((float)(x) * (float)(1 << FRACBITS) + 0.5f))
+
+// Int part value: 16.0 fixed point
+#define INTPART_VALUE(x)    ((x) >> FRACBITS)
+
+// Fraction part value: 0.16 fixed point
+#define FRACPART_VALUE(x)   ((x) & 0xffff)
+
+// Calculate new sample data
+#define CALC_NEW_SAMPLE(s1, s2, part) ((s1) + ((((s2) - (s1)) * (int32_t)(part)) >> 16))
+
+// Convert sample width in bytes
+#define BYTES_PER_SAMPLE(bits_per_sample)   ((bits_per_sample) >> 3)
+
+// Round the given positive float number to the nearest integer
+#define LRINTPF(pf) ((long)((float)(pf) + 0.5f))
+
+// Max channel num supported for SRC
+#define SRC_MAX_CH  (2)
+
+// Down resample ratio for 44.1k->32k, 22.05k->16k and 11.025k->8k
+#define DOWN_RESAMPLE_441_320_RATIO ((float)441 / (float)320)
+
+#define FLOAT_ACCURACY      (0.000001f)
+#define FLOAT_EQUAL(a, b)   (fabsf((a)-(b)) < FLOAT_ACCURACY)
+
+#define NUM_COEFF_16KHZ (sizeof(filter_16khz_coeff) / sizeof(filter_16khz_coeff[0]))
+#define OVERLAP_16KHZ   (NUM_COEFF_16KHZ - 1)
+
+#define NUM_COEFF_22KHZ (sizeof(filter_22khz_coeff) / sizeof(filter_22khz_coeff[0]))
+#define OVERLAP_22KHZ   (NUM_COEFF_22KHZ - 2)
+
+// At least remain one frame (one sample for each channel)
+#define OVERLAP_DEFAULT (1)
+
+#define RETURN_VAL_IF_FAIL(condition, val) \
+	do { \
+		if (!(condition)) { \
+			return val; \
+		} \
+	} while (0)
+
+
+/****************************************************************************
+ * Private Declarations
+ ****************************************************************************/
 /**
- * @structure resampler: main structure used for SRC, it contains context
+ * @structure resampler_s: main structure used for SRC, it contains context
  *            variables used between src_simple() calls.
  * @brief It's internal structure, user can only get the handler via src_init().
  */
-struct resampler {
+struct resampler_s {
 	int16_t *in_buffer;     // internal input buffer
 	int16_t *out_buffer;    // internal output buffer
 	int size_in_bytes;      // input buffer size in bytes
@@ -51,8 +111,7 @@ struct resampler {
 	int lastnewformat;      // memorize last desired sample width(format)
 };
 
-typedef struct resampler resampler_t;
-
+typedef struct resampler_s resampler_t;
 
 /**
  * 16.16 fixed point FIR filter coefficients for conversion 44100 -> 32000,
@@ -67,9 +126,6 @@ static const int32_t filter_16khz_coeff[] = {
 	4362037, 1880478, -2973608, 2057290,
 };
 
-#define NUM_COEFF_16KHZ (sizeof(filter_16khz_coeff) / sizeof(filter_16khz_coeff[0]))
-#define OVERLAP_16KHZ (NUM_COEFF_16KHZ - 1)
-
 /**
  * 16.16 fixed point FIR filter coefficients for conversion 44100 -> 22050.
  * (Works equivalently for 22010 -> 11025 or any other halving, of course.)
@@ -82,18 +138,10 @@ static const int32_t filter_22khz_coeff[] = {
 	-10484531, -5820678, 2898328, 2089257,
 };
 
-#define NUM_COEFF_22KHZ (sizeof(filter_22khz_coeff) / sizeof(filter_22khz_coeff[0]))
-#define OVERLAP_22KHZ (NUM_COEFF_22KHZ - 2)
 
-
-#define RETURN_VAL_IF_FAIL(condition, val) \
-	do {\
-		if (!(condition))\
-		{\
-			return val;\
-		}\
-	} while (0)
-
+/****************************************************************************
+ * Private Functions
+ ****************************************************************************/
 /**
  * @brief   Do convolution calculation for sample data
  * @remarks FIR: Finite Impulse Response
@@ -261,7 +309,7 @@ static void downresample_441_320(resampler_t *src, int32_t num_frames_in, int32_
 	int16_t *output = src->out_buffer;
 	int32_t channels_num = src->channels_num;
 	int32_t num_samples_in = num_frames_in * channels_num;
-	float step_float = (float)441 / (float)320;
+	float step_float = DOWN_RESAMPLE_441_320_RATIO;
 	uint32_t step = TO_16_16_FIXED(step_float);
 	uint32_t fp_index = 0;   // 16.16 fixed point value
 
@@ -320,6 +368,9 @@ static void downresample_2_1_filter_frac(resampler_t *src, int32_t num_frames_in
 	}
 }
 
+/****************************************************************************
+ * Public Functions
+ ****************************************************************************/
 src_handle_t src_init(int size)
 {
 	resampler_t *src = (resampler_t *)malloc(sizeof(resampler_t));
@@ -427,7 +478,7 @@ int src_simple(src_handle_t handle, src_data_t *src_data)
 	int output_frames_gen = 0;
 	if (old_sample_rate == new_sample_rate) {
 		// same rate, just copy data
-		input_frames_used = MIN(src_data->input_frames, src->outsize_in_frames);
+		input_frames_used = MINIMUM(src_data->input_frames, src->outsize_in_frames);
 		output_frames_gen = input_frames_used;
 		memcpy((void *)src->out_buffer,\
 			   src_data->data_in,\
@@ -443,7 +494,7 @@ int src_simple(src_handle_t handle, src_data_t *src_data)
 		frames_num += src->left_frames;
 
 		// accept input frames as much as possible
-		input_frames_used = MIN(src_data->input_frames, (src->size_in_frames - frames_num));
+		input_frames_used = MINIMUM(src_data->input_frames, (src->size_in_frames - frames_num));
 
 		// append new input frames
 		memcpy((void *)(int8_t *)src->in_buffer + FRAMES_TO_BYTES(frames_num),\
@@ -476,7 +527,7 @@ int src_simple(src_handle_t handle, src_data_t *src_data)
 					output_frames_gen = LRINTPF((float)src->used_frames * src_ratio);
 					downresample_2_1_filter_frac(src, src->used_frames, output_frames_gen, inverse_ratio);
 				}
-			} else if (old_sample_rate * 320 == new_sample_rate * 441) {
+			} else if (FLOAT_EQUAL(inverse_ratio, DOWN_RESAMPLE_441_320_RATIO)) {
 				// ratio 1.* :: 44.1K->32K, 22.05K->16K, 11.025K->8K, ...
 				src->left_frames = OVERLAP_16KHZ;
 				src->used_frames = frames_num - src->left_frames;
@@ -495,18 +546,16 @@ int src_simple(src_handle_t handle, src_data_t *src_data)
 			// up resample
 			int quotient = new_sample_rate / old_sample_rate;
 			int remainer = new_sample_rate % old_sample_rate;
+
+			src->left_frames = OVERLAP_DEFAULT;
+			src->used_frames = frames_num - src->left_frames;
+
 			if (remainer == 0) {
 				// ratio 2.0/3.0 :: 8K->16K, 8K->24K, 11.025K->22.05K, ...
-				src->left_frames = OVERLAP_DEFAULT;
-				src->used_frames = frames_num - src->left_frames;
-
 				output_frames_gen = src->used_frames * quotient;
 				upresample_int(src, output_frames_gen, quotient);
 			} else {
 				// ratio 1.*/2.* :: 8K->11.025K, 16K->44.1K, 11.025K->12K, ...
-				src->left_frames = OVERLAP_DEFAULT;
-				src->used_frames = frames_num - src->left_frames;
-
 				float frac = (float)((quotient + 1) * old_sample_rate) / (float) new_sample_rate;
 				output_frames_gen = LRINTPF((float)(src->used_frames * (quotient + 1)) / frac);
 				upresample_frac(src, output_frames_gen, quotient + 1, frac);
