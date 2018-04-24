@@ -132,6 +132,7 @@ static void websocket_rx_callback(void *user_data, void *result)
 			task_create("cloud_disconnect", SCHED_PRIORITY_DEFAULT, 4096, disconnect_command, NULL);
 		}
 
+		cJSON_Delete(msg);
 		free(result);
 	}
 }
@@ -393,7 +394,6 @@ static int connect_command(int argc, char *argv[])
 		ret = -1;
 		goto exit;
 	}
-
 
 exit:
 	if (cloud)
