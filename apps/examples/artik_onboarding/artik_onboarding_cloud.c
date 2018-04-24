@@ -93,7 +93,7 @@ static void set_led_state(bool state)
 static pthread_addr_t wifi_onboarding_start(pthread_addr_t arg)
 {
 	StartCloudWebsocket(false, NULL);
-	StartLwm2m(false);
+	StartLwm2m(false, NULL);
 
 	if (StartSoftAP(true) != S_OK) {
 		return NULL;

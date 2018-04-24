@@ -39,7 +39,7 @@ static void StopOnboardingService(void)
 {
 	StartWebServer(false, API_SET_WIFI | API_SET_CLOUD);
 	StartCloudWebsocket(false, NULL);
-	StartLwm2m(false);
+	StartLwm2m(false, NULL);
 	StopWifi();
 
 	printf("ARTIK Onboarding Service stopped\n");
@@ -60,7 +60,7 @@ static pthread_addr_t start_onboarding(pthread_addr_t arg)
 			if ((strlen(cloud_config.device_id) == AKC_DID_LEN) &&
 			    (strlen(cloud_config.device_token) == AKC_TOKEN_LEN)) {
 				if (StartCloudWebsocket(true, NULL) == S_OK) {
-					if (StartLwm2m(true) == S_OK) {
+					if (StartLwm2m(true, NULL) == S_OK) {
 						printf("ARTIK Cloud connection started\n");
 						goto exit;
 					} else {

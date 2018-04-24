@@ -51,8 +51,10 @@ struct Lwm2mConfig {
 
 extern struct Lwm2mConfig lwm2m_config;
 
-artik_error StartLwm2m(bool start);
+typedef void (*on_lwm2m_start_cb)(void);
+artik_error StartLwm2m(bool start, on_lwm2m_start_cb);
 void Lwm2mResetConfig(bool force);
+
 /*
  * WiFi related exports
  */

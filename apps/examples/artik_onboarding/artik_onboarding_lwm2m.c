@@ -62,14 +62,14 @@ static const char akc_root_ca[] =
 	"-----END CERTIFICATE-----\r\n";
 
 
-#define OTA_FIRMWARE_HEADER_SIZE		4096
-#define OTA_SIGNATURE_SIZE				3192
-#define UUID_MAX_LEN					64
-#define LWM2M_RES_DEVICE_REBOOT		"/3/0/4"
-#define LWM2M_CONNECTION_MAX_RETRIES	5
-#define PKCS7_BEGIN					"-----BEGIN PKCS7-----\n"
-#define PKCS7_END						"-----END PKCS7-----\n"
-#define END_CERT						"-----END CERTIFICATE-----\n"
+#define OTA_FIRMWARE_HEADER_SIZE        4096
+#define OTA_SIGNATURE_SIZE              3192
+#define UUID_MAX_LEN                    64
+#define LWM2M_RES_DEVICE_REBOOT         "/3/0/4"
+#define LWM2M_RETRY_PERIOD              5
+#define PKCS7_BEGIN                     "-----BEGIN PKCS7-----\n"
+#define PKCS7_END                       "-----END PKCS7-----\n"
+#define END_CERT                        "-----END CERTIFICATE-----\n"
 
 enum ota_error {
 	OTA_ERROR_SUCCESS = 0,
@@ -98,33 +98,20 @@ struct ota_info {
 
 static artik_lwm2m_handle g_lwm2m_handle;
 static struct ota_info *g_ota_info;
-static int g_lwm2m_connection_retries;
 
 struct Lwm2mConfig lwm2m_config;
 
-static pthread_addr_t restart_lwm2m(pthread_addr_t arg)
+static void restart_lwm2m(void)
 {
-	StartLwm2m(false);
-	StartLwm2m(true);
-	pthread_exit(0);
+	sleep(LWM2M_RETRY_PERIOD);
+	StartLwm2m(true, NULL);
 }
 
 static void on_error(void *data, void *user_data)
 {
-	if (g_lwm2m_connection_retries++ < LWM2M_CONNECTION_MAX_RETRIES) {
-		pthread_t tid;
-		pthread_attr_t attr;
-		struct sched_param sparam;
-
-		fprintf(stderr, "LWM2M error, reconnecting...\n");
-		sparam.sched_priority = 100;
-		pthread_attr_setschedparam(&attr, &sparam);
-		pthread_attr_setschedpolicy(&attr, SCHED_RR);
-		pthread_attr_setstacksize(&attr, 1024 * 4);
-		pthread_create(&tid, &attr, restart_lwm2m, NULL);
-	} else {
-		fprintf(stderr, "Could not reconnect to LWM2M server, giving up\n");
-	}
+	fprintf(stderr, "LWM2M error, trying to reconnect in %d seconds\n",
+			LWM2M_RETRY_PERIOD);
+	StartLwm2m(false, restart_lwm2m);
 }
 
 static pthread_addr_t delayed_reboot(pthread_addr_t arg)
@@ -553,6 +540,7 @@ static pthread_addr_t lwm2m_start_cb(void *arg)
 	artik_lwm2m_config config;
 	artik_lwm2m_module *lwm2m = (artik_lwm2m_module *)artik_request_api_module("lwm2m");
 	artik_ssl_config ssl_config;
+	on_lwm2m_start_cb callback = (on_lwm2m_start_cb)arg;
 
 	if (!lwm2m) {
 		printf("Failed to request lwm2m module\n");
@@ -561,13 +549,12 @@ static pthread_addr_t lwm2m_start_cb(void *arg)
 		return NULL;
 	}
 
-	printf("Start LWM2M connection to ARTIK Cloud\n");
-
 	memset(&config, 0, sizeof(artik_lwm2m_config));
 	memset(&ssl_config, 0, sizeof(artik_ssl_config));
 	config.server_id = 123;
 	config.server_uri = "coaps+tcp://coaps-api.artik.cloud:5689";
 	config.lifetime = 30;
+	config.connect_timeout = 15;
 	config.name = strndup(cloud_config.device_id, UUID_MAX_LEN);
 	config.tls_psk_identity = config.name;
 	config.tls_psk_key = strndup(cloud_config.device_token, UUID_MAX_LEN);
@@ -618,6 +605,9 @@ static pthread_addr_t lwm2m_start_cb(void *arg)
 		finish_ota();
 	}
 
+	if (callback)
+		callback();
+
 exit:
 	if (config.objects[ARTIK_LWM2M_OBJECT_DEVICE])
 		lwm2m->free_object(config.objects[ARTIK_LWM2M_OBJECT_DEVICE]);
@@ -645,6 +635,7 @@ static pthread_addr_t lwm2m_stop_cb(void *arg)
 {
 	artik_error ret = S_OK;
 	artik_lwm2m_module *lwm2m = (artik_lwm2m_module *)artik_request_api_module("lwm2m");
+	on_lwm2m_start_cb callback = (on_lwm2m_start_cb)arg;
 
 	if (!lwm2m) {
 		printf("Failed to request lwm2m module\n");
@@ -660,15 +651,18 @@ static pthread_addr_t lwm2m_stop_cb(void *arg)
 	lwm2m->client_disconnect(g_lwm2m_handle);
 	lwm2m->client_release(g_lwm2m_handle);
 	g_lwm2m_handle = NULL;
+
+	if (callback)
+		callback();
+
 	pthread_exit((void *)ret);
 
 	return NULL;
 }
 
-artik_error StartLwm2m(bool start)
+artik_error StartLwm2m(bool start, on_lwm2m_start_cb cb)
 {
 	artik_error ret = S_OK;
-	int num_retries = LWM2M_CONNECTION_MAX_RETRIES;
 
 	if (start) {
 		static pthread_t tid;
@@ -682,13 +676,15 @@ artik_error StartLwm2m(bool start)
 			goto exit;
 		}
 
+		printf("Starting LWM2M connection\n");
+
 retry:
 		pthread_attr_init(&attr);
 		sparam.sched_priority = 100;
 		status = pthread_attr_setschedparam(&attr, &sparam);
 		status = pthread_attr_setschedpolicy(&attr, SCHED_RR);
 		status = pthread_attr_setstacksize(&attr, 1024 * 8);
-		status = pthread_create(&tid, &attr, lwm2m_start_cb, NULL);
+		status = pthread_create(&tid, &attr, lwm2m_start_cb, (void *)cb);
 		if (status) {
 			printf("Failed to create thread for starting lwm2m\n");
 			ret = E_NO_MEM;
@@ -696,21 +692,20 @@ retry:
 		}
 
 		pthread_setname_np(tid, "onboarding-lwm2m-start");
-		pthread_join(tid, (void **)&ret);
 
-		if ((ret != S_OK) && num_retries--) {
-			printf("Failed to connect to lwm2m (%d), retrying...\n", ret);
-			goto retry;
-		}
-
-		if (num_retries < 1) {
-			ret = E_LWM2M_ERROR;
+		if (cb) {
+			pthread_detach(tid);
 			goto exit;
 		}
 
-		if (ret == S_OK)
-			g_lwm2m_connection_retries = 0;
+		pthread_join(tid, (void **)&ret);
 
+		if (ret != S_OK) {
+			printf("Failed to connect to lwm2m (%d), retrying in %d seconds\n",
+					ret, LWM2M_RETRY_PERIOD);
+			sleep(LWM2M_RETRY_PERIOD);
+			goto retry;
+		}
 	} else {
 		static pthread_t tid;
 		pthread_attr_t attr;
@@ -728,7 +723,8 @@ retry:
 		status = pthread_attr_setschedparam(&attr, &sparam);
 		status = pthread_attr_setschedpolicy(&attr, SCHED_RR);
 		status = pthread_attr_setstacksize(&attr, 1024 * 8);
-		status = pthread_create(&tid, &attr, lwm2m_stop_cb, NULL);
+		status = pthread_create(&tid, &attr, lwm2m_stop_cb, (void *)cb);
+		pthread_attr_destroy(&attr);
 		if (status) {
 			printf("Failed to create thread for stopping lwm2m\n");
 			ret = E_NO_MEM;
@@ -736,6 +732,12 @@ retry:
 		}
 
 		pthread_setname_np(tid, "onboarding-lwm2m-stop");
+
+		if (cb) {
+			pthread_detach(tid);
+			goto exit;
+		}
+
 		pthread_join(tid, (void **)&ret);
 	}
 
