@@ -18,6 +18,7 @@ if !DISABLE_HTTP
 config USE_NGHTTP2
 	bool "Use NGHTTP2"
 	default n
+	select ENABLE_NGHTTP2
 
 config USE_ZLIB
 	bool "Use Zlib Compression"
