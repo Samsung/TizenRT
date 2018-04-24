@@ -577,6 +577,7 @@ db_result_t storage_flush_insert_buffer()
 		return DB_OK;
 	}
 
+	fd = -1;
 	fd = storage_open(g_storage_write_buffer.file_name, O_APPEND | O_RDWR);
 	if (fd < 0) {
 		DB_LOG_D("Failed to open %s\n", g_storage_write_buffer.file_name);
