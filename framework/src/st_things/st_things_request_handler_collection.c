@@ -192,6 +192,7 @@ bool form_collection_links(things_resource_s *collection_rsrc, OCRepPayload ***l
 			result = false;
 			break;
 		}
+		things_free_str_array(res_types, rt_count);
 		res_types = NULL;
 
 		THINGS_LOG_V(THINGS_DEBUG, TAG, "Resource types of child resource(%s) are set in the response payload.", children[index]->uri);
@@ -209,6 +210,7 @@ bool form_collection_links(things_resource_s *collection_rsrc, OCRepPayload ***l
 			result = false;
 			break;
 		}
+		things_free_str_array(if_types, if_count);
 		if_types = NULL;
 
 		THINGS_LOG_V(THINGS_DEBUG, TAG, "Interface types of child resource(%s) are set in the response payload.", children[index]->uri);
