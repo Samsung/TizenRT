@@ -141,11 +141,6 @@ recorder_result_t MediaRecorderImpl::unprepare()
 		return RECORDER_ERROR;
 	}
 
-	if (destroy_audio_stream_in() != AUDIO_MANAGER_SUCCESS) {
-		meddbg("destroy_audio_stream_in() != AUDIO_MANAGER_SUCCESS\n");
-		return RECORDER_ERROR;
-	}
-
 	mCurState = RECORDER_STATE_IDLE;
 	return RECORDER_OK;
 }
