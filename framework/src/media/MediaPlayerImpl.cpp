@@ -249,6 +249,7 @@ player_result_t MediaPlayerImpl::seekTo(int msec)
 
 void MediaPlayerImpl::notifySync()
 {
+	std::unique_lock<std::mutex> lock(mCmdMtx);
 	mSyncCv.notify_one();
 }
 
