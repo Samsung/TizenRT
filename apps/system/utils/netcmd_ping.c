@@ -15,8 +15,7 @@
  * language governing permissions and limitations under the License.
  *
  ****************************************************************************/
-
-/*
+/****************************************************************************
  * Copyright (c) 2001-2004 Swedish Institute of Computer Science.
  * All rights reserved.
  *
@@ -46,7 +45,8 @@
  *
  * Author: Adam Dunkels <adam@sics.se>
  *
- */
+ ****************************************************************************/
+
 #include <tinyara/config.h>
 #include <stdio.h>
 #include <string.h>
@@ -66,11 +66,14 @@
 #define PING_DELAY     1000
 #define PING_RESULT(ping_ok)
 
+#ifndef CONFIG_NET_PING_CMD_ICOUNT
+#define CONFIG_NET_PING_CMD_ICOUNT 5
+#endif
+
 static int g_ping_recv_counter;
 static uint16_t g_ping_seq_num;
 
-static int
-nu_ping_options(int argc, char **argv, int *count, uint32_t *dsec, char **staddr)
+static int ping_options(int argc, char **argv, int *count, uint32_t *dsec, char **staddr)
 {
 	FAR const char *fmt = fmtarginvalid;
 	bool badarg = false;
@@ -142,8 +145,7 @@ errout:
 	return ERROR;
 }
 
-static u16_t
-nu_standard_chksum(void *dataptr, u16_t len)
+static u16_t standard_chksum(void *dataptr, u16_t len)
 {
 	u32_t acc;
 	u16_t src;
@@ -180,8 +182,7 @@ nu_standard_chksum(void *dataptr, u16_t len)
 }
 
 
-static void
-nu_ping_recv(int s, struct timespec *ping_time)
+static void ping_recv(int s, struct timespec *ping_time)
 {
 	char buf[64];
 	int fromlen;
@@ -218,15 +219,16 @@ nu_ping_recv(int s, struct timespec *ping_time)
 					/* do some ping result processing */
 					PING_RESULT((ICMPH_TYPE(iecho) == ICMP_ER));
 					return;
-				} else printf("drop\n");
+				} else {
+					printf("drop\n");
+				}
 			}
 		}
 	}
 }
 
 
-static void
-nu_ping_prepare_echo(struct icmp_echo_hdr *iecho, u16_t len)
+static void ping_prepare_echo(struct icmp_echo_hdr *iecho, u16_t len)
 {
 	size_t i;
 	size_t data_len = len - sizeof(struct icmp_echo_hdr);
@@ -243,11 +245,11 @@ nu_ping_prepare_echo(struct icmp_echo_hdr *iecho, u16_t len)
 		((char *)iecho)[sizeof(struct icmp_echo_hdr) + i] = (char)i;
 	}
 
-	iecho->chksum = ~nu_standard_chksum(iecho, len);
+	iecho->chksum = ~standard_chksum(iecho, len);
 }
 
 
-static int nu_ping_send(int s, struct sockaddr_in *to)
+static int ping_send(int s, struct sockaddr_in *to)
 {
 	int err;
 	struct icmp_echo_hdr *iecho;
@@ -260,7 +262,7 @@ static int nu_ping_send(int s, struct sockaddr_in *to)
 		return -1;
 	}
 
-	nu_ping_prepare_echo(iecho, (u16_t)ping_size);
+	ping_prepare_echo(iecho, (u16_t)ping_size);
 
 	err = sendto(s, iecho, ping_size, 0, (struct sockaddr *)to, sizeof(struct sockaddr_in));
 	if (err <= 0) {
@@ -272,7 +274,7 @@ static int nu_ping_send(int s, struct sockaddr_in *to)
 	return 0;
 }
 
-int nu_ping_process(int count, const char *taddr)
+int ping_process(int count, const char *taddr)
 {
 	int s;
 	struct timeval tv;
@@ -302,9 +304,10 @@ int nu_ping_process(int count, const char *taddr)
 	to.sin_addr.s_addr = inet_addr(taddr);
 
 	while (1) {
-		if (nu_ping_send(s, &to) == ERR_OK) {
+		if (ping_send(s, &to) == ERR_OK) {
+			// printf("ping : send %d\n", ping_send_counter);
 			clock_gettime(CLOCK_REALTIME, &ping_time);
-			nu_ping_recv(s, &ping_time);
+			ping_recv(s, &ping_time);
 		} else {
 			printf("nu_ping_process: send error\n");
 			break;
@@ -312,15 +315,17 @@ int nu_ping_process(int count, const char *taddr)
 
 		ping_send_counter++;
 		usleep(1000 * PING_DELAY);
-		if (ping_send_counter == count) break;
+		if (ping_send_counter == count) {
+			break;
+		}
 	}
 
 	close(s);
 
 	printf("--- %s ping statistics ---\n", taddr);
-	printf("%d packets transmitted, %d received, %f\%% packet loss,\n", ping_send_counter,
-		   g_ping_recv_counter,
-		   (100.0f * (float)(g_ping_recv_counter - ping_send_counter))/(float)g_ping_recv_counter);
+	printf("%d packets transmitted, %d received, %f%% packet loss\n", ping_send_counter,
+		g_ping_recv_counter,
+		(100.0f * (float)(ping_send_counter - g_ping_recv_counter) / (float)ping_send_counter));
 
 	return OK;
 }
@@ -329,19 +334,18 @@ int cmd_ping(int argc, char **argv)
 {
 	char *staddr;
 	uint32_t dsec = 10;
-	int count = 10;
+	int count = CONFIG_NET_PING_CMD_ICOUNT;
 
 	/* Get the ping options */
 
-	int ret = nu_ping_options(argc, argv, &count, &dsec, &staddr);
+	int ret = ping_options(argc, argv, &count, &dsec, &staddr);
 	if (ret < 0) {
 		return ERROR;
 	}
-	ret = nu_ping_process(count, staddr);
+	ret = ping_process(count, staddr);
 	if (ret < 0) {
 		return ERROR;
 	}
 
 	return OK;
 }
-

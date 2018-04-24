@@ -34,6 +34,22 @@ config NET_CMDS
 		Disable Network command in TASH.
 		Command including ifconfig, ifdown, ifup, and so on.
 
+if NET_CMDS
+config NET_PING_CMD
+	bool "Network 'ping' command"
+	default y
+	---help---
+		Network ping command
+
+config NET_PING_CMD_ICOUNT
+	int "ping command iterations"
+	default 5
+	depends on NET_PING_CMD
+	---help---
+		Number of iterations that 'ping' has to be run.
+
+endif #NET_CMDS
+
 config ENABLE_DATE
 	bool "date"
 	default y
