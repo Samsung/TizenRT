@@ -15,6 +15,10 @@
  * language governing permissions and limitations under the License.
  *
  ****************************************************************************/
+/*
+ * This file is dual licensed under the MIT and the University of Illinois Open
+ * Source Licenses. See LICENSE.TXT for details.
+ */
 #ifndef __IEEE_BIG_ENDIAN
 #ifndef __IEEE_LITTLE_ENDIAN
 
