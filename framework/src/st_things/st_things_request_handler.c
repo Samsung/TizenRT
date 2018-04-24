@@ -268,6 +268,7 @@ bool add_common_props(things_resource_s *rsrc, bool collection, OCRepPayload *re
 			return false;
 		}
 	}
+	things_free_str_array(res_types, rt_count);
 
 	// Set interface types.
 	int if_count = 0;
@@ -285,6 +286,7 @@ bool add_common_props(things_resource_s *rsrc, bool collection, OCRepPayload *re
 			return false;
 		}
 	}
+	things_free_str_array(if_types, if_count);
 
 	// Set "links"(only for collection).
 	if (collection) {
@@ -525,8 +527,9 @@ static bool add_property_in_post_req_msg(st_things_set_request_message_s *req_ms
 			result = OCRepPayloadSetPropString(resp_payload, prop->key, value);
 			if (!result) {
 				THINGS_LOG_V(THINGS_ERROR, TAG, "Failed to set the string value of '%s' in request message", prop->key);
-				things_free(value);
 			}
+
+			things_free(value);
 		} else {
 			THINGS_LOG_V(THINGS_ERROR, TAG, "Failed to get the string value of '%s' for request message", prop->key);
 		}
@@ -538,8 +541,9 @@ static bool add_property_in_post_req_msg(st_things_set_request_message_s *req_ms
 			result = OCRepPayloadSetPropObject(resp_payload, prop->key, value);
 			if (!result) {
 				THINGS_LOG_V(THINGS_ERROR, TAG, "Failed to set the object value of '%s' in request message", prop->key);
-				OCRepPayloadDestroy(value);
 			}
+
+			OCRepPayloadDestroy(value);
 		} else {
 			THINGS_LOG_V(THINGS_ERROR, TAG, "Failed to get the object value of '%s' for request message", prop->key);
 		}
@@ -551,8 +555,9 @@ static bool add_property_in_post_req_msg(st_things_set_request_message_s *req_ms
 			result = OCRepPayloadSetPropByteString(resp_payload, prop->key, byte_value);
 			if (!result) {
 				THINGS_LOG_V(THINGS_ERROR, TAG, "Failed to set the byte string value of '%s' in request message", prop->key);
-				things_free(byte_value.bytes);
 			}
+
+			things_free(byte_value.bytes);
 		} else {
 			THINGS_LOG_V(THINGS_ERROR, TAG, "Failed to get the byte string value of '%s' for request message", prop->key);
 		}
@@ -565,8 +570,9 @@ static bool add_property_in_post_req_msg(st_things_set_request_message_s *req_ms
 			result = OCRepPayloadSetIntArray(resp_payload, prop->key, value, dimensions);
 			if (!result) {
 				THINGS_LOG_V(THINGS_ERROR, TAG, "Failed to set the integer array value of '%s' in request message", prop->key);
-				things_free(value);
 			}
+
+			things_free(value);
 		} else {
 			THINGS_LOG_V(THINGS_ERROR, TAG, "Failed to get the integer array value of '%s' for request message", prop->key);
 		}
@@ -579,8 +585,9 @@ static bool add_property_in_post_req_msg(st_things_set_request_message_s *req_ms
 			result = OCRepPayloadSetDoubleArray(resp_payload, prop->key, value, dimensions);
 			if (!result) {
 				THINGS_LOG_V(THINGS_ERROR, TAG, "Failed to set the double array value of '%s' in request message", prop->key);
-				things_free(value);
 			}
+
+			things_free(value);
 		} else {
 			THINGS_LOG_V(THINGS_ERROR, TAG, "Failed to get the double array value of '%s' for request message", prop->key);
 		}
@@ -593,9 +600,10 @@ static bool add_property_in_post_req_msg(st_things_set_request_message_s *req_ms
 			result = OCRepPayloadSetStringArray(resp_payload, prop->key, value, dimensions);
 			if (!result) {
 				THINGS_LOG_V(THINGS_ERROR, TAG, "Failed to set the string array value of '%s' in request message", prop->key);
-				size_t len = calcDimTotal(dimensions);
-				things_free_str_array(value, len);
 			}
+
+			size_t len = calcDimTotal(dimensions);
+			things_free_str_array(value, len);
 		} else {
 			THINGS_LOG_V(THINGS_ERROR, TAG, "Failed to get the string array value of '%s' for request message", prop->key);
 		}
@@ -608,12 +616,13 @@ static bool add_property_in_post_req_msg(st_things_set_request_message_s *req_ms
 			result = OCRepPayloadSetPropObjectArray(resp_payload, prop->key, value, dimensions);
 			if (!result) {
 				THINGS_LOG_V(THINGS_ERROR, TAG, "Failed to set the object array value of '%s' in request message", prop->key);
-				size_t len = calcDimTotal(dimensions);
-				for (size_t index = 0; index < len; index++) {
-					OCRepPayloadDestroy(value[index]);
-				}
-				things_free(value);
 			}
+
+			size_t len = calcDimTotal(dimensions);
+			for (size_t index = 0; index < len; index++) {
+				OCRepPayloadDestroy(value[index]);
+			}
+			things_free(value);
 		} else {
 			THINGS_LOG_V(THINGS_ERROR, TAG, "Failed to get the object array value of '%s' for request message", prop->key);
 		}
