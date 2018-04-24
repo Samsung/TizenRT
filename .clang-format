@@ -6,13 +6,13 @@ AccessModifierOffset: -4
 AllowShortFunctionsOnASingleLine: false
 BreakBeforeBraces: Custom
 BraceWrapping:
-  AfterEnum: true
-  AfterFunction: true
-  AfterStruct: true
-  AfterUnion: true
+  AfterEnum: false #[M16]
+  AfterFunction: true #[M14]
+  AfterStruct: false #[M16]
+  AfterUnion: false #[M16]
   AfterClass: true
   AfterNamespace: false
-  BeforeElse: false
+  BeforeElse: false #[M15]
 IndentCaseLabels: false #[M09]
 IndentWidth:     4 #[M08]
 SpaceBeforeAssignmentOperators: true #[M11]

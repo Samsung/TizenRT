@@ -29,8 +29,7 @@ namespace media {
  * @details @b #include <media/MediaPlayer.h>
  * @since TizenRT v2.0 PRE
  */
-typedef enum player_state_e
-{
+typedef enum player_state_e {
 	/** MediaPlayer object was created */
 	PLAYER_STATE_NONE,
 	/** MediaPlayer worker object was created */
@@ -48,8 +47,7 @@ typedef enum player_state_e
  * @details @b #include <media/MediaPlayer.h>
  * @since TizenRT v2.0 PRE
  */
-typedef enum player_result_e
-{
+typedef enum player_result_e {
 	/** MediaPlayer Error case */
 	PLAYER_ERROR,
 	/** MediaPlayer Success case */
