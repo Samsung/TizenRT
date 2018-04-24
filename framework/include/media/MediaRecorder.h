@@ -29,8 +29,7 @@ namespace media {
  * @details @b #include <media/MediaRecorder.h>
  * @since TizenRT v2.0 PRE
  */
-typedef enum recorder_state_e
-{
+typedef enum recorder_state_e {
 	/** MediaRecorder object was created */
 	RECORDER_STATE_NONE,
 	/** MediaRecorder worker object was created */
@@ -48,8 +47,7 @@ typedef enum recorder_state_e
  * @details @b #include <media/MediaRecorder.h>
  * @since TizenRT v2.0 PRE
  */
-typedef enum recorder_result_e
-{
+typedef enum recorder_result_e {
 	/** MediaRecorder Error case */
 	RECORDER_ERROR,
 	/** MediaRecorder Success case */
