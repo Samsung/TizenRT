@@ -154,6 +154,8 @@ void RecorderWorker::increaseRef()
 
 void RecorderWorker::decreaseRef()
 {
-	mRefCnt--;
+	if (mRefCnt > 0) {
+		mRefCnt--;
+	}
 }
 } // namespace media
