@@ -862,8 +862,10 @@
 /* Use TLS-SRP authentication */
 #define USE_TLS_SRP 1
 
+#ifndef __TIZENRT__
 /* Use Unix domain sockets */
 #define USE_UNIX_SOCKETS 1
+#endif
 
 /* Version number of package */
 #define VERSION "2.8.12"
