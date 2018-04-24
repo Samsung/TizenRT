@@ -29,7 +29,10 @@ THREADEXEC = TASH_EXECMD_SYNC
 # SmartThings Things example
 
 ASRCS =
-CSRCS = sample_light_user.c sample_light_things.c
+CSRCS = 
+ifeq ($(CONFIG_EXAMPLES_ST_THINGS_LIGHT),y)
+CSRCS += light/sample_light_things.c light/sample_light_user.c
+endif
 MAINSRC = st_things_sample_main.c
 
 AOBJS = $(ASRCS:.S=$(OBJEXT))
