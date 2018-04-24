@@ -276,11 +276,7 @@ int things_initialize_stack(const char *json_path, bool *easysetup_completed)
 	if (es_state != ES_COMPLETE) {
 		esm_save_easysetup_state(ES_NOT_COMPLETE);
 		THINGS_LOG_D(THINGS_DEBUG, TAG, "delete svrdb");
-		int ret = unlink(dm_get_svrdb_file_path());
-		if (ret < 0) {
-			THINGS_LOG_D(THINGS_ERROR, TAG, "delete svrdb fail(%d)", errno);
-			return 0;
-		}
+		unlink(dm_get_svrdb_file_path());
 	}
 	
 #ifdef CONFIG_ST_THINGS_FOTA
