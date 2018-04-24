@@ -72,7 +72,9 @@ long double hypotl(long double x, long double y)
 
 static void sq(long double *hi, long double *lo, long double x)
 {
-	long double xh, xl, xc;
+	long double xh;
+	long double xl;
+	long double xc;
 	xc = x * SPLIT;
 	xh = x - xc + xc;
 	xl = x - xh;
@@ -89,8 +91,13 @@ long double hypotl(long double x, long double y)
 	union ldshape ux = { x }, uy = {
 		y
 	};
-	int ex, ey;
-	long double hx, lx, hy, ly, z;
+	int ex;
+	int ey;
+	long double hx;
+	long double lx;
+	long double hy;
+	long double ly;
+	long double z;
 
 	ux.i.se &= 0x7fff;
 	uy.i.se &= 0x7fff;

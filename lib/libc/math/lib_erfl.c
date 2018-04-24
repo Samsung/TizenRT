@@ -72,7 +72,12 @@ long double erfl(long double x)
 
 	char sign;
 	long double t;
-	long double a1, a2, a3, a4, a5, p;
+	long double a1;
+	long double a2;
+	long double a3;
+	long double a4;
+	long double a5;
+	long double p;
 
 	a1 = 0.254829592;
 	a2 = -0.284496736;
@@ -83,6 +88,6 @@ long double erfl(long double x)
 
 	sign = (x >= 0 ? 1 : -1);
 	t = 1.0 / (1.0 + p * x);
-	return sign * (1.0 - (((((a5 * t + a4) * t) + a3) * t + a2) * t + a1) * t * expf(-x * x));
+	return sign * (1.0 - (((((a5 * t + a4) * t) + a3) * t + a2) * t + a1) * t * expl(-x * x));
 }
 #endif

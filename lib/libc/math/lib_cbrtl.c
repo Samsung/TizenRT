@@ -90,8 +90,13 @@ long double cbrtl(long double x)
 		float f;
 		uint32_t i;
 	} uft;
-	long double r, s, t, w;
-	double_t dr, dt, dx;
+	long double r;
+	long double s;
+	long double t;
+	long double w;
+	double_t dr;
+	double_t dt;
+	double_t dx;
 	float_t ft;
 	int e = u.i.se & 0x7fff;
 	int sign = u.i.se & 0x8000;
