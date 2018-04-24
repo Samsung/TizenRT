@@ -12,11 +12,21 @@ config EXAMPLES_ST_THINGS
 		Enable the ST(SmartThings) Things example
 
 if EXAMPLES_ST_THINGS
+choice
+	prompt "ST Things Sample list"
+	default EXAMPLES_ST_THINGS_LIGHT
+	---help---
+	This selection builds a sample of ST_things.
+
+config EXAMPLES_ST_THINGS_LIGHT
+	bool "LIGHT"
+	---help---
+	This is a Light Sample.
 
 config RESET_BUTTON
 	bool "Reset_Button"
 	default y
-	depends on EXAMPLES_ST_THINGS
+	depends on EXAMPLES_ST_THINGS_LIGHT
 	---help---
 		Decide whether to use the button to reset the connection on your board.
 
@@ -27,7 +37,7 @@ config RESET_BUTTON_PIN_NUMBER
 	---help---
 		The default is the reset button pin number 44 for the ARTIK 053.
 		If you use another board, you can set the pin number for the board.
-
+endchoice 
 endif
 
 config USER_ENTRYPOINT
