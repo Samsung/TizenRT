@@ -2,6 +2,14 @@
 # For a description of the syntax of this configuration file,
 # see kconfig-language at https://www.kernel.org/doc/Documentation/kbuild/kconfig-language.txt
 
+config AUDIO_MAX_INPUT_CARD_NUM
+	int "Max # of Input Audio Card"
+	default 2
+
+config AUDIO_MAX_OUTPUT_CARD_NUM
+	int "Max # of Output Audio Card"
+	default 2
+	
 config AUDIO_I2SCHAR
 	bool "I2S character driver (for testing only)"
 	default n

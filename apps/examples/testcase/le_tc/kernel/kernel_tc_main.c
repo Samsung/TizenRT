@@ -44,9 +44,6 @@ int tc_kernel_main(int argc, char *argv[])
 #endif
 
 #ifdef CONFIG_TC_KERNEL_CLOCK
-#if (!defined CONFIG_SYSTEM_TIME64)
-#error CONFIG_SYSTEM_TIME64 is needed for testing CLOCK TC
-#endif
 	clock_main();
 #endif
 
@@ -161,9 +158,6 @@ int tc_kernel_main(int argc, char *argv[])
 #endif
 
 #ifdef CONFIG_TC_KERNEL_SEMAPHORE
-#if (!defined CONFIG_DEBUG) || (!defined CONFIG_SEM_PREALLOCHOLDERS) || (!defined CONFIG_PRIORITY_INHERITANCE)
-#error CONFIG_DEBUG, CONFIG_SEM_PHDEBUG, CONFIG_SEM_PREALLOCHOLDERS and CONFIG_PRIORITY_INHERITANCE are needed for testing SEMAPHORE TC
-#endif
 	semaphore_main();
 #endif
 

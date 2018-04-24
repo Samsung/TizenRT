@@ -54,8 +54,6 @@
 ifeq ($(CONFIG_EXAMPLES_TESTCASE_SYSTEMIO_UTC),y)
 CSRCS += utc_sysio_main.c utc_gpio.c utc_i2c.c utc_pwm.c utc_spi.c utc_uart.c
 
-CFLAGS += -I$(TOPDIR)/../framework/include/iotbus
-
 # Include system io build support
 
 DEPPATH += --dep-path ta_tc/systemio/utc

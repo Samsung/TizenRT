@@ -3,12 +3,15 @@
 # see kconfig-language at https://www.kernel.org/doc/Documentation/kbuild/kconfig-language.txt
 #
 
+source "$EXTERNALDIR/audiocodec/Kconfig"
 source "$EXTERNALDIR/aws/Kconfig"
 source "$EXTERNALDIR/codecs/Kconfig"
+source "$EXTERNALDIR/curl/Kconfig"
 source "$EXTERNALDIR/gmock/Kconfig"
 source "$EXTERNALDIR/iotivity/Kconfig"
 source "$EXTERNALDIR/json/Kconfig"
 source "$EXTERNALDIR/libtuv/Kconfig"
-source "$EXTERNALDIR/wakaama/Kconfig"
 source "$EXTERNALDIR/protobuf/Kconfig"
+source "$EXTERNALDIR/wakaama/Kconfig"
 source "$EXTERNALDIR/WICED/Kconfig"
+

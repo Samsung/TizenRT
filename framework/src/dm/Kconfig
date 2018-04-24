@@ -7,7 +7,7 @@ config DM
 	bool "DM"
 	default n
 	depends on NET
-	select LIBC_NETDB
+	select NET_LWIP_NETDB
 	select LWM2M_WAKAAMA
 	---help---
 		enable the DM functionality

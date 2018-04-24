@@ -53,7 +53,7 @@ static void tc_net_getsockname_p(void)
 	TC_ASSERT_NEQ("getsockname", ret, -1);
 	TC_SUCCESS_RESULT();
 }
-
+#ifdef AF_UNIX
 /**
    * @testcase		   :tc_net_getsockname_unix_p
    * @brief		   :
@@ -74,7 +74,7 @@ static void tc_net_getsockname_unix_p(void)
 	TC_ASSERT_NEQ("getsockname", ret, -1);
 	TC_SUCCESS_RESULT();
 }
-
+#endif
 /**
    * @testcase		   :tc_net_getsockname_n
    * @brief		   :
@@ -196,7 +196,8 @@ int net_getsockname_main(void)
 	tc_net_getsockname_udp_p();
 	tc_net_getsockname_icmp_p();
 	tc_net_getsockname_close_n();
+#ifdef AF_UNIX
 	tc_net_getsockname_unix_p();
-
+#endif
 	return 0;
 }

@@ -627,6 +627,17 @@ int dhcpc_request(void *handle, struct dhcpc_state *presult)
 	ndbg("Got default router %d.%d.%d.%d\n", (presult->default_router.s_addr) & 0xff, (presult->default_router.s_addr >> 8) & 0xff, (presult->default_router.s_addr >> 16) & 0xff, (presult->default_router.s_addr >> 24) & 0xff);
 	ndbg("Lease expires in %d seconds\n", presult->lease_time);
 
+#if defined CONFIG_NET_LWIP    // this is temporal fix. it should be modified later
+    ip_addr_t dns_addr;
+    IP_SET_TYPE_VAL(dns_addr, IPADDR_TYPE_V4);
+#ifdef CONFIG_NET_IPv6
+    dns_addr.u_addr.ip4.addr = presult->dnsaddr.s_addr;
+#else
+    dns_addr.addr = presult->dnsaddr.s_addr;
+#endif
+    dns_setserver(0, &dns_addr);
+#endif /*  CONFIG_NET_LWIP */
+
 #if defined(CONFIG_NETDB_DNSCLIENT) && defined(CONFIG_NETDB_DNSSERVER_BY_DHCP)
 	struct sockaddr_in dns;
 	if (presult->dnsaddr.s_addr != 0) {

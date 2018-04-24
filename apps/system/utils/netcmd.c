@@ -59,12 +59,15 @@
 #include <netdb.h>
 #endif
 #include <protocols/dhcpc.h>
+
 #ifndef DNS_DEFAULT_PORT
 #define DNS_DEFAULT_PORT   53
 #endif
 
 #include "netcmd.h"
+#ifdef CONFIG_NET_PING_CMD
 #include "netcmd_ping.h"
+#endif
 #ifdef CONFIG_NETUTILS_DHCPD
 #include "netcmd_dhcpd.h"
 #endif
@@ -287,13 +290,53 @@ int cmd_ifconfig(int argc, char **argv)
 
 	/* Get the MAC address of the NIC */
 	if (!gip) {
-		FAR void *handle;
-		netlib_getmacaddr(intf, mac);
-		struct dhcpc_state ds;
 		int ret;
 
-		/* Set up the DHCPC modules */
+#if 0 /* TODO : LWIP_DHCP */
+#define NET_CMD_DHCP_TIMEOUT 5000000
+#define NET_CMD_DHCP_CHECK_INTERVAL 10000
+		struct netif *ifcon_if = NULL;
+		int32_t timeleft = NET_CMD_DHCP_TIMEOUT;
 
+		netlib_getmacaddr(intf, mac);
+
+		ifcon_if = netif_find(intf);
+		if (ifcon_if == NULL) {
+			return ERROR;
+		}
+
+		ret = dhcp_start(ifcon_if);
+		if (ret < 0) {
+			dhcp_release(ifcon_if);
+			return ERROR;
+		}
+
+		while (ifcon_if->dhcp->state != DHCP_BOUND) {
+			usleep(NET_CMD_DHCP_CHECK_INTERVAL);
+			timeleft -= NET_CMD_DHCP_CHECK_INTERVAL;
+			if (timeleft <= 0) {
+				break;
+			}
+		}
+
+		if (ifcon_if->dhcp->state == DHCP_BOUND) {
+			printf("IP address %u.%u.%u.%u\n", (unsigned char)((htonl(ifcon_if->ip_addr.addr) >> 24) & 0xff), (unsigned char)((htonl(ifcon_if->ip_addr.addr) >> 16) & 0xff), (unsigned char)((htonl(ifcon_if->ip_addr.addr) >> 8) & 0xff), (unsigned char)((htonl(ifcon_if->ip_addr.addr) >> 0) & 0xff));
+			printf("Netmask address %u.%u.%u.%u\n", (unsigned char)((htonl(ifcon_if->netmask.addr) >> 24) & 0xff), (unsigned char)((htonl(ifcon_if->netmask.addr) >> 16) & 0xff), (unsigned char)((htonl(ifcon_if->netmask.addr) >> 8) & 0xff), (unsigned char)((htonl(ifcon_if->netmask.addr) >> 0) & 0xff));
+			printf("Gateway address %u.%u.%u.%u\n", (unsigned char)((htonl(ifcon_if->gw.addr) >> 24) & 0xff), (unsigned char)((htonl(ifcon_if->gw.addr) >> 16) & 0xff), (unsigned char)((htonl(ifcon_if->gw.addr) >> 8) & 0xff), (unsigned char)((htonl(ifcon_if->gw.addr) >> 0) & 0xff));
+		} else {
+			if (timeleft <= 0) {
+				printf("DHCP Client - Timeout fail to get ip address\n");
+				return ERROR;
+			}
+		}
+#else							/* LWIP_DHCP */
+
+		FAR void *handle;
+		struct dhcpc_state ds;
+
+		netlib_getmacaddr(intf, mac);
+
+		/* Set up the DHCPC modules */
 		handle = dhcpc_open(intf);
 
 		/* Get an IP address.  Note that there is no logic for renewing the IP
@@ -325,9 +368,9 @@ int cmd_ifconfig(int argc, char **argv)
 		printf("Gateway %s\n", inet_ntoa(ds.default_router));
 #if defined(CONFIG_NETDB_DNSCLIENT) && defined(CONFIG_NETDB_DNSSERVER_BY_DHCP)
 		printf("Default DNS %s\n", inet_ntoa(ds.dnsaddr));
-#endif
+#endif							/* defined(CONFIG_NETDB_DNSCLIENT) && defined(CONFIG_NETDB_DNSSERVER_BY_DHCP) */
 		dhcpc_close(handle);
-
+#endif							/* LWIP_DHCP */
 		return OK;
 	}
 
@@ -379,7 +422,9 @@ const static tash_cmdlist_t net_utilcmds[] = {
 #ifdef NET_LWIP_STATS_DISPLAY
 	{"lwip_stats", stats_display, TASH_EXECMD_ASYNC},
 #endif
+#ifdef CONFIG_NET_PING_CMD
 	{"ping", cmd_ping, TASH_EXECMD_SYNC},
+#endif
 #ifdef CONFIG_NETUTILS_TFTPC
 	{"tftpc", cmd_tftpc, TASH_EXECMD_SYNC},
 #endif

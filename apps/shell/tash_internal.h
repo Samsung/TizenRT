@@ -62,6 +62,9 @@ extern int tash_script(int argc, char **args);
 #endif
 #ifndef CONFIG_DISABLE_SIGNALS
 extern int tash_sleep(int argc, char **args);
+#ifdef CONFIG_TASH_USLEEP
+extern int tash_usleep(int argc, char **args);
+#endif
 #endif
 
 #endif							/* __APPS_SHELL_TASH_INTERNAL_H */

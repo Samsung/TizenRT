@@ -62,6 +62,7 @@ static void itc_net_setsockopt_p_rcvbuf(int s)
 	TC_SUCCESS_RESULT();
 }
 
+#if 0
 /**
 * @testcase             :itc_net_setsockopt_p_reuseport
 * @brief                :setsockopt setting flag SO_REUSEPORT
@@ -79,6 +80,7 @@ static void itc_net_setsockopt_p_reuseport(int s)
 	TC_ASSERT_EQ("setsockopt", ret, 0);
 	TC_SUCCESS_RESULT();
 }
+#endif
 
 /**
 * @testcase             :itc_net_setsockopt_p_reuseaddr
@@ -223,12 +225,17 @@ int itc_net_setsockopt_main(void)
 
 	itc_net_setsockopt_n_invalid_opt_name(fd);
 	itc_net_setsockopt_p_rcvbuf(fd);
-	itc_net_setsockopt_p_reuseport(fd);
+	//itc_net_setsockopt_p_reuseport(fd);
 	itc_net_setsockopt_p_reuseaddr(fd);
 	itc_net_setsockopt_p_rcvtimo(fd);
 	itc_net_setsockopt_p_sndtimo(fd);
-	itc_net_setsockopt_p_no_check(fd);
 	itc_net_setsockopt_p_ip_ttl(fd);
+
+	close(fd);
+
+	fd = socket(AF_INET, SOCK_DGRAM, 0);
+
+	itc_net_setsockopt_p_no_check(fd);
 	itc_net_setsockopt_p_multicast_ttl_loop(fd);
 	itc_net_setsockopt_p_multicast_ttl_loop_own(fd);
 

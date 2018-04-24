@@ -16,6 +16,13 @@ config TASH_MAX_COMMANDS
 	---help---
 		The maximum number of TASH commands to register.
 
+config TASH_USLEEP
+	bool "Enable 'usleep' command in TASH"
+	default n
+	depends on !DISABLE_SIGNALS
+	---help---
+		Enable 'usleep' command in TASH.
+
 config DEBUG_TASH
 	bool "enable debug messages in TASH"
 	default n

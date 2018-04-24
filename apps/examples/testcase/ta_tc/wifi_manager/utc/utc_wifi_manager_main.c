@@ -120,7 +120,7 @@ static void utc_wifi_manager_init_n(void)
 
 	ret = wifi_manager_init(NULL);
 
-	TC_ASSERT_EQ("wifi_manager_init_n", ret, WIFI_MANAGER_FAIL);
+	TC_ASSERT_EQ("wifi_manager_init_n", ret, WIFI_MANAGER_INVALID_ARGS);
 	TC_SUCCESS_RESULT();
 }
 
@@ -186,7 +186,7 @@ static void utc_wifi_manager_get_mode_n(void)
 
 	ret = wifi_manager_get_info(info);
 
-	TC_ASSERT_EQ("wifi_manager_get_mode_n", ret, WIFI_MANAGER_FAIL);
+	TC_ASSERT_EQ("wifi_manager_get_mode_n", ret, WIFI_MANAGER_INVALID_ARGS);
 	TC_SUCCESS_RESULT();
 }
 
@@ -319,7 +319,7 @@ static void utc_wifi_manager_deinit_n(void)
 
 	ret = wifi_manager_deinit();
 
-	TC_ASSERT_EQ("wifi_manager_deinit_n", ret, WIFI_MANAGER_DEINITIALIZED);
+	TC_ASSERT_EQ("wifi_manager_deinit_n", ret, WIFI_MANAGER_FAIL);
 	TC_SUCCESS_RESULT();
 }
 
@@ -331,8 +331,8 @@ static void utc_wifi_manager_scan_ap_n(void)
 	TC_ASSERT_EQ("wifi_manager_scan_ap_n", ret, WIFI_MANAGER_SUCCESS);
 
 	ret = wifi_manager_scan_ap();
-	TC_ASSERT_EQ("wifi_manager_scan_ap_n", ret, WIFI_MANAGER_INVALID_ARGS);
 
+	TC_ASSERT_EQ("wifi_manager_scan_ap_n", ret, WIFI_MANAGER_FAIL);
 	TC_SUCCESS_RESULT();
 }
 

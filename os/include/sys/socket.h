@@ -68,13 +68,14 @@
  ****************************************************************************/
 
 #include <tinyara/config.h>
-#include <sys/sock_internal.h>
 #include <sys/types.h>
 
-#ifdef CONFIG_NET_SOCKET
+#ifdef CONFIG_NET_LWIP
 #include <net/lwip/sockets.h>
 #include <net/lwip/api.h>
-#endif	/* CONFIG_NET_SOCKET */
+#else
+#include <sys/sock_internal.h>
+#endif /* CONFIG_NET_LWIP */
 
 /****************************************************************************
  * Public Function Prototypes
@@ -301,6 +302,9 @@ int getsockname(int sockfd, FAR struct sockaddr *addr, FAR socklen_t *addrlen);
 * @since TizenRT v1.0
 */
 int getpeername(int s, struct sockaddr *name, socklen_t *namelen);
+
+ssize_t recvmsg(int sockfd, struct msghdr *msg, int flags);
+ssize_t sendmsg(int sockfd, struct msghdr *msg, int flags);
 
 #undef EXTERN
 #if defined(__cplusplus)

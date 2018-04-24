@@ -22,12 +22,9 @@
 ############################################################################
 
 
-LWIP_CSRCS += def.c dhcp.c init.c mem.c memp.c netif.c
-LWIP_CSRCS += pbuf.c raw.c sys.c tcp.c tcp_in.c tcp_out.c timers.c udp.c
-LWIP_CSRCS += dhcps.c
-ifeq ($(CONFIG_NET_STATS),y)
-LWIP_CSRCS += stats.c
-endif
+LWIP_CSRCS += def.c init.c mem.c memp.c netif.c ip.c dns.c timeouts.c
+LWIP_CSRCS += pbuf.c raw.c stats.c sys.c tcp.c tcp_in.c tcp_out.c udp.c
+LWIP_CSRCS += inet_chksum.c
 
 # Include core build support
 

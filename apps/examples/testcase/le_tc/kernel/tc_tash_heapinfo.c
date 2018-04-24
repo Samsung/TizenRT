@@ -181,7 +181,9 @@ static int tc_tash_heapinfo(int argc, char **args)
 	int ret = ERROR;
 	pthread_t tc_thread;
 	pthread_attr_t tc_thread_attr;
+#ifdef CONFIG_HEAPINFO_USER_GROUP
 	pthread_t pid;
+#endif
 
 	pthread_attr_init(&tc_thread_attr);
 

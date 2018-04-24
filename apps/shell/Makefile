@@ -31,6 +31,9 @@ CSRCS += tash_script.c
 endif
 ifneq ($(CONFIG_DISABLE_SIGNALS),y)
 CSRCS += tash_sleep.c
+ifeq ($(CONFIG_TASH_USLEEP),y)
+CSRCS += tash_usleep.c
+endif
 endif
 
 MAINSRC = tash_main.c

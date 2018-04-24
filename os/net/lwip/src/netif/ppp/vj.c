@@ -335,7 +335,7 @@ found:
 			break;
 		}
 
-		/* (fall through) */
+	/* (fall through) */
 
 	case SPECIAL_I:
 	case SPECIAL_D:

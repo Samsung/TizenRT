@@ -61,7 +61,6 @@ config TC_KN_ALL
 config TC_KERNEL_CLOCK
 	bool "Clock"
 	default n
-	select SYSTEM_TIME64
 
 config TC_KERNEL_ENVIRON
 	bool "Environ"
@@ -177,7 +176,6 @@ config TC_KERNEL_SEMAPHORE
 	bool "Semaphore"
 	default n
 	select DEBUG
-	select PRIORITY_INHERITANCE
 
 config TC_KERNEL_SIGNAL
 	bool "Signal"
@@ -240,7 +238,6 @@ config ITC_KERNEL_SEMAPHORE
 	bool "ITC Semaphore"
 	default n
 	select DEBUG
-	select PRIORITY_INHERITANCE
 if ITC_KERNEL_SEMAPHORE
 config ITC_KERN_SEM_LOOP_SIZE
 	int "Iterator Count"

@@ -50,8 +50,8 @@ OCStackResult things_cloud_signup(const char *host,
 								  const char *device_id,
 								  const es_cloud_prov_data_s *event_data,
 								  OCClientResponseHandler response,
-								  check_time_out_call_func timeout_handler,
-								  timeout_s *timeout);
+								  things_check_time_out_call_func timeout_handler,
+								  things_timeout_s *timeout);
 
 OCStackResult things_cloud_session(const char *host,
 								   const char *uId,
@@ -59,28 +59,28 @@ OCStackResult things_cloud_session(const char *host,
 								   const char *accesstoken,
 								   bool is_login,
 								   OCClientResponseHandler response,
-								   check_time_out_call_func timeout_handler,
-								   timeout_s *timeout);
+								   things_check_time_out_call_func timeout_handler,
+								   things_timeout_s *timeout);
 
 OCStackResult things_cloud_rsc_publish(char *host,
 									   things_resource_s **list,
 									   int length,
 									   OCClientResponseHandler response,
-									   check_time_out_call_func timeout_handler,
-									   timeout_s *timeout);
+									   things_check_time_out_call_func timeout_handler,
+									   things_timeout_s *timeout);
 
 OCStackResult things_cloud_rsc_publish_with_device_id(char *host,
 		const char *id,
 		things_resource_s **list,
 		int length,
 		OCClientResponseHandler response,
-		check_time_out_call_func timeout_handler,
-		timeout_s *timeout);
+		things_check_time_out_call_func timeout_handler,
+		things_timeout_s *timeout);
 
 OCStackResult things_cloud_dev_profile_publish(char *host,
 		OCClientResponseHandler response,
-		check_time_out_call_func timeout_handler,
-		timeout_s *timeout);
+		things_check_time_out_call_func timeout_handler,
+		things_timeout_s *timeout);
 
 OCStackResult things_cloud_refresh(const char *host,
 								   const char *uId,

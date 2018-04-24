@@ -23,12 +23,9 @@
 #include <tinyara/config.h>
 #include <stdio.h>
 #include <stdlib.h>
-#include <errno.h>
-#include <tinyara/time.h>
-#include <sys/time.h>
+#include <iotbus/iotbus_i2c.h>
+#include <iotbus/iotbus_error.h>
 #include "utc_internal.h"
-#include <iotbus_i2c.h>
-#include <iotbus_error.h>
 
 iotbus_i2c_context_h i2c;
 
@@ -82,12 +79,14 @@ static void utc_systemio_i2c_set_address_n(void)
 	TC_SUCCESS_RESULT();
 }
 
+#ifndef CONFIG_DISABLE_MANUAL_TESTCASE
 static void utc_systemio_i2c_write_p(void)
 {
 	uint8_t cmd[1] = { 0x01};
 	TC_ASSERT_GT("iotbus_i2c_write", iotbus_i2c_write(i2c, cmd, 1), IOTBUS_ERROR_NONE);
 	TC_SUCCESS_RESULT();
 }
+#endif
 
 static void utc_systemio_i2c_write_n(void)
 {
@@ -95,12 +94,14 @@ static void utc_systemio_i2c_write_n(void)
 	TC_SUCCESS_RESULT();
 }
 
+#ifndef CONFIG_DISABLE_MANUAL_TESTCASE
 static void utc_systemio_i2c_read_p(void)
 {
 	uint8_t buf[1];
 	TC_ASSERT_GT("iotbus_i2c_read", iotbus_i2c_read(i2c, buf, 1), IOTBUS_ERROR_NONE);
 	TC_SUCCESS_RESULT();
 }
+#endif
 
 static void utc_systemio_i2c_read_n(void)
 {

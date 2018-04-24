@@ -45,7 +45,9 @@ int ares__get_hostent(FILE *fp, int family, struct hostent **host)
   /* Validate family */
   switch (family) {
     case AF_INET:
+#if defined(CONFIG_NET_IPv6)
     case AF_INET6:
+#endif
     case AF_UNSPEC:
       break;
     default:

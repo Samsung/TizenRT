@@ -228,7 +228,7 @@ void tc_net_recvfrom_tcp_conn_n(int fd)
 	shutdown(fd, SHUT_RD);
 	int ret = recvfrom(fd, buffer, MAXRCVLEN, 0, NULL, NULL);
 
-	TC_ASSERT_EQ("recvfrom", ret, -1);
+	TC_ASSERT_EQ("recvfrom", ret, 0);
 	TC_SUCCESS_RESULT();
 
 }

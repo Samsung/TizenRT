@@ -5,21 +5,6 @@
 > [Board-Specific](#board-specific)
 
 ## Common
-### Issues on GNU toolchain
-When 64 bit machine tries to use 32 bit package like GDB, someone meets below:
-```
-'Launching XXX' has envountered a problem.
-Could not determine GDB version after sending: /home/.../arm-none-eabi-gdb --version
-```
-```
-bash: .../gcc-arm-none-eabi-4_9-2015q3/bin/arm-none-eabi-gcc: No such file or directory
-```
-
-Installing *lib32ncurses5* package resolves it.
-```bash
-sudo apt-get install lib32ncurses5
-```
-
 ### Issues on Kconfig-frontend
 When ```make menuconfig``` excutes after installing Kconfig-frontend, someone meets below:
 ```

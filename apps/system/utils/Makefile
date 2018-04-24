@@ -79,7 +79,10 @@ CSRCS += fscmd.c
 endif
 
 ifeq ($(CONFIG_NET_CMDS),y)
-CSRCS += netcmd.c netcmd_ping.c
+CSRCS += netcmd.c
+ifeq ($(CONFIG_NET_PING_CMD),y)
+CSRCS += netcmd_ping.c
+endif
 endif
 
 ifeq ($(CONFIG_NETUTILS_DHCPD),y)
@@ -136,10 +139,6 @@ endif
 
 ifeq ($(CONFIG_ENABLE_STACKMONITOR),y)
 CSRCS += kdbg_stackmonitor.c
-endif
-
-ifeq ($(CONFIG_ENABLE_STACKOPT),y)
-CSRCS += kdbg_stackopt.c
 endif
 
 ifeq ($(CONFIG_TTRACE),y)

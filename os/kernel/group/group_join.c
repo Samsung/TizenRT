@@ -189,6 +189,10 @@ int group_bind(FAR struct pthread_tcb_s *tcb)
 
 	DEBUGASSERT(ptcb && tcb && ptcb->group && !tcb->cmn.group);
 
+	if (!(ptcb && tcb && ptcb->group && !tcb->cmn.group)) {
+		return -EINVAL;
+	}
+
 	/* Copy the group reference from the parent to the child */
 
 	tcb->cmn.group = ptcb->group;

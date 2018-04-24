@@ -55,7 +55,6 @@ int kdbg_heapinfo(int argc, char **args);
 int kdbg_irqinfo(int argc, char **args);
 #endif
 
-#ifndef CONFIG_DISABLE_SIGNALS
 #if defined(CONFIG_ENABLE_KILL)
 int kdbg_kill(int argc, char **args);
 #endif
@@ -63,7 +62,6 @@ int kdbg_kill(int argc, char **args);
 #if defined(CONFIG_ENABLE_KILLALL)
 int kdbg_killall(int argc, char **args);
 #endif
-#endif							/* !CONFIG_DISABLE_SIGNALS */
 
 #if defined(CONFIG_ENABLE_PS)
 int kdbg_ps(int argc, char **args);
@@ -71,10 +69,6 @@ int kdbg_ps(int argc, char **args);
 
 #if defined(CONFIG_ENABLE_STACKMONITOR)
 int kdbg_stackmonitor(int argc, char **args);
-#endif
-
-#if defined(CONFIG_ENABLE_STACKOPT)
-int kdbg_stackopt(int argc, char **args);
 #endif
 
 #if defined(CONFIG_TTRACE)

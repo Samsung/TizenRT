@@ -50,7 +50,7 @@
 #include <sstream>
 #include <vector>
 
-#if GTEST_OS_LINUX
+#if (GTEST_OS_TIZENRT || GTEST_OS_LINUX)
 
 // TODO(kenton@google.com): Use autoconf to detect availability of
 // gettimeofday().
@@ -115,7 +115,7 @@
 # include <sys/time.h>  // NOLINT
 # include <unistd.h>  // NOLINT
 
-#endif  // GTEST_OS_LINUX
+#endif  // (GTEST_OS_TIZENRT || GTEST_OS_LINUX)
 
 #if GTEST_HAS_EXCEPTIONS
 # include <stdexcept>
@@ -3450,8 +3450,8 @@ void StreamingListener::SocketWriter::MakeConnection() {
   const int error_num = getaddrinfo(
       host_name_.c_str(), port_num_.c_str(), &hints, &servinfo);
   if (error_num != 0) {
-    GTEST_LOG_(WARNING) << "stream_result_to: getaddrinfo() failed: "
-                        << gai_strerror(error_num);
+      GTEST_LOG_(WARNING) << "stream_result_to: getaddrinfo() failed: ";
+    //                    << gai_strerror(error_num);
   }
 
   // Loop through all the results and connect to the first we can.

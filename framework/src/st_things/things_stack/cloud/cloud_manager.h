@@ -71,9 +71,9 @@ bool es_cloud_signup_init(es_cloud_signup_s **data);
 
 bool es_cloud_session_stop_trigger(things_es_enrollee_state_e es_state);
 
-OCStackResult publish_resource_into_cloud(rp_target_e target, timeout_s *timeout);
+OCStackResult publish_resource_into_cloud(rp_target_e target, things_timeout_s *timeout);
 
-OCStackResult log_in_out_to_cloud(bool value, timeout_s *timeout);
+OCStackResult log_in_out_to_cloud(bool value, things_timeout_s *timeout);
 
 OCStackResult find_cloud_resource(void);
 
@@ -81,7 +81,7 @@ OCStackResult refresh_token_into_cloud(void);
 
 void *cloud_data_cb_esm(es_cloud_prov_data_s *event_data);
 
-int cloud_retry_sign_in(timeout_s *timeout);
+int cloud_retry_sign_in(things_timeout_s *timeout);
 
 int ci_retry_stop_by_wifi_cb(bool is_retry);
 

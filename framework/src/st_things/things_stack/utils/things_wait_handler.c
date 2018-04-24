@@ -39,10 +39,10 @@
 typedef void *(*PthreadFunc)(void *param);
 
 typedef struct TimeOutManager_s {
-	timeout_s timeout;
+	things_timeout_s timeout;
 	pthread_t gthreadId;
 	OCDoHandle handleVal;
-	check_time_out_call_func funcName;
+	things_check_time_out_call_func funcName;
 } TimeOutManager_s;
 
 static int iSendHandle = 0;
@@ -51,7 +51,7 @@ static OCDoHandle gSendHandle[MAX_SENDHANDLES] = { NULL, };
 static pthread_mutex_t gREQmutex = PTHREAD_MUTEX_INITIALIZER;
 static pthread_mutex_t gTimeOutmutex = PTHREAD_MUTEX_INITIALIZER;
 
-OCDoHandle get_request_handle(void)
+OCDoHandle things_get_request_handle(void)
 {
 	int i = 0;
 	OCDoHandle result = NULL;
@@ -68,7 +68,7 @@ OCDoHandle get_request_handle(void)
 	return result;
 }
 
-int cas_request_handle(OCDoHandle EqualVal, OCDoHandle writeHandleVal)
+int things_cas_request_handle(OCDoHandle EqualVal, OCDoHandle writeHandleVal)
 {
 	int i = 0;
 	int res = 0;
@@ -87,7 +87,7 @@ int cas_request_handle(OCDoHandle EqualVal, OCDoHandle writeHandleVal)
 	return res;
 }
 
-bool is_empty_request_handle(void)
+bool things_is_empty_request_handle(void)
 {
 	bool isEmpty = false;
 
@@ -100,7 +100,7 @@ bool is_empty_request_handle(void)
 	return isEmpty;
 }
 
-OCDoHandle add_request_handle(OCDoHandle HandleVal)
+OCDoHandle things_add_request_handle(OCDoHandle HandleVal)
 {
 	OCDoHandle result = NULL;
 
@@ -117,7 +117,7 @@ OCDoHandle add_request_handle(OCDoHandle HandleVal)
 	return result;
 }
 
-void del_all_request_handle(void)
+void things_del_all_request_handle(void)
 {
 	int i = 0;
 
@@ -160,11 +160,11 @@ static void *handle_base_timeout_loop(TimeOutManager_s *pTimeOutManager)
 
 	THINGS_LOG_D(THINGS_DEBUG, TAG, "handleVal=0x%X, timeCounter=%d, funcName=0x%X", pTimeOutManager->handleVal, pTimeOutManager->timeout.cur_counter, pTimeOutManager->funcName);
 
-	while (get_request_handle() != NULL && pTimeOutManager->handleVal == get_request_handle()) {	// get_request_handle() != NULL will guarantee for Connecting to AP.
+	while (things_get_request_handle() != NULL && pTimeOutManager->handleVal == things_get_request_handle()) {	// things_get_request_handle() != NULL will guarantee for Connecting to AP.
 		sleep(1);
 
 		if (--pTimeOutManager->timeout.cur_counter == 0) {
-			if (cas_request_handle(pTimeOutManager->handleVal, NULL) == 1) {	// cas_request_handle(handle, NULL) == 1 will guarantee that AP is connected and handle is latest important request.
+			if (things_cas_request_handle(pTimeOutManager->handleVal, NULL) == 1) {	// things_cas_request_handle(handle, NULL) == 1 will guarantee that AP is connected and handle is latest important request.
 				pTimeOutManager->funcName(&pTimeOutManager->timeout);
 			}
 			pTimeOutManager->handleVal = (void *)(-1);
@@ -182,7 +182,7 @@ static void *handle_base_timeout_loop(TimeOutManager_s *pTimeOutManager)
 	return 0;
 }
 
-long long next_time_out(const long long ori_num, const long long cur_num)
+long long things_next_time_out(const long long ori_num, const long long cur_num)
 {
 	long long x = 0;
 	long long nextT = -1;
@@ -211,7 +211,7 @@ long long next_time_out(const long long ori_num, const long long cur_num)
 	return nextT;
 }
 
-unsigned long int create_time_out_process(OCDoHandle hadler, check_time_out_call_func CallFunc, timeout_s *timeOut)
+unsigned long int things_create_time_out_process(OCDoHandle hadler, things_check_time_out_call_func CallFunc, things_timeout_s *timeOut)
 {
 	TimeOutManager_s *pTimeOutManager = NULL;
 

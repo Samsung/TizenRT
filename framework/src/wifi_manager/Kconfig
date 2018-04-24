@@ -6,7 +6,6 @@
 config WIFI_MANAGER
     bool "Enable Wi-Fi Manager"
     default n
-	select NETUTILS_WIFI
 	select DRIVERS_WIRELESS
     ---help---
         Easy APIs for applications to use and control Wi-Fi features
@@ -20,6 +19,8 @@ choice
 config SELECT_WPA_SUPPLICANT
 	bool "select wpa_supplicant"
 	select WPA_SUPPLICANT
+	select NETUTILS_WIFI
+
 	---help---
 		Select the wpa_supplicant
 
@@ -32,7 +33,10 @@ endchoice # WiFi supplicant library
 
 choice
 	prompt "WiFi Driver"
-	default SELECT_SCSC_WLAN
+	default SELECT_NO_DRIVER
+
+config SELECT_NO_DRIVER
+	bool "No Wi-Fi Driver"
 
 config SELECT_SCSC_WLAN
 	bool "Enable SCSC Wireless Module"
@@ -52,4 +56,15 @@ config WIFI_PROFILE_SECURESTORAGE
 	bool "Store the Wi-Fi Profile in a Secure Storage"
 	depends on SUPPORT_FULL_SECURITY
 	default n
+
+
+config WIFIMGR_SOFTAP_IFNAME
+	string "interface name of softap mode"
+	default "wl1"
+
+config WIFIMGR_STA_IFNAME
+	string "interface name of station mode"
+	default "wl1"
+
 endif #WIFI_MANAGER
+

@@ -18,8 +18,9 @@
 
 #include <tinyara/config.h>
 #include <stdio.h>
-
-#include "mbedtls/easy_tls.h"
+#include <string.h>
+#include <mbedtls/easy_tls.h>
+#include <mbedtls/debug.h>
 
 /****************************************************************************
  * Pre-processor Definitions

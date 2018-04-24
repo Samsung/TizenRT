@@ -78,7 +78,7 @@
 #include <errno.h>
 #include <fcntl.h>
 
-#ifdef CONFIG_LIBC_NETDB
+#ifdef CONFIG_NET_LWIP_NETDB
 #include <netdb.h>
 #endif
 #include <arpa/inet.h>
@@ -447,7 +447,7 @@ exit:
 
 static int wget_gethostip(FAR char *hostname, in_addr_t *ipv4addr)
 {
-#ifdef CONFIG_LIBC_NETDB
+#ifdef CONFIG_NET_LWIP_NETDB
 	FAR struct hostent *he;
 	he = gethostbyname(hostname);
 	if (he == NULL) {
@@ -461,7 +461,7 @@ static int wget_gethostip(FAR char *hostname, in_addr_t *ipv4addr)
 	memcpy(ipv4addr, he->h_addr, sizeof(in_addr_t));
 	return OK;
 #else
-	ndbg("LIBC NETDB is not supported\n");
+	ndbg("NETDB is not supported\n");
 	return ERROR;
 #endif
 }
@@ -935,7 +935,7 @@ static pthread_addr_t wget_base(void *arg)
 	struct wget_s ws;
 	struct http_client_request_t *param = (struct http_client_request_t *)arg;
 	struct http_client_response_t response = {0, };
-	bool read_finish = false;
+	int read_finish = false;
 
 	struct http_client_tls_t *client_tls = (struct http_client_tls_t *)malloc(sizeof(
 			struct http_client_tls_t));
@@ -1125,7 +1125,7 @@ static pthread_addr_t wget_base(void *arg)
 	struct wget_s ws;
 	struct http_client_request_t *param = (struct http_client_request_t *)arg;
 	struct http_client_response_t response;
-	bool read_finish = false;
+	int read_finish = false;
 
 	/* Initialize the state structure */
 	memset(&ws, 0, sizeof(struct wget_s));

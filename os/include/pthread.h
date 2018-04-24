@@ -604,13 +604,14 @@ int pthread_setspecific(pthread_key_t key, FAR const void *value);
  */
 FAR void *pthread_getspecific(pthread_key_t key);
 /**
- * @cond
- * @internal
+ * @ingroup PTHREAD_KERNEL
+ * @brief thread-specific data key deletion
+ * @details @b #include <pthread.h> \n
+ * SYSTEM CALL API \n
+ * POSIX API (refer to : http://pubs.opengroup.org/onlinepubs/9699919799/)
+ * @since TizenRT v2.0 PRE
  */
 int pthread_key_delete(pthread_key_t key);
-/**
- * @endcond
- */
 
 /* The following routines create, delete, lock and unlock mutexes. */
 

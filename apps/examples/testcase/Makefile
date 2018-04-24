@@ -60,11 +60,13 @@ include $(APPDIR)/Make.defs
 APPNAME = tc
 FUNCNAME = $(APPNAME)_main
 THREADEXEC = TASH_EXECMD_ASYNC
+CXXEXT ?= .cpp
 
 # testcase example
 
 ASRCS =
 CSRCS =
+CXXSRCS =
 
 ifeq ($(CONFIG_EXAMPLES_TESTCASE),y)
 
@@ -93,9 +95,10 @@ endif
 
 AOBJS		= $(ASRCS:.S=$(OBJEXT))
 COBJS		= $(CSRCS:.c=$(OBJEXT))
+CXXOBJS		= $(CXXSRCS:$(CXXEXT)=$(OBJEXT))
 
-SRCS		= $(ASRCS) $(CSRCS)
-OBJS		= $(AOBJS) $(COBJS)
+SRCS		= $(ASRCS) $(CSRCS) $(CXXSRCS)
+OBJS		= $(AOBJS) $(COBJS) $(CXXOBJS)
 
 ifeq ($(CONFIG_WINDOWS_NATIVE),y)
   BIN		= ..\..\libapps$(LIBEXT)
@@ -119,6 +122,9 @@ $(AOBJS): %$(OBJEXT): %.S
 
 $(COBJS): %$(OBJEXT): %.c
 	$(call COMPILE, $<, $@)
+
+$(CXXOBJS): %$(OBJEXT): %$(CXXEXT)
+	$(call COMPILEXX, $<, $@)
 endif
 
 .built: $(OBJS)
@@ -141,10 +147,12 @@ context:
 endif
 
 .depend: Makefile $(SRCS)
-ifeq ($(CONFIG_EXAMPLES_TESTCASE),y)
-	$(Q) $(MKDEP) $(DEPPATH) "$(CC)" -- $(CFLAGS) -- $(SRCS) >Make.dep
-	$(Q) touch $@
+ifeq ($(filter %$(CXXEXT),$(SRCS)),)
+	@$(MKDEP) $(DEPPATH) "$(CC)" -- $(CFLAGS) -- $(SRCS) >Make.dep
+else
+	@$(MKDEP) $(DEPPATH) "$(CXX)" -- $(CXXFLAGS) -- $(SRCS) >Make.dep
 endif
+	@touch $@
 
 depend: .depend
 

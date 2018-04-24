@@ -102,6 +102,9 @@ const static tash_cmdlist_t tash_basic_cmds[] = {
 #endif
 #ifndef CONFIG_DISABLE_SIGNALS
 	{"sleep", tash_sleep,  TASH_EXECMD_SYNC},
+#ifdef CONFIG_TASH_USLEEP
+	{"usleep", tash_usleep, TASH_EXECMD_SYNC},
+#endif
 #endif
 #if defined(CONFIG_BOARDCTL_RESET)
 	{"reboot", tash_reboot, TASH_EXECMD_SYNC},

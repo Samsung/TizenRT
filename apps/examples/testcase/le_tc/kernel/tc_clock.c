@@ -155,6 +155,7 @@ static void tc_clock_clock_gettimeofday(void)
 	TC_SUCCESS_RESULT();
 }
 
+#ifndef CONFIG_SCHED_TICKLESS
 /**
 * @fn                   :tc_clock_clock_timer
 * @brief                :This function must be called once every time the real time clock interrupt occurs
@@ -175,6 +176,7 @@ static void tc_clock_clock_timer(void)
 
 	TC_SUCCESS_RESULT();
 }
+#endif
 
 /**
 * @fn                   :tc_clock_clock_systimer
@@ -187,24 +189,6 @@ static void tc_clock_clock_timer(void)
 */
 
 static void tc_clock_clock_systimer(void)
-{
-	systime_t itime = ERROR;
-	itime = clock_systimer();
-	TC_ASSERT_GEQ("clock_systimer", itime, 0);
-
-	TC_SUCCESS_RESULT();
-}
-
-/**
-* @fn                   :tc_clock_clock_systimer64
-* @brief                :Returns the current value of 64 bit system timer counter
-* @scenario             :Returns the current value of 64 bit system timer counter
-* API's covered         :clock_systimer64
-* Preconditions         :none
-* Postconditions        :none
-* @return               :void
- */
-static void tc_clock_clock_systimer64(void)
 {
 	systime_t itime = ERROR;
 	itime = clock_systimer();
@@ -252,9 +236,10 @@ static void tc_clock_clock_abstime2ticks(void)
 
 int clock_main(void)
 {
+#ifndef CONFIG_SCHED_TICKLESS
 	tc_clock_clock_timer();
+#endif
 	tc_clock_clock_systimer();
-	tc_clock_clock_systimer64();
 	tc_clock_clock_gettimeofday();
 	tc_clock_clock_set_get_time();
 	tc_clock_clock_getres();

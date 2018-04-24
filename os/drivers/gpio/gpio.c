@@ -112,22 +112,6 @@ struct gpio_open_s {
  ****************************************************************************/
 
 /****************************************************************************
- * Name: sem_reinit
- *
- * Description:
- *    Reinitialize semaphore
- *
- ****************************************************************************/
-#ifndef CONFIG_DISABLE_POLL
-static int sem_reinit(FAR sem_t *sem, int pshared, unsigned int value)
-{
-	sem_destroy(sem);
-
-	return sem_init(sem, pshared, value);
-}
-#endif
-
-/****************************************************************************
  * Name: gpio_takesem
  *
  * Description:

@@ -256,16 +256,18 @@ static unsigned int sched_process_timeslice(unsigned int ticks, bool noswitches)
 	 */
 
 	if ((rtcb->flags & TCB_FLAG_ROUND_ROBIN) != 0) {
-		/* Now much can we decrement the timeslice delay?  If 'ticks'
-		 * is greater than the timeslice value, then we ignore any
-		 * excess amount.
+
+		/* How much can we decrement the timeslice delay?  If 'ticks' is greater
+		 * than the timeslice value, then we ignore any excess amount.
 		 *
-		 * 'ticks' should never be greater than the remaining timeslice.
-		 * We try to handle that gracefully but it would be an error
-		 * in the scheduling if there ever were the case.
+		 * 'ticks' should not be greater than the remaining timeslice.  But that
+		 * event seems to be possible, perhaps in cases where pre-emption has been
+		 * disabled or the noswitches flag is set.  This might cause jitter of a
+		 * few ticks in the slicing because the excess amount is not handled.
 		 */
 
-		DEBUGASSERT(ticks <= rtcb->timeslice);
+		DEBUGASSERT(rtcb != NULL);
+
 		decr = MIN(rtcb->timeslice, ticks);
 
 		/* Decrement the timeslice counter */
@@ -274,9 +276,6 @@ static unsigned int sched_process_timeslice(unsigned int ticks, bool noswitches)
 
 		/* Did decrementing the timeslice counter cause the timeslice to
 		 * expire?
-		 *
-		 * If the task has pre-emption disabled. Then we will freeze the
-		 * timeslice count at the value until pre-emption has been enabled.
 		 */
 
 		ret = rtcb->timeslice;

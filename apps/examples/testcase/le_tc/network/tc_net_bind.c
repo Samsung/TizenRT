@@ -138,7 +138,7 @@ static void tc_net_bind_fd_n(void)
 	TC_SUCCESS_RESULT();
 	
 }
-
+#ifdef AF_UNIX
 /**
    * @testcase		   :tc_net_bind_addrfamily_n
    * @brief		   :
@@ -164,7 +164,7 @@ static void tc_net_bind_addrfamily_n(void)
 	TC_SUCCESS_RESULT();
 
 }
-
+#endif
 /**
    * @testcase		   :tc_net_bind_size_n
    * @brief		   :
@@ -231,6 +231,8 @@ int net_bind_main(void)
 	tc_net_bind_udp_p();
 	tc_net_bind_broadcast_p();
 	tc_net_bind_size_n();
+#ifdef AF_UNIX
 	tc_net_bind_addrfamily_n();
+#endif
 	return 0;
 }

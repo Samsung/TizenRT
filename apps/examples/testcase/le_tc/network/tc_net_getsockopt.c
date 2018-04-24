@@ -213,12 +213,16 @@ void net_getsockopt_main(void)
 	fd = socket(AF_INET, SOCK_STREAM, 0);
 	tc_net_getsockopt_invalid_filedesc_n();
 	tc_net_getsockopt_optval_n(fd);
-	tc_net_getsockopt_multicast_ttl_loop_p(fd);
-	tc_net_getsockopt_multicast_ttl_loop_own_p(fd);
-	tc_net_getsockopt_multicast_ttl_p(fd);
 	tc_net_getsockopt_sol_socket_so_acceptconn_p(fd);
 	tc_net_getsockopt_sol_socket_so_broadcast_p(fd);
 	tc_net_getsockopt_sol_socket_so_keepalive_p(fd);
+
+	close(fd);
+
+	fd = socket(AF_INET, SOCK_DGRAM, 0);
+	tc_net_getsockopt_multicast_ttl_loop_p(fd);
+	tc_net_getsockopt_multicast_ttl_loop_own_p(fd);
+	tc_net_getsockopt_multicast_ttl_p(fd);
 
 	close(fd);
 }

@@ -27,7 +27,7 @@
 #include <tinyara/mm/heapinfo_internal.h>
 extern struct heapinfo_group_info_s group_info[HEAPINFO_THREAD_NUM];
 static char *ptr = CONFIG_HEAPINFO_USER_GROUP_LIST;
-const static char *end_list = CONFIG_HEAPINFO_USER_GROUP_LIST + sizeof(CONFIG_HEAPINFO_USER_GROUP_LIST);
+const static char *end_list = CONFIG_HEAPINFO_USER_GROUP_LIST + sizeof(CONFIG_HEAPINFO_USER_GROUP_LIST) - 1;
 #endif
 
 #ifdef CONFIG_DEBUG_MM_HEAPINFO
@@ -71,8 +71,9 @@ static void kdbg_heapinfo_group_threadlist(void)
 	while (*ptr != '/') {
 		printf("%c", *ptr++);
 		if (ptr == end_list) {
-			ptr = CONFIG_HEAPINFO_USER_GROUP_LIST - 1;
-			break;
+			ptr = CONFIG_HEAPINFO_USER_GROUP_LIST;
+			printf("\n");
+			return;
 		}
 	}
 	printf("\n");

@@ -24,6 +24,7 @@
 #include <unistd.h>
 #include <string.h>
 #include <pthread.h>
+#include <dirent.h>
 #include <errno.h>
 #include <sys/select.h>
 #include <time.h>
@@ -50,6 +51,8 @@
 #define TAG "[ezsetup-mg]"
 #define MAX_REFRESHCHECK_CNT    30	// 30 times
 
+#define FILE_ES_STATE "easysetup_state.dat"
+
 es_dev_conf_prov_data_s *g_dev_conf_prov_data = NULL;
 es_wifi_prov_data_s *g_wifi_prov_data = NULL;
 es_cloud_prov_data_s *g_cloud_prov_data = NULL;
@@ -74,6 +77,8 @@ static pthread_mutex_t g_es_mutex = PTHREAD_MUTEX_INITIALIZER;
 static es_device_property device_property;
 static const char *def_device_name = "ST_Things Device";
 
+static int g_es_state = 0; // 0 : EasySetup Need, 1 : Easysetup Done
+
 void wifi_prov_cb_in_app(es_wifi_prov_data_s *event_data);
 void dev_conf_prov_cb_in_app(es_dev_conf_prov_data_s *event_data);
 void cloud_data_prov_cb_in_app(es_cloud_prov_data_s *event_data);
@@ -89,7 +94,7 @@ es_provisioning_callbacks_s g_callbacks = {
 
 static void *wifi_prov_set_loop(void *param);
 static void *cloud_refresh_check_loop(void *param);
-static void *wifi_prov_timeout_handler(timeout_s *param);
+static void *wifi_prov_timeout_handler(things_timeout_s *param);
 
 #ifdef __SECURED__
 void generate_pin_cb(char *pin, size_t pin_size)
@@ -470,7 +475,7 @@ static void *wifi_prov_set_loop(void *param)
 	THINGS_LOG_D(THINGS_DEBUG, TAG, "Open Loop Enter.");
 
 	static int timeout_handle_num = 100;
-	timeout_s timeout;
+	things_timeout_s timeout;
 
 	es_set_state(ES_STATE_CONNECTING_TO_ENROLLER);
 	set_wifi_prov_state(WIFI_READY);
@@ -505,10 +510,10 @@ static void *wifi_prov_set_loop(void *param)
 	set_wifi_prov_state(WIFI_SET);
 	things_free((access_point_info_s *) param);
 
-	if (add_request_handle((OCDoHandle) timeout_handle_num) != NULL) {
+	if (things_add_request_handle((OCDoHandle) timeout_handle_num) != NULL) {
 		timeout.cur_num = 300;	// 5 min    because, st_things-App wait AP-Connecting for 5 min.
 		timeout.cur_counter = timeout.cur_num;
-		create_time_out_process((OCDoHandle) timeout_handle_num++, wifi_prov_timeout_handler, &timeout);
+		things_create_time_out_process((OCDoHandle) timeout_handle_num++, wifi_prov_timeout_handler, &timeout);
 	}
 
 	gthread_id_network_status_check = 0;
@@ -517,7 +522,7 @@ static void *wifi_prov_set_loop(void *param)
 	return NULL;
 }
 
-static void *wifi_prov_timeout_handler(timeout_s *param)
+static void *wifi_prov_timeout_handler(things_timeout_s *param)
 {
 	THINGS_LOG_D(THINGS_DEBUG, TAG, "WiFi Setting of Provisioning data was Time-Out.");
 
@@ -577,7 +582,7 @@ int esm_wifi_prov_check_cb(int enabled, char *ssid, char *addr)
 		}
 #endif
 
-		del_all_request_handle();	// clear time-out thread.
+		things_del_all_request_handle();	// clear time-out thread.
 		PROFILING_TIME("WiFi Provisioning End.");
 
 		set_wifi_prov_state(WIFI_INIT);
@@ -688,7 +693,7 @@ void wifi_prov_cb_in_app(es_wifi_prov_data_s *event_data)
 	// Connect to AP
 	if (gthread_id_network_status_check == 0) {
 		THINGS_LOG(THINGS_DEBUG, TAG, "Create NetworkStatusCheck thread");
-		del_all_request_handle();	// clear time-out thread.
+		things_del_all_request_handle();	// clear time-out thread.
 		set_wifi_prov_state(WIFI_INIT);
 
 		pthread_create_rtos(&gthread_id_network_status_check, NULL, wifi_prov_set_loop, (void *)p_info, THINGS_STACK_AP_INFO_SET_THREAD);
@@ -900,4 +905,53 @@ int esm_register_user_confirm_cb(user_confirm_result_func_type func)
 		THINGS_LOG_ERROR(THINGS_ERROR, TAG, "Invalid UserConformCB function");
 		return 0;
 	}
+}
+
+int esm_save_easysetup_state(int state)
+{
+	THINGS_LOG_D(THINGS_DEBUG, TAG, THINGS_FUNC_ENTRY);
+	if (state == ES_COMPLETE) { // Done
+		THINGS_LOG_D(THINGS_DEBUG, TAG, "file open : %s", PATH_MNT FILE_ES_STATE);		
+		FILE *fp = fopen(PATH_MNT FILE_ES_STATE, "w+");
+		if (!fp) {
+			THINGS_LOG_D(THINGS_ERROR, TAG, "file open error(%d)", errno);
+			return 0;
+		}
+		unsigned char easysetup_completed = ES_COMPLETE;
+		int ret = fwrite(&easysetup_completed, ES_COMPLETE, sizeof(unsigned char), fp);
+		if (ret <= 0) {
+			THINGS_LOG_D(THINGS_ERROR, TAG, "file write error(%d)", errno);
+			fclose(fp);
+			return 0;
+		}
+		fclose(fp);
+		THINGS_LOG_D(THINGS_DEBUG, TAG, "easysetup completed");
+	} else {
+		unlink(PATH_MNT FILE_ES_STATE);
+		THINGS_LOG_D(THINGS_DEBUG, TAG, "easysetup not completed. delete ES_STATE File");
+	}
+	g_es_state = state;
+	return 1;
+}
+
+int esm_read_easysetup_state(void)
+{
+	THINGS_LOG_D(THINGS_DEBUG, TAG, "file open : %s", PATH_MNT FILE_ES_STATE);	
+	FILE *fp = fopen(PATH_MNT FILE_ES_STATE, "r");
+	if (!fp) {
+		THINGS_LOG_D(THINGS_ERROR, TAG, "file open error(%d)", errno);
+		return 0;
+	}
+	unsigned char easysetup_completed;
+	int ret = fread(&easysetup_completed, ES_COMPLETE, sizeof(unsigned char), fp);
+	if (ret <= 0) {
+		THINGS_LOG_D(THINGS_ERROR, TAG, "file write error(%d)", errno);
+		fclose(fp);
+		return 0;
+	}
+	fclose(fp);
+	if (easysetup_completed == ES_COMPLETE) {
+		return 1;
+	}
+	return 0;
 }

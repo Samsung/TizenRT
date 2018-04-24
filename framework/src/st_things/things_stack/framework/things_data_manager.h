@@ -126,7 +126,7 @@ int dm_load_legacy_cloud_data(es_cloud_signup_s **cl_data);
 bool dm_is_rsc_published(void);
 
 int dm_del_things_cloud_data(void);
-bool dm_is_there_things_cloud(void);
+bool dm_is_es_complete(void);
 
 bool dm_get_easy_setup_use_artik_crt(void);
 char *dm_get_mnid(void);

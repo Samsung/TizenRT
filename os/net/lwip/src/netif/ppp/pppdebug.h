@@ -54,18 +54,32 @@
 #ifndef PPPDEBUG_H
 #define PPPDEBUG_H
 
-/* Trace levels. */
-#define LOG_CRITICAL  (PPP_DEBUG | LWIP_DBG_LEVEL_SEVERE)
-#define LOG_ERR       (PPP_DEBUG | LWIP_DBG_LEVEL_SEVERE)
-#define LOG_NOTICE    (PPP_DEBUG | LWIP_DBG_LEVEL_WARNING)
-#define LOG_WARNING   (PPP_DEBUG | LWIP_DBG_LEVEL_WARNING)
-#define LOG_INFO      (PPP_DEBUG)
-#define LOG_DETAIL    (PPP_DEBUG)
-#define LOG_DEBUG     (PPP_DEBUG)
-
 #define TRACELCP PPP_DEBUG
 
+/* Trace levels. */
 #if PPP_DEBUG
+
+#ifndef LOG_CRITICAL
+#define LOG_CRITICAL  (PPP_DEBUG | LWIP_DBG_LEVEL_SEVERE)
+#endif
+#ifndef LOG_ERR
+#define LOG_ERR       (PPP_DEBUG | LWIP_DBG_LEVEL_SEVERE)
+#endif
+#ifndef LOG_NOTICE
+#define LOG_NOTICE    (PPP_DEBUG | LWIP_DBG_LEVEL_WARNING)
+#endif
+#ifndef LOG_WARNING
+#define LOG_WARNING   (PPP_DEBUG | LWIP_DBG_LEVEL_WARNING)
+#endif
+#ifndef LOG_INFO
+#define LOG_INFO      (PPP_DEBUG)
+#endif
+#ifndef LOG_DETAIL
+#define LOG_DETAIL    (PPP_DEBUG)
+#endif
+#ifndef LOG_DEBUG
+#define LOG_DEBUG     (PPP_DEBUG)
+#endif
 
 #define AUTHDEBUG(a, b) LWIP_DEBUGF(a, b)
 #define IPCPDEBUG(a, b) LWIP_DEBUGF(a, b)

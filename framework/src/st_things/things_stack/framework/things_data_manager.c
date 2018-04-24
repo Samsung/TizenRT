@@ -25,6 +25,7 @@
 #include "octypes.h"
 #include "ocpayload.h"
 #include "easy-setup/easysetup.h"
+#include "easy-setup/easysetup_manager.h"
 #include "ocstackconfig.h"
 #include "ocrandom.h"
 #include "things_def.h"
@@ -127,9 +128,6 @@
 #define MAX_CLOUD_SESSIONKEY        (128)	//   Need to match with the Cloud Spec.
 #define MAX_SOFTAP_SSID             (33)
 
-#define PATH_MNT "/mnt/"
-#define PATH_ROM "/rom/"
-
 #define STD_CI_CLOUD_ADDRESS "52.40.216.160:5683"
 #define MAX_CI_CLOUD_ADDRESS 256
 
@@ -163,7 +161,6 @@ static int g_ownership_transfer_method = 0;
 static struct hashmap_s *g_resource_type_hmap = NULL;	// map for resource types
 static struct hashmap_s *g_device_hmap = NULL;
 
-static bool is_there_cloud_data = false;
 static const char *origin_cloud_json_str = "{\n\
 		\"cloud\":    {\n\
 			\"address\":    \"52.40.216.160:5683\"\n\
@@ -733,7 +730,7 @@ wifi_manager_softap_config_s *dm_get_softap_wifi_config(void)
 {
 	st_device_s *device = dm_get_info_of_dev(0);
 	int ssid_type = (is_artik == true ? 1 : 0);
-	unsigned char ext_value[16] = { 0, };
+	unsigned char ext_value[9] = { 0, };
 	char ssid_device_name[17];
 
 	memset(ext_value, 0, sizeof(ext_value));
@@ -830,10 +827,8 @@ RETRY_JSON:
 
 			if (address == NULL || accesstoken == NULL || refresh_accesstoken == NULL || user_id == NULL || expire_time == NULL) {
 				THINGS_LOG_D(THINGS_DEBUG, TAG, "[ProvisionInfo] address = %d, accesstoken = %d, refresh_accesstoken = %d, user_id = %d, expire_time = %d", address, accesstoken, refresh_accesstoken, user_id, expire_time);
-				is_there_cloud_data = false;
 			} else {
 				THINGS_LOG_D(THINGS_DEBUG, TAG, "[ProvisionInfo] There is mandatory elements in cloud file.");
-				is_there_cloud_data = true;
 			}
 		}
 
@@ -1944,7 +1939,7 @@ int dm_register_resource(things_server_builder_s *p_builder)
 				memset(res_uri, 0, (size_t) MAX_URI_LENGTH);
 				strncat(res_uri, device->collection[0].uri, MAX_URI_LENGTH);
 
-				p_collection_resource = p_builder->create_collection_resource(p_builder, res_uri, device->collection[0].resource_types[0], device->collection[0].interface_types[0]);
+				p_collection_resource = p_builder->create_collection_resource(p_builder, res_uri, device->collection[0].resource_types[0]);
 
 				for (int rt_num = 1; rt_num < device->collection[0].rt_cnt; rt_num++) {
 					OCBindResourceTypeToResource(p_builder, device->collection[0].resource_types[rt_num]);
@@ -2003,10 +1998,12 @@ int dm_register_resource(things_server_builder_s *p_builder)
 	}							// End of for device loop
 	THINGS_LOG_D(THINGS_DEBUG, TAG, "=====================================================");
 
+#if 0
 	if (p_builder->broadcast_presence(p_builder, 20) == 1) {
 		THINGS_LOG_V_ERROR(THINGS_ERROR, TAG, "Broadcast Presence Failed.");
 		return 0;
 	}
+#endif
 
 	THINGS_LOG_D(THINGS_DEBUG, TAG, THINGS_FUNC_EXIT);
 
@@ -2093,12 +2090,10 @@ int dm_update_things_cloud(es_cloud_signup_s *cl_data)
 
 		if ((res = dm_load_legacy_cloud_data(&confirmData)) == 1) {
 			THINGS_LOG_D(THINGS_DEBUG, TAG, "Update Success.");
-			is_there_cloud_data = true;
 			es_cloud_signup_clear(confirmData);
 			confirmData = NULL;
 		} else {
 			THINGS_LOG_D(THINGS_DEBUG, TAG, "Update Failed.(%d)", res);	// 1 : Success , 0/-1 : system error. , -2 : saved invalid Cloud-Data.
-			is_there_cloud_data = false;
 		}
 	}
 
@@ -2124,17 +2119,20 @@ int dm_del_things_cloud_data(void)
 
 	if (ret == 1) {
 		THINGS_LOG_D(THINGS_DEBUG, TAG, "Delete Success.");
-		is_there_cloud_data = false;
 	}
+
+	esm_save_easysetup_state(ES_NOT_COMPLETE);
 
 	THINGS_LOG(THINGS_DEBUG, TAG, "Exit.");
 	return ret;
 }
 
-bool dm_is_there_things_cloud(void)
+bool dm_is_es_complete(void)
 {
-	THINGS_LOG_D(THINGS_DEBUG, TAG, "is_there_cloud_data = %d", is_there_cloud_data);
-	return is_there_cloud_data;
+	bool ret = (esm_read_easysetup_state() == 1);
+	THINGS_LOG_D(THINGS_DEBUG, TAG, "is_easysetup_complete = %d", ret);
+	
+	return ret;
 }
 
 int dm_validate_attribute_in_request(char *rt, const void *payload)

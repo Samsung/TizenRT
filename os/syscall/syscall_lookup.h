@@ -155,7 +155,6 @@ SYSCALL_LOOKUP(nanosleep,               2, STUB_nanosleep)
  * TinyAra configuration.
  */
 
-SYSCALL_LOOKUP(syscall_clock_systimer,  0, STUB_clock_systimer)
 SYSCALL_LOOKUP(clock_getres,            2, STUB_clock_getres)
 SYSCALL_LOOKUP(clock_gettime,           2, STUB_clock_gettime)
 SYSCALL_LOOKUP(clock_settime,           2, STUB_clock_settime)

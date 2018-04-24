@@ -26,7 +26,6 @@ choice
 
 config	NET_LWIP
 	bool "LwIP"
-	select NET_IPv4
 
 endchoice
 
@@ -124,7 +123,7 @@ source "../framework/src/network/mqtt/Kconfig.protocol"
 config NET_SECURITY_TLS
 	bool "TLS Support"
 	default n
-	depends on LIBC_NETDB
+	depends on NET_LWIP_NETDB
 
 if NET_SECURITY_TLS
 source "$EXTERNALDIR/mbedtls/Kconfig.protocol"

@@ -28,6 +28,8 @@
 #include "octypes.h"
 #include <json/cJSON.h>
 #endif
+#include <errno.h>
+
 #include "things_api.h"
 #include "things_types.h"
 #include "things_def.h"
@@ -55,9 +57,9 @@
 #ifdef CONFIG_ST_THINGS_FOTA
 #include "fota/fmwup_api.h"
 #include "deviceDef.h"
-#define DEVICE_DEF_FILE_ROOT "/mnt/"
+#define DEVICE_DEF_FILE_ROOT PATH_MNT
 #else
-#define DEVICE_DEF_FILE_ROOT "/rom/"
+#define DEVICE_DEF_FILE_ROOT PATH_ROM
 #endif
 
 #define TAG "[things_stack]"
@@ -95,38 +97,6 @@ static volatile rst_state_e m_reset_bit_mask = RST_COMPLETE;
 
 static void *t_things_reset_loop(reset_args_s *args);
 static void *t_things_abort_loop(s_abort_s *contents);
-
-const char *things_get_device_id_string()
-{
-	return OCGetServerInstanceIDString();
-}
-
-int things_set_device_name(int dev_num, char *name)
-{
-	int res = 0;
-	if (!is_things_module_inited) {
-		THINGS_LOG_ERROR(THINGS_ERROR, TAG, "Stack not initialized");
-	} else {
-		if (dev_num > 0) {
-			THINGS_LOG_D_ERROR(THINGS_ERROR, TAG, "Dev Num %d Not Supported Yet", dev_num);
-		} else {
-			if (NULL != name && strlen(name) > 0) {
-				OCStackResult result = OCSetPropertyValue(PAYLOAD_TYPE_DEVICE,
-									   OC_RSRVD_DEVICE_NAME,
-									   name);
-				if (result == OC_STACK_OK) {
-					res = 1;
-				} else {
-					THINGS_LOG_D_ERROR(THINGS_ERROR, TAG, "Set Device Name Failed : %d ", result);
-				}
-			} else {
-				THINGS_LOG_D_ERROR(THINGS_ERROR, TAG, "Invalid Device Name : %s ", name);
-			}
-		}
-	}
-
-	return res;
-}
 
 // This logic will be refactored later to reflact whole easy-setup states..
 int things_get_easysetup_state(void)
@@ -195,6 +165,7 @@ static bool things_has_abs_device_def_path(const char *json_path)
 		return false;
 	}
 }
+
 static char *things_make_abs_device_def_path(const char *json_path)
 {
 	char *abs_json_path = NULL;
@@ -212,6 +183,7 @@ static char *things_make_abs_device_def_path(const char *json_path)
 	abs_json_path[len_of_path] = NULL;
 	return abs_json_path;
 }
+
 int things_initialize_stack(const char *json_path, bool *easysetup_completed)
 {
 	THINGS_LOG_D(THINGS_DEBUG, TAG, THINGS_FUNC_ENTRY);
@@ -298,7 +270,18 @@ int things_initialize_stack(const char *json_path, bool *easysetup_completed)
 	}
 	is_things_module_inited = 1;
 
-	*easysetup_completed = dm_is_there_things_cloud();
+	int es_state = esm_read_easysetup_state();
+	*easysetup_completed = ((es_state == ES_COMPLETE) ? true : false);
+
+	if (es_state != ES_COMPLETE) {
+		esm_save_easysetup_state(ES_NOT_COMPLETE);
+		THINGS_LOG_D(THINGS_DEBUG, TAG, "delete svrdb");
+		int ret = unlink(dm_get_svrdb_file_path());
+		if (ret < 0) {
+			THINGS_LOG_D(THINGS_ERROR, TAG, "delete svrdb fail(%d)", errno);
+			return 0;
+		}
+	}
 	
 #ifdef CONFIG_ST_THINGS_FOTA
 	if (fmwup_initialize() < 0) {
@@ -310,20 +293,7 @@ int things_initialize_stack(const char *json_path, bool *easysetup_completed)
 	return 1;
 }
 
-int things_send_push_message(const char *push_uri, void *payload)
-{
-	if (payload == NULL) {
-		THINGS_LOG(THINGS_ERROR, TAG, "payload is NULL");
-		return 0;
-	}
-	if (!push_notification_to_cloud(push_uri, (OCRepPayload *) payload)) {
-		THINGS_LOG_D(THINGS_ERROR, TAG, "push_notification_to_cloud() failed");
-		return 0;
-	}
-	return 1;
-}
-
-int things_deinitialize_stack()
+int things_deinitialize_stack(void)
 {
 	THINGS_LOG_D(THINGS_DEBUG, TAG, THINGS_FUNC_ENTRY);
 
@@ -334,12 +304,12 @@ int things_deinitialize_stack()
 	return 1;
 }
 
-int things_start_stack()
+int things_start_stack(void)
 {
 	THINGS_LOG_D(THINGS_INFO, TAG, "ST_Things SDK version : %s", ST_THINGS_STACK_VERSION);
 
 	if (dm_get_easysetup_connectivity_type() == es_conn_type_softap) {
-		if (dm_is_there_things_cloud() == false) {
+		if (dm_is_es_complete() == false) {
 			if (!things_network_turn_on_soft_ap()) {
 				return 0;
 			}
@@ -493,7 +463,7 @@ GOTO_OUT:
 	return res;
 }
 
-int things_stop(void)
+int things_stop_stack(void)
 {
 	pthread_mutex_lock(&g_things_stop_mutex);
 
@@ -560,25 +530,6 @@ int things_notify_observers(const char *uri)
 		return 0;
 	}
 	return g_req_handler->notify_things_observers(uri);
-}
-
-int things_register_update_dev_prov_data_func(things_update_dev_prov_data_func_type func)
-{
-	if (func != NULL) {
-		esm_register_update_dev_prov_data_func(func);
-		return 1;
-	} else {
-		return 0;
-	}
-}
-
-int things_register_stop_soft_ap_func(things_stop_soft_ap_func_type func)
-{
-	if (NULL != func) {
-		return register_stop_softap_cb(func);
-	} else {
-		return 0;
-	}
 }
 
 int things_register_pin_generated_func(things_pin_generated_func_type func)
@@ -651,32 +602,6 @@ int things_register_otm_event_handler(things_sec_otm_state_func_type otmEventCal
 	return 0;
 #endif
 	return 1;
-}
-
-int things_save_acl(const char *uuid, const char *resourceUri, const char *resourceType, const char *interfaceName, uint16_t permission)
-{
-	int ret = -1;
-	THINGS_LOG(THINGS_DEBUG, TAG, "In things_save_acl");
-#ifdef __SECURED__
-	ret = sm_save_acl(uuid, resourceUri, resourceType, interfaceName, permission);
-#else
-	THINGS_LOG_ERROR(THINGS_ERROR, TAG, "Stack is in UNSECURED Mode");
-#endif
-	THINGS_LOG(THINGS_DEBUG, TAG, "Out things_save_acl");
-	return ret;
-}
-
-int things_set_mot_status(bool enable)
-{
-	int ret = -1;
-	THINGS_LOG(THINGS_DEBUG, TAG, "In things_set_mot_status");
-#ifdef __SECURED__
-	ret = sm_set_mot_status(enable);
-#else
-	THINGS_LOG_ERROR(THINGS_ERROR, TAG, "Stack is in UNSECURED Mode");
-#endif
-	THINGS_LOG(THINGS_DEBUG, TAG, "Out things_set_mot_status");
-	return ret;
 }
 
 //////////////////////////////////////////////////////////////////////////

@@ -69,6 +69,7 @@
 #include <tinyara/fs/fs.h>
 
 #include "inode/inode.h"
+#include "driver/block/driver.h"
 
 /****************************************************************************
  * Private Functions

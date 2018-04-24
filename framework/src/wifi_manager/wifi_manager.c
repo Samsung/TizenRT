@@ -124,7 +124,9 @@ struct _wifimgr_info {
 };
 typedef struct _wifimgr_info _wifimgr_info_s;
 
-#define CTRL_IFNAME "wl1" // ToDo: interface name should be configurable.
+#define WIFIMGR_SOFTAP_IFNAME CONFIG_WIFIMGR_SOFTAP_IFNAME
+#define WIFIMGR_STA_IFNAME CONFIG_WIFIMGR_STA_IFNAME
+
 #define WIFIMGR_MAX_CONN_RETRIES 10
 #define WIFIMGR_IPC_PORT 9098
 #define WIFIDRIVER_SUPPORT_AUTOCONNECT 1
@@ -515,9 +517,9 @@ wifi_manager_result_e _start_dhcpd(void)
 	struct in_addr ip = {.s_addr = 0x012fa8c0 };
 	struct in_addr netmask = {.s_addr = 0x00ffffff};
 	struct in_addr gw = {.s_addr = 0x012fa8c0};
-	WIFIMGR_SET_IP4ADDR(CTRL_IFNAME, ip, netmask, gw);
+	WIFIMGR_SET_IP4ADDR(WIFIMGR_SOFTAP_IFNAME, ip, netmask, gw);
 
-	if (dhcpd_start(CTRL_IFNAME, _wifi_dhcpd_event) < 0) {
+	if (dhcpd_start(WIFIMGR_SOFTAP_IFNAME, _wifi_dhcpd_event) < 0) {
 		ndbg("[WM] DHCP Server - started fail\n");
 		return WIFI_MANAGER_FAIL;
 	}
@@ -532,7 +534,7 @@ wifi_manager_result_e _start_dhcpd(void)
 wifi_manager_result_e _stop_dhcpd(void)
 {
 	struct in_addr in = { .s_addr = INADDR_NONE };
-	WIFIMGR_SET_IP4ADDR(CTRL_IFNAME, in, in, in);
+	WIFIMGR_SET_IP4ADDR(WIFIMGR_SOFTAP_IFNAME, in, in, in);
 
 	dhcpd_stop();
 
@@ -549,7 +551,7 @@ wifi_manager_result_e _get_ipaddr_dhcp(void)
 	int ret;
 	void *dhcp_hnd = NULL;
 
-	dhcp_hnd = dhcpc_open(CTRL_IFNAME);
+	dhcp_hnd = dhcpc_open(WIFIMGR_STA_IFNAME);
 	if (dhcp_hnd == NULL) {
 		ndbg("[WM] Invalid dhcp handle\n");
 		return WIFI_MANAGER_FAIL;
@@ -560,7 +562,7 @@ wifi_manager_result_e _get_ipaddr_dhcp(void)
 		dhcpc_close(dhcp_hnd);
 		return WIFI_MANAGER_FAIL;
 	}
-	WIFIMGR_SET_IP4ADDR(CTRL_IFNAME, state.ipaddr, state.netmask, state.default_router);
+	WIFIMGR_SET_IP4ADDR(WIFIMGR_STA_IFNAME, state.ipaddr, state.netmask, state.default_router);
 #ifdef CONFIG_ENABLE_IOTIVITY
 	__tizenrt_manual_linkset("gen");
 #endif
@@ -668,6 +670,13 @@ wifi_manager_result_e _wifimgr_stop_softap(void)
 wifi_manager_result_e _wifimgr_scan(void)
 {
 	WM_LOG_START;
+	wifi_manager_cb_s *cbk = &g_manager_info.cb;
+	
+	if (!cbk->scan_ap_done) {
+		ndbg("[WM] Callback funciton should be defined.\n");
+		return WIFI_MANAGER_FAIL;
+	}
+	
 	WIFIMGR_CHECK_UTILRESULT(wifi_utils_scan_ap(NULL), "[WM] request scan to wifi utils is fail\n", WIFI_MANAGER_FAIL);
 	return WIFI_MANAGER_SUCCESS;
 }
@@ -971,6 +980,10 @@ wifi_manager_result_e _handler_on_reconnect_state(_wifimgr_msg_s *msg)
 			return wres;
 		}
 		WIFIMGR_SET_STATE(WIFIMGR_STA_RECONNECTING);
+	} else if (msg->event == EVT_DEINIT) {
+		nvdbg("[WM] deinit\n");
+		WIFIMGR_CHECK_RESULT(_wifimgr_deinit(), "critical error\n", WIFI_MANAGER_FAIL);
+		WIFIMGR_SET_STATE(WIFIMGR_UNINITIALIZED);
 	}
 #else /* WIFIDRIVER_SUPPORT_AUTOCONNECT*/
 	if (msg->event == EVT_DISCONNECT) {
@@ -982,6 +995,10 @@ wifi_manager_result_e _handler_on_reconnect_state(_wifimgr_msg_s *msg)
 		nvdbg("[WM] connected\n");
 		_handle_user_cb(CB_STA_CONNECTED, NULL);
 		WIFIMGR_SET_STATE(WIFIMGR_STA_CONNECTED);
+	} else if (msg->event == EVT_DEINIT) {
+		nvdbg("[WM] deinit\n");
+		WIFIMGR_CHECK_RESULT(_wifimgr_deinit(), "critical error\n", WIFI_MANAGER_FAIL);
+		WIFIMGR_SET_STATE(WIFIMGR_UNINITIALIZED);
 	}
 #endif /* WIFIDRIVER_SUPPORT_AUTOCONNECT*/
 	return WIFI_MANAGER_SUCCESS;
@@ -1173,6 +1190,9 @@ wifi_manager_result_e wifi_manager_set_mode(wifi_manager_mode_e mode, wifi_manag
 
 wifi_manager_result_e wifi_manager_get_info(wifi_manager_info_s *info)
 {
+	if (info == NULL) {
+		return WIFI_MANAGER_INVALID_ARGS;
+	}
 	LOCK_WIFIMGR;
 	uint8_t *ip = (uint8_t *)&g_manager_info.ip4_address;
 	snprintf(info->ip4_address, 18, "%d.%d.%d.%d", ip[0], ip[1], ip[2], ip[3]);

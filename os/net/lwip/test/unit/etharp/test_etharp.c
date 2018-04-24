@@ -121,6 +121,7 @@ static void create_arp_response(ip_addr_t *adr)
 		ethhdr->src.addr[k] = test_ethaddr2.addr[k];
 	}
 
+	//etharp_input(p, &test_netif);
 	ethernet_input(p, &test_netif);
 }
 

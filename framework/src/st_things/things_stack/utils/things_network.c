@@ -434,7 +434,7 @@ void things_tcp_session_state_cb(const CAEndpoint_t *info, bool connected)
 	}
 
 	THINGS_LOG_D(THINGS_DEBUG, TAG, "DISCONNECTED");
-	oic_ping_unset_mask(info->addr, PING_ST_SIGNIN | PING_ST_TCPCONNECT);
+	things_ping_unset_mask(info->addr, PING_ST_SIGNIN | PING_ST_TCPCONNECT);
 
 	if (ci_retry_stop_by_tcp_cb(info->addr, info->port) == -1) {
 		THINGS_LOG_V_ERROR(THINGS_ERROR, TAG, "[Error] System Error.");

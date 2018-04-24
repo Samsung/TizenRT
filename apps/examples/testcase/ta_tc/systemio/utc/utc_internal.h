@@ -32,4 +32,10 @@
 #define SYSIO_UTC_PWM_PRINT   printf
 #define SYSIO_UTC_I2C_PRINT   printf
 
+int utc_gpio_main(void);
+int utc_i2c_main(void);
+int utc_pwm_main(void);
+int utc_spi_main(void);
+int utc_uart_main(void);
+
 #endif							/* __EXAMPLES_TESTCASE_SYSTEMIO_UTC_INTERNAL_H */

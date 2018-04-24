@@ -122,10 +122,11 @@ $(KBIN):
 endif
 
 ifeq ($(CONFIG_HEAPINFO_USER_GROUP),y)
-  GROUP_DELIM_NUM = "${shell echo $(CONFIG_HEAPINFO_USER_GROUP_LIST) | grep -o '/' | wc -l}"
-  THREAD_DELIM_NUM = "${shell echo $(CONFIG_HEAPINFO_USER_GROUP_LIST) | grep -o ',' | wc -l}"
+context:
+GROUP_DELIM_NUM = "${shell echo $(CONFIG_HEAPINFO_USER_GROUP_LIST) | grep -o '/' | wc -l}"
+THREAD_DELIM_NUM = "${shell echo $(CONFIG_HEAPINFO_USER_GROUP_LIST) | grep -o ',' | wc -l}"
 
-  ${shell echo '#define HEAPINFO_USER_GROUP_DELIM_NUM' "$(GROUP_DELIM_NUM)\n"'#define HEAPINFO_THREAD_DELIM_NUM' "$(THREAD_DELIM_NUM)\n"'#define HEAPINFO_USER_GROUP_NUM (HEAPINFO_USER_GROUP_DELIM_NUM + 1)\n#define HEAPINFO_THREAD_NUM (HEAPINFO_USER_GROUP_NUM + HEAPINFO_THREAD_DELIM_NUM)' > $(TOPDIR)$(DELIM)include$(DELIM)tinyara$(DELIM)mm$(DELIM)heapinfo_internal.h}
+${shell echo '#define HEAPINFO_USER_GROUP_DELIM_NUM' "$(GROUP_DELIM_NUM)\n"'#define HEAPINFO_THREAD_DELIM_NUM' "$(THREAD_DELIM_NUM)\n"'#define HEAPINFO_USER_GROUP_NUM (HEAPINFO_USER_GROUP_DELIM_NUM + 1)\n#define HEAPINFO_THREAD_NUM (HEAPINFO_USER_GROUP_NUM + HEAPINFO_THREAD_DELIM_NUM)' > $(TOPDIR)$(DELIM)include$(DELIM)tinyara$(DELIM)mm$(DELIM)heapinfo_internal.h}
 endif
 
 # Dependencies
@@ -150,7 +151,7 @@ clean:
 	$(call DELFILE, $(BIN))
 	$(call DELFILE, $(UBIN))
 	$(call DELFILE, $(KBIN))
-ifeq ($(CONFIG_HEAPINFO_GROUP),y)
+ifeq ($(CONFIG_HEAPINFO_USER_GROUP),y)
 	$(call DELFILE, $(TOPDIR)$(DELIM)include$(DELIM)tinyara$(DELIM)mm$(DELIM)heapinfo_internal.h)
 endif
 	$(call CLEAN)

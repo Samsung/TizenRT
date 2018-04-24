@@ -18,7 +18,7 @@
 /************************************************************************
  * kernel/sched/sched_processtimer.c
  *
- *   Copyright (C) 2007, 2009, 2014 Gregory Nutt. All rights reserved.
+ *   Copyright (C) 2007, 2009, 2014-2018 Gregory Nutt. All rights reserved.
  *   Author: Gregory Nutt <gnutt@nuttx.org>
  *
  * Redistribution and use in source and binary forms, with or without
@@ -214,13 +214,13 @@ void sched_process_timer(void)
 	}
 #endif
 
-	/* Process watchdogs */
-
-	wd_timer();
-
 	/* Check if the currently executing task has exceeded its
 	 * timeslice.
 	 */
 
 	sched_process_timeslice();
+
+	/* Process watchdogs */
+
+	wd_timer();
 }
