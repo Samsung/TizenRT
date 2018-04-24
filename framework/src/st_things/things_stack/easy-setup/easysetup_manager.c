@@ -24,6 +24,7 @@
 #include <unistd.h>
 #include <string.h>
 #include <pthread.h>
+#include <dirent.h>
 #include <errno.h>
 #include <sys/select.h>
 #include <time.h>
@@ -50,6 +51,8 @@
 #define TAG "[ezsetup-mg]"
 #define MAX_REFRESHCHECK_CNT    30	// 30 times
 
+#define FILE_ES_STATE "easysetup_state.dat"
+
 es_dev_conf_prov_data_s *g_dev_conf_prov_data = NULL;
 es_wifi_prov_data_s *g_wifi_prov_data = NULL;
 es_cloud_prov_data_s *g_cloud_prov_data = NULL;
@@ -73,6 +76,8 @@ static pthread_mutex_t g_es_mutex = PTHREAD_MUTEX_INITIALIZER;
 
 static es_device_property device_property;
 static const char *def_device_name = "ST_Things Device";
+
+static int g_es_state = 0; // 0 : EasySetup Need, 1 : Easysetup Done
 
 void wifi_prov_cb_in_app(es_wifi_prov_data_s *event_data);
 void dev_conf_prov_cb_in_app(es_dev_conf_prov_data_s *event_data);
@@ -900,4 +905,53 @@ int esm_register_user_confirm_cb(user_confirm_result_func_type func)
 		THINGS_LOG_ERROR(THINGS_ERROR, TAG, "Invalid UserConformCB function");
 		return 0;
 	}
+}
+
+int esm_save_easysetup_state(int state)
+{
+	THINGS_LOG_D(THINGS_DEBUG, TAG, THINGS_FUNC_ENTRY);
+	if (state == ES_COMPLETE) { // Done
+		THINGS_LOG_D(THINGS_DEBUG, TAG, "file open : %s", PATH_MNT FILE_ES_STATE);		
+		FILE *fp = fopen(PATH_MNT FILE_ES_STATE, "w+");
+		if (!fp) {
+			THINGS_LOG_D(THINGS_ERROR, TAG, "file open error(%d)", errno);
+			return 0;
+		}
+		unsigned char easysetup_completed = ES_COMPLETE;
+		int ret = fwrite(&easysetup_completed, ES_COMPLETE, sizeof(unsigned char), fp);
+		if (ret <= 0) {
+			THINGS_LOG_D(THINGS_ERROR, TAG, "file write error(%d)", errno);
+			fclose(fp);
+			return 0;
+		}
+		fclose(fp);
+		THINGS_LOG_D(THINGS_DEBUG, TAG, "easysetup completed");
+	} else {
+		unlink(PATH_MNT FILE_ES_STATE);
+		THINGS_LOG_D(THINGS_DEBUG, TAG, "easysetup not completed. delete ES_STATE File");
+	}
+	g_es_state = state;
+	return 1;
+}
+
+int esm_read_easysetup_state(void)
+{
+	THINGS_LOG_D(THINGS_DEBUG, TAG, "file open : %s", PATH_MNT FILE_ES_STATE);	
+	FILE *fp = fopen(PATH_MNT FILE_ES_STATE, "r");
+	if (!fp) {
+		THINGS_LOG_D(THINGS_ERROR, TAG, "file open error(%d)", errno);
+		return 0;
+	}
+	unsigned char easysetup_completed;
+	int ret = fread(&easysetup_completed, ES_COMPLETE, sizeof(unsigned char), fp);
+	if (ret <= 0) {
+		THINGS_LOG_D(THINGS_ERROR, TAG, "file write error(%d)", errno);
+		fclose(fp);
+		return 0;
+	}
+	fclose(fp);
+	if (easysetup_completed == ES_COMPLETE) {
+		return 1;
+	}
+	return 0;
 }
