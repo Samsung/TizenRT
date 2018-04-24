@@ -41,9 +41,11 @@ int RecorderObserverWorker::entry()
 			mObserverQueue.wait(lock);
 		}
 
-		std::function<void()> run = mObserverQueue.deQueue();
-		medvdbg("RecorderObserverWorker::entry() - pop Queue\n");
-		run();
+		if (!mObserverQueue.isEmpty()) {
+			std::function<void()> run = mObserverQueue.deQueue();
+			medvdbg("RecorderObserverWorker::entry() - pop Queue\n");
+			run();
+		}
 	}
 	return 0;
 }
@@ -74,6 +76,7 @@ void RecorderObserverWorker::stopWorker()
 		mIsRunning = false;
 
 		if (mWorkerThread.joinable()) {
+			mObserverQueue.notify_one();
 			mWorkerThread.join();
 			medvdbg("RecorderObserverWorker::stopWorker() - workerthread exited\n");
 		}
@@ -92,7 +95,8 @@ void RecorderObserverWorker::increaseRef()
 
 void RecorderObserverWorker::decreaseRef()
 {
-	if (mRefCnt > 0)
+	if (mRefCnt > 0) {
 		mRefCnt--;
+	}
 }
 } // namespace media
