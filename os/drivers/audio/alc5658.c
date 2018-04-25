@@ -300,10 +300,10 @@ static void alc5658_takesem(sem_t *sem)
  ************************************************************************************/
 static void alc5658_dumpregs(struct alc5658_dev_s *priv)
 {
-	audvdbg("MIC GAIN 0x%x\n", (uint32_t)alc5658_readreg(priv, ALC5658_IN1));
-	audvdbg("MUTE HPOUT MUTE %x\n", (uint32_t)alc5658_readreg(priv, ALC5658_HPOUT));
-	audvdbg("VOLL 0x%x\n", (uint32_t)alc5658_readreg(priv, ALC5658_HPOUT_L));
-	audvdbg("VOLR 0x%x\n", (uint32_t)alc5658_readreg(priv, ALC5658_HPOUT_R));
+	audvdbg("MIC GAIN 0x%x\n", (uint16_t)alc5658_readreg(priv, ALC5658_IN1));
+	audvdbg("MUTE HPOUT MUTE %x\n", (uint16_t)alc5658_readreg(priv, ALC5658_HPOUT));
+	audvdbg("VOLL 0x%x\n", (uint16_t)alc5658_readreg(priv, ALC5658_HPOUT_L));
+	audvdbg("VOLR 0x%x\n", (uint16_t)alc5658_readreg(priv, ALC5658_HPOUT_R));
 }
 
 /************************************************************************************
@@ -320,16 +320,29 @@ static void alc5658_setvolume(FAR struct alc5658_dev_s *priv)
 	/* Bits 8:12; 00000: 0dB,  00001: -0.75dB, 11111: -23.25dB, (-0.75dB/step) */
 
 	if (!priv->mute) {
-		alc5658_writereg(priv, ALC5658_IN1, IN1_PORT_GAIN);
 		alc5658_writereg(priv, ALC5658_HPOUT, UNMUTE_HP_LR);
-		alc5658_writereg(priv, ALC5658_HPOUT_L, priv->volume);
-		alc5658_writereg(priv, ALC5658_HPOUT_R, priv->volume);
+		alc5658_writereg(priv, ALC5658_HPOUT_L, (ALC5658_HP_VOL_MAX - priv->volume) << VOL_REG_BITSHIFT_COUNT);
+		alc5658_writereg(priv, ALC5658_HPOUT_R, (ALC5658_HP_VOL_MAX - priv->volume) << VOL_REG_BITSHIFT_COUNT);
 	} else {
 		alc5658_writereg(priv, ALC5658_HPOUT, MUTE_HP_LR);
 	}
 	alc5658_dumpregs(priv);
 }
 #endif							/* CONFIG_AUDIO_EXCLUDE_VOLUME */
+
+/************************************************************************************
+ * Name: alc5658_set_inport_gain
+ *
+ * Description:
+ *   Set the IN port gain.
+ *
+ ************************************************************************************/
+static void alc5658_set_inport_gain(FAR struct alc5658_dev_s *priv)
+{
+	/* Bits 8:14; 00000: 0h(-12dB) to 45h(39.75dB) rest reserved  (0.75dB/step) */
+	alc5658_writereg(priv, ALC5658_IN1, priv->gain << 8);
+	alc5658_dumpregs(priv);
+}
 
 /************************************************************************************
  * Name: alc5658_scalevolume
@@ -418,6 +431,9 @@ static void alc5658_set_i2s_samplerate(FAR struct alc5658_dev_s *priv)
  ****************************************************************************/
 static int alc5658_getcaps(FAR struct audio_lowerhalf_s *dev, int type, FAR struct audio_caps_s *caps)
 {
+#if !defined(CONFIG_AUDIO_EXCLUDE_VOLUME) || !defined(CONFIG_AUDIO_EXCLUDE_TONE)
+	FAR struct alc5658_dev_s *priv = (FAR struct alc5658_dev_s *)dev;
+#endif
 	/* Validate the structure */
 
 	DEBUGASSERT(caps && caps->ac_len >= sizeof(struct audio_caps_s));
@@ -425,7 +441,6 @@ static int alc5658_getcaps(FAR struct audio_lowerhalf_s *dev, int type, FAR stru
 
 	/* Fill in the caller's structure based on requested info */
 
-	caps->ac_format.hw = 0;
 	caps->ac_controls.w = 0;
 
 	switch (caps->ac_type) {
@@ -475,6 +490,7 @@ static int alc5658_getcaps(FAR struct audio_lowerhalf_s *dev, int type, FAR stru
 			/* Report the Sample rates we support */
 
 			caps->ac_controls.b[0] = AUDIO_SAMP_RATE_TYPE_8K | AUDIO_SAMP_RATE_TYPE_11K | AUDIO_SAMP_RATE_TYPE_16K | AUDIO_SAMP_RATE_TYPE_22K | AUDIO_SAMP_RATE_TYPE_32K | AUDIO_SAMP_RATE_TYPE_44K | AUDIO_SAMP_RATE_TYPE_48K;
+
 			break;
 
 		case AUDIO_FMT_MP3:
@@ -503,6 +519,19 @@ static int alc5658_getcaps(FAR struct audio_lowerhalf_s *dev, int type, FAR stru
 			/* TODO:  Do we need to provide specific info for the Feature Units,
 			 * such as volume setting ranges, etc.?
 			 */
+		}
+
+		switch (caps->ac_format.hw) {
+		case AUDIO_FU_VOLUME:
+			caps->ac_controls.b[0] = ALC5658_HP_VOL_MAX;
+			caps->ac_controls.b[1] = priv->volume;		// ToDo: Update with a proper get function.
+			break;
+		case AUDIO_FU_INP_GAIN:
+			caps->ac_controls.b[0] = ALC5658_GAIN_MAX;
+			caps->ac_controls.b[1] = priv->volume;		// ToDo: Update with a proper get function.
+			break;
+		default:
+			break;
 		}
 
 		break;
@@ -630,6 +659,19 @@ static int alc5658_configure(FAR struct audio_lowerhalf_s *dev, FAR const struct
 			audvdbg("    Treble: %d\n", treble);
 			if (treble <= 100) {
 				alc5658_settreble(priv, treble);
+			}
+		}
+		break;
+		case AUDIO_FU_INP_GAIN: {
+			/* Set the gain */
+			uint16_t gain = caps->ac_controls.hw[0];
+
+			if (gain >= ALC5658_GAIN_MIN && gain <= ALC5658_GAIN_MAX) {
+				audvdbg(" INP Gain: 0x%x\n", gain);
+				priv->gain = gain;
+				alc5658_set_inport_gain(priv);
+			} else {
+				ret = -EDOM;
 			}
 		}
 		break;
@@ -1022,6 +1064,9 @@ static int alc5658_ioctl(FAR struct audio_lowerhalf_s *dev, int cmd, unsigned lo
 		/* TOCHECK: Possible to cut the two level execution of alc scritps so as to cut the time? */
 		alc5658_setvolume(priv);
 
+		/* Set the configured gain */
+		alc5658_set_inport_gain(priv);
+
 		/* Resume I2S */
 		if (priv->inout) {
 			I2S_RESUME(priv->i2s, I2S_RX);
@@ -1300,13 +1345,9 @@ static void alc5658_hw_reset(FAR struct alc5658_dev_s *priv)
 	priv->balance = b16HALF;	/* Center balance */
 #endif
 
-	/* Software reset.  This puts all ALC5658 registers back in their
-	 * default state.
-	 */
+	/* Software reset.  This puts all ALC5658 registers back in their default state	 */
 
 	alc5658_exec_i2c_script(priv, codec_reset_script, sizeof(codec_reset_script) / sizeof(t_codec_init_script_entry));
-	alc5658_writereg(priv, ALC5658_IN1, (10 + 16) << 8);
-	audvdbg("MIC GAIN 0x%x\n", (uint32_t)alc5658_readreg(priv, ALC5658_IN1));
 }
 
 /****************************************************************************
@@ -1346,6 +1387,8 @@ FAR struct audio_lowerhalf_s *alc5658_initialize(FAR struct i2c_dev_s *i2c, FAR 
 		priv->lower = lower;
 		priv->i2c = i2c;
 		priv->i2s = i2s;
+		priv->gain = ALC5658_GAIN_DEFAULT;
+		priv->volume = ALC5658_HP_VOL_DEFAULT;
 
 		sem_init(&priv->devsem, 0, 1);
 		sq_init(&priv->pendq);

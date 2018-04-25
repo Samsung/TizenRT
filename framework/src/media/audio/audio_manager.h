@@ -57,29 +57,64 @@ typedef enum audio_manager_result_e audio_manager_result_t;
  ****************************************************************************/
 
 /****************************************************************************
- * Name: set_audio_volume
+ * Name: set_input_audio_volume
  *
  * Description:
- *   Adjust the volume level of the active audio device.
+ *   Adjust the volume level of the active input audio device.
  *
  * Input parameters:
- *   volume:   Volume level, 0(Min) ~ 31(Max)
+ *   volume:   Volume level, 0(Min) ~ 10(Max)
  *
  * Returned Value:
  *   On success, AUDIO_MANAGER_SUCCESS. Otherwise, a negative value.
  ****************************************************************************/
-audio_manager_result_t set_audio_volume(uint16_t volume);
+audio_manager_result_t set_input_audio_volume(uint16_t volume);
+
+/****************************************************************************
+ * Name: set_output_audio_volume
+ *
+ * Description:
+ *   Adjust the volume level of the active output audio device.
+ *
+ * Input parameters:
+ *   volume:   Volume level, 0(Min) ~ 10(Max)
+ *
+ * Returned Value:
+ *   On success, AUDIO_MANAGER_SUCCESS. Otherwise, a negative value.
+ ****************************************************************************/
+audio_manager_result_t set_output_audio_volume(uint16_t volume);
+
+/****************************************************************************
+ * Name: get_input_audio_volume
+ *
+ * Description:
+ *   Get the current volume level of the active input audio device.
+  *
+ * Returned Value:
+ *   On success, the current input volume level. Otherwise, a negative value.
+ ****************************************************************************/
+int get_input_audio_volume(void);
+
+/****************************************************************************
+ * Name: get_output_audio_volume
+ *
+ * Description:
+ *   Get the current volume level of the active output audio device.
+  *
+ * Returned Value:
+ *   On success, the current output volume level. Otherwise, a negative value.
+ ****************************************************************************/
+int get_output_audio_volume(void);
 
 /****************************************************************************
  * Name: get_audio_volume
  *
  * Description:
- *   Get the current volume level of the active audio device.
+ *   Get the maximum volume level of an audio device.
   *
- * Returned Value:
- *   On success, the current volume level. Otherwise, a negative value.
+ * Returned Value: The maximum volume level.
  ****************************************************************************/
-int get_audio_volume(void);
+uint16_t get_max_audio_volume(void);
 
 /****************************************************************************
  * Name: set_audio_stream_in
