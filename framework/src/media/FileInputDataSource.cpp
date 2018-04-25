@@ -52,6 +52,11 @@ FileInputDataSource::~FileInputDataSource()
 
 bool FileInputDataSource::open()
 {
+	if (mFp) {
+		meddbg("FileInputDataSource::open : file is already open\n");
+		return false;
+	}
+
 	setAudioType(utils::getAudioTypeFromPath(mDataPath));
 
 	switch (getAudioType()) {
@@ -78,8 +83,10 @@ bool FileInputDataSource::open()
 
 void FileInputDataSource::close()
 {
-	fclose(mFp);
-	mFp = nullptr;
+	if (mFp) {
+		fclose(mFp);
+		mFp = nullptr;
+	}
 }
 
 bool FileInputDataSource::isPrepare()
