@@ -16,6 +16,8 @@
  *
  ******************************************************************/
 
+#include <debug.h>
+
 #include <media/FileOutputDataSource.h>
 
 namespace media {
