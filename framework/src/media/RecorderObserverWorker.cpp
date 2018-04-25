@@ -34,7 +34,7 @@ int RecorderObserverWorker::entry()
 	medvdbg("RecorderObserverWorker::entry()\n");
 
 	while (mIsRunning) {
-		unique_lock<mutex> lock(mObserverQueue.getMutex());
+		std::unique_lock<std::mutex> lock(mObserverQueue.getMutex());
 
 		if (mObserverQueue.isEmpty()) {
 			medvdbg("RecorderObserverWorker::entry() - wait Queue\n");
@@ -52,7 +52,7 @@ int RecorderObserverWorker::entry()
 
 recorder_result_t RecorderObserverWorker::startWorker()
 {
-	unique_lock<mutex> lock(mRefMtx);
+	std::unique_lock<std::mutex> lock(mRefMtx);
 	increaseRef();
 
 	medvdbg("RecorderObserverWorker::startWorker() - increase RefCnt : %d\n", mRefCnt);
@@ -67,7 +67,7 @@ recorder_result_t RecorderObserverWorker::startWorker()
 
 void RecorderObserverWorker::stopWorker()
 {
-	unique_lock<mutex> lock(mRefMtx);
+	std::unique_lock<std::mutex> lock(mRefMtx);
 	decreaseRef();
 
 	medvdbg("RecorderObserverWorker::stopWorker() - decrease RefCnt : %d\n", mRefCnt);
@@ -78,7 +78,7 @@ void RecorderObserverWorker::stopWorker()
 		if (mWorkerThread.joinable()) {
 			mObserverQueue.notify_one();
 			mWorkerThread.join();
-			medvdbg("RecorderObserverWorker::stopWorker() - workerthread exited\n");
+			medvdbg("RecorderObserverWorker::stopWorker() - mWorkerthread exited\n");
 		}
 	}
 }

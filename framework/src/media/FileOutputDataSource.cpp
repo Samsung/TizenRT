@@ -54,8 +54,10 @@ bool FileOutputDataSource::open()
 
 void FileOutputDataSource::close()
 {
-	fclose(mFp);
-	mFp = nullptr;
+	if (mFp) {
+		fclose(mFp);
+		mFp = nullptr;
+	}
 }
 
 bool FileOutputDataSource::isPrepare()
