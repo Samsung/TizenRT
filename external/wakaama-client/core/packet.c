@@ -262,8 +262,6 @@ void lwm2m_handle_packet(lwm2m_context_t * contextP,
                 if ( IS_OPTION(&message, COAP_OPTION_BLOCK1) && response.code<COAP_400_BAD_REQUEST && !IS_OPTION(&response, COAP_OPTION_BLOCK1) )
                 {
                     LOG("Block1 NOT IMPLEMENTED\n");
-
-                    coap_error_code = COAP_501_NOT_IMPLEMENTED;
                 }
                 else if ( IS_OPTION(&message, COAP_OPTION_BLOCK2) )
                 {

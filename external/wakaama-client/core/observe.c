@@ -161,6 +161,7 @@ coap_status_t observe_handleRequest(lwm2m_context_t * contextP,
                                     coap_packet_t * message,
                                     coap_packet_t * response)
 {
+    coap_status_t ret = COAP_400_BAD_REQUEST;
     lwm2m_watcher_t * watcherP;
     uint32_t count;
 
@@ -187,10 +188,16 @@ coap_status_t observe_handleRequest(lwm2m_context_t * contextP,
             switch (dataP->type)
             {
             case LWM2M_TYPE_INTEGER:
-                if (1 != lwm2m_data_decode_int(dataP, &(watcherP->lastValue.asInteger))) return COAP_500_INTERNAL_SERVER_ERROR;
+                if (1 != lwm2m_data_decode_int(dataP, &(watcherP->lastValue.asInteger))) {
+                    ret = COAP_500_INTERNAL_SERVER_ERROR;
+                    goto exit;
+                }
                 break;
             case LWM2M_TYPE_FLOAT:
-                if (1 != lwm2m_data_decode_float(dataP, &(watcherP->lastValue.asFloat))) return COAP_500_INTERNAL_SERVER_ERROR;
+                if (1 != lwm2m_data_decode_float(dataP, &(watcherP->lastValue.asFloat))) {
+                    ret = COAP_500_INTERNAL_SERVER_ERROR;
+                    goto exit;
+                }
                 break;
             default:
                 break;
@@ -198,17 +205,21 @@ coap_status_t observe_handleRequest(lwm2m_context_t * contextP,
         }
 
         coap_set_header_observe(response, watcherP->counter++);
-
-        return COAP_205_CONTENT;
+        ret = COAP_205_CONTENT;
+        break;
 
     case 1:
         // cancellation
         observe_cancel(contextP, LWM2M_MAX_ID, serverP->sessionH);
-        return COAP_205_CONTENT;
+        ret = COAP_205_CONTENT;
+        break;
 
     default:
-        return COAP_400_BAD_REQUEST;
+        break;
     }
+
+exit:
+    return ret;
 }
 
 void observe_cancel(lwm2m_context_t * contextP,
@@ -433,8 +444,10 @@ void observe_step(lwm2m_context_t * contextP,
         int64_t integerValue = 0;
         bool storeValue = false;
         lwm2m_media_type_t format = LWM2M_CONTENT_TEXT;
-        coap_packet_t message[1];
+        coap_packet_t message;
         time_t interval;
+
+        memset(&message, 0, sizeof(coap_packet_t));
 
         if (LWM2M_URI_IS_SET_RESOURCE(&targetP->uri))
         {
@@ -611,17 +624,17 @@ void observe_step(lwm2m_context_t * contextP,
                                 break;
                             }
                         }
-                        coap_init_message(message, watcherP->server->protocol, COAP_TYPE_NON, COAP_205_CONTENT, 0);
-                        coap_set_header_content_type(message, format);
-                        coap_set_payload(message, buffer, length);
+                        coap_init_message(&message, watcherP->server->protocol, COAP_TYPE_NON, COAP_205_CONTENT, 0);
+                        coap_set_header_content_type(&message, format);
+                        coap_set_payload(&message, buffer, length);
                         LOG("Observe Update[/%d/%d/%d]: %.*s\n", targetP->uri.objectId, targetP->uri.instanceId, targetP->uri.resourceId, length, buffer);
                     }
                     watcherP->lastTime = currentTime;
                     watcherP->lastMid = contextP->nextMID++;
-                    message->mid = watcherP->lastMid;
-                    coap_set_header_token(message, watcherP->token, watcherP->tokenLen);
-                    coap_set_header_observe(message, watcherP->counter++);
-                    (void)message_send(contextP, message, watcherP->server->sessionH);
+                    message.mid = watcherP->lastMid;
+                    coap_set_header_token(&message, watcherP->token, watcherP->tokenLen);
+                    coap_set_header_observe(&message, watcherP->counter++);
+                    (void)message_send(contextP, &message, watcherP->server->sessionH);
                     watcherP->update = false;
                 }
 

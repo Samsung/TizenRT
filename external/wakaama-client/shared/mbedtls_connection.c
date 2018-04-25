@@ -64,22 +64,20 @@ static char *security_get_secret_key(lwm2m_object_t * obj, int instanceId, int *
 static int security_get_security_mode(lwm2m_object_t * obj, int instanceId)
 {
     int size = 1;
+    int val = -1;
     lwm2m_data_t * dataP = lwm2m_data_new(size);
+
+    if (!dataP)
+        return -1;
+
     dataP->id = 2; // security mode
 
     obj->readFunc(instanceId, &size, &dataP, obj);
-    if (dataP != NULL &&
-            dataP->type == LWM2M_TYPE_INTEGER)
-    {
-        int val = dataP->value.asInteger;
-        lwm2m_free(dataP);
-        return val;
-    }
-    else
-    {
-        lwm2m_free(dataP);
-        return -1;
-    }
+    if (dataP->type == LWM2M_TYPE_INTEGER)
+        val = dataP->value.asInteger;
+
+    lwm2m_free(dataP);
+    return val;
 }
 
 static void context_ssl_free(context_ssl_t *ssl)
@@ -117,23 +115,23 @@ static void context_ssl_free(context_ssl_t *ssl)
 static char *security_get_server_public(lwm2m_object_t * obj, int instanceId, int * length)
 {
     int size = 1;
+    char *val = NULL;
     lwm2m_data_t * dataP = lwm2m_data_new(size);
+
+    if (!dataP)
+        return NULL;
+
     dataP->id = 4; // server public key or id
 
     obj->readFunc(instanceId, &size, &dataP, obj);
-    if (dataP != NULL &&
-            dataP->type == LWM2M_TYPE_OPAQUE)
+    if (dataP->type == LWM2M_TYPE_OPAQUE)
     {
-        char *val = (char*)dataP->value.asBuffer.buffer;
+        val = (char*)dataP->value.asBuffer.buffer;
         *length = dataP->value.asBuffer.length;
-        lwm2m_free(dataP);
-        return val;
     }
-    else
-    {
-        lwm2m_free(dataP);
-        return NULL;
-    }
+
+    lwm2m_free(dataP);
+    return val;
 }
 
 static void lwm2m_tls_debug(void *ctx, int level, const char *file, int line, const char *str)
@@ -179,6 +177,7 @@ static bool ssl_mbedtls_init(context_ssl_t *ssl, lwm2m_config_ssl_t *lwm2m_ssl_c
 #ifdef WITH_LOGS
             fprintf(stderr, "Failed to allocate pkey");
 #endif
+            goto error;
         }
         mbedtls_pk_init(ssl->pkey);
     }
@@ -340,7 +339,11 @@ error:
 
 static bool ssl_configure_certificate_mode(connection_t *conn)
 {
+    bool ret = true;
     static lwm2m_config_ssl_t lwm2m_ssl_config;
+
+    if (!conn->sec_obj)
+        return false;
 
     conn->ssl = lwm2m_malloc(sizeof(context_ssl_t));
     if (!conn->ssl) {
@@ -353,7 +356,7 @@ static bool ssl_configure_certificate_mode(connection_t *conn)
     memset(&lwm2m_ssl_config, 0, sizeof(lwm2m_config_ssl_t));
     memset(conn->ssl, 0, sizeof(context_ssl_t));
 
-    if (conn->protocol == COAP_UDP_DTLS && conn->sec_obj) {
+    if (conn->protocol == COAP_UDP_DTLS) {
         lwm2m_ssl_config.transport = MBEDTLS_SSL_TRANSPORT_DATAGRAM;
         lwm2m_ssl_config.ciphersuites = NULL;
         lwm2m_ssl_config.auth_mode = MBEDTLS_SSL_VERIFY_NONE;
@@ -363,7 +366,7 @@ static bool ssl_configure_certificate_mode(connection_t *conn)
         lwm2m_ssl_config.auth_mode = conn->verify_cert ? MBEDTLS_SSL_VERIFY_REQUIRED : MBEDTLS_SSL_VERIFY_NONE;
 
         if (conn->root_ca) {
-            lwm2m_ssl_config.root_ca = strdup(conn->root_ca);
+            lwm2m_ssl_config.root_ca = lwm2m_strdup(conn->root_ca);
         }
     }
 
@@ -373,7 +376,8 @@ static bool ssl_configure_certificate_mode(connection_t *conn)
 #ifdef WITH_LOGS
         fprintf(stderr, "Failed to get Public ID\r\n");
 #endif
-        goto error;
+        ret = false;
+        goto cleanup;
     }
 
     if (!conn->use_se) {
@@ -385,7 +389,8 @@ static bool ssl_configure_certificate_mode(connection_t *conn)
 #ifdef WITH_LOGS
             fprintf(stderr, "Failed to get private key\r\n");
 #endif
-            goto error;
+            ret = false;
+            goto cleanup;
         }
 
         if (mbedtls_pem_write_buffer("-----BEGIN EC PRIVATE KEY-----\n",
@@ -399,7 +404,8 @@ static bool ssl_configure_certificate_mode(connection_t *conn)
 #ifdef WITH_LOGS
             fprintf(stderr, "Failed to parse private key\r\n");
 #endif
-            goto error;
+            ret = false;
+            goto cleanup;
         }
 
         lwm2m_ssl_config.device_private_key = lwm2m_malloc(lwm2m_ssl_config.device_private_key_len);
@@ -407,7 +413,8 @@ static bool ssl_configure_certificate_mode(connection_t *conn)
 #ifdef WITH_LOGS
             fprintf(stderr, "Failed to allocate private key\r\n");
 #endif
-            goto error;
+            ret = false;
+            goto cleanup;
         }
 
         if (mbedtls_pem_write_buffer("-----BEGIN EC PRIVATE KEY-----\n",
@@ -421,7 +428,8 @@ static bool ssl_configure_certificate_mode(connection_t *conn)
 #ifdef WITH_LOGS
             fprintf(stderr, "Failed to parse DER private key\r\n");
 #endif
-            goto error;
+            ret = false;
+            goto cleanup;
         }
     }
 
@@ -429,21 +437,21 @@ static bool ssl_configure_certificate_mode(connection_t *conn)
 
     lwm2m_ssl_config.fd = conn->sock;
     if (!ssl_mbedtls_init(conn->ssl, &lwm2m_ssl_config)) {
-        goto error;
+        ret = false;
+        goto cleanup;
     }
 
+cleanup:
+    if (lwm2m_ssl_config.root_ca)
+        lwm2m_free(lwm2m_ssl_config.root_ca);
+
     if (lwm2m_ssl_config.device_private_key)
         lwm2m_free(lwm2m_ssl_config.device_private_key);
 
-    return true;
+    if (!ret)
+        lwm2m_free(conn->ssl);
 
-error:
-    if (lwm2m_ssl_config.device_private_key)
-        lwm2m_free(lwm2m_ssl_config.device_private_key);
-
-    lwm2m_free(conn->ssl);
-
-    return false;
+    return ret;
 }
 
 static bool ssl_configure_pre_shared_key(connection_t *conn)
@@ -579,53 +587,53 @@ error:
 static char *security_get_public_id(lwm2m_object_t * obj, int instanceId, int * length)
 {
     int size = 1;
+    char *val = NULL;
     lwm2m_data_t * dataP = lwm2m_data_new(size);
+
+    if (!dataP)
+        return NULL;
+
     dataP->id = 3; // public key or id
 
     obj->readFunc(instanceId, &size, &dataP, obj);
-    if (dataP != NULL &&
-            dataP->type == LWM2M_TYPE_OPAQUE)
+    if (dataP->type == LWM2M_TYPE_OPAQUE)
     {
-        char *val = (char*)dataP->value.asBuffer.buffer;
+        val = (char*)dataP->value.asBuffer.buffer;
         *length = dataP->value.asBuffer.length;
-        lwm2m_free(dataP);
-        return val;
     }
-    else
-    {
-        lwm2m_free(dataP);
-        return NULL;
-    }
+
+    lwm2m_free(dataP);
+    return val;
 }
 
 static char *security_get_secret_key(lwm2m_object_t * obj, int instanceId, int * length)
 {
     int size = 1;
+    char *val = NULL;
     lwm2m_data_t * dataP = lwm2m_data_new(size);
+
+    if (!dataP)
+        return NULL;
+
     dataP->id = 5; // secret key
 
     obj->readFunc(instanceId, &size, &dataP, obj);
-    if (dataP != NULL &&
-            dataP->type == LWM2M_TYPE_OPAQUE)
+    if (dataP->type == LWM2M_TYPE_OPAQUE)
     {
-        char *val = (char*)dataP->value.asBuffer.buffer;
+        val = (char*)dataP->value.asBuffer.buffer;
         *length = dataP->value.asBuffer.length;
-        lwm2m_free(dataP);
-        return val;
     }
-    else
-    {
-        lwm2m_free(dataP);
-        return NULL;
-    }
+
+    lwm2m_free(dataP);
+    return val;
 }
 
 int create_socket(coap_protocol_t protocol, const char * portStr, int addressFamily)
 {
     int s = -1;
     struct addrinfo hints;
-    struct addrinfo *res;
-    struct addrinfo *p;
+    struct addrinfo *res = NULL;
+    struct addrinfo *p = NULL;
 
     memset(&hints, 0, sizeof hints);
     hints.ai_family = addressFamily;
@@ -645,7 +653,7 @@ int create_socket(coap_protocol_t protocol, const char * portStr, int addressFam
 
     hints.ai_flags = AI_PASSIVE;
 
-    if (0 != getaddrinfo(NULL, portStr, &hints, &res))
+    if (getaddrinfo(NULL, portStr, &hints, &res) || (res == NULL))
     {
         return -1;
     }
@@ -729,7 +737,7 @@ connection_t * connection_create(coap_protocol_t protocol,
         break;
     }
 
-    if (0 != getaddrinfo(host, remote_port, &hints, &servinfo) || servinfo == NULL)
+    if (getaddrinfo(host, remote_port, &hints, &servinfo) || (servinfo == NULL))
     {
         return NULL;
     }
@@ -823,13 +831,13 @@ fail:
         connP->verify_cert = verify_cert;
 
         if (root_ca)
-            connP->root_ca = strdup(root_ca);
+            connP->root_ca = lwm2m_strdup(root_ca);
 
         memcpy(&(connP->addr), sa, sl);
-        connP->host = strndup(host, strlen(host));
+        connP->host = lwm2m_strdup(host);
         connP->addrLen = sl;
-        strncpy(connP->local_port, remote_port, 16);
-        strncpy(connP->remote_port, remote_port, 16);
+        strncpy(connP->local_port, remote_port, sizeof(connP->local_port) - 1);
+        strncpy(connP->remote_port, remote_port, sizeof(connP->remote_port) - 1);
         connP->address_family = addressFamily;
         connP->sec_obj = sec_obj;
         connP->sec_inst = sec_inst;
@@ -848,6 +856,7 @@ fail:
             }
         }
         close(s);
+        s = -1;
     }
     else
     {
@@ -857,18 +866,22 @@ fail:
         goto error;
     }
 
-    if (servinfo)
-        freeaddrinfo(servinfo);
+    freeaddrinfo(servinfo);
 
     return connP;
 
 error:
-    if (servinfo)
-        freeaddrinfo(servinfo);
+    freeaddrinfo(servinfo);
+
+    if (s >= 0)
+        close(s);
 
     if (connP)
     {
-        free(connP->host);
+        if (connP->root_ca)
+            lwm2m_free(connP->root_ca);
+        if (connP->host)
+            lwm2m_free(connP->host);
         lwm2m_free(connP);
         connP = NULL;
     }
@@ -882,7 +895,10 @@ void connection_free(connection_t * connList)
     {
         connection_t * nextP = connList->next;
         if (connList->host)
-            free(connList->host);
+            lwm2m_free(connList->host);
+
+        if (connList->root_ca)
+            lwm2m_free(connList->root_ca);
 
         if (connList->ssl) {
             context_ssl_free(connList->ssl);

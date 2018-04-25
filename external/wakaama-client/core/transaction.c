@@ -257,6 +257,8 @@ lwm2m_transaction_t * transaction_new(coap_message_type_t type,
     return transacP;
 
 error:
+    if (transacP->message)
+        lwm2m_free(transacP->message);
     lwm2m_free(transacP);
     return NULL;
 }

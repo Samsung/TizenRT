@@ -279,10 +279,12 @@ lwm2m_object_t * get_object_location(object_location_t *default_value)
         if (NULL != locationObj->userData)
         {
             location_data_t* data = (location_data_t*)locationObj->userData;
-            strncpy (data->latitude,     default_value->latitude, LOCATION_STR_MAX_LEN);
-            strncpy (data->longitude,    default_value->longitude, LOCATION_STR_MAX_LEN);
-            strncpy (data->altitude,     default_value->altidude, LOCATION_STR_MAX_LEN);
-            strncpy (data->uncertainty,  default_value->uncertainty, LOCATION_STR_MAX_LEN);
+
+            memset(data, 0, sizeof(location_data_t));
+            strncpy (data->latitude,     default_value->latitude, LOCATION_STR_MAX_LEN - 1);
+            strncpy (data->longitude,    default_value->longitude, LOCATION_STR_MAX_LEN - 1);
+            strncpy (data->altitude,     default_value->altidude, LOCATION_STR_MAX_LEN - 1);
+            strncpy (data->uncertainty,  default_value->uncertainty, LOCATION_STR_MAX_LEN - 1);
             location_setVelocity(locationObj, 0, 0, 255); // 255: speedUncertainty not supported!
             data->timestamp   = time(NULL);
         }
@@ -312,14 +314,16 @@ uint8_t location_change_object(lwm2m_data_t *dataArray, lwm2m_object_t *object)
     {
         case RES_M_LATITUDE:
         {
+            memset(data->latitude, 0, LOCATION_STR_MAX_LEN);
             strncpy(data->latitude, (char*)dataArray->value.asBuffer.buffer,
-                    LOCATION_STR_MAX_LEN);
+                    LOCATION_STR_MAX_LEN - 1);
             result = COAP_204_CHANGED;
         }
         break;
 
         case RES_M_LONGITUDE:
         {
+            memset(data->longitude, 0, LOCATION_STR_MAX_LEN);
             strncpy(data->longitude, (char*)dataArray->value.asBuffer.buffer,
                     LOCATION_STR_MAX_LEN);
             result = COAP_204_CHANGED;
@@ -328,14 +332,16 @@ uint8_t location_change_object(lwm2m_data_t *dataArray, lwm2m_object_t *object)
 
         case RES_O_ALTITUDE:
         {
+            memset(data->altitude, 0, LOCATION_STR_MAX_LEN);
             strncpy(data->altitude, (char*)dataArray->value.asBuffer.buffer,
-                    LOCATION_STR_MAX_LEN);
+                    LOCATION_STR_MAX_LEN - 1);
             result = COAP_204_CHANGED;
         }
         break;
 
         case RES_O_UNCERTAINTY:
         {
+            memset(data->uncertainty, 0, LOCATION_STR_MAX_LEN);
             strncpy(data->uncertainty, (char*)dataArray->value.asBuffer.buffer,
                     LOCATION_STR_MAX_LEN);
             result = COAP_204_CHANGED;

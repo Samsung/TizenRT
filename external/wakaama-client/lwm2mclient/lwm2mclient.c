@@ -185,6 +185,9 @@ void * lwm2m_connect_server(uint16_t secObjInstID, void * userData, int timeout)
         }
     }
 
+    if (!host)
+        goto exit;
+
     port = strrchr(host, ':');
     if (port == NULL) goto exit;
     // remove brackets
@@ -380,16 +383,30 @@ client_handle_t* lwm2m_client_start(object_container_t *init_val, char *root_ca,
     lwm2m_context_t *ctx = NULL;
     uint16_t pskLen = -1;
     char * pskBuffer = NULL;
-    char * token = init_val->server->token;
-    char * uri = init_val->server->serverUri;
-    int serverId = init_val->server->serverId;
+    char * token = NULL;
+    char * uri = NULL;
+    int serverId = 0;
     client_handle_t *handle = NULL;
 
+    if (!init_val || !init_val->server)
+        return NULL;
+
+    token = init_val->server->token;
+    uri = init_val->server->serverUri;
+    serverId = init_val->server->serverId;
+
     data = lwm2m_malloc(sizeof(client_data_t));
-    handle = lwm2m_malloc(sizeof(client_handle_t));
-    if (!data || !handle) {
+    if (!data) {
 #ifdef WITH_LOGS
         fprintf(stderr, "Failed to allocate memory for client data\r\n");
+#endif
+        goto error;
+    }
+
+    handle = lwm2m_malloc(sizeof(client_handle_t));
+    if (!handle) {
+#ifdef WITH_LOGS
+        fprintf(stderr, "Failed to allocate memory for client handle\r\n");
 #endif
         goto error;
     }
@@ -529,9 +546,6 @@ client_handle_t* lwm2m_client_start(object_container_t *init_val, char *root_ca,
 #ifdef WITH_LOGS
                 fprintf(stderr, "Failed to create security object\r\n");
 #endif
-                if (init_val->server->securityMode == LWM2M_SEC_MODE_PSK)
-                    lwm2m_free(pskBuffer);
-
                 goto error;
             }
 
@@ -876,9 +890,6 @@ void lwm2m_register_callback(client_handle_t* handle, enum lwm2m_execute_callbac
                 callback, param);
         break;
     default:
-#ifdef WITH_LOGS
-        fprintf(stderr, "lwm2m_register_callback: unsupported callback\r\n");
-#endif
         break;
     }
 }
@@ -911,9 +922,6 @@ void lwm2m_unregister_callback(client_handle_t* handle, enum lwm2m_execute_callb
         prv_firmware_register_callback(data->objArray[LWM2M_OBJ_FIRMWARE], type, NULL, NULL);
         break;
     default:
-#ifdef WITH_LOGS
-        fprintf(stderr, "lwm2m_register_callback: unsupported callback\r\n");
-#endif
         break;
     }
 }
@@ -1018,7 +1026,7 @@ static int encode_data(lwm2m_data_t *data, uint8_t **buffer)
     case LWM2M_TYPE_STRING:
         size = data[0].value.asBuffer.length;
         *buffer = (uint8_t *)lwm2m_malloc(size);
-        if (!buffer)
+        if (!*buffer)
         {
 #ifdef WITH_LOGS
             fprintf(stderr, "encode_data: failed to allocate memory\r\n");
@@ -1047,6 +1055,7 @@ static int encode_data(lwm2m_data_t *data, uint8_t **buffer)
 #ifdef WITH_LOGS
         fprintf(stderr, "encode_data: unsupported type (%d)\r\n", data[0].type);
 #endif
+        lwm2m_free(*buffer);
         size = LWM2M_CLIENT_ERROR;
         break;
     }
@@ -1229,8 +1238,11 @@ int lwm2m_serialize_tlv_string(int num, char **strs, lwm2m_resource_t* res)
 #ifdef WITH_LOGS
         fprintf(stderr, "lwm2m_serialize_tlv_string: failed to serialize TLV\r\n");
 #endif
+        lwm2m_free(array);
         return LWM2M_CLIENT_ERROR;
     }
+
+    lwm2m_free(array);
 
     return LWM2M_CLIENT_OK;
 }
@@ -1261,9 +1273,11 @@ int lwm2m_serialize_tlv_int(int num, int *ints, lwm2m_resource_t* res)
 #ifdef WITH_LOGS
         fprintf(stderr, "lwm2m_tlv_string: failed to serialize TLV\r\n");
 #endif
+        lwm2m_free(array);
         return LWM2M_CLIENT_ERROR;
     }
 
+    lwm2m_free(array);
     return LWM2M_CLIENT_OK;
 }
 

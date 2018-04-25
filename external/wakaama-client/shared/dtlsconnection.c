@@ -71,32 +71,43 @@ int64_t security_get_mode(lwm2m_object_t * obj, int instanceId){
 char * security_get_public_id(lwm2m_object_t * obj, int instanceId, int * length){
     int size = 1;
     lwm2m_data_t * dataP = lwm2m_data_new(size);
+
+    if (!dataP)
+        return NULL;
+
     dataP->id = 3; // public key or id
 
     obj->readFunc(instanceId, &size, &dataP, obj);
-    if (dataP != NULL &&
-            dataP->type == LWM2M_TYPE_OPAQUE)
+    if (dataP->type == LWM2M_TYPE_OPAQUE)
     {
-            *length = dataP->value.asBuffer.length;
-            return dataP->value.asBuffer.buffer;
-    }else{
+        *length = dataP->value.asBuffer.length;
+        return dataP->value.asBuffer.buffer;
+    }
+    else
+    {
+        lwm2m_data_free(size, dataP);
         return NULL;
     }
 }
 
-
 char * security_get_secret_key(lwm2m_object_t * obj, int instanceId, int * length){
     int size = 1;
     lwm2m_data_t * dataP = lwm2m_data_new(size);
+
+    if (!dataP)
+        return NULL;
+
     dataP->id = 5; // secret key
 
     obj->readFunc(instanceId, &size, &dataP, obj);
-    if (dataP != NULL &&
-            dataP->type == LWM2M_TYPE_OPAQUE)
+    if (dataP->type == LWM2M_TYPE_OPAQUE)
     {
         *length = dataP->value.asBuffer.length;
         return dataP->value.asBuffer.buffer;
-    }else{
+    }
+    else
+    {
+        lwm2m_data_free(size, dataP);
         return NULL;
     }
 }

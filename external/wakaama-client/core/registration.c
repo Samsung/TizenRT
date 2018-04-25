@@ -145,13 +145,7 @@ static void prv_handleRegistrationReply(lwm2m_transaction_t * transacP,
     {
         if (packet != NULL && packet->code == COAP_201_CREATED)
         {
-            time_t tv_sec = lwm2m_gettime();
-
-            if (tv_sec >= 0)
-            {
-                targetP->registration = tv_sec;
-            }
-
+            targetP->registration = lwm2m_gettime();
             targetP->status = STATE_REGISTERED;
             if (NULL != targetP->location)
             {
@@ -241,12 +235,7 @@ static void prv_handleRegistrationUpdateReply(lwm2m_transaction_t * transacP,
     {
         if (packet != NULL && packet->code == COAP_204_CHANGED)
         {
-            time_t tv_sec = lwm2m_gettime();
-
-            if (tv_sec >= 0)
-            {
-                targetP->registration = tv_sec;
-            }
+            targetP->registration = lwm2m_gettime();
             targetP->status = STATE_REGISTERED;
             LOG("    => REGISTERED: %s\r\n", contextP->endpointName);
         }
@@ -911,10 +900,7 @@ coap_status_t registration_handleRequest(lwm2m_context_t * contextP,
                                           coap_packet_t * response)
 {
     coap_status_t result;
-    time_t tv_sec;
-
-    tv_sec = lwm2m_gettime();
-    if (tv_sec < 0) return COAP_500_INTERNAL_SERVER_ERROR;
+    time_t tv_sec = lwm2m_gettime();
 
     switch(message->code)
     {

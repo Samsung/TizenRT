@@ -355,11 +355,8 @@ int lwm2m_remove_object(lwm2m_context_t * contextP,
 int lwm2m_step(lwm2m_context_t * contextP,
                time_t * timeoutP)
 {
-    time_t tv_sec;
     int result;
-
-    tv_sec = lwm2m_gettime();
-    if (tv_sec < 0) return COAP_500_INTERNAL_SERVER_ERROR;
+    time_t tv_sec = lwm2m_gettime();
 
 #ifdef LWM2M_CLIENT_MODE
     // state can also be modified in bootstrap_handleCommand().

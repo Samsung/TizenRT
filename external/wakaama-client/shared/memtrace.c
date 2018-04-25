@@ -117,7 +117,7 @@ void lwm2m_trace_free(void* mem, const char* file, const char* function, int lin
         else
         {
             fprintf(stderr, "memory: free error (no malloc) %s, %d, %s\n", file, lineno, function);
-            memory_entry_t* entry = prv_memory_find_previous(&prv_memory_free_list, mem);
+            entry = prv_memory_find_previous(&prv_memory_free_list, mem);
             if (NULL != entry)
             {
                 entry = entry->next;

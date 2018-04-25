@@ -51,10 +51,8 @@ time_t lwm2m_gettime(void)
 {
     struct timeval tv;
 
-    if (0 != gettimeofday(&tv, NULL))
-    {
-        return -1;
-    }
+    if (gettimeofday(&tv, NULL))
+        return 0;
 
     return tv.tv_sec;
 }

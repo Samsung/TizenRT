@@ -513,114 +513,133 @@ lwm2m_object_t * get_security_object(int serverId,
                                      uint16_t pskLen,
                                      bool isBootstrap)
 {
-    lwm2m_object_t * securityObj;
+    lwm2m_object_t *securityObj = NULL;
+    security_instance_t *targetP = NULL;
 
     securityObj = (lwm2m_object_t *)lwm2m_malloc(sizeof(lwm2m_object_t));
-
-    if (NULL != securityObj)
+    if (!securityObj)
     {
-        security_instance_t * targetP;
-
-        memset(securityObj, 0, sizeof(lwm2m_object_t));
-
-        securityObj->objID = LWM2M_SECURITY_OBJECT_ID;
-
-        // Manually create an hard-coded instance
-        targetP = (security_instance_t *)lwm2m_malloc(sizeof(security_instance_t));
-        if (NULL == targetP)
-        {
 #ifdef WITH_LOGS
-            fprintf(stderr, "Failed to allocate security instance.\r\n");
+        fprintf(stderr, "Failed to allocate security object\r\n");
 #endif
-            lwm2m_free(securityObj);
-            return NULL;
-        }
-
-        memset(targetP, 0, sizeof(security_instance_t));
-        targetP->uri = (char*)lwm2m_malloc(strlen(serverUri)+1);
-        strcpy(targetP->uri, serverUri);
-        targetP->securityMode = securityMode;
-
-        if (securityMode == LWM2M_SECURITY_MODE_PRE_SHARED_KEY)
-        {
-            if (psk == NULL || clientCertificateOrPskId == NULL || pskLen < 1)
-            {
-#ifdef WITH_LOGS
-                fprintf(stderr, "Bad parameters for PSK mode.\r\n");
-#endif
-                clean_security_object(securityObj);
-                return NULL;
-            }
-
-            targetP->publicIdentity = strdup(clientCertificateOrPskId);
-            targetP->publicIdLen = strlen(clientCertificateOrPskId);
-            targetP->secretKey = (char *)lwm2m_malloc(pskLen);
-            if (!targetP->secretKey)
-            {
-#ifdef WITH_LOGS
-                fprintf(stderr, "Failed to allocate secretKey.\r\n");
-#endif
-                clean_security_object(securityObj);
-                return NULL;
-            }
-
-            memcpy(targetP->secretKey, psk, pskLen);
-            targetP->secretKeyLen = pskLen;
-        }
-
-        if (securityMode == LWM2M_SECURITY_MODE_CERTIFICATE)
-        {
-            if (!convert_pem_x509_to_der(serverCertificate, &targetP->serverPublicKey, &targetP->serverPublicKeyLen))
-            {
-#ifdef WITH_LOGS
-                fprintf(stderr, "Failed to parse server certificate\r\n");
-#endif
-            }
-
-            if (!convert_pem_x509_to_der(clientCertificateOrPskId, &targetP->publicIdentity, &targetP->publicIdLen))
-            {
-#ifdef WITH_LOGS
-                fprintf(stderr, "Failed to parse client certificate\r\n");
-#endif
-                clean_security_object(securityObj);
-                return NULL;
-            }
-
-            if (!convert_pem_privatekey_to_der(psk, &targetP->secretKey, &targetP->secretKeyLen))
-            {
-#ifdef WITH_LOGS
-                fprintf(stderr, "Failed to parse private key (Certificate mode)\r\n");
-#endif
-                clean_security_object(securityObj);
-                return NULL;
-            }
-        }
-
-        // ARTIK Cloud does not support NoSec mode
-        if (securityMode == LWM2M_SECURITY_MODE_NONE)
-        {
-            clean_security_object(securityObj);
-#ifdef WITH_LOGS
-            fprintf(stderr, "NoSec is not supported.\r\n");
-#endif
-            return NULL;
-        }
-
-        targetP->isBootstrap = isBootstrap;
-        targetP->shortID = serverId;
-        targetP->clientHoldOffTime = 10;
-
-        securityObj->instanceList = LWM2M_LIST_ADD(securityObj->instanceList, targetP);
-
-        securityObj->readFunc = prv_security_read;
-#ifdef LWM2M_BOOTSTRAP
-        securityObj->writeFunc = prv_security_write;
-        securityObj->createFunc = prv_security_create;
-        securityObj->deleteFunc = prv_security_delete;
-#endif
+        return NULL;
     }
 
+    memset(securityObj, 0, sizeof(lwm2m_object_t));
+    securityObj->objID = LWM2M_SECURITY_OBJECT_ID;
+
+    // Manually create an hard-coded instance
+    targetP = (security_instance_t *)lwm2m_malloc(sizeof(security_instance_t));
+    if (!targetP)
+    {
+#ifdef WITH_LOGS
+        fprintf(stderr, "Failed to allocate security instance.\r\n");
+#endif
+        lwm2m_free(securityObj);
+        return NULL;
+    }
+
+    memset(targetP, 0, sizeof(security_instance_t));
+    targetP->securityMode = securityMode;
+    targetP->uri = lwm2m_strdup(serverUri);
+
+    if (!targetP->uri) {
+#ifdef WITH_LOGS
+        fprintf(stderr, "Failed to allocate memory for URI\r\n");
+#endif
+        goto error;
+    }
+
+    if (securityMode == LWM2M_SECURITY_MODE_PRE_SHARED_KEY)
+    {
+        if (psk == NULL || clientCertificateOrPskId == NULL || pskLen < 1)
+        {
+#ifdef WITH_LOGS
+            fprintf(stderr, "Bad parameters for PSK mode.\r\n");
+#endif
+            goto error;
+        }
+
+        targetP->publicIdentity = lwm2m_strdup(clientCertificateOrPskId);
+        targetP->publicIdLen = strlen(clientCertificateOrPskId);
+        targetP->secretKey = (char *)lwm2m_malloc(pskLen);
+        if (!targetP->secretKey)
+        {
+#ifdef WITH_LOGS
+            fprintf(stderr, "Failed to allocate secretKey.\r\n");
+#endif
+            goto error;
+        }
+
+        memcpy(targetP->secretKey, psk, pskLen);
+        targetP->secretKeyLen = pskLen;
+    }
+
+    if (securityMode == LWM2M_SECURITY_MODE_CERTIFICATE)
+    {
+        if (!convert_pem_x509_to_der(serverCertificate, &targetP->serverPublicKey, &targetP->serverPublicKeyLen))
+        {
+#ifdef WITH_LOGS
+            fprintf(stderr, "Failed to parse server certificate\r\n");
+#endif
+        }
+
+        if (!convert_pem_x509_to_der(clientCertificateOrPskId, &targetP->publicIdentity, &targetP->publicIdLen))
+        {
+#ifdef WITH_LOGS
+            fprintf(stderr, "Failed to parse client certificate\r\n");
+#endif
+            goto error;
+        }
+
+        if (!convert_pem_privatekey_to_der(psk, &targetP->secretKey, &targetP->secretKeyLen))
+        {
+#ifdef WITH_LOGS
+            fprintf(stderr, "Failed to parse private key (Certificate mode)\r\n");
+#endif
+            goto error;
+        }
+    }
+
+    // ARTIK Cloud does not support NoSec mode
+    if (securityMode == LWM2M_SECURITY_MODE_NONE)
+    {
+#ifdef WITH_LOGS
+        fprintf(stderr, "NoSec is not supported.\r\n");
+#endif
+        goto error;
+    }
+
+    targetP->isBootstrap = isBootstrap;
+    targetP->shortID = serverId;
+    targetP->clientHoldOffTime = 10;
+
+    securityObj->instanceList = LWM2M_LIST_ADD(securityObj->instanceList, targetP);
+
+    securityObj->readFunc = prv_security_read;
+#ifdef LWM2M_BOOTSTRAP
+    securityObj->writeFunc = prv_security_write;
+    securityObj->createFunc = prv_security_create;
+    securityObj->deleteFunc = prv_security_delete;
+#endif
+
     return securityObj;
+
+error:
+    if (targetP) {
+        if (targetP->serverPublicKey)
+            lwm2m_free(targetP->serverPublicKey);
+        if (targetP->publicIdentity)
+            lwm2m_free(targetP->publicIdentity);
+        if (targetP->secretKey)
+            lwm2m_free(targetP->secretKey);
+        if (targetP->uri)
+            lwm2m_free(targetP->uri);
+        lwm2m_free(targetP);
+    }
+    clean_security_object(securityObj);
+
+    return NULL;
 }
 
 char * get_server_uri(lwm2m_object_t * objectP,

@@ -275,15 +275,21 @@ lwm2m_object_t * get_object_conn_m(object_conn_monitoring_t *default_value)
         if (NULL != connObj->userData)
         {
             conn_m_data_t *conn_data = (conn_m_data_t*) connObj->userData;
+
+            memset(conn_data, 0, sizeof(conn_m_data_t));
             conn_data->obj = default_value;
             conn_data->cellId = default_value->cell_id;
             conn_data->signalStrength = default_value->radio_signal_strength;
             conn_data->linkQuality = default_value->link_quality;
             conn_data->linkUtilization = default_value->link_utilization;
-            strncpy(conn_data->ipAddresses[0], default_value->ip_addr, IPV46_MAX_ADDR_LEN);
-            strncpy(conn_data->ipAddresses[1], default_value->ip_addr2, IPV46_MAX_ADDR_LEN);
-            strncpy(conn_data->routerIpAddresses[0], default_value->router_ip_addr, IPV46_MAX_ADDR_LEN);
-            strncpy(conn_data->routerIpAddresses[1], default_value->router_ip_addr2, IPV46_MAX_ADDR_LEN);
+            strncpy(conn_data->ipAddresses[0], default_value->ip_addr,
+                    IPV46_MAX_ADDR_LEN - 1);
+            strncpy(conn_data->ipAddresses[1], default_value->ip_addr2,
+                    IPV46_MAX_ADDR_LEN - 1);
+            strncpy(conn_data->routerIpAddresses[0],
+                    default_value->router_ip_addr, IPV46_MAX_ADDR_LEN - 1);
+            strncpy(conn_data->routerIpAddresses[1],
+                    default_value->router_ip_addr2, IPV46_MAX_ADDR_LEN - 1);
         }
         else
         {
@@ -442,7 +448,7 @@ uint8_t connectivity_moni_change(lwm2m_data_t *dataArray, lwm2m_object_t *object
 
         for (i=0; i<num; i++)
         {
-            if (parsed[i].value.asBuffer.length > LWM2M_MAX_STR_LEN)
+            if (parsed[i].value.asBuffer.length >= LWM2M_MAX_STR_LEN)
             {
 #ifdef WITH_LOGS
                 fprintf(stderr, "connectivity_moni_change: passed string is too big to be an IP address\r\n");
@@ -451,8 +457,8 @@ uint8_t connectivity_moni_change(lwm2m_data_t *dataArray, lwm2m_object_t *object
             }
 
             memset(data->obj->apn, 0, LWM2M_MAX_STR_LEN);
-            memcpy(data->obj->apn, parsed[i].value.asBuffer.buffer, parsed[i].value.asBuffer.length);
-            data->obj->apn[parsed[i].value.asBuffer.length] = '\0';
+            memcpy(data->obj->apn, parsed[i].value.asBuffer.buffer,
+                parsed[i].value.asBuffer.length);
             lwm2m_free(parsed[i].value.asBuffer.buffer);
             result = COAP_204_CHANGED;
         }

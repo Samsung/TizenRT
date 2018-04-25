@@ -35,14 +35,18 @@ bool convert_pem_privatekey_to_der(const char *private_key_pem, char **private_k
 		return false;
 	}
 
-	*len = mbedtls_pk_write_key_der(&pkey, (unsigned char *)pk_der, sizeof(pk_der));
-
-	if (*len < 0) {
+	ret = mbedtls_pk_write_key_der(&pkey, (unsigned char *)pk_der, sizeof(pk_der));
+	if ((ret < 0) || (ret > UINT16_MAX)){
 		mbedtls_pk_free(&pkey);
 		return false;
 	}
 
+	*len = (uint16_t)ret;
 	*private_key_der = (char *)lwm2m_malloc(*len);
+	if (!*private_key_der) {
+		return false;
+	}
+
 	memcpy(*private_key_der, pk_der + sizeof(pk_der) - *len, *len);
 
 	mbedtls_pk_free(&pkey);

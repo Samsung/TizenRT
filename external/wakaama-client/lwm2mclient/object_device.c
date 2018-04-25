@@ -174,7 +174,8 @@ static void prv_notify_resource_changed(device_data_t *client, char *uri, lwm2m_
     {
         lwm2m_resource_t params;
 
-        strncpy(params.uri, uri, LWM2M_MAX_URI_LEN);
+        memset(&params, 0, sizeof(params));
+        strncpy(params.uri, uri, LWM2M_MAX_URI_LEN - 1);
         params.buffer = data->value.asBuffer.buffer;
         params.length = data->value.asBuffer.length;
 

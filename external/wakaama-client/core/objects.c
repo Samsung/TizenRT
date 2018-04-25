@@ -713,6 +713,8 @@ int object_getServers(lwm2m_context_t * contextP)
             else
             {
                 lwm2m_list_t * serverInstP;     // instanceID of the server in the LWM2M Server Object
+                if (!serverObjP)
+                    return -1;
 
                 serverInstP = prv_findServerInstance(serverObjP, targetP->shortID);
                 if (serverInstP == NULL)
