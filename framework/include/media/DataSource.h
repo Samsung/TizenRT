@@ -20,6 +20,7 @@
 #define __MEDIA_DATASOURCE_H
 
 #include <iostream>
+#include <media/MediaUtils.h>
 
 namespace media {
 /**
