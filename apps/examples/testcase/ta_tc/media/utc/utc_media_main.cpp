@@ -27,13 +27,7 @@
 #include <gtest/gtest.h>
 #include <iostream>
 #include "tc_common.h"
-
-TEST(SimpleTest, SubTest1)
-{
-	// will do implementation for media test case
-	ASSERT_TRUE(1 == 1);
-	EXPECT_EQ(1, 1);
-}
+#include "utc_media_player.cpp"
 
 int gtest_run(int *argc, char **argv)
 {
