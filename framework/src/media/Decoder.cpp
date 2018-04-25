@@ -1,3 +1,21 @@
+/* ****************************************************************
+ *
+ * Copyright 2018 Samsung Electronics All Rights Reserved.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ *
+ ******************************************************************/
+
 #include <tinyara/config.h>
 #include <string.h>
 #include "Decoder.h"
@@ -11,7 +29,7 @@ namespace media {
 Decoder::Decoder()
 {
 #ifdef CONFIG_AUDIO_CODEC
-	memset(&mPlayer, 0, sizeof(mPlayer));
+	memset(&mPlayer, 0, sizeof(pv_player_t));
 	if (pv_player_init(&mPlayer, CONFIG_AUDIO_CODEC_RINGBUFFER_SIZE, this, _configFunc, nullptr, nullptr) !=
 		PV_SUCCESS) {
 		meddbg("Error! pv_player_init failed!\n");

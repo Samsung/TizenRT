@@ -46,7 +46,8 @@ int PlayerWorker::entry()
 			if (mCurPlayer && (mCurPlayer->mCurState == PLAYER_STATE_PLAYING)) {
 				shared_ptr<Decoder> mDecoder = mCurPlayer->mInputDataSource->getDecoder();
 				if(mDecoder) {
-					size_t num_read = mCurPlayer->mInputDataSource->read(mCurPlayer->mBuffer, std::min(mCurPlayer->mBufSize, mDecoder->getDataSpace()));
+					size_t num_read = mCurPlayer->mInputDataSource->read(mCurPlayer->mBuffer,
+						(mCurPlayer->mBufSize < mDecoder->getDataSpace()) ? mCurPlayer->mBufSize : mDecoder->getDataSpace());
 					medvdbg("MediaPlayer Worker(has mDecoder) : num_read = %d\n", num_read);
 
 					/* Todo: Below code has an issue about file EOF.
