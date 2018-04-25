@@ -32,8 +32,8 @@ Let us look in detail at the points above.
 The C++ binding for gRPC uses Service and Message classes to implement RPC stubs. Although the Service and Message classes can be written by hand,
 the *Protocol buffer* compiler provides a convenient specification language, as well as automated C++ code generation for these classes. TizenRT has ported *Protocol buffer* under
 `external/protobuf` folder, so it is highly recommended to use this external module to generate the aforestated classes.
-Accordingly, please include `CONFIG_PROTOBUF` in your TizenRT build configuration as well.
-You can refer to `external/protobuf/Kconfig` for details of this configuration.
+Accordingly, please include `CONFIG_PROTOBUF` in your TizenRT build configuration as well. You can refer to `external/protobuf/Kconfig` for details of this configuration. In order to generate stub code from `protobuf` specifications, `gRPC` features a set of plugins, one for each programming language. TizenRT requires the `grpc-cpp-plugin` to convert `.proto` files into C++ implementation of Message and Service classes. For this purpose, additional plugins must be installed on the host build environment (your Linux machine or VM). To do so, clone the `gRPC v1.9x` branch on Github, and follow the installation steps described therein.
+
 In the following subsection, we describe in detail how
 to include the `protoc` compilation command in TizenRT's application-level `Makefile`.
 
@@ -54,7 +54,7 @@ $(CXXSRCS): %$(GENCXXEXT): %$(PROTOEXT)
 $(CXXSRCS2): %$(SERVICECXXEXT): %$(PROTOEXT)
 	protoc -I . --grpc_out=. --plugin=protoc-gen-grpc=`which grpc_cpp_plugin` $<
 ```
-After the `protoc` step shown above, the Message class and Service class sources are compiled to generate object files of type `.pb.o` and `.grpc.pb.o` respectively.
+The `protoc` step above uses the `grpc_cpp_plugin` that comes with the `gRPC` installation on your host build machine. After the `protoc` step shown above, the Message class and Service class sources are compiled to generate object files of type `.pb.o` and `.grpc.pb.o` respectively.
 These object files are combined together with the main application source file under the static library `os/build/libraries/libapps.a`.
 
 Additionally, applications using gRPC need to be run through an `ASYNC` task from TASH, given their memory consumption. Accordingly, you need
