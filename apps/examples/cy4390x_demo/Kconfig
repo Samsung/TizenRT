@@ -6,5 +6,6 @@
 config EXAMPLES_CY4390x_DEMO
 	bool "cy4390x demo example"
 	default n
+	depends on ARCH_BOARD_CY4390x
 	---help---
 		Enable the cy4390x demo example
