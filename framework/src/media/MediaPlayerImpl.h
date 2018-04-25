@@ -43,7 +43,7 @@ public:
 public:
 	player_state_t mCurState;
 	unsigned char* mBuffer;
-	unsigned int mBufSize;
+	size_t mBufSize;
 	static int mRefCnt;
 	std::mutex mCmdMtx;
 	std::condition_variable mSyncCv;

@@ -28,6 +28,11 @@ namespace media {
 std::unique_ptr<PlayerWorker> PlayerWorker::mWorker;
 std::once_flag PlayerWorker::mOnceFlag;
 
+static const size_t& min2(const size_t& a, const size_t& b)
+{
+	return a < b ? a : b;
+}
+
 PlayerWorker::PlayerWorker()
 	: mRefCnt{0}
 {
@@ -46,7 +51,7 @@ int PlayerWorker::entry()
 			if (mCurPlayer && (mCurPlayer->mCurState == PLAYER_STATE_PLAYING)) {
 				shared_ptr<Decoder> mDecoder = mCurPlayer->mInputDataSource->getDecoder();
 				if(mDecoder) {
-					size_t num_read = mCurPlayer->mInputDataSource->read(mCurPlayer->mBuffer, std::min(mCurPlayer->mBufSize, mDecoder->getDataSpace()));
+					size_t num_read = mCurPlayer->mInputDataSource->read(mCurPlayer->mBuffer, min2(mCurPlayer->mBufSize, mDecoder->getDataSpace()));
 					medvdbg("MediaPlayer Worker(has mDecoder) : num_read = %d\n", num_read);
 
 					/* Todo: Below code has an issue about file EOF.
