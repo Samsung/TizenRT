@@ -67,7 +67,7 @@ public:
 	std::condition_variable mSyncCv;
 	int mCurVolume;
 	std::shared_ptr<MediaPlayerObserverInterface> mPlayerObserver;
-	std::shared_ptr<stream::InputDataSource> mInputDataSource;
+	std::unique_ptr<stream::InputDataSource> mInputDataSource;
 	int mId;
 };
 } // namespace media
