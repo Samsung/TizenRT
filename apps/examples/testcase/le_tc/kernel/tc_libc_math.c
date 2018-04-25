@@ -992,7 +992,7 @@ static void tc_libc_math_cosl(void)
 static void tc_libc_math_erf(void)
 {
 	const double in_val[] = { 1, -1, ZERO, 0.5, -0.5 };
-	const double sol_val[] = { 0.8427006858353, -217.6481312007792, 0, 0.52049987781, -132.8284539391262 };
+	const double sol_val[] = { 0.842700689747, -0.842700689747, ZERO, 0.520500016304, -0.520500016304 };
 	double ret_val[SIZE(sol_val, double)];
 	int erf_idx;
 
@@ -1018,7 +1018,7 @@ static void tc_libc_math_erf(void)
 static void tc_libc_math_erff(void)
 {
 	const float in_val[] = { 1, -1, ZERO, 0.5, -0.5 };
-	const float sol_val[] = { 0.8427006858353, -217.6480102539062, 0, 0.52049987781, -132.8285064697266 };
+	const float sol_val[] = { 0.842700689747, -0.842700689747, ZERO, 0.520500016304, -0.520500016304 };
 	float ret_val[SIZE(sol_val, float)];
 	int erff_idx;
 
@@ -1044,7 +1044,7 @@ static void tc_libc_math_erff(void)
 static void tc_libc_math_erfl(void)
 {
 	const long double in_val[] = { 1, -1, ZERO, 0.5, -0.5 };
-	const long double sol_val[] = { 0.8427006858353, -217.6481312007792, 0, 0.52049987781, -132.8284539391262 };
+	const long double sol_val[] = { 0.842700689747, -0.842700689747, ZERO, 0.520500016304, -0.520500016304 };
 	long double ret_val[SIZE(sol_val, long double)];
 	int erfl_idx;
 
@@ -1651,7 +1651,7 @@ static void tc_libc_math_frexp(void)
 static void tc_libc_math_frexpf(void)
 {
 	const float in_val[] = { 8.0, 2.3, -10.0 };
-	const float sol_val[] = { 1, 0.575, 0 };
+	const float sol_val[] = { 0.99999976158142, 0.574999988079071, 0 };
 	const float n_val[] = { 3, 2, 2147483647 };
 	float ret_val[SIZE(sol_val, float)];
 	int n[SIZE(sol_val, float)];
@@ -1984,7 +1984,7 @@ static void tc_libc_math_ldexp(void)
 static void tc_libc_math_ldexpf(void)
 {
 	const float in_val[] = { 0.95, 0, -10 };
-	const float sol_val[] = { 15.1999998092651, 0, -10239.9990234375000 };
+	const float sol_val[] = { 15.200005531311, 0, -10240.003906250 };
 	float ret_val[SIZE(sol_val, float)];
 	int n[] = { 4, -2, 10 };
 	int ldexpf_idx;
