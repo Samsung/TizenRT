@@ -22,7 +22,7 @@ public:
 private:
 #ifdef CONFIG_AUDIO_CODEC
 	static int _configFunc(void* user_data, int audio_type, void* dec_ext);
-	pv_player_t mPlayer;
+	pv_player_p mPlayer;
 #endif
 };
 } // namespace media
