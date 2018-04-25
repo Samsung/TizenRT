@@ -24,9 +24,10 @@ namespace media {
 std::unique_ptr<PlayerObserverWorker> PlayerObserverWorker::mWorker;
 std::once_flag PlayerObserverWorker::mOnceFlag;
 
-PlayerObserverWorker::PlayerObserverWorker()
+PlayerObserverWorker::PlayerObserverWorker() : mRefCnt{0}
 {
 }
+
 PlayerObserverWorker::~PlayerObserverWorker()
 {
 }
