@@ -157,9 +157,10 @@ public:
 	 * @details @b #include <media/MediaPlayer.h>
 	 * This function is sync call apis
 	 * @param[in] dataSource The dataSource that the config of input data
+	 * @return The result of the setDataSource operation
 	 * @since TizenRT v2.0 PRE
 	 */
-	void setDataSource(std::unique_ptr<stream::InputDataSource>);
+	player_result_t setDataSource(std::unique_ptr<stream::InputDataSource>);
 	/**
 	 * @brief Sets the observer of MediaPlayer
 	 * @details @b #include <media/MediaPlayer.h>
