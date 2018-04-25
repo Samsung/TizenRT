@@ -95,9 +95,8 @@ static int sdr_command(int argc, char *argv[]);
 static int dm_command(int argc, char *argv[]);
 
 static artik_websocket_handle ws_handle;
-static artik_lwm2m_config *g_dm_config;
-static artik_lwm2m_handle g_dm_client;
-static struct ota_info *g_dm_info;
+static artik_lwm2m_handle g_dm_client = NULL;
+static struct ota_info *g_dm_info = NULL;
 
 const struct command cloud_commands[] = {
 	{ "device", "device <token> <device id> [<properties>]", device_command },
@@ -645,14 +644,22 @@ static int download_firmware(int argc, char *argv[])
 		{ "User-Agent", "Artik Firmware Updater"}
 	};
 
-	g_dm_info = malloc(sizeof(struct ota_info));
-	memset(g_dm_info, 0, sizeof(struct ota_info));
-	g_dm_info->remaining_header_size = OTA_FIRMWARE_HEADER_SIZE;
-
 	if (!lwm2m) {
 		fprintf(stderr, "Failed to request LWM2M module\n");
 		return 1;
 	}
+
+	/* Only allocate if was not allocated before */
+	if (!g_dm_info) {
+		g_dm_info = malloc(sizeof(struct ota_info));
+		if (!g_dm_info) {
+			fprintf(stderr, "Failed to allocate memory\n");
+			return 1;
+		}
+	}
+
+	memset(g_dm_info, 0, sizeof(struct ota_info));
+	g_dm_info->remaining_header_size = OTA_FIRMWARE_HEADER_SIZE;
 
 	if (!http) {
 		lwm2m->client_write_resource(
@@ -785,6 +792,9 @@ static int dm_command(int argc, char *argv[])
 	int ret = 0;
 	artik_lwm2m_module *lwm2m = NULL;
 	artik_ssl_config *ssl_config = NULL;
+	artik_lwm2m_config dm_config;
+
+	memset(&dm_config, 0, sizeof(dm_config));
 
 	if (!strcmp(argv[3], "connect")) {
 
@@ -805,13 +815,6 @@ static int dm_command(int argc, char *argv[])
 			goto exit;
 		}
 
-		g_dm_config = zalloc(sizeof(artik_lwm2m_config));
-		if (!g_dm_config) {
-			fprintf(stderr, "Failed to allocate memory for DM config\n");
-			ret = -1;
-			goto exit;
-		}
-
 		ssl_config = zalloc(sizeof(artik_ssl_config));
 		if (!ssl_config) {
 			fprintf(stderr, "Failed to allocate memory for DM SSL config\n");
@@ -824,40 +827,38 @@ static int dm_command(int argc, char *argv[])
 		ssl_config->ca_cert.len = sizeof(akc_root_ca);
 		ssl_config->verify_cert = ssl_config->se_config.use_se ?
 			ARTIK_SSL_VERIFY_NONE : ARTIK_SSL_VERIFY_REQUIRED;
-		g_dm_config->ssl_config = ssl_config;
 
-		g_dm_config->server_id = 123;
-		g_dm_config->server_uri = ssl_config->se_config.use_se ?
+		dm_config.ssl_config = ssl_config;
+		dm_config.server_id = 123;
+		dm_config.server_uri = ssl_config->se_config.use_se ?
 				"coaps+tcp://coaps-api.artik.cloud:5689" :
 				"coaps://coaps-api.artik.cloud:5686";
-		g_dm_config->lifetime = 30;
-		g_dm_config->name = strndup(argv[5], UUID_MAX_LEN);
-		g_dm_config->tls_psk_identity = g_dm_config->name;
-		g_dm_config->tls_psk_key = strndup(argv[4], UUID_MAX_LEN);
-		g_dm_config->objects[ARTIK_LWM2M_OBJECT_DEVICE] =
+		dm_config.lifetime = 30;
+		dm_config.name = strndup(argv[5], UUID_MAX_LEN);
+		dm_config.tls_psk_identity = dm_config.name;
+		dm_config.tls_psk_key = strndup(argv[4], UUID_MAX_LEN);
+		dm_config.objects[ARTIK_LWM2M_OBJECT_DEVICE] =
 			lwm2m->create_device_object("Samsung", "ARTIK05x", "1234567890", "1.0",
 						    "1.0", "1.0", "A05x", 0, 5000, 1500, 100, 1000000, 200000,
 						    "Europe/Paris", "+01:00", "U");
-		if (!g_dm_config->objects[ARTIK_LWM2M_OBJECT_DEVICE]) {
+		if (!dm_config.objects[ARTIK_LWM2M_OBJECT_DEVICE]) {
 			fprintf(stderr, "Failed to allocate memory for object device.");
-			free(g_dm_config);
 			ret = -1;
 			goto exit;
 		}
-		g_dm_config->objects[ARTIK_LWM2M_OBJECT_FIRMWARE] = lwm2m->create_firmware_object(
-			false,
-			"Artik/TizenRT",
-			OTA_FIRMWARE_VERSION);
-		if (!g_dm_config->objects[ARTIK_LWM2M_OBJECT_FIRMWARE]) {
+
+		dm_config.objects[ARTIK_LWM2M_OBJECT_FIRMWARE] =
+			lwm2m->create_firmware_object(false, "Artik/TizenRT",
+					OTA_FIRMWARE_VERSION);
+		if (!dm_config.objects[ARTIK_LWM2M_OBJECT_FIRMWARE]) {
 			fprintf(stderr, "Failed to allocate memory for object firmware.");
 			ret = -1;
 			goto exit;
 		}
-		ret = lwm2m->client_request(&g_dm_client, g_dm_config);
+
+		ret = lwm2m->client_request(&g_dm_client, &dm_config);
 		if (ret != S_OK) {
 			fprintf(stderr, "Failed to request lwm2m handle (%d)\n", ret);
-			lwm2m->free_object(g_dm_config->objects[ARTIK_LWM2M_OBJECT_DEVICE]);
-			free(g_dm_config);
 			ret = -1;
 			goto exit;
 		}
@@ -874,17 +875,9 @@ static int dm_command(int argc, char *argv[])
 			fprintf(stderr, "Failed to connect to the DM server (%d)\n", ret);
 			lwm2m->client_release(g_dm_client);
 			g_dm_client = NULL;
-			lwm2m->free_object(g_dm_config->objects[ARTIK_LWM2M_OBJECT_DEVICE]);
-			free(g_dm_config);
 			ret = -1;
 			goto exit;
 		}
-
-		lwm2m->free_object(g_dm_config->objects[ARTIK_LWM2M_OBJECT_DEVICE]);
-		free(g_dm_config->name);
-		free(g_dm_config->tls_psk_key);
-		free(g_dm_config->ssl_config);
-		free(g_dm_config);
 	} else if (!strcmp(argv[3], "disconnect")) {
 
 		if (!g_dm_client) {
@@ -994,6 +987,17 @@ static int dm_command(int argc, char *argv[])
 	}
 
 exit:
+	if (dm_config.objects[ARTIK_LWM2M_OBJECT_DEVICE])
+		lwm2m->free_object(dm_config.objects[ARTIK_LWM2M_OBJECT_DEVICE]);
+	if (dm_config.objects[ARTIK_LWM2M_OBJECT_FIRMWARE])
+		lwm2m->free_object(dm_config.objects[ARTIK_LWM2M_OBJECT_FIRMWARE]);
+	if (dm_config.name)
+		free(dm_config.name);
+	if (dm_config.tls_psk_key)
+		free(dm_config.tls_psk_key);
+	if (dm_config.ssl_config)
+		free(dm_config.ssl_config);
+
 	if (lwm2m)
 		artik_release_api_module(lwm2m);
 
