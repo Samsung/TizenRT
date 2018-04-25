@@ -1623,7 +1623,7 @@ static void tc_libc_math_frexp(void)
 {
 	const double in_val[] = { 8.0, 2.3, -10.0 };
 	const double sol_val[] = { 0.5, 0.575, -10 };
-	const double n_val[] = { 4, 2, 0 };
+	const int n_val[] = { 4, 2, 0 };
 	double ret_val[SIZE(sol_val, double)];
 	int n[SIZE(sol_val, double)];
 	int frexp_idx;
@@ -1633,7 +1633,7 @@ static void tc_libc_math_frexp(void)
 	for (frexp_idx = 0; frexp_idx < SIZE(sol_val, double); frexp_idx++) {
 		ret_val[frexp_idx] = frexp(in_val[frexp_idx], &n[frexp_idx]);
 		TC_ASSERT_LEQ("frexp", fabs(sol_val[frexp_idx] - ret_val[frexp_idx]), FLT_EPSILON);
-		TC_ASSERT_LEQ("frexp", fabs(n[frexp_idx] - n_val[frexp_idx]), FLT_EPSILON);
+		TC_ASSERT_EQ("frexp", n[frexp_idx], n_val[frexp_idx]);
 	}
 
 	TC_SUCCESS_RESULT();
@@ -1652,7 +1652,7 @@ static void tc_libc_math_frexpf(void)
 {
 	const float in_val[] = { 8.0, 2.3, -10.0 };
 	const float sol_val[] = { 0.99999976158142, 0.574999988079071, 0 };
-	const float n_val[] = { 3, 2, 2147483647 };
+	const int n_val[] = { 3, 2, 2147483647 };
 	float ret_val[SIZE(sol_val, float)];
 	int n[SIZE(sol_val, float)];
 	int frexpf_idx;
@@ -1661,8 +1661,8 @@ static void tc_libc_math_frexpf(void)
 
 	for (frexpf_idx = 0; frexpf_idx < SIZE(sol_val, float); frexpf_idx++) {
 		ret_val[frexpf_idx] = frexpf(in_val[frexpf_idx], &n[frexpf_idx]);
-		TC_ASSERT_LEQ("frexp", fabsf(sol_val[frexpf_idx] - ret_val[frexpf_idx]), FLT_EPSILON);
-		TC_ASSERT_LEQ("frexp", fabsf(n[frexpf_idx] - n_val[frexpf_idx]), FLT_EPSILON);
+		TC_ASSERT_LEQ("frexpf", fabsf(sol_val[frexpf_idx] - ret_val[frexpf_idx]), FLT_EPSILON);
+		TC_ASSERT_EQ("frexpf", n[frexpf_idx], n_val[frexpf_idx]);
 	}
 
 	TC_SUCCESS_RESULT();
@@ -1681,7 +1681,7 @@ static void tc_libc_math_frexpl(void)
 {
 	const long double in_val[] = { 8.0, 2.3, -10.0 };
 	const long double sol_val[] = { 0.5, 0.575, -10 };
-	const long double n_val[] = { 4, 2, 0 };
+	const int n_val[] = { 4, 2, 0 };
 	long double ret_val[SIZE(sol_val, long double)];
 	int n[SIZE(sol_val, long double)];
 	int frexpl_idx;
@@ -1690,8 +1690,8 @@ static void tc_libc_math_frexpl(void)
 
 	for (frexpl_idx = 0; frexpl_idx < SIZE(sol_val, long double); frexpl_idx++) {
 		ret_val[frexpl_idx] = frexpl(in_val[frexpl_idx], &n[frexpl_idx]);
-		TC_ASSERT_LEQ("frexp", fabsl(sol_val[frexpl_idx] - ret_val[frexpl_idx]), FLT_EPSILON);
-		TC_ASSERT_LEQ("frexp", fabsl(n[frexpl_idx] - n_val[frexpl_idx]), FLT_EPSILON);
+		TC_ASSERT_LEQ("frexpl", fabsl(sol_val[frexpl_idx] - ret_val[frexpl_idx]), FLT_EPSILON);
+		TC_ASSERT_EQ("frexpl", n[frexpl_idx], n_val[frexpl_idx]);
 	}
 
 	TC_SUCCESS_RESULT();
