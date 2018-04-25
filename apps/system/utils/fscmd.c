@@ -271,7 +271,7 @@ static int tash_cat(int argc, char **args)
 				memset(fscmd_buffer, 0, FSCMD_BUFFER_LEN);
 				ret = read(fd, fscmd_buffer, FSCMD_BUFFER_LEN);
 				if (ret > 0) {
-					write(destfd, fscmd_buffer, ret);
+					ret = write(destfd, fscmd_buffer, ret);
 				}
 			} while (ret > 0);
 

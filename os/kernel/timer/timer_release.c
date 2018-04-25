@@ -114,10 +114,6 @@ static inline void timer_free(struct posix_timer_s *timer)
 		irqrestore(flags);
 		sched_kfree(timer);
 	}
-
-	/* Mark this timer is not in use */
-
-	timer->pt_flags &= ~PT_FLAGS_INUSE;
 }
 
 /********************************************************************************
@@ -166,6 +162,12 @@ int timer_release(FAR struct posix_timer_s *timer)
 	 */
 
 	(void)wd_delete(timer->pt_wdog);
+
+	/* Mark this timer is not in use before releasing the timer.
+	 * This prevents returning some value when timer API is called after release
+	 */
+
+	timer->pt_flags &= ~PT_FLAGS_INUSE;
 
 	/* Release the timer structure */
 

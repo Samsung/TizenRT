@@ -18,10 +18,20 @@
 ###########################################################################
 TARGET=$1
 
+if ! which indent >/dev/null; then
+    echo "Need to install indent"
+    exit 1
+fi
+if ! which astyle >/dev/null; then
+    echo "Need to install astyle"
+    exit 1
+fi
+
 function USAGE()
 {
-    echo "usage: $0 <TARGET>"
-    echo "     <TARGET> : folder path or target files"
+    echo "usage: $0 TARGET"
+    echo "     TARGET: folder path or target files"
+    echo "Apply TizenRT C coding rule"
     echo ""
     echo "example:"
     echo "    $0 ../kernel"

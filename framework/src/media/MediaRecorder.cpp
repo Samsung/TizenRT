@@ -80,6 +80,11 @@ void MediaRecorder::setObserver(std::shared_ptr<MediaRecorderObserverInterface> 
 	mPMrImpl->setObserver(observer);
 }
 
+recorder_state_t MediaRecorder::getState()
+{
+	return mPMrImpl->getState();
+}
+
 MediaRecorder::~MediaRecorder()
 {
 }

@@ -65,8 +65,7 @@ recorder_result_t MediaRecorderImpl::destroy()
 	mrw.getQueue().enQueue(&MediaRecorderImpl::notifySync, shared_from_this());
 	mSyncCv.wait(lock);
 	mrw.stopWorker();
-
-	notifyObserver(OBSERVER_COMMAND_FINISHIED);
+	
 	mCurState = RECORDER_STATE_NONE;
 
 	return RECORDER_OK;
@@ -244,6 +243,7 @@ void MediaRecorderImpl::capture()
 
 void MediaRecorderImpl::notifySync()
 {
+	unique_lock<mutex> lock(mCmdMtx);
 	medvdbg("MediaRecorderImpl::notifySync()\n");
 	mSyncCv.notify_one();
 }

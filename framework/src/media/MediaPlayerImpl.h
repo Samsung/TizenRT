@@ -29,7 +29,7 @@ public:
 	int getVolume();
 	player_result_t setVolume(int);
 
-	void setDataSource(std::unique_ptr<stream::InputDataSource>);
+	player_result_t setDataSource(std::unique_ptr<stream::InputDataSource>);
 	void setObserver(std::shared_ptr<MediaPlayerObserverInterface>);
 
 	player_state_t getState();

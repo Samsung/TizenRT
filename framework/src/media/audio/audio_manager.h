@@ -89,7 +89,7 @@ audio_manager_result_t set_output_audio_volume(uint16_t volume);
  *
  * Description:
  *   Get the current volume level of the active input audio device.
-  *
+ *
  * Returned Value:
  *   On success, the current input volume level. Otherwise, a negative value.
  ****************************************************************************/
@@ -100,7 +100,7 @@ int get_input_audio_volume(void);
  *
  * Description:
  *   Get the current volume level of the active output audio device.
-  *
+ *
  * Returned Value:
  *   On success, the current output volume level. Otherwise, a negative value.
  ****************************************************************************/
@@ -111,7 +111,7 @@ int get_output_audio_volume(void);
  *
  * Description:
  *   Get the maximum volume level of an audio device.
-  *
+ *
  * Returned Value: The maximum volume level.
  ****************************************************************************/
 uint16_t get_max_audio_volume(void);

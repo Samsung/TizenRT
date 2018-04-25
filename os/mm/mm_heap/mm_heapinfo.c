@@ -371,8 +371,10 @@ void heapinfo_update_group_info(pid_t pid, int group, int type)
 				group_info[info_idx].pid = pid;
 				group_info[info_idx].group = group;
 				tcb = sched_gettcb(pid);
-				group_info[info_idx].stack_size = tcb->adj_stack_size;
-				heapinfo_update_group(tcb->adj_stack_size, pid);
+				if (tcb) {
+					group_info[info_idx].stack_size = tcb->adj_stack_size;
+					heapinfo_update_group(tcb->adj_stack_size, pid);
+				}
 				break;
 			}
 		}

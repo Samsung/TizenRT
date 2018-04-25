@@ -215,11 +215,17 @@ player_result_t MediaPlayerImpl::setVolume(int vol)
 	}
 }
 
-void MediaPlayerImpl::setDataSource(std::unique_ptr<stream::InputDataSource> source)
+player_result_t MediaPlayerImpl::setDataSource(std::unique_ptr<stream::InputDataSource> source)
 {
 	std::lock_guard<std::mutex> lock(mCmdMtx);
 	medvdbg("MediaPlayer setDataSource\n");
+	if (!source) {
+		meddbg("MediaPlayer setDataSource fail : invalid argument. DataSource should not be nullptr\n");
+		return PLAYER_ERROR;
+	}
+
 	mInputDataSource = std::move(source);
+	return PLAYER_OK;
 }
 
 void MediaPlayerImpl::setObserver(std::shared_ptr<MediaPlayerObserverInterface> observer)
@@ -249,6 +255,7 @@ player_result_t MediaPlayerImpl::seekTo(int msec)
 
 void MediaPlayerImpl::notifySync()
 {
+	std::unique_lock<std::mutex> lock(mCmdMtx);
 	mSyncCv.notify_one();
 }
 

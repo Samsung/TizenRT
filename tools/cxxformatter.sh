@@ -1,3 +1,4 @@
+#!/bin/bash
 ###########################################################################
 #
 # Copyright 2018 Samsung Electronics All Rights Reserved.
@@ -15,23 +16,41 @@
 # language governing permissions and limitations under the License.
 #
 ###########################################################################
-# Authentication/Crypto specific source files
 
-CSRCS+= cleartext.c
-CSRCS+= cram.c 
-CSRCS+= digest.c 
-CSRCS+= digest_sspi.c 
-CSRCS+= krb5_gssapi.c
-CSRCS+= krb5_sspi.c 
-CSRCS+= ntlm.c 
-CSRCS+= ntlm_sspi.c 
-CSRCS+= oauth2.c
-CSRCS+= spnego_gssapi.c
-CSRCS+= spnego_sspi.c
-CSRCS+= vauth.c
+CMD=clang-format
+OPTION="-i -style=file"
 
-DEPPATH += --dep-path vauth
-VPATH += :vauth
+if ! which ${CMD} >/dev/null; then
+	echo "Need to install clang-format"
+	exit 1
+fi
 
+function USAGE()
+{
+	echo "usage: $0 TARGET"
+	echo "     TARGET: folder path or target files"
+	echo "Apply TizenRT C++ coding rule"
+	echo ""
+	echo "example:"
+	echo "    $0 kernel/"
+	echo "    $0 framework/src/media apps/system"
+	echo "    $0 ../../abc.c"
+}
 
+if [ -z $1 ]; then
+	USAGE
+	exit 1
+fi
+if [ $1 == "--help" ]; then
+	USAGE
+	exit 1
+fi
+
+for target in "$@"; do
+	if [ -d "${target}" ]; then
+		find "${target}" -name *.cpp -o -name *.cxx -o -name *.cc -o -name *.h -exec ${CMD} ${OPTION} {} \;
+	else
+		${CMD} ${OPTION} ${target}
+	fi
+done
 

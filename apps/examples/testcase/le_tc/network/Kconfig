@@ -37,10 +37,7 @@ config TC_NET_ALL
 	select TC_NET_INET
 	select TC_NET_ETHER
 	select TC_NET_NETDB
-	select TC_NET_DUP
 	select ITC_NET_CLOSE
-	select ITC_NET_DUP
-	select ITC_NET_FCNTL
 	select ITC_NET_LISTEN
 	select ITC_NET_SETSOCKOPT
 	select ITC_NET_SEND
@@ -132,20 +129,8 @@ config TC_NET_NETDB
 	bool "netdb() api"
 	default n
 
-config TC_NET_DUP
-	bool "dup() api"
-	default n
-
 config ITC_NET_CLOSE
 	bool "ITC close() api"
-	default n
-
-config ITC_NET_DUP
-	bool "ITC dup() api"
-	default n
-
-config ITC_NET_FCNTL
-	bool "ITC fcntl() api"
 	default n
 
 config ITC_NET_LISTEN

@@ -375,8 +375,10 @@
 /* Define to 1 if you have the memrchr function or macro. */
 /* #undef HAVE_MEMRCHR */
 
+#ifndef __TIZENRT__
 /* Define to 1 if you have the MSG_NOSIGNAL flag. */
 #define HAVE_MSG_NOSIGNAL 1
+#endif
 
 /* Define to 1 if you have the <netdb.h> header file. */
 #define HAVE_NETDB_H 1
@@ -862,8 +864,10 @@
 /* Use TLS-SRP authentication */
 #define USE_TLS_SRP 1
 
+#ifndef __TIZENRT__
 /* Use Unix domain sockets */
 #define USE_UNIX_SOCKETS 1
+#endif
 
 /* Version number of package */
 #define VERSION "2.8.12"

@@ -29,8 +29,7 @@ namespace media {
  * @details @b #include <media/MediaPlayer.h>
  * @since TizenRT v2.0 PRE
  */
-typedef enum player_state_e
-{
+typedef enum player_state_e {
 	/** MediaPlayer object was created */
 	PLAYER_STATE_NONE,
 	/** MediaPlayer worker object was created */
@@ -48,8 +47,7 @@ typedef enum player_state_e
  * @details @b #include <media/MediaPlayer.h>
  * @since TizenRT v2.0 PRE
  */
-typedef enum player_result_e
-{
+typedef enum player_result_e {
 	/** MediaPlayer Error case */
 	PLAYER_ERROR,
 	/** MediaPlayer Success case */
@@ -159,9 +157,10 @@ public:
 	 * @details @b #include <media/MediaPlayer.h>
 	 * This function is sync call apis
 	 * @param[in] dataSource The dataSource that the config of input data
+	 * @return The result of the setDataSource operation
 	 * @since TizenRT v2.0 PRE
 	 */
-	void setDataSource(std::unique_ptr<stream::InputDataSource>);
+	player_result_t setDataSource(std::unique_ptr<stream::InputDataSource>);
 	/**
 	 * @brief Sets the observer of MediaPlayer
 	 * @details @b #include <media/MediaPlayer.h>
