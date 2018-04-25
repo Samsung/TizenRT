@@ -25,8 +25,11 @@
 #include <apps/platform/cxxinitialize.h>
 #include <errno.h>
 #include <gtest/gtest.h>
+#include <gmock/gmock.h>
 #include <iostream>
 #include "tc_common.h"
+
+#include "utc_media_recorder.cpp"
 #include "utc_media_player.cpp"
 
 int gtest_run(int *argc, char **argv)
@@ -35,7 +38,7 @@ int gtest_run(int *argc, char **argv)
 	return RUN_ALL_TESTS();
 }
 
-extern "C" 
+extern "C"
 {
 	#ifdef CONFIG_BUILD_KERNEL
 	int main(int argc, FAR char *argv[])
