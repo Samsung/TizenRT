@@ -25,24 +25,6 @@
 
 namespace media {
 /**
- * @brief current state of MediaRecorder
- * @details @b #include <media/MediaRecorder.h>
- * @since TizenRT v2.0 PRE
- */
-typedef enum recorder_state_e {
-	/** MediaRecorder object was created */
-	RECORDER_STATE_NONE,
-	/** MediaRecorder worker object was created */
-	RECORDER_STATE_IDLE,
-	/** MediaRecorder ready to record */
-	RECORDER_STATE_READY,
-	/** MediaRecorder do recording */
-	RECORDER_STATE_RECORDING,
-	/** MediaRecorder pause to record */
-	RECORDER_STATE_PAUSED
-} recorder_state_t;
-
-/**
  * @brief result of call the apis
  * @details @b #include <media/MediaRecorder.h>
  * @since TizenRT v2.0 PRE
@@ -140,7 +122,7 @@ public:
 	 * @brief Gets the current volume
 	 * @details @b #include <media/MediaRecorder.h>
 	 * This function is sync call apis
-	 * @return The value of current volume
+	 * @return The value of current mic volume
 	 * @since TizenRT v2.0 PRE
 	 */
 	int getVolume();
@@ -149,17 +131,19 @@ public:
 	 * @details @b #include <media/MediaRecorder.h>
 	 * This function is sync call apis
 	 * @param[in] vol The vol that the value of mic volume
+	 * @return The result of setting the mic volume
 	 * @since TizenRT v2.0 PRE
 	 */
-	void setVolume(int vol);
+	recorder_result_t setVolume(int vol);
 	/**
 	 * @brief Sets the DatSource of output data
 	 * @details @b #include <media/MediaRecorder.h>
 	 * This function is sync call apis
 	 * @param[in] dataSource The dataSource that the config of output data
+	 * @return The result of setting the datasource
 	 * @since TizenRT v2.0 PRE
 	 */
-	void setDataSource(std::unique_ptr<stream::OutputDataSource> dataSource);
+	recorder_result_t setDataSource(std::unique_ptr<stream::OutputDataSource> dataSource);
 	/**
 	 * @brief Sets the observer of MediaRecorder
 	 * @details @b #include <media/MediaRecorder.h>
@@ -168,14 +152,6 @@ public:
 	 * @since TizenRT v2.0 PRE
 	 */
 	void setObserver(std::shared_ptr<MediaRecorderObserverInterface> observer);
-	/**
-	 * @brief Gets the current state of MediaRecorder
-	 * @details @b #include <media/MediaRecorder.h>
-	 * This function is sync call apis
-	 * @return The value of current state
-	 * @since TizenRT v2.0 PRE
-	 */
-	recorder_state_t getState();
 
 private:
 	std::shared_ptr<MediaRecorderImpl> mPMrImpl;

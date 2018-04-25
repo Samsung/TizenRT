@@ -32,7 +32,7 @@ MediaRecorderImpl::MediaRecorderImpl()
 
 recorder_result_t MediaRecorderImpl::create()
 {
-	unique_lock<mutex> lock(mCmdMtx);
+	std::unique_lock<std::mutex> lock(mCmdMtx);
 	medvdbg("MediaRecorderImpl::create()");
 
 	if (mCurState != RECORDER_STATE_NONE) {
@@ -52,7 +52,7 @@ recorder_result_t MediaRecorderImpl::create()
 
 recorder_result_t MediaRecorderImpl::destroy()
 {
-	unique_lock<mutex> lock(mCmdMtx);
+	std::unique_lock<std::mutex> lock(mCmdMtx);
 
 	medvdbg("MediaRecorderImpl::destroy()");
 
@@ -64,16 +64,23 @@ recorder_result_t MediaRecorderImpl::destroy()
 	RecorderWorker& mrw = RecorderWorker::getWorker();
 	mrw.getQueue().enQueue(&MediaRecorderImpl::notifySync, shared_from_this());
 	mSyncCv.wait(lock);
-	mrw.stopWorker();
-	
-	mCurState = RECORDER_STATE_NONE;
 
+	RecorderObserverWorker& row = RecorderObserverWorker::getWorker();
+	row.stopWorker();
+	mRecorderObserver = nullptr;
+
+	mrw.stopWorker();
+
+	stream::OutputDataSource * raw = mOutputDataSource.release();
+	delete raw;
+
+	mCurState = RECORDER_STATE_NONE;
 	return RECORDER_OK;
 }
 
 recorder_result_t MediaRecorderImpl::prepare()
 {
-	unique_lock<mutex> lock(mCmdMtx);
+	std::unique_lock<std::mutex> lock(mCmdMtx);
 
 	medvdbg("MediaRecorderImpl::prepare()\n");
 
@@ -98,7 +105,7 @@ recorder_result_t MediaRecorderImpl::prepare()
 		return RECORDER_ERROR;
 	}
 
-	mBuffSize = get_input_frames_byte_size(get_input_frame_count());	
+	mBuffSize = get_input_frames_byte_size(get_input_frame_count());
 	mBuffer = new unsigned char[mBuffSize];
 	if (!mBuffer) {
 		meddbg("MediaRecorderImpl::prepare() - mBuffer alloc failed\n");
@@ -111,7 +118,7 @@ recorder_result_t MediaRecorderImpl::prepare()
 
 recorder_result_t MediaRecorderImpl::unprepare()
 {
-	unique_lock<mutex> lock(mCmdMtx);
+	std::unique_lock<std::mutex> lock(mCmdMtx);
 
 	medvdbg("MediaRecorderImpl::unprepare()\n");
 
@@ -151,7 +158,7 @@ recorder_result_t MediaRecorderImpl::unprepare()
 
 recorder_result_t MediaRecorderImpl::start()
 {
-	lock_guard<mutex> lock(mCmdMtx);
+	std::lock_guard<std::mutex> lock(mCmdMtx);
 	medvdbg("MediaRecorderImpl::start()\n");
 	RecorderWorker& mrw = RecorderWorker::getWorker();
 	mrw.getQueue().enQueue(&RecorderWorker::startRecorder, &mrw, shared_from_this());
@@ -161,7 +168,7 @@ recorder_result_t MediaRecorderImpl::start()
 
 recorder_result_t MediaRecorderImpl::stop()
 {
-	lock_guard<mutex> lock(mCmdMtx);
+	std::lock_guard<std::mutex> lock(mCmdMtx);
 	medvdbg("MediaRecorderImpl::stop()\n");
 	RecorderWorker& mrw = RecorderWorker::getWorker();
 	mrw.getQueue().enQueue(&RecorderWorker::stopRecorder, &mrw, shared_from_this(), true);
@@ -171,7 +178,7 @@ recorder_result_t MediaRecorderImpl::stop()
 
 recorder_result_t MediaRecorderImpl::pause()
 {
-	lock_guard<mutex> lock(mCmdMtx);
+	std::lock_guard<std::mutex> lock(mCmdMtx);
 	medvdbg("MediaRecorderImpl::pause()\n");
 	RecorderWorker& mrw = RecorderWorker::getWorker();
 	mrw.getQueue().enQueue(&RecorderWorker::pauseRecorder, &mrw, shared_from_this());
@@ -179,25 +186,50 @@ recorder_result_t MediaRecorderImpl::pause()
 	return RECORDER_OK;
 }
 
-recorder_result_t MediaRecorderImpl::getVolume()
+int MediaRecorderImpl::getVolume()
 {
-	lock_guard<mutex> lock(mCmdMtx);
+	std::lock_guard<std::mutex> lock(mCmdMtx);
 	medvdbg("MediaRecorderImpl::getVolume()\n");
+
+	if (mCurState == RECORDER_STATE_IDLE || mCurState == RECORDER_STATE_NONE) {
+		meddbg("MediaRecorderImpl::getVolume() - mCurState == RECORDER_STATE_IDLE || mCurState == RECORDER_STATE_NONE\n");
+		return 0;
+	}
+
+	return mCurVolume;
+}
+
+recorder_result_t MediaRecorderImpl::setVolume(int vol)
+{
+	std::lock_guard<std::mutex> lock(mCmdMtx);
+	medvdbg("MediaRecorderImpl::setVolume(int vol)\n");
+
+	if (mCurState == RECORDER_STATE_IDLE || mCurState == RECORDER_STATE_NONE) {
+		meddbg("MediaRecorderImpl::setVolume(int vol) - mCurState == RECORDER_STATE_IDLE || mCurState == RECORDER_STATE_NONE\n");
+		return RECORDER_ERROR;
+	}
+
+	mCurVolume = vol;
 	return RECORDER_OK;
 }
 
-void MediaRecorderImpl::setVolume(int vol)
+recorder_result_t MediaRecorderImpl::setDataSource(std::unique_ptr<stream::OutputDataSource> dataSource)
 {
-	lock_guard<mutex> lock(mCmdMtx);
-	medvdbg("MediaRecorderImpl::setVolume(int vol)\n");
-	mCurVolume = vol;
-}
+	std::lock_guard<std::mutex> lock(mCmdMtx);
+	medvdbg("MediaRecorderImpl::setDataSource(std::unique_ptr<stream::OutputDataSource> dataSource)\n");
+	
+	if (mCurState != RECORDER_STATE_IDLE) {
+		meddbg("MediaRecorderImpl::setDataSource : mCurState != RECORDER_STATE_IDLE\n");
+		return RECORDER_ERROR;
+	}
 
-void MediaRecorderImpl::setDataSource(std::unique_ptr<stream::OutputDataSource> dataSource)
-{
-	lock_guard<mutex> lock(mCmdMtx);
-	medvdbg("MediaRecorderImpl::setDataSource(OutputDataSource *_OutputDataSource)\n");
-	mOutputDataSource = std::move(dataSource);
+	if (!dataSource) {
+		meddbg("MediaRecorderImpl::setDataSource : datasource is nullptr\n");
+		return RECORDER_ERROR;
+	}
+
+	mOutputDataSource = std::move(dataSource);	
+	return RECORDER_OK;
 }
 
 recorder_state_t MediaRecorderImpl::getState()
@@ -214,8 +246,11 @@ void MediaRecorderImpl::setState(recorder_state_t state)
 
 void MediaRecorderImpl::setObserver(std::shared_ptr<MediaRecorderObserverInterface> observer)
 {
-	unique_lock<mutex> lock(mCmdMtx);
+	std::unique_lock<std::mutex> lock(mCmdMtx);
 	medvdbg("MediaRecorderImpl::setObserver(std::shared_ptr<MediaRecorderObserverInterface> observer)\n");
+	RecorderWorker& mrw = RecorderWorker::getWorker();
+	mrw.getQueue().enQueue(&MediaRecorderImpl::notifySync, shared_from_this());
+	mSyncCv.wait(lock);
 
 	RecorderObserverWorker& row = RecorderObserverWorker::getWorker();
 	row.startWorker();
@@ -231,10 +266,10 @@ void MediaRecorderImpl::capture()
 		int ret = mOutputDataSource->write(mBuffer, size);
 
 		if (ret < 0) {
-			meddbg("MediaRecorderImpl::startRecording - ret < 0\n");
+			meddbg("MediaRecorderImpl::capture() - ret < 0\n");
 		}
 	} else {
-		lock_guard<mutex> lock(mCmdMtx);
+		std::lock_guard<std::mutex> lock(mCmdMtx);
 		meddbg("MediaRecorderImpl::startRecording() - enqueue stopRecorder : errro code = %d\n", frames);
 		RecorderWorker& mrw = RecorderWorker::getWorker();
 		mrw.getQueue().enQueue(&RecorderWorker::stopRecorder, &mrw, shared_from_this(), false);
@@ -243,7 +278,7 @@ void MediaRecorderImpl::capture()
 
 void MediaRecorderImpl::notifySync()
 {
-	unique_lock<mutex> lock(mCmdMtx);
+	std::unique_lock<std::mutex> lock(mCmdMtx);
 	medvdbg("MediaRecorderImpl::notifySync()\n");
 	mSyncCv.notify_one();
 }
@@ -281,8 +316,5 @@ MediaRecorderImpl::~MediaRecorderImpl()
 			meddbg("MediaRecorderImpl::~MediaRecorderImpl() - destroy() != RECORDER_OK\n");
 		}
 	}
-
-	RecorderObserverWorker& row = RecorderObserverWorker::getWorker();
-	row.stopWorker();
 }
 } // namespace media

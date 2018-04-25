@@ -65,24 +65,19 @@ int MediaRecorder::getVolume()
 	return mPMrImpl->getVolume();
 }
 
-void MediaRecorder::setVolume(int vol)
+recorder_result_t MediaRecorder::setVolume(int vol)
 {
-	mPMrImpl->setVolume(vol);
+	return mPMrImpl->setVolume(vol);
 }
 
-void MediaRecorder::setDataSource(std::unique_ptr<stream::OutputDataSource> dataSource)
+recorder_result_t MediaRecorder::setDataSource(std::unique_ptr<stream::OutputDataSource> dataSource)
 {
-	mPMrImpl->setDataSource(std::move(dataSource));
+	return mPMrImpl->setDataSource(std::move(dataSource));
 }
 
 void MediaRecorder::setObserver(std::shared_ptr<MediaRecorderObserverInterface> observer)
 {
 	mPMrImpl->setObserver(observer);
-}
-
-recorder_state_t MediaRecorder::getState()
-{
-	return mPMrImpl->getState();
 }
 
 MediaRecorder::~MediaRecorder()
