@@ -190,7 +190,7 @@ int MediaPlayerImpl::getVolume()
 		return -1;
 	}
 
-	return get_audio_volume();
+	return get_output_audio_volume();
 }
 
 player_result_t MediaPlayerImpl::setVolume(int vol)
@@ -207,7 +207,7 @@ player_result_t MediaPlayerImpl::setVolume(int vol)
 		return PLAYER_ERROR;
 	}
 
-	if (!set_audio_volume(vol)) {
+	if (!set_output_audio_volume(vol)) {
 		mCurVolume = vol;
 		return PLAYER_OK;
 	} else {
