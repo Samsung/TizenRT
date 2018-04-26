@@ -263,7 +263,6 @@
 #define AUDIO_FU_UNDERFLOW          0x2000
 #define AUDIO_FU_OVERFLOW           0x4000
 #define AUDIO_FU_LATENCY            0x8000
-#define AUDIO_FU_MICGAIN            0x8001
 
 /* Processing Unit controls *************************************************/
 
