@@ -101,6 +101,44 @@ TEST_F(SimpleMediaPlayerTest, unprepare)
 	mp->destroy();
 }
 
+TEST_F(SimpleMediaPlayerTest, start)
+{
+	mp->create();
+	mp->setDataSource(std::move(source));
+	mp->prepare();
+
+	EXPECT_EQ(mp->start(), media::PLAYER_OK);
+
+	mp->unprepare();
+	mp->destroy();
+}
+
+TEST_F(SimpleMediaPlayerTest, pause)
+{
+	mp->create();
+	mp->setDataSource(std::move(source));
+	mp->prepare();
+	mp->start();
+
+	EXPECT_EQ(mp->pause(), media::PLAYER_OK);
+
+	mp->unprepare();
+	mp->destroy();
+}
+
+TEST_F(SimpleMediaPlayerTest, stop)
+{
+	mp->create();
+	mp->setDataSource(std::move(source));
+	mp->prepare();
+	mp->start();
+
+	EXPECT_EQ(mp->stop(), media::PLAYER_OK);
+
+	mp->unprepare();
+	mp->destroy();
+}
+
 TEST_F(SimpleMediaPlayerTest, setVolume)
 {
 	mp->create();
