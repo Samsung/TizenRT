@@ -91,14 +91,14 @@ public:
 	 * @return The channel count of the stream data.
 	 * @since TizenRT v2.0 PRE
 	 */
-	int getChannels();
+	unsigned char getChannels();
 	/**
 	 * @brief Gets the sample rate of the stream data.
 	 * @details @b #include <media/DataSource.h>
 	 * @return The sample rate of the stream data.
 	 * @since TizenRT v2.0 PRE
 	 */
-	int getSampleRate();
+	unsigned int getSampleRate();
 	/**
 	 * @brief Gets the pcm format of the stream data.
 	 * @details @b #include <media/DataSource.h>
@@ -113,7 +113,7 @@ public:
 	 * @param[in] channels The channels that the channel count of stream data
 	 * @since TizenRT v2.0 PRE
 	 */
-	void setChannels(unsigned short channels);
+	void setChannels(unsigned char channels);
 	/**
 	 * @brief Sets the sample rate of the stream data.
 	 * @details @b #include <media/DataSource.h>
@@ -130,7 +130,7 @@ public:
 	void setPcmFormat(int pcmFormat);
 
 private:
-	unsigned short mChannels;
+	unsigned char mChannels;
 	unsigned int mSampleRate;
 	int mPcmFormat;
 };
