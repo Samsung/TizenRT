@@ -69,6 +69,10 @@ bool FileOutputDataSource::isPrepare()
 
 size_t FileOutputDataSource::write(unsigned char* buf, size_t size)
 {
+	if (!buf) {
+		return (size_t)0;
+	}
+
 	return fwrite(buf, sizeof(unsigned char), size, mFp);
 }
 
