@@ -20,7 +20,7 @@
 #include <media/MediaPlayer.h>
 #include <media/FileInputDataSource.h>
 
-#define MEDIAPLAYER_TEST_FILE "/ramfs/utc_media_player.raw"
+#define MEDIAPLAYER_TEST_FILE "/mnt/utc_media_player.raw"
 
 class SimpleMediaPlayerTest : public ::testing::Test
 {
@@ -29,6 +29,7 @@ protected:
 	{
 		fp = fopen(MEDIAPLAYER_TEST_FILE, "w");
 		fputs("dummyfile", fp);
+		fclose(fp);
 		source = std::move(std::unique_ptr<media::stream::FileInputDataSource>(
 			new media::stream::FileInputDataSource(MEDIAPLAYER_TEST_FILE)));
 		source->setSampleRate(16000);
@@ -37,7 +38,6 @@ protected:
 	}
 	virtual void TearDown()
 	{
-		fclose(fp);
 		remove(MEDIAPLAYER_TEST_FILE);
 		delete mp;
 	}
@@ -54,7 +54,7 @@ TEST_F(SimpleMediaPlayerTest, getState)
 
 TEST_F(SimpleMediaPlayerTest, create)
 {
-	ASSERT_EQ(mp->create(), media::PLAYER_OK);
+	EXPECT_EQ(mp->create(), media::PLAYER_OK);
 	EXPECT_EQ(mp->getState(), media::PLAYER_STATE_IDLE);
 
 	mp->destroy();
@@ -64,7 +64,7 @@ TEST_F(SimpleMediaPlayerTest, destroy)
 {
 	mp->create();
 
-	ASSERT_EQ(mp->destroy(), media::PLAYER_OK);
+	EXPECT_EQ(mp->destroy(), media::PLAYER_OK);
 	EXPECT_EQ(mp->getState(), media::PLAYER_STATE_NONE);
 }
 
@@ -72,7 +72,7 @@ TEST_F(SimpleMediaPlayerTest, setDataSource)
 {
 	mp->create();
 
-	ASSERT_EQ(mp->setDataSource(std::move(source)), media::PLAYER_OK);
+	EXPECT_EQ(mp->setDataSource(std::move(source)), media::PLAYER_OK);
 
 	mp->destroy();
 }
@@ -82,7 +82,7 @@ TEST_F(SimpleMediaPlayerTest, prepare)
 	mp->create();
 	mp->setDataSource(std::move(source));
 
-	ASSERT_EQ(mp->prepare(), media::PLAYER_OK);
+	EXPECT_EQ(mp->prepare(), media::PLAYER_OK);
 	EXPECT_EQ(mp->getState(), media::PLAYER_STATE_READY);
 
 	mp->unprepare();
@@ -98,6 +98,44 @@ TEST_F(SimpleMediaPlayerTest, unprepare)
 	EXPECT_EQ(mp->unprepare(), media::PLAYER_OK);
 	EXPECT_EQ(mp->getState(), media::PLAYER_STATE_IDLE);
 
+	mp->destroy();
+}
+
+TEST_F(SimpleMediaPlayerTest, start)
+{
+	mp->create();
+	mp->setDataSource(std::move(source));
+	mp->prepare();
+
+	EXPECT_EQ(mp->start(), media::PLAYER_OK);
+
+	mp->unprepare();
+	mp->destroy();
+}
+
+TEST_F(SimpleMediaPlayerTest, pause)
+{
+	mp->create();
+	mp->setDataSource(std::move(source));
+	mp->prepare();
+	mp->start();
+
+	EXPECT_EQ(mp->pause(), media::PLAYER_OK);
+
+	mp->unprepare();
+	mp->destroy();
+}
+
+TEST_F(SimpleMediaPlayerTest, stop)
+{
+	mp->create();
+	mp->setDataSource(std::move(source));
+	mp->prepare();
+	mp->start();
+
+	EXPECT_EQ(mp->stop(), media::PLAYER_OK);
+
+	mp->unprepare();
 	mp->destroy();
 }
 
