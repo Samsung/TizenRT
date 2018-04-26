@@ -26,8 +26,7 @@
 #include "MediaQueue.h"
 
 namespace media {
-typedef enum player_observer_command_e
-{
+typedef enum player_observer_command_e {
 	PLAYER_OBSERVER_COMMAND_STARTED,
 	PLAYER_OBSERVER_COMMAND_FINISHIED,
 	PLAYER_OBSERVER_COMMAND_ERROR
