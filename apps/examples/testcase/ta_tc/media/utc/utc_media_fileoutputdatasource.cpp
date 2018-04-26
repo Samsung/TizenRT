@@ -110,3 +110,22 @@ TEST_F(FileOutputDataSourceTest, CloseFilePositiveWithIsPrepare)
 
 	EXPECT_EQ(ret, false);
 }
+
+TEST_F(FileOutputDataSourceTest, WriteFilePositive)
+{
+	unsigned char dummy[] = "dummy";
+	size_t dummySize = 6;
+	dataSource->open();
+	size_t ret = dataSource->write(dummy, dummySize);
+	dataSource->close();
+
+	EXPECT_EQ(ret, dummySize);
+}
+
+TEST_F(FileOutputDataSourceTest, WriteFileNegative)
+{
+	dataSource->open();
+	size_t ret = dataSource->write(nullptr, 1);
+
+	EXPECT_EQ(ret, 0);
+}
