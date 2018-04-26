@@ -150,6 +150,11 @@ player_result_t MediaPlayerImpl::start()
 {
 	std::lock_guard<std::mutex> lock(mCmdMtx);
 	medvdbg("MediaPlayer start\n");
+	if (mCurState == PLAYER_STATE_NONE || mCurState == PLAYER_STATE_IDLE) {
+		meddbg("MediaPlayer unprepare fail : wrong state\n");
+		return PLAYER_ERROR;
+	}
+
 	PlayerWorker& mpw = PlayerWorker::getWorker();
 	mpw.getQueue().enQueue(&PlayerWorker::startPlayer, &mpw, shared_from_this());
 
@@ -160,6 +165,11 @@ player_result_t MediaPlayerImpl::stop()
 {
 	std::lock_guard<std::mutex> lock(mCmdMtx);
 	medvdbg("MediaPlayer stop\n");
+	if (mCurState == PLAYER_STATE_NONE || mCurState == PLAYER_STATE_IDLE) {
+		meddbg("MediaPlayer stop fail : wrong state\n");
+		return PLAYER_ERROR;
+	}
+
 	PlayerWorker& mpw = PlayerWorker::getWorker();
 	mpw.getQueue().enQueue(&PlayerWorker::stopPlayer, &mpw, shared_from_this());
 
@@ -170,6 +180,11 @@ player_result_t MediaPlayerImpl::pause()
 {
 	std::lock_guard<std::mutex> lock(mCmdMtx);
 	medvdbg("MediaPlayer pause\n");
+	if (mCurState == PLAYER_STATE_NONE || mCurState == PLAYER_STATE_IDLE) {
+		meddbg("MediaPlayer pause fail : wrong state\n");
+		return PLAYER_ERROR;
+	}
+
 	PlayerWorker& mpw = PlayerWorker::getWorker();
 	mpw.getQueue().enQueue(&PlayerWorker::pausePlayer, &mpw, shared_from_this());
 
