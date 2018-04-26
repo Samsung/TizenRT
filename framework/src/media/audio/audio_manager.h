@@ -236,34 +236,7 @@ audio_manager_result_t reset_audio_stream_in(void);
  ****************************************************************************/
 audio_manager_result_t reset_audio_stream_out(void);
 
-/****************************************************************************
- * Name: destroy_audio_stream_in
- *
- * Description:
- *   Release the active input audio device.
- *   After destroying, the audio device will be searched again by calling
- *   set_audio_stream_in().
- *
- * Returned Value:
- *   On success, AUDIO_MANAGER_SUCCESS. Otherwise, a negative value.
- ****************************************************************************/
-audio_manager_result_t destroy_audio_stream_in(void);
-
-/****************************************************************************
- * Name: destroy_audio_stream_out
- *
- * Description:
- *   Release the active output audio device.
- *   After destroying, the audio device will be searched again by calling
- *   set_audio_stream_out().
- *
- * Returned Value:
- *   On success, AUDIO_MANAGER_SUCCESS. Otherwise, a negative value.
- ****************************************************************************/
-audio_manager_result_t destroy_audio_stream_out(void);
-
 #if defined(__cplusplus)
 }								/* extern "C" */
 #endif
-
 #endif

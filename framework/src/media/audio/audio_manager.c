@@ -312,8 +312,7 @@ static audio_manager_result_t get_active_audio_device_pcm(struct pcm **pcm, audi
 		}
 
 		*pcm = g_audio_in_cards[g_actual_audio_in_card_id].pcm;
-	}
-	else {
+	} else {
 		if (g_actual_audio_out_card_id < 0) {
 			auddbg("Found no active output audio card\n");
 			return AUDIO_MANAGER_NO_AVAIL_CARD;
@@ -334,7 +333,7 @@ static audio_manager_result_t get_active_audio_device_pcm(struct pcm **pcm, audi
 static int get_avail_audio_in_card_id()
 {
 	int i;
-	for (i=0; i<CONFIG_AUDIO_MAX_INPUT_CARD_NUM; i++) {
+	for (i = 0; i < CONFIG_AUDIO_MAX_INPUT_CARD_NUM; i++) {
 		if (g_audio_in_cards[i].status == AUDIO_CARD_READY) {
 			return i;
 		}
@@ -347,7 +346,7 @@ static int get_avail_audio_in_card_id()
 static int get_avail_audio_out_card_id()
 {
 	int i;
-	for (i=0; i<CONFIG_AUDIO_MAX_OUTPUT_CARD_NUM; i++) {
+	for (i = 0; i < CONFIG_AUDIO_MAX_OUTPUT_CARD_NUM; i++) {
 		if (g_audio_out_cards[i].status == AUDIO_CARD_READY) {
 			return i;
 		}
@@ -387,11 +386,9 @@ int start_audio_stream_in(void *data, int frames)
 				auddbg("Fail to pcm_prepare()\n");
 				return AUDIO_MANAGER_XRUN_STATE;
 			}
-		}
-		else if (ret == -EINVAL) {
+		} else if (ret == -EINVAL) {
 			return AUDIO_MANAGER_INVALID_PARAM;
-		}
-		else {
+		} else {
 			return ret;
 		}
 	} while ((ret == OK) && (retry--));
@@ -429,11 +426,9 @@ int start_audio_stream_out(void *data, int frames)
 				auddbg("Fail to pcm_prepare()\n");
 				return AUDIO_MANAGER_XRUN_STATE;
 			}
-		}
-		else if (ret == -EINVAL) {
+		} else if (ret == -EINVAL) {
 			return AUDIO_MANAGER_INVALID_PARAM;
-		}
-		else {
+		} else {
 			return ret;
 		}
 	} while ((ret == OK) && (retry--));
@@ -621,6 +616,9 @@ audio_manager_result_t reset_audio_stream_in(void)
 	pcm_close(pcm);
 	pcm = NULL;
 
+	audvdbg("Clean all of an input audio card %d\n", g_actual_audio_in_card_id);
+	g_audio_in_cards[g_actual_audio_in_card_id].status = AUDIO_CARD_READY;
+
 	return AUDIO_MANAGER_SUCCESS;
 }
 
@@ -636,43 +634,8 @@ audio_manager_result_t reset_audio_stream_out(void)
 	pcm_close(pcm);
 	pcm = NULL;
 
-	return AUDIO_MANAGER_SUCCESS;
-}
-
-audio_manager_result_t destroy_audio_stream_in(void)
-{
-	if (g_actual_audio_in_card_id < 0) {
-		auddbg("Found no active input audio card\n");
-		return AUDIO_MANAGER_NO_AVAIL_CARD;
-	}
-
-	audvdbg("Clean all of audio card %d\n", g_actual_audio_in_card_id);
-	if (g_audio_in_cards[g_actual_audio_in_card_id].status == AUDIO_CARD_RUNNING) {
-		g_audio_in_cards[g_actual_audio_in_card_id].status = AUDIO_CARD_READY;
-		g_audio_in_cards[g_actual_audio_in_card_id].device_id = -1;
-		g_audio_in_cards[g_actual_audio_in_card_id].config.volume = 0;
-		g_audio_in_cards[g_actual_audio_in_card_id].pcm = NULL;
-		g_actual_audio_in_card_id = -1;
-	}
-
-	return AUDIO_MANAGER_SUCCESS;
-}
-
-audio_manager_result_t destroy_audio_stream_out(void)
-{
-	if (g_actual_audio_out_card_id < 0) {
-		auddbg("Found no active output audio card\n");
-		return AUDIO_MANAGER_NO_AVAIL_CARD;
-	}
-
-	audvdbg("Clean all of audio card %d\n", g_actual_audio_out_card_id);
-	if (g_audio_out_cards[g_actual_audio_out_card_id].status == AUDIO_CARD_RUNNING) {
-		g_audio_out_cards[g_actual_audio_out_card_id].status = AUDIO_CARD_READY;
-		g_audio_out_cards[g_actual_audio_out_card_id].device_id = -1;
-		g_audio_out_cards[g_actual_audio_out_card_id].config.volume = 0;
-		g_audio_out_cards[g_actual_audio_out_card_id].pcm = NULL;
-		g_actual_audio_out_card_id = -1;
-	}
+	audvdbg("Clean all of an output audio card %d\n", g_actual_audio_out_card_id);
+	g_audio_out_cards[g_actual_audio_out_card_id].status = AUDIO_CARD_READY;
 
 	return AUDIO_MANAGER_SUCCESS;
 }
