@@ -19,60 +19,7 @@
 // Included Files
 //***************************************************************************
 
-#include <media/MediaRecorder.h>
-#include <media/MediaRecorderObserverInterface.h>
-#include <media/FileOutputDataSource.h>
-
-using namespace std;
-using namespace media;
-using namespace media::stream;
-
-using ::testing::_;
-
-unsigned short channels = 2;
-unsigned int sampleRate = 16000;
-int pcmFormat = 0;
-const char * filePath = "/ramfs/record";
-
-class FileOutputDataTest : public testing::Test
-{
-protected:
-	virtual void SetUp() {
-		dataSource = new FileOutputDataSource(channels, sampleRate, pcmFormat, filePath);
-	}
-	virtual void TearDown() {
-		delete dataSource;
-		dataSource = nullptr;
-	}
-
-public:
-	FileOutputDataSource* dataSource;
-};
-
-TEST_F(FileOutputDataTest, OpenFilePositive)
-{
-	bool ret = dataSource->open();
-	dataSource->close();
-
-	EXPECT_EQ(ret, true);
-}
-
-TEST_F(FileOutputDataTest, OpenFileNegative)
-{
-	dataSource->open();
-	bool ret = dataSource->open();
-	dataSource->close();
-
-	EXPECT_EQ(ret, false);
-}
-
-TEST_F(FileOutputDataTest, CloseFilePositiveWithIsPrepare)
-{
-	dataSource->close();
-	bool ret = dataSource->isPrepare();
-
-	EXPECT_EQ(ret, false);
-}
+#include "utc_media_common.h"
 
 struct null_deleter
 {
