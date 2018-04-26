@@ -18,7 +18,6 @@
 #ifndef __DRIVERS_AUDIO_ALC5658SCRIPTS_H
 #define __DRIVERS_AUDIO_ALC5658SCRIPTS_H
 
-
 #ifdef CONFIG_AUDIO_ALC5658
 
 /****************************************************************************
@@ -206,7 +205,7 @@ t_codec_init_script_entry codec_init_in_script[] = {
 	{ALC5658_MANAGEMENT1, 0x8C98, 0},	/* en_i2s1, pow_dac1_l/r, Pow_ldo_dacref, pow_adc1_l/r ON */
 	{ALC5658_MANAGEMENT6, 0x0C00, 0},	/* pow_recmix1l/r ON */
 	{ALC5658_MANAGEMENT7, 0x0300, 0},	/* ?extra bits set? pow_inl_vol ON */
-	{ALC5658_IN1, 0x3000, 0},	/* Gain -12dB + 0.75dB*0x30  */
+	{ALC5658_IN1, 0x2000, 0},	/* Gain -12dB + 0.75dB*0x20  */
 	{ALC5658_RECMIX1L_SEL, 0x005F, 0},	/* Default, all mute */
 	{ALC5658_RECMIX1R_SEL, 0x005F, 0},	/* Default, all mute */
 	{ALC5658_ADC_ST1_MXR, 0x6020, 0},	/* mu_stereo1_adcl1 unmute, sel_stereo1_adc1 Sel, mu_stereo1_adcr1 unmute */
@@ -294,7 +293,7 @@ t_codec_init_script_entry codec_init_inout_script2[] = {
 	{ALC5658_DAC_SRC, 0x000F, 0},
 	{ALC5658_HP, 0x0019, 0},
 	{ALC5658_0010, 0x3040, 0},	//CRT Mbias1 path
-	{ALC5658_IN1, 0x0000, 0},	//BST1 gain (minimal)
+	{ALC5658_IN1, 0x2000, 0},	//BST1 gain (minimal)
 	{ALC5658_RECMIX1L_SEL, 0x005F, 0},	//BST1
 	{ALC5658_RECMIX1R_SEL, 0x005F, 0},	//BST1
 	{ALC5658_ADC_ST1_MXR, 0x6020, 0},
