@@ -71,10 +71,27 @@ static struct ntpc_server_conn_s ntp_server_conn[] = {
 	{ NULL, 123 },
 };
 
-static void ntp_link_error(void)
+static void ntp_link_error(void);
+
+static int restart_ntp(int argc, char *argv[])
 {
-	printf("NTP error: stopping client\n");
 	ntpc_stop();
+
+	if (ntpc_start(ntp_server_conn, ARRAY_SIZE(ntp_server_conn),
+			NTP_REFRESH_PERIOD, ntp_link_error) < 0) {
+		printf("Failed to start NTP client\n");
+	}
+
+	return 0;
+}
+
+void ntp_link_error(void)
+{
+	if (ntpc_get_status() == NTP_RUNNING) {
+		printf("NTP error - trying to reconnect\n");
+		task_create("restart-ntp", SCHED_PRIORITY_DEFAULT, 4096, restart_ntp,
+			NULL);
+	}
 }
 
 void StopWifi(void)
@@ -529,22 +546,17 @@ artik_error StartStationConnection(bool start)
 
 		/* Set date and time using NTP */
 		ntp_server_conn[0].hostname = wifi_config.ntp_server;
+retry:
 		if (ntpc_start(ntp_server_conn, ARRAY_SIZE(ntp_server_conn), NTP_REFRESH_PERIOD, ntp_link_error) < 0) {
-			printf("Failed to start NTP client.\n"
-					"The date may be incorrect and lead to undefined behavior\n");
-		} else {
-			int num_retries = 10;
-
-			/* Wait for the date to be set */
-			while ((ntpc_get_link_status() != NTP_LINK_UP) && --num_retries) {
-				sleep(2);
-			}
-
-			if (!num_retries) {
-				printf("Failed to reach NTP server.\n"
-						"The date may be incorrect and lead to undefined behavior\n");
-			}
+			printf("Failed to start NTP client, retrying.\n");
+			sleep(2);
+			goto retry;
 		}
+
+		/* Wait for the date to be set, don't go anywhere until it's set */
+		while (ntpc_get_link_status() != NTP_LINK_UP)
+			sleep(2);
+
 	} else {
 
 		if (g_mode != ARTIK_WIFI_MODE_STATION) {
