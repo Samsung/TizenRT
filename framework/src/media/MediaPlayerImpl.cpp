@@ -140,11 +140,6 @@ player_result_t MediaPlayerImpl::unprepare()
 		return PLAYER_ERROR;
 	}
 
-	if (destroy_audio_stream_out() != AUDIO_MANAGER_SUCCESS) {
-		meddbg("MediaPlayer unprepare fail : destroy_audio_stream_out fail\n");
-		return PLAYER_ERROR;
-	}
-
 	mInputDataSource->close();
 
 	mCurState = PLAYER_STATE_IDLE;
