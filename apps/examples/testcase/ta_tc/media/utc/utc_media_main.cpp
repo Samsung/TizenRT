@@ -29,6 +29,7 @@
 #include <iostream>
 #include "tc_common.h"
 
+#include "utc_media_fileoutputdatasource.cpp"
 #include "utc_media_recorder.cpp"
 #include "utc_media_player.cpp"
 
