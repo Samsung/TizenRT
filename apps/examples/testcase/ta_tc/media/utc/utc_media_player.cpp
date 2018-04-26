@@ -47,15 +47,9 @@ protected:
 	media::MediaPlayer* mp;
 };
 
-TEST_F(SimpleMediaPlayerTest, getState)
-{
-	EXPECT_EQ(mp->getState(), media::PLAYER_STATE_NONE);
-}
-
 TEST_F(SimpleMediaPlayerTest, create)
 {
 	EXPECT_EQ(mp->create(), media::PLAYER_OK);
-	EXPECT_EQ(mp->getState(), media::PLAYER_STATE_IDLE);
 
 	mp->destroy();
 }
@@ -65,7 +59,6 @@ TEST_F(SimpleMediaPlayerTest, destroy)
 	mp->create();
 
 	EXPECT_EQ(mp->destroy(), media::PLAYER_OK);
-	EXPECT_EQ(mp->getState(), media::PLAYER_STATE_NONE);
 }
 
 TEST_F(SimpleMediaPlayerTest, setDataSource)
@@ -83,7 +76,6 @@ TEST_F(SimpleMediaPlayerTest, prepare)
 	mp->setDataSource(std::move(source));
 
 	EXPECT_EQ(mp->prepare(), media::PLAYER_OK);
-	EXPECT_EQ(mp->getState(), media::PLAYER_STATE_READY);
 
 	mp->unprepare();
 	mp->destroy();
@@ -96,7 +88,6 @@ TEST_F(SimpleMediaPlayerTest, unprepare)
 	mp->prepare();
 
 	EXPECT_EQ(mp->unprepare(), media::PLAYER_OK);
-	EXPECT_EQ(mp->getState(), media::PLAYER_STATE_IDLE);
 
 	mp->destroy();
 }

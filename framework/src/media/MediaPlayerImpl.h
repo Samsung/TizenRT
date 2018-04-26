@@ -30,6 +30,24 @@
 #include "PlayerObserverWorker.h"
 
 namespace media {
+/**
+ * @brief current state of MediaPlayer.
+ * @details @b #include <media/MediaPlayer.h>
+ * @since TizenRT v2.0 PRE
+ */
+typedef enum player_state_e {
+	/** MediaPlayer object was created */
+	PLAYER_STATE_NONE,
+	/** MediaPlayer worker object was created */
+	PLAYER_STATE_IDLE,
+	/** MediaPlayer ready to play */
+	PLAYER_STATE_READY,
+	/** MediaPlayer do playing */
+	PLAYER_STATE_PLAYING,
+	/** MediaPlayer pause to play */
+	PLAYER_STATE_PAUSED
+} player_state_t;
+
 class MediaPlayerImpl : public std::enable_shared_from_this<MediaPlayerImpl>
 {
 public:
