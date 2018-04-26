@@ -107,10 +107,11 @@
 #define KEY_CLOUD_DOMAIN                                        "domain"
 #define KEY_CLOUD_ADDRESS                                       "address"
 #define KEY_CLOUD_PORT                                          "port"
-
+#ifndef CONFIG_ST_THINGS_COLLECTION
 /* collection resource */
 #define KEY_RESOURCES_COL                                       "collection"
 #define KEY_DEVICE_RESOURCE_COLLECTION_LINKS                    "links"
+#endif
 
 /* validate_attribute_in_request */
 #define CHECK_BIT(var, pos)         (((var)>>(pos)) & 1)
@@ -445,8 +446,9 @@ static st_device_s *create_device()
 	device->col_cnt = 0;
 	device->sig_cnt = 0;
 	device->is_physical = 0;
-
+#ifdef CONFIG_ST_THINGS_COLLECTION
 	device->collection = NULL;
+#endif
 	device->single = NULL;
 	device->pchild_resources = NULL;
 
@@ -468,7 +470,7 @@ static void delete_device(st_device_s *device)
 		things_free(device->ver_fw);
 		things_free(device->device_id);
 		things_free(device->vender_id);
-
+#ifdef CONFIG_ST_THINGS_COLLECTION
 		for (int col_iter = 0; col_iter < device->col_cnt; ++col_iter) {
 			for (int link_iter = 0; link_iter < device->collection->link_cnt; ++link_iter) {
 				things_free(device->collection->links[link_iter]);
@@ -476,6 +478,7 @@ static void delete_device(st_device_s *device)
 			things_free(device->collection->links);
 		}
 		things_free(device->collection);
+#endif
 
 		things_free(device->single);
 		things_free(device);
@@ -1075,7 +1078,7 @@ static int parse_things_info_json(const char *filename)
 				} else {
 					THINGS_LOG_V_ERROR(THINGS_ERROR, TAG, "[SINGLE] Reosurces Not Exist");
 				}
-				
+#ifdef CONFIG_ST_THINGS_COLLECTION	
 				cJSON *collection = cJSON_GetObjectItem(resources, KEY_RESOURCES_COL);
 
 				if (collection != NULL) {
@@ -1212,6 +1215,7 @@ static int parse_things_info_json(const char *filename)
 				} else {
 					THINGS_LOG_D(THINGS_INFO, TAG, "Children Reosurces Not Exist");
 				}
+#endif
 			} else {
 				THINGS_LOG_D(THINGS_INFO, TAG, "Reosurces Not Exist");
 			}
@@ -1918,7 +1922,9 @@ int dm_register_resource(things_server_builder_s *p_builder)
 
 		st_device_s *device = NULL;
 		struct things_resource_info_s *resource = NULL;
+#ifdef CONFIG_ST_THINGS_COLLECTION
 		struct things_resource_s *p_collection_resource = NULL;
+#endif
 
 		// 2. Device Capability Resources Registration
 		THINGS_LOG_D(THINGS_DEBUG, TAG, "BEFORE SEARCHING THE DEVICE  ITEM FROM HASH TABLE");
@@ -1928,9 +1934,10 @@ int dm_register_resource(things_server_builder_s *p_builder)
 		if (NULL != device) {
 			snprintf(id, sizeof(id), "%d", device->no);
 			THINGS_LOG_D(THINGS_DEBUG, TAG, "==================== Device (%s) ====================", id);
-
+#ifndef CONFIG_ST_THINGS_COLLECTION
+			device->pchild_resources = things_malloc(sizeof(things_resource_s *) * device->sig_cnt);
+#else
 			device->pchild_resources = things_malloc(sizeof(things_resource_s *) * (device->col_cnt + device->sig_cnt));
-
 			if (device->col_cnt < 1) {
 				THINGS_LOG_D(THINGS_DEBUG, TAG, "NO COLLECTION & ITS CHILDREN RESOURCE(S)");
 			} else {
@@ -1964,6 +1971,7 @@ int dm_register_resource(things_server_builder_s *p_builder)
 
 				device->pchild_resources[n_count_of_children++] = p_collection_resource;
 			}
+#endif
 
 			THINGS_LOG_D(THINGS_DEBUG, TAG, "SINGLE RESOURCE(S) CNT : %d", device->sig_cnt);
 			for (int capa_num = 0; capa_num < device->sig_cnt; capa_num++) {
@@ -2183,6 +2191,7 @@ int dm_validate_attribute_in_request(char *rt, const void *payload)
 					}
 				}
 			}
+#ifndef CONFIG_ST_THINGS_COLLECTION
 			//    c. Make it pass if it's collection resource
 			if (0 == strncmp(rt, OC_RSRVD_RESOURCE_TYPE_COLLECTION, strlen(OC_RSRVD_RESOURCE_TYPE_COLLECTION))
 				|| 0 == strncmp(rt, SEC_RTYPE_THINGS_DEVICE, strlen(SEC_RTYPE_THINGS_DEVICE))) {
@@ -2191,6 +2200,7 @@ int dm_validate_attribute_in_request(char *rt, const void *payload)
 				THINGS_LOG_D(THINGS_DEBUG, TAG, "\t==> Request On Collection Resource. Making it PASS");
 				ret = 1;
 			}
+#endif
 		} else {
 			THINGS_LOG_D_ERROR(THINGS_ERROR, TAG, "Not Supporting rt : %s", rt);
 		}
@@ -2223,6 +2233,7 @@ int things_get_resource_type(const char *resource_uri, int *count, char ***resou
 					}
 				}
 			}
+#ifndef CONFIG_ST_THINGS_COLLECTION
 			if (device->col_cnt > 0) {
 				for (int index = 0; index < device->col_cnt; index++) {
 					if (strncmp(device->collection[index].uri, resource_uri, strlen(resource_uri)) == 0) {
@@ -2240,6 +2251,7 @@ int things_get_resource_type(const char *resource_uri, int *count, char ***resou
 					}
 				}
 			}
+#endif
 		}
 	}
 	return 0;
@@ -2285,7 +2297,7 @@ int things_get_attributes_by_resource_type(const char *res_type, int *count, thi
 	}
 	return 0;
 }
-
+#ifndef CONFIG_ST_THINGS_COLLECTION
 bool things_is_collection_resource(const char *res_uri)
 {
 	int device_cnt = (int)hashmap_count(g_device_hmap);
@@ -2330,6 +2342,7 @@ int things_get_child_resources(const char *col_res_uri, int *count, things_resou
 	}
 	return 0;
 }
+#endif
 
 int dm_init_module(const char *devJsonPath)
 {

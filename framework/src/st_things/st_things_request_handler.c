@@ -17,7 +17,9 @@
  ******************************************************************/
 
 #include "st_things_request_handler.h"
+#ifdef CONFIG_ST_THINGS_COLLECTION
 #include "st_things_request_handler_collection.h"
+#endif
 #include "st_things_representation.h"
 #include "utils/things_malloc.h"
 #include "utils/things_util.h"
@@ -287,7 +289,7 @@ bool add_common_props(things_resource_s *rsrc, bool collection, OCRepPayload *re
 		}
 	}
 	things_free_str_array(if_types, if_count);
-
+#ifdef CONFIG_ST_THINGS_COLLECTION
 	// Set "links"(only for collection).
 	if (collection) {
 		size_t count = 0;
@@ -309,6 +311,7 @@ bool add_common_props(things_resource_s *rsrc, bool collection, OCRepPayload *re
 			return false;
 		}
 	}
+#endif
 
 	return true;
 }
@@ -1085,13 +1088,19 @@ int handle_get_request_cb(struct things_resource_s *resource)
 	RET_VAL_IF_EXPR_IS_TRUE(TAG, (NULL == resource->uri || strlen(resource->uri) < 1), "Resource URI is invalid", 0);
 
 	int result = 0;
+#ifdef CONFIG_ST_THINGS_COLLECTION
 	bool collection = things_is_collection_resource(resource->uri);
+#else
+	bool collection = false;
+#endif
 
 	THINGS_LOG_V(THINGS_DEBUG, TAG, "Resource URI : %s (%s resource)", resource->uri, collection ? "collection" : "single");
 	THINGS_LOG_V(THINGS_DEBUG, TAG, "Query Parameter: %s", resource->query);
 
 	if (collection) {
+#ifdef CONFIG_ST_THINGS_COLLECTION
 		result = handle_get_req_on_collection_rsrc(resource);
+#endif
 	} else {
 		result = handle_get_req_on_single_rsrc(resource);
 	}
@@ -1114,13 +1123,19 @@ int handle_set_request_cb(struct things_resource_s *resource)
 	RET_VAL_IF_EXPR_IS_TRUE(TAG, (NULL == resource->uri || strlen(resource->uri) < 1), "Resource URI is invalid", 0);
 
 	int result = 0;
+#ifdef CONFIG_ST_THINGS_COLLECTION
 	bool collection = things_is_collection_resource(resource->uri);
+#else
+	bool collection = false;
+#endif
 
 	THINGS_LOG_V(THINGS_DEBUG, TAG, "Resource URI : %s (%s resource)", resource->uri, collection ? "collection" : "single");
 	THINGS_LOG_V(THINGS_DEBUG, TAG, "Query Parameter: %s", resource->query);
 
 	if (collection) {
+#ifdef CONFIG_ST_THINGS_COLLECTION
 		result = handle_post_req_on_collection_rsrc(resource);
+#endif
 	} else {
 		result = handle_post_req_on_single_rsrc(resource);
 	}

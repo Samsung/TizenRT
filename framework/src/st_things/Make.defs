@@ -22,7 +22,11 @@ THINGS_STACK_DIR = $(TOPDIR)/../framework/src/st_things/things_stack
 IOTIVITY_RELEASE=${shell echo $(CONFIG_IOTIVITY_RELEASE_VERSION) | sed 's/"//g'}
 IOTIVITY_BASE_DIR = $(TOPDIR)/../external/iotivity/iotivity_$(IOTIVITY_RELEASE)
 
-CSRCS += st_things.c st_things_request_handler.c st_things_request_handler_collection.c st_things_representation.c
+CSRCS += st_things.c st_things_request_handler.c st_things_representation.c
+
+ifeq ($(CONFIG_ST_THINGS_COLLECTION), y)
+CSRCS += st_things_request_handler_collection.c 
+endif
 
 CFLAGS += -D__TIZENRT__
 CFLAGS += -D__TINYARA__
