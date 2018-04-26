@@ -94,26 +94,26 @@ void MediaPlayerTest::start(void)
 	source->setChannels(2);
 #endif
 
+	if (mp.create() == PLAYER_ERROR) {
+		cout << "Mediaplayer::create failed" << endl;
+	}
+	mp.setObserver(shared_from_this());
+	mp.setDataSource(std::move(source));
+
 	while (true) {
 		printMenu();
 		switch (userInput(APP_OFF, VOLUME_DOWN)) {
 		case APP_OFF:
 			cout << "APP_OFF is selected" << endl;
+			if (mp.destroy() == PLAYER_ERROR) {
+				cout << "Mediaplayer::destroy failed" << endl;
+			}
 			return;
 		case PLAYER_START:
 			cout << "PLAYER_START is selected" << endl;
-			if (mp.getState() == PLAYER_STATE_NONE) {
-				if (mp.create() == PLAYER_ERROR) {
-					cout << "Mediaplayer::create failed" << endl;
-				}
-				mp.setObserver(shared_from_this());
-				mp.setDataSource(std::move(source));
-
-				if (mp.prepare() == PLAYER_ERROR) {
-					cout << "Mediaplayer::prepare failed" << endl;
-				}
+			if (mp.prepare() == PLAYER_ERROR) {
+				cout << "Mediaplayer::prepare failed" << endl;
 			}
-
 			if (mp.start() == PLAYER_ERROR) {
 				cout << "Mediaplayer::start failed" << endl;
 			}
@@ -132,10 +132,6 @@ void MediaPlayerTest::start(void)
 
 			if (mp.unprepare() == PLAYER_ERROR) {
 				cout << "Mediaplayer::unprepare failed" << endl;
-			}
-
-			if (mp.destroy() == PLAYER_ERROR) {
-				cout << "Mediaplayer::destroy failed" << endl;
 			}
 			break;
 		case VOLUME_UP:

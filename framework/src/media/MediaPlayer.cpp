@@ -80,11 +80,6 @@ void MediaPlayer::setObserver(std::shared_ptr<MediaPlayerObserverInterface> obse
 	mPMpImpl->setObserver(observer);
 }
 
-player_state_t MediaPlayer::getState()
-{
-	return mPMpImpl->getState();
-}
-
 player_result_t MediaPlayer::seekTo(int msec)
 {
 	return mPMpImpl->seekTo(msec);
