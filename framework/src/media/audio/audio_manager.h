@@ -239,5 +239,4 @@ audio_manager_result_t reset_audio_stream_out(void);
 #if defined(__cplusplus)
 }								/* extern "C" */
 #endif
-
 #endif
