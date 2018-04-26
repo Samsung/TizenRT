@@ -144,19 +144,3 @@ void things_logv(things_log_level_e level, const char *tag, const char *func_nam
 	va_end(args);
 	things_log(level, tag, func_name, line_num, buffer);
 }
-
-//#endif
-
-const char *__get_timestamp__()
-{
-	struct timeval tv;
-	time_t nowtime = 0;
-	struct tm *nowtm = NULL;
-
-	gettimeofday(&tv, NULL);
-	nowtime = tv.tv_sec;
-	nowtm = localtime(&nowtime);
-	strftime(ts_buf, sizeof ts_buf, "%m/%d %H:%M:%S", nowtm);
-
-	return ts_buf;
-}

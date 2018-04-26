@@ -59,7 +59,7 @@ void *get_dev_addr(struct things_resource_s *p_res)
 
 void set_uri(struct things_resource_s *res, const char *key)
 {
-	//THINGS_LOG_V(THINGS_DEBUG, TAG, THINGS_FUNC_ENTRY);
+	//THINGS_LOG_D(TAG, THINGS_FUNC_ENTRY);
 
 	if (key == NULL) {
 		return;
@@ -76,10 +76,10 @@ void set_uri(struct things_resource_s *res, const char *key)
 	if (NULL != res->rep) {
 		OCRepPayloadSetUri(res->rep->payload, key);
 	} else {
-		THINGS_LOG_V_ERROR(THINGS_ERROR, TAG, "Set URI Failed, No Representation Yet");
+		THINGS_LOG_E(TAG, "Set URI Failed, No Representation Yet");
 	}
 
-	//THINGS_LOG_D(THINGS_DEBUG, TAG, THINGS_FUNC_EXIT);
+	//THINGS_LOG_D(TAG, THINGS_FUNC_EXIT);
 }
 
 void set_error(struct things_resource_s *res, double error)
@@ -118,7 +118,7 @@ void things_set_byte_value(struct things_representation_s *rep, char *key, uint8
 	OCByteString b_val = { value, size };
 
 	if (b_val.len < 1) {
-		THINGS_LOG_V_ERROR(THINGS_ERROR, TAG, "No byte value to Set");
+		THINGS_LOG_E(TAG, "No byte value to Set");
 	} else {
 		OCRepPayloadSetPropByteString(rep->payload, key, b_val);
 	}
@@ -150,7 +150,7 @@ bool things_set_arrayvalue(struct things_representation_s *mother, char *key, in
 {
 	bool things_set_value = false;
 	if (length < 1) {
-		THINGS_LOG_V_ERROR(THINGS_ERROR, TAG, "DATA LENGTH IS ZERO!!!!!!");
+		THINGS_LOG_E(TAG, "DATA LENGTH IS ZERO!!!!!!");
 		return things_set_value;
 	}
 	size_t dimensions[MAX_REP_ARRAY_DEPTH] = { length, 0, 0 };
@@ -163,7 +163,7 @@ bool things_set_arrayvalue(struct things_representation_s *mother, char *key, in
 	//  This is codesnippet for creating Array type of value inside the payload..
 	things_set_value = OCRepPayloadSetPropObjectArray(mother->payload, key, (const OCRepPayload **)(payloads), dimensions);
 
-	// THINGS_LOG_V(THINGS_INFO, TAG, " Length : %d", length);
+	// THINGS_LOG_V(TAG, " Length : %d", length);
 	// OCRepPayloadSetPropInt(mother->payload, SEC_ATTRIBUTE_LENGTH, length);
 
 	//  Do we need to have those children representation
@@ -173,9 +173,9 @@ bool things_set_arrayvalue(struct things_representation_s *mother, char *key, in
 
 bool things_get_arrayvalue(struct things_representation_s *mother, char *key, int *length, struct things_representation_s ***children)
 {
-	//THINGS_LOG_V_ERROR(THINGS_ERROR, TAG, "NOt Supported This Function Yet");
+	//THINGS_LOG_E(TAG, "NOt Supported This Function Yet");
 	bool find_value = false;
-	THINGS_LOG_V(THINGS_DEBUG, TAG, "There're (%d) Number of children resources in the Payload : %d", mother->num_children);
+	THINGS_LOG_D(TAG, "There're (%d) Number of children resources in the Payload : %d", mother->num_children);
 
 	// if( OCRepPayloadGetPropInt((OCRepPayload*)(mother->payload), SEC_ATTRIBUTE_LENGTH, &(mother->num_children) ) )
 	OCRepPayloadValue *payload_value = things_rep_payload_find_values((OCRepPayload *)(mother->payload), key);
@@ -184,10 +184,10 @@ bool things_get_arrayvalue(struct things_representation_s *mother, char *key, in
 		size_t dimension_size = calcDimTotal(payload_value->arr.dimensions);
 		size_t dimensions[3] = { dimension_size, 0, 0 };
 
-		THINGS_LOG_V(THINGS_DEBUG, TAG, "Dimension size in the Payload : %d", dimension_size);
+		THINGS_LOG_D(TAG, "Dimension size in the Payload : %d", dimension_size);
 		//    This is testing code only... will be removed...
 		find_value = OCRepPayloadGetPropObjectArray((OCRepPayload *)(mother->payload), key, &payload_values, dimensions);
-		THINGS_LOG_V(THINGS_DEBUG, TAG, "Find Value : %d", find_value);
+		THINGS_LOG_D(TAG, "Find Value : %d", find_value);
 		if (find_value) {
 			*children = (things_representation_s **) things_malloc(sizeof(things_representation_s *) *dimension_size);
 
@@ -203,7 +203,7 @@ bool things_get_arrayvalue(struct things_representation_s *mother, char *key, in
 			*length = mother->num_children = dimension_size;
 		}
 	} else {
-		THINGS_LOG_V_ERROR(THINGS_ERROR, TAG, "DATA NOT EXIST~!!!!");
+		THINGS_LOG_E(TAG, "DATA NOT EXIST~!!!!");
 	}
 
 	return find_value;
@@ -212,7 +212,7 @@ bool things_get_arrayvalue(struct things_representation_s *mother, char *key, in
 void things_set_string_arrayvalue(struct things_representation_s *mother, char *key, int length, char **array)
 {
 	if (length < 1) {
-		THINGS_LOG_V_ERROR(THINGS_ERROR, TAG, "DATA LENGTH IS ZERO!!!!!!");
+		THINGS_LOG_E(TAG, "DATA LENGTH IS ZERO!!!!!!");
 		return;
 	}
 	size_t dimensions[MAX_REP_ARRAY_DEPTH] = { length, 0, 0 };
@@ -223,7 +223,7 @@ void things_set_string_arrayvalue(struct things_representation_s *mother, char *
 
 bool things_get_string_arrayvalue(struct things_representation_s *mother, char *key, int *length, char ***array)
 {
-	THINGS_LOG_V(THINGS_DEBUG, TAG, "There're (%d) Number of children resources in the Payload : %d", mother->num_children);
+	THINGS_LOG_D(TAG, "There're (%d) Number of children resources in the Payload : %d", mother->num_children);
 
 	bool find_value = false;
 
@@ -236,13 +236,13 @@ bool things_get_string_arrayvalue(struct things_representation_s *mother, char *
 		size_t dimensions[3] = { dimension_size, 0, 0 };
 
 		find_value = OCRepPayloadGetStringArray((OCRepPayload *)(mother->payload), key, array, dimensions);
-		THINGS_LOG_V(THINGS_DEBUG, TAG, "Find Value : %d", find_value);
+		THINGS_LOG_D(TAG, "Find Value : %d", find_value);
 		if (find_value) {
 
 			*length = dimension_size;
 		}
 	} else {
-		THINGS_LOG_V_ERROR(THINGS_ERROR, TAG, "DATA NOT EXIST~!!!!");
+		THINGS_LOG_E(TAG, "DATA NOT EXIST~!!!!");
 	}
 
 	return find_value;
@@ -251,7 +251,7 @@ bool things_get_string_arrayvalue(struct things_representation_s *mother, char *
 void things_set_double_arrayvalue(struct things_representation_s *mother, char *key, int length, double *array)
 {
 	if (length < 1) {
-		THINGS_LOG_V_ERROR(THINGS_ERROR, TAG, "DATA LENGTH IS ZERO!!!!!!");
+		THINGS_LOG_E(TAG, "DATA LENGTH IS ZERO!!!!!!");
 		return;
 	}
 	size_t dimensions[MAX_REP_ARRAY_DEPTH] = { length, 0, 0 };
@@ -269,16 +269,16 @@ bool things_get_double_arrayvalue(struct things_representation_s *mother, char *
 		size_t dimension_size = calcDimTotal(payload_value->arr.dimensions);
 		size_t dimensions[3] = { dimension_size, 0, 0 };
 
-		THINGS_LOG_V(THINGS_DEBUG, TAG, "Dimension size in the Payload : %d", dimension_size);
+		THINGS_LOG_D(TAG, "Dimension size in the Payload : %d", dimension_size);
 
 		find_value = OCRepPayloadGetDoubleArray((OCRepPayload *)(mother->payload), key, array, dimensions);
 
-		THINGS_LOG_V(THINGS_DEBUG, TAG, "Find Value : %d", find_value);
+		THINGS_LOG_D(TAG, "Find Value : %d", find_value);
 		if (find_value) {
 			*length = dimension_size;
 		}
 	} else {
-		THINGS_LOG_V_ERROR(THINGS_ERROR, TAG, "DATA NOT EXIST~!!!!");
+		THINGS_LOG_E(TAG, "DATA NOT EXIST~!!!!");
 	}
 
 	return find_value;
@@ -287,7 +287,7 @@ bool things_get_double_arrayvalue(struct things_representation_s *mother, char *
 void things_set_int_arrayvalue(struct things_representation_s *mother, char *key, int length, int64_t *array)
 {
 	if (length < 1) {
-		THINGS_LOG_V_ERROR(THINGS_ERROR, TAG, "DATA LENGTH IS ZERO!!!!!!");
+		THINGS_LOG_E(TAG, "DATA LENGTH IS ZERO!!!!!!");
 		return;
 	}
 	size_t dimensions[MAX_REP_ARRAY_DEPTH] = { length, 0, 0 };
@@ -305,16 +305,16 @@ bool things_get_int_arrayvalue(struct things_representation_s *mother, char *key
 		size_t dimension_size = calcDimTotal(payload_value->arr.dimensions);
 		size_t dimensions[3] = { dimension_size, 0, 0 };
 
-		THINGS_LOG_V(THINGS_DEBUG, TAG, "Dimension size in the Payload : %d", dimension_size);
+		THINGS_LOG_D(TAG, "Dimension size in the Payload : %d", dimension_size);
 
 		find_value = OCRepPayloadGetIntArray((OCRepPayload *)(mother->payload), key, array, dimensions);
 
-		THINGS_LOG_V(THINGS_DEBUG, TAG, "Find Value : %d", find_value);
+		THINGS_LOG_D(TAG, "Find Value : %d", find_value);
 		if (find_value) {
 			*length = dimension_size;
 		}
 	} else {
-		THINGS_LOG_V_ERROR(THINGS_ERROR, TAG, "DATA NOT EXIST~!!!!");
+		THINGS_LOG_E(TAG, "DATA NOT EXIST~!!!!");
 	}
 	return find_value;
 }
@@ -349,8 +349,8 @@ int get_num_of_res_types(struct things_resource_s *res)
 const char *get_res_type(struct things_resource_s *res, int index)
 {
 	const char *resourcType = OCGetResourceTypeName((OCResourceHandle) res->resource_handle, index);
-	THINGS_LOG_D(THINGS_DEBUG, TAG, "=====>  RH : %x cnt : %d", res->resource_handle, index);
-	THINGS_LOG_D(THINGS_DEBUG, TAG, "=====>  RT : %s ", resourcType);
+	THINGS_LOG_D(TAG, "=====>  RH : %x cnt : %d", res->resource_handle, index);
+	THINGS_LOG_D(TAG, "=====>  RT : %s ", resourcType);
 
 	return resourcType;
 }
@@ -365,8 +365,8 @@ int get_num_of_inf_types(struct things_resource_s *res)
 const char *get_inf_type(struct things_resource_s *res, int index)
 {
 	const char *interface_type = OCGetResourceInterfaceName((OCResourceHandle) res->resource_handle, index);
-	THINGS_LOG_D(THINGS_DEBUG, TAG, "=====>  RH : %x cnt : %d", res->resource_handle, index);
-	THINGS_LOG_D(THINGS_DEBUG, TAG, "=====>  IT : %s ", interface_type);
+	THINGS_LOG_D(TAG, "=====>  RH : %x cnt : %d", res->resource_handle, index);
+	THINGS_LOG_D(TAG, "=====>  IT : %s ", interface_type);
 
 	return interface_type;
 }
@@ -427,7 +427,7 @@ bool things_get_object_value(struct things_representation_s *mother, char *key, 
 
 bool get_query(struct things_resource_s *res, char *key, char **value)
 {
-	THINGS_LOG_D(THINGS_DEBUG, TAG, THINGS_FUNC_ENTRY);
+	THINGS_LOG_D(TAG, THINGS_FUNC_ENTRY);
 
 	if (NULL == key) {
 		return 0;
@@ -439,7 +439,7 @@ bool get_query(struct things_resource_s *res, char *key, char **value)
 		return 0;
 	}
 
-	THINGS_LOG_D(THINGS_DEBUG, TAG, "Query is %s.", res->query);
+	THINGS_LOG_D(TAG, "Query is %s.", res->query);
 
 	*value = NULL;
 
@@ -454,9 +454,9 @@ bool get_query(struct things_resource_s *res, char *key, char **value)
 	}
 
 	memset(p_buff, 0, strlen(res->query) + 1);
-	THINGS_LOG_D(THINGS_DEBUG, TAG, "p_buff is initialized by 0.");
+	THINGS_LOG_D(TAG, "p_buff is initialized by 0.");
 	memcpy(p_buff, res->query, strlen(res->query) + 1);
-	THINGS_LOG_D(THINGS_DEBUG, TAG, "p_buff is Initialized as", res->query);
+	THINGS_LOG_D(TAG, "p_buff is Initialized as", res->query);
 
 	p_ptr = strtok(p_buff, QUERY_DELIMITER);
 	if (p_ptr != NULL) {
@@ -468,14 +468,14 @@ bool get_query(struct things_resource_s *res, char *key, char **value)
 	//while (p_ptr != NULL)
 	while (p_ptr2 != NULL) {
 		if (strncmp(p_ptr2, key, strlen(key)) == 0) {
-			THINGS_LOG_D(THINGS_DEBUG, TAG, "\tFind Query : %s", p_ptr2 + strlen(key) + 1);
+			THINGS_LOG_D(TAG, "\tFind Query : %s", p_ptr2 + strlen(key) + 1);
 
 			things_string_duplicate(p_ptr2 + strlen(key) + 1, value);
 			if (NULL == *value) {
 				things_free(p_origin);
 				return 1;
 			}
-			THINGS_LOG_D(THINGS_DEBUG, TAG, "\tRESULT : %s", *value);
+			THINGS_LOG_D(TAG, "\tRESULT : %s", *value);
 			break;
 		}
 
@@ -484,7 +484,7 @@ bool get_query(struct things_resource_s *res, char *key, char **value)
 
 	things_free(p_origin);
 
-	THINGS_LOG_D(THINGS_DEBUG, TAG, THINGS_FUNC_EXIT);
+	THINGS_LOG_D(TAG, THINGS_FUNC_EXIT);
 
 	return 1;
 }
@@ -509,14 +509,14 @@ void /*OCRepPayload */ *create_payload(struct things_resource_s *res, char *quer
 	//    To provide identical pattern for handling the result
 	//       allocating new memory for the payload to delete later
 	OCRepPayload *payload = OCRepPayloadClone((OCRepPayload *)(res->rep->payload));
-	THINGS_LOG_D(THINGS_DEBUG, TAG, "Query : %s", query);
+	THINGS_LOG_D(TAG, "Query : %s", query);
 
 	if (query == NULL || (query != NULL && strlen(query) < 1)
 		|| strstr(query, OIC_INTERFACE_ACTUATOR) != NULL || strstr(query, OIC_INTERFACE_SENSOR) != NULL) {
-		THINGS_LOG_D(THINGS_DEBUG, TAG, "Including properties & its values only");
+		THINGS_LOG_D(TAG, "Including properties & its values only");
 		// Do nothing..
 	} else if (strstr(query, OIC_INTERFACE_BASELINE)) {
-		THINGS_LOG_D(THINGS_DEBUG, TAG, "Including all the properties & its values");
+		THINGS_LOG_D(TAG, "Including all the properties & its values");
 
 		uint8_t index = 0;
 		uint8_t number_of_interfaces = 0;
@@ -524,28 +524,28 @@ void /*OCRepPayload */ *create_payload(struct things_resource_s *res, char *quer
 
 		OCGetNumberOfResourceInterfaces((OCResourceHandle) res->resource_handle, &number_of_interfaces);
 
-		THINGS_LOG_D(THINGS_DEBUG, TAG, "@@  IF # : %d ", number_of_interfaces);
+		THINGS_LOG_D(TAG, "@@  IF # : %d ", number_of_interfaces);
 		//2.a Find interface type(s) & insert it/them into payload
 		for (index = 0; index < number_of_interfaces; index++) {
 			const char *interface = OCGetResourceInterfaceName((OCResourceHandle) res->resource_handle, index);
-			THINGS_LOG_D(THINGS_DEBUG, TAG, "=====>  IF : %s ", interface);
+			THINGS_LOG_D(TAG, "=====>  IF : %s ", interface);
 			OCRepPayloadAddInterface(payload, interface);
 		}
 
 		//3.a Find resource type & insert it into payload
 		OCGetNumberOfResourceTypes((OCResourceHandle) res->resource_handle, &number_of_resource_type);
-		THINGS_LOG_D(THINGS_DEBUG, TAG, "@@  RT # : %d ", number_of_resource_type);
+		THINGS_LOG_D(TAG, "@@  RT # : %d ", number_of_resource_type);
 		for (index = 0; index < number_of_resource_type; index++) {
 			const char *rt = OCGetResourceTypeName((OCResourceHandle) res->resource_handle, index);
-			THINGS_LOG_D(THINGS_DEBUG, TAG, "=====>  RT : %s ", rt);
+			THINGS_LOG_D(TAG, "=====>  RT : %s ", rt);
 			OCRepPayloadAddResourceType(payload, rt);
 		}
 	} else if (strstr(query, OC_RSRVD_INTERFACE_BATCH)) {
-		THINGS_LOG_D(THINGS_DEBUG, TAG, "Batch only supported by Collection Resource");
+		THINGS_LOG_D(TAG, "Batch only supported by Collection Resource");
 	} else if (strstr(query, OC_RSRVD_INTERFACE_LL)) {
-		THINGS_LOG_D(THINGS_DEBUG, TAG, "Link-List only supported by Collection Resource");
+		THINGS_LOG_D(TAG, "Link-List only supported by Collection Resource");
 	} else {
-		THINGS_LOG_D(THINGS_DEBUG, TAG, "Not supporting Interface type : %s", query);
+		THINGS_LOG_D(TAG, "Not supporting Interface type : %s", query);
 	}
 
 	return payload;
@@ -580,58 +580,58 @@ void /*OCRepPayload */ *get_rep_payload(struct things_resource_s *res)
 
 		return rep_payload;
 	} else {
-		THINGS_LOG_D_ERROR(THINGS_ERROR, TAG, "ROOT(Parent) Paylaod is NULL.");
+		THINGS_LOG_E(TAG, "ROOT(Parent) Paylaod is NULL.");
 		return NULL;
 	}
 }
 
 bool is_supporting_interface_type(struct things_resource_s *res, char *query)
 {
-	THINGS_LOG_D(THINGS_DEBUG, TAG, THINGS_FUNC_ENTRY);
+	THINGS_LOG_D(TAG, THINGS_FUNC_ENTRY);
 	bool result = false;
 	uint8_t number_of_interfaces = 0;
 
 	OCGetNumberOfResourceInterfaces((OCResourceHandle) res->resource_handle, &number_of_interfaces);
 
-	THINGS_LOG_D(THINGS_DEBUG, TAG, "@@  IF # : %d ", number_of_interfaces);
+	THINGS_LOG_D(TAG, "@@  IF # : %d ", number_of_interfaces);
 	//2.a Find interface type(s) & insert it/them into payload
 	for (uint8_t index = 0; index < number_of_interfaces; index++) {
 		const char *interface = OCGetResourceInterfaceName((OCResourceHandle) res->resource_handle, index);
 
-		// THINGS_LOG_D(THINGS_DEBUG, TAG, "Supporting Interface :: %s(%s)", query, interface);
+		// THINGS_LOG_D(TAG, "Supporting Interface :: %s(%s)", query, interface);
 		if (NULL != query) {
 			if (strstr(query, interface) != NULL) {
-				// THINGS_LOG_D(THINGS_DEBUG, TAG, "Confirm Interface.");
+				// THINGS_LOG_D(TAG, "Confirm Interface.");
 				result = true;
 				break;
 			}
 		}
 	}
-	THINGS_LOG_D(THINGS_DEBUG, TAG, THINGS_FUNC_EXIT);
+	THINGS_LOG_D(TAG, THINGS_FUNC_EXIT);
 	return result;
 }
 
 bool is_supporting_resource_type(struct things_resource_s *res, char *query)
 {
-	THINGS_LOG_D(THINGS_DEBUG, TAG, THINGS_FUNC_ENTRY);
+	THINGS_LOG_D(TAG, THINGS_FUNC_ENTRY);
 	bool result = false;
 	uint8_t number_of_resource_type = 0;
 
 	OCGetNumberOfResourceTypes((OCResourceHandle) res->resource_handle, &number_of_resource_type);
 
-	THINGS_LOG_D(THINGS_DEBUG, TAG, "@@  RT # : %d ", number_of_resource_type);
+	THINGS_LOG_D(TAG, "@@  RT # : %d ", number_of_resource_type);
 	//2.a Find resource type(s) & insert it/them into payload
 	for (uint8_t index = 0; index < number_of_resource_type; index++) {
 		const char *rtype = OCGetResourceTypeName((OCResourceHandle) res->resource_handle, index);
 
-		// THINGS_LOG_D(THINGS_DEBUG, TAG, "Supporting rtype :: %s(%s)", query, rtype);
+		// THINGS_LOG_D(TAG, "Supporting rtype :: %s(%s)", query, rtype);
 		if (strstr(query, rtype) != NULL) {
-			// THINGS_LOG_D(THINGS_DEBUG, TAG, "Confirm rtype.");
+			// THINGS_LOG_D(TAG, "Confirm rtype.");
 			result = true;
 			break;
 		}
 	}
-	THINGS_LOG_D(THINGS_DEBUG, TAG, THINGS_FUNC_EXIT);
+	THINGS_LOG_D(TAG, THINGS_FUNC_EXIT);
 	return result;
 }
 
@@ -653,7 +653,7 @@ things_resource_s *get_next(things_resource_s *res)
 
 void add_child(things_resource_s *root, things_resource_s *child)
 {
-	THINGS_LOG_D(THINGS_DEBUG, TAG, THINGS_FUNC_ENTRY);
+	THINGS_LOG_D(TAG, THINGS_FUNC_ENTRY);
 
 	things_resource_s *p_node = NULL;
 
@@ -665,14 +665,14 @@ void add_child(things_resource_s *root, things_resource_s *child)
 	p_node->next = child;
 	root->size++;
 
-	THINGS_LOG_D(THINGS_DEBUG, TAG, THINGS_FUNC_EXIT);
+	THINGS_LOG_D(TAG, THINGS_FUNC_EXIT);
 }
 
 things_representation_s *things_create_representation_inst(void *rep_payload)
 {
 	things_representation_s *rep = (things_representation_s *) things_malloc(sizeof(things_representation_s));
 	if (NULL == rep) {
-		THINGS_LOG_ERROR(THINGS_ERROR, TAG, THINGS_MEMORY_ERROR);
+		THINGS_LOG_E(TAG, THINGS_MEMORY_ERROR);
 		return NULL;
 	}
 
@@ -718,7 +718,7 @@ things_resource_s *create_resource_inst_impl(void *requesthd, void *resourcehd, 
 {
 	things_resource_s *res = (things_resource_s *) things_malloc(sizeof(things_resource_s));
 	if (NULL == res) {
-		THINGS_LOG_ERROR(THINGS_ERROR, TAG, THINGS_MEMORY_ERROR);
+		THINGS_LOG_E(TAG, THINGS_MEMORY_ERROR);
 		return NULL;
 	}
 
@@ -782,7 +782,7 @@ things_resource_s *create_resource_inst_impl(void *requesthd, void *resourcehd, 
 	}
 	// else
 	// {
-	//     THINGS_LOG_D(THINGS_DEBUG,TAG, "Representation not created!!");
+	//     THINGS_LOG_D(TAG, "Representation not created!!");
 	// }
 
 	return res;
@@ -796,7 +796,7 @@ things_resource_s *things_create_resource_inst(OCRequestHandle requesthd, OCReso
 							 rep_payload);
 
 	if (NULL != rep_payload) {
-		THINGS_LOG_D(THINGS_DEBUG, TAG, "Representation Inserted to Clone~!!!");
+		THINGS_LOG_D(TAG, "Representation Inserted to Clone~!!!");
 		OCRepPayload *pl = ((OCRepPayload *) rep_payload)->next;
 
 		things_resource_s *pTempRes = NULL;
@@ -804,19 +804,19 @@ things_resource_s *things_create_resource_inst(OCRequestHandle requesthd, OCReso
 			if (NULL != pl->uri) {
 				pTempRes = create_resource_inst_impl(requesthd, resourcehd, NULL, pl);
 
-				THINGS_LOG_D(THINGS_DEBUG, TAG, "Child Resource URI : %s", pl->uri);
+				THINGS_LOG_D(TAG, "Child Resource URI : %s", pl->uri);
 				pTempRes->things_set_uri(pTempRes, pl->uri);
 				res->things_add_child(res, pTempRes);
 				//res->size++;
 			} else {
-				THINGS_LOG_D(THINGS_DEBUG, TAG, "No Uri in this payload for child, this payload was ignored.");
+				THINGS_LOG_D(TAG, "No Uri in this payload for child, this payload was ignored.");
 			}
 
 			pl = pl->next;
 		}
-		THINGS_LOG_D(THINGS_DEBUG, TAG, "\t Child Count : %d", res->size);
+		THINGS_LOG_D(TAG, "\t Child Count : %d", res->size);
 	} else {
-		THINGS_LOG_D(THINGS_DEBUG, TAG, "No Representation to Clone : %x", rep_payload);
+		THINGS_LOG_D(TAG, "No Representation to Clone : %x", rep_payload);
 	}
 
 	return res;
@@ -833,7 +833,7 @@ things_resource_s *clone_resource_inst(things_resource_s *pori)
 								pori->query,
 								(pori->rep == NULL) ? NULL : pori->rep->payload);
 	pclone->things_set_uri(pclone, pori->uri);
-	THINGS_LOG_D(THINGS_DEBUG, TAG, "@@@@@@@@@@@@@@@ URI  %s", pclone->uri);
+	THINGS_LOG_D(TAG, "@@@@@@@@@@@@@@@ URI  %s", pclone->uri);
 
 	things_resource_s *p_temp = pori->next;
 	while (p_temp) {
@@ -847,7 +847,7 @@ things_resource_s *clone_resource_inst(things_resource_s *pori)
 		p_temp = p_temp->next;
 	}
 
-	THINGS_LOG_D(THINGS_DEBUG, TAG, "@@@@@@@@@@@@@@@ Address of cloned %x", pclone);
+	THINGS_LOG_D(TAG, "@@@@@@@@@@@@@@@ Address of cloned %x", pclone);
 	return pclone;
 }
 
@@ -860,7 +860,7 @@ void things_clone_resource_inst2(things_resource_s *pori, things_resource_s **pc
 	*pclone = create_resource_inst_impl(pori->request_handle, pori->resource_handle, pori->query, ((pori->rep == NULL) ? NULL : pori->rep->payload));
 
 	(*pclone)->things_set_uri(*pclone, pori->uri);
-	THINGS_LOG_D(THINGS_DEBUG, TAG, "@@@@@@@@@@@@@@@ URI  %s", (*pclone)->uri);
+	THINGS_LOG_D(TAG, "@@@@@@@@@@@@@@@ URI  %s", (*pclone)->uri);
 
 	return;
 }
@@ -869,10 +869,10 @@ void things_release_representation_inst(things_representation_s *rep)
 {
 	if (rep != NULL) {
 		if (rep->children_payload != NULL) {
-			THINGS_LOG_D(THINGS_DEBUG, TAG, "Representation has %lld Children.", rep->num_children);
+			THINGS_LOG_D(TAG, "Representation has %lld Children.", rep->num_children);
 			for (int64_t iter = 0; iter < rep->num_children; iter++) {
 				if ((rep->children_payload[iter]) != NULL) {
-					THINGS_LOG_D(THINGS_DEBUG, TAG, "\t RELEASED.");
+					THINGS_LOG_D(TAG, "\t RELEASED.");
 					OCPayloadDestroy((OCPayload *)(rep->children_payload[iter]));
 					rep->children_payload[iter] = NULL;
 				}

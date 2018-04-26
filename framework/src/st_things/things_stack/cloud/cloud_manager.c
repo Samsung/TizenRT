@@ -114,12 +114,12 @@ static void publish_dev_profile_into_cloud(things_timeout_s *timeout);
 
 static void *handle_signup_timeout(things_timeout_s *timeout)
 {
-	THINGS_LOG_D(THINGS_DEBUG, TAG, "Sign-UP is Time-Out.");
+	THINGS_LOG_D(TAG, "Sign-UP is Time-Out.");
 
 	es_cloud_prov_data_s *pend_cloud_data = NULL;
 
 	if (timeout == NULL) {
-		THINGS_LOG_V_ERROR(THINGS_ERROR, TAG, "[Error] timeout is NULL.");
+		THINGS_LOG_E(TAG, "[Error] timeout is NULL.");
 		return 0;
 	}
 
@@ -128,7 +128,7 @@ static void *handle_signup_timeout(things_timeout_s *timeout)
 	if (send_cnt_sign_up <= MAX_SIGNUP_SENDNUM) {
 		if ((pend_cloud_data = ci_cp_get_pended_data()) != NULL) {
 			timeout->cur_counter = timeout->cur_num;
-			THINGS_LOG_V(THINGS_INFO, TAG, "Sign-UP Request Send is re-tryed(%d).", send_cnt_sign_up);
+			THINGS_LOG_V(TAG, "Sign-UP Request Send is re-tryed(%d).", send_cnt_sign_up);
 			if (cloud_retry_sign_up(pend_cloud_data, timeout) == 0) {
 				send_cnt_sign_up = MAX_SIGNUP_SENDNUM + 1;
 			}
@@ -138,28 +138,28 @@ static void *handle_signup_timeout(things_timeout_s *timeout)
 	}
 
 	if (send_cnt_sign_up > MAX_SIGNUP_SENDNUM) {
-		THINGS_LOG_V(THINGS_INFO, TAG, "Sign-UP Re-Try Request Send is failed.");
+		THINGS_LOG_V(TAG, "Sign-UP Re-Try Request Send is failed.");
 
 		things_ping_unset_mask(g_cloud_ip, PING_ST_ISCLOUD | PING_ST_SIGNIN);
 
 		if (es_cloud_state_set_and_notify(ES_STATE_FAILED_TO_REGISTER_TO_CLOUD, ES_ERRCODE_NO_RESPONSE_FROM_CLOUD_SERVER, NULL, NULL) != 0) {
-			THINGS_LOG_D(THINGS_DEBUG, TAG, "StateAndNotify is failed.");
+			THINGS_LOG_D(TAG, "StateAndNotify is failed.");
 		}
 
 		force_session_stop(CISESS_NULL);
 		send_cnt_sign_up = 0;
 	}
 
-	THINGS_LOG_D(THINGS_DEBUG, TAG, "Exit.");
+	THINGS_LOG_D(TAG, "Exit.");
 	return 0;
 }
 
 static void *handle_signin_timeout(things_timeout_s *timeout)
 {
-	THINGS_LOG_D(THINGS_DEBUG, TAG, "Sign-IN is Time-Out.");
+	THINGS_LOG_D(TAG, "Sign-IN is Time-Out.");
 
 	if (timeout == NULL) {
-		THINGS_LOG_V_ERROR(THINGS_ERROR, TAG, "[Error] timeout is NULL.");
+		THINGS_LOG_E(TAG, "[Error] timeout is NULL.");
 		return 0;
 	}
 
@@ -171,32 +171,32 @@ static void *handle_signin_timeout(things_timeout_s *timeout)
 		}
 		timeout->cur_counter = timeout->cur_num;
 
-		THINGS_LOG_V(THINGS_INFO, TAG, "Sign-IN Request Send is re-tryed. (PDF interval:%d)", timeout->cur_num);
+		THINGS_LOG_V(TAG, "Sign-IN Request Send is re-tryed. (PDF interval:%d)", timeout->cur_num);
 
 		force_session_stop(CISESS_SIGNOUT);
 		cloud_request_retry_trigger(timeout);
 	} else {
-		THINGS_LOG_V(THINGS_INFO, TAG, "Sign-IN Re-Try Request Send is failed.");
+		THINGS_LOG_V(TAG, "Sign-IN Re-Try Request Send is failed.");
 
 		things_ping_unset_mask(g_cloud_ip, PING_ST_ISCLOUD | PING_ST_SIGNIN);
 
 		if (es_cloud_state_set_and_notify(ES_STATE_FAILED_TO_REGISTER_TO_CLOUD, ES_ERRCODE_NO_RESPONSE_FROM_CLOUD_SERVER, NULL, NULL) != 0) {
-			THINGS_LOG_D(THINGS_DEBUG, TAG, "StateAndNotify is failed.");
+			THINGS_LOG_D(TAG, "StateAndNotify is failed.");
 		}
 
 		force_session_stop(CISESS_NULL);
 	}
 
-	THINGS_LOG_D(THINGS_DEBUG, TAG, "Exit.");
+	THINGS_LOG_D(TAG, "Exit.");
 	return 0;
 }
 
 static void *handle_publish_timeout(things_timeout_s *timeout)
 {
-	THINGS_LOG_D(THINGS_DEBUG, TAG, "Resource-Publish is Time-Out.");
+	THINGS_LOG_D(TAG, "Resource-Publish is Time-Out.");
 
 	if (timeout == NULL) {
-		THINGS_LOG_V_ERROR(THINGS_ERROR, TAG, "[Error] timeout is NULL.");
+		THINGS_LOG_E(TAG, "[Error] timeout is NULL.");
 		return 0;
 	}
 
@@ -208,28 +208,28 @@ static void *handle_publish_timeout(things_timeout_s *timeout)
 		}
 		timeout->cur_counter = timeout->cur_num;
 
-		THINGS_LOG_V(THINGS_INFO, TAG, "RSC_Publish Request Send is re-tryed. (PDF interval:%d)", timeout->cur_num);
+		THINGS_LOG_V(TAG, "RSC_Publish Request Send is re-tryed. (PDF interval:%d)", timeout->cur_num);
 		publish_resource_into_cloud(RSC_PUB_MAIN_ONLY, timeout);
 	} else {
-		THINGS_LOG_V(THINGS_INFO, TAG, "Resource-Publish Re-Try Request Sending is failed.");
+		THINGS_LOG_V(TAG, "Resource-Publish Re-Try Request Sending is failed.");
 
 		if (es_cloud_state_set_and_notify(ES_STATE_FAILED_TO_PUBLISH_RESOURCES_TO_CLOUD, ES_ERRCODE_NO_RESPONSE_FROM_CLOUD_SERVER, NULL, NULL) != 0) {
-			THINGS_LOG_D(THINGS_DEBUG, TAG, "StateAndNotify is failed.");
+			THINGS_LOG_D(TAG, "StateAndNotify is failed.");
 		}
 
 		force_session_stop(CISESS_NULL);
 	}
 
-	THINGS_LOG_D(THINGS_DEBUG, TAG, "Exit.");
+	THINGS_LOG_D(TAG, "Exit.");
 	return 0;
 }
 
 static void *handle_dev_profile_timeout(things_timeout_s *timeout)
 {
-	THINGS_LOG_D(THINGS_DEBUG, TAG, "Device Profile Publish is Time-Out.");
+	THINGS_LOG_D(TAG, "Device Profile Publish is Time-Out.");
 
 	if (timeout == NULL) {
-		THINGS_LOG_V_ERROR(THINGS_ERROR, TAG, "[Error] timeout is NULL.");
+		THINGS_LOG_E(TAG, "[Error] timeout is NULL.");
 		return 0;
 	}
 
@@ -241,13 +241,13 @@ static void *handle_dev_profile_timeout(things_timeout_s *timeout)
 		}
 		timeout->cur_counter = timeout->cur_num;
 
-		THINGS_LOG_V(THINGS_INFO, TAG, "Device Profile Request Send is re-tryed. (PDF interval:%d)", timeout->cur_num);
+		THINGS_LOG_V(TAG, "Device Profile Request Send is re-tryed. (PDF interval:%d)", timeout->cur_num);
 		publish_dev_profile_into_cloud(timeout);
 	} else {
-		THINGS_LOG_V(THINGS_INFO, TAG, "Device Profile publish Re-Try Request Sending is failed.");
+		THINGS_LOG_V(TAG, "Device Profile publish Re-Try Request Sending is failed.");
 	}
 
-	THINGS_LOG_D(THINGS_DEBUG, TAG, "Exit.");
+	THINGS_LOG_D(TAG, "Exit.");
 	return 0;
 }
 
@@ -259,11 +259,11 @@ static int set_def_cloud_info(es_cloud_signup_s *cloud_info, const char *cloud_a
 	char *t_domain = NULL;
 
 	if (cloud_info == NULL || cloud_addr == NULL || cloud_addr[0] == 0) {
-		THINGS_LOG_D_ERROR(THINGS_ERROR, TAG, "Parameter value is invalid.(cloud_info=0x%X, coud_addr=%s)", cloud_info, cloud_addr);
+		THINGS_LOG_E(TAG, "Parameter value is invalid.(cloud_info=0x%X, coud_addr=%s)", cloud_info, cloud_addr);
 		return 0;
 	}
 
-	THINGS_LOG_D(THINGS_DEBUG, TAG, "cloud_addr = %s", cloud_addr);
+	THINGS_LOG_D(TAG, "cloud_addr = %s", cloud_addr);
 
 	if (cloud_info->address != NULL) {
 		things_free(cloud_info->address);
@@ -282,13 +282,13 @@ static int set_def_cloud_info(es_cloud_signup_s *cloud_info, const char *cloud_a
 
 	ip_port = strstr(cloud_addr, "://");
 	if (ip_port == NULL) {
-		THINGS_LOG_D_ERROR(THINGS_ERROR, TAG, "cloud_addr is invalid.");
+		THINGS_LOG_E(TAG, "cloud_addr is invalid.");
 		return 0;
 	}
 	ip_port = ip_port + 3;
 
 	if ((cloud_info->address = (char *)things_malloc(sizeof(char) * MAX_CI_ADDRESS)) == NULL) {
-		THINGS_LOG_D_ERROR(THINGS_ERROR, TAG, "Cloud_info address memory allocation is Failed.");
+		THINGS_LOG_E(TAG, "Cloud_info address memory allocation is Failed.");
 		return 0;
 	}
 
@@ -315,27 +315,27 @@ static int set_def_cloud_info(es_cloud_signup_s *cloud_info, const char *cloud_a
 			ip_port++;
 		} else {
 			if ((ip_port = strchr(ip_port, ':')) == NULL) {
-				THINGS_LOG_D_ERROR(THINGS_ERROR, TAG, "Not exit Port number.");
+				THINGS_LOG_E(TAG, "Not exit Port number.");
 				result = 0;
 				goto GOTO_OUT;
 			}
 			ip_port++;
 		}
 
-		THINGS_LOG_D(THINGS_DEBUG, TAG, "m_domain = %s", t_domain);
-		THINGS_LOG_D(THINGS_DEBUG, TAG, "Port   = %s", ip_port);
+		THINGS_LOG_D(TAG, "m_domain = %s", t_domain);
+		THINGS_LOG_D(TAG, "Port   = %s", ip_port);
 
 		int length_port = strlen(ip_port) + 1;
 		int length_domain = strlen(t_domain) + 1;
 
 		if ((cloud_info->port = (char *)things_malloc(sizeof(char) * length_port)) == NULL) {
-			THINGS_LOG_D_ERROR(THINGS_ERROR, TAG, "Cloud_info port memory allocation is Failed.");
+			THINGS_LOG_E(TAG, "Cloud_info port memory allocation is Failed.");
 			result = 0;
 			goto GOTO_OUT;
 		}
 
 		if ((cloud_info->domain = (char *)things_malloc(sizeof(char) * length_domain)) == NULL) {
-			THINGS_LOG_D_ERROR(THINGS_ERROR, TAG, "Cloud_info domain-name memory allocation is Failed.");
+			THINGS_LOG_E(TAG, "Cloud_info domain-name memory allocation is Failed.");
 			result = 0;
 			goto GOTO_OUT;
 		}
@@ -347,17 +347,17 @@ static int set_def_cloud_info(es_cloud_signup_s *cloud_info, const char *cloud_a
 
 	if (cloud_info->refresh_token == NULL) {
 		if (prov_data == NULL || prov_data->refreshtoken[0] == 0) {
-			THINGS_LOG_D_ERROR(THINGS_ERROR, TAG, "Not exist Refresh Token. please check your system.");
+			THINGS_LOG_E(TAG, "Not exist Refresh Token. please check your system.");
 			result = 0;
 			goto GOTO_OUT;
 		}
 
-		THINGS_LOG_D(THINGS_DEBUG, TAG, "refreshtoken = %s", prov_data->refreshtoken);
+		THINGS_LOG_D(TAG, "refreshtoken = %s", prov_data->refreshtoken);
 
 		int length_refresh = strlen(prov_data->refreshtoken) + 1;
 
 		if ((cloud_info->refresh_token = (char *)things_malloc(sizeof(char) * length_refresh)) == NULL) {
-			THINGS_LOG_D_ERROR(THINGS_ERROR, TAG, "Cloud_info port memory allocation is Failed.");
+			THINGS_LOG_E(TAG, "Cloud_info port memory allocation is Failed.");
 			result = 0;
 			goto GOTO_OUT;
 		}
@@ -400,19 +400,19 @@ OCStackApplicationResult handle_register_cb(void *ctx, OCDoHandle handle, OCClie
 	es_cloud_prov_data_s *proved_data = NULL;
 
 	if (ctx != (void *)DEFAULT_CONTEXT_VALUE) {
-		THINGS_LOG_D(THINGS_DEBUG, TAG, "Invalid Register callback received");
+		THINGS_LOG_D(TAG, "Invalid Register callback received");
 	}
 
-	THINGS_LOG_D(THINGS_DEBUG, TAG, "Register response received code: %s(%d)", get_result(client_response->result), client_response->result);
+	THINGS_LOG_D(TAG, "Register response received code: %s(%d)", get_result(client_response->result), client_response->result);
 	if ((proved_data = if_failed_then_retry(handle, client_response->result, &n_err)) == NULL) {
 		if (n_err == 1 || n_err == 4) {	// OC_STACK_COMM_ERROR or Handle is invalid.
-			THINGS_LOG_D(THINGS_DEBUG, TAG, "OC_STACK_COMM_ERROR(1) or Handle InValid(4) : %d", n_err);
+			THINGS_LOG_D(TAG, "OC_STACK_COMM_ERROR(1) or Handle InValid(4) : %d", n_err);
 			return OC_STACK_DELETE_TRANSACTION;
 		}
 
-		THINGS_LOG_D_ERROR(THINGS_ERROR, TAG, "System Error occurred.(proved_data=0x%X, n_err=%d)", proved_data, n_err);
+		THINGS_LOG_E(TAG, "System Error occurred.(proved_data=0x%X, n_err=%d)", proved_data, n_err);
 		if (es_cloud_state_set_and_notify(ES_STATE_FAILED_TO_REGISTER_TO_CLOUD, ER_ERRCODE_SYSTEM_ERROR, NULL, NULL) != 0) {
-			THINGS_LOG_V_ERROR(THINGS_ERROR, TAG, "StateAndNotify is failed.");
+			THINGS_LOG_E(TAG, "StateAndNotify is failed.");
 		}
 
 		return OC_STACK_DELETE_TRANSACTION;
@@ -421,17 +421,17 @@ OCStackApplicationResult handle_register_cb(void *ctx, OCDoHandle handle, OCClie
 	send_cnt_sign_up = 0;
 
 	if (client_response->payload != NULL && client_response->payload->type == PAYLOAD_TYPE_REPRESENTATION) {
-		THINGS_LOG_D(THINGS_DEBUG, TAG, "PAYLOAD_TYPE_REPRESENTATION received");
-		THINGS_LOG_D(THINGS_DEBUG, TAG, "You can login using received session variable after disconnected or reboot");
+		THINGS_LOG_D(TAG, "PAYLOAD_TYPE_REPRESENTATION received");
+		THINGS_LOG_D(TAG, "You can login using received session variable after disconnected or reboot");
 
 		OCRepPayloadValue *val = ((OCRepPayload *) client_response->payload)->values;
 		while (val != NULL) {
 			if (val->type == OCREP_PROP_INT) {
-				THINGS_LOG_D(THINGS_DEBUG, TAG, "Key: %s, Value: %lld, int ", val->name, val->i);
+				THINGS_LOG_D(TAG, "Key: %s, Value: %lld, int ", val->name, val->i);
 			} else if (val->type == OCREP_PROP_STRING) {
-				THINGS_LOG_D(THINGS_DEBUG, TAG, "Key: %s, Value: %s, string", val->name, val->str);
+				THINGS_LOG_D(TAG, "Key: %s, Value: %s, string", val->name, val->str);
 			} else {
-				THINGS_LOG_D(THINGS_DEBUG, TAG, "Un supported val Type.(0x%d)", val->type);
+				THINGS_LOG_D(TAG, "Un supported val Type.(0x%d)", val->type);
 			}
 
 			val = val->next;
@@ -443,38 +443,38 @@ OCStackApplicationResult handle_register_cb(void *ctx, OCDoHandle handle, OCClie
 			things_ping_unset_mask(g_cloud_ip, PING_ST_ISCLOUD | PING_ST_SIGNIN);
 
 			if (es_cloud_state_set_and_notify(ES_STATE_FAILED_TO_REGISTER_TO_CLOUD, (ci_error_code_e) NULL, client_response, &ci_err) != 0) {
-				THINGS_LOG_D(THINGS_DEBUG, TAG, "StateAndNotify is failed.");
+				THINGS_LOG_D(TAG, "StateAndNotify is failed.");
 				res = OC_STACK_DELETE_TRANSACTION;
 				goto GOTO_OUT;
 			}
 
 			switch (ci_err) {
 			case ERRCI_NOT_ACCEPTABLE:
-				THINGS_LOG_D(THINGS_DEBUG, TAG, "Cloud received duplicated-request in 500msec. retry-again");
+				THINGS_LOG_D(TAG, "Cloud received duplicated-request in 500msec. retry-again");
 				if (g_qis_cloud_thread_running != CISESS_APDISCON) {
 					cloud_request_retry_trigger(NULL);
 				}
 				break;
 			case ERRCI_INTERNAL_SERVER_ERROR:
-				THINGS_LOG_D(THINGS_DEBUG, TAG, "[ERRCODE]Cloud Server has a issue, Check your Cloud Server.");
+				THINGS_LOG_D(TAG, "[ERRCODE]Cloud Server has a issue, Check your Cloud Server.");
 				esm_get_network_status();	// State return
 				break;
 			case ERRCI_SAMSUNG_ACCOUNT_UNAUTHORIZED_TOKEN:
 			case ERRCI_SAMSUNG_ACCOUNT_AUTHORIZATION_FAILED:
 			case ERRCI_FORBIDDEN:
 			case ERRCI_USER_NOT_FOUND:
-				THINGS_LOG_D(THINGS_DEBUG, TAG, "[ERRCODE] %d : fix the information and try again.", ci_err);
+				THINGS_LOG_D(TAG, "[ERRCODE] %d : fix the information and try again.", ci_err);
 				if (cloud_retry_sign_in(NULL) != 0) {
-					THINGS_LOG_D_ERROR(THINGS_ERROR, TAG, "Cloud connection Re-try is failed.");
+					THINGS_LOG_E(TAG, "Cloud connection Re-try is failed.");
 				}
 				res = OC_STACK_DELETE_TRANSACTION;
 				break;
 			case ERRCI_DEVICE_DUPLICATE_PARAM:
-				THINGS_LOG_D(THINGS_DEBUG, TAG, "[ERRCODE] %d : check your device_id and try again.", ci_err);
+				THINGS_LOG_D(TAG, "[ERRCODE] %d : check your device_id and try again.", ci_err);
 				;				// TODO : need cloud definition.
 				break;
 			default:
-				THINGS_LOG_D(THINGS_DEBUG, TAG, "Not Support This Cloud-Error-Code(%d) Exception", ci_err);
+				THINGS_LOG_D(TAG, "Not Support This Cloud-Error-Code(%d) Exception", ci_err);
 				esm_get_network_status();	// State return
 				res = OC_STACK_DELETE_TRANSACTION;
 				break;
@@ -485,7 +485,7 @@ OCStackApplicationResult handle_register_cb(void *ctx, OCDoHandle handle, OCClie
 
 		if (es_cloud_signup_init(&signed_up_data) == false) {
 			es_cloud_state_set_and_notify(ES_STATE_FAILED_TO_REGISTER_TO_CLOUD, ER_ERRCODE_SYSTEM_ERROR, NULL, NULL);
-			THINGS_LOG_D_ERROR(THINGS_ERROR, TAG, "signed_up_data-memory allocation is Failed, try again.");
+			THINGS_LOG_E(TAG, "signed_up_data-memory allocation is Failed, try again.");
 			res = OC_STACK_DELETE_TRANSACTION;
 			goto GOTO_OUT;
 		}
@@ -502,7 +502,7 @@ OCStackApplicationResult handle_register_cb(void *ctx, OCDoHandle handle, OCClie
 #ifdef __SECURED__
 		if (sm_save_cloud_acl(signed_up_data->sid) != 0) {	// OIC_SEC_OK(0)
 			es_cloud_state_set_and_notify(ES_STATE_FAILED_TO_REGISTER_TO_CLOUD, ER_ERRCODE_SYSTEM_ERROR, NULL, NULL);
-			THINGS_LOG_V_ERROR(THINGS_ERROR, TAG, "It's failed to save Cloud UUID to ACL list.");
+			THINGS_LOG_E(TAG, "It's failed to save Cloud UUID to ACL list.");
 			res = OC_STACK_DELETE_TRANSACTION;
 			goto GOTO_OUT;
 		}
@@ -510,38 +510,38 @@ OCStackApplicationResult handle_register_cb(void *ctx, OCDoHandle handle, OCClie
 
 		if (set_def_cloud_info(signed_up_data, g_cloud_address, proved_data) == 0) {
 			es_cloud_state_set_and_notify(ES_STATE_FAILED_TO_REGISTER_TO_CLOUD, ER_ERRCODE_SYSTEM_ERROR, NULL, NULL);
-			THINGS_LOG_D_ERROR(THINGS_ERROR, TAG, "signed_up_data default setting is Failed.");
+			THINGS_LOG_E(TAG, "signed_up_data default setting is Failed.");
 			res = OC_STACK_DELETE_TRANSACTION;
 			goto GOTO_OUT;
 		}
 
-		THINGS_LOG_D(THINGS_DEBUG, TAG, "expiresin : %lld", signed_up_data->expire_time);
+		THINGS_LOG_D(TAG, "expiresin : %lld", signed_up_data->expire_time);
 
 		if (signed_up_data->access_token == NULL || strlen(signed_up_data->access_token) < 1) {
-			THINGS_LOG_ERROR(THINGS_ERROR, TAG, "Session Key is NULL");
+			THINGS_LOG_E(TAG, "Session Key is NULL");
 
 			if (es_cloud_state_set_and_notify(ES_STATE_FAILED_TO_REGISTER_TO_CLOUD, ES_ERRCODE_INVALID_ACCESSTOKEN, NULL, NULL) != 0) {
-				THINGS_LOG_D(THINGS_DEBUG, TAG, "StateAndNotify is failed.");
+				THINGS_LOG_D(TAG, "StateAndNotify is failed.");
 				res = OC_STACK_DELETE_TRANSACTION;
 				goto GOTO_OUT;
 			}
 		} else {
-			THINGS_LOG(THINGS_DEBUG, TAG, "Write Sign-Up data to file.");
+			THINGS_LOG_D(TAG, "Write Sign-Up data to file.");
 			if (dm_update_things_cloud(signed_up_data) == 0) {
-				THINGS_LOG_ERROR(THINGS_ERROR, TAG, "Sign-UP data can not write to info file.");
+				THINGS_LOG_E(TAG, "Sign-UP data can not write to info file.");
 				res = OC_STACK_DELETE_TRANSACTION;
 				goto GOTO_OUT;
 			}
 
-			THINGS_LOG(THINGS_DEBUG, TAG, "Start Login Into Cloud");
+			THINGS_LOG_D(TAG, "Start Login Into Cloud");
 			log_in_out_to_cloud(true, NULL);
 			res = OC_STACK_DELETE_TRANSACTION;
 		}
 	} else {
-		THINGS_LOG_V_ERROR(THINGS_ERROR, TAG, "Received Failed-Response of Sign-UP without payload from Cloud Server.");
+		THINGS_LOG_E(TAG, "Received Failed-Response of Sign-UP without payload from Cloud Server.");
 
 		if (es_cloud_state_set_and_notify(ES_STATE_FAILED_TO_REGISTER_TO_CLOUD, ES_ERRCODE_UNKNOWN, NULL, NULL) != 0) {
-			THINGS_LOG_V_ERROR(THINGS_ERROR, TAG, "StateAndNotify is failed.");
+			THINGS_LOG_E(TAG, "StateAndNotify is failed.");
 			res = OC_STACK_DELETE_TRANSACTION;
 			goto GOTO_OUT;
 		}
@@ -566,17 +566,17 @@ GOTO_OUT:
  */
 OCStackApplicationResult handle_login_cb(void *ctx, OCDoHandle handle, OCClientResponse *client_response)
 {
-	THINGS_LOG_D(THINGS_DEBUG, TAG, "Login callback received");
+	THINGS_LOG_D(TAG, "Login callback received");
 
 	int n_err = 0;
 	es_cloud_prov_data_s *proved_data = NULL;
 	OCStackApplicationResult res = OC_STACK_DELETE_TRANSACTION;
 
 	if (ctx != (void *)DEFAULT_CONTEXT_VALUE) {
-		THINGS_LOG_D(THINGS_DEBUG, TAG, "Invalid Login callback received");
+		THINGS_LOG_D(TAG, "Invalid Login callback received");
 	}
 
-	THINGS_LOG_D(THINGS_DEBUG, TAG, "Login response received code: %s(%d)", get_result(client_response->result), client_response->result);
+	THINGS_LOG_D(TAG, "Login response received code: %s(%d)", get_result(client_response->result), client_response->result);
 	proved_data = if_failed_then_retry(handle, client_response->result, &n_err);
 
 	if (proved_data) {
@@ -585,21 +585,21 @@ OCStackApplicationResult handle_login_cb(void *ctx, OCDoHandle handle, OCClientR
 	}
 
 	if (n_err >= 3 || n_err == 1) {	// mem alloc error, handle is invalid.
-		THINGS_LOG_D(THINGS_DEBUG, TAG, "Memory alloc error or InValid Resp CB.(%d)", n_err);
+		THINGS_LOG_D(TAG, "Memory alloc error or InValid Resp CB.(%d)", n_err);
 		return OC_STACK_DELETE_TRANSACTION;
 	}
 
 	if (client_response->payload != NULL && client_response->payload->type == PAYLOAD_TYPE_REPRESENTATION) {
-		THINGS_LOG_D(THINGS_DEBUG, TAG, "PAYLOAD_TYPE_REPRESENTATION received");
+		THINGS_LOG_D(TAG, "PAYLOAD_TYPE_REPRESENTATION received");
 
 		OCRepPayloadValue *val = ((OCRepPayload *) client_response->payload)->values;
 		while (val) {
 			if (val->type == OCREP_PROP_INT) {
-				THINGS_LOG_D(THINGS_DEBUG, TAG, "Key: %s, Value: %lld, int", val->name, val->i);
+				THINGS_LOG_D(TAG, "Key: %s, Value: %lld, int", val->name, val->i);
 			} else if (val->type == OCREP_PROP_STRING) {
-				THINGS_LOG_D(THINGS_DEBUG, TAG, "Key: %s, Value: %s, string", val->name, val->str);
+				THINGS_LOG_D(TAG, "Key: %s, Value: %s, string", val->name, val->str);
 			} else {
-				THINGS_LOG_D(THINGS_DEBUG, TAG, "Un supported val Type.(0x%d)", val->type);
+				THINGS_LOG_D(TAG, "Un supported val Type.(0x%d)", val->type);
 			}
 
 			val = val->next;
@@ -611,35 +611,35 @@ OCStackApplicationResult handle_login_cb(void *ctx, OCDoHandle handle, OCClientR
 			things_ping_unset_mask(g_cloud_ip, PING_ST_SIGNIN);
 
 			if (es_cloud_state_set_and_notify(ES_STATE_FAILED_TO_REGISTER_TO_CLOUD, (ci_error_code_e) NULL, client_response, &ci_err) != 0) {
-				THINGS_LOG_D(THINGS_DEBUG, TAG, "StateAndNotify is failed.");
+				THINGS_LOG_D(TAG, "StateAndNotify is failed.");
 				return OC_STACK_DELETE_TRANSACTION;
 			}
 
 			switch (ci_err) {
 			case ERRCI_INTERNAL_SERVER_ERROR:
-				THINGS_LOG_D(THINGS_DEBUG, TAG, "[ERRCODE]Cloud Server has a issue, Check your Cloud Server.");
+				THINGS_LOG_D(TAG, "[ERRCODE]Cloud Server has a issue, Check your Cloud Server.");
 				things_ping_unset_mask(g_cloud_ip, PING_ST_ISCLOUD);
 				esm_get_network_status();	// State return
 				break;
 			case ERRCI_TOKEN_VALIDATION_FAILED:
 			case ERRCI_TOKEN_EXPIRED:
-				THINGS_LOG_D(THINGS_DEBUG, TAG, "[ERRCODE] AccessToken \"%d\", refresh AccessToken and try again.", ci_err);
+				THINGS_LOG_D(TAG, "[ERRCODE] AccessToken \"%d\", refresh AccessToken and try again.", ci_err);
 				refresh_token_into_cloud();	// refresh accesstoken.
 				break;
 			case ERRCI_FORBIDDEN:
-				THINGS_LOG_D(THINGS_DEBUG, TAG, "[ERRCODE]-> URI is invalid, fix the URI and try again.");
+				THINGS_LOG_D(TAG, "[ERRCODE]-> URI is invalid, fix the URI and try again.");
 				cloud_retry_sign_in(NULL);	// TODO : need re-code
 				break;
 			case ERRCI_DEVICE_NOT_FOUND:
-				THINGS_LOG_D(THINGS_DEBUG, TAG, "[ERRCODE]Device Not Found, Check your device ID and User ID coupling.");
+				THINGS_LOG_D(TAG, "[ERRCODE]Device Not Found, Check your device ID and User ID coupling.");
 				things_ping_unset_mask(g_cloud_ip, PING_ST_ISCLOUD);
 				esm_get_network_status();	// State return
 				if (things_reset(NULL, RST_AUTO_RESET) == -1) {
-					THINGS_LOG_V_ERROR(THINGS_ERROR, TAG, "[Error] things_reset is failed.");
+					THINGS_LOG_E(TAG, "[Error] things_reset is failed.");
 				}
 				break;
 			default:
-				THINGS_LOG_D(THINGS_DEBUG, TAG, "Not Support This Cloud-Error-Code(%d) Exception", ci_err);
+				THINGS_LOG_D(TAG, "Not Support This Cloud-Error-Code(%d) Exception", ci_err);
 				things_ping_unset_mask(g_cloud_ip, PING_ST_ISCLOUD);
 				esm_get_network_status();	// State return
 				break;
@@ -649,7 +649,7 @@ OCStackApplicationResult handle_login_cb(void *ctx, OCDoHandle handle, OCClientR
 		}
 
 		if (es_cloud_state_set_and_notify(ES_STATE_REGISTERED_TO_CLOUD, ES_ERRCODE_NO_ERROR, NULL, NULL) != 0) {
-			THINGS_LOG_D(THINGS_DEBUG, TAG, "StateAndNotify is failed.");
+			THINGS_LOG_D(TAG, "StateAndNotify is failed.");
 			return OC_STACK_DELETE_TRANSACTION;
 		}
 
@@ -658,7 +658,7 @@ OCStackApplicationResult handle_login_cb(void *ctx, OCDoHandle handle, OCClientR
 		things_ping_set_mask(g_cloud_ip, atoi(g_cloud_port), PING_ST_SIGNIN);
 
 		// [ysy] Plublish resources to cloud
-		THINGS_LOG(THINGS_DEBUG, TAG, "Start OCCloudPUblish");
+		THINGS_LOG_D(TAG, "Start OCCloudPUblish");
 		retranslate_rsc_publish_cnt = 0;
 		publish_resource_into_cloud(RSC_PUB_MAIN_ONLY, NULL);
 #ifdef ENABLE_PUSH_NOTY
@@ -667,10 +667,10 @@ OCStackApplicationResult handle_login_cb(void *ctx, OCDoHandle handle, OCClientR
 
 		res = OC_STACK_DELETE_TRANSACTION;
 	} else if (client_response->result != OC_STACK_RESOURCE_CHANGED) {
-		THINGS_LOG_V_ERROR(THINGS_ERROR, TAG, "Received Failed-Response of Sign-IN without payload from Cloud Server.");
+		THINGS_LOG_E(TAG, "Received Failed-Response of Sign-IN without payload from Cloud Server.");
 
 		if (es_cloud_state_set_and_notify(ES_STATE_FAILED_TO_REGISTER_TO_CLOUD, ES_ERRCODE_UNKNOWN, NULL, NULL) != 0) {
-			THINGS_LOG_V_ERROR(THINGS_ERROR, TAG, "StateAndNotify is failed.");
+			THINGS_LOG_E(TAG, "StateAndNotify is failed.");
 			return OC_STACK_DELETE_TRANSACTION;
 		}
 	}
@@ -688,27 +688,27 @@ OCStackApplicationResult handle_login_cb(void *ctx, OCDoHandle handle, OCClientR
  */
 OCStackApplicationResult handle_logout_cb(void *ctx, OCDoHandle handle, OCClientResponse *client_response)
 {
-	THINGS_LOG_D(THINGS_DEBUG, TAG, "Logout callback received");
+	THINGS_LOG_D(TAG, "Logout callback received");
 
 	OCStackApplicationResult res = OC_STACK_DELETE_TRANSACTION;
 
 	if (ctx != (void *)DEFAULT_CONTEXT_VALUE) {
-		THINGS_LOG_D(THINGS_DEBUG, TAG, "Invalid Logout callback received");
+		THINGS_LOG_D(TAG, "Invalid Logout callback received");
 	}
 
-	THINGS_LOG_D(THINGS_DEBUG, TAG, "Logout response received code: %s(%d)", get_result(client_response->result), client_response->result);
+	THINGS_LOG_D(TAG, "Logout response received code: %s(%d)", get_result(client_response->result), client_response->result);
 
 	if (client_response->payload != NULL && client_response->payload->type == PAYLOAD_TYPE_REPRESENTATION) {
-		THINGS_LOG_D(THINGS_DEBUG, TAG, "PAYLOAD_TYPE_REPRESENTATION received");
+		THINGS_LOG_D(TAG, "PAYLOAD_TYPE_REPRESENTATION received");
 
 		OCRepPayloadValue *val = ((OCRepPayload *) client_response->payload)->values;
 		while (val) {
 			if (val->type == OCREP_PROP_INT) {
-				THINGS_LOG_D(THINGS_DEBUG, TAG, "Key: %s, Value: %lld, int", val->name, val->i);
+				THINGS_LOG_D(TAG, "Key: %s, Value: %lld, int", val->name, val->i);
 			} else if (val->type == OCREP_PROP_STRING) {
-				THINGS_LOG_D(THINGS_DEBUG, TAG, "Key: %s, Value: %s, string", val->name, val->str);
+				THINGS_LOG_D(TAG, "Key: %s, Value: %s, string", val->name, val->str);
 			} else {
-				THINGS_LOG_D(THINGS_DEBUG, TAG, "Un supported val Type.(0x%d)", val->type);
+				THINGS_LOG_D(TAG, "Un supported val Type.(0x%d)", val->type);
 			}
 
 			val = val->next;
@@ -723,7 +723,7 @@ OCStackApplicationResult handle_logout_cb(void *ctx, OCDoHandle handle, OCClient
 		}
 
 		if (es_cloud_state_set_and_notify(es_err, ES_ERRCODE_NO_ERROR, NULL, NULL) != 0) {
-			THINGS_LOG_V_ERROR(THINGS_ERROR, TAG, "StateAndNotify is failed.");
+			THINGS_LOG_E(TAG, "StateAndNotify is failed.");
 		}
 	}
 
@@ -739,9 +739,9 @@ static bool check_comm_error_retrans(OCStackResult result)
 	static int retransmission_count = 0;
 
 	if (result == OC_STACK_COMM_ERROR) {	// Don't Send Request Message.
-		THINGS_LOG_D(THINGS_DEBUG, TAG, "Request-Send is Failed.");
+		THINGS_LOG_D(TAG, "Request-Send is Failed.");
 		if (g_qis_cloud_thread_running != CISESS_APDISCON && retransmission_count < MAX_COMM_ERROR_RETRANSMISSION) {
-			THINGS_LOG_D(THINGS_DEBUG, TAG, "Re-transmission try.");
+			THINGS_LOG_D(TAG, "Re-transmission try.");
 			retransmission_count++;
 			ret = true;
 		} else {
@@ -757,32 +757,32 @@ static bool check_comm_error_retrans(OCStackResult result)
 
 OCStackApplicationResult handle_refresh_token_cb(void *ctx, OCDoHandle handle, OCClientResponse *client_response)
 {
-	THINGS_LOG_D(THINGS_DEBUG, TAG, "Refresh Token callback received");
+	THINGS_LOG_D(TAG, "Refresh Token callback received");
 
 	OCStackApplicationResult res = OC_STACK_DELETE_TRANSACTION;
 
 	if (ctx != (void *)DEFAULT_CONTEXT_VALUE) {
-		THINGS_LOG_D(THINGS_DEBUG, TAG, "Invalid Login/out callback received");
+		THINGS_LOG_D(TAG, "Invalid Login/out callback received");
 	}
 
-	THINGS_LOG_D(THINGS_DEBUG, TAG, "Refresh Token response received code: %s(%d)", get_result(client_response->result), client_response->result);
+	THINGS_LOG_D(TAG, "Refresh Token response received code: %s(%d)", get_result(client_response->result), client_response->result);
 
 	if (check_comm_error_retrans(client_response->result) == true) {
-		THINGS_LOG_D(THINGS_DEBUG, TAG, "Re-Start Refresh-Token Process.");
+		THINGS_LOG_D(TAG, "Re-Start Refresh-Token Process.");
 		refresh_token_into_cloud();
 	}
 
 	if (client_response->payload != NULL && client_response->payload->type == PAYLOAD_TYPE_REPRESENTATION) {
-		THINGS_LOG_D(THINGS_DEBUG, TAG, "PAYLOAD_TYPE_REPRESENTATION received");
+		THINGS_LOG_D(TAG, "PAYLOAD_TYPE_REPRESENTATION received");
 
 		OCRepPayloadValue *val = ((OCRepPayload *) client_response->payload)->values;
 		while (val != NULL) {
 			if (val->type == OCREP_PROP_INT) {
-				THINGS_LOG_D(THINGS_DEBUG, TAG, "Key: %s, Value: %lld, int", val->name, val->i);
+				THINGS_LOG_D(TAG, "Key: %s, Value: %lld, int", val->name, val->i);
 			} else if (val->type == OCREP_PROP_STRING) {
-				THINGS_LOG_D(THINGS_DEBUG, TAG, "Key: %s, Value: %s, string", val->name, val->str);
+				THINGS_LOG_D(TAG, "Key: %s, Value: %s, string", val->name, val->str);
 			} else {
-				THINGS_LOG_D(THINGS_DEBUG, TAG, "Un supported val Type.(0x%d)", val->type);
+				THINGS_LOG_D(TAG, "Un supported val Type.(0x%d)", val->type);
 			}
 
 			val = val->next;
@@ -795,32 +795,32 @@ OCStackApplicationResult handle_refresh_token_cb(void *ctx, OCDoHandle handle, O
 				ci_err = ERRCI_UNKNOWN;
 			}
 
-			THINGS_LOG_D(THINGS_DEBUG, TAG, "Cloud ErrCode = %d", ci_err);
+			THINGS_LOG_D(TAG, "Cloud ErrCode = %d", ci_err);
 //            es_set_cloud_error_code(ci_err);
 
 			switch (ci_err) {
 			case ERRCI_INTERNAL_SERVER_ERROR:
-				THINGS_LOG_D(THINGS_DEBUG, TAG, "[ERRCODE]Cloud Server has a issue, Check your Cloud Server.");
+				THINGS_LOG_D(TAG, "[ERRCODE]Cloud Server has a issue, Check your Cloud Server.");
 				esm_get_network_status();	// State return
 				break;
 			case ERRCI_TOKEN_VALIDATION_FAILED:
-				THINGS_LOG_D(THINGS_DEBUG, TAG, "[ERRCODE]-> RefreshToken is invalid, fix RefreshToken and try again.");
+				THINGS_LOG_D(TAG, "[ERRCODE]-> RefreshToken is invalid, fix RefreshToken and try again.");
 				esm_get_network_status();	// State return
 				break;
 			case ERRCI_SAMSUNG_ACCOUNT_UNAUTHORIZED_TOKEN:
-				THINGS_LOG_D(THINGS_DEBUG, TAG, "[ERRCODE]-> RefreshToken is mismatched with client ID, fix RefreshToken or Client ID.");
+				THINGS_LOG_D(TAG, "[ERRCODE]-> RefreshToken is mismatched with client ID, fix RefreshToken or Client ID.");
 				esm_get_network_status();	// State return
 				break;
 			case ERRCI_TOKEN_EXPIRED:
-				THINGS_LOG_D(THINGS_DEBUG, TAG, "[ERRCODE]-> RefreshToken is expired, refresh RefreshToken and try again.");
+				THINGS_LOG_D(TAG, "[ERRCODE]-> RefreshToken is expired, refresh RefreshToken and try again.");
 				esm_get_network_status();	// State return
 				break;
 			case ERRCI_FORBIDDEN:
-				THINGS_LOG_D(THINGS_DEBUG, TAG, "[ERRCODE]-> URI is invalid, fix the URI and try again.");
+				THINGS_LOG_D(TAG, "[ERRCODE]-> URI is invalid, fix the URI and try again.");
 				esm_get_network_status();	// State return
 				break;
 			default:
-				THINGS_LOG_D(THINGS_DEBUG, TAG, "Not Support This Cloud-Error-Code(%d) Exception", ci_err);
+				THINGS_LOG_D(TAG, "Not Support This Cloud-Error-Code(%d) Exception", ci_err);
 				esm_get_network_status();	// State return
 				break;
 			}
@@ -838,18 +838,18 @@ OCStackApplicationResult handle_refresh_token_cb(void *ctx, OCDoHandle handle, O
 		OCRepPayloadGetPropString(((OCRepPayload *) client_response->payload), KEY_TOKEN_TYPE, &signed_up_data->token_type);
 		OCRepPayloadGetPropInt(((OCRepPayload *) client_response->payload), KEY_EXPIRE_TIME, &signed_up_data->expire_time);
 
-		THINGS_LOG_D(THINGS_DEBUG, TAG, "expiresin : %lld", signed_up_data->expire_time);
+		THINGS_LOG_D(TAG, "expiresin : %lld", signed_up_data->expire_time);
 
 		if (signed_up_data->access_token == NULL || strlen(signed_up_data->access_token) < 1) {
-			THINGS_LOG_ERROR(THINGS_ERROR, TAG, "Session Key is NULL. Refresh Token Failed.");
+			THINGS_LOG_E(TAG, "Session Key is NULL. Refresh Token Failed.");
 		} else {
-			THINGS_LOG(THINGS_DEBUG, TAG, "Write Sign-Up data to file.");
+			THINGS_LOG_D(TAG, "Write Sign-Up data to file.");
 			if (dm_update_things_cloud(signed_up_data) == 1) {
-				THINGS_LOG_D(THINGS_DEBUG, TAG, "Re-Try Sign-IN step.");
+				THINGS_LOG_D(TAG, "Re-Try Sign-IN step.");
 				force_session_stop(CISESS_SIGNOUT);
 				log_in_out_to_cloud(true, NULL);
 			} else {
-				THINGS_LOG_ERROR(THINGS_ERROR, TAG, "Refreshed Sign-UP data can not write to info file.");
+				THINGS_LOG_E(TAG, "Refreshed Sign-UP data can not write to info file.");
 			}
 		}
 
@@ -861,23 +861,23 @@ OCStackApplicationResult handle_refresh_token_cb(void *ctx, OCDoHandle handle, O
 
 OCStackApplicationResult handle_main_dev_publish_cb(void *ctx, OCDoHandle handle, OCClientResponse *client_response)
 {
-	THINGS_LOG_D(THINGS_DEBUG, TAG, "Publish callback received");
+	THINGS_LOG_D(TAG, "Publish callback received");
 
 	if (ctx != (void *)DEFAULT_CONTEXT_VALUE) {
-		THINGS_LOG_D(THINGS_DEBUG, TAG, "Invalid Publish callback received");
+		THINGS_LOG_D(TAG, "Invalid Publish callback received");
 	}
 
-	THINGS_LOG_D(THINGS_DEBUG, TAG, "Publish resource response received, code: %s(%d)", get_result(client_response->result), client_response->result);
+	THINGS_LOG_D(TAG, "Publish resource response received, code: %s(%d)", get_result(client_response->result), client_response->result);
 	if (things_cas_request_handle(handle, NULL) == 1) {
 		things_del_all_request_handle();
 
 		if (check_comm_error_retrans(client_response->result) == true) {
-			THINGS_LOG_D(THINGS_DEBUG, TAG, "Re-Start publish_resource_into_cloud");
+			THINGS_LOG_D(TAG, "Re-Start publish_resource_into_cloud");
 			publish_resource_into_cloud(RSC_PUB_MAIN_ONLY, NULL);
 		}
 
 	} else {
-		THINGS_LOG_V_ERROR(THINGS_ERROR, TAG, "Response Handle(0x%X) is not exist in the Request Handle list.", handle);
+		THINGS_LOG_E(TAG, "Response Handle(0x%X) is not exist in the Request Handle list.", handle);
 		return OC_STACK_DELETE_TRANSACTION;
 	}
 
@@ -885,11 +885,11 @@ OCStackApplicationResult handle_main_dev_publish_cb(void *ctx, OCDoHandle handle
 		OCRepPayloadValue *val = ((OCRepPayload *) client_response->payload)->values;
 		while (val != NULL) {
 			if (val->type == OCREP_PROP_INT) {
-				THINGS_LOG_D(THINGS_DEBUG, TAG, "Key: %s, Value: %lld, int", val->name, val->i);
+				THINGS_LOG_D(TAG, "Key: %s, Value: %lld, int", val->name, val->i);
 			} else if (val->type == OCREP_PROP_STRING) {
-				THINGS_LOG_D(THINGS_DEBUG, TAG, "Key: %s, Value: %s, string", val->name, val->str);
+				THINGS_LOG_D(TAG, "Key: %s, Value: %s, string", val->name, val->str);
 			} else {
-				THINGS_LOG_D(THINGS_DEBUG, TAG, "Un supported val Type.(0x%d)", val->type);
+				THINGS_LOG_D(TAG, "Un supported val Type.(0x%d)", val->type);
 			}
 
 			val = val->next;
@@ -899,46 +899,46 @@ OCStackApplicationResult handle_main_dev_publish_cb(void *ctx, OCDoHandle handle
 			ci_error_code_e ci_err = ERRCI_NO_ERROR;
 
 			if (es_cloud_state_set_and_notify(ES_STATE_FAILED_TO_PUBLISH_RESOURCES_TO_CLOUD, (ci_error_code_e) NULL, client_response, &ci_err) != 0) {
-				THINGS_LOG_D(THINGS_DEBUG, TAG, "StateAndNotify is failed.");
+				THINGS_LOG_D(TAG, "StateAndNotify is failed.");
 				PROFILING_TIME("Cloud Provisioning End.");
 				return OC_STACK_DELETE_TRANSACTION;
 			}
 
 			switch (ci_err) {
 			case ERRCI_INTERNAL_SERVER_ERROR:
-				THINGS_LOG_D(THINGS_DEBUG, TAG, "[ERRCODE]Cloud Server has a issue, Check your Cloud Server.");
+				THINGS_LOG_D(TAG, "[ERRCODE]Cloud Server has a issue, Check your Cloud Server.");
 				esm_get_network_status();	// State return
 				break;
 			case ERRCI_TOKEN_VALIDATION_FAILED:
 			case ERRCI_TOKEN_EXPIRED:
-				THINGS_LOG_D(THINGS_DEBUG, TAG, "[ERRCODE]-> AccessToken \"%d\", refresh AccessToken and try again.", ci_err);
+				THINGS_LOG_D(TAG, "[ERRCODE]-> AccessToken \"%d\", refresh AccessToken and try again.", ci_err);
 				refresh_token_into_cloud();	// refresh accesstoken.
 				break;
 			case ERRCI_FORBIDDEN:
-				THINGS_LOG_D(THINGS_DEBUG, TAG, "[ERRCODE]-> URI is invalid, fix the URI and try again.");
+				THINGS_LOG_D(TAG, "[ERRCODE]-> URI is invalid, fix the URI and try again.");
 				break;
 			case ERRCI_RDLINK_INVALID_PARAM:
-				THINGS_LOG_D(THINGS_DEBUG, TAG, "[ERRCODE]-> Resource List Cbor syntax is invalid. Re-Translation.");
+				THINGS_LOG_D(TAG, "[ERRCODE]-> Resource List Cbor syntax is invalid. Re-Translation.");
 				if (retranslate_rsc_publish_cnt < MAX_RETRY_RSCPUBLISH) {
 					publish_resource_into_cloud(RSC_PUB_MAIN_ONLY, NULL);
 					retranslate_rsc_publish_cnt++;
 				} else {
-					THINGS_LOG_D(THINGS_INFO, TAG, "[INFO] Resource Publish is Re-translated about %d\n Please check Network Line.", retranslate_rsc_publish_cnt);
+					THINGS_LOG_V(TAG, "[INFO] Resource Publish is Re-translated about %d\n Please check Network Line.", retranslate_rsc_publish_cnt);
 					retranslate_rsc_publish_cnt = 0;
 					esm_get_network_status();	// State return
 				}
 				break;
 			default:
-				THINGS_LOG_D(THINGS_DEBUG, TAG, "Not Support This Cloud-Error-Code(%d) Exception", ci_err);
+				THINGS_LOG_D(TAG, "Not Support This Cloud-Error-Code(%d) Exception", ci_err);
 				break;
 			}
 		}
 
 	} else if (client_response->result != OC_STACK_RESOURCE_CHANGED) {
-		THINGS_LOG_V_ERROR(THINGS_ERROR, TAG, "Received Failed-Response of Resource-Publish without payload from Cloud Server.");
+		THINGS_LOG_E(TAG, "Received Failed-Response of Resource-Publish without payload from Cloud Server.");
 
 		if (es_cloud_state_set_and_notify(ES_STATE_FAILED_TO_PUBLISH_RESOURCES_TO_CLOUD, ES_ERRCODE_UNKNOWN, NULL, NULL) != 0) {
-			THINGS_LOG_V_ERROR(THINGS_ERROR, TAG, "StateAndNotify is failed.");
+			THINGS_LOG_E(TAG, "StateAndNotify is failed.");
 			PROFILING_TIME("Cloud Provisioning End.");
 			return OC_STACK_DELETE_TRANSACTION;
 		}
@@ -946,7 +946,7 @@ OCStackApplicationResult handle_main_dev_publish_cb(void *ctx, OCDoHandle handle
 
 	if (client_response->result == OC_STACK_RESOURCE_CHANGED) {
 		if (es_cloud_state_set_and_notify(ES_STATE_PUBLISHED_RESOURCES_TO_CLOUD, ES_ERRCODE_NO_ERROR, NULL, NULL) != 0) {
-			THINGS_LOG_D(THINGS_DEBUG, TAG, "StateAndNotify is failed.");
+			THINGS_LOG_D(TAG, "StateAndNotify is failed.");
 			PROFILING_TIME("Cloud Provisioning End.");
 			return OC_STACK_DELETE_TRANSACTION;
 		}
@@ -963,15 +963,15 @@ OCStackApplicationResult handle_main_dev_publish_cb(void *ctx, OCDoHandle handle
 #ifdef CONFIG_ST_THINGS_SUPPORT_SUB_DEVICE
 OCStackApplicationResult handle_sub_dev_publish_cb(void *ctx, OCDoHandle handle, OCClientResponse *client_response)
 {
-	THINGS_LOG_D(THINGS_DEBUG, TAG, "Sub-Device resource Publish callback received");
+	THINGS_LOG_D(TAG, "Sub-Device resource Publish callback received");
 
 	if (ctx != (void *)DEFAULT_CONTEXT_VALUE) {
-		THINGS_LOG_D(THINGS_DEBUG, TAG, "Invalid Publish callback received");
+		THINGS_LOG_D(TAG, "Invalid Publish callback received");
 	}
 
-	THINGS_LOG_D(THINGS_DEBUG, TAG, "Publish resource response received, code: %s(%d)", get_result(client_response->result), client_response->result);
+	THINGS_LOG_D(TAG, "Publish resource response received, code: %s(%d)", get_result(client_response->result), client_response->result);
 	if (check_comm_error_retrans(client_response->result) == true) {
-		THINGS_LOG_D(THINGS_DEBUG, TAG, "Resource Publish Request-Send is Failed.");
+		THINGS_LOG_D(TAG, "Resource Publish Request-Send is Failed.");
 		publish_resource_into_cloud(RSC_PUB_SUB_ALL, NULL);
 	}
 
@@ -979,11 +979,11 @@ OCStackApplicationResult handle_sub_dev_publish_cb(void *ctx, OCDoHandle handle,
 		OCRepPayloadValue *val = ((OCRepPayload *) client_response->payload)->values;
 		while (val != NULL) {
 			if (val->type == OCREP_PROP_INT) {
-				THINGS_LOG_D(THINGS_DEBUG, TAG, "Key: %s, Value: %lld, int", val->name, val->i);
+				THINGS_LOG_D(TAG, "Key: %s, Value: %lld, int", val->name, val->i);
 			} else if (val->type == OCREP_PROP_STRING) {
-				THINGS_LOG_D(THINGS_DEBUG, TAG, "Key: %s, Value: %s, string", val->name, val->str);
+				THINGS_LOG_D(TAG, "Key: %s, Value: %s, string", val->name, val->str);
 			} else {
-				THINGS_LOG_D(THINGS_DEBUG, TAG, "Un supported val Type.(0x%d)", val->type);
+				THINGS_LOG_D(TAG, "Un supported val Type.(0x%d)", val->type);
 			}
 
 			val = val->next;
@@ -999,16 +999,16 @@ OCStackApplicationResult handle_sub_dev_publish_cb(void *ctx, OCDoHandle handle,
 
 			switch (ci_err) {
 			case ERRCI_INTERNAL_SERVER_ERROR:
-				THINGS_LOG_D(THINGS_DEBUG, TAG, "[ERRCODE]Cloud Server has a issue, Check your Cloud Server.");
+				THINGS_LOG_D(TAG, "[ERRCODE]Cloud Server has a issue, Check your Cloud Server.");
 				esm_get_network_status();	// State return
 				break;
 			case ERRCI_TOKEN_VALIDATION_FAILED:
 			case ERRCI_TOKEN_EXPIRED:
-				THINGS_LOG_D(THINGS_DEBUG, TAG, "[ERRCODE]-> AccessToken \"%d\", refresh AccessToken and try again.", ci_err);
+				THINGS_LOG_D(TAG, "[ERRCODE]-> AccessToken \"%d\", refresh AccessToken and try again.", ci_err);
 				refresh_token_into_cloud();	// refresh accesstoken.
 				break;
 			default:
-				THINGS_LOG_D(THINGS_DEBUG, TAG, "Not Support This Cloud-Error-Code(%d) Exception", ci_err);
+				THINGS_LOG_D(TAG, "Not Support This Cloud-Error-Code(%d) Exception", ci_err);
 				break;
 			}
 		}
@@ -1021,17 +1021,17 @@ OCStackApplicationResult handle_sub_dev_publish_cb(void *ctx, OCDoHandle handle,
 
 OCStackApplicationResult handle_dev_profile_cb(void *ctx, OCDoHandle handle, OCClientResponse *client_response)
 {
-	THINGS_LOG_D(THINGS_DEBUG, TAG, "Device Profile Publish callback received");
+	THINGS_LOG_D(TAG, "Device Profile Publish callback received");
 
 	if (ctx != (void *)DEFAULT_CONTEXT_VALUE) {
-		THINGS_LOG_D(THINGS_DEBUG, TAG, "Invalid Publish callback received");
+		THINGS_LOG_D(TAG, "Invalid Publish callback received");
 	}
 
 	things_del_all_request_handle();
 
-	THINGS_LOG_D(THINGS_DEBUG, TAG, "Device Profile Publish response received, code: %s(%d)", get_result(client_response->result), client_response->result);
+	THINGS_LOG_D(TAG, "Device Profile Publish response received, code: %s(%d)", get_result(client_response->result), client_response->result);
 	if (check_comm_error_retrans(client_response->result) == true) {
-		THINGS_LOG_D(THINGS_DEBUG, TAG, "Device Profile Publish Request-Send is Failed.");
+		THINGS_LOG_D(TAG, "Device Profile Publish Request-Send is Failed.");
 		publish_dev_profile_into_cloud(NULL);
 	}
 
@@ -1039,11 +1039,11 @@ OCStackApplicationResult handle_dev_profile_cb(void *ctx, OCDoHandle handle, OCC
 		OCRepPayloadValue *val = ((OCRepPayload *) client_response->payload)->values;
 		while (val != NULL) {
 			if (val->type == OCREP_PROP_INT) {
-				THINGS_LOG_D(THINGS_DEBUG, TAG, "Key: %s, Value: %lld, int", val->name, val->i);
+				THINGS_LOG_D(TAG, "Key: %s, Value: %lld, int", val->name, val->i);
 			} else if (val->type == OCREP_PROP_STRING) {
-				THINGS_LOG_D(THINGS_DEBUG, TAG, "Key: %s, Value: %s, string", val->name, val->str);
+				THINGS_LOG_D(TAG, "Key: %s, Value: %s, string", val->name, val->str);
 			} else {
-				THINGS_LOG_D(THINGS_DEBUG, TAG, "Un supported val Type.(0x%d)", val->type);
+				THINGS_LOG_D(TAG, "Un supported val Type.(0x%d)", val->type);
 			}
 
 			val = val->next;
@@ -1059,16 +1059,16 @@ OCStackApplicationResult handle_dev_profile_cb(void *ctx, OCDoHandle handle, OCC
 
 			switch (ci_err) {
 			case ERRCI_INTERNAL_SERVER_ERROR:
-				THINGS_LOG_D(THINGS_DEBUG, TAG, "[ERRCODE]Cloud Server has a issue, Check your Cloud Server.");
+				THINGS_LOG_D(TAG, "[ERRCODE]Cloud Server has a issue, Check your Cloud Server.");
 				esm_get_network_status();	// State return
 				break;
 			case ERRCI_TOKEN_VALIDATION_FAILED:
 			case ERRCI_TOKEN_EXPIRED:
-				THINGS_LOG_D(THINGS_DEBUG, TAG, "[ERRCODE]-> AccessToken \"%d\", refresh AccessToken and try again.", ci_err);
+				THINGS_LOG_D(TAG, "[ERRCODE]-> AccessToken \"%d\", refresh AccessToken and try again.", ci_err);
 				refresh_token_into_cloud();	// refresh accesstoken.
 				break;
 			default:
-				THINGS_LOG_D(THINGS_DEBUG, TAG, "Not Support This Cloud-Error-Code(%d) Exception", ci_err);
+				THINGS_LOG_D(TAG, "Not Support This Cloud-Error-Code(%d) Exception", ci_err);
 				break;
 			}
 		}
@@ -1081,25 +1081,25 @@ OCStackApplicationResult handle_dev_profile_cb(void *ctx, OCDoHandle handle, OCC
 OCStackApplicationResult handle_find_resource_cb(void *ctx, OCDoHandle handle, OCClientResponse *client_response)
 {
 	if (ctx == (void *)DEFAULT_CONTEXT_VALUE) {
-		THINGS_LOG_D(THINGS_DEBUG, TAG, "Callback Context for DISCOVER query recvd successfully");
+		THINGS_LOG_D(TAG, "Callback Context for DISCOVER query recvd successfully");
 	}
 
 	if (client_response) {
-		THINGS_LOG_D(THINGS_DEBUG, TAG, "StackResult: %s(%d)", get_result(client_response->result), client_response->result);
+		THINGS_LOG_D(TAG, "StackResult: %s(%d)", get_result(client_response->result), client_response->result);
 
 		//char* connectionType = getConnectivityType (client_response->connType);
-		//THINGS_LOG_D(THINGS_DEBUG, TAG, "Discovered on %s", connectionType.c_str());
-		THINGS_LOG_D(THINGS_DEBUG, TAG, "Device =============> Discovered @ %s:%d", client_response->devAddr.addr, client_response->devAddr.port);
+		//THINGS_LOG_D(TAG, "Discovered on %s", connectionType.c_str());
+		THINGS_LOG_D(TAG, "Device =============> Discovered @ %s:%d", client_response->devAddr.addr, client_response->devAddr.port);
 
 		if (client_response->payload != NULL && client_response->payload->type == PAYLOAD_TYPE_REPRESENTATION) {
 			OCRepPayloadValue *val = ((OCRepPayload *) client_response->payload)->values;
 			while (val != NULL) {
 				if (val->type == OCREP_PROP_INT) {
-					THINGS_LOG_D(THINGS_DEBUG, TAG, "Key: %s, Value: %lld, int", val->name, val->i);
+					THINGS_LOG_D(TAG, "Key: %s, Value: %lld, int", val->name, val->i);
 				} else if (val->type == OCREP_PROP_STRING) {
-					THINGS_LOG_D(THINGS_DEBUG, TAG, "Key: %s, Value: %s, string", val->name, val->str);
+					THINGS_LOG_D(TAG, "Key: %s, Value: %s, string", val->name, val->str);
 				} else {
-					THINGS_LOG_D(THINGS_DEBUG, TAG, "Un supported val Type.(0x%d)", val->type);
+					THINGS_LOG_D(TAG, "Un supported val Type.(0x%d)", val->type);
 				}
 
 				val = val->next;
@@ -1107,12 +1107,12 @@ OCStackApplicationResult handle_find_resource_cb(void *ctx, OCDoHandle handle, O
 		}
 
 		if (client_response->result != OC_STACK_OK) {
-			THINGS_LOG_D(THINGS_INFO, TAG, "Refresh Token process Start.");
+			THINGS_LOG_V(TAG, "Refresh Token process Start.");
 			refresh_token_into_cloud();
 		}
 
 	} else {
-		THINGS_LOG_D(THINGS_INFO, TAG, "handle_find_resource_cb received Null client_response");
+		THINGS_LOG_V(TAG, "handle_find_resource_cb received Null client_response");
 	}
 
 	return OC_STACK_DELETE_TRANSACTION;
@@ -1120,27 +1120,27 @@ OCStackApplicationResult handle_find_resource_cb(void *ctx, OCDoHandle handle, O
 
 OCStackApplicationResult handle_publish_topic_cb(void *ctx, OCDoHandle handle, OCClientResponse *client_response)
 {
-	THINGS_LOG_D(THINGS_DEBUG, TAG, "Publish Topic callback received");
+	THINGS_LOG_D(TAG, "Publish Topic callback received");
 
 	OCStackApplicationResult res = OC_STACK_DELETE_TRANSACTION;
 
 	if (ctx != (void *)DEFAULT_CONTEXT_VALUE) {
-		THINGS_LOG_D(THINGS_DEBUG, TAG, "Invalid Publish Topic callback received");
+		THINGS_LOG_D(TAG, "Invalid Publish Topic callback received");
 	}
 
-	THINGS_LOG_D(THINGS_DEBUG, TAG, "Publish Topic response received code: %s(%d)", get_result(client_response->result), client_response->result);
+	THINGS_LOG_D(TAG, "Publish Topic response received code: %s(%d)", get_result(client_response->result), client_response->result);
 
 	if (client_response->payload != NULL && client_response->payload->type == PAYLOAD_TYPE_REPRESENTATION) {
-		THINGS_LOG_D(THINGS_DEBUG, TAG, "PAYLOAD_TYPE_REPRESENTATION received");
+		THINGS_LOG_D(TAG, "PAYLOAD_TYPE_REPRESENTATION received");
 
 		OCRepPayloadValue *val = ((OCRepPayload *) client_response->payload)->values;
 		while (val) {
 			if (val->type == OCREP_PROP_INT) {
-				THINGS_LOG_D(THINGS_DEBUG, TAG, "Key: %s, Value: %lld, int", val->name, val->i);
+				THINGS_LOG_D(TAG, "Key: %s, Value: %lld, int", val->name, val->i);
 			} else if (val->type == OCREP_PROP_STRING) {
-				THINGS_LOG_D(THINGS_DEBUG, TAG, "Key: %s, Value: %s, string", val->name, val->str);
+				THINGS_LOG_D(TAG, "Key: %s, Value: %s, string", val->name, val->str);
 			} else {
-				THINGS_LOG_D(THINGS_DEBUG, TAG, "Un supported val Type.(0x%d)", val->type);
+				THINGS_LOG_D(TAG, "Un supported val Type.(0x%d)", val->type);
 			}
 
 			val = val->next;
@@ -1155,16 +1155,16 @@ OCStackApplicationResult handle_publish_topic_cb(void *ctx, OCDoHandle handle, O
 
 			switch (ci_err) {
 			case ERRCI_INTERNAL_SERVER_ERROR:
-				THINGS_LOG_D(THINGS_DEBUG, TAG, "[ERRCODE]Cloud Server has a issue, Check your Cloud Server.");
+				THINGS_LOG_D(TAG, "[ERRCODE]Cloud Server has a issue, Check your Cloud Server.");
 				esm_get_network_status();	// State return
 				break;
 			case ERRCI_TOKEN_VALIDATION_FAILED:
 			case ERRCI_TOKEN_EXPIRED:
-				THINGS_LOG_D(THINGS_DEBUG, TAG, "[ERRCODE] AccessToken \"%d\", refresh AccessToken and try again.", ci_err);
+				THINGS_LOG_D(TAG, "[ERRCODE] AccessToken \"%d\", refresh AccessToken and try again.", ci_err);
 				refresh_token_into_cloud();	// refresh accesstoken.
 				break;
 			default:
-				THINGS_LOG_D(THINGS_DEBUG, TAG, "Not Support This Cloud-Error-Code(%d) Exception", ci_err);
+				THINGS_LOG_D(TAG, "Not Support This Cloud-Error-Code(%d) Exception", ci_err);
 				//esm_get_network_status();  // Don't need to sign out on this session
 				break;
 			}
@@ -1182,27 +1182,27 @@ static OCStackResult publish_resource_main_dev_into_cloud(things_resource_s **li
 	OCStackResult res = OC_STACK_ERROR;
 
 	if (list == NULL || length < 1) {
-		THINGS_LOG_V_ERROR(THINGS_ERROR, TAG, "Invalid Parameter Inserted");
+		THINGS_LOG_E(TAG, "Invalid Parameter Inserted");
 		es_cloud_state_set_and_notify(ES_STATE_FAILED_TO_PUBLISH_RESOURCES_TO_CLOUD, ER_ERRCODE_SYSTEM_ERROR, NULL, NULL);
 		return res;
 	} else {
 		if (es_cloud_state_set_and_notify(ES_STATE_PUBLISHING_RESOURCES_TO_CLOUD, ES_ERRCODE_NO_ERROR, NULL, NULL) != 0) {
-			THINGS_LOG_D(THINGS_DEBUG, TAG, "StateAndNotify is failed.");
+			THINGS_LOG_D(TAG, "StateAndNotify is failed.");
 			return res;
 		}
 
 		if (ci_connection_pre_check(NULL, NULL) == 0) {
 			res = things_cloud_rsc_publish(g_cloud_address, list, length, handle_main_dev_publish_cb, handle_publish_timeout, timeout);
 		} else {
-			THINGS_LOG_V(THINGS_INFO, TAG, "AP is not connected to internet.");
+			THINGS_LOG_V(TAG, "AP is not connected to internet.");
 			es_err = ES_ERRCODE_NO_INTERNETCONNECTION;
 		}
 
 		if (res != OC_STACK_OK) {
-			THINGS_LOG_D(THINGS_DEBUG, TAG, "Unable to publish user resources to cloud : %d", res);
+			THINGS_LOG_D(TAG, "Unable to publish user resources to cloud : %d", res);
 
 			if (es_cloud_state_set_and_notify(ES_STATE_FAILED_TO_PUBLISH_RESOURCES_TO_CLOUD, es_err, NULL, NULL) != 0) {
-				THINGS_LOG_D(THINGS_DEBUG, TAG, "StateAndNotify is failed.");
+				THINGS_LOG_D(TAG, "StateAndNotify is failed.");
 				return res;
 			}
 
@@ -1215,7 +1215,7 @@ static OCStackResult publish_resource_main_dev_into_cloud(things_resource_s **li
 
 OCStackResult publish_resource_into_cloud(rp_target_e target, things_timeout_s *timeout)
 {
-	THINGS_LOG_D(THINGS_DEBUG, TAG, "Enter.");
+	THINGS_LOG_D(TAG, "Enter.");
 
 #ifdef CONFIG_ST_THINGS_SUPPORT_SUB_DEVICE
 	int sub_dev_pub_fail = -1;
@@ -1223,14 +1223,14 @@ OCStackResult publish_resource_into_cloud(rp_target_e target, things_timeout_s *
 	OCStackResult res = OC_STACK_OK;
 
 	if (target == RSC_PUB_ALL || target == RSC_PUB_MAIN_ONLY) {
-		THINGS_LOG(THINGS_DEBUG, TAG, "Main-Device Resource Publish Start.");
+		THINGS_LOG_D(TAG, "Main-Device Resource Publish Start.");
 		res = publish_resource_main_dev_into_cloud(g_resource_lists, g_len, timeout);
 		usleep(10000);			// 1 device resource-publish per 10 msec.
 	}
 
 #ifdef CONFIG_ST_THINGS_SUPPORT_SUB_DEVICE
 	if (res == OC_STACK_OK && target != RSC_PUB_MAIN_ONLY) {
-		THINGS_LOG(THINGS_DEBUG, TAG, "Sub-Devices Resource Publish Start.");
+		THINGS_LOG_D(TAG, "Sub-Devices Resource Publish Start.");
 		int device_cnt = 0;
 		char *device_id = NULL;
 		st_device_s **dList = NULL;
@@ -1245,9 +1245,9 @@ OCStackResult publish_resource_into_cloud(rp_target_e target, things_timeout_s *
 
 					device_id = dList[index]->device_id;
 
-					THINGS_LOG_D(THINGS_DEBUG, TAG, "Sub-device ID=%s", device_id);
+					THINGS_LOG_D(TAG, "Sub-device ID=%s", device_id);
 					if (device_id == NULL || device_id[0] == 0) {
-						THINGS_LOG_D(THINGS_DEBUG, TAG, "not exist device ID. So, skip publish resource.");
+						THINGS_LOG_D(TAG, "not exist device ID. So, skip publish resource.");
 						sub_dev_pub_fail = 1;
 						continue;
 					}
@@ -1277,15 +1277,15 @@ OCStackResult publish_resource_into_cloud(rp_target_e target, things_timeout_s *
 		if (target == RSC_PUB_SUB_ALL || target == RSC_PUB_NEED_SUB_ONLY) {
 			switch (sub_dev_pub_fail) {
 			case 1:			// occurred error
-				THINGS_LOG_D(THINGS_INFO, TAG, "Sending-request is failed for Sub-device publish.");
+				THINGS_LOG_V(TAG, "Sending-request is failed for Sub-device publish.");
 				res = OC_STACK_ERROR;
 				break;
 			case -1:			// not exist sub-dev
-				THINGS_LOG_D(THINGS_INFO, TAG, "Not exist sub-device publish.");
+				THINGS_LOG_V(TAG, "Not exist sub-device publish.");
 				res = OC_STACK_ERROR;
 				break;
 			case 0:
-				THINGS_LOG_D(THINGS_INFO, TAG, "Sending-request is Success for Sub-device publish.");
+				THINGS_LOG_V(TAG, "Sending-request is Success for Sub-device publish.");
 				res = OC_STACK_OK;
 				break;
 			}
@@ -1293,7 +1293,7 @@ OCStackResult publish_resource_into_cloud(rp_target_e target, things_timeout_s *
 	}
 #endif
 
-	THINGS_LOG_D(THINGS_DEBUG, TAG, "Exit.");
+	THINGS_LOG_D(TAG, "Exit.");
 	return res;
 }
 
@@ -1308,12 +1308,12 @@ OCStackResult log_in_out_to_cloud(bool value, things_timeout_s *timeout)
 	things_check_time_out_call_func calltimeout = NULL;
 
 	if (signed_up_data == NULL || signed_up_data->access_token == NULL || strlen(signed_up_data->access_token) < 1) {
-		THINGS_LOG_V_ERROR(THINGS_ERROR, TAG, "No Session Key Retrived from the Cloud ");
+		THINGS_LOG_E(TAG, "No Session Key Retrived from the Cloud ");
 		return res;
 	}
 
 	if (signed_up_data->domain != NULL && (signed_up_data->port == NULL || signed_up_data->port[0] == 0)) {
-		THINGS_LOG_D_ERROR(THINGS_ERROR, TAG, "domain=%s but, not exist port number.(%s)", signed_up_data->domain, signed_up_data->port);
+		THINGS_LOG_E(TAG, "domain=%s but, not exist port number.(%s)", signed_up_data->domain, signed_up_data->port);
 		return res;
 	}
 
@@ -1321,29 +1321,29 @@ OCStackResult log_in_out_to_cloud(bool value, things_timeout_s *timeout)
 		callback = handle_login_cb;
 		calltimeout = handle_signin_timeout;
 		if (es_cloud_state_set_and_notify(ES_STATE_REGISTERING_TO_CLOUD, ES_ERRCODE_NO_ERROR, NULL, NULL) != 0) {
-			THINGS_LOG_D(THINGS_DEBUG, TAG, "StateAndNotify is failed.");
+			THINGS_LOG_D(TAG, "StateAndNotify is failed.");
 			return res;
 		}
 
 		if (signed_up_data->domain != NULL) {
 			ci_domian = things_strdup(signed_up_data->domain);
 		}
-		THINGS_LOG_D(THINGS_DEBUG, TAG, "*********** Start Sign-IN ********** ci_domian : %s", ci_domian);
+		THINGS_LOG_D(TAG, "*********** Start Sign-IN ********** ci_domian : %s", ci_domian);
 	} else {
 		callback = handle_logout_cb;
 		calltimeout = NULL;
 		g_qis_cloud_thread_running = CISESS_SIGNOUT;
 		if (es_cloud_state_set_and_notify(ES_STATE_LOGOUT_FROM_CLOUD, ES_ERRCODE_NO_ERROR, NULL, NULL) != 0) {
-			THINGS_LOG_D(THINGS_DEBUG, TAG, "StateAndNotify is failed.");
+			THINGS_LOG_D(TAG, "StateAndNotify is failed.");
 			return res;
 		}
-		THINGS_LOG_D(THINGS_DEBUG, TAG, "*********** Start Sign-OUT **********");
+		THINGS_LOG_D(TAG, "*********** Start Sign-OUT **********");
 	}
 
 	if (ci_connection_pre_check(ci_domian, &ci_ip) == 0) {
 		if (ci_ip != NULL) {
 			if (make_cloud_address(ci_ip, signed_up_data->port, NULL) == NULL) {
-				THINGS_LOG_D_ERROR(THINGS_ERROR, TAG, "Making CloudAddress is failed.");
+				THINGS_LOG_E(TAG, "Making CloudAddress is failed.");
 				goto GOTO_OUT;
 			}
 			things_strncpy(g_cloud_ip, ci_ip, IP_PORT);
@@ -1351,26 +1351,26 @@ OCStackResult log_in_out_to_cloud(bool value, things_timeout_s *timeout)
 
 			port = atoi(g_cloud_port);
 			if (g_cloud_ip[0] == NULL || g_cloud_port[0] == NULL || 0 >= port || port > 65535) {
-				THINGS_LOG_V_ERROR(THINGS_ERROR, TAG, "Cloud info is invalid.(g_cloud_ip=%s, g_cloud_port=%s, port=%d)", g_cloud_ip, g_cloud_port, port);
+				THINGS_LOG_E(TAG, "Cloud info is invalid.(g_cloud_ip=%s, g_cloud_port=%s, port=%d)", g_cloud_ip, g_cloud_port, port);
 				goto GOTO_OUT;
 			}
 		}
 
 		if (g_cloud_address[0] == 0) {
-			THINGS_LOG_V_ERROR(THINGS_ERROR, TAG, "g_cloud_address is invalid.(0x%X)", g_cloud_address);
+			THINGS_LOG_E(TAG, "g_cloud_address is invalid.(0x%X)", g_cloud_address);
 			goto GOTO_OUT;
 		}
 
-		THINGS_LOG_D(THINGS_INFO, TAG, "Cloud Addr : %s", g_cloud_address);
-		THINGS_LOG_D(THINGS_INFO, TAG, "device ID : %s", OCGetServerInstanceIDString());
-		THINGS_LOG_D(THINGS_INFO, TAG, "access_token : %s", signed_up_data->access_token);
-		THINGS_LOG_D(THINGS_INFO, TAG, "refresh token : %s", signed_up_data->refresh_token);
-		THINGS_LOG_D(THINGS_INFO, TAG, "user ID : %s", signed_up_data->uid);
-		THINGS_LOG_D(THINGS_INFO, TAG, "toke type : %s", signed_up_data->token_type);
-		THINGS_LOG_D(THINGS_INFO, TAG, "expire Time : %lld", signed_up_data->expire_time);
-		THINGS_LOG_D(THINGS_INFO, TAG, "certificate : %s", signed_up_data->certificate);
-		THINGS_LOG_D(THINGS_INFO, TAG, "redirect URI : %s", signed_up_data->redirect_uri);
-		THINGS_LOG_D(THINGS_INFO, TAG, "sid : %s", signed_up_data->sid);
+		THINGS_LOG_V(TAG, "Cloud Addr : %s", g_cloud_address);
+		THINGS_LOG_V(TAG, "device ID : %s", OCGetServerInstanceIDString());
+		THINGS_LOG_V(TAG, "access_token : %s", signed_up_data->access_token);
+		THINGS_LOG_V(TAG, "refresh token : %s", signed_up_data->refresh_token);
+		THINGS_LOG_V(TAG, "user ID : %s", signed_up_data->uid);
+		THINGS_LOG_V(TAG, "toke type : %s", signed_up_data->token_type);
+		THINGS_LOG_V(TAG, "expire Time : %lld", signed_up_data->expire_time);
+		THINGS_LOG_V(TAG, "certificate : %s", signed_up_data->certificate);
+		THINGS_LOG_V(TAG, "redirect URI : %s", signed_up_data->redirect_uri);
+		THINGS_LOG_V(TAG, "sid : %s", signed_up_data->sid);
 
 		if (value == true) {
 			things_ping_set_mask(g_cloud_ip, port, PING_ST_ISCLOUD);
@@ -1380,9 +1380,9 @@ OCStackResult log_in_out_to_cloud(bool value, things_timeout_s *timeout)
 
 		res = things_cloud_session(g_cloud_address, signed_up_data->uid, OCGetServerInstanceIDString(), signed_up_data->access_token, value, callback, calltimeout, timeout);
 
-		THINGS_LOG_D(THINGS_DEBUG, TAG, "OCCloudLogInOut return : %d", res);
+		THINGS_LOG_D(TAG, "OCCloudLogInOut return : %d", res);
 	} else {
-		THINGS_LOG_V(THINGS_INFO, TAG, "AP is not connected to internet.");
+		THINGS_LOG_V(TAG, "AP is not connected to internet.");
 		es_err = ES_ERRCODE_NO_INTERNETCONNECTION;
 	}
 
@@ -1401,13 +1401,13 @@ GOTO_OUT:
 		if (value == true) {
 			things_ping_unset_mask(g_cloud_ip, PING_ST_ISCLOUD);
 
-			THINGS_LOG_V_ERROR(THINGS_ERROR, TAG, "Cloud Server LogIn Failed : %d", res);
+			THINGS_LOG_E(TAG, "Cloud Server LogIn Failed : %d", res);
 			if (es_cloud_state_set_and_notify(ES_STATE_FAILED_TO_REGISTER_TO_CLOUD, es_err, NULL, NULL) != 0) {
-				THINGS_LOG_D(THINGS_DEBUG, TAG, "StateAndNotify is failed.");
+				THINGS_LOG_D(TAG, "StateAndNotify is failed.");
 				return res;
 			}
 		} else {
-			THINGS_LOG_V_ERROR(THINGS_ERROR, TAG, "Cloud Server LogOut Failed : %d", res);
+			THINGS_LOG_E(TAG, "Cloud Server LogOut Failed : %d", res);
 			esm_get_network_status();
 			return res;
 		}
@@ -1434,7 +1434,7 @@ OCStackResult find_cloud_resource(void)
 	length_query = sizeof(char) * (length + 2);
 
 	if ((sz_query_uri = (char *)things_malloc(length_query)) == NULL) {
-		THINGS_LOG_D_ERROR(THINGS_ERROR, TAG, "sz_query_uri memory allocation is failed.");
+		THINGS_LOG_E(TAG, "sz_query_uri memory allocation is failed.");
 		return OC_STACK_ERROR;
 	}
 
@@ -1448,7 +1448,7 @@ OCStackResult find_cloud_resource(void)
 	if (things_strcat(sz_query_uri, length_query, OCGetServerInstanceIDString()) == NULL) {
 		ret = OC_STACK_NO_MEMORY;
 	}
-	THINGS_LOG_D(THINGS_DEBUG, TAG, "Find Resource to Cloud URI : %s", sz_query_uri);
+	THINGS_LOG_D(TAG, "Find Resource to Cloud URI : %s", sz_query_uri);
 
 	OCCallbackData cb_data;
 	cb_data.cb = handle_find_resource_cb;
@@ -1460,7 +1460,7 @@ OCStackResult find_cloud_resource(void)
 	}
 
 	if (ret != OC_STACK_OK) {
-		THINGS_LOG_D_ERROR(THINGS_ERROR, TAG, "Find Resource in Cloud is failed.");
+		THINGS_LOG_E(TAG, "Find Resource in Cloud is failed.");
 	}
 
 	things_free(sz_query_uri);
@@ -1473,12 +1473,12 @@ static OCStackResult register_server_into_cloud(es_cloud_prov_data_s *event_data
 	OCStackResult res = OC_STACK_ERROR;
 
 	if (event_data == NULL || (event_data->auth_code[0] == 0 && event_data->accesstoken[0] == 0)) {
-		THINGS_LOG_D_ERROR(THINGS_ERROR, TAG, "Invalid event_data.");
+		THINGS_LOG_E(TAG, "Invalid event_data.");
 		return res;
 	}
 
-	THINGS_LOG_D(THINGS_DEBUG, TAG, "AuthCode     : %s", event_data->auth_code);
-	THINGS_LOG_D(THINGS_DEBUG, TAG, "Access Token : %s", event_data->accesstoken);
+	THINGS_LOG_D(TAG, "AuthCode     : %s", event_data->auth_code);
+	THINGS_LOG_D(TAG, "Access Token : %s", event_data->accesstoken);
 
 	if (signed_up_data != NULL) {
 		es_cloud_signup_clear(signed_up_data);
@@ -1487,12 +1487,12 @@ static OCStackResult register_server_into_cloud(es_cloud_prov_data_s *event_data
 
 	int port = atoi(g_cloud_port);
 	if (g_cloud_ip[0] == NULL || g_cloud_port[0] == NULL || 0 >= port || port > 65535) {
-		THINGS_LOG_V_ERROR(THINGS_ERROR, TAG, "Cloud info is invalid.(g_cloud_ip=%s, g_cloud_port=%s, port=%d)", g_cloud_ip, g_cloud_port, port);
+		THINGS_LOG_E(TAG, "Cloud info is invalid.(g_cloud_ip=%s, g_cloud_port=%s, port=%d)", g_cloud_ip, g_cloud_port, port);
 		return res;
 	}
 
 	if (es_cloud_state_set_and_notify(ES_STATE_REGISTERING_TO_CLOUD, ES_ERRCODE_NO_ERROR, NULL, NULL) != 0) {
-		THINGS_LOG_V_ERROR(THINGS_ERROR, TAG, "StateAndNotify is failed.");
+		THINGS_LOG_E(TAG, "StateAndNotify is failed.");
 		return res;
 	}
 
@@ -1502,10 +1502,10 @@ static OCStackResult register_server_into_cloud(es_cloud_prov_data_s *event_data
 	res = things_cloud_signup(g_cloud_address, OCGetServerInstanceIDString(), event_data, handle_register_cb, handle_signup_timeout, timeout);
 
 	if (res != OC_STACK_OK) {
-		THINGS_LOG_V_ERROR(THINGS_ERROR, TAG, "Cloud Server Registration Failed : %d", res);
+		THINGS_LOG_E(TAG, "Cloud Server Registration Failed : %d", res);
 		things_ping_unset_mask(g_cloud_ip, PING_ST_ISCLOUD);
 		if (es_cloud_state_set_and_notify(ES_STATE_FAILED_TO_REGISTER_TO_CLOUD, ES_ERRCODE_UNKNOWN, NULL, NULL) != 0) {
-			THINGS_LOG_D(THINGS_DEBUG, TAG, "StateAndNotify is failed.");
+			THINGS_LOG_D(TAG, "StateAndNotify is failed.");
 			return res;
 		}
 	}
@@ -1517,15 +1517,15 @@ OCStackResult refresh_token_into_cloud(void)
 {
 	OCStackResult res = OC_STACK_ERROR;
 	if (signed_up_data == NULL || signed_up_data->access_token == NULL || strlen(signed_up_data->access_token) < 1) {
-		THINGS_LOG_V_ERROR(THINGS_ERROR, TAG, "No Session Key Retrived from the Cloud ");
+		THINGS_LOG_E(TAG, "No Session Key Retrived from the Cloud ");
 	} else {
 		res = things_cloud_refresh(g_cloud_address, signed_up_data->uid, OCGetServerInstanceIDString(), signed_up_data->refresh_token, handle_refresh_token_cb);
 
-		THINGS_LOG_D(THINGS_DEBUG, TAG, "OCCloud Refresh Token return : %d", res);
+		THINGS_LOG_D(TAG, "OCCloud Refresh Token return : %d", res);
 	}
 
 	if (res != OC_STACK_OK) {
-		THINGS_LOG_V_ERROR(THINGS_ERROR, TAG, "Cloud access_token refresh Failed : %d", res);
+		THINGS_LOG_E(TAG, "Cloud access_token refresh Failed : %d", res);
 	}
 
 	return res;
@@ -1533,12 +1533,12 @@ OCStackResult refresh_token_into_cloud(void)
 
 int push_notification_to_cloud(const char *uri, OCRepPayload *payload)
 {
-	THINGS_LOG_D(THINGS_DEBUG, TAG, THINGS_FUNC_ENTRY);
+	THINGS_LOG_D(TAG, THINGS_FUNC_ENTRY);
 
 	int ret = 0;
 
 	if (things_get_reset_mask(RST_NOTI_MODULE_DISABLE) == true) {
-		THINGS_LOG(THINGS_INFO, TAG, "Notification Module Disable.");
+		THINGS_LOG_V(TAG, "Notification Module Disable.");
 		ret = 0;
 	} else if (NULL != payload) {
 		if (OC_STACK_OK == things_cloud_topic_publish_topic(g_cloud_address, uri, payload, handle_publish_topic_cb)) {
@@ -1546,7 +1546,7 @@ int push_notification_to_cloud(const char *uri, OCRepPayload *payload)
 		}
 	}
 
-	THINGS_LOG_D(THINGS_DEBUG, TAG, THINGS_FUNC_EXIT);
+	THINGS_LOG_D(TAG, THINGS_FUNC_EXIT);
 
 	return ret;
 }
@@ -1555,7 +1555,7 @@ static char *make_cloud_address(char *ip, char *port, const char *ci_addr)
 {
 	char *delmem = NULL;
 	char *ipport = (char *)ci_addr;
-	THINGS_LOG_D(THINGS_DEBUG, TAG, "ip=%s, port=%s, ci_addr=%s", ip, port, ci_addr);
+	THINGS_LOG_D(TAG, "ip=%s, port=%s, ci_addr=%s", ip, port, ci_addr);
 
 	if (ci_addr != NULL && strlen(ci_addr) > 0) {	// ci address.
 		char *point = strstr(ci_addr, DEFAULT_COAP_TCP_HOST);
@@ -1571,7 +1571,7 @@ static char *make_cloud_address(char *ip, char *port, const char *ci_addr)
 	// Update Cloud Address.
 	memset(g_cloud_address, 0, MAX_CI_ADDRESS);
 	if (things_strcat(g_cloud_address, MAX_CI_ADDRESS, DEFAULT_COAP_TCP_HOST) == NULL) {
-		THINGS_LOG_V_ERROR(THINGS_ERROR, TAG, "things_strcat() is failed.");
+		THINGS_LOG_E(TAG, "things_strcat() is failed.");
 		if (delmem) {
 			things_free(delmem);
 		}
@@ -1579,7 +1579,7 @@ static char *make_cloud_address(char *ip, char *port, const char *ci_addr)
 	}
 
 	if (things_strcat(g_cloud_address, MAX_CI_ADDRESS, ipport) == NULL) {
-		THINGS_LOG_V_ERROR(THINGS_ERROR, TAG, "things_strcat() is failed.");
+		THINGS_LOG_E(TAG, "things_strcat() is failed.");
 		if (delmem) {
 			things_free(delmem);
 		}
@@ -1602,21 +1602,21 @@ static int start_ci_connection(const char *cloud_adress, es_cloud_prov_data_s *e
 	g_len = length;
 
 	if (make_cloud_address(NULL, NULL, cloud_adress) == NULL) {
-		THINGS_LOG_V_ERROR(THINGS_ERROR, TAG, "Making Cloud Address is failed.");
+		THINGS_LOG_E(TAG, "Making Cloud Address is failed.");
 		result = OC_STACK_NO_MEMORY;
 	}
 
-	THINGS_LOG_D(THINGS_DEBUG, TAG, "CI Svr Addr         : %s", g_cloud_address);
-	THINGS_LOG_D(THINGS_DEBUG, TAG, "CI Svr AuthCode     : %s", event_data->auth_code);
-	THINGS_LOG_D(THINGS_DEBUG, TAG, "CI Svr Accesstoken  : %s", event_data->accesstoken);
-	THINGS_LOG_D(THINGS_DEBUG, TAG, "CI Svr Uid          : %s", event_data->uid);
-	THINGS_LOG_D(THINGS_DEBUG, TAG, "CI Svr AuthProvider : %s", event_data->auth_provider);
-	THINGS_LOG_D(THINGS_DEBUG, TAG, "CI Svr client_id     : %s", event_data->client_id);
+	THINGS_LOG_D(TAG, "CI Svr Addr         : %s", g_cloud_address);
+	THINGS_LOG_D(TAG, "CI Svr AuthCode     : %s", event_data->auth_code);
+	THINGS_LOG_D(TAG, "CI Svr Accesstoken  : %s", event_data->accesstoken);
+	THINGS_LOG_D(TAG, "CI Svr Uid          : %s", event_data->uid);
+	THINGS_LOG_D(TAG, "CI Svr AuthProvider : %s", event_data->auth_provider);
+	THINGS_LOG_D(TAG, "CI Svr client_id     : %s", event_data->client_id);
 
 	if (timeout != NULL) {
-		THINGS_LOG_D(THINGS_DEBUG, TAG, "CI Svr timeout_cnt     : %d", timeout->cur_counter);
-		THINGS_LOG_D(THINGS_DEBUG, TAG, "CI Svr timeout_cur_num : %d", timeout->cur_num);
-		THINGS_LOG_D(THINGS_DEBUG, TAG, "CI Svr timeout_ori_num : %d", timeout->ori_num);
+		THINGS_LOG_D(TAG, "CI Svr timeout_cnt     : %d", timeout->cur_counter);
+		THINGS_LOG_D(TAG, "CI Svr timeout_cur_num : %d", timeout->cur_num);
+		THINGS_LOG_D(TAG, "CI Svr timeout_ori_num : %d", timeout->ori_num);
 	}
 
 	if (result != OC_STACK_NO_MEMORY) {
@@ -1626,13 +1626,13 @@ static int start_ci_connection(const char *cloud_adress, es_cloud_prov_data_s *e
 			if (es_cloud_signup_init(&signed_up_data) == true && (ret = dm_load_legacy_cloud_data(&signed_up_data)) == 1) {
 				result = log_in_out_to_cloud(true, timeout);
 			} else {
-				THINGS_LOG_D(THINGS_INFO, TAG, "Sign-UP data load failed.");
+				THINGS_LOG_V(TAG, "Sign-UP data load failed.");
 			}
 		}
 	}
 
 	if (OC_STACK_OK != result) {
-		THINGS_LOG_V_ERROR(THINGS_ERROR, TAG, "start_ci_connection() is failed.");
+		THINGS_LOG_E(TAG, "start_ci_connection() is failed.");
 	} else {
 		ret = 1;				// Success.
 	}
@@ -1642,7 +1642,7 @@ static int start_ci_connection(const char *cloud_adress, es_cloud_prov_data_s *e
 
 static void *ci_connection_init_loop(es_cloud_event_timeout_s *param)
 {
-	THINGS_LOG_D(THINGS_DEBUG, TAG, THINGS_FUNC_ENTRY);
+	THINGS_LOG_D(TAG, THINGS_FUNC_ENTRY);
 
 	int res = 0;
 	char *ci_ip = NULL;
@@ -1653,10 +1653,10 @@ static void *ci_connection_init_loop(es_cloud_event_timeout_s *param)
 	ci_cp_del_is_there_cp();
 
 	if (param == NULL) {
-		THINGS_LOG_V_ERROR(THINGS_ERROR, TAG, "[Error] parameter is NULL.");
+		THINGS_LOG_E(TAG, "[Error] parameter is NULL.");
 
 		if (es_cloud_state_set_and_notify(ES_STATE_FAILED_TO_REGISTER_TO_CLOUD, ER_ERRCODE_SYSTEM_ERROR, NULL, NULL) != 0) {
-			THINGS_LOG_D(THINGS_DEBUG, TAG, "StateAndNotify is failed.");
+			THINGS_LOG_D(TAG, "StateAndNotify is failed.");
 		}
 
 		force_session_stop(CISESS_NULL);
@@ -1671,15 +1671,15 @@ static void *ci_connection_init_loop(es_cloud_event_timeout_s *param)
 		ci_host = &(event_data->ip[0]);
 	}
 
-	THINGS_LOG_D(THINGS_DEBUG, TAG, "* param add= 0x%X *", param);
-	THINGS_LOG_D(THINGS_DEBUG, TAG, "* ci_host   = %s *", ci_host);
+	THINGS_LOG_D(TAG, "* param add= 0x%X *", param);
+	THINGS_LOG_D(TAG, "* ci_host   = %s *", ci_host);
 
 	// Cross check if a network is available
 	if (esm_get_network_status()) {
 		if (g_server_builder != NULL) {
-			THINGS_LOG_V(THINGS_INFO, TAG, "##########################");
-			THINGS_LOG_V(THINGS_INFO, TAG, "  Start Cloud Connection ");
-			THINGS_LOG_V(THINGS_INFO, TAG, "##########################");
+			THINGS_LOG_V(TAG, "##########################");
+			THINGS_LOG_V(TAG, "  Start Cloud Connection ");
+			THINGS_LOG_V(TAG, "##########################");
 
 			if (ci_connection_pre_check(ci_host, &ci_ip) == 0) {
 				ci_ip_port = make_ip_port(ci_ip, event_data->port);
@@ -1702,7 +1702,7 @@ static void *ci_connection_init_loop(es_cloud_event_timeout_s *param)
 					es_err = ER_ERRCODE_INVALID_SAVED_CLOUD_DATA;
 					break;
 				}
-				THINGS_LOG_D(THINGS_DEBUG, TAG, "res = %d, es_err = %d", res, es_err);
+				THINGS_LOG_D(TAG, "res = %d, es_err = %d", res, es_err);
 				pthread_mutex_unlock(&g_es_mutex);
 
 				if (ci_ip_port) {
@@ -1714,43 +1714,43 @@ static void *ci_connection_init_loop(es_cloud_event_timeout_s *param)
 					ci_ip = NULL;
 				}
 			} else {
-				THINGS_LOG_V_ERROR(THINGS_ERROR, TAG, "AP is Not Connected to Internet.");
+				THINGS_LOG_E(TAG, "AP is Not Connected to Internet.");
 				es_err = ES_ERRCODE_NO_INTERNETCONNECTION;
 			}
 		} else {
-			THINGS_LOG_V_ERROR(THINGS_ERROR, TAG, "ServerBuilder is NULL.");
+			THINGS_LOG_E(TAG, "ServerBuilder is NULL.");
 			es_err = ER_ERRCODE_SYSTEM_ERROR;
 		}
 	} else {
-		THINGS_LOG_V_ERROR(THINGS_ERROR, TAG, "Device is not connected to AP.");
+		THINGS_LOG_E(TAG, "Device is not connected to AP.");
 		es_err = ES_ERRCODE_UNKNOWN;
 	}
 
 	if (res != 1) {
-		THINGS_LOG_V_ERROR(THINGS_ERROR, TAG, "###################################");
-		THINGS_LOG_V_ERROR(THINGS_ERROR, TAG, "  Exiting without Cloud Connection ");
-		THINGS_LOG_V_ERROR(THINGS_ERROR, TAG, "###################################");
+		THINGS_LOG_E(TAG, "###################################");
+		THINGS_LOG_E(TAG, "  Exiting without Cloud Connection ");
+		THINGS_LOG_E(TAG, "###################################");
 
 		if (es_cloud_state_set_and_notify(ES_STATE_FAILED_TO_REGISTER_TO_CLOUD, es_err, NULL, NULL) != 0) {
-			THINGS_LOG_V_ERROR(THINGS_ERROR, TAG, "StateAndNotify is failed.");
+			THINGS_LOG_E(TAG, "StateAndNotify is failed.");
 		}
 
 		force_session_stop(CISESS_NULL);
 	}
 
 	things_free(param);
-	THINGS_LOG_D(THINGS_DEBUG, TAG, THINGS_FUNC_EXIT);
+	THINGS_LOG_D(TAG, THINGS_FUNC_EXIT);
 
 	return NULL;
 }
 
 static void *ci_connection_waiting_loop(es_cloud_event_timeout_s *param)
 {
-	THINGS_LOG_D(THINGS_DEBUG, TAG, THINGS_FUNC_ENTRY);
-	THINGS_LOG_D(THINGS_DEBUG, TAG, "Sleep before cloud_retry_sign_up");
+	THINGS_LOG_D(TAG, THINGS_FUNC_ENTRY);
+	THINGS_LOG_D(TAG, "Sleep before cloud_retry_sign_up");
 	sleep(1);
 	if (param == NULL) {
-		THINGS_LOG_V_ERROR(THINGS_ERROR, TAG, "[Error] parameter is NULL.");
+		THINGS_LOG_E(TAG, "[Error] parameter is NULL.");
 		ci_cp_del_is_there_cp();
 		ci_cp_del_pended_data();
 		es_cloud_state_set_and_notify(ES_STATE_FAILED_TO_REGISTER_TO_CLOUD, ER_ERRCODE_SYSTEM_ERROR, NULL, NULL);
@@ -1759,32 +1759,32 @@ static void *ci_connection_waiting_loop(es_cloud_event_timeout_s *param)
 	}
 
 	while (g_qis_cloud_thread_running != CISESS_STOP) {
-		THINGS_LOG_D(THINGS_DEBUG, TAG, "Waiting ...");
+		THINGS_LOG_D(TAG, "Waiting ...");
 		usleep(100000);
 	}
 
 	ci_cp_pend_event_data(&(param->event));
 	g_qis_cloud_thread_running = CISESS_BUSY;
-	THINGS_LOG(THINGS_DEBUG, TAG, "Create CloudInit thread");
+	THINGS_LOG_D(TAG, "Create CloudInit thread");
 
 	ci_connection_init_loop(param);
 
-	THINGS_LOG_D(THINGS_DEBUG, TAG, THINGS_FUNC_EXIT);
+	THINGS_LOG_D(TAG, THINGS_FUNC_EXIT);
 
 	return NULL;
 }
 
 void *cloud_data_cb_esm(es_cloud_prov_data_s *event_data)
 {
-	THINGS_LOG_D(THINGS_DEBUG, TAG, THINGS_FUNC_ENTRY);
+	THINGS_LOG_D(TAG, THINGS_FUNC_ENTRY);
 
-	THINGS_LOG_D(THINGS_DEBUG, TAG, "g_qis_cloud_thread_running = %d", g_qis_cloud_thread_running);
+	THINGS_LOG_D(TAG, "g_qis_cloud_thread_running = %d", g_qis_cloud_thread_running);
 
 	pthread_t cthread_handler;
 	es_cloud_event_timeout_s *cloned_data = NULL;
 #if 0							// pkcloud
 	if (ci_cp_cas_is_there_cp_if_false() == true) {
-		THINGS_LOG_D(THINGS_DEBUG, TAG, "Already exist data of Cloud Provisioning.");
+		THINGS_LOG_D(TAG, "Already exist data of Cloud Provisioning.");
 		return NULL;
 	}
 #endif
@@ -1806,18 +1806,18 @@ void *cloud_data_cb_esm(es_cloud_prov_data_s *event_data)
 		if ((cloned_data = clone_data_add_timeout(event_data, NULL)) != NULL) {
 			int retp = pthread_create_rtos(&cthread_handler, NULL, (pthread_func_type) ci_connection_init_loop, (void *)cloned_data, THINGS_STACK_CICONNETION_INIT_THREAD);
 			if (retp != 0) {
-				THINGS_LOG_V_ERROR(THINGS_ERROR, TAG, "Create thread is failed.");
+				THINGS_LOG_E(TAG, "Create thread is failed.");
 				things_free(cloned_data);
 				cloned_data = NULL;
 				g_qis_cloud_thread_running = CISESS_STOP;
 				es_cloud_state_set_and_notify(ES_STATE_FAILED_TO_REGISTER_TO_CLOUD, ER_ERRCODE_SYSTEM_ERROR, NULL, NULL);
 			}
 		} else {
-			THINGS_LOG_V_ERROR(THINGS_ERROR, TAG, "clone_data_add_timeout is failed.");
+			THINGS_LOG_E(TAG, "clone_data_add_timeout is failed.");
 		}
 		return NULL;
 	default:
-		THINGS_LOG_V_ERROR(THINGS_ERROR, TAG, "Not Surpport value(%d) of g_qis_cloud_thread_running.", g_qis_cloud_thread_running);
+		THINGS_LOG_E(TAG, "Not Surpport value(%d) of g_qis_cloud_thread_running.", g_qis_cloud_thread_running);
 		return NULL;
 	}
 
@@ -1825,27 +1825,27 @@ void *cloud_data_cb_esm(es_cloud_prov_data_s *event_data)
 	send_cnt_sign_up = 0;
 
 	if (cloud_retry_sign_up(event_data, NULL) == 0) {
-		THINGS_LOG_V_ERROR(THINGS_ERROR, TAG, "cloud_retry_sign_up is failed.");
+		THINGS_LOG_E(TAG, "cloud_retry_sign_up is failed.");
 		ci_cp_del_pended_data();
 		ci_cp_del_is_there_cp();
 		es_cloud_state_set_and_notify(ES_STATE_FAILED_TO_REGISTER_TO_CLOUD, ER_ERRCODE_SYSTEM_ERROR, NULL, NULL);
 		esm_get_network_status();	// State return
 	}
-	THINGS_LOG_D(THINGS_DEBUG, TAG, THINGS_FUNC_EXIT);
+	THINGS_LOG_D(TAG, THINGS_FUNC_EXIT);
 
 	return NULL;
 }
 
 int cloud_retry_sign_in(things_timeout_s *timeout)
 {
-	THINGS_LOG_D(THINGS_DEBUG, TAG, THINGS_FUNC_ENTRY);
+	THINGS_LOG_D(TAG, THINGS_FUNC_ENTRY);
 
 	pthread_t cthread_handler;
 	es_cloud_prov_data_s dummy_data;
 	es_cloud_event_timeout_s *cloned_data = NULL;
 
 	if (ci_cp_get_is_there_cp() == true) {
-		THINGS_LOG_D(THINGS_DEBUG, TAG, "There is a CloudProvisioning data. Cloud-retry is skiped.");
+		THINGS_LOG_D(TAG, "There is a CloudProvisioning data. Cloud-retry is skiped.");
 		return 1;
 	}
 
@@ -1854,13 +1854,13 @@ int cloud_retry_sign_in(things_timeout_s *timeout)
 	// Need to check the running state of the thread...
 	if (g_qis_cloud_thread_running == CISESS_STOP) {
 		g_qis_cloud_thread_running = CISESS_BUSY;
-		THINGS_LOG(THINGS_DEBUG, TAG, "Create CloudInit thread");
+		THINGS_LOG_D(TAG, "Create CloudInit thread");
 
 		// cloud_data setting.
 		init_es_cloud_prov_data(&dummy_data);
 
 		if ((cloned_data = clone_data_add_timeout(&dummy_data, timeout)) == NULL || pthread_create_rtos(&cthread_handler, NULL, (pthread_func_type) ci_connection_init_loop, (void *)cloned_data, THINGS_STACK_CICONNETION_INIT_THREAD) != 0) {
-			THINGS_LOG_V_ERROR(THINGS_ERROR, TAG, "Create thread is failed.");
+			THINGS_LOG_E(TAG, "Create thread is failed.");
 			things_free(cloned_data);
 			cloned_data = NULL;
 			g_qis_cloud_thread_running = CISESS_STOP;
@@ -1868,20 +1868,20 @@ int cloud_retry_sign_in(things_timeout_s *timeout)
 		}
 	}
 
-	THINGS_LOG_D(THINGS_DEBUG, TAG, THINGS_FUNC_EXIT);
+	THINGS_LOG_D(TAG, THINGS_FUNC_EXIT);
 
 	return 0;
 }
 
 static int cloud_retry_sign_up(es_cloud_prov_data_s *event_data, things_timeout_s *timeout)
 {
-	THINGS_LOG_D(THINGS_DEBUG, TAG, "Enter.");
+	THINGS_LOG_D(TAG, "Enter.");
 
 	pthread_t cthread_handler;
 	es_cloud_event_timeout_s *cloned_data = NULL;
 
 	if (event_data == NULL) {
-		THINGS_LOG_V_ERROR(THINGS_ERROR, TAG, "event_data is NULL.");
+		THINGS_LOG_E(TAG, "event_data is NULL.");
 		return 0;
 	}
 
@@ -1889,13 +1889,13 @@ static int cloud_retry_sign_up(es_cloud_prov_data_s *event_data, things_timeout_
 	esm_get_network_status();	// State return
 
 	if ((cloned_data = clone_data_add_timeout(event_data, timeout)) == NULL || pthread_create_rtos(&cthread_handler, NULL, (pthread_func_type) ci_connection_waiting_loop, (void *)cloned_data, THINGS_STACK_CICONNETION_WAIT_THREAD) != 0) {
-		THINGS_LOG_V_ERROR(THINGS_ERROR, TAG, "Create thread is failed.");
+		THINGS_LOG_E(TAG, "Create thread is failed.");
 		things_free(cloned_data);
 		cloned_data = NULL;
 		return 0;
 	}
 
-	THINGS_LOG_D(THINGS_DEBUG, TAG, "Exit.");
+	THINGS_LOG_D(TAG, "Exit.");
 	return 1;
 }
 
@@ -1913,7 +1913,7 @@ static void cloud_request_retry_trigger(things_timeout_s *timeout)
 
 static es_cloud_prov_data_s *if_failed_then_retry(OCDoHandle handle, OCStackResult result, int *n_err)
 {
-	THINGS_LOG_D(THINGS_DEBUG, TAG, "latestRequest 0x%X, RespCB:0x%X]", things_get_request_handle(), handle);
+	THINGS_LOG_D(TAG, "latestRequest 0x%X, RespCB:0x%X]", things_get_request_handle(), handle);
 
 	es_cloud_prov_data_s *pended_data = NULL;
 	es_cloud_prov_data_s *clone_data = NULL;
@@ -1930,13 +1930,13 @@ static es_cloud_prov_data_s *if_failed_then_retry(OCDoHandle handle, OCStackResu
 			things_del_all_request_handle();
 
 			if ((pended_data = ci_cp_get_pended_data()) == NULL) {
-				THINGS_LOG_V(THINGS_INFO, TAG, "Not exist Pended Event Data.");
+				THINGS_LOG_V(TAG, "Not exist Pended Event Data.");
 				*n_err = 2;		// not exist pended_data.
 				goto GOTO_OUT;
 			}
 
 			if ((clone_data = things_malloc(sizeof(es_cloud_prov_data_s))) == NULL) {
-				THINGS_LOG_V_ERROR(THINGS_ERROR, TAG, "memory allocation is failed for clone_data.");
+				THINGS_LOG_E(TAG, "memory allocation is failed for clone_data.");
 				*n_err = 3;		// mem allocation error.
 				goto GOTO_OUT;
 			}
@@ -1944,7 +1944,7 @@ static es_cloud_prov_data_s *if_failed_then_retry(OCDoHandle handle, OCStackResu
 			clone_es_cloud_prov_data(clone_data, pended_data);
 		}
 	} else {
-		THINGS_LOG_V_ERROR(THINGS_ERROR, TAG, "Response Handle(0x%X) is not exist in the Request Handle list.", handle);
+		THINGS_LOG_E(TAG, "Response Handle(0x%X) is not exist in the Request Handle list.", handle);
 		*n_err = 4;
 	}
 
@@ -2002,28 +2002,28 @@ int ci_retry_stop_by_tcp_cb(const char *addr_ip, const int port)
 
 	pthread_mutex_lock(&g_es_tcp_session_mutex);
 
-	THINGS_LOG_D(THINGS_DEBUG, TAG, THINGS_FUNC_ENTRY);
+	THINGS_LOG_D(TAG, THINGS_FUNC_ENTRY);
 
 	int ci_port = 0;
 
 	if (g_qis_cloud_thread_running != CISESS_BUSY || g_cloud_port[0] == 0 || g_cloud_ip[0] == 0) {
-		THINGS_LOG_D(THINGS_DEBUG, TAG, "Don't need something process. IP=%s, Port=%s, RunningState=%d", g_cloud_ip, g_cloud_port, g_qis_cloud_thread_running);
+		THINGS_LOG_D(TAG, "Don't need something process. IP=%s, Port=%s, RunningState=%d", g_cloud_ip, g_cloud_port, g_qis_cloud_thread_running);
 		ret = 0;
 		goto GOTO_OUT;
 	}
 
-	THINGS_LOG_D(THINGS_DEBUG, TAG, "IP = %s, port = %d", addr_ip, port);	// I expect that ( IP = 52.37.99.111, port = 443 )
+	THINGS_LOG_D(TAG, "IP = %s, port = %d", addr_ip, port);	// I expect that ( IP = 52.37.99.111, port = 443 )
 
 	if ((ci_port = atoi(g_cloud_port)) <= 0) {
-		THINGS_LOG_V_ERROR(THINGS_ERROR, TAG, "[Error] Cloud Port is not invalid.(g_cloud_port = %s = %d)", g_cloud_port, ci_port);
+		THINGS_LOG_E(TAG, "[Error] Cloud Port is not invalid.(g_cloud_port = %s = %d)", g_cloud_port, ci_port);
 		ret = -1;
 		goto GOTO_OUT;
 	}
 
 	if (strncmp(g_cloud_ip, addr_ip, strlen(addr_ip)) != 0 || ci_port != port) {
-		THINGS_LOG_V(THINGS_INFO, TAG, "We Support IP:Port is \"%s:%s\"", g_cloud_ip, g_cloud_port);
+		THINGS_LOG_V(TAG, "We Support IP:Port is \"%s:%s\"", g_cloud_ip, g_cloud_port);
 		if (strncmp(g_cloud_ip, addr_ip, strlen(addr_ip)) != 0) {
-			THINGS_LOG_D(THINGS_DEBUG, TAG, "Delete OIC_Ping for IP=%s.(Cur_Cloud=%s)", addr_ip, g_cloud_ip);
+			THINGS_LOG_D(TAG, "Delete OIC_Ping for IP=%s.(Cur_Cloud=%s)", addr_ip, g_cloud_ip);
 			things_ping_unset_mask(addr_ip, PING_ST_ISCLOUD);
 		}
 		ret = 0;
@@ -2031,7 +2031,7 @@ int ci_retry_stop_by_tcp_cb(const char *addr_ip, const int port)
 	}
 	// Case Cloud Connection is BUSY & AP Connected.
 	if (es_get_cloud_login_state() == false) {
-		THINGS_LOG_V(THINGS_INFO, TAG, "process Re-Transmission in Time-Out Process instated of this.");
+		THINGS_LOG_V(TAG, "process Re-Transmission in Time-Out Process instated of this.");
 		ret = 0;
 		goto GOTO_OUT;
 	}
@@ -2040,7 +2040,7 @@ int ci_retry_stop_by_tcp_cb(const char *addr_ip, const int port)
 	cloud_request_retry_trigger(NULL);
 
 GOTO_OUT:
-	THINGS_LOG_D(THINGS_DEBUG, TAG, THINGS_FUNC_EXIT);
+	THINGS_LOG_D(TAG, THINGS_FUNC_EXIT);
 	pthread_mutex_unlock(&g_es_tcp_session_mutex);
 
 	return ret;
@@ -2051,24 +2051,24 @@ bool es_cloud_session_stop_trigger(things_es_enrollee_state_e es_state)
 	if (g_qis_cloud_thread_running != CISESS_APDISCON) {
 		if ((g_qis_cloud_thread_running == CISESS_STOP_TRIGGER || es_state <= ES_STATE_CONNECTED_TO_ENROLLER)
 			&& g_qis_cloud_thread_running != CISESS_SIGNOUT && es_get_cloud_login_state() == true) {
-			THINGS_LOG_D(THINGS_DEBUG, TAG, "Sign-Out Start.");
+			THINGS_LOG_D(TAG, "Sign-Out Start.");
 			log_in_out_to_cloud(false, NULL);
 			return true;
 		}
 
-		THINGS_LOG_D(THINGS_DEBUG, TAG, "es_state=%s, get_enrollee_state()=%s", get_prov_status(es_state), get_prov_status(get_enrollee_state()));
+		THINGS_LOG_D(TAG, "es_state=%s, get_enrollee_state()=%s", get_prov_status(es_state), get_prov_status(get_enrollee_state()));
 
 		if (es_state <= ES_STATE_CONNECTED_TO_ENROLLER) {
 			if (g_qis_cloud_thread_running != CISESS_BUSY && g_qis_cloud_thread_running != CISESS_APDISCON && es_get_cloud_login_state() == false) {
-				THINGS_LOG_D(THINGS_DEBUG, TAG, "Setting Cloud Semaphore init.");
+				THINGS_LOG_D(TAG, "Setting Cloud Semaphore init.");
 				g_qis_cloud_thread_running = CISESS_STOP;
 			}
 		}
 	}
 
-	THINGS_LOG_D(THINGS_DEBUG, TAG, "g_qis_cloud_thread_running=%d", g_qis_cloud_thread_running);
+	THINGS_LOG_D(TAG, "g_qis_cloud_thread_running=%d", g_qis_cloud_thread_running);
 
-	//THINGS_LOG_D(THINGS_DEBUG, TAG, THINGS_FUNC_EXIT);
+	//THINGS_LOG_D(TAG, THINGS_FUNC_EXIT);
 
 	return false;
 }
@@ -2078,12 +2078,12 @@ static int es_cloud_state_set_and_notify(things_cloud_status_e state, es_error_c
 	const char *strState = get_prov_status(state);
 
 	if (strState == NULL || strncmp(strState, "UNKNOWN", strlen("UNKNOWN")) == 0 || state == ES_STATE_INIT || state == ES_STATE_CONNECTED_TO_ENROLLER) {
-		THINGS_LOG_D(THINGS_DEBUG, TAG, "state is invalid value(%d)", state);
+		THINGS_LOG_D(TAG, "state is invalid value(%d)", state);
 		return -1;
 	}
 
 	if (es_set_state(state) == ES_ERROR) {
-		THINGS_LOG_D(THINGS_DEBUG, TAG, "Cloud State(%s) is failed.", strState);
+		THINGS_LOG_D(TAG, "Cloud State(%s) is failed.", strState);
 		return 1;
 	}
 
@@ -2095,7 +2095,7 @@ static int es_cloud_state_set_and_notify(things_cloud_status_e state, es_error_c
 
 		es_set_cloud_error_code(*ci_err);
 	} else {
-		THINGS_LOG_D(THINGS_DEBUG, TAG, "Provisioning last_err_code = %d", es_err);
+		THINGS_LOG_D(TAG, "Provisioning last_err_code = %d", es_err);
 		if (es_err == ES_ERRCODE_UNKNOWN) {
 			es_set_cloud_error_code(ERRCI_UNKNOWN);
 		} else {
@@ -2192,7 +2192,7 @@ bool es_cloud_signup_init(es_cloud_signup_s **data)
 
 	*data = (es_cloud_signup_s *) things_malloc(sizeof(es_cloud_signup_s));
 	if (*data == NULL) {
-		THINGS_LOG_D(THINGS_DEBUG, TAG, "ESCloud_SignedUp struct data is NULL.");
+		THINGS_LOG_D(TAG, "ESCloud_SignedUp struct data is NULL.");
 		return false;
 	}
 
@@ -2216,14 +2216,14 @@ void *es_cloud_init(things_server_builder_s *server_builder)
 	unsigned int time_v = (unsigned int)time(NULL);
 
 	if (time_v == -1) {
-		THINGS_LOG_D(THINGS_INFO, TAG, "Random Number Initialization is Failed.");
+		THINGS_LOG_V(TAG, "Random Number Initialization is Failed.");
 	} else {
-		THINGS_LOG_D(THINGS_DEBUG, TAG, "Random Number Initialization is Success.");
+		THINGS_LOG_D(TAG, "Random Number Initialization is Success.");
 		srand(time_v);
 	}
 
 	if (things_ping_init() == false) {
-		THINGS_LOG_D(THINGS_DEBUG, TAG, "OICPing init is failed.");
+		THINGS_LOG_D(TAG, "OICPing init is failed.");
 		return NULL;
 	}
 
@@ -2272,28 +2272,28 @@ void es_cloud_terminate(void)
 }
 static int get_cloud_code(OCClientResponse *response, OCMethod method, ci_error_code_e *err)
 {
-	THINGS_LOG_D(THINGS_DEBUG, TAG, "Enter");
+	THINGS_LOG_D(TAG, "Enter");
 
 	int ret = 0;
 	OCRepPayloadValue *val = NULL;
 	CAResponseResult_t rawResult = CA_EMPTY;
 
 	if (response == NULL || response->payload == NULL || err == NULL || method == OC_REST_NOMETHOD) {
-		THINGS_LOG_V_ERROR(THINGS_ERROR, TAG, "response(0x%X) or err(0x%X) is NULL", response, err);
+		THINGS_LOG_E(TAG, "response(0x%X) or err(0x%X) is NULL", response, err);
 		return ret;
 	}
 
 	rawResult = things_result_to_network_result(response->result, method);
 	*err = rawResult * ERR_UPPER_UNIT;
 
-	THINGS_LOG_D(THINGS_DEBUG, TAG, "result = %d, rawResult = %d, method = %d, *err = %d", response->result, rawResult, method, *err);
+	THINGS_LOG_D(TAG, "result = %d, rawResult = %d, method = %d, *err = %d", response->result, rawResult, method, *err);
 
 	val = ((OCRepPayload *) response->payload)->values;
 
 	while (val != NULL) {
 		if (strncmp(val->name, CLOUD_ERROR_CODE, strlen(CLOUD_ERROR_CODE)) == 0) {
 			if (val->type != OCREP_PROP_INT) {
-				THINGS_LOG_V_ERROR(THINGS_ERROR, TAG, "DataType of Cloud-Err-Code is not Integer.");
+				THINGS_LOG_E(TAG, "DataType of Cloud-Err-Code is not Integer.");
 			} else {
 				*err += (ci_error_code_e) val->i;
 				ret = 1;
@@ -2305,9 +2305,9 @@ static int get_cloud_code(OCClientResponse *response, OCMethod method, ci_error_
 		val = val->next;
 	}
 
-	THINGS_LOG_D(THINGS_DEBUG, TAG, "*err = %d, ret = %d", *err, ret);
+	THINGS_LOG_D(TAG, "*err = %d, ret = %d", *err, ret);
 
-	THINGS_LOG_D(THINGS_DEBUG, TAG, "Exit");
+	THINGS_LOG_D(TAG, "Exit");
 	return ret;
 }
 
@@ -2333,7 +2333,7 @@ static CAResponseResult_t things_result_to_network_result(OCStackResult oc_code,
 			// This should not happen but,
 			// give it a value just in case but output an error
 			ret = CA_CONTENT;
-			THINGS_LOG_V_ERROR(THINGS_ERROR, TAG, "Unexpected OC_STACK_OK return code for method [%d].", method);
+			THINGS_LOG_E(TAG, "Unexpected OC_STACK_OK return code for method [%d].", method);
 		}
 		break;
 	case OC_STACK_RESOURCE_CREATED:
@@ -2378,66 +2378,66 @@ static char *make_ip_port(char *p_ip, char *p_port)
 	int length = 0;
 
 	if (p_ip == NULL || p_port == NULL) {
-		THINGS_LOG_V_ERROR(THINGS_ERROR, TAG, "IP=%s, or Port=%s is NULL.", p_ip, p_port);
+		THINGS_LOG_E(TAG, "IP=%s, or Port=%s is NULL.", p_ip, p_port);
 		return NULL;
 	}
 
 	length = strlen(p_ip) + strlen(p_port) + 2;
 	if ((ipport = (char *)things_malloc(length)) == NULL) {
-		THINGS_LOG_V_ERROR(THINGS_ERROR, TAG, "Memory allocation is failed.");
+		THINGS_LOG_E(TAG, "Memory allocation is failed.");
 		return NULL;
 	}
 
 	memset(ipport, 0, length);
 	if (things_strcat(ipport, length, p_ip) == NULL) {
-		THINGS_LOG_V_ERROR(THINGS_ERROR, TAG, "things_strcat is failed.");
+		THINGS_LOG_E(TAG, "things_strcat is failed.");
 		things_free(ipport);
 		return NULL;
 	}
 	ipport[strlen(p_ip)] = ':';
 	if (things_strcat(ipport, length, p_port) == NULL) {
-		THINGS_LOG_V_ERROR(THINGS_ERROR, TAG, "things_strcat is failed.");
+		THINGS_LOG_E(TAG, "things_strcat is failed.");
 		things_free(ipport);
 		return NULL;
 	}
 
-	THINGS_LOG_D(THINGS_DEBUG, TAG, "IP=%s, Port=%s, ipport=%s", p_ip, p_port, ipport);
+	THINGS_LOG_D(TAG, "IP=%s, Port=%s, ipport=%s", p_ip, p_port, ipport);
 	return ipport;
 }
 
 static es_cloud_event_timeout_s *clone_data_add_timeout(es_cloud_prov_data_s *cloud_data, things_timeout_s *timeout)
 {
-	THINGS_LOG_D(THINGS_DEBUG, TAG, THINGS_FUNC_ENTRY);
+	THINGS_LOG_D(TAG, THINGS_FUNC_ENTRY);
 
 	es_cloud_event_timeout_s *cloned_data = NULL;
 
 	if (cloud_data == NULL) {
-		THINGS_LOG_V_ERROR(THINGS_ERROR, TAG, "cloud_data is NULL.");
+		THINGS_LOG_E(TAG, "cloud_data is NULL.");
 		return NULL;
 	}
 
 	if ((cloned_data = (es_cloud_event_timeout_s *) things_malloc(sizeof(es_cloud_event_timeout_s) * 1)) == NULL) {
-		THINGS_LOG_V_ERROR(THINGS_ERROR, TAG, "Memory allocation is failed.");
+		THINGS_LOG_E(TAG, "Memory allocation is failed.");
 		return NULL;
 	}
 
 	clone_es_cloud_prov_data(&cloned_data->event, cloud_data);
 
 	if (timeout == NULL) {
-		THINGS_LOG_D(THINGS_DEBUG, TAG, "Default Setting to cloned Cloud Data.");
+		THINGS_LOG_D(TAG, "Default Setting to cloned Cloud Data.");
 		cloned_data->timeOut.cur_counter = DEFAULT_TIMEOUT;
 		cloned_data->timeOut.cur_num = DEFAULT_TIMEOUT;
 		cloned_data->timeOut.ori_num = DEFAULT_TIMEOUT;
 	} else {
-		THINGS_LOG_D(THINGS_DEBUG, TAG, "Custom Setting to cloned Cloud Data.");
+		THINGS_LOG_D(TAG, "Custom Setting to cloned Cloud Data.");
 		cloned_data->timeOut.cur_counter = timeout->cur_counter;
 		cloned_data->timeOut.cur_num = timeout->cur_num;
 		cloned_data->timeOut.ori_num = timeout->ori_num;
 	}
 
-	THINGS_LOG_D(THINGS_DEBUG, TAG, "cur_counter = %d, cur_num = %d, ori_num = %d", cloned_data->timeOut.cur_counter, cloned_data->timeOut.cur_num, cloned_data->timeOut.ori_num);
-	THINGS_LOG_D(THINGS_DEBUG, TAG, "cloned_data add= 0x%X", cloned_data);
-	THINGS_LOG_D(THINGS_DEBUG, TAG, THINGS_FUNC_EXIT);
+	THINGS_LOG_D(TAG, "cur_counter = %d, cur_num = %d, ori_num = %d", cloned_data->timeOut.cur_counter, cloned_data->timeOut.cur_num, cloned_data->timeOut.ori_num);
+	THINGS_LOG_D(TAG, "cloned_data add= 0x%X", cloned_data);
+	THINGS_LOG_D(TAG, THINGS_FUNC_EXIT);
 	return cloned_data;
 }
 
@@ -2476,6 +2476,6 @@ static void ci_finish_cloud_con(int result)
 static void publish_dev_profile_into_cloud(things_timeout_s *timeout)
 {
 	if (things_cloud_dev_profile_publish(g_cloud_address, handle_dev_profile_cb, handle_dev_profile_timeout, timeout) != OC_STACK_OK) {
-		THINGS_LOG_V_ERROR(THINGS_ERROR, TAG, "Publish Device Profile request is failed.");
+		THINGS_LOG_E(TAG, "Publish Device Profile request is failed.");
 	}
 }

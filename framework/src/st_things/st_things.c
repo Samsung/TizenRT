@@ -61,13 +61,13 @@ static stack_status_e g_stack_status = STACK_NOT_INITIALIZED;
  */
 void get_reset_result_cb(int result)
 {
-	THINGS_LOG_D(THINGS_DEBUG, TAG, THINGS_FUNC_ENTRY);
-	THINGS_LOG_V(THINGS_DEBUG, TAG, "Result of reset is %d", result);
+	THINGS_LOG_D(TAG, THINGS_FUNC_ENTRY);
+	THINGS_LOG_D(TAG, "Result of reset is %d", result);
 	bool res = (result == 1) ? true : false;
 	if (NULL != g_handle_reset_result_cb) {
 		g_handle_reset_result_cb(res);
 	}
-	THINGS_LOG_D(THINGS_DEBUG, TAG, THINGS_FUNC_EXIT);
+	THINGS_LOG_D(TAG, THINGS_FUNC_EXIT);
 }
 
 /**
@@ -76,34 +76,34 @@ void get_reset_result_cb(int result)
  */
 int get_reset_confirm_cb(things_reset_result_func_type *func_carrier, things_es_enrollee_reset_e reset_type)
 {
-	THINGS_LOG_D(THINGS_DEBUG, TAG, THINGS_FUNC_ENTRY);
+	THINGS_LOG_D(TAG, THINGS_FUNC_ENTRY);
 	if (NULL == g_handle_reset_confirm_cb) {
-		THINGS_LOG_D(THINGS_DEBUG, TAG, THINGS_FUNC_EXIT);
+		THINGS_LOG_D(TAG, THINGS_FUNC_EXIT);
 		return 0;
 	}
 
 	if (RST_NEED_CONFIRM == reset_type) {
 		// Invoke application's callback to get user's confirmation and pass the result to DA Stack.
 		bool confirm = g_handle_reset_confirm_cb();
-		THINGS_LOG_V(THINGS_DEBUG, TAG, "User's confirmation for reset : %s", confirm ? "true" : "false");
+		THINGS_LOG_D(TAG, "User's confirmation for reset : %s", confirm ? "true" : "false");
 		if (confirm) {
 			things_return_user_opinion_for_reset(1);
 		} else {
 			things_return_user_opinion_for_reset(0);
 		}
 	} else if (RST_AUTO_RESET == reset_type) {
-		THINGS_LOG(THINGS_DEBUG, TAG, "Reset will start automatically");
+		THINGS_LOG_D(TAG, "Reset will start automatically");
 		things_return_user_opinion_for_reset(1);
 	} else {
-		THINGS_LOG_V(THINGS_ERROR, TAG, "reset_type(%d) is invalid", reset_type);
-		THINGS_LOG_D(THINGS_DEBUG, TAG, THINGS_FUNC_EXIT);
+		THINGS_LOG_E(TAG, "reset_type(%d) is invalid", reset_type);
+		THINGS_LOG_D(TAG, THINGS_FUNC_EXIT);
 		return 0;
 	}
 
 	// Set the callback through this function's value-result paramter with DA Stack to get the result of reset.
 	*func_carrier = get_reset_result_cb;
 
-	THINGS_LOG_D(THINGS_DEBUG, TAG, THINGS_FUNC_EXIT);
+	THINGS_LOG_D(TAG, THINGS_FUNC_EXIT);
 	return 1;
 }
 
@@ -113,8 +113,8 @@ int get_reset_confirm_cb(things_reset_result_func_type *func_carrier, things_es_
  */
 void get_things_status_cb(things_es_enrollee_state_e state)
 {
-	THINGS_LOG_D(THINGS_DEBUG, TAG, THINGS_FUNC_ENTRY);
-	THINGS_LOG_V(THINGS_DEBUG, TAG, "Received event for easy-setup state change (%d)", state);
+	THINGS_LOG_D(TAG, THINGS_FUNC_ENTRY);
+	THINGS_LOG_D(TAG, "Received event for easy-setup state change (%d)", state);
 	bool handled = true;
 	st_things_status_e status = ST_THINGS_STATUS_INIT;
 	switch (state) {
@@ -143,7 +143,7 @@ void get_things_status_cb(things_es_enrollee_state_e state)
 		status = ST_THINGS_STATUS_REGISTERED_TO_CLOUD;
 		break;
 	default:
-		THINGS_LOG(THINGS_DEBUG, TAG, "This state is ignored");
+		THINGS_LOG_D(TAG, "This state is ignored");
 		handled = false;
 		break;
 	}
@@ -151,7 +151,7 @@ void get_things_status_cb(things_es_enrollee_state_e state)
 	if (handled && NULL != g_handle_things_status_change_cb) {
 		g_handle_things_status_change_cb(status);
 	}
-	THINGS_LOG_D(THINGS_DEBUG, TAG, THINGS_FUNC_EXIT);
+	THINGS_LOG_D(TAG, THINGS_FUNC_EXIT);
 }
 
 /**
@@ -159,14 +159,14 @@ void get_things_status_cb(things_es_enrollee_state_e state)
  */
 void ownership_transfer_state_cb(const char *addr, uint16_t port, const char *uuid, int event)
 {
-	THINGS_LOG_D(THINGS_DEBUG, TAG, THINGS_FUNC_ENTRY);
-	THINGS_LOG_V(THINGS_DEBUG, TAG, "Received event for ownership-transfer state change (%d)", event);
+	THINGS_LOG_D(TAG, THINGS_FUNC_ENTRY);
+	THINGS_LOG_D(TAG, "Received event for ownership-transfer state change (%d)", event);
 	(void)addr;
 	(void)port;
 	(void)uuid;
 
 	if (NULL == g_handle_things_status_change_cb) {
-		THINGS_LOG_D(THINGS_DEBUG, TAG, THINGS_FUNC_EXIT);
+		THINGS_LOG_D(TAG, THINGS_FUNC_EXIT);
 		return;
 	}
 
@@ -181,7 +181,7 @@ void ownership_transfer_state_cb(const char *addr, uint16_t port, const char *uu
 		g_handle_things_status_change_cb(ST_THINGS_STATUS_ES_FAILED_ON_OWNERSHIP_TRANSFER);
 		break;
 	}
-	THINGS_LOG_D(THINGS_DEBUG, TAG, THINGS_FUNC_EXIT);
+	THINGS_LOG_D(TAG, THINGS_FUNC_EXIT);
 }
 
 /**
@@ -189,16 +189,16 @@ void ownership_transfer_state_cb(const char *addr, uint16_t port, const char *uu
  */
 int get_user_confirm_cb(void)
 {
-	THINGS_LOG_D(THINGS_DEBUG, TAG, THINGS_FUNC_ENTRY);
+	THINGS_LOG_D(TAG, THINGS_FUNC_ENTRY);
 	if (NULL == g_handle_user_confirm_cb) {
-		THINGS_LOG_D(THINGS_DEBUG, TAG, THINGS_FUNC_EXIT);
+		THINGS_LOG_D(TAG, THINGS_FUNC_EXIT);
 		return 0;
 	}
 
 	bool confirm = g_handle_user_confirm_cb();
-	THINGS_LOG_V(THINGS_DEBUG, TAG, "User's confirmation for MUTUAL VERIFICATION BASED JUST WORK Ownership-transfer : %s", confirm ? "true" : "false");
+	THINGS_LOG_D(TAG, "User's confirmation for MUTUAL VERIFICATION BASED JUST WORK Ownership-transfer : %s", confirm ? "true" : "false");
 
-	THINGS_LOG_D(THINGS_DEBUG, TAG, THINGS_FUNC_EXIT);
+	THINGS_LOG_D(TAG, THINGS_FUNC_EXIT);
 	return confirm ? 1 : 0;
 }
 
@@ -207,11 +207,11 @@ int get_user_confirm_cb(void)
  */
 void generated_pin_cb(char *pin_data, size_t pin_size)
 {
-	THINGS_LOG_D(THINGS_DEBUG, TAG, THINGS_FUNC_ENTRY);
+	THINGS_LOG_D(TAG, THINGS_FUNC_ENTRY);
 	if (NULL != g_handle_pin_generated_cb) {
 		g_handle_pin_generated_cb(pin_data, pin_size);
 	}
-	THINGS_LOG_D(THINGS_DEBUG, TAG, THINGS_FUNC_EXIT);
+	THINGS_LOG_D(TAG, THINGS_FUNC_EXIT);
 }
 
 /**
@@ -219,118 +219,118 @@ void generated_pin_cb(char *pin_data, size_t pin_size)
  */
 void close_pin_display_cb(void)
 {
-	THINGS_LOG_D(THINGS_DEBUG, TAG, THINGS_FUNC_ENTRY);
+	THINGS_LOG_D(TAG, THINGS_FUNC_ENTRY);
 	if (NULL != g_handle_pin_display_close_cb) {
 		g_handle_pin_display_close_cb();
 	}
-	THINGS_LOG_D(THINGS_DEBUG, TAG, THINGS_FUNC_EXIT);
+	THINGS_LOG_D(TAG, THINGS_FUNC_EXIT);
 }
 
 int st_things_initialize(const char *json_path, bool *easysetup_complete)
 {
-	THINGS_LOG_D(THINGS_DEBUG, TAG, THINGS_FUNC_ENTRY);
+	THINGS_LOG_D(TAG, THINGS_FUNC_ENTRY);
 
 	if (STACK_NOT_INITIALIZED != g_stack_status) {
 		int ret_val = ST_THINGS_ERROR_OPERATION_FAILED;
 		switch (g_stack_status) {
 		case STACK_INITIALIZED:
-			THINGS_LOG(THINGS_ERROR, TAG, "Stack initialized already.");
+			THINGS_LOG_E(TAG, "Stack initialized already.");
 			ret_val = ST_THINGS_ERROR_STACK_ALREADY_INITIALIZED;
 			break;
 		case STACK_STARTED:
-			THINGS_LOG(THINGS_ERROR, TAG, "Stack is currently running.");
+			THINGS_LOG_E(TAG, "Stack is currently running.");
 			ret_val = ST_THINGS_ERROR_STACK_RUNNING;
 			break;
 		default:
-			THINGS_LOG_V(THINGS_ERROR, TAG, "Invalid stack state: %d.", g_stack_status);
+			THINGS_LOG_E(TAG, "Invalid stack state: %d.", g_stack_status);
 			break;
 		}
 
-		THINGS_LOG_D(THINGS_DEBUG, TAG, THINGS_FUNC_EXIT);
+		THINGS_LOG_D(TAG, THINGS_FUNC_EXIT);
 		return ret_val;
 	}
 
 	if (NULL == json_path) {
-		THINGS_LOG(THINGS_ERROR, TAG, "Json file path is NULL");
-		THINGS_LOG_D(THINGS_DEBUG, TAG, THINGS_FUNC_EXIT);
+		THINGS_LOG_E(TAG, "Json file path is NULL");
+		THINGS_LOG_D(TAG, THINGS_FUNC_EXIT);
 		return ST_THINGS_ERROR_INVALID_PARAMETER;
 	}
 
-	THINGS_LOG_V(THINGS_DEBUG, "JSON file path: %s", json_path);
+	THINGS_LOG_D("JSON file path: %s", json_path);
 
 	int result = 0;
 	if (1 != (result = things_initialize_stack(json_path, easysetup_complete))) {
-		THINGS_LOG_V(THINGS_ERROR, TAG, "things_initialize_stack failed (result:%d)", result);
-		THINGS_LOG_D(THINGS_DEBUG, TAG, THINGS_FUNC_EXIT);
+		THINGS_LOG_E(TAG, "things_initialize_stack failed (result:%d)", result);
+		THINGS_LOG_D(TAG, THINGS_FUNC_EXIT);
 		return ST_THINGS_ERROR_OPERATION_FAILED;
 	}
 
 	g_stack_status = STACK_INITIALIZED;
 
-	THINGS_LOG_V(THINGS_DEBUG, TAG, "Is EasySetup completed : %s", (*easysetup_complete) ? "true" : "false");
-	THINGS_LOG_D(THINGS_DEBUG, TAG, THINGS_FUNC_EXIT);
+	THINGS_LOG_D(TAG, "Is EasySetup completed : %s", (*easysetup_complete) ? "true" : "false");
+	THINGS_LOG_D(TAG, THINGS_FUNC_EXIT);
 	return ST_THINGS_ERROR_NONE;
 }
 
 int st_things_deinitialize(void)
 {
-	THINGS_LOG_D(THINGS_DEBUG, TAG, THINGS_FUNC_ENTRY);
+	THINGS_LOG_D(TAG, THINGS_FUNC_ENTRY);
 
 	if (STACK_INITIALIZED != g_stack_status) {
 		int ret_val = ST_THINGS_ERROR_OPERATION_FAILED;
 		switch (g_stack_status) {
 		case STACK_NOT_INITIALIZED:
-			THINGS_LOG(THINGS_ERROR, TAG, "Stack is not initialized.");
+			THINGS_LOG_E(TAG, "Stack is not initialized.");
 			ret_val = ST_THINGS_ERROR_STACK_NOT_INITIALIZED;
 			break;
 		case STACK_STARTED:
-			THINGS_LOG(THINGS_ERROR, TAG, "Stack is currently running. Stop the stack before deinitializing it.");
+			THINGS_LOG_E(TAG, "Stack is currently running. Stop the stack before deinitializing it.");
 			ret_val = ST_THINGS_ERROR_STACK_RUNNING;
 			break;
 		default:
-			THINGS_LOG_V(THINGS_ERROR, TAG, "Invalid stack state: %d.", g_stack_status);
+			THINGS_LOG_E(TAG, "Invalid stack state: %d.", g_stack_status);
 			break;
 		}
 
-		THINGS_LOG_D(THINGS_DEBUG, TAG, THINGS_FUNC_EXIT);
+		THINGS_LOG_D(TAG, THINGS_FUNC_EXIT);
 		return ret_val;
 	}
 
 	int result = 0;
 	if (1 != (result = things_deinitialize_stack())) {
-		THINGS_LOG_V(THINGS_ERROR, TAG, "things_deinitialize_stack failed (result:%d)", result);
-		THINGS_LOG_D(THINGS_DEBUG, TAG, THINGS_FUNC_EXIT);
+		THINGS_LOG_E(TAG, "things_deinitialize_stack failed (result:%d)", result);
+		THINGS_LOG_D(TAG, THINGS_FUNC_EXIT);
 		return ST_THINGS_ERROR_OPERATION_FAILED;
 	}
 
 	g_stack_status = STACK_NOT_INITIALIZED;
 
-	THINGS_LOG_D(THINGS_DEBUG, TAG, THINGS_FUNC_EXIT);
+	THINGS_LOG_D(TAG, THINGS_FUNC_EXIT);
 	return ST_THINGS_ERROR_NONE;
 }
 
 int st_things_start(void)
 {
 	THINGS_LOG_INIT();
-	THINGS_LOG_D(THINGS_DEBUG, TAG, THINGS_FUNC_ENTRY);
+	THINGS_LOG_D(TAG, THINGS_FUNC_ENTRY);
 
 	if (STACK_INITIALIZED != g_stack_status) {
 		int ret_val = ST_THINGS_ERROR_OPERATION_FAILED;
 		switch (g_stack_status) {
 		case STACK_NOT_INITIALIZED:
-			THINGS_LOG(THINGS_ERROR, TAG, "Stack is not initialized.");
+			THINGS_LOG_E(TAG, "Stack is not initialized.");
 			ret_val = ST_THINGS_ERROR_STACK_NOT_INITIALIZED;
 			break;
 		case STACK_STARTED:
-			THINGS_LOG(THINGS_DEBUG, TAG, "Stack started already.");
+			THINGS_LOG_D(TAG, "Stack started already.");
 			ret_val = ST_THINGS_ERROR_NONE;
 			break;
 		default:
-			THINGS_LOG_V(THINGS_ERROR, TAG, "Invalid stack state: %d.", g_stack_status);
+			THINGS_LOG_E(TAG, "Invalid stack state: %d.", g_stack_status);
 			break;
 		}
 
-		THINGS_LOG_D(THINGS_DEBUG, TAG, THINGS_FUNC_EXIT);
+		THINGS_LOG_D(TAG, THINGS_FUNC_EXIT);
 		return ret_val;
 	}
 
@@ -338,212 +338,212 @@ int st_things_start(void)
 
 	// Register callback for reset confirmation.
 	if (1 != (result = things_register_confirm_reset_start_func(get_reset_confirm_cb))) {
-		THINGS_LOG_V(THINGS_ERROR, TAG, "things_register_confirm_reset_start_func failed (result:%d)", result);
+		THINGS_LOG_E(TAG, "things_register_confirm_reset_start_func failed (result:%d)", result);
 		goto error;
 	}
 	// Register callback for easy-setup status.
 	if (1 != (result = things_register_easysetup_state_func(get_things_status_cb))) {
-		THINGS_LOG_V(THINGS_ERROR, TAG, "things_register_easysetup_state_func failed (result:%d)", result);
+		THINGS_LOG_E(TAG, "things_register_easysetup_state_func failed (result:%d)", result);
 		goto error;
 	}
 	// Register callback for receiving the Security Ownership Transfer state changes.
 	if (1 != (result = things_register_otm_event_handler(ownership_transfer_state_cb))) {
-		THINGS_LOG_V(THINGS_ERROR, TAG, "things_register_otm_event_handler failed (result:%d)", result);
+		THINGS_LOG_E(TAG, "things_register_otm_event_handler failed (result:%d)", result);
 		goto error;
 	}
 	// Register callback for receiving request during ownership transfer for getting confirmation from user.
 	if (1 != (result = things_register_user_confirm_func(get_user_confirm_cb))) {
-		THINGS_LOG_V(THINGS_ERROR, TAG, "things_register_user_confirm_func failed (result:%d)", result);
+		THINGS_LOG_E(TAG, "things_register_user_confirm_func failed (result:%d)", result);
 		goto error;
 	}
 	// Register callback for receiving the pin generated for ownership transfer.
 	if (1 != (result = things_register_pin_generated_func(generated_pin_cb))) {
-		THINGS_LOG_V(THINGS_ERROR, TAG, "things_register_pin_generated_func failed (result:%d)", result);
+		THINGS_LOG_E(TAG, "things_register_pin_generated_func failed (result:%d)", result);
 		goto error;
 	}
 	// Register callback to receiving request for closing the PIN display.
 	if (1 != (result = things_register_pin_display_close_func(close_pin_display_cb))) {
-		THINGS_LOG_V(THINGS_ERROR, TAG, "things_register_pin_display_close_func failed (result:%d)", result);
+		THINGS_LOG_E(TAG, "things_register_pin_display_close_func failed (result:%d)", result);
 		goto error;
 	}
 	// Register callback to handle GET and POST requests.
 	if (1 != (result = things_register_handle_request_func(handle_get_request_cb, handle_set_request_cb))) {
-		THINGS_LOG_V(THINGS_ERROR, TAG, "things_register_handle_request_func failed (result:%d)", result);
+		THINGS_LOG_E(TAG, "things_register_handle_request_func failed (result:%d)", result);
 		goto error;
 	}
 	// Start DA Stack.
 	if (1 != (result = things_start_stack())) {
-		THINGS_LOG_V(THINGS_ERROR, TAG, "things_start_stack failed (result:%d)", result);
+		THINGS_LOG_E(TAG, "things_start_stack failed (result:%d)", result);
 		goto error;
 	}
 
 	g_stack_status = STACK_STARTED;
 
-	THINGS_LOG_D(THINGS_DEBUG, TAG, THINGS_FUNC_EXIT);
+	THINGS_LOG_D(TAG, THINGS_FUNC_EXIT);
 	return ST_THINGS_ERROR_NONE;
 
 error:
-	THINGS_LOG_D(THINGS_DEBUG, TAG, THINGS_FUNC_EXIT);
+	THINGS_LOG_D(TAG, THINGS_FUNC_EXIT);
 	return ST_THINGS_ERROR_OPERATION_FAILED;
 }
 
 int st_things_register_request_cb(st_things_get_request_cb get_cb, st_things_set_request_cb set_cb)
 {
-	THINGS_LOG_D(THINGS_DEBUG, TAG, THINGS_FUNC_ENTRY);
+	THINGS_LOG_D(TAG, THINGS_FUNC_ENTRY);
 	if (NULL == get_cb || NULL == set_cb) {
-		THINGS_LOG_D(THINGS_DEBUG, TAG, THINGS_FUNC_EXIT);
+		THINGS_LOG_D(TAG, THINGS_FUNC_EXIT);
 		return ST_THINGS_ERROR_INVALID_PARAMETER;
 	}
 
-	THINGS_LOG_D(THINGS_DEBUG, TAG, THINGS_FUNC_EXIT);
+	THINGS_LOG_D(TAG, THINGS_FUNC_EXIT);
 	return register_request_handler_cb(get_cb, set_cb);
 }
 
 int st_things_register_reset_cb(st_things_reset_confirm_cb confirm_cb, st_things_reset_result_cb result_cb)
 {
-	THINGS_LOG_D(THINGS_DEBUG, TAG, THINGS_FUNC_ENTRY);
+	THINGS_LOG_D(TAG, THINGS_FUNC_ENTRY);
 	if (NULL == confirm_cb || NULL == result_cb) {
-		THINGS_LOG_D(THINGS_DEBUG, TAG, THINGS_FUNC_EXIT);
+		THINGS_LOG_D(TAG, THINGS_FUNC_EXIT);
 		return ST_THINGS_ERROR_INVALID_PARAMETER;
 	}
 
 	g_handle_reset_confirm_cb = confirm_cb;
 	g_handle_reset_result_cb = result_cb;
 
-	THINGS_LOG_D(THINGS_DEBUG, TAG, THINGS_FUNC_EXIT);
+	THINGS_LOG_D(TAG, THINGS_FUNC_EXIT);
 	return ST_THINGS_ERROR_NONE;
 }
 
 int st_things_reset(void)
 {
-	THINGS_LOG_D(THINGS_DEBUG, TAG, THINGS_FUNC_ENTRY);
+	THINGS_LOG_D(TAG, THINGS_FUNC_ENTRY);
 
 	if (STACK_STARTED != g_stack_status) {
 		int ret_val = ST_THINGS_ERROR_OPERATION_FAILED;
 		switch (g_stack_status) {
 		case STACK_NOT_INITIALIZED:
-			THINGS_LOG(THINGS_ERROR, TAG, "Stack is not initialized. Before reset, stack should be initialized and started.");
+			THINGS_LOG_E(TAG, "Stack is not initialized. Before reset, stack should be initialized and started.");
 			ret_val = ST_THINGS_ERROR_STACK_NOT_INITIALIZED;
 			break;
 		case STACK_INITIALIZED:
-			THINGS_LOG(THINGS_ERROR, TAG, "Stack is initialized but not started.");
+			THINGS_LOG_E(TAG, "Stack is initialized but not started.");
 			ret_val = ST_THINGS_ERROR_STACK_NOT_STARTED;
 			break;
 		default:
-			THINGS_LOG_V(THINGS_ERROR, TAG, "Invalid stack state: %d.", g_stack_status);
+			THINGS_LOG_E(TAG, "Invalid stack state: %d.", g_stack_status);
 			break;
 		}
 
-		THINGS_LOG_D(THINGS_DEBUG, TAG, THINGS_FUNC_EXIT);
+		THINGS_LOG_D(TAG, THINGS_FUNC_EXIT);
 		return ret_val;
 	}
 
 	int result = 0;
 	if (1 != (result = things_reset(NULL, RST_AUTO_RESET))) {
-		THINGS_LOG_V(THINGS_ERROR, TAG, "things_reset failed (result:%d)", result);
-		THINGS_LOG_D(THINGS_DEBUG, TAG, THINGS_FUNC_EXIT);
+		THINGS_LOG_E(TAG, "things_reset failed (result:%d)", result);
+		THINGS_LOG_D(TAG, THINGS_FUNC_EXIT);
 		return ST_THINGS_ERROR_OPERATION_FAILED;
 	}
 
-	THINGS_LOG_D(THINGS_DEBUG, TAG, THINGS_FUNC_EXIT);
+	THINGS_LOG_D(TAG, THINGS_FUNC_EXIT);
 	return ST_THINGS_ERROR_NONE;
 }
 
 int st_things_register_pin_handling_cb(st_things_pin_generated_cb generated_cb, st_things_pin_display_close_cb close_cb)
 {
-	THINGS_LOG_D(THINGS_DEBUG, TAG, THINGS_FUNC_ENTRY);
+	THINGS_LOG_D(TAG, THINGS_FUNC_ENTRY);
 	if (NULL == generated_cb || NULL == close_cb) {
-		THINGS_LOG_D(THINGS_DEBUG, TAG, THINGS_FUNC_EXIT);
+		THINGS_LOG_D(TAG, THINGS_FUNC_EXIT);
 		return ST_THINGS_ERROR_INVALID_PARAMETER;
 	}
 
 	g_handle_pin_generated_cb = generated_cb;
 	g_handle_pin_display_close_cb = close_cb;
 
-	THINGS_LOG_D(THINGS_DEBUG, TAG, THINGS_FUNC_EXIT);
+	THINGS_LOG_D(TAG, THINGS_FUNC_EXIT);
 	return ST_THINGS_ERROR_NONE;
 }
 
 int st_things_register_user_confirm_cb(st_things_user_confirm_cb confirm_cb)
 {
-	THINGS_LOG_D(THINGS_DEBUG, TAG, THINGS_FUNC_ENTRY);
+	THINGS_LOG_D(TAG, THINGS_FUNC_ENTRY);
 	if (NULL == confirm_cb) {
-		THINGS_LOG_D(THINGS_DEBUG, TAG, THINGS_FUNC_EXIT);
+		THINGS_LOG_D(TAG, THINGS_FUNC_EXIT);
 		return ST_THINGS_ERROR_INVALID_PARAMETER;
 	}
 
 	g_handle_user_confirm_cb = confirm_cb;
 
-	THINGS_LOG_D(THINGS_DEBUG, TAG, THINGS_FUNC_EXIT);
+	THINGS_LOG_D(TAG, THINGS_FUNC_EXIT);
 	return ST_THINGS_ERROR_NONE;
 }
 
 int st_things_register_things_status_change_cb(st_things_status_change_cb status_cb)
 {
-	THINGS_LOG_D(THINGS_DEBUG, TAG, THINGS_FUNC_ENTRY);
+	THINGS_LOG_D(TAG, THINGS_FUNC_ENTRY);
 	if (NULL == status_cb) {
-		THINGS_LOG_D(THINGS_DEBUG, TAG, THINGS_FUNC_EXIT);
+		THINGS_LOG_D(TAG, THINGS_FUNC_EXIT);
 		return ST_THINGS_ERROR_INVALID_PARAMETER;
 	}
 
 	g_handle_things_status_change_cb = status_cb;
 
-	THINGS_LOG_D(THINGS_DEBUG, TAG, THINGS_FUNC_EXIT);
+	THINGS_LOG_D(TAG, THINGS_FUNC_EXIT);
 	return ST_THINGS_ERROR_NONE;
 }
 
 int st_things_notify_observers(const char *resource_uri)
 {
-	THINGS_LOG_D(THINGS_DEBUG, TAG, THINGS_FUNC_ENTRY);
+	THINGS_LOG_D(TAG, THINGS_FUNC_ENTRY);
 
 	if (STACK_STARTED != g_stack_status) {
 		int ret_val = ST_THINGS_ERROR_OPERATION_FAILED;
 		switch (g_stack_status) {
 		case STACK_NOT_INITIALIZED:
-			THINGS_LOG(THINGS_ERROR, TAG, "Stack is not initialized. Before notifying observers, stack should be initialized and started.");
+			THINGS_LOG_E(TAG, "Stack is not initialized. Before notifying observers, stack should be initialized and started.");
 			ret_val = ST_THINGS_ERROR_STACK_NOT_INITIALIZED;
 			break;
 		case STACK_INITIALIZED:
-			THINGS_LOG(THINGS_ERROR, TAG, "Stack is initialized but not started.");
+			THINGS_LOG_E(TAG, "Stack is initialized but not started.");
 			ret_val = ST_THINGS_ERROR_STACK_NOT_STARTED;
 			break;
 		default:
-			THINGS_LOG_V(THINGS_ERROR, TAG, "Invalid stack state: %d.", g_stack_status);
+			THINGS_LOG_E(TAG, "Invalid stack state: %d.", g_stack_status);
 			break;
 		}
 
-		THINGS_LOG_D(THINGS_DEBUG, TAG, THINGS_FUNC_EXIT);
+		THINGS_LOG_D(TAG, THINGS_FUNC_EXIT);
 		return ret_val;
 	}
 
 	if (NULL == resource_uri || 1 > strlen(resource_uri)) {
-		THINGS_LOG(THINGS_ERROR, TAG, "The resource URI is invalid");
-		THINGS_LOG_D(THINGS_DEBUG, TAG, THINGS_FUNC_EXIT);
+		THINGS_LOG_E(TAG, "The resource URI is invalid");
+		THINGS_LOG_D(TAG, THINGS_FUNC_EXIT);
 		return ST_THINGS_ERROR_INVALID_PARAMETER;
 	}
 
 	int result = 0;
 	if (1 != (result = things_notify_observers(resource_uri))) {
-		THINGS_LOG_V(THINGS_ERROR, TAG, "things_notify_observers failed (result:%d)", result);
-		THINGS_LOG_D(THINGS_DEBUG, TAG, THINGS_FUNC_EXIT);
+		THINGS_LOG_E(TAG, "things_notify_observers failed (result:%d)", result);
+		THINGS_LOG_D(TAG, THINGS_FUNC_EXIT);
 		return ST_THINGS_ERROR_OPERATION_FAILED;
 	}
 
-	THINGS_LOG_D(THINGS_DEBUG, TAG, THINGS_FUNC_EXIT);
+	THINGS_LOG_D(TAG, THINGS_FUNC_EXIT);
 	return ST_THINGS_ERROR_NONE;
 }
 
 st_things_representation_s *st_things_create_representation_inst()
 {
-	THINGS_LOG_D(THINGS_DEBUG, TAG, THINGS_FUNC_ENTRY);
+	THINGS_LOG_D(TAG, THINGS_FUNC_ENTRY);
 	st_things_representation_s *rep = create_representation_inst();
-	THINGS_LOG_D(THINGS_DEBUG, TAG, THINGS_FUNC_EXIT);
+	THINGS_LOG_D(TAG, THINGS_FUNC_EXIT);
 	return rep;
 }
 
 void st_things_destroy_representation_inst(st_things_representation_s *rep)
 {
-	THINGS_LOG_D(THINGS_DEBUG, TAG, THINGS_FUNC_ENTRY);
+	THINGS_LOG_D(TAG, THINGS_FUNC_ENTRY);
 	destroy_representation_inst(rep);
-	THINGS_LOG_D(THINGS_DEBUG, TAG, THINGS_FUNC_EXIT);
+	THINGS_LOG_D(TAG, THINGS_FUNC_EXIT);
 }

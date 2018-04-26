@@ -36,7 +36,7 @@ static pthread_cond_t _cond = PTHREAD_COND_INITIALIZER;
 
 void fmwup_internal_propagate_timed_wait()
 {
-	THINGS_LOG_D(THINGS_DEBUG, TAG, THINGS_FUNC_ENTRY);
+	THINGS_LOG_D(TAG, THINGS_FUNC_ENTRY);
 
 	struct timeval now;			/* start time to wait    */
 	struct timespec timeout;	/* timeout value in waiting function */
@@ -55,10 +55,10 @@ void fmwup_internal_propagate_timed_wait()
 	case 0:
 		break;
 	case ETIMEDOUT:
-		THINGS_LOG_D(THINGS_ERROR, TAG, "timeout %d second", TIMEOUT_SEC);
+		THINGS_LOG_E(TAG, "timeout %d second", TIMEOUT_SEC);
 		break;
 	default:
-		THINGS_LOG_D(THINGS_ERROR, TAG, "failed pthread_cond_timedwait [%d]", rc);
+		THINGS_LOG_E(TAG, "failed pthread_cond_timedwait [%d]", rc);
 		break;
 	}
 	pthread_mutex_unlock(&_lock);
@@ -68,7 +68,7 @@ void fmwup_internal_propagate_timed_wait()
 
 void fmwup_internal_propagate_cond_signal()
 {
-	THINGS_LOG_D(THINGS_DEBUG, TAG, THINGS_FUNC_ENTRY);
+	THINGS_LOG_D(TAG, THINGS_FUNC_ENTRY);
 	pthread_mutex_lock(&_lock);
 	pthread_cond_signal(&_cond);
 	pthread_mutex_unlock(&_lock);
@@ -77,7 +77,7 @@ void fmwup_internal_propagate_cond_signal()
 
 void fmwup_internal_propagate_resource(fmwup_state_e state, fmwup_result_e result, bool wait_flag)
 {
-	THINGS_LOG_D(THINGS_ERROR, TAG, "Propagate state[%d], result[%d]", state, result);
+	THINGS_LOG_E(TAG, "Propagate state[%d], result[%d]", state, result);
 
 	int ret = 0;
 
@@ -86,7 +86,7 @@ void fmwup_internal_propagate_resource(fmwup_state_e state, fmwup_result_e resul
 
 	ret = st_things_notify_observers(FIRMWARE_URI);
 	if (ST_THINGS_ERROR_NONE != ret) {
-		THINGS_LOG_D(THINGS_ERROR, TAG, "Failed st_things_notify_observers [%d]", ret);
+		THINGS_LOG_E(TAG, "Failed st_things_notify_observers [%d]", ret);
 		return;
 	}
 
@@ -103,7 +103,7 @@ void fmwup_internal_propagate_resource(fmwup_state_e state, fmwup_result_e resul
 
 void _handle_update_command(int64_t update_type)
 {
-	THINGS_LOG_D(THINGS_DEBUG, TAG, THINGS_FUNC_ENTRY);
+	THINGS_LOG_D(TAG, THINGS_FUNC_ENTRY);
 
 	int result = FMWUP_RESULT_INIT;
 
@@ -114,32 +114,32 @@ void _handle_update_command(int64_t update_type)
 	int state = 0;
 
 	if (!package_uri || !new_version || !current_version || !temp_state) {
-		THINGS_LOG_ERROR(THINGS_ERROR, TAG, "failed get property");
+		THINGS_LOG_E(TAG, "failed get property");
 		result = FMWUP_RESULT_UPDATE_FAILED;
 		goto _END_OF_FUNC_;
 	}
 
 	state = atoi(temp_state);
 	if (strcmp(package_uri, "") == 0 || strcmp(new_version, "") == 0 || strcmp(current_version, new_version) == 0) {
-		THINGS_LOG_D(THINGS_ERROR, TAG, "Invalid value, package_uri[%s], new_version[%s], current_version[%s]", package_uri, new_version, current_version);
+		THINGS_LOG_E(TAG, "Invalid value, package_uri[%s], new_version[%s], current_version[%s]", package_uri, new_version, current_version);
 		result = FMWUP_RESULT_UPDATE_FAILED;
 		goto _END_OF_FUNC_;
 	}
 
-	THINGS_LOG_D(THINGS_DEBUG, TAG, "state : %d, update_type : %d", state, update_type);
+	THINGS_LOG_D(TAG, "state : %d, update_type : %d", state, update_type);
 
 	if ((state == FMWUP_STATE_IDLE) && (update_type == FMWUP_COMMAND_DOWNLOAD || update_type == FMWUP_COMMAND_DOWNLOADUPDATE)) {
-		THINGS_LOG_V(THINGS_INFO, TAG, "***Downloading image from [%s] ***", package_uri);
+		THINGS_LOG_V(TAG, "***Downloading image from [%s] ***", package_uri);
 		state = FMWUP_STATE_DOWNLOADING;
 		fmwup_internal_propagate_resource(FMWUP_STATE_DOWNLOADING, FMWUP_RESULT_INIT, true);
 
 		if (fmwup_http_download_file(package_uri) != 0) {
-			THINGS_LOG_ERROR(THINGS_ERROR, TAG, "fmwup_http_download_file failed");
+			THINGS_LOG_E(TAG, "fmwup_http_download_file failed");
 			result = FMWUP_RESULT_INVALID_URI;
 			goto _END_OF_FUNC_;
 		}
 
-		THINGS_LOG_V(THINGS_INFO, TAG, "*** Firmware image downloaded ***");
+		THINGS_LOG_V(TAG, "*** Firmware image downloaded ***");
 		state = FMWUP_STATE_DOWNLOADED;
 		fmwup_internal_propagate_resource(FMWUP_STATE_DOWNLOADED, FMWUP_RESULT_INIT, true);
 	}
@@ -157,7 +157,7 @@ void _handle_update_command(int64_t update_type)
 
 _END_OF_FUNC_:
 	if (result != FMWUP_RESULT_INIT) {
-		THINGS_LOG_D(THINGS_ERROR, TAG, "propagate printf[%d]", result);
+		THINGS_LOG_E(TAG, "propagate printf[%d]", result);
 		state = FMWUP_STATE_IDLE;
 		fmwup_internal_propagate_resource(FMWUP_STATE_IDLE, result, true);
 	}
@@ -167,7 +167,7 @@ _END_OF_FUNC_:
 
 void *_update_worker(void *data)
 {
-	THINGS_LOG_D(THINGS_DEBUG, TAG, THINGS_FUNC_ENTRY);
+	THINGS_LOG_D(TAG, THINGS_FUNC_ENTRY);
 
 	int64_t exec_type = *(int64_t *) data;
 	_handle_update_command(exec_type);
@@ -182,13 +182,13 @@ void *_update_worker(void *data)
 
 int fmwup_internal_update_command(int64_t update_type)
 {
-	THINGS_LOG_D(THINGS_DEBUG, TAG, THINGS_FUNC_ENTRY);
+	THINGS_LOG_D(TAG, THINGS_FUNC_ENTRY);
 	pthread_mutex_lock(&_lock);
 
 	if (g_thread_running) {
 		/* Allow only one running thread */
 		pthread_mutex_unlock(&_lock);
-		THINGS_LOG_ERROR(THINGS_ERROR, TAG, "duplicated request");
+		THINGS_LOG_E(TAG, "duplicated request");
 		return FMWUP_ERROR_NONE;
 	} else {
 		g_thread_running = 1;
@@ -198,7 +198,7 @@ int fmwup_internal_update_command(int64_t update_type)
 
 	int64_t *update = (int64_t *) things_calloc(1, sizeof(int64_t));
 	if (!update) {
-		THINGS_LOG_ERROR(THINGS_ERROR, TAG, "Memory allocation error!");
+		THINGS_LOG_E(TAG, "Memory allocation error!");
 		return FMWUP_ERROR_MEMORY_ERROR;
 	}
 
@@ -206,7 +206,7 @@ int fmwup_internal_update_command(int64_t update_type)
 
 	pthread_t fota_thread_handler;
 	if (pthread_create_rtos(&fota_thread_handler, NULL, _update_worker, (void *)update, THGINS_STACK_FOTA_UPDATE_THREAD) != 0) {
-		THINGS_LOG_V_ERROR(THINGS_ERROR, TAG, "Create thread is failed.");
+		THINGS_LOG_E(TAG, "Create thread is failed.");
 		return FMWUP_ERROR_OPERATION_FAILED;
 	}
 

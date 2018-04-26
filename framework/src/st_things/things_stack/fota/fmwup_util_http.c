@@ -116,7 +116,7 @@ static void callback(struct http_client_response_t *response)
 {
 	if (response->status != 200) {
 		is_link_fail = true;
-		THINGS_LOG_D(THINGS_ERROR, TAG, "recv callback status %d", response->status);
+		THINGS_LOG_E(TAG, "recv callback status %d", response->status);
 		return;
 	}
 
@@ -166,7 +166,7 @@ int webclient_init_request(char *url, struct http_client_request_t *request)
 
 int wget_from_url(char *download_url) 
 {
-	THINGS_LOG_D(THINGS_INFO, TAG, "download url : %s\n", download_url);
+	THINGS_LOG_V(TAG, "download url : %s\n", download_url);
 
 	struct http_client_request_t request;
 	struct http_keyvalue_list_t headers;
@@ -177,7 +177,7 @@ int wget_from_url(char *download_url)
 	ret = -1;
 
 	if (webclient_init_request(download_url, &request) != 0) {
-		THINGS_LOG_ERROR(THINGS_ERROR, TAG, "webclient_init_request error");
+		THINGS_LOG_E(TAG, "webclient_init_request error");
 		return NULL;
 	}
 
@@ -195,7 +195,7 @@ int wget_from_url(char *download_url)
 	 * must initialize response structure
 	 */
 	if (http_client_send_request_async(&request, ssl_config, (wget_callback_t)callback)) {
-		THINGS_LOG_ERROR(THINGS_ERROR, TAG, "fail to send request");
+		THINGS_LOG_E(TAG, "fail to send request");
 		goto release_out;
 	}
 	/* sleep for end request */
@@ -204,7 +204,7 @@ int wget_from_url(char *download_url)
 	}
 
 	if (request.async_flag < 0) {
-		THINGS_LOG_ERROR(THINGS_ERROR, TAG, "fail to send request");
+		THINGS_LOG_E(TAG, "fail to send request");
 		goto release_out;
 	}
 
@@ -215,14 +215,14 @@ release_out:
 	 * must release keyvalue list for request headers
 	 */
 	http_keyvalue_list_release(&headers);
-	THINGS_LOG_D(THINGS_DEBUG, TAG, "end request");
+	THINGS_LOG_D(TAG, "end request");
 
 	return ret;
 }
 
 int fmwup_http_download_file(const char *download_url)
 {
-	THINGS_LOG_D(THINGS_DEBUG, TAG, THINGS_FUNC_ENTRY);
+	THINGS_LOG_D(TAG, THINGS_FUNC_ENTRY);
 
 	download_state = FOTA_DOWNLOAD_STATE_JSON;
 	json_str = (char *)things_malloc(FOTA_REC_JSON_SIZE); 
@@ -232,7 +232,7 @@ int fmwup_http_download_file(const char *download_url)
 
 	// parsing json
 	if (wget_from_url(download_url) < 0) {
-		THINGS_LOG_ERROR(THINGS_ERROR, TAG, "wget_from_url error");
+		THINGS_LOG_E(TAG, "wget_from_url error");
 		things_free(json_str);
 		download_state = FOTA_DOWNLOAD_STATE_NONE;
 		return -1;
@@ -246,10 +246,10 @@ int fmwup_http_download_file(const char *download_url)
 		return -1;
 	}
 
-	THINGS_LOG_D(THINGS_DEBUG, TAG, "[recv:JSON] state : %d / recv_size : %u / total size : %u / json = %s", download_state, recv_size, total_size, json_str);
+	THINGS_LOG_D(TAG, "[recv:JSON] state : %d / recv_size : %u / total size : %u / json = %s", download_state, recv_size, total_size, json_str);
 
 	if (recv_size != total_size) {
-		THINGS_LOG_ERROR(THINGS_ERROR, TAG, "[recv:JSON] file size error");
+		THINGS_LOG_E(TAG, "[recv:JSON] file size error");
 		things_free(json_str);
 		download_state = FOTA_DOWNLOAD_STATE_NONE;
 		return -1;
@@ -272,7 +272,7 @@ int fmwup_http_download_file(const char *download_url)
 	is_link_fail = false;
 
 	if (wget_from_url(url->valuestring) < 0) {
-		THINGS_LOG_ERROR(THINGS_ERROR, TAG, "wget_from_url error");
+		THINGS_LOG_E(TAG, "wget_from_url error");
 
 		if (root != NULL) {
 			cJSON_Delete(root);
@@ -292,10 +292,10 @@ int fmwup_http_download_file(const char *download_url)
 		return -1;
 	}
 
-	THINGS_LOG_D(THINGS_DEBUG, TAG, "[recv:BINARY] state : %d / recv_size : %u / total size : %u", download_state, recv_size, total_size, total_size);
+	THINGS_LOG_D(TAG, "[recv:BINARY] state : %d / recv_size : %u / total size : %u", download_state, recv_size, total_size, total_size);
 
 	if (recv_size != total_size) {
-		THINGS_LOG_ERROR(THINGS_ERROR, TAG, "[recv:BINARY] file size error");
+		THINGS_LOG_E(TAG, "[recv:BINARY] file size error");
 		fotahal_erase(fotahal_handle);
 		fotahal_close(fotahal_handle);
 		things_free(json_str);
