@@ -25,24 +25,6 @@
 
 namespace media {
 /**
- * @brief current state of MediaPlayer.
- * @details @b #include <media/MediaPlayer.h>
- * @since TizenRT v2.0 PRE
- */
-typedef enum player_state_e {
-	/** MediaPlayer object was created */
-	PLAYER_STATE_NONE,
-	/** MediaPlayer worker object was created */
-	PLAYER_STATE_IDLE,
-	/** MediaPlayer ready to play */
-	PLAYER_STATE_READY,
-	/** MediaPlayer do playing */
-	PLAYER_STATE_PLAYING,
-	/** MediaPlayer pause to play */
-	PLAYER_STATE_PAUSED
-} player_state_t;
-
-/**
  * @brief result of call the apis
  * @details @b #include <media/MediaPlayer.h>
  * @since TizenRT v2.0 PRE
@@ -171,14 +153,6 @@ public:
 	void setObserver(std::shared_ptr<MediaPlayerObserverInterface>);
 	/**
 	 * @brief Gets the current state of MediaPlayer
-	 * @details @b #include <media/MediaPlayer.h>
-	 * This function is sync call apis
-	 * @return The value of current state
-	 * @since TizenRT v2.0 PRE
-	 */
-	player_state_t getState();	
-	/**
-	 * @brief Moves the media to specified time position
 	 * @details @b #include <media/MediaPlayer.h>
 	 * This function is sync call apis
 	 * @return The value of current state
