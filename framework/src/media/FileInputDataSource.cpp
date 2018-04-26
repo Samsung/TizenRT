@@ -31,7 +31,9 @@ FileInputDataSource::FileInputDataSource()
 }
 
 FileInputDataSource::FileInputDataSource(const std::string& dataPath)
-	: mDataPath(dataPath)
+	: InputDataSource()
+	, mDataPath(dataPath)
+	, mFp(nullptr)
 {
 }
 
