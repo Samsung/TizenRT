@@ -23,6 +23,31 @@
 #define MEDIAPLAYER_TEST_FILE "/mnt/utc_media_player.raw"
 #define MEDIAPLAYER_MAX_VOLUME 10
 
+class TestObserver : public media::MediaPlayerObserverInterface
+{
+public:
+	int value[3];
+	TestObserver() : value{0, 0, 0} {}
+	void onPlaybackStarted(Id id) override;
+	void onPlaybackFinished(Id id) override;
+	void onPlaybackError(Id id) override;
+};
+
+void TestObserver::onPlaybackStarted(Id id)
+{
+	value[0] = 1;
+}
+
+void TestObserver::onPlaybackFinished(Id id)
+{
+	value[1] = 2;
+}
+
+void TestObserver::onPlaybackError(Id id)
+{
+	value[2] = 3;
+}
+
 class SimpleMediaPlayerTest : public ::testing::Test
 {
 protected:
@@ -95,6 +120,22 @@ TEST_F(SimpleMediaPlayerTest, setDataSourceWithNullptr)
 	EXPECT_EQ(mp->setDataSource(nullptr), media::PLAYER_ERROR);
 
 	mp->destroy();
+}
+
+TEST_F(SimpleMediaPlayerTest, setObserver)
+{
+	auto observer = std::make_shared<TestObserver>();
+	mp->create();
+	mp->setDataSource(std::move(source));
+	mp->setObserver(observer);
+	mp->prepare();
+	mp->pause();
+	mp->start();
+	mp->unprepare();
+	mp->destroy();
+	EXPECT_EQ(observer->value[0], 1);
+	EXPECT_EQ(observer->value[1], 2);
+	EXPECT_EQ(observer->value[2], 3);
 }
 
 TEST_F(SimpleMediaPlayerTest, prepare)
