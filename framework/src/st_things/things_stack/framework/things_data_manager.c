@@ -1142,7 +1142,7 @@ static int parse_things_info_json(const char *filename)
 								int linkCnt = cJSON_GetArraySize(links);
 
 								node->collection[iter].link_cnt = linkCnt;
-								node->collection[iter].links = (things_attribute_info_s**)things_malloc(sizeof(things_attribute_info_s*) * linkCnt);
+								node->collection[iter].links = (things_resource_info_s**)things_malloc(sizeof(things_resource_info_s*) * linkCnt);
 
 								THINGS_LOG_D(THINGS_INFO, TAG, "[COLLECTION] collection[iter].link_cnt : %d", (node->collection[iter].link_cnt));
 								for (int linkiter = 0; linkiter < linkCnt; linkiter++) {
