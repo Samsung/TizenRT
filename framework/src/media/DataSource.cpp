@@ -51,12 +51,12 @@ DataSource& DataSource::operator=(const DataSource& source)
 	return *this;
 }
 
-int DataSource::getChannels()
+unsigned char DataSource::getChannels()
 {
 	return mChannels;
 }
 
-int DataSource::getSampleRate()
+unsigned int DataSource::getSampleRate()
 {
 	return mSampleRate;
 }
@@ -66,7 +66,7 @@ int DataSource::getPcmFormat()
 	return mPcmFormat;
 }
 
-void DataSource::setChannels(unsigned short channels)
+void DataSource::setChannels(unsigned char channels)
 {
 	mChannels = channels;
 }
