@@ -16,47 +16,54 @@
  *
  ******************************************************************/
 
+#ifndef DEFS_H
+#define DEFS_H
+
 #include <stdio.h>
 #include <assert.h>
 #include "debug.h"
 
-#ifndef DEFS_H
-#define DEFS_H
+#ifdef __cplusplus
+extern "C" {
+#endif /* __cplusplus */
 
 #define MY_ASSERT(condition) \
-	do {\
-		if (!(condition))\
+	do { \
+		if (!(condition)) \
 		{\
 			auddbg("[%s] line %d, ASSERT(%s) failed!\n", __FUNCTION__, __LINE__, #condition);\
-			assert(0);\
-		}\
+			assert(0); \
+		} \
 	} while (0)
 
 #define RETURN_IF_FAIL(condition) \
-	do {\
-		if (!(condition))\
-		{\
-			return;\
-		}\
+	do { \
+		if (!(condition)) \
+		{ \
+			return; \
+		} \
 	} while (0)
 
 #define RETURN_VAL_IF_FAIL(condition, val) \
-	do {\
-		if (!(condition))\
-		{\
-			return val;\
-		}\
+	do { \
+		if (!(condition)) \
+		{ \
+			return val; \
+		} \
 	} while (0)
 
 #define GOTO_IF_FAIL(condition, tag) \
-	do {\
-		if (!(condition))\
-		{\
-			goto tag;\
-		}\
+	do { \
+		if (!(condition)) \
+		{ \
+			goto tag; \
+		} \
 	} while (0)
 
 #define MINIMUM(x,y) (((x) < (y)) ? (x) : (y))
 
-#endif // DEFS_H
+#ifdef __cplusplus
+}
+#endif /* __cplusplus */
+#endif /* DEFS_H */
 
