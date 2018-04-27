@@ -205,6 +205,7 @@ int MediaPlayerImpl::getVolume()
 
 player_result_t MediaPlayerImpl::setVolume(int vol)
 {
+	int vol_max = get_max_audio_volume();
 	std::lock_guard<std::mutex> lock(mCmdMtx);
 	medvdbg("MediaPlayer setVolume\n");
 	if (mCurState == PLAYER_STATE_NONE) {
@@ -212,8 +213,8 @@ player_result_t MediaPlayerImpl::setVolume(int vol)
 		return PLAYER_ERROR;
 	}
 
-	if (vol < 0 || vol > 31) {
-		meddbg("MediaPlayer setVolume fail : invalid argument. volume level should be 0(Min) ~ 31(Max)\n");
+	if (vol < 0 || vol > vol_max) {
+		meddbg("MediaPlayer setVolume fail : invalid argument. volume level should be 0(Min) ~ %d(Max)\n", vol_max);
 		return PLAYER_ERROR;
 	}
 
