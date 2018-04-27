@@ -31,6 +31,7 @@
 
 #include "utc_media_fileoutputdatasource.cpp"
 #include "utc_media_recorder.cpp"
+#include "utc_media_fileinputdatasource.cpp"
 #include "utc_media_player.cpp"
 
 int gtest_run(int *argc, char **argv)
