@@ -65,9 +65,11 @@ recorder_result_t MediaRecorderImpl::destroy()
 	mrw.getQueue().enQueue(&MediaRecorderImpl::notifySync, shared_from_this());
 	mSyncCv.wait(lock);
 
-	RecorderObserverWorker& row = RecorderObserverWorker::getWorker();
-	row.stopWorker();
-	mRecorderObserver = nullptr;
+	if (mRecorderObserver) {
+		RecorderObserverWorker& row = RecorderObserverWorker::getWorker();
+		row.stopWorker();
+		mRecorderObserver = nullptr;
+	}
 
 	mrw.stopWorker();
 
