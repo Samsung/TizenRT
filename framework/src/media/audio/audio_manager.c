@@ -283,6 +283,8 @@ audio_manager_result_t set_output_audio_volume(uint8_t volume)
 int get_input_audio_volume(void)
 {
 	int fd;
+	int max_volume;
+	int cur_volume;
 	struct audio_caps_desc_s caps_desc;
 
 	if ((fd = open(g_audio_in_cards[g_actual_audio_in_card_id].card_path, O_RDONLY)) < 0) {
@@ -302,15 +304,23 @@ int get_input_audio_volume(void)
 
 	close(fd);
 
-	g_audio_in_cards[g_actual_audio_in_card_id].config.max_volume = caps_desc.caps.ac_controls.b[0] - (caps_desc.caps.ac_controls.b[0] % AUDIO_DEVICE_MAX_VOLUME);
-	g_audio_in_cards[g_actual_audio_in_card_id].config.volume = caps_desc.caps.ac_controls.b[1] * AUDIO_DEVICE_MAX_VOLUME / g_audio_in_cards[g_actual_audio_in_card_id].config.max_volume;
+	max_volume = caps_desc.caps.ac_controls.b[0];
+	cur_volume = caps_desc.caps.ac_controls.b[1];
 
-	return g_audio_in_cards[g_actual_audio_in_card_id].config.volume;
+	/** scale here **/
+	cur_volume = cur_volume * AUDIO_DEVICE_MAX_VOLUME / (max_volume - (max_volume % AUDIO_DEVICE_MAX_VOLUME));
+
+	g_audio_in_cards[g_actual_audio_in_card_id].config.max_volume = max_volume;
+	g_audio_in_cards[g_actual_audio_in_card_id].config.volume = cur_volume;
+
+	return cur_volume;
 }
 
 int get_output_audio_volume(void)
 {
 	int fd;
+	int max_volume;
+	int cur_volume;
 	struct audio_caps_desc_s caps_desc;
 
 	if ((fd = open(g_audio_out_cards[g_actual_audio_out_card_id].card_path, O_WRONLY)) < 0) {
@@ -330,10 +340,16 @@ int get_output_audio_volume(void)
 
 	close(fd);
 
-	g_audio_out_cards[g_actual_audio_out_card_id].config.max_volume = caps_desc.caps.ac_controls.b[0] - (caps_desc.caps.ac_controls.b[0] % AUDIO_DEVICE_MAX_VOLUME);
-	g_audio_out_cards[g_actual_audio_out_card_id].config.volume = caps_desc.caps.ac_controls.b[1] * AUDIO_DEVICE_MAX_VOLUME / g_audio_out_cards[g_actual_audio_out_card_id].config.max_volume;
+	max_volume = caps_desc.caps.ac_controls.b[0];
+	cur_volume = caps_desc.caps.ac_controls.b[1];
 
-	return g_audio_out_cards[g_actual_audio_out_card_id].config.volume;
+	/** scale here **/
+	cur_volume = cur_volume * AUDIO_DEVICE_MAX_VOLUME / (max_volume - (max_volume % AUDIO_DEVICE_MAX_VOLUME));
+
+	g_audio_out_cards[g_actual_audio_out_card_id].config.max_volume = max_volume;
+	g_audio_out_cards[g_actual_audio_out_card_id].config.volume = cur_volume;
+
+	return cur_volume;
 }
 
 uint16_t get_max_audio_volume(void)
