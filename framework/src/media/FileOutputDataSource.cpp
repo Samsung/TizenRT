@@ -54,12 +54,14 @@ bool FileOutputDataSource::open()
 	return false;
 }
 
-void FileOutputDataSource::close()
+bool FileOutputDataSource::close()
 {
-	if (mFp) {
-		fclose(mFp);
+	if (mFp && fclose(mFp) != EOF) {
 		mFp = nullptr;
+		return true;
 	}
+
+	return false;
 }
 
 bool FileOutputDataSource::isPrepare()
