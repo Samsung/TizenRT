@@ -688,6 +688,48 @@ bool pv_player_dataspace_is_empty(pv_player_p player)
 	return !rb_used(&player->ringbuffer);
 }
 
+int pv_player_get_audio_type(pv_player_p player)
+{
+	PLAYER_ASSERT(player != NULL);
+
+	if (!CHECK_AUDIO_TYPE(player->audio_type)) {
+		player->audio_type = _get_audio_type(player->rbsp);
+	}
+
+	return player->audio_type;
+}
+
+int pv_player_init_decoder(pv_player_p player, int audio_type)
+{
+	PLAYER_ASSERT(player != NULL);
+
+	// If user did not tell the audio type, then try to get it from stream.
+	if (!CHECK_AUDIO_TYPE(player->audio_type)) {
+		PLAYER_ASSERT(player->rbsp != NULL);
+		player->audio_type = _get_audio_type(player->rbsp);
+	}
+
+	PLAYER_DEBUG("audio_type %d\n", player->audio_type);
+
+	int ret = _init_decoder(player);
+	RETURN_VAL_IF_FAIL((ret == PV_SUCCESS), PV_FAILURE);
+}
+
+bool pv_player_get_frame(pv_player_p player)
+{
+	PLAYER_ASSERT(player != NULL);
+
+	return _get_frame(pv_player_p player);
+}
+
+int pv_player_frame_decode(pv_player_p player, pcm_data_p pcm)
+{
+	PLAYER_ASSERT(player != NULL);
+	PLAYER_ASSERT(pcm != NULL);
+
+	return _frame_decoder(pv_player_p player, pcm_data_p pcm);
+}
+
 int pv_player_init(pv_player_p player, size_t rbuf_size, void *user_data, config_func_f config_func, input_func_f input_func, output_func_f output_func)
 {
 	PLAYER_ASSERT(player != NULL);
@@ -756,23 +798,21 @@ int pv_player_finish(pv_player_p player)
 int pv_player_run(pv_player_p player)
 {
 	PLAYER_ASSERT(player != NULL);
-	PLAYER_ASSERT(player->input_func != NULL);
-	PLAYER_ASSERT(player->output_func != NULL);
-	PLAYER_ASSERT(player->config_func != NULL);
 
+	RETURN_VAL_IF_FAIL((player->input_func != NULL), PV_FAILURE);
+	RETURN_VAL_IF_FAIL((player->output_func != NULL), PV_FAILURE);
+	RETURN_VAL_IF_FAIL((player->config_func != NULL), PV_FAILURE);
 	RETURN_VAL_IF_FAIL((player->rbsp != NULL), PV_FAILURE);
 
-	player->audio_type = _get_audio_type(player->rbsp);
-	PLAYER_DEBUG("audio_type %d\n", player->audio_type);
-	//RETURN_VAL_IF_FAIL((player->audio_type > 0), PV_FAILURE);
+	player->audio_type = pv_player_get_audio_type(player->rbsp);
+	RETURN_VAL_IF_FAIL(CHECK_AUDIO_TYPE(player->audio_type), PV_FAILURE);
 
-	int ret = _init_decoder(player);
+	int ret = pv_player_init_decoder(player, player->audio_type);
 	RETURN_VAL_IF_FAIL((ret == PV_SUCCESS), PV_FAILURE);
 
-	while (_get_frame(player)) {
+	while (pv_player_get_frame(player)) {
 		pcm_data_t pcm;
-		if (0 == _frame_decoder(player, &pcm)) {
-
+		if (PV_SUCCESS == pv_player_frame_decode(player, &pcm)) {
 			player->output_func(player->cb_data, player, &pcm);
 		}
 	}
