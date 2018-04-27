@@ -21,6 +21,7 @@
 #include <media/FileInputDataSource.h>
 
 #define MEDIAPLAYER_TEST_FILE "/mnt/utc_media_player.raw"
+#define MEDIAPLAYER_MAX_VOLUME 10
 
 class SimpleMediaPlayerTest : public ::testing::Test
 {
@@ -228,7 +229,7 @@ TEST_F(SimpleMediaPlayerTest, setVolume)
 	mp->setDataSource(std::move(source));
 	mp->prepare();
 
-	for (int vol = 0; vol <= 31; vol++) {
+	for (int vol = 0; vol <= MEDIAPLAYER_MAX_VOLUME; vol++) {
 		EXPECT_EQ(mp->setVolume(vol), media::PLAYER_OK);
 	}
 
@@ -243,7 +244,7 @@ TEST_F(SimpleMediaPlayerTest, setVolumeWithOutOfRangeValue)
 	mp->prepare();
 
 	EXPECT_EQ(mp->setVolume(-1), media::PLAYER_ERROR);
-	EXPECT_EQ(mp->setVolume(32), media::PLAYER_ERROR);
+	EXPECT_EQ(mp->setVolume(MEDIAPLAYER_MAX_VOLUME + 1), media::PLAYER_ERROR);
 
 	mp->unprepare();
 	mp->destroy();
@@ -255,7 +256,7 @@ TEST_F(SimpleMediaPlayerTest, getVolume)
 	mp->setDataSource(std::move(source));
 	mp->prepare();
 
-	for (int vol = 0; vol <= 31; vol++) {
+	for (int vol = 0; vol <= MEDIAPLAYER_MAX_VOLUME; vol++) {
 		mp->setVolume(vol);
 		EXPECT_EQ(mp->getVolume(), vol);
 	}
