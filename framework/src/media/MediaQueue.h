@@ -23,6 +23,7 @@
 #include <condition_variable>
 #include <queue>
 #include <atomic>
+#include <iostream>
 
 namespace media {
 class MediaQueue
@@ -36,12 +37,11 @@ public:
 		std::unique_lock<std::mutex> lock(mQueueMtx);
 		std::function<void()> func = std::bind(std::forward<_Callable>(__f), std::forward<_Args>(__args)...);
 		mQueueData.push(func);
+		lock.unlock();
 		mQueueCv.notify_one();
 	}
 	std::function<void()> deQueue();
 	bool isEmpty();
-	std::mutex& getMutex();
-	void wait(std::unique_lock<std::mutex>& lock);
 	void notify_one();
 
 private:

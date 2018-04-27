@@ -34,16 +34,9 @@ int RecorderObserverWorker::entry()
 	medvdbg("RecorderObserverWorker::entry()\n");
 
 	while (mIsRunning) {
-		std::unique_lock<std::mutex> lock(mObserverQueue.getMutex());
-
-		if (mObserverQueue.isEmpty()) {
-			medvdbg("RecorderObserverWorker::entry() - wait Queue\n");
-			mObserverQueue.wait(lock);
-		}
-
-		if (!mObserverQueue.isEmpty()) {
-			std::function<void()> run = mObserverQueue.deQueue();
-			medvdbg("RecorderObserverWorker::entry() - pop Queue\n");
+		std::function<void()> run = mObserverQueue.deQueue();
+		medvdbg("RecorderObserverWorker::entry() - pop Queue\n");
+		if (run != nullptr) {
 			run();
 		}
 	}

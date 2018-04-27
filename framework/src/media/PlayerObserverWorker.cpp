@@ -42,16 +42,9 @@ PlayerObserverWorker& PlayerObserverWorker::getWorker()
 int PlayerObserverWorker::entry()
 {
 	while (mIsRunning) {
-		std::unique_lock<std::mutex> lock(mObserverQueue.getMutex());
-
-		if (mObserverQueue.isEmpty()) {
-			medvdbg("PlayerObserverWorker: wait\n");
-			mObserverQueue.wait(lock);
-		}
-
-		if (!mObserverQueue.isEmpty()) {
-			medvdbg("PlayerObserverWorker: wake\n");
-			std::function<void()> run = mObserverQueue.deQueue();
+		std::function<void()> run = mObserverQueue.deQueue();
+		medvdbg("PlayerObserverWorker::entry() - pop Queue\n");
+		if (run != nullptr) {
 			run();
 		}
 	}
