@@ -20,6 +20,27 @@ make
 sudo make install
 ```
 
+### Issue on build of Proto buffers
+When Proto buffers (a.k.a., protobuf) which is mandatory on using gRPC is enabled, 
+you can meet build breaks as shown below:
+```
+AR: helloxx_main.o
+make[2]: Leaving directory '/TizenRT/apps/examples/helloxx'
+make[2]: Entering directory '/TizenRT/apps/examples/grpc_greeter_client'
+protoc -I . --cpp_out=. helloworld.proto
+make[2]: protoc: Command not found
+Makefile:86: recipe for target 'helloworld.pb.cc' failed
+make[2]: *** [helloworld.pb.cc] Error 127
+make[2]: Leaving directory '/TizenRT/apps/examples/grpc_greeter_client'
+Makefile:109: recipe for target 'examples/grpc_greeter_client_all' failed
+make[1]: *** [examples/grpc_greeter_client_all] Error 2
+make[1]: Leaving directory '/TizenRT/apps'
+LibTargets.mk:158: recipe for target '../apps/libapps.a' failed
+make: *** [../apps/libapps.a] Error 2
+```
+This is comming from missing ```protoc``` installation.  
+Please find [Proto buffers' README](https://github.com/Samsung/TizenRT/blob/master/external/protobuf/README.md).
+
 ## Board-Specific
 ### ARTIK
 #### Issues on Programming
