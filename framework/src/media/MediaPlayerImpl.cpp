@@ -67,8 +67,11 @@ player_result_t MediaPlayerImpl::destroy()
 	mSyncCv.wait(lock);
 	mpw.stopWorker();
 
-	PlayerObserverWorker& pow = PlayerObserverWorker::getWorker();
-	pow.stopWorker();
+	if (mPlayerObserver) {
+		PlayerObserverWorker& pow = PlayerObserverWorker::getWorker();
+		pow.stopWorker();
+		mPlayerObserver = nullptr;
+	}
 
 	mCurState = PLAYER_STATE_NONE;
 	return PLAYER_OK;
