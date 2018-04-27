@@ -40,14 +40,6 @@
 #define PLAYER_ERROR    auddbg
 #define PLAYER_ASSERT   MY_ASSERT
 
-//#define PERFORMANCE_TEST
-
-#if defined(PERFORMANCE_TEST)
-static unsigned long timems_input = 0;
-static unsigned long timems_output = 0;
-static unsigned long timems_decode = 0;
-static unsigned long samples_output = 0;
-#endif
 
 // Mask to extract the version, layer, sampling rate parts of the MP3 header,
 // which should be same for all MP3 frames.
@@ -680,19 +672,9 @@ static size_t _input_callback(void *data, rbstream_p rbsp)
 	pv_player_p player = (pv_player_p) data;
 	PLAYER_ASSERT(player != NULL);
 
-#if defined(PERFORMANCE_TEST)
-	struct timeval tv1, tv2;
-	gettimeofday(&tv1, NULL);
-#endif
-
 	size_t wlen = 0;
 	RETURN_VAL_IF_FAIL((player->input_func != NULL), wlen);
 	wlen = player->input_func(player->cb_data, player);
-
-#if defined(PERFORMANCE_TEST)
-	gettimeofday(&tv2, NULL);
-	timems_input += (tv2.tv_sec * 1000 + tv2.tv_usec / 1000) - (tv1.tv_sec * 1000 + tv1.tv_usec / 1000);
-#endif
 
 	return wlen;
 }
@@ -794,39 +776,13 @@ int pv_player_run(pv_player_p player)
 	int ret = _init_decoder(player);
 	RETURN_VAL_IF_FAIL((ret == PV_SUCCESS), PV_FAILURE);
 
-#if defined(PERFORMANCE_TEST)
-	timems_input = 0;
-	timems_output = 0;
-	timems_decode = 0;
-	samples_output = 0;
-	struct timeval tv1, tv2, tv3;
-#endif
-
 	while (_get_frame(player)) {
-#if defined(PERFORMANCE_TEST)
-		gettimeofday(&tv1, NULL);
-#endif
-
 		pcm_data_t pcm;
 		if (0 == _frame_decoder(player, &pcm)) {
-#if defined(PERFORMANCE_TEST)
-			gettimeofday(&tv2, NULL);
-			timems_decode += (tv2.tv_sec * 1000 + tv2.tv_usec / 1000) - (tv1.tv_sec * 1000 + tv1.tv_usec / 1000);
-			samples_output += pcm.length;
-#endif
 
 			player->output_func(player->cb_data, player, &pcm);
-
-#if defined(PERFORMANCE_TEST)
-			gettimeofday(&tv3, NULL);
-			timems_output += (tv3.tv_sec * 1000 + tv3.tv_usec / 1000) - (tv2.tv_sec * 1000 + tv2.tv_usec / 1000);
-#endif
 		}
 	}
-
-#if defined(PERFORMANCE_TEST)
-	printf("[%s] finished! time: input %lu / output %lu / decoding %lu ms, samples: 0x%x\n", __FUNCTION__, timems_input, timems_output, timems_decode, samples_output);
-#endif
 
 	return PV_SUCCESS;
 }
