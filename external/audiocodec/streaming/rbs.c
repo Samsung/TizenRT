@@ -27,14 +27,17 @@
 #include <string.h>
 #include <assert.h>
 #include <stdio.h>
-#include "internal_defs.h"
-#include "debug.h"
+#include <debug.h>
 #include <audiocodec/streaming/rbs.h>
+#include "internal_defs.h"
 
-#define RBS_DEBUG 	audvdbg
-#define RBS_ERROR 	auddbg
-#define RBS_ASSERT 	ASSERT
-#define MINIMUM(x,y) (((x) < (y)) ? (x) : (y))
+#define RBS_DEBUG   medvdbg
+#define RBS_ERROR   meddbg
+#define RBS_ASSERT  MY_ASSERT
+
+#define RBS_OPTION_SET(rbsp, option)    (((rbstream_p)(rbsp))->options |= (option))
+#define RBS_OPTION_CLR(rbsp, option)    (((rbstream_p)(rbsp))->options &= ~(option))
+#define RBS_OPTION_TEST(rbsp, option)   ((((rbstream_p)(rbsp))->options & (option)) != 0)
 
 /**
  * @brief  Pull/Request more data from user, because there's not enough data in ring-buffer.
@@ -47,7 +50,7 @@
  */
 static size_t _pull(size_t size, size_t least, rbstream_p rbsp);
 
-rbstream_p rbs_open(rb_p rbp, rbstream_input_f input_func, void* data)
+rbstream_p rbs_open(rb_p rbp, rbstream_input_f input_func, void *data)
 {
 	RBS_DEBUG("[%s] rbp %p, input_func %p, data %p\n", __FUNCTION__, rbp, input_func, data);
 	RETURN_VAL_IF_FAIL(rbp != NULL, NULL);
@@ -59,7 +62,7 @@ rbstream_p rbs_open(rb_p rbp, rbstream_input_f input_func, void* data)
 	rbsp->options = 0;
 	rbsp->cur_pos = 0;
 	rbsp->rd_size = 0;
-	rbsp->wr_size = rb_used(rbp); // Allow to preset data in ring-buffer.
+	rbsp->wr_size = rb_used(rbp);   // Allow to preset data in ring-buffer.
 
 	rbsp->data = data;
 	rbsp->input_func = input_func;
@@ -77,7 +80,6 @@ int rbs_close(rbstream_p rbsp)
 	return 0;
 }
 
-// limitation: support size 1 only
 size_t rbs_read(void *ptr, size_t size, size_t nmemb, rbstream_p rbsp)
 {
 	RBS_DEBUG("[%s] ptr %p nmemb %lu\n", __FUNCTION__, ptr, nmemb);
@@ -87,50 +89,45 @@ size_t rbs_read(void *ptr, size_t size, size_t nmemb, rbstream_p rbsp)
 	// only size:1 supported
 	RBS_ASSERT(size == 1);
 
-	size_t offset = rbsp->cur_pos - rbsp->rd_size;
 	size_t len = size * nmemb;
-	size_t rlen = rb_read_ext(rbsp->rbp, ptr, len, offset);
+	size_t read = 0;
 
-	if (rlen < len)
-	{
-		size_t least = len - rlen;
-		size_t avail = rb_avail(rbsp->rbp);
-		if (least > avail)
-		{	// need pop data
-			size_t _len = offset;
-			size_t _least = least - avail;
-			_len = MINIMUM(_len, _least);
-			size_t _rlen = rb_read(rbsp->rbp, NULL, _len);
-			RBS_ASSERT(_rlen == _len);
-			rbsp->rd_size += _rlen;
-			// update offset
-			offset = rbsp->cur_pos - rbsp->rd_size;
-		}
+	while (read < len) {
+		void *_ptr = (void *) ((uint8_t *) ptr + read);
+		size_t need = len - read;
+		size_t offset = rbsp->cur_pos - rbsp->rd_size;
+		// read data desired
+		size_t rlen = rb_read_ext(rbsp->rbp, _ptr, need, offset);
+		read += rlen;
+		rbsp->cur_pos += rlen; // increase cur_pos
 
-		// pull stream data, then it's available to read more.
-		_pull(rb_avail(rbsp->rbp), least, rbsp);
-		// read again
-		rlen = rb_read_ext(rbsp->rbp, ptr, len, offset);
-#if 0
-		if (rlen < len)
-		{
-			if (0 == rb_avail(rbsp->rbp))
-			{	// ring-buffer is full, can not accept more data.
-				RBS_ERROR("[%s] WARNING!!! ring-buffer is FULL !!!\n", __FUNCTION__);
+		if (read < len) {
+			// need to read more data
+			size_t least = len - read;
+			size_t avail = rb_avail(rbsp->rbp);
+			if (least > avail) {
+				// need to dequeue data
+				if (RBS_OPTION_TEST(rbsp, OPTION_ALLOW_TO_DEQUEUE)) {
+					offset = rbsp->cur_pos - rbsp->rd_size;
+					size_t _len = MINIMUM(offset, (least - avail));
+					size_t _rlen = rb_read(rbsp->rbp, NULL, _len);
+					RBS_ASSERT(_rlen == _len);
+					rbsp->rd_size += _rlen;
+				}
 			}
-			// else no more data, do nothing.
+
+			// pull stream data, then it's available to read more.
+			if (0 == _pull(rb_avail(rbsp->rbp), least, rbsp)) {
+				// pull data failed
+				break;
+			}
 		}
-#endif
 	}
 
-	RBS_DEBUG("[%s] done, rlen %lu\n", __FUNCTION__, rlen);
-	// increase cur_pos
-	rbsp->cur_pos += rlen;
-	return rlen;
+	RBS_DEBUG("[%s] done, read %lu\n", __FUNCTION__, read);
+	return read;
 }
 
-// always write to stream end, not cur_pos!
-// rename to rbs_append ?
 size_t rbs_write(const void *ptr, size_t size, size_t nmemb, rbstream_p rbsp)
 {
 	RBS_DEBUG("[%s] ptr %p nmemb %lu\n", __FUNCTION__, ptr, nmemb);
@@ -156,38 +153,33 @@ int rbs_seek(rbstream_p rbsp, ssize_t offset, int whence)
 	RBS_DEBUG("[%s] offset %ld, whence %d\n", __FUNCTION__, offset, whence);
 	RETURN_VAL_IF_FAIL(rbsp != NULL, -1);
 
-	switch (whence)
-	{
+	switch (whence) {
 	case SEEK_SET:
 		// checking underflow
-		RETURN_VAL_IF_FAIL(((size_t)offset >= rbsp->rd_size), -1);
+		RETURN_VAL_IF_FAIL(((size_t) offset >= rbsp->rd_size), -1);
 
-		while ((size_t)offset > rbsp->wr_size)
-		{
-			size_t least = (size_t)offset - rbsp->wr_size;
+		while ((size_t) offset > rbsp->wr_size) {
+			size_t least = (size_t) offset - rbsp->wr_size;
 			size_t wlen;
 
 			// pull stream data, then wr_size will be increased
 			wlen = _pull(rb_avail(rbsp->rbp), least, rbsp);
 
-			if ((size_t)offset > rbsp->wr_size)
-			{	// not enough
-				if (0 == rb_avail(rbsp->rbp))
-				{	// ring-buffer is full
-					RETURN_VAL_IF_FAIL((0 != (rbsp->options & option_seek_with_pop)), -1); // overflow
+			if ((size_t) offset > rbsp->wr_size) {
+				// not enough
+				if (0 == rb_avail(rbsp->rbp)) {
+					// ring-buffer is full
+					RETURN_VAL_IF_FAIL((RBS_OPTION_TEST(rbsp, OPTION_ALLOW_TO_DEQUEUE)), -1); // overflow
 
-					// pop out all data in buffer and continue to request
-					RBS_DEBUG("[%s] ring-buffer is full, pop out data...\n", __FUNCTION__);
+					// dequeue minimal data from ring-buffer
 					size_t len = rbsp->wr_size - rbsp->rd_size;
-					least = (size_t)offset - rbsp->wr_size;
-					len = MINIMUM(len, least);	// pop minimal data, not all.
+					least = (size_t) offset - rbsp->wr_size;
+					len = MINIMUM(len, least);
 					size_t rlen = rb_read(rbsp->rbp, NULL, len);
 					RBS_ASSERT(rlen == len);
 					rbsp->rd_size += rlen;
-				}
-				else
-				{
-					RETURN_VAL_IF_FAIL((wlen != 0), -1);	// EOS
+				} else {
+					RETURN_VAL_IF_FAIL((wlen != 0), -1);    // EOS
 				}
 
 				// request more data
@@ -197,48 +189,37 @@ int rbs_seek(rbstream_p rbsp, ssize_t offset, int whence)
 			break;
 		}
 
-		rbsp->cur_pos = (size_t)offset;
+		rbsp->cur_pos = (size_t) offset;
 		break;
 
 #if 0
 	case SEEK_CUR:
 		// checking underflow
-		RETURN_VAL_IF_FAIL(((ssize_t)rbsp->cur_pos + offset >= (ssize_t)rbsp->rd_size), -1);
+		RETURN_VAL_IF_FAIL(((ssize_t) rbsp->cur_pos + offset >= (ssize_t) rbsp->rd_size), -1);
 
-		while ((ssize_t)rbsp->cur_pos + offset > (ssize_t)rbsp->wr_size)
-		{
-			size_t least = (ssize_t)rbsp->cur_pos + offset - (ssize_t)rbsp->wr_size;
+		while ((ssize_t) rbsp->cur_pos + offset > (ssize_t) rbsp->wr_size) {
+			size_t least = (ssize_t) rbsp->cur_pos + offset - (ssize_t) rbsp->wr_size;
 			size_t wlen;
 
 			// pull stream data, then wr_size will be increased
 			wlen = _pull(rb_avail(rbsp->rbp), least, rbsp);
 
-			if ((ssize_t)rbsp->cur_pos + offset > (ssize_t)rbsp->wr_size)
-			{	// not enough
-				if (0 == rb_avail(rbsp->rbp))
-				{	// ring-buffer is full
-					if (0 != (rbsp->options & option_seek_with_pop))
-					{	// pop out all data in buffer and continue to request
-						RBS_DEBUG("[%s] ring-buffer is full, pop out data...\n", __FUNCTION__);
-						size_t len = rbsp->wr_size - rbsp->rd_size;
-						least = (ssize_t)rbsp->cur_pos + offset - (ssize_t)rbsp->wr_size;
-						len = MINIMUM(len, least);	// pop minimal data, not all.
-						size_t rlen = rb_read(rbsp->rbp, NULL, len);
-						RBS_ASSERT(rlen == len);
-						rbsp->rd_size += rlen;
-					}
-					else
-					{
-						RBS_ERROR("[%s] OVERFLOW, SEEK_CUR invalid offset[%ld] > wr[%lu] - cur[%lu]\n", __FUNCTION__, offset, rbsp->wr_size, rbsp->cur_pos);
-						return -1;
-					}
-				}
-				else if (wlen == 0)
-				{	// EOS
-					RBS_ERROR("[%s] EOS, SEEK_CUR invalid offset[%ld] > wr[%lu] - cur[%lu]\n", __FUNCTION__, offset, rbsp->wr_size, rbsp->cur_pos);
-					return -1;
-				}
+			if ((ssize_t) rbsp->cur_pos + offset > (ssize_t) rbsp->wr_size) {
+				// not enough
+				if (0 == rb_avail(rbsp->rbp)) {
+					// ring-buffer is full
+					RETURN_VAL_IF_FAIL((RBS_OPTION_TEST(rbsp, OPTION_ALLOW_TO_DEQUEUE)), -1);
 
+					// dequeue minimal data from ring-buffer
+					size_t len = rbsp->wr_size - rbsp->rd_size;
+					least = (ssize_t) rbsp->cur_pos + offset - (ssize_t) rbsp->wr_size;
+					len = MINIMUM(len, least);
+					size_t rlen = rb_read(rbsp->rbp, NULL, len);
+					RBS_ASSERT(rlen == len);
+					rbsp->rd_size += rlen;
+				} else {
+					RETURN_VAL_IF_FAIL((wlen != 0), -1);	// EOS
+				}
 				// request more data
 				continue;
 			}
@@ -246,11 +227,11 @@ int rbs_seek(rbstream_p rbsp, ssize_t offset, int whence)
 			break;
 		}
 
-		rbsp->cur_pos = (size_t)((ssize_t)rbsp->cur_pos + offset);
+		rbsp->cur_pos = (size_t)((ssize_t) rbsp->cur_pos + offset);
 		break;
 
 	case SEEK_END:
-		rbsp->cur_pos = rbsp->wr_size; // seek end of ring buffer, not end of stream, as we don't know the end of stream.
+		rbsp->cur_pos = rbsp->wr_size;  // seek end of ring buffer, not end of stream, as we don't know the end of stream.
 		break;
 
 	default:
@@ -261,19 +242,21 @@ int rbs_seek(rbstream_p rbsp, ssize_t offset, int whence)
 	return 0;
 }
 
-// seek and pop out data from ring buffer
+// seek and dequeue data from ring-buffer
 int rbs_seek_ext(rbstream_p rbsp, ssize_t offset, int whence)
 {
 	RBS_DEBUG("[%s] offset %ld, whence %d\n", __FUNCTION__, offset, whence);
+	RBS_ASSERT(RBS_OPTION_TEST(rbsp, OPTION_ALLOW_TO_DEQUEUE));
 
+	// seek
 	int ret = rbs_seek(rbsp, offset, whence);
 	RETURN_VAL_IF_FAIL(ret == 0, ret);
 
-	// pop out from ring buffer
+	// dequeue data from ring-buffer
 	size_t len = rbsp->cur_pos - rbsp->rd_size;
 	size_t rlen = rb_read(rbsp->rbp, NULL, len);
 
-	RBS_ASSERT(rlen == len); // rbs_seek returned success!
+	RBS_ASSERT(rlen == len);    // rbs_seek returned success!
 	rbsp->rd_size += rlen;
 
 	return ret;
@@ -300,14 +283,14 @@ int rbs_ctrl(rbstream_p rbsp, int option, int value)
 
 	int ret = 0;
 
-	switch (option)
-	{
-	case option_seek_with_pop:
-		ret = ((rbsp->options & option_seek_with_pop) != 0);
-		if (value == 0)
-			rbsp->options &= ~option_seek_with_pop;
-		else
-			rbsp->options |= option_seek_with_pop;
+	switch (option) {
+	case OPTION_ALLOW_TO_DEQUEUE:
+		ret = RBS_OPTION_TEST(rbsp, OPTION_ALLOW_TO_DEQUEUE);
+		if (value == 0) {
+			RBS_OPTION_CLR(rbsp, option);
+		} else {
+			RBS_OPTION_SET(rbsp, option);
+		}
 		break;
 	}
 
@@ -321,21 +304,19 @@ static size_t _pull(size_t size, size_t least, rbstream_p rbsp)
 
 	RBS_DEBUG("[%s] size %lu, least %lu\n", __FUNCTION__, size, least);
 
-	if (least > size)
-	{	// Large size ring-buffer is needed or you should pop out read-data from ring-buffer in time.
+	if (least > size) {
+		// Large size ring-buffer is needed or you should dequeue read-data from ring-buffer in time.
 		RBS_DEBUG("[%s] WARNING!!! least[%lu] > size[%lu]\n", __FUNCTION__, least, size);
 		least = size;
-		RETURN_VAL_IF_FAIL(least > 0, 0); // ring-buffer is full.
+		RETURN_VAL_IF_FAIL(least > 0, 0);   // ring-buffer is full.
 	}
 
 	size_t wlen = 0;
 	size_t len;
 	do {
 		len = (rbsp->input_func)(rbsp->data, rbsp);
-		if (len == 0)
-		{
-			RBS_DEBUG("[%s] WARNING!!! no more data, wlen[%lu], least[%lu], size[%lu]\n",
-					__FUNCTION__, wlen, least, size);
+		if (len == 0) {
+			RBS_DEBUG("[%s] WARNING!!! no more data, wlen[%lu], least[%lu], size[%lu]\n", __FUNCTION__, wlen, least, size);
 			break;
 		}
 
