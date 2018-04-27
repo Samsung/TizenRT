@@ -91,8 +91,8 @@
 #  define EXAMPLE_TIMER_SIGNO    17
 #endif
 
-#define TIMER_THEAD_SIZE                512
-#define TIMER_THEAD_PRIORITY            100
+#define TIMER_THEAD_SIZE         CONFIG_EXAMPLES_TIMER_THEAD_SIZE
+#define TIMER_THEAD_PRIORITY     100
 /****************************************************************************
  * Private Data
  ****************************************************************************/

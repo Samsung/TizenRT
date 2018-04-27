@@ -11,3 +11,12 @@ config EXAMPLES_TIMER
 		This application is an example program that opens /dev/timer0
 		to set the timer and registers the callback which is called at
 		the end of the timer.
+
+config EXAMPLES_TIMER_THEAD_SIZE
+	int "size of timer thread"
+	default 1024
+	depends on EXAMPLES_TIMER
+	---help---
+		This variable is defineds the size of timer thread. This config
+		can selectable after enable the timer example. And, set to 1024
+		by default.
