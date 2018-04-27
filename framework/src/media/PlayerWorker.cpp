@@ -16,9 +16,11 @@
  *
  ******************************************************************/
 
-#include "PlayerWorker.h"
 #include <debug.h>
+
+#include "PlayerWorker.h"
 #include "MediaPlayerImpl.h"
+#include "audio/audio_manager.h"
 #include "Decoder.h"
 
 using namespace std;
@@ -47,7 +49,7 @@ int PlayerWorker::entry()
 				shared_ptr<Decoder> mDecoder = mCurPlayer->mInputDataSource->getDecoder();
 				if(mDecoder) {
 					size_t num_read = mCurPlayer->mInputDataSource->read(mCurPlayer->mBuffer,
-						(mCurPlayer->mBufSize < mDecoder->getDataSpace()) ? mCurPlayer->mBufSize : mDecoder->getDataSpace());
+						(mCurPlayer->mBufSize < mDecoder->getAvailSpace()) ? mCurPlayer->mBufSize : mDecoder->getAvailSpace());
 					medvdbg("MediaPlayer Worker(has mDecoder) : num_read = %d\n", num_read);
 
 					/* Todo: Below code has an issue about file EOF.
@@ -62,6 +64,7 @@ int PlayerWorker::entry()
 						 *       But this isn't beautiful logic. Need to rearrange and modify the logic.
 						 */
 						mDecoder->pushData(mCurPlayer->mBuffer, num_read);
+
 						size_t size = 0;
 						unsigned int sampleRate = 0;
 						unsigned short channels = 0;
@@ -72,7 +75,9 @@ int PlayerWorker::entry()
 						}
 					}
 				} else {
-					size_t num_read = mCurPlayer->mInputDataSource->read(mCurPlayer->mBuffer, mCurPlayer->mBufSize);
+					size_t num_read = mCurPlayer->mInputDataSource->read(mCurPlayer->mBuffer,
+						((int)mCurPlayer->mBufSize < get_output_frames_byte_size(get_output_frame_count())) ?
+							mCurPlayer->mBufSize : get_output_frames_byte_size(get_output_frame_count()));
 					medvdbg("MediaPlayer Worker : num_read = %d\n", num_read);
 
 					if (num_read > 0) {
@@ -163,7 +168,7 @@ void PlayerWorker::pausePlayer(std::shared_ptr<MediaPlayerImpl> mp)
 		mp->notifyObserver(PLAYER_OBSERVER_COMMAND_ERROR);
 		return;
 	}
-
+ 
 	mCurPlayer = nullptr;
 	mp->mCurState = PLAYER_STATE_PAUSED;
 }

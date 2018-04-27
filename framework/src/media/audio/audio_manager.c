@@ -28,53 +28,55 @@
 #include <tinyalsa/tinyalsa.h>
 
 #include "audio_manager.h"
+#include "resample/samplerate.h"
 
 /****************************************************************************
  * Pre-processor Definitions
  ****************************************************************************/
-#define MAX_AUDIO_DEVICE_NUM			3
-#define AUDIO_STREAM_CHANNEL_MONO			1
-#define AUDIO_STREAM_CHANNEL_STEREO			2
+#define MAX_AUDIO_DEVICE_NUM 3
+#define AUDIO_STREAM_CHANNEL_MONO 1
+#define AUDIO_STREAM_CHANNEL_STEREO 2
 // ToDO: Expand with policies, Large data requires a large period.
-#define AUDIO_STREAM_VOIP_PERIOD_SIZE			512
-#define AUDIO_STREAM_VOIP_PERIOD_COUNT			8
-#define AUDIO_STREAM_VOIP_SAMPLE_RATE			16000
+#define AUDIO_STREAM_VOIP_PERIOD_SIZE 2048
+#define AUDIO_STREAM_VOIP_PERIOD_COUNT 8
+#define AUDIO_STREAM_VOIP_SAMPLE_RATE 16000
 
-#define AUDIO_STREAM_RETRY_COUNT			2
+#define AUDIO_STREAM_RETRY_COUNT 2
 
-#define AUDIO_DEVICE_UNDEF			0x0000
-#define AUDIO_DEVICE_IN_MICROPHONE		0x0001
-#define AUDIO_DEVICE_OUT_EARPIECE		0x0100
-#define AUDIO_DEVICE_OUT_SPEAKER		0x0200
-#define AUDIO_DEVICE_OUT_HEADSET		0x0400
+#define AUDIO_DEVICE_UNDEF 0x0000
+#define AUDIO_DEVICE_IN_MICROPHONE 0x0001
+#define AUDIO_DEVICE_OUT_EARPIECE 0x0100
+#define AUDIO_DEVICE_OUT_SPEAKER 0x0200
+#define AUDIO_DEVICE_OUT_HEADSET 0x0400
 
-#define AUDIO_DEVICE_MAX_VOLUME			10
+#define AUDIO_DEVICE_MAX_VOLUME 10
+
+#define MAX_SUPPORTED_SAMPLERATE 32
 
 /****************************************************************************
  * Private Declarations
  ****************************************************************************/
-enum audio_card_status_e {
-	AUDIO_CARD_IDLE = 0,
-	AUDIO_CARD_READY,
-	AUDIO_CARD_RUNNING,
-	AUDIO_CARD_PAUSE
-};
+enum audio_card_status_e { AUDIO_CARD_IDLE = 0, AUDIO_CARD_READY, AUDIO_CARD_RUNNING, AUDIO_CARD_PAUSE };
 
-enum manufacturer_type_e {
-	AUDIO_CARD_REALTEK = 0
-};
+enum manufacturer_type_e { AUDIO_CARD_REALTEK = 0 };
 
-enum audio_device_type_e {
-	INPUT = 0,
-	OUTPUT
-};
+enum audio_device_type_e { INPUT = 0, OUTPUT };
 
 struct audio_config_s {
 	uint16_t volume;
 	uint16_t max_volume;
-	char *manufacturer_name;
+	char* manufacturer_name;
 	enum manufacturer_type_e manufacturer_type;
 	int audio_card_type;
+};
+
+struct audio_resample_s {
+	bool necessary;
+	uint32_t from;
+	uint32_t to;
+	uint16_t* readbuffer; // readbuffer for only pcm_readi
+	float ratio;
+	src_handle_t handle;
 };
 
 struct audio_card_info_s {
@@ -82,17 +84,18 @@ struct audio_card_info_s {
 	enum audio_card_status_e status;
 	uint8_t device_id;
 	struct audio_config_s config;
-	struct pcm *pcm;
+	struct pcm* pcm;
+	struct audio_resample_s resample;
 };
 
 typedef enum audio_card_status_e audio_card_status_t;
 typedef enum manufacturer_type_e manufacturer_t;
 typedef enum audio_device_type_e audio_device_type_t;
 typedef struct audio_config_s audio_config_t;
-typedef struct audio_card_info_s audio_card_into_t;
+typedef struct audio_card_info_s audio_card_info_t;
 
-audio_card_into_t g_audio_in_cards[CONFIG_AUDIO_MAX_INPUT_CARD_NUM];
-audio_card_into_t g_audio_out_cards[CONFIG_AUDIO_MAX_OUTPUT_CARD_NUM];
+audio_card_info_t g_audio_in_cards[CONFIG_AUDIO_MAX_INPUT_CARD_NUM];
+audio_card_info_t g_audio_out_cards[CONFIG_AUDIO_MAX_OUTPUT_CARD_NUM];
 
 static unsigned int g_audio_in_card_num = 0;
 static unsigned int g_audio_out_card_num = 0;
@@ -102,8 +105,15 @@ static int g_actual_audio_out_card_id = -1;
 
 static int get_avail_audio_in_card_id(void);
 static int get_avail_audio_out_card_id(void);
-static audio_manager_result_t get_active_audio_device_pcm(struct pcm **pcm, audio_device_type_t type);
+static audio_manager_result_t get_active_audio_device_pcm(struct pcm** pcm, audio_device_type_t type);
 static audio_manager_result_t set_audio_volume(audio_device_type_t type, uint8_t volume);
+
+static uint32_t getClosestSampRateUp(uint32_t rate);
+static uint32_t getClosestSampRateDown(uint32_t rate);
+
+static uint32_t g_supported_samprates[MAX_SUPPORTED_SAMPLERATE] = {
+	AUDIO_SAMP_RATE_8K,  AUDIO_SAMP_RATE_11K, AUDIO_SAMP_RATE_16K, AUDIO_SAMP_RATE_22K,
+	AUDIO_SAMP_RATE_32K, AUDIO_SAMP_RATE_44K, AUDIO_SAMP_RATE_48K, AUDIO_SAMP_RATE_96K};
 
 /****************************************************************************
  * Public Functions
@@ -114,8 +124,8 @@ audio_manager_result_t find_input_audio_card(void)
 	uint8_t card_id = -1;
 	uint16_t device_id = -1;
 	char type;
-	struct dirent *dir_entry;
-	DIR *dir_info;
+	struct dirent* dir_entry;
+	DIR* dir_info;
 
 	if (!(dir_info = opendir("/dev/audio/"))) {
 		return AUDIO_MANAGER_DEVICE_FAIL;
@@ -123,26 +133,35 @@ audio_manager_result_t find_input_audio_card(void)
 
 	while ((dir_entry = readdir(dir_info)) != NULL) {
 		// TODO: Add cases for various drivers. Currently, identify 'pcm' drivers only.
-		if ((dir_entry->d_name[0] != 'p')
-			|| (dir_entry->d_name[1] != 'c')
-			|| (dir_entry->d_name[2] != 'm')
-			|| (sscanf(&dir_entry->d_name[3], "C%uD%u%c", &card_id, &device_id, &type) != 3)) {
+		if ((dir_entry->d_name[0] != 'p') || (dir_entry->d_name[1] != 'c') || (dir_entry->d_name[2] != 'm')
+			// TODO: Below code makes stack smashing. Need to make parse function.
+			/*|| (sscanf(&dir_entry->d_name[3], "C%uD%u%c", &card_id, &device_id, &type) != 3)*/) {
 			continue;
 		}
 
+		if (dir_entry->d_name[7] != 'c')
+			continue;
+
+		// Below codes should be deleted after parse function is added.
+		card_id = 0;
+		device_id = 0;
+		type = 'c';
+
 		if ((type == 'c') && (card_id < CONFIG_AUDIO_MAX_INPUT_CARD_NUM) && (device_id < MAX_AUDIO_DEVICE_NUM)) {
-			snprintf(g_audio_in_cards[card_id].card_path, strlen("/dev/audio/") + strlen(dir_entry->d_name) + 1, "%s%s", "/dev/audio/", dir_entry->d_name);
+			snaudvdbg(g_audio_in_cards[card_id].card_path, strlen("/dev/audio/") + strlen(dir_entry->d_name) + 1,
+					  "%s%s", "/dev/audio/", dir_entry->d_name);
 
 			g_actual_audio_in_card_id = card_id;
 			g_audio_in_cards[card_id].status = AUDIO_CARD_READY;
 			g_audio_in_cards[card_id].device_id = device_id;
 			g_audio_in_card_num++;
-			audvdbg("Found an input audio card, id=%d, count=%d,  card_path=%s\n", card_id, g_audio_in_card_num, g_audio_in_cards[card_id].card_path);
+			audvdbg("Found an input audio card, id=%d, count=%d,  card_path=%s\n", card_id, g_audio_in_card_num,
+					g_audio_in_cards[card_id].card_path);
 		}
 	}
 
 	if (!g_audio_in_card_num) {
-		auddbg("Wrong g_audio_in_card_num\n");
+		audvdbg("Wrong g_audio_in_card_num\n");
 		ret = AUDIO_MANAGER_NO_AVAIL_CARD;
 	}
 
@@ -152,7 +171,8 @@ audio_manager_result_t find_input_audio_card(void)
 		ret = AUDIO_MANAGER_DEVICE_FAIL;
 		goto error_out;
 	}
-	audvdbg("max_vol=%d, cur_vol=%d\n", g_audio_in_cards[g_actual_audio_in_card_id].config.max_volume, g_audio_in_cards[g_actual_audio_in_card_id].config.volume);
+	audvdbg("max_vol=%d, cur_vol=%d\n", g_audio_in_cards[g_actual_audio_in_card_id].config.max_volume,
+			g_audio_in_cards[g_actual_audio_in_card_id].config.volume);
 #endif
 
 error_out:
@@ -166,8 +186,8 @@ audio_manager_result_t find_output_audio_card(void)
 	uint8_t card_id = -1;
 	uint16_t device_id = -1;
 	char type;
-	struct dirent *dir_entry;
-	DIR *dir_info;
+	struct dirent* dir_entry;
+	DIR* dir_info;
 
 	if (!(dir_info = opendir("/dev/audio/"))) {
 		return AUDIO_MANAGER_DEVICE_FAIL;
@@ -175,26 +195,35 @@ audio_manager_result_t find_output_audio_card(void)
 
 	while ((dir_entry = readdir(dir_info)) != NULL) {
 		// TODO: Add cases for various drivers. Currently, identify 'pcm' drivers only.
-		if ((dir_entry->d_name[0] != 'p')
-			|| (dir_entry->d_name[1] != 'c')
-			|| (dir_entry->d_name[2] != 'm')
-			|| (sscanf(&dir_entry->d_name[3], "C%uD%u%c", &card_id, &device_id, &type) != 3)) {
+		if ((dir_entry->d_name[0] != 'p') || (dir_entry->d_name[1] != 'c') || (dir_entry->d_name[2] != 'm')
+			// TODO: Below code makes stack smashing. Need to make parse function.
+			/*|| (sscanf(&dir_entry->d_name[3], "C%uD%u%c", &card_id, &device_id, &type) != 3)*/) {
 			continue;
 		}
 
+		if (dir_entry->d_name[7] != 'p')
+			continue;
+
+		// Below codes should be deleted after parse function is added.
+		card_id = 0;
+		device_id = 0;
+		type = 'p';
+
 		if ((type == 'p') && (card_id < CONFIG_AUDIO_MAX_OUTPUT_CARD_NUM) && (device_id < MAX_AUDIO_DEVICE_NUM)) {
-			snprintf(g_audio_out_cards[card_id].card_path, strlen("/dev/audio/") + strlen(dir_entry->d_name) + 1, "%s%s", "/dev/audio/", dir_entry->d_name);
+			snaudvdbg(g_audio_out_cards[card_id].card_path, strlen("/dev/audio/") + strlen(dir_entry->d_name) + 1,
+					  "%s%s", "/dev/audio/", dir_entry->d_name);
 
 			g_actual_audio_out_card_id = card_id;
 			g_audio_out_cards[card_id].status = AUDIO_CARD_READY;
 			g_audio_out_cards[card_id].device_id = device_id;
 			g_audio_out_card_num++;
-			audvdbg("Found an output audio card, id=%d, count=%d,  card_path=%s\n", card_id, g_audio_out_card_num, g_audio_out_cards[card_id].card_path);
+			audvdbg("Found an output audio card, id=%d, count=%d,  card_path=%s\n", card_id, g_audio_out_card_num,
+					g_audio_out_cards[card_id].card_path);
 		}
 	}
 
 	if (!g_audio_out_card_num) {
-		auddbg("Wrong g_audio_out_card_num\n");
+		audvdbg("Wrong g_audio_out_card_num\n");
 		ret = AUDIO_MANAGER_NO_AVAIL_CARD;
 	}
 
@@ -204,7 +233,8 @@ audio_manager_result_t find_output_audio_card(void)
 		ret = AUDIO_MANAGER_DEVICE_FAIL;
 		goto error_out;
 	}
-	audvdbg("max_vol=%d, cur_vol=%d\n", g_audio_out_cards[g_actual_audio_out_card_id].config.max_volume, g_audio_out_cards[g_actual_audio_out_card_id].config.volume);
+	audvdbg("max_vol=%d, cur_vol=%d\n", g_audio_out_cards[g_actual_audio_out_card_id].config.max_volume,
+			g_audio_out_cards[g_actual_audio_out_card_id].config.volume);
 #endif
 
 error_out:
@@ -224,7 +254,8 @@ static audio_manager_result_t set_audio_volume(audio_device_type_t type, uint8_t
 
 	if (type == INPUT) {
 		caps_desc.caps.ac_format.hw = AUDIO_FU_INP_GAIN;
-		caps_desc.caps.ac_controls.hw[0] = volume * g_audio_in_cards[g_actual_audio_in_card_id].config.max_volume / AUDIO_DEVICE_MAX_VOLUME;
+		caps_desc.caps.ac_controls.hw[0] =
+			volume * g_audio_in_cards[g_actual_audio_in_card_id].config.max_volume / AUDIO_DEVICE_MAX_VOLUME;
 
 		if ((fd = open(g_audio_in_cards[g_actual_audio_in_card_id].card_path, O_RDONLY)) < 0) {
 			auddbg("Fail to open an input audio driver\n");
@@ -232,7 +263,8 @@ static audio_manager_result_t set_audio_volume(audio_device_type_t type, uint8_t
 		}
 	} else {
 		caps_desc.caps.ac_format.hw = AUDIO_FU_VOLUME;
-		caps_desc.caps.ac_controls.hw[0] = volume * g_audio_out_cards[g_actual_audio_out_card_id].config.max_volume / AUDIO_DEVICE_MAX_VOLUME;
+		caps_desc.caps.ac_controls.hw[0] =
+			volume * g_audio_out_cards[g_actual_audio_out_card_id].config.max_volume / AUDIO_DEVICE_MAX_VOLUME;
 
 		if ((fd = open(g_audio_out_cards[g_actual_audio_out_card_id].card_path, O_WRONLY)) < 0) {
 			auddbg("Fail to open an output audio driver\n");
@@ -296,7 +328,7 @@ int get_input_audio_volume(void)
 	caps_desc.caps.ac_type = AUDIO_TYPE_FEATURE;
 	caps_desc.caps.ac_format.hw = AUDIO_FU_INP_GAIN;
 
-	if (ioctl(fd, AUDIOIOC_GETCAPS, (unsigned long *)&caps_desc.caps) < 0) {
+	if (ioctl(fd, AUDIOIOC_GETCAPS, (unsigned long*)&caps_desc.caps) < 0) {
 		auddbg("Fail to ioctl AUDIOIOC_GETCAPS\n");
 		close(fd);
 		return AUDIO_MANAGER_DEVICE_FAIL;
@@ -332,7 +364,7 @@ int get_output_audio_volume(void)
 	caps_desc.caps.ac_type = AUDIO_TYPE_FEATURE;
 	caps_desc.caps.ac_format.hw = AUDIO_FU_VOLUME;
 
-	if (ioctl(fd, AUDIOIOC_GETCAPS, (unsigned long *)&caps_desc.caps) < 0) {
+	if (ioctl(fd, AUDIOIOC_GETCAPS, (unsigned long*)&caps_desc.caps) < 0) {
 		auddbg("Fail to ioctl AUDIOIOC_GETCAPS\n");
 		close(fd);
 		return AUDIO_MANAGER_DEVICE_FAIL;
@@ -360,7 +392,7 @@ uint16_t get_max_audio_volume(void)
 int get_input_frame_count(void)
 {
 	int ret;
-	struct pcm *pcm;
+	struct pcm* pcm;
 
 	if ((ret = get_active_audio_device_pcm(&pcm, INPUT)) != AUDIO_MANAGER_SUCCESS) {
 		return ret;
@@ -372,7 +404,7 @@ int get_input_frame_count(void)
 int get_input_frames_byte_size(uint32_t frames)
 {
 	int ret;
-	struct pcm *pcm;
+	struct pcm* pcm;
 
 	if ((ret = get_active_audio_device_pcm(&pcm, INPUT)) != AUDIO_MANAGER_SUCCESS) {
 		return ret;
@@ -384,7 +416,7 @@ int get_input_frames_byte_size(uint32_t frames)
 int get_input_bytes_frame_count(uint32_t bytes)
 {
 	int ret;
-	struct pcm *pcm;
+	struct pcm* pcm;
 
 	if ((ret = get_active_audio_device_pcm(&pcm, INPUT)) != AUDIO_MANAGER_SUCCESS) {
 		return ret;
@@ -396,7 +428,7 @@ int get_input_bytes_frame_count(uint32_t bytes)
 int get_output_frame_count(void)
 {
 	int ret;
-	struct pcm *pcm;
+	struct pcm* pcm;
 
 	if ((ret = get_active_audio_device_pcm(&pcm, OUTPUT)) != AUDIO_MANAGER_SUCCESS) {
 		return ret;
@@ -408,7 +440,7 @@ int get_output_frame_count(void)
 int get_output_frames_byte_size(uint32_t frames)
 {
 	int ret;
-	struct pcm *pcm;
+	struct pcm* pcm;
 
 	if ((ret = get_active_audio_device_pcm(&pcm, OUTPUT)) != AUDIO_MANAGER_SUCCESS) {
 		return ret;
@@ -420,7 +452,7 @@ int get_output_frames_byte_size(uint32_t frames)
 int get_output_bytes_frame_count(uint32_t bytes)
 {
 	int ret;
-	struct pcm *pcm;
+	struct pcm* pcm;
 
 	if ((ret = get_active_audio_device_pcm(&pcm, OUTPUT)) != AUDIO_MANAGER_SUCCESS) {
 		return ret;
@@ -429,7 +461,7 @@ int get_output_bytes_frame_count(uint32_t bytes)
 	return pcm_bytes_to_frames(pcm, bytes);
 }
 
-static audio_manager_result_t get_active_audio_device_pcm(struct pcm **pcm, audio_device_type_t type)
+static audio_manager_result_t get_active_audio_device_pcm(struct pcm** pcm, audio_device_type_t type)
 {
 	if (type == INPUT) {
 		if (g_actual_audio_in_card_id < 0) {
@@ -465,7 +497,7 @@ static int get_avail_audio_in_card_id()
 		}
 	}
 
-	audvdbg("Fail to find an avail input audio card\n");
+	auddbg("Fail to find an avail input audio card\n");
 	return AUDIO_MANAGER_NO_AVAIL_CARD;
 }
 
@@ -478,15 +510,18 @@ static int get_avail_audio_out_card_id()
 		}
 	}
 
-	audvdbg("Fail to find an avail output audio card\n");
+	auddbg("Fail to find an avail output audio card\n");
 	return AUDIO_MANAGER_NO_AVAIL_CARD;
 }
 
-int start_audio_stream_in(void *data, uint32_t frames)
+int start_audio_stream_in(void* data, uint32_t frames)
 {
 	int ret;
 	int retry = AUDIO_STREAM_RETRY_COUNT;
-	struct pcm *pcm;
+	struct pcm* pcm;
+
+	// Todo: Need to check g_actual_audio_out_card_id index.
+	audio_card_info_t* cur_card = &g_audio_in_cards[g_actual_audio_in_card_id];
 
 	if ((ret = get_active_audio_device_pcm(&pcm, INPUT)) != AUDIO_MANAGER_SUCCESS) {
 		return ret;
@@ -504,7 +539,38 @@ int start_audio_stream_in(void *data, uint32_t frames)
 	}
 
 	do {
-		ret = pcm_readi(pcm, data, frames);
+		if (cur_card->resample.necessary) {
+			unsigned int frames_to_read = (unsigned int)((float)frames * cur_card->resample.ratio);
+			if (frames_to_read > (get_input_frame_count() * cur_card->resample.ratio)) {
+				frames_to_read = (get_input_frame_count() * cur_card->resample.ratio);
+			}
+
+			audvdbg("Read frame for resample: %u to %u\n", frames_to_read, frames);
+
+			ret = pcm_readi(pcm, cur_card->resample.readbuffer, frames_to_read);
+
+			src_data_t srcData;
+			srcData.data_in = cur_card->resample.readbuffer;
+			srcData.input_frames = ret;
+			srcData.channels_num = 2; // Todo: Consider Mono/Stereo
+			srcData.origin_sample_rate = cur_card->resample.from;
+			srcData.origin_sample_width = SAMPLE_WIDTH_16BITS;
+			srcData.desired_sample_rate = cur_card->resample.to;
+			srcData.desired_sample_width = SAMPLE_WIDTH_16BITS;
+
+			if (src_simple(cur_card->resample.handle, &srcData) != SRC_ERR_NO_ERROR) {
+				auddbg("Fail to resample to %u from %u\n", srcData.desired_sample_rate, srcData.origin_sample_rate);
+				return AUDIO_MANAGER_RESAMPLE_FAIL;
+			}
+
+			audvdbg("Record resampled frames: from %d to %d\n", ret, srcData.output_frames_gen);
+			ret = srcData.output_frames_gen;
+
+			memcpy(data, srcData.data_out, get_input_frames_byte_size(srcData.output_frames_gen));
+		} else {
+			ret = pcm_readi(pcm, data, frames);
+		}
+
 		audvdbg("Read %d frames\n", ret);
 		if (ret == -EPIPE) {
 			ret = pcm_prepare(pcm);
@@ -522,30 +588,57 @@ int start_audio_stream_in(void *data, uint32_t frames)
 	return ret;
 }
 
-int start_audio_stream_out(void *data, uint32_t frames)
+int start_audio_stream_out(void* data, uint32_t frames)
 {
 	int ret;
 	int retry = AUDIO_STREAM_RETRY_COUNT;
-	struct pcm *pcm;
+	struct pcm* pcm;
+
+	// Todo: Need to check g_actual_audio_out_card_id index.
+	audio_card_info_t* cur_card = &g_audio_out_cards[g_actual_audio_out_card_id];
+	audvdbg("start_audio_stream_out\n");
 
 	if ((ret = get_active_audio_device_pcm(&pcm, OUTPUT)) != AUDIO_MANAGER_SUCCESS) {
+		audvdbg("God damn error\n");
 		return ret;
 	}
 
-	if (g_audio_out_cards[g_actual_audio_out_card_id].status == AUDIO_CARD_PAUSE) {
+	if (cur_card->status == AUDIO_CARD_PAUSE) {
 		ret = ioctl(pcm_get_file_descriptor(pcm), AUDIOIOC_RESUME, NULL);
 		if (ret < 0) {
 			auddbg("Fail to ioctl AUDIOIOC_RESUME, ret = %d\n", ret);
 			return AUDIO_MANAGER_DEVICE_FAIL;
 		}
 
-		g_audio_out_cards[g_actual_audio_out_card_id].status = AUDIO_CARD_RUNNING;
+		cur_card->status = AUDIO_CARD_RUNNING;
 		audvdbg("Resume the output audio card!!\n");
 	}
 
 	do {
 		audvdbg("Start Playing!!\n");
-		ret = pcm_writei(pcm, data, frames);
+
+		if (cur_card->resample.necessary) {
+			src_data_t srcData;
+			srcData.data_in = data;
+			srcData.input_frames = frames;
+			srcData.channels_num = 2; // Todo: Consider Mono/Stereo
+			srcData.origin_sample_rate = cur_card->resample.from;
+			srcData.origin_sample_width = SAMPLE_WIDTH_16BITS;
+			srcData.desired_sample_rate = cur_card->resample.to;
+			srcData.desired_sample_width = SAMPLE_WIDTH_16BITS;
+			srcData.input_frames_used = 0;
+
+			if (src_simple(cur_card->resample.handle, &srcData) != SRC_ERR_NO_ERROR) {
+				auddbg("Fail to resample to %u from %u\n", srcData.desired_sample_rate, srcData.origin_sample_rate);
+				return AUDIO_MANAGER_RESAMPLE_FAIL;
+			}
+
+			audvdbg("Resampled %d to %d\n", frames, srcData.output_frames_gen);
+			pcm_writei(pcm, srcData.data_out, srcData.output_frames_gen);
+		} else {
+			ret = pcm_writei(pcm, data, frames);
+		}
+
 		if (ret == -EPIPE) {
 			ret = pcm_prepare(pcm);
 			if (ret != OK) {
@@ -565,6 +658,7 @@ int start_audio_stream_out(void *data, uint32_t frames)
 audio_manager_result_t set_audio_stream_in(uint8_t channels, uint32_t sample_rate, uint8_t format)
 {
 	int card_id = -1;
+	uint32_t closest_samprate;
 	struct pcm_config config;
 
 	if ((channels <= 0) || (sample_rate <= 0) || (format < 0)) {
@@ -572,22 +666,27 @@ audio_manager_result_t set_audio_stream_in(uint8_t channels, uint32_t sample_rat
 	}
 
 	if ((g_audio_in_card_num == 0) && (find_input_audio_card() != AUDIO_MANAGER_SUCCESS)) {
-		auddbg("Found no active input audio card\n");
+		audvdbg("Found no active input audio card\n");
 		return AUDIO_MANAGER_CARD_NOT_FOUND;
 	}
 
 	audvdbg("Print the current card id = %d\n", card_id);
 	card_id = get_avail_audio_in_card_id();
 	if (card_id < 0) {
-		auddbg("Found no available card\n");
+		audvdbg("Found no available card\n");
 		return AUDIO_MANAGER_NO_AVAIL_CARD;
 	}
 
 	if (channels > AUDIO_STREAM_CHANNEL_MONO) {
-		config.channels = AUDIO_STREAM_CHANNEL_STEREO;
+		channels = AUDIO_STREAM_CHANNEL_STEREO;
 	}
+
+	closest_samprate = getClosestSampRateUp(sample_rate);
+	audvdbg("[IN] Device samplerate: %u, User requested: %u\n", closest_samprate, sample_rate);
+
+	memset(&config, 0, sizeof(struct pcm_config));
 	config.channels = channels;
-	config.rate = sample_rate;
+	config.rate = closest_samprate;
 	config.format = format;
 	config.period_size = AUDIO_STREAM_VOIP_PERIOD_SIZE;
 	config.period_count = AUDIO_STREAM_VOIP_PERIOD_COUNT;
@@ -596,12 +695,35 @@ audio_manager_result_t set_audio_stream_in(uint8_t channels, uint32_t sample_rat
 	g_audio_in_cards[card_id].pcm = pcm_open(card_id, 0, PCM_IN, &config);
 	if (!pcm_is_ready(g_audio_in_cards[card_id].pcm)) {
 		pcm_close(g_audio_in_cards[card_id].pcm);
-		auddbg("fail to pcm_is_ready()\n");
+		audvdbg("fail to pcm_is_ready()\n");
 		return AUDIO_MANAGER_CARD_NOT_READY;
 	}
 
 	g_actual_audio_in_card_id = card_id;
 	g_audio_in_cards[card_id].status = AUDIO_CARD_RUNNING;
+	g_audio_in_cards[card_id].resample.from = closest_samprate;
+	g_audio_in_cards[card_id].resample.to = sample_rate;
+	g_audio_in_cards[card_id].resample.ratio = (float)sample_rate / (float)closest_samprate;
+
+	if (sample_rate == closest_samprate) {
+		g_audio_in_cards[card_id].resample.necessary = false;
+	} else {
+		g_audio_in_cards[card_id].resample.necessary = true;
+
+		size_t resample_bufsize = (size_t)((float)get_input_frames_byte_size(get_input_frame_count()) *
+										   (float)sample_rate / (float)closest_samprate) +
+								  1; // +1 for floating point margin
+
+		audvdbg("[IN] resample_bufsize: %u\n", resample_bufsize);
+
+		g_audio_in_cards[card_id].resample.handle = src_init(resample_bufsize * 3);
+
+		g_audio_in_cards[card_id].resample.readbuffer =
+			malloc((int)((float)get_input_frames_byte_size(get_input_frame_count()) *
+						 g_audio_in_cards[card_id].resample.ratio) +
+				   1 // +1 for floating point margin
+				   );
+	}
 
 	return AUDIO_MANAGER_SUCCESS;
 }
@@ -609,6 +731,7 @@ audio_manager_result_t set_audio_stream_in(uint8_t channels, uint32_t sample_rat
 audio_manager_result_t set_audio_stream_out(uint8_t channels, uint32_t sample_rate, uint8_t format)
 {
 	int card_id = -1;
+	uint32_t closest_samprate;
 	struct pcm_config config;
 
 	if ((channels <= 0) || (sample_rate <= 0) || (format < 0)) {
@@ -628,24 +751,50 @@ audio_manager_result_t set_audio_stream_out(uint8_t channels, uint32_t sample_ra
 	}
 
 	if (channels > AUDIO_STREAM_CHANNEL_MONO) {
-		config.channels = AUDIO_STREAM_CHANNEL_STEREO;
+		channels = AUDIO_STREAM_CHANNEL_STEREO;
 	}
+
+	closest_samprate = getClosestSampRateUp(sample_rate);
+	audvdbg("[OUT] Device samplerate: %u, User requested: %u, channels: %u\n", closest_samprate, sample_rate, channels);
+
+	memset(&config, 0, sizeof(struct pcm_config));
 	config.channels = channels;
-	config.rate = sample_rate;
+	config.rate = closest_samprate;
 	config.format = format;
 	config.period_size = AUDIO_STREAM_VOIP_PERIOD_SIZE;
 	config.period_count = AUDIO_STREAM_VOIP_PERIOD_COUNT;
 
 	audvdbg("Print the found card id = %d\n", card_id);
 	g_audio_out_cards[card_id].pcm = pcm_open(card_id, 0, PCM_OUT, &config);
+
 	if (!pcm_is_ready(g_audio_out_cards[card_id].pcm)) {
 		pcm_close(g_audio_out_cards[card_id].pcm);
-		auddbg("fail to pcm_is_ready()\n");
+		audvdbg("fail to pcm_is_ready()\n");
 		return AUDIO_MANAGER_CARD_NOT_READY;
 	}
 
 	g_actual_audio_out_card_id = card_id;
 	g_audio_out_cards[card_id].status = AUDIO_CARD_RUNNING;
+	g_audio_out_cards[card_id].resample.from = sample_rate;
+	g_audio_out_cards[card_id].resample.to = closest_samprate;
+	g_audio_out_cards[card_id].resample.ratio = (float)closest_samprate / (float)sample_rate;
+
+	audvdbg("get_output_frame_count: %d\n", get_output_frame_count());
+	audvdbg("get_output_frames_byte_size: %d\n", get_output_frames_byte_size(get_output_frame_count()));
+
+	if (sample_rate == closest_samprate) {
+		g_audio_out_cards[card_id].resample.necessary = false;
+	} else {
+		g_audio_out_cards[card_id].resample.necessary = true;
+
+		size_t resample_bufsize = (size_t)((float)get_output_frames_byte_size(get_output_frame_count()) *
+										   g_audio_out_cards[card_id].resample.ratio) +
+								  1; // +1 for floating point margin
+
+		audvdbg("[OUT] resample_bufsize: %u, ratio: %f\n", resample_bufsize, g_audio_out_cards[card_id].resample.ratio);
+
+		g_audio_out_cards[card_id].resample.handle = src_init(resample_bufsize * 3);
+	}
 
 	return AUDIO_MANAGER_SUCCESS;
 }
@@ -653,7 +802,7 @@ audio_manager_result_t set_audio_stream_out(uint8_t channels, uint32_t sample_ra
 audio_manager_result_t pause_audio_stream_in(void)
 {
 	int ret;
-	struct pcm *pcm;
+	struct pcm* pcm;
 
 	if ((ret = get_active_audio_device_pcm(&pcm, INPUT)) != AUDIO_MANAGER_SUCCESS) {
 		return ret;
@@ -673,7 +822,7 @@ audio_manager_result_t pause_audio_stream_in(void)
 audio_manager_result_t pause_audio_stream_out(void)
 {
 	int ret;
-	struct pcm *pcm;
+	struct pcm* pcm;
 
 	if ((ret = get_active_audio_device_pcm(&pcm, OUTPUT)) != AUDIO_MANAGER_SUCCESS) {
 		return ret;
@@ -693,7 +842,7 @@ audio_manager_result_t pause_audio_stream_out(void)
 audio_manager_result_t stop_audio_stream_in(void)
 {
 	int ret;
-	struct pcm *pcm;
+	struct pcm* pcm;
 
 	if ((ret = get_active_audio_device_pcm(&pcm, INPUT)) != AUDIO_MANAGER_SUCCESS) {
 		return ret;
@@ -713,7 +862,7 @@ audio_manager_result_t stop_audio_stream_in(void)
 audio_manager_result_t stop_audio_stream_out(void)
 {
 	int ret;
-	struct pcm *pcm;
+	struct pcm* pcm;
 
 	if ((ret = get_active_audio_device_pcm(&pcm, OUTPUT)) != AUDIO_MANAGER_SUCCESS) {
 		return ret;
@@ -733,7 +882,7 @@ audio_manager_result_t stop_audio_stream_out(void)
 audio_manager_result_t reset_audio_stream_in(void)
 {
 	int ret;
-	struct pcm *pcm;
+	struct pcm* pcm;
 
 	if ((ret = get_active_audio_device_pcm(&pcm, INPUT)) != AUDIO_MANAGER_SUCCESS) {
 		return ret;
@@ -741,6 +890,11 @@ audio_manager_result_t reset_audio_stream_in(void)
 
 	pcm_close(pcm);
 	pcm = NULL;
+
+	if (g_audio_in_cards[g_actual_audio_in_card_id].resample.necessary) {
+		free(g_audio_in_cards[g_actual_audio_in_card_id].resample.readbuffer);
+		src_destroy(g_audio_in_cards[g_actual_audio_in_card_id].resample.handle);
+	}
 
 	g_audio_in_cards[g_actual_audio_in_card_id].status = AUDIO_CARD_READY;
 
@@ -750,7 +904,7 @@ audio_manager_result_t reset_audio_stream_in(void)
 audio_manager_result_t reset_audio_stream_out(void)
 {
 	int ret;
-	struct pcm *pcm;
+	struct pcm* pcm;
 
 	if ((ret = get_active_audio_device_pcm(&pcm, OUTPUT)) != AUDIO_MANAGER_SUCCESS) {
 		return ret;
@@ -759,7 +913,44 @@ audio_manager_result_t reset_audio_stream_out(void)
 	pcm_close(pcm);
 	pcm = NULL;
 
+	if (g_audio_out_cards[g_actual_audio_out_card_id].resample.necessary) {
+		src_destroy(g_audio_out_cards[g_actual_audio_out_card_id].resample.handle);
+	}
+
 	g_audio_out_cards[g_actual_audio_out_card_id].status = AUDIO_CARD_READY;
 
 	return AUDIO_MANAGER_SUCCESS;
+}
+
+/****************************************************************************
+ * Resampling
+ ****************************************************************************/
+uint32_t getClosestSampRateDown(uint32_t rate)
+{
+	int i;
+	uint32_t result = g_supported_samprates[0];
+
+	for (i = 0; g_supported_samprates[i] != 0; i++) {
+		if (rate >= g_supported_samprates[i]) {
+			result = g_supported_samprates[i];
+		}
+	}
+	return result;
+}
+
+uint32_t getClosestSampRateUp(uint32_t rate)
+{
+	int i;
+	uint32_t result = g_supported_samprates[0];
+
+	for (i = 0; g_supported_samprates[i] != 0; i++) {
+		if (rate >= g_supported_samprates[i]) {
+			if (g_supported_samprates[i + 1] != 0 && rate != g_supported_samprates[i]) {
+				result = g_supported_samprates[i + 1];
+			} else {
+				result = g_supported_samprates[i];
+			}
+		}
+	}
+	return result;
 }

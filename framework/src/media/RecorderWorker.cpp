@@ -46,6 +46,7 @@ int RecorderWorker::entry()
 				mWorkerQueue.wait(lock);
 			}
 		}
+	
 
 		if (!mWorkerQueue.isEmpty()) {
 			std::function<void()> run = mWorkerQueue.deQueue();

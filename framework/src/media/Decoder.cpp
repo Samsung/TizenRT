@@ -56,7 +56,7 @@ Decoder::~Decoder()
 size_t Decoder::pushData(unsigned char* buf, size_t size)
 {
 #ifdef CONFIG_AUDIO_CODEC
-	size_t rmax = pv_player_dataspace(&mPlayer);
+	size_t rmax = getAvailSpace();
 	if (size > rmax) {
 		meddbg("Error!! data is larger than rmax\n");
 		size = rmax;
@@ -71,24 +71,38 @@ bool Decoder::getFrame(unsigned char* buf, size_t* size, unsigned int* sampleRat
 {
 #ifdef CONFIG_AUDIO_CODEC
 	if (mPlayer.audio_type == 0) {
-		mPlayer.audio_type = _get_audio_type(mPlayer.rbsp);
-		medvdbg("audio_type %d\n", mPlayer.audio_type);
+		mPlayer.audio_type = pv_player_get_audio_type(&mPlayer);
 
-		if (_init_decoder(&mPlayer) != 0) {
-			meddbg("Error! _init_decoder failed!\n");
-			return false;
+		if(mPlayer.audio_type) {
+			if (pv_player_init_decoder(&mPlayer, mPlayer.audio_type) != 0) {
+				meddbg("Error! _init_decoder failed!\n");
+				return false;
+			}
 		}
 	}
 
-	if (_get_frame(&mPlayer)) {
+	if(mPlayer.audio_type == 0) {
+		medvdbg("Decoder: Unknown audio_type\n");
+		return false;
+	}
+
+	if (pv_player_get_frame(&mPlayer)) {
 		pcm_data_t pcm;
-		if (_frame_decoder(&mPlayer, &pcm) == 0) {
+		if (pv_player_frame_decode(&mPlayer, &pcm) == 0) {
 			*size = pcm.length * sizeof(short);
 			*sampleRate = pcm.samplerate;
 			*channels = pcm.channels;
 			memcpy(buf, pcm.samples, *size);
 			return true;
 		}
+		else {
+			meddbg("Error: Decoding frame failed!\n");
+			return false;
+		}
+	}
+	else {
+		meddbg("Error: Getting frame failed!\n");
+		return false;
 	}
 #endif
 	return false;
@@ -102,10 +116,10 @@ bool Decoder::empty()
 	return false;
 }
 
-size_t Decoder::getDataSpace()
+size_t Decoder::getAvailSpace()
 {
 #ifdef CONFIG_AUDIO_CODEC
-	return pv_player_dataspace(&mPlayer);
+	return rb_avail(mPlayer.rbsp->rbp);
 #endif
 	return 0;
 }

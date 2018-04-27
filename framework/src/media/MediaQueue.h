@@ -36,7 +36,7 @@ public:
 		std::unique_lock<std::mutex> lock(mQueueMtx);
 		std::function<void()> func = std::bind(std::forward<_Callable>(__f), std::forward<_Args>(__args)...);
 		mQueueData.push(func);
-		mQueueCv.notify_one();
+		notify_one();
 	}
 	std::function<void()> deQueue();
 	bool isEmpty();
