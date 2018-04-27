@@ -304,8 +304,8 @@ int get_input_audio_volume(void)
 
 	close(fd);
 
-	g_audio_in_cards[g_actual_audio_in_card_id].config.max_volume = caps->ac_controls.b[0];
-	g_audio_in_cards[g_actual_audio_in_card_id].config.volume = caps->ac_controls.b[1] * AUDIO_DEVICE_MAX_VOLUME / caps->ac_controls.b[0];
+	g_audio_in_cards[g_actual_audio_in_card_id].config.max_volume = caps->ac_controls.b[0] - (caps->ac_controls.b[0] % AUDIO_DEVICE_MAX_VOLUME);
+	g_audio_in_cards[g_actual_audio_in_card_id].config.volume = caps->ac_controls.b[1] * AUDIO_DEVICE_MAX_VOLUME / g_audio_in_cards[g_actual_audio_in_card_id].config.max_volume;
 
 	return g_audio_in_cards[g_actual_audio_in_card_id].config.volume;
 }
@@ -333,8 +333,8 @@ int get_output_audio_volume(void)
 
 	close(fd);
 
-	g_audio_out_cards[g_actual_audio_out_card_id].config.max_volume = caps->ac_controls.b[0];
-	g_audio_out_cards[g_actual_audio_out_card_id].config.volume = caps->ac_controls.b[1] * AUDIO_DEVICE_MAX_VOLUME / caps->ac_controls.b[0];
+	g_audio_out_cards[g_actual_audio_out_card_id].config.max_volume = caps->ac_controls.b[0] - (caps->ac_controls.b[0] % AUDIO_DEVICE_MAX_VOLUME);
+	g_audio_out_cards[g_actual_audio_out_card_id].config.volume = caps->ac_controls.b[1] * AUDIO_DEVICE_MAX_VOLUME / g_audio_out_cards[g_actual_audio_out_card_id].config.max_volume;
 
 	return g_audio_out_cards[g_actual_audio_out_card_id].config.volume;
 }
