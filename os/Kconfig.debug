@@ -45,6 +45,44 @@ config DEBUG_VERBOSE
 
 comment "Subsystem Debug Options"
 
+config DEBUG_ST_THINGS
+	bool "ST Things Debug Output"
+	default y
+	---help---
+		Enable st things debug SYSLOG output (enabled by default)
+
+if DEBUG_ST_THINGS
+
+config DEBUG_ST_THINGS_ERROR
+	bool "ST Things Error Output"
+	default n
+	depends on DEBUG_ERROR
+	---help---
+		Enable ST Things error debug SYSLOG output.
+
+config DEBUG_ST_THINGS_WARN
+	bool "ST Things Warning Output"
+	default n
+	depends on DEBUG_WARN
+	---help---
+		Enable ST Things warning debug SYSLOG output.
+
+config DEBUG_ST_THINGS_DEBUG
+	bool "ST Things Developer Debug Output"
+	default n
+	depends on DEBUG_VERBOSE
+	---help---
+		Enable ST Things Developer debug SYSLOG output.
+
+config DEBUG_ST_THINGS_INFO
+	bool "ST Things Infomational Debug Output"
+	default y
+	depends on DEBUG_VERBOSE
+	---help---
+		Enable ST Things informational debug SYSLOG output.
+
+endif #DEBUG_ST_THINGS
+
 config DEBUG_FS
 	bool "File System Debug Output"
 	default n

@@ -75,10 +75,42 @@ const char *__get_timestamp__();
 
 #define THINGS_LOG_INIT()   things_log_init()
 #define THINGS_LOG_SHUTDOWN()   things_log_shutdown()
+
+#ifdef CONFIG_DEBUG_ST_THINGS
+
+#ifdef CONFIG_DEBUG_ST_THINGS_WARN
 #define THINGS_LOG_W(tag, ...)   things_logv((THINGS_WARNING), (tag), __FUNCTION__, __LINE__, __VA_ARGS__)
+#else //CONFIG_DEBUG_ST_THINGS_WARN
+#define THINGS_LOG_W(tag, ...)
+#endif
+
+#ifdef CONFIG_DEBUG_ST_THINGS_ERROR
 #define THINGS_LOG_E(tag, ...)   things_logv((THINGS_ERROR), (tag), __FUNCTION__, __LINE__, __VA_ARGS__)
+#else //CONFIG_DEBUG_ST_THINGS_ERROR
+#define THINGS_LOG_E(tag, ...)
+#endif
+
+#ifdef CONFIG_DEBUG_ST_THINGS_DEBUG
 #define THINGS_LOG_D(tag, ...)   things_logv((THINGS_DEBUG), (tag), __FUNCTION__, __LINE__, __VA_ARGS__)
+#else //CONFIG_DEBUG_ST_THINGS_DEBUG
+#define THINGS_LOG_D(tag, ...)
+#endif
+
+#ifdef CONFIG_DEBUG_ST_THINGS_INFO
 #define THINGS_LOG_V(tag, ...)   things_logv((THINGS_INFO), (tag), __FUNCTION__, __LINE__, __VA_ARGS__)
+#else //CONFIG_DEBUG_ST_THINGS_INFO
+#define THINGS_LOG_V(tag, ...)
+#endif
+
+#else //CONFIG_DEBUG_ST_THINGS
+
+#define THINGS_LOG_W(tag, ...)
+#define THINGS_LOG_E(tag, ...)
+#define THINGS_LOG_D(tag, ...)
+#define THINGS_LOG_V(tag, ...)
+
+#endif //CONFIG_DEBUG_ST_THINGS
+
 #define PROFILING_TIME(...)
 
 #ifdef __cplusplus
