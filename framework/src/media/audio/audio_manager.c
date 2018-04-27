@@ -217,23 +217,22 @@ static audio_manager_result_t set_audio_volume(audio_device_type_t type, uint8_t
 	int ret;
 	int fd;
 	struct audio_caps_desc_s caps_desc;
-	FAR struct audio_caps_s *caps = &(caps_desc.caps);
 
 	if (volume > AUDIO_DEVICE_MAX_VOLUME) {
 		volume = AUDIO_DEVICE_MAX_VOLUME;
 	}
 
 	if (type == INPUT) {
-		caps->ac_format.hw = AUDIO_FU_INP_GAIN;
-		caps->ac_controls.hw[0] = volume * g_audio_in_cards[g_actual_audio_in_card_id].config.max_volume / AUDIO_DEVICE_MAX_VOLUME;
+		caps_desc.caps.ac_format.hw = AUDIO_FU_INP_GAIN;
+		caps_desc.caps.ac_controls.hw[0] = volume * g_audio_in_cards[g_actual_audio_in_card_id].config.max_volume / AUDIO_DEVICE_MAX_VOLUME;
 
 		if ((fd = open(g_audio_in_cards[g_actual_audio_in_card_id].card_path, O_RDONLY)) < 0) {
 			auddbg("Fail to open an input audio driver\n");
 			return AUDIO_MANAGER_DEVICE_FAIL;
 		}
 	} else {
-		caps->ac_format.hw = AUDIO_FU_VOLUME;
-		caps->ac_controls.hw[0] = volume * g_audio_out_cards[g_actual_audio_out_card_id].config.max_volume / AUDIO_DEVICE_MAX_VOLUME;
+		caps_desc.caps.ac_format.hw = AUDIO_FU_VOLUME;
+		caps_desc.caps.ac_controls.hw[0] = volume * g_audio_out_cards[g_actual_audio_out_card_id].config.max_volume / AUDIO_DEVICE_MAX_VOLUME;
 
 		if ((fd = open(g_audio_out_cards[g_actual_audio_out_card_id].card_path, O_WRONLY)) < 0) {
 			auddbg("Fail to open an output audio driver\n");
@@ -241,8 +240,8 @@ static audio_manager_result_t set_audio_volume(audio_device_type_t type, uint8_t
 		}
 	}
 
-	caps->ac_len = sizeof(struct audio_caps_s);
-	caps->ac_type = AUDIO_TYPE_FEATURE;
+	caps_desc.caps.ac_len = sizeof(struct audio_caps_s);
+	caps_desc.caps.ac_type = AUDIO_TYPE_FEATURE;
 
 	ret = ioctl(fd, AUDIOIOC_CONFIGURE, (unsigned long)&caps_desc);
 	if (ret < 0) {
@@ -292,9 +291,9 @@ int get_input_audio_volume(void)
 		return AUDIO_MANAGER_DEVICE_FAIL;
 	}
 
-	caps->ac_len = sizeof(struct audio_caps_s);
-	caps->ac_type = AUDIO_TYPE_FEATURE;
-	caps->ac_format.hw = AUDIO_FU_INP_GAIN;
+	caps_desc.caps.ac_len = sizeof(struct audio_caps_s);
+	caps_desc.caps.ac_type = AUDIO_TYPE_FEATURE;
+	caps_desc.caps.ac_format.hw = AUDIO_FU_INP_GAIN;
 
 	if (ioctl(fd, AUDIOIOC_GETCAPS, (unsigned long)caps) < 0) {
 		auddbg("Fail to ioctl AUDIOIOC_GETCAPS\n");
@@ -304,8 +303,8 @@ int get_input_audio_volume(void)
 
 	close(fd);
 
-	g_audio_in_cards[g_actual_audio_in_card_id].config.max_volume = caps->ac_controls.b[0];
-	g_audio_in_cards[g_actual_audio_in_card_id].config.volume = caps->ac_controls.b[1] * AUDIO_DEVICE_MAX_VOLUME / caps->ac_controls.b[0];
+	g_audio_in_cards[g_actual_audio_in_card_id].config.max_volume = caps_desc.caps.ac_controls.b[0];
+	g_audio_in_cards[g_actual_audio_in_card_id].config.volume = caps_desc.caps.ac_controls.b[1] * AUDIO_DEVICE_MAX_VOLUME / caps_desc.caps.ac_controls.b[0];
 
 	return g_audio_in_cards[g_actual_audio_in_card_id].config.volume;
 }
@@ -314,18 +313,17 @@ int get_output_audio_volume(void)
 {
 	int fd;
 	struct audio_caps_desc_s caps_desc;
-	FAR struct audio_caps_s *caps = &(caps_desc.caps);
 
 	if ((fd = open(g_audio_out_cards[g_actual_audio_out_card_id].card_path, O_WRONLY)) < 0) {
 		auddbg("Fail to open an output driver\n");
 		return AUDIO_MANAGER_DEVICE_FAIL;
 	}
 
-	caps->ac_len = sizeof(struct audio_caps_s);
-	caps->ac_type = AUDIO_TYPE_FEATURE;
-	caps->ac_format.hw = AUDIO_FU_VOLUME;
+	caps_desc.caps.ac_len = sizeof(struct audio_caps_s);
+	caps_desc.caps.ac_type = AUDIO_TYPE_FEATURE;
+	caps_desc.caps.ac_format.hw = AUDIO_FU_VOLUME;
 
-	if (ioctl(fd, AUDIOIOC_GETCAPS, (unsigned long)caps) < 0) {
+	if (ioctl(fd, AUDIOIOC_GETCAPS, (unsigned long *)&caps_desc.caps) < 0) {
 		auddbg("Fail to ioctl AUDIOIOC_GETCAPS\n");
 		close(fd);
 		return AUDIO_MANAGER_DEVICE_FAIL;
@@ -333,8 +331,8 @@ int get_output_audio_volume(void)
 
 	close(fd);
 
-	g_audio_out_cards[g_actual_audio_out_card_id].config.max_volume = caps->ac_controls.b[0];
-	g_audio_out_cards[g_actual_audio_out_card_id].config.volume = caps->ac_controls.b[1] * AUDIO_DEVICE_MAX_VOLUME / caps->ac_controls.b[0];
+	g_audio_out_cards[g_actual_audio_out_card_id].config.max_volume = caps_desc.caps.ac_controls.b[0];
+	g_audio_out_cards[g_actual_audio_out_card_id].config.volume = caps_desc.caps.ac_controls.b[1] * AUDIO_DEVICE_MAX_VOLUME / caps_desc.caps.ac_controls.b[0];
 
 	return g_audio_out_cards[g_actual_audio_out_card_id].config.volume;
 }
