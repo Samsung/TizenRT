@@ -683,11 +683,11 @@ int handle_get_req_on_collection_rsrc(things_resource_s *collection_rsrc)
 	THINGS_LOG_D(TAG, "This GET request will be handled on %s inteface.", if_type);
 
 	bool result = false;
-	if (0 == strncmp(if_type, OC_RSRVD_INTERFACE_DEFAULT, strlen(OC_RSRVD_INTERFACE_DEFAULT))) {
+	if (0 == strncmp(if_type, OC_RSRVD_INTERFACE_DEFAULT, sizeof(OC_RSRVD_INTERFACE_DEFAULT))) {
 		result = handle_get_req_on_collection_baseline(collection_rsrc);
-	} else if (0 == strncmp(if_type, OC_RSRVD_INTERFACE_LL, strlen(OC_RSRVD_INTERFACE_LL))) {
+	} else if (0 == strncmp(if_type, OC_RSRVD_INTERFACE_LL, sizeof(OC_RSRVD_INTERFACE_LL))) {
 		result = handle_get_req_on_collection_linkslist(collection_rsrc);
-	} else if (0 == strncmp(if_type, OC_RSRVD_INTERFACE_BATCH, strlen(OC_RSRVD_INTERFACE_BATCH))) {
+	} else if (0 == strncmp(if_type, OC_RSRVD_INTERFACE_BATCH, sizeof(OC_RSRVD_INTERFACE_BATCH))) {
 		result = handle_get_req_on_collection_batch(collection_rsrc);
 	} else {
 		result = handle_get_req_on_collection_common(collection_rsrc);
@@ -1051,13 +1051,13 @@ int handle_post_req_on_collection_rsrc(things_resource_s *collection_rsrc)
 	THINGS_LOG_D(TAG, "This SET request will be handled on %s inteface.", if_type);
 
 	bool result = false;
-	if (0 == strncmp(if_type, OC_RSRVD_INTERFACE_DEFAULT, strlen(OC_RSRVD_INTERFACE_DEFAULT))) {
+	if (0 == strncmp(if_type, OC_RSRVD_INTERFACE_DEFAULT, sizeof(OC_RSRVD_INTERFACE_DEFAULT))) {
 		result = handle_post_req_on_collection_baseline(collection_rsrc);
-	} else if (0 == strncmp(if_type, OC_RSRVD_INTERFACE_BATCH, strlen(OC_RSRVD_INTERFACE_BATCH))) {
+	} else if (0 == strncmp(if_type, OC_RSRVD_INTERFACE_BATCH, sizeof(OC_RSRVD_INTERFACE_BATCH))) {
 		result = handle_post_req_on_collection_batch(collection_rsrc);
-	} else if (0 == strncmp(if_type, ST_THINGS_RSRVD_INTERFACE_READWRITE, strlen(ST_THINGS_RSRVD_INTERFACE_READWRITE))) {
+	} else if (0 == strncmp(if_type, ST_THINGS_RSRVD_INTERFACE_READWRITE, sizeof(ST_THINGS_RSRVD_INTERFACE_READWRITE))) {
 		result = handle_post_req_on_collection_common(collection_rsrc);
-	} else if (0 == strncmp(if_type, ST_THINGS_RSRVD_INTERFACE_ACTUATOR, strlen(ST_THINGS_RSRVD_INTERFACE_ACTUATOR))) {
+	} else if (0 == strncmp(if_type, ST_THINGS_RSRVD_INTERFACE_ACTUATOR, sizeof(ST_THINGS_RSRVD_INTERFACE_ACTUATOR))) {
 		result = handle_post_req_on_collection_common(collection_rsrc);
 	} else {
 		result = false;

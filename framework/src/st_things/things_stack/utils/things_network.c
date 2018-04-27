@@ -216,23 +216,23 @@ int things_set_ap_connection(access_point_info_s *p_info)
 	THINGS_LOG_V(TAG, "[%s] ssid : %s", __FUNCTION__, connect_config.ssid);
 
 	// set auth type
-	if (strncmp(p_info->auth_type, "WEP", strlen("WEP")) == 0) {
+	if (strncmp(p_info->auth_type, "WEP", sizeof("WEP")) == 0) {
 		connect_config.ap_auth_type = WIFI_MANAGER_AUTH_WEP_SHARED;
-	} else if (strncmp(p_info->auth_type, "WPA-PSK", strlen("WPA-PSK")) == 0) {
+	} else if (strncmp(p_info->auth_type, "WPA-PSK", sizeof("WPA-PSK")) == 0) {
 		connect_config.ap_auth_type = WIFI_MANAGER_AUTH_WPA_PSK;
-	} else if (strncmp(p_info->auth_type, "WPA2-PSK", strlen("WPA2-PSK")) == 0) {
+	} else if (strncmp(p_info->auth_type, "WPA2-PSK", sizeof("WPA2-PSK")) == 0) {
 		connect_config.ap_auth_type = WIFI_MANAGER_AUTH_WPA2_PSK;
 	}
 	// set encryption crypto type
-	if (strncmp(p_info->enc_type, "WEP-64", strlen("WEP-64")) == 0) {
+	if (strncmp(p_info->enc_type, "WEP-64", sizeof("WEP-64")) == 0) {
 		connect_config.ap_crypto_type = WIFI_MANAGER_CRYPTO_WEP_64;
-	} else if (strncmp(p_info->enc_type, "WEP-128", strlen("WEP-128")) == 0) {
+	} else if (strncmp(p_info->enc_type, "WEP-128", sizeof("WEP-128")) == 0) {
 		connect_config.ap_crypto_type = WIFI_MANAGER_CRYPTO_WEP_128;
-	} else if (strncmp(p_info->enc_type, "TKIP", strlen("TKIP")) == 0) {
+	} else if (strncmp(p_info->enc_type, "TKIP", sizeof("TKIP")) == 0) {
 		connect_config.ap_crypto_type = WIFI_MANAGER_CRYPTO_TKIP;
-	} else if (strncmp(p_info->enc_type, "AES", strlen("AES")) == 0) {
+	} else if (strncmp(p_info->enc_type, "AES", sizeof("AES")) == 0) {
 		connect_config.ap_crypto_type = WIFI_MANAGER_CRYPTO_AES;
-	} else if (strncmp(p_info->enc_type, "TKIP_AES", strlen("TKIP_AES")) == 0) {
+	} else if (strncmp(p_info->enc_type, "TKIP_AES", sizeof("TKIP_AES")) == 0) {
 		connect_config.ap_crypto_type = WIFI_MANAGER_CRYPTO_TKIP_AND_AES;
 	}
 

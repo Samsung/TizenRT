@@ -377,8 +377,8 @@ OCStackResult things_cloud_rsc_publish(char *host, things_resource_s **list, int
 
 			const char *uri = OCGetResourceUri(handle);
 
-			if (0 == strncmp(uri, OC_RSRVD_DEVICE_URI, strlen(OC_RSRVD_DEVICE_URI))
-				|| 0 == strncmp(uri, OC_RSRVD_PLATFORM_URI, strlen(OC_RSRVD_PLATFORM_URI))) {
+			if (0 == strncmp(uri, OC_RSRVD_DEVICE_URI, sizeof(OC_RSRVD_DEVICE_URI))
+				|| 0 == strncmp(uri, OC_RSRVD_PLATFORM_URI, sizeof(OC_RSRVD_PLATFORM_URI))) {
 				resourceHandles[iter++] = handle;
 			}
 		}
