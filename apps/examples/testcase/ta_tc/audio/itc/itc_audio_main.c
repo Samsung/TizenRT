@@ -1153,10 +1153,12 @@ int itc_audio_main(int argc, char *argv[])
 	itc_audio_pcm_bytes_to_frames_n();
 	itc_audio_pcm_format_to_bits_p();
 	itc_audio_pcm_format_to_bits_n();
+#ifndef CONFIG_DISABLE_MANUAL_TESTCASE
 	itc_audio_pcm_readi_p();
 	itc_audio_pcm_readi_n();
 	itc_audio_pcm_writei_p();
 	itc_audio_pcm_writei_n();
+#endif
 	/* after test, unlink the file */
 	unlink(AUDIO_TEST_FILE);
 
