@@ -27,13 +27,36 @@
 extern "C" {
 #endif
 
+/**
+ * @brief Audio type detected by player from audio stream.
+ */
+enum audio_type_e {
+	AUDIO_TYPE_INVALID = 0,
+	AUDIO_TYPE_UNKNOWN = AUDIO_TYPE_INVALID,
+	AUDIO_TYPE_MP3 = 1,
+	AUDIO_TYPE_AAC = 2,
+
+	// add new type above.
+	AUDIO_TYPE_MAX
+};
+
+typedef enum audio_type_e audio_type_t;
+
+/**
+ * Deprecated, to be removed.
+ */
 enum {
-	type_unknown = 0,
-	type_mp3 = 1,
-	type_aac = 2,
+	type_unknown = AUDIO_TYPE_UNKNOWN,
+	type_mp3 = AUDIO_TYPE_MP3,
+	type_aac = AUDIO_TYPE_AAC,
 	type_max,
 };
 
+/**
+ * @struct  pcm_data_s
+ * @brief   Define PCM data output structure, inludes sample rate, channel number,
+ *          and samples buffer and count.
+ */
 struct pcm_data_s {
 	unsigned int samplerate;    /* sampling frequency (Hz) */
 	unsigned short channels;    /* number of channels */
@@ -44,6 +67,7 @@ struct pcm_data_s {
 typedef struct pcm_data_s pcm_data_t;
 typedef struct pcm_data_s *pcm_data_p;
 
+struct pv_player_s;
 typedef struct pv_player_s pv_player_t;
 typedef struct pv_player_s *pv_player_p;
 
@@ -95,12 +119,8 @@ struct pv_player_s {
 	rb_t ringbuffer;            /* ring-buffer object */
 	rbstream_p rbsp;            /* ring-buffer stream handle, co-work with above ring-buffer */
 
-	// internal varialbes, the same below
-	ssize_t mCurrentPos;        /* read position when decoding */
-	uint32_t mFixedHeader;      /* mp3 frame header */
-	uint32_t mSampleRate;       /* mp3 sample rate */
-	uint32_t mNumChannels;      /* mp3 sound channel, 1:mono, 2:stereo */
-	uint32_t mBitrate;          /* mp3 bit rate */
+	// private data
+	void *priv_data;            /* pointer to private data */
 };
 
 /**
@@ -170,7 +190,7 @@ int _init_decoder(pv_player_p player);
 int _frame_decoder(pv_player_p player, pcm_data_p pcm);
 
 #ifdef __cplusplus
-}
+} /* extern "C" */
 #endif
-#endif
+#endif /* STREAMING_PLAYER_H */
 
