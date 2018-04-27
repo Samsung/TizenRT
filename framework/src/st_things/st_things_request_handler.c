@@ -62,7 +62,8 @@ bool get_query_value_internal(const char *query, const char *key, char **value, 
 
 	int query_len = strlen(query);
 	int key_len = strlen(key);
-	char *p_buff = NULL, *p_origin = NULL;
+	char *p_buff = NULL;
+	char *p_origin = NULL;
 	char *p_ptr = NULL;
 
 	p_origin = p_buff = (char *)things_malloc(query_len + 1);
