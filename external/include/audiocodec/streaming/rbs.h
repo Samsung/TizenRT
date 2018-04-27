@@ -51,7 +51,6 @@ extern "C" {
  	             |...........#################.............|
                   ------------------------------------------
 
-
      ~~~~~~~~~~~~~~~~~~~~~~~~#################,,,,,,,,,,,,,,,,,,,,,,,
      |                       |       |        |                     |
 POS: 0                     rd_size cur_pos wr_size              end of stream
@@ -64,23 +63,23 @@ POS: 0                     rd_size cur_pos wr_size              end of stream
 */
 
 enum {
-	option_seek_with_pop = 0x0001,	/* for seek overflow case, data in ring-buffer may be popped out */
+	OPTION_ALLOW_TO_DEQUEUE = 0x0001,    /* Allow to dequeue data form ring-buffer */
+	OPTION_MAX,
 };
 
-typedef struct rbstream   rbstream_t;
-typedef struct rbstream * rbstream_p;
+typedef struct rbstream_s  rbstream_t;
+typedef struct rbstream_s *rbstream_p;
 
-typedef size_t (*rbstream_input_f)(void *data, rbstream_p stream);
+typedef size_t(*rbstream_input_f)(void *data, rbstream_p stream);
 
-struct rbstream
-{
-	rb_p   rbp;						/* pointer to the ring-buffer object */
-	volatile size_t wr_size;		/* total size written to ring-buffer */
-	volatile size_t rd_size;		/* total size read from ring-buffer  */
-	volatile size_t cur_pos;		/* current read position, range[rd_size,wr_size] */
-	void* data;						/* callback data for user */
-	rbstream_input_f input_func;	/* callback function to request more data */
-	int	options;					/*  */
+struct rbstream_s {
+	rb_p rbp;                       /* pointer to the ring-buffer object */
+	volatile size_t wr_size;        /* total size written to ring-buffer */
+	volatile size_t rd_size;        /* total size read from ring-buffer  */
+	volatile size_t cur_pos;        /* current read position, range[rd_size,wr_size] */
+	void *data;                     /* callback data for user */
+	rbstream_input_f input_func;    /* callback function to request more data */
+	int options;                    /*  */
 };
 
 /**
@@ -91,7 +90,7 @@ struct rbstream
  * @param  data: ponter to user callback data
  * @return ring-buffer stream handle, NULL is returned when failed.
  */
-rbstream_p rbs_open(rb_p rbp, rbstream_input_f input_func, void* data);
+rbstream_p rbs_open(rb_p rbp, rbstream_input_f input_func, void *data);
 
 /**
  * @brief  Close ring-buffer stream returned by rbs_open().
@@ -181,6 +180,5 @@ int rbs_ctrl(rbstream_p stream, int option, int value);
 #ifdef __cplusplus
 }
 #endif
-
 #endif
 
