@@ -40,7 +40,7 @@ using namespace std;
 using namespace media;
 using namespace media::stream;
 
-class MediaRecorderTest : public MediaRecorderObserverInterface
+class MediaRecorderTest : public MediaRecorderObserverInterface, public enable_shared_from_this<MediaRecorderTest>
 {
 public:
 	void onRecordStarted(Id id)
@@ -66,8 +66,7 @@ public:
 				case APP_ON: {
 					std::cout << "SELECTED APP ON" << std::endl;
 					mr.create();
-					auto tClass = std::shared_ptr<MediaRecorderTest>{this};
-					mr.setObserver(tClass);
+					mr.setObserver(shared_from_this());
 					mr.setDataSource(unique_ptr<FileOutputDataSource>(new FileOutputDataSource(2, 16000, PCM_FORMAT_S16_LE, "/ramfs/record")));
 				}
 				break;
@@ -217,8 +216,8 @@ extern "C"
 	{
 		up_cxxinitialize();
 
-		MediaRecorderTest mediaRecorderTest;
-		mediaRecorderTest.start();
+		auto mediaRecorderTest = make_shared<MediaRecorderTest>();
+		mediaRecorderTest->start();
 
 		return 0;
 	}
