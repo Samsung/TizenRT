@@ -83,12 +83,14 @@ bool FileInputDataSource::open()
 	return isPrepare();
 }
 
-void FileInputDataSource::close()
+bool FileInputDataSource::close()
 {
-	if (mFp) {
-		fclose(mFp);
+	if (mFp && fclose(mFp) != EOF) {
 		mFp = nullptr;
+		return true;
 	}
+
+	return false;
 }
 
 bool FileInputDataSource::isPrepare()

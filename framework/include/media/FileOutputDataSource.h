@@ -95,7 +95,7 @@ public:
 	 * @return True is Success, False is Fail
 	 * @since TizenRT v2.0 PRE
 	 */
-	void close() override;
+	bool close() override;
 	
 	/**
 	 * @brief Puts the file data

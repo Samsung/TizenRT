@@ -77,7 +77,7 @@ public:
 	 * @details @b #include <media/DataSource.h>
 	 * @since TizenRT v2.0 PRE
 	 */
-	virtual void close() = 0;
+	virtual bool close() = 0;
 	/**
 	 * @brief Whether data is ready to be read.
 	 * @details @b #include <media/DataSource.h>
