@@ -27,12 +27,12 @@
 #include <string.h>
 #include <assert.h>
 #include <stdio.h>
-#include "internal_defs.h"
-#include "debug.h"
+#include <debug.h>
 #include <audiocodec/streaming/rbs.h>
+#include "internal_defs.h"
 
-#define RBS_DEBUG   audvdbg
-#define RBS_ERROR   auddbg
+#define RBS_DEBUG   medvdbg
+#define RBS_ERROR   meddbg
 #define RBS_ASSERT  MY_ASSERT
 
 #define RBS_OPTION_SET(rbsp, option)    (((rbstream_p)(rbsp))->options |= (option))

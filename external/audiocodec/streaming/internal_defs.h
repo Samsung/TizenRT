@@ -21,7 +21,7 @@
 
 #include <stdio.h>
 #include <assert.h>
-#include "debug.h"
+#include <debug.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -31,7 +31,7 @@ extern "C" {
 	do { \
 		if (!(condition)) \
 		{\
-			auddbg("[%s] line %d, ASSERT(%s) failed!\n", __FUNCTION__, __LINE__, #condition);\
+			meddbg("[%s] line %d, ASSERT(%s) failed!\n", __FUNCTION__, __LINE__, #condition);\
 			assert(0); \
 		} \
 	} while (0)

@@ -29,9 +29,9 @@
 #include <assert.h>
 #include <pthread.h>
 #include <sys/time.h>
-#include "internal_defs.h"
-#include "debug.h"
+#include <debug.h>
 #include <audiocodec/streaming/player.h>
+#include "internal_defs.h"
 
 
 /****************************************************************************
@@ -40,8 +40,8 @@
 #define PV_SUCCESS  0
 #define PV_FAILURE  -1
 
-#define PLAYER_DEBUG    audvdbg
-#define PLAYER_ERROR    auddbg
+#define PLAYER_DEBUG    medvdbg
+#define PLAYER_ERROR    meddbg
 #define PLAYER_ASSERT   MY_ASSERT
 
 #define CHECK_AUDIO_TYPE(type) (AUDIO_TYPE_UNKNOWN < (type) && (type) < AUDIO_TYPE_MAX)

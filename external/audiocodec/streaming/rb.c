@@ -20,9 +20,8 @@
 #include <string.h>
 #include <assert.h>
 #include <stdio.h>
-#include "internal_defs.h"
-#include "debug.h"
 #include <audiocodec/streaming/rb.h>
+#include "internal_defs.h"
 
 #define IS_EMPTY(rbp) (rbp->rd_idx == rbp->wr_idx)
 #define IS_FULL(rbp) ((rbp->rd_idx & IDX_MASK) == (rbp->wr_idx & IDX_MASK) && (rbp->rd_idx & MSB_MASK) != (rbp->wr_idx & MSB_MASK))
