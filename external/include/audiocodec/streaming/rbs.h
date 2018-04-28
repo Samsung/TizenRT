@@ -149,24 +149,6 @@ int rbs_seek(rbstream_p stream, ssize_t offset, int whence);
  */
 int rbs_seek_ext(rbstream_p stream, ssize_t offset, int whence);
 
-#if 0
-/**
- * @brief  Obtains the current read position indicator for the stream.
- *
- * @param  stream : Pointer to the ring-buffer stream
- * @return the current offset (cur_pos).
- */
-size_t rbs_tell(rbstream_p stream);
-
-/**
- * @brief  Obtains the head position of ring-buffer for the stream.
- *
- * @param  stream : Pointer to the ring-buffer stream
- * @return the head position(rd_size).
- */
-size_t rbs_tell_ext(rbstream_p stream);
-#endif
-
 /**
  * @brief  Set options
  *

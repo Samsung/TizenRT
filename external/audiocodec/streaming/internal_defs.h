@@ -19,10 +19,6 @@
 #ifndef DEFS_H
 #define DEFS_H
 
-#include <stdio.h>
-#include <assert.h>
-#include <debug.h>
-
 #ifdef __cplusplus
 extern "C" {
 #endif /* __cplusplus */
@@ -51,7 +47,20 @@ extern "C" {
 		} \
 	} while (0)
 
-#define MINIMUM(x,y) (((x) < (y)) ? (x) : (y))
+#ifndef MINIMUM
+#define MINIMUM(x, y) (((x) < (y)) ? (x) : (y))
+#endif
+
+// Size: 0, no data written or read
+#define SIZE_ZERO (0)
+
+#ifndef OK
+#define OK (0)
+#endif
+
+#ifndef ERROR
+#define ERROR (-1)
+#endif
 
 #ifdef __cplusplus
 }

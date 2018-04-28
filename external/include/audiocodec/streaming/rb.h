@@ -55,14 +55,6 @@ bool rb_init(rb_p rbp, size_t size);
  */
 void rb_free(rb_p rbp);
 
-#if 0
-/**
- * @brief  Clear the ring-buffer object.
- * @param  rbp: Pointer to the ring-buffer object
- */
-void rb_clear(rb_p rbp);
-#endif
-
 /**
  * @brief  Get data bytes in the ring-buffer
  * @param  rbp   : Pointer to the ring-buffer object
@@ -93,6 +85,7 @@ size_t rb_write(rb_p rbp, const void *ptr, size_t len);
  *              in case of ptr NULL, just increase rd_idx.
  * @param  len: length of the data to be read
  * @return size of data be read(or rd_idx increased), range[0, len]
+ *         size rd_idx increased, in case of 'ptr' is NULL.
  */
 size_t rb_read(rb_p rbp, void *ptr, size_t len);
 
@@ -101,9 +94,11 @@ size_t rb_read(rb_p rbp, void *ptr, size_t len);
  *         rd_idx will not be increased.
  * @param  rbp: Pointer to the ring-buffer object
  * @param  ptr: Pointer to the bufer saving read data
+ *              in case of ptr NULL, do not really read data
  * @param  len: length of the data to be read
  * @param  offset: offset from rd_idx started to read.
- * @return size of data actually be read, range[0, len]
+ * @return size of data actually be read, range[0, len].
+ *         size of avaialbe data can be read, in case of 'ptr' is NULL.
  */
 size_t rb_read_ext(rb_p rbp, void *ptr, size_t len, size_t offset);
 
