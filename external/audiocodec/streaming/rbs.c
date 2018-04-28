@@ -34,6 +34,7 @@
 #define RBS_DEBUG   audvdbg
 #define RBS_ERROR   auddbg
 #define RBS_ASSERT  MY_ASSERT
+#define SIZE_ZERO   (0)     // No data written or read
 
 #define RBS_OPTION_SET(rbsp, option)    (((rbstream_p)(rbsp))->options |= (option))
 #define RBS_OPTION_CLR(rbsp, option)    (((rbstream_p)(rbsp))->options &= ~(option))
@@ -89,34 +90,43 @@ size_t rbs_read(void *ptr, size_t size, size_t nmemb, rbstream_p rbsp)
 	// only size:1 supported
 	RBS_ASSERT(size == 1);
 
-	size_t offset = rbsp->cur_pos - rbsp->rd_size;
 	size_t len = size * nmemb;
-	size_t rlen = rb_read_ext(rbsp->rbp, ptr, len, offset);
+	size_t read = 0;
 
-	if (rlen < len) {
-		size_t least = len - rlen;
-		size_t avail = rb_avail(rbsp->rbp);
-		if (least > avail) {
-			// need pop data
-			size_t _len = offset;
-			size_t _least = least - avail;
-			_len = MINIMUM(_len, _least);
-			size_t _rlen = rb_read(rbsp->rbp, NULL, _len);
-			RBS_ASSERT(_rlen == _len);
-			rbsp->rd_size += _rlen;
-			// update offset
-			offset = rbsp->cur_pos - rbsp->rd_size;
+	while (read < len) {
+		void *_ptr = (void *) ((uint8_t *) ptr + read);
+		size_t need = len - read;
+		size_t offset = rbsp->cur_pos - rbsp->rd_size;
+		// read data desired
+		size_t rlen = rb_read_ext(rbsp->rbp, _ptr, need, offset);
+		read += rlen;
+		rbsp->cur_pos += rlen; // increase cur_pos
+
+		if (read < len) {
+			// need to read more data
+			size_t least = len - read;
+			size_t avail = rb_avail(rbsp->rbp);
+			if (least > avail) {
+				// need to dequeue data
+				if (RBS_OPTION_TEST(rbsp, OPTION_ALLOW_TO_DEQUEUE)) {
+					offset = rbsp->cur_pos - rbsp->rd_size;
+					size_t _len = MINIMUM(offset, (least - avail));
+					size_t _rlen = rb_read(rbsp->rbp, NULL, _len);
+					RBS_ASSERT(_rlen == _len);
+					rbsp->rd_size += _rlen;
+				}
+			}
+
+			// pull stream data, then it's available to read more.
+			if (_pull(rb_avail(rbsp->rbp), least, rbsp) == SIZE_ZERO) {
+				// pull data failed
+				break;
+			}
 		}
-		// pull stream data, then it's available to read more.
-		_pull(rb_avail(rbsp->rbp), least, rbsp);
-		// read again
-		rlen = rb_read_ext(rbsp->rbp, ptr, len, offset);
 	}
 
-	RBS_DEBUG("[%s] done, rlen %lu\n", __FUNCTION__, rlen);
-	// increase cur_pos
-	rbsp->cur_pos += rlen;
-	return rlen;
+	RBS_DEBUG("[%s] done, read %lu\n", __FUNCTION__, read);
+	return read;
 }
 
 size_t rbs_write(const void *ptr, size_t size, size_t nmemb, rbstream_p rbsp)
