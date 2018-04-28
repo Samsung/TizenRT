@@ -21,20 +21,11 @@
 
 #include <stdio.h>
 #include <assert.h>
-#include "debug.h"
+#include <debug.h>
 
 #ifdef __cplusplus
 extern "C" {
 #endif /* __cplusplus */
-
-#define MY_ASSERT(condition) \
-	do { \
-		if (!(condition)) \
-		{\
-			auddbg("[%s] line %d, ASSERT(%s) failed!\n", __FUNCTION__, __LINE__, #condition);\
-			assert(0); \
-		} \
-	} while (0)
 
 #define RETURN_IF_FAIL(condition) \
 	do { \

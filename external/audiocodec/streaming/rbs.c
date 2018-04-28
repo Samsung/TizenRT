@@ -27,13 +27,10 @@
 #include <string.h>
 #include <assert.h>
 #include <stdio.h>
-#include "internal_defs.h"
-#include "debug.h"
+#include <debug.h>
 #include <audiocodec/streaming/rbs.h>
+#include "internal_defs.h"
 
-#define RBS_DEBUG   audvdbg
-#define RBS_ERROR   auddbg
-#define RBS_ASSERT  MY_ASSERT
 #define SIZE_ZERO   (0)     // No data written or read
 
 #define RBS_OPTION_SET(rbsp, option)    (((rbstream_p)(rbsp))->options |= (option))
@@ -53,7 +50,7 @@ static size_t _pull(size_t size, size_t least, rbstream_p rbsp);
 
 rbstream_p rbs_open(rb_p rbp, rbstream_input_f input_func, void *data)
 {
-	RBS_DEBUG("[%s] rbp %p, input_func %p, data %p\n", __FUNCTION__, rbp, input_func, data);
+	medvdbg("[%s] rbp %p, input_func %p, data %p\n", __FUNCTION__, rbp, input_func, data);
 	RETURN_VAL_IF_FAIL(rbp != NULL, NULL);
 
 	rbstream_p rbsp = (rbstream_p) calloc(1, sizeof(rbstream_t));
@@ -68,13 +65,13 @@ rbstream_p rbs_open(rb_p rbp, rbstream_input_f input_func, void *data)
 	rbsp->data = data;
 	rbsp->input_func = input_func;
 
-	RBS_DEBUG("[%s] done, rbsp %p\n", __FUNCTION__, rbsp);
+	medvdbg("[%s] done, rbsp %p\n", __FUNCTION__, rbsp);
 	return rbsp;
 }
 
 int rbs_close(rbstream_p rbsp)
 {
-	RBS_DEBUG("[%s] rbsp %p\n", __FUNCTION__, rbsp);
+	medvdbg("[%s] rbsp %p\n", __FUNCTION__, rbsp);
 
 	RETURN_VAL_IF_FAIL(rbsp != NULL, 0);
 	free(rbsp);
@@ -83,12 +80,12 @@ int rbs_close(rbstream_p rbsp)
 
 size_t rbs_read(void *ptr, size_t size, size_t nmemb, rbstream_p rbsp)
 {
-	RBS_DEBUG("[%s] ptr %p nmemb %lu\n", __FUNCTION__, ptr, nmemb);
+	medvdbg("[%s] ptr %p nmemb %lu\n", __FUNCTION__, ptr, nmemb);
 	RETURN_VAL_IF_FAIL(ptr != NULL, 0);
 	RETURN_VAL_IF_FAIL(rbsp != NULL, 0);
 
 	// only size:1 supported
-	RBS_ASSERT(size == 1);
+	assert(size == 1);
 
 	size_t len = size * nmemb;
 	size_t read = 0;
@@ -112,7 +109,7 @@ size_t rbs_read(void *ptr, size_t size, size_t nmemb, rbstream_p rbsp)
 					offset = rbsp->cur_pos - rbsp->rd_size;
 					size_t _len = MINIMUM(offset, (least - avail));
 					size_t _rlen = rb_read(rbsp->rbp, NULL, _len);
-					RBS_ASSERT(_rlen == _len);
+					assert(_rlen == _len);
 					rbsp->rd_size += _rlen;
 				}
 			}
@@ -125,18 +122,18 @@ size_t rbs_read(void *ptr, size_t size, size_t nmemb, rbstream_p rbsp)
 		}
 	}
 
-	RBS_DEBUG("[%s] done, read %lu\n", __FUNCTION__, read);
+	medvdbg("[%s] done, read %lu\n", __FUNCTION__, read);
 	return read;
 }
 
 size_t rbs_write(const void *ptr, size_t size, size_t nmemb, rbstream_p rbsp)
 {
-	RBS_DEBUG("[%s] ptr %p nmemb %lu\n", __FUNCTION__, ptr, nmemb);
+	medvdbg("[%s] ptr %p nmemb %lu\n", __FUNCTION__, ptr, nmemb);
 	RETURN_VAL_IF_FAIL(ptr != NULL, 0);
 	RETURN_VAL_IF_FAIL(rbsp != NULL, 0);
 
 	// only size:1 supported
-	RBS_ASSERT(size == 1);
+	assert(size == 1);
 
 	size_t len = size * nmemb;
 	size_t wlen;
@@ -145,13 +142,13 @@ size_t rbs_write(const void *ptr, size_t size, size_t nmemb, rbstream_p rbsp)
 	// increase wr_size
 	rbsp->wr_size += wlen;
 
-	RBS_DEBUG("[%s] done, wlen %lu\n", __FUNCTION__, wlen);
+	medvdbg("[%s] done, wlen %lu\n", __FUNCTION__, wlen);
 	return wlen;
 }
 
 int rbs_seek(rbstream_p rbsp, ssize_t offset, int whence)
 {
-	RBS_DEBUG("[%s] offset %ld, whence %d\n", __FUNCTION__, offset, whence);
+	medvdbg("[%s] offset %ld, whence %d\n", __FUNCTION__, offset, whence);
 	RETURN_VAL_IF_FAIL(rbsp != NULL, -1);
 
 	switch (whence) {
@@ -177,7 +174,7 @@ int rbs_seek(rbstream_p rbsp, ssize_t offset, int whence)
 					least = (size_t) offset - rbsp->wr_size;
 					len = MINIMUM(len, least);
 					size_t rlen = rb_read(rbsp->rbp, NULL, len);
-					RBS_ASSERT(rlen == len);
+					assert(rlen == len);
 					rbsp->rd_size += rlen;
 				} else {
 					RETURN_VAL_IF_FAIL((wlen != 0), -1);    // EOS
@@ -216,7 +213,7 @@ int rbs_seek(rbstream_p rbsp, ssize_t offset, int whence)
 					least = (ssize_t) rbsp->cur_pos + offset - (ssize_t) rbsp->wr_size;
 					len = MINIMUM(len, least);
 					size_t rlen = rb_read(rbsp->rbp, NULL, len);
-					RBS_ASSERT(rlen == len);
+					assert(rlen == len);
 					rbsp->rd_size += rlen;
 				} else {
 					RETURN_VAL_IF_FAIL((wlen != 0), -1);	// EOS
@@ -246,8 +243,8 @@ int rbs_seek(rbstream_p rbsp, ssize_t offset, int whence)
 // seek and dequeue data from ring-buffer
 int rbs_seek_ext(rbstream_p rbsp, ssize_t offset, int whence)
 {
-	RBS_DEBUG("[%s] offset %ld, whence %d\n", __FUNCTION__, offset, whence);
-	RBS_ASSERT(RBS_OPTION_TEST(rbsp, OPTION_ALLOW_TO_DEQUEUE));
+	medvdbg("[%s] offset %ld, whence %d\n", __FUNCTION__, offset, whence);
+	assert(RBS_OPTION_TEST(rbsp, OPTION_ALLOW_TO_DEQUEUE));
 
 	// seek
 	int ret = rbs_seek(rbsp, offset, whence);
@@ -257,7 +254,7 @@ int rbs_seek_ext(rbstream_p rbsp, ssize_t offset, int whence)
 	size_t len = rbsp->cur_pos - rbsp->rd_size;
 	size_t rlen = rb_read(rbsp->rbp, NULL, len);
 
-	RBS_ASSERT(rlen == len);    // rbs_seek returned success!
+	assert(rlen == len);    // rbs_seek returned success!
 	rbsp->rd_size += rlen;
 
 	return ret;
@@ -266,20 +263,20 @@ int rbs_seek_ext(rbstream_p rbsp, ssize_t offset, int whence)
 #if 0
 size_t rbs_tell(rbstream_p rbsp)
 {
-	RBS_DEBUG("[%s] cur_pos %lu\n", __FUNCTION__, rbsp->cur_pos);
+	medvdbg("[%s] cur_pos %lu\n", __FUNCTION__, rbsp->cur_pos);
 	return rbsp->cur_pos;
 }
 
 size_t rbs_tell_ext(rbstream_p rbsp)
 {
-	RBS_DEBUG("[%s] rd_size %lu\n", __FUNCTION__, rbsp->rd_size);
+	medvdbg("[%s] rd_size %lu\n", __FUNCTION__, rbsp->rd_size);
 	return rbsp->rd_size;
 }
 #endif
 
 int rbs_ctrl(rbstream_p rbsp, int option, int value)
 {
-	RBS_DEBUG("[%s] option %d value %d\n", __FUNCTION__, option, value);
+	medvdbg("[%s] option %d value %d\n", __FUNCTION__, option, value);
 	RETURN_VAL_IF_FAIL(rbsp != NULL, 0);
 
 	int ret = 0;
@@ -303,11 +300,11 @@ static size_t _pull(size_t size, size_t least, rbstream_p rbsp)
 	RETURN_VAL_IF_FAIL(rbsp != NULL, 0);
 	RETURN_VAL_IF_FAIL(rbsp->input_func != NULL, 0);
 
-	RBS_DEBUG("[%s] size %lu, least %lu\n", __FUNCTION__, size, least);
+	medvdbg("[%s] size %lu, least %lu\n", __FUNCTION__, size, least);
 
 	if (least > size) {
 		// Large size ring-buffer is needed or you should dequeue read-data from ring-buffer in time.
-		RBS_DEBUG("[%s] WARNING!!! least[%lu] > size[%lu]\n", __FUNCTION__, least, size);
+		medvdbg("[%s] WARNING!!! least[%lu] > size[%lu]\n", __FUNCTION__, least, size);
 		least = size;
 		RETURN_VAL_IF_FAIL(least > 0, 0);   // ring-buffer is full.
 	}
@@ -317,14 +314,14 @@ static size_t _pull(size_t size, size_t least, rbstream_p rbsp)
 	do {
 		len = (rbsp->input_func)(rbsp->data, rbsp);
 		if (len == 0) {
-			RBS_DEBUG("[%s] WARNING!!! no more data, wlen[%lu], least[%lu], size[%lu]\n", __FUNCTION__, wlen, least, size);
+			medvdbg("[%s] WARNING!!! no more data, wlen[%lu], least[%lu], size[%lu]\n", __FUNCTION__, wlen, least, size);
 			break;
 		}
 
 		wlen += len;
 	} while (wlen < least);
 
-	RBS_DEBUG("[%s] done, wlen %lu\n", __FUNCTION__, wlen);
+	medvdbg("[%s] done, wlen %lu\n", __FUNCTION__, wlen);
 	return wlen;
 }
 

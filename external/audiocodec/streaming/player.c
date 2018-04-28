@@ -29,16 +29,13 @@
 #include <assert.h>
 #include <pthread.h>
 #include <sys/time.h>
-#include "internal_defs.h"
-#include "debug.h"
+#include <debug.h>
 #include <audiocodec/streaming/player.h>
+#include "internal_defs.h"
 
 #define PV_SUCCESS  0
 #define PV_FAILURE  -1
 
-#define PLAYER_DEBUG    audvdbg
-#define PLAYER_ERROR    auddbg
-#define PLAYER_ASSERT   MY_ASSERT
 
 //#define PERFORMANCE_TEST
 
@@ -203,7 +200,7 @@ static ssize_t _source_read_at(rbstream_p fp, ssize_t offset, void *data, size_t
 // Resync to next valid MP3 frame in the file.
 static bool mp3_resync(rbstream_p fp, uint32_t match_header, ssize_t *inout_pos, uint32_t *out_header)
 {
-	PLAYER_DEBUG("[%s] Line %d, match_header %#x, *pos %d\n", __FUNCTION__, __LINE__, match_header, *inout_pos);
+	medvdbg("[%s] Line %d, match_header %#x, *pos %d\n", __FUNCTION__, __LINE__, match_header, *inout_pos);
 
 	if (*inout_pos == 0) {
 		// Skip an optional ID3 header if syncing at the very beginning of the datasource.
@@ -241,7 +238,7 @@ static bool mp3_resync(rbstream_p fp, uint32_t match_header, ssize_t *inout_pos,
 
 	do {
 		if (pos >= *inout_pos + kMaxBytesChecked) {
-			PLAYER_DEBUG("[%s] Line %d, resync range < kMaxBytesChecked %d\n", __FUNCTION__, __LINE__, kMaxBytesChecked);
+			medvdbg("[%s] Line %d, resync range < kMaxBytesChecked %d\n", __FUNCTION__, __LINE__, kMaxBytesChecked);
 			break;              // Don't scan forever.
 		}
 
@@ -291,7 +288,7 @@ static bool mp3_resync(rbstream_p fp, uint32_t match_header, ssize_t *inout_pos,
 		// We found what looks like a valid frame,
 		// now find its successors.
 		ssize_t test_pos = pos + frame_size;
-		PLAYER_DEBUG("[%s] Line %d, valid frame at pos %#x + framesize %#x = %#x\n", __FUNCTION__, __LINE__, pos, frame_size, test_pos);
+		medvdbg("[%s] Line %d, valid frame at pos %#x + framesize %#x = %#x\n", __FUNCTION__, __LINE__, pos, frame_size, test_pos);
 		valid = true;
 		const int FRAME_MATCH_REQUIRED = 2;
 		for (int j = 0; j < FRAME_MATCH_REQUIRED; ++j) {
@@ -305,19 +302,19 @@ static bool mp3_resync(rbstream_p fp, uint32_t match_header, ssize_t *inout_pos,
 			uint32_t test_header = _u32_at(temp);
 
 			if ((test_header & MP3_FRAME_HEADER_MASK) != (header & MP3_FRAME_HEADER_MASK)) {
-				PLAYER_DEBUG("[%s] Line %d, invalid frame at pos1 %#x\n", __FUNCTION__, __LINE__, test_pos);
+				medvdbg("[%s] Line %d, invalid frame at pos1 %#x\n", __FUNCTION__, __LINE__, test_pos);
 				valid = false;
 				break;
 			}
 
 			size_t test_frame_size;
 			if (!_parse_header(test_header, &test_frame_size, NULL, NULL, NULL, NULL)) {
-				PLAYER_DEBUG("[%s] Line %d, invalid frame at pos2 %#x\n", __FUNCTION__, __LINE__, test_pos);
+				medvdbg("[%s] Line %d, invalid frame at pos2 %#x\n", __FUNCTION__, __LINE__, test_pos);
 				valid = false;
 				break;
 			}
 
-			PLAYER_DEBUG("[%s] Line %d, valid frame at pos %#x + framesize %#x = %#x\n", __FUNCTION__, __LINE__, test_pos, test_frame_size, test_pos + test_frame_size);
+			medvdbg("[%s] Line %d, valid frame at pos %#x + framesize %#x = %#x\n", __FUNCTION__, __LINE__, test_pos, test_frame_size, test_pos + test_frame_size);
 			test_pos += test_frame_size;
 		}
 
@@ -328,7 +325,7 @@ static bool mp3_resync(rbstream_p fp, uint32_t match_header, ssize_t *inout_pos,
 				*out_header = header;
 			}
 
-			PLAYER_DEBUG("[%s] Line %d, find header %#x at pos %d(%#x)\n", __FUNCTION__, __LINE__, header, pos, pos);
+			medvdbg("[%s] Line %d, find header %#x at pos %d(%#x)\n", __FUNCTION__, __LINE__, header, pos, pos);
 		}
 
 		++pos;
@@ -388,7 +385,7 @@ bool mp3_get_frame(rbstream_p mFp, ssize_t *offset, uint32_t fixed_header, void 
 	ssize_t n = _source_read_at(mFp, *offset, buffer, frame_size);
 	RETURN_VAL_IF_FAIL((n == (ssize_t) frame_size), false);
 
-	PLAYER_DEBUG("[%s] Line %d, pos %#x, framesize %#x\n", __FUNCTION__, __LINE__, *offset, frame_size);
+	medvdbg("[%s] Line %d, pos %#x, framesize %#x\n", __FUNCTION__, __LINE__, *offset, frame_size);
 
 	*size = frame_size;
 	*offset += frame_size;
@@ -599,7 +596,7 @@ bool _get_frame(pv_player_p player)
 		return aac_get_frame(player->rbsp, &player->mCurrentPos, (void *)aac_ext->pInputBuffer, (uint32_t *)&aac_ext->inputBufferCurrentLength);
 	}
 
-	PLAYER_DEBUG("[%s] unsupported audio type: %d\n", __FUNCTION__, player->audio_type);
+	medvdbg("[%s] unsupported audio type: %d\n", __FUNCTION__, player->audio_type);
 	return false;
 }
 
@@ -678,7 +675,7 @@ int _frame_decoder(pv_player_p player, pcm_data_p pcm)
 static size_t _input_callback(void *data, rbstream_p rbsp)
 {
 	pv_player_p player = (pv_player_p) data;
-	PLAYER_ASSERT(player != NULL);
+	assert(player != NULL);
 
 #if defined(PERFORMANCE_TEST)
 	struct timeval tv1, tv2;
@@ -699,8 +696,8 @@ static size_t _input_callback(void *data, rbstream_p rbsp)
 
 size_t pv_player_pushdata(pv_player_p player, const void *data, size_t len)
 {
-	PLAYER_ASSERT(player != NULL);
-	PLAYER_ASSERT(data != NULL);
+	assert(player != NULL);
+	assert(data != NULL);
 
 	static pthread_mutex_t s_mutex = PTHREAD_MUTEX_INITIALIZER;
 
@@ -713,19 +710,19 @@ size_t pv_player_pushdata(pv_player_p player, const void *data, size_t len)
 
 size_t pv_player_dataspace(pv_player_p player)
 {
-	PLAYER_ASSERT(player != NULL);
-
+	assert(player != NULL);
 	return rb_avail(&player->ringbuffer);
 }
 
 bool pv_player_dataspace_is_empty(pv_player_p player)
 {
+	assert(player != NULL);
 	return !rb_used(&player->ringbuffer);
 }
 
 int pv_player_init(pv_player_p player, size_t rbuf_size, void *user_data, config_func_f config_func, input_func_f input_func, output_func_f output_func)
 {
-	PLAYER_ASSERT(player != NULL);
+	assert(player != NULL);
 
 	player->mCurrentPos = 0;
 	player->mFixedHeader = 0;
@@ -752,7 +749,7 @@ int pv_player_init(pv_player_p player, size_t rbuf_size, void *user_data, config
 
 int pv_player_finish(pv_player_p player)
 {
-	PLAYER_ASSERT(player != NULL);
+	assert(player != NULL);
 
 	// close stream
 	rbs_close(player->rbsp);
@@ -780,15 +777,14 @@ int pv_player_finish(pv_player_p player)
 
 int pv_player_run(pv_player_p player)
 {
-	PLAYER_ASSERT(player != NULL);
-	PLAYER_ASSERT(player->input_func != NULL);
-	PLAYER_ASSERT(player->output_func != NULL);
-	PLAYER_ASSERT(player->config_func != NULL);
+	assert(player != NULL);
+	assert(player->input_func != NULL);
+	assert(player->output_func != NULL);
+	assert(player->config_func != NULL);
 
 	RETURN_VAL_IF_FAIL((player->rbsp != NULL), PV_FAILURE);
 
 	player->audio_type = _get_audio_type(player->rbsp);
-	PLAYER_DEBUG("audio_type %d\n", player->audio_type);
 	//RETURN_VAL_IF_FAIL((player->audio_type > 0), PV_FAILURE);
 
 	int ret = _init_decoder(player);
@@ -825,7 +821,7 @@ int pv_player_run(pv_player_p player)
 	}
 
 #if defined(PERFORMANCE_TEST)
-	printf("[%s] finished! time: input %lu / output %lu / decoding %lu ms, samples: 0x%x\n", __FUNCTION__, timems_input, timems_output, timems_decode, samples_output);
+	medvdbg("[%s] finished! time: input %lu / output %lu / decoding %lu ms, samples: 0x%x\n", __FUNCTION__, timems_input, timems_output, timems_decode, samples_output);
 #endif
 
 	return PV_SUCCESS;
