@@ -91,8 +91,8 @@
 #  define EXAMPLE_TIMER_SIGNO    17
 #endif
 
-#define TIMER_THEAD_SIZE         CONFIG_EXAMPLES_TIMER_THEAD_SIZE
-#define TIMER_THEAD_PRIORITY     100
+#define TIMER_THREAD_SIZE        CONFIG_EXAMPLES_TIMER_THREAD_SIZE
+#define TIMER_THREAD_PRIORITY    100
 /****************************************************************************
  * Private Data
  ****************************************************************************/
@@ -157,13 +157,13 @@ static pthread_t create_timer_thread(void *arg)
 		return -ret;
 	}
 
-	ret = pthread_attr_setstacksize(&attr, TIMER_THEAD_SIZE);
+	ret = pthread_attr_setstacksize(&attr, TIMER_THREAD_SIZE);
 	if (ret != 0) {
 		fprintf(stderr, "failed to set stack size(%d)\n", ret);
 		return -ret;
 	}
 
-	sparam.sched_priority = TIMER_THEAD_PRIORITY;
+	sparam.sched_priority = TIMER_THREAD_PRIORITY;
 	ret = pthread_attr_setschedparam(&attr, &sparam);
 	if (ret != 0) {
 		fprintf(stderr, "failed to set sched param(%d)\n", ret);

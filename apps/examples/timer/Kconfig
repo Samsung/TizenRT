@@ -12,7 +12,7 @@ config EXAMPLES_TIMER
 		to set the timer and registers the callback which is called at
 		the end of the timer.
 
-config EXAMPLES_TIMER_THEAD_SIZE
+config EXAMPLES_TIMER_THREAD_SIZE
 	int "size of timer thread"
 	default 1024
 	depends on EXAMPLES_TIMER
