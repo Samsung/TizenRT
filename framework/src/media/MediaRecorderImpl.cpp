@@ -231,12 +231,14 @@ recorder_result_t MediaRecorderImpl::setDataSource(std::unique_ptr<stream::Outpu
 
 recorder_state_t MediaRecorderImpl::getState()
 {
+	std::lock_guard<std::mutex> lock(mCmdMtx);
 	medvdbg("MediaRecorderImpl::getState()\n");
 	return mCurState;
 }
 
 void MediaRecorderImpl::setState(recorder_state_t state)
 {
+	std::lock_guard<std::mutex> lock(mCmdMtx);
 	medvdbg("MediaRecorderImpl::setState(recorder_state_t state)\n");
 	mCurState = state;
 }
