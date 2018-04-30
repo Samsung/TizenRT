@@ -40,7 +40,7 @@ PlayerWorker::~PlayerWorker()
 int PlayerWorker::entry()
 {
 	while (mIsRunning) {
-		if (mCurPlayer && (mCurPlayer->mCurState == PLAYER_STATE_PLAYING)) {
+		if (mWorkerQueue.isEmpty() && mCurPlayer && (mCurPlayer->mCurState == PLAYER_STATE_PLAYING)) {
 			shared_ptr<Decoder> mDecoder = mCurPlayer->mInputDataSource->getDecoder();
 			if(mDecoder) {
 				size_t num_read = mCurPlayer->mInputDataSource->read(mCurPlayer->mBuffer,
@@ -79,14 +79,12 @@ int PlayerWorker::entry()
 					stopPlayer(mCurPlayer);
 				}
 			}
+		} else {
+			std::function<void()> run = mWorkerQueue.deQueue();
+			if (run != nullptr) {
+				run();
+			}
 		}
-
-		std::function<void()> run = mWorkerQueue.deQueue();
-		if (run != nullptr) {
-			run();
-		}
-		
-		
 	}
 
 	return 0;
