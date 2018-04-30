@@ -32,7 +32,7 @@ public:
 	PlayerWorker();
 	~PlayerWorker();
 
-	static PlayerWorker& getWorker()
+	static PlayerWorker &getWorker()
 	{
 		call_once(PlayerWorker::mOnceFlag, []() { mWorker.reset(new PlayerWorker); });
 
@@ -44,7 +44,7 @@ public:
 	void pausePlayer(std::shared_ptr<MediaPlayerImpl>);
 	player_result_t startWorker();
 	void stopWorker();
-	MediaQueue& getQueue();
+	MediaQueue &getQueue();
 
 private:
 	int entry();
@@ -58,8 +58,8 @@ private:
 	bool mIsRunning;
 	std::thread mWorkerThread;
 	std::shared_ptr<MediaPlayerImpl> mCurPlayer;
-	MediaQueue mWorkerQueue;   // worker queue
-	std::mutex mRefMtx; // reference cnt mutex
+	MediaQueue mWorkerQueue; // worker queue
+	std::mutex mRefMtx;		 // reference cnt mutex
 };
 } // namespace media
 #endif

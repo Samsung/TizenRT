@@ -94,7 +94,7 @@ void MediaPlayerTest::start(void)
 #elif defined(TEST_AAC)
 	auto source = std::move(unique_ptr<FileInputDataSource>(new FileInputDataSource("/rom/play.mp4")));
 #else
-	auto source = std::move(unique_ptr<FileInputDataSource>(new FileInputDataSource("/rom/44100_2.pcm")));
+	auto source = std::move(unique_ptr<FileInputDataSource>(new FileInputDataSource("/rom/44100.pcm")));
 	source->setSampleRate(44100);
 	source->setChannels(2);
 #endif

@@ -32,8 +32,7 @@ public:
 	MediaQueue();
 	~MediaQueue();
 	template <typename _Callable, typename... _Args>
-	void enQueue(_Callable&& __f, _Args&&... __args)
-	{
+	void enQueue(_Callable &&__f, _Args &&... __args) {
 		std::unique_lock<std::mutex> lock(mQueueMtx);
 		std::function<void()> func = std::bind(std::forward<_Callable>(__f), std::forward<_Args>(__args)...);
 		mQueueData.push(func);

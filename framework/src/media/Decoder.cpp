@@ -37,7 +37,7 @@ Decoder::Decoder()
 #endif
 }
 
-Decoder::Decoder(const Decoder* source)
+Decoder::Decoder(const Decoder *source)
 {
 #ifdef CONFIG_AUDIO_CODEC
 	mPlayer = source->mPlayer;
@@ -53,7 +53,7 @@ Decoder::~Decoder()
 #endif
 }
 
-size_t Decoder::pushData(unsigned char* buf, size_t size)
+size_t Decoder::pushData(unsigned char *buf, size_t size)
 {
 #ifdef CONFIG_AUDIO_CODEC
 	size_t rmax = getAvailSpace();
@@ -67,40 +67,41 @@ size_t Decoder::pushData(unsigned char* buf, size_t size)
 	return 0;
 }
 
-bool Decoder::getFrame(unsigned char* buf, size_t* size, unsigned int* sampleRate, unsigned short* channels)
+bool Decoder::getFrame(unsigned char *buf, size_t *size, unsigned int *sampleRate, unsigned short *channels)
 {
 #ifdef CONFIG_AUDIO_CODEC
-	if (mPlayer.audio_type == 0) {
-		mPlayer.audio_type = pv_player_get_audio_type(&mPlayer);
+	/*
+	 * Need to get the enough data to parse data format.
+	 */
+	if (mPlayer.audio_type == type_unknown) {
+		mPlayer.audio_type = _get_audio_type(mPlayer.rbsp);
 
-		if(mPlayer.audio_type) {
-			if (pv_player_init_decoder(&mPlayer, mPlayer.audio_type) != 0) {
+		if (mPlayer.audio_type) {
+			if (_init_decoder(&mPlayer) != 0) {
 				meddbg("Error! _init_decoder failed!\n");
 				return false;
 			}
 		}
 	}
 
-	if(mPlayer.audio_type == 0) {
+	if (mPlayer.audio_type == type_unknown) {
 		medvdbg("Decoder: Unknown audio_type\n");
 		return false;
 	}
 
-	if (pv_player_get_frame(&mPlayer)) {
+	if (_get_frame(&mPlayer)) {
 		pcm_data_t pcm;
-		if (pv_player_frame_decode(&mPlayer, &pcm) == 0) {
+		if (_frame_decoder(&mPlayer, &pcm) != PV_FAILURE) {
 			*size = pcm.length * sizeof(short);
 			*sampleRate = pcm.samplerate;
 			*channels = pcm.channels;
 			memcpy(buf, pcm.samples, *size);
 			return true;
-		}
-		else {
+		} else {
 			meddbg("Error: Decoding frame failed!\n");
 			return false;
 		}
-	}
-	else {
+	} else {
 		meddbg("Error: Getting frame failed!\n");
 		return false;
 	}
@@ -125,7 +126,7 @@ size_t Decoder::getAvailSpace()
 }
 
 #ifdef CONFIG_AUDIO_CODEC
-int Decoder::_configFunc(void* user_data, int audio_type, void* dec_ext)
+int Decoder::_configFunc(void *user_data, int audio_type, void *dec_ext)
 {
 	/* To-do: Below buffer size and channel count must be calculated correctly. */
 	static const int TARGET_SOUND_TRACK = 2;
@@ -133,7 +134,7 @@ int Decoder::_configFunc(void* user_data, int audio_type, void* dec_ext)
 	static int16_t outputBuf[2048];
 
 	if (audio_type == type_mp3) {
-		tPVMP3DecoderExternal* mp3_ext = (tPVMP3DecoderExternal*)dec_ext;
+		tPVMP3DecoderExternal *mp3_ext = (tPVMP3DecoderExternal *)dec_ext;
 		mp3_ext->equalizerType = flat;
 		mp3_ext->crcEnabled = false;
 		mp3_ext->pInputBuffer = inputBuf;
@@ -141,7 +142,7 @@ int Decoder::_configFunc(void* user_data, int audio_type, void* dec_ext)
 		mp3_ext->outputFrameSize = sizeof(outputBuf) / sizeof(int16_t);
 		return 0;
 	} else if (audio_type == type_aac) {
-		tPVMP4AudioDecoderExternal* aac_ext = (tPVMP4AudioDecoderExternal*)dec_ext;
+		tPVMP4AudioDecoderExternal *aac_ext = (tPVMP4AudioDecoderExternal *)dec_ext;
 		aac_ext->outputFormat = OUTPUTFORMAT_16PCM_INTERLEAVED;
 		aac_ext->desiredChannels = TARGET_SOUND_TRACK;
 		aac_ext->pInputBuffer = inputBuf;
