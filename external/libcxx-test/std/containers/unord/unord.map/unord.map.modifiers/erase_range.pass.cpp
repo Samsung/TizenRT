@@ -35,9 +35,10 @@
 #include <unordered_map>
 #include <string>
 #include <cassert>
+#include "libcxx_tc_common.h"
 
 
-int main()
+int tc_libcxx_containers_unord_map_modifiers_erase_range(void)
 {
     {
         typedef std::unordered_map<int, std::string> C;
@@ -55,23 +56,25 @@ int main()
         C::const_iterator i = c.find(2);
         C::const_iterator j = next(i, 1);
         C::iterator k = c.erase(i, i);
-        assert(k == i);
-        assert(c.size() == 4);
-        assert(c.at(1) == "one");
-        assert(c.at(2) == "two");
-        assert(c.at(3) == "three");
-        assert(c.at(4) == "four");
+        TC_ASSERT_EXPR(k == i);
+        TC_ASSERT_EXPR(c.size() == 4);
+        TC_ASSERT_EXPR(c.at(1) == "one");
+        TC_ASSERT_EXPR(c.at(2) == "two");
+        TC_ASSERT_EXPR(c.at(3) == "three");
+        TC_ASSERT_EXPR(c.at(4) == "four");
 
         k = c.erase(i, j);
-        assert(c.size() == 3);
-        assert(k == j);
-        assert(c.at(1) == "one");
-        assert(c.at(3) == "three");
-        assert(c.at(4) == "four");
+        TC_ASSERT_EXPR(c.size() == 3);
+        TC_ASSERT_EXPR(k == j);
+        TC_ASSERT_EXPR(c.at(1) == "one");
+        TC_ASSERT_EXPR(c.at(3) == "three");
+        TC_ASSERT_EXPR(c.at(4) == "four");
 
         k = c.erase(c.cbegin(), c.cend());
-        assert(k == c.cend());
-        assert(c.size() == 0);
-        assert(k == c.end());
+        TC_ASSERT_EXPR(k == c.cend());
+        TC_ASSERT_EXPR(c.size() == 0);
+        TC_ASSERT_EXPR(k == c.end());
     }
+    TC_SUCCESS_RESULT();
+    return 0;
 }

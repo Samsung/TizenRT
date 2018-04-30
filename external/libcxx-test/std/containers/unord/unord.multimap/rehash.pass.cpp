@@ -30,11 +30,12 @@
 //           class Alloc = allocator<pair<const Key, T>>>
 // class unordered_multimap
 
-// void rehash(size_type n);
+// static int rehash(size_type n);
 
 #include <unordered_map>
 #include <string>
 #include <cassert>
+#include "libcxx_tc_common.h"
 #include <cfloat>
 #include <cmath>
 #include <cstddef>
@@ -42,49 +43,51 @@
 #include "test_macros.h"
 
 template <class C>
-void rehash_postcondition(const C& c, size_t n)
+static int rehash_postcondition(const C& c, size_t n)
 {
-    assert(c.bucket_count() >= c.size() / c.max_load_factor() && c.bucket_count() >= n);
+    TC_ASSERT_EXPR(c.bucket_count() >= c.size() / c.max_load_factor() && c.bucket_count() >= n);
+    return 0;
 }
 
 template <class C>
-void test(const C& c)
+static int test(const C& c)
 {
-    assert(c.size() == 6);
+    TC_ASSERT_EXPR(c.size() == 6);
     typedef std::pair<typename C::const_iterator, typename C::const_iterator> Eq;
     Eq eq = c.equal_range(1);
-    assert(std::distance(eq.first, eq.second) == 2);
+    TC_ASSERT_EXPR(std::distance(eq.first, eq.second) == 2);
     typename C::const_iterator i = eq.first;
-    assert(i->first == 1);
-    assert(i->second == "one");
+    TC_ASSERT_EXPR(i->first == 1);
+    TC_ASSERT_EXPR(i->second == "one");
     ++i;
-    assert(i->first == 1);
-    assert(i->second == "four");
+    TC_ASSERT_EXPR(i->first == 1);
+    TC_ASSERT_EXPR(i->second == "four");
     eq = c.equal_range(2);
-    assert(std::distance(eq.first, eq.second) == 2);
+    TC_ASSERT_EXPR(std::distance(eq.first, eq.second) == 2);
     i = eq.first;
-    assert(i->first == 2);
-    assert(i->second == "two");
+    TC_ASSERT_EXPR(i->first == 2);
+    TC_ASSERT_EXPR(i->second == "two");
     ++i;
-    assert(i->first == 2);
-    assert(i->second == "four");
+    TC_ASSERT_EXPR(i->first == 2);
+    TC_ASSERT_EXPR(i->second == "four");
 
     eq = c.equal_range(3);
-    assert(std::distance(eq.first, eq.second) == 1);
+    TC_ASSERT_EXPR(std::distance(eq.first, eq.second) == 1);
     i = eq.first;
-    assert(i->first == 3);
-    assert(i->second == "three");
+    TC_ASSERT_EXPR(i->first == 3);
+    TC_ASSERT_EXPR(i->second == "three");
     eq = c.equal_range(4);
-    assert(std::distance(eq.first, eq.second) == 1);
+    TC_ASSERT_EXPR(std::distance(eq.first, eq.second) == 1);
     i = eq.first;
-    assert(i->first == 4);
-    assert(i->second == "four");
-    assert(static_cast<std::size_t>(std::distance(c.begin(), c.end())) == c.size());
-    assert(static_cast<std::size_t>(std::distance(c.cbegin(), c.cend())) == c.size());
-    assert(std::fabs(c.load_factor() - (float)c.size()/c.bucket_count()) < FLT_EPSILON);
+    TC_ASSERT_EXPR(i->first == 4);
+    TC_ASSERT_EXPR(i->second == "four");
+    TC_ASSERT_EXPR(static_cast<std::size_t>(std::distance(c.begin(), c.end())) == c.size());
+    TC_ASSERT_EXPR(static_cast<std::size_t>(std::distance(c.cbegin(), c.cend())) == c.size());
+    TC_ASSERT_EXPR(std::fabs(c.load_factor() - (float)c.size()/c.bucket_count()) < FLT_EPSILON);
+    return 0;
 }
 
-int main()
+int tc_libcxx_containers_unord_multimap_rehash(void)
 {
     {
         typedef std::unordered_multimap<int, std::string> C;
@@ -100,7 +103,7 @@ int main()
         };
         C c(a, a + sizeof(a)/sizeof(a[0]));
         test(c);
-        assert(c.bucket_count() >= 7);
+        TC_ASSERT_EXPR(c.bucket_count() >= 7);
         c.rehash(3);
         rehash_postcondition(c, 3);
         LIBCPP_ASSERT(c.bucket_count() == 7);
@@ -115,4 +118,6 @@ int main()
         LIBCPP_ASSERT(c.bucket_count() == 31);
         test(c);
     }
+    TC_SUCCESS_RESULT();
+    return 0;
 }

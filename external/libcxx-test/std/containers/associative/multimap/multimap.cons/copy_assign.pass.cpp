@@ -32,11 +32,12 @@
 
 #include <map>
 #include <cassert>
+#include "libcxx_tc_common.h"
 
 #include "test_compare.h"
 #include "test_allocator.h"
 
-int main()
+int tc_libcxx_containers_multimap_cons_copy_assign(void)
 {
     {
         typedef std::pair<const int, double> V;
@@ -57,12 +58,12 @@ int main()
         std::multimap<int, double, C, A> mo(ar, ar+sizeof(ar)/sizeof(ar[0]), C(5), A(2));
         std::multimap<int, double, C, A> m(ar, ar+sizeof(ar)/sizeof(ar[0])/2, C(3), A(7));
         m = mo;
-        assert(m == mo);
-        assert(m.get_allocator() == A(7));
-        assert(m.key_comp() == C(5));
+        TC_ASSERT_EXPR(m == mo);
+        TC_ASSERT_EXPR(m.get_allocator() == A(7));
+        TC_ASSERT_EXPR(m.key_comp() == C(5));
 
-        assert(mo.get_allocator() == A(2));
-        assert(mo.key_comp() == C(5));
+        TC_ASSERT_EXPR(mo.get_allocator() == A(2));
+        TC_ASSERT_EXPR(mo.key_comp() == C(5));
     }
     {
         typedef std::pair<const int, double> V;
@@ -81,8 +82,8 @@ int main()
         std::multimap<int, double> m(ar, ar+sizeof(ar)/sizeof(ar[0]));
         std::multimap<int, double> *p = &m;
         m = *p;
-        assert(m.size() == sizeof(ar)/sizeof(ar[0]));
-        assert(std::equal(m.begin(), m.end(), ar));
+        TC_ASSERT_EXPR(m.size() == sizeof(ar)/sizeof(ar[0]));
+        TC_ASSERT_EXPR(std::equal(m.begin(), m.end(), ar));
     }
     {
         typedef std::pair<const int, double> V;
@@ -103,11 +104,13 @@ int main()
         std::multimap<int, double, C, A> mo(ar, ar+sizeof(ar)/sizeof(ar[0]), C(5), A(2));
         std::multimap<int, double, C, A> m(ar, ar+sizeof(ar)/sizeof(ar[0])/2, C(3), A(7));
         m = mo;
-        assert(m == mo);
-        assert(m.get_allocator() == A(2));
-        assert(m.key_comp() == C(5));
+        TC_ASSERT_EXPR(m == mo);
+        TC_ASSERT_EXPR(m.get_allocator() == A(2));
+        TC_ASSERT_EXPR(m.key_comp() == C(5));
 
-        assert(mo.get_allocator() == A(2));
-        assert(mo.key_comp() == C(5));
+        TC_ASSERT_EXPR(mo.get_allocator() == A(2));
+        TC_ASSERT_EXPR(mo.key_comp() == C(5));
     }
+    TC_SUCCESS_RESULT();
+    return 0;
 }

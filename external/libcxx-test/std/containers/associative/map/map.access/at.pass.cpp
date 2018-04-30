@@ -33,10 +33,11 @@
 
 #include <map>
 #include <cassert>
+#include "libcxx_tc_common.h"
 
 #include "test_macros.h"
 
-int main()
+int tc_libcxx_containers_map_access_at(void)
 {
     {
         typedef std::pair<const int, double> V;
@@ -51,27 +52,27 @@ int main()
             V(8, 8.5),
         };
         std::map<int, double> m(ar, ar+sizeof(ar)/sizeof(ar[0]));
-        assert(m.size() == 7);
-        assert(m.at(1) == 1.5);
+        TC_ASSERT_EXPR(m.size() == 7);
+        TC_ASSERT_EXPR(m.at(1) == 1.5);
         m.at(1) = -1.5;
-        assert(m.at(1) == -1.5);
-        assert(m.at(2) == 2.5);
-        assert(m.at(3) == 3.5);
-        assert(m.at(4) == 4.5);
-        assert(m.at(5) == 5.5);
+        TC_ASSERT_EXPR(m.at(1) == -1.5);
+        TC_ASSERT_EXPR(m.at(2) == 2.5);
+        TC_ASSERT_EXPR(m.at(3) == 3.5);
+        TC_ASSERT_EXPR(m.at(4) == 4.5);
+        TC_ASSERT_EXPR(m.at(5) == 5.5);
 #ifndef TEST_HAS_NO_EXCEPTIONS
         try
         {
             TEST_IGNORE_NODISCARD m.at(6);
-            assert(false);
+            TC_ASSERT_EXPR(false);
         }
         catch (std::out_of_range&)
         {
         }
 #endif
-        assert(m.at(7) == 7.5);
-        assert(m.at(8) == 8.5);
-        assert(m.size() == 7);
+        TC_ASSERT_EXPR(m.at(7) == 7.5);
+        TC_ASSERT_EXPR(m.at(8) == 8.5);
+        TC_ASSERT_EXPR(m.size() == 7);
     }
     {
         typedef std::pair<const int, double> V;
@@ -86,24 +87,26 @@ int main()
             V(8, 8.5),
         };
         const std::map<int, double> m(ar, ar+sizeof(ar)/sizeof(ar[0]));
-        assert(m.size() == 7);
-        assert(m.at(1) == 1.5);
-        assert(m.at(2) == 2.5);
-        assert(m.at(3) == 3.5);
-        assert(m.at(4) == 4.5);
-        assert(m.at(5) == 5.5);
+        TC_ASSERT_EXPR(m.size() == 7);
+        TC_ASSERT_EXPR(m.at(1) == 1.5);
+        TC_ASSERT_EXPR(m.at(2) == 2.5);
+        TC_ASSERT_EXPR(m.at(3) == 3.5);
+        TC_ASSERT_EXPR(m.at(4) == 4.5);
+        TC_ASSERT_EXPR(m.at(5) == 5.5);
 #ifndef TEST_HAS_NO_EXCEPTIONS
         try
         {
             TEST_IGNORE_NODISCARD m.at(6);
-            assert(false);
+            TC_ASSERT_EXPR(false);
         }
         catch (std::out_of_range&)
         {
         }
 #endif
-        assert(m.at(7) == 7.5);
-        assert(m.at(8) == 8.5);
-        assert(m.size() == 7);
+        TC_ASSERT_EXPR(m.at(7) == 7.5);
+        TC_ASSERT_EXPR(m.at(8) == 8.5);
+        TC_ASSERT_EXPR(m.size() == 7);
     }
+    TC_SUCCESS_RESULT();
+    return 0;
 }

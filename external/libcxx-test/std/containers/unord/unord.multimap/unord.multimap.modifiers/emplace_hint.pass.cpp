@@ -38,11 +38,12 @@
 
 #include <unordered_map>
 #include <cassert>
+#include "libcxx_tc_common.h"
 
 #include "Emplaceable.h"
 #include "test_macros.h"
 
-int main()
+int tc_libcxx_containers_unord_multimap_modifiers_emplace_hint(void)
 {
     {
         typedef std::unordered_multimap<int, Emplaceable> C;
@@ -51,27 +52,29 @@ int main()
         C::const_iterator e = c.end();
         R r = c.emplace_hint(e, std::piecewise_construct, std::forward_as_tuple(3),
                                                           std::forward_as_tuple());
-        assert(c.size() == 1);
-        assert(r->first == 3);
-        assert(r->second == Emplaceable());
+        TC_ASSERT_EXPR(c.size() == 1);
+        TC_ASSERT_EXPR(r->first == 3);
+        TC_ASSERT_EXPR(r->second == Emplaceable());
 
         r = c.emplace_hint(c.end(), std::pair<const int, Emplaceable>(3, Emplaceable(5, 6)));
-        assert(c.size() == 2);
-        assert(r->first == 3);
-        assert(r->second == Emplaceable(5, 6));
+        TC_ASSERT_EXPR(c.size() == 2);
+        TC_ASSERT_EXPR(r->first == 3);
+        TC_ASSERT_EXPR(r->second == Emplaceable(5, 6));
         LIBCPP_ASSERT(r == next(c.begin()));
 
         r = c.emplace_hint(r, std::piecewise_construct, std::forward_as_tuple(3),
                                                         std::forward_as_tuple(6, 7));
-        assert(c.size() == 3);
-        assert(r->first == 3);
-        assert(r->second == Emplaceable(6, 7));
+        TC_ASSERT_EXPR(c.size() == 3);
+        TC_ASSERT_EXPR(r->first == 3);
+        TC_ASSERT_EXPR(r->second == Emplaceable(6, 7));
         LIBCPP_ASSERT(r == next(c.begin()));
         r = c.begin();
-        assert(r->first == 3);
+        TC_ASSERT_EXPR(r->first == 3);
         LIBCPP_ASSERT(r->second == Emplaceable());
         r = next(r, 2);
-        assert(r->first == 3);
+        TC_ASSERT_EXPR(r->first == 3);
         LIBCPP_ASSERT(r->second == Emplaceable(5, 6));
     }
+    TC_SUCCESS_RESULT();
+    return 0;
 }

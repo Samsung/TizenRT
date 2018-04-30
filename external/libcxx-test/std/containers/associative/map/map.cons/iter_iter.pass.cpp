@@ -33,9 +33,10 @@
 
 #include <map>
 #include <cassert>
+#include "libcxx_tc_common.h"
 
 
-int main()
+int tc_libcxx_containers_map_cons_iter_iter(void)
 {
     {
     typedef std::pair<const int, double> V;
@@ -52,10 +53,12 @@ int main()
         V(3, 2),
     };
     std::map<int, double> m(ar, ar+sizeof(ar)/sizeof(ar[0]));
-    assert(m.size() == 3);
-    assert(distance(m.begin(), m.end()) == 3);
-    assert(*m.begin() == V(1, 1));
-    assert(*next(m.begin()) == V(2, 1));
-    assert(*next(m.begin(), 2) == V(3, 1));
+    TC_ASSERT_EXPR(m.size() == 3);
+    TC_ASSERT_EXPR(distance(m.begin(), m.end()) == 3);
+    TC_ASSERT_EXPR(*m.begin() == V(1, 1));
+    TC_ASSERT_EXPR(*next(m.begin()) == V(2, 1));
+    TC_ASSERT_EXPR(*next(m.begin(), 2) == V(3, 1));
     }
+    TC_SUCCESS_RESULT();
+    return 0;
 }

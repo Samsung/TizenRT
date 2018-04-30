@@ -32,11 +32,12 @@
 
 #include <map>
 #include <cassert>
+#include "libcxx_tc_common.h"
 
 #include "test_macros.h"
 
 template <class Container>
-void do_insert_cv_test()
+static int do_insert_cv_test()
 {
     typedef Container M;
     typedef std::pair<typename M::iterator, bool> R;
@@ -45,38 +46,41 @@ void do_insert_cv_test()
 
     const VT v1(2, 2.5);
     R r = m.insert(v1);
-    assert(r.second);
-    assert(r.first == m.begin());
-    assert(m.size() == 1);
-    assert(r.first->first == 2);
-    assert(r.first->second == 2.5);
+    TC_ASSERT_EXPR(r.second);
+    TC_ASSERT_EXPR(r.first == m.begin());
+    TC_ASSERT_EXPR(m.size() == 1);
+    TC_ASSERT_EXPR(r.first->first == 2);
+    TC_ASSERT_EXPR(r.first->second == 2.5);
 
     const VT v2(1, 1.5);
     r = m.insert(v2);
-    assert(r.second);
-    assert(r.first == m.begin());
-    assert(m.size() == 2);
-    assert(r.first->first == 1);
-    assert(r.first->second == 1.5);
+    TC_ASSERT_EXPR(r.second);
+    TC_ASSERT_EXPR(r.first == m.begin());
+    TC_ASSERT_EXPR(m.size() == 2);
+    TC_ASSERT_EXPR(r.first->first == 1);
+    TC_ASSERT_EXPR(r.first->second == 1.5);
 
     const VT v3(3, 3.5);
     r = m.insert(v3);
-    assert(r.second);
-    assert(r.first == prev(m.end()));
-    assert(m.size() == 3);
-    assert(r.first->first == 3);
-    assert(r.first->second == 3.5);
+    TC_ASSERT_EXPR(r.second);
+    TC_ASSERT_EXPR(r.first == prev(m.end()));
+    TC_ASSERT_EXPR(m.size() == 3);
+    TC_ASSERT_EXPR(r.first->first == 3);
+    TC_ASSERT_EXPR(r.first->second == 3.5);
 
     const VT v4(3, 4.5);
     r = m.insert(v4);
-    assert(!r.second);
-    assert(r.first == prev(m.end()));
-    assert(m.size() == 3);
-    assert(r.first->first == 3);
-    assert(r.first->second == 3.5);
+    TC_ASSERT_EXPR(!r.second);
+    TC_ASSERT_EXPR(r.first == prev(m.end()));
+    TC_ASSERT_EXPR(m.size() == 3);
+    TC_ASSERT_EXPR(r.first->first == 3);
+    TC_ASSERT_EXPR(r.first->second == 3.5);
+    return 0;
 }
 
-int main()
+int tc_libcxx_containers_map_modifiers_insert_cv(void)
 {
     do_insert_cv_test<std::map<int, double> >();
+    TC_SUCCESS_RESULT();
+    return 0;
 }

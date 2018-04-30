@@ -30,14 +30,15 @@
 //           class Alloc = allocator<pair<const Key, T>>>
 // class unordered_multimap
 
-// void clear()
+// static int clear()
 
 #include <unordered_map>
 #include <string>
 #include <cassert>
+#include "libcxx_tc_common.h"
 
 
-int main()
+int tc_libcxx_containers_unord_multimap_modifiers_clear(void)
 {
     {
         typedef std::unordered_multimap<int, std::string> C;
@@ -53,6 +54,8 @@ int main()
         };
         C c(a, a + sizeof(a)/sizeof(a[0]));
         c.clear();
-        assert(c.size() == 0);
+        TC_ASSERT_EXPR(c.size() == 0);
     }
+    TC_SUCCESS_RESULT();
+    return 0;
 }

@@ -32,16 +32,17 @@
 //           class Alloc = allocator<pair<const Key, T>>>
 // class unordered_multimap
 
-// void insert(initializer_list<value_type> il);
+// static int insert(initializer_list<value_type> il);
 
 #include <unordered_map>
 #include <string>
 #include <cassert>
+#include "libcxx_tc_common.h"
 #include <cstddef>
 
 #include "test_iterators.h"
 
-int main()
+int tc_libcxx_containers_unord_multimap_modifiers_insert_init(void)
 {
     {
         typedef std::unordered_multimap<int, std::string> C;
@@ -57,35 +58,37 @@ int main()
                         P(2, "four"),
                     }
                 );
-        assert(c.size() == 6);
+        TC_ASSERT_EXPR(c.size() == 6);
         typedef std::pair<C::iterator, C::iterator> Eq;
         Eq eq = c.equal_range(1);
-        assert(std::distance(eq.first, eq.second) == 2);
+        TC_ASSERT_EXPR(std::distance(eq.first, eq.second) == 2);
         C::iterator k = eq.first;
-        assert(k->first == 1);
-        assert(k->second == "one");
+        TC_ASSERT_EXPR(k->first == 1);
+        TC_ASSERT_EXPR(k->second == "one");
         ++k;
-        assert(k->first == 1);
-        assert(k->second == "four");
+        TC_ASSERT_EXPR(k->first == 1);
+        TC_ASSERT_EXPR(k->second == "four");
         eq = c.equal_range(2);
-        assert(std::distance(eq.first, eq.second) == 2);
+        TC_ASSERT_EXPR(std::distance(eq.first, eq.second) == 2);
         k = eq.first;
-        assert(k->first == 2);
-        assert(k->second == "two");
+        TC_ASSERT_EXPR(k->first == 2);
+        TC_ASSERT_EXPR(k->second == "two");
         ++k;
-        assert(k->first == 2);
-        assert(k->second == "four");
+        TC_ASSERT_EXPR(k->first == 2);
+        TC_ASSERT_EXPR(k->second == "four");
         eq = c.equal_range(3);
-        assert(std::distance(eq.first, eq.second) == 1);
+        TC_ASSERT_EXPR(std::distance(eq.first, eq.second) == 1);
         k = eq.first;
-        assert(k->first == 3);
-        assert(k->second == "three");
+        TC_ASSERT_EXPR(k->first == 3);
+        TC_ASSERT_EXPR(k->second == "three");
         eq = c.equal_range(4);
-        assert(std::distance(eq.first, eq.second) == 1);
+        TC_ASSERT_EXPR(std::distance(eq.first, eq.second) == 1);
         k = eq.first;
-        assert(k->first == 4);
-        assert(k->second == "four");
-        assert(static_cast<std::size_t>(std::distance(c.begin(), c.end())) == c.size());
-        assert(static_cast<std::size_t>(std::distance(c.cbegin(), c.cend())) == c.size());
+        TC_ASSERT_EXPR(k->first == 4);
+        TC_ASSERT_EXPR(k->second == "four");
+        TC_ASSERT_EXPR(static_cast<std::size_t>(std::distance(c.begin(), c.end())) == c.size());
+        TC_ASSERT_EXPR(static_cast<std::size_t>(std::distance(c.cbegin(), c.cend())) == c.size());
     }
+    TC_SUCCESS_RESULT();
+    return 0;
 }

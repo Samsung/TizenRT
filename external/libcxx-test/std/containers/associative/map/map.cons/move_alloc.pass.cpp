@@ -34,13 +34,14 @@
 
 #include <map>
 #include <cassert>
+#include "libcxx_tc_common.h"
 
 #include "MoveOnly.h"
 #include "test_compare.h"
 #include "test_allocator.h"
 #include "Counter.h"
 
-int main()
+int tc_libcxx_containers_map_cons_move_alloc(void)
 {
     {
         typedef std::pair<MoveOnly, MoveOnly> V;
@@ -76,10 +77,10 @@ int main()
         };
         M m2(I(a2), I(a2+sizeof(a2)/sizeof(a2[0])), C(5), A(7));
         M m3(std::move(m1), A(7));
-        assert(m3 == m2);
-        assert(m3.get_allocator() == A(7));
-        assert(m3.key_comp() == C(5));
-        assert(m1.empty());
+        TC_ASSERT_EXPR(m3 == m2);
+        TC_ASSERT_EXPR(m3.get_allocator() == A(7));
+        TC_ASSERT_EXPR(m3.key_comp() == C(5));
+        TC_ASSERT_EXPR(m1.empty());
     }
     {
         typedef std::pair<MoveOnly, MoveOnly> V;
@@ -115,10 +116,10 @@ int main()
         };
         M m2(I(a2), I(a2+sizeof(a2)/sizeof(a2[0])), C(5), A(7));
         M m3(std::move(m1), A(5));
-        assert(m3 == m2);
-        assert(m3.get_allocator() == A(5));
-        assert(m3.key_comp() == C(5));
-        assert(m1.empty());
+        TC_ASSERT_EXPR(m3 == m2);
+        TC_ASSERT_EXPR(m3.get_allocator() == A(5));
+        TC_ASSERT_EXPR(m3.key_comp() == C(5));
+        TC_ASSERT_EXPR(m1.empty());
     }
     {
         typedef std::pair<MoveOnly, MoveOnly> V;
@@ -154,10 +155,10 @@ int main()
         };
         M m2(I(a2), I(a2+sizeof(a2)/sizeof(a2[0])), C(5), A(7));
         M m3(std::move(m1), A(5));
-        assert(m3 == m2);
-        assert(m3.get_allocator() == A(5));
-        assert(m3.key_comp() == C(5));
-        assert(m1.empty());
+        TC_ASSERT_EXPR(m3 == m2);
+        TC_ASSERT_EXPR(m3.get_allocator() == A(5));
+        TC_ASSERT_EXPR(m3.key_comp() == C(5));
+        TC_ASSERT_EXPR(m1.empty());
     }
     {
         typedef Counter<int> T;
@@ -182,28 +183,30 @@ int main()
                 V(3, 3)
             };
             const size_t num = sizeof(a1)/sizeof(a1[0]);
-            assert(Counter_base::gConstructed == num);
+            TC_ASSERT_EXPR(Counter_base::gConstructed == num);
 
             M m1(I(a1), I(a1+num), C(), A());
-            assert(Counter_base::gConstructed == num+3);
+            TC_ASSERT_EXPR(Counter_base::gConstructed == num+3);
 
             M m2(m1);
-            assert(m2 == m1);
-            assert(Counter_base::gConstructed == num+6);
+            TC_ASSERT_EXPR(m2 == m1);
+            TC_ASSERT_EXPR(Counter_base::gConstructed == num+6);
 
             M m3(std::move(m1), A());
-            assert(m3 == m2);
-            assert(m1.empty());
-            assert(Counter_base::gConstructed == num+6);
+            TC_ASSERT_EXPR(m3 == m2);
+            TC_ASSERT_EXPR(m1.empty());
+            TC_ASSERT_EXPR(Counter_base::gConstructed == num+6);
 
             {
             M m4(std::move(m2), A(5));
-            assert(Counter_base::gConstructed == num+6);
-            assert(m4 == m3);
-            assert(m2.empty());
+            TC_ASSERT_EXPR(Counter_base::gConstructed == num+6);
+            TC_ASSERT_EXPR(m4 == m3);
+            TC_ASSERT_EXPR(m2.empty());
             }
-            assert(Counter_base::gConstructed == num+3);
+            TC_ASSERT_EXPR(Counter_base::gConstructed == num+3);
         }
-        assert(Counter_base::gConstructed == 0);
+        TC_ASSERT_EXPR(Counter_base::gConstructed == 0);
     }
+    TC_SUCCESS_RESULT();
+    return 0;
 }

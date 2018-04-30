@@ -32,11 +32,12 @@
 
 #include <map>
 #include <cassert>
+#include "libcxx_tc_common.h"
 
 #include "test_macros.h"
 
 template <class Container>
-void do_insert_iter_cv_test()
+static int do_insert_iter_cv_test()
 {
     typedef Container M;
     typedef typename M::iterator R;
@@ -45,34 +46,37 @@ void do_insert_iter_cv_test()
     M m;
     const VT v1(2, 2.5);
     R r = m.insert(m.end(), v1);
-    assert(r == m.begin());
-    assert(m.size() == 1);
-    assert(r->first == 2);
-    assert(r->second == 2.5);
+    TC_ASSERT_EXPR(r == m.begin());
+    TC_ASSERT_EXPR(m.size() == 1);
+    TC_ASSERT_EXPR(r->first == 2);
+    TC_ASSERT_EXPR(r->second == 2.5);
 
     const VT v2(1, 1.5);
     r = m.insert(m.end(), v2);
-    assert(r == m.begin());
-    assert(m.size() == 2);
-    assert(r->first == 1);
-    assert(r->second == 1.5);
+    TC_ASSERT_EXPR(r == m.begin());
+    TC_ASSERT_EXPR(m.size() == 2);
+    TC_ASSERT_EXPR(r->first == 1);
+    TC_ASSERT_EXPR(r->second == 1.5);
 
     const VT v3(3, 3.5);
     r = m.insert(m.end(), v3);
-    assert(r == prev(m.end()));
-    assert(m.size() == 3);
-    assert(r->first == 3);
-    assert(r->second == 3.5);
+    TC_ASSERT_EXPR(r == prev(m.end()));
+    TC_ASSERT_EXPR(m.size() == 3);
+    TC_ASSERT_EXPR(r->first == 3);
+    TC_ASSERT_EXPR(r->second == 3.5);
 
     const VT v4(3, 4.5);
     r = m.insert(m.end(), v4);
-    assert(r == prev(m.end()));
-    assert(m.size() == 3);
-    assert(r->first == 3);
-    assert(r->second == 3.5);
+    TC_ASSERT_EXPR(r == prev(m.end()));
+    TC_ASSERT_EXPR(m.size() == 3);
+    TC_ASSERT_EXPR(r->first == 3);
+    TC_ASSERT_EXPR(r->second == 3.5);
+    return 0;
 }
 
-int main()
+int tc_libcxx_containers_map_modifiers_insert_iter_cv(void)
 {
     do_insert_iter_cv_test<std::map<int, double> >();
+    TC_SUCCESS_RESULT();
+    return 0;
 }

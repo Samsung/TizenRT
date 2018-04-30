@@ -30,31 +30,34 @@
 //           class Alloc = allocator<pair<const Key, T>>>
 // class unordered_map
 
-// void rehash(size_type n);
+// static int rehash(size_type n);
 
 #include <unordered_map>
 #include <string>
 #include <cassert>
+#include "libcxx_tc_common.h"
 
 #include "test_macros.h"
 
 template <class C>
-void rehash_postcondition(const C& c, size_t n)
+static int rehash_postcondition(const C& c, size_t n)
 {
-    assert(c.bucket_count() >= c.size() / c.max_load_factor() && c.bucket_count() >= n);
+    TC_ASSERT_EXPR(c.bucket_count() >= c.size() / c.max_load_factor() && c.bucket_count() >= n);
+    return 0;
 }
 
 template <class C>
-void test(const C& c)
+static int test(const C& c)
 {
-    assert(c.size() == 4);
-    assert(c.at(1) == "one");
-    assert(c.at(2) == "two");
-    assert(c.at(3) == "three");
-    assert(c.at(4) == "four");
+    TC_ASSERT_EXPR(c.size() == 4);
+    TC_ASSERT_EXPR(c.at(1) == "one");
+    TC_ASSERT_EXPR(c.at(2) == "two");
+    TC_ASSERT_EXPR(c.at(3) == "three");
+    TC_ASSERT_EXPR(c.at(4) == "four");
+    return 0;
 }
 
-int main()
+int tc_libcxx_containers_unord_map_rehash(void)
 {
     {
         typedef std::unordered_map<int, std::string> C;
@@ -70,7 +73,7 @@ int main()
         };
         C c(a, a + sizeof(a)/sizeof(a[0]));
         test(c);
-        assert(c.bucket_count() >= 5);
+        TC_ASSERT_EXPR(c.bucket_count() >= 5);
         c.rehash(3);
         rehash_postcondition(c, 3);
         LIBCPP_ASSERT(c.bucket_count() == 5);
@@ -85,4 +88,6 @@ int main()
         LIBCPP_ASSERT(c.bucket_count() == 31);
         test(c);
     }
+    TC_SUCCESS_RESULT();
+    return 0;
 }

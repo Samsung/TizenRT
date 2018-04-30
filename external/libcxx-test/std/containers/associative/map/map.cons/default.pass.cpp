@@ -32,13 +32,16 @@
 
 #include <map>
 #include <cassert>
+#include "libcxx_tc_common.h"
 
 
-int main()
+int tc_libcxx_containers_map_cons_default(void)
 {
     {
     std::map<int, double> m;
-    assert(m.empty());
-    assert(m.begin() == m.end());
+    TC_ASSERT_EXPR(m.empty());
+    TC_ASSERT_EXPR(m.begin() == m.end());
     }
+    TC_SUCCESS_RESULT();
+    return 0;
 }

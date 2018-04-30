@@ -34,12 +34,13 @@
 
 #include <map>
 #include <cassert>
+#include "libcxx_tc_common.h"
 
 #include "MoveOnly.h"
 #include "test_compare.h"
 #include "test_allocator.h"
 
-int main()
+int tc_libcxx_containers_multimap_cons_move_assign(void)
 {
     {
         typedef std::pair<MoveOnly, MoveOnly> V;
@@ -76,10 +77,10 @@ int main()
         M m2(I(a2), I(a2+sizeof(a2)/sizeof(a2[0])), C(5), A(7));
         M m3(C(3), A(7));
         m3 = std::move(m1);
-        assert(m3 == m2);
-        assert(m3.get_allocator() == A(7));
-        assert(m3.key_comp() == C(5));
-        assert(m1.empty());
+        TC_ASSERT_EXPR(m3 == m2);
+        TC_ASSERT_EXPR(m3.get_allocator() == A(7));
+        TC_ASSERT_EXPR(m3.key_comp() == C(5));
+        TC_ASSERT_EXPR(m1.empty());
     }
     {
         typedef std::pair<MoveOnly, MoveOnly> V;
@@ -116,10 +117,10 @@ int main()
         M m2(I(a2), I(a2+sizeof(a2)/sizeof(a2[0])), C(5), A(7));
         M m3(C(3), A(5));
         m3 = std::move(m1);
-        assert(m3 == m2);
-        assert(m3.get_allocator() == A(5));
-        assert(m3.key_comp() == C(5));
-        assert(m1.empty());
+        TC_ASSERT_EXPR(m3 == m2);
+        TC_ASSERT_EXPR(m3.get_allocator() == A(5));
+        TC_ASSERT_EXPR(m3.key_comp() == C(5));
+        TC_ASSERT_EXPR(m1.empty());
     }
     {
         typedef std::pair<MoveOnly, MoveOnly> V;
@@ -156,9 +157,11 @@ int main()
         M m2(I(a2), I(a2+sizeof(a2)/sizeof(a2[0])), C(5), A(7));
         M m3(C(3), A(5));
         m3 = std::move(m1);
-        assert(m3 == m2);
-        assert(m3.get_allocator() == A(7));
-        assert(m3.key_comp() == C(5));
-        assert(m1.empty());
+        TC_ASSERT_EXPR(m3 == m2);
+        TC_ASSERT_EXPR(m3.get_allocator() == A(7));
+        TC_ASSERT_EXPR(m3.key_comp() == C(5));
+        TC_ASSERT_EXPR(m1.empty());
     }
+    TC_SUCCESS_RESULT();
+    return 0;
 }

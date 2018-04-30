@@ -35,8 +35,9 @@
 #include <unordered_map>
 #include <string>
 #include <cassert>
+#include "libcxx_tc_common.h"
 
-int main()
+int tc_libcxx_containers_unord_map_find_non_const(void)
 {
     {
         typedef std::unordered_map<int, std::string> C;
@@ -54,9 +55,11 @@ int main()
         };
         C c(std::begin(a), std::end(a));
         C::iterator i = c.find(30);
-        assert(i->first == 30);
-        assert(i->second == "thirty");
+        TC_ASSERT_EXPR(i->first == 30);
+        TC_ASSERT_EXPR(i->second == "thirty");
         i = c.find(5);
-        assert(i == c.end());
+        TC_ASSERT_EXPR(i == c.end());
     }
+    TC_SUCCESS_RESULT();
+    return 0;
 }

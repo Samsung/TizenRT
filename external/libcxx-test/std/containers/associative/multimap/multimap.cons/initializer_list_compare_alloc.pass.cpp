@@ -34,10 +34,11 @@
 
 #include <map>
 #include <cassert>
+#include "libcxx_tc_common.h"
 #include "test_compare.h"
 #include "test_allocator.h"
 
-int main()
+int tc_libcxx_containers_multimap_cons_initializer_list_compare_alloc(void)
 {
     {
     typedef test_compare<std::less<int> > Cmp;
@@ -58,19 +59,21 @@ int main()
            },
            Cmp(4), A(5)
         );
-    assert(m.size() == 9);
-    assert(distance(m.begin(), m.end()) == 9);
+    TC_ASSERT_EXPR(m.size() == 9);
+    TC_ASSERT_EXPR(distance(m.begin(), m.end()) == 9);
     C::const_iterator i = m.cbegin();
-    assert(*i == V(1, 1));
-    assert(*++i == V(1, 1.5));
-    assert(*++i == V(1, 2));
-    assert(*++i == V(2, 1));
-    assert(*++i == V(2, 1.5));
-    assert(*++i == V(2, 2));
-    assert(*++i == V(3, 1));
-    assert(*++i == V(3, 1.5));
-    assert(*++i == V(3, 2));
-    assert(m.key_comp() == Cmp(4));
-    assert(m.get_allocator() == A(5));
+    TC_ASSERT_EXPR(*i == V(1, 1));
+    TC_ASSERT_EXPR(*++i == V(1, 1.5));
+    TC_ASSERT_EXPR(*++i == V(1, 2));
+    TC_ASSERT_EXPR(*++i == V(2, 1));
+    TC_ASSERT_EXPR(*++i == V(2, 1.5));
+    TC_ASSERT_EXPR(*++i == V(2, 2));
+    TC_ASSERT_EXPR(*++i == V(3, 1));
+    TC_ASSERT_EXPR(*++i == V(3, 1.5));
+    TC_ASSERT_EXPR(*++i == V(3, 2));
+    TC_ASSERT_EXPR(m.key_comp() == Cmp(4));
+    TC_ASSERT_EXPR(m.get_allocator() == A(5));
     }
+    TC_SUCCESS_RESULT();
+    return 0;
 }

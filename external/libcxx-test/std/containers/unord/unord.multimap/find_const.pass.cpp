@@ -35,9 +35,10 @@
 #include <unordered_map>
 #include <string>
 #include <cassert>
+#include "libcxx_tc_common.h"
 
 
-int main()
+int tc_libcxx_containers_unord_multimap_find_const(void)
 {
     {
         typedef std::unordered_multimap<int, std::string> C;
@@ -55,9 +56,11 @@ int main()
         };
         const C c(std::begin(a), std::end(a));
         C::const_iterator i = c.find(30);
-        assert(i->first == 30);
-        assert(i->second == "thirty");
+        TC_ASSERT_EXPR(i->first == 30);
+        TC_ASSERT_EXPR(i->second == "thirty");
         i = c.find(5);
-        assert(i == c.cend());
+        TC_ASSERT_EXPR(i == c.cend());
     }
+    TC_SUCCESS_RESULT();
+    return 0;
 }

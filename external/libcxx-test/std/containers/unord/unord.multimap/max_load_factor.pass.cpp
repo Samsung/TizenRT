@@ -31,24 +31,27 @@
 // class unordered_multimap
 
 // float max_load_factor() const;
-// void max_load_factor(float mlf);
+// static int max_load_factor(float mlf);
 
 #include <unordered_map>
 #include <string>
 #include <cassert>
+#include "libcxx_tc_common.h"
 
-int main()
+int tc_libcxx_containers_unord_multimap_max_load_factor(void)
 {
     {
         typedef std::unordered_multimap<int, std::string> C;
         const C c;
-        assert(c.max_load_factor() == 1);
+        TC_ASSERT_EXPR(c.max_load_factor() == 1);
     }
     {
         typedef std::unordered_multimap<int, std::string> C;
         C c;
-        assert(c.max_load_factor() == 1);
+        TC_ASSERT_EXPR(c.max_load_factor() == 1);
         c.max_load_factor(2.5);
-        assert(c.max_load_factor() == 2.5);
+        TC_ASSERT_EXPR(c.max_load_factor() == 2.5);
     }
+    TC_SUCCESS_RESULT();
+    return 0;
 }

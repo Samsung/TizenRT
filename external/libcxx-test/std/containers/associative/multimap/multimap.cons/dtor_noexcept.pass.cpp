@@ -32,6 +32,7 @@
 
 #include <map>
 #include <cassert>
+#include "libcxx_tc_common.h"
 
 #include "test_macros.h"
 #include "MoveOnly.h"
@@ -45,7 +46,7 @@ struct some_comp
     bool operator()(const T&, const T&) const { return false; }
 };
 
-int main()
+int tc_libcxx_containers_multimap_cons_dtor_noexcept(void)
 {
     typedef std::pair<const MoveOnly, MoveOnly> V;
     {
@@ -66,4 +67,6 @@ int main()
         static_assert(!std::is_nothrow_destructible<C>::value, "");
     }
 #endif // _LIBCPP_VERSION
+    TC_SUCCESS_RESULT();
+    return 0;
 }

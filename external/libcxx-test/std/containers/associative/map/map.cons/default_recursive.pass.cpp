@@ -31,7 +31,7 @@
 // map();
 
 #include <map>
-
+#include "libcxx_tc_common.h"
 struct X
 {
     std::map<int, X> m;
@@ -41,6 +41,8 @@ struct X
     std::map<int, X>::const_reverse_iterator cri;
 };
 
-int main()
+int tc_libcxx_containers_map_cons_default_recursive(void)
 {
+    TC_SUCCESS_RESULT();
+    return 0;
 }

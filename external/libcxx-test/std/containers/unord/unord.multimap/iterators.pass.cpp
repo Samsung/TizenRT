@@ -40,11 +40,12 @@
 #include <unordered_map>
 #include <string>
 #include <cassert>
+#include "libcxx_tc_common.h"
 #include <cstddef>
 
 #include "test_macros.h"
 
-int main()
+int tc_libcxx_containers_unord_multimap_iterators(void)
 {
     {
         typedef std::unordered_multimap<int, std::string> C;
@@ -59,14 +60,14 @@ int main()
             P(2, "four"),
         };
         C c(a, a + sizeof(a)/sizeof(a[0]));
-        assert(c.bucket_count() >= 7);
-        assert(c.size() == 6);
-        assert(static_cast<std::size_t>(std::distance(c.begin(), c.end())) == c.size());
-        assert(static_cast<std::size_t>(std::distance(c.cbegin(), c.cend())) == c.size());
+        TC_ASSERT_EXPR(c.bucket_count() >= 7);
+        TC_ASSERT_EXPR(c.size() == 6);
+        TC_ASSERT_EXPR(static_cast<std::size_t>(std::distance(c.begin(), c.end())) == c.size());
+        TC_ASSERT_EXPR(static_cast<std::size_t>(std::distance(c.cbegin(), c.cend())) == c.size());
         C::iterator i;
         i = c.begin();
         i->second = "ONE";
-        assert(i->second == "ONE");
+        TC_ASSERT_EXPR(i->second == "ONE");
     }
     {
         typedef std::unordered_multimap<int, std::string> C;
@@ -81,10 +82,10 @@ int main()
             P(2, "four"),
         };
         const C c(a, a + sizeof(a)/sizeof(a[0]));
-        assert(c.bucket_count() >= 7);
-        assert(c.size() == 6);
-        assert(static_cast<std::size_t>(std::distance(c.begin(), c.end())) == c.size());
-        assert(static_cast<std::size_t>(std::distance(c.cbegin(), c.cend())) == c.size());
+        TC_ASSERT_EXPR(c.bucket_count() >= 7);
+        TC_ASSERT_EXPR(c.size() == 6);
+        TC_ASSERT_EXPR(static_cast<std::size_t>(std::distance(c.begin(), c.end())) == c.size());
+        TC_ASSERT_EXPR(static_cast<std::size_t>(std::distance(c.cbegin(), c.cend())) == c.size());
         C::const_iterator i;
     }
 #if TEST_STD_VER > 11
@@ -93,15 +94,17 @@ int main()
         C::iterator ii1{}, ii2{};
         C::iterator ii4 = ii1;
         C::const_iterator cii{};
-        assert ( ii1 == ii2 );
-        assert ( ii1 == ii4 );
+        TC_ASSERT_EXPR ( ii1 == ii2 );
+        TC_ASSERT_EXPR ( ii1 == ii4 );
 
-        assert (!(ii1 != ii2 ));
+        TC_ASSERT_EXPR (!(ii1 != ii2 ));
 
-        assert ( (ii1 == cii ));
-        assert ( (cii == ii1 ));
-        assert (!(ii1 != cii ));
-        assert (!(cii != ii1 ));
+        TC_ASSERT_EXPR ( (ii1 == cii ));
+        TC_ASSERT_EXPR ( (cii == ii1 ));
+        TC_ASSERT_EXPR (!(ii1 != cii ));
+        TC_ASSERT_EXPR (!(cii != ii1 ));
     }
 #endif
+    TC_SUCCESS_RESULT();
+    return 0;
 }

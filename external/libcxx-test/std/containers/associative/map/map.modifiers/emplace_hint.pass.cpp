@@ -35,41 +35,42 @@
 
 #include <map>
 #include <cassert>
+#include "libcxx_tc_common.h"
 
 #include "Emplaceable.h"
 #include "DefaultOnly.h"
 
-int main()
+int tc_libcxx_containers_map_modifiers_emplace_hint(void)
 {
     {
         typedef std::map<int, DefaultOnly> M;
         typedef M::iterator R;
         M m;
-        assert(DefaultOnly::count == 0);
+        TC_ASSERT_EXPR(DefaultOnly::count == 0);
         R r = m.emplace_hint(m.end());
-        assert(r == m.begin());
-        assert(m.size() == 1);
-        assert(m.begin()->first == 0);
-        assert(m.begin()->second == DefaultOnly());
-        assert(DefaultOnly::count == 1);
+        TC_ASSERT_EXPR(r == m.begin());
+        TC_ASSERT_EXPR(m.size() == 1);
+        TC_ASSERT_EXPR(m.begin()->first == 0);
+        TC_ASSERT_EXPR(m.begin()->second == DefaultOnly());
+        TC_ASSERT_EXPR(DefaultOnly::count == 1);
         r = m.emplace_hint(m.end(), std::piecewise_construct,
                                        std::forward_as_tuple(1),
                                        std::forward_as_tuple());
-        assert(r == next(m.begin()));
-        assert(m.size() == 2);
-        assert(next(m.begin())->first == 1);
-        assert(next(m.begin())->second == DefaultOnly());
-        assert(DefaultOnly::count == 2);
+        TC_ASSERT_EXPR(r == next(m.begin()));
+        TC_ASSERT_EXPR(m.size() == 2);
+        TC_ASSERT_EXPR(next(m.begin())->first == 1);
+        TC_ASSERT_EXPR(next(m.begin())->second == DefaultOnly());
+        TC_ASSERT_EXPR(DefaultOnly::count == 2);
         r = m.emplace_hint(m.end(), std::piecewise_construct,
                                        std::forward_as_tuple(1),
                                        std::forward_as_tuple());
-        assert(r == next(m.begin()));
-        assert(m.size() == 2);
-        assert(next(m.begin())->first == 1);
-        assert(next(m.begin())->second == DefaultOnly());
-        assert(DefaultOnly::count == 2);
+        TC_ASSERT_EXPR(r == next(m.begin()));
+        TC_ASSERT_EXPR(m.size() == 2);
+        TC_ASSERT_EXPR(next(m.begin())->first == 1);
+        TC_ASSERT_EXPR(next(m.begin())->second == DefaultOnly());
+        TC_ASSERT_EXPR(DefaultOnly::count == 2);
     }
-    assert(DefaultOnly::count == 0);
+    TC_ASSERT_EXPR(DefaultOnly::count == 0);
     {
         typedef std::map<int, Emplaceable> M;
         typedef M::iterator R;
@@ -77,33 +78,35 @@ int main()
         R r = m.emplace_hint(m.end(), std::piecewise_construct,
                                        std::forward_as_tuple(2),
                                        std::forward_as_tuple());
-        assert(r == m.begin());
-        assert(m.size() == 1);
-        assert(m.begin()->first == 2);
-        assert(m.begin()->second == Emplaceable());
+        TC_ASSERT_EXPR(r == m.begin());
+        TC_ASSERT_EXPR(m.size() == 1);
+        TC_ASSERT_EXPR(m.begin()->first == 2);
+        TC_ASSERT_EXPR(m.begin()->second == Emplaceable());
         r = m.emplace_hint(m.end(), std::piecewise_construct,
                                     std::forward_as_tuple(1),
                                     std::forward_as_tuple(2, 3.5));
-        assert(r == m.begin());
-        assert(m.size() == 2);
-        assert(m.begin()->first == 1);
-        assert(m.begin()->second == Emplaceable(2, 3.5));
+        TC_ASSERT_EXPR(r == m.begin());
+        TC_ASSERT_EXPR(m.size() == 2);
+        TC_ASSERT_EXPR(m.begin()->first == 1);
+        TC_ASSERT_EXPR(m.begin()->second == Emplaceable(2, 3.5));
         r = m.emplace_hint(m.end(), std::piecewise_construct,
                                     std::forward_as_tuple(1),
                                     std::forward_as_tuple(2, 3.5));
-        assert(r == m.begin());
-        assert(m.size() == 2);
-        assert(m.begin()->first == 1);
-        assert(m.begin()->second == Emplaceable(2, 3.5));
+        TC_ASSERT_EXPR(r == m.begin());
+        TC_ASSERT_EXPR(m.size() == 2);
+        TC_ASSERT_EXPR(m.begin()->first == 1);
+        TC_ASSERT_EXPR(m.begin()->second == Emplaceable(2, 3.5));
     }
     {
         typedef std::map<int, double> M;
         typedef M::iterator R;
         M m;
         R r = m.emplace_hint(m.end(), M::value_type(2, 3.5));
-        assert(r == m.begin());
-        assert(m.size() == 1);
-        assert(m.begin()->first == 2);
-        assert(m.begin()->second == 3.5);
+        TC_ASSERT_EXPR(r == m.begin());
+        TC_ASSERT_EXPR(m.size() == 1);
+        TC_ASSERT_EXPR(m.begin()->first == 2);
+        TC_ASSERT_EXPR(m.begin()->second == 3.5);
     }
+    TC_SUCCESS_RESULT();
+    return 0;
 }

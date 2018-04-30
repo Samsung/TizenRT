@@ -35,6 +35,7 @@
 #include <unordered_map>
 #include <string>
 #include <cassert>
+#include "libcxx_tc_common.h"
 
 #include "test_macros.h"
 
@@ -51,11 +52,12 @@ bool only_deletions ( const Unordered &whole, const Unordered &part ) {
         }
 
     return p == part.end();
+    return 0;
 }
 #endif
 
 
-int main()
+int tc_libcxx_containers_unord_map_modifiers_erase_key(void)
 {
     {
         typedef std::unordered_map<int, std::string> C;
@@ -70,48 +72,48 @@ int main()
             P(2, "four"),
         };
         C c(a, a + sizeof(a)/sizeof(a[0]));
-        assert(c.erase(5) == 0);
-        assert(c.size() == 4);
-        assert(c.at(1) == "one");
-        assert(c.at(2) == "two");
-        assert(c.at(3) == "three");
-        assert(c.at(4) == "four");
+        TC_ASSERT_EXPR(c.erase(5) == 0);
+        TC_ASSERT_EXPR(c.size() == 4);
+        TC_ASSERT_EXPR(c.at(1) == "one");
+        TC_ASSERT_EXPR(c.at(2) == "two");
+        TC_ASSERT_EXPR(c.at(3) == "three");
+        TC_ASSERT_EXPR(c.at(4) == "four");
 
-        assert(c.erase(2) == 1);
-        assert(c.size() == 3);
-        assert(c.at(1) == "one");
-        assert(c.at(3) == "three");
-        assert(c.at(4) == "four");
+        TC_ASSERT_EXPR(c.erase(2) == 1);
+        TC_ASSERT_EXPR(c.size() == 3);
+        TC_ASSERT_EXPR(c.at(1) == "one");
+        TC_ASSERT_EXPR(c.at(3) == "three");
+        TC_ASSERT_EXPR(c.at(4) == "four");
 
-        assert(c.erase(2) == 0);
-        assert(c.size() == 3);
-        assert(c.at(1) == "one");
-        assert(c.at(3) == "three");
-        assert(c.at(4) == "four");
+        TC_ASSERT_EXPR(c.erase(2) == 0);
+        TC_ASSERT_EXPR(c.size() == 3);
+        TC_ASSERT_EXPR(c.at(1) == "one");
+        TC_ASSERT_EXPR(c.at(3) == "three");
+        TC_ASSERT_EXPR(c.at(4) == "four");
 
-        assert(c.erase(4) == 1);
-        assert(c.size() == 2);
-        assert(c.at(1) == "one");
-        assert(c.at(3) == "three");
+        TC_ASSERT_EXPR(c.erase(4) == 1);
+        TC_ASSERT_EXPR(c.size() == 2);
+        TC_ASSERT_EXPR(c.at(1) == "one");
+        TC_ASSERT_EXPR(c.at(3) == "three");
 
-        assert(c.erase(4) == 0);
-        assert(c.size() == 2);
-        assert(c.at(1) == "one");
-        assert(c.at(3) == "three");
+        TC_ASSERT_EXPR(c.erase(4) == 0);
+        TC_ASSERT_EXPR(c.size() == 2);
+        TC_ASSERT_EXPR(c.at(1) == "one");
+        TC_ASSERT_EXPR(c.at(3) == "three");
 
-        assert(c.erase(1) == 1);
-        assert(c.size() == 1);
-        assert(c.at(3) == "three");
+        TC_ASSERT_EXPR(c.erase(1) == 1);
+        TC_ASSERT_EXPR(c.size() == 1);
+        TC_ASSERT_EXPR(c.at(3) == "three");
 
-        assert(c.erase(1) == 0);
-        assert(c.size() == 1);
-        assert(c.at(3) == "three");
+        TC_ASSERT_EXPR(c.erase(1) == 0);
+        TC_ASSERT_EXPR(c.size() == 1);
+        TC_ASSERT_EXPR(c.at(3) == "three");
 
-        assert(c.erase(3) == 1);
-        assert(c.size() == 0);
+        TC_ASSERT_EXPR(c.erase(3) == 1);
+        TC_ASSERT_EXPR(c.size() == 0);
 
-        assert(c.erase(3) == 0);
-        assert(c.size() == 0);
+        TC_ASSERT_EXPR(c.erase(3) == 0);
+        TC_ASSERT_EXPR(c.size() == 0);
     }
 #if TEST_STD_VER >= 11
     {
@@ -131,7 +133,9 @@ int main()
             ++i;
         }
 
-    assert (only_deletions (m, m2));
+    TC_ASSERT_EXPR (only_deletions (m, m2));
     }
 #endif
+    TC_SUCCESS_RESULT();
+    return 0;
 }

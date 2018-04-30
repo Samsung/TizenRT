@@ -32,17 +32,20 @@
 
 #include <map>
 #include <cassert>
+#include "libcxx_tc_common.h"
 
 #include "test_allocator.h"
 
-int main()
+int tc_libcxx_containers_map_cons_alloc(void)
 {
     {
     typedef std::less<int> C;
     typedef test_allocator<std::pair<const int, double> > A;
     std::map<int, double, C, A> m(A(5));
-    assert(m.empty());
-    assert(m.begin() == m.end());
-    assert(m.get_allocator() == A(5));
+    TC_ASSERT_EXPR(m.empty());
+    TC_ASSERT_EXPR(m.begin() == m.end());
+    TC_ASSERT_EXPR(m.get_allocator() == A(5));
     }
+    TC_SUCCESS_RESULT();
+    return 0;
 }

@@ -47,9 +47,9 @@
 
 #include <unordered_map>
 #include <type_traits>
+#include "libcxx_tc_common.h"
 
-
-int main()
+int tc_libcxx_containers_unord_multimap_types(void)
 {
     {
         typedef std::unordered_multimap<char, short> C;
@@ -66,4 +66,6 @@ int main()
         static_assert((std::is_same<C::size_type, std::size_t>::value), "");
         static_assert((std::is_same<C::difference_type, std::ptrdiff_t>::value), "");
     }
+    TC_SUCCESS_RESULT();
+    return 0;
 }

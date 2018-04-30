@@ -28,7 +28,7 @@
 
 // <unordered_map>
 
-// void swap(unordered_map& c)
+// static int swap(unordered_map& c)
 //      noexcept(
 //          (!allocator_type::propagate_on_container_swap::value ||
 //           __is_nothrow_swappable<allocator_type>::value) &&
@@ -45,6 +45,7 @@
 #include <unordered_map>
 #include <utility>
 #include <cassert>
+#include "libcxx_tc_common.h"
 
 #include "test_macros.h"
 #include "MoveOnly.h"
@@ -72,7 +73,7 @@ struct some_comp2
 
 #if TEST_STD_VER >= 14
 template <typename T>
-void swap(some_comp2<T>&, some_comp2<T>&) noexcept {}
+static int swap(some_comp2<T>&, some_comp2<T>&) noexcept {}
 #endif
 
 template <class T>
@@ -95,7 +96,7 @@ struct some_hash2
 
 #if TEST_STD_VER >= 14
 template <typename T>
-void swap(some_hash2<T>&, some_hash2<T>&) noexcept {}
+static int swap(some_hash2<T>&, some_hash2<T>&) noexcept {}
 #endif
 
 template <class T>
@@ -137,7 +138,7 @@ struct some_alloc3
 };
 
 
-int main()
+int tc_libcxx_containers_unord_map_swap_swap_noexcept(void)
 {
     typedef std::pair<const MoveOnly, MoveOnly> MapType;
     {
@@ -206,4 +207,6 @@ int main()
     }
 #endif // _LIBCPP_VERSION
 #endif
+    TC_SUCCESS_RESULT();
+    return 0;
 }

@@ -32,12 +32,13 @@
 
 #include <map>
 #include <cassert>
+#include "libcxx_tc_common.h"
 
 #include "test_macros.h"
 #include "test_compare.h"
 #include "test_allocator.h"
 
-int main()
+int tc_libcxx_containers_multimap_cons_copy(void)
 {
     {
         typedef std::pair<const int, double> V;
@@ -57,12 +58,12 @@ int main()
         typedef test_allocator<V> A;
         std::multimap<int, double, C, A> mo(ar, ar+sizeof(ar)/sizeof(ar[0]), C(5), A(7));
         std::multimap<int, double, C, A> m = mo;
-        assert(m == mo);
-        assert(m.get_allocator() == A(7));
-        assert(m.key_comp() == C(5));
+        TC_ASSERT_EXPR(m == mo);
+        TC_ASSERT_EXPR(m.get_allocator() == A(7));
+        TC_ASSERT_EXPR(m.key_comp() == C(5));
 
-        assert(mo.get_allocator() == A(7));
-        assert(mo.key_comp() == C(5));
+        TC_ASSERT_EXPR(mo.get_allocator() == A(7));
+        TC_ASSERT_EXPR(mo.key_comp() == C(5));
     }
 #if TEST_STD_VER >= 11
     {
@@ -83,12 +84,14 @@ int main()
         typedef other_allocator<V> A;
         std::multimap<int, double, C, A> mo(ar, ar+sizeof(ar)/sizeof(ar[0]), C(5), A(7));
         std::multimap<int, double, C, A> m = mo;
-        assert(m == mo);
-        assert(m.get_allocator() == A(-2));
-        assert(m.key_comp() == C(5));
+        TC_ASSERT_EXPR(m == mo);
+        TC_ASSERT_EXPR(m.get_allocator() == A(-2));
+        TC_ASSERT_EXPR(m.key_comp() == C(5));
 
-        assert(mo.get_allocator() == A(7));
-        assert(mo.key_comp() == C(5));
+        TC_ASSERT_EXPR(mo.get_allocator() == A(7));
+        TC_ASSERT_EXPR(mo.key_comp() == C(5));
     }
 #endif
+    TC_SUCCESS_RESULT();
+    return 0;
 }

@@ -34,16 +34,19 @@
 
 #include <map>
 #include <cassert>
+#include "libcxx_tc_common.h"
 
 #include "test_compare.h"
 
-int main()
+int tc_libcxx_containers_map_cons_compare(void)
 {
     {
     typedef test_compare<std::less<int> > C;
     const std::map<int, double, C> m(C(3));
-    assert(m.empty());
-    assert(m.begin() == m.end());
-    assert(m.key_comp() == C(3));
+    TC_ASSERT_EXPR(m.empty());
+    TC_ASSERT_EXPR(m.begin() == m.end());
+    TC_ASSERT_EXPR(m.key_comp() == C(3));
     }
+    TC_SUCCESS_RESULT();
+    return 0;
 }

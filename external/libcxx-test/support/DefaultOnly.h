@@ -47,6 +47,5 @@ public:
         {return x.data_ < y.data_;}
 };
 
-int DefaultOnly::count = 0;
 
 #endif  // DEFAULTONLY_H

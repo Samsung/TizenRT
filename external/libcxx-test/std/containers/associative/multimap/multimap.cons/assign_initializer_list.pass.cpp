@@ -34,9 +34,10 @@
 
 #include <map>
 #include <cassert>
+#include "libcxx_tc_common.h"
 
 
-int main()
+int tc_libcxx_containers_multimap_cons_assign_initializer_list(void)
 {
     {
     typedef std::multimap<int, double> C;
@@ -54,17 +55,19 @@ int main()
                {3, 1.5},
                {3, 2}
            };
-    assert(m.size() == 9);
-    assert(distance(m.begin(), m.end()) == 9);
+    TC_ASSERT_EXPR(m.size() == 9);
+    TC_ASSERT_EXPR(distance(m.begin(), m.end()) == 9);
     C::const_iterator i = m.cbegin();
-    assert(*i == V(1, 1));
-    assert(*++i == V(1, 1.5));
-    assert(*++i == V(1, 2));
-    assert(*++i == V(2, 1));
-    assert(*++i == V(2, 1.5));
-    assert(*++i == V(2, 2));
-    assert(*++i == V(3, 1));
-    assert(*++i == V(3, 1.5));
-    assert(*++i == V(3, 2));
+    TC_ASSERT_EXPR(*i == V(1, 1));
+    TC_ASSERT_EXPR(*++i == V(1, 1.5));
+    TC_ASSERT_EXPR(*++i == V(1, 2));
+    TC_ASSERT_EXPR(*++i == V(2, 1));
+    TC_ASSERT_EXPR(*++i == V(2, 1.5));
+    TC_ASSERT_EXPR(*++i == V(2, 2));
+    TC_ASSERT_EXPR(*++i == V(3, 1));
+    TC_ASSERT_EXPR(*++i == V(3, 1.5));
+    TC_ASSERT_EXPR(*++i == V(3, 2));
     }
+    TC_SUCCESS_RESULT();
+    return 0;
 }
