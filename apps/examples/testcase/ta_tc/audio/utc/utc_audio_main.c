@@ -1505,6 +1505,7 @@ int utc_audio_main(int argc, char *argv[])
 	utc_audio_pcm_bytes_to_frames_n();
 	utc_audio_pcm_format_to_bits_p();
 	utc_audio_pcm_format_to_bits_n();
+#ifndef CONFIG_DISABLE_MANUAL_TESTCASE
 	utc_audio_pcm_readi_p();
 	utc_audio_pcm_readi_n();
 
@@ -1513,7 +1514,6 @@ int utc_audio_main(int argc, char *argv[])
 	*/
 	utc_audio_pcm_writei_p();
 	utc_audio_pcm_drain_p();
-
 	utc_audio_pcm_writei_n();
 	utc_audio_pcm_drain_n();
 	utc_audio_pcm_drop_p();
@@ -1532,6 +1532,7 @@ int utc_audio_main(int argc, char *argv[])
 	utc_audio_pcm_commit_p();
 	utc_audio_pcm_mmap_read_p();
 	utc_audio_pcm_mmap_write_p();
+#endif
 
 	/* after test, unlink the file */
 	unlink(AUDIO_TEST_FILE);
