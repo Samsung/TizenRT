@@ -17,6 +17,7 @@
  ****************************************************************************/
 
 #include <stdio.h>
+#include <condition_variable>
 #include <media/MediaPlayer.h>
 #include <media/FileInputDataSource.h>
 
@@ -26,8 +27,10 @@
 class TestObserver : public media::MediaPlayerObserverInterface
 {
 public:
-	int value[3];
-	TestObserver() : value{0, 0, 0} {}
+	std::condition_variable cv;
+	std::mutex mtx;
+	int value;
+	TestObserver() : value{0} {}
 	void onPlaybackStarted(Id id) override;
 	void onPlaybackFinished(Id id) override;
 	void onPlaybackError(Id id) override;
@@ -35,17 +38,20 @@ public:
 
 void TestObserver::onPlaybackStarted(Id id)
 {
-	value[0] = 1;
+	value = 1;
+	cv.notify_one();
 }
 
 void TestObserver::onPlaybackFinished(Id id)
 {
-	value[1] = 2;
+	value = 2;
+	cv.notify_one();
 }
 
 void TestObserver::onPlaybackError(Id id)
 {
-	value[2] = 3;
+	value = 3;
+	cv.notify_one();
 }
 
 class SimpleMediaPlayerTest : public ::testing::Test
@@ -129,13 +135,27 @@ TEST_F(SimpleMediaPlayerTest, setObserver)
 	mp->setDataSource(std::move(source));
 	mp->setObserver(observer);
 	mp->prepare();
+
 	mp->pause();
+	{
+		std::unique_lock<std::mutex> lock(observer->mtx);
+		observer->cv.wait(lock);
+		EXPECT_EQ(observer->value, 3);
+	}
+
 	mp->start();
+	{
+		std::unique_lock<std::mutex> lock(observer->mtx);
+		observer->cv.wait(lock);
+		EXPECT_EQ(observer->value, 1);
+	}
+	{
+		std::unique_lock<std::mutex> lock(observer->mtx);
+		observer->cv.wait(lock);
+		EXPECT_EQ(observer->value, 2);
+	}
 	mp->unprepare();
 	mp->destroy();
-	EXPECT_EQ(observer->value[0], 1);
-	EXPECT_EQ(observer->value[1], 2);
-	EXPECT_EQ(observer->value[2], 3);
 }
 
 TEST_F(SimpleMediaPlayerTest, prepare)

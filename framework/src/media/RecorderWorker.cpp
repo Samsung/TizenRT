@@ -36,21 +36,13 @@ int RecorderWorker::entry()
 	medvdbg("RecorderWorker::entry()\n");
 
 	while (mIsRunning) {
-		std::unique_lock<std::mutex> lock(mWorkerQueue.getMutex());
+		if (mCurRecorder && (mCurRecorder->getState() == RECORDER_STATE_RECORDING)) {
+			mCurRecorder->capture();
+		} 
 
-		if (mWorkerQueue.isEmpty()) {
-			if (mCurRecorder && (mCurRecorder->getState() == RECORDER_STATE_RECORDING)) {
-				mCurRecorder->capture();
-			} else {
-				medvdbg("RecorderWorker::entry() - wait Queue\n");
-				mWorkerQueue.wait(lock);
-			}
-		}
-	
-
-		if (!mWorkerQueue.isEmpty()) {
-			std::function<void()> run = mWorkerQueue.deQueue();
-			medvdbg("RecorderWorker::entry() - pop Queue\n");
+		std::function<void()> run = mWorkerQueue.deQueue();
+		medvdbg("RecorderWorker::entry() - pop Queue\n");
+		if (run != nullptr) {
 			run();
 		}
 	}

@@ -28,6 +28,15 @@ MediaQueue::~MediaQueue()
 
 std::function<void()> MediaQueue::deQueue()
 {
+	std::unique_lock<std::mutex> lock(mQueueMtx);
+	if (mQueueData.empty()) {
+		mQueueCv.wait(lock);
+	}
+
+	// when thread exits, TO-DO will optimize 
+	if (mQueueData.empty()) {
+		return nullptr;
+	}
 	auto data = std::move(mQueueData.front());
 	mQueueData.pop();
 	return data;
@@ -36,16 +45,6 @@ std::function<void()> MediaQueue::deQueue()
 bool MediaQueue::isEmpty()
 {
 	return mQueueData.empty();
-}
-
-std::mutex& MediaQueue::getMutex()
-{
-	return mQueueMtx;
-}
-
-void MediaQueue::wait(std::unique_lock<std::mutex>& lock)
-{
-	mQueueCv.wait(lock);
 }
 
 void MediaQueue::notify_one()

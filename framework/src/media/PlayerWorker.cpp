@@ -88,16 +88,24 @@ int PlayerWorker::entry()
 					}
 				}
 			} else {
-				medvdbg("MediaPlayer Worker : SLEEP\n");
-				mWorkerQueue.wait(lock);
-				medvdbg("MediaPlayer Worker : WAKEUP\n");
+				size_t num_read = mCurPlayer->mInputDataSource->read(mCurPlayer->mBuffer, mCurPlayer->mBufSize);
+				medvdbg("MediaPlayer Worker : num_read = %d\n", num_read);
+
+				if (num_read > 0) {
+					mCurPlayer->playback(num_read);
+				} else {
+					mCurPlayer->notifyObserver(PLAYER_OBSERVER_COMMAND_FINISHIED);
+					stopPlayer(mCurPlayer);
+				}
 			}
 		}
 
-		if (!mWorkerQueue.isEmpty()) {
-			std::function<void()> run = mWorkerQueue.deQueue();
+		std::function<void()> run = mWorkerQueue.deQueue();
+		if (run != nullptr) {
 			run();
 		}
+		
+		
 	}
 
 	return 0;
