@@ -16,20 +16,21 @@
  *
  ******************************************************************/
 
-#include "PlayerWorker.h"
 #include <debug.h>
+
+#include "PlayerWorker.h"
 #include "MediaPlayerImpl.h"
 #include "Decoder.h"
+#include "audio/audio_manager.h"
 
 using namespace std;
 
 namespace media {
-	
+
 std::unique_ptr<PlayerWorker> PlayerWorker::mWorker;
 std::once_flag PlayerWorker::mOnceFlag;
 
-PlayerWorker::PlayerWorker()
-	: mRefCnt{0}
+PlayerWorker::PlayerWorker() : mRefCnt{0}
 {
 }
 
@@ -42,34 +43,40 @@ int PlayerWorker::entry()
 	while (mIsRunning) {
 		if (mWorkerQueue.isEmpty() && mCurPlayer && (mCurPlayer->mCurState == PLAYER_STATE_PLAYING)) {
 			shared_ptr<Decoder> mDecoder = mCurPlayer->mInputDataSource->getDecoder();
-			if(mDecoder) {
+			if (mDecoder) {
 				size_t num_read = mCurPlayer->mInputDataSource->read(mCurPlayer->mBuffer,
-					(mCurPlayer->mBufSize < mDecoder->getDataSpace()) ? mCurPlayer->mBufSize : mDecoder->getDataSpace());
+					(mCurPlayer->mBufSize < mDecoder->getAvailSpace()) ?
+						mCurPlayer->mBufSize : mDecoder->getAvailSpace());
 				medvdbg("MediaPlayer Worker(has mDecoder) : num_read = %d\n", num_read);
 
 				/* Todo: Below code has an issue about file EOF.
-					*       Should be fixed after discuss.
-					*/
-				if(num_read == 0 && mDecoder->empty()) {
+				 *       Should be fixed after discuss.
+				 */
+				if (num_read == 0 && mDecoder->empty()) {
 					mCurPlayer->notifyObserver(PLAYER_OBSERVER_COMMAND_FINISHIED);
 					stopPlayer(mCurPlayer);
 				} else {
 					/* Todo: Currently, below function is working correctly.
-						*       Because the read size cannot be larger than remain data space.
-						*       But this isn't beautiful logic. Need to rearrange and modify the logic.
-						*/
+					 *       Because the read size cannot be larger than remain data space.
+					 *       But this isn't beautiful logic. Need to rearrange and modify the logic.
+					 */
 					mDecoder->pushData(mCurPlayer->mBuffer, num_read);
+
 					size_t size = 0;
 					unsigned int sampleRate = 0;
 					unsigned short channels = 0;
-					while(mDecoder->getFrame(mCurPlayer->mBuffer, &size, &sampleRate, &channels)) {
+					while (mDecoder->getFrame(mCurPlayer->mBuffer, &size, &sampleRate, &channels)) {
+						medvdbg("Decoded Frame: %d bytes %d %d\n", size, sampleRate, channels);
 						mCurPlayer->mInputDataSource->setSampleRate(sampleRate);
 						mCurPlayer->mInputDataSource->setChannels(channels);
 						mCurPlayer->playback(size);
 					}
 				}
 			} else {
-				size_t num_read = mCurPlayer->mInputDataSource->read(mCurPlayer->mBuffer, mCurPlayer->mBufSize);
+				size_t num_read = mCurPlayer->mInputDataSource->read(
+					mCurPlayer->mBuffer,
+					((int)mCurPlayer->mBufSize < get_output_frames_byte_size(get_output_frame_count())) ?
+						mCurPlayer->mBufSize : get_output_frames_byte_size(get_output_frame_count()));
 				medvdbg("MediaPlayer Worker : num_read = %d\n", num_read);
 
 				if (num_read > 0) {
@@ -160,7 +167,7 @@ void PlayerWorker::pausePlayer(std::shared_ptr<MediaPlayerImpl> mp)
 	mp->mCurState = PLAYER_STATE_PAUSED;
 }
 
-MediaQueue& PlayerWorker::getQueue()
+MediaQueue &PlayerWorker::getQueue()
 {
 	return mWorkerQueue;
 }

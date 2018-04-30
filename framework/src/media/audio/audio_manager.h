@@ -39,6 +39,7 @@ extern "C" {
  * @brief Result types of Audio Manager APIs such as FAIL, SUCCESS, or INVALID ARGS
  */
 enum audio_manager_result_e {
+	AUDIO_MANAGER_RESAMPLE_FAIL = -9,
 	AUDIO_MANAGER_DEVICE_FAIL = -8,
 	AUDIO_MANAGER_CARD_NOT_READY = -7,
 	AUDIO_MANAGER_CARD_NOT_FOUND = -6,

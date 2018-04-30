@@ -29,18 +29,18 @@ class Decoder
 {
 public:
 	Decoder();
-	Decoder(const Decoder* source);
+	Decoder(const Decoder *source);
 	~Decoder();
 
 public:
-	size_t pushData(unsigned char* buf, size_t size);
-	bool getFrame(unsigned char* buf, size_t* size, unsigned int* sampleRate, unsigned short* channels);
+	size_t pushData(unsigned char *buf, size_t size);
+	bool getFrame(unsigned char *buf, size_t *size, unsigned int *sampleRate, unsigned short *channels);
 	bool empty();
-	size_t getDataSpace();
+	size_t getAvailSpace();
 
 private:
 #ifdef CONFIG_AUDIO_CODEC
-	static int _configFunc(void* user_data, int audio_type, void* dec_ext);
+	static int _configFunc(void *user_data, int audio_type, void *dec_ext);
 	pv_player_t mPlayer;
 #endif
 };
