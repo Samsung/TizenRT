@@ -32,12 +32,13 @@
 
 #include <map>
 #include <cassert>
+#include "libcxx_tc_common.h"
 
 #include "test_macros.h"
 #include "private_constructor.hpp"
 #include "is_transparent.h"
 
-int main()
+int tc_libcxx_containers_map_ops_count(void)
 {
     {
     typedef std::pair<const int, double> V;
@@ -57,23 +58,23 @@ int main()
         };
         const M m(ar, ar+sizeof(ar)/sizeof(ar[0]));
         R r = m.count(5);
-        assert(r == 1);
+        TC_ASSERT_EXPR(r == 1);
         r = m.count(6);
-        assert(r == 1);
+        TC_ASSERT_EXPR(r == 1);
         r = m.count(7);
-        assert(r == 1);
+        TC_ASSERT_EXPR(r == 1);
         r = m.count(8);
-        assert(r == 1);
+        TC_ASSERT_EXPR(r == 1);
         r = m.count(9);
-        assert(r == 1);
+        TC_ASSERT_EXPR(r == 1);
         r = m.count(10);
-        assert(r == 1);
+        TC_ASSERT_EXPR(r == 1);
         r = m.count(11);
-        assert(r == 1);
+        TC_ASSERT_EXPR(r == 1);
         r = m.count(12);
-        assert(r == 1);
+        TC_ASSERT_EXPR(r == 1);
         r = m.count(4);
-        assert(r == 0);
+        TC_ASSERT_EXPR(r == 0);
     }
     }
 #if TEST_STD_VER > 11
@@ -95,42 +96,42 @@ int main()
     };
     const M m(ar, ar+sizeof(ar)/sizeof(ar[0]));
     R r = m.count(5);
-    assert(r == 1);
+    TC_ASSERT_EXPR(r == 1);
     r = m.count(6);
-    assert(r == 1);
+    TC_ASSERT_EXPR(r == 1);
     r = m.count(7);
-    assert(r == 1);
+    TC_ASSERT_EXPR(r == 1);
     r = m.count(8);
-    assert(r == 1);
+    TC_ASSERT_EXPR(r == 1);
     r = m.count(9);
-    assert(r == 1);
+    TC_ASSERT_EXPR(r == 1);
     r = m.count(10);
-    assert(r == 1);
+    TC_ASSERT_EXPR(r == 1);
     r = m.count(11);
-    assert(r == 1);
+    TC_ASSERT_EXPR(r == 1);
     r = m.count(12);
-    assert(r == 1);
+    TC_ASSERT_EXPR(r == 1);
     r = m.count(4);
-    assert(r == 0);
+    TC_ASSERT_EXPR(r == 0);
 
     r = m.count(C2Int(5));
-    assert(r == 1);
+    TC_ASSERT_EXPR(r == 1);
     r = m.count(C2Int(6));
-    assert(r == 1);
+    TC_ASSERT_EXPR(r == 1);
     r = m.count(C2Int(7));
-    assert(r == 1);
+    TC_ASSERT_EXPR(r == 1);
     r = m.count(C2Int(8));
-    assert(r == 1);
+    TC_ASSERT_EXPR(r == 1);
     r = m.count(C2Int(9));
-    assert(r == 1);
+    TC_ASSERT_EXPR(r == 1);
     r = m.count(C2Int(10));
-    assert(r == 1);
+    TC_ASSERT_EXPR(r == 1);
     r = m.count(C2Int(11));
-    assert(r == 1);
+    TC_ASSERT_EXPR(r == 1);
     r = m.count(C2Int(12));
-    assert(r == 1);
+    TC_ASSERT_EXPR(r == 1);
     r = m.count(C2Int(4));
-    assert(r == 0);
+    TC_ASSERT_EXPR(r == 0);
     }
 
     {
@@ -149,23 +150,25 @@ int main()
     m [ PC::make(12) ] = 12;
 
     R r = m.count(5);
-    assert(r == 1);
+    TC_ASSERT_EXPR(r == 1);
     r = m.count(6);
-    assert(r == 1);
+    TC_ASSERT_EXPR(r == 1);
     r = m.count(7);
-    assert(r == 1);
+    TC_ASSERT_EXPR(r == 1);
     r = m.count(8);
-    assert(r == 1);
+    TC_ASSERT_EXPR(r == 1);
     r = m.count(9);
-    assert(r == 1);
+    TC_ASSERT_EXPR(r == 1);
     r = m.count(10);
-    assert(r == 1);
+    TC_ASSERT_EXPR(r == 1);
     r = m.count(11);
-    assert(r == 1);
+    TC_ASSERT_EXPR(r == 1);
     r = m.count(12);
-    assert(r == 1);
+    TC_ASSERT_EXPR(r == 1);
     r = m.count(4);
-    assert(r == 0);
+    TC_ASSERT_EXPR(r == 0);
     }
 #endif
+    TC_SUCCESS_RESULT();
+    return 0;
 }

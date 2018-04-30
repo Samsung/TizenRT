@@ -45,11 +45,12 @@
 
 #include <map>
 #include <cassert>
+#include "libcxx_tc_common.h"
 #include <cstddef>
 
 #include "test_macros.h"
 
-int main()
+int tc_libcxx_containers_map_access_iterator(void)
 {
     {
         typedef std::pair<const int, double> V;
@@ -81,18 +82,18 @@ int main()
             V(8, 2)
         };
         std::map<int, double> m(ar, ar+sizeof(ar)/sizeof(ar[0]));
-        assert(static_cast<std::size_t>(std::distance(m.begin(), m.end())) == m.size());
-        assert(static_cast<std::size_t>(std::distance(m.rbegin(), m.rend())) == m.size());
+        TC_ASSERT_EXPR(static_cast<std::size_t>(std::distance(m.begin(), m.end())) == m.size());
+        TC_ASSERT_EXPR(static_cast<std::size_t>(std::distance(m.rbegin(), m.rend())) == m.size());
         std::map<int, double>::iterator i;
         i = m.begin();
         std::map<int, double>::const_iterator k = i;
-        assert(i == k);
+        TC_ASSERT_EXPR(i == k);
         for (int j = 1; static_cast<std::size_t>(j) <= m.size(); ++j, ++i)
         {
-            assert(i->first == j);
-            assert(i->second == 1);
+            TC_ASSERT_EXPR(i->first == j);
+            TC_ASSERT_EXPR(i->second == 1);
             i->second = 2.5;
-            assert(i->second == 2.5);
+            TC_ASSERT_EXPR(i->second == 2.5);
         }
     }
     {
@@ -125,16 +126,16 @@ int main()
             V(8, 2)
         };
         const std::map<int, double> m(ar, ar+sizeof(ar)/sizeof(ar[0]));
-        assert(static_cast<std::size_t>(std::distance(m.begin(), m.end())) == m.size());
-        assert(static_cast<std::size_t>(std::distance(m.cbegin(), m.cend())) == m.size());
-        assert(static_cast<std::size_t>(std::distance(m.rbegin(), m.rend())) == m.size());
-        assert(static_cast<std::size_t>(std::distance(m.crbegin(), m.crend())) == m.size());
+        TC_ASSERT_EXPR(static_cast<std::size_t>(std::distance(m.begin(), m.end())) == m.size());
+        TC_ASSERT_EXPR(static_cast<std::size_t>(std::distance(m.cbegin(), m.cend())) == m.size());
+        TC_ASSERT_EXPR(static_cast<std::size_t>(std::distance(m.rbegin(), m.rend())) == m.size());
+        TC_ASSERT_EXPR(static_cast<std::size_t>(std::distance(m.crbegin(), m.crend())) == m.size());
         std::map<int, double>::const_iterator i;
         i = m.begin();
         for (int j = 1; static_cast<std::size_t>(j) <= m.size(); ++j, ++i)
         {
-            assert(i->first == j);
-            assert(i->second == 1);
+            TC_ASSERT_EXPR(i->first == j);
+            TC_ASSERT_EXPR(i->second == 1);
         }
     }
 #if TEST_STD_VER > 11
@@ -143,15 +144,17 @@ int main()
         C::iterator ii1{}, ii2{};
         C::iterator ii4 = ii1;
         C::const_iterator cii{};
-        assert ( ii1 == ii2 );
-        assert ( ii1 == ii4 );
+        TC_ASSERT_EXPR ( ii1 == ii2 );
+        TC_ASSERT_EXPR ( ii1 == ii4 );
 
-        assert (!(ii1 != ii2 ));
+        TC_ASSERT_EXPR (!(ii1 != ii2 ));
 
-        assert ( (ii1 == cii ));
-        assert ( (cii == ii1 ));
-        assert (!(ii1 != cii ));
-        assert (!(cii != ii1 ));
+        TC_ASSERT_EXPR ( (ii1 == cii ));
+        TC_ASSERT_EXPR ( (cii == ii1 ));
+        TC_ASSERT_EXPR (!(ii1 != cii ));
+        TC_ASSERT_EXPR (!(cii != ii1 ));
     }
 #endif
+    TC_SUCCESS_RESULT();
+    return 0;
 }

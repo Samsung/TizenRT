@@ -35,12 +35,13 @@
 #include <unordered_map>
 #include <string>
 #include <cassert>
+#include "libcxx_tc_common.h"
 #include <cmath>
 #include <cfloat>
 
 #include "test_macros.h"
 
-int main()
+int tc_libcxx_containers_unord_map_load_factor(void)
 {
     {
         typedef std::unordered_map<int, std::string> C;
@@ -57,11 +58,13 @@ int main()
             P(80, "eighty"),
         };
         const C c(std::begin(a), std::end(a));
-        assert(std::fabs(c.load_factor() - (float)c.size()/c.bucket_count()) < FLT_EPSILON);
+        TC_ASSERT_EXPR(std::fabs(c.load_factor() - (float)c.size()/c.bucket_count()) < FLT_EPSILON);
     }
     {
         typedef std::unordered_map<int, std::string> C;
         const C c;
-        assert(c.load_factor() == 0);
+        TC_ASSERT_EXPR(c.load_factor() == 0);
     }
+    TC_SUCCESS_RESULT();
+    return 0;
 }

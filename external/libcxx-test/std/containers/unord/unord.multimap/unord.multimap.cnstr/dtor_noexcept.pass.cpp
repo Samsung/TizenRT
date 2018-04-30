@@ -32,6 +32,7 @@
 
 #include <unordered_map>
 #include <cassert>
+#include "libcxx_tc_common.h"
 
 #include "test_macros.h"
 #include "MoveOnly.h"
@@ -55,7 +56,7 @@ struct some_hash
     std::size_t operator()(T const&) const;
 };
 
-int main()
+int tc_libcxx_containers_unord_multimap_cnstr_dtor_noexcept(void)
 {
     {
         typedef std::unordered_multimap<MoveOnly, MoveOnly> C;
@@ -82,4 +83,6 @@ int main()
         static_assert(!std::is_nothrow_destructible<C>::value, "");
     }
 #endif // _LIBCPP_VERSION
+    TC_SUCCESS_RESULT();
+    return 0;
 }

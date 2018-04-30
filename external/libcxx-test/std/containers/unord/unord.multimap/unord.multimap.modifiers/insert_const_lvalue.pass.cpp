@@ -34,10 +34,11 @@
 
 #include <unordered_map>
 #include <cassert>
+#include "libcxx_tc_common.h"
 
 
 template<class Container>
-void do_insert_const_lvalue_test()
+static int do_insert_const_lvalue_test()
 {
     typedef Container C;
     typedef typename C::iterator R;
@@ -45,30 +46,33 @@ void do_insert_const_lvalue_test()
     C c;
     const VT v1(3.5, 3);
     R r = c.insert(v1);
-    assert(c.size() == 1);
-    assert(r->first == 3.5);
-    assert(r->second == 3);
+    TC_ASSERT_EXPR(c.size() == 1);
+    TC_ASSERT_EXPR(r->first == 3.5);
+    TC_ASSERT_EXPR(r->second == 3);
 
     const VT v2(3.5, 4);
     r = c.insert(v2);
-    assert(c.size() == 2);
-    assert(r->first == 3.5);
-    assert(r->second == 4);
+    TC_ASSERT_EXPR(c.size() == 2);
+    TC_ASSERT_EXPR(r->first == 3.5);
+    TC_ASSERT_EXPR(r->second == 4);
 
     const VT v3(4.5, 4);
     r = c.insert(v3);
-    assert(c.size() == 3);
-    assert(r->first == 4.5);
-    assert(r->second == 4);
+    TC_ASSERT_EXPR(c.size() == 3);
+    TC_ASSERT_EXPR(r->first == 4.5);
+    TC_ASSERT_EXPR(r->second == 4);
 
     const VT v4(5.5, 4);
     r = c.insert(v4);
-    assert(c.size() == 4);
-    assert(r->first == 5.5);
-    assert(r->second == 4);
+    TC_ASSERT_EXPR(c.size() == 4);
+    TC_ASSERT_EXPR(r->first == 5.5);
+    TC_ASSERT_EXPR(r->second == 4);
+    return 0;
 }
 
-int main()
+int tc_libcxx_containers_unord_multimap_modifiers_insert_const_lvalue(void)
 {
     do_insert_const_lvalue_test<std::unordered_multimap<double, int> >();
+    TC_SUCCESS_RESULT();
+    return 0;
 }

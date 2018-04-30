@@ -28,12 +28,13 @@
 
 // class multimap
 
-// void clear();
+// static int clear();
 
 #include <map>
 #include <cassert>
+#include "libcxx_tc_common.h"
 
-int main()
+int tc_libcxx_containers_multimap_modifiers_clear(void)
 {
     {
         typedef std::multimap<int, double> M;
@@ -50,8 +51,10 @@ int main()
             P(8, 8.5),
         };
         M m(ar, ar + sizeof(ar)/sizeof(ar[0]));
-        assert(m.size() == 8);
+        TC_ASSERT_EXPR(m.size() == 8);
         m.clear();
-        assert(m.size() == 0);
+        TC_ASSERT_EXPR(m.size() == 0);
     }
+    TC_SUCCESS_RESULT();
+    return 0;
 }

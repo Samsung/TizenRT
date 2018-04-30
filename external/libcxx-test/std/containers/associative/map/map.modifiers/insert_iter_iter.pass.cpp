@@ -29,14 +29,15 @@
 // class map
 
 // template <class InputIterator>
-//   void insert(InputIterator first, InputIterator last);
+//   static int insert(InputIterator first, InputIterator last);
 
 #include <map>
 #include <cassert>
+#include "libcxx_tc_common.h"
 
 #include "test_iterators.h"
 
-int main()
+int tc_libcxx_containers_map_modifiers_insert_iter_iter(void)
 {
     {
         typedef std::map<int, double> M;
@@ -55,12 +56,14 @@ int main()
         };
         M m;
         m.insert(input_iterator<P*>(ar), input_iterator<P*>(ar + sizeof(ar)/sizeof(ar[0])));
-        assert(m.size() == 3);
-        assert(m.begin()->first == 1);
-        assert(m.begin()->second == 1);
-        assert(next(m.begin())->first == 2);
-        assert(next(m.begin())->second == 1);
-        assert(next(m.begin(), 2)->first == 3);
-        assert(next(m.begin(), 2)->second == 1);
+        TC_ASSERT_EXPR(m.size() == 3);
+        TC_ASSERT_EXPR(m.begin()->first == 1);
+        TC_ASSERT_EXPR(m.begin()->second == 1);
+        TC_ASSERT_EXPR(next(m.begin())->first == 2);
+        TC_ASSERT_EXPR(next(m.begin())->second == 1);
+        TC_ASSERT_EXPR(next(m.begin(), 2)->first == 3);
+        TC_ASSERT_EXPR(next(m.begin(), 2)->second == 1);
     }
+    TC_SUCCESS_RESULT();
+    return 0;
 }

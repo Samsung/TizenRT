@@ -30,11 +30,12 @@
 //           class Alloc = allocator<pair<const Key, T>>>
 // class unordered_map
 
-// void swap(unordered_map& __u);
+// static int swap(unordered_map& __u);
 
 #include <unordered_map>
 #include <string>
 #include <cassert>
+#include "libcxx_tc_common.h"
 #include <cstddef>
 
 #include "test_compare.h"
@@ -42,7 +43,7 @@
 #include "test_macros.h"
 #include "test_allocator.h"
 
-int main()
+int tc_libcxx_containers_unord_map_swap_member(void)
 {
     {
         typedef test_hash<std::hash<int> > Hash;
@@ -55,22 +56,22 @@ int main()
         c1.swap(c2);
 
         LIBCPP_ASSERT(c1.bucket_count() == 0);
-        assert(c1.size() == 0);
-        assert(c1.hash_function() == Hash(2));
-        assert(c1.key_eq() == Compare(2));
-        assert(c1.get_allocator().get_id() == 1);
-        assert(static_cast<std::size_t>(std::distance(c1.begin(), c1.end())) == c1.size());
-        assert(static_cast<std::size_t>(std::distance(c1.cbegin(), c1.cend())) == c1.size());
-        assert(c1.max_load_factor() == 2);
+        TC_ASSERT_EXPR(c1.size() == 0);
+        TC_ASSERT_EXPR(c1.hash_function() == Hash(2));
+        TC_ASSERT_EXPR(c1.key_eq() == Compare(2));
+        TC_ASSERT_EXPR(c1.get_allocator().get_id() == 1);
+        TC_ASSERT_EXPR(static_cast<std::size_t>(std::distance(c1.begin(), c1.end())) == c1.size());
+        TC_ASSERT_EXPR(static_cast<std::size_t>(std::distance(c1.cbegin(), c1.cend())) == c1.size());
+        TC_ASSERT_EXPR(c1.max_load_factor() == 2);
 
         LIBCPP_ASSERT(c2.bucket_count() == 0);
-        assert(c2.size() == 0);
-        assert(c2.hash_function() == Hash(1));
-        assert(c2.key_eq() == Compare(1));
-        assert(c2.get_allocator().get_id() == 2);
-        assert(static_cast<std::size_t>(std::distance(c2.begin(), c2.end())) == c2.size());
-        assert(static_cast<std::size_t>(std::distance(c2.cbegin(), c2.cend())) == c2.size());
-        assert(c2.max_load_factor() == 1);
+        TC_ASSERT_EXPR(c2.size() == 0);
+        TC_ASSERT_EXPR(c2.hash_function() == Hash(1));
+        TC_ASSERT_EXPR(c2.key_eq() == Compare(1));
+        TC_ASSERT_EXPR(c2.get_allocator().get_id() == 2);
+        TC_ASSERT_EXPR(static_cast<std::size_t>(std::distance(c2.begin(), c2.end())) == c2.size());
+        TC_ASSERT_EXPR(static_cast<std::size_t>(std::distance(c2.cbegin(), c2.cend())) == c2.size());
+        TC_ASSERT_EXPR(c2.max_load_factor() == 1);
     }
     {
         typedef test_hash<std::hash<int> > Hash;
@@ -94,31 +95,31 @@ int main()
         c2.max_load_factor(2);
         c1.swap(c2);
 
-        assert(c1.bucket_count() >= 8);
-        assert(c1.size() == 8);
-        assert(c1.at(10) == "ten");
-        assert(c1.at(20) == "twenty");
-        assert(c1.at(30) == "thirty");
-        assert(c1.at(40) == "forty");
-        assert(c1.at(50) == "fifty");
-        assert(c1.at(60) == "sixty");
-        assert(c1.at(70) == "seventy");
-        assert(c1.at(80) == "eighty");
-        assert(c1.hash_function() == Hash(2));
-        assert(c1.key_eq() == Compare(2));
-        assert(c1.get_allocator().get_id() == 1);
-        assert(static_cast<std::size_t>(std::distance(c1.begin(), c1.end())) == c1.size());
-        assert(static_cast<std::size_t>(std::distance(c1.cbegin(), c1.cend())) == c1.size());
-        assert(c1.max_load_factor() == 2);
+        TC_ASSERT_EXPR(c1.bucket_count() >= 8);
+        TC_ASSERT_EXPR(c1.size() == 8);
+        TC_ASSERT_EXPR(c1.at(10) == "ten");
+        TC_ASSERT_EXPR(c1.at(20) == "twenty");
+        TC_ASSERT_EXPR(c1.at(30) == "thirty");
+        TC_ASSERT_EXPR(c1.at(40) == "forty");
+        TC_ASSERT_EXPR(c1.at(50) == "fifty");
+        TC_ASSERT_EXPR(c1.at(60) == "sixty");
+        TC_ASSERT_EXPR(c1.at(70) == "seventy");
+        TC_ASSERT_EXPR(c1.at(80) == "eighty");
+        TC_ASSERT_EXPR(c1.hash_function() == Hash(2));
+        TC_ASSERT_EXPR(c1.key_eq() == Compare(2));
+        TC_ASSERT_EXPR(c1.get_allocator().get_id() == 1);
+        TC_ASSERT_EXPR(static_cast<std::size_t>(std::distance(c1.begin(), c1.end())) == c1.size());
+        TC_ASSERT_EXPR(static_cast<std::size_t>(std::distance(c1.cbegin(), c1.cend())) == c1.size());
+        TC_ASSERT_EXPR(c1.max_load_factor() == 2);
 
         LIBCPP_ASSERT(c2.bucket_count() == 0);
-        assert(c2.size() == 0);
-        assert(c2.hash_function() == Hash(1));
-        assert(c2.key_eq() == Compare(1));
-        assert(c2.get_allocator().get_id() == 2);
-        assert(static_cast<std::size_t>(std::distance(c2.begin(), c2.end())) == c2.size());
-        assert(static_cast<std::size_t>(std::distance(c2.cbegin(), c2.cend())) == c2.size());
-        assert(c2.max_load_factor() == 1);
+        TC_ASSERT_EXPR(c2.size() == 0);
+        TC_ASSERT_EXPR(c2.hash_function() == Hash(1));
+        TC_ASSERT_EXPR(c2.key_eq() == Compare(1));
+        TC_ASSERT_EXPR(c2.get_allocator().get_id() == 2);
+        TC_ASSERT_EXPR(static_cast<std::size_t>(std::distance(c2.begin(), c2.end())) == c2.size());
+        TC_ASSERT_EXPR(static_cast<std::size_t>(std::distance(c2.cbegin(), c2.cend())) == c2.size());
+        TC_ASSERT_EXPR(c2.max_load_factor() == 1);
     }
     {
         typedef test_hash<std::hash<int> > Hash;
@@ -141,26 +142,26 @@ int main()
         c1.swap(c2);
 
         LIBCPP_ASSERT(c1.bucket_count() == 0);
-        assert(c1.size() == 0);
-        assert(c1.hash_function() == Hash(2));
-        assert(c1.key_eq() == Compare(2));
-        assert(c1.get_allocator().get_id() == 1);
-        assert(static_cast<std::size_t>(std::distance(c1.begin(), c1.end())) == c1.size());
-        assert(static_cast<std::size_t>(std::distance(c1.cbegin(), c1.cend())) == c1.size());
-        assert(c1.max_load_factor() == 2);
+        TC_ASSERT_EXPR(c1.size() == 0);
+        TC_ASSERT_EXPR(c1.hash_function() == Hash(2));
+        TC_ASSERT_EXPR(c1.key_eq() == Compare(2));
+        TC_ASSERT_EXPR(c1.get_allocator().get_id() == 1);
+        TC_ASSERT_EXPR(static_cast<std::size_t>(std::distance(c1.begin(), c1.end())) == c1.size());
+        TC_ASSERT_EXPR(static_cast<std::size_t>(std::distance(c1.cbegin(), c1.cend())) == c1.size());
+        TC_ASSERT_EXPR(c1.max_load_factor() == 2);
 
-        assert(c2.bucket_count() >= 4);
-        assert(c2.size() == 4);
-        assert(c2.at(1) == "one");
-        assert(c2.at(2) == "two");
-        assert(c2.at(3) == "three");
-        assert(c2.at(4) == "four");
-        assert(c2.hash_function() == Hash(1));
-        assert(c2.key_eq() == Compare(1));
-        assert(c2.get_allocator().get_id() == 2);
-        assert(static_cast<std::size_t>(std::distance(c2.begin(), c2.end())) == c2.size());
-        assert(static_cast<std::size_t>(std::distance(c2.cbegin(), c2.cend())) == c2.size());
-        assert(c2.max_load_factor() == 1);
+        TC_ASSERT_EXPR(c2.bucket_count() >= 4);
+        TC_ASSERT_EXPR(c2.size() == 4);
+        TC_ASSERT_EXPR(c2.at(1) == "one");
+        TC_ASSERT_EXPR(c2.at(2) == "two");
+        TC_ASSERT_EXPR(c2.at(3) == "three");
+        TC_ASSERT_EXPR(c2.at(4) == "four");
+        TC_ASSERT_EXPR(c2.hash_function() == Hash(1));
+        TC_ASSERT_EXPR(c2.key_eq() == Compare(1));
+        TC_ASSERT_EXPR(c2.get_allocator().get_id() == 2);
+        TC_ASSERT_EXPR(static_cast<std::size_t>(std::distance(c2.begin(), c2.end())) == c2.size());
+        TC_ASSERT_EXPR(static_cast<std::size_t>(std::distance(c2.cbegin(), c2.cend())) == c2.size());
+        TC_ASSERT_EXPR(c2.max_load_factor() == 1);
     }
     {
         typedef test_hash<std::hash<int> > Hash;
@@ -193,35 +194,35 @@ int main()
         c2.max_load_factor(2);
         c1.swap(c2);
 
-        assert(c1.bucket_count() >= 8);
-        assert(c1.size() == 8);
-        assert(c1.at(10) == "ten");
-        assert(c1.at(20) == "twenty");
-        assert(c1.at(30) == "thirty");
-        assert(c1.at(40) == "forty");
-        assert(c1.at(50) == "fifty");
-        assert(c1.at(60) == "sixty");
-        assert(c1.at(70) == "seventy");
-        assert(c1.at(80) == "eighty");
-        assert(c1.hash_function() == Hash(2));
-        assert(c1.key_eq() == Compare(2));
-        assert(c1.get_allocator().get_id() == 1);
-        assert(static_cast<std::size_t>(std::distance(c1.begin(), c1.end())) == c1.size());
-        assert(static_cast<std::size_t>(std::distance(c1.cbegin(), c1.cend())) == c1.size());
-        assert(c1.max_load_factor() == 2);
+        TC_ASSERT_EXPR(c1.bucket_count() >= 8);
+        TC_ASSERT_EXPR(c1.size() == 8);
+        TC_ASSERT_EXPR(c1.at(10) == "ten");
+        TC_ASSERT_EXPR(c1.at(20) == "twenty");
+        TC_ASSERT_EXPR(c1.at(30) == "thirty");
+        TC_ASSERT_EXPR(c1.at(40) == "forty");
+        TC_ASSERT_EXPR(c1.at(50) == "fifty");
+        TC_ASSERT_EXPR(c1.at(60) == "sixty");
+        TC_ASSERT_EXPR(c1.at(70) == "seventy");
+        TC_ASSERT_EXPR(c1.at(80) == "eighty");
+        TC_ASSERT_EXPR(c1.hash_function() == Hash(2));
+        TC_ASSERT_EXPR(c1.key_eq() == Compare(2));
+        TC_ASSERT_EXPR(c1.get_allocator().get_id() == 1);
+        TC_ASSERT_EXPR(static_cast<std::size_t>(std::distance(c1.begin(), c1.end())) == c1.size());
+        TC_ASSERT_EXPR(static_cast<std::size_t>(std::distance(c1.cbegin(), c1.cend())) == c1.size());
+        TC_ASSERT_EXPR(c1.max_load_factor() == 2);
 
-        assert(c2.bucket_count() >= 4);
-        assert(c2.size() == 4);
-        assert(c2.at(1) == "one");
-        assert(c2.at(2) == "two");
-        assert(c2.at(3) == "three");
-        assert(c2.at(4) == "four");
-        assert(c2.hash_function() == Hash(1));
-        assert(c2.key_eq() == Compare(1));
-        assert(c2.get_allocator().get_id() == 2);
-        assert(static_cast<std::size_t>(std::distance(c2.begin(), c2.end())) == c2.size());
-        assert(static_cast<std::size_t>(std::distance(c2.cbegin(), c2.cend())) == c2.size());
-        assert(c2.max_load_factor() == 1);
+        TC_ASSERT_EXPR(c2.bucket_count() >= 4);
+        TC_ASSERT_EXPR(c2.size() == 4);
+        TC_ASSERT_EXPR(c2.at(1) == "one");
+        TC_ASSERT_EXPR(c2.at(2) == "two");
+        TC_ASSERT_EXPR(c2.at(3) == "three");
+        TC_ASSERT_EXPR(c2.at(4) == "four");
+        TC_ASSERT_EXPR(c2.hash_function() == Hash(1));
+        TC_ASSERT_EXPR(c2.key_eq() == Compare(1));
+        TC_ASSERT_EXPR(c2.get_allocator().get_id() == 2);
+        TC_ASSERT_EXPR(static_cast<std::size_t>(std::distance(c2.begin(), c2.end())) == c2.size());
+        TC_ASSERT_EXPR(static_cast<std::size_t>(std::distance(c2.cbegin(), c2.cend())) == c2.size());
+        TC_ASSERT_EXPR(c2.max_load_factor() == 1);
     }
 
     {
@@ -235,22 +236,22 @@ int main()
         c1.swap(c2);
 
         LIBCPP_ASSERT(c1.bucket_count() == 0);
-        assert(c1.size() == 0);
-        assert(c1.hash_function() == Hash(2));
-        assert(c1.key_eq() == Compare(2));
-        assert(c1.get_allocator() == Alloc(2));
-        assert(static_cast<std::size_t>(std::distance(c1.begin(), c1.end())) == c1.size());
-        assert(static_cast<std::size_t>(std::distance(c1.cbegin(), c1.cend())) == c1.size());
-        assert(c1.max_load_factor() == 2);
+        TC_ASSERT_EXPR(c1.size() == 0);
+        TC_ASSERT_EXPR(c1.hash_function() == Hash(2));
+        TC_ASSERT_EXPR(c1.key_eq() == Compare(2));
+        TC_ASSERT_EXPR(c1.get_allocator() == Alloc(2));
+        TC_ASSERT_EXPR(static_cast<std::size_t>(std::distance(c1.begin(), c1.end())) == c1.size());
+        TC_ASSERT_EXPR(static_cast<std::size_t>(std::distance(c1.cbegin(), c1.cend())) == c1.size());
+        TC_ASSERT_EXPR(c1.max_load_factor() == 2);
 
         LIBCPP_ASSERT(c2.bucket_count() == 0);
-        assert(c2.size() == 0);
-        assert(c2.hash_function() == Hash(1));
-        assert(c2.key_eq() == Compare(1));
-        assert(c2.get_allocator() == Alloc(1));
-        assert(static_cast<std::size_t>(std::distance(c2.begin(), c2.end())) == c2.size());
-        assert(static_cast<std::size_t>(std::distance(c2.cbegin(), c2.cend())) == c2.size());
-        assert(c2.max_load_factor() == 1);
+        TC_ASSERT_EXPR(c2.size() == 0);
+        TC_ASSERT_EXPR(c2.hash_function() == Hash(1));
+        TC_ASSERT_EXPR(c2.key_eq() == Compare(1));
+        TC_ASSERT_EXPR(c2.get_allocator() == Alloc(1));
+        TC_ASSERT_EXPR(static_cast<std::size_t>(std::distance(c2.begin(), c2.end())) == c2.size());
+        TC_ASSERT_EXPR(static_cast<std::size_t>(std::distance(c2.cbegin(), c2.cend())) == c2.size());
+        TC_ASSERT_EXPR(c2.max_load_factor() == 1);
     }
     {
         typedef test_hash<std::hash<int> > Hash;
@@ -274,31 +275,31 @@ int main()
         c2.max_load_factor(2);
         c1.swap(c2);
 
-        assert(c1.bucket_count() >= 8);
-        assert(c1.size() == 8);
-        assert(c1.at(10) == "ten");
-        assert(c1.at(20) == "twenty");
-        assert(c1.at(30) == "thirty");
-        assert(c1.at(40) == "forty");
-        assert(c1.at(50) == "fifty");
-        assert(c1.at(60) == "sixty");
-        assert(c1.at(70) == "seventy");
-        assert(c1.at(80) == "eighty");
-        assert(c1.hash_function() == Hash(2));
-        assert(c1.key_eq() == Compare(2));
-        assert(c1.get_allocator() == Alloc(2));
-        assert(static_cast<std::size_t>(std::distance(c1.begin(), c1.end())) == c1.size());
-        assert(static_cast<std::size_t>(std::distance(c1.cbegin(), c1.cend())) == c1.size());
-        assert(c1.max_load_factor() == 2);
+        TC_ASSERT_EXPR(c1.bucket_count() >= 8);
+        TC_ASSERT_EXPR(c1.size() == 8);
+        TC_ASSERT_EXPR(c1.at(10) == "ten");
+        TC_ASSERT_EXPR(c1.at(20) == "twenty");
+        TC_ASSERT_EXPR(c1.at(30) == "thirty");
+        TC_ASSERT_EXPR(c1.at(40) == "forty");
+        TC_ASSERT_EXPR(c1.at(50) == "fifty");
+        TC_ASSERT_EXPR(c1.at(60) == "sixty");
+        TC_ASSERT_EXPR(c1.at(70) == "seventy");
+        TC_ASSERT_EXPR(c1.at(80) == "eighty");
+        TC_ASSERT_EXPR(c1.hash_function() == Hash(2));
+        TC_ASSERT_EXPR(c1.key_eq() == Compare(2));
+        TC_ASSERT_EXPR(c1.get_allocator() == Alloc(2));
+        TC_ASSERT_EXPR(static_cast<std::size_t>(std::distance(c1.begin(), c1.end())) == c1.size());
+        TC_ASSERT_EXPR(static_cast<std::size_t>(std::distance(c1.cbegin(), c1.cend())) == c1.size());
+        TC_ASSERT_EXPR(c1.max_load_factor() == 2);
 
         LIBCPP_ASSERT(c2.bucket_count() == 0);
-        assert(c2.size() == 0);
-        assert(c2.hash_function() == Hash(1));
-        assert(c2.key_eq() == Compare(1));
-        assert(c2.get_allocator() == Alloc(1));
-        assert(static_cast<std::size_t>(std::distance(c2.begin(), c2.end())) == c2.size());
-        assert(static_cast<std::size_t>(std::distance(c2.cbegin(), c2.cend())) == c2.size());
-        assert(c2.max_load_factor() == 1);
+        TC_ASSERT_EXPR(c2.size() == 0);
+        TC_ASSERT_EXPR(c2.hash_function() == Hash(1));
+        TC_ASSERT_EXPR(c2.key_eq() == Compare(1));
+        TC_ASSERT_EXPR(c2.get_allocator() == Alloc(1));
+        TC_ASSERT_EXPR(static_cast<std::size_t>(std::distance(c2.begin(), c2.end())) == c2.size());
+        TC_ASSERT_EXPR(static_cast<std::size_t>(std::distance(c2.cbegin(), c2.cend())) == c2.size());
+        TC_ASSERT_EXPR(c2.max_load_factor() == 1);
     }
     {
         typedef test_hash<std::hash<int> > Hash;
@@ -321,26 +322,26 @@ int main()
         c1.swap(c2);
 
         LIBCPP_ASSERT(c1.bucket_count() == 0);
-        assert(c1.size() == 0);
-        assert(c1.hash_function() == Hash(2));
-        assert(c1.key_eq() == Compare(2));
-        assert(c1.get_allocator() == Alloc(2));
-        assert(static_cast<std::size_t>(std::distance(c1.begin(), c1.end())) == c1.size());
-        assert(static_cast<std::size_t>(std::distance(c1.cbegin(), c1.cend())) == c1.size());
-        assert(c1.max_load_factor() == 2);
+        TC_ASSERT_EXPR(c1.size() == 0);
+        TC_ASSERT_EXPR(c1.hash_function() == Hash(2));
+        TC_ASSERT_EXPR(c1.key_eq() == Compare(2));
+        TC_ASSERT_EXPR(c1.get_allocator() == Alloc(2));
+        TC_ASSERT_EXPR(static_cast<std::size_t>(std::distance(c1.begin(), c1.end())) == c1.size());
+        TC_ASSERT_EXPR(static_cast<std::size_t>(std::distance(c1.cbegin(), c1.cend())) == c1.size());
+        TC_ASSERT_EXPR(c1.max_load_factor() == 2);
 
-        assert(c2.bucket_count() >= 4);
-        assert(c2.size() == 4);
-        assert(c2.at(1) == "one");
-        assert(c2.at(2) == "two");
-        assert(c2.at(3) == "three");
-        assert(c2.at(4) == "four");
-        assert(c2.hash_function() == Hash(1));
-        assert(c2.key_eq() == Compare(1));
-        assert(c2.get_allocator() == Alloc(1));
-        assert(static_cast<std::size_t>(std::distance(c2.begin(), c2.end())) == c2.size());
-        assert(static_cast<std::size_t>(std::distance(c2.cbegin(), c2.cend())) == c2.size());
-        assert(c2.max_load_factor() == 1);
+        TC_ASSERT_EXPR(c2.bucket_count() >= 4);
+        TC_ASSERT_EXPR(c2.size() == 4);
+        TC_ASSERT_EXPR(c2.at(1) == "one");
+        TC_ASSERT_EXPR(c2.at(2) == "two");
+        TC_ASSERT_EXPR(c2.at(3) == "three");
+        TC_ASSERT_EXPR(c2.at(4) == "four");
+        TC_ASSERT_EXPR(c2.hash_function() == Hash(1));
+        TC_ASSERT_EXPR(c2.key_eq() == Compare(1));
+        TC_ASSERT_EXPR(c2.get_allocator() == Alloc(1));
+        TC_ASSERT_EXPR(static_cast<std::size_t>(std::distance(c2.begin(), c2.end())) == c2.size());
+        TC_ASSERT_EXPR(static_cast<std::size_t>(std::distance(c2.cbegin(), c2.cend())) == c2.size());
+        TC_ASSERT_EXPR(c2.max_load_factor() == 1);
     }
     {
         typedef test_hash<std::hash<int> > Hash;
@@ -373,34 +374,36 @@ int main()
         c2.max_load_factor(2);
         c1.swap(c2);
 
-        assert(c1.bucket_count() >= 8);
-        assert(c1.size() == 8);
-        assert(c1.at(10) == "ten");
-        assert(c1.at(20) == "twenty");
-        assert(c1.at(30) == "thirty");
-        assert(c1.at(40) == "forty");
-        assert(c1.at(50) == "fifty");
-        assert(c1.at(60) == "sixty");
-        assert(c1.at(70) == "seventy");
-        assert(c1.at(80) == "eighty");
-        assert(c1.hash_function() == Hash(2));
-        assert(c1.key_eq() == Compare(2));
-        assert(c1.get_allocator() == Alloc(2));
-        assert(static_cast<std::size_t>(std::distance(c1.begin(), c1.end())) == c1.size());
-        assert(static_cast<std::size_t>(std::distance(c1.cbegin(), c1.cend())) == c1.size());
-        assert(c1.max_load_factor() == 2);
+        TC_ASSERT_EXPR(c1.bucket_count() >= 8);
+        TC_ASSERT_EXPR(c1.size() == 8);
+        TC_ASSERT_EXPR(c1.at(10) == "ten");
+        TC_ASSERT_EXPR(c1.at(20) == "twenty");
+        TC_ASSERT_EXPR(c1.at(30) == "thirty");
+        TC_ASSERT_EXPR(c1.at(40) == "forty");
+        TC_ASSERT_EXPR(c1.at(50) == "fifty");
+        TC_ASSERT_EXPR(c1.at(60) == "sixty");
+        TC_ASSERT_EXPR(c1.at(70) == "seventy");
+        TC_ASSERT_EXPR(c1.at(80) == "eighty");
+        TC_ASSERT_EXPR(c1.hash_function() == Hash(2));
+        TC_ASSERT_EXPR(c1.key_eq() == Compare(2));
+        TC_ASSERT_EXPR(c1.get_allocator() == Alloc(2));
+        TC_ASSERT_EXPR(static_cast<std::size_t>(std::distance(c1.begin(), c1.end())) == c1.size());
+        TC_ASSERT_EXPR(static_cast<std::size_t>(std::distance(c1.cbegin(), c1.cend())) == c1.size());
+        TC_ASSERT_EXPR(c1.max_load_factor() == 2);
 
-        assert(c2.bucket_count() >= 4);
-        assert(c2.size() == 4);
-        assert(c2.at(1) == "one");
-        assert(c2.at(2) == "two");
-        assert(c2.at(3) == "three");
-        assert(c2.at(4) == "four");
-        assert(c2.hash_function() == Hash(1));
-        assert(c2.key_eq() == Compare(1));
-        assert(c2.get_allocator() == Alloc(1));
-        assert(static_cast<std::size_t>(std::distance(c2.begin(), c2.end())) == c2.size());
-        assert(static_cast<std::size_t>(std::distance(c2.cbegin(), c2.cend())) == c2.size());
-        assert(c2.max_load_factor() == 1);
+        TC_ASSERT_EXPR(c2.bucket_count() >= 4);
+        TC_ASSERT_EXPR(c2.size() == 4);
+        TC_ASSERT_EXPR(c2.at(1) == "one");
+        TC_ASSERT_EXPR(c2.at(2) == "two");
+        TC_ASSERT_EXPR(c2.at(3) == "three");
+        TC_ASSERT_EXPR(c2.at(4) == "four");
+        TC_ASSERT_EXPR(c2.hash_function() == Hash(1));
+        TC_ASSERT_EXPR(c2.key_eq() == Compare(1));
+        TC_ASSERT_EXPR(c2.get_allocator() == Alloc(1));
+        TC_ASSERT_EXPR(static_cast<std::size_t>(std::distance(c2.begin(), c2.end())) == c2.size());
+        TC_ASSERT_EXPR(static_cast<std::size_t>(std::distance(c2.cbegin(), c2.cend())) == c2.size());
+        TC_ASSERT_EXPR(c2.max_load_factor() == 1);
     }
+    TC_SUCCESS_RESULT();
+    return 0;
 }

@@ -33,16 +33,9 @@
 #include <map>
 #include <cassert>
 #include "test_macros.h"
+#include "libcxx_tc_common.h"
 
-struct TemplateConstructor
-{
-    template<typename T>
-    TemplateConstructor (const T&) {}
-};
-
-bool operator<(const TemplateConstructor&, const TemplateConstructor&) { return false; }
-
-int main()
+int tc_libcxx_containers_map_modifiers_erase_iter(void)
 {
     {
         typedef std::map<int, double> M;
@@ -60,95 +53,95 @@ int main()
             P(8, 8.5),
         };
         M m(ar, ar + sizeof(ar)/sizeof(ar[0]));
-        assert(m.size() == 8);
+        TC_ASSERT_EXPR(m.size() == 8);
         I i = m.erase(next(m.cbegin(), 3));
-        assert(m.size() == 7);
-        assert(i == next(m.begin(), 3));
-        assert(m.begin()->first == 1);
-        assert(m.begin()->second == 1.5);
-        assert(next(m.begin())->first == 2);
-        assert(next(m.begin())->second == 2.5);
-        assert(next(m.begin(), 2)->first == 3);
-        assert(next(m.begin(), 2)->second == 3.5);
-        assert(next(m.begin(), 3)->first == 5);
-        assert(next(m.begin(), 3)->second == 5.5);
-        assert(next(m.begin(), 4)->first == 6);
-        assert(next(m.begin(), 4)->second == 6.5);
-        assert(next(m.begin(), 5)->first == 7);
-        assert(next(m.begin(), 5)->second == 7.5);
-        assert(next(m.begin(), 6)->first == 8);
-        assert(next(m.begin(), 6)->second == 8.5);
+        TC_ASSERT_EXPR(m.size() == 7);
+        TC_ASSERT_EXPR(i == next(m.begin(), 3));
+        TC_ASSERT_EXPR(m.begin()->first == 1);
+        TC_ASSERT_EXPR(m.begin()->second == 1.5);
+        TC_ASSERT_EXPR(next(m.begin())->first == 2);
+        TC_ASSERT_EXPR(next(m.begin())->second == 2.5);
+        TC_ASSERT_EXPR(next(m.begin(), 2)->first == 3);
+        TC_ASSERT_EXPR(next(m.begin(), 2)->second == 3.5);
+        TC_ASSERT_EXPR(next(m.begin(), 3)->first == 5);
+        TC_ASSERT_EXPR(next(m.begin(), 3)->second == 5.5);
+        TC_ASSERT_EXPR(next(m.begin(), 4)->first == 6);
+        TC_ASSERT_EXPR(next(m.begin(), 4)->second == 6.5);
+        TC_ASSERT_EXPR(next(m.begin(), 5)->first == 7);
+        TC_ASSERT_EXPR(next(m.begin(), 5)->second == 7.5);
+        TC_ASSERT_EXPR(next(m.begin(), 6)->first == 8);
+        TC_ASSERT_EXPR(next(m.begin(), 6)->second == 8.5);
 
         i = m.erase(next(m.cbegin(), 0));
-        assert(m.size() == 6);
-        assert(i == m.begin());
-        assert(m.begin()->first == 2);
-        assert(m.begin()->second == 2.5);
-        assert(next(m.begin())->first == 3);
-        assert(next(m.begin())->second == 3.5);
-        assert(next(m.begin(), 2)->first == 5);
-        assert(next(m.begin(), 2)->second == 5.5);
-        assert(next(m.begin(), 3)->first == 6);
-        assert(next(m.begin(), 3)->second == 6.5);
-        assert(next(m.begin(), 4)->first == 7);
-        assert(next(m.begin(), 4)->second == 7.5);
-        assert(next(m.begin(), 5)->first == 8);
-        assert(next(m.begin(), 5)->second == 8.5);
+        TC_ASSERT_EXPR(m.size() == 6);
+        TC_ASSERT_EXPR(i == m.begin());
+        TC_ASSERT_EXPR(m.begin()->first == 2);
+        TC_ASSERT_EXPR(m.begin()->second == 2.5);
+        TC_ASSERT_EXPR(next(m.begin())->first == 3);
+        TC_ASSERT_EXPR(next(m.begin())->second == 3.5);
+        TC_ASSERT_EXPR(next(m.begin(), 2)->first == 5);
+        TC_ASSERT_EXPR(next(m.begin(), 2)->second == 5.5);
+        TC_ASSERT_EXPR(next(m.begin(), 3)->first == 6);
+        TC_ASSERT_EXPR(next(m.begin(), 3)->second == 6.5);
+        TC_ASSERT_EXPR(next(m.begin(), 4)->first == 7);
+        TC_ASSERT_EXPR(next(m.begin(), 4)->second == 7.5);
+        TC_ASSERT_EXPR(next(m.begin(), 5)->first == 8);
+        TC_ASSERT_EXPR(next(m.begin(), 5)->second == 8.5);
 
         i = m.erase(next(m.cbegin(), 5));
-        assert(m.size() == 5);
-        assert(i == m.end());
-        assert(m.begin()->first == 2);
-        assert(m.begin()->second == 2.5);
-        assert(next(m.begin())->first == 3);
-        assert(next(m.begin())->second == 3.5);
-        assert(next(m.begin(), 2)->first == 5);
-        assert(next(m.begin(), 2)->second == 5.5);
-        assert(next(m.begin(), 3)->first == 6);
-        assert(next(m.begin(), 3)->second == 6.5);
-        assert(next(m.begin(), 4)->first == 7);
-        assert(next(m.begin(), 4)->second == 7.5);
+        TC_ASSERT_EXPR(m.size() == 5);
+        TC_ASSERT_EXPR(i == m.end());
+        TC_ASSERT_EXPR(m.begin()->first == 2);
+        TC_ASSERT_EXPR(m.begin()->second == 2.5);
+        TC_ASSERT_EXPR(next(m.begin())->first == 3);
+        TC_ASSERT_EXPR(next(m.begin())->second == 3.5);
+        TC_ASSERT_EXPR(next(m.begin(), 2)->first == 5);
+        TC_ASSERT_EXPR(next(m.begin(), 2)->second == 5.5);
+        TC_ASSERT_EXPR(next(m.begin(), 3)->first == 6);
+        TC_ASSERT_EXPR(next(m.begin(), 3)->second == 6.5);
+        TC_ASSERT_EXPR(next(m.begin(), 4)->first == 7);
+        TC_ASSERT_EXPR(next(m.begin(), 4)->second == 7.5);
 
         i = m.erase(next(m.cbegin(), 1));
-        assert(m.size() == 4);
-        assert(i == next(m.begin()));
-        assert(m.begin()->first == 2);
-        assert(m.begin()->second == 2.5);
-        assert(next(m.begin())->first == 5);
-        assert(next(m.begin())->second == 5.5);
-        assert(next(m.begin(), 2)->first == 6);
-        assert(next(m.begin(), 2)->second == 6.5);
-        assert(next(m.begin(), 3)->first == 7);
-        assert(next(m.begin(), 3)->second == 7.5);
+        TC_ASSERT_EXPR(m.size() == 4);
+        TC_ASSERT_EXPR(i == next(m.begin()));
+        TC_ASSERT_EXPR(m.begin()->first == 2);
+        TC_ASSERT_EXPR(m.begin()->second == 2.5);
+        TC_ASSERT_EXPR(next(m.begin())->first == 5);
+        TC_ASSERT_EXPR(next(m.begin())->second == 5.5);
+        TC_ASSERT_EXPR(next(m.begin(), 2)->first == 6);
+        TC_ASSERT_EXPR(next(m.begin(), 2)->second == 6.5);
+        TC_ASSERT_EXPR(next(m.begin(), 3)->first == 7);
+        TC_ASSERT_EXPR(next(m.begin(), 3)->second == 7.5);
 
         i = m.erase(next(m.cbegin(), 2));
-        assert(m.size() == 3);
-        assert(i == next(m.begin(), 2));
-        assert(m.begin()->first == 2);
-        assert(m.begin()->second == 2.5);
-        assert(next(m.begin())->first == 5);
-        assert(next(m.begin())->second == 5.5);
-        assert(next(m.begin(), 2)->first == 7);
-        assert(next(m.begin(), 2)->second == 7.5);
+        TC_ASSERT_EXPR(m.size() == 3);
+        TC_ASSERT_EXPR(i == next(m.begin(), 2));
+        TC_ASSERT_EXPR(m.begin()->first == 2);
+        TC_ASSERT_EXPR(m.begin()->second == 2.5);
+        TC_ASSERT_EXPR(next(m.begin())->first == 5);
+        TC_ASSERT_EXPR(next(m.begin())->second == 5.5);
+        TC_ASSERT_EXPR(next(m.begin(), 2)->first == 7);
+        TC_ASSERT_EXPR(next(m.begin(), 2)->second == 7.5);
 
         i = m.erase(next(m.cbegin(), 2));
-        assert(m.size() == 2);
-        assert(i == next(m.begin(), 2));
-        assert(m.begin()->first == 2);
-        assert(m.begin()->second == 2.5);
-        assert(next(m.begin())->first == 5);
-        assert(next(m.begin())->second == 5.5);
+        TC_ASSERT_EXPR(m.size() == 2);
+        TC_ASSERT_EXPR(i == next(m.begin(), 2));
+        TC_ASSERT_EXPR(m.begin()->first == 2);
+        TC_ASSERT_EXPR(m.begin()->second == 2.5);
+        TC_ASSERT_EXPR(next(m.begin())->first == 5);
+        TC_ASSERT_EXPR(next(m.begin())->second == 5.5);
 
         i = m.erase(next(m.cbegin(), 0));
-        assert(m.size() == 1);
-        assert(i == next(m.begin(), 0));
-        assert(m.begin()->first == 5);
-        assert(m.begin()->second == 5.5);
+        TC_ASSERT_EXPR(m.size() == 1);
+        TC_ASSERT_EXPR(i == next(m.begin(), 0));
+        TC_ASSERT_EXPR(m.begin()->first == 5);
+        TC_ASSERT_EXPR(m.begin()->second == 5.5);
 
         i = m.erase(m.cbegin());
-        assert(m.size() == 0);
-        assert(i == m.begin());
-        assert(i == m.end());
+        TC_ASSERT_EXPR(m.size() == 0);
+        TC_ASSERT_EXPR(i == m.begin());
+        TC_ASSERT_EXPR(i == m.end());
     }
 #if TEST_STD_VER >= 14
     {
@@ -164,4 +157,6 @@ int main()
             c.erase(it);
     }
 #endif
+    TC_SUCCESS_RESULT();
+    return 0;
 }

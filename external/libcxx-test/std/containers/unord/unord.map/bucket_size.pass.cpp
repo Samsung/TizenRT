@@ -35,10 +35,11 @@
 #include <unordered_map>
 #include <string>
 #include <cassert>
+#include "libcxx_tc_common.h"
 
 #include "test_macros.h"
 
-int main()
+int tc_libcxx_containers_unord_map_bucket_size(void)
 {
     {
         typedef std::unordered_map<int, std::string> C;
@@ -53,11 +54,13 @@ int main()
             P(2, "four"),
         };
         const C c(std::begin(a), std::end(a));
-        assert(c.bucket_count() >= 5);
+        TC_ASSERT_EXPR(c.bucket_count() >= 5);
         LIBCPP_ASSERT(c.bucket_size(0) == 0);
         LIBCPP_ASSERT(c.bucket_size(1) == 1);
         LIBCPP_ASSERT(c.bucket_size(2) == 1);
         LIBCPP_ASSERT(c.bucket_size(3) == 1);
         LIBCPP_ASSERT(c.bucket_size(4) == 1);
     }
+    TC_SUCCESS_RESULT();
+    return 0;
 }

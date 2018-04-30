@@ -32,25 +32,28 @@
 
 #include <map>
 #include <cassert>
+#include "libcxx_tc_common.h"
 
 
-int main()
+int tc_libcxx_containers_multimap_size(void)
 {
     {
     typedef std::multimap<int, double> M;
     M m;
-    assert(m.size() == 0);
+    TC_ASSERT_EXPR(m.size() == 0);
     m.insert(M::value_type(2, 1.5));
-    assert(m.size() == 1);
+    TC_ASSERT_EXPR(m.size() == 1);
     m.insert(M::value_type(1, 1.5));
-    assert(m.size() == 2);
+    TC_ASSERT_EXPR(m.size() == 2);
     m.insert(M::value_type(3, 1.5));
-    assert(m.size() == 3);
+    TC_ASSERT_EXPR(m.size() == 3);
     m.erase(m.begin());
-    assert(m.size() == 2);
+    TC_ASSERT_EXPR(m.size() == 2);
     m.erase(m.begin());
-    assert(m.size() == 1);
+    TC_ASSERT_EXPR(m.size() == 1);
     m.erase(m.begin());
-    assert(m.size() == 0);
+    TC_ASSERT_EXPR(m.size() == 0);
     }
+    TC_SUCCESS_RESULT();
+    return 0;
 }

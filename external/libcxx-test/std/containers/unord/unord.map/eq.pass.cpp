@@ -39,9 +39,10 @@
 #include <unordered_map>
 #include <string>
 #include <cassert>
+#include "libcxx_tc_common.h"
 
 
-int main()
+int tc_libcxx_containers_unord_map_eq(void)
 {
     {
         typedef std::unordered_map<int, std::string> C;
@@ -59,8 +60,8 @@ int main()
         };
         const C c1(std::begin(a), std::end(a));
         const C c2;
-        assert(!(c1 == c2));
-        assert( (c1 != c2));
+        TC_ASSERT_EXPR(!(c1 == c2));
+        TC_ASSERT_EXPR( (c1 != c2));
     }
     {
         typedef std::unordered_map<int, std::string> C;
@@ -78,8 +79,8 @@ int main()
         };
         const C c1(std::begin(a), std::end(a));
         const C c2 = c1;
-        assert( (c1 == c2));
-        assert(!(c1 != c2));
+        TC_ASSERT_EXPR( (c1 == c2));
+        TC_ASSERT_EXPR(!(c1 != c2));
     }
     {
         typedef std::unordered_map<int, std::string> C;
@@ -98,13 +99,15 @@ int main()
         C c1(std::begin(a), std::end(a));
         C c2 = c1;
         c2.rehash(30);
-        assert( (c1 == c2));
-        assert(!(c1 != c2));
+        TC_ASSERT_EXPR( (c1 == c2));
+        TC_ASSERT_EXPR(!(c1 != c2));
         c2.insert(P(90, "ninety"));
-        assert(!(c1 == c2));
-        assert( (c1 != c2));
+        TC_ASSERT_EXPR(!(c1 == c2));
+        TC_ASSERT_EXPR( (c1 != c2));
         c1.insert(P(90, "ninety"));
-        assert( (c1 == c2));
-        assert(!(c1 != c2));
+        TC_ASSERT_EXPR( (c1 == c2));
+        TC_ASSERT_EXPR(!(c1 != c2));
     }
+    TC_SUCCESS_RESULT();
+    return 0;
 }

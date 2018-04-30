@@ -35,9 +35,10 @@
 #include <unordered_map>
 #include <string>
 #include <cassert>
+#include "libcxx_tc_common.h"
 
 
-int main()
+int tc_libcxx_containers_unord_map_equal_range_const(void)
 {
     {
         typedef std::unordered_map<int, std::string> C;
@@ -56,10 +57,12 @@ int main()
         };
         const C c(std::begin(a), std::end(a));
         std::pair<I, I> r = c.equal_range(30);
-        assert(std::distance(r.first, r.second) == 1);
-        assert(r.first->first == 30);
-        assert(r.first->second == "thirty");
+        TC_ASSERT_EXPR(std::distance(r.first, r.second) == 1);
+        TC_ASSERT_EXPR(r.first->first == 30);
+        TC_ASSERT_EXPR(r.first->second == "thirty");
         r = c.equal_range(5);
-        assert(std::distance(r.first, r.second) == 0);
+        TC_ASSERT_EXPR(std::distance(r.first, r.second) == 0);
     }
+    TC_SUCCESS_RESULT();
+    return 0;
 }

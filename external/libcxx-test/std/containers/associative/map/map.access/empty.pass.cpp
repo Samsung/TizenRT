@@ -32,16 +32,19 @@
 
 #include <map>
 #include <cassert>
+#include "libcxx_tc_common.h"
 
-int main()
+int tc_libcxx_containers_map_access_empty(void)
 {
     {
     typedef std::map<int, double> M;
     M m;
-    assert(m.empty());
+    TC_ASSERT_EXPR(m.empty());
     m.insert(M::value_type(1, 1.5));
-    assert(!m.empty());
+    TC_ASSERT_EXPR(!m.empty());
     m.clear();
-    assert(m.empty());
+    TC_ASSERT_EXPR(m.empty());
     }
+    TC_SUCCESS_RESULT();
+    return 0;
 }

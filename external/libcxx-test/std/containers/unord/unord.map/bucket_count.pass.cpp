@@ -35,10 +35,11 @@
 #include <unordered_map>
 #include <string>
 #include <cassert>
+#include "libcxx_tc_common.h"
 
 #include "test_macros.h"
 
-int main()
+int tc_libcxx_containers_unord_map_bucket_count(void)
 {
     {
         typedef std::unordered_map<int, std::string> C;
@@ -60,6 +61,8 @@ int main()
             P(80, "eighty"),
         };
         const C c(std::begin(a), std::end(a));
-        assert(c.bucket_count() >= 8);
+        TC_ASSERT_EXPR(c.bucket_count() >= 8);
     }
+    TC_SUCCESS_RESULT();
+    return 0;
 }

@@ -40,9 +40,10 @@
 #include <unordered_map>
 #include <string>
 #include <cassert>
+#include "libcxx_tc_common.h"
 
 
-int main()
+int tc_libcxx_containers_unord_multimap_local_iterators(void)
 {
     {
         typedef std::unordered_multimap<int, std::string> C;
@@ -58,55 +59,55 @@ int main()
             P(2, "four"),
         };
         C c(a, a + sizeof(a)/sizeof(a[0]));
-        assert(c.bucket_count() >= 7);
+        TC_ASSERT_EXPR(c.bucket_count() >= 7);
         C::size_type b = c.bucket(0);
         I i = c.begin(b);
         I j = c.end(b);
-        assert(std::distance(i, j) == 0);
+        TC_ASSERT_EXPR(std::distance(i, j) == 0);
 
         b = c.bucket(1);
         i = c.begin(b);
         j = c.end(b);
-        assert(std::distance(i, j) == 2);
-        assert(i->first == 1);
-        assert(i->second == "one");
+        TC_ASSERT_EXPR(std::distance(i, j) == 2);
+        TC_ASSERT_EXPR(i->first == 1);
+        TC_ASSERT_EXPR(i->second == "one");
         ++i;
-        assert(i->first == 1);
-        assert(i->second == "four");
+        TC_ASSERT_EXPR(i->first == 1);
+        TC_ASSERT_EXPR(i->second == "four");
 
         b = c.bucket(2);
         i = c.begin(b);
         j = c.end(b);
-        assert(std::distance(i, j) == 2);
-        assert(i->first == 2);
-        assert(i->second == "two");
+        TC_ASSERT_EXPR(std::distance(i, j) == 2);
+        TC_ASSERT_EXPR(i->first == 2);
+        TC_ASSERT_EXPR(i->second == "two");
         ++i;
-        assert(i->first == 2);
-        assert(i->second == "four");
+        TC_ASSERT_EXPR(i->first == 2);
+        TC_ASSERT_EXPR(i->second == "four");
 
         b = c.bucket(3);
         i = c.begin(b);
         j = c.end(b);
-        assert(std::distance(i, j) == 1);
-        assert(i->first == 3);
-        assert(i->second == "three");
+        TC_ASSERT_EXPR(std::distance(i, j) == 1);
+        TC_ASSERT_EXPR(i->first == 3);
+        TC_ASSERT_EXPR(i->second == "three");
 
         b = c.bucket(4);
         i = c.begin(b);
         j = c.end(b);
-        assert(std::distance(i, j) == 1);
-        assert(i->first == 4);
-        assert(i->second == "four");
+        TC_ASSERT_EXPR(std::distance(i, j) == 1);
+        TC_ASSERT_EXPR(i->first == 4);
+        TC_ASSERT_EXPR(i->second == "four");
 
         b = c.bucket(5);
         i = c.begin(b);
         j = c.end(b);
-        assert(std::distance(i, j) == 0);
+        TC_ASSERT_EXPR(std::distance(i, j) == 0);
 
         b = c.bucket(6);
         i = c.begin(b);
         j = c.end(b);
-        assert(std::distance(i, j) == 0);
+        TC_ASSERT_EXPR(std::distance(i, j) == 0);
     }
     {
         typedef std::unordered_multimap<int, std::string> C;
@@ -122,55 +123,55 @@ int main()
             P(2, "four"),
         };
         const C c(a, a + sizeof(a)/sizeof(a[0]));
-        assert(c.bucket_count() >= 7);
+        TC_ASSERT_EXPR(c.bucket_count() >= 7);
         C::size_type b = c.bucket(0);
         I i = c.begin(b);
         I j = c.end(b);
-        assert(std::distance(i, j) == 0);
+        TC_ASSERT_EXPR(std::distance(i, j) == 0);
 
         b = c.bucket(1);
         i = c.begin(b);
         j = c.end(b);
-        assert(std::distance(i, j) == 2);
-        assert(i->first == 1);
-        assert(i->second == "one");
+        TC_ASSERT_EXPR(std::distance(i, j) == 2);
+        TC_ASSERT_EXPR(i->first == 1);
+        TC_ASSERT_EXPR(i->second == "one");
         ++i;
-        assert(i->first == 1);
-        assert(i->second == "four");
+        TC_ASSERT_EXPR(i->first == 1);
+        TC_ASSERT_EXPR(i->second == "four");
 
         b = c.bucket(2);
         i = c.begin(b);
         j = c.end(b);
-        assert(std::distance(i, j) == 2);
-        assert(i->first == 2);
-        assert(i->second == "two");
+        TC_ASSERT_EXPR(std::distance(i, j) == 2);
+        TC_ASSERT_EXPR(i->first == 2);
+        TC_ASSERT_EXPR(i->second == "two");
         ++i;
-        assert(i->first == 2);
-        assert(i->second == "four");
+        TC_ASSERT_EXPR(i->first == 2);
+        TC_ASSERT_EXPR(i->second == "four");
 
         b = c.bucket(3);
         i = c.begin(b);
         j = c.end(b);
-        assert(std::distance(i, j) == 1);
-        assert(i->first == 3);
-        assert(i->second == "three");
+        TC_ASSERT_EXPR(std::distance(i, j) == 1);
+        TC_ASSERT_EXPR(i->first == 3);
+        TC_ASSERT_EXPR(i->second == "three");
 
         b = c.bucket(4);
         i = c.begin(b);
         j = c.end(b);
-        assert(std::distance(i, j) == 1);
-        assert(i->first == 4);
-        assert(i->second == "four");
+        TC_ASSERT_EXPR(std::distance(i, j) == 1);
+        TC_ASSERT_EXPR(i->first == 4);
+        TC_ASSERT_EXPR(i->second == "four");
 
         b = c.bucket(5);
         i = c.begin(b);
         j = c.end(b);
-        assert(std::distance(i, j) == 0);
+        TC_ASSERT_EXPR(std::distance(i, j) == 0);
 
         b = c.bucket(6);
         i = c.begin(b);
         j = c.end(b);
-        assert(std::distance(i, j) == 0);
+        TC_ASSERT_EXPR(std::distance(i, j) == 0);
     }
     {
         typedef std::unordered_multimap<int, std::string> C;
@@ -186,55 +187,55 @@ int main()
             P(2, "four"),
         };
         C c(a, a + sizeof(a)/sizeof(a[0]));
-        assert(c.bucket_count() >= 7);
+        TC_ASSERT_EXPR(c.bucket_count() >= 7);
         C::size_type b = c.bucket(0);
         I i = c.cbegin(b);
         I j = c.cend(b);
-        assert(std::distance(i, j) == 0);
+        TC_ASSERT_EXPR(std::distance(i, j) == 0);
 
         b = c.bucket(1);
         i = c.cbegin(b);
         j = c.cend(b);
-        assert(std::distance(i, j) == 2);
-        assert(i->first == 1);
-        assert(i->second == "one");
+        TC_ASSERT_EXPR(std::distance(i, j) == 2);
+        TC_ASSERT_EXPR(i->first == 1);
+        TC_ASSERT_EXPR(i->second == "one");
         ++i;
-        assert(i->first == 1);
-        assert(i->second == "four");
+        TC_ASSERT_EXPR(i->first == 1);
+        TC_ASSERT_EXPR(i->second == "four");
 
         b = c.bucket(2);
         i = c.cbegin(b);
         j = c.cend(b);
-        assert(std::distance(i, j) == 2);
-        assert(i->first == 2);
-        assert(i->second == "two");
+        TC_ASSERT_EXPR(std::distance(i, j) == 2);
+        TC_ASSERT_EXPR(i->first == 2);
+        TC_ASSERT_EXPR(i->second == "two");
         ++i;
-        assert(i->first == 2);
-        assert(i->second == "four");
+        TC_ASSERT_EXPR(i->first == 2);
+        TC_ASSERT_EXPR(i->second == "four");
 
         b = c.bucket(3);
         i = c.cbegin(b);
         j = c.cend(b);
-        assert(std::distance(i, j) == 1);
-        assert(i->first == 3);
-        assert(i->second == "three");
+        TC_ASSERT_EXPR(std::distance(i, j) == 1);
+        TC_ASSERT_EXPR(i->first == 3);
+        TC_ASSERT_EXPR(i->second == "three");
 
         b = c.bucket(4);
         i = c.cbegin(b);
         j = c.cend(b);
-        assert(std::distance(i, j) == 1);
-        assert(i->first == 4);
-        assert(i->second == "four");
+        TC_ASSERT_EXPR(std::distance(i, j) == 1);
+        TC_ASSERT_EXPR(i->first == 4);
+        TC_ASSERT_EXPR(i->second == "four");
 
         b = c.bucket(5);
         i = c.cbegin(b);
         j = c.cend(b);
-        assert(std::distance(i, j) == 0);
+        TC_ASSERT_EXPR(std::distance(i, j) == 0);
 
         b = c.bucket(6);
         i = c.cbegin(b);
         j = c.cend(b);
-        assert(std::distance(i, j) == 0);
+        TC_ASSERT_EXPR(std::distance(i, j) == 0);
     }
     {
         typedef std::unordered_multimap<int, std::string> C;
@@ -250,54 +251,56 @@ int main()
             P(2, "four"),
         };
         const C c(a, a + sizeof(a)/sizeof(a[0]));
-        assert(c.bucket_count() >= 7);
+        TC_ASSERT_EXPR(c.bucket_count() >= 7);
         C::size_type b = c.bucket(0);
         I i = c.cbegin(b);
         I j = c.cend(b);
-        assert(std::distance(i, j) == 0);
+        TC_ASSERT_EXPR(std::distance(i, j) == 0);
 
         b = c.bucket(1);
         i = c.cbegin(b);
         j = c.cend(b);
-        assert(std::distance(i, j) == 2);
-        assert(i->first == 1);
-        assert(i->second == "one");
+        TC_ASSERT_EXPR(std::distance(i, j) == 2);
+        TC_ASSERT_EXPR(i->first == 1);
+        TC_ASSERT_EXPR(i->second == "one");
         ++i;
-        assert(i->first == 1);
-        assert(i->second == "four");
+        TC_ASSERT_EXPR(i->first == 1);
+        TC_ASSERT_EXPR(i->second == "four");
 
         b = c.bucket(2);
         i = c.cbegin(b);
         j = c.cend(b);
-        assert(std::distance(i, j) == 2);
-        assert(i->first == 2);
-        assert(i->second == "two");
+        TC_ASSERT_EXPR(std::distance(i, j) == 2);
+        TC_ASSERT_EXPR(i->first == 2);
+        TC_ASSERT_EXPR(i->second == "two");
         ++i;
-        assert(i->first == 2);
-        assert(i->second == "four");
+        TC_ASSERT_EXPR(i->first == 2);
+        TC_ASSERT_EXPR(i->second == "four");
 
         b = c.bucket(3);
         i = c.cbegin(b);
         j = c.cend(b);
-        assert(std::distance(i, j) == 1);
-        assert(i->first == 3);
-        assert(i->second == "three");
+        TC_ASSERT_EXPR(std::distance(i, j) == 1);
+        TC_ASSERT_EXPR(i->first == 3);
+        TC_ASSERT_EXPR(i->second == "three");
 
         b = c.bucket(4);
         i = c.cbegin(b);
         j = c.cend(b);
-        assert(std::distance(i, j) == 1);
-        assert(i->first == 4);
-        assert(i->second == "four");
+        TC_ASSERT_EXPR(std::distance(i, j) == 1);
+        TC_ASSERT_EXPR(i->first == 4);
+        TC_ASSERT_EXPR(i->second == "four");
 
         b = c.bucket(5);
         i = c.cbegin(b);
         j = c.cend(b);
-        assert(std::distance(i, j) == 0);
+        TC_ASSERT_EXPR(std::distance(i, j) == 0);
 
         b = c.bucket(6);
         i = c.cbegin(b);
         j = c.cend(b);
-        assert(std::distance(i, j) == 0);
+        TC_ASSERT_EXPR(std::distance(i, j) == 0);
     }
+    TC_SUCCESS_RESULT();
+    return 0;
 }

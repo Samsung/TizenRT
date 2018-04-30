@@ -31,15 +31,16 @@
 // class unordered_map
 
 // template <class InputIterator>
-//     void insert(InputIterator first, InputIterator last);
+//     static int insert(InputIterator first, InputIterator last);
 
 #include <unordered_map>
 #include <string>
 #include <cassert>
+#include "libcxx_tc_common.h"
 
 #include "test_iterators.h"
 
-int main()
+int tc_libcxx_containers_unord_map_modifiers_insert_range(void)
 {
     {
         typedef std::unordered_map<int, std::string> C;
@@ -55,10 +56,12 @@ int main()
         };
         C c;
         c.insert(input_iterator<P*>(a), input_iterator<P*>(a + sizeof(a)/sizeof(a[0])));
-        assert(c.size() == 4);
-        assert(c.at(1) == "one");
-        assert(c.at(2) == "two");
-        assert(c.at(3) == "three");
-        assert(c.at(4) == "four");
+        TC_ASSERT_EXPR(c.size() == 4);
+        TC_ASSERT_EXPR(c.at(1) == "one");
+        TC_ASSERT_EXPR(c.at(2) == "two");
+        TC_ASSERT_EXPR(c.at(3) == "three");
+        TC_ASSERT_EXPR(c.at(4) == "four");
     }
+    TC_SUCCESS_RESULT();
+    return 0;
 }

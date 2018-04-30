@@ -519,6 +519,10 @@ CXXSRCS += std/strings/basic.string.hash/strings.pass.cpp
 CXXSRCS += std/strings/tc_strings.cpp
 endif
 
+ifeq ($(CONFIG_LIBCXX_UTC_CONTAINERS),y)
+
+ifeq ($(CONFIG_LIBCXX_UTC_CONTAINERS_MAP),y)
+
 CXXSRCS += std/containers/associative/map/map.access/at.pass.cpp
 CXXSRCS += std/containers/associative/map/map.access/empty.pass.cpp
 CXXSRCS += std/containers/associative/map/map.access/index_key.pass.cpp
@@ -715,8 +719,10 @@ CXXSRCS += std/containers/unord/unord.multimap/unord.multimap.modifiers/clear.pa
 CXXSRCS += std/containers/unord/unord.multimap/unord.multimap.modifiers/insert_range.pass.cpp
 CXXSRCS += std/containers/unord/unord.multimap/unord.multimap.modifiers/insert_hint_const_lvalue.pass.cpp
 CXXSRCS += std/containers/unord/unord.multimap/local_iterators.pass.cpp
+endif
 
-
+#Containers TC Main
+CXXSRCS += std/containers/tc_containers.cpp
 endif
 
 AOBJS		= $(ASRCS:.S=$(OBJEXT))

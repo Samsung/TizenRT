@@ -38,10 +38,11 @@
 
 #include <unordered_map>
 #include <cassert>
+#include "libcxx_tc_common.h"
 
 #include "MoveOnly.h"
 
-int main()
+int tc_libcxx_containers_unord_map_modifiers_insert_rvalue(void)
 {
     {
         typedef std::unordered_map<double, int> C;
@@ -49,28 +50,28 @@ int main()
         typedef std::pair<double, short> P;
         C c;
         R r = c.insert(P(3.5, static_cast<short>(3)));
-        assert(r.second);
-        assert(c.size() == 1);
-        assert(r.first->first == 3.5);
-        assert(r.first->second == 3);
+        TC_ASSERT_EXPR(r.second);
+        TC_ASSERT_EXPR(c.size() == 1);
+        TC_ASSERT_EXPR(r.first->first == 3.5);
+        TC_ASSERT_EXPR(r.first->second == 3);
 
         r = c.insert(P(3.5, static_cast<short>(4)));
-        assert(!r.second);
-        assert(c.size() == 1);
-        assert(r.first->first == 3.5);
-        assert(r.first->second == 3);
+        TC_ASSERT_EXPR(!r.second);
+        TC_ASSERT_EXPR(c.size() == 1);
+        TC_ASSERT_EXPR(r.first->first == 3.5);
+        TC_ASSERT_EXPR(r.first->second == 3);
 
         r = c.insert(P(4.5, static_cast<short>(4)));
-        assert(r.second);
-        assert(c.size() == 2);
-        assert(r.first->first == 4.5);
-        assert(r.first->second == 4);
+        TC_ASSERT_EXPR(r.second);
+        TC_ASSERT_EXPR(c.size() == 2);
+        TC_ASSERT_EXPR(r.first->first == 4.5);
+        TC_ASSERT_EXPR(r.first->second == 4);
 
         r = c.insert(P(5.5, static_cast<short>(4)));
-        assert(r.second);
-        assert(c.size() == 3);
-        assert(r.first->first == 5.5);
-        assert(r.first->second == 4);
+        TC_ASSERT_EXPR(r.second);
+        TC_ASSERT_EXPR(c.size() == 3);
+        TC_ASSERT_EXPR(r.first->first == 5.5);
+        TC_ASSERT_EXPR(r.first->second == 4);
     }
     {
         typedef std::unordered_map<MoveOnly, MoveOnly> C;
@@ -78,55 +79,57 @@ int main()
         typedef std::pair<MoveOnly, MoveOnly> P;
         C c;
         R r = c.insert(P(3, 3));
-        assert(r.second);
-        assert(c.size() == 1);
-        assert(r.first->first == 3);
-        assert(r.first->second == 3);
+        TC_ASSERT_EXPR(r.second);
+        TC_ASSERT_EXPR(c.size() == 1);
+        TC_ASSERT_EXPR(r.first->first == 3);
+        TC_ASSERT_EXPR(r.first->second == 3);
 
         r = c.insert(P(3, 4));
-        assert(!r.second);
-        assert(c.size() == 1);
-        assert(r.first->first == 3);
-        assert(r.first->second == 3);
+        TC_ASSERT_EXPR(!r.second);
+        TC_ASSERT_EXPR(c.size() == 1);
+        TC_ASSERT_EXPR(r.first->first == 3);
+        TC_ASSERT_EXPR(r.first->second == 3);
 
         r = c.insert(P(4, 4));
-        assert(r.second);
-        assert(c.size() == 2);
-        assert(r.first->first == 4);
-        assert(r.first->second == 4);
+        TC_ASSERT_EXPR(r.second);
+        TC_ASSERT_EXPR(c.size() == 2);
+        TC_ASSERT_EXPR(r.first->first == 4);
+        TC_ASSERT_EXPR(r.first->second == 4);
 
         r = c.insert(P(5, 4));
-        assert(r.second);
-        assert(c.size() == 3);
-        assert(r.first->first == 5);
-        assert(r.first->second == 4);
+        TC_ASSERT_EXPR(r.second);
+        TC_ASSERT_EXPR(c.size() == 3);
+        TC_ASSERT_EXPR(r.first->first == 5);
+        TC_ASSERT_EXPR(r.first->second == 4);
     }
     {
         typedef std::unordered_map<double, MoveOnly> C;
         typedef std::pair<C::iterator, bool> R;
         C c;
         R r = c.insert({3.5, 3});
-        assert(r.second);
-        assert(c.size() == 1);
-        assert(r.first->first == 3.5);
-        assert(r.first->second == 3);
+        TC_ASSERT_EXPR(r.second);
+        TC_ASSERT_EXPR(c.size() == 1);
+        TC_ASSERT_EXPR(r.first->first == 3.5);
+        TC_ASSERT_EXPR(r.first->second == 3);
 
         r = c.insert({3.5, 4});
-        assert(!r.second);
-        assert(c.size() == 1);
-        assert(r.first->first == 3.5);
-        assert(r.first->second == 3);
+        TC_ASSERT_EXPR(!r.second);
+        TC_ASSERT_EXPR(c.size() == 1);
+        TC_ASSERT_EXPR(r.first->first == 3.5);
+        TC_ASSERT_EXPR(r.first->second == 3);
 
         r = c.insert({4.5, 4});
-        assert(r.second);
-        assert(c.size() == 2);
-        assert(r.first->first == 4.5);
-        assert(r.first->second == 4);
+        TC_ASSERT_EXPR(r.second);
+        TC_ASSERT_EXPR(c.size() == 2);
+        TC_ASSERT_EXPR(r.first->first == 4.5);
+        TC_ASSERT_EXPR(r.first->second == 4);
 
         r = c.insert({5.5, 4});
-        assert(r.second);
-        assert(c.size() == 3);
-        assert(r.first->first == 5.5);
-        assert(r.first->second == 4);
+        TC_ASSERT_EXPR(r.second);
+        TC_ASSERT_EXPR(c.size() == 3);
+        TC_ASSERT_EXPR(r.first->first == 5.5);
+        TC_ASSERT_EXPR(r.first->second == 4);
     }
+    TC_SUCCESS_RESULT();
+    return 0;
 }

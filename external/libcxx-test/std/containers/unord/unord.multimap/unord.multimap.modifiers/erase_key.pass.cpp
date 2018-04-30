@@ -35,6 +35,7 @@
 #include <unordered_map>
 #include <string>
 #include <cassert>
+#include "libcxx_tc_common.h"
 #include <cstddef>
 #include "test_macros.h"
 
@@ -51,10 +52,11 @@ bool only_deletions ( const Unordered &whole, const Unordered &part ) {
         }
 
     return p == part.end();
+    return 0;
 }
 #endif
 
-int main()
+int tc_libcxx_containers_unord_multimap_modifiers_erase_key(void)
 {
     {
         typedef std::unordered_multimap<int, std::string> C;
@@ -69,153 +71,153 @@ int main()
             P(2, "four"),
         };
         C c(a, a + sizeof(a)/sizeof(a[0]));
-        assert(c.erase(5) == 0);
-        assert(c.size() == 6);
+        TC_ASSERT_EXPR(c.erase(5) == 0);
+        TC_ASSERT_EXPR(c.size() == 6);
         typedef std::pair<C::const_iterator, C::const_iterator> Eq;
         Eq eq = c.equal_range(1);
-        assert(std::distance(eq.first, eq.second) == 2);
+        TC_ASSERT_EXPR(std::distance(eq.first, eq.second) == 2);
         C::const_iterator k = eq.first;
-        assert(k->first == 1);
-        assert(k->second == "one");
+        TC_ASSERT_EXPR(k->first == 1);
+        TC_ASSERT_EXPR(k->second == "one");
         ++k;
-        assert(k->first == 1);
-        assert(k->second == "four");
+        TC_ASSERT_EXPR(k->first == 1);
+        TC_ASSERT_EXPR(k->second == "four");
         eq = c.equal_range(2);
-        assert(std::distance(eq.first, eq.second) == 2);
+        TC_ASSERT_EXPR(std::distance(eq.first, eq.second) == 2);
         k = eq.first;
-        assert(k->first == 2);
-        assert(k->second == "two");
+        TC_ASSERT_EXPR(k->first == 2);
+        TC_ASSERT_EXPR(k->second == "two");
         ++k;
-        assert(k->first == 2);
-        assert(k->second == "four");
+        TC_ASSERT_EXPR(k->first == 2);
+        TC_ASSERT_EXPR(k->second == "four");
         eq = c.equal_range(3);
-        assert(std::distance(eq.first, eq.second) == 1);
+        TC_ASSERT_EXPR(std::distance(eq.first, eq.second) == 1);
         k = eq.first;
-        assert(k->first == 3);
-        assert(k->second == "three");
+        TC_ASSERT_EXPR(k->first == 3);
+        TC_ASSERT_EXPR(k->second == "three");
         eq = c.equal_range(4);
-        assert(std::distance(eq.first, eq.second) == 1);
+        TC_ASSERT_EXPR(std::distance(eq.first, eq.second) == 1);
         k = eq.first;
-        assert(k->first == 4);
-        assert(k->second == "four");
-        assert(static_cast<std::size_t>(std::distance(c.begin(), c.end())) == c.size());
-        assert(static_cast<std::size_t>(std::distance(c.cbegin(), c.cend())) == c.size());
+        TC_ASSERT_EXPR(k->first == 4);
+        TC_ASSERT_EXPR(k->second == "four");
+        TC_ASSERT_EXPR(static_cast<std::size_t>(std::distance(c.begin(), c.end())) == c.size());
+        TC_ASSERT_EXPR(static_cast<std::size_t>(std::distance(c.cbegin(), c.cend())) == c.size());
 
-        assert(c.erase(2) == 2);
-        assert(c.size() == 4);
+        TC_ASSERT_EXPR(c.erase(2) == 2);
+        TC_ASSERT_EXPR(c.size() == 4);
         eq = c.equal_range(1);
-        assert(std::distance(eq.first, eq.second) == 2);
+        TC_ASSERT_EXPR(std::distance(eq.first, eq.second) == 2);
         k = eq.first;
-        assert(k->first == 1);
-        assert(k->second == "one");
+        TC_ASSERT_EXPR(k->first == 1);
+        TC_ASSERT_EXPR(k->second == "one");
         ++k;
-        assert(k->first == 1);
-        assert(k->second == "four");
+        TC_ASSERT_EXPR(k->first == 1);
+        TC_ASSERT_EXPR(k->second == "four");
         eq = c.equal_range(3);
-        assert(std::distance(eq.first, eq.second) == 1);
+        TC_ASSERT_EXPR(std::distance(eq.first, eq.second) == 1);
         k = eq.first;
-        assert(k->first == 3);
-        assert(k->second == "three");
+        TC_ASSERT_EXPR(k->first == 3);
+        TC_ASSERT_EXPR(k->second == "three");
         eq = c.equal_range(4);
-        assert(std::distance(eq.first, eq.second) == 1);
+        TC_ASSERT_EXPR(std::distance(eq.first, eq.second) == 1);
         k = eq.first;
-        assert(k->first == 4);
-        assert(k->second == "four");
-        assert(static_cast<std::size_t>(std::distance(c.begin(), c.end())) == c.size());
-        assert(static_cast<std::size_t>(std::distance(c.cbegin(), c.cend())) == c.size());
+        TC_ASSERT_EXPR(k->first == 4);
+        TC_ASSERT_EXPR(k->second == "four");
+        TC_ASSERT_EXPR(static_cast<std::size_t>(std::distance(c.begin(), c.end())) == c.size());
+        TC_ASSERT_EXPR(static_cast<std::size_t>(std::distance(c.cbegin(), c.cend())) == c.size());
 
-        assert(c.erase(2) == 0);
-        assert(c.size() == 4);
+        TC_ASSERT_EXPR(c.erase(2) == 0);
+        TC_ASSERT_EXPR(c.size() == 4);
         eq = c.equal_range(1);
-        assert(std::distance(eq.first, eq.second) == 2);
+        TC_ASSERT_EXPR(std::distance(eq.first, eq.second) == 2);
         k = eq.first;
-        assert(k->first == 1);
-        assert(k->second == "one");
+        TC_ASSERT_EXPR(k->first == 1);
+        TC_ASSERT_EXPR(k->second == "one");
         ++k;
-        assert(k->first == 1);
-        assert(k->second == "four");
+        TC_ASSERT_EXPR(k->first == 1);
+        TC_ASSERT_EXPR(k->second == "four");
         eq = c.equal_range(3);
-        assert(std::distance(eq.first, eq.second) == 1);
+        TC_ASSERT_EXPR(std::distance(eq.first, eq.second) == 1);
         k = eq.first;
-        assert(k->first == 3);
-        assert(k->second == "three");
+        TC_ASSERT_EXPR(k->first == 3);
+        TC_ASSERT_EXPR(k->second == "three");
         eq = c.equal_range(4);
-        assert(std::distance(eq.first, eq.second) == 1);
+        TC_ASSERT_EXPR(std::distance(eq.first, eq.second) == 1);
         k = eq.first;
-        assert(k->first == 4);
-        assert(k->second == "four");
-        assert(static_cast<std::size_t>(std::distance(c.begin(), c.end())) == c.size());
-        assert(static_cast<std::size_t>(std::distance(c.cbegin(), c.cend())) == c.size());
+        TC_ASSERT_EXPR(k->first == 4);
+        TC_ASSERT_EXPR(k->second == "four");
+        TC_ASSERT_EXPR(static_cast<std::size_t>(std::distance(c.begin(), c.end())) == c.size());
+        TC_ASSERT_EXPR(static_cast<std::size_t>(std::distance(c.cbegin(), c.cend())) == c.size());
 
-        assert(c.erase(4) == 1);
-        assert(c.size() == 3);
+        TC_ASSERT_EXPR(c.erase(4) == 1);
+        TC_ASSERT_EXPR(c.size() == 3);
         eq = c.equal_range(1);
-        assert(std::distance(eq.first, eq.second) == 2);
+        TC_ASSERT_EXPR(std::distance(eq.first, eq.second) == 2);
         k = eq.first;
-        assert(k->first == 1);
-        assert(k->second == "one");
+        TC_ASSERT_EXPR(k->first == 1);
+        TC_ASSERT_EXPR(k->second == "one");
         ++k;
-        assert(k->first == 1);
-        assert(k->second == "four");
+        TC_ASSERT_EXPR(k->first == 1);
+        TC_ASSERT_EXPR(k->second == "four");
         eq = c.equal_range(3);
-        assert(std::distance(eq.first, eq.second) == 1);
+        TC_ASSERT_EXPR(std::distance(eq.first, eq.second) == 1);
         k = eq.first;
-        assert(k->first == 3);
-        assert(k->second == "three");
-        assert(static_cast<std::size_t>(std::distance(c.begin(), c.end())) == c.size());
-        assert(static_cast<std::size_t>(std::distance(c.cbegin(), c.cend())) == c.size());
+        TC_ASSERT_EXPR(k->first == 3);
+        TC_ASSERT_EXPR(k->second == "three");
+        TC_ASSERT_EXPR(static_cast<std::size_t>(std::distance(c.begin(), c.end())) == c.size());
+        TC_ASSERT_EXPR(static_cast<std::size_t>(std::distance(c.cbegin(), c.cend())) == c.size());
 
-        assert(c.erase(4) == 0);
-        assert(c.size() == 3);
+        TC_ASSERT_EXPR(c.erase(4) == 0);
+        TC_ASSERT_EXPR(c.size() == 3);
         eq = c.equal_range(1);
-        assert(std::distance(eq.first, eq.second) == 2);
+        TC_ASSERT_EXPR(std::distance(eq.first, eq.second) == 2);
         k = eq.first;
-        assert(k->first == 1);
-        assert(k->second == "one");
+        TC_ASSERT_EXPR(k->first == 1);
+        TC_ASSERT_EXPR(k->second == "one");
         ++k;
-        assert(k->first == 1);
-        assert(k->second == "four");
+        TC_ASSERT_EXPR(k->first == 1);
+        TC_ASSERT_EXPR(k->second == "four");
         eq = c.equal_range(3);
-        assert(std::distance(eq.first, eq.second) == 1);
+        TC_ASSERT_EXPR(std::distance(eq.first, eq.second) == 1);
         k = eq.first;
-        assert(k->first == 3);
-        assert(k->second == "three");
-        assert(static_cast<std::size_t>(std::distance(c.begin(), c.end())) == c.size());
-        assert(static_cast<std::size_t>(std::distance(c.cbegin(), c.cend())) == c.size());
+        TC_ASSERT_EXPR(k->first == 3);
+        TC_ASSERT_EXPR(k->second == "three");
+        TC_ASSERT_EXPR(static_cast<std::size_t>(std::distance(c.begin(), c.end())) == c.size());
+        TC_ASSERT_EXPR(static_cast<std::size_t>(std::distance(c.cbegin(), c.cend())) == c.size());
 
-        assert(c.erase(1) == 2);
-        assert(c.size() == 1);
+        TC_ASSERT_EXPR(c.erase(1) == 2);
+        TC_ASSERT_EXPR(c.size() == 1);
         eq = c.equal_range(3);
-        assert(std::distance(eq.first, eq.second) == 1);
+        TC_ASSERT_EXPR(std::distance(eq.first, eq.second) == 1);
         k = eq.first;
-        assert(k->first == 3);
-        assert(k->second == "three");
-        assert(static_cast<std::size_t>(std::distance(c.begin(), c.end())) == c.size());
-        assert(static_cast<std::size_t>(std::distance(c.cbegin(), c.cend())) == c.size());
+        TC_ASSERT_EXPR(k->first == 3);
+        TC_ASSERT_EXPR(k->second == "three");
+        TC_ASSERT_EXPR(static_cast<std::size_t>(std::distance(c.begin(), c.end())) == c.size());
+        TC_ASSERT_EXPR(static_cast<std::size_t>(std::distance(c.cbegin(), c.cend())) == c.size());
 
-        assert(c.erase(1) == 0);
-        assert(c.size() == 1);
+        TC_ASSERT_EXPR(c.erase(1) == 0);
+        TC_ASSERT_EXPR(c.size() == 1);
         eq = c.equal_range(3);
-        assert(std::distance(eq.first, eq.second) == 1);
+        TC_ASSERT_EXPR(std::distance(eq.first, eq.second) == 1);
         k = eq.first;
-        assert(k->first == 3);
-        assert(k->second == "three");
-        assert(static_cast<std::size_t>(std::distance(c.begin(), c.end())) == c.size());
-        assert(static_cast<std::size_t>(std::distance(c.cbegin(), c.cend())) == c.size());
+        TC_ASSERT_EXPR(k->first == 3);
+        TC_ASSERT_EXPR(k->second == "three");
+        TC_ASSERT_EXPR(static_cast<std::size_t>(std::distance(c.begin(), c.end())) == c.size());
+        TC_ASSERT_EXPR(static_cast<std::size_t>(std::distance(c.cbegin(), c.cend())) == c.size());
 
-        assert(c.erase(3) == 1);
-        assert(c.size() == 0);
+        TC_ASSERT_EXPR(c.erase(3) == 1);
+        TC_ASSERT_EXPR(c.size() == 0);
         eq = c.equal_range(3);
-        assert(std::distance(eq.first, eq.second) == 0);
-        assert(static_cast<std::size_t>(std::distance(c.begin(), c.end())) == c.size());
-        assert(static_cast<std::size_t>(std::distance(c.cbegin(), c.cend())) == c.size());
+        TC_ASSERT_EXPR(std::distance(eq.first, eq.second) == 0);
+        TC_ASSERT_EXPR(static_cast<std::size_t>(std::distance(c.begin(), c.end())) == c.size());
+        TC_ASSERT_EXPR(static_cast<std::size_t>(std::distance(c.cbegin(), c.cend())) == c.size());
 
-        assert(c.erase(3) == 0);
-        assert(c.size() == 0);
+        TC_ASSERT_EXPR(c.erase(3) == 0);
+        TC_ASSERT_EXPR(c.size() == 0);
         eq = c.equal_range(3);
-        assert(std::distance(eq.first, eq.second) == 0);
-        assert(static_cast<std::size_t>(std::distance(c.begin(), c.end())) == c.size());
-        assert(static_cast<std::size_t>(std::distance(c.cbegin(), c.cend())) == c.size());
+        TC_ASSERT_EXPR(std::distance(eq.first, eq.second) == 0);
+        TC_ASSERT_EXPR(static_cast<std::size_t>(std::distance(c.begin(), c.end())) == c.size());
+        TC_ASSERT_EXPR(static_cast<std::size_t>(std::distance(c.cbegin(), c.cend())) == c.size());
     }
 #if TEST_STD_VER >= 11
     {
@@ -237,7 +239,9 @@ int main()
             ++i;
         }
 
-    assert (only_deletions (m, m2));
+    TC_ASSERT_EXPR (only_deletions (m, m2));
     }
 #endif
+    TC_SUCCESS_RESULT();
+    return 0;
 }

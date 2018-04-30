@@ -35,10 +35,11 @@
 #include <unordered_map>
 #include <string>
 #include <cassert>
+#include "libcxx_tc_common.h"
 
 #include "test_macros.h"
 
-int main()
+int tc_libcxx_containers_unord_multimap_bucket_size(void)
 {
     {
         typedef std::unordered_multimap<int, std::string> C;
@@ -53,7 +54,7 @@ int main()
             P(2, "four"),
         };
         const C c(std::begin(a), std::end(a));
-        assert(c.bucket_count() >= 7);
+        TC_ASSERT_EXPR(c.bucket_count() >= 7);
         LIBCPP_ASSERT(c.bucket_size(0) == 0);
         LIBCPP_ASSERT(c.bucket_size(1) == 2);
         LIBCPP_ASSERT(c.bucket_size(2) == 2);
@@ -62,4 +63,6 @@ int main()
         LIBCPP_ASSERT(c.bucket_size(5) == 0);
         LIBCPP_ASSERT(c.bucket_size(6) == 0);
     }
+    TC_SUCCESS_RESULT();
+    return 0;
 }

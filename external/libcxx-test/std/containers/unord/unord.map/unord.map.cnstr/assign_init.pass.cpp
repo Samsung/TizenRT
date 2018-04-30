@@ -37,13 +37,14 @@
 #include <unordered_map>
 #include <string>
 #include <cassert>
+#include "libcxx_tc_common.h"
 #include <cfloat>
 #include <cstddef>
 
 #include "test_compare.h"
 #include "test_hash.h"
 
-int main()
+int tc_libcxx_containers_unord_map_cnstr_assign_init(void)
 {
     {
         typedef std::allocator<std::pair<const int, std::string> > A;
@@ -66,15 +67,17 @@ int main()
                     P(1, "four"),
                     P(2, "four"),
                 };
-        assert(c.bucket_count() >= 5);
-        assert(c.size() == 4);
-        assert(c.at(1) == "one");
-        assert(c.at(2) == "two");
-        assert(c.at(3) == "three");
-        assert(c.at(4) == "four");
-        assert(static_cast<std::size_t>(std::distance(c.begin(), c.end())) == c.size());
-        assert(static_cast<std::size_t>(std::distance(c.cbegin(), c.cend())) == c.size());
-        assert(fabs(c.load_factor() - (float)c.size()/c.bucket_count()) < FLT_EPSILON);
-        assert(c.max_load_factor() == 1);
+        TC_ASSERT_EXPR(c.bucket_count() >= 5);
+        TC_ASSERT_EXPR(c.size() == 4);
+        TC_ASSERT_EXPR(c.at(1) == "one");
+        TC_ASSERT_EXPR(c.at(2) == "two");
+        TC_ASSERT_EXPR(c.at(3) == "three");
+        TC_ASSERT_EXPR(c.at(4) == "four");
+        TC_ASSERT_EXPR(static_cast<std::size_t>(std::distance(c.begin(), c.end())) == c.size());
+        TC_ASSERT_EXPR(static_cast<std::size_t>(std::distance(c.cbegin(), c.cend())) == c.size());
+        TC_ASSERT_EXPR(fabs(c.load_factor() - (float)c.size()/c.bucket_count()) < FLT_EPSILON);
+        TC_ASSERT_EXPR(c.max_load_factor() == 1);
     }
+    TC_SUCCESS_RESULT();
+    return 0;
 }

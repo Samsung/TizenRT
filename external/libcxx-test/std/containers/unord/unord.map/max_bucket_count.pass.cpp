@@ -35,14 +35,17 @@
 #include <unordered_map>
 #include <string>
 #include <cassert>
+#include "libcxx_tc_common.h"
 
 #include "test_macros.h"
 
-int main()
+int tc_libcxx_containers_unord_map_max_bucket_count(void)
 {
     {
         typedef std::unordered_map<int, std::string> C;
         const C c;
-        assert(c.max_bucket_count() > 0);
+        TC_ASSERT_EXPR(c.max_bucket_count() > 0);
     }
+    TC_SUCCESS_RESULT();
+    return 0;
 }

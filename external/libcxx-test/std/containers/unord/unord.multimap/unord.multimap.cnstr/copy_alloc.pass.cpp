@@ -35,6 +35,7 @@
 #include <unordered_map>
 #include <string>
 #include <cassert>
+#include "libcxx_tc_common.h"
 #include <cfloat>
 #include <cmath>
 #include <cstddef>
@@ -44,7 +45,7 @@
 #include "test_hash.h"
 #include "test_allocator.h"
 
-int main()
+int tc_libcxx_containers_unord_multimap_cnstr_copy_alloc(void)
 {
     {
         typedef std::unordered_multimap<int, std::string,
@@ -70,33 +71,35 @@ int main()
            );
         C c(c0, test_allocator<std::pair<const int, std::string> >(5));
         LIBCPP_ASSERT(c.bucket_count() == 7);
-        assert(c.size() == 6);
+        TC_ASSERT_EXPR(c.size() == 6);
         C::const_iterator i = c.cbegin();
-        assert(i->first == 1);
-        assert(i->second == "one");
+        TC_ASSERT_EXPR(i->first == 1);
+        TC_ASSERT_EXPR(i->second == "one");
         ++i;
-        assert(i->first == 1);
-        assert(i->second == "four");
+        TC_ASSERT_EXPR(i->first == 1);
+        TC_ASSERT_EXPR(i->second == "four");
         ++i;
-        assert(i->first == 2);
-        assert(i->second == "two");
+        TC_ASSERT_EXPR(i->first == 2);
+        TC_ASSERT_EXPR(i->second == "two");
         ++i;
-        assert(i->first == 2);
-        assert(i->second == "four");
+        TC_ASSERT_EXPR(i->first == 2);
+        TC_ASSERT_EXPR(i->second == "four");
         ++i;
-        assert(i->first == 3);
-        assert(i->second == "three");
+        TC_ASSERT_EXPR(i->first == 3);
+        TC_ASSERT_EXPR(i->second == "three");
         ++i;
-        assert(i->first == 4);
-        assert(i->second == "four");
-        assert(c.hash_function() == test_hash<std::hash<int> >(8));
-        assert(c.key_eq() == test_compare<std::equal_to<int> >(9));
-        assert(c.get_allocator() ==
+        TC_ASSERT_EXPR(i->first == 4);
+        TC_ASSERT_EXPR(i->second == "four");
+        TC_ASSERT_EXPR(c.hash_function() == test_hash<std::hash<int> >(8));
+        TC_ASSERT_EXPR(c.key_eq() == test_compare<std::equal_to<int> >(9));
+        TC_ASSERT_EXPR(c.get_allocator() ==
                (test_allocator<std::pair<const int, std::string> >(5)));
-        assert(!c.empty());
-        assert(static_cast<std::size_t>(std::distance(c.begin(), c.end())) == c.size());
-        assert(static_cast<std::size_t>(std::distance(c.cbegin(), c.cend())) == c.size());
-        assert(std::fabs(c.load_factor() - (float)c.size()/c.bucket_count()) < FLT_EPSILON);
-        assert(c.max_load_factor() == 1);
+        TC_ASSERT_EXPR(!c.empty());
+        TC_ASSERT_EXPR(static_cast<std::size_t>(std::distance(c.begin(), c.end())) == c.size());
+        TC_ASSERT_EXPR(static_cast<std::size_t>(std::distance(c.cbegin(), c.cend())) == c.size());
+        TC_ASSERT_EXPR(std::fabs(c.load_factor() - (float)c.size()/c.bucket_count()) < FLT_EPSILON);
+        TC_ASSERT_EXPR(c.max_load_factor() == 1);
     }
+    TC_SUCCESS_RESULT();
+    return 0;
 }
