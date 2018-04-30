@@ -8,6 +8,7 @@ The ARTIK 053 is a SOC for Wi-Fi™ IoT solutions. The ARTIK 053 has a Wi-Fi sub
 > [Environment Set-up](#environment-set-up)  
 > [How to program a binary](#how-to-program-a-binary)  
 > [ROMFS](#romfs)  
+> [How to use GDB](#how-to-use-gdb)  
 > [Configuration Sets](#configuration-sets)  
 > [Appendix](#appendix)
 
@@ -175,6 +176,75 @@ Before executing below board-specific steps, execute [generic steps](../../../to
         Hardware Configuration -> Board Selection -> Automount partitions -> Automount romfs partiton to y
         ```
 4. Build TizenRT and flash a binary [using download script](#using-download-script)
+
+## How to use GDB
+1. Run OpenOCD daemon.
+    ```bash
+    @ubuntu:~/TizenRT/os$ ../build/tools/openocd/linux64/openocd -f artik05x.cfg -s ../build/configs/artik05x/scripts/
+    Open On-Chip Debugger 0.10.0-dirty (2017-09-02-08:32)
+    Licensed under GNU GPL v2
+    For bug reports, read
+    	http://openocd.org/doc/doxygen/bugs.html
+    adapter speed: 2000 kHz
+    Info : auto-selecting first available session transport "jtag". To override use 'transport select <transport>'.
+    force hard breakpoints
+    trst_and_srst separate srst_gates_jtag trst_push_pull srst_push_pull connect_deassert_srst
+    adapter_nsrst_assert_width: 50
+    adapter_nsrst_delay: 100
+    debug_level: -1
+    ```
+2. Run GDB at another terminal.  
+    Please find ```<-- COMMAND``` at below logs.
+    ```bash
+    @ubuntu:~/TizenRT/os$ arm-none-eabi-gdb ../build/output/bin/tinyara   <-- COMMAND
+    GNU gdb (GNU Tools for ARM Embedded Processors) 7.8.0.20150604-cvs
+    Copyright (C) 2014 Free Software Foundation, Inc.
+    License GPLv3+: GNU GPL version 3 or later <http://gnu.org/licenses/gpl.html>
+    This is free software: you are free to change and redistribute it.
+    There is NO WARRANTY, to the extent permitted by law.  Type "show copying"
+    and "show warranty" for details.
+    This GDB was configured as "--host=i686-linux-gnu --target=arm-none-eabi".
+    Type "show configuration" for configuration details.
+    For bug reporting instructions, please see:
+    <http://www.gnu.org/software/gdb/bugs/>.
+    Find the GDB manual and other documentation resources online at:
+    <http://www.gnu.org/software/gdb/documentation/>.
+    For help, type "help".
+    Type "apropos word" to search for commands related to "word"...
+    Reading symbols from TizenRT/build/output/bin/tinyara...done.
+    (gdb) target remote:3333   <-- COMMAND
+    Remote debugging using :3333
+    0x00003834 in ?? ()
+    (gdb) monitor reset halt   <-- COMMAND
+    target halted in ARM state due to debug-request, current mode: Supervisor
+    cpsr: 0x60000153 pc: 0x040db8a8
+    D-Cache: enabled, I-Cache: enabled
+    (gdb) monitor cortex_r4 maskisr on   <-- COMMAND
+    cortex_a interrupt mask on
+    (gdb) b hello_main
+    Breakpoint 1 at 0x40d30fc: file hello_main.c, line 196.
+    (gdb) b up_assert
+    Breakpoint 2 at 0x40c9364: file armv7-r/arm_assert.c, line 945.
+    (gdb) c
+    Continuing.
+
+    Breakpoint 1, hello_main (argc=1, argv=0x202fd1c) at hello_main.c:196
+    196	{
+    (gdb) s
+    197		sleep(20);
+    (gdb) s
+    sleep (seconds=seconds@entry=20) at unistd/lib_sleep.c:155
+    155		if (seconds) {
+    (gdb) c
+    Continuing.
+
+    Breakpoint 2, up_assert (filename=filename@entry=0x40ea757 "hello_main.c", 
+      lineno=lineno@entry=198) at armv7-r/arm_assert.c:945
+    945		lldbg("Assertion failed at file:%s line: %d task: %s\n", filename, lineno, this_task()->name);
+    (gdb) 
+    ```
+```help``` will help you to find GDB commands.
+
 
 ## Configuration Sets
 
