@@ -43,60 +43,60 @@ void es_register_notify_easysetup_state(void *func)
 
 void ESWiFiRsrcCallback(es_result_e es_result, es_wifi_prov_data_s *event_data)
 {
-	THINGS_LOG_D(THINGS_DEBUG, ES_ENROLLEE_TAG, "ESWiFiRsrcCallback IN");
+	THINGS_LOG_D(ES_ENROLLEE_TAG, "ESWiFiRsrcCallback IN");
 
 	if (es_result != ES_OK) {
-		THINGS_LOG_V_ERROR(THINGS_ERROR, ES_ENROLLEE_TAG, "ESWiFiRsrcCallback ES_ERROR Occured");
+		THINGS_LOG_E(ES_ENROLLEE_TAG, "ESWiFiRsrcCallback ES_ERROR Occured");
 		return;
 	}
 	// deliver data to es_provisioning_callbacks_s
 	if (g_es_provisioning_cb.wifi_prov_cb != NULL) {
 		g_es_provisioning_cb.wifi_prov_cb(event_data);
 	} else {
-		THINGS_LOG_V_ERROR(THINGS_ERROR, ES_ENROLLEE_TAG, "wifi_prov_cb is NULL");
+		THINGS_LOG_E(ES_ENROLLEE_TAG, "wifi_prov_cb is NULL");
 		return;
 	}
 }
 
 void ESCloudRsrcCallback(es_result_e es_resoult, es_cloud_prov_data_s *event_data)
 {
-	THINGS_LOG_D(THINGS_DEBUG, ES_ENROLLEE_TAG, "ESCloudRsrcCallback IN");
+	THINGS_LOG_D(ES_ENROLLEE_TAG, "ESCloudRsrcCallback IN");
 
 	if (es_resoult != ES_OK) {
-		THINGS_LOG_V_ERROR(THINGS_ERROR, ES_ENROLLEE_TAG, "ESCloudRsrcCallback ES_ERROR Occured");
+		THINGS_LOG_E(ES_ENROLLEE_TAG, "ESCloudRsrcCallback ES_ERROR Occured");
 		return;
 	}
 
 	if (g_es_provisioning_cb.cloud_data_prov_cb != NULL) {
 		g_es_provisioning_cb.cloud_data_prov_cb(event_data);
 	} else {
-		THINGS_LOG_V_ERROR(THINGS_ERROR, ES_ENROLLEE_TAG, "cloud_data_prov_cb is NULL");
+		THINGS_LOG_E(ES_ENROLLEE_TAG, "cloud_data_prov_cb is NULL");
 		return;
 	}
 }
 
 void ESDevconfRsrcallback(es_result_e es_resoult, es_dev_conf_prov_data_s *event_data)
 {
-	THINGS_LOG_D(THINGS_DEBUG, ES_ENROLLEE_TAG, "ESDevconfRsrcallback IN");
+	THINGS_LOG_D(ES_ENROLLEE_TAG, "ESDevconfRsrcallback IN");
 
 	if (es_resoult != ES_OK) {
-		THINGS_LOG_V_ERROR(THINGS_ERROR, ES_ENROLLEE_TAG, "ESDevconfRsrcallback ES_ERROR Occured");
+		THINGS_LOG_E(ES_ENROLLEE_TAG, "ESDevconfRsrcallback ES_ERROR Occured");
 		return;
 	}
 
 	if (g_es_provisioning_cb.dev_conf_prov_cb != NULL) {
 		g_es_provisioning_cb.dev_conf_prov_cb(event_data);
 	} else {
-		THINGS_LOG_V_ERROR(THINGS_ERROR, ES_ENROLLEE_TAG, "dev_conf_prov_cb is NULL");
+		THINGS_LOG_E(ES_ENROLLEE_TAG, "dev_conf_prov_cb is NULL");
 		return;
 	}
 
-	THINGS_LOG_D(THINGS_DEBUG, ES_ENROLLEE_TAG, "ESDevconfRsrcallback OUT");
+	THINGS_LOG_D(ES_ENROLLEE_TAG, "ESDevconfRsrcallback OUT");
 }
 
 es_result_e es_init_enrollee(bool is_secured, es_resource_mask_e resource_mask, es_provisioning_callbacks_s callbacks)
 {
-	THINGS_LOG_D(THINGS_DEBUG, ES_ENROLLEE_TAG, "es_init_enrollee IN");
+	THINGS_LOG_D(ES_ENROLLEE_TAG, "es_init_enrollee IN");
 
 	g_is_secured = is_secured;
 	g_es_provisioning_cb.wifi_prov_cb = NULL;
@@ -108,7 +108,7 @@ es_result_e es_init_enrollee(bool is_secured, es_resource_mask_e resource_mask, 
 			g_es_provisioning_cb.wifi_prov_cb = callbacks.wifi_prov_cb;
 			register_wifi_rsrc_event_callback(ESWiFiRsrcCallback);
 		} else {
-			THINGS_LOG_ERROR(THINGS_ERROR, ES_ENROLLEE_TAG, "wifi_prov_cb NULL");
+			THINGS_LOG_E(ES_ENROLLEE_TAG, "wifi_prov_cb NULL");
 			return ES_ERROR;
 		}
 	}
@@ -117,7 +117,7 @@ es_result_e es_init_enrollee(bool is_secured, es_resource_mask_e resource_mask, 
 			g_es_provisioning_cb.dev_conf_prov_cb = callbacks.dev_conf_prov_cb;
 			register_dev_conf_rsrc_event_callback(ESDevconfRsrcallback);
 		} else {
-			THINGS_LOG_ERROR(THINGS_ERROR, ES_ENROLLEE_TAG, "dev_conf_prov_cb NULL");
+			THINGS_LOG_E(ES_ENROLLEE_TAG, "dev_conf_prov_cb NULL");
 			return ES_ERROR;
 		}
 	}
@@ -126,7 +126,7 @@ es_result_e es_init_enrollee(bool is_secured, es_resource_mask_e resource_mask, 
 			g_es_provisioning_cb.cloud_data_prov_cb = callbacks.cloud_data_prov_cb;
 			register_cloud_rsrc_event_callback(ESCloudRsrcCallback);
 		} else {
-			THINGS_LOG_ERROR(THINGS_ERROR, ES_ENROLLEE_TAG, "cloud_data_prov_cb NULL");
+			THINGS_LOG_E(ES_ENROLLEE_TAG, "cloud_data_prov_cb NULL");
 			return ES_ERROR;
 		}
 	}
@@ -135,13 +135,13 @@ es_result_e es_init_enrollee(bool is_secured, es_resource_mask_e resource_mask, 
 		unregister_resource_event_callback();
 
 		if (delete_easysetup_resources() != OC_STACK_OK) {
-			THINGS_LOG_ERROR(THINGS_ERROR, ES_ENROLLEE_TAG, "Deleting prov resource ES_ERROR!!");
+			THINGS_LOG_E(ES_ENROLLEE_TAG, "Deleting prov resource ES_ERROR!!");
 		}
 
 		return ES_ERROR;
 	}
 
-	THINGS_LOG_D(THINGS_DEBUG, ES_ENROLLEE_TAG, "es_init_enrollee OUT");
+	THINGS_LOG_D(ES_ENROLLEE_TAG, "es_init_enrollee OUT");
 	return ES_OK;
 }
 
@@ -165,67 +165,67 @@ bool es_get_cloud_login_state(void)
 
 es_result_e es_set_device_property(es_device_property *device_property)
 {
-	THINGS_LOG_D(THINGS_DEBUG, ES_ENROLLEE_TAG, "es_set_device_property IN");
+	THINGS_LOG_D(ES_ENROLLEE_TAG, "es_set_device_property IN");
 
 	if (set_device_property(device_property) != OC_STACK_OK) {
-		THINGS_LOG_ERROR(THINGS_ERROR, ES_ENROLLEE_TAG, "es_set_device_property ES_ERROR");
+		THINGS_LOG_E(ES_ENROLLEE_TAG, "es_set_device_property ES_ERROR");
 		return ES_ERROR;
 	}
 
 	int mode_idx = 0;
 	while ((device_property->WiFi).mode[mode_idx] != WiFi_EOF) {
 		(g_es_device_property.WiFi).mode[mode_idx] = (device_property->WiFi).mode[mode_idx];
-		THINGS_LOG_D(THINGS_DEBUG, ES_ENROLLEE_TAG, "WiFi Mode : %d", (g_es_device_property.WiFi).mode[mode_idx]);
+		THINGS_LOG_D(ES_ENROLLEE_TAG, "WiFi Mode : %d", (g_es_device_property.WiFi).mode[mode_idx]);
 		mode_idx++;
 	}
 	(g_es_device_property.WiFi).freq = (device_property->WiFi).freq;
-	THINGS_LOG_D(THINGS_DEBUG, ES_ENROLLEE_TAG, "WiFi Freq : %d", (g_es_device_property.WiFi).freq);
+	THINGS_LOG_D(ES_ENROLLEE_TAG, "WiFi Freq : %d", (g_es_device_property.WiFi).freq);
 
 	things_strncpy((g_es_device_property.dev_conf_s).device_name, (device_property->dev_conf_s).device_name, MAX_DEVICELEN);
-	THINGS_LOG_D(THINGS_DEBUG, ES_ENROLLEE_TAG, "Device Name : %s", (g_es_device_property.dev_conf_s).device_name);
+	THINGS_LOG_D(ES_ENROLLEE_TAG, "Device Name : %s", (g_es_device_property.dev_conf_s).device_name);
 
 	things_strncpy((g_es_device_property.dev_conf_s).device_type, (device_property->dev_conf_s).device_type, MAX_DEVICELEN);
-	THINGS_LOG_D(THINGS_DEBUG, ES_ENROLLEE_TAG, "Device Type : %s", (g_es_device_property.dev_conf_s).device_type);
+	THINGS_LOG_D(ES_ENROLLEE_TAG, "Device Type : %s", (g_es_device_property.dev_conf_s).device_type);
 
-	THINGS_LOG_D(THINGS_DEBUG, ES_ENROLLEE_TAG, "es_set_device_property OUT");
+	THINGS_LOG_D(ES_ENROLLEE_TAG, "es_set_device_property OUT");
 	return ES_OK;
 }
 
 es_result_e es_set_state(things_es_enrollee_state_e es_state)
 {
-	//THINGS_LOG_D(THINGS_DEBUG, ES_ENROLLEE_TAG, "es_set_state IN");
+	//THINGS_LOG_D(ES_ENROLLEE_TAG, "es_set_state IN");
 	OCStackResult res = OC_STACK_ERROR;
 
 	if (es_state >= ES_STATE_EOF) {
-		THINGS_LOG_V_ERROR(THINGS_ERROR, ES_ENROLLEE_TAG, "Invalid things_es_enrollee_state_e : %d", es_state);
+		THINGS_LOG_E(ES_ENROLLEE_TAG, "Invalid things_es_enrollee_state_e : %d", es_state);
 		return ES_ERROR;
 	}
 
 	if (es_cloud_session_stop_trigger(es_state) == true) {
-		THINGS_LOG_V_ERROR(THINGS_ERROR, ES_ENROLLEE_TAG, "Cloud Connection Log-Out ing...");
+		THINGS_LOG_E(ES_ENROLLEE_TAG, "Cloud Connection Log-Out ing...");
 		return ES_ERROR;
 	}
 
 	if ((res = set_enrollee_state(es_state)) == OC_STACK_ERROR) {
-		THINGS_LOG_V_ERROR(THINGS_ERROR, ES_ENROLLEE_TAG, "es_set_state setting is failed.");
+		THINGS_LOG_E(ES_ENROLLEE_TAG, "es_set_state setting is failed.");
 		return ES_ERROR;
 	}
 
 	if (g_notify_easysetup_state != NULL && res == OC_STACK_OK) {
-		THINGS_LOG_D(THINGS_DEBUG, ES_ENROLLEE_TAG, "Notify Easy-Setup State to THINGS_APP. %d", es_state);
+		THINGS_LOG_D(ES_ENROLLEE_TAG, "Notify Easy-Setup State to THINGS_APP. %d", es_state);
 #ifdef CONFIG_ST_THINGS_FOTA
 		if (es_state == ES_STATE_PUBLISHED_RESOURCES_TO_CLOUD) {
 			int ret = fmwup_check_firmware_upgraded();
 			if (ret != 0) {
-				THINGS_LOG_D(THINGS_DEBUG, "fmwup_check_firmware_upgraded : [%d]", ret);
+				THINGS_LOG_D("fmwup_check_firmware_upgraded : [%d]", ret);
 			}
 		}
 #endif
 		g_notify_easysetup_state(es_state);
 	}
 
-	THINGS_LOG_D(THINGS_DEBUG, ES_ENROLLEE_TAG, "Set ESState succesfully : %d", es_state);
-	//THINGS_LOG_D(THINGS_DEBUG, ES_ENROLLEE_TAG, "es_set_state OUT");
+	THINGS_LOG_D(ES_ENROLLEE_TAG, "Set ESState succesfully : %d", es_state);
+	//THINGS_LOG_D(ES_ENROLLEE_TAG, "es_set_state OUT");
 	return ES_OK;
 }
 
@@ -261,60 +261,60 @@ static es_error_code_e ci_errcode_to_es_errcode(ci_error_code_e cm_err_code)
 
 es_result_e es_set_error_code(es_error_code_e es_err_code)
 {
-	THINGS_LOG_D(THINGS_DEBUG, ES_ENROLLEE_TAG, "es_set_error_code IN");
+	THINGS_LOG_D(ES_ENROLLEE_TAG, "es_set_error_code IN");
 
 	if (es_err_code > ES_ERRCODE_UNKNOWN) {
-		THINGS_LOG_V_ERROR(THINGS_ERROR, ES_ENROLLEE_TAG, "Invalid es_set_error_code : %d", es_err_code);
+		THINGS_LOG_E(ES_ENROLLEE_TAG, "Invalid es_set_error_code : %d", es_err_code);
 		return ES_ERROR;
 	}
 
 	if (set_enrollee_err_code(es_err_code) != OC_STACK_OK) {
-		THINGS_LOG_ERROR(THINGS_ERROR, ES_ENROLLEE_TAG, "es_set_error_code ES_ERROR");
+		THINGS_LOG_E(ES_ENROLLEE_TAG, "es_set_error_code ES_ERROR");
 		return ES_ERROR;
 	}
 
-	THINGS_LOG_D(THINGS_DEBUG, ES_ENROLLEE_TAG, "Set es_error_code_e successfully : %d", es_err_code);
+	THINGS_LOG_D(ES_ENROLLEE_TAG, "Set es_error_code_e successfully : %d", es_err_code);
 	return ES_OK;
 }
 
 es_result_e es_set_cloud_error_code(ci_error_code_e es_err_code)
 {
-	THINGS_LOG_D(THINGS_DEBUG, ES_ENROLLEE_TAG, "es_set_cloud_error_code IN");
+	THINGS_LOG_D(ES_ENROLLEE_TAG, "es_set_cloud_error_code IN");
 
 	es_error_code_e esError = ES_ERRCODE_NO_ERROR;
 
 	if (es_err_code > ERRCI_UNKNOWN) {
-		THINGS_LOG_V_ERROR(THINGS_ERROR, ES_ENROLLEE_TAG, "Invalid es_set_cloud_error_code : %d", es_err_code);
+		THINGS_LOG_E(ES_ENROLLEE_TAG, "Invalid es_set_cloud_error_code : %d", es_err_code);
 		return ES_ERROR;
 	}
 
 	esError = ci_errcode_to_es_errcode(es_err_code);
 
 	if (set_cloud_err_code(es_err_code) != OC_STACK_OK) {
-		THINGS_LOG_ERROR(THINGS_ERROR, ES_ENROLLEE_TAG, "es_set_cloud_error_code ES_ERROR");
+		THINGS_LOG_E(ES_ENROLLEE_TAG, "es_set_cloud_error_code ES_ERROR");
 		return ES_ERROR;
 	}
 
-	THINGS_LOG_D(THINGS_DEBUG, ES_ENROLLEE_TAG, "Set es_error_code_e successfully : %d", es_err_code);
+	THINGS_LOG_D(ES_ENROLLEE_TAG, "Set es_error_code_e successfully : %d", es_err_code);
 
 	es_set_error_code(esError);
 
-	THINGS_LOG_D(THINGS_DEBUG, ES_ENROLLEE_TAG, "es_set_cloud_error_code OUT");
+	THINGS_LOG_D(ES_ENROLLEE_TAG, "es_set_cloud_error_code OUT");
 	return ES_OK;
 }
 
 es_result_e es_terminate_enrollee()
 {
-	THINGS_LOG_D(THINGS_DEBUG, ES_ENROLLEE_TAG, "es_terminate_enrollee IN");
+	THINGS_LOG_D(ES_ENROLLEE_TAG, "es_terminate_enrollee IN");
 
 	unregister_resource_event_callback();
 
 	//Delete Prov resource
 	if (delete_easysetup_resources() != OC_STACK_OK) {
-		THINGS_LOG_ERROR(THINGS_ERROR, ES_ENROLLEE_TAG, "Deleting prov resource ES_ERROR!!");
+		THINGS_LOG_E(ES_ENROLLEE_TAG, "Deleting prov resource ES_ERROR!!");
 		return ES_ERROR;
 	}
 
-	THINGS_LOG_D(THINGS_DEBUG, ES_ENROLLEE_TAG, "es_terminate_enrollee success");
+	THINGS_LOG_D(ES_ENROLLEE_TAG, "es_terminate_enrollee success");
 	return ES_OK;
 }

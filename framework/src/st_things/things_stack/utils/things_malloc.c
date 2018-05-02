@@ -40,7 +40,7 @@ void *things_malloc(size_t size)
 #ifdef ENABLE_MALLOC_DEBUG
 	void *ptr = malloc(size);
 	count++;
-	THINGS_LOG_D(THINGS_DEBUG, TAG, "malloc: ptr=%p, size=%u, count=%u", ptr, size, count);
+	THINGS_LOG_D(TAG, "malloc: ptr=%p, size=%u, count=%u", ptr, size, count);
 	return ptr;
 #else
 	return malloc(size);
@@ -56,7 +56,7 @@ void *things_calloc(size_t num, size_t size)
 	 */
 #ifdef ENABLE_MALLOC_DEBUG
 	void *ptr = calloc(num, size);
-	THINGS_LOG_D(THINGS_DEBUG, TAG, "calloc: ptr=%p, num=%u, size=%u", ptr, num, size);
+	THINGS_LOG_D(TAG, "calloc: ptr=%p, num=%u, size=%u", ptr, num, size);
 	return ptr;
 #else
 	return calloc(num, size);
@@ -75,7 +75,7 @@ void *things_realloc(void *ptr, size_t size)
 
 #ifdef ENABLE_MALLOC_DEBUG
 	void *newptr = realloc(ptr, size);
-	THINGS_LOG_D(THINGS_DEBUG, TAG, "realloc: ptr=%p, newptr=%p, size=%u", ptr, newptr, size);
+	THINGS_LOG_D(TAG, "realloc: ptr=%p, newptr=%p, size=%u", ptr, newptr, size);
 	// Very important to return the correct pointer here, as it only *somtimes*
 	// differs and thus can be hard to notice/test:
 	return newptr;
@@ -92,7 +92,7 @@ void things_free(void *ptr)
 	if (ptr) {
 		count--;
 	}
-	THINGS_LOG_D(THINGS_DEBUG, TAG, "free: ptr=%p, count=%u", ptr, count);
+	THINGS_LOG_D(TAG, "free: ptr=%p, count=%u", ptr, count);
 #endif
 
 	free(ptr);

@@ -34,7 +34,7 @@ static bool get_resource_types2(things_resource_info_s *rsrc, char ***res_types,
 	RET_FALSE_IF_PARAM_IS_NULL(TAG, count);
 
 	int rt_count = rsrc->rt_cnt;
-	THINGS_LOG_V(THINGS_DEBUG, TAG, "Resource(%s) has %d resource type(s).", rsrc->uri, rt_count);
+	THINGS_LOG_D(TAG, "Resource(%s) has %d resource type(s).", rsrc->uri, rt_count);
 	RET_FALSE_IF_EXPR_IS_TRUE(TAG, rt_count < 1, "No resource types in resource.");
 
 	char **types = (char **)things_calloc(rt_count, sizeof(char *));
@@ -45,7 +45,7 @@ static bool get_resource_types2(things_resource_info_s *rsrc, char ***res_types,
 	for (int i = 0; i < rt_count; i++) {
 		res_type = rsrc->resource_types[i];
 		if (NULL == res_type || strlen(res_type) < 1) {
-			THINGS_LOG_V(THINGS_ERROR, TAG, "Resource type at index(%d) is invalid.", i);
+			THINGS_LOG_E(TAG, "Resource type at index(%d) is invalid.", i);
 			things_free_str_array(types, i);
 			result = false;
 			break;
@@ -53,7 +53,7 @@ static bool get_resource_types2(things_resource_info_s *rsrc, char ***res_types,
 
 		types[i] = things_clone_string(res_type);
 		if (NULL == types[i]) {
-			THINGS_LOG_V(THINGS_ERROR, TAG, "Failed to clone resource type(%s).", res_type);
+			THINGS_LOG_E(TAG, "Failed to clone resource type(%s).", res_type);
 			things_free_str_array(types, i);
 			result = false;
 			break;
@@ -75,7 +75,7 @@ static bool get_interface_types2(things_resource_info_s *rsrc, char ***if_types,
 	RET_FALSE_IF_PARAM_IS_NULL(TAG, count);
 
 	int if_count = rsrc->if_cnt;
-	THINGS_LOG_V(THINGS_DEBUG, TAG, "Resource(%s) has %d interface type(s).", rsrc->uri, if_count);
+	THINGS_LOG_D(TAG, "Resource(%s) has %d interface type(s).", rsrc->uri, if_count);
 	RET_FALSE_IF_EXPR_IS_TRUE(TAG, if_count < 1, "No interface types in resource.");
 
 	char **types = (char **)things_calloc(if_count, sizeof(char *));
@@ -86,7 +86,7 @@ static bool get_interface_types2(things_resource_info_s *rsrc, char ***if_types,
 	for (int i = 0; i < if_count; i++) {
 		if_type = rsrc->interface_types[i];
 		if (NULL == if_type || strlen(if_type) < 1) {
-			THINGS_LOG_V(THINGS_ERROR, TAG, "Interface type at index(%d) is invalid.", i);
+			THINGS_LOG_E(TAG, "Interface type at index(%d) is invalid.", i);
 			things_free_str_array(types, i);
 			result = false;
 			break;
@@ -94,7 +94,7 @@ static bool get_interface_types2(things_resource_info_s *rsrc, char ***if_types,
 
 		types[i] = things_clone_string(if_type);
 		if (NULL == types[i]) {
-			THINGS_LOG_V(THINGS_ERROR, TAG, "Failed to clone inteface type(%s).", if_type);
+			THINGS_LOG_E(TAG, "Failed to clone inteface type(%s).", if_type);
 			things_free_str_array(types, i);
 			result = false;
 			break;
@@ -133,21 +133,21 @@ bool form_collection_links(things_resource_s *collection_rsrc, OCRepPayload ***l
 	int num_of_children = 0;
 	things_resource_info_s **children = NULL;
 	if (!things_get_child_resources(collection_rsrc->uri, &num_of_children, &children)) {
-		THINGS_LOG_V(THINGS_ERROR, TAG, "Failed to get child resources of collection resource(%s).", collection_rsrc->uri);
+		THINGS_LOG_E(TAG, "Failed to get child resources of collection resource(%s).", collection_rsrc->uri);
 		return false;
 	}
 
 	if (0 == num_of_children || NULL == children) {
-		THINGS_LOG_V(THINGS_ERROR, TAG, "Collection resource(%s) has no children.", collection_rsrc->uri);
+		THINGS_LOG_E(TAG, "Collection resource(%s) has no children.", collection_rsrc->uri);
 		return false;
 	}
 
-	THINGS_LOG_V(THINGS_DEBUG, TAG, "Collection resource(%s) has %d children.", collection_rsrc->uri, num_of_children);
+	THINGS_LOG_D(TAG, "Collection resource(%s) has %d children.", collection_rsrc->uri, num_of_children);
 
 	// Allocate memory for the "links" in the response payload.
 	OCRepPayload **link_arr = (OCRepPayload **) things_calloc(num_of_children, sizeof(OCRepPayload *));
 	if (NULL == link_arr) {
-		THINGS_LOG(THINGS_ERROR, TAG, "Failed to allocate memory for links in collection.");
+		THINGS_LOG_E(TAG, "Failed to allocate memory for links in collection.");
 		return false;
 	}
 
@@ -159,61 +159,61 @@ bool form_collection_links(things_resource_s *collection_rsrc, OCRepPayload ***l
 	size_t dimensions[MAX_REP_ARRAY_DEPTH] = { 0, 0, 0 };
 	for (int index = 0; index < num_of_children; index++) {
 		if (NULL == children[index]->uri || strlen(children[index]->uri)) {
-			THINGS_LOG_V(THINGS_ERROR, TAG, "Resource URI of child resource at index(%d) is invalid.", index);
+			THINGS_LOG_E(TAG, "Resource URI of child resource at index(%d) is invalid.", index);
 			result = false;
 			break;
 		}
 
 		link_arr[index] = OCRepPayloadCreate();
 		if (NULL == link_arr[index]) {
-			THINGS_LOG(THINGS_ERROR, TAG, "Failed to allocate memory for links in collection.");
+			THINGS_LOG_E(TAG, "Failed to allocate memory for links in collection.");
 			result = false;
 			break;
 		}
 		// Set the resource URI.
 		if (!OCRepPayloadSetPropString(link_arr[index], OC_RSRVD_HREF, children[index]->uri)) {
-			THINGS_LOG_V(THINGS_ERROR, TAG, "Failed to set the URI of child(%s) for links in collection(%s).", children[index]->uri, collection_rsrc->uri);
+			THINGS_LOG_E(TAG, "Failed to set the URI of child(%s) for links in collection(%s).", children[index]->uri, collection_rsrc->uri);
 			result = false;
 			break;
 		}
 
-		THINGS_LOG_V(THINGS_DEBUG, TAG, "Child resource uri(%s) is set in the response payload.", children[index]->uri);
+		THINGS_LOG_D(TAG, "Child resource uri(%s) is set in the response payload.", children[index]->uri);
 
 		// Set the resource types.
 		if (!get_resource_types2(children[index], &res_types, &rt_count)) {
-			THINGS_LOG_V(THINGS_ERROR, TAG, "Failed to get the resource types of a child(%s) for links in collection.", children[index]->uri);
+			THINGS_LOG_E(TAG, "Failed to get the resource types of a child(%s) for links in collection.", children[index]->uri);
 			result = false;
 			break;
 		}
 		dimensions[0] = rt_count;
 		result = OCRepPayloadSetStringArray(link_arr[index], OC_RSRVD_RESOURCE_TYPE, res_types, dimensions);
 		if (!result) {
-			THINGS_LOG_V(THINGS_ERROR, TAG, "Failed to set the resource types of child(%s) for links in collection.", children[index]->uri);
+			THINGS_LOG_E(TAG, "Failed to set the resource types of child(%s) for links in collection.", children[index]->uri);
 			result = false;
 			break;
 		}
 		things_free_str_array(res_types, rt_count);
 		res_types = NULL;
 
-		THINGS_LOG_V(THINGS_DEBUG, TAG, "Resource types of child resource(%s) are set in the response payload.", children[index]->uri);
+		THINGS_LOG_D(TAG, "Resource types of child resource(%s) are set in the response payload.", children[index]->uri);
 
 		// Set the interface types.
 		if (!get_interface_types2(children[index], &if_types, &if_count)) {
-			THINGS_LOG_V(THINGS_ERROR, TAG, "Failed to get the interface types of child(%s) for links in collection.", children[index]->uri);
+			THINGS_LOG_E(TAG, "Failed to get the interface types of child(%s) for links in collection.", children[index]->uri);
 			result = false;
 			break;
 		}
 		dimensions[0] = if_count;
 		result = OCRepPayloadSetStringArray(link_arr[index], OC_RSRVD_INTERFACE, if_types, dimensions);
 		if (!result) {
-			THINGS_LOG_V(THINGS_ERROR, TAG, "Failed to set the interface types of child(%s) for links in collection.", children[index]->uri);
+			THINGS_LOG_E(TAG, "Failed to set the interface types of child(%s) for links in collection.", children[index]->uri);
 			result = false;
 			break;
 		}
 		things_free_str_array(if_types, if_count);
 		if_types = NULL;
 
-		THINGS_LOG_V(THINGS_DEBUG, TAG, "Interface types of child resource(%s) are set in the response payload.", children[index]->uri);
+		THINGS_LOG_D(TAG, "Interface types of child resource(%s) are set in the response payload.", children[index]->uri);
 	}
 
 	if (result) {
@@ -274,7 +274,7 @@ static bool handle_get_req_on_collection_linkslist(things_resource_s *collection
 
 	OCRepPayload *payload = resp_rep->payload;
 	if (NULL == payload) {
-		THINGS_LOG(THINGS_ERROR, TAG, "Payload in response representation is NULL.");
+		THINGS_LOG_E(TAG, "Payload in response representation is NULL.");
 		things_release_representation_inst(resp_rep);
 		return false;
 	}
@@ -286,14 +286,14 @@ static bool handle_get_req_on_collection_linkslist(things_resource_s *collection
 		size_t dimensions[MAX_REP_ARRAY_DEPTH] = { count, 0, 0 };
 		result = OCRepPayloadSetPropObjectArray(payload, OC_RSRVD_LINKS, links, dimensions);
 		if (!result) {
-			THINGS_LOG(THINGS_ERROR, TAG, "Failed to add the links in the response payload.");
+			THINGS_LOG_E(TAG, "Failed to add the links in the response payload.");
 			for (size_t i = 0; i < count && NULL != links[i]; i++) {
 				OCRepPayloadDestroy(links[i]);
 			}
 			things_free(links);
 		}
 	} else {
-		THINGS_LOG(THINGS_ERROR, TAG, "Failed to form links for collection.");
+		THINGS_LOG_E(TAG, "Failed to form links for collection.");
 	}
 
 	if (result) {
@@ -343,33 +343,33 @@ static bool handle_get_req_on_collection_baseline(things_resource_s *collection_
 
 	OCRepPayload *resp_payload = resp_rep->payload;
 	if (NULL == resp_payload) {
-		THINGS_LOG(THINGS_ERROR, TAG, "Payload in response representation is NULL.");
+		THINGS_LOG_E(TAG, "Payload in response representation is NULL.");
 		things_release_representation_inst(resp_rep);
 		return false;
 	}
 	// Set collection resource's URI.
 	if (!OCRepPayloadSetUri(resp_payload, collection_rsrc->uri)) {
-		THINGS_LOG_V(THINGS_ERROR, TAG, "Failed to set the resource uri(%s) in response payload.", collection_rsrc->uri);
+		THINGS_LOG_E(TAG, "Failed to set the resource uri(%s) in response payload.", collection_rsrc->uri);
 		things_release_representation_inst(resp_rep);
 		return false;
 	}
 
-	THINGS_LOG_V(THINGS_DEBUG, TAG, "Resource URI(%s) is set in the response payload.", collection_rsrc->uri);
+	THINGS_LOG_D(TAG, "Resource URI(%s) is set in the response payload.", collection_rsrc->uri);
 
 	// Set collection resource's common properties (rt, if & links).
 	bool result = add_common_props(collection_rsrc, true, resp_payload);
 	if (!result) {
-		THINGS_LOG(THINGS_ERROR, TAG, "Failed to add the common properties in response representation.");
+		THINGS_LOG_E(TAG, "Failed to add the common properties in response representation.");
 		things_release_representation_inst(resp_rep);
 		return false;
 	}
 
-	THINGS_LOG(THINGS_DEBUG, TAG, "Common properties are added in the response payload.");
+	THINGS_LOG_D(TAG, "Common properties are added in the response payload.");
 
 	// Get the properties of the collection resource from application.
 	result = handle_get_req_helper(collection_rsrc->uri, collection_rsrc->query, resp_payload);
 	if (!result) {
-		THINGS_LOG(THINGS_ERROR, TAG, "Failed to get the resource properties from application.");
+		THINGS_LOG_E(TAG, "Failed to get the resource properties from application.");
 		things_release_representation_inst(resp_rep);
 		return false;
 	}
@@ -423,47 +423,47 @@ static bool handle_get_req_on_collection_batch(things_resource_s *collection_rsr
 
 	OCRepPayload *payload_head = resp_rep->payload;
 	if (NULL == payload_head) {
-		THINGS_LOG(THINGS_ERROR, TAG, "Payload in response representation is NULL.");
+		THINGS_LOG_E(TAG, "Payload in response representation is NULL.");
 		things_release_representation_inst(resp_rep);
 		return false;
 	}
 	// Handle collection resource.
 	// Set collection resource's URI.
 	if (!OCRepPayloadSetUri(payload_head, collection_rsrc->uri)) {
-		THINGS_LOG_V(THINGS_ERROR, TAG, "Failed to set the resource uri(%s) in response payload.", collection_rsrc->uri);
+		THINGS_LOG_E(TAG, "Failed to set the resource uri(%s) in response payload.", collection_rsrc->uri);
 		things_release_representation_inst(resp_rep);
 		return false;
 	}
 
-	THINGS_LOG_V(THINGS_DEBUG, TAG, "Resource URI(%s) is set in the response payload.", collection_rsrc->uri);
+	THINGS_LOG_D(TAG, "Resource URI(%s) is set in the response payload.", collection_rsrc->uri);
 
 	OCRepPayload *rep_payload = OCRepPayloadCreate();
 	if (NULL == rep_payload) {
-		THINGS_LOG(THINGS_ERROR, TAG, "Failed to create response payload for 'rep'.");
+		THINGS_LOG_E(TAG, "Failed to create response payload for 'rep'.");
 		things_release_representation_inst(resp_rep);
 		return false;
 	}
 	// Set collection resource's common properties (rt, if & links).
 	bool result = add_common_props(collection_rsrc, true, rep_payload);
 	if (!result) {
-		THINGS_LOG(THINGS_ERROR, TAG, "Failed to add collection's common properties in response payload.");
+		THINGS_LOG_E(TAG, "Failed to add collection's common properties in response payload.");
 		OCRepPayloadDestroy(rep_payload);
 		things_release_representation_inst(resp_rep);
 		return false;
 	}
 
-	THINGS_LOG(THINGS_DEBUG, TAG, "Collection's common properties are added in the response payload.");
+	THINGS_LOG_D(TAG, "Collection's common properties are added in the response payload.");
 
 	// Get the properties of the collection resource from application.
 	result = handle_get_req_helper(collection_rsrc->uri, collection_rsrc->query, rep_payload);
 	if (!result) {
-		THINGS_LOG_V(THINGS_DEBUG, TAG, "Failed to get the collection resource(%s) properties from application.", collection_rsrc->uri);
-		THINGS_LOG(THINGS_DEBUG, TAG, "Corresponding payload in response will be empty.");
+		THINGS_LOG_D(TAG, "Failed to get the collection resource(%s) properties from application.", collection_rsrc->uri);
+		THINGS_LOG_D(TAG, "Corresponding payload in response will be empty.");
 	}
 
 	result = OCRepPayloadSetPropObject(payload_head, OC_RSRVD_REPRESENTATION, rep_payload);
 	if (!result) {
-		THINGS_LOG(THINGS_ERROR, TAG, "Failed to set 'rep' for collection in response payload.");
+		THINGS_LOG_E(TAG, "Failed to set 'rep' for collection in response payload.");
 		OCRepPayloadDestroy(rep_payload);
 		things_release_representation_inst(resp_rep);
 		return false;
@@ -475,18 +475,18 @@ static bool handle_get_req_on_collection_batch(things_resource_s *collection_rsr
 	int num_of_children = 0;
 	things_resource_info_s **children = NULL;
 	if (!things_get_child_resources(collection_rsrc->uri, &num_of_children, &children)) {
-		THINGS_LOG(THINGS_ERROR, TAG, "Failed to get child resources.");
+		THINGS_LOG_E(TAG, "Failed to get child resources.");
 		things_release_representation_inst(resp_rep);
 		return false;
 	}
 
 	if (0 == num_of_children || NULL == children) {
-		THINGS_LOG(THINGS_ERROR, TAG, "No child resource(s).");
+		THINGS_LOG_E(TAG, "No child resource(s).");
 		things_release_representation_inst(resp_rep);
 		return false;
 	}
 
-	THINGS_LOG_V(THINGS_DEBUG, TAG, "Collection resource(%s) has %d child resource(s).", collection_rsrc->uri, num_of_children);
+	THINGS_LOG_D(TAG, "Collection resource(%s) has %d child resource(s).", collection_rsrc->uri, num_of_children);
 
 	result = true;
 	int rt_count = 0;
@@ -498,39 +498,39 @@ static bool handle_get_req_on_collection_batch(things_resource_s *collection_rsr
 	OCRepPayload *child_payload = NULL;
 	for (int index = 0; index < num_of_children; index++) {
 		if (NULL == children[index]) {
-			THINGS_LOG_V(THINGS_ERROR, TAG, "Child at index(%d) is NULL.", index);
+			THINGS_LOG_E(TAG, "Child at index(%d) is NULL.", index);
 			result = false;
 			break;
 		}
 
 		child_payload = OCRepPayloadCreate();
 		if (NULL == child_payload) {
-			THINGS_LOG(THINGS_ERROR, TAG, "Failed to create payload for child.");
+			THINGS_LOG_E(TAG, "Failed to create payload for child.");
 			result = false;
 			break;
 		}
 		// Set child resource's URI.
 		if (!OCRepPayloadSetUri(child_payload, children[index]->uri)) {
-			THINGS_LOG_V(THINGS_ERROR, TAG, "Failed to set the child resource uri(%s) in response representation.", children[index]->uri);
+			THINGS_LOG_E(TAG, "Failed to set the child resource uri(%s) in response representation.", children[index]->uri);
 			result = false;
 			break;
 		}
 		// Set child resource's representation (common properties and resource properties).
 		rep_payload = OCRepPayloadCreate();
 		if (NULL == rep_payload) {
-			THINGS_LOG(THINGS_ERROR, TAG, "Failed to create payload for child.");
+			THINGS_LOG_E(TAG, "Failed to create payload for child.");
 			result = false;
 			break;
 		}
 		// Set the resource types.
 		if (!get_resource_types2(children[index], &res_types, &rt_count)) {
-			THINGS_LOG(THINGS_ERROR, TAG, "Failed to get the resource types of child.");
+			THINGS_LOG_E(TAG, "Failed to get the resource types of child.");
 			result = false;
 			break;
 		}
 		dimensions[0] = rt_count;
 		if (!OCRepPayloadSetStringArray(rep_payload, OC_RSRVD_RESOURCE_TYPE, res_types, dimensions)) {
-			THINGS_LOG(THINGS_ERROR, TAG, "Failed to set the resource types of child in response representation.");
+			THINGS_LOG_E(TAG, "Failed to set the resource types of child in response representation.");
 			result = false;
 			break;
 		}
@@ -538,13 +538,13 @@ static bool handle_get_req_on_collection_batch(things_resource_s *collection_rsr
 
 		// Set the interface types.
 		if (!get_interface_types2(children[index], &if_types, &if_count)) {
-			THINGS_LOG(THINGS_ERROR, TAG, "Failed to get the interface types of child.");
+			THINGS_LOG_E(TAG, "Failed to get the interface types of child.");
 			result = false;
 			break;
 		}
 		dimensions[0] = if_count;
 		if (!OCRepPayloadSetStringArray(rep_payload, OC_RSRVD_INTERFACE, if_types, dimensions)) {
-			THINGS_LOG(THINGS_ERROR, TAG, "Failed to set the inteface types of child in response representation.");
+			THINGS_LOG_E(TAG, "Failed to set the inteface types of child in response representation.");
 			result = false;
 			break;
 		}
@@ -554,13 +554,13 @@ static bool handle_get_req_on_collection_batch(things_resource_s *collection_rsr
 		// Form a query with the first interface.
 		char **child_if_types = children[index]->interface_types;
 		if (NULL == child_if_types) {
-			THINGS_LOG(THINGS_ERROR, TAG, "Child resource doesn't have any interface.");
+			THINGS_LOG_E(TAG, "Child resource doesn't have any interface.");
 			result = false;
 			break;
 		}
 		char *if_type = child_if_types[0];
 		if (NULL == if_type) {
-			THINGS_LOG(THINGS_ERROR, TAG, "First interface of child resource is NULL.");
+			THINGS_LOG_E(TAG, "First interface of child resource is NULL.");
 			result = false;
 			break;
 		}
@@ -568,7 +568,7 @@ static bool handle_get_req_on_collection_batch(things_resource_s *collection_rsr
 		char *prefix = "if=";
 		char *query = (char *)things_malloc(strlen(if_type) + strlen(prefix) + 1);
 		if (NULL == query) {
-			THINGS_LOG(THINGS_ERROR, TAG, "Failed to create query for child.");
+			THINGS_LOG_E(TAG, "Failed to create query for child.");
 			result = false;
 			break;
 		}
@@ -579,11 +579,11 @@ static bool handle_get_req_on_collection_batch(things_resource_s *collection_rsr
 		// Get the properties of the child resource from application.
 		result = handle_get_req_helper(children[index]->uri, query, rep_payload);
 		if (!result) {
-			THINGS_LOG_V(THINGS_DEBUG, TAG, "Failed to get the child resource(%s) properties from application.", children[index]->uri);
-			THINGS_LOG(THINGS_DEBUG, TAG, "Corresponding payload in response will be empty.");
+			THINGS_LOG_D(TAG, "Failed to get the child resource(%s) properties from application.", children[index]->uri);
+			THINGS_LOG_D(TAG, "Corresponding payload in response will be empty.");
 		}
 		if (!OCRepPayloadSetPropObject(child_payload, OC_RSRVD_REPRESENTATION, rep_payload)) {
-			THINGS_LOG(THINGS_ERROR, TAG, "Failed to set the child representation in response representation.");
+			THINGS_LOG_E(TAG, "Failed to set the child representation in response representation.");
 			things_free(query);
 			result = false;
 			break;
@@ -631,23 +631,23 @@ static bool handle_get_req_on_collection_common(things_resource_s *collection_rs
 
 	OCRepPayload *resp_payload = resp_rep->payload;
 	if (NULL == resp_payload) {
-		THINGS_LOG(THINGS_ERROR, TAG, "Payload is response representation is NULL.");
+		THINGS_LOG_E(TAG, "Payload is response representation is NULL.");
 		things_release_representation_inst(resp_rep);
 		return false;
 	}
 
 	if (!OCRepPayloadSetUri(resp_payload, collection_rsrc->uri)) {
-		THINGS_LOG_V(THINGS_ERROR, TAG, "Failed to set the resource uri(%s) in response payload.", collection_rsrc->uri);
+		THINGS_LOG_E(TAG, "Failed to set the resource uri(%s) in response payload.", collection_rsrc->uri);
 		things_release_representation_inst(resp_rep);
 		return false;
 	}
 
-	THINGS_LOG_V(THINGS_DEBUG, TAG, "Resource URI(%s) is set in the response payload.", collection_rsrc->uri);
+	THINGS_LOG_D(TAG, "Resource URI(%s) is set in the response payload.", collection_rsrc->uri);
 
 	// Get the resource's properties from the application.
 	bool result = handle_get_req_helper(collection_rsrc->uri, collection_rsrc->query, resp_payload);
 	if (!result) {
-		THINGS_LOG(THINGS_ERROR, TAG, "Failed to get the resource properties from application.");
+		THINGS_LOG_E(TAG, "Failed to get the resource properties from application.");
 		things_release_representation_inst(resp_rep);
 		return false;
 	}
@@ -666,7 +666,7 @@ int handle_get_req_on_collection_rsrc(things_resource_s *collection_rsrc)
 		bool found = false;
 		bool result = get_query_value_internal(collection_rsrc->query, OC_RSRVD_INTERFACE, &if_type, &found);
 		if (found && !result) {	// If query is present but API returns false.
-			THINGS_LOG_V(THINGS_ERROR, TAG, "Failed to get the interface type from query parameter(%s).", collection_rsrc->query);
+			THINGS_LOG_E(TAG, "Failed to get the interface type from query parameter(%s).", collection_rsrc->query);
 			return 0;
 		}
 	}
@@ -680,7 +680,7 @@ int handle_get_req_on_collection_rsrc(things_resource_s *collection_rsrc)
 		RET_VAL_IF_NULL(TAG, if_type, "Failed to clone interface type.", 0);
 	}
 
-	THINGS_LOG_V(THINGS_DEBUG, TAG, "This GET request will be handled on %s inteface.", if_type);
+	THINGS_LOG_D(TAG, "This GET request will be handled on %s inteface.", if_type);
 
 	bool result = false;
 	if (0 == strncmp(if_type, OC_RSRVD_INTERFACE_DEFAULT, strlen(OC_RSRVD_INTERFACE_DEFAULT))) {
@@ -710,7 +710,7 @@ static bool handle_post_req_on_collection_baseline(things_resource_s *collection
 	struct things_representation_s *req_rep = NULL;
 	bool rep_exist = collection_rsrc->things_get_representation(collection_rsrc, &req_rep);
 	if (!rep_exist || NULL == req_rep || NULL == req_rep->payload) {
-		THINGS_LOG(THINGS_ERROR, TAG, "Empty payload in POST request.");
+		THINGS_LOG_E(TAG, "Empty payload in POST request.");
 		return false;			// TODO: When a post request comes with empty payload, how do we handle?
 	}
 	// Setup the response representation. This representation will be handed over to the underlying stack.
@@ -719,33 +719,33 @@ static bool handle_post_req_on_collection_baseline(things_resource_s *collection
 
 	OCRepPayload *resp_payload = resp_rep->payload;
 	if (NULL == resp_payload) {
-		THINGS_LOG(THINGS_ERROR, TAG, "Payload in response representation is NULL.");
+		THINGS_LOG_E(TAG, "Payload in response representation is NULL.");
 		things_release_representation_inst(resp_rep);
 		return false;
 	}
 	// Set collection resource's URI.
 	if (!OCRepPayloadSetUri(resp_payload, collection_rsrc->uri)) {
-		THINGS_LOG_V(THINGS_ERROR, TAG, "Failed to set the resource uri(%s) in response payload.", collection_rsrc->uri);
+		THINGS_LOG_E(TAG, "Failed to set the resource uri(%s) in response payload.", collection_rsrc->uri);
 		things_release_representation_inst(resp_rep);
 		return false;
 	}
 
-	THINGS_LOG_V(THINGS_DEBUG, TAG, "Resource URI(%s) is set in the response payload.", collection_rsrc->uri);
+	THINGS_LOG_D(TAG, "Resource URI(%s) is set in the response payload.", collection_rsrc->uri);
 
 	// Set collection resource's common properties (rt, if, & links).
 	bool result = add_common_props(collection_rsrc, true, resp_payload);
 	if (!result) {
-		THINGS_LOG(THINGS_ERROR, TAG, "Failed to add the common properties in response payload.");
+		THINGS_LOG_E(TAG, "Failed to add the common properties in response payload.");
 		things_release_representation_inst(resp_rep);
 		return false;
 	}
 
-	THINGS_LOG(THINGS_DEBUG, TAG, "Common properties are added in the response payload.");
+	THINGS_LOG_D(TAG, "Common properties are added in the response payload.");
 
 	// Give the properties of the collection resource to application and get the response.
 	result = handle_post_req_helper(collection_rsrc->uri, collection_rsrc->query, req_rep->payload, resp_payload);
 	if (!result) {
-		THINGS_LOG(THINGS_ERROR, TAG, "Failed to set the resource properties.");
+		THINGS_LOG_E(TAG, "Failed to set the resource properties.");
 		things_release_representation_inst(resp_rep);
 		return false;
 	}
@@ -767,7 +767,7 @@ static bool handle_post_req_on_collection_batch(things_resource_s *collection_rs
 	struct things_representation_s *req_rep = NULL;
 	bool rep_exist = collection_rsrc->things_get_representation(collection_rsrc, &req_rep);
 	if (!rep_exist || NULL == req_rep || NULL == req_rep->payload) {
-		THINGS_LOG(THINGS_ERROR, TAG, "Empty payload in POST request.");
+		THINGS_LOG_E(TAG, "Empty payload in POST request.");
 		return false;			// TODO: When a post request comes with empty payload, how do we handle?
 	}
 	// Setup the response representation. This representation will be handed over to the underlying stack.
@@ -776,47 +776,47 @@ static bool handle_post_req_on_collection_batch(things_resource_s *collection_rs
 
 	OCRepPayload *payload_head = resp_rep->payload;
 	if (NULL == payload_head) {
-		THINGS_LOG(THINGS_ERROR, TAG, "Payload in response representation is NULL.");
+		THINGS_LOG_E(TAG, "Payload in response representation is NULL.");
 		things_release_representation_inst(resp_rep);
 		return false;
 	}
 	// Handle collection resource.
 	// Set collection resource's URI.
 	if (!OCRepPayloadSetUri(payload_head, collection_rsrc->uri)) {
-		THINGS_LOG_V(THINGS_ERROR, TAG, "Failed to set the resource uri(%s) in response payload.", collection_rsrc->uri);
+		THINGS_LOG_E(TAG, "Failed to set the resource uri(%s) in response payload.", collection_rsrc->uri);
 		things_release_representation_inst(resp_rep);
 		return false;
 	}
 
-	THINGS_LOG_V(THINGS_DEBUG, TAG, "Resource URI(%s) is set in the response payload.", collection_rsrc->uri);
+	THINGS_LOG_D(TAG, "Resource URI(%s) is set in the response payload.", collection_rsrc->uri);
 
 	OCRepPayload *rep_payload = OCRepPayloadCreate();
 	if (NULL == rep_payload) {
-		THINGS_LOG(THINGS_ERROR, TAG, "Failed to create payload for response representation.");
+		THINGS_LOG_E(TAG, "Failed to create payload for response representation.");
 		things_release_representation_inst(resp_rep);
 		return false;
 	}
 	// Set collection resource's common properties (rt, if, & links).
 	bool result = add_common_props(collection_rsrc, true, rep_payload);
 	if (!result) {
-		THINGS_LOG(THINGS_ERROR, TAG, "Failed to add collection's common properties in response payload.");
+		THINGS_LOG_E(TAG, "Failed to add collection's common properties in response payload.");
 		OCRepPayloadDestroy(rep_payload);
 		things_release_representation_inst(resp_rep);
 		return false;
 	}
 
-	THINGS_LOG(THINGS_DEBUG, TAG, "Collection's common properties are added in the response payload.");
+	THINGS_LOG_D(TAG, "Collection's common properties are added in the response payload.");
 
 	// Get the properties of the collection resource from application.
 	result = handle_post_req_helper(collection_rsrc->uri, collection_rsrc->query, req_rep->payload, rep_payload);
 	if (!result) {
-		THINGS_LOG_V(THINGS_DEBUG, TAG, "Failed to get the collection resource(%s) properties from application.", collection_rsrc->uri);
-		THINGS_LOG(THINGS_DEBUG, TAG, "Corresponding payload in response will be empty.");
+		THINGS_LOG_D(TAG, "Failed to get the collection resource(%s) properties from application.", collection_rsrc->uri);
+		THINGS_LOG_D(TAG, "Corresponding payload in response will be empty.");
 	}
 
 	result = OCRepPayloadSetPropObject(payload_head, OC_RSRVD_REPRESENTATION, rep_payload);
 	if (!result) {
-		THINGS_LOG(THINGS_ERROR, TAG, "Failed to set the representation for collection in response payload.");
+		THINGS_LOG_E(TAG, "Failed to set the representation for collection in response payload.");
 		OCRepPayloadDestroy(rep_payload);
 		things_release_representation_inst(resp_rep);
 		return false;
@@ -829,18 +829,18 @@ static bool handle_post_req_on_collection_batch(things_resource_s *collection_rs
 	int num_of_children = 0;
 	things_resource_info_s **children = NULL;
 	if (!things_get_child_resources(collection_rsrc->uri, &num_of_children, &children)) {
-		THINGS_LOG(THINGS_ERROR, TAG, "Failed to get child resources.");
+		THINGS_LOG_E(TAG, "Failed to get child resources.");
 		things_release_representation_inst(resp_rep);
 		return false;
 	}
 
 	if (0 == num_of_children || NULL == children) {
-		THINGS_LOG(THINGS_ERROR, TAG, "No child resource(s).");
+		THINGS_LOG_E(TAG, "No child resource(s).");
 		things_release_representation_inst(resp_rep);
 		return false;
 	}
 
-	THINGS_LOG_V(THINGS_DEBUG, TAG, "Collection resource(%s) has %d child resource(s).", collection_rsrc->uri, num_of_children);
+	THINGS_LOG_D(TAG, "Collection resource(%s) has %d child resource(s).", collection_rsrc->uri, num_of_children);
 
 	int rt_count = 0;
 	int if_count = 0;
@@ -852,39 +852,39 @@ static bool handle_post_req_on_collection_batch(things_resource_s *collection_rs
 	OCRepPayload *payload = NULL;	// Represents the current payload in loop.
 	for (int index = 0; index < num_of_children; index++) {
 		if (NULL == children[index]) {
-			THINGS_LOG_V(THINGS_ERROR, TAG, "Child at index(%d) is NULL.", index);
+			THINGS_LOG_E(TAG, "Child at index(%d) is NULL.", index);
 			result = false;
 			break;
 		}
 
 		payload = OCRepPayloadCreate();
 		if (NULL == payload) {
-			THINGS_LOG(THINGS_ERROR, TAG, "Failed to create payload for child.");
+			THINGS_LOG_E(TAG, "Failed to create payload for child.");
 			result = false;
 			break;
 		}
 		// Set child resource's URI.
 		if (!OCRepPayloadSetUri(payload, children[index]->uri)) {
-			THINGS_LOG_V(THINGS_ERROR, TAG, "Failed to set the child resource uri(%s) in response representation.", children[index]->uri);
+			THINGS_LOG_E(TAG, "Failed to set the child resource uri(%s) in response representation.", children[index]->uri);
 			result = false;
 			break;
 		}
 		// Set child resource's representation (common properties and resource properties).
 		rep_payload = OCRepPayloadCreate();
 		if (NULL == rep_payload) {
-			THINGS_LOG(THINGS_ERROR, TAG, "Failed to create payload for child.");
+			THINGS_LOG_E(TAG, "Failed to create payload for child.");
 			result = false;
 			break;
 		}
 		// Set the resource types.
 		if (!get_resource_types2(children[index], &res_types, &rt_count)) {
-			THINGS_LOG(THINGS_ERROR, TAG, "Failed to get the resource types of child.");
+			THINGS_LOG_E(TAG, "Failed to get the resource types of child.");
 			result = false;
 			break;
 		}
 		dimensions[0] = rt_count;
 		if (!OCRepPayloadSetStringArray(rep_payload, OC_RSRVD_RESOURCE_TYPE, res_types, dimensions)) {
-			THINGS_LOG(THINGS_ERROR, TAG, "Failed to set the resource types of child in response representation.");
+			THINGS_LOG_E(TAG, "Failed to set the resource types of child in response representation.");
 			result = false;
 			break;
 		}
@@ -892,13 +892,13 @@ static bool handle_post_req_on_collection_batch(things_resource_s *collection_rs
 
 		// Set the interface types.
 		if (!get_interface_types2(children[index], &if_types, &if_count)) {
-			THINGS_LOG(THINGS_ERROR, TAG, "Failed to get the interface types of child.");
+			THINGS_LOG_E(TAG, "Failed to get the interface types of child.");
 			result = false;
 			break;
 		}
 		dimensions[0] = if_count;
 		if (!OCRepPayloadSetStringArray(rep_payload, OC_RSRVD_INTERFACE, if_types, dimensions)) {
-			THINGS_LOG(THINGS_ERROR, TAG, "Failed to set the inteface types of child in response representation.");
+			THINGS_LOG_E(TAG, "Failed to set the inteface types of child in response representation.");
 			result = false;
 			break;
 		}
@@ -908,13 +908,13 @@ static bool handle_post_req_on_collection_batch(things_resource_s *collection_rs
 		// Form a query with the first interface.
 		char **child_if_types = children[index]->interface_types;
 		if (NULL == child_if_types) {
-			THINGS_LOG(THINGS_ERROR, TAG, "Child resource doesn't have any interface.");
+			THINGS_LOG_E(TAG, "Child resource doesn't have any interface.");
 			result = false;
 			break;
 		}
 		char *if_type = child_if_types[0];
 		if (NULL == if_type) {
-			THINGS_LOG(THINGS_ERROR, TAG, "First interface of child resource is NULL.");
+			THINGS_LOG_E(TAG, "First interface of child resource is NULL.");
 			result = false;
 			break;
 		}
@@ -922,7 +922,7 @@ static bool handle_post_req_on_collection_batch(things_resource_s *collection_rs
 		char *prefix = "if=";
 		char *query = (char *)things_malloc(strlen(if_type) + strlen(prefix) + 1);
 		if (NULL == query) {
-			THINGS_LOG(THINGS_ERROR, TAG, "Failed to create query for child.");
+			THINGS_LOG_E(TAG, "Failed to create query for child.");
 			result = false;
 			break;
 		}
@@ -933,12 +933,12 @@ static bool handle_post_req_on_collection_batch(things_resource_s *collection_rs
 		// Get the properties of the child resource from application.
 		result = handle_post_req_helper(children[index]->uri, query, req_rep->payload, rep_payload);
 		if (!result) {
-			THINGS_LOG_V(THINGS_DEBUG, TAG, "Failed to get the child resource(%s) properties from application.", children[index]->uri);
-			THINGS_LOG(THINGS_DEBUG, TAG, "Corresponding payload in response will be empty.");
+			THINGS_LOG_D(TAG, "Failed to get the child resource(%s) properties from application.", children[index]->uri);
+			THINGS_LOG_D(TAG, "Corresponding payload in response will be empty.");
 		}
 
 		if (!OCRepPayloadSetPropObject(payload, OC_RSRVD_REPRESENTATION, rep_payload)) {
-			THINGS_LOG(THINGS_ERROR, TAG, "Failed to set the child representation in response representation.");
+			THINGS_LOG_E(TAG, "Failed to set the child representation in response representation.");
 			result = false;
 			break;
 		}
@@ -992,7 +992,7 @@ static bool handle_post_req_on_collection_common(things_resource_s *collection_r
 	struct things_representation_s *req_rep = NULL;
 	bool rep_exist = collection_rsrc->things_get_representation(collection_rsrc, &req_rep);
 	if (!rep_exist || NULL == req_rep || NULL == req_rep->payload) {
-		THINGS_LOG(THINGS_ERROR, TAG, "Empty payload in POST request.");
+		THINGS_LOG_E(TAG, "Empty payload in POST request.");
 		return false;			// TODO: When a post request comes with empty payload, how do we handle?
 	}
 	// Setup the response representation. This representation will be handed over to the underlying stack.
@@ -1001,24 +1001,24 @@ static bool handle_post_req_on_collection_common(things_resource_s *collection_r
 
 	OCRepPayload *resp_payload = resp_rep->payload;
 	if (NULL == resp_payload) {
-		THINGS_LOG(THINGS_ERROR, TAG, "Payload is response representation is NULL.");
+		THINGS_LOG_E(TAG, "Payload is response representation is NULL.");
 		things_release_representation_inst(resp_rep);
 		return false;
 	}
 
 	if (!OCRepPayloadSetUri(resp_payload, collection_rsrc->uri)) {
-		THINGS_LOG_V(THINGS_ERROR, TAG, "Failed to set the resource uri(%s) in response payload.", collection_rsrc->uri);
+		THINGS_LOG_E(TAG, "Failed to set the resource uri(%s) in response payload.", collection_rsrc->uri);
 		things_release_representation_inst(resp_rep);
 		return false;
 	}
 
-	THINGS_LOG_V(THINGS_DEBUG, TAG, "Resource URI(%s) is set in the response payload.", collection_rsrc->uri);
+	THINGS_LOG_D(TAG, "Resource URI(%s) is set in the response payload.", collection_rsrc->uri);
 
 	// Give the properties of the collection resource to application and get the response.
 	bool result = handle_post_req_helper(collection_rsrc->uri, collection_rsrc->query,
 										 req_rep->payload, resp_payload);
 	if (!result) {
-		THINGS_LOG(THINGS_ERROR, TAG, "Failed to set the resource properties.");
+		THINGS_LOG_E(TAG, "Failed to set the resource properties.");
 		things_release_representation_inst(resp_rep);
 		return false;
 	}
@@ -1038,7 +1038,7 @@ int handle_post_req_on_collection_rsrc(things_resource_s *collection_rsrc)
 		bool found = false;
 		bool result = get_query_value_internal(collection_rsrc->query, OC_RSRVD_INTERFACE, &if_type, &found);
 		if (found && !result) {	// If query is present but API returns false.
-			THINGS_LOG_V(THINGS_ERROR, TAG, "Failed to get the interface type from query parameter(%s).", collection_rsrc->query);
+			THINGS_LOG_E(TAG, "Failed to get the interface type from query parameter(%s).", collection_rsrc->query);
 			return 0;
 		}
 	}
@@ -1048,7 +1048,7 @@ int handle_post_req_on_collection_rsrc(things_resource_s *collection_rsrc)
 		RET_VAL_IF_NULL(TAG, if_type, "Failed to clone interface type.", 0);
 	}
 
-	THINGS_LOG_V(THINGS_DEBUG, TAG, "This SET request will be handled on %s inteface.", if_type);
+	THINGS_LOG_D(TAG, "This SET request will be handled on %s inteface.", if_type);
 
 	bool result = false;
 	if (0 == strncmp(if_type, OC_RSRVD_INTERFACE_DEFAULT, strlen(OC_RSRVD_INTERFACE_DEFAULT))) {
