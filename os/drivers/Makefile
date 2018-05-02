@@ -83,6 +83,7 @@ include fota$(DELIM)Make.defs
 include ttrace$(DELIM)Make.defs
 include wireless$(DELIM)Make.defs
 include sensors$(DELIM)Make.defs
+include task_manager$(DELIM)Make.defs
 include testcase$(DELIM)Make.defs
 
 ifneq ($(CONFIG_NFILE_DESCRIPTORS),0)

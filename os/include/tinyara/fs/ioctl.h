@@ -93,6 +93,7 @@
 #define _RTCBASE        (0x1800)	/* RTC ioctl commands */
 #define _FOTABASE       (0x1900)	/* FOTA ioctl commands */
 #define _GPIOBASE       (0x2000)	/* GPIO ioctl commands */
+#define _TMBASE         (0x2100)	/* Task Management ioctl commands */
 #define _TESTIOCBASE (0xfe00)	/* KERNEL TEST DRV module ioctl commands */
 
 /* boardctl() commands share the same number space */
@@ -351,6 +352,26 @@
 
 #define _TESTIOCVALID(c) (_IOC_TYPE(c) == _TESTIOCBASE)
 #define _TESTIOC(nr)     _IOC(_TESTIOCBASE, nr)
+
+/* TinyAra Task Management driver ioctl definitions ************************/
+
+#define _TMIOCVALID(c)   (_IOC_TYPE(c) == _TMBASE)
+#define _TMIOC(nr)       _IOC(_TMBASE, nr)
+
+#define TMIOC_REGISTER_TASK        _TMIOC(0x0001)
+#define TMIOC_REGISTER_THREAD      _TMIOC(0x0002)
+#define TMIOC_START                _TMIOC(0x0003)
+#define TMIOC_TERMINATE            _TMIOC(0x0004)
+#define TMIOC_RESTART              _TMIOC(0x0005)
+#define TMIOC_PAUSE                _TMIOC(0x0006)
+#define TMIOC_RESUME               _TMIOC(0x0007)
+#define TMIOC_SCAN                 _TMIOC(0x0008)
+#define TMIOC_UNICAST              _TMIOC(0x0009)
+#define TMIOC_BROADCAST            _TMIOC(0x000A)
+#define TMIOC_SCAN_NAME            _TMIOC(0x000B)
+#define TMIOC_SCAN_HANDLE          _TMIOC(0x000C)
+#define TMIOC_SCAN_GROUP           _TMIOC(0x000D)
+#define TMIOC_UNREGISTER_TASK      _TMIOC(0x000E)
 
 /****************************************************************************
  * Public Type Definitions
