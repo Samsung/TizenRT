@@ -128,9 +128,6 @@
 #define MAX_CLOUD_SESSIONKEY        (128)	//   Need to match with the Cloud Spec.
 #define MAX_SOFTAP_SSID             (33)
 
-#define STD_CI_CLOUD_ADDRESS "52.40.216.160:5683"
-#define MAX_CI_CLOUD_ADDRESS 256
-
 typedef int8_t INT8;
 
 static volatile int resource_type_cnt = 0;
@@ -163,15 +160,12 @@ static struct hashmap_s *g_device_hmap = NULL;
 
 static const char *origin_cloud_json_str = "{\n\
 		\"cloud\":    {\n\
-			\"address\":    \"52.40.216.160:5683\"\n\
+			\"address\":    \"\"\n\
 		}\n\
 }";
 
 static wifi_manager_softap_config_s ap_config;
 static easysetup_connectivity_type_e es_conn_type = es_conn_type_none;
-
-static es_cloud_signup_s *gpst_cloud_data = NULL;
-static char g_ci_cloud_address[MAX_CI_CLOUD_ADDRESS] = { 0 };
 
 static const struct things_attribute_info_s const gstAttr_x_com_samsung_provisioninginfo[] = {
 	{
@@ -346,25 +340,6 @@ static const struct things_resource_info_s const gstResources[] = {
 	}
 #endif
 };
-
-/**
- *	@fn get_cloud_server_address
- *	@brief Function to get cloud server address
- *  @param pch_current_server
- *  @return
- */
-char *get_cloud_server_address(char *pch_current_server)
-{
-	if (gpst_cloud_data != NULL) {
-		memset(g_ci_cloud_address, 0, MAX_CI_CLOUD_ADDRESS);
-		memcpy(g_ci_cloud_address, gpst_cloud_data->address, strlen(gpst_cloud_data->address) + 1);
-	} else {
-		memcpy(g_ci_cloud_address, STD_CI_CLOUD_ADDRESS, strlen(STD_CI_CLOUD_ADDRESS) + 1);
-	}
-	THINGS_LOG_D(THINGS_DEBUG, TAG, "CLOUD CI Address : %s", g_ci_cloud_address);
-
-	return g_ci_cloud_address;
-}
 
 static struct things_attribute_info_s *create_property()
 {
@@ -564,7 +539,7 @@ int set_json_string_into_file(const char *filename, const char *json_str)
 
 static int get_json_int(cJSON *json, int64_t *variable)
 {
-	THINGS_LOG_D(THINGS_DEBUG, TAG, "Enter");
+	THINGS_LOG_D(THINGS_DEBUG, TAG, THINGS_FUNC_ENTRY);
 
 	int res = 1;
 
@@ -580,14 +555,14 @@ static int get_json_int(cJSON *json, int64_t *variable)
 
 	*variable = json->valueint;
 
-	THINGS_LOG_D(THINGS_DEBUG, TAG, "Exit");
+	THINGS_LOG_D(THINGS_DEBUG, TAG, THINGS_FUNC_EXIT);
 
 	return res;
 }
 
 static int get_json_string(cJSON *json, char **variable)
 {
-	THINGS_LOG_D(THINGS_DEBUG, TAG, "Enter");
+	THINGS_LOG_D(THINGS_DEBUG, TAG, THINGS_FUNC_ENTRY);
 
 	int res = 1;
 	int length = 0;
@@ -599,37 +574,31 @@ static int get_json_string(cJSON *json, char **variable)
 		}
 		return 0;
 	}
-
 	if ((length = strlen(json->valuestring)) == 0) {
 		THINGS_LOG_V_ERROR(THINGS_ERROR, TAG, "length is NULL");
 		return 0;
 	}
-
 	*variable = (char *)things_malloc(sizeof(char) * (length + 1));
 	if (*variable == NULL) {
 		THINGS_LOG_V_ERROR(THINGS_ERROR, TAG, "memory allocation is failed.");
 		return 0;
 	}
-
 	memset(*variable, 0, length + 1);
 	memcpy(*variable, json->valuestring, length + 1);
-
-	THINGS_LOG_D(THINGS_DEBUG, TAG, "Exit");
-
+	THINGS_LOG_D(THINGS_INFO, TAG, "(variable = %s)", json->valuestring);
+	THINGS_LOG_D(THINGS_DEBUG, TAG, THINGS_FUNC_EXIT);
 	return res;
 }
 
 static int load_cloud_signup_data(cJSON *json, es_cloud_signup_s **cl_data)
 {
-	THINGS_LOG_D(THINGS_DEBUG, TAG, "Enter");
+	THINGS_LOG_D(THINGS_DEBUG, TAG, THINGS_FUNC_ENTRY);
 
 	int res = 1;
-
 	if (json == NULL || cl_data == NULL) {
 		THINGS_LOG_V_ERROR(THINGS_ERROR, TAG, "json = %d, cl_data = %d", json, cl_data);
 		return -1;
 	}
-
 	cJSON *domain = cJSON_GetObjectItem(json, KEY_CLOUD_DOMAIN);
 	cJSON *address = cJSON_GetObjectItem(json, KEY_CLOUD_ADDRESS);
 	cJSON *port = cJSON_GetObjectItem(json, KEY_CLOUD_PORT);
@@ -646,37 +615,30 @@ static int load_cloud_signup_data(cJSON *json, es_cloud_signup_s **cl_data)
 		THINGS_LOG_V_ERROR(THINGS_ERROR, TAG, "address = %d, accesstoken = %d, refresh_accesstoken = %d, user_id = %d, expire_time = %d", address, accesstoken, refresh_accesstoken, user_id, expire_time);
 		return -2;
 	}
-
 	if (es_cloud_signup_init(cl_data) == false) {
 		THINGS_LOG_V_ERROR(THINGS_ERROR, TAG, "ESCloud data initialization is failed.");
 		return -1;
 	}
-
 	if (get_json_string(address, &((*cl_data)->address)) == 0) {
 		THINGS_LOG_V_ERROR(THINGS_ERROR, TAG, "Load JSON String address is failed");
 		res = -1;
 	}
-
 	if (get_json_string(accesstoken, &((*cl_data)->access_token)) == 0) {
 		THINGS_LOG_V_ERROR(THINGS_ERROR, TAG, "Load JSON String accesstoken is failed");
 		res = -1;
 	}
-
 	if (get_json_string(refresh_accesstoken, &((*cl_data)->refresh_token)) == 0) {
 		THINGS_LOG_V_ERROR(THINGS_ERROR, TAG, "Load JSON String refresh_accesstoken is failed");
 		res = -1;
 	}
-
 	if (get_json_string(user_id, &((*cl_data)->uid)) == 0) {
 		THINGS_LOG_V_ERROR(THINGS_ERROR, TAG, "Load JSON String user_id is failed");
 		res = -1;
 	}
-
 	if (get_json_int(expire_time, &((*cl_data)->expire_time)) == 0) {
 		THINGS_LOG_V_ERROR(THINGS_ERROR, TAG, "Load JSON String expire_time is failed");
 		res = -1;
 	}
-
 	get_json_string(token_type, &((*cl_data)->token_type));
 	get_json_string(redirect_uri, &((*cl_data)->redirect_uri));
 	get_json_string(certificate, &((*cl_data)->certificate));
@@ -692,32 +654,8 @@ static int load_cloud_signup_data(cJSON *json, es_cloud_signup_s **cl_data)
 		THINGS_LOG_D(THINGS_DEBUG, TAG, "CLOUD CI Address : %s", g_cloud_address);
 	}
 
-	THINGS_LOG_D(THINGS_DEBUG, TAG, "Exit");
-
-	return res;
-}
-
-static int if_need_init_things_cloud_file(const char *filename)
-{
-	THINGS_LOG_D(THINGS_DEBUG, TAG, THINGS_FUNC_ENTRY);
-
-	int res = 0;
-
-	FILE *fp = fopen(filename, "r");
-	if (fp) {
-		THINGS_LOG_D(THINGS_DEBUG, TAG, "Already Exist : provisioning file.");
-		fclose(fp);
-	} else {
-		if (set_json_string_into_file(filename, origin_cloud_json_str) == 0) {
-			THINGS_LOG_V_ERROR(THINGS_ERROR, TAG, "Creating privisioning file is failed.");
-			res = -1;
-		} else {
-			THINGS_LOG_D(THINGS_INFO, TAG, "Creating privisioning file is Success.");
-			res = 1;
-		}
-	}
-
 	THINGS_LOG_D(THINGS_DEBUG, TAG, THINGS_FUNC_EXIT);
+
 	return res;
 }
 
@@ -770,13 +708,6 @@ int parse_things_cloud_json(const char *filename)
 
 	int ret = 0;
 	char *json_str = NULL;
-
-	if (if_need_init_things_cloud_file(filename) == -1) {
-		THINGS_LOG_V_ERROR(THINGS_ERROR, TAG, "RW CloudFile-loading is failed. please check your \"%s\"", filename);
-		return 0;
-	}
-
-RETRY_JSON:
 	json_str = get_json_string_from_file(filename);
 
 	if (json_str == NULL) {
@@ -785,54 +716,27 @@ RETRY_JSON:
 			THINGS_LOG_V_ERROR(THINGS_ERROR, TAG, "[Error] Creating cloud file is failed.");
 			return 0;
 		}
-		goto RETRY_JSON;
 	}
 
 	if (strlen(json_str) > 0) {
-		// 3. Parse the Json string
 		cJSON *root = cJSON_Parse((const char *)json_str);
-
 		if (root == NULL) {
 			THINGS_LOG_V(THINGS_INFO, TAG, "cloud file context has a error about json-format.");
 			things_free(json_str);
 			json_str = NULL;
-
-			THINGS_LOG_V(THINGS_INFO, TAG, "cloud file initialization.");
-			if (set_json_string_into_file(filename, origin_cloud_json_str) == 0) {
-				THINGS_LOG_V_ERROR(THINGS_ERROR, TAG, "[Error] Creating colud file is failed.");
-				if (NULL != root) {
-					cJSON_Delete(root);
-				}
-				return 0;
-			}
-			goto RETRY_JSON;
+			return 0;
 		}
-
 		cJSON *cloud = cJSON_GetObjectItem(root, KEY_CLOUD);
-
-		if (NULL != cloud) {
-			/***** Cloud *****/
+		if (cloud != NULL) {
 			cJSON *address = cJSON_GetObjectItem(cloud, KEY_CLOUD_ADDRESS);
-			if (NULL != address) {
+			if (address != NULL) {
 				memset(g_cloud_address, 0, (size_t) MAX_CLOUD_ADDRESS);
 				memcpy(g_cloud_address, address->valuestring, strlen(address->valuestring) + 1);
 				THINGS_LOG_D(THINGS_DEBUG, TAG, "[CLOUD] CI Address : %s", g_cloud_address);
 				ret = 1;
 			}
-
-			cJSON *accesstoken = cJSON_GetObjectItem(cloud, KEY_TOKEN_ACCESS);
-			cJSON *refresh_accesstoken = cJSON_GetObjectItem(cloud, KEY_TOKEN_ACCESS_REFRESH);
-			cJSON *user_id = cJSON_GetObjectItem(cloud, KEY_ID_USER);
-			cJSON *expire_time = cJSON_GetObjectItem(cloud, KEY_EXPIRE_TIME);
-
-			if (address == NULL || accesstoken == NULL || refresh_accesstoken == NULL || user_id == NULL || expire_time == NULL) {
-				THINGS_LOG_D(THINGS_DEBUG, TAG, "[ProvisionInfo] address = %d, accesstoken = %d, refresh_accesstoken = %d, user_id = %d, expire_time = %d", address, accesstoken, refresh_accesstoken, user_id, expire_time);
-			} else {
-				THINGS_LOG_D(THINGS_DEBUG, TAG, "[ProvisionInfo] There is mandatory elements in cloud file.");
-			}
 		}
-
-		if (NULL != root) {
+		if (root != NULL) {
 			cJSON_Delete(root);
 		}
 	} else {
@@ -1490,7 +1394,9 @@ static int parse_things_info_json(const char *filename)
 		}
 	}
 
-	parse_things_cloud_json(g_things_cloud_file_path);
+	if (parse_things_cloud_json(g_things_cloud_file_path) == 0) {
+		THINGS_LOG_D(THINGS_ERROR, TAG, "cloud data parsing error");			
+	}
 
 JSON_ERROR:
 	if (root != NULL) {
@@ -1511,24 +1417,28 @@ static int get_signup_data_from_json(const char *filename, es_cloud_signup_s **c
 
 	int ret = 1;
 	char *json_str = get_json_string_from_file(filename);
+	cJSON *root = NULL;
+	cJSON *cloud = NULL;
 
 	if (json_str != NULL && strlen(json_str) > 0) {
-		// 3. Parse the Json string
-		cJSON *root = cJSON_Parse((const char *)json_str);
-		cJSON *cloud = cJSON_GetObjectItem(root, KEY_CLOUD);
+		root = cJSON_Parse((const char *)json_str);
+		cloud = cJSON_GetObjectItem(root, KEY_CLOUD);
 		if (cloud == NULL) {
 			THINGS_LOG_V_ERROR(THINGS_ERROR, TAG, "cloud cJSON is NULL.");
 			ret = 0;
+			goto JSON_ERROR;
 		} else if ((ret = load_cloud_signup_data(cloud, cl_data)) != 1) {
 			THINGS_LOG_V_ERROR(THINGS_ERROR, TAG, "Load Cloud SignUp Data Failed.");
 		}
-
-		cJSON_Delete(root);
 	} else {
 		THINGS_LOG_V_ERROR(THINGS_ERROR, TAG, "cloud file Reading is failed.");
 		ret = 0;
+		goto JSON_ERROR;
 	}
-
+JSON_ERROR:
+	if (root != NULL) {
+		cJSON_Delete(root);
+	}
 	if (json_str != NULL) {
 		things_free(json_str);
 	}
@@ -1547,19 +1457,14 @@ static int update_things_cloud_json_by_cloud_signup(const char *filename, es_clo
 	char *json_str = get_json_string_from_file(filename);
 
 	if (json_str != NULL && strlen(json_str) > 0) {
-		// 3. Parse the Json string
 		root = cJSON_Parse((const char *)json_str);
-
-		// Cloud Items
 		cJSON *cloud = cJSON_GetObjectItem(root, KEY_CLOUD);
 		if (cloud == NULL) {
 			THINGS_LOG_V_ERROR(THINGS_ERROR, TAG, "cloud cJSON is NULL.");
 			goto GOTO_OUT;
 		}
-
-		if (cl_data != NULL) {
-			cJSON_DeleteItemFromObject(cloud, KEY_CLOUD_ADDRESS);
-		}
+		
+		cJSON_DeleteItemFromObject(cloud, KEY_CLOUD_ADDRESS);
 		cJSON_DeleteItemFromObject(cloud, KEY_CLOUD_DOMAIN);
 		cJSON_DeleteItemFromObject(cloud, KEY_CLOUD_PORT);
 		cJSON_DeleteItemFromObject(cloud, KEY_TOKEN_ACCESS);
@@ -1570,7 +1475,6 @@ static int update_things_cloud_json_by_cloud_signup(const char *filename, es_clo
 		cJSON_DeleteItemFromObject(cloud, KEY_SERVER_REDIRECT_URI);
 		cJSON_DeleteItemFromObject(cloud, KEY_CERTIFICATE_FILE);
 		cJSON_DeleteItemFromObject(cloud, KEY_SERVER_ID);
-
 		memset(g_cloud_address, 0, MAX_CLOUD_ADDRESS);
 		if (cl_data != NULL) {
 			if (things_strcat(g_cloud_address, MAX_CLOUD_ADDRESS, cl_data->address) == NULL) {
@@ -1610,20 +1514,18 @@ static int update_things_cloud_json_by_cloud_signup(const char *filename, es_clo
 			if (cl_data->sid != NULL && strlen(cl_data->sid) > 0) {
 				cJSON_AddStringToObject(cloud, KEY_SERVER_ID, cl_data->sid);
 			}
+			json_update = cJSON_Print(root);
+		} else {
+			json_update = things_malloc(sizeof(char) * (strlen(origin_cloud_json_str) + 1));
+			strncpy(json_update, origin_cloud_json_str, strlen(origin_cloud_json_str) + 1);
 		}
-
-		json_update = cJSON_Print(root);
-
 		if (set_json_string_into_file(filename, json_update) == 0) {
 			THINGS_LOG_V_ERROR(THINGS_ERROR, TAG, "Fail : Store data to info file.");
 			goto GOTO_OUT;
 		}
-
 		ret = 1;
-	}							// End of if
-
+	}
 	THINGS_LOG_D(THINGS_DEBUG, TAG, "Update Success in \"%s\" file.", filename);
-
 GOTO_OUT:
 	if (root != NULL) {
 		cJSON_Delete(root);
@@ -1716,7 +1618,7 @@ const char *dm_get_things_cloud_address(char *customized_ci_server)
 	if (customized_ci_server && customized_ci_server[0] != 0) {
 		return customized_ci_server;
 	}
-	return get_cloud_server_address(customized_ci_server);
+	return g_cloud_address;
 }
 
 bool dm_is_rsc_published(void)
@@ -2066,65 +1968,38 @@ int dm_get_device_information(int *cnt, st_device_s ***list)
 
 int dm_update_things_cloud(es_cloud_signup_s *cl_data)
 {
-	int ret = 1;
-
 	THINGS_LOG_V(THINGS_INFO, TAG, "RTOS Recived Signup Data domain[%s], address[%s], port [%s],  access_token[%s],  refresh_token[%s], token_type[%s],  " "uid[%s]", cl_data->domain, cl_data->address, cl_data->port, cl_data->access_token, cl_data->refresh_token, cl_data->token_type, cl_data->uid);
 	THINGS_LOG_V(THINGS_INFO, TAG, "RTOS Recived Signup Data redirect_uri[%s],  certificate[%s], sid[%s]", cl_data->redirect_uri, cl_data->certificate, cl_data->sid);
 
 	if (g_things_cloud_file_path[0] == 0 || cl_data == NULL) {
 		THINGS_LOG_V_ERROR(THINGS_ERROR, TAG, "cloud file path is NULL(%s). or Invalid argument.(0x%X)", g_things_cloud_file_path, cl_data);
-		ret = 0;
-		return ret;
+		return 0;
 	}
-
 	THINGS_LOG_D(THINGS_DEBUG, TAG, "g_things_cloud_file_path = %s", g_things_cloud_file_path);
-
 	if (update_things_cloud_json_by_cloud_signup(g_things_cloud_file_path, cl_data) == 0) {
 		THINGS_LOG_V_ERROR(THINGS_ERROR, TAG, "Provisioning file update failed.");
-		ret = 0;
-	}
-
-	if (ret == 1) {
-		int res = 0;
-		es_cloud_signup_s *confirmData = NULL;
-
-		if ((res = dm_load_legacy_cloud_data(&confirmData)) == 1) {
-			THINGS_LOG_D(THINGS_DEBUG, TAG, "Update Success.");
-			es_cloud_signup_clear(confirmData);
-			confirmData = NULL;
-		} else {
-			THINGS_LOG_D(THINGS_DEBUG, TAG, "Update Failed.(%d)", res);	// 1 : Success , 0/-1 : system error. , -2 : saved invalid Cloud-Data.
-		}
-	}
-
-	return ret;
+		return 0;
+	}	
+	return 1;
 }
 
 int dm_del_things_cloud_data(void)
 {
-	THINGS_LOG(THINGS_DEBUG, TAG, "Enter.");
+	THINGS_LOG(THINGS_DEBUG, TAG, THINGS_FUNC_ENTRY);
 
-	int ret = 1;
 	if (g_things_cloud_file_path[0] == 0) {
 		THINGS_LOG_V_ERROR(THINGS_ERROR, TAG, "cloud file path is NULL.");
-		ret = 0;
+		return 0;
 	}
-
 	THINGS_LOG_D(THINGS_DEBUG, TAG, "g_things_cloud_file_path = %s", g_things_cloud_file_path);
-
 	if (update_things_cloud_json_by_cloud_signup(g_things_cloud_file_path, NULL) == 0) {
 		THINGS_LOG_V_ERROR(THINGS_ERROR, TAG, "It's failed to delete Cloud-Data in cloud file.");
-		ret = 0;
+		return 0;
 	}
-
-	if (ret == 1) {
-		THINGS_LOG_D(THINGS_DEBUG, TAG, "Delete Success.");
-	}
-
+	THINGS_LOG_D(THINGS_DEBUG, TAG, "Delete Success.");
 	esm_save_easysetup_state(ES_NOT_COMPLETE);
-
-	THINGS_LOG(THINGS_DEBUG, TAG, "Exit.");
-	return ret;
+	THINGS_LOG(THINGS_DEBUG, TAG, THINGS_FUNC_EXIT);
+	return 1;
 }
 
 bool dm_is_es_complete(void)

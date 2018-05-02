@@ -918,7 +918,7 @@ int esm_save_easysetup_state(int state)
 			return 0;
 		}
 		unsigned char easysetup_completed = ES_COMPLETE;
-		int ret = fwrite(&easysetup_completed, ES_COMPLETE, sizeof(unsigned char), fp);
+		int ret = fwrite(&easysetup_completed, 1, sizeof(unsigned char), fp);
 		if (ret <= 0) {
 			THINGS_LOG_D(THINGS_ERROR, TAG, "file write error(%d)", errno);
 			fclose(fp);
@@ -943,7 +943,7 @@ int esm_read_easysetup_state(void)
 		return 0;
 	}
 	unsigned char easysetup_completed;
-	int ret = fread(&easysetup_completed, ES_COMPLETE, sizeof(unsigned char), fp);
+	int ret = fread(&easysetup_completed, 1, sizeof(unsigned char), fp);
 	if (ret <= 0) {
 		THINGS_LOG_D(THINGS_ERROR, TAG, "file write error(%d)", errno);
 		fclose(fp);
