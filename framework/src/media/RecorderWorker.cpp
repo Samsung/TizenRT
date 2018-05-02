@@ -19,7 +19,6 @@
 #include "RecorderWorker.h"
 
 namespace media {
-once_flag RecorderWorker::mOnceFlag;
 
 RecorderWorker::RecorderWorker() : mRefCnt(0)
 {

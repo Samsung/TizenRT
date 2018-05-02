@@ -58,7 +58,6 @@ private:
 	void decreaseRef();
 
 private:
-	static once_flag mOnceFlag;
 	int mRefCnt;
 	std::atomic<bool> mIsRunning;
 	std::thread mWorkerThread;
