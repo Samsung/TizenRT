@@ -51,7 +51,7 @@ typedef struct st_resource_type_s {
 	int prop_cnt;
 	struct things_attribute_info_s *prop[MAX_PROPERTY_CNT];
 } st_resource_type_s;
-#ifndef CONFIG_ST_THINGS_COLLECTION
+#ifdef CONFIG_ST_THINGS_COLLECTION
 typedef struct col_resource_s {
 	char uri[MAX_URI_LENGTH_OCF];
 	char *interface_types[MAX_IT_CNT];
@@ -79,7 +79,7 @@ typedef struct st_device_s {
 	char *ver_fw;	// mnfv
 	char *device_id;	// mnfv
 	char *vender_id;	// mnfv
-#ifndef CONFIG_ST_THINGS_COLLECTION
+#ifdef CONFIG_ST_THINGS_COLLECTION
 	col_resource_s *collection;
 #endif
 	things_resource_info_s *single;
