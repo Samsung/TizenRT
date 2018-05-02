@@ -41,7 +41,6 @@ typedef char *(*get_notify_obs_uri_cb)(const char *Uri, const char *query);
 typedef OCEntityHandlerResult(*handle_request_interface_cb)(things_resource_s **ppst_target_resource);
 
 void release_handler_instance(things_request_handler_s *);
-int register_stop_softap_cb(stop_softap_func_type func);
 void notify_result_of_reset(things_resource_s *target_resource, bool result);
 int register_handle_request_func(handle_request_func_type get_func, handle_request_func_type set_func);
 

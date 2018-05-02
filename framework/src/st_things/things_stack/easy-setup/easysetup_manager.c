@@ -56,7 +56,6 @@ es_wifi_prov_data_s *g_wifi_prov_data = NULL;
 es_cloud_prov_data_s *g_cloud_prov_data = NULL;
 
 static things_server_builder_s *g_server_builder = NULL;
-static things_update_dev_prov_data_func_type g_update_dev_prov_data = NULL;
 static pin_generated_func_type g_pin_generated_cb = NULL;
 static pin_close_func_type g_pin_close_cb = NULL;
 static user_confirm_result_func_type g_user_confirm_cb = NULL;
@@ -156,16 +155,6 @@ OCStackResult get_user_confirmation(void *ctx)
 }
 
 #endif							//#ifdef __SECURED__
-
-/*******************************************************************
- *
- * st_things API Function register
- *
- *******************************************************************/
-void esm_register_update_dev_prov_data_func(things_update_dev_prov_data_func_type func)
-{
-	g_update_dev_prov_data = func;
-}
 
 int esm_set_device_property(char *name, const wifi_mode_e *mode, int ea_mode, const wifi_freq_e freq)
 {
@@ -450,24 +439,6 @@ static void *cloud_refresh_check_loop(void *param)
 	return NULL;
 }
 
-static int things_update_dev_prov_data(es_dev_conf_prov_data_s *dev_prov_data)
-{
-	THINGS_LOG_D(TAG, "Enter.");
-
-	if (dev_prov_data == NULL) {
-		return -1;
-	}
-
-	THINGS_LOG_D(TAG, "Country=%s, DateTime=%s, Language=%s", dev_prov_data->country, dev_prov_data->datetime, dev_prov_data->language);
-
-	if (g_update_dev_prov_data == NULL) {
-		THINGS_LOG_V(TAG, "st_things API is not registered.(gUpdateDateTime)");
-		return -1;
-	}
-
-	return g_update_dev_prov_data(dev_prov_data);
-}
-
 static void *wifi_prov_set_loop(void *param)
 {
 	THINGS_LOG_D(TAG, "Open Loop Enter.");
@@ -489,8 +460,6 @@ static void *wifi_prov_set_loop(void *param)
 		things_free((access_point_info_s *) param);
 		return 0;
 	}
-	// Notify DevConfProvData to THINGS_App.
-	things_update_dev_prov_data(g_dev_conf_prov_data);
 
 	usleep(50000);
 

@@ -43,7 +43,6 @@ esm_result_e esm_terminate_easysetup(void);
 esm_result_e esm_set_wifi_conn_err(void);
 bool esm_get_network_status(void);
 void *esm_register_cloud_cb(void *);
-void esm_register_update_dev_prov_data_func(things_update_dev_prov_data_func_type func);
 int esm_register_pin_generated_cb(pin_generated_func_type func);
 int esm_register_pin_close_cb(pin_close_func_type func);
 int esm_register_user_confirm_cb(user_confirm_result_func_type func);

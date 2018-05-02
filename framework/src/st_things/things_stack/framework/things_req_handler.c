@@ -129,60 +129,10 @@ static int verify_request(OCEntityHandlerRequest *eh_request, const char *uri, i
 
 				THINGS_LOG_D(TAG, "# of RT :%d", num);
 
-				if (resource->size > 1) {
-					// Remove "rep" wrapper
-					things_resource_s *res = resource;
-					things_representation_s *tRep = NULL;
-					things_representation_s *tchild_rep = NULL;
-
-					for (int iter = 0; iter < resource->size; ++iter) {
-						tchild_rep = things_create_representation_inst(NULL);
-						res->things_get_representation(res, &tRep);
-						tRep->things_get_object_value(tRep, OC_RSRVD_REPRESENTATION, tchild_rep);
-						res->things_set_representation(res, tchild_rep);
-
-						res = res->things_get_next(res);
-					}
-
-					for (int iter = 0; iter < resource->size; ++iter) {
-						child = NULL;
-
-						if (resource->uri == NULL) {
-							THINGS_LOG_E(TAG, "Resource URI is NULL.");
-							result = OC_EH_ERROR;
-							goto EXIT_VALIDATION;
-						}
-
-						child = g_builder->get_resource(g_builder, resource->uri);
-
-						if (NULL == child) {
-							THINGS_LOG_E(TAG, "Not Existing Child Resource.");
-							result = OC_EH_ERROR;
-							goto EXIT_VALIDATION;
-						}
-						if (NULL == resource->rep) {
-							THINGS_LOG_E(TAG, "things_representation_s is NULL.");
-							result = OC_EH_ERROR;
-							goto EXIT_VALIDATION;
-						}
-
-						if (num > 0) {
-							for (int i = 0; i < num; i++) {
-								result |= dm_validate_attribute_in_request(resource->things_get_res_type(child, i), (const void *) /*eh_request->payload */resource->rep->payload);
-								if (!result) {
-									goto EXIT_VALIDATION;
-								}
-							}
-						}
-
-						resource = resource->things_get_next(resource);
-					}
-				} else {
-					if (num > 0) {
-						for (int iter = 0; iter < num; iter++) {
-							// if it's okey in any case then....it's valid..
-							result |= dm_validate_attribute_in_request(resource->things_get_res_type(resource, iter), (const void *)eh_request->payload);
-						}
+				if (num > 0) {
+					for (int iter = 0; iter < num; iter++) {
+						// if it's okey in any case then....it's valid..
+						result |= dm_validate_attribute_in_request(resource->things_get_res_type(resource, iter), (const void *)eh_request->payload);
 					}
 				}
 			}
@@ -238,19 +188,6 @@ OCEntityHandlerResult send_response(OCRequestHandle request_handle, OCResourceHa
 
 	// THINGS_LOG_D(TAG, THINGS_FUNC_EXIT);
 	return eh_result;
-}
-
-static bool is_number(char *str)
-{
-	int len = strlen(str);
-	for (int index = 0; index < len; index++) {
-		if (!isdigit(str[index])) {
-			THINGS_LOG_E(TAG, "It's NOT NUMBER : %s", str);
-			return false;
-		}
-	}
-	THINGS_LOG_D(TAG, "It is NUMBER : %s", str);
-	return true;
 }
 
 /**
@@ -408,30 +345,6 @@ static OCEntityHandlerResult set_provisioning_info(things_resource_s *target_res
 	return eh_result;
 }
 
-static OCEntityHandlerResult get_device_or_platform_info_result(things_resource_s *target_resource, char *device_id)
-{
-	OCEntityHandlerResult eh_result = OC_EH_ERROR;
-
-	if (strlen(device_id) > 0 && is_number(device_id)) {
-		int num = atoi(device_id);
-
-		// 1. Get the resource with uri
-		things_resource_s *resource = dm_get_resource_instance(target_resource->uri, num);
-		if (resource) {
-			// 2. Clone the Payload of the resource
-			OCPayloadDestroy((OCPayload *) target_resource->rep->payload);
-			target_resource->rep->payload = NULL;
-			target_resource->rep->payload = OCRepPayloadClone(resource->rep->payload);
-
-			eh_result = OC_EH_OK;
-		}
-	} else {
-		THINGS_LOG_E(TAG, "Invalid Device ID : %s", device_id);
-	}
-
-	return eh_result;
-}
-
 static OCEntityHandlerResult process_post_request(things_resource_s **target_res)
 {
 	OCEntityHandlerResult eh_result = OC_EH_ERROR;
@@ -481,9 +394,6 @@ static OCEntityHandlerResult process_get_request(things_resource_s *target_resou
 	} else if (strstr(target_resource->uri, URI_FIRMWARE) != NULL) {
 		eh_result = fmwup_get_data(target_resource);
 #endif
-	} else if (strstr(target_resource->uri, OC_RSRVD_DEVICE_URI) != NULL || strstr(target_resource->uri, OC_RSRVD_PLATFORM_URI) != NULL) {
-		// 9. Get request for the device maintenance information
-		eh_result = get_device_or_platform_info_result(target_resource, device_id);
 	} else {
 		if (g_handle_request_get_cb != NULL) {
 			int ret = g_handle_request_get_cb(target_resource);
@@ -776,16 +686,6 @@ void release_handler_instance(struct things_request_handler_s *handler)
 	if (handler) {
 		handler->deinit_module();
 		things_free(handler);
-	}
-}
-
-int register_stop_softap_cb(stop_softap_func_type func)
-{
-	if (NULL != func) {
-		g_stop_soft_ap_cb = func;
-		return 1;
-	} else {
-		return 0;
 	}
 }
 

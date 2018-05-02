@@ -53,7 +53,6 @@ int things_register_handle_request_func(things_handle_request_func_type get_func
 int things_register_pin_generated_func(things_pin_generated_func_type func);
 int things_register_pin_display_close_func(things_pin_display_close_func_type func);
 int things_register_user_confirm_func(things_get_user_confirm_func_type func);
-int things_get_easysetup_state(void);
 int things_register_easysetup_state_func(things_get_easysetup_state_func_type func);
 int things_register_otm_event_handler(things_sec_otm_state_func_type otm_event_callback);
 int things_get_resource_type(const char *resource_uri, int *count, char ***resource_types);
