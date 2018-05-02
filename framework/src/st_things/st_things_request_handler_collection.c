@@ -27,6 +27,8 @@
 
 #define TAG "[st_things_sdk]"
 
+#ifdef CONFIG_ST_THINGS_COLLECTION
+
 static bool get_resource_types2(things_resource_info_s *rsrc, char ***res_types, int *count)
 {
 	RET_FALSE_IF_PARAM_IS_NULL(TAG, rsrc);
@@ -1067,3 +1069,4 @@ int handle_post_req_on_collection_rsrc(things_resource_s *collection_rsrc)
 
 	return result ? 1 : 0;
 }
+#endif

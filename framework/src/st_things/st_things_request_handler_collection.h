@@ -22,10 +22,14 @@
 #include "things_resource.h"
 #include "octypes.h"
 
+#ifdef CONFIG_ST_THINGS_COLLECTION
+
 bool form_collection_links(things_resource_s *collection_rsrc, OCRepPayload ***links, size_t *count);
 
 int handle_get_req_on_collection_rsrc(things_resource_s *collection_rsrc);
 
 int handle_post_req_on_collection_rsrc(things_resource_s *collection_rsrc);
+
+#endif
 
 #endif							// __ST_THINGS_REQUEST_HANDLER_COLLECTION_H__
