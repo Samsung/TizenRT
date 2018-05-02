@@ -190,10 +190,10 @@ int MediaRecorderImpl::getVolume()
 
 	if (mCurState == RECORDER_STATE_IDLE || mCurState == RECORDER_STATE_NONE) {
 		meddbg("MediaRecorderImpl::getVolume() - mCurState == RECORDER_STATE_IDLE || mCurState == RECORDER_STATE_NONE\n");
-		return 0;
+		return -1;
 	}
 
-	return mCurVolume;
+	return get_input_audio_volume();
 }
 
 recorder_result_t MediaRecorderImpl::setVolume(int vol)
@@ -206,7 +206,18 @@ recorder_result_t MediaRecorderImpl::setVolume(int vol)
 		return RECORDER_ERROR;
 	}
 
-	mCurVolume = vol;
+	int maxVolume = get_max_audio_volume();
+	if (vol < 0 || vol > maxVolume) {
+		meddbg("MediaRecorderImpl::setVolume(int vol) : incorrect vol range (recorder ranage 0 ~ %d)\n", maxVolume);
+		return RECORDER_ERROR;
+	}
+
+	if (set_input_audio_volume(vol) != AUDIO_MANAGER_SUCCESS) {
+		meddbg("MediaRecorderImpl::setVolume(int vol) : set_input_audio_volume(vol) != AUDIO_MANAGER_SUCCESS\n", maxVolume);
+		return RECORDER_ERROR;
+	}
+
+	medvdbg("MediaRecorderImpl::setVolume is success(int vol)\n");
 	return RECORDER_OK;
 }
 

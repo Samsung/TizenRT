@@ -208,7 +208,6 @@ int MediaPlayerImpl::getVolume()
 
 player_result_t MediaPlayerImpl::setVolume(int vol)
 {
-	int vol_max = get_max_audio_volume();
 	std::lock_guard<std::mutex> lock(mCmdMtx);
 	medvdbg("MediaPlayer setVolume\n");
 	if (mCurState == PLAYER_STATE_NONE) {
@@ -216,17 +215,19 @@ player_result_t MediaPlayerImpl::setVolume(int vol)
 		return PLAYER_ERROR;
 	}
 
+	int vol_max = get_max_audio_volume();
 	if (vol < 0 || vol > vol_max) {
 		meddbg("MediaPlayer setVolume fail : invalid argument. volume level should be 0(Min) ~ %d(Max)\n", vol_max);
 		return PLAYER_ERROR;
 	}
 
-	if (!set_output_audio_volume(vol)) {
-		mCurVolume = vol;
-		return PLAYER_OK;
-	} else {
+	if (set_output_audio_volume(vol) != AUDIO_MANAGER_SUCCESS) {
+		meddbg("MediaPlayer setVolume fail : audio manager failed\n", vol_max);
 		return PLAYER_ERROR;
 	}
+	
+	medvdbg("MediaPlayer setVolume success\n");
+	return PLAYER_OK;
 }
 
 player_result_t MediaPlayerImpl::setDataSource(std::unique_ptr<stream::InputDataSource> source)

@@ -96,7 +96,6 @@ private:
 	unsigned int mBuffSize;
 	mutex mCmdMtx; // command mutex
 	std::condition_variable mSyncCv;
-	int mCurVolume;
 	int mId;
 };
 } // namespace media

@@ -253,7 +253,7 @@ static audio_manager_result_t set_audio_volume(audio_device_type_t type, uint8_t
 	if (type == INPUT) {
 		caps_desc.caps.ac_format.hw = AUDIO_FU_INP_GAIN;
 		caps_desc.caps.ac_controls.hw[0] =
-			volume * g_audio_in_cards[g_actual_audio_in_card_id].config.max_volume / AUDIO_DEVICE_MAX_VOLUME;
+			volume * (int)(g_audio_in_cards[g_actual_audio_in_card_id].config.max_volume / AUDIO_DEVICE_MAX_VOLUME);
 
 		if ((fd = open(g_audio_in_cards[g_actual_audio_in_card_id].card_path, O_RDONLY)) < 0) {
 			meddbg("Fail to open an input audio driver\n");
@@ -262,7 +262,7 @@ static audio_manager_result_t set_audio_volume(audio_device_type_t type, uint8_t
 	} else {
 		caps_desc.caps.ac_format.hw = AUDIO_FU_VOLUME;
 		caps_desc.caps.ac_controls.hw[0] =
-			volume * g_audio_out_cards[g_actual_audio_out_card_id].config.max_volume / AUDIO_DEVICE_MAX_VOLUME;
+			volume * (int)(g_audio_out_cards[g_actual_audio_out_card_id].config.max_volume / AUDIO_DEVICE_MAX_VOLUME);
 
 		if ((fd = open(g_audio_out_cards[g_actual_audio_out_card_id].card_path, O_WRONLY)) < 0) {
 			meddbg("Fail to open an output audio driver\n");
