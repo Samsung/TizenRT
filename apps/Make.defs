@@ -61,6 +61,10 @@ ifeq ($(CONFIG_WINDOWS_NATIVE),y)
 define REGISTER
 	$(Q) echo Register: $1
 	$(Q) echo { "$1", $2, $3 }, > "$(BUILTIN_REGISTRY)$(DELIM)$2.bdat"
+	$(Q) echo { "$1", $2, $4, $5 }, > "$(BUILTIN_REGISTRY)$(DELIM)$2.mdat";
+	$(Q) if [ -z $5 ]; then \
+		$(Q) echo { "$1", $2, 100, 1024 }, > "$(BUILTIN_REGISTRY)$(DELIM)$2.mdat"; \
+	fi
 	$(Q) echo int $2(int argc, char *argv[]); > "$(BUILTIN_REGISTRY)$(DELIM)$2.pdat"
 	$(Q) if [ $3 = "TASH_EXECMD_ASYNC" ]; then \
 		if [ $5 ]; then \
@@ -73,6 +77,10 @@ else
 define REGISTER
 	$(Q) echo "Register: $1"
 	$(Q) echo "{ \"$1\", $2, $3 }," > "$(BUILTIN_REGISTRY)$(DELIM)$2.bdat"
+	$(Q) echo { \"$1\", $2, $4, $5 }, > "$(BUILTIN_REGISTRY)$(DELIM)$2.mdat"
+	$(Q) if [ -z $5 ]; then \
+		echo { \"$1\", $2, 100, 1024 }, > "$(BUILTIN_REGISTRY)$(DELIM)$2.mdat"; \
+	fi
 	$(Q) echo "int $2(int argc, char *argv[]);" > "$(BUILTIN_REGISTRY)$(DELIM)$2.pdat"
 	$(Q) if [ $3 = "TASH_EXECMD_ASYNC" ]; then \
 		if [ $5 ]; then \

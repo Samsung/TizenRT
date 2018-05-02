@@ -5,7 +5,6 @@
 config BUILTIN_APPS
 	bool "Support builtin applications"
 	default y
-	depends on TASH
 	---help---
 		If this configuration is enabled (is set to y), enabled applications are registered
 		at TASH automatically.
