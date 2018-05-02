@@ -880,6 +880,10 @@ static void up_dumpstate(void)
 
 	up_showtasks();
 
+#if defined(CONFIG_BUILD_PROTECTED)
+	mpu_show_regioninfo();
+#endif
+
 #ifdef CONFIG_FRAME_POINTER
 	/* Display the call stack of all tasks */
 	dump_all_stack();

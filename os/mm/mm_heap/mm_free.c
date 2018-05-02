@@ -60,6 +60,7 @@
 #include <debug.h>
 
 #include <tinyara/mm/mm.h>
+#include <tinyara/userspace.h>
 
 #ifdef CONFIG_DEBUG_MM_HEAPINFO
 #include  <tinyara/sched.h>
@@ -94,6 +95,10 @@ void mm_free(FAR struct mm_heap_s *heap, FAR void *mem)
 #endif
 
 	mvdbg("Freeing %p\n", mem);
+
+#if defined(CONFIG_BUILD_PROTECTED) && defined(CONFIG_UTASK_MEMORY_PROTECTION) && !defined(__KERNEL__)
+	mm_set_alloc_state(heap, MM_IN_FREE);
+#endif
 
 	/* Protect against attempts to free a NULL reference */
 
@@ -136,6 +141,11 @@ void mm_free(FAR struct mm_heap_s *heap, FAR void *mem)
 	}
 
 #endif
+
+#if defined(CONFIG_BUILD_PROTECTED) && defined(CONFIG_UTASK_MEMORY_PROTECTION) && !defined(__KERNEL__)
+	mm_list_del_node(heap, (struct mm_allocnode_s *)node);
+#endif
+
 #ifdef CONFIG_DEBUG_MM_HEAPINFO
 	alloc_node = (struct mm_allocnode_s *)node;
 
@@ -203,4 +213,12 @@ void mm_free(FAR struct mm_heap_s *heap, FAR void *mem)
 
 	mm_addfreechunk(heap, node);
 	mm_givesemaphore(heap);
+
+#if defined(CONFIG_BUILD_PROTECTED) && defined(CONFIG_UTASK_MEMORY_PROTECTION) && !defined(__KERNEL__)
+	mm_set_alloc_state(heap, MM_FREE_DONE);
+
+	// This is done to revoke permission given at the start of this function
+	char *p = (char *)CONFIG_RAM_END;
+	*p = 0xf;
+#endif
 }

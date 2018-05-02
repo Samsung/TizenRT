@@ -145,8 +145,22 @@ struct mm_heap_s g_mmheap;
  *
  ************************************************************************/
 
+#if defined(CONFIG_BUILD_PROTECTED) && defined(CONFIG_UTASK_MEMORY_PROTECTION)
+static void umm_heap_list_init(FAR struct mm_heap_s *heap)
+{
+	int i;
+
+	for (i = 0; i < CONFIG_MAX_TASKS; i++) {
+		sq_init(&heap->alloc_list[i]);
+	}
+}
+#endif
+
 void umm_initialize(FAR void *heap_start, size_t heap_size)
 {
+#if defined(CONFIG_BUILD_PROTECTED) && defined(CONFIG_UTASK_MEMORY_PROTECTION)
+	umm_heap_list_init(USR_HEAP);
+#endif
 	mm_initialize(USR_HEAP, heap_start, heap_size);
 }
 

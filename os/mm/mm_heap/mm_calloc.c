@@ -57,6 +57,7 @@
 #include <tinyara/config.h>
 
 #include <tinyara/mm/mm.h>
+ #include <tinyara/userspace.h>
 
 /****************************************************************************
  * Pre-processor Definitions
@@ -82,6 +83,10 @@ FAR void *mm_calloc(FAR struct mm_heap_s *heap, size_t n, size_t elem_size)
 {
 	FAR void *ret = NULL;
 
+#if defined(CONFIG_BUILD_PROTECTED) && defined(CONFIG_UTASK_MEMORY_PROTECTION) && !defined(__KERNEL__)
+	mm_set_alloc_state(heap, MM_IN_CALLOC);
+#endif
+
 	if (n > 0 && elem_size > 0) {
 #ifdef CONFIG_DEBUG_MM_HEAPINFO
 		ret = mm_zalloc(heap, n * elem_size, caller_retaddr);
@@ -89,6 +94,14 @@ FAR void *mm_calloc(FAR struct mm_heap_s *heap, size_t n, size_t elem_size)
 		ret = mm_zalloc(heap, n * elem_size);
 #endif
 	}
+
+#if defined(CONFIG_BUILD_PROTECTED) && defined(CONFIG_UTASK_MEMORY_PROTECTION) && !defined(__KERNEL__)
+	mm_set_alloc_state(heap, MM_DEFAULT);
+
+	// This is done to revoke permission given at the start of this function
+	char *p = (char *)CONFIG_RAM_END;
+	*p = 0xf;
+#endif
 
 	return ret;
 }

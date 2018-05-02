@@ -183,6 +183,16 @@ config BUILD_PROTECTED
 		a memory protection unit (MPU).  Support, however, may not be
 		implemented on all platforms.
 
+if BUILD_PROTECTED
+config UTASK_MEMORY_PROTECTION
+	bool "User Stack And Heap Protection"
+	depends on BUILD_PROTECTED
+	default n
+	---help---
+		It offers stack and heap memory protection for user space task using
+		Hardware enabled MPU.
+endif
+
 config BUILD_KERNEL
 	bool "TinyAra kernel build"
 	depends on ARCH_USE_MMU && ARCH_ADDRENV && EXPERIMENTAL

@@ -56,6 +56,7 @@
 
 #include <tinyara/config.h>
 #include <tinyara/irq.h>
+#include <chip/mpu-reg.h>
 #include "up_internal.h"
 #include "svcall.h"
 
@@ -68,7 +69,7 @@
 /****************************************************************************
  * Public Symbols
  ****************************************************************************/
-	.global up_mpucontextrestore
+	.global	up_mpucontextrestore
 	.globl	up_fullcontextrestore
 
 #ifdef CONFIG_ARCH_FPU
@@ -102,7 +103,11 @@
 	.type	up_fullcontextrestore, function
 
 up_fullcontextrestore:
-
+#ifdef CONFIG_MPU_STACKGUARD
+	push	{lr}
+	bl up_mpuguardrestore
+	pop	{lr}
+#endif
 	/* On entry, a1 (r0) holds address of the register save area.  All other
 	 * registers are available for use.
 	 */
@@ -134,13 +139,15 @@ up_fullcontextrestore:
 	 * to either user or kernel mode.
 	 */
 
-	sub	sp, #4
-	/* restore the MPU context information */
-	str	lr,	[sp]
-	bl up_mpucontextrestore
-	ldr	lr,	[sp]
-	add	sp, #4
+	/* Restore MPU context information */
+#if defined(CONFIG_UTASK_MEMORY_PROTECTION)
+	push	{lr}
+	bl		up_mpucontextrestore
+	pop		{lr}
+#endif
+
 	/* Perform the System call with R0=SYS_context_restore, R1=restoreregs */
+
 	mov		r1, r0					/* R1: restoreregs */
 	mov		r0, #SYS_context_restore	/* R0: SYS_context_restore syscall */
 	svc		#0x900001				/* Perform the system call */
@@ -184,4 +191,4 @@ up_fullcontextrestore:
 
 #endif
 
-	.size up_fullcontextrestore, . - up_fullcontextrestore
+	.size	up_fullcontextrestore, . - up_fullcontextrestore

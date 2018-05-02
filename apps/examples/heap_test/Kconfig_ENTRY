@@ -1,0 +1,3 @@
+config ENTRY_HEAPTEST
+	bool "\"Heap Protection Test\" example"
+	depends on EXAMPLES_HEAPTEST

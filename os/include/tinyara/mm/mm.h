@@ -64,6 +64,7 @@
 #ifdef CONFIG_HEAPINFO_USER_GROUP
 #include <tinyara/mm/heapinfo_internal.h>
 #endif
+#include <queue.h>
 
 /****************************************************************************
  * Pre-Processor Definitions
@@ -194,6 +195,20 @@
 #endif
 #define MM_IS_ALLOCATED(n) ((int)((struct mm_allocnode_s*)(n)->preceding) < 0)
 
+
+// Alloction states for heap protectionfeature
+#if defined(CONFIG_BUILD_PROTECTED) && defined(CONFIG_UTASK_MEMORY_PROTECTION)
+#define MM_IN_MALLOC    (1)
+#define MM_IN_CALLOC    (2)
+#define MM_IN_REALLOC   (3)
+#define MM_IN_FREE      (4)
+#define MM_ALLOC_DONE   (5)
+#define MM_FREE_DONE    (6)
+#define MM_DEFAULT      (7)
+#define MM_RESET        (8)
+#endif
+
+
 /****************************************************************************
  * Public Types
  ****************************************************************************/
@@ -240,8 +255,13 @@ typedef size_t mmaddress_t;		/* 32 bit address space */
 #error Unknown CONFIG_ARCH option, malloc debug feature wont work.
 #endif
 
+#if defined(CONFIG_BUILD_PROTECTED) && defined(CONFIG_UTASK_MEMORY_PROTECTION)
+#define SIZEOF_MM_MALLOC_DEBUG_INFO \
+	(sizeof(mmaddress_t)
+#else
 #define SIZEOF_MM_MALLOC_DEBUG_INFO \
 	(sizeof(mmaddress_t) + sizeof(pid_t) + sizeof(uint16_t))
+#endif
 #endif
 
 /* This describes an allocated chunk.  An allocated chunk is
@@ -250,37 +270,29 @@ typedef size_t mmaddress_t;		/* 32 bit address space */
  */
 
 struct mm_allocnode_s {
+#if defined(CONFIG_BUILD_PROTECTED) && defined(CONFIG_UTASK_MEMORY_PROTECTION)
+	FAR struct mm_allocnode_s *link;
+#endif
 	mmsize_t size;					/* Size of this chunk */
 	mmsize_t preceding;				/* Size of the preceding chunk */
+#ifndef CONFIG_UTASK_MEMORY_PROTECTION
 #ifdef CONFIG_DEBUG_MM_HEAPINFO
 	mmaddress_t alloc_call_addr;			/* malloc call address */
 	pid_t pid;					/* PID info */
 	uint16_t reserved;				/* Reserved for future use. */
 #endif
-
+#else
+#ifdef CONFIG_DEBUG_MM_HEAPINFO
+	mmaddress_t alloc_call_addr;			/* malloc call address */
+#endif
+	pid_t pid;					/* PID info */
+	uint16_t reserved;				/* Reserved for future use. */
+#endif
 };
 
 /* What is the size of the allocnode? */
 
-#ifdef CONFIG_MM_SMALL
-#ifdef CONFIG_DEBUG_MM_HEAPINFO
-/* 10 = (uint16_t + uint16_t + uint16_t + uint16_t + uint16_t ) */
-#define SIZEOF_MM_ALLOCNODE   (sizeof(mmsize_t) + sizeof(mmsize_t) + SIZEOF_MM_MALLOC_DEBUG_INFO)
-#else
-/* 4 = (uint16_t + uint16_t) */
-#define SIZEOF_MM_ALLOCNODE   (sizeof(mmsize_t) + sizeof(mmsize_t))
-#endif
-
-#else
-
-#ifdef CONFIG_DEBUG_MM_HEAPINFO
-/* 16 = (uint32_t + uint32_t + uint32_t + uint16_t + uint16_t ) */
-#define SIZEOF_MM_ALLOCNODE  (sizeof(mmsize_t) + sizeof(mmsize_t) + SIZEOF_MM_MALLOC_DEBUG_INFO)
-#else
-/* 8 = (uint32_t + uint32_t) */
-#define SIZEOF_MM_ALLOCNODE   (sizeof(mmsize_t) + sizeof(mmsize_t))
-#endif
-#endif
+#define SIZEOF_MM_ALLOCNODE   (sizeof(struct mm_allocnode_s))
 
 #define CHECK_ALLOCNODE_SIZE \
 	DEBUGASSERT(sizeof(struct mm_allocnode_s) == SIZEOF_MM_ALLOCNODE)
@@ -288,6 +300,9 @@ struct mm_allocnode_s {
 /* This describes a free chunk */
 
 struct mm_freenode_s {
+#if defined(CONFIG_BUILD_PROTECTED) && defined(CONFIG_UTASK_MEMORY_PROTECTION)
+	FAR struct mm_freenode_s *link;
+#endif
 	mmsize_t size;				/* Size of this chunk */
 	mmsize_t preceding;			/* Size of the preceding chunk */
 	FAR struct mm_freenode_s *flink;	/* Supports a doubly linked list */
@@ -301,7 +316,11 @@ struct mm_freenode_s {
 #define SIZEOF_MM_FREENODE \
 	(SIZEOF_MM_ALLOCNODE - SIZEOF_MM_MALLOC_DEBUG_INFO + 2 * MM_PTR_SIZE)
 #else
+#if defined(CONFIG_BUILD_PROTECTED) && defined(CONFIG_UTASK_MEMORY_PROTECTION)
+#define SIZEOF_MM_FREENODE (SIZEOF_MM_ALLOCNODE - sizeof(pid_t) - sizeof(uint16_t) + 2 * MM_PTR_SIZE)
+#else
 #define SIZEOF_MM_FREENODE (SIZEOF_MM_ALLOCNODE + 2 * MM_PTR_SIZE)
+#endif
 #endif
 
 #define CHECK_FREENODE_SIZE \
@@ -321,6 +340,15 @@ struct heapinfo_group_s {
 	int heap_size;
 };
 #endif
+
+#if defined(CONFIG_BUILD_PROTECTED) && defined(CONFIG_UTASK_MEMORY_PROTECTION)
+struct node_info_s {
+	int32_t size;
+	void *naddr;
+	pid_t pid;
+};
+#endif
+
 /* This describes one heap (possibly with multiple regions) */
 
 struct mm_heap_s {
@@ -359,6 +387,19 @@ struct mm_heap_s {
 	 */
 
 	struct mm_freenode_s mm_nodelist[MM_NNODES];
+
+#if defined(CONFIG_BUILD_PROTECTED) && defined(CONFIG_UTASK_MEMORY_PROTECTION)
+	/* Array of Double linked list to maintain the list of heap memory per PID
+	 * Allocation per PID are maintained as list. This shall be reffered by the
+	 * fault handler to validate the permission and give access rights
+	 */
+
+	sq_queue_t alloc_list[CONFIG_MAX_TASKS];
+
+	//	Allocation state holder for each user task
+
+	uint8_t alloc_state[CONFIG_MAX_TASKS];
+#endif
 };
 
 /****************************************************************************
@@ -456,6 +497,13 @@ FAR void *mm_malloc(FAR struct mm_heap_s *heap, size_t size, mmaddress_t caller_
 /* Functions contained in mm_malloc.c ***************************************/
 
 FAR void *mm_malloc(FAR struct mm_heap_s *heap, size_t size);
+#endif
+
+#if defined(CONFIG_BUILD_PROTECTED) && defined(CONFIG_UTASK_MEMORY_PROTECTION)
+FAR void mm_list_add_node(FAR struct mm_heap_s *heap, FAR struct mm_allocnode_s *node, uint32_t size);
+FAR void mm_list_del_node(FAR struct mm_heap_s *heap, FAR struct mm_allocnode_s *node);
+FAR void *mm_get_mmlist_bypid(FAR struct mm_heap_s *heap, int16_t pid);
+FAR void mm_set_alloc_state(FAR struct mm_heap_s *heap, uint8_t state);
 #endif
 
 /* Functions contained in kmm_malloc.c **************************************/

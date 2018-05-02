@@ -131,6 +131,7 @@ struct userspace_s {
 	uintptr_t us_dataend;
 	uintptr_t us_bssstart;
 	uintptr_t us_bssend;
+	uintptr_t us_heap;
 
 	/* Task/thread startup routines */
 

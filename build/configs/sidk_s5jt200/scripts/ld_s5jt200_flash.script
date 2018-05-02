@@ -148,3 +148,6 @@ SECTIONS
 		_end = .;
 	} > flash
 }
+
+__ksram_segment_start__   = ORIGIN(sram);
+__ksram_segment_size__    = LENGTH(sram);

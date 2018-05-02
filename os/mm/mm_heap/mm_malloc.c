@@ -60,6 +60,7 @@
 #include <debug.h>
 
 #include <tinyara/mm/mm.h>
+#include <tinyara/userspace.h>
 
 #ifdef CONFIG_DEBUG_MM_HEAPINFO
 #include  <tinyara/sched.h>
@@ -111,6 +112,10 @@ FAR void *mm_malloc(FAR struct mm_heap_s *heap, size_t size)
 	FAR struct mm_freenode_s *node;
 	void *ret = NULL;
 	int ndx;
+
+#if defined(CONFIG_BUILD_PROTECTED) && defined(CONFIG_UTASK_MEMORY_PROTECTION) && !defined(__KERNEL__)
+	mm_set_alloc_state(heap, MM_IN_MALLOC);
+#endif
 
 	/* Handle bad sizes */
 
@@ -210,6 +215,10 @@ FAR void *mm_malloc(FAR struct mm_heap_s *heap, size_t size)
 
 		node->preceding |= MM_ALLOC_BIT;
 
+#if defined(CONFIG_BUILD_PROTECTED) && defined(CONFIG_UTASK_MEMORY_PROTECTION) && !defined(__KERNEL__)
+		mm_list_add_node(heap, (struct mm_allocnode_s *)node, size);
+#endif
+
 #ifdef CONFIG_DEBUG_MM_HEAPINFO
 		heapinfo_update_node((struct mm_allocnode_s *)node, caller_retaddr);
 		heapinfo_add_size(((struct mm_allocnode_s *)node)->pid, node->size);
@@ -233,6 +242,14 @@ FAR void *mm_malloc(FAR struct mm_heap_s *heap, size_t size)
 	} else {
 		mvdbg("Allocated %p, size %u\n", ret, size);
 	}
+#endif
+
+#if defined(CONFIG_BUILD_PROTECTED) && defined(CONFIG_UTASK_MEMORY_PROTECTION) && !defined(__KERNEL__)
+	mm_set_alloc_state(heap, MM_DEFAULT);
+
+	// This is done to revoke permission given at the start of this function
+	char *p = (char *)CONFIG_RAM_END;
+	*p = 0xf;
 #endif
 
 	return ret;

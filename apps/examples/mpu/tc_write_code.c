@@ -1,6 +1,6 @@
 /****************************************************************************
  *
- * Copyright 2016 Samsung Electronics All Rights Reserved.
+ * Copyright 2017 Samsung Electronics All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,8 +15,6 @@
  * language governing permissions and limitations under the License.
  *
  ****************************************************************************/
-/// @file tc_write.c
-/// @brief Test Case Example for write to kernel space from user space
 
 /****************************************************************************
  * Included Files
@@ -28,25 +26,30 @@
 #include <errno.h>
 #include <sys/types.h>
 
-extern uint32_t __ksram_segment_start__[];
+extern uint32_t __kflash_segment_start__[];
+
 /****************************************************************************
- * Name: read_main
+ *
+ * Name: write_code_main
+ *
+ * Description: Test Case Example for write to kernel code space from user space
+ *
  ****************************************************************************/
 
-int write_main(void)
+int write_code_main(void)
 {
-	uint32_t *address = (uint32_t *)(__ksram_segment_start__);
+	uint32_t *address = (uint32_t *)(__kflash_segment_start__);
 	uint32_t dest = 0xdeadbeef;
 
-	printf("************************************************\n");
-	printf("* Test to verify protection of Kernel data     *\n");
-	printf("* User Tasks should not be allowed to write     *\n");
-	printf("* kernel data space. MPU shall raise exception *\n");
+	printf("\n************************************************\n");
+	printf("* Test to verify protection of Kernel code     *\n");
+	printf("* User Tasks should not be allowed to write    *\n");
+	printf("* kernel code space. MPU shall raise exception *\n");
 	printf("************************************************\n");
 
-	sleep(3);
+	sleep(1);
 	*address = dest;
 
-	printf("ERR: User Task successfully accessed Kernel space\n");
+	printf("INFO: User Task successfully write to Kernel code space\n");
 	return 0;
 }

@@ -1,0 +1,3 @@
+config ENTRY_STACKTEST
+	bool "\"Stack Test\" example"
+	depends on EXAMPLES_STACKTEST
