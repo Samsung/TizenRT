@@ -28,7 +28,8 @@
                       "x.com.st.powerswitch"
                   ],
                   "interfaces": [
-                        "oic.if.a"                    
+                        "oic.if.a",
+                        "oic.if.baseline"                    
                   ],
                   "policy": 3
               }
