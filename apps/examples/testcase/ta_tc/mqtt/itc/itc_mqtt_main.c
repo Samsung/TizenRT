@@ -40,21 +40,16 @@
 
 #define ITC_MQTT_WAIT_SIGNAL \
 	do {\
-		pthread_mutex_lock(&g_ocfmutex);\
-		pthread_cond_wait(&g_ocfcond, &g_ocfmutex);\
-		pthread_mutex_unlock(&g_ocfmutex);\
+		sem_wait(&g_mqtt_itc_signal);				\
 	} while (0)
 
 #define ITC_MQTT_SEND_SIGNAL\
 	do {\
-		pthread_mutex_lock(&g_ocfmutex);\
-		pthread_cond_signal(&g_ocfcond);\
-		pthread_mutex_unlock(&g_ocfmutex);\
+		sem_post(&g_mqtt_itc_signal);\
 	} while (0)
 
 static mqtt_client_t *g_mqtt_client_handle;
-static pthread_mutex_t g_ocfmutex = PTHREAD_MUTEX_INITIALIZER;;
-static pthread_cond_t g_ocfcond;
+static sem_t g_mqtt_itc_signal;
 static char g_mqtt_msg[] = ITC_MQTT_MESSAGE;
 
 /****************************************************************************************
@@ -65,13 +60,8 @@ static int _itc_mqtt_init(void)
 {
 	g_mqtt_client_handle = NULL;
 
-	int res = pthread_mutex_init(&g_ocfmutex, NULL);
-	if (res != 0) {
-		ITC_MQTT_LOGE;
-		return -1;
-	}
-	res = pthread_cond_init(&g_ocfcond, NULL);
-	if (res != 0) {
+	int ret = sem_init(&g_mqtt_itc_signal, 0, 0);
+	if (ret != OK) {
 		ITC_MQTT_LOGE;
 		return -1;
 	}
@@ -80,12 +70,8 @@ static int _itc_mqtt_init(void)
 
 static void _itc_mqtt_deinit(void)
 {
-	int res = pthread_mutex_destroy(&g_ocfmutex);
-	if (res != 0) {
-		ITC_MQTT_LOGE;
-	}
-	res = pthread_cond_destroy(&g_ocfcond);
-	if (res != 0) {
+	int ret = sem_destroy(&g_mqtt_itc_signal);
+	if (ret < 0) {
 		ITC_MQTT_LOGE;
 	}
 	return;
@@ -403,6 +389,7 @@ void itc_mqtt_deinit_n_redeinit_client(void)
 
 	res = mqtt_deinit_client(g_mqtt_client_handle);
 	TC_ASSERT_EQ("mqtt_deinit_client", res, 0);
+	g_mqtt_client_handle = NULL;
 
 	//MQTT re-deinit
 	res = mqtt_deinit_client(g_mqtt_client_handle);
