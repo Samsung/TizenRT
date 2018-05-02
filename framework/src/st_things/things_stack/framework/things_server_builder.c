@@ -142,7 +142,7 @@ struct things_resource_s *create_resource(struct things_server_builder_s *builde
 
 	return res;
 }
-#ifndef CONFIG_ST_THINGS_COLLECTION
+#ifdef CONFIG_ST_THINGS_COLLECTION
 struct things_resource_s *create_collection_resource(struct things_server_builder_s *builder, char *uri, char *type)
 {
 	things_resource_s *res = NULL;
@@ -397,7 +397,9 @@ things_server_builder_s *get_builder_instance()
 			g_builder->set_platform_info = &set_platform_info;
 			g_builder->create_resource = &create_resource;
 			// g_builder->CreateActiveResource = &CreateActiveResource;
+#ifdef CONFIG_ST_THINGS_COLLECTION
 			g_builder->create_collection_resource = &create_collection_resource;
+#endif
 			g_builder->get_resource = &get_resource;
 			g_builder->delete_resource = &delete_resource;
 			g_builder->add_interface_type = &add_interface_type;

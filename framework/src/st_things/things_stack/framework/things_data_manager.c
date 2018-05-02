@@ -107,7 +107,7 @@
 #define KEY_CLOUD_DOMAIN                                        "domain"
 #define KEY_CLOUD_ADDRESS                                       "address"
 #define KEY_CLOUD_PORT                                          "port"
-#ifndef CONFIG_ST_THINGS_COLLECTION
+#ifdef CONFIG_ST_THINGS_COLLECTION
 /* collection resource */
 #define KEY_RESOURCES_COL                                       "collection"
 #define KEY_DEVICE_RESOURCE_COLLECTION_LINKS                    "links"
@@ -1836,9 +1836,7 @@ int dm_register_resource(things_server_builder_s *p_builder)
 		if (NULL != device) {
 			snprintf(id, sizeof(id), "%d", device->no);
 			THINGS_LOG_D(THINGS_DEBUG, TAG, "==================== Device (%s) ====================", id);
-#ifndef CONFIG_ST_THINGS_COLLECTION
-			device->pchild_resources = things_malloc(sizeof(things_resource_s *) * device->sig_cnt);
-#else
+#ifdef CONFIG_ST_THINGS_COLLECTION
 			device->pchild_resources = things_malloc(sizeof(things_resource_s *) * (device->col_cnt + device->sig_cnt));
 			if (device->col_cnt < 1) {
 				THINGS_LOG_D(THINGS_DEBUG, TAG, "NO COLLECTION & ITS CHILDREN RESOURCE(S)");
@@ -1873,6 +1871,8 @@ int dm_register_resource(things_server_builder_s *p_builder)
 
 				device->pchild_resources[n_count_of_children++] = p_collection_resource;
 			}
+#else
+			device->pchild_resources = things_malloc(sizeof(things_resource_s *) * device->sig_cnt);
 #endif
 
 			THINGS_LOG_D(THINGS_DEBUG, TAG, "SINGLE RESOURCE(S) CNT : %d", device->sig_cnt);
@@ -2066,7 +2066,7 @@ int dm_validate_attribute_in_request(char *rt, const void *payload)
 					}
 				}
 			}
-#ifndef CONFIG_ST_THINGS_COLLECTION
+#ifdef CONFIG_ST_THINGS_COLLECTION
 			//    c. Make it pass if it's collection resource
 			if (0 == strncmp(rt, OC_RSRVD_RESOURCE_TYPE_COLLECTION, strlen(OC_RSRVD_RESOURCE_TYPE_COLLECTION))
 				|| 0 == strncmp(rt, SEC_RTYPE_THINGS_DEVICE, strlen(SEC_RTYPE_THINGS_DEVICE))) {
@@ -2108,7 +2108,7 @@ int things_get_resource_type(const char *resource_uri, int *count, char ***resou
 					}
 				}
 			}
-#ifndef CONFIG_ST_THINGS_COLLECTION
+#ifdef CONFIG_ST_THINGS_COLLECTION
 			if (device->col_cnt > 0) {
 				for (int index = 0; index < device->col_cnt; index++) {
 					if (strncmp(device->collection[index].uri, resource_uri, strlen(resource_uri)) == 0) {
@@ -2172,7 +2172,7 @@ int things_get_attributes_by_resource_type(const char *res_type, int *count, thi
 	}
 	return 0;
 }
-#ifndef CONFIG_ST_THINGS_COLLECTION
+#ifdef CONFIG_ST_THINGS_COLLECTION
 bool things_is_collection_resource(const char *res_uri)
 {
 	int device_cnt = (int)hashmap_count(g_device_hmap);
