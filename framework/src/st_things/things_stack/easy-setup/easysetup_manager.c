@@ -38,8 +38,6 @@
 #include "logging/things_logger.h"
 #include "framework/things_data_manager.h"
 #include "utils/things_malloc.h"
-
-#include "utils/things_thread.h"
 #include "utils/things_rtos_util.h"
 #include "framework/things_data_manager.h"
 

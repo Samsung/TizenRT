@@ -36,8 +36,6 @@
 
 
 #include "easy-setup/resource_handler.h"
-
-#include "utils/things_thread.h"
 #ifdef __ST_THINGS_RTOS__
 #include "utils/things_rtos_util.h"
 #endif
