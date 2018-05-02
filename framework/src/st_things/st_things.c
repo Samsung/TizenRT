@@ -276,6 +276,12 @@ int st_things_deinitialize(void)
 {
 	THINGS_LOG_D(THINGS_DEBUG, TAG, THINGS_FUNC_ENTRY);
 
+	if (STACK_STARTED == g_stack_status) {
+		if(!st_things_stop()) {
+			THINGS_LOG(THINGS_ERROR, TAG, "Failed to stop the things stack.");
+		}
+	}
+
 	if (STACK_INITIALIZED != g_stack_status) {
 		int ret_val = ST_THINGS_ERROR_OPERATION_FAILED;
 		switch (g_stack_status) {
@@ -447,6 +453,16 @@ int st_things_reset(void)
 
 	THINGS_LOG_D(THINGS_DEBUG, TAG, THINGS_FUNC_EXIT);
 	return ST_THINGS_ERROR_NONE;
+}
+
+int st_things_stop(void)
+{
+	if(things_stop()) {
+		g_stack_status = STACK_INITIALIZED;
+		return 1;
+	}
+
+	return 0;
 }
 
 int st_things_register_pin_handling_cb(st_things_pin_generated_cb generated_cb, st_things_pin_display_close_cb close_cb)
