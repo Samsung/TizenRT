@@ -35,22 +35,19 @@ typedef enum player_observer_command_e {
 class PlayerObserverWorker
 {
 public:
-	PlayerObserverWorker();
-	~PlayerObserverWorker();
-
 	static PlayerObserverWorker& getWorker();
 	player_result_t startWorker();
 	void stopWorker();
 	MediaQueue& getQueue();
 
 private:
+	PlayerObserverWorker();
+	~PlayerObserverWorker();
 	int entry();
 
 private:
-	static std::unique_ptr<PlayerObserverWorker> mWorker;
-	static std::once_flag mOnceFlag;
 	int mRefCnt;
-	bool mIsRunning;
+	std::atomic<bool> mIsRunning;
 	std::thread mWorkerThread;
 	MediaQueue mObserverQueue; // observer queue
 	std::mutex mRefMtx;  // reference cnt mutex

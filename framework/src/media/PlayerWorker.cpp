@@ -26,16 +26,18 @@
 using namespace std;
 
 namespace media {
-
-std::unique_ptr<PlayerWorker> PlayerWorker::mWorker;
-std::once_flag PlayerWorker::mOnceFlag;
-
 PlayerWorker::PlayerWorker() : mRefCnt{0}
 {
 }
 
 PlayerWorker::~PlayerWorker()
 {
+}
+
+PlayerWorker& PlayerWorker::getWorker()
+{
+	static PlayerWorker worker;
+	return worker;
 }
 
 int PlayerWorker::entry()
@@ -117,10 +119,11 @@ void PlayerWorker::stopWorker()
 	decreaseRef();
 
 	if (mRefCnt <= 0) {
-		mIsRunning = false;
-
 		if (mWorkerThread.joinable()) {
-			mWorkerQueue.notify_one();
+			std::atomic<bool> &refBool = mIsRunning;
+			mWorkerQueue.enQueue([&refBool]() {
+				refBool = false;
+			});
 			mWorkerThread.join();
 		}
 	}
