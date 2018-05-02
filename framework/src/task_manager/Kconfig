@@ -1,0 +1,51 @@
+#
+# For a description of the syntax of this configuration file,
+# see kconfig-language at https://www.kernel.org/doc/Documentation/kbuild/kconfig-language.txt
+#
+
+config TASK_MANAGER
+	bool "Task Manager"
+	default n
+	select BUILTIN_APPS
+	depends on !DISABLE_SIGNALS && !DISABLE_MQUEUE
+	---help---
+		Enables Task Manager.
+
+if TASK_MANAGER
+
+config TASK_MANAGER_MAX_TASKS
+	int "Task Manager Max Task Num"
+	default MAX_TASKS
+	---help---
+		Task Manager can register this number of tasks
+
+config TASK_MANAGER_MAX_MSG
+	int "Task Manager Max Msg number"
+	default MAX_TASKS
+	---help---
+		Task Manager can receive under this value.
+
+config TASK_MANAGER_DEBUG
+	bool "Enable Task Manager Debug Output"
+	default n
+	depends on DEBUG
+	---help---
+		Task Manager Debug Output.
+
+if TASK_MANAGER_DEBUG
+config TASK_MANAGER_DEBUG_ERROR
+	bool "Enable Task Manager Error Debug Output"
+	default n
+	depends on DEBUG_ERROR
+	---help---
+		Task Manager Error Debug Output.
+
+config TASK_MANAGER_DEBUG_INFO
+	bool "Enable Task Manager Informational Debug Output"
+	default n
+	depends on DEBUG_VERBOSE
+	---help---
+		Task Manager Informational Debug Output.
+endif
+
+endif
