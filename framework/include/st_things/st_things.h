@@ -205,6 +205,8 @@ int st_things_register_reset_cb(st_things_reset_confirm_cb confirm_cb, st_things
  */
 int st_things_reset(void);
 
+int st_things_stop(void);
+
 /**
  * @brief Callback for carrying the randomly generated PIN info.
  *
