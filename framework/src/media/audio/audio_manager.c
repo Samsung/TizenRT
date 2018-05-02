@@ -541,33 +541,42 @@ int start_audio_stream_in(void *data, uint32_t frames)
 		//       From: 1 pcm_readi - 1 resampling
 		//       To  : * pcm_readi - 1 resampling
 		if (cur_card->resample.necessary) {
-			unsigned int frames_to_read = (unsigned int)((float)frames * cur_card->resample.ratio);
-			if (frames_to_read > (get_input_frame_count() * cur_card->resample.ratio)) {
-				frames_to_read = (get_input_frame_count() * cur_card->resample.ratio);
+			unsigned int frames_to_read = (unsigned int)((float)frames / cur_card->resample.ratio);
+			if (frames_to_read > (get_input_frame_count() / cur_card->resample.ratio)) {
+				frames_to_read = (get_input_frame_count() / cur_card->resample.ratio);
 			}
 
-			medvdbg("Read frame for resample: %u to %u\n", frames_to_read, frames);
-
+			
 			ret = pcm_readi(pcm, cur_card->resample.readbuffer, frames_to_read);
+			medvdbg("Read frames (%d/%u) for resample to %u\n", ret, frames_to_read, frames);
 
-			src_data_t srcData;
-			srcData.data_in = cur_card->resample.readbuffer;
-			srcData.input_frames = ret;
-			srcData.channels_num = 2; // Todo: Consider Mono/Stereo
-			srcData.origin_sample_rate = cur_card->resample.from;
-			srcData.origin_sample_width = SAMPLE_WIDTH_16BITS;
-			srcData.desired_sample_rate = cur_card->resample.to;
-			srcData.desired_sample_width = SAMPLE_WIDTH_16BITS;
+			int frames_total = ret;
+			int frames_used = 0;
+			int frames_copied = 0;
+			src_data_t srcData = {0, };
 
-			if (src_simple(cur_card->resample.handle, &srcData) != SRC_ERR_NO_ERROR) {
-				meddbg("Fail to resample to %u from %u\n", srcData.desired_sample_rate, srcData.origin_sample_rate);
-				return AUDIO_MANAGER_RESAMPLE_FAIL;
+			while (frames_total > frames_used) {
+				srcData.data_in = (void *)(cur_card->resample.readbuffer) + get_input_frames_byte_size(frames_used);
+				srcData.input_frames = frames_total - frames_used;
+				srcData.channels_num = 2;
+				srcData.origin_sample_rate = cur_card->resample.from;
+				srcData.origin_sample_width = SAMPLE_WIDTH_16BITS;
+				srcData.desired_sample_rate = cur_card->resample.to;
+				srcData.desired_sample_width = SAMPLE_WIDTH_16BITS;
+				srcData.input_frames_used = 0;
+
+				if (src_simple(cur_card->resample.handle, &srcData) != SRC_ERR_NO_ERROR) {
+					meddbg("Fail to resample to %u from %u\n", srcData.desired_sample_rate, srcData.origin_sample_rate);
+					return AUDIO_MANAGER_RESAMPLE_FAIL;
+				}
+
+				memcpy(data + get_input_frames_byte_size(frames_copied), srcData.data_out, get_input_frames_byte_size(srcData.output_frames_gen));
+				frames_copied += srcData.output_frames_gen;
+				frames_used += srcData.input_frames_used;
+
+				medvdbg("Record resampled %d/%d\n", frames_used, frames_total);
 			}
-
-			medvdbg("Record resampled frames: from %d to %d\n", ret, srcData.output_frames_gen);
-			ret = srcData.output_frames_gen;
-
-			memcpy(data, srcData.data_out, get_input_frames_byte_size(srcData.output_frames_gen));
+			ret = frames_copied;
 		} else {
 			ret = pcm_readi(pcm, data, frames);
 		}
@@ -619,23 +628,30 @@ int start_audio_stream_out(void *data, uint32_t frames)
 
 		// Todo: Need to consider xrun situation.
 		if (cur_card->resample.necessary) {
-			src_data_t srcData;
-			srcData.data_in = data;
-			srcData.input_frames = frames;
-			srcData.channels_num = 2; // Todo: Consider Mono/Stereo
-			srcData.origin_sample_rate = cur_card->resample.from;
-			srcData.origin_sample_width = SAMPLE_WIDTH_16BITS;
-			srcData.desired_sample_rate = cur_card->resample.to;
-			srcData.desired_sample_width = SAMPLE_WIDTH_16BITS;
-			srcData.input_frames_used = 0;
+			int frames_total = frames;
+			int frames_used = 0;
+			src_data_t srcData = {0, };
 
-			if (src_simple(cur_card->resample.handle, &srcData) != SRC_ERR_NO_ERROR) {
-				meddbg("Fail to resample to %u from %u\n", srcData.desired_sample_rate, srcData.origin_sample_rate);
-				return AUDIO_MANAGER_RESAMPLE_FAIL;
+			while (frames_total > frames_used) {
+				srcData.data_in = (void *)data + get_output_frames_byte_size(frames_used);
+				srcData.input_frames = frames_total - frames_used;
+				srcData.channels_num = 2;
+				srcData.origin_sample_rate = cur_card->resample.from;
+				srcData.origin_sample_width = SAMPLE_WIDTH_16BITS;
+				srcData.desired_sample_rate = cur_card->resample.to;
+				srcData.desired_sample_width = SAMPLE_WIDTH_16BITS;
+				srcData.input_frames_used = 0;
+
+				if (src_simple(cur_card->resample.handle, &srcData) != SRC_ERR_NO_ERROR) {
+					meddbg("Fail to resample to %u from %u\n", srcData.desired_sample_rate, srcData.origin_sample_rate);
+					return AUDIO_MANAGER_RESAMPLE_FAIL;
+				}
+
+				frames_used += srcData.input_frames_used;
+
+				ret = pcm_writei(pcm, srcData.data_out, srcData.output_frames_gen);
+				medvdbg("pcm_writei: %d/%d Resampled(%d/%d)\n", ret, srcData.output_frames_gen, frames_used, frames_total);
 			}
-
-			ret = pcm_writei(pcm, srcData.data_out, srcData.output_frames_gen);
-			medvdbg("pcm_writei return: %d(Resampled %d to %d)\n", ret, frames, srcData.output_frames_gen);
 		} else {
 			ret = pcm_writei(pcm, data, frames);
 			medvdbg("pcm_writei return: %d [%02x%02x%02x%02x]\n", ret, ((unsigned char *)data)[0], ((unsigned char *)data)[1], ((unsigned char *)data)[2], ((unsigned char *)data)[3]);
@@ -710,17 +726,10 @@ audio_manager_result_t set_audio_stream_in(uint8_t channels, uint32_t sample_rat
 		g_audio_in_cards[card_id].resample.to = sample_rate;
 		g_audio_in_cards[card_id].resample.ratio = (float)sample_rate / (float)config.rate;
 
-		size_t resample_bufsize = (size_t)((float)get_input_frames_byte_size(get_input_frame_count()) *
-										   (float)g_audio_in_cards[card_id].resample.ratio) +
-								  1; // +1 for floating point margin
-
-		medvdbg("[IN] resample_bufsize: %u\n", resample_bufsize);
-
-		// Todo: resample_bufsize can be reduced after resampler bufsize issue is resolved.
-		g_audio_in_cards[card_id].resample.handle = src_init(resample_bufsize * 3);
+		g_audio_in_cards[card_id].resample.handle = src_init(CONFIG_AUDIO_RESAMPLER_BUFSIZE);
 
 		g_audio_in_cards[card_id].resample.readbuffer =
-			malloc((int)((float)get_input_frames_byte_size(get_input_frame_count()) *
+			malloc((int)((float)get_input_frames_byte_size(get_input_frame_count()) /
 						 g_audio_in_cards[card_id].resample.ratio) +
 				   1 // +1 for floating point margin
 				   );
@@ -782,15 +791,7 @@ audio_manager_result_t set_audio_stream_out(uint8_t channels, uint32_t sample_ra
 		g_audio_out_cards[card_id].resample.from = sample_rate;
 		g_audio_out_cards[card_id].resample.to = config.rate;
 		g_audio_out_cards[card_id].resample.ratio = (float)config.rate / (float)sample_rate;
-
-		size_t resample_bufsize = (size_t)((float)get_output_frames_byte_size(get_output_frame_count()) *
-										   g_audio_out_cards[card_id].resample.ratio) +
-								  1; // +1 for floating point margin
-
-		medvdbg("[OUT] resample_bufsize: %u, ratio: %f\n", resample_bufsize, g_audio_out_cards[card_id].resample.ratio);
-
-		// Todo: resample_bufsize can be reduced after resampler bufsize issue is resolved.
-		g_audio_out_cards[card_id].resample.handle = src_init(resample_bufsize * 3);
+		g_audio_out_cards[card_id].resample.handle = src_init(CONFIG_AUDIO_RESAMPLER_BUFSIZE);
 	}
 
 	return AUDIO_MANAGER_SUCCESS;

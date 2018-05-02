@@ -130,8 +130,8 @@ int Decoder::_configFunc(void *user_data, int audio_type, void *dec_ext)
 {
 	/* To-do: Below buffer size and channel count must be calculated correctly. */
 	static const int TARGET_SOUND_TRACK = 2;
-	static uint8_t inputBuf[2048];
-	static int16_t outputBuf[2048];
+	static uint8_t inputBuf[4096];
+	static int16_t outputBuf[4096];
 
 	if (audio_type == type_mp3) {
 		tPVMP3DecoderExternal *mp3_ext = (tPVMP3DecoderExternal *)dec_ext;

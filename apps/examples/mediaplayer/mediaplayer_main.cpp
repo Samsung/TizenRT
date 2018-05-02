@@ -88,8 +88,8 @@ void MediaPlayerTest::start(void)
 #undef TEST_AAC
 	
 #if defined(TEST_MP3)
-	auto source = std::move(unique_ptr<FileInputDataSource>(new FileInputDataSource("/rom/over_44100.mp3")));
-	source->setSampleRate(44100);
+	auto source = std::move(unique_ptr<FileInputDataSource>(new FileInputDataSource("/rom/over_16000.mp3")));
+	source->setSampleRate(16000);
 	source->setChannels(2);
 #elif defined(TEST_AAC)
 	auto source = std::move(unique_ptr<FileInputDataSource>(new FileInputDataSource("/rom/play.mp4")));
