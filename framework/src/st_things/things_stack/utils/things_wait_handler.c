@@ -25,7 +25,6 @@
 #include "logging/things_logger.h"
 #include "things_wait_handler.h"
 
-#include "things_thread.h"
 #ifdef __ST_THINGS_RTOS__
 #include "things_rtos_util.h"
 #endif

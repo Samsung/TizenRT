@@ -29,7 +29,6 @@
 
 #include "things_def.h"
 #include "things_common.h"
-#include "utils/things_queue.h"
 #include "logging/things_logger.h"
 #include "utils/things_malloc.h"
 #include "cacommon.h"
@@ -44,7 +43,6 @@
 #include "things_req_handler.h"
 #include "utils/things_hashmap.h"
 
-#include "utils/things_thread.h"
 #ifdef __ST_THINGS_RTOS__
 #include "ctype.h"
 #include "utils/things_rtos_util.h"

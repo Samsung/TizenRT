@@ -40,8 +40,6 @@
 #include "easy-setup/resource_handler.h"
 #include "cloud/cloud_manager.h"
 
-#include "things_thread.h"
-
 #define TAG "[things_ping]"
 
 #define DEFAULT_CONTEXT_VALUE   0x99

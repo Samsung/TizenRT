@@ -46,7 +46,6 @@
 #include "utils/things_network.h"
 #include "NSProviderInterface.h"
 #include "utils/things_ping.h"
-#include "utils/things_thread.h"
 #include "framework/things_security_manager.h"
 #include "utils/things_rtos_util.h"
 
