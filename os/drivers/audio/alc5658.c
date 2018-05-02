@@ -387,7 +387,7 @@ static void alc5658_setvolume(FAR struct alc5658_dev_s *priv)
 static void alc5658_set_inport_gain(FAR struct alc5658_dev_s *priv)
 {
 	/* Bits 8:14; 00000: 0h(-12dB) to 45h(39.75dB) rest reserved  (0.75dB/step) */
-	alc5658_writereg(priv, ALC5658_IN1, priv->gain << 8);
+	alc5658_writereg(priv, ALC5658_IN1, priv->gain << VOL_REG_BITSHIFT_COUNT);
 	alc5658_dumpregs(priv);
 }
 
@@ -593,7 +593,7 @@ static int alc5658_getcaps(FAR struct audio_lowerhalf_s *dev, int type, FAR stru
 			break;
 		case AUDIO_FU_INP_GAIN:
 			caps->ac_controls.b[0] = ALC5658_GAIN_MAX;
-			caps->ac_controls.b[1] = priv->volume;
+			caps->ac_controls.b[1] = priv->gain;
 			break;
 		default:
 			break;

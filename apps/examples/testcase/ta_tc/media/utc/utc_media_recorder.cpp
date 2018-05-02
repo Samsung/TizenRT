@@ -135,17 +135,32 @@ TEST_F(MediaRecorderTest, SetRecorderVolumeNegative)
 	EXPECT_EQ(ret, RECORDER_ERROR);
 }
 
+TEST_F(MediaRecorderTest, SetRecorderVolumeNegativeWithOverRange)
+{
+	mr.create();
+	mr.setObserver(CreateRecorder(this));
+	mr.setDataSource(std::move(dataSource));
+	recorder_result_t ret = mr.setVolume(11);
+	mr.unprepare();
+	mr.destroy();
+
+	EXPECT_EQ(ret, RECORDER_ERROR);
+}
+
 TEST_F(MediaRecorderTest, GetRecorderVolumePositive)
 {
 	mr.create();
 	mr.setDataSource(std::move(dataSource));
 	mr.prepare();
-	mr.setVolume(10);
-	int currVolume = mr.getVolume();
+	for (int i = 0; i <= 10; ++i)
+	{
+		mr.setVolume(i);
+		int currVolume = mr.getVolume();
+		EXPECT_EQ(currVolume, i);
+	}
+
 	mr.unprepare();
 	mr.destroy();
-
-	EXPECT_EQ(currVolume, 10);
 }
 
 TEST_F(MediaRecorderTest, GetRecorderVolumeNegative)
@@ -154,7 +169,7 @@ TEST_F(MediaRecorderTest, GetRecorderVolumeNegative)
 	int currVolume = mr.getVolume();
 	mr.destroy();
 
-	EXPECT_EQ(currVolume, 0);
+	EXPECT_EQ(currVolume, -1);
 }
 
 TEST_F(MediaRecorderTest, PrepareRecorderPositive)
@@ -222,7 +237,7 @@ TEST_F(MediaRecorderTest, StartAndStopRecorderExpectCallback)
 	mr.destroy();
 }
 
-TEST_F(MediaRecorderTest, startRecorderNegative)
+TEST_F(MediaRecorderTest, StartRecorderNegative)
 {
 	mr.create();
 	mr.setObserver(CreateRecorder(this));
@@ -231,7 +246,7 @@ TEST_F(MediaRecorderTest, startRecorderNegative)
 	mr.destroy();
 }
 
-TEST_F(MediaRecorderTest, stopRecorderNegative)
+TEST_F(MediaRecorderTest, StopRecorderNegative)
 {
 	mr.create();
 	mr.setObserver(CreateRecorder(this));
@@ -240,7 +255,7 @@ TEST_F(MediaRecorderTest, stopRecorderNegative)
 	mr.destroy();
 }
 
-TEST_F(MediaRecorderTest, pauseRecorderPositiveWithExpectCallback)
+TEST_F(MediaRecorderTest, PauseRecorderPositiveWithExpectCallback)
 {
 	mr.create();
 	mr.setObserver(CreateRecorder(this));
@@ -255,7 +270,7 @@ TEST_F(MediaRecorderTest, pauseRecorderPositiveWithExpectCallback)
 	EXPECT_EQ(ret, RECORDER_OK);
 }
 
-TEST_F(MediaRecorderTest, pauseRecorderNegative)
+TEST_F(MediaRecorderTest, PauseRecorderNegative)
 {
 	mr.create();
 	mr.setObserver(CreateRecorder(this));
