@@ -16,33 +16,37 @@
  *
  ******************************************************************/
 
-#ifndef __MEDIA_PLAYEROBSERVERWORKER_HPP
-#define __MEDIA_PLAYEROBSERVERWORKER_HPP
+#ifndef __MEDIA_MEIDAWORKER_H
+#define __MEDIA_MEIDAWORKER_H
 
 #include <thread>
-#include <memory>
 #include <mutex>
-#include <media/MediaPlayer.h>
-#include "MediaWorker.h"
+#include <atomic>
+
+#include "MediaQueue.h"
+
+using namespace std;
 
 namespace media {
-typedef enum player_observer_command_e {
-	PLAYER_OBSERVER_COMMAND_STARTED,
-	PLAYER_OBSERVER_COMMAND_FINISHIED,
-	PLAYER_OBSERVER_COMMAND_ERROR
-} player_observer_command_t;
-
-class PlayerObserverWorker : public MediaWorker
+class MediaWorker
 {
 public:
-	static PlayerObserverWorker& getWorker();
-	player_result_t startWorker();
-	void stopWorker();
+	MediaQueue& getQueue();
 
-private:
-	PlayerObserverWorker();
-	~PlayerObserverWorker();
-	int entry();
+protected:
+	MediaWorker();
+	virtual ~MediaWorker();
+
+	virtual int entry() = 0;
+	void increaseRef();
+	void decreaseRef();
+
+protected:
+	int mRefCnt;
+	std::atomic<bool> mIsRunning;
+	std::thread mWorkerThread;
+	MediaQueue mWorkerQueue;   // worker queue
+	std::mutex mRefMtx; // reference cnt mutex
 };
 } // namespace media
 

@@ -20,7 +20,7 @@
 
 namespace media {
 
-RecorderWorker::RecorderWorker() : mRefCnt(0)
+RecorderWorker::RecorderWorker()
 {
 	medvdbg("RecorderWorker::RecorderWorker()\n");
 }
@@ -137,22 +137,5 @@ void RecorderWorker::pauseRecorder(std::shared_ptr<MediaRecorderImpl> mr)
 	}
 
 	mr->setState(RECORDER_STATE_PAUSED);
-}
-
-MediaQueue& RecorderWorker::getQueue()
-{
-	return mWorkerQueue;
-}
-
-void RecorderWorker::increaseRef()
-{
-	mRefCnt++;
-}
-
-void RecorderWorker::decreaseRef()
-{
-	if (mRefCnt > 0) {
-		mRefCnt--;
-	}
 }
 } // namespace media
