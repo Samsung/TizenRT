@@ -19,7 +19,6 @@
 #include "RecorderWorker.h"
 
 namespace media {
-unique_ptr<RecorderWorker> RecorderWorker::mWorker;
 once_flag RecorderWorker::mOnceFlag;
 
 RecorderWorker::RecorderWorker() : mRefCnt(0)
@@ -29,6 +28,12 @@ RecorderWorker::RecorderWorker() : mRefCnt(0)
 RecorderWorker::~RecorderWorker()
 {
 	medvdbg("RecorderWorker::~RecorderWorker()\n");
+}
+
+RecorderWorker& RecorderWorker::getWorker()
+{
+	static RecorderWorker worker;
+	return worker;
 }
 
 int RecorderWorker::entry()
@@ -72,10 +77,11 @@ void RecorderWorker::stopWorker()
 	medvdbg("RecorderWorker::stopWorker() - decrease RefCnt : %d\n", mRefCnt);
 
 	if (mRefCnt <= 0) {
-		mIsRunning = false;
-
 		if (mWorkerThread.joinable()) {
-			mWorkerQueue.notify_one();
+			std::atomic<bool> &refBool = mIsRunning;
+			mWorkerQueue.enQueue([&refBool]() {
+				refBool = false;
+			});
 			mWorkerThread.join();
 			medvdbg("RecorderWorker::stopWorker() - mWorkerthread exited\n");
 		}

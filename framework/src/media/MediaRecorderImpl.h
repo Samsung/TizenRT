@@ -88,7 +88,7 @@ public:
 	void capture();
 
 private:
-	recorder_state_t mCurState;
+	std::atomic<recorder_state_t> mCurState;
 	std::unique_ptr<stream::OutputDataSource> mOutputDataSource;
 	std::shared_ptr<MediaRecorderObserverInterface> mRecorderObserver;
 
