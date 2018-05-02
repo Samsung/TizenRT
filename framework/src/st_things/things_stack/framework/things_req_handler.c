@@ -116,8 +116,9 @@ static int verify_request(OCEntityHandlerRequest *eh_request, const char *uri, i
 		result = 0;
 
 		//  If the given resource does not have sensor nor read interface type..
-		if (!(resource->things_is_supporting_interface_type(resource, OIC_INTERFACE_SENSOR))
-			&& !(resource->things_is_supporting_interface_type(resource, OC_RSRVD_INTERFACE_READ))) {
+		if ((resource->things_is_supporting_interface_type(resource, OIC_INTERFACE_ACTUATOR))
+			|| (!(resource->things_is_supporting_interface_type(resource, OIC_INTERFACE_SENSOR))
+			&& !(resource->things_is_supporting_interface_type(resource, OC_RSRVD_INTERFACE_READ)))) {
 			//  If no query or..
 			//       query with "supporting interface types"  then...
 			if ((strstr(eh_request->query, "if=") == NULL)
