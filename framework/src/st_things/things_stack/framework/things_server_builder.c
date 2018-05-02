@@ -142,7 +142,7 @@ struct things_resource_s *create_resource(struct things_server_builder_s *builde
 
 	return res;
 }
-
+#ifndef CONFIG_ST_THINGS_COLLECTION
 struct things_resource_s *create_collection_resource(struct things_server_builder_s *builder, char *uri, char *type)
 {
 	things_resource_s *res = NULL;
@@ -172,8 +172,8 @@ struct things_resource_s *create_collection_resource(struct things_server_builde
 		return NULL;
 	}
 	
-	OCBindResourceTypeToResource( hd, OIC_RTYPE_COLLECTION_WK );
-	OCBindResourceInterfaceToResource( hd, OIC_INTERFACE_BATCH);
+	OCBindResourceTypeToResource(hd, OIC_RTYPE_COLLECTION_WK);
+	OCBindResourceInterfaceToResource(hd, OIC_INTERFACE_BATCH);
 
 	res = things_create_resource_inst(NULL, hd, NULL, NULL);
 
@@ -190,6 +190,7 @@ struct things_resource_s *create_collection_resource(struct things_server_builde
 
 	return res;
 }
+#endif
 
 void delete_resource(struct things_server_builder_s *builder)
 {
