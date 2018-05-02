@@ -77,7 +77,6 @@ static OCStackApplicationResult handler_ping_update_request(void *ctx, OCDoHandl
 
 static things_ping_s *create_things_ping_s(const char *remote_addr, const uint16_t port);
 static void terminate_things_ping_s(things_ping_s *ping);
-static int is_state_key_equal(things_ping_s *ping, const ping_state_e value);
 static int is_ip_key_equal(things_ping_s *ping, const char *target_ip);
 static void check_ping_thread(things_ping_s *ping);
 static void set_mask(things_ping_s *ping, ping_state_e state);
@@ -86,14 +85,12 @@ static bool cas_mask(things_ping_s *ping, ping_state_e preState, bool preStateTh
 static void unset_mask(things_ping_s *ping, ping_state_e state);
 static int find_resource_oic_ping(things_ping_s *ping);
 static int send_things_ping_request(things_ping_s *ping);
-static bool set_interval_send_update(things_ping_s *ping, int64_t *intervals, int int_ea);
 static bool set_interval(things_ping_s *ping, int64_t *intervals, int int_ea, ping_state_e confirm_state);
 static bool set_def_interval(things_ping_s *ping);
 static bool things_ping_create_thread(things_ping_s *ping);
 static bool things_ping_destroy_thread(things_ping_s *ping);
 static void things_rep_payload_value_print(OCRepPayloadValue *value);
 static char *make_host_addr(const char *ip, const uint16_t port);
-static OCStackResult send_keep_alive_update_request(const char *host, int64_t *intervals, int int_ea, OCCallbackData *cb);
 
 #ifdef THINGS_PING_ENABLE
 bool things_ping_init(void)
@@ -189,41 +186,6 @@ bool things_ping_set_mask(const char *remote_addr, uint16_t port, ping_state_e s
 	return true;
 }
 
-int things_ping_get_mask(const char* remote_addr, ping_state_e state)
-{
-	THINGS_LOG_D(TAG, "Enter.");
-	things_node_s *node = NULL;
-	things_ping_s *ping = NULL;
-	
-	if (remote_addr == NULL || strlen(remote_addr) == 0) {
-		THINGS_LOG_E(TAG, "Invalid arguments.(remote_addr=%s, state=%d)", remote_addr, state);
-		return -1;
-	}
-	
-	if (list == NULL) {
-		THINGS_LOG_V(TAG, "OICPing Module is not initialized.");
-		return -1;
-	}
-	
-	node = list->find_by_key(list, (key_compare) is_ip_key_equal, remote_addr);
-	if (node == NULL) {
-		THINGS_LOG_D(TAG, "Not Found OICnode for remote(%s).", remote_addr);
-		return -1;
-	} else {
-		THINGS_LOG_D(TAG, "Found OICnode for remote(%s).", remote_addr);
-		ping = node->item;
-	}
-	
-	if (ping == NULL) {
-		THINGS_LOG_E(TAG, "Not exist oicping_s in remote_addr_Node.(%s)", remote_addr);
-		return false;
-	}
-	
-	THINGS_LOG_D(TAG, "Exit.");
-	return (int) get_mask(ping, state);
-}
-
-
 bool things_ping_unset_mask(const char *remote_addr, ping_state_e state)
 {
 	THINGS_LOG_D(TAG, "Enter.");
@@ -261,78 +223,6 @@ bool things_ping_unset_mask(const char *remote_addr, ping_state_e state)
 	return true;
 }
 
-bool things_ping_set_cloud_interval(int64_t *intervals, int int_ea)
-{
-	THINGS_LOG_D(TAG, "Enter.");
-	
-	bool res = false;
-	things_node_s* node = NULL;
-	things_ping_s* ping = NULL;
-	
-	if (intervals == NULL || int_ea == 0) {
-		THINGS_LOG_D(TAG, "Invalid arguments.(intervals=0x%X, int_ea=%d)", intervals, int_ea);
-		return false;
-		}
-		
-	if (list == NULL) {
-		THINGS_LOG_V(TAG, "OICPing Module is not initialized.");
-		return false;
-	}
-
-	node = list->find_by_key(list, (key_compare) is_state_key_equal, PING_ST_ISCLOUD);
-	if (node == NULL) {
-		THINGS_LOG_D(TAG, "Not Found OICnode for Cloud-Connection.");
-		return false;
-	}
-
-	if ((ping = node->item) == NULL) {
-		THINGS_LOG_E(TAG, "Not exist oicping_s in Cloud_Node.");
-		return false;
-	}
-	THINGS_LOG_D(TAG, "Found OICnode for Cloud-Connection(IP:Port=%s:%d).", ping->addr, ping->port);
-
-	res = set_interval_send_update(ping, intervals, int_ea);
-
-	THINGS_LOG_D(TAG, "Exit.");
-	return res;
-}
-
-bool things_ping_set_interval(const char *remote_addr, int64_t *intervals, int int_ea)
-{
-	THINGS_LOG_D(TAG, "Enter.");
-
-	bool res = false;
-	things_node_s* node = NULL;
-	things_ping_s* ping = NULL;
-
-	if (remote_addr == NULL || intervals == NULL || int_ea == 0) {
-		THINGS_LOG_D(TAG, "Invalid arguments.(remote=%s, intervals=0x%X, int_ea=%d)", remote_addr, intervals, int_ea);
-		return false;
-	}
-
-	if (list == NULL) {
-		THINGS_LOG_V(TAG, "OICPing Module is not initialized.");
-		return false;
-	}
-
-	node = list->find_by_key(list, (key_compare) is_ip_key_equal, remote_addr);
-	if (node == NULL) {
-		THINGS_LOG_D(TAG, "Not Found OICnode for remote(%s).", remote_addr);
-		return false;
-	}
-
-	THINGS_LOG_D(TAG, "Found OICnode for remote(%s).", remote_addr);
-	if ((ping = node->item) == NULL) {
-		THINGS_LOG_E(TAG, "Not exist oicping_s in remote_addr_Node.(%s)", remote_addr);
-		return false;
-	}
-
-	res = set_interval_send_update(ping, intervals, int_ea);
-
-	THINGS_LOG_D(TAG, "Exit.");
-	return res;
-}
-
 #else
 bool things_ping_init(void)
 {
@@ -349,22 +239,7 @@ bool things_ping_set_mask(const char *remote_addr, uint16_t port, ping_state_e s
 	return true;
 }
 
-int things_ping_get_mask(const char *remote_addr, PING_STATE state)
-{
-	return 1;
-}
-
 bool things_ping_unset_mask(const char *remote_addr, ping_state_e state)
-{
-	return true;
-}
-
-bool things_ping_set_cloud_interval(int64_t *intervals, int int_ea)
-{
-	return true;
-}
-
-bool things_ping_set_interval(const char *remote_addr, int64_t *intervals, int int_ea)
 {
 	return true;
 }
@@ -729,22 +604,6 @@ static void terminate_things_ping_s(things_ping_s *ping)
 	THINGS_LOG_D(TAG, "Exit.");
 }
 
-static int is_state_key_equal(things_ping_s *ping, const ping_state_e value)
-{
-	int res = 0;
-	if (ping == NULL || ping->addr == NULL) {
-		THINGS_LOG_E(TAG, "Invalid arguments.(ping=0x%X, targetIP=%s)", ping);
-		return res;
-	}
-
-	if (get_mask(ping, value) == true) {
-		THINGS_LOG_D(TAG, "Found ping-struct(%s) for State(%d)", ping->addr, value);
-		res = 1;
-	}
-
-	return res;
-}
-
 static int is_ip_key_equal(things_ping_s *ping, const char *targetIP)
 {
 	int res = 0;
@@ -1024,87 +883,6 @@ static int send_things_ping_request(things_ping_s *ping)
 	THINGS_LOG_D(TAG, "Exit.");
 	return sleepTime;
 }
-
-static bool set_interval_send_update(things_ping_s *ping, int64_t *intervals, int int_ea)
-{
-	THINGS_LOG_D(TAG, "Enter.");
-
-//    int i = 0;
-	bool res = false;
-	OCStackResult result = OC_STACK_ERROR;
-	OCCallbackData cb;
-	char *hostAddr = NULL;
-
-	cb.cb = handler_ping_update_request;
-	cb.cd = NULL;
-	cb.context = (void *)ping;
-
-	if (ping == NULL || intervals == NULL || int_ea == 0) {
-		THINGS_LOG_D(TAG, "Invalid arguments.(ping=%0x%X, intervals=0x%X, int_ea=%d)", ping, intervals, int_ea);
-		return false;
-	}
-
-	if (get_mask(ping, PING_ST_ISCLOUD) == false) {
-		THINGS_LOG_D(TAG, "Interval Update & Sending update-Ping request is Support only for Cloud.");
-		return false;
-	}
-
-	if (int_ea > MAX_INTERVAL_EA) {
-		THINGS_LOG_D(TAG, "int_ea is over %d. So, fix to %d", MAX_INTERVAL_EA, MAX_INTERVAL_EA);
-		int_ea = MAX_INTERVAL_EA;
-	}
-
-	if (get_mask(ping, PING_ST_STARTTHREAD) == false || ping->continue_thread == false) {
-		THINGS_LOG_E(TAG, "Ping-Thread is not ready.");
-		return false;
-	}
-
-	if ((hostAddr = make_host_addr(ping->addr, ping->port)) == NULL) {
-		THINGS_LOG_E(TAG, "Memory Allocation is failed.");
-		return false;
-	}
-
-	//while (cas_mask(ping, PING_ST_DISCOVERY | PING_ST_REQUEST | PING_ST_TIMEOUT, false, PING_ST_INTUPDATE) == false) {
-	//	sleep(1);				// sleep 1 second
-	//}
-
-	if (get_mask(ping, PING_ST_TIMEOUT) == true) {
-		THINGS_LOG_E(TAG, "Ping thread is time out");
-		return false;
-	}
-
-	set_mask(ping, PING_ST_INTUPDATE);
-
-//    pthread_mutex_lock( &ping->mutex_int );
-	result = send_keep_alive_update_request(hostAddr, intervals, int_ea, &cb);
-//    if( (result = send_keep_alive_update_request(host, intervals, int_ea, &cb)) == OC_STACK_OK )     // send interval-update request to Cloud. & set State.
-//    {
-//        memset(ping->interval, 0, sizeof(int64_t)*MAX_INTERVAL_EA);
-//        for(i=0; i < int_ea; i++)
-//        {
-//            ping->interval[i] = intervals[i];
-//        }
-//        ping->int_seq = 0;
-//        res = true;
-//    }
-//    pthread_mutex_unlock( &ping->mutex_int );
-
-	if (result != OC_STACK_OK) {
-		THINGS_LOG_E(TAG, "[Error]: Sending about update-Ping request is failed.");
-		unset_mask(ping, PING_ST_INTUPDATE);
-	} else {
-		THINGS_LOG_D(TAG, "Success Sending update-Ping request.");
-		res = true;
-	}
-	/*! Added by st_things for memory Leak fix
-	 */
-	if (hostAddr) {
-		things_free(hostAddr);
-	}
-
-	THINGS_LOG_D(TAG, "Exit.");
-	return res;
-}
 #else
 static int find_resource_oic_ping(things_ping_s *ping)
 {
@@ -1114,11 +892,6 @@ static int find_resource_oic_ping(things_ping_s *ping)
 static int send_things_ping_request(things_ping_s *ping)
 {
 	return 1;
-}
-
-static bool set_interval_send_update(things_ping_s *ping, int64_t *intervals, int int_ea)
-{
-	return true;
 }
 #endif
 
@@ -1369,55 +1142,4 @@ static char *make_host_addr(const char *ip, const uint16_t port)
 
 	THINGS_LOG_D(TAG, "Exit.");
 	return host;
-}
-
-static OCStackResult send_keep_alive_update_request(const char *host, int64_t *intervals, int int_ea, OCCallbackData *cb)
-{
-	OCDoHandle g_req_handle = NULL;
-	OCStackResult result = OC_STACK_ERROR;
-	char targetUri[MAX_URI_LENGTH * 2] = { 0, };
-	OCRepPayload *payload = NULL;
-	size_t dimensions[MAX_REP_ARRAY_DEPTH] = { 0, 0, 0 };
-
-	if (host == NULL || strlen(host) == 0 || intervals == NULL || int_ea == 0) {
-		THINGS_LOG_E(TAG, "Invalid event_data.(host=%s, intervals=0x%X, int_ea=%d)", host, intervals, int_ea);
-		result = OC_STACK_NO_MEMORY;
-		goto no_memory;
-	}
-
-	snprintf(targetUri, MAX_URI_LENGTH * 2, "%s%s", host, KEEPALIVE_RESOURCE_URI);
-	THINGS_LOG_D(TAG, "oicping Update Request to : %s", targetUri);
-
-	payload = OCRepPayloadCreate();
-	if (!payload) {
-		result = OC_STACK_NO_MEMORY;
-		goto no_memory;
-	}
-
-	THINGS_LOG_D(TAG, "int_ea=%d", int_ea);
-	for (int i = 0; i < int_ea; i++) {
-		THINGS_LOG_D(TAG, "intervals[%d]=%d", i, intervals[i]);
-	}
-
-	dimensions[0] = (size_t) int_ea;
-	OCRepPayloadSetIntArray(payload, INTERVAL_ARRAY, intervals, dimensions);
-	THINGS_LOG_D(TAG, "key     : %s", INTERVAL_ARRAY);
-
-//#if defined (__WITH_DTLS__) || defined(__WITH_TLS__)
-//    CASelectCipherSuite(0x35, (1 << 4));
-//#endif
-
-	THINGS_LOG_D(TAG, "Send OCSendKeepAliveRequest request to %s.", host);
-	result = OCSendKeepAliveRequest(&g_req_handle, host, payload, cb);
-//    result = OCDoResource(&g_req_handle, OC_REST_POST, targetUri,
-//                          NULL, (OCPayload *) payload, CT_ADAPTER_TCP,
-//                          OC_HIGH_QOS, cb, NULL, 0);
-
-	if (result != OC_STACK_OK) {
-		THINGS_LOG_E(TAG, "oicping Update Request Sending is failed.(URI: %s)", targetUri);
-		OCRepPayloadDestroy(payload);
-	}
-
-no_memory:
-	return result;
 }

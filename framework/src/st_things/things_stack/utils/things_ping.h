@@ -39,12 +39,6 @@ bool things_ping_terminate(void);
 
 bool things_ping_set_mask(const char *remote_addr, uint16_t port, ping_state_e state);
 
-int things_ping_get_mask(const char *remoteAddr, ping_state_e state);
-
 bool things_ping_unset_mask(const char *remoteAddr, ping_state_e state);
-
-bool things_ping_set_cloud_interval(int64_t *intervals, int int_ea);
-
-bool things_ping_set_interval(const char *remoteAddr, int64_t *intervals, int int_ea);
 
 #endif							/* THINGS_CLOUD_PING_H_ */

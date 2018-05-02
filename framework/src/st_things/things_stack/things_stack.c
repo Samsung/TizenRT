@@ -97,22 +97,6 @@ static volatile rst_state_e m_reset_bit_mask = RST_COMPLETE;
 static void *t_things_reset_loop(reset_args_s *args);
 static void *t_things_abort_loop(s_abort_s *contents);
 
-// This logic will be refactored later to reflact whole easy-setup states..
-int things_get_easysetup_state(void)
-{
-	bool isOwned = false;
-	// 1. check the owned state
-	if (OC_STACK_OK != OCGetDeviceOwnedState(&isOwned)) {
-		THINGS_LOG_E(TAG, "Failed to get device owned state, Informing as UNOWNED~!!!!");
-		isOwned = false;
-	}
-	// 2. check the resource publish state if necessary..
-
-	// 3. anything else to check???
-
-	return (isOwned == true);
-}
-
 int things_register_easysetup_state_func(things_get_easysetup_state_func_type func)
 {
 	int res = 0;
