@@ -121,11 +121,6 @@ static audio_manager_result_t set_audio_volume(audio_device_type_t type, uint8_t
 static uint32_t get_closest_samprate(uint32_t rate);
 
 static uint32_t g_supported_samprates[MAX_SUPPORTED_SAMPLERATE] = {
-	AUDIO_SAMP_RATE_8K,
-	AUDIO_SAMP_RATE_11K,
-	AUDIO_SAMP_RATE_16K,
-	AUDIO_SAMP_RATE_22K,
-	AUDIO_SAMP_RATE_32K,
 	AUDIO_SAMP_RATE_44K,
 	AUDIO_SAMP_RATE_48K,
 	AUDIO_SAMP_RATE_96K
