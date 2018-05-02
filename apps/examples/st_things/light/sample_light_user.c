@@ -28,32 +28,26 @@
 
 static const char *PROPERTY_VALUE_SWITCH = "power";
 static const char *PROPERTY_VALUE_DIMMING = "dimmingSetting";
+static const char *PROPERTY_VALUE_RANGE = "range";
+static const char *PROPERTY_VALUE_STEP = "step";
 static const char *PROPERTY_VALUE_COLOR_TEMPERATURE = "ct";
 
-static char *power_status[] = { "on", "off" };
+static char *power_status[] = { "off", "on" };
 
-static bool g_switch_value = false;
+static int g_switch_value = 0;
 static int64_t g_dimming_setting = 50;
+static int64_t g_dimming_step = 5;
 static int64_t g_color_temp = 50;
+static int64_t g_dimming_range[] = {0, 100};
+static int64_t g_color_range[] = {0, 100};
 
 bool handle_get_request_on_switch(st_things_get_request_message_s *req_msg, st_things_representation_s *resp_rep)
 {
 	printf("[%s]IN-handle_get_request_on_switch() called..\n", TAG);
 
 	if (req_msg->has_property_key(req_msg, PROPERTY_VALUE_SWITCH)) {
-		st_things_representation_s *temp_rep = st_things_create_representation_inst();
-		if (temp_rep == NULL) {
-			printf("Create representation inst Failed\n");
-			return false;
-		}
-		temp_rep->set_str_value(temp_rep, "company", "Samsung");
-		temp_rep->set_str_value(temp_rep, "sdk", "ST Things SDK");
-
 		printf("[%s]current switch value: %d\n", TAG, g_switch_value);
-
-		resp_rep->set_str_value(resp_rep, PROPERTY_VALUE_SWITCH, g_switch_value ? power_status[0] : power_status[1]);
-		resp_rep->set_object_value(resp_rep, "userInfo", temp_rep);
-		st_things_destroy_representation_inst(temp_rep);
+		resp_rep->set_str_value(resp_rep, PROPERTY_VALUE_SWITCH, power_status[g_switch_value]);
 	}
 
 	printf("[%s]OUT-handle_get_request_on_switch() called..\n", TAG);
@@ -67,12 +61,12 @@ bool handle_set_request_on_switch(st_things_set_request_message_s *req_msg, st_t
 	char *power;
 	if (req_msg->rep->get_str_value(req_msg->rep, PROPERTY_VALUE_SWITCH, &power)) {
 		printf("[%s] power : %s\n", TAG, power);
-		if (strcmp(power, "off") == 0) {
-			g_switch_value = false;
+		if (strncmp(power, "off", sizeof("off")) == 0) {
+			g_switch_value = 0;
 		} else {
-			g_switch_value = true;
+			g_switch_value = 1;
 		}
-		resp_rep->set_str_value(resp_rep, PROPERTY_VALUE_SWITCH, g_switch_value ? power_status[0] : power_status[1]);
+		resp_rep->set_str_value(resp_rep, PROPERTY_VALUE_SWITCH, power_status[g_switch_value]);
 		st_things_notify_observers(req_msg->resource_uri);
 	}
 
@@ -86,6 +80,10 @@ bool handle_get_request_on_dimming(st_things_get_request_message_s *req_msg, st_
 
 	if (req_msg->has_property_key(req_msg, PROPERTY_VALUE_DIMMING)) {
 		resp_rep->set_int_value(resp_rep, PROPERTY_VALUE_DIMMING, g_dimming_setting);
+	} else if (req_msg->has_property_key(req_msg, PROPERTY_VALUE_RANGE)) {
+		resp_rep->set_int_array_value(resp_rep, PROPERTY_VALUE_RANGE, g_dimming_range, 2);
+	} else if (req_msg->has_property_key(req_msg, PROPERTY_VALUE_STEP)) {
+		resp_rep->set_int_value(resp_rep, PROPERTY_VALUE_STEP, g_dimming_step);
 	}
 
 	printf("[%s]OUT-handle_get_request_on_dimming() called..\n", TAG);
@@ -112,6 +110,8 @@ bool handle_get_request_on_ct(st_things_get_request_message_s *req_msg, st_thing
 
 	if (req_msg->has_property_key(req_msg, PROPERTY_VALUE_COLOR_TEMPERATURE)) {
 		resp_rep->set_int_value(resp_rep, PROPERTY_VALUE_COLOR_TEMPERATURE, g_color_temp);
+	} else if (req_msg->has_property_key(req_msg, PROPERTY_VALUE_RANGE)) {
+		resp_rep->set_int_array_value(resp_rep, PROPERTY_VALUE_RANGE, g_color_range, 2);
 	}
 
 	printf("[%s]OUT-handle_get_request_on_ct() called..\n", TAG);
@@ -123,7 +123,6 @@ bool handle_set_request_on_ct(st_things_set_request_message_s *req_msg, st_thing
 	printf("[%s]IN-handle_set_request_on_ct() called..\n", TAG);
 
 	if (req_msg->rep->get_int_value(req_msg->rep, PROPERTY_VALUE_COLOR_TEMPERATURE, &g_color_temp)) {
-		printf("color_temp : %lld\n", g_color_temp);
 		resp_rep->set_int_value(resp_rep, PROPERTY_VALUE_COLOR_TEMPERATURE, g_color_temp);
 		st_things_notify_observers(req_msg->resource_uri);
 	}
