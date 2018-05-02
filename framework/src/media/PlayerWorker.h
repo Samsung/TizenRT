@@ -31,13 +31,7 @@ class PlayerWorker
 public:
 	PlayerWorker();
 	~PlayerWorker();
-
-	static PlayerWorker &getWorker()
-	{
-		call_once(PlayerWorker::mOnceFlag, []() { mWorker.reset(new PlayerWorker); });
-
-		return *(mWorker.get());
-	}
+	static PlayerWorker &getWorker();
 
 	void startPlayer(std::shared_ptr<MediaPlayerImpl>);
 	void stopPlayer(std::shared_ptr<MediaPlayerImpl>);
@@ -52,10 +46,8 @@ private:
 	void decreaseRef();
 
 private:
-	static std::unique_ptr<PlayerWorker> mWorker;
-	static std::once_flag mOnceFlag;
 	int mRefCnt;
-	bool mIsRunning;
+	std::atomic<bool> mIsRunning;
 	std::thread mWorkerThread;
 	std::shared_ptr<MediaPlayerImpl> mCurPlayer;
 	MediaQueue mWorkerQueue; // worker queue

@@ -21,9 +21,6 @@
 #include "PlayerObserverWorker.h"
 
 namespace media {
-std::unique_ptr<PlayerObserverWorker> PlayerObserverWorker::mWorker;
-std::once_flag PlayerObserverWorker::mOnceFlag;
-
 PlayerObserverWorker::PlayerObserverWorker() : mRefCnt{0}
 {
 }
@@ -34,9 +31,8 @@ PlayerObserverWorker::~PlayerObserverWorker()
 
 PlayerObserverWorker& PlayerObserverWorker::getWorker()
 {
-	std::call_once(PlayerObserverWorker::mOnceFlag, []() { mWorker.reset(new PlayerObserverWorker); });
-
-	return *(mWorker.get());
+	static PlayerObserverWorker worker;
+	return worker;
 }
 
 int PlayerObserverWorker::entry()
@@ -70,11 +66,11 @@ void PlayerObserverWorker::stopWorker()
 	medvdbg("PlayerObserverWorker : stopWorker\n");
 	if (--mRefCnt <= 0) {
 		medvdbg("PlayerObserverWorker : join thread\n");
-		mIsRunning = false;
-		if (mWorkerThread.joinable()) {
-			mObserverQueue.notify_one();
-			mWorkerThread.join();
-		}
+		std::atomic<bool> &refBool = mIsRunning;
+		mObserverQueue.enQueue([&refBool]() {
+			refBool = false;
+		});
+		mWorkerThread.join();
 	}
 }
 

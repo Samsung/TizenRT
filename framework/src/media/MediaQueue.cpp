@@ -43,9 +43,4 @@ bool MediaQueue::isEmpty()
 	std::unique_lock<std::mutex> lock(mQueueMtx);
 	return mQueueData.empty();
 }
-
-void MediaQueue::notify_one()
-{
-	mQueueCv.notify_one();
-}
 } // namespace media

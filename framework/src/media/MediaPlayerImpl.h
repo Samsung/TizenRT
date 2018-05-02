@@ -77,7 +77,7 @@ public:
 	int playback(int size);
 
 public:
-	player_state_t mCurState;
+	std::atomic<player_state_t> mCurState;
 	unsigned char* mBuffer;
 	unsigned int mBufSize;
 	static int mRefCnt;

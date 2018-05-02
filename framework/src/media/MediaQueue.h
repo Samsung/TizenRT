@@ -40,7 +40,6 @@ public:
 	}
 	std::function<void()> deQueue();
 	bool isEmpty();
-	void notify_one();
 
 private:
 	std::queue<std::function<void()>> mQueueData;
