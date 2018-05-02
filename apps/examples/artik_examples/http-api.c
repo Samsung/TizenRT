@@ -208,11 +208,12 @@ exit:
 static void http_response_callback(artik_error result, int status,
 								char *response, void *user_data)
 {
-	if (result != S_OK)
+	if (result != S_OK) {
 		fprintf(stderr, "error = %s\n", error_msg(result));
-	else
-		fprintf(stdout, "response = %s\nstatus = %d\n", response,
-								status);
+	} else {
+		fprintf(stdout, "response = %s\nstatus = %d\n", response, status);
+		free(response);
+	}
 }
 
 static int http_get_async(int argc, char **argv)
