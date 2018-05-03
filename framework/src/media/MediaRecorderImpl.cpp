@@ -108,6 +108,14 @@ recorder_result_t MediaRecorderImpl::prepare()
 	}
 
 	mBuffSize = get_input_frames_byte_size(get_input_frame_count());
+
+	if (mBuffSize < 0) {
+		meddbg("MediaRecorderImpl::prepare() - get_input_frames_byte_size(get_input_frame_count()) failed\n");
+		return RECORDER_ERROR;
+	}
+
+	medvdbg("MediaRecorder mBuffer size : %d\n", mBufSize);
+
 	mBuffer = new unsigned char[mBuffSize];
 	if (!mBuffer) {
 		meddbg("MediaRecorderImpl::prepare() - mBuffer alloc failed\n");

@@ -29,6 +29,7 @@ MediaPlayerImpl::MediaPlayerImpl()
 	mPlayerObserver = nullptr;
 	mCurState = PLAYER_STATE_NONE;
 	mBuffer = nullptr;
+	mBufSize = 0;
 	mInputDataSource = nullptr;
 
 	static int playerId = 1;
@@ -107,6 +108,11 @@ player_result_t MediaPlayerImpl::prepare()
 	}
 
 	mBufSize = get_output_frames_byte_size(get_output_frame_count());
+	if (mBufSize < 0) {
+		meddbg("MediaPlayer prepare fail : get_output_frames_byte_size fail\n");
+		return PLAYER_ERROR;
+	}
+
 	medvdbg("MediaPlayer mBuffer size : %d\n", mBufSize);
 
 	mBuffer = new unsigned char[mBufSize];

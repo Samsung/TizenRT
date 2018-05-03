@@ -23,7 +23,7 @@
 namespace media {
 namespace stream {
 
-FileOutputDataSource::FileOutputDataSource(const std::string& dataPath) 
+FileOutputDataSource::FileOutputDataSource(const std::string& dataPath)
 	: OutputDataSource(), mDataPath(dataPath), mFp(nullptr)
 {	
 }
@@ -33,7 +33,8 @@ FileOutputDataSource::FileOutputDataSource(unsigned short channels, unsigned int
 {
 }
 
-FileOutputDataSource::FileOutputDataSource(const FileOutputDataSource& source) : OutputDataSource(source)
+FileOutputDataSource::FileOutputDataSource(const FileOutputDataSource& source) : 
+	OutputDataSource(source), mDataPath(source.mDataPath), mFp(source.mFp)
 {
 }
 

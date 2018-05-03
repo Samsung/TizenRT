@@ -23,12 +23,12 @@ namespace media {
 namespace stream {
 
 InputDataSource::InputDataSource()
-	: DataSource()
+	: DataSource(), mAudioType(utils::AUDIO_TYPE_INVALID)
 {
 }
 
 InputDataSource::InputDataSource(const InputDataSource& source)
-	: DataSource(source)
+	: DataSource(source), mAudioType(source.mAudioType)
 {
 
 }

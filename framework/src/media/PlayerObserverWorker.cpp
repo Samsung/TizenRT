@@ -21,7 +21,7 @@
 #include "PlayerObserverWorker.h"
 
 namespace media {
-PlayerObserverWorker::PlayerObserverWorker() : mRefCnt{0}
+PlayerObserverWorker::PlayerObserverWorker() : mRefCnt{0}, mIsRunning(false)
 {
 }
 

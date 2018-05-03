@@ -44,8 +44,14 @@ class MediaPlayerTest : public MediaPlayerObserverInterface, public enable_share
 
 	void start();
 
-	MediaPlayerTest() { cout << "App start" << endl; }
-	~MediaPlayerTest() { cout << "App terminate" << endl; }
+	MediaPlayerTest() : volume(0)
+	{
+		cout << "App start" << endl;
+	}
+	~MediaPlayerTest() 
+	{
+		cout << "App terminate" << endl;
+	}
 
   private:
 	void printMenu();

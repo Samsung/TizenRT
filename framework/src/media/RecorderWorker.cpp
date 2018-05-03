@@ -20,7 +20,7 @@
 
 namespace media {
 
-RecorderWorker::RecorderWorker() : mRefCnt(0)
+RecorderWorker::RecorderWorker() : mRefCnt(0), mIsRunning(false)
 {
 	medvdbg("RecorderWorker::RecorderWorker()\n");
 }

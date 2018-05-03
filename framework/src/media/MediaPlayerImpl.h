@@ -79,7 +79,7 @@ public:
 public:
 	std::atomic<player_state_t> mCurState;
 	unsigned char* mBuffer;
-	unsigned int mBufSize;
+	int mBufSize;
 	std::mutex mCmdMtx;
 	std::condition_variable mSyncCv;
 	std::shared_ptr<MediaPlayerObserverInterface> mPlayerObserver;

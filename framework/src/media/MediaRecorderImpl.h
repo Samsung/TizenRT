@@ -93,7 +93,7 @@ private:
 	std::shared_ptr<MediaRecorderObserverInterface> mRecorderObserver;
 
 	unsigned char* mBuffer;
-	unsigned int mBuffSize;
+	int mBuffSize;
 	mutex mCmdMtx; // command mutex
 	std::condition_variable mSyncCv;
 	int mId;
