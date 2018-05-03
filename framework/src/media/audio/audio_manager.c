@@ -678,7 +678,7 @@ audio_manager_result_t set_audio_stream_in(uint8_t channels, uint32_t sample_rat
 	int card_id = -1;
 	struct pcm_config config;
 
-	if ((channels <= 0) || (sample_rate <= 0) || (format < 0)) {
+	if ((channels == 0) || (sample_rate == 0)) {
 		return AUDIO_MANAGER_INVALID_PARAM;
 	}
 
@@ -743,7 +743,7 @@ audio_manager_result_t set_audio_stream_out(uint8_t channels, uint32_t sample_ra
 	int card_id = -1;
 	struct pcm_config config;
 
-	if ((channels <= 0) || (sample_rate <= 0) || (format < 0)) {
+	if ((channels == 0) || (sample_rate == 0)) {
 		return AUDIO_MANAGER_INVALID_PARAM;
 	}
 
