@@ -48,6 +48,9 @@
 #ifdef CONFIG_EXAMPLES_TESTCASE_KERNEL
 #define TC_KERNEL_STACK   2048
 #endif
+#if defined(CONFIG_EXAMPLES_TESTCASE_MEDIA_UTC) || defined(CONFIG_EXAMPLES_TESTCASE_MEDIA_ITC)	
+#define TC_MEDIA_STACK  8192	
+#endif
 #ifdef CONFIG_EXAMPLES_TESTCASE_MPU
 #define TC_MPU_STACK   2048
 #endif
@@ -90,6 +93,7 @@ extern int utc_audio_main(int argc, char *argv[]);
 extern int itc_audio_main(int argc, char *argv[]);
 extern int utc_dm_main(int argc, char *argv[]);
 extern int itc_dm_main(int argc, char *argv[]);
+extern int utc_media_main(int argc, char *argv[]);
 extern int utc_mqtt_main(int argc, char *argv[]);
 extern int itc_mqtt_main(int argc, char *argv[]);
 extern int utc_sysio_main(int argc, char *argv[]);
@@ -130,6 +134,9 @@ static const tash_cmdlist_t tc_cmds[] = {
 #ifdef CONFIG_EXAMPLES_TESTCASE_KERNEL
 	{"kernel_tc", tc_kernel_main, TASH_EXECMD_ASYNC},
 #endif
+#ifdef CONFIG_EXAMPLES_TESTCASE_MEDIA_UTC	
+	{"media_utc", utc_media_main, TASH_EXECMD_ASYNC},	
+#endif
 #ifdef CONFIG_EXAMPLES_TESTCASE_MPU
 	{"mpu_tc", tc_mpu_main, TASH_EXECMD_ASYNC},
 #endif
@@ -164,6 +171,9 @@ static const tash_cmdlist_t tc_cmds[] = {
 };
 #endif
 
+#ifdef __cplusplus
+extern "C" {
+#endif
 int tc_handler(tc_op_type_t type, const char *tc_name)
 {
 	switch (type) {
@@ -269,6 +279,12 @@ int tc_main(int argc, char *argv[])
 		printf("Kernel tc is not started, err = %d\n", pid);
 	}
 #endif
+#ifdef CONFIG_EXAMPLES_TESTCASE_MEDIA_UTC
+	pid = task_create("mediautc", SCHED_PRIORITY_DEFAULT, TC_MEDIA_STACK, utc_media_main, argv);
+	if (pid < 0) {
+		printf("Media utc is not started, err = %d\n", pid);
+	}
+#endif
 #ifdef CONFIG_EXAMPLES_TESTCASE_MPU
 	pid = task_create("mputc", SCHED_PRIORITY_DEFAULT, TC_MPU_STACK, tc_mpu_main, argv);
 	if (pid < 0) {
@@ -335,3 +351,6 @@ int tc_main(int argc, char *argv[])
 
 	return 0;
 }
+#ifdef __cplusplus
+}
+#endif
