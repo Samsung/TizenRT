@@ -199,9 +199,11 @@ static void wifi_connect_callback(void *result, void *user_data)
 			printf("WiFi connection error: %d\n", info->error);
 			g_join_result = 1;
 		} else {
-			printf("Connected to Access Point\n");
+			printf("%s Access Point\n", info->connected ?
+					"Connected to" : "Disconnected from");
 			g_join_result = info->connected ? 0 : -1;
 		}
+
 		sem_post(&g_sem_join);
 	}
 }
