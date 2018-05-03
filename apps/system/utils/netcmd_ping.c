@@ -212,14 +212,14 @@ static void ping_recv(int family, int s, struct timespec *ping_time)
 		fromlen = sizeof(struct sockaddr_in);
 	} else {
 		printf("ping_recv: invalid family\n");
-		return ERROR;
+		return;
 	}
 
 	/* allocate memory due to difference of size between ipv4/v6 socket structure */
 	from = malloc(fromlen);
 	if (from == NULL) {
 		printf("ping_recv: fail to allocate memory\n");
-		return ERROR;
+		return;
 	}
 
 	while (1) {
@@ -311,14 +311,12 @@ static void ping_recv(int family, int s, struct timespec *ping_time)
 	}
 
 	free(from);
-	return OK;
+	return;
 err_out:
 	if (from) {
 		free(from);
 		from = NULL;
 	}
-
-	return ERROR;
 }
 
 static void ping_prepare_echo(int family, struct icmp_echo_hdr *iecho, u16_t len)
@@ -357,7 +355,7 @@ static void ping_prepare_echo(int family, struct icmp_echo_hdr *iecho, u16_t len
 	}
 }
 
-static int ping_send(int s, struct sockaddr_in *to, int size)
+static int ping_send(int s, struct sockaddr *to, int size)
 {
 	int ret;
 	size_t icmplen;
@@ -380,7 +378,7 @@ static int ping_send(int s, struct sockaddr_in *to, int size)
 
 	iecho = (struct icmp_echo_hdr *)malloc(icmplen);
 	if (!iecho) {
-		printf("ping_send: fail to alloc mem\n");
+		printf("ping_send: fail to allocate memory\n");
 		return ERROR;
 	}
 
