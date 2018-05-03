@@ -52,7 +52,6 @@ OBJS		= $(AOBJS) $(COBJS)
 BIN		= ../libexternal$(LIBEXT)
 
 CFLAGS+= -D__TIZENRT__
-CFLAGS+= -Wno-error
 
 all: .built
 .PHONY: .depend depend clean distclean
