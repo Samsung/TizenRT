@@ -48,6 +48,9 @@
 #ifdef CONFIG_EXAMPLES_TESTCASE_KERNEL
 #define TC_KERNEL_STACK   2048
 #endif
+#ifdef CONFIG_LIBCXX_UTC
+#define TC_LIBCXX_STACK  4096
+#endif
 #if defined(CONFIG_EXAMPLES_TESTCASE_MEDIA_UTC) || defined(CONFIG_EXAMPLES_TESTCASE_MEDIA_ITC)	
 #define TC_MEDIA_STACK  8192	
 #endif
@@ -105,6 +108,11 @@ extern int itc_wifi_manager_main(int argc, char *argv[]);
 /* Not yet */
 extern int tc_mpu_main(int argc, char *argv[]);
 
+/* Libc++ Testcase */
+#ifdef CONFIG_LIBCXX_UTC
+extern int utc_libcxx_main(int argc, char *argv[]);
+#endif
+
 #ifdef CONFIG_TASH
 static const tash_cmdlist_t tc_cmds[] = {
 #ifdef CONFIG_EXAMPLES_TESTCASE_ARASTORAGE_UTC
@@ -133,6 +141,9 @@ static const tash_cmdlist_t tc_cmds[] = {
 #endif
 #ifdef CONFIG_EXAMPLES_TESTCASE_KERNEL
 	{"kernel_tc", tc_kernel_main, TASH_EXECMD_ASYNC},
+#endif
+#ifdef CONFIG_LIBCXX_UTC
+	{"libcxx_utc", utc_libcxx_main, TASH_EXECMD_ASYNC},
 #endif
 #ifdef CONFIG_EXAMPLES_TESTCASE_MEDIA_UTC	
 	{"media_utc", utc_media_main, TASH_EXECMD_ASYNC},	
@@ -277,6 +288,12 @@ int tc_main(int argc, char *argv[])
 	pid = task_create("kerneltc", SCHED_PRIORITY_DEFAULT, TC_KERNEL_STACK, tc_kernel_main, argv);
 	if (pid < 0) {
 		printf("Kernel tc is not started, err = %d\n", pid);
+	}
+#endif
+#ifdef CONFIG_LIBCXX_UTC
+	pid = task_create("libcxxutc", SCHED_PRIORITY_DEFAULT, TC_LIBCXX_STACK, utc_libcxx_main, argv);
+	if (pid < 0) {
+		printf("Libcxx utc is not started, err = %d\n", pid);
 	}
 #endif
 #ifdef CONFIG_EXAMPLES_TESTCASE_MEDIA_UTC

@@ -1,0 +1,95 @@
+#
+# For a description of the syntax of this configuration file,
+# see kconfig-language at https://www.kernel.org/doc/Documentation/kbuild/kconfig-language.txt
+#
+
+config LIBCXX_UTC
+	bool "Unit Test for LLVM Libc++"
+	default n
+	depends on LIBCXX
+	---help---
+		Enables unit test for LLVM Libc++.
+
+config LIBCXX_UTC_ALGORITHMS
+	bool "UTC for Libc++ Algorithms"
+	default y
+	depends on LIBCXX_UTC
+	---help---
+		UTC for Libc++ Algorithms
+
+config LIBCXX_UTC_CONTAINERS
+	bool "UTC for Libc++ Containers"
+	default y
+	depends on LIBCXX_UTC
+	---help---
+		UTC for Libc++ Containers
+
+config LIBCXX_UTC_CONTAINERS_MAP
+	bool "UTC for Libc++ Map"
+	default y
+	depends on LIBCXX_UTC_CONTAINERS
+	---help---
+		UTC for Libc++ Containers(Map)
+
+config LIBCXX_UTC_CONTAINERS_VECTOR
+	bool "UTC for Libc++ Vector"
+	default y
+	depends on LIBCXX_UTC_CONTAINERS
+	---help---
+		UTC for Libc++ Containers(Vector)
+
+config LIBCXX_UTC_CONTAINERS_LIST
+	bool "UTC for Libc++ List"
+	default y
+	depends on LIBCXX_UTC_CONTAINERS
+	---help---
+		UTC for Libc++ Containers(List)
+
+config LIBCXX_UTC_UTILITIES
+	bool "UTC for Libc++ Utilities"
+	default y
+	depends on LIBCXX_UTC
+	---help---
+		UTC for Libc++ Utilities
+
+config LIBCXX_UTC_DIAGNOSTICS
+	bool "UTC for Libc++ Diagnostics(stdexcept)"
+	default y
+	depends on LIBCXX_UTC
+	---help---
+		UTC for Libc++ Diagnostics(stdexcept)
+
+config LIBCXX_UTC_STDBOOL
+	bool "UTC for Libc++ stdbool"
+	default y
+	depends on LIBCXX_UTC
+	---help---
+		UTC for Libc++ stdbool
+
+config LIBCXX_UTC_THREAD
+	bool "UTC for Libc++ Thread(Mutex)"
+	default y
+	depends on LIBCXX_UTC
+	---help---
+		UTC for Libc++ Thread(Mutex)
+
+config LIBCXX_UTC_ITERATORS
+	bool "UTC for Libc++ Iterators"
+	default y
+	depends on LIBCXX_UTC
+	---help---
+		UTC for Libc++ Iterators
+
+config LIBCXX_UTC_STRINGS
+	bool "UTC for Libc++ Strings"
+	default n
+	depends on LIBCXX_UTC
+	---help---
+		UTC for Libc++ Strings
+
+config LIBCXX_UTC_STRINGS_LARGESIZE
+	bool "UTC for Libc++ Strings Large size tests"
+	default n
+	depends on LIBCXX_UTC_STRINGS
+	---help---
+		UTC for Libc++ Strings Large size tests
