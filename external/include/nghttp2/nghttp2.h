@@ -71,7 +71,9 @@ extern "C" {
  * Value of SIZEOF_INT_P has been obtained from config.h, which
  * was generated from config.h.in, obtained from configure.ac
  */
+#ifndef SIZEOF_INT_P
 #define SIZEOF_INT_P 4
+#endif
 
 /**
  * @macro

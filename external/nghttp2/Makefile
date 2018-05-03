@@ -43,6 +43,8 @@ DEPPATH	= --dep-path .
 # Common build
 VPATH =
 
+CFLAGS += -DHAVE_CONFIG_H
+
 all: .built
 .PHONY: .depend depend clean distclean
 

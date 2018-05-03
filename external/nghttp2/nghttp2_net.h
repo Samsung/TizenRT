@@ -26,7 +26,7 @@
 #define NGHTTP2_NET_H
 
 #ifdef HAVE_CONFIG_H
-#include <config.h>
+#include <nghttp2_config.h>
 #endif /* HAVE_CONFIG_H */
 
 #ifdef HAVE_ARPA_INET_H
