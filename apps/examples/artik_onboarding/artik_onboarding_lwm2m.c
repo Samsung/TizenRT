@@ -502,7 +502,7 @@ static void on_changed_resource(void *data, void *user_data)
 		firmware_uri = strndup((char *)res->buffer, res->length);
 		fprintf(stdout, "Downloading firmware from %s\n", firmware_uri);
 		argv[0] = firmware_uri;
-		task_create("download-firmware", SCHED_PRIORITY_DEFAULT, 16384, download_firmware, argv);
+		task_create("download-firmware", 80, 16384, download_firmware, argv);
 		artik_release_api_module(lwm2m);
 	}
 }
