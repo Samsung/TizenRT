@@ -48,6 +48,10 @@ static void tc_net_getsockname_p(void)
 	struct sockaddr foo;
 
 	sock = socket(AF_INET, SOCK_STREAM, 0);
+	if (sock < 0) {
+		printf("socket creation error (%s) line:%d\n", __FUNCTION__, __LINE__);
+		return;
+	}
 	int ret = getsockname(sock, &foo, (socklen_t *)&len);
 	close(sock);
 	TC_ASSERT_NEQ("getsockname", ret, -1);
@@ -113,6 +117,10 @@ static void tc_net_getsockname_close_n(void)
 	struct sockaddr foo;
 
 	sock = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP);
+	if (sock < 0) {
+		printf("socket creation error (%s) line:%d\n", __FUNCTION__, __LINE__);
+		return;
+	}
 	close(sock);
 	int ret = getsockname(sock, &foo, (socklen_t *)&len);
 
@@ -135,6 +143,10 @@ static void tc_net_getsockname_udp_p(void)
 	struct sockaddr foo;
 
 	sock = socket(AF_INET, SOCK_DGRAM, IPPROTO_UDP);
+	if (sock < 0) {
+		printf("socket creation error (%s) line:%d\n", __FUNCTION__, __LINE__);
+		return;
+	}
 	int ret = getsockname(sock, &foo, (socklen_t *)&len);
 	close(sock);
 	TC_ASSERT_NEQ("getsockname", ret, -1);
@@ -156,6 +168,10 @@ static void tc_net_getsockname_icmp_p(void)
 	struct sockaddr foo;
 
 	sock = socket(AF_INET, SOCK_DGRAM, IPPROTO_ICMP);
+	if (sock < 0) {
+		printf("socket creation error (%s) line:%d\n", __FUNCTION__, __LINE__);
+		return;
+	}
 	int ret = getsockname(sock, &foo, (socklen_t *)&len);
 	close(sock);
 	TC_ASSERT_NEQ("getsockname", ret, -1);

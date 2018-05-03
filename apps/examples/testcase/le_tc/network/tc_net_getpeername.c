@@ -36,7 +36,9 @@
 
 #define PORTNUM 1115
 #define MAXRCVLEN 20
-int sem = 0;
+static int g_sem = 0;
+static int g_running_client = 0;
+
 /**
    * @fn                   :getpeername_wait
    * @brief                :function to wait on semaphore
@@ -46,12 +48,15 @@ int sem = 0;
    * Postconditions        :
    * @return               :void
    */
-void getpeername_wait(void)
+static int getpeername_wait(void)
 {
-	while (sem <= 0)
-		printf("");
-
-	sem--;
+	while (g_sem <= 0) {
+		if (g_sem == -1) {
+			return -1;
+		}
+		sleep(1);
+	}
+	return 1;
 }
 
 /**
@@ -63,11 +68,24 @@ void getpeername_wait(void)
    * Postconditions        :
    * @return               :void
    */
-void getpeername_signal(void)
+static void getpeername_signal(void)
 {
-	sem++;
+	g_sem = 1;
 }
 
+static void getpeername_error(void)
+{
+	g_sem = -1;
+}
+static int _wait_client(void)
+{
+	while (g_running_client <= 0) {
+		if (g_running_client == -1) {
+			return -1;
+		}
+	}
+	return 1;
+}
 /**
    * @testcase		   :tc_net_getpeername_sock_n
    * @brief		   :negative test case wthout client server model
@@ -99,6 +117,10 @@ static void tc_net_getpeername_close_n(void)
 {
 	int sock;
 	sock = socket(AF_INET, SOCK_STREAM, 0);
+	if (sock < 0) {
+		printf("socket creation error (%s) line:%d\n", __FUNCTION__, __LINE__);
+		return;
+	}
 	int len = sizeof(struct sockaddr);
 	struct sockaddr foo;
 	close(sock);
@@ -183,24 +205,38 @@ static void tc_net_getpeername_n(int fd)
    */
 void *getpeername_server(void *args)
 {
-
 	struct sockaddr_in sa;
 	int SocketFD = socket(PF_INET, SOCK_STREAM, IPPROTO_TCP);
-
+	if (SocketFD < 0) {
+		printf("socket creation fail %s :%d", __FUNCTION__, __LINE__);
+		getpeername_error();
+		return 0;
+	}
 	memset(&sa, 0, sizeof(sa));
 
 	sa.sin_family = PF_INET;
 	sa.sin_port = htons(PORTNUM);
 	sa.sin_addr.s_addr = inet_addr("127.0.0.1");
 
-	bind(SocketFD, (struct sockaddr *)&sa, sizeof(sa));
+	int ret = bind(SocketFD, (struct sockaddr *)&sa, sizeof(sa));
+	if (ret < 0) {
+		printf("bind fail %s :%d", __FUNCTION__, __LINE__);
+		getpeername_error();
+		close(SocketFD);
+		return 0;
+	}
 
-	listen(SocketFD, 1);
+	ret = listen(SocketFD, 1);
+	if (ret < 0) {
+		printf("listen fail %s :%d", __FUNCTION__, __LINE__);
+		getpeername_error();
+		close(SocketFD);
+		return 0;
+	}
 	getpeername_signal();
 	int ConnectFD = accept(SocketFD, NULL, NULL);
 
 	close(ConnectFD);
-
 	close(SocketFD);
 	return 0;
 }
@@ -216,18 +252,32 @@ void *getpeername_server(void *args)
    */
 void *getpeername_client(void *args)
 {
-
 	int mysocket;
 	struct sockaddr_in dest;
 	mysocket = socket(PF_INET, SOCK_STREAM, IPPROTO_TCP);
+	if (mysocket < 0) {
+		printf("socket creation fail %s :%d\n", __FUNCTION__, __LINE__);
+		g_running_client = -1;
+		return 0;
+	}
 
 	memset(&dest, 0, sizeof(dest));
 	dest.sin_family = PF_INET;
 	dest.sin_addr.s_addr = inet_addr("127.0.0.1");
 	dest.sin_port = htons(PORTNUM);
 
-	getpeername_wait();
-	connect(mysocket, (struct sockaddr *)&dest, sizeof(struct sockaddr));
+	g_running_client = 1;
+	int ret = getpeername_wait();
+	if (ret < 0) {
+		printf("running server fail\n");
+		close(mysocket);
+		return 0;
+	}
+	ret = connect(mysocket, (struct sockaddr *)&dest, sizeof(struct sockaddr));
+	if (ret < 0) {
+		printf("connect fail %s %d\n", __FUNCTION__, __LINE__);
+		return 0;
+	}
 
 	tc_net_getpeername_p(mysocket);
 	tc_net_getpeername_n(mysocket);
@@ -244,12 +294,19 @@ int net_getpeername_main(void)
 
 	pthread_t Server, Client;
 
-	pthread_create(&Server, NULL, getpeername_server, NULL);
 	pthread_create(&Client, NULL, getpeername_client, NULL);
+	int ret = _wait_client();
+	if (ret < 0) {
+		printf("running client fail %s :%d\n", __FUNCTION__, __LINE__);
+		pthread_join(Client, NULL);
+		return -1;
+	}
+
+	pthread_create(&Server, NULL, getpeername_server, NULL);
 
 	pthread_join(Server, NULL);
-
 	pthread_join(Client, NULL);
+
 	tc_net_getpeername_sock_n();
 	tc_net_getpeername_close_n();
 #ifdef AF_UNIX

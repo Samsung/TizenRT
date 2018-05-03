@@ -48,6 +48,10 @@ static void tc_net_ioctl_p(void)
 
 	int fd = -1;
 	fd = socket(AF_INET, SOCK_DGRAM, 0);
+	if (fd < 0) {
+		printf("fail %s:%d\n", __FUNCTION__, __LINE__);
+		return;
+	}
 	long a = 0;
 
 	int ret = ioctlsocket(fd, FIONBIO, &a);
@@ -71,6 +75,10 @@ static void tc_net_ioctl_fionread_n(void)
 
 	int fd = -1;
 	fd = socket(AF_INET, SOCK_DGRAM, 0);
+	if (fd < 0) {
+		printf("fail %s:%d\n", __FUNCTION__, __LINE__);
+		return;
+	}
 	long a = 10;
 
 	int ret = ioctlsocket(fd, FIONREAD, &a);

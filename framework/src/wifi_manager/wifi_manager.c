@@ -197,9 +197,19 @@ typedef struct _wifimgr_info _wifimgr_info_s;
 
 #define WIFIMGR_SET_IP4ADDR(intf, ip, netmask, gateway)	\
 	do {												\
-		netlib_set_ipv4addr(intf, &ip);					\
-		netlib_set_ipv4netmask(intf, &netmask);			\
-		netlib_set_dripv4addr(intf, &gateway);			\
+		int res = -1;									\
+		res = netlib_set_ipv4addr(intf, &ip);			\
+		if (res == -1) {								\
+			nvdbg("[WM] set ipv4 addr error\n");		\
+		}												\
+		res = netlib_set_ipv4netmask(intf, &netmask);	\
+		if (res == -1) {								\
+			nvdbg("[WM] set netmask addr error\n");		\
+		}												\
+		res = netlib_set_dripv4addr(intf, &gateway);	\
+		if (res == -1) {								\
+			nvdbg("[WM] set route addr error\n");		\
+		}												\
 		g_manager_info.ip4_address = ip.s_addr;			\
 	} while (0)
 
@@ -250,8 +260,8 @@ typedef struct _wifimgr_info _wifimgr_info_s;
 		msg->config = NULL;						\
 		free(msg->conn_config);					\
 		msg->conn_config = NULL;				\
-		free(msg);								\
 		close(msg->fd);							\
+		free(msg);								\
 	} while (0)
 
 /**
@@ -671,12 +681,12 @@ wifi_manager_result_e _wifimgr_scan(void)
 {
 	WM_LOG_START;
 	wifi_manager_cb_s *cbk = &g_manager_info.cb;
-	
+
 	if (!cbk->scan_ap_done) {
 		ndbg("[WM] Callback funciton should be defined.\n");
 		return WIFI_MANAGER_FAIL;
 	}
-	
+
 	WIFIMGR_CHECK_UTILRESULT(wifi_utils_scan_ap(NULL), "[WM] request scan to wifi utils is fail\n", WIFI_MANAGER_FAIL);
 	return WIFI_MANAGER_SUCCESS;
 }

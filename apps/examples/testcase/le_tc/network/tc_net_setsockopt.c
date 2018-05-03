@@ -675,7 +675,10 @@ int net_setsockopt_main(void)
 	//char *ip = "192.168.1.100";
 
 	fd = socket(AF_INET, SOCK_STREAM, 0);
-
+	if (fd < 0) {
+		printf("socket creation error (%s) line:%d\n", __FUNCTION__, __LINE__);
+		return -1;
+	}
 	//tc_net_setsockopt_invalid_opt_name_n(fd);
 	tc_net_setsockopt_invalid_level_n(fd);
 	tc_net_setsockopt_invalid_filedesc_n();
