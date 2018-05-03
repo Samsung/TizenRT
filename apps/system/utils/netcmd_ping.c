@@ -64,6 +64,7 @@
 
 #undef htons
 #define htons HTONS
+#define PING_RESULT(ping_ok)
 #define PING_ID        0xAFAF
 #define PING_DELAY     1000
 #define ICMP_HDR_SIZE sizeof(struct ip_hdr) + sizeof(struct icmp_echo_hdr)
@@ -210,24 +211,24 @@ static void ping_recv(int family, int s, struct timespec *ping_time)
 	if (family == AF_INET) {
 		fromlen = sizeof(struct sockaddr_in);
 	} else {
-		printf("nu_ping_recv: invalid family\n");
+		printf("ping_recv: invalid family\n");
 		return ERROR;
 	}
 
 	/* allocate memory due to difference of size between ipv4/v6 socket structure */
 	from = malloc(fromlen);
 	if (from == NULL) {
-		printf("nu_ping_recv: fail to allocate memory\n");
+		printf("ping_recv: fail to allocate memory\n");
 		return ERROR;
 	}
 
 	while (1) {
 		len = recvfrom(s, buf, sizeof(buf), 0, from, &fromlen);
 		if (len < 0) {
-			printf("nu_ping_recv: recvfrom error(%d)\n", errno);
+			printf("ping_recv: recvfrom error(%d)\n", errno);
 			goto err_out;
 		} else if (len == 0) {
-			printf("nu_ping_recv: timeout\n");
+			printf("ping_recv: timeout\n");
 		}
 
 #if LWIP_IPV6
@@ -352,7 +353,7 @@ static void ping_prepare_echo(int family, struct icmp_echo_hdr *iecho, u16_t len
 	{
 		ICMPH_TYPE_SET(iecho, ICMP_ECHO);
 		iecho->chksum = 0;
-		iecho->chksum = ~nu_standard_chksum(iecho, len);
+		iecho->chksum = ~standard_chksum(iecho, len);
 	}
 }
 
@@ -373,13 +374,13 @@ static int ping_send(int s, struct sockaddr_in *to, int size)
 		addrlen = sizeof(struct sockaddr_in);
 		icmplen = sizeof(struct icmp_echo_hdr) + size;
 	} else {
-		printf("nu_ping_send: invalid family\n");
+		printf("ping_send: invalid family\n");
 		return ERROR;
 	}
 
 	iecho = (struct icmp_echo_hdr *)malloc(icmplen);
 	if (!iecho) {
-		printf("nu_ping_send: fail to alloc mem\n");
+		printf("ping_send: fail to alloc mem\n");
 		return ERROR;
 	}
 
@@ -422,7 +423,7 @@ int ping_process(int count, const char *taddr, int size)
 	}
 #endif
 	if (hints.ai_protocol == 0) {
-		printf("nu_ping_process: invalid target ip address\n");
+		printf("ping_process: invalid target ip address\n");
 		return ERROR;
 	}
 
@@ -430,7 +431,7 @@ int ping_process(int count, const char *taddr, int size)
 
 	/* get address information */
 	if (lwip_getaddrinfo(taddr, NULL, &hints, &result) != 0) {
-		printf("nu_ping_process: fail to get addrinfo\n");
+		printf("ping_process: fail to get addrinfo\n");
 		return ERROR;
 	}
 
@@ -446,7 +447,7 @@ int ping_process(int count, const char *taddr, int size)
 	}
 	if (rp == NULL) {
 		/* opening socket is totally failed */
-		printf("nu_ping_process: fail to create raw socket\n");
+		printf("ping_process: fail to create raw socket\n");
 		goto err_out;
 	}
 
@@ -456,7 +457,7 @@ int ping_process(int count, const char *taddr, int size)
 	tv.tv_sec = 1;
 	tv.tv_usec = 0;
 	if (setsockopt(s, SOL_SOCKET, SO_RCVTIMEO, (struct timeval *)&tv, sizeof(struct timeval)) != ERR_OK) {
-		printf("nu_ping_process: setsockopt error\n");
+		printf("ping_process: setsockopt error\n");
 		goto err_out;
 	}
 
@@ -466,7 +467,7 @@ int ping_process(int count, const char *taddr, int size)
       clock_gettime(CLOCK_REALTIME, &ping_time);
 			ping_recv((int)to->sa_family, s, &ping_time);
 		} else {
-			printf("nu_ping_process: sendto error(%d)\n", errno);
+			printf("ping_process: sendto error(%d)\n", errno);
 			break;
 		}
 
