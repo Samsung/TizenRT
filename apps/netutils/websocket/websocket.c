@@ -102,7 +102,7 @@ websocket_return_t websocket_config_socket(int fd)
 	return WEBSOCKET_SUCCESS;
 }
 
-websocket_return_t websocket_wait_state(websocket_t *websocket, int state, int utime)
+static websocket_return_t websocket_wait_state(websocket_t *websocket, int state, int utime, int retries)
 {
 	if (websocket == NULL) {
 		WEBSOCKET_DEBUG("NULL parameter\n");
@@ -110,8 +110,13 @@ websocket_return_t websocket_wait_state(websocket_t *websocket, int state, int u
 	}
 
 	if (state >= WEBSOCKET_STOP && state < WEBSOCKET_MAX_STATE) {
-		while ((websocket->state) != state) {
+		while ((websocket->state != state) && (retries-- > 0)) {
 			usleep(utime);
+		}
+
+		if (retries <= 0) {
+			WEBSOCKET_DEBUG("Timed out waiting for state %d\n", state);
+			return WEBSOCKET_CONNECT_ERROR;
 		}
 	} else {
 		WEBSOCKET_DEBUG("function returned for invalid parameter\n");
@@ -1108,7 +1113,7 @@ websocket_return_t websocket_queue_close(websocket_t *websocket, const char *clo
 			r = WEBSOCKET_SEND_ERROR;
 			goto EXIT_QUEUE_CLOSE;
 		}
-		websocket_wait_state(websocket, WEBSOCKET_STOP, 100000);
+		websocket_wait_state(websocket, WEBSOCKET_STOP, 100000, 50);
 		WEBSOCKET_DEBUG("websocket handler successfully stopped, closing\n");
 	}
 
