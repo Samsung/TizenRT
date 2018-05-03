@@ -322,6 +322,10 @@ typedef CODE int (*main_t)(int argc, char *argv[]);
 
 typedef CODE int (*preapp_main_t)(int argc, char *argv[]);
 
+#ifdef CONFIG_TASK_MANAGER
+typedef CODE int (*task_manager_main_t)(int argc, char *argv[]);
+#endif
+
 #endif
 
 /****************************************************************************

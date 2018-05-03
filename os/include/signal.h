@@ -162,6 +162,13 @@
 #endif
 #endif
 
+/* SIGTM is used in Task Manager */
+#ifndef CONFIG_SIG_SIGTM
+#define SIGTM       18			/* Taskmgt signal */
+#else
+#define SIGTM       CONFIG_SIG_SIGTM
+#endif
+
 /* sigprocmask() "how" definitions. Only one of the following can be specified: */
 
 #define SIG_BLOCK       1		/* Block the given signals */
