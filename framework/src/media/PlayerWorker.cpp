@@ -26,7 +26,7 @@
 using namespace std;
 
 namespace media {
-PlayerWorker::PlayerWorker() : mRefCnt{0}
+PlayerWorker::PlayerWorker() : mRefCnt(0), mIsRunning(false)
 {
 }
 
@@ -47,7 +47,7 @@ int PlayerWorker::entry()
 			shared_ptr<Decoder> mDecoder = mCurPlayer->mInputDataSource->getDecoder();
 			if (mDecoder) {
 				size_t num_read = mCurPlayer->mInputDataSource->read(mCurPlayer->mBuffer,
-					(mCurPlayer->mBufSize < mDecoder->getAvailSpace()) ?
+					((size_t)mCurPlayer->mBufSize < mDecoder->getAvailSpace()) ?
 						mCurPlayer->mBufSize : mDecoder->getAvailSpace());
 				medvdbg("MediaPlayer Worker(has mDecoder) : num_read = %d\n", num_read);
 

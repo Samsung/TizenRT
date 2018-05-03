@@ -21,7 +21,7 @@
 namespace media {
 once_flag RecorderObserverWorker::mOnceFlag;
 
-RecorderObserverWorker::RecorderObserverWorker() : mRefCnt(0)
+RecorderObserverWorker::RecorderObserverWorker() : mRefCnt(0), mIsRunning(false)
 {
 }
 RecorderObserverWorker::~RecorderObserverWorker()
