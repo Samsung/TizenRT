@@ -23,10 +23,10 @@
 #include <memory>
 #include <mutex>
 #include <media/MediaPlayer.h>
-#include "MediaQueue.h"
+#include "MediaWorker.h"
 
 namespace media {
-class PlayerWorker
+class PlayerWorker : public MediaWorker
 {
 public:
 	PlayerWorker();
@@ -38,20 +38,12 @@ public:
 	void pausePlayer(std::shared_ptr<MediaPlayerImpl>);
 	player_result_t startWorker();
 	void stopWorker();
-	MediaQueue &getQueue();
 
 private:
 	int entry();
-	void increaseRef();
-	void decreaseRef();
 
 private:
-	int mRefCnt;
-	std::atomic<bool> mIsRunning;
-	std::thread mWorkerThread;
 	std::shared_ptr<MediaPlayerImpl> mCurPlayer;
-	MediaQueue mWorkerQueue; // worker queue
-	std::mutex mRefMtx;		 // reference cnt mutex
 };
 } // namespace media
 #endif

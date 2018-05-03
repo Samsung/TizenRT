@@ -26,7 +26,7 @@
 using namespace std;
 
 namespace media {
-PlayerWorker::PlayerWorker() : mRefCnt{0}
+PlayerWorker::PlayerWorker()
 {
 }
 
@@ -168,20 +168,5 @@ void PlayerWorker::pausePlayer(std::shared_ptr<MediaPlayerImpl> mp)
 
 	mCurPlayer = nullptr;
 	mp->mCurState = PLAYER_STATE_PAUSED;
-}
-
-MediaQueue &PlayerWorker::getQueue()
-{
-	return mWorkerQueue;
-}
-
-void PlayerWorker::increaseRef()
-{
-	mRefCnt++;
-}
-
-void PlayerWorker::decreaseRef()
-{
-	mRefCnt--;
 }
 } // namespace media

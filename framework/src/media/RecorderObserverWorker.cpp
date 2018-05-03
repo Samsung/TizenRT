@@ -19,9 +19,8 @@
 #include "RecorderObserverWorker.h"
 
 namespace media {
-once_flag RecorderObserverWorker::mOnceFlag;
 
-RecorderObserverWorker::RecorderObserverWorker() : mRefCnt(0)
+RecorderObserverWorker::RecorderObserverWorker()
 {
 }
 RecorderObserverWorker::~RecorderObserverWorker()
@@ -39,7 +38,7 @@ int RecorderObserverWorker::entry()
 	medvdbg("RecorderObserverWorker::entry()\n");
 
 	while (mIsRunning) {
-		std::function<void()> run = mObserverQueue.deQueue();
+		std::function<void()> run = mWorkerQueue.deQueue();
 		medvdbg("RecorderObserverWorker::entry() - pop Queue\n");
 		if (run != nullptr) {
 			run();
@@ -74,29 +73,12 @@ void RecorderObserverWorker::stopWorker()
 
 		if (mWorkerThread.joinable()) {
 			std::atomic<bool> &refBool = mIsRunning;
-			mObserverQueue.enQueue([&refBool]() {
+			mWorkerQueue.enQueue([&refBool]() {
 				refBool = false;
 			});
 			mWorkerThread.join();
 			medvdbg("RecorderObserverWorker::stopWorker() - mWorkerthread exited\n");
 		}
-	}
-}
-
-MediaQueue& RecorderObserverWorker::getQueue()
-{
-	return mObserverQueue;
-}
-
-void RecorderObserverWorker::increaseRef()
-{
-	mRefCnt++;
-}
-
-void RecorderObserverWorker::decreaseRef()
-{
-	if (mRefCnt > 0) {
-		mRefCnt--;
 	}
 }
 } // namespace media

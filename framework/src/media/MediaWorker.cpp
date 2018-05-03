@@ -16,34 +16,31 @@
  *
  ******************************************************************/
 
-#ifndef __MEDIA_PLAYEROBSERVERWORKER_HPP
-#define __MEDIA_PLAYEROBSERVERWORKER_HPP
-
-#include <thread>
-#include <memory>
-#include <mutex>
-#include <media/MediaPlayer.h>
 #include "MediaWorker.h"
 
 namespace media {
-typedef enum player_observer_command_e {
-	PLAYER_OBSERVER_COMMAND_STARTED,
-	PLAYER_OBSERVER_COMMAND_FINISHIED,
-	PLAYER_OBSERVER_COMMAND_ERROR
-} player_observer_command_t;
 
-class PlayerObserverWorker : public MediaWorker
+MediaWorker::MediaWorker() : mRefCnt(0)
 {
-public:
-	static PlayerObserverWorker& getWorker();
-	player_result_t startWorker();
-	void stopWorker();
+}
+MediaWorker::~MediaWorker()
+{
+}
 
-private:
-	PlayerObserverWorker();
-	~PlayerObserverWorker();
-	int entry();
-};
+MediaQueue& MediaWorker::getQueue()
+{
+	return mWorkerQueue;
+}
+
+void MediaWorker::increaseRef()
+{
+	mRefCnt++;
+}
+
+void MediaWorker::decreaseRef()
+{
+	if (mRefCnt > 0) {
+		mRefCnt--;
+	}
+}
 } // namespace media
-
-#endif
