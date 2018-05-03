@@ -55,7 +55,7 @@ if DEBUG_ST_THINGS
 
 config DEBUG_ST_THINGS_ERROR
 	bool "ST Things Error Output"
-	default n
+	default y
 	depends on DEBUG_ERROR
 	---help---
 		Enable ST Things error debug SYSLOG output.
