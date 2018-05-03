@@ -51,7 +51,7 @@ typedef struct st_resource_type_s {
 	int prop_cnt;
 	struct things_attribute_info_s *prop[MAX_PROPERTY_CNT];
 } st_resource_type_s;
-
+#ifdef CONFIG_ST_THINGS_COLLECTION
 typedef struct col_resource_s {
 	char uri[MAX_URI_LENGTH_OCF];
 	char *interface_types[MAX_IT_CNT];
@@ -64,7 +64,7 @@ typedef struct col_resource_s {
 	int link_cnt;
 	int policy;
 } col_resource_s;
-
+#endif
 typedef struct st_device_s {
 	int no;
 	char *type;
@@ -79,8 +79,9 @@ typedef struct st_device_s {
 	char *ver_fw;	// mnfv
 	char *device_id;	// mnfv
 	char *vender_id;	// mnfv
-
+#ifdef CONFIG_ST_THINGS_COLLECTION
 	col_resource_s *collection;
+#endif
 	things_resource_info_s *single;
 
 	int capa_cnt;
@@ -126,7 +127,7 @@ int dm_load_legacy_cloud_data(es_cloud_signup_s **cl_data);
 bool dm_is_rsc_published(void);
 
 int dm_del_things_cloud_data(void);
-bool dm_is_there_things_cloud(void);
+bool dm_is_es_complete(void);
 
 bool dm_get_easy_setup_use_artik_crt(void);
 char *dm_get_mnid(void);

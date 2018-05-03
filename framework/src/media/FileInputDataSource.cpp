@@ -31,7 +31,9 @@ FileInputDataSource::FileInputDataSource()
 }
 
 FileInputDataSource::FileInputDataSource(const std::string& dataPath)
-	: mDataPath(dataPath)
+	: InputDataSource()
+	, mDataPath(dataPath)
+	, mFp(nullptr)
 {
 }
 
@@ -52,6 +54,11 @@ FileInputDataSource::~FileInputDataSource()
 
 bool FileInputDataSource::open()
 {
+	if (mFp) {
+		meddbg("FileInputDataSource::open : file is already open\n");
+		return false;
+	}
+
 	setAudioType(utils::getAudioTypeFromPath(mDataPath));
 
 	switch (getAudioType()) {
@@ -76,10 +83,14 @@ bool FileInputDataSource::open()
 	return isPrepare();
 }
 
-void FileInputDataSource::close()
+bool FileInputDataSource::close()
 {
-	fclose(mFp);
-	mFp = nullptr;
+	if (mFp && fclose(mFp) != EOF) {
+		mFp = nullptr;
+		return true;
+	}
+
+	return false;
 }
 
 bool FileInputDataSource::isPrepare()
@@ -89,6 +100,16 @@ bool FileInputDataSource::isPrepare()
 
 size_t FileInputDataSource::read(unsigned char* buf, size_t size)
 {
+	return fread(buf, sizeof(unsigned char), size, mFp);
+}
+
+int FileInputDataSource::readAt(long offset, int origin, unsigned char* buf, size_t size)
+{
+	if (fseek(mFp, offset, origin) != 0) {
+		meddbg("FileInputDataSource::readAt : fail to seek\n");
+		return -1;
+	}
+
 	return fread(buf, sizeof(unsigned char), size, mFp);
 }
 

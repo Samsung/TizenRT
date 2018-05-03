@@ -64,7 +64,9 @@
 
 static void sq(double *hi, double *lo, double x)
 {
-	double xh, xl, xc;
+	double xh;
+	double xl;
+	double xc;
 
 	xc = (double)x * SPLIT;
 	xh = x - xc + xc;
@@ -87,8 +89,13 @@ double hypot(double x, double y)
 	}, uy = {
 		y
 	}, ut;
-	int ex, ey;
-	double hx, lx, hy, ly, z;
+	int ex;
+	int ey;
+	double hx;
+	double lx;
+	double hy;
+	double ly;
+	double z;
 
 	/* arrange |x| >= |y| */
 	ux.i &= -1ULL >> 1;

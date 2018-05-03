@@ -58,6 +58,13 @@ config MEDIA_RECORDER
 	---help---
 		Enable media recoreder functions
 
+config AUDIO_RESAMPLER_BUFSIZE
+	int "Audio Resampler Buffer size"
+	default 4096
+	depends on AUDIO
+	---help---
+		Buffer size for resampler
+
 endif #MEDIA
 
 config AUDIO_CODEC

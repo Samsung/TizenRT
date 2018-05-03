@@ -36,7 +36,9 @@ typedef struct things_server_builder_s {
 	void (*set_device_info)(struct things_server_builder_s *, char *, char *);
 	void (*set_platform_info)(struct things_server_builder_s *, char *, char *, char *, char *, char *, char *, char *, char *);
 	struct things_resource_s *(*create_resource)(struct things_server_builder_s *, char *, char *, char *, int, int, int);
+#ifdef CONFIG_ST_THINGS_COLLECTION
 	struct things_resource_s *(*create_collection_resource)(struct things_server_builder_s *, char *, char *);
+#endif
 	struct things_resource_s *(*get_resource)(struct things_server_builder_s *, const char *);
 	void (*delete_resource)(struct things_server_builder_s *);
 

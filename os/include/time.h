@@ -252,7 +252,7 @@ int clock_getres(clockid_t clockid, FAR struct timespec *res);
  * implementation-defined era related only to the process invocation.
  * @details @b #include <time.h> \n
  * POSIX API (refer to : http://pubs.opengroup.org/onlinepubs/9699919799/)
- * @since TizenRT v2.0
+ * @since TizenRT v2.0 PRE
  */
 clock_t clock(void);
 /**

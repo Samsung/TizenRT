@@ -73,7 +73,7 @@ CSRCS += artik055_alc5658char.c
 endif
 
 ifeq ($(CONFIG_BOARD_CRASHDUMP),y)
-CSRCS += artik053_crashdump.c
+CSRCS += artik05x_crashdump.c
 endif
 
 ifeq ($(CONFIG_MTD_PROGMEM),y)

@@ -15,8 +15,7 @@
  * language governing permissions and limitations under the License.
  *
  ****************************************************************************/
-
-/*
+/****************************************************************************
  * Copyright (c) 2001-2004 Swedish Institute of Computer Science.
  * All rights reserved.
  *
@@ -46,7 +45,8 @@
  *
  * Author: Adam Dunkels <adam@sics.se>
  *
- */
+ ****************************************************************************/
+
 #include <tinyara/config.h>
 #include <netdb.h>
 #include <stdio.h>
@@ -74,6 +74,10 @@
 #define PING_SIZE(proto) (ICMP_HDR_SIZE + 32)
 #endif
 
+#ifndef CONFIG_NET_PING_CMD_ICOUNT
+#define CONFIG_NET_PING_CMD_ICOUNT 5
+#endif
+
 static int g_ping_recv_counter;
 static uint16_t g_ping_seq_num;
 
@@ -83,7 +87,7 @@ static void ping_usage(void)
 	return;
 }
 
-static int nu_ping_options(int argc, char **argv, int *count, int *size, char **staddr)
+static int ping_options(int argc, char **argv, int *count, int *size, char **staddr)
 {
 	FAR const char *fmt = fmtarginvalid;
 	bool badarg = false;
@@ -151,7 +155,7 @@ errout:
 	return ERROR;
 }
 
-static u16_t nu_standard_chksum(void *dataptr, u16_t len)
+static u16_t standard_chksum(void *dataptr, u16_t len)
 {
 	u32_t acc;
 	u16_t src;
@@ -187,7 +191,7 @@ static u16_t nu_standard_chksum(void *dataptr, u16_t len)
 	return htons((u16_t) acc);
 }
 
-static int nu_ping_recv(int family, int s, struct timespec *ping_time)
+static void ping_recv(int family, int s, struct timespec *ping_time)
 {
 	char buf[64];
 	char addr_str[64];
@@ -213,7 +217,7 @@ static int nu_ping_recv(int family, int s, struct timespec *ping_time)
 	/* allocate memory due to difference of size between ipv4/v6 socket structure */
 	from = malloc(fromlen);
 	if (from == NULL) {
-		printf("nu_ping_recv: fail to allocate memoru\n");
+		printf("nu_ping_recv: fail to allocate memory\n");
 		return ERROR;
 	}
 
@@ -297,7 +301,8 @@ static int nu_ping_recv(int family, int s, struct timespec *ping_time)
 
 			if ((iecho->id == PING_ID) && (iecho->seqno == htons(g_ping_seq_num))) {
 				/* do some ping result processing */
-				break;
+				PING_RESULT((ICMPH_TYPE(iecho) == ICMP_ER));
+				return;
 			} else {
 				printf("drop\n");
 			}
@@ -305,7 +310,6 @@ static int nu_ping_recv(int family, int s, struct timespec *ping_time)
 	}
 
 	free(from);
-
 	return OK;
 err_out:
 	if (from) {
@@ -316,7 +320,7 @@ err_out:
 	return ERROR;
 }
 
-static void nu_ping_prepare_echo(int family, struct icmp_echo_hdr *iecho, u16_t len)
+static void ping_prepare_echo(int family, struct icmp_echo_hdr *iecho, u16_t len)
 {
 	int icmp_hdrlen;
 	size_t i;
@@ -352,7 +356,7 @@ static void nu_ping_prepare_echo(int family, struct icmp_echo_hdr *iecho, u16_t 
 	}
 }
 
-static int nu_ping_send(int s, struct sockaddr *to, int size)
+static int ping_send(int s, struct sockaddr_in *to, int size)
 {
 	int ret;
 	size_t icmplen;
@@ -379,7 +383,7 @@ static int nu_ping_send(int s, struct sockaddr *to, int size)
 		return ERROR;
 	}
 
-	nu_ping_prepare_echo((int)to->sa_family, iecho, (u16_t)icmplen);
+	ping_prepare_echo((int)to->sa_family, iecho, (u16_t)icmplen);
 
 	ret = sendto(s, iecho, icmplen, 0, to, addrlen);
 	if (ret <= 0) {
@@ -391,7 +395,7 @@ static int nu_ping_send(int s, struct sockaddr *to, int size)
 	return 0;
 }
 
-static int nu_ping_process(int count, const char *taddr, int size)
+int ping_process(int count, const char *taddr, int size)
 {
 	int s = -1;
 	int ping_send_counter = 0;
@@ -457,9 +461,10 @@ static int nu_ping_process(int count, const char *taddr, int size)
 	}
 
 	while (1) {
-		if (nu_ping_send(s, to, size) == ERR_OK) {
-			clock_gettime(CLOCK_REALTIME, &ping_time);
-			nu_ping_recv((int)to->sa_family, s, &ping_time);
+		if (ping_send(s, to, size) == ERR_OK) {
+			// printf("ping : send %d\n", ping_send_counter);
+      clock_gettime(CLOCK_REALTIME, &ping_time);
+			ping_recv((int)to->sa_family, s, &ping_time);
 		} else {
 			printf("nu_ping_process: sendto error(%d)\n", errno);
 			break;
@@ -476,7 +481,9 @@ static int nu_ping_process(int count, const char *taddr, int size)
 	close(s);
 
 	printf("--- %s ping statistics ---\n", taddr);
-	printf("%d packets transmitted, %d received, %f\%% packet loss,\n", ping_send_counter, g_ping_recv_counter, (100.0f * (float)(ping_send_counter - g_ping_recv_counter)) / (float)ping_send_counter);
+	printf("%d packets transmitted, %d received, %f%% packet loss\n", ping_send_counter,
+		g_ping_recv_counter,
+		(100.0f * (float)(ping_send_counter - g_ping_recv_counter) / (float)ping_send_counter));
 
 	return OK;
 
@@ -494,15 +501,15 @@ int cmd_ping(int argc, char **argv)
 {
 	char *staddr;
 	int size = 0;
-	int count = 10;
+	int count = CONFIG_NET_PING_CMD_ICOUNT;
 
 	/* Get the ping options */
 
-	int ret = nu_ping_options(argc, argv, &count, &size, &staddr);
+	int ret = ping_options(argc, argv, &count, &size, &staddr);
 	if (ret < 0) {
 		return ERROR;
 	}
-	ret = nu_ping_process(count, staddr, size);
+	ret = ping_process(count, staddr, size);
 	if (ret < 0) {
 		return ERROR;
 	}

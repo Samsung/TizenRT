@@ -40,7 +40,7 @@ using namespace std;
 using namespace media;
 using namespace media::stream;
 
-class MediaRecorderTest : public MediaRecorderObserverInterface
+class MediaRecorderTest : public MediaRecorderObserverInterface, public enable_shared_from_this<MediaRecorderTest>
 {
 public:
 	void onRecordStarted(Id id)
@@ -66,8 +66,7 @@ public:
 				case APP_ON: {
 					std::cout << "SELECTED APP ON" << std::endl;
 					mr.create();
-					auto tClass = std::shared_ptr<MediaRecorderTest>{this};
-					mr.setObserver(tClass);
+					mr.setObserver(shared_from_this());
 					mr.setDataSource(unique_ptr<FileOutputDataSource>(new FileOutputDataSource(2, 16000, PCM_FORMAT_S16_LE, "/ramfs/record")));
 				}
 				break;
@@ -120,13 +119,7 @@ public:
 		int num_read;
 		unsigned int size;
 
-		pcm_config.channels = 2;
-		pcm_config.rate = 16000;
-		pcm_config.format = PCM_FORMAT_S16_LE;
-		pcm_config.period_size = 1024;
-		pcm_config.period_count = 2;
-
-		p_out = pcm_open(0, 0, PCM_OUT, &pcm_config);
+		p_out = pcm_open(0, 0, PCM_OUT, &pcmConfig);
 
 		if (pcm_get_file_descriptor(p_out) < 0) {
 			printf("pcm open fail\n%s\n", pcm_get_error(p_out));
@@ -137,6 +130,15 @@ public:
 		buffer = (char *)malloc(size);
 
 		fd = open("/ramfs/record", O_RDONLY);
+
+		if (fd < 0) {
+			printf("file open fail : %d\n", fd);
+			free(buffer);
+			buffer = NULL;
+			pcm_close(p_out);
+			p_out = NULL;
+			return;
+		}
 
 		printf("fd = %d\n", fd);
 
@@ -200,15 +202,21 @@ public:
 		return input;
 	}
 
-	MediaRecorderTest() {}
+	MediaRecorderTest() : p_out(nullptr), appRunning(false) 
+	{
+		pcmConfig.channels = 2;
+		pcmConfig.rate = 16000;
+		pcmConfig.format = PCM_FORMAT_S16_LE;
+		pcmConfig.period_size = 1024;
+		pcmConfig.period_count = 2;
+	}
 	~MediaRecorderTest() {}
 
 private:
+	struct pcm_config pcmConfig;
 	struct pcm *p_out;
-	struct pcm_config pcm_config;
-
-	MediaRecorder mr;
 	bool appRunning;
+	MediaRecorder mr;
 };
 
 extern "C"
@@ -217,8 +225,8 @@ extern "C"
 	{
 		up_cxxinitialize();
 
-		MediaRecorderTest mediaRecorderTest;
-		mediaRecorderTest.start();
+		auto mediaRecorderTest = make_shared<MediaRecorderTest>();
+		mediaRecorderTest->start();
 
 		return 0;
 	}

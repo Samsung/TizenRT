@@ -36,8 +36,6 @@
 
 
 #include "easy-setup/resource_handler.h"
-
-#include "utils/things_thread.h"
 #ifdef __ST_THINGS_RTOS__
 #include "utils/things_rtos_util.h"
 #endif
@@ -60,17 +58,17 @@ things_server_builder_s *g_builder = NULL;
 
 void *server_execute_loop(void *param)
 {
-	THINGS_LOG_D(THINGS_DEBUG, TAG, THINGS_FUNC_ENTRY);
+	THINGS_LOG_D(TAG, THINGS_FUNC_ENTRY);
 
 	while (!g_quit_flag) {
 		if (OCProcess() != OC_STACK_OK) {
-			THINGS_LOG_ERROR(THINGS_ERROR, TAG, "OCProcess Error");
+			THINGS_LOG_E(TAG, "OCProcess Error");
 			//   need to insert error handling logic from here
 		}
 		//   The proper time period for looping need to be decided..
 		usleep(10 * 1000);
 	}
-	THINGS_LOG_D(THINGS_DEBUG, TAG, THINGS_FUNC_EXIT);
+	THINGS_LOG_D(TAG, THINGS_FUNC_EXIT);
 
 	return NULL;
 }
@@ -78,7 +76,7 @@ void *server_execute_loop(void *param)
 void register_req_handler(struct things_server_builder_s *builder, request_handler_cb handler)
 {
 	if (handler == NULL || builder == NULL) {
-		THINGS_LOG_D_ERROR(THINGS_ERROR, TAG, "Invalid Param");
+		THINGS_LOG_E(TAG, "Invalid Param");
 		return;
 	}
 	builder->handler = handler;
@@ -91,7 +89,7 @@ struct things_resource_s *create_resource(struct things_server_builder_s *builde
 	uint8_t rsc_properties = OC_DISCOVERABLE;
 
 	if (builder->handler == NULL) {
-		THINGS_LOG_ERROR(THINGS_ERROR, TAG, "Handler for serverbuilder is not registered");
+		THINGS_LOG_E(TAG, "Handler for serverbuilder is not registered");
 		return res;
 	}
 
@@ -107,7 +105,7 @@ struct things_resource_s *create_resource(struct things_server_builder_s *builde
 #ifdef __SECURED__
 		rsc_properties |= OC_SECURE;
 #else
-		THINGS_LOG(THINGS_DEBUG, TAG, "Stack is in UNSECURED Mode");
+		THINGS_LOG_D(TAG, "Stack is in UNSECURED Mode");
 #endif
 	}
 
@@ -120,14 +118,14 @@ struct things_resource_s *create_resource(struct things_server_builder_s *builde
 										 rsc_properties);
 
 	if (ret != OC_STACK_OK) {
-		THINGS_LOG_V_ERROR(THINGS_ERROR, TAG, "Resource Creation Failed - ret = %d, %s", ret, uri);
+		THINGS_LOG_V(TAG, "Resource Creation Failed - ret = %d, %s", ret, uri);
 		return NULL;
 	}
 
 	res = things_create_resource_inst(NULL, hd, NULL, NULL);
 
 	if (NULL == res) {
-		THINGS_LOG_ERROR(THINGS_ERROR, TAG, "things_create_resource_inst is failed");
+		THINGS_LOG_E(TAG, "things_create_resource_inst is failed");
 		return res;
 	}
 
@@ -135,14 +133,14 @@ struct things_resource_s *create_resource(struct things_server_builder_s *builde
 
 	builder->gres_arr[builder->res_num++] = res;
 
-	THINGS_LOG_D(THINGS_DEBUG, TAG, "Created hd [%x], prop [0x%X] uri : %s", res->resource_handle, rsc_properties, res->uri);
-	THINGS_LOG_D(THINGS_DEBUG, TAG, "DISCOVERABLE : %s", (isDiscoverable == 1 ? "YES" : "NO"));
-	THINGS_LOG_D(THINGS_DEBUG, TAG, "OBSERABLE : %s", (isObserable == 1 ? "YES" : "NO"));
-	THINGS_LOG_D(THINGS_DEBUG, TAG, "SECURE : %s", (isSecure == 1 ? "YES" : "NO"));
+	THINGS_LOG_D(TAG, "Created hd [%x], prop [0x%X] uri : %s", res->resource_handle, rsc_properties, res->uri);
+	THINGS_LOG_D(TAG, "DISCOVERABLE : %s", (isDiscoverable == 1 ? "YES" : "NO"));
+	THINGS_LOG_D(TAG, "OBSERABLE : %s", (isObserable == 1 ? "YES" : "NO"));
+	THINGS_LOG_D(TAG, "SECURE : %s", (isSecure == 1 ? "YES" : "NO"));
 
 	return res;
 }
-
+#ifdef CONFIG_ST_THINGS_COLLECTION
 struct things_resource_s *create_collection_resource(struct things_server_builder_s *builder, char *uri, char *type)
 {
 	things_resource_s *res = NULL;
@@ -150,7 +148,7 @@ struct things_resource_s *create_collection_resource(struct things_server_builde
 	uint8_t rsc_properties = OC_DISCOVERABLE | OC_OBSERVABLE;
 
 	if (builder->handler == NULL) {
-		THINGS_LOG_ERROR(THINGS_ERROR, TAG, "Handler for serverbuilder is not registered");
+		THINGS_LOG_E(TAG, "Handler for serverbuilder is not registered");
 		return res;
 	}
 #ifdef __SECURED__
@@ -168,17 +166,17 @@ struct things_resource_s *create_collection_resource(struct things_server_builde
 										 rsc_properties);
 
 	if (ret != OC_STACK_OK) {
-		THINGS_LOG_V_ERROR(THINGS_ERROR, TAG, "Resource Creation Failed - ret = %d, %s", ret, uri);
+		THINGS_LOG_V(TAG, "Resource Creation Failed - ret = %d, %s", ret, uri);
 		return NULL;
 	}
 	
-	OCBindResourceTypeToResource( hd, OIC_RTYPE_COLLECTION_WK );
-	OCBindResourceInterfaceToResource( hd, OIC_INTERFACE_BATCH);
+	OCBindResourceTypeToResource(hd, OIC_RTYPE_COLLECTION_WK);
+	OCBindResourceInterfaceToResource(hd, OIC_INTERFACE_BATCH);
 
 	res = things_create_resource_inst(NULL, hd, NULL, NULL);
 
 	if (NULL == res) {
-		THINGS_LOG_ERROR(THINGS_ERROR, TAG, "things_create_resource_inst is failed");
+		THINGS_LOG_E(TAG, "things_create_resource_inst is failed");
 		return res;
 	}
 
@@ -186,17 +184,18 @@ struct things_resource_s *create_collection_resource(struct things_server_builde
 
 	builder->gres_arr[builder->res_num++] = res;
 
-	THINGS_LOG_D(THINGS_INFO, TAG, "Created hd [%x], prop [0x%X] uri : %s", res->resource_handle, rsc_properties, uri);
+	THINGS_LOG_V(TAG, "Created hd [%x], prop [0x%X] uri : %s", res->resource_handle, rsc_properties, uri);
 
 	return res;
 }
+#endif
 
 void delete_resource(struct things_server_builder_s *builder)
 {
 	for (size_t iter = 0; iter < builder->res_num; iter++) {
 		OCStackResult ret = OCDeleteResource((OCResourceHandle)(builder->gres_arr[iter]->resource_handle));
 		if (ret != OC_STACK_OK) {
-			THINGS_LOG_ERROR(THINGS_ERROR, TAG, "Failed to delete the resource");
+			THINGS_LOG_E(TAG, "Failed to delete the resource");
 		}
 	}
 }
@@ -230,19 +229,19 @@ int add_resource_type(things_resource_s *resource, char *type)
 void things_bind(struct things_resource_s *res, struct things_resource_s *bind)
 {
 	if (res == NULL || bind == NULL) {
-		THINGS_LOG_ERROR(THINGS_ERROR, TAG, "Invalid Resource");
+		THINGS_LOG_E(TAG, "Invalid Resource");
 		return;
 	}
 
 	if (res->resource_handle == bind->resource_handle) {
-		THINGS_LOG_D(THINGS_DEBUG, TAG, "It's identical resource");
+		THINGS_LOG_D(TAG, "It's identical resource");
 		return;
 	}
 
 	OCStackResult ret = OCBindResource((OCResourceHandle)(res->resource_handle),
 									   (OCResourceHandle)(bind->resource_handle));
 	if (ret != OC_STACK_OK) {
-		THINGS_LOG_V_ERROR(THINGS_ERROR, TAG, "bind Failed ");
+		THINGS_LOG_V(TAG, "bind Failed ");
 	}
 }
 
@@ -263,7 +262,7 @@ struct things_resource_s *get_resource(things_server_builder_s *builder, const c
 		const char *rURI = OCGetResourceUri((OCResourceHandle)(builder->gres_arr[iter]->resource_handle));
 
 		if (things_string_compare(rURI, uri) == 0) {
-			THINGS_LOG_D(THINGS_DEBUG, TAG, "URI Compare : %s , %s", uri, rURI);
+			THINGS_LOG_D(TAG, "URI Compare : %s , %s", uri, rURI);
 			ret = builder->gres_arr[iter];
 			break;
 		}
@@ -275,11 +274,11 @@ void init_builder(struct things_server_builder_s *builder, request_handler_cb cb
 {
 	OCTransportAdapter m_transport = (OC_ADAPTER_IP | OC_ADAPTER_TCP);
 	if (OC_STACK_OK != OCInit2(OC_CLIENT_SERVER, OC_IP_USE_V4, OC_IP_USE_V4, m_transport)) {
-		THINGS_LOG_ERROR(THINGS_ERROR, TAG, "RESOURCE SERVER START FAILED");
+		THINGS_LOG_E(TAG, "RESOURCE SERVER START FAILED");
 		return;
 	}
 
-	THINGS_LOG(THINGS_INFO, TAG, "Resource Server IS NOW STARTING...");
+	THINGS_LOG_V(TAG, "Resource Server IS NOW STARTING...");
 
 	g_quit_flag = 0;
 
@@ -312,16 +311,16 @@ void deinit_builder(things_server_builder_s *builder)
 	}
 
 	if (OCStop() != OC_STACK_OK) {
-		THINGS_LOG_ERROR(THINGS_ERROR, TAG, "OCStack process error");
+		THINGS_LOG_E(TAG, "OCStack process error");
 	}
 }
 
 void set_device_info(things_server_builder_s *builder, char *device_name, char *device_type)
 {
-	THINGS_LOG_D(THINGS_DEBUG, TAG, THINGS_FUNC_ENTRY);
+	THINGS_LOG_D(TAG, THINGS_FUNC_ENTRY);
 
-	THINGS_LOG_D(THINGS_DEBUG, TAG, "[/oic/d] name :%s", device_name);
-	THINGS_LOG_D(THINGS_DEBUG, TAG, "[/oic/d] type :%s", device_type);
+	THINGS_LOG_D(TAG, "[/oic/d] name :%s", device_name);
+	THINGS_LOG_D(TAG, "[/oic/d] type :%s", device_type);
 
 	OCDeviceInfo device_info;
 	device_info.deviceName = NULL;
@@ -343,25 +342,25 @@ void set_device_info(things_server_builder_s *builder, char *device_name, char *
 	OCFreeOCStringLL(device_info.dataModelVersions);
 	OCFreeOCStringLL(device_info.types);
 
-	THINGS_LOG_D(THINGS_DEBUG, TAG, THINGS_FUNC_EXIT);
+	THINGS_LOG_D(TAG, THINGS_FUNC_EXIT);
 }
 
 void set_platform_info(things_server_builder_s *builder, char *model_num, char *pver, char *osver, char *hwver, char *fwver, char *venderid, char *mnmn, char *mn_url)
 {
-	THINGS_LOG_D(THINGS_DEBUG, TAG, THINGS_FUNC_ENTRY);
+	THINGS_LOG_D(TAG, THINGS_FUNC_ENTRY);
 
 	if (model_num == NULL || strlen(model_num) < 1) {
-		THINGS_LOG_D_ERROR(THINGS_ERROR, TAG, "Invalid input for registering platform Info");
+		THINGS_LOG_E(TAG, "Invalid input for registering platform Info");
 		return;
 	}
 
-	THINGS_LOG_D(THINGS_DEBUG, TAG, "[/oic/p] Manufacturer :%s", mnmn);
-	THINGS_LOG_D(THINGS_DEBUG, TAG, "[/oic/p] Model Name :%s", model_num);
-	THINGS_LOG_D(THINGS_DEBUG, TAG, "[/oic/p] Ver. Plaform :%s", pver);
-	THINGS_LOG_D(THINGS_DEBUG, TAG, "[/oic/p] Ver. OS :%s", osver);
-	THINGS_LOG_D(THINGS_DEBUG, TAG, "[/oic/p] Ver. HW :%s", hwver);
-	THINGS_LOG_D(THINGS_DEBUG, TAG, "[/oic/p] Ver. FW :%s", fwver);
-	THINGS_LOG_D(THINGS_DEBUG, TAG, "[/oic/p] Ver. vid :%s", venderid);
+	THINGS_LOG_D(TAG, "[/oic/p] Manufacturer :%s", mnmn);
+	THINGS_LOG_D(TAG, "[/oic/p] Model Name :%s", model_num);
+	THINGS_LOG_D(TAG, "[/oic/p] Ver. Plaform :%s", pver);
+	THINGS_LOG_D(TAG, "[/oic/p] Ver. OS :%s", osver);
+	THINGS_LOG_D(TAG, "[/oic/p] Ver. HW :%s", hwver);
+	THINGS_LOG_D(TAG, "[/oic/p] Ver. FW :%s", fwver);
+	THINGS_LOG_D(TAG, "[/oic/p] Ver. vid :%s", venderid);
 
 	OCPlatformInfo platform_info;
 
@@ -382,7 +381,7 @@ void set_platform_info(things_server_builder_s *builder, char *model_num, char *
 
 	OCSetPlatformInfo(platform_info);
 
-	THINGS_LOG_D(THINGS_DEBUG, TAG, THINGS_FUNC_EXIT);
+	THINGS_LOG_D(TAG, THINGS_FUNC_EXIT);
 }
 
 things_server_builder_s *get_builder_instance()
@@ -396,7 +395,9 @@ things_server_builder_s *get_builder_instance()
 			g_builder->set_platform_info = &set_platform_info;
 			g_builder->create_resource = &create_resource;
 			// g_builder->CreateActiveResource = &CreateActiveResource;
+#ifdef CONFIG_ST_THINGS_COLLECTION
 			g_builder->create_collection_resource = &create_collection_resource;
+#endif
 			g_builder->get_resource = &get_resource;
 			g_builder->delete_resource = &delete_resource;
 			g_builder->add_interface_type = &add_interface_type;
@@ -411,11 +412,11 @@ things_server_builder_s *get_builder_instance()
 
 			return g_builder;
 		} else {
-			THINGS_LOG_ERROR(THINGS_ERROR, TAG, "Not enough Memory for Builder Instance");
+			THINGS_LOG_E(TAG, "Not enough Memory for Builder Instance");
 			return NULL;
 		}
 	} else {
-		THINGS_LOG_D(THINGS_DEBUG, TAG, "Builder Instance Already Created");
+		THINGS_LOG_D(TAG, "Builder Instance Already Created");
 		return g_builder;
 	}
 }

@@ -1,3 +1,21 @@
+/* ****************************************************************
+ *
+ * Copyright 2018 Samsung Electronics All Rights Reserved.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ *
+ ******************************************************************/
+
 #ifndef __MEDIA_MEDIAPLAYERIMPL_H
 #define __MEDIA_MEDIAPLAYERIMPL_H
 
@@ -12,6 +30,24 @@
 #include "PlayerObserverWorker.h"
 
 namespace media {
+/**
+ * @brief current state of MediaPlayer.
+ * @details @b #include <media/MediaPlayer.h>
+ * @since TizenRT v2.0 PRE
+ */
+typedef enum player_state_e {
+	/** MediaPlayer object was created */
+	PLAYER_STATE_NONE,
+	/** MediaPlayer worker object was created */
+	PLAYER_STATE_IDLE,
+	/** MediaPlayer ready to play */
+	PLAYER_STATE_READY,
+	/** MediaPlayer do playing */
+	PLAYER_STATE_PLAYING,
+	/** MediaPlayer pause to play */
+	PLAYER_STATE_PAUSED
+} player_state_t;
+
 class MediaPlayerImpl : public std::enable_shared_from_this<MediaPlayerImpl>
 {
 public:
@@ -29,7 +65,7 @@ public:
 	int getVolume();
 	player_result_t setVolume(int);
 
-	void setDataSource(std::unique_ptr<stream::InputDataSource>);
+	player_result_t setDataSource(std::unique_ptr<stream::InputDataSource>);
 	void setObserver(std::shared_ptr<MediaPlayerObserverInterface>);
 
 	player_state_t getState();
@@ -41,15 +77,13 @@ public:
 	int playback(int size);
 
 public:
-	player_state_t mCurState;
+	std::atomic<player_state_t> mCurState;
 	unsigned char* mBuffer;
-	unsigned int mBufSize;
-	static int mRefCnt;
+	int mBufSize;
 	std::mutex mCmdMtx;
 	std::condition_variable mSyncCv;
-	int mCurVolume;
 	std::shared_ptr<MediaPlayerObserverInterface> mPlayerObserver;
-	std::shared_ptr<stream::InputDataSource> mInputDataSource;
+	std::unique_ptr<stream::InputDataSource> mInputDataSource;
 	int mId;
 };
 } // namespace media

@@ -57,12 +57,12 @@ static pthread_t h_thread_things_wifi_join = NULL;
 #ifdef CONFIG_NETUTILS_NTPCLIENT
 static void ntp_link_error(void)
 {
-	THINGS_LOG_D(THINGS_DEBUG, TAG, "ntp_link_error() callback is called");
+	THINGS_LOG_D(TAG, "ntp_link_error() callback is called");
 }
 
 static void sync_time_from_ntp(int guarantee_secs)
 {
-	THINGS_LOG_D(THINGS_INFO, TAG, "T%d --> %s", getpid(), __FUNCTION__);
+	THINGS_LOG_V(TAG, "T%d --> %s", getpid(), __FUNCTION__);
 
 	if (ntpc_get_status() != NTP_RUNNING) {
 		struct timespec pre_tp;
@@ -74,9 +74,9 @@ static void sync_time_from_ntp(int guarantee_secs)
 		clock_settime(CLOCK_REALTIME, &init_tp);
 
 		if (ntpc_start(NULL, 0, 0, ntp_link_error) < 0) {
-			THINGS_LOG_ERROR(THINGS_ERROR, TAG, "ntpc_start() failed");
+			THINGS_LOG_E(TAG, "ntpc_start() failed");
 		} else {
-			THINGS_LOG(THINGS_INFO, TAG, "ntpc_start() OK");
+			THINGS_LOG_V(TAG, "ntpc_start() OK");
 			int time_sync = 0;
 
 			while (1) {
@@ -91,14 +91,14 @@ static void sync_time_from_ntp(int guarantee_secs)
 				usleep(100000);
 			}
 			if (time_sync) {
-				THINGS_LOG(THINGS_INFO, TAG, "ntpc_time sync done");
+				THINGS_LOG_V(TAG, "ntpc_time sync done");
 			} else {
-				THINGS_LOG(THINGS_ERROR, TAG, "ntpc_time sync fail");
+				THINGS_LOG_E(TAG, "ntpc_time sync fail");
 				clock_settime(CLOCK_REALTIME, &pre_tp);
 			}
 		}
 	} else {
-		THINGS_LOG(THINGS_INFO, TAG, "ntpc already running");
+		THINGS_LOG_V(TAG, "ntpc already running");
 	}
 }
 #endif
@@ -108,9 +108,9 @@ wifi_manager_ap_config_s *things_network_get_homeap_config(void)
 	wifi_manager_result_e res = wifi_manager_get_config(&g_homeap_info);
 
 	if (res != WIFI_MANAGER_SUCCESS) {
-		THINGS_LOG_V(THINGS_ERROR, TAG, "Get AP configuration failed [error code : %d]", res);
+		THINGS_LOG_E(TAG, "Get AP configuration failed [error code : %d]", res);
 	} else {
-		THINGS_LOG_D(THINGS_DEBUG, TAG, "[WIFI] Saved SSID : %s", g_homeap_info.ssid);
+		THINGS_LOG_D(TAG, "[WIFI] Saved SSID : %s", g_homeap_info.ssid);
 	}
 	return &g_homeap_info;
 }
@@ -120,7 +120,7 @@ bool things_network_connect_home_ap(void)
 	wifi_manager_ap_config_s *connect_config = things_network_get_homeap_config();
 	
 	if (connect_config != NULL && connect_config->ssid != NULL) {
-		THINGS_LOG_V(THINGS_INFO, TAG, "Try_connect_home_ap [ssid : %s]", connect_config->ssid);
+		THINGS_LOG_V(TAG, "Try_connect_home_ap [ssid : %s]", connect_config->ssid);
 	}
 
 	wifi_manager_result_e result = WIFI_MANAGER_SUCCESS;
@@ -132,12 +132,12 @@ bool things_network_connect_home_ap(void)
 		if (result == WIFI_MANAGER_SUCCESS) {
 			break;
 		} else {
-			THINGS_LOG_V(THINGS_ERROR, TAG, "Failed to connect WiFi [Error Code : %d, Retry count : %d]", result, retry_count);
+			THINGS_LOG_E(TAG, "Failed to connect WiFi [Error Code : %d, Retry count : %d]", result, retry_count);
 		}
 	}
 
 	if (retry_count == 3) {
-		THINGS_LOG_ERROR(THINGS_ERROR, TAG, "Failed to connect WiFi 3 times");
+		THINGS_LOG_E(TAG, "Failed to connect WiFi 3 times");
 		return false;
 	}
 
@@ -154,11 +154,11 @@ bool things_network_turn_on_soft_ap()
 	if (info.mode != SOFTAP_MODE) {
 		wifi_manager_softap_config_s *ap_config = dm_get_softap_wifi_config();
 		if (wifi_manager_set_mode(SOFTAP_MODE, ap_config) != WIFI_MANAGER_SUCCESS) {
-			THINGS_LOG_ERROR(THINGS_ERROR, TAG, "Failed to change to SOFTAP mode");
+			THINGS_LOG_E(TAG, "Failed to change to SOFTAP mode");
 			return false;
 		}
 	}
-	THINGS_LOG(THINGS_INFO, TAG, "In SOFTAP mode");
+	THINGS_LOG_V(TAG, "In SOFTAP mode");
 	return true;
 }
 
@@ -170,7 +170,7 @@ bool things_handle_stop_soft_ap(wifi_manager_ap_config_s *connect_config)
 
 	if (info.mode == SOFTAP_MODE) {
 		if (wifi_manager_set_mode(STA_MODE, NULL) != WIFI_MANAGER_SUCCESS) {
-			THINGS_LOG_ERROR(THINGS_ERROR, TAG, "Failed to change to STA mode)");
+			THINGS_LOG_E(TAG, "Failed to change to STA mode)");
 			return false;
 		}
 		usleep(100000);
@@ -184,12 +184,12 @@ bool things_handle_stop_soft_ap(wifi_manager_ap_config_s *connect_config)
 		if (result == WIFI_MANAGER_SUCCESS) {
 			break;
 		} else {
-			THINGS_LOG_ERROR(THINGS_ERROR, TAG, "Failed to connect WiFi");
+			THINGS_LOG_E(TAG, "Failed to connect WiFi");
 		}
 	}
 
 	if (retry_count == 3) {
-		THINGS_LOG_ERROR(THINGS_ERROR, TAG, "Failed to connect WiFi 3 times");
+		THINGS_LOG_E(TAG, "Failed to connect WiFi 3 times");
 		return false;
 	}
 
@@ -198,10 +198,10 @@ bool things_handle_stop_soft_ap(wifi_manager_ap_config_s *connect_config)
 
 int things_set_ap_connection(access_point_info_s *p_info)
 {
-	THINGS_LOG_D(THINGS_DEBUG, TAG, "T%d --> %s", getpid(), __FUNCTION__);
+	THINGS_LOG_D(TAG, "T%d --> %s", getpid(), __FUNCTION__);
 
 	if (p_info == NULL) {
-		THINGS_LOG_ERROR(THINGS_ERROR, TAG, "Invalid params");
+		THINGS_LOG_E(TAG, "Invalid params");
 		return -1;
 	}
 
@@ -213,7 +213,7 @@ int things_set_ap_connection(access_point_info_s *p_info)
 
 	connect_config.passphrase_length = strlen(connect_config.passphrase);
 
-	THINGS_LOG_V(THINGS_INFO, TAG, "[%s] ssid : %s", __FUNCTION__, connect_config.ssid);
+	THINGS_LOG_V(TAG, "[%s] ssid : %s", __FUNCTION__, connect_config.ssid);
 
 	// set auth type
 	if (strncmp(p_info->auth_type, "WEP", strlen("WEP")) == 0) {
@@ -239,10 +239,10 @@ int things_set_ap_connection(access_point_info_s *p_info)
 	wifi_manager_result_e res = wifi_manager_save_config(&connect_config);
 
 	if (res != WIFI_MANAGER_SUCCESS) {
-		THINGS_LOG_V(THINGS_ERROR, TAG, "Failed to save AP configuration : [%d]", res);
+		THINGS_LOG_E(TAG, "Failed to save AP configuration : [%d]", res);
 		return -1;
 	} else {
-		THINGS_LOG_V(THINGS_INFO, TAG, "Success to save AP configuration");
+		THINGS_LOG_V(TAG, "Success to save AP configuration");
 	}
 
 	if (!things_handle_stop_soft_ap(&connect_config)) {
@@ -262,7 +262,7 @@ static void *__attribute__((optimize("O0"))) t_things_wifi_join_loop(void *args)
 #ifdef CONFIG_NETUTILS_NTPCLIENT
 	sync_time_from_ntp(10);
 #else
-	THINGS_LOG_D(THINGS_INFO, TAG, "CONFIG_NETUTILS_NTPCLIENT is not set");
+	THINGS_LOG_V(TAG, "CONFIG_NETUTILS_NTPCLIENT is not set");
 #endif
 
 	wifi_manager_info_s wifi_info;
@@ -276,11 +276,11 @@ static void *__attribute__((optimize("O0"))) t_things_wifi_join_loop(void *args)
 void things_wifi_sta_connected(wifi_manager_result_e res)
 {
 	if (res == WIFI_MANAGER_FAIL) {
-		THINGS_LOG_ERROR(THINGS_ERROR, TAG, "Failed to connect to the AP");
+		THINGS_LOG_E(TAG, "Failed to connect to the AP");
 		return;
 	}
 
-	THINGS_LOG_D(THINGS_INFO, TAG, "T%d --> %s", getpid(), __FUNCTION__);
+	THINGS_LOG_V(TAG, "T%d --> %s", getpid(), __FUNCTION__);
 
 	if (things_is_things_module_inited() == 1) {
 		pthread_create_rtos(&h_thread_things_wifi_join, NULL, (pthread_func_type) t_things_wifi_join_loop, NULL, THINGS_STACK_WIFI_JOIN_THREAD);
@@ -289,24 +289,24 @@ void things_wifi_sta_connected(wifi_manager_result_e res)
 
 void things_wifi_sta_disconnected(void)
 {
-	THINGS_LOG_D(THINGS_INFO, TAG, "T%d --> %s", getpid(), __FUNCTION__);
+	THINGS_LOG_V(TAG, "T%d --> %s", getpid(), __FUNCTION__);
 	things_wifi_changed_call_func(0, NULL, NULL);
 }
 
 void things_wifi_soft_ap_sta_joined(void)
 {
-	THINGS_LOG_D(THINGS_INFO, TAG, "T%d --> %s", getpid(), __FUNCTION__);
+	THINGS_LOG_V(TAG, "T%d --> %s", getpid(), __FUNCTION__);
 
 }
 
 void things_wifi_soft_ap_sta_left(void)
 {
-	THINGS_LOG_D(THINGS_INFO, TAG, "T%d --> %s", getpid(), __FUNCTION__);
+	THINGS_LOG_V(TAG, "T%d --> %s", getpid(), __FUNCTION__);
 }
 
 void things_wifi_scan_done(wifi_manager_scan_info_s **scan_result, int res)
 {
-	THINGS_LOG_D(THINGS_INFO, TAG, "T%d --> %s", getpid(), __FUNCTION__);
+	THINGS_LOG_V(TAG, "T%d --> %s", getpid(), __FUNCTION__);
 	/* Make sure you copy the scan results onto a local data structure.
 	 * It will be deleted soon eventually as you exit this function.
 	 */
@@ -324,7 +324,7 @@ static const wifi_manager_cb_s wifi_callbacks = {
 int things_network_initialize(void)
 {
 	if (wifi_manager_init(&wifi_callbacks) != WIFI_MANAGER_SUCCESS) {
-		THINGS_LOG_ERROR(THINGS_ERROR, TAG, "Failed to initialize WiFi manager");
+		THINGS_LOG_E(TAG, "Failed to initialize WiFi manager");
 		return 0;
 	}
 }
@@ -344,18 +344,18 @@ int things_wifi_state_changed_cb(int state, char *ap_name, char *ip_addr)
 {
 	bool Retry1Stop0 = false;
 
-	THINGS_LOG_D(THINGS_DEBUG, TAG, "state=%d, ap_name=%s, ip_name=%s", state, ap_name, ip_addr);
+	THINGS_LOG_D(TAG, "state=%d, ap_name=%s, ip_name=%s", state, ap_name, ip_addr);
 
 	// Process.
 	if (state == 1) {			// [Info] Always, when Soft-AP enabling, Call-Back State maintain disconnected. So, Soft-AP Check is not need.
-		THINGS_LOG_D(THINGS_DEBUG, TAG, "AP CONNECTED.");
+		THINGS_LOG_D(TAG, "AP CONNECTED.");
 		is_connected_target_ap = true;
 
 		set_ssid_in_wifi_resource(app_ap_name);
 		Retry1Stop0 = true;		// Re-Try with Last failed Access info.
 		esm_wifi_prov_check_cb(state, app_ap_name, app_ip_addr);
 	} else {
-		THINGS_LOG_D(THINGS_DEBUG, TAG, "AP DISCONNECTED.");
+		THINGS_LOG_D(TAG, "AP DISCONNECTED.");
 		is_connected_target_ap = false;
 		set_ssid_in_wifi_resource(NULL);
 	}
@@ -379,18 +379,18 @@ void things_adapter_state_cb(CATransportAdapter_t adapter, bool enabled)
 {
 	(void)adapter;
 
-	THINGS_LOG_D(THINGS_DEBUG, TAG, "IN");
+	THINGS_LOG_D(TAG, "IN");
 
 	if (enabled) {
-		THINGS_LOG_D(THINGS_DEBUG, TAG, "CONNECTED but Not Guarantee to be Communication-Available");
+		THINGS_LOG_D(TAG, "CONNECTED but Not Guarantee to be Communication-Available");
 	} else {
-		THINGS_LOG_D(THINGS_DEBUG, TAG, "AP DISCONNECTED.");
+		THINGS_LOG_D(TAG, "AP DISCONNECTED.");
 		is_connected_target_ap = false;
 		set_ssid_in_wifi_resource(NULL);
 		ci_retry_stop_by_wifi_cb(false);
 	}
 
-	THINGS_LOG_D(THINGS_DEBUG, TAG, "OUT");
+	THINGS_LOG_D(TAG, "OUT");
 }
 
 /*****************************************************************************
@@ -404,44 +404,44 @@ void things_adapter_state_cb(CATransportAdapter_t adapter, bool enabled)
  *****************************************************************************/
 void things_tcp_session_state_cb(const CAEndpoint_t *info, bool connected)
 {
-	THINGS_LOG_D(THINGS_DEBUG, TAG, "Enter.");
+	THINGS_LOG_D(TAG, "Enter.");
 
 	if (b_reset_continue_flag == true) {
 		return;
 	}
 
 	if (info == NULL) {
-		THINGS_LOG_V_ERROR(THINGS_ERROR, TAG, "[IoTivity Error] invalid call-back parameter.(info is null.)");
+		THINGS_LOG_E(TAG, "[IoTivity Error] invalid call-back parameter.(info is null.)");
 		return;
 	}
 
 	if (info->adapter != CA_ADAPTER_TCP) {
-		THINGS_LOG_D(THINGS_DEBUG, TAG, "Don't support adapter type.(%d)", info->adapter);
+		THINGS_LOG_D(TAG, "Don't support adapter type.(%d)", info->adapter);
 		return;
 	}
 
 	if (strlen(info->addr) == 0 || info->port == 0) {
-		THINGS_LOG_V_ERROR(THINGS_ERROR, TAG, "[IoTivity Error] invalid call-back parameter.(addrIP=%s, port=%d)", info->addr, info->port);
+		THINGS_LOG_E(TAG, "[IoTivity Error] invalid call-back parameter.(addrIP=%s, port=%d)", info->addr, info->port);
 		return;
 	}
 
-	THINGS_LOG_D(THINGS_DEBUG, TAG, "IP = %s, port = %d", info->addr, info->port);
+	THINGS_LOG_D(TAG, "IP = %s, port = %d", info->addr, info->port);
 
 	if (connected == true) {
-		THINGS_LOG_D(THINGS_DEBUG, TAG, "CONNECTED");
+		THINGS_LOG_D(TAG, "CONNECTED");
 		things_ping_set_mask(info->addr, info->port, PING_ST_TCPCONNECT);
 		return;
 	}
 
-	THINGS_LOG_D(THINGS_DEBUG, TAG, "DISCONNECTED");
+	THINGS_LOG_D(TAG, "DISCONNECTED");
 	things_ping_unset_mask(info->addr, PING_ST_SIGNIN | PING_ST_TCPCONNECT);
 
 	if (ci_retry_stop_by_tcp_cb(info->addr, info->port) == -1) {
-		THINGS_LOG_V_ERROR(THINGS_ERROR, TAG, "[Error] System Error.");
+		THINGS_LOG_E(TAG, "[Error] System Error.");
 		return;
 	}
 
-	THINGS_LOG_D(THINGS_DEBUG, TAG, "Exit.");
+	THINGS_LOG_D(TAG, "Exit.");
 }
 
 

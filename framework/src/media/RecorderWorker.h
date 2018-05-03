@@ -40,36 +40,26 @@ namespace media {
 class RecorderWorker
 {
 public:
-	RecorderWorker();
-	~RecorderWorker();
-
-	static RecorderWorker& getWorker()
-	{
-		call_once(RecorderWorker::mOnceFlag, []() {
-			mWorker.reset(new RecorderWorker);
-			mWorker.get()->mCurRecorder = nullptr;
-		});
-
-		return *(mWorker.get());
-	}
-
 	void startRecorder(std::shared_ptr<MediaRecorderImpl>);
 	void stopRecorder(std::shared_ptr<MediaRecorderImpl>, bool);
 	void pauseRecorder(std::shared_ptr<MediaRecorderImpl>);
+
 	recorder_result_t startWorker();
 	void stopWorker();
 	MediaQueue& getQueue();
+	static RecorderWorker& getWorker();
 
 private:
+	RecorderWorker();
+	~RecorderWorker();
+
 	int entry();
 	void increaseRef();
 	void decreaseRef();
 
 private:
-	static unique_ptr<RecorderWorker> mWorker;
-	static once_flag mOnceFlag;
 	int mRefCnt;
-	bool mIsRunning;
+	std::atomic<bool> mIsRunning;
 	std::thread mWorkerThread;
 	std::shared_ptr<MediaRecorderImpl> mCurRecorder;
 	MediaQueue mWorkerQueue;   // worker queue

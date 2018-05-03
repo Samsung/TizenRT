@@ -95,7 +95,7 @@ bool get_object_value(struct _st_things_representation *rep, const char *key, st
 	if (result) {
 		*value = create_representation_inst_internal(payload);
 		if (NULL == *value) {
-			THINGS_LOG(THINGS_ERROR, TAG, "Failed to create representation for value.");
+			THINGS_LOG_E(TAG, "Failed to create representation for value.");
 			OCRepPayloadDestroy(payload);
 			return false;
 		}
@@ -232,7 +232,7 @@ bool get_object_array_value(struct _st_things_representation *rep, const char *k
 	*length = calcDimTotal(dimensions);
 	*array = (struct _st_things_representation **)things_calloc((*length), sizeof(struct _st_things_representation *));
 	if (NULL == *array) {
-		THINGS_LOG(THINGS_ERROR, TAG, "Failed to allocate memory for object array value.");
+		THINGS_LOG_E(TAG, "Failed to allocate memory for object array value.");
 		for (size_t index = 0; index < *length; index++) {
 			OCPayloadDestroy((OCPayload *) children[index]);
 		}
@@ -242,11 +242,11 @@ bool get_object_array_value(struct _st_things_representation *rep, const char *k
 
 	for (size_t index = 0; index < *length; index++) {
 		if (NULL == children[index]) {
-			THINGS_LOG_V(THINGS_ERROR, TAG, "Payload at index(%d) is NULL.", index);
+			THINGS_LOG_E(TAG, "Payload at index(%d) is NULL.", index);
 		} else {
 			(*array)[index] = create_representation_inst_internal(children[index]);
 			if (NULL == (*array)[index]) {
-				THINGS_LOG(THINGS_ERROR, TAG, "Failed to create a representation for object array value.");
+				THINGS_LOG_E(TAG, "Failed to create a representation for object array value.");
 			}
 		}
 
@@ -317,18 +317,18 @@ bool set_object_array_value(struct _st_things_representation *rep, const char *k
 	OCRepPayload **value_payload = NULL;
 	value_payload = (OCRepPayload **) things_malloc(length * sizeof(OCRepPayload *));
 	if (NULL == value_payload) {
-		THINGS_LOG(THINGS_ERROR, TAG, "Failed to allocate memory for object array value.");
+		THINGS_LOG_E(TAG, "Failed to allocate memory for object array value.");
 		return false;
 	}
 
 	for (size_t i = 0; i < length; i++) {
 		if (NULL == array[i]) {
-			THINGS_LOG_V(THINGS_ERROR, TAG, "array[%d] is NULL.", i);
+			THINGS_LOG_E(TAG, "array[%d] is NULL.", i);
 			things_free(value_payload);
 			return false;
 		}
 		if (NULL == array[i]->payload) {
-			THINGS_LOG_V(THINGS_ERROR, TAG, "array[%d]->payload is NULL.", i);
+			THINGS_LOG_E(TAG, "array[%d]->payload is NULL.", i);
 			things_free(value_payload);
 			return false;
 		}
@@ -372,13 +372,13 @@ st_things_representation_s *create_representation_inst_internal(OCRepPayload *pa
 	rep->set_object_array_value = &set_object_array_value;
 
 	if (NULL != payload) {
-		THINGS_LOG(THINGS_DEBUG, TAG, "Setting the given payload in the representation.");
+		THINGS_LOG_D(TAG, "Setting the given payload in the representation.");
 		rep->payload = payload;
 	} else {
-		THINGS_LOG(THINGS_DEBUG, TAG, "Creating a new payload and setting it in the representation.");
+		THINGS_LOG_D(TAG, "Creating a new payload and setting it in the representation.");
 		rep->payload = OCRepPayloadCreate();
 		if (NULL == rep->payload) {
-			THINGS_LOG(THINGS_ERROR, TAG, "Failed to create payload for representation.");
+			THINGS_LOG_E(TAG, "Failed to create payload for representation.");
 			destroy_representation_inst_internal(rep, false);
 			return NULL;
 		}
@@ -396,7 +396,7 @@ void destroy_representation_inst_internal(st_things_representation_s *rep, bool 
 {
 	RET_IF_PARAM_IS_NULL(TAG, rep);
 
-	THINGS_LOG_V(THINGS_DEBUG, TAG, "Destroy payload: %s.", destroy_payload ? "Yes" : "No");
+	THINGS_LOG_D(TAG, "Destroy payload: %s.", destroy_payload ? "Yes" : "No");
 
 	// Payload will be de-allocated for the following cases.
 	// 1. For request representations(created at this API layer).

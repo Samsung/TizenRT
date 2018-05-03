@@ -51,7 +51,7 @@ char *things_clone_string(const char *str)
 	if (NULL != dest_str) {
 		strncpy(dest_str, str, len + 1);
 	} else {
-		THINGS_LOG(THINGS_ERROR, TAG, "Memory allocation failed.");
+		THINGS_LOG_E(TAG, "Memory allocation failed.");
 	}
 
 	return dest_str;
@@ -92,7 +92,7 @@ int things_string_duplicate(const char *src, char **dst)
 		int len = strlen(src);
 		*dst = (char *)things_malloc(len + 1);
 		if (NULL == *dst) {
-			THINGS_LOG(THINGS_ERROR, TAG, "memory allocation failed.");
+			THINGS_LOG_E(TAG, "memory allocation failed.");
 			return 0;
 		}
 
@@ -102,104 +102,15 @@ int things_string_duplicate(const char *src, char **dst)
 	return 1;
 }
 
-// Memory Leakage Should be check
-void things_string_concat(char **target, char *attach)
-{
-	char buf[MAX_BUF_LEN] = { 0 };
-
-	if (attach == NULL) {
-		return;
-	}
-
-	if (*target != NULL) {
-		things_strncpy(buf, *target, strlen(*target) + 1);
-		things_free(*target);
-		*target = NULL;
-	}
-
-	if (MAX_BUF_LEN >= (strlen(buf) + strlen(attach) + 1)) {
-		strncat(buf, attach, MAX_BUF_LEN);
-	} else {
-		THINGS_LOG_ERROR(THINGS_ERROR, TAG, "Something went wrong");
-		return;
-	}
-
-	*target = (char *)things_malloc(strlen(buf) + 1);
-	if (NULL == *target) {
-		THINGS_LOG_ERROR(THINGS_ERROR, TAG, THINGS_MEMORY_ERROR);
-		return;
-	}
-	things_strncpy(*target, buf, strlen(buf) + 1);
-}
-
-int things_string_hex_to_int(const char *hex, int *num)
-{
-	return sscanf(hex, "%x", num);
-}
-
-int things_get_id_value_from_query(char idvalue[], char *inputQuery, int size)
-{
-	THINGS_LOG_D(THINGS_DEBUG, TAG, "Input query => %s", inputQuery);
-
-	char seperators[] = "?;#&";
-
-	if (NULL == inputQuery) {
-		THINGS_LOG_D(THINGS_DEBUG, TAG, "Input query is NULL");
-		return 0;
-	}
-
-	if (size > MAX_INPUT_QUERY_LEN) {
-		THINGS_LOG_D(THINGS_DEBUG, TAG, "Input size bigger than maximum query size(%d)", MAX_INPUT_QUERY_LEN);
-		return 0;
-	}
-
-	// Remove empty space
-	char queries[MAX_INPUT_QUERY_LEN + 1] = { 0, };
-	int index = 0;
-	for (int i = 0; i < strlen(inputQuery); i++) {
-		if (*(inputQuery + i) == ' ') {
-			continue;
-		}
-		queries[index] = *(inputQuery + i);
-		index++;
-	}
-
-	// Get Query start with "id="
-	char *idQuery = strstr(queries, "id=");
-	if (NULL == idQuery) {
-		THINGS_LOG_D(THINGS_DEBUG, TAG, "There is no \"id=\" in input query");
-		return 0;
-	}
-	// Seperate idQuery with seperators [?, ;, #]
-	for (int i = 0; i < strlen(idQuery); i++) {
-		if (*(idQuery + i) == '?' || *(idQuery + i) == ';' || *(idQuery + i) == '#' || *(idQuery + i) == '&') {
-			strtok(idQuery, seperators);
-			break;
-		}
-	}
-
-	// Get id data after "id=" and validation check.
-	for (int i = 3, k = 0; i < strlen(idQuery); i++) {
-		if (idQuery[i] >= '0' && idQuery[i] <= '9') {
-			idvalue[k++] = idQuery[i];
-		} else {
-			idvalue[0] = '\0';
-			return 0;
-		}
-	}
-
-	return 1;
-}
-
 char *things_strcat(char *dest, size_t destSize, const char *src)
 {
 	if (dest == NULL || src == NULL || destSize == 0) {
-		THINGS_LOG_V_ERROR(THINGS_ERROR, TAG, "dest(0x%X) or src(0x%X) or dest_size=%d is NULL.", dest, src, destSize);
+		THINGS_LOG_E(TAG, "dest(0x%X) or src(0x%X) or dest_size=%d is NULL.", dest, src, destSize);
 		return NULL;
 	}
 
 	if (strlen(src) >= (destSize - strlen(dest))) {
-		THINGS_LOG_V_ERROR(THINGS_ERROR, TAG, "Source Size(%d) is over than Dest-FreeSize(%d).", strlen(src), destSize - strlen(dest) - 1);
+		THINGS_LOG_E(TAG, "Source Size(%d) is over than Dest-FreeSize(%d).", strlen(src), destSize - strlen(dest) - 1);
 		return NULL;
 	}
 
@@ -209,7 +120,7 @@ char *things_strcat(char *dest, size_t destSize, const char *src)
 char *things_strncpy(char *destination, const char *source, size_t num)
 {
 	if (NULL == source) {
-		THINGS_LOG_V_ERROR(THINGS_ERROR, TAG, "Input String is NULL");
+		THINGS_LOG_E(TAG, "Input String is NULL");
 		return NULL;
 	}
 

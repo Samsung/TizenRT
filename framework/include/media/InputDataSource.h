@@ -31,7 +31,7 @@ namespace stream {
  * @class
  * @brief This class is input data structure
  * @details @b #include <media/InputDataSource.h>
- * @since TizenRT v2.0
+ * @since TizenRT v2.0 PRE
  */
 class InputDataSource : public DataSource
 {
@@ -39,40 +39,47 @@ public:
 	/**
 	 * @brief Constructs an empty InputDataSource.
 	 * @details @b #include <media/InputDataSource.h>
-	 * @since TizenRT v2.0
+	 * @since TizenRT v2.0 PRE
 	 */
 	InputDataSource();
 	/**
 	 * @brief Copy constructs for InputDataSource.
 	 * @details @b #include <media/InputDataSource.h>
-	 * @since TizenRT v2.0
+	 * @since TizenRT v2.0 PRE
 	 */
 	InputDataSource(const InputDataSource& source);
 	/**
 	 * @brief Operator= for InputDataSource.
 	 * @details @b #include <media/InputDataSource.h>
-	 * @since TizenRT v2.0
+	 * @since TizenRT v2.0 PRE
 	 */
 	InputDataSource& operator=(const InputDataSource& source);
 	/**
 	 * @brief Deconstructs an empty InputDataSource.
 	 * @details @b #include <media/InputDataSource.h>
-	 * @since TizenRT v2.0
+	 * @since TizenRT v2.0 PRE
 	 */
 	virtual ~InputDataSource();
   
   	/**
 	 * @brief Gets the stream data
 	 * @details @b #include <media/InputDataSource.h>
-	 * @since TizenRT v2.0
+	 * @since TizenRT v2.0 PRE
 	 */
 	virtual size_t read(unsigned char* buf, size_t size) = 0;
+
+  	/**
+	 * @brief Gets the stream data from offset
+	 * @details @b #include <media/InputDataSource.h>
+	 * @since TizenRT v2.0
+	 */
+	virtual int readAt(long offset, int origin, unsigned char* buf, size_t size) = 0;
 
 	/**
 	 * @brief Gets current audio decoder. The audio decoder is set by each data source.
 	 * @details @b #include <media/InputDataSource.h>
 	 * @return Current audio decoder instance.
-	 * @since TizenRT v2.0
+	 * @since TizenRT v2.0 PRE
 	 */
 	const std::shared_ptr<Decoder> getDecoder();
 

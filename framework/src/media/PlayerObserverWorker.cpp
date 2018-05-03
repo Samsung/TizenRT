@@ -21,36 +21,26 @@
 #include "PlayerObserverWorker.h"
 
 namespace media {
-std::unique_ptr<PlayerObserverWorker> PlayerObserverWorker::mWorker;
-std::once_flag PlayerObserverWorker::mOnceFlag;
-
-PlayerObserverWorker::PlayerObserverWorker()
+PlayerObserverWorker::PlayerObserverWorker() : mRefCnt{0}, mIsRunning(false)
 {
 }
+
 PlayerObserverWorker::~PlayerObserverWorker()
 {
 }
 
 PlayerObserverWorker& PlayerObserverWorker::getWorker()
 {
-	std::call_once(PlayerObserverWorker::mOnceFlag, []() { mWorker.reset(new PlayerObserverWorker); });
-
-	return *(mWorker.get());
+	static PlayerObserverWorker worker;
+	return worker;
 }
 
 int PlayerObserverWorker::entry()
 {
 	while (mIsRunning) {
-		std::unique_lock<std::mutex> lock(mObserverQueue.getMutex());
-
-		if (mObserverQueue.isEmpty()) {
-			medvdbg("PlayerObserverWorker: wait\n");
-			mObserverQueue.wait(lock);
-		}
-
-		if (!mObserverQueue.isEmpty()) {
-			medvdbg("PlayerObserverWorker: wake\n");
-			std::function<void()> run = mObserverQueue.deQueue();
+		std::function<void()> run = mObserverQueue.deQueue();
+		medvdbg("PlayerObserverWorker::entry() - pop Queue\n");
+		if (run != nullptr) {
 			run();
 		}
 	}
@@ -76,11 +66,11 @@ void PlayerObserverWorker::stopWorker()
 	medvdbg("PlayerObserverWorker : stopWorker\n");
 	if (--mRefCnt <= 0) {
 		medvdbg("PlayerObserverWorker : join thread\n");
-		mIsRunning = false;
-		if (mWorkerThread.joinable()) {
-			mObserverQueue.notify_one();
-			mWorkerThread.join();
-		}
+		std::atomic<bool> &refBool = mIsRunning;
+		mObserverQueue.enQueue([&refBool]() {
+			refBool = false;
+		});
+		mWorkerThread.join();
 	}
 }
 

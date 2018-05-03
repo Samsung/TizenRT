@@ -379,7 +379,7 @@ static void tc_fs_vfs_write(void)
 	close(fd);
 
 	/* Nagative case with invalid argument, fd. It will return ERROR */
-	ret = write(CONFIG_NFILE_DESCRIPTORS, buf, sizeof(buf));
+	ret = write(CONFIG_NFILE_DESCRIPTORS, buf, strlen(buf));
 	TC_ASSERT_EQ("write", ret, ERROR);
 
 	TC_SUCCESS_RESULT();
@@ -1204,7 +1204,7 @@ static void tc_fs_vfs_fstat(void)
 	TC_ASSERT_GEQ("open", fd, 0);
 
 	ret = fstat(fd, &st);
-	TC_ASSERT_EQ("fstat", ret, OK);
+	TC_ASSERT_EQ_CLEANUP("fstat", ret, OK, close(fd));
 
 	close(fd);
 	TC_SUCCESS_RESULT();
@@ -1670,17 +1670,23 @@ static void tc_driver_mtd_ftl_ops(void)
 	}
 
 	fd = open(MTD_FTL_PATH, O_RDWR);
-	TC_ASSERT_GEQ("open", fd, 0);
+	TC_ASSERT_GEQ_CLEANUP("open", fd, 0, free(buf));
 
 	ret = read(fd, buf, BUF_SIZE);
-	TC_ASSERT_EQ_CLEANUP("read", ret, BUF_SIZE, close(fd));
+	TC_ASSERT_EQ_CLEANUP("read", ret, BUF_SIZE, goto cleanup);
 #ifdef CONFIG_FS_WRITABLE
 	ret = write(fd, buf, BUF_SIZE);
-	TC_ASSERT_EQ_CLEANUP("write", ret, BUF_SIZE, close(fd));
+	TC_ASSERT_EQ_CLEANUP("write", ret, BUF_SIZE, goto cleanup);
+#endif
+#ifdef FIXME	// This causes tc stuck. Temporarilly block.
+	free(buf);
 #endif
 	ret = close(fd);
 	TC_ASSERT_EQ("close", ret, OK);
 	TC_SUCCESS_RESULT();
+cleanup:
+	free(buf);
+	close(fd);
 }
 #endif
 /**
@@ -3333,21 +3339,17 @@ static void tc_libc_stdio_zeroinstream(void)
 #if !defined(CONFIG_FS_PROCFS_EXCLUDE_MTD)
 static void tc_driver_mtd_procfs_ops(void)
 {
-	int fd1;
-	int fd2;
+	int fd;
 	int ret;
 	struct stat st;
 
-	fd1 = open(MTD_PROCFS_PATH, O_RDONLY);
-	TC_ASSERT_GEQ("open", fd1, 0);
-
-	fd2 = dup(fd1);
-	TC_ASSERT_GEQ_CLEANUP("dup", fd2, 0, close(fd1));
+	fd = open(MTD_PROCFS_PATH, O_RDONLY);
+	TC_ASSERT_GEQ("open", fd, 0);
 
 	ret = stat(MTD_PROCFS_PATH, &st);
-	TC_ASSERT_EQ_CLEANUP("stat", ret, OK, close(fd1));
+	TC_ASSERT_EQ_CLEANUP("stat", ret, OK, close(fd));
 
-	ret = close(fd1);
+	ret = close(fd);
 	TC_ASSERT_EQ("close", ret, OK);
 
 	TC_SUCCESS_RESULT();

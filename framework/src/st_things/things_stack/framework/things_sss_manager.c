@@ -54,10 +54,10 @@ OCStackResult things_sss_rootca_handler_init(OicUuid_t* subjectUuid)
 
 	res = CredSaveTrustCertChain(subjectUuid, cacert.data, cacert.len, OIC_ENCODING_DER, MF_TRUST_CA, &cred_id);
 	if (OC_STACK_OK != res) {
-		THINGS_LOG_D(THINGS_ERROR, TAG, "SRPCredSaveTrustCertChain #2 error");
+		THINGS_LOG_E(TAG, "SRPCredSaveTrustCertChain #2 error");
 	    return res;
 	}
-	THINGS_LOG_D(THINGS_DEBUG, TAG, "CA Cert.der for MF_TRUST_CA HW saved w/ cred ID=%d", cred_id);
+	THINGS_LOG_D(TAG, "CA Cert.der for MF_TRUST_CA HW saved w/ cred ID=%d", cred_id);
 
 	return res;
 }
@@ -65,7 +65,7 @@ OCStackResult things_sss_rootca_handler_init(OicUuid_t* subjectUuid)
 //this callback will be invoked to get key context based on key usage
 void *OCGetHwKey(const char *service, const char *usage, const char *keytype)
 {
-	THINGS_LOG_D(THINGS_DEBUG, TAG, "IN : %s", __func__);
+	THINGS_LOG_D(TAG, "IN : %s", __func__);
 
 	if (service == NULL || usage == NULL) {
 		return NULL;
@@ -76,17 +76,17 @@ void *OCGetHwKey(const char *service, const char *usage, const char *keytype)
 	pkey = (mbedtls_pk_context *)things_malloc(sizeof(mbedtls_pk_context));
 
 	if (pkey == NULL) {
-		THINGS_LOG_D(THINGS_ERROR, TAG, "pkey context alloc failed");
+		THINGS_LOG_E(TAG, "pkey context alloc failed");
 		return NULL;
 	}
-	THINGS_LOG_D(THINGS_DEBUG, TAG, "Out: %s", __func__);
+	THINGS_LOG_D(TAG, "Out: %s", __func__);
 	return (void *)pkey;
 }
 
 //this callback will free key context that was retreived from TZ
 int OCFreeHwKey(void* keyContext)
 {
-	THINGS_LOG_D(THINGS_DEBUG, TAG, "IN : %s", __func__);
+	THINGS_LOG_D(TAG, "IN : %s", __func__);
 
 	if (keyContext == NULL) {
 		return -1;
@@ -94,7 +94,7 @@ int OCFreeHwKey(void* keyContext)
 
 	things_free(keyContext);
 
-	THINGS_LOG_D(THINGS_DEBUG, TAG, "Out: %s", __func__);
+	THINGS_LOG_D(TAG, "Out: %s", __func__);
 
 	return 0;
 }
@@ -104,7 +104,7 @@ int OCGetOwnCertFromHw(const void* keyContext, uint8_t** certChain, size_t* cert
 {
 	(void *)keyContext;
 	
-	THINGS_LOG_D(THINGS_DEBUG, TAG, "IN : %s", __func__);
+	THINGS_LOG_D(TAG, "IN : %s", __func__);
 
 	if (certChain == NULL || certChainLen == NULL) {
 		return -1;
@@ -125,14 +125,14 @@ int OCGetOwnCertFromHw(const void* keyContext, uint8_t** certChain, size_t* cert
 
 	g_certChain = *certChain;
 
-	THINGS_LOG_D(THINGS_DEBUG, TAG, "Out: %s", __func__);
+	THINGS_LOG_D(TAG, "Out: %s", __func__);
 	return 0;
 }
 
 //this callback will be invoked to load private key in case of TZ
 int OCSetupPkContextFromHw(mbedtls_pk_context* ctx, void* keyContext)
 {
-	THINGS_LOG_D(THINGS_DEBUG, TAG, "IN : %s", __func__);
+	THINGS_LOG_D(TAG, "IN : %s", __func__);
 
 	if (ctx == NULL || keyContext == NULL) {
 		return -1;
@@ -162,7 +162,7 @@ int OCSetupPkContextFromHw(mbedtls_pk_context* ctx, void* keyContext)
 	ctx->pk_info = pkey->pk_info;
 	ctx->pk_ctx = pkey->pk_ctx;
 
-	THINGS_LOG_D(THINGS_DEBUG, TAG, "Out: %s", __func__);
+	THINGS_LOG_D(TAG, "Out: %s", __func__);
 
 	return 0;
 }
@@ -175,12 +175,12 @@ static int things_set_cert_chains(void)
 
 	buf = (uint8_t *)things_malloc(buflen);
 	if (buf == NULL) {
-		THINGS_LOG_D(THINGS_ERROR, TAG, "things_set_cert_chains() : Memory is full");
+		THINGS_LOG_E(TAG, "things_set_cert_chains() : Memory is full");
 		return -1;
 	}
 
 	if ((ret = see_get_certificate(buf, &buflen, FACTORYKEY_ARTIK_CERT, 0)) != 0) {
-		THINGS_LOG_D(THINGS_ERROR, TAG, "things_set_cert_chains() : see_get_certificate fail %d", ret);
+		THINGS_LOG_E(TAG, "things_set_cert_chains() : see_get_certificate fail %d", ret);
 		things_free(buf);
 		return ret;
 	}
@@ -197,7 +197,7 @@ static int things_set_cert_chains(void)
 				cacert.len = (buf + i) - ptr;
 				cacert.data = (uint8_t *)things_malloc(cacert.len);
 				if (cacert.data == NULL) {
-					THINGS_LOG_D(THINGS_ERROR, TAG, "Memory is full");
+					THINGS_LOG_E(TAG, "Memory is full");
 					things_free(buf);
 					return -1;
 				}
@@ -211,7 +211,7 @@ static int things_set_cert_chains(void)
 				subca.len = (buf + i) - ptr;
 				subca.data = (uint8_t *)things_malloc(subca.len);
 				if (subca.data == NULL) {
-					THINGS_LOG_D(THINGS_ERROR, TAG, "Memory is full");
+					THINGS_LOG_E(TAG, "Memory is full");
 					things_free(buf);
 					things_free(cacert.data);
 					return -2;
@@ -227,7 +227,7 @@ static int things_set_cert_chains(void)
 	devicecert.len = (buf + buflen) - ptr;
 	devicecert.data = (uint8_t *)things_malloc(devicecert.len);
 	if (devicecert.data == NULL) {
-		THINGS_LOG_D(THINGS_ERROR, TAG, "Memory is full");
+		THINGS_LOG_E(TAG, "Memory is full");
 		things_free(buf);
 		things_free(cacert.data);
 		things_free(subca.data);
@@ -242,21 +242,21 @@ static int things_set_cert_chains(void)
 
 OCStackResult things_sss_key_handler_init(void)
 {
-	THINGS_LOG_D(THINGS_DEBUG, TAG, "%s is called", __func__);
+	THINGS_LOG_D(TAG, "%s is called", __func__);
 
 	if (things_set_cert_chains() < 0) {
-		THINGS_LOG_D(THINGS_ERROR, TAG, "things_set_cert_chains() failed");
+		THINGS_LOG_E(TAG, "things_set_cert_chains() failed");
 		return OC_STACK_ERROR;
 	}
 
 	if (SetHwPkixCallbacks(OCGetHwKey, OCFreeHwKey, OCGetOwnCertFromHw, OCSetupPkContextFromHw)) {
-		THINGS_LOG_D(THINGS_ERROR, TAG, "SetHwPkixCallbacks failed");
+		THINGS_LOG_E(TAG, "SetHwPkixCallbacks failed");
 		return OC_STACK_ERROR;
 	}
 
 	uint16_t cipher = MBEDTLS_TLS_ECDHE_ECDSA_WITH_AES_128_GCM_SHA256;
 	if (CA_STATUS_OK != CASelectCipherSuite(cipher, CA_ADAPTER_TCP)) {
-		THINGS_LOG_D(THINGS_ERROR, TAG, "CASelectCipherSuite returned an error");
+		THINGS_LOG_E(TAG, "CASelectCipherSuite returned an error");
 		return OC_STACK_ERROR;
 	}
 
@@ -265,7 +265,7 @@ OCStackResult things_sss_key_handler_init(void)
 
 bool things_encrypt_artik_uuid(unsigned char *output)
 {
-	THINGS_LOG_D(THINGS_DEBUG, TAG, "In %s", __func__);
+	THINGS_LOG_D(TAG, "In %s", __func__);
 	
 	unsigned char uuid[((UUID_LENGTH * 2) + 4 + 1)] = { 0, };
 	unsigned int uuid_len = 0;
@@ -287,7 +287,7 @@ bool things_encrypt_artik_uuid(unsigned char *output)
 	unsigned char encode_buf[128] = { 0, };
 	if ((ret = mbedtls_base64_encode(encode_buf, sizeof(encode_buf),
 									&written_len, uuid_hash, strlen((char *)uuid_hash))) != 0) {
-		THINGS_LOG_D(THINGS_ERROR, TAG, "mbedtls_base64_encode() error [%d], written_len [%d]", ret, written_len);
+		THINGS_LOG_E(TAG, "mbedtls_base64_encode() error [%d], written_len [%d]", ret, written_len);
 		return false;
 	}
 
@@ -298,13 +298,13 @@ bool things_encrypt_artik_uuid(unsigned char *output)
 	unsigned char encode_buf2[128] = { 0, };
 	if ((ret = mbedtls_base64_encode(encode_buf2, sizeof(encode_buf2),
 									&written_len, uuid_hash, strlen((char *)uuid_hash))) != 0) {
-		THINGS_LOG_D(THINGS_ERROR, TAG, "mbedtls_base64_encode() error [%d], written_len [%d]", ret, written_len);
+		THINGS_LOG_E(TAG, "mbedtls_base64_encode() error [%d], written_len [%d]", ret, written_len);
 		return false;
 	}
 
 	// 5. use 8 bytes of encode_buf2
 	memcpy(output, encode_buf2, 8);
-	THINGS_LOG_D(THINGS_DEBUG, TAG, "output len [%d][%s]", strlen((char *)output), output);
+	THINGS_LOG_D(TAG, "output len [%d][%s]", strlen((char *)output), output);
 
 	// 6. url safe
 	int i;
@@ -315,7 +315,7 @@ bool things_encrypt_artik_uuid(unsigned char *output)
 			output[i] = '_';
 		}
 	}
-	THINGS_LOG_D(THINGS_DEBUG, TAG, "urlsafe output len [%d][%s]", strlen((char *)output), output);
+	THINGS_LOG_D(TAG, "urlsafe output len [%d][%s]", strlen((char *)output), output);
 
 	return true;
 }

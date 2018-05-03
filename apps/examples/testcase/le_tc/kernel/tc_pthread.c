@@ -139,15 +139,19 @@ static void *do_nothing_thread(void *param)
 static void *setschedprio_test_thread(void *param)
 {
 	struct sched_param param_info;
+	int ret_chk;
 
 	/* sleep to guarantee running of pthread_setschedprio() */
 	sleep(1);
 
 	/* get current priority */
-	(void)sched_getparam(0, &param_info);
-
-	/* give getting value to global variable to compare it in another function */
-	check_prio = param_info.sched_priority;
+	ret_chk = sched_getparam(0, &param_info);
+	if (ret_chk == ERROR) {
+		check_prio = 0;	// Fail to get current priority
+	} else {
+		/* give getting value to global variable to compare it in another function */
+		check_prio = param_info.sched_priority;
+	}
 
 	return NULL;
 }
@@ -945,7 +949,9 @@ static void tc_pthread_pthread_mutex_lock_unlock_trylock(void)
 {
 	int ret_chk;
 	pthread_mutexattr_t attr;
-	pthread_mutexattr_init(&attr);
+	
+	ret_chk = pthread_mutexattr_init(&attr);
+	TC_ASSERT_EQ("pthread_mutexattr_init", ret_chk, OK);
 	pthread_mutexattr_settype(&attr, PTHREAD_MUTEX_RECURSIVE);
 
 	pthread_mutex_init(&g_mutex, NULL);

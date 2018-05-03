@@ -73,11 +73,21 @@ static void itc_net_inet_aton_n(void)
 */
 static void itc_net_inet_ntop_p(void)
 {
+#ifdef CONFIG_NET_IPv4
 	struct in_addr in_addr;
 	char dst[INET_ADDRSTRLEN];
-	const char *ret;
-
 	in_addr.s_addr = 0x17071994;
+#endif
+
+#ifdef CONFIG_NET_IPv6
+	struct in6_addr in6_addr;
+	char dst6[INET6_ADDRSTRLEN];
+	in6_addr.s6_addr32[0] = 0x17071994;
+	in6_addr.s6_addr32[1] = 0x17071994;
+	in6_addr.s6_addr32[2] = 0x17071994;
+	in6_addr.s6_addr32[3] = 0x17071994;
+#endif
+	const char *ret;
 
 #ifdef CONFIG_NET_IPv4
 	ret = inet_ntop(AF_INET, &in_addr, dst, INET_ADDRSTRLEN);
@@ -85,7 +95,7 @@ static void itc_net_inet_ntop_p(void)
 #endif
 
 #ifdef CONFIG_NET_IPv6
-	ret = inet_ntop(AF_INET6, &in_addr, dst, INET_ADDRSTRLEN);
+	ret = inet_ntop(AF_INET6, &in6_addr, dst6, INET6_ADDRSTRLEN);
 	TC_ASSERT_NEQ("inet_ntop", ret, NULL);
 #endif
 

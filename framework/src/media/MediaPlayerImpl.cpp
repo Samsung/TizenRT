@@ -29,6 +29,7 @@ MediaPlayerImpl::MediaPlayerImpl()
 	mPlayerObserver = nullptr;
 	mCurState = PLAYER_STATE_NONE;
 	mBuffer = nullptr;
+	mBufSize = 0;
 	mInputDataSource = nullptr;
 
 	static int playerId = 1;
@@ -67,8 +68,11 @@ player_result_t MediaPlayerImpl::destroy()
 	mSyncCv.wait(lock);
 	mpw.stopWorker();
 
-	PlayerObserverWorker& pow = PlayerObserverWorker::getWorker();
-	pow.stopWorker();
+	if (mPlayerObserver) {
+		PlayerObserverWorker& pow = PlayerObserverWorker::getWorker();
+		pow.stopWorker();
+		mPlayerObserver = nullptr;
+	}
 
 	mCurState = PLAYER_STATE_NONE;
 	return PLAYER_OK;
@@ -92,8 +96,7 @@ player_result_t MediaPlayerImpl::prepare()
 		return PLAYER_ERROR;
 	}
 
-	mInputDataSource->open();
-	if (!mInputDataSource->isPrepare()) {
+	if (!mInputDataSource->open()) {
 		meddbg("MediaPlayer prepare fail : file open fail\n");
 		return PLAYER_ERROR;
 	}
@@ -105,6 +108,11 @@ player_result_t MediaPlayerImpl::prepare()
 	}
 
 	mBufSize = get_output_frames_byte_size(get_output_frame_count());
+	if (mBufSize < 0) {
+		meddbg("MediaPlayer prepare fail : get_output_frames_byte_size fail\n");
+		return PLAYER_ERROR;
+	}
+
 	medvdbg("MediaPlayer mBuffer size : %d\n", mBufSize);
 
 	mBuffer = new unsigned char[mBufSize];
@@ -141,11 +149,6 @@ player_result_t MediaPlayerImpl::unprepare()
 		return PLAYER_ERROR;
 	}
 
-	if (destroy_audio_stream_out() != AUDIO_MANAGER_SUCCESS) {
-		meddbg("MediaPlayer unprepare fail : destroy_audio_stream_out fail\n");
-		return PLAYER_ERROR;
-	}
-
 	mInputDataSource->close();
 
 	mCurState = PLAYER_STATE_IDLE;
@@ -156,6 +159,11 @@ player_result_t MediaPlayerImpl::start()
 {
 	std::lock_guard<std::mutex> lock(mCmdMtx);
 	medvdbg("MediaPlayer start\n");
+	if (mCurState == PLAYER_STATE_NONE || mCurState == PLAYER_STATE_IDLE) {
+		meddbg("MediaPlayer unprepare fail : wrong state\n");
+		return PLAYER_ERROR;
+	}
+
 	PlayerWorker& mpw = PlayerWorker::getWorker();
 	mpw.getQueue().enQueue(&PlayerWorker::startPlayer, &mpw, shared_from_this());
 
@@ -166,6 +174,11 @@ player_result_t MediaPlayerImpl::stop()
 {
 	std::lock_guard<std::mutex> lock(mCmdMtx);
 	medvdbg("MediaPlayer stop\n");
+	if (mCurState == PLAYER_STATE_NONE || mCurState == PLAYER_STATE_IDLE) {
+		meddbg("MediaPlayer stop fail : wrong state\n");
+		return PLAYER_ERROR;
+	}
+
 	PlayerWorker& mpw = PlayerWorker::getWorker();
 	mpw.getQueue().enQueue(&PlayerWorker::stopPlayer, &mpw, shared_from_this());
 
@@ -176,6 +189,11 @@ player_result_t MediaPlayerImpl::pause()
 {
 	std::lock_guard<std::mutex> lock(mCmdMtx);
 	medvdbg("MediaPlayer pause\n");
+	if (mCurState == PLAYER_STATE_NONE || mCurState == PLAYER_STATE_IDLE) {
+		meddbg("MediaPlayer pause fail : wrong state\n");
+		return PLAYER_ERROR;
+	}
+
 	PlayerWorker& mpw = PlayerWorker::getWorker();
 	mpw.getQueue().enQueue(&PlayerWorker::pausePlayer, &mpw, shared_from_this());
 
@@ -191,7 +209,7 @@ int MediaPlayerImpl::getVolume()
 		return -1;
 	}
 
-	return get_audio_volume();
+	return get_output_audio_volume();
 }
 
 player_result_t MediaPlayerImpl::setVolume(int vol)
@@ -203,24 +221,32 @@ player_result_t MediaPlayerImpl::setVolume(int vol)
 		return PLAYER_ERROR;
 	}
 
-	if (vol < 0 || vol > 31) {
-		meddbg("MediaPlayer setVolume fail : invalid argument. volume level should be 0(Min) ~ 31(Max)\n");
+	int vol_max = get_max_audio_volume();
+	if (vol < 0 || vol > vol_max) {
+		meddbg("MediaPlayer setVolume fail : invalid argument. volume level should be 0(Min) ~ %d(Max)\n", vol_max);
 		return PLAYER_ERROR;
 	}
 
-	if (!set_audio_volume(vol)) {
-		mCurVolume = vol;
-		return PLAYER_OK;
-	} else {
+	if (set_output_audio_volume(vol) != AUDIO_MANAGER_SUCCESS) {
+		meddbg("MediaPlayer setVolume fail : audio manager failed\n", vol_max);
 		return PLAYER_ERROR;
 	}
+	
+	medvdbg("MediaPlayer setVolume success\n");
+	return PLAYER_OK;
 }
 
-void MediaPlayerImpl::setDataSource(std::unique_ptr<stream::InputDataSource> source)
+player_result_t MediaPlayerImpl::setDataSource(std::unique_ptr<stream::InputDataSource> source)
 {
 	std::lock_guard<std::mutex> lock(mCmdMtx);
 	medvdbg("MediaPlayer setDataSource\n");
+	if (!source) {
+		meddbg("MediaPlayer setDataSource fail : invalid argument. DataSource should not be nullptr\n");
+		return PLAYER_ERROR;
+	}
+
 	mInputDataSource = std::move(source);
+	return PLAYER_OK;
 }
 
 void MediaPlayerImpl::setObserver(std::shared_ptr<MediaPlayerObserverInterface> observer)
@@ -250,6 +276,7 @@ player_result_t MediaPlayerImpl::seekTo(int msec)
 
 void MediaPlayerImpl::notifySync()
 {
+	std::unique_lock<std::mutex> lock(mCmdMtx);
 	mSyncCv.notify_one();
 }
 

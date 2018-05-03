@@ -384,13 +384,6 @@ kconfig.bat
      -   option env="APPSDIR"
      +   default "../apps"
 
-formatter.sh
----------
-
-  This script can be used to indent .c and .h files in a manner similar
-  to my coding TinyAra coding style.  It doesn't do a really good job,
-  however (see the comments at the top of the formatter.sh file).
-
 refresh.sh
 ----------
 

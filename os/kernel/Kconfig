@@ -814,8 +814,17 @@ config SIG_SIGWORK
 	depends on SCHED_WORKQUEUE || LIB_USRWORK
 	---help---
 		SIGWORK is a non-standard signal used to wake up the internal TinyAra
-		worker thread.  This setting specifies the signal number that will be
-		used for SIGWORK.  Default: 17
+		worker thread. This setting specifies the signal number that will be
+		used for SIGWORK. Default: 17
+
+config SIG_SIGTM
+	int "SIGTM"
+	default 18
+	depends on TASK_MANAGER
+	---help---
+		SIGTM is a non-standard signal used to wake up the internal TinyAra
+		task manager. This setting specifies the signal number that will be
+		used for SIGTM. Default: 18
 
 endmenu # Signal Numbers
 

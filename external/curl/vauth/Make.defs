@@ -33,12 +33,5 @@ CSRCS+= vauth.c
 DEPPATH += --dep-path vauth
 VPATH += :vauth
 
-CFLAGS += -I$(TOPDIR)$(DELIM)$(EXTDIR)$(DELIM)wpa_supplicant$(DELIM)src
-CFLAGS += -I$(TOPDIR)$(DELIM)$(EXTDIR)$(DELIM)wpa_supplicant$(DELIM)src$(DELIM)utils
-CFLAGS += -I$(TOPDIR)$(DELIM)$(EXTDIR)$(DELIM)wpa_supplicant$(DELIM)src$(DELIM)rsn_supp
-
-DEPPATH += --dep-path wpa_supplicant
-VPATH += :wpa_supplicant
-
 
 

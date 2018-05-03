@@ -44,6 +44,12 @@
 #define MAX_CHANNEL           8
 #define MAX_LEVEL_SIGNAL      12
 
+#define ES_COMPLETE            1
+#define ES_NOT_COMPLETE        0
+
+#define PATH_MNT "/mnt/"
+#define PATH_ROM "/rom/"
+
 typedef enum {
 	WiFi_11A = 0,
 	WiFi_11B,

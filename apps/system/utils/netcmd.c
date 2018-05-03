@@ -64,7 +64,9 @@
 #endif
 
 #include "netcmd.h"
+#ifdef CONFIG_NET_PING_CMD
 #include "netcmd_ping.h"
+#endif
 #ifdef CONFIG_NETUTILS_DHCPD
 #include "netcmd_dhcpd.h"
 #endif
@@ -515,7 +517,9 @@ const static tash_cmdlist_t net_utilcmds[] = {
 #ifdef NET_LWIP_STATS_DISPLAY
 	{"lwip_stats", stats_display, TASH_EXECMD_ASYNC},
 #endif
+#ifdef CONFIG_NET_PING_CMD
 	{"ping", cmd_ping, TASH_EXECMD_SYNC},
+#endif
 #ifdef CONFIG_NETUTILS_TFTPC
 	{"tftpc", cmd_tftpc, TASH_EXECMD_SYNC},
 #endif

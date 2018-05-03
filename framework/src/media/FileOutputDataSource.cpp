@@ -16,22 +16,25 @@
  *
  ******************************************************************/
 
+#include <debug.h>
+
 #include <media/FileOutputDataSource.h>
 
 namespace media {
 namespace stream {
 
-FileOutputDataSource::FileOutputDataSource(const std::string& dataPath) 
-	: OutputDataSource(), mDataPath(dataPath)
+FileOutputDataSource::FileOutputDataSource(const std::string& dataPath)
+	: OutputDataSource(), mDataPath(dataPath), mFp(nullptr)
 {	
 }
 
 FileOutputDataSource::FileOutputDataSource(unsigned short channels, unsigned int sampleRate, int pcmFormat, const std::string& dataPath)
-	: OutputDataSource(channels, sampleRate, pcmFormat), mDataPath(dataPath)
+	: OutputDataSource(channels, sampleRate, pcmFormat), mDataPath(dataPath), mFp(nullptr)
 {
 }
 
-FileOutputDataSource::FileOutputDataSource(const FileOutputDataSource& source) : OutputDataSource(source)
+FileOutputDataSource::FileOutputDataSource(const FileOutputDataSource& source) : 
+	OutputDataSource(source), mDataPath(source.mDataPath), mFp(source.mFp)
 {
 }
 
@@ -43,14 +46,23 @@ FileOutputDataSource& FileOutputDataSource::operator=(const FileOutputDataSource
 
 bool FileOutputDataSource::open()
 {
-	mFp = fopen(mDataPath.c_str(), "w+");
-	return isPrepare();
+	if (!mFp) {
+		mFp = fopen(mDataPath.c_str(), "w+");
+		return true;
+	} 
+
+	medvdbg("file is already open\n");
+	return false;
 }
 
-void FileOutputDataSource::close()
+bool FileOutputDataSource::close()
 {
-	fclose(mFp);
-	mFp = nullptr;
+	if (mFp && fclose(mFp) != EOF) {
+		mFp = nullptr;
+		return true;
+	}
+
+	return false;
 }
 
 bool FileOutputDataSource::isPrepare()
@@ -60,6 +72,10 @@ bool FileOutputDataSource::isPrepare()
 
 size_t FileOutputDataSource::write(unsigned char* buf, size_t size)
 {
+	if (!buf) {
+		return (size_t)0;
+	}
+
 	return fwrite(buf, sizeof(unsigned char), size, mFp);
 }
 

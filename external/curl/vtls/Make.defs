@@ -20,35 +20,8 @@
 CSRCS+= vtls.c 
 CSRCS+= polarssl_threadlock.c
 
-ifeq ($(CONFIG_AXTLS),y)
-CSRCS+= axtls.c
-endif
-ifeq ($(CONFIG_CYASSL),y)
-CSRCS+= cyassl.c
-endif
-ifeq ($(CONFIG_DARWINSSL),y)
-CSRCS+= darwinssl.c
-endif
-ifeq ($(CONFIG_GNUTLS),y)
-CSRCS+= gtls.c
-endif
-ifeq ($(CONFIG_GSKIT),y)
-CSRCS+= gskit.c
-endif
 ifeq ($(CONFIG_MBEDTLS),y)
 CSRCS+= mbedtls.c
-endif
-ifeq ($(CONFIG_NSS),y)
-CSRCS+= nss.c
-endif
-ifeq ($(CONFIG_OPENSSL),y)
-CSRCS+= openssl.c
-endif
-ifeq ($(CONFIG_POLARSSL),y)
-CSRCS+= polarssl.c
-endif
-ifeq ($(CONFIG_SCHANNEL),y)
-CSRCS+= schannel.c
 endif
 
 DEPPATH += --dep-path vtls

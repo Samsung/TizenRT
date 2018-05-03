@@ -107,6 +107,4 @@ const char *get_result(OCStackResult result);
 const char *get_prov_status(things_es_enrollee_state_e status);
 const char *get_prov_errcode(es_error_code_e last_errcode);
 
-bool start_cloud_provisioning(void *CIinfo);
-
 #endif							//ES_RESOURCE_HANDLER_H_

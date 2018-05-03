@@ -51,6 +51,7 @@ OBJS		= $(AOBJS) $(COBJS)
 # Make Own Archive for CURL
 BIN		= ../libexternal$(LIBEXT)
 
+CFLAGS+= -D__TIZENRT__
 CFLAGS+= -Wno-error
 
 all: .built
@@ -63,6 +64,7 @@ $(COBJS): curl_%$(OBJEXT): %.c
 	$(call COMPILE, $<, $@)
 
 .built: $(OBJS)
+	cp curl-certificates.crt $(TOPDIR)/../tools/fs/contents
 	$(call ARCHIVE, $(BIN), $(OBJS))
 	$(Q) touch .built
 
@@ -75,7 +77,7 @@ depend: .depend
 clean:
 	$(call DELFILE, .built)
 	$(call CLEAN)
-	rm -f $(OBJS)
+	rm -f $(TOPDIR)/../tools/fs/contents/curl-certificates.crt
 
 distclean: clean
 	$(call DELFILE, Make.dep)

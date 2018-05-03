@@ -82,7 +82,8 @@ B2 = 642849266;				/* B2 = (127-127.0/3-24/3-0.03306235651)*2**23 */
 
 float cbrtf(float x)
 {
-	double r, T;
+	double r;
+	double T;
 	union {
 		float f;
 		uint32_t i;

@@ -70,19 +70,14 @@ player_result_t MediaPlayer::setVolume(int vol)
 	return mPMpImpl->setVolume(vol);
 }
 
-void MediaPlayer::setDataSource(std::unique_ptr<stream::InputDataSource> source)
+player_result_t MediaPlayer::setDataSource(std::unique_ptr<stream::InputDataSource> source)
 {
-	mPMpImpl->setDataSource(std::move(source));
+	return mPMpImpl->setDataSource(std::move(source));
 }
 
 void MediaPlayer::setObserver(std::shared_ptr<MediaPlayerObserverInterface> observer)
 {
 	mPMpImpl->setObserver(observer);
-}
-
-player_state_t MediaPlayer::getState()
-{
-	return mPMpImpl->getState();
 }
 
 player_result_t MediaPlayer::seekTo(int msec)

@@ -29,7 +29,6 @@
 
 #include "things_def.h"
 #include "things_common.h"
-#include "utils/things_queue.h"
 #include "logging/things_logger.h"
 #include "utils/things_malloc.h"
 #include "cacommon.h"
@@ -44,7 +43,6 @@
 #include "things_req_handler.h"
 #include "utils/things_hashmap.h"
 
-#include "utils/things_thread.h"
 #ifdef __ST_THINGS_RTOS__
 #include "ctype.h"
 #include "utils/things_rtos_util.h"
@@ -82,7 +80,7 @@ static int verify_request(OCEntityHandlerRequest *eh_request, const char *uri, i
 	things_resource_s *pst_temp_resource = NULL;
 
 	if (g_builder == NULL) {
-		THINGS_LOG_ERROR(THINGS_ERROR, TAG, "Server Builder is not registered..");
+		THINGS_LOG_E(TAG, "Server Builder is not registered..");
 		goto EXIT_VALIDATION;
 	}
 
@@ -95,11 +93,11 @@ static int verify_request(OCEntityHandlerRequest *eh_request, const char *uri, i
 	 */
 	pst_temp_resource = resource;
 	if (resource == NULL) {
-		THINGS_LOG_V_ERROR(THINGS_ERROR, TAG, "Resource Not found : %s ", uri);
+		THINGS_LOG_E(TAG, "Resource Not found : %s ", uri);
 		goto EXIT_VALIDATION;
 	}
 
-	THINGS_LOG_D(THINGS_DEBUG, TAG, "Query in the Request : %s", eh_request->query);
+	THINGS_LOG_D(TAG, "Query in the Request : %s", eh_request->query);
 
 	//  Verify received request in valid or not..
 	// 1. If there's no interface type in the request ..
@@ -116,8 +114,9 @@ static int verify_request(OCEntityHandlerRequest *eh_request, const char *uri, i
 		result = 0;
 
 		//  If the given resource does not have sensor nor read interface type..
-		if (!(resource->things_is_supporting_interface_type(resource, OIC_INTERFACE_SENSOR))
-			&& !(resource->things_is_supporting_interface_type(resource, OC_RSRVD_INTERFACE_READ))) {
+		if ((resource->things_is_supporting_interface_type(resource, OIC_INTERFACE_ACTUATOR))
+			|| (!(resource->things_is_supporting_interface_type(resource, OIC_INTERFACE_SENSOR))
+			&& !(resource->things_is_supporting_interface_type(resource, OC_RSRVD_INTERFACE_READ)))) {
 			//  If no query or..
 			//       query with "supporting interface types"  then...
 			if ((strstr(eh_request->query, "if=") == NULL)
@@ -128,62 +127,12 @@ static int verify_request(OCEntityHandlerRequest *eh_request, const char *uri, i
 				//  Verify request(Attributes.) with Validator func implemented
 				const int num = resource->things_get_num_of_res_types(resource);
 
-				THINGS_LOG_D(THINGS_DEBUG, TAG, "# of RT :%d", num);
+				THINGS_LOG_D(TAG, "# of RT :%d", num);
 
-				if (resource->size > 1) {
-					// Remove "rep" wrapper
-					things_resource_s *res = resource;
-					things_representation_s *tRep = NULL;
-					things_representation_s *tchild_rep = NULL;
-
-					for (int iter = 0; iter < resource->size; ++iter) {
-						tchild_rep = things_create_representation_inst(NULL);
-						res->things_get_representation(res, &tRep);
-						tRep->things_get_object_value(tRep, OC_RSRVD_REPRESENTATION, tchild_rep);
-						res->things_set_representation(res, tchild_rep);
-
-						res = res->things_get_next(res);
-					}
-
-					for (int iter = 0; iter < resource->size; ++iter) {
-						child = NULL;
-
-						if (resource->uri == NULL) {
-							THINGS_LOG_ERROR(THINGS_ERROR, TAG, "Resource URI is NULL.");
-							result = OC_EH_ERROR;
-							goto EXIT_VALIDATION;
-						}
-
-						child = g_builder->get_resource(g_builder, resource->uri);
-
-						if (NULL == child) {
-							THINGS_LOG_ERROR(THINGS_ERROR, TAG, "Not Existing Child Resource.");
-							result = OC_EH_ERROR;
-							goto EXIT_VALIDATION;
-						}
-						if (NULL == resource->rep) {
-							THINGS_LOG_ERROR(THINGS_ERROR, TAG, "things_representation_s is NULL.");
-							result = OC_EH_ERROR;
-							goto EXIT_VALIDATION;
-						}
-
-						if (num > 0) {
-							for (int i = 0; i < num; i++) {
-								result |= dm_validate_attribute_in_request(resource->things_get_res_type(child, i), (const void *) /*eh_request->payload */resource->rep->payload);
-								if (!result) {
-									goto EXIT_VALIDATION;
-								}
-							}
-						}
-
-						resource = resource->things_get_next(resource);
-					}
-				} else {
-					if (num > 0) {
-						for (int iter = 0; iter < num; iter++) {
-							// if it's okey in any case then....it's valid..
-							result |= dm_validate_attribute_in_request(resource->things_get_res_type(resource, iter), (const void *)eh_request->payload);
-						}
+				if (num > 0) {
+					for (int iter = 0; iter < num; iter++) {
+						// if it's okey in any case then....it's valid..
+						result |= dm_validate_attribute_in_request(resource->things_get_res_type(resource, iter), (const void *)eh_request->payload);
 					}
 				}
 			}
@@ -196,18 +145,18 @@ EXIT_VALIDATION:
 	 */
 	things_release_resource_inst(pst_temp_resource);
 
-	THINGS_LOG_D(THINGS_DEBUG, TAG, "Validation Result.(%d)", result);
+	THINGS_LOG_D(TAG, "Validation Result.(%d)", result);
 
 	return result;
 }
 
 OCEntityHandlerResult send_response(OCRequestHandle request_handle, OCResourceHandle resource, OCEntityHandlerResult result, const char *uri, void *payload)
 {
-	THINGS_LOG_D(THINGS_DEBUG, TAG, THINGS_FUNC_ENTRY);
+	THINGS_LOG_D(TAG, THINGS_FUNC_ENTRY);
 	OCEntityHandlerResult eh_result = OC_EH_OK;
 	OCEntityHandlerResponse response = { 0, 0, OC_EH_ERROR, 0, 0, {}, {0}, false };
 
-	THINGS_LOG_D(THINGS_DEBUG, TAG, "Creating Response with Request Handle : %x,Resource Handle : %x", request_handle, resource);
+	THINGS_LOG_D(TAG, "Creating Response with Request Handle : %x,Resource Handle : %x", request_handle, resource);
 
 	response.numSendVendorSpecificHeaderOptions = 0;
 	memset(response.sendVendorSpecificHeaderOptions, 0, sizeof response.sendVendorSpecificHeaderOptions);
@@ -219,17 +168,17 @@ OCEntityHandlerResult send_response(OCRequestHandle request_handle, OCResourceHa
 		response.persistentBufferFlag = 0;
 		response.ehResult = result;
 		if (payload != NULL) {
-			THINGS_LOG_D(THINGS_DEBUG, TAG, "Payload is Not NULL");
+			THINGS_LOG_D(TAG, "Payload is Not NULL");
 			response.payload = (OCPayload *) payload;
 		} else {
-			THINGS_LOG_D(THINGS_DEBUG, TAG, "No Payload");
+			THINGS_LOG_D(TAG, "No Payload");
 			response.payload = NULL;
 		}
 
-		THINGS_LOG_V(THINGS_INFO, TAG, "\t\t\tRes. : %s ( %d )", (response.ehResult == OC_EH_OK ? "NORMAL" : "ERROR"), response.ehResult);
+		THINGS_LOG_V(TAG, "\t\t\tRes. : %s ( %d )", (response.ehResult == OC_EH_OK ? "NORMAL" : "ERROR"), response.ehResult);
 
 		OCStackResult ret = OCDoResponse(&response);
-		THINGS_LOG_V(THINGS_INFO, TAG, "\t\t\tMsg. Out? : (%s)", (ret == OC_STACK_OK) ? "SUCCESS" : "FAIL");
+		THINGS_LOG_V(TAG, "\t\t\tMsg. Out? : (%s)", (ret == OC_STACK_OK) ? "SUCCESS" : "FAIL");
 		if (ret != OC_STACK_OK) {
 			eh_result = OC_EH_ERROR;
 		}
@@ -237,21 +186,8 @@ OCEntityHandlerResult send_response(OCRequestHandle request_handle, OCResourceHa
 		eh_result = OC_EH_ERROR;
 	}
 
-	// THINGS_LOG_D(THINGS_DEBUG, TAG, THINGS_FUNC_EXIT);
+	// THINGS_LOG_D(TAG, THINGS_FUNC_EXIT);
 	return eh_result;
-}
-
-static bool is_number(char *str)
-{
-	int len = strlen(str);
-	for (int index = 0; index < len; index++) {
-		if (!isdigit(str[index])) {
-			THINGS_LOG_D_ERROR(THINGS_ERROR, TAG, "It's NOT NUMBER : %s", str);
-			return false;
-		}
-	}
-	THINGS_LOG_D(THINGS_DEBUG, TAG, "It is NUMBER : %s", str);
-	return true;
 }
 
 /**
@@ -267,7 +203,7 @@ static OCEntityHandlerResult get_provisioning_info(things_resource_s *target_res
 	bool is_reset = things_get_reset_mask(RST_ALL_FLAG);
 
 	if (OC_STACK_OK != OCGetDeviceOwnedState(&is_owned)) {
-		THINGS_LOG_V_ERROR(THINGS_ERROR, TAG, "Failed to get device owned state, Informing as UNOWNED~!!!!");
+		THINGS_LOG_E(TAG, "Failed to get device owned state, Informing as UNOWNED~!!!!");
 		is_owned = false;
 	}
 
@@ -311,7 +247,7 @@ static OCEntityHandlerResult trigger_reset_request(things_resource_s *target_res
 		return OC_EH_NOT_ACCEPTABLE;
 	}
 
-	THINGS_LOG_V(THINGS_DEBUG, TAG, "==> RESET : %s", (reset == true ? "YES" : "NO"));
+	THINGS_LOG_D(TAG, "==> RESET : %s", (reset == true ? "YES" : "NO"));
 
 	if (reset == true) {
 		int res = -1;
@@ -321,11 +257,11 @@ static OCEntityHandlerResult trigger_reset_request(things_resource_s *target_res
 
 		switch (res) {
 		case 1:
-			THINGS_LOG(THINGS_DEBUG, TAG, "Reset Thread create is success.");
+			THINGS_LOG_D(TAG, "Reset Thread create is success.");
 			eh_result = OC_EH_SLOW;
 			break;
 		case 0:
-			THINGS_LOG(THINGS_INFO, TAG, "Already Run Reset-Process.");
+			THINGS_LOG_V(TAG, "Already Run Reset-Process.");
 			eh_result = OC_EH_NOT_ACCEPTABLE;
 		default:
 			things_release_resource_inst(clone_resource);
@@ -333,7 +269,7 @@ static OCEntityHandlerResult trigger_reset_request(things_resource_s *target_res
 			break;
 		}
 	} else {
-		THINGS_LOG_D(THINGS_DEBUG, TAG, "reset = %d, So, can not reset start.", reset);
+		THINGS_LOG_D(TAG, "reset = %d, So, can not reset start.", reset);
 		eh_result = OC_EH_OK;
 	}
 
@@ -344,20 +280,20 @@ static OCEntityHandlerResult trigger_stop_ap_request(things_resource_s *target_r
 {
 	OCEntityHandlerResult eh_result = OC_EH_ERROR;
 
-	THINGS_LOG_V(THINGS_DEBUG, TAG, "==> STOP SOFT AP : %s", (stop_ap == true ? "YES" : "NO"));
+	THINGS_LOG_D(TAG, "==> STOP SOFT AP : %s", (stop_ap == true ? "YES" : "NO"));
 
 	if (stop_ap == true) {
 		if (NULL != g_stop_soft_ap_cb) {
 			if (1 == g_stop_soft_ap_cb(stop_ap)) {
-				THINGS_LOG_V(THINGS_DEBUG, TAG, "Stop Soft AP notified Successfully");
+				THINGS_LOG_D(TAG, "Stop Soft AP notified Successfully");
 				eh_result = OC_EH_OK;
 			} else {
-				THINGS_LOG_V(THINGS_DEBUG, TAG, "Stop Soft AP notified, BUT DENIED");
+				THINGS_LOG_D(TAG, "Stop Soft AP notified, BUT DENIED");
 				eh_result = OC_EH_ERROR;
 			}
 		}
 	} else {
-		THINGS_LOG_D(THINGS_DEBUG, TAG, "stop_ap = %d, So, can not stop AP.", stop_ap);
+		THINGS_LOG_D(TAG, "stop_ap = %d, So, can not stop AP.", stop_ap);
 		eh_result = OC_EH_OK;
 	}
 
@@ -369,17 +305,17 @@ static OCEntityHandlerResult trigger_abort_request(things_resource_s *target_res
 	OCEntityHandlerResult eh_result = OC_EH_ERROR;
 	static pthread_t h_thread_abort = NULL;
 
-	THINGS_LOG_V(THINGS_DEBUG, TAG, "==> ABORT Easy Setup : %d", abort_es);
+	THINGS_LOG_D(TAG, "==> ABORT Easy Setup : %d", abort_es);
 
 	switch (abort_es) {
 	case ABORT_BEFORE_RESET_CONFIRM:	// before Reset Confirm.
 	case ABORT_BEFORE_SEC_CONFIRM:	// After Reset Confirm & before Security Confirm.
 	case ABORT_BEFORE_DATA_PROVISIONING:	// After Security Confirm
-		THINGS_LOG_V(THINGS_DEBUG, TAG, "Forwarding abort-level to st_things App.(Level: %d)", abort_es);
+		THINGS_LOG_D(TAG, "Forwarding abort-level to st_things App.(Level: %d)", abort_es);
 		eh_result = things_abort(&h_thread_abort, abort_es);
 		break;
 	default:
-		THINGS_LOG_D(THINGS_DEBUG, TAG, "abort_es = %d, So, Don't need any-process", abort_es);
+		THINGS_LOG_D(TAG, "abort_es = %d, So, Don't need any-process", abort_es);
 		eh_result = OC_EH_OK;
 		break;
 	}
@@ -402,32 +338,8 @@ static OCEntityHandlerResult set_provisioning_info(things_resource_s *target_res
 	} else if (target_resource->rep->things_get_int_value(target_resource->rep, SEC_ATTRIBUTE_PROV_ABORT, &abort_es) == true) {
 		eh_result = trigger_abort_request(target_resource, (things_es_enrollee_abort_e) abort_es);
 	} else {
-		THINGS_LOG_V_ERROR(THINGS_ERROR, TAG, "Get Value is failed.(RESET NOR TERMINATE NOR ABORT)");
+		THINGS_LOG_E(TAG, "Get Value is failed.(RESET NOR TERMINATE NOR ABORT)");
 		return eh_result;
-	}
-
-	return eh_result;
-}
-
-static OCEntityHandlerResult get_device_or_platform_info_result(things_resource_s *target_resource, char *device_id)
-{
-	OCEntityHandlerResult eh_result = OC_EH_ERROR;
-
-	if (strlen(device_id) > 0 && is_number(device_id)) {
-		int num = atoi(device_id);
-
-		// 1. Get the resource with uri
-		things_resource_s *resource = dm_get_resource_instance(target_resource->uri, num);
-		if (resource) {
-			// 2. Clone the Payload of the resource
-			OCPayloadDestroy((OCPayload *) target_resource->rep->payload);
-			target_resource->rep->payload = NULL;
-			target_resource->rep->payload = OCRepPayloadClone(resource->rep->payload);
-
-			eh_result = OC_EH_OK;
-		}
-	} else {
-		THINGS_LOG_V_ERROR(THINGS_ERROR, TAG, "Invalid Device ID : %s", device_id);
 	}
 
 	return eh_result;
@@ -452,10 +364,10 @@ static OCEntityHandlerResult process_post_request(things_resource_s **target_res
 			if (1 == ret) {
 				eh_result = OC_EH_OK;
 			} else {
-				THINGS_LOG_D_ERROR(THINGS_ERROR, TAG, "Handled as ERROR from App.");
+				THINGS_LOG_E(TAG, "Handled as ERROR from App.");
 			}
 		} else {
-			THINGS_LOG_V(THINGS_ERROR, TAG, "g_handle_request_set_cb is not registered");
+			THINGS_LOG_E(TAG, "g_handle_request_set_cb is not registered");
 		}
 	}
 
@@ -470,7 +382,7 @@ static OCEntityHandlerResult process_get_request(things_resource_s *target_resou
 	char *device_id = NULL;
 
 	device_id = strrchr(target_resource->uri, '/') + 1;
-	THINGS_LOG_D(THINGS_DEBUG, TAG, "Get Device ID in Resources URI = %s", device_id);
+	THINGS_LOG_D(TAG, "Get Device ID in Resources URI = %s", device_id);
 
 	things_representation_s *rep = things_create_representation_inst(NULL);
 	target_resource->things_set_representation(target_resource, rep);
@@ -482,19 +394,16 @@ static OCEntityHandlerResult process_get_request(things_resource_s *target_resou
 	} else if (strstr(target_resource->uri, URI_FIRMWARE) != NULL) {
 		eh_result = fmwup_get_data(target_resource);
 #endif
-	} else if (strstr(target_resource->uri, OC_RSRVD_DEVICE_URI) != NULL || strstr(target_resource->uri, OC_RSRVD_PLATFORM_URI) != NULL) {
-		// 9. Get request for the device maintenance information
-		eh_result = get_device_or_platform_info_result(target_resource, device_id);
 	} else {
 		if (g_handle_request_get_cb != NULL) {
 			int ret = g_handle_request_get_cb(target_resource);
 			if (1 == ret) {
 				eh_result = OC_EH_OK;
 			} else {
-				THINGS_LOG_D_ERROR(THINGS_ERROR, TAG, "Handled as ERROR from App.");
+				THINGS_LOG_E(TAG, "Handled as ERROR from App.");
 			}
 		} else {
-			THINGS_LOG_V(THINGS_ERROR, TAG, "g_handle_request_get_cb is not registered");
+			THINGS_LOG_E(TAG, "g_handle_request_get_cb is not registered");
 		}
 	}
 
@@ -503,35 +412,35 @@ static OCEntityHandlerResult process_get_request(things_resource_s *target_resou
 
 static bool is_can_not_response_case(things_resource_s *target_resource, OCMethod req_type, OCEntityHandlerResult eh_result)
 {
-	THINGS_LOG_D(THINGS_DEBUG, TAG, THINGS_FUNC_ENTRY);
+	THINGS_LOG_D(TAG, THINGS_FUNC_ENTRY);
 
 	bool res = false;
 
 	if (target_resource == NULL) {
-		THINGS_LOG_ERROR(THINGS_ERROR, TAG, "Invalid argument.(target_resource=NULL)");
+		THINGS_LOG_E(TAG, "Invalid argument.(target_resource=NULL)");
 		return true;
 	}
 
-	THINGS_LOG_D(THINGS_DEBUG, TAG, "target_resource->uri=%s", target_resource->uri);
+	THINGS_LOG_D(TAG, "target_resource->uri=%s", target_resource->uri);
 	if (strstr(target_resource->uri, URI_SEC) != NULL && strstr(target_resource->uri, URI_PROVINFO) != NULL) {
 		if (req_type == OC_REST_POST && eh_result == OC_EH_SLOW) {
 			res = true;
 		}
 	}
 
-	THINGS_LOG_D(THINGS_DEBUG, TAG, "result = %d", res);
-	THINGS_LOG_D(THINGS_DEBUG, TAG, THINGS_FUNC_EXIT);
+	THINGS_LOG_D(TAG, "result = %d", res);
+	THINGS_LOG_D(TAG, THINGS_FUNC_EXIT);
 	return res;
 }
 
 void notify_result_of_reset(things_resource_s *target_resource, bool result)
 {
-	THINGS_LOG(THINGS_DEBUG, TAG, THINGS_FUNC_ENTRY);
+	THINGS_LOG_D(TAG, THINGS_FUNC_ENTRY);
 
 	OCEntityHandlerResult eh_result = OC_EH_ERROR;
 
 	if (target_resource == NULL) {
-		THINGS_LOG(THINGS_DEBUG, TAG, "Not exist remote-client.");
+		THINGS_LOG_D(TAG, "Not exist remote-client.");
 		return;
 	}
 
@@ -546,23 +455,23 @@ void notify_result_of_reset(things_resource_s *target_resource, bool result)
 		rep_payload = NULL;
 
 	} else {
-		THINGS_LOG_V_ERROR(THINGS_ERROR, TAG, "Handing Request Failed, Sending ERROR Response");
+		THINGS_LOG_E(TAG, "Handing Request Failed, Sending ERROR Response");
 
 		send_response(target_resource->request_handle, target_resource->resource_handle, eh_result, target_resource->uri, NULL);
 	}
 
 	things_release_resource_inst(target_resource);
 
-	THINGS_LOG(THINGS_DEBUG, TAG, THINGS_FUNC_EXIT);
+	THINGS_LOG_D(TAG, THINGS_FUNC_EXIT);
 }
 
 int notify_things_observers(const char *uri, const char *query)
 {
-	THINGS_LOG_D(THINGS_DEBUG, TAG, THINGS_FUNC_ENTRY);
+	THINGS_LOG_D(TAG, THINGS_FUNC_ENTRY);
 
 	int res = 0;
 
-	THINGS_LOG_D(THINGS_DEBUG, TAG, "uri = %s", uri);
+	THINGS_LOG_D(TAG, "uri = %s", uri);
 	if (NULL != uri) {
 		int remainLen = MAX_RESOURCE_LEN - 1;
 		char tempUri[MAX_RESOURCE_LEN] = { 0 };
@@ -581,19 +490,19 @@ int notify_things_observers(const char *uri, const char *query)
 			remainLen -= strnlen(tempUri, MAX_RESOURCE_LEN - 1);
 		}
 
-		THINGS_LOG_D(THINGS_DEBUG, TAG, "%s resource notifies to observers.", tempUri);
+		THINGS_LOG_D(TAG, "%s resource notifies to observers.", tempUri);
 
 		for (int iter = 0; iter < g_builder->res_num; iter++) {
 			if (strstr(g_builder->gres_arr[iter]->uri, tempUri) != NULL) {
 				OCStackResult ret2 = OCNotifyAllObservers((OCResourceHandle) g_builder->gres_arr[iter]->resource_handle,
 									 OC_MEDIUM_QOS);
 
-				THINGS_LOG_D(THINGS_DEBUG, TAG, "%s resource has notified to observers.", g_builder->gres_arr[iter]->uri);
+				THINGS_LOG_D(TAG, "%s resource has notified to observers.", g_builder->gres_arr[iter]->uri);
 
 				if (OC_STACK_OK == ret2) {
-					THINGS_LOG(THINGS_INFO, TAG, "Success: Sent notification to Observers");
+					THINGS_LOG_V(TAG, "Success: Sent notification to Observers");
 				} else {
-					THINGS_LOG_D(THINGS_INFO, TAG, "Failed: No Observers to notify : %d ", ret2);
+					THINGS_LOG_V(TAG, "Failed: No Observers to notify : %d ", ret2);
 				}
 				res = 1;
 				break;
@@ -601,7 +510,7 @@ int notify_things_observers(const char *uri, const char *query)
 		}
 	}
 
-	THINGS_LOG_D(THINGS_DEBUG, TAG, THINGS_FUNC_EXIT);
+	THINGS_LOG_D(TAG, THINGS_FUNC_EXIT);
 	return res;
 }
 
@@ -610,28 +519,28 @@ OCEntityHandlerResult handle_message(things_resource_s *target_resource)
 	OCEntityHandlerResult eh_result = OC_EH_ERROR;
 
 	if (NULL == target_resource) {
-		THINGS_LOG_D(THINGS_DEBUG, TAG, "Request Item is NULL.");
+		THINGS_LOG_D(TAG, "Request Item is NULL.");
 		return OC_EH_ERROR;
 	}
 
-	THINGS_LOG_D(THINGS_DEBUG, TAG, "Request Handle : %x, Resource Handle : %x", target_resource->request_handle, target_resource->resource_handle);
+	THINGS_LOG_D(TAG, "Request Handle : %x, Resource Handle : %x", target_resource->request_handle, target_resource->resource_handle);
 
 	if (target_resource->req_type == OC_REST_GET) {
-		THINGS_LOG_V(THINGS_INFO, TAG, "\t\tReq. : GET on %s", target_resource->uri);
-		THINGS_LOG_V(THINGS_INFO, TAG, "\t\tQuery: %s", target_resource->query);
+		THINGS_LOG_V(TAG, "\t\tReq. : GET on %s", target_resource->uri);
+		THINGS_LOG_V(TAG, "\t\tQuery: %s", target_resource->query);
 		eh_result = process_get_request(target_resource);
 	} else if (target_resource->req_type == OC_REST_POST) {
-		THINGS_LOG_V(THINGS_INFO, TAG, "\t\tReq. : POST on  %s", target_resource->uri);
-		THINGS_LOG_V(THINGS_INFO, TAG, "\t\tQuery: %s", target_resource->query);
+		THINGS_LOG_V(TAG, "\t\tReq. : POST on  %s", target_resource->uri);
+		THINGS_LOG_V(TAG, "\t\tQuery: %s", target_resource->query);
 		eh_result = process_post_request(&target_resource);
 	} else {
-		THINGS_LOG_V_ERROR(THINGS_ERROR, TAG, " Invalid Request Received : %d", target_resource->req_type);
+		THINGS_LOG_E(TAG, " Invalid Request Received : %d", target_resource->req_type);
 	}
-	THINGS_LOG_D(THINGS_DEBUG, TAG, " @@@@@ target_resource ->size : %d", target_resource->size);
+	THINGS_LOG_D(TAG, " @@@@@ target_resource ->size : %d", target_resource->size);
 
 	if (is_can_not_response_case(target_resource, target_resource->req_type, eh_result) == false) {
 		if (eh_result != OC_EH_OK && eh_result != OC_EH_SLOW) {
-			THINGS_LOG_V_ERROR(THINGS_ERROR, TAG, "Handing Request Failed, Sending ERROR Response");
+			THINGS_LOG_E(TAG, "Handing Request Failed, Sending ERROR Response");
 
 			send_response(target_resource->request_handle, target_resource->resource_handle, eh_result, target_resource->uri, NULL);
 
@@ -655,12 +564,12 @@ OCEntityHandlerResult handle_message(things_resource_s *target_resource)
 
 OCEntityHandlerResult entity_handler(OCEntityHandlerFlag flag, OCEntityHandlerRequest *entity_handler_request, void *callback)
 {
-	THINGS_LOG_D(THINGS_INFO, TAG, THINGS_FUNC_ENTRY);
+	THINGS_LOG_V(TAG, THINGS_FUNC_ENTRY);
 	OCEntityHandlerResult eh_result = OC_EH_ERROR;
 
 	// Validate pointer
 	if (!entity_handler_request) {
-		THINGS_LOG_ERROR(THINGS_ERROR, TAG, "Invalid request pointer");
+		THINGS_LOG_E(TAG, "Invalid request pointer");
 		return eh_result;
 	}
 
@@ -669,31 +578,31 @@ OCEntityHandlerResult entity_handler(OCEntityHandlerFlag flag, OCEntityHandlerRe
 	// Observe Request Handling
 	if (flag & OC_OBSERVE_FLAG) {
 		if (OC_OBSERVE_REGISTER == entity_handler_request->obsInfo.action) {
-			THINGS_LOG_V(THINGS_INFO, TAG, "Observe Requset on : %s ", uri);
+			THINGS_LOG_V(TAG, "Observe Requset on : %s ", uri);
 			// 1. Check whether it's Observe request on the Collection Resource
 			if (NULL != strstr(uri, URI_DEVICE_COL)) {
 				//2. Check whether the query carriese the if=oic.if.b
 				if ((strstr(entity_handler_request->query, OIC_INTERFACE_BATCH) == NULL)) {
 					//3. If not batch then error
-					THINGS_LOG_V_ERROR(THINGS_ERROR, TAG, "Collection Resource Requires BATCH for Observing : %s", entity_handler_request->query);
+					THINGS_LOG_E(TAG, "Collection Resource Requires BATCH for Observing : %s", entity_handler_request->query);
 					eh_result = OC_EH_BAD_REQ;
 					goto RESPONSE_ERROR;
 				} else {
-					THINGS_LOG_V_ERROR(THINGS_ERROR, TAG, "Receiving Observe Request Collection Resource");
+					THINGS_LOG_E(TAG, "Receiving Observe Request Collection Resource");
 				}
 			}
 		} else if (OC_OBSERVE_DEREGISTER == entity_handler_request->obsInfo.action) {
-			THINGS_LOG_V(THINGS_INFO, TAG, "CancelObserve Request on : %s", uri);
+			THINGS_LOG_V(TAG, "CancelObserve Request on : %s", uri);
 		}
 	}
 	// Get/Post Request Handling
 	if (flag & OC_REQUEST_FLAG) {
 		if (things_get_reset_mask(RST_CONTROL_MODULE_DISABLE) == true) {
-			THINGS_LOG(THINGS_INFO, TAG, "Control Module Disable.");
+			THINGS_LOG_V(TAG, "Control Module Disable.");
 			eh_result = OC_EH_NOT_ACCEPTABLE;
 		} else if ((OC_REST_GET == entity_handler_request->method)
 				   || (OC_REST_POST == entity_handler_request->method)) {
-			THINGS_LOG_D(THINGS_INFO, TAG, "Request Handle : %x, Resource Handle : %x", entity_handler_request->requestHandle, entity_handler_request->resource);
+			THINGS_LOG_V(TAG, "Request Handle : %x, Resource Handle : %x", entity_handler_request->requestHandle, entity_handler_request->resource);
 			if (verify_request(entity_handler_request, uri, (int)entity_handler_request->method) > 0) {
 				//  IoTivity Stack Destroy the payload after receving result from this function
 				//       Therefore, we need to copy/clone the payload for the later use..
@@ -706,12 +615,12 @@ OCEntityHandlerResult entity_handler(OCEntityHandlerFlag flag, OCEntityHandlerRe
 
 				eh_result = handle_message(resource);
 			} else {
-				THINGS_LOG_V_ERROR(THINGS_ERROR, TAG, "Invalid Query in the Request : %s", entity_handler_request->query);
+				THINGS_LOG_E(TAG, "Invalid Query in the Request : %s", entity_handler_request->query);
 			}
 		} else if (OC_REST_DELETE == entity_handler_request->method || OC_REST_PUT == entity_handler_request->method) {
-			THINGS_LOG_ERROR(THINGS_ERROR, TAG, "Delete/PUT Req. Handling is not supported Yet");
+			THINGS_LOG_E(TAG, "Delete/PUT Req. Handling is not supported Yet");
 		} else {
-			THINGS_LOG_D(THINGS_DEBUG, TAG, "Received unsupported method from client");
+			THINGS_LOG_D(TAG, "Received unsupported method from client");
 		}
 
 	}
@@ -728,7 +637,7 @@ RESPONSE_ERROR:
 		//      Need to refactor later..
 	}
 
-	THINGS_LOG_D(THINGS_DEBUG, TAG, THINGS_FUNC_EXIT);
+	THINGS_LOG_D(TAG, THINGS_FUNC_EXIT);
 
 	return eh_result;
 }
@@ -761,7 +670,7 @@ struct things_request_handler_s *get_handler_instance()
 	struct things_request_handler_s *handler = (things_request_handler_s *) things_malloc(sizeof(things_request_handler_s));
 
 	if (handler == NULL) {
-		THINGS_LOG_ERROR(THINGS_ERROR, TAG, "Not Enough Memory");
+		THINGS_LOG_E(TAG, "Not Enough Memory");
 		return NULL;
 	} else {
 		handler->entity_handler = &entity_handler;
@@ -777,16 +686,6 @@ void release_handler_instance(struct things_request_handler_s *handler)
 	if (handler) {
 		handler->deinit_module();
 		things_free(handler);
-	}
-}
-
-int register_stop_softap_cb(stop_softap_func_type func)
-{
-	if (NULL != func) {
-		g_stop_soft_ap_cb = func;
-		return 1;
-	} else {
-		return 0;
 	}
 }
 

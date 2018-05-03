@@ -61,16 +61,6 @@ void things_log_shutdown();
 void things_log_set_version(char *version);
 
 /**
- * Output a log string with the specified priority level.
- * Only defined for Linux and Android
- *
- * @param level  - DEBUG, INFO, WARNING, ERROR, FATAL
- * @param tag    - Module name
- * @param log_str - log string
- */
-void things_log(things_log_level_e level, const char *tag, const char *funcName, const int16_t line_num, const char *log_str);
-
-/**
  * Output a variable argument list log string with the specified priority level.
  * Only defined for Linux and Android
  *
@@ -83,50 +73,45 @@ void things_logv(things_log_level_e level, const char *tag, const char *func_nam
 
 const char *__get_timestamp__();
 
-#ifdef TB_LOG
 #define THINGS_LOG_INIT()   things_log_init()
 #define THINGS_LOG_SHUTDOWN()   things_log_shutdown()
-#define THINGS_LOG(level, tag, log_str)  things_log((level), (tag), __FUNCTION__, __LINE__, (log_str))
-#define THINGS_LOG_D(level, tag, ...)   things_logv((level), (tag), __FUNCTION__, __LINE__, __VA_ARGS__)
-#define THINGS_LOG_V(level, tag, ...)   things_logv((level), (tag), __FUNCTION__, __LINE__, __VA_ARGS__)
+
+#ifdef CONFIG_DEBUG_ST_THINGS
+
+#ifdef CONFIG_DEBUG_ST_THINGS_WARN
+#define THINGS_LOG_W(tag, ...)   things_logv((THINGS_WARNING), (tag), __FUNCTION__, __LINE__, __VA_ARGS__)
+#else //CONFIG_DEBUG_ST_THINGS_WARN
+#define THINGS_LOG_W(tag, ...)
+#endif
+
+#ifdef CONFIG_DEBUG_ST_THINGS_ERROR
+#define THINGS_LOG_E(tag, ...)   things_logv((THINGS_ERROR), (tag), __FUNCTION__, __LINE__, __VA_ARGS__)
+#else //CONFIG_DEBUG_ST_THINGS_ERROR
+#define THINGS_LOG_E(tag, ...)
+#endif
+
+#ifdef CONFIG_DEBUG_ST_THINGS_DEBUG
+#define THINGS_LOG_D(tag, ...)   things_logv((THINGS_DEBUG), (tag), __FUNCTION__, __LINE__, __VA_ARGS__)
+#else //CONFIG_DEBUG_ST_THINGS_DEBUG
+#define THINGS_LOG_D(tag, ...)
+#endif
+
+#ifdef CONFIG_DEBUG_ST_THINGS_INFO
+#define THINGS_LOG_V(tag, ...)   things_logv((THINGS_INFO), (tag), __FUNCTION__, __LINE__, __VA_ARGS__)
+#else //CONFIG_DEBUG_ST_THINGS_INFO
+#define THINGS_LOG_V(tag, ...)
+#endif
+
+#else //CONFIG_DEBUG_ST_THINGS
+
+#define THINGS_LOG_W(tag, ...)
+#define THINGS_LOG_E(tag, ...)
+#define THINGS_LOG_D(tag, ...)
+#define THINGS_LOG_V(tag, ...)
+
+#endif //CONFIG_DEBUG_ST_THINGS
+
 #define PROFILING_TIME(...)
-#else							//TB_LOG
-/*
- * Merged RELEASE & LOGGING option into RELEASE
- * THINGS_LOG_D will be disabled in RELEASE mode
- * THINGS_LOG & THINGS_LOG_V will be enabled in RELEASE mode
- *
- */
-#define THINGS_LOG_CONFIG(ctx)
-#define THINGS_LOG_SHUTDOWN()
-
-#define THINGS_LOG(level, tag, log_str)  things_log((level), (tag), __FUNCTION__, __LINE__, (log_str))
-#define THINGS_LOG_V(level, tag, ...)   things_logv((level), (tag), __FUNCTION__, __LINE__, __VA_ARGS__)
-#define THINGS_LOG_D(level, tag, ...)   things_logv((level), (tag), __FUNCTION__, __LINE__, __VA_ARGS__)
-
-#define THINGS_LOG_DEBUG(level, tag, log_str)  things_log((level), (tag), __FUNCTION__, __LINE__, (log_str))
-#define THINGS_LOG_INFO(level, tag, log_str)  things_log((level), (tag), __FUNCTION__, __LINE__, (log_str))
-#define THINGS_LOG_WARNING(level, tag, log_str)  things_log((level), (tag), __FUNCTION__, __LINE__, (log_str))
-#define THINGS_LOG_ERROR(level, tag, log_str)  things_log((level), (tag), __FUNCTION__, __LINE__, (log_str))
-#define THINGS_LOG_FATAL(level, tag, log_str)  things_log((level), (tag), __FUNCTION__, __LINE__, (log_str))
-
-#define THINGS_LOG_V_DEBUG(level, tag, ...)  things_logv((level), (tag), __FUNCTION__, __LINE__, __VA_ARGS__)
-#define THINGS_LOG_V_INFO(level, tag, ...)  things_logv((level), (tag), __FUNCTION__, __LINE__, __VA_ARGS__)
-#define THINGS_LOG_V_WARNING(level, tag, ...)  things_logv((level), (tag), __FUNCTION__, __LINE__, __VA_ARGS__)
-#define THINGS_LOG_V_ERROR(level, tag, ...)  things_logv((level), (tag), __FUNCTION__, __LINE__, __VA_ARGS__)
-#define THINGS_LOG_V_FATAL(level, tag, ...)  things_logv((level), (tag), __FUNCTION__, __LINE__, __VA_ARGS__)
-
-#define THINGS_LOG_D_DEBUG(level, tag, ...)  things_logv((level), (tag), __FUNCTION__, __LINE__, __VA_ARGS__)
-#define THINGS_LOG_D_INFO(level, tag, ...)  things_logv((level), (tag), __FUNCTION__, __LINE__, __VA_ARGS__)
-#define THINGS_LOG_D_WARNING(level, tag, ...)  things_logv((level), (tag), __FUNCTION__, __LINE__, __VA_ARGS__)
-#define THINGS_LOG_D_ERROR(level, tag, ...)  things_logv((level), (tag), __FUNCTION__, __LINE__, __VA_ARGS__)
-#define THINGS_LOG_D_FATAL(level, tag, ...)  things_logv((level), (tag), __FUNCTION__, __LINE__, __VA_ARGS__)
-// Fot set loglevel //
-
-#define PROFILING_TIME(...)
-#define THINGS_LOG_INIT()
-// #define ENABLE_MALLOC_DEBUG
-#endif							// TB_LOG
 
 #ifdef __cplusplus
 }

@@ -34,7 +34,7 @@ With the Model Manager, you can:
 - [Manage device model](HowToManageDeviceModel.md)
 - [Manage Certificate](manage-certificate.md)
 
-The Model Manager is displayed while creating a new project with SmartThings functionality. If you want to access the Model Manager later again, in the **Project Explorer** view, right-click the project and select **Manage ST-Things Resource**.
+The Model Manager is displayed while creating a new project with SmartThings functionality. If you want to access the Model Manager later again, in the **Project Explorer** view, right-click the project and select **Manage ST Things Resource**.
 
 #### **Checking Device, Resource, and Property Information**
 To access information:  

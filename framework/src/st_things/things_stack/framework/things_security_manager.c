@@ -49,7 +49,7 @@
 #endif
 #endif
 
-#define TAG "OIC_SEC_MGR"
+#define TAG "[OIC_SEC_MGR]"
 
 typedef enum {
 	OIC_SEC_OK = 0,
@@ -175,7 +175,7 @@ const unsigned char OIC_SVR_DB_DOXM_PAYLOAD[] = {
 
 FILE *server_fopen(const char *path, const char *mode)	// pkss
 {
-	THINGS_LOG_D(THINGS_DEBUG, TAG, "F SVR DB File Path : %s", SVR_DB_PATH);
+	THINGS_LOG_D(TAG, "F SVR DB File Path : %s", SVR_DB_PATH);
 	(void)path;
 	return fopen(SVR_DB_PATH, mode);
 }
@@ -218,7 +218,7 @@ int server_unlink(const char *path)
  */
 static OCStackResult seckey_setup(const char *filename, OicSecKey_t *key, OicEncodingType_t encoding)
 {
-	THINGS_LOG_D(THINGS_DEBUG, TAG, "IN: %s", __func__);
+	THINGS_LOG_D(TAG, "IN: %s", __func__);
 
 	size_t size = 0;
 	key->data = NULL;
@@ -227,8 +227,8 @@ static OCStackResult seckey_setup(const char *filename, OicSecKey_t *key, OicEnc
 	FILE *fp = fopen(filename, "rb");
 
 	if (fp == NULL) {
-		THINGS_LOG_D(THINGS_ERROR, TAG, "Can not open file[%s].", filename);
-		THINGS_LOG_D(THINGS_DEBUG, TAG, "OUT[FAIL]: %s", __func__);
+		THINGS_LOG_E(TAG, "Can not open file[%s].", filename);
+		THINGS_LOG_D(TAG, "OUT[FAIL]: %s", __func__);
 		return OC_STACK_ERROR;
 	}
 
@@ -258,8 +258,8 @@ static OCStackResult seckey_setup(const char *filename, OicSecKey_t *key, OicEnc
 		rewind(fp);
 		key->data = (uint8_t *)things_malloc(size);
 		if (key->data == NULL) {
-			THINGS_LOG_D(THINGS_ERROR, TAG, "Memory Full");
-			THINGS_LOG_D(THINGS_DEBUG, TAG, "OUT[FAIL]: %s", __func__);
+			THINGS_LOG_E(TAG, "Memory Full");
+			THINGS_LOG_D(TAG, "OUT[FAIL]: %s", __func__);
 			fclose(fp);
 			return OC_STACK_NO_MEMORY;
 		}
@@ -268,7 +268,7 @@ static OCStackResult seckey_setup(const char *filename, OicSecKey_t *key, OicEnc
 	}
 
 	fclose(fp);
-	THINGS_LOG_D(THINGS_DEBUG, TAG, "OUT: %s", __func__);
+	THINGS_LOG_D(TAG, "OUT: %s", __func__);
 	return OC_STACK_OK;
 }
 
@@ -280,14 +280,14 @@ static OCStackResult save_signed_asymmetric_key(OicUuid_t *subject_uuid);
 
 static int GenerateSvrDb(OCPersistentStorage *ps)
 {
-	THINGS_LOG_D(THINGS_INFO, TAG, "In %s", __func__);
+	THINGS_LOG_V(TAG, "In %s", __func__);
 
 	if (AUTH_UNKNOW == g_auth_type) {
-		THINGS_LOG(THINGS_INFO, TAG, "Unknown authentication type for ownership transfer.");
-		THINGS_LOG(THINGS_INFO, TAG, "please make sure your configuration in json file.");
-		THINGS_LOG(THINGS_INFO, TAG, "----------------------");
-		THINGS_LOG(THINGS_INFO, TAG, "Justwork authentication will be used as default authentication method.");
-		THINGS_LOG(THINGS_INFO, TAG, "----------------------");
+		THINGS_LOG_V(TAG, "Unknown authentication type for ownership transfer.");
+		THINGS_LOG_V(TAG, "please make sure your configuration in json file.");
+		THINGS_LOG_V(TAG, "----------------------");
+		THINGS_LOG_V(TAG, "Justwork authentication will be used as default authentication method.");
+		THINGS_LOG_V(TAG, "----------------------");
 		g_auth_type = AUTH_JUST_WORKS;
 	}
 
@@ -307,43 +307,43 @@ static int GenerateSvrDb(OCPersistentStorage *ps)
 		size_t svrdb_size = 0;
 
 		if (g_auth_type & AUTH_JUST_WORKS) {
-			THINGS_LOG(THINGS_DEBUG, TAG, "Added Justworks OxM.");
+			THINGS_LOG_D(TAG, "Added Justworks OxM.");
 			oxms[oxm_cnt++] = OIC_JUST_WORKS;
 			oxm_size++;
 		}
 		if (g_auth_type & AUTH_RANDOM_PIN) {
-			THINGS_LOG(THINGS_DEBUG, TAG, "Added Random PIN based OxM.");
+			THINGS_LOG_D(TAG, "Added Random PIN based OxM.");
 			oxms[oxm_cnt++] = OIC_RANDOM_DEVICE_PIN;
 			oxm_size++;
 		}
 		if (g_auth_type & AUTH_CERTIFICATE || g_auth_type & AUTH_CERTIFICATE_CONFIRM) {
-			THINGS_LOG(THINGS_DEBUG, TAG, "Added Certificate based OxM.");
+			THINGS_LOG_D(TAG, "Added Certificate based OxM.");
 			oxms[oxm_cnt++] = OIC_MANUFACTURER_CERTIFICATE;
 			oxm_size++;
 		}
 		if (g_auth_type & AUTH_DECENTRALIZED_PUB_KEY) {
-			THINGS_LOG(THINGS_DEBUG, TAG, "Added Decentralized public key based OxM.");
+			THINGS_LOG_D(TAG, "Added Decentralized public key based OxM.");
 			oxms[oxm_cnt++] = OIC_DECENTRALIZED_PUBLIC_KEY;
 			oxm_size++;
 		}
 		if (g_auth_type & AUTH_PRECONF_PIN) {
-			THINGS_LOG(THINGS_DEBUG, TAG, "Added Preconfigured-PIN based OxM (for MOT only).");
+			THINGS_LOG_D(TAG, "Added Preconfigured-PIN based OxM (for MOT only).");
 			oxms[oxm_cnt++] = 0xFF00;	//OIC_PRECONFIG_PIN
 			oxm_size += 3;
 		}
 		if (g_auth_type & AUTH_JUST_WORKS_MUTUAL_VERIFIED) {
-			THINGS_LOG(THINGS_DEBUG, TAG, "Added Mutual Verification Justworks based OxM.");
+			THINGS_LOG_D(TAG, "Added Mutual Verification Justworks based OxM.");
 			oxms[oxm_cnt++] = 0xFF01;
 			oxm_size += 3;
 		}
 		if (g_auth_type & AUTH_CERTIFICATE || g_auth_type & AUTH_CERTIFICATE_CONFIRM) {
-			THINGS_LOG(THINGS_DEBUG, TAG, "Added Certificate+Confirm based OxM.");
+			THINGS_LOG_D(TAG, "Added Certificate+Confirm based OxM.");
 			oxms[oxm_cnt++] = 0xFF02;
 			oxm_size += 3;
 		}
 		if (0 == oxm_cnt) {
-			THINGS_LOG_ERROR(THINGS_ERROR, TAG, "Failed to extract authentication types.");
-			THINGS_LOG_ERROR(THINGS_ERROR, TAG, "Please make sure your configuration in json file.");
+			THINGS_LOG_E(TAG, "Failed to extract authentication types.");
+			THINGS_LOG_E(TAG, "Please make sure your configuration in json file.");
 			res = OIC_SEC_INVALID_PARAM;
 			goto error;
 		}
@@ -351,7 +351,7 @@ static int GenerateSvrDb(OCPersistentStorage *ps)
 		svrdb_size = sizeof(OIC_SVR_DB_COMMON) + sizeof(OIC_SVR_DB_DOXM_HEADER) + sizeof(OIC_SVR_DB_DOXM_PAYLOAD) + 2 /*size of payload length */  + oxm_size;
 		svrdb = (unsigned char *)things_malloc(svrdb_size + 32);
 		if (NULL == svrdb) {
-			THINGS_LOG_ERROR(THINGS_ERROR, TAG, "Failed to memory allocation.");
+			THINGS_LOG_E(TAG, "Failed to memory allocation.");
 			goto error;
 		}
 		//
@@ -413,14 +413,14 @@ static int GenerateSvrDb(OCPersistentStorage *ps)
 		ps->write(svrdb, 1, svrdb_size, fp);
 		ps->close(fp);
 		things_free(svrdb);
-		THINGS_LOG_D(THINGS_INFO, TAG, "Out %s", __func__);
+		THINGS_LOG_V(TAG, "Out %s", __func__);
 		return OIC_SEC_OK;
 error:
 		ps->close(fp);
 		things_free(svrdb);
 		return OIC_SEC_ERROR;
 	} else {
-		THINGS_LOG_D_ERROR(THINGS_ERROR, TAG, "Can not open the [%s], Please make sure the access permision of file system.", SVR_DB_PATH);
+		THINGS_LOG_E(TAG, "Can not open the [%s], Please make sure the access permision of file system.", SVR_DB_PATH);
 	}
 
 	return res;					// return 0 when failed, 1 otherwise..
@@ -434,13 +434,13 @@ static OCStackResult sm_secure_resource_check(OicUuid_t *device_id)
 	bool isOwned = false;
 	oc_res = GetDoxmIsOwned(&isOwned);
 	if (OC_STACK_OK != oc_res) {
-		THINGS_LOG_D_ERROR(THINGS_ERROR, TAG, "Error in GetDoxmIsOwned : %d", (int)oc_res);
+		THINGS_LOG_E(TAG, "Error in GetDoxmIsOwned : %d", (int)oc_res);
 		return oc_res;
 	}
 	if (!isOwned) {
 		oc_res = SetDoxmDeviceID(device_id);
 		if (OC_STACK_OK != oc_res) {
-			THINGS_LOG_D_ERROR(THINGS_ERROR, TAG, "Error in SetDoxmDeviceID : %d", (int)oc_res);
+			THINGS_LOG_E(TAG, "Error in SetDoxmDeviceID : %d", (int)oc_res);
 			return oc_res;
 		}
 	}
@@ -449,7 +449,7 @@ static OCStackResult sm_secure_resource_check(OicUuid_t *device_id)
 	if (dm_get_easy_setup_use_artik_crt()) {
 		oc_res = save_signed_asymmetric_key(device_id);
 		if (OC_STACK_OK != oc_res) {
-			THINGS_LOG_D_ERROR(THINGS_ERROR, TAG, "Error in save_signed_asymmetric_key : %d", (int)oc_res);
+			THINGS_LOG_E(TAG, "Error in save_signed_asymmetric_key : %d", (int)oc_res);
 			return oc_res;
 		}
 	} else
@@ -474,7 +474,7 @@ static OCStackResult sm_secure_resource_check(OicUuid_t *device_id)
 			DeleteCredList(GetCredList());
 			oc_res = save_signed_asymmetric_key(device_id);
 			if (OC_STACK_OK != oc_res) {
-				THINGS_LOG_D_ERROR(THINGS_ERROR, TAG, "Error in save_signed_asymmetric_key : %d", (int)oc_res);
+				THINGS_LOG_E(TAG, "Error in save_signed_asymmetric_key : %d", (int)oc_res);
 				return oc_res;
 			}
 		}
@@ -490,7 +490,7 @@ static int get_mac_addr(unsigned char *p_id_buf, size_t p_id_buf_size, unsigned 
 	int family = 0;
 	int i = 0;
 
-	THINGS_LOG_D(THINGS_DEBUG, TAG, "In %s", __func__);
+	THINGS_LOG_D(TAG, "In %s", __func__);
 
 #ifdef __ST_THINGS_RTOS__
 	wifi_manager_info_s st_wifi_info;
@@ -498,14 +498,14 @@ static int get_mac_addr(unsigned char *p_id_buf, size_t p_id_buf_size, unsigned 
 
 	if (wifi_manager_get_info(&st_wifi_info) != WIFI_MANAGER_SUCCESS) {
 		
-		THINGS_LOG_D_ERROR(THINGS_ERROR, TAG, "MAC Get Error\n");
+		THINGS_LOG_E(TAG, "MAC Get Error\n");
 		return OIC_SEC_ERROR;
 	}
 
 	snprintf((char *)p_id_buf, MAC_BUF_SIZE - 1, "%02X%02X%02X%02X%02X%02X", st_wifi_info.mac_address[0], st_wifi_info.mac_address[1], st_wifi_info.mac_address[2], st_wifi_info.mac_address[3], st_wifi_info.mac_address[4], st_wifi_info.mac_address[5]);
 #else
 	if (getifaddrs(&ifaddr) == -1) {
-		THINGS_LOG_D_ERROR(THINGS_ERROR, TAG, "Failed to read network address information.");
+		THINGS_LOG_E(TAG, "Failed to read network address information.");
 		return OIC_SEC_ERROR;
 	} else {
 		for (ifa = ifaddr; ifa != NULL; ifa = ifa->ifa_next) {
@@ -521,10 +521,10 @@ static int get_mac_addr(unsigned char *p_id_buf, size_t p_id_buf_size, unsigned 
 		freeifaddrs(ifaddr);
 	}
 #endif
-	THINGS_LOG_D(THINGS_DEBUG, TAG, "MAC Address : %s", (char *)p_id_buf);
+	THINGS_LOG_D(TAG, "MAC Address : %s", (char *)p_id_buf);
 	*p_id_out_len = strlen((char *)p_id_buf);
 
-	THINGS_LOG_D(THINGS_DEBUG, TAG, "Out %s", __func__);
+	THINGS_LOG_D(TAG, "Out %s", __func__);
 
 	return OIC_SEC_OK;
 }
@@ -532,7 +532,7 @@ static int get_mac_addr(unsigned char *p_id_buf, size_t p_id_buf_size, unsigned 
 // To support MAC based UUID
 static int sm_generate_mac_based_device_id(void)
 {
-	THINGS_LOG_D(THINGS_DEBUG, TAG, "In %s", __func__);
+	THINGS_LOG_D(TAG, "In %s", __func__);
 
 	OICSecurityResult res = OIC_SEC_ERROR;
 	OicUuid_t device_id;
@@ -542,10 +542,10 @@ static int sm_generate_mac_based_device_id(void)
 
 	res = get_mac_addr(mac_id, MAC_BUF_SIZE, &id_len);
 	if (OIC_SEC_OK != res) {
-		THINGS_LOG_ERROR(THINGS_ERROR, TAG, "Failed to read MAC Address.");
+		THINGS_LOG_E(TAG, "Failed to read MAC Address.");
 		return res;
 	}
-	THINGS_LOG_V(THINGS_INFO, TAG, "MAC Address : %s", mac_id);
+	THINGS_LOG_V(TAG, "MAC Address : %s", mac_id);
 
 	ss_sha256_ctx sha256_ctx;
 	ss_sha256_init(&sha256_ctx);
@@ -556,17 +556,17 @@ static int sm_generate_mac_based_device_id(void)
 	char *uuid_str = NULL;
 	OCStackResult oc_res = ConvertUuidToStr(&device_id, &uuid_str);
 	if (OC_STACK_OK != oc_res) {
-		THINGS_LOG_D_ERROR(THINGS_ERROR, TAG, "Error in ConvertUuidToStr : %d", (int)oc_res);
+		THINGS_LOG_E(TAG, "Error in ConvertUuidToStr : %d", (int)oc_res);
 		return OIC_SEC_ERROR;
 	}
-	THINGS_LOG_D(THINGS_INFO, TAG, "MACbased UUID : %s", uuid_str);
+	THINGS_LOG_V(TAG, "MACbased UUID : %s", uuid_str);
 	things_free(uuid_str);
 
 	if (sm_secure_resource_check(&device_id) != OC_STACK_OK) {
 		return OIC_SEC_ERROR;
 	}
 
-	THINGS_LOG_D(THINGS_DEBUG, TAG, "Out %s", __func__);
+	THINGS_LOG_D(TAG, "Out %s", __func__);
 
 	return res;
 }
@@ -574,7 +574,7 @@ static int sm_generate_mac_based_device_id(void)
 #if defined(CONFIG_ST_THINGS_ARTIK_HW_CERT_KEY) && defined(CONFIG_TLS_WITH_SSS)
 static int sm_generate_artik_device_id(void)
 {
-	THINGS_LOG_D(THINGS_DEBUG, TAG, "In %s", __func__);
+	THINGS_LOG_D(TAG, "In %s", __func__);
 
 	OicUuid_t device_id;
 	unsigned char uuid_str[((UUID_LENGTH * 2) + 4 + 1)];
@@ -584,16 +584,16 @@ static int sm_generate_artik_device_id(void)
 	get_artik_crt_uuid(uuid_str, &uuid_len);
 	OCStackResult oc_res = ConvertStrToUuid(uuid_str, &device_id);
 	if (OC_STACK_OK != oc_res) {
-		THINGS_LOG_D_ERROR(THINGS_ERROR, TAG, "Error in ConvertStrToUuid : %d", (int)oc_res);
+		THINGS_LOG_E(TAG, "Error in ConvertStrToUuid : %d", (int)oc_res);
 		return OIC_SEC_ERROR;
 	}
-	THINGS_LOG_D(THINGS_INFO, TAG, "Artik UUID : %s", uuid_str);
+	THINGS_LOG_V(TAG, "Artik UUID : %s", uuid_str);
 
 	if (sm_secure_resource_check(&device_id) != OC_STACK_OK) {
 		return OIC_SEC_ERROR;
 	}
 
-	THINGS_LOG_D(THINGS_DEBUG, TAG, "Out %s", __func__);
+	THINGS_LOG_D(TAG, "Out %s", __func__);
 
 	return oc_res;
 }
@@ -617,18 +617,18 @@ int sm_init_things_security(int auth_type, const char *db_path)
 {
 	OICSecurityResult res = OIC_SEC_ERROR;
 
-	THINGS_LOG_D(THINGS_DEBUG, TAG, "In %s", __func__);
+	THINGS_LOG_D(TAG, "In %s", __func__);
 
 	memset(SVR_DB_PATH, 0x00, MAX_PATH_LEN);
 
 	if (db_path != NULL && strlen(db_path) > 0) {
 		things_strncpy(SVR_DB_PATH, db_path, MAX_PATH_LEN);
 	} else {
-		THINGS_LOG_ERROR(THINGS_ERROR, TAG, "DB Path Not Inserted. Using Default Value");
+		THINGS_LOG_E(TAG, "DB Path Not Inserted. Using Default Value");
 		things_strncpy(SVR_DB_PATH, STRING_SVR_DB_PATH, MAX_PATH_LEN);
 	}
 
-	THINGS_LOG_D(THINGS_DEBUG, TAG, "SVR DB PATH : %s", SVR_DB_PATH);
+	THINGS_LOG_D(TAG, "SVR DB PATH : %s", SVR_DB_PATH);
 
 	g_auth_type = auth_type;
 	if ((g_auth_type & AUTH_JUST_WORKS_MUTUAL_VERIFIED) || (g_auth_type & AUTH_CERTIFICATE_CONFIRM)) {
@@ -643,44 +643,44 @@ int sm_init_things_security(int auth_type, const char *db_path)
 	static OCPersistentStorage ps = { server_fopen, server_fread, server_fwrite, server_fclose, server_unlink };
 	res = SM_InitSvrDb(&ps);
 	if (OIC_SEC_OK != res) {
-		THINGS_LOG_ERROR(THINGS_ERROR, TAG, "Failed to create SVR DB.");
+		THINGS_LOG_E(TAG, "Failed to create SVR DB.");
 		return res;
 	}
 
-	THINGS_LOG(THINGS_INFO, TAG, "******* WARNING : SVR DB will be used without encryption *******");
+	THINGS_LOG_V(TAG, "******* WARNING : SVR DB will be used without encryption *******");
 	
 	OCStackResult oc_res = OCRegisterPersistentStorageHandler(&ps);
 	if (OC_STACK_INCONSISTENT_DB == oc_res || OC_STACK_SVR_DB_NOT_EXIST == oc_res) {
 		//If failed to load SVR DB
-		THINGS_LOG_D(THINGS_WARNING, TAG, "SVR DB[%s] is inconsistent or not exist : %d", SVR_DB_PATH, oc_res);
-		THINGS_LOG_D(THINGS_WARNING, TAG, "SVR DB will be reinstalled as default SVR DB.");
+		THINGS_LOG_W(TAG, "SVR DB[%s] is inconsistent or not exist : %d", SVR_DB_PATH, oc_res);
+		THINGS_LOG_W(TAG, "SVR DB will be reinstalled as default SVR DB.");
 
 		//re-generate and re-install SVR DB
 		if (g_is_svr_db_exist) {
 			g_is_svr_db_exist = false;
 			res = GenerateSvrDb(&ps);
 			if (OIC_SEC_OK != res) {
-				THINGS_LOG_ERROR(THINGS_ERROR, TAG, "Failed to Generate SVR DB.");
+				THINGS_LOG_E(TAG, "Failed to Generate SVR DB.");
 				return res;
 			}
 		}
 		res = SM_InitSvrDb();
 		if (OIC_SEC_OK != res) {
-			THINGS_LOG_ERROR(THINGS_ERROR, TAG, "Failed to Open SVR DB.");
+			THINGS_LOG_E(TAG, "Failed to Open SVR DB.");
 			return res;
 		}
 		//Re-register PSI
 		oc_res = OCRegisterPersistentStorageHandler(&ps);
 		if (OC_STACK_OK != oc_res) {
-			THINGS_LOG_D_ERROR(THINGS_ERROR, TAG, "Failed to register persistent storage for SVR DB : %d", (int)oc_res);
+			THINGS_LOG_E(TAG, "Failed to register persistent storage for SVR DB : %d", (int)oc_res);
 			return OIC_SEC_ERROR;
 		}
 	} else if (OC_STACK_OK != oc_res) {
-		THINGS_LOG_D_ERROR(THINGS_ERROR, TAG, "Failed to register persistent storage for SVR DB : %d", (int)oc_res);
+		THINGS_LOG_E(TAG, "Failed to register persistent storage for SVR DB : %d", (int)oc_res);
 		return OIC_SEC_ERROR;
 	}
 
-	THINGS_LOG_D(THINGS_DEBUG, TAG, "Out %s", __func__);
+	THINGS_LOG_D(TAG, "Out %s", __func__);
 
 	return OIC_SEC_OK;
 }
@@ -689,29 +689,29 @@ int SM_InitSvrDb(OCPersistentStorage *ps)
 {
 	FILE *fp = ps->open(SVR_DB_PATH, "r");
 	if (fp == NULL) {
-		THINGS_LOG_D(THINGS_INFO, TAG, "Can not find the [%s], SVR DB will be automatically generated...", SVR_DB_PATH);
-		THINGS_LOG_D(THINGS_INFO, TAG, "Out %s", __func__);
+		THINGS_LOG_V(TAG, "Can not find the [%s], SVR DB will be automatically generated...", SVR_DB_PATH);
+		THINGS_LOG_V(TAG, "Out %s", __func__);
 		return GenerateSvrDb(ps);
 	} else {
-		THINGS_LOG_D(THINGS_INFO, TAG, "SVR DB [%s] is already exist.", SVR_DB_PATH);
+		THINGS_LOG_V(TAG, "SVR DB [%s] is already exist.", SVR_DB_PATH);
 		g_is_svr_db_exist = true;
 	}
 
 	ps->close(fp);
-	THINGS_LOG_D(THINGS_INFO, TAG, "Out %s", __func__);
+	THINGS_LOG_V(TAG, "Out %s", __func__);
 
 	return OIC_SEC_OK;
 }
 
 int sm_reset_svrdb()
 {
-	THINGS_LOG_D(THINGS_DEBUG, TAG, "In %s", __func__);
+	THINGS_LOG_D(TAG, "In %s", __func__);
 	OCStackResult oc_res = ResetSecureResourceInPS();
 	if (OC_STACK_OK != oc_res) {
-		THINGS_LOG_D_ERROR(THINGS_ERROR, TAG, "ResetSecureResourceInPS error : %d", oc_res);
+		THINGS_LOG_E(TAG, "ResetSecureResourceInPS error : %d", oc_res);
 		return OIC_SEC_ERROR;
 	}
-	THINGS_LOG_D(THINGS_DEBUG, TAG, "Out %s", __func__);
+	THINGS_LOG_D(TAG, "Out %s", __func__);
 	return OIC_SEC_OK;
 }
 
@@ -804,7 +804,7 @@ static OCStackResult save_signed_asymmetric_key(OicUuid_t *subject_uuid)
 	OCStackResult res = OC_STACK_OK;
 	uint16_t cred_id = 0;
 
-	THINGS_LOG_D(THINGS_DEBUG, TAG, "IN: %s", __func__);
+	THINGS_LOG_D(TAG, "IN: %s", __func__);
 
 	// For D2S
 
@@ -814,28 +814,28 @@ static OCStackResult save_signed_asymmetric_key(OicUuid_t *subject_uuid)
 #ifdef CONFIG_ST_THINGS_STG_MODE
 	res = CredSaveTrustCertChain(subject_uuid, g_regional_test_root_ca, sizeof(g_regional_test_root_ca), OIC_ENCODING_DER, TRUST_CA, &cred_id);
 	if (OC_STACK_OK != res) {
-		THINGS_LOG_D(THINGS_ERROR, TAG, "SRPCredSaveTrustCertChain #2 error");
+		THINGS_LOG_E(TAG, "SRPCredSaveTrustCertChain #2 error");
 		return res;
 	}
-	THINGS_LOG_D(THINGS_DEBUG, TAG, "Samsung_OCF_Test_RootCA.der saved w/ cred ID=%d", cred_id);
+	THINGS_LOG_D(TAG, "Samsung_OCF_Test_RootCA.der saved w/ cred ID=%d", cred_id);
 #else
 	res = CredSaveTrustCertChain(subject_uuid, g_regional_root_ca, sizeof(g_regional_root_ca), OIC_ENCODING_DER, TRUST_CA, &cred_id);
 	if (OC_STACK_OK != res) {
-		THINGS_LOG_D(THINGS_ERROR, TAG, "SRPCredSaveTrustCertChain #1 error");
+		THINGS_LOG_E(TAG, "SRPCredSaveTrustCertChain #1 error");
 		return res;
 	}
-	THINGS_LOG_D(THINGS_DEBUG, TAG, "Samsung_OCF_RootCA.der saved w/ cred ID=%d", cred_id);
+	THINGS_LOG_D(TAG, "Samsung_OCF_RootCA.der saved w/ cred ID=%d", cred_id);
 #endif
 
 #ifdef USE_SSS
 	if (dm_get_easy_setup_use_artik_crt()) {
 		if (things_sss_key_handler_init() < 0) {
-			THINGS_LOG_D_ERROR(THINGS_ERROR, TAG, "InitializeSSSKeyHandlers() Fail");
+			THINGS_LOG_E(TAG, "InitializeSSSKeyHandlers() Fail");
 			return OC_STACK_ERROR;
 		}
 
 		if (things_sss_rootca_handler_init(subject_uuid) < 0) {
-			THINGS_LOG_D_ERROR(THINGS_ERROR, TAG, "SSSRootCAHandler() Fail");
+			THINGS_LOG_E(TAG, "SSSRootCAHandler() Fail");
 			return OC_STACK_ERROR;
 		}
 	} else
@@ -846,20 +846,20 @@ static OCStackResult save_signed_asymmetric_key(OicUuid_t *subject_uuid)
 		*/
 		res = seckey_setup(dm_get_certificate_file_path(), &primary_cert, OIC_ENCODING_UNKNOW);
 		if (OC_STACK_OK != res) {
-			THINGS_LOG_D_ERROR(THINGS_ERROR, TAG, "seckey_setup error");
+			THINGS_LOG_E(TAG, "seckey_setup error");
 			return res;
 		}
 		res = seckey_setup(dm_get_privatekey_file_path(), &primary_key, OIC_ENCODING_RAW);
 		if (OC_STACK_OK != res) {
-			THINGS_LOG_D_ERROR(THINGS_ERROR, TAG, "seckey_setup error");
+			THINGS_LOG_E(TAG, "seckey_setup error");
 			return res;
 		}
 		res = CredSaveOwnCert(subject_uuid, &primary_cert, &primary_key, PRIMARY_CERT, &cred_id);
 		if (OC_STACK_OK != res) {
-			THINGS_LOG_D_ERROR(THINGS_ERROR, TAG, "SRPCredSaveOwnCertChain error");
+			THINGS_LOG_E(TAG, "SRPCredSaveOwnCertChain error");
 			return res;
 		}
-		THINGS_LOG_D(THINGS_DEBUG, TAG, "Primary cert & key saved w/ cred ID=%d", cred_id);
+		THINGS_LOG_D(TAG, "Primary cert & key saved w/ cred ID=%d", cred_id);
 
 		// For D2D
 		if (g_is_mfg_cert_required) {
@@ -873,20 +873,20 @@ static OCStackResult save_signed_asymmetric_key(OicUuid_t *subject_uuid)
 #endif		
 
 			if (OC_STACK_OK != res) {
-				THINGS_LOG_D_ERROR(THINGS_ERROR, TAG, "SRPCredSaveOwnCertChain error");
+				THINGS_LOG_E(TAG, "SRPCredSaveOwnCertChain error");
 				return res;
 			}
-			THINGS_LOG_D(THINGS_DEBUG, TAG, "MFG trust CA chain saved w/ cred ID=%d", cred_id);
+			THINGS_LOG_D(TAG, "MFG trust CA chain saved w/ cred ID=%d", cred_id);
 
 			/*
 			* 4. Save the key for D2D (manufacturer cert & key)
 			*/
 			res = CredSaveOwnCert(subject_uuid, &primary_cert, &primary_key, MF_PRIMARY_CERT, &cred_id);
 			if (OC_STACK_OK != res) {
-				THINGS_LOG_D_ERROR(THINGS_ERROR, TAG, "SRPCredSaveOwnCertChain error");
+				THINGS_LOG_E(TAG, "SRPCredSaveOwnCertChain error");
 				return res;
 			}
-			THINGS_LOG_D(THINGS_DEBUG, TAG, "MFG primary cert & key saved w/ cred ID=%d", cred_id);
+			THINGS_LOG_D(TAG, "MFG primary cert & key saved w/ cred ID=%d", cred_id);
 		}
 
 		if (primary_cert.data != NULL) {
@@ -898,33 +898,33 @@ static OCStackResult save_signed_asymmetric_key(OicUuid_t *subject_uuid)
 		}
 	}
 
-	THINGS_LOG_D(THINGS_DEBUG, TAG, "Out: %s", __func__);
+	THINGS_LOG_D(TAG, "Out: %s", __func__);
 	return res;
 }
 
 int sm_save_cloud_acl(const char *cloud_uuid)
 {
-	THINGS_LOG_D(THINGS_DEBUG, TAG, "IN : %s", __func__);
+	THINGS_LOG_D(TAG, "IN : %s", __func__);
 
 	if (!cloud_uuid) {
-		THINGS_LOG_D_ERROR(THINGS_ERROR, TAG, "cloud_uuid is NULL");
+		THINGS_LOG_E(TAG, "cloud_uuid is NULL");
 		return OIC_SEC_ERROR;
 	}
 
 	OicUuid_t oic_uuid;
 	if (OC_STACK_OK != ConvertStrToUuid(cloud_uuid, &oic_uuid)) {
-		THINGS_LOG_D_ERROR(THINGS_ERROR, TAG, "cloud_uuid is NULL");
+		THINGS_LOG_E(TAG, "cloud_uuid is NULL");
 		return OIC_SEC_ERROR;
 	}
 	// allocate memory for |acl| struct
 	OicSecAcl_t *acl = (OicSecAcl_t *) things_calloc(1, sizeof(OicSecAcl_t));
 	if (!acl) {
-		THINGS_LOG_D_ERROR(THINGS_ERROR, TAG, " %s : things_calloc error return", __func__);
+		THINGS_LOG_E(TAG, " %s : things_calloc error return", __func__);
 		return OIC_SEC_ERROR;
 	}
 	OicSecAce_t *ace = (OicSecAce_t *) things_calloc(1, sizeof(OicSecAce_t));
 	if (!ace) {
-		THINGS_LOG_D_ERROR(THINGS_ERROR, TAG, "%s : things_calloc error return", __func__);
+		THINGS_LOG_E(TAG, "%s : things_calloc error return", __func__);
 		return OIC_SEC_ERROR;
 	}
 	LL_APPEND(acl->aces, ace);
@@ -933,7 +933,7 @@ int sm_save_cloud_acl(const char *cloud_uuid)
 
 	OicSecRsrc_t *rsrc = (OicSecRsrc_t *) things_calloc(1, sizeof(OicSecRsrc_t));
 	if (!rsrc) {
-		THINGS_LOG_D_ERROR(THINGS_ERROR, TAG, "%s : things_calloc error return", __func__);
+		THINGS_LOG_E(TAG, "%s : things_calloc error return", __func__);
 		DeleteACLList(acl);
 		return OIC_SEC_ERROR;
 	}
@@ -942,7 +942,7 @@ int sm_save_cloud_acl(const char *cloud_uuid)
 	size_t len = strlen(href) + 1;	// '1' for null termination
 	rsrc->href = (char *)things_calloc(len, sizeof(char));
 	if (!rsrc->href) {
-		THINGS_LOG_D_ERROR(THINGS_ERROR, TAG, "%s : things_calloc error return", __func__);
+		THINGS_LOG_E(TAG, "%s : things_calloc error return", __func__);
 		FreeRsrc(rsrc);
 		DeleteACLList(acl);
 		return OIC_SEC_ERROR;
@@ -953,14 +953,14 @@ int sm_save_cloud_acl(const char *cloud_uuid)
 	rsrc->typeLen = arrLen;
 	rsrc->types = (char **)things_calloc(arrLen, sizeof(char *));
 	if (!rsrc->types) {
-		THINGS_LOG_D_ERROR(THINGS_ERROR, TAG, "%s : things_calloc error return", __func__);
+		THINGS_LOG_E(TAG, "%s : things_calloc error return", __func__);
 		FreeRsrc(rsrc);
 		DeleteACLList(acl);
 		return OIC_SEC_ERROR;
 	}
 	rsrc->types[0] = things_strdup("x.com.samsung.cloudconnection");	// ignore
 	if (!rsrc->types[0]) {
-		THINGS_LOG_D_ERROR(THINGS_ERROR, TAG, "%s : things_strdup error return", __func__);
+		THINGS_LOG_E(TAG, "%s : things_strdup error return", __func__);
 		FreeRsrc(rsrc);
 		DeleteACLList(acl);
 		return OIC_SEC_ERROR;
@@ -969,14 +969,14 @@ int sm_save_cloud_acl(const char *cloud_uuid)
 	rsrc->interfaceLen = 1;
 	rsrc->interfaces = (char **)things_calloc(arrLen, sizeof(char *));
 	if (!rsrc->interfaces) {
-		THINGS_LOG_D_ERROR(THINGS_ERROR, TAG, "%s : things_calloc error return", __func__);
+		THINGS_LOG_E(TAG, "%s : things_calloc error return", __func__);
 		FreeRsrc(rsrc);
 		DeleteACLList(acl);
 		return OIC_SEC_ERROR;
 	}
 	rsrc->interfaces[0] = things_strdup("oic.if.baseline");	// ignore
 	if (!rsrc->interfaces[0]) {
-		THINGS_LOG_D_ERROR(THINGS_ERROR, TAG, "%s : things_strdup error return", __func__);
+		THINGS_LOG_E(TAG, "%s : things_strdup error return", __func__);
 		FreeRsrc(rsrc);
 		DeleteACLList(acl);
 		return OIC_SEC_ERROR;
@@ -987,25 +987,25 @@ int sm_save_cloud_acl(const char *cloud_uuid)
 
 	OCStackResult installRes = InstallACL(acl);
 	if (OC_STACK_DUPLICATE_REQUEST == installRes) {
-		THINGS_LOG_D(THINGS_WARNING, TAG, "%s : [%s]'s ACL already installed.", __func__, cloud_uuid);
+		THINGS_LOG_W(TAG, "%s : [%s]'s ACL already installed.", __func__, cloud_uuid);
 	} else if (OC_STACK_OK != installRes) {
-		THINGS_LOG_D_ERROR(THINGS_ERROR, TAG, "%s : things_strdup error return", __func__);
+		THINGS_LOG_E(TAG, "%s : things_strdup error return", __func__);
 		/*SVACE warning fix */
 		DeleteACLList(acl);
 		return OIC_SEC_ERROR;
 	}
 	DeleteACLList(acl);
 
-	THINGS_LOG_D(THINGS_DEBUG, TAG, "OUT : %s", __func__);
+	THINGS_LOG_D(TAG, "OUT : %s", __func__);
 
 	return OIC_SEC_OK;
 }
 
 void sm_set_otm_event_handler(OicSecOtmEventHandler_t otmEventHandler)
 {
-	THINGS_LOG_D(THINGS_DEBUG, TAG, "IN : %s", __func__);
+	THINGS_LOG_D(TAG, "IN : %s", __func__);
 
 	SetOtmEventHandler(otmEventHandler);
 
-	THINGS_LOG_D(THINGS_DEBUG, TAG, "OUT : %s", __func__);
+	THINGS_LOG_D(TAG, "OUT : %s", __func__);
 }

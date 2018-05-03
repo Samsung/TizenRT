@@ -609,7 +609,7 @@ FAR void *pthread_getspecific(pthread_key_t key);
  * @details @b #include <pthread.h> \n
  * SYSTEM CALL API \n
  * POSIX API (refer to : http://pubs.opengroup.org/onlinepubs/9699919799/)
- * @since TizenRT v2.0
+ * @since TizenRT v2.0 PRE
  */
 int pthread_key_delete(pthread_key_t key);
 

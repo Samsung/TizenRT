@@ -26,7 +26,7 @@
 #define RET_IF_PARAM_IS_NULL(tag, var) \
 	do { \
 		if (NULL == (var)) { \
-			THINGS_LOG(THINGS_ERROR, tag, "Invalid Parameter: " #var " is NULL."); \
+			THINGS_LOG_E(tag, "Invalid Parameter: " #var " is NULL."); \
 			return; \
 		} \
 	} while (0)
@@ -34,7 +34,7 @@
 #define RET_NULL_IF_PARAM_IS_NULL(tag, var) \
 	do { \
 		if (NULL == (var)) { \
-			THINGS_LOG(THINGS_ERROR, tag, "Invalid Parameter: " #var " is NULL."); \
+			THINGS_LOG_E(tag, "Invalid Parameter: " #var " is NULL."); \
 			return NULL; \
 		} \
 	} while (0)
@@ -42,7 +42,7 @@
 #define RET_FALSE_IF_PARAM_IS_NULL(tag, var) \
 	do { \
 		if (NULL == (var)) { \
-			THINGS_LOG(THINGS_ERROR, tag, "Invalid Parameter: " #var " is NULL."); \
+			THINGS_LOG_E(tag, "Invalid Parameter: " #var " is NULL."); \
 			return false; \
 		} \
 	} while (0)
@@ -50,7 +50,7 @@
 #define RET_VAL_IF_PARAM_IS_NULL(tag, var, ret_val) \
 	do { \
 		if (NULL == (var)) { \
-			THINGS_LOG(THINGS_ERROR, tag, "Invalid Parameter: " #var " is NULL."); \
+			THINGS_LOG_E(tag, "Invalid Parameter: " #var " is NULL."); \
 			return (ret_val); \
 		} \
 	} while (0)
@@ -58,7 +58,7 @@
 #define RET_VAL_IF_NULL(tag, var, msg, ret_val) \
 	do { \
 		if (NULL == (var)) { \
-			THINGS_LOG(THINGS_ERROR, tag, msg); \
+			THINGS_LOG_E(tag, msg); \
 			return (ret_val); \
 		} \
 	} while (0)
@@ -66,7 +66,7 @@
 #define RET_FALSE_IF_NULL(tag, var, msg) \
 	do { \
 		if (NULL == (var)) { \
-			THINGS_LOG(THINGS_ERROR, tag, msg); \
+			THINGS_LOG_E(tag, msg); \
 			return false; \
 		} \
 	} while (0)
@@ -74,7 +74,7 @@
 #define RET_IF_PARAM_EXPR_IS_TRUE(tag, expr) \
 	do { \
 		if ((expr)) { \
-			THINGS_LOG(THINGS_ERROR, tag, "Invalid Parameter: " #expr); \
+			THINGS_LOG_E(tag, "Invalid Parameter: " #expr); \
 			return; \
 		} \
 	} while (0)
@@ -82,7 +82,7 @@
 #define RET_NULL_IF_PARAM_EXPR_IS_TRUE(tag, expr) \
 	do { \
 		if ((expr)) { \
-			THINGS_LOG(THINGS_ERROR, tag, "Invalid Parameter: " #expr); \
+			THINGS_LOG_E(tag, "Invalid Parameter: " #expr); \
 			return NULL; \
 		} \
 	} while (0)
@@ -90,7 +90,7 @@
 #define RET_FALSE_IF_PARAM_EXPR_IS_TRUE(tag, expr) \
 	do { \
 		if ((expr)) { \
-			THINGS_LOG(THINGS_ERROR, tag, "Invalid Parameter: " #expr); \
+			THINGS_LOG_E(tag, "Invalid Parameter: " #expr); \
 			return false; \
 		} \
 	} while (0)
@@ -98,7 +98,7 @@
 #define RET_IF_EXPR_IS_TRUE(tag, expr, msg) \
 	do { \
 		if ((expr)) { \
-			THINGS_LOG(THINGS_ERROR, tag, msg); \
+			THINGS_LOG_E(tag, msg); \
 			return; \
 		} \
 	} while (0)
@@ -106,7 +106,7 @@
 #define RET_FALSE_IF_EXPR_IS_TRUE(tag, expr, msg) \
 	do { \
 		if ((expr)) { \
-			THINGS_LOG(THINGS_ERROR, tag, msg); \
+			THINGS_LOG_E(tag, msg); \
 			return false; \
 		} \
 	} while (0)
@@ -114,7 +114,7 @@
 #define RET_VAL_IF_EXPR_IS_TRUE(tag, expr, msg, ret_val) \
 	do { \
 		if ((expr)) { \
-			THINGS_LOG(THINGS_ERROR, tag, msg); \
+			THINGS_LOG_E(tag, msg); \
 			return (ret_val); \
 		} \
 	} while (0)

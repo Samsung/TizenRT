@@ -495,7 +495,7 @@ static void tc_libc_timer_clock(void)
 	clock_t ret_time = ERROR;
 
 	ret_time = clock();
-	TC_ASSERT_GEQ("clock", ret_time, 0);
+	TC_ASSERT_NEQ("clock", ret_time, 0);
 
 	TC_SUCCESS_RESULT();
 }

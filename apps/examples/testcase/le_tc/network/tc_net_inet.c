@@ -103,6 +103,9 @@ static void tc_net_inet_ntop(void)
 {
 	struct in_addr in_addr;
 	char dst[INET_ADDRSTRLEN];
+#ifdef CONFIG_NET_IPv6
+	char dst6[INET6_ADDRSTRLEN];
+#endif
 	const char *ret;
 
 	in_addr.s_addr = 0x17071994;
@@ -116,7 +119,7 @@ static void tc_net_inet_ntop(void)
 	TC_ASSERT_EQ("inet_ntop", ret, NULL);
 #endif
 #ifdef CONFIG_NET_IPv6
-	ret = inet_ntop(AF_INET6, &in_addr, dst, INET_ADDRSTRLEN);
+	ret = inet_ntop(AF_INET6, &in_addr, dst6, INET6_ADDRSTRLEN);
 	TC_ASSERT_NEQ("inet_ntop", ret, NULL);
 #endif
 	/* Failure case: invalid address family */

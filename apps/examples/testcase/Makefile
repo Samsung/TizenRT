@@ -60,11 +60,15 @@ include $(APPDIR)/Make.defs
 APPNAME = tc
 FUNCNAME = $(APPNAME)_main
 THREADEXEC = TASH_EXECMD_ASYNC
+CXXEXT ?= .cpp
+PRIORITY = 100
+STACKSIZE = 1024
 
 # testcase example
 
 ASRCS =
 CSRCS =
+CXXSRCS =
 
 ifeq ($(CONFIG_EXAMPLES_TESTCASE),y)
 
@@ -93,9 +97,10 @@ endif
 
 AOBJS		= $(ASRCS:.S=$(OBJEXT))
 COBJS		= $(CSRCS:.c=$(OBJEXT))
+CXXOBJS		= $(CXXSRCS:$(CXXEXT)=$(OBJEXT))
 
-SRCS		= $(ASRCS) $(CSRCS)
-OBJS		= $(AOBJS) $(COBJS)
+SRCS		= $(ASRCS) $(CSRCS) $(CXXSRCS)
+OBJS		= $(AOBJS) $(COBJS) $(CXXOBJS)
 
 ifeq ($(CONFIG_WINDOWS_NATIVE),y)
   BIN		= ..\..\libapps$(LIBEXT)
@@ -119,6 +124,9 @@ $(AOBJS): %$(OBJEXT): %.S
 
 $(COBJS): %$(OBJEXT): %.c
 	$(call COMPILE, $<, $@)
+
+$(CXXOBJS): %$(OBJEXT): %$(CXXEXT)
+	$(call COMPILEXX, $<, $@)
 endif
 
 .built: $(OBJS)
@@ -132,6 +140,9 @@ install:
 ifeq ($(CONFIG_BUILTIN_APPS)$(CONFIG_EXAMPLES_TESTCASE),yy)
 $(BUILTIN_REGISTRY)$(DELIM)$(FUNCNAME).bdat: $(DEPCONFIG) Makefile
 	$(Q) $(call REGISTER,$(APPNAME),$(FUNCNAME),$(THREADEXEC),$(PRIORITY),$(STACKSIZE))
+ifeq ($(CONFIG_EXAMPLES_TESTCASE_TASK_MANAGER_UTC),y)
+	$(Q) $(call REGISTER,tm_sample,tm_sample_main,TASH_EXECMD_ASYNC,100,1024)
+endif
 
 context: $(BUILTIN_REGISTRY)$(DELIM)$(FUNCNAME).bdat
 
@@ -141,10 +152,12 @@ context:
 endif
 
 .depend: Makefile $(SRCS)
-ifeq ($(CONFIG_EXAMPLES_TESTCASE),y)
-	$(Q) $(MKDEP) $(DEPPATH) "$(CC)" -- $(CFLAGS) -- $(SRCS) >Make.dep
-	$(Q) touch $@
+ifeq ($(filter %$(CXXEXT),$(SRCS)),)
+	@$(MKDEP) $(DEPPATH) "$(CC)" -- $(CFLAGS) -- $(SRCS) >Make.dep
+else
+	@$(MKDEP) $(DEPPATH) "$(CXX)" -- $(CXXFLAGS) -- $(SRCS) >Make.dep
 endif
+	@touch $@
 
 depend: .depend
 

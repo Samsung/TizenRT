@@ -58,7 +58,10 @@
 #ifdef CONFIG_HAVE_LONG_DOUBLE
 long double logl(long double x)
 {
-	long double y, y_old, ey, epsilon;
+	long double y;
+	long double y_old;
+	long double ey;
+	long double epsilon;
 
 	y = 0.0;
 	y_old = 1.0;

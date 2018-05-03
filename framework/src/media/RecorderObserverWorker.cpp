@@ -19,37 +19,38 @@
 #include "RecorderObserverWorker.h"
 
 namespace media {
-unique_ptr<RecorderObserverWorker> RecorderObserverWorker::mWorker;
 once_flag RecorderObserverWorker::mOnceFlag;
 
-RecorderObserverWorker::RecorderObserverWorker() : mRefCnt(0)
+RecorderObserverWorker::RecorderObserverWorker() : mRefCnt(0), mIsRunning(false)
 {
 }
 RecorderObserverWorker::~RecorderObserverWorker()
 {
 }
 
+RecorderObserverWorker& RecorderObserverWorker::getWorker()
+{
+	static RecorderObserverWorker worker;
+	return worker;
+}
+
 int RecorderObserverWorker::entry()
 {
 	medvdbg("RecorderObserverWorker::entry()\n");
+
 	while (mIsRunning) {
-		unique_lock<mutex> lock(mObserverQueue.getMutex());
-
-		if (mObserverQueue.isEmpty()) {
-			medvdbg("RecorderObserverWorker::entry() - wait Queue\n");
-			mObserverQueue.wait(lock);
-		}
-
 		std::function<void()> run = mObserverQueue.deQueue();
 		medvdbg("RecorderObserverWorker::entry() - pop Queue\n");
-		run();
+		if (run != nullptr) {
+			run();
+		}
 	}
 	return 0;
 }
 
 recorder_result_t RecorderObserverWorker::startWorker()
 {
-	unique_lock<mutex> lock(mRefMtx);
+	std::unique_lock<std::mutex> lock(mRefMtx);
 	increaseRef();
 
 	medvdbg("RecorderObserverWorker::startWorker() - increase RefCnt : %d\n", mRefCnt);
@@ -64,17 +65,20 @@ recorder_result_t RecorderObserverWorker::startWorker()
 
 void RecorderObserverWorker::stopWorker()
 {
-	unique_lock<mutex> lock(mRefMtx);
+	std::unique_lock<std::mutex> lock(mRefMtx);
 	decreaseRef();
 
 	medvdbg("RecorderObserverWorker::stopWorker() - decrease RefCnt : %d\n", mRefCnt);
 
 	if (mRefCnt <= 0) {
-		mIsRunning = false;
 
 		if (mWorkerThread.joinable()) {
+			std::atomic<bool> &refBool = mIsRunning;
+			mObserverQueue.enQueue([&refBool]() {
+				refBool = false;
+			});
 			mWorkerThread.join();
-			medvdbg("RecorderObserverWorker::stopWorker() - workerthread exited\n");
+			medvdbg("RecorderObserverWorker::stopWorker() - mWorkerthread exited\n");
 		}
 	}
 }
@@ -91,6 +95,8 @@ void RecorderObserverWorker::increaseRef()
 
 void RecorderObserverWorker::decreaseRef()
 {
-	mRefCnt--;
+	if (mRefCnt > 0) {
+		mRefCnt--;
+	}
 }
 } // namespace media

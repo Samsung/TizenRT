@@ -58,7 +58,9 @@
 #ifdef CONFIG_HAVE_DOUBLE
 double asin(double x)
 {
-	long double y, y_sin, y_cos;
+	long double y;
+	long double y_sin;
+	long double y_cos;
 
 	y = 0;
 

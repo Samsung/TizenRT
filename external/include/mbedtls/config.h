@@ -2627,7 +2627,15 @@
 #undef MBEDTLS_ERROR_STRERROR_DUMMY
 #undef MBEDTLS_GENPRIME
 
+/* MBEDTLS_FS_IO is required for CURL.
+	Dependent method calls below.
+	`mbedtls_x509_crt_parse_file'  `mbedtls_x509_crt_parse_path'
+	`mbedtls_pk_parse_keyfile' `mbedtls_x509_crl_parse_file'
+*/
+#ifndef CONFIG_ENABLE_CURL
 #undef MBEDTLS_FS_IO
+#endif
+
 #undef MBEDTLS_MEMORY_DEBUG
 #undef MBEDTLS_HAVEGE_C
 

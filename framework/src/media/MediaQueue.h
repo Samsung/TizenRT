@@ -23,6 +23,7 @@
 #include <condition_variable>
 #include <queue>
 #include <atomic>
+#include <iostream>
 
 namespace media {
 class MediaQueue
@@ -31,8 +32,7 @@ public:
 	MediaQueue();
 	~MediaQueue();
 	template <typename _Callable, typename... _Args>
-	void enQueue(_Callable&& __f, _Args&&... __args)
-	{
+	void enQueue(_Callable &&__f, _Args &&... __args) {
 		std::unique_lock<std::mutex> lock(mQueueMtx);
 		std::function<void()> func = std::bind(std::forward<_Callable>(__f), std::forward<_Args>(__args)...);
 		mQueueData.push(func);
@@ -40,9 +40,6 @@ public:
 	}
 	std::function<void()> deQueue();
 	bool isEmpty();
-	std::mutex& getMutex();
-	void wait(std::unique_lock<std::mutex>& lock);
-	void notify_one();
 
 private:
 	std::queue<std::function<void()>> mQueueData;

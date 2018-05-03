@@ -36,8 +36,25 @@
 using namespace std;
 
 namespace media {
-typedef enum observer_command_e
-{
+/**
+ * @brief current state of MediaRecorder
+ * @details @b #include <media/MediaRecorder.h>
+ * @since TizenRT v2.0 PRE
+ */
+typedef enum recorder_state_e {
+	/** MediaRecorder object was created */
+	RECORDER_STATE_NONE,
+	/** MediaRecorder worker object was created */
+	RECORDER_STATE_IDLE,
+	/** MediaRecorder ready to record */
+	RECORDER_STATE_READY,
+	/** MediaRecorder do recording */
+	RECORDER_STATE_RECORDING,
+	/** MediaRecorder pause to record */
+	RECORDER_STATE_PAUSED
+} recorder_state_t;
+
+typedef enum observer_command_e {
 	OBSERVER_COMMAND_STARTED,
 	OBSERVER_COMMAND_FINISHIED,
 	OBSERVER_COMMAND_ERROR
@@ -58,10 +75,10 @@ public:
 	recorder_result_t pause();
 	recorder_result_t stop();
 
-	recorder_result_t getVolume();
-	void setVolume(int vol);
+	int getVolume();
+	recorder_result_t setVolume(int vol);
 
-	void setDataSource(std::unique_ptr<stream::OutputDataSource> dataSource);
+	recorder_result_t setDataSource(std::unique_ptr<stream::OutputDataSource> dataSource);
 	recorder_state_t getState();
 	void setState(recorder_state_t state);
 	void setObserver(std::shared_ptr<MediaRecorderObserverInterface> observer);
@@ -71,15 +88,14 @@ public:
 	void capture();
 
 private:
-	recorder_state_t mCurState;
+	std::atomic<recorder_state_t> mCurState;
 	std::unique_ptr<stream::OutputDataSource> mOutputDataSource;
 	std::shared_ptr<MediaRecorderObserverInterface> mRecorderObserver;
 
 	unsigned char* mBuffer;
-	unsigned int mBuffSize;
+	int mBuffSize;
 	mutex mCmdMtx; // command mutex
 	std::condition_variable mSyncCv;
-	int mCurVolume;
 	int mId;
 };
 } // namespace media
