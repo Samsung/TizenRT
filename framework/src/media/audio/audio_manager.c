@@ -946,8 +946,7 @@ static int get_supported_sample_rate(audio_device_type_t type, const char *path)
 
 	if (type == INPUT) {
 		ASSERT(g_actual_audio_in_card_id >= 0);
-	}
-	else {
+	} else {
 		ASSERT(g_actual_audio_out_card_id >= 0);
 	}
 
@@ -968,8 +967,7 @@ static int get_supported_sample_rate(audio_device_type_t type, const char *path)
 			medvdbg("Fail to open input driver, path = %s\n", path);
 			return AUDIO_MANAGER_FAIL;
 		}
-	}
-	else {
+	} else {
 		caps->ac_type = AUDIO_TYPE_OUTPUT;
 		fd = open(path, O_WRONLY);
 		if (fd < 0) {
@@ -989,8 +987,7 @@ static int get_supported_sample_rate(audio_device_type_t type, const char *path)
 	if (type == INPUT) {
 		g_audio_in_cards[g_actual_audio_in_card_id].resample.samprate_types = caps->ac_controls.b[0];
 		medvdbg("Supported Input sample rate: %d, %x\n", caps->ac_controls.b[0], caps->ac_controls.b[0]);
-	}
-	else {
+	} else {
 		g_audio_out_cards[g_actual_audio_out_card_id].resample.samprate_types = caps->ac_controls.b[0];
 		medvdbg("Supported Output sample rate: %d, %x\n", caps->ac_controls.b[0], caps->ac_controls.b[0]);
 	}
@@ -1002,20 +999,22 @@ static uint32_t get_closest_samprate(uint32_t origin_samprate, audio_device_type
 {
 	int i;
 	uint32_t result;
+	uint32_t samprate_types;
 	int count = sizeof(g_audio_samprate_entry) / sizeof(struct audio_samprate_map_entry_s);
 
 	ASSERT(count > 0);
 
+	if (type == INPUT) {
+		ASSERT(g_actual_audio_in_card_id >= 0);
+		samprate_types = g_audio_in_cards[g_actual_audio_in_card_id].resample.samprate_types;
+	} else {
+		ASSERT(g_actual_audio_out_card_id >= 0);
+		samprate_types = g_audio_out_cards[g_actual_audio_out_card_id].resample.samprate_types;
+	}
+
 	result = g_audio_samprate_entry[count - 1].samprate;
 
 	for (i = count - 1; i >= 0; i--) {
-		uint32_t samprate_types;
-		if (type == INPUT) {
-			samprate_types = g_audio_in_cards[g_actual_audio_in_card_id].resample.samprate_types;
-		} else {
-			samprate_types = g_audio_out_cards[g_actual_audio_out_card_id].resample.samprate_types;
-		}
-
 		if (g_audio_samprate_entry[i].samprate_types & samprate_types) {
 			if (g_audio_samprate_entry[i].samprate >= origin_samprate) {
 				result = g_audio_samprate_entry[i].samprate;
