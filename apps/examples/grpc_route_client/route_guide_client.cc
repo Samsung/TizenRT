@@ -124,9 +124,16 @@ class RouteGuideClient {
     Point point;
     Feature feature;
     point = MakePoint(409146138, -746188906);
-    GetOneFeature(point, &feature);
+    if (!GetOneFeature(point, &feature)) {
+        std::cout << "############### GetFeature FAIL ###############" << std::endl;
+        return;
+    }
     point = MakePoint(0, 0);
-    GetOneFeature(point, &feature);
+    if (!GetOneFeature(point, &feature)) {
+        std::cout << "############### GetFeature FAIL ###############" << std::endl;
+		return;
+    }
+    std::cout << "############### GetFeature SUCCESS ###############" << std::endl;
   }
   virtual bool GetOneFeature(const Point&, Feature*) = 0;
   virtual void ListFeatures() = 0;
@@ -165,9 +172,9 @@ class SyncRouteGuideClient : public RouteGuideClient {
     }
     Status status = reader->Finish();
     if (status.ok()) {
-      std::cout << "ListFeatures rpc succeeded." << std::endl;
+      std::cout << "############### ListFeatures SUCCESS ###############" << std::endl;
     } else {
-      std::cout << "ListFeatures rpc Failed." << std::endl;
+      std::cout << "############### ListFeatures FAIL ###############" << std::endl;
     }
   }
 
@@ -206,8 +213,9 @@ class SyncRouteGuideClient : public RouteGuideClient {
                 << "Travelled " << stats.distance() << " meters\n"
                 << "It took " << stats.elapsed_time() << " seconds"
                 << std::endl;
+	  std::cout << "############### RecordRoute SUCCESS ###############" << std::endl;
     } else {
-      std::cout << "RecordRoute rpc Failed." << std::endl;
+      std::cout << "############### RecordRoute FAIL ###############" << std::endl;
     }
   }
 
@@ -240,8 +248,10 @@ class SyncRouteGuideClient : public RouteGuideClient {
     }
     writer.join();
     Status status = stream->Finish();
-    if (!status.ok()) {
-      std::cout << "RouteChat rpc Failed." << std::endl;
+    if (status.ok()) {
+      std::cout << "############### RouteChat SUCCESS ###############" << std::endl;
+    } else {
+      std::cout << "############### RouteChat FAIL ###############" << std::endl;
     }
   }
 
@@ -324,9 +334,9 @@ class AsyncRouteGuideClient : public RouteGuideClient {
     }
 
     if(status.ok()) {
-       std::cout << "ListFeature Done" << std::endl;
+       std::cout << "############### Async ListFeatures SUCCESS ###############" << std::endl;
     } else {
-       std::cout << "ListFeature Failed" << std::endl;
+       std::cout << "############### Async ListFeatures FAIL ###############" << std::endl;
     }
 }
 
@@ -393,9 +403,9 @@ class AsyncRouteGuideClient : public RouteGuideClient {
                 << "Travelled " << stats.distance() << " meters\n"
                 << "It took " << stats.elapsed_time() << " seconds"
                 << std::endl;
-	  std::cout << "RecordRoute Done" << std::endl;
+	  std::cout << "############### Async RecordRoute SUCCESS ###############" << std::endl;
     } else {
-      std::cout << "RecordRoute Failed." << std::endl;
+      std::cout << "############### Async RecordRoute FAIL ###############" << std::endl;
     }
   }
 
@@ -466,9 +476,9 @@ class AsyncRouteGuideClient : public RouteGuideClient {
     }
 
     if(status.ok()) {
-      std::cout << "RouteChat Done" << std::endl;
+      std::cout << "############### Async RouteChat SUCCESS ###############" << std::endl;
     } else {
-      std::cout << "RouteChat Failed" << std::endl;
+      std::cout << "############### Async RouteChat FAIL ###############" << std::endl;
     }
   }
 
@@ -512,7 +522,6 @@ private:
                 << feature->location().latitude()/kCoordFactor_ << ", "
                 << feature->location().longitude()/kCoordFactor_ << std::endl;
     }
-
   return true;
   }
 };
