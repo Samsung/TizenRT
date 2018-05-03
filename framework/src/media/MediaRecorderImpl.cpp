@@ -114,7 +114,7 @@ recorder_result_t MediaRecorderImpl::prepare()
 		return RECORDER_ERROR;
 	}
 
-	medvdbg("MediaRecorder mBuffer size : %d\n", mBufSize);
+	medvdbg("MediaRecorder mBuffer size : %d\n", mBuffSize);
 
 	mBuffer = new unsigned char[mBuffSize];
 	if (!mBuffer) {
