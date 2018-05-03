@@ -92,10 +92,15 @@ static void nic_display_state(void)
 	struct sockaddr_in *sin;
 	struct sockaddr *sa;
 	struct ifconf ifcfg;
+	int ret = -1;
 	int fd;
 	int numreqs = 3;
 	int num_nic = 0;
 	fd = socket(AF_INET, SOCK_DGRAM, 0);
+	if (fd < 0) {
+		ndbg("fail %s:%d\n", __FUNCTION__, __LINE__);
+		return;
+	}
 	memset(&ifcfg, 0, sizeof(ifcfg));
 	ifcfg.ifc_buf = NULL;
 	ifcfg.ifc_len = sizeof(struct ifreq) * numreqs;
@@ -108,28 +113,44 @@ static void nic_display_state(void)
 	ifr = ifcfg.ifc_req;
 	int i = 0;
 	for (; i < num_nic; ifr++, i++) {
-		printf("%s\t", ifr->ifr_name);
+		nvdbg("%s\t", ifr->ifr_name);
 		sin = (struct sockaddr_in *)&ifr->ifr_addr;
 		if ((sin->sin_addr.s_addr) == INADDR_LOOPBACK) {
-			printf("Loop Back\t");
+			nvdbg("Loop Back\t");
 		} else {
 			struct ifreq tmp;
 			strncpy(tmp.ifr_name, ifr->ifr_name, IF_NAMESIZE);
-			ioctl(fd, SIOCGIFHWADDR, (unsigned long)&tmp);
-			sa = &tmp.ifr_hwaddr;
-			printf("Link encap: %s\t", ether_ntoa((struct ether_addr *)sa->sa_data));
+			ret = ioctl(fd, SIOCGIFHWADDR, (unsigned long)&tmp);
+			if (ret < 0) {
+				ndbg("fail %s:%d\n", __FUNCTION__, __LINE__);
+			} else {
+				sa = &tmp.ifr_hwaddr;
+				nvdbg("Link encap: %s\t", ether_ntoa((struct ether_addr *)sa->sa_data));
+			}
 
-			ioctl(fd, SIOCGIFFLAGS, (unsigned long)ifr);
-			printf("RUNNING: %s\n", (ifr->ifr_flags & IFF_UP) ? "UP" : "DOWN");
+			ret = ioctl(fd, SIOCGIFFLAGS, (unsigned long)ifr);
+			if (ret < 0) {
+				ndbg("fail %s:%d\n", __FUNCTION__, __LINE__);
+			} else {
+				nvdbg("RUNNING: %s\n", (ifr->ifr_flags & IFF_UP) ? "UP" : "DOWN");
+			}
 		}
-		printf("\tinet addr: %s\t", inet_ntoa(sin->sin_addr));
+		nvdbg("\tinet addr: %s\t", inet_ntoa(sin->sin_addr));
 
-		ioctl(fd, SIOCGIFNETMASK, (unsigned long)ifr);
-		sin = (struct sockaddr_in *)&ifr->ifr_addr;
-		printf("Mask: %s\t", inet_ntoa(sin->sin_addr));
-		ioctl(fd, SIOCGIFMTU, (unsigned long)ifr);
-		printf("MTU: %d\n", ifr->ifr_mtu);
-		printf("\n");
+		ret = ioctl(fd, SIOCGIFNETMASK, (unsigned long)ifr);
+		if (ret < 0) {
+			ndbg("fail %s:%d\n", __FUNCTION__, __LINE__);
+		} else {
+			sin = (struct sockaddr_in *)&ifr->ifr_addr;
+			nvdbg("Mask: %s\t", inet_ntoa(sin->sin_addr));
+		}
+
+		ret = ioctl(fd, SIOCGIFMTU, (unsigned long)ifr);
+		if (ret < 0) {
+			ndbg("fail %s:%d\n", __FUNCTION__, __LINE__);
+		} else {
+			nvdbg("MTU: %d\n\n", ifr->ifr_mtu);
+		}
 	}
 DONE:
 	free(ifcfg.ifc_buf);
@@ -142,14 +163,14 @@ int cmd_ifup(int argc, char **argv)
 	int ret;
 
 	if (argc != 2) {
-		printf("Please select nic_name:\n");
+		nvdbg("Please select nic_name:\n");
 		nic_display_state();
 		return OK;
 	}
 
 	intf = argv[1];
 	ret = netlib_ifup(intf);
-	printf("ifup %s...%s\n", intf, (ret == OK) ? "OK" : "Failed");
+	nvdbg("ifup %s...%s\n", intf, (ret == OK) ? "OK" : "Failed");
 	return ret;
 }
 
@@ -159,14 +180,14 @@ int cmd_ifdown(int argc, char **argv)
 	int ret;
 
 	if (argc != 2) {
-		printf("Please select nic_name:\n");
+		nvdbg("Please select nic_name:\n");
 		nic_display_state();
 		return OK;
 	}
 
 	intf = argv[1];
 	ret = netlib_ifdown(intf);
-	printf("ifdown %s...%s\n", intf, (ret == OK) ? "OK" : "Failed");
+	nvdbg("ifdown %s...%s\n", intf, (ret == OK) ? "OK" : "Failed");
 	return ret;
 }
 
@@ -256,7 +277,7 @@ int cmd_ifconfig(int argc, char **argv)
 	}
 
 	if (badarg) {
-		printf(fmtargrequired, argv[0]);
+		nvdbg(fmtargrequired, argv[0]);
 		return ERROR;
 	}
 #ifdef CONFIG_NET_ETHERNET
@@ -265,7 +286,10 @@ int cmd_ifconfig(int argc, char **argv)
 
 	if (hw) {
 		ndbg("HW MAC: %s\n", hw);
-		netlib_setmacaddr(intf, mac);
+		int ret = netlib_setmacaddr(intf, mac);
+		if (ret < 0) {
+			ndbg("Set mac address fail\n");
+		}
 	}
 #endif
 
@@ -284,7 +308,7 @@ int cmd_ifconfig(int argc, char **argv)
 		netlib_set_ipv4addr(intf, &addr);
 
 	} else {
-		printf("hostip is not provided\n");
+		ndbg("hostip is not provided\n");
 		return ERROR;
 	}
 
@@ -298,7 +322,10 @@ int cmd_ifconfig(int argc, char **argv)
 		struct netif *ifcon_if = NULL;
 		int32_t timeleft = NET_CMD_DHCP_TIMEOUT;
 
-		netlib_getmacaddr(intf, mac);
+		ret = netlib_getmacaddr(intf, mac);
+		if (ret < 0) {
+			ndbg("get mac fail %s:%d\n", __FUNCTION__, __LINE__);
+		}
 
 		ifcon_if = netif_find(intf);
 		if (ifcon_if == NULL) {
@@ -320,12 +347,12 @@ int cmd_ifconfig(int argc, char **argv)
 		}
 
 		if (ifcon_if->dhcp->state == DHCP_BOUND) {
-			printf("IP address %u.%u.%u.%u\n", (unsigned char)((htonl(ifcon_if->ip_addr.addr) >> 24) & 0xff), (unsigned char)((htonl(ifcon_if->ip_addr.addr) >> 16) & 0xff), (unsigned char)((htonl(ifcon_if->ip_addr.addr) >> 8) & 0xff), (unsigned char)((htonl(ifcon_if->ip_addr.addr) >> 0) & 0xff));
-			printf("Netmask address %u.%u.%u.%u\n", (unsigned char)((htonl(ifcon_if->netmask.addr) >> 24) & 0xff), (unsigned char)((htonl(ifcon_if->netmask.addr) >> 16) & 0xff), (unsigned char)((htonl(ifcon_if->netmask.addr) >> 8) & 0xff), (unsigned char)((htonl(ifcon_if->netmask.addr) >> 0) & 0xff));
-			printf("Gateway address %u.%u.%u.%u\n", (unsigned char)((htonl(ifcon_if->gw.addr) >> 24) & 0xff), (unsigned char)((htonl(ifcon_if->gw.addr) >> 16) & 0xff), (unsigned char)((htonl(ifcon_if->gw.addr) >> 8) & 0xff), (unsigned char)((htonl(ifcon_if->gw.addr) >> 0) & 0xff));
+			nvdbg("IP address %u.%u.%u.%u\n", (unsigned char)((htonl(ifcon_if->ip_addr.addr) >> 24) & 0xff), (unsigned char)((htonl(ifcon_if->ip_addr.addr) >> 16) & 0xff), (unsigned char)((htonl(ifcon_if->ip_addr.addr) >> 8) & 0xff), (unsigned char)((htonl(ifcon_if->ip_addr.addr) >> 0) & 0xff));
+			nvdbg("Netmask address %u.%u.%u.%u\n", (unsigned char)((htonl(ifcon_if->netmask.addr) >> 24) & 0xff), (unsigned char)((htonl(ifcon_if->netmask.addr) >> 16) & 0xff), (unsigned char)((htonl(ifcon_if->netmask.addr) >> 8) & 0xff), (unsigned char)((htonl(ifcon_if->netmask.addr) >> 0) & 0xff));
+			nvdbg("Gateway address %u.%u.%u.%u\n", (unsigned char)((htonl(ifcon_if->gw.addr) >> 24) & 0xff), (unsigned char)((htonl(ifcon_if->gw.addr) >> 16) & 0xff), (unsigned char)((htonl(ifcon_if->gw.addr) >> 8) & 0xff), (unsigned char)((htonl(ifcon_if->gw.addr) >> 0) & 0xff));
 		} else {
 			if (timeleft <= 0) {
-				printf("DHCP Client - Timeout fail to get ip address\n");
+				nvdbg("DHCP Client - Timeout fail to get ip address\n");
 				return ERROR;
 			}
 		}
@@ -334,7 +361,10 @@ int cmd_ifconfig(int argc, char **argv)
 		FAR void *handle;
 		struct dhcpc_state ds;
 
-		netlib_getmacaddr(intf, mac);
+		ret = netlib_getmacaddr(intf, mac);
+		if (ret < 0) {
+			ndbg("get mac  fail %s:%d\n", __FUNCTION__, __LINE__);
+		}
 
 		/* Set up the DHCPC modules */
 		handle = dhcpc_open(intf);
@@ -354,7 +384,10 @@ int cmd_ifconfig(int argc, char **argv)
 			return ERROR;
 		}
 
-		netlib_set_ipv4addr(intf, &ds.ipaddr);
+		ret = netlib_set_ipv4addr(intf, &ds.ipaddr);
+		if (ret < 0) {
+			ndbg("Set IPv4 address fail %s:%d\n", __FUNCTION__, __LINE__);
+		}
 
 		if (ds.netmask.s_addr != 0) {
 			netlib_set_ipv4netmask(intf, &ds.netmask);
@@ -363,11 +396,11 @@ int cmd_ifconfig(int argc, char **argv)
 		if (ds.default_router.s_addr != 0) {
 			netlib_set_dripv4addr(intf, &ds.default_router);
 		}
-		printf("IP address %s\n", inet_ntoa(ds.ipaddr));
-		printf("Netmask %s\n", inet_ntoa(ds.netmask));
-		printf("Gateway %s\n", inet_ntoa(ds.default_router));
+		nvdbg("IP address %s\n", inet_ntoa(ds.ipaddr));
+		nvdbg("Netmask %s\n", inet_ntoa(ds.netmask));
+		nvdbg("Gateway %s\n", inet_ntoa(ds.default_router));
 #if defined(CONFIG_NETDB_DNSCLIENT) && defined(CONFIG_NETDB_DNSSERVER_BY_DHCP)
-		printf("Default DNS %s\n", inet_ntoa(ds.dnsaddr));
+		nvdbg("Default DNS %s\n", inet_ntoa(ds.dnsaddr));
 #endif							/* defined(CONFIG_NETDB_DNSCLIENT) && defined(CONFIG_NETDB_DNSSERVER_BY_DHCP) */
 		dhcpc_close(handle);
 #endif							/* LWIP_DHCP */
@@ -389,8 +422,10 @@ int cmd_ifconfig(int argc, char **argv)
 
 		addr.s_addr = gip;
 	}
-	netlib_set_dripv4addr(intf, &addr);
-
+	int ret = netlib_set_dripv4addr(intf, &addr);
+	if (ret < 0) {
+		ndbg("Set IPv4 route fail %s:%d\n", __FUNCTION__, __LINE__);
+	}
 	/* Set network mask */
 	if (mask) {
 		ndbg("Netmask: %s\n", mask);
@@ -399,8 +434,10 @@ int cmd_ifconfig(int argc, char **argv)
 		ndbg("Netmask: Default\n");
 		addr.s_addr = inet_addr("255.255.255.0");
 	}
-	netlib_set_ipv4netmask(intf, &addr);
-
+	ret = netlib_set_ipv4netmask(intf, &addr);
+	if (ret < 0) {
+		ndbg("Set IPv4 netmask fail %s:%d\n", __FUNCTION__, __LINE__);
+	}
 	if (dns) {
 		ndbg("DNS: %s\n", dns);
 		addr.s_addr = inet_addr(dns);

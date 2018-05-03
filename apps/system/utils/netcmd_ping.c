@@ -296,6 +296,7 @@ int ping_process(int count, const char *taddr)
 	if (setsockopt(s, SOL_SOCKET, SO_RCVTIMEO, (struct timeval *)&tv,
 			   sizeof(struct timeval)) != ERR_OK) {
 		printf("nu_ping_process: setsockopt error\n");
+		close(s);
 		return -1;
 	}
 
