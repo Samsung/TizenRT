@@ -135,7 +135,7 @@ fetch_scan_results(wifi_utils_scan_list_s **scan_list, slsi_scan_info_t **slsi_s
 		get_security_type(wifi_scan_iter->sec_modes, wifi_scan_iter->num_sec_modes,
 						  &cur->ap_info.ap_auth_type, &cur->ap_info.ap_crypto_type);
 		strncpy(cur->ap_info.ssid, (char *)wifi_scan_iter->ssid, wifi_scan_iter->ssid_len);
-		cur->ap_info.ssid_length = wifi_scan_iter->ssid_len;
+		cur->ap_info.ssid_length = (unsigned int)wifi_scan_iter->ssid_len;
 		strncpy(cur->ap_info.bssid, (char *)wifi_scan_iter->bssid, SLSI_MACADDR_STR_LEN);
 
 		if (!prev) {
