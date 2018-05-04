@@ -261,7 +261,7 @@ int things_initialize_stack(const char *json_path, bool *easysetup_completed)
 		THINGS_LOG_D(TAG, "delete svrdb");
 		unlink(dm_get_svrdb_file_path());
 	}
-	
+
 #ifdef CONFIG_ST_THINGS_FOTA
 	if (fmwup_initialize() < 0) {
 		THINGS_LOG_E(TAG, "fmwup_initizlize() failed");
@@ -280,6 +280,7 @@ int things_deinitialize_stack(void)
 
 	is_things_module_inited = 0;
 
+	THINGS_LOG_D(THINGS_DEBUG, TAG, THINGS_FUNC_EXIT);
 	return 1;
 }
 
@@ -482,8 +483,6 @@ int things_stop_stack(void)
 		release_handler_instance(g_req_handler);
 		g_req_handler = NULL;
 	}
-
-	dm_termiate_module();
 
 	// [Jay] Need to add memory release for the Queue..
 	THINGS_LOG_D(TAG, THINGS_FUNC_EXIT);
@@ -736,7 +735,7 @@ GOTO_OUT:
 		THINGS_LOG_D(TAG, "Notify result of reset to remote-client.(mobile)");
 		notify_result_of_reset(args->remote_owner, result);
 	}
-	// 12. If there is Reset Result Call-Back Function, then Notify result of Reset to st_things-Application.
+	// 12. If there is Reset Result Call-Back Function, then Notify result of Reset to ST_Things-Application.
 	if (things_cb_func_for_reset_result) {	// Notify result of reset to st_things.
 		THINGS_LOG_D(TAG, "Notify result of reset to st_things.");
 		things_cb_func_for_reset_result(result);

@@ -2246,6 +2246,7 @@ int dm_termiate_module()
 		delete_device(device);
 	}
 	hashmap_delete(g_device_hmap);
+	g_device_hmap = NULL;
 	things_free(keyset);
 
 	// Delete resource types;
@@ -2256,6 +2257,7 @@ int dm_termiate_module()
 		delete_resource_type(type);
 	}
 	hashmap_delete(g_resource_type_hmap);
+	g_resource_type_hmap = NULL;
 	things_free(keyset);
 
 	return 1;
