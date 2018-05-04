@@ -182,8 +182,6 @@ config TC_KERNEL_SIGNAL
 config TC_KERNEL_TASK
 	bool "Task"
 	default n
-	select SCHED_ATEXIT
-	select SCHED_ONEXIT
 
 config TC_KERNEL_TERMIOS
 	bool "Termios"
