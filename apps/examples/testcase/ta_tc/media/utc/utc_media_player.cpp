@@ -64,7 +64,7 @@ protected:
 		fclose(fp);
 		source = std::move(std::unique_ptr<media::stream::FileInputDataSource>(
 			new media::stream::FileInputDataSource(MEDIAPLAYER_TEST_FILE)));
-		source->setSampleRate(16000);
+		source->setSampleRate(20000);
 		source->setChannels(2);
 		mp = new media::MediaPlayer();
 	}
