@@ -34,7 +34,9 @@
 #include "tc_internal.h"
 
 #define TEST_STRING     "test"
+#ifdef CONFIG_SCHED_ONEXIT
 #define ONEXIT_VAL      123
+#endif
 #define SEC_1           1
 #define SEC_2           2
 #define USEC_10         10
@@ -102,6 +104,7 @@ static int exit_task(int argc, char *argv[])
 	return OK;
 }
 
+#ifdef CONFIG_SCHED_ATEXIT
 /**
 * @fn                   :fn_atexit
 * @brief                :utility function for tc_task_atexit
@@ -122,7 +125,9 @@ static int atexit_task(int argc, char *argv[])
 	atexit(fn_atexit);
 	return OK;
 }
+#endif
 
+#ifdef CONFIG_SCHED_ONEXIT
 /**
 * @fn                   :fn_onExit
 * @brief                :utility function for tc_task_on_exit
@@ -151,6 +156,7 @@ static int onexit_task(int argc, char *argv[])
 	exit(ONEXIT_VAL);
 	return OK;
 }
+#endif
 
 /**
 * @fn                   :getpid_task
@@ -342,6 +348,7 @@ static void tc_task_exit(void)
 	TC_SUCCESS_RESULT();
 }
 
+#ifdef CONFIG_SCHED_ATEXIT
 /**
 * @fn                   :tc_task_atexit
 * @brief                :Register a function to be called at normal process termination
@@ -360,7 +367,9 @@ static void tc_task_atexit(void)
 	TC_ASSERT_EQ("task_atexit", g_callback, OK);
 	TC_SUCCESS_RESULT();
 }
+#endif
 
+#ifdef CONFIG_SCHED_ONEXIT
 /**
 * @fn                   :tc_task_on_exit
 * @brief                :on_exit() function registers the given function to be called\
@@ -382,6 +391,7 @@ static void tc_task_on_exit(void)
 	TC_ASSERT_EQ("on_exit", g_callback, OK);
 	TC_SUCCESS_RESULT();
 }
+#endif
 
 /**
 * @fn                   :tc_task_prctl
@@ -488,10 +498,14 @@ static void tc_task_vfork(void)
  ****************************************************************************/
 int task_main(void)
 {
+#ifdef CONFIG_SCHED_ATEXIT
 	tc_task_atexit();
+#endif
 	tc_task_exit();
 	tc_task_getpid();
+#ifdef CONFIG_SCHED_ONEXIT
 	tc_task_on_exit();
+#endif
 	tc_task_prctl();
 	tc_task_task_create();
 	tc_task_task_delete();

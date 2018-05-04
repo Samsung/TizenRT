@@ -145,9 +145,6 @@ int tc_kernel_main(int argc, char *argv[])
 #endif
 
 #ifdef CONFIG_TC_KERNEL_SCHED
-#if (!defined CONFIG_SCHED_HAVE_PARENT)
-	/* #error CONFIG_SCHED_HAVE_PARENT is needed for testing SCHED TC */
-#endif
 	sched_main();
 #endif
 
@@ -160,9 +157,6 @@ int tc_kernel_main(int argc, char *argv[])
 #endif
 
 #ifdef CONFIG_TC_KERNEL_TASK
-#if (!defined CONFIG_SCHED_ATEXIT) || (!defined CONFIG_SCHED_ONEXIT) || (!defined CONFIG_TASK_NAME_SIZE)
-#error CONFIG_SCHED_ATEXIT, CONFIG_SCHED_ONEXIT and CONFIG_TASK_NAME_SIZE are needed for testing TASK TC
-#endif
 	task_main();
 #endif
 
@@ -203,9 +197,6 @@ int tc_kernel_main(int argc, char *argv[])
 #endif
 
 #ifdef CONFIG_ITC_KERNEL_SCHED
-#if (!defined CONFIG_SCHED_HAVE_PARENT)
-	/* #error CONFIG_SCHED_HAVE_PARENT is needed for testing SCHED TC */
-#endif
 	itc_sched_main();
 #endif
 
