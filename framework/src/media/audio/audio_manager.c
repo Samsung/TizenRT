@@ -584,11 +584,17 @@ int start_audio_stream_in(void *data, uint32_t frames)
 					return AUDIO_MANAGER_RESAMPLE_FAIL;
 				}
 
-				memcpy(data + get_input_frames_byte_size(frames_copied), srcData.data_out, get_input_frames_byte_size(srcData.output_frames_gen));
-				frames_copied += srcData.output_frames_gen;
-				frames_used += srcData.input_frames_used;
+				ret = get_input_frames_byte_size(srcData.output_frames_gen);
+				if (ret > 0) {
+					memcpy(data + get_input_frames_byte_size(frames_copied), srcData.data_out, ret);
+					frames_copied += srcData.output_frames_gen;
+					frames_used += srcData.input_frames_used;
 
-				medvdbg("Record resampled %d/%d\n", frames_used, frames_total);
+					medvdbg("Record resampled %d/%d\n", frames_used, frames_total);
+				} else {
+					meddbg("Failed to copy recorded data, get_input_frames_byte_size : %d\n", ret);
+					return AUDIO_MANAGER_RESAMPLE_FAIL;
+				}
 			}
 			ret = frames_copied;
 		} else {
