@@ -49,7 +49,6 @@ int mutex = 0;
 void recv_wait(void)
 {
 	while (mutex <= 0) {
-
 		printf("");
 	}
 	mutex--;
@@ -81,7 +80,6 @@ void tc_net_recv_p(int fd)
 {
 	char buffer[MAXRCVLEN];
 	int ret = recv(fd, buffer, MAXRCVLEN, 0);
-	buffer[ret] = '\0';
 
 	TC_ASSERT_NEQ("recv", ret, -1);
 	TC_SUCCESS_RESULT();
@@ -101,7 +99,6 @@ void tc_net_recv_n(int fd)
 	char buffer[MAXRCVLEN];
 
 	int ret = recv(-1, buffer, MAXRCVLEN, 0);
-	buffer[ret] = '\0';
 
 	TC_ASSERT_EQ("recv", ret, -1);
 	TC_SUCCESS_RESULT();
@@ -121,7 +118,6 @@ void tc_net_recv_shutdown_n(int fd)
 	char buffer[MAXRCVLEN];
 	shutdown(fd, SHUT_RD);
 	int ret = recv(fd, buffer, MAXRCVLEN, 0);
-	buffer[ret] = '\0';
 
 	TC_ASSERT_EQ("recv", ret, 0);
 	TC_SUCCESS_RESULT();
@@ -141,7 +137,6 @@ void tc_net_recv_close_n(int fd)
 	char buffer[MAXRCVLEN];
 	close(fd);
 	int ret = recv(fd, buffer, MAXRCVLEN, 0);
-	buffer[ret] = '\0';
 
 	TC_ASSERT_EQ("recv", ret, -1);
 	TC_SUCCESS_RESULT();
@@ -170,14 +165,33 @@ void *recv_server(void *args)
 	sa.sin_port = htons(PORTNUM);
 	sa.sin_addr.s_addr = inet_addr("127.0.0.1");
 
-	bind(SocketFD, (struct sockaddr *)&sa, sizeof(sa));
+	int ret = bind(SocketFD, (struct sockaddr *)&sa, sizeof(sa));
+	if (ret < 0) {
+		printf("error %s:%d\n", __FUNCTION__, __LINE__);
+		close(SocketFD);
+		return 0;
+	}
 
-	listen(SocketFD, 2);
+	ret = listen(SocketFD, 2);
+	if (ret < 0) {
+		close(SocketFD);
+		printf("error %s:%d\n", __FUNCTION__, __LINE__);
+		return 0;
+	}
 	recv_signal();
 	int ConnectFD = accept(SocketFD, NULL, NULL);
+	if (ConnectFD < 0) {
+		printf("error %s:%d\n", __FUNCTION__, __LINE__);
+		close(SocketFD);
+		return 0;
+	}
 	int i;
-	for (i = 0; i < 6; i++)
-		send(ConnectFD, msg, strlen(msg), 0);
+	for (i = 0; i < 6; i++) {
+		ret = send(ConnectFD, msg, strlen(msg), 0);
+		if (ret < 0) {
+			printf("error %s:%d\n", __FUNCTION__, __LINE__);
+		}
+	}
 
 	close(ConnectFD);
 
@@ -202,6 +216,10 @@ void *recv_client(void *args)
 	struct sockaddr_in dest;
 
 	mysocket = socket(PF_INET, SOCK_STREAM, IPPROTO_TCP);
+	if (mysocket < 0) {
+		printf("Socket creation fail %s:%d\n", __FUNCTION__,  __LINE__);
+		return 0;
+	}
 
 	memset(&dest, 0, sizeof(dest));
 	dest.sin_family = PF_INET;
@@ -210,13 +228,23 @@ void *recv_client(void *args)
 
 	recv_wait();
 
-	connect(mysocket, (struct sockaddr *)&dest, sizeof(struct sockaddr));
+	int ret = connect(mysocket, (struct sockaddr *)&dest, sizeof(struct sockaddr));
+	if (ret < 0) {
+		close(mysocket);
+		printf("fail %s:%d\n", __FUNCTION__, __LINE__);
+		return 0;
+	}
 	tc_net_recv_p(mysocket);
 	tc_net_recv_n(mysocket);
 	tc_net_recv_shutdown_n(mysocket);
-	connect(mysocket, (struct sockaddr *)&dest, sizeof(struct sockaddr));
+	ret = connect(mysocket, (struct sockaddr *)&dest, sizeof(struct sockaddr));
+	if (ret < 0) {
+		close(mysocket);
+		printf("fail %s:%d\n", __FUNCTION__, __LINE__);
+		return 0;
+	}
 	tc_net_recv_close_n(mysocket);
-	close(mysocket);
+
 	return 0;
 
 }

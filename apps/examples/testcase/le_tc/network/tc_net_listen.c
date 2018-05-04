@@ -45,15 +45,23 @@ static void tc_net_listen_p(void)
 {
 	struct sockaddr_in sa;
 	int SocketFD = socket(PF_INET, SOCK_STREAM, IPPROTO_TCP);
-
+	if (SocketFD < 0) {
+		printf("Socket creation fail %s:%d\n", __FUNCTION__,  __LINE__);
+		return;
+	}
 	memset(&sa, 0, sizeof sa);
 
 	sa.sin_family = AF_INET;
 	sa.sin_port = htons(1100);
 	sa.sin_addr.s_addr = htonl(INADDR_ANY);
 
-	bind(SocketFD, (struct sockaddr *)&sa, sizeof(sa));
-	int ret = (listen(SocketFD, 10));
+	int ret = bind(SocketFD, (struct sockaddr *)&sa, sizeof(sa));
+	if (ret < 0) {
+		close(SocketFD);
+		printf("fail %s:%d\n", __FUNCTION__, __LINE__);
+		return;
+	}
+	ret = (listen(SocketFD, 10));
 	close(SocketFD);
 
 	TC_ASSERT_NEQ("listen", ret, -1);
@@ -73,14 +81,23 @@ static void tc_net_listen_fd_n(void)
 {
 	struct sockaddr_in sa;
 	int fd = socket(PF_INET, SOCK_STREAM, IPPROTO_TCP);
+	if (fd < 0) {
+		printf("fail %s:%d\n", __FUNCTION__, __LINE__);
+		return;
+	}
 	memset(&sa, 0, sizeof sa);
 
 	sa.sin_family = AF_INET;
 	sa.sin_port = htons(1101);
 	sa.sin_addr.s_addr = htonl(INADDR_ANY);
 
-	bind(fd, (struct sockaddr *)&sa, sizeof(sa));
-	int ret = (listen(-1, 10));
+	int ret = bind(fd, (struct sockaddr *)&sa, sizeof(sa));
+	if (ret < 0) {
+		close(fd);
+		printf("fail %s:%d", __FUNCTION__, __LINE__);
+		return;
+	}
+	ret = (listen(-1, 10));
 	close(fd);
 	TC_ASSERT_NEQ("listen", ret, 0);
 	TC_SUCCESS_RESULT();
@@ -98,15 +115,23 @@ static void tc_net_listen_backlog_p(void)
 {
 	struct sockaddr_in sa;
 	int SocketFD = socket(PF_INET, SOCK_STREAM, IPPROTO_TCP);
-
+	if (SocketFD < 0) {
+		printf("Socket creation fail %s:%d\n", __FUNCTION__,  __LINE__);
+		return;
+	}
 	memset(&sa, 0, sizeof sa);
 
 	sa.sin_family = AF_INET;
 	sa.sin_port = htons(1100);
 	sa.sin_addr.s_addr = htonl(INADDR_ANY);
 
-	bind(SocketFD, (struct sockaddr *)&sa, sizeof(sa));
-	int ret = (listen(SocketFD, -1));
+	int ret = bind(SocketFD, (struct sockaddr *)&sa, sizeof(sa));
+	if (ret < 0) {
+		close(SocketFD);
+		printf("fail %s:%d\n", __FUNCTION__, __LINE__);
+		return;
+	}
+	ret = (listen(SocketFD, -1));
 	close(SocketFD);
 
 	TC_ASSERT_NEQ("listen", ret, -1);
@@ -126,15 +151,23 @@ static void tc_net_listen_fd_backlog_n(void)
 {
 	struct sockaddr_in sa;
 	int SocketFD = socket(PF_INET, SOCK_STREAM, IPPROTO_TCP);
-
+	if (SocketFD < 0) {
+		printf("Socket creation fail %s:%d\n", __FUNCTION__,  __LINE__);
+		return;
+	}
 	memset(&sa, 0, sizeof sa);
 
 	sa.sin_family = AF_INET;
 	sa.sin_port = htons(1100);
 	sa.sin_addr.s_addr = htonl(INADDR_ANY);
 
-	bind(SocketFD, (struct sockaddr *)&sa, sizeof(sa));
-	int ret = (listen(-1, -1));
+	int ret = bind(SocketFD, (struct sockaddr *)&sa, sizeof(sa));
+	if (ret < 0) {
+		close(SocketFD);
+		printf("fail %s:%d\n", __FUNCTION__, __LINE__);
+		return;
+	}
+	ret = (listen(-1, -1));
 	close(SocketFD);
 	TC_ASSERT_NEQ("listen", ret, 0);
 	TC_SUCCESS_RESULT();

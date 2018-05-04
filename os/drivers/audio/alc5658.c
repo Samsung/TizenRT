@@ -690,7 +690,7 @@ static int alc5658_configure(FAR struct audio_lowerhalf_s *dev, FAR const struct
 
 			uint16_t volume = caps->ac_controls.hw[0];
 
-			if (volume >= ALC5658_HP_VOL_MIN && volume <= ALC5658_HP_VOL_MAX) {
+			if (volume <= ALC5658_HP_VOL_MAX) {
 				audvdbg("    Volume: 0x%x\n", volume);
 				priv->volume = volume;
 				alc5658_setvolume(priv);
@@ -738,7 +738,7 @@ static int alc5658_configure(FAR struct audio_lowerhalf_s *dev, FAR const struct
 			/* Set the gain */
 			uint16_t gain = caps->ac_controls.hw[0];
 
-			if (gain >= ALC5658_GAIN_MIN && gain <= ALC5658_GAIN_MAX) {
+			if (gain <= ALC5658_GAIN_MAX) {
 				audvdbg(" INP Gain: 0x%x\n", gain);
 				priv->gain = gain;
 				alc5658_set_inport_gain(priv);

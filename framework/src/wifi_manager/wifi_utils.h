@@ -21,6 +21,13 @@
 
 #include "wifi_common.h"
 
+/* Length defines */
+#define WIFI_UTILS_MACADDR_LEN        6
+#define WIFI_UTILS_MACADDR_STR_LEN    18
+/* The maximum length of an SSID - excluding '\0' is case of all characters used */
+#define WIFI_UTILS_SSID_LEN           32
+#define WIFI_UTILS_PASSPHRASE_LEN     64
+
 /**
  * @brief <b> wifi authentication type WPA, WPA2, WPS</b>
  */
@@ -60,9 +67,9 @@ typedef enum {
  */
 typedef struct {
 	unsigned int channel;				  /**<  Radio channel that the AP beacon was received on       */
-	char ssid[32];						  /**<  Service Set Identification (i.e. Name of Access Point) */
+	char ssid[WIFI_UTILS_SSID_LEN];						  /**<  Service Set Identification (i.e. Name of Access Point) */
 	unsigned int ssid_length;			  /**<  The length of Service Set Identification               */
-	unsigned char bssid[6];				  /**<  MAC address of Access Point                            */
+	unsigned char bssid[WIFI_UTILS_MACADDR_STR_LEN];				  /**<  MAC address (xx:xx:xx:xx:xx:xx) of Access Point */
 	unsigned int max_rate;				  /**<  Maximum data rate in kilobits/s                        */
 	int rssi;							  /**<  Receive Signal Strength Indication in dBm              */
 	uint8_t phy_mode;					// 0:legacy 1: 11N HT
@@ -75,9 +82,9 @@ typedef struct {
  * @brief wifi ap connect config
  */
 typedef struct {
-	char ssid[32];							 /**<  Service Set Identification         */
+	char ssid[WIFI_UTILS_SSID_LEN];							 /**<  Service Set Identification         */
 	unsigned int ssid_length;				 /**<  Service Set Identification Length  */
-	char passphrase[64];					 /**<  ap passphrase(password)            */
+	char passphrase[WIFI_UTILS_PASSPHRASE_LEN];					 /**<  ap passphrase(password)            */
 	unsigned int passphrase_length;			 /**<  ap passphrase length               */
 	wifi_utils_ap_auth_type_e ap_auth_type;		  /**<  @ref wifi_utils_ap_auth_type            */
 	wifi_utils_ap_crypto_type_e ap_crypto_type;	  /**<  @ref wifi_utils_ap_crypto_type          */
@@ -88,9 +95,9 @@ typedef struct {
  */
 typedef struct {
 	unsigned int channel;					 /**<  soft ap wifi channel               */
-	char ssid[32];							 /**<  Service Set Identification         */
+	char ssid[WIFI_UTILS_SSID_LEN];							 /**<  Service Set Identification         */
 	unsigned int ssid_length;				 /**<  Service Set Identification Length  */
-	char passphrase[64];					 /**<  ap passphrase(password)            */
+	char passphrase[WIFI_UTILS_PASSPHRASE_LEN];					 /**<  ap passphrase(password)            */
 	unsigned int passphrase_length;			 /**<  ap passphrase length               */
 	wifi_utils_ap_auth_type_e ap_auth_type;		  /**<  @ref wifi_utils_ap_auth_type            */
 	wifi_utils_ap_crypto_type_e ap_crypto_type;	  /**<  @ref wifi_utils_ap_crypto_type          */
@@ -122,7 +129,7 @@ typedef struct {
  */
 typedef struct {
 	uint32_t ip4_address;			   /**<  ip4 address                               */
-	unsigned char mac_address[6];	   /**<  MAC address of wifi interface             */
+	unsigned char mac_address[WIFI_UTILS_MACADDR_LEN];	   /**<  MAC address of wifi interface             */
 	int rssi;						   /**<  Receive Signal Strength Indication in dBm */
 	wifi_utils_status_e wifi_status;	   /**<  @ref wifi_utils_status                    */
 } wifi_utils_info;

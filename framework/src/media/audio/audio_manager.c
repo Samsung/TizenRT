@@ -51,8 +51,6 @@
 
 #define AUDIO_DEVICE_MAX_VOLUME 10
 
-#define MAX_SUPPORTED_SAMPLERATE 32
-
 /****************************************************************************
  * Private Declarations
  ****************************************************************************/
@@ -82,6 +80,7 @@ struct audio_config_s {
 
 struct audio_resample_s {
 	bool necessary;
+	uint32_t samprate_types;
 	uint32_t from;
 	uint32_t to;
 	uint16_t *readbuffer; // readbuffer for only pcm_readi
@@ -96,6 +95,12 @@ struct audio_card_info_s {
 	struct audio_config_s config;
 	struct pcm *pcm;
 	struct audio_resample_s resample;
+	uint32_t supported_samprates;
+};
+
+struct audio_samprate_map_entry_s {
+	uint32_t samprate_types;
+	uint32_t samprate;
 };
 
 typedef enum audio_card_status_e audio_card_status_t;
@@ -118,17 +123,18 @@ static int get_avail_audio_out_card_id(void);
 static audio_manager_result_t get_active_audio_device_pcm(struct pcm **pcm, audio_device_type_t type);
 static audio_manager_result_t set_audio_volume(audio_device_type_t type, uint8_t volume);
 
-static uint32_t get_closest_samprate(uint32_t rate);
+static int get_supported_sample_rate(audio_device_type_t type, const char *path);
+static uint32_t get_closest_samprate(uint32_t origin_samprate, audio_device_type_t type);
 
-static uint32_t g_supported_samprates[MAX_SUPPORTED_SAMPLERATE] = {
-	AUDIO_SAMP_RATE_8K,
-	AUDIO_SAMP_RATE_11K,
-	AUDIO_SAMP_RATE_16K,
-	AUDIO_SAMP_RATE_22K,
-	AUDIO_SAMP_RATE_32K,
-	AUDIO_SAMP_RATE_44K,
-	AUDIO_SAMP_RATE_48K,
-	AUDIO_SAMP_RATE_96K
+static const struct audio_samprate_map_entry_s g_audio_samprate_entry[] = {
+	{AUDIO_SAMP_RATE_TYPE_8K, AUDIO_SAMP_RATE_8K},
+	{AUDIO_SAMP_RATE_TYPE_11K, AUDIO_SAMP_RATE_11K},
+	{AUDIO_SAMP_RATE_TYPE_16K, AUDIO_SAMP_RATE_16K},
+	{AUDIO_SAMP_RATE_TYPE_22K, AUDIO_SAMP_RATE_22K},
+	{AUDIO_SAMP_RATE_TYPE_32K, AUDIO_SAMP_RATE_32K},
+	{AUDIO_SAMP_RATE_TYPE_44K, AUDIO_SAMP_RATE_44K},
+	{AUDIO_SAMP_RATE_TYPE_48K, AUDIO_SAMP_RATE_48K},
+	{AUDIO_SAMP_RATE_TYPE_96K, AUDIO_SAMP_RATE_96K}
 };
 
 /****************************************************************************
@@ -162,6 +168,10 @@ audio_manager_result_t find_input_audio_card(void)
 			g_audio_in_cards[card_id].status = AUDIO_CARD_READY;
 			g_audio_in_cards[card_id].device_id = device_id;
 			g_audio_in_card_num++;
+
+			ret = get_supported_sample_rate(INPUT, g_audio_in_cards[card_id].card_path);
+			ASSERT(ret == AUDIO_MANAGER_SUCCESS);
+
 			medvdbg("Found an input audio card, id=%d, count=%d,  card_path=%s\n", card_id, g_audio_in_card_num,
 					g_audio_in_cards[card_id].card_path);
 		}
@@ -215,6 +225,10 @@ audio_manager_result_t find_output_audio_card(void)
 			g_audio_out_cards[card_id].status = AUDIO_CARD_READY;
 			g_audio_out_cards[card_id].device_id = device_id;
 			g_audio_out_card_num++;
+
+			ret = get_supported_sample_rate(OUTPUT, g_audio_out_cards[card_id].card_path);
+			ASSERT(ret == AUDIO_MANAGER_SUCCESS);
+
 			medvdbg("Found an output audio card, id=%d, count=%d,  card_path=%s\n", card_id, g_audio_out_card_num,
 					g_audio_out_cards[card_id].card_path);
 		}
@@ -700,7 +714,7 @@ audio_manager_result_t set_audio_stream_in(uint8_t channels, uint32_t sample_rat
 
 	memset(&config, 0, sizeof(struct pcm_config));
 	config.channels = channels;
-	config.rate = get_closest_samprate(sample_rate);
+	config.rate = get_closest_samprate(sample_rate, INPUT);
 	config.format = format;
 	config.period_size = AUDIO_STREAM_VOIP_PERIOD_SIZE;
 	config.period_count = AUDIO_STREAM_VOIP_PERIOD_COUNT;
@@ -765,7 +779,7 @@ audio_manager_result_t set_audio_stream_out(uint8_t channels, uint32_t sample_ra
 
 	memset(&config, 0, sizeof(struct pcm_config));
 	config.channels = channels;
-	config.rate = get_closest_samprate(sample_rate);
+	config.rate = get_closest_samprate(sample_rate, OUTPUT);
 	config.format = format;
 	config.period_size = AUDIO_STREAM_VOIP_PERIOD_SIZE;
 	config.period_count = AUDIO_STREAM_VOIP_PERIOD_COUNT;
@@ -923,19 +937,90 @@ audio_manager_result_t reset_audio_stream_out(void)
 /****************************************************************************
  * Resampling
  ****************************************************************************/
-uint32_t get_closest_samprate(uint32_t rate)
+static int get_supported_sample_rate(audio_device_type_t type, const char *path)
+{
+	int ret;
+	int fd;
+	struct audio_caps_desc_s caps_desc;
+	FAR struct audio_caps_s *caps = &(caps_desc.caps);
+
+	if (type == INPUT) {
+		ASSERT(g_actual_audio_in_card_id >= 0);
+	} else {
+		ASSERT(g_actual_audio_out_card_id >= 0);
+	}
+
+	// Return SUCCESS if the sample rate type of the active card is loaded already.
+	if ((type == INPUT) && (g_audio_in_cards[g_actual_audio_in_card_id].resample.samprate_types != 0)) {
+		return AUDIO_MANAGER_SUCCESS;
+	}
+	if ((type == OUTPUT) && (g_audio_out_cards[g_actual_audio_out_card_id].resample.samprate_types != 0)) {
+		return AUDIO_MANAGER_SUCCESS;
+	}
+
+	caps->ac_len = sizeof(struct audio_caps_s);
+
+	if (type == INPUT) {
+		caps->ac_type = AUDIO_TYPE_INPUT;
+		fd = open(path, O_RDONLY);
+		if (fd < 0) {
+			medvdbg("Fail to open input driver, path = %s\n", path);
+			return AUDIO_MANAGER_FAIL;
+		}
+	} else {
+		caps->ac_type = AUDIO_TYPE_OUTPUT;
+		fd = open(path, O_WRONLY);
+		if (fd < 0) {
+			medvdbg("Fail to open output friver, path = %s\n", path);
+			return AUDIO_MANAGER_FAIL;
+		}
+	}
+
+	caps->ac_subtype = AUDIO_TYPE_QUERY;
+
+	ret = ioctl(fd, AUDIOIOC_GETCAPS, (unsigned long)caps);
+	if (ret < 0) {
+		meddbg("Fail to ioctl AUDIOIOC_CONFIGURE, ret = %d\n", ret);
+		return AUDIO_MANAGER_DEVICE_FAIL;
+	}
+
+	if (type == INPUT) {
+		g_audio_in_cards[g_actual_audio_in_card_id].resample.samprate_types = caps->ac_controls.b[0];
+		medvdbg("Supported Input sample rate: %d, %x\n", caps->ac_controls.b[0], caps->ac_controls.b[0]);
+	} else {
+		g_audio_out_cards[g_actual_audio_out_card_id].resample.samprate_types = caps->ac_controls.b[0];
+		medvdbg("Supported Output sample rate: %d, %x\n", caps->ac_controls.b[0], caps->ac_controls.b[0]);
+	}
+
+	return AUDIO_MANAGER_SUCCESS;
+}
+
+static uint32_t get_closest_samprate(uint32_t origin_samprate, audio_device_type_t type)
 {
 	int i;
-	uint32_t result = g_supported_samprates[0];
+	uint32_t result;
+	uint32_t samprate_types;
+	int count = sizeof(g_audio_samprate_entry) / sizeof(struct audio_samprate_map_entry_s);
 
-	for (i = 0; g_supported_samprates[i] != 0; i++) {
-		if (rate >= g_supported_samprates[i]) {
-			if (g_supported_samprates[i + 1] != 0 && rate != g_supported_samprates[i]) {
-				result = g_supported_samprates[i + 1];
-			} else {
-				result = g_supported_samprates[i];
+	ASSERT(count > 0);
+
+	if (type == INPUT) {
+		ASSERT(g_actual_audio_in_card_id >= 0);
+		samprate_types = g_audio_in_cards[g_actual_audio_in_card_id].resample.samprate_types;
+	} else {
+		ASSERT(g_actual_audio_out_card_id >= 0);
+		samprate_types = g_audio_out_cards[g_actual_audio_out_card_id].resample.samprate_types;
+	}
+
+	result = g_audio_samprate_entry[count - 1].samprate;
+
+	for (i = count - 1; i >= 0; i--) {
+		if (g_audio_samprate_entry[i].samprate_types & samprate_types) {
+			if (g_audio_samprate_entry[i].samprate >= origin_samprate) {
+				result = g_audio_samprate_entry[i].samprate;
 			}
 		}
 	}
+
 	return result;
 }

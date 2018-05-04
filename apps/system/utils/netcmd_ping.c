@@ -454,6 +454,7 @@ int ping_process(int count, const char *taddr, int size)
 
 	tv.tv_sec = 1;
 	tv.tv_usec = 0;
+
 	if (setsockopt(s, SOL_SOCKET, SO_RCVTIMEO, (struct timeval *)&tv, sizeof(struct timeval)) != ERR_OK) {
 		printf("ping_process: setsockopt error\n");
 		goto err_out;

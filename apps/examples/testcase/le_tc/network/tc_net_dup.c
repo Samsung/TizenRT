@@ -66,6 +66,11 @@ static void tc_net_dup_p(void)
 		return;
 	}
 	int fd = dup(sock);
+	if (fd < 0) {
+		printf("socket dup error line:%d\n", __LINE__);
+		close(sock);
+		return;
+	}
 	close(sock);
 	close(fd);
 	TC_ASSERT_GT("dup", fd, 0);
