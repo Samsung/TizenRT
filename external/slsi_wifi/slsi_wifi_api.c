@@ -3448,14 +3448,21 @@ int8_t WiFiRegisterLinkCallback(slsi_network_link_callback_t link_up, slsi_netwo
 
 int8_t WiFiRegisterScanCallback(network_scan_result_handler_t scan_result_handler)
 {
-	ENTER_CRITICAL;
+	int8_t result = SLSI_STATUS_SUCCESS;
 
+	if (!scan_result_handler) {
+		result = SLSI_STATUS_ERROR;
+		return result;
+	}
+	
+	ENTER_CRITICAL;
 	g_scan_result_handler = scan_result_handler;
 #ifdef CONFIG_SCSC_WLAN_AUTO_RECOVERY
 	g_recovery_data.scan_result_handler = scan_result_handler;
 #endif
 	LEAVE_CRITICAL;
-	return SLSI_STATUS_SUCCESS;
+	
+	return result;
 }
 
 int8_t WiFiNetworkJoin(uint8_t *ssid, uint8_t ssid_len, uint8_t *bssid, const slsi_security_config_t *security_config)
