@@ -203,8 +203,7 @@ static const wifi_manager_ap_crypto_type_e crypto_type_table[] = {
 	WIFI_MANAGER_CRYPTO_UNKNOWN,               /**<  unknown encryption             */
 };
 
-void
-print_wifi_ap_profile(wifi_manager_ap_config_s *config, char *title)
+void print_wifi_ap_profile(wifi_manager_ap_config_s *config, char *title)
 {
 	printf("====================================\n");
 	if (title) {
@@ -219,8 +218,7 @@ print_wifi_ap_profile(wifi_manager_ap_config_s *config, char *title)
 	printf("====================================\n");
 }
 
-void
-print_wifi_softap_profile(wifi_manager_softap_config_s *config, char *title)
+void print_wifi_softap_profile(wifi_manager_softap_config_s *config, char *title)
 {
 	printf("====================================\n");
 	if (title) {
@@ -234,8 +232,7 @@ print_wifi_softap_profile(wifi_manager_softap_config_s *config, char *title)
 }
 
 
-wifi_manager_ap_auth_type_e
-get_auth_type(const char *method)
+wifi_manager_ap_auth_type_e get_auth_type(const char *method)
 {
 	int i = 0;
 	int list_size = sizeof(wifi_test_auth_method)/sizeof(wifi_test_auth_method[0]);
@@ -248,8 +245,7 @@ get_auth_type(const char *method)
 }
 
 
-wifi_manager_ap_crypto_type_e
-get_crypto_type(const char *method)
+wifi_manager_ap_crypto_type_e get_crypto_type(const char *method)
 {
 	int i = 0;
 	int list_size = sizeof(wifi_test_auth_method)/sizeof(wifi_test_auth_method[0]);
@@ -262,8 +258,7 @@ get_crypto_type(const char *method)
 }
 
 
-int
-wm_signal_init(void)
+int wm_signal_init(void)
 {
 	if (g_mode != 0) {
 		printf("Program is already running\n");
@@ -297,8 +292,7 @@ wm_signal_init(void)
 }
 
 
-void
-wm_signal_deinit(void)
+void wm_signal_deinit(void)
 {
 	pthread_mutex_destroy(&g_wm_func_mutex);
 	pthread_cond_destroy(&g_wm_func_cond);
@@ -363,8 +357,7 @@ void wm_scan_done(wifi_manager_scan_info_s **scan_result, wifi_manager_scan_resu
 /*
  * Control Functions
  */
-void
-wm_reset_info(void *arg)
+void wm_reset_info(void *arg)
 {
 	WM_TEST_LOG_START;
 	wifi_manager_result_e res = wifi_manager_remove_config();
@@ -377,8 +370,7 @@ wm_reset_info(void *arg)
 }
 
 
-void
-wm_get_info(void *arg)
+void wm_get_info(void *arg)
 {
 	WM_TEST_LOG_START;
 	wifi_manager_ap_config_s apconfig;
@@ -392,8 +384,7 @@ wm_get_info(void *arg)
 	WM_TEST_LOG_END;
 }
 
-void
-wm_set_info(void *arg)
+void wm_set_info(void *arg)
 {
 	WM_TEST_LOG_START;
 	struct options *ap_info = (struct options *)arg;
@@ -417,8 +408,7 @@ wm_set_info(void *arg)
 	WM_TEST_LOG_END;
 }
 
-void
-wm_start(void *arg)
+void wm_start(void *arg)
 {
 	WM_TEST_LOG_START;
 	wifi_manager_result_e res = WIFI_MANAGER_SUCCESS;
@@ -431,8 +421,7 @@ wm_start(void *arg)
 }
 
 
-void
-wm_stop(void *arg)
+void wm_stop(void *arg)
 {
 	WM_TEST_LOG_START;
 	wifi_manager_result_e res = wifi_manager_deinit();
@@ -443,8 +432,7 @@ wm_stop(void *arg)
 }
 
 
-void
-wm_scan(void *arg)
+void wm_scan(void *arg)
 {
 	WM_TEST_LOG_START;
 	wifi_manager_result_e res = WIFI_MANAGER_SUCCESS;
@@ -459,8 +447,7 @@ wm_scan(void *arg)
 }
 
 
-void
-wm_display_state(void *arg)
+void wm_display_state(void *arg)
 {
 	WM_TEST_LOG_START;
 	wifi_manager_info_s info;
@@ -500,8 +487,7 @@ exit:
 }
 
 
-void
-wm_sta_start(void *arg)
+void wm_sta_start(void *arg)
 {
 	WM_TEST_LOG_START;
 	wifi_manager_result_e res = WIFI_MANAGER_SUCCESS;
@@ -516,8 +502,7 @@ wm_sta_start(void *arg)
 }
 
 
-void
-wm_connect(void *arg)
+void wm_connect(void *arg)
 {
 	WM_TEST_LOG_START;
 	struct options *ap_info = (struct options *)arg;
@@ -546,8 +531,7 @@ wm_connect(void *arg)
 }
 
 
-void
-wm_disconnect(void *arg)
+void wm_disconnect(void *arg)
 {
 	WM_TEST_LOG_START;
 	wifi_manager_result_e res = WIFI_MANAGER_SUCCESS;
@@ -562,8 +546,7 @@ wm_disconnect(void *arg)
 }
 
 
-void
-wm_cancel(void *arg)
+void wm_cancel(void *arg)
 {
 	WM_TEST_LOG_START;
 	wifi_manager_result_e res = WIFI_MANAGER_SUCCESS;
@@ -577,8 +560,7 @@ wm_cancel(void *arg)
 }
 
 
-void
-wm_softap_start(void *arg)
+void wm_softap_start(void *arg)
 {
 	WM_TEST_LOG_START;
 	wifi_manager_result_e res = WIFI_MANAGER_SUCCESS;
@@ -605,8 +587,7 @@ wm_softap_start(void *arg)
  * ocf_wifi_test
  ****************************************************************************/
 
-void
-wm_auto_test(void *arg)
+void wm_auto_test(void *arg)
 {
 	wifi_manager_result_e res = WIFI_MANAGER_SUCCESS;
 	struct options *info = (struct options *)arg;
@@ -697,8 +678,7 @@ wm_auto_test(void *arg)
 }
 
 
-int
-wm_parse_commands(struct options *opt, int argc, char *argv[])
+int wm_parse_commands(struct options *opt, int argc, char *argv[])
 {
 	if (argc < 3) {
 		return -1;
@@ -780,8 +760,7 @@ wm_parse_commands(struct options *opt, int argc, char *argv[])
 }
 
 
-void
-wm_process(int argc, char *argv[])
+void wm_process(int argc, char *argv[])
 {
 	struct options opt;
 	int res = wm_parse_commands(&opt, argc, argv);
