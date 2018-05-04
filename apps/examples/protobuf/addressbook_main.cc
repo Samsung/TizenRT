@@ -60,11 +60,11 @@ using google::protobuf::util::TimeUtil;
 #endif
 
 #ifdef CONFIG_DEBUG_CXX
-#define cxxdbg              dbg
-#define cxxlldbg            lldbg
+#define cxxdbg dbg
+#define cxxlldbg lldbg
 #ifdef CONFIG_DEBUG_VERBOSE
-#define cxxvdbg           vdbg
-#define cxxllvdbg         llvdbg
+#define cxxvdbg vdbg
+#define cxxllvdbg llvdbg
 #else
 #define cxxvdbg(x...)
 #define cxxllvdbg(x...)
@@ -88,20 +88,20 @@ static tutorial::AddressBook address_book;
 // Private Functions
 //***************************************************************************
 
-void PromptForAddress(tutorial::Person *person)
+void PromptForAddress(tutorial::Person* person)
 {
 	person->set_id(100);
 	*person->mutable_name() = "abc";
-	//person->set_name("abc");
+	// person->set_name("abc");
 	string email = "abc@samsung.com";
 	if (!email.empty()) {
 		person->set_email(email);
 	}
-	tutorial::Person::PhoneNumber *phone_number = person->add_phones();
+	tutorial::Person::PhoneNumber* phone_number = person->add_phones();
 	phone_number->set_number("1234");
 	phone_number->set_type(tutorial::Person::MOBILE);
 	*person->mutable_last_updated() = TimeUtil::SecondsToTimestamp(time(NULL));
-	#if 0
+#if 0
 	cout << "Enter person ID number: ";
 	int id;
 	cin >> id;
@@ -143,14 +143,14 @@ void PromptForAddress(tutorial::Person *person)
 		}
 	}
 	*person->mutable_last_updated() = TimeUtil::SecondsToTimestamp(time(NULL));
-	#endif
+#endif
 }
 
 // Iterates though all people in the AddressBook and prints info about them.
-void ListPeople(const tutorial::AddressBook &address_book)
+void ListPeople(const tutorial::AddressBook& address_book)
 {
 	for (int i = 0; i < address_book.people_size(); i++) {
-		const tutorial::Person &person = address_book.people(i);
+		const tutorial::Person& person = address_book.people(i);
 
 		cout << "Person ID: " << person.id() << endl;
 		cout << "  Name: " << person.name() << endl;
@@ -159,7 +159,7 @@ void ListPeople(const tutorial::AddressBook &address_book)
 		}
 
 		for (int j = 0; j < person.phones_size(); j++) {
-			const tutorial::Person::PhoneNumber &phone_number = person.phones(j);
+			const tutorial::Person::PhoneNumber& phone_number = person.phones(j);
 
 			switch (phone_number.type()) {
 			case tutorial::Person::MOBILE:
@@ -189,7 +189,8 @@ void DoStream(void)
 		// Read the existing address book.
 		fstream input("/mnt/addressbook.dat", ios::in | ios::binary);
 		if (!input) {
-			cout << "/mnt/addressbook.dat" << ": File not found.  Creating a new file." << endl;
+			cout << "/mnt/addressbook.dat"
+				 << ": File not found.  Creating a new file." << endl;
 		} else if (!address_book.ParseFromIstream(&input)) {
 			cerr << "Failed to parse address book." << endl;
 			return;
@@ -237,24 +238,23 @@ void DoString(void)
  ****************************************************************************/
 
 extern "C" {
-	int addressbook_main(int argc, char *argv[])
-	{
-		// If C++ initialization for static constructors is supported, then do
-		// that first
+int addressbook_main(int argc, char* argv[])
+{
+// If C++ initialization for static constructors is supported, then do
+// that first
 
 #ifdef CONFIG_EXAMPLES_PROTOBUF_CXXINITIALIZE
-		up_cxxinitialize();
+	up_cxxinitialize();
 #endif
 
-		GOOGLE_PROTOBUF_VERIFY_VERSION;
+	GOOGLE_PROTOBUF_VERIFY_VERSION;
 
-		DoStream();
-		DoString();
+	DoStream();
+	DoString();
 
-		// Optional:  Delete all global objects allocated by libprotobuf.
-		//google::protobuf::ShutdownProtobufLibrary();
+	// Optional:  Delete all global objects allocated by libprotobuf.
+	// google::protobuf::ShutdownProtobufLibrary();
 
-		return 0;
-	}
+	return 0;
 }
-
+}
