@@ -993,8 +993,8 @@ int audio_register(FAR const char *name, FAR struct audio_lowerhalf_s *dev)
 	/* Register the Audio device */
 
 	memset(path, 0, AUDIO_MAX_DEVICE_PATH);
-	strcpy(path, devname);
-	strcat(path, "/");
+	strncpy(path, devname, sizeof(path));
+	strncat(path, "/", strlen("/"));
 	strncat(path, name, AUDIO_MAX_DEVICE_PATH - 11);
 #endif
 
