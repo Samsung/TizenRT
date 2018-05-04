@@ -151,9 +151,9 @@ static const struct audio_samprate_map_entry_s g_audio_samprate_entry[] = {
 /****************************************************************************
  * Public Functions
  ****************************************************************************/
-audio_manager_result_t find_audio_card(audio_card_type_t card_type)
+static audio_manager_result_t find_audio_card(audio_card_type_t card_type)
 {
-	int ret = AUDIO_MANAGER_SUCCESS;
+	audio_manager_result_t ret = AUDIO_MANAGER_SUCCESS;
 	uint8_t card_id = INVALID_ID;
 	uint16_t device_id = INVALID_ID;
 	char type;
@@ -217,11 +217,33 @@ error_out:
 	return ret;
 }
 
+static audio_manager_result_t find_audio_card_if_empty(audio_card_type_t card_type)
+{
+	int id = g_actual_audio_out_card_id;
+
+	if (card_type == INPUT) {
+		id = g_actual_audio_in_card_id;
+	}
+	
+	if ((id == INVALID_ID) && (find_audio_card(card_type) != AUDIO_MANAGER_SUCCESS)) {
+		meddbg("Found no active audio card type : %d\n", card_type);
+		return AUDIO_MANAGER_CARD_NOT_FOUND;
+	}
+	return AUDIO_MANAGER_SUCCESS;
+}
+
 static audio_manager_result_t set_audio_volume(audio_card_type_t type, uint8_t volume)
 {
 	int ret;
 	int fd;
 	struct audio_caps_desc_s caps_desc;
+	audio_card_info_t *card;
+
+	/* check actual card and try to find all card if there is no actual card */
+	ret = find_audio_card_if_empty(type);
+	if (ret != AUDIO_MANAGER_SUCCESS) {
+		return ret;
+	}
 
 	if (volume > AUDIO_DEVICE_MAX_VOLUME) {
 		volume = AUDIO_DEVICE_MAX_VOLUME;
@@ -229,42 +251,36 @@ static audio_manager_result_t set_audio_volume(audio_card_type_t type, uint8_t v
 
 	if (type == INPUT) {
 		caps_desc.caps.ac_format.hw = AUDIO_FU_INP_GAIN;
-		caps_desc.caps.ac_controls.hw[0] = volume * (int)(g_audio_in_cards[g_actual_audio_in_card_id].config.max_volume / AUDIO_DEVICE_MAX_VOLUME);
-
-		if ((fd = open(g_audio_in_cards[g_actual_audio_in_card_id].card_path, O_RDONLY)) < 0) {
-			meddbg("Fail to open an input audio driver\n");
-			return AUDIO_MANAGER_DEVICE_FAIL;
-		}
+		card = &g_audio_in_cards[g_actual_audio_in_card_id];
 	} else {
 		caps_desc.caps.ac_format.hw = AUDIO_FU_VOLUME;
-		caps_desc.caps.ac_controls.hw[0] = volume * (int)(g_audio_out_cards[g_actual_audio_out_card_id].config.max_volume / AUDIO_DEVICE_MAX_VOLUME);
+		card = &g_audio_out_cards[g_actual_audio_out_card_id];
 
-		if ((fd = open(g_audio_out_cards[g_actual_audio_out_card_id].card_path, O_WRONLY)) < 0) {
-			meddbg("Fail to open an output audio driver\n");
-			return AUDIO_MANAGER_DEVICE_FAIL;
-		}
 	}
-
+	caps_desc.caps.ac_controls.hw[0] = volume * (int)(card->config.max_volume / AUDIO_DEVICE_MAX_VOLUME);
 	caps_desc.caps.ac_len = sizeof(struct audio_caps_s);
 	caps_desc.caps.ac_type = AUDIO_TYPE_FEATURE;
+
+	fd = open(card->card_path, O_RDONLY);
+	if (fd < 0) {
+		meddbg("Failed to open device path : %s type : %d\n", card->card_path, type);
+		return AUDIO_MANAGER_DEVICE_FAIL;
+	}
 
 	ret = ioctl(fd, AUDIOIOC_CONFIGURE, (unsigned long)&caps_desc);
 	if (ret < 0) {
 		meddbg("Fail to set a volume, ret = %d\n", ret);
-		close(fd);
-		return AUDIO_MANAGER_DEVICE_FAIL;
+		ret = AUDIO_MANAGER_DEVICE_FAIL;
+		goto errout;
 	}
 
-	if (type == INPUT) {
-		g_audio_in_cards[g_actual_audio_in_card_id].config.volume = volume;
-	} else {
-		g_audio_out_cards[g_actual_audio_out_card_id].config.volume = volume;
-	}
+	ret = AUDIO_MANAGER_SUCCESS;
+	card->config.volume = volume;
 	medvdbg("Volume = %d\n", volume);
 
+errout:
 	close(fd);
-
-	return AUDIO_MANAGER_SUCCESS;
+	return ret;
 }
 
 audio_manager_result_t set_input_audio_volume(uint8_t volume)
@@ -643,8 +659,8 @@ audio_manager_result_t set_audio_stream_in(uint8_t channels, uint32_t sample_rat
 		return AUDIO_MANAGER_INVALID_PARAM;
 	}
 
-	/* if g_actual_audio_in_card_id is invalid, try to find all card here */
-	if ((g_actual_audio_in_card_id == INVALID_ID) && (find_audio_card(INPUT) != AUDIO_MANAGER_SUCCESS)) {
+	/* check actual card and try to find all card if there is no actual card */
+	if (find_audio_card_if_empty(INPUT) != AUDIO_MANAGER_SUCCESS) {
 		meddbg("Found no active input audio card\n");
 		return AUDIO_MANAGER_CARD_NOT_FOUND;
 	}
@@ -697,8 +713,8 @@ audio_manager_result_t set_audio_stream_out(uint8_t channels, uint32_t sample_ra
 		return AUDIO_MANAGER_INVALID_PARAM;
 	}
 
-	/* if g_actual_audio_in_card_id is invalid, try to find all card here */
-	if ((g_actual_audio_out_card_id == INVALID_ID) && (find_audio_card(OUTPUT) != AUDIO_MANAGER_SUCCESS)) {
+	/* check actual card and try to find all card if there is no actual card */
+	if (find_audio_card_if_empty(OUTPUT) != AUDIO_MANAGER_SUCCESS) {
 		meddbg("Found no active output audio card\n");
 		return AUDIO_MANAGER_CARD_NOT_FOUND;
 	}
@@ -917,8 +933,15 @@ static audio_manager_result_t get_supported_sample_rate(int fd, uint32_t *sample
 static audio_manager_result_t get_audio_volume(int fd, audio_config_t *config, audio_card_type_t card_type)
 {
 	struct audio_caps_desc_s caps_desc;
+	int ret;
 	int max_volume;
 	int cur_volume;
+
+	/* check actual card and try to find all card if there is no actual card */
+	ret = find_audio_card_if_empty(card_type);
+	if (ret != AUDIO_MANAGER_SUCCESS) {
+		return ret;
+	}
 
 	caps_desc.caps.ac_len = sizeof(struct audio_caps_s);
 	caps_desc.caps.ac_type = AUDIO_TYPE_FEATURE;
@@ -928,7 +951,8 @@ static audio_manager_result_t get_audio_volume(int fd, audio_config_t *config, a
 		caps_desc.caps.ac_format.hw = AUDIO_FU_INP_GAIN;
 	}
 
-	if (ioctl(fd, AUDIOIOC_GETCAPS, (unsigned long *)&caps_desc.caps) < 0) {
+	ret = ioctl(fd, AUDIOIOC_GETCAPS, (unsigned long *)&caps_desc.caps);
+	if (ret < 0) {
 		meddbg("Fail to ioctl AUDIOIOC_GETCAPS\n");
 		return AUDIO_MANAGER_DEVICE_FAIL;
 	}
