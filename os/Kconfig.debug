@@ -48,6 +48,7 @@ comment "Subsystem Debug Options"
 config DEBUG_ST_THINGS
 	bool "ST Things Debug Output"
 	default y
+	depends on ST_THINGS
 	---help---
 		Enable st things debug SYSLOG output (enabled by default)
 
@@ -117,6 +118,7 @@ endif #DEBUG_FS
 config DEBUG_AUDIO
 	bool "Audio Debug Output"
 	default n
+	depends on AUDIO
 	---help---
 		Enable Audio debug SYSLOG output (disabled by default)
 
