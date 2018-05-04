@@ -69,7 +69,6 @@ config TC_KERNEL_ENVIRON
 config TC_KERNEL_ERRNO
 	bool "Errno"
 	default n
-	select LIBC_STRERROR
 
 config TC_KERNEL_GROUP
 	bool "Group"
@@ -139,7 +138,6 @@ config TC_KERNEL_LIBC_STDLIB
 config TC_KERNEL_LIBC_STRING
 	bool "Libc String"
 	default n
-	select LIBC_STRERROR
 
 config TC_KERNEL_LIBC_TIMER
 	bool "Libc Timer"

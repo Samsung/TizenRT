@@ -52,9 +52,6 @@ int tc_kernel_main(int argc, char *argv[])
 #endif
 
 #ifdef CONFIG_TC_KERNEL_ERRNO
-#if (!defined CONFIG_LIBC_STRERROR)
-#error CONFIG_LIBC_STRERROR is needed for testing ERRNO TC
-#endif
 	errno_main();
 #endif
 
@@ -124,9 +121,6 @@ int tc_kernel_main(int argc, char *argv[])
 #endif
 
 #ifdef CONFIG_TC_KERNEL_LIBC_STRING
-#if (!defined CONFIG_LIBC_STRERROR)
-#error CONFIG_LIBC_STRERROR is needed for testing LIBC_STRING TC
-#endif
 	libc_string_main();
 #endif
 

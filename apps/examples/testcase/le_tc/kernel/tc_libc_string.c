@@ -376,6 +376,7 @@ static void tc_libc_string_strdup(void)
 	TC_SUCCESS_RESULT();
 }
 
+#ifdef CONFIG_LIBC_STRERROR
 /**
 * @fn                   :tc_libc_string_strerror
 * @brief                :Interprets the value of errnum, generating a string with a message that describes the error.
@@ -398,6 +399,7 @@ static void tc_libc_string_strerror(void)
 
 	TC_SUCCESS_RESULT();
 }
+#endif
 
 /**
 * @fn                   :tc_libc_string_strlen
@@ -868,7 +870,9 @@ int libc_string_main(void)
 	tc_libc_string_strcpy();
 	tc_libc_string_strcspn();
 	tc_libc_string_strdup();
+#ifdef CONFIG_LIBC_STRERROR
 	tc_libc_string_strerror();
+#endif
 	tc_libc_string_strlen();
 	tc_libc_string_strncasecmp();
 	tc_libc_string_strncat();

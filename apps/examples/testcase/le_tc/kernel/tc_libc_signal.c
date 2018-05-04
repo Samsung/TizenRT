@@ -27,12 +27,11 @@
 #include <stdio.h>
 #include <signal.h>
 #include <time.h>
+#include <stdbool.h>
 #include "tc_internal.h"
 
 #define SIG1  SIGUSR1
 #define SIG2  SIGUSR2
-#define TRUE  1
-#define FALSE 0
 
 /****************************************************************************
  * Public Functions
@@ -155,10 +154,10 @@ static void tc_libc_signal_sigismember(void)
 	TC_ASSERT_EQ("sigismember", ret_chk, ERROR);
 
 	ret_chk = sigismember(&sigset, SIG1);
-	TC_ASSERT_EQ("sigismember", ret_chk, TRUE);
+	TC_ASSERT_EQ("sigismember", ret_chk, true);
 
 	ret_chk = sigismember(&sigset, SIG2);
-	TC_ASSERT_EQ("sigismember", ret_chk, FALSE);
+	TC_ASSERT_EQ("sigismember", ret_chk, false);
 
 	TC_SUCCESS_RESULT();
 }
@@ -190,6 +189,7 @@ static void tc_libc_signal_sigignore(void)
 	TC_SUCCESS_RESULT();
 }
 
+#ifndef CONFIG_DISABLE_POSIX_TIMERS
 /**
 * @fn                   :tc_libc_signal_sigpause
 * @brief                :tc_libc_signal_sigpause test sigpause function
@@ -235,6 +235,7 @@ static void tc_libc_signal_sigpause(void)
 	timer_delete(timer_id);
 	TC_SUCCESS_RESULT();
 }
+#endif
 
 /**
 * @fn                   :tc_libc_signal_sigset
@@ -332,7 +333,9 @@ int libc_signal_main(void)
 	tc_libc_signal_raise();
 	tc_libc_signal_sigset();
 	tc_libc_signal_signal();
+#ifndef CONFIG_DISABLE_POSIX_TIMERS
 	tc_libc_signal_sigpause();
+#endif
 
 	return 0;
 }
