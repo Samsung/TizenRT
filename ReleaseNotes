@@ -77,6 +77,7 @@ v1.0.07
 v1.0.08
 -------
 
+* 1st Maintenance Release version of ARTIK053S
 * LWIP: update LWIP v2.0.2 (support IPv6)
 * Iotivity: update Iotivity 1.3-rel for OCF 1.3
 
@@ -88,6 +89,7 @@ v1.0.09
 v1.0.10
 -------
 
+* 1st Maintenance Release version of ARTIK055S
 * WiFi: fix wrong handling of received msg from supplicant
 * PWM: add frequency/duty functions
 * PWM: change order port configuration
@@ -147,6 +149,25 @@ v1.0.11
 v1.0.12
 -------
 
-* DEBUG: support ramdump ans analysis crash
+* DEBUG: support ramdump and analysis crash
 * libc: update some features
-* Onboad: prepare secure OTA
+* Onboard: prepare secure OTA
+
+v1.0.13
+-------
+
+* Regular Maintenance Release Version of ARTIK05x (2018.04)
+* Kernel/BSP
+  * Bootloader: update bl2.bin binary. modify OTA process
+  * RTC: add rtc clock mux. By default, external crystal RTC clock is used.
+* Connectivity
+  * wifi: fix timing issue to close mq descriptor
+  * MQTT: allow passing multiple root CA certs as a bundle
+  * Onboard: add retry mechanism for LWM2M connection
+  * TLS: update mbedtls version to 2.6.0
+  * netdev: fix network interface flag
+  * webserver: fix null termination in http receive buffer
+  * websocket: fix infinite loop
+* ETC
+  * DEBUG: add ADB(ARTIK Debug Bridge) feature
+  * ETC: remove IoTBus apis

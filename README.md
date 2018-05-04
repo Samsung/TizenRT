@@ -146,7 +146,7 @@ $ sudo make install
 
 The main branch is `artik`.
 ```bash
-$ git clone https://github.com/SamsungARTIK/TizenRT.git
+$ git clone --recursive https://github.com/SamsungARTIK/TizenRT.git
 $ cd TizenRT
 ```
 Since then, `TizenRT` means the path where the source was cloned.
@@ -313,7 +313,7 @@ $ make download os
 $ cd os
 $ make download bl2
 ```
-You can refer to the [partition_map.cfg](../artik05x/scripts/partition_map.cfg) file for the partition name.
+You can refer to the [partition_map.cfg](build/configs/artik05x/scripts/partition_map.cfg) file for the partition name.
 
 ## How to clear flashed content on a board
 
@@ -688,12 +688,30 @@ include files :  ['tinyara', 'dump_info.txt', 'reg.cmm', 'ramdump_0x02020400--0x
 
 #### Load dump file for Debugging
 
+ * Extract the crash_dump.zip archive.
+
+ * Run simarm\t32marm.exe
+
  * Load Register
-   - Excute CMM : ../build/output/bin/reg.cmm
+   - Menu -> File -> Run Script... : Open "crash_dump\reg.cmm"
+
  * Load RAM data
-   - d.load.binary  ramdump_0x02020400--0x215FFFF.bin  D:0x02020400--0x215FFFF /long /noclear
+```
+B::d.load.binary  ramdump_0x02020400--0x215FFFF.bin  D:0x02020400--0x215FFFF /long /noclear
+```
  * Load ELF
-   - d.load.elf tinyara
+```
+B::d.load.elf tinyara
+```
+ * If you cannot see full sources,
+   - Menu -> View -> Symbols -> Symbols Tree View
+
+![SIMARM](./external/docs/media/ramdump_simarm0.png)
+ * You can see the source path when compiling. Let's change this to a path on the PC that analyzes it. (sYmbol.SourcePATH.Translate <original path> <targetpc path>)
+(For Example)
+```
+B::sYmbol.SourcePATH.Translate "\var\lib\jenkins\workspace\rtos_tizenrt_periodic_build\board\artik053s\label\master\" "Y:\data1\artik05x"
+```
 
 #### Analysis
 
@@ -1068,7 +1086,7 @@ TASH>> ota http://192.168.1.10/ota.bin /dev/mtdblock7
 TASH>> reboot
 ```
 
-#### using `ARTIK CLOUD`
+##### using `ARTIK CLOUD`
 
 1) Prepare a device type in ARTIK Cloud
 
