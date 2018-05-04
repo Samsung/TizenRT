@@ -19,6 +19,6 @@ SpaceBeforeAssignmentOperators: true #[M11]
 SpaceBeforeParens: ControlStatements
 TabWidth:        4 #[M08]
 UseTab:          Always #[M08]
-PointerAlignment: Left #[M13]
+PointerAlignment: Right
 SortIncludes: false
 ...
