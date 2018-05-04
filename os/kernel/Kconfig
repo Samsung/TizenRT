@@ -220,7 +220,8 @@ config WDOG_INTRESERVE
 
 config PREALLOC_TIMERS
 	int "Number of pre-allocated POSIX timers"
-	default 8
+	default 8 if !DISABLE_POSIX_TIMERS
+	default 0 if DISABLE_POSIX_TIMERS
 	---help---
 		The number of pre-allocated POSIX timer structures.  The system manages a
 		pool of preallocated timer structures to minimize dynamic allocations.  Set to
