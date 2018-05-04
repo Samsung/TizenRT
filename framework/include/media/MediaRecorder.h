@@ -16,6 +16,17 @@
  *
  ******************************************************************/
 
+/**
+ * @defgroup MEDIA MEDIA
+ * @brief Provides APIs for Media Framework 
+ * @{
+ */
+
+/**
+ * @file media/MediaRecorder.h
+ * @brief Media MediaRecorder APIs
+ */
+
 #ifndef __MEDIA_MEDIARECORDER_H
 #define __MEDIA_MEDIARECORDER_H
 
@@ -159,3 +170,4 @@ private:
 } // namespace media
 
 #endif
+/** @} */ // end of MEDIA group

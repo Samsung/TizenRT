@@ -16,6 +16,16 @@
  *
  ******************************************************************/
 
+/**
+ * @ingroup MEDIA
+ * @{
+ */
+
+/**
+ * @file media/MediaRecorderObserverInterface.h
+ * @brief Media MediaRecorderObserverInterface APIs
+ */
+
 #ifndef __MEDIA_MEDIARECOREROBSERVERINTERFACE_H
 #define __MEDIA_MEDIARECOREROBSERVERINTERFACE_H
 
@@ -60,3 +70,4 @@ public:
 } // namespace media
 
 #endif
+/** @} */ // end of MEDIA group
