@@ -87,27 +87,34 @@ extern int netdb_main(int argc, char *argv[]);
 
 static void nic_display_state(void)
 {
+	struct ifreq *ifr;
+	struct sockaddr_in *sin;
+	struct sockaddr *sa;
 	struct ifconf ifcfg;
+	int ret = -1;
 	int fd;
 	int numreqs = 3;
 	int num_nic = 0;
-
 	fd = socket(AF_INET, SOCK_DGRAM, 0);
 	if (fd < 0) {
 		ndbg("fail %s:%d\n", __FUNCTION__, __LINE__);
 		return;
 	}
 	memset(&ifcfg, 0, sizeof(ifcfg));
+	ifcfg.ifc_buf = NULL;
 	ifcfg.ifc_len = sizeof(struct ifreq) * numreqs;
 	ifcfg.ifc_buf = malloc(ifcfg.ifc_len);
-	if (ioctl(fd, SIOCGIFCONF, (void *)&ifcfg) < 0) {
+	if (ioctl(fd, SIOCGIFCONF, (unsigned long)&ifcfg) < 0) {
 		perror("SIOCGIFCONF ");
 		goto DONE;
 	}
 	num_nic = ifcfg.ifc_len / sizeof(struct ifreq);
-
 	ifr = ifcfg.ifc_req;
-	int i = 0;
+	int i = 0, j;
+#ifdef CONFIG_NET_IPv6_NUM_ADDRESSES
+	struct netif *netif;
+#endif
+
 	for (; i < num_nic; ifr++, i++) {
 		nvdbg("%s\t", ifr->ifr_name);
 		sin = (struct sockaddr_in *)&ifr->ifr_addr;
@@ -145,17 +152,17 @@ static void nic_display_state(void)
 		if (ret < 0) {
 			ndbg("fail %s:%d\n", __FUNCTION__, __LINE__);
 		} else {
-			nvdbg("MTU: %d\n\n", ifr->ifr_mtu);
+			nvdbg("MTU: %d\n", ifr->ifr_mtu);
 		}
-
 #ifdef CONFIG_NET_IPv6_NUM_ADDRESSES
-		netif = netif_find(ifr.ifr_name);
+		netif = netif_find(ifr->ifr_name);
 		for (j = 0; netif != NULL && j < CONFIG_NET_IPv6_NUM_ADDRESSES; j++) {
 			if (netif->ip6_addr_state[j] != 0) {
 				nvdbg("\tinet6 addr: %s\n", ip6addr_ntoa(ip_2_ip6(&netif->ip6_addr[j])));
 			}
 		}
 #endif /* CONFIG_NET_IPv6_NUM_ADDRESSES */
+		printf("\n");
 	}
 DONE:
 	free(ifcfg.ifc_buf);
