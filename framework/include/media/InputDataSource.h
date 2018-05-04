@@ -16,6 +16,16 @@
  *
  ******************************************************************/
 
+/**
+ * @ingroup MEDIA
+ * @{
+ */
+
+/**
+ * @file media/InuptDataSource.h
+ * @brief Media InuptDataSource APIs
+ */
+
 #ifndef __MEDIA_INPUTDATASOURCE_H
 #define __MEDIA_INPUTDATASOURCE_H
 
@@ -97,3 +107,4 @@ private:
 } // namespace media
 
 #endif
+/** @} */ // end of MEDIA group

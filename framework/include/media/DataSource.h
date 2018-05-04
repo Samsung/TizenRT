@@ -16,6 +16,16 @@
  *
  ******************************************************************/
 
+/**
+ * @ingroup MEDIA
+ * @{
+ */
+
+/**
+ * @file media/DataSource.h
+ * @brief Media DataSource APIs
+ */
+
 #ifndef __MEDIA_DATASOURCE_H
 #define __MEDIA_DATASOURCE_H
 
@@ -137,3 +147,4 @@ private:
 } // namespace media
 
 #endif
+/** @} */ // end of MEDIA group

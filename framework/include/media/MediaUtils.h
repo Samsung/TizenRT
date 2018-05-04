@@ -16,6 +16,16 @@
  *
  ******************************************************************/
 
+/**
+ * @ingroup MEDIA
+ * @{
+ */
+
+/**
+ * @file media/MediaUtils.h
+ * @brief Media MediaUtils APIs
+ */
+
 #ifndef __MEDIA_UTILS_H
 #define __MEDIA_UTILS_H
 
@@ -70,3 +80,4 @@ audio_type_t getAudioTypeFromPath(std::string path);
 } // namespace media
 
 #endif
+/** @} */ // end of MEDIA group

@@ -16,6 +16,17 @@
  *
  ******************************************************************/
 
+/**
+ * @defgroup MEDIA MEDIA
+ * @brief Provides APIs for Media Framework 
+ * @{
+ */
+
+/**
+ * @file media/MediaPlayer.h
+ * @brief Media MediaPlayer APIs
+ */
+
 #ifndef __MEDIA_MEDIAPLAYER_H
 #define __MEDIA_MEDIAPLAYER_H
 
@@ -166,3 +177,4 @@ private:
 };
 } // namespace media
 #endif
+/** @} */ // end of MEDIA group

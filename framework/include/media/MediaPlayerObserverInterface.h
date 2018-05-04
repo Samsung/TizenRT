@@ -16,6 +16,16 @@
  *
  ******************************************************************/
 
+/**
+ * @ingroup MEDIA
+ * @{
+ */
+
+/**
+ * @file media/MediaPlayerObserverInterface.h
+ * @brief Media MediaPlayerObserverInterface APIs
+ */
+
 #ifndef __MEDIA_MEDIAPLAYEROBSERVERINTERFACE_H
 #define __MEDIA_MEDIAPLAYEROBSERVERINTERFACE_H
 
@@ -60,3 +70,4 @@ public:
 } // namespace media
 
 #endif
+/** @} */ // end of MEDIA group
