@@ -48,6 +48,7 @@ comment "Subsystem Debug Options"
 config DEBUG_ST_THINGS
 	bool "ST Things Debug Output"
 	default y
+	depends on ST_THINGS
 	---help---
 		Enable st things debug SYSLOG output (enabled by default)
 
