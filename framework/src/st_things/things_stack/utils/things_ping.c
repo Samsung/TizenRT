@@ -758,14 +758,14 @@ static int find_resource_oic_ping(things_ping_s *ping)
 
 	if (ping == NULL) {
 		THINGS_LOG_E(TAG, "ping struct is NULL.");
-		return sleepTime;
+		goto error;
 	}
 
 	THINGS_LOG_D(TAG, "cb.context=0x%X", cb.context);
 
 	if ((hostAddr = make_host_addr(ping->addr, ping->port)) == NULL) {
 		THINGS_LOG_E(TAG, "Memory Allocation is failed.");
-		return sleepTime;
+		goto error;
 	}
 
 	//while (cas_mask(ping, PING_ST_REQUEST | PING_ST_INTUPDATE | PING_ST_TIMEOUT, false, PING_ST_DISCOVERY) == false) {
@@ -774,7 +774,7 @@ static int find_resource_oic_ping(things_ping_s *ping)
 
 	if (get_mask(ping, PING_ST_TIMEOUT) == true) {
 		THINGS_LOG_E(TAG, "Ping thread timeout");
-		return sleepTime;
+		goto error;
 	}
 
 	set_mask(ping, PING_ST_DISCOVERY);
@@ -789,6 +789,7 @@ static int find_resource_oic_ping(things_ping_s *ping)
 	}
 	/*! Added by st_things for memory Leak fix
 	 */
+error:
 	if (hostAddr) {
 		things_free(hostAddr);
 	}
@@ -818,25 +819,20 @@ static int send_things_ping_request(things_ping_s *ping)
 
 	if (ping == NULL) {
 		THINGS_LOG_E(TAG, "ping struct is NULL.");
-		return sleepTime;
+		goto error;
 	}
 
 	THINGS_LOG_D(TAG, "cb.context=0x%X", cb.context);
 
 	if ((hostAddr = make_host_addr(ping->addr, ping->port)) == NULL) {
 		THINGS_LOG_E(TAG, "hostAddr Memory Allocation is failed.");
-		return sleepTime;
+		goto error;
 	}
 
 	payload = OCRepPayloadCreate();
 	if (!payload) {
 		THINGS_LOG_E(TAG, "payload Memory Allocation is failed.");
-		/*! Added by st_things for memory Leak fix
-		 */
-		if (hostAddr) {
-			things_free(hostAddr);
-		}
-		return sleepTime;
+		goto error;
 	}
 
 	//while (cas_mask(ping, PING_ST_DISCOVERY | PING_ST_INTUPDATE | PING_ST_TIMEOUT, false, PING_ST_REQUEST) == false) {
@@ -845,7 +841,7 @@ static int send_things_ping_request(things_ping_s *ping)
 
 	if (get_mask(ping, PING_ST_TIMEOUT) == true) {
 		THINGS_LOG_E(TAG, "Ping thread timeout");
-		return sleepTime;
+		goto error;
 	}
 
 	set_mask(ping, PING_ST_REQUEST);
@@ -875,8 +871,8 @@ static int send_things_ping_request(things_ping_s *ping)
 		unset_mask(ping, PING_ST_REQUEST);
 		OCRepPayloadDestroy(payload);
 	}
-	/*! Added by st_things for memory Leak fix
-	 */
+
+error:
 	if (hostAddr) {
 		things_free(hostAddr);
 	}
