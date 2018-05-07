@@ -20,36 +20,12 @@
 # File   : artik05x_download.sh
 # Description : Download script for ARTIK 05X
 
-# Remember, make is invoked from "os" directory
 source .config
-OS_DIR_PATH=${PWD}
-BUILD_DIR_PATH=${OS_DIR_PATH}/../build
-CONFIGS_DIR_PATH=${BUILD_DIR_PATH}/configs
-OUTPUT_BINARY_PATH=${BUILD_DIR_PATH}/output/bin
-OPENOCD_DIR_PATH=${BUILD_DIR_PATH}/tools/openocd
-ARTIK05X_DIR_PATH=${CONFIGS_DIR_PATH}/artik05x
+SCRIPT_DIR=$(dirname "${BASH_SOURCE[0]}")
+source $(dirname "${BASH_SOURCE[0]}")/artik05x_cmn.sh
 SCRIPTS_PATH=${ARTIK05X_DIR_PATH}/scripts
-CODESIGNER_DIR_PATH=${ARTIK05X_DIR_PATH}/tools/codesigner
-
-if [[ $CONFIG_HOST_OSX == 'y' ]]; then
-	OPENOCD_BIN_PATH=${OPENOCD_DIR_PATH}/macos
-	CODESIGNER_PATH=${CODESIGNER_DIR_PATH}/macos
-else
-	SYSTEM_TYPE=`getconf LONG_BIT`
-	if [ "$SYSTEM_TYPE" = "64" ]; then
-		OPENOCD_BIN_PATH=${OPENOCD_DIR_PATH}/linux64
-		CODESIGNER_PATH=${CODESIGNER_DIR_PATH}/linux64
-	else
-		OPENOCD_BIN_PATH=${OPENOCD_DIR_PATH}/linux32
-		CODESIGNER_PATH=${CODESIGNER_DIR_PATH}/linux32
-	fi
-fi
-OPENOCD=${OPENOCD_BIN_PATH}/openocd
 
 CFG_FILE=artik05x.cfg
-
-TIZENRT_BIN=$OUTPUT_BINARY_PATH/tinyara_head.bin
-CODESIGNER_TOOL=artik05x_AppCodesigner
 
 usage() {
 	cat <<EOF
@@ -230,16 +206,6 @@ erase()
 	pushd ${OPENOCD_DIR_PATH} > /dev/null
 	${OPENOCD} -f ${CFG_FILE} -s ${SCRIPTS_PATH} -c "flash_erase_part ${PART_NAME};	exit" || exit 1
 	popd > /dev/null
-}
-
-signing() {
-	if [ ! -f ${CODESIGNER_PATH}/${CODESIGNER_TOOL} ]; then
-		echo "${CODESIGNER_TOOL} should be in ${CODESIGNER_PATH} to use secure boards like ARTIK053S, ARTIK055S."
-		exit 1
-	fi
-
-	${CODESIGNER_PATH}/${CODESIGNER_TOOL} ${CODESIGNER_DIR_PATH}/rsa_private.key $TIZENRT_BIN
-	TIZENRT_BIN=${TIZENRT_BIN}-signed
 }
 
 if test $# -eq 0; then

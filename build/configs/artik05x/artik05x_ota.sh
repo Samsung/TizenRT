@@ -20,28 +20,10 @@
 # File   : artik05x_ota.sh
 # Description : Attach CRC and Signing in TizenRT Binary
 
-# Remember, make is invoked from "os" directory
-OS_DIR_PATH=${PWD}
-BUILD_DIR_PATH=${OS_DIR_PATH}/../build
-CONFIGS_DIR_PATH=${BUILD_DIR_PATH}/configs
-OUTPUT_BINARY_PATH=${BUILD_DIR_PATH}/output/bin
-ARTIK05X_DIR_PATH=${CONFIGS_DIR_PATH}/artik05x
-CODESIGNER_PATH=${ARTIK05X_DIR_PATH}/tools/codesigner
+SCRIPT_DIR=$(dirname "${BASH_SOURCE[0]}")
+source ../build/configs/artik05x/artik05x_cmn.sh
 TARGET_NAME=ota
 OUTPUT_BIN=$OUTPUT_BINARY_PATH/${TARGET_NAME}.bin
-
-TIZENRT_BIN=$OUTPUT_BINARY_PATH/tinyara_head.bin
-CODESIGNER_TOOL=artik05x_AppCodesigner
-
-signing() {
-    if [ ! -f ${CODESIGNER_PATH}/${CODESIGNER_TOOL} ]; then
-        echo "${CODESIGNER_TOOL} should be in ${CODESIGNER_PATH} to use secure boards like ARTIK053S, ARTIK055S."
-        exit 1
-    fi
-
-    ${CODESIGNER_PATH}/${CODESIGNER_TOOL} ${CODESIGNER_PATH}/rsa_private.key $TIZENRT_BIN
-    TIZENRT_BIN=${TIZENRT_BIN}-signed
-}
 
 make-target-bin() {
     local bin=
