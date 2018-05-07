@@ -190,10 +190,50 @@ size_t pv_player_dataspace(pv_player_p player);
  */
 bool pv_player_dataspace_is_empty(pv_player_p player);
 
+/**
+ * @brief  get audio type from audio stream.
+ *
+ * @param  player : Pointer to player object
+ * @return audio type enum value.
+ * @see    enum audio_type_e
+ */
+int pv_player_get_audio_type(pv_player_p player);
+
+/**
+ * @brief  initilize decoder after get audio type.
+ *         frame data is stored in player structure.
+ * @param  player : Pointer to player object
+ * @param  audio_type : specify the audio type of the input audio stream
+ *         you can get the type via pv_player_get_audio_type().
+ * @return 0 on success, -1 on failure.
+ * @see pv_player_get_audio_type()
+ */
+int pv_player_init_decoder(pv_player_p player, int audio_type);
+
+/**
+ * @brief  get audio frame from audio stream.
+ *         frame data is stored in player structure.
+ * @param  player : Pointer to player object
+ * @return true on success, and false on failure.
+ */
+bool pv_player_get_frame(pv_player_p player);
+
+/**
+ * @brief  decode audio frame and then output raw PCM samples(16bits format).
+ *
+ * @param  player : Pointer to player object
+ * @param  pcm : Pointer to pcm_data_s structure, contains output raw PCM samples.
+ * @return 0 on success, -1 on failure.
+ */
+int pv_player_frame_decode(pv_player_p player, pcm_data_p pcm);
+
+
+//{{ Deprecated
 int _get_audio_type(rbstream_p rbsp);
 bool _get_frame(pv_player_p player);
 int _init_decoder(pv_player_p player);
 int _frame_decoder(pv_player_p player, pcm_data_p pcm);
+//}}
 
 #ifdef __cplusplus
 } /* extern "C" */
