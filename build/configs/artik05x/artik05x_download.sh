@@ -21,7 +21,6 @@
 # Description : Download script for ARTIK 05X
 
 source .config
-SCRIPT_DIR=$(dirname "${BASH_SOURCE[0]}")
 source $(dirname "${BASH_SOURCE[0]}")/artik05x_cmn.sh
 SCRIPTS_PATH=${ARTIK05X_DIR_PATH}/scripts
 
@@ -77,7 +76,7 @@ make_romfs()
 
 compute_fw_parts()
 {
-	bl1=0; bl2=0; sssfw=0; wlanfw=0; os=0; rom=0;
+	bl1=0; bl2=0; sssfw=0; wlanfw=0; os=0; rom=0; ota=0;
 	case $1 in
 		ALL|all)
 			bl1=1; bl2=1; sssfw=1; wlanfw=1; os=1;
@@ -103,6 +102,9 @@ compute_fw_parts()
 		OS|os)
 			os=1
 			;;
+        OTA|ota)
+            ota=1
+            ;;
 		*)
 			echo "$1 is not supported"
 			exit 1
@@ -110,7 +112,7 @@ compute_fw_parts()
 	esac
 
 	parts=
-	for var in bl1 bl2 sssfw wlanfw os rom; do
+	for var in bl1 bl2 sssfw wlanfw os rom ota; do
 		eval value='${'${var}:-}
 		if [ "x${value:-}" == x1 ]; then
 			parts+=" ${var}"
@@ -130,7 +132,7 @@ ensure_file()
 
 compute_ocd_commands()
 {
-	commands=
+	local commands=
 	for part in "$@"; do
 		case "${part}" in
 			bl1)
@@ -144,6 +146,10 @@ compute_ocd_commands()
 			os)
 				ensure_file ${OUTPUT_BINARY_PATH}/tinyara_head.bin
 				commands+="flash_write ${part} ${TIZENRT_BIN} ${VERIFY}; "
+				;;
+			ota)
+				ensure_file ${OUTPUT_BINARY_PATH}/ota.bin
+				commands+="flash_write ${part} ${OUTPUT_BINARY_PATH}/ota.bin ${VERIFY}; "
 				;;
 			rom)
 				ensure_file ${OUTPUT_BINARY_PATH}/romfs.img
@@ -169,6 +175,7 @@ download()
 
 	# Make Openocd commands for parts
 	commands=$(compute_ocd_commands ${parts})
+    echo "ocd command to run: ${commands}"
 
 	# Generate Partition Map
 	${SCRIPTS_PATH}/partition_gen.sh
@@ -236,7 +243,7 @@ while test $# -gt 0; do
 		--verify)
 			VERIFY=verify
 			;;
-		ALL|OS|ROMFS|BL1|BL2|SSSFW|WLANFW|all|os|romfs|bl1|bl2|sssfw|wlanfw)
+		ALL|OS|ROMFS|BL1|BL2|SSSFW|WLANFW|OTA|all|os|romfs|bl1|bl2|sssfw|wlanfw|ota)
 			download $1
 			;;
 		ERASE_*)

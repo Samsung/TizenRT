@@ -20,8 +20,7 @@
 # File   : artik05x_ota.sh
 # Description : Attach CRC and Signing in TizenRT Binary
 
-SCRIPT_DIR=$(dirname "${BASH_SOURCE[0]}")
-source ../build/configs/artik05x/artik05x_cmn.sh
+source $(dirname "${BASH_SOURCE[0]}")/artik05x_cmn.sh
 TARGET_NAME=ota
 OUTPUT_BIN=$OUTPUT_BINARY_PATH/${TARGET_NAME}.bin
 
