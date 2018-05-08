@@ -215,7 +215,7 @@ fi
 
 # Okay... Everything looks good.  Setup the configuration
 
-echo "  Copy files"
+echo "  Copy build environment files"
 install -m 644 "${src_makedefs}" "${dest_makedefs}" || \
   { echo "Failed to copy \"${src_makedefs}\"" ; exit 7 ; }
 if [ "X${have_setenv}" = "Xy" ]; then
@@ -245,4 +245,46 @@ if [ "X${defappdir}" = "Xy" ]; then
     echo "CONFIG_APPS_DIR=\"$posappdir\"" >> "${dest_config}"
   fi
 fi
-echo "  Configuartion is Done!"
+
+# Check necessary packages to build configured set
+IOTIVITY=`grep CONFIG_ENABLE_IOTIVITY=y ${dest_config}`
+if [ ! -z ${IOTIVITY} ]; then
+  if ! which scons >/dev/null; then
+    echo " "
+    echo "  CAUTION!! To build ${boardconfig}, scons should be installed"
+    echo "  Find details at https://github.com/Samsung/TizenRT/blob/master/docs/HowToUseIotivity.md"
+    echo " "
+  fi
+fi
+
+ROMFS=`grep CONFIG_FS_ROMFS=y ${dest_config}`
+if [ ! -z ${ROMFS} ]; then
+  if ! which genromfs >/dev/null; then
+    echo " "
+    echo "  CAUTION!! To download ${boardconfig} built image, genromfs should be installed"
+    echo "  Find details at https://github.com/Samsung/TizenRT/blob/master/docs/HowToUseROMFS.md"
+    echo " "
+  fi
+fi
+
+IOTJS=`grep CONFIG_ENABLE_IOTJS=y ${dest_config}`
+if [ ! -z ${IOTJS} ]; then
+  if ! which cmake >/dev/null; then
+    echo " "
+    echo "  CAUTION!! To build ${boardconfig}, cmake should be installed"
+    echo "  Find details at https://github.com/Samsung/TizenRT/blob/master/external/iotjs/README.md"
+    echo " "
+  fi
+fi
+
+GRPC=`grep CONFIG_PROTOBUF=y ${dest_config}`
+if [ ! -z ${GRPC} ]; then
+  if ! which protoc >/dev/null; then
+    echo " "
+    echo "  CAUTION!! To build ${boardconfig}, protoc should be installed"
+    echo "  Find details at https://github.com/Samsung/TizenRT/blob/master/external/protobuf/README.md"
+    echo " "
+  fi
+fi
+
+echo "  Configuration is Done!"
