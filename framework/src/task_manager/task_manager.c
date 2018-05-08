@@ -201,7 +201,7 @@ static int tm_search_task_list(tm_request_t *msg, tm_response_t *response_msg)
 		return TM_INVALID_PARAM;
 	}
 
-	for(chk_idx = 0; chk_idx < CONFIG_MAX_TASKS; chk_idx++) {
+	for (chk_idx = 0; chk_idx < CONFIG_MAX_TASKS; chk_idx++) {
 		if (TASK_LIST_ADDR(chk_idx) == NULL) {
 			continue;
 		}
@@ -259,9 +259,13 @@ int task_manager(int argc, char *argv[])
 		switch (request_msg.cmd) {
 		case TASKMGT_REGISTER_TASK:
 			register_permission = request_msg.handle;
+			if (request_msg.data == NULL) {
+				ret = TM_INVALID_PARAM;
+				break;
+			}
 			/* Check that task is in builtin-list or not */
 			for (chk_idx = 0; chk_idx < builtin_cnt; chk_idx++) {
-				if (strncmp((char *)tm_builtin_lists[chk_idx].name, request_msg.data, strlen(request_msg.data)) == 0) {
+				if (strncmp((char *)tm_builtin_lists[chk_idx].name, request_msg.data, CONFIG_TASK_NAME_SIZE) == 0) {
 					/* Requested name is in builtin-list */
 					ret = ioctl(fd, TMIOC_REGISTER_TASK, &request_msg);
 					break;
@@ -276,11 +280,15 @@ int task_manager(int argc, char *argv[])
 
 			if (ret == OK) {
 				tm_task_list[request_msg.handle].addr = (void *)TM_ALLOC(sizeof(task_list_data_t));
-				TASK_BUILTIN_IDX(request_msg.handle) = chk_idx;
-				TASK_TM_GID(request_msg.handle) = request_msg.caller_pid;
-				TASK_STATUS(request_msg.handle) = TM_TASK_STATE_STOP;
-				TASK_PERMISSION(request_msg.handle) = register_permission;
-				ret = request_msg.handle;
+				if (tm_task_list[request_msg.handle].addr != NULL) {
+					TASK_BUILTIN_IDX(request_msg.handle) = chk_idx;
+					TASK_TM_GID(request_msg.handle) = request_msg.caller_pid;
+					TASK_STATUS(request_msg.handle) = TM_TASK_STATE_STOP;
+					TASK_PERMISSION(request_msg.handle) = register_permission;
+					ret = request_msg.handle;
+				} else {
+					ret = TM_OUT_OF_MEMORY;
+				}
 			}
 			break;
 
