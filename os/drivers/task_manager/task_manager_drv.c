@@ -21,11 +21,13 @@
  ****************************************************************************/
 #include <tinyara/config.h>
 #include <stdint.h>
+#include <stdbool.h>
 #include <errno.h>
 #include <debug.h>
 #include <signal.h>
 #include <sys/types.h>
 #include <tinyara/sched.h>
+#include <tinyara/arch.h>
 #include <tinyara/fs/fs.h>
 #include <tinyara/fs/ioctl.h>
 #include <tinyara/taskmgt.h>
@@ -130,6 +132,8 @@ static int taskmgt_ioctl(FAR struct file *filep, int cmd, unsigned long arg)
 	int ret = -EINVAL;
 	tm_request_t *request_msg;
 	task_builtin_list_t *task_info;
+	struct tcb_s *tcb;
+	bool state_chk;
 
 	tmvdbg("cmd: %d arg: %ld\n", cmd, arg);
 
@@ -166,8 +170,33 @@ static int taskmgt_ioctl(FAR struct file *filep, int cmd, unsigned long arg)
 	case TMIOC_RESTART:
 		break;
 	case TMIOC_PAUSE:
+		tcb = sched_gettcb((int)arg);
+		if (tcb == NULL) {
+			tmdbg("PAUSE Failed to get tcb\n");
+			return ERROR;
+		}
+		state_chk = sched_removereadytorun(tcb);
+		if (state_chk != true) {
+			tmdbg("Failed to remove tcb from readytorun\n");
+			ret = ERROR;
+		}
+		sched_addblocked(tcb, (tstate_t)TSTATE_WAIT_SIG);
+		ret = OK;
 		break;
 	case TMIOC_RESUME:
+		tcb = sched_gettcb((int)arg);
+		if (tcb == NULL) {
+			tmdbg("RESUME Failed to get tcb\n");
+			return ERROR;
+		}
+
+		sched_removeblocked(tcb);
+		state_chk = sched_addreadytorun(tcb);
+		if (state_chk != true) {
+			tmdbg("Failed to add tcb to readytorun\n");
+			ret = ERROR;
+		}
+		ret = OK;
 		break;
 	case TMIOC_SCAN:
 		break;
