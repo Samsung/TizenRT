@@ -242,7 +242,7 @@ static OCEntityHandlerResult trigger_reset_request(things_resource_s *target_res
 	bool isOwned;
 
 	OCGetDeviceOwnedState(&isOwned);
-	
+
 	if (isOwned == false) {
 		return OC_EH_NOT_ACCEPTABLE;
 	}
@@ -335,8 +335,10 @@ static OCEntityHandlerResult set_provisioning_info(things_resource_s *target_res
 		eh_result = trigger_reset_request(target_resource, reset);
 	} else if (target_resource->rep->things_get_bool_value(target_resource->rep, SEC_ATTRIBUTE_PROV_TERMINATE_AP, &stop_ap) == true) {
 		eh_result = trigger_stop_ap_request(target_resource, stop_ap);
+#ifdef CONFIG_ST_THINGS_EASYSETUP_ABORT
 	} else if (target_resource->rep->things_get_int_value(target_resource->rep, SEC_ATTRIBUTE_PROV_ABORT, &abort_es) == true) {
 		eh_result = trigger_abort_request(target_resource, (things_es_enrollee_abort_e) abort_es);
+#endif
 	} else {
 		THINGS_LOG_E(TAG, "Get Value is failed.(RESET NOR TERMINATE NOR ABORT)");
 		return eh_result;

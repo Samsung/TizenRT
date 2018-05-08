@@ -68,17 +68,12 @@ typedef void *(*pthread_func_type)(void *);
 volatile static int g_quit_flag = 0;
 volatile static int is_things_module_inited = 0;
 
-typedef struct s_abort_s {
-	pthread_t *h_thread;
-	things_es_enrollee_abort_e level;
-} s_abort_s;
 
 typedef struct reset_args_s {
 	things_resource_s *remote_owner;
 	things_es_enrollee_reset_e resetType;
 } reset_args_s;
 
-things_abort_easysetup_func_type g_abort_easysetup = NULL;
 
 things_server_builder_s *g_server_builder = NULL;
 things_request_handler_s *g_req_handler = NULL;
@@ -95,7 +90,16 @@ static pthread_mutex_t m_thread_oic_reset = PTHREAD_MUTEX_INITIALIZER;
 static volatile rst_state_e m_reset_bit_mask = RST_COMPLETE;
 
 static void *t_things_reset_loop(reset_args_s *args);
+
+#ifdef CONFIG_ST_THINGS_EASYSETUP_ABORT
+typedef struct s_abort_s {
+	pthread_t *h_thread;
+	things_es_enrollee_abort_e level;
+} s_abort_s;
+
+things_abort_easysetup_func_type g_abort_easysetup = NULL;
 static void *t_things_abort_loop(s_abort_s *contents);
+#endif
 
 int things_register_easysetup_state_func(things_get_easysetup_state_func_type func)
 {
@@ -124,10 +128,10 @@ static void otm_event_cb(const char *addr, uint16_t port, const char *uuid, int 
 		THINGS_LOG_D(TAG, "[%s:%d][%s]", addr, port, uuid);
 		break;
 	case OIC_OTM_ERROR:
-		THINGS_LOG_E( TAG, "OIC_OTM_ERROR");
+		THINGS_LOG_E(TAG, "OIC_OTM_ERROR");
 		break;
 	default:
-		THINGS_LOG_E( TAG, "Unknown");
+		THINGS_LOG_E(TAG, "Unknown");
 		break;
 	}
 	if (g_otm_event_handler) {
@@ -204,12 +208,13 @@ int things_initialize_stack(const char *json_path, bool *easysetup_completed)
 			THINGS_LOG_D(TAG, "Modify the device resource file");
 			fp = fopen(abs_json_path, "w+");
 			if (!fp) {
-				THINGS_LOG_E( TAG, "fopen() failed");
+				THINGS_LOG_E(TAG, "fopen() failed");
 				return -1;
 			}
 			ret = fwrite(deviceDef, size_d, 1, fp);
 			if (ret < 0) {
-				THINGS_LOG_E( TAG, "fwrite() failed");
+				fclose(fp);
+				THINGS_LOG_E(TAG, "fwrite() failed");
 				return -1;
 			}
 			fclose(fp);
@@ -222,12 +227,13 @@ int things_initialize_stack(const char *json_path, bool *easysetup_completed)
 		THINGS_LOG_V(TAG, "File did not exist...Create file");
 		fp = fopen(abs_json_path, "w+");
 		if (!fp) {
-			THINGS_LOG_E( TAG, "fopen() failed");
+			THINGS_LOG_E(TAG, "fopen() failed");
 			return -1;
 		}
 		ret = fwrite(deviceDef, size_d, 1, fp);
 		if (ret < 0) {
-			THINGS_LOG_E( TAG, "fwrite() failed");
+			fclose(fp);
+			THINGS_LOG_E(TAG, "fwrite() failed");
 			return -1;
 		}
 		fclose(fp);
@@ -261,7 +267,7 @@ int things_initialize_stack(const char *json_path, bool *easysetup_completed)
 		THINGS_LOG_D(TAG, "delete svrdb");
 		unlink(dm_get_svrdb_file_path());
 	}
-	
+
 #ifdef CONFIG_ST_THINGS_FOTA
 	if (fmwup_initialize() < 0) {
 		THINGS_LOG_E(TAG, "fmwup_initizlize() failed");
@@ -754,6 +760,7 @@ GOTO_OUT:
 	return NULL;
 }
 
+#ifdef CONFIG_ST_THINGS_EASYSETUP_ABORT
 OCEntityHandlerResult things_abort(pthread_t *h_thread_abort, things_es_enrollee_abort_e level)
 {
 	s_abort_s *ARGs = NULL;
@@ -814,6 +821,7 @@ GOTO_OUT:
 	THINGS_LOG_D(TAG, "Exit.");
 	return NULL;
 }
+#endif
 
 int things_is_things_module_inited(void)
 {
