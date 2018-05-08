@@ -310,7 +310,6 @@ int task_manager_terminate(int handle, int timeout)
 	return OK;
 }
 
-#if TBD
 int task_manager_pause(int handle, int timeout)
 {
 	int status;
@@ -326,6 +325,7 @@ int task_manager_pause(int handle, int timeout)
 	request_msg.handle = handle;
 	request_msg.caller_pid = getpid();
 	request_msg.timeout = timeout;
+	request_msg.data = NULL;
 
 	if (timeout != TM_NO_RESPONSE) {
 		asprintf(&request_msg.q_name, "%s%d", TM_PRIVATE_MQ, request_msg.caller_pid);
@@ -364,6 +364,7 @@ int task_manager_resume(int handle, int timeout)
 	request_msg.handle = handle;
 	request_msg.caller_pid = getpid();
 	request_msg.timeout = timeout;
+	request_msg.data = NULL;
 
 	if (timeout != TM_NO_RESPONSE) {
 		asprintf(&request_msg.q_name, "%s%d", TM_PRIVATE_MQ, request_msg.caller_pid);
@@ -385,7 +386,7 @@ int task_manager_resume(int handle, int timeout)
 
 	return OK;
 }
-
+#if TBD
 int task_manager_restart(int handle, int timeout)
 {
 	int status;

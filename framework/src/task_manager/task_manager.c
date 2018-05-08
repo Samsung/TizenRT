@@ -248,6 +248,8 @@ int task_manager(int argc, char *argv[])
 	while (1) {
 		ret = ERROR;
 
+		memset(&request_msg, 0, sizeof(tm_request_t));
+		request_msg.data = NULL;
 		nbytes = mq_receive(g_tm_recv_mqfd, (char *)&request_msg, sizeof(tm_request_t), NULL);
 		if (nbytes <= 0) {
 			continue;
@@ -346,9 +348,39 @@ int task_manager(int argc, char *argv[])
 			break;
 
 		case TASKMGT_PAUSE:
+			tm_update_task_state(request_msg.handle);
+			ret = tm_get_task_state(request_msg.handle);
+			if (ret == TM_TASK_STATE_UNREGISTERED || ret == TM_TASK_STATE_STOP || ret == TM_TASK_STATE_PAUSE) {
+				ret = -ret;
+				break;
+			}
+			ret = tm_check_permission(request_msg.handle, request_msg.caller_pid);
+			if (ret != OK) {
+				break;
+			}
+			ret = ioctl(fd, TMIOC_PAUSE, TASK_PID(request_msg.handle));
+			if (ret >= 0) {
+				TASK_STATUS(request_msg.handle) = TM_TASK_STATE_PAUSE;
+				ret = OK;
+			}
 			break;
 
 		case TASKMGT_RESUME:
+			tm_update_task_state(request_msg.handle);
+			ret = tm_get_task_state(request_msg.handle);
+			if (ret == TM_TASK_STATE_UNREGISTERED || ret == TM_TASK_STATE_STOP) {
+				ret = -ret;
+				break;
+			}
+			ret = tm_check_permission(request_msg.handle, request_msg.caller_pid);
+			if (ret != OK) {
+				break;
+			}
+			ret = ioctl(fd, TMIOC_RESUME, TASK_PID(request_msg.handle));
+			if (ret >= 0) {
+				TASK_STATUS(request_msg.handle) = TM_TASK_STATE_RUNNING;
+				ret = OK;
+			}
 			break;
 
 		case TASKMGT_SCAN_NAME:
@@ -376,7 +408,7 @@ int task_manager(int argc, char *argv[])
 		case TASKMGT_UNICAST:
 			tm_update_task_state(request_msg.handle);
 			ret = tm_get_task_state(request_msg.handle);
-			if (ret == TM_TASK_STATE_UNREGISTERED || ret == TM_TASK_STATE_STOP) {
+			if (ret == TM_TASK_STATE_UNREGISTERED || ret == TM_TASK_STATE_STOP || ret == TM_TASK_STATE_PAUSE) {
 				ret = -ret;
 				break;
 			}
