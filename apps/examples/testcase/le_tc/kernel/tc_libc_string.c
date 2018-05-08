@@ -28,6 +28,7 @@
 #include <errno.h>
 #include <stdlib.h>
 #include <string.h>
+#include <tinyara/float.h>
 #include "tc_internal.h"
 
 #define BUFF_SIZE 5
@@ -850,6 +851,60 @@ static void tc_libc_string_strlcpy(void)
 
 	TC_SUCCESS_RESULT();
 }
+/**
+* @fn                   :tc_libc_string_strtof
+* @brief                :convert the string to float value
+* @Scenario             :put string to strtof and check the return which points the string value
+* API's covered         :strtof
+* Preconditions         :none
+* Postconditions        :none
+* @return               :void
+*/
+static void tc_libc_string_strtof(void)
+{
+	char *str;
+	char *ptr;
+	float value;
+
+	str = "123.456TizenRT";
+	value = strtof(str, &ptr);
+	TC_ASSERT_LEQ("strtof", value - 123.456, FLT_EPSILON);
+	TC_ASSERT_EQ("strtof", strncmp(ptr, "TizenRT", strlen("TizenRT")), 0);
+
+	str = "-78.9123TinyAra";
+	value = strtof(str, &ptr);
+	TC_ASSERT_LEQ("strtof", value - (-78.9123), FLT_EPSILON);
+	TC_ASSERT_EQ("strtof", strncmp(ptr, "TinyAra", strlen("TinyAra")), 0);
+
+	TC_SUCCESS_RESULT();
+}
+/**
+* @fn                   :tc_libc_string_strtold
+* @brief                :convert the string to long double value
+* @Scenario             :put string to strtold and check the return which points the string value
+* API's covered         :strtold
+* Preconditions         :none
+* Postconditions        :none
+* @return               :void
+*/
+static void tc_libc_string_strtold(void)
+{
+	char *str;
+	char *ptr;
+	long double value;
+
+	str = "123.456TizenRT";
+	value = strtold(str, &ptr);
+	TC_ASSERT_LEQ("strtold", value - 123.456, DBL_EPSILON);
+	TC_ASSERT_EQ("strtold", strncmp(ptr, "TizenRT", strlen("TizenRT")), 0);
+
+	str = "-78.9123TinyAra";
+	value = strtold(str, &ptr);
+	TC_ASSERT_LEQ("strtold", value - (-78.9123), DBL_EPSILON);
+	TC_ASSERT_EQ("strtold", strncmp(ptr, "TinyAra", strlen("TinyAra")), 0);
+
+	TC_SUCCESS_RESULT();
+}
 
 /****************************************************************************
  * Name: libc_string
@@ -889,6 +944,8 @@ int libc_string_main(void)
 	tc_libc_string_strcasestr();
 	tc_libc_string_memccpy();
 	tc_libc_string_strlcpy();
+	tc_libc_string_strtof();
+	tc_libc_string_strtold();
 
 	return 0;
 }
