@@ -33,15 +33,17 @@ public:
 	~PlayerWorker();
 	static PlayerWorker &getWorker();
 
-	void startPlayer(std::shared_ptr<MediaPlayerImpl>);
-	void stopPlayer(std::shared_ptr<MediaPlayerImpl>);
-	void pausePlayer(std::shared_ptr<MediaPlayerImpl>);
 	player_result_t startWorker();
 	void stopWorker();
 	MediaQueue &getQueue();
 
+	bool isAlive();
+	void setPlayer(std::shared_ptr<MediaPlayerImpl>);
+	std::shared_ptr<MediaPlayerImpl> getPlayer();
+
 private:
 	int entry();
+	int getRefCnt();
 	void increaseRef();
 	void decreaseRef();
 
