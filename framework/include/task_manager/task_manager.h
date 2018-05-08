@@ -75,6 +75,7 @@
 #define TM_FAIL_RESPONSE              (-11)
 #define TM_FAIL_UNREGISTER            (-12)
 #define TM_INVALID_PARAM              (-13)
+#define TM_OUT_OF_MEMORY              (-14)
 
 /**
  * @brief Task Info Structure
