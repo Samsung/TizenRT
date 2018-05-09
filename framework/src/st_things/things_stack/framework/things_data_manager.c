@@ -830,34 +830,22 @@ int parse_things_cloud_json(const char *filename)
 
 	if (strlen(json_str) > 0) {
 		cJSON *root = cJSON_Parse((const char *)json_str);
-		if (root == NULL) {
-			THINGS_LOG_V(TAG, "cloud file context has a error about json-format.");
-			things_free(json_str);
-			json_str = NULL;
-			return 0;
-		}
-		cJSON *cloud = cJSON_GetObjectItem(root, KEY_CLOUD);
-		if (cloud != NULL) {
-			cJSON *address = cJSON_GetObjectItem(cloud, KEY_CLOUD_ADDRESS);
-			if (address != NULL) {
-				memset(g_cloud_address, 0, (size_t) MAX_CLOUD_ADDRESS);
-				memcpy(g_cloud_address, address->valuestring, strlen(address->valuestring) + 1);
-				THINGS_LOG_D(TAG, "[CLOUD] CI Address : %s", g_cloud_address);
-				ret = 1;
+		if (root != NULL) {}
+			cJSON *cloud = cJSON_GetObjectItem(root, KEY_CLOUD);
+			if (cloud != NULL) {
+				cJSON *address = cJSON_GetObjectItem(cloud, KEY_CLOUD_ADDRESS);
+				if (address != NULL) {
+					memset(g_cloud_address, 0, (size_t) MAX_CLOUD_ADDRESS);
+					memcpy(g_cloud_address, address->valuestring, strlen(address->valuestring) + 1);
+					THINGS_LOG_D(TAG, "[CLOUD] CI Address : %s", g_cloud_address);
+					ret = 1;
+				}
 			}
-		}
-		if (root != NULL) {
 			cJSON_Delete(root);
 		}
-	} else {
-		THINGS_LOG_V(TAG, "Can not Read \"%s\" file.", filename);
 	}
-
-	if (json_str != NULL) {
-		things_free(json_str);
-	}
-
-	THINGS_LOG_D(TAG, THINGS_FUNC_EXIT);
+	things_free(json_str);
+	THINGS_LOG_D(TAG, THINGS_FUNC_EXIT);	
 	return ret;
 }
 
