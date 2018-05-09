@@ -154,6 +154,11 @@ static void wifi_scan_callback(void *result, void *user_data)
 		goto exit;
 	}
 
+	if (!json || !ap_array) {
+		ret = E_NO_MEM;
+		goto exit;
+	}
+
 	ret = wifi->get_scan_result(&list, &count);
 	if (ret != S_OK) {
 		printf("Failed to get scan results (err=%d)\n", ret);
@@ -163,6 +168,11 @@ static void wifi_scan_callback(void *result, void *user_data)
 	/* Browse through the results and create JSON objects */
 	for (i = 0; i < count; i++) {
 		ap = cJSON_CreateObject();
+		if (!ap) {
+			ret = E_NO_MEM;
+			goto exit;
+		}
+
 		cJSON_AddStringToObject(ap, "ssid", list[i].name);
 		cJSON_AddStringToObject(ap, "bssid", list[i].bssid);
 		cJSON_AddStringToObject(ap, "security",
@@ -454,7 +464,7 @@ static void wifi_find_ap_callback(void *result, void *user_data)
 			}
 
 			/* Join the Access Point */
-			wifi->connect(wifi_config.ssid, wifi_config.secure ? wifi_config.passphrase : NULL,
+			ret = wifi->connect(wifi_config.ssid, wifi_config.secure ? wifi_config.passphrase : NULL,
 				      true);
 			if (ret != S_OK) {
 				printf("Failed to start connection to AP (err=%d)\n", ret);
