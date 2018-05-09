@@ -76,6 +76,17 @@ public:
 
 	int playback(int size);
 
+private:
+	void createPlayer(player_result_t &ret);
+	void destroyPlayer(player_result_t &ret);
+	void preparePlayer(player_result_t &ret);
+	void unpreparePlayer(player_result_t &ret);
+	void startPlayer();
+	void stopPlayer();
+	void pausePlayer();
+	void getVolumePlayer(int &ret);
+	void setVolumePlayer(int, player_result_t &ret);
+
 public:
 	std::atomic<player_state_t> mCurState;
 	unsigned char* mBuffer;
