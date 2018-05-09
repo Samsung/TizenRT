@@ -36,7 +36,7 @@
  * Private Data
  ****************************************************************************/
 
-static systime_t start_time;
+static clock_t start_time;
 
 /****************************************************************************
  * Private Functions
@@ -44,32 +44,32 @@ static systime_t start_time;
 
 static void wq_test1(FAR void *arg)
 {
-	systime_t cur_time = 0;
-	cur_time = clock_systimer();
+	clock_t cur_time = 0;
+	cur_time = clock();
 
 	printf("workqueue_test: test 1 requested delay is (%u) ticks, executed delay is (%llu) ticks.\n", (uint32_t)arg, (uint64_t)cur_time - (uint64_t)start_time);
 }
 
 static void wq_test2(FAR void *arg)
 {
-	systime_t cur_time = 0;
-	cur_time = clock_systimer();
+	clock_t cur_time = 0;
+	cur_time = clock();
 
 	printf("workqueue_test: test 2 requested delay is (%u) ticks, executed delay is (%llu) ticks.\n", (uint32_t)arg, (uint64_t)cur_time - (uint64_t)start_time);
 }
 
 static void wq_test3(FAR void *arg)
 {
-	systime_t cur_time = 0;
-	cur_time = clock_systimer();
+	clock_t cur_time = 0;
+	cur_time = clock();
 
 	printf("workqueue_test: test 3 requested delay is (%u) ticks, executed delay is (%llu) ticks.\n", (uint32_t)arg, (uint64_t)cur_time - (uint64_t)start_time);
 }
 
 static void wq_test4(FAR void *arg)
 {
-	systime_t cur_time = 0;
-	cur_time = clock_systimer();
+	clock_t cur_time = 0;
+	cur_time = clock();
 
 	printf("workqueue_test: test 4 requested delay is (%u) ticks, executed delay is (%llu) ticks.\n", (uint32_t)arg, (uint64_t)cur_time - (uint64_t)start_time);
 }
@@ -94,7 +94,7 @@ int workqueue_test(void)
 	test_wq3 = (struct work_s *)malloc(sizeof(struct work_s));
 	test_wq4 = (struct work_s *)malloc(sizeof(struct work_s));
 
-	start_time = clock_systimer();
+	start_time = clock();
 
 	printf("workqueue_test: test1 is queued and will excute it after 50 ticks\n");
 	work_queue(HPWORK, test_wq1, wq_test1, (void *)50, 50);

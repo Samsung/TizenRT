@@ -23,7 +23,7 @@
 
 int kdbg_uptime(int argc, char **args)
 {
-	systime_t ticktime;
+	clock_t ticktime;
 #if defined(CONFIG_HAVE_DOUBLE) && defined(CONFIG_LIBC_FLOATINGPOINT)
 	double now;
 #else
@@ -35,7 +35,7 @@ int kdbg_uptime(int argc, char **args)
 	unsigned int csec;
 #endif
 
-	ticktime = clock_systimer();
+	ticktime = clock();
 
 #if defined(CONFIG_HAVE_DOUBLE) && defined(CONFIG_LIBC_FLOATINGPOINT)
 	now = (double)ticktime / (double)CLOCKS_PER_SEC;
