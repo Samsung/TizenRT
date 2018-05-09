@@ -354,9 +354,39 @@ int task_manager(int argc, char *argv[])
 			break;
 
 		case TASKMGT_PAUSE:
+			tm_update_task_state(request_msg.handle);
+			ret = tm_get_task_state(request_msg.handle);
+			if (ret != TM_TASK_STATE_RUNNING) {
+				ret = -ret;
+				break;
+			}
+			ret = tm_check_permission(request_msg.handle, request_msg.caller_pid);
+			if (ret != OK) {
+				break;
+			}
+			ret = kill(TASK_PID(request_msg.handle), SIGTM_PAUSE);
+			if (ret != 0) {
+				ret  = TM_FAIL_PAUSE;
+			}
+			TASK_STATUS(request_msg.handle) = TM_TASK_STATE_PAUSE;
 			break;
 
 		case TASKMGT_RESUME:
+			tm_update_task_state(request_msg.handle);
+			ret = tm_get_task_state(request_msg.handle);
+			if (ret != TM_TASK_STATE_PAUSE) {
+				ret = -ret;
+				break;
+			}
+			ret = tm_check_permission(request_msg.handle, request_msg.caller_pid);
+			if (ret != OK) {
+				break;
+			}
+			ret = kill(TASK_PID(request_msg.handle), SIGTM_RESUME);
+			if (ret != 0) {
+				ret  = TM_FAIL_RESUME;
+			}
+			TASK_STATUS(request_msg.handle) = TM_TASK_STATE_RUNNING;
 			break;
 
 		case TASKMGT_SCAN_NAME:
@@ -384,7 +414,7 @@ int task_manager(int argc, char *argv[])
 		case TASKMGT_UNICAST:
 			tm_update_task_state(request_msg.handle);
 			ret = tm_get_task_state(request_msg.handle);
-			if (ret == TM_TASK_STATE_UNREGISTERED || ret == TM_TASK_STATE_STOP) {
+			if (ret == TM_TASK_STATE_UNREGISTERED || ret == TM_TASK_STATE_STOP || ret == TM_TASK_STATE_PAUSE) {
 				ret = -ret;
 				break;
 			}

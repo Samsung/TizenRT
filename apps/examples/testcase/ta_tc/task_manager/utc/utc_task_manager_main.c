@@ -162,6 +162,48 @@ static void utc_task_manager_unicast_p(void)
 	TC_SUCCESS_RESULT();
 }
 
+static void utc_task_manager_pause_n(void)
+{
+	int ret;
+	ret = task_manager_pause(tm_sample_handle, TM_INVALID_TIMEOUT);
+	TC_ASSERT_EQ("task_manager_pause_n", ret, TM_INVALID_PARAM);
+
+	ret = task_manager_pause(TM_INVALID_HANDLE, TM_NO_RESPONSE);
+	TC_ASSERT_EQ("task_manager_pause_n", ret, TM_INVALID_PARAM);
+
+	TC_SUCCESS_RESULT();
+}
+
+static void utc_task_manager_pause_p(void)
+{
+	int ret;
+	ret = task_manager_pause(tm_sample_handle, TM_RESPONSE_WAIT_INF);
+	TC_ASSERT_EQ("task_manager_pause_p", ret, OK);
+
+	TC_SUCCESS_RESULT();
+}
+
+static void utc_task_manager_resume_n(void)
+{
+	int ret;
+	ret = task_manager_resume(tm_sample_handle, TM_INVALID_TIMEOUT);
+	TC_ASSERT_EQ("task_manager_resume_n", ret, TM_INVALID_PARAM);
+
+	ret = task_manager_resume(TM_INVALID_HANDLE, TM_NO_RESPONSE);
+	TC_ASSERT_EQ("task_manager_resume_n", ret, TM_INVALID_PARAM);
+
+	TC_SUCCESS_RESULT();
+}
+
+static void utc_task_manager_resume_p(void)
+{
+	int ret;
+	ret = task_manager_resume(tm_sample_handle, TM_RESPONSE_WAIT_INF);
+	TC_ASSERT_EQ("task_manager_resume_p", ret, OK);
+
+	TC_SUCCESS_RESULT();
+}
+
 static void utc_task_manager_getinfo_with_name_n(void)
 {
 	task_info_list_t *ret;
@@ -323,6 +365,12 @@ int utc_task_manager_main(int argc, char *argv[])
 
 	utc_task_manager_start_n();
 	utc_task_manager_start_p();
+
+	utc_task_manager_pause_n();
+	utc_task_manager_pause_p();
+
+	utc_task_manager_resume_n();
+	utc_task_manager_resume_p();
 
 	utc_task_manager_set_handler_n();
 	utc_task_manager_set_handler_p();
