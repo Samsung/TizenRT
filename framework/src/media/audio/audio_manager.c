@@ -154,12 +154,11 @@ static const struct audio_samprate_map_entry_s g_audio_samprate_entry[] = {
 static audio_manager_result_t find_audio_card(audio_card_type_t card_type)
 {
 	audio_manager_result_t ret = AUDIO_MANAGER_SUCCESS;
-	uint8_t card_id = INVALID_ID;
-	uint16_t device_id = INVALID_ID;
+	int card_id = INVALID_ID;
+	int device_id = INVALID_ID;
 	char type;
 	struct dirent *dir_entry;
 	DIR *dir_info;
-
 	audio_card_info_t *card = g_audio_out_cards;
 	int max_card_num = CONFIG_AUDIO_MAX_OUTPUT_CARD_NUM;
 	char type_chr = 'p';
@@ -169,20 +168,20 @@ static audio_manager_result_t find_audio_card(audio_card_type_t card_type)
 		return AUDIO_MANAGER_DEVICE_FAIL;
 	}
 
+	if (card_type == INPUT) {
+		max_card_num = CONFIG_AUDIO_MAX_INPUT_CARD_NUM;
+		type_chr = 'c';
+		card = g_audio_in_cards;
+	}
+
 	while ((dir_entry = readdir(dir_info)) != NULL) {
 		// TODO: Add cases for various drivers. Currently, identify 'pcm' drivers only.
 		if ((dir_entry->d_name[0] != 'p') || (dir_entry->d_name[1] != 'c') || (dir_entry->d_name[2] != 'm') || (sscanf(&dir_entry->d_name[3], "C%uD%u%c", &card_id, &device_id, &type) != 3)) {
 			continue;
 		}
 
-		if (card_type == INPUT) {
-			max_card_num = CONFIG_AUDIO_MAX_INPUT_CARD_NUM;
-			type_chr = 'c';
-			card = g_audio_in_cards;
-		}
-
 		/* Find next card if driver name isn't follow naming policy */
-		if (card_id >= max_card_num || device_id >= MAX_AUDIO_DEVICE_NUM) {
+		if ((card_id < 0) || (card_id >= max_card_num) || (device_id < 0) || (device_id >= MAX_AUDIO_DEVICE_NUM)) {
 			meddbg("Found wrong card card_id : %d device_id : %d\n", card_id, device_id);
 			continue;
 		}
@@ -193,9 +192,16 @@ static audio_manager_result_t find_audio_card(audio_card_type_t card_type)
 			card[card_id].device_id = device_id;
 			found_cards++;
 			medvdbg("Found an audio card, total card : %d id : %d, card_path : %s\n", found_cards, card_id, card[card_id].card_path);
+
+			/* update actual card here */
+			if (card_type == INPUT) {
+				g_actual_audio_in_card_id = get_actual_audio_in_card_id();
+			} else {
+				g_actual_audio_out_card_id = get_actual_audio_out_card_id();
+			}
+
 			get_hardware_params(&card[card_id], card_type);
 		}
-
 	}
 
 	/* If nothing founded */
@@ -203,13 +209,6 @@ static audio_manager_result_t find_audio_card(audio_card_type_t card_type)
 		meddbg("Failed to find card\n");
 		ret = AUDIO_MANAGER_NO_AVAIL_CARD;
 		goto error_out;
-	}
-
-	/* update actual card here */
-	if (card_type == INPUT) {
-		g_actual_audio_in_card_id = get_actual_audio_in_card_id();
-	} else {
-		g_actual_audio_out_card_id = get_actual_audio_out_card_id();
 	}
 
 error_out:
@@ -678,7 +677,7 @@ audio_manager_result_t set_audio_stream_in(uint8_t channels, uint32_t sample_rat
 
 	medvdbg("[IN] Device samplerate: %u, User requested: %u\n", config.rate, sample_rate);
 
-	medvdbg("actual input card id = %d\n", g_actual_audio_out_card_id);
+	medvdbg("actual input card id = %d\n", g_actual_audio_in_card_id);
 	g_audio_in_cards[g_actual_audio_in_card_id].pcm = pcm_open(g_actual_audio_in_card_id, 0, PCM_IN, &config);
 	if (!pcm_is_ready(g_audio_in_cards[g_actual_audio_in_card_id].pcm)) {
 		pcm_close(g_audio_in_cards[g_actual_audio_in_card_id].pcm);
