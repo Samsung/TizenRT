@@ -169,6 +169,20 @@
 #define SIGTM       CONFIG_SIG_SIGTM
 #endif
 
+/* SIGTM_PAUSE is used in Task Manager */
+#ifndef CONFIG_SIG_SIGTM_PAUSE
+#define SIGTM_PAUSE       19			/* Taskmgt signal */
+#else
+#define SIGTM_PAUSE       CONFIG_SIG_SIGTM_PAUSE
+#endif
+
+/* SIGTM_RESUME is used in Task Manager */
+#ifndef CONFIG_SIG_SIGTM_RESUME
+#define SIGTM_RESUME       20			/* Taskmgt signal */
+#else
+#define SIGTM_RESUME       CONFIG_SIG_SIGTM_RESUME
+#endif
+
 /* sigprocmask() "how" definitions. Only one of the following can be specified: */
 
 #define SIG_BLOCK       1		/* Block the given signals */

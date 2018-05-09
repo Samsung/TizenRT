@@ -43,7 +43,12 @@ static ssize_t taskmgt_write(FAR struct file *filep, FAR const char *buffer, siz
  ****************************************************************************/
 #define MAX_HANDLE_MASK (CONFIG_TASK_MANAGER_MAX_TASKS - 1)
 #define HANDLE_HASH(i)  ((i) & MAX_HANDLE_MASK)
-
+#define COPY_SIGACTION(t, f) \
+	{ \
+		(t)->sa_sigaction = (f)->sa_sigaction; \
+		(t)->sa_mask      = (f)->sa_mask; \
+		(t)->sa_flags     = (f)->sa_flags; \
+	}
 static uint32_t g_lasthandle;
 static bool g_handle_hash[CONFIG_TASK_MANAGER_MAX_TASKS];
 
@@ -62,10 +67,107 @@ static const struct file_operations taskmgt_fops = {
 	, 0                         /* poll */
 #endif
 };
+struct tm_sigactq {
+	FAR struct sigactq *flink;	/* Forward link */
+	struct sigaction act;		/* Sigaction data */
+	uint8_t signo;				/* Signal associated with action */
+};
+typedef struct tm_sigactq tm_sigactq_t;
 
+struct tm_sigq_s {
+	FAR struct sigq_s *flink;	/* Forward link */
+	union {
+		void (*sighandler)(int signo, siginfo_t *info, void *context);
+	} action;					/* Signal action */
+	sigset_t mask;				/* Additional signals to mask while the
+								 * the signal-catching function executes */
+	siginfo_t info;				/* Signal information */
+	uint8_t type;				/* (Used to manage allocations) */
+};
+typedef struct tm_sigq_s tm_sigq_t;
+
+extern tm_sigactq_t *sig_findaction(FAR struct tcb_s *stcb, int signo);
+extern void sig_allocateactionblock(void);
+extern sq_queue_t g_sigfreeaction;
 /****************************************************************************
  * Private Functions
  ****************************************************************************/
+static FAR tm_sigactq_t *tm_sig_allocateaction(void)
+{
+	FAR tm_sigactq_t *sigact;
+
+	/* Try to get the signal action structure from the free list */
+
+	sigact = (FAR tm_sigactq_t *)sq_remfirst(&g_sigfreeaction);
+
+	/* Check if we got one. */
+
+	if (!sigact) {
+		/* Add another block of signal actions to the list */
+
+		sig_allocateactionblock();
+
+		/* And try again */
+
+		sigact = (FAR tm_sigactq_t *)sq_remfirst(&g_sigfreeaction);
+		ASSERT(sigact);
+	}
+
+	return sigact;
+}
+
+static void taskmgt_action(int signo, siginfo_t *info, void *extra)
+{
+	if (signo != SIGTM_PAUSE) {
+		tmdbg("[TM] Invalid signal. signo = %d\n", signo);
+		return;
+	}
+
+	sigpause(SIGTM_RESUME);
+}
+
+static int taskmgt_task_init(pid_t pid)
+{
+	struct tcb_s *tcb;
+	struct sigaction act;
+	int ret;
+	tm_sigactq_t *sigact;
+
+	tcb = sched_gettcb(pid);
+
+	if (!tcb) {
+		tmdbg("[TM] tcb is invalid. pid = %d.\n", pid);
+		return ERROR;
+	}
+
+	memset (&act, '\0', sizeof(act));
+	act.sa_handler = (_sa_handler_t)&taskmgt_action;
+	sched_lock();
+
+	/* No.. Then we need to allocate one for the new action. */
+
+	sigact = (tm_sigactq_t *)tm_sig_allocateaction();
+
+	/* An error has occurred if we could not allocate the sigaction */
+
+	if (!sigact) {
+		set_errno(ENOMEM);
+		return ERROR;
+	}
+
+	/* Put the signal number in the queue entry */
+
+	sigact->signo = (uint8_t)SIGTM_PAUSE;
+
+	/* Add the new sigaction to sigactionq */
+
+	sq_addlast((FAR sq_entry_t *)sigact, &tcb->sigactionq);
+	COPY_SIGACTION(&sigact->act, &act);
+
+	sched_unlock();
+
+	return ret;
+}
 static int taskmgt_assign_handle(void)
 {
 	int hash_ndx;
@@ -155,6 +257,7 @@ static int taskmgt_ioctl(FAR struct file *filep, int cmd, unsigned long arg)
 			tmdbg("Fail to create new task\n");
 			return ret;
 		}
+		taskmgt_task_init(ret);
 		break;
 	case TMIOC_TERMINATE:
 		ret = task_delete((int)arg);
@@ -164,14 +267,6 @@ static int taskmgt_ioctl(FAR struct file *filep, int cmd, unsigned long arg)
 		}
 		break;
 	case TMIOC_RESTART:
-		break;
-	case TMIOC_PAUSE:
-		break;
-	case TMIOC_RESUME:
-		break;
-	case TMIOC_SCAN:
-		break;
-	case TMIOC_UNICAST:
 		break;
 	case TMIOC_BROADCAST:
 		break;
