@@ -26,7 +26,10 @@
 
 #define TAG	"MSG_HANDLING_USER"
 
-#define MAX_STR_LEN                                 64
+#define MAX_STR_LEN                                 32
+#define MAX_RANGES                                  2
+#define MAX_SUPPORTED_MODES                         3
+
 
 #define PROPERTY_VALUE_SWITCH                       "power"
 
@@ -37,6 +40,13 @@
 #define PROP_TONE                                   "toneValue"
 #define PROP_MACHINESTATES                          "machineStates"
 #define PROP_CURRENTMACHINESTATE                    "currentMachineState"
+#define PROP_MODES                                  "modes"
+#define PROP_SUPPORTEDMODES                         "supportedModes"
+
+#define ATTR_MODE_READY                             "READY"
+#define ATTR_MODE_RUNNING                           "RUNNING"
+#define ATTR_MODE_STOP                              "STOP"
+
 
 static char *g_power_status[]                       = {"on", "off"};
 
@@ -51,6 +61,29 @@ static int64_t g_color_temp                         = 50;
 static int64_t g_color_temp_range[MAX_STR_LEN]      = {0, 100};
 
 static char g_machine_state[MAX_STR_LEN]            = "RUNNING";
+
+static size_t g_mode_cnt                            = 0;
+static char **g_modes                               = NULL;
+static char **g_supported_modes                     = NULL;
+
+void init_modes(void)
+{
+	int idx;
+
+	g_mode_cnt = 1;
+	g_modes = (char **)malloc(sizeof(char*) * 1);
+	g_modes[0] = malloc(sizeof(char) * MAX_STR_LEN);
+	strncpy(g_modes[0], g_machine_state, MAX_STR_LEN);
+
+	g_supported_modes = (char **)malloc(sizeof(char*) * MAX_SUPPORTED_MODES);
+	for (idx = 0; idx < MAX_SUPPORTED_MODES; ++idx) {
+		g_supported_modes[idx] = malloc(sizeof(char) * MAX_STR_LEN);
+	}
+
+	strncpy(g_supported_modes[0], ATTR_MODE_READY, MAX_STR_LEN);
+	strncpy(g_supported_modes[1], ATTR_MODE_RUNNING, MAX_STR_LEN);
+	strncpy(g_supported_modes[2], ATTR_MODE_STOP, MAX_STR_LEN);
+}
 
 bool handle_get_request_on_switch(st_things_get_request_message_s *req_msg, st_things_representation_s *resp_rep)
 {
@@ -90,7 +123,7 @@ bool handle_set_request_on_resource_doorcontrol(st_things_set_request_message_s 
 	if (req_msg->rep->get_str_value(req_msg->rep, PROP_DOORSTATE, &doorstate)) {
 		printf("[%s] Door State : %s\n", TAG, doorstate);
 
-		strncpy(g_door_state, doorstate, 10);
+		strncpy(g_door_state, doorstate, MAX_STR_LEN);
 
 		resp_rep->set_str_value(resp_rep, PROP_DOORSTATE, g_door_state);
 		st_things_notify_observers(req_msg->resource_uri);
@@ -127,7 +160,7 @@ bool handle_get_request_on_resource_wwstairqualitysensorlevelresuri(st_things_ge
 		resp_rep->set_double_value(resp_rep, PROP_AIRQUALITY, g_airqulity);
 	}
 	if (req_msg->has_property_key(req_msg, PROP_RANGE)) {
-		resp_rep->set_double_array_value(resp_rep, PROP_RANGE, g_airqulity_range, 2);
+		resp_rep->set_double_array_value(resp_rep, PROP_RANGE, g_airqulity_range, MAX_RANGES);
 	}
 	return true;
 }
@@ -139,7 +172,7 @@ bool handle_get_request_on_resource_wwstcolortemperatureresuri(st_things_get_req
 		resp_rep->set_int_value(resp_rep, PROP_CT, g_color_temp);
 	}
 	if (req_msg->has_property_key(req_msg, PROP_RANGE)) {
-		resp_rep->set_int_array_value(resp_rep, PROP_RANGE, g_color_temp_range, 2);
+		resp_rep->set_int_array_value(resp_rep, PROP_RANGE, g_color_temp_range, MAX_RANGES);
 	}
 	return true;
 }
@@ -160,12 +193,7 @@ bool handle_get_request_on_resource_wwstfilterstateresuri(st_things_get_request_
 		resp_rep->set_str_value(resp_rep, PROP_MACHINESTATES, g_machine_state);
 	}
 	if (req_msg->has_property_key(req_msg, PROP_CURRENTMACHINESTATE)) {
-		char **machine_state_list = malloc(sizeof(char *) * 3);
-		machine_state_list[0] = (char *)"RUNNING";
-		machine_state_list[1] = (char *)"STOP";
-		machine_state_list[2] = (char *)"READY";
-		resp_rep->set_str_array_value(resp_rep, PROP_CURRENTMACHINESTATE, (const char **)machine_state_list, 3);
-		free(machine_state_list);
+		resp_rep->set_str_array_value(resp_rep, PROP_CURRENTMACHINESTATE, (const char **)g_supported_modes, MAX_SUPPORTED_MODES);
 	}
 	return true;
 }
@@ -174,9 +202,40 @@ bool handle_set_request_on_resource_wwstfilterstateresuri(st_things_set_request_
 {
 	char *machinestates;
 	if (req_msg->rep->get_str_value(req_msg->rep, PROP_MACHINESTATES, &machinestates)) {
-		strncpy(g_machine_state, machinestates, 10);
+		strncpy(g_machine_state, machinestates, MAX_STR_LEN);
 		resp_rep->set_str_value(resp_rep, PROP_MACHINESTATES, machinestates);
 		st_things_notify_observers(req_msg->resource_uri);
+	}
+
+	return true;
+}
+
+bool handle_get_request_on_resource_wwstrobotcleanerturbomoderesuri(st_things_get_request_message_s *req_msg, st_things_representation_s *resp_rep)
+{
+	if (req_msg->has_property_key(req_msg, PROP_MODES)) {
+		resp_rep->set_str_array_value(resp_rep, PROP_MODES, (const char **)g_modes, g_mode_cnt);
+	}
+	if (req_msg->has_property_key(req_msg, PROP_SUPPORTEDMODES)) {
+		resp_rep->set_str_array_value(resp_rep, PROP_SUPPORTEDMODES, (const char **)g_supported_modes, MAX_SUPPORTED_MODES);
+	}
+
+	return true;
+}
+
+bool handle_set_request_on_resource_wwstrobotcleanerturbomoderesuri(st_things_set_request_message_s *req_msg, st_things_representation_s *resp_rep)
+{
+	char **req_str_array;
+	size_t array_size;
+	int idx;
+
+	if (req_msg->rep->get_str_array_value(req_msg->rep, PROP_MODES, &req_str_array, &array_size)) {
+		for (idx = 0; idx < g_mode_cnt; ++idx) {
+			free(g_modes[idx]);
+		}
+		free(g_modes);
+
+		g_modes = req_str_array;
+		g_mode_cnt = array_size;
 	}
 
 	return true;

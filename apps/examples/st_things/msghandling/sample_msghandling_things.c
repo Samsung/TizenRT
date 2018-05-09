@@ -47,33 +47,30 @@
 #define URI_FILTER                                               "/capability/filterStatus/main/0"
 #define URI_FILTER_LEN                                           sizeof(URI_FILTER)
 
+#define URI_TURBO                                                "/capability/robotCleanerTurboMode/main/0"
+#define URI_TURBO_LEN                                            sizeof(URI_FILTER)
+
+extern void init_modes(void);
+
 extern bool handle_get_request_on_switch(st_things_get_request_message_s *req_msg, st_things_representation_s *resp_rep);
 extern bool handle_set_request_on_switch(st_things_set_request_message_s *req_msg, st_things_representation_s *resp_rep);
 
 extern bool handle_get_request_on_resource_wwstcolortemperatureresuri(st_things_get_request_message_s *req_msg, st_things_representation_s *resp_rep);
 extern bool handle_set_request_on_resource_wwstcolortemperatureresuri(st_things_set_request_message_s *req_msg, st_things_representation_s *resp_rep);
+
 extern bool handle_get_request_on_resource_doorcontrol(st_things_get_request_message_s *req_msg, st_things_representation_s *resp_rep);
 extern bool handle_set_request_on_resource_doorcontrol(st_things_set_request_message_s *req_msg, st_things_representation_s *resp_rep);
+
 extern bool handle_get_request_on_resource_wwstairqualitysensorlevelresuri(st_things_get_request_message_s *req_msg, st_things_representation_s *resp_rep);
+
 extern bool handle_get_request_on_resource_tone(st_things_get_request_message_s *req_msg, st_things_representation_s *resp_rep);
 extern bool handle_set_request_on_resource_tone(st_things_set_request_message_s *req_msg, st_things_representation_s *resp_rep);
 
 extern bool handle_get_request_on_resource_wwstfilterstateresuri(st_things_get_request_message_s *req_msg, st_things_representation_s *resp_rep);
 extern bool handle_set_request_on_resource_wwstfilterstateresuri(st_things_set_request_message_s *req_msg, st_things_representation_s *resp_rep);
 
-#ifdef CONFIG_RESET_BUTTON
-static bool check_reset_button_pin_number(void)
-{
-	printf("Current pin number : %d\n", CONFIG_RESET_BUTTON_PIN_NUMBER);
-	return CONFIG_RESET_BUTTON_PIN_NUMBER >= 0 ? true : false;
-}
-
-static void gpio_callback_event(void *user_data)
-{
-	printf("gpio_callback_event!!\n");
-	printf("reset :: %d\n", st_things_reset());
-}
-#endif
+extern bool handle_get_request_on_resource_wwstrobotcleanerturbomoderesuri(st_things_get_request_message_s *req_msg, st_things_representation_s *resp_rep);
+extern bool handle_set_request_on_resource_wwstrobotcleanerturbomoderesuri(st_things_set_request_message_s *req_msg, st_things_representation_s *resp_rep);
 
 static void handle_reset_result(bool result)
 {
@@ -113,6 +110,8 @@ static bool handle_get_request(st_things_get_request_message_s *req_msg, st_thin
 		return handle_get_request_on_resource_wwstairqualitysensorlevelresuri(req_msg, resp_rep);
 	} else if (0 == strncmp(req_msg->resource_uri, URI_FILTER, URI_FILTER_LEN)) {
 		return handle_get_request_on_resource_wwstfilterstateresuri(req_msg, resp_rep);
+	} else if (0 == strncmp(req_msg->resource_uri, URI_TURBO, URI_TURBO_LEN)) {
+		return handle_get_request_on_resource_wwstrobotcleanerturbomoderesuri(req_msg, resp_rep);
 	} else {
 		printf("Not supported uri.\n");
 	}
@@ -134,6 +133,8 @@ static bool handle_set_request(st_things_set_request_message_s *req_msg, st_thin
 		return handle_set_request_on_resource_tone(req_msg, resp_rep);
 	} else if (0 == strncmp(req_msg->resource_uri, URI_FILTER, URI_FILTER_LEN)) {
 		return handle_set_request_on_resource_wwstfilterstateresuri(req_msg, resp_rep);
+	} else if (0 == strncmp(req_msg->resource_uri, URI_TURBO, URI_TURBO_LEN)) {
+		return handle_set_request_on_resource_wwstrobotcleanerturbomoderesuri(req_msg, resp_rep);
 	}
 
 	return false;
@@ -141,17 +142,6 @@ static bool handle_set_request(st_things_set_request_message_s *req_msg, st_thin
 
 int ess_process(void)
 {
-#ifdef CONFIG_RESET_BUTTON
-	if (!check_reset_button_pin_number()) {
-		printf("Error : Invalid pin number.\n");
-		return 0;
-	}
-	iotapi_initialize();
-
-	iotbus_gpio_context_h m_gpio = iotbus_gpio_open(CONFIG_RESET_BUTTON_PIN_NUMBER);
-	iotbus_gpio_register_cb(m_gpio, IOTBUS_GPIO_EDGE_RISING, gpio_callback_event, (void *)m_gpio);
-#endif
-
 	bool easysetup_complete = false;
 	st_things_initialize("device_def.json", &easysetup_complete);
 
@@ -159,6 +149,8 @@ int ess_process(void)
 	st_things_register_reset_cb(handle_reset_request, handle_reset_result);
 	st_things_register_user_confirm_cb(handle_ownership_transfer_request);
 	st_things_register_things_status_change_cb(handle_things_status_change);
+
+	init_modes();
 
 	if (st_things_start() == ST_THINGS_ERROR_NONE) {
 		printf("[%s]=====================================================\n", TAG);
