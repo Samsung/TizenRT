@@ -16,116 +16,19 @@
  *
  ****************************************************************************/
 
-#include "utc_media_common.h"
+#include <media/FileOutputDataSource.h>
+#include "tc_common.h"
 
-class FileOutputDataSourceTest : public testing::Test
+static void utc_media_fileoutputdatasource_getChannels_p(void)
 {
-protected:
-	virtual void SetUp() {
-		dataSource = new FileOutputDataSource(channels, sampleRate, pcmFormat, filePath);
-	}
-	virtual void TearDown() {
-		delete dataSource;
-		dataSource = nullptr;
-	}
+	media::stream::FileOutputDataSource source(2, 16000, 0, "/ramfs/record");
+	TC_ASSERT_EQ("utc_media_fileoutputdatasource_getChannels", source.getChannels(), 2);
 
-public:
-	FileOutputDataSource* dataSource;
-};
-
-TEST_F(FileOutputDataSourceTest, getMemberVariablePositive)
-{
-	unsigned short compare_channels = 2;
-	unsigned int compare_sampleRate = 16000;
-	int compare_pcmFormat = 0;
-
-	EXPECT_EQ(dataSource->getChannels(), compare_channels);
-	EXPECT_EQ(dataSource->getSampleRate(), compare_sampleRate);
-	EXPECT_EQ(dataSource->getPcmFormat(), compare_pcmFormat);
+	TC_SUCCESS_RESULT();
 }
 
-TEST_F(FileOutputDataSourceTest, setMemberVariablePositive)
+int utc_media_fileoutputdatasource_main(void)
 {
-	unsigned short compare_channels = 3;
-	unsigned int compare_sampleRate = 32000;
-	int compare_pcmFormat = 1;
-
-	dataSource->setChannels(compare_channels);
-	dataSource->setSampleRate(compare_sampleRate);
-	dataSource->setPcmFormat(compare_pcmFormat);
-
-	EXPECT_EQ(dataSource->getChannels(), compare_channels);
-	EXPECT_EQ(dataSource->getSampleRate(), compare_sampleRate);
-	EXPECT_EQ(dataSource->getPcmFormat(), compare_pcmFormat);
-}
-
-TEST_F(FileOutputDataSourceTest, FileOutputDataSourceFilePathConstructor)
-{
-	FileOutputDataSource dummy_value(filePath);
-
-	EXPECT_EQ(dataSource->getChannels(), dummy_value.getChannels());
-	EXPECT_EQ(dataSource->getSampleRate(), dummy_value.getSampleRate());
-	EXPECT_EQ(dataSource->getPcmFormat(), dummy_value.getPcmFormat());
-}
-
-TEST_F(FileOutputDataSourceTest, FileOutputDataSourceCopyConstructor)
-{
-	FileOutputDataSource dummy_value(*dataSource);
-
-	EXPECT_EQ(dataSource->getChannels(), dummy_value.getChannels());
-	EXPECT_EQ(dataSource->getSampleRate(), dummy_value.getSampleRate());
-	EXPECT_EQ(dataSource->getPcmFormat(), dummy_value.getPcmFormat());
-}
-
-TEST_F(FileOutputDataSourceTest, FileOutputDataSourceEqualOperator)
-{
-	FileOutputDataSource dummy_value = *dataSource;
-
-	EXPECT_EQ(dataSource->getChannels(), dummy_value.getChannels());
-	EXPECT_EQ(dataSource->getSampleRate(), dummy_value.getSampleRate());
-	EXPECT_EQ(dataSource->getPcmFormat(), dummy_value.getPcmFormat());
-}
-
-TEST_F(FileOutputDataSourceTest, OpenFilePositive)
-{
-	bool ret = dataSource->open();
-	dataSource->close();
-
-	EXPECT_EQ(ret, true);
-}
-
-TEST_F(FileOutputDataSourceTest, OpenFileNegative)
-{
-	dataSource->open();
-	bool ret = dataSource->open();
-	dataSource->close();
-
-	EXPECT_EQ(ret, false);
-}
-
-TEST_F(FileOutputDataSourceTest, CloseFilePositiveWithIsPrepare)
-{
-	dataSource->close();
-	bool ret = dataSource->isPrepare();
-
-	EXPECT_EQ(ret, false);
-}
-
-TEST_F(FileOutputDataSourceTest, WriteFilePositive)
-{
-	unsigned char dummy[] = "dummy";
-	size_t dummySize = 6;
-	dataSource->open();
-	size_t ret = dataSource->write(dummy, dummySize);
-	dataSource->close();
-
-	EXPECT_EQ(ret, dummySize);
-}
-
-TEST_F(FileOutputDataSourceTest, WriteFileNegative)
-{
-	dataSource->open();
-	size_t ret = dataSource->write(nullptr, 1);
-
-	EXPECT_EQ(ret, 0);
+	utc_media_fileoutputdatasource_getChannels_p();
+	return 0;
 }

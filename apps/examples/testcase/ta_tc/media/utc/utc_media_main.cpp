@@ -24,15 +24,16 @@
 #include <stdio.h>
 #include <apps/platform/cxxinitialize.h>
 #include <errno.h>
-#include <gtest/gtest.h>
-#include <gmock/gmock.h>
 #include <iostream>
 #include "tc_common.h"
 
-#include "utc_media_fileoutputdatasource.cpp"
-#include "utc_media_recorder.cpp"
-#include "utc_media_fileinputdatasource.cpp"
-#include "utc_media_player.cpp"
+#ifdef CONFIG_GMOCK
+#include <gtest/gtest.h>
+#include <gmock/gmock.h>
+#include "gmock/utc_media_fileoutputdatasource.cpp"
+#include "gmock/utc_media_recorder.cpp"
+#include "gmock/utc_media_fileinputdatasource.cpp"
+#include "gmock/utc_media_player.cpp"
 
 int gtest_run(int *argc, char **argv)
 {
@@ -40,24 +41,46 @@ int gtest_run(int *argc, char **argv)
 	return RUN_ALL_TESTS();
 }
 
+#else
+#ifdef CONFIG_MEDIA_PLAYER
+int utc_media_mediaplayer_main(void);
+int utc_media_fileinputdatasource_main(void);
+#endif
+#ifdef CONFIG_MEDIA_RECORDER
+int utc_media_mediarecorder_main(void);
+int utc_media_fileoutputdatasource_main(void);
+#endif
+#endif
+
 extern "C"
 {
-	#ifdef CONFIG_BUILD_KERNEL
-	int main(int argc, FAR char *argv[])
-	#else
-	int utc_media_main(int argc, char *argv[])
-	#endif
-	{
-		up_cxxinitialize();
-		
-		if (tc_handler(TC_START, "Media UTC") == -1) {
-			return -1;
-		}
-		
-		gtest_run(&argc, argv);
-
-		(void)tc_handler(TC_END, "Media UTC");
-
-		return 0;
+#ifdef CONFIG_BUILD_KERNEL
+int main(int argc, FAR char *argv[])
+#else
+int utc_media_main(int argc, char *argv[])
+#endif
+{
+	up_cxxinitialize();
+	
+	if (tc_handler(TC_START, "Media UTC") == -1) {
+		return -1;
 	}
+
+#ifdef CONFIG_GMOCK
+	gtest_run(&argc, argv);
+#else
+#ifdef CONFIG_MEDIA_PLAYER
+	utc_media_mediaplayer_main();
+	utc_media_fileinputdatasource_main();
+#endif
+#ifdef CONFIG_MEDIA_RECORDER
+	utc_media_mediarecorder_main();
+	utc_media_fileinputdatasource_main();
+#endif
+#endif
+
+	(void)tc_handler(TC_END, "Media UTC");
+
+	return 0;
+}
 }
