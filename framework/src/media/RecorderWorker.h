@@ -40,14 +40,14 @@ namespace media {
 class RecorderWorker
 {
 public:
-	void startRecorder(std::shared_ptr<MediaRecorderImpl>);
-	void stopRecorder(std::shared_ptr<MediaRecorderImpl>, bool);
-	void pauseRecorder(std::shared_ptr<MediaRecorderImpl>);
-
 	recorder_result_t startWorker();
 	void stopWorker();
 	MediaQueue& getQueue();
 	static RecorderWorker& getWorker();
+
+	std::shared_ptr<MediaRecorderImpl> getCurrentRecorder();
+	void setCurrentRecorder(std::shared_ptr<MediaRecorderImpl> mr);
+	bool isAlive();
 
 private:
 	RecorderWorker();
