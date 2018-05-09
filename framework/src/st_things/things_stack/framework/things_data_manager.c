@@ -830,7 +830,7 @@ int parse_things_cloud_json(const char *filename)
 
 	if (strlen(json_str) > 0) {
 		cJSON *root = cJSON_Parse((const char *)json_str);
-		if (root != NULL) {}
+		if (root != NULL) {
 			cJSON *cloud = cJSON_GetObjectItem(root, KEY_CLOUD);
 			if (cloud != NULL) {
 				cJSON *address = cJSON_GetObjectItem(cloud, KEY_CLOUD_ADDRESS);
