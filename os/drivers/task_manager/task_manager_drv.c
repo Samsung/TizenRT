@@ -97,18 +97,14 @@ static FAR tm_sigactq_t *tm_sig_allocateaction(void)
 	FAR tm_sigactq_t *sigact;
 
 	/* Try to get the signal action structure from the free list */
-
 	sigact = (FAR tm_sigactq_t *)sq_remfirst(&g_sigfreeaction);
 
 	/* Check if we got one. */
-
 	if (!sigact) {
 		/* Add another block of signal actions to the list */
-
 		sig_allocateactionblock();
 
 		/* And try again */
-
 		sigact = (FAR tm_sigactq_t *)sq_remfirst(&g_sigfreeaction);
 		ASSERT(sigact);
 	}
@@ -116,7 +112,7 @@ static FAR tm_sigactq_t *tm_sig_allocateaction(void)
 	return sigact;
 }
 
-static void taskmgt_action(int signo, siginfo_t *info, void *extra)
+static void taskmgt_pause_handler(int signo, tm_msg_t *info, void *extra)
 {
 	if (signo != SIGTM_PAUSE) {
 		tmdbg("[TM] Invalid signal. signo = %d\n", signo);
@@ -137,30 +133,26 @@ static int taskmgt_task_init(pid_t pid)
 
 	if (!tcb) {
 		tmdbg("[TM] tcb is invalid. pid = %d.\n", pid);
-		return ERROR;
+		return TM_FAIL_START_NOT_CREATED;
 	}
 
 	memset (&act, '\0', sizeof(act));
-	act.sa_handler = (_sa_handler_t)&taskmgt_action;
+	act.sa_handler = (_sa_handler_t)&taskmgt_pause_handler;
 	sched_lock();
 
 	/* No.. Then we need to allocate one for the new action. */
-
 	sigact = (tm_sigactq_t *)tm_sig_allocateaction();
 
 	/* An error has occurred if we could not allocate the sigaction */
-
 	if (!sigact) {
 		set_errno(ENOMEM);
-		return ERROR;
+		return TM_OUT_OF_MEMORY;
 	}
 
 	/* Put the signal number in the queue entry */
-
 	sigact->signo = (uint8_t)SIGTM_PAUSE;
 
 	/* Add the new sigaction to sigactionq */
-
 	sq_addlast((FAR sq_entry_t *)sigact, &tcb->sigactionq);
 	COPY_SIGACTION(&sigact->act, &act);
 
@@ -257,7 +249,11 @@ static int taskmgt_ioctl(FAR struct file *filep, int cmd, unsigned long arg)
 			tmdbg("Fail to create new task\n");
 			return ret;
 		}
-		taskmgt_task_init(ret);
+		ret = taskmgt_task_init(ret);
+		if (ret < 0) {
+			tmdbg("Fail to init new task\n");
+			return ret;
+		}
 		break;
 	case TMIOC_TERMINATE:
 		ret = task_delete((int)arg);
