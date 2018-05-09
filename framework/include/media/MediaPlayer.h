@@ -159,9 +159,10 @@ public:
 	 * @details @b #include <media/MediaPlayer.h>
 	 * This function is sync call apis
 	 * It sets the user's function
+	 * @return The result of the setObserver operation
 	 * @since TizenRT v2.0 PRE
 	 */
-	void setObserver(std::shared_ptr<MediaPlayerObserverInterface>);
+	player_result_t setObserver(std::shared_ptr<MediaPlayerObserverInterface>);
 	/**
 	 * @brief Gets the current state of MediaPlayer
 	 * @details @b #include <media/MediaPlayer.h>
