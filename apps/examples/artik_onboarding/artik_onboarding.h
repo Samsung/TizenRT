@@ -77,6 +77,7 @@ artik_error StartSoftAP(bool start);
 artik_error StartStationConnection(bool start);
 void StopWifi(void);
 void StartMDNSService(bool start);
+bool get_wifi_status(void);
 
 /*
  * ARTIK Cloud related exports

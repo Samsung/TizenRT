@@ -72,10 +72,21 @@ static struct ntpc_server_conn_s ntp_server_conn[] = {
 };
 
 static void ntp_link_error(void);
+static int StartDHCPClient(bool start);
 
 static int restart_ntp(int argc, char *argv[])
 {
 	ntpc_stop();
+
+	do {
+		sleep(1);
+		printf("ntp-client is waiting for network connected (%d)\n",
+				g_join_result);
+	} while (g_join_result != 0);
+
+	StartDHCPClient(true);
+
+	printf("NTP Client Restart\n");
 
 	if (ntpc_start(ntp_server_conn, ARRAY_SIZE(ntp_server_conn),
 			NTP_REFRESH_PERIOD, ntp_link_error) < 0) {
@@ -83,6 +94,11 @@ static int restart_ntp(int argc, char *argv[])
 	}
 
 	return 0;
+}
+
+bool get_wifi_status(void)
+{
+	return g_join_result == 0 ? true : false;
 }
 
 void ntp_link_error(void)
@@ -298,12 +314,6 @@ int StartDHCPClient(bool start)
 	}
 
 	if (start) {
-		if (g_dhcpc_handle) {
-			printf("DHCP client is already started\n");
-			ret = E_BUSY;
-			goto exit;
-		}
-
 		ret = network->dhcp_client_start(&g_dhcpc_handle, ARTIK_WIFI);
 		if (ret != S_OK) {
 			printf("Failed to start DHCP client (%d)\n", ret);

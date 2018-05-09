@@ -349,6 +349,11 @@ retry:
 			sem_destroy(&g_sem_ws_registered);
 			printf("Failed to connect to websocket (%d), retrying in %d secs\n",
 					ret, WEBSOCKET_RETRY_PERIOD);
+			do {
+				sleep(1);
+				printf("ws-client is waiting for network connected\n");
+			} while (!get_wifi_status());
+
 			sleep(WEBSOCKET_RETRY_PERIOD);
 			goto retry;
 		}
