@@ -23,6 +23,20 @@ config EXAMPLES_ST_THINGS_LIGHT
 	---help---
 		This is a Light Sample.
 
+config EXAMPLES_ST_THINGS_BLINK
+	bool "BLINK"
+	select IOTBUS_GPIO
+	---help---
+		This is a Blink Sample.
+
+config EXAMPLES_ST_THINGS_MSG_HANDLING
+	bool "Message Handling Example"
+	select IOTBUS_GPIO
+	---help---
+		This is a Message handling Sample.
+
+endchoice
+
 config RESET_BUTTON
 	bool "Reset_Button"
 	default y
@@ -38,23 +52,14 @@ config RESET_BUTTON_PIN_NUMBER
 		The default is the reset button pin number 44 for the ARTIK 053.
 		If you use another board, you can set the pin number for the board.
 
-config EXAMPLES_ST_THINGS_BLINK
-	bool "BLINK"
-	select IOTBUS_GPIO
-	---help---
-		This is a Blink Sample.
 
-config EXAMPLES_ST_THINGS_MSG_HANDLING
-	bool "Message Handling Example"
-	select IOTBUS_GPIO
-	---help---
-		This is a Message handling Sample.
-
-config EXAMPLES_IOTBUS_TEST_RED_LED_GPIO_NUM
+config EXAMPLES_ST_THINGS_RED_LED_GPIO_NUM
 	int "GPIO number of RED LED"
 	default 45
 	depends on EXAMPLES_ST_THINGS_BLINK
-endchoice
+	---help---
+		This is a red led gpio num.
+
 endif
 
 config USER_ENTRYPOINT
