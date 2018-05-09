@@ -3395,6 +3395,59 @@ static void tc_libc_math_ynf(void)
 	TC_SUCCESS_RESULT();
 }
 
+/**
+ * @fn                   :tc_libc_math_gamma
+ * @brief                :gamma(d) function returns (d-1)!
+ * @Scenario             :put a value and check the return
+ * API's covered         :gamma
+ * Preconditions         :None
+ * Postconditions        :None
+ * @return               :void
+ */
+static void tc_libc_math_gamma(void)
+{
+	double value;
+	double result;
+
+	value = 2.0;
+	result = gamma(value);
+	TC_ASSERT_EQ("gamma", result, 1);
+
+	value = 3.0;
+	result = gamma(value);
+	TC_ASSERT_EQ("gamma", result, 2);
+
+	value = INFINITY;
+	result = gamma(value);
+	TC_ASSERT_EQ("gamma", result, (double)INFINITY);
+
+	TC_SUCCESS_RESULT();
+}
+
+/**
+ * @fn                   :tc_libc_math_lgamma
+ * @brief                :lgamma(d) function returns the log of |(d-1)!|
+ * @Scenario             :put a value and check the return
+ * API's covered         :lgamma
+ * Preconditions         :None
+ * Postconditions        :None
+ * @return               :void
+ */
+static void tc_libc_math_lgamma(void)
+{
+	double value;
+	double result;
+
+	value = 2.0;
+	result = lgamma(value);
+	TC_ASSERT_EQ("lgamma", result, 0);
+
+	value = INFINITY;
+	result = lgamma(value);
+	TC_ASSERT_EQ("lgamma", result, (double)INFINITY);
+
+	TC_SUCCESS_RESULT();
+}
 #endif
 
 /****************************************************************************
@@ -3466,6 +3519,7 @@ int libc_math_main(void)
 	tc_libc_math_frexp();
 	tc_libc_math_frexpf();
 	tc_libc_math_frexpl();
+	tc_libc_math_gamma();
 	tc_libc_math_hypot();
 	tc_libc_math_hypotf();
 	tc_libc_math_hypotl();
@@ -3478,6 +3532,7 @@ int libc_math_main(void)
 	tc_libc_math_ldexp();
 	tc_libc_math_ldexpf();
 	tc_libc_math_ldexpl();
+	tc_libc_math_lgamma();
 	tc_libc_math_log2();
 	tc_libc_math_log2f();
 	tc_libc_math_log2l();
