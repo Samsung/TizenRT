@@ -70,13 +70,6 @@
  * Definitions
  ****************************************************************************/
 
-#define COPY_SIGACTION(t, f) \
-	{ \
-		(t)->sa_sigaction = (f)->sa_sigaction; \
-		(t)->sa_mask      = (f)->sa_mask; \
-		(t)->sa_flags     = (f)->sa_flags; \
-	}
-
 /****************************************************************************
  * Private Type Declarations
  ****************************************************************************/
@@ -101,7 +94,7 @@
  *
  ****************************************************************************/
 
-static FAR sigactq_t *sig_allocateaction(void)
+FAR sigactq_t *sig_allocateaction(void)
 {
 	FAR sigactq_t *sigact;
 

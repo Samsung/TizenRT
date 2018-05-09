@@ -15,7 +15,6 @@
  * language governing permissions and limitations under the License.
  *
  ****************************************************************************/
-
 /****************************************************************************
  * Included Files
  ****************************************************************************/
@@ -26,9 +25,11 @@
 #include <signal.h>
 #include <sys/types.h>
 #include <tinyara/sched.h>
+#include <tinyara/signal.h>
 #include <tinyara/fs/fs.h>
 #include <tinyara/fs/ioctl.h>
 #include <tinyara/taskmgt.h>
+#include <tinyara/wdog.h>
 
 /****************************************************************************
  * Private Function Prototypes
@@ -43,7 +44,6 @@ static ssize_t taskmgt_write(FAR struct file *filep, FAR const char *buffer, siz
  ****************************************************************************/
 #define MAX_HANDLE_MASK (CONFIG_TASK_MANAGER_MAX_TASKS - 1)
 #define HANDLE_HASH(i)  ((i) & MAX_HANDLE_MASK)
-
 static uint32_t g_lasthandle;
 static bool g_handle_hash[CONFIG_TASK_MANAGER_MAX_TASKS];
 
@@ -62,10 +62,41 @@ static const struct file_operations taskmgt_fops = {
 	, 0                         /* poll */
 #endif
 };
-
 /****************************************************************************
  * Private Functions
  ****************************************************************************/
+static void taskmgt_pause_handler(int signo, siginfo_t *info, void *extra)
+{
+	if (signo != SIGTM_PAUSE) {
+		tmdbg("[TM] Invalid signal. signo = %d\n", signo);
+		return;
+	}
+
+	sigpause(SIGTM_RESUME);
+}
+
+static int taskmgt_task_init(pid_t pid)
+{
+	int ret;
+	struct tcb_s *tcb;
+	struct sigaction act;
+
+	tcb = sched_gettcb(pid);
+	if (!tcb) {
+		tmdbg("[TM] tcb is invalid. pid = %d.\n", pid);
+		return ERROR;
+	}
+
+	memset(&act, '\0', sizeof(act));
+	act.sa_handler = (_sa_handler_t)&taskmgt_pause_handler;
+
+	ret = sig_sethandler(tcb, SIGTM_PAUSE, &act);
+	if (ret != OK) {
+		return ERROR;
+	}
+
+	return pid;
+}
 static int taskmgt_assign_handle(void)
 {
 	int hash_ndx;
@@ -129,6 +160,7 @@ static int taskmgt_ioctl(FAR struct file *filep, int cmd, unsigned long arg)
 {
 	int ret = -EINVAL;
 	tm_request_t *request_msg;
+	struct tcb_s *tcb;
 	task_builtin_list_t *task_info;
 
 	tmvdbg("cmd: %d arg: %ld\n", cmd, arg);
@@ -155,6 +187,11 @@ static int taskmgt_ioctl(FAR struct file *filep, int cmd, unsigned long arg)
 			tmdbg("Fail to create new task\n");
 			return ret;
 		}
+		ret = taskmgt_task_init(ret);
+		if (ret < 0) {
+			tmdbg("Fail to init new task\n");
+			return ret;
+		}
 		break;
 	case TMIOC_TERMINATE:
 		ret = task_delete((int)arg);
@@ -163,15 +200,24 @@ static int taskmgt_ioctl(FAR struct file *filep, int cmd, unsigned long arg)
 			return ret;
 		}
 		break;
-	case TMIOC_RESTART:
-		break;
 	case TMIOC_PAUSE:
+		tcb = sched_gettcb((int)arg);
+		if (tcb == NULL) {
+			return ERROR;
+		}
+		if (tcb->task_state == TSTATE_WAIT_SIG && tcb->waitdog != NULL) {
+			/* tcb is waiting another signal, e.g. sleep */
+			wd_cancel(tcb->waitdog);
+			ret = OK;
+		} else if (tcb->task_state == TSTATE_WAIT_SEM) {
+			tcb->waitsem = NULL;
+			sched_removeblocked(tcb);
+			sched_addblocked(tcb, TSTATE_WAIT_SIG);
+			ret = OK;
+		}
+		ret = OK;
 		break;
-	case TMIOC_RESUME:
-		break;
-	case TMIOC_SCAN:
-		break;
-	case TMIOC_UNICAST:
+	case TMIOC_RESTART:
 		break;
 	case TMIOC_BROADCAST:
 		break;
