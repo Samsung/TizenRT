@@ -124,10 +124,11 @@
 #define CHECK_SECURE(var)           CHECK_BIT(var, 2)
 
 /* etc */
-#define MAX_ATTRIBUTE_LENGTH        (64)
-#define MAX_CLOUD_ADDRESS           (256)	//   Need to match with the Cloud Spec.
-#define MAX_CLOUD_SESSIONKEY        (128)	//   Need to match with the Cloud Spec.
-#define MAX_SOFTAP_SSID             (33)
+#define MAX_ATTRIBUTE_LENGTH            (64)
+#define MAX_CLOUD_ADDRESS               (256)	//   Need to match with the Cloud Spec.
+#define MAX_CLOUD_SESSIONKEY            (128)	//   Need to match with the Cloud Spec.
+#define MAX_SOFTAP_SSID                 (32)
+#define MAX_SSID_DEVICE_NAME            (13)
 
 typedef int8_t INT8;
 
@@ -672,13 +673,13 @@ wifi_manager_softap_config_s *dm_get_softap_wifi_config(void)
 	st_device_s *device = dm_get_info_of_dev(0);
 	int ssid_type = (is_artik == true ? 1 : 0);
 	unsigned char ext_value[9] = { 0, };
-	char ssid_device_name[17];
+	char ssid_device_name[MAX_SSID_DEVICE_NAME + 1];
 
 	memset(ext_value, 0, sizeof(ext_value));
 	memset(ssid_device_name, 0, sizeof(ssid_device_name));
 
 	snprintf(ssid_device_name, sizeof(ssid_device_name), "%s", device->name);
-	THINGS_LOG_V(TAG, "DeviceName : %s", ssid_device_name);
+	THINGS_LOG_V(TAG, "[softap] DeviceName : %s", ssid_device_name);
 
 	wifi_manager_info_s st_wifi_info;
 	wifi_manager_get_info(&st_wifi_info);
@@ -2004,7 +2005,7 @@ int dm_del_things_cloud_data(void)
 		THINGS_LOG_E(TAG, "It's failed to delete Cloud-Data in cloud file.");
 		return 0;
 	}
-	THINGS_LOG_D( TAG, "Delete Success.");
+	THINGS_LOG_D(TAG, "Delete Success.");
 	esm_save_easysetup_state(ES_NOT_COMPLETE);
 	THINGS_LOG_V(TAG, THINGS_FUNC_EXIT);
 	return 1;
