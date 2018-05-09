@@ -29,6 +29,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <tinyara/float.h>
+#include <tinyara/math.h>
 #include "tc_internal.h"
 
 #define BUFF_SIZE 5
@@ -868,12 +869,12 @@ static void tc_libc_string_strtof(void)
 
 	str = "123.456TizenRT";
 	value = strtof(str, &ptr);
-	TC_ASSERT_LEQ("strtof", value - 123.456, FLT_EPSILON);
+	TC_ASSERT_LEQ("strtof", fabsf(value - 123.456f), FLT_EPSILON);
 	TC_ASSERT_EQ("strtof", strncmp(ptr, "TizenRT", strlen("TizenRT")), 0);
 
 	str = "-78.9123TinyAra";
 	value = strtof(str, &ptr);
-	TC_ASSERT_LEQ("strtof", value - (-78.9123), FLT_EPSILON);
+	TC_ASSERT_LEQ("strtof", fabsf(value - (-78.9123f)), FLT_EPSILON);
 	TC_ASSERT_EQ("strtof", strncmp(ptr, "TinyAra", strlen("TinyAra")), 0);
 
 	TC_SUCCESS_RESULT();
@@ -895,12 +896,12 @@ static void tc_libc_string_strtold(void)
 
 	str = "123.456TizenRT";
 	value = strtold(str, &ptr);
-	TC_ASSERT_LEQ("strtold", value - 123.456, DBL_EPSILON);
+	TC_ASSERT_LEQ("strtold", fabsl(value - 123.456), DBL_EPSILON);
 	TC_ASSERT_EQ("strtold", strncmp(ptr, "TizenRT", strlen("TizenRT")), 0);
 
 	str = "-78.9123TinyAra";
 	value = strtold(str, &ptr);
-	TC_ASSERT_LEQ("strtold", value - (-78.9123), DBL_EPSILON);
+	TC_ASSERT_LEQ("strtold", fabsl(value - (-78.9123)), DBL_EPSILON);
 	TC_ASSERT_EQ("strtold", strncmp(ptr, "TinyAra", strlen("TinyAra")), 0);
 
 	TC_SUCCESS_RESULT();
