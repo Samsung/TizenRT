@@ -16,19 +16,32 @@
  *
  ****************************************************************************/
 
-#include <media/FileInputDataSource.h>
+#include <media/MediaPlayer.h>
 #include "tc_common.h"
 
-static void utc_media_fileinputdatasource_getChannels_p(void)
+static void utc_media_mediaplayer_create_p(void)
 {
-	media::stream::FileInputDataSource source("/mnt/fileinputdatasource.raw");
-	TC_ASSERT_EQ("utc_media_fileinputdatasource_getChannels", source.getChannels(), 2);
+	media::MediaPlayer mp;
+	TC_ASSERT_EQ("utc_media_mediaplayer_create", mp.create(), media::PLAYER_OK);
 
+	mp.destroy();
 	TC_SUCCESS_RESULT();
 }
 
-int utc_media_fileinputdatasource_main(void)
+static void utc_media_mediaplayer_create_n(void)
 {
-	utc_media_fileinputdatasource_getChannels_p();
+	media::MediaPlayer mp;
+	mp.create();
+
+	TC_ASSERT_EQ("utc_media_mediaplayer_create", mp.create(), media::PLAYER_ERROR);
+
+	mp.destroy();
+	TC_SUCCESS_RESULT();
+}
+
+int utc_media_mediaplayer_main(void)
+{
+	utc_media_mediaplayer_create_p();
+	utc_media_mediaplayer_create_n();
 	return 0;
 }

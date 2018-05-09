@@ -18,13 +18,23 @@
 
 ifeq ($(CONFIG_EXAMPLES_TESTCASE_MEDIA_UTC),y)
 CXXSRCS += utc_media_main.cpp
+ifeq ($(CONFIG_MEDIA_PLAYER),y)
+CXXSRCS += utc_media_mediaplayer.cpp
+CXXSRCS += utc_media_fileinputdatasource.cpp
+endif
+ifeq ($(CONFIG_MEDIA_RECORDER),y)
+CXXSRCS += utc_media_mediarecorder.cpp
+CXXSRCS += utc_media_fileoutputdatasource.cpp
+endif
 
+ifeq ($(CONFIG_GMOCK),y)
 GMOCK_DIR = $(TOPDIR)/../external/gmock
 GTEST_DIR = $(TOPDIR)/../external/gmock/gtest
 
 CXXFLAGS += -D__TIZENRT__ -DHAVE_PTHREAD -g -Wall -Wno-sign-compare
 CXXFLAGS += -I $(GMOCK_DIR) -I $(GMOCK_DIR)/include -I $(GMOCK_DIR)/include/gmock/internal
 CXXFLAGS += -I $(GTEST_DIR) -I $(GTEST_DIR)/include -I $(GTEST_DIR)/include/gtest/internal
+endif
 
 # Include media build support
 
