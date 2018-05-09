@@ -147,6 +147,38 @@ config DEBUG_AUDIO_INFO
 
 endif #DEBUG_AUDIO
 
+config DEBUG_MEDIA
+	bool "Media Debug Output"
+	depends on DEBUG
+	default n
+	---help---
+		Enable Media debug SYSLOG output(disable by default)
+
+if DEBUG_MEDIA
+
+config DEBUG_MEDIA_ERROR
+	bool "Media Error Output"
+	depends on DEBUG_ERROR
+	default n
+	---help---
+		Enable Media error SYSLOG output
+
+config DEBUG_MEDIA_WARN
+	bool "Media Warning Output"
+	depends on DEBUG_WARN
+	default n
+	---help---
+		Enable Media warning SYSLOG output
+
+config DEBUG_MEDIA_INFO
+	bool "Media Informational Output"
+	depends on DEBUG_VERBOSE
+	default n
+	---help---
+		Enable Media informational SYSLOG output
+
+endif #DEBUG_MEDIA
+
 config DEBUG_LIB
 	bool "C Library Debug Output"
 	default n
