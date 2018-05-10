@@ -17,627 +17,624 @@
  ******************************************************************/
 
 #include <sys/types.h>
-#include <sys/ioctl.h>
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
 #include <stdint.h>
-#include <unistd.h>
-#include <fcntl.h>
-#include <dirent.h>
-#include <math.h>
 #include <assert.h>
 #include <pthread.h>
-#include <sys/time.h>
-#include "internal_defs.h"
-#include "debug.h"
+#include <debug.h>
 #include <audiocodec/streaming/player.h>
+#include "internal_defs.h"
 
-#define PV_SUCCESS 	0
-#define PV_FAILURE 	-1
+/****************************************************************************
+ * Pre-processor Definitions
+ ****************************************************************************/
+#define PV_SUCCESS OK
+#define PV_FAILURE ERROR
 
-#define PLAYER_DEBUG 	audvdbg
-#define PLAYER_ERROR 	auddbg
-#define PLAYER_ASSERT 	MY_ASSERT
+// Validation of audio type
+#define CHECK_AUDIO_TYPE(type) (AUDIO_TYPE_UNKNOWN < (type) && (type) < AUDIO_TYPE_MAX)
 
-//#define PERFORMANCE_TEST
+// MP3 tag frame header len
+#define MP3_HEAD_ID3_TAG_LEN 10
 
-#if defined(PERFORMANCE_TEST)
-static unsigned long timems_input = 0;
-static unsigned long timems_output = 0;
-static unsigned long timems_decode = 0;
-static unsigned long samples_output = 0;
-#endif
+// MP3 ID3v2 frame len, 6th~9th bytes in header
+#define MP3_HEAD_ID3_FRAME_GETSIZE(buf)  (((buf[6] & 0x7f) << 21) \
+										| ((buf[7] & 0x7f) << 14) \
+										| ((buf[8] & 0x7f) << 7) \
+										| ((buf[9] & 0x7f)))
+
+// Mask to verfiy the MP3 header, all bits should be '1' for all MP3 frames.
+#define MP3_FRAME_VERIFY_MASK 0xffe00000
 
 // Mask to extract the version, layer, sampling rate parts of the MP3 header,
 // which should be same for all MP3 frames.
 #define MP3_FRAME_HEADER_MASK 0xfffe0c00
 
+// AAC ADIF header sync data and len
+#define AAC_ADIF_SYNC_DATA "ADIF"
+#define AAC_ADIF_SYNC_LEN  4
+
+// AAC ADTS frame header len
+#define AAC_ADTS_FRAME_HEADER_LEN 9
+
+// AAC ADTS frame sync verify
+#define AAC_ADTS_SYNC_VERIFY(buf) ((buf[0] == 0xff) && ((buf[1] & 0xf6) == 0xf0))
+
+// AAC ADTS Frame size value stores in 13 bits started at the 31th bit from header
+#define AAC_ADTS_FRAME_GETSIZE(buf) ((buf[3] & 0x03) << 11 | buf[4] << 3 | buf[5] >> 5)
+
+// Read bytes each time from stream each time, while frame resyn.
+#define FRAME_RESYNC_READ_BYTES      (1024)
+// Max bytes could be read from stream in total, while frame resyn.
+#define FRAME_RESYNC_MAX_CHECK_BYTES (8 * 1024)
+
+// MPEG version
+#define MPEG_VERSION_1         3
+#define MPEG_VERSION_2         2
+#define MPEG_VERSION_UNDEFINED 1
+#define MPEG_VERSION_2_5       0
+#define MP3_FRAME_GET_MPEG_VERSION(header) (((header) >> 19) & 0x3)
+
+// MPEG layer
+#define MPEG_LAYER_1         3
+#define MPEG_LAYER_2         2
+#define MPEG_LAYER_3         1
+#define MPEG_LAYER_UNDEFINED 0
+#define MP3_FRAME_GET_MPEG_LAYER(header) (((header) >> 17) & 0x3)
+
+// Bitrate index
+#define BITRATE_IDX_FREE 0x0  // Variable Bit Rate
+#define BITRATE_IDX_BAD  0xf  // Not allow
+#define MP3_FRAME_GET_BITRATE_IDX(header) (((header) >> 12) & 0xf)
+
+// Sample Rate index
+#define SAMPLE_RATE_IDX_UNDEFINED 0x3
+#define MP3_FRAME_GET_SR_IDX(header) (((header) >> 10) & 0x3)
+
+// Padding flag
+#define MP3_FRAME_GET_PADDING(header) ((header >> 9) & 0x1)
+
+// Frame size = frame samples * (1 / sample rate) * bitrate / 8 + padding
+//            = frame samples * bitrate / 8 / sample rate + padding
+// Number of frame samples is constant value as below table:
+//        MPEG1  MPEG2(LSF)  MPEG2.5(LSF)
+// Layer1  384     384         384
+// Layer2  1152    1152        1152
+// Layer3  1152    576         576
+#define MPEG_LAYER1_FRAME_SIZE(sr, br, pad)  (384 * ((br) * 1000) / 8 / (sr) + ((pad) * 4))
+#define MPEG_LAYER2_FRAME_SIZE(sr, br, pad)  (1152 * ((br) * 1000) / 8 / (sr) + (pad))
+#define MPEG1_LAYER2_LAYER3_FRAME_SIZE(sr, br, pad) MPEG_LAYER2_FRAME_SIZE(sr, br, pad)
+#define MPEG2_LAYER3_FRAME_SIZE(sr, br, pad) (576 * ((br) * 1000) / 8 / (sr) + (pad))
+
+// Frame Resync, match more frame headers for confirming.
+#define FRAME_MATCH_REQUIRED 2
+
+#define U32_LEN_IN_BYTES (sizeof(uint32_t) / sizeof(uint8_t))
+
+/****************************************************************************
+ * Private Declarations
+ ****************************************************************************/
+
+/**
+ * @struct  priv_data_s
+ * @brief   Player private data structure define.
+ */
+struct priv_data_s {
+	ssize_t mCurrentPos;        /* read position when decoding */
+	uint32_t mFixedHeader;      /* mp3 frame header */
+};
+
+typedef struct priv_data_s priv_data_t;
+typedef struct priv_data_s *priv_data_p;
+
+// Sample Rate(in Hz) tables
+static const int kSamplingRateV1[] = {
+	44100, 48000, 32000
+};
+
+static const int kSamplingRateV2[] = {
+	22050, 24000, 16000
+};
+
+static const int kSamplingRateV2_5[] = {
+	11025, 12000, 8000
+};
+
+// Bit Rate (in kbps) tables
+// V1 - MPEG 1, V2 - MPEG 2 and MPEG 2.5
+// L1 - Layer 1, L2 - Layer 2, L3 - Layer 3
+static const int kBitrateV1L1[] = {
+	32, 64, 96, 128, 160, 192, 224, 256, 288, 320, 352, 384, 416, 448
+};
+
+static const int kBitrateV2L1[] = {
+	32, 48, 56, 64, 80, 96, 112, 128, 144, 160, 176, 192, 224, 256
+};
+
+static const int kBitrateV1L2[] = {
+	32, 48, 56, 64, 80, 96, 112, 128, 160, 192, 224, 256, 320, 384
+};
+
+static const int kBitrateV1L3[] = {
+	32, 40, 48, 56, 64, 80, 96, 112, 128, 160, 192, 224, 256, 320
+};
+
+static const int kBitrateV2L3[] = {
+	8, 16, 24, 32, 40, 48, 56, 64, 80, 96, 112, 128, 144, 160
+};
+
+/****************************************************************************
+ * Private Functions
+ ****************************************************************************/
+
 static uint32_t _u32_at(const uint8_t *ptr)
 {
-    return ptr[0] << 24 | ptr[1] << 16 | ptr[2] << 8 | ptr[3];
+	return ptr[0] << 24 | ptr[1] << 16 | ptr[2] << 8 | ptr[3];
 }
 
-static bool _parse_header(
-        uint32_t header, size_t *frame_size,
-        uint32_t *out_sampling_rate, uint32_t *out_channels ,
-        uint32_t *out_bitrate, uint32_t *out_num_samples)
+static bool _parse_header(uint32_t header, size_t *frame_size)
 {
-    *frame_size = 0;
+	*frame_size = 0;
 
-    if (out_sampling_rate)
-        *out_sampling_rate = 0;
+	RETURN_VAL_IF_FAIL((header & MP3_FRAME_VERIFY_MASK) == MP3_FRAME_VERIFY_MASK, false);
 
-    if (out_channels)
-        *out_channels = 0;
+	unsigned version = MP3_FRAME_GET_MPEG_VERSION(header);
+	RETURN_VAL_IF_FAIL(version != MPEG_VERSION_UNDEFINED, false);
 
-    if (out_bitrate)
-        *out_bitrate = 0;
+	unsigned layer = MP3_FRAME_GET_MPEG_LAYER(header);
+	RETURN_VAL_IF_FAIL(layer != MPEG_LAYER_UNDEFINED, false);
 
-    if (out_num_samples)
-        *out_num_samples = 1152;
+	unsigned bitrate_index = MP3_FRAME_GET_BITRATE_IDX(header);
+	RETURN_VAL_IF_FAIL((bitrate_index != BITRATE_IDX_FREE), false);
+	RETURN_VAL_IF_FAIL((bitrate_index != BITRATE_IDX_BAD), false);
 
-    RETURN_VAL_IF_FAIL((header & 0xffe00000) == 0xffe00000, false);
+	unsigned sampling_rate_index = MP3_FRAME_GET_SR_IDX(header);
+	RETURN_VAL_IF_FAIL((sampling_rate_index != SAMPLE_RATE_IDX_UNDEFINED), false);
 
-    unsigned version = (header >> 19) & 3;
-    RETURN_VAL_IF_FAIL(version != 0x01, false);
+	int sampling_rate;
+	if (version == MPEG_VERSION_1)
+		sampling_rate= kSamplingRateV1[sampling_rate_index];
+	else if (version == MPEG_VERSION_2) {
+		sampling_rate = kSamplingRateV2[sampling_rate_index];
+	} else { // MPEG_VERSION_2_5
+		sampling_rate = kSamplingRateV2_5[sampling_rate_index];
+	}
 
-    unsigned layer = (header >> 17) & 3;
+	unsigned padding = MP3_FRAME_GET_PADDING(header);
 
-    RETURN_VAL_IF_FAIL(layer != 0x00, false);
+	if (layer == MPEG_LAYER_1) {
+		int bitrate = (version == MPEG_VERSION_1)
+					  ? kBitrateV1L1[bitrate_index - 1]
+					  : kBitrateV2L1[bitrate_index - 1];
+		*frame_size = MPEG_LAYER1_FRAME_SIZE(sampling_rate, bitrate, padding);
+	} else {
+		int bitrate;
+		if (version == MPEG_VERSION_1) {
+			bitrate = (layer == MPEG_LAYER_2)
+					  ? kBitrateV1L2[bitrate_index - 1]
+					  : kBitrateV1L3[bitrate_index - 1];
+			*frame_size = MPEG1_LAYER2_LAYER3_FRAME_SIZE(sampling_rate, bitrate, padding);
+		} else {
+			bitrate = kBitrateV2L3[bitrate_index - 1];
+			if (layer == MPEG_LAYER_3) {
+				*frame_size = MPEG2_LAYER3_FRAME_SIZE(sampling_rate, bitrate, padding);
+			} else {
+				*frame_size = MPEG_LAYER2_FRAME_SIZE(sampling_rate, bitrate, padding);
+			}
+		}
+	}
 
-    unsigned bitrate_index = (header >> 12) & 0x0f;
-
-    if (bitrate_index == 0 || bitrate_index == 0x0f)
-        return false;	// Disallow "free" bitrate.
-
-    unsigned sampling_rate_index = (header >> 10) & 3;
-
-    RETURN_VAL_IF_FAIL((sampling_rate_index != 3), false);
-
-    static const int kSamplingRateV1[] = { 44100, 48000, 32000 };
-    int sampling_rate = kSamplingRateV1[sampling_rate_index];
-    if (version == 2 /* V2 */)
-	{
-        sampling_rate /= 2;
-    }
-	else if (version == 0 /* V2.5 */)
-    {
-        sampling_rate /= 4;
-    }
-
-    unsigned padding = (header >> 9) & 1;
-
-    if (layer == 3)
-	{
-        // layer I
-        static const int kBitrateV1[] = {
-            32, 64, 96, 128, 160, 192, 224, 256,
-            288, 320, 352, 384, 416, 448
-        };
-
-        static const int kBitrateV2[] = {
-            32, 48, 56, 64, 80, 96, 112, 128,
-            144, 160, 176, 192, 224, 256
-        };
-
-        int bitrate =
-            (version == 3 /* V1 */)
-                ? kBitrateV1[bitrate_index - 1]
-                : kBitrateV2[bitrate_index - 1];
-
-        if (out_bitrate)
-            *out_bitrate = bitrate;
-
-        *frame_size = (12000 * bitrate / sampling_rate + padding) * 4;
-
-        if (out_num_samples)
-            *out_num_samples = 384;
-    }
-	else
-	{
-        // layer II or III
-        static const int kBitrateV1L2[] = {
-            32, 48, 56, 64, 80, 96, 112, 128,
-            160, 192, 224, 256, 320, 384
-        };
-
-        static const int kBitrateV1L3[] = {
-            32, 40, 48, 56, 64, 80, 96, 112,
-            128, 160, 192, 224, 256, 320
-        };
-
-        static const int kBitrateV2[] = {
-            8, 16, 24, 32, 40, 48, 56, 64,
-            80, 96, 112, 128, 144, 160
-        };
-
-        int bitrate;
-        if (version == 3 /* V1 */) {
-            bitrate = (layer == 2 /* L2 */)
-                ? kBitrateV1L2[bitrate_index - 1]
-                : kBitrateV1L3[bitrate_index - 1];
-
-            if (out_num_samples) {
-                *out_num_samples = 1152;
-            }
-        }
-		else
-		{
-            // V2 (or 2.5)
-
-            bitrate = kBitrateV2[bitrate_index - 1];
-            if (out_num_samples)
-                *out_num_samples = (layer == 1 /* L3 */) ? 576 : 1152;
-        }
-
-        if (out_bitrate)
-            *out_bitrate = bitrate;
-
-        if (version == 3 /* V1 */)
-		{
-            *frame_size = 144000 * bitrate / sampling_rate + padding;
-        }
-		else
-        {
-            // V2 or V2.5
-            size_t tmp = (layer == 1 /* L3 */) ? 72000 : 144000;
-            *frame_size = tmp * bitrate / sampling_rate + padding;
-        }
-    }
-
-    if (out_sampling_rate)
-        *out_sampling_rate = sampling_rate;
-
-    if (out_channels)
-	{
-        int channel_mode = (header >> 6) & 3;
-        *out_channels = (channel_mode == 3) ? 1 : 2;
-    }
-
-    return true;
+	return true;
 }
 
 static ssize_t _source_read_at(rbstream_p fp, ssize_t offset, void *data, size_t size)
 {
-    int retVal = rbs_seek(fp, offset, SEEK_SET);
-    if (retVal != EXIT_SUCCESS)
-        return 0;
+	int retVal = rbs_seek(fp, offset, SEEK_SET);
+	RETURN_VAL_IF_FAIL((retVal == OK), SIZE_ZERO);
 
-    return rbs_read(data, 1, size, fp);
+	return rbs_read(data, 1, size, fp);
 }
 
-
 // Resync to next valid MP3 frame in the file.
-static bool mp3_resync(
-        rbstream_p fp, uint32_t match_header,
-        ssize_t *inout_pos, uint32_t *out_header)
+static bool mp3_resync(rbstream_p fp, uint32_t match_header, ssize_t *inout_pos, uint32_t *out_header)
 {
-	PLAYER_DEBUG("[%s] Line %d, match_header %#x, *pos %d\n", __FUNCTION__, __LINE__, match_header, *inout_pos);
+	medvdbg("[%s] Line %d, match_header %#x, *pos %d\n", __FUNCTION__, __LINE__, match_header, *inout_pos);
 
-    if (*inout_pos == 0)
-	{
-        // Skip an optional ID3 header if syncing at the very beginning of the datasource.
-        for (;;)
-		{
-            uint8_t id3header[10];
-            int retVal = _source_read_at(fp, *inout_pos, id3header, sizeof(id3header));
-            RETURN_VAL_IF_FAIL((retVal == (ssize_t)sizeof(id3header)), false);
+	if (*inout_pos == 0) {
+		// Skip an optional ID3 header if syncing at the very beginning of the datasource.
+		for (;;) {
+			uint8_t id3header[MP3_HEAD_ID3_TAG_LEN];
+			int retVal = _source_read_at(fp, *inout_pos, id3header, sizeof(id3header));
+			RETURN_VAL_IF_FAIL((retVal == (ssize_t) sizeof(id3header)), false);
 
-            if (memcmp("ID3", id3header, 3))
-                break;
+			if (memcmp("ID3", id3header, 3)) {
+				break;
+			}
+			// Skip the ID3v2 header.
+			size_t len = MP3_HEAD_ID3_FRAME_GETSIZE(id3header);
+			len += MP3_HEAD_ID3_TAG_LEN;
+			*inout_pos += len;
+		}
+	}
 
-            // Skip the ID3v2 header.
-            size_t len =
-                ((id3header[6] & 0x7f) << 21)
-                | ((id3header[7] & 0x7f) << 14)
-                | ((id3header[8] & 0x7f) << 7)
-                | (id3header[9] & 0x7f);
+	ssize_t pos = *inout_pos;
+	bool valid = false;
+	uint8_t buf[FRAME_RESYNC_READ_BYTES];
+	ssize_t bytesToRead = FRAME_RESYNC_READ_BYTES;
+	ssize_t totalBytesRead = 0;
+	ssize_t remainingBytes = 0;
+	bool reachEOS = false;
+	uint8_t *tmp = buf;
 
-            len += 10;
+	do {
+		if (pos >= *inout_pos + FRAME_RESYNC_MAX_CHECK_BYTES) {
+			medvdbg("[%s] resync range < %d\n", __FUNCTION__, FRAME_RESYNC_MAX_CHECK_BYTES);
+			break;
+		}
 
-            *inout_pos += len;
-        }
-    }
+		if (remainingBytes < U32_LEN_IN_BYTES) {
+			if (reachEOS) {
+				break;
+			}
 
-    ssize_t pos = *inout_pos;
-    bool valid = false;
+			memcpy(buf, tmp, remainingBytes);
+			bytesToRead = FRAME_RESYNC_READ_BYTES - remainingBytes;
 
-    const int32_t kMaxReadBytes = 1024;
-    const int32_t kMaxBytesChecked = 8*1024;//128 * 1024;
-    uint8_t buf[kMaxReadBytes];
-    ssize_t bytesToRead = kMaxReadBytes;
-    ssize_t totalBytesRead = 0;
-    ssize_t remainingBytes = 0;
-    bool reachEOS = false;
-    uint8_t *tmp = buf;
+			/*
+			 * The next read position should start from the end of
+			 * the last buffer, and thus should include the remaining
+			 * bytes in the buffer.
+			 */
+			totalBytesRead = _source_read_at(fp, pos + remainingBytes, buf + remainingBytes, bytesToRead);
 
-    do {
-        if (pos >= *inout_pos + kMaxBytesChecked)
-            break;	// Don't scan forever.
+			if (totalBytesRead <= 0) {
+				break;
+			}
 
-        if (remainingBytes < 4)
-		{
-            if (reachEOS)
-                break;
+			reachEOS = (totalBytesRead != bytesToRead);
+			remainingBytes += totalBytesRead;
+			tmp = buf;
+			continue;
+		}
 
-            memcpy(buf, tmp, remainingBytes);
-            bytesToRead = kMaxReadBytes - remainingBytes;
+		uint32_t header = _u32_at(tmp);
 
-            /*
-             * The next read position should start from the end of
-             * the last buffer, and thus should include the remaining
-             * bytes in the buffer.
-             */
-            totalBytesRead = _source_read_at(fp, pos + remainingBytes,
-                                         buf + remainingBytes, bytesToRead);
+		if (match_header != 0 && (header & MP3_FRAME_HEADER_MASK) != (match_header & MP3_FRAME_HEADER_MASK)) {
+			++pos;
+			++tmp;
+			--remainingBytes;
+			continue;
+		}
 
-            if (totalBytesRead <= 0)
-                break;
+		size_t frame_size;
+		if (!_parse_header(header, &frame_size)) {
+			++pos;
+			++tmp;
+			--remainingBytes;
+			continue;
+		}
 
-            reachEOS = (totalBytesRead != bytesToRead);
-            remainingBytes += totalBytesRead;
-            tmp = buf;
-            continue;
-        }
+		// We found what looks like a valid frame,
+		// now find its successors.
+		valid = true;
+		ssize_t test_pos = pos + frame_size;
+		medvdbg("[%s] Line %d, valid frame at pos %#x + framesize %#x = %#x\n", __FUNCTION__, __LINE__, pos, frame_size, test_pos);
+		int j;
+		for (j = 0; j < FRAME_MATCH_REQUIRED; ++j) {
+			uint8_t temp[U32_LEN_IN_BYTES];
+			ssize_t retval = _source_read_at(fp, test_pos, temp, sizeof(temp));
+			if (retval < (ssize_t) sizeof(temp)) {
+				valid = false;
+				break;
+			}
 
-        uint32_t header = _u32_at(tmp);
+			uint32_t test_header = _u32_at(temp);
 
-        if (match_header != 0 && (header & MP3_FRAME_HEADER_MASK) != (match_header & MP3_FRAME_HEADER_MASK))
-		{
-            ++pos;
-            ++tmp;
-            --remainingBytes;
-            continue;
-        }
+			if ((test_header & MP3_FRAME_HEADER_MASK) != (header & MP3_FRAME_HEADER_MASK)) {
+				medvdbg("[%s] Line %d, invalid frame at pos1 %#x\n", __FUNCTION__, __LINE__, test_pos);
+				valid = false;
+				break;
+			}
 
-        size_t frame_size;
-        uint32_t sample_rate, num_channels, bitrate;
-        if (!_parse_header(header, &frame_size, &sample_rate, &num_channels, &bitrate, NULL))
-		{
-            ++pos;
-            ++tmp;
-            --remainingBytes;
-            continue;
-        }
+			size_t test_frame_size;
+			if (!_parse_header(test_header, &test_frame_size)) {
+				medvdbg("[%s] Line %d, invalid frame at pos2 %#x\n", __FUNCTION__, __LINE__, test_pos);
+				valid = false;
+				break;
+			}
 
-        // We found what looks like a valid frame,
-        // now find its successors.
+			medvdbg("[%s] Line %d, valid frame at pos %#x + framesize %#x = %#x\n", __FUNCTION__, __LINE__, test_pos, test_frame_size, test_pos + test_frame_size);
+			test_pos += test_frame_size;
+		}
 
-        ssize_t test_pos = pos + frame_size;
+		if (valid) {
+			*inout_pos = pos;
 
-        valid = true;
-        const int FRAME_MATCH_REQUIRED = 2;
-        for (int j = 0; j < FRAME_MATCH_REQUIRED; ++j)
-		{
-            uint8_t temp[4];
-            ssize_t retval = _source_read_at(fp, test_pos, temp, sizeof(temp));
-            if (retval < (ssize_t)sizeof(temp))
-			{
-                valid = false;
-                break;
-            }
+			if (out_header != NULL) {
+				*out_header = header;
+			}
 
-            uint32_t test_header = _u32_at(temp);
+			medvdbg("[%s] Line %d, find header %#x at pos %d(%#x)\n", __FUNCTION__, __LINE__, header, pos, pos);
+		}
 
-            if ((test_header & MP3_FRAME_HEADER_MASK) != (header & MP3_FRAME_HEADER_MASK))
-			{
-                valid = false;
-                break;
-            }
+		++pos;
+		++tmp;
+		--remainingBytes;
+	} while (!valid);
 
-            size_t test_frame_size;
-            if (!_parse_header(test_header, &test_frame_size, NULL, NULL, NULL, NULL))
-			{
-                valid = false;
-                break;
-            }
-
-            test_pos += test_frame_size;
-        }
-
-        if (valid)
-		{
-            *inout_pos = pos;
-
-            if (out_header != NULL)
-                *out_header = header;
-
-			PLAYER_DEBUG("[%s] Line %d, find header %#x at pos %d(%#x)\n", __FUNCTION__, __LINE__, header, pos, pos);
-        }
-
-        ++pos;
-        ++tmp;
-        --remainingBytes;
-    } while (!valid);
-
-    return valid;
+	return valid;
 }
 
 // Initialize the MP3 reader.
-bool mp3_init(rbstream_p mFp, ssize_t *offset, uint32_t *header,
-				uint32_t *sample_rate, uint32_t *channles, uint32_t *bit_rate)
+bool mp3_init(rbstream_p mFp, ssize_t *offset, uint32_t *header)
 {
-    // Sync to the first valid frame.
-    bool success = mp3_resync(mFp, 0, offset, header);
-    RETURN_VAL_IF_FAIL((success == true), false);
+	// Sync to the first valid frame.
+	bool success = mp3_resync(mFp, 0, offset, header);
+	RETURN_VAL_IF_FAIL((success == true), false);
 
 	// Policy: Pop out data when *offset updated!
 	rbs_seek_ext(mFp, *offset, SEEK_SET);
 
-    size_t frame_size;
-    return _parse_header(*header, &frame_size, sample_rate, channles, bit_rate, NULL);
+	size_t frame_size;
+	return _parse_header(*header, &frame_size);
 }
 
 // Get the next valid MP3 frame.
 bool mp3_get_frame(rbstream_p mFp, ssize_t *offset, uint32_t fixed_header, void *buffer, uint32_t *size)
 {
-    size_t frame_size;
-    uint32_t bitrate;
-    uint32_t num_samples;
-    uint32_t sample_rate;
-    for (;;)
-	{
-        ssize_t n = _source_read_at(mFp, *offset, buffer, 4);
-        RETURN_VAL_IF_FAIL((n == 4), false);
+	size_t frame_size;
 
-        uint32_t header = _u32_at((const uint8_t *)buffer);
+	for (;;) {
+		ssize_t n = _source_read_at(mFp, *offset, buffer, U32_LEN_IN_BYTES);
+		RETURN_VAL_IF_FAIL((n == U32_LEN_IN_BYTES), false);
 
-        if ((header & MP3_FRAME_HEADER_MASK) == (fixed_header & MP3_FRAME_HEADER_MASK)
-            && _parse_header(header, &frame_size, &sample_rate, NULL, &bitrate, &num_samples))
-        {
-            break;
-        }
+		uint32_t header = _u32_at((const uint8_t *)buffer);
 
-        // Lost sync.
-        ssize_t pos = *offset;
-        if (!mp3_resync(mFp, fixed_header, &pos, NULL /*out_header*/))
-		{
-            // Unable to mp3_resync. Signalling end of stream.
-            return false;
-        }
+		if ((header & MP3_FRAME_HEADER_MASK) == (fixed_header & MP3_FRAME_HEADER_MASK)
+			&& _parse_header(header, &frame_size)) {
+			break;
+		}
 
-        *offset = pos;
+		// Lost sync.
+		ssize_t pos = *offset;
+		if (!mp3_resync(mFp, fixed_header, &pos, NULL /*out_header */)) {
+			// Unable to mp3_resync. Signalling end of stream.
+			return false;
+		}
+
+		*offset = pos;
 		// Policy: Pop out data when mCurrentPos updated!
 		rbs_seek_ext(mFp, *offset, SEEK_SET);
 
-        // Try again with the new position.
-    }
+		// Try again with the new position.
+	}
 
-    ssize_t n = _source_read_at(mFp, *offset, buffer, frame_size);
-    RETURN_VAL_IF_FAIL((n == (ssize_t)frame_size), false);
+	ssize_t n = _source_read_at(mFp, *offset, buffer, frame_size);
+	RETURN_VAL_IF_FAIL((n == (ssize_t) frame_size), false);
 
-    *size = frame_size;
-    *offset += frame_size;
+	medvdbg("[%s] Line %d, pos %#x, framesize %#x\n", __FUNCTION__, __LINE__, *offset, frame_size);
+
+	*size = frame_size;
+	*offset += frame_size;
 	// Policy: Pop out data when mCurrentPos updated!
 	rbs_seek_ext(mFp, *offset, SEEK_SET);
 
-    return true;
+	return true;
 }
-
 
 bool mp3_check_type(rbstream_p rbsp)
 {
 	bool result = false;
-    uint8_t id3header[10];
+	uint8_t id3header[MP3_HEAD_ID3_TAG_LEN];
 
-	PLAYER_DEBUG("[%s] Line %d\n", __FUNCTION__, __LINE__);
+	int retVal = _source_read_at(rbsp, 0, id3header, sizeof(id3header));
+	RETURN_VAL_IF_FAIL((retVal == (ssize_t) sizeof(id3header)), false);
 
-    int retVal = _source_read_at(rbsp, 0, id3header, sizeof(id3header));
-    RETURN_VAL_IF_FAIL((retVal == (ssize_t)sizeof(id3header)), false);
+	if (memcmp("ID3", id3header, 3) == OK) {
+		return true;
+	}
 
-    if (0 == memcmp("ID3", id3header, 3)) {
-        return true;
-    }
-
-	int value = rbs_ctrl(rbsp, option_seek_with_pop, 0);
-    ssize_t pos = 0;
-    result = mp3_resync(rbsp, 0, &pos, NULL);
-	rbs_ctrl(rbsp, option_seek_with_pop, value);
+	int value = rbs_ctrl(rbsp, OPTION_ALLOW_TO_DEQUEUE, 0);
+	ssize_t pos = 0;
+	result = mp3_resync(rbsp, 0, &pos, NULL);
+	rbs_ctrl(rbsp, OPTION_ALLOW_TO_DEQUEUE, value);
 
 	return result;
 }
 
-
-
 // Resync to next valid MP3 frame in the file.
 static bool aac_resync(rbstream_p fp, ssize_t *inout_pos)
 {
-    ssize_t pos = *inout_pos;
-    bool valid = false;
+	ssize_t pos = *inout_pos;
+	bool valid = false;
 
-    const int32_t kMaxReadBytes = 1024;
-    const int32_t kMaxBytesChecked = 4*1024;//128 * 1024;
-    uint8_t buf[kMaxReadBytes];
-    ssize_t bytesToRead = kMaxReadBytes;
-    ssize_t totalBytesRead = 0;
-    ssize_t remainingBytes = 0;
-    bool reachEOS = false;
-    uint8_t *tmp = buf;
+	uint8_t buf[FRAME_RESYNC_READ_BYTES];
+	ssize_t bytesToRead = FRAME_RESYNC_READ_BYTES;
+	ssize_t totalBytesRead = 0;
+	ssize_t remainingBytes = 0;
+	bool reachEOS = false;
+	uint8_t *tmp = buf;
 
-    do {
-        if (pos >= *inout_pos + kMaxBytesChecked)
-            break;	// Don't scan forever.
+	do {
+		if (pos >= *inout_pos + FRAME_RESYNC_MAX_CHECK_BYTES) {
+			break;
+		}
 
-        if (remainingBytes < 6)
-		{  // syncword... frame length, 6 bytes in total
-            if (reachEOS)
-                break;
+		if (remainingBytes < AAC_ADTS_FRAME_HEADER_LEN) {
+			if (reachEOS) {
+				break;
+			}
 
-            memcpy(buf, tmp, remainingBytes);
-            bytesToRead = kMaxReadBytes - remainingBytes;
+			memcpy(buf, tmp, remainingBytes);
+			bytesToRead = FRAME_RESYNC_READ_BYTES - remainingBytes;
 
-            /*
-             * The next read position should start from the end of
-             * the last buffer, and thus should include the remaining
-             * bytes in the buffer.
-             */
-            totalBytesRead = _source_read_at(fp, pos + remainingBytes, buf + remainingBytes, bytesToRead);
+			/*
+			 * The next read position should start from the end of
+			 * the last buffer, and thus should include the remaining
+			 * bytes in the buffer.
+			 */
+			totalBytesRead = _source_read_at(fp, pos + remainingBytes, buf + remainingBytes, bytesToRead);
+			if (totalBytesRead <= 0) {
+				break;
+			}
 
-            if (totalBytesRead <= 0)
-                break;
+			reachEOS = (totalBytesRead != bytesToRead);
+			remainingBytes += totalBytesRead;
+			tmp = buf;
+			continue;
+		}
 
-            reachEOS = (totalBytesRead != bytesToRead);
-            remainingBytes += totalBytesRead;
-            tmp = buf;
-            continue;
-        }
+		if (!AAC_ADTS_SYNC_VERIFY(tmp)) {
+			++pos;
+			++tmp;
+			--remainingBytes;
+			continue;
+		}
 
-        if((tmp[0] != 0xff) || ((tmp[1] & 0xf6) != 0xf0))
-		{
-            ++pos;
-            ++tmp;
-            --remainingBytes;
-            continue;
-        }
+		// We found what looks like a valid frame,
+		// now find its successors.
+		valid = true;
+		int frame_size = AAC_ADTS_FRAME_GETSIZE(tmp);
+		ssize_t test_pos = pos + frame_size;
+		int j;
+		for (j = 0; j < FRAME_MATCH_REQUIRED; ++j) {
+			uint8_t temp[AAC_ADTS_FRAME_HEADER_LEN];
+			ssize_t retval = _source_read_at(fp, test_pos, temp, sizeof(temp));
+			if (retval < (ssize_t) sizeof(temp)) {
+				valid = false;
+				break;
+			}
 
-        //int protectionAbsent = tmp[1] & 0x01;
-        int frame_size = (tmp[3] & 0x03) << 11 | tmp[4] << 3 | tmp[5] >> 5;
-        //int headerSize = protectionAbsent ? 7 : 9;
+			if (!AAC_ADTS_SYNC_VERIFY(temp)) {
+				valid = false;
+				break;
+			}
 
-        // We found what looks like a valid frame,
-        // now find its successors.
+			int test_frame_size = AAC_ADTS_FRAME_GETSIZE(temp);
+			test_pos += test_frame_size;
+		}
 
-        ssize_t test_pos = pos + frame_size;
+		if (valid) {
+			*inout_pos = pos;
+		}
 
-        valid = true;
-        const int FRAME_MATCH_REQUIRED = 3;
-        for (int j = 0; j < FRAME_MATCH_REQUIRED; ++j)
-		{
-            uint8_t temp[6];
-            ssize_t retval = _source_read_at(fp, test_pos, temp, sizeof(temp));
-            if (retval < (ssize_t)sizeof(temp))
-			{
-                valid = false;
-                break;
-            }
+		++pos;
+		++tmp;
+		--remainingBytes;
+	} while (!valid);
 
-	        if((temp[0] != 0xff) || ((temp[1] & 0xf6) != 0xf0))
-			{
-	            valid = false;
-	            break;
-	        }
-
-	        int test_frame_size = (temp[3] & 0x03) << 11 | temp[4] << 3 | temp[5] >> 5;
-
-            test_pos += test_frame_size;
-        }
-
-        if (valid)
-            *inout_pos = pos;
-
-        ++pos;
-        ++tmp;
-        --remainingBytes;
-    } while (!valid);
-
-    return valid;
+	return valid;
 }
 
 // Initialize the aac reader.
 bool aac_init(rbstream_p mFp, ssize_t *offset)
 {
-    // Sync to the first valid frame.
-    bool success = aac_resync(mFp, offset);
-    RETURN_VAL_IF_FAIL((success == true), false);
+	// Sync to the first valid frame.
+	bool success = aac_resync(mFp, offset);
+	RETURN_VAL_IF_FAIL((success == true), false);
 
 	// Policy: Pop out data when *offset updated!
 	rbs_seek_ext(mFp, *offset, SEEK_SET);
-    return true;
+	return true;
 }
 
 // Get the next valid aac frame.
 bool aac_get_frame(rbstream_p mFp, ssize_t *offset, void *buffer, uint32_t *size)
 {
-    size_t frame_size = 0;
-	uint8_t *buf = (uint8_t *)buffer;
+	size_t frame_size = 0;
+	uint8_t *buf = (uint8_t *) buffer;
 
-    for (;;)
-	{
-        ssize_t n = _source_read_at(mFp, *offset, buffer, 6);
-		RETURN_VAL_IF_FAIL((n == 6), false);
+	for (;;) {
+		ssize_t n = _source_read_at(mFp, *offset, buffer, AAC_ADTS_FRAME_HEADER_LEN);
+		RETURN_VAL_IF_FAIL((n == AAC_ADTS_FRAME_HEADER_LEN), false);
 
-        if((buf[0] == 0xff) && ((buf[1] & 0xf6) == 0xf0))
-		{
-	        //int protectionAbsent = buffer[1] & 0x01;
-	        frame_size = (buf[3] & 0x03) << 11 | buf[4] << 3 | buf[5] >> 5;
-	        //int headerSize = protectionAbsent ? 7 : 9;
-            break;
-        }
+		if (AAC_ADTS_SYNC_VERIFY(buf)) {
+			frame_size = AAC_ADTS_FRAME_GETSIZE(buf);
+			break;
+		}
 
-        // Lost sync.
-        ssize_t pos = *offset;
-        RETURN_VAL_IF_FAIL(aac_resync(mFp, &pos), false);
+		// Lost sync.
+		ssize_t pos = *offset;
+		RETURN_VAL_IF_FAIL(aac_resync(mFp, &pos), false);
 
-        *offset = pos;
+		*offset = pos;
 		rbs_seek_ext(mFp, *offset, SEEK_SET);
-        // Try again with the new position.
-    }
+		// Try again with the new position.
+	}
 
-    ssize_t n = _source_read_at(mFp, *offset, buffer, frame_size);
-	RETURN_VAL_IF_FAIL((n == (ssize_t)frame_size), false);
+	ssize_t n = _source_read_at(mFp, *offset, buffer, frame_size);
+	RETURN_VAL_IF_FAIL((n == (ssize_t) frame_size), false);
 
-    *size = frame_size;
-    *offset += frame_size;
+	*size = frame_size;
+	*offset += frame_size;
 	rbs_seek_ext(mFp, *offset, SEEK_SET);
 
-    return true;
+	return true;
 }
 
 bool aac_check_type(rbstream_p rbsp)
 {
 	bool result = false;
-    uint8_t syncword[4];
+	uint8_t syncword[AAC_ADIF_SYNC_LEN];
 
-	PLAYER_DEBUG("[%s] Line %d\n", __FUNCTION__, __LINE__);
+	ssize_t rlen = _source_read_at(rbsp, 0, syncword, sizeof(syncword));
+	RETURN_VAL_IF_FAIL((rlen == (ssize_t) sizeof(syncword)), false);
 
-    ssize_t rlen = _source_read_at(rbsp, 0, syncword, sizeof(syncword));
-	RETURN_VAL_IF_FAIL((rlen == (ssize_t)sizeof(syncword)), false);
+	// Don't support ADIF
+	RETURN_VAL_IF_FAIL((memcmp(AAC_ADIF_SYNC_DATA, syncword, AAC_ADIF_SYNC_LEN) != OK), false);
 
-    RETURN_VAL_IF_FAIL((0 != memcmp("ADIF", syncword, 4)), false); // not support ADIF
-
-	int value = rbs_ctrl(rbsp, option_seek_with_pop, 0);
-    ssize_t pos = 0;
-    result = aac_resync(rbsp, &pos);
-	rbs_ctrl(rbsp, option_seek_with_pop, value);
+	int value = rbs_ctrl(rbsp, OPTION_ALLOW_TO_DEQUEUE, 0);
+	ssize_t pos = 0;
+	result = aac_resync(rbsp, &pos);
+	rbs_ctrl(rbsp, OPTION_ALLOW_TO_DEQUEUE, value);
 
 	return result;
 }
 
 int _get_audio_type(rbstream_p rbsp)
 {
-	if (mp3_check_type(rbsp))
-		return type_mp3;
+	if (mp3_check_type(rbsp)) {
+		return AUDIO_TYPE_MP3;
+	}
 
-	if (aac_check_type(rbsp))
-		return type_aac;
+	if (aac_check_type(rbsp)) {
+		return AUDIO_TYPE_AAC;
+	}
 
-	return type_unknown;
+	return AUDIO_TYPE_UNKNOWN;
 }
 
 bool _get_frame(pv_player_p player)
 {
-	if (player->audio_type == type_mp3)
-	{
+	priv_data_p priv = (priv_data_p) player->priv_data;
+	assert(priv != NULL);
+
+	switch (player->audio_type) {
+	case AUDIO_TYPE_MP3: {
 		tPVMP3DecoderExternal *mp3_ext = (tPVMP3DecoderExternal *) player->dec_ext;
-		return mp3_get_frame(player->rbsp, &player->mCurrentPos, player->mFixedHeader,
-							(void*) mp3_ext->pInputBuffer, (uint32_t*) &mp3_ext->inputBufferCurrentLength);
-	}
-	else if (player->audio_type == type_aac)
-	{
-		tPVMP4AudioDecoderExternal *aac_ext = (tPVMP4AudioDecoderExternal *) player->dec_ext;
-		return aac_get_frame(player->rbsp, &player->mCurrentPos,
-				(void*) aac_ext->pInputBuffer, (uint32_t*) &aac_ext->inputBufferCurrentLength);
+		return mp3_get_frame(player->rbsp, &priv->mCurrentPos, priv->mFixedHeader, (void *)mp3_ext->pInputBuffer, (uint32_t *)&mp3_ext->inputBufferCurrentLength);
 	}
 
-	PLAYER_ERROR("[%s] unsupported audio type: %d\n", __FUNCTION__, player->audio_type);
-	return false;
+	case AUDIO_TYPE_AAC: {
+		tPVMP4AudioDecoderExternal *aac_ext = (tPVMP4AudioDecoderExternal *) player->dec_ext;
+		return aac_get_frame(player->rbsp, &priv->mCurrentPos, (void *)aac_ext->pInputBuffer, (uint32_t *)&aac_ext->inputBufferCurrentLength);
+	}
+
+	default:
+		medwdbg("[%s] unsupported audio type: %d\n", __FUNCTION__, player->audio_type);
+		return false;
+	}
 }
 
 int _init_decoder(pv_player_p player)
 {
-	if (player->audio_type == type_mp3)
-	{
+	priv_data_p priv = (priv_data_p) player->priv_data;
+	assert(priv != NULL);
+
+	switch (player->audio_type) {
+	case AUDIO_TYPE_MP3: {
 		player->dec_ext = calloc(1, sizeof(tPVMP3DecoderExternal));
 		RETURN_VAL_IF_FAIL((player->dec_ext != NULL), PV_FAILURE);
 
@@ -646,14 +643,16 @@ int _init_decoder(pv_player_p player)
 
 		player->config_func(player->cb_data, player->audio_type, player->dec_ext);
 
+		pvmp3_resetDecoder(player->dec_mem);
 		pvmp3_InitDecoder(player->dec_ext, player->dec_mem);
 
-		player->mCurrentPos = 0;
-		bool ret = mp3_init(player->rbsp, &player->mCurrentPos, &player->mFixedHeader, &player->mSampleRate, &player->mNumChannels, &player->mBitrate);
+		priv->mCurrentPos = 0;
+		bool ret = mp3_init(player->rbsp, &priv->mCurrentPos, &priv->mFixedHeader);
 		RETURN_VAL_IF_FAIL((ret == true), PV_FAILURE);
+		break;
 	}
-	else if (player->audio_type == type_aac)
-	{
+
+	case AUDIO_TYPE_AAC: {
 		player->dec_ext = calloc(1, sizeof(tPVMP4AudioDecoderExternal));
 		RETURN_VAL_IF_FAIL((player->dec_ext != NULL), PV_FAILURE);
 
@@ -662,12 +661,19 @@ int _init_decoder(pv_player_p player)
 
 		player->config_func(player->cb_data, player->audio_type, player->dec_ext);
 
+		PVMP4AudioDecoderResetBuffer(player->dec_mem);
 		Int err = PVMP4AudioDecoderInitLibrary(player->dec_ext, player->dec_mem);
-	    RETURN_VAL_IF_FAIL((err == MP4AUDEC_SUCCESS), PV_FAILURE);
+		RETURN_VAL_IF_FAIL((err == MP4AUDEC_SUCCESS), PV_FAILURE);
 
-		player->mCurrentPos = 0;
-		bool ret = aac_init(player->rbsp, &player->mCurrentPos);
+		priv->mCurrentPos = 0;
+		bool ret = aac_init(player->rbsp, &priv->mCurrentPos);
 		RETURN_VAL_IF_FAIL((ret == true), PV_FAILURE);
+		break;
+	}
+
+	default:
+		// Maybe do not need to init, return success.
+		return PV_SUCCESS;
 	}
 
 	return PV_SUCCESS;
@@ -675,68 +681,69 @@ int _init_decoder(pv_player_p player)
 
 int _frame_decoder(pv_player_p player, pcm_data_p pcm)
 {
-	if (player->audio_type == type_mp3)
-	{
-		tPVMP3DecoderExternal   tmp_ext = *((tPVMP3DecoderExternal *) player->dec_ext);
-		tPVMP3DecoderExternal * mp3_ext = &tmp_ext;
+	switch (player->audio_type) {
+	case AUDIO_TYPE_MP3: {
+		tPVMP3DecoderExternal tmp_ext = *((tPVMP3DecoderExternal *) player->dec_ext);
+		tPVMP3DecoderExternal *mp3_ext = &tmp_ext;
 
 		mp3_ext->inputBufferUsedLength = 0;
 
 		ERROR_CODE errorCode = pvmp3_framedecoder(mp3_ext, player->dec_mem);
+		medvdbg("[%s] Line %d, pvmp3_framedecoder, errorCode %d\n", __FUNCTION__, __LINE__, errorCode);
 		RETURN_VAL_IF_FAIL((errorCode == NO_DECODING_ERROR), PV_FAILURE);
 
 		pcm->length = mp3_ext->outputFrameSize;
 		pcm->samples = mp3_ext->pOutputBuffer;
-		pcm->channels = player->mNumChannels;
-		pcm->samplerate = player->mSampleRate;
-		return PV_SUCCESS;
+		pcm->channels = mp3_ext->num_channels;
+		pcm->samplerate = mp3_ext->samplingRate;
+		break;
 	}
-	else if (player->audio_type == type_aac)
-	{
-		tPVMP4AudioDecoderExternal * aac_ext = (tPVMP4AudioDecoderExternal *) player->dec_ext;
+
+	case AUDIO_TYPE_AAC: {
+		tPVMP4AudioDecoderExternal *aac_ext = (tPVMP4AudioDecoderExternal *) player->dec_ext;
 
 		aac_ext->inputBufferUsedLength = 0;
 		aac_ext->remainderBits = 0;
 
-        Int decoderErr = PVMP4AudioDecodeFrame(aac_ext, player->dec_mem);
+		Int decoderErr = PVMP4AudioDecodeFrame(aac_ext, player->dec_mem);
+		medvdbg("[%s] Line %d, PVMP4AudioDecodeFrame, decoderErr %d\n", __FUNCTION__, __LINE__, decoderErr);
 		RETURN_VAL_IF_FAIL((decoderErr == MP4AUDEC_SUCCESS), PV_FAILURE);
 
 		pcm->length = aac_ext->frameLength * aac_ext->desiredChannels;
 		pcm->samples = aac_ext->pOutputBuffer;
 		pcm->channels = aac_ext->desiredChannels;
 		pcm->samplerate = aac_ext->samplingRate;
-		return PV_SUCCESS;
+		break;
 	}
 
-	return PV_FAILURE;
+	default:
+		// No decoding, return failure.
+		return PV_FAILURE;
+	}
+
+	return PV_SUCCESS;
 }
 
 static size_t _input_callback(void *data, rbstream_p rbsp)
 {
-	pv_player_p player = (pv_player_p)data;
-	PLAYER_ASSERT(player != NULL);
-
-#if defined(PERFORMANCE_TEST)
-	struct timeval tv1, tv2;
-	gettimeofday(&tv1, NULL);
-#endif
+	pv_player_p player = (pv_player_p) data;
+	assert(player != NULL);
 
 	size_t wlen = 0;
 	RETURN_VAL_IF_FAIL((player->input_func != NULL), wlen);
 	wlen = player->input_func(player->cb_data, player);
 
-#if defined(PERFORMANCE_TEST)
-	gettimeofday(&tv2, NULL);
-	timems_input += (tv2.tv_sec*1000+tv2.tv_usec/1000) - (tv1.tv_sec*1000 + tv1.tv_usec/1000);
-#endif
-
 	return wlen;
 }
 
-size_t pv_player_pushdata(pv_player_p player, const void* data, size_t len)
+/****************************************************************************
+ * Public Functions
+ ****************************************************************************/
+
+size_t pv_player_pushdata(pv_player_p player, const void *data, size_t len)
 {
-	PLAYER_ASSERT(player != NULL);
-	PLAYER_ASSERT(data != NULL);
+	assert(player != NULL);
+	assert(data != NULL);
 
 	static pthread_mutex_t s_mutex = PTHREAD_MUTEX_INITIALIZER;
 
@@ -747,56 +754,93 @@ size_t pv_player_pushdata(pv_player_p player, const void* data, size_t len)
 	return len;
 }
 
-
 size_t pv_player_dataspace(pv_player_p player)
 {
-	PLAYER_ASSERT(player != NULL);
+	assert(player != NULL);
 
 	return rb_avail(&player->ringbuffer);
 }
 
-
 bool pv_player_dataspace_is_empty(pv_player_p player)
 {
+	assert(player != NULL);
+
 	return !rb_used(&player->ringbuffer);
 }
 
-
-int pv_player_init(pv_player_p player,
-					size_t rbuf_size,
-					void *user_data,
-					config_func_f config_func,
-					input_func_f input_func,
-					output_func_f output_func)
+int pv_player_get_audio_type(pv_player_p player)
 {
-	PLAYER_ASSERT(player != NULL);
+	assert(player != NULL);
 
-	player->mCurrentPos = 0;
-	player->mFixedHeader = 0;
-	player->mSampleRate = 0;
-	player->mNumChannels = 0;
-	player->mBitrate = 0;
+	if (!CHECK_AUDIO_TYPE(player->audio_type)) {
+		player->audio_type = _get_audio_type(player->rbsp);
+		medvdbg("audio_type %d\n", player->audio_type);
+	}
 
+	return player->audio_type;
+}
+
+int pv_player_init_decoder(pv_player_p player, int audio_type)
+{
+	assert(player != NULL);
+
+	// User may tell the audio type
+	player->audio_type = audio_type;
+
+	// Try to get from stream (in case of given invalid type).
+	pv_player_get_audio_type(player);
+
+	return _init_decoder(player);
+}
+
+bool pv_player_get_frame(pv_player_p player)
+{
+	assert(player != NULL);
+
+	return _get_frame(player);
+}
+
+int pv_player_frame_decode(pv_player_p player, pcm_data_p pcm)
+{
+	assert(player != NULL);
+	assert(pcm != NULL);
+
+	return _frame_decoder(player, pcm);
+}
+
+int pv_player_init(pv_player_p player, size_t rbuf_size, void *user_data, config_func_f config_func, input_func_f input_func, output_func_f output_func)
+{
+	assert(player != NULL);
+
+	priv_data_p priv = (priv_data_p) malloc(sizeof(priv_data_t));
+	RETURN_VAL_IF_FAIL((priv != NULL), PV_FAILURE);
+
+	// init private data
+	priv->mCurrentPos = 0;
+	priv->mFixedHeader = 0;
+
+	// init player data
 	player->cb_data = user_data;
-	player->config_func	= config_func;
-	player->input_func	= input_func;
+	player->config_func = config_func;
+	player->input_func = input_func;
 	player->output_func = output_func;
 
 	player->dec_ext = NULL;
 	player->dec_mem = NULL;
+	player->priv_data = priv;
 
 	// init ring-buffer and open it as a stream
 	rb_init(&player->ringbuffer, rbuf_size);
-	player->rbsp = rbs_open(&player->ringbuffer, _input_callback, (void*)player);
+	player->rbsp = rbs_open(&player->ringbuffer, _input_callback, (void *)player);
 	RETURN_VAL_IF_FAIL((player->rbsp != NULL), PV_FAILURE);
 
-	rbs_ctrl(player->rbsp, option_seek_with_pop, 1);
+	rbs_ctrl(player->rbsp, OPTION_ALLOW_TO_DEQUEUE, 1);
 	return PV_SUCCESS;
 }
 
 int pv_player_finish(pv_player_p player)
 {
-	PLAYER_ASSERT(player != NULL);
+	assert(player != NULL);
 
 	// close stream
 	rbs_close(player->rbsp);
@@ -806,17 +850,21 @@ int pv_player_finish(pv_player_p player)
 	rb_free(&player->ringbuffer);
 
 	// free decoder external buffer
-	//if (player->dec_ext != NULL)
-	{
+	if (player->dec_ext != NULL) {
 		free(player->dec_ext);
-		//player->dec_ext = NULL;
+		player->dec_ext = NULL;
 	}
 
 	// free decoder buffer
-	//if (player->dec_mem != NULL)
-	{
+	if (player->dec_mem != NULL) {
 		free(player->dec_mem);
-		//player->dec_mem = NULL;
+		player->dec_mem = NULL;
+	}
+
+	// free private data buffer
+	if (player->priv_data != NULL) {
+		free(player->priv_data);
+		player->priv_data = NULL;
 	}
 
 	return PV_SUCCESS;
@@ -824,58 +872,26 @@ int pv_player_finish(pv_player_p player)
 
 int pv_player_run(pv_player_p player)
 {
-	PLAYER_ASSERT(player != NULL);
-	PLAYER_ASSERT(player->input_func != NULL);
-	PLAYER_ASSERT(player->output_func != NULL);
-	PLAYER_ASSERT(player->config_func != NULL);
+	assert(player != NULL);
 
+	RETURN_VAL_IF_FAIL((player->input_func != NULL), PV_FAILURE);
+	RETURN_VAL_IF_FAIL((player->output_func != NULL), PV_FAILURE);
+	RETURN_VAL_IF_FAIL((player->config_func != NULL), PV_FAILURE);
 	RETURN_VAL_IF_FAIL((player->rbsp != NULL), PV_FAILURE);
 
-	player->audio_type = _get_audio_type(player->rbsp);
-	PLAYER_DEBUG("audio_type %d\n", player->audio_type);
-	//RETURN_VAL_IF_FAIL((player->audio_type > 0), PV_FAILURE);
+	player->audio_type = pv_player_get_audio_type(player);
+	RETURN_VAL_IF_FAIL(CHECK_AUDIO_TYPE(player->audio_type), PV_FAILURE);
 
-	int ret = _init_decoder(player);
+	int ret = pv_player_init_decoder(player, player->audio_type);
 	RETURN_VAL_IF_FAIL((ret == PV_SUCCESS), PV_FAILURE);
 
-#if defined(PERFORMANCE_TEST)
-	timems_input = 0;
-	timems_output = 0;
-	timems_decode = 0;
-	samples_output = 0;
-	struct timeval tv1, tv2, tv3;
-#endif
-
-	while(_get_frame(player))
-	{
-		#if defined(PERFORMANCE_TEST)
-			gettimeofday(&tv1, NULL);
-		#endif
-
+	while (pv_player_get_frame(player)) {
 		pcm_data_t pcm;
-		if (0 == _frame_decoder(player, &pcm))
-		{	// pcm output
-			#if defined(PERFORMANCE_TEST)
-				gettimeofday(&tv2, NULL);
-				timems_decode += (tv2.tv_sec*1000+tv2.tv_usec/1000) - (tv1.tv_sec*1000 + tv1.tv_usec/1000);
-				samples_output += pcm.length;
-			#endif
-
+		if (pv_player_frame_decode(player, &pcm) == PV_SUCCESS) {
 			player->output_func(player->cb_data, player, &pcm);
-
-			#if defined(PERFORMANCE_TEST)
-				gettimeofday(&tv3, NULL);
-				timems_output += (tv3.tv_sec*1000+tv3.tv_usec/1000) - (tv2.tv_sec*1000 + tv2.tv_usec/1000);
-			#endif
 		}
 	}
 
-#if defined(PERFORMANCE_TEST)
-	printf("[%s] finished! time: input %lu / output %lu / decoding %lu ms, samples: 0x%x\n", __FUNCTION__,
-			timems_input, timems_output, timems_decode, samples_output);
-#endif
-
 	return PV_SUCCESS;
 }
-
 
