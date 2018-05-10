@@ -77,13 +77,16 @@ recorder_result_t MediaRecorderImpl::destroy()
 	mrw.getQueue().enQueue(&MediaRecorderImpl::destroyRecorder, shared_from_this(), std::ref(ret));
 	mSyncCv.wait(lock);
 
-	if (mRecorderObserver) {
-		RecorderObserverWorker& row = RecorderObserverWorker::getWorker();
-		row.stopWorker();
-		mRecorderObserver = nullptr;
+	if (ret == RECORDER_OK) {
+		if (mRecorderObserver) {
+			RecorderObserverWorker& row = RecorderObserverWorker::getWorker();
+			row.stopWorker();
+			mRecorderObserver = nullptr;
+		}
+
+		mrw.stopWorker();
 	}
 
-	mrw.stopWorker();
 	return ret;
 }
 
