@@ -40,6 +40,8 @@ using namespace std;
 using namespace media;
 using namespace media::stream;
 
+static const char *filePath = "/ramfs/record";
+
 class MediaRecorderTest : public MediaRecorderObserverInterface, public enable_shared_from_this<MediaRecorderTest>
 {
 public:
@@ -67,7 +69,7 @@ public:
 					std::cout << "SELECTED APP ON" << std::endl;
 					mr.create();
 					mr.setObserver(shared_from_this());
-					mr.setDataSource(unique_ptr<FileOutputDataSource>(new FileOutputDataSource(2, 16000, PCM_FORMAT_S16_LE, "/ramfs/record")));
+					mr.setDataSource(unique_ptr<FileOutputDataSource>(new FileOutputDataSource(2, 16000, PCM_FORMAT_S16_LE, filePath)));
 				}
 				break;
 				case RECORDER_START: {
@@ -129,7 +131,7 @@ public:
 		size = pcm_frames_to_bytes(p_out, pcm_get_buffer_size(p_out));
 		buffer = (char *)malloc(size);
 
-		fd = open("/ramfs/record", O_RDONLY);
+		fd = open(filePath, O_RDONLY);
 
 		if (fd < 0) {
 			printf("file open fail : %d\n", fd);
@@ -231,4 +233,3 @@ extern "C"
 		return 0;
 	}
 }
-

@@ -19,7 +19,6 @@
 #include "RecorderObserverWorker.h"
 
 namespace media {
-once_flag RecorderObserverWorker::mOnceFlag;
 
 RecorderObserverWorker::RecorderObserverWorker() : mRefCnt(0), mIsRunning(false)
 {

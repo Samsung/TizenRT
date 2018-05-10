@@ -22,8 +22,8 @@
  */
 
 /**
- * @file media/FileOuptDataSource.h
- * @brief Media FileOuptDataSource APIs
+ * @file media/FileOutputDataSource.h
+ * @brief Media FileOutputDataSource APIs
  */
 
 #ifndef __MEDIA_FILEOUTPUTDATASOURCE_H

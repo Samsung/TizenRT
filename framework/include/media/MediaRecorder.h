@@ -160,9 +160,10 @@ public:
 	 * @details @b #include <media/MediaRecorder.h>
 	 * This function is sync call apis
 	 * It sets the user's function
+	 * @return The result of setting the observer
 	 * @since TizenRT v2.0 PRE
 	 */
-	void setObserver(std::shared_ptr<MediaRecorderObserverInterface> observer);
+	recorder_result_t setObserver(std::shared_ptr<MediaRecorderObserverInterface> observer);
 
 private:
 	std::shared_ptr<MediaRecorderImpl> mPMrImpl;
