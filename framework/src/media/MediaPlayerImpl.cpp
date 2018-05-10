@@ -410,16 +410,23 @@ player_result_t MediaPlayerImpl::setDataSource(std::unique_ptr<stream::InputData
 	return PLAYER_OK;
 }
 
-void MediaPlayerImpl::setObserver(std::shared_ptr<MediaPlayerObserverInterface> observer)
+player_result_t MediaPlayerImpl::setObserver(std::shared_ptr<MediaPlayerObserverInterface> observer)
 {
 	std::unique_lock<std::mutex> lock(mCmdMtx);
 	medvdbg("MediaPlayer setObserver\n");
 	PlayerWorker& mpw = PlayerWorker::getWorker();
+	if (!mpw.isAlive()) {
+		return PLAYER_ERROR;
+	}
+
 	mpw.getQueue().enQueue(&MediaPlayerImpl::notifySync, shared_from_this());
 	mSyncCv.wait(lock);
+
 	PlayerObserverWorker& pow = PlayerObserverWorker::getWorker();
 	pow.startWorker();
 	mPlayerObserver = observer;
+
+	return PLAYER_OK;
 }
 
 player_state_t MediaPlayerImpl::getState()
