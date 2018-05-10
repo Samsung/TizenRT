@@ -37,7 +37,7 @@ TEST_F(FileOutputDataSourceTest, getMemberVariablePositive)
 {
 	unsigned short compare_channels = 2;
 	unsigned int compare_sampleRate = 16000;
-	int compare_pcmFormat = 0;
+	int compare_pcmFormat = media::AUDIO_FORMAT_TYPE_S16_LE;
 
 	EXPECT_EQ(dataSource->getChannels(), compare_channels);
 	EXPECT_EQ(dataSource->getSampleRate(), compare_sampleRate);
@@ -48,11 +48,11 @@ TEST_F(FileOutputDataSourceTest, setMemberVariablePositive)
 {
 	unsigned short compare_channels = 3;
 	unsigned int compare_sampleRate = 32000;
-	int compare_pcmFormat = 1;
+	int compare_pcmFormat = media::AUDIO_FORMAT_TYPE_S8;
 
 	dataSource->setChannels(compare_channels);
 	dataSource->setSampleRate(compare_sampleRate);
-	dataSource->setPcmFormat(compare_pcmFormat);
+	dataSource->setPcmFormat(media::AUDIO_FORMAT_TYPE_S8);
 
 	EXPECT_EQ(dataSource->getChannels(), compare_channels);
 	EXPECT_EQ(dataSource->getSampleRate(), compare_sampleRate);
@@ -65,7 +65,7 @@ TEST_F(FileOutputDataSourceTest, FileOutputDataSourceFilePathConstructor)
 
 	EXPECT_EQ(dataSource->getChannels(), dummy_value.getChannels());
 	EXPECT_EQ(dataSource->getSampleRate(), dummy_value.getSampleRate());
-	EXPECT_EQ(dataSource->getPcmFormat(), dummy_value.getPcmFormat());
+	EXPECT_EQ(dataSource->getPcmFormat(), media::AUDIO_FORMAT_TYPE_S16_LE);
 }
 
 TEST_F(FileOutputDataSourceTest, FileOutputDataSourceCopyConstructor)
@@ -74,7 +74,7 @@ TEST_F(FileOutputDataSourceTest, FileOutputDataSourceCopyConstructor)
 
 	EXPECT_EQ(dataSource->getChannels(), dummy_value.getChannels());
 	EXPECT_EQ(dataSource->getSampleRate(), dummy_value.getSampleRate());
-	EXPECT_EQ(dataSource->getPcmFormat(), dummy_value.getPcmFormat());
+	EXPECT_EQ(dataSource->getPcmFormat(), media::AUDIO_FORMAT_TYPE_S16_LE);
 }
 
 TEST_F(FileOutputDataSourceTest, FileOutputDataSourceEqualOperator)
@@ -83,7 +83,7 @@ TEST_F(FileOutputDataSourceTest, FileOutputDataSourceEqualOperator)
 
 	EXPECT_EQ(dataSource->getChannels(), dummy_value.getChannels());
 	EXPECT_EQ(dataSource->getSampleRate(), dummy_value.getSampleRate());
-	EXPECT_EQ(dataSource->getPcmFormat(), dummy_value.getPcmFormat());
+	EXPECT_EQ(dataSource->getPcmFormat(), media::AUDIO_FORMAT_TYPE_S16_LE);
 }
 
 TEST_F(FileOutputDataSourceTest, OpenFilePositive)

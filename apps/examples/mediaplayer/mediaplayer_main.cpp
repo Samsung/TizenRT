@@ -97,12 +97,14 @@ void MediaPlayerTest::start(void)
 	auto source = std::move(unique_ptr<FileInputDataSource>(new FileInputDataSource("/rom/over_16000.mp3")));
 	source->setSampleRate(16000);
 	source->setChannels(2);
+	source->setPcmFormat(AUDIO_FORMAT_TYPE_S16_LE);
 #elif defined(TEST_AAC)
 	auto source = std::move(unique_ptr<FileInputDataSource>(new FileInputDataSource("/rom/play.mp4")));
 #else
 	auto source = std::move(unique_ptr<FileInputDataSource>(new FileInputDataSource("/rom/44100.pcm")));
 	source->setSampleRate(44100);
 	source->setChannels(2);
+	source->setPcmFormat(AUDIO_FORMAT_TYPE_S16_LE);
 #endif
 
 	if (mp.create() == PLAYER_ERROR) {
