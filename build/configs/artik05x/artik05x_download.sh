@@ -20,36 +20,11 @@
 # File   : artik05x_download.sh
 # Description : Download script for ARTIK 05X
 
-# Remember, make is invoked from "os" directory
 source .config
-OS_DIR_PATH=${PWD}
-BUILD_DIR_PATH=${OS_DIR_PATH}/../build
-CONFIGS_DIR_PATH=${BUILD_DIR_PATH}/configs
-OUTPUT_BINARY_PATH=${BUILD_DIR_PATH}/output/bin
-OPENOCD_DIR_PATH=${BUILD_DIR_PATH}/tools/openocd
-ARTIK05X_DIR_PATH=${CONFIGS_DIR_PATH}/artik05x
+source $(dirname "${BASH_SOURCE[0]}")/artik05x_cmn.sh
 SCRIPTS_PATH=${ARTIK05X_DIR_PATH}/scripts
-CODESIGNER_DIR_PATH=${ARTIK05X_DIR_PATH}/tools/codesigner
-
-if [[ $CONFIG_HOST_OSX == 'y' ]]; then
-	OPENOCD_BIN_PATH=${OPENOCD_DIR_PATH}/macos
-	CODESIGNER_PATH=${CODESIGNER_DIR_PATH}/macos
-else
-	SYSTEM_TYPE=`getconf LONG_BIT`
-	if [ "$SYSTEM_TYPE" = "64" ]; then
-		OPENOCD_BIN_PATH=${OPENOCD_DIR_PATH}/linux64
-		CODESIGNER_PATH=${CODESIGNER_DIR_PATH}/linux64
-	else
-		OPENOCD_BIN_PATH=${OPENOCD_DIR_PATH}/linux32
-		CODESIGNER_PATH=${CODESIGNER_DIR_PATH}/linux32
-	fi
-fi
-OPENOCD=${OPENOCD_BIN_PATH}/openocd
 
 CFG_FILE=artik05x.cfg
-
-TIZENRT_BIN=$OUTPUT_BINARY_PATH/tinyara_head.bin
-CODESIGNER_TOOL=artik05x_AppCodesigner
 
 usage() {
 	cat <<EOF
@@ -101,7 +76,7 @@ make_romfs()
 
 compute_fw_parts()
 {
-	bl1=0; bl2=0; sssfw=0; wlanfw=0; os=0; rom=0;
+	bl1=0; bl2=0; sssfw=0; wlanfw=0; os=0; rom=0; ota=0;
 	case $1 in
 		ALL|all)
 			bl1=1; bl2=1; sssfw=1; wlanfw=1; os=1;
@@ -127,6 +102,9 @@ compute_fw_parts()
 		OS|os)
 			os=1
 			;;
+        OTA|ota)
+            ota=1
+            ;;
 		*)
 			echo "$1 is not supported"
 			exit 1
@@ -134,7 +112,7 @@ compute_fw_parts()
 	esac
 
 	parts=
-	for var in bl1 bl2 sssfw wlanfw os rom; do
+	for var in bl1 bl2 sssfw wlanfw os rom ota; do
 		eval value='${'${var}:-}
 		if [ "x${value:-}" == x1 ]; then
 			parts+=" ${var}"
@@ -154,7 +132,7 @@ ensure_file()
 
 compute_ocd_commands()
 {
-	commands=
+	local commands=
 	for part in "$@"; do
 		case "${part}" in
 			bl1)
@@ -168,6 +146,10 @@ compute_ocd_commands()
 			os)
 				ensure_file ${OUTPUT_BINARY_PATH}/tinyara_head.bin
 				commands+="flash_write ${part} ${TIZENRT_BIN} ${VERIFY}; "
+				;;
+			ota)
+				ensure_file ${OUTPUT_BINARY_PATH}/ota.bin
+				commands+="flash_write ${part} ${OUTPUT_BINARY_PATH}/ota.bin ${VERIFY}; "
 				;;
 			rom)
 				ensure_file ${OUTPUT_BINARY_PATH}/romfs.img
@@ -193,6 +175,7 @@ download()
 
 	# Make Openocd commands for parts
 	commands=$(compute_ocd_commands ${parts})
+    echo "ocd command to run: ${commands}"
 
 	# Generate Partition Map
 	${SCRIPTS_PATH}/partition_gen.sh
@@ -232,16 +215,6 @@ erase()
 	popd > /dev/null
 }
 
-signing() {
-	if [ ! -f ${CODESIGNER_PATH}/${CODESIGNER_TOOL} ]; then
-		echo "${CODESIGNER_TOOL} should be in ${CODESIGNER_PATH} to use secure boards like ARTIK053S, ARTIK055S."
-		exit 1
-	fi
-
-	${CODESIGNER_PATH}/${CODESIGNER_TOOL} ${CODESIGNER_DIR_PATH}/rsa_private.key $TIZENRT_BIN
-	TIZENRT_BIN=${TIZENRT_BIN}-signed
-}
-
 if test $# -eq 0; then
 	usage 1>&2
 	exit 1
@@ -270,7 +243,7 @@ while test $# -gt 0; do
 		--verify)
 			VERIFY=verify
 			;;
-		ALL|OS|ROMFS|BL1|BL2|SSSFW|WLANFW|all|os|romfs|bl1|bl2|sssfw|wlanfw)
+		ALL|OS|ROMFS|BL1|BL2|SSSFW|WLANFW|OTA|all|os|romfs|bl1|bl2|sssfw|wlanfw|ota)
 			download $1
 			;;
 		ERASE_*)
