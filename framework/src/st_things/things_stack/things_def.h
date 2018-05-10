@@ -51,4 +51,8 @@
 #define URI_DEVICE_COL                  "/device"
 #define URI_FIRMWARE                    "/firmware"
 
+#define DEVICE_OS_VERSION               "1.1"
+#define DEVICE_PLATFORM_VERSION         "1.1"
+#define DEVICE_HARDWARE_VERSION         "1.0"
+
 #endif							// _THINGS_DEF_
