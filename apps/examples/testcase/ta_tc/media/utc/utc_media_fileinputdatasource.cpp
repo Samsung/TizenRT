@@ -19,16 +19,148 @@
 #include <media/FileInputDataSource.h>
 #include "tc_common.h"
 
-static void utc_media_fileinputdatasource_getChannels_p(void)
+static const char dummyfilepath[] = "/mnt/fileinputdatasource.raw";
+static const char testData[] = "dummydata";
+static unsigned char *buf;
+
+static void SetUp(void)
 {
-	media::stream::FileInputDataSource source("/mnt/fileinputdatasource.raw");
-	TC_ASSERT_EQ("utc_media_fileinputdatasource_getChannels", source.getChannels(), 2);
+	FILE *fp = fopen(dummyfilepath, "w");
+	fputs(testData, fp);
+	fclose(fp);
+
+	buf = new unsigned char[21];
+}
+
+static void TearDown()
+{
+	remove(dummyfilepath);
+
+	delete buf;
+}
+
+static void utc_media_FileInputDataSource_getChannels_p(void)
+{
+	media::stream::FileInputDataSource source(dummyfilepath);
+	TC_ASSERT_EQ("utc_media_FileInputDataSource_getChannels", source.getChannels(), 2);
 
 	TC_SUCCESS_RESULT();
 }
 
-int utc_media_fileinputdatasource_main(void)
+static void utc_media_FileInputDataSource_getSampleRate_p(void)
 {
-	utc_media_fileinputdatasource_getChannels_p();
+	media::stream::FileInputDataSource source(dummyfilepath);
+	TC_ASSERT_EQ("utc_media_FileInputDataSource_getSampleRate", source.getSampleRate(), 16000);
+
+	TC_SUCCESS_RESULT();
+}
+
+static void utc_media_FileInputDataSource_getPcmFormat_p(void)
+{
+	media::stream::FileInputDataSource source(dummyfilepath);
+
+	TC_ASSERT_EQ("utc_media_FileInputDataSource_getPcmFormat", source.getPcmFormat(), media::AUDIO_FORMAT_TYPE_S16_LE);
+
+	TC_SUCCESS_RESULT();
+}
+
+static void utc_media_FileInputDataSource_setChannels_p(void)
+{
+	media::stream::FileInputDataSource source(dummyfilepath);
+	source.setChannels(1);
+
+	TC_ASSERT_EQ("utc_media_FileInputDataSource_setChannels", source.getChannels(), 1);
+
+	TC_SUCCESS_RESULT();
+}
+
+static void utc_media_FileInputDataSource_setSampleRate_p(void)
+{
+	media::stream::FileInputDataSource source(dummyfilepath);
+	source.setSampleRate(44100);
+
+	TC_ASSERT_EQ("utc_media_FileInputDataSource_setSampleRate", source.getSampleRate(), 44100);
+
+	TC_SUCCESS_RESULT();
+}
+
+static void utc_media_FileInputDataSource_setPcmFormat_p(void)
+{
+	media::stream::FileInputDataSource source(dummyfilepath);
+	source.setPcmFormat(media::AUDIO_FORMAT_TYPE_S8);
+
+	TC_ASSERT_EQ("utc_media_FileInputDataSource_setPcmFormat", source.getPcmFormat(), media::AUDIO_FORMAT_TYPE_S8);
+
+	TC_SUCCESS_RESULT();
+}
+
+static void utc_media_FileInputDataSource_open_p(void)
+{
+	media::stream::FileInputDataSource source(dummyfilepath);
+
+	TC_ASSERT_EQ("utc_media_FileInputDataSource_open", source.open(), true);
+
+	source.close();
+	TC_SUCCESS_RESULT();
+}
+
+static void utc_media_FileInputDataSource_close_p(void)
+{
+	media::stream::FileInputDataSource source(dummyfilepath);
+	source.open();
+
+	TC_ASSERT_EQ("utc_media_FileInputDataSource_close", source.close(), true);
+
+	TC_SUCCESS_RESULT();
+}
+
+static void utc_media_FileInputDataSource_isPrepare_p(void)
+{
+	media::stream::FileInputDataSource source(dummyfilepath);
+	source.open();
+
+	TC_ASSERT_EQ("utc_media_FileInputDataSource_isPrepare", source.isPrepare(), true);
+
+	source.close();
+	TC_SUCCESS_RESULT();
+}
+
+static void utc_media_FileInputDataSource_read_p(void)
+{
+	media::stream::FileInputDataSource source(dummyfilepath);
+	memset(buf, 0, 21);
+	source.open();
+
+	TC_ASSERT_EQ("utc_media_FileInputDataSource_read", source.read(buf, 100), strlen(testData));
+
+	TC_SUCCESS_RESULT();
+}
+
+static void utc_media_FileInputDataSource_readAt_p(void)
+{
+	media::stream::FileInputDataSource source(dummyfilepath);
+	memset(buf, 0, 21);
+	source.open();
+
+	TC_ASSERT_EQ("utc_media_FileInputDataSource_readAt", source.readAt(1, 0, buf, 100), (int)strlen(testData + 1));
+
+	TC_SUCCESS_RESULT();
+}
+
+int utc_media_FileInputDataSource_main(void)
+{
+	SetUp();
+	utc_media_FileInputDataSource_getChannels_p();
+	utc_media_FileInputDataSource_getSampleRate_p();
+	utc_media_FileInputDataSource_getPcmFormat_p();
+	utc_media_FileInputDataSource_setChannels_p();
+	utc_media_FileInputDataSource_setSampleRate_p();
+	utc_media_FileInputDataSource_setPcmFormat_p();
+	utc_media_FileInputDataSource_open_p();
+	utc_media_FileInputDataSource_close_p();
+	utc_media_FileInputDataSource_isPrepare_p();
+	utc_media_FileInputDataSource_read_p();
+	utc_media_FileInputDataSource_readAt_p();
+	TearDown();
 	return 0;
 }
