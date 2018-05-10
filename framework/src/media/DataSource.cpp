@@ -23,7 +23,7 @@ namespace media {
 DataSource::DataSource()
 	: mChannels(2)
 	, mSampleRate(16000)
-	, mPcmFormat(0)
+	, mPcmFormat(utils::PCM_FORMAT_S16_LE)
 {
 	medvdbg("DataSource::DataSource()\n");
 }
