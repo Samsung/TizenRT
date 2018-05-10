@@ -85,12 +85,15 @@ player_result_t MediaPlayerImpl::destroy()
 
 	mpw.getQueue().enQueue(&MediaPlayerImpl::destroyPlayer, shared_from_this(), std::ref(ret));
 	mSyncCv.wait(lock);
-	mpw.stopWorker();
+	
+	if (ret == PLAYER_OK) {
+		if (mPlayerObserver) {
+			PlayerObserverWorker& pow = PlayerObserverWorker::getWorker();
+			pow.stopWorker();
+			mPlayerObserver = nullptr;
+		}
 
-	if (mPlayerObserver) {
-		PlayerObserverWorker& pow = PlayerObserverWorker::getWorker();
-		pow.stopWorker();
-		mPlayerObserver = nullptr;
+		mpw.stopWorker();
 	}
 
 	return ret;
