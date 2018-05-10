@@ -21,7 +21,7 @@
 
 static void utc_media_fileoutputdatasource_getChannels_p(void)
 {
-	media::stream::FileOutputDataSource source(2, 16000, 0, "/ramfs/record");
+	media::stream::FileOutputDataSource source(2, 16000, media::AUDIO_FORMAT_TYPE_S16_LE, "/ramfs/record");
 	TC_ASSERT_EQ("utc_media_fileoutputdatasource_getChannels", source.getChannels(), 2);
 
 	TC_SUCCESS_RESULT();

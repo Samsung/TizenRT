@@ -69,7 +69,7 @@ public:
 					std::cout << "SELECTED APP ON" << std::endl;
 					mr.create();
 					mr.setObserver(shared_from_this());
-					mr.setDataSource(unique_ptr<FileOutputDataSource>(new FileOutputDataSource(2, 16000, PCM_FORMAT_S16_LE, filePath)));
+					mr.setDataSource(unique_ptr<FileOutputDataSource>(new FileOutputDataSource(2, 16000, AUDIO_FORMAT_TYPE_S16_LE, filePath)));
 				}
 				break;
 				case RECORDER_START: {
