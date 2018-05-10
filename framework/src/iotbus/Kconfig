@@ -45,11 +45,5 @@ config IOTBUS_UART
 	depends on SERIAL
 	---help---
 		Enables IoTbus Uart
-
-config DEBUG_IOTBUS
-	bool "Enable IoTbus debug messages"
-	default n
-	depends on DEBUG
-	---help---
-		This config makes ibdbg printing messages.
+		
 endif

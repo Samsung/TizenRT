@@ -25,27 +25,4 @@ config TASK_MANAGER_MAX_MSG
 	---help---
 		Task Manager can receive under this value.
 
-config TASK_MANAGER_DEBUG
-	bool "Enable Task Manager Debug Output"
-	default n
-	depends on DEBUG
-	---help---
-		Task Manager Debug Output.
-
-if TASK_MANAGER_DEBUG
-config TASK_MANAGER_DEBUG_ERROR
-	bool "Enable Task Manager Error Debug Output"
-	default n
-	depends on DEBUG_ERROR
-	---help---
-		Task Manager Error Debug Output.
-
-config TASK_MANAGER_DEBUG_INFO
-	bool "Enable Task Manager Informational Debug Output"
-	default n
-	depends on DEBUG_VERBOSE
-	---help---
-		Task Manager Informational Debug Output.
-endif
-
 endif

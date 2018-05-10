@@ -41,7 +41,7 @@ extern int wpa_supplicant_main(int argc, char *argv[]);
 extern size_t printf_decode(u8 *buf, size_t maxlen, const char *str);
 extern void printf_encode(char *txt, size_t maxlen, const u8 *data, size_t len);
 
-#ifdef CONFIG_DEBUG_WLAN_API_VERBOSE
+#ifdef CONFIG_DEBUG_WLAN_API_INFO
 #define VPRINT(format, ...) printf("SLSI API VERBOSE (%s): " format, __FUNCTION__, ##__VA_ARGS__)
 #define SLSI_API_VERBOSE  (1)
 #ifndef CONFIG_DEBUG_WLAN_API_DEBUG
@@ -50,7 +50,7 @@ extern void printf_encode(char *txt, size_t maxlen, const u8 *data, size_t len);
 #else
 #define VPRINT(a, ...) (void)0
 #define SLSI_API_VERBOSE  (0)
-#endif							//CONFIG_DEBUG_WLAN_API_VERBOSE
+#endif							//CONFIG_DEBUG_WLAN_API_INFO
 
 #ifdef CONFIG_DEBUG_WLAN_API_DEBUG
 #define DPRINT(format, ...) printf("SLSI API DEBUG (%s): " format, __FUNCTION__, ##__VA_ARGS__)
@@ -2927,7 +2927,7 @@ static uint8_t slsi_start_supplicant(void)
 #ifdef CONFIG_DEBUG_WLAN_SUPPLICANT_MORE
 	sup_argv[0] = "-dddd";		// + DUMP
 #endif
-#ifdef CONFIG_DEBUG_WLAN_SUPPLICANT_VERBOSE
+#ifdef CONFIG_DEBUG_WLAN_SUPPLICANT_INFO
 	sup_argv[0] = "-ddddd";		// + EXCESSIVE
 #endif
 	sup_argv[1] = "-t";
