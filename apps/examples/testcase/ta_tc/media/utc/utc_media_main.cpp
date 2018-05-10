@@ -44,7 +44,7 @@ int gtest_run(int *argc, char **argv)
 #else
 #ifdef CONFIG_MEDIA_PLAYER
 int utc_media_mediaplayer_main(void);
-int utc_media_fileinputdatasource_main(void);
+int utc_media_FileInputDataSource_main(void);
 #endif
 #ifdef CONFIG_MEDIA_RECORDER
 int utc_media_mediarecorder_main(void);
@@ -71,11 +71,11 @@ int utc_media_main(int argc, char *argv[])
 #else
 #ifdef CONFIG_MEDIA_PLAYER
 	utc_media_mediaplayer_main();
-	utc_media_fileinputdatasource_main();
+	utc_media_FileInputDataSource_main();
 #endif
 #ifdef CONFIG_MEDIA_RECORDER
 	utc_media_mediarecorder_main();
-	utc_media_fileinputdatasource_main();
+	utc_media_fileoutputdatasource_main();
 #endif
 #endif
 
