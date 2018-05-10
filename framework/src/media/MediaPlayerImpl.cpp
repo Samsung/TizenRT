@@ -399,34 +399,68 @@ errout:
 
 player_result_t MediaPlayerImpl::setDataSource(std::unique_ptr<stream::InputDataSource> source)
 {
-	std::lock_guard<std::mutex> lock(mCmdMtx);
+	player_result_t ret = PLAYER_ERROR;
+
+	std::unique_lock<std::mutex> lock(mCmdMtx);
 	medvdbg("MediaPlayer setDataSource\n");
-	if (!source) {
-		meddbg("MediaPlayer setDataSource fail : invalid argument. DataSource should not be nullptr\n");
+
+	PlayerWorker& mpw = PlayerWorker::getWorker();
+	if (!mpw.isAlive()) {
 		return PLAYER_ERROR;
 	}
 
-	mInputDataSource = std::move(source);
-	return PLAYER_OK;
+	std::shared_ptr<stream::InputDataSource> sharedDataSource = std::move(source);
+	mpw.getQueue().enQueue(&MediaPlayerImpl::setPlayerDataSource, shared_from_this(), sharedDataSource, std::ref(ret));
+	mSyncCv.wait(lock);
+
+	return ret;
+}
+
+void MediaPlayerImpl::setPlayerDataSource(std::shared_ptr<stream::InputDataSource> source, player_result_t& ret)
+{
+	if (mCurState != PLAYER_STATE_IDLE) {
+		meddbg("MediaPlayerImpl::setDataSource : mCurState != PLAYER_STATE_IDLE\n");
+		goto errout;
+	}
+
+	if (!source) {
+		meddbg("MediaPlayer setDataSource fail : invalid argument. DataSource should not be nullptr\n");
+		goto errout;
+	}
+
+	mInputDataSource = source;
+	ret = PLAYER_OK;
+	mSyncCv.notify_one();
+	return;
+
+errout:
+	ret = PLAYER_ERROR;
+	mSyncCv.notify_one();
 }
 
 player_result_t MediaPlayerImpl::setObserver(std::shared_ptr<MediaPlayerObserverInterface> observer)
 {
 	std::unique_lock<std::mutex> lock(mCmdMtx);
 	medvdbg("MediaPlayer setObserver\n");
+
 	PlayerWorker& mpw = PlayerWorker::getWorker();
 	if (!mpw.isAlive()) {
 		return PLAYER_ERROR;
 	}
 
-	mpw.getQueue().enQueue(&MediaPlayerImpl::notifySync, shared_from_this());
+	mpw.getQueue().enQueue(&MediaPlayerImpl::setPlayerObserver, shared_from_this(), observer);
 	mSyncCv.wait(lock);
 
+	return PLAYER_OK;
+}
+
+void MediaPlayerImpl::setPlayerObserver(std::shared_ptr<MediaPlayerObserverInterface> observer)
+{
 	PlayerObserverWorker& pow = PlayerObserverWorker::getWorker();
 	pow.startWorker();
 	mPlayerObserver = observer;
 
-	return PLAYER_OK;
+	mSyncCv.notify_one();
 }
 
 player_state_t MediaPlayerImpl::getState()

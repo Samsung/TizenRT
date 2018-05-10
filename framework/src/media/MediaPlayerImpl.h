@@ -86,6 +86,8 @@ private:
 	void pausePlayer();
 	void getVolumePlayer(int &ret);
 	void setVolumePlayer(int, player_result_t &ret);
+	void setPlayerObserver(std::shared_ptr<MediaPlayerObserverInterface> observer);
+	void setPlayerDataSource(std::shared_ptr<stream::InputDataSource> dataSource, player_result_t& ret);
 
 public:
 	std::atomic<player_state_t> mCurState;
@@ -94,7 +96,7 @@ public:
 	std::mutex mCmdMtx;
 	std::condition_variable mSyncCv;
 	std::shared_ptr<MediaPlayerObserverInterface> mPlayerObserver;
-	std::unique_ptr<stream::InputDataSource> mInputDataSource;
+	std::shared_ptr<stream::InputDataSource> mInputDataSource;
 	int mId;
 };
 } // namespace media
