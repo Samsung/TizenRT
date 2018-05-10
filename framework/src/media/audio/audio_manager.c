@@ -136,6 +136,7 @@ static audio_manager_result_t get_audio_volume(int fd, audio_config_t *config, a
 static audio_manager_result_t set_audio_volume(audio_card_type_t type, uint8_t volume);
 static audio_manager_result_t get_supported_sample_rate(int fd, uint32_t *sample_type, audio_card_type_t type);
 static uint32_t get_closest_samprate(uint32_t origin_samprate, audio_card_type_t type);
+static int resample_stream_out(struct pcm *pcm, audio_card_info_t *cur_card, void *data, uint32_t frames);
 
 static const struct audio_samprate_map_entry_s g_audio_samprate_entry[] = {
 	{AUDIO_SAMP_RATE_TYPE_8K, AUDIO_SAMP_RATE_8K},
@@ -489,15 +490,14 @@ int start_audio_stream_in(void *data, uint32_t frames)
 	int ret;
 	int retry = AUDIO_STREAM_RETRY_COUNT;
 	struct pcm *pcm;
-
-	// Todo: Need to check g_actual_audio_out_card_id index.
-	audio_card_info_t *cur_card = &g_audio_in_cards[g_actual_audio_in_card_id];
+	audio_card_info_t *cur_card;
 
 	if ((ret = get_active_audio_device_pcm(&pcm, INPUT)) != AUDIO_MANAGER_SUCCESS) {
 		return ret;
 	}
 
-	if (g_audio_in_cards[g_actual_audio_in_card_id].status == AUDIO_CARD_PAUSE) {
+	cur_card = &g_audio_in_cards[g_actual_audio_in_card_id];
+	if (cur_card->status == AUDIO_CARD_PAUSE) {
 		ret = ioctl(pcm_get_file_descriptor(pcm), AUDIOIOC_RESUME, NULL);
 		if (ret < 0) {
 			meddbg("Fail to ioctl AUDIOIOC_RESUME, ret = %d\n", ret);
@@ -520,40 +520,6 @@ int start_audio_stream_in(void *data, uint32_t frames)
 
 			ret = pcm_readi(pcm, cur_card->resample.readbuffer, frames_to_read);
 			medvdbg("Read frames (%d/%u) for resample to %u\n", ret, frames_to_read, frames);
-
-			int frames_total = ret;
-			int frames_used = 0;
-			int frames_copied = 0;
-			src_data_t srcData = {0, };
-
-			while (frames_total > frames_used) {
-				srcData.data_in = (void *)(cur_card->resample.readbuffer) + get_input_frames_byte_size(frames_used);
-				srcData.input_frames = frames_total - frames_used;
-				srcData.channels_num = 2;
-				srcData.origin_sample_rate = cur_card->resample.from;
-				srcData.origin_sample_width = SAMPLE_WIDTH_16BITS;
-				srcData.desired_sample_rate = cur_card->resample.to;
-				srcData.desired_sample_width = SAMPLE_WIDTH_16BITS;
-				srcData.input_frames_used = 0;
-
-				if (src_simple(cur_card->resample.handle, &srcData) != SRC_ERR_NO_ERROR) {
-					meddbg("Fail to resample to %u from %u\n", srcData.desired_sample_rate, srcData.origin_sample_rate);
-					return AUDIO_MANAGER_RESAMPLE_FAIL;
-				}
-
-				ret = get_input_frames_byte_size(srcData.output_frames_gen);
-				if (ret > 0) {
-					memcpy(data + get_input_frames_byte_size(frames_copied), srcData.data_out, ret);
-					frames_copied += srcData.output_frames_gen;
-					frames_used += srcData.input_frames_used;
-
-					medvdbg("Record resampled %d/%d\n", frames_used, frames_total);
-				} else {
-					meddbg("Failed to copy recorded data, get_input_frames_byte_size : %d\n", ret);
-					return AUDIO_MANAGER_RESAMPLE_FAIL;
-				}
-			}
-			ret = frames_copied;
 		} else {
 			ret = pcm_readi(pcm, data, frames);
 		}
@@ -561,6 +527,7 @@ int start_audio_stream_in(void *data, uint32_t frames)
 		medvdbg("Read %d frames\n", ret);
 		if (ret == -EPIPE) {
 			ret = pcm_prepare(pcm);
+			meddbg("PCM is reprepared\n");
 			if (ret != OK) {
 				meddbg("Fail to pcm_prepare()\n");
 				return AUDIO_MANAGER_XRUN_STATE;
@@ -568,11 +535,98 @@ int start_audio_stream_in(void *data, uint32_t frames)
 		} else if (ret == -EINVAL) {
 			return AUDIO_MANAGER_INVALID_PARAM;
 		} else {
-			return ret;
+			break;
 		}
 	} while ((ret == OK) && (retry--));
 
+	if (cur_card->resample.necessary) {
+		int frames_total = ret;
+		int frames_used = 0;
+		int frames_copied = 0;
+		src_data_t srcData = {0, };
+
+		while (frames_total > frames_used) {
+			srcData.data_in = (void *)(cur_card->resample.readbuffer) + get_input_frames_byte_size(frames_used);
+			srcData.input_frames = frames_total - frames_used;
+			srcData.channels_num = 2;
+			srcData.origin_sample_rate = cur_card->resample.from;
+			srcData.origin_sample_width = SAMPLE_WIDTH_16BITS;
+			srcData.desired_sample_rate = cur_card->resample.to;
+			srcData.desired_sample_width = SAMPLE_WIDTH_16BITS;
+			srcData.input_frames_used = 0;
+
+			if (src_simple(cur_card->resample.handle, &srcData) != SRC_ERR_NO_ERROR) {
+				meddbg("Fail to resample to %u from %u\n", srcData.desired_sample_rate, srcData.origin_sample_rate);
+				return AUDIO_MANAGER_RESAMPLE_FAIL;
+			}
+
+			ret = get_input_frames_byte_size(srcData.output_frames_gen);
+			if (ret > 0) {
+				memcpy(data + get_input_frames_byte_size(frames_copied), srcData.data_out, ret);
+				frames_copied += srcData.output_frames_gen;
+				frames_used += srcData.input_frames_used;
+
+				medvdbg("Record resampled %d/%d\n", frames_used, frames_total);
+			} else {
+				meddbg("Failed to copy recorded data, get_input_frames_byte_size : %d\n", ret);
+				return AUDIO_MANAGER_RESAMPLE_FAIL;
+			}
+		}
+		ret = frames_copied;
+	}
+
 	return ret;
+}
+
+static int resample_stream_out(struct pcm *pcm, audio_card_info_t *cur_card, void *data, uint32_t frames)
+{
+	int ret = 0;
+	int frames_used = 0;
+	int written_frames = 0;
+	int prepare_retry = AUDIO_STREAM_RETRY_COUNT;
+	src_data_t srcData = { 0, };
+
+	while (frames > frames_used) {
+		srcData.data_in = (void *)data + get_output_frames_byte_size(frames_used);
+		srcData.input_frames = frames - frames_used;
+		srcData.channels_num = 2;
+		srcData.origin_sample_rate = cur_card->resample.from;
+		srcData.origin_sample_width = SAMPLE_WIDTH_16BITS;
+		srcData.desired_sample_rate = cur_card->resample.to;
+		srcData.desired_sample_width = SAMPLE_WIDTH_16BITS;
+		srcData.input_frames_used = 0;
+
+		if (src_simple(cur_card->resample.handle, &srcData) != SRC_ERR_NO_ERROR) {
+			meddbg("Fail to resample to %u from %u\n", srcData.desired_sample_rate, srcData.origin_sample_rate);
+			return AUDIO_MANAGER_RESAMPLE_FAIL;
+		}
+
+		frames_used += srcData.input_frames_used;
+
+		ret = pcm_writei(pcm, srcData.data_out, srcData.output_frames_gen);
+		medvdbg("pcm_writei: %d/%d Resampled(%d/%d)\n", ret, srcData.output_frames_gen, frames_used, frames);
+
+		if (ret == -EPIPE) {
+			if (prepare_retry > 0) {
+				ret = pcm_prepare(pcm);
+				if (ret != OK) {
+					meddbg("Fail to pcm_prepare()\n");
+					return AUDIO_MANAGER_XRUN_STATE;
+				}
+				prepare_retry--;
+			}
+			else {
+				return AUDIO_MANAGER_XRUN_STATE;
+			}
+		} else if (ret == -EINVAL) {
+			return AUDIO_MANAGER_INVALID_PARAM;
+		}
+		else {
+			written_frames += ret;
+		}
+	}
+
+	return written_frames;
 }
 
 int start_audio_stream_out(void *data, uint32_t frames)
@@ -580,15 +634,14 @@ int start_audio_stream_out(void *data, uint32_t frames)
 	int ret;
 	int retry = AUDIO_STREAM_RETRY_COUNT;
 	struct pcm *pcm;
+	audio_card_info_t *cur_card;
 
-	// Todo: Need to check g_actual_audio_out_card_id index.
-	audio_card_info_t *cur_card = &g_audio_out_cards[g_actual_audio_out_card_id];
 	medvdbg("start_audio_stream_out(%u)\n", frames);
-
 	if ((ret = get_active_audio_device_pcm(&pcm, OUTPUT)) != AUDIO_MANAGER_SUCCESS) {
 		return ret;
 	}
 
+	cur_card = &g_audio_out_cards[g_actual_audio_out_card_id];
 	if (cur_card->status == AUDIO_CARD_PAUSE) {
 		ret = ioctl(pcm_get_file_descriptor(pcm), AUDIOIOC_RESUME, NULL);
 		if (ret < 0) {
@@ -603,32 +656,8 @@ int start_audio_stream_out(void *data, uint32_t frames)
 	do {
 		medvdbg("Start Playing!! Resample : %d\n", cur_card->resample.necessary);
 
-		// Todo: Need to consider xrun situation.
 		if (cur_card->resample.necessary) {
-			int frames_total = frames;
-			int frames_used = 0;
-			src_data_t srcData = { 0, };
-
-			while (frames_total > frames_used) {
-				srcData.data_in = (void *)data + get_output_frames_byte_size(frames_used);
-				srcData.input_frames = frames_total - frames_used;
-				srcData.channels_num = 2;
-				srcData.origin_sample_rate = cur_card->resample.from;
-				srcData.origin_sample_width = SAMPLE_WIDTH_16BITS;
-				srcData.desired_sample_rate = cur_card->resample.to;
-				srcData.desired_sample_width = SAMPLE_WIDTH_16BITS;
-				srcData.input_frames_used = 0;
-
-				if (src_simple(cur_card->resample.handle, &srcData) != SRC_ERR_NO_ERROR) {
-					meddbg("Fail to resample to %u from %u\n", srcData.desired_sample_rate, srcData.origin_sample_rate);
-					return AUDIO_MANAGER_RESAMPLE_FAIL;
-				}
-
-				frames_used += srcData.input_frames_used;
-
-				ret = pcm_writei(pcm, srcData.data_out, srcData.output_frames_gen);
-				medvdbg("pcm_writei: %d/%d Resampled(%d/%d)\n", ret, srcData.output_frames_gen, frames_used, frames_total);
-			}
+			ret = resample_stream_out(pcm, cur_card, data, frames);
 		} else {
 			ret = pcm_writei(pcm, data, frames);
 			medvdbg("pcm_writei return: %d [%02x%02x%02x%02x]\n", ret, ((unsigned char *)data)[0], ((unsigned char *)data)[1], ((unsigned char *)data)[2], ((unsigned char *)data)[3]);
