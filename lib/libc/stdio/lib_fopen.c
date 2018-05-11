@@ -106,6 +106,10 @@ int lib_mode2oflags(FAR const char *mode)
 
 	DEBUGASSERT(mode);
 
+	if (!mode || !*mode) {
+		goto errout;
+	}
+
 	/* Parse the mode string to determine the corresponding open flags */
 
 	state = MODE_NONE;

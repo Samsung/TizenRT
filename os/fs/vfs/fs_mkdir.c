@@ -59,6 +59,7 @@
 #include <sys/stat.h>
 #include <errno.h>
 #include <tinyara/fs/fs.h>
+#include <tinyara/kmalloc.h>
 
 #include "inode/inode.h"
 
@@ -113,10 +114,18 @@ int mkdir(const char *pathname, mode_t mode)
 	const char *relpath = NULL;
 	int errcode;
 	int ret;
+#ifndef CONFIG_DISABLE_MOUNTPOINT
+	FAR char *parent;
+	const char *ptr;
+	int index;
+	int len;
+	struct stat st;
+#endif
 
 	/* Find the inode that includes this path */
 
 	inode = inode_find(pathname, &relpath);
+
 	if (inode) {
 		/* An inode was found that includes this path and possibly refers to a
 		 * mountpoint.
@@ -130,6 +139,48 @@ int mkdir(const char *pathname, mode_t mode)
 
 			errcode = ENXIO;
 			goto errout_with_inode;
+		}
+
+		ptr = relpath;
+		index = 0;
+		len = 0;
+
+		while (ptr != NULL && *ptr != '\0') {
+			/* Search a path of parent directory */
+			if (*ptr == '/') {
+				index = len;
+			}
+			len++;
+			ptr++;
+		}
+
+		if (index > 0) {
+			/* In another directory */
+			parent = (FAR char *)kmm_malloc(index + 1);
+			if (parent == NULL) {
+				ret = ENOMEM;
+				goto errout_with_inode;
+			}
+			memset(parent, 0, index + 1);
+			strncpy(parent, relpath, index);
+
+			if (inode->u.i_mops->stat) {
+				/* Perform the stat() operation */
+
+				ret = inode->u.i_mops->stat(inode, parent, &st);
+				kmm_free(parent);
+				if (ret < 0) {
+					ret = -ret;
+					goto errout_with_inode;
+				} else if ((st.st_mode & (S_IWUSR | S_IWGRP | S_IWOTH)) == 0) {
+					ret = EACCES;
+					goto errout_with_inode;
+				}
+			} else {
+				ret = ENOSYS;
+				kmm_free(parent);
+				goto errout_with_inode;
+			}
 		}
 
 		/* Perform the mkdir operation using the relative path
@@ -161,7 +212,6 @@ int mkdir(const char *pathname, mode_t mode)
 	/* No inode exists that contains this path.  Create a new inode in the
 	 * pseudo-filesystem at this location.
 	 */
-
 	else {
 		/* Create an inode in the pseudo-filesystem at this path */
 

@@ -638,6 +638,7 @@ static void tc_fs_vfs_lseek(void)
 
 	ret = lseek(fd, 10, SEEK_SET);
 	TC_ASSERT_NEQ_CLEANUP("lseek", ret, 10, close(fd));
+	close(fd);
 #if defined(CONFIG_PIPES) && (CONFIG_DEV_PIPE_SIZE > 11)
 	ret = mkfifo(FIFO_FILE_PATH, 0666);
 	if (ret < 0) {
@@ -659,8 +660,8 @@ static void tc_fs_vfs_lseek(void)
 	TC_ASSERT_NEQ_CLEANUP("lseek", ret, 10, close(fd));
 
 	close(fd);
-
 #endif
+
 	TC_SUCCESS_RESULT();
 }
 
@@ -739,6 +740,7 @@ static void tc_fs_vfs_mkdir(void)
 	size_t len;
 
 	len = strlen(VFS_FOLDER_PATH) + 3;
+
 	/** make parent folder first **/
 	ret = mkdir(VFS_FOLDER_PATH, 0777);
 	TC_ASSERT_EQ("mkdir", ret, OK);
@@ -926,11 +928,11 @@ static void tc_fs_vfs_seekdir(void)
 	TC_ASSERT_NEQ_CLEANUP("readdir", dirent, NULL, closedir(dir));
 	TC_ASSERT_EQ_CLEANUP("readdir", dirent->d_type, DTYPE_DIRECTORY, closedir(dir));
 
+	itoa((int)offset, filename, 10);
+	TC_ASSERT_EQ_CLEANUP("readdir", strncmp(dirent->d_name, filename, 1), 0, closedir(dir));
+
 	ret = closedir(dir);
 	TC_ASSERT_EQ("closedir", ret, OK);
-
-	itoa((int)offset, filename, 10);
-	TC_ASSERT_EQ("readdir", strncmp(dirent->d_name, filename, 1), 0);
 
 	/* For Negative offset in seekmountdir operations */
 	dir = opendir(VFS_FOLDER_PATH);
