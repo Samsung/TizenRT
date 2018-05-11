@@ -75,7 +75,7 @@ int utc_media_main(int argc, char *argv[])
 #endif
 #ifdef CONFIG_MEDIA_RECORDER
 	utc_media_mediarecorder_main();
-	utc_media_fileinputdatasource_main();
+	utc_media_fileoutputdatasource_main();
 #endif
 #endif
 

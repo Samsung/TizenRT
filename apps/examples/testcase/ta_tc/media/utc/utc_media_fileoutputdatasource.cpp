@@ -19,16 +19,185 @@
 #include <media/FileOutputDataSource.h>
 #include "tc_common.h"
 
-static void utc_media_fileoutputdatasource_getChannels_p(void)
+using namespace std;
+using namespace media;
+using namespace media::stream;
+
+static unsigned char channels = 2;
+static unsigned int sampleRate = 16000;
+static int pcmFormat = AUDIO_FORMAT_TYPE_S16_LE;
+static const char * filePath = "/ramfs/record";
+
+
+
+static void utc_media_FileOutputDataSource_getChannels_p(void)
 {
-	media::stream::FileOutputDataSource source(2, 16000, media::AUDIO_FORMAT_TYPE_S16_LE, "/ramfs/record");
-	TC_ASSERT_EQ("utc_media_fileoutputdatasource_getChannels", source.getChannels(), 2);
+	FileOutputDataSource dataSource(channels, sampleRate, pcmFormat, filePath);
+	TC_ASSERT_EQ("utc_media_FileOutputDataSource_getChannels", dataSource.getChannels(), channels);
+	TC_SUCCESS_RESULT();
+}
+
+static void utc_media_FileOutputDataSource_getSampleRate_p(void)
+{
+	FileOutputDataSource dataSource(channels, sampleRate, pcmFormat, filePath);
+	TC_ASSERT_EQ("utc_media_FileOutputDataSource_getSampleRate", dataSource.getSampleRate(), sampleRate);
+	TC_SUCCESS_RESULT();
+}
+
+static void utc_media_FileOutputDataSource_getPcmFormat_p(void)
+{
+	FileOutputDataSource dataSource(channels, sampleRate, pcmFormat, filePath);
+	TC_ASSERT_EQ("utc_media_FileOutputDataSource_getPcmFormat", dataSource.getPcmFormat(), pcmFormat);
+	TC_SUCCESS_RESULT();
+}
+
+static void utc_media_FileOutputDataSource_setChannels_p(void)
+{
+	FileOutputDataSource dataSource(filePath);
+	unsigned short compare_channels = 3;
+	dataSource.setChannels(compare_channels);
+	TC_ASSERT_EQ("utc_media_FileOutputDataSource_setChannels", dataSource.getChannels(), compare_channels);
+	TC_SUCCESS_RESULT();
+}
+
+static void utc_media_FileOutputDataSource_setSampleRate_p(void)
+{
+	FileOutputDataSource dataSource(filePath);
+	unsigned int compare_sampleRate = 32000;
+	dataSource.setSampleRate(compare_sampleRate);
+	TC_ASSERT_EQ("utc_media_FileOutputDataSource_setSampleRate", dataSource.getSampleRate(), compare_sampleRate);
+	TC_SUCCESS_RESULT();
+}
+
+static void utc_media_FileOutputDataSource_setPcmFormat_p(void)
+{
+	FileOutputDataSource dataSource(filePath);
+	int compare_pcmFormat = media::AUDIO_FORMAT_TYPE_S8;
+	dataSource.setPcmFormat(media::AUDIO_FORMAT_TYPE_S8);
+	TC_ASSERT_EQ("utc_media_FileOutputDataSource_setPcmFormat", dataSource.getPcmFormat(), compare_pcmFormat);
+	TC_SUCCESS_RESULT();
+}
+
+static void utc_media_FileOutputDataSource_CopyConstructor_p(void)
+{
+	FileOutputDataSource dummy(filePath);
+	FileOutputDataSource dataSource(dummy);
+
+	TC_ASSERT_EQ("utc_media_FileOutputDataSource_CopyConstructor", dataSource.getChannels(), dummy.getChannels());
+	TC_ASSERT_EQ("utc_media_FileOutputDataSource_CopyConstructor", dataSource.getSampleRate(), dummy.getSampleRate());
+	TC_ASSERT_EQ("utc_media_FileOutputDataSource_CopyConstructor", dataSource.getPcmFormat(), dummy.getPcmFormat());
+	TC_SUCCESS_RESULT();
+}
+
+static void utc_media_FileOutputDataSource_EqualOperator_p(void)
+{
+	FileOutputDataSource dummy(filePath);
+	FileOutputDataSource dataSource = dummy;
+
+	TC_ASSERT_EQ("utc_media_FileOutputDataSource_EqualOperator", dataSource.getChannels(), dummy.getChannels());
+	TC_ASSERT_EQ("utc_media_FileOutputDataSource_EqualOperator", dataSource.getSampleRate(), dummy.getSampleRate());
+	TC_ASSERT_EQ("utc_media_FileOutputDataSource_EqualOperator", dataSource.getPcmFormat(), dummy.getPcmFormat());
+	TC_SUCCESS_RESULT();
+}
+
+static void utc_media_FileOutputDataSource_open_p(void)
+{
+	FileOutputDataSource dataSource(filePath);
+
+	TC_ASSERT_EQ("utc_media_FileOutputDataSource_open", dataSource.open(), true);
+	dataSource.close();
+
+	TC_SUCCESS_RESULT();
+}
+
+static void utc_media_FileOutputDataSource_open_n(void)
+{
+	FileOutputDataSource dataSource(filePath);
+
+	dataSource.open();
+	TC_ASSERT_EQ("utc_media_FileOutputDataSource_open", dataSource.open(), false);
+	dataSource.close();
+	TC_SUCCESS_RESULT();
+}
+
+static void utc_media_FileOutputDataSource_close_p(void)
+{
+	FileOutputDataSource dataSource(filePath);
+
+	dataSource.open();
+	TC_ASSERT_EQ("utc_media_FileOutputDataSource_close", dataSource.close(), true);
+
+	TC_SUCCESS_RESULT();
+}
+
+static void utc_media_FileOutputDataSource_close_n(void)
+{
+	FileOutputDataSource dataSource(filePath);
+
+	TC_ASSERT_EQ("utc_media_FileOutputDataSource_close", dataSource.close(), false);
+	TC_SUCCESS_RESULT();
+}
+
+static void utc_media_FileOutputDataSource_isPrepare_p(void)
+{
+	FileOutputDataSource dataSource(filePath);
+
+	TC_ASSERT_EQ("utc_media_FileOutputDataSource_isPrepare", dataSource.isPrepare(), false);
+	dataSource.open();
+	TC_ASSERT_EQ("utc_media_FileOutputDataSource_isPrepare", dataSource.isPrepare(), true);
+	dataSource.close();
+	TC_ASSERT_EQ("utc_media_FileOutputDataSource_isPrepare", dataSource.isPrepare(), false);
+
+	TC_SUCCESS_RESULT();
+}
+
+static void utc_media_FileOutputDataSource_write_p(void)
+{
+	FileOutputDataSource dataSource(filePath);
+	unsigned char dummy[] = "dummy";
+	size_t dummySize = 6;
+
+	dataSource.open();
+	TC_ASSERT_EQ("utc_media_FileOutputDataSource_write", dataSource.write(dummy, dummySize), dummySize);
+	dataSource.close();
+
+	TC_SUCCESS_RESULT();
+}
+
+static void utc_media_FileOutputDataSource_write_n(void)
+{
+	FileOutputDataSource dataSource(filePath);
+
+	dataSource.open();
+	TC_ASSERT_EQ("utc_media_FileOutputDataSource_write", dataSource.write(nullptr, 1), 0);
+	dataSource.close();
 
 	TC_SUCCESS_RESULT();
 }
 
 int utc_media_fileoutputdatasource_main(void)
 {
-	utc_media_fileoutputdatasource_getChannels_p();
+	utc_media_FileOutputDataSource_getChannels_p();
+	utc_media_FileOutputDataSource_getSampleRate_p();
+	utc_media_FileOutputDataSource_getPcmFormat_p();
+
+	utc_media_FileOutputDataSource_setChannels_p();
+	utc_media_FileOutputDataSource_setSampleRate_p();
+	utc_media_FileOutputDataSource_setPcmFormat_p();
+
+	utc_media_FileOutputDataSource_CopyConstructor_p();
+	utc_media_FileOutputDataSource_EqualOperator_p();
+
+	utc_media_FileOutputDataSource_open_p();
+	utc_media_FileOutputDataSource_open_n();
+
+	utc_media_FileOutputDataSource_close_p();
+	utc_media_FileOutputDataSource_close_n();
+
+	utc_media_FileOutputDataSource_isPrepare_p();
+
+	utc_media_FileOutputDataSource_write_p();
+	utc_media_FileOutputDataSource_write_n();
+
 	return 0;
 }
