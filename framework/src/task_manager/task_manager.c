@@ -225,8 +225,9 @@ int task_manager(int argc, char *argv[])
 	int chk_idx;
 	int register_permission;
 	struct mq_attr attr;
-
+#ifdef CONFIG_SCHED_HAVE_PARENT
 	sigignore(SIGCHLD);
+#endif
 	attr.mq_maxmsg = CONFIG_TASK_MANAGER_MAX_MSG;
 	attr.mq_msgsize = sizeof(tm_request_t);
 	attr.mq_flags = 0;
