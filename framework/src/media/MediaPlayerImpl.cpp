@@ -80,6 +80,7 @@ player_result_t MediaPlayerImpl::destroy()
 
 	PlayerWorker& mpw = PlayerWorker::getWorker();
 	if (!mpw.isAlive()) {
+		meddbg("PlayerWorker is not alive\n");
 		return PLAYER_ERROR;
 	}
 
@@ -124,7 +125,8 @@ player_result_t MediaPlayerImpl::prepare()
 
 	PlayerWorker& mpw = PlayerWorker::getWorker();
 	if (!mpw.isAlive()) {
-		return ret;
+		meddbg("PlayerWorker is not alive\n");
+		return PLAYER_ERROR;
 	}
 
 	mpw.getQueue().enQueue(&MediaPlayerImpl::preparePlayer, shared_from_this(), std::ref(ret));
@@ -189,7 +191,8 @@ player_result_t MediaPlayerImpl::unprepare()
 
 	PlayerWorker& mpw = PlayerWorker::getWorker();
 	if (!mpw.isAlive()) {
-		return ret;
+		meddbg("PlayerWorker is not alive\n");
+		return PLAYER_ERROR;
 	}
 
 	mpw.getQueue().enQueue(&MediaPlayerImpl::unpreparePlayer, shared_from_this(), std::ref(ret));
@@ -237,6 +240,7 @@ player_result_t MediaPlayerImpl::start()
 
 	PlayerWorker& mpw = PlayerWorker::getWorker();
 	if (!mpw.isAlive()) {
+		meddbg("PlayerWorker is not alive\n");
 		return PLAYER_ERROR;
 	}
 
@@ -271,6 +275,7 @@ player_result_t MediaPlayerImpl::stop()
 
 	PlayerWorker& mpw = PlayerWorker::getWorker();
 	if (!mpw.isAlive()) {
+		meddbg("PlayerWorker is not alive\n");
 		return PLAYER_ERROR;
 	}
 
@@ -300,6 +305,7 @@ player_result_t MediaPlayerImpl::pause()
 
 	PlayerWorker& mpw = PlayerWorker::getWorker();
 	if (!mpw.isAlive()) {
+		meddbg("PlayerWorker is not alive\n");
 		return PLAYER_ERROR;
 	}
 
@@ -328,6 +334,7 @@ int MediaPlayerImpl::getVolume()
 
 	PlayerWorker& mpw = PlayerWorker::getWorker();
 	if (!mpw.isAlive()) {
+		meddbg("PlayerWorker is not alive\n");
 		return -1;
 	}
 
@@ -345,6 +352,7 @@ void MediaPlayerImpl::getVolumePlayer(int &ret)
 		meddbg("MediaPlayer getVolume fail : wrong state\n");
 		notifyObserver(PLAYER_OBSERVER_COMMAND_ERROR);
 		ret = -1;
+		mSyncCv.notify_one();
 		return;
 	}
 
@@ -361,6 +369,7 @@ player_result_t MediaPlayerImpl::setVolume(int vol)
 
 	PlayerWorker& mpw = PlayerWorker::getWorker();
 	if (!mpw.isAlive()) {
+		meddbg("PlayerWorker is not alive\n");
 		return PLAYER_ERROR;
 	}
 
@@ -393,6 +402,9 @@ void MediaPlayerImpl::setVolumePlayer(int vol, player_result_t &ret)
 	
 	medvdbg("MediaPlayer setVolume success\n");
 	ret = PLAYER_OK;
+	mSyncCv.notify_one();
+	return;
+
 errout:
 	notifyObserver(PLAYER_OBSERVER_COMMAND_ERROR);
 	ret = PLAYER_ERROR;
@@ -409,6 +421,7 @@ player_result_t MediaPlayerImpl::setDataSource(std::unique_ptr<stream::InputData
 
 	PlayerWorker& mpw = PlayerWorker::getWorker();
 	if (!mpw.isAlive()) {
+		meddbg("PlayerWorker is not alive\n");
 		return PLAYER_ERROR;
 	}
 
@@ -448,6 +461,7 @@ player_result_t MediaPlayerImpl::setObserver(std::shared_ptr<MediaPlayerObserver
 
 	PlayerWorker& mpw = PlayerWorker::getWorker();
 	if (!mpw.isAlive()) {
+		meddbg("PlayerWorker is not alive\n");
 		return PLAYER_ERROR;
 	}
 
