@@ -345,6 +345,7 @@ void MediaPlayerImpl::getVolumePlayer(int &ret)
 		meddbg("MediaPlayer getVolume fail : wrong state\n");
 		notifyObserver(PLAYER_OBSERVER_COMMAND_ERROR);
 		ret = -1;
+		mSyncCv.notify_one();
 		return;
 	}
 
@@ -393,6 +394,9 @@ void MediaPlayerImpl::setVolumePlayer(int vol, player_result_t &ret)
 	
 	medvdbg("MediaPlayer setVolume success\n");
 	ret = PLAYER_OK;
+	mSyncCv.notify_one();
+	return;
+
 errout:
 	notifyObserver(PLAYER_OBSERVER_COMMAND_ERROR);
 	ret = PLAYER_ERROR;
