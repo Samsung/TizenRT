@@ -18,6 +18,7 @@
 
 #include <media/FileOutputDataSource.h>
 #include "tc_common.h"
+#include <errno.h>
 
 using namespace std;
 using namespace media;
@@ -26,9 +27,7 @@ using namespace media::stream;
 static unsigned char channels = 2;
 static unsigned int sampleRate = 16000;
 static int pcmFormat = AUDIO_FORMAT_TYPE_S16_LE;
-static const char * filePath = "/ramfs/record";
-
-
+static const char *filePath = "/ramfs/record";
 
 static void utc_media_FileOutputDataSource_getChannels_p(void)
 {
@@ -141,13 +140,16 @@ static void utc_media_FileOutputDataSource_close_n(void)
 static void utc_media_FileOutputDataSource_isPrepare_p(void)
 {
 	FileOutputDataSource dataSource(filePath);
-
-	TC_ASSERT_EQ("utc_media_FileOutputDataSource_isPrepare", dataSource.isPrepare(), false);
 	dataSource.open();
 	TC_ASSERT_EQ("utc_media_FileOutputDataSource_isPrepare", dataSource.isPrepare(), true);
 	dataSource.close();
-	TC_ASSERT_EQ("utc_media_FileOutputDataSource_isPrepare", dataSource.isPrepare(), false);
+	TC_SUCCESS_RESULT();
+}
 
+static void utc_media_FileOutputDataSource_isPrepare_n(void)
+{
+	FileOutputDataSource dataSource(filePath);
+	TC_ASSERT_EQ("utc_media_FileOutputDataSource_isPrepare", dataSource.isPrepare(), false);
 	TC_SUCCESS_RESULT();
 }
 
@@ -195,6 +197,7 @@ int utc_media_fileoutputdatasource_main(void)
 	utc_media_FileOutputDataSource_close_n();
 
 	utc_media_FileOutputDataSource_isPrepare_p();
+	utc_media_FileOutputDataSource_isPrepare_n();
 
 	utc_media_FileOutputDataSource_write_p();
 	utc_media_FileOutputDataSource_write_n();

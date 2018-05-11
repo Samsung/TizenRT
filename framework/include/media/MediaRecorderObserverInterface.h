@@ -55,6 +55,12 @@ public:
 	 */
 	virtual void onRecordStarted(Id id) = 0;
 	/**
+	 * @brief informs the user of the recording has paused.
+	 * @details @b #include <media/MediaRecorderObserverInterface.h>
+	 * @since TizenRT v2.0 PRE
+	 */
+	virtual void onRecordPaused(Id id) = 0;
+	/**
 	 * @brief informs the user of the recording has finished.
 	 * @details @b #include <media/MediaRecorderObserverInterface.h>
 	 * @since TizenRT v2.0 PRE

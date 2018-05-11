@@ -34,6 +34,7 @@ public:
 	MOCK_METHOD1(onRecordStarted, void(Id id));
 	MOCK_METHOD1(onRecordFinished, void(Id id));
 	MOCK_METHOD1(onRecordError, void(Id id));
+	MOCK_METHOD1(onRecordPaused, void(Id id));
 
 	std::shared_ptr<MediaRecorderTest> CreateRecorder(MediaRecorderTest* mrTest)
 	{

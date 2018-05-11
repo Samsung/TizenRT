@@ -56,6 +56,7 @@ typedef enum recorder_state_e {
 
 typedef enum observer_command_e {
 	OBSERVER_COMMAND_STARTED,
+	OBSERVER_COMMAND_PAUSED,
 	OBSERVER_COMMAND_FINISHIED,
 	OBSERVER_COMMAND_ERROR
 } observer_command_t;

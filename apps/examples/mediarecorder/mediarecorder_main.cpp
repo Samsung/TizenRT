@@ -49,6 +49,10 @@ public:
 	{
 		std::cout << "onRecordStarted" << std::endl;		
 	}
+	void onRecordPaused(Id id)
+	{
+		std::cout << "onRecordPaused" << std::endl;
+	}
 	void onRecordFinished(Id id)
 	{
 		std::cout << "onRecordFinished" << std::endl;

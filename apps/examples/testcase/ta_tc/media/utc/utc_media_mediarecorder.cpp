@@ -228,6 +228,10 @@ public:
 	{
 		notifyStarted();
 	}
+	void onRecordPaused(Id id) override
+	{
+		notifyPaused();
+	}
 	void onRecordFinished(Id id) override
 	{
 		notifyFinished();
@@ -241,6 +245,12 @@ public:
 	{
 		std::unique_lock<std::mutex> lock(mtx);
 		cvStarted.wait(lock);
+	}
+
+	void waitPaused()
+	{
+		std::unique_lock<std::mutex> lock(mtx);
+		cvPaused.wait(lock);
 	}
 
 	void waitFinished()
@@ -260,6 +270,11 @@ public:
 		cvStarted.notify_one();
 	}
 
+	void notifyPaused()
+	{
+		cvPaused.notify_one();
+	}
+
 	void notifyFinished()
 	{
 		cvFinished.notify_one();
@@ -273,6 +288,7 @@ public:
 private:
 	std::mutex mtx;
 	std::condition_variable cvStarted;
+	std::condition_variable cvPaused;
 	std::condition_variable cvFinished;
 	std::condition_variable cvError;
 };
@@ -306,10 +322,10 @@ static void utc_media_MediaRecorder_start_n(void)
 	auto observer = std::make_shared<RecorderTest>();
 	mr.create();
 	mr.setObserver(observer);
+	mr.setDataSource(std::move(dataSource));
 	mr.start();
 	observer->waitError();
 	mr.stop();
-	mr.unprepare();
 	mr.destroy();
 
 	TC_SUCCESS_RESULT();
@@ -344,10 +360,68 @@ static void utc_media_MediaRecorder_stop_n(void)
 	auto observer = std::make_shared<RecorderTest>();
 	mr.create();
 	mr.setObserver(observer);
+	mr.setDataSource(std::move(dataSource));
 	mr.stop();
+	observer->waitError();
+	mr.destroy();
+
+	TC_SUCCESS_RESULT();
+}
+
+static void utc_media_MediaRecorder_pause_p(void)
+{
+	MediaRecorder mr;
+	unique_ptr<FileOutputDataSource> dataSource = unique_ptr<FileOutputDataSource>(new FileOutputDataSource(channels, sampleRate, pcmFormat, filePath));
+
+	auto observer = std::make_shared<RecorderTest>();
+	mr.create();
+	mr.setObserver(observer);
+	mr.setDataSource(std::move(dataSource));
+	mr.prepare();
+	mr.start();
+	mr.pause();
+	observer->waitPaused();
+	mr.unprepare();
+	mr.destroy();
+
+	TC_SUCCESS_RESULT();
+}
+
+static void utc_media_MediaRecorder_pause_n(void)
+{
+	MediaRecorder mr;
+	unique_ptr<FileOutputDataSource> dataSource = unique_ptr<FileOutputDataSource>(new FileOutputDataSource(channels, sampleRate, pcmFormat, filePath));
+
+	mr.pause();
+	auto observer = std::make_shared<RecorderTest>();
+	mr.create();
+	mr.setObserver(observer);
+	mr.setDataSource(std::move(dataSource));
+	mr.prepare();
+	mr.pause();
 	observer->waitError();
 	mr.unprepare();
 	mr.destroy();
+
+	TC_SUCCESS_RESULT();
+}
+
+static void utc_media_MediaRecorder_setObserver_p(void)
+{
+	MediaRecorder mr;
+	mr.create();
+
+	TC_ASSERT_EQ("utc_media_MediaRecorder_setObserver", mr.setObserver(nullptr), RECORDER_OK);
+
+	mr.destroy();
+	TC_SUCCESS_RESULT();
+}
+
+static void utc_media_MediaRecorder_setObserver_n(void)
+{
+	MediaRecorder mr;
+
+	TC_ASSERT_EQ("utc_media_MediaRecorder_setObserver", mr.setObserver(nullptr), RECORDER_ERROR);
 
 	TC_SUCCESS_RESULT();
 }
@@ -380,6 +454,12 @@ int utc_media_mediarecorder_main(void)
 
 	utc_media_MediaRecorder_stop_p();
 	utc_media_MediaRecorder_stop_n();
+
+	utc_media_MediaRecorder_pause_p();
+	utc_media_MediaRecorder_pause_n();
+
+	utc_media_MediaRecorder_setObserver_p();
+	utc_media_MediaRecorder_setObserver_n();
 
 	return 0;
 }
