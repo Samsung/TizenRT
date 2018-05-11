@@ -66,19 +66,37 @@ int DataSource::getPcmFormat()
 	return mPcmFormat;
 }
 
-void DataSource::setChannels(unsigned char channels)
+bool DataSource::setChannels(unsigned char channels)
 {
+	if (channels == 0) {
+		return false;
+	}
+
 	mChannels = channels;
+	return true;
 }
 
-void DataSource::setSampleRate(unsigned int sampleRate)
+bool DataSource::setSampleRate(unsigned int sampleRate)
 {
+	if (sampleRate == 0) {
+		return false;
+	}
+
 	mSampleRate = sampleRate;
+	return true;
 }
 
-void DataSource::setPcmFormat(int pcmFormat)
+bool DataSource::setPcmFormat(int pcmFormat)
 {
-	mPcmFormat = pcmFormat;
+	switch (pcmFormat) {
+	case AUDIO_FORMAT_TYPE_S8:
+	case AUDIO_FORMAT_TYPE_S16_LE:
+	case AUDIO_FORMAT_TYPE_S32_LE:
+		mPcmFormat = pcmFormat;
+		return true;
+	default:
+		return false;
+	}
 }
 
 DataSource::~DataSource()
