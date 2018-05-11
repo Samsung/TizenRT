@@ -213,7 +213,7 @@ static int audio_close(FAR struct file *filep)
 {
 	FAR struct inode *inode = filep->f_inode;
 	FAR struct audio_upperhalf_s *upper = inode->i_private;
-	int ret;
+	int ret = OK;
 
 	audvdbg("crefs: %d\n", upper->crefs);
 
@@ -243,9 +243,8 @@ static int audio_close(FAR struct file *filep)
 		DEBUGASSERT(lower->ops->shutdown != NULL);
 		audvdbg("calling shutdown: %d\n");
 
-		lower->ops->shutdown(lower);
+		ret = lower->ops->shutdown(lower);
 	}
-	ret = OK;
 
 //errout_with_sem:
 	sem_post(&upper->exclsem);
@@ -292,7 +291,6 @@ static ssize_t audio_write(FAR struct file *filep, FAR const char *buffer, size_
 	FAR struct inode *inode = filep->f_inode;
 	FAR struct audio_upperhalf_s *upper = inode->i_private;
 	FAR struct audio_lowerhalf_s *lower = upper->dev;
-
 	/* TODO: Should we check permissions here? */
 
 	/* Audio write operations get passed directly to the lower-level */
