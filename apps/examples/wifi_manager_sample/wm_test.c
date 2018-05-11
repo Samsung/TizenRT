@@ -44,6 +44,12 @@
 	"	 wm_test scan\n"												\
 	"\n get current state:\n"											\
 	"	 wm_test mode\n\n"												\
+	"\n set a profile:\n"											\
+	"	 wm_test set [ssid] [security mode] [password]\n"												\
+	"\n get a profile:\n"											\
+	"	 wm_test get\n"												\
+	"\n remove a profile:\n"											\
+	"	 wm_test reset\n\n"												\
 	"\n repeat test:\n"													\
 	"	 wm_test auto [softap ssid] [softap password] [ssid] [security mode] [password]\n\n\n"
 
@@ -92,6 +98,10 @@ static void wm_display_state(void *arg);
 static void wm_process(int argc, char *argv[]);
 
 static int wm_parse_commands(struct options *opt, int argc, char *argv[]);
+
+#ifdef CONFIG_EXAMPLES_WIFIMANAGER_STRESS_TEST
+extern void wm_run_stress_test(void *arg);
+#endif
 
 /*
  * Global
@@ -687,6 +697,12 @@ int wm_parse_commands(struct options *opt, int argc, char *argv[])
 		opt->func = wm_start;
 	} else if (strcmp(argv[2], "stop") == 0) {
 		opt->func = wm_stop;
+	} else if (strcmp(argv[2], "stress") == 0) {
+#ifdef CONFIG_EXAMPLES_WIFIMANAGER_STRESS_TEST
+		opt->func = wm_run_stress_test;
+#else
+		return -1;
+#endif
 	} else if (strcmp(argv[2], "softap") == 0) {
 		/* wpa2 aes is a default security mode. */
 		opt->func = wm_softap_start;
