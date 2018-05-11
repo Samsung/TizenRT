@@ -23,6 +23,26 @@
 
 static const char *dummyfilepath = "/mnt/fileinputdatasource.raw";
 
+class EmptyObserver : public media::MediaPlayerObserverInterface
+{
+public:
+	void onPlaybackStarted(Id id) override;
+	void onPlaybackFinished(Id id) override;
+	void onPlaybackError(Id id) override;
+};
+
+void EmptyObserver::onPlaybackStarted(Id id)
+{
+}
+
+void EmptyObserver::onPlaybackFinished(Id id)
+{
+}
+
+void EmptyObserver::onPlaybackError(Id id)
+{
+}
+
 static void SetUp(void)
 {
 	FILE *fp = fopen(dummyfilepath, "w");
@@ -58,7 +78,9 @@ static void utc_media_MediaPlayer_create_n(void)
 static void utc_media_MediaPlayer_destroy_p(void)
 {
 	media::MediaPlayer mp;
+	auto observer = std::make_shared<EmptyObserver>();
 	mp.create();
+	mp.setObserver(observer);
 
 	TC_ASSERT_EQ("utc_media_MediaPlayer_destroy", mp.destroy(), media::PLAYER_OK);
 
@@ -67,9 +89,26 @@ static void utc_media_MediaPlayer_destroy_p(void)
 
 static void utc_media_MediaPlayer_destroy_n(void)
 {
-	media::MediaPlayer mp;
+	/* destroy without create */
+	{
+		media::MediaPlayer mp;
 
-	TC_ASSERT_EQ("utc_media_MediaPlayer_destroy", mp.destroy(), media::PLAYER_ERROR);
+		TC_ASSERT_EQ("utc_media_MediaPlayer_destroy", mp.destroy(), media::PLAYER_ERROR);
+	}
+
+	/* destroy At invalid time */
+	{
+		media::MediaPlayer mp;
+		std::unique_ptr<media::stream::FileInputDataSource> source = std::move(std::unique_ptr<media::stream::FileInputDataSource>(new media::stream::FileInputDataSource(dummyfilepath)));
+		mp.create();
+		mp.setDataSource(std::move(source));
+		mp.prepare();
+
+		TC_ASSERT_EQ("utc_media_MediaPlayer_destroy", mp.destroy(), media::PLAYER_ERROR);
+
+		mp.unprepare();
+		mp.destroy();
+	}
 
 	TC_SUCCESS_RESULT();
 }
@@ -90,21 +129,36 @@ static void utc_media_MediaPlayer_setDataSource_p(void)
 
 static void utc_media_MediaPlayer_setDataSource_n(void)
 {
-	media::MediaPlayer mp;
-	mp.create();
+	/* setDataSource without create */
+	{
+		media::MediaPlayer mp;
+		std::unique_ptr<media::stream::FileInputDataSource> source = std::move(std::unique_ptr<media::stream::FileInputDataSource>(new media::stream::FileInputDataSource(dummyfilepath)));
+		source->setSampleRate(20000);
+		source->setChannels(2);
 
-	TC_ASSERT_EQ("utc_media_MediaPlayer_setDataSource", mp.setDataSource(nullptr), media::PLAYER_ERROR);
+		TC_ASSERT_EQ("setDataSource", mp.setDataSource(std::move(source)), media::PLAYER_ERROR);
+	}
 
-	mp.destroy();
+	/* setDataSource with nullptr */
+	{
+		media::MediaPlayer mp;
+		mp.create();
+
+		TC_ASSERT_EQ("utc_media_MediaPlayer_setDataSource", mp.setDataSource(nullptr), media::PLAYER_ERROR);
+
+		mp.destroy();
+	}
+
 	TC_SUCCESS_RESULT();
 }
 
 static void utc_media_MediaPlayer_setObserver_p(void)
 {
 	media::MediaPlayer mp;
+	auto observer = std::make_shared<EmptyObserver>();
 	mp.create();
 
-	TC_ASSERT_EQ("utc_media_MediaPlayer_setObserver", mp.setObserver(nullptr), media::PLAYER_OK);
+	TC_ASSERT_EQ("utc_media_MediaPlayer_setObserver", mp.setObserver(observer), media::PLAYER_OK);
 
 	mp.destroy();
 	TC_SUCCESS_RESULT();
@@ -135,9 +189,48 @@ static void utc_media_MediaPlayer_prepare_p(void)
 
 static void utc_media_MediaPlayer_prepare_n(void)
 {
-	media::MediaPlayer mp;
+	/* prepare without create */
+	{
+		media::MediaPlayer mp;
 
-	TC_ASSERT_EQ("utc_media_MediaPlayer_prepare", mp.prepare(), media::PLAYER_ERROR);
+		TC_ASSERT_EQ("utc_media_MediaPlayer_prepare", mp.prepare(), media::PLAYER_ERROR);
+	}
+
+	/* prepare twice */
+	{
+		media::MediaPlayer mp;
+		std::unique_ptr<media::stream::FileInputDataSource> source = std::move(std::unique_ptr<media::stream::FileInputDataSource>(new media::stream::FileInputDataSource(dummyfilepath)));
+		mp.create();
+		mp.setDataSource(std::move(source));
+		mp.prepare();
+
+		TC_ASSERT_EQ("utc_media_MediaPlayer_prepare", mp.prepare(), media::PLAYER_ERROR);
+
+		mp.unprepare();
+		mp.destroy();
+	}
+
+	/* prepare without setting datasource */
+	{
+		media::MediaPlayer mp;
+		mp.create();
+
+		TC_ASSERT_EQ("utc_media_MediaPlayer_prepare", mp.prepare(), media::PLAYER_ERROR);
+
+		mp.destroy();
+	}
+
+	/* prepare with invalid datasource */
+	{
+		media::MediaPlayer mp;
+		std::unique_ptr<media::stream::FileInputDataSource> source = std::move(std::unique_ptr<media::stream::FileInputDataSource>(new media::stream::FileInputDataSource("non-exist-file")));
+		mp.create();
+		mp.setDataSource(std::move(source));
+
+		TC_ASSERT_EQ("utc_media_MediaPlayer_prepare", mp.prepare(), media::PLAYER_ERROR);
+
+		mp.destroy();
+	}
 
 	TC_SUCCESS_RESULT();
 }
@@ -158,9 +251,26 @@ static void utc_media_MediaPlayer_unprepare_p(void)
 
 static void utc_media_MediaPlayer_unprepare_n(void)
 {
-	media::MediaPlayer mp;
+	/* unprepare without create */
+	{
+		media::MediaPlayer mp;
 
-	TC_ASSERT_EQ("utc_media_MediaPlayer_unprepare", mp.unprepare(), media::PLAYER_ERROR);
+		TC_ASSERT_EQ("utc_media_MediaPlayer_unprepare", mp.unprepare(), media::PLAYER_ERROR);
+	}
+
+	/* unprepare twice */
+	{
+		media::MediaPlayer mp;
+		std::unique_ptr<media::stream::FileInputDataSource> source = std::move(std::unique_ptr<media::stream::FileInputDataSource>(new media::stream::FileInputDataSource(dummyfilepath)));
+		mp.create();
+		mp.setDataSource(std::move(source));
+		mp.unprepare();
+
+		TC_ASSERT_EQ("utc_media_MediaPlayer_unprepare", mp.unprepare(), media::PLAYER_ERROR);
+
+		mp.unprepare();
+		mp.destroy();
+	}
 
 	TC_SUCCESS_RESULT();
 }
