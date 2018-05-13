@@ -396,8 +396,7 @@ static void tc_sched_waitpid(void)
 	int status;
 
 	/* Check for The TCB corresponding to this PID is not our child. */
-
-	ret_chk = waitpid(0, &status, 0);
+	ret_chk = waitpid(-1, &status, 0);
 	TC_ASSERT_EQ("waitpid", ret_chk, ERROR);
 	TC_ASSERT_EQ("waitpid", errno, ECHILD);
 
