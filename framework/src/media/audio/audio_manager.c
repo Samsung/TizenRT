@@ -680,8 +680,8 @@ audio_manager_result_t set_audio_stream_in(uint8_t channels, uint32_t sample_rat
 	medvdbg("actual input card id = %d\n", g_actual_audio_in_card_id);
 	g_audio_in_cards[g_actual_audio_in_card_id].pcm = pcm_open(g_actual_audio_in_card_id, 0, PCM_IN, &config);
 	if (!pcm_is_ready(g_audio_in_cards[g_actual_audio_in_card_id].pcm)) {
+		meddbg("fail to pcm_is_ready() error : %s", pcm_get_error(g_audio_in_cards[g_actual_audio_in_card_id].pcm));
 		pcm_close(g_audio_in_cards[g_actual_audio_in_card_id].pcm);
-		meddbg("fail to pcm_is_ready()\n");
 		return AUDIO_MANAGER_CARD_NOT_READY;
 	}
 
@@ -735,8 +735,8 @@ audio_manager_result_t set_audio_stream_out(uint8_t channels, uint32_t sample_ra
 	g_audio_out_cards[g_actual_audio_out_card_id].pcm = pcm_open(g_actual_audio_out_card_id, 0, PCM_OUT, &config);
 
 	if (!pcm_is_ready(g_audio_out_cards[g_actual_audio_out_card_id].pcm)) {
+		meddbg("fail to pcm_is_ready() error : %s", pcm_get_error(g_audio_out_cards[g_actual_audio_out_card_id].pcm));
 		pcm_close(g_audio_out_cards[g_actual_audio_out_card_id].pcm);
-		meddbg("fail to pcm_is_ready()\n");
 		return AUDIO_MANAGER_CARD_NOT_READY;
 	}
 

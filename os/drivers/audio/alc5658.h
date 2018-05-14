@@ -66,36 +66,6 @@
 #include <stdint.h>
 
 /****************************************************************************
- * Pre-processor Definitions
- ****************************************************************************/
-
-#define ALC5658_DEFAULT_SAMPRATE    16000
-#define ALC5658_DEFAULT_NCHANNELS    2
-#define ALC5658_DEFAULT_BPSAMP    16
-#define FAIL    0xFFFF
-#define MUTE_HP_LR    0x8080
-#define UNMUTE_HP_LR    0x0
-#define ALC5658_HP_VOL_MIN    0x0
-#define ALC5658_HP_VOL_MAX    0x1F
-#define ALC5658_HP_VOL_DEFAULT    0x1a
-#define ALC5658_GAIN_MIN    0x0
-#define ALC5658_GAIN_MAX    0x45
-#define ALC5658_GAIN_DEFAULT    0x20
-#define VOL_REG_BITSHIFT_COUNT    8
-
-#define alc5658_givesem(s) sem_post(s)
-
-/* Commonly defined and redefined macros */
-
-#ifndef MIN
-#define MIN(a, b)                   (((a) < (b)) ? (a) : (b))
-#endif
-
-#ifndef MAX
-#define MAX(a, b)                   (((a) > (b)) ? (a) : (b))
-#endif
-
-/****************************************************************************
  * Public Types
  ****************************************************************************/
 /* This should be put under hammer to strip size
