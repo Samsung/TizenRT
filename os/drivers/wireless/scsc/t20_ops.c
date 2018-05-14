@@ -2477,6 +2477,13 @@ int slsi_start_ap(void *priv, struct wpa_driver_ap_params *settings)
 	}
 #endif
 
+	r = slsi_read_disconnect_ind_timeout(sdev, SLSI_PSID_UNIFI_DISCONNECT_TIMEOUT);
+	if (r != 0) {
+		sdev->device_config.ap_disconnect_ind_timeout = SLSI_SIG_WAIT_CFM_TIMEOUT + 2000;
+	}
+
+	SLSI_NET_DBG2(dev, SLSI_T20_80211, "slsi_read_disconnect_ind_timeout: timeout = %d", sdev->device_config.ap_disconnect_ind_timeout);
+
 	r = slsi_mlme_start(sdev, dev, dev->d_mac.ether_addr_octet, settings, wpa_ie_pos, wmm_ie_pos, append_vht_ies);
 	if (r != 0) {
 		SLSI_NET_ERR(dev, "Start ap failed: resultcode = %d\n", r);
@@ -2488,13 +2495,6 @@ int slsi_start_ap(void *priv, struct wpa_driver_ap_params *settings)
 	}
 
 	ndev_vif->ap.beacon_interval = settings->beacon_int;
-
-	r = slsi_read_disconnect_ind_timeout(sdev, SLSI_PSID_UNIFI_DISCONNECT_TIMEOUT);
-	if (r != 0) {
-		sdev->device_config.ap_disconnect_ind_timeout = SLSI_SIG_WAIT_CFM_TIMEOUT + 2000;
-	}
-
-	SLSI_NET_DBG2(dev, SLSI_T20_80211, "slsi_read_disconnect_ind_timeout: timeout = %d", sdev->device_config.ap_disconnect_ind_timeout);
 
 	netif_set_link_up(dev);
 	goto exit_with_vif_mutex;
