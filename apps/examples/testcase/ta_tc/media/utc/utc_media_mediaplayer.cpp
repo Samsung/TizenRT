@@ -29,6 +29,7 @@ public:
 	void onPlaybackStarted(Id id) override;
 	void onPlaybackFinished(Id id) override;
 	void onPlaybackError(Id id) override;
+	void onPlaybackPaused(Id id) override;
 };
 
 void EmptyObserver::onPlaybackStarted(Id id)
@@ -40,6 +41,10 @@ void EmptyObserver::onPlaybackFinished(Id id)
 }
 
 void EmptyObserver::onPlaybackError(Id id)
+{
+}
+
+void EmptyObserver::onPlaybackPaused(Id id)
 {
 }
 
