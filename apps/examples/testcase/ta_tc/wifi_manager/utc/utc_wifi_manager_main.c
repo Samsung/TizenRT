@@ -279,22 +279,22 @@ static void utc_wifi_manager_connect_ap_p(void)
 	TC_SUCCESS_RESULT();
 }
 
-static void utc_wifi_utils_disconnect_ap_p(void)
+static void utc_wifi_manager_disconnect_ap_p(void)
 {
 	wifi_manager_result_e ret = WIFI_MANAGER_FAIL;
 
-	ret = wifi_utils_disconnect_ap();
+	ret = wifi_manager_disconnect_ap();
 
 	TC_ASSERT_EQ("wifi_manager_disconnect_ap_p", ret, WIFI_MANAGER_SUCCESS);
 	TC_SUCCESS_RESULT();
 }
 
 /* second disconnection trial will get failed */
-static void utc_wifi_utils_disconnect_ap_n(void)
+static void utc_wifi_manager_disconnect_ap_n(void)
 {
 	wifi_manager_result_e ret = WIFI_MANAGER_FAIL;
 
-	ret = wifi_utils_disconnect_ap();
+	ret = wifi_manager_disconnect_ap();
 
 	TC_ASSERT_EQ("wifi_manager_disconnect_ap_n", ret, WIFI_MANAGER_FAIL);
 	TC_SUCCESS_RESULT();
@@ -378,11 +378,11 @@ int wifi_manager_utc(int argc, FAR char *argv[])
 
 	sleep(5);
 
-	utc_wifi_utils_disconnect_ap_p();
+	utc_wifi_manager_disconnect_ap_p();
 
 	WIFITEST_WAIT;
 
-	utc_wifi_utils_disconnect_ap_n();	//  Should be run after positive tc, that is, the second disconnect gets failed.
+	utc_wifi_manager_disconnect_ap_n();	//  Should be run after positive tc, that is, the second disconnect gets failed.
 
 	utc_wifi_manager_deinit_p();
 	utc_wifi_manager_deinit_n(); // Should be run after positive tc, that is, the second deinit gets failed.
