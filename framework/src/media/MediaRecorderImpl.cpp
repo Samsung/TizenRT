@@ -442,9 +442,16 @@ void MediaRecorderImpl::setRecorderObserver(std::shared_ptr<MediaRecorderObserve
 	medvdbg("MediaRecorderImpl::notifySync()\n");
 
 	RecorderObserverWorker& row = RecorderObserverWorker::getWorker();
-	row.startWorker();
-	mRecorderObserver = observer;
 
+	if (mRecorderObserver) {
+		row.stopWorker();
+	}
+
+	if (observer) {
+		row.startWorker();
+	}
+
+	mRecorderObserver = observer;
 	notifySync();
 }
 
