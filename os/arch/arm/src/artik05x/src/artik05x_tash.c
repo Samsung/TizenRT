@@ -338,32 +338,33 @@ int board_app_initialize(void)
 
 #if defined(CONFIG_RAMMTD) && defined(CONFIG_FS_SMARTFS)
 	rambuf = (uint8_t *)malloc(bufsize);
-
-	mtd = rammtd_initialize(rambuf, bufsize);
-	if (!mtd) {
-		lldbg("ERROR: FAILED TO CREATE RAM MTD INSTANCE\n");
-		free(rambuf);
+	if (!rambuf) {
+		lldbg("ERROR: FAILED TO allocate RAMMTD\n");
 	} else {
-		ret = smart_initialize(CONFIG_ARTIK05X_RAMMTD_DEV_NUMBER, mtd, NULL);
-		if (ret < 0) {
-			lldbg("ERROR: FAILED TO smart_initialize\n");
+		mtd = rammtd_initialize(rambuf, bufsize);
+		if (!mtd) {
+			lldbg("ERROR: FAILED TO CREATE RAM MTD INSTANCE\n");
 			free(rambuf);
 		} else {
-#ifdef CONFIG_SMARTFS_MULTI_ROOT_DIRS
-			ret = mksmartfs(CONFIG_ARTIK05X_RAMMTD_DEV_POINT, 1, false);
-#else
-			ret = mksmartfs(CONFIG_ARTIK05X_RAMMTD_DEV_POINT, false);
-#endif
-			if (ret != OK) {
-				lldbg("ERROR: mksmartfs on %s failed\n", CONFIG_ARTIK05X_RAMMTD_DEV_POINT);
+			ret = smart_initialize(CONFIG_ARTIK05X_RAMMTD_DEV_NUMBER, mtd, NULL);
+			if (ret < 0) {
+				lldbg("ERROR: FAILED TO smart_initialize\n");
 				free(rambuf);
 			} else {
-				ret = mount(CONFIG_ARTIK05X_RAMMTD_DEV_POINT,
-					CONFIG_ARTIK05X_RAMMTD_MOUNT_POINT,
-					"smartfs", 0, NULL);
-				if (ret < 0) {
-					lldbg("ERROR: Failed to mount the SMART volume: %d\n", errno);
+#ifdef CONFIG_SMARTFS_MULTI_ROOT_DIRS
+				ret = mksmartfs(CONFIG_ARTIK05X_RAMMTD_DEV_POINT, 1, false);
+#else
+				ret = mksmartfs(CONFIG_ARTIK05X_RAMMTD_DEV_POINT, false);
+#endif
+				if (ret != OK) {
+					lldbg("ERROR: mksmartfs on %s failed\n", CONFIG_ARTIK05X_RAMMTD_DEV_POINT);
 					free(rambuf);
+				} else {
+					ret = mount(CONFIG_ARTIK05X_RAMMTD_DEV_POINT, CONFIG_ARTIK05X_RAMMTD_MOUNT_POINT, "smartfs", 0, NULL);
+					if (ret < 0) {
+						lldbg("ERROR: Failed to mount the SMART volume: %d\n", errno);
+						free(rambuf);
+					}
 				}
 			}
 		}
