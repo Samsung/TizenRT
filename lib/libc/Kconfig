@@ -53,7 +53,7 @@ config LIBC_FLOATINGPOINT
 
 config LIBC_SCANSET
         bool "Scanset support"
-        default n 
+        default y 
         ---help---
                 Add scanset support to sscanf().
 
