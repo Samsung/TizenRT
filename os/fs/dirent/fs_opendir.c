@@ -65,6 +65,7 @@
 #include <tinyara/kmalloc.h>
 #include <tinyara/fs/fs.h>
 #include <tinyara/fs/dirent.h>
+#include <sys/stat.h>
 
 #include "inode/inode.h"
 
@@ -240,6 +241,7 @@ FAR DIR *opendir(FAR const char *path)
 	FAR struct inode *inode = NULL;
 	FAR struct fs_dirent_s *dir;
 	FAR const char *relpath;
+	struct stat st;
 	bool isroot = false;
 	int ret;
 
@@ -247,8 +249,13 @@ FAR DIR *opendir(FAR const char *path)
 	 * request for the root inode.
 	 */
 
+	if (!path || *path == '\0') {
+		set_errno(ENOENT);
+		return NULL;
+	}
+
 	inode_semtake();
-	if (!path || *path == 0 || strcmp(path, "/") == 0) {
+	if (strcmp(path, "/") == 0) {
 		inode = root_inode;
 		isroot = true;
 		relpath = NULL;
@@ -313,6 +320,22 @@ FAR DIR *opendir(FAR const char *path)
 	else if (INODE_IS_MOUNTPT(inode)) {
 		/* Yes, the node is a file system mountpoint */
 
+		if (inode->u.i_mops && inode->u.i_mops->stat) {
+			/* Perform the stat() operation */
+
+			ret = inode->u.i_mops->stat(inode, path, &st);
+			if (ret < 0) {
+				ret = -ret;
+				goto errout_with_direntry;
+			} else if (!S_ISDIR(st.st_mode)) {
+				ret = ENOTDIR;
+				goto errout_with_direntry;
+			}
+		} else {
+			ret = ENOSYS;
+			goto errout_with_direntry;
+		}
+
 		dir->fd_root = inode;	/* Save the inode where we start */
 
 		/* Open the directory at the relative path */
@@ -328,6 +351,12 @@ FAR DIR *opendir(FAR const char *path)
 		 * have a child? If so that the child would be the 'root' of a list
 		 * of nodes under the directory.
 		 */
+
+		ret = inode_stat(inode, &st);
+		if (!S_ISDIR(st.st_mode)) {
+			ret = ENOTDIR;
+			goto errout_with_direntry;
+		}
 
 		FAR struct inode *child = inode->i_child;
 		if (child) {
