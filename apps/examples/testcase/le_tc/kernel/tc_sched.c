@@ -40,7 +40,7 @@
 #define VAL_3           3
 #define VAL_5           5
 #define TASK_STACKSIZE 2048
-#define PID_INVAL       -1
+#define INVALID_PID       -2
 #define PID_IDLE        0
 #define TASK_CANCEL_INVALID  -1
 
@@ -396,7 +396,7 @@ static void tc_sched_waitpid(void)
 	int status;
 
 	/* Check for The TCB corresponding to this PID is not our child. */
-	ret_chk = waitpid(-1, &status, 0);
+	ret_chk = waitpid(INVALID_PID, &status, 0);
 	TC_ASSERT_EQ("waitpid", ret_chk, ERROR);
 	TC_ASSERT_EQ("waitpid", errno, ECHILD);
 
@@ -429,7 +429,7 @@ static void tc_sched_sched_gettcb(void)
 {
 	struct tcb_s *tcb;
 
-	tcb = sched_gettcb(PID_INVAL);
+	tcb = sched_gettcb(INVALID_PID);
 	TC_ASSERT_EQ("sched_gettcb", tcb, NULL);
 
 	tcb = sched_gettcb(PID_IDLE);
