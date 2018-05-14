@@ -575,6 +575,11 @@ void wm_softap_start(void *arg)
 	WM_TEST_LOG_START;
 	wifi_manager_result_e res = WIFI_MANAGER_SUCCESS;
 	struct options *ap_info = (struct options *)arg;
+	if (strlen(ap_info->ssid) >= 32 || strlen(ap_info->password) >= 64) {
+		printf("Param Error\n");
+		WM_TEST_LOG_END;
+		return;
+	}
 	wifi_manager_softap_config_s ap_config;
 	strcpy(ap_config.ssid, ap_info->ssid);
 	ap_config.ssid[strlen(ap_info->ssid)] = '\0';
