@@ -474,9 +474,16 @@ player_result_t MediaPlayerImpl::setObserver(std::shared_ptr<MediaPlayerObserver
 void MediaPlayerImpl::setPlayerObserver(std::shared_ptr<MediaPlayerObserverInterface> observer)
 {
 	PlayerObserverWorker& pow = PlayerObserverWorker::getWorker();
-	pow.startWorker();
-	mPlayerObserver = observer;
 
+	if (mPlayerObserver) {
+		pow.stopWorker();
+	}
+
+	if (observer) {
+		pow.startWorker();
+	}
+
+	mPlayerObserver = observer;
 	mSyncCv.notify_one();
 }
 
