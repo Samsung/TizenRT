@@ -253,16 +253,22 @@ void MediaPlayerImpl::startPlayer()
 {
 	PlayerWorker& mpw = PlayerWorker::getWorker();
 
-	medvdbg("MediaPlayer Worker : startPlayer\n");
+	medvdbg("PlayerWorker : startPlayer\n");
 	if (mCurState != PLAYER_STATE_READY && mCurState != PLAYER_STATE_PAUSED) {
+		meddbg("PlayerWorker : player is not ready or paused\n");
 		notifyObserver(PLAYER_OBSERVER_COMMAND_ERROR);
 		return;
 	}
 
-	if (mpw.getPlayer() != nullptr) {
-		mpw.getPlayer()->pausePlayer();
+	auto prevPlayer = mpw.getPlayer();
+	auto curPlayer = shared_from_this();
+	if (prevPlayer != curPlayer) {
+		if (prevPlayer) {
+			/** TODO Should be considered Audiofocus later **/
+			prevPlayer->pausePlayer();
+		}
+		mpw.setPlayer(curPlayer);
 	}
-	mpw.setPlayer(shared_from_this());
 
 	mCurState = PLAYER_STATE_PLAYING;
 	notifyObserver(PLAYER_OBSERVER_COMMAND_STARTED);
@@ -290,6 +296,7 @@ void MediaPlayerImpl::stopPlayer()
 
 	medvdbg("MediaPlayer Worker : stopPlayer\n");
 	if (mCurState != PLAYER_STATE_PLAYING && mCurState != PLAYER_STATE_PAUSED) {
+		meddbg("PlayerWorker : player is not playing or paused\n");
 		notifyObserver(PLAYER_OBSERVER_COMMAND_ERROR);
 		return;
 	}
@@ -318,6 +325,7 @@ void MediaPlayerImpl::pausePlayer()
 {
 	medvdbg("MediaPlayer Worker : pausePlayer\n");
 	if (mCurState != PLAYER_STATE_PLAYING) {
+		meddbg("PlayerWorker : player is not playing\n");
 		notifyObserver(PLAYER_OBSERVER_COMMAND_ERROR);
 		return;
 	}

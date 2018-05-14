@@ -26,7 +26,7 @@
 using namespace std;
 
 namespace media {
-PlayerWorker::PlayerWorker() : mRefCnt(0), mIsRunning(false)
+PlayerWorker::PlayerWorker() : mRefCnt(0), mIsRunning(false), mCurPlayer(nullptr)
 {
 }
 
