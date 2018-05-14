@@ -65,6 +65,7 @@ class MediaPlayerTest : public MediaPlayerObserverInterface, public enable_share
 		APP_OFF,
 		PLAYER_START,
 		PLAYER_PAUSE,
+		PLAYER_RESUME,
 		PLAYER_STOP,
 		VOLUME_UP,
 		VOLUME_DOWN
@@ -143,6 +144,12 @@ void MediaPlayerTest::start(void)
 				cout << "Mediaplayer::pause failed" << endl;
 			}
 			break;
+		case PLAYER_RESUME:
+			cout << "PLAYER_RESUME is selected" << endl;
+			if (mp.start() == PLAYER_ERROR) {
+				cout << "Mediaplayer::start failed" << endl;
+			}
+			break;
 		case PLAYER_STOP:
 			cout << "PLAYER_STOP is selected" << endl;
 			if (mp.stop() == PLAYER_ERROR) {
@@ -185,9 +192,10 @@ void MediaPlayerTest::printMenu()
 	cout << " 0. APP_OFF         " << endl;
 	cout << " 1. PLAYER_START    " << endl;
 	cout << " 2. PLAYER_PAUSE    " << endl;
-	cout << " 3. PLAYER_STOP     " << endl;
-	cout << " 4. VOLUME_UP       " << endl;
-	cout << " 5. VOLUME_DOWN     " << endl;
+	cout << " 3. PLAYER_RESUME   " << endl;
+	cout << " 4. PLAYER_STOP     " << endl;
+	cout << " 5. VOLUME_UP       " << endl;
+	cout << " 6. VOLUME_DOWN     " << endl;
 	cout << "====================" << endl;
 }
 
