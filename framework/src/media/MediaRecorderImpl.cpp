@@ -236,11 +236,17 @@ void MediaRecorderImpl::startRecorder()
 	}
 
 	RecorderWorker& mrw = RecorderWorker::getWorker();
-	if (mrw.getCurrentRecorder() != nullptr) {
-		mrw.getCurrentRecorder()->pauseRecorder();
+	auto prevRecorder = mrw.getCurrentRecorder();
+	auto curRecorder = shared_from_this();
+
+	if (prevRecorder != curRecorder) {
+		if (prevRecorder) {
+			/** TODO Should be considered Audiofocus later **/
+			prevRecorder->pauseRecorder();
+		}
+		mrw.setCurrentRecorder(curRecorder);
 	}
 
-	mrw.setCurrentRecorder(shared_from_this());
 	mCurState = RECORDER_STATE_RECORDING;
 	notifyObserver(OBSERVER_COMMAND_STARTED);
 }
