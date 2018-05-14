@@ -255,6 +255,7 @@ void MediaPlayerImpl::startPlayer()
 
 	medvdbg("MediaPlayer Worker : startPlayer\n");
 	if (mCurState != PLAYER_STATE_READY && mCurState != PLAYER_STATE_PAUSED) {
+		meddbg("PlayerWorker : player is not ready or paused\n");
 		notifyObserver(PLAYER_OBSERVER_COMMAND_ERROR);
 		return;
 	}
@@ -290,6 +291,7 @@ void MediaPlayerImpl::stopPlayer()
 
 	medvdbg("MediaPlayer Worker : stopPlayer\n");
 	if (mCurState != PLAYER_STATE_PLAYING && mCurState != PLAYER_STATE_PAUSED) {
+		meddbg("PlayerWorker : player is not playing or paused\n");
 		notifyObserver(PLAYER_OBSERVER_COMMAND_ERROR);
 		return;
 	}
@@ -318,6 +320,7 @@ void MediaPlayerImpl::pausePlayer()
 {
 	medvdbg("MediaPlayer Worker : pausePlayer\n");
 	if (mCurState != PLAYER_STATE_PLAYING) {
+		meddbg("PlayerWorker : player is not playing\n");
 		notifyObserver(PLAYER_OBSERVER_COMMAND_ERROR);
 		return;
 	}
