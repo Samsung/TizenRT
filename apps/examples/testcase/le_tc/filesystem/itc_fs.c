@@ -149,7 +149,10 @@ static void itc_fs_vfs_mount_p_read_mode(void)
 	TC_ASSERT_EQ("mount", ret, OK);
 
 	ret = mkdir(VFS_FOLDER_PATH, 0777);
-	TC_ASSERT_NEQ_CLEANUP("mkdir", ret, OK, rmdir(VFS_FOLDER_PATH); umount(MOUNT_DIR));
+	TC_ASSERT_EQ_CLEANUP("mkdir", ret, OK, umount(MOUNT_DIR));
+
+	ret = rmdir(VFS_FOLDER_PATH);
+	TC_ASSERT_EQ("rmdir", ret, OK);
 
 	ret = umount(MOUNT_DIR);
 	TC_ASSERT_EQ("umount", ret, OK);
