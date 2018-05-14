@@ -14,7 +14,8 @@ if SYSTEM_PREAPP_INIT
 
 config SYSTEM_PREAPP_STACKSIZE
 	int "pre-app thread stack size"
-	default 2048
+	default 2048 if !TIZENRT_LITTLE_PROFILE
+	default 1024 if TIZENRT_LITTLE_PROFILE
 	---help---
 		The size of the stack to allocate for the pre-application thread
 		that is started as soon as the OS completes its initialization.

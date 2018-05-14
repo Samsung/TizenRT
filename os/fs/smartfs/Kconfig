@@ -5,7 +5,8 @@
 
 config FS_SMARTFS
 	bool "SMART file system"
-	default y
+	default y if !TIZENRT_LITTLE_PROFILE
+	default n if TIZENRT_LITTLE_PROFILE
 	depends on !DISABLE_MOUNTPOINT
 	select FS_READABLE
 	select FS_WRITABLE

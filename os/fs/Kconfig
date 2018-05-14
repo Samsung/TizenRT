@@ -9,8 +9,8 @@ config DISABLE_MOUNTPOINT
 
 config DISABLE_PSEUDOFS_OPERATIONS
 	bool "Disable pseudo-filesystem operations"
-	default y if DEFAULT_SMALL
-	default n if !DEFAULT_SMALL
+	default y if DEFAULT_SMALL || TIZENRT_LITTLE_PROFILE
+	default n if !DEFAULT_SMALL && !TIZENRT_LITTLE_PROFILE
 	---help---
 		Disable certain operations on pseudo-file systems include mkdir,
 		rmdir, unlink, and rename.  These are necessary for the logical

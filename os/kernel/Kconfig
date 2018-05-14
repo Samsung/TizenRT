@@ -604,13 +604,15 @@ config NFILE_DESCRIPTORS
 
 config NFILE_STREAMS
 	int "Maximum number of FILE streams"
-	default 16
+	default 16 if !TIZENRT_LITTLE_PROFILE
+	default 6 if TIZENRT_LITTLE_PROFILE
 	---help---
 		The maximum number of streams that can be fopen'ed
 
 config NAME_MAX
 	int "Maximum size of a file name"
-	default 32
+	default 32 if !TIZENRT_LITTLE_PROFILE
+	default 10 if TIZENRT_LITTLE_PROFILE
 	---help---
 	The maximum size of a file name.
 
@@ -851,6 +853,7 @@ endmenu # POSIX Message Queue Options
 menu "Work Queue Support"
 	depends on !DISABLE_SIGNALS
 
+
 config SCHED_WORKQUEUE
 	bool
 	default n
@@ -868,7 +871,8 @@ config SCHED_WORKQUEUE_SORTING
 
 config SCHED_HPWORK
 	bool "High priority (kernel) worker thread"
-	default y
+	default y if !TIZENRT_LITTLE_PROFILE
+	default n if TIZENRT_LITTLE_PROFILE
 	select SCHED_WORKQUEUE
 	---help---
 		Create a dedicated high-priority "worker" thread to handle delayed
@@ -919,7 +923,8 @@ config SCHED_HPWORKPERIOD
 
 config SCHED_HPWORKSTACKSIZE
 	int "High priority worker thread stack size"
-	default 2048
+	default 2048 if !TIZENRT_LITTLE_PROFILE
+	default 512 if TIZENRT_LITTLE_PROFILE
 	---help---
 		The stack size allocated for the worker thread.  Default: 2K.
 
@@ -927,7 +932,8 @@ endif # SCHED_HPWORK
 
 config SCHED_LPWORK
 	bool "Low priority (kernel) worker thread"
-	default y
+	default y if !TIZENRT_LITTLE_PROFILE
+	default n if TIZENRT_LITTLE_PROFILE
 	select SCHED_WORKQUEUE
 	---help---
 		If SCHED_LPWORK is defined then a lower-priority work queue will
@@ -1015,18 +1021,20 @@ config SCHED_LPWORKPERIOD
 
 config SCHED_LPWORKSTACKSIZE
 	int "Low priority worker thread stack size"
-	default 2048
+	default 2048 if !TIZENRT_LITTLE_PROFILE
+	default 512 if TIZENRT_LITTLE_PROFILE
 	---help---
 		The stack size allocated for the lower priority worker thread.  Default: 2K.
 
 endif # SCHED_LPWORK
-endmenu # Work Queue Support
+endmenu #Work Queue Support
 
 menu "Stack size information"
 
 config IDLETHREAD_STACKSIZE
 	int "Idle thread stack size"
-	default 1024
+	default 1024 if !TIZENRT_LITTLE_PROFILE
+	default 512 if TIZENRT_LITTLE_PROFILE
 	---help---
 		The size of the initial stack used by the IDLE thread.  The IDLE thread
 		is the thread that (1) performs the initial boot of the system up to the
@@ -1053,7 +1061,8 @@ config PTHREAD_STACK_MIN
 
 config PTHREAD_STACK_DEFAULT
 	int "Default pthread stack size"
-	default 2048
+	default 2048 if !TIZENRT_LITTLE_PROFILE
+	default 512 if TIZENRT_LITTLE_PROFILE
 	depends on !DISABLE_PTHREAD
 	---help---
 		Default pthread stack size
