@@ -50,6 +50,7 @@ FileInputDataSource& FileInputDataSource::operator=(const FileInputDataSource& s
 
 FileInputDataSource::~FileInputDataSource()
 {
+	close();
 }
 
 bool FileInputDataSource::open()
