@@ -56,6 +56,10 @@ static void *server_connect(void *ptr_num_clients)
 	int *pret = malloc(sizeof(int));
 	int recv_len = 0;
 	int send_len = 0;
+	if (NULL == pret) {
+		printf("Memory allocation to pret is failed\n");
+		return NULL;
+	}
 	*pret = OK;
 
 	printf("Server thread started...\n");
@@ -64,7 +68,12 @@ static void *server_connect(void *ptr_num_clients)
 		*pret = ERROR;
 		pthread_exit(pret);
 	}
-	setsockopt(server_socket, SOL_SOCKET, SO_REUSEADDR | SO_REUSEPORT, &opt, sizeof(opt));
+	int nRet = setsockopt(server_socket, SOL_SOCKET, SO_REUSEADDR | SO_REUSEPORT, &opt, sizeof(opt));
+	if (nRet < 0) {
+		printf("setsockopt API failed \n");
+		*pret = ERROR;
+		pthread_exit(pret);
+	}
 	address.sin_family = AF_INET;
 	address.sin_addr.s_addr = INADDR_ANY;
 	address.sin_port = htons(g_port);
@@ -164,16 +173,20 @@ static void *client_connect(void *ptr_id)
 	char buffer[BUFF_LEN] = {0};
 	int total_recv;
 	int total_send;
-	int *pret = malloc(sizeof(int));
 	int recv_len = 0;
 	int send_len = 0;
+	int *pret = malloc(sizeof(int));
+	if (NULL == pret) {
+		printf("Memory allocation to pret is failed\n");
+		return NULL;
+	}
 	*pret = OK;
 	printf("Client thread started...\n");
 	sock = socket(AF_INET, SOCK_STREAM, 0);
 	if (sock < 0) {
 		pthread_exit(pret);
 	}
-	memset(&serv_addr, '0', sizeof(serv_addr));
+	memset(&serv_addr, 0, sizeof(serv_addr));
 	serv_addr.sin_family = AF_INET;
 	serv_addr.sin_addr.s_addr = inet_addr("127.0.0.1");
 	serv_addr.sin_port = htons(g_port);
