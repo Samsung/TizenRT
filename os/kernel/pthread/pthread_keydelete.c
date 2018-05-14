@@ -93,8 +93,7 @@
  *
  * Description:
  *   This POSIX function should delete a thread-specific data key
- *   previously returned by pthread_key_create().  However, this function
- *   does nothing in the present implementation.
+ *   previously returned by pthread_key_create().
  *
  * Parameters:
  *   key = the key to delete
