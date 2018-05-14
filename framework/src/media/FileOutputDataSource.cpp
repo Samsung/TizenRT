@@ -47,11 +47,17 @@ FileOutputDataSource& FileOutputDataSource::operator=(const FileOutputDataSource
 bool FileOutputDataSource::open()
 {
 	if (!mFp) {
-		mFp = fopen(mDataPath.c_str(), "w+");
-		return true;
-	} 
+		mFp = fopen(mDataPath.c_str(), "w");
+		if (mFp) {
+			medvdbg("file open success\n");
+			return true;
+		} else {
+			medvdbg("file open failed\n");
+			return false;
+		}
+	}
 
-	medvdbg("file is already open\n");
+	medvdbg("file already exists\n");
 	return false;
 }
 
@@ -81,6 +87,7 @@ size_t FileOutputDataSource::write(unsigned char* buf, size_t size)
 
 FileOutputDataSource::~FileOutputDataSource()
 {
+	close();
 }
 } // namespace stream
 } // namespace media

@@ -298,6 +298,7 @@ void MediaRecorderImpl::pauseRecorder()
 	}
 
 	mCurState = RECORDER_STATE_PAUSED;
+	notifyObserver(OBSERVER_COMMAND_PAUSED);
 }
 
 int MediaRecorderImpl::getVolume()
@@ -489,6 +490,10 @@ void MediaRecorderImpl::notifyObserver(observer_command_t cmd)
 		case OBSERVER_COMMAND_STARTED: {
 			medvdbg("MediaRecorderImpl::notifyObserver(observer_command_t cmd) - OBSERVER_COMMAND_STARTED\n");
 			row.getQueue().enQueue(&MediaRecorderObserverInterface::onRecordStarted, mRecorderObserver, mId);
+		} break;
+		case OBSERVER_COMMAND_PAUSED: {
+			medvdbg("MediaRecorderImpl::notifyObserver(observer_command_t cmd) - OBSERVER_COMMAND_PAUSED\n");
+			row.getQueue().enQueue(&MediaRecorderObserverInterface::onRecordPaused, mRecorderObserver, mId);
 		} break;
 		case OBSERVER_COMMAND_FINISHIED: {
 			medvdbg("MediaRecorderImpl::notifyObserver(observer_command_t cmd) - OBSERVER_COMMAND_FINISHIED\n");
