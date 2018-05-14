@@ -228,9 +228,10 @@ void MediaRecorderImpl::startRecorder()
 {
 	medvdbg("MediaRecorderImpl::startRecorder()\n");
 
-	if (mCurState != RECORDER_STATE_READY) {
+	if (mCurState != RECORDER_STATE_READY && mCurState != RECORDER_STATE_PAUSED) {
 		notifyObserver(OBSERVER_COMMAND_ERROR);
-		meddbg("MediaRecorderImpl::startRecorder() - (mCurState != RECORDER_STATE_READY)\n");
+		meddbg("MediaRecorderImpl::startRecorder() - " \
+			"mCurState != RECORDER_STATE_READY && mCurState != RECORDER_STATE_PAUSED\n");
 		return;
 	}
 
