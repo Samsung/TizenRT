@@ -160,6 +160,7 @@ static void utc_media_FileInputDataSource_read_p(void)
 
 	TC_ASSERT_EQ("utc_media_FileInputDataSource_read", source.read(buf, 100), strlen(testData));
 
+	source.close();
 	TC_SUCCESS_RESULT();
 }
 
@@ -181,6 +182,7 @@ static void utc_media_FileInputDataSource_readAt_p(void)
 
 	TC_ASSERT_EQ("utc_media_FileInputDataSource_readAt", source.readAt(1, 0, buf, 100), (int)strlen(testData + 1));
 
+	source.close();
 	TC_SUCCESS_RESULT();
 }
 
