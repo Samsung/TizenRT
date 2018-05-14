@@ -41,6 +41,7 @@ class MediaPlayerTest : public MediaPlayerObserverInterface, public enable_share
 	void onPlaybackStarted(Id id) override;
 	void onPlaybackFinished(Id id) override;
 	void onPlaybackError(Id id) override;
+	void onPlaybackPaused(Id id) override;
 
 	void start();
 
@@ -83,6 +84,11 @@ void MediaPlayerTest::onPlaybackFinished(Id id)
 void MediaPlayerTest::onPlaybackError(Id id)
 {
 	cout << "onPlaybackError" << endl;
+}
+
+void MediaPlayerTest::onPlaybackPaused(Id id)
+{
+	cout << "onPlaybackPaused" << endl;
 }
 
 void MediaPlayerTest::start(void)

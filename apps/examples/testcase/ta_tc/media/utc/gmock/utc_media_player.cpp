@@ -54,6 +54,12 @@ void TestObserver::onPlaybackError(Id id)
 	cv.notify_one();
 }
 
+void TestObserver::onPlaybackPaused(Id id)
+{
+	value = 4;
+	cv.notify_one();
+}
+
 class SimpleMediaPlayerTest : public ::testing::Test
 {
 protected:
