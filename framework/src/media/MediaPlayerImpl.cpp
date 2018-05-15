@@ -501,13 +501,6 @@ player_state_t MediaPlayerImpl::getState()
 	return mCurState;
 }
 
-player_result_t MediaPlayerImpl::seekTo(int msec)
-{
-	medvdbg("MediaPlayer seekTo %d msec\n", msec);
-	// TODO : implementation of seekTo
-	return PLAYER_OK;
-}
-
 void MediaPlayerImpl::notifySync()
 {
 	std::unique_lock<std::mutex> lock(mCmdMtx);
