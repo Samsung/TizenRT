@@ -256,7 +256,7 @@ int st_things_initialize(const char *json_path, bool *easysetup_complete)
 		return ST_THINGS_ERROR_INVALID_PARAMETER;
 	}
 
-	THINGS_LOG_D("JSON file path: %s", json_path);
+	THINGS_LOG_D(TAG, "JSON file path: %s", json_path);
 
 	int result = 0;
 	if (1 != (result = things_initialize_stack(json_path, easysetup_complete))) {
