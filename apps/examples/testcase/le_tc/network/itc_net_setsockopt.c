@@ -222,6 +222,10 @@ int itc_net_setsockopt_main(void)
 	int fd = -1;
 
 	fd = socket(AF_INET, SOCK_STREAM, 0);
+	if (fd < 0) {
+		printf("socket creation failed\n");
+		return 0;
+	}
 
 	itc_net_setsockopt_n_invalid_opt_name(fd);
 	itc_net_setsockopt_p_rcvbuf(fd);
@@ -232,8 +236,12 @@ int itc_net_setsockopt_main(void)
 	itc_net_setsockopt_p_ip_ttl(fd);
 
 	close(fd);
-
+	fd = -1;
 	fd = socket(AF_INET, SOCK_DGRAM, 0);
+	if (fd < 0) {
+		printf("socket creation failed\n");
+		return 0;
+	}
 
 	itc_net_setsockopt_p_no_check(fd);
 	itc_net_setsockopt_p_multicast_ttl_loop(fd);
