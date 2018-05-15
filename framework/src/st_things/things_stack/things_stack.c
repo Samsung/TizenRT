@@ -64,10 +64,7 @@
 #define TAG "[things_stack]"
 
 typedef void *(*pthread_func_type)(void *);
-
-volatile static int g_quit_flag = 0;
-volatile static int is_things_module_inited = 0;
-
+volatile static int is_things_module_initialized = 0;
 
 typedef struct reset_args_s {
 	things_resource_s *remote_owner;
@@ -240,7 +237,7 @@ int things_initialize_stack(const char *json_path, bool *easysetup_completed)
 		THINGS_LOG_V(TAG, "Success to create the device resource file");
 	}
 #endif
-	if (is_things_module_inited) {
+	if (is_things_module_initialized) {
 		THINGS_LOG_E(TAG, "Stack already initialized");
 		return 0;
 	}
@@ -257,7 +254,7 @@ int things_initialize_stack(const char *json_path, bool *easysetup_completed)
 		THINGS_LOG_E(TAG, "dm_init_module() failed");
 		return 0;
 	}
-	is_things_module_inited = 1;
+	is_things_module_initialized = 1;
 
 	int es_state = esm_read_easysetup_state();
 	*easysetup_completed = ((es_state == ES_COMPLETE) ? true : false);
@@ -284,7 +281,7 @@ int things_deinitialize_stack(void)
 
 	dm_termiate_module();
 
-	is_things_module_inited = 0;
+	is_things_module_initialized = 0;
 
 	return 1;
 }
@@ -293,22 +290,12 @@ int things_start_stack(void)
 {
 	THINGS_LOG_V(TAG, "ST_Things SDK version : %s", ST_THINGS_STACK_VERSION);
 
-	if (dm_get_easysetup_connectivity_type() == es_conn_type_softap) {
-		if (dm_is_es_complete() == false) {
-			if (!things_network_turn_on_soft_ap()) {
-				return 0;
-			}
-		} else if (!things_network_connect_home_ap()) {
-			return 0;
-		}
-	} else if (dm_get_easysetup_connectivity_type() == es_conn_type_ble) {
-		//TO DO
-	} else {
-		THINGS_LOG_E(TAG, "es_conn_type_Unknown");
+	if (!is_things_module_initialized) {
+		THINGS_LOG_E(TAG, "Initialize failed. You must initialize it first.");
 		return 0;
 	}
 
-	// 2. Enable Security Features
+	// Enable Security Features
 #ifdef __SECURED__
 	int auty_type = AUTH_UNKNOW;
 	switch (dm_get_ownership_transfer_method()) {
@@ -337,7 +324,7 @@ int things_start_stack(void)
 	// Will be refactored to received callbacks for GET/PUT/POST/DELETE/OBSERVE ..
 	g_req_handler->init_module();
 
-	// 4. Initiate Server Builder
+	// Initiate Server Builder
 	g_server_builder = get_builder_instance();
 	if (NULL == g_server_builder) {
 		THINGS_LOG_E(TAG, "Failed to initialize Resource Server");
@@ -347,14 +334,14 @@ int things_start_stack(void)
 	g_server_builder->init_module(g_server_builder, g_req_handler->entity_handler);
 
 #ifdef __SECURED__
-	//5. Generate device UUID
+	// Generate device UUID
 	if (0 != sm_generate_device_id()) {
 		THINGS_LOG_E(TAG, "Failed to generate device_id");
 		return 0;
 	}
 #endif
 
-	// 6. Register Device-ID & Resources
+	// Register Device-ID & Resources
 	if (dm_register_device_id() == false) {
 		THINGS_LOG_E(TAG, "Failed to register Device ID");
 		return 0;
@@ -364,7 +351,7 @@ int things_start_stack(void)
 		THINGS_LOG_E(TAG, "Failed to register Resource");
 		return 0;
 	}
-	// 7. Initiate Easy-Setup & Login to Cloud
+	// Initiate Easy-Setup & Login to Cloud
 	if (ESM_OK != esm_init_easysetup(0, g_server_builder)) {
 		THINGS_LOG_E(TAG, "Failed to initialize Easy-Setup Module");
 		return 0;
@@ -377,11 +364,22 @@ int things_start_stack(void)
 		return 0;
 	}
 
-	is_things_module_inited = 1;
+	if (dm_get_easysetup_connectivity_type() == es_conn_type_softap) {
+		if (dm_is_es_complete() == false) {
+			if (!things_network_turn_on_soft_ap()) {
+				return 0;
+			}
+		} else if (!things_network_connect_home_ap()) {
+			return 0;
+		}
+	} else if (dm_get_easysetup_connectivity_type() == es_conn_type_ble) {
+		//TO DO
+	} else {
+		THINGS_LOG_E(TAG, "es_conn_type_Unknown");
+		return 0;
+	}
 
-	g_quit_flag = 0;
-
-	THINGS_LOG_V(TAG, "Stack Initialization Success");
+	THINGS_LOG_V(TAG, "Stack Start Success");
 	return 1;
 }
 
@@ -450,13 +448,10 @@ GOTO_OUT:
 
 int things_stop_stack(void)
 {
-	pthread_mutex_lock(&g_things_stop_mutex);
-
 	THINGS_LOG_D(TAG, THINGS_FUNC_ENTRY);
-	g_quit_flag = 1;
-	is_things_module_inited = 0;
-
+	pthread_mutex_lock(&g_things_stop_mutex);	
 	pthread_mutex_lock(&m_thread_oic_reset);
+
 	if (b_thread_things_reset == true) {
 		b_reset_continue_flag = false;
 
@@ -823,7 +818,7 @@ GOTO_OUT:
 }
 #endif
 
-int things_is_things_module_inited(void)
+int things_is_things_module_initialized(void)
 {
-	return is_things_module_inited;
+	return is_things_module_initialized;
 }

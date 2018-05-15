@@ -282,7 +282,7 @@ void things_wifi_sta_connected(wifi_manager_result_e res)
 
 	THINGS_LOG_V(TAG, "T%d --> %s", getpid(), __FUNCTION__);
 
-	if (things_is_things_module_inited() == 1) {
+	if (things_is_things_module_initialized() == 1) {
 		pthread_create_rtos(&h_thread_things_wifi_join, NULL, (pthread_func_type) t_things_wifi_join_loop, NULL, THINGS_STACK_WIFI_JOIN_THREAD);
 	}
 }
