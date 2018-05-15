@@ -68,7 +68,7 @@ static void *server_connect(void *ptr_num_clients)
 		*pret = ERROR;
 		pthread_exit(pret);
 	}
-	int nRet = setsockopt(server_socket, SOL_SOCKET, SO_REUSEADDR | SO_REUSEPORT, &opt, sizeof(opt));
+	int nRet = setsockopt(server_socket, SOL_SOCKET, SO_REUSEADDR, &opt, sizeof(opt));
 	if (nRet < 0) {
 		printf("setsockopt API failed \n");
 		*pret = ERROR;
