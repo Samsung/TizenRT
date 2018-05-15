@@ -255,7 +255,7 @@ int task_manager(int argc, char *argv[])
 
 		sched_lock();
 
-		tmvdbg("Recevied Request msg : cmd = %d\n", request_msg.cmd);
+		printf("Recevied Request msg : cmd = %d\n", request_msg.cmd);
 		switch (request_msg.cmd) {
 		case TASKMGT_REGISTER_TASK:
 			register_permission = request_msg.handle;
