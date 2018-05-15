@@ -869,12 +869,16 @@ static void tc_libc_string_strtof(void)
 
 	str = "123.456TizenRT";
 	value = strtof(str, &ptr);
+#ifdef CONFIG_LIBM
 	TC_ASSERT_LEQ("strtof", roundf((fabsf(value - 123.456f) * 1000) / 1000), FLT_EPSILON);
+#endif
 	TC_ASSERT_EQ("strtof", strncmp(ptr, "TizenRT", strlen("TizenRT")), 0);
 
 	str = "-78.9123TinyAra";
 	value = strtof(str, &ptr);
+#ifdef CONFIG_LIBM
 	TC_ASSERT_LEQ("strtof", roundf((fabsf(value - (-78.9123f)) * 10000) / 10000), FLT_EPSILON);
+#endif
 	TC_ASSERT_EQ("strtof", strncmp(ptr, "TinyAra", strlen("TinyAra")), 0);
 
 	TC_SUCCESS_RESULT();
@@ -896,12 +900,16 @@ static void tc_libc_string_strtold(void)
 
 	str = "123.456TizenRT";
 	value = strtold(str, &ptr);
+#ifdef CONFIG_LIBM
 	TC_ASSERT_LEQ("strtold", roundl((fabsl(value - 123.456) * 1000) / 1000), DBL_EPSILON);
+#endif
 	TC_ASSERT_EQ("strtold", strncmp(ptr, "TizenRT", strlen("TizenRT")), 0);
 
 	str = "-78.9123TinyAra";
 	value = strtold(str, &ptr);
+#ifdef CONFIG_LIBM
 	TC_ASSERT_LEQ("strtold", roundl((fabsl(value - (-78.9123)) * 10000) / 10000), DBL_EPSILON);
+#endif
 	TC_ASSERT_EQ("strtold", strncmp(ptr, "TinyAra", strlen("TinyAra")), 0);
 
 	TC_SUCCESS_RESULT();
