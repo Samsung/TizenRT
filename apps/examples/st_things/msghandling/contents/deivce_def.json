@@ -17,7 +17,7 @@
           "osVersion": "1.0",
           "hardwareVersion": "1.0",
           "firmwareVersion": "1.0",
-          "vendorId": "YOURVENDERID"
+          "vendorId": "YOUR VENDERID"
         }
       },
       "resources": {
@@ -84,6 +84,18 @@
               "x.com.st.tone"
             ],
             "interfaces": [
+              "oic.if.baseline"
+            ],
+            "policy": 3
+          },
+          {
+            "uri": "/capability/robotCleanerTurboMode/main/0",
+            "types": [
+              "x.com.st.robot.cleaner.turbo"
+            ],
+            "interfaces": [
+              "oic.if.a",
+              "oic.if.s",
               "oic.if.baseline"
             ],
             "policy": 3
@@ -165,7 +177,24 @@
           "rw": 1
         }
       ]
-    }
+    },
+    {
+      "type": "x.com.st.robot.cleaner.turbo",
+      "properties": [
+        {
+          "key": "modes",
+          "type": 8,
+          "mandatory": true,
+          "rw": 3
+        },
+        {
+          "key": "supportedModes",
+          "type": 8,
+          "mandatory": true,
+          "rw": 1
+        }
+      ]
+    },
     {
       "type": "x.com.st.tone",
       "properties": [
