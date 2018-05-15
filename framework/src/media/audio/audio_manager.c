@@ -23,6 +23,7 @@
 #include <dirent.h>
 #include <errno.h>
 #include <fcntl.h>
+#include <pthread.h>
 #include <sys/time.h>
 #include <tinyara/audio/audio.h>
 #include <tinyalsa/tinyalsa.h>
@@ -109,6 +110,7 @@ struct audio_card_info_s {
 	struct audio_config_s config;
 	struct pcm *pcm;
 	struct audio_resample_s resample;
+	pthread_mutex_t card_mutex;
 };
 
 struct audio_samprate_map_entry_s {
@@ -187,7 +189,12 @@ static audio_manager_result_t find_audio_card(audio_card_type_t card_type)
 		}
 
 		if (type == type_chr) {
+			pthread_mutex_init(&(card[card_id].card_mutex), NULL);
+			medvdbg("card %d mutex is initialized\n", card_id);
+			pthread_mutex_lock(&(card[card_id].card_mutex));
+
 			snprintf(card[card_id].card_path, strlen("/dev/audio/") + strlen(dir_entry->d_name) + 1, "%s%s", "/dev/audio/", dir_entry->d_name);
+
 			card[card_id].status = AUDIO_CARD_IDLE;
 			card[card_id].device_id = device_id;
 			found_cards++;
@@ -201,6 +208,8 @@ static audio_manager_result_t find_audio_card(audio_card_type_t card_type)
 			}
 
 			get_hardware_params(&card[card_id], card_type);
+
+			pthread_mutex_unlock(&(card[card_id].card_mutex));
 		}
 	}
 
@@ -489,22 +498,24 @@ int start_audio_stream_in(void *data, uint32_t frames)
 	int ret;
 	int retry = AUDIO_STREAM_RETRY_COUNT;
 	struct pcm *pcm;
-
-	// Todo: Need to check g_actual_audio_out_card_id index.
-	audio_card_info_t *cur_card = &g_audio_in_cards[g_actual_audio_in_card_id];
+	audio_card_info_t *cur_card;
 
 	if ((ret = get_active_audio_device_pcm(&pcm, INPUT)) != AUDIO_MANAGER_SUCCESS) {
 		return ret;
 	}
 
-	if (g_audio_in_cards[g_actual_audio_in_card_id].status == AUDIO_CARD_PAUSE) {
+	pthread_mutex_lock(&(g_audio_in_cards[g_actual_audio_in_card_id].card_mutex));
+
+	cur_card = &g_audio_in_cards[g_actual_audio_in_card_id];
+	if (cur_card->status == AUDIO_CARD_PAUSE) {
 		ret = ioctl(pcm_get_file_descriptor(pcm), AUDIOIOC_RESUME, NULL);
 		if (ret < 0) {
 			meddbg("Fail to ioctl AUDIOIOC_RESUME, ret = %d\n", ret);
-			return AUDIO_MANAGER_DEVICE_FAIL;
+			ret = AUDIO_MANAGER_DEVICE_FAIL;
+			goto error_out;
 		}
 
-		g_audio_in_cards[g_actual_audio_in_card_id].status = AUDIO_CARD_RUNNING;
+		cur_card->status = AUDIO_CARD_RUNNING;
 		medvdbg("Resume the input audio card!!\n");
 	}
 
@@ -538,7 +549,8 @@ int start_audio_stream_in(void *data, uint32_t frames)
 
 				if (src_simple(cur_card->resample.handle, &srcData) != SRC_ERR_NO_ERROR) {
 					meddbg("Fail to resample to %u from %u\n", srcData.desired_sample_rate, srcData.origin_sample_rate);
-					return AUDIO_MANAGER_RESAMPLE_FAIL;
+					ret = AUDIO_MANAGER_RESAMPLE_FAIL;
+					goto error_out;
 				}
 
 				ret = get_input_frames_byte_size(srcData.output_frames_gen);
@@ -550,7 +562,8 @@ int start_audio_stream_in(void *data, uint32_t frames)
 					medvdbg("Record resampled %d/%d\n", frames_used, frames_total);
 				} else {
 					meddbg("Failed to copy recorded data, get_input_frames_byte_size : %d\n", ret);
-					return AUDIO_MANAGER_RESAMPLE_FAIL;
+					ret = AUDIO_MANAGER_RESAMPLE_FAIL;
+					goto error_out;
 				}
 			}
 			ret = frames_copied;
@@ -563,14 +576,19 @@ int start_audio_stream_in(void *data, uint32_t frames)
 			ret = pcm_prepare(pcm);
 			if (ret != OK) {
 				meddbg("Fail to pcm_prepare()\n");
-				return AUDIO_MANAGER_XRUN_STATE;
+				ret = AUDIO_MANAGER_XRUN_STATE;
+				break;
 			}
 		} else if (ret == -EINVAL) {
-			return AUDIO_MANAGER_INVALID_PARAM;
+			ret = AUDIO_MANAGER_INVALID_PARAM;
+			break;
 		} else {
-			return ret;
+			break;
 		}
 	} while ((ret == OK) && (retry--));
+
+error_out:
+	pthread_mutex_unlock(&(g_audio_in_cards[g_actual_audio_in_card_id].card_mutex));
 
 	return ret;
 }
@@ -580,20 +598,22 @@ int start_audio_stream_out(void *data, uint32_t frames)
 	int ret;
 	int retry = AUDIO_STREAM_RETRY_COUNT;
 	struct pcm *pcm;
+	audio_card_info_t *cur_card;
 
-	// Todo: Need to check g_actual_audio_out_card_id index.
-	audio_card_info_t *cur_card = &g_audio_out_cards[g_actual_audio_out_card_id];
 	medvdbg("start_audio_stream_out(%u)\n", frames);
-
 	if ((ret = get_active_audio_device_pcm(&pcm, OUTPUT)) != AUDIO_MANAGER_SUCCESS) {
 		return ret;
 	}
 
+	pthread_mutex_lock(&(g_audio_out_cards[g_actual_audio_out_card_id].card_mutex));
+
+	cur_card = &g_audio_out_cards[g_actual_audio_out_card_id];
 	if (cur_card->status == AUDIO_CARD_PAUSE) {
 		ret = ioctl(pcm_get_file_descriptor(pcm), AUDIOIOC_RESUME, NULL);
 		if (ret < 0) {
 			meddbg("Fail to ioctl AUDIOIOC_RESUME, ret = %d\n", ret);
-			return AUDIO_MANAGER_DEVICE_FAIL;
+			ret = AUDIO_MANAGER_DEVICE_FAIL;
+			goto error_out;
 		}
 
 		cur_card->status = AUDIO_CARD_RUNNING;
@@ -621,7 +641,8 @@ int start_audio_stream_out(void *data, uint32_t frames)
 
 				if (src_simple(cur_card->resample.handle, &srcData) != SRC_ERR_NO_ERROR) {
 					meddbg("Fail to resample to %u from %u\n", srcData.desired_sample_rate, srcData.origin_sample_rate);
-					return AUDIO_MANAGER_RESAMPLE_FAIL;
+					ret = AUDIO_MANAGER_RESAMPLE_FAIL;
+					goto error_out;
 				}
 
 				frames_used += srcData.input_frames_used;
@@ -638,14 +659,19 @@ int start_audio_stream_out(void *data, uint32_t frames)
 			ret = pcm_prepare(pcm);
 			if (ret != OK) {
 				meddbg("Fail to pcm_prepare()\n");
-				return AUDIO_MANAGER_XRUN_STATE;
+				ret = AUDIO_MANAGER_XRUN_STATE;
+				break;
 			}
 		} else if (ret == -EINVAL) {
-			return AUDIO_MANAGER_INVALID_PARAM;
+			ret = AUDIO_MANAGER_INVALID_PARAM;
+			break;
 		} else {
-			return ret;
+			break;
 		}
 	} while ((ret == OK) && (retry--));
+
+error_out:
+	pthread_mutex_unlock(&(g_audio_out_cards[g_actual_audio_out_card_id].card_mutex));
 
 	return ret;
 }
@@ -663,6 +689,8 @@ audio_manager_result_t set_audio_stream_in(uint8_t channels, uint32_t sample_rat
 		meddbg("Found no active input audio card\n");
 		return AUDIO_MANAGER_CARD_NOT_FOUND;
 	}
+
+	pthread_mutex_lock(&(g_audio_in_cards[g_actual_audio_in_card_id].card_mutex));
 
 	if (channels > AUDIO_STREAM_CHANNEL_MONO) {
 		channels = AUDIO_STREAM_CHANNEL_STEREO;
@@ -682,6 +710,7 @@ audio_manager_result_t set_audio_stream_in(uint8_t channels, uint32_t sample_rat
 	if (!pcm_is_ready(g_audio_in_cards[g_actual_audio_in_card_id].pcm)) {
 		meddbg("fail to pcm_is_ready() error : %s", pcm_get_error(g_audio_in_cards[g_actual_audio_in_card_id].pcm));
 		pcm_close(g_audio_in_cards[g_actual_audio_in_card_id].pcm);
+		pthread_mutex_unlock(&(g_audio_in_cards[g_actual_audio_in_card_id].card_mutex));
 		return AUDIO_MANAGER_CARD_NOT_READY;
 	}
 
@@ -701,6 +730,8 @@ audio_manager_result_t set_audio_stream_in(uint8_t channels, uint32_t sample_rat
 																				);
 	}
 
+	pthread_mutex_unlock(&(g_audio_in_cards[g_actual_audio_in_card_id].card_mutex));
+
 	return AUDIO_MANAGER_SUCCESS;
 }
 
@@ -717,6 +748,8 @@ audio_manager_result_t set_audio_stream_out(uint8_t channels, uint32_t sample_ra
 		meddbg("Found no active output audio card\n");
 		return AUDIO_MANAGER_CARD_NOT_FOUND;
 	}
+
+	pthread_mutex_lock(&(g_audio_out_cards[g_actual_audio_out_card_id].card_mutex));
 
 	if (channels > AUDIO_STREAM_CHANNEL_MONO) {
 		channels = AUDIO_STREAM_CHANNEL_STEREO;
@@ -737,6 +770,7 @@ audio_manager_result_t set_audio_stream_out(uint8_t channels, uint32_t sample_ra
 	if (!pcm_is_ready(g_audio_out_cards[g_actual_audio_out_card_id].pcm)) {
 		meddbg("fail to pcm_is_ready() error : %s", pcm_get_error(g_audio_out_cards[g_actual_audio_out_card_id].pcm));
 		pcm_close(g_audio_out_cards[g_actual_audio_out_card_id].pcm);
+		pthread_mutex_unlock(&(g_audio_out_cards[g_actual_audio_out_card_id].card_mutex));
 		return AUDIO_MANAGER_CARD_NOT_READY;
 	}
 
@@ -752,6 +786,8 @@ audio_manager_result_t set_audio_stream_out(uint8_t channels, uint32_t sample_ra
 		g_audio_out_cards[g_actual_audio_out_card_id].resample.handle = src_init(CONFIG_AUDIO_RESAMPLER_BUFSIZE);
 	}
 
+	pthread_mutex_unlock(&(g_audio_out_cards[g_actual_audio_out_card_id].card_mutex));
+
 	return AUDIO_MANAGER_SUCCESS;
 }
 
@@ -764,6 +800,8 @@ audio_manager_result_t pause_audio_stream_in(void)
 		return ret;
 	}
 
+	pthread_mutex_lock(&(g_audio_in_cards[g_actual_audio_in_card_id].card_mutex));
+
 	ret = ioctl(pcm_get_file_descriptor(pcm), AUDIOIOC_PAUSE, NULL);
 	if (ret < 0) {
 		meddbg("Fail to ioctl AUDIOIOC_PAUSE, ret = %d\n", ret);
@@ -771,6 +809,8 @@ audio_manager_result_t pause_audio_stream_in(void)
 	}
 
 	g_audio_in_cards[g_actual_audio_in_card_id].status = AUDIO_CARD_PAUSE;
+
+	pthread_mutex_unlock(&(g_audio_in_cards[g_actual_audio_in_card_id].card_mutex));
 
 	return AUDIO_MANAGER_SUCCESS;
 }
@@ -784,6 +824,8 @@ audio_manager_result_t pause_audio_stream_out(void)
 		return ret;
 	}
 
+	pthread_mutex_lock(&(g_audio_out_cards[g_actual_audio_out_card_id].card_mutex));
+
 	ret = ioctl(pcm_get_file_descriptor(pcm), AUDIOIOC_PAUSE, NULL);
 	if (ret < 0) {
 		meddbg("Fail to ioctl AUDIOIOC_PAUSE, ret = %d\n", ret);
@@ -791,6 +833,8 @@ audio_manager_result_t pause_audio_stream_out(void)
 	}
 
 	g_audio_out_cards[g_actual_audio_out_card_id].status = AUDIO_CARD_PAUSE;
+
+	pthread_mutex_unlock(&(g_audio_out_cards[g_actual_audio_out_card_id].card_mutex));
 
 	return AUDIO_MANAGER_SUCCESS;
 }
@@ -804,6 +848,8 @@ audio_manager_result_t stop_audio_stream_in(void)
 		return ret;
 	}
 
+	pthread_mutex_lock(&(g_audio_in_cards[g_actual_audio_in_card_id].card_mutex));
+
 	ret = ioctl(pcm_get_file_descriptor(pcm), AUDIOIOC_STOP, NULL);
 	if (ret < 0) {
 		meddbg("Fail to ioctl AUDIOIOC_STOP, ret = %d\n", ret);
@@ -811,6 +857,8 @@ audio_manager_result_t stop_audio_stream_in(void)
 	}
 
 	g_audio_in_cards[g_actual_audio_in_card_id].status = AUDIO_CARD_READY;
+
+	pthread_mutex_unlock(&(g_audio_in_cards[g_actual_audio_in_card_id].card_mutex));
 
 	return AUDIO_MANAGER_SUCCESS;
 }
@@ -824,6 +872,8 @@ audio_manager_result_t stop_audio_stream_out(void)
 		return ret;
 	}
 
+	pthread_mutex_lock(&(g_audio_out_cards[g_actual_audio_out_card_id].card_mutex));
+
 	ret = ioctl(pcm_get_file_descriptor(pcm), AUDIOIOC_STOP, NULL);
 	if (ret < 0) {
 		meddbg("Fail to ioctl AUDIOIOC_STOP, ret = %d\n", ret);
@@ -831,6 +881,8 @@ audio_manager_result_t stop_audio_stream_out(void)
 	}
 
 	g_audio_out_cards[g_actual_audio_out_card_id].status = AUDIO_CARD_READY;
+
+	pthread_mutex_unlock(&(g_audio_out_cards[g_actual_audio_out_card_id].card_mutex));
 
 	return AUDIO_MANAGER_SUCCESS;
 }
@@ -844,6 +896,8 @@ audio_manager_result_t reset_audio_stream_in(void)
 		return ret;
 	}
 
+	pthread_mutex_lock(&(g_audio_in_cards[g_actual_audio_in_card_id].card_mutex));
+
 	pcm_close(pcm);
 	pcm = NULL;
 
@@ -853,6 +907,8 @@ audio_manager_result_t reset_audio_stream_in(void)
 	}
 
 	g_audio_in_cards[g_actual_audio_in_card_id].status = AUDIO_CARD_READY;
+
+	pthread_mutex_unlock(&(g_audio_in_cards[g_actual_audio_in_card_id].card_mutex));
 
 	return AUDIO_MANAGER_SUCCESS;
 }
@@ -866,6 +922,8 @@ audio_manager_result_t reset_audio_stream_out(void)
 		return ret;
 	}
 
+	pthread_mutex_lock(&(g_audio_out_cards[g_actual_audio_out_card_id].card_mutex));
+
 	pcm_close(pcm);
 	pcm = NULL;
 
@@ -874,6 +932,8 @@ audio_manager_result_t reset_audio_stream_out(void)
 	}
 
 	g_audio_out_cards[g_actual_audio_out_card_id].status = AUDIO_CARD_READY;
+
+	pthread_mutex_unlock(&(g_audio_out_cards[g_actual_audio_out_card_id].card_mutex));
 
 	return AUDIO_MANAGER_SUCCESS;
 }
