@@ -131,7 +131,7 @@ int pthread_key_create(FAR pthread_key_t *key, pthread_destructor_t destructor)
 	struct task_group_s *group = rtcb->cmn.group;
 	int key_index = 0;
 
-	DEBUGASSERT(group);
+	DEBUGASSERT(group && (rtcb->cmn.flags & TCB_FLAG_TTYPE_MASK) == TCB_FLAG_TTYPE_PTHREAD);
 
 	if (!key) {
 		return EINVAL;

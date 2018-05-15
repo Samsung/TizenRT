@@ -113,7 +113,7 @@ int pthread_key_delete(pthread_key_t key)
 	struct pthread_tcb_s *rtcb = (FAR struct pthread_tcb_s *)this_task();
 	struct task_group_s *group = rtcb->cmn.group;
 
-	DEBUGASSERT(group);
+	DEBUGASSERT(group && (rtcb->cmn.flags & TCB_FLAG_TTYPE_MASK) == TCB_FLAG_TTYPE_PTHREAD);
 
 	if (key < PTHREAD_KEYS_MAX && group->tg_keys[key] == IN_USE) {
 		rtcb->pthread_data[key].data = NULL;
