@@ -69,7 +69,6 @@ public:
 	player_result_t setObserver(std::shared_ptr<MediaPlayerObserverInterface>);
 
 	player_state_t getState();
-	player_result_t seekTo(int);
 
 	void notifySync();
 	void notifyObserver(player_observer_command_t cmd);

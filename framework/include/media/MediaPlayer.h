@@ -163,15 +163,6 @@ public:
 	 * @since TizenRT v2.0 PRE
 	 */
 	player_result_t setObserver(std::shared_ptr<MediaPlayerObserverInterface>);
-	/**
-	 * @brief Gets the current state of MediaPlayer
-	 * @details @b #include <media/MediaPlayer.h>
-	 * This function is sync call apis
-	 * @return The value of current state
-	 * @since TizenRT v2.0 PRE
-	 */
-	
-	player_result_t seekTo(int);
 
 private:
 	std::shared_ptr<MediaPlayerImpl> mPMpImpl;
