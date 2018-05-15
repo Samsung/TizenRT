@@ -35,7 +35,6 @@
 #undef nvdbg
 #define nvdbg printf
 
-#define NUM_OF_STATE_HANDLER 10 // the number of states
 enum _wifimgr_state {
 	WIFIMGR_UNINITIALIZED,
 	WIFIMGR_STA_DISCONNECTED,
@@ -45,9 +44,11 @@ enum _wifimgr_state {
 	WIFIMGR_STA_RECONNECT, // 5
 	WIFIMGR_STA_RECONNECTING,
 	WIFIMGR_STA_CONNECT_CANCEL,
+	WIFIMGR_SOFTAP_DISCONNECTING_STA,
 	WIFIMGR_SOFTAP,
 	WIFIMGR_SCANNING,
 	WIFIMGR_NONE, // it is used for prev state only
+	WIFIMGR_STATE_MAX,
 };
 typedef enum _wifimgr_state _wifimgr_state_e;
 
@@ -110,6 +111,8 @@ struct _wifimgr_info {
 
 	pthread_mutex_t state_lock;
 	pthread_mutex_t info_lock;
+	pthread_mutex_t softap_lock;
+	pthread_cond_t softap_signal; 
 	wifi_manager_cb_s cb;
 
 	//
@@ -121,6 +124,7 @@ struct _wifimgr_info {
 	int terminate;	// it is protected by g_reconn_mutex to sync between the callback task and reconn_worker
 	int conn_tries; // to do: set  it by Kconfig
 	int max_tries;
+	wifi_manager_softap_config_s softap_config;
 };
 typedef struct _wifimgr_info _wifimgr_info_s;
 
@@ -139,6 +143,22 @@ typedef struct _wifimgr_info _wifimgr_info_s;
 #define WIFIMGR_RESET_CBK_CHK (g_manager_info.chk_cbk = 0)
 #define WIFIMGR_CHECK_CBK (g_manager_info.chk_cbk == 0)
 
+#define WIFIMGR_SOFTAP_WAIT_CALLBACK												   \
+	do {																			   \
+		pthread_mutex_lock(&g_manager_info.softap_lock);							   \
+		pthread_cond_wait(&g_manager_info.softap_signal, &g_manager_info.softap_lock); \
+		pthread_mutex_unlock(&g_manager_info.softap_lock);	                           \
+		nvdbg("[WM] T%d wait disconnect callback\n", getpid());										   \
+	} while (0)
+
+#define WIFIMGR_SOFTAP_CALLBACK_RECEIVED											   \
+	do {																			   \
+		pthread_mutex_lock(&g_manager_info.softap_lock);							   \
+		pthread_cond_signal(&g_manager_info.softap_signal);                            \
+		pthread_mutex_unlock(&g_manager_info.softap_lock);	                           \
+		nvdbg("[WM] T%d received disconnect callback\n", getpid());										   \
+	} while (0)
+
 #define WIFIMGR_GET_PREVSTATE g_manager_info.prev_state
 #define WIFIMGR_STORE_PREV_STATE (g_manager_info.prev_state = g_manager_info.state)
 #define WIFIMGR_RESTORE_STATE								\
@@ -150,6 +170,13 @@ typedef struct _wifimgr_info _wifimgr_info_s;
 #define WIFIMGR_SET_SSID(s)							\
 	do {											\
 		strncpy(g_manager_info.ssid, s, strlen(s));	\
+	} while (0)
+
+#define WIFIMGR_COPY_SOFTAP_CONFIG(dest, src)													\
+	do {																				\
+		(dest).channel = (src)->channel;													\
+		strncpy((dest).ssid, (src)->ssid, strlen((src)->ssid) + 1);						\
+		strncpy((dest).passphrase, (src)->passphrase, strlen((src)->passphrase) + 1);	\
 	} while (0)
 
 #define WIFIMGR_COPY_AP_INFO(dest, src)									\
@@ -257,6 +284,7 @@ typedef struct _wifimgr_info _wifimgr_info_s;
 #define WM_APINFO_INITIALIZER {{0,}, 0, {0,}, 0, WIFI_MANAGER_AUTH_UNKNOWN, WIFI_MANAGER_CRYPTO_UNKNOWN}
 #define WM_RECONN_INITIALIZER {WIFI_RECONN_NONE, -1, -1}
 #define WIFIMGR_DEFAULT_CONN_CONFIG {WIFI_RECONN_INTERVAL, 77, 128}
+#define WIFIMGR_SOTFAP_CONFIG {{0,}, {0,}, 1}
 
 /**
  * global variables
@@ -265,11 +293,15 @@ static _wifimgr_info_s g_manager_info = {{0}, {0}, 0, 0, 0,
 										 WIFIMGR_UNINITIALIZED, WIFIMGR_UNINITIALIZED, 0,
 										 PTHREAD_MUTEX_INITIALIZER,
 										 PTHREAD_MUTEX_INITIALIZER,
+										 PTHREAD_MUTEX_INITIALIZER,
+										 PTHREAD_COND_INITIALIZER,
 										 {NULL, NULL, NULL, NULL, NULL},
 										 0,
 										 WM_APINFO_INITIALIZER,
 										 WM_RECONN_INITIALIZER,
-										 0, 0, 10};
+										 0, 0, 10,
+										 WIFIMGR_SOTFAP_CONFIG};
+
 #if WIFIDRIVER_SUPPORT_AUTOCONNECT == 0
 static pthread_mutex_t g_reconn_mutex = PTHREAD_MUTEX_INITIALIZER;
 static pthread_cond_t g_reconn_signal = PTHREAD_COND_INITIALIZER;
@@ -353,6 +385,7 @@ static wifi_manager_result_e _handler_on_connected_state(_wifimgr_msg_s *msg);
 static wifi_manager_result_e _handler_on_reconnecting_state(_wifimgr_msg_s *msg);
 static wifi_manager_result_e _handler_on_reconnect_state(_wifimgr_msg_s *msg);
 static wifi_manager_result_e _handler_on_connect_cancel_state(_wifimgr_msg_s *msg);
+static wifi_manager_result_e _handler_on_softap_disconnecting_state(_wifimgr_msg_s *msg);
 static wifi_manager_result_e _handler_on_softap_state(_wifimgr_msg_s *msg);
 static wifi_manager_result_e _handler_on_scanning_state(_wifimgr_msg_s *msg);
 
@@ -361,7 +394,7 @@ typedef wifi_manager_result_e (*wifimgr_handler)(_wifimgr_msg_s *msg);
 /*
  * g_handler should be matched to _wifimgr_state
  */
-wifimgr_handler g_handler[NUM_OF_STATE_HANDLER] = {
+const wifimgr_handler g_handler[] = {
 	_handler_on_uninitialized_state,
 	_handler_on_disconnected_state,
 	_handler_on_disconnecting_state,
@@ -370,6 +403,7 @@ wifimgr_handler g_handler[NUM_OF_STATE_HANDLER] = {
 	_handler_on_reconnect_state,
 	_handler_on_reconnecting_state,
 	_handler_on_connect_cancel_state,
+	_handler_on_softap_disconnecting_state,
 	_handler_on_softap_state,
 	_handler_on_scanning_state,
 };
@@ -517,6 +551,7 @@ void _convert_state_to_info(connect_status_e *conn, wifi_manager_mode_e *mode, _
 	case WIFIMGR_STA_DISCONNECTED:
 	case WIFIMGR_STA_DISCONNECTING:
 	case WIFIMGR_STA_CONNECTING:
+	case WIFIMGR_SOFTAP_DISCONNECTING_STA:
 		*mode = STA_MODE;
 		*conn = AP_DISCONNECTED;
 		break;
@@ -681,6 +716,9 @@ wifi_manager_result_e _wifimgr_run_softap(wifi_manager_softap_config_s *config)
 	strncpy(g_manager_info.ssid, config->ssid, softap_config.ssid_length + 1);
 	g_manager_info.num_sta = 0;
 
+	if (g_manager_info.state == WIFIMGR_SOFTAP_DISCONNECTING_STA) {
+		WIFIMGR_SOFTAP_CALLBACK_RECEIVED;	
+	}
 	return WIFI_MANAGER_SUCCESS;
 }
 
@@ -865,6 +903,24 @@ wifi_manager_result_e _handler_on_disconnecting_state(_wifimgr_msg_s *msg)
 }
 
 
+
+wifi_manager_result_e _handler_on_softap_disconnecting_state(_wifimgr_msg_s *msg)
+{
+	WM_LOG_HANDLER_START;
+	if (msg->event == EVT_STA_DISCONNECTED) {
+		if (WIFIMGR_CHECK_CBK) {
+			_handle_user_cb(CB_STA_DISCONNECTED, NULL);
+		} else {
+			WIFIMGR_RESET_CBK_CHK;
+		}
+		WIFIMGR_CHECK_RESULT(_wifimgr_run_softap(&g_manager_info.softap_config), "run_softap fail", WIFI_MANAGER_FAIL);
+		WIFIMGR_SET_STATE(WIFIMGR_SOFTAP);
+	} else {
+		return WIFI_MANAGER_FAIL;
+	}
+	return WIFI_MANAGER_SUCCESS;
+}
+
 wifi_manager_result_e _handler_on_connecting_state(_wifimgr_msg_s *msg)
 {
 	WM_LOG_HANDLER_START;
@@ -943,12 +999,9 @@ wifi_manager_result_e _handler_on_connected_state(_wifimgr_msg_s *msg)
 		}
 #endif /* WIFIDRIVER_SUPPORT_AUTOCONNECT */
 	} else if (msg->event == EVT_SET_SOFTAP) {
-		wifi_manager_result_e res = _wifimgr_run_softap((wifi_manager_softap_config_s *)msg->param);
-		if (res != WIFI_MANAGER_SUCCESS) {
-			WIFIMGR_CHECK_RESULT(_wifimgr_disconnect_ap(), "critical error\n", WIFI_MANAGER_FAIL);
-			WIFIMGR_SET_STATE(WIFIMGR_STA_DISCONNECTING);
-		}
-		WIFIMGR_SET_STATE(WIFIMGR_SOFTAP);
+		WIFIMGR_CHECK_RESULT(_wifimgr_disconnect_ap(), "critical error", WIFI_MANAGER_FAIL);
+		WIFIMGR_COPY_SOFTAP_CONFIG(g_manager_info.softap_config, (wifi_manager_softap_config_s *)msg->param);
+		WIFIMGR_SET_STATE(WIFIMGR_SOFTAP_DISCONNECTING_STA);
 	} else if (msg->event == EVT_DEINIT) {
 		// Todo: do I need to disconnect?
 		WIFIMGR_CHECK_RESULT(_wifimgr_deinit(), "critical error\n", WIFI_MANAGER_FAIL);
@@ -1216,6 +1269,14 @@ wifi_manager_result_e wifi_manager_set_mode(wifi_manager_mode_e mode, wifi_manag
 		msg.param = (void *)config;
 	}
 	wifi_manager_result_e res = _handle_request(&msg);
+	LOCK_WIFIMGR;
+	if (g_manager_info.state == WIFIMGR_SOFTAP_DISCONNECTING_STA) {
+		UNLOCK_WIFIMGR;
+		WIFIMGR_SOFTAP_WAIT_CALLBACK;
+	} else {
+		UNLOCK_WIFIMGR;
+	}
+
 	return res;
 }
 
