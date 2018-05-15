@@ -20,7 +20,7 @@
 
 namespace media {
 
-RecorderWorker::RecorderWorker() : mRefCnt(0), mIsRunning(false)
+RecorderWorker::RecorderWorker()
 {
 	medvdbg("RecorderWorker::RecorderWorker()\n");
 }
@@ -57,36 +57,6 @@ int RecorderWorker::entry()
 	return 0;
 }
 
-recorder_result_t RecorderWorker::startWorker()
-{
-	std::unique_lock<std::mutex> lock(mRefMtx);
-	increaseRef();
-	medvdbg("RecorderWorker::startWorker() - increase RefCnt : %d\n", mRefCnt);
-	if (mRefCnt == 1) {
-		mIsRunning = true;
-		mWorkerThread = std::thread(std::bind(&RecorderWorker::entry, this));
-	}
-
-	return RECORDER_OK;
-}
-
-void RecorderWorker::stopWorker()
-{
-	std::unique_lock<std::mutex> lock(mRefMtx);
-	decreaseRef();
-	medvdbg("RecorderWorker::stopWorker() - decrease RefCnt : %d\n", mRefCnt);
-	if (mRefCnt <= 0) {
-		if (mWorkerThread.joinable()) {
-			std::atomic<bool> &refBool = mIsRunning;
-			mWorkerQueue.enQueue([&refBool]() {
-				refBool = false;
-			});
-			mWorkerThread.join();
-			medvdbg("RecorderWorker::stopWorker() - mWorkerthread exited\n");
-		}
-	}
-}
-
 std::shared_ptr<MediaRecorderImpl> RecorderWorker::getCurrentRecorder()
 {
 	return mCurRecorder;
@@ -95,28 +65,5 @@ std::shared_ptr<MediaRecorderImpl> RecorderWorker::getCurrentRecorder()
 void RecorderWorker::setCurrentRecorder(std::shared_ptr<MediaRecorderImpl> mr)
 {
 	mCurRecorder = mr;
-}
-
-MediaQueue& RecorderWorker::getQueue()
-{
-	return mWorkerQueue;
-}
-
-void RecorderWorker::increaseRef()
-{
-	mRefCnt++;
-}
-
-void RecorderWorker::decreaseRef()
-{
-	if (mRefCnt > 0) {
-		mRefCnt--;
-	}
-}
-
-bool RecorderWorker::isAlive()
-{
-	std::unique_lock<std::mutex> lock(mRefMtx);
-	return mRefCnt == 0 ? false : true ;
 }
 } // namespace media

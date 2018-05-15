@@ -26,7 +26,7 @@
 using namespace std;
 
 namespace media {
-PlayerWorker::PlayerWorker() : mRefCnt(0), mIsRunning(false), mCurPlayer(nullptr)
+PlayerWorker::PlayerWorker() : mCurPlayer(nullptr)
 {
 }
 
@@ -101,60 +101,6 @@ int PlayerWorker::entry()
 	}
 
 	return 0;
-}
-
-player_result_t PlayerWorker::startWorker()
-{
-	std::unique_lock<mutex> lock(mRefMtx);
-	increaseRef();
-
-	if (getRefCnt() == 1) {
-		mIsRunning = true;
-		mWorkerThread = std::thread(std::bind(&PlayerWorker::entry, this));
-	}
-
-	return PLAYER_OK;
-}
-
-void PlayerWorker::stopWorker()
-{
-	std::unique_lock<mutex> lock(mRefMtx);
-	decreaseRef();
-
-	if (getRefCnt() <= 0) {
-		if (mWorkerThread.joinable()) {
-			std::atomic<bool> &refBool = mIsRunning;
-			mWorkerQueue.enQueue([&refBool]() {
-				refBool = false;
-			});
-			mWorkerThread.join();
-		}
-	}
-}
-
-MediaQueue &PlayerWorker::getQueue()
-{
-	return mWorkerQueue;
-}
-
-int PlayerWorker::getRefCnt()
-{
-	return mRefCnt;
-}
-
-void PlayerWorker::increaseRef()
-{
-	mRefCnt++;
-}
-
-void PlayerWorker::decreaseRef()
-{
-	mRefCnt--;
-}
-
-bool PlayerWorker::isAlive()
-{
-	return getRefCnt() != 0;
 }
 
 void PlayerWorker::setPlayer(std::shared_ptr<MediaPlayerImpl> player)

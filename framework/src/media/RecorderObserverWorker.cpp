@@ -20,7 +20,7 @@
 
 namespace media {
 
-RecorderObserverWorker::RecorderObserverWorker() : mRefCnt(0), mIsRunning(false)
+RecorderObserverWorker::RecorderObserverWorker()
 {
 }
 RecorderObserverWorker::~RecorderObserverWorker()
@@ -38,64 +38,12 @@ int RecorderObserverWorker::entry()
 	medvdbg("RecorderObserverWorker::entry()\n");
 
 	while (mIsRunning) {
-		std::function<void()> run = mObserverQueue.deQueue();
+		std::function<void()> run = mWorkerQueue.deQueue();
 		medvdbg("RecorderObserverWorker::entry() - pop Queue\n");
 		if (run != nullptr) {
 			run();
 		}
 	}
 	return 0;
-}
-
-recorder_result_t RecorderObserverWorker::startWorker()
-{
-	std::unique_lock<std::mutex> lock(mRefMtx);
-	increaseRef();
-
-	medvdbg("RecorderObserverWorker::startWorker() - increase RefCnt : %d\n", mRefCnt);
-
-	if (mRefCnt == 1) {
-		mIsRunning = true;
-		mWorkerThread = std::thread(std::bind(&RecorderObserverWorker::entry, this));
-	}
-
-	return RECORDER_OK;
-}
-
-void RecorderObserverWorker::stopWorker()
-{
-	std::unique_lock<std::mutex> lock(mRefMtx);
-	decreaseRef();
-
-	medvdbg("RecorderObserverWorker::stopWorker() - decrease RefCnt : %d\n", mRefCnt);
-
-	if (mRefCnt <= 0) {
-
-		if (mWorkerThread.joinable()) {
-			std::atomic<bool> &refBool = mIsRunning;
-			mObserverQueue.enQueue([&refBool]() {
-				refBool = false;
-			});
-			mWorkerThread.join();
-			medvdbg("RecorderObserverWorker::stopWorker() - mWorkerthread exited\n");
-		}
-	}
-}
-
-MediaQueue& RecorderObserverWorker::getQueue()
-{
-	return mObserverQueue;
-}
-
-void RecorderObserverWorker::increaseRef()
-{
-	mRefCnt++;
-}
-
-void RecorderObserverWorker::decreaseRef()
-{
-	if (mRefCnt > 0) {
-		mRefCnt--;
-	}
 }
 } // namespace media
