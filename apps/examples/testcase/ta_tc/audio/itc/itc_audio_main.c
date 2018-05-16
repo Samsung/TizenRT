@@ -977,7 +977,7 @@ static void itc_audio_pcm_readi_p(void)
 	TC_ASSERT_NEQ_CLEANUP("pcm_readi", str, NULL, clean_all_data(fd, buffer));
 
 	while (remain > 0) {
-		frames_read = pcm_readi(g_pcm, buffer, remain);
+		frames_read = pcm_readi(g_pcm, buffer, pcm_get_buffer_size(g_pcm));
 		if (frames_read < 0) {
 			break;
 		}
