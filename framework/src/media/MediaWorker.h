@@ -16,34 +16,41 @@
  *
  ******************************************************************/
 
-#include <functional>
-#include <debug.h>
-#include "PlayerObserverWorker.h"
+#ifndef __MEDIA_MEDIAWORKER_HPP
+#define __MEDIA_MEDIAWORKER_HPP
+
+#include <atomic>
+#include <thread>
+#include <mutex>
+#include "MediaQueue.h"
 
 namespace media {
-PlayerObserverWorker::PlayerObserverWorker()
+class MediaWorker
 {
-}
+public:
+	MediaWorker();
+	virtual ~MediaWorker();
 
-PlayerObserverWorker::~PlayerObserverWorker()
-{
-}
+	void startWorker();
+	void stopWorker();
+	MediaQueue &getQueue();
 
-PlayerObserverWorker& PlayerObserverWorker::getWorker()
-{
-	static PlayerObserverWorker worker;
-	return worker;
-}
+	bool isAlive();
 
-int PlayerObserverWorker::entry()
-{
-	while (mIsRunning) {
-		std::function<void()> run = mWorkerQueue.deQueue();
-		medvdbg("PlayerObserverWorker::entry() - pop Queue\n");
-		if (run != nullptr) {
-			run();
-		}
-	}
-	return 0;
-}
+protected:
+	virtual int entry() = 0;
+
+	MediaQueue mWorkerQueue;
+	std::atomic<bool> mIsRunning;
+
+private:
+	int getRefCnt();
+	void increaseRef();
+	void decreaseRef();
+
+	int mRefCnt;
+	std::thread mWorkerThread;
+	std::mutex mRefMtx;
+};
 } // namespace media
+#endif

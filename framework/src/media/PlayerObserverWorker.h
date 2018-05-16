@@ -23,7 +23,7 @@
 #include <memory>
 #include <mutex>
 #include <media/MediaPlayer.h>
-#include "MediaQueue.h"
+#include "MediaWorker.h"
 
 namespace media {
 typedef enum player_observer_command_e {
@@ -33,25 +33,15 @@ typedef enum player_observer_command_e {
 	PLAYER_OBSERVER_COMMAND_PAUSED
 } player_observer_command_t;
 
-class PlayerObserverWorker
+class PlayerObserverWorker : public MediaWorker
 {
 public:
 	static PlayerObserverWorker& getWorker();
-	player_result_t startWorker();
-	void stopWorker();
-	MediaQueue& getQueue();
 
 private:
 	PlayerObserverWorker();
-	~PlayerObserverWorker();
-	int entry();
-
-private:
-	int mRefCnt;
-	std::atomic<bool> mIsRunning;
-	std::thread mWorkerThread;
-	MediaQueue mObserverQueue; // observer queue
-	std::mutex mRefMtx;  // reference cnt mutex
+	virtual ~PlayerObserverWorker();
+	int entry() override;
 };
 } // namespace media
 

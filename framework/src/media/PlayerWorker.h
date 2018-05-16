@@ -19,41 +19,26 @@
 #ifndef __MEDIA_PLAYERWORKER_HPP
 #define __MEDIA_PLAYERWORKER_HPP
 
-#include <thread>
 #include <memory>
-#include <mutex>
 #include <media/MediaPlayer.h>
-#include "MediaQueue.h"
+#include "MediaWorker.h"
 
 namespace media {
-class PlayerWorker
+class PlayerWorker : public MediaWorker
 {
 public:
 	PlayerWorker();
-	~PlayerWorker();
+	virtual ~PlayerWorker();
 	static PlayerWorker &getWorker();
 
-	player_result_t startWorker();
-	void stopWorker();
-	MediaQueue &getQueue();
-
-	bool isAlive();
 	void setPlayer(std::shared_ptr<MediaPlayerImpl>);
 	std::shared_ptr<MediaPlayerImpl> getPlayer();
 
 private:
-	int entry();
-	int getRefCnt();
-	void increaseRef();
-	void decreaseRef();
+	int entry() override;
 
 private:
-	int mRefCnt;
-	std::atomic<bool> mIsRunning;
-	std::thread mWorkerThread;
 	std::shared_ptr<MediaPlayerImpl> mCurPlayer;
-	MediaQueue mWorkerQueue; // worker queue
-	std::mutex mRefMtx;		 // reference cnt mutex
 };
 } // namespace media
 #endif
