@@ -48,7 +48,7 @@ int RecorderWorker::entry()
 			}
 		}
 
-		std::function<void()> run = mWorkerQueue.deQueue();
+		std::function<void()> run = deQueue();
 		medvdbg("RecorderWorker::entry() - pop Queue\n");
 		if (run != nullptr) {
 			run();

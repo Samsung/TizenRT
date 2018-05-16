@@ -94,7 +94,7 @@ int PlayerWorker::entry()
 			}
 		}
 
-		std::function<void()> run = mWorkerQueue.deQueue();
+		std::function<void()> run = deQueue();
 		if (run != nullptr) {
 			run();
 		}

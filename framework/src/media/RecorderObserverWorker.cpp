@@ -38,7 +38,7 @@ int RecorderObserverWorker::entry()
 	medvdbg("RecorderObserverWorker::entry()\n");
 
 	while (mIsRunning) {
-		std::function<void()> run = mWorkerQueue.deQueue();
+		std::function<void()> run = deQueue();
 		medvdbg("RecorderObserverWorker::entry() - pop Queue\n");
 		if (run != nullptr) {
 			run();

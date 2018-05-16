@@ -39,7 +39,7 @@ recorder_result_t MediaRecorderImpl::create()
 	mrw.startWorker();
 
 	recorder_result_t ret = RECORDER_ERROR;
-	mrw.getQueue().enQueue(&MediaRecorderImpl::createRecorder, shared_from_this(), std::ref(ret));
+	mrw.enQueue(&MediaRecorderImpl::createRecorder, shared_from_this(), std::ref(ret));
 	mSyncCv.wait(lock);
 
 	if (ret == RECORDER_ERROR) {
@@ -74,7 +74,7 @@ recorder_result_t MediaRecorderImpl::destroy()
 	}
 
 	recorder_result_t ret = RECORDER_ERROR;
-	mrw.getQueue().enQueue(&MediaRecorderImpl::destroyRecorder, shared_from_this(), std::ref(ret));
+	mrw.enQueue(&MediaRecorderImpl::destroyRecorder, shared_from_this(), std::ref(ret));
 	mSyncCv.wait(lock);
 
 	if (ret == RECORDER_OK) {
@@ -115,7 +115,7 @@ recorder_result_t MediaRecorderImpl::prepare()
 		return RECORDER_ERROR;
 	}
 	recorder_result_t ret = RECORDER_ERROR;
-	mrw.getQueue().enQueue(&MediaRecorderImpl::prepareRecorder, shared_from_this(), std::ref(ret));
+	mrw.enQueue(&MediaRecorderImpl::prepareRecorder, shared_from_this(), std::ref(ret));
 	mSyncCv.wait(lock);
 
 	return ret;
@@ -173,7 +173,7 @@ recorder_result_t MediaRecorderImpl::unprepare()
 		return RECORDER_ERROR;
 	}
 	recorder_result_t ret = RECORDER_ERROR;
-	mrw.getQueue().enQueue(&MediaRecorderImpl::unprepareRecorder, shared_from_this(), std::ref(ret));
+	mrw.enQueue(&MediaRecorderImpl::unprepareRecorder, shared_from_this(), std::ref(ret));
 	mSyncCv.wait(lock);
 
 	return ret;
@@ -219,7 +219,7 @@ recorder_result_t MediaRecorderImpl::start()
 	if (!mrw.isAlive()) {
 		return RECORDER_ERROR;
 	}
-	mrw.getQueue().enQueue(&MediaRecorderImpl::startRecorder, shared_from_this());
+	mrw.enQueue(&MediaRecorderImpl::startRecorder, shared_from_this());
 
 	return RECORDER_OK;
 }
@@ -259,7 +259,7 @@ recorder_result_t MediaRecorderImpl::stop()
 	if (!mrw.isAlive()) {
 		return RECORDER_ERROR;
 	}
-	mrw.getQueue().enQueue(&MediaRecorderImpl::stopRecorder, shared_from_this(), true);
+	mrw.enQueue(&MediaRecorderImpl::stopRecorder, shared_from_this(), true);
 
 	return RECORDER_OK;
 }
@@ -289,7 +289,7 @@ recorder_result_t MediaRecorderImpl::pause()
 	if (!mrw.isAlive()) {
 		return RECORDER_ERROR;
 	}
-	mrw.getQueue().enQueue(&MediaRecorderImpl::pauseRecorder, shared_from_this());
+	mrw.enQueue(&MediaRecorderImpl::pauseRecorder, shared_from_this());
 
 	return RECORDER_OK;
 }
@@ -319,7 +319,7 @@ int MediaRecorderImpl::getVolume()
 		return ret;
 	}
 
-	mrw.getQueue().enQueue(&MediaRecorderImpl::getRecorderVolume, shared_from_this(), std::ref(ret));
+	mrw.enQueue(&MediaRecorderImpl::getRecorderVolume, shared_from_this(), std::ref(ret));
 	mSyncCv.wait(lock);
 
 	return ret;
@@ -349,7 +349,7 @@ recorder_result_t MediaRecorderImpl::setVolume(int vol)
 	}
 
 	recorder_result_t ret = RECORDER_ERROR;
-	mrw.getQueue().enQueue(&MediaRecorderImpl::setRecorderVolume, shared_from_this(), vol, std::ref(ret));
+	mrw.enQueue(&MediaRecorderImpl::setRecorderVolume, shared_from_this(), vol, std::ref(ret));
 	mSyncCv.wait(lock);
 
 	return ret;
@@ -397,7 +397,7 @@ recorder_result_t MediaRecorderImpl::setDataSource(std::unique_ptr<stream::Outpu
 
 	recorder_result_t ret = RECORDER_ERROR;
 	std::shared_ptr<stream::OutputDataSource> sharedDataSource = std::move(dataSource);
-	mrw.getQueue().enQueue(&MediaRecorderImpl::setRecorderDataSource, shared_from_this(), sharedDataSource, std::ref(ret));
+	mrw.enQueue(&MediaRecorderImpl::setRecorderDataSource, shared_from_this(), sharedDataSource, std::ref(ret));
 	mSyncCv.wait(lock);
 
 	return ret;
@@ -438,7 +438,7 @@ recorder_result_t MediaRecorderImpl::setObserver(std::shared_ptr<MediaRecorderOb
 		return RECORDER_ERROR;
 	}
 
-	mrw.getQueue().enQueue(&MediaRecorderImpl::setRecorderObserver, shared_from_this(), observer);
+	mrw.enQueue(&MediaRecorderImpl::setRecorderObserver, shared_from_this(), observer);
 	mSyncCv.wait(lock);
 
 	return RECORDER_OK;
@@ -485,7 +485,7 @@ void MediaRecorderImpl::capture()
 		std::lock_guard<std::mutex> lock(mCmdMtx);
 		meddbg("MediaRecorderImpl::capture() -  (frames < 0)\n");
 		RecorderWorker& mrw = RecorderWorker::getWorker();
-		mrw.getQueue().enQueue(&MediaRecorderImpl::stopRecorder, shared_from_this(), false);
+		mrw.enQueue(&MediaRecorderImpl::stopRecorder, shared_from_this(), false);
 	}
 }
 
@@ -503,19 +503,19 @@ void MediaRecorderImpl::notifyObserver(observer_command_t cmd)
 		switch (cmd) {
 		case OBSERVER_COMMAND_STARTED: {
 			medvdbg("MediaRecorderImpl::notifyObserver(observer_command_t cmd) - OBSERVER_COMMAND_STARTED\n");
-			row.getQueue().enQueue(&MediaRecorderObserverInterface::onRecordStarted, mRecorderObserver, mId);
+			row.enQueue(&MediaRecorderObserverInterface::onRecordStarted, mRecorderObserver, mId);
 		} break;
 		case OBSERVER_COMMAND_PAUSED: {
 			medvdbg("MediaRecorderImpl::notifyObserver(observer_command_t cmd) - OBSERVER_COMMAND_PAUSED\n");
-			row.getQueue().enQueue(&MediaRecorderObserverInterface::onRecordPaused, mRecorderObserver, mId);
+			row.enQueue(&MediaRecorderObserverInterface::onRecordPaused, mRecorderObserver, mId);
 		} break;
 		case OBSERVER_COMMAND_FINISHIED: {
 			medvdbg("MediaRecorderImpl::notifyObserver(observer_command_t cmd) - OBSERVER_COMMAND_FINISHIED\n");
-			row.getQueue().enQueue(&MediaRecorderObserverInterface::onRecordFinished, mRecorderObserver, mId);
+			row.enQueue(&MediaRecorderObserverInterface::onRecordFinished, mRecorderObserver, mId);
 		} break;
 		case OBSERVER_COMMAND_ERROR: {
 			medvdbg("MediaRecorderImpl::notifyObserver(observer_command_t cmd) - OBSERVER_COMMAND_ERROR\n");
-			row.getQueue().enQueue(&MediaRecorderObserverInterface::onRecordError, mRecorderObserver, mId);
+			row.enQueue(&MediaRecorderObserverInterface::onRecordError, mRecorderObserver, mId);
 		} break;
 		}
 	}

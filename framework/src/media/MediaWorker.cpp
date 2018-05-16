@@ -59,9 +59,9 @@ void MediaWorker::stopWorker()
 	}
 }
 
-MediaQueue& MediaWorker::getQueue()
+std::function<void()> MediaWorker::deQueue()
 {
-	return mWorkerQueue;
+	return mWorkerQueue.deQueue();
 }
 
 void MediaWorker::increaseRef()

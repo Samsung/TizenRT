@@ -38,7 +38,7 @@ PlayerObserverWorker& PlayerObserverWorker::getWorker()
 int PlayerObserverWorker::entry()
 {
 	while (mIsRunning) {
-		std::function<void()> run = mWorkerQueue.deQueue();
+		std::function<void()> run = deQueue();
 		medvdbg("PlayerObserverWorker::entry() - pop Queue\n");
 		if (run != nullptr) {
 			run();
