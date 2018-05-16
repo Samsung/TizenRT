@@ -3635,7 +3635,7 @@ int tc_filesystem_main(int argc, char *argv[])
 #ifdef CONFIG_ITC_FS
 	itc_fs_main();
 #endif
-#if defined(CONFIG_TC_FS_PROCFS) && !defined(CONFIG_SMARTFS_MULTI_ROOT_DIRS)
+#if defined(CONFIG_TC_FS_PROCFS) && defined(CONFIG_FS_SMARTFS) && !defined(CONFIG_SMARTFS_MULTI_ROOT_DIRS)
 	tc_fs_smartfs_mksmartfs();
 #endif
 	(void)tc_handler(TC_END, "FileSystem TC");
