@@ -34,6 +34,9 @@ endif
 
 ifeq ($(CONFIG_MEDIA_RECORDER), y)
 CXXSRCS += MediaRecorder.cpp OutputDataSource.cpp FileOutputDataSource.cpp RecorderWorker.cpp MediaRecorderImpl.cpp RecorderObserverWorker.cpp 
+ifeq ($(CONFIG_NET), y)
+CXXSRCS += SocketOutputDataSource.cpp
+endif
 endif
 
 DEPPATH += --dep-path src/media
