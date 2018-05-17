@@ -735,6 +735,31 @@ config RAM_SIZE
 		does not execute out of RAM but from FLASH, then you may designate
 		any block of RAM as "primary."
 
+config RAMx_START
+	string "List of start address for additional heap region"
+	default "0x00000000,"
+	depends on MM_REGIONS != 1
+	---help---
+		The start address list of the additional heap regions.
+		When you want to use separated heap region in a physical RAM or
+		two different physical RAMs, set MM_REGIONS first at memory
+		management, and then set hexa values at RAMx_START and RAMx_SIZE
+		to support several heap regions.
+		Each region is separated by ',' as shown in example.
+		i.e. "0x02000000,0x4000000"
+
+config RAMx_SIZE
+	string "List of size for additional heap region"
+	default "0,"
+	depends on MM_REGIONS != 1
+	---help---
+		The size list of additional heap region.
+		Refer RAMx_START content. One different thing is this has
+		decimal values (START has hexa values).
+		This should have same number of list element with RAMx_START's.
+		Each region is separated by ',' as shown in example.
+		i.e. "100,200"
+
 config DDR
 	bool "Use DDR memory"
 	default n
