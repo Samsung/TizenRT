@@ -5,7 +5,7 @@
 
 config EXAMPLES_TESTCASE_ARASTORAGE_ITC
 	bool "Arastorage ITC TestCase Example"
-	select ARASTORAGE
+	depends on  ARASTORAGE
 	default n
 	---help---
 		Enable the Arastorage TestCase example

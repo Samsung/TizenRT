@@ -604,13 +604,15 @@ config NFILE_DESCRIPTORS
 
 config NFILE_STREAMS
 	int "Maximum number of FILE streams"
-	default 16
+	default 16 if !OPTIMIZE_RAM_USAGE
+	default 8 if OPTIMIZE_RAM_USAGE
 	---help---
 		The maximum number of streams that can be fopen'ed
 
 config NAME_MAX
 	int "Maximum size of a file name"
-	default 32
+	default 32 if !OPTIMIZE_RAM_USAGE
+	default 10 if OPTIMIZE_RAM_USAGE
 	---help---
 	The maximum size of a file name.
 
@@ -886,7 +888,8 @@ config SCHED_WORKQUEUE_SORTING
 
 config SCHED_HPWORK
 	bool "High priority (kernel) worker thread"
-	default y
+	default y if !OPTIMIZE_RAM_USAGE
+	default n if OPTIMIZE_RAM_USAGE
 	select SCHED_WORKQUEUE
 	---help---
 		Create a dedicated high-priority "worker" thread to handle delayed
@@ -937,7 +940,8 @@ config SCHED_HPWORKPERIOD
 
 config SCHED_HPWORKSTACKSIZE
 	int "High priority worker thread stack size"
-	default 2048
+	default 2048 if !OPTIMIZE_RAM_USAGE
+	default 512 if OPTIMIZE_RAM_USAGE
 	---help---
 		The stack size allocated for the worker thread.  Default: 2K.
 
@@ -945,7 +949,8 @@ endif # SCHED_HPWORK
 
 config SCHED_LPWORK
 	bool "Low priority (kernel) worker thread"
-	default y
+	default y if !OPTIMIZE_RAM_USAGE
+	default n if OPTIMIZE_RAM_USAGE
 	select SCHED_WORKQUEUE
 	---help---
 		If SCHED_LPWORK is defined then a lower-priority work queue will
@@ -1033,7 +1038,8 @@ config SCHED_LPWORKPERIOD
 
 config SCHED_LPWORKSTACKSIZE
 	int "Low priority worker thread stack size"
-	default 2048
+	default 2048 if !OPTIMIZE_RAM_USAGE
+	default 512 if OPTIMIZE_RAM_USAGE
 	---help---
 		The stack size allocated for the lower priority worker thread.  Default: 2K.
 
@@ -1071,7 +1077,8 @@ config PTHREAD_STACK_MIN
 
 config PTHREAD_STACK_DEFAULT
 	int "Default pthread stack size"
-	default 2048
+	default 2048 if !OPTIMIZE_RAM_USAGE
+	default 512 if OPTIMIZE_RAM_USAGE
 	depends on !DISABLE_PTHREAD
 	---help---
 		Default pthread stack size

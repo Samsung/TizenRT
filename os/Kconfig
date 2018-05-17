@@ -22,6 +22,13 @@ menu "Build Setup"
 config EXPERIMENTAL
 	bool "Prompt for development and/or incomplete code/drivers"
 
+config OPTIMIZE_RAM_USAGE
+	bool "Optimize RAM Usage"
+	default n
+	---help---
+		This option is selected by the user at build time according to the memory requirements, (16KB to 64KB)
+
+
 config DEFAULT_SMALL
 	bool "Default to smallest size"
 	default n

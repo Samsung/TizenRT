@@ -5,7 +5,8 @@
 
 config FS_SMARTFS
 	bool "SMART file system"
-	default y
+	default y if !OPTIMIZE_RAM_USAGE
+	default n if OPTIMIZE_RAM_USAGE	
 	depends on !DISABLE_MOUNTPOINT
 	select FS_READABLE
 	select FS_WRITABLE

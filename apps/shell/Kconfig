@@ -6,7 +6,8 @@
 menu "Shell"
 config TASH
 	bool "Enable shell"
-	default y
+	default y if !OPTIMIZE_RAM_USAGE
+	default n if OPTIMIZE_RAM_USAGE
 	depends on NFILE_DESCRIPTORS != 0
 
 if TASH
@@ -31,7 +32,8 @@ config TASH_COMMAND_INTERFACE
 
 config TASH_CMDTASK_STACKSIZE
 	int "TASH task stack size to run command with ASYNC type"
-	default 4096
+	default 4096 if !OPTIMIZE_RAM_USAGE
+	default 2048 if OPTIMIZE_RAM_USAGE
 	---help---
 		The stack size allocated for TASH command task
 

@@ -7,7 +7,8 @@ comment "Standard C Library Options"
 
 config STDIO_BUFFER_SIZE
 	int "C STDIO buffer size"
-	default 64
+	default 64 if !OPTIMIZE_RAM_USAGE
+	default 32 if OPTIMIZE_RAM_USAGE
 	---help---
 		Size of buffers using within the C buffered I/O interfaces (printf,
 		putchar, fwrite, etc.).  This function sets the initial I/O buffer
