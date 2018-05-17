@@ -25,7 +25,7 @@ comment "ST_Things Config Parameters"
 
 config ST_THINGS_ARTIK_HW_CERT_KEY
 	bool "Enable Artik H/W Certificate & Key"
-	depends on ARCH_BOARD_ARTIK053 || ARCH_BOARD_ARTIK053S || ARCH_BOARD_ARTIK055 || ARCH_BOARD_ARTIK055S
+	depends on ARCH_BOARD_ARTIK05X_FAMILY
 	select TLS_WITH_SSS
 	select SUPPORT_FULL_SECURITY
 	select HW_RNG
