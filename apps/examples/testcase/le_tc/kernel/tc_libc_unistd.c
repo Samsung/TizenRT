@@ -33,10 +33,8 @@
 
 #define ARG_COUNT       6
 #define BUFFSIZE        32
-#ifndef CONFIG_DISABLE_SIGNALS
 #define SEC_3           3
 #define USLEEP_INTERVAL 3000000
-#endif
 #ifdef CONFIG_PIPES
 #define MSG_SIZE        30
 
@@ -198,7 +196,6 @@ static void tc_libc_unistd_getopt(void)
 	TC_SUCCESS_RESULT();
 }
 
-#ifndef CONFIG_DISABLE_SIGNALS
 /**
 * @fn                   :tc_libc_unistd_sleep
 * @brief                :The sleep() function shall cause the calling thread to be suspended from execution until either\
@@ -250,7 +247,6 @@ static void tc_libc_unistd_usleep(void)
 
 	TC_SUCCESS_RESULT();
 }
-#endif
 
 #ifdef CONFIG_PIPES
 /**
@@ -308,10 +304,8 @@ int libc_unistd_main(void)
 #ifdef CONFIG_PIPES
 	tc_libc_unistd_pipe();
 #endif
-#ifndef CONFIG_DISABLE_SIGNALS
 	tc_libc_unistd_sleep();
 	tc_libc_unistd_usleep();
-#endif
 
 	return 0;
 }

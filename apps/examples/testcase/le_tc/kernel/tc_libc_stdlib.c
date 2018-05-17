@@ -668,7 +668,9 @@ static void tc_libc_stdlib_div(void)
  ****************************************************************************/
 int libc_stdlib_main(void)
 {
+#ifndef CONFIG_DISABLE_PTHREAD
 	tc_libc_stdlib_abort();
+#endif
 	tc_libc_stdlib_abs_labs_llabs();
 	tc_libc_stdlib_atof();
 	tc_libc_stdlib_atoi();
