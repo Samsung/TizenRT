@@ -1268,6 +1268,10 @@ wifi_manager_result_e wifi_manager_scan_ap(void)
 
 wifi_manager_result_e wifi_manager_save_config(wifi_manager_ap_config_s *config)
 {
+	if (config == NULL) {
+		ndbg("[WM] save AP configuration failure\n");
+		return WIFI_MANAGER_FAIL;
+	}
 	WIFIMGR_CHECK_UTILRESULT(wifi_profile_write(config), "wifimgr save config fail\n", WIFI_MANAGER_FAIL);
 	return WIFI_MANAGER_SUCCESS;
 }
