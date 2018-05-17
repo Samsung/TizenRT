@@ -99,7 +99,7 @@
  */
 struct resampler_s {
 	int16_t *in_buffer;     // internal input buffer
-	int16_t *out_buffer;    // internal output buffer
+	int16_t *out_buffer;    // pointer of the external output buffer
 	int size_in_bytes;      // input buffer size in bytes
 	int size_in_frames;     // input buffer size in frames
 	int outsize_in_frames;  // output buffer size in frames
@@ -402,9 +402,6 @@ int src_destroy(src_handle_t handle)
 	free(src->in_buffer);
 	src->in_buffer = NULL;
 
-	free(src->out_buffer);
-	src->out_buffer = NULL;
-
 	free(src);
 	return SRC_ERR_NO_ERROR;
 }
@@ -422,6 +419,7 @@ int src_simple(src_handle_t handle, src_data_t *src_data)
 {
 	resampler_t *src = (resampler_t *)handle;
 	RETURN_VAL_IF_FAIL((src != NULL && src_data != NULL), SRC_ERR_BAD_PARAMS);
+	RETURN_VAL_IF_FAIL((src_data->data_in != NULL && src_data->data_out != NULL), SRC_ERR_BAD_PARAMS);
 
 	int channels_num = src_data->channels_num;
 	RETURN_VAL_IF_FAIL((channels_num > 0 && channels_num <= SRC_MAX_CH), SRC_ERR_BAD_CHANNEL_COUNT);
@@ -439,7 +437,12 @@ int src_simple(src_handle_t handle, src_data_t *src_data)
 	}
 
 	// PCM format conversion isn't supported currently, and shall be supported in future.
-	RETURN_VAL_IF_FAIL((old_sample_width == new_sample_width), SRC_ERR_NOT_SUPPORT);
+	// Support SAMPLE_WIDTH_16BITS  currenty, and other format shall be supported in future.
+	RETURN_VAL_IF_FAIL((old_sample_width == new_sample_width && old_sample_width == SAMPLE_WIDTH_16BITS), SRC_ERR_NOT_SUPPORT);
+
+	src->outsize_in_frames = src_data->out_buf_length / (BYTES_PER_SAMPLE(new_sample_width) * channels_num);
+	RETURN_VAL_IF_FAIL((src_data->out_buf_length > 0 && src->outsize_in_frames > src->left_frames), SRC_ERR_BAD_PARAMS);
+	src->out_buffer = src_data->data_out;
 
 	if (src->in_buffer == NULL) {
 		src->in_buffer = (int16_t *)malloc(src->size_in_bytes);
@@ -447,20 +450,6 @@ int src_simple(src_handle_t handle, src_data_t *src_data)
 
 		src->channels_num = channels_num;
 		src->size_in_frames = src->size_in_bytes / (bytes_per_sample * channels_num);
-	}
-
-	if (src->out_buffer == NULL) {
-		// Calculate sample rate ratio for internal buffer allocation
-		int ratio = new_sample_rate / old_sample_rate;
-		if ((new_sample_rate % old_sample_rate) != 0) {
-			ratio += 1;
-		}
-
-		int out_buf_size = ratio * src->size_in_bytes;
-		src->out_buffer = (int16_t *)malloc(out_buf_size);
-		RETURN_VAL_IF_FAIL((src->out_buffer != NULL), SRC_ERR_MALLOC_FAILED);
-
-		src->outsize_in_frames = out_buf_size / (BYTES_PER_SAMPLE(new_sample_width) * channels_num);
 		src->lastratio = src_ratio;
 		src->lastoldformat = old_sample_width;
 		src->lastnewformat = new_sample_width;
@@ -493,8 +482,15 @@ int src_simple(src_handle_t handle, src_data_t *src_data)
 			   FRAMES_TO_BYTES(src->left_frames));
 		frames_num += src->left_frames;
 
+		//according to the outsize_in_frames, to calculate the adjust_size_in_frames
+		int ratio = new_sample_rate / old_sample_rate;
+		if ((new_sample_rate % old_sample_rate) != 0) {
+			ratio += 1;
+		}
+		int adjust_size_in_frames = MINIMUM(src->size_in_frames, src->outsize_in_frames/ratio);
+		
 		// accept input frames as much as possible
-		input_frames_used = MINIMUM(src_data->input_frames, (src->size_in_frames - frames_num));
+		input_frames_used = MINIMUM(src_data->input_frames, (adjust_size_in_frames - frames_num));
 
 		// append new input frames
 		memcpy((void *)(int8_t *)src->in_buffer + FRAMES_TO_BYTES(frames_num),\
