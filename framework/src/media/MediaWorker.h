@@ -42,16 +42,16 @@ public:
 	bool isAlive();
 
 protected:
-	virtual int entry() = 0;
-
-	MediaQueue mWorkerQueue;
-	std::atomic<bool> mIsRunning;
+	virtual bool processLoop();
 
 private:
+	int mediaLooper();
 	int getRefCnt();
 	void increaseRef();
 	void decreaseRef();
 
+	MediaQueue mWorkerQueue;
+	std::atomic<bool> mIsRunning;
 	int mRefCnt;
 	std::thread mWorkerThread;
 	std::mutex mRefMtx;

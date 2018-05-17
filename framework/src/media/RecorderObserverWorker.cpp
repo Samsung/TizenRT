@@ -32,18 +32,4 @@ RecorderObserverWorker& RecorderObserverWorker::getWorker()
 	static RecorderObserverWorker worker;
 	return worker;
 }
-
-int RecorderObserverWorker::entry()
-{
-	medvdbg("RecorderObserverWorker::entry()\n");
-
-	while (mIsRunning) {
-		std::function<void()> run = deQueue();
-		medvdbg("RecorderObserverWorker::entry() - pop Queue\n");
-		if (run != nullptr) {
-			run();
-		}
-	}
-	return 0;
-}
 } // namespace media

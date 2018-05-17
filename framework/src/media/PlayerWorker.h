@@ -35,7 +35,7 @@ public:
 	std::shared_ptr<MediaPlayerImpl> getPlayer();
 
 private:
-	int entry() override;
+	bool processLoop() override;
 
 private:
 	std::shared_ptr<MediaPlayerImpl> mCurPlayer;
