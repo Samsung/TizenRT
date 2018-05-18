@@ -485,7 +485,7 @@ int pm_changestate(int domain, int newstate);
  *
  ****************************************************************************/
 
-enum pm_state_e pm_querystate(int domain);
+int pm_querystate(int domain);
 
 #undef EXTERN
 #ifdef __cplusplus

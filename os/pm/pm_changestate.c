@@ -271,7 +271,7 @@ int pm_changestate(int domain_indx, int newstate)
  *
  ****************************************************************************/
 
-enum pm_state_e pm_querystate(int domain)
+int pm_querystate(int domain)
 {
 	return g_pmglobals.domain[domain].state;
 }

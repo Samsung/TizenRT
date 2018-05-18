@@ -1,0 +1,21 @@
+#
+# For a description of the syntax of this configuration file,
+# see kconfig-language at https://www.kernel.org/doc/Documentation/kbuild/kconfig-language.txt
+#
+
+config EXAMPLES_PM_TEST
+	bool "Power Module test application"
+	default n
+	select PM
+	select DEBUG_PM
+	select PM_METRICS
+	select PM_TEST
+	---help---
+		Enable the Power Module test application. This application features a set
+		of API calls to register dummy drivers to the PM framework, & calling the
+		registered callback funcions associated with these drivers. It also ensures
+		device enters different power states & notes timeout in each one of them.
+
+config USER_ENTRYPOINT
+	string
+	default "pm_test_main" if ENTRY_PM_TEST

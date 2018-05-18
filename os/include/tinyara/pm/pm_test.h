@@ -25,11 +25,11 @@
 #define PMTEST_DOMAIN (0)
 #define PMTEST_THREAD_PRIORITY (100)
 #define PMTEST_THREAD_STACKSIZE (1024)
-#define PMTEST_THREAD_SLEEP_TIME (10)
-#define PMTEST_DURATION_IN_SECS (180)
+#define PMTEST_THREAD_SLEEP_TIME (5)
+#define PMTEST_DURATION_IN_SECS (5)
 
 #ifdef CONFIG_PM_TEST
-void pmtest_init(void);
+int pmtest_init(void);
 #else
 #define pmtest_init(void)
 #endif

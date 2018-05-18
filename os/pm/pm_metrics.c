@@ -61,19 +61,16 @@ void pm_prune_history(sq_queue_t *q)
 	}
 }
 
-void pm_get_domainmetrics(int indx, struct pm_time_in_each_s *mtrics)
+void pm_get_domainmetrics(int indx)
 {
 	pm_lock(indx);
 	sq_entry_t *curnode = NULL;
-	time_t normal_time = 0;
-	time_t idle_time = 0;
-	time_t standby_time = 0;
-	time_t sleep_time = 0;
+	time_t time_in_state_s[CONFIG_PM_NSTATE] = {0};
 	struct timespec ts;
 	time_t timetoadd = 0;
 	struct pm_statechange_s *sc = NULL;
 	struct pm_statechange_s *nsc = NULL;
-	enum pm_state_e s = PM_NORMAL;
+	int s = PM_NORMAL;
 	int isfirst = 1;
 	clock_gettime(CLOCK_REALTIME, &ts);
 	time_t cur_time = ts.tv_sec;
@@ -106,28 +103,13 @@ void pm_get_domainmetrics(int indx, struct pm_time_in_each_s *mtrics)
 		s = sc->state;
 
 		pmvdbg(" Timetoadd is %d to state:%d\n", timetoadd, s);
-		switch (s) {
-		case PM_NORMAL:
-			normal_time += timetoadd;
-			break;
-		case PM_IDLE:
-			idle_time += timetoadd;
-			break;
-		case PM_STANDBY:
-			standby_time += timetoadd;
-			break;
-		case PM_SLEEP:
-			sleep_time += timetoadd;
-			break;
-		default:
-			printf("Invalid state\n");
-		}
+		time_in_state_s[s] += timetoadd;
+
 	}
 	pm_unlock(indx);
 
 	/* Write back metrics */
-	mtrics->normal = normal_time;
-	mtrics->idle = idle_time;
-	mtrics->standby = standby_time;
-	mtrics->sleep = sleep_time;
+	for (s = 0; s < CONFIG_PM_NSTATE; s++) {
+		pm_time_in_each_s[s] = time_in_state_s[s];
+	}
 }

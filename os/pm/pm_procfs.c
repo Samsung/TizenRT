@@ -347,7 +347,6 @@ static size_t power_curstate_read(FAR struct file *filep, FAR char *buffer, size
 static size_t power_metrics_read(FAR struct file *filep, FAR char *buffer, size_t buflen)
 {
 	FAR struct power_file_s *priv;
-	struct pm_time_in_each_s mtrics;
 	size_t copysize;
 	size_t totalsize;
 	int domain;
@@ -363,31 +362,15 @@ static size_t power_metrics_read(FAR struct file *filep, FAR char *buffer, size_
 		domain = priv->dir.domain;
 
 		if (domain >= 0 && domain < CONFIG_PM_NDOMAINS) {
-			pm_get_domainmetrics(domain, &mtrics);
+			pm_get_domainmetrics(domain);
 
-			/* Time in NORMAL state */
-			copysize = snprintf(buffer, buflen, " Time in %s : %d\n", g_power_states[index++], mtrics.normal);
-			buflen -= copysize;
-			buffer += copysize;
-			totalsize += copysize;
-
-			/* Time in IDLE state */
-			copysize = snprintf(buffer, buflen, " Time in %s : %d\n", g_power_states[index++], mtrics.idle);
-			buflen -= copysize;
-			buffer += copysize;
-			totalsize += copysize;
-
-			/* Time in STANDBY state */
-			copysize = snprintf(buffer, buflen, " Time in %s : %d\n", g_power_states[index++], mtrics.standby);
-			buflen -= copysize;
-			buffer += copysize;
-			totalsize += copysize;
-
-			/* Time in SLEEP state */
-			copysize = snprintf(buffer, buflen, " Time in %s : %d", g_power_states[index], mtrics.sleep);
-			buflen -= copysize;
-			buffer += copysize;
-			totalsize += copysize;
+			for (index = 0; index < CONFIG_PM_NSTATE; index++) {
+				/* Time in each state*/
+				copysize = snprintf(buffer, buflen, " Time in %s : %d\n", g_power_states[index], pm_time_in_each_s[index]);
+				buflen -= copysize;
+				buffer += copysize;
+				totalsize += copysize;
+			}
 		}
 		/* Indicate we have already provided all the data */
 		priv->offset = 0xFF;

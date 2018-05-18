@@ -53,6 +53,7 @@
  */
 
 #define TESTIOC_DRIVER_ANALOG            _TESTIOC(1)
+#define TESTIOC_DRIVER_PM                _TESTIOC(3)
 
 /****************************************************************************
  * Public Data

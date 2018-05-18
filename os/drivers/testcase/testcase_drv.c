@@ -23,6 +23,7 @@
 #include <errno.h>
 #include <debug.h>
 #include <tinyara/fs/fs.h>
+#include <tinyara/pm/pm_test.h>
 #include <tinyara/testcase_drv.h>
 
 /****************************************************************************
@@ -76,6 +77,13 @@ static int testdrv_ioctl(FAR struct file *filep, int cmd, unsigned long arg)
 
 	}
 	break;
+
+#ifdef CONFIG_PM_TEST
+	case TESTIOC_DRIVER_PM: {
+		ret = pmtest_init();
+	}
+	break;
+#endif
 
 	default: {
 		vdbg("Unrecognized cmd: %d arg: %ld\n", cmd, arg);

@@ -1,0 +1,3 @@
+config ENTRY_PM_TEST
+	bool "Power Module test application"
+	depends on EXAMPLES_PM_TEST

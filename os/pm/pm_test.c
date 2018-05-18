@@ -16,19 +16,19 @@
  *
  ****************************************************************************/
 
-#include <apps/shell/tash.h>
 #include <pm_metrics.h>
 #include <tinyara/config.h>
 #include <debug.h>
-#include <unistd.h>
-#include <tinyara/kthread.h>
-#include <sched.h>
+#include <errno.h>
 #include <time.h>
+#include <pthread.h>
 #include <pm.h>
+#include <tinyara/pm/pm_test.h>
+
 #include "pm.h"
 #include "pm_debug.h"
 #include "pm_metrics.h"
-#include "pm_test.h"
+#include <sys/types.h>
 
 /* Global Variables */
 
@@ -36,25 +36,34 @@ struct pm_callback_s pmtest_cbarray[PMTEST_DEVICES];
 
 /* Local functions */
 
-void pmtest_dev_notify(struct pm_callback_s *cb, int domain, enum pm_state_e state)
+void pmtest_dev_notify(struct pm_callback_s *cb, int domain, int state)
 {
 	pmvdbg("Recevied notify call for %s device in %d domain for %d state \n", cb->name, domain, state);
 }
 
-int pmtest_dev_prepare(struct pm_callback_s *cb, int domain, enum pm_state_e state)
+int pmtest_dev_prepare(struct pm_callback_s *cb, int domain, int state)
 {
 	pmvdbg("Recevied prepare call for %s device in %d domain for %d state \n", cb->name, domain, state);
 	return OK;
 }
 
 /* PM test routine */
-
-static int pmtest_kthread(int argc, char *argv[])
+/**
+* @fn                   :pm_test_thread
+* @brief                :This tc tests the different  power states provided
+*                        by the PM.
+* @Scenario             :The function shall tests the power states provided
+*                        by PM by sleeping for a certain period & recording
+*                        the sleeping time in each sleep state.
+* @API'scovered         :pm_changestate(), pm_dumpstates(), pm_get_domainmetrics()
+* @Preconditions        :Device should have entered different sleep states
+* @Postconditions       :none
+* @return               :void
+*/
+static int pm_test_thread(int argc, char *argv[])
 {
-	enum pm_state_e s = PM_IDLE;
-#ifdef CONFIG_PM_METRICS
-	struct pm_time_in_each_s m;
-#endif
+	int pm_state;
+	int ret = -EINVAL;
 	struct timespec start_time;
 	struct timespec elapsed_time;
 
@@ -62,38 +71,54 @@ static int pmtest_kthread(int argc, char *argv[])
 	clock_gettime(CLOCK_REALTIME, &start_time);
 	elapsed_time.tv_sec = start_time.tv_sec;
 
-	while (elapsed_time.tv_sec <= (start_time.tv_sec + PMTEST_DURATION_IN_SECS)) {
-		sleep(PMTEST_THREAD_SLEEP_TIME);
-		pm_changestate(PMTEST_DOMAIN, s);
-		pm_dumpstates();
+	for (pm_state = PM_NORMAL; pm_state < CONFIG_PM_NSTATE; pm_state++) {
+		while (elapsed_time.tv_sec <= (start_time.tv_sec + PMTEST_DURATION_IN_SECS)) {
+			sleep(PMTEST_THREAD_SLEEP_TIME);
+			pm_changestate(PMTEST_DOMAIN, pm_state);
+			pm_dumpstates();
 #ifdef CONFIG_PM_METRICS
-		pm_get_domainmetrics(0, &m);
-		pmvdbg("Normal:%d Idle:%d standby:%d sleep:%d \n", m.normal, m.idle, m.standby, m.sleep);
+			int s = 0;
+			pm_get_domainmetrics(0);
+			for (s = 0; s < CONFIG_PM_NSTATE; s++) {
+				pmvdbg("Time spent in state %d : %d\n", s, pm_time_in_each_s[s]);
+			}
 #endif
-		clock_gettime(CLOCK_REALTIME, &elapsed_time);
+			clock_gettime(CLOCK_REALTIME, &elapsed_time);
+		}
 	}
+
+	/* Return to normal state */
+	pm_state = PM_NORMAL;
+	ret = pm_changestate(PMTEST_DOMAIN, pm_state);
+
 	return 0;
 }
 
 /* Launch pm test thread */
 
-void pmtest_launch_kthread(void)
+void pmtest_launch_thread(void)
 {
 	int i = 0;
-	if (kernel_thread("pmtest", PMTEST_THREAD_PRIORITY, PMTEST_THREAD_STACKSIZE, pmtest_kthread, (char *const *)NULL) < 0) {
-		pmvdbg("pmtest kthread launch failed\n");
+	pthread_t pid;
+
+	if (pthread_create(&pid, NULL, (pthread_addr_t)pm_test_thread, (pthread_addr_t)NULL) < 0) {
+		pmdbg("pm_test_thread launch failed\n");
 		for (i = 0; i < PMTEST_DEVICES; i++) {
 			pm_unregister(0, &pmtest_cbarray[i]);
 		}
 	}
+	pthread_join(pid, NULL);
 }
 
-/* init function  */
+/****************************************************************************
+ * pmtest_init function
+ ****************************************************************************/
 
-void pmtest_init(void)
+int pmtest_init(void)
 {
 	int i = 0;
 	char pmtest_dev_names[PMTEST_DEVICES][CONFIG_PM_DEVNAME_LEN] = { "dev0", "dev1", "dev2" };
+	pmvdbg("\n%s: 'Begin' Test\n", __func__);
 
 	for (i = 0; i < PMTEST_DEVICES; i++) {
 		pmtest_cbarray[i].notify = &pmtest_dev_notify;
@@ -103,6 +128,14 @@ void pmtest_init(void)
 	for (i = 0; i < PMTEST_DEVICES; i++) {
 		pm_register(0, &pmtest_cbarray[i]);
 	}
-	/* Launch test thead */
-	pmtest_launch_kthread();
+	/* Launch test thread */
+	pmtest_launch_thread();
+
+	for (i = 0; i < PMTEST_DEVICES; i++) {
+		pm_unregister(0, &pmtest_cbarray[i]);
+	}
+
+	pmvdbg("\n%s: 'End' Test\n", __func__);
+
+	return 0;
 }

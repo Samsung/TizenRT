@@ -29,17 +29,12 @@ struct pm_statechange_s {
 	time_t timestamp;
 };
 
-struct pm_time_in_each_s {
-	time_t normal;
-	time_t idle;
-	time_t standby;
-	time_t sleep;
-};
+time_t pm_time_in_each_s[CONFIG_PM_NSTATE];
 
 #ifdef CONFIG_PM_METRICS
 extern struct pm_global_s g_pmglobals;
 
-void pm_get_domainmetrics(int indx, struct pm_time_in_each_s *mtrics);
+void pm_get_domainmetrics(int indx);
 void pm_prune_history(sq_queue_t *q);
 #endif
 

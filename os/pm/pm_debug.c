@@ -30,14 +30,12 @@ void pm_dumpstates(void)
 
 	sq_queue_t *q = &g_pmglobals.domain[0].history;
 
-	pmvdbg("#########################################################\n");
 
 	for (node = sq_peek(q); node; node = node->flink) {
 		sc = (struct pm_statechange_s *)node;
 		pmvdbg("state %d and Node address: 0x%x \n", sc->state, sc);
 	}
 
-	pmvdbg("#########################################################\n");
 	pm_unlock(0);
 }
 #endif
