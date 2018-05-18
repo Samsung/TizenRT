@@ -26,6 +26,7 @@
 #include <fcntl.h>
 #include <errno.h>
 #include <sys/types.h>
+#include <apps/builtin.h>
 #include <tinyara/sched.h>
 #include <tinyara/fs/ioctl.h>
 #include <tinyara/taskmgt.h>
@@ -62,10 +63,8 @@ typedef struct task_list_data_s task_list_data_t;
 
 static int builtin_cnt;
 static mqd_t g_tm_recv_mqfd;
-extern const task_builtin_list_t tm_builtin_lists[];
 /* [0] : tm_gid, [1] : the address of task list data */
 static task_list_t tm_task_list[CONFIG_TASK_MANAGER_MAX_TASKS];
-extern int get_tm_builtin_cnt(void);
 
 /****************************************************************************
  * Private Functions
@@ -172,14 +171,14 @@ int tm_get_task_info(task_info_list_t **data, int handle)
 		return -1;
 	}
 
-	len = strlen(tm_builtin_lists[TASK_BUILTIN_IDX(handle)].name);
+	len = strlen(builtin_list[TASK_BUILTIN_IDX(handle)].name);
 	item->task.name = (char *)TM_ALLOC(len + 1);
 	if (item->task.name == NULL) {
 		tmdbg("Memory allocation for name Failed\n");
 		TM_FREE(item);
 		return -1;
 	}
-	strncpy(item->task.name, tm_builtin_lists[TASK_BUILTIN_IDX(handle)].name, len + 1);
+	strncpy(item->task.name, builtin_list[TASK_BUILTIN_IDX(handle)].name, len + 1);
 	item->task.gid = TASK_TM_GID(handle);
 	item->task.handle = handle;
 	item->task.status = TASK_STATUS(handle);
@@ -205,7 +204,7 @@ static int tm_search_task_list(tm_request_t *msg, tm_response_t *response_msg)
 		if (TASK_LIST_ADDR(chk_idx) == NULL) {
 			continue;
 		}
-		if ((type == TASKMGT_SCAN_NAME && strncmp(tm_builtin_lists[TASK_BUILTIN_IDX(chk_idx)].name, msg->data, strlen(msg->data)) == 0) \
+		if ((type == TASKMGT_SCAN_NAME && strncmp(builtin_list[TASK_BUILTIN_IDX(chk_idx)].name, msg->data, strlen(msg->data)) == 0) \
 			|| (type == TASKMGT_SCAN_GROUP && TASK_TM_GID(chk_idx) == msg->handle)) {
 				tmvdbg("FIND!!!!!!! handle = %d\n", chk_idx);
 				tm_get_task_info(&response_msg->data, chk_idx);
@@ -232,7 +231,7 @@ int task_manager(int argc, char *argv[])
 	attr.mq_msgsize = sizeof(tm_request_t);
 	attr.mq_flags = 0;
 
-	builtin_cnt = get_tm_builtin_cnt();
+	builtin_cnt = get_builtin_list_cnt();
 	if (builtin_cnt < 2) {
 		tmdbg("Failed to start task manager\n");
 		return 0;
@@ -266,7 +265,7 @@ int task_manager(int argc, char *argv[])
 			}
 			/* Check that task is in builtin-list or not */
 			for (chk_idx = 0; chk_idx < builtin_cnt; chk_idx++) {
-				if (strncmp((char *)tm_builtin_lists[chk_idx].name, request_msg.data, CONFIG_TASK_NAME_SIZE) == 0) {
+				if (strncmp((char *)builtin_list[chk_idx].name, request_msg.data, CONFIG_TASK_NAME_SIZE) == 0) {
 					/* Requested name is in builtin-list */
 					ret = ioctl(fd, TMIOC_REGISTER_TASK, &request_msg);
 					break;
@@ -319,7 +318,7 @@ int task_manager(int argc, char *argv[])
 				break;
 			}
 			/* handle is in task_list */
-			ret = ioctl(fd, TMIOC_START, &tm_builtin_lists[TASK_BUILTIN_IDX(request_msg.handle)]);
+			ret = ioctl(fd, TMIOC_START, &builtin_list[TASK_BUILTIN_IDX(request_msg.handle)]);
 			if (ret > 0) {
 				/* task created well */
 				TASK_PID(request_msg.handle) = ret;

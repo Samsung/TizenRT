@@ -59,9 +59,7 @@ all:
 .PHONY: context depend clean distclean
 
 .updated: $(DEPCONFIG)
-	$(call DELFILE, *.bdat)
 	$(call DELFILE, *.pdat)
-	$(call DELFILE, *.tdat)
 	$(call DELFILE, *.mdat)
 	$(Q) touch .updated
 
@@ -77,8 +75,6 @@ clean:
 	$(call CLEAN)
 
 distclean: clean
-	$(call DELFILE, *.bdat)
 	$(call DELFILE, *.pdat)
-	$(call DELFILE, *.tdat)
 	$(call DELFILE, *.mdat)
 	$(call DELFILE, .updated)
