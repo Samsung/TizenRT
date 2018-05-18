@@ -20,6 +20,8 @@
 #define _POSIX_C_SOURCE 200809L
 #include <string.h>
 #include <stdlib.h>
+#include <unistd.h>
+#include <sys/types.h>
 
 #include <netdb.h>
 #ifdef __USE_MISC
@@ -56,33 +58,37 @@ int CICheckDomain(const char *DomainName, char **pIP)
 	char ipbuffer[20];
 	memset(ipbuffer, 0, 20);
 	char bytes[4];
+	struct hostent *shost;
+	unsigned int ip4_address = 0;
 
-	int ip4_address = 0;
+	if (DomainName != NULL) {
+		shost = gethostbyname((const char *)DomainName);
+		if (shost != NULL) {
+			memcpy(&ip4_address, shost->h_addr, sizeof(in_addr_t));
+			bytes[0] = ip4_address & 0XFF;
+			bytes[1] = (ip4_address >> 8) & 0XFF;
+			bytes[2] = (ip4_address >> 16) & 0XFF;
+			bytes[3] = (ip4_address >> 24) & 0XFF;
+			//54.85.39.78
+			//78.85.39.54
 
-	wifi_manager_result_e res = wifi_net_hostname_to_ip4(DomainName, &ip4_address);
-	if (res == 0) {
-		bytes[0] = ip4_address & 0XFF;
-		bytes[1] = (ip4_address >> 8) & 0XFF;
-		bytes[2] = (ip4_address >> 16) & 0XFF;
-		bytes[3] = (ip4_address >> 24) & 0XFF;
-		//54.85.39.78
-		//78.85.39.54
+			snprintf(ipbuffer, sizeof(ipbuffer), "%d.%d.%d.%d", bytes[0], bytes[1], bytes[2], bytes[3]);
 
-		snprintf(ipbuffer, sizeof(ipbuffer), "%d.%d.%d.%d", bytes[0], bytes[1], bytes[2], bytes[3]);
+			THINGS_LOG_D(TAG, "DNS resolved IP for[%s] is =%s", DomainName, ipbuffer);
 
-		THINGS_LOG_D(TAG, "DNS resolved IP for[%s] is =%s", DomainName, ipbuffer);
-
-		if (pIP != NULL) {
-			*pIP = things_strdup(ipbuffer);
+			if (pIP != NULL) {
+				*pIP = things_strdup(ipbuffer);
+			}
+			return 0;
 		}
-	} else {
-		THINGS_LOG_E(TAG, " Failed to get the IP, hard coding the ip");
-		snprintf(ipbuffer, sizeof(ipbuffer), "%s", "13.124.51.231");
+	} 
 
-		usleep(500);
-		if (pIP != NULL) {
-			*pIP = things_strdup(ipbuffer);
-		}
+	THINGS_LOG_E(TAG, " Failed to get the IP, hard coding the ip");
+	snprintf(ipbuffer, sizeof(ipbuffer), "%s", "13.124.51.231");
+
+	usleep(500);
+	if (pIP != NULL) {
+		*pIP = things_strdup(ipbuffer);
 	}
 
 	return 0;

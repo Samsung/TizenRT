@@ -527,6 +527,20 @@ wifi_utils_result_e wifi_utils_start_softap(wifi_utils_softap_config_s *softap_c
 	}
 	g_mode = SLSI_WIFI_SOFT_AP_IF;
 	nvdbg("[WU] SoftAP with SSID: %s has successfully started!\n", softap_config->ssid);
+	
+	ret = WiFiRegisterLinkCallback(&linkup_handler, &linkdown_handler);
+	if (ret != SLSI_STATUS_SUCCESS) {
+		ndbg("[WU] Link callback handles: register failed !\n");
+		return WIFI_UTILS_FAIL;
+	} else {
+		nvdbg("[WU] Link callback handles: registered\n");
+	}
+
+	ret = WiFiRegisterScanCallback(&wifi_scan_result_callback);
+	if (ret != SLSI_STATUS_SUCCESS) {
+		ndbg("[WU] [ERR] Register Scan Callback(%d)\n", ret);
+		return WIFI_UTILS_FAIL;
+	}
 
 	ret = WIFI_UTILS_SUCCESS;
 

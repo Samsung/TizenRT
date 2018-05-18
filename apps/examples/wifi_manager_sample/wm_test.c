@@ -26,7 +26,7 @@
 #include <errno.h>
 #include <wifi_manager/wifi_manager.h>
 
-#define WM_TEST_COUNT  3
+#define WM_TEST_COUNT  1
 
 #define USAGE															\
 	"\n usage: wm_test [options]\n"										\
@@ -461,6 +461,8 @@ void wm_display_state(void *arg)
 {
 	WM_TEST_LOG_START;
 	wifi_manager_info_s info;
+	char mac_str[20];
+	char mac_char[6];
 	wifi_manager_result_e res = wifi_manager_get_info(&info);
 	if (res != WIFI_MANAGER_SUCCESS) {
 		goto exit;
@@ -473,21 +475,33 @@ void wm_display_state(void *arg)
 		}
 		printf("IP: %s\n", info.ip4_address);
 		printf("SSID: %s\n", info.ssid);
-		printf("MAC: %d:%d:%d:%d:%d:%d\n", info.mac_address[0], info.mac_address[1],
-			   info.mac_address[2], info.mac_address[3],
-			   info.mac_address[4], info.mac_address[5]);
+		res = wifi_manager_mac_addr_to_mac_str(info.mac_address, mac_str);
+		if (res != WIFI_MANAGER_SUCCESS) {
+			goto exit;
+		}
+		printf("MAC: %s\n", mac_str);
+		res = wifi_manager_mac_str_to_mac_addr(mac_str, mac_char);
+		if (res != WIFI_MANAGER_SUCCESS) {
+			goto exit;
+		}
 	} else if (info.mode == STA_MODE) {
 		if (info.status == AP_CONNECTED) {
 			printf("MODE: station (connected)\n");
 			printf("IP: %s\n", info.ip4_address);
 			printf("SSID: %s\n", info.ssid);
-			printf("rssi: %s\n", info.rssi);
+			printf("rssi: %d\n", info.rssi);
 		} else if (info.status == AP_DISCONNECTED) {
 			printf("MODE: station (disconnected)\n");
 		}
-		printf("MAC: %d:%d:%d:%d:%d:%d\n", info.mac_address[0], info.mac_address[1],
-			   info.mac_address[2], info.mac_address[3],
-			   info.mac_address[4], info.mac_address[5]);
+		res = wifi_manager_mac_addr_to_mac_str(info.mac_address, mac_str);	
+		if (res != WIFI_MANAGER_SUCCESS) {
+			goto exit;
+		}
+		printf("MAC: %s\n", mac_str);
+		res = wifi_manager_mac_str_to_mac_addr(mac_str, mac_char);
+		if (res != WIFI_MANAGER_SUCCESS) {
+			goto exit;
+		}
 	} else {
 		printf("STATE: NONE\n");
 	}
@@ -504,7 +518,7 @@ void wm_sta_start(void *arg)
 
 	res = wifi_manager_set_mode(STA_MODE, NULL);
 	if (res != WIFI_MANAGER_SUCCESS) {
-		printf(" Set AP mode Fail\n");
+		printf(" Set STA mode Fail\n");
 		return ;
 	}
 	printf(" Connecting to AP\n");
@@ -624,11 +638,27 @@ void wm_auto_test(void *arg)
 	ap_config.ap_auth_type = info->auth_type;
 	ap_config.ap_crypto_type = info->crypto_type;
 
+	/* Set FAKE AP Configuration */
+	char fake_passphrase[] = "fakePasswd1#";
+	char fake_long_ssid[] = "fakefakefakefakefakefakefakeNewAP";
+	char fake_ssid[] = "fakeNewAP";
+	wifi_manager_ap_config_s fake_config;
+	fake_config.ssid_length = strlen(fake_long_ssid);
+	fake_config.passphrase_length = strlen(fake_passphrase);
+	strncpy(fake_config.ssid, fake_long_ssid, fake_config.ssid_length + 1);
+	strncpy(fake_config.passphrase, fake_passphrase, fake_config.passphrase_length + 1);
+	fake_config.ap_auth_type = 2;
+	fake_config.ap_crypto_type = 3;
+	
+	printf("Init WiFi (default STA mode)\n");
+	res = wifi_manager_init(NULL);
 	res = wifi_manager_init(&wifi_callbacks);
 	if (res != WIFI_MANAGER_SUCCESS) {
-		printf(" wifi_manager_init fail\n");
+		printf("wifi_manager_init fail\n");
 		return ;
 	}
+	/* Print current status */
+	wm_display_state(NULL);
 
 	printf("====================================\n");
 	printf("Repeated Test\n");
@@ -640,54 +670,215 @@ void wm_auto_test(void *arg)
 	int cnt = 0;
 	while (cnt++ < WM_TEST_COUNT) {
 		printf(" T%d Starting round %d\n", getpid(), cnt);
+		/* Print current status */
+		wm_display_state(NULL);
+		printf("Connecting to NULL\n");
+		/* Connect to fake AP */
+		res = wifi_manager_connect_ap(NULL);
+		if (res != WIFI_MANAGER_SUCCESS) {
+			printf("AP connect failed due to AP NULL\n");
+			res = WIFI_MANAGER_FAIL;
+		}
+		printf("Connecting to AP with too long SSID\n");
+		/* Connect to fake AP */
+		res = wifi_manager_connect_ap(&fake_config);
+		if (res != WIFI_MANAGER_SUCCESS) {
+			printf("AP connect failed due to bad configuration: long SSID\n");
+			res = WIFI_MANAGER_FAIL;
+			fake_config.ssid_length = strlen(fake_ssid);
+			strncpy(fake_config.ssid, fake_ssid, fake_config.ssid_length + 1);
+		}
+		printf("Connecting to fake AP (Auth/Crypto type 2/3)\n");
+		/* Connect to fake AP */
+		res = wifi_manager_connect_ap(&fake_config);
+		if (res != WIFI_MANAGER_SUCCESS) {
+			printf("AP connect failed due to bad configuration: auth/crypto type 2/3\n");
+			res = WIFI_MANAGER_FAIL;
+			fake_config.ap_auth_type = 1;
+			fake_config.ap_crypto_type = info->crypto_type;
+		}
+		WM_TEST_WAIT;
+
+		printf("Connecting to AP\n");
+		/* Connect to AP */
+		res = wifi_manager_connect_ap(&ap_config);
+		if (res != WIFI_MANAGER_SUCCESS) {
+			printf("AP connect failed in round %d\n", cnt);
+			return ;
+		}
+		/* Print current status */
+		wm_display_state(NULL);
+		WM_TEST_WAIT; // wait dhcp
+		/* Print current status */
+		wm_display_state(NULL);
+
+		printf("Connecting to AP, but already connected\n");
+		/* Connect to AP */
+		res = wifi_manager_connect_ap(&ap_config);
+		if (res != WIFI_MANAGER_SUCCESS) {
+			printf("AP connect failed in round %d\n", cnt);
+		}
+
+		/* Start SoftAP mode */
+		printf("Start SoftAP mode\n");
 		res = wifi_manager_set_mode(SOFTAP_MODE, &softap_config);
 		if (res != WIFI_MANAGER_SUCCESS) {
 			printf(" Set AP mode Fail\n");
 			return ;
 		}
-		printf(" Step 1 done.. Waiting for STA join\n");
+		/* Print current status */
+		wm_display_state(NULL);
+		/* Scanning */
+		printf("Start scanning\n");
+		res = wifi_manager_scan_ap();
+		if (res != WIFI_MANAGER_SUCCESS) {
+			printf("scan Fail\n");
+			return ;
+		}
+		WM_TEST_WAIT; // wait the scan result
+		/* Print current status */
+		wm_display_state(NULL);
+		//TODO how to call callback functions such as join, leave, dhcpd, etc.
+		/* Print current status */
+		wm_display_state(NULL);
 
-		/* Wait station connect */
-		WM_TEST_WAIT;
-
-		printf(" Step 2 done..Waiting for STA leave\n");
-		/* Wait station disconnect */
-		WM_TEST_WAIT;
-
-		printf(" Step 3 done..Waiting for SoftAP down and startSTA\n");
-		// Do Soft AP down
+		/* Start STA mode */	
+		printf("Start STA mode\n");
 		res = wifi_manager_set_mode(STA_MODE, NULL);
+		if (res != WIFI_MANAGER_SUCCESS) {
+			printf(" Set STA mode Fail\n");
+			return ;
+		}
+		/* Scanning */
+		printf("Start scanning\n");
+		res = wifi_manager_scan_ap();
+		if (res != WIFI_MANAGER_SUCCESS) {
+			printf("scan Fail\n");
+			return ;
+		}
+		WM_TEST_WAIT; // wait the scan result
+
+
+		printf("Connecting to fake AP (Auth/Crypto type 1/3)\n");
+		/* Connect to fake AP */
+		res = wifi_manager_connect_ap(&fake_config);
+		if (res != WIFI_MANAGER_SUCCESS) {
+			printf("AP connect failed due to bad configuration: auth/crypto type 1/3\n");
+			res = WIFI_MANAGER_FAIL;
+			fake_config.ap_auth_type = 4;
+		}
+		WM_TEST_WAIT;
+
+		printf("Connecting to AP\n");
+		/* Connect to AP */
+		res = wifi_manager_connect_ap(&ap_config);
+		if (res != WIFI_MANAGER_SUCCESS) {
+			printf("AP connect failed in round %d\n", cnt);
+			return ;
+		}
+		WM_TEST_WAIT; // wait dhcp
+		/* File system call */
+		printf("Save AP info.\n");
+		res = wifi_manager_save_config(&ap_config);
+		if (res != WIFI_MANAGER_SUCCESS) {
+			printf("Save AP configuration failed\n");
+			return;
+		}
+		printf("Get AP info.\n");
+		wifi_manager_ap_config_s new_config;
+		res = wifi_manager_get_config(&new_config);
+		if (res != WIFI_MANAGER_SUCCESS) {
+			printf("Get AP configuration failed\n");
+			return;
+		}
+		print_wifi_ap_profile(&new_config, "Stored WiFi Information");
+		printf("Reset AP info.\n");
+		res = wifi_manager_remove_config();
+		if (res != WIFI_MANAGER_SUCCESS) {
+			printf("Reset AP configuration failed\n");
+			return;
+		}
+		/* Print current status */
+		wm_display_state(NULL);
+		//TODO how to call callback functions to change the state into RECONNECT
+
+		printf("Disconnecting AP\n");
+		/* Disconnect AP */
+		res = wifi_manager_disconnect_ap();
+		if (res != WIFI_MANAGER_SUCCESS) {
+			printf("disconnect fail (%d)\n", res);
+			return;
+		}
+		/* Print current status */
+		wm_display_state(NULL);
+		WM_TEST_WAIT;
+		/* Print current status */
+		wm_display_state(NULL);
+		printf("Deinit TEST in disconnected state\n");
+		res = wifi_manager_deinit();
+		if (res != WIFI_MANAGER_SUCCESS) {
+			printf("WiFi Manager failed to stop\n");
+			return ;
+		}	
+		printf("Re-init WiFi (default STA mode)\n");
+		res = wifi_manager_init(&wifi_callbacks);
+		if (res != WIFI_MANAGER_SUCCESS) {
+			printf("wifi_manager_init fail\n");
+			return ;
+		}
+		printf("Connecting to fake AP (Auth/Crypto type 4/3)\n");
+		/* Connect to fake AP */
+		res = wifi_manager_connect_ap(&fake_config);
+		if (res != WIFI_MANAGER_SUCCESS) {
+			printf("AP connect failed due to bad configuration: auth/crypto type 4/3\n");
+			res = WIFI_MANAGER_FAIL;
+		}
+		WM_TEST_WAIT;
+
+		printf("Connecting to AP\n");
+		/* Connect to AP */
+		res = wifi_manager_connect_ap(&ap_config);
+		if (res != WIFI_MANAGER_SUCCESS) {
+			printf("AP connect failed in round %d\n", cnt);
+			return ;
+		}
+		WM_TEST_WAIT; // wait dhcp
+		/* Scanning */
+		printf("Start scanning in connected state\n");
+		res = wifi_manager_scan_ap();
+		if (res != WIFI_MANAGER_SUCCESS) {
+			printf("scan Fail\n");
+			return ;
+		}
+		WM_TEST_WAIT; // wait the scan result
+
+		printf("Deinit TEST in connected state\n");
+		res = wifi_manager_deinit();
+		if (res != WIFI_MANAGER_SUCCESS) {
+			printf("WiFi Manager failed to stop\n");
+			return ;
+		}
+		printf("Re-init WiFi (default STA mode)\n");
+		res = wifi_manager_init(&wifi_callbacks);
+		if (res != WIFI_MANAGER_SUCCESS) {
+			printf("wifi_manager_init fail\n");
+			return ;
+		}
+		printf("Re-start SoftAP mode\n");
+		res = wifi_manager_set_mode(SOFTAP_MODE, &softap_config);
 		if (res != WIFI_MANAGER_SUCCESS) {
 			printf(" Set AP mode Fail\n");
 			return ;
 		}
-		printf(" Step 4 done..Connecting to AP\n");
-
-		/* Connect to AP */
-		res = wifi_manager_connect_ap(&ap_config);
+		printf("Deinit TEST in SoftAP state\n");
+		res = wifi_manager_deinit();
 		if (res != WIFI_MANAGER_SUCCESS) {
-			printf(" Ap connect failed in round %d\n", cnt);
+			printf("WiFi Manager failed to stop\n");
 			return ;
 		}
-		/* Wait for DHCP connection */
-		WM_TEST_WAIT;
-		printf(" Step 5 done..Scanning for APs\n", cnt);
-		wifi_manager_scan_ap();
-		WM_TEST_WAIT;
-		printf(" Step 6 done..Disconnecting AP\n");
-		/* Disconnect AP */
-		wifi_manager_disconnect_ap();
-		WM_TEST_WAIT;
-		printf(" Step 7 done..Cycle finished [Round %d]\n", cnt);
+		printf("Cycle finished [Round %d]\n", cnt);
 	}
-
-	res = wifi_manager_deinit();
-	if (res != WIFI_MANAGER_SUCCESS) {
-		printf(" WiFi Manager failed to stop\n");
-		return ;
-	}
-
-	printf("Exit Wi-Fi Manager Stress Test..\n");
+	printf("Exit WiFi Manager Stress Test..\n");
 
 	return ;
 }

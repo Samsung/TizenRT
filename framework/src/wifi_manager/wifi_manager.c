@@ -1220,6 +1220,12 @@ wifi_manager_result_e wifi_manager_get_info(wifi_manager_info_s *info)
 	snprintf(info->ip4_address, 18, "%d.%d.%d.%d", ip[0], ip[1], ip[2], ip[3]);
 	memcpy(info->ssid, g_manager_info.ssid, 32);
 	memcpy(info->mac_address, g_manager_info.mac_address, 6);
+	/* Get RSSI */
+	wifi_utils_info info_utils;
+	wifi_utils_result_e wres = wifi_utils_get_info(&info_utils);
+	if (wres != WIFI_UTILS_FAIL) {
+		g_manager_info.rssi = info_utils.rssi;
+	}
 	info->rssi = g_manager_info.rssi;
 	if (WIFIMGR_IS_STATE(WIFIMGR_SCANNING)) {
 		_convert_state_to_info(&info->status, &info->mode, WIFIMGR_GET_PREVSTATE);
@@ -1301,3 +1307,26 @@ wifi_manager_result_e wifi_manager_remove_config(void)
 	WIFIMGR_CHECK_UTILRESULT(wifi_profile_reset(), "wifimgr remove config fail\n", WIFI_MANAGER_FAIL);
 	return WIFI_MANAGER_SUCCESS;
 }
+
+wifi_manager_result_e wifi_manager_mac_addr_to_mac_str(char mac_addr[6], char mac_str[20])
+{
+	if (!mac_addr || !mac_str) {
+		return WIFI_MANAGER_INVALID_ARGS;
+	}
+
+	snprintf(mac_str, 18, "%02X:%02X:%02X:%02X:%02X:%02X", mac_addr[0], mac_addr[1], mac_addr[2], mac_addr[3], mac_addr[4], mac_addr[5]);
+	return WIFI_MANAGER_SUCCESS;
+}
+
+wifi_manager_result_e wifi_manager_mac_str_to_mac_addr(char mac_str[20], char mac_addr[6])
+{
+	if (!mac_addr || !mac_str) {
+		return WIFI_MANAGER_INVALID_ARGS;
+	}
+	int ret = sscanf(mac_str, "%hhx:%hhx:%hhx:%hhx:%hhx:%hhx%*c", &mac_addr[0], &mac_addr[1], &mac_addr[2], &mac_addr[3], &mac_addr[4], &mac_addr[5]);
+	if (ret != 6) {
+		return WIFI_MANAGER_FAIL;	
+	}
+	return WIFI_MANAGER_SUCCESS;
+}
+
