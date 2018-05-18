@@ -77,13 +77,12 @@ if env.get('LOGGING'):
 # Determine dependency for tizenrt_os_dir
 
 dep_src_dir1 =  os.path.join(tizenrt_os_dir, 'include')
-dep_src_dir2 =  os.path.join(tizenrt_os_dir, 'include/tinyara')
-dep_src_dir3 =  os.path.join(tizenrt_os_dir, '../external/include')
-dep_lib_dir =  '/usr/lib/arm-none-eabi/include'
+dep_src_dir2 =  os.path.join(tizenrt_os_dir, '../external/include')
+dep_lib_dir =  default_os_dir + 'include'
 
 
 # Add directories to search for header files and external libraries
-env.AppendUnique(CPPPATH = [ dep_src_dir1, dep_src_dir2, dep_src_dir3 ])
+env.AppendUnique(CPPPATH = [ dep_src_dir1, dep_src_dir2 ])
 env.AppendUnique(LIBPATH = [ dep_lib_dir ])
 
 print env.get('CPPPATH')
