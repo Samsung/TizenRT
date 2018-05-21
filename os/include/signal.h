@@ -164,9 +164,23 @@
 
 /* SIGTM is used in Task Manager */
 #ifndef CONFIG_SIG_SIGTM
-#define SIGTM       18			/* Taskmgt signal */
+#define SIGTM_UNICAST       18			/* Taskmgt signal */
 #else
-#define SIGTM       CONFIG_SIG_SIGTM
+#define SIGTM_UNICAST       CONFIG_SIG_SIGTM_UNICAST
+#endif
+
+/* SIGTM_PAUSE is used in Task Manager */
+#ifndef CONFIG_SIG_SIGTM_PAUSE
+#define SIGTM_PAUSE       19			/* Taskmgt signal */
+#else
+#define SIGTM_PAUSE       CONFIG_SIG_SIGTM_PAUSE
+#endif
+
+/* SIGTM_RESUME is used in Task Manager */
+#ifndef CONFIG_SIG_SIGTM_RESUME
+#define SIGTM_RESUME       20			/* Taskmgt signal */
+#else
+#define SIGTM_RESUME       CONFIG_SIG_SIGTM_RESUME
 #endif
 
 /* sigprocmask() "how" definitions. Only one of the following can be specified: */
@@ -211,6 +225,13 @@
 #define SIG_DFL         ((_sa_handler_t)0)
 #define SIG_IGN         ((_sa_handler_t)0)
 #define SIG_HOLD        ((_sa_handler_t)1)   /* Used only with sigset() */
+
+#define COPY_SIGACTION(t, f) \
+	{ \
+		(t)->sa_sigaction = (f)->sa_sigaction; \
+		(t)->sa_mask      = (f)->sa_mask; \
+		(t)->sa_flags     = (f)->sa_flags; \
+	}
 
 /********************************************************************************
  * Global Type Declarations
