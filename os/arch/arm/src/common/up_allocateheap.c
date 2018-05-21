@@ -212,12 +212,13 @@ void up_allocate_kheap(FAR void **heap_start, size_t *heap_size)
 void up_addregion(void)
 {
 	int region_cnt;
-	char *mem_start = CONFIG_HEAPx_BASE;
-	char *mem_size = CONFIG_HEAPx_SIZE;
+	char *mem_start = CONFIG_RAMx_START;
+	char *mem_size = CONFIG_RAMx_SIZE;
 
 	for (region_cnt = 0; region_cnt < CONFIG_MM_REGIONS - 1; region_cnt++) {
-		if (*mem_start || *mem_size) {
-			dbg("CONFIG_HEAPx_BASE and CONFIG_HEAPx_SIZE are not defined properly\n");
+		if (!*mem_start || !*mem_size) {
+			dbg("Fail to add %dth heap region\n", region_cnt + 1);
+			break;
 		}
 		kumm_addregion((void *)strtol(mem_start, &mem_start, 16), (size_t)strtol(mem_size, &mem_size, 0));
 

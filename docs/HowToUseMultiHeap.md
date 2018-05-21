@@ -4,29 +4,27 @@ There are two cases to use multi-heap regions.
 1. continuous physical RAM but want to split regions  
 2. separated physical RAMs but want to use for heap  
 
-Modify *[Kconfig](#Kconfig)* and *[TizenRT configuration file](#tizenrt-configuration-file)*.  
+To use multi-heap regions, find below two steps.
 
-## Kconfig
+## Set number of Heap regions
 
-Add **select ARCH_HAVE_HEAPx** belong to config ARCH_ARM in os/arch/<ARCH_NAME>/src/<CHIP_NAME>/Kconfig.
+Set **CONFIG_MM_REGIONS** value which shows how many regions are.
 ```
-config ARCH_CHIP_<CHIP_NAME>
-	select ARCH_HAVE_HEAPx
+Memory Management -> Number of memory regions -> change a number over 2
 ```
-This will enable HEAPx_BASE and HEAPx_SIZE configs in os/mm/Kconfig.
+When CONFIG_MM_REGIONS has over 2, RAMx_START and RAMx_SIZE configs come out.
 
-## TizenRT configuration file
+## Set RAM start address and size
 
-Set base addresses and sizes for new heap regions through menuconfig.
+Set start addresses, **CONFIG_RAMx_START** with hexa values and sizes, **CONFIG_RAMx_SIZE** with decimal values of new heap regions.
 ```
-cd $TIZENRT_BASEDIR
-cd os
-make menuconfig
+Hardware Configuration -> Chip Selection -> List of start address for additional heap region -> set values
+Hardware Configuration -> Chip Selection -> List of size for additional heap region -> set values
 ```
-Set *CONFIG_HEAPx_BASE* and *CONFIG_HEAPx_SIZE* based on new heap region information.
+Each region is separated by ```','``` as shown below example:
 ```
-Memory Management -> Set List of start address for additional heap region
-Memory Management -> Set List of size for additional heap region
+0x02000000,0x4000000
+100,200
 ```
 
-TizenRT will add additional heap region automatically.
+Based on above configurations, *up_addregion* function sets new regions automatically.
