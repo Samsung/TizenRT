@@ -92,7 +92,7 @@
 
 #endif							/* CONFIG_DEBUG_WLAN_DRIVER_ERROR */
 
-#ifdef CONFIG_DEBUG_WLAN_DRIVER_VERBOSE
+#ifdef CONFIG_DEBUG_WLAN_DRIVER_INFO
 
 #define SLSI_INFO(sdev, fmt, arg ...)                   SLSI_EWI(pr_info, NULL, "I", fmt, ## arg)
 #define SLSI_NET_INFO(ndev, fmt, arg ...)               SLSI_EWI_NET(pr_info, NULL, "I", fmt, ## arg)

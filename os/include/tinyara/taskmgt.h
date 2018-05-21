@@ -38,13 +38,13 @@
  ****************************************************************************/
 #define TASKMGT_DRVPATH     "/dev/taskmgr"
 
-#ifdef CONFIG_TASK_MANAGER_DEBUG
-#ifdef CONFIG_TASK_MANAGER_DEBUG_ERROR
+#ifdef CONFIG_DEBUG_TASK_MANAGER
+#ifdef CONFIG_DEBUG_TASK_MANAGER_ERROR
 #define tmdbg(format, ...)      dbg(format, ##__VA_ARGS__)
 #else
 #define tmdbg(x...)
 #endif
-#ifdef CONFIG_TASK_MANAGER_DEBUG_INFO
+#ifdef CONFIG_DEBUG_TASK_MANAGER_INFO
 #define tmvdbg(format, ...)     vdbg(format, ##__VA_ARGS__)
 #else
 #define tmvdbg(x...)
