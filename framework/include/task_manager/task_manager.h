@@ -71,13 +71,14 @@
 #define TM_FAIL_START_NOT_CREATED     (-7)
 #define TM_FAIL_SEND_MSG              (-8)
 #define TM_FAIL_SET_HANDLER           (-9)
-#define TM_FAIL_PAUSE                 (-10)
-#define TM_FAIL_RESUME                (-11)
-#define TM_FAIL_REQ_TO_MGR            (-12)
-#define TM_FAIL_RESPONSE              (-13)
-#define TM_FAIL_UNREGISTER            (-14)
-#define TM_INVALID_PARAM              (-15)
-#define TM_OUT_OF_MEMORY              (-16)
+#define TM_FAIL_NO_HANDLER            (-10)
+#define TM_FAIL_PAUSE                 (-11)
+#define TM_FAIL_RESUME                (-12)
+#define TM_FAIL_REQ_TO_MGR            (-13)
+#define TM_FAIL_RESPONSE              (-14)
+#define TM_FAIL_UNREGISTER            (-15)
+#define TM_INVALID_PARAM              (-16)
+#define TM_OUT_OF_MEMORY              (-17)
 
 /**
  * @brief Task Info Structure

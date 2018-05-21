@@ -15,23 +15,20 @@
  * language governing permissions and limitations under the License.
  *
  ****************************************************************************/
-#ifndef ___INCLUDE_TINYARA_SIGNAL_H
-#define ___INCLUDE_TINYARA_SIGNAL_H
 
 /****************************************************************************
  * Included Files
  ****************************************************************************/
-
-#include <tinyara/config.h>
 #include <sched.h>
-#include <signal.h>
+#include <stdbool.h>
 
+#include "signal/signal.h"
 /****************************************************************************
- * Pre-processor Definitions
+ * Definitions
  ****************************************************************************/
 
 /****************************************************************************
- * Global Type Declarations
+ * Private Type Declarations
  ****************************************************************************/
 
 /****************************************************************************
@@ -39,29 +36,24 @@
  ****************************************************************************/
 
 /****************************************************************************
- * Global Function Prototypes
+ * Private Variables
  ****************************************************************************/
 
-#ifdef __cplusplus
-#define EXTERN extern "C"
-extern "C" {
-#else
-#define EXTERN extern
-#endif
+/****************************************************************************
+ * Private Functions
+ ****************************************************************************/
 
-/**
- * @cond
- * @internal
- */
-int sig_sethandler(struct tcb_s *tcb, int signo, struct sigaction *act);
-bool sig_is_handler_registered(struct tcb_s *tcb, int signo);
-/**
- * @endcond
- */
+/****************************************************************************
+ * Public Functions
+ ****************************************************************************/
+bool sig_is_handler_registered(struct tcb_s *tcb, int signo)
+{
+	bool ret = false;
+	sigactq_t *sigact = NULL;
+	sigact = sig_findaction(tcb, signo);
+	if (sigact != NULL) {
+		ret = true;
+	}
 
-#undef EXTERN
-#ifdef __cplusplus
+	return ret;
 }
-#endif
-
-#endif							/* ___INCLUDE_TINYARA_SIGNAL_H */
