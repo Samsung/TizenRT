@@ -1,7 +1,7 @@
 language: c
 
 sudo: false
-dist: xenial
+dist: trusty
 
 env:
   - BUILD_CONFIG=artik053/onboard
@@ -12,9 +12,6 @@ before_install:
   - sudo apt-get -qq update
   - sudo apt-get install -y build-essential git gcc-arm-none-eabi gdb-arm-none-eabi
 
-install:
-  - git clone https://github.com/SamsungARTIK/TizenRT.git
-
 script:
-  - cd os/tools; ./configure.sh ${BUILD_CONFIG}
-  - cd ..; make
+  - cd os; ./config.sh ${BUILD_CONFIG}
+  - make
