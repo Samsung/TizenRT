@@ -87,7 +87,7 @@ int get_crt_subject_uuid(unsigned char *uuid, unsigned int *uuid_len,
 	t_crt = &crt;
 	while (t_crt != NULL) {
 		r = mbedtls_x509_dn_gets(subname, sizeof(subname), &t_crt->subject);
-		if (r < 0) {
+		if (r < 0 || r >= sizeof(subname)) {
 			SEE_DEBUG("Fail to get dn %d\n", r);
 			r = MBEDTLS_ERR_X509_BUFFER_TOO_SMALL;
 			goto exit;
@@ -111,6 +111,8 @@ int get_crt_subject_uuid(unsigned char *uuid, unsigned int *uuid_len,
 
 	uuid[len] = '\0';
 	*uuid_len = len;
+
+	r = 0;
 
 exit:
 	mbedtls_x509_crt_free(&crt);
