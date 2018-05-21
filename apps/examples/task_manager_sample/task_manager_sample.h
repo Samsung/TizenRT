@@ -20,19 +20,8 @@
  * Included Files
  ****************************************************************************/
 
-#include <tinyara/config.h>
-#include <stdio.h>
+#include <semaphore.h>
 
-/****************************************************************************
- * led_off_main
- ****************************************************************************/
+sem_t tm_sem;
 
-#ifdef CONFIG_BUILD_KERNEL
-int main(int argc, FAR char *argv[])
-#else
-int led_off_main(int argc, char *argv[])
-#endif
-{
-	printf("LED OFF!\n");
-	return 0;
-}
+
