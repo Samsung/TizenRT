@@ -431,6 +431,12 @@ int task_manager(int argc, char *argv[])
 				break;
 			}
 
+			ret = ioctl(fd, TMIOC_UNICAST, TASK_PID(request_msg.handle));
+			if (ret < 0) {
+				ret = TM_FAIL_NO_HANDLER;
+				break;
+			}
+
 			/* handle is in task_list */
 			union sigval msg;
 			msg.sival_ptr = request_msg.data;
