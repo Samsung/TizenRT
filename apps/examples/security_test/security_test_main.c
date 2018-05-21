@@ -66,6 +66,7 @@
 #include <string.h>
 
 #include "tls/see_api.h"
+#include "tls/see_misc.h"
 
 /*
  * Definition for handling pthread
@@ -1295,12 +1296,37 @@ void TC_see_factory_key_test(int debug_mode)
 	TC_see_factory_ecctest(debug_mode, FACTORYKEY_ARTIK_DEVICE, ARTIK_CURVE);
 }
 
+void TC_see_get_uuid(int debug_mode)
+{
+	unsigned char uuid[64] = { 0x00, };
+	unsigned int uuid_len = 0;
+	unsigned int ret = 0;
+	int i;
+
+	if (debug_mode < 0) {
+		return;
+	}
+
+	ret = get_artik_crt_uuid(uuid, &uuid_len);
+	if (ret) {
+		printf("Failed to get uuid (err:0x%x)");
+		return;
+	}
+
+	printf("uuid : ");
+	for (i = 0; i < uuid_len; i++)
+		printf("%c", uuid[i]);
+
+	printf("\n");
+}
+
 pthread_addr_t security_test_cb(void *args)
 {
 	int i;
 	int test_result = 0;
 	int debug_mode = 0;
 	int factory_test = 0;
+	int get_uuid = 0;
 	unsigned int test_select = 0x1fff;	// FULL TEST = 0x1fff;
 
 	int argc;
@@ -1331,6 +1357,12 @@ pthread_addr_t security_test_cb(void *args)
 			debug_mode = atoi(q);
 			factory_test = 1;
 		}
+
+		if (strcmp(p, "uuid") == 0) {
+			debug_mode = atoi(q);
+			get_uuid = 1;
+		}
+
 	}
 
 	if (factory_test) {
@@ -1341,6 +1373,12 @@ pthread_addr_t security_test_cb(void *args)
 		printf("Key existence\n");
 		printf("-----------------\n");
 		print_existence();
+		printf("\n");
+		return 0;
+	}
+
+	if (get_uuid) {
+		TC_see_get_uuid(debug_mode);
 		printf("\n");
 		return 0;
 	}
@@ -1414,6 +1452,7 @@ pthread_addr_t security_test_cb(void *args)
 		test_select = test_select >> 1;
 	}
 
+	printf("=====SSS Block Test Finish=====\n");
 #if defined(CONFIG_TLS_WITH_SSS)
 	see_free();
 #endif
@@ -1465,8 +1504,6 @@ int security_test_main(int argc, char **argv)
 
 	/* Wait for the threads to stop */
 	pthread_join(tid, NULL);
-
-	printf("=====SSS Block Test Finish=====\n");
 
 	return 0;
 }
