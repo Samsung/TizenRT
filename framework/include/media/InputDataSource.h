@@ -32,7 +32,6 @@
 #include <fstream>
 #include <memory>
 #include <media/DataSource.h>
-#include <media/MediaUtils.h>
 
 namespace media {
 class Decoder;
@@ -95,11 +94,11 @@ public:
 
 protected:
 	void setDecoder(std::shared_ptr<Decoder> decoder);
-	void setAudioType(utils::audio_type_t audioType);
-	utils::audio_type_t getAudioType();
+	void setAudioType(audio_type_t audioType);
+	audio_type_t getAudioType();
 
 private:
-	utils::audio_type_t mAudioType;
+	audio_type_t mAudioType;
 	std::shared_ptr<Decoder> mDecoder;
 };
 
