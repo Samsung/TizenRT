@@ -92,7 +92,7 @@ static int tm_get_task_state(int handle)
 
 static int tm_check_permission(int handle, pid_t pid)
 {
-	int ret = ERROR;
+	int ret = TM_FAIL_NOT_PERMITTED;
 	int chk_idx;
 	int caller_gid = -1;
 
@@ -256,7 +256,7 @@ int task_manager(int argc, char *argv[])
 
 		sched_lock();
 
-		printf("Recevied Request msg : cmd = %d\n", request_msg.cmd);
+		tmdbg("Recevied Request msg : cmd = %d\n", request_msg.cmd);
 		switch (request_msg.cmd) {
 		case TASKMGT_REGISTER_TASK:
 			register_permission = request_msg.handle;
@@ -443,8 +443,6 @@ int task_manager(int argc, char *argv[])
 			ret = sigqueue(TASK_PID(request_msg.handle), SIGTM_UNICAST, msg);
 			if (ret != OK) {
 				tmdbg("Fail to send signal, errno : %d\n", errno);
-				TM_FREE(request_msg.data);
-				request_msg.data = NULL;
 				ret = TM_FAIL_SEND_MSG;
 			}
 			break;
