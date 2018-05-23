@@ -451,6 +451,18 @@ int task_manager_set_handler(void (*func)(int signo, tm_msg_t *data))
 	return OK;
 }
 
+int task_manager_set_termination_cb(void (*func)(void))
+{
+	if (func == NULL) {
+		return TM_INVALID_PARAM;
+	}
+
+	if (atexit((void *)func) != OK) {
+		return TM_FAIL_SET_TERMINATION_CB;
+	}
+	return OK;
+}
+
 task_info_list_t *task_manager_getinfo_with_name(char *name, int timeout)
 {
 	int status;
