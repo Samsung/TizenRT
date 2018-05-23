@@ -75,6 +75,11 @@ ifeq ($(CONFIG_LIBCXX_HAVE_LIBSUPCXX),y)
 CSRCS += libxx_newlib_impure.c
 endif
 
+# custom task specific tls data pointer implementation
+ifeq ($(CONFIG_LIBCXX),y)
+CSRCS += libcpp_tls_pointer.c
+endif
+
 # Paths
 
 DEPPATH = --dep-path .

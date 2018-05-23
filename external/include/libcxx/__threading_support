@@ -117,7 +117,7 @@ int __libcpp_tls_create(__libcpp_tls_key* __key, void (*__at_exit)(void*));
 _LIBCPP_THREAD_ABI_VISIBILITY
 void* __libcpp_tls_get(__libcpp_tls_key __key);
 _LIBCPP_THREAD_ABI_VISIBILITY
-void __libcpp_tls_set(__libcpp_tls_key __key, void* __p);
+int __libcpp_tls_set(__libcpp_tls_key __key, void* __p);
 
 #if defined(_LIBCPP_HAS_THREAD_API_PTHREAD) || defined(_LIBCPP_BUILDING_EXTERNAL_THREADS)
 
@@ -247,9 +247,9 @@ void* __libcpp_tls_get(__libcpp_tls_key __key)
     return pthread_getspecific(__key);
 }
 
-void __libcpp_tls_set(__libcpp_tls_key __key, void* __p)
+int __libcpp_tls_set(__libcpp_tls_key __key, void* __p)
 {
-    pthread_setspecific(__key, __p);
+    return pthread_setspecific(__key, __p);
 }
 
 #endif // _LIBCPP_HAS_THREAD_API_PTHREAD || _LIBCPP_BUILDING_EXTERNAL_THREADS

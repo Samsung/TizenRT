@@ -410,6 +410,10 @@ struct task_group_s {
 #endif
 #endif
 
+#if defined(CONFIG_LIBCXX)
+	void *__libcpp_tls_pointer;
+#endif
+
 #ifndef CONFIG_DISABLE_SIGNALS
 	/* POSIX Signal Control Fields *********************************************** */
 

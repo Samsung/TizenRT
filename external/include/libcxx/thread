@@ -159,7 +159,6 @@ class __thread_specific_ptr
      // Only __thread_local_data() may construct a __thread_specific_ptr
      // and only with _Tp == __thread_struct.
     static_assert((is_same<_Tp, __thread_struct>::value), "");
-    __thread_specific_ptr();
     friend _LIBCPP_FUNC_VIS __thread_specific_ptr<__thread_struct>& __thread_local_data();
 
     __thread_specific_ptr(const __thread_specific_ptr&);
@@ -169,6 +168,7 @@ class __thread_specific_ptr
 public:
     typedef _Tp* pointer;
 
+    __thread_specific_ptr();
     ~__thread_specific_ptr();
 
     _LIBCPP_INLINE_VISIBILITY
@@ -213,7 +213,10 @@ __thread_specific_ptr<_Tp>::set_pointer(pointer __p)
 {
     _LIBCPP_ASSERT(get() == nullptr,
                    "Attempting to overwrite thread local data");
-    __libcpp_tls_set(__key_, __p);
+    if (__libcpp_tls_set(__key_, __p) != 0)
+    {
+        delete static_cast<pointer>(__p);
+    }
 }
 
 class _LIBCPP_TYPE_VIS thread;
@@ -354,10 +357,21 @@ __thread_execute(tuple<_TSp, _Fp, _Args...>& __t, __tuple_indices<_Indices...>)
     __invoke(_VSTD::move(_VSTD::get<1>(__t)), _VSTD::move(_VSTD::get<_Indices>(__t))...);
 }
 
+#if defined(__TINYARA__)
+extern "C" void* __libcpp_get_tls_pointer();
+extern "C" void  __libcpp_set_tls_pointer(void *);
+extern "C" int on_exit(void (*func)(int, void *), void *arg);
+
+void thread_specific_ptr_init(void);
+#endif
+
 template <class _Fp>
 void* __thread_proxy(void* __vp)
 {
     // _Fp = std::tuple< unique_ptr<__thread_struct>, Functor, Args...>
+#if defined(__TINYARA__)
+    thread_specific_ptr_init();
+#endif
     std::unique_ptr<_Fp> __p(static_cast<_Fp*>(__vp));
     __thread_local_data().set_pointer(_VSTD::get<0>(*__p).release());
     typedef typename __make_tuple_indices<tuple_size<_Fp>::value, 2>::type _Index;
@@ -400,6 +414,9 @@ template <class _Fp>
 void* __thread_proxy_cxx03(void* __vp)
 {
     std::unique_ptr<_Fp> __p(static_cast<_Fp*>(__vp));
+#if defined(__TINYARA__)
+    thread_specific_ptr_init();
+#endif
     __thread_local_data().set_pointer(__p->__tsp_.release());
     (__p->__fn_)();
     return nullptr;

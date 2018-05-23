@@ -157,11 +157,41 @@ sleep_for(const chrono::nanoseconds& ns)
 
 }  // this_thread
 
+#if defined(__TINYARA__)
+void __libcpp_tls_pointer_cleanup(int exitcode, void *__libcpp_tls_pointer)
+{
+    if (__libcpp_tls_pointer)
+        delete static_cast<__thread_specific_ptr<__thread_struct>*>(__libcpp_tls_pointer);
+}
+
+void thread_specific_ptr_init(void)
+{
+    void *__libcpp_tls_pointer = __libcpp_get_tls_pointer();
+    if (!__libcpp_tls_pointer)
+    {
+	__libcpp_tls_pointer = static_cast<void *>(new(__thread_specific_ptr<__thread_struct>));
+	__libcpp_set_tls_pointer(__libcpp_tls_pointer);
+	on_exit(__libcpp_tls_pointer_cleanup, __libcpp_tls_pointer);
+    }
+}
+#endif
+
 __thread_specific_ptr<__thread_struct>&
 __thread_local_data()
 {
+#if defined(__TINYARA__)
+    void *__p = __libcpp_get_tls_pointer();
+    if(__p)
+    {
+        return (* static_cast<__thread_specific_ptr<__thread_struct> *>(__p));
+    }
+    else
+        __throw_system_error(1, "__thread_local_data() failed");
+
+#else
     static __thread_specific_ptr<__thread_struct> __p;
     return __p;
+#endif
 }
 
 // __thread_struct_imp
