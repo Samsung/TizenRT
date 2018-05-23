@@ -92,7 +92,7 @@ static int tm_get_task_state(int handle)
 
 static int tm_check_permission(int handle, pid_t pid)
 {
-	int ret = ERROR;
+	int ret = TM_FAIL_NOT_PERMITTED;
 	int chk_idx;
 	int caller_gid = -1;
 
