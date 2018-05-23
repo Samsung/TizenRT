@@ -41,6 +41,9 @@ This project is forking [TizenRT 1.0](https://github.com/Samsung/TizenRT) from [
 >   * [Thumb Mode Build](#thumb-mode-build)
 >   * [Crash Dump Analysis Tool](#crash-dump-analysis-tool)
 >   * [ADB(Artik Debug Bridge)](#adbartik-debug-bridge)
+> * Security
+>   * [ARTIK certificate uuid](#artik-certificate-uuid)
+>   * [ARTIK Secure Boot Guide](#artik-secure-boot-guide)
 > * Support Tool
 >   * [TRACE32](#trace32)
 >   * [J-Link](#j-link)
@@ -897,6 +900,132 @@ To stop the adb server, use the adb kill-server command. You can then restart th
 ```bash
 $ adb kill-server
 ```
+
+<!-- Security -->
+
+## ARTIK certificate uuid
+
+You can get ARTIK uuid using `get_artik_crt_uuid` api from injected ARTIK certificate.
+
+Please refer to the following example code.
+```c
+unsigned char uuid[64] = { 0x00, };
+unsigned int uuid_len = 0;
+
+get_artik_crt_uuid(uuid, &uuid_len);
+```
+> uuid format: `01011707-2400-000a-3ce7-fd0a1708684e`
+
+## ARTIK Secure Boot Guide
+
+This guide introduces secure boot for `development` and `mass production stage`. First of all, if you are using ARTIK05xs(such as ARTIK053s, ARTIK055s) models, you need to read terms of use on below link before production.
+
+(Link : https://www.artik.io)
+
+Please access the link and sign-up.
+
+### Secure Boot in development
+
+Here is the secure boot chain.
+```
++-------------------------+         +--------------------------------+         +--------------------------------+
+|           bl1           |         |               u-boot           |         |            tinyara             |
++-------------------------+ ======> +--------------------------------+ ======> +--------------------------------+
+| Customer KMS public key |         |     Customer APP public key    |         |        Signature of above      |
+|                         |         +--------------------------------+         | (Signed by customer's APP key) |
++-------------------------+         |       Signature of above       |         +--------------------------------+
+                                    | (Signed by customer's KMS key) |
+                                    +--------------------------------+
+```
+
+In development, below items are used.
+> * bl1 image is default image
+> * Customer's KMS Key is default key
+> * Customer's APP Key is default key
+
+When you build tinyara of s-model series, build system will sign the fw files with default keys.
+
+### Secure Boot in mass production stage
+
+If you are in mass production stage, you need to change some items to your own.
+
+(If you wonder the condition of mass production please contact "codesigner@artik.io". This is email of ARTIK support team.)
+
+Here is the list you need to change.
+> * bl1 image that includes your KMS public key
+> * KMS key and public key from ARTIK KMS Server
+> * APP key
+
+
+#### KMS key
+
+* Please access [link](https://developer.artik.io/documentation/advanced-concepts/secure-os/kms.html).
+* Above link describes how to get account of KMS and generate KMS key.
+* It also describes the process how to get bl1 image including your public key.
+
+#### bl1 image
+
+* This [link](https://developer.artik.io/documentation/advanced-concepts/secure-os/kms.html) also describes the process how to get bl1 image including your public key.
+* To operate new bl1 image, please contact "codesigner@artik.io" to get efuse app and guide.
+* Here is how to enable new bl1 image.
+1. Copy received “tinyara_head.bin” into “tinyara/build/output/bin”
+2. Run below command in "tinyara/os" to sign “tinyara_head.bin” and fuse it on your artik module.
+```bash
+$ make download os
+```
+3. After fusing please run commands as below.
+```
+TASH>>do_aes
+
+Writing...
+Read...
+RData[3~0]:0x00000000,0x00000200,0x0000060c,0xeed68e13
+DO_AES Write Ok
+
+TASH>>wwkeysel 7
+
+Writing...
+Read...
+RData[3~0]:0x00000000,0x00000207,0x0000060c,0xeed68e13
+WW Key Write Ok
+TASH>>
+```
+
+#### APP key
+
+APP key is used for signing tinyara os. Here is the process.
+
+1. Run below commands to generate private key. This is a key for signing OS.
+```bash
+$ openssl genrsa -3 -out rsa_private.key 2048
+```
+2. Copy the private key into below path. From now on, if you build, OS will be signed with your private key. Please keep it safe.
+
+> tinyara/build/configs/artik05x/tools/codesigner/rsa_private.key
+
+3. Run below command to extract public key from private key. You need to inject the public key into u-boot.
+```bash
+$ openssl rsa -in rsa_private.key -pubout > rsa_public.key
+```
+4. Compile u-boot.
+
+> Reference: https://github.com/SamsungARTIK/u-boot-artik/tree/artik-05x
+
+5. Inject public key into u-boot.
+```bash
+$ ./tools/attachns2-s.py ./u-boot.bin ./u-boot.head.bin ./rsa_public.key
+```
+6. Upload “u-boot.head.bin” onto KMS and sign.
+
+> Reference: https://developer.artik.io/documentation/advanced-concepts/secure-os/kms.html
+
+7. Download signed image and copy it into below path as named `bl2.bin`. From now on, if you use `make download ALL` command, that `bl2.bin` will be used to fuse.
+
+> tinyara/build/configs/artik053s/bin/bl2.bin
+
+8. Build as guided below.
+
+> Reference: https://github.com/SamsungARTIK/TizenRT#how-to-build
 
 <!-- Support Tool -->
 
