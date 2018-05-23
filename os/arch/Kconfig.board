@@ -5,7 +5,7 @@
 
 choice
 	prompt "Select target board"
-	default ARCH_BOARD_SIDK_S5JT200
+	default ARCH_BOARD_ARTIK053
 	---help---
 		Select the board hosting the architecture.  You must first select the
 		exact MCU part number, then the boards supporting that part will
@@ -35,13 +35,6 @@ config ARCH_BOARD_ARTIK055S
 	---help---
 		Samsung ARTIK-055S Starter Kit based on S5JT200 IoT WiFi MCU
 
-config ARCH_BOARD_SIDK_S5JT200
-	bool "Samsung S5JT200 sidk board"
-	depends on ARCH_CHIP_S5JT200
-	select ARCH_HAVE_BUTTONS
-	select ARCH_HAVE_IRQBUTTONS
-	---help---
-		Samsung S5JT200 IoT wifi MCU
 endchoice
 
 config ARCH_BOARD_ARTIK05X_FAMILY
@@ -51,7 +44,6 @@ config ARCH_BOARD_ARTIK05X_FAMILY
 config ARCH_BOARD
 	string
 	default "artik05x" if ARCH_BOARD_ARTIK05X_FAMILY
-	default "sidk_s5jt200" if ARCH_BOARD_SIDK_S5JT200
 
 config ARCH_BOARD_NAME
 	string
@@ -184,8 +176,4 @@ comment "Board-Specific Options"
 
 if ARCH_BOARD_ARTIK05X_FAMILY
 source arch/arm/src/artik05x/Kconfig
-endif
-
-if ARCH_BOARD_SIDK_S5JT200
-source arch/arm/src/sidk_s5jt200/Kconfig
 endif
