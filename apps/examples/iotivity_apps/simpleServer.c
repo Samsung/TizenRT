@@ -85,7 +85,7 @@
 
 #if defined(CONFIG_ENC28J60) || defined(CONFIG_WICED)
 #define NET_DEVNAME "en"
-#elif defined(CONFIG_ARCH_BOARD_SIDK_S5JT200) || defined(CONFIG_ARCH_BOARD_ARTIK05X_FAMILY)
+#elif defined(CONFIG_ARCH_BOARD_ARTIK05X_FAMILY)
 #define NET_DEVNAME "wl"
 #else
 #error "undefined CONFIG_NET_<type>, check your .config"

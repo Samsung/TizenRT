@@ -1694,11 +1694,7 @@ static int wpas_p2p_add_group_interface(struct wpa_supplicant *wpa_s, enum wpa_d
 	/* Tinyara Driver doesnt take Group Ifname as Input.
 	   It creates the Group with IFNAME Wl3.So Hardcoding the Ifname to Wl3
 	 */
-#ifndef CONFIG_ARCH_BOARD_SIDK_S5JT200
 	wpas_p2p_get_group_ifname(wpa_s, ifname, sizeof(ifname));
-#else
-	snprintf(ifname, sizeof(ifname), "wl3");
-#endif
 	force_ifname[0] = '\0';
 
 	wpa_printf(MSG_DEBUG, "P2P: Create a new interface %s for the group", ifname);

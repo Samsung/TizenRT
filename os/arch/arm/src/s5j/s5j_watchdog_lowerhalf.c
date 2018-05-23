@@ -364,7 +364,7 @@ static int s5j_wdg_settimeout(FAR struct watchdog_lowerhalf_s *lower, uint32_t t
 
 	/*
 	 * See S5JT200 WTCON reg
-	 * sidk_s5jt200 uses OSC 26Mhz
+	 * S5JT200 uses OSC 26Mhz
 	 * divider = 2^division factor*16
 	 * Prescaler  = Prescaler value + 1
 	 */

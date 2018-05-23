@@ -47,10 +47,6 @@
 #include<arpa/inet.h>
 #include<sys/socket.h>
 
-#if defined(CONFIG_ARCH_BOARD_SIDK_S5JT200)
-#include "slsi_wifi_api.h"
-#endif
-
 #if !defined(CONFIG_DISABLE_MOUNTPOINT) && defined(CONFIG_FS_PROCFS)
 #if defined(CONFIG_CM) && !defined(CONFIG_FS_PROCFS_EXCLUDE_CONNECTIVITY)
 
@@ -259,12 +255,7 @@ static size_t cm_rssi_read(FAR struct cm_file_s *connectivityfile, FAR char *buf
 	size_t linesize;
 	size_t copysize;
 	int rssi_value;
-#if defined(CONFIG_ARCH_BOARD_SIDK_S5JT200)
-	WiFiGetRssi(&rssi_value);
-	rssi_value -= 255;
-#else
 	rssi_value = 0;
-#endif
 
 	linesize = snprintf(connectivityfile->line, CM_LINELEN, "%d", rssi_value);
 	copysize = procfs_memcpy(connectivityfile->line, linesize, buffer, buflen, &offset);

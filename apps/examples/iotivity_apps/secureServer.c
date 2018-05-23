@@ -103,8 +103,6 @@ OCEntityHandlerResult sec_OCEntityHandlerCb(OCEntityHandlerFlag flag, OCEntityHa
 
 #if defined(CONFIG_ENC28J60) || defined(CONFIG_WICED)
 #define NET_DEVNAME "en"
-#elif defined(CONFIG_ARCH_BOARD_SIDK_S5JT200)
-#define NET_DEVNAME "wl"
 #elif defined(CONFIG_ARCH_BOARD_ARTIK05X_FAMILY)
 #define NET_DEVNAME "wl"
 #else
