@@ -97,10 +97,6 @@
 #define TASK_CANCEL_DEFERRED (0)
 #define TASK_CANCEL_ASYNCHRONOUS (1)
 
-/* Pthread definitions **********************************************************/
-
-#define PTHREAD_KEYS_MAX CONFIG_NPTHREAD_KEYS
-
 /**
  * @}
  */

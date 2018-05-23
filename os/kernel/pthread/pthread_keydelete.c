@@ -1,6 +1,6 @@
 /****************************************************************************
  *
- * Copyright 2016 Samsung Electronics All Rights Reserved.
+ * Copyright 2018 Samsung Electronics All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,51 +15,19 @@
  * language governing permissions and limitations under the License.
  *
  ****************************************************************************/
-/************************************************************************
- * kernel/pthread/pthread_keydelete.c
- *
- *   Copyright (C) 2007, 2009 Gregory Nutt. All rights reserved.
- *   Author: Gregory Nutt <gnutt@nuttx.org>
- *
- * Redistribution and use in source and binary forms, with or without
- * modification, are permitted provided that the following conditions
- * are met:
- *
- * 1. Redistributions of source code must retain the above copyright
- *    notice, this list of conditions and the following disclaimer.
- * 2. Redistributions in binary form must reproduce the above copyright
- *    notice, this list of conditions and the following disclaimer in
- *    the documentation and/or other materials provided with the
- *    distribution.
- * 3. Neither the name NuttX nor the names of its contributors may be
- *    used to endorse or promote products derived from this software
- *    without specific prior written permission.
- *
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
- * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
- * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS
- * FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE
- * COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT,
- * INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING,
- * BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS
- * OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED
- * AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT
- * LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN
- * ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
- * POSSIBILITY OF SUCH DAMAGE.
- *
- ************************************************************************/
 
 /************************************************************************
  * Included Files
  ************************************************************************/
 
-#include <tinyara/config.h>
-
-#include <sched.h>
+#include <sys/types.h>
+#include <pthread.h>
+#include <queue.h>
 #include <errno.h>
-#include <debug.h>
 #include <assert.h>
+
+#include <tinyara/sched.h>
+#include <tinyara/kmalloc.h>
 
 #include "sched/sched.h"
 #include "pthread/pthread.h"
@@ -111,13 +79,36 @@ int pthread_key_delete(pthread_key_t key)
 {
 	struct pthread_tcb_s *rtcb = (FAR struct pthread_tcb_s *)this_task();
 	struct task_group_s *group = rtcb->cmn.group;
+	struct pthread_key_s *cur_key;
 
 	DEBUGASSERT(group && (rtcb->cmn.flags & TCB_FLAG_TTYPE_MASK) == TCB_FLAG_TTYPE_PTHREAD);
 
-	if (key < PTHREAD_KEYS_MAX && group->tg_keys[key] == IN_USE) {
-		rtcb->pthread_data[key].data = NULL;
-		rtcb->pthread_data[key].destructor = NULL;
-		group->tg_keys[key] = NOT_IN_USE;
+	/* Check key validation */
+
+	if (key < PTHREAD_KEYS_MAX) {
+
+		/* Find key data */
+
+		cur_key = (struct pthread_key_s *)pthread_key_find(rtcb, key);
+		if (cur_key == NULL) {
+
+			/* No Key in the list */
+
+			return EINVAL;
+		}
+
+		/* Remove key from list */
+
+		sq_rem((sq_entry_t *)cur_key, &rtcb->key_list);
+
+		/* Free key data */
+
+		sched_kfree(cur_key);
+
+		/* Update pthread key number and group key number */
+
+		rtcb->nkeys--;
+		group->tg_nkeys--;
 
 		return OK;
 	}

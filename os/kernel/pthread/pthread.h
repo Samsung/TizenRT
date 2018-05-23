@@ -70,14 +70,6 @@
 /****************************************************************************
  * Pre-processor Definitions
  ****************************************************************************/
-#define NOT_IN_USE                     0  /* Pthread key is not in-use */
-#define IN_USE                         1  /* Pthread key is in-use     */
-/* Max Number of calling destructor */
-#ifdef CONFIG_NPTHREAD_DESTRUCTOR_ITERATIONS
-#define PTHREAD_DESTRUCTOR_ITERATIONS  CONFIG_NPTHREAD_DESTRUCTOR_ITERATIONS
-#else
-#define PTHREAD_DESTRUCTOR_ITERATIONS  2
-#endif
 
 /****************************************************************************
  * Public Type Declarations
@@ -156,6 +148,11 @@ void pthread_enable_cancel(uint16_t oldstate);
 
 #ifdef CONFIG_PTHREAD_MUTEX_TYPES
 int pthread_mutexattr_verifytype(int type);
+#endif
+
+#if defined(CONFIG_NPTHREAD_KEYS) && CONFIG_NPTHREAD_KEYS > 0
+struct pthread_key_s *pthread_key_find(struct pthread_tcb_s *tcb, pthread_key_t key);
+void pthread_key_destroy(struct pthread_tcb_s *tcb);
 #endif
 
 #undef EXTERN

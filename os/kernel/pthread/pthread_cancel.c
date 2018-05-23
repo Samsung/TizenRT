@@ -194,6 +194,10 @@ int pthread_cancel(pthread_t thread)
 	pthread_cleanup_popall(tcb);
 #endif
 
+#if CONFIG_NPTHREAD_KEYS > 0
+	pthread_key_destroy(tcb);
+#endif
+
 	/* Complete pending join operations */
 
 	(void)pthread_completejoin((pid_t)thread, PTHREAD_CANCELED);
