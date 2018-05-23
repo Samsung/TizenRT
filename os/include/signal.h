@@ -163,7 +163,7 @@
 #endif
 
 /* SIGTM is used in Task Manager */
-#ifndef CONFIG_SIG_SIGTM
+#ifndef CONFIG_SIG_SIGTM_UNICAST
 #define SIGTM_UNICAST       18			/* Taskmgt signal */
 #else
 #define SIGTM_UNICAST       CONFIG_SIG_SIGTM_UNICAST
