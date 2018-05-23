@@ -23,7 +23,7 @@ namespace media {
 namespace stream {
 
 InputDataSource::InputDataSource()
-	: DataSource(), mAudioType(utils::AUDIO_TYPE_INVALID)
+	: DataSource(), mAudioType(AUDIO_TYPE_INVALID)
 {
 }
 
@@ -53,12 +53,12 @@ const std::shared_ptr<Decoder> InputDataSource::getDecoder()
 	return mDecoder;
 }
 
-void InputDataSource::setAudioType(utils::audio_type_t audioType)
+void InputDataSource::setAudioType(audio_type_t audioType)
 {
 	mAudioType = audioType;
 }
 
-utils::audio_type_t InputDataSource::getAudioType()
+audio_type_t InputDataSource::getAudioType()
 {
 	return mAudioType;
 }

@@ -30,29 +30,10 @@
 #define __MEDIA_UTILS_H
 
 #include <string>
+#include <media/MediaTypes.h>
 
 namespace media {
 namespace utils {
-
-/**
- * @brief Audio type.
- * @details @b #include <media/MediaUtils.h>
- * @since TizenRT v2.0 PRE
- */
-typedef enum audio_type_e {
-	/** Audio type is invalid */
-	AUDIO_TYPE_INVALID = 0,
-	/** Audio type is mp3 */
-	AUDIO_TYPE_MP3 = 1,
-	/** Audio type is AAC */
-	AUDIO_TYPE_AAC = 2,
-	/** Audio type is PCM */
-	AUDIO_TYPE_PCM = 3,
-	/** Audio type is PCM */
-	AUDIO_TYPE_OPUS = 4,
-	/** Audio type is PCM */
-	AUDIO_TYPE_FLAC = 5
-} audio_type_t;
 
 /**
  * @brief Replace string with lowercase string.

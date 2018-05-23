@@ -30,23 +30,9 @@
 #define __MEDIA_DATASOURCE_H
 
 #include <iostream>
+#include <media/MediaTypes.h>
 
 namespace media {
-
-/**
- * @class 
- * @brief Audio format type, each value follows pcm_format in tinyalsa.
- * @details @b #include <media/MediaUtils.h>
- * @since TizenRT v2.0 PRE
- */
-typedef enum audio_format_type_e {
-	/* Signed 8 bit */
-	AUDIO_FORMAT_TYPE_S8 = 1,
-	/* Signed 16 bit use this as a default */
-	AUDIO_FORMAT_TYPE_S16_LE = 0,
-	/* Signed 32 bit */
-	AUDIO_FORMAT_TYPE_S32_LE = 2
-} audio_format_type_t;
 
 /**
  * @class 

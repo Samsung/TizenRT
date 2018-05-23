@@ -16,7 +16,7 @@
  *
  ******************************************************************/
 
-#include <media/MediaUtils.h>
+#include "MediaUtils.h"
 #include <debug.h>
 
 namespace media {

@@ -30,7 +30,6 @@
 #define __MEDIA_FILEINPUTDATASOURCE_H
 
 #include <media/InputDataSource.h>
-#include <media/MediaUtils.h>
 
 namespace media {
 namespace stream {
