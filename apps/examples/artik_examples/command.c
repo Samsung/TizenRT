@@ -95,7 +95,9 @@ int commands_parser(int argc, char **argv, const struct command *commands)
 				pthread_attr_setschedparam(&attr, &sparam);
 				pthread_attr_setschedpolicy(&attr, SCHED_RR);
 				pthread_attr_setstacksize(&attr, 16384);
-				pthread_create(&tid, &attr, launch_command, (void *)&tparams);
+				if (pthread_create(&tid, &attr, launch_command, (void *)&tparams) != 0) {
+					return -1;
+				}
 				pthread_attr_destroy(&attr);
 				pthread_setname_np(tid, "launch-command");
 				pthread_join(tid, NULL);
