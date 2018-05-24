@@ -10,7 +10,6 @@ config EXAMPLES_WIFIMANAGER_TEST
 	---help---
 		Wi-Fi Manager sample program
 
-
 config USER_ENTRYPOINT
 	string
 	default "wm_test_main" if ENTRY_WIFIMANAGER_TEST
@@ -21,14 +20,18 @@ config EXAMPLES_WIFIMANAGER_STRESS_TEST
 	bool "Enable Sterss Test"
 	default n
 
-
 if EXAMPLES_WIFIMANAGER_STRESS_TEST
+config WIFIMANAGER_TEST_TRIAL
+	string "Number of test trial"
+	default "2"
+	---help---
+		Number of test trial
+
 config WIFIMANAGER_TEST_AP_SSID
 	string "SSID of AP"
 	default "SSID"
 	---help---
 		Select SSID of AP which you want to connect to
-
 
 config WIFIMANAGER_TEST_AP_PASSPHRASE
 	string "Passphrase of AP"
