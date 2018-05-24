@@ -17,6 +17,7 @@
  ******************************************************************/
 
 #include <media/FileInputDataSource.h>
+#include "utils/MediaUtils.h"
 #include <debug.h>
 #include "Decoder.h"
 
@@ -50,6 +51,7 @@ FileInputDataSource& FileInputDataSource::operator=(const FileInputDataSource& s
 
 FileInputDataSource::~FileInputDataSource()
 {
+	close();
 }
 
 bool FileInputDataSource::open()
@@ -62,14 +64,14 @@ bool FileInputDataSource::open()
 	setAudioType(utils::getAudioTypeFromPath(mDataPath));
 
 	switch (getAudioType()) {
-		case utils::AUDIO_TYPE_MP3:
-		case utils::AUDIO_TYPE_AAC:
-			setDecoder(std::make_shared<Decoder>(new Decoder()));
+		case AUDIO_TYPE_MP3:
+		case AUDIO_TYPE_AAC:
+			setDecoder(std::make_shared<Decoder>());
 			break;
-		case utils::AUDIO_TYPE_OPUS:
+		case AUDIO_TYPE_OPUS:
 			/* To be supported */
 			break;
-		case utils::AUDIO_TYPE_FLAC:
+		case AUDIO_TYPE_FLAC:
 			/* To be supported */
 			break;
 		default:

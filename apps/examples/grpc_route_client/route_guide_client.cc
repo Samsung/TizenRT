@@ -68,8 +68,8 @@
 #include <apps/platform/cxxinitialize.h>
 
 struct arg_holder {
-    int argc;
-    char ** argv;
+	int argc;
+	char** argv;
 };
 
 using grpc::Channel;
@@ -91,442 +91,430 @@ using routeguide::RouteSummary;
 using routeguide::RouteNote;
 using routeguide::RouteGuide;
 
-Point MakePoint(long latitude, long longitude) {
-  Point p;
-  p.set_latitude(latitude);
-  p.set_longitude(longitude);
-  return p;
+Point MakePoint(long latitude, long longitude)
+{
+	Point p;
+	p.set_latitude(latitude);
+	p.set_longitude(longitude);
+	return p;
 }
 
-Feature MakeFeature(const std::string& name,
-                    long latitude, long longitude) {
-  Feature f;
-  f.set_name(name);
-  f.mutable_location()->CopyFrom(MakePoint(latitude, longitude));
-  return f;
+Feature MakeFeature(const std::string& name, long latitude, long longitude)
+{
+	Feature f;
+	f.set_name(name);
+	f.mutable_location()->CopyFrom(MakePoint(latitude, longitude));
+	return f;
 }
 
-RouteNote MakeRouteNote(const std::string& message,
-                        long latitude, long longitude) {
-  RouteNote n;
-  n.set_message(message);
-  n.mutable_location()->CopyFrom(MakePoint(latitude, longitude));
-  return n;
+RouteNote MakeRouteNote(const std::string& message, long latitude, long longitude)
+{
+	RouteNote n;
+	n.set_message(message);
+	n.mutable_location()->CopyFrom(MakePoint(latitude, longitude));
+	return n;
 }
-class RouteGuideClient {
- public:
-  RouteGuideClient(std::shared_ptr<Channel> channel, const std::string& db)
-      : stub_(RouteGuide::NewStub(channel)) {
-    routeguide::ParseDb(db, &feature_list_);
-  }
 
-  void GetFeature() {
-    Point point;
-    Feature feature;
-    point = MakePoint(409146138, -746188906);
-    GetOneFeature(point, &feature);
-    point = MakePoint(0, 0);
-    GetOneFeature(point, &feature);
-  }
-  virtual bool GetOneFeature(const Point&, Feature*) = 0;
-  virtual void ListFeatures() = 0;
-  virtual void RecordRoute() = 0 ;
-  virtual void RouteChat() = 0;
+class RouteGuideClient
+{
+public:
+	RouteGuideClient(std::shared_ptr<Channel> channel, const std::string& db) : stub_(RouteGuide::NewStub(channel))
+	{
+		routeguide::ParseDb(db, &feature_list_);
+	}
 
-  const float kCoordFactor_ = 10000000.0;
-  std::unique_ptr<RouteGuide::Stub> stub_;
-  std::vector<Feature> feature_list_;
+	void GetFeature()
+	{
+		Point point;
+		Feature feature;
+		point = MakePoint(409146138, -746188906);
+		if (!GetOneFeature(point, &feature)) {
+			std::cout << "############### GetFeature FAIL ###############" << std::endl;
+			return;
+		}
+		point = MakePoint(0, 0);
+		if (!GetOneFeature(point, &feature)) {
+			std::cout << "############### GetFeature FAIL ###############" << std::endl;
+			return;
+		}
+		std::cout << "############### GetFeature SUCCESS ###############" << std::endl;
+	}
+	virtual bool GetOneFeature(const Point&, Feature*) = 0;
+	virtual void ListFeatures() = 0;
+	virtual void RecordRoute() = 0;
+	virtual void RouteChat() = 0;
+
+	const float kCoordFactor_ = 10000000.0;
+	std::unique_ptr<RouteGuide::Stub> stub_;
+	std::vector<Feature> feature_list_;
 };
 
-class SyncRouteGuideClient : public RouteGuideClient {
- public:
-  SyncRouteGuideClient(std::shared_ptr<Channel> channel, const std::string& db)
-      : RouteGuideClient(channel, db) {};
+class SyncRouteGuideClient : public RouteGuideClient
+{
+public:
+	SyncRouteGuideClient(std::shared_ptr<Channel> channel, const std::string& db) : RouteGuideClient(channel, db){};
 
-  void ListFeatures() {
-    routeguide::Rectangle rect;
-    Feature feature;
-    ClientContext context;
+	void ListFeatures()
+	{
+		routeguide::Rectangle rect;
+		Feature feature;
+		ClientContext context;
 
-    rect.mutable_lo()->set_latitude(400000000);
-    rect.mutable_lo()->set_longitude(-750000000);
-    rect.mutable_hi()->set_latitude(420000000);
-    rect.mutable_hi()->set_longitude(-730000000);
-    std::cout << "Looking for features between 40, -75 and 42, -73"
-              << std::endl;
+		rect.mutable_lo()->set_latitude(400000000);
+		rect.mutable_lo()->set_longitude(-750000000);
+		rect.mutable_hi()->set_latitude(420000000);
+		rect.mutable_hi()->set_longitude(-730000000);
+		std::cout << "Looking for features between 40, -75 and 42, -73" << std::endl;
 
-    std::unique_ptr<ClientReader<Feature> > reader(
-        stub_->ListFeatures(&context, rect));
-    while (reader->Read(&feature)) {
-      std::cout << "Found feature called "
-                << feature.name() << " at "
-                << feature.location().latitude()/kCoordFactor_ << ", "
-                << feature.location().longitude()/kCoordFactor_ << std::endl;
-    }
-    Status status = reader->Finish();
-    if (status.ok()) {
-      std::cout << "ListFeatures rpc succeeded." << std::endl;
-    } else {
-      std::cout << "ListFeatures rpc Failed." << std::endl;
-    }
-  }
+		std::unique_ptr<ClientReader<Feature>> reader(stub_->ListFeatures(&context, rect));
+		while (reader->Read(&feature)) {
+			std::cout << "Found feature called " << feature.name() << " at "
+					  << feature.location().latitude() / kCoordFactor_ << ", "
+					  << feature.location().longitude() / kCoordFactor_ << std::endl;
+		}
+		Status status = reader->Finish();
+		if (status.ok()) {
+			std::cout << "############### ListFeatures SUCCESS ###############" << std::endl;
+		} else {
+			std::cout << "############### ListFeatures FAIL ###############" << std::endl;
+		}
+	}
 
-  void RecordRoute() {
-    Point point;
-    RouteSummary stats;
-    ClientContext context;
-    const int kPoints = 10;
-    unsigned seed = std::chrono::system_clock::now().time_since_epoch().count();
+	void RecordRoute()
+	{
+		Point point;
+		RouteSummary stats;
+		ClientContext context;
+		const int kPoints = 10;
+		unsigned seed = std::chrono::system_clock::now().time_since_epoch().count();
 
-    std::default_random_engine generator(seed);
-    std::uniform_int_distribution<int> feature_distribution(
-        0, feature_list_.size() - 1);
-    std::uniform_int_distribution<int> delay_distribution(
-        500, 1500);
+		std::default_random_engine generator(seed);
+		std::uniform_int_distribution<int> feature_distribution(0, feature_list_.size() - 1);
+		std::uniform_int_distribution<int> delay_distribution(500, 1500);
 
-    std::unique_ptr<ClientWriter<Point> > writer(
-        stub_->RecordRoute(&context, &stats));
-    for (int i = 0; i < kPoints; i++) {
-      const Feature& f = feature_list_[feature_distribution(generator)];
-      std::cout << "Visiting point "
-                << f.location().latitude()/kCoordFactor_ << ", "
-                << f.location().longitude()/kCoordFactor_ << std::endl;
-      if (!writer->Write(f.location())) {
-        // Broken stream.
-        break;
-      }
-      std::this_thread::sleep_for(std::chrono::milliseconds(
-          delay_distribution(generator)));
-    }
-    writer->WritesDone();
-    Status status = writer->Finish();
-    if (status.ok()) {
-      std::cout << "Finished trip with " << stats.point_count() << " points\n"
-                << "Passed " << stats.feature_count() << " features\n"
-                << "Travelled " << stats.distance() << " meters\n"
-                << "It took " << stats.elapsed_time() << " seconds"
-                << std::endl;
-    } else {
-      std::cout << "RecordRoute rpc Failed." << std::endl;
-    }
-  }
+		std::unique_ptr<ClientWriter<Point>> writer(stub_->RecordRoute(&context, &stats));
+		for (int i = 0; i < kPoints; i++) {
+			const Feature& f = feature_list_[feature_distribution(generator)];
+			std::cout << "Visiting point " << f.location().latitude() / kCoordFactor_ << ", "
+					  << f.location().longitude() / kCoordFactor_ << std::endl;
+			if (!writer->Write(f.location())) {
+				// Broken stream.
+				break;
+			}
+			std::this_thread::sleep_for(std::chrono::milliseconds(delay_distribution(generator)));
+		}
+		writer->WritesDone();
+		Status status = writer->Finish();
+		if (status.ok()) {
+			std::cout << "Finished trip with " << stats.point_count() << " points\n"
+					  << "Passed " << stats.feature_count() << " features\n"
+					  << "Travelled " << stats.distance() << " meters\n"
+					  << "It took " << stats.elapsed_time() << " seconds" << std::endl;
+			std::cout << "############### RecordRoute SUCCESS ###############" << std::endl;
+		} else {
+			std::cout << "############### RecordRoute FAIL ###############" << std::endl;
+		}
+	}
 
-  void RouteChat() {
-    ClientContext context;
+	void RouteChat()
+	{
+		ClientContext context;
 
-    std::shared_ptr<ClientReaderWriter<RouteNote, RouteNote> > stream(
-        stub_->RouteChat(&context));
+		std::shared_ptr<ClientReaderWriter<RouteNote, RouteNote>> stream(stub_->RouteChat(&context));
 
-    std::thread writer([stream]() {
-      std::vector<RouteNote> notes{
-        MakeRouteNote("First message", 0, 0),
-        MakeRouteNote("Second message", 0, 1),
-        MakeRouteNote("Third message", 1, 0),
-        MakeRouteNote("Fourth message", 0, 0)};
-      for (const RouteNote& note : notes) {
-        std::cout << "Sending message " << note.message()
-                  << " at " << note.location().latitude() << ", "
-                  << note.location().longitude() << std::endl;
-        stream->Write(note);
-      }
-      stream->WritesDone();
-    });
+		std::thread writer([stream]() {
+			std::vector<RouteNote> notes{MakeRouteNote("First message", 0, 0), MakeRouteNote("Second message", 0, 1),
+										 MakeRouteNote("Third message", 1, 0), MakeRouteNote("Fourth message", 0, 0)};
+			for (const RouteNote& note : notes) {
+				std::cout << "Sending message " << note.message() << " at " << note.location().latitude() << ", "
+						  << note.location().longitude() << std::endl;
+				stream->Write(note);
+			}
+			stream->WritesDone();
+		});
 
-    RouteNote server_note;
-    while (stream->Read(&server_note)) {
-      std::cout << "Got message " << server_note.message()
-                << " at " << server_note.location().latitude() << ", "
-                << server_note.location().longitude() << std::endl;
-    }
-    writer.join();
-    Status status = stream->Finish();
-    if (!status.ok()) {
-      std::cout << "RouteChat rpc Failed." << std::endl;
-    }
-  }
-
- private:
-
-  bool GetOneFeature(const Point& point, Feature* feature) {
-    ClientContext context;
-    Status status = stub_->GetFeature(&context, point, feature);
-    if (!status.ok()) {
-      std::cout << "GetFeature rpc Failed." << std::endl;
-      return false;
-    }
-    if (!feature->has_location()) {
-      std::cout << "Server returns incomplete feature." << std::endl;
-      return false;
-    }
-    if (feature->name().empty()) {
-      std::cout << "Found no feature at "
-                << feature->location().latitude()/kCoordFactor_ << ", "
-                << feature->location().longitude()/kCoordFactor_ << std::endl;
-    } else {
-      std::cout << "Found feature called " << feature->name()  << " at "
-                << feature->location().latitude()/kCoordFactor_ << ", "
-                << feature->location().longitude()/kCoordFactor_ << std::endl;
-    }
-    return true;
-  }
-
-};
-
-class AsyncRouteGuideClient : public RouteGuideClient {
- public:
-  AsyncRouteGuideClient(std::shared_ptr<Channel> channel, const std::string& db)
-      : RouteGuideClient(channel, db) {};
-
-  void ListFeatures() {
-    routeguide::Rectangle rect;
-    Feature feature;
-    CompletionQueue cq;
-    Status status;
-    ClientContext context;
-
-    rect.mutable_lo()->set_latitude(400000000);
-    rect.mutable_lo()->set_longitude(-750000000);
-    rect.mutable_hi()->set_latitude(420000000);
-    rect.mutable_hi()->set_longitude(-730000000);
-    std::cout << "Looking for features between 40, -75 and 42, -73"
-              << std::endl;
-
-    std::unique_ptr<ClientAsyncReader<Feature> > reader(
-       stub_->AsyncListFeatures(&context, rect, &cq, (void*)1));
-
-    void* got_tag;
-    bool ok = false;
-    bool ret;
-
-    ret = cq.Next(&got_tag, &ok);
-    if (!ret || !ok || got_tag != (void*)1) {
-      std::cout << "RPC initialization Failed" << std::endl;
-      return;
-    }
-
-    while (1) {
-      reader->Read(&feature, got_tag);
-      ok = false;
-      bool ret = cq.Next(&got_tag, &ok);
-      if (!ret || !ok || got_tag != (void*)1) {
-        break;
-      }
-      std::cout << "Found feature called "
-                << feature.name() << " at "
-                << feature.location().latitude()/kCoordFactor_ << ", "
-                << feature.location().longitude()/kCoordFactor_ << std::endl;
-    }
-    reader->Finish(&status, (void*)1);
-    ret = cq.Next(&got_tag, &ok);
-    if (!ret || !ok || got_tag != (void*)1) {
-      std::cout << "reader Finish is Failed" << std::endl;
-      return;
-    }
-
-    if(status.ok()) {
-       std::cout << "ListFeature Done" << std::endl;
-    } else {
-       std::cout << "ListFeature Failed" << std::endl;
-    }
-}
-
-  void RecordRoute() {
-    Point point;
-    RouteSummary stats;
-    ClientContext context;
-    CompletionQueue cq;
-    const int kPoints = 10;
-    Status status;
-    unsigned seed = std::chrono::system_clock::now().time_since_epoch().count();
-
-    std::default_random_engine generator(seed);
-    std::uniform_int_distribution<int> feature_distribution(
-        0, feature_list_.size() - 1);
-    std::uniform_int_distribution<int> delay_distribution(
-        500, 1500);
-
-    std::unique_ptr<ClientAsyncWriter<Point>> writer(
-        stub_->AsyncRecordRoute(&context, &stats, &cq, (void*)1));
-
-    void* got_tag;
-    bool ok = false;
-    bool ret;
-
-    ret = cq.Next(&got_tag, &ok);
-    if (!ret || !ok || got_tag != (void*)1) {
-      std::cout << "RPC initialization Failed" << std::endl;
-      return;
-    }
-
-    for (int i = 0; i < kPoints; i++) {
-      const Feature& f = feature_list_[feature_distribution(generator)];
-      std::cout << "Visiting point "
-                << f.location().latitude()/kCoordFactor_ << ", "
-                << f.location().longitude()/kCoordFactor_ << std::endl;
-      writer->Write(f.location(), got_tag);
-      ret = cq.Next(&got_tag, &ok);
-      if (!ret || !ok || got_tag != (void*)1) {
-        std::cout << "Write Failed" << std::endl;
-        break;
-      }
-      std::this_thread::sleep_for(std::chrono::milliseconds(
-        delay_distribution(generator)));
-    }
-
-    writer->WritesDone(got_tag);
-    ret = cq.Next(&got_tag, &ok);
-    if (!ret || !ok || got_tag != (void*)1) {
-      std::cout << "WritesDone Failed" << std::endl;
-      return;
-    }
-
-    writer->Finish(&status, (void*)1);
-    ret = cq.Next(&got_tag, &ok);
-    if (!ret || !ok || got_tag != (void*)1) {
-      std::cout << "writer Finish Failed" << std::endl;
-      return;
-    }
-
-    if(status.ok()) {
-      std::cout << "Finished trip with " << stats.point_count() << " points\n"
-                << "Passed " << stats.feature_count() << " features\n"
-                << "Travelled " << stats.distance() << " meters\n"
-                << "It took " << stats.elapsed_time() << " seconds"
-                << std::endl;
-	  std::cout << "RecordRoute Done" << std::endl;
-    } else {
-      std::cout << "RecordRoute Failed." << std::endl;
-    }
-  }
-
-  void RouteChat() {
-    ClientContext context;
-    CompletionQueue cq;
-    Status status;
-
-    std::shared_ptr<ClientAsyncReaderWriter<RouteNote, RouteNote> > stream(
-      stub_->AsyncRouteChat(&context, &cq, (void *)1));
-
-    void* got_tag_read;
-    bool ok = false;
-    bool ret;
-
-    ret = cq.Next(&got_tag_read, &ok);
-    if (!ret || !ok || got_tag_read != (void*)1) {
-      std::cout << "RPC initialization Failed" << std::endl;
-      return;
-    }
-
-    std::thread writer([stream, &cq]() {
-      bool thd_ok = false;
-      bool thd_ret;
-      void* got_tag_write;
-
-      std::vector<RouteNote> notes{
-        MakeRouteNote("First message", 0, 0),
-        MakeRouteNote("Second message", 0, 1),
-        MakeRouteNote("Third message", 1, 0),
-        MakeRouteNote("Fourth message", 0, 0)};
-        for (const RouteNote& note : notes) {
-          std::cout << "Sending message " << note.message()
-                    << " at " << note.location().latitude() << ", "
-                    << note.location().longitude() << std::endl;
-          stream->Write(note, (void*)1);
-          thd_ret = cq.Next(&got_tag_write, &thd_ok);
-          if (!thd_ret || !thd_ok || got_tag_write != (void*)1) {
-            std::cout << "Write Failed" << std::endl;
-            break;
-          }
-        }
-        stream->WritesDone(got_tag_write);
-        thd_ret = cq.Next(&got_tag_write, &thd_ok);
-        if (!thd_ret || !thd_ok || got_tag_write != (void*)1) {
-          std::cout << "WriteDone Failed" << std::endl;
-        }
-    });
-
-    RouteNote server_note;
-    while (1) {
-      stream->Read(&server_note, (void*)1);
-      ret = cq.Next(&got_tag_read, &ok);
-      if (!ret || !ok || got_tag_read != (void*)1) {
-        break;
-      }
-      std::cout << "Got message " << server_note.message()
-                << " at " << server_note.location().latitude() << ", "
-                << server_note.location().longitude() << std::endl;
-    }
-    writer.join();
-
-    stream->Finish(&status, (void*)1);
-    ret = cq.Next(&got_tag_read, &ok);
-    if (!ret || !ok || got_tag_read != (void*)1) {
-      std::cout << "stream Finish Failed" << std::endl;
-      return;
-    }
-
-    if(status.ok()) {
-      std::cout << "RouteChat Done" << std::endl;
-    } else {
-      std::cout << "RouteChat Failed" << std::endl;
-    }
-  }
+		RouteNote server_note;
+		while (stream->Read(&server_note)) {
+			std::cout << "Got message " << server_note.message() << " at " << server_note.location().latitude() << ", "
+					  << server_note.location().longitude() << std::endl;
+		}
+		writer.join();
+		Status status = stream->Finish();
+		if (status.ok()) {
+			std::cout << "############### RouteChat SUCCESS ###############" << std::endl;
+		} else {
+			std::cout << "############### RouteChat FAIL ###############" << std::endl;
+		}
+	}
 
 private:
-  bool GetOneFeature(const Point& point, Feature* feature) {
-    ClientContext context;
-    CompletionQueue cq;
-    Status status;
-
-    std::unique_ptr<ClientAsyncResponseReader<Feature> > rpc(
-      stub_->AsyncGetFeature(&context, point, &cq));
-
-    rpc->Finish(feature, &status, (void*)1);
-
-    void* got_tag;
-    bool ok = false;
-	bool ret;
-
-    ret = cq.Next(&got_tag, &ok);
-    if (!ret || !ok || got_tag != (void*)1) {
-      std::cout << "RPC Failed" << std::endl;
-      return false;
-    }
-
-    if (!status.ok()) {
-      std::cout << "GetFeature Failed." << std::endl;
-      return false;
-    }
-
-    if (!feature->has_location()) {
-      std::cout << "Server returns incomplete feature." << std::endl;
-      return false;
-    }
-
-    if (feature->name().empty()) {
-      std::cout << "Found no feature at "
-                << feature->location().latitude()/kCoordFactor_ << ", "
-                << feature->location().longitude()/kCoordFactor_ << std::endl;
-    } else {
-      std::cout << "Found feature called " << feature->name()  << " at "
-                << feature->location().latitude()/kCoordFactor_ << ", "
-                << feature->location().longitude()/kCoordFactor_ << std::endl;
-    }
-
-  return true;
-  }
+	bool GetOneFeature(const Point& point, Feature* feature)
+	{
+		ClientContext context;
+		Status status = stub_->GetFeature(&context, point, feature);
+		if (!status.ok()) {
+			std::cout << "GetFeature rpc Failed." << std::endl;
+			return false;
+		}
+		if (!feature->has_location()) {
+			std::cout << "Server returns incomplete feature." << std::endl;
+			return false;
+		}
+		if (feature->name().empty()) {
+			std::cout << "Found no feature at " << feature->location().latitude() / kCoordFactor_ << ", "
+					  << feature->location().longitude() / kCoordFactor_ << std::endl;
+		} else {
+			std::cout << "Found feature called " << feature->name() << " at "
+					  << feature->location().latitude() / kCoordFactor_ << ", "
+					  << feature->location().longitude() / kCoordFactor_ << std::endl;
+		}
+		return true;
+	}
 };
 
-int route_client_guide_cb(void *args) {
-	// Expect only arg: --db_path=path/to/route_guide_db.json.
-    bool secure_mode = false;
-    int sync_mode;
-    char *p;
-    char *addr;
+class AsyncRouteGuideClient : public RouteGuideClient
+{
+public:
+	AsyncRouteGuideClient(std::shared_ptr<Channel> channel, const std::string& db) : RouteGuideClient(channel, db){};
 
-	struct arg_holder *arg = (struct arg_holder *)args;
+	void ListFeatures()
+	{
+		routeguide::Rectangle rect;
+		Feature feature;
+		CompletionQueue cq;
+		Status status;
+		ClientContext context;
+
+		rect.mutable_lo()->set_latitude(400000000);
+		rect.mutable_lo()->set_longitude(-750000000);
+		rect.mutable_hi()->set_latitude(420000000);
+		rect.mutable_hi()->set_longitude(-730000000);
+		std::cout << "Looking for features between 40, -75 and 42, -73" << std::endl;
+
+		std::unique_ptr<ClientAsyncReader<Feature>> reader(stub_->AsyncListFeatures(&context, rect, &cq, (void*)1));
+
+		void* got_tag;
+		bool ok = false;
+		bool ret;
+
+		ret = cq.Next(&got_tag, &ok);
+		if (!ret || !ok || got_tag != (void*)1) {
+			std::cout << "RPC initialization Failed" << std::endl;
+			return;
+		}
+
+		while (1) {
+			reader->Read(&feature, got_tag);
+			ok = false;
+			bool ret = cq.Next(&got_tag, &ok);
+			if (!ret || !ok || got_tag != (void*)1) {
+				break;
+			}
+			std::cout << "Found feature called " << feature.name() << " at "
+					  << feature.location().latitude() / kCoordFactor_ << ", "
+					  << feature.location().longitude() / kCoordFactor_ << std::endl;
+		}
+		reader->Finish(&status, (void*)1);
+		ret = cq.Next(&got_tag, &ok);
+		if (!ret || !ok || got_tag != (void*)1) {
+			std::cout << "reader Finish is Failed" << std::endl;
+			return;
+		}
+
+		if (status.ok()) {
+			std::cout << "############### Async ListFeatures SUCCESS ###############" << std::endl;
+		} else {
+			std::cout << "############### Async ListFeatures FAIL ###############" << std::endl;
+		}
+	}
+
+	void RecordRoute()
+	{
+		Point point;
+		RouteSummary stats;
+		ClientContext context;
+		CompletionQueue cq;
+		const int kPoints = 10;
+		Status status;
+		unsigned seed = std::chrono::system_clock::now().time_since_epoch().count();
+
+		std::default_random_engine generator(seed);
+		std::uniform_int_distribution<int> feature_distribution(0, feature_list_.size() - 1);
+		std::uniform_int_distribution<int> delay_distribution(500, 1500);
+
+		std::unique_ptr<ClientAsyncWriter<Point>> writer(stub_->AsyncRecordRoute(&context, &stats, &cq, (void*)1));
+
+		void* got_tag;
+		bool ok = false;
+		bool ret;
+
+		ret = cq.Next(&got_tag, &ok);
+		if (!ret || !ok || got_tag != (void*)1) {
+			std::cout << "RPC initialization Failed" << std::endl;
+			return;
+		}
+
+		for (int i = 0; i < kPoints; i++) {
+			const Feature& f = feature_list_[feature_distribution(generator)];
+			std::cout << "Visiting point " << f.location().latitude() / kCoordFactor_ << ", "
+					  << f.location().longitude() / kCoordFactor_ << std::endl;
+			writer->Write(f.location(), got_tag);
+			ret = cq.Next(&got_tag, &ok);
+			if (!ret || !ok || got_tag != (void*)1) {
+				std::cout << "Write Failed" << std::endl;
+				break;
+			}
+			std::this_thread::sleep_for(std::chrono::milliseconds(delay_distribution(generator)));
+		}
+
+		writer->WritesDone(got_tag);
+		ret = cq.Next(&got_tag, &ok);
+		if (!ret || !ok || got_tag != (void*)1) {
+			std::cout << "WritesDone Failed" << std::endl;
+			return;
+		}
+
+		writer->Finish(&status, (void*)1);
+		ret = cq.Next(&got_tag, &ok);
+		if (!ret || !ok || got_tag != (void*)1) {
+			std::cout << "writer Finish Failed" << std::endl;
+			return;
+		}
+
+		if (status.ok()) {
+			std::cout << "Finished trip with " << stats.point_count() << " points\n"
+					  << "Passed " << stats.feature_count() << " features\n"
+					  << "Travelled " << stats.distance() << " meters\n"
+					  << "It took " << stats.elapsed_time() << " seconds" << std::endl;
+			std::cout << "############### Async RecordRoute SUCCESS ###############" << std::endl;
+		} else {
+			std::cout << "############### Async RecordRoute FAIL ###############" << std::endl;
+		}
+	}
+
+	void RouteChat()
+	{
+		ClientContext context;
+		CompletionQueue cq;
+		Status status;
+
+		std::shared_ptr<ClientAsyncReaderWriter<RouteNote, RouteNote>> stream(
+			stub_->AsyncRouteChat(&context, &cq, (void*)1));
+
+		void* got_tag_read;
+		bool ok = false;
+		bool ret;
+
+		ret = cq.Next(&got_tag_read, &ok);
+		if (!ret || !ok || got_tag_read != (void*)1) {
+			std::cout << "RPC initialization Failed" << std::endl;
+			return;
+		}
+
+		std::thread writer([stream, &cq]() {
+			bool thd_ok = false;
+			bool thd_ret;
+			void* got_tag_write;
+
+			std::vector<RouteNote> notes{MakeRouteNote("First message", 0, 0), MakeRouteNote("Second message", 0, 1),
+										 MakeRouteNote("Third message", 1, 0), MakeRouteNote("Fourth message", 0, 0)};
+			for (const RouteNote& note : notes) {
+				std::cout << "Sending message " << note.message() << " at " << note.location().latitude() << ", "
+						  << note.location().longitude() << std::endl;
+				stream->Write(note, (void*)1);
+				thd_ret = cq.Next(&got_tag_write, &thd_ok);
+				if (!thd_ret || !thd_ok || got_tag_write != (void*)1) {
+					std::cout << "Write Failed" << std::endl;
+					break;
+				}
+			}
+			stream->WritesDone(got_tag_write);
+			thd_ret = cq.Next(&got_tag_write, &thd_ok);
+			if (!thd_ret || !thd_ok || got_tag_write != (void*)1) {
+				std::cout << "WriteDone Failed" << std::endl;
+			}
+		});
+
+		RouteNote server_note;
+		while (1) {
+			stream->Read(&server_note, (void*)1);
+			ret = cq.Next(&got_tag_read, &ok);
+			if (!ret || !ok || got_tag_read != (void*)1) {
+				break;
+			}
+			std::cout << "Got message " << server_note.message() << " at " << server_note.location().latitude() << ", "
+					  << server_note.location().longitude() << std::endl;
+		}
+		writer.join();
+
+		stream->Finish(&status, (void*)1);
+		ret = cq.Next(&got_tag_read, &ok);
+		if (!ret || !ok || got_tag_read != (void*)1) {
+			std::cout << "stream Finish Failed" << std::endl;
+			return;
+		}
+
+		if (status.ok()) {
+			std::cout << "############### Async RouteChat SUCCESS ###############" << std::endl;
+		} else {
+			std::cout << "############### Async RouteChat FAIL ###############" << std::endl;
+		}
+	}
+
+private:
+	bool GetOneFeature(const Point& point, Feature* feature)
+	{
+		ClientContext context;
+		CompletionQueue cq;
+		Status status;
+
+		std::unique_ptr<ClientAsyncResponseReader<Feature>> rpc(stub_->AsyncGetFeature(&context, point, &cq));
+
+		rpc->Finish(feature, &status, (void*)1);
+
+		void* got_tag;
+		bool ok = false;
+		bool ret;
+
+		ret = cq.Next(&got_tag, &ok);
+		if (!ret || !ok || got_tag != (void*)1) {
+			std::cout << "RPC Failed" << std::endl;
+			return false;
+		}
+
+		if (!status.ok()) {
+			std::cout << "GetFeature Failed." << std::endl;
+			return false;
+		}
+
+		if (!feature->has_location()) {
+			std::cout << "Server returns incomplete feature." << std::endl;
+			return false;
+		}
+
+		if (feature->name().empty()) {
+			std::cout << "Found no feature at " << feature->location().latitude() / kCoordFactor_ << ", "
+					  << feature->location().longitude() / kCoordFactor_ << std::endl;
+		} else {
+			std::cout << "Found feature called " << feature->name() << " at "
+					  << feature->location().latitude() / kCoordFactor_ << ", "
+					  << feature->location().longitude() / kCoordFactor_ << std::endl;
+		}
+		return true;
+	}
+};
+
+int route_client_guide_cb(void* args)
+{
+	// Expect only arg: --db_path=path/to/route_guide_db.json.
+	bool secure_mode = false;
+	int sync_mode;
+	char* p;
+	char* addr;
+
+	struct arg_holder* arg = (struct arg_holder*)args;
 	int argc = arg->argc;
-	char **argv = arg->argv;
+	char** argv = arg->argv;
 
 	if (argc < 3 || argc > 4) {
 		printf("Usage: \tgrpc_client [MODE] <option> [IP:PORT]\n");
@@ -574,7 +562,7 @@ int route_client_guide_cb(void *args) {
 		myChannel = grpc::CreateChannel(addr, grpc::InsecureChannelCredentials());
 	}
 
-	RouteGuideClient *client;
+	RouteGuideClient* client;
 
 	if (sync_mode == 1) {
 		printf("Sync Client!\n");
@@ -601,14 +589,15 @@ int route_client_guide_cb(void *args) {
 /*
  * Definition for handling pthread
  */
-#define ROUTE_CLIENT_PRIORITY     100
-#define ROUTE_CLIENT_STACK_SIZE   16384
+#define ROUTE_CLIENT_PRIORITY 100
+#define ROUTE_CLIENT_STACK_SIZE 16384
 #define ROUTE_CLIENT_SCHED_POLICY SCHED_RR
 
 extern "C" {
-int route_client_main(int argc, char** argv) {
-	// If C++ initialization for static constructors is supported, then do
-	// that first
+int route_client_main(int argc, char** argv)
+{
+// If C++ initialization for static constructors is supported, then do
+// that first
 #ifdef CONFIG_EXAMPLES_ROUTE_CLIENT_CXXINITIALIZE
 	up_cxxinitialize();
 #endif
@@ -651,5 +640,5 @@ int route_client_main(int argc, char** argv) {
 	pthread_join(tid, NULL);
 
 	return 0;
-}	
+}
 }

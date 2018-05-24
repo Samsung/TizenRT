@@ -16,11 +16,20 @@
  *
  ******************************************************************/
 
+/**
+ * @ingroup MEDIA
+ * @{
+ */
+
+/**
+ * @file media/FileInuptDataSource.h
+ * @brief Media FileInuptDataSource APIs
+ */
+
 #ifndef __MEDIA_FILEINPUTDATASOURCE_H
 #define __MEDIA_FILEINPUTDATASOURCE_H
 
 #include <media/InputDataSource.h>
-#include <media/MediaUtils.h>
 
 namespace media {
 namespace stream {
@@ -117,3 +126,4 @@ private:
 } // namespace media
 
 #endif
+/** @} */ // end of MEDIA group

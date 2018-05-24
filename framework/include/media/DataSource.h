@@ -16,12 +16,24 @@
  *
  ******************************************************************/
 
+/**
+ * @ingroup MEDIA
+ * @{
+ */
+
+/**
+ * @file media/DataSource.h
+ * @brief Media DataSource APIs
+ */
+
 #ifndef __MEDIA_DATASOURCE_H
 #define __MEDIA_DATASOURCE_H
 
 #include <iostream>
+#include <media/MediaTypes.h>
 
 namespace media {
+
 /**
  * @class 
  * @brief This class is audio data structure
@@ -137,3 +149,4 @@ private:
 } // namespace media
 
 #endif
+/** @} */ // end of MEDIA group

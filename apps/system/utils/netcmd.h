@@ -25,21 +25,21 @@
 
 /* Common, message formats */
 
-static const char syntax[] = "%s: syntax error\n";
-static const char fmtargrequired[] = "%s: missing required argument(s)\n";
-static const char fmtnomatching[] = "%s: no matching %s\n";
-static const char fmtarginvalid[] = "%s: argument invalid\n";
-static const char fmtargrange[] = "%s: value out of range\n";
-static const char fmtcmdnotfound[] = "%s: command not found\n";
-static const char fmtnosuch[] = "%s: no such %s: %s\n";
-static const char fmttoomanyargs[] = "%s: too many arguments\n";
-static const char fmtdeepnesting[] = "%s: nesting too deep\n";
-static const char fmtcontext[] = "%s: not valid in this context\n";
-static const char fmtcmdfailed[] = "%s: %s failed: %s\n";
-static const char fmtcmdoutofmemory[] = "%s: out of memory\n";
-static const char fmtinternalerror[] = "%s: Internal error\n";
+#define syntax "%s: syntax error\n"
+#define fmtargrequired "%s: missing required argument(s)\n"
+#define fmtnomatching "%s: no matching %s\n"
+#define fmtarginvalid "%s: argument invalid\n"
+#define fmtargrange "%s: value out of range\n"
+#define fmtcmdnotfound "%s: command not found\n"
+#define fmtnosuch "%s: no such %s: %s\n"
+#define fmttoomanyargs "%s: too many arguments\n"
+#define fmtdeepnesting "%s: nesting too deep\n"
+#define fmtcontext "%s: not valid in this context\n"
+#define fmtcmdfailed "%s: %s failed: %s\n"
+#define fmtcmdoutofmemory "%s: out of memory\n"
+#define fmtinternalerror "%s: Internal error\n"
 #ifndef CONFIG_DISABLE_SIGNALS
-static const char fmtsignalrecvd[] = "%s: Interrupted by signal\n";
+#define fmtsignalrecvd "%s: Interrupted by signal\n"
 #endif
 
 #endif //__APPS_SYSTEM_UTILS_NETCMD_H

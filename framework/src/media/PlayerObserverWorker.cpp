@@ -21,7 +21,7 @@
 #include "PlayerObserverWorker.h"
 
 namespace media {
-PlayerObserverWorker::PlayerObserverWorker() : mRefCnt{0}, mIsRunning(false)
+PlayerObserverWorker::PlayerObserverWorker()
 {
 }
 
@@ -38,44 +38,12 @@ PlayerObserverWorker& PlayerObserverWorker::getWorker()
 int PlayerObserverWorker::entry()
 {
 	while (mIsRunning) {
-		std::function<void()> run = mObserverQueue.deQueue();
+		std::function<void()> run = mWorkerQueue.deQueue();
 		medvdbg("PlayerObserverWorker::entry() - pop Queue\n");
 		if (run != nullptr) {
 			run();
 		}
 	}
 	return 0;
-}
-
-player_result_t PlayerObserverWorker::startWorker()
-{
-	std::lock_guard<std::mutex> lock(mRefMtx);
-	medvdbg("PlayerObserverWorker : startWorker\n");
-	if (++mRefCnt == 1) {
-		medvdbg("PlayerObserverWorker : create thread\n");
-		mIsRunning = true;
-		mWorkerThread = std::thread(std::bind(&PlayerObserverWorker::entry, this));
-	}
-
-	return PLAYER_OK;
-}
-
-void PlayerObserverWorker::stopWorker()
-{
-	std::lock_guard<std::mutex> lock(mRefMtx);
-	medvdbg("PlayerObserverWorker : stopWorker\n");
-	if (--mRefCnt <= 0) {
-		medvdbg("PlayerObserverWorker : join thread\n");
-		std::atomic<bool> &refBool = mIsRunning;
-		mObserverQueue.enQueue([&refBool]() {
-			refBool = false;
-		});
-		mWorkerThread.join();
-	}
-}
-
-MediaQueue& PlayerObserverWorker::getQueue()
-{
-	return mObserverQueue;
 }
 } // namespace media

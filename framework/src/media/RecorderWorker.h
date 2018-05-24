@@ -30,40 +30,29 @@
 
 #include <tinyalsa/tinyalsa.h>
 #include <media/MediaRecorder.h>
-#include "MediaQueue.h"
+#include "MediaWorker.h"
 #include "MediaRecorderImpl.h"
 #include "audio/audio_manager.h"
 
 using namespace std;
 
 namespace media {
-class RecorderWorker
+class RecorderWorker : public MediaWorker
 {
 public:
-	void startRecorder(std::shared_ptr<MediaRecorderImpl>);
-	void stopRecorder(std::shared_ptr<MediaRecorderImpl>, bool);
-	void pauseRecorder(std::shared_ptr<MediaRecorderImpl>);
-
-	recorder_result_t startWorker();
-	void stopWorker();
-	MediaQueue& getQueue();
 	static RecorderWorker& getWorker();
+
+	std::shared_ptr<MediaRecorderImpl> getCurrentRecorder();
+	void setCurrentRecorder(std::shared_ptr<MediaRecorderImpl> mr);
 
 private:
 	RecorderWorker();
-	~RecorderWorker();
+	virtual ~RecorderWorker();
 
-	int entry();
-	void increaseRef();
-	void decreaseRef();
+	int entry() override;
 
 private:
-	int mRefCnt;
-	std::atomic<bool> mIsRunning;
-	std::thread mWorkerThread;
 	std::shared_ptr<MediaRecorderImpl> mCurRecorder;
-	MediaQueue mWorkerQueue;   // worker queue
-	std::mutex mRefMtx; // reference cnt mutex
 };
 } // namespace media
 

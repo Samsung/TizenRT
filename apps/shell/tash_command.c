@@ -213,7 +213,7 @@ static int tash_launch_cmdtask(TASH_CMD_CALLBACK cb, int argc, char **args)
 	}
 #endif
 
-	printf("Command will be launched with pri (%d), stack size(%d)\n", pri, stack_size);
+	shvdbg("Command will be launched with pri (%d), stack size(%d)\n", pri, stack_size);
 
 	ret = task_create(args[0], pri, stack_size, cb, &args[1]);
 

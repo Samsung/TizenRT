@@ -36,7 +36,6 @@ extern "C"
 		tc_libcxx_thread_thread_lock_unique_cons_mutex_defer_lock();
 		tc_libcxx_thread_thread_lock_unique_cons_mutex_duration();
 		tc_libcxx_thread_thread_lock_unique_cons_mutex_time_point();
-		tc_libcxx_thread_thread_lock_unique_cons_mutex_try_to_lock();
 		tc_libcxx_thread_thread_lock_unique_locking_lock();
 		tc_libcxx_thread_thread_lock_unique_locking_try_lock();
 		tc_libcxx_thread_thread_lock_unique_locking_try_lock_for();
@@ -52,18 +51,14 @@ extern "C"
 		tc_libcxx_thread_thread_lock_types();
 		tc_libcxx_thread_thread_mutex_class_default();
 		tc_libcxx_thread_thread_mutex_class_lock();
-		tc_libcxx_thread_thread_mutex_class_try_lock();
 		tc_libcxx_thread_thread_mutex_recursive_default();
 		tc_libcxx_thread_thread_mutex_recursive_lock();
-		tc_libcxx_thread_thread_mutex_recursive_try_lock();
 		tc_libcxx_thread_thread_timedmutex_class_default();
 		tc_libcxx_thread_thread_timedmutex_class_lock();
-		tc_libcxx_thread_thread_timedmutex_class_try_lock();
 		tc_libcxx_thread_thread_timedmutex_class_try_lock_for();
 		tc_libcxx_thread_thread_timedmutex_class_try_lock_until();
 		tc_libcxx_thread_thread_timedmutex_recursive_default();
 		tc_libcxx_thread_thread_timedmutex_recursive_lock();
-		tc_libcxx_thread_thread_timedmutex_recursive_try_lock();
 		tc_libcxx_thread_thread_timedmutex_recursive_try_lock_for();
 		tc_libcxx_thread_thread_timedmutex_recursive_try_lock_until();
 		tc_libcxx_thread_thread_once_callonce_call_once();

@@ -35,11 +35,15 @@
 #include "wifi_profile.h"
 
 //#define WIFI_PROFILE_USE_ETC
+
+
 #define WIFI_PROFILE_PATH "/mnt/"
 #define WIFI_PROFILE_FILENAME "wifi.conf"
 
 #define DELIMITER "\t"
 #define DELI_LEN 1
+
+#define WIFI_PROFILE_BUFSIZE 128
 
 #ifdef CONFIG_WIFI_PROFILE_SECURESTORAGE
 #define WIFI_PROFILE_SS_INDEX 1
@@ -152,6 +156,10 @@ static int _wifi_profile_read_file(char *buf, unsigned int buf_size)
 		ndbg("fread fail\n");
 		fclose(fp);
 		return -1;
+	} else if (ret > 107) {
+		ndbg("file is corrupted\n");
+		fclose(fp);
+		return -1;
 	}
 	fclose(fp);
 	return 0;
@@ -205,10 +213,10 @@ wifi_utils_result_e wifi_profile_reset(void)
 
 wifi_utils_result_e wifi_profile_write(wifi_manager_ap_config_s *config)
 {
-	char buf[256];
+	char buf[WIFI_PROFILE_BUFSIZE];
 	int ret = 0;
 	int len = 0;
-	len = _wifi_profile_serialize(buf, 256, config);
+	len = _wifi_profile_serialize(buf, WIFI_PROFILE_BUFSIZE	, config);
 	if (len < 0) {
 		return WIFI_UTILS_FAIL;
 	}
@@ -232,22 +240,30 @@ wifi_utils_result_e wifi_profile_write(wifi_manager_ap_config_s *config)
 
 wifi_utils_result_e wifi_profile_read(wifi_manager_ap_config_s *config)
 {
-	char buf[256] = {0,};
+	char buf[WIFI_PROFILE_BUFSIZE] = {0,};
 	int ret = -1;
 #ifdef CONFIG_WIFI_PROFILE_SECURESTORAGE
-	unsigned int readlen = 256;
+	/////////////////////////////////////////////////////////////////////////////////////////
+	//
+	// max size:
+	// ssid(31) + tab(1) + ssid_length(2) + tab(1) + ap_type(1) + tab(1) +
+	// passphrase(63) + tab(1) + passphrase length(2) + tab(1) + crypto type(1) == 105
+	// file size of wifi.conf should not exceed 107(+EOF)
+	// ssid_length and passphrase length are stored as character.
+	//
+	/////////////////////////////////////////////////////////////////////////////////////////
+	unsigned int readlen = WIFI_PROFILE_BUFSIZE;
 	ret = see_read_secure_storage((unsigned char *)buf, &readlen, WIFI_PROFILE_SS_INDEX);
 	if (ret != SEE_OK) {
 		return WIFI_UTILS_FILE_ERROR;
-	} else if (readlen == 1) {
-		return WIFI_UTILS_FILE_ERROR;
 	}
 #else
-	ret = _wifi_profile_read_file(buf, 256);
+	ret = _wifi_profile_read_file(buf, WIFI_PROFILE_BUFSIZE);
 	if (ret < 0) {
 		return WIFI_UTILS_FILE_ERROR;
 	}
 #endif
+	nvdbg("readed data len(%d)\n", readlen);
 
 	_wifi_profile_deserialize(config, buf);
 

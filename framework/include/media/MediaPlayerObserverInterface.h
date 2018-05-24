@@ -16,6 +16,16 @@
  *
  ******************************************************************/
 
+/**
+ * @ingroup MEDIA
+ * @{
+ */
+
+/**
+ * @file media/MediaPlayerObserverInterface.h
+ * @brief Media MediaPlayerObserverInterface APIs
+ */
+
 #ifndef __MEDIA_MEDIAPLAYEROBSERVERINTERFACE_H
 #define __MEDIA_MEDIAPLAYEROBSERVERINTERFACE_H
 
@@ -56,7 +66,14 @@ public:
 	 * @since TizenRT v2.0 PRE
 	 */
 	virtual void onPlaybackError(Id id) = 0;
+	/**
+	 * @brief informs the user of the playback has paused.
+	 * @details @b #include <media/MediaPlayerObserverInterface.h>
+	 * @since TizenRT v2.0 PRE
+	 */
+	virtual void onPlaybackPaused(Id id) = 0;
 };
 } // namespace media
 
 #endif
+/** @} */ // end of MEDIA group

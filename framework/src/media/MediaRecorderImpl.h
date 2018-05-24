@@ -56,6 +56,7 @@ typedef enum recorder_state_e {
 
 typedef enum observer_command_e {
 	OBSERVER_COMMAND_STARTED,
+	OBSERVER_COMMAND_PAUSED,
 	OBSERVER_COMMAND_FINISHIED,
 	OBSERVER_COMMAND_ERROR
 } observer_command_t;
@@ -68,28 +69,38 @@ public:
 
 	recorder_result_t create();
 	recorder_result_t destroy();
-
 	recorder_result_t prepare();
 	recorder_result_t unprepare();
+
 	recorder_result_t start();
 	recorder_result_t pause();
 	recorder_result_t stop();
 
 	int getVolume();
 	recorder_result_t setVolume(int vol);
-
 	recorder_result_t setDataSource(std::unique_ptr<stream::OutputDataSource> dataSource);
 	recorder_state_t getState();
-	void setState(recorder_state_t state);
-	void setObserver(std::shared_ptr<MediaRecorderObserverInterface> observer);
-	
+	recorder_result_t setObserver(std::shared_ptr<MediaRecorderObserverInterface> observer);
 	void notifySync();
 	void notifyObserver(observer_command_t cmd);
 	void capture();
 
 private:
+	void createRecorder(recorder_result_t& ret);
+	void destroyRecorder(recorder_result_t& ret);
+	void prepareRecorder(recorder_result_t& ret);
+	void unprepareRecorder(recorder_result_t& ret);
+	void startRecorder();
+	void pauseRecorder();
+	void stopRecorder(bool);
+	void getRecorderVolume(int& ret);
+	void setRecorderVolume(int vol, recorder_result_t& ret);
+	void setRecorderObserver(std::shared_ptr<MediaRecorderObserverInterface> observer);
+	void setRecorderDataSource(std::shared_ptr<stream::OutputDataSource> dataSource, recorder_result_t& ret);
+
+private:
 	std::atomic<recorder_state_t> mCurState;
-	std::unique_ptr<stream::OutputDataSource> mOutputDataSource;
+	std::shared_ptr<stream::OutputDataSource> mOutputDataSource;
 	std::shared_ptr<MediaRecorderObserverInterface> mRecorderObserver;
 
 	unsigned char* mBuffer;

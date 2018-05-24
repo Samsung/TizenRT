@@ -270,6 +270,7 @@ static void *threadfunc_sched(void *param)
 	return NULL;
 }
 
+#if CONFIG_NPTHREAD_KEYS > 0
 /**
 * @fn                   :pthread_key_test
 * @brief                :utility function for tc_pthread_pthread_key_create_delete_set_getspecific
@@ -354,6 +355,7 @@ test_out:
 	}
 	return NULL;
 }
+#endif
 
 /**
 * @fn                   :cancel_state_func
@@ -817,6 +819,7 @@ static void tc_pthread_pthread_set_get_schedparam(void)
 	TC_SUCCESS_RESULT();
 }
 
+#if CONFIG_NPTHREAD_KEYS > 0
 /**
 * @fn                   :tc_pthread_pthread_key_create_delete_set_getspecific
 * @brief                :thread-specific data management
@@ -844,6 +847,7 @@ static void tc_pthread_pthread_key_create_delete_set_getspecific(void)
 
 	TC_SUCCESS_RESULT();
 }
+#endif
 
 /**
 * @fn                   :tc_pthread_pthread_cancel_setcancelstate
@@ -1476,7 +1480,9 @@ int pthread_main(void)
 	tc_pthread_pthread_cond_broadcast();
 	tc_pthread_pthread_cond_init_destroy();
 	tc_pthread_pthread_set_get_schedparam();
+#if CONFIG_NPTHREAD_KEYS > 0
 	tc_pthread_pthread_key_create_delete_set_getspecific();
+#endif
 	tc_pthread_pthread_cancel_setcancelstate();
 	tc_pthread_pthread_setschedprio();
 	tc_pthread_pthread_timed_wait();

@@ -16,13 +16,22 @@
  *
  ******************************************************************/
 
+/**
+ * @ingroup MEDIA
+ * @{
+ */
+
+/**
+ * @file media/InuptDataSource.h
+ * @brief Media InuptDataSource APIs
+ */
+
 #ifndef __MEDIA_INPUTDATASOURCE_H
 #define __MEDIA_INPUTDATASOURCE_H
 
 #include <fstream>
 #include <memory>
 #include <media/DataSource.h>
-#include <media/MediaUtils.h>
 
 namespace media {
 class Decoder;
@@ -85,11 +94,11 @@ public:
 
 protected:
 	void setDecoder(std::shared_ptr<Decoder> decoder);
-	void setAudioType(utils::audio_type_t audioType);
-	utils::audio_type_t getAudioType();
+	void setAudioType(audio_type_t audioType);
+	audio_type_t getAudioType();
 
 private:
-	utils::audio_type_t mAudioType;
+	audio_type_t mAudioType;
 	std::shared_ptr<Decoder> mDecoder;
 };
 
@@ -97,3 +106,4 @@ private:
 } // namespace media
 
 #endif
+/** @} */ // end of MEDIA group

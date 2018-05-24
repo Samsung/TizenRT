@@ -310,7 +310,6 @@ int task_manager_terminate(int handle, int timeout)
 	return OK;
 }
 
-#if TBD
 int task_manager_pause(int handle, int timeout)
 {
 	int status;
@@ -326,6 +325,7 @@ int task_manager_pause(int handle, int timeout)
 	request_msg.handle = handle;
 	request_msg.caller_pid = getpid();
 	request_msg.timeout = timeout;
+	request_msg.data = NULL;
 
 	if (timeout != TM_NO_RESPONSE) {
 		asprintf(&request_msg.q_name, "%s%d", TM_PRIVATE_MQ, request_msg.caller_pid);
@@ -364,6 +364,7 @@ int task_manager_resume(int handle, int timeout)
 	request_msg.handle = handle;
 	request_msg.caller_pid = getpid();
 	request_msg.timeout = timeout;
+	request_msg.data = NULL;
 
 	if (timeout != TM_NO_RESPONSE) {
 		asprintf(&request_msg.q_name, "%s%d", TM_PRIVATE_MQ, request_msg.caller_pid);
@@ -385,7 +386,7 @@ int task_manager_resume(int handle, int timeout)
 
 	return OK;
 }
-
+#if TBD
 int task_manager_restart(int handle, int timeout)
 {
 	int status;
@@ -438,12 +439,12 @@ int task_manager_set_handler(void (*func)(int signo, tm_msg_t *data))
 	act.sa_flags = 0;
 	(void)sigemptyset(&act.sa_mask);
 
-	ret = sigaddset(&act.sa_mask, SIGTM);
+	ret = sigaddset(&act.sa_mask, SIGTM_UNICAST);
 	if (ret < 0) {
 		return TM_FAIL_SET_HANDLER;
 	}
 
-	ret = sigaction(SIGTM, &act, NULL);
+	ret = sigaction(SIGTM_UNICAST, &act, NULL);
 	if (ret == (int)SIG_ERR) {
 		ret = TM_FAIL_SET_HANDLER;
 	}

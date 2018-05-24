@@ -16,6 +16,16 @@
  *
  ******************************************************************/
 
+/**
+ * @ingroup MEDIA
+ * @{
+ */
+
+/**
+ * @file media/MediaRecorderObserverInterface.h
+ * @brief Media MediaRecorderObserverInterface APIs
+ */
+
 #ifndef __MEDIA_MEDIARECOREROBSERVERINTERFACE_H
 #define __MEDIA_MEDIARECOREROBSERVERINTERFACE_H
 
@@ -45,6 +55,12 @@ public:
 	 */
 	virtual void onRecordStarted(Id id) = 0;
 	/**
+	 * @brief informs the user of the recording has paused.
+	 * @details @b #include <media/MediaRecorderObserverInterface.h>
+	 * @since TizenRT v2.0 PRE
+	 */
+	virtual void onRecordPaused(Id id) = 0;
+	/**
 	 * @brief informs the user of the recording has finished.
 	 * @details @b #include <media/MediaRecorderObserverInterface.h>
 	 * @since TizenRT v2.0 PRE
@@ -60,3 +76,4 @@ public:
 } // namespace media
 
 #endif
+/** @} */ // end of MEDIA group

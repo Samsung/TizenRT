@@ -1269,7 +1269,7 @@ static err_t pppifNetifInit(struct netif *netif)
 	netif->name[1] = 'p';
 	netif->output = pppifOutput;
 	netif->mtu = pppMTU((int)(size_t) netif->state);
-	netif->flags = NETIF_FLAG_POINTTOPOINT | NETIF_FLAG_LINK_UP;
+	netif->flags = NETIF_FLAG_LINK_UP;
 #if LWIP_NETIF_HOSTNAME
 	/* @todo: Initialize interface hostname */
 	/* netif_set_hostname(netif, "lwip"); */

@@ -279,22 +279,22 @@ static void utc_wifi_manager_connect_ap_p(void)
 	TC_SUCCESS_RESULT();
 }
 
-static void utc_wifi_utils_disconnect_ap_p(void)
+static void utc_wifi_manager_disconnect_ap_p(void)
 {
 	wifi_manager_result_e ret = WIFI_MANAGER_FAIL;
 
-	ret = wifi_utils_disconnect_ap();
+	ret = wifi_manager_disconnect_ap();
 
 	TC_ASSERT_EQ("wifi_manager_disconnect_ap_p", ret, WIFI_MANAGER_SUCCESS);
 	TC_SUCCESS_RESULT();
 }
 
 /* second disconnection trial will get failed */
-static void utc_wifi_utils_disconnect_ap_n(void)
+static void utc_wifi_manager_disconnect_ap_n(void)
 {
 	wifi_manager_result_e ret = WIFI_MANAGER_FAIL;
 
-	ret = wifi_utils_disconnect_ap();
+	ret = wifi_manager_disconnect_ap();
 
 	TC_ASSERT_EQ("wifi_manager_disconnect_ap_n", ret, WIFI_MANAGER_FAIL);
 	TC_SUCCESS_RESULT();
@@ -352,6 +352,93 @@ static void utc_wifi_manager_scan_ap_p(void)
 	TC_SUCCESS_RESULT();
 }
 
+static void utc_wifi_manager_save_config_n(void)
+{
+	wifi_manager_result_e ret = WIFI_MANAGER_FAIL;
+	ret = wifi_manager_save_config(NULL);
+
+	TC_ASSERT_EQ("utc_wifi_manager_save_config_n", ret, WIFI_MANAGER_FAIL);
+	TC_SUCCESS_RESULT();
+}
+
+static void utc_wifi_manager_save_config_p(void)
+{
+	wifi_manager_result_e ret = WIFI_MANAGER_FAIL;
+	
+	wifi_manager_ap_config_s config;
+	config.ssid_length = strlen(CONFIG_EXAMPLES_TESTCASE_WIFI_MANAGER_UTC_SSID);
+	config.passphrase_length = strlen(CONFIG_EXAMPLES_TESTCASE_WIFI_MANAGER_UTC_PASSPHRASE);
+	strncpy(config.ssid, CONFIG_EXAMPLES_TESTCASE_WIFI_MANAGER_UTC_SSID, config.ssid_length + 1);
+	strncpy(config.passphrase, CONFIG_EXAMPLES_TESTCASE_WIFI_MANAGER_UTC_PASSPHRASE, config.passphrase_length + 1);
+	config.ap_auth_type = (wifi_manager_ap_auth_type_e)CONFIG_EXAMPLES_TESTCASE_WIFI_MANAGER_UTC_AUTHENTICATION;
+	config.ap_crypto_type = (wifi_manager_ap_crypto_type_e)CONFIG_EXAMPLES_TESTCASE_WIFI_MANAGER_UTC_CRYPTO;
+	printf("AP config: %s(%d), %s(%d), %d %d\n", config.ssid, config.ssid_length, config.passphrase, config.passphrase_length, config.ap_auth_type, config.ap_crypto_type);
+
+	ret = wifi_manager_save_config(&config);
+
+	TC_ASSERT_EQ("utc_wifi_manager_save_config_p", ret, WIFI_MANAGER_SUCCESS);
+	TC_SUCCESS_RESULT();
+}
+
+static void utc_wifi_manager_get_config_p(void)
+{
+	wifi_manager_result_e ret = WIFI_MANAGER_FAIL;
+	int res = 0;
+	wifi_manager_ap_config_s config;
+	ret = wifi_manager_get_config(&config);
+	if (ret == WIFI_MANAGER_SUCCESS) {
+		printf("====================================\n");
+		printf("SSID: %s\n", config.ssid);
+		printf("SECURITY TYPE: %d\n", config.ap_auth_type);
+		printf("====================================\n");
+		res = strncmp(config.ssid, CONFIG_EXAMPLES_TESTCASE_WIFI_MANAGER_UTC_SSID, strlen(config.ssid));
+		res = strncmp(config.passphrase, CONFIG_EXAMPLES_TESTCASE_WIFI_MANAGER_UTC_PASSPHRASE, strlen(config.passphrase));
+		if (res < 0) {
+			ret = WIFI_MANAGER_FAIL;
+		}
+	}
+	TC_ASSERT_EQ("utc_wifi_manager_get_config_p", ret, WIFI_MANAGER_SUCCESS);
+	TC_SUCCESS_RESULT();
+}
+
+static void utc_wifi_manager_get_config_n(void)
+{
+	wifi_manager_result_e ret = WIFI_MANAGER_FAIL;
+	int res = 0;
+	wifi_manager_ap_config_s config;
+	ret = wifi_manager_get_config(&config);
+	if (ret == WIFI_MANAGER_SUCCESS) {
+		printf("====================================\n");
+		printf("SSID: %s\n", config.ssid);
+		printf("SECURITY TYPE: %d\n", config.ap_auth_type);
+		printf("====================================\n");
+		res = strncmp(config.ssid, CONFIG_EXAMPLES_TESTCASE_WIFI_MANAGER_UTC_SSID, strlen(config.ssid));
+		res = strncmp(config.passphrase, CONFIG_EXAMPLES_TESTCASE_WIFI_MANAGER_UTC_PASSPHRASE, strlen(config.passphrase));
+		if (res < 0) {
+			ret = WIFI_MANAGER_FAIL;
+		}
+	}
+	TC_ASSERT_EQ("utc_wifi_manager_get_config_n", ret, WIFI_MANAGER_FAIL);
+	TC_SUCCESS_RESULT();
+}
+
+static void utc_wifi_manager_remove_config_n(void)
+{
+	wifi_manager_result_e ret = WIFI_MANAGER_FAIL;
+	ret = wifi_manager_remove_config();
+	TC_ASSERT_EQ("utc_wifi_manager_remove_config_n", ret, WIFI_MANAGER_FAIL);
+	TC_SUCCESS_RESULT();
+}
+
+static void utc_wifi_manager_remove_config_p(void)
+{
+	wifi_manager_result_e ret = WIFI_MANAGER_FAIL;
+	ret = wifi_manager_remove_config();
+	TC_ASSERT_EQ("utc_wifi_manager_remove_config_p", ret, WIFI_MANAGER_SUCCESS);
+	TC_SUCCESS_RESULT();
+}
+
+
 int wifi_manager_utc(int argc, FAR char *argv[])
 {
 	if (tc_handler(TC_START, "WiFiManager UTC") == ERROR) {
@@ -371,18 +458,26 @@ int wifi_manager_utc(int argc, FAR char *argv[])
 	 * and utc_wifi_manager_connect_ap_p() before trying these two tests
 	 * Otherwise, you will get failed.
 	 */
+	 
 	utc_wifi_manager_connect_ap_n();	// try to connect to ap in softap mode
 	utc_wifi_manager_connect_ap_p();	// change to station mode and try to connect to ap
 
+	utc_wifi_manager_save_config_n();   
+	utc_wifi_manager_get_config_n();	
+	utc_wifi_manager_remove_config_n(); 
+	utc_wifi_manager_save_config_p();	// save correct wifi config
+	utc_wifi_manager_get_config_p();    
+	utc_wifi_manager_remove_config_p();
+	
 	WIFITEST_WAIT;
 
 	sleep(5);
 
-	utc_wifi_utils_disconnect_ap_p();
+	utc_wifi_manager_disconnect_ap_p();
 
 	WIFITEST_WAIT;
 
-	utc_wifi_utils_disconnect_ap_n();	//  Should be run after positive tc, that is, the second disconnect gets failed.
+	utc_wifi_manager_disconnect_ap_n();	//  Should be run after positive tc, that is, the second disconnect gets failed.
 
 	utc_wifi_manager_deinit_p();
 	utc_wifi_manager_deinit_n(); // Should be run after positive tc, that is, the second deinit gets failed.

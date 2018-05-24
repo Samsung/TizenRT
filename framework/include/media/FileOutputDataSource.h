@@ -16,6 +16,16 @@
  *
  ******************************************************************/
 
+/**
+ * @ingroup MEDIA
+ * @{
+ */
+
+/**
+ * @file media/FileOutputDataSource.h
+ * @brief Media FileOutputDataSource APIs
+ */
+
 #ifndef __MEDIA_FILEOUTPUTDATASOURCE_H
 #define __MEDIA_FILEOUTPUTDATASOURCE_H
 
@@ -115,3 +125,4 @@ private:
 } // namespace media
 
 #endif
+/** @} */ // end of MEDIA group

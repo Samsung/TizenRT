@@ -75,14 +75,9 @@ player_result_t MediaPlayer::setDataSource(std::unique_ptr<stream::InputDataSour
 	return mPMpImpl->setDataSource(std::move(source));
 }
 
-void MediaPlayer::setObserver(std::shared_ptr<MediaPlayerObserverInterface> observer)
+player_result_t MediaPlayer::setObserver(std::shared_ptr<MediaPlayerObserverInterface> observer)
 {
-	mPMpImpl->setObserver(observer);
-}
-
-player_result_t MediaPlayer::seekTo(int msec)
-{
-	return mPMpImpl->seekTo(msec);
+	return mPMpImpl->setObserver(observer);
 }
 
 MediaPlayer::~MediaPlayer()

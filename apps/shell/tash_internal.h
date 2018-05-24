@@ -32,7 +32,7 @@
 #ifdef CONFIG_DEBUG_TASH_ERROR
 #define shdbg(format, ...)        dbg(format, ##__VA_ARGS__)
 #endif
-#ifdef CONFIG_DEBUG_TASH_VERBOSE
+#ifdef CONFIG_DEBUG_TASH_INFO
 #define shvdbg(format, ...)       vdbg(format, ##__VA_ARGS__)
 #endif
 #else  /* !CONFIG_DEBUG_TASH */
@@ -44,7 +44,7 @@
 #ifdef CONFIG_DEBUG_TASH_ERROR
 #define shdbg        dbg
 #endif
-#ifdef CONFIG_DEBUG_TASH_VERBOSE
+#ifdef CONFIG_DEBUG_TASH_INFO
 #define shvdbg       vdbg
 #endif
 #else  /* !CONFIG_DEBUG_TASH */

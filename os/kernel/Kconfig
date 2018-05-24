@@ -220,7 +220,8 @@ config WDOG_INTRESERVE
 
 config PREALLOC_TIMERS
 	int "Number of pre-allocated POSIX timers"
-	default 8
+	default 8 if !DISABLE_POSIX_TIMERS
+	default 0 if DISABLE_POSIX_TIMERS
 	---help---
 		The number of pre-allocated POSIX timer structures.  The system manages a
 		pool of preallocated timer structures to minimize dynamic allocations.  Set to
@@ -817,14 +818,32 @@ config SIG_SIGWORK
 		worker thread. This setting specifies the signal number that will be
 		used for SIGWORK. Default: 17
 
-config SIG_SIGTM
-	int "SIGTM"
+config SIG_SIGTM_UNICAST
+	int "SIGTM_UNICAST"
 	default 18
 	depends on TASK_MANAGER
 	---help---
-		SIGTM is a non-standard signal used to wake up the internal TinyAra
+		SIGTM_UNICAST is a non-standard signal used to wake up the internal TinyAra
 		task manager. This setting specifies the signal number that will be
-		used for SIGTM. Default: 18
+		used for SIGTM_UNICAST. Default: 18
+
+config SIG_SIGTM_PAUSE
+	int "SIGTM_PAUSE"
+	default 19
+	depends on TASK_MANAGER
+	---help---
+		SIGTM_PAUSE is a non-standard signal used to wake up the internal TinyAra
+		task manager. This setting specifies the signal number that will be
+		used for SIGTM_PAUSE. Default: 19
+
+config SIG_SIGTM_RESUME
+	int "SIGTM_RESUME"
+	default 20
+	depends on TASK_MANAGER
+	---help---
+		SIGTM_RESUME is a non-standard signal used to wake up the internal TinyAra
+		task manager. This setting specifies the signal number that will be
+		used for SIGTM_RESUME. Default: 20
 
 endmenu # Signal Numbers
 

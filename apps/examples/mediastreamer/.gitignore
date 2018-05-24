@@ -1,0 +1,11 @@
+/Make.dep
+/.context
+/.depend
+/.built
+/*.asm
+/*.rel
+/*.lst
+/*.sym
+/*.adb
+/*.lib
+/*.src

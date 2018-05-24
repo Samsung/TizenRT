@@ -41,7 +41,7 @@ extern int wpa_supplicant_main(int argc, char *argv[]);
 extern size_t printf_decode(u8 *buf, size_t maxlen, const char *str);
 extern void printf_encode(char *txt, size_t maxlen, const u8 *data, size_t len);
 
-#ifdef CONFIG_DEBUG_WLAN_API_VERBOSE
+#ifdef CONFIG_DEBUG_WLAN_API_INFO
 #define VPRINT(format, ...) printf("SLSI API VERBOSE (%s): " format, __FUNCTION__, ##__VA_ARGS__)
 #define SLSI_API_VERBOSE  (1)
 #ifndef CONFIG_DEBUG_WLAN_API_DEBUG
@@ -50,7 +50,7 @@ extern void printf_encode(char *txt, size_t maxlen, const u8 *data, size_t len);
 #else
 #define VPRINT(a, ...) (void)0
 #define SLSI_API_VERBOSE  (0)
-#endif							//CONFIG_DEBUG_WLAN_API_VERBOSE
+#endif							//CONFIG_DEBUG_WLAN_API_INFO
 
 #ifdef CONFIG_DEBUG_WLAN_API_DEBUG
 #define DPRINT(format, ...) printf("SLSI API DEBUG (%s): " format, __FUNCTION__, ##__VA_ARGS__)
@@ -2927,7 +2927,7 @@ static uint8_t slsi_start_supplicant(void)
 #ifdef CONFIG_DEBUG_WLAN_SUPPLICANT_MORE
 	sup_argv[0] = "-dddd";		// + DUMP
 #endif
-#ifdef CONFIG_DEBUG_WLAN_SUPPLICANT_VERBOSE
+#ifdef CONFIG_DEBUG_WLAN_SUPPLICANT_INFO
 	sup_argv[0] = "-ddddd";		// + EXCESSIVE
 #endif
 	sup_argv[1] = "-t";
@@ -3448,14 +3448,21 @@ int8_t WiFiRegisterLinkCallback(slsi_network_link_callback_t link_up, slsi_netwo
 
 int8_t WiFiRegisterScanCallback(network_scan_result_handler_t scan_result_handler)
 {
-	ENTER_CRITICAL;
+	int8_t result = SLSI_STATUS_SUCCESS;
 
+	if (!scan_result_handler) {
+		result = SLSI_STATUS_ERROR;
+		return result;
+	}
+	
+	ENTER_CRITICAL;
 	g_scan_result_handler = scan_result_handler;
 #ifdef CONFIG_SCSC_WLAN_AUTO_RECOVERY
 	g_recovery_data.scan_result_handler = scan_result_handler;
 #endif
 	LEAVE_CRITICAL;
-	return SLSI_STATUS_SUCCESS;
+	
+	return result;
 }
 
 int8_t WiFiNetworkJoin(uint8_t *ssid, uint8_t ssid_len, uint8_t *bssid, const slsi_security_config_t *security_config)

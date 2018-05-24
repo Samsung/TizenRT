@@ -71,10 +71,14 @@
 #define TM_FAIL_START_NOT_CREATED     (-7)
 #define TM_FAIL_SEND_MSG              (-8)
 #define TM_FAIL_SET_HANDLER           (-9)
-#define TM_FAIL_REQ_TO_MGR            (-10)
-#define TM_FAIL_RESPONSE              (-11)
-#define TM_FAIL_UNREGISTER            (-12)
-#define TM_INVALID_PARAM              (-13)
+#define TM_FAIL_NO_HANDLER            (-10)
+#define TM_FAIL_PAUSE                 (-11)
+#define TM_FAIL_RESUME                (-12)
+#define TM_FAIL_REQ_TO_MGR            (-13)
+#define TM_FAIL_RESPONSE              (-14)
+#define TM_FAIL_UNREGISTER            (-15)
+#define TM_INVALID_PARAM              (-16)
+#define TM_OUT_OF_MEMORY              (-17)
 
 /**
  * @brief Task Info Structure
@@ -154,6 +158,30 @@ int task_manager_start(int handle, int timeout);
  * @since TizenRT v2.0 PRE
  */
 int task_manager_terminate(int handle, int timeout);
+/**
+ * @brief Request to pause the task
+ * @details @b #include <task_manager/task_manager.h>
+ * @param[in] handle the handle id of task which request to pause
+ * @param[in] timeout returnable flag. It can be one of the below.\n
+ *			TM_NO_RESPONSE : Ignore the response of request from task manager\n
+ *			TM_RESPONSE_WAIT_INF : Blocked until get the response from task manager\n
+ *			integer value : Specifies an upper limit on the time for which will block in milliseconds
+ * @return On success, OK is returned. On failure, defined negative value is returned.
+ * @since TizenRT v2.0 PRE
+ */
+int task_manager_pause(int handle, int timeout);
+/**
+ * @brief Request to resume the task
+ * @details @b #include <task_manager/task_manager.h>
+ * @param[in] handle the handle id of task which request to resume
+ * @param[in] timeout returnable flag. It can be one of the below.\n
+ *			TM_NO_RESPONSE : Ignore the response of request from task manager\n
+ *			TM_RESPONSE_WAIT_INF : Blocked until get the response from task manager\n
+ *			integer value : Specifies an upper limit on the time for which will block in milliseconds
+ * @return On success, OK is returned. On failure, defined negative value is returned.
+ * @since TizenRT v2.0 PRE
+ */
+int task_manager_resume(int handle, int timeout);
 /**
  * @brief Request to send messages to the task
  * @details @b #include <task_manager/task_manager.h>

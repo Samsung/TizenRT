@@ -90,11 +90,11 @@ static void *thread_equal_check(void *param)
 }
 
 /**
-* @fn                   :thread_set_get_specific
+* @fn                   :itc_pthread_key_test
 * @brief                :utility function for itc_pthread_key_create_set_getspecific_p_multitime
 * @return               :void*
 */
-static void *thread_set_get_specific(void *param)
+static void *itc_pthread_key_test(void *param)
 {
 	int *get_spec;
 	int ret_chk;
@@ -102,6 +102,12 @@ static void *thread_set_get_specific(void *param)
 	g_flag = false;
 
 	for (exec_index = 1; exec_index <= LOOP_SIZE; exec_index++) {
+		ret_chk = pthread_key_create(&g_key, NULL);
+		if (ret_chk != OK) {
+			printf("pthread_key_create FAIL\n");
+			return NULL;
+		}
+
 		ret_chk = pthread_setspecific(g_key, &exec_index);
 		if (ret_chk != OK) {
 			printf("pthread_setspecific FAIL\n");
@@ -113,8 +119,14 @@ static void *thread_set_get_specific(void *param)
 			printf("pthread_getspecific FAIL\n");
 			return NULL;
 		}
+
+		ret_chk = pthread_key_delete(g_key);
+		if (ret_chk != OK) {
+			printf("pthread_key_delete FAIL! ret: %d\n", ret_chk);
+			return NULL;
+		}
 	}
-	sleep(WAIT_TIME_1);
+
 	g_flag = true;
 	return NULL;
 }
@@ -322,29 +334,23 @@ static void itc_pthread_mutex_init_destroy_p_multitime(void)
 
 
 /**
-* @fn                   :itc_pthread_key_create_set_getspecific_p_multitime
+* @fn                   :itc_pthread_key_create_set_get_delete_specific_p_multitime
 * @brief                :thread-specific data management
-* @Scenario             :pthread_key_create, then set and get key_specific value multiple time
-* API's covered         :pthread_setspecific, pthread_getspecific, pthread_key_create
+* @Scenario             :pthread_key_create, then set and get key_specific, delete key value multiple time
+* API's covered         :pthread_setspecific, pthread_getspecific, pthread_key_create, pthread_key_delete
 * Preconditions         :pthread_key_create
 * Postconditions        :none
 */
-static void itc_pthread_key_create_set_getspecific_p_multitime(void)
+static void itc_pthread_key_create_set_get_delete_specific_p_multitime(void)
 {
 	int ret_chk;
 	g_flag = false;
-	g_key = 0;
 
-	ret_chk = pthread_key_create(&g_key, NULL);
-	TC_ASSERT_EQ("pthread_key_create", ret_chk, OK);
-
-	ret_chk = pthread_create(&g_pthread, NULL, thread_set_get_specific, NULL);
+	ret_chk = pthread_create(&g_pthread, NULL, itc_pthread_key_test, NULL);
 	TC_ASSERT_EQ("pthread_create", ret_chk, OK);
 
-	sleep(WAIT_TIME_1);
-
 	ret_chk = pthread_join(g_pthread, NULL);
-	TC_ASSERT_EQ("pthread_join", ret_chk, OK);
+	TC_ASSERT_EQ_CLEANUP("pthread_join", ret_chk, OK, pthread_detach(g_pthread));
 	TC_ASSERT_EQ("pthread_join", g_flag, true);
 
 	TC_SUCCESS_RESULT();
@@ -361,6 +367,6 @@ int itc_pthread_main(void)
 	itc_pthread_setgetname_np_p_reset_name();
 	itc_pthread_equal_pthread_self_p();
 	itc_pthread_mutex_init_destroy_p_multitime();
-	itc_pthread_key_create_set_getspecific_p_multitime();
+	itc_pthread_key_create_set_get_delete_specific_p_multitime();
 	return 0;
 }

@@ -93,6 +93,33 @@
 #define AUDIO_BUFFER_MAX_NUM 16
 
 #define AUDIO_BUFFER_MIN_NUM 2
+
+#define ALC5658_DEFAULT_SAMPRATE    16000
+
+#define ALC5658_DEFAULT_NCHANNELS    2
+
+#define ALC5658_DEFAULT_BPSAMP    16
+
+#define MUTE_HP_LR    0x8080
+
+#define UNMUTE_HP_LR    0x0
+
+#define ALC5658_HP_VOL_MIN    0x0
+
+#define ALC5658_HP_VOL_MAX    0x1F
+
+#define ALC5658_HP_VOL_DEFAULT    0x1a
+
+#define ALC5658_GAIN_MIN    0x0
+
+#define ALC5658_GAIN_MAX    0x45
+
+#define ALC5658_GAIN_DEFAULT    0x20
+
+#define VOL_REG_BITSHIFT_COUNT    8
+
+#define alc5658_givesem(s) sem_post(s)
+
 /****************************************************************************
  * Private Data
  ****************************************************************************/
@@ -173,7 +200,7 @@ uint16_t alc5658_readreg(FAR struct alc5658_dev_s *priv, uint16_t regaddr)
 	/* if no audio device object return */
 	if (!priv || !priv->lower) {
 		auddbg("Error, Device's private data Not available\n");
-		return FAIL;
+		return -EINVAL;
 	}
 
 	dev = priv->i2c;
@@ -182,7 +209,7 @@ uint16_t alc5658_readreg(FAR struct alc5658_dev_s *priv, uint16_t regaddr)
 	/* if board private function no available return */
 	if (!alc5658_i2c_config) {
 		auddbg("Error, Configuration function not Initialised\n");
-		return FAIL;
+		return -EINVAL;
 	}
 
 	reg16 = (regaddr >> 8) | ((regaddr & 0xFF) << 8);
@@ -190,13 +217,13 @@ uint16_t alc5658_readreg(FAR struct alc5658_dev_s *priv, uint16_t regaddr)
 	ret = i2c_write(dev, alc5658_i2c_config, (uint8_t *)&reg16, 2);
 	if (ret < 0) {
 		auddbg("Error, cannot read reg %x\n", regaddr);
-		return FAIL;
+		return -EIO;
 	}
 
 	ret = i2c_read(dev, alc5658_i2c_config, (uint8_t *)&reg16, 2);
 	if (ret < 0) {
 		auddbg("Error, cannot read reg %x\n", regaddr);
-		return FAIL;
+		return -EIO;
 	}
 
 	regval = (reg16 >> 8) | ((reg16 & 0xFF) << 8);
@@ -260,7 +287,7 @@ static uint16_t alc5658_modifyreg(FAR struct alc5658_dev_s *priv, uint16_t regad
 	/* if no audio device object return */
 	if (!priv) {
 		auddbg("Error, Device's private data Not available\n");
-		return FAIL;
+		return -EINVAL;
 	}
 
 	data = alc5658_readreg(priv, regaddr);
@@ -758,7 +785,7 @@ static int alc5658_configure(FAR struct audio_lowerhalf_s *dev, FAR const struct
 		audvdbg("  AUDIO_TYPE :%s\n", caps->ac_type == AUDIO_TYPE_INPUT ? "INPUT" : "OUTPUT");
 		/* Verify that all of the requested values are supported */
 
-		ret = -ERANGE;
+		ret = -EDOM;
 		if (caps->ac_channels != 1 && caps->ac_channels != 2) {
 			auddbg("ERROR: Unsupported number of channels: %d\n", caps->ac_channels);
 			break;
@@ -816,7 +843,7 @@ static int alc5658_shutdown(FAR struct audio_lowerhalf_s *dev)
 	DEBUGASSERT(priv);
 
 	if (!priv) {
-		return FAIL;
+		return -EINVAL;
 	}
 
 	/* First disable interrupts */
@@ -877,7 +904,7 @@ static int alc5658_start(FAR struct audio_lowerhalf_s *dev)
 	FAR struct alc5658_dev_s *priv = (FAR struct alc5658_dev_s *)dev;
 
 	if (!priv) {
-		return FAIL;
+		return -EINVAL;
 	}
 
 	audvdbg(" alc5658_start Entry\n");
@@ -927,7 +954,7 @@ static int alc5658_stop(FAR struct audio_lowerhalf_s *dev)
 	FAR struct alc5658_dev_s *priv = (FAR struct alc5658_dev_s *)dev;
 
 	if (!priv) {
-		return FAIL;
+		return -EINVAL;
 	}
 
 	if (priv->inout) {
@@ -966,7 +993,7 @@ static int alc5658_pause(FAR struct audio_lowerhalf_s *dev)
 	FAR struct alc5658_dev_s *priv = (FAR struct alc5658_dev_s *)dev;
 
 	if (!priv) {
-		return FAIL;
+		return -EINVAL;
 	}
 
 	alc5658_takesem(&priv->devsem);
@@ -1010,7 +1037,7 @@ static int alc5658_resume(FAR struct audio_lowerhalf_s *dev)
 	FAR struct alc5658_dev_s *priv = (FAR struct alc5658_dev_s *)dev;
 
 	if (!priv) {
-		return FAIL;
+		return -EINVAL;
 	}
 
 	alc5658_takesem(&priv->devsem);
@@ -1085,7 +1112,7 @@ static int alc5658_enqueuebuffer(FAR struct audio_lowerhalf_s *dev, FAR struct a
 	int ret;
 
 	if (!priv || !apb) {
-		return FAIL;
+		return -EINVAL;
 	}
 
 	audvdbg("alc5658_enqueuebuffer: apbadr = 0x%x\n", apb);
@@ -1106,7 +1133,6 @@ static int alc5658_enqueuebuffer(FAR struct audio_lowerhalf_s *dev, FAR struct a
 	}
 
 	audvdbg("I2s  returned 0x%x\n", ret);
-
 	return ret;
 }
 
@@ -1136,7 +1162,7 @@ static int alc5658_ioctl(FAR struct audio_lowerhalf_s *dev, int cmd, unsigned lo
 	FAR struct alc5658_dev_s *priv = (FAR struct alc5658_dev_s *)dev;
 
 	if (!priv) {
-		return FAIL;
+		return -EINVAL;
 	}
 
 	/* Deal with ioctls passed from the upper-half driver */
@@ -1235,7 +1261,7 @@ static int alc5658_reserve(FAR struct audio_lowerhalf_s *dev)
 	int ret = OK;
 
 	if (!priv) {
-		return FAIL;
+		return -EINVAL;
 	}
 
 	/* Borrow the APBQ semaphore for thread sync */
@@ -1278,7 +1304,7 @@ static int alc5658_release(FAR struct audio_lowerhalf_s *dev)
 	FAR struct alc5658_dev_s *priv = (FAR struct alc5658_dev_s *)dev;
 
 	if (!priv) {
-		return FAIL;
+		return -EINVAL;
 	}
 
 	alc5658_takesem(&priv->devsem);
@@ -1367,7 +1393,7 @@ static int alc5658_interrupt(FAR const struct alc5658_lower_s *lower, FAR void *
 	DEBUGASSERT(lower && priv);
 
 	if (!priv || !lower) {
-		return FAIL;
+		return -EINVAL;
 	}
 
 	/* Disable further interrupts and perform all interrupt related activities

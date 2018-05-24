@@ -332,10 +332,14 @@ static bool get_supported_properties(const char *res_type, const char *res_uri, 
 		THINGS_LOG_D(TAG, "Get attributes by resource type(%s): %s.", res_type, (1 == res) ? "Success" : "Failed");
 		return res ? true : false;
 	}
+
+	char **res_types = NULL;
+	int *prop_count = NULL;
+	things_attribute_info_s ***props = NULL;
+
 	// Get the properties based on resource uri.
 	if (NULL != res_uri && strlen(res_uri) > 0) {
 		int type_count = 0;
-		char **res_types = NULL;
 		// 1. Get the resource types.
 		if (!things_get_resource_type(res_uri, &type_count, &res_types)) {
 			THINGS_LOG_E(TAG, "Failed to get the resource types based on resource uri(%s).", res_uri);
@@ -350,28 +354,21 @@ static bool get_supported_properties(const char *res_type, const char *res_uri, 
 		THINGS_LOG_D(TAG, "Resource(%s) has %d resource type(s).", res_uri, type_count);
 
 		// 2. Get the properties for each resource type.
-		int *prop_count = NULL;
-		things_attribute_info_s ***props = NULL;
 		props = (things_attribute_info_s ***) things_calloc(type_count, sizeof(things_attribute_info_s **));
 		if (NULL == props) {
-			THINGS_LOG_E(TAG, "Failed to allocate memory for resource properties.");
-			return false;
+			THINGS_LOG_E(THINGS_ERROR, TAG, "Failed to allocate memory for resource properties.");
+			goto EXIT_WITH_ERROR;
 		}
 		prop_count = (int *)things_calloc(type_count, sizeof(int));
 		if (NULL == prop_count) {
-			THINGS_LOG_E(TAG, "Failed to allocate memory for resource properties.");
-			things_free(props);
-			return false;
+			THINGS_LOG_E(THINGS_ERROR, TAG, "Failed to allocate memory for resource properties.");
+			goto EXIT_WITH_ERROR;
 		}
 
 		for (int index = 0; index < type_count; index++) {
 			if (!things_get_attributes_by_resource_type(res_types[index], &prop_count[index], &props[index])) {
-				THINGS_LOG_E(TAG, "Failed to get the properties of resource type (%s).", res_types[index]);
-				things_free(prop_count);
-				things_free(props);
-				*count = 0;
-				*properties = NULL;
-				return false;
+				THINGS_LOG_V(THINGS_ERROR, TAG, "Failed to get the properties of resource type (%s).", res_types[index]);
+				goto EXIT_WITH_ERROR;
 			}
 			THINGS_LOG_D(TAG, "Number of properties of resource type(%s): %d.", res_types[index], prop_count[index]);
 			*count += prop_count[index];
@@ -381,31 +378,22 @@ static bool get_supported_properties(const char *res_type, const char *res_uri, 
 
 		*properties = (things_attribute_info_s **) things_calloc(*count, sizeof(things_attribute_info_s *));
 		if (NULL == *properties) {
-			THINGS_LOG_E(TAG, "Failed to allocate memory for resource properties.");
-			things_free(prop_count);
-			things_free(props);
-			*count = 0;
-			return false;
+			THINGS_LOG_E(THINGS_ERROR, TAG, "Failed to allocate memory for resource properties.");
+			goto EXIT_WITH_ERROR;
 		}
 
 		int cur_index = 0;
 		for (int index = 0; index < type_count; index++) {
 			if (NULL == props[index]) {
-				THINGS_LOG_E(TAG, "Resource type(%s) doesn't have any properties.", res_types[index]);
-				things_free(prop_count);
-				things_free(props);
-				*count = 0;
-				return false;
+				THINGS_LOG_V(THINGS_ERROR, TAG, "Resource type(%s) doesn't have any properties.", res_types[index]);
+				goto EXIT_WITH_ERROR;
 			}
 
 			for (int sub_index = 0; sub_index < prop_count[index]; sub_index++) {
 				things_attribute_info_s *prop = *(props[index] + sub_index);
 				if (NULL == prop) {
-					THINGS_LOG_E(TAG, "NULL Property.");
-					things_free(prop_count);
-					things_free(props);
-					*count = 0;
-					return false;
+					THINGS_LOG_E(THINGS_ERROR, TAG, "NULL Property.");
+					goto EXIT_WITH_ERROR;
 				}
 				// If this prop is already added, then ignore it and decrement the total count by 1.
 				bool exist = false;
@@ -433,6 +421,19 @@ static bool get_supported_properties(const char *res_type, const char *res_uri, 
 	}
 
 	return true;
+
+EXIT_WITH_ERROR:
+	res_types = NULL;
+	things_free(prop_count);
+	prop_count = NULL;
+	things_free(props);
+	props = NULL;
+	things_free(properties);
+	properties = NULL;
+
+	*count = 0;
+
+	return false;
 }
 
 static void remove_query_parameter(char *query, char *key)
@@ -971,9 +972,9 @@ bool handle_post_req_helper(const char *res_uri, const char *query, OCRepPayload
 			break;
 		}
 
-		if (properties[index]->mandatory) {
+		if (!IS_WRITABLE(properties[index]->rw)) {
 			if (OCRepPayloadIsNull(req_payload, properties[index]->key)) {
-				THINGS_LOG_E(TAG, "Mandatory property (%s) is not present in the request.", properties[index]->key);
+				THINGS_LOG_E(TAG, "(%s) is not present in the request.", properties[index]->key);
 				res = false;
 				break;
 			}

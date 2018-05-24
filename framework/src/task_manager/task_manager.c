@@ -92,7 +92,7 @@ static int tm_get_task_state(int handle)
 
 static int tm_check_permission(int handle, pid_t pid)
 {
-	int ret = ERROR;
+	int ret = TM_FAIL_NOT_PERMITTED;
 	int chk_idx;
 	int caller_gid = -1;
 
@@ -201,7 +201,7 @@ static int tm_search_task_list(tm_request_t *msg, tm_response_t *response_msg)
 		return TM_INVALID_PARAM;
 	}
 
-	for(chk_idx = 0; chk_idx < CONFIG_MAX_TASKS; chk_idx++) {
+	for (chk_idx = 0; chk_idx < CONFIG_MAX_TASKS; chk_idx++) {
 		if (TASK_LIST_ADDR(chk_idx) == NULL) {
 			continue;
 		}
@@ -225,8 +225,9 @@ int task_manager(int argc, char *argv[])
 	int chk_idx;
 	int register_permission;
 	struct mq_attr attr;
-
+#ifdef CONFIG_SCHED_HAVE_PARENT
 	sigignore(SIGCHLD);
+#endif
 	attr.mq_maxmsg = CONFIG_TASK_MANAGER_MAX_MSG;
 	attr.mq_msgsize = sizeof(tm_request_t);
 	attr.mq_flags = 0;
@@ -259,9 +260,13 @@ int task_manager(int argc, char *argv[])
 		switch (request_msg.cmd) {
 		case TASKMGT_REGISTER_TASK:
 			register_permission = request_msg.handle;
+			if (request_msg.data == NULL) {
+				ret = TM_INVALID_PARAM;
+				break;
+			}
 			/* Check that task is in builtin-list or not */
 			for (chk_idx = 0; chk_idx < builtin_cnt; chk_idx++) {
-				if (strncmp((char *)tm_builtin_lists[chk_idx].name, request_msg.data, strlen(request_msg.data)) == 0) {
+				if (strncmp((char *)tm_builtin_lists[chk_idx].name, request_msg.data, CONFIG_TASK_NAME_SIZE) == 0) {
 					/* Requested name is in builtin-list */
 					ret = ioctl(fd, TMIOC_REGISTER_TASK, &request_msg);
 					break;
@@ -276,11 +281,15 @@ int task_manager(int argc, char *argv[])
 
 			if (ret == OK) {
 				tm_task_list[request_msg.handle].addr = (void *)TM_ALLOC(sizeof(task_list_data_t));
-				TASK_BUILTIN_IDX(request_msg.handle) = chk_idx;
-				TASK_TM_GID(request_msg.handle) = request_msg.caller_pid;
-				TASK_STATUS(request_msg.handle) = TM_TASK_STATE_STOP;
-				TASK_PERMISSION(request_msg.handle) = register_permission;
-				ret = request_msg.handle;
+				if (tm_task_list[request_msg.handle].addr != NULL) {
+					TASK_BUILTIN_IDX(request_msg.handle) = chk_idx;
+					TASK_TM_GID(request_msg.handle) = request_msg.caller_pid;
+					TASK_STATUS(request_msg.handle) = TM_TASK_STATE_STOP;
+					TASK_PERMISSION(request_msg.handle) = register_permission;
+					ret = request_msg.handle;
+				} else {
+					ret = TM_OUT_OF_MEMORY;
+				}
 			}
 			break;
 
@@ -346,9 +355,46 @@ int task_manager(int argc, char *argv[])
 			break;
 
 		case TASKMGT_PAUSE:
+			tm_update_task_state(request_msg.handle);
+			ret = tm_get_task_state(request_msg.handle);
+			if (ret != TM_TASK_STATE_RUNNING) {
+				ret = -ret;
+				break;
+			}
+			ret = tm_check_permission(request_msg.handle, request_msg.caller_pid);
+			if (ret != OK) {
+				break;
+			}
+			ret = ioctl(fd, TMIOC_PAUSE, TASK_PID(request_msg.handle));
+			if (ret == OK) {
+				ret = kill(TASK_PID(request_msg.handle), SIGTM_PAUSE);
+				if (ret != 0) {
+					ret  = TM_FAIL_PAUSE;
+					break;
+				}
+			} else {
+				ret = TM_FAIL_PAUSE;
+				break;
+			}
+			TASK_STATUS(request_msg.handle) = TM_TASK_STATE_PAUSE;
 			break;
 
 		case TASKMGT_RESUME:
+			tm_update_task_state(request_msg.handle);
+			ret = tm_get_task_state(request_msg.handle);
+			if (ret != TM_TASK_STATE_PAUSE) {
+				ret = -ret;
+				break;
+			}
+			ret = tm_check_permission(request_msg.handle, request_msg.caller_pid);
+			if (ret != OK) {
+				break;
+			}
+			ret = kill(TASK_PID(request_msg.handle), SIGTM_RESUME);
+			if (ret != 0) {
+				ret  = TM_FAIL_RESUME;
+			}
+			TASK_STATUS(request_msg.handle) = TM_TASK_STATE_RUNNING;
 			break;
 
 		case TASKMGT_SCAN_NAME:
@@ -376,7 +422,7 @@ int task_manager(int argc, char *argv[])
 		case TASKMGT_UNICAST:
 			tm_update_task_state(request_msg.handle);
 			ret = tm_get_task_state(request_msg.handle);
-			if (ret == TM_TASK_STATE_UNREGISTERED || ret == TM_TASK_STATE_STOP) {
+			if (ret != TM_TASK_STATE_RUNNING) {
 				ret = -ret;
 				break;
 			}
@@ -385,14 +431,18 @@ int task_manager(int argc, char *argv[])
 				break;
 			}
 
+			ret = ioctl(fd, TMIOC_UNICAST, TASK_PID(request_msg.handle));
+			if (ret < 0) {
+				ret = TM_FAIL_NO_HANDLER;
+				break;
+			}
+
 			/* handle is in task_list */
 			union sigval msg;
 			msg.sival_ptr = request_msg.data;
-			ret = sigqueue(TASK_PID(request_msg.handle), SIGTM, msg);
+			ret = sigqueue(TASK_PID(request_msg.handle), SIGTM_UNICAST, msg);
 			if (ret != OK) {
 				tmdbg("Fail to send signal, errno : %d\n", errno);
-				TM_FREE(request_msg.data);
-				request_msg.data = NULL;
 				ret = TM_FAIL_SEND_MSG;
 			}
 			break;

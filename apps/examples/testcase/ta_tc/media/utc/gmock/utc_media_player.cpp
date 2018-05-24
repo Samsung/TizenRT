@@ -54,6 +54,12 @@ void TestObserver::onPlaybackError(Id id)
 	cv.notify_one();
 }
 
+void TestObserver::onPlaybackPaused(Id id)
+{
+	value = 4;
+	cv.notify_one();
+}
+
 class SimpleMediaPlayerTest : public ::testing::Test
 {
 protected:
@@ -64,7 +70,7 @@ protected:
 		fclose(fp);
 		source = std::move(std::unique_ptr<media::stream::FileInputDataSource>(
 			new media::stream::FileInputDataSource(MEDIAPLAYER_TEST_FILE)));
-		source->setSampleRate(16000);
+		source->setSampleRate(20000);
 		source->setChannels(2);
 		mp = new media::MediaPlayer();
 	}

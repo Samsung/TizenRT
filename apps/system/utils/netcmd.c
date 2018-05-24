@@ -110,16 +110,17 @@ static void nic_display_state(void)
 	}
 	num_nic = ifcfg.ifc_len / sizeof(struct ifreq);
 	ifr = ifcfg.ifc_req;
-	int i = 0, j;
+	int i = 0;
 #ifdef CONFIG_NET_IPv6_NUM_ADDRESSES
+	int j;
 	struct netif *netif;
 #endif
 
 	for (; i < num_nic; ifr++, i++) {
-		nvdbg("%s\t", ifr->ifr_name);
+		printf("%s\t", ifr->ifr_name);
 		sin = (struct sockaddr_in *)&ifr->ifr_addr;
 		if ((sin->sin_addr.s_addr) == INADDR_LOOPBACK) {
-			nvdbg("Loop Back\t");
+			printf("Loop Back\t");
 		} else {
 			struct ifreq tmp;
 			strncpy(tmp.ifr_name, ifr->ifr_name, IF_NAMESIZE);
@@ -128,39 +129,41 @@ static void nic_display_state(void)
 				ndbg("fail %s:%d\n", __FUNCTION__, __LINE__);
 			} else {
 				sa = &tmp.ifr_hwaddr;
-				nvdbg("Link encap: %s\t", ether_ntoa((struct ether_addr *)sa->sa_data));
+				printf("Link encap: %s\t", ether_ntoa((struct ether_addr *)sa->sa_data));
 			}
 
 			ret = ioctl(fd, SIOCGIFFLAGS, (unsigned long)ifr);
 			if (ret < 0) {
 				ndbg("fail %s:%d\n", __FUNCTION__, __LINE__);
 			} else {
-				nvdbg("RUNNING: %s\n", (ifr->ifr_flags & IFF_UP) ? "UP" : "DOWN");
+				printf("RUNNING: %s\n", (ifr->ifr_flags & IFF_UP) ? "UP" : "DOWN");
 			}
 		}
-		nvdbg("\tinet addr: %s\t", inet_ntoa(sin->sin_addr));
+		printf("\tinet addr: %s\t", inet_ntoa(sin->sin_addr));
 
 		ret = ioctl(fd, SIOCGIFNETMASK, (unsigned long)ifr);
 		if (ret < 0) {
 			ndbg("fail %s:%d\n", __FUNCTION__, __LINE__);
 		} else {
 			sin = (struct sockaddr_in *)&ifr->ifr_addr;
-			nvdbg("Mask: %s\t", inet_ntoa(sin->sin_addr));
+			printf("Mask: %s\t", inet_ntoa(sin->sin_addr));
 		}
 
 		ret = ioctl(fd, SIOCGIFMTU, (unsigned long)ifr);
 		if (ret < 0) {
 			ndbg("fail %s:%d\n", __FUNCTION__, __LINE__);
 		} else {
-			nvdbg("MTU: %d\n", ifr->ifr_mtu);
+			printf("MTU: %d\n", ifr->ifr_mtu);
 		}
 #ifdef CONFIG_NET_IPv6_NUM_ADDRESSES
 		netif = netif_find(ifr->ifr_name);
 		for (j = 0; netif != NULL && j < CONFIG_NET_IPv6_NUM_ADDRESSES; j++) {
 			if (netif->ip6_addr_state[j] != 0) {
-				nvdbg("\tinet6 addr: %s\n", ip6addr_ntoa(ip_2_ip6(&netif->ip6_addr[j])));
+				printf("\tinet6 addr: %s\n", ip6addr_ntoa(ip_2_ip6(&netif->ip6_addr[j])));
 			}
 		}
+#else
+		printf("\n");
 #endif /* CONFIG_NET_IPv6_NUM_ADDRESSES */
 		printf("\n");
 	}
@@ -175,14 +178,14 @@ int cmd_ifup(int argc, char **argv)
 	int ret;
 
 	if (argc != 2) {
-		nvdbg("Please select nic_name:\n");
+		printf("Please select nic_name:\n");
 		nic_display_state();
 		return OK;
 	}
 
 	intf = argv[1];
 	ret = netlib_ifup(intf);
-	nvdbg("ifup %s...%s\n", intf, (ret == OK) ? "OK" : "Failed");
+	printf("ifup %s...%s\n", intf, (ret == OK) ? "OK" : "Failed");
 	return ret;
 }
 
@@ -192,14 +195,14 @@ int cmd_ifdown(int argc, char **argv)
 	int ret;
 
 	if (argc != 2) {
-		nvdbg("Please select nic_name:\n");
+		printf("Please select nic_name:\n");
 		nic_display_state();
 		return OK;
 	}
 
 	intf = argv[1];
 	ret = netlib_ifdown(intf);
-	nvdbg("ifdown %s...%s\n", intf, (ret == OK) ? "OK" : "Failed");
+	printf("ifdown %s...%s\n", intf, (ret == OK) ? "OK" : "Failed");
 	return ret;
 }
 
@@ -289,7 +292,7 @@ int cmd_ifconfig(int argc, char **argv)
 	}
 
 	if (badarg) {
-		nvdbg(fmtargrequired, argv[0]);
+		printf(fmtargrequired, argv[0]);
 		return ERROR;
 	}
 #ifdef CONFIG_NET_ETHERNET
@@ -397,7 +400,7 @@ int cmd_ifconfig(int argc, char **argv)
 			}
 		}
 	} else {
-		ndbg("hostip is not provided\n");
+		printf("hostip is not provided\n");
 		return ERROR;
 	}
 
@@ -485,11 +488,11 @@ int cmd_ifconfig(int argc, char **argv)
 		if (ds.default_router.s_addr != 0) {
 			netlib_set_dripv4addr(intf, &ds.default_router);
 		}
-		nvdbg("IP address %s\n", inet_ntoa(ds.ipaddr));
-		nvdbg("Netmask %s\n", inet_ntoa(ds.netmask));
-		nvdbg("Gateway %s\n", inet_ntoa(ds.default_router));
+		printf("IP address %s\n", inet_ntoa(ds.ipaddr));
+		printf("Netmask %s\n", inet_ntoa(ds.netmask));
+		printf("Gateway %s\n", inet_ntoa(ds.default_router));
 #if defined(CONFIG_NETDB_DNSCLIENT) && defined(CONFIG_NETDB_DNSSERVER_BY_DHCP)
-		nvdbg("Default DNS %s\n", inet_ntoa(ds.dnsaddr));
+		printf("Default DNS %s\n", inet_ntoa(ds.dnsaddr));
 #endif							/* defined(CONFIG_NETDB_DNSCLIENT) && defined(CONFIG_NETDB_DNSSERVER_BY_DHCP) */
 		dhcpc_close(handle);
 #endif							/* LWIP_DHCP */
