@@ -18,6 +18,7 @@
 #ifndef __MIF_REG_H
 #define __MIF_REG_H
 
+#include "chip/s5jt200_pmu.h"
 #include "chip/s5jt200_system.h"
 
 /*****************************/
@@ -51,8 +52,6 @@ struct peterson_mutex {
 	u32 flag[2];
 	u32 turn;
 };
-
-#define PMU_ALIVE_BASE          0x80090000	/* From s5jt200_memorymap.h */
 
 #define MBOX_OFFSET             0x3ffc00
 /* Leave space to allocate emulated registers */
@@ -98,7 +97,7 @@ struct peterson_mutex {
 /* POWER */
 /* Page 594 datasheet */
 /* Base Address - 0x11C8_0000 */
-#define WIFI_CTRL_NS            ((void *)(PMU_ALIVE_BASE + 0x0140))	/* WIFI Control SFR non-secure */
+#define WIFI_CTRL_NS			((void *)(S5J_PMU_WIFI_CTRL_NS)) /* WIFI Control SFR non-secure */
 #define WIFI_PWRON              BIT(1)
 #define WIFI_RESET_SET          BIT(2)
 #define WIFI_ACTIVE_EN          BIT(5)	/* Enable of WIFI_ACTIVE_REQ */
@@ -110,18 +109,16 @@ struct peterson_mutex {
 										 * If MASK_WIFI_PWRDN_DONE = 1, WIFI enter to DOWN
 										 * state without checking WIFI_PWRDN_DONE*/
 
-#define WIFI_CTRL_S             ((void *)(PMU_ALIVE_BASE + 0x0144))	/* WIFI Control SFR secure */
+#define WIFI_CTRL_S				((void *)(S5J_PMU_WIFI_CTRL_S)) /* WIFI Control SFR secure */
 #define WIFI_START              BIT(3)	/* WIFI Reset release control  If WIFI_START = 1,
 										 * WIFI exit from DOWN state and go to UP state.
 										 * If this field is set to high (WIFI_START = 1)
 										 * WIFI state can go to UP state. This signal can be
 										 * auto-clear by DIRECTWR at UP */
 
-#define WIFI_STAT               ((void *)(PMU_ALIVE_BASE + 0x0148))	/* Indicate whether WIFI uses MIF domain */
-#define WIFI_DEBUG              ((void *)(PMU_ALIVE_BASE + 0x014c))	/* MIF sleep, wakeup debugging control */
+#define WIFI_STAT				((void *)(S5J_PMU_WIFI_STAT))	/* Indicate whether WIFI uses MIF domain */
+#define WIFI_DEBUG				((void *)(S5J_PMU_WIFI_DEBUG))	/* MIF sleep, wakeup debugging control */
 /* Page 1574 datasheet */
-//#define PMU_ALIVE_BASE          0x0000
-//#define PMU_ALIVE_REG(r)        (PMU_ALIVE_BASE + (r))
 #define WLBT2AP_MIF_ACCESS_WIN0 0x0154	/* ACCESS_CONTROL_PERI_IP */
 #define WLBT2AP_MIF_ACCESS_WIN1 0x0158	/* ACCESS_CONTROL_PERI_IP */
 #define WLBT2AP_MIF_ACCESS_WIN2 0x015a	/* ACCESS_CONTROL_PERI_IP */
@@ -139,7 +136,7 @@ struct peterson_mutex {
 #define WIFI2AP_MEM_CONFIG1			((void *)(S5J_SYSREG_WIFI_MEM_BA0))		/* Control WIFI_MEM_BA0 */
 #define WIFI2AP_MEM_CONFIG2			((void *)(S5J_SYSREG_WIFI_MEM_BA1))		/* Control WIFI_MEM_BA1 */
 
-#define WIFI2AP_PMU_SPARE0      ((void *)(PMU_ALIVE_BASE + 0x0900))	/* Control PMU_SPARE0 */
+#define WIFI2AP_PMU_SPARE0				((void *)(S5J_PMU_SPARE0))	/* Control PMU_SPARE0 */
 
 /* Wi-Fi Firmware load address */
 #define WIFI_IRAM_MEM_BASE              0x2020	/* Base address for iRAM mappings */
@@ -151,18 +148,18 @@ struct peterson_mutex {
 #endif
 
 /* Power down registers */
-#define CLEANY_BUS_WIFI_SYS_PWR_REG ((void *)(PMU_ALIVE_BASE + 0x1324))	/* Control power state in LOWPWR mode 1 - on, 0 - down */
-#define LOGIC_RESET_WIFI_SYS_PWR_REG ((void *)(PMU_ALIVE_BASE + 0x1328))	/* Control power state in LOWPWR mode 1 - on, 0 - down */
-#define TCXO_GATE_WIFI_SYS_PWR_REG ((void *)(PMU_ALIVE_BASE + 0x132c))	/* Control power state in LOWPWR mode 1 - on, 0 - down */
-#define RESET_ASB_WIFI_SYS_PWR_REG ((void *)(PMU_ALIVE_BASE + 0x1330))	/* Control power state in LOWPWR mode 1 - on, 0 - down */
+#define CLEANY_BUS_WIFI_SYS_PWR_REG		((void *)(S5J_PMU_CLEANY_BUS_WIFI_SYS_PWR_REG))		/* Control power state in LOWPWR mode 1 - on, 0 - down */
+#define LOGIC_RESET_WIFI_SYS_PWR_REG	((void *)(S5J_PMU_LOGIC_RESET_WIFI_SYS_PWR_REG))	/* Control power state in LOWPWR mode 1 - on, 0 - down */
+#define TCXO_GATE_WIFI_SYS_PWR_REG		((void *)(S5J_PMU_TCXO_GATE_WIFI_SYS_PWR_REG))		/* Control power state in LOWPWR mode 1 - on, 0 - down */
+#define RESET_ASB_WIFI_SYS_PWR_REG		((void *)(S5J_PMU_RESET_ASB_WIFI_SYS_PWR_REG))		/* Control power state in LOWPWR mode 1 - on, 0 - down */
 
-#define CENTRAL_SEQ_WIFI_CONFIGURATION ((void *)(PMU_ALIVE_BASE + 0x0380))	/* bit 16. Decides whether system-level low-power mode */
+#define CENTRAL_SEQ_WIFI_CONFIGURATION	((void *)(S5J_PMU_CENTRAL_SEQ_WIFI_CONFIGURATION))	/* bit 16. Decides whether system-level low-power mode */
 // * is used HIGH: System-level Low-Power mode
 // * disabled. LOW: System-level Low-Power mode
 // * enabled. When system enters low-power mode,
 // * this field is automatically cleared to HIGH.
 
-#define CENTRAL_SEQ_WIFI_STATUS ((void *)(PMU_ALIVE_BASE + 0x0384))	/* 23:16  Check statemachine status */
+#define CENTRAL_SEQ_WIFI_STATUS			((void *)(S5J_PMU_CENTRAL_SEQ_WIFI_STATUS))	/* 23:16  Check statemachine status */
 #define STATES                  0xff0000
 
 #define SYS_PWR_CFG             BIT(0)

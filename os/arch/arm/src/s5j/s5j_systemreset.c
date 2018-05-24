@@ -78,7 +78,7 @@ static void up_systemreset(void)
 	 * This field is automatically cleared to low on completion of
 	 * a software reset.
 	 */
-	putreg32(S5J_PMU_SYSTEM_RESET_ON, S5J_PMU_BASE + S5J_PMU_SWRESET_OFFSET);
+	putreg32(S5J_PMU_SYSTEM_RESET_ON, S5J_PMU_SWRESET);
 
 	/* Wait for the reset */
 	for (; ; ) {

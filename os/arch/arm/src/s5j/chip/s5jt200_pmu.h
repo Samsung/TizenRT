@@ -62,8 +62,19 @@
  * Pre-processor Definitions
  ****************************************************************************/
 /* Power Management Unit Register Offsets ***********************************/
-#define S5J_PMU_SWRESET_OFFSET					0x0400
-#define S5J_PMU_MASK_WDT_RESET_REQUEST_OFFSET	0x040C
+#define S5J_PMU_WIFI_CTRL_NS					(S5J_PMU_BASE + 0x0140)	/* Non-Secure WIFI Control Register */
+#define S5J_PMU_WIFI_CTRL_S						(S5J_PMU_BASE + 0x0144) /* Secure WIFI Control Register */
+#define S5J_PMU_WIFI_STAT						(S5J_PMU_BASE + 0x0148) /* WIFI Status Register */
+#define S5J_PMU_WIFI_DEBUG						(S5J_PMU_BASE + 0x014C) /* WIFI Debug Register */
+#define S5J_PMU_CENTRAL_SEQ_WIFI_CONFIGURATION	(S5J_PMU_BASE + 0x0380) /* Central Sequencer Configuration Register for WIFI */
+#define S5J_PMU_CENTRAL_SEQ_WIFI_STATUS			(S5J_PMU_BASE + 0x0384) /* Central Sequencer Status Register for WIFI */
+#define S5J_PMU_SWRESET							(S5J_PMU_BASE + 0x0400) /* Software Reset Register */
+#define S5J_PMU_MASK_WDT_RESET_REQUEST			(S5J_PMU_BASE + 0x040C) /* Mask the WDT Reset Request Register */
+#define S5J_PMU_SPARE0							(S5J_PMU_BASE + 0x0900) /* PMU Spare Register 0 */
+#define S5J_PMU_CLEANY_BUS_WIFI_SYS_PWR_REG		(S5J_PMU_BASE + 0x1324) /* CLEANY_BUS_WIFI System Power Configuration Register */
+#define S5J_PMU_LOGIC_RESET_WIFI_SYS_PWR_REG	(S5J_PMU_BASE + 0x1328) /* LOGIC_RESET_WIFI System Power Configuration Register */
+#define S5J_PMU_TCXO_GATE_WIFI_SYS_PWR_REG		(S5J_PMU_BASE + 0x132C) /* TCXO_GATE_WIFI System Power Configuration Register */
+#define S5J_PMU_RESET_ASB_WIFI_SYS_PWR_REG		(S5J_PMU_BASE + 0x1330) /* RESET_ASB_WIFI System Power Configuration Register */
 
 /* SWRESET Register Address *************************************************/
 #define S5J_PMU_SYSTEM_SHIFT			0

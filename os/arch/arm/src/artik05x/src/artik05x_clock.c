@@ -99,7 +99,7 @@ void board_wdt_initialize(void)
 	s5j_wdg_initialize(CONFIG_WATCHDOG_DEVPATH);
 
 	/* When set, PMU ignores the watchdog timer reset request. */
-	modifyreg32(S5J_PMU_BASE + S5J_PMU_MASK_WDT_RESET_REQUEST_OFFSET,
+	modifyreg32(S5J_PMU_MASK_WDT_RESET_REQUEST,
 				S5J_PMU_CR4_WDTRESET_MASK, S5J_PMU_CR4_WDTRESET_OFF);
 #endif
 }
