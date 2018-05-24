@@ -30,7 +30,7 @@
 #define TM_NOPERM_NAME "tm_noperm"
 #define TM_SAMPLE_MSG  "test_msg"
 #define TM_INVALID_HANDLE      -2
-#define TM_UNREGISTERED_HANDLE 99
+#define TM_UNREGISTERED_HANDLE (CONFIG_MAX_TASKS - 2)
 #define TM_INVALID_TIMEOUT     -2
 #define TM_INVALID_PERMISSION  -2
 
@@ -89,7 +89,7 @@ static void utc_task_manager_register_n(void)
 static void utc_task_manager_register_p(void)
 {
 	tm_sample_handle = task_manager_register("invalid", TM_TASK_PERMISSION_DEDICATE, TM_RESPONSE_WAIT_INF);
-	TC_ASSERT_EQ("task_manager_register_p", tm_sample_handle, TM_FAIL_NOT_REGISTERED);
+	TC_ASSERT_EQ("task_manager_register_p", tm_sample_handle, TM_FAIL_REGISTER);
 
 	tm_sample_handle = task_manager_register(TM_SAMPLE_NAME, TM_TASK_PERMISSION_DEDICATE, TM_RESPONSE_WAIT_INF);
 	TC_ASSERT_GEQ("task_manager_register_p", tm_sample_handle, 0);
@@ -106,6 +106,9 @@ static void utc_task_manager_start_n(void)
 	ret = task_manager_start(TM_INVALID_HANDLE, TM_NO_RESPONSE);
 	TC_ASSERT_EQ("task_manager_start_n", ret, TM_INVALID_PARAM);
 
+	ret = task_manager_start(TM_UNREGISTERED_HANDLE, 100);
+	TC_ASSERT_EQ("task_manager_start_n", ret, TM_FAIL_UNREGISTERED_TASK);
+
 	TC_SUCCESS_RESULT();
 }
 
@@ -113,10 +116,7 @@ static void utc_task_manager_start_p(void)
 {
 	int ret;
 
-	ret = task_manager_start(TM_UNREGISTERED_HANDLE, 100);
-	TC_ASSERT_EQ("task_manager_start_p", ret, TM_FAIL_UNREGISTERED_TASK);
-
-	ret = task_manager_start(tm_sample_handle, TM_NO_RESPONSE);
+	ret = task_manager_start(tm_sample_handle, TM_RESPONSE_WAIT_INF);
 	TC_ASSERT_EQ("task_manager_start_p", ret, OK);
 
 	ret = task_manager_start(tm_sample_handle, TM_RESPONSE_WAIT_INF);
@@ -294,10 +294,10 @@ static void utc_task_manager_getinfo_with_group_n(void)
 		TC_ASSERT_NEQ("utc_task_manager_getinfo_with_group_n", sample_info, NULL);
 	}
 
-	ret = (task_info_list_t *)task_manager_getinfo_with_group(sample_info->gid, TM_INVALID_TIMEOUT);
+	ret = (task_info_list_t *)task_manager_getinfo_with_group(sample_info->tm_gid, TM_INVALID_TIMEOUT);
 	TC_ASSERT_EQ("task_manager_getinfo_with_group_n", ret, NULL);
 
-	ret = (task_info_list_t *)task_manager_getinfo_with_group(sample_info->gid, TM_NO_RESPONSE);
+	ret = (task_info_list_t *)task_manager_getinfo_with_group(sample_info->tm_gid, TM_NO_RESPONSE);
 	TC_ASSERT_EQ("task_manager_getinfo_with_group_n", ret, NULL);
 
 	TC_SUCCESS_RESULT();
@@ -310,7 +310,7 @@ static void utc_task_manager_getinfo_with_group_p(void)
 		TC_ASSERT_NEQ("utc_task_manager_getinfo_with_group_p", sample_info, NULL);
 	}
 
-	group_list_info = (task_info_list_t *)task_manager_getinfo_with_group(sample_info->gid, TM_RESPONSE_WAIT_INF);
+	group_list_info = (task_info_list_t *)task_manager_getinfo_with_group(sample_info->tm_gid, TM_RESPONSE_WAIT_INF);
 	TC_ASSERT_NEQ("task_manager_getinfo_with_group_p", group_list_info, NULL);
 
 	task_manager_clean_infolist(&group_list_info);
