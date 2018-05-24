@@ -46,9 +46,6 @@ protected:
 
 private:
 	int mediaLooper();
-	int getRefCnt();
-	void increaseRef();
-	void decreaseRef();
 
 	MediaQueue mWorkerQueue;
 	std::atomic<bool> mIsRunning;

@@ -34,7 +34,7 @@ MediaWorker::~MediaWorker()
 void MediaWorker::startWorker()
 {
 	std::unique_lock<std::mutex> lock(mRefMtx);
-	increaseRef();
+	++mRefCnt;
 	medvdbg("MediaWorker::startWorker() - increase RefCnt : %d\n", mRefCnt);
 	if (mRefCnt == 1) {
 		mIsRunning = true;
@@ -45,7 +45,9 @@ void MediaWorker::startWorker()
 void MediaWorker::stopWorker()
 {
 	std::unique_lock<std::mutex> lock(mRefMtx);
-	decreaseRef();
+	if (mRefCnt > 0) {
+		--mRefCnt;
+	}
 	medvdbg("MediaWorker::stopWorker() - decrease RefCnt : %d\n", mRefCnt);
 	if (mRefCnt <= 0) {
 		if (mWorkerThread.joinable()) {
@@ -83,18 +85,6 @@ int MediaWorker::mediaLooper()
 		}
 	}
 	return 0;
-}
-
-void MediaWorker::increaseRef()
-{
-	mRefCnt++;
-}
-
-void MediaWorker::decreaseRef()
-{
-	if (mRefCnt > 0) {
-		mRefCnt--;
-	}
 }
 
 bool MediaWorker::isAlive()
