@@ -21,7 +21,7 @@
 #include <assert.h>
 #include <stdio.h>
 #include <sys/types.h>
-#include <audiocodec/streaming/rb.h>
+#include "rb.h"
 #include "internal_defs.h"
 
 #define IS_EMPTY(rbp) (rbp->rd_idx == rbp->wr_idx)

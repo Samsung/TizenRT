@@ -25,24 +25,21 @@ extern "C" {
 
 #define RETURN_IF_FAIL(condition) \
 	do { \
-		if (!(condition)) \
-		{ \
+		if (!(condition)) { \
 			return; \
 		} \
 	} while (0)
 
 #define RETURN_VAL_IF_FAIL(condition, val) \
 	do { \
-		if (!(condition)) \
-		{ \
+		if (!(condition)) { \
 			return val; \
 		} \
 	} while (0)
 
 #define GOTO_IF_FAIL(condition, tag) \
 	do { \
-		if (!(condition)) \
-		{ \
+		if (!(condition)) { \
 			goto tag; \
 		} \
 	} while (0)

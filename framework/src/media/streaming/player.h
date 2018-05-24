@@ -19,7 +19,8 @@
 #ifndef STREAMING_PLAYER_H
 #define STREAMING_PLAYER_H
 
-#include "rbs.h"
+#include "../utils/rb.h"
+#include "../utils/rbs.h"
 #include <audiocodec/mp3dec/pvmp3decoder_api.h>
 #include <audiocodec/aacdec/pvmp4audiodecoder_api.h>
 
