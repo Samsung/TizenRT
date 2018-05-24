@@ -28,7 +28,6 @@
 #include <errno.h>
 #include <sys/wait.h>
 #include <sys/types.h>
-#include "../../../../../os/kernel/sched/sched.h"
 #include "tc_internal.h"
 
 #define USECVAL         1000000
@@ -523,26 +522,6 @@ static void tc_sched_sched_self(void)
 }
 
 /**
-* @fn                   :tc_sched_sched_verifytcb
-* @brief                :Returns true if tcb refers to active task, false if it is state tcb handle
-* @scenario             :sched_verifytcb returns true if tcb refers to active task, false if it is state tcb handle
-* API's covered         :sched_verifytcb,sched_gettcb
-* Preconditions         :none
-* Postconditions        :none
-* @return               :void
-*/
-static void tc_sched_sched_verifytcb(void)
-{
-	bool ret_chk = false;
-	struct tcb_s *st_tcb;
-	st_tcb = sched_self();
-	ret_chk = sched_verifytcb(st_tcb);
-	TC_ASSERT_EQ("sched_verifytcb", ret_chk, true);
-
-	TC_SUCCESS_RESULT();
-}
-
-/**
 * @fn                   :tc_sched_sched_foreach
 * @brief                :Enumerate over each task and provide the TCB of each task to a user callback functions.
 * @scenario             :provides TCB to user callback function "sched_foreach_callback"
@@ -621,35 +600,6 @@ static void tc_sched_sched_getstreams(void)
 
 	stream = sched_getstreams();
 	TC_ASSERT_NEQ("sched_getstreams", stream, NULL);
-
-	TC_SUCCESS_RESULT();
-}
-
-
-/**
-* @fn                   :tc_sched_sched_setpriority
-* @brief                :This function sets the priority of a specified task
-* @scenario             :On success, sched_setparam() returns 0 (OK). On error, -1 (ERROR) is returned
-* API's covered         :sched_setpriority
-* Preconditions         :tcb - the TCB of task to reprioritize
-* Postconditions        :sched_priority - The new task priority
-* @return               :void
-*/
-
-static void tc_sched_sched_setpriority(void)
-{
-	int ret_chk = ERROR;
-	FAR struct tcb_s *tcb;
-
-	tcb = sched_gettcb(getpid());
-	TC_ASSERT_NEQ("sched_gettcb", tcb, NULL);
-
-	ret_chk = sched_setpriority(tcb, SCHED_PRIORITY);
-	TC_ASSERT_EQ("sched_setpriority", ret_chk, OK);
-
-	ret_chk = sched_setpriority(tcb, SCHED_PRIORITY_MIN - 1);
-	TC_ASSERT_EQ("sched_setpriority", ret_chk, ERROR);
-	TC_ASSERT_EQ("sched_setpriority", errno, EINVAL);
 
 	TC_SUCCESS_RESULT();
 }
@@ -798,11 +748,9 @@ int sched_main(void)
 	tc_sched_sched_gettcb();
 	tc_sched_sched_lock_unlock();
 	tc_sched_sched_self();
-	tc_sched_sched_verifytcb();
 	tc_sched_sched_foreach();
 	tc_sched_sched_lockcount();
 	tc_sched_sched_getstreams();
-	tc_sched_sched_setpriority();
 #ifndef CONFIG_BUILD_PROTECTED
 	tc_sched_task_setcancelstate();
 #ifdef CONFIG_CANCELLATION_POINTS
