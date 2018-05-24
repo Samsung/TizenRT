@@ -197,6 +197,13 @@ static int socket_argument_validation(int domain, int type, int protocol)
 	case IPPROTO_TCP:
 	case IPPROTO_UDP:
 	case IPPROTO_UDPLITE:
+	case IPPROTO_RAW:
+#ifdef CONFIG_NET_IPv6
+	case IPPROTO_IPV6:
+#ifdef CONFIG_NET_IPv6_ICMP
+	case IPPROTO_ICMPV6:
+#endif
+#endif /* CONFIG_NET_IPv6 */
 		break;
 	default:
 		return -1;
