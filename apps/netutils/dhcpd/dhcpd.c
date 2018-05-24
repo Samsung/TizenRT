@@ -1337,6 +1337,9 @@ static inline int dhcpd_request(void)
 
 	if (response == DHCPACK) {
 		ndbg("ACK IP %08lx\n", (long)ipaddr);
+		if (ipaddr - CONFIG_NETUTILS_DHCPD_STARTIP >= DHCP_HLEN_ETHERNET) {
+			return ERROR;
+		}
 
 		memset(g_state.ds_leases[ipaddr - CONFIG_NETUTILS_DHCPD_STARTIP].mac, 0, DHCP_HLEN_ETHERNET);
 		g_state.ds_leases[ipaddr - CONFIG_NETUTILS_DHCPD_STARTIP].allocated = true;
