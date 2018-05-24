@@ -73,7 +73,7 @@ public:
 	void notifySync();
 	void notifyObserver(player_observer_command_t cmd);
 
-	int playback(int size);
+	void playback();
 
 private:
 	void createPlayer(player_result_t &ret);
