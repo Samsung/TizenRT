@@ -621,7 +621,7 @@ static void tc_sched_task_setcancelstate(void)
 	int noncancelable_flag;
 	int originstate;
 	int oldstate;
-	struct tcb_s *tcb = this_task();
+	struct tcb_s *tcb = sched_self();
 	int ret_chk;
 
 	noncancelable_flag = tcb->flags & TCB_FLAG_NONCANCELABLE;
