@@ -68,7 +68,7 @@
 #define PING_ID        0xAFAF
 #define PING_DELAY     1000
 #define ICMP_HDR_SIZE sizeof(struct ip_hdr) + sizeof(struct icmp_echo_hdr)
-#if LWIP_IPV6
+#ifdef CONFIG_NET_IPv6
 #define ICMP6_HDR_SIZE sizeof(struct ip6_hdr) + sizeof(struct icmp6_echo_hdr)
 #define PING_SIZE(proto) ((proto == IPPROTO_ICMPV6) ? ICMP6_HDR_SIZE : ICMP_HDR_SIZE )
 #else
@@ -203,7 +203,7 @@ static void ping_recv(int family, int s, struct timespec *ping_time)
 	struct icmp_echo_hdr *iecho = NULL;
 	struct ip_hdr *iphdr = NULL;
 
-#if LWIP_IPV6
+#ifdef CONFIG_NET_IPv6
 	if (family == AF_INET6) {
 		fromlen = sizeof(struct sockaddr_in6);
 	} else
@@ -231,7 +231,7 @@ static void ping_recv(int family, int s, struct timespec *ping_time)
 			printf("ping_recv: timeout\n");
 		}
 
-#if LWIP_IPV6
+#ifdef CONFIG_NET_IPv6
 		if (family == AF_INET6) {
 			if (len >= ICMP6_HDR_SIZE) {
 				struct ip6_hdr *ip6hdr;
@@ -267,6 +267,7 @@ static void ping_recv(int family, int s, struct timespec *ping_time)
 					}
 				}
 
+				printf("ok %d\n", ok);
 				if (ok) {
 					iecho = (struct icmp_echo_hdr *)(curp);
 
@@ -277,7 +278,7 @@ static void ping_recv(int family, int s, struct timespec *ping_time)
 				}
 			}
 		} else
-#endif
+#endif /* CONFIG_NET_IPv6 */
 		{
 			if (len >= ICMP_HDR_SIZE) {
 				inet_ntop(family, (void *)&((struct sockaddr_in *)from)->sin_addr, addr_str, 64);
@@ -324,7 +325,7 @@ static void ping_prepare_echo(int family, struct icmp_echo_hdr *iecho, u16_t len
 	int icmp_hdrlen;
 	size_t i;
 
-#if LWIP_IPV6
+#ifdef CONFIG_NET_IPv6
 	if (family == AF_INET6) {
 		icmp_hdrlen = sizeof(struct icmp6_echo_hdr);
 	} else
@@ -342,7 +343,7 @@ static void ping_prepare_echo(int family, struct icmp_echo_hdr *iecho, u16_t len
 		((char *)iecho)[i] = (char)i;
 	}
 
-#if LWIP_IPV6
+#ifdef CONFIG_NET_IPv6
 	if (family == AF_INET6) {
 		ICMPH_TYPE_SET(iecho, ICMP6_TYPE_EREQ);
 		iecho->chksum = 0;
@@ -362,7 +363,7 @@ static int ping_send(int s, struct sockaddr *to, int size)
 	socklen_t addrlen;
 	struct icmp_echo_hdr *iecho = NULL;
 
-#if LWIP_IPV6
+#ifdef CONFIG_NET_IPv6
 	if (to->sa_family == AF_INET6) {
 		addrlen = sizeof(struct sockaddr_in6);
 		icmplen = sizeof(struct icmp6_echo_hdr) + size;
@@ -415,11 +416,11 @@ int ping_process(int count, const char *taddr, int size)
 	if (strstr(taddr, ".") != NULL) {
 		hints.ai_protocol = IPPROTO_ICMP;
 	}
-#if LWIP_IPV6
+#ifdef CONFIG_NET_IPv6
 	if (strstr(taddr, ":") != NULL) {
 		hints.ai_protocol = hints.ai_protocol ? 0 : IPPROTO_ICMPV6;
 	}
-#endif
+#endif /* CONFIG_NET_IPv6 */
 	if (hints.ai_protocol == 0) {
 		printf("ping_process: invalid target ip address\n");
 		return ERROR;
