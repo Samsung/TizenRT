@@ -33,21 +33,25 @@ public:
 
 	void startWorker();
 	void stopWorker();
-	MediaQueue &getQueue();
 
+	template <typename _Callable, typename... _Args>
+	void enQueue(_Callable &&__f, _Args &&... __args) {
+		mWorkerQueue.enQueue(__f, __args...);
+	}
+	std::function<void()> deQueue();
 	bool isAlive();
 
 protected:
-	virtual int entry() = 0;
-
-	MediaQueue mWorkerQueue;
-	std::atomic<bool> mIsRunning;
+	virtual bool processLoop();
 
 private:
+	int mediaLooper();
 	int getRefCnt();
 	void increaseRef();
 	void decreaseRef();
 
+	MediaQueue mWorkerQueue;
+	std::atomic<bool> mIsRunning;
 	int mRefCnt;
 	std::thread mWorkerThread;
 	std::mutex mRefMtx;

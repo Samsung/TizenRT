@@ -38,7 +38,7 @@ void MediaWorker::startWorker()
 	medvdbg("MediaWorker::startWorker() - increase RefCnt : %d\n", mRefCnt);
 	if (mRefCnt == 1) {
 		mIsRunning = true;
-		mWorkerThread = std::thread(std::bind(&MediaWorker::entry, this));
+		mWorkerThread = std::thread(std::bind(&MediaWorker::mediaLooper, this));
 	}
 }
 
@@ -59,9 +59,30 @@ void MediaWorker::stopWorker()
 	}
 }
 
-MediaQueue& MediaWorker::getQueue()
+std::function<void()> MediaWorker::deQueue()
 {
-	return mWorkerQueue;
+	return mWorkerQueue.deQueue();
+}
+
+bool MediaWorker::processLoop()
+{
+	return false;
+}
+
+int MediaWorker::mediaLooper()
+{
+	medvdbg("MediaWorker : mediaLooper\n");
+
+	while (mIsRunning) {
+		while (processLoop() && mWorkerQueue.isEmpty());
+
+		std::function<void()> run = deQueue();
+		medvdbg("MediaWorker : deQueue\n");
+		if (run != nullptr) {
+			run();
+		}
+	}
+	return 0;
 }
 
 void MediaWorker::increaseRef()
