@@ -18,6 +18,8 @@
 #ifndef __MIF_REG_H
 #define __MIF_REG_H
 
+#include "chip/s5jt200_system.h"
+
 /*****************************/
 /* PCIE register definitions */
 /*****************************/
@@ -132,11 +134,10 @@ struct peterson_mutex {
 #define WIFI2AP_MODAPIF_CONFIG  0x0170	/* WLBT2AP_PERI_ACCESS_END - WLBT2AP_PERI_ACCESS_START */
 #define WIFI2AP_QOS             0x0170	/* RT */
 
-#define SYS_REG_BASE                    0x800A0000
-#define WIFI_BOOT_TEST_RST_CONFIG       ((void *)(SYS_REG_BASE + 0x434))
-#define WIFI2AP_MEM_CONFIG0             ((void *)(SYS_REG_BASE + 0x0440))	/* Control WIFI_MEM_SIZE */
-#define WIFI2AP_MEM_CONFIG1             ((void *)(SYS_REG_BASE + 0x0438))	/* Control WIFI_MEM_BA0 */
-#define WIFI2AP_MEM_CONFIG2             ((void *)(SYS_REG_BASE + 0x043c))	/* Control WIFI_MEM_BA1 */
+#define WIFI_BOOT_TEST_RST_CONFIG	((void *)(S5J_SYSREG_WIFI_IRAM))
+#define WIFI2AP_MEM_CONFIG0			((void *)(S5J_SYSREG_WIFI_MEM_SIZE))	/* Control WIFI_MEM_SIZE */
+#define WIFI2AP_MEM_CONFIG1			((void *)(S5J_SYSREG_WIFI_MEM_BA0))		/* Control WIFI_MEM_BA0 */
+#define WIFI2AP_MEM_CONFIG2			((void *)(S5J_SYSREG_WIFI_MEM_BA1))		/* Control WIFI_MEM_BA1 */
 
 #define WIFI2AP_PMU_SPARE0      ((void *)(PMU_ALIVE_BASE + 0x0900))	/* Control PMU_SPARE0 */
 

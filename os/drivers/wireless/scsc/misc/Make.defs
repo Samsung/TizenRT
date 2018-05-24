@@ -64,5 +64,6 @@ CSRCS += \
 
 DEPPATH += --dep-path wireless$(DELIM)scsc$(DELIM)misc
 VPATH += :wireless$(DELIM)scsc$(DELIM)misc
+CFLAGS += -I$(TOPDIR)/arch/arm/src/s5j
 CFLAGS += ${shell $(INCDIR) $(INCDIROPT) "$(CC)" $(TOPDIR)$(DELIM)drivers$(DELIM)wireless$(DELIM)scsc$(DELIM)misc} -DMX_LOG_PHASE_4
 endif
