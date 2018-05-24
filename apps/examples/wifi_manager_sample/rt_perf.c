@@ -26,9 +26,8 @@ _calc_performance(rt_performance *p, rt_elapsed_time *duration)
 {
 	rt_performance_time *start = &duration->start;
 	rt_performance_time *end = &duration->end;
-
-	printf("start %d %d\n", start->second, start->micro);
-	printf("end %d %d\n", end->second, end->micro);
+	unsigned int start_time = start->second*1000000 + start->micro;
+	unsigned int end_time = end->second*1000000 + end->micro;
 	rt_performance_stat *stat = &p->stat;
 	if (stat->count == 0) {
 		stat->start.second = start->second;
@@ -37,15 +36,20 @@ _calc_performance(rt_performance *p, rt_elapsed_time *duration)
 	stat->count++;
 	stat->end.second = end->second;
 	stat->end.micro = end->micro;
-
 	unsigned int elapsed = (end->second - start->second) * 1000000 + (end->micro - start->micro);
-	printf("elapsed %d\n", elapsed);
+	printf("start %d end %d, elapsed %d us\n", start_time, end_time, elapsed);
+	
 	stat->sum += elapsed;
-	if (elapsed > stat->max) {
+	if (stat->count == 1) {
 		stat->max = elapsed;
-	}
-	if (elapsed < stat->min) {
 		stat->min = elapsed;
+	} else {
+		if (elapsed > stat->max) {
+			stat->max = elapsed;
+		}
+		if (elapsed < stat->min) {
+			stat->min = elapsed;
+		}
 	}
 	if (p->expect != 0 && p->expect < elapsed) {
 		printf("timeout\n");
@@ -121,7 +125,7 @@ void
 _print_stability(rt_stability *stab)
 {
 	rt_stability_stat *s = &stab->stat;
-	printf("S:\t%d\t%d\t%d\t%d\t:%d\n", s->count, s->pass, s->fail, s->skip, s->result);
+	printf("             %-11d%-8d%-8d%-7d:%-d\n", s->count, s->pass, s->fail, s->skip, s->result);
 }
 
 
@@ -129,14 +133,14 @@ void
 _print_performance(rt_performance *perf)
 {
 	rt_performance_stat *p = &perf->stat;
-	printf("P:\t%d\t%d\t%d\t%d\t%d\t:%d\t", p->count, p->max, p->min, p->sum, p->fail, p->result);
+	printf("             %-11d%-8d%-8d%-8d%-8d         :%-d\n", p->count, p->max/1000, p->min/1000, p->sum/1000, p->fail, p->result);
 }
 
 
 void
 _print_smoke(rt_smoke *smoke)
 {
-	printf("TC: %s\n", smoke->func->tc_name);
+	printf("TESTCASE: %s\n", smoke->func->tc_name);
 	_print_performance(smoke->performance);
 	_print_stability(smoke->stability);
 	printf("----------------------------------------------------------------------------\n");
@@ -164,8 +168,8 @@ perf_print_result(rt_pack *pack) {
 	rt_smoke *smoke = pack->head;
 	printf(COLOR_RESULT);
 	printf("============================================================================\n");
-	printf("performance: count\tmax\tmin\tsum\tfail\tresult\t");
-	printf("stability: count\tpass\tfail\tskip\tresult\n");
+	printf("PERFORMANCE: count\tmax\tmin\tsum\tfail\tresult\n");
+	printf("STABILITY  : count\tpass\tfail\tskip\t        result\n");
 	printf("----------------------------------------------------------------------------\n");
 	for (; smoke != NULL; smoke = smoke->next) {
 		_print_smoke(smoke);
