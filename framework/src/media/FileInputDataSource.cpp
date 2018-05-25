@@ -102,7 +102,46 @@ bool FileInputDataSource::isPrepare()
 
 size_t FileInputDataSource::read(unsigned char* buf, size_t size)
 {
-	return fread(buf, sizeof(unsigned char), size, mFp);
+	size_t ret;
+	size_t readSize = size;
+	std::shared_ptr<Decoder> decoder = getDecoder();
+	if (decoder) {
+		size_t frames = 0;
+		/* TODO Currently it just return frames which decoded only ONCE if available */
+		ret = getDecodeFrames(buf, &frames);
+		medvdbg("decode frame : %d\n", frames);
+		if (ret > 0) {
+			return ret;
+		}
+
+		if (readSize > decoder->getAvailSpace()) {
+			readSize = decoder->getAvailSpace();
+		}
+	}
+
+	ret = fread(buf, sizeof(unsigned char), readSize, mFp);
+	/* If file position reaches end of file, return 0 */
+	if (feof(mFp)) {
+		medvdbg("eof!! stop!\n");
+		return 0;
+	}
+	
+	medvdbg("read size : %d\n", ret);
+	if (ret == 0) {
+		return EOF;
+	}
+	
+	if (decoder) {
+		if (!decoder->pushData(buf, ret)) {
+			return EOF;
+		}
+		size_t frames = 0;
+		if (getDecodeFrames(buf, &frames)) {
+			return frames;
+		}
+		return EOF;
+	}
+	return ret;
 }
 
 int FileInputDataSource::readAt(long offset, int origin, unsigned char* buf, size_t size)
