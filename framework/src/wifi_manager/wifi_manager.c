@@ -933,6 +933,7 @@ wifi_manager_result_e _handler_on_connected_state(_wifimgr_msg_s *msg)
 			WIFIMGR_CHECK_RESULT(_wifimgr_disconnect_ap(), "critical error", WIFI_MANAGER_FAIL);
 			WIFIMGR_SET_STATE(WIFIMGR_STA_DISCONNECTED);
 		} else {
+			ndbg("[WM] AUTOCONNECT: go to RECONNECT state\n");
 			WIFIMGR_SET_STATE(WIFIMGR_STA_RECONNECT);
 		}
 #endif /* WIFIDRIVER_SUPPORT_AUTOCONNECT */
@@ -1009,16 +1010,16 @@ wifi_manager_result_e _handler_on_reconnect_state(_wifimgr_msg_s *msg)
 	}
 #else /* WIFIDRIVER_SUPPORT_AUTOCONNECT*/
 	if (msg->event == EVT_DISCONNECT) {
-		nvdbg("[WM] disconnect\n");
+		ndbg("[WM] AUTOCONNECT fail: go to DISCONNECTED\n");
 		WIFIMGR_SET_STATE(WIFIMGR_STA_DISCONNECTED);
 	} else if (msg->event == EVT_STA_CONNECT_FAILED) {
-		nvdbg("[WM] reconnect\n");
+		ndbg("[WM] AUTOCONNECT wait\n");
 	} else if (msg->event == EVT_STA_CONNECTED) {
-		nvdbg("[WM] connected\n");
+		ndbg("[WM] AUTOCONNECT done: go to CONNECTED\n");
 		_handle_user_cb(CB_STA_CONNECTED, NULL);
 		WIFIMGR_SET_STATE(WIFIMGR_STA_CONNECTED);
 	} else if (msg->event == EVT_DEINIT) {
-		nvdbg("[WM] deinit\n");
+		ndbg("[WM] AUTOCONNECT fail: go to DEINIT\n");
 		WIFIMGR_CHECK_RESULT(_wifimgr_deinit(), "critical error\n", WIFI_MANAGER_FAIL);
 		WIFIMGR_SET_STATE(WIFIMGR_UNINITIALIZED);
 	}
