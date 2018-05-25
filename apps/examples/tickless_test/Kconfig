@@ -1,0 +1,14 @@
+#
+# For a description of the syntax of this configuration file,
+# see kconfig-language at https://www.kernel.org/doc/Documentation/kbuild/kconfig-language.txt
+#
+
+config EXAMPLES_TICKLESS_TEST
+	bool "Tickless Kernel test application"
+	default n
+	---help---
+		Enable the Tickless Kernel test application
+
+config USER_ENTRYPOINT
+	string
+	default "tickless_test_main" if ENTRY_TICKLESS_TEST

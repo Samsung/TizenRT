@@ -59,23 +59,23 @@
 /* Register Address *********************************************************/
 #define S5J_MCT_CFG					S5J_MCT_BASE
 
-#define S5J_MCT_TCNTB_OFFSET		0x0000
-#define S5J_MCT_TCNTO_OFFSET		0x0004
-#define S5J_MCT_ICNTB_OFFSET		0x0008
-#define S5J_MCT_ICNTO_OFFSET		0x000C
-#define S5J_MCT_FRCNTB_OFFSET		0x0010
-#define S5J_MCT_FRCNTO_OFFSET		0x0014
-#define S5J_MCT_TCON_OFFSET			0x0020
-#define S5J_MCT_INT_CSTAT_OFFSET	0x0030
-#define S5J_MCT_INT_ENB_OFFSET		0x0034
-#define S5J_MCT_WSTAT_OFFSET		0x0040
+#define S5J_MCT_L_TCNTB_OFFSET		0x0000
+#define S5J_MCT_L_TCNTO_OFFSET		0x0004
+#define S5J_MCT_L_ICNTB_OFFSET		0x0008
+#define S5J_MCT_L_ICNTO_OFFSET		0x000C
+#define S5J_MCT_L_FRCNTB_OFFSET	0x0010
+#define S5J_MCT_L_FRCNTO_OFFSET	0x0014
+#define S5J_MCT_L_TCON_OFFSET		0x0020
+#define S5J_MCT_L_INT_CSTAT_OFFSET	0x0030
+#define S5J_MCT_L_INT_ENB_OFFSET	0x0034
+#define S5J_MCT_L_WSTAT_OFFSET		0x0040
 
 /* Register Bitfield Definitions ********************************************/
 /* MCT TCON register */
-#define S5J_MCT_TCON_FRC_START		(1 << 3)
-#define S5J_MCT_TCON_INTERVAL_MODE	(1 << 2)
-#define S5J_MCT_TCON_INT_START		(1 << 1)
-#define S5J_MCT_TCON_TIMER_START	(1 << 0)
+#define S5J_MCT_L_TCON_FRC_START		(1 << 3)
+#define S5J_MCT_L_TCON_INTERVAL_MODE		(1 << 2)
+#define S5J_MCT_L_TCON_INT_START		(1 << 1)
+#define S5J_MCT_L_TCON_TIMER_START		(1 << 0)
 
 /* MCT INTR register */
 #define S5J_MCT_INTR_FRC			(1 << 1)
@@ -94,5 +94,32 @@
 /* MCT INT register */
 #define S5J_MCT_INT_ENB_FRC_MASK	(1 << 1)
 #define S5J_MCT_INT_ENB_ICNT_MASK	(1 << 0)
+
+/* Global MCT */
+
+#define S5J_MCT_G_CNT_L			(0x100)
+#define S5J_MCT_G_CNT_U			(0x104)
+#define S5J_MCT_G_CNT_WSTAT			(0x110)
+#define S5J_MCT_G_COMP_L(x)			(0x200 + (0x10 * x))
+#define S5J_MCT_G_COMP_U(x)			(0x204 + (0x10 * x))
+#define S5J_MCT_G_COMP_ADD_INCR(x)		(0x208 + (0x10 * x))
+#define S5J_MCT_G_TCON				(0x240)
+#define S5J_MCT_G_INT_CSTAT			(0x244)
+#define S5J_MCT_G_INT_ENB			(0x248)
+#define S5J_MCT_G_WSTAT				(0x24C)
+
+#define G_TCON_START_FRC			(1 << 8)
+
+#define G_TCON_AUTO_INCR_ENABLE(x)		(1 << ((2 * x) + 1))
+#define G_TCON_COMP_ENABLE(x)			(1 << ((2 * x) + 0))
+
+#define WSTAT_G_CNT_U				(1 << 1)
+#define WSTAT_G_CNT_L				(1 << 0)
+
+#define WSTAT_G_COMP_ADD_INCR(x)		(1 << ((x * 4) + 2))
+#define WSTAT_G_COMP_U(x)			(1 << ((x * 4) + 1))
+#define WSTAT_G_COMP_L(x)			(1 << ((x * 4) + 0))
+
+#define WSTAT_G_TCON				(1 << 16)
 
 #endif /* __ARCH_ARM_SRC_S5J_CHIP_S5JT200_MCT_H */
