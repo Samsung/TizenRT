@@ -32,12 +32,6 @@ PlayerWorker::~PlayerWorker()
 {
 }
 
-PlayerWorker& PlayerWorker::getWorker()
-{
-	static PlayerWorker worker;
-	return worker;
-}
-
 bool PlayerWorker::processLoop()
 {
 	if (mCurPlayer && (mCurPlayer->mCurState == PLAYER_STATE_PLAYING)) {

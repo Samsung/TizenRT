@@ -37,10 +37,10 @@
 using namespace std;
 
 namespace media {
-class RecorderWorker : public MediaWorker
+class RecorderWorker : public MediaWorker, public SingletonWorker<RecorderWorker>
 {
 public:
-	static RecorderWorker& getWorker();
+	friend SingletonWorker<RecorderWorker>;
 
 	std::shared_ptr<MediaRecorderImpl> getCurrentRecorder();
 	void setCurrentRecorder(std::shared_ptr<MediaRecorderImpl> mr);

@@ -35,10 +35,10 @@
 using namespace std;
 
 namespace media {
-class RecorderObserverWorker : public MediaWorker
+class RecorderObserverWorker : public MediaWorker, public SingletonWorker<RecorderObserverWorker>
 {
 public:
-	static RecorderObserverWorker& getWorker();
+	friend SingletonWorker<RecorderObserverWorker>;
 private:
 	RecorderObserverWorker();
 	virtual ~RecorderObserverWorker();

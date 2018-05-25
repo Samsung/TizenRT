@@ -29,12 +29,6 @@ RecorderWorker::~RecorderWorker()
 	medvdbg("RecorderWorker::~RecorderWorker()\n");
 }
 
-RecorderWorker& RecorderWorker::getWorker()
-{
-	static RecorderWorker worker;
-	return worker;
-}
-
 bool RecorderWorker::processLoop()
 {
 	if (mCurRecorder && (mCurRecorder->getState() == RECORDER_STATE_RECORDING)) {

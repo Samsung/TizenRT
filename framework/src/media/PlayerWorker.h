@@ -24,10 +24,10 @@
 #include "MediaWorker.h"
 
 namespace media {
-class PlayerWorker : public MediaWorker
+class PlayerWorker : public MediaWorker, public SingletonWorker<PlayerWorker>
 {
 public:
-	static PlayerWorker &getWorker();
+	friend SingletonWorker<PlayerWorker>;
 
 	void setPlayer(std::shared_ptr<MediaPlayerImpl>);
 	std::shared_ptr<MediaPlayerImpl> getPlayer();
