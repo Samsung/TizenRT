@@ -138,32 +138,6 @@ typedef struct _wifimgr_info _wifimgr_info_s;
 #define WIFIMGR_SET_NO_CBK (g_manager_info.chk_cbk = 1)
 #define WIFIMGR_RESET_CBK_CHK (g_manager_info.chk_cbk = 0)
 #define WIFIMGR_CHECK_CBK (g_manager_info.chk_cbk == 0)
-#define WIFIMGR_TRIGGER_RECONNECT_WORKER		\
-	do {										\
-		g_manager_info.conn_tries++;			\
-		pthread_mutex_lock(&g_reconn_mutex);	\
-		pthread_cond_signal(&g_reconn_signal);	\
-		pthread_mutex_unlock(&g_reconn_mutex);	\
-	} while (0)
-
-#define WIFIMGR_WAIT_RECONNECT_EVENT							\
-	do {														\
-		pthread_mutex_lock(&g_reconn_mutex);					\
-		pthread_cond_wait(&g_reconn_signal, &g_reconn_mutex);	\
-		pthread_mutex_unlock(&g_reconn_mutex);					\
-		nvdbg("[WM] T%d wake up\n", getpid());						\
-	} while (0)
-
-#define WIFIMGR_TERMINATE_RECONN_WORKER									\
-	do {																\
-		nvdbg("[WM] send terminate signal to worker(%d/%d)\n", g_manager_info.conn_tries, g_manager_info.max_tries); \
-		pthread_mutex_lock(&g_reconn_mutex);							\
-		g_manager_info.terminate = true;								\
-		pthread_cond_signal(&g_reconn_signal);							\
-		pthread_mutex_unlock(&g_reconn_mutex);							\
-		nvdbg("[WM] wait worker to terminate\n");							\
-		pthread_join(g_manager_info.reconn_id, NULL);					\
-	} while (0)
 
 #define WIFIMGR_GET_PREVSTATE g_manager_info.prev_state
 #define WIFIMGR_STORE_PREV_STATE (g_manager_info.prev_state = g_manager_info.state)
@@ -264,8 +238,7 @@ typedef struct _wifimgr_info _wifimgr_info_s;
 
 #define LOCK_WIFIMGR pthread_mutex_lock(&g_manager_info.state_lock)
 #define UNLOCK_WIFIMGR pthread_mutex_unlock(&g_manager_info.state_lock)
-#define LOCK_RECONN pthread_mutex_lock(&g_reconn_mutex);
-#define UNLOCK_RECONN pthread_mutex_unlock(&g_reconn_mutex);
+
 #define WIFIMGR_FREE_CONNMSG(msg)				\
 	do {										\
 		free(msg->config);						\
@@ -297,8 +270,38 @@ static _wifimgr_info_s g_manager_info = {{0}, {0}, 0, 0, 0,
 										 WM_APINFO_INITIALIZER,
 										 WM_RECONN_INITIALIZER,
 										 0, 0, 10};
+#if WIFIDRIVER_SUPPORT_AUTOCONNECT == 0
 static pthread_mutex_t g_reconn_mutex = PTHREAD_MUTEX_INITIALIZER;
 static pthread_cond_t g_reconn_signal = PTHREAD_COND_INITIALIZER;
+#define LOCK_RECONN pthread_mutex_lock(&g_reconn_mutex);
+#define UNLOCK_RECONN pthread_mutex_unlock(&g_reconn_mutex);
+#define WIFIMGR_TRIGGER_RECONNECT_WORKER		\
+	do {										\
+		g_manager_info.conn_tries++;			\
+		pthread_mutex_lock(&g_reconn_mutex);	\
+		pthread_cond_signal(&g_reconn_signal);	\
+		pthread_mutex_unlock(&g_reconn_mutex);	\
+	} while (0)
+
+#define WIFIMGR_WAIT_RECONNECT_EVENT							\
+	do {														\
+		pthread_mutex_lock(&g_reconn_mutex);					\
+		pthread_cond_wait(&g_reconn_signal, &g_reconn_mutex);	\
+		pthread_mutex_unlock(&g_reconn_mutex);					\
+		nvdbg("[WM] T%d wake up\n", getpid());						\
+	} while (0)
+
+#define WIFIMGR_TERMINATE_RECONN_WORKER									\
+	do {																\
+		nvdbg("[WM] send terminate signal to worker(%d/%d)\n", g_manager_info.conn_tries, g_manager_info.max_tries); \
+		pthread_mutex_lock(&g_reconn_mutex);							\
+		g_manager_info.terminate = true;								\
+		pthread_cond_signal(&g_reconn_signal);							\
+		pthread_mutex_unlock(&g_reconn_mutex);							\
+		nvdbg("[WM] wait worker to terminate\n");							\
+		pthread_join(g_manager_info.reconn_id, NULL);					\
+	} while (0)
+#endif
 #ifdef CONFIG_ENABLE_IOTIVITY
 static mqd_t g_dw_nwevent_mqfd;
 #endif
@@ -384,6 +387,7 @@ void __tizenrt_manual_linkset(const char *msg)
 #endif
 
 
+#if WIFIDRIVER_SUPPORT_AUTOCONNECT == 0
 static void *_reconn_worker(void *arg)
 {
 	_wifimgr_conn_info_msg_s *msg = (_wifimgr_conn_info_msg_s *)arg;
@@ -460,6 +464,7 @@ static void *_reconn_worker(void *arg)
 	nvdbg("[WM] reconnect func terminated\n");
 	return NULL;
 }
+#endif /* WIFIDRIVER_SUPPORT_AUTOCONNECT*/
 
 
 wifi_manager_result_e
@@ -1030,6 +1035,7 @@ wifi_manager_result_e _handler_on_reconnect_state(_wifimgr_msg_s *msg)
 wifi_manager_result_e _handler_on_reconnecting_state(_wifimgr_msg_s *msg)
 {
 	WM_LOG_HANDLER_START;
+#if WIFIDRIVER_SUPPORT_AUTOCONNECT == 0
 	if (msg->event == EVT_STA_CONNECT_FAILED) {
 		nvdbg("[WM] reconnect fail\n");
 		if (g_manager_info.conn_tries == g_manager_info.max_tries) {
@@ -1048,6 +1054,7 @@ wifi_manager_result_e _handler_on_reconnecting_state(_wifimgr_msg_s *msg)
 		_handle_user_cb(CB_STA_CONNECTED, NULL);
 		WIFIMGR_SET_STATE(WIFIMGR_STA_CONNECTED);
 	}
+#endif /* WIFIDRIVER_SUPPORT_AUTOCONNECT*/
 	return WIFI_MANAGER_SUCCESS;
 }
 
@@ -1055,12 +1062,14 @@ wifi_manager_result_e _handler_on_reconnecting_state(_wifimgr_msg_s *msg)
 wifi_manager_result_e _handler_on_connect_cancel_state(_wifimgr_msg_s *msg)
 {
 	WM_LOG_HANDLER_START;
+#if WIFIDRIVER_SUPPORT_AUTOCONNECT == 0
 	if (msg->event == EVT_STA_CONNECTED) {
 		WIFIMGR_CHECK_RESULT(_wifimgr_disconnect_ap(), "critical error", WIFI_MANAGER_FAIL);
 		WIFIMGR_SET_STATE(WIFIMGR_STA_DISCONNECTING);
 	} else if (msg->event == EVT_STA_CONNECT_FAILED) {
 		WIFIMGR_SET_STATE(WIFIMGR_STA_DISCONNECTED);
 	}
+#endif /* WIFIDRIVER_SUPPORT_AUTOCONNECT*/
 	return WIFI_MANAGER_SUCCESS;
 }
 
