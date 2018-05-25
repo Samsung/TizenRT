@@ -352,15 +352,6 @@ int board_app_initialize(void)
 	}
 #endif /* CONFIG_SIDK_S5JT200_AUTOMOUNT_SSSRW */
 
-#ifdef CONFIG_FS_PROCFS
-	/* Mount the procfs file system */
-	ret = mount(NULL, SIDK_S5JT200_PROCFS_MOUNTPOINT, "procfs", 0, NULL);
-	if (ret < 0) {
-		lldbg("Failed to mount procfs at %s: %d\n",
-				SIDK_S5JT200_PROCFS_MOUNTPOINT, ret);
-	}
-#endif
-
 #if defined(CONFIG_RAMMTD) && defined(CONFIG_FS_SMARTFS)
 	rambuf = (uint8_t *)malloc(bufsize);
 
