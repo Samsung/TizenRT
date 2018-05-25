@@ -531,49 +531,16 @@ void MediaPlayerImpl::notifyObserver(player_observer_command_t cmd)
 
 void MediaPlayerImpl::playback()
 {
-	std::shared_ptr<Decoder> mDecoder = mInputDataSource->getDecoder();
-	if (mDecoder) {
-		size_t num_read = mInputDataSource->read(mBuffer,
-			((size_t)mBufSize < mDecoder->getAvailSpace()) ?
-				mBufSize : mDecoder->getAvailSpace());
-		medvdbg("MediaPlayer Worker(has mDecoder) : num_read = %d\n", num_read);
-
-		/* Todo: Below code has an issue about file EOF.
-			*       Should be fixed after discuss.
-			*/
-		if (num_read == 0 && mDecoder->empty()) {
-			notifyObserver(PLAYER_OBSERVER_COMMAND_FINISHIED);
-			stop();
-		} else {
-			/* Todo: Currently, below function is working correctly.
-				*       Because the read size cannot be larger than remain data space.
-				*       But this isn't beautiful logic. Need to rearrange and modify the logic.
-				*/
-			mDecoder->pushData(mBuffer, num_read);
-
-			size_t size = 0;
-			unsigned int sampleRate = 0;
-			unsigned short channels = 0;
-			while (mDecoder->getFrame(mBuffer, &size, &sampleRate, &channels)) {
-				medvdbg("Decoded Frame: %d bytes %d %d\n", size, sampleRate, channels);
-				mInputDataSource->setSampleRate(sampleRate);
-				mInputDataSource->setChannels(channels);
-				start_audio_stream_out(mBuffer, get_output_bytes_frame_count(size));
-			}
-		}
+	size_t num_read = mInputDataSource->read(mBuffer,(int)mBufSize);
+	meddbg("num_read : %d\n", num_read);
+	if (num_read > 0) {
+		start_audio_stream_out(mBuffer, get_output_bytes_frame_count(num_read));
+	} else if (num_read == 0) {
+		notifyObserver(PLAYER_OBSERVER_COMMAND_FINISHIED);
+		stop();
 	} else {
-		size_t num_read = mInputDataSource->read(
-			mBuffer,
-			((int)mBufSize < get_output_frames_byte_size(get_output_frame_count())) ?
-				mBufSize : get_output_frames_byte_size(get_output_frame_count()));
-		medvdbg("MediaPlayer Worker : num_read = %d\n", num_read);
-
-		if (num_read > 0) {
-			start_audio_stream_out(mBuffer, get_output_bytes_frame_count(num_read));
-		} else {
-			notifyObserver(PLAYER_OBSERVER_COMMAND_FINISHIED);
-			stop();
-		}
+		notifyObserver(PLAYER_OBSERVER_COMMAND_ERROR);
+		stop();
 	}
 }
 
