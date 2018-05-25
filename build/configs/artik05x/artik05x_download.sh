@@ -39,8 +39,7 @@ test $(expr match $(gcc -dumpmachine) '^x86_64*.') -eq 0 \
     && arch=32 || arch=64
 
 case "$(uname)" in
-    CYGWIN* ) TOOL=win$arch ;;
-    MINGW* ) TOOL=win$arch ;;
+    MINGW*|MSYS*|CYGWIN* ) TOOL=win$arch ;;
     Darwin* ) TOOL=macos ;;
     Linux* ) TOOL=linux$arch ;;
 esac
@@ -174,7 +173,9 @@ make-target-bin() {
             test ! -e $bin && return 1 ;;
     esac
 
-    echo $bin
+    test $(expr match $TOOL win) -ne 0 && \
+        echo $(cygpath -m $bin) ||
+        echo $bin
 
     return 0
 }
@@ -221,8 +222,8 @@ download()
 signing() {
     local bin=$1
     local codesigner=$secure_tool_path/$TOOL/$CONFIG_ARTIK05X_CODESIGNER_EXEC
-    test $(expr match "$CONFIG_HOST_WINDOWS" y) -eq 1 \
-        && codesigner=${codesigner}.exe
+    test $(expr match $TOOL win) -ne 0 && \
+        codesigner=${codesigner}.exe
 
     if test ! -e $1; then
         echo "OS image file not found" >&2
@@ -263,7 +264,7 @@ while test $# -gt 0; do
                 exit 1
             fi
             ;;
-        --secure) secure_tool_path=$CONFIG_ARTIK05X_CODESIGNER_PATH ;;
+        --secure) secure_tool_path=$OS_DIR_PATH/$CONFIG_ARTIK05X_CODESIGNER_PATH ;;
         --verify) VERIFY=verify ;;
         --make-only) make=y;;
         erase) erase=1 ;;
