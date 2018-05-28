@@ -37,6 +37,7 @@
 #define LOOP_CNT		5
 #define SEM_PRIO_DEFAULT	3
 
+#ifndef CONFIG_DISABLE_PTHREAD
 static sem_t g_empty;
 static sem_t g_full;
 static sem_t g_sem;
@@ -171,7 +172,7 @@ cleanup:
 	sem_destroy(&g_full);
 	sem_destroy(&g_sem);
 }
-
+#endif
 
 /**
 * @fn                   :tc_semaphore_sem_trywait
@@ -468,7 +469,9 @@ static void tc_semaphore_sem_tickwait(void)
 int semaphore_main(void)
 {
 	tc_semaphore_sem_destroy();
+#ifndef CONFIG_DISABLE_PTHREAD
 	tc_semaphore_sem_post_wait();
+#endif
 #ifdef CONFIG_PRIORITY_INHERITANCE
 	tc_semaphore_sem_setprotocol();
 #endif

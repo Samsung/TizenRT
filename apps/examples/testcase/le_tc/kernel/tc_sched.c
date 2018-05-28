@@ -44,7 +44,9 @@
 #define PID_IDLE        0
 #define TASK_CANCEL_INVALID  -1
 
+#ifndef CONFIG_DISABLE_PTHREAD
 pthread_t thread1, thread2;
+#endif
 
 pid_t g_task_pid;
 bool g_callback = false;
@@ -113,6 +115,7 @@ static int function_waitid_2(int argc, char *argv[])
 }
 #endif
 
+#ifndef CONFIG_DISABLE_PTHREAD
 /**
 * @fn                   :threadfunc_callback
 * @description          :Function for tc_sched_sched_yield
@@ -128,6 +131,7 @@ static void *threadfunc_callback(void *param)
 	g_pthread_callback = false;
 	return NULL;
 }
+#endif
 
 /**
 * @fn                   :tc_sched_sched_setget_scheduler_param
@@ -238,7 +242,7 @@ static void tc_sched_sched_rr_get_interval(void)
 
 	TC_SUCCESS_RESULT();
 }
-
+#ifndef CONFIG_DISABLE_PTHREAD
 /**
 * @fn                   :tc_sched_sched_yield
 * @brief                :sched_yield() causes the calling thread to relinquish the CPU.
@@ -266,6 +270,7 @@ static void tc_sched_sched_yield(void)
 	pthread_join(thread2, 0);
 	TC_SUCCESS_RESULT();
 }
+#endif
 
 /**
 * @fn                   :tc_sched_wait
@@ -584,7 +589,7 @@ static void tc_sched_sched_lockcount(void)
 
 	TC_SUCCESS_RESULT();
 }
-
+#if CONFIG_NFILE_DESCRIPTORS > 0 && CONFIG_NFILE_STREAMS > 0
 /**
 * @fn                   :tc_sched_sched_getstreams
 * @brief                :return a pointer to the streams list for this thread
@@ -604,6 +609,7 @@ static void tc_sched_sched_getstreams(void)
 
 	TC_SUCCESS_RESULT();
 }
+#endif
 
 #if !defined(CONFIG_BUILD_PROTECTED)
 /**
@@ -745,13 +751,17 @@ int sched_main(void)
 #endif
 	tc_sched_sched_setget_scheduler_param();
 	tc_sched_sched_rr_get_interval();
+#ifndef CONFIG_DISABLE_PTHREAD
 	tc_sched_sched_yield();
+#endif
 	tc_sched_sched_gettcb();
 	tc_sched_sched_lock_unlock();
 	tc_sched_sched_self();
 	tc_sched_sched_foreach();
 	tc_sched_sched_lockcount();
+#if CONFIG_NFILE_DESCRIPTORS > 0 && CONFIG_NFILE_STREAMS > 0
 	tc_sched_sched_getstreams();
+#endif
 #ifndef CONFIG_BUILD_PROTECTED
 	tc_sched_task_setcancelstate();
 #ifdef CONFIG_CANCELLATION_POINTS

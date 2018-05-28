@@ -119,6 +119,8 @@ static mqd_t g_timedrecv_mqfd;
 static int enter_notify_handler = 0;
 static int timedsend_check = 0;
 static int timedreceive_check = 0;
+static int g_sender_status = 0;
+static int g_receiver_status = 0;
 /**************************************************************************
 * Private Functions
 **************************************************************************/
@@ -435,7 +437,8 @@ static void *sender_thread(void *arg)
 	g_send_mqfd = mq_open("mqueue", O_WRONLY | O_CREAT, 0666, &attr);
 	if (g_send_mqfd == (mqd_t)-1) {
 		printf("tc_mqueue_mq_open FAIL\n");
-		pthread_exit((pthread_addr_t)1);
+		g_sender_status = ERROR;
+		return NULL;
 	}
 
 	/* Fill in a test message buffer to send */
@@ -460,8 +463,8 @@ static void *sender_thread(void *arg)
 		g_send_mqfd = NULL;
 	}
 
-	pthread_exit((pthread_addr_t)nerrors);
-	return (pthread_addr_t)nerrors;
+	g_sender_status = nerrors;
+	return NULL;
 }
 
 /**
@@ -497,7 +500,8 @@ static void *receiver_thread(void *arg)
 	g_recv_mqfd = mq_open("mqueue", O_RDONLY | O_CREAT, 0666, &attr);
 	if (g_recv_mqfd == (mqd_t)ERROR) {
 		printf("tc_mqueue_mq_open FAIL\n");
-		pthread_exit((pthread_addr_t)1);
+		g_receiver_status = ERROR;
+		return NULL;
 	}
 
 	/* Perform the receive TEST_RECEIVE_NMSGS times */
@@ -546,8 +550,8 @@ static void *receiver_thread(void *arg)
 		g_recv_mqfd = NULL;
 	}
 
-	pthread_exit((pthread_addr_t)nerrors);
-	return (pthread_addr_t)nerrors;
+	g_receiver_status = nerrors;
+	return NULL;
 }
 
 /**
@@ -561,99 +565,42 @@ static void *receiver_thread(void *arg)
  */
 static void tc_mqueue_mq_open_close_send_receive(void)
 {
-	pthread_t sender;
-	pthread_t receiver;
-	void *result;
-	pthread_attr_t attr;
-	struct sched_param sparam;
-	FAR void *expected;
+	const char* sendername = "Sender";
+	const char* receivername = "Receiver";
+	int pids;
+	int pidr;
 	int prio_min;
 	int prio_max;
 	int prio_mid;
-	int status;
 
 	/* Reset globals for the beginning of the test */
 
 	g_send_mqfd = NULL;
 	g_recv_mqfd = NULL;
 
-	/* Start the sending thread at higher priority */
-
-	status = pthread_attr_init(&attr);
-	TC_ASSERT_EQ("pthread_attr_init", status, OK);
-
-	status = pthread_attr_setstacksize(&attr, STACKSIZE);
-	TC_ASSERT_EQ("pthread_attr_setstacksize", status, OK);
-
 	prio_min = sched_get_priority_min(SCHED_FIFO);
 	prio_max = sched_get_priority_max(SCHED_FIFO);
 	prio_mid = (prio_min + prio_max) / 2;
 
-	sparam.sched_priority = prio_mid;
-	status = pthread_attr_setschedparam(&attr, &sparam);
-	TC_ASSERT_EQ("pthread_attr_setschedparam", status, OK);
+	/* Start the sending thread at higher priority */
+	pidr = task_create(receivername, prio_mid, STACKSIZE, (main_t)receiver_thread, NULL);
+	TC_ASSERT_GT("task_create", pidr, 0);
 
-	status = pthread_create(&receiver, &attr, receiver_thread, NULL);
-	TC_ASSERT_EQ("pthread_create", status, OK);
+	pids = task_create(sendername, (prio_mid + prio_min) / 2, STACKSIZE, (main_t)sender_thread, NULL);
+	TC_ASSERT_GT("task_create", pids, 0);
 
-	/* Start the sending thread at lower priority */
+	usleep(2 * HALF_SECOND_USEC_USEC);
 
-	status = pthread_attr_init(&attr);
-	TC_ASSERT_EQ("pthread_attr_init", status, OK);
-
-	status = pthread_attr_setstacksize(&attr, STACKSIZE);
-	TC_ASSERT_EQ("pthread_attr_setstacksize", status, OK);
-
-	sparam.sched_priority = (prio_min + prio_mid) / 2;
-	status = pthread_attr_setschedparam(&attr, &sparam);
-	TC_ASSERT_EQ("pthread_attr_setschedparam", status, OK);
-
-	status = pthread_create(&sender, &attr, sender_thread, NULL);
-	TC_ASSERT_EQ("pthread_create", status, OK);
-
-	pthread_join(sender, &result);
-	TC_ASSERT_EQ("pthread_join", result, (void *)0);
-#ifndef CONFIG_DISABLE_SIGNALS
-	/* Wake up the receiver thread with a signal */
-
-	pthread_kill(receiver, 9);
-
-	/* Wait a bit to see if the thread exits on its own */
-
-	usleep(HALF_SECOND_USEC_USEC);
-#endif
-
-	/* Then cancel the thread and see if it did */
-
-	expected = PTHREAD_CANCELED;
-	status = pthread_cancel(receiver);
-	if (status == ESRCH) {
-		tckndbg("receiver has already terminated\n");
-		expected = (FAR void *)0;
-	}
-
-	/* Check the result.  If the pthread was canceled, PTHREAD_CANCELED is the
-	 * correct result.  Zero might be returned if the thread ran to completion
-	 * before it was canceled.
-	 */
-
-	pthread_join(receiver, &result);
-	TC_ASSERT_EQ("pthread_join", result, expected);
-
-	/* Message queues are global resources and persist for the life the the
-	 * task group.  The message queue opened by the sender_thread must be closed
-	 * since the sender pthread may have been canceled and may have left the
-	 * message queue open.
-	 */
-
-	if (result == PTHREAD_CANCELED && g_recv_mqfd) {
-		TC_ASSERT_GEQ("mq_close", mq_close(g_recv_mqfd), 0);
-	} else if (result != PTHREAD_CANCELED && g_recv_mqfd) {
+	if (g_recv_mqfd) {
 		TC_ASSERT_EQ("mq_close", mq_close(g_recv_mqfd), 0);
 	}
 
-	/* Make sure that the receive queue is closed as well */
-	TC_ASSERT_EQ("mq_close", g_send_mqfd, NULL);
+	if (g_send_mqfd) {
+		TC_ASSERT_EQ("mq_close", mq_close(g_send_mqfd), 0);
+	}
+
+	TC_ASSERT_EQ("mq_send", g_sender_status, 0);
+	TC_ASSERT_EQ("mq_receive", g_receiver_status, 0);
 
 	/* Destroy the message queue */
 	TC_ASSERT_GEQ("mq_unlink", mq_unlink("mqueue"), 0);
@@ -661,6 +608,7 @@ static void tc_mqueue_mq_open_close_send_receive(void)
 	TC_SUCCESS_RESULT();
 }
 
+#ifndef CONFIG_DISABLE_SIGNALS
 static void tc_mqueue_mq_notify(void)
 {
 	mqd_t mqdes;
@@ -719,6 +667,7 @@ cleanup:
 	mq_close(mqdes);
 	mq_unlink("noti_queue");
 }
+#endif
 
 static void tc_mqueue_mq_timedsend_timedreceive(void)
 {
@@ -858,7 +807,9 @@ cleanup1:
 int mqueue_main(void)
 {
 	tc_mqueue_mq_open_close_send_receive();
+#ifndef CONFIG_DISABLE_SIGNALS
 	tc_mqueue_mq_notify();
+#endif
 	tc_mqueue_mq_timedsend_timedreceive();
 	tc_mqueue_mq_timedsend_timedreceive_failurechecks();
 	tc_mqueue_mq_unlink();

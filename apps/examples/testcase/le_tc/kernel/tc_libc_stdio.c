@@ -591,20 +591,22 @@ static void tc_libc_stdio_putchar(void)
 
 int libc_stdio_main(void)
 {
+#if CONFIG_NFILE_DESCRIPTORS > 0
 	tc_libc_stdio_flush();
+	tc_libc_stdio_puts();
+	tc_libc_stdio_perror();
+	tc_libc_stdio_vfprintf("%s", printable_chars);
+	tc_libc_stdio_putchar();
+	tc_libc_stdio_vprintf("%s", printable_chars);
+#endif
 	tc_libc_stdio_vasprintf("%s", printable_chars);
 	tc_libc_stdio_snprintf();
 	tc_libc_stdio_sscanf();
 	tc_libc_stdio_sprintf();
 	tc_libc_stdio_vsscanf_vsprintf("%s", printable_chars);
-	tc_libc_stdio_puts();
-	tc_libc_stdio_vprintf("%s", printable_chars);
 	tc_libc_stdio_vsnprintf("%s", printable_chars);
-	tc_libc_stdio_perror();
 	tc_libc_stdio_printf();
-	tc_libc_stdio_vfprintf("%s", printable_chars);
 	tc_libc_stdio_asprintf();
-	tc_libc_stdio_putchar();
 
 	return 0;
 }

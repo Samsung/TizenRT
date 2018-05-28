@@ -599,14 +599,11 @@ static void tc_libc_stdlib_bsearch(void)
  */
 static void tc_libc_stdlib_abort(void)
 {
-	pthread_t th_id;
-	int ret_chk;
+	const char* name = "task_abort";
+	int pid;
 
-	ret_chk = pthread_create(&th_id, NULL, thread_func, NULL);
-	TC_ASSERT_EQ("pthread_create", ret_chk, OK);
-
-	ret_chk = pthread_join(th_id, NULL);
-	TC_ASSERT_EQ("pthread_join", ret_chk, OK);
+	pid = task_create(name, SCHED_PRIORITY_DEFAULT, 512, (main_t)thread_func, (char * const *)NULL);
+	TC_ASSERT_GT("task_create", pid, OK);
 
 	TC_SUCCESS_RESULT();
 }

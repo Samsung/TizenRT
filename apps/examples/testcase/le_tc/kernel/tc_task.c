@@ -80,7 +80,7 @@ static int delete_task(int argc, char *argv[])
 	g_callback = ERROR;
 	return OK;
 }
-
+#ifndef CONFIG_DISABLE_SIGNALS
 /**
 * @fn                   :restart_task
 * @brief                :utility function for tc_task_task_restart
@@ -91,7 +91,7 @@ static int restart_task(int argc, char *argv[])
 	g_callback++;
 	return OK;
 }
-
+#endif
 /**
 * @fn                   :exit_task function
 * @brief                :utility function for tc_task_exit
@@ -224,7 +224,7 @@ static void tc_task_task_delete(void)
 
 	TC_SUCCESS_RESULT();
 }
-
+#ifndef CONFIG_DISABLE_SIGNALS
 /**
 * @fn                   :tc_task_task_restart
 * @brief                :Restart a task
@@ -268,6 +268,7 @@ static void tc_task_task_restart(void)
 
 	TC_SUCCESS_RESULT();
 }
+#endif
 
 /**
 * @fn                   :tc_task_exit
@@ -428,7 +429,9 @@ int task_main(void)
 	tc_task_prctl();
 	tc_task_task_create();
 	tc_task_task_delete();
+#ifndef CONFIG_DISABLE_SIGNALS
 	tc_task_task_restart();
+#endif
 
 	return 0;
 }
