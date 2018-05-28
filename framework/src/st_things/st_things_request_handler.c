@@ -831,8 +831,12 @@ bool handle_get_req_helper(const char *res_uri, const char *query, OCRepPayload 
 	}
 	// Remove 'rt' and 'if' from query parameters
 	if (NULL != query && strlen(query) > 0) {
-		remove_query_parameter(req_msg->query, OC_RSRVD_RESOURCE_TYPE);
-		remove_query_parameter(req_msg->query, OC_RSRVD_INTERFACE);
+		if (strstr(req_msg->query, OC_RSRVD_RESOURCE_TYPE) != NULL) {
+			remove_query_parameter(req_msg->query, OC_RSRVD_RESOURCE_TYPE);
+		}
+		if (strstr(req_msg->query, OC_RSRVD_INTERFACE) != NULL) {
+			remove_query_parameter(req_msg->query, OC_RSRVD_INTERFACE);
+		}
 	}
 	// Setup the response representation for application. This representation will be handed over to the application.
 	st_things_representation_s *things_resp_rep = create_representation_inst_internal(resp_payload);
@@ -1004,9 +1008,12 @@ bool handle_post_req_helper(const char *res_uri, const char *query, OCRepPayload
 
 	if (res) {
 		// Remove 'rt' and 'if' from query parameters.
-		remove_query_parameter(req_msg->query, OC_RSRVD_RESOURCE_TYPE);
-		remove_query_parameter(req_msg->query, OC_RSRVD_INTERFACE);
-
+		if (strstr(req_msg->query, OC_RSRVD_RESOURCE_TYPE) != NULL) {
+			remove_query_parameter(req_msg->query, OC_RSRVD_RESOURCE_TYPE);
+		}
+		if (strstr(req_msg->query, OC_RSRVD_INTERFACE) != NULL) {
+			remove_query_parameter(req_msg->query, OC_RSRVD_INTERFACE);
+		}
 		res = g_handle_set_req_cb(req_msg, things_resp_rep);
 		THINGS_LOG_D(TAG, "The result of application's callback : %s", res ? "true" : "false");
 	} else {
