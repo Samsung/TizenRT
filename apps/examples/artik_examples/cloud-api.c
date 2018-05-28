@@ -234,7 +234,7 @@ static int devices_command(int argc, char *argv[])
 	ssl.ca_cert.data = (char *)akc_root_ca;
 	ssl.ca_cert.len = sizeof(akc_root_ca);
 
-	err = cloud->get_user_devices(argv[3], count, properties, 0, argv[4], &response, &ssl);
+	err = cloud->get_user_devices(argv[3], count, properties, offset, argv[4], &response, &ssl);
 	if (err != S_OK) {
 		FAIL_AND_EXIT("Failed to get user devices\n");
 		goto exit;
