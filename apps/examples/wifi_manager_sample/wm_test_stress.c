@@ -319,14 +319,11 @@ TEST_F(softap_stop)
 	RT_END_TEST;
 }
 
-
-RT_SET_SMOKE_TAIL(WM_TEST_TRIAL, 3000000, "station join", sta_join);
-RT_SET_SMOKE(WM_TEST_TRIAL, 100000, "station leave", sta_leave, sta_join);
+RT_SET_SMOKE_TAIL(WM_TEST_TRIAL, 8000000, "station join", sta_join);
+RT_SET_SMOKE(WM_TEST_TRIAL, 1000000, "station leave", sta_leave, sta_join);
 RT_SET_SMOKE(WM_TEST_TRIAL, 5000000, "station scan", sta_scan, sta_leave);
-RT_SET_SMOKE(WM_TEST_TRIAL, 1000000, "softap start", softap_start, sta_scan);
-//RT_SET_SMOKE(WM_TEST_TRIAL, 3000000, "softap scan", softap_scan, softap_start);
+RT_SET_SMOKE(WM_TEST_TRIAL, 5000000, "softap start", softap_start, sta_scan);
 RT_SET_SMOKE(WM_TEST_TRIAL, 2000000, "softap stop", softap_stop, softap_start);
-
 RT_SET_PACK(wifi, softap_stop);
 
 void wm_run_stress_test(void *arg)

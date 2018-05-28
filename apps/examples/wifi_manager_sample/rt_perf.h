@@ -28,8 +28,8 @@
 /*
  * Initializer Macro
  */
-#define RT_PERF_INITIALIZER {{0, 0}, {0, 0}, 0, 0, 0, 0, 0, DA_TC_SKIP}
-#define RT_STAB_INITIALIZER {0, 0, 0, 0, DA_TC_SKIP}
+#define RT_PERF_INITIALIZER {{0, 0}, {0, 0}, 0, 0, 0, 0, 0, WIFIMGR_STRESS_TC_PASS}
+#define RT_STAB_INITIALIZER {0, 0, 0, 0, WIFIMGR_STRESS_TC_PASS}
 
 /*
  * Test case Macro
@@ -106,7 +106,7 @@
 	do {										\
 		if (exp != val) {						\
 			RT_ERROR;							\
-			res = DA_TC_FAIL;					\
+			res = WIFIMGR_STRESS_TC_FAIL;					\
 		}										\
 	} while (0)
 
@@ -114,7 +114,7 @@
 	do {										\
 		if ((exp) >= val) {						\
 			RT_ERROR;							\
-			res = DA_TC_FAIL;					\
+			res = WIFIMGR_STRESS_TC_FAIL;					\
 		}										\
 	} while (0)
 
@@ -122,7 +122,7 @@
 	do {										\
 		if (exp > val) {						\
 			RT_ERROR;							\
-			res = DA_TC_FAIL;					\
+			res = WIFIMGR_STRESS_TC_FAIL;					\
 		}										\
 	} while (0)
 
@@ -130,7 +130,7 @@
 	do {										\
 		if (exp <= val) {						\
 			RT_ERROR;							\
-			res = DA_TC_FAIL;					\
+			res = WIFIMGR_STRESS_TC_FAIL;					\
 		}										\
 	} while (0)
 
@@ -138,12 +138,12 @@
 	do {										\
 		if (exp < val) {						\
 			RT_ERROR;							\
-			res = DA_TC_FAIL;					\
+			res = WIFIMGR_STRESS_TC_FAIL;					\
 		}										\
 	} while (0)
 
 #define RT_START_TEST									\
-	rt_tc_result res = DA_TC_PASS;						\
+	rt_tc_result res = WIFIMGR_STRESS_TC_PASS;						\
 	struct timeval start, end;							\
 	rt_elapsed_time *timer = (rt_elapsed_time *)arg;	\
 	do {												\
@@ -171,10 +171,10 @@
  * Structures
  */
 typedef enum {
-	DA_TC_PASS,
-	DA_TC_FAIL,
-	DA_TC_SKIP,
-	DA_TC_PERF_FAIL
+	WIFIMGR_STRESS_TC_PASS,
+	WIFIMGR_STRESS_TC_FAIL,
+	WIFIMGR_STRESS_TC_SKIP,
+	WIFIMGR_STRESS_TC_PERF_FAIL
 } rt_tc_result;
 
 typedef rt_tc_result(*rt_unit_tc)(void *arg);
