@@ -606,9 +606,17 @@ static void dm_on_execute_resource(void *data, void *user_data)
 			ARTIK_LWM2M_URI_FIRMWARE_STATE,
 			(unsigned char *)ARTIK_LWM2M_FIRMWARE_STATE_UPDATING,
 			strlen(ARTIK_LWM2M_FIRMWARE_STATE_UPDATING));
-		int fd =  open("/dev/mtdblock7", O_RDWR);
+		int fd = open("/dev/mtdblock7", O_RDWR);
+		if (fd < 0) {
+			fprintf(stderr, "Open failed\n");
+			return;
+		}
 
-		write(fd, g_dm_info->header, OTA_FIRMWARE_HEADER_SIZE);
+		if (write(fd, g_dm_info->header, OTA_FIRMWARE_HEADER_SIZE) < 0) {
+			fprintf(stderr, "Write failed\n");
+			close(fd);
+			return;
+		}
 		close(fd);
 		reboot();
 	}
@@ -627,8 +635,12 @@ static int write_firmware(char *data, size_t len, void *user_data)
 		printf("Skip OTA header (header_size %d, len %d, remaining_header_size %d)\n", header_size, len, g_dm_info->remaining_header_size);
 	}
 
-	if (len > 0)
-		write(g_dm_info->fd, data+header_size, len);
+	if (len > 0) {
+		if (write(g_dm_info->fd, data+header_size, len) < 0) {
+			fprintf(stderr, "Write failed\n");
+			return -1;
+		}
+	}
 
 	return len;
 }
@@ -684,7 +696,18 @@ static int download_firmware(int argc, char *argv[])
 	memset(&ssl_conf, 0, sizeof(artik_ssl_config));
 	ssl_conf.verify_cert = ARTIK_SSL_VERIFY_NONE;
 	g_dm_info->fd = open("/dev/mtdblock7", O_RDWR);
-	lseek(g_dm_info->fd, 4096, SEEK_SET);
+	if (g_dm_info->fd < 0) {
+		fprintf(stderr, "Open failed\n");
+		artik_release_api_module(lwm2m);
+		artik_release_api_module(http);
+		return 1;
+	}
+	if (lseek(g_dm_info->fd, 4096, SEEK_SET) == (off_t)-1) {
+		fprintf(stderr, "Seek failed\n");
+		artik_release_api_module(lwm2m);
+		artik_release_api_module(http);
+		return 1;
+	}
 	ret = http->get_stream(argv[1], &headers, &status, write_firmware, NULL, &ssl_conf);
 	if (ret != S_OK) {
 		lwm2m->client_write_resource(
@@ -989,10 +1012,14 @@ static int dm_command(int argc, char *argv[])
 	}
 
 exit:
-	if (dm_config.objects[ARTIK_LWM2M_OBJECT_DEVICE])
-		lwm2m->free_object(dm_config.objects[ARTIK_LWM2M_OBJECT_DEVICE]);
-	if (dm_config.objects[ARTIK_LWM2M_OBJECT_FIRMWARE])
-		lwm2m->free_object(dm_config.objects[ARTIK_LWM2M_OBJECT_FIRMWARE]);
+	if (dm_config.objects[ARTIK_LWM2M_OBJECT_DEVICE]) {
+		if (lwm2m)
+			lwm2m->free_object(dm_config.objects[ARTIK_LWM2M_OBJECT_DEVICE]);
+	}
+	if (dm_config.objects[ARTIK_LWM2M_OBJECT_FIRMWARE]) {
+		if (lwm2m)
+			lwm2m->free_object(dm_config.objects[ARTIK_LWM2M_OBJECT_FIRMWARE]);
+	}
 	if (dm_config.name)
 		free(dm_config.name);
 	if (dm_config.tls_psk_key)
