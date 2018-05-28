@@ -173,7 +173,8 @@ Before executing below board-specific steps, execute [generic steps](../../../to
         ```bash
         Hardware Configuration -> Board Selection -> Automount partitions -> Automount romfs partiton to y
         ````
-4. Build TizenRT and flash a binary [using download script](#using-download-script)
+4. Build TizenRT and flash a binary.  
+    Refer [How to program a binary](#how-to-program-a-binary).
 
 ## How to use GDB
 1. Run OpenOCD daemon.
