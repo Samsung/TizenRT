@@ -81,6 +81,7 @@ void wifi_scan_ap_done(wifi_manager_scan_info_s **scan_info, wifi_manager_scan_r
 	 */
 	if (res == WIFI_SCAN_FAIL) {
 		printf("WiFi scan failed\n");
+		WIFITEST_SIGNAL;
 		return;
 	}
 	wifi_manager_scan_info_s *wifi_scan_iter = *scan_info;
@@ -90,6 +91,7 @@ void wifi_scan_ap_done(wifi_manager_scan_info_s **scan_info, wifi_manager_scan_r
 						wifi_scan_iter->channel, wifi_scan_iter->phy_mode);
 		wifi_scan_iter = wifi_scan_iter->next;
 	}
+	WIFITEST_SIGNAL;
 }
 
 static int wifi_test_signal_init(void)
@@ -357,7 +359,7 @@ static void utc_wifi_manager_save_config_n(void)
 	wifi_manager_result_e ret = WIFI_MANAGER_FAIL;
 	ret = wifi_manager_save_config(NULL);
 
-	TC_ASSERT_EQ("utc_wifi_manager_save_config_n", ret, WIFI_MANAGER_FAIL);
+	TC_ASSERT_EQ("utc_wifi_manager_save_config_n", ret, WIFI_MANAGER_INVALID_ARGS);
 	TC_SUCCESS_RESULT();
 }
 
@@ -462,16 +464,16 @@ int wifi_manager_utc(int argc, FAR char *argv[])
 	utc_wifi_manager_connect_ap_n();	// try to connect to ap in softap mode
 	utc_wifi_manager_connect_ap_p();	// change to station mode and try to connect to ap
 
+	WIFITEST_WAIT;
+
+	sleep(5);
+	
 	utc_wifi_manager_save_config_n();   
 	utc_wifi_manager_get_config_n();	
 	utc_wifi_manager_remove_config_n(); 
 	utc_wifi_manager_save_config_p();	// save correct wifi config
 	utc_wifi_manager_get_config_p();    
 	utc_wifi_manager_remove_config_p();
-	
-	WIFITEST_WAIT;
-
-	sleep(5);
 
 	utc_wifi_manager_disconnect_ap_p();
 
@@ -484,6 +486,10 @@ int wifi_manager_utc(int argc, FAR char *argv[])
 
 	utc_wifi_manager_scan_ap_n(); // Get failed becasue there is no callback hander for scan results
 	utc_wifi_manager_scan_ap_p(); // Reinitialized wifi manager with the callback hander for scan results
+
+	WIFITEST_WAIT;
+
+	utc_wifi_manager_deinit_p(); // End of UTC
 
 	(void)tc_handler(TC_END, "WiFiManager UTC");
 
