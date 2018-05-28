@@ -76,7 +76,11 @@
 /****************************************************************************
  * Pre-processor Definitions
  ****************************************************************************/
-
+#ifdef CONFIG_SMARTFS_MULTI_ROOT_DIRS
+#define ARTIK05X_AUTOMOUNT_USERFS_DEVNAME  CONFIG_ARTIK05X_AUTOMOUNT_USERFS_DEVNAME"d1"
+#else
+#define ARTIK05X_AUTOMOUNT_USERFS_DEVNAME  CONFIG_ARTIK05X_AUTOMOUNT_USERFS_DEVNAME
+#endif
 /****************************************************************************
  * Private Functions
  ****************************************************************************/
@@ -278,20 +282,20 @@ int board_app_initialize(void)
 #ifdef CONFIG_ARTIK05X_AUTOMOUNT_USERFS
 	/* Initialize and mount user partition (if we have) */
 #ifdef CONFIG_SMARTFS_MULTI_ROOT_DIRS
-	ret = mksmartfs(CONFIG_ARTIK05X_AUTOMOUNT_USERFS_DEVNAME, 1, false);
+	ret = mksmartfs(ARTIK05X_AUTOMOUNT_USERFS_DEVNAME, 1, false);
 #else
-	ret = mksmartfs(CONFIG_ARTIK05X_AUTOMOUNT_USERFS_DEVNAME, false);
+	ret = mksmartfs(ARTIK05X_AUTOMOUNT_USERFS_DEVNAME, false);
 #endif
 	if (ret != OK) {
 		lldbg("ERROR: mksmartfs on %s failed\n",
-				CONFIG_ARTIK05X_AUTOMOUNT_USERFS_DEVNAME);
+				ARTIK05X_AUTOMOUNT_USERFS_DEVNAME);
 	} else {
-		ret = mount(CONFIG_ARTIK05X_AUTOMOUNT_USERFS_DEVNAME,
+		ret = mount(ARTIK05X_AUTOMOUNT_USERFS_DEVNAME,
 				CONFIG_ARTIK05X_AUTOMOUNT_USERFS_MOUNTPOINT,
 				"smartfs", 0, NULL);
 		if (ret != OK) {
 			lldbg("ERROR: mounting '%s' failed\n",
-					CONFIG_ARTIK05X_AUTOMOUNT_USERFS_DEVNAME);
+					ARTIK05X_AUTOMOUNT_USERFS_DEVNAME);
 		}
 	}
 #endif /* CONFIG_ARTIK05X_AUTOMOUNT_USERFS */
