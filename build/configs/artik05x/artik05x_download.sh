@@ -182,7 +182,7 @@ download()
 
 	# Download all binaries using openocd script
 	pushd ${OPENOCD_DIR_PATH} > /dev/null
-	${OPENOCD} -f ${CFG_FILE} -s ${SCRIPTS_PATH} -c "${commands} exit" || exit 1
+	${OPENOCD} -f ${CFG_FILE} -s ${SCRIPTS_PATH} -c "${commands}" -c "init; reset; exit" || exit 1
 	popd > /dev/null
 
 	echo "Flash DONE"
