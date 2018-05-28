@@ -27,7 +27,7 @@ endif
 CFLAGS += -D__TINYARA__
 
 ifeq ($(CONFIG_MEDIA), y)
-CXXSRCS += MediaQueue.cpp DataSource.cpp MediaUtils.cpp MediaWorker.cpp
+CXXSRCS += MediaQueue.cpp DataSource.cpp MediaWorker.cpp
 CXXSRCS += MediaUtils.cpp
 DEPPATH += --dep-path src/media/utils
 VPATH += :src/media/utils
