@@ -479,7 +479,7 @@ static void do_dependency(const char *file, char separator)
 			exit(EXIT_FAILURE);
 		}
 
-		strncpy(&g_command[cmdlen], path, MAX_BUFFER);
+		strncpy(&g_command[cmdlen], path, MAX_BUFFER - cmdlen);
 
 		if (g_command[totallen] != '\0') {
 			fprintf(stderr, "ERROR: Missing NUL terminator\n");
