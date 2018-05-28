@@ -28,10 +28,4 @@ PlayerObserverWorker::PlayerObserverWorker()
 PlayerObserverWorker::~PlayerObserverWorker()
 {
 }
-
-PlayerObserverWorker& PlayerObserverWorker::getWorker()
-{
-	static PlayerObserverWorker worker;
-	return worker;
-}
 } // namespace media

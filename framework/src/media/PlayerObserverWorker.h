@@ -33,10 +33,10 @@ typedef enum player_observer_command_e {
 	PLAYER_OBSERVER_COMMAND_PAUSED
 } player_observer_command_t;
 
-class PlayerObserverWorker : public MediaWorker
+class PlayerObserverWorker : public MediaWorker, public SingletonWorker<PlayerObserverWorker>
 {
 public:
-	static PlayerObserverWorker& getWorker();
+	friend SingletonWorker<PlayerObserverWorker>;
 
 private:
 	PlayerObserverWorker();

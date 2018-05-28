@@ -26,10 +26,4 @@ RecorderObserverWorker::RecorderObserverWorker()
 RecorderObserverWorker::~RecorderObserverWorker()
 {
 }
-
-RecorderObserverWorker& RecorderObserverWorker::getWorker()
-{
-	static RecorderObserverWorker worker;
-	return worker;
-}
 } // namespace media

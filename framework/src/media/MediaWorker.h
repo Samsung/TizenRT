@@ -25,6 +25,16 @@
 #include "MediaQueue.h"
 
 namespace media {
+template<typename DerivedWorker>
+class SingletonWorker
+{
+public:
+	static DerivedWorker& getWorker() {
+		static DerivedWorker worker;
+		return worker;
+	}
+};
+
 class MediaWorker
 {
 public:
