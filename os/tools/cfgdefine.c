@@ -317,62 +317,66 @@ void generate_definitions(FILE * stream)
 
 				else
 					printf("#define %s %s\n", varname, varval);
-			}
 
-			if (strcmp(varname, "CONFIG_ARTIK05X_FLASH_PART_NAME") == 0) {
-				char *tmp;
-				char *copy;
-				char *tok;
-				int i = 0;
-				int ndx;
+				/* Flash Partition parsing */
+				if (varval && (strcmp(varname, "CONFIG_ARTIK05X_FLASH_PART_NAME") == 0)) {
+					char *tmp;
+					char *copy;
+					char *tok;
+					int i = 0;
+					int ndx;
 
-				copy = strdup(varval);
-				tok = copy;
-				tmp = strsep(&tok, "\"");
-				while ((tmp = strsep(&tok, ",")) != NULL) {
-					cnt++;
-				}
-				free(copy);
-
-				copy = strdup(varval);
-				tok = copy;
-				tmp = strsep(&tok, "\"");
-				word = (char **)malloc((sizeof(char *)*cnt));
-				memset(word, 0, sizeof(char *)*cnt);
-				while ((tmp = strsep(&tok, ",")) != NULL) {
-					word[i] = (char *)malloc(20);
-					memset(word[i], 0, 20);
-					for (ndx = 0; ndx < strlen(tmp); ndx++) {
-						word[i][ndx] = (char)toupper(tmp[ndx]);
+					copy = strdup(varval);
+					tok = copy;
+					tmp = strsep(&tok, "\"");
+					while ((tmp = strsep(&tok, ",")) != NULL) {
+						cnt++;
 					}
-					i++;
-				}
-				free(copy);
-			}
+					free(copy);
 
-			if (strcmp(varname, "CONFIG_ARTIK05X_FLASH_PART_LIST") == 0) {
-				char *tmp;
-				int step = 0;
-				int temp = 0;
-				int base = 0;
-				int i = 0;
-
-				printf("#define CONFIG_ARTIK05X_%s_BIN_ADDR 0x%08X\n", (char *)word[i], 0);
-
-				tmp = strsep(&varval, "\"");
-				while ((tmp = strsep(&varval, ",")) != NULL) {
-					step = strtoul(tmp, NULL, 10);
-					temp = step;
-					base += step;
-
-					printf("#define CONFIG_ARTIK05X_%s_BIN_SIZE 0x%08X\n", (char *)word[i++], temp * 1024);
-					if (i >= cnt - 1) {
-						break;
+					copy = strdup(varval);
+					tok = copy;
+					tmp = strsep(&tok, "\"");
+					word = (char **)malloc((sizeof(char *)*cnt));
+					memset(word, 0, sizeof(char *)*cnt);
+					while ((tmp = strsep(&tok, ",")) != NULL) {
+						word[i] = (char *)malloc(20);
+						memset(word[i], 0, 20);
+						for (ndx = 0; ndx < strlen(tmp); ndx++) {
+							word[i][ndx] = (char)toupper(tmp[ndx]);
+						}
+						i++;
 					}
-					printf("#define CONFIG_ARTIK05X_%s_BIN_ADDR 0x%08X\n", (char *)word[i], base * 1024);
-					free(word[i - 1]);
+					free(copy);
+				} else if (varval && strcmp(varname, "CONFIG_ARTIK05X_FLASH_PART_LIST") == 0) {
+					char *tmp;
+					int step = 0;
+					int temp = 0;
+					int base = 0;
+					int i = 0;
+
+					printf("#define CONFIG_ARTIK05X_%s_BIN_ADDR 0x%08X\n", (char *)word[i], 0);
+
+					tmp = strsep(&varval, "\"");
+					while ((tmp = strsep(&varval, ",")) != NULL) {
+						step = strtoul(tmp, NULL, 10);
+						temp = step;
+						base += step;
+
+						printf("#define CONFIG_ARTIK05X_%s_BIN_SIZE 0x%08X\n", (char *)word[i++], temp * 1024);
+						if (i >= cnt - 1) {
+							break;
+						}
+						printf("#define CONFIG_ARTIK05X_%s_BIN_ADDR 0x%08X\n", (char *)word[i], base * 1024);
+					}
+
+					for (i = 0; i < cnt && word[i]; i++ ) {
+						free(word[i]);
+					}
+
+					free(word);
+
 				}
-				free(word);
 			}
 		}
 	} while (ptr);
