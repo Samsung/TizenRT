@@ -361,6 +361,10 @@ int cmd_ifconfig(int argc, char **argv)
 					/* add static ipv6 address */
 					result = netif_add_ip6_address(netif, &temp, &idx);
 
+					if (result != ERR_OK) {
+						return ERROR;
+					}
+
 #ifdef CONFIG_NET_IPv6_MLD
 					ip6_addr_t solicit_addr;
 
