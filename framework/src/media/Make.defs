@@ -28,8 +28,8 @@ CFLAGS += -D__TINYARA__
 
 ifeq ($(CONFIG_MEDIA), y)
 CXXSRCS += MediaQueue.cpp DataSource.cpp MediaUtils.cpp MediaWorker.cpp
-CXXSRCS += MediaUtils.cpp 
-DEPPATH += --dep-path src/media/utils 
+CXXSRCS += MediaUtils.cpp
+DEPPATH += --dep-path src/media/utils
 VPATH += :src/media/utils
 ifeq ($(CONFIG_MEDIA_PLAYER), y)
 CXXSRCS += MediaPlayer.cpp InputDataSource.cpp FileInputDataSource.cpp PlayerWorker.cpp MediaPlayerImpl.cpp PlayerObserverWorker.cpp Decoder.cpp
