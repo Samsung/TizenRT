@@ -11,6 +11,7 @@ config FS_SMARTFS
 	select FS_WRITABLE
 	---help---
 		Enable TinyAra SMART Flash file system (SMARTFS) support.
+		Arch-dependent fs automount option can be found at "os/arch/arm/src/<board>/Kconfig"
 
 if FS_SMARTFS
 

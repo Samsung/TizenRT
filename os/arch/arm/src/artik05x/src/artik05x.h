@@ -57,10 +57,6 @@
  * Included Files
  ****************************************************************************/
 
-#ifdef CONFIG_FS_PROCFS
-#define ARTIK05X_PROCFS_MOUNTPOINT "/proc"
-#endif
-
 #ifdef CONFIG_MTD_CONFIG
 enum configdata_id {
 	/* Application-specific */

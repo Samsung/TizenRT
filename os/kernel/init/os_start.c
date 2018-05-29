@@ -514,6 +514,10 @@ void os_start(void)
 
 	up_initialize();
 
+	/* Auto-mount Arch-independent File Sysytems */
+
+	fs_auto_mount();
+
 #ifdef CONFIG_KERNEL_TEST_DRV
 	test_drv_register();
 #endif
