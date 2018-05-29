@@ -40,6 +40,7 @@ int http_keyvalue_list_init(struct http_keyvalue_list_t *list)
 
 	list->tail = (struct http_keyvalue_t *)HTTP_MALLOC(sizeof(struct http_keyvalue_t));
 	if (!list->tail) {
+		HTTP_FREE(list->head);
 		return HTTP_ERROR;
 	}
 
