@@ -124,24 +124,6 @@ static void tc_libc_stdlib_abs_labs_llabs(void)
 }
 
 /**
- * @fn                   :tc_libc_stdlib_imaxabs
- * @brief                :Calculate the absolute value of the argument of the appropriate integer type
- * @Scenario             :Compute the absolute value of the argument of the appropriate integer type for the function
- * API's covered         :imaxabs
- * Preconditions         :None
- * Postconditions        :None
- * @return               :void
- */
-static void tc_libc_stdlib_imaxabs(void)
-{
-	intmax_t val = -NVAL1;
-	intmax_t ret_chk = imaxabs(val);
-	TC_ASSERT_EQ("imaxabs", ret_chk, NVAL1);
-
-	TC_SUCCESS_RESULT();
-}
-
-/**
  * @fn                   :tc_libc_stdlib_itoa
  * @brief                :Convert integer to string
  * @Scenario             :Converts an integer value to a null-terminated string using the specified base and
@@ -676,7 +658,6 @@ int libc_stdlib_main(void)
 	tc_libc_stdlib_atoll();
 	tc_libc_stdlib_bsearch();
 	tc_libc_stdlib_div();
-	tc_libc_stdlib_imaxabs();
 	tc_libc_stdlib_itoa();
 	tc_libc_stdlib_qsort();
 	tc_libc_stdlib_rand();
