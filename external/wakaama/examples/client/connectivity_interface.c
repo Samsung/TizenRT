@@ -39,14 +39,16 @@ char cm_iobuffer[PROC_BUFFER_LEN];
 
 void get_interface_name(char *mac)
 {
-#if defined(CONFIG_WICED)
+#if defined(CONFIG_WIFI_MANAGER)
+	strcpy(mac,CONFIG_WIFIMGR_STA_IFNAME);
+#elif defined(CONFIG_WICED)
     strcpy(mac,"en1");
 #elif defined(CONFIG_NET_ETHERNET)
     strcpy(mac,"eth0");
 #elif defined(CONFIG_NET_802154)
     strcpy(mac,"wlan0");
-#elif defined(CONFIG_ARCH_BOARD_SIDK_S5JT200)
-    strcpy(mac, "wl1");
+#else
+	strcpy(mac,"wl1");
 #endif
 }
 
