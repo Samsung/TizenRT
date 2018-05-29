@@ -16,7 +16,7 @@
  *
  ****************************************************************************/
 
-/// @file libc_queue.c
+/// @file tc_libc_queue.c
 
 /// @brief Test Case Example for Libc Queue API
 

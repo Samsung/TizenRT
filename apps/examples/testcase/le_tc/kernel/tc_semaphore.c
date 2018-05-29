@@ -16,8 +16,13 @@
  *
  ****************************************************************************/
 
-/// @file semaphore.c
+/// @file tc_semaphore.c
+
 /// @brief Test Case Example for semaphore API
+
+/****************************************************************************
+ * Included Files
+ ****************************************************************************/
 #include <tinyara/config.h>
 #include <tinyara/clock.h>
 #include <tinyara/semaphore.h>

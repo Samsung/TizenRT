@@ -16,7 +16,7 @@
  *
  ****************************************************************************/
 
-/// @file libc_misc.c
+/// @file tc_libc_misc.c
 
 /// @brief Test Case Example for Libc Misc API
 

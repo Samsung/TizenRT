@@ -16,7 +16,7 @@
  *
  ****************************************************************************/
 
-/// @file errno.c
+/// @file tc_errno.c
 
 /// @brief Test Case Example for Errno API
 #include <tinyara/config.h>
