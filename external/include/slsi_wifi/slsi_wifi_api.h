@@ -40,7 +40,13 @@ extern "C"
 #endif
 
 /* interface name to use */
+#ifdef CONFIG_WIFI_MANAGER
+#define CTRL_IFNAME	CONFIG_WIFIMGR_STA_IFNAME
+#else
 #define CTRL_IFNAME "wl1"
+#endif
+
+
 
 #ifndef BIT
 #define BIT(x) (1 << (x))
