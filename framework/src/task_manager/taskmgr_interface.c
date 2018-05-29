@@ -234,6 +234,49 @@ int task_manager_unicast(int handle, void *msg, int msg_size, int timeout)
 	return OK;
 }
 
+int task_manager_broadcast(int msg, int timeout)
+{
+	int status;
+	tm_request_t request_msg;
+	tm_response_t response_msg;
+
+	if (msg < 0 || timeout < TM_RESPONSE_WAIT_INF) {
+		return TM_INVALID_PARAM;
+	}
+
+	memset(&request_msg, 0, sizeof(tm_request_t));
+	request_msg.data = (void *)TM_ALLOC(sizeof(int));
+	if (request_msg.data != NULL) {
+		*((int *)request_msg.data) = msg;
+	} else {
+		return TM_OUT_OF_MEMORY;
+	}
+
+	/* Set the request msg */
+	request_msg.cmd = TASKMGT_BROADCAST;
+	request_msg.timeout = timeout;
+
+	if (timeout != TM_NO_RESPONSE) {
+		asprintf(&request_msg.q_name, "%s%d", TM_PRIVATE_MQ, request_msg.caller_pid);
+	}
+
+	status = taskmgr_send_request(&request_msg);
+	if (status < 0) {
+		return TM_FAIL_REQ_TO_MGR;
+	}
+
+	if (timeout != TM_NO_RESPONSE) {
+		status = taskmgr_receive_response(request_msg.q_name, &response_msg, timeout);
+		TM_FREE(request_msg.q_name);
+		if (status == OK) {
+			status = response_msg.status;
+		}
+		return status;
+	}
+
+	return OK;
+}
+
 int task_manager_start(int handle, int timeout)
 {
 	int status;
@@ -438,7 +481,6 @@ int task_manager_set_handler(void (*func)(int signo, tm_msg_t *data))
 	act.sa_sigaction = (_sa_sigaction_t)func;
 	act.sa_flags = 0;
 	(void)sigemptyset(&act.sa_mask);
-
 	ret = sigaddset(&act.sa_mask, SIGTM_UNICAST);
 	if (ret < 0) {
 		return TM_FAIL_SET_HANDLER;
@@ -447,6 +489,46 @@ int task_manager_set_handler(void (*func)(int signo, tm_msg_t *data))
 	ret = sigaction(SIGTM_UNICAST, &act, NULL);
 	if (ret == (int)SIG_ERR) {
 		ret = TM_FAIL_SET_HANDLER;
+	}
+	return OK;
+}
+
+int task_manager_set_broadcast_handler(int msg_filter, void (*func)(int signo, tm_msg_t *data))
+{
+	int ret;
+	tm_request_t request_msg;
+	struct sigaction act;
+
+	if (msg_filter < 0 || func == NULL) {
+		return TM_INVALID_PARAM;
+	}
+
+	act.sa_sigaction = (_sa_sigaction_t)func;
+	act.sa_flags = 0;
+	(void)sigemptyset(&act.sa_mask);
+
+	ret = sigaddset(&act.sa_mask, SIGTM_BROADCAST);
+	if (ret < 0) {
+		return TM_FAIL_SET_HANDLER;
+	}
+
+	ret = sigaction(SIGTM_BROADCAST, &act, NULL);
+	if (ret == (int)SIG_ERR) {
+		return TM_FAIL_SET_HANDLER;
+	}
+
+	memset(&request_msg, 0, sizeof(tm_request_t));
+	request_msg.cmd = TASKMGT_SET_BROADCAST_HANDLER;
+	request_msg.caller_pid = getpid();
+	request_msg.data = (void *)TM_ALLOC(sizeof(int));
+	if (request_msg.data != NULL) {
+		*((int *)request_msg.data) = msg_filter;
+	} else {
+		return TM_OUT_OF_MEMORY;
+	}
+	ret = taskmgr_send_request(&request_msg);
+	if (ret < 0) {
+		return TM_FAIL_REQ_TO_MGR;
 	}
 	return OK;
 }

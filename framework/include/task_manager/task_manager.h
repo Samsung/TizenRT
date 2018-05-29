@@ -82,6 +82,15 @@
 #define TM_OUT_OF_MEMORY              (-18)
 
 /**
+ * @brief Broadcast message list
+ * @details These values can be used for broadcast messges
+ * If user wants to add some other types of broadcast message,
+ * user can add their own broadcast messages at here.
+ */
+#define TM_BROADCAST_WIFI_ON       (1 << 0)
+#define TM_BROADCAST_WIFI_OFF      (1 << 1)
+
+/**
  * @brief Task Info Structure
  */
 struct task_info_s {
@@ -197,6 +206,22 @@ int task_manager_resume(int handle, int timeout);
  * @since TizenRT v2.0 PRE
  */
 int task_manager_unicast(int handle, void *msg, int msg_size, int timeout);
+
+/**
+ * @brief Request to send messages to the tasks
+ * @details @b #include <task_manager/task_manager.h>
+ * @param[in] msg message which request to broadcast.\n
+ * @param[in] timeout returnable flag. It can be one of the below.\n
+ *			TM_NO_RESPONSE : Ignore the response of request from task manager\n
+ *			TM_RESPONSE_WAIT_INF : Blocked until get the response from task manager\n
+ *			integer value : Specifies an upper limit on the time for which will block in milliseconds
+ * @return On success, OK is returned. On failure, defined negative value is returned.
+ *         (This return value only checks whether a broadcast message has been requested 
+*           to the task manager to broadcast.)
+ * @since TizenRT v2.0 PRE
+ */
+int task_manager_broadcast(int msg, int timeout);
+
 /**
  * @brief Set handler function API
  * @details @b #include <task_manager/task_manager.h>
@@ -206,6 +231,20 @@ int task_manager_unicast(int handle, void *msg, int msg_size, int timeout);
  * @since TizenRT v2.0 PRE
  */
 int task_manager_set_handler(void (*func)(int signo, tm_msg_t *data));
+
+/**
+ * @brief Set handler function API which will be used for receiving broadcast messages
+ * @details @b #include <task_manager/task_manager.h>
+ * @param[in] msg_mask the message mask for selecting specific broadcast msgs\n
+ *            User can change the msg_mask by using task_manager_set_broadcast_handler
+ *            with the changed msg_mask value
+ * @param[in] func the handler function which handle broadcast msgs\n
+ * In handler function, tm_msg_t is for containing data. It is originally siginfo_t type.\n
+ * @return On success, OK is returned. On failure, defined negative value is returned.
+ * @since TizenRT v2.0 PRE
+ */
+int task_manager_set_broadcast_handler(int msg_mask, void (*func)(int signo, tm_msg_t *data));
+
 /**
  * @brief Set callback function for resource deallocation API. If you set the callback, it will works when task is terminated.
  * @details @b #include <task_manager/task_manager.h>

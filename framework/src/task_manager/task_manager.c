@@ -48,6 +48,7 @@ struct task_list_data_s {
 	int tm_gid;
 	int status;
 	int permission;
+	int msg_mask;
 };
 typedef struct task_list_data_s task_list_data_t;
 
@@ -60,6 +61,7 @@ typedef struct task_list_data_s task_list_data_t;
 #define TASK_TM_GID(i)      TASK_LIST_ADDR(i)->tm_gid
 #define TASK_STATUS(i)      TASK_LIST_ADDR(i)->status
 #define TASK_PERMISSION(i)  TASK_LIST_ADDR(i)->permission
+#define TASK_MSG_MASK(i)    TASK_LIST_ADDR(i)->msg_mask
 
 static int builtin_cnt;
 static mqd_t g_tm_recv_mqfd;
@@ -154,6 +156,26 @@ static int tm_handle_private_queue(char *q_name, tm_response_t *msg)
 	mq_close(priv_q);
 
 	return OK;
+}
+
+static int tm_check_msg_mask(int msg, int handle)
+{
+	if (msg & TASK_MSG_MASK(handle)) {
+		return OK;
+	}
+	return ERROR;
+}
+
+static int tm_get_handle_by_pid(int pid)
+{
+	int chk_idx;
+
+	for (chk_idx = 0; chk_idx < CONFIG_TASK_MANAGER_MAX_TASKS; chk_idx++) {
+		if (TASK_PID(chk_idx) == pid) {
+			return chk_idx;
+		}
+	}
+	return ERROR;
 }
 
 /****************************************************************************
@@ -447,6 +469,42 @@ int task_manager(int argc, char *argv[])
 			break;
 
 		case TASKMGT_BROADCAST:
+			{
+				union sigval msg_broad;
+				msg_broad.sival_int = *((int *)request_msg.data);
+				for (chk_idx = 0; chk_idx < CONFIG_TASK_MANAGER_MAX_TASKS; chk_idx++) {
+					if (TASK_LIST_ADDR(chk_idx) != NULL) {
+						tm_update_task_state(chk_idx);
+						ret = tm_get_task_state(chk_idx);
+						if (ret == TM_TASK_STATE_STOP || ret == TM_TASK_STATE_UNREGISTERED) {
+							continue;
+						}
+						ret = tm_check_msg_mask(*((int *)request_msg.data), chk_idx);
+						if (ret != OK) {
+							continue;
+						}
+						ret = ioctl(fd, TMIOC_BROADCAST, TASK_PID(chk_idx));
+						if (ret != OK) {
+							continue;
+						}
+						(void)sigqueue(TASK_PID(chk_idx), SIGTM_BROADCAST, msg_broad);
+					}
+				}
+				break;
+			}
+
+		case TASKMGT_SET_BROADCAST_HANDLER:
+			ret = tm_get_handle_by_pid(request_msg.caller_pid);
+			if (ret < 0) {
+				ret = TM_FAIL_NOT_REGISTERED;
+				break;
+			}
+			if (TASK_LIST_ADDR(ret) != NULL) {
+				TASK_MSG_MASK(ret) = *((int *)request_msg.data);
+				ret = OK;
+			} else {
+				ret = TM_FAIL_UNREGISTERED_TASK;
+			}
 			break;
 
 		default:
