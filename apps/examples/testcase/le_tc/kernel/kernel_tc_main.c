@@ -66,6 +66,10 @@ int tc_kernel_main(int argc, char *argv[])
 	libc_fixedmath_main();
 #endif
 
+#ifdef CONFIG_TC_KERNEL_LIBC_INTTYPES
+	libc_inttypes_main();
+#endif
+
 #ifdef CONFIG_TC_KERNEL_LIBC_LIBGEN
 	libc_libgen_main();
 #endif

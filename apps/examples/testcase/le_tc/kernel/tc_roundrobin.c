@@ -16,7 +16,7 @@
  *
  ****************************************************************************/
 
-/// @file roundrobin.c
+/// @file tc_roundrobin.c
 
 /// @brief Test Case Example for Roundrobin Features
 

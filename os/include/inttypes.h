@@ -183,7 +183,10 @@
  *   function.
  */
 
-typedef void *imaxdiv_t;		/* Dummy type since imaxdiv is not yet supported */
+typedef struct {
+	intmax_t quot;
+	intmax_t rem;
+} imaxdiv_t;
 
 /****************************************************************************
  * Public Function Prototypes
@@ -208,19 +211,28 @@ extern "C" {
  */
 intmax_t imaxabs(intmax_t j);
 /**
- * @cond
- * @internal
+ * @brief return quotient and remainder of an integer division
+ * @details @b #include <inttypes.h> \n
+ * POSIX API (refer to : http://pubs.opengroup.org/onlinepubs/9699919799/)
+ * @since TizenRT v2.0 PRE
  */
 imaxdiv_t imaxdiv(intmax_t numer, intmax_t denom);
 /**
- * @internal
+ * @brief convert string to integer
+ * @details @b #include <inttypes.h> \n
+ * POSIX API (refer to : http://pubs.opengroup.org/onlinepubs/9699919799/)
+ * @since TizenRT v2.0 PRE
  */
 intmax_t strtoimax(FAR const char *nptr, FAR char **endptr, int base);
 /**
- * @internal
+ * @brief convert string to unsigned integer
+ * @details @b #include <inttypes.h> \n
+ * POSIX API (refer to : http://pubs.opengroup.org/onlinepubs/9699919799/)
+ * @since TizenRT v2.0 PRE
  */
 uintmax_t strtoumax(FAR const char *nptr, FAR char **endptr, int base);
 /**
+ * @cond
  * @internal
  */
 intmax_t wcstoimax(FAR const wchar_t *nptr, FAR wchar_t **endptr, int base);

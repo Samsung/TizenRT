@@ -16,7 +16,7 @@
  *
  ****************************************************************************/
 
-/// @file group.c
+/// @file tc_group.c
 
 /// @brief Test Case Example for Group API
 

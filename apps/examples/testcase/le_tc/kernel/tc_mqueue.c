@@ -15,9 +15,6 @@
  * language governing permissions and limitations under the License.
  *
  ****************************************************************************/
-
-/// @file mqueue.c
-/// @brief Test Case Example for Message Queue API
 /**************************************************************************
 *
 *   Copyright (C) 2007-2009, 2011 Gregory Nutt. All rights reserved.
@@ -51,6 +48,10 @@
 * POSSIBILITY OF SUCH DAMAGE.
 *
 **************************************************************************/
+
+/// @file tc_mqueue.c
+
+/// @brief Test Case Example for Message Queue API
 
 /**************************************************************************
 * Included Files
