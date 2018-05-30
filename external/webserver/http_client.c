@@ -286,7 +286,7 @@ int http_parse_message(char *buf, int buf_len, int *method, char *url,
 					HTTP_LOGD("[HEADER] buf_len : %d len->sentence_start : %d len->message_len : %d len->content_len %d\n", buf_len, len->sentence_start, len->message_len, len->content_len);
 				}
 				if (buf_len - len->sentence_start + len->message_len == len->content_len) {
-					buf[buf_len + len->message_len] = '\0';
+					buf[buf_len] = '\0';
 					HTTP_LOGD("[BODY_END]buf_len : %d len->sentence_start : %d len->message_len : %d len->content_len %d\n", buf_len, len->sentence_start, len->message_len, len->content_len);
 					//HTTP_LOGD("All body readed : \n%s\n", *body);
 

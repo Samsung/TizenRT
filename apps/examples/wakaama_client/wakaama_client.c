@@ -29,8 +29,11 @@
 #include <protocols/dhcpc.h>
 #include <slsi_wifi/slsi_wifi_api.h>
 
-
+#ifdef CONFIG_WIFI_MANAGER
+#define NET_DEVNAME	CONFIG_WIFIMGR_STA_IFNAME
+#else
 #define NET_DEVNAME "wl1"
+#endif
 
 #define WAKAAMA_CHECK_ARG() \
 	do {\

@@ -21,11 +21,11 @@
 #include <tinyara/gpio.h>
 #include <iotbus/iotbus_gpio.h>
 
-#if !defined(CONFIG_EXAMPLES_IOTBUS_TEST_RED_LED_GPIO_NUM)
+#if !defined(CONFIG_EXAMPLES_ST_THINGS_RED_LED_GPIO_NUM)
 #error To run this sample, input GPIO numbers on menuconfig.
 #endif
 
-#define LED_POWER_PORT CONFIG_EXAMPLES_IOTBUS_TEST_RED_LED_GPIO_NUM
+#define LED_POWER_PORT CONFIG_EXAMPLES_ST_THINGS_RED_LED_GPIO_NUM
 
 const char *get_led_power(void);
 int set_led_power(char *value);

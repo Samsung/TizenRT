@@ -66,24 +66,36 @@ public:
 	player_result_t setVolume(int);
 
 	player_result_t setDataSource(std::unique_ptr<stream::InputDataSource>);
-	void setObserver(std::shared_ptr<MediaPlayerObserverInterface>);
+	player_result_t setObserver(std::shared_ptr<MediaPlayerObserverInterface>);
 
 	player_state_t getState();
-	player_result_t seekTo(int);
 
 	void notifySync();
 	void notifyObserver(player_observer_command_t cmd);
 
-	int playback(int size);
+	void playback();
+
+private:
+	void createPlayer(player_result_t &ret);
+	void destroyPlayer(player_result_t &ret);
+	void preparePlayer(player_result_t &ret);
+	void unpreparePlayer(player_result_t &ret);
+	void startPlayer();
+	void stopPlayer();
+	void pausePlayer();
+	void getVolumePlayer(int &ret);
+	void setVolumePlayer(int, player_result_t &ret);
+	void setPlayerObserver(std::shared_ptr<MediaPlayerObserverInterface> observer);
+	void setPlayerDataSource(std::shared_ptr<stream::InputDataSource> dataSource, player_result_t& ret);
 
 public:
 	std::atomic<player_state_t> mCurState;
 	unsigned char* mBuffer;
-	unsigned int mBufSize;
+	int mBufSize;
 	std::mutex mCmdMtx;
 	std::condition_variable mSyncCv;
 	std::shared_ptr<MediaPlayerObserverInterface> mPlayerObserver;
-	std::unique_ptr<stream::InputDataSource> mInputDataSource;
+	std::shared_ptr<stream::InputDataSource> mInputDataSource;
 	int mId;
 };
 } // namespace media

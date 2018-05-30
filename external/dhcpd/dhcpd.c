@@ -1615,7 +1615,10 @@ int dhcpd_run(void *arg)
 		switch (g_state.ds_optmsgtype) {
 		case DHCPDISCOVER:
 			ndbg("DHCPDISCOVER\n");
-			dhcpd_discover();
+			int res = dhcpd_discover();
+			if (res == ERROR) {
+				ndbg("dhcpd discover fail\n");
+			}
 			break;
 
 		case DHCPREQUEST:

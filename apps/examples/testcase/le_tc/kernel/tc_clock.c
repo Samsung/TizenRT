@@ -179,25 +179,6 @@ static void tc_clock_clock_timer(void)
 #endif
 
 /**
-* @fn                   :tc_clock_clock_systimer
-* @brief                :Return the current value of the 32 bit system timer counter
-* @scenario             :Return the current value of the 32 bit system timer counter
-* API's covered         :clock_systimer
-* Preconditions         :none
-* Postconditions        :none
-* @return               :void
-*/
-
-static void tc_clock_clock_systimer(void)
-{
-	systime_t itime = ERROR;
-	itime = clock_systimer();
-	TC_ASSERT_GEQ("clock_systimer", itime, 0);
-
-	TC_SUCCESS_RESULT();
-}
-
-/**
 * @fn                   :tc_clock_clock_abstime2ticks
 * @brief                :Convert an absolute timespec to ticks
 * @scenario             :Compare two conversions to ticks with some calculation
@@ -239,7 +220,6 @@ int clock_main(void)
 #ifndef CONFIG_SCHED_TICKLESS
 	tc_clock_clock_timer();
 #endif
-	tc_clock_clock_systimer();
 	tc_clock_clock_gettimeofday();
 	tc_clock_clock_set_get_time();
 	tc_clock_clock_getres();

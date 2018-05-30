@@ -105,8 +105,7 @@
  * Parameters:
  *   key = A pointer to the key to create.
  *   destructor = An optional destructor() function that may be associated
- *      with each key that is invoked when a thread exits.  However, this
- *      argument is ignored in the current implementation.
+ *      with each key that is invoked when a thread exits.
  *
  * Return Value:
  *   If successful, the pthread_key_create() function will store the newly
@@ -121,7 +120,6 @@
  * Assumptions:
  *
  * POSIX Compatibility:
- *   - The present implementation ignores the destructor argument.
  *
  ****************************************************************************/
 
@@ -131,7 +129,7 @@ int pthread_key_create(FAR pthread_key_t *key, pthread_destructor_t destructor)
 	struct task_group_s *group = rtcb->cmn.group;
 	int key_index = 0;
 
-	DEBUGASSERT(group);
+	DEBUGASSERT(group && (rtcb->cmn.flags & TCB_FLAG_TTYPE_MASK) == TCB_FLAG_TTYPE_PTHREAD);
 
 	if (!key) {
 		return EINVAL;

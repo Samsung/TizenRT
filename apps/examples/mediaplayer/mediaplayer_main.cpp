@@ -41,11 +41,18 @@ class MediaPlayerTest : public MediaPlayerObserverInterface, public enable_share
 	void onPlaybackStarted(Id id) override;
 	void onPlaybackFinished(Id id) override;
 	void onPlaybackError(Id id) override;
+	void onPlaybackPaused(Id id) override;
 
 	void start();
 
-	MediaPlayerTest() { cout << "App start" << endl; }
-	~MediaPlayerTest() { cout << "App terminate" << endl; }
+	MediaPlayerTest() : volume(0)
+	{
+		cout << "App start" << endl;
+	}
+	~MediaPlayerTest() 
+	{
+		cout << "App terminate" << endl;
+	}
 
   private:
 	void printMenu();
@@ -58,6 +65,7 @@ class MediaPlayerTest : public MediaPlayerObserverInterface, public enable_share
 		APP_OFF,
 		PLAYER_START,
 		PLAYER_PAUSE,
+		PLAYER_RESUME,
 		PLAYER_STOP,
 		VOLUME_UP,
 		VOLUME_DOWN
@@ -79,6 +87,11 @@ void MediaPlayerTest::onPlaybackError(Id id)
 	cout << "onPlaybackError" << endl;
 }
 
+void MediaPlayerTest::onPlaybackPaused(Id id)
+{
+	cout << "onPlaybackPaused" << endl;
+}
+
 void MediaPlayerTest::start(void)
 {
 	/**
@@ -91,12 +104,14 @@ void MediaPlayerTest::start(void)
 	auto source = std::move(unique_ptr<FileInputDataSource>(new FileInputDataSource("/rom/over_16000.mp3")));
 	source->setSampleRate(16000);
 	source->setChannels(2);
+	source->setPcmFormat(AUDIO_FORMAT_TYPE_S16_LE);
 #elif defined(TEST_AAC)
 	auto source = std::move(unique_ptr<FileInputDataSource>(new FileInputDataSource("/rom/play.mp4")));
 #else
 	auto source = std::move(unique_ptr<FileInputDataSource>(new FileInputDataSource("/rom/44100.pcm")));
 	source->setSampleRate(44100);
 	source->setChannels(2);
+	source->setPcmFormat(AUDIO_FORMAT_TYPE_S16_LE);
 #endif
 
 	if (mp.create() == PLAYER_ERROR) {
@@ -127,6 +142,12 @@ void MediaPlayerTest::start(void)
 			cout << "PLAYER_PAUSE is selected" << endl;
 			if (mp.pause() == PLAYER_ERROR) {
 				cout << "Mediaplayer::pause failed" << endl;
+			}
+			break;
+		case PLAYER_RESUME:
+			cout << "PLAYER_RESUME is selected" << endl;
+			if (mp.start() == PLAYER_ERROR) {
+				cout << "Mediaplayer::start failed" << endl;
 			}
 			break;
 		case PLAYER_STOP:
@@ -171,9 +192,10 @@ void MediaPlayerTest::printMenu()
 	cout << " 0. APP_OFF         " << endl;
 	cout << " 1. PLAYER_START    " << endl;
 	cout << " 2. PLAYER_PAUSE    " << endl;
-	cout << " 3. PLAYER_STOP     " << endl;
-	cout << " 4. VOLUME_UP       " << endl;
-	cout << " 5. VOLUME_DOWN     " << endl;
+	cout << " 3. PLAYER_RESUME   " << endl;
+	cout << " 4. PLAYER_STOP     " << endl;
+	cout << " 5. VOLUME_UP       " << endl;
+	cout << " 6. VOLUME_DOWN     " << endl;
 	cout << "====================" << endl;
 }
 

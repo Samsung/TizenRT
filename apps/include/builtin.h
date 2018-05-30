@@ -19,7 +19,20 @@
 #define __APPS_INCLUDE_BUILTIN_H
 #include <tinyara/config.h>
 
+typedef int (*TASK_CALLBACK)(int argc, char **args);
+
+struct builtin_info_s {
+	const char *name;
+	const TASK_CALLBACK entry;
+	const int exectype;
+	const int priority;
+	const int stacksize;
+};
+typedef struct builtin_info_s builtin_info_t;
+
 #ifdef CONFIG_BUILTIN_APPS
+extern const builtin_info_t builtin_list[];
+int get_builtin_list_cnt(void);
 void register_examples_cmds(void);
 #endif
 

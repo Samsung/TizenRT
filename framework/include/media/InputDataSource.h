@@ -16,13 +16,22 @@
  *
  ******************************************************************/
 
+/**
+ * @ingroup MEDIA
+ * @{
+ */
+
+/**
+ * @file media/InuptDataSource.h
+ * @brief Media InuptDataSource APIs
+ */
+
 #ifndef __MEDIA_INPUTDATASOURCE_H
 #define __MEDIA_INPUTDATASOURCE_H
 
 #include <fstream>
 #include <memory>
 #include <media/DataSource.h>
-#include <media/MediaUtils.h>
 
 namespace media {
 class Decoder;
@@ -75,25 +84,22 @@ public:
 	 */
 	virtual int readAt(long offset, int origin, unsigned char* buf, size_t size) = 0;
 
-	/**
-	 * @brief Gets current audio decoder. The audio decoder is set by each data source.
-	 * @details @b #include <media/InputDataSource.h>
-	 * @return Current audio decoder instance.
-	 * @since TizenRT v2.0 PRE
-	 */
-	const std::shared_ptr<Decoder> getDecoder();
 
 protected:
 	void setDecoder(std::shared_ptr<Decoder> decoder);
-	void setAudioType(utils::audio_type_t audioType);
-	utils::audio_type_t getAudioType();
+	const std::shared_ptr<Decoder> getDecoder();
+	void setAudioType(audio_type_t audioType);
+	audio_type_t getAudioType();
+	size_t getDecodeFrames(unsigned char* buf, size_t* size);
 
 private:
-	utils::audio_type_t mAudioType;
+	audio_type_t mAudioType;
 	std::shared_ptr<Decoder> mDecoder;
+
 };
 
 } // namespace stream
 } // namespace media
 
 #endif
+/** @} */ // end of MEDIA group

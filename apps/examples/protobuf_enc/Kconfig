@@ -1,0 +1,16 @@
+#
+# For a description of the syntax of this configuration file,
+# see kconfig-language at https://www.kernel.org/doc/Documentation/kbuild/kconfig-language.txt
+#
+
+config EXAMPLES_PROTOTEST
+	bool "Protocol Buffers Serialize/Deserialize Tests"
+	default n
+	depends on PROTOBUF
+	depends on HAVE_CXX && HAVE_CXXINITIALIZE
+	---help---
+		Test the Protocol Buffers Serialize/Deserialize by Type
+
+config USER_ENTRYPOINT
+	string
+	default "prototest_main" if ENTRY_PROTOTEST

@@ -75,9 +75,9 @@ recorder_result_t MediaRecorder::setDataSource(std::unique_ptr<stream::OutputDat
 	return mPMrImpl->setDataSource(std::move(dataSource));
 }
 
-void MediaRecorder::setObserver(std::shared_ptr<MediaRecorderObserverInterface> observer)
+recorder_result_t MediaRecorder::setObserver(std::shared_ptr<MediaRecorderObserverInterface> observer)
 {
-	mPMrImpl->setObserver(observer);
+	return mPMrImpl->setObserver(observer);
 }
 
 MediaRecorder::~MediaRecorder()

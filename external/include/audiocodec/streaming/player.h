@@ -23,30 +23,53 @@
 #include <audiocodec/mp3dec/pvmp3decoder_api.h>
 #include <audiocodec/aacdec/pvmp4audiodecoder_api.h>
 
-
 #ifdef __cplusplus
 extern "C" {
 #endif
 
+/**
+ * @brief Audio type detected by player from audio stream.
+ */
+enum audio_type_e {
+	AUDIO_TYPE_INVALID = 0,
+	AUDIO_TYPE_UNKNOWN = AUDIO_TYPE_INVALID,
+	AUDIO_TYPE_MP3 = 1,
+	AUDIO_TYPE_AAC = 2,
+
+	// add new type above.
+	AUDIO_TYPE_MAX
+};
+
+typedef enum audio_type_e audio_type_t;
+
+/**
+ * Deprecated, to be removed.
+ */
 enum {
-	type_unknown = 0,
-	type_mp3 = 1,
-	type_aac = 2,
+	type_unknown = AUDIO_TYPE_UNKNOWN,
+	type_mp3 = AUDIO_TYPE_MP3,
+	type_aac = AUDIO_TYPE_AAC,
 	type_max,
 };
 
-struct pcm_data {
-	unsigned int samplerate;		/* sampling frequency (Hz) */
-	unsigned short channels;		/* number of channels */
-	unsigned short length;			/* Size of the output frame in 16-bit words */
-	signed short * samples;			/* PCM output 16-bit samples, include both L/R ch for stereo case */
+/**
+ * @struct  pcm_data_s
+ * @brief   Define PCM data output structure, inludes sample rate, channel number,
+ *          and samples buffer and count.
+ */
+struct pcm_data_s {
+	unsigned int samplerate;    /* sampling frequency (Hz) */
+	unsigned short channels;    /* number of channels */
+	unsigned short length;      /* number of the output samples in 16-bit words */
+	signed short *samples;      /* PCM output 16-bit samples, include both L/R ch for stereo case */
 };
 
-typedef struct pcm_data		pcm_data_t;
-typedef struct pcm_data *	pcm_data_p;
+typedef struct pcm_data_s pcm_data_t;
+typedef struct pcm_data_s *pcm_data_p;
 
-typedef struct pv_player   	pv_player_t;
-typedef struct pv_player * 	pv_player_p;
+struct pv_player_s;
+typedef struct pv_player_s pv_player_t;
+typedef struct pv_player_s *pv_player_p;
 
 /**
  * @brief  configure callback routine type.
@@ -57,7 +80,7 @@ typedef struct pv_player * 	pv_player_p;
  *         according to certain audio_type.
  * @return 0 on success, otherwise, return -1.
  */
-typedef int (*config_func_f)(void * user_data, int audio_type, void * dec_cfg);
+typedef int (*config_func_f)(void *user_data, int audio_type, void *dec_cfg);
 
 /**
  * @brief  input callback routine type.
@@ -67,41 +90,43 @@ typedef int (*config_func_f)(void * user_data, int audio_type, void * dec_cfg);
  * @return size of audio data pushed to player via pv_player_pushdata().
  *         in case of return 0, that means end of stream, then decoding will be terminated.
  */
-typedef size_t (*input_func_f)(void * user_data, pv_player_p player);
+typedef size_t(*input_func_f)(void *user_data, pv_player_p player);
 
 /**
  * @brief  output callback routine type.
  *
  * @param  user_data: Pointer to user callback data register via pv_player_init()
  * @param  player: Pointer to player object
- * @param  pcm_dat: Pointer to an object of pcm_data structure, includes pcm informations.
+ * @param  pcm_dat: Pointer to an object of structure pcm_data_s.
  * @return value not be used now.
  */
-typedef size_t (*output_func_f)(void * user_data, pv_player_p player, pcm_data_p pcm_dat);
+typedef size_t(*output_func_f)(void *user_data, pv_player_p player, pcm_data_p pcm_dat);
 
-struct pv_player {
-	int audio_type; 				/* indicates the format of current audio stream, mp3 or aac */
+/**
+ * @struct  pv_player_s
+ * @brief   Player structure, support decoding various types of audio stream, see enum audio_type_e.
+ *          User should define and mantain player object in stack or heap, and give object pointer
+ *          to pv_player_init(), and specify input/output/config callback routines at the same time.
+ */
+struct pv_player_s {
+	int audio_type;             /* indicates the format of current audio stream, mp3 or aac */
 
 	// decoder buffer
-	void  *dec_ext;					/* decoder external struct, configured by user via config_func_f */
-	void  *dec_mem;					/* decoder required memory, used internally */
+	void *dec_ext;              /* decoder external struct, configured by user via config_func_f */
+	void *dec_mem;              /* decoder required memory, used internally */
 
 	// user callback func and data
-	void *cb_data;					/* data ptr user registered, be passed to callback function. */
-	config_func_f	config_func;
-	input_func_f	input_func;		/* input callback, be called when decoder request more data. */
-	output_func_f  	output_func;	/* output callback, be called when decoder output PCM data. */
+	void *cb_data;              /* data ptr user registered, be passed to callback function. */
+	config_func_f config_func;
+	input_func_f input_func;    /* input callback, be called when decoder request more data. */
+	output_func_f output_func;  /* output callback, be called when decoder output PCM data. */
 
 	// internal member used by decoder
-	rb_t ringbuffer;				/* ring-buffer object */
-	rbstream_p rbsp;				/* ring-buffer stream handle, co-work with above ring-buffer */
+	rb_t ringbuffer;            /* ring-buffer object */
+	rbstream_p rbsp;            /* ring-buffer stream handle, co-work with above ring-buffer */
 
-	/* internal varialbes, the same below */
-	ssize_t	 mCurrentPos;			/* read position when decoding */
-	uint32_t mFixedHeader;			/* mp3 frame header */
-	uint32_t mSampleRate;			/* mp3 sample rate */
-	uint32_t mNumChannels;			/* mp3 sound channel, 1:mono, 2:stereo */
-	uint32_t mBitrate;				/* mp3 bit rate */
+	// private data
+	void *priv_data;            /* pointer to private data */
 };
 
 /**
@@ -147,7 +172,7 @@ int pv_player_run(pv_player_p player);
  * @param  len: size in bytes of audio source data contained in buffer.
  * @return size in bytes of data actually accepted by player.
  */
-size_t pv_player_pushdata(pv_player_p player, const void* data, size_t len);
+size_t pv_player_pushdata(pv_player_p player, const void *data, size_t len);
 
 /**
  * @brief  get free data space in player, which means the maximum of data to push.
@@ -165,14 +190,53 @@ size_t pv_player_dataspace(pv_player_p player);
  */
 bool pv_player_dataspace_is_empty(pv_player_p player);
 
+/**
+ * @brief  get audio type from audio stream.
+ *
+ * @param  player : Pointer to player object
+ * @return audio type enum value.
+ * @see    enum audio_type_e
+ */
+int pv_player_get_audio_type(pv_player_p player);
+
+/**
+ * @brief  initilize decoder after get audio type.
+ *         frame data is stored in player structure.
+ * @param  player : Pointer to player object
+ * @param  audio_type : specify the audio type of the input audio stream
+ *         you can get the type via pv_player_get_audio_type().
+ * @return 0 on success, -1 on failure.
+ * @see pv_player_get_audio_type()
+ */
+int pv_player_init_decoder(pv_player_p player, int audio_type);
+
+/**
+ * @brief  get audio frame from audio stream.
+ *         frame data is stored in player structure.
+ * @param  player : Pointer to player object
+ * @return true on success, and false on failure.
+ */
+bool pv_player_get_frame(pv_player_p player);
+
+/**
+ * @brief  decode audio frame and then output raw PCM samples(16bits format).
+ *
+ * @param  player : Pointer to player object
+ * @param  pcm : Pointer to pcm_data_s structure, contains output raw PCM samples.
+ * @return 0 on success, -1 on failure.
+ */
+int pv_player_frame_decode(pv_player_p player, pcm_data_p pcm);
+
+
+//{{ Deprecated
 int _get_audio_type(rbstream_p rbsp);
 bool _get_frame(pv_player_p player);
 int _init_decoder(pv_player_p player);
 int _frame_decoder(pv_player_p player, pcm_data_p pcm);
+//}}
 
 #ifdef __cplusplus
-}
+} /* extern "C" */
 #endif
-
-#endif
+#endif /* STREAMING_PLAYER_H */
 

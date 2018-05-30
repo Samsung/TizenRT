@@ -133,8 +133,8 @@ typedef struct {
  */
 typedef struct {
 	char ssid[32];
-	uint16_t channel;
 	char passphrase[64];
+	uint16_t channel;
 } wifi_manager_softap_config_s;
 
 /**
@@ -289,6 +289,34 @@ wifi_manager_result_e wifi_manager_get_config(wifi_manager_ap_config_s *config);
  * @since TizenRT v2.0 PRE
  */
 wifi_manager_result_e wifi_manager_remove_config(void);
+
+/**
+ * @brief convert mac address (48bit) to mac address string (FF:FF:FF:FF:FF:FF)
+ *
+ * @param[in]  mac_addr  :  mac address 48bit
+ * @param[out] mac_str   :  mac address string
+ *
+ * @return WIFI_MANAGER_SUCCESS       :  success
+ * @return WIFI_MANAGER_FAIL          :  fail
+ * @return WIFI_MANAGER_INVALID_ARGS  :  input parameter invalid
+ * @since TinzeRT v2.0 PRE
+ */
+
+wifi_manager_result_e wifi_manager_mac_addr_to_mac_str(char mac_addr[6], char mac_str[20]);
+
+/**
+ * @brief convert mac address string (FF:FF:FF:FF:FF:FF)to mac address (48bit)
+ *
+ * @param[in]   mac_str   :  mac address string
+ * @param[out]  mac_addr  :  mac address 48bit
+ *
+ * @return WIFI_MANAGER_SUCCESS       :  success
+ * @return WIFI_MANAGER_FAIL          :  fail
+ * @return WIFI_MANAGER_INVALID_ARGS  :  input parameter invalid
+ * @since TinzeRT v2.0 PRE
+ */
+
+wifi_manager_result_e wifi_manager_mac_str_to_mac_addr(char mac_str[20], char mac_addr[6]);
 
 #endif
 /**

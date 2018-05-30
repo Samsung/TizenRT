@@ -16,47 +16,54 @@
  *
  ******************************************************************/
 
-#include <stdio.h>
-#include <assert.h>
-#include "debug.h"
-
 #ifndef DEFS_H
 #define DEFS_H
 
-#define MY_ASSERT(condition) \
-	do {\
-		if (!(condition))\
-		{\
-			auddbg("[%s] line %d, ASSERT(%s) failed!\n", __FUNCTION__, __LINE__, #condition);\
-			assert(0);\
-		}\
-	} while (0)
+#ifdef __cplusplus
+extern "C" {
+#endif /* __cplusplus */
 
 #define RETURN_IF_FAIL(condition) \
-	do {\
-		if (!(condition))\
-		{\
-			return;\
-		}\
+	do { \
+		if (!(condition)) \
+		{ \
+			return; \
+		} \
 	} while (0)
 
 #define RETURN_VAL_IF_FAIL(condition, val) \
-	do {\
-		if (!(condition))\
-		{\
-			return val;\
-		}\
+	do { \
+		if (!(condition)) \
+		{ \
+			return val; \
+		} \
 	} while (0)
 
 #define GOTO_IF_FAIL(condition, tag) \
-	do {\
-		if (!(condition))\
-		{\
-			goto tag;\
-		}\
+	do { \
+		if (!(condition)) \
+		{ \
+			goto tag; \
+		} \
 	} while (0)
 
-#define MINIMUM(x,y) (((x) < (y)) ? (x) : (y))
+#ifndef MINIMUM
+#define MINIMUM(x, y) (((x) < (y)) ? (x) : (y))
+#endif
 
-#endif // DEFS_H
+// Size: 0, no data written or read
+#define SIZE_ZERO (0)
+
+#ifndef OK
+#define OK (0)
+#endif
+
+#ifndef ERROR
+#define ERROR (-1)
+#endif
+
+#ifdef __cplusplus
+}
+#endif /* __cplusplus */
+#endif /* DEFS_H */
 

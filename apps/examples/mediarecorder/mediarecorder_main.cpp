@@ -28,17 +28,21 @@
 #include <iostream>
 #include <memory>
 
-constexpr int APP_ON = 0;
-constexpr int RECORDER_START = 1;
-constexpr int RECORDER_PAUSE = 2;
-constexpr int RECORDER_RESUME = 3;
-constexpr int RECORDER_STOP = 4;
-constexpr int APP_OFF = 5;
-constexpr int PLAY_DATA = 6;
+constexpr int APP_ON = 1;
+constexpr int RECORDER_START = 2;
+constexpr int RECORDER_PAUSE = 3;
+constexpr int RECORDER_RESUME = 4;
+constexpr int RECORDER_STOP = 5;
+constexpr int VOLUME_UP = 6;
+constexpr int VOLUME_DOWN = 7;
+constexpr int PLAY_DATA = 8;
+constexpr int APP_OFF = 0;
 
 using namespace std;
 using namespace media;
 using namespace media::stream;
+
+static const char *filePath = "/ramfs/record";
 
 class MediaRecorderTest : public MediaRecorderObserverInterface, public enable_shared_from_this<MediaRecorderTest>
 {
@@ -46,6 +50,10 @@ public:
 	void onRecordStarted(Id id)
 	{
 		std::cout << "onRecordStarted" << std::endl;		
+	}
+	void onRecordPaused(Id id)
+	{
+		std::cout << "onRecordPaused" << std::endl;
 	}
 	void onRecordFinished(Id id)
 	{
@@ -67,7 +75,7 @@ public:
 					std::cout << "SELECTED APP ON" << std::endl;
 					mr.create();
 					mr.setObserver(shared_from_this());
-					mr.setDataSource(unique_ptr<FileOutputDataSource>(new FileOutputDataSource(2, 16000, PCM_FORMAT_S16_LE, "/ramfs/record")));
+					mr.setDataSource(unique_ptr<FileOutputDataSource>(new FileOutputDataSource(2, 16000, AUDIO_FORMAT_TYPE_S16_LE, filePath)));
 				}
 				break;
 				case RECORDER_START: {
@@ -97,17 +105,34 @@ public:
 					}
 				}
 				break;
-				case APP_OFF: {
-					std::cout << "SELECTED APP_OFF" << std::endl;
-						mr.destroy();
-						appRunning = false;
-				}
-				break;
 				case PLAY_DATA: {
 					std::cout << "PLAY_DATA" << std::endl;
 					play_data();
 				}
 				break;
+				case VOLUME_UP: {
+					std::cout << "VOLUME_UP" << std::endl;
+					if (mr.setVolume(mr.getVolume() + 1) == RECORDER_ERROR) {
+						cout << "setVolume failed" << endl;
+					}
+					std::cout << "Now, Volume is " << mr.getVolume() << std::endl;
+				}
+				break;
+				case VOLUME_DOWN: {
+					std::cout << "VOLUME_DOWN" << std::endl;
+					if (mr.setVolume(mr.getVolume() - 1) == RECORDER_ERROR) {
+						cout << "setVolume failed" << endl;
+					}
+					std::cout << "Now, Volume is " << mr.getVolume() << std::endl;
+				}
+				break;
+				case APP_OFF: {
+					std::cout << "SELECTED APP_OFF" << std::endl;
+					mr.destroy();
+					appRunning = false;
+				}
+				break;
+				
 			}
 		}
 	}
@@ -119,13 +144,7 @@ public:
 		int num_read;
 		unsigned int size;
 
-		pcm_config.channels = 2;
-		pcm_config.rate = 16000;
-		pcm_config.format = PCM_FORMAT_S16_LE;
-		pcm_config.period_size = 1024;
-		pcm_config.period_count = 2;
-
-		p_out = pcm_open(0, 0, PCM_OUT, &pcm_config);
+		p_out = pcm_open(0, 0, PCM_OUT, &pcmConfig);
 
 		if (pcm_get_file_descriptor(p_out) < 0) {
 			printf("pcm open fail\n%s\n", pcm_get_error(p_out));
@@ -135,7 +154,16 @@ public:
 		size = pcm_frames_to_bytes(p_out, pcm_get_buffer_size(p_out));
 		buffer = (char *)malloc(size);
 
-		fd = open("/ramfs/record", O_RDONLY);
+		fd = open(filePath, O_RDONLY);
+
+		if (fd < 0) {
+			printf("file open fail : %d\n", fd);
+			free(buffer);
+			buffer = NULL;
+			pcm_close(p_out);
+			p_out = NULL;
+			return;
+		}
 
 		printf("fd = %d\n", fd);
 
@@ -164,15 +192,15 @@ public:
 	void printRecorderMenu()
 	{
 		std::cout << "========================================" << std::endl;
-		
-		std::cout << "0. RECORDER APP ON" << std::endl;
-		std::cout << "1. RECORDER Start" << std::endl;
-		std::cout << "2. RECORDER Pause" << std::endl;
-		std::cout << "3. RECORDER Resume" << std::endl;
-		std::cout << "4. RECORDER Stop" << std::endl;
-		std::cout << "5. RECORDER APP OFF" << std::endl;
-		std::cout << "6. play Data" << std::endl;
-
+		std::cout << "1. RECORDER APP ON" << std::endl;
+		std::cout << "2. RECORDER Start" << std::endl;
+		std::cout << "3. RECORDER Pause" << std::endl;
+		std::cout << "4. RECORDER Resume" << std::endl;
+		std::cout << "5. RECORDER Stop" << std::endl;
+		std::cout << "6. RECORDER Volume Up" << std::endl;
+		std::cout << "7. RECORDER Volume Down" << std::endl;
+		std::cout << "8. play Data" << std::endl;
+		std::cout << "0. RECORDER APP OFF" << std::endl;
 		std::cout << "========================================" << std::endl;
 	}
 
@@ -199,15 +227,21 @@ public:
 		return input;
 	}
 
-	MediaRecorderTest() {}
+	MediaRecorderTest() : p_out(nullptr), appRunning(false) 
+	{
+		pcmConfig.channels = 2;
+		pcmConfig.rate = 16000;
+		pcmConfig.format = PCM_FORMAT_S16_LE;
+		pcmConfig.period_size = 1024;
+		pcmConfig.period_count = 2;
+	}
 	~MediaRecorderTest() {}
 
 private:
+	struct pcm_config pcmConfig;
 	struct pcm *p_out;
-	struct pcm_config pcm_config;
-
-	MediaRecorder mr;
 	bool appRunning;
+	MediaRecorder mr;
 };
 
 extern "C"
@@ -222,4 +256,3 @@ extern "C"
 		return 0;
 	}
 }
-

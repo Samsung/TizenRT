@@ -200,6 +200,7 @@ static void itc_audio_pcm_is_ready_n_after_close(void)
 	TC_ASSERT_GT_CLEANUP("pcm_open", pcm_get_file_descriptor(g_pcm), 0, pcm_close(g_pcm));
 
 	TC_ASSERT_EQ("pcm_close", pcm_close(g_pcm), 0);
+	g_pcm = NULL;
 
 	ret = pcm_is_ready(g_pcm);
 	TC_ASSERT_EQ("pcm_is_ready", ret, 0);
@@ -344,6 +345,7 @@ static void itc_audio_pcm_get_config_n_after_close(void)
 	TC_ASSERT_GT_CLEANUP("pcm_open", pcm_get_file_descriptor(g_pcm), 0, pcm_close(g_pcm));
 
 	TC_ASSERT_EQ("pcm_close", pcm_close(g_pcm), 0);
+	g_pcm = NULL;
 
 	config = pcm_get_config(g_pcm);
 	TC_ASSERT_EQ("pcm_get_config", config, NULL);
@@ -402,6 +404,7 @@ static void itc_audio_pcm_get_channels_n_after_close(void)
 	TC_ASSERT_GT_CLEANUP("pcm_open", pcm_get_file_descriptor(g_pcm), 0, pcm_close(g_pcm));
 
 	TC_ASSERT_EQ("pcm_close", pcm_close(g_pcm), 0);
+	g_pcm = NULL;
 
 	ch = pcm_get_channels(g_pcm);
 	TC_ASSERT_EQ("pcm_get_channels", ch, 0);
@@ -460,6 +463,7 @@ static void itc_audio_pcm_get_rate_n_after_close(void)
 	TC_ASSERT_GT_CLEANUP("pcm_open", pcm_get_file_descriptor(g_pcm), 0, pcm_close(g_pcm));
 
 	TC_ASSERT_EQ("pcm_close", pcm_close(g_pcm), 0);
+	g_pcm = NULL;
 
 	rate = pcm_get_rate(g_pcm);
 	TC_ASSERT_EQ("pcm_get_rate", rate, 0);
@@ -518,6 +522,7 @@ static void itc_audio_pcm_get_format_n_after_close(void)
 	TC_ASSERT_GT_CLEANUP("pcm_open", pcm_get_file_descriptor(g_pcm), 0, pcm_close(g_pcm));
 
 	TC_ASSERT_EQ("pcm_close", pcm_close(g_pcm), 0);
+	g_pcm = NULL;
 
 	format = pcm_get_format(g_pcm);
 	TC_ASSERT_EQ("pcm_get_format", format, PCM_FORMAT_NONE);
@@ -575,6 +580,7 @@ static void itc_audio_pcm_get_file_descriptor_n_after_close(void)
 	g_pcm = pcm_open(0, 0, PCM_IN, NULL);
 
 	TC_ASSERT_EQ("pcm_close", pcm_close(g_pcm), 0);
+	g_pcm = NULL;
 
 	fd = pcm_get_file_descriptor(g_pcm);
 	TC_ASSERT_LEQ("pcm_get_file_descriptor", fd, -1);
@@ -666,6 +672,7 @@ static void itc_audio_pcm_get_buffer_size_n_after_close(void)
 	TC_ASSERT_GT_CLEANUP("pcm_open", pcm_get_file_descriptor(g_pcm), 0, pcm_close(g_pcm));
 
 	TC_ASSERT_EQ("pcm_close", pcm_close(g_pcm), 0);
+	g_pcm = NULL;
 
 	size = pcm_get_buffer_size(g_pcm);
 	TC_ASSERT_EQ("pcm_get_buffer_size", size, 0);
@@ -703,7 +710,7 @@ static void itc_audio_pcm_get_subdevice_p(void)
 	g_pcm = pcm_open(0, 0, PCM_IN, NULL);
 	TC_ASSERT_GT_CLEANUP("pcm_open", pcm_get_file_descriptor(g_pcm), 0, pcm_close(g_pcm));
 	device = pcm_get_subdevice(g_pcm);
-	TC_ASSERT_NEQ_CLEANUP("pcm_get_subdevice", device, 0, pcm_close(g_pcm));
+	TC_ASSERT_NEQ_CLEANUP("pcm_get_subdevice", device, 1, pcm_close(g_pcm));
 
 	TC_ASSERT_EQ("pcm_close", pcm_close(g_pcm), 0);
 	TC_SUCCESS_RESULT();
@@ -801,6 +808,7 @@ static void itc_audio_pcm_frames_to_bytes_n_after_close(void)
 	TC_ASSERT_GT_CLEANUP("pcm_bytes_to_frames", frame_size, 0, pcm_close(g_pcm));
 
 	TC_ASSERT_EQ("pcm_close", pcm_close(g_pcm), 0);
+	g_pcm = NULL;
 
 	bytes = pcm_frames_to_bytes(g_pcm, frame_size);
 	TC_ASSERT_EQ("pcm_frames_to_bytes", bytes, 0);
@@ -870,6 +878,7 @@ static void itc_audio_pcm_bytes_to_frames_n_after_close(void)
 	TC_ASSERT_GT_CLEANUP("pcm_get_buffer_size", size, 0, pcm_close(g_pcm));
 
 	TC_ASSERT_EQ("pcm_close", pcm_close(g_pcm), 0);
+	g_pcm = NULL;
 
 	frame_size = pcm_bytes_to_frames(g_pcm, size);
 	TC_ASSERT_EQ("pcm_bytes_to_frames", frame_size, 0);
@@ -968,7 +977,7 @@ static void itc_audio_pcm_readi_p(void)
 	TC_ASSERT_NEQ_CLEANUP("pcm_readi", str, NULL, clean_all_data(fd, buffer));
 
 	while (remain > 0) {
-		frames_read = pcm_readi(g_pcm, buffer, remain);
+		frames_read = pcm_readi(g_pcm, buffer, pcm_get_buffer_size(g_pcm));
 		if (frames_read < 0) {
 			break;
 		}

@@ -45,78 +45,10 @@ config DEBUG_VERBOSE
 
 comment "Subsystem Debug Options"
 
-config DEBUG_ST_THINGS
-	bool "ST Things Debug Output"
-	default y
-	---help---
-		Enable st things debug SYSLOG output (enabled by default)
-
-if DEBUG_ST_THINGS
-
-config DEBUG_ST_THINGS_ERROR
-	bool "ST Things Error Output"
-	default n
-	depends on DEBUG_ERROR
-	---help---
-		Enable ST Things error debug SYSLOG output.
-
-config DEBUG_ST_THINGS_WARN
-	bool "ST Things Warning Output"
-	default n
-	depends on DEBUG_WARN
-	---help---
-		Enable ST Things warning debug SYSLOG output.
-
-config DEBUG_ST_THINGS_DEBUG
-	bool "ST Things Developer Debug Output"
-	default n
-	depends on DEBUG_VERBOSE
-	---help---
-		Enable ST Things Developer debug SYSLOG output.
-
-config DEBUG_ST_THINGS_INFO
-	bool "ST Things Infomational Debug Output"
-	default y
-	depends on DEBUG_VERBOSE
-	---help---
-		Enable ST Things informational debug SYSLOG output.
-
-endif #DEBUG_ST_THINGS
-
-config DEBUG_FS
-	bool "File System Debug Output"
-	default n
-	---help---
-		Enable file system debug SYSLOG output (disabled by default)
-
-if DEBUG_FS
-
-config DEBUG_FS_ERROR
-	bool "File System Error Output"
-	default n
-	depends on DEBUG_ERROR
-	---help---
-		Enable file system error debug SYSLOG output.
-
-config DEBUG_FS_WARN
-	bool "File System Warning Output"
-	default n
-	depends on DEBUG_WARN
-	---help---
-		Enable file system warning debug SYSLOG output.
-
-config DEBUG_FS_INFO
-	bool "File System Infomational Debug Output"
-	default n
-	depends on DEBUG_VERBOSE
-	---help---
-		Enable file system informational debug SYSLOG output.
-
-endif #DEBUG_FS
-
 config DEBUG_AUDIO
 	bool "Audio Debug Output"
 	default n
+	depends on AUDIO
 	---help---
 		Enable Audio debug SYSLOG output (disabled by default)
 
@@ -176,6 +108,76 @@ config DEBUG_LIB_INFO
 
 endif #DEBUG_LIB
 
+config DEBUG_FS
+	bool "File System Debug Output"
+	default n
+	---help---
+		Enable file system debug SYSLOG output (disabled by default)
+
+if DEBUG_FS
+
+config DEBUG_FS_ERROR
+	bool "File System Error Output"
+	default n
+	depends on DEBUG_ERROR
+	---help---
+		Enable file system error debug SYSLOG output.
+
+config DEBUG_FS_WARN
+	bool "File System Warning Output"
+	default n
+	depends on DEBUG_WARN
+	---help---
+		Enable file system warning debug SYSLOG output.
+
+config DEBUG_FS_INFO
+	bool "File System Infomational Debug Output"
+	default n
+	depends on DEBUG_VERBOSE
+	---help---
+		Enable file system informational debug SYSLOG output.
+
+endif #DEBUG_FS
+
+config DEBUG_IOTBUS
+	bool "IoTbus Debug Output"
+	default n
+	depends on IOTBUS
+	---help---
+		This config makes ibdbg printing messages.
+
+config DEBUG_MEDIA
+	bool "Media Debug Output"
+	default n
+	depends on MEDIA
+	---help---
+		Enable Media debug SYSLOG output(disable by default)
+
+if DEBUG_MEDIA
+
+config DEBUG_MEDIA_ERROR
+	bool "Media Error Output"
+	default n
+	depends on DEBUG_ERROR
+	---help---
+		Enable Media error SYSLOG output
+
+config DEBUG_MEDIA_WARN
+	bool "Media Warning Output"
+	default n
+	depends on DEBUG_WARN
+	---help---
+		Enable Media warning SYSLOG output
+
+config DEBUG_MEDIA_INFO
+	bool "Media Informational Output"
+	default n
+	depends on DEBUG_VERBOSE
+	---help---
+		Enable Media informational SYSLOG output
+
+endif #DEBUG_MEDIA
+
 config DEBUG_MM
 	bool "Memory Manager Debug Output"
 	default n
@@ -216,38 +218,6 @@ config DEBUG_DOUBLE_FREE
 		Attempt to free an already released pointer ( double free detection )
 
 endif #DEBUG_MM
-
-config DEBUG_SHM
-	bool "Shared Memory Debug Output"
-	default n
-	depends on MM_SHM
-	---help---
-		Enable shared memory management debug SYSLOG output (disabled by default)
-
-if DEBUG_SHM
-
-config DEBUG_SHM_ERROR
-	bool "Shared Memory Error Output"
-	default n
-	depends on DEBUG_ERROR
-	---help---
-		Enable shared memory management error debug SYSLOG output.
-
-config DEBUG_SHM_WARN
-	bool "Shared Memory Warning Output"
-	default n
-	depends on DEBUG_WARN
-	---help---
-		Enable shared memory management warning debug SYSLOG output.
-
-config DEBUG_SHM_INFO
-	bool "Shared Memory Informational Debug Output"
-	default n
-	depends on DEBUG_VERBOSE
-	---help---
-		Enable shared memory management informational debug SYSLOG output.
-
-endif #DEBUG_SHM
 
 config DEBUG_NET
 	bool "Network Debug Output"
@@ -312,6 +282,77 @@ config DEBUG_SCHED_INFO
 
 endif #DEBUG_SCHED
 
+config DEBUG_SHM
+	bool "Shared Memory Debug Output"
+	default n
+	depends on MM_SHM
+	---help---
+		Enable shared memory management debug SYSLOG output (disabled by default)
+
+if DEBUG_SHM
+
+config DEBUG_SHM_ERROR
+	bool "Shared Memory Error Output"
+	default n
+	depends on DEBUG_ERROR
+	---help---
+		Enable shared memory management error debug SYSLOG output.
+
+config DEBUG_SHM_WARN
+	bool "Shared Memory Warning Output"
+	default n
+	depends on DEBUG_WARN
+	---help---
+		Enable shared memory management warning debug SYSLOG output.
+
+config DEBUG_SHM_INFO
+	bool "Shared Memory Informational Debug Output"
+	default n
+	depends on DEBUG_VERBOSE
+	---help---
+		Enable shared memory management informational debug SYSLOG output.
+
+endif #DEBUG_SHM
+
+config DEBUG_ST_THINGS
+	bool "ST Things Debug Output"
+	default y
+	depends on ST_THINGS
+	---help---
+		Enable st things debug SYSLOG output (enabled by default)
+
+if DEBUG_ST_THINGS
+
+config DEBUG_ST_THINGS_ERROR
+	bool "ST Things Error Output"
+	default y
+	depends on DEBUG_ERROR
+	---help---
+		Enable ST Things error debug SYSLOG output.
+
+config DEBUG_ST_THINGS_WARN
+	bool "ST Things Warning Output"
+	default n
+	depends on DEBUG_WARN
+	---help---
+		Enable ST Things warning debug SYSLOG output.
+
+config DEBUG_ST_THINGS_DEBUG
+	bool "ST Things Developer Debug Output"
+	default n
+	depends on DEBUG_VERBOSE
+	---help---
+		Enable ST Things Developer debug SYSLOG output.
+
+config DEBUG_ST_THINGS_INFO
+	bool "ST Things Infomational Debug Output"
+	default y
+	depends on DEBUG_VERBOSE
+	---help---
+		Enable ST Things informational debug SYSLOG output.
+
+endif #DEBUG_ST_THINGS
+
 config DEBUG_SYSCALL
 	bool "SYSCALL Debug Output"
 	default n
@@ -344,6 +385,50 @@ config DEBUG_SYSCALL_INFO
 		Enable system calls informational debug SYSLOG output.
 
 endif #DEBUG_SYSCALL
+
+config DEBUG_TASH
+	bool "TASH Debug Output"
+	default n
+	depends on TASH
+	---help---
+		Enable debugging message in TASH.
+
+if DEBUG_TASH
+config DEBUG_TASH_ERROR
+	bool "Print error messages in TASH"
+	default y
+	depends on DEBUG_ERROR
+
+config DEBUG_TASH_INFO
+	bool "Print informational messages in TASH"
+	default n
+	depends on DEBUG_VERBOSE
+endif #DEBUG_TASH
+
+config DEBUG_TASK_MANAGER
+	bool "Task Manager Debug Output"
+	default n
+	depends on TASK_MANAGER
+	---help---
+		Task Manager Debug Output.
+
+if DEBUG_TASK_MANAGER
+
+config DEBUG_TASK_MANAGER_ERROR
+	bool "Enable Task Manager Error Debug Output"
+	default n
+	depends on DEBUG_ERROR
+	---help---
+		Task Manager Error Debug Output.
+
+config DEBUG_TASK_MANAGER_INFO
+	bool "Enable Task Manager Informational Debug Output"
+	default n
+	depends on DEBUG_VERBOSE
+	---help---
+		Task Manager Informational Debug Output.
+
+endif #DEBUG_TASK_MANAGER
 
 config DEBUG_WLAN
 	bool "WLAN Debug Output"
@@ -391,7 +476,7 @@ config DEBUG_WLAN_DRIVER_MORE
 	---help---
 		Enable T20 logs with log level 1 & 2 from the SCSC Wifi driver
 
-config DEBUG_WLAN_DRIVER_VERBOSE
+config DEBUG_WLAN_DRIVER_INFO
 	bool "Enable VERBOSE Debug Output"
 	default n
 	select DEBUG_WLAN_DRIVER_MORE
@@ -425,7 +510,7 @@ config DEBUG_WLAN_SUPPLICANT_MORE
 	---help---
 		Enables further logging MSG_MSGDUMP debug output from the SLSI wpa supplicant.
 
-config DEBUG_WLAN_SUPPLICANT_VERBOSE
+config DEBUG_WLAN_SUPPLICANT_INFO
 	bool "Enable VERBOSE Debug Output"
 	default n
 	depends on WPA_SUPPLICANT
@@ -451,7 +536,7 @@ config DEBUG_WLAN_API_DEBUG
 	---help---
 		Enables DEBUG level debug output for SLSI Wi-Fi API.
 
-config DEBUG_WLAN_API_VERBOSE
+config DEBUG_WLAN_API_INFO
 	bool "Enable VERBOSE Debug Output"
 	default n
 	depends on NETUTILS_WIFI
@@ -459,7 +544,7 @@ config DEBUG_WLAN_API_VERBOSE
 	---help---
 		Enables VERBOSE level debug output for SLSI Wi-Fi API.
 
-endif # DEBUG_WLAN
+endif #DEBUG_WLAN
 
 comment "OS Function Debug Options"
 
@@ -472,16 +557,16 @@ config DEBUG_DMA
 		Support for this debug option is architecture-specific and may not
 		be available for some MCUs.
 
+config ARCH_HAVE_HEAPCHECK
+	bool
+	default n
+
 config DEBUG_HEAP
 	bool "Heap usage debug hooks"
 	default n
 	depends on ARCH_HAVE_HEAPCHECK
 	---help---
 		Enable hooks to check heap usage.  Only supported by a few architectures.
-
-config ARCH_HAVE_HEAPCHECK
-	bool
-	default n
 
 config DEBUG_MM_HEAPINFO
 	bool "Heap Info debug option"
@@ -500,11 +585,16 @@ config DEBUG_IRQ
 		that here is a problem with that logic.  On some platforms, this
 		option may even cause crashes! Use with care!
 
+if DEBUG_IRQ
+
 config DEBUG_IRQ_INFO
 	bool "Interrupt Debug information"
 	default n
+	depends on DEBUG_VERBOSE
 	---help---
 		List the registered interrupts, it's occurrence count and corresponding isr.
+
+endif #DEBUG_IRQ
 
 config DEBUG_PAGING
 	bool "Demand Paging Debug Output"
@@ -514,6 +604,37 @@ config DEBUG_PAGING
 		Enable demand paging debug SYSLOG output (disabled by default)
 
 comment "Driver Debug Options"
+
+config DEBUG_I2S
+        bool "I2S Device Driver Debug Output"
+        default n
+        ---help---
+                Enable i2s debug logs
+
+if DEBUG_I2S
+
+config DEBUG_I2S_ERROR
+        bool "I2S Error Output"
+        default n
+        depends on DEBUG_ERROR
+        ---help---
+                Enable i2s error debug output.
+
+config DEBUG_I2S_WARN
+        bool "I2S Warning Output"
+        default n
+        depends on DEBUG_WARN
+        ---help---
+                Enable i2s warning debug output.
+
+config DEBUG_I2S_INFO
+        bool "I2S Infomational Debug Output"
+        default n
+        depends on DEBUG_VERBOSE
+        ---help---
+                Enable i2s informational debug output.
+
+endif #DEBUG_I2S
 
 config DEBUG_PWM
 	bool "PWM Debug Output"
@@ -551,6 +672,13 @@ config DEBUG_TIMER
 		Support for this debug option is architecture-specific and may not
 		be available for some MCUs.
 
+config DEBUG_TTRACE
+	bool "T-trace Debug Output"
+	default n
+	depends on TTRACE
+	---help---
+		Enable T-trace debug SYSLOG output (disabled by default)
+
 config DEBUG_WATCHDOG
 	bool "Watchdog Timer Debug Output"
 	default n
@@ -559,44 +687,6 @@ config DEBUG_WATCHDOG
 		Enable watchdog timer debug SYSLOG output (disabled by default).
 		Support for this debug option is architecture-specific and may not
 		be available for some MCUs.
-
-config DEBUG_I2S
-        bool "I2S Device Driver Debug Output"
-        default n
-        ---help---
-                Enable i2s debug logs
-
-if DEBUG_I2S
-
-config DEBUG_I2S_ERROR
-        bool "I2S Error Output"
-        default n
-        depends on DEBUG_ERROR
-        ---help---
-                Enable i2s error debug output.
-
-config DEBUG_I2S_WARN
-        bool "I2S Warning Output"
-        default n
-        depends on DEBUG_WARN
-        ---help---
-                Enable i2s warning debug output.
-
-config DEBUG_I2S_INFO
-        bool "I2S Infomational Debug Output"
-        default n
-        depends on DEBUG_VERBOSE
-        ---help---
-                Enable i2s informational debug output.
-
-endif #DEBUG_I2S
-
-config DEBUG_TTRACE
-	bool "T-trace Debug Output"
-	default n
-	depends on TTRACE
-	---help---
-		Enable T-trace debug SYSLOG output (disabled by default)
 
 comment "System Debug Options"
 
@@ -609,10 +699,6 @@ config DEBUG_SYSTEM
 
 if DEBUG_SYSTEM
 
-config TASK_SCHED_HISTORY
-	bool "Task Scheduling history"
-	default n
-
 config IRQ_SCHED_HISTORY
 	bool "IRQ Scheduling history"
 	default n
@@ -621,10 +707,9 @@ config SEMAPHORE_HISTORY
 	bool "Semaphore holder history"
 	default n
 
-config DEBUG_TASK_MAX_COUNT
-	hex "Maximum count for task history"
-	default 0x20
-	depends on TASK_SCHED_HISTORY
+config TASK_SCHED_HISTORY
+	bool "Task Scheduling history"
+	default n
 
 config DEBUG_IRQ_MAX_COUNT
 	hex "Maximum count for irq history"
@@ -636,9 +721,14 @@ config DEBUG_SEM_MAX_COUNT
 	default 0x20
 	depends on SEMAPHORE_HISTORY
 
+config DEBUG_TASK_MAX_COUNT
+	hex "Maximum count for task history"
+	default 0x20
+	depends on TASK_SCHED_HISTORY
+
 endif #DEBUG_SYSTEM
 
-endif # DEBUG
+endif #DEBUG
 
 comment "Stack Debug Options"
 

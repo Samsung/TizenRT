@@ -175,6 +175,7 @@ struct task_group_s;
 
 void weak_function sig_initialize(void);
 void sig_allocateactionblock(void);
+sigactq_t *sig_allocateaction(void);
 
 /* sig_action.c */
 

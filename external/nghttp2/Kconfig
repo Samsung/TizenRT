@@ -1,0 +1,13 @@
+config ENABLE_NGHTTP2
+	bool "Enable NGHTTP2"
+	default n
+	depends on MBEDTLS
+	---help---
+		nghttp2 is an implementation of HTTP/2 and its header compression algorithm HPACK.
+
+if ENABLE_NGHTTP2
+config NGHTTP2_DEBUG
+	bool "Nghttp2 Debug"
+	default n
+	depends on DEBUG
+endif #ENABLE_NGHTTP2

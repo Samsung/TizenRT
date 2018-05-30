@@ -135,7 +135,7 @@ fetch_scan_results(wifi_utils_scan_list_s **scan_list, slsi_scan_info_t **slsi_s
 		get_security_type(wifi_scan_iter->sec_modes, wifi_scan_iter->num_sec_modes,
 						  &cur->ap_info.ap_auth_type, &cur->ap_info.ap_crypto_type);
 		strncpy(cur->ap_info.ssid, (char *)wifi_scan_iter->ssid, wifi_scan_iter->ssid_len);
-		cur->ap_info.ssid_length = wifi_scan_iter->ssid_len;
+		cur->ap_info.ssid_length = (unsigned int)wifi_scan_iter->ssid_len;
 		strncpy(cur->ap_info.bssid, (char *)wifi_scan_iter->bssid, SLSI_MACADDR_STR_LEN);
 
 		if (!prev) {
@@ -527,6 +527,20 @@ wifi_utils_result_e wifi_utils_start_softap(wifi_utils_softap_config_s *softap_c
 	}
 	g_mode = SLSI_WIFI_SOFT_AP_IF;
 	nvdbg("[WU] SoftAP with SSID: %s has successfully started!\n", softap_config->ssid);
+	
+	ret = WiFiRegisterLinkCallback(&linkup_handler, &linkdown_handler);
+	if (ret != SLSI_STATUS_SUCCESS) {
+		ndbg("[WU] Link callback handles: register failed !\n");
+		return WIFI_UTILS_FAIL;
+	} else {
+		nvdbg("[WU] Link callback handles: registered\n");
+	}
+
+	ret = WiFiRegisterScanCallback(&wifi_scan_result_callback);
+	if (ret != SLSI_STATUS_SUCCESS) {
+		ndbg("[WU] [ERR] Register Scan Callback(%d)\n", ret);
+		return WIFI_UTILS_FAIL;
+	}
 
 	ret = WIFI_UTILS_SUCCESS;
 

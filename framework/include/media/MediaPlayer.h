@@ -16,6 +16,17 @@
  *
  ******************************************************************/
 
+/**
+ * @defgroup MEDIA MEDIA
+ * @brief Provides APIs for Media Framework 
+ * @{
+ */
+
+/**
+ * @file media/MediaPlayer.h
+ * @brief Media MediaPlayer APIs
+ */
+
 #ifndef __MEDIA_MEDIAPLAYER_H
 #define __MEDIA_MEDIAPLAYER_H
 
@@ -148,21 +159,14 @@ public:
 	 * @details @b #include <media/MediaPlayer.h>
 	 * This function is sync call apis
 	 * It sets the user's function
+	 * @return The result of the setObserver operation
 	 * @since TizenRT v2.0 PRE
 	 */
-	void setObserver(std::shared_ptr<MediaPlayerObserverInterface>);
-	/**
-	 * @brief Gets the current state of MediaPlayer
-	 * @details @b #include <media/MediaPlayer.h>
-	 * This function is sync call apis
-	 * @return The value of current state
-	 * @since TizenRT v2.0 PRE
-	 */
-	
-	player_result_t seekTo(int);
+	player_result_t setObserver(std::shared_ptr<MediaPlayerObserverInterface>);
 
 private:
 	std::shared_ptr<MediaPlayerImpl> mPMpImpl;
 };
 } // namespace media
 #endif
+/** @} */ // end of MEDIA group

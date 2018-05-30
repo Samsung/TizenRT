@@ -58,6 +58,7 @@
 
 #include <dirent.h>
 #include <errno.h>
+#include <string.h>
 
 #include <tinyara/kmalloc.h>
 #include <tinyara/fs/fs.h>
@@ -156,6 +157,7 @@ int closedir(FAR DIR *dirp)
 
 	/* Then release the container */
 
+	memset(idir, 0, sizeof(struct fs_dirent_s));
 	kumm_free(idir);
 	return OK;
 

@@ -17,7 +17,7 @@
 ###########################################################################
 
 ifeq ($(CONFIG_WIFI_MANAGER), y)
-CSRCS += wifi_manager.c wifi_net.c
+CSRCS += wifi_manager.c 
 CSRCS += wifi_profile.c
 
 ifeq ($(CONFIG_WPA_SUPPLICANT), y)

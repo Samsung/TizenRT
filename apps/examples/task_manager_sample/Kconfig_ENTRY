@@ -1,0 +1,3 @@
+config ENTRY_TASK_MANAGER_SAMPLE
+	bool "Task Manager Sample"
+	depends on EXAMPLES_TASK_MANAGER_SAMPLE

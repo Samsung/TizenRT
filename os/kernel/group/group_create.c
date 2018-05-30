@@ -254,7 +254,9 @@ int group_allocate(FAR struct task_tcb_s *tcb, uint8_t ttype)
 #ifndef CONFIG_DISABLE_PTHREAD
 	(void)sem_init(&group->tg_joinsem, 0, 1);
 #endif
-
+#if defined(CONFIG_SCHED_WAITPID) && !defined(CONFIG_SCHED_HAVE_PARENT)
+	(void)sem_init(&group->tg_exitsem, 0, 0);
+#endif
 	return OK;
 }
 

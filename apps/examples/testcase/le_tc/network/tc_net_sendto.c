@@ -161,6 +161,10 @@ void *sendto_udpserver(void *args)
 {
 	struct sockaddr_in sa;
 	int SocketFD = socket(PF_INET, SOCK_DGRAM, IPPROTO_UDP);
+	if (SocketFD < 0) {
+		printf("socket fail %s:%d", __FUNCTION__, __LINE__);
+		return 0;
+	}
 	char buffer[MAXRCVLEN];
 	memset(&sa, 0, sizeof(sa));
 
@@ -168,11 +172,19 @@ void *sendto_udpserver(void *args)
 	sa.sin_port = htons(PORTNUM);
 	sa.sin_addr.s_addr = inet_addr("127.0.0.1");
 
-	bind(SocketFD, (struct sockaddr *)&sa, sizeof(sa));
+	int ret = bind(SocketFD, (struct sockaddr *)&sa, sizeof(sa));
+	if (ret < 0) {
+		printf("bind fail %s:%d", __FUNCTION__, __LINE__);
+		close(SocketFD);
+		return 0;
+	}
 	struct sockaddr_storage serverStorage;
 	socklen_t addr_size;
 
-	recvfrom(SocketFD, buffer, MAXRCVLEN, 0, (struct sockaddr *)&serverStorage, &addr_size);
+	ret = recvfrom(SocketFD, buffer, MAXRCVLEN, 0, (struct sockaddr *)&serverStorage, &addr_size);
+	if (ret < 0) {
+		printf("recvfrom fail %s:%d", __FUNCTION__, __LINE__);
+	}
 
 	close(SocketFD);
 
@@ -193,6 +205,10 @@ void *sendto_udpclient(void *args)
 {
 	int mysocket;
 	mysocket = socket(PF_INET, SOCK_DGRAM, IPPROTO_UDP);
+	if (mysocket < 0) {
+		printf("socket fail %s:%d", __FUNCTION__, __LINE__);
+		return 0;
+	}
 	tc_net_sendto_p(mysocket);
 	tc_net_sendto_n();
 #ifdef AF_UNIX
@@ -251,6 +267,10 @@ void tc_net_sendto_tcp_p(int fd)
 	char *msg = "Hello World !\n";
 	socklen_t fromlen = 0;
 	int ConnectFD = accept(fd, NULL, NULL);
+	if (ConnectFD < 0) {
+		printf("connect fail %s:%d", __FUNCTION__, __LINE__);
+		return;
+	}
 	int ret = sendto(ConnectFD, msg, strlen(msg), 0, NULL, fromlen);
 
 	TC_ASSERT_NEQ("sendto", ret, -1);
@@ -322,16 +342,29 @@ void *sendto_tcpserver(void *args)
 
 	struct sockaddr_in sa;
 	int SocketFD = socket(PF_INET, SOCK_STREAM, IPPROTO_TCP);
-
+	if (SocketFD < 0) {
+		printf("socket fail %s:%d", __FUNCTION__, __LINE__);
+		return 0;
+	}
 	memset(&sa, 0, sizeof(sa));
 
 	sa.sin_family = PF_INET;
 	sa.sin_port = htons(TCPPORT);
 	sa.sin_addr.s_addr = inet_addr("127.0.0.1");
 
-	bind(SocketFD, (struct sockaddr *)&sa, sizeof(sa));
+	int ret = bind(SocketFD, (struct sockaddr *)&sa, sizeof(sa));
+	if (ret < 0) {
+		printf("bind fail %s:%d", __FUNCTION__, __LINE__);
+		close(SocketFD);
+		return 0;
+	}
 
-	listen(SocketFD, 2);
+	ret = listen(SocketFD, 2);
+	if (ret < 0) {
+		printf("listen fail %s:%d", __FUNCTION__, __LINE__);
+		close(SocketFD);
+		return 0;
+	}
 
 	sendto_signal();
 	tc_net_sendto_tcp_p(SocketFD);
@@ -358,7 +391,10 @@ void *sendto_tcpclient(void *args)
 	struct sockaddr_in dest;
 
 	mysocket = socket(PF_INET, SOCK_STREAM, IPPROTO_TCP);
-
+	if (mysocket < 0) {
+		printf("socket fail %s:%d", __FUNCTION__, __LINE__);
+		return 0;
+	}
 	memset(&dest, 0, sizeof(dest));
 	dest.sin_family = PF_INET;
 	dest.sin_addr.s_addr = inet_addr("127.0.0.1");
@@ -366,7 +402,12 @@ void *sendto_tcpclient(void *args)
 
 	sendto_wait();
 
-	connect(mysocket, (struct sockaddr *)&dest, sizeof(struct sockaddr));
+	int ret = connect(mysocket, (struct sockaddr *)&dest, sizeof(struct sockaddr));
+	if (ret < 0) {
+		printf("connect fail %s:%d", __FUNCTION__, __LINE__);
+		close(mysocket);
+		return 0;
+	}
 	while ((len = recvfrom(mysocket, buffer, MAXRCVLEN, 0, NULL, NULL)) > 0) {
 		buffer[len] = '\0';
 	}

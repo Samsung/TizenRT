@@ -82,6 +82,9 @@ extern "C" {
 
 int CONFIG_USER_ENTRYPOINT(int argc, char *argv[]);
 int preapp_start(int argc, char *argv[]);
+#ifdef CONFIG_TASK_MANAGER
+int task_manager(int argc, char *argv[]);
+#endif
 
 /* Functions contained in os_task.c *****************************************/
 /* OS entry point called by boot logic */
