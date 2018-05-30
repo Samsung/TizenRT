@@ -91,7 +91,7 @@ void fs_auto_mount(void)
 		const char *fs_mountpoint;
 	} fs_automount[] = {
 #ifdef CONFIG_FS_AUTOMOUNT_PROCFS
-		{ "procfs", "/procfs" },
+		{ "procfs", "/proc" },
 #endif
 		{ NULL, NULL }
 	};
