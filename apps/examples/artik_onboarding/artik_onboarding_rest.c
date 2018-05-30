@@ -99,6 +99,8 @@ static void get_akc_callback(struct http_client_t *client, struct http_req_messa
 	if (body)
 		free(body);
 	cJSON_Delete(resp);
+
+	http_keyvalue_list_release(&headers);
 }
 
 static void set_akc_callback(struct http_client_t *client, struct http_req_message *msg)
@@ -159,6 +161,8 @@ exit:
 		printf("Failed to send response\n");
 	}
 
+	http_keyvalue_list_release(&headers);
+
 	if (config)
 		cJSON_Delete(config);
 }
@@ -188,6 +192,8 @@ static void get_ap_callback(struct http_client_t *client, struct http_req_messag
 	if (http_send_response(client, status, body, &headers) < 0) {
 		printf("Failed to send response\n");
 	}
+
+	http_keyvalue_list_release(&headers);
 
 	if (body) {
 		free(body);
@@ -338,6 +344,8 @@ exit:
 		pthread_detach(tid);
 	}
 
+	http_keyvalue_list_release(&headers);
+
 	if (config)
 		cJSON_Delete(config);
 }
@@ -362,6 +370,8 @@ static void get_akc_registration_callback(struct http_client_t *client, struct h
 
 	if (http_send_response(client, 200, resp, &headers) < 0)
 		printf("Failed to send response\n");
+
+	http_keyvalue_list_release(&headers);
 
 	if (resp)
 		free(resp);
@@ -391,6 +401,8 @@ static void put_akc_registration_callback(struct http_client_t *client, struct h
 
 	if (resp)
 		free(resp);
+
+	http_keyvalue_list_release(&headers);
 
 	/*
 	 * If onboarding went well, save configuration
