@@ -31,6 +31,7 @@
 #include "tc_internal.h"
 #include <unistd.h>
 #include <sys/types.h>
+#include <sys/wait.h>
 
 
 #define ITC_SPAWN_STACKSIZE 2048

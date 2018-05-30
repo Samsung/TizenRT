@@ -182,16 +182,20 @@ int pthread_cancel(pthread_t thread)
 	}
 
 #ifdef CONFIG_PTHREAD_CLEANUP
-		/* Perform any stack pthread clean-up callbacks.
-		 *
-		 * REVISIT: In this case, the clean-up callback will execute on the
-		 * thread of the caller of pthread cancel, not on the thread of
-		 * the thread-to-be-canceled.  Is that an issue?  Presumably they
-		 * are both within the same group and within the same process address
-		 * space.
-		 */
+	/* Perform any stack pthread clean-up callbacks.
+	 *
+	 * REVISIT: In this case, the clean-up callback will execute on the
+	 * thread of the caller of pthread cancel, not on the thread of
+	 * the thread-to-be-canceled.  Is that an issue?  Presumably they
+	 * are both within the same group and within the same process address
+	 * space.
+	 */
 
-		pthread_cleanup_popall(tcb);
+	pthread_cleanup_popall(tcb);
+#endif
+
+#if CONFIG_NPTHREAD_KEYS > 0
+	pthread_key_destroy(tcb);
 #endif
 
 	/* Complete pending join operations */

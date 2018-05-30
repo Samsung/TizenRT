@@ -22,13 +22,9 @@
 
 #include <sys/types.h>
 #include <pthread.h>
-#include <assert.h>
-#include <errno.h>
+#include <queue.h>
 
 #include <tinyara/sched.h>
-
-#include "sched/sched.h"
-#include "pthread/pthread.h"
 
 /************************************************************************
  * Definitions
@@ -55,53 +51,31 @@
  ************************************************************************/
 
 /************************************************************************
- * Name: pthread_getspecific
+ * Name: pthread_key_find
  *
  * Description:
- *   The pthread_getspecific() function returns the value currently
- *   bound to the specified key on behalf of the calling thread.
- *
- *   The effect of calling pthread_getspecific() with with a key value
- *   not obtained from pthread_create() or after a key has been deleted
- *   with pthread_key_delete() is undefined.
+ *   This function returns pthread key pointer which has key value
+ *   as key index from tcb's key list.
  *
  * Parameters:
- *   key = The data key to get or set
+ *   tcb = pthread_tcb_s structure address
+ *   key = pthread key value
  *
  * Return Value:
- *   The function pthread_getspecific() returns the thread-specific data
- *   associated with the given key.  If no thread specific data is
- *   associated with the key, then the value NULL is returned.
- *
- * Assumptions:
- *
- * POSIX Compatibility:
- *   - Both calling pthread_setspecific() and pthread_getspecific()
- *     may be called from a thread-specific data destructor
- *     function.
+ *   If successful, return key address. Return NULL on failure.
  *
  ************************************************************************/
 
-FAR void *pthread_getspecific(pthread_key_t key)
+struct pthread_key_s *pthread_key_find(struct pthread_tcb_s *tcb, pthread_key_t key)
 {
-	FAR struct pthread_tcb_s *rtcb = (FAR struct pthread_tcb_s *)this_task();
 	struct pthread_key_s *cur_key;
 
-	DEBUGASSERT((rtcb->cmn.flags & TCB_FLAG_TTYPE_MASK) == TCB_FLAG_TTYPE_PTHREAD);
-
-	/* Check key validation */
-
-	if (key < PTHREAD_KEYS_MAX) {
-
-		/* Find key data */
-
-		cur_key = (struct pthread_key_s *)pthread_key_find(rtcb, key);
-		if (cur_key != NULL) {
-
-			/* Return the stored value. */
-
-			return cur_key->data;
-		}
+	if (tcb && (cur_key = (struct pthread_key_s *)sq_peek(&tcb->key_list)) != NULL) {
+		do {
+			if (cur_key->key == key) {
+				return cur_key;
+			}
+		} while ((cur_key = sq_next(cur_key)) != NULL);
 	}
 
 	return NULL;

@@ -20,15 +20,12 @@
  * Included Files
  ************************************************************************/
 
+#include <stdlib.h>
 #include <sys/types.h>
-#include <pthread.h>
-#include <assert.h>
-#include <errno.h>
+#include <queue.h>
 
 #include <tinyara/sched.h>
-
-#include "sched/sched.h"
-#include "pthread/pthread.h"
+#include <tinyara/kmalloc.h>
 
 /************************************************************************
  * Definitions
@@ -55,54 +52,54 @@
  ************************************************************************/
 
 /************************************************************************
- * Name: pthread_getspecific
+ * Name: pthread_key_destroy
  *
  * Description:
- *   The pthread_getspecific() function returns the value currently
- *   bound to the specified key on behalf of the calling thread.
- *
- *   The effect of calling pthread_getspecific() with with a key value
- *   not obtained from pthread_create() or after a key has been deleted
- *   with pthread_key_delete() is undefined.
+ *   When pthread is finished by exit or cancel, this function executes
+ *   key destructor and releases key resources.
  *
  * Parameters:
- *   key = The data key to get or set
+ *   None
  *
- * Return Value:
- *   The function pthread_getspecific() returns the thread-specific data
- *   associated with the given key.  If no thread specific data is
- *   associated with the key, then the value NULL is returned.
+ * Returned Value:
+ *   None
  *
  * Assumptions:
  *
- * POSIX Compatibility:
- *   - Both calling pthread_setspecific() and pthread_getspecific()
- *     may be called from a thread-specific data destructor
- *     function.
- *
  ************************************************************************/
 
-FAR void *pthread_getspecific(pthread_key_t key)
+void pthread_key_destroy(struct pthread_tcb_s *tcb)
 {
-	FAR struct pthread_tcb_s *rtcb = (FAR struct pthread_tcb_s *)this_task();
+	struct task_group_s *group = tcb->cmn.group;
 	struct pthread_key_s *cur_key;
+	struct pthread_key_s *next_key;
+	int destr_count = 0;
 
-	DEBUGASSERT((rtcb->cmn.flags & TCB_FLAG_TTYPE_MASK) == TCB_FLAG_TTYPE_PTHREAD);
+	for (cur_key = (struct pthread_key_s *)sq_peek(&tcb->key_list); cur_key; cur_key = next_key) {
 
-	/* Check key validation */
+		/* Execute destructor until exceeding limitation */
 
-	if (key < PTHREAD_KEYS_MAX) {
+		if (destr_count < PTHREAD_DESTRUCTOR_ITERATIONS) {
 
-		/* Find key data */
+			/* Get key data from pthread tcb */
 
-		cur_key = (struct pthread_key_s *)pthread_key_find(rtcb, key);
-		if (cur_key != NULL) {
+			if (cur_key->destructor != NULL && cur_key->data != NULL) {
 
-			/* Return the stored value. */
+				/* Execute destructor with data if they are valid */
 
-			return cur_key->data;
+				cur_key->destructor(cur_key->data);
+				destr_count++;
+			}
 		}
+
+		next_key = sq_next(cur_key);
+
+		/* Free each key data */
+
+		sched_kfree(cur_key);
 	}
 
-	return NULL;
+	/* Update Group total key number */
+
+	group->tg_nkeys -= tcb->nkeys;
 }

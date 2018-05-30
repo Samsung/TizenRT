@@ -204,6 +204,12 @@
 #define _PTHREAD_MFLAGS_INCONSISTENT  (1 << 1)	/* Mutex is in an inconsistent state */
 #define _PTHREAD_MFLAGS_NRECOVERABLE  (1 << 2)	/* Inconsistent mutex has been unlocked */
 
+/*
+ * Maximum values of pthread key operation
+ */
+#define PTHREAD_KEYS_MAX              CONFIG_NPTHREAD_KEYS
+#define PTHREAD_DESTRUCTOR_ITERATIONS CONFIG_NPTHREAD_DESTRUCTOR_ITERATIONS
+
 /* Definitions to map some non-standard, BSD thread management interfaces to
  * the non-standard Linux-like prctl() interface.  Since these are simple
  * mappings to prctl, they will return 0 on success and -1 on failure with the
@@ -245,6 +251,7 @@ extern "C" {
 /* pthread-specific types */
 
 typedef unsigned int pthread_key_t;
+typedef CODE void (*pthread_destructor_t)(void *arg);
 typedef FAR void *pthread_addr_t;
 
 typedef pthread_addr_t(*pthread_startroutine_t)(pthread_addr_t);

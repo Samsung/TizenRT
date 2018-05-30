@@ -252,10 +252,6 @@ typedef CODE void (*atexitfunc_t)(void);
 typedef CODE void (*onexitfunc_t)(int exitcode, FAR void *arg);
 #endif
 
-#if CONFIG_NPTHREAD_KEYS > 0
-typedef CODE void (*pthread_destructor_t)(void *arg);
-#endif
-
 /* struct child_status_s *********************************************************/
 /** @brief This structure is used to maintin information about child tasks.
  * pthreads work differently, they have join information.  This is
@@ -309,6 +305,8 @@ struct dspace_s {
 /* struct pthread_key_s **********************************************************/
 #if CONFIG_NPTHREAD_KEYS > 0
 struct pthread_key_s {
+	struct pthread_key_s *flink;
+	pthread_key_t key;
 	void *data;
 	pthread_destructor_t destructor;
 };
@@ -408,7 +406,7 @@ struct task_group_s {
 	FAR struct join_s *tg_joinhead;	/*   Head of a list of join data            */
 	FAR struct join_s *tg_jointail;	/*   Tail of a list of join data            */
 #if CONFIG_NPTHREAD_KEYS > 0
-	uint8_t tg_keys[CONFIG_NPTHREAD_KEYS];	/* Information of pthread keys allocated */
+	uint8_t tg_nkeys;		/* number of pthread keys allocated */
 #endif
 #endif
 
@@ -663,7 +661,8 @@ struct pthread_tcb_s {
 	/* POSIX Thread Specific Data ************************************************ */
 
 #if CONFIG_NPTHREAD_KEYS > 0
-	struct pthread_key_s pthread_data[CONFIG_NPTHREAD_KEYS];
+	uint8_t nkeys;
+	sq_queue_t key_list;
 #endif
 #if defined(CONFIG_BUILD_PROTECTED)
 	struct pthread_region_s *region;
