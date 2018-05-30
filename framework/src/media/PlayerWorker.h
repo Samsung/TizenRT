@@ -27,15 +27,15 @@ namespace media {
 class PlayerWorker : public MediaWorker
 {
 public:
-	PlayerWorker();
-	virtual ~PlayerWorker();
 	static PlayerWorker &getWorker();
 
 	void setPlayer(std::shared_ptr<MediaPlayerImpl>);
 	std::shared_ptr<MediaPlayerImpl> getPlayer();
 
 private:
-	int entry() override;
+	PlayerWorker();
+	virtual ~PlayerWorker();
+	bool processLoop() override;
 
 private:
 	std::shared_ptr<MediaPlayerImpl> mCurPlayer;

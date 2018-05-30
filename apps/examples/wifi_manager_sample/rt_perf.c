@@ -27,8 +27,10 @@ _calc_performance(rt_performance *p, rt_elapsed_time *duration)
 	rt_performance_time *start = &duration->start;
 	rt_performance_time *end = &duration->end;
 
-	printf("start %d %d\n", start->second, start->micro);
-	printf("end %d %d\n", end->second, end->micro);
+	unsigned int start_time = start->second*1000000 + start->micro;
+	unsigned int end_time = end->second*1000000 + end->micro;
+	unsigned int elapsed = end_time - start_time;
+
 	rt_performance_stat *stat = &p->stat;
 	if (stat->count == 0) {
 		stat->start.second = start->second;
@@ -38,18 +40,24 @@ _calc_performance(rt_performance *p, rt_elapsed_time *duration)
 	stat->end.second = end->second;
 	stat->end.micro = end->micro;
 
-	unsigned int elapsed = (end->second - start->second) * 1000000 + (end->micro - start->micro);
-	printf("elapsed %d\n", elapsed);
+	printf("TEST#%d\tstart %u end %u, elapsed %u us\n", stat->count, start_time, end_time, elapsed);
+	
 	stat->sum += elapsed;
-	if (elapsed > stat->max) {
+	if (stat->count == 1) {
 		stat->max = elapsed;
-	}
-	if (elapsed < stat->min) {
 		stat->min = elapsed;
+	} else {
+		if (elapsed > stat->max) {
+			stat->max = elapsed;
+		}
+		if (elapsed < stat->min) {
+			stat->min = elapsed;
+		}
 	}
 	if (p->expect != 0 && p->expect < elapsed) {
 		printf("timeout\n");
 		stat->fail++;
+		stat->result = WIFIMGR_STRESS_TC_FAIL;
 		return -1;
 	}
 	return 0;
@@ -61,14 +69,16 @@ _calc_stability(rt_stability *stab, rt_tc_result r)
 	rt_stability_stat *s = &stab->stat;
 	s->count++;
 	switch (r) {
-	case DA_TC_PASS:
+	case WIFIMGR_STRESS_TC_PASS:
 		s->pass++;
 		break;
-	case DA_TC_FAIL:
+	case WIFIMGR_STRESS_TC_FAIL:
 		s->fail++;
+		s->result = WIFIMGR_STRESS_TC_FAIL;
 		break;
-	case DA_TC_SKIP:
+	case WIFIMGR_STRESS_TC_SKIP:
 		s->skip++;
+		s->result = WIFIMGR_STRESS_TC_SKIP;
 		break;
 	default:
 		RT_ERROR;
@@ -87,11 +97,12 @@ _run_smoke(rt_smoke *smoke)
 	rt_tc_result ret;
 	int perf_result;
 	rt_func *unit = smoke->func;
+	printf("Repeat size: %d\n", smoke->repeat_size);
 	for (; cnt < smoke->repeat_size; cnt++) {
 		if (unit->setup) {
 			ret = unit->setup(NULL);
 			// update rt performance, stability
-			if (ret != DA_TC_PASS) {
+			if (ret != WIFIMGR_STRESS_TC_PASS) {
 				// reset
 				// if teardown fails then remained testcase could be affected.
 				// so remained procedures could be useless
@@ -101,13 +112,12 @@ _run_smoke(rt_smoke *smoke)
 		}
 		rt_elapsed_time duration;
 		ret = unit->tc(&duration);
-
 		perf_result = _calc_performance(smoke->performance, &duration);
 		_calc_stability(smoke->stability, ret);
 
 		if (unit->teardown) {
 			ret = unit->teardown(NULL);
-			if (ret != DA_TC_PASS) {
+			if (ret != WIFIMGR_STRESS_TC_PASS) {
 				// same to the setup procedure
 				break;
 			}
@@ -121,7 +131,11 @@ void
 _print_stability(rt_stability *stab)
 {
 	rt_stability_stat *s = &stab->stat;
-	printf("S:\t%d\t%d\t%d\t%d\t:%d\n", s->count, s->pass, s->fail, s->skip, s->result);
+	if (s->result == WIFIMGR_STRESS_TC_PASS) {
+		printf("             %-11d%-8d%-8d%-7d         :SUCCESS\n", s->count, s->pass, s->fail, s->skip);
+	} else {
+		printf("             %-11d%-8d%-8d%-7d         :FAILURE\n", s->count, s->pass, s->fail, s->skip);
+	}
 }
 
 
@@ -129,14 +143,18 @@ void
 _print_performance(rt_performance *perf)
 {
 	rt_performance_stat *p = &perf->stat;
-	printf("P:\t%d\t%d\t%d\t%d\t%d\t:%d\t", p->count, p->max, p->min, p->sum, p->fail, p->result);
+	if (p->result == WIFIMGR_STRESS_TC_PASS) {
+		printf("             %-11d%-8d%-8d%-8d%-8d:SUCCESS\n", p->count, p->max/1000, p->min/1000, p->sum/1000, p->fail);
+	} else {
+		printf("             %-11d%-8d%-8d%-8d%-8d:FAILURE\n", p->count, p->max/1000, p->min/1000, p->sum/1000, p->fail);
+	}
 }
 
 
 void
 _print_smoke(rt_smoke *smoke)
 {
-	printf("TC: %s\n", smoke->func->tc_name);
+	printf("TESTCASE: %s\n", smoke->func->tc_name);
 	_print_performance(smoke->performance);
 	_print_stability(smoke->stability);
 	printf("----------------------------------------------------------------------------\n");
@@ -164,8 +182,8 @@ perf_print_result(rt_pack *pack) {
 	rt_smoke *smoke = pack->head;
 	printf(COLOR_RESULT);
 	printf("============================================================================\n");
-	printf("performance: count\tmax\tmin\tsum\tfail\tresult\t");
-	printf("stability: count\tpass\tfail\tskip\tresult\n");
+	printf("PERFORMANCE: count\tmax\tmin\tsum\tfail\tresult\n");
+	printf("STABILITY  : count\tpass\tfail\tskip\t        result\n");
 	printf("----------------------------------------------------------------------------\n");
 	for (; smoke != NULL; smoke = smoke->next) {
 		_print_smoke(smoke);

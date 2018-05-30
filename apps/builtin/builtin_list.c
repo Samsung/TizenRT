@@ -58,6 +58,7 @@
 
 #include <tinyara/config.h>
 #include <apps/shell/tash.h>
+#include <apps/builtin.h>
 #include <sys/types.h>
 
 /****************************************************************************
@@ -74,9 +75,9 @@
 
 #include "builtin_proto.h"
 
-const static tash_cmdlist_t examples_cmds[] = {
+const builtin_info_t builtin_list[] = {
 #include "builtin_list.h"
-	{ NULL, NULL, 0 }
+	{ NULL, NULL, 0, 0, 0 }
 };
 
 /****************************************************************************
@@ -93,5 +94,14 @@ const static tash_cmdlist_t examples_cmds[] = {
 
 void register_examples_cmds(void)
 {
-	tash_cmdlist_install(examples_cmds);
+	const builtin_info_t *map;
+
+	for (map = builtin_list; map->entry; map++) {
+		tash_cmd_install(map->name, map->entry, map->exectype);
+	}
+}
+
+int get_builtin_list_cnt(void)
+{
+	return sizeof(builtin_list) / sizeof(builtin_list[0]);
 }

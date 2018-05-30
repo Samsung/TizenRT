@@ -48,8 +48,7 @@ public:
 private:
 	RecorderWorker();
 	virtual ~RecorderWorker();
-
-	int entry() override;
+	bool processLoop() override;
 
 private:
 	std::shared_ptr<MediaRecorderImpl> mCurRecorder;

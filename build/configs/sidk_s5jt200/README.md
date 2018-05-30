@@ -134,8 +134,8 @@ Before executing below steps, execute [generic steps](../../../tools/fs/README_R
     ```bash
     Hardware Configuration -> Board Selection -> Automount partitions -> Automount ROM read only partition to y
     ```
-
-After above two steps, build TizenRT and program a TizenRT binary through above [method](#how-to-program-a-binary).
+5. Build TizenRT and flash a binary.  
+    Refer [How to program a binary](#how-to-program-a-binary).
 
 ## Using GDB
 1. Build TizenRT and program a TizenRT binary through above [method](#how-to-program-a-binary)

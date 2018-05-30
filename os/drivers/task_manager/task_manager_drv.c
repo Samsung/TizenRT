@@ -23,6 +23,7 @@
 #include <errno.h>
 #include <debug.h>
 #include <signal.h>
+#include <apps/builtin.h>
 #include <sys/types.h>
 #include <tinyara/sched.h>
 #include <tinyara/signal.h>
@@ -161,7 +162,7 @@ static int taskmgt_ioctl(FAR struct file *filep, int cmd, unsigned long arg)
 	int ret = -EINVAL;
 	tm_request_t *request_msg;
 	struct tcb_s *tcb;
-	task_builtin_list_t *task_info;
+	builtin_info_t *task_info;
 
 	tmvdbg("cmd: %d arg: %ld\n", cmd, arg);
 
@@ -181,7 +182,7 @@ static int taskmgt_ioctl(FAR struct file *filep, int cmd, unsigned long arg)
 		ret = OK;
 		break;
 	case TMIOC_START:
-		task_info = (task_builtin_list_t *)arg;
+		task_info = (builtin_info_t *)arg;
 		ret = task_create(task_info->name, task_info->priority, task_info->stacksize, task_info->entry, (char * const *)NULL);
 		if (ret == ERROR) {
 			tmdbg("Fail to create new task\n");
@@ -192,6 +193,7 @@ static int taskmgt_ioctl(FAR struct file *filep, int cmd, unsigned long arg)
 			tmdbg("Fail to init new task\n");
 			return ret;
 		}
+		tmvdbg("Created task %s %d %d %p\n", task_info->name, task_info->priority, task_info->stacksize, task_info->entry);
 		break;
 	case TMIOC_TERMINATE:
 		ret = task_delete((int)arg);

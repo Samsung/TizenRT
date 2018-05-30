@@ -77,8 +77,9 @@
 #define TM_FAIL_REQ_TO_MGR            (-13)
 #define TM_FAIL_RESPONSE              (-14)
 #define TM_FAIL_UNREGISTER            (-15)
-#define TM_INVALID_PARAM              (-16)
-#define TM_OUT_OF_MEMORY              (-17)
+#define TM_FAIL_SET_TERMINATION_CB    (-16)
+#define TM_INVALID_PARAM              (-17)
+#define TM_OUT_OF_MEMORY              (-18)
 
 /**
  * @brief Task Info Structure
@@ -205,6 +206,14 @@ int task_manager_unicast(int handle, void *msg, int msg_size, int timeout);
  * @since TizenRT v2.0 PRE
  */
 int task_manager_set_handler(void (*func)(int signo, tm_msg_t *data));
+/**
+ * @brief Set callback function for resource deallocation API. If you set the callback, it will works when task is terminated.
+ * @details @b #include <task_manager/task_manager.h>
+ * @param[in] func the callback function which deallocate resources\n
+ * @return On success, OK is returned. On failure, defined negative value is returned.
+ * @since TizenRT v2.0 PRE
+ */
+int task_manager_set_termination_cb(void (*func)(void));
 /**
  * @brief Get task information list through task name
  * @details @b #include <task_manager/task_manager.h>

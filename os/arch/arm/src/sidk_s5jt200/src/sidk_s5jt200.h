@@ -58,11 +58,6 @@
  ****************************************************************************/
 #include <tinyara/config.h>
 
-/* procfs file system */
-#ifdef CONFIG_FS_PROCFS
-#define SIDK_S5JT200_PROCFS_MOUNTPOINT	"/proc"
-#endif
-
 enum configdata_id {
 	SIDK_S5JT200_CONFIGDATA_PLATFORM	= 0xff00,
 	SIDK_S5JT200_CONFIGDATA_WIFI_NVRAM,

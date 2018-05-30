@@ -21,6 +21,7 @@
 #include "MediaPlayerImpl.h"
 
 #include <debug.h>
+#include "Decoder.h"
 #include "audio/audio_manager.h"
 
 namespace media {
@@ -46,7 +47,7 @@ player_result_t MediaPlayerImpl::create()
 	PlayerWorker& mpw = PlayerWorker::getWorker();
 	mpw.startWorker();
 
-	mpw.getQueue().enQueue(&MediaPlayerImpl::createPlayer, shared_from_this(), std::ref(ret));
+	mpw.enQueue(&MediaPlayerImpl::createPlayer, shared_from_this(), std::ref(ret));
 	mSyncCv.wait(lock);
 
 	if (ret == PLAYER_ERROR) {
@@ -84,7 +85,7 @@ player_result_t MediaPlayerImpl::destroy()
 		return PLAYER_ERROR;
 	}
 
-	mpw.getQueue().enQueue(&MediaPlayerImpl::destroyPlayer, shared_from_this(), std::ref(ret));
+	mpw.enQueue(&MediaPlayerImpl::destroyPlayer, shared_from_this(), std::ref(ret));
 	mSyncCv.wait(lock);
 	
 	if (ret == PLAYER_OK) {
@@ -129,7 +130,7 @@ player_result_t MediaPlayerImpl::prepare()
 		return PLAYER_ERROR;
 	}
 
-	mpw.getQueue().enQueue(&MediaPlayerImpl::preparePlayer, shared_from_this(), std::ref(ret));
+	mpw.enQueue(&MediaPlayerImpl::preparePlayer, shared_from_this(), std::ref(ret));
 	mSyncCv.wait(lock);
 
 	return ret;	
@@ -195,7 +196,7 @@ player_result_t MediaPlayerImpl::unprepare()
 		return PLAYER_ERROR;
 	}
 
-	mpw.getQueue().enQueue(&MediaPlayerImpl::unpreparePlayer, shared_from_this(), std::ref(ret));
+	mpw.enQueue(&MediaPlayerImpl::unpreparePlayer, shared_from_this(), std::ref(ret));
 	mSyncCv.wait(lock);
 
 	return ret;
@@ -244,7 +245,7 @@ player_result_t MediaPlayerImpl::start()
 		return PLAYER_ERROR;
 	}
 
-	mpw.getQueue().enQueue(&MediaPlayerImpl::startPlayer, shared_from_this());
+	mpw.enQueue(&MediaPlayerImpl::startPlayer, shared_from_this());
 
 	return PLAYER_OK;
 }
@@ -285,7 +286,7 @@ player_result_t MediaPlayerImpl::stop()
 		return PLAYER_ERROR;
 	}
 
-	mpw.getQueue().enQueue(&MediaPlayerImpl::stopPlayer, shared_from_this());
+	mpw.enQueue(&MediaPlayerImpl::stopPlayer, shared_from_this());
 
 	return PLAYER_OK;
 }
@@ -316,7 +317,7 @@ player_result_t MediaPlayerImpl::pause()
 		return PLAYER_ERROR;
 	}
 
-	mpw.getQueue().enQueue(&MediaPlayerImpl::pausePlayer, shared_from_this());
+	mpw.enQueue(&MediaPlayerImpl::pausePlayer, shared_from_this());
 
 	return PLAYER_OK;
 }
@@ -346,7 +347,7 @@ int MediaPlayerImpl::getVolume()
 		return -1;
 	}
 
-	mpw.getQueue().enQueue(&MediaPlayerImpl::getVolumePlayer, shared_from_this(), std::ref(ret));
+	mpw.enQueue(&MediaPlayerImpl::getVolumePlayer, shared_from_this(), std::ref(ret));
 	mSyncCv.wait(lock);
 
 	return ret;
@@ -381,7 +382,7 @@ player_result_t MediaPlayerImpl::setVolume(int vol)
 		return PLAYER_ERROR;
 	}
 
-	mpw.getQueue().enQueue(&MediaPlayerImpl::setVolumePlayer, shared_from_this(), vol, std::ref(ret));
+	mpw.enQueue(&MediaPlayerImpl::setVolumePlayer, shared_from_this(), vol, std::ref(ret));
 	mSyncCv.wait(lock);
 
 	return ret;
@@ -434,7 +435,7 @@ player_result_t MediaPlayerImpl::setDataSource(std::unique_ptr<stream::InputData
 	}
 
 	std::shared_ptr<stream::InputDataSource> sharedDataSource = std::move(source);
-	mpw.getQueue().enQueue(&MediaPlayerImpl::setPlayerDataSource, shared_from_this(), sharedDataSource, std::ref(ret));
+	mpw.enQueue(&MediaPlayerImpl::setPlayerDataSource, shared_from_this(), sharedDataSource, std::ref(ret));
 	mSyncCv.wait(lock);
 
 	return ret;
@@ -473,7 +474,7 @@ player_result_t MediaPlayerImpl::setObserver(std::shared_ptr<MediaPlayerObserver
 		return PLAYER_ERROR;
 	}
 
-	mpw.getQueue().enQueue(&MediaPlayerImpl::setPlayerObserver, shared_from_this(), observer);
+	mpw.enQueue(&MediaPlayerImpl::setPlayerObserver, shared_from_this(), observer);
 	mSyncCv.wait(lock);
 
 	return PLAYER_OK;
@@ -513,24 +514,34 @@ void MediaPlayerImpl::notifyObserver(player_observer_command_t cmd)
 		PlayerObserverWorker& pow = PlayerObserverWorker::getWorker();
 		switch (cmd) {
 		case PLAYER_OBSERVER_COMMAND_STARTED:
-			pow.getQueue().enQueue(&MediaPlayerObserverInterface::onPlaybackStarted, mPlayerObserver, mId);
+			pow.enQueue(&MediaPlayerObserverInterface::onPlaybackStarted, mPlayerObserver, mId);
 			break;
 		case PLAYER_OBSERVER_COMMAND_FINISHIED:
-			pow.getQueue().enQueue(&MediaPlayerObserverInterface::onPlaybackFinished, mPlayerObserver, mId);
+			pow.enQueue(&MediaPlayerObserverInterface::onPlaybackFinished, mPlayerObserver, mId);
 			break;
 		case PLAYER_OBSERVER_COMMAND_ERROR:
-			pow.getQueue().enQueue(&MediaPlayerObserverInterface::onPlaybackError, mPlayerObserver, mId);
+			pow.enQueue(&MediaPlayerObserverInterface::onPlaybackError, mPlayerObserver, mId);
 			break;
 		case PLAYER_OBSERVER_COMMAND_PAUSED:
-			pow.getQueue().enQueue(&MediaPlayerObserverInterface::onPlaybackPaused, mPlayerObserver, mId);
+			pow.enQueue(&MediaPlayerObserverInterface::onPlaybackPaused, mPlayerObserver, mId);
 			break;
 		}
 	}
 }
 
-int MediaPlayerImpl::playback(int size)
+void MediaPlayerImpl::playback()
 {
-	return start_audio_stream_out(mBuffer, get_output_bytes_frame_count(size));
+	size_t num_read = mInputDataSource->read(mBuffer,(int)mBufSize);
+	meddbg("num_read : %d\n", num_read);
+	if (num_read > 0) {
+		start_audio_stream_out(mBuffer, get_output_bytes_frame_count(num_read));
+	} else if (num_read == 0) {
+		notifyObserver(PLAYER_OBSERVER_COMMAND_FINISHIED);
+		stop();
+	} else {
+		notifyObserver(PLAYER_OBSERVER_COMMAND_ERROR);
+		stop();
+	}
 }
 
 MediaPlayerImpl::~MediaPlayerImpl()

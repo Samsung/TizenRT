@@ -8,9 +8,10 @@ sudo apt-get install genromfs
 ### Steps
 1. Enable ROMFS config through menuconfig at *os* folder.
 ```bash
-cd $TIZENRT_BASEDIR
+cd $TIZENRT_BASEDIR/os
 make menuconfig
 ```
+See [[Getting the sources]](https://github.com/Samsung/TizenRT#getting-the-sources) for how to set *TIZENRT_BASEDIR*.
 
 Select menu.
 ```bash

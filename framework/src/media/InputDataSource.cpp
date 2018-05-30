@@ -22,18 +22,15 @@
 namespace media {
 namespace stream {
 
-InputDataSource::InputDataSource()
-	: DataSource(), mAudioType(AUDIO_TYPE_INVALID)
+InputDataSource::InputDataSource() : DataSource(), mAudioType(AUDIO_TYPE_INVALID)
 {
 }
 
-InputDataSource::InputDataSource(const InputDataSource& source)
-	: DataSource(source), mAudioType(source.mAudioType)
+InputDataSource::InputDataSource(const InputDataSource &source) : DataSource(source), mAudioType(source.mAudioType)
 {
-
 }
 
-InputDataSource& InputDataSource::operator=(const InputDataSource& source)
+InputDataSource &InputDataSource::operator=(const InputDataSource &source)
 {
 	DataSource::operator=(source);
 	return *this;
@@ -63,6 +60,21 @@ audio_type_t InputDataSource::getAudioType()
 	return mAudioType;
 }
 
+size_t InputDataSource::getDecodeFrames(unsigned char *buf, size_t *size)
+{
+	unsigned int sampleRate = 0;
+	unsigned short channels = 0;
+
+	if (mDecoder->getFrame(buf, size, &sampleRate, &channels)) {
+		/* TODO set configuration should be removed when we finish implement header parser */
+		setSampleRate(sampleRate);
+		setChannels(channels);
+		medvdbg("size : %d samplerate : %d channels : %d\n", size, sampleRate, channels);
+		return *size;
+	}
+
+	return 0;
+}
 
 } // namespace stream
 } // namespace media

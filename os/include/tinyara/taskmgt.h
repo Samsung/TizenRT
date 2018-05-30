@@ -57,15 +57,6 @@
 /****************************************************************************
  * Public Data
  ****************************************************************************/
-typedef int (*TASK_MANAGER_CALLBACK)(int argc, char **args);
-
-struct task_builtin_list_s {
-	const char *name;
-	const TASK_MANAGER_CALLBACK entry;
-	const int priority;
-	const int stacksize;
-};
-typedef struct task_builtin_list_s task_builtin_list_t;
 
 struct tm_request_s {
 	int cmd;

@@ -57,8 +57,6 @@ include $(APPDIR)/Make.defs
 
 ASRCS		=
 CSRCS		= builtin_list.c
-CSRCS		+= builtin_taskinfo.c
-CSRCS		+= taskmgt_list.c
 
 AOBJS		= $(ASRCS:.S=$(OBJEXT))
 COBJS		= $(CSRCS:.c=$(OBJEXT))
@@ -93,16 +91,16 @@ $(COBJS): %$(OBJEXT): %.c
 registry$(DELIM).updated:
 	$(Q) $(MAKE) -C registry .updated TOPDIR="$(TOPDIR)" APPDIR="$(APPDIR)"
 
-builtin_list$(OBJEXT): builtin_list.h builtin_proto.h builtin_taskinfo.h taskmgt_list.h
+builtin_list$(OBJEXT): builtin_list.h builtin_proto.h
 
 builtin_list.h: registry$(DELIM).updated
 	$(call DELFILE, .xx_builtin_list.h)
 	$(Q) touch .xx_builtin_list.h
 ifeq ($(CONFIG_WINDOWS_NATIVE),y)
-	$(Q) (for /f %%G in ('dir /b registry\*.bdat') do ( type registry\%%G >> .xx_builtin_list.h )) || echo ""
+	$(Q) (for /f %%G in ('dir /b registry\*.mdat') do ( type registry\%%G >> .xx_builtin_list.h )) || echo ""
 else
 	$(Q) ( \
-		filelist=`ls registry/*.bdat 2>/dev/null || echo ""`; \
+		filelist=`ls registry/*.mdat 2>/dev/null || echo ""`; \
 		for file in $$filelist; \
 			do cat $$file >> .xx_builtin_list.h; \
 		done; \
@@ -125,36 +123,6 @@ else
 endif
 	$(Q) mv .xx_builtin_proto.h builtin_proto.h
 
-builtin_taskinfo.h: registry$(DELIM).updated
-	$(call DELFILE, .xx_builtin_taskinfo.h)
-	$(Q) touch .xx_builtin_taskinfo.h
-ifeq ($(CONFIG_WINDOWS_NATIVE),y)
-	$(Q) (for /f %%G in ('dir /b registry\*.tdat') do ( type registry\%%G >> .xx_builtin_taskinfo.h )) || echo ""
-else
-	$(Q) ( \
-		filelist=`ls registry/*.tdat 2>/dev/null || echo ""`; \
-		for file in $$filelist; \
-			do cat $$file >> .xx_builtin_taskinfo.h; \
-		done; \
-	)
-endif
-	$(Q) mv .xx_builtin_taskinfo.h builtin_taskinfo.h
-
-taskmgt_list.h: registry$(DELIM).updated
-	$(call DELFILE, .xx_taskmgt_list.h)
-	$(Q) touch .xx_taskmgt_list.h
-ifeq ($(CONFIG_WINDOWS_NATIVE),y)
-	$(Q) (for /f %%G in ('dir /b registry\*.mdat') do ( type registry\%%G >> .xx_taskmgt_list.h )) || echo ""
-else
-	$(Q) ( \
-		filelist=`ls registry/*.mdat 2>/dev/null || echo ""`; \
-		for file in $$filelist; \
-			do cat $$file >> .xx_taskmgt_list.h; \
-		done; \
-	)
-endif
-	$(Q) mv .xx_taskmgt_list.h taskmgt_list.h
-
 .built: $(OBJS)
 	$(call ARCHIVE, $(BIN), $(OBJS))
 	$(Q) touch .built
@@ -164,7 +132,7 @@ install:
 context:
 	$(Q) $(MAKE) -C registry context TOPDIR="$(TOPDIR)" APPDIR="$(APPDIR)"
 
-.depend: Makefile $(SRCS) builtin_list.h builtin_proto.h builtin_taskinfo.h taskmgt_list.h
+.depend: Makefile $(SRCS) builtin_list.h builtin_proto.h
 	$(Q) $(MKDEP) $(ROOTDEPPATH) "$(CC)" -- $(CFLAGS) -- $(SRCS) >Make.dep
 	$(Q) touch $@
 
@@ -175,8 +143,6 @@ clean:
 	$(call DELFILE, .built)
 	$(call DELFILE, .xx_builtin_list.h)
 	$(call DELFILE, .xx_builtin_proto.h)
-	$(call DELFILE, .xx_builtin_taskinfo.h)
-	$(call DELFILE, .xx_taskmgt_list.h)
 	$(call CLEAN)
 
 distclean: clean
@@ -185,8 +151,6 @@ distclean: clean
 	$(call DELFILE, .depend)
 	$(call DELFILE, builtin_list.h)
 	$(call DELFILE, builtin_proto.h)
-	$(call DELFILE, builtin_taskinfo.h)
-	$(call DELFILE, taskmgt_list.h)	
 
 -include Make.dep
 .PHONY: preconfig

@@ -23,11 +23,14 @@
 #include <tinyara/config.h>
 #include <stdio.h>
 #include <unistd.h>
+#include <semaphore.h>
 #include <sys/types.h>
 #include <task_manager/task_manager.h>
 
+#include "task_manager_sample.h"
+
 /****************************************************************************
- * hello_main
+ * task_manager_sample_main
  ****************************************************************************/
 
 #ifdef CONFIG_BUILD_KERNEL
@@ -36,46 +39,70 @@ int main(int argc, FAR char *argv[])
 int task_manager_sample_main(int argc, char *argv[])
 #endif
 {
-	int tid_actionmanager;
-	int tid_user;
-	int ret_start_actionmanager;
-	int ret_start_user;
+	int handle_actionmanager;
+	int handle_user;
+	int ret;
+	int ret_unregister_actionmanager;
+	int ret_unregister_user;
 
-	printf("Task Manager Sample is started\n");
-	printf("Register Action Manager\n");
+	sem_init(&tm_sem, 0, 0);
 
-	tid_actionmanager = task_manager_register("action_manager", TM_TASK_PERMISSION_ALL, TM_RESPONSE_WAIT_INF);
-	if (tid_actionmanager < 0) {
-		printf("FAIL TO REGISTER Action Manager, %d\n", tid_actionmanager);
-	} else if (tid_actionmanager >= 0) {
-		printf("Action Manager is succeefully registered and its tid is %d\n", tid_actionmanager);
+	printf("Task Manager Sample is started\nRegister Action Manager\n");
+
+	handle_actionmanager = task_manager_register("action_manager", TM_TASK_PERMISSION_ALL, TM_RESPONSE_WAIT_INF);
+	if (handle_actionmanager < 0) {
+		printf("FAIL TO REGISTER ACTION MANAGER, %d\n", handle_actionmanager);
+	} else if (handle_actionmanager >= 0) {
+		printf("Action Manager is succeefully registered and its handle is %d\n", handle_actionmanager);
 	}
 
 	printf("\nRegister User App\n");
-	tid_user = task_manager_register("user", TM_TASK_PERMISSION_ALL, TM_RESPONSE_WAIT_INF);
-	if (tid_user < 0) {
-		printf("FAIL TO REGISTER User App, %d\n", tid_user);
-	} else if (tid_user > 0) {
-		printf("User App is succeefully registered and its tid is %d\n", tid_user);
+	handle_user = task_manager_register("user", TM_TASK_PERMISSION_ALL, TM_RESPONSE_WAIT_INF);
+	if (handle_user < 0) {
+		printf("FAIL TO REGISTER USER APP, %d\n", handle_user);
+	} else if (handle_user >= 0) {
+		printf("User App is succeefully registered and its handle is %d\n", handle_user);
 	}
 
-	printf("\nAction Manager starts\n");
-	ret_start_actionmanager = task_manager_start(tid_actionmanager, TM_RESPONSE_WAIT_INF);
-
-	if (ret_start_actionmanager < 0) {
-		printf("FAIL TO START Action Manager, %d\n", ret_start_actionmanager);
-	} else if (ret_start_actionmanager == OK) {
+	printf("\nStart Action Manager\n");
+	ret = task_manager_start(handle_actionmanager, TM_RESPONSE_WAIT_INF);
+	if (ret < 0) {
+		printf("FAIL TO START ACTION MANAGER, %d\n", ret);
+	} else if (ret == OK) {
 		printf("Action Manager is successfully started!\n");
 	}
 
-	sleep(3);
-	printf("\nUser App starts\n");
-	ret_start_user = task_manager_start(tid_user, TM_RESPONSE_WAIT_INF);
-
-	if (ret_start_user < 0) {
-		printf("FAIL TO START User App, %d\n", ret_start_user);
-	} else if (ret_start_user == OK) {
+	sem_wait(&tm_sem);
+	printf("\nStart User App\n");
+	ret = task_manager_start(handle_user, TM_RESPONSE_WAIT_INF);
+	if (ret < 0) {
+		printf("FAIL TO START USER APP, %d\n", ret);
+	} else if (ret == OK) {
 		printf("User App is successfully started!\n");
+	}
+
+	sem_wait(&tm_sem);
+	printf("\nUnregister Action Manager\n");
+	ret_unregister_actionmanager = task_manager_unregister(handle_actionmanager, TM_RESPONSE_WAIT_INF);
+	if (ret_unregister_actionmanager < 0) {
+		printf("FAIL TO UNREGISTER ACTION MANAGER, %d\n", handle_actionmanager);
+	} else if (ret_unregister_actionmanager == OK) {
+		printf("Action Manager is succeefully unregistered\n");
+	}
+
+	printf("\nUnregister User App\n");
+	ret_unregister_user = task_manager_unregister(handle_user, TM_RESPONSE_WAIT_INF);
+	if (ret_unregister_user < 0) {
+		printf("FAIL TO UNREGISTER USER APP, %d\n", handle_user);
+	} else if (ret_unregister_user == OK) {
+		printf("User App is succeefully unregistered\n");
+	}
+
+
+	if ((ret_unregister_actionmanager == OK) && (ret_unregister_user == OK)) {
+		printf("\n\nTask Manager Samaple is successfully Ended!\n");
+	} else {
+		printf("\n\nRunning Task Manager Samaple is Failed.\n");
 	}
 
 	return 0;

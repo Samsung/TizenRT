@@ -12,4 +12,4 @@ config EXAMPLES_TASK_MANAGER_SAMPLE
 
 config USER_ENTRYPOINT
 	string
-	default "task_manager_main" if ENTRY_TASK_MANAGER
+	default "task_manager_sample_main" if ENTRY_TASK_MANAGER_SAMPLE

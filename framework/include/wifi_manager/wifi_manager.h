@@ -133,8 +133,8 @@ typedef struct {
  */
 typedef struct {
 	char ssid[32];
-	uint16_t channel;
 	char passphrase[64];
+	uint16_t channel;
 } wifi_manager_softap_config_s;
 
 /**

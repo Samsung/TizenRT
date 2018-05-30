@@ -41,7 +41,6 @@ public:
 private:
 	PlayerObserverWorker();
 	virtual ~PlayerObserverWorker();
-	int entry() override;
 };
 } // namespace media
 

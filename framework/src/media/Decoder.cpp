@@ -73,7 +73,7 @@ bool Decoder::getFrame(unsigned char *buf, size_t *size, unsigned int *sampleRat
 	/*
 	 * Need to get the enough data to parse data format.
 	 */
-	if (mPlayer.audio_type == type_unknown) {
+	if (mPlayer.audio_type == AUDIO_TYPE_UNKNOWN) {
 		mPlayer.audio_type = _get_audio_type(mPlayer.rbsp);
 
 		if (mPlayer.audio_type) {
@@ -84,7 +84,7 @@ bool Decoder::getFrame(unsigned char *buf, size_t *size, unsigned int *sampleRat
 		}
 	}
 
-	if (mPlayer.audio_type == type_unknown) {
+	if (mPlayer.audio_type == AUDIO_TYPE_UNKNOWN) {
 		medvdbg("Decoder: Unknown audio_type\n");
 		return false;
 	}

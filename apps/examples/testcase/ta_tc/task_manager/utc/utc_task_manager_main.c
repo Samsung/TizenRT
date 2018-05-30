@@ -19,6 +19,7 @@
 #include <tinyara/config.h>
 #include <stdio.h>
 #include <string.h>
+#include <stdlib.h>
 #include <unistd.h>
 #include <stdbool.h>
 #include <sys/types.h>
@@ -39,12 +40,20 @@ static bool flag;
 static task_info_t *sample_info;
 static task_info_list_t *group_list_info;
 static task_info_list_t *sample_list_info;
+static int *addr;
+static int *addr2;
 
 static void test_handler(int sig, tm_msg_t *info)
 {
 	int ret = strncmp(info->si_value.sival_ptr, TM_SAMPLE_MSG, strlen(TM_SAMPLE_MSG));
 	TC_ASSERT_EQ("task_manager_unicast_p", ret, 0);
 	flag = true;
+}
+
+void free_handler(void)
+{
+	free(addr);
+	free(addr2);
 }
 
 int tm_sample_main(int argc, char *argv[])
@@ -130,6 +139,28 @@ static void utc_task_manager_set_handler_p(void)
 	int ret;
 	ret = task_manager_set_handler(test_handler);
 	TC_ASSERT_EQ("task_manager_set_handler_p", ret, OK);
+
+	TC_SUCCESS_RESULT();
+}
+
+static void utc_task_manager_set_termination_cb_n(void)
+{
+	int ret;
+	ret = task_manager_set_termination_cb(NULL);
+	TC_ASSERT_EQ("task_manager_set_termination_cb_n", ret, TM_INVALID_PARAM);
+
+	TC_SUCCESS_RESULT();
+}
+
+static void utc_task_manager_set_termination_cb_p(void)
+{
+	int ret;
+	/* No meaningful malloc for testing resource collection handler */
+	addr = (int *)malloc(123);
+	addr2 = (int *)malloc(456);
+
+	ret = task_manager_set_termination_cb(free_handler);
+	TC_ASSERT_EQ("task_manager_set_termination_cb_p", ret, OK);
 
 	TC_SUCCESS_RESULT();
 }
@@ -370,6 +401,9 @@ int utc_task_manager_main(int argc, char *argv[])
 
 	utc_task_manager_set_handler_n();
 	utc_task_manager_set_handler_p();
+
+	utc_task_manager_set_termination_cb_n();
+	utc_task_manager_set_termination_cb_p();
 
 	utc_task_manager_unicast_n();
 	utc_task_manager_unicast_p();

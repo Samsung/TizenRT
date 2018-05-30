@@ -42,7 +42,6 @@ public:
 private:
 	RecorderObserverWorker();
 	virtual ~RecorderObserverWorker();
-	int entry() override;
 };
 } // namespace media
 
