@@ -20,7 +20,7 @@
 #include <stdio.h>
 
 #ifdef CONFIG_AUDIO_CODEC
-#include <audiocodec/streaming/player.h>
+#include "streaming/player.h"
 #endif
 
 namespace media {
