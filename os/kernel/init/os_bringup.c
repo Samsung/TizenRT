@@ -250,6 +250,10 @@ static inline void os_do_appstart(void)
 
 	svdbg("Starting application init thread\n");
 
+#if !defined(CONFIG_BUILD_KERNEL) && defined(CONFIG_HAVE_CXXINITIALIZE)
+	up_cxxinitialize();
+#endif
+
 #ifdef CONFIG_SYSTEM_PREAPP_INIT
 #ifdef CONFIG_BUILD_PROTECTED
 	DEBUGASSERT(USERSPACE->preapp_start != NULL);
