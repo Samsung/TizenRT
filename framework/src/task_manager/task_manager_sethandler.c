@@ -15,73 +15,57 @@
  * language governing permissions and limitations under the License.
  *
  ****************************************************************************/
-
-#ifndef __INCLUDE_TINYARA_TASKMGT_H
-#define __INCLUDE_TINYARA_TASKMGT_H
-
-/* This file will be used to provide definitions to support
- * task manager framework
- */
-
 /****************************************************************************
  * Included Files
  ****************************************************************************/
-
-#include <tinyara/config.h>
-#include <mqueue.h>
-#include <stdbool.h>
-#include <debug.h>
-#include <tinyara/fs/ioctl.h>
-
-/****************************************************************************
- * Pre-processor Definitions
- ****************************************************************************/
-#define TASKMGT_DRVPATH     "/dev/taskmgr"
-
-#ifdef CONFIG_DEBUG_TASK_MANAGER
-#ifdef CONFIG_DEBUG_TASK_MANAGER_ERROR
-#define tmdbg(format, ...)      dbg(format, ##__VA_ARGS__)
-#else
-#define tmdbg(x...)
-#endif
-#ifdef CONFIG_DEBUG_TASK_MANAGER_INFO
-#define tmvdbg(format, ...)     vdbg(format, ##__VA_ARGS__)
-#else
-#define tmvdbg(x...)
-#endif
-#else
-#define tmdbg(x...)
-#define tmvdbg(x...)
-#endif
+#include <stdio.h>
+#include <signal.h>
+#include <stdlib.h>
+#include <sys/types.h>
+#include <task_manager/task_manager.h>
+#include "task_manager_internal.h"
 
 /****************************************************************************
- * Public Data
+ * task_manager_set_handler
  ****************************************************************************/
+int task_manager_set_handler(void (*func)(int signo, tm_msg_t *data))
+{
+	int ret = OK;
+	struct sigaction act;
 
-struct tm_request_s {
-	int cmd;
-	int caller_pid;
-	int handle;
-	int timeout;
-	char *q_name;
-	void* data;
-};
-typedef struct tm_request_s tm_request_t;
+	if (func == NULL) {
+		return TM_INVALID_PARAM;
+	}
 
-/****************************************************************************
- * Public Function Prototypes
- ****************************************************************************/
+	act.sa_sigaction = (_sa_sigaction_t)func;
+	act.sa_flags = 0;
+	(void)sigemptyset(&act.sa_mask);
 
-#ifdef __cplusplus
-#define EXTERN extern "C"
-extern "C" {
-#else
-#define EXTERN extern
-#endif
+	ret = sigaddset(&act.sa_mask, SIGTM_UNICAST);
+	if (ret < 0) {
+		return TM_FAIL_SET_HANDLER;
+	}
 
-#undef EXTERN
-#ifdef __cplusplus
+	ret = sigaction(SIGTM_UNICAST, &act, NULL);
+	if (ret == (int)SIG_ERR) {
+		ret = TM_FAIL_SET_HANDLER;
+	}
+
+	return ret;
 }
-#endif
 
-#endif /* __INCLUDE_TINYARA_TEST_FW_H */
+/****************************************************************************
+ * task_manager_set_termination_cb
+ ****************************************************************************/
+int task_manager_set_termination_cb(void (*func)(void))
+{
+	if (func == NULL) {
+		return TM_INVALID_PARAM;
+	}
+
+	if (atexit((void *)func) != OK) {
+		return TM_FAIL_SET_TERMINATION_CB;
+	}
+
+	return OK;
+}

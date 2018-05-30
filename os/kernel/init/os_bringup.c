@@ -73,7 +73,7 @@
 #include <tinyara/logm.h>
 #endif
 #ifdef CONFIG_TASK_MANAGER
-#include <tinyara/taskmgt.h>
+#include <tinyara/task_manager_drv.h>
 #endif
 #include "wqueue/wqueue.h"
 #include "init/init.h"
@@ -267,7 +267,7 @@ static inline void os_do_appstart(void)
 #define TASKMGR_PRIORITY 200
 
 	svdbg("Starting task manager\n");
-	taskmgt_register();
+	task_manager_drv_register();
 
 	pid = task_create("task_manager", TASKMGR_PRIORITY, TASKMGR_STACK_SIZE, task_manager, (FAR char *const *)NULL);
 	if (pid < 0) {

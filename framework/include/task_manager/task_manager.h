@@ -67,9 +67,9 @@
 #define TM_FAIL_ALREADY_STOPPED_TASK  (-3)    // same as negative STOP state
 #define TM_FAIL_UNREGISTERED_TASK     (-4)    // same as negative UNREGISTERED state
 #define TM_FAIL_NOT_PERMITTED         (-5)
-#define TM_FAIL_NOT_REGISTERED        (-6)
-#define TM_FAIL_START_NOT_CREATED     (-7)
-#define TM_FAIL_SEND_MSG              (-8)
+#define TM_FAIL_REGISTER              (-6)
+#define TM_FAIL_START                 (-7)
+#define TM_FAIL_UNICAST               (-8)
 #define TM_FAIL_SET_HANDLER           (-9)
 #define TM_FAIL_NO_HANDLER            (-10)
 #define TM_FAIL_PAUSE                 (-11)
@@ -78,15 +78,16 @@
 #define TM_FAIL_RESPONSE              (-14)
 #define TM_FAIL_UNREGISTER            (-15)
 #define TM_FAIL_SET_TERMINATION_CB    (-16)
-#define TM_INVALID_PARAM              (-17)
-#define TM_OUT_OF_MEMORY              (-18)
+#define TM_FAIL_TERMINATE             (-17)
+#define TM_INVALID_PARAM              (-18)
+#define TM_OUT_OF_MEMORY              (-19)
 
 /**
  * @brief Task Info Structure
  */
 struct task_info_s {
 	char *name;
-	int gid;
+	int tm_gid;
 	int handle;
 	int status;
 	int permission;
@@ -98,12 +99,6 @@ struct task_info_list_s {
 	struct task_info_list_s *next;
 };
 typedef struct task_info_list_s task_info_list_t;
-
-struct tm_response_s {
-	int status;
-	task_info_list_t *data;
-};
-typedef struct tm_response_s tm_response_t;
 
 typedef siginfo_t tm_msg_t;
 

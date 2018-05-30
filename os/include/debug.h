@@ -709,6 +709,22 @@ Once LOGM is approved, each module should have its own index
 #define medllvdbg(x...)
 #endif
 
+#ifdef CONFIG_DEBUG_TASK_MANAGER
+#ifdef CONFIG_DEBUG_TASK_MANAGER_ERROR
+#define tmdbg(format, ...)      dbg(format, ##__VA_ARGS__)
+#else
+#define tmdbg(x...)
+#endif
+#ifdef CONFIG_DEBUG_TASK_MANAGER_INFO
+#define tmvdbg(format, ...)     vdbg(format, ##__VA_ARGS__)
+#else
+#define tmvdbg(x...)
+#endif
+#else
+#define tmdbg(x...)
+#define tmvdbg(x...)
+#endif
+
 #else							/* CONFIG_CPP_HAVE_VARARGS */
 
 /* Variadic macros NOT supported */
