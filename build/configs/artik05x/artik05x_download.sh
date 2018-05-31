@@ -142,6 +142,8 @@ make-target-bin() {
             else
                 obj=`make-target-bin --target=os --make=y` || return 1
                 gzip -c $obj > $bin
+                test $(basename $bin) = "tmp.bin" || \
+                    echo "'$t' binary file creation is complete image : $bin" >&2
             fi ;;
         ota)
             if test "$m" = "n" ; then
@@ -169,6 +171,7 @@ make-target-bin() {
                 echo -n $(printf "NRTA") | \
                     dd of=$bin bs=1 seek=`expr $objsize + 4096` conv=notrunc 2> /dev/null
                 rm -rf $obj
+                echo "'$t' binary file creation is complete image : $bin" >&2
             fi ;;
         *)
             test ! -e $bin && return 1 ;;
@@ -195,7 +198,7 @@ download()
             bin=$(make-target-bin --target=$cmd --bin=$cmd --make=$make)
             # check existence of firmware binaries
             if test $? -eq 1; then
-                echo " `echo $cmd | tr a-z A-Z` binary was not existed"
+                echo " `echo $cmd | tr a-z A-Z` binary was not existed" >&2
                 exit 1
             fi
 
@@ -213,10 +216,11 @@ download()
 
     # Download all binaries using openocd script
     if test "$make" = "n" ; then
-        pushd ${OPENOCD_DIR_PATH} > /dev/null
-            ${OPENOCD_BIN_PATH}/openocd -f artik05x.cfg -s $BOARD_DIR_PATH/../artik05x/scripts -c \
+        echo "${OPENOCD_BIN_PATH}/openocd -f artik05x.cfg -s $BOARD_DIR_PATH/../artik05x/scripts -c \
+            'init; $strcmd reset; exit'"
+
+        ${OPENOCD_BIN_PATH}/openocd -f artik05x.cfg -s $BOARD_DIR_PATH/../artik05x/scripts -c \
             "init; $strcmd reset; exit"
-        popd > /dev/null
     fi
 }
 
@@ -283,7 +287,7 @@ while test $# -gt 0; do
 done
 
 if test -z "$target"; then
-    echo "Not selected target"
+    echo "Not selected target" >&2
     usage 1>&2
 fi
 
