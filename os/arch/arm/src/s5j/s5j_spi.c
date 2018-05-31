@@ -83,6 +83,12 @@
 #include "s5j_clock.h"
 
 /****************************************************************************
+ * Pre-processor Definitions
+ ****************************************************************************/
+/* SPI maximum frequency up to 40 MHz */
+#define S5J_SPI_MAX_OPERATING_FREQ	40000000
+
+/****************************************************************************
  * Private Types
  ****************************************************************************/
 struct s5j_spidev_s {
@@ -197,6 +203,18 @@ static void spi_select(struct spi_dev_s *dev, enum spi_dev_e devid, bool selecte
 static uint32_t spi_setfrequency(struct spi_dev_s *dev, uint32_t frequency)
 {
 	FAR struct s5j_spidev_s *priv = (FAR struct s5j_spidev_s *)dev;
+
+	int div = 0;
+
+	if (frequency >= S5J_SPI_MAX_OPERATING_FREQ) {
+		frequency = S5J_SPI_MAX_OPERATING_FREQ;
+	} else {
+		div = ceil(S5J_SPI_MAX_OPERATING_FREQ / frequency);
+		if (div >= 2048) {
+			div = 2048;
+		}
+		frequency = S5J_SPI_MAX_OPERATING_FREQ / div;
+	}
 
 	s5j_clk_set_rate(priv->freqid, (unsigned long)frequency);
 

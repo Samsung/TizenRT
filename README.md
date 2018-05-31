@@ -33,6 +33,7 @@ This project is forking [TizenRT 1.0](https://github.com/Samsung/TizenRT) from [
 >   * [How to use JTAG equiqments](#how-to-use-jtag-equiqments)
 >   * [GPIO Mapping](#gpio-mapping)
 >   * [SERIAL Mapping](#serial-mapping)
+>   * [SPI Frequency](#spi-frequency)
 >   * [How to enable Secure shell](#how-to-enable-secure-shell)
 >   * [How to save/restore wifi info](#how-to-saverestore-wifi-info)
 >   * [How to enable the ARTIK SDK](#how-to-enable-the-artik-sdk)
@@ -336,6 +337,12 @@ If you change the serial console to UART3, the mapping of the other device chang
 |   XUART3   |   XUART0   |   XUART1   |   XUART2   |   XUART4   |
 |:----------:|:----------:|:----------:|:----------:|:----------:|
 | /dev/ttyS0 | /dev/ttyS1 | /dev/ttyS2 | /dev/ttyS3 | /dev/ttyS4 |
+
+## SPI Frequency
+
+In ARTIK05x, the maximum frequency of SPI is **40MHz**. You can also use this value divided by the div. The div is from 1 to 2048. Due to these limitations, the internal driver is set to an approximate value according to the set frequency.
+
+For convenience, if you set a frequency above 40MHz, it will change internally to its maximum value.
 
 ## How to enable Secure shell
 
