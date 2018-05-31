@@ -69,7 +69,7 @@ int sig_sethandler(struct tcb_s *tcb, int signo, struct sigaction *act)
 	}
 
 	/* Put the signal number in the queue entry */
-	sigact->signo = (uint8_t)SIGTM_PAUSE;
+	sigact->signo = (uint8_t)signo;
 
 	/* Add the new sigaction to sigactionq */
 	sq_addlast((FAR sq_entry_t *)sigact, &tcb->sigactionq);
