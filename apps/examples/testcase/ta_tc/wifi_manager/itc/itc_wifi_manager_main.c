@@ -153,10 +153,10 @@ static void itc_wifi_manager_init_deinit_p(void)
 {
 	wifi_manager_result_e ret = WIFI_MANAGER_FAIL;
 	ret = wifi_manager_init(&wifi_callbacks);
-	TC_ASSERT_EQ("wifi_manager_init_p", ret, WIFI_MANAGER_SUCCESS);
+	TC_ASSERT_EQ("wifi_manager_init", ret, WIFI_MANAGER_SUCCESS);
 
 	ret = wifi_manager_deinit();
-	TC_ASSERT_EQ("wifi_manager_deinit_p", ret, WIFI_MANAGER_SUCCESS);
+	TC_ASSERT_EQ("wifi_manager_deinit", ret, WIFI_MANAGER_SUCCESS);
 	TC_SUCCESS_RESULT();
 }
 
@@ -188,10 +188,10 @@ static void itc_wifi_manager_set_mode_p(void)
 			ap_config.passphrase, strlen(TEST_SOFTAP_PASSWORD), ap_config.channel);
 
 	ret = wifi_manager_set_mode(SOFTAP_MODE, &ap_config);
-	TC_ASSERT_EQ_CLEANUP("wifi_manager_set_mode_p", ret, WIFI_MANAGER_SUCCESS, wifi_manager_deinit());
+	TC_ASSERT_EQ_CLEANUP("wifi_manager_set_mode", ret, WIFI_MANAGER_SUCCESS, wifi_manager_deinit());
 
 	ret = wifi_manager_set_mode(STA_MODE, NULL);
-	TC_ASSERT_EQ_CLEANUP("wifi_manager_set_mode_p", ret, WIFI_MANAGER_SUCCESS, wifi_manager_deinit());
+	TC_ASSERT_EQ_CLEANUP("wifi_manager_set_mode", ret, WIFI_MANAGER_SUCCESS, wifi_manager_deinit());
 
 	ret = wifi_manager_deinit();
 	TC_ASSERT_EQ("wifi_manager_deinit", ret, WIFI_MANAGER_SUCCESS);
@@ -727,10 +727,10 @@ static void itc_wifi_manager_init_deinit_n(void)
 {
 	wifi_manager_result_e ret = WIFI_MANAGER_FAIL;
 	ret = wifi_manager_init(NULL);
-	TC_ASSERT_EQ("wifi_manager_init_n", ret, WIFI_MANAGER_INVALID_ARGS);
+	TC_ASSERT_EQ("wifi_manager_init", ret, WIFI_MANAGER_INVALID_ARGS);
 
 	ret = wifi_manager_deinit();
-	TC_ASSERT_EQ("wifi_manager_deinit_n", ret, WIFI_MANAGER_FAIL);
+	TC_ASSERT_EQ("wifi_manager_deinit", ret, WIFI_MANAGER_FAIL);
 	TC_SUCCESS_RESULT();
 }
 
