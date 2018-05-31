@@ -60,7 +60,7 @@ int user_main(int argc, char *argv[])
 	ret = task_manager_unicast(handle_actionmanager, msg1, strlen(msg1) + 1, TM_RESPONSE_WAIT_INF);
 	if (ret != OK) {
 		printf("ERROR : SEND SIGNAL %d\n", ret);
-	} else if (ret == OK) {
+	} else {
 		printf("Alarm On message is successfully sended!\n");
 	}
 
@@ -69,7 +69,7 @@ int user_main(int argc, char *argv[])
 	ret = task_manager_unicast(handle_actionmanager, msg2, strlen(msg2) + 1, TM_RESPONSE_WAIT_INF);
 	if (ret != OK) {
 		printf("ERROR : SEND SIGNAL %d\n", ret);
-	} else if (ret == OK) {
+	} else {
 		printf("Alarm Pause message is successfully sended!\n");
 	}
 
@@ -78,7 +78,7 @@ int user_main(int argc, char *argv[])
 	ret = task_manager_unicast(handle_actionmanager, msg3, strlen(msg3) + 1, TM_RESPONSE_WAIT_INF);
 	if (ret != OK) {
 		printf("ERROR : SEND SIGNAL %d\n", ret);
-	} else if (ret == OK) {
+	} else {
 		printf("Alarm Resume message is successfully sended!\n");
 	}
 
@@ -87,7 +87,7 @@ int user_main(int argc, char *argv[])
 	ret = task_manager_unicast(handle_actionmanager, msg4, strlen(msg4) + 1, TM_RESPONSE_WAIT_INF);
 	if (ret != OK) {
 		printf("ERROR : SEND SIGNAL %d\n", ret);
-	} else if (ret == OK) {
+	} else {
 		printf("Alarm Off message is successfully sended!\n");
 	}
 
@@ -96,5 +96,22 @@ int user_main(int argc, char *argv[])
 	free(msg3);
 	free(msg4);
 
+	sleep(1);
+	printf("\nUser App broadcasts WIFI_ON message\n");
+	ret = task_manager_broadcast(TM_BROADCAST_WIFI_ON);
+	if (ret != OK) {
+		printf("ERROR : SEND SIGNAL %d\n", ret);
+	} else {
+		printf("WIFI_ON message is successfully broadcasted!\n");
+	}
+
+	sleep(1);
+	printf("\nUser App broadcasts WIFI_OFF message\n");
+	ret = task_manager_broadcast(TM_BROADCAST_WIFI_OFF);
+	if (ret != OK) {
+		printf("ERROR : SEND SIGNAL %d\n", ret);
+	} else {
+		printf("WIFI_OFF message is successfully broadcasted!\n");
+	}
 	return 0;
 }
