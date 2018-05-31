@@ -45,9 +45,7 @@ static int *addr2;
 
 static void test_handler(int sig, tm_msg_t *info)
 {
-	int ret = strncmp(info->si_value.sival_ptr, TM_SAMPLE_MSG, strlen(TM_SAMPLE_MSG));
-	TC_ASSERT_EQ("task_manager_unicast_p", ret, 0);
-	flag = true;
+	flag = !strncmp(info->si_value.sival_ptr, TM_SAMPLE_MSG, strlen(TM_SAMPLE_MSG));
 }
 
 void free_handler(void)
@@ -75,13 +73,13 @@ static void utc_task_manager_register_n(void)
 {
 	int ret;
 	ret = task_manager_register(NULL, TM_TASK_PERMISSION_DEDICATE, TM_NO_RESPONSE);
-	TC_ASSERT_EQ("task_manager_register_n", ret, TM_INVALID_PARAM);
+	TC_ASSERT_EQ("task_manager_register", ret, TM_INVALID_PARAM);
 
 	ret = task_manager_register(TM_SAMPLE_NAME, TM_INVALID_PERMISSION, TM_NO_RESPONSE);
-	TC_ASSERT_EQ("task_manager_register_n", ret, TM_INVALID_PARAM);
+	TC_ASSERT_EQ("task_manager_register", ret, TM_INVALID_PARAM);
 
 	ret = task_manager_register(TM_SAMPLE_NAME, TM_TASK_PERMISSION_GROUP, TM_INVALID_TIMEOUT);
-	TC_ASSERT_EQ("task_manager_register_n", ret, TM_INVALID_PARAM);
+	TC_ASSERT_EQ("task_manager_register", ret, TM_INVALID_PARAM);
 
 	TC_SUCCESS_RESULT();
 }
@@ -89,10 +87,10 @@ static void utc_task_manager_register_n(void)
 static void utc_task_manager_register_p(void)
 {
 	tm_sample_handle = task_manager_register("invalid", TM_TASK_PERMISSION_DEDICATE, TM_RESPONSE_WAIT_INF);
-	TC_ASSERT_EQ("task_manager_register_p", tm_sample_handle, TM_FAIL_REGISTER);
+	TC_ASSERT_EQ("task_manager_register", tm_sample_handle, TM_FAIL_REGISTER);
 
 	tm_sample_handle = task_manager_register(TM_SAMPLE_NAME, TM_TASK_PERMISSION_DEDICATE, TM_RESPONSE_WAIT_INF);
-	TC_ASSERT_GEQ("task_manager_register_p", tm_sample_handle, 0);
+	TC_ASSERT_GEQ("task_manager_register", tm_sample_handle, 0);
 
 	TC_SUCCESS_RESULT();
 }
@@ -101,13 +99,13 @@ static void utc_task_manager_start_n(void)
 {
 	int ret;
 	ret = task_manager_start(tm_sample_handle, TM_INVALID_TIMEOUT);
-	TC_ASSERT_EQ("task_manager_start_n", ret, TM_INVALID_PARAM);
+	TC_ASSERT_EQ("task_manager_start", ret, TM_INVALID_PARAM);
 
 	ret = task_manager_start(TM_INVALID_HANDLE, TM_NO_RESPONSE);
-	TC_ASSERT_EQ("task_manager_start_n", ret, TM_INVALID_PARAM);
+	TC_ASSERT_EQ("task_manager_start", ret, TM_INVALID_PARAM);
 
 	ret = task_manager_start(TM_UNREGISTERED_HANDLE, 100);
-	TC_ASSERT_EQ("task_manager_start_n", ret, TM_FAIL_UNREGISTERED_TASK);
+	TC_ASSERT_EQ("task_manager_start", ret, TM_FAIL_UNREGISTERED_TASK);
 
 	TC_SUCCESS_RESULT();
 }
@@ -117,10 +115,10 @@ static void utc_task_manager_start_p(void)
 	int ret;
 
 	ret = task_manager_start(tm_sample_handle, TM_RESPONSE_WAIT_INF);
-	TC_ASSERT_EQ("task_manager_start_p", ret, OK);
+	TC_ASSERT_EQ("task_manager_start", ret, OK);
 
 	ret = task_manager_start(tm_sample_handle, TM_RESPONSE_WAIT_INF);
-	TC_ASSERT_EQ("task_manager_start_p", ret, TM_FAIL_ALREADY_STARTED_TASK);
+	TC_ASSERT_EQ("task_manager_start", ret, TM_FAIL_ALREADY_STARTED_TASK);
 
 	TC_SUCCESS_RESULT();
 }
@@ -129,7 +127,7 @@ static void utc_task_manager_set_handler_n(void)
 {
 	int ret;
 	ret = task_manager_set_handler(NULL);
-	TC_ASSERT_EQ("task_manager_set_handler_n", ret, TM_INVALID_PARAM);
+	TC_ASSERT_EQ("task_manager_set_handler", ret, TM_INVALID_PARAM);
 
 	TC_SUCCESS_RESULT();
 }
@@ -138,7 +136,7 @@ static void utc_task_manager_set_handler_p(void)
 {
 	int ret;
 	ret = task_manager_set_handler(test_handler);
-	TC_ASSERT_EQ("task_manager_set_handler_p", ret, OK);
+	TC_ASSERT_EQ("task_manager_set_handler", ret, OK);
 
 	TC_SUCCESS_RESULT();
 }
@@ -147,7 +145,7 @@ static void utc_task_manager_set_termination_cb_n(void)
 {
 	int ret;
 	ret = task_manager_set_termination_cb(NULL);
-	TC_ASSERT_EQ("task_manager_set_termination_cb_n", ret, TM_INVALID_PARAM);
+	TC_ASSERT_EQ("task_manager_set_termination_cb", ret, TM_INVALID_PARAM);
 
 	TC_SUCCESS_RESULT();
 }
@@ -160,7 +158,7 @@ static void utc_task_manager_set_termination_cb_p(void)
 	addr2 = (int *)malloc(456);
 
 	ret = task_manager_set_termination_cb(free_handler);
-	TC_ASSERT_EQ("task_manager_set_termination_cb_p", ret, OK);
+	TC_ASSERT_EQ("task_manager_set_termination_cb", ret, OK);
 
 	TC_SUCCESS_RESULT();
 }
@@ -169,13 +167,13 @@ static void utc_task_manager_unicast_n(void)
 {
 	int ret;
 	ret = task_manager_unicast(tm_sample_handle, TM_SAMPLE_MSG, strlen(TM_SAMPLE_MSG), TM_INVALID_TIMEOUT);
-	TC_ASSERT_EQ("task_manager_unicast_n", ret, TM_INVALID_PARAM);
+	TC_ASSERT_EQ("task_manager_unicast", ret, TM_INVALID_PARAM);
 
 	ret = task_manager_unicast(TM_INVALID_HANDLE, TM_SAMPLE_MSG, strlen(TM_SAMPLE_MSG), TM_NO_RESPONSE);
-	TC_ASSERT_EQ("task_manager_unicast_n", ret, TM_INVALID_PARAM);
+	TC_ASSERT_EQ("task_manager_unicast", ret, TM_INVALID_PARAM);
 
 	ret = task_manager_unicast(tm_sample_handle, TM_SAMPLE_MSG, 0, TM_NO_RESPONSE);
-	TC_ASSERT_EQ("task_manager_unicast_n", ret, TM_INVALID_PARAM);
+	TC_ASSERT_EQ("task_manager_unicast", ret, TM_INVALID_PARAM);
 
 	TC_SUCCESS_RESULT();
 }
@@ -183,13 +181,16 @@ static void utc_task_manager_unicast_n(void)
 static void utc_task_manager_unicast_p(void)
 {
 	int ret;
+	int sleep_cnt = 0;
 	ret = task_manager_unicast(tm_sample_handle, TM_SAMPLE_MSG, strlen(TM_SAMPLE_MSG), TM_NO_RESPONSE);
-	TC_ASSERT_EQ("task_manager_unicast_p", ret, OK);
+	TC_ASSERT_EQ("task_manager_unicast", ret, OK);
 	while (1) {
-		usleep(1);
+		sleep(1);
 		if (flag) {
 			break;
 		}
+		TC_ASSERT_LEQ("task_manager_unicast", sleep_cnt, 10);
+		sleep_cnt++;
 	}
 
 	TC_SUCCESS_RESULT();
@@ -199,10 +200,10 @@ static void utc_task_manager_pause_n(void)
 {
 	int ret;
 	ret = task_manager_pause(tm_sample_handle, TM_INVALID_TIMEOUT);
-	TC_ASSERT_EQ("task_manager_pause_n", ret, TM_INVALID_PARAM);
+	TC_ASSERT_EQ("task_manager_pause", ret, TM_INVALID_PARAM);
 
 	ret = task_manager_pause(TM_INVALID_HANDLE, TM_NO_RESPONSE);
-	TC_ASSERT_EQ("task_manager_pause_n", ret, TM_INVALID_PARAM);
+	TC_ASSERT_EQ("task_manager_pause", ret, TM_INVALID_PARAM);
 
 	TC_SUCCESS_RESULT();
 }
@@ -211,7 +212,7 @@ static void utc_task_manager_pause_p(void)
 {
 	int ret;
 	ret = task_manager_pause(tm_sample_handle, TM_RESPONSE_WAIT_INF);
-	TC_ASSERT_EQ("task_manager_pause_p", ret, OK);
+	TC_ASSERT_EQ("task_manager_pause", ret, OK);
 
 	TC_SUCCESS_RESULT();
 }
@@ -220,10 +221,10 @@ static void utc_task_manager_resume_n(void)
 {
 	int ret;
 	ret = task_manager_resume(tm_sample_handle, TM_INVALID_TIMEOUT);
-	TC_ASSERT_EQ("task_manager_resume_n", ret, TM_INVALID_PARAM);
+	TC_ASSERT_EQ("task_manager_resume", ret, TM_INVALID_PARAM);
 
 	ret = task_manager_resume(TM_INVALID_HANDLE, TM_NO_RESPONSE);
-	TC_ASSERT_EQ("task_manager_resume_n", ret, TM_INVALID_PARAM);
+	TC_ASSERT_EQ("task_manager_resume", ret, TM_INVALID_PARAM);
 
 	TC_SUCCESS_RESULT();
 }
@@ -232,7 +233,7 @@ static void utc_task_manager_resume_p(void)
 {
 	int ret;
 	ret = task_manager_resume(tm_sample_handle, TM_RESPONSE_WAIT_INF);
-	TC_ASSERT_EQ("task_manager_resume_p", ret, OK);
+	TC_ASSERT_EQ("task_manager_resume", ret, OK);
 
 	TC_SUCCESS_RESULT();
 }
@@ -241,13 +242,13 @@ static void utc_task_manager_getinfo_with_name_n(void)
 {
 	task_info_list_t *ret;
 	ret = (task_info_list_t *)task_manager_getinfo_with_name(NULL, TM_NO_RESPONSE);
-	TC_ASSERT_EQ("task_manager_getinfo_with_name_n", ret, NULL);
+	TC_ASSERT_EQ("task_manager_getinfo_with_name", ret, NULL);
 
 	ret = (task_info_list_t *)task_manager_getinfo_with_name(TM_SAMPLE_NAME, TM_INVALID_TIMEOUT);
-	TC_ASSERT_EQ("task_manager_getinfo_with_name_n", ret, NULL);
+	TC_ASSERT_EQ("task_manager_getinfo_with_name", ret, NULL);
 
 	ret = (task_info_list_t *)task_manager_getinfo_with_name(TM_SAMPLE_NAME, TM_NO_RESPONSE);
-	TC_ASSERT_EQ("task_manager_getinfo_with_name_n", ret, NULL);
+	TC_ASSERT_EQ("task_manager_getinfo_with_name", ret, NULL);
 
 	TC_SUCCESS_RESULT();
 }
@@ -255,7 +256,7 @@ static void utc_task_manager_getinfo_with_name_n(void)
 static void utc_task_manager_getinfo_with_name_p(void)
 {
 	sample_list_info = (task_info_list_t *)task_manager_getinfo_with_name(TM_SAMPLE_NAME, TM_RESPONSE_WAIT_INF);
-	TC_ASSERT_NEQ("task_manager_getinfo_with_name_p", sample_list_info, NULL);
+	TC_ASSERT_NEQ("task_manager_getinfo_with_name", sample_list_info, NULL);
 
 	TC_SUCCESS_RESULT();
 }
@@ -264,13 +265,13 @@ static void utc_task_manager_getinfo_with_handle_n(void)
 {
 	task_info_t *ret;
 	ret = (task_info_t *)task_manager_getinfo_with_handle(TM_INVALID_HANDLE, TM_NO_RESPONSE);
-	TC_ASSERT_EQ("task_manager_getinfo_with_handle_n", ret, NULL);
+	TC_ASSERT_EQ("task_manager_getinfo_with_handle", ret, NULL);
 
 	ret = (task_info_t *)task_manager_getinfo_with_handle(tm_sample_handle, TM_INVALID_TIMEOUT);
-	TC_ASSERT_EQ("task_manager_getinfo_with_handle_n", ret, NULL);
+	TC_ASSERT_EQ("task_manager_getinfo_with_handle", ret, NULL);
 
 	ret = (task_info_t *)task_manager_getinfo_with_handle(tm_sample_handle, TM_NO_RESPONSE);
-	TC_ASSERT_EQ("task_manager_getinfo_with_handle_n", ret, NULL);
+	TC_ASSERT_EQ("task_manager_getinfo_with_handle", ret, NULL);
 
 	TC_SUCCESS_RESULT();
 }
@@ -278,7 +279,7 @@ static void utc_task_manager_getinfo_with_handle_n(void)
 static void utc_task_manager_getinfo_with_handle_p(void)
 {
 	sample_info = (task_info_t *)task_manager_getinfo_with_handle(tm_sample_handle, TM_RESPONSE_WAIT_INF);
-	TC_ASSERT_NEQ("task_manager_getinfo_with_handle_p", sample_info, NULL);
+	TC_ASSERT_NEQ("task_manager_getinfo_with_handle", sample_info, NULL);
 
 	TC_SUCCESS_RESULT();
 }
@@ -287,18 +288,18 @@ static void utc_task_manager_getinfo_with_group_n(void)
 {
 	task_info_list_t *ret;
 	ret = (task_info_list_t *)task_manager_getinfo_with_group(TM_INVALID_HANDLE, TM_NO_RESPONSE);
-	TC_ASSERT_EQ("task_manager_getinfo_with_group_n", ret, NULL);
+	TC_ASSERT_EQ("task_manager_getinfo_with_group", ret, NULL);
 
 	if (!sample_info) {
 		sample_info = (task_info_t *)task_manager_getinfo_with_handle(tm_sample_handle, TM_RESPONSE_WAIT_INF);
-		TC_ASSERT_NEQ("utc_task_manager_getinfo_with_group_n", sample_info, NULL);
+		TC_ASSERT_NEQ("task_manager_getinfo_with_handle", sample_info, NULL);
 	}
 
 	ret = (task_info_list_t *)task_manager_getinfo_with_group(sample_info->tm_gid, TM_INVALID_TIMEOUT);
-	TC_ASSERT_EQ("task_manager_getinfo_with_group_n", ret, NULL);
+	TC_ASSERT_EQ("task_manager_getinfo_with_group", ret, NULL);
 
 	ret = (task_info_list_t *)task_manager_getinfo_with_group(sample_info->tm_gid, TM_NO_RESPONSE);
-	TC_ASSERT_EQ("task_manager_getinfo_with_group_n", ret, NULL);
+	TC_ASSERT_EQ("task_manager_getinfo_with_group", ret, NULL);
 
 	TC_SUCCESS_RESULT();
 }
@@ -307,11 +308,11 @@ static void utc_task_manager_getinfo_with_group_p(void)
 {
 	if (!sample_info) {
 		sample_info = (task_info_t *)task_manager_getinfo_with_handle(tm_sample_handle, TM_RESPONSE_WAIT_INF);
-		TC_ASSERT_NEQ("utc_task_manager_getinfo_with_group_p", sample_info, NULL);
+		TC_ASSERT_NEQ("task_manager_getinfo_with_handle", sample_info, NULL);
 	}
 
 	group_list_info = (task_info_list_t *)task_manager_getinfo_with_group(sample_info->tm_gid, TM_RESPONSE_WAIT_INF);
-	TC_ASSERT_NEQ("task_manager_getinfo_with_group_p", group_list_info, NULL);
+	TC_ASSERT_NEQ("task_manager_getinfo_with_group", group_list_info, NULL);
 
 	task_manager_clean_infolist(&group_list_info);
 
@@ -321,7 +322,7 @@ static void utc_task_manager_getinfo_with_group_p(void)
 static void utc_task_manager_clean_infolist_p(void)
 {
 	task_manager_clean_infolist(&sample_list_info);
-	TC_ASSERT_NEQ("task_manager_clean_infolist_p", (task_info_list_t *)&sample_list_info, NULL);
+	TC_ASSERT_NEQ("task_manager_clean_infolist", (task_info_list_t *)&sample_list_info, NULL);
 
 	TC_SUCCESS_RESULT();
 }
@@ -329,7 +330,7 @@ static void utc_task_manager_clean_infolist_p(void)
 static void utc_task_manager_clean_info_p(void)
 {
 	task_manager_clean_info(&sample_info);
-	TC_ASSERT_NEQ("task_manager_clean_info_p", (task_info_t *)&sample_info, NULL);
+	TC_ASSERT_NEQ("task_manager_clean_info", (task_info_t *)&sample_info, NULL);
 
 	TC_SUCCESS_RESULT();
 }
@@ -338,10 +339,10 @@ static void utc_task_manager_terminate_n(void)
 {
 	int ret;
 	ret = task_manager_terminate(tm_sample_handle, TM_INVALID_TIMEOUT);
-	TC_ASSERT_EQ("task_manager_terminate_n", ret, TM_INVALID_PARAM);
+	TC_ASSERT_EQ("task_manager_terminate", ret, TM_INVALID_PARAM);
 
 	ret = task_manager_terminate(TM_INVALID_HANDLE, TM_NO_RESPONSE);
-	TC_ASSERT_EQ("task_manager_terminate_n", ret, TM_INVALID_PARAM);
+	TC_ASSERT_EQ("task_manager_terminate", ret, TM_INVALID_PARAM);
 
 	TC_SUCCESS_RESULT();
 }
@@ -350,10 +351,10 @@ static void utc_task_manager_terminate_p(void)
 {
 	int ret;
 	ret = task_manager_terminate(tm_sample_handle, TM_RESPONSE_WAIT_INF);
-	TC_ASSERT_EQ("task_manager_terminate_p", ret, OK);
+	TC_ASSERT_EQ("task_manager_terminate", ret, OK);
 
 	ret = task_manager_terminate(tm_sample_handle, TM_RESPONSE_WAIT_INF);
-	TC_ASSERT_EQ("task_manager_terminate_p", ret, TM_FAIL_ALREADY_STOPPED_TASK);
+	TC_ASSERT_EQ("task_manager_terminate", ret, TM_FAIL_ALREADY_STOPPED_TASK);
 
 	TC_SUCCESS_RESULT();
 }
@@ -362,10 +363,10 @@ static void utc_task_manager_unregister_n(void)
 {
 	int ret;
 	ret = task_manager_unregister(TM_INVALID_HANDLE, TM_NO_RESPONSE);
-	TC_ASSERT_EQ("task_manager_unregister_n", ret, TM_INVALID_PARAM);
+	TC_ASSERT_EQ("task_manager_unregister", ret, TM_INVALID_PARAM);
 
 	ret = task_manager_unregister(tm_sample_handle, TM_INVALID_TIMEOUT);
-	TC_ASSERT_EQ("task_manager_unregister_n", ret, TM_INVALID_PARAM);
+	TC_ASSERT_EQ("task_manager_unregister", ret, TM_INVALID_PARAM);
 
 	TC_SUCCESS_RESULT();
 }
@@ -374,10 +375,10 @@ static void utc_task_manager_unregister_p(void)
 {
 	int ret;
 	ret = task_manager_unregister(TM_UNREGISTERED_HANDLE, TM_RESPONSE_WAIT_INF);
-	TC_ASSERT_EQ("task_manager_unregister_p", ret, TM_FAIL_UNREGISTERED_TASK);
+	TC_ASSERT_EQ("task_manager_unregister", ret, TM_FAIL_UNREGISTERED_TASK);
 
 	ret = task_manager_unregister(tm_sample_handle, TM_RESPONSE_WAIT_INF);
-	TC_ASSERT_EQ("task_manager_unregister_p", ret, OK);
+	TC_ASSERT_EQ("task_manager_unregister", ret, OK);
 
 	TC_SUCCESS_RESULT();
 }
