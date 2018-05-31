@@ -153,12 +153,12 @@ audio_manager_result_t set_audio_stream_in(uint8_t channels, uint32_t sample_rat
  ****************************************************************************/
 audio_manager_result_t set_audio_stream_out(uint8_t channels, uint32_t sample_rate, uint8_t format);
 
-int get_input_frame_count(void);
-int get_input_frames_byte_size(uint32_t frames);
-int get_input_bytes_frame_count(uint32_t bytes);
-int get_output_frame_count(void);
-int get_output_frames_byte_size(uint32_t frames);
-int get_output_bytes_frame_count(uint32_t bytes);
+uint32_t get_input_frame_count(void);
+uint32_t get_input_frames_byte_size(uint32_t frames);
+uint32_t get_input_bytes_frame_count(uint32_t bytes);
+uint32_t get_output_frame_count(void);
+uint32_t get_output_frames_byte_size(uint32_t frames);
+uint32_t get_output_bytes_frame_count(uint32_t bytes);
 
 /****************************************************************************
  * Name: start_audio_stream_in
