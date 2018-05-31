@@ -359,6 +359,30 @@ static void utc_task_manager_terminate_p(void)
 	TC_SUCCESS_RESULT();
 }
 
+static void utc_task_manager_restart_n(void)
+{
+	int ret;
+	ret = task_manager_restart(TM_INVALID_HANDLE, TM_RESPONSE_WAIT_INF);
+	TC_ASSERT_EQ("task_manager_restart", ret, TM_INVALID_PARAM);
+
+	ret = task_manager_restart(tm_sample_handle, TM_INVALID_TIMEOUT);
+	TC_ASSERT_EQ("task_manager_restart", ret, TM_INVALID_PARAM);
+
+	TC_SUCCESS_RESULT();
+}
+
+static void utc_task_manager_restart_p(void)
+{
+	int ret;
+	ret = task_manager_restart(TM_UNREGISTERED_HANDLE, TM_RESPONSE_WAIT_INF);
+	TC_ASSERT_EQ("task_manager_restart", ret, TM_FAIL_UNREGISTERED_TASK);
+
+	ret = task_manager_restart(tm_sample_handle, TM_RESPONSE_WAIT_INF);
+	TC_ASSERT_EQ("task_manager_restart", ret, OK);
+
+	TC_SUCCESS_RESULT();
+}
+
 static void utc_task_manager_unregister_n(void)
 {
 	int ret;
@@ -426,6 +450,9 @@ int utc_task_manager_main(int argc, char *argv[])
 
 	utc_task_manager_clean_infolist_p();
 	utc_task_manager_clean_info_p();
+
+	utc_task_manager_restart_n();
+	utc_task_manager_restart_p();
 
 	utc_task_manager_terminate_n();
 	utc_task_manager_terminate_p();
