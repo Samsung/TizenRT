@@ -67,9 +67,36 @@ size_t Decoder::pushData(unsigned char *buf, size_t size)
 	return 0;
 }
 
+/**
+ * @brief   Get decoded PCM sample frames
+ * @remarks
+ * @param   buf:  pointer to buffer for output
+ * @param   size: input/output parameter, in bytes.
+ *                input-size means the capability of 'buf', and also be the requested size for output.
+ *                output-size means the real output data size.
+ * @param   sampleRate:  Sample rate (Hz) of the output PCM samples
+ * @param   channels:  Number of channels of the output PCM samples
+ * @return  true  - output some data to 'buf', and output-size in the range of (0, input-size];
+ *          false - no output, and need push more audio data for decoding.
+ * @see
+ */
 bool Decoder::getFrame(unsigned char *buf, size_t *size, unsigned int *sampleRate, unsigned short *channels)
 {
 #ifdef CONFIG_AUDIO_CODEC
+	// Record pcm data fetched from audio decoder.
+	// Currently, pcm_data_t.samples point to the static buffer configured in Decoder::_configFunc(),
+	// so we can keep this pcm_data_t info before next pv_player_frame_decode() called.
+	static pcm_data_t pcm = {0};
+
+	// Get input buffer max size (it's also the request size)
+	size_t max = *size;
+
+	// Check 2 bytes aligned
+	assert((max % 2) == 0);
+
+	// Reset ouput *size 0
+	*size = 0;
+
 	/*
 	 * Need to get the enough data to parse data format.
 	 */
@@ -89,22 +116,53 @@ bool Decoder::getFrame(unsigned char *buf, size_t *size, unsigned int *sampleRat
 		return false;
 	}
 
-	if (_get_frame(&mPlayer)) {
-		pcm_data_t pcm;
-		if (_frame_decoder(&mPlayer, &pcm) != PV_FAILURE) {
-			*size = pcm.length * sizeof(short);
-			*sampleRate = pcm.samplerate;
-			*channels = pcm.channels;
-			memcpy(buf, pcm.samples, *size);
-			return true;
-		} else {
-			meddbg("Error: Decoding frame failed!\n");
-			return false;
+	while (1) {
+		if (pcm.samples) {
+			#define BYTES_PER_SAMPLE sizeof(signed short)
+			// Move remained data to decoder output buffer
+			size_t nSamples = (max - *size) / BYTES_PER_SAMPLE;
+			if (pcm.length  <= nSamples) {
+				// Move all data
+				memcpy(buf + *size, pcm.samples, pcm.length * BYTES_PER_SAMPLE);
+				*size += pcm.length * BYTES_PER_SAMPLE;
+				// Clear record
+				pcm.samples = nullptr;
+				pcm.length = 0;
+
+				if (*size == max) {
+					break;
+				}
+			} else {
+				memcpy(buf + *size, pcm.samples, nSamples * BYTES_PER_SAMPLE);
+				*size = max;
+				// Update remaind data record
+				pcm.samples += nSamples;
+				pcm.length -= nSamples;
+				break;
+			}
+			#undef BYTES_PER_SAMPLE
 		}
-	} else {
-		meddbg("Error: Getting frame failed!\n");
+
+		// Decode more
+		if (!pv_player_get_frame(&mPlayer)) {
+			// Need push more data for further decoding.
+			// In this case, *size < max.
+			break;
+		}
+
+		if (pv_player_frame_decode(&mPlayer, &pcm) == PV_FAILURE) {
+			// Decoding failed
+			break;
+		}
+	}
+
+	if (*size == 0) {
 		return false;
 	}
+
+	*sampleRate = pcm.samplerate;
+	*channels = pcm.channels;
+	return true;
 #endif
 	return false;
 }

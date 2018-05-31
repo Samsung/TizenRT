@@ -96,46 +96,50 @@ bool FileInputDataSource::isPrepare()
 
 size_t FileInputDataSource::read(unsigned char *buf, size_t size)
 {
-	size_t ret;
+	size_t rlen = 0;
 	size_t readSize = size;
 	std::shared_ptr<Decoder> decoder = getDecoder();
 	if (decoder) {
-		size_t frames = 0;
-		/* TODO Currently it just return frames which decoded only ONCE if available */
-		ret = getDecodeFrames(buf, &frames);
-		medvdbg("decode frame : %d\n", frames);
-		if (ret > 0) {
-			return ret;
+		size_t frames = size;
+		rlen = getDecodeFrames(buf, &frames);
+		medvdbg("decode frame : %d/%d\n", rlen, size);
+		if (rlen == size) {
+			return rlen;
 		}
+
+		/* Set buf offset */
+		buf += rlen;
+		/* Calculate available space in 'buf' */
+		readSize -= rlen;
 
 		if (readSize > decoder->getAvailSpace()) {
 			readSize = decoder->getAvailSpace();
 		}
 	}
 
-	ret = fread(buf, sizeof(unsigned char), readSize, mFp);
 	/* If file position reaches end of file, return 0 */
 	if (feof(mFp)) {
 		medvdbg("eof!! stop!\n");
-		return 0;
+		return rlen;
 	}
 
+	size_t ret = fread(buf, sizeof(unsigned char), readSize, mFp);
 	medvdbg("read size : %d\n", ret);
 	if (ret == 0) {
-		return EOF;
+		return rlen;
 	}
 
 	if (decoder) {
 		if (!decoder->pushData(buf, ret)) {
-			return EOF;
+			return rlen;
 		}
-		size_t frames = 0;
-		if (getDecodeFrames(buf, &frames)) {
-			return frames;
-		}
-		return EOF;
+		size_t frames = size - rlen;
+		rlen += getDecodeFrames(buf, &frames);
+		medvdbg("decode frame ; %d/%d\n", rlen, size);
+		return rlen;
 	}
-	return ret;
+
+	return rlen;
 }
 
 int FileInputDataSource::readAt(long offset, int origin, unsigned char *buf, size_t size)
