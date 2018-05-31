@@ -151,22 +151,23 @@ make-target-bin() {
                 # zero padding
                 trgsize=$(cat $obj | wc -c)
                 dd if=/dev/zero bs=1 \
-                    count=`expr $(expr $(expr $(expr $trgsize + 3) / 4) \* 4) - $trgsize` >> $obj
+                    count=`expr $(expr $(expr $(expr $trgsize + 3) / 4) \* 4) - $trgsize` >> $obj \
+                    2> /dev/null
                 objsize=$(cat $obj | wc -c)
                 # add binary
-                dd if=$obj of=$bin bs=1024 seek=4;
+                dd if=$obj of=$bin bs=1024 seek=4 2> /dev/null
                 # add start magic
                 echo -n $(printf "TIZE") | \
-                    dd of=$bin bs=1 seek=0 conv=notrunc
+                    dd of=$bin bs=1 seek=0 conv=notrunc 2> /dev/null
                 # add size
                 echo -n $(printf "%08x" $objsize) | tac -rs .. | xxd -r -p | \
-                    dd of=$bin bs=1 seek=4 conv=notrunc
+                    dd of=$bin bs=1 seek=4 conv=notrunc 2> /dev/null
                 # add crc
                 echo -n $(crc32 $obj) | tac -rs .. | xxd -r -p | \
-                    dd of=$bin bs=1 seek=8 conv=notrunc
+                    dd of=$bin bs=1 seek=8 conv=notrunc 2> /dev/null
                 # add end magic
                 echo -n $(printf "NRTA") | \
-                    dd of=$bin bs=1 seek=`expr $objsize + 4096` conv=notrunc
+                    dd of=$bin bs=1 seek=`expr $objsize + 4096` conv=notrunc 2> /dev/null
                 rm -rf $obj
             fi ;;
         *)
