@@ -183,6 +183,13 @@
 #define SIGTM_RESUME       CONFIG_SIG_SIGTM_RESUME
 #endif
 
+/* SIGTM_BROADCAST is used in Task Manager */
+#ifndef CONFIG_SIG_SIGTM_BROADCAST
+#define SIGTM_BROADCAST       21			/* Taskmgt signal */
+#else
+#define SIGTM_BROADCAST       CONFIG_SIG_SIGTM_BROADCAST
+#endif
+
 /* sigprocmask() "how" definitions. Only one of the following can be specified: */
 
 #define SIG_BLOCK       1		/* Block the given signals */

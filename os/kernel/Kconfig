@@ -845,6 +845,15 @@ config SIG_SIGTM_RESUME
 		task manager. This setting specifies the signal number that will be
 		used for SIGTM_RESUME. Default: 20
 
+config SIG_SIGTM_BROADCAST
+	int "SIGTM_BROADCAST"
+	default 21
+	depends on TASK_MANAGER
+	---help---
+		SIGTM_BROADCAST is a non-standard signal used to send broadcast message to
+		the internal TinyAra task manager. This setting specifies the signal number
+		that will be used for SIGTM_BROADCAST. Default: 21
+
 endmenu # Signal Numbers
 
 menu "POSIX Message Queue Options"
