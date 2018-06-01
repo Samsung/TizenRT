@@ -17,15 +17,16 @@
  ******************************************************************/
 
 #include <debug.h>
-
 #include <media/FileOutputDataSource.h>
+#include "utils/MediaUtils.h"
+#include "Encoder.h"
 
 namespace media {
 namespace stream {
 
 FileOutputDataSource::FileOutputDataSource(const std::string& dataPath)
 	: OutputDataSource(), mDataPath(dataPath), mFp(nullptr)
-{	
+{
 }
 
 FileOutputDataSource::FileOutputDataSource(unsigned short channels, unsigned int sampleRate, int pcmFormat, const std::string& dataPath)
@@ -33,7 +34,7 @@ FileOutputDataSource::FileOutputDataSource(unsigned short channels, unsigned int
 {
 }
 
-FileOutputDataSource::FileOutputDataSource(const FileOutputDataSource& source) : 
+FileOutputDataSource::FileOutputDataSource(const FileOutputDataSource& source) :
 	OutputDataSource(source), mDataPath(source.mDataPath), mFp(source.mFp)
 {
 }
@@ -46,19 +47,31 @@ FileOutputDataSource& FileOutputDataSource::operator=(const FileOutputDataSource
 
 bool FileOutputDataSource::open()
 {
-	if (!mFp) {
-		mFp = fopen(mDataPath.c_str(), "w");
-		if (mFp) {
-			medvdbg("file open success\n");
-			return true;
-		} else {
-			medvdbg("file open failed\n");
-			return false;
-		}
+	if (mFp) {
+		medvdbg("file already exists\n");
+		return false;
 	}
 
-	medvdbg("file already exists\n");
-	return false;
+	setAudioType(utils::getAudioTypeFromPath(mDataPath));
+
+	switch (getAudioType()) {
+		case AUDIO_TYPE_OPUS:
+			setEncoder(std::make_shared<Encoder>(AUDIO_TYPE_OPUS));
+			break;
+
+		default:
+			/* Don't set any decoder for unsupported formats */
+			break;
+	}
+
+	mFp = fopen(mDataPath.c_str(), "w");
+	if (mFp) {
+		medvdbg("file open success\n");
+		return true;
+	} else {
+		medvdbg("file open failed\n");
+		return false;
+	}
 }
 
 bool FileOutputDataSource::close()
@@ -78,11 +91,40 @@ bool FileOutputDataSource::isPrepare()
 
 size_t FileOutputDataSource::write(unsigned char* buf, size_t size)
 {
-	if (!buf) {
-		return (size_t)0;
+	size_t wlen = 0;
+	if (!isPrepare()) {
+		return wlen;
 	}
 
-	return fwrite(buf, sizeof(unsigned char), size, mFp);
+	std::shared_ptr<Encoder> encoder = getEncoder();
+
+	while (wlen < size) {
+		if (encoder) {
+			// Push data as much as possible
+			wlen += encoder->pushData(buf + wlen, size - wlen);
+
+			// Get encoded data and save to file.
+			// Actually, it's an encoding process.
+			while (1) {
+				// Reuse 'wlen' bytes free space in 'buf'.
+				// Encoded data size is usually smaller than origin PCM data size.
+				size_t ret = wlen;
+				if (!encoder->getFrame(buf, &ret)) {
+					// Need push more data
+					break;
+				}
+
+				size_t written = fwrite(buf, sizeof(unsigned char), ret, mFp);
+				medvdbg("written size: %d\n", written);
+				assert(written == ret);
+			}
+		} else {
+			wlen = fwrite(buf + wlen, sizeof(unsigned char), size - wlen, mFp);
+			medvdbg("written size : %d\n", wlen);
+		}
+	}
+
+	return wlen;
 }
 
 FileOutputDataSource::~FileOutputDataSource()

@@ -187,11 +187,12 @@ size_t Decoder::getAvailSpace()
 int Decoder::_configFunc(void *user_data, int audio_type, void *dec_ext)
 {
 	/* To-do: Below buffer size and channel count must be calculated correctly. */
+	static const int TARGET_SAMPLE_RATE = 16000;
 	static const int TARGET_SOUND_TRACK = 2;
 	static uint8_t inputBuf[4096];
 	static int16_t outputBuf[4096];
 
-	if (audio_type == type_mp3) {
+	if (audio_type == AUDIO_TYPE_MP3) {
 		tPVMP3DecoderExternal *mp3_ext = (tPVMP3DecoderExternal *)dec_ext;
 		mp3_ext->equalizerType = flat;
 		mp3_ext->crcEnabled = false;
@@ -199,13 +200,23 @@ int Decoder::_configFunc(void *user_data, int audio_type, void *dec_ext)
 		mp3_ext->pOutputBuffer = outputBuf;
 		mp3_ext->outputFrameSize = sizeof(outputBuf) / sizeof(int16_t);
 		return 0;
-	} else if (audio_type == type_aac) {
+	} else if (audio_type == AUDIO_TYPE_AAC) {
 		tPVMP4AudioDecoderExternal *aac_ext = (tPVMP4AudioDecoderExternal *)dec_ext;
 		aac_ext->outputFormat = OUTPUTFORMAT_16PCM_INTERLEAVED;
 		aac_ext->desiredChannels = TARGET_SOUND_TRACK;
 		aac_ext->pInputBuffer = inputBuf;
 		aac_ext->pOutputBuffer = outputBuf;
 		aac_ext->aacPlusEnabled = 1;
+		return 0;
+	} else if (audio_type == AUDIO_TYPE_OPUS) {
+		opus_dec_external_t *ext = (opus_dec_external_t *)dec_ext;
+		ext->pInputBuffer = inputBuf;
+		ext->inputBufferMaxLength = sizeof(inputBuf);
+		ext->pOutputBuffer = outputBuf;
+		ext->outputFrameSize = sizeof(outputBuf)/sizeof(int16_t);
+		ext->outputBufferMaxLength = ext->outputFrameSize;
+		ext->desiredSampleRate = TARGET_SAMPLE_RATE;
+		ext->desiredChannels = TARGET_SOUND_TRACK;
 		return 0;
 	}
 

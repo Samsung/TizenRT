@@ -60,10 +60,8 @@ bool FileInputDataSource::open()
 	switch (getAudioType()) {
 	case AUDIO_TYPE_MP3:
 	case AUDIO_TYPE_AAC:
-		setDecoder(std::make_shared<Decoder>());
-		break;
 	case AUDIO_TYPE_OPUS:
-		/* To be supported */
+		setDecoder(std::make_shared<Decoder>());
 		break;
 	case AUDIO_TYPE_FLAC:
 		/* To be supported */

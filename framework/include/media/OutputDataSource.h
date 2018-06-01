@@ -32,6 +32,7 @@
 #include <media/DataSource.h>
 
 namespace media {
+class Encoder;
 namespace stream {
 /**
  * @class
@@ -53,11 +54,11 @@ public:
 	 * @details @b #include <media/OutputDataSource.h>
 	 * param[in] channels   The channels that the channels of audio
 	 * param[in] sampleRate The sampleRate that the sample rate of audio
-	 * param[in] pcmFormat  The pcmFormat that the pcm format of audio	
+	 * param[in] pcmFormat  The pcmFormat that the pcm format of audio
 	 * @since TizenRT v2.0 PRE
 	 */
 	OutputDataSource(unsigned short channels, unsigned int sampleRate, int pcmFormat);
-	
+
 	/**
 	 * @brief Copy constructs for OutputDataSource.
 	 * @details @b #include <media/OutputDataSource.h>
@@ -76,6 +77,16 @@ public:
 	 * @since TizenRT v2.0 PRE
 	 */
 	virtual ~OutputDataSource();
+
+protected:
+	const std::shared_ptr<Encoder> getEncoder();
+	void setEncoder(std::shared_ptr<Encoder> encoder);
+	void setAudioType(audio_type_t audioType);
+	audio_type_t getAudioType();
+
+private:
+	audio_type_t mAudioType;
+	std::shared_ptr<Encoder> mEncoder;
 
 public:
 	/**

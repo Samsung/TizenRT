@@ -17,21 +17,22 @@
  ******************************************************************/
 
 #include <media/OutputDataSource.h>
+#include "Encoder.h"
 
 namespace media {
 namespace stream {
 OutputDataSource::OutputDataSource()
-	: DataSource()
+	: DataSource(), mAudioType(AUDIO_TYPE_INVALID), mEncoder(nullptr)
 {
 }
 
 OutputDataSource::OutputDataSource(unsigned short channels, unsigned int sampleRate, int pcmFormat)
-	: DataSource(channels, sampleRate, pcmFormat)
+	: DataSource(channels, sampleRate, pcmFormat), mAudioType(AUDIO_TYPE_INVALID), mEncoder(nullptr)
 {
 }
 
 OutputDataSource::OutputDataSource(const OutputDataSource& source)
-	: DataSource(source)
+	: DataSource(source), mAudioType(source.mAudioType), mEncoder(source.mEncoder)
 {
 }
 
@@ -44,5 +45,28 @@ OutputDataSource& OutputDataSource::operator=(const OutputDataSource& source)
 OutputDataSource::~OutputDataSource()
 {
 }
+
+void OutputDataSource::setEncoder(std::shared_ptr<Encoder> encoder)
+{
+	mEncoder = encoder;
+}
+
+const std::shared_ptr<Encoder> OutputDataSource::getEncoder()
+{
+	return mEncoder;
+}
+
+void OutputDataSource::setAudioType(audio_type_t audioType)
+{
+	mAudioType = audioType;
+}
+
+audio_type_t OutputDataSource::getAudioType()
+{
+	return mAudioType;
+}
+
+
+
 } // namespace stream
 } // namespace media
