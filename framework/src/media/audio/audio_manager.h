@@ -153,11 +153,70 @@ audio_manager_result_t set_audio_stream_in(uint8_t channels, uint32_t sample_rat
  ****************************************************************************/
 audio_manager_result_t set_audio_stream_out(uint8_t channels, uint32_t sample_rate, uint8_t format);
 
+/****************************************************************************
+ * Name: get_input_frame_count
+ *
+ * Description:
+ *   Get the frame size of the pcm buffer in the active input audio device.
+ *
+ * Returned Value:
+ *   On success, the size of the pcm buffer for input streams. Otherwise, 0.
+ ****************************************************************************/
 uint32_t get_input_frame_count(void);
+
+/****************************************************************************
+ * Name: get_input_frames_byte_size
+ *
+ * Description:
+ *   Get the byte size of the given frame value in input stream.
+ *
+ * Returned Value:
+ *   On success, the byte size of the frame in input stream. Otherwise, 0.
+ ****************************************************************************/
 uint32_t get_input_frames_byte_size(uint32_t frames);
+
+/****************************************************************************
+ * Name: get_input_bytes_frame_count
+ *
+ * Description:
+ *   Get the number of frames for the given byte size in input stream.
+ *
+ * Returned Value:
+ *   On success, the number of frames in input stream. Otherwise, 0.
+ ****************************************************************************/
 uint32_t get_input_bytes_frame_count(uint32_t bytes);
+
+/****************************************************************************
+ * Name: get_output_frame_count
+ *
+ * Description:
+ *   Get the frame size of the pcm buffer in the active output audio device.
+ *
+ * Returned Value:
+ *   On success, the size of the pcm buffer for output streams. Otherwise, 0.
+ ****************************************************************************/
 uint32_t get_output_frame_count(void);
+
+/****************************************************************************
+ * Name: get_output_frames_byte_size
+ *
+ * Description:
+ *   Get the byte size of the given frame value in output stream.
+ *
+ * Returned Value:
+ *   On success, the byte size of the frame in output stream. Otherwise, 0.
+ ****************************************************************************/
 uint32_t get_output_frames_byte_size(uint32_t frames);
+
+/****************************************************************************
+ * Name: get_output_bytes_frame_count
+ *
+ * Description:
+ *   Get the number of frames for the given byte size in output stream.
+ *
+ * Returned Value:
+ *   On success, the number of frames in output stream. Otherwise, 0.
+ ****************************************************************************/
 uint32_t get_output_bytes_frame_count(uint32_t bytes);
 
 /****************************************************************************

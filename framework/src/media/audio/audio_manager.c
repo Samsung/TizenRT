@@ -372,7 +372,7 @@ uint32_t get_input_frame_count(void)
 
 uint32_t get_input_frames_byte_size(uint32_t frames)
 {
-	if (g_actual_audio_in_card_id < 0) {
+	if ((g_actual_audio_in_card_id < 0) || (frames == 0)) {
 		meddbg("No input audio card is active.\n");
 		return 0;
 	}
@@ -382,7 +382,7 @@ uint32_t get_input_frames_byte_size(uint32_t frames)
 
 uint32_t get_input_bytes_frame_count(uint32_t bytes)
 {
-	if (g_actual_audio_in_card_id < 0) {
+	if ((g_actual_audio_in_card_id < 0) || (bytes == 0)) {
 		meddbg("No input audio card is active.\n");
 		return 0;
 	}
@@ -402,7 +402,7 @@ uint32_t get_output_frame_count(void)
 
 uint32_t get_output_frames_byte_size(uint32_t frames)
 {
-	if (g_actual_audio_out_card_id < 0) {
+	if ((g_actual_audio_out_card_id < 0) || (frames == 0)) {
 		meddbg("No output audio card is active.\n");
 		return 0;
 	}
@@ -412,7 +412,7 @@ uint32_t get_output_frames_byte_size(uint32_t frames)
 
 uint32_t get_output_bytes_frame_count(uint32_t bytes)
 {
-	if (g_actual_audio_out_card_id < 0) {
+	if ((g_actual_audio_out_card_id < 0) || (bytes == 0)) {
 		meddbg("No output audio card is active.\n");
 		return 0;
 	}
