@@ -58,6 +58,7 @@ CSRCS		=
 
 CSRCS += $(wildcard ./mp3dec/*.c)
 CSRCS += $(wildcard ./aacdec/*.c)
+CSRCS += $(wildcard ./opus/*.c)
 
 CFLAGS += -D__TINYARA__
 CFLAGS += -std=c99
