@@ -61,7 +61,7 @@ THREADEXEC = TASH_EXECMD_SYNC
 
 ASRCS =
 ARTIK_SDK_DIR = $(TOPDIR)/../external/artik-sdk
-CFLAGS += -D__TINYARA__
+CFLAGS += -D__TIZENRT__
 CFLAGS += -Wno-error=strict-prototypes
 CFLAGS += -I$(ARTIK_SDK_DIR)/inc/base
 CFLAGS += -I$(ARTIK_SDK_DIR)/inc/systemio
