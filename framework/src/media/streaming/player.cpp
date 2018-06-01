@@ -27,6 +27,8 @@
 #include "player.h"
 #include "../utils/internal_defs.h"
 
+namespace media {
+
 /****************************************************************************
  * Pre-processor Definitions
  ****************************************************************************/
@@ -34,7 +36,9 @@
 #define PV_FAILURE ERROR
 
 // Validation of audio type
-#define CHECK_AUDIO_TYPE(type) (AUDIO_TYPE_UNKNOWN < (type) && (type) < AUDIO_TYPE_MAX)
+#define CHECK_AUDIO_TYPE(type) ((type) == AUDIO_TYPE_MP3 || \
+								(type) == AUDIO_TYPE_AAC || \
+								(type) == AUDIO_TYPE_OPUS)
 
 // MP3 tag frame header len
 #define MP3_HEAD_ID3_TAG_LEN 10
@@ -112,6 +116,13 @@
 #define FRAME_MATCH_REQUIRED 2
 
 #define U32_LEN_IN_BYTES (sizeof(uint32_t) / sizeof(uint8_t))
+
+// Opus packet header is self-defined, 4 bytes syncword + 4 bytes packet length.
+#define OPUS_PACKET_HEADER_LEN 8
+
+// Opus packet sync verify
+#define OPUS_PACKET_SYNC_VERIFY(buf) (strncmp((const char *)buf, "Opus", 4) == 0)
+#define OPUS_PACKET_GETSIZE(buf) (OPUS_PACKET_HEADER_LEN + _u32_at(buf+4))
 
 /****************************************************************************
  * Private Declarations
@@ -593,6 +604,148 @@ bool aac_check_type(rbstream_p rbsp)
 	return result;
 }
 
+// Resync to next valid Opus frame in the file.
+static bool opus_resync(rbstream_p fp, ssize_t *inout_pos)
+{
+	ssize_t pos = *inout_pos;
+	bool valid = false;
+
+	uint8_t buf[FRAME_RESYNC_READ_BYTES];
+	ssize_t bytesToRead = FRAME_RESYNC_READ_BYTES;
+	ssize_t totalBytesRead = 0;
+	ssize_t remainingBytes = 0;
+	bool reachEOS = false;
+	uint8_t *tmp = buf;
+
+	do {
+		if (pos >= *inout_pos + FRAME_RESYNC_MAX_CHECK_BYTES) {
+			break;
+		}
+
+		if (remainingBytes < OPUS_PACKET_HEADER_LEN) {
+			if (reachEOS) {
+				break;
+			}
+
+			memcpy(buf, tmp, remainingBytes);
+			bytesToRead = FRAME_RESYNC_READ_BYTES - remainingBytes;
+
+			/*
+			 * The next read position should start from the end of
+			 * the last buffer, and thus should include the remaining
+			 * bytes in the buffer.
+			 */
+			totalBytesRead = _source_read_at(fp, pos + remainingBytes, buf + remainingBytes, bytesToRead);
+			if (totalBytesRead <= 0) {
+				break;
+			}
+
+			reachEOS = (totalBytesRead != bytesToRead);
+			remainingBytes += totalBytesRead;
+			tmp = buf;
+			continue;
+		}
+
+		if (!OPUS_PACKET_SYNC_VERIFY(tmp)) {
+			++pos;
+			++tmp;
+			--remainingBytes;
+			continue;
+		}
+
+		// We found what looks like a valid frame,
+		// now find its successors.
+		valid = true;
+		int frame_size = OPUS_PACKET_GETSIZE(tmp);
+		ssize_t test_pos = pos + frame_size;
+		int j;
+		for (j = 0; j < FRAME_MATCH_REQUIRED; ++j) {
+			uint8_t temp[OPUS_PACKET_HEADER_LEN];
+			ssize_t retval = _source_read_at(fp, test_pos, temp, sizeof(temp));
+			if (retval < (ssize_t) sizeof(temp)) {
+				valid = false;
+				break;
+			}
+
+			if (!OPUS_PACKET_SYNC_VERIFY(temp)) {
+				valid = false;
+				break;
+			}
+
+			int test_frame_size = OPUS_PACKET_GETSIZE(temp);
+			test_pos += test_frame_size;
+		}
+
+		if (valid) {
+			*inout_pos = pos;
+		}
+
+		++pos;
+		++tmp;
+		--remainingBytes;
+	} while (!valid);
+
+	return valid;
+}
+
+// Initialize the Opus reader.
+bool opus_init(rbstream_p mFp, ssize_t *offset)
+{
+	// Sync to the first valid frame.
+	bool success = opus_resync(mFp, offset);
+	RETURN_VAL_IF_FAIL((success == true), false);
+
+	// Policy: Pop out data when *offset updated!
+	rbs_seek_ext(mFp, *offset, SEEK_SET);
+	return true;
+}
+
+// Get the next valid Opus frame.
+bool opus_get_frame(rbstream_p mFp, ssize_t *offset, void *buffer, uint32_t *size)
+{
+	size_t frame_size = 0;
+	uint8_t *buf = (uint8_t *) buffer;
+
+	for (;;) {
+		ssize_t n = _source_read_at(mFp, *offset, buffer, OPUS_PACKET_HEADER_LEN);
+		RETURN_VAL_IF_FAIL((n == OPUS_PACKET_HEADER_LEN), false);
+
+		if (OPUS_PACKET_SYNC_VERIFY(buf)) {
+			frame_size = OPUS_PACKET_GETSIZE(buf);
+			break;
+		}
+
+		// Lost sync.
+		ssize_t pos = *offset;
+		RETURN_VAL_IF_FAIL(opus_resync(mFp, &pos), false);
+
+		*offset = pos;
+		rbs_seek_ext(mFp, *offset, SEEK_SET);
+		// Try again with the new position.
+	}
+
+	ssize_t n = _source_read_at(mFp, *offset, buffer, frame_size);
+	RETURN_VAL_IF_FAIL((n == (ssize_t) frame_size), false);
+
+	*size = frame_size;
+	*offset += frame_size;
+	rbs_seek_ext(mFp, *offset, SEEK_SET);
+
+	return true;
+}
+
+bool opus_check_type(rbstream_p rbsp)
+{
+	bool result = false;
+	int value = rbs_ctrl(rbsp, OPTION_ALLOW_TO_DEQUEUE, 0);
+	ssize_t pos = 0;
+	result = opus_resync(rbsp, &pos);
+	rbs_ctrl(rbsp, OPTION_ALLOW_TO_DEQUEUE, value);
+
+	return result;
+}
+
+
 int _get_audio_type(rbstream_p rbsp)
 {
 	if (mp3_check_type(rbsp)) {
@@ -601,6 +754,10 @@ int _get_audio_type(rbstream_p rbsp)
 
 	if (aac_check_type(rbsp)) {
 		return AUDIO_TYPE_AAC;
+	}
+
+	if (opus_check_type(rbsp)) {
+		return AUDIO_TYPE_OPUS;
 	}
 
 	return AUDIO_TYPE_UNKNOWN;
@@ -620,6 +777,11 @@ bool _get_frame(pv_player_p player)
 	case AUDIO_TYPE_AAC: {
 		tPVMP4AudioDecoderExternal *aac_ext = (tPVMP4AudioDecoderExternal *) player->dec_ext;
 		return aac_get_frame(player->rbsp, &priv->mCurrentPos, (void *)aac_ext->pInputBuffer, (uint32_t *)&aac_ext->inputBufferCurrentLength);
+	}
+
+	case AUDIO_TYPE_OPUS: {
+		opus_dec_external_t *opus_ext = (opus_dec_external_t *) player->dec_ext;
+		return opus_get_frame(player->rbsp, &priv->mCurrentPos, (void *)opus_ext->pInputBuffer, (uint32_t *)&opus_ext->inputBufferCurrentLength);
 	}
 
 	default:
@@ -644,7 +806,7 @@ int _init_decoder(pv_player_p player)
 		player->config_func(player->cb_data, player->audio_type, player->dec_ext);
 
 		pvmp3_resetDecoder(player->dec_mem);
-		pvmp3_InitDecoder(player->dec_ext, player->dec_mem);
+		pvmp3_InitDecoder((tPVMP3DecoderExternal *) player->dec_ext, player->dec_mem);
 
 		priv->mCurrentPos = 0;
 		bool ret = mp3_init(player->rbsp, &priv->mCurrentPos, &priv->mFixedHeader);
@@ -662,11 +824,30 @@ int _init_decoder(pv_player_p player)
 		player->config_func(player->cb_data, player->audio_type, player->dec_ext);
 
 		PVMP4AudioDecoderResetBuffer(player->dec_mem);
-		Int err = PVMP4AudioDecoderInitLibrary(player->dec_ext, player->dec_mem);
+		Int err = PVMP4AudioDecoderInitLibrary((tPVMP4AudioDecoderExternal *) player->dec_ext, player->dec_mem);
 		RETURN_VAL_IF_FAIL((err == MP4AUDEC_SUCCESS), PV_FAILURE);
 
 		priv->mCurrentPos = 0;
 		bool ret = aac_init(player->rbsp, &priv->mCurrentPos);
+		RETURN_VAL_IF_FAIL((ret == true), PV_FAILURE);
+		break;
+	}
+
+	case AUDIO_TYPE_OPUS: {
+		player->dec_ext = calloc(1, sizeof(opus_dec_external_t));
+		RETURN_VAL_IF_FAIL((player->dec_ext != NULL), PV_FAILURE);
+
+		player->dec_mem = calloc(1, opus_decoderMemRequirements());
+		RETURN_VAL_IF_FAIL((player->dec_mem != NULL), PV_FAILURE);
+
+		player->config_func(player->cb_data, player->audio_type, player->dec_ext);
+
+		opus_resetDecoder(player->dec_mem);
+		int err = opus_initDecoder((opus_dec_external_t *) player->dec_ext, player->dec_mem);
+		RETURN_VAL_IF_FAIL((err == OPUS_OK), PV_FAILURE);
+
+		priv->mCurrentPos = 0;
+		bool ret = opus_init(player->rbsp, &priv->mCurrentPos);
 		RETURN_VAL_IF_FAIL((ret == true), PV_FAILURE);
 		break;
 	}
@@ -713,6 +894,20 @@ int _frame_decoder(pv_player_p player, pcm_data_p pcm)
 		pcm->samples = aac_ext->pOutputBuffer;
 		pcm->channels = aac_ext->desiredChannels;
 		pcm->samplerate = aac_ext->samplingRate;
+		break;
+	}
+
+	case AUDIO_TYPE_OPUS: {
+		opus_dec_external_t *opus_ext = (opus_dec_external_t *) player->dec_ext;
+
+		Int err = opus_frameDecode(opus_ext, player->dec_mem);
+		medvdbg("[%s] Line %d, opus_frameDecode, err %d\n", __FUNCTION__, __LINE__, err);
+		RETURN_VAL_IF_FAIL((err == OPUS_OK), PV_FAILURE);
+
+		pcm->length = opus_ext->outputFrameSize * opus_ext->desiredChannels;
+		pcm->samples = opus_ext->pOutputBuffer;
+		pcm->channels = opus_ext->desiredChannels;
+		pcm->samplerate = opus_ext->desiredSampleRate;
 		break;
 	}
 
@@ -895,3 +1090,4 @@ int pv_player_run(pv_player_p player)
 	return PV_SUCCESS;
 }
 
+} // namespace media

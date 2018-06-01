@@ -23,35 +23,10 @@
 #include "../utils/rbs.h"
 #include <audiocodec/mp3dec/pvmp3decoder_api.h>
 #include <audiocodec/aacdec/pvmp4audiodecoder_api.h>
+#include <audiocodec/opus/opus_decoder_api.h>
+#include <media/MediaTypes.h>
 
-#ifdef __cplusplus
-extern "C" {
-#endif
-
-/**
- * @brief Audio type detected by player from audio stream.
- */
-enum audio_type_e {
-	AUDIO_TYPE_INVALID = 0,
-	AUDIO_TYPE_UNKNOWN = AUDIO_TYPE_INVALID,
-	AUDIO_TYPE_MP3 = 1,
-	AUDIO_TYPE_AAC = 2,
-
-	// add new type above.
-	AUDIO_TYPE_MAX
-};
-
-typedef enum audio_type_e audio_type_t;
-
-/**
- * Deprecated, to be removed.
- */
-enum {
-	type_unknown = AUDIO_TYPE_UNKNOWN,
-	type_mp3 = AUDIO_TYPE_MP3,
-	type_aac = AUDIO_TYPE_AAC,
-	type_max,
-};
+namespace media {
 
 /**
  * @struct  pcm_data_s
@@ -76,7 +51,7 @@ typedef struct pv_player_s *pv_player_p;
  * @brief  configure callback routine type.
  *
  * @param  user_data: Pointer to user callback data register via pv_player_init()
- * @param  audio_type: the audio format of current playing audio, type_mp3, type_aac
+ * @param  audio_type: the audio format of current playing audio
  * @param  dec_cfg: Pointer to an object of tPVMP3DecoderExternal or tPVMP4AudioDecoderExternal,
  *         according to certain audio_type.
  * @return 0 on success, otherwise, return -1.
@@ -236,8 +211,7 @@ int _init_decoder(pv_player_p player);
 int _frame_decoder(pv_player_p player, pcm_data_p pcm);
 //}}
 
-#ifdef __cplusplus
-} /* extern "C" */
-#endif
+} // namespace media
+
 #endif /* STREAMING_PLAYER_H */
 
