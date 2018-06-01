@@ -78,9 +78,10 @@
 #define TM_FAIL_RESPONSE              (-14)
 #define TM_FAIL_UNREGISTER            (-15)
 #define TM_FAIL_SET_TERMINATION_CB    (-16)
-#define TM_FAIL_TERMINATE             (-17)
-#define TM_INVALID_PARAM              (-18)
-#define TM_OUT_OF_MEMORY              (-19)
+#define TM_FAIL_RESTART               (-17)
+#define TM_FAIL_TERMINATE             (-18)
+#define TM_INVALID_PARAM              (-19)
+#define TM_OUT_OF_MEMORY              (-20)
 
 /**
  * @brief Broadcast message list
@@ -187,6 +188,19 @@ int task_manager_pause(int handle, int timeout);
  * @since TizenRT v2.0 PRE
  */
 int task_manager_resume(int handle, int timeout);
+/**
+ * @brief Request to restart the task
+ * @details @b #include <task_manager/task_manager.h>
+ * It cannot guarantee the resource deallocation.
+ * @param[in] handle the handle id of task which request to restart
+ * @param[in] timeout returnable flag. It can be one of the below.\n
+ *			TM_NO_RESPONSE : Ignore the response of request from task manager\n
+ *			TM_RESPONSE_WAIT_INF : Blocked until get the response from task manager\n
+ *			integer value : Specifies an upper limit on the time for which will block in milliseconds
+ * @return On success, OK is returned. On failure, defined negative value is returned.
+ * @since TizenRT v2.0 PRE
+ */
+int task_manager_restart(int handle, int timeout);
 /**
  * @brief Request to send messages to the task
  * @details @b #include <task_manager/task_manager.h>

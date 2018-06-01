@@ -16,9 +16,11 @@
 13. The action\_manager requests to pause the alarm action through the task manager by using ```task_manager_pause()```.
 14. Three seconds after sending the alarm action pause request message, the user\_app sends a unicast message to the action\_manager through the task manager to resume the alarm action by using ```task_manager_unicast()```.
 15. The action\_manager requests to resume the alarm action through the task manager by using ```task_manager_resume()```.
-16. Two seconds after sending the alarm action resume request message, the user\_app sends a unicast message to the action\_manager through the task manager to terminate the alarm action by using ```task_manager_unicast()```.
-17. The action\_manager requests to terminate the alarm action through the task manager by using ```task_manager_terminate()```.
-18. One seconds after sending the alarm action terminate request message, the user\_app broadcasts a ```TM_BROADCAST_WIFI_ON``` message.
-19. One seconds after broadcasting the ```TM_BROADCAST_WIFI_ON``` message, the user\_app broadcasts a ```TM_BROADCAST_WIFI_OFF``` message.
-20. The action\_manager requests to unregister the alarm action, the LED on action, and the LED off action to the task manager by using ```task_manager_unregister()```.
-21. The task\_manager\_sample\_main requests to unregister the action\_manager and the user\_app to the task manager by using ```task_manager_unregister()```.
+16. Three seconds after sending the alarm action resume request message, the user\_app sends a unicast message to the action\_manager through the task manager to restart the alarm action by using ```task_manager_unicast()```.
+17. The action\_manager requests to restart the alarm action through the task manager by using ```task_manager_restart()```.
+18. Two seconds after sending the alarm action resume request message, the user\_app sends a unicast message to the action\_manager through the task manager to terminate the alarm action by using ```task_manager_unicast()```.
+19. The action\_manager requests to terminate the alarm action through the task manager by using ```task_manager_terminate()```.
+20. One seconds after sending the alarm action terminate request message, the user\_app broadcasts a ```TM_BROADCAST_WIFI_ON``` message.
+21. One seconds after broadcasting the ```TM_BROADCAST_WIFI_ON``` message, the user\_app broadcasts a ```TM_BROADCAST_WIFI_OFF``` message.
+22. The action\_manager requests to unregister the alarm action, the LED on action, and the LED off action to the task manager by using ```task_manager_unregister()```.
+23. The task\_manager\_sample\_main requests to unregister the action\_manager and the user\_app to the task manager by using ```task_manager_unregister()```.

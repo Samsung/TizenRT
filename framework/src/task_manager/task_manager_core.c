@@ -22,6 +22,7 @@
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
+#include <sched.h>
 #include <signal.h>
 #include <mqueue.h>
 #include <fcntl.h>
@@ -239,6 +240,35 @@ static int taskmgr_terminate(int handle, int caller_pid)
 	}
 	/* task deleted well */
 	TASK_STATUS(handle) = TM_TASK_STATE_STOP;
+
+	return OK;
+}
+
+static int taskmgr_restart(int handle, int caller_pid)
+{
+	int ret;
+
+	if (IS_INVALID_HANDLE(handle) || caller_pid < 0) {
+		return TM_INVALID_PARAM;
+	}
+
+	ret = taskmgr_get_task_state(handle);
+
+	if (ret == TM_TASK_STATE_UNREGISTERED) {
+		return -ret;
+	}
+
+	if (!taskmgr_is_permitted(handle, caller_pid)) {
+		return TM_FAIL_NOT_PERMITTED;
+	}
+
+	ret = task_restart(TASK_PID(handle));
+	if (ret != OK) {
+		tmdbg("Fail to restart the task\n");
+		return TM_FAIL_RESTART;
+	}
+
+	TASK_STATUS(handle) = TM_TASK_STATE_RUNNING;
 
 	return OK;
 }
@@ -577,6 +607,7 @@ int task_manager(int argc, char *argv[])
 			break;
 
 		case TASKMGT_RESTART:
+			ret = taskmgr_restart(request_msg.handle, request_msg.caller_pid);
 			break;
 
 		case TASKMGT_PAUSE:

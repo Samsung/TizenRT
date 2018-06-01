@@ -64,6 +64,14 @@ static void action(int signo, tm_msg_t *info)
 		} else if (ret == OK) {
 			printf("Alarm is successfully resumed\n");
 		}
+	} else if (strncmp(rec, "alarm_restart", strlen("alarm_restart") + 1) == 0) {
+		printf("\nAction Manager receives Alarm Restart request\n");
+		ret = task_manager_restart(handle_alarm, TM_RESPONSE_WAIT_INF);
+		if (ret != OK) {
+			printf("FAIL TO RESTART ALARM, %d\n", ret);
+		} else {
+			printf("Alarm is successfully restarted\n");
+		}
 	} else if (strncmp(rec, "alarm_off", strlen("alarm_off") + 1) == 0) {
 		printf("\nAction Manager receives Alarm Off request\n");
 		ret = task_manager_terminate(handle_alarm, TM_RESPONSE_WAIT_INF);
@@ -161,11 +169,11 @@ int action_manager_main(int argc, char *argv[])
 	task_manager_set_broadcast_handler((TM_BROADCAST_WIFI_ON | TM_BROADCAST_WIFI_OFF), action_broad);
 	sem_post(&tm_sem);
 
-	while (exit_flag < 6) {
+	while (exit_flag < 7) {
 		usleep(10);
 	}
 
-	if (exit_flag >= 6) {
+	if (exit_flag >= 7) {
 		printf("\nUnregister Alarm Action\n");
 		ret_unregister_alarm = task_manager_unregister(handle_alarm, TM_RESPONSE_WAIT_INF);
 		if (ret_unregister_alarm < 0) {

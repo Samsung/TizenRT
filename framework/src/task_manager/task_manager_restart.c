@@ -15,31 +15,52 @@
  * language governing permissions and limitations under the License.
  *
  ****************************************************************************/
-
 /****************************************************************************
  * Included Files
  ****************************************************************************/
-
-#include <tinyara/config.h>
+#include <string.h>
 #include <stdio.h>
 #include <unistd.h>
+#include <sys/types.h>
+#include <task_manager/task_manager.h>
+#include "task_manager_internal.h"
 
 /****************************************************************************
- * alarm_main
+ * task_manager_restart
  ****************************************************************************/
-
-#ifdef CONFIG_BUILD_KERNEL
-int main(int argc, FAR char *argv[])
-#else
-int alarm_main(int argc, char *argv[])
-#endif
+int task_manager_restart(int handle, int timeout)
 {
-	int cnt = 0;
+	int status;
+	tm_request_t request_msg;
+	tm_response_t response_msg;
 
-	while (1) {
-		printf("Alarm is ringing! %d\n", cnt++);
-		sleep(1);
+	if (IS_INVALID_HANDLE(handle) || timeout < TM_RESPONSE_WAIT_INF) {
+		return TM_INVALID_PARAM;
 	}
 
-	return 0;
+	memset(&request_msg, 0, sizeof(tm_request_t));
+	request_msg.cmd = TASKMGT_RESTART;
+	request_msg.handle = handle;
+	request_msg.caller_pid = getpid();
+	request_msg.timeout = timeout;
+	request_msg.data = NULL;
+
+	if (timeout != TM_NO_RESPONSE) {
+		asprintf(&request_msg.q_name, "%s%d", TM_PRIVATE_MQ, request_msg.caller_pid);
+	}
+
+	status = taskmgr_send_request(&request_msg);
+	if (status < 0) {
+		return TM_FAIL_REQ_TO_MGR;
+	}
+
+	if (timeout != TM_NO_RESPONSE) {
+		status = taskmgr_receive_response(request_msg.q_name, &response_msg, timeout);
+		TM_FREE(request_msg.q_name);
+		if (status == OK) {
+			status = response_msg.status;
+		}
+	}
+
+	return status;
 }
