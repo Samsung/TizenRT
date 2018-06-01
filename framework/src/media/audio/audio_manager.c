@@ -312,22 +312,14 @@ audio_manager_result_t set_output_audio_volume(uint8_t volume)
 int get_input_audio_volume(void)
 {
 #ifndef CONFIG_AUDIO_EXCLUDE_VOLUME	//TODO consider about config for gain.
-	int fd;
 	int ret;
-
-	fd = open(g_audio_in_cards[g_actual_audio_in_card_id].card_path, O_RDONLY);
-	if (fd < 0) {
-		meddbg("Fail to open an input driver\n");
-		return AUDIO_MANAGER_DEVICE_FAIL;
+	
+	/* check actual card and try to find all card if there is no actual card */
+	ret = find_audio_card_if_empty(INPUT);
+	if (ret != AUDIO_MANAGER_SUCCESS) {
+		return ret;
 	}
-
-	ret = get_audio_volume(fd, &g_audio_in_cards[g_actual_audio_in_card_id].config, INPUT);
-	close(fd);
-	if (ret == AUDIO_MANAGER_SUCCESS) {
-		return g_audio_in_cards[g_actual_audio_in_card_id].config.volume;
-	}
-
-	return AUDIO_MANAGER_DEVICE_FAIL;
+	return g_audio_in_cards[g_actual_audio_in_card_id].config.volume;
 #endif
 	return 0;
 }
@@ -335,22 +327,14 @@ int get_input_audio_volume(void)
 int get_output_audio_volume(void)
 {
 #ifndef CONFIG_AUDIO_EXCLUDE_VOLUME
-	int fd;
 	int ret;
 
-	fd = open(g_audio_out_cards[g_actual_audio_out_card_id].card_path, O_RDONLY);
-	if (fd < 0) {
-		meddbg("Fail to open an input driver\n");
-		return AUDIO_MANAGER_DEVICE_FAIL;
+	/* check actual card and try to find all card if there is no actual card */
+	ret = find_audio_card_if_empty(OUTPUT);
+	if (ret != AUDIO_MANAGER_SUCCESS) {
+		return ret;
 	}
-
-	ret = get_audio_volume(fd, &g_audio_out_cards[g_actual_audio_out_card_id].config, OUTPUT);
-	close(fd);
-	if (ret == AUDIO_MANAGER_SUCCESS) {
-		return g_audio_out_cards[g_actual_audio_out_card_id].config.volume;
-	}
-
-	return AUDIO_MANAGER_DEVICE_FAIL;
+	return g_audio_out_cards[g_actual_audio_out_card_id].config.volume;
 #endif
 	return 0;
 }
@@ -857,10 +841,10 @@ audio_manager_result_t stop_audio_stream_in(void)
 	if ((ret = get_active_audio_device_pcm(&pcm, INPUT)) != AUDIO_MANAGER_SUCCESS) {
 		return ret;
 	}
+	ret = pcm_drop(pcm);
 
-	ret = ioctl(pcm_get_file_descriptor(pcm), AUDIOIOC_STOP, NULL);
 	if (ret < 0) {
-		meddbg("Fail to ioctl AUDIOIOC_STOP, ret = %d\n", ret);
+		meddbg("pcm_drop Failed, ret = %d\n", ret);
 		return AUDIO_MANAGER_DEVICE_FAIL;
 	}
 
@@ -878,9 +862,9 @@ audio_manager_result_t stop_audio_stream_out(void)
 		return ret;
 	}
 
-	ret = ioctl(pcm_get_file_descriptor(pcm), AUDIOIOC_STOP, NULL);
+	ret = pcm_drain(pcm);
 	if (ret < 0) {
-		meddbg("Fail to ioctl AUDIOIOC_STOP, ret = %d\n", ret);
+		meddbg("pcm_drain failed ret = %d\n", ret);
 		return AUDIO_MANAGER_DEVICE_FAIL;
 	}
 
@@ -990,12 +974,6 @@ static audio_manager_result_t get_audio_volume(int fd, audio_config_t *config, a
 	int ret;
 	int max_volume;
 	int cur_volume;
-
-	/* check actual card and try to find all card if there is no actual card */
-	ret = find_audio_card_if_empty(card_type);
-	if (ret != AUDIO_MANAGER_SUCCESS) {
-		return ret;
-	}
 
 	caps_desc.caps.ac_len = sizeof(struct audio_caps_s);
 	caps_desc.caps.ac_type = AUDIO_TYPE_FEATURE;
