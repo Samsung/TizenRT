@@ -73,6 +73,8 @@ public:
 	void notifySync();
 	void notifyObserver(player_observer_command_t cmd);
 
+	bool setAudioStream();
+	bool resetAudioStream();
 	void playback();
 
 private:

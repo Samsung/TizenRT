@@ -24,7 +24,7 @@
 using namespace std;
 
 namespace media {
-PlayerWorker::PlayerWorker() : mCurPlayer(nullptr)
+PlayerWorker::PlayerWorker()
 {
 }
 
@@ -32,7 +32,7 @@ PlayerWorker::~PlayerWorker()
 {
 }
 
-PlayerWorker& PlayerWorker::getWorker()
+PlayerWorker &PlayerWorker::getWorker()
 {
 	static PlayerWorker worker;
 	return worker;
@@ -40,22 +40,66 @@ PlayerWorker& PlayerWorker::getWorker()
 
 bool PlayerWorker::processLoop()
 {
-	if (mCurPlayer && (mCurPlayer->mCurState == PLAYER_STATE_PLAYING)) {
-		mCurPlayer->playback();
-		return true;
+	if (!mFocusList.empty()) {
+		auto focusedPlayer = mFocusList.front();
+		if (focusedPlayer->getState() == PLAYER_STATE_PLAYING) {
+			focusedPlayer->playback();
+			return true;
+		}
 	}
 
 	return false;
 }
 
-void PlayerWorker::setPlayer(std::shared_ptr<MediaPlayerImpl> player)
+bool PlayerWorker::requestFocus(std::shared_ptr<MediaPlayerImpl> player)
 {
-	mCurPlayer = player;
+	if (!mFocusList.empty()) {
+		auto focusedPlayer = mFocusList.front();
+		if (!focusedPlayer->resetAudioStream()) {
+			meddbg("fail to reset audio stream\n");
+			return false;
+		}
+	}
+
+	if (player->setAudioStream()) {
+		mFocusList.push_front(player);
+		medvdbg("mFocusList.size() = %d\n", mFocusList.size());
+		return true;
+	}
+	return false;
 }
 
-std::shared_ptr<MediaPlayerImpl> PlayerWorker::getPlayer()
+bool PlayerWorker::abandonFocus(std::shared_ptr<MediaPlayerImpl> player)
 {
-	return mCurPlayer;
-}
+	/* If the abandoned player is focused, reset pre-focused player and set newly focused player */
+	auto playerIterator = mFocusList.begin();
+	if (*playerIterator == player) {
+		if (player->resetAudioStream()) {
+			playerIterator = mFocusList.erase(playerIterator);
+			medvdbg("mFocusList.size() = %d\n", mFocusList.size());
+			if (!mFocusList.empty()) {
+				return (*playerIterator)->setAudioStream();
+			}
+			return true;
+		} else {
+			return false;
+		}
+	} else {
+		playerIterator++;
+	}
 
+	/* Else, just find player and erase it */
+	while (playerIterator != mFocusList.end()) {
+		if (*playerIterator == player) {
+			playerIterator = mFocusList.erase(playerIterator);
+			medvdbg("mFocusList.size() = %d\n", mFocusList.size());
+			return true;
+		} else {
+			playerIterator++;
+		}
+	}
+
+	meddbg("Player is not removed from mFocusList list\n");
+	return false;
+}
 } // namespace media

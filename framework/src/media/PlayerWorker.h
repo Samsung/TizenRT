@@ -19,6 +19,7 @@
 #ifndef __MEDIA_PLAYERWORKER_HPP
 #define __MEDIA_PLAYERWORKER_HPP
 
+#include <list>
 #include <memory>
 #include <media/MediaPlayer.h>
 #include "MediaWorker.h"
@@ -29,8 +30,8 @@ class PlayerWorker : public MediaWorker
 public:
 	static PlayerWorker &getWorker();
 
-	void setPlayer(std::shared_ptr<MediaPlayerImpl>);
-	std::shared_ptr<MediaPlayerImpl> getPlayer();
+	bool requestFocus(std::shared_ptr<MediaPlayerImpl>);
+	bool abandonFocus(std::shared_ptr<MediaPlayerImpl>);
 
 private:
 	PlayerWorker();
@@ -38,7 +39,7 @@ private:
 	bool processLoop() override;
 
 private:
-	std::shared_ptr<MediaPlayerImpl> mCurPlayer;
+	std::list<std::shared_ptr<MediaPlayerImpl>> mFocusList;
 };
 } // namespace media
 #endif
