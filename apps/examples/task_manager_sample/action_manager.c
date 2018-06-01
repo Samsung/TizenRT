@@ -79,6 +79,22 @@ static void action(int signo, tm_msg_t *info)
 	exit_flag++;
 }
 
+static void action_broad(int signo, tm_msg_t *info)
+{
+	int recv_sig;
+
+	recv_sig = info->si_value.sival_int;
+
+	if (recv_sig == TM_BROADCAST_WIFI_ON) {
+		printf("\nWIFI is On!\n");
+	} else if (recv_sig == TM_BROADCAST_WIFI_OFF) {
+		printf("\nWIFI is Off!\n");
+	} else {
+		printf("Unsubscribed Action\n");
+	}
+	exit_flag++;
+}
+
 /****************************************************************************
  * action_manager_main
  ****************************************************************************/
@@ -142,14 +158,14 @@ int action_manager_main(int argc, char *argv[])
 	}
 
 	task_manager_set_handler(action);
-
+	task_manager_set_broadcast_handler((TM_BROADCAST_WIFI_ON | TM_BROADCAST_WIFI_OFF), action_broad);
 	sem_post(&tm_sem);
 
-	while (exit_flag < 4) {
+	while (exit_flag < 6) {
 		usleep(10);
 	}
 
-	if (exit_flag >= 4) {
+	if (exit_flag >= 6) {
 		printf("\nUnregister Alarm Action\n");
 		ret_unregister_alarm = task_manager_unregister(handle_alarm, TM_RESPONSE_WAIT_INF);
 		if (ret_unregister_alarm < 0) {

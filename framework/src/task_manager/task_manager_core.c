@@ -447,6 +447,67 @@ static void taskmgr_termination_callback(void)
 	mq_unlink(TM_PUBLIC_MQ);
 }
 
+static int taskmgr_check_msg_mask(int msg_mask, int handle)
+{
+	if (msg_mask & TASK_MSG_MASK(handle)) {
+		return OK;
+	}
+	return ERROR;
+}
+
+static int taskmgr_get_handle_by_pid(int pid)
+{
+	int handle;
+	for (handle = 0; handle < CONFIG_TASK_MANAGER_MAX_TASKS; handle++) {
+		if (TASK_PID(handle) == pid) {
+			return handle;
+		}
+	}
+	return TM_FAIL_UNREGISTERED_TASK;
+}
+
+static void taskmgr_broadcast(int msg)
+{
+	int handle;
+	int fd;
+	int ret;
+	union sigval msg_broad;
+
+	fd = taskmgr_get_drvfd();
+	if (fd < 0) {
+		return;
+	}
+	msg_broad.sival_int = msg;
+	for (handle = 0; handle < CONFIG_TASK_MANAGER_MAX_TASKS; handle++) {
+		if (TASK_LIST_ADDR(handle) != NULL) {
+			ret = taskmgr_get_task_state(handle);
+			if (ret == TM_TASK_STATE_STOP || ret == TM_TASK_STATE_UNREGISTERED) {
+				continue;
+			}
+			ret = taskmgr_check_msg_mask(msg, handle);
+			if (ret != OK) {
+				continue;
+			}
+			ret = ioctl(fd, TMIOC_BROADCAST, TASK_PID(handle));
+			if (ret != OK) {
+				continue;
+			}
+			(void)sigqueue(TASK_PID(handle), SIGTM_BROADCAST, msg_broad);
+		}
+	}
+}
+
+static int taskmgr_set_broadcast_handler(int msg_mask, int pid)
+{
+	int ret;
+	ret = taskmgr_get_handle_by_pid(pid);
+	if (ret < 0) {
+		return ret;
+	}
+	TASK_MSG_MASK(ret) = msg_mask;
+	return OK;
+}
+
 /****************************************************************************
  * Main Function
  ****************************************************************************/
@@ -543,8 +604,13 @@ int task_manager(int argc, char *argv[])
 			break;
 
 		case TASKMGT_BROADCAST:
+			(void)taskmgr_broadcast(*((int *)request_msg.data));
 			break;
 
+		case TASKMGT_SET_BROADCAST_HANDLER:
+			ret = taskmgr_set_broadcast_handler(*((int *)request_msg.data), request_msg.caller_pid);
+			break;
+			
 		default:
 			break;
 		}
