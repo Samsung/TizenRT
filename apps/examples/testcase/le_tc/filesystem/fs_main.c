@@ -1328,6 +1328,7 @@ static void tc_fs_vfs_mkfifo(void)
 	TC_ASSERT_GEQ("unlink", ret, 0);
 
 	TC_SUCCESS_RESULT();
+	return;
 errout:
 	pthread_kill(tid, SIGUSR1);
 	close(fd);
@@ -1682,12 +1683,12 @@ static void tc_driver_mtd_ftl_ops(void)
 	ret = write(fd, buf, BUF_SIZE);
 	TC_ASSERT_EQ_CLEANUP("write", ret, BUF_SIZE, goto cleanup);
 #endif
-#ifdef FIXME	// This causes tc stuck. Temporarilly block.
 	free(buf);
-#endif
+	buf = NULL;
 	ret = close(fd);
 	TC_ASSERT_EQ("close", ret, OK);
 	TC_SUCCESS_RESULT();
+	return;
 cleanup:
 	free(buf);
 	close(fd);
@@ -3224,6 +3225,7 @@ static void tc_libc_stdio_tempnam(void)
 	umount(CONFIG_LIBC_TMPDIR);
 
 	TC_SUCCESS_RESULT();
+	return;
 
 errout2:
 	unlink(ret2);
@@ -3275,6 +3277,7 @@ static void tc_libc_stdio_tmpnam(void)
 	umount(CONFIG_LIBC_TMPDIR);
 
 	TC_SUCCESS_RESULT();
+	return;
 
 errout2:
 	unlink(ret2);
