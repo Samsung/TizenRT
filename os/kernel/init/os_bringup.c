@@ -250,9 +250,6 @@ static inline void os_do_appstart(void)
 
 	svdbg("Starting application init thread\n");
 
-#if !defined(CONFIG_BUILD_KERNEL) && defined(CONFIG_HAVE_CXXINITIALIZE)
-	up_cxxinitialize();
-#endif
 
 #ifdef CONFIG_SYSTEM_PREAPP_INIT
 #ifdef CONFIG_BUILD_PROTECTED
@@ -423,6 +420,10 @@ int os_bringup(void)
 
 #ifdef CONFIG_LOGM
 	logm_start();
+#endif
+
+#if !defined(CONFIG_BUILD_KERNEL) && defined(CONFIG_HAVE_CXXINITIALIZE)
+	up_cxxinitialize();
 #endif
 
 	/* Once the operating system has been initialized, the system must be
