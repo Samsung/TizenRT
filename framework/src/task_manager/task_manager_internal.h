@@ -33,11 +33,12 @@
 #define TASKMGT_SCAN                    7
 #define TASKMGT_UNICAST                 8
 #define TASKMGT_BROADCAST               9
-#define TASKMGT_SCAN_NAME               10
-#define TASKMGT_SCAN_HANDLE             11
-#define TASKMGT_SCAN_GROUP              12
-#define TASKMGT_UNREGISTER_TASK         13
-#define TASKMGT_SET_BROADCAST_HANDLER   14
+#define TASKMGT_SET_UNICAST_CB          10
+#define TASKMGT_SCAN_NAME               11
+#define TASKMGT_SCAN_HANDLE             12
+#define TASKMGT_SCAN_GROUP              13
+#define TASKMGT_UNREGISTER_TASK         14
+#define TASKMGT_SET_BROADCAST_HANDLER   15
 
 /* Message Queue Values */
 #define TM_MQ_PRIO   50
@@ -47,6 +48,8 @@
 /* Wrapper of allocation APIs */
 #define TM_ALLOC(a)  malloc(a)
 #define TM_FREE(a)   free(a)
+
+typedef void (*_tm_callback_t)(void *);
 
 struct task_list_s {
 	int pid;
@@ -61,6 +64,7 @@ struct task_list_data_s {
 	int status;
 	int permission;
 	int msg_mask;
+	_tm_callback_t unicast_cb;
 };
 typedef struct task_list_data_s task_list_data_t;
 
@@ -82,13 +86,14 @@ typedef struct tm_response_s tm_response_t;
 
 #define IS_INVALID_HANDLE(i) (i < 0 || i >= CONFIG_TASK_MANAGER_MAX_TASKS)
 
-#define TASK_LIST_ADDR(handle)   ((task_list_data_t *)tm_task_list[handle].addr)
-#define TASK_PID(handle)         tm_task_list[handle].pid
-#define TASK_BUILTIN_IDX(handle) TASK_LIST_ADDR(handle)->builtin_idx
-#define TASK_TM_GID(handle)      TASK_LIST_ADDR(handle)->tm_gid
-#define TASK_STATUS(handle)      TASK_LIST_ADDR(handle)->status
-#define TASK_PERMISSION(handle)  TASK_LIST_ADDR(handle)->permission
-#define TASK_MSG_MASK(handle)    TASK_LIST_ADDR(handle)->msg_mask
+#define TASK_LIST_ADDR(handle)       ((task_list_data_t *)tm_task_list[handle].addr)
+#define TASK_PID(handle)             tm_task_list[handle].pid
+#define TASK_BUILTIN_IDX(handle)     TASK_LIST_ADDR(handle)->builtin_idx
+#define TASK_TM_GID(handle)          TASK_LIST_ADDR(handle)->tm_gid
+#define TASK_STATUS(handle)          TASK_LIST_ADDR(handle)->status
+#define TASK_PERMISSION(handle)      TASK_LIST_ADDR(handle)->permission
+#define TASK_MSG_MASK(handle)        TASK_LIST_ADDR(handle)->msg_mask
+#define TASK_UNICAST_CB(handle)      TASK_LIST_ADDR(handle)->unicast_cb
 
 extern task_list_t tm_task_list[CONFIG_TASK_MANAGER_MAX_TASKS];
 
@@ -99,5 +104,6 @@ int taskmgr_receive_response(char *q_name, tm_response_t *response_msg, int time
 bool taskmgr_is_permitted(int handle, pid_t pid);
 int taskmgr_get_task_state(int handle);
 int taskmgr_get_drvfd(void);
+int taskmgr_get_handle_by_pid(int pid);
 
 #endif

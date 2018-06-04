@@ -226,14 +226,13 @@ int task_manager_unicast(int handle, void *msg, int msg_size, int timeout);
  */
 int task_manager_broadcast(int msg);
 /**
- * @brief Set handler function API
+ * @brief Set unicast callback function API
  * @details @b #include <task_manager/task_manager.h>
- * @param[in] func the handler function which handle the msg\n
- * In handler function, tm_msg_t is for containing data. It is originally siginfo_t type.\n
+ * @param[in] func the callback function which handle the msg\n
  * @return On success, OK is returned. On failure, defined negative value is returned.
  * @since TizenRT v2.0 PRE
  */
-int task_manager_set_handler(void (*func)(int signo, tm_msg_t *data));
+int task_manager_set_unicast_cb(void (*func)(void *data));
 /**
  * @brief Register callback function which will be used for processing received broadcast messages
  * @details @b #include <task_manager/task_manager.h>

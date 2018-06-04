@@ -33,12 +33,12 @@
 static int exit_flag;
 static int handle_alarm;
 
-static void action(int signo, tm_msg_t *info)
+static void action(void *info)
 {
 	int ret;
 
-	char *rec = (char *)malloc(strlen((char *)info->si_value.sival_ptr) + 1);
-	strncpy(rec, info->si_value.sival_ptr, strlen((char *)info->si_value.sival_ptr) + 1);
+	char *rec = (char *)malloc(strlen((char *)info) + 1);
+	strncpy(rec, info, strlen((char *)info) + 1);
 
 	if (strncmp(rec, "alarm_on", strlen("alarm_on") + 1) == 0) {
 		printf("\nAction Manager receives Alarm On request\n");
@@ -165,7 +165,7 @@ int action_manager_main(int argc, char *argv[])
 		printf("LED Off Action is successfully started\n");
 	}
 
-	task_manager_set_handler(action);
+	task_manager_set_unicast_cb(action);
 	task_manager_set_broadcast_handler((TM_BROADCAST_WIFI_ON | TM_BROADCAST_WIFI_OFF), action_broad);
 	sem_post(&tm_sem);
 
