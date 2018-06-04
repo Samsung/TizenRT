@@ -16,6 +16,7 @@
  *
  ******************************************************************/
 
+#include <tinyara/config.h>
 #include <sys/types.h>
 #include <stdio.h>
 #include <string.h>
@@ -34,11 +35,6 @@ namespace media {
  ****************************************************************************/
 #define PV_SUCCESS OK
 #define PV_FAILURE ERROR
-
-// Validation of audio type
-#define CHECK_AUDIO_TYPE(type) ((type) == AUDIO_TYPE_MP3 || \
-								(type) == AUDIO_TYPE_AAC || \
-								(type) == AUDIO_TYPE_OPUS)
 
 // MP3 tag frame header len
 #define MP3_HEAD_ID3_TAG_LEN 10
@@ -604,6 +600,7 @@ bool aac_check_type(rbstream_p rbsp)
 	return result;
 }
 
+#ifdef CONFIG_CODEC_LIBOPUS
 // Resync to next valid Opus frame in the file.
 static bool opus_resync(rbstream_p fp, ssize_t *inout_pos)
 {
@@ -744,7 +741,7 @@ bool opus_check_type(rbstream_p rbsp)
 
 	return result;
 }
-
+#endif
 
 int _get_audio_type(rbstream_p rbsp)
 {
@@ -756,9 +753,11 @@ int _get_audio_type(rbstream_p rbsp)
 		return AUDIO_TYPE_AAC;
 	}
 
+#ifdef CONFIG_CODEC_LIBOPUS
 	if (opus_check_type(rbsp)) {
 		return AUDIO_TYPE_OPUS;
 	}
+#endif
 
 	return AUDIO_TYPE_UNKNOWN;
 }
@@ -779,10 +778,12 @@ bool _get_frame(pv_player_p player)
 		return aac_get_frame(player->rbsp, &priv->mCurrentPos, (void *)aac_ext->pInputBuffer, (uint32_t *)&aac_ext->inputBufferCurrentLength);
 	}
 
+#ifdef CONFIG_CODEC_LIBOPUS
 	case AUDIO_TYPE_OPUS: {
 		opus_dec_external_t *opus_ext = (opus_dec_external_t *) player->dec_ext;
 		return opus_get_frame(player->rbsp, &priv->mCurrentPos, (void *)opus_ext->pInputBuffer, (uint32_t *)&opus_ext->inputBufferCurrentLength);
 	}
+#endif
 
 	default:
 		medwdbg("[%s] unsupported audio type: %d\n", __FUNCTION__, player->audio_type);
@@ -833,6 +834,7 @@ int _init_decoder(pv_player_p player)
 		break;
 	}
 
+#ifdef CONFIG_CODEC_LIBOPUS
 	case AUDIO_TYPE_OPUS: {
 		player->dec_ext = calloc(1, sizeof(opus_dec_external_t));
 		RETURN_VAL_IF_FAIL((player->dec_ext != NULL), PV_FAILURE);
@@ -851,6 +853,7 @@ int _init_decoder(pv_player_p player)
 		RETURN_VAL_IF_FAIL((ret == true), PV_FAILURE);
 		break;
 	}
+#endif
 
 	default:
 		// Maybe do not need to init, return success.
@@ -897,6 +900,7 @@ int _frame_decoder(pv_player_p player, pcm_data_p pcm)
 		break;
 	}
 
+#ifdef CONFIG_CODEC_LIBOPUS
 	case AUDIO_TYPE_OPUS: {
 		opus_dec_external_t *opus_ext = (opus_dec_external_t *) player->dec_ext;
 
@@ -910,6 +914,7 @@ int _frame_decoder(pv_player_p player, pcm_data_p pcm)
 		pcm->samplerate = opus_ext->desiredSampleRate;
 		break;
 	}
+#endif
 
 	default:
 		// No decoding, return failure.
@@ -934,6 +939,24 @@ static size_t _input_callback(void *data, rbstream_p rbsp)
 /****************************************************************************
  * Public Functions
  ****************************************************************************/
+
+// check if the given auido type is supportted or not
+bool pv_player_check_audio_type(int audio_type)
+{
+	switch (audio_type) {
+	case AUDIO_TYPE_MP3:
+	case AUDIO_TYPE_AAC:
+		return true;
+
+#ifdef CONFIG_CODEC_LIBOPUS
+	case AUDIO_TYPE_OPUS:
+		return true;
+#endif
+
+	default:
+		return false;
+	}
+}
 
 size_t pv_player_pushdata(pv_player_p player, const void *data, size_t len)
 {
@@ -967,7 +990,7 @@ int pv_player_get_audio_type(pv_player_p player)
 {
 	assert(player != NULL);
 
-	if (!CHECK_AUDIO_TYPE(player->audio_type)) {
+	if (!pv_player_check_audio_type(player->audio_type)) {
 		player->audio_type = _get_audio_type(player->rbsp);
 		medvdbg("audio_type %d\n", player->audio_type);
 	}
@@ -1075,7 +1098,7 @@ int pv_player_run(pv_player_p player)
 	RETURN_VAL_IF_FAIL((player->rbsp != NULL), PV_FAILURE);
 
 	player->audio_type = pv_player_get_audio_type(player);
-	RETURN_VAL_IF_FAIL(CHECK_AUDIO_TYPE(player->audio_type), PV_FAILURE);
+	RETURN_VAL_IF_FAIL(pv_player_check_audio_type(player->audio_type), PV_FAILURE);
 
 	int ret = pv_player_init_decoder(player, player->audio_type);
 	RETURN_VAL_IF_FAIL((ret == PV_SUCCESS), PV_FAILURE);

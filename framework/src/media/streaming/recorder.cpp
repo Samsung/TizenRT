@@ -35,8 +35,6 @@ namespace media {
 #define PV_SUCCESS OK
 #define PV_FAILURE ERROR
 
-// Validation of audio type
-#define CHECK_AUDIO_TYPE(type) ((type) == AUDIO_TYPE_OPUS)
 /****************************************************************************
  * Private Declarations
  ****************************************************************************/
@@ -74,6 +72,7 @@ int _init_encoder(aud_encoder_p encoder, void *enc_ext)
 	assert(priv != NULL);
 
 	switch (encoder->audio_type) {
+#ifdef CONFIG_CODEC_LIBOPUS
 	case AUDIO_TYPE_OPUS: {
 		encoder->enc_ext = calloc(1, sizeof(opus_enc_external_t));
 		RETURN_VAL_IF_FAIL((encoder->enc_ext != NULL), PV_FAILURE);
@@ -95,6 +94,7 @@ int _init_encoder(aud_encoder_p encoder, void *enc_ext)
 		priv->mCurrentPos = 0;
 		break;
 	}
+#endif
 
 	default:
 		// Maybe do not need to init, return success.
@@ -107,6 +107,20 @@ int _init_encoder(aud_encoder_p encoder, void *enc_ext)
 /****************************************************************************
  * Public Functions
  ****************************************************************************/
+
+// check if the given auido type is supportted or not
+bool aud_encoder_check_audio_type(int audio_type)
+{
+	switch (audio_type) {
+#ifdef CONFIG_CODEC_LIBOPUS
+	case AUDIO_TYPE_OPUS:
+		return true;
+#endif
+
+	default:
+		return false;
+	}
+}
 
 size_t aud_encoder_pushdata(aud_encoder_p encoder, const void *data, size_t len)
 {
@@ -143,6 +157,7 @@ int aud_encoder_getframe(aud_encoder_p encoder, void *data, size_t len)
 	assert(priv != NULL);
 
 	switch (encoder->audio_type) {
+#ifdef CONFIG_CODEC_LIBOPUS
 	case AUDIO_TYPE_OPUS: {
 		opus_enc_external_t *opus_ext = (opus_enc_external_t *) encoder->enc_ext;
 
@@ -170,6 +185,7 @@ int aud_encoder_getframe(aud_encoder_p encoder, void *data, size_t len)
 		memcpy(data, opus_ext->pOutputBuffer, opus_ext->outputDataSize);
 		return opus_ext->outputDataSize;
 	}
+#endif
 
 	default:
 		medwdbg("[%s] unsupported audio type: %d\n", __FUNCTION__, encoder->audio_type);
@@ -180,7 +196,7 @@ int aud_encoder_getframe(aud_encoder_p encoder, void *data, size_t len)
 int aud_encoder_init(aud_encoder_p encoder, size_t rbuf_size, audio_type_t audio_type, void *enc_ext)
 {
 	assert(encoder != NULL);
-	RETURN_VAL_IF_FAIL(CHECK_AUDIO_TYPE(audio_type), PV_FAILURE);
+	RETURN_VAL_IF_FAIL(aud_encoder_check_audio_type(audio_type), PV_FAILURE);
 
 	encoder->audio_type = audio_type;
 

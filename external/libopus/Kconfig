@@ -5,7 +5,8 @@
 
 config CODEC_LIBOPUS
 	bool "libopus 1.2.1"
-	default n
+	default y
+	depends on AUDIO_CODEC
 	---help---
 		Enable support for the libopus library
 
