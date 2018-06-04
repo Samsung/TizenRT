@@ -30,7 +30,6 @@
 #define TM_NOPERM_NAME "tm_noperm"
 #define TM_SAMPLE_MSG  "test_msg"
 #define TM_INVALID_HANDLE      -2
-#define TM_UNREGISTERED_HANDLE (CONFIG_MAX_TASKS - 2)
 #define TM_INVALID_TIMEOUT     -2
 #define TM_INVALID_PERMISSION  -2
 
@@ -103,9 +102,6 @@ static void utc_task_manager_start_n(void)
 
 	ret = task_manager_start(TM_INVALID_HANDLE, TM_NO_RESPONSE);
 	TC_ASSERT_EQ("task_manager_start", ret, TM_INVALID_PARAM);
-
-	ret = task_manager_start(TM_UNREGISTERED_HANDLE, 100);
-	TC_ASSERT_EQ("task_manager_start", ret, TM_FAIL_UNREGISTERED_TASK);
 
 	TC_SUCCESS_RESULT();
 }
@@ -374,8 +370,6 @@ static void utc_task_manager_restart_n(void)
 static void utc_task_manager_restart_p(void)
 {
 	int ret;
-	ret = task_manager_restart(TM_UNREGISTERED_HANDLE, TM_RESPONSE_WAIT_INF);
-	TC_ASSERT_EQ("task_manager_restart", ret, TM_FAIL_UNREGISTERED_TASK);
 
 	ret = task_manager_restart(tm_sample_handle, TM_RESPONSE_WAIT_INF);
 	TC_ASSERT_EQ("task_manager_restart", ret, OK);
@@ -398,11 +392,18 @@ static void utc_task_manager_unregister_n(void)
 static void utc_task_manager_unregister_p(void)
 {
 	int ret;
-	ret = task_manager_unregister(TM_UNREGISTERED_HANDLE, TM_RESPONSE_WAIT_INF);
-	TC_ASSERT_EQ("task_manager_unregister", ret, TM_FAIL_UNREGISTERED_TASK);
 
 	ret = task_manager_unregister(tm_sample_handle, TM_RESPONSE_WAIT_INF);
 	TC_ASSERT_EQ("task_manager_unregister", ret, OK);
+
+	ret = task_manager_start(tm_sample_handle, 100);
+	TC_ASSERT_EQ("task_manager_start", ret, TM_FAIL_UNREGISTERED_TASK);
+
+	ret = task_manager_restart(tm_sample_handle, TM_RESPONSE_WAIT_INF);
+	TC_ASSERT_EQ("task_manager_restart", ret, TM_FAIL_UNREGISTERED_TASK);
+
+	ret = task_manager_unregister(tm_sample_handle, TM_RESPONSE_WAIT_INF);
+	TC_ASSERT_EQ("task_manager_unregister", ret, TM_FAIL_UNREGISTERED_TASK);
 
 	TC_SUCCESS_RESULT();
 }
