@@ -23,6 +23,7 @@
 
 #define PV_SUCCESS 0
 #define PV_FAILURE -1
+#define BYTES_PER_SAMPLE sizeof(signed short)
 
 namespace media {
 
@@ -88,23 +89,23 @@ bool Decoder::getFrame(unsigned char *buf, size_t *size, unsigned int *sampleRat
 	// so we can keep this pcm_data_t info before next pv_player_frame_decode() called.
 	static pcm_data_t pcm = {0};
 
-	// Get input buffer max size (it's also the request size)
+	// Get input buffer max size (it's also the requested size)
 	size_t max = *size;
 
 	// Check 2 bytes aligned
 	assert((max % 2) == 0);
 
-	// Reset ouput *size 0
+	// Reset output *size 0
 	*size = 0;
 
 	/*
 	 * Need to get the enough data to parse data format.
 	 */
 	if (mPlayer.audio_type == AUDIO_TYPE_UNKNOWN) {
-		mPlayer.audio_type = _get_audio_type(mPlayer.rbsp);
+		mPlayer.audio_type = pv_player_get_audio_type(&mPlayer);
 
 		if (mPlayer.audio_type) {
-			if (_init_decoder(&mPlayer) != 0) {
+			if (pv_player_init_decoder(&mPlayer, mPlayer.audio_type) != PV_SUCCESS) {
 				meddbg("Error! _init_decoder failed!\n");
 				return false;
 			}
@@ -118,40 +119,42 @@ bool Decoder::getFrame(unsigned char *buf, size_t *size, unsigned int *sampleRat
 
 	while (1) {
 		if (pcm.samples) {
-			#define BYTES_PER_SAMPLE sizeof(signed short)
-			// Move remained data to decoder output buffer
+			// Copy remained data to decoder output buffer
 			size_t nSamples = (max - *size) / BYTES_PER_SAMPLE;
 			if (pcm.length  <= nSamples) {
-				// Move all data
+				// Copy all data
 				memcpy(buf + *size, pcm.samples, pcm.length * BYTES_PER_SAMPLE);
 				*size += pcm.length * BYTES_PER_SAMPLE;
-				// Clear record
+				// Clear remained data record
 				pcm.samples = nullptr;
 				pcm.length = 0;
 
 				if (*size == max) {
+					// Just enough
 					break;
 				}
 			} else {
+				// Copy part of data required
 				memcpy(buf + *size, pcm.samples, nSamples * BYTES_PER_SAMPLE);
 				*size = max;
-				// Update remaind data record
+				// Update remained data record
 				pcm.samples += nSamples;
 				pcm.length -= nSamples;
 				break;
 			}
-			#undef BYTES_PER_SAMPLE
 		}
 
 		// Decode more
 		if (!pv_player_get_frame(&mPlayer)) {
-			// Need push more data for further decoding.
+			// Need to push more data for further decoding.
 			// In this case, *size < max.
+			medvdbg("Decoder: there's not enough data, need to push more.\n");
 			break;
 		}
 
-		if (pv_player_frame_decode(&mPlayer, &pcm) == PV_FAILURE) {
+		if (pv_player_frame_decode(&mPlayer, &pcm) != PV_SUCCESS) {
 			// Decoding failed
+			meddbg("Decoder: pv_player_frame_decode failed!\n");
 			break;
 		}
 	}
