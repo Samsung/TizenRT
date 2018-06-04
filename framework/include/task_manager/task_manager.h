@@ -70,7 +70,7 @@
 #define TM_FAIL_REGISTER              (-6)
 #define TM_FAIL_START                 (-7)
 #define TM_FAIL_UNICAST               (-8)
-#define TM_FAIL_SET_HANDLER           (-9)
+#define TM_FAIL_SET_CALLBACK          (-9)
 #define TM_FAIL_NO_HANDLER            (-10)
 #define TM_FAIL_PAUSE                 (-11)
 #define TM_FAIL_RESUME                (-12)
@@ -109,8 +109,6 @@ struct task_info_list_s {
 	struct task_info_list_s *next;
 };
 typedef struct task_info_list_s task_info_list_t;
-
-typedef siginfo_t tm_msg_t;
 
 /****************************************************************************
  * Public Function Prototypes
@@ -237,14 +235,13 @@ int task_manager_set_unicast_cb(void (*func)(void *data));
  * @brief Register callback function which will be used for processing received broadcast messages
  * @details @b #include <task_manager/task_manager.h>
  * @param[in] msg_mask the message mask for selecting specific broadcast msgs\n
- *            User can change the msg_mask by using task_manager_set_broadcast_handler
+ *            User can change the msg_mask by using task_manager_set_broadcast_cb
  *            with the changed msg_mask value
  * @param[in] func the handler function which handle broadcast msgs\n
- * In handler function, tm_msg_t is for containing data. It is originally siginfo_t type.\n
  * @return On success, OK is returned. On failure, defined negative value is returned.
  * @since TizenRT v2.0 PRE
  */
-int task_manager_set_broadcast_handler(int msg_mask, void (*func)(int signo, tm_msg_t *data));
+int task_manager_set_broadcast_cb(int msg_mask, void (*func)(void *data));
 /**
  * @brief Set callback function for resource deallocation API. If you set the callback, it will works when task is terminated.
  * @details @b #include <task_manager/task_manager.h>
