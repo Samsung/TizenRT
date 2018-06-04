@@ -19,6 +19,7 @@
  * Included Files
  ****************************************************************************/
 #include <stdio.h>
+#include <string.h>
 #include <signal.h>
 #include <stdlib.h>
 #include <unistd.h>
@@ -26,7 +27,7 @@
 #include <task_manager/task_manager.h>
 #include "task_manager_internal.h"
 
-void taskmgr_unicast_cb(int signo, tm_msg_t *data)
+void taskmgr_msg_cb(int signo, siginfo_t *data)
 {
 	int handle;
 	handle = taskmgr_get_handle_by_pid(getpid());
@@ -34,9 +35,12 @@ void taskmgr_unicast_cb(int signo, tm_msg_t *data)
 		tmdbg("Fail to start the unicast callback\n");
 		return;
 	}
-	(*TASK_UNICAST_CB(handle))((void *)data->si_value.sival_ptr);
+	if (signo == CONFIG_SIG_SIGTM_UNICAST) {
+		(*TASK_UNICAST_CB(handle))((void *)data->si_value.sival_ptr);
+	} else {
+		(*TASK_BROADCAST_CB(handle))((void *)data->si_value.sival_ptr);
+	}
 }
-
 /****************************************************************************
  * task_manager_set_unicast_cb
  ****************************************************************************/
@@ -50,18 +54,18 @@ int task_manager_set_unicast_cb(void (*func)(void *data))
 		return TM_INVALID_PARAM;
 	}
 
-	act.sa_sigaction = (_sa_sigaction_t)taskmgr_unicast_cb;
+	act.sa_sigaction = (_sa_sigaction_t)taskmgr_msg_cb;
 	act.sa_flags = 0;
 	(void)sigemptyset(&act.sa_mask);
 
 	ret = sigaddset(&act.sa_mask, SIGTM_UNICAST);
 	if (ret < 0) {
-		return TM_FAIL_SET_HANDLER;
+		return TM_FAIL_SET_CALLBACK;
 	}
 
 	ret = sigaction(SIGTM_UNICAST, &act, NULL);
 	if (ret == (int)SIG_ERR) {
-		return TM_FAIL_SET_HANDLER;
+		return TM_FAIL_SET_CALLBACK;
 	}
 
 	/* send user defined callback function to task manager */
@@ -70,8 +74,12 @@ int task_manager_set_unicast_cb(void (*func)(void *data))
 	/* Set the request msg */
 	request_msg.cmd = TASKMGT_SET_UNICAST_CB;
 	request_msg.caller_pid = getpid();
-	request_msg.data = (void *)func;
-
+	request_msg.data = (void *)TM_ALLOC(sizeof(tm_msg_t));
+	if (request_msg.data != NULL) {
+		((tm_msg_t *)request_msg.data)->cb = func;
+	} else {
+		return TM_OUT_OF_MEMORY;
+	}
 
 	ret = taskmgr_send_request(&request_msg);
 	if (ret < 0) {
@@ -79,6 +87,50 @@ int task_manager_set_unicast_cb(void (*func)(void *data))
 	}
 
 	return ret;
+}
+
+/****************************************************************************
+ * task_manager_set_broadcast_cb
+ ****************************************************************************/
+int task_manager_set_broadcast_cb(int msg_mask, void (*func)(void *data))
+{
+	int ret;
+	tm_request_t request_msg;
+	struct sigaction act;
+
+	if (msg_mask < 0 || func == NULL) {
+		return TM_INVALID_PARAM;
+	}
+
+	act.sa_sigaction = (_sa_sigaction_t)taskmgr_msg_cb;
+	act.sa_flags = 0;
+	(void)sigemptyset(&act.sa_mask);
+
+	ret = sigaddset(&act.sa_mask, SIGTM_BROADCAST);
+	if (ret < 0) {
+		return TM_FAIL_SET_CALLBACK;
+	}
+
+	ret = sigaction(SIGTM_BROADCAST, &act, NULL);
+	if (ret == (int)SIG_ERR) {
+		return TM_FAIL_SET_CALLBACK;
+	}
+
+	memset(&request_msg, 0, sizeof(tm_request_t));
+	request_msg.cmd = TASKMGT_SET_BROADCAST_CB;
+	request_msg.caller_pid = getpid();
+	request_msg.data = (void *)TM_ALLOC(sizeof(tm_msg_t));
+	if (request_msg.data != NULL) {
+		((tm_msg_t *)request_msg.data)->msg_mask = msg_mask;
+		((tm_msg_t *)request_msg.data)->cb = func;
+	} else {
+		return TM_OUT_OF_MEMORY;
+	}
+	ret = taskmgr_send_request(&request_msg);
+	if (ret < 0) {
+		return TM_FAIL_REQ_TO_MGR;
+	}
+	return OK;
 }
 
 /****************************************************************************

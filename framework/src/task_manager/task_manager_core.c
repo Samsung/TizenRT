@@ -47,6 +47,8 @@ static bool g_handle_hash[CONFIG_TASK_MANAGER_MAX_TASKS];
 
 #define MAX_HANDLE_MASK (CONFIG_TASK_MANAGER_MAX_TASKS - 1)
 #define HANDLE_HASH(handle)  ((handle) & MAX_HANDLE_MASK)
+#define TYPE_UNICAST     1
+#define TYPE_BROADCAST   2
 
 /****************************************************************************
  * Public Functions
@@ -527,18 +529,7 @@ static void taskmgr_broadcast(int msg)
 	}
 }
 
-static int taskmgr_set_broadcast_handler(int msg_mask, int pid)
-{
-	int ret;
-	ret = taskmgr_get_handle_by_pid(pid);
-	if (ret < 0) {
-		return ret;
-	}
-	TASK_MSG_MASK(ret) = msg_mask;
-	return OK;
-}
-
-static int taskmgr_set_unicast_cb(_tm_callback_t func, int pid)
+static int taskmgr_set_msg_cb(int type, tm_msg_t *data, int pid)
 {
 	int handle;
 	handle = taskmgr_get_handle_by_pid(pid);
@@ -546,7 +537,16 @@ static int taskmgr_set_unicast_cb(_tm_callback_t func, int pid)
 		return handle;
 	}
 
-	TASK_UNICAST_CB(handle) = func;
+	if (data == NULL) {
+		return TM_FAIL_SET_CALLBACK;
+	}
+
+	if (type == TYPE_UNICAST) {
+		TASK_UNICAST_CB(handle) = data->cb;
+	} else {
+		TASK_MSG_MASK(handle) = data->msg_mask;
+		TASK_BROADCAST_CB(handle) = data->cb;
+	}
 	return OK;
 }
 
@@ -650,12 +650,12 @@ int task_manager(int argc, char *argv[])
 			(void)taskmgr_broadcast(*((int *)request_msg.data));
 			break;
 
-		case TASKMGT_SET_BROADCAST_HANDLER:
-			ret = taskmgr_set_broadcast_handler(*((int *)request_msg.data), request_msg.caller_pid);
+		case TASKMGT_SET_BROADCAST_CB:
+			ret = taskmgr_set_msg_cb(TYPE_BROADCAST, (tm_msg_t *)request_msg.data, request_msg.caller_pid);
 			break;
 
 		case TASKMGT_SET_UNICAST_CB:
-			ret = taskmgr_set_unicast_cb((_tm_callback_t)request_msg.data, request_msg.caller_pid);
+			ret = taskmgr_set_msg_cb(TYPE_UNICAST, (tm_msg_t *)request_msg.data, request_msg.caller_pid);
 			break;
 			
 		default:
@@ -667,7 +667,7 @@ int task_manager(int argc, char *argv[])
 			taskmgr_send_response((char *)request_msg.q_name, &response_msg);
 		}
 
-		if (request_msg.data != NULL && request_msg.cmd != TASKMGT_SET_UNICAST_CB) {
+		if (request_msg.data != NULL) {
 			TM_FREE(request_msg.data);
 			request_msg.data = NULL;
 		}

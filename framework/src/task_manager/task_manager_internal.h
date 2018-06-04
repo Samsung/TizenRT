@@ -38,7 +38,7 @@
 #define TASKMGT_SCAN_HANDLE             12
 #define TASKMGT_SCAN_GROUP              13
 #define TASKMGT_UNREGISTER_TASK         14
-#define TASKMGT_SET_BROADCAST_HANDLER   15
+#define TASKMGT_SET_BROADCAST_CB        15
 
 /* Message Queue Values */
 #define TM_MQ_PRIO   50
@@ -65,6 +65,7 @@ struct task_list_data_s {
 	int permission;
 	int msg_mask;
 	_tm_callback_t unicast_cb;
+	_tm_callback_t broadcast_cb;
 };
 typedef struct task_list_data_s task_list_data_t;
 
@@ -84,6 +85,12 @@ struct tm_response_s {
 };
 typedef struct tm_response_s tm_response_t;
 
+struct tm_msg_s {
+	int msg_mask;
+	_tm_callback_t cb;
+};
+typedef struct tm_msg_s tm_msg_t;
+
 #define IS_INVALID_HANDLE(i) (i < 0 || i >= CONFIG_TASK_MANAGER_MAX_TASKS)
 
 #define TASK_LIST_ADDR(handle)       ((task_list_data_t *)tm_task_list[handle].addr)
@@ -94,6 +101,7 @@ typedef struct tm_response_s tm_response_t;
 #define TASK_PERMISSION(handle)      TASK_LIST_ADDR(handle)->permission
 #define TASK_MSG_MASK(handle)        TASK_LIST_ADDR(handle)->msg_mask
 #define TASK_UNICAST_CB(handle)      TASK_LIST_ADDR(handle)->unicast_cb
+#define TASK_BROADCAST_CB(handle)    TASK_LIST_ADDR(handle)->broadcast_cb
 
 extern task_list_t tm_task_list[CONFIG_TASK_MANAGER_MAX_TASKS];
 
