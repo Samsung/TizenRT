@@ -87,18 +87,20 @@ static void action(void *info)
 	exit_flag++;
 }
 
-static void action_broad(int signo, tm_msg_t *info)
+static void action_broad(int info)
 {
-	int recv_sig;
-
-	recv_sig = info->si_value.sival_int;
-
-	if (recv_sig == TM_BROADCAST_WIFI_ON) {
+	switch (info) {
+	case TM_BROADCAST_WIFI_ON:
 		printf("\nWIFI is On!\n");
-	} else if (recv_sig == TM_BROADCAST_WIFI_OFF) {
+		break;
+
+	case TM_BROADCAST_WIFI_OFF:
 		printf("\nWIFI is Off!\n");
-	} else {
+		break;
+
+	default:
 		printf("Unsubscribed Action\n");
+		break;
 	}
 	exit_flag++;
 }
@@ -166,7 +168,7 @@ int action_manager_main(int argc, char *argv[])
 	}
 
 	task_manager_set_unicast_cb(action);
-	task_manager_set_broadcast_handler((TM_BROADCAST_WIFI_ON | TM_BROADCAST_WIFI_OFF), action_broad);
+	task_manager_set_broadcast_cb((TM_BROADCAST_WIFI_ON | TM_BROADCAST_WIFI_OFF), action_broad);
 	sem_post(&tm_sem);
 
 	while (exit_flag < 7) {
