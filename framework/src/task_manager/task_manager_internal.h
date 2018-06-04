@@ -49,7 +49,8 @@
 #define TM_ALLOC(a)  malloc(a)
 #define TM_FREE(a)   free(a)
 
-typedef void (*_tm_callback_t)(void *);
+typedef void (*_tm_unicast_t)(void *);
+typedef void (*_tm_broadcast_t)(int);
 
 struct task_list_s {
 	int pid;
@@ -64,8 +65,8 @@ struct task_list_data_s {
 	int status;
 	int permission;
 	int msg_mask;
-	_tm_callback_t unicast_cb;
-	_tm_callback_t broadcast_cb;
+	_tm_unicast_t unicast_cb;
+	_tm_broadcast_t broadcast_cb;
 };
 typedef struct task_list_data_s task_list_data_t;
 
@@ -85,11 +86,11 @@ struct tm_response_s {
 };
 typedef struct tm_response_s tm_response_t;
 
-struct tm_msg_s {
+struct tm_broadcast_s {
 	int msg_mask;
-	_tm_callback_t cb;
+	_tm_broadcast_t cb;
 };
-typedef struct tm_msg_s tm_msg_t;
+typedef struct tm_broadcast_s tm_broadcast_t;
 
 #define IS_INVALID_HANDLE(i) (i < 0 || i >= CONFIG_TASK_MANAGER_MAX_TASKS)
 

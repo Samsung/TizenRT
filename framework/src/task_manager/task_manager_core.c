@@ -529,7 +529,7 @@ static void taskmgr_broadcast(int msg)
 	}
 }
 
-static int taskmgr_set_msg_cb(int type, tm_msg_t *data, int pid)
+static int taskmgr_set_msg_cb(int type, void *data, int pid)
 {
 	int handle;
 	handle = taskmgr_get_handle_by_pid(pid);
@@ -542,10 +542,10 @@ static int taskmgr_set_msg_cb(int type, tm_msg_t *data, int pid)
 	}
 
 	if (type == TYPE_UNICAST) {
-		TASK_UNICAST_CB(handle) = data->cb;
+		TASK_UNICAST_CB(handle) = (_tm_unicast_t)data;
 	} else {
-		TASK_MSG_MASK(handle) = data->msg_mask;
-		TASK_BROADCAST_CB(handle) = data->cb;
+		TASK_MSG_MASK(handle) = ((tm_broadcast_t *)data)->msg_mask;
+		TASK_BROADCAST_CB(handle) = ((tm_broadcast_t *)data)->cb;
 	}
 	return OK;
 }
@@ -651,11 +651,11 @@ int task_manager(int argc, char *argv[])
 			break;
 
 		case TASKMGT_SET_BROADCAST_CB:
-			ret = taskmgr_set_msg_cb(TYPE_BROADCAST, (tm_msg_t *)request_msg.data, request_msg.caller_pid);
+			ret = taskmgr_set_msg_cb(TYPE_BROADCAST, request_msg.data, request_msg.caller_pid);
 			break;
 
 		case TASKMGT_SET_UNICAST_CB:
-			ret = taskmgr_set_msg_cb(TYPE_UNICAST, (tm_msg_t *)request_msg.data, request_msg.caller_pid);
+			ret = taskmgr_set_msg_cb(TYPE_UNICAST, request_msg.data, request_msg.caller_pid);
 			break;
 			
 		default:
@@ -667,7 +667,7 @@ int task_manager(int argc, char *argv[])
 			taskmgr_send_response((char *)request_msg.q_name, &response_msg);
 		}
 
-		if (request_msg.data != NULL) {
+		if (request_msg.data != NULL && request_msg.cmd != TASKMGT_SET_UNICAST_CB) {
 			TM_FREE(request_msg.data);
 			request_msg.data = NULL;
 		}
