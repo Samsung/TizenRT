@@ -55,6 +55,7 @@
 
 #define PROC_SMARTFS_PATH "/proc/fs/smartfs"
 #define PROC_SMARTFS_FILE_PATH "/proc/fs/smartfs/file.txt"
+
 /* Read all files in the directory */
 static int read_dir_entries(const char *dirpath)
 {
@@ -112,7 +113,7 @@ error:
 
 	return ERROR;
 }
-#if defined(CONFIG_FS_PROCFS) && !defined (CONFIG_FS_PROCFS_EXCLUDE_UPTIME)
+#ifndef CONFIG_FS_PROCFS_EXCLUDE_UPTIME
 static int procfs_uptime_ops(char *dirpath)
 {
 	int ret;
@@ -148,7 +149,6 @@ static int procfs_uptime_ops(char *dirpath)
 }
 #endif
 
-#if defined(CONFIG_FS_PROCFS)
 static int procfs_version_ops(char *dirpath)
 {
 	int ret;
@@ -182,7 +182,7 @@ static int procfs_version_ops(char *dirpath)
 
 		return OK;
 }
-#endif
+
 static int procfs_rewind_tc(const char *dirpath)
 {
 	int count;
@@ -313,7 +313,7 @@ void tc_fs_procfs_main(void)
 	ret = procfs_rewind_tc(PROC_MOUNTPOINT);
 	TC_ASSERT_EQ("procfs_rewind_tc", ret, OK);
 
-#if defined(CONFIG_FS_PROCFS) && !defined (CONFIG_FS_PROCFS_EXCLUDE_UPTIME)
+#ifndef CONFIG_FS_PROCFS_EXCLUDE_UPTIME
 	ret = procfs_uptime_ops(PROC_UPTIME_PATH);
 	TC_ASSERT_EQ("procfs_uptime_ops", ret, OK);
 #endif
@@ -324,7 +324,6 @@ void tc_fs_procfs_main(void)
 	ret = stat(PROC_INVALID_PATH, &st);
 	TC_ASSERT_EQ("stat", ret, ERROR);
 
-#if defined(CONFIG_FS_PROCFS)
 	ret = procfs_version_ops(PROC_UPTIME_PATH);
 	TC_ASSERT_EQ("procfs_version_ops", ret, OK);
 #ifndef CONFIG_FS_PROCFS_EXCLUDE_SMARTFS
