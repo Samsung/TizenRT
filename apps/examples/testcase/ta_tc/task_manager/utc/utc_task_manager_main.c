@@ -155,7 +155,7 @@ static void utc_task_manager_set_termination_cb_p(void)
 	addr2 = (int *)malloc(456);
 
 	ret = task_manager_set_termination_cb(free_handler);
-	TC_ASSERT_EQ("task_manager_set_termination_cb", ret, OK);
+	TC_ASSERT_EQ_CLEANUP("task_manager_set_termination_cb", ret, OK, free(addr); free(addr2));
 
 	TC_SUCCESS_RESULT();
 }
