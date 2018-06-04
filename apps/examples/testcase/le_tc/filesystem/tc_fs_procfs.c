@@ -274,7 +274,7 @@ void tc_fs_procfs_main(void)
 
 		ret = mount(NULL, PROC_MOUNTPOINT, "procfs", 0, NULL);
 	}
-	
+
 	if (ret < 0) {
 		TC_ASSERT_EQ("mount", errno, EEXIST);
 	}
@@ -288,11 +288,13 @@ void tc_fs_procfs_main(void)
 #if defined(CONFIG_FS_PROCFS) && !defined (CONFIG_FS_PROCFS_EXCLUDE_UPTIME)
 	ret = procfs_uptime_ops(PROC_UPTIME_PATH);
 	TC_ASSERT_EQ("procfs_uptime_ops", ret, OK);
+#endif
+
+	ret = stat(PROC_MOUNTPOINT, &st);
+	TC_ASSERT_EQ("stat", ret, OK);
 
 	ret = stat(PROC_INVALID_PATH, &st);
 	TC_ASSERT_EQ("stat", ret, ERROR);
-
-#endif
 
 #if defined(CONFIG_FS_PROCFS)
 	ret = procfs_version_ops(PROC_UPTIME_PATH);

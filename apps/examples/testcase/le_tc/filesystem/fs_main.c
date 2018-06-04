@@ -1153,9 +1153,6 @@ static void tc_fs_vfs_stat(void)
 	ret = stat("", &st);
 	TC_ASSERT_EQ("stat", ret, ERROR);
 
-	ret = stat(PROCFS_PATH, &st);
-	TC_ASSERT_EQ("stat", ret, OK);
-
 	TC_SUCCESS_RESULT();
 }
 
