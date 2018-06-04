@@ -75,7 +75,7 @@ int task_manager_set_unicast_cb(void (*func)(void *data))
 	request_msg.cmd = TASKMGT_SET_UNICAST_CB;
 	request_msg.caller_pid = getpid();
 	request_msg.data = (void *)func;
-
+	request_msg.timeout = TM_NO_RESPONSE;
 	ret = taskmgr_send_request(&request_msg);
 	if (ret < 0) {
 		return TM_FAIL_REQ_TO_MGR;
@@ -114,6 +114,7 @@ int task_manager_set_broadcast_cb(int msg_mask, void (*func)(int data))
 	memset(&request_msg, 0, sizeof(tm_request_t));
 	request_msg.cmd = TASKMGT_SET_BROADCAST_CB;
 	request_msg.caller_pid = getpid();
+	request_msg.timeout = TM_NO_RESPONSE;
 	request_msg.data = (void *)TM_ALLOC(sizeof(tm_broadcast_t));
 	if (request_msg.data != NULL) {
 		((tm_broadcast_t *)request_msg.data)->msg_mask = msg_mask;
