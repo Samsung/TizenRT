@@ -262,6 +262,34 @@ void tc_fs_smartfs_procfs_main(void)
 }
 #endif
 
+/**
+* @testcase         tc_fs_driver_mtd_procfs_ops
+* @brief            mtd procfs ops
+* @scenario         opens /proc/mtd and performs operations
+* @apicovered       mtdprocfs_operations (mtd_open, mtd_dup, mtd_stat, mtd_close)
+* @precondition     NA
+* @postcondition    NA
+*/
+#ifndef CONFIG_FS_PROCFS_EXCLUDE_MTD
+static void tc_driver_mtd_procfs_ops(void)
+{
+	int fd;
+	int ret;
+	struct stat st;
+
+	fd = open(MTD_PROCFS_PATH, O_RDONLY);
+	TC_ASSERT_GEQ("open", fd, 0);
+
+	ret = stat(MTD_PROCFS_PATH, &st);
+	TC_ASSERT_EQ_CLEANUP("stat", ret, OK, close(fd));
+
+	ret = close(fd);
+	TC_ASSERT_EQ("close", ret, OK);
+
+	TC_SUCCESS_RESULT();
+}
+#endif
+
 void tc_fs_procfs_main(void)
 {
 	int ret;
@@ -299,6 +327,11 @@ void tc_fs_procfs_main(void)
 #if defined(CONFIG_FS_PROCFS)
 	ret = procfs_version_ops(PROC_UPTIME_PATH);
 	TC_ASSERT_EQ("procfs_version_ops", ret, OK);
+#ifndef CONFIG_FS_PROCFS_EXCLUDE_SMARTFS
+	tc_fs_smartfs_procfs_main();
+#endif
+#ifndef CONFIG_FS_PROCFS_EXCLUDE_MTD
+	tc_driver_mtd_procfs_ops();
 #endif
 
 	TC_SUCCESS_RESULT();
