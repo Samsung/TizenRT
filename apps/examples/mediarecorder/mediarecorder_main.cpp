@@ -21,7 +21,7 @@
 #include <apps/platform/cxxinitialize.h>
 #include <tinyalsa/tinyalsa.h>
 #include <fcntl.h>
-
+#include <errno.h>
 #include <media/MediaRecorder.h>
 #include <media/MediaRecorderObserverInterface.h>
 #include <media/FileOutputDataSource.h>
@@ -36,6 +36,7 @@ constexpr int RECORDER_STOP = 5;
 constexpr int VOLUME_UP = 6;
 constexpr int VOLUME_DOWN = 7;
 constexpr int PLAY_DATA = 8;
+constexpr int DELETE_FILE = 9;
 constexpr int APP_OFF = 0;
 
 using namespace std;
@@ -61,7 +62,8 @@ public:
 	}
 	void onRecordError(Id id)
 	{
-		std::cout << "onRecordError" << std::endl;
+		std::cout << "onRecordError!! please select Stop!!" << std::endl;
+
 	}
 
 	void start()
@@ -70,7 +72,7 @@ public:
 	
 		while (appRunning) {
 			printRecorderMenu();
-			switch (userInput(APP_ON, PLAY_DATA))	{
+			switch (userInput(APP_ON, DELETE_FILE))	{
 				case APP_ON: {
 					std::cout << "SELECTED APP ON" << std::endl;
 					mr.create();
@@ -80,28 +82,49 @@ public:
 				break;
 				case RECORDER_START: {
 					std::cout << "SELECTED RECORDER_START" << std::endl;
-					if (mr.prepare() == RECORDER_OK) {
-						mr.start();
-					}
-					else {
-						std::cout << "prepare failed" << std::endl;
+					if (isPaused) {
+						if (mr.start()) {
+							std::cout << "START IN PAUSE STATE SUCCESS" << std::endl;
+							isPaused = false;
+						}
+					} else {
+						if (mr.prepare() == RECORDER_OK) {
+							mr.start();
+							std::cout << "START IN NONE-PAUSE STATE SUCCESS" << std::endl;
+						} else {
+							std::cout << "PREPARE FAILED" << std::endl;
+						}
 					}
 				}
 				break;
 				case RECORDER_PAUSE: {
 					std::cout << "SELECTED RECORDER_PAUSE" << std::endl;
-					mr.pause();
+					if (mr.pause()) {
+						isPaused = true;
+						std::cout << "PAUSE SUCCESS" << std::endl;
+					} else {
+						std::cout << "PAUSE FAILED" << std::endl;
+					}
 				}
 				break;
 				case RECORDER_RESUME: {
 					std::cout << "SELECTED RECORDER_RESUME" << std::endl;
-					mr.start();
+					if (mr.start()) {
+						isPaused = false;
+						std::cout << "RESUME SUCCESS" << std::endl;
+					} else {
+						std::cout << "RESUME FAILED" << std::endl;
+					}
 				}
 				break;
 				case RECORDER_STOP: {
 					std::cout << "SELECTED RECORDER_STOP" << std::endl;
 					if (mr.stop() == RECORDER_OK) {
 						mr.unprepare();
+						isPaused = false;
+						std::cout << "STOP SUCCESS" << std::endl;
+					} else {
+						std::cout << "STOP FAILED" << std::endl;
 					}
 				}
 				break;
@@ -130,6 +153,14 @@ public:
 					std::cout << "SELECTED APP_OFF" << std::endl;
 					mr.destroy();
 					appRunning = false;
+				}
+				break;
+				case DELETE_FILE : {
+					if (unlink(filePath) == OK) {
+						std::cout << "FILE DELETED" << std::endl;
+					} else {
+						std::cout << "DELETE FAILED ERRPR " << errno << std::endl;
+					}
 				}
 				break;
 				
@@ -200,6 +231,7 @@ public:
 		std::cout << "6. RECORDER Volume Up" << std::endl;
 		std::cout << "7. RECORDER Volume Down" << std::endl;
 		std::cout << "8. play Data" << std::endl;
+		std::cout << "9. Delete file" << std::endl;
 		std::cout << "0. RECORDER APP OFF" << std::endl;
 		std::cout << "========================================" << std::endl;
 	}
@@ -227,7 +259,7 @@ public:
 		return input;
 	}
 
-	MediaRecorderTest() : p_out(nullptr), appRunning(false) 
+	MediaRecorderTest() : p_out(nullptr), appRunning(false), isPaused(false) 
 	{
 		pcmConfig.channels = 2;
 		pcmConfig.rate = 16000;
@@ -241,6 +273,7 @@ private:
 	struct pcm_config pcmConfig;
 	struct pcm *p_out;
 	bool appRunning;
+	bool isPaused;
 	MediaRecorder mr;
 };
 
