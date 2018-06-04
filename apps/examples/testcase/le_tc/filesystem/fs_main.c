@@ -951,7 +951,7 @@ static void tc_fs_vfs_seekdir(void)
 	seekdir(dir, offset);
 	TC_ASSERT_NEQ_CLEANUP("seekdir", dir, NULL, closedir(dir));
 	dirent = readdir(dir);
-	TC_ASSERT_NEQ_CLEANUP("readdir", dirent, NULL, closedir(dir));
+	TC_ASSERT_EQ_CLEANUP("readdir", dirent, NULL, closedir(dir));
 
 	ret = closedir(dir);
 	TC_ASSERT_EQ("closedir", ret, OK);
