@@ -38,7 +38,7 @@ void taskmgr_msg_cb(int signo, siginfo_t *data)
 	if (signo == CONFIG_SIG_SIGTM_UNICAST) {
 		(*TASK_UNICAST_CB(handle))((void *)data->si_value.sival_ptr);
 	} else {
-		(*TASK_BROADCAST_CB(handle))((void *)data->si_value.sival_ptr);
+		(*TASK_BROADCAST_CB(handle))(data->si_value.sival_int);
 	}
 }
 /****************************************************************************
@@ -74,12 +74,7 @@ int task_manager_set_unicast_cb(void (*func)(void *data))
 	/* Set the request msg */
 	request_msg.cmd = TASKMGT_SET_UNICAST_CB;
 	request_msg.caller_pid = getpid();
-	request_msg.data = (void *)TM_ALLOC(sizeof(tm_msg_t));
-	if (request_msg.data != NULL) {
-		((tm_msg_t *)request_msg.data)->cb = func;
-	} else {
-		return TM_OUT_OF_MEMORY;
-	}
+	request_msg.data = (void *)func;
 
 	ret = taskmgr_send_request(&request_msg);
 	if (ret < 0) {
@@ -92,7 +87,7 @@ int task_manager_set_unicast_cb(void (*func)(void *data))
 /****************************************************************************
  * task_manager_set_broadcast_cb
  ****************************************************************************/
-int task_manager_set_broadcast_cb(int msg_mask, void (*func)(void *data))
+int task_manager_set_broadcast_cb(int msg_mask, void (*func)(int data))
 {
 	int ret;
 	tm_request_t request_msg;
@@ -119,10 +114,10 @@ int task_manager_set_broadcast_cb(int msg_mask, void (*func)(void *data))
 	memset(&request_msg, 0, sizeof(tm_request_t));
 	request_msg.cmd = TASKMGT_SET_BROADCAST_CB;
 	request_msg.caller_pid = getpid();
-	request_msg.data = (void *)TM_ALLOC(sizeof(tm_msg_t));
+	request_msg.data = (void *)TM_ALLOC(sizeof(tm_broadcast_t));
 	if (request_msg.data != NULL) {
-		((tm_msg_t *)request_msg.data)->msg_mask = msg_mask;
-		((tm_msg_t *)request_msg.data)->cb = func;
+		((tm_broadcast_t *)request_msg.data)->msg_mask = msg_mask;
+		((tm_broadcast_t *)request_msg.data)->cb = (_tm_broadcast_t)func;
 	} else {
 		return TM_OUT_OF_MEMORY;
 	}

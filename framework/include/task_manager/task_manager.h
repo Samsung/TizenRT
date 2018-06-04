@@ -241,7 +241,7 @@ int task_manager_set_unicast_cb(void (*func)(void *data));
  * @return On success, OK is returned. On failure, defined negative value is returned.
  * @since TizenRT v2.0 PRE
  */
-int task_manager_set_broadcast_cb(int msg_mask, void (*func)(void *data));
+int task_manager_set_broadcast_cb(int msg_mask, void (*func)(int data));
 /**
  * @brief Set callback function for resource deallocation API. If you set the callback, it will works when task is terminated.
  * @details @b #include <task_manager/task_manager.h>
