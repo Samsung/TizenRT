@@ -485,7 +485,7 @@ static int taskmgr_check_msg_mask(int msg_mask, int handle)
 	return ERROR;
 }
 
-static int taskmgr_get_handle_by_pid(int pid)
+int taskmgr_get_handle_by_pid(int pid)
 {
 	int handle;
 	for (handle = 0; handle < CONFIG_TASK_MANAGER_MAX_TASKS; handle++) {
@@ -535,6 +535,18 @@ static int taskmgr_set_broadcast_handler(int msg_mask, int pid)
 		return ret;
 	}
 	TASK_MSG_MASK(ret) = msg_mask;
+	return OK;
+}
+
+static int taskmgr_set_unicast_cb(_tm_callback_t func, int pid)
+{
+	int handle;
+	handle = taskmgr_get_handle_by_pid(pid);
+	if (handle == TM_FAIL_UNREGISTERED_TASK) {
+		return handle;
+	}
+
+	TASK_UNICAST_CB(handle) = func;
 	return OK;
 }
 
@@ -641,6 +653,10 @@ int task_manager(int argc, char *argv[])
 		case TASKMGT_SET_BROADCAST_HANDLER:
 			ret = taskmgr_set_broadcast_handler(*((int *)request_msg.data), request_msg.caller_pid);
 			break;
+
+		case TASKMGT_SET_UNICAST_CB:
+			ret = taskmgr_set_unicast_cb((_tm_callback_t)request_msg.data, request_msg.caller_pid);
+			break;
 			
 		default:
 			break;
@@ -651,7 +667,7 @@ int task_manager(int argc, char *argv[])
 			taskmgr_send_response((char *)request_msg.q_name, &response_msg);
 		}
 
-		if (request_msg.data != NULL) {
+		if (request_msg.data != NULL && request_msg.cmd != TASKMGT_SET_UNICAST_CB) {
 			TM_FREE(request_msg.data);
 			request_msg.data = NULL;
 		}

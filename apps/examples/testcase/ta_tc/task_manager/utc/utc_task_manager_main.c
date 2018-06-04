@@ -43,9 +43,9 @@ static task_info_list_t *sample_list_info;
 static int *addr;
 static int *addr2;
 
-static void test_handler(int sig, tm_msg_t *info)
+static void test_handler(void *info)
 {
-	flag = !strncmp(info->si_value.sival_ptr, TM_SAMPLE_MSG, strlen(TM_SAMPLE_MSG));
+	flag = !strncmp(info, TM_SAMPLE_MSG, strlen(TM_SAMPLE_MSG));
 }
 
 void free_handler(void)
@@ -60,10 +60,11 @@ int tm_sample_main(int argc, char *argv[])
 
 	tm_noperm_handle = task_manager_register(TM_NOPERM_NAME, TM_TASK_PERMISSION_DEDICATE, 100);
 
-	ret = task_manager_set_handler(test_handler);
+	ret = task_manager_set_unicast_cb(test_handler);
 	if (ret != OK) {
 		printf("ERROR : fail to set handler\n");
 	}
+
 	while (1) {
 		usleep(1);
 	}	// This will be dead at utc_task_manager_terminate_p
@@ -123,20 +124,20 @@ static void utc_task_manager_start_p(void)
 	TC_SUCCESS_RESULT();
 }
 
-static void utc_task_manager_set_handler_n(void)
+static void utc_task_manager_set_unicast_cb_n(void)
 {
 	int ret;
-	ret = task_manager_set_handler(NULL);
-	TC_ASSERT_EQ("task_manager_set_handler", ret, TM_INVALID_PARAM);
+	ret = task_manager_set_unicast_cb(NULL);
+	TC_ASSERT_EQ("task_manager_set_unicast_cb", ret, TM_INVALID_PARAM);
 
 	TC_SUCCESS_RESULT();
 }
 
-static void utc_task_manager_set_handler_p(void)
+static void utc_task_manager_set_unicast_cb_p(void)
 {
 	int ret;
-	ret = task_manager_set_handler(test_handler);
-	TC_ASSERT_EQ("task_manager_set_handler", ret, OK);
+	ret = task_manager_set_unicast_cb(test_handler);
+	TC_ASSERT_EQ("task_manager_set_unicast_cb", ret, OK);
 
 	TC_SUCCESS_RESULT();
 }
@@ -418,14 +419,13 @@ int utc_task_manager_main(int argc, char *argv[])
 	}
 
 	utc_task_manager_register_n();
-
 	utc_task_manager_register_p();
 
 	utc_task_manager_start_n();
 	utc_task_manager_start_p();
 
-	utc_task_manager_set_handler_n();
-	utc_task_manager_set_handler_p();
+	utc_task_manager_set_unicast_cb_n();
+	utc_task_manager_set_unicast_cb_p();
 
 	utc_task_manager_set_termination_cb_n();
 	utc_task_manager_set_termination_cb_p();
