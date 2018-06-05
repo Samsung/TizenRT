@@ -57,7 +57,8 @@ int user_main(int argc, char *argv[])
 	if (action_manager_info != NULL) {
 		handle_actionmanager = action_manager_info->task.handle;
 	}
-
+	task_manager_clean_infolist(&action_manager_info);
+	
 	printf("\nUser App sends Alarm On message to Action Manager\n");
 	ret = task_manager_unicast(handle_actionmanager, msg1, strlen(msg1) + 1, TM_RESPONSE_WAIT_INF);
 	if (ret != OK) {
