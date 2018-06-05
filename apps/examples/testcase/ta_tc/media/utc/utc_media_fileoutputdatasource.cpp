@@ -111,11 +111,10 @@ static void utc_media_FileOutputDataSource_open_p(void)
 
 static void utc_media_FileOutputDataSource_open_n(void)
 {
-	FileOutputDataSource dataSource(filePath);
+	FileOutputDataSource dataSource("non-exist-file");
 
-	dataSource.open();
 	TC_ASSERT_EQ("utc_media_FileOutputDataSource_open", dataSource.open(), false);
-	dataSource.close();
+
 	TC_SUCCESS_RESULT();
 }
 
