@@ -103,7 +103,7 @@
  ****************************************************************************/
 
 #if defined(CONFIG_SCHED_ATEXIT) && !defined(CONFIG_SCHED_ONEXIT)
-static inline void task_atexit(FAR struct tcb_s *tcb)
+inline void task_atexit(FAR struct tcb_s *tcb)
 {
 	FAR struct task_group_s *group = tcb->group;
 
@@ -159,7 +159,7 @@ static inline void task_atexit(FAR struct tcb_s *tcb)
  ****************************************************************************/
 
 #ifdef CONFIG_SCHED_ONEXIT
-static inline void task_onexit(FAR struct tcb_s *tcb, int status)
+inline void task_onexit(FAR struct tcb_s *tcb, int status)
 {
 	FAR struct task_group_s *group = tcb->group;
 
@@ -616,36 +616,12 @@ void task_exithook(FAR struct tcb_s *tcb, int status, bool nonblocking)
 	tcb->cpcount = 0;
 #endif
 
-#if defined(CONFIG_SCHED_ATEXIT) || defined(CONFIG_SCHED_ONEXIT)
-	/* If exit function(s) were registered, call them now before we do any un-
-	 * initialization.
-	 *
-	 * NOTES:
-	 *
-	 * 1. In the case of task_delete(), the exit function will *not* be called
-	 *    on the thread execution of the task being deleted!  That is probably
-	 *    a bug.
-	 * 2. We cannot call the exit functions if nonblocking is requested:  These
-	 *    functions might block.
-	 * 3. This function will only be called with with non-blocking == true
-	 *    only when called through _exit(). _exit() behaviors requires that
-	 *    the exit functions *not* be called.
-	 */
-
-	if (!nonblocking) {
-		task_atexit(tcb);
-
-		/* Call any registered on_exit function(s) */
-
-		task_onexit(tcb, status);
-	}
-#endif
-
 	/* If the task was terminated by another task, it may be in an unknown
 	 * state.  Make some feeble effort to recover the state.
+	 * And if exit function(s) were registered, call them in task_recover.
 	 */
 
-	task_recover(tcb);
+	task_recover(tcb, status, nonblocking);
 
 	/* Send the SIGCHILD signal to the parent task group */
 

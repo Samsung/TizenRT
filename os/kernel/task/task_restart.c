@@ -58,6 +58,7 @@
 
 #include <sys/types.h>
 #include <sched.h>
+#include <stdlib.h>
 #include <errno.h>
 
 #include <tinyara/arch.h>
@@ -166,7 +167,7 @@ int task_restart(pid_t pid)
 
 		/* Try to recover from any bad states */
 
-		task_recover((FAR struct tcb_s *)tcb);
+		task_recover((FAR struct tcb_s *)tcb, EXIT_SUCCESS, false);
 
 		/* Kill any children of this thread */
 
