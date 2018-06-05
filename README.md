@@ -213,62 +213,6 @@ $ cd os
 $ ./config.sh artik053/onboard
 ```
 
-#### other configures
-
-The following environment settings are divided into three stages and used in advance. The details are as follows.
-
-1) minimal
-```bash
-$ cd os
-$ ./config.sh artik053/minimal
-```
-> * OS kernel
-> * Customized C Library
-> * Security(TLS)
-> * BSP(boot loader)
-> * Power
-> * Networking support (LWIP, DHCP Client, Wi-Fi)
-
-2) typical
-```bash
-$ cd os
-$ ./config.sh artik053/typical
-```
-> * OS kernel
-> * Customized C Library
-> * Security(TLS)
-> * BSP(boot loader)
-> * Power
-> * Networking support(LWIP, DHCP Client, DHCP Server, Wi-Fi)
-> * Watchdog
-> * ARTIK-SDK
-> * JSON
-> * Tash
-> * I2S
-> * DMA
-> * System IO(I2C, UART, GPIO, PWM, SPI)
-> * Network Utilities(FTP Client, Websock, Webclient, Webserver, NTP Client)
-
-3) extra
-```bash
-$ cd os
-$ ./config.sh artik053/extra
-```
-> * OS kernel
-> * Customized C Library
-> * Security(TLS)
-> * BSP(boot loader)
-> * Power
-> * Networking support (LWIP, DHCP Client, DHCP Server, Wi-Fi)
-> * Watchdog
-> * ARTIK-SDK
-> * JSON
-> * Tash
-> * I2S
-> * DMA
-> * System IO(I2C, UART, GPIO, PWM, SPI)
-> * Network Utilities(FTP Client, Websock, Webclient, Webserver, NTP Client, CoAP, MQTT)
-
 ## How to Build
 
 Configure the build from `TizenRT/os/tools` directory
@@ -934,14 +878,14 @@ Please access the link and sign-up.
 
 Here is the secure boot chain.
 ```
-+-------------------------+         +--------------------------------+         +--------------------------------+
-|           bl1           |         |               u-boot           |         |            tinyara             |
-+-------------------------+ ======> +--------------------------------+ ======> +--------------------------------+
-| Customer KMS public key |         |     Customer APP public key    |         |        Signature of above      |
-|                         |         +--------------------------------+         | (Signed by customer's APP key) |
-+-------------------------+         |       Signature of above       |         +--------------------------------+
-                                    | (Signed by customer's KMS key) |
-                                    +--------------------------------+
++-------------------------+      +--------------------------------+      +--------------------------------+
+|           bl1           |      |             u-boot             |      |            TizenRT             |
++-------------------------+ ===> +--------------------------------+ ===> +--------------------------------+
+| Customer KMS public key |      |     Customer APP public key    |      |        Signature of above      |
+|                         |      +--------------------------------+      | (Signed by customer's APP key) |
++-------------------------+      |       Signature of above       |      +--------------------------------+
+                                 | (Signed by customer's KMS key) |
+                                 +--------------------------------+
 ```
 
 In development, below items are used.
@@ -949,7 +893,7 @@ In development, below items are used.
 > * Customer's KMS Key is default key
 > * Customer's APP Key is default key
 
-When you build tinyara of s-model series, build system will sign the fw files with default keys.
+When you build TizenRT of s-model series, build system will sign the fw files with default keys.
 
 ### Secure Boot in mass production stage
 
@@ -974,8 +918,8 @@ Here is the list you need to change.
 * This [link](https://developer.artik.io/documentation/advanced-concepts/secure-os/kms.html) also describes the process how to get bl1 image including your public key.
 * To operate new bl1 image, please contact "codesigner@artik.io" to get efuse app and guide.
 * Here is how to enable new bl1 image.
-1. Copy received “tinyara_head.bin” into “tinyara/build/output/bin”
-2. Run below command in "tinyara/os" to sign “tinyara_head.bin” and fuse it on your artik module.
+1. Copy received “tinyara_head.bin” into “TizenRT/build/output/bin”
+2. Run below command in "TizenRT/os" to sign “tinyara_head.bin” and fuse it on your artik module.
 ```bash
 $ make download os
 ```
@@ -999,7 +943,7 @@ TASH>>
 
 #### APP key
 
-APP key is used for signing tinyara os. Here is the process.
+APP key is used for signing TizenRT os. Here is the process.
 
 1. Run below commands to generate private key. This is a key for signing OS.
 ```bash
@@ -1007,7 +951,7 @@ $ openssl genrsa -3 -out rsa_private.key 2048
 ```
 2. Copy the private key into below path. From now on, if you build, OS will be signed with your private key. Please keep it safe.
 
-> tinyara/build/configs/artik05x/tools/codesigner/rsa_private.key
+> TizenRT/build/configs/artik05x/tools/codesigner/rsa_private.key
 
 3. Run below command to extract public key from private key. You need to inject the public key into u-boot.
 ```bash
@@ -1027,7 +971,7 @@ $ ./tools/attachns2-s.py ./u-boot.bin ./u-boot.head.bin ./rsa_public.key
 
 7. Download signed image and copy it into below path as named `bl2.bin`. From now on, if you use `make download` command, that `bl2.bin` will be used to fuse.
 
-> tinyara/build/configs/artik053s/bin/bl2.bin
+> TizenRT/build/configs/artik053s/bin/bl2.bin
 
 8. Build as guided below.
 
@@ -1338,7 +1282,7 @@ The following is the memory map of ARTIK05x.
              ADDRESS      CONTENTS       NOTE
            0x047FFFFF +---------------+
                       |    SSS R/W    | Secure Storage R/W
-                      |    (512KB)    |
+                      |    (512KB)    | (This area is only used in the Secure models.)
                       |               |
            0x04780000 +---------------+
                       |  WiFi NVRAM   | WiFi RAM
