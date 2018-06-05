@@ -416,6 +416,144 @@ static void tc_libc_timer_strftime(void)
 }
 
 /**
+* @fn             :tc_libc_timer_strptime
+* @brief          :strptime - Format string as time
+* @Scenario       :strptime - converts time string as the time described in timeptr
+*                  structure as per the format specifiers.
+* API's covered   :strptime
+* Preconditions   :none
+* Postconditions  :none
+* @return         :void
+*/
+static void tc_libc_timer_strptime(void)
+{
+	struct tm sp_tm;
+	struct tm sf_tm;
+	char *ret;
+
+	sf_tm.tm_sec  = 13;
+	sf_tm.tm_min  = 42;
+	sf_tm.tm_hour = 12;
+	sf_tm.tm_mday = 5;
+	sf_tm.tm_mon  = 5;
+	sf_tm.tm_year = 2018 - YEAR_BASE;
+
+	memset(&sp_tm, 0, sizeof(struct tm));
+
+	/* strptime() converts a string representation of time to a time tm structure,
+	 * using the specified format. descrtiption of example formats are as shown below,
+	 * %Y or %y - The year, including century (2018 = 2000(century) + 18(year)).
+	 * %m - The month number.
+	 * %d - The day of month (1-31).
+	 * %k - The hour on a 24-hour clock (0-23).
+	 * %M - The minute (0-59).
+	 * %S - The second (0-60).
+	 * %p - The locale's equivalent of AM or PM.
+	 */
+	ret = strptime("2018-06-05 12:42:13 PM", "%Y-%m-%Od %k:%M:%S %p", &sp_tm);
+	TC_ASSERT_NEQ("strptime", ret, NULL);
+	TC_ASSERT_EQ("strptime", sp_tm.tm_year, sf_tm.tm_year);
+	TC_ASSERT_EQ("strptime", sp_tm.tm_mon, sf_tm.tm_mon);
+	TC_ASSERT_EQ("strptime", sp_tm.tm_mday, sf_tm.tm_mday);
+	TC_ASSERT_EQ("strptime", sp_tm.tm_hour, sf_tm.tm_hour);
+	TC_ASSERT_EQ("strptime", sp_tm.tm_min, sf_tm.tm_min);
+	TC_ASSERT_EQ("strptime", sp_tm.tm_sec, sf_tm.tm_sec);
+
+	/* %U - The week number with Sunday the first day of the week (0-53).
+	 *      The first Sunday of January is the first day of week 1.
+	 * %b or %B or %h - The month name according to the current locale, in abbreviated form or the full name.
+	 * %l or %I - The hour on a 12-hour clock (1-12).
+	 */
+	memset(&sp_tm, 0, sizeof(struct tm));
+	ret = strptime("22 June 10 AM 18", "%U %B %l %p %Ey", &sp_tm);
+	TC_ASSERT_NEQ("strptime", ret, NULL);
+	TC_ASSERT_EQ("strptime", sp_tm.tm_year, sf_tm.tm_year);
+	TC_ASSERT_EQ("strptime", sp_tm.tm_mon, sf_tm.tm_mon);
+	TC_ASSERT_EQ("strptime", sp_tm.tm_hour, sf_tm.tm_hour - 2);
+
+	/* %C - The century number (0-99).
+	 * %C does not modify tm structure, so just validating the return value..
+	 */
+	ret = strptime("2018", "%C", &sp_tm);
+	TC_ASSERT_NEQ("strptime", ret, NULL);
+
+	/* %D - Equivalent  to %m/%d/%y(month/day/year).
+	 * %X - The time, using the locale's time format.
+	 */
+	memset(&sp_tm, 0, sizeof(struct tm));
+	ret = strptime("06/05/18 12:42:13", "%D %X", &sp_tm);
+	TC_ASSERT_NEQ("strptime", ret, NULL);
+	TC_ASSERT_EQ("strptime", sp_tm.tm_year, sf_tm.tm_year);
+	TC_ASSERT_EQ("strptime", sp_tm.tm_mon, sf_tm.tm_mon);
+	TC_ASSERT_EQ("strptime", sp_tm.tm_mday, sf_tm.tm_mday);
+	TC_ASSERT_EQ("strptime", sp_tm.tm_hour, sf_tm.tm_hour);
+	TC_ASSERT_EQ("strptime", sp_tm.tm_min, sf_tm.tm_min);
+	TC_ASSERT_EQ("strptime", sp_tm.tm_sec, sf_tm.tm_sec);
+
+	/* %x - The date, using the locale's date format.
+	 * %R - Equivalent to %H:%M (hour:minute).
+     */
+	memset(&sp_tm, 0, sizeof(struct tm));
+	ret = strptime("06/05/18 12:42", "%x %R", &sp_tm);
+	TC_ASSERT_NEQ("strptime", ret, NULL);
+	TC_ASSERT_EQ("strptime", sp_tm.tm_year, sf_tm.tm_year);
+	TC_ASSERT_EQ("strptime", sp_tm.tm_mon, sf_tm.tm_mon);
+	TC_ASSERT_EQ("strptime", sp_tm.tm_mday, sf_tm.tm_mday);
+	TC_ASSERT_EQ("strptime", sp_tm.tm_hour, sf_tm.tm_hour);
+	TC_ASSERT_EQ("strptime", sp_tm.tm_min, sf_tm.tm_min);
+
+	/* %T - Equivalent to %H:%M:%S (hour/minute/second). */
+	memset(&sp_tm, 0, sizeof(struct tm));
+	ret = strptime("12:42:13", "%T", &sp_tm);
+	TC_ASSERT_NEQ("strptime", ret, NULL);
+	TC_ASSERT_EQ("strptime", sp_tm.tm_hour, sf_tm.tm_hour);
+	TC_ASSERT_EQ("strptime", sp_tm.tm_min, sf_tm.tm_min);
+	TC_ASSERT_EQ("strptime", sp_tm.tm_sec, sf_tm.tm_sec);
+
+
+	/* %r - The 12-hour clock time (using the locale's AM or PM).
+	 * In the POSIX locale equivalent to %I:%M:%S %p.
+	 */
+	memset(&sp_tm, 0, sizeof(struct tm));
+	ret = strptime("12:42:13 PM", "%r", &sp_tm);
+	TC_ASSERT_NEQ("strptime", ret, NULL);
+	TC_ASSERT_EQ("strptime", sp_tm.tm_hour, sf_tm.tm_hour);
+	TC_ASSERT_EQ("strptime", sp_tm.tm_min, sf_tm.tm_min);
+	TC_ASSERT_EQ("strptime", sp_tm.tm_sec, sf_tm.tm_sec);
+
+#if defined(CONFIG_LIBC_LOCALTIME) || defined(CONFIG_TIME_EXTENDED)
+	/* Tuesday (0-6: day of the week, week starts on Sunday)*/
+	sf_tm.tm_wday = 2;
+	memset(&sp_tm, 0, sizeof(struct tm));
+	/* %a or %A - The weekday name according to the current locale,
+	 * in abbreviated form or the full name.
+	 * %j - The day number in the year (1-366).
+	 * %w - The weekday number (0-6) with Sunday = 0.
+	 */
+	ret = strptime("Tue/Tuesday 187 2", "%a/%A %j %w", &sp_tm);
+	TC_ASSERT_NEQ("strptime", ret, NULL);
+	TC_ASSERT_EQ("strptime", sp_tm.tm_wday, sf_tm.tm_wday);
+
+	/* %c - The date and time representation for the current locale. */
+	memset(&sp_tm, 0, sizeof(struct tm));
+	ret = strptime("Tue Jun 5 12:42:13 2018", "%c", &sp_tm);
+	TC_ASSERT_NEQ("strptime", ret, NULL);
+	TC_ASSERT_EQ("strptime", sp_tm.tm_year, sf_tm.tm_year);
+	TC_ASSERT_EQ("strptime", sp_tm.tm_mon, sf_tm.tm_mon);
+	TC_ASSERT_EQ("strptime", sp_tm.tm_mday, sf_tm.tm_mday);
+	TC_ASSERT_EQ("strptime", sp_tm.tm_hour, sf_tm.tm_hour);
+	TC_ASSERT_EQ("strptime", sp_tm.tm_min, sf_tm.tm_min);
+	TC_ASSERT_EQ("strptime", sp_tm.tm_sec, sf_tm.tm_sec);
+#endif
+
+	/* Check with invalid param. it will returns NULl. */
+	ret = strptime("", "%f", NULL);
+	TC_ASSERT_EQ("strptime", ret, NULL);
+
+	TC_SUCCESS_RESULT();
+}
+
+/**
 * @fn                   :tc_libc_timer_time
 * @brief                :Get the current calendar time as a value of type time_t.
 * @Scenario             :The function returns this value, and if the argument is not a null
@@ -552,6 +690,7 @@ int libc_timer_main(void)
 	tc_libc_timer_localtime_r();
 	tc_libc_timer_mktime();
 	tc_libc_timer_strftime();
+	tc_libc_timer_strptime();
 	tc_libc_timer_time();
 
 	return 0;
