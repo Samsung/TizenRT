@@ -111,3 +111,9 @@ fi
 
 ln -s "${src}" "${dest}" || \
 	{ echo "Failed to create link: $dest" ; exit 1 ; }
+
+case $(uname -o) in
+    Msys | Cygwin ) touch ${dest}/.fakelnk ;;
+    *) ;;
+esac
+
