@@ -50,22 +50,11 @@ typedef int (*TASH_CMD_CALLBACK)(int argc, char **args);
  *          To register TASH command, these elements are needed.
  */
 struct tash_cmdlist_s {
-	const char *str;
-	const TASH_CMD_CALLBACK cb;
-	const int thread_exec;
+	const char *name;
+	const TASH_CMD_CALLBACK entry;
+	const int exectype;
 };
 typedef struct tash_cmdlist_s tash_cmdlist_t;
-
-/**
- * @brief   Structure of task information for TASH command
- * @details @b #include <apps/shell/tash.h>
- */
-struct tash_taskinfo_s {
-	const char *str;
-	const int task_prio;
-	const int task_stacksize;
-};
-typedef struct tash_taskinfo_s tash_taskinfo_t;
 
 /**
  * @brief   API to install a TASH command

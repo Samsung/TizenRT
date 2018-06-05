@@ -29,7 +29,7 @@
 #include <stdio.h>
 #include <sys/types.h>
 #include <debug.h>
-#include <audiocodec/streaming/rbs.h>
+#include "rbs.h"
 #include "internal_defs.h"
 
 #define RBS_OPTION_SET(rbsp, option)    (((rbstream_p)(rbsp))->options |= (option))

@@ -1,6 +1,6 @@
 /****************************************************************************
  *
- * Copyright 2016 Samsung Electronics All Rights Reserved.
+ * Copyright 2018 Samsung Electronics All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,54 +15,20 @@
  * language governing permissions and limitations under the License.
  *
  ****************************************************************************/
-/****************************************************************************
- * kernel/pthread/pthread_keycreate.c
- *
- *   Copyright (C) 2007-2009, 2013 Gregory Nutt. All rights reserved.
- *   Author: Gregory Nutt <gnutt@nuttx.org>
- *
- * Redistribution and use in source and binary forms, with or without
- * modification, are permitted provided that the following conditions
- * are met:
- *
- * 1. Redistributions of source code must retain the above copyright
- *    notice, this list of conditions and the following disclaimer.
- * 2. Redistributions in binary form must reproduce the above copyright
- *    notice, this list of conditions and the following disclaimer in
- *    the documentation and/or other materials provided with the
- *    distribution.
- * 3. Neither the name NuttX nor the names of its contributors may be
- *    used to endorse or promote products derived from this software
- *    without specific prior written permission.
- *
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
- * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
- * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS
- * FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE
- * COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT,
- * INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING,
- * BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS
- * OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED
- * AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT
- * LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN
- * ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
- * POSSIBILITY OF SUCH DAMAGE.
- *
- ****************************************************************************/
 
 /****************************************************************************
  * Included Files
  ****************************************************************************/
 
-#include <tinyara/config.h>
-
-#include <sched.h>
-#include <errno.h>
+#include <sys/types.h>
+#include <pthread.h>
 #include <assert.h>
-#include <debug.h>
+#include <errno.h>
+
+#include <tinyara/sched.h>
+#include <tinyara/kmalloc.h>
 
 #include "sched/sched.h"
-#include "pthread/pthread.h"
 
 /****************************************************************************
  * Definitions
@@ -115,7 +81,7 @@
  *      EAGAIN - The system lacked sufficient resources to create another
  *         thread-specific data key, or the system-imposed limit on the total
  *         number of keys pers process {PTHREAD_KEYS_MAX} has been exceeded
- *      ENONMEM - Insufficient memory exists to create the key.
+ *      EINVAL - Invalid argument.
  *
  * Assumptions:
  *
@@ -127,7 +93,9 @@ int pthread_key_create(FAR pthread_key_t *key, pthread_destructor_t destructor)
 {
 	struct pthread_tcb_s *rtcb = (struct pthread_tcb_s *)this_task();
 	struct task_group_s *group = rtcb->cmn.group;
-	int key_index = 0;
+	struct pthread_key_s *new_key;
+	struct pthread_key_s *cur_key;
+	pthread_key_t new_key_inex = 1;
 
 	DEBUGASSERT(group && (rtcb->cmn.flags & TCB_FLAG_TTYPE_MASK) == TCB_FLAG_TTYPE_PTHREAD);
 
@@ -137,26 +105,51 @@ int pthread_key_create(FAR pthread_key_t *key, pthread_destructor_t destructor)
 
 	/* Check if we have exceeded the system-defined number of keys. */
 
-	while (key_index < PTHREAD_KEYS_MAX) {
-		/* Find not in-use key */
+	if (group->tg_nkeys == PTHREAD_KEYS_MAX) {
+		return EAGAIN;
+	}
 
-		if (!group->tg_keys[key_index]) {
-			/* Mark it is in-use */
+	/* Allocate new key structure */
 
-			group->tg_keys[key_index] = IN_USE;
+	new_key = (struct pthread_key_s *)kmm_malloc(sizeof(struct pthread_key_s));
+	if (!new_key) {
+		return EAGAIN;
+	}
 
-			/* Save desctructor */
+	/* Initialize data and Save desctructor */
 
-			rtcb->pthread_data[key_index].destructor = destructor;
+	new_key->data = NULL;
+	new_key->destructor = destructor;
 
-			/* Return the key value */
-
-			*key = key_index;
-
-			return OK;
+	if ((cur_key = (struct pthread_key_s *)sq_peek(&rtcb->key_list)) == NULL || cur_key->key != 0) {
+		new_key->key = 0;
+		sq_addfirst((sq_entry_t *)new_key, &rtcb->key_list);
+	} else {
+		while (sq_next(cur_key) && sq_next(cur_key)->key == new_key_inex) {
+			new_key_inex++;
+			cur_key = sq_next(cur_key);
 		}
-		key_index++;
-	};
 
-	return EAGAIN;
+		new_key->key = new_key_inex;
+
+		if (sq_next(cur_key) == NULL) {
+			sq_addlast((sq_entry_t *)new_key, &rtcb->key_list);
+		} else {
+			sq_addafter((sq_entry_t *)cur_key, (sq_entry_t *)new_key, &rtcb->key_list);
+		}
+	}
+
+	/* Return the key value and update key number */
+
+	*key = new_key->key;
+
+	/* Update this pthread key number */
+
+	rtcb->nkeys++;;
+
+	/* Update total key number of this group */
+
+	group->tg_nkeys++;
+
+	return OK;
 }

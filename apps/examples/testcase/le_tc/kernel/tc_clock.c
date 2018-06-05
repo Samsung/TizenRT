@@ -16,7 +16,7 @@
  *
  ****************************************************************************/
 
-/// @file clock.c
+/// @file tc_clock.c
 
 /// @brief Test Case Example for Clock API
 

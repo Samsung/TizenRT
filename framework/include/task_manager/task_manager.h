@@ -67,25 +67,37 @@
 #define TM_FAIL_ALREADY_STOPPED_TASK  (-3)    // same as negative STOP state
 #define TM_FAIL_UNREGISTERED_TASK     (-4)    // same as negative UNREGISTERED state
 #define TM_FAIL_NOT_PERMITTED         (-5)
-#define TM_FAIL_NOT_REGISTERED        (-6)
-#define TM_FAIL_START_NOT_CREATED     (-7)
-#define TM_FAIL_SEND_MSG              (-8)
-#define TM_FAIL_SET_HANDLER           (-9)
+#define TM_FAIL_REGISTER              (-6)
+#define TM_FAIL_START                 (-7)
+#define TM_FAIL_UNICAST               (-8)
+#define TM_FAIL_SET_CALLBACK          (-9)
 #define TM_FAIL_NO_HANDLER            (-10)
 #define TM_FAIL_PAUSE                 (-11)
 #define TM_FAIL_RESUME                (-12)
 #define TM_FAIL_REQ_TO_MGR            (-13)
 #define TM_FAIL_RESPONSE              (-14)
 #define TM_FAIL_UNREGISTER            (-15)
-#define TM_INVALID_PARAM              (-16)
-#define TM_OUT_OF_MEMORY              (-17)
+#define TM_FAIL_SET_TERMINATION_CB    (-16)
+#define TM_FAIL_RESTART               (-17)
+#define TM_FAIL_TERMINATE             (-18)
+#define TM_INVALID_PARAM              (-19)
+#define TM_OUT_OF_MEMORY              (-20)
+
+/**
+ * @brief Broadcast message list
+ * @details These values can be used for broadcast messges
+ * If user wants to add some other types of broadcast message,
+ * user can add their own broadcast messages at here.
+ */
+#define TM_BROADCAST_WIFI_ON       (1 << 0)
+#define TM_BROADCAST_WIFI_OFF      (1 << 1)
 
 /**
  * @brief Task Info Structure
  */
 struct task_info_s {
 	char *name;
-	int gid;
+	int tm_gid;
 	int handle;
 	int status;
 	int permission;
@@ -97,14 +109,6 @@ struct task_info_list_s {
 	struct task_info_list_s *next;
 };
 typedef struct task_info_list_s task_info_list_t;
-
-struct tm_response_s {
-	int status;
-	task_info_list_t *data;
-};
-typedef struct tm_response_s tm_response_t;
-
-typedef siginfo_t tm_msg_t;
 
 /****************************************************************************
  * Public Function Prototypes
@@ -183,6 +187,19 @@ int task_manager_pause(int handle, int timeout);
  */
 int task_manager_resume(int handle, int timeout);
 /**
+ * @brief Request to restart the task
+ * @details @b #include <task_manager/task_manager.h>
+ * It cannot guarantee the resource deallocation.
+ * @param[in] handle the handle id of task which request to restart
+ * @param[in] timeout returnable flag. It can be one of the below.\n
+ *			TM_NO_RESPONSE : Ignore the response of request from task manager\n
+ *			TM_RESPONSE_WAIT_INF : Blocked until get the response from task manager\n
+ *			integer value : Specifies an upper limit on the time for which will block in milliseconds
+ * @return On success, OK is returned. On failure, defined negative value is returned.
+ * @since TizenRT v2.0 PRE
+ */
+int task_manager_restart(int handle, int timeout);
+/**
  * @brief Request to send messages to the task
  * @details @b #include <task_manager/task_manager.h>
  * @param[in] handle the handle id of task which request to send
@@ -197,14 +214,42 @@ int task_manager_resume(int handle, int timeout);
  */
 int task_manager_unicast(int handle, void *msg, int msg_size, int timeout);
 /**
- * @brief Set handler function API
+ * @brief Request to send messages to the tasks
  * @details @b #include <task_manager/task_manager.h>
- * @param[in] func the handler function which handle the msg\n
- * In handler function, tm_msg_t is for containing data. It is originally siginfo_t type.\n
+ * @param[in] msg message which request to broadcast.\n
+ * @return On success, OK is returned. On failure, defined negative value is returned.
+ *         (This return value only checks whether a broadcast message has been requested 
+ *          to the task manager to broadcast.)
+ * @since TizenRT v2.0 PRE
+ */
+int task_manager_broadcast(int msg);
+/**
+ * @brief Set unicast callback function API
+ * @details @b #include <task_manager/task_manager.h>
+ * @param[in] func the callback function which handle the msg\n
  * @return On success, OK is returned. On failure, defined negative value is returned.
  * @since TizenRT v2.0 PRE
  */
-int task_manager_set_handler(void (*func)(int signo, tm_msg_t *data));
+int task_manager_set_unicast_cb(void (*func)(void *data));
+/**
+ * @brief Register callback function which will be used for processing received broadcast messages
+ * @details @b #include <task_manager/task_manager.h>
+ * @param[in] msg_mask the message mask for selecting specific broadcast msgs\n
+ *            User can change the msg_mask by using task_manager_set_broadcast_cb
+ *            with the changed msg_mask value
+ * @param[in] func the handler function which handle broadcast msgs\n
+ * @return On success, OK is returned. On failure, defined negative value is returned.
+ * @since TizenRT v2.0 PRE
+ */
+int task_manager_set_broadcast_cb(int msg_mask, void (*func)(int data));
+/**
+ * @brief Set callback function for resource deallocation API. If you set the callback, it will works when task is terminated.
+ * @details @b #include <task_manager/task_manager.h>
+ * @param[in] func the callback function which deallocate resources\n
+ * @return On success, OK is returned. On failure, defined negative value is returned.
+ * @since TizenRT v2.0 PRE
+ */
+int task_manager_set_termination_cb(void (*func)(void));
 /**
  * @brief Get task information list through task name
  * @details @b #include <task_manager/task_manager.h>

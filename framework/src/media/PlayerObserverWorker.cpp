@@ -34,16 +34,4 @@ PlayerObserverWorker& PlayerObserverWorker::getWorker()
 	static PlayerObserverWorker worker;
 	return worker;
 }
-
-int PlayerObserverWorker::entry()
-{
-	while (mIsRunning) {
-		std::function<void()> run = mWorkerQueue.deQueue();
-		medvdbg("PlayerObserverWorker::entry() - pop Queue\n");
-		if (run != nullptr) {
-			run();
-		}
-	}
-	return 0;
-}
 } // namespace media

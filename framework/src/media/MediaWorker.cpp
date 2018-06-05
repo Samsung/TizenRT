@@ -34,18 +34,20 @@ MediaWorker::~MediaWorker()
 void MediaWorker::startWorker()
 {
 	std::unique_lock<std::mutex> lock(mRefMtx);
-	increaseRef();
+	++mRefCnt;
 	medvdbg("MediaWorker::startWorker() - increase RefCnt : %d\n", mRefCnt);
 	if (mRefCnt == 1) {
 		mIsRunning = true;
-		mWorkerThread = std::thread(std::bind(&MediaWorker::entry, this));
+		mWorkerThread = std::thread(std::bind(&MediaWorker::mediaLooper, this));
 	}
 }
 
 void MediaWorker::stopWorker()
 {
 	std::unique_lock<std::mutex> lock(mRefMtx);
-	decreaseRef();
+	if (mRefCnt > 0) {
+		--mRefCnt;
+	}
 	medvdbg("MediaWorker::stopWorker() - decrease RefCnt : %d\n", mRefCnt);
 	if (mRefCnt <= 0) {
 		if (mWorkerThread.joinable()) {
@@ -59,21 +61,30 @@ void MediaWorker::stopWorker()
 	}
 }
 
-MediaQueue& MediaWorker::getQueue()
+std::function<void()> MediaWorker::deQueue()
 {
-	return mWorkerQueue;
+	return mWorkerQueue.deQueue();
 }
 
-void MediaWorker::increaseRef()
+bool MediaWorker::processLoop()
 {
-	mRefCnt++;
+	return false;
 }
 
-void MediaWorker::decreaseRef()
+int MediaWorker::mediaLooper()
 {
-	if (mRefCnt > 0) {
-		mRefCnt--;
+	medvdbg("MediaWorker : mediaLooper\n");
+
+	while (mIsRunning) {
+		while (processLoop() && mWorkerQueue.isEmpty());
+
+		std::function<void()> run = deQueue();
+		medvdbg("MediaWorker : deQueue\n");
+		if (run != nullptr) {
+			run();
+		}
 	}
+	return 0;
 }
 
 bool MediaWorker::isAlive()

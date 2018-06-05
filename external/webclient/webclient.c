@@ -1048,7 +1048,13 @@ retry:
 			goto errout;
 		} else if (len == 0) {
 			ndbg("Finish read\n");
-			goto errout;
+			if (mlen.message_len - mlen.sentence_start == mlen.content_len) {
+				ndbg("download completed successfully\n");
+				break;
+			} else {
+				ndbg("Error: Receive Fail\n");
+				goto errout;
+			}
 		}
 
 		usleep(1);
@@ -1198,7 +1204,13 @@ static pthread_addr_t wget_base(void *arg)
 			goto errout;
 		} else if (len == 0) {
 			ndbg("Finish read\n");
-			goto errout;
+			if (mlen.message_len - mlen.sentence_start == mlen.content_len) {
+				ndbg("download completed successfully\n");
+				break;
+			} else {
+				ndbg("Error: Receive Fail\n");
+				goto errout;
+			}
 		}
 
 		usleep(1);

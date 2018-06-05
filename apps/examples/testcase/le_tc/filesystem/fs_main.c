@@ -969,7 +969,7 @@ static void tc_fs_vfs_seekdir(void)
 * @precondition     tc_fs_vfs_mkdir should be passed
 * @postcondition    NA
 */
-static void fs_libc_dirent_readdir_r(void)
+static void tc_fs_libc_dirent_readdir_r(void)
 {
 	int ret, count;
 	DIR *dirp;
@@ -987,9 +987,9 @@ static void fs_libc_dirent_readdir_r(void)
 		}
 		count++;
 	}
+	TC_ASSERT_EQ("readdir_r", count, VFS_LOOP_COUNT);
 	ret = closedir(dirp);
 	TC_ASSERT_EQ("closedir", ret, OK);
-	TC_ASSERT_EQ("readdir_r", count, VFS_LOOP_COUNT);
 	TC_SUCCESS_RESULT();
 }
 
@@ -1001,7 +1001,7 @@ static void fs_libc_dirent_readdir_r(void)
 * @precondition     tc_fs_vfs_mkdir should be passed
 * @postcondition    NA
 */
-static void fs_libc_dirent_telldir(void)
+static void tc_fs_libc_dirent_telldir(void)
 {
 	DIR *dirp;
 	off_t offset, res;
@@ -3533,8 +3533,8 @@ int tc_filesystem_main(int argc, char *argv[])
 	tc_fs_vfs_rewinddir();
 	tc_fs_vfs_seekdir();
 	tc_fs_vfs_closedir();
-	fs_libc_dirent_readdir_r();
-	fs_libc_dirent_telldir();
+	tc_fs_libc_dirent_readdir_r();
+	tc_fs_libc_dirent_telldir();
 	tc_fs_vfs_rmdir();
 	tc_fs_vfs_unlink();
 	tc_fs_vfs_stat();

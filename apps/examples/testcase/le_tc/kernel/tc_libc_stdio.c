@@ -16,7 +16,7 @@
  *
  ****************************************************************************/
 
-/// @file libc_stdio.c
+/// @file tc_libc_stdio.c
 
 /// @brief Test Case Example for Libc Stdio API
 

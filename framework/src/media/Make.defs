@@ -16,27 +16,31 @@
 #
 ###########################################################################
 ifeq ($(CONFIG_AUDIO), y)
-CSRCS += audio_manager.c 
-DEPPATH += --dep-path src/media/audio 
+CSRCS += audio_manager.c
+DEPPATH += --dep-path src/media/audio
 VPATH += :src/media/audio
 CSRCS += samplerate.c
 DEPPATH += --dep-path src/media/audio/resample
 VPATH += :src/media/audio/resample
+CSRCS += player.c
+DEPPATH += --dep-path src/media/streaming
+VPATH += :src/media/streaming
 endif
 
 CFLAGS += -D__TINYARA__
 
 ifeq ($(CONFIG_MEDIA), y)
-CXXSRCS += MediaQueue.cpp DataSource.cpp MediaUtils.cpp MediaWorker.cpp
-CXXSRCS += MediaUtils.cpp 
-DEPPATH += --dep-path src/media/utils 
+CXXSRCS += MediaQueue.cpp DataSource.cpp MediaWorker.cpp
+CXXSRCS += MediaUtils.cpp
+CSRCS += rb.c rbs.c
+DEPPATH += --dep-path src/media/utils
 VPATH += :src/media/utils
 ifeq ($(CONFIG_MEDIA_PLAYER), y)
 CXXSRCS += MediaPlayer.cpp InputDataSource.cpp FileInputDataSource.cpp PlayerWorker.cpp MediaPlayerImpl.cpp PlayerObserverWorker.cpp Decoder.cpp
 endif
 
 ifeq ($(CONFIG_MEDIA_RECORDER), y)
-CXXSRCS += MediaRecorder.cpp OutputDataSource.cpp FileOutputDataSource.cpp RecorderWorker.cpp MediaRecorderImpl.cpp RecorderObserverWorker.cpp 
+CXXSRCS += MediaRecorder.cpp OutputDataSource.cpp FileOutputDataSource.cpp RecorderWorker.cpp MediaRecorderImpl.cpp RecorderObserverWorker.cpp
 ifeq ($(CONFIG_NET), y)
 CXXSRCS += SocketOutputDataSource.cpp
 endif

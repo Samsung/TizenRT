@@ -16,7 +16,7 @@
  *
  ****************************************************************************/
 
-/// @file libc_timer.c
+/// @file tc_libc_timer.c
 /// @brief Test Case Example for Libc Timer API
 
 /****************************************************************************
@@ -274,23 +274,28 @@ static void tc_libc_timer_localtime_r(void)
 */
 static void tc_libc_timer_mktime(void)
 {
-	int ret_chk = ERROR;
-	int today;
-	int after5days;
-	struct tm *st_time;
-	time_t test_time;
+	time_t cur_day;
+	time_t after_5days;
+	struct tm st_time;
+	struct timespec ts;
+	int ret_chk;
 
-	time(&test_time);
-	/* calculate current date */
-	st_time = localtime(&test_time);
-	today = st_time->tm_mday;
-	st_time->tm_mday = st_time->tm_mday + 5;
+	/* Get the current time */
 
-	ret_chk = mktime(st_time);
-	TC_ASSERT_NEQ("mktime", ret_chk, ERROR);
+	ret_chk = clock_gettime(CLOCK_REALTIME, &ts);
+	TC_ASSERT_LEQ("clock_gettime", ret_chk, 0);
+	(void)gmtime_r((FAR const time_t *)&ts.tv_sec, &st_time);
 
-	after5days = st_time->tm_mday;
-	TC_ASSERT_EQ("mktime", today + 5, after5days);
+	/* convert current day to time_t */
+	cur_day = mktime(&st_time);
+	TC_ASSERT_NEQ("mktime", cur_day, ERROR);
+
+	/* convert current day + 5 to time_t */
+	st_time.tm_mday = st_time.tm_mday + 5;
+	after_5days = mktime(&st_time);
+	TC_ASSERT_NEQ("mktime", after_5days, ERROR);
+	/* after_5day should be greater than cur_day */
+	TC_ASSERT_GT("mktime", after_5days, cur_day);
 
 	TC_SUCCESS_RESULT();
 }

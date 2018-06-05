@@ -24,8 +24,8 @@
 #include <assert.h>
 #include <pthread.h>
 #include <debug.h>
-#include <audiocodec/streaming/player.h>
-#include "internal_defs.h"
+#include "player.h"
+#include "../utils/internal_defs.h"
 
 /****************************************************************************
  * Pre-processor Definitions
@@ -195,7 +195,7 @@ static bool _parse_header(uint32_t header, size_t *frame_size)
 
 	int sampling_rate;
 	if (version == MPEG_VERSION_1)
-		sampling_rate= kSamplingRateV1[sampling_rate_index];
+		sampling_rate = kSamplingRateV1[sampling_rate_index];
 	else if (version == MPEG_VERSION_2) {
 		sampling_rate = kSamplingRateV2[sampling_rate_index];
 	} else { // MPEG_VERSION_2_5

@@ -50,7 +50,11 @@
 
 #define DM_CALLBACK_BUFFER_SIZE 10
 #define DM_BSSID_LEN            18
-#define DM_NET_DEVNAME          "wl1"
+#ifdef CONFIG_WIFI_MANAGER
+#define DM_NET_DEVNAME	CONFIG_WIFIMGR_STA_IFNAME
+#else
+#define DM_NET_DEVNAME "wl1"
+#endif
 
 /* Static data structure to hold results of a WiFi scan.
  */

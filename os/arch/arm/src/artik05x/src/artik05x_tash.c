@@ -327,15 +327,6 @@ int board_app_initialize(void)
 	}
 #endif
 
-#ifdef CONFIG_FS_PROCFS
-	/* Mount the procfs file system */
-	ret = mount(NULL, ARTIK05X_PROCFS_MOUNTPOINT, "procfs", 0, NULL);
-	if (ret < 0) {
-		lldbg("Failed to mount procfs at %s: %d\n",
-				ARTIK05X_PROCFS_MOUNTPOINT, ret);
-	}
-#endif
-
 #if defined(CONFIG_RAMMTD) && defined(CONFIG_FS_SMARTFS)
 	rambuf = (uint8_t *)malloc(bufsize);
 	if (!rambuf) {

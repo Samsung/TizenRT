@@ -7,7 +7,8 @@ config TASK_MANAGER
 	bool "Task Manager"
 	default n
 	select BUILTIN_APPS
-	depends on !DISABLE_SIGNALS && !DISABLE_MQUEUE
+	select SCHED_ATEXIT
+	depends on !DISABLE_SIGNALS && !DISABLE_MQUEUE && TASK_NAME_SIZE != 0
 	---help---
 		Enables Task Manager.
 
@@ -17,7 +18,8 @@ config TASK_MANAGER_MAX_TASKS
 	int "Task Manager Max Task Num"
 	default MAX_TASKS
 	---help---
-		Task Manager can register this number of tasks
+		Task Manager can register this number of tasks.
+		Maximum MAX_TASKS tasks can be alive at the same time although it is greater than MAX_TASKS.
 
 config TASK_MANAGER_MAX_MSG
 	int "Task Manager Max Msg number"

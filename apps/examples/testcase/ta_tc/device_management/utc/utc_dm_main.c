@@ -31,7 +31,11 @@
 #include "tc_common.h"
 #include "utc_internal.h"
 
+#ifdef CONFIG_WIFI_MANAGER
+#define NET_DEVNAME	CONFIG_WIFIMGR_STA_IFNAME
+#else
 #define NET_DEVNAME "wl1"
+#endif
 
 static int isConnected = 0;
 

@@ -15,47 +15,50 @@
  * language governing permissions and limitations under the License.
  *
  ****************************************************************************/
-
 /****************************************************************************
  * Included Files
  ****************************************************************************/
-
-#include <tinyara/config.h>
-#include <tinyara/taskmgt.h>
 #include <sys/types.h>
+#include <task_manager/task_manager.h>
+#include "task_manager_internal.h"
 
 /****************************************************************************
- * Private Types
+ * task_manager_clean_info
  ****************************************************************************/
-
-/****************************************************************************
- * Private Function Prototypes
- ****************************************************************************/
-
-/****************************************************************************
- * Public Data
- ****************************************************************************/
-#include "builtin_proto.h"
-
-const task_builtin_list_t tm_builtin_lists[] = {
-#include "taskmgt_list.h"
-	{ NULL, NULL, 0, 0 }
-};
-
-
-/****************************************************************************
- * Private Data
- ****************************************************************************/
-
-/****************************************************************************
- * Private Functions
- ****************************************************************************/
-
-/****************************************************************************
- * Public Functions
- ****************************************************************************/
-
-int get_tm_builtin_cnt(void)
+void task_manager_clean_info(task_info_t **info)
 {
-	return sizeof(tm_builtin_lists) / sizeof(tm_builtin_lists[0]);
+	if (*info == NULL) {
+		return;
+	}
+
+	if ((*info)->name != NULL) {
+		TM_FREE((*info)->name);
+		(*info)->name = NULL;
+	}
+	TM_FREE(*info);
+
+	*info = NULL;
+}
+
+/****************************************************************************
+ * task_manager_clean_infolist
+ ****************************************************************************/
+void task_manager_clean_infolist(task_info_list_t **info_list)
+{
+	task_info_list_t *curr_info;
+
+	if (*info_list == NULL) {
+		return;
+	}
+
+	while (*info_list != NULL) {
+		curr_info = *info_list;
+		*info_list = (*info_list)->next;
+		if ((curr_info)->task.name != NULL) {
+			TM_FREE(curr_info->task.name);
+			curr_info->task.name = NULL;
+		}
+		curr_info->next = NULL;
+		TM_FREE(curr_info);
+	}
 }

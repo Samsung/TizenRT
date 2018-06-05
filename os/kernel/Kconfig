@@ -823,8 +823,8 @@ config SIG_SIGTM_UNICAST
 	default 18
 	depends on TASK_MANAGER
 	---help---
-		SIGTM_UNICAST is a non-standard signal used to wake up the internal TinyAra
-		task manager. This setting specifies the signal number that will be
+		SIGTM_UNICAST is a non-standard signal used to send message to another task
+		through task manager. This setting specifies the signal number that will be
 		used for SIGTM_UNICAST. Default: 18
 
 config SIG_SIGTM_PAUSE
@@ -832,7 +832,7 @@ config SIG_SIGTM_PAUSE
 	default 19
 	depends on TASK_MANAGER
 	---help---
-		SIGTM_PAUSE is a non-standard signal used to wake up the internal TinyAra
+		SIGTM_PAUSE is a non-standard signal used to pause another task through
 		task manager. This setting specifies the signal number that will be
 		used for SIGTM_PAUSE. Default: 19
 
@@ -841,9 +841,18 @@ config SIG_SIGTM_RESUME
 	default 20
 	depends on TASK_MANAGER
 	---help---
-		SIGTM_RESUME is a non-standard signal used to wake up the internal TinyAra
+		SIGTM_RESUME is a non-standard signal used to resume the paused task through
 		task manager. This setting specifies the signal number that will be
 		used for SIGTM_RESUME. Default: 20
+
+config SIG_SIGTM_BROADCAST
+	int "SIGTM_BROADCAST"
+	default 21
+	depends on TASK_MANAGER
+	---help---
+		SIGTM_BROADCAST is a non-standard signal used to send broadcast message to
+		the internal TinyAra task manager. This setting specifies the signal number
+		that will be used for SIGTM_BROADCAST. Default: 21
 
 endmenu # Signal Numbers
 

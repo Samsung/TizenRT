@@ -23,6 +23,7 @@ config TC_KN_ALL
 	select TC_KERNEL_ENVIRON
 	select TC_KERNEL_ERRNO
 	select TC_KERNEL_LIBC_FIXEDMATH
+	select TC_KERNEL_LIBC_INTTYPES
 	select TC_KERNEL_LIBC_LIBGEN
 	select TC_KERNEL_LIBC_MATH
 	select TC_KERNEL_LIBC_MISC
@@ -80,6 +81,10 @@ config TC_KERNEL_LIBC_FIXEDMATH
 	bool "Libc FixedMath"
 	default n
 	depends on LIBM
+
+config TC_KERNEL_LIBC_INTTYPES
+	bool "Libc Inttypes"
+	default n
 
 config TC_KERNEL_LIBC_LIBGEN
 	bool "Libc Libgen"
@@ -206,6 +211,7 @@ config TC_KERNEL_TASH_STACKMONITOR
 config TC_KERNEL_WORK_QUEUE
 	bool "wqueue"
 	default n
+	depends on SCHED_WORKQUEUE || LIB_USRWORK
 
 config ITC_KERNEL_ENVIRON
 	bool "ITC Environ"

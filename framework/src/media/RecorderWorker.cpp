@@ -35,26 +35,14 @@ RecorderWorker& RecorderWorker::getWorker()
 	return worker;
 }
 
-int RecorderWorker::entry()
+bool RecorderWorker::processLoop()
 {
-	medvdbg("RecorderWorker::entry()\n");
-
-	while (mIsRunning) {
-		if (mCurRecorder && (mCurRecorder->getState() == RECORDER_STATE_RECORDING)) {
-			mCurRecorder->capture();
-
-			if (mWorkerQueue.isEmpty()) {
-				continue;
-			}
-		}
-
-		std::function<void()> run = mWorkerQueue.deQueue();
-		medvdbg("RecorderWorker::entry() - pop Queue\n");
-		if (run != nullptr) {
-			run();
-		}
+	if (mCurRecorder && (mCurRecorder->getState() == RECORDER_STATE_RECORDING)) {
+		mCurRecorder->capture();
+		return true;
 	}
-	return 0;
+
+	return false;
 }
 
 std::shared_ptr<MediaRecorderImpl> RecorderWorker::getCurrentRecorder()

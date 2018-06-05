@@ -173,42 +173,34 @@ static int socket_argument_validation(int domain, int type, int protocol)
 	if (domain != AF_INET && domain != AF_INET6 && domain != AF_UNSPEC) {
 		return -1;
 	}
-
-	switch (type) {
-	case SOCK_STREAM:
-		if (protocol == IPPROTO_UDP) {
-			return -1;
-		}
-		break;
-	case SOCK_DGRAM:
-		if (protocol == IPPROTO_TCP) {
-			return -1;
-		}
-		break;
-	case SOCK_RAW:
-		break;
-	default:
-		return -1;
-	}
-
 	switch (protocol) {
-	case IPPROTO_IP:
-	case IPPROTO_ICMP:
-	case IPPROTO_TCP:
-	case IPPROTO_UDP:
-	case IPPROTO_UDPLITE:
-	case IPPROTO_RAW:
-#ifdef CONFIG_NET_IPv6
-	case IPPROTO_IPV6:
-#ifdef CONFIG_NET_IPv6_ICMP
-	case IPPROTO_ICMPV6:
-#endif
-#endif /* CONFIG_NET_IPv6 */
-		break;
-	default:
-		return -1;
+		case IPPROTO_UDP:
+		case IPPROTO_UDPLITE:
+			if (type != SOCK_DGRAM) {
+				return -1;
+			}
+			break;
+		case IPPROTO_TCP:
+			if (type != SOCK_STREAM) {
+				return -1;
+			}
+			break;
+		case IPPROTO_ICMP:
+		case IPPROTO_IGMP:
+		case IPPROTO_ICMPV6:
+			if (type != SOCK_RAW) {
+				return -1;
+			}
+			break;
+		case IPPROTO_IP:
+			if (type == SOCK_RAW) {
+				return -1;
+			}
+			break;
+		default:
+			return -1;
+			break;
 	}
-
 	return 0;
 }
 

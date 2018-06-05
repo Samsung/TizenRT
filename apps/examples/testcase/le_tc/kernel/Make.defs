@@ -68,6 +68,9 @@ endif
 ifeq ($(CONFIG_TC_KERNEL_LIBC_FIXEDMATH),y)
   CSRCS += tc_libc_fixedmath.c
 endif
+ifeq ($(CONFIG_TC_KERNEL_LIBC_INTTYPES),y)
+  CSRCS += tc_libc_inttypes.c
+endif
 ifeq ($(CONFIG_TC_KERNEL_LIBC_LIBGEN),y)
   CSRCS += tc_libc_libgen.c
 endif

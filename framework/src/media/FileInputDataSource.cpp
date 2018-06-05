@@ -24,26 +24,20 @@
 namespace media {
 namespace stream {
 
-FileInputDataSource::FileInputDataSource()
-	: InputDataSource()
-	, mDataPath("")
-	, mFp(nullptr)
+FileInputDataSource::FileInputDataSource() : InputDataSource(), mDataPath(""), mFp(nullptr)
 {
 }
 
-FileInputDataSource::FileInputDataSource(const std::string& dataPath)
-	: InputDataSource()
-	, mDataPath(dataPath)
-	, mFp(nullptr)
+FileInputDataSource::FileInputDataSource(const std::string &dataPath)
+	: InputDataSource(), mDataPath(dataPath), mFp(nullptr)
 {
 }
 
-FileInputDataSource::FileInputDataSource(const FileInputDataSource& source)
-	: InputDataSource(source)
+FileInputDataSource::FileInputDataSource(const FileInputDataSource &source) : InputDataSource(source)
 {
 }
 
-FileInputDataSource& FileInputDataSource::operator=(const FileInputDataSource& source)
+FileInputDataSource &FileInputDataSource::operator=(const FileInputDataSource &source)
 {
 	InputDataSource::operator=(source);
 	return *this;
@@ -56,14 +50,10 @@ FileInputDataSource::~FileInputDataSource()
 
 bool FileInputDataSource::open()
 {
-	if (mFp) {
-		meddbg("FileInputDataSource::open : file is already open\n");
-		return false;
-	}
+	if (!mFp) {
+		setAudioType(utils::getAudioTypeFromPath(mDataPath));
 
-	setAudioType(utils::getAudioTypeFromPath(mDataPath));
-
-	switch (getAudioType()) {
+		switch (getAudioType()) {
 		case AUDIO_TYPE_MP3:
 		case AUDIO_TYPE_AAC:
 			setDecoder(std::make_shared<Decoder>());
@@ -77,35 +67,100 @@ bool FileInputDataSource::open()
 		default:
 			/* Don't set any decoder for unsupported formats */
 			break;
+		}
+
+		mFp = fopen(mDataPath.c_str(), "rb");
+		if (mFp) {
+			medvdbg("file open success\n");
+			return true;
+		} else {
+			meddbg("file open failed error : %d\n", errno);
+			return false;
+		}
 	}
 
-	mFp = fopen(mDataPath.c_str(), "rb");
-	medvdbg("FileInputDataSource : %s : %p\n", mDataPath.c_str(), mFp);
-
-	return isPrepare();
+	/** return true if mFp is not null, because it means it using now */
+	return true;
 }
 
 bool FileInputDataSource::close()
 {
-	if (mFp && fclose(mFp) != EOF) {
-		mFp = nullptr;
-		return true;
+	if (mFp) {
+		int ret = fclose(mFp);
+		if (ret == OK) {
+			mFp = nullptr;
+			medvdbg("close success!!\n");
+			return true;
+		} else {
+			meddbg("close failed ret : %d error : %d\n", ret, errno);
+			return false;
+		}
 	}
 
+	meddbg("close failed, mFp is nullptr!!\n");
 	return false;
 }
 
 bool FileInputDataSource::isPrepare()
 {
-	return (mFp != nullptr);
+	if (mFp == nullptr) {
+		meddbg("mFp is null\n");
+		return false;
+	}
+	return true;
 }
 
-size_t FileInputDataSource::read(unsigned char* buf, size_t size)
+size_t FileInputDataSource::read(unsigned char *buf, size_t size)
 {
-	return fread(buf, sizeof(unsigned char), size, mFp);
+	size_t ret;
+	size_t readSize = size;
+	std::shared_ptr<Decoder> decoder = getDecoder();
+
+	if (!buf) {
+		meddbg("buf is nullptr, hence return 0\n");
+		return 0;
+	}
+
+	if (decoder) {
+		size_t frames = 0;
+		/* TODO Currently it just return frames which decoded only ONCE if available */
+		ret = getDecodeFrames(buf, &frames);
+		medvdbg("decode frame : %d\n", frames);
+		if (ret > 0) {
+			return ret;
+		}
+
+		if (readSize > decoder->getAvailSpace()) {
+			readSize = decoder->getAvailSpace();
+		}
+	}
+
+	ret = fread(buf, sizeof(unsigned char), readSize, mFp);
+	/* If file position reaches end of file, return 0 */
+	if (feof(mFp)) {
+		medvdbg("eof!! stop!\n");
+		return 0;
+	}
+
+	medvdbg("read size : %d\n", ret);
+	if (ret == 0) {
+		return EOF;
+	}
+
+	if (decoder) {
+		if (!decoder->pushData(buf, ret)) {
+			return EOF;
+		}
+		size_t frames = 0;
+		if (getDecodeFrames(buf, &frames)) {
+			return frames;
+		}
+		return EOF;
+	}
+	return ret;
 }
 
-int FileInputDataSource::readAt(long offset, int origin, unsigned char* buf, size_t size)
+int FileInputDataSource::readAt(long offset, int origin, unsigned char *buf, size_t size)
 {
 	if (fseek(mFp, offset, origin) != 0) {
 		meddbg("FileInputDataSource::readAt : fail to seek\n");

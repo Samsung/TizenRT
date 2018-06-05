@@ -52,33 +52,46 @@ bool FileOutputDataSource::open()
 			medvdbg("file open success\n");
 			return true;
 		} else {
-			medvdbg("file open failed\n");
+			meddbg("file open failed error : %d\n", errno);
 			return false;
 		}
 	}
 
 	medvdbg("file already exists\n");
-	return false;
+	/** return true if mFp is not null, because it means it using now */
+	return true;
 }
 
 bool FileOutputDataSource::close()
 {
-	if (mFp && fclose(mFp) != EOF) {
-		mFp = nullptr;
-		return true;
+	if (mFp) {
+		int ret = fclose(mFp);
+		if (ret == OK) {
+			mFp = nullptr;
+			medvdbg("close success!!\n");
+			return true;
+		} else {
+			meddbg("close failed ret : %d error : %d\n", ret, errno);
+			return false;
+		}
 	}
-
+	meddbg("close failed, mFp is nullptr!!\n");
 	return false;
 }
 
 bool FileOutputDataSource::isPrepare()
 {
-	return (mFp != nullptr);
+	if (mFp == nullptr) {
+		meddbg("mFp is null\n");
+		return false;
+	}
+	return true;
 }
 
 size_t FileOutputDataSource::write(unsigned char* buf, size_t size)
 {
 	if (!buf) {
+		meddbg("buf is nullptr, hence return 0\n");
 		return (size_t)0;
 	}
 

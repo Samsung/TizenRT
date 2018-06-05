@@ -16,7 +16,7 @@
  *
  ****************************************************************************/
 
-/// @file libc_spawn.c
+/// @file tc_libc_spawn.c
 
 /// @brief Test Case Example for Libc Spawn API
 

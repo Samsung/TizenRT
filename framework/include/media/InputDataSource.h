@@ -84,22 +84,18 @@ public:
 	 */
 	virtual int readAt(long offset, int origin, unsigned char* buf, size_t size) = 0;
 
-	/**
-	 * @brief Gets current audio decoder. The audio decoder is set by each data source.
-	 * @details @b #include <media/InputDataSource.h>
-	 * @return Current audio decoder instance.
-	 * @since TizenRT v2.0 PRE
-	 */
-	const std::shared_ptr<Decoder> getDecoder();
 
 protected:
 	void setDecoder(std::shared_ptr<Decoder> decoder);
+	const std::shared_ptr<Decoder> getDecoder();
 	void setAudioType(audio_type_t audioType);
 	audio_type_t getAudioType();
+	size_t getDecodeFrames(unsigned char* buf, size_t* size);
 
 private:
 	audio_type_t mAudioType;
 	std::shared_ptr<Decoder> mDecoder;
+
 };
 
 } // namespace stream
