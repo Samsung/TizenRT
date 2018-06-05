@@ -242,8 +242,5 @@ int net_bind_main(void)
 	tc_net_bind_udp_p();
 	tc_net_bind_broadcast_p();
 	tc_net_bind_size_n();
-#ifdef AF_UNIX
-	tc_net_bind_addrfamily_n();
-#endif
 	return 0;
 }

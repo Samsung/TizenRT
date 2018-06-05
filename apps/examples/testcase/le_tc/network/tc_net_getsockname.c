@@ -212,8 +212,5 @@ int net_getsockname_main(void)
 	tc_net_getsockname_udp_p();
 	tc_net_getsockname_icmp_p();
 	tc_net_getsockname_close_n();
-#ifdef AF_UNIX
-	tc_net_getsockname_unix_p();
-#endif
 	return 0;
 }
