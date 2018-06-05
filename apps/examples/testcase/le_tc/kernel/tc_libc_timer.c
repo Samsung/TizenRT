@@ -505,23 +505,54 @@ static void tc_libc_timer_clock(void)
 	TC_SUCCESS_RESULT();
 }
 
+#ifdef CONFIG_LIBM
+static void tc_libc_timer_difftime(void)
+{
+	time_t t0;
+	time_t t1;
+#ifdef CONFIG_HAVE_DOUBLE
+	double ret;
+#else
+	float ret;
+#endif
+
+	t0 = time(NULL);
+	/* Time elapse of 1s */
+	sleep(1);
+	t1 = time(NULL);
+
+	ret = difftime(t1, t0);
+
+#ifdef CONFIG_HAVE_DOUBLE
+	TC_ASSERT_LEQ("difftime", fabs(1.0 - ret), DBL_EPSILON);
+#else
+	TC_ASSERT_LEQ("difftime", fabsf(1.0f - ret), DBL_EPSILON);
+#endif
+
+	TC_SUCCESS_RESULT();
+}
+#endif
+
 /****************************************************************************
  * Name: libc_timer
  ****************************************************************************/
 
 int libc_timer_main(void)
 {
+	tc_libc_timer_clock();
 	tc_libc_timer_clock_calendar2utc();
-	tc_libc_timer_gmtime_r();
-	tc_libc_timer_gmtime();
+	tc_libc_timer_clock_daysbeforemonth();
 	tc_libc_timer_clock_isleapyear();
+#ifdef CONFIG_LIBM
+	tc_libc_timer_difftime();
+#endif
+	tc_libc_timer_gmtime();
+	tc_libc_timer_gmtime_r();
 	tc_libc_timer_localtime();
 	tc_libc_timer_localtime_r();
 	tc_libc_timer_mktime();
 	tc_libc_timer_strftime();
 	tc_libc_timer_time();
-	tc_libc_timer_clock_daysbeforemonth();
-	tc_libc_timer_clock();
 
 	return 0;
 }
