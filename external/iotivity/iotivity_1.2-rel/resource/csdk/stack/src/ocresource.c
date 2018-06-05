@@ -1164,11 +1164,14 @@ HandleDefaultDeviceEntityHandler(OCServerRequest *request)
         OIC_LOG(INFO, TAG, "This is a slow resource");
         request->slowFlag = 1;
     }
-    else if(ehResult == OC_EH_ERROR)
+    result = EntityHandlerCodeToOCStackCode(ehResult);
+
+    // Clear server request on error case
+    if (!OCResultToSuccess(result))
     {
         FindAndDeleteServerRequest(request);
     }
-    result = EntityHandlerCodeToOCStackCode(ehResult);
+
 exit:
     OCPayloadDestroy(ehRequest.payload);
     return result;
@@ -1307,11 +1310,14 @@ HandleResourceWithEntityHandler(OCServerRequest *request,
         OIC_LOG(INFO, TAG, "This is a slow resource");
         request->slowFlag = 1;
     }
-    else if(ehResult == OC_EH_ERROR)
+    result = EntityHandlerCodeToOCStackCode(ehResult);
+
+    // Clear server request on error case
+    if (!OCResultToSuccess(result))
     {
         FindAndDeleteServerRequest(request);
     }
-    result = EntityHandlerCodeToOCStackCode(ehResult);
+
 exit:
     OCPayloadDestroy(ehRequest.payload);
     return result;

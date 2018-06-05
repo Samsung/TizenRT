@@ -143,7 +143,8 @@ static OCStackResult SendObserveNotification(ResourceObserver *observer,
             {
                 ehResult = observer->resource->entityHandler(OC_REQUEST_FLAG, &ehRequest,
                                     observer->resource->entityHandlerCallbackParam);
-                if (ehResult == OC_EH_ERROR)
+                // Clear server request on error case
+                if (!OCResultToSuccess(EntityHandlerCodeToOCStackCode(ehResult)))
                 {
                     FindAndDeleteServerRequest(request);
                 }
@@ -227,6 +228,11 @@ OCStackResult SendAllObserverNotification (OCMethod method, OCResource *resPtr, 
                         OICStrcpy(ehResponse.resourceUri, sizeof(ehResponse.resourceUri),
                                 resourceObserver->resUri);
                         result = OCDoResponse(&ehResponse);
+                        if (result != OC_STACK_OK)
+                        {
+                            OIC_LOG(ERROR, TAG, "Failed to send presence notification!");
+                            FindAndDeleteServerRequest(request);
+                        }
                     }
 
                     OCPresencePayloadDestroy(presenceResBuf);
@@ -317,17 +323,18 @@ OCStackResult SendListObserverNotification (OCResource * resource,
 
                             // Increment only if OCDoResponse is successful
                             numSentNotification++;
-
-                            OICFree(ehResponse.payload);
-                            FindAndDeleteServerRequest(request);
                         }
                         else
                         {
                             OIC_LOG_V(INFO, TAG, "Error notifying observer id %d.", *obsIdList);
+                            FindAndDeleteServerRequest(request);
                         }
+
                         // Reset Observer TTL.
                         observer->TTL =
                                 GetTicks(MAX_OBSERVER_TTL_SECONDS * MILLISECONDS_PER_SECOND);
+
+                        OICFree(ehResponse.payload);
                     }
                     else
                     {

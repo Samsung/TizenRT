@@ -324,3 +324,17 @@ CAResult_t CAQueueingThreadStop(CAQueueingThread_t *thread)
 
     return CA_STATUS_OK;
 }
+
+uint32_t CAQueueingThreadGetQueueSize(CAQueueingThread_t *thread)
+{
+    uint32_t size = 0;
+
+    if (thread)
+    {
+        oc_mutex_lock(thread->threadMutex);
+        size = u_queue_get_size(thread->dataQueue);
+        oc_mutex_unlock(thread->threadMutex);
+    }
+
+    return size;
+}
