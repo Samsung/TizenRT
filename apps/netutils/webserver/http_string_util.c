@@ -171,6 +171,10 @@ int http_separate_keyvalue(const char *src, char *key, char *value)
 		}
 	}
 
+	/* Trim if longer than allocated memory to avoid overflow */
+	if (src_len > HTTP_CONF_MAX_VALUE_LENGTH)
+		src_len = HTTP_CONF_MAX_VALUE_LENGTH;
+
 	for (i = value_position; i < src_len; i++) {
 		value[i - value_position] = src[i];
 	}
