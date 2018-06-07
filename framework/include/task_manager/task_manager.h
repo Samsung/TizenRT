@@ -253,6 +253,7 @@ int task_manager_set_termination_cb(void (*func)(void));
 /**
  * @brief Get task information list through task name
  * @details @b #include <task_manager/task_manager.h>
+ * After using the list of task information, use task_manager_clean_infolist() API to free the allocated memory.
  * @param[in] name the task name which want to get information
  * @param[in] timeout returnable flag. It can be one of the below.\n
  *			TM_NO_RESPONSE : Ignore the response of request from task manager\n
@@ -265,6 +266,7 @@ task_info_list_t *task_manager_getinfo_with_name(char *name, int timeout);
 /**
  * @brief Get task information through handle
  * @details @b #include <task_manager/task_manager.h>
+ * After using the task information, use task_manager_clean_info() API to free the allocated memory.
  * @param[in] handle the handle id of task
  * @param[in] timeout returnable flag. It can be one of the below.\n
  *			TM_NO_RESPONSE : Ignore the response of request from task manager\n
@@ -277,6 +279,7 @@ task_info_t *task_manager_getinfo_with_handle(int handle, int timeout);
 /**
  * @brief Get task information list through group
  * @details @b #include <task_manager/task_manager.h>
+ * After using the list of task information, use task_manager_clean_infolist() API to free the allocated memory.
  * @param[in] group the group id which want to get information
  * @param[in] timeout returnable flag. It can be one of the below.\n
  *			TM_NO_RESPONSE : Ignore the response of request from task manager\n
