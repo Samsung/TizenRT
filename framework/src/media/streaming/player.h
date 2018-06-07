@@ -228,6 +228,18 @@ bool pv_player_get_frame(pv_player_p player);
  */
 int pv_player_frame_decode(pv_player_p player, pcm_data_p pcm);
 
+/**
+ * @brief  Get sample frames in 16bit-PCM format.
+ *
+ * @param  player : Pointer to player object
+ * @param  buf : Pointer to output buffer, which store outputed PCM data
+ * @param  max : Max bytes of output buffer, it should be 16bit-PCM frame aligned.
+ * @param  sr : Sample rate (Hz) of the output PCM data
+ * @param  ch : Number of channels of the output PCM data
+ * @return bytes of PCM data saved in 'buf', usually it's same as 'max'.
+ *         it may be less than 'max' when there's no more data to decode.
+ */
+size_t pv_player_get_frames(pv_player_p player, unsigned char *buf, size_t max, unsigned int *sr, unsigned short *ch);
 
 //{{ Deprecated
 int _get_audio_type(rbstream_p rbsp);

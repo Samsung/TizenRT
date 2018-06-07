@@ -23,7 +23,6 @@
 
 #define PV_SUCCESS 0
 #define PV_FAILURE -1
-#define BYTES_PER_SAMPLE sizeof(signed short)
 
 namespace media {
 
@@ -84,20 +83,6 @@ size_t Decoder::pushData(unsigned char *buf, size_t size)
 bool Decoder::getFrame(unsigned char *buf, size_t *size, unsigned int *sampleRate, unsigned short *channels)
 {
 #ifdef CONFIG_AUDIO_CODEC
-	// Record pcm data fetched from audio decoder.
-	// Currently, pcm_data_t.samples point to the static buffer configured in Decoder::_configFunc(),
-	// so we can keep this pcm_data_t info before next pv_player_frame_decode() called.
-	static pcm_data_t pcm = {0};
-
-	// Get input buffer max size (it's also the requested size)
-	size_t max = *size;
-
-	// Check 2 bytes aligned
-	assert((max % 2) == 0);
-
-	// Reset output *size 0
-	*size = 0;
-
 	/*
 	 * Need to get the enough data to parse data format.
 	 */
@@ -117,54 +102,11 @@ bool Decoder::getFrame(unsigned char *buf, size_t *size, unsigned int *sampleRat
 		return false;
 	}
 
-	while (1) {
-		if (pcm.samples) {
-			// Copy remained data to decoder output buffer
-			size_t nSamples = (max - *size) / BYTES_PER_SAMPLE;
-			if (pcm.length  <= nSamples) {
-				// Copy all data
-				memcpy(buf + *size, pcm.samples, pcm.length * BYTES_PER_SAMPLE);
-				*size += pcm.length * BYTES_PER_SAMPLE;
-				// Clear remained data record
-				pcm.samples = nullptr;
-				pcm.length = 0;
-
-				if (*size == max) {
-					// Just enough
-					break;
-				}
-			} else {
-				// Copy part of data required
-				memcpy(buf + *size, pcm.samples, nSamples * BYTES_PER_SAMPLE);
-				*size = max;
-				// Update remained data record
-				pcm.samples += nSamples;
-				pcm.length -= nSamples;
-				break;
-			}
-		}
-
-		// Decode more
-		if (!pv_player_get_frame(&mPlayer)) {
-			// Need to push more data for further decoding.
-			// In this case, *size < max.
-			medvdbg("Decoder: there's not enough data, need to push more.\n");
-			break;
-		}
-
-		if (pv_player_frame_decode(&mPlayer, &pcm) != PV_SUCCESS) {
-			// Decoding failed
-			meddbg("Decoder: pv_player_frame_decode failed!\n");
-			break;
-		}
-	}
-
+	*size = pv_player_get_frames(&mPlayer, buf, *size, sampleRate, channels);
 	if (*size == 0) {
 		return false;
 	}
 
-	*sampleRate = pcm.samplerate;
-	*channels = pcm.channels;
 	return true;
 #endif
 	return false;
