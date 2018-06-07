@@ -112,16 +112,17 @@ public:
 	 * @since TizenRT v2.0 PRE
 	 */
 	bool close() override;
-	
+
 	/**
 	 * @brief Puts the file data
 	 * @details @b #include <media/SocketOutputDataSource.h>
 	 * @param[in] buf The buf that buffer to be written to the file
 	 * @param[in] size The size that the size of the buffer
-	 * @return if there is nothing to write, it returns 0, else written size returns
+	 * @return if there is nothing to write, it returns 0
+	 *         if error occurred, it returns -1, else written size returns
 	 * @since TizenRT v2.0 PRE
 	 */
-	size_t write(unsigned char* buf, size_t size) override;
+	ssize_t write(unsigned char* buf, size_t size) override;
 
 private:
 	std::string mIpAddr;

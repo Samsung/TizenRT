@@ -94,7 +94,7 @@ bool FileInputDataSource::isPrepare()
 	return (mFp != nullptr);
 }
 
-size_t FileInputDataSource::read(unsigned char *buf, size_t size)
+ssize_t FileInputDataSource::read(unsigned char *buf, size_t size)
 {
 	size_t rlen = 0;
 	size_t readSize = size;
@@ -117,22 +117,26 @@ size_t FileInputDataSource::read(unsigned char *buf, size_t size)
 		}
 	}
 
-	/* If file position reaches end of file, return 0 */
-	if (feof(mFp)) {
-		medvdbg("eof!! stop!\n");
-		return rlen;
-	}
+	size_t readRet = fread(buf, sizeof(unsigned char), readSize, mFp);
+	medvdbg("read size : %d\n", readRet);
+	if (readRet == 0) {
+		/* fread returned 0 */
+		/* If file position reaches end of file, it's a normal case, we returns rlen */
+		if (feof(mFp)) {
+			medvdbg("eof!! stop!\n");
+			return rlen;
+		}
 
-	size_t ret = fread(buf, sizeof(unsigned char), readSize, mFp);
-	medvdbg("read size : %d\n", ret);
-	if (ret == 0) {
-		return rlen;
+		/* Otherwise, an error occurred, we also returns error */
+		return EOF;
 	}
 
 	if (decoder) {
-		if (!decoder->pushData(buf, ret)) {
-			return rlen;
+		if (!decoder->pushData(buf, readRet)) {
+			meddbg("decode push data failed!\n");
+			return EOF;
 		}
+
 		size_t frames = size - rlen;
 		rlen += getDecodeFrames(buf, &frames);
 		medvdbg("decode frame ; %d/%d\n", rlen, size);

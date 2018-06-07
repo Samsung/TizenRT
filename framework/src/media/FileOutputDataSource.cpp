@@ -25,7 +25,7 @@ namespace stream {
 
 FileOutputDataSource::FileOutputDataSource(const std::string& dataPath)
 	: OutputDataSource(), mDataPath(dataPath), mFp(nullptr)
-{	
+{
 }
 
 FileOutputDataSource::FileOutputDataSource(unsigned short channels, unsigned int sampleRate, int pcmFormat, const std::string& dataPath)
@@ -33,7 +33,7 @@ FileOutputDataSource::FileOutputDataSource(unsigned short channels, unsigned int
 {
 }
 
-FileOutputDataSource::FileOutputDataSource(const FileOutputDataSource& source) : 
+FileOutputDataSource::FileOutputDataSource(const FileOutputDataSource& source) :
 	OutputDataSource(source), mDataPath(source.mDataPath), mFp(source.mFp)
 {
 }
@@ -76,7 +76,7 @@ bool FileOutputDataSource::isPrepare()
 	return (mFp != nullptr);
 }
 
-size_t FileOutputDataSource::write(unsigned char* buf, size_t size)
+ssize_t FileOutputDataSource::write(unsigned char* buf, size_t size)
 {
 	if (!buf) {
 		return (size_t)0;

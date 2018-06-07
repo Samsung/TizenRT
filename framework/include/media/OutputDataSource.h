@@ -53,11 +53,11 @@ public:
 	 * @details @b #include <media/OutputDataSource.h>
 	 * param[in] channels   The channels that the channels of audio
 	 * param[in] sampleRate The sampleRate that the sample rate of audio
-	 * param[in] pcmFormat  The pcmFormat that the pcm format of audio	
+	 * param[in] pcmFormat  The pcmFormat that the pcm format of audio
 	 * @since TizenRT v2.0 PRE
 	 */
 	OutputDataSource(unsigned short channels, unsigned int sampleRate, int pcmFormat);
-	
+
 	/**
 	 * @brief Copy constructs for OutputDataSource.
 	 * @details @b #include <media/OutputDataSource.h>
@@ -83,7 +83,7 @@ public:
 	 * @details @b #include <media/OutputDataSource.h>
 	 * @since TizenRT v2.0 PRE
 	 */
-	virtual size_t write(unsigned char* buf, size_t size) = 0;
+	virtual ssize_t write(unsigned char* buf, size_t size) = 0;
 };
 } // namespace stream
 } // namespace media
