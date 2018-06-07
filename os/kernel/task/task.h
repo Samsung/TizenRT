@@ -91,7 +91,17 @@ int task_argsetup(FAR struct task_tcb_s *tcb, FAR const char *name, FAR char *co
 int task_exit(void);
 int task_terminate(pid_t pid, bool nonblocking);
 void task_exithook(FAR struct tcb_s *tcb, int status, bool nonblocking);
-void task_recover(FAR struct tcb_s *tcb);
+void task_recover(FAR struct tcb_s *tcb, int status, bool nonblocking);
+#if defined(CONFIG_SCHED_ATEXIT) && !defined(CONFIG_SCHED_ONEXIT)
+void task_atexit(FAR struct tcb_s *tcb);
+#else
+#define task_atexit(tcb)
+#endif
+#ifdef CONFIG_SCHED_ONEXIT
+void task_onexit(FAR struct tcb_s *tcb, int status);
+#else
+#define task_onexit(tcb, status)
+#endif
 
 /* Misc. */
 

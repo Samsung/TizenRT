@@ -112,8 +112,34 @@
  *
  ****************************************************************************/
 
-void task_recover(FAR struct tcb_s *tcb)
+void task_recover(FAR struct tcb_s *tcb, int status, bool nonblocking)
 {
+
+#if defined(CONFIG_SCHED_ATEXIT) || defined(CONFIG_SCHED_ONEXIT)
+	/* If exit function(s) were registered, call them now before we do any un-
+	 * initialization.
+	 *
+	 * NOTES:
+	 *
+	 * 1. In the case of task_delete(), the exit function will *not* be called
+	 *    on the thread execution of the task being deleted!  That is probably
+	 *    a bug.
+	 * 2. We cannot call the exit functions if nonblocking is requested:  These
+	 *    functions might block.
+	 * 3. This function will only be called with with non-blocking == true
+	 *    only when called through _exit(). _exit() behaviors requires that
+	 *    the exit functions *not* be called.
+	 */
+
+	if (!nonblocking) {
+		task_atexit(tcb);
+
+		/* Call any registered on_exit function(s) */
+
+		task_onexit(tcb, status);
+	}
+#endif
+
 	/* The task is being deleted.  Cancel in pending timeout events. */
 
 	wd_recover(tcb);
