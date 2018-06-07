@@ -37,6 +37,8 @@
 #include <poll.h>
 #endif
 #include <errno.h>
+#include <sys/ioctl.h>
+#include <sys/mount.h>
 #include <sys/stat.h>
 #include <sys/sendfile.h>
 #include <sys/statfs.h>
@@ -1592,19 +1594,19 @@ static void tc_fs_vfs_ioctl(void)
 
 	fd1 = open(DEV_CONSOLE_PATH, O_RDWR);
 	TC_ASSERT_GEQ("open", fd1, 0);
-	ret = ioctl(fd1, FIONREAD, &size);
+	ret = ioctl(fd1, FIONREAD, (unsigned long)&size);
 	close(fd1);
 	TC_ASSERT_EQ("ioctl", ret, OK);
 
 	/*Negative case where invalid fd */
-	ret = ioctl(INV_FD, FIONREAD, &size);
+	ret = ioctl(INV_FD, FIONREAD, (unsigned long)&size);
 	TC_ASSERT_EQ("ioctl", ret, ERROR);
 
 	/*Negative cae where invalid cmd */
 	fd2 = open(DEV_CONSOLE_PATH, O_RDWR);
 	TC_ASSERT_GEQ("open", fd2, 0);
 
-	ret = ioctl(fd2, FIONREAD, &size);
+	ret = ioctl(fd2, FIONREAD, (unsigned long)&size);
 	close(fd2);
 	TC_ASSERT_LEQ("ioctl", ret, 0);
 
