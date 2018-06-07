@@ -16,6 +16,7 @@
  *
  ******************************************************************/
 
+#include <debug.h>
 #include <media/InputDataSource.h>
 #include "Decoder.h"
 

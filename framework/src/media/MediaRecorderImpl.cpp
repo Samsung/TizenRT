@@ -16,6 +16,7 @@
  *
  ******************************************************************/
 
+#include <debug.h>
 #include <media/MediaRecorder.h>
 #include "RecorderWorker.h"
 #include "MediaRecorderImpl.h"
