@@ -51,6 +51,13 @@ config LIBC_FLOATINGPOINT
 		By default, floating point
 		support in printf, sscanf, etc. is disabled.
 
+config LIBC_FLOATPRECISION
+	int "Default floating point Precision value"
+	depends on LIBC_FLOATINGPOINT
+	default 6
+	---help---
+		Precision point support for floating point values.
+
 config LIBC_SCANSET
         bool "Scanset support"
         default y 
