@@ -35,6 +35,13 @@ CXXSRCS += MediaUtils.cpp
 CSRCS += rb.c rbs.c
 DEPPATH += --dep-path src/media/utils
 VPATH += :src/media/utils
+
+ifeq ($(CONFIG_CODEC_LIBOPUS), y)
+CSRCS += opus_encoder_api.c opus_decoder_api.c
+DEPPATH += --dep-path src/media/codecs
+VPATH += :src/media/codecs
+endif
+
 ifeq ($(CONFIG_MEDIA_PLAYER), y)
 CXXSRCS += MediaPlayer.cpp InputDataSource.cpp FileInputDataSource.cpp PlayerWorker.cpp MediaPlayerImpl.cpp PlayerObserverWorker.cpp Decoder.cpp
 endif

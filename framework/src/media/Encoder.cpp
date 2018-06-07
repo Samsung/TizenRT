@@ -29,27 +29,22 @@ namespace media {
 Encoder::Encoder(audio_type_t audio_type)
 {
 #ifdef CONFIG_AUDIO_CODEC
-	switch (audio_type)
-	{
+	switch (audio_type) {
+
+#ifdef CONFIG_CODEC_LIBOPUS
 	case AUDIO_TYPE_OPUS: {
 		memset(&mEncoder, 0, sizeof(aud_encoder_t));
 
 		static uint8_t outputBuf[1024];
 		static int16_t inputBuf[1920*2];  // inputSampleRate / 1000 * frame_size_ms * 2
 
-		extern int g_appmode;
-		extern int g_bitrate;
-		extern int g_bandwidth;
-		extern int g_framesize;
-		extern int g_complexity;
-
 		opus_enc_external_t ext = {0};
 		// params for opus encoding
-		ext.opus_application = g_appmode; // OPUS_APPLICATION_AUDIO;
-		ext.frame_size_ms = g_framesize; // 20ms
-		ext.bitrate_bps = g_bitrate; // 16000 bps
-		ext.band_width = g_bandwidth; // OPUS_AUTO
-		ext.complexity = g_complexity;
+		ext.opus_application = OPUS_APPLICATION_AUDIO;
+		ext.frame_size_ms = 100;
+		ext.bitrate_bps = 16000;
+		ext.band_width = OPUS_AUTO;
+		ext.complexity = 5;
 
 		// params for streaming
 		ext.pOutputBuffer = outputBuf;
@@ -69,6 +64,7 @@ Encoder::Encoder(audio_type_t audio_type)
 		}
 		break;
 	}
+#endif
 
 	default:
 		break;

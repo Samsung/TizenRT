@@ -21,8 +21,10 @@
 
 #include "../utils/rb.h"
 #include "../utils/rbs.h"
-#include <audiocodec/opus/opus_encoder_api.h>
 #include <media/MediaTypes.h>
+#ifdef CONFIG_CODEC_LIBOPUS
+#include "../codecs/opus_encoder_api.h"
+#endif
 
 namespace media {
 

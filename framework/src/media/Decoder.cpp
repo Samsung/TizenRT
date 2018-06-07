@@ -192,7 +192,8 @@ int Decoder::_configFunc(void *user_data, int audio_type, void *dec_ext)
 	static uint8_t inputBuf[4096];
 	static int16_t outputBuf[4096];
 
-	if (audio_type == AUDIO_TYPE_MP3) {
+	switch (audio_type) {
+	case AUDIO_TYPE_MP3: {
 		tPVMP3DecoderExternal *mp3_ext = (tPVMP3DecoderExternal *)dec_ext;
 		mp3_ext->equalizerType = flat;
 		mp3_ext->crcEnabled = false;
@@ -200,7 +201,9 @@ int Decoder::_configFunc(void *user_data, int audio_type, void *dec_ext)
 		mp3_ext->pOutputBuffer = outputBuf;
 		mp3_ext->outputFrameSize = sizeof(outputBuf) / sizeof(int16_t);
 		return 0;
-	} else if (audio_type == AUDIO_TYPE_AAC) {
+	}
+
+	case AUDIO_TYPE_AAC: {
 		tPVMP4AudioDecoderExternal *aac_ext = (tPVMP4AudioDecoderExternal *)dec_ext;
 		aac_ext->outputFormat = OUTPUTFORMAT_16PCM_INTERLEAVED;
 		aac_ext->desiredChannels = TARGET_SOUND_TRACK;
@@ -208,7 +211,10 @@ int Decoder::_configFunc(void *user_data, int audio_type, void *dec_ext)
 		aac_ext->pOutputBuffer = outputBuf;
 		aac_ext->aacPlusEnabled = 1;
 		return 0;
-	} else if (audio_type == AUDIO_TYPE_OPUS) {
+	}
+
+#ifdef CONFIG_CODEC_LIBOPUS
+	case AUDIO_TYPE_OPUS: {
 		opus_dec_external_t *ext = (opus_dec_external_t *)dec_ext;
 		ext->pInputBuffer = inputBuf;
 		ext->inputBufferMaxLength = sizeof(inputBuf);
@@ -219,9 +225,12 @@ int Decoder::_configFunc(void *user_data, int audio_type, void *dec_ext)
 		ext->desiredChannels = TARGET_SOUND_TRACK;
 		return 0;
 	}
+#endif
 
-	meddbg("Error! Not supported audio format!\n");
-	return -1;
+	default:
+		meddbg("Error! Not supported audio format!\n");
+		return -1;
+	}
 }
 #endif
 

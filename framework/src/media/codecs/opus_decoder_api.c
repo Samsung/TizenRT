@@ -28,6 +28,9 @@
 #define OPUS_SELF_THREAD
 
 #ifdef OPUS_SELF_THREAD
+
+#define OPUS_DECODE_THREAD_STACKSIZE (48*1024)
+
 static pthread_mutex_t invoke_mutex = PTHREAD_MUTEX_INITIALIZER;
 static pthread_cond_t invoke_cond = PTHREAD_COND_INITIALIZER;
 
@@ -107,7 +110,7 @@ int32_t opus_initDecoder(opus_dec_external_t *pExt, void *pMem)
 	}
 
 	/* Set the stacksize */
-	status = pthread_attr_setstacksize(&attr, 48 * 1024);
+	status = pthread_attr_setstacksize(&attr, OPUS_DECODE_THREAD_STACKSIZE);
 	if (status != 0) {
 		meddbg("thread : pthread_attr_setstacksize failed, status=%d\n", status);
 	}

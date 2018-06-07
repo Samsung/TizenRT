@@ -66,7 +66,7 @@ static size_t _input_callback(void *data, rbstream_p rbsp)
 	return wlen;
 }
 
-int _init_encoder(aud_encoder_p encoder, void *enc_ext)
+static int _init_encoder(aud_encoder_p encoder, void *enc_ext)
 {
 	priv_data_p priv = (priv_data_p) encoder->priv_data;
 	assert(priv != NULL);
