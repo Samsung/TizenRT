@@ -103,7 +103,7 @@
  ****************************************************************************/
 
 #if defined(CONFIG_SCHED_ATEXIT) && !defined(CONFIG_SCHED_ONEXIT)
-static inline void task_atexit(FAR struct tcb_s *tcb)
+inline void task_atexit(FAR struct tcb_s *tcb)
 {
 	FAR struct task_group_s *group = tcb->group;
 
@@ -159,7 +159,7 @@ static inline void task_atexit(FAR struct tcb_s *tcb)
  ****************************************************************************/
 
 #ifdef CONFIG_SCHED_ONEXIT
-static inline void task_onexit(FAR struct tcb_s *tcb, int status)
+inline void task_onexit(FAR struct tcb_s *tcb, int status)
 {
 	FAR struct task_group_s *group = tcb->group;
 
