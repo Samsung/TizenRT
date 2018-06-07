@@ -151,7 +151,6 @@ int pthread_mutexattr_verifytype(int type);
 #endif
 
 #if defined(CONFIG_NPTHREAD_KEYS) && CONFIG_NPTHREAD_KEYS > 0
-struct pthread_key_s *pthread_key_find(struct pthread_tcb_s *tcb, pthread_key_t key);
 void pthread_key_destroy(struct pthread_tcb_s *tcb);
 #endif
 
