@@ -45,6 +45,7 @@ int task_manager_broadcast(int msg)
 
 	/* Set the request msg */
 	request_msg.cmd = TASKMGT_BROADCAST;
+	request_msg.timeout = TM_NO_RESPONSE;
 
 	status = taskmgr_send_request(&request_msg);
 	if (status < 0) {
