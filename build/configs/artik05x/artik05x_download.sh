@@ -216,9 +216,6 @@ download()
 
     # Download all binaries using openocd script
     if test "$make" = "n" ; then
-        echo "${OPENOCD_BIN_PATH}/openocd -f artik05x.cfg -s $BOARD_DIR_PATH/../artik05x/scripts -c \
-            'init; $strcmd reset; exit'"
-
         ${OPENOCD_BIN_PATH}/openocd -f artik05x.cfg -s $BOARD_DIR_PATH/../artik05x/scripts -c \
             "init; $strcmd reset; exit"
     fi
