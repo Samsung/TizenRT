@@ -1075,6 +1075,9 @@ int pv_player_finish(pv_player_p player)
 
 	// free decoder buffer
 	if (player->dec_mem != NULL) {
+		#ifdef CONFIG_CODEC_LIBOPUS
+		opus_uninitDecoder(player->dec_mem);
+		#endif
 		free(player->dec_mem);
 		player->dec_mem = NULL;
 	}

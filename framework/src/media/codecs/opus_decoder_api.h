@@ -122,6 +122,12 @@ uint32_t opus_decoderMemRequirements(void);
   */
 int32_t opus_initDecoder(opus_dec_external_t *pExt, void *pMem);
 
+/** Uninitialize decoder resource.
+  * Thread resource is allocated during opus_initDecoder().
+  * @param [in] pMem :Decoder internal used memory.
+  */
+int32_t opus_uninitDecoder(void *pMem);
+
 /** Reset a previously allocated decoder memory pMem.
   * The memory pointed to by pMem must be at least the size returned by opus_decoderMemRequirements().
   * @param [in] pMem :Decoder internal used memory.

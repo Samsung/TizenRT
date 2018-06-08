@@ -16,6 +16,7 @@
  *
  ******************************************************************/
 
+#include <tinyara/config.h>
 #include <sys/types.h>
 #include <stdio.h>
 #include <string.h>
@@ -246,6 +247,9 @@ int aud_encoder_finish(aud_encoder_p encoder)
 
 	// free encoder buffer
 	if (encoder->enc_mem != NULL) {
+		#ifdef CONFIG_CODEC_LIBOPUS
+		opus_uninitEncoder(encoder->enc_mem);
+		#endif
 		free(encoder->enc_mem);
 		encoder->enc_mem = NULL;
 	}
