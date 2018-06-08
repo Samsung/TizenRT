@@ -2339,32 +2339,6 @@ static void tc_libc_stdio_fileno(void)
 	TC_SUCCESS_RESULT();
 }
 
-#if CONFIG_STDIO_BUFFER_SIZE > 0
-/**
-* @testcase         tc_libc_stdio_lib_rdflush
-* @brief            Flush read data from the I/O buffer and adjust the file pointer to account for the unread data.
-* @scenario         Flush read data from the I/O buffer and adjust the file pointer to account for the unread data.
-* @apicovered       lib_rdflush
-* @precondition     NA
-* @postcondition    NA
-*/
-static void tc_libc_stdio_lib_rdflush(void)
-{
-	char *filename = VFS_FILE_PATH;
-	FILE *stream;
-	int ret;
-
-	stream = fopen(filename, "r");
-	TC_ASSERT_NEQ("fopen", stream, NULL);
-
-	ret = lib_rdflush(stream);
-	fclose(stream);
-	TC_ASSERT_EQ("lib_rdflush", ret, OK);
-
-	TC_SUCCESS_RESULT();
-}
-#endif
-
 #ifdef CONFIG_STDIO_LINEBUFFER
 /**
 * @testcase         tc_libc_stdio_lib_snoflush
@@ -3596,9 +3570,6 @@ int tc_filesystem_main(int argc, char *argv[])
 	tc_libc_stdio_gets_s();
 #endif
 	tc_libc_stdio_fileno();
-#if CONFIG_STDIO_BUFFER_SIZE > 0
-	tc_libc_stdio_lib_rdflush();
-#endif
 #ifdef CONFIG_STDIO_LINEBUFFER
 	tc_libc_stdio_lib_snoflush();
 #endif
