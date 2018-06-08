@@ -87,7 +87,7 @@ player_result_t MediaPlayerImpl::destroy()
 
 	mpw.enQueue(&MediaPlayerImpl::destroyPlayer, shared_from_this(), std::ref(ret));
 	mSyncCv.wait(lock);
-	
+
 	if (ret == PLAYER_OK) {
 		if (mPlayerObserver) {
 			PlayerObserverWorker& pow = PlayerObserverWorker::getWorker();
@@ -133,7 +133,7 @@ player_result_t MediaPlayerImpl::prepare()
 	mpw.enQueue(&MediaPlayerImpl::preparePlayer, shared_from_this(), std::ref(ret));
 	mSyncCv.wait(lock);
 
-	return ret;	
+	return ret;
 }
 
 void MediaPlayerImpl::preparePlayer(player_result_t &ret)
@@ -408,7 +408,7 @@ void MediaPlayerImpl::setVolumePlayer(int vol, player_result_t &ret)
 		meddbg("MediaPlayer setVolume fail : audio manager failed\n");
 		goto errout;
 	}
-	
+
 	medvdbg("MediaPlayer setVolume success\n");
 	ret = PLAYER_OK;
 	mSyncCv.notify_one();
@@ -531,7 +531,7 @@ void MediaPlayerImpl::notifyObserver(player_observer_command_t cmd)
 
 void MediaPlayerImpl::playback()
 {
-	size_t num_read = mInputDataSource->read(mBuffer,(int)mBufSize);
+	ssize_t num_read = mInputDataSource->read(mBuffer,(int)mBufSize);
 	meddbg("num_read : %d\n", num_read);
 	if (num_read > 0) {
 		start_audio_stream_out(mBuffer, get_output_bytes_frame_count(num_read));

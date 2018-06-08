@@ -67,6 +67,19 @@ size_t Decoder::pushData(unsigned char *buf, size_t size)
 	return 0;
 }
 
+/**
+ * @brief   Get decoded PCM sample frames
+ * @remarks
+ * @param   buf:  pointer to buffer for output
+ * @param   size: input/output parameter, in bytes.
+ *                input-size means the capability of 'buf', and also be the requested size for output.
+ *                output-size means the real output data size.
+ * @param   sampleRate:  Sample rate (Hz) of the output PCM samples
+ * @param   channels:  Number of channels of the output PCM samples
+ * @return  true  - output some data to 'buf', and output-size in the range of (0, input-size];
+ *          false - no output, and need push more audio data for decoding.
+ * @see
+ */
 bool Decoder::getFrame(unsigned char *buf, size_t *size, unsigned int *sampleRate, unsigned short *channels)
 {
 #ifdef CONFIG_AUDIO_CODEC
@@ -74,10 +87,10 @@ bool Decoder::getFrame(unsigned char *buf, size_t *size, unsigned int *sampleRat
 	 * Need to get the enough data to parse data format.
 	 */
 	if (mPlayer.audio_type == AUDIO_TYPE_UNKNOWN) {
-		mPlayer.audio_type = _get_audio_type(mPlayer.rbsp);
+		mPlayer.audio_type = pv_player_get_audio_type(&mPlayer);
 
 		if (mPlayer.audio_type) {
-			if (_init_decoder(&mPlayer) != 0) {
+			if (pv_player_init_decoder(&mPlayer, mPlayer.audio_type) != PV_SUCCESS) {
 				meddbg("Error! _init_decoder failed!\n");
 				return false;
 			}
@@ -89,22 +102,12 @@ bool Decoder::getFrame(unsigned char *buf, size_t *size, unsigned int *sampleRat
 		return false;
 	}
 
-	if (_get_frame(&mPlayer)) {
-		pcm_data_t pcm;
-		if (_frame_decoder(&mPlayer, &pcm) != PV_FAILURE) {
-			*size = pcm.length * sizeof(short);
-			*sampleRate = pcm.samplerate;
-			*channels = pcm.channels;
-			memcpy(buf, pcm.samples, *size);
-			return true;
-		} else {
-			meddbg("Error: Decoding frame failed!\n");
-			return false;
-		}
-	} else {
-		meddbg("Error: Getting frame failed!\n");
+	*size = pv_player_get_frames(&mPlayer, buf, *size, sampleRate, channels);
+	if (*size == 0) {
 		return false;
 	}
+
+	return true;
 #endif
 	return false;
 }

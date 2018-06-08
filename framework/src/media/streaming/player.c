@@ -113,6 +113,8 @@
 
 #define U32_LEN_IN_BYTES (sizeof(uint32_t) / sizeof(uint8_t))
 
+#define BYTES_PER_SAMPLE sizeof(signed short)
+
 /****************************************************************************
  * Private Declarations
  ****************************************************************************/
@@ -124,6 +126,7 @@
 struct priv_data_s {
 	ssize_t mCurrentPos;        /* read position when decoding */
 	uint32_t mFixedHeader;      /* mp3 frame header */
+	pcm_data_t pcm;             /* a recorder of pcm data info */
 };
 
 typedef struct priv_data_s priv_data_t;
@@ -633,6 +636,11 @@ int _init_decoder(pv_player_p player)
 	priv_data_p priv = (priv_data_p) player->priv_data;
 	assert(priv != NULL);
 
+	// Init private data
+	priv->mCurrentPos = 0;
+	priv->mFixedHeader = 0;
+	memset(&(priv->pcm), 0, sizeof(pcm_data_t));
+
 	switch (player->audio_type) {
 	case AUDIO_TYPE_MP3: {
 		player->dec_ext = calloc(1, sizeof(tPVMP3DecoderExternal));
@@ -646,7 +654,6 @@ int _init_decoder(pv_player_p player)
 		pvmp3_resetDecoder(player->dec_mem);
 		pvmp3_InitDecoder(player->dec_ext, player->dec_mem);
 
-		priv->mCurrentPos = 0;
 		bool ret = mp3_init(player->rbsp, &priv->mCurrentPos, &priv->mFixedHeader);
 		RETURN_VAL_IF_FAIL((ret == true), PV_FAILURE);
 		break;
@@ -665,7 +672,6 @@ int _init_decoder(pv_player_p player)
 		Int err = PVMP4AudioDecoderInitLibrary(player->dec_ext, player->dec_mem);
 		RETURN_VAL_IF_FAIL((err == MP4AUDEC_SUCCESS), PV_FAILURE);
 
-		priv->mCurrentPos = 0;
 		bool ret = aac_init(player->rbsp, &priv->mCurrentPos);
 		RETURN_VAL_IF_FAIL((ret == true), PV_FAILURE);
 		break;
@@ -807,6 +813,69 @@ int pv_player_frame_decode(pv_player_p player, pcm_data_p pcm)
 
 	return _frame_decoder(player, pcm);
 }
+
+size_t pv_player_get_frames(pv_player_p player, unsigned char *buf, size_t max, unsigned int *sr, unsigned short *ch)
+{
+	priv_data_p priv = (priv_data_p) player->priv_data;
+	pcm_data_p pcm = &priv->pcm;
+
+	// Output size, in bytes
+	size_t size = 0;
+
+	// Check 2 bytes aligned, due to 16bit-PCM format.
+	assert((max % 2) == 0);
+
+	while (size < max) {
+		if (pcm->samples) {
+			// Copy remained data to decoder output buffer
+			size_t nSamples = (max - size) / BYTES_PER_SAMPLE;
+			if (pcm->length  <= nSamples) {
+				// Copy all data
+				memcpy(buf + size, pcm->samples, pcm->length * BYTES_PER_SAMPLE);
+				size += pcm->length * BYTES_PER_SAMPLE;
+				// Clear remained data record
+				pcm->samples = NULL;
+				pcm->length = 0;
+				continue;
+			} else {
+				// Copy part of data required
+				memcpy(buf + size, pcm->samples, nSamples * BYTES_PER_SAMPLE);
+				size = max;
+				// Update remained data record
+				pcm->samples += nSamples;
+				pcm->length -= nSamples;
+				break;
+			}
+		}
+
+		// Decode more
+		if (!_get_frame(player)) {
+			// Need to push more data for further decoding.
+			// In this case, *size < max.
+			medvdbg("there's not enough data, need to push more.\n");
+			break;
+		}
+
+		if (_frame_decoder(player, pcm) != PV_SUCCESS) {
+			// Decoding failed
+			meddbg("frame decoding failed!\n");
+			break;
+		}
+	}
+
+	// Output sample rate if desired
+	if (sr != NULL) {
+		*sr = pcm->samplerate;
+	}
+
+	// Output channel num if desired
+	if (ch != NULL) {
+		*ch = pcm->channels;
+	}
+
+	return size;
+}
+
 
 int pv_player_init(pv_player_p player, size_t rbuf_size, void *user_data, config_func_f config_func, input_func_f input_func, output_func_f output_func)
 {

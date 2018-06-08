@@ -110,9 +110,9 @@ bool FileInputDataSource::isPrepare()
 	return true;
 }
 
-size_t FileInputDataSource::read(unsigned char *buf, size_t size)
+ssize_t FileInputDataSource::read(unsigned char *buf, size_t size)
 {
-	size_t ret;
+	size_t rlen = 0;
 	size_t readSize = size;
 	std::shared_ptr<Decoder> decoder = getDecoder();
 
@@ -122,42 +122,50 @@ size_t FileInputDataSource::read(unsigned char *buf, size_t size)
 	}
 
 	if (decoder) {
-		size_t frames = 0;
-		/* TODO Currently it just return frames which decoded only ONCE if available */
-		ret = getDecodeFrames(buf, &frames);
-		medvdbg("decode frame : %d\n", frames);
-		if (ret > 0) {
-			return ret;
+		size_t frames = size;
+		rlen = getDecodeFrames(buf, &frames);
+		medvdbg("decode frame : %d/%d\n", rlen, size);
+		if (rlen == size) {
+			return rlen;
 		}
+
+		/* Set buf offset */
+		buf += rlen;
+		/* Calculate available space in 'buf' */
+		readSize -= rlen;
 
 		if (readSize > decoder->getAvailSpace()) {
 			readSize = decoder->getAvailSpace();
 		}
 	}
 
-	ret = fread(buf, sizeof(unsigned char), readSize, mFp);
-	/* If file position reaches end of file, return 0 */
-	if (feof(mFp)) {
-		medvdbg("eof!! stop!\n");
-		return 0;
-	}
+	size_t readRet = fread(buf, sizeof(unsigned char), readSize, mFp);
+	medvdbg("read size : %d\n", readRet);
+	if (readRet == 0) {
+		/* fread returned 0 */
+		/* If file position reaches end of file, it's a normal case, we returns rlen */
+		if (feof(mFp)) {
+			medvdbg("eof!! stop!\n");
+			return rlen;
+		}
 
-	medvdbg("read size : %d\n", ret);
-	if (ret == 0) {
+		/* Otherwise, an error occurred, we also returns error */
 		return EOF;
 	}
 
 	if (decoder) {
-		if (!decoder->pushData(buf, ret)) {
+		if (!decoder->pushData(buf, readRet)) {
+			meddbg("decode push data failed!\n");
 			return EOF;
 		}
-		size_t frames = 0;
-		if (getDecodeFrames(buf, &frames)) {
-			return frames;
-		}
-		return EOF;
+
+		size_t frames = size - rlen;
+		rlen += getDecodeFrames(buf, &frames);
+		medvdbg("decode frame ; %d/%d\n", rlen, size);
+		return rlen;
 	}
-	return ret;
+
+	return rlen;
 }
 
 int FileInputDataSource::readAt(long offset, int origin, unsigned char *buf, size_t size)
