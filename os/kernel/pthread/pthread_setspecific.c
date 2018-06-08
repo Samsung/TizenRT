@@ -28,7 +28,6 @@
 #include <tinyara/sched.h>
 
 #include "sched/sched.h"
-#include "pthread/pthread.h"
 
 /****************************************************************************
  * Definitions
@@ -97,28 +96,17 @@
 
 int pthread_setspecific(pthread_key_t key, FAR const void *value)
 {
-	FAR struct pthread_tcb_s *rtcb = (FAR struct pthread_tcb_s *)this_task();
-	struct pthread_key_s *cur_key;
+	struct pthread_tcb_s *rtcb = (FAR struct pthread_tcb_s *)this_task();
+	struct task_group_s *group = rtcb->cmn.group;
 
-	DEBUGASSERT((rtcb->cmn.flags & TCB_FLAG_TTYPE_MASK) == TCB_FLAG_TTYPE_PTHREAD);
+	DEBUGASSERT(group && (rtcb->cmn.flags & TCB_FLAG_TTYPE_MASK) == TCB_FLAG_TTYPE_PTHREAD);
 
 	/* Check key validation */
 
-	if (key < PTHREAD_KEYS_MAX) {
-
-		/* Find key data */
-
-		cur_key = (struct pthread_key_s *)pthread_key_find(rtcb, key);
-		if (cur_key == NULL) {
-
-			/* No Key in the list */
-
-			return EINVAL;
-		}
-
+	if (key < PTHREAD_KEYS_MAX && group->tg_key[key] == KEY_INUSE) {
 		/* Store the data in the TCB. */
 
-		cur_key->data = (void *)value;
+		rtcb->key_data[key] = (void *)value;
 
 		/* Return success. */
 

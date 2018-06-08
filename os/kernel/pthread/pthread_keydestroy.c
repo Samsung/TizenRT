@@ -20,12 +20,10 @@
  * Included Files
  ************************************************************************/
 
-#include <stdlib.h>
 #include <sys/types.h>
-#include <queue.h>
+#include <pthread.h>
 
 #include <tinyara/sched.h>
-#include <tinyara/kmalloc.h>
 
 /************************************************************************
  * Definitions
@@ -71,35 +69,21 @@
 void pthread_key_destroy(struct pthread_tcb_s *tcb)
 {
 	struct task_group_s *group = tcb->cmn.group;
-	struct pthread_key_s *cur_key;
-	struct pthread_key_s *next_key;
+	pthread_key_t key_index;
 	int destr_count = 0;
 
-	for (cur_key = (struct pthread_key_s *)sq_peek(&tcb->key_list); cur_key; cur_key = next_key) {
+	for (key_index = 0; key_index < PTHREAD_KEYS_MAX; key_index++) {
+		if (tcb->key_data[key_index] != NULL && group->tg_destructor[key_index] != NULL) {
+			/* Execute destructor with data if they are valid */
 
-		/* Execute destructor until exceeding limitation */
+			group->tg_destructor[key_index](tcb->key_data[key_index]);
 
-		if (destr_count < PTHREAD_DESTRUCTOR_ITERATIONS) {
+			/* Execute destructor until exceeding limitation */
 
-			/* Get key data from pthread tcb */
-
-			if (cur_key->destructor != NULL && cur_key->data != NULL) {
-
-				/* Execute destructor with data if they are valid */
-
-				cur_key->destructor(cur_key->data);
-				destr_count++;
+			destr_count++;
+			if (destr_count >= PTHREAD_DESTRUCTOR_ITERATIONS) {
+				return;
 			}
 		}
-
-		next_key = sq_next(cur_key);
-
-		/* Free each key data */
-
-		sched_kfree(cur_key);
 	}
-
-	/* Update Group total key number */
-
-	group->tg_nkeys -= tcb->nkeys;
 }
