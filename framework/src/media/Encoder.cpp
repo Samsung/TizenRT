@@ -40,10 +40,10 @@ Encoder::Encoder(audio_type_t audio_type)
 
 		opus_enc_external_t ext = {0};
 		// params for opus encoding
-		ext.opus_application = OPUS_APPLICATION_AUDIO;
-		ext.frame_size_ms = 100;
-		ext.bitrate_bps = 16000;
-		ext.band_width = OPUS_AUTO;
+		ext.applicationMode = OPUS_APPLICATION_AUDIO;
+		ext.frameSizeMS = 100;
+		ext.bitrate = 16000;
+		ext.bandWidth = OPUS_AUTO;
 		ext.complexity = 5;
 
 		// params for streaming
@@ -51,8 +51,6 @@ Encoder::Encoder(audio_type_t audio_type)
 		ext.outputBufferMaxLength = sizeof(outputBuf);
 		ext.pInputBuffer = inputBuf;
 		ext.inputBufferMaxLength = sizeof(inputBuf);
-		ext.inputBufferCurrentLength = 0;
-		ext.inputBufferUsedLength = 0;
 
 		// params about PCM source
 		ext.inputChannels = 2; // channels

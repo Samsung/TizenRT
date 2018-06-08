@@ -64,8 +64,8 @@ static void *opus_encoder_thread(void *param)
 
 		medvdbg("opus encoding...\n");
 		unsigned char *out_data = ((unsigned char *)opus_svr->ext->pOutputBuffer) + OPUS_PACKET_HEADER_LEN;
-		int analysis_frame_size = opus_svr->ext->inputSampleRate * opus_svr->ext->frame_size_ms / 1000;
-		if (opus_svr->ext->frame_size_ms == 25) {
+		int analysis_frame_size = opus_svr->ext->inputSampleRate * opus_svr->ext->frameSizeMS / 1000;
+		if (opus_svr->ext->frameSizeMS == 25) {
 			analysis_frame_size /= 10;
 		}
 
@@ -124,14 +124,14 @@ uint32_t opus_encoderMemRequirements(void)
 int32_t opus_initEncoder(opus_enc_external_t *pExt, void *pMem)
 {
 	OpusEncoder *st = getOpusEncoder(pMem);
-	int err = opus_encoder_init(st, pExt->inputSampleRate, pExt->inputChannels, pExt->opus_application);
+	int err = opus_encoder_init(st, pExt->inputSampleRate, pExt->inputChannels, pExt->applicationMode);
 	if (err != OPUS_OK) {
 		meddbg("opus_encoder_init err %d\n", err);
 		return err;
 	}
 
-	opus_encoder_ctl(st, OPUS_SET_BITRATE(pExt->bitrate_bps));
-	opus_encoder_ctl(st, OPUS_SET_BANDWIDTH(pExt->band_width));
+	opus_encoder_ctl(st, OPUS_SET_BITRATE(pExt->bitrate));
+	opus_encoder_ctl(st, OPUS_SET_BANDWIDTH(pExt->bandWidth));
 	opus_encoder_ctl(st, OPUS_SET_VBR(1));
 	opus_encoder_ctl(st, OPUS_SET_VBR_CONSTRAINT(0));
 	opus_encoder_ctl(st, OPUS_SET_COMPLEXITY(pExt->complexity));
@@ -215,9 +215,9 @@ int32_t opus_frameEncode(opus_enc_external_t *pExt, void *pMem)
 {
 	OpusEncoder *st = getOpusEncoder(pMem);
 	unsigned char *out_data = ((unsigned char *)pExt->pOutputBuffer) + OPUS_PACKET_HEADER_LEN;
-	int analysis_frame_size = pExt->inputSampleRate * pExt->frame_size_ms / 1000;
+	int analysis_frame_size = pExt->inputSampleRate * pExt->frameSizeMS / 1000;
 
-	if (pExt->frame_size_ms == 25) {
+	if (pExt->frameSizeMS == 25) {
 		analysis_frame_size /= 10;
 	}
 
@@ -250,6 +250,7 @@ int32_t opus_frameEncode(opus_enc_external_t *pExt, void *pMem)
 							   out_data,
 							   pExt->outputBufferMaxLength);
 #endif // CONFIG_OPUS_CODEC_PTHREAD
+
 	int nb_encoded = opus_packet_get_samples_per_frame(out_data, pExt->inputSampleRate)
 					 * opus_packet_get_nb_frames(out_data, payload_size);
 	int remaining = analysis_frame_size - nb_encoded;

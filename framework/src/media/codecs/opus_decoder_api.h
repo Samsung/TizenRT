@@ -30,30 +30,22 @@ struct opus_dec_external_s {
 	/*
 	 * INPUT:
 	 * Pointer to the input buffer that contains the encoded Opus data.
-	 * The data is filled in such that the first bit transmitted is
-	 * the most-significant bit (MSB) of the first array element.
-	 * The data in the pInputBuffer should be all decoded by opus_decode() one time, and no remained undecoded data.
-	 * So should push a whole opus packet to this buffer, and set correct inputBufferCurrentLength.
-	 * Here, a whole opus packet is composed of SYNC(4 bytes) +  frame data Length(4 bytes) + frame data.
+	 * The data in the pInputBuffer should be a whole opus packet, which consists
+	 * of SYNC(4 bytes) +  Frame Length(4 bytes) + payload.
+	 * So make sure to set correct inputBufferCurrentLength.
+	 * All input data is decoded by opus_decode() at one time.
 	 */
 	uint8_t *pInputBuffer;
 
 	/*
 	 * INPUT:
-	 * The actual size of the buffer.
-	 * This variable is not used by the library, but is used by the
-	 * console test application. This parameter could be deleted
-	 * if this value was passed into these function.
+	 * The actual size (in bytes) of the buffer.
 	 */
 	int32_t inputBufferMaxLength;
 
 	/*
 	 * INPUT:
-	 * Number of valid bytes in the input buffer, set by the calling
-	 * function. After decoding the bitstream the library checks to
-	 * see if it when past this value; it would be to prohibitive to
-	 * check after every read operation. This value is not modified by
-	 * the Opus library.
+	 * Number of valid bytes in the input buffer, that is the bytes of whole opus packet.
 	 */
 	int32_t inputBufferCurrentLength;
 
@@ -74,17 +66,16 @@ struct opus_dec_external_s {
 
 	/*
 	 * OUTPUT:
-	 * This value is the bitrate in units of bits/second. IT
-	 * is calculated using the number of bits consumed for the current frame,
+	 * This value is the bitrate in units of bits/second.
+	 * It's calculated using the number of bits consumed for the current frame,
 	 * and then multiplying by the sampling_rate, divided by points in a frame.
 	 * This value can changes frame to frame.
 	 */
 	int32_t bitRate;
 
 	/*
-	 * INPUT/OUTPUT:
-	 * In: Inform decoder how much more room is available in the output buffer in int16 samples
-	 * Out: Size of the output frame in 16-bit words.
+	 * OUTPUT:
+	 * Size of the output frames, one frame consists of 16bit-PCM samples of all channels.
 	 */
 	int32_t outputFrameSize;
 
@@ -98,10 +89,7 @@ struct opus_dec_external_s {
 
 	/*
 	 * INPUT:
-	 * The actual size of the buffer.
-	 * This variable is not used by the library, but is used by the
-	 * console test application. This parameter could be deleted
-	 * if this value was passed into these function.
+	 * The actual size (in bytes) of the buffer.
 	 */
 	int32_t outputBufferMaxLength;
 };
@@ -109,36 +97,36 @@ struct opus_dec_external_s {
 typedef struct opus_dec_external_s opus_dec_external_t;
 typedef struct opus_dec_external_s *opus_dec_external_p;
 
-/** Gets the size of internal OpusDecoder structure,which will be internally used.
+/** Gets the size of internal OpusDecoder structure, which will be internally used.
   * @retval returns The size in bytes.
   */
 uint32_t opus_decoderMemRequirements(void);
 
-/** Initializes a previously allocated decoder memory pMem, by configuration in opus_dec_external_t.
+/** Initializes decoder context memory, as per configuration in opus_dec_external_t.
   * The memory pointed to by pMem must be at least the size returned by opus_decoderMemRequirements().
-  * @param [in] pExt <tt>opus_dec_external_t *</tt>: Decoder external structure for setting user configuration, pointer to input/output buffer and so on.
-  * @param [in] pMem :Decoder internal used memory.
-  * @retval #OPUS_OK Success or @ref opus_errorcodes
+  * @param [in] pExt: Decoder external structure, which is user setting.
+  * @param [in] pMem: Decoder internal used memory, user allocated.
+  * @return OPUS_OK on success, otherwise, return error codes, see opus_errorcodes
   */
 int32_t opus_initDecoder(opus_dec_external_t *pExt, void *pMem);
 
 /** Uninitialize decoder resource.
   * Thread resource is allocated during opus_initDecoder().
-  * @param [in] pMem :Decoder internal used memory.
+  * @param [in] pMem: Decoder internal used memory.
+  * @return OPUS_OK on success, otherwise, return error codes, see opus_errorcodes
   */
 int32_t opus_uninitDecoder(void *pMem);
 
-/** Reset a previously allocated decoder memory pMem.
+/** Reset decoder context memory.
   * The memory pointed to by pMem must be at least the size returned by opus_decoderMemRequirements().
-  * @param [in] pMem :Decoder internal used memory.
+  * @param [in] pMem: Decoder internal used memory.
   */
 void opus_resetDecoder(void *pMem);
 
-/** Decode the Opus frame data to 16-bit PCM audio samples, and user can get output data from opus_enc_external_t struct.
-  * The decoded data must be a whole packet. It is composed of SYNC(4 bytes) +  frame data Length(4 bytes) + frame data.
-  * @param [in] pExt <tt>opus_dec_external_t *</tt>: Decoder external structure for setting user configuration, pointer to input/output buffer and so on.
-  * @param [in] pMem :Decoder internal used memory.
-  * @retval #OPUS_OK Success or @ref opus_errorcodes
+/** Decode one Opus frame to 16-bit PCM samples, stored in opus_enc_external_t struct.
+  * @param [in/out] pExt: Decoder external structure, input frame data and hold output data.
+  * @param [in] pMem: Decoder internal used memory.
+  * @return OPUS_OK on success, otherwise, return error codes, see opus_errorcodes
   */
 int32_t opus_frameDecode(opus_dec_external_t *pExt, void *pMem);
 

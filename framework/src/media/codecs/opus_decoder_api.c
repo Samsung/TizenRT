@@ -65,13 +65,14 @@ static void *opus_decoder_thread(void *param)
 
 		medvdbg("opus decoding...\n");
 		opus_svr->frame_size = opus_decode(opus_svr->st, \
-									opus_svr->ext->pInputBuffer + OPUS_PACKET_HEADER_LEN, \
-									opus_svr->ext->inputBufferCurrentLength - OPUS_PACKET_HEADER_LEN, \
-									opus_svr->ext->pOutputBuffer, \
-									opus_svr->ext->outputFrameSize, 0);
+								opus_svr->ext->pInputBuffer + OPUS_PACKET_HEADER_LEN, \
+								opus_svr->ext->inputBufferCurrentLength - OPUS_PACKET_HEADER_LEN, \
+								opus_svr->ext->pOutputBuffer, \
+								opus_svr->ext->outputBufferMaxLength / sizeof(signed short), \
+								0);
 		opus_svr->st = NULL;
 		opus_svr->ext = NULL;
-		medvdbg("opus decode end!\n");
+		medvdbg("opus decode end! frame_size %d\n", opus_svr->frame_size);
 
 		pthread_mutex_unlock(&opus_svr->invoke_mutex);
 
@@ -110,7 +111,7 @@ uint32_t opus_decoderMemRequirements(void)
 
 int32_t opus_initDecoder(opus_dec_external_t *pExt, void *pMem)
 {
-	OpusDecoder *st = (OpusDecoder *) pMem;
+	OpusDecoder *st = getOpusDecoder(pMem);
 	int err = opus_decoder_init(st, pExt->desiredSampleRate, pExt->desiredChannels);
 	if (err != OPUS_OK) {
 		meddbg("opus_decoder_init err %d\n", err);
@@ -225,7 +226,8 @@ int32_t opus_frameDecode(opus_dec_external_t *pExt, void *pMem)
   							pExt->pInputBuffer + OPUS_PACKET_HEADER_LEN, \
   							pExt->inputBufferCurrentLength - OPUS_PACKET_HEADER_LEN, \
   							pExt->pOutputBuffer, \
-  							pExt->outputFrameSize, 0);
+  							pExt->outputBufferMaxLength / sizeof(signed short), \
+  							0);
 #endif // CONFIG_OPUS_CODEC_PTHREAD
 
 	if (frame_size < 0) {

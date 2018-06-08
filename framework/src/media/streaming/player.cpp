@@ -612,7 +612,7 @@ static bool opus_resync(rbstream_p fp, ssize_t *inout_pos)
 	ssize_t totalBytesRead = 0;
 	ssize_t remainingBytes = 0;
 	bool reachEOS = false;
-	uint8_t *tmp = buf;
+	uint8_t *buf_ptr = buf;
 
 	do {
 		if (pos >= *inout_pos + FRAME_RESYNC_MAX_CHECK_BYTES) {
@@ -624,7 +624,7 @@ static bool opus_resync(rbstream_p fp, ssize_t *inout_pos)
 				break;
 			}
 
-			memcpy(buf, tmp, remainingBytes);
+			memcpy(buf, buf_ptr, remainingBytes);
 			bytesToRead = FRAME_RESYNC_READ_BYTES - remainingBytes;
 
 			/*
@@ -639,13 +639,13 @@ static bool opus_resync(rbstream_p fp, ssize_t *inout_pos)
 
 			reachEOS = (totalBytesRead != bytesToRead);
 			remainingBytes += totalBytesRead;
-			tmp = buf;
+			buf_ptr = buf;
 			continue;
 		}
 
-		if (!OPUS_PACKET_SYNC_VERIFY(tmp)) {
+		if (!OPUS_PACKET_SYNC_VERIFY(buf_ptr)) {
 			++pos;
-			++tmp;
+			++buf_ptr;
 			--remainingBytes;
 			continue;
 		}
@@ -653,7 +653,7 @@ static bool opus_resync(rbstream_p fp, ssize_t *inout_pos)
 		// We found what looks like a valid frame,
 		// now find its successors.
 		valid = true;
-		int frame_size = OPUS_PACKET_GETSIZE(tmp);
+		int frame_size = OPUS_PACKET_GETSIZE(buf_ptr);
 		ssize_t test_pos = pos + frame_size;
 		int j;
 		for (j = 0; j < FRAME_MATCH_REQUIRED; ++j) {
@@ -678,7 +678,7 @@ static bool opus_resync(rbstream_p fp, ssize_t *inout_pos)
 		}
 
 		++pos;
-		++tmp;
+		++buf_ptr;
 		--remainingBytes;
 	} while (!valid);
 

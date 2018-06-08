@@ -219,8 +219,7 @@ int Decoder::_configFunc(void *user_data, int audio_type, void *dec_ext)
 		ext->pInputBuffer = inputBuf;
 		ext->inputBufferMaxLength = sizeof(inputBuf);
 		ext->pOutputBuffer = outputBuf;
-		ext->outputFrameSize = sizeof(outputBuf)/sizeof(int16_t);
-		ext->outputBufferMaxLength = ext->outputFrameSize;
+		ext->outputBufferMaxLength = sizeof(outputBuf);
 		ext->desiredSampleRate = TARGET_SAMPLE_RATE;
 		ext->desiredChannels = TARGET_SOUND_TRACK;
 		return 0;
