@@ -235,6 +235,7 @@ config ARTIK_SDK
 	bool "ARTIK SDK"
 	default n
 	select SPI
+	select SPI_EXCHANGE
 	select ADC
 	select GPIO
 	select PWM
