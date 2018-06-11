@@ -19,48 +19,37 @@
  * Included Files
  ****************************************************************************/
 #include <string.h>
-#include <stdio.h>
-#include <unistd.h>
 #include <sys/types.h>
 #include <task_manager/task_manager.h>
 #include "task_manager_internal.h"
 
 /****************************************************************************
- * task_manager_unregister
+ * task_manager_broadcast
  ****************************************************************************/
-int task_manager_unregister(int handle, int timeout)
+int task_manager_broadcast(int msg)
 {
 	int status;
 	tm_request_t request_msg;
-	tm_response_t response_msg;
 
-	if (IS_INVALID_HANDLE(handle) || timeout < TM_RESPONSE_WAIT_INF) {
+	if (msg < 0) {
 		return TM_INVALID_PARAM;
 	}
 
 	memset(&request_msg, 0, sizeof(tm_request_t));
-	request_msg.cmd = TASKMGT_UNREGISTER_TASK;
-	request_msg.handle = handle;
-	request_msg.caller_pid = getpid();
-	request_msg.timeout = timeout;
-	request_msg.data = NULL;
-
-	if (timeout != TM_NO_RESPONSE) {
-		asprintf(&request_msg.q_name, "%s%d", TM_PRIVATE_MQ, request_msg.caller_pid);
+	request_msg.data = (void *)TM_ALLOC(sizeof(int));
+	if (request_msg.data != NULL) {
+		*((int *)request_msg.data) = msg;
+	} else {
+		return TM_OUT_OF_MEMORY;
 	}
+
+	/* Set the request msg */
+	request_msg.cmd = TASKMGT_BROADCAST;
+	request_msg.timeout = TM_NO_RESPONSE;
 
 	status = taskmgr_send_request(&request_msg);
 	if (status < 0) {
 		return TM_FAIL_REQ_TO_MGR;
 	}
-
-	if (timeout != TM_NO_RESPONSE) {
-		status = taskmgr_receive_response(request_msg.q_name, &response_msg, timeout);
-		TM_FREE(request_msg.q_name);
-		if (status == OK) {
-			status = response_msg.status;
-		}
-	}
-
-	return status;
+	return OK;
 }

@@ -18,54 +18,49 @@
 /****************************************************************************
  * Included Files
  ****************************************************************************/
+#include <string.h>
 #include <stdio.h>
-#include <signal.h>
-#include <stdlib.h>
+#include <unistd.h>
 #include <sys/types.h>
 #include <task_manager/task_manager.h>
 #include "task_manager_internal.h"
 
 /****************************************************************************
- * task_manager_set_handler
+ * task_manager_restart
  ****************************************************************************/
-int task_manager_set_handler(void (*func)(int signo, tm_msg_t *data))
+int task_manager_restart(int handle, int timeout)
 {
-	int ret = OK;
-	struct sigaction act;
+	int status;
+	tm_request_t request_msg;
+	tm_response_t response_msg;
 
-	if (func == NULL) {
+	if (IS_INVALID_HANDLE(handle) || timeout < TM_RESPONSE_WAIT_INF) {
 		return TM_INVALID_PARAM;
 	}
 
-	act.sa_sigaction = (_sa_sigaction_t)func;
-	act.sa_flags = 0;
-	(void)sigemptyset(&act.sa_mask);
+	memset(&request_msg, 0, sizeof(tm_request_t));
+	request_msg.cmd = TASKMGT_RESTART;
+	request_msg.handle = handle;
+	request_msg.caller_pid = getpid();
+	request_msg.timeout = timeout;
+	request_msg.data = NULL;
 
-	ret = sigaddset(&act.sa_mask, SIGTM_UNICAST);
-	if (ret < 0) {
-		return TM_FAIL_SET_HANDLER;
+	if (timeout != TM_NO_RESPONSE) {
+		asprintf(&request_msg.q_name, "%s%d", TM_PRIVATE_MQ, request_msg.caller_pid);
 	}
 
-	ret = sigaction(SIGTM_UNICAST, &act, NULL);
-	if (ret == (int)SIG_ERR) {
-		ret = TM_FAIL_SET_HANDLER;
+	status = taskmgr_send_request(&request_msg);
+	if (status < 0) {
+		return TM_FAIL_REQ_TO_MGR;
 	}
 
-	return ret;
-}
-
-/****************************************************************************
- * task_manager_set_termination_cb
- ****************************************************************************/
-int task_manager_set_termination_cb(void (*func)(void))
-{
-	if (func == NULL) {
-		return TM_INVALID_PARAM;
+	if (timeout != TM_NO_RESPONSE) {
+		status = taskmgr_receive_response(request_msg.q_name, &response_msg, timeout);
+		TM_FREE(request_msg.q_name);
+		if (status == OK) {
+			status = response_msg.status;
+		}
 	}
 
-	if (atexit((void *)func) != OK) {
-		return TM_FAIL_SET_TERMINATION_CB;
-	}
-
-	return OK;
+	return status;
 }

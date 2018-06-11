@@ -151,6 +151,16 @@ static int taskmgr_ioctl(FAR struct file *filep, int cmd, unsigned long arg)
 	case TMIOC_RESTART:
 		break;
 	case TMIOC_BROADCAST:
+		tcb = sched_gettcb((int)arg);
+		if (tcb == NULL) {
+			return ERROR;
+		}
+		ret = (int)sig_is_handler_registered(tcb, SIGTM_BROADCAST);
+		if ((bool)ret != true) {
+			ret = ERROR;
+		} else {
+			ret = OK;
+		}
 		break;
 	case TMIOC_CHECK_ALIVE:
 		tcb = sched_gettcb((int)arg);

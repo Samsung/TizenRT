@@ -309,8 +309,6 @@ int net_getpeername_main(void)
 
 	tc_net_getpeername_sock_n();
 	tc_net_getpeername_close_n();
-#ifdef AF_UNIX
-	tc_net_getpeername_unix_p();
-#endif
+
 	return 0;
 }

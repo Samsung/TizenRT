@@ -23,12 +23,10 @@
 #include <sys/types.h>
 #include <pthread.h>
 #include <assert.h>
-#include <errno.h>
 
 #include <tinyara/sched.h>
 
 #include "sched/sched.h"
-#include "pthread/pthread.h"
 
 /************************************************************************
  * Definitions
@@ -82,26 +80,19 @@
  *
  ************************************************************************/
 
-FAR void *pthread_getspecific(pthread_key_t key)
+void *pthread_getspecific(pthread_key_t key)
 {
-	FAR struct pthread_tcb_s *rtcb = (FAR struct pthread_tcb_s *)this_task();
-	struct pthread_key_s *cur_key;
+	struct pthread_tcb_s *rtcb = (FAR struct pthread_tcb_s *)this_task();
+	struct task_group_s *group = rtcb->cmn.group;
 
-	DEBUGASSERT((rtcb->cmn.flags & TCB_FLAG_TTYPE_MASK) == TCB_FLAG_TTYPE_PTHREAD);
+	DEBUGASSERT(group && (rtcb->cmn.flags & TCB_FLAG_TTYPE_MASK) == TCB_FLAG_TTYPE_PTHREAD);
 
 	/* Check key validation */
 
-	if (key < PTHREAD_KEYS_MAX) {
+	if (key < PTHREAD_KEYS_MAX && group->tg_key[key] == KEY_INUSE) {
+		/* Return the stored value. */
 
-		/* Find key data */
-
-		cur_key = (struct pthread_key_s *)pthread_key_find(rtcb, key);
-		if (cur_key != NULL) {
-
-			/* Return the stored value. */
-
-			return cur_key->data;
-		}
+		return rtcb->key_data[key];
 	}
 
 	return NULL;

@@ -46,6 +46,7 @@
 #define PING_UNIT           60	// 60 seconds is minimum value of ping.
 #define NET_TROUBLE_DELAY   5	// 5 seconds
 #define MAX_INTERVAL_EA     4	// Cloud Support 4 EA Interval class.
+#define MAX_RETRY_CNT       10
 
 #define KEEPALIVE_RESOURCE_URI "/oic/ping"
 
@@ -65,6 +66,8 @@ typedef struct things_ping_s {
 	int int_seq;				// sequence of interval
 } things_ping_s;
 
+
+pthread_mutex_t mutex_ping_list;
 static list_s *list = NULL;
 static const char INTERVAL_ARRAY[] = "inarray";
 static const char INTERVAL[] = "in";
@@ -99,6 +102,9 @@ bool things_ping_init(void)
 
 	bool res = false;
 
+	pthread_mutex_init(&mutex_ping_list, NULL);
+	pthread_mutex_lock(&mutex_ping_list);
+
 	if (list == NULL) {
 		if ((list = create_list()) == NULL) {
 			THINGS_LOG_E(TAG, "memory allocation is failed.");
@@ -109,6 +115,7 @@ bool things_ping_init(void)
 	} else {
 		res = true;
 	}
+	pthread_mutex_unlock(&mutex_ping_list);
 
 	p_ping = NULL;
 	THINGS_LOG_D(TAG, "Exit.");
@@ -121,8 +128,10 @@ bool things_ping_terminate(void)
 
 	things_ping_s *ping = NULL;
 
+	pthread_mutex_lock(&mutex_ping_list);
 	if (list) {
 		THINGS_LOG_D(TAG, "things_ping_s terminate.");
+
 		while ((ping = (things_ping_s *) list->pop(list)) != NULL) {
 			THINGS_LOG_D(TAG, "Terminate ping.(%s)", ping->addr);
 			if (cas_mask(ping, PING_ST_STARTTHREAD, true, PING_ST_INIT) == true) {
@@ -135,6 +144,9 @@ bool things_ping_terminate(void)
 		terminate_list(list);
 		list = NULL;
 	}
+
+	pthread_mutex_unlock(&mutex_ping_list);
+	pthread_mutex_destroy(&mutex_ping_list);
 
 	THINGS_LOG_D(TAG, "Exit.");
 	return true;
@@ -152,6 +164,7 @@ bool things_ping_set_mask(const char *remote_addr, uint16_t port, ping_state_e s
 		return false;
 	}
 
+	pthread_mutex_lock(&mutex_ping_list);
 	if (list == NULL) {
 		THINGS_LOG_V(TAG, "OICPing Module is not initialized.");
 		return false;
@@ -169,6 +182,7 @@ bool things_ping_set_mask(const char *remote_addr, uint16_t port, ping_state_e s
 		THINGS_LOG_D(TAG, "Found things_node_s for remote(%s).", remote_addr);
 		ping = node->item;
 	}
+	pthread_mutex_unlock(&mutex_ping_list);
 
 	if (ping == NULL) {
 		THINGS_LOG_E(TAG, "Not exist things_ping_s in remote_addr_Node.(%s)", remote_addr);
@@ -201,7 +215,7 @@ bool things_ping_unset_mask(const char *remote_addr, ping_state_e state)
 		THINGS_LOG_V(TAG, "OICPing Module is not initialized.");
 		return false;
 	}
-
+	pthread_mutex_lock(&mutex_ping_list);
 	node = list->find_by_key(list, (key_compare) is_ip_key_equal, remote_addr);
 	if (node == NULL) {
 		THINGS_LOG_D(TAG, "Not Found things_node_s for remote(%s).", remote_addr);
@@ -210,6 +224,7 @@ bool things_ping_unset_mask(const char *remote_addr, ping_state_e state)
 		THINGS_LOG_D(TAG, "Found things_node_s for remote(%s).", remote_addr);
 		ping = node->item;
 	}
+	pthread_mutex_unlock(&mutex_ping_list);
 
 	if (ping == NULL) {
 		THINGS_LOG_E(TAG, "Not exist things_ping_s in remote_addr_Node.(%s)", remote_addr);
@@ -279,11 +294,12 @@ static void *__attribute__((optimize("O0"))) thd_ping_loop(things_ping_s *ping)
 	pthread_mutex_unlock(&ping->mutex_int);
 
 	THINGS_LOG_D(TAG, "Start FindResource for /oic/ping to Cloud(%s)", ping->addr);
+	int retry_cnt = MAX_RETRY_CNT;
 	do {						// /oic/ping Resource Finding Start
 		int sleepTime = 1;
 		sleepTime = find_resource_oic_ping(ping);
 		sleep(sleepTime);
-	} while (!ping->continue_thread && ping->handle_thread);
+	} while (!ping->continue_thread && ping->handle_thread && (retry_cnt--) > 0);
 
 	p_ping = ping;
 	int sleepDelay = 10;
@@ -725,7 +741,6 @@ static void unset_mask(things_ping_s *ping, ping_state_e state)
 		return;
 	}
 
-	pthread_mutex_lock(&ping->mutex_state);
 	THINGS_LOG_D(TAG, "(B) bit_mask_state = 0x%X", ping->bit_mask_state);
 	if (state != PING_ST_INIT) {
 		ping->bit_mask_state &= (~state);
@@ -733,8 +748,6 @@ static void unset_mask(things_ping_s *ping, ping_state_e state)
 		ping->bit_mask_state = state;
 	}
 	THINGS_LOG_D(TAG, "(A) bit_mask_state = 0x%X", ping->bit_mask_state);
-	pthread_mutex_unlock(&ping->mutex_state);
-
 	THINGS_LOG_D(TAG, "Exit.");
 }
 
@@ -1013,7 +1026,6 @@ static bool things_ping_destroy_thread(things_ping_s *ping)
 		return res;
 	}
 
-	pthread_mutex_lock(&ping->mutex_thread);
 	if (ping->handle_thread) {
 		pthread_t handle = ping->handle_thread;
 		ping->handle_thread = 0;
@@ -1038,7 +1050,6 @@ static bool things_ping_destroy_thread(things_ping_s *ping)
 		unset_mask(ping, PING_ST_STARTTHREAD | PING_ST_DISCOVERY | PING_ST_REQUEST | PING_ST_INTUPDATE | PING_ST_TIMEOUT);
 		res = true;
 	}
-	pthread_mutex_unlock(&ping->mutex_thread);
 
 	THINGS_LOG_D(TAG, "Exit.(result=%d)", res);
 	return res;

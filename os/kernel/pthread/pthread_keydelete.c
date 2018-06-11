@@ -21,13 +21,12 @@
  ************************************************************************/
 
 #include <sys/types.h>
+#include <sched.h>
 #include <pthread.h>
-#include <queue.h>
 #include <errno.h>
 #include <assert.h>
 
 #include <tinyara/sched.h>
-#include <tinyara/kmalloc.h>
 
 #include "sched/sched.h"
 #include "pthread/pthread.h"
@@ -77,39 +76,36 @@
 
 int pthread_key_delete(pthread_key_t key)
 {
-	struct pthread_tcb_s *rtcb = (FAR struct pthread_tcb_s *)this_task();
-	struct task_group_s *group = rtcb->cmn.group;
-	struct pthread_key_s *cur_key;
+	struct tcb_s *rtcb = this_task();
+	struct task_group_s *group = rtcb->group;
+	struct pthread_tcb_s *ptcb;
+	struct join_s *pjoin;
 
-	DEBUGASSERT(group && (rtcb->cmn.flags & TCB_FLAG_TTYPE_MASK) == TCB_FLAG_TTYPE_PTHREAD);
+	DEBUGASSERT(group);
 
 	/* Check key validation */
 
-	if (key < PTHREAD_KEYS_MAX) {
+	if (key < PTHREAD_KEYS_MAX && group->tg_key[key] == KEY_INUSE) {
+		sched_lock();
 
-		/* Find key data */
+		/* Delete destructor */
 
-		cur_key = (struct pthread_key_s *)pthread_key_find(rtcb, key);
-		if (cur_key == NULL) {
+		group->tg_destructor[key] = NULL;
 
-			/* No Key in the list */
+		/* Delete key data from all of thread in this group */
 
-			return EINVAL;
+		for (pjoin = group->tg_joinhead; pjoin; pjoin = pjoin->next) {
+			ptcb = (struct pthread_tcb_s *)sched_gettcb((pid_t)pjoin->thread);
+			if (ptcb) {
+				ptcb->key_data[key] = NULL;
+			}
 		}
 
-		/* Remove key from list */
+		/* Mark this key is free */
 
-		sq_rem((sq_entry_t *)cur_key, &rtcb->key_list);
+		group->tg_key[key] = KEY_NOT_INUSE;
 
-		/* Free key data */
-
-		sched_kfree(cur_key);
-
-		/* Update pthread key number and group key number */
-
-		rtcb->nkeys--;
-		group->tg_nkeys--;
-
+		sched_unlock();
 		return OK;
 	}
 

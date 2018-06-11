@@ -78,6 +78,10 @@
 #define CONFIG_LIBC_FIXEDPRECISION 3
 #endif
 
+#if defined(CONFIG_LIBC_FLOATINGPOINT) && !defined(CONFIG_LIBC_FLOATPRECISION)
+#define CONFIG_LIBC_FLOATPRECISION 6
+#endif
+
 #define FLAG_SHOWPLUS            0x01
 #define FLAG_ALTFORM             0x02
 #define FLAG_HASDOT              0x04
@@ -1133,7 +1137,7 @@ int lib_vsprintf(FAR struct lib_outstream_s *obj, FAR const char *src, va_list a
 		fmt = FMT_RJUST;
 		width = 0;
 #ifdef CONFIG_LIBC_FLOATINGPOINT
-		trunc = 0;
+		trunc = CONFIG_LIBC_FLOATPRECISION;
 #endif
 #endif
 

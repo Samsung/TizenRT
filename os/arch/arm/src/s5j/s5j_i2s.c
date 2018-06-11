@@ -1673,7 +1673,6 @@ static int i2s_stop(struct i2s_dev_s *dev, i2s_ch_dir_t dir)
 			flags = irqsave();
 			bfcontainer = (struct s5j_buffer_s *)sq_remfirst(&priv->txp.done);
 			irqrestore(flags);
-			apb_free(bfcontainer->apb);
 			i2s_buf_tx_free(priv, bfcontainer);
 		}
 	}
@@ -1705,7 +1704,6 @@ static int i2s_stop(struct i2s_dev_s *dev, i2s_ch_dir_t dir)
 			flags = irqsave();
 			bfcontainer = (struct s5j_buffer_s *)sq_remfirst(&priv->rx.done);
 			irqrestore(flags);
-			apb_free(bfcontainer->apb);
 			i2s_buf_rx_free(priv, bfcontainer);
 		}
 	}

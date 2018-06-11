@@ -83,28 +83,14 @@ size_t Decoder::pushData(unsigned char *buf, size_t size)
 bool Decoder::getFrame(unsigned char *buf, size_t *size, unsigned int *sampleRate, unsigned short *channels)
 {
 #ifdef CONFIG_AUDIO_CODEC
-	// Record pcm data fetched from audio decoder.
-	// Currently, pcm_data_t.samples point to the static buffer configured in Decoder::_configFunc(),
-	// so we can keep this pcm_data_t info before next pv_player_frame_decode() called.
-	static pcm_data_t pcm = {0};
-
-	// Get input buffer max size (it's also the request size)
-	size_t max = *size;
-
-	// Check 2 bytes aligned
-	assert((max % 2) == 0);
-
-	// Reset ouput *size 0
-	*size = 0;
-
 	/*
 	 * Need to get the enough data to parse data format.
 	 */
 	if (mPlayer.audio_type == AUDIO_TYPE_UNKNOWN) {
-		mPlayer.audio_type = _get_audio_type(mPlayer.rbsp);
+		mPlayer.audio_type = pv_player_get_audio_type(&mPlayer);
 
 		if (mPlayer.audio_type) {
-			if (_init_decoder(&mPlayer) != 0) {
+			if (pv_player_init_decoder(&mPlayer, mPlayer.audio_type) != PV_SUCCESS) {
 				meddbg("Error! _init_decoder failed!\n");
 				return false;
 			}
@@ -116,52 +102,11 @@ bool Decoder::getFrame(unsigned char *buf, size_t *size, unsigned int *sampleRat
 		return false;
 	}
 
-	while (1) {
-		if (pcm.samples) {
-			#define BYTES_PER_SAMPLE sizeof(signed short)
-			// Move remained data to decoder output buffer
-			size_t nSamples = (max - *size) / BYTES_PER_SAMPLE;
-			if (pcm.length  <= nSamples) {
-				// Move all data
-				memcpy(buf + *size, pcm.samples, pcm.length * BYTES_PER_SAMPLE);
-				*size += pcm.length * BYTES_PER_SAMPLE;
-				// Clear record
-				pcm.samples = nullptr;
-				pcm.length = 0;
-
-				if (*size == max) {
-					break;
-				}
-			} else {
-				memcpy(buf + *size, pcm.samples, nSamples * BYTES_PER_SAMPLE);
-				*size = max;
-				// Update remaind data record
-				pcm.samples += nSamples;
-				pcm.length -= nSamples;
-				break;
-			}
-			#undef BYTES_PER_SAMPLE
-		}
-
-		// Decode more
-		if (!pv_player_get_frame(&mPlayer)) {
-			// Need push more data for further decoding.
-			// In this case, *size < max.
-			break;
-		}
-
-		if (pv_player_frame_decode(&mPlayer, &pcm) == PV_FAILURE) {
-			// Decoding failed
-			break;
-		}
-	}
-
+	*size = pv_player_get_frames(&mPlayer, buf, *size, sampleRate, channels);
 	if (*size == 0) {
 		return false;
 	}
 
-	*sampleRate = pcm.samplerate;
-	*channels = pcm.channels;
 	return true;
 #endif
 	return false;

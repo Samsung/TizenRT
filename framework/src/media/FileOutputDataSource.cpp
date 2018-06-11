@@ -47,64 +47,86 @@ FileOutputDataSource& FileOutputDataSource::operator=(const FileOutputDataSource
 
 bool FileOutputDataSource::open()
 {
-	if (mFp) {
-		medvdbg("file already exists\n");
-		return false;
-	}
+	if (!mFp) {
+		setAudioType(utils::getAudioTypeFromPath(mDataPath));
 
-	setAudioType(utils::getAudioTypeFromPath(mDataPath));
-
-	switch (getAudioType()) {
+		switch (getAudioType()) {
 		case AUDIO_TYPE_OPUS:
 			setEncoder(std::make_shared<Encoder>(AUDIO_TYPE_OPUS));
 			break;
 
 		default:
-			/* Don't set any decoder for unsupported formats */
+			/* Don't set any encoder for unsupported formats */
 			break;
+		}
+
+		mFp = fopen(mDataPath.c_str(), "wb");
+		if (mFp) {
+			medvdbg("file open success\n");
+			return true;
+		} else {
+			meddbg("file open failed error : %d\n", errno);
+			return false;
+		}
 	}
 
-	mFp = fopen(mDataPath.c_str(), "w");
-	if (mFp) {
-		medvdbg("file open success\n");
-		return true;
-	} else {
-		medvdbg("file open failed\n");
-		return false;
-	}
+	medvdbg("file already exists\n");
+	/** return true if mFp is not null, because it means it using now */
+	return true;
 }
 
 bool FileOutputDataSource::close()
 {
-	if (mFp && fclose(mFp) != EOF) {
-		mFp = nullptr;
-		return true;
+	if (mFp) {
+		int ret = fclose(mFp);
+		if (ret == OK) {
+			mFp = nullptr;
+			medvdbg("close success!!\n");
+			return true;
+		} else {
+			meddbg("close failed ret : %d error : %d\n", ret, errno);
+			return false;
+		}
 	}
-
+	meddbg("close failed, mFp is nullptr!!\n");
 	return false;
 }
 
 bool FileOutputDataSource::isPrepare()
 {
-	return (mFp != nullptr);
+	if (mFp == nullptr) {
+		meddbg("mFp is null\n");
+		return false;
+	}
+	return true;
 }
 
-size_t FileOutputDataSource::write(unsigned char* buf, size_t size)
+ssize_t FileOutputDataSource::write(unsigned char* buf, size_t size)
 {
-	size_t wlen = 0;
 	if (!isPrepare()) {
-		return wlen;
+		return (ssize_t)0;
+	}
+
+	if (!buf) {
+		meddbg("buf is nullptr, hence return 0\n");
+		return (ssize_t)0;
 	}
 
 	std::shared_ptr<Encoder> encoder = getEncoder();
 
+	size_t wlen = 0;
 	while (wlen < size) {
 		if (encoder) {
 			// Push data as much as possible
-			wlen += encoder->pushData(buf + wlen, size - wlen);
+			size_t pushed = encoder->pushData(buf + wlen, size - wlen);
+			if (pushed == 0) {
+				meddbg("Can not push data! Error occurred during encoding!\n");
+				break;
+			}
 
-			// Get encoded data and save to file.
-			// Actually, it's an encoding process.
+			wlen += pushed;
+
+			// Encode data and write to file.
 			while (1) {
 				// Reuse 'wlen' bytes free space in 'buf'.
 				// Encoded data size is usually smaller than origin PCM data size.
@@ -116,11 +138,16 @@ size_t FileOutputDataSource::write(unsigned char* buf, size_t size)
 
 				size_t written = fwrite(buf, sizeof(unsigned char), ret, mFp);
 				medvdbg("written size: %d\n", written);
-				assert(written == ret);
+				if (written != ret) {
+					meddbg("Can not write all!\n");
+					break;
+				}
 			}
 		} else {
-			wlen = fwrite(buf + wlen, sizeof(unsigned char), size - wlen, mFp);
+			// Write origin data to file
+			wlen += fwrite(buf + wlen, sizeof(unsigned char), size - wlen, mFp);
 			medvdbg("written size : %d\n", wlen);
+			break;
 		}
 	}
 

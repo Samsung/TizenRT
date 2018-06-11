@@ -33,12 +33,12 @@
 static int exit_flag;
 static int handle_alarm;
 
-static void action(int signo, tm_msg_t *info)
+static void action(void *info)
 {
 	int ret;
 
-	char *rec = (char *)malloc(strlen((char *)info->si_value.sival_ptr) + 1);
-	strncpy(rec, info->si_value.sival_ptr, strlen((char *)info->si_value.sival_ptr) + 1);
+	char *rec = (char *)malloc(strlen((char *)info) + 1);
+	strncpy(rec, info, strlen((char *)info) + 1);
 
 	if (strncmp(rec, "alarm_on", strlen("alarm_on") + 1) == 0) {
 		printf("\nAction Manager receives Alarm On request\n");
@@ -64,6 +64,14 @@ static void action(int signo, tm_msg_t *info)
 		} else if (ret == OK) {
 			printf("Alarm is successfully resumed\n");
 		}
+	} else if (strncmp(rec, "alarm_restart", strlen("alarm_restart") + 1) == 0) {
+		printf("\nAction Manager receives Alarm Restart request\n");
+		ret = task_manager_restart(handle_alarm, TM_RESPONSE_WAIT_INF);
+		if (ret != OK) {
+			printf("FAIL TO RESTART ALARM, %d\n", ret);
+		} else {
+			printf("Alarm is successfully restarted\n");
+		}
 	} else if (strncmp(rec, "alarm_off", strlen("alarm_off") + 1) == 0) {
 		printf("\nAction Manager receives Alarm Off request\n");
 		ret = task_manager_terminate(handle_alarm, TM_RESPONSE_WAIT_INF);
@@ -76,6 +84,24 @@ static void action(int signo, tm_msg_t *info)
 		printf("Unregistered Action\n");
 	}
 	free(rec);
+	exit_flag++;
+}
+
+static void action_broad(int info)
+{
+	switch (info) {
+	case TM_BROADCAST_WIFI_ON:
+		printf("\nWIFI is On!\n");
+		break;
+
+	case TM_BROADCAST_WIFI_OFF:
+		printf("\nWIFI is Off!\n");
+		break;
+
+	default:
+		printf("Unsubscribed Action\n");
+		break;
+	}
 	exit_flag++;
 }
 
@@ -141,15 +167,15 @@ int action_manager_main(int argc, char *argv[])
 		printf("LED Off Action is successfully started\n");
 	}
 
-	task_manager_set_handler(action);
-
+	task_manager_set_unicast_cb(action);
+	task_manager_set_broadcast_cb((TM_BROADCAST_WIFI_ON | TM_BROADCAST_WIFI_OFF), action_broad);
 	sem_post(&tm_sem);
 
-	while (exit_flag < 4) {
+	while (exit_flag < 7) {
 		usleep(10);
 	}
 
-	if (exit_flag >= 4) {
+	if (exit_flag >= 7) {
 		printf("\nUnregister Alarm Action\n");
 		ret_unregister_alarm = task_manager_unregister(handle_alarm, TM_RESPONSE_WAIT_INF);
 		if (ret_unregister_alarm < 0) {

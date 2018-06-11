@@ -142,6 +142,9 @@ $(BUILTIN_REGISTRY)$(DELIM)$(FUNCNAME).bdat: $(DEPCONFIG) Makefile
 	$(Q) $(call REGISTER,$(APPNAME),$(FUNCNAME),$(THREADEXEC),$(PRIORITY),$(STACKSIZE))
 ifeq ($(CONFIG_EXAMPLES_TESTCASE_TASK_MANAGER_UTC),y)
 	$(Q) $(call REGISTER,tm_sample,tm_sample_main,TASH_EXECMD_ASYNC,101,1024)
+	$(Q) $(call REGISTER,tm_broadcast1,tm_broadcast1_main,TASH_EXECMD_ASYNC,101,1024)
+	$(Q) $(call REGISTER,tm_broadcast2,tm_broadcast2_main,TASH_EXECMD_ASYNC,101,1024)
+	$(Q) $(call REGISTER,tm_broadcast3,tm_broadcast3_main,TASH_EXECMD_ASYNC,101,1024)
 endif
 
 context: $(BUILTIN_REGISTRY)$(DELIM)$(FUNCNAME).bdat

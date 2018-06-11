@@ -90,7 +90,7 @@ static char g_cloud_ip[IP_PORT] = { 0, };	//!< Current Connected Cloud Ipv4 addr
 static char g_cloud_port[IP_PORT] = { 0, };	//!< Current Connected Cloud Port number.
 static char g_cloud_address[MAX_CI_ADDRESS] = { 0, };	//!< Current Connected Cloud Address.
 
-static es_cloud_signup_s *signed_up_data = NULL;	
+static es_cloud_signup_s *signed_up_data = NULL;
 
 static things_server_builder_s *g_server_builder = NULL;	//!< Server-Builder pointer to get Resource List.
 static things_resource_s **g_resource_lists = NULL;	//!< Resource List pointer to be publishing resources to Cloud.
@@ -632,7 +632,7 @@ OCStackApplicationResult handle_login_cb(void *ctx, OCDoHandle handle, OCClientR
 				break;
 			case ERRCI_DEVICE_NOT_FOUND:
 				THINGS_LOG_D(TAG, "[ERRCODE]Device Not Found, Check your device ID and User ID coupling.");
-				things_ping_unset_mask(g_cloud_ip, PING_ST_ISCLOUD);
+				things_ping_unset_mask(g_cloud_ip, PING_ST_TCPCONNECT | PING_ST_ISCLOUD);
 				esm_get_network_status();	// State return
 				if (things_reset(NULL, RST_AUTO_RESET) == -1) {
 					THINGS_LOG_E(TAG, "[Error] things_reset is failed.");

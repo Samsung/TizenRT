@@ -268,6 +268,13 @@ void tc_fs_procfs_main(void)
 	struct stat st;
 
 	ret = mount(NULL, PROC_MOUNTPOINT, "procfs", 0, NULL);
+	if (ret == EEXIST) {
+		ret = umount(PROC_MOUNTPOINT);
+		TC_ASSERT_EQ("umount", ret, OK);
+
+		ret = mount(NULL, PROC_MOUNTPOINT, "procfs", 0, NULL);
+	}
+	
 	if (ret < 0) {
 		TC_ASSERT_EQ("mount", errno, EEXIST);
 	}

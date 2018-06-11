@@ -609,7 +609,7 @@ int pthread_setspecific(pthread_key_t key, FAR const void *value);
  * POSIX API (refer to : http://pubs.opengroup.org/onlinepubs/9699919799/)
  * @since TizenRT v1.0
  */
-FAR void *pthread_getspecific(pthread_key_t key);
+void *pthread_getspecific(pthread_key_t key);
 /**
  * @ingroup PTHREAD_KERNEL
  * @brief thread-specific data key deletion

@@ -101,10 +101,11 @@ public:
 	 * @details @b #include <media/FileInputDataSource.h>
 	 * @param[out] buf The buf that read the data and fill it into the buffer
 	 * @param[in] size The size that the size of the buffer
-	 * @return if there is nothing to read, it returns 0, else readead size returns
+	 * @return if there is nothing to read, it returns 0
+	 *         if error occurred, it returns -1, else readead size returns
 	 * @since TizenRT v2.0 PRE
 	 */
-	size_t read(unsigned char* buf, size_t size) override;
+	ssize_t read(unsigned char* buf, size_t size) override;
 
 	/**
 	 * @brief Gets the file data

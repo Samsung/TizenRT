@@ -178,6 +178,11 @@
 #define CHILD_FLAG_TTYPE_KERNEL  (2 << CHILD_FLAG_TTYPE_SHIFT)	/* Kernel thread */
 #define CHILD_FLAG_EXITED          (1 << 0)	/* Bit 2: The child thread has exit'ed */
 
+/* Values for flag of pthread key allocated */
+
+#define KEY_NOT_INUSE   (0)
+#define KEY_INUSE       (1)
+
 /********************************************************************************
  * Public Type Definitions
  ********************************************************************************/
@@ -302,16 +307,6 @@ struct dspace_s {
 };
 #endif
 
-/* struct pthread_key_s **********************************************************/
-#if CONFIG_NPTHREAD_KEYS > 0
-struct pthread_key_s {
-	struct pthread_key_s *flink;
-	pthread_key_t key;
-	void *data;
-	pthread_destructor_t destructor;
-};
-#endif
-
 /* struct task_group_s ***********************************************************/
 /* All threads created by pthread_create belong in the same task group (along with
  * the thread of the original task).  struct task_group_s is a shared structure
@@ -406,7 +401,8 @@ struct task_group_s {
 	FAR struct join_s *tg_joinhead;	/*   Head of a list of join data            */
 	FAR struct join_s *tg_jointail;	/*   Tail of a list of join data            */
 #if CONFIG_NPTHREAD_KEYS > 0
-	uint8_t tg_nkeys;		/* number of pthread keys allocated */
+	uint8_t tg_key[PTHREAD_KEYS_MAX];		/* flag of pthread keys allocated */
+	pthread_destructor_t tg_destructor[PTHREAD_KEYS_MAX];	/* Address list of each destructor */
 #endif
 #endif
 
@@ -661,8 +657,7 @@ struct pthread_tcb_s {
 	/* POSIX Thread Specific Data ************************************************ */
 
 #if CONFIG_NPTHREAD_KEYS > 0
-	uint8_t nkeys;
-	sq_queue_t key_list;
+	void *key_data[PTHREAD_KEYS_MAX];
 #endif
 #if defined(CONFIG_BUILD_PROTECTED)
 	struct pthread_region_s *region;

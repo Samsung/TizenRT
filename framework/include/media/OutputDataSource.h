@@ -94,7 +94,7 @@ public:
 	 * @details @b #include <media/OutputDataSource.h>
 	 * @since TizenRT v2.0 PRE
 	 */
-	virtual size_t write(unsigned char* buf, size_t size) = 0;
+	virtual ssize_t write(unsigned char* buf, size_t size) = 0;
 };
 } // namespace stream
 } // namespace media

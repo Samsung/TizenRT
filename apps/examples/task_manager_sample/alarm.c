@@ -34,8 +34,10 @@ int main(int argc, FAR char *argv[])
 int alarm_main(int argc, char *argv[])
 #endif
 {
+	int cnt = 0;
+
 	while (1) {
-		printf("Alarm is ringing!\n");
+		printf("Alarm is ringing! %d\n", cnt++);
 		sleep(1);
 	}
 

@@ -31,7 +31,7 @@ namespace stream {
 
 SocketOutputDataSource::SocketOutputDataSource(const std::string& ipAddr, const uint16_t port)
 	: OutputDataSource(), mIpAddr(ipAddr), mPort(port), mSockFd(INVALID_SOCKET)
-{	
+{
 }
 
 SocketOutputDataSource::SocketOutputDataSource(unsigned short channels, unsigned int sampleRate, int pcmFormat, const std::string& ipAddr, const uint16_t port)
@@ -39,7 +39,7 @@ SocketOutputDataSource::SocketOutputDataSource(unsigned short channels, unsigned
 {
 }
 
-SocketOutputDataSource::SocketOutputDataSource(const SocketOutputDataSource& source) : 
+SocketOutputDataSource::SocketOutputDataSource(const SocketOutputDataSource& source) :
 	OutputDataSource(source), mIpAddr(source.mIpAddr), mPort(source.mPort), mSockFd(source.mSockFd)
 {
 }
@@ -97,7 +97,7 @@ bool SocketOutputDataSource::isPrepare()
 	return (mSockFd != INVALID_SOCKET);
 }
 
-size_t SocketOutputDataSource::write(unsigned char* buf, size_t size)
+ssize_t SocketOutputDataSource::write(unsigned char* buf, size_t size)
 {
 	if (!buf) {
 		return (size_t)0;

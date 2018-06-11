@@ -60,7 +60,7 @@ CSRCS += pthread_condwait.c pthread_condsignal.c pthread_condbroadcast.c
 CSRCS += pthread_cancel.c
 ifneq ($(CONFIG_NPTHREAD_KEYS),0)
 CSRCS += pthread_keycreate.c pthread_setspecific.c pthread_getspecific.c
-CSRCS += pthread_keydelete.c pthread_keydestroy.c pthread_keyfind.c
+CSRCS += pthread_keydelete.c pthread_keydestroy.c
 endif
 CSRCS += pthread_initialize.c pthread_completejoin.c pthread_findjoininfo.c
 CSRCS += pthread_release.c pthread_setschedprio.c

@@ -21,12 +21,12 @@
  ****************************************************************************/
 
 #include <sys/types.h>
+#include <sched.h>
 #include <pthread.h>
 #include <assert.h>
 #include <errno.h>
 
 #include <tinyara/sched.h>
-#include <tinyara/kmalloc.h>
 
 #include "sched/sched.h"
 
@@ -91,65 +91,40 @@
 
 int pthread_key_create(FAR pthread_key_t *key, pthread_destructor_t destructor)
 {
-	struct pthread_tcb_s *rtcb = (struct pthread_tcb_s *)this_task();
-	struct task_group_s *group = rtcb->cmn.group;
-	struct pthread_key_s *new_key;
-	struct pthread_key_s *cur_key;
-	pthread_key_t new_key_inex = 1;
+	struct tcb_s *rtcb = this_task();
+	struct task_group_s *group = rtcb->group;
+	pthread_key_t new_key_index = 0;
 
-	DEBUGASSERT(group && (rtcb->cmn.flags & TCB_FLAG_TTYPE_MASK) == TCB_FLAG_TTYPE_PTHREAD);
+	DEBUGASSERT(group);
 
 	if (!key) {
 		return EINVAL;
 	}
 
-	/* Check if we have exceeded the system-defined number of keys. */
+	/* Find free key */
 
-	if (group->tg_nkeys == PTHREAD_KEYS_MAX) {
-		return EAGAIN;
-	}
+	sched_lock();
+	do {
+		if (group->tg_key[new_key_index] == KEY_NOT_INUSE) {
+			/* Update destructor address */
 
-	/* Allocate new key structure */
+			group->tg_destructor[new_key_index] = destructor;
 
-	new_key = (struct pthread_key_s *)kmm_malloc(sizeof(struct pthread_key_s));
-	if (!new_key) {
-		return EAGAIN;
-	}
+			/* Update key number */
 
-	/* Initialize data and Save desctructor */
+			*key = new_key_index;
 
-	new_key->data = NULL;
-	new_key->destructor = destructor;
+			/* Mark this key allocated */
 
-	if ((cur_key = (struct pthread_key_s *)sq_peek(&rtcb->key_list)) == NULL || cur_key->key != 0) {
-		new_key->key = 0;
-		sq_addfirst((sq_entry_t *)new_key, &rtcb->key_list);
-	} else {
-		while (sq_next(cur_key) && sq_next(cur_key)->key == new_key_inex) {
-			new_key_inex++;
-			cur_key = sq_next(cur_key);
+			group->tg_key[new_key_index] = KEY_INUSE;
+
+			sched_unlock();
+			return OK;
 		}
 
-		new_key->key = new_key_inex;
+		new_key_index++;
+	} while (new_key_index < PTHREAD_KEYS_MAX);
 
-		if (sq_next(cur_key) == NULL) {
-			sq_addlast((sq_entry_t *)new_key, &rtcb->key_list);
-		} else {
-			sq_addafter((sq_entry_t *)cur_key, (sq_entry_t *)new_key, &rtcb->key_list);
-		}
-	}
-
-	/* Return the key value and update key number */
-
-	*key = new_key->key;
-
-	/* Update this pthread key number */
-
-	rtcb->nkeys++;;
-
-	/* Update total key number of this group */
-
-	group->tg_nkeys++;
-
-	return OK;
+	sched_unlock();
+	return EAGAIN;
 }

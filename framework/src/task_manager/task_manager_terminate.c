@@ -44,6 +44,7 @@ int task_manager_terminate(int handle, int timeout)
 	request_msg.handle = handle;
 	request_msg.caller_pid = getpid();
 	request_msg.timeout = timeout;
+	request_msg.data = NULL;
 
 	if (timeout != TM_NO_RESPONSE) {
 		asprintf(&request_msg.q_name, "%s%d", TM_PRIVATE_MQ, request_msg.caller_pid);

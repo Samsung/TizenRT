@@ -22,6 +22,7 @@
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
+#include <sched.h>
 #include <signal.h>
 #include <mqueue.h>
 #include <fcntl.h>
@@ -46,6 +47,8 @@ static bool g_handle_hash[CONFIG_TASK_MANAGER_MAX_TASKS];
 
 #define MAX_HANDLE_MASK (CONFIG_TASK_MANAGER_MAX_TASKS - 1)
 #define HANDLE_HASH(handle)  ((handle) & MAX_HANDLE_MASK)
+#define TYPE_UNICAST     1
+#define TYPE_BROADCAST   2
 
 /****************************************************************************
  * Public Functions
@@ -239,6 +242,35 @@ static int taskmgr_terminate(int handle, int caller_pid)
 	}
 	/* task deleted well */
 	TASK_STATUS(handle) = TM_TASK_STATE_STOP;
+
+	return OK;
+}
+
+static int taskmgr_restart(int handle, int caller_pid)
+{
+	int ret;
+
+	if (IS_INVALID_HANDLE(handle) || caller_pid < 0) {
+		return TM_INVALID_PARAM;
+	}
+
+	ret = taskmgr_get_task_state(handle);
+
+	if (ret == TM_TASK_STATE_UNREGISTERED) {
+		return -ret;
+	}
+
+	if (!taskmgr_is_permitted(handle, caller_pid)) {
+		return TM_FAIL_NOT_PERMITTED;
+	}
+
+	ret = task_restart(TASK_PID(handle));
+	if (ret != OK) {
+		tmdbg("Fail to restart the task\n");
+		return TM_FAIL_RESTART;
+	}
+
+	TASK_STATUS(handle) = TM_TASK_STATE_RUNNING;
 
 	return OK;
 }
@@ -447,6 +479,77 @@ static void taskmgr_termination_callback(void)
 	mq_unlink(TM_PUBLIC_MQ);
 }
 
+static int taskmgr_check_msg_mask(int msg_mask, int handle)
+{
+	if (msg_mask & TASK_MSG_MASK(handle)) {
+		return OK;
+	}
+	return ERROR;
+}
+
+int taskmgr_get_handle_by_pid(int pid)
+{
+	int handle;
+	for (handle = 0; handle < CONFIG_TASK_MANAGER_MAX_TASKS; handle++) {
+		if (TASK_PID(handle) == pid) {
+			return handle;
+		}
+	}
+	return TM_FAIL_UNREGISTERED_TASK;
+}
+
+static void taskmgr_broadcast(int msg)
+{
+	int handle;
+	int fd;
+	int ret;
+	union sigval msg_broad;
+
+	fd = taskmgr_get_drvfd();
+	if (fd < 0) {
+		return;
+	}
+	msg_broad.sival_int = msg;
+	for (handle = 0; handle < CONFIG_TASK_MANAGER_MAX_TASKS; handle++) {
+		if (TASK_LIST_ADDR(handle) != NULL) {
+			ret = taskmgr_get_task_state(handle);
+			if (ret == TM_TASK_STATE_STOP || ret == TM_TASK_STATE_UNREGISTERED) {
+				continue;
+			}
+			ret = taskmgr_check_msg_mask(msg, handle);
+			if (ret != OK) {
+				continue;
+			}
+			ret = ioctl(fd, TMIOC_BROADCAST, TASK_PID(handle));
+			if (ret != OK) {
+				continue;
+			}
+			(void)sigqueue(TASK_PID(handle), SIGTM_BROADCAST, msg_broad);
+		}
+	}
+}
+
+static int taskmgr_set_msg_cb(int type, void *data, int pid)
+{
+	int handle;
+	handle = taskmgr_get_handle_by_pid(pid);
+	if (handle == TM_FAIL_UNREGISTERED_TASK) {
+		return handle;
+	}
+
+	if (data == NULL) {
+		return TM_FAIL_SET_CALLBACK;
+	}
+
+	if (type == TYPE_UNICAST) {
+		TASK_UNICAST_CB(handle) = (_tm_unicast_t)data;
+	} else {
+		TASK_MSG_MASK(handle) = ((tm_broadcast_t *)data)->msg_mask;
+		TASK_BROADCAST_CB(handle) = ((tm_broadcast_t *)data)->cb;
+	}
+	return OK;
+}
+
 /****************************************************************************
  * Main Function
  ****************************************************************************/
@@ -516,6 +619,7 @@ int task_manager(int argc, char *argv[])
 			break;
 
 		case TASKMGT_RESTART:
+			ret = taskmgr_restart(request_msg.handle, request_msg.caller_pid);
 			break;
 
 		case TASKMGT_PAUSE:
@@ -543,8 +647,17 @@ int task_manager(int argc, char *argv[])
 			break;
 
 		case TASKMGT_BROADCAST:
+			(void)taskmgr_broadcast(*((int *)request_msg.data));
 			break;
 
+		case TASKMGT_SET_BROADCAST_CB:
+			ret = taskmgr_set_msg_cb(TYPE_BROADCAST, request_msg.data, request_msg.caller_pid);
+			break;
+
+		case TASKMGT_SET_UNICAST_CB:
+			ret = taskmgr_set_msg_cb(TYPE_UNICAST, request_msg.data, request_msg.caller_pid);
+			break;
+			
 		default:
 			break;
 		}
@@ -554,7 +667,7 @@ int task_manager(int argc, char *argv[])
 			taskmgr_send_response((char *)request_msg.q_name, &response_msg);
 		}
 
-		if (request_msg.data != NULL) {
+		if (request_msg.data != NULL && request_msg.cmd != TASKMGT_SET_UNICAST_CB) {
 			TM_FREE(request_msg.data);
 			request_msg.data = NULL;
 		}

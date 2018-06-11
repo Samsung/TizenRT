@@ -50,53 +50,75 @@ FileInputDataSource::~FileInputDataSource()
 
 bool FileInputDataSource::open()
 {
-	if (mFp) {
-		meddbg("FileInputDataSource::open : file is already open\n");
-		return false;
+	if (!mFp) {
+		setAudioType(utils::getAudioTypeFromPath(mDataPath));
+
+		switch (getAudioType()) {
+		case AUDIO_TYPE_MP3:
+		case AUDIO_TYPE_AAC:
+		case AUDIO_TYPE_OPUS:
+			setDecoder(std::make_shared<Decoder>());
+			break;
+		case AUDIO_TYPE_FLAC:
+			/* To be supported */
+			break;
+		default:
+			/* Don't set any decoder for unsupported formats */
+			break;
+		}
+
+		mFp = fopen(mDataPath.c_str(), "rb");
+		if (mFp) {
+			medvdbg("file open success\n");
+			return true;
+		} else {
+			meddbg("file open failed error : %d\n", errno);
+			return false;
+		}
 	}
 
-	setAudioType(utils::getAudioTypeFromPath(mDataPath));
-
-	switch (getAudioType()) {
-	case AUDIO_TYPE_MP3:
-	case AUDIO_TYPE_AAC:
-	case AUDIO_TYPE_OPUS:
-		setDecoder(std::make_shared<Decoder>());
-		break;
-	case AUDIO_TYPE_FLAC:
-		/* To be supported */
-		break;
-	default:
-		/* Don't set any decoder for unsupported formats */
-		break;
-	}
-
-	mFp = fopen(mDataPath.c_str(), "rb");
-	medvdbg("FileInputDataSource : %s : %p\n", mDataPath.c_str(), mFp);
-
-	return isPrepare();
+	/** return true if mFp is not null, because it means it using now */
+	return true;
 }
 
 bool FileInputDataSource::close()
 {
-	if (mFp && fclose(mFp) != EOF) {
-		mFp = nullptr;
-		return true;
+	if (mFp) {
+		int ret = fclose(mFp);
+		if (ret == OK) {
+			mFp = nullptr;
+			medvdbg("close success!!\n");
+			return true;
+		} else {
+			meddbg("close failed ret : %d error : %d\n", ret, errno);
+			return false;
+		}
 	}
 
+	meddbg("close failed, mFp is nullptr!!\n");
 	return false;
 }
 
 bool FileInputDataSource::isPrepare()
 {
-	return (mFp != nullptr);
+	if (mFp == nullptr) {
+		meddbg("mFp is null\n");
+		return false;
+	}
+	return true;
 }
 
-size_t FileInputDataSource::read(unsigned char *buf, size_t size)
+ssize_t FileInputDataSource::read(unsigned char *buf, size_t size)
 {
 	size_t rlen = 0;
 	size_t readSize = size;
 	std::shared_ptr<Decoder> decoder = getDecoder();
+
+	if (!buf) {
+		meddbg("buf is nullptr, hence return 0\n");
+		return 0;
+	}
+
 	if (decoder) {
 		size_t frames = size;
 		rlen = getDecodeFrames(buf, &frames);
@@ -115,22 +137,26 @@ size_t FileInputDataSource::read(unsigned char *buf, size_t size)
 		}
 	}
 
-	/* If file position reaches end of file, return 0 */
-	if (feof(mFp)) {
-		medvdbg("eof!! stop!\n");
-		return rlen;
-	}
+	size_t readRet = fread(buf, sizeof(unsigned char), readSize, mFp);
+	medvdbg("read size : %d\n", readRet);
+	if (readRet == 0) {
+		/* fread returned 0 */
+		/* If file position reaches end of file, it's a normal case, we returns rlen */
+		if (feof(mFp)) {
+			medvdbg("eof!! stop!\n");
+			return rlen;
+		}
 
-	size_t ret = fread(buf, sizeof(unsigned char), readSize, mFp);
-	medvdbg("read size : %d\n", ret);
-	if (ret == 0) {
-		return rlen;
+		/* Otherwise, an error occurred, we also returns error */
+		return EOF;
 	}
 
 	if (decoder) {
-		if (!decoder->pushData(buf, ret)) {
-			return rlen;
+		if (!decoder->pushData(buf, readRet)) {
+			meddbg("decode push data failed!\n");
+			return EOF;
 		}
+
 		size_t frames = size - rlen;
 		rlen += getDecodeFrames(buf, &frames);
 		medvdbg("decode frame ; %d/%d\n", rlen, size);
