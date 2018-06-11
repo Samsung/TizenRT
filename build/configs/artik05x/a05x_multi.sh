@@ -25,22 +25,13 @@ pid=6010
 WD=$(cd `dirname $0` && pwd)
 config_path=$WD/scripts
 tool_path=$WD/../../tools/openocd
-HOST=`gcc -dumpmachine`
-
-# Openocd
-test -z ${HOST##x86_64*} && ARCH=64 || ARCH=32;
-case $OSTYPE in
-  linux*)  tool_path=$tool_path/linux$ARCH ;;
-  darwin*) tool_path=$tool_path/macos ;;
-  msys*)   tool_path=$tool_path/win$ARCH ;;
-  *)       die "Not support Host OS: $OSTYPE" ;;
-esac
-EEPROMEXE=$tool_path/ftdi_eeprom
-OPENOCDEXE=$tool_path/openocd
+HOST=$(gcc -dumpmachine)
 
 opt="init;reset halt"
 declare -a devlist=()
 declare -a seriallist=()
+
+ocd=0
 
 # ERROR
 error() {
@@ -54,46 +45,60 @@ usage() {
 Usage: `basename $0` [OPTIONS]
 Options:
     [--write]
-    [--flash]
-    [--dev[=serial]]
-    [--list[=file]]
-    [--opt[=file]]
-    [--set[="partition file"]]
+    [--dev[=<serial>]]
+    [--list[=<path/to/file>]]
+    [--options[=<path/to/file>]]
+    [--flash[="partition file"]]
+    [--erase[=<partition>]]
+    [--opt[=<option>]]
     [--exec-path[=<path>]]
     [--config-path[=<path>]]
 
 For examples:
     `basename $0` --write
     `basename $0` --write \\
-                  --set="bl1 ../bl1.bin" --set="os tinyara_head.bin" \\
-                  --flash
-    `basename $0` --list=serial.txt --set="os tinyara_head.bin" --flash
-    `basename $0` --dev=024 --exec-path=./tools --config-path=./scripts \\
-                  --set="os tinyara_head.bin" --flash
+                  --flash="bl1 ../bl1.bin" --flash="os tinyara_head.bin"
+    `basename $0` --list=serial.txt --flash="os tinyara_head.bin"
+    `basename $0` --dev=ARTIK05X-001 --exec-path=./tools --config-path=./scripts \\
+                  --flash="os tinyara_head.bin"
+    `basename $0` --dev=ARTIK05X-001 \\
+                  --opt="flash_protect off" --flash="bl1 bl1.bin" --opt="flash_protect on" \\
+                  --erase=user
 
 Options:
-   --write                  Write FTDI serial into EEPROM.
-   --flash                  Start download the each binary file to target
-                            devices.
-   --dev[=serial]           Choose the device corresponding to 'serial'.
-   --list[=file]            Read the list of target devices from input file.
-   --opt[=file]             Read the list of download options from input file.
-   --set[=partition file]   Choose the partition what do you want.
-   --exec-path[=<path..>]   Specifies the path to the executables. If you don't use this
-                            option, the default path is specified.
-                            <default-path := `dirname $OPENOCDEXE`
-   --config-path[=<path..>] Specifies the path to the openocd script files. Also, If you don't
-                            use this option, the default path is specified.
-                            <default-path := `dirname $config_path`
+   --write                    Write FTDI serial into EEPROM.
+   --dev[=serial]             Choose the device corresponding to 'serial'.
+   --list[=file]              Read the list of target devices from input file.
+   --options[=<path/to/file>] Read the list of download options from input file.
+   --flash[=partition file]   Choose the partition what do you want.
+   --erase[=partition]        Selects the partition to be erased .
+   --opt[=option]             Adds other options for openocd.
+   --exec-path[=<path..>]     Specifies the path to the executables. If you don't use this
+                              option, the default path is specified.
+                              <default-path := `dirname $OPENOCDEXE`
+   --config-path[=<path..>]   Specifies the path to the openocd script files. Also, If you don't
+                              use this option, the default path is specified.
+                              <default-path := `dirname $config_path`
 
 
 EOF
   exit $1
 }
 
+# Openocd
+test -z ${HOST##x86_64*} && ARCH=64 || ARCH=32;
+case $OSTYPE in
+  linux*)  tool_path=$tool_path/linux$ARCH ;;
+  darwin*) tool_path=$tool_path/macos ;;
+  msys*)   tool_path=$tool_path/win$ARCH ;;
+  *)       error "Not support Host OS: $OSTYPE" ;;
+esac
+EEPROMEXE=$tool_path/ftdi_eeprom
+OPENOCDEXE=$tool_path/openocd
+
 search_device() {
   echo "Device Searching.. "
-  for d in `lsusb | grep "$vid:$pid" | awk '{print $2"/"$4}'`; do
+  for d in $(lsusb | grep "$vid:$pid" | awk '{print $2"/"$4}'); do
     local node=${d/\:/}
 
     devlist=("${devlist[@]}" "$node")
@@ -105,7 +110,7 @@ write_serial() {
 
   for d in "${devlist[@]}"; do
     echo "DEVICE: $d"
-    local _dev=`echo $d | awk -F'/' '{print $2}'`
+    local _dev=$(echo $d | awk -F'/' '{print $2}')
 
     tee serial_$_dev.cfg << __EOF__
 vendor_id=0x$vid            # Vendor ID
@@ -164,7 +169,7 @@ download() {
   done
 }
 
-readlist() {
+readline_from_file() {
   test -e $1 || error "No such list file '$1'"
   exec < $1
 
@@ -173,37 +178,45 @@ readlist() {
   done
 }
 
-append_list() {
+add_device() {
   seriallist=("${seriallist[@]}" "$1")
 }
 
-append_option() {
-  local cmds=($1)
+set_opt() {
+  echo "cmd=$1, opt=$2"
+  local cmd=$1
+  local option=($2)
 
-  echo "${cmds[@]}"
-  test -e ${cmds[1]} || error "No such binary file '${cmds[1]}'"
-
-  opt="$opt;flash_write ${cmds[@]}"
+  case $cmd in
+    erase )
+      opt="$opt; flash_erase_part $option"; echo $opt;;
+    fusing )
+      test -e ${option[1]} || error "No such binary file '${option[1]}'"
+      opt="$opt; flash_write ${option[@]}";;
+    *)
+      opt="$opt; $cmd" ;;
+  esac
 }
 
 test $# -eq 0 && usage 1 1>&2
 
 while test $# -gt 0; do
   case "$1" in
-    -*=*) optarg=`echo "$1" | sed 's/[-_a-zA-Z0-9]*=//'` ;;
+    -*=*) optarg=$(echo "$1" | sed 's/[-_a-zA-Z0-9]*=//') ;;
     *)    optarg= ;;
   esac
 
   case $1 in
     --write)  search_device; write_serial ;;
-    --flash)
-      test ${#seriallist[@]} -eq 0 && \
-          error "Not exist FTDI serial list" || \
-          download ;;
-    --list=*) readlist $optarg append_list ;;
-    --opt=*)  readlist $optarg append_option ;;
-    --set=*)  append_option "$optarg" ;;
-    --dev=*)  seriallist=("${seriallist[@]}" "$optarg") ;;
+    --options=*) readline_from_file $optarg set_opt; ocd=1;;
+    --list=*)  readline_from_file $optarg add_device ;;
+
+    --flash=*) set_opt fusing "$optarg"; ocd=1 ;;
+    --erase=*) set_opt erase "$optarg"; ocd=1 ;;
+    --opt=*)   set_opt "$optarg"; ocd=1 ;;
+
+    --dev=*)   seriallist=("${seriallist[@]}" "$optarg") ;;
+
     --exec-path=*)
       EEPROMEXE=$optarg/ftdi_eeprom
       OPENOCDEXE=$optarg/openocd ;;
@@ -212,3 +225,9 @@ while test $# -gt 0; do
     esac
   shift
 done
+
+if test $ocd -eq 1; then
+  test ${#seriallist[@]} -eq 0 && \
+    error "Not exist FTDI serial list" || \
+    download
+fi
