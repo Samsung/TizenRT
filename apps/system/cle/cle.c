@@ -127,13 +127,13 @@
 #if CONFIG_SYSTEM_CLE_DEBUGLEVEL > 0
 #define cledbg(format, ...) syslog(LOG_DEBUG, EXTRA_FMT format EXTRA_ARG, ##__VA_ARGS__)
 #else
-#define cledbg(x...)
+#define cledbg(...)
 #endif
 
 #if CONFIG_SYSTEM_CLE_DEBUGLEVEL > 1
 #define clevdbg(format, ...) syslog(LOG_DEBUG, EXTRA_FMT format EXTRA_ARG, ##__VA_ARGS__)
 #else
-#define clevdbg(x...)
+#define clevdbg(...)
 #endif
 #else
 #if CONFIG_SYSTEM_CLE_DEBUGLEVEL > 0

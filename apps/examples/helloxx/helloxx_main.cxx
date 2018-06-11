@@ -87,14 +87,14 @@
 #    define cxxvdbg           vdbg
 #    define cxxllvdbg         llvdbg
 #  else
-#    define cxxvdbg(x...)
-#    define cxxllvdbg(x...)
+#    define cxxvdbg(...)
+#    define cxxllvdbg(...)
 #  endif
 #else
-#  define cxxdbg(x...)
-#  define cxxlldbg(x...)
-#  define cxxvdbg(x...)
-#  define cxxllvdbg(x...)
+#  define cxxdbg(...)
+#  define cxxlldbg(...)
+#  define cxxvdbg(...)
+#  define cxxllvdbg(...)
 #endif
 
 //***************************************************************************

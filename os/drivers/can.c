@@ -88,10 +88,10 @@
 #define canlldbg  lldbg
 #define canllvdbg llvdbg
 #else
-#define candbg(x...)
-#define canvdbg(x...)
-#define canlldbg(x...)
-#define canllvdbg(x...)
+#define candbg(...)
+#define canvdbg(...)
+#define canlldbg(...)
+#define canllvdbg(...)
 #endif
 
 /* Timing Definitions *******************************************************/

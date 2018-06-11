@@ -73,7 +73,7 @@
 #ifdef CONFIG_DEBUG_CXX
 #define cxxinfo        dbg
 #else
-#define cxxinfo(x...)
+#define cxxinfo(...)
 #endif
 
 /****************************************************************************

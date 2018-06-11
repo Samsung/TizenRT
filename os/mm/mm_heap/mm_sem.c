@@ -78,7 +78,7 @@
 #endif
 #else
 #ifdef CONFIG_CPP_HAVE_VARARGS
-#define msemdbg(x...)
+#define msemdbg(...)
 #else
 #define msemdbg (void)
 #endif
