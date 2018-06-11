@@ -16,6 +16,7 @@
  *
  ******************************************************************/
 
+#include <debug.h>
 #include "RecorderWorker.h"
 
 namespace media {
