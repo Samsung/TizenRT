@@ -58,6 +58,9 @@
 
 #include <sys/types.h>
 #include <sched.h>
+#if defined(CONFIG_SCHED_ATEXIT) || defined(CONFIG_SCHED_ONEXIT)
+#include <stdlib.h>
+#endif
 #include <errno.h>
 
 #include <tinyara/arch.h>
@@ -102,7 +105,8 @@
  * Description:
  *   This function "restarts" a task.  The task is first terminated and then
  *   reinitialized with same ID, priority, original entry point, stack size,
- *   and parameters it had when it was first started.
+ *   and parameters it had when it was first started. This function supports 
+ *   to register a function through atexit or on_exit to run at process termination.
  *
  * Inputs:
  *   pid - The task ID of the task to delete.  An ID of zero signifies the
@@ -163,6 +167,18 @@ int task_restart(pid_t pid)
 			trace_end(TTRACE_TAG_TASK);
 			return ERROR;
 		}
+
+#if defined(CONFIG_SCHED_ATEXIT) || defined(CONFIG_SCHED_ONEXIT)
+		/* If exit function(s) were registered, call them now before we do any un-
+		 * initialization.
+		 */
+
+		task_atexit((FAR struct tcb_s *)tcb);
+
+		/* Call any registered on_exit function(s) */
+
+		task_onexit((FAR struct tcb_s *)tcb, EXIT_SUCCESS);
+#endif
 
 		/* Try to recover from any bad states */
 
