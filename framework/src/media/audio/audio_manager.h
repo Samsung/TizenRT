@@ -39,10 +39,9 @@ extern "C" {
  * @brief Result types of Audio Manager APIs such as FAIL, SUCCESS, or INVALID ARGS
  */
 enum audio_manager_result_e {
-	AUDIO_MANAGER_RESAMPLE_FAIL = -9,
-	AUDIO_MANAGER_DEVICE_FAIL = -8,
-	AUDIO_MANAGER_CARD_NOT_READY = -7,
-	AUDIO_MANAGER_CARD_NOT_FOUND = -6,
+	AUDIO_MANAGER_RESAMPLE_FAIL = -8,
+	AUDIO_MANAGER_DEVICE_FAIL = -7,
+	AUDIO_MANAGER_CARD_NOT_READY = -6,
 	AUDIO_MANAGER_XRUN_STATE = -5,
 	AUDIO_MANAGER_INVALID_PARAM = -4,
 	AUDIO_MANAGER_INVALID_DEVICE_NAME = -3,
@@ -58,12 +57,36 @@ typedef enum audio_manager_result_e audio_manager_result_t;
  ****************************************************************************/
 
 /****************************************************************************
+ * Name: init_audio_stream_in
+ *
+ * Description:
+ *   Find all available audio cards for input stream and initialize the
+ *   mutexes of each card. The one of the audio cards is set as the active one.
+ *
+ * Returned Value:
+ *   On success, AUDIO_MANAGER_SUCCESS. Otherwise a negative value.
+ ****************************************************************************/
+audio_manager_result_t init_audio_stream_in(void);
+
+/****************************************************************************
+ * Name: init_audio_stream_out
+ *
+ * Description:
+ *   Find all available audio cards for output stream and initialize the
+ *   mutexes of the cards. The one of the audio cards is set as the active one.
+ *
+ * Returned Value:
+ *   On success, AUDIO_MANAGER_SUCCESS. Otherwise a negative value.
+ ****************************************************************************/
+audio_manager_result_t init_audio_stream_out(void);
+
+/****************************************************************************
  * Name: set_audio_stream_in
  *
  * Description:
- *   Find an available audio card for input stream and setup the configuration
- *   parameters and status of the card together with opening the pcm for the
- *   input stream.
+ *   Opening the pcm for the input stream and setup the status of the active
+ *   input card. If the target sample rate is out of range from the sample rates
+ *   supported by the active input audio card, a resampling flag is set.
  *
  * Input parameters:
  *   channels: number of channels
@@ -79,9 +102,9 @@ audio_manager_result_t set_audio_stream_in(uint8_t channels, uint32_t sample_rat
  * Name: set_audio_stream_out
  *
  * Description:
- *   Find an available audio card for output stream and setup the configuration
- *   parameters and status of the card together with opening the pcm for the
- *   output stream.
+ *   Opening the pcm for the output stream and setup the status of the active
+ *   output card. If the target sample rate is out of range from the sample rates
+ *   supported by the active output audio card, a resampling flag is set.
  *
  * Input parameters:
  *   channels: number of channels
@@ -99,6 +122,7 @@ audio_manager_result_t set_audio_stream_out(uint8_t channels, uint32_t sample_ra
  * Description:
  *   Read the specified number of frames from the input stream.
  *   If the input audio device have been paused, resume and proceed the reading.
+ *   If the resampling flag is set, resamplings are performed for all taret frames.
  *
  * Input parameters:
  *   data: buffer to get the frame data
@@ -115,6 +139,7 @@ int start_audio_stream_in(void *data, uint32_t frames);
  * Description:
  *   Write the specified frame data to the output stream.
  *   If the output audio device have been paused, resume and proceed the writing.
+ *   If the resampling flag is set, resamplings are performed for all taret frames.
  *
  * Input parameters:
  *   data: buffer to transfer the frame data
