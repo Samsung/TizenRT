@@ -32,7 +32,7 @@ void taskmgr_msg_cb(int signo, siginfo_t *data)
 	int handle;
 	handle = taskmgr_get_handle_by_pid(getpid());
 	if (handle == TM_FAIL_UNREGISTERED_TASK) {
-		tmdbg("Fail to start the unicast callback\n");
+		tmdbg("Fail to get handle by pid\n");
 		return;
 	}
 	if (signo == CONFIG_SIG_SIGTM_UNICAST) {
@@ -116,14 +116,15 @@ int task_manager_set_broadcast_cb(int msg_mask, void (*func)(int data))
 	request_msg.caller_pid = getpid();
 	request_msg.timeout = TM_NO_RESPONSE;
 	request_msg.data = (void *)TM_ALLOC(sizeof(tm_broadcast_t));
-	if (request_msg.data != NULL) {
-		((tm_broadcast_t *)request_msg.data)->msg_mask = msg_mask;
-		((tm_broadcast_t *)request_msg.data)->cb = (_tm_broadcast_t)func;
-	} else {
+	if (request_msg.data == NULL) {
 		return TM_OUT_OF_MEMORY;
 	}
+	((tm_broadcast_t *)request_msg.data)->msg_mask = msg_mask;
+	((tm_broadcast_t *)request_msg.data)->cb = (_tm_broadcast_t)func;
+
 	ret = taskmgr_send_request(&request_msg);
 	if (ret < 0) {
+		TM_FREE(request_msg.data);
 		return TM_FAIL_REQ_TO_MGR;
 	}
 	return OK;

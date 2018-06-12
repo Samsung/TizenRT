@@ -532,13 +532,14 @@ static void taskmgr_broadcast(int msg)
 static int taskmgr_set_msg_cb(int type, void *data, int pid)
 {
 	int handle;
+
+	if (data == NULL) {
+		return TM_INVALID_PARAM;
+	}
+
 	handle = taskmgr_get_handle_by_pid(pid);
 	if (handle == TM_FAIL_UNREGISTERED_TASK) {
 		return handle;
-	}
-
-	if (data == NULL) {
-		return TM_FAIL_SET_CALLBACK;
 	}
 
 	if (type == TYPE_UNICAST) {

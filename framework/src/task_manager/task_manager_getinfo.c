@@ -50,9 +50,14 @@ task_info_list_t *task_manager_getinfo_with_name(char *name, int timeout)
 	request_msg.timeout = timeout;
 
 	asprintf(&request_msg.q_name, "%s%d", TM_PRIVATE_MQ, getpid());
+	if (request_msg.q_name == NULL) {
+		TM_FREE(request_msg.data);
+		return NULL;
+	}
 
 	status = taskmgr_send_request(&request_msg);
 	if (status < 0) {
+		TM_FREE(request_msg.data);
 		TM_FREE(request_msg.q_name);
 		return NULL;
 	}
@@ -88,6 +93,9 @@ task_info_t *task_manager_getinfo_with_handle(int handle, int timeout)
 	request_msg.timeout = timeout;
 
 	asprintf(&request_msg.q_name, "%s%d", TM_PRIVATE_MQ, getpid());
+	if (request_msg.q_name == NULL) {
+		return NULL;
+	}
 
 	status = taskmgr_send_request(&request_msg);
 	if (status < 0) {
@@ -126,6 +134,9 @@ task_info_list_t *task_manager_getinfo_with_group(int group, int timeout)
 	request_msg.timeout = timeout;
 
 	asprintf(&request_msg.q_name, "%s%d", TM_PRIVATE_MQ, getpid());
+	if (request_msg.q_name == NULL) {
+		return NULL;
+	}
 
 	status = taskmgr_send_request(&request_msg);
 	if (status < 0) {

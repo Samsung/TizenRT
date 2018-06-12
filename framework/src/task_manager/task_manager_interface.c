@@ -133,5 +133,5 @@ int taskmgr_receive_response(char *q_name, tm_response_t *response_msg, int time
 		return TM_FAIL_RESPONSE;
 	}
 
-	return OK;
+	return response_msg->status;
 }
