@@ -602,59 +602,59 @@ int task_manager(int argc, char *argv[])
 
 		tmvdbg("Recevied Request msg : cmd = %d\n", request_msg.cmd);
 		switch (request_msg.cmd) {
-		case TASKMGT_REGISTER_TASK:
+		case TASKMGR_REGISTER:
 			ret = taskmgr_register(request_msg.data, request_msg.handle, request_msg.caller_pid);
 			break;
 
-		case TASKMGT_UNREGISTER_TASK:
+		case TASKMGR_UNREGISTER:
 			ret = taskmgr_unregister(request_msg.handle);
 			break;
 
-		case TASKMGT_START:
+		case TASKMGR_START:
 			ret = taskmgr_start(request_msg.handle, request_msg.caller_pid);
 			break;
 
-		case TASKMGT_TERMINATE:
+		case TASKMGR_TERMINATE:
 			ret = taskmgr_terminate(request_msg.handle, request_msg.caller_pid);
 			break;
 
-		case TASKMGT_RESTART:
+		case TASKMGR_RESTART:
 			ret = taskmgr_restart(request_msg.handle, request_msg.caller_pid);
 			break;
 
-		case TASKMGT_PAUSE:
+		case TASKMGR_PAUSE:
 			ret = taskmgr_pause(request_msg.handle, request_msg.caller_pid);
 			break;
 
-		case TASKMGT_RESUME:
+		case TASKMGR_RESUME:
 			ret = taskmgr_resume(request_msg.handle, request_msg.caller_pid);
 			break;
 
-		case TASKMGT_SCAN_NAME:
+		case TASKMGR_SCAN_NAME:
 			ret = taskmgr_getinfo_with_name(request_msg.data, &response_msg);
 			break;
 
-		case TASKMGT_SCAN_GROUP:
+		case TASKMGR_SCAN_GROUP:
 			ret = taskmgr_getinfo_with_group(request_msg.handle, &response_msg);
 			break;
 
-		case TASKMGT_SCAN_HANDLE:
+		case TASKMGR_SCAN_HANDLE:
 			ret = taskmgr_getinfo_with_handle(request_msg.handle, &response_msg);
 			break;
 
-		case TASKMGT_UNICAST:
+		case TASKMGR_UNICAST:
 			ret = taskmgr_unicast(request_msg.handle, request_msg.caller_pid, request_msg.data);
 			break;
 
-		case TASKMGT_BROADCAST:
+		case TASKMGR_BROADCAST:
 			(void)taskmgr_broadcast(*((int *)request_msg.data));
 			break;
 
-		case TASKMGT_SET_BROADCAST_CB:
+		case TASKMGR_SET_BROADCAST_CB:
 			ret = taskmgr_set_msg_cb(TYPE_BROADCAST, request_msg.data, request_msg.caller_pid);
 			break;
 
-		case TASKMGT_SET_UNICAST_CB:
+		case TASKMGR_SET_UNICAST_CB:
 			ret = taskmgr_set_msg_cb(TYPE_UNICAST, request_msg.data, request_msg.caller_pid);
 			break;
 			
@@ -667,7 +667,7 @@ int task_manager(int argc, char *argv[])
 			taskmgr_send_response((char *)request_msg.q_name, &response_msg);
 		}
 
-		if (request_msg.data != NULL && request_msg.cmd != TASKMGT_SET_UNICAST_CB) {
+		if (request_msg.data != NULL && request_msg.cmd != TASKMGR_SET_UNICAST_CB) {
 			TM_FREE(request_msg.data);
 			request_msg.data = NULL;
 		}

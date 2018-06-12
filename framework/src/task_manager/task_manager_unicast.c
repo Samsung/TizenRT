@@ -53,7 +53,7 @@ int task_manager_unicast(int handle, void *msg, int msg_size, int timeout)
 	}
 
 	/* Set the request msg */
-	request_msg.cmd = TASKMGT_UNICAST;
+	request_msg.cmd = TASKMGR_UNICAST;
 	request_msg.handle = handle;
 	request_msg.caller_pid = getpid();
 	request_msg.timeout = timeout;

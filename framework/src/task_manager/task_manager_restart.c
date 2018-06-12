@@ -39,7 +39,7 @@ int task_manager_restart(int handle, int timeout)
 	}
 
 	memset(&request_msg, 0, sizeof(tm_request_t));
-	request_msg.cmd = TASKMGT_RESTART;
+	request_msg.cmd = TASKMGR_RESTART;
 	request_msg.handle = handle;
 	request_msg.caller_pid = getpid();
 	request_msg.timeout = timeout;

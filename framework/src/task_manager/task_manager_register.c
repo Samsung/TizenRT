@@ -39,7 +39,7 @@ int task_manager_register(char *name, int permission, int timeout)
 	}
 
 	memset(&request_msg, 0, sizeof(tm_request_t));
-	request_msg.cmd = TASKMGT_REGISTER_TASK;
+	request_msg.cmd = TASKMGR_REGISTER;
 	request_msg.caller_pid = getpid();
 	request_msg.handle = permission;
 	request_msg.data = (void *)TM_ALLOC(strlen(name) + 1);
