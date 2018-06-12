@@ -711,8 +711,10 @@ static void tc_mqueue_mq_notify(void)
 	TC_ASSERT_EQ_ERROR_CLEANUP("mq_notify", mq_notify(mqdes, NULL), OK, get_errno(), goto cleanup);
 
 	mq_close(mqdes);
+	mq_unlink("noti_queue");
 
 	TC_SUCCESS_RESULT();
+	return;
 cleanup:
 	mq_close(mqdes);
 	mq_unlink("noti_queue");
@@ -729,6 +731,7 @@ static void tc_mqueue_mq_timedsend_timedreceive(void)
 	ret_chk = timedreceive_test();
 	TC_ASSERT_EQ("timedreceive_test", ret_chk, OK);
 
+	mq_unlink("t_mqueue");
 	TC_SUCCESS_RESULT();
 }
 
@@ -740,14 +743,14 @@ static void tc_mqueue_mq_unlink(void)
 	mqdes = mq_open("mqunlink", O_CREAT | O_RDWR, 0666, 0);
 	TC_ASSERT_NEQ("mq_open", mqdes, (mqd_t)-1);
 
-	ret = mq_unlink("mqunlink");
-	TC_ASSERT_EQ_ERROR_CLEANUP("mq_unlink", ret, OK, get_errno(), mq_close(mqdes));
-
-	ret = mq_unlink("mqunlink");
-	TC_ASSERT_EQ_CLEANUP("mq_unlink", ret, ERROR, mq_close(mqdes));
-	TC_ASSERT_EQ_CLEANUP("mq_unlink", errno, ENOENT, mq_close(mqdes));
-
 	mq_close(mqdes);
+
+	ret = mq_unlink("mqunlink");
+	TC_ASSERT_EQ("mq_unlink", ret, OK);
+
+	ret = mq_unlink("mqunlink");
+	TC_ASSERT_EQ("mq_unlink", ret, ERROR);
+	TC_ASSERT_EQ("mq_unlink", errno, ENOENT);
 
 	TC_SUCCESS_RESULT();
 }
