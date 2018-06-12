@@ -167,13 +167,13 @@ Once LOGM is approved, each module should have its own index
 #define lldbg(format, ...) \
 	lowsyslog(LOG_ERR, EXTRA_FMT format EXTRA_ARG, ##__VA_ARGS__)
 #else
-#define lldbg(x...)
+#define lldbg(...)
 #endif
 #endif
 
 #else
-#define dbg(x...)
-#define lldbg(x...)
+#define dbg(...)
+#define lldbg(...)
 #endif
 
 #ifdef CONFIG_DEBUG_WARN
@@ -202,13 +202,13 @@ Once LOGM is approved, each module should have its own index
 #define llwdbg(format, ...) \
 	lowsyslog(LOG_WARNING, EXTRA_FMT format EXTRA_ARG, ##__VA_ARGS__)
 #else
-#define llwdbg(x...)
+#define llwdbg(...)
 #endif
 #endif
 
 #else
-#define wdbg(x...)
-#define llwdbg(x...)
+#define wdbg(...)
+#define llwdbg(...)
 #endif
 
 #ifdef CONFIG_DEBUG_VERBOSE
@@ -238,23 +238,23 @@ Once LOGM is approved, each module should have its own index
 	lowsyslog(LOG_INFO, EXTRA_FMT format EXTRA_ARG, ##__VA_ARGS__)
 
 #else
-#define llvdbg(x...)
+#define llvdbg(...)
 #endif
 #endif
 
 #else
-#define vdbg(x...)
-#define llvdbg(x...)
+#define vdbg(...)
+#define llvdbg(...)
 #endif
 
 #else							/* CONFIG_DEBUG */
 
-#define dbg(x...)
-#define lldbg(x...)
-#define wdbg(x...)
-#define llwdbg(x...)
-#define vdbg(x...)
-#define llvdbg(x...)
+#define dbg(...)
+#define lldbg(...)
+#define wdbg(...)
+#define llwdbg(...)
+#define vdbg(...)
+#define llvdbg(...)
 
 #endif							/* CONFIG_DEBUG */
 
@@ -264,184 +264,184 @@ Once LOGM is approved, each module should have its own index
 #define mdbg(format, ...)    dbg(format, ##__VA_ARGS__)
 #define mlldbg(format, ...)  lldbg(format, ##__VA_ARGS__)
 #else
-#define mdbg(x...)
-#define mlldbg(x...)
+#define mdbg(...)
+#define mlldbg(...)
 #endif
 
 #ifdef CONFIG_DEBUG_MM_WARN
 #define mwdbg(format, ...)    wdbg(format, ##__VA_ARGS__)
 #define mllwdbg(format, ...)  llwdbg(format, ##__VA_ARGS__)
 #else
-#define mwdbg(x...)
-#define mllwdbg(x...)
+#define mwdbg(...)
+#define mllwdbg(...)
 #endif
 
 #ifdef CONFIG_DEBUG_MM_INFO
 #define mvdbg(format, ...)   vdbg(format, ##__VA_ARGS__)
 #define mllvdbg(format, ...) llvdbg(format, ##__VA_ARGS__)
 #else
-#define mvdbg(x...)
-#define mllvdbg(x...)
+#define mvdbg(...)
+#define mllvdbg(...)
 #endif
 
 #ifdef CONFIG_DEBUG_SCHED_ERROR
 #define sdbg(format, ...)    dbg(format, ##__VA_ARGS__)
 #define slldbg(format, ...)  lldbg(format, ##__VA_ARGS__)
 #else
-#define sdbg(x...)
-#define slldbg(x...)
+#define sdbg(...)
+#define slldbg(...)
 #endif
 
 #ifdef CONFIG_DEBUG_SCHED_WARN
 #define swdbg(format, ...)    wdbg(format, ##__VA_ARGS__)
 #define sllwdbg(format, ...)  llwdbg(format, ##__VA_ARGS__)
 #else
-#define swdbg(x...)
-#define sllwdbg(x...)
+#define swdbg(...)
+#define sllwdbg(...)
 #endif
 
 #ifdef CONFIG_DEBUG_SCHED_INFO
 #define svdbg(format, ...)   vdbg(format, ##__VA_ARGS__)
 #define sllvdbg(format, ...) llvdbg(format, ##__VA_ARGS__)
 #else
-#define svdbg(x...)
-#define sllvdbg(x...)
+#define svdbg(...)
+#define sllvdbg(...)
 #endif
 
 #ifdef CONFIG_DEBUG_PM_ERROR
 #define pmdbg(format, ...)    dbg(format, ##__VA_ARGS__)
 #define pmlldbg(format, ...)  lldbg(format, ##__VA_ARGS__)
 #else
-#define pmdbg(x...)
-#define pmlldbg(x...)
+#define pmdbg(...)
+#define pmlldbg(...)
 #endif
 
 #ifdef CONFIG_DEBUG_PM_WARN
 #define pmwdbg(format, ...)    wdbg(format, ##__VA_ARGS__)
 #define pmllwdbg(format, ...)  llwdbg(format, ##__VA_ARGS__)
 #else
-#define pmwdbg(x...)
-#define pmllwdbg(x...)
+#define pmwdbg(...)
+#define pmllwdbg(...)
 #endif
 
 #ifdef CONFIG_DEBUG_PM_INFO
 #define pmvdbg(format, ...)   vdbg(format, ##__VA_ARGS__)
 #define pmllvdbg(format, ...) llvdbg(format, ##__VA_ARGS__)
 #else
-#define pmvdbg(x...)
-#define pmllvdbg(x...)
+#define pmvdbg(...)
+#define pmllvdbg(...)
 #endif
 
 #ifdef CONFIG_DEBUG_PAGING_ERROR
 #define pgdbg(format, ...)    dbg(format, ##__VA_ARGS__)
 #define pglldbg(format, ...)  lldbg(format, ##__VA_ARGS__)
 #else
-#define pgdbg(x...)
-#define pglldbg(x...)
+#define pgdbg(...)
+#define pglldbg(...)
 #endif
 
 #ifdef CONFIG_DEBUG_PAGING_WARN
 #define pgwdbg(format, ...)    wdbg(format, ##__VA_ARGS__)
 #define pgllwdbg(format, ...)  llwdbg(format, ##__VA_ARGS__)
 #else
-#define pgwdbg(x...)
-#define pgllwdbg(x...)
+#define pgwdbg(...)
+#define pgllwdbg(...)
 #endif
 
 #ifdef CONFIG_DEBUG_PAGING_INFO
 #define pgvdbg(format, ...)   vdbg(format, ##__VA_ARGS__)
 #define pgllvdbg(format, ...) llvdbg(format, ##__VA_ARGS__)
 #else
-#define pgvdbg(x...)
-#define pgllvdbg(x...)
+#define pgvdbg(...)
+#define pgllvdbg(...)
 #endif
 
 #ifdef CONFIG_DEBUG_DMA_ERROR
 #define dmadbg(format, ...)    dbg(format, ##__VA_ARGS__)
 #define dmalldbg(format, ...)  lldbg(format, ##__VA_ARGS__)
 #else
-#define dmadbg(x...)
-#define dmalldbg(x...)
+#define dmadbg(...)
+#define dmalldbg(...)
 #endif
 
 #ifdef CONFIG_DEBUG_DMA_WARN
 #define dmawdbg(format, ...)    wdbg(format, ##__VA_ARGS__)
 #define dmallwdbg(format, ...)  llwdbg(format, ##__VA_ARGS__)
 #else
-#define dmawdbg(x...)
-#define dmallwdbg(x...)
+#define dmawdbg(...)
+#define dmallwdbg(...)
 #endif
 
 #ifdef CONFIG_DEBUG_DMA_INFO
 #define dmavdbg(format, ...)   vdbg(format, ##__VA_ARGS__)
 #define dmallvdbg(format, ...) llvdbg(format, ##__VA_ARGS__)
 #else
-#define dmavdbg(x...)
-#define dmallvdbg(x...)
+#define dmavdbg(...)
+#define dmallvdbg(...)
 #endif
 
 #ifdef CONFIG_DEBUG_NET_ERROR
 #define ndbg(format, ...)    dbg(format, ##__VA_ARGS__)
 #define nlldbg(format, ...)  lldbg(format, ##__VA_ARGS__)
 #else
-#define ndbg(x...)
-#define nlldbg(x...)
+#define ndbg(...)
+#define nlldbg(...)
 #endif
 
 #ifdef CONFIG_DEBUG_NET_WARN
 #define nwdbg(format, ...)    wdbg(format, ##__VA_ARGS__)
 #define nllwdbg(format, ...)  llwdbg(format, ##__VA_ARGS__)
 #else
-#define nwdbg(x...)
-#define nllwdbg(x...)
+#define nwdbg(...)
+#define nllwdbg(...)
 #endif
 
 #ifdef CONFIG_DEBUG_NET_INFO
 #define nvdbg(format, ...)   vdbg(format, ##__VA_ARGS__)
 #define nllvdbg(format, ...) llvdbg(format, ##__VA_ARGS__)
 #else
-#define nvdbg(x...)
-#define nllvdbg(x...)
+#define nvdbg(...)
+#define nllvdbg(...)
 #endif
 
 #ifdef CONFIG_DEBUG_USB_ERROR
 #define udbg(format, ...)    dbg(format, ##__VA_ARGS__)
 #define ulldbg(format, ...)  lldbg(format, ##__VA_ARGS__)
 #else
-#define udbg(x...)
-#define ulldbg(x...)
+#define udbg(...)
+#define ulldbg(...)
 #endif
 
 #ifdef CONFIG_DEBUG_USB_WARN
 #define uwdbg(format, ...)    wdbg(format, ##__VA_ARGS__)
 #define ullwdbg(format, ...)  llwdbg(format, ##__VA_ARGS__)
 #else
-#define uwdbg(x...)
-#define ullwdbg(x...)
+#define uwdbg(...)
+#define ullwdbg(...)
 #endif
 
 #ifdef CONFIG_DEBUG_USB_INFO
 #define uvdbg(format, ...)   vdbg(format, ##__VA_ARGS__)
 #define ullvdbg(format, ...) llvdbg(format, ##__VA_ARGS__)
 #else
-#define uvdbg(x...)
-#define ullvdbg(x...)
+#define uvdbg(...)
+#define ullvdbg(...)
 #endif
 
 #ifdef CONFIG_DEBUG_FS_ERROR
 #define fdbg(format, ...)    dbg(format, ##__VA_ARGS__)
 #define flldbg(format, ...)  lldbg(format, ##__VA_ARGS__)
 #else
-#define fdbg(x...)
-#define flldbg(x...)
+#define fdbg(...)
+#define flldbg(...)
 #endif
 
 #ifdef CONFIG_DEBUG_FS_WARN
 #define fwdbg(format, ...)    wdbg(format, ##__VA_ARGS__)
 #define fllwdbg(format, ...)  llwdbg(format, ##__VA_ARGS__)
 #else
-#define fwdbg(x...)
-#define fllwdbg(x...)
+#define fwdbg(...)
+#define fllwdbg(...)
 #endif
 
 #ifdef CONFIG_DEBUG_FS_INFO
@@ -449,225 +449,225 @@ Once LOGM is approved, each module should have its own index
 #define fsdbg(format, ...)   dbg_noarg(format, ##__VA_ARGS__)
 #define fllvdbg(format, ...) llvdbg(format, ##__VA_ARGS__)
 #else
-#define fvdbg(x...)
+#define fvdbg(...)
 #define fsdbg(format, ...)
-#define fllvdbg(x...)
+#define fllvdbg(...)
 #endif
 
 #ifdef CONFIG_DEBUG_DM_ERROR
 #define dmdbg(format, ...)    dbg(format, ##__VA_ARGS__)
 #define dmlldbg(format, ...)  lldbg(format, ##__VA_ARGS__)
 #else
-#define dmdbg(x...)
-#define dmlldbg(x...)
+#define dmdbg(...)
+#define dmlldbg(...)
 #endif
 
 #ifdef CONFIG_DEBUG_DM_WARN
 #define dmwdbg(format, ...)    wdbg(format, ##__VA_ARGS__)
 #define dmllwdbg(format, ...)  llwdbg(format, ##__VA_ARGS__)
 #else
-#define dmwdbg(x...)
-#define dmllwdbg(x...)
+#define dmwdbg(...)
+#define dmllwdbg(...)
 #endif
 
 #ifdef  CONFIG_DEBUG_DM_INFO
 #define dmvdbg(format, ...)   vdbg(format, ##__VA_ARGS__)
 #define dmllvdbg(format, ...) llvdbg(format, ##__VA_ARGS__)
 #else
-#define dmvdbg(x...)
-#define dmllvdbg(x...)
+#define dmvdbg(...)
+#define dmllvdbg(...)
 #endif
 
 #ifdef CONFIG_DEBUG_INPUT_ERROR
 #define idbg(format, ...)    dbg(format, ##__VA_ARGS__)
 #define illdbg(format, ...)  lldbg(format, ##__VA_ARGS__)
 #else
-#define idbg(x...)
-#define illdbg(x...)
+#define idbg(...)
+#define illdbg(...)
 #endif
 
 #ifdef CONFIG_DEBUG_INPUT_WARN
 #define iwdbg(format, ...)    wdbg(format, ##__VA_ARGS__)
 #define illwdbg(format, ...)  llwdbg(format, ##__VA_ARGS__)
 #else
-#define iwdbg(x...)
-#define illwdbg(x...)
+#define iwdbg(...)
+#define illwdbg(...)
 #endif
 
 #ifdef CONFIG_DEBUG_INPUT_INFO
 #define ivdbg(format, ...)   vdbg(format, ##__VA_ARGS__)
 #define illvdbg(format, ...) llvdbg(format, ##__VA_ARGS__)
 #else
-#define ivdbg(x...)
-#define illvdbg(x...)
+#define ivdbg(...)
+#define illvdbg(...)
 #endif
 
 #ifdef CONFIG_DEBUG_SENSORS_ERROR
 #define sndbg(format, ...)    dbg(format, ##__VA_ARGS__)
 #define snlldbg(format, ...)  lldbg(format, ##__VA_ARGS__)
 #else
-#define sndbg(x...)
-#define snlldbg(x...)
+#define sndbg(...)
+#define snlldbg(...)
 #endif
 
 #ifdef CONFIG_DEBUG_SENSORS_WARN
 #define snwdbg(format, ...)    wdbg(format, ##__VA_ARGS__)
 #define snllwdbg(format, ...)  llwdbg(format, ##__VA_ARGS__)
 #else
-#define snwdbg(x...)
-#define snllwdbg(x...)
+#define snwdbg(...)
+#define snllwdbg(...)
 #endif
 
 #ifdef CONFIG_DEBUG_SENSORS_INFO
 #define snvdbg(format, ...)   vdbg(format, ##__VA_ARGS__)
 #define snllvdbg(format, ...) llvdbg(format, ##__VA_ARGS__)
 #else
-#define snvdbg(x...)
-#define snllvdbg(x...)
+#define snvdbg(...)
+#define snllvdbg(...)
 #endif
 
 #ifdef CONFIG_DEBUG_ANALOG_ERROR
 #define adbg(format, ...)    dbg(format, ##__VA_ARGS__)
 #define alldbg(format, ...)  lldbg(format, ##__VA_ARGS__)
 #else
-#define adbg(x...)
-#define alldbg(x...)
+#define adbg(...)
+#define alldbg(...)
 #endif
 
 #ifdef CONFIG_DEBUG_ANALOG_WARN
 #define awdbg(format, ...)    wdbg(format, ##__VA_ARGS__)
 #define allwdbg(format, ...)  llwdbg(format, ##__VA_ARGS__)
 #else
-#define awdbg(x...)
-#define allwdbg(x...)
+#define awdbg(...)
+#define allwdbg(...)
 #endif
 
 #ifdef CONFIG_DEBUG_ANALOG_INFO
 #define avdbg(format, ...)   vdbg(format, ##__VA_ARGS__)
 #define allvdbg(format, ...) llvdbg(format, ##__VA_ARGS__)
 #else
-#define avdbg(x...)
-#define allvdbg(x...)
+#define avdbg(...)
+#define allvdbg(...)
 #endif
 
 #ifdef CONFIG_DEBUG_GRAPHICS_ERROR
 #define gdbg(format, ...)    dbg(format, ##__VA_ARGS__)
 #define glldbg(format, ...)  lldbg(format, ##__VA_ARGS__)
 #else
-#define gdbg(x...)
-#define glldbg(x...)
+#define gdbg(...)
+#define glldbg(...)
 #endif
 
 #ifdef CONFIG_DEBUG_GRAPHICS_WARN
 #define gwdbg(format, ...)    wdbg(format, ##__VA_ARGS__)
 #define gllwdbg(format, ...)  llwdbg(format, ##__VA_ARGS__)
 #else
-#define gwdbg(x...)
-#define gllwdbg(x...)
+#define gwdbg(...)
+#define gllwdbg(...)
 #endif
 
 #ifdef CONFIG_DEBUG_GRAPHICS_INFO
 #define gvdbg(format, ...)   vdbg(format, ##__VA_ARGS__)
 #define gllvdbg(format, ...) llvdbg(format, ##__VA_ARGS__)
 #else
-#define gvdbg(x...)
-#define gllvdbg(x...)
+#define gvdbg(...)
+#define gllvdbg(...)
 #endif
 
 #ifdef CONFIG_DEBUG_LIB_ERROR
 #define ldbg(format, ...)    dbg(format, ##__VA_ARGS__)
 #define llldbg(format, ...)  lldbg(format, ##__VA_ARGS__)
 #else
-#define ldbg(x...)
-#define llldbg(x...)
+#define ldbg(...)
+#define llldbg(...)
 #endif
 
 #ifdef CONFIG_DEBUG_LIB_WARN
 #define lwdbg(format, ...)    wdbg(format, ##__VA_ARGS__)
 #define lllwdbg(format, ...)  llwdbg(format, ##__VA_ARGS__)
 #else
-#define lwdbg(x...)
-#define lllwdbg(x...)
+#define lwdbg(...)
+#define lllwdbg(...)
 #endif
 
 #ifdef CONFIG_DEBUG_LIB_INFO
 #define lvdbg(format, ...)   vdbg(format, ##__VA_ARGS__)
 #define lllvdbg(format, ...) llvdbg(format, ##__VA_ARGS__)
 #else
-#define lvdbg(x...)
-#define lllvdbg(x...)
+#define lvdbg(...)
+#define lllvdbg(...)
 #endif
 
 #ifdef CONFIG_DEBUG_AUDIO_ERROR
 #define auddbg(format, ...)    dbg(format, ##__VA_ARGS__)
 #define audlldbg(format, ...)  lldbg(format, ##__VA_ARGS__)
 #else
-#define auddbg(x...)
-#define audlldbg(x...)
+#define auddbg(...)
+#define audlldbg(...)
 #endif
 
 #ifdef CONFIG_DEBUG_AUDIO_WARN
 #define audwdbg(format, ...)    wdbg(format, ##__VA_ARGS__)
 #define audllwdbg(format, ...)  llwdbg(format, ##__VA_ARGS__)
 #else
-#define audwdbg(x...)
-#define audllwdbg(x...)
+#define audwdbg(...)
+#define audllwdbg(...)
 #endif
 
 #ifdef CONFIG_DEBUG_AUDIO_INFO
 #define audvdbg(format, ...)   vdbg(format, ##__VA_ARGS__)
 #define audllvdbg(format, ...) llvdbg(format, ##__VA_ARGS__)
 #else
-#define audvdbg(x...)
-#define audllvdbg(x...)
+#define audvdbg(...)
+#define audllvdbg(...)
 #endif
 
 #ifdef CONFIG_DEBUG_I2C_ERROR
 #define i2cerr(format, ...)    dbg(format, ##__VA_ARGS__)
 #define i2clldbg(format, ...)  lldbg(format, ##__VA_ARGS__)
 #else
-#define i2cerr(x...)
-#define i2clldbg(x...)
+#define i2cerr(...)
+#define i2clldbg(...)
 #endif
 
 #ifdef CONFIG_DEBUG_I2C_WARN
 #define i2cwarn(format, ...)    wdbg(format, ##__VA_ARGS__)
 #define i2cllwdbg(format, ...)  llwdbg(format, ##__VA_ARGS__)
 #else
-#define i2cwarn(x...)
-#define i2cllwdbg(x...)
+#define i2cwarn(...)
+#define i2cllwdbg(...)
 #endif
 
 #ifdef CONFIG_DEBUG_I2C_INFO
 #define i2cinfo(format, ...)   vdbg(format, ##__VA_ARGS__)
 #define i2cllvdbg(format, ...) llvdbg(format, ##__VA_ARGS__)
 #else
-#define i2cinfo(x...)
-#define i2cllvdbg(x...)
+#define i2cinfo(...)
+#define i2cllvdbg(...)
 #endif
 
 #ifdef CONFIG_DEBUG_I2S_ERROR
 #define i2serr(format, ...)    dbg(format, ##__VA_ARGS__)
 #define i2slldbg(format, ...)  lldbg(format, ##__VA_ARGS__)
 #else
-#define i2serr(x...)
-#define i2slldbg(x...)
+#define i2serr(...)
+#define i2slldbg(...)
 #endif
 
 #ifdef CONFIG_DEBUG_I2S_WARN
 #define i2swarn(format, ...)    wdbg(format, ##__VA_ARGS__)
 #define i2sllwdbg(format, ...)  llwdbg(format, ##__VA_ARGS__)
 #else
-#define i2swarn(x...)
-#define i2sllwdbg(x...)
+#define i2swarn(...)
+#define i2sllwdbg(...)
 #endif
 
 #ifdef CONFIG_DEBUG_I2S_INFO
 #define i2sinfo(format, ...)   vdbg(format, ##__VA_ARGS__)
 #define i2sllvdbg(format, ...) llvdbg(format, ##__VA_ARGS__)
 #else
-#define i2sinfo(x...)
-#define i2sllvdbg(x...)
+#define i2sinfo(...)
+#define i2sllvdbg(...)
 #endif
 
 
@@ -675,8 +675,8 @@ Once LOGM is approved, each module should have its own index
 #define lwipdbg(format, ...)    dbg(format, ##__VA_ARGS__)
 #define lwiplldbg(format, ...)  lldbg(format, ##__VA_ARGS__)
 #else
-#define lwipdbg(x...)
-#define lwiplldbg(x...)
+#define lwipdbg(...)
+#define lwiplldbg(...)
 #endif
 
 #ifdef CONFIG_DEBUG_TTRACE
@@ -689,40 +689,40 @@ Once LOGM is approved, each module should have its own index
 #define meddbg(format, ...)    dbg(format, ##__VA_ARGS__)
 #define medlldbg(format, ...)  lldbg(format, ##__VA_ARGS__)
 #else
-#define meddbg(x...)
-#define medlldbg(x...)
+#define meddbg(...)
+#define medlldbg(...)
 #endif
 
 #ifdef CONFIG_DEBUG_MEDIA_WARN
 #define medwdbg(format, ...)    wdbg(format, ##__VA_ARGS__)
 #define medllwdbg(format, ...)  llwdbg(format, ##__VA_ARGS__)
 #else
-#define medwdbg(x...)
-#define medllwdbg(x...)
+#define medwdbg(...)
+#define medllwdbg(...)
 #endif
 
 #ifdef CONFIG_DEBUG_MEDIA_INFO
 #define medvdbg(format, ...)    vdbg(format, ##__VA_ARGS__)
 #define medllvdbg(format, ...)  llvdbg(format, ##__VA_ARGS__)
 #else
-#define medvdbg(x...)
-#define medllvdbg(x...)
+#define medvdbg(...)
+#define medllvdbg(...)
 #endif
 
 #ifdef CONFIG_DEBUG_TASK_MANAGER
 #ifdef CONFIG_DEBUG_TASK_MANAGER_ERROR
 #define tmdbg(format, ...)      dbg(format, ##__VA_ARGS__)
 #else
-#define tmdbg(x...)
+#define tmdbg(...)
 #endif
 #ifdef CONFIG_DEBUG_TASK_MANAGER_INFO
 #define tmvdbg(format, ...)     vdbg(format, ##__VA_ARGS__)
 #else
-#define tmvdbg(x...)
+#define tmvdbg(...)
 #endif
 #else
-#define tmdbg(x...)
-#define tmvdbg(x...)
+#define tmdbg(...)
+#define tmvdbg(...)
 #endif
 
 #else							/* CONFIG_CPP_HAVE_VARARGS */
@@ -1098,7 +1098,7 @@ Once LOGM is approved, each module should have its own index
 #define medllvdbg   llvdbg
 #else
 #define medllvdbg   (void)
-#define medllvdbg   (x...)
+#define medllvdbg   (...)
 #endif
 
 #endif							/* CONFIG_CPP_HAVE_VARARGS */

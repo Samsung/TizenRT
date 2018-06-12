@@ -170,14 +170,14 @@
 #define vidbg(format, ...) syslog(LOG_DEBUG, EXTRA_FMT format EXTRA_ARG, ##__VA_ARGS__)
 #define vvidbg(format, ap) vsyslog(LOG_DEBUG, format, ap)
 #else
-#define vidbg(x...)
-#define vvidbg(x...)
+#define vidbg(...)
+#define vvidbg(...)
 #endif
 
 #if CONFIG_SYSTEM_VI_DEBUGLEVEL > 1
 #define vivdbg(format, ...) syslog(LOG_DEBUG, EXTRA_FMT format EXTRA_ARG, ##__VA_ARGS__)
 #else
-#define vivdbg(x...)
+#define vivdbg(...)
 #endif
 #else
 #if CONFIG_SYSTEM_VI_DEBUGLEVEL > 0

@@ -87,10 +87,10 @@
 #define tmrlldbg  lldbg
 #define tmrllvdbg llvdbg
 #else
-#define tmrdbg(x...)
-#define tmrvdbg(x...)
-#define tmrlldbg(x...)
-#define tmrllvdbg(x...)
+#define tmrdbg(...)
+#define tmrvdbg(...)
+#define tmrlldbg(...)
+#define tmrllvdbg(...)
 #endif
 
 /****************************************************************************

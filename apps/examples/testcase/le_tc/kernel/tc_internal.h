@@ -32,10 +32,10 @@
 # define tcknvdbg(format, ...)   vdbg(format, ##__VA_ARGS__)
 # define tcknllvdbg(format, ...) llvdbg(format, ##__VA_ARGS__)
 #else
-# define tckndbg(x...)
-# define tcknlldbg(x...)
-# define tcknvdbg(x...)
-# define tcknllvdbg(x...)
+# define tckndbg(...)
+# define tcknlldbg(...)
+# define tcknvdbg(...)
+# define tcknllvdbg(...)
 #endif
 
 #else /* ! CONFIG_CPP_HAVE_VARARGS */

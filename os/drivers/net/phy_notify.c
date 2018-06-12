@@ -102,8 +102,8 @@
 #define phydbg    dbg
 #define phylldbg  lldbg
 #else
-#define phydbg(x...)
-#define phylldbg(x...)
+#define phydbg(...)
+#define phylldbg(...)
 #endif
 
 /****************************************************************************
