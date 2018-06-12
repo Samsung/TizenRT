@@ -18,7 +18,8 @@
 
 include ${TOPDIR}/.config
 include ${TOPDIR}/tools/Config.mk
-include ${TOPDIR}/arch/arm/src/armv7-r/Toolchain.defs
+ARCH_FAMILY = $(patsubst "%",%,$(CONFIG_ARCH_FAMILY))
+include ${TOPDIR}/arch/$(CONFIG_ARCH)/src/$(ARCH_FAMILY)/Toolchain.defs
 
 LDSCRIPT = flash.ld
 
