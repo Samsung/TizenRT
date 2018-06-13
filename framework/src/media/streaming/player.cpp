@@ -127,6 +127,21 @@ namespace media {
  ****************************************************************************/
 
 /**
+ * @struct  pcm_data_s
+ * @brief   Define PCM data output structure, inludes sample rate, channel number,
+ *          and samples buffer and count.
+ */
+struct pcm_data_s {
+	unsigned int samplerate;    /* sampling frequency (Hz) */
+	unsigned short channels;    /* number of channels */
+	unsigned short length;      /* number of the output samples in 16-bit words */
+	signed short *samples;      /* PCM output 16-bit samples, include both L/R ch for stereo case */
+};
+
+typedef struct pcm_data_s pcm_data_t;
+typedef struct pcm_data_s *pcm_data_p;
+
+/**
  * @struct  priv_data_s
  * @brief   Player private data structure define.
  */
@@ -276,7 +291,7 @@ static bool mp3_resync(rbstream_p fp, uint32_t match_header, ssize_t *inout_pos,
 	ssize_t totalBytesRead = 0;
 	ssize_t remainingBytes = 0;
 	bool reachEOS = false;
-	uint8_t *tmp = buf;
+	uint8_t *buf_ptr = buf;
 
 	do {
 		if (pos >= *inout_pos + FRAME_RESYNC_MAX_CHECK_BYTES) {
@@ -284,12 +299,12 @@ static bool mp3_resync(rbstream_p fp, uint32_t match_header, ssize_t *inout_pos,
 			break;
 		}
 
-		if (remainingBytes < U32_LEN_IN_BYTES) {
+		if (remainingBytes < (ssize_t)U32_LEN_IN_BYTES) {
 			if (reachEOS) {
 				break;
 			}
 
-			memcpy(buf, tmp, remainingBytes);
+			memcpy(buf, buf_ptr, remainingBytes);
 			bytesToRead = FRAME_RESYNC_READ_BYTES - remainingBytes;
 
 			/*
@@ -305,15 +320,15 @@ static bool mp3_resync(rbstream_p fp, uint32_t match_header, ssize_t *inout_pos,
 
 			reachEOS = (totalBytesRead != bytesToRead);
 			remainingBytes += totalBytesRead;
-			tmp = buf;
+			buf_ptr = buf;
 			continue;
 		}
 
-		uint32_t header = _u32_at(tmp);
+		uint32_t header = _u32_at(buf_ptr);
 
 		if (match_header != 0 && (header & MP3_FRAME_HEADER_MASK) != (match_header & MP3_FRAME_HEADER_MASK)) {
 			++pos;
-			++tmp;
+			++buf_ptr;
 			--remainingBytes;
 			continue;
 		}
@@ -321,7 +336,7 @@ static bool mp3_resync(rbstream_p fp, uint32_t match_header, ssize_t *inout_pos,
 		size_t frame_size;
 		if (!_parse_header(header, &frame_size)) {
 			++pos;
-			++tmp;
+			++buf_ptr;
 			--remainingBytes;
 			continue;
 		}
@@ -370,7 +385,7 @@ static bool mp3_resync(rbstream_p fp, uint32_t match_header, ssize_t *inout_pos,
 		}
 
 		++pos;
-		++tmp;
+		++buf_ptr;
 		--remainingBytes;
 	} while (!valid);
 
@@ -465,7 +480,7 @@ static bool aac_resync(rbstream_p fp, ssize_t *inout_pos)
 	ssize_t totalBytesRead = 0;
 	ssize_t remainingBytes = 0;
 	bool reachEOS = false;
-	uint8_t *tmp = buf;
+	uint8_t *buf_ptr = buf;
 
 	do {
 		if (pos >= *inout_pos + FRAME_RESYNC_MAX_CHECK_BYTES) {
@@ -477,7 +492,7 @@ static bool aac_resync(rbstream_p fp, ssize_t *inout_pos)
 				break;
 			}
 
-			memcpy(buf, tmp, remainingBytes);
+			memcpy(buf, buf_ptr, remainingBytes);
 			bytesToRead = FRAME_RESYNC_READ_BYTES - remainingBytes;
 
 			/*
@@ -492,13 +507,13 @@ static bool aac_resync(rbstream_p fp, ssize_t *inout_pos)
 
 			reachEOS = (totalBytesRead != bytesToRead);
 			remainingBytes += totalBytesRead;
-			tmp = buf;
+			buf_ptr = buf;
 			continue;
 		}
 
-		if (!AAC_ADTS_SYNC_VERIFY(tmp)) {
+		if (!AAC_ADTS_SYNC_VERIFY(buf_ptr)) {
 			++pos;
-			++tmp;
+			++buf_ptr;
 			--remainingBytes;
 			continue;
 		}
@@ -506,7 +521,7 @@ static bool aac_resync(rbstream_p fp, ssize_t *inout_pos)
 		// We found what looks like a valid frame,
 		// now find its successors.
 		valid = true;
-		int frame_size = AAC_ADTS_FRAME_GETSIZE(tmp);
+		int frame_size = AAC_ADTS_FRAME_GETSIZE(buf_ptr);
 		ssize_t test_pos = pos + frame_size;
 		int j;
 		for (j = 0; j < FRAME_MATCH_REQUIRED; ++j) {
@@ -531,7 +546,7 @@ static bool aac_resync(rbstream_p fp, ssize_t *inout_pos)
 		}
 
 		++pos;
-		++tmp;
+		++buf_ptr;
 		--remainingBytes;
 	} while (!valid);
 
@@ -812,8 +827,7 @@ int _init_decoder(pv_player_p player, void *dec_ext)
 		player->dec_mem = calloc(1, pvmp3_decoderMemRequirements());
 		RETURN_VAL_IF_FAIL((player->dec_mem != NULL), PV_FAILURE);
 
-		player->config_func(player->cb_data, player->audio_type, player->dec_ext);
-		//*((tPVMP3DecoderExternal *) player->dec_ext) = *((tPVMP3DecoderExternal *) dec_ext);
+		*((tPVMP3DecoderExternal *) player->dec_ext) = *((tPVMP3DecoderExternal *) dec_ext);
 
 		pvmp3_resetDecoder(player->dec_mem);
 		pvmp3_InitDecoder((tPVMP3DecoderExternal *) player->dec_ext, player->dec_mem);
@@ -830,8 +844,7 @@ int _init_decoder(pv_player_p player, void *dec_ext)
 		player->dec_mem = calloc(1, PVMP4AudioDecoderGetMemRequirements());
 		RETURN_VAL_IF_FAIL((player->dec_mem != NULL), PV_FAILURE);
 
-		player->config_func(player->cb_data, player->audio_type, player->dec_ext);
-		//*((tPVMP4AudioDecoderExternal *) player->dec_ext) = *((tPVMP4AudioDecoderExternal *) dec_ext);
+		*((tPVMP4AudioDecoderExternal *) player->dec_ext) = *((tPVMP4AudioDecoderExternal *) dec_ext);
 
 		PVMP4AudioDecoderResetBuffer(player->dec_mem);
 		Int err = PVMP4AudioDecoderInitLibrary((tPVMP4AudioDecoderExternal *) player->dec_ext, player->dec_mem);
@@ -850,8 +863,7 @@ int _init_decoder(pv_player_p player, void *dec_ext)
 		player->dec_mem = calloc(1, opus_decoderMemRequirements());
 		RETURN_VAL_IF_FAIL((player->dec_mem != NULL), PV_FAILURE);
 
-		player->config_func(player->cb_data, player->audio_type, player->dec_ext);
-		//*((opus_dec_external_t *) player->dec_ext) = *((opus_dec_external_t *) dec_ext);
+		*((opus_dec_external_t *) player->dec_ext) = *((opus_dec_external_t *) dec_ext);
 
 		opus_resetDecoder(player->dec_mem);
 		int err = opus_initDecoder((opus_dec_external_t *) player->dec_ext, player->dec_mem);
@@ -1020,21 +1032,6 @@ int pv_player_init_decoder(pv_player_p player, int audio_type, void *dec_ext)
 	return _init_decoder(player, dec_ext);
 }
 
-bool pv_player_get_frame(pv_player_p player)
-{
-	assert(player != NULL);
-
-	return _get_frame(player);
-}
-
-int pv_player_frame_decode(pv_player_p player, pcm_data_p pcm)
-{
-	assert(player != NULL);
-	assert(pcm != NULL);
-
-	return _frame_decoder(player, pcm);
-}
-
 size_t pv_player_get_frames(pv_player_p player, unsigned char *buf, size_t max, unsigned int *sr, unsigned short *ch)
 {
 	priv_data_p priv = (priv_data_p) player->priv_data;
@@ -1098,7 +1095,7 @@ size_t pv_player_get_frames(pv_player_p player, unsigned char *buf, size_t max, 
 }
 
 
-int pv_player_init(pv_player_p player, size_t rbuf_size, void *user_data, config_func_f config_func, input_func_f input_func, output_func_f output_func)
+int pv_player_init(pv_player_p player, size_t rbuf_size)
 {
 	assert(player != NULL);
 
@@ -1110,10 +1107,8 @@ int pv_player_init(pv_player_p player, size_t rbuf_size, void *user_data, config
 	priv->mFixedHeader = 0;
 
 	// init player data
-	player->cb_data = user_data;
-	player->config_func = config_func;
-	player->input_func = input_func;
-	player->output_func = output_func;
+	player->cb_data = NULL;
+	player->input_func = NULL;
 
 	player->dec_ext = NULL;
 	player->dec_mem = NULL;
@@ -1125,6 +1120,14 @@ int pv_player_init(pv_player_p player, size_t rbuf_size, void *user_data, config
 	RETURN_VAL_IF_FAIL((player->rbsp != NULL), PV_FAILURE);
 
 	rbs_ctrl(player->rbsp, OPTION_ALLOW_TO_DEQUEUE, 1);
+	return PV_SUCCESS;
+}
+
+int pv_player_register_callbacks(pv_player_p player, void *user_data, input_func_f input_func)
+{
+	player->cb_data = user_data;
+	player->input_func = input_func;
+
 	return PV_SUCCESS;
 }
 
@@ -1158,31 +1161,6 @@ int pv_player_finish(pv_player_p player)
 	if (player->priv_data != NULL) {
 		free(player->priv_data);
 		player->priv_data = NULL;
-	}
-
-	return PV_SUCCESS;
-}
-
-int pv_player_run(pv_player_p player)
-{
-	assert(player != NULL);
-
-	RETURN_VAL_IF_FAIL((player->input_func != NULL), PV_FAILURE);
-	RETURN_VAL_IF_FAIL((player->output_func != NULL), PV_FAILURE);
-	RETURN_VAL_IF_FAIL((player->config_func != NULL), PV_FAILURE);
-	RETURN_VAL_IF_FAIL((player->rbsp != NULL), PV_FAILURE);
-
-	player->audio_type = pv_player_get_audio_type(player);
-	RETURN_VAL_IF_FAIL(pv_player_check_audio_type(player->audio_type), PV_FAILURE);
-
-	int ret = pv_player_init_decoder(player, player->audio_type, NULL);
-	RETURN_VAL_IF_FAIL((ret == PV_SUCCESS), PV_FAILURE);
-
-	while (pv_player_get_frame(player)) {
-		pcm_data_t pcm;
-		if (pv_player_frame_decode(player, &pcm) == PV_SUCCESS) {
-			player->output_func(player->cb_data, player, &pcm);
-		}
 	}
 
 	return PV_SUCCESS;

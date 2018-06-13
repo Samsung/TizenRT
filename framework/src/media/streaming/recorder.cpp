@@ -203,6 +203,8 @@ int aud_encoder_init(aud_encoder_p encoder, size_t rbuf_size, audio_type_t audio
 	RETURN_VAL_IF_FAIL(aud_encoder_check_audio_type(audio_type), PV_FAILURE);
 
 	encoder->audio_type = audio_type;
+	encoder->cb_data = NULL;
+	encoder->input_func = NULL;
 
 	// init private data
 	priv_data_p priv = (priv_data_p) malloc(sizeof(priv_data_t));

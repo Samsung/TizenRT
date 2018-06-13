@@ -32,8 +32,7 @@ Decoder::Decoder(unsigned short channels, unsigned int sampleRate)
 {
 #ifdef CONFIG_AUDIO_CODEC
 	memset(&mPlayer, 0, sizeof(pv_player_t));
-	if (pv_player_init(&mPlayer, CONFIG_AUDIO_CODEC_RINGBUFFER_SIZE, nullptr, nullptr, nullptr, nullptr) !=
-		PV_SUCCESS) {
+	if (pv_player_init(&mPlayer, CONFIG_AUDIO_CODEC_RINGBUFFER_SIZE) != PV_SUCCESS) {
 		meddbg("Error! pv_player_init failed!\n");
 	}
 #endif
