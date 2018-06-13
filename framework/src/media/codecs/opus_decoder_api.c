@@ -26,6 +26,9 @@
 // Opus packet header is self-defined, 4 bytes syncword + 4 bytes packet length.
 #define OPUS_PACKET_HEADER_LEN 8
 
+// Support 2 channels (stereo) at most
+#define CHANNEL_NUM_MAX 2
+
 #ifdef CONFIG_OPUS_CODEC_PTHREAD
 struct opus_dec_service_s {
 	uint32_t magic;
@@ -103,9 +106,7 @@ uint32_t opus_decoderMemRequirements(void)
 	size += sizeof(opus_dec_service_t);
 #endif
 
-	int channels = 2; // max 2
-	size += opus_decoder_get_size(channels);
-
+	size += opus_decoder_get_size(CHANNEL_NUM_MAX);
 	return size;
 }
 
