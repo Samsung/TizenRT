@@ -183,10 +183,12 @@ int pv_player_get_audio_type(pv_player_p player);
  * @param  player : Pointer to player object
  * @param  audio_type : specify the audio type of the input audio stream
  *         you can get the type via pv_player_get_audio_type().
+ * @param  dec_ext : Pointer to decoder external structure object,
+ *         this external structure type corresponds to 'audio_type'.
  * @return 0 on success, -1 on failure.
  * @see pv_player_get_audio_type()
  */
-int pv_player_init_decoder(pv_player_p player, int audio_type);
+int pv_player_init_decoder(pv_player_p player, int audio_type, void *dec_ext);
 
 /**
  * @brief  get audio frame from audio stream.

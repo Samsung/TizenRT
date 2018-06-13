@@ -28,7 +28,7 @@ namespace media {
 class Decoder
 {
 public:
-	Decoder();
+	Decoder(unsigned short channels, unsigned int sampleRate);
 	Decoder(const Decoder *source);
 	~Decoder();
 
@@ -40,8 +40,11 @@ public:
 
 private:
 #ifdef CONFIG_AUDIO_CODEC
-	static int _configFunc(void *user_data, int audio_type, void *dec_ext);
+	//static int _configFunc(void *user_data, int audio_type, void *dec_ext);
+	bool mConfig(int audioType);
 	pv_player_t mPlayer;
+	unsigned short mChannels;
+	unsigned int mSampleRate;
 #endif
 };
 } // namespace media

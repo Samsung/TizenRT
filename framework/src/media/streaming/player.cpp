@@ -794,7 +794,7 @@ bool _get_frame(pv_player_p player)
 	}
 }
 
-int _init_decoder(pv_player_p player)
+int _init_decoder(pv_player_p player, void *dec_ext)
 {
 	priv_data_p priv = (priv_data_p) player->priv_data;
 	assert(priv != NULL);
@@ -813,6 +813,7 @@ int _init_decoder(pv_player_p player)
 		RETURN_VAL_IF_FAIL((player->dec_mem != NULL), PV_FAILURE);
 
 		player->config_func(player->cb_data, player->audio_type, player->dec_ext);
+		//*((tPVMP3DecoderExternal *) player->dec_ext) = *((tPVMP3DecoderExternal *) dec_ext);
 
 		pvmp3_resetDecoder(player->dec_mem);
 		pvmp3_InitDecoder((tPVMP3DecoderExternal *) player->dec_ext, player->dec_mem);
@@ -830,6 +831,7 @@ int _init_decoder(pv_player_p player)
 		RETURN_VAL_IF_FAIL((player->dec_mem != NULL), PV_FAILURE);
 
 		player->config_func(player->cb_data, player->audio_type, player->dec_ext);
+		//*((tPVMP4AudioDecoderExternal *) player->dec_ext) = *((tPVMP4AudioDecoderExternal *) dec_ext);
 
 		PVMP4AudioDecoderResetBuffer(player->dec_mem);
 		Int err = PVMP4AudioDecoderInitLibrary((tPVMP4AudioDecoderExternal *) player->dec_ext, player->dec_mem);
@@ -849,6 +851,7 @@ int _init_decoder(pv_player_p player)
 		RETURN_VAL_IF_FAIL((player->dec_mem != NULL), PV_FAILURE);
 
 		player->config_func(player->cb_data, player->audio_type, player->dec_ext);
+		//*((opus_dec_external_t *) player->dec_ext) = *((opus_dec_external_t *) dec_ext);
 
 		opus_resetDecoder(player->dec_mem);
 		int err = opus_initDecoder((opus_dec_external_t *) player->dec_ext, player->dec_mem);
@@ -1004,7 +1007,7 @@ int pv_player_get_audio_type(pv_player_p player)
 	return player->audio_type;
 }
 
-int pv_player_init_decoder(pv_player_p player, int audio_type)
+int pv_player_init_decoder(pv_player_p player, int audio_type, void *dec_ext)
 {
 	assert(player != NULL);
 
@@ -1014,7 +1017,7 @@ int pv_player_init_decoder(pv_player_p player, int audio_type)
 	// Try to get from stream (in case of given invalid type).
 	pv_player_get_audio_type(player);
 
-	return _init_decoder(player);
+	return _init_decoder(player, dec_ext);
 }
 
 bool pv_player_get_frame(pv_player_p player)
@@ -1172,7 +1175,7 @@ int pv_player_run(pv_player_p player)
 	player->audio_type = pv_player_get_audio_type(player);
 	RETURN_VAL_IF_FAIL(pv_player_check_audio_type(player->audio_type), PV_FAILURE);
 
-	int ret = pv_player_init_decoder(player, player->audio_type);
+	int ret = pv_player_init_decoder(player, player->audio_type, NULL);
 	RETURN_VAL_IF_FAIL((ret == PV_SUCCESS), PV_FAILURE);
 
 	while (pv_player_get_frame(player)) {

@@ -33,7 +33,8 @@ FileInputDataSource::FileInputDataSource(const std::string &dataPath)
 {
 }
 
-FileInputDataSource::FileInputDataSource(const FileInputDataSource &source) : InputDataSource(source)
+FileInputDataSource::FileInputDataSource(const FileInputDataSource &source)
+	: InputDataSource(source), mDataPath(source.mDataPath), mFp(source.mFp)
 {
 }
 
@@ -57,7 +58,7 @@ bool FileInputDataSource::open()
 		case AUDIO_TYPE_MP3:
 		case AUDIO_TYPE_AAC:
 		case AUDIO_TYPE_OPUS:
-			setDecoder(std::make_shared<Decoder>());
+			setDecoder(std::make_shared<Decoder>(getChannels(), getSampleRate()));
 			break;
 		case AUDIO_TYPE_FLAC:
 			/* To be supported */
