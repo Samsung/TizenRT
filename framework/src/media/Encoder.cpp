@@ -24,9 +24,14 @@
 #define PV_SUCCESS 0
 #define PV_FAILURE -1
 
+#define MAX_PACKET_SIZE 1024
+#define MSEC_PER_SECOND 1000
+
 namespace media {
 
-Encoder::Encoder(audio_type_t audio_type)
+Encoder::Encoder(audio_type_t audio_type, unsigned short channels, unsigned int sampleRate)
+	: inputBuf(nullptr)
+	, outputBuf(nullptr)
 {
 #ifdef CONFIG_AUDIO_CODEC
 	switch (audio_type) {
@@ -35,16 +40,27 @@ Encoder::Encoder(audio_type_t audio_type)
 	case AUDIO_TYPE_OPUS: {
 		memset(&mEncoder, 0, sizeof(aud_encoder_t));
 
-		static uint8_t outputBuf[1024];
-		static int16_t inputBuf[1920*2];  // inputSampleRate / 1000 * frame_size_ms * 2
-
 		opus_enc_external_t ext = {0};
+
 		// params for opus encoding
+		#if defined(CONFIG_OPUS_APPLICATION_VOIP)
+		ext.applicationMode = OPUS_APPLICATION_VOIP;
+		#elif defined(CONFIG_OPUS_APPLICATION_AUDIO)
 		ext.applicationMode = OPUS_APPLICATION_AUDIO;
-		ext.frameSizeMS = 100;
-		ext.bitrate = 16000;
+		#elif defined(CONFIG_OPUS_APPLICATION_RESTRICTED_LOWDELAY)
+		ext.applicationMode = OPUS_APPLICATION_RESTRICTED_LOWDELAY;
+		#else
+		ext.applicationMode = OPUS_APPLICATION_AUDIO;
+		#endif
+		ext.complexity = CONFIG_OPUS_ENCODE_COMPLEXITY;
+		ext.frameSizeMS = CONFIG_OPUS_ENCODE_FRAMESIZE;
+		ext.bitrate = CONFIG_OPUS_ENCODE_BITRATE;
 		ext.bandWidth = OPUS_AUTO;
-		ext.complexity = 5;
+
+		// allocate memory resource
+		size_t inSamples = sampleRate * channels * ext.frameSizeMS / MSEC_PER_SECOND;
+		inputBuf = new signed short[inSamples];
+		outputBuf = new unsigned char[MAX_PACKET_SIZE];
 
 		// params for streaming
 		ext.pOutputBuffer = outputBuf;
@@ -53,8 +69,8 @@ Encoder::Encoder(audio_type_t audio_type)
 		ext.inputBufferMaxLength = sizeof(inputBuf);
 
 		// params about PCM source
-		ext.inputChannels = 2; // channels
-		ext.inputSampleRate = 16000; // sample rate
+		ext.inputChannels = channels;
+		ext.inputSampleRate = sampleRate;
 
 		// Initialize encoder
 		if (aud_encoder_init(&mEncoder, CONFIG_AUDIO_CODEC_RINGBUFFER_SIZE, AUDIO_TYPE_OPUS, &ext) != PV_SUCCESS) {
@@ -83,6 +99,9 @@ Encoder::~Encoder()
 	if (aud_encoder_finish(&mEncoder) != PV_SUCCESS) {
 		meddbg("Error! aud_encoder_finish failed!\n");
 	}
+
+	delete[] inputBuf;
+	delete[] outputBuf;
 #endif
 }
 

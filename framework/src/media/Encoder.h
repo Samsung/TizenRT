@@ -29,7 +29,7 @@ namespace media {
 class Encoder
 {
 public:
-	Encoder(audio_type_t audio_type);
+	Encoder(audio_type_t audio_type, unsigned short channels, unsigned int sampleRate);
 	Encoder(const Encoder *source);
 	~Encoder();
 
@@ -43,6 +43,8 @@ private:
 	Encoder() {}
 #ifdef CONFIG_AUDIO_CODEC
 	aud_encoder_t mEncoder;
+	signed short *inputBuf;
+	unsigned char *outputBuf;
 #endif
 };
 } // namespace media
