@@ -204,6 +204,20 @@ void *recv_server(void *args)
 		}
 	}
 
+	ConnectFD = accept(SocketFD, NULL, NULL);
+	if (ConnectFD < 0) {
+		printf("error %s:%d\n", __FUNCTION__, __LINE__);
+		close(SocketFD);
+		return 0;
+	}
+
+	ret = send(ConnectFD, msg, strlen(msg), 0);
+	if (ret == 0) {
+		printf("socket is closed. it's not error\n");
+	} else if (ret < 0) {
+		printf("error %s:%d %d\n", __FUNCTION__, __LINE__, errno);
+	}
+
 	close(ConnectFD);
 
 	close(SocketFD);
@@ -248,6 +262,14 @@ void *recv_client(void *args)
 	tc_net_recv_p(mysocket);
 	tc_net_recv_n(mysocket);
 	tc_net_recv_shutdown_n(mysocket);
+
+	close(mysocket);
+
+	mysocket = socket(PF_INET, SOCK_STREAM, IPPROTO_TCP);
+	if (mysocket < 0) {
+		printf("Socket creation fail %s:%d\n", __FUNCTION__,  __LINE__);
+		return 0;
+	}
 
 	ret = connect(mysocket, (struct sockaddr *)&dest, sizeof(struct sockaddr));
 	if (ret < 0) {
