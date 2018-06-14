@@ -49,14 +49,14 @@ int taskmgr_send_request(tm_request_t *request_msg)
 	g_tm_send_mqfd = mq_open(TM_PUBLIC_MQ, O_WRONLY | O_CREAT, 0666, &attr);
 	if (g_tm_send_mqfd == (mqd_t)ERROR) {
 		tmdbg("mq_open failed!\n");
-		return TM_FAIL_REQ_TO_MGR;
+		return TM_COMMUCATION_FAIL;
 	}
 
 	status = mq_send(g_tm_send_mqfd, (const char *)request_msg, sizeof(tm_request_t), TM_MQ_PRIO);
 	if (status < 0) {
 		tmdbg("mq_send failed! %d\n", errno);
 		mq_close(g_tm_send_mqfd);
-		return TM_FAIL_REQ_TO_MGR;
+		return TM_COMMUCATION_FAIL;
 	}
 
 	mq_close(g_tm_send_mqfd);
@@ -81,14 +81,14 @@ int taskmgr_send_response(char *q_name, tm_response_t *response_msg)
 	private_mqfd = mq_open(q_name, O_WRONLY | O_CREAT, 0666, &attr);
 	if (private_mqfd == (mqd_t)ERROR) {
 		tmdbg("mq_open failed!\n");
-		return TM_FAIL_RESPONSE;
+		return TM_COMMUCATION_FAIL;
 	}
 
 	status = mq_send(private_mqfd, (char *)response_msg, sizeof(tm_response_t), TM_MQ_PRIO);
 	if (status != OK) {
 		tmdbg("mq_send failed! %d\n", errno);
 		mq_close(private_mqfd);
-		return TM_FAIL_RESPONSE;
+		return TM_COMMUCATION_FAIL;
 	}
 
 	mq_close(private_mqfd);
@@ -114,7 +114,7 @@ int taskmgr_receive_response(char *q_name, tm_response_t *response_msg, int time
 	private_mqfd = mq_open(q_name, O_RDONLY | O_CREAT, 0666, &attr);
 	if (private_mqfd == (mqd_t)ERROR) {
 		tmdbg("mq_open failed!\n");
-		return TM_FAIL_RESPONSE;
+		return TM_COMMUCATION_FAIL;
 	}
 
 	if (timeout == TM_RESPONSE_WAIT_INF) {
@@ -130,7 +130,7 @@ int taskmgr_receive_response(char *q_name, tm_response_t *response_msg, int time
 
 	if (status <= 0) {
 		tmdbg("mq_receive failed! %d\n", errno);
-		return TM_FAIL_RESPONSE;
+		return TM_COMMUCATION_FAIL;
 	}
 
 	return response_msg->status;

@@ -59,29 +59,22 @@
 #define TM_RESPONSE_WAIT_INF (-1)
 
 /**
- * @brief Error Type of Request
- * @details When fail to request to task manager, these defined values will be returned.
+ * @brief Error Type of Result Value returned from Task Manager
+ * @details If operation is failed, these defined values will be returned.
  */
-#define TM_FAIL_ALREADY_STARTED_TASK  (-1)    // same as negative RUNNING state
-#define TM_FAIL_ALREADY_PAUSED_TASK   (-2)    // same as negative PAUSE state
-#define TM_FAIL_ALREADY_STOPPED_TASK  (-3)    // same as negative STOP state
-#define TM_FAIL_UNREGISTERED_TASK     (-4)    // same as negative UNREGISTERED state
-#define TM_FAIL_NOT_PERMITTED         (-5)
-#define TM_FAIL_REGISTER              (-6)
-#define TM_FAIL_START                 (-7)
-#define TM_FAIL_UNICAST               (-8)
-#define TM_FAIL_SET_CALLBACK          (-9)
-#define TM_FAIL_NO_HANDLER            (-10)
-#define TM_FAIL_PAUSE                 (-11)
-#define TM_FAIL_RESUME                (-12)
-#define TM_FAIL_REQ_TO_MGR            (-13)
-#define TM_FAIL_RESPONSE              (-14)
-#define TM_FAIL_UNREGISTER            (-15)
-#define TM_FAIL_SET_TERMINATION_CB    (-16)
-#define TM_FAIL_RESTART               (-17)
-#define TM_FAIL_TERMINATE             (-18)
-#define TM_INVALID_PARAM              (-19)
-#define TM_OUT_OF_MEMORY              (-20)
+enum tm_result_error_e {
+	TM_ALREADY_STARTED_TASK = -1,
+	TM_ALREADY_PAUSED_TASK = -2,
+	TM_ALREADY_STOPPED_TASK = -3,
+	TM_UNREGISTERED_TASK = -4,
+	TM_OPERATION_FAIL = -5,
+	TM_COMMUCATION_FAIL = -6,
+	TM_BUSY = -7,
+	TM_INVALID_PARAM = -8,
+	TM_INVALID_DRVFD = -9,
+	TM_OUT_OF_MEMORY = -10,
+	TM_NO_PERMISSION = -11,
+};
 
 /**
  * @brief Broadcast message list

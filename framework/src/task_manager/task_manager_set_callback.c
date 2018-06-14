@@ -31,7 +31,7 @@ void taskmgr_msg_cb(int signo, siginfo_t *data)
 {
 	int handle;
 	handle = taskmgr_get_handle_by_pid(getpid());
-	if (handle == TM_FAIL_UNREGISTERED_TASK) {
+	if (handle == TM_UNREGISTERED_TASK) {
 		tmdbg("Fail to get handle by pid\n");
 		return;
 	}
@@ -60,12 +60,14 @@ int task_manager_set_unicast_cb(void (*func)(void *data))
 
 	ret = sigaddset(&act.sa_mask, SIGTM_UNICAST);
 	if (ret < 0) {
-		return TM_FAIL_SET_CALLBACK;
+		tmdbg("Failed to add signal set\n");
+		return TM_OPERATION_FAIL;
 	}
 
 	ret = sigaction(SIGTM_UNICAST, &act, NULL);
 	if (ret == (int)SIG_ERR) {
-		return TM_FAIL_SET_CALLBACK;
+		tmdbg("sigaction Failed\n");
+		return TM_OPERATION_FAIL;
 	}
 
 	/* send user defined callback function to task manager */
@@ -78,7 +80,7 @@ int task_manager_set_unicast_cb(void (*func)(void *data))
 	request_msg.timeout = TM_NO_RESPONSE;
 	ret = taskmgr_send_request(&request_msg);
 	if (ret < 0) {
-		return TM_FAIL_REQ_TO_MGR;
+		return ret;
 	}
 
 	return ret;
@@ -103,12 +105,14 @@ int task_manager_set_broadcast_cb(int msg_mask, void (*func)(int data))
 
 	ret = sigaddset(&act.sa_mask, SIGTM_BROADCAST);
 	if (ret < 0) {
-		return TM_FAIL_SET_CALLBACK;
+		tmdbg("Failed to add signal set\n");
+		return TM_OPERATION_FAIL;
 	}
 
 	ret = sigaction(SIGTM_BROADCAST, &act, NULL);
 	if (ret == (int)SIG_ERR) {
-		return TM_FAIL_SET_CALLBACK;
+		tmdbg("sigaction Failed\n");
+		return TM_OPERATION_FAIL;
 	}
 
 	memset(&request_msg, 0, sizeof(tm_request_t));
@@ -125,7 +129,7 @@ int task_manager_set_broadcast_cb(int msg_mask, void (*func)(int data))
 	ret = taskmgr_send_request(&request_msg);
 	if (ret < 0) {
 		TM_FREE(request_msg.data);
-		return TM_FAIL_REQ_TO_MGR;
+		return ret;
 	}
 	return OK;
 }
@@ -140,7 +144,8 @@ int task_manager_set_termination_cb(void (*func)(void))
 	}
 
 	if (atexit((void *)func) != OK) {
-		return TM_FAIL_SET_TERMINATION_CB;
+		tmdbg("Faile to register a function at exit\n");
+		return TM_OPERATION_FAIL;
 	}
 
 	return OK;

@@ -63,7 +63,7 @@ int task_manager_register(char *name, int permission, int timeout)
 		if (request_msg.q_name != NULL) {
 			TM_FREE(request_msg.q_name);
 		}
-		return TM_FAIL_REQ_TO_MGR;
+		return status;
 	}
 
 	if (timeout != TM_NO_RESPONSE) {
