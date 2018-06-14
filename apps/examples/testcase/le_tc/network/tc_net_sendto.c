@@ -33,6 +33,7 @@
 #include <netinet/in.h>
 #include <sys/socket.h>
 #include <pthread.h>
+#include <errno.h>
 
 #define PORTNUM 7891
 #define TCPPORT 7890
@@ -339,13 +340,19 @@ void tc_net_sendto_tcp_shutdown_n(int ConnectFD)
 
 void *sendto_tcpserver(void *args)
 {
-
 	struct sockaddr_in sa;
 	int SocketFD = socket(PF_INET, SOCK_STREAM, IPPROTO_TCP);
 	if (SocketFD < 0) {
 		printf("socket fail %s:%d", __FUNCTION__, __LINE__);
 		return 0;
 	}
+
+	if (setsockopt(SocketFD, SOL_SOCKET, SO_REUSEADDR, &(int){ 1 }, sizeof(int)) < 0) {
+		printf("setsockopt(SO_REUSEADDR) failed %s:%d:%d\n", __FUNCTION__, __LINE__, errno);
+		close(SocketFD);
+		return 0;
+	}
+
 	memset(&sa, 0, sizeof(sa));
 
 	sa.sin_family = PF_INET;
