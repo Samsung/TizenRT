@@ -1,0 +1,15 @@
+#
+# For a description of the syntax of this configuration file,
+# see kconfig-language at https://www.kernel.org/doc/Documentation/kbuild/kconfig-language.txt
+#
+
+config AVS_DEVICE_SDK
+	bool "Alexa Voice Service Device SDK"
+	default n
+
+	select MEDIA
+	select MEDIA_PLAYER
+	select MEDIA_RECORDER
+	select AUDIO_CODEC
+	---help---
+		Enable AVS Device SDK
