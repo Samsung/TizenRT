@@ -85,7 +85,7 @@
 
 /**
  * @brief Broadcast message list
- * @details These values can be used for broadcast messges
+ * @details These values can be used for broadcast messges.
  * If user wants to add some other types of broadcast message,
  * user can add their own broadcast messages at here.
  */
@@ -115,9 +115,11 @@ typedef struct task_info_list_s task_info_list_t;
  ****************************************************************************/
 /**
  * @brief Request to register a task
- * @details @b #include <task_manager/task_manager.h>
- * @param[in] name the name of task which request to register
- * @param[in] permission the permission of task which request to register\n
+ * @details @b #include <task_manager/task_manager.h>\n
+ * Only builtin task can be managed by task manager.\n
+ * Find apps/builtin/README.md to know how to use builtin task.
+ * @param[in] name the name of task to be registered
+ * @param[in] permission the permission of task to be registered
  * @param[in] timeout returnable flag. It can be one of the below.\n
  *			TM_NO_RESPONSE : Ignore the response of request from task manager\n
  *			TM_RESPONSE_WAIT_INF : Blocked until get the response from task manager\n
@@ -129,7 +131,7 @@ int task_manager_register(char *name, int permission, int timeout);
 /**
  * @brief Request to unregister a task
  * @details @b #include <task_manager/task_manager.h>
- * @param[in] handle the handle id of task which request to unregister
+ * @param[in] handle the handle id of task to be unregistered
  * @param[in] timeout returnable flag. It can be one of the below.\n
  *			TM_NO_RESPONSE : Ignore the response of request from task manager\n
  *			TM_RESPONSE_WAIT_INF : Blocked until get the response from task manager\n
@@ -141,11 +143,11 @@ int task_manager_unregister(int handle, int timeout);
 /**
  * @brief Request to start the task
  * @details @b #include <task_manager/task_manager.h>
- * @param[in] handle the handle id of task which request to start
+ * @param[in] handle the handle id of task to be started
  * @param[in] timeout returnable flag. It can be one of the below.\n
  *			TM_NO_RESPONSE : Ignore the response of request from task manager\n
  *			TM_RESPONSE_WAIT_INF : Blocked until get the response from task manager\n
- *			integer value : Specifies an upper limit on the time for which will block in milliseconds 
+ *			integer value : Specifies an upper limit on the time for which will block in milliseconds
  * @return On success, OK is returned. On failure, defined negative value is returned.
  * @since TizenRT v2.0 PRE
  */
@@ -153,11 +155,11 @@ int task_manager_start(int handle, int timeout);
 /**
  * @brief Request to terminate the task
  * @details @b #include <task_manager/task_manager.h>
- * @param[in] handle the handle id of task which request to terminate
+ * @param[in] handle the handle id of task to be terminated.
  * @param[in] timeout returnable flag. It can be one of the below.\n
  *			TM_NO_RESPONSE : Ignore the response of request from task manager\n
  *			TM_RESPONSE_WAIT_INF : Blocked until get the response from task manager\n
- *			integer value : Specifies an upper limit on the time for which will block in milliseconds 
+ *			integer value : Specifies an upper limit on the time for which will block in milliseconds
  * @return On success, OK is returned. On failure, defined negative value is returned.
  * @since TizenRT v2.0 PRE
  */
@@ -165,7 +167,7 @@ int task_manager_terminate(int handle, int timeout);
 /**
  * @brief Request to pause the task
  * @details @b #include <task_manager/task_manager.h>
- * @param[in] handle the handle id of task which request to pause
+ * @param[in] handle the handle id of task to be paused
  * @param[in] timeout returnable flag. It can be one of the below.\n
  *			TM_NO_RESPONSE : Ignore the response of request from task manager\n
  *			TM_RESPONSE_WAIT_INF : Blocked until get the response from task manager\n
@@ -177,7 +179,7 @@ int task_manager_pause(int handle, int timeout);
 /**
  * @brief Request to resume the task
  * @details @b #include <task_manager/task_manager.h>
- * @param[in] handle the handle id of task which request to resume
+ * @param[in] handle the handle id of task to be resumed
  * @param[in] timeout returnable flag. It can be one of the below.\n
  *			TM_NO_RESPONSE : Ignore the response of request from task manager\n
  *			TM_RESPONSE_WAIT_INF : Blocked until get the response from task manager\n
@@ -190,7 +192,7 @@ int task_manager_resume(int handle, int timeout);
  * @brief Request to restart the task
  * @details @b #include <task_manager/task_manager.h>
  * It cannot guarantee the resource deallocation.
- * @param[in] handle the handle id of task which request to restart
+ * @param[in] handle the handle id of task to be restarted
  * @param[in] timeout returnable flag. It can be one of the below.\n
  *			TM_NO_RESPONSE : Ignore the response of request from task manager\n
  *			TM_RESPONSE_WAIT_INF : Blocked until get the response from task manager\n
@@ -202,13 +204,13 @@ int task_manager_restart(int handle, int timeout);
 /**
  * @brief Request to send messages to the task
  * @details @b #include <task_manager/task_manager.h>
- * @param[in] handle the handle id of task which request to send
- * @param[in] msg message which request to send
+ * @param[in] handle the handle id of task to be sent
+ * @param[in] msg message to be unicasted
  * @param[in] msg_size the size of message
  * @param[in] timeout returnable flag. It can be one of the below.\n
  *			TM_NO_RESPONSE : Ignore the response of request from task manager\n
  *			TM_RESPONSE_WAIT_INF : Blocked until get the response from task manager\n
- *			integer value : Specifies an upper limit on the time for which will block in milliseconds 
+ *			integer value : Specifies an upper limit on the time for which will block in milliseconds
  * @return On success, OK is returned. On failure, defined negative value is returned.
  * @since TizenRT v2.0 PRE
  */
@@ -216,9 +218,9 @@ int task_manager_unicast(int handle, void *msg, int msg_size, int timeout);
 /**
  * @brief Request to send messages to the tasks
  * @details @b #include <task_manager/task_manager.h>
- * @param[in] msg message which request to broadcast.\n
+ * @param[in] msg message to be broadcasted
  * @return On success, OK is returned. On failure, defined negative value is returned.
- *         (This return value only checks whether a broadcast message has been requested 
+ *         (This return value only checks whether a broadcast message has been requested
  *          to the task manager to broadcast.)
  * @since TizenRT v2.0 PRE
  */
@@ -236,7 +238,7 @@ int task_manager_set_unicast_cb(void (*func)(void *data));
  * @details @b #include <task_manager/task_manager.h>
  * @param[in] msg_mask the message mask for selecting specific broadcast msgs\n
  *            User can change the msg_mask by using task_manager_set_broadcast_cb
- *            with the changed msg_mask value
+ *            with the changed msg_mask value.
  * @param[in] func the handler function which handle broadcast msgs\n
  * @return On success, OK is returned. On failure, defined negative value is returned.
  * @since TizenRT v2.0 PRE
@@ -254,11 +256,11 @@ int task_manager_set_termination_cb(void (*func)(void));
  * @brief Get task information list through task name
  * @details @b #include <task_manager/task_manager.h>
  * After using the list of task information, use task_manager_clean_infolist() API to free the allocated memory.
- * @param[in] name the task name which want to get information
+ * @param[in] name the task name to get information
  * @param[in] timeout returnable flag. It can be one of the below.\n
  *			TM_NO_RESPONSE : Ignore the response of request from task manager\n
  *			TM_RESPONSE_WAIT_INF : Blocked until get the response from task manager\n
- *			integer value : Specifies an upper limit on the time for which will block in milliseconds 
+ *			integer value : Specifies an upper limit on the time for which will block in milliseconds
  * @return On success, the list of task information is returned(at the end of the list, NULL will be returned). On failure, NULL is returned.
  * @since TizenRT v2.0 PRE
  */
@@ -267,11 +269,11 @@ task_info_list_t *task_manager_getinfo_with_name(char *name, int timeout);
  * @brief Get task information through handle
  * @details @b #include <task_manager/task_manager.h>
  * After using the task information, use task_manager_clean_info() API to free the allocated memory.
- * @param[in] handle the handle id of task
+ * @param[in] handle the handle id to get information
  * @param[in] timeout returnable flag. It can be one of the below.\n
  *			TM_NO_RESPONSE : Ignore the response of request from task manager\n
  *			TM_RESPONSE_WAIT_INF : Blocked until get the response from task manager\n
- *			integer value : Specifies an upper limit on the time for which will block in milliseconds 
+ *			integer value : Specifies an upper limit on the time for which will block in milliseconds
  * @return On success, the task information is returned. On failure, NULL is returned.
  * @since TizenRT v2.0 PRE
  */
@@ -280,11 +282,11 @@ task_info_t *task_manager_getinfo_with_handle(int handle, int timeout);
  * @brief Get task information list through group
  * @details @b #include <task_manager/task_manager.h>
  * After using the list of task information, use task_manager_clean_infolist() API to free the allocated memory.
- * @param[in] group the group id which want to get information
+ * @param[in] group the group id to get information
  * @param[in] timeout returnable flag. It can be one of the below.\n
  *			TM_NO_RESPONSE : Ignore the response of request from task manager\n
  *			TM_RESPONSE_WAIT_INF : Blocked until get the response from task manager\n
- *			integer value : Specifies an upper limit on the time for which will block in milliseconds 
+ *			integer value : Specifies an upper limit on the time for which will block in milliseconds
  * @return On success, the task information is returned. On failure, NULL is returned.
  * @since TizenRT v2.0 PRE
  */
