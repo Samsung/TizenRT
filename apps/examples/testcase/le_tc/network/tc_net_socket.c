@@ -1076,6 +1076,7 @@ static void tc_net_socket_af_inet_sock_raw_icmpv6_p(void)
 	fd = socket(AF_INET, SOCK_RAW, IPPROTO_ICMPV6);
 	TC_ASSERT_GEQ("socket", fd, 0)
 	TC_SUCCESS_RESULT()
+	close(fd);
 }
 #endif
 
