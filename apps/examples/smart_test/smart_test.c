@@ -68,6 +68,7 @@
 /****************************************************************************
  * Pre-processor Definitions
  ****************************************************************************/
+#define VERBOSE(fmt, ...)	if (g_verbose) { printf(fmt, ##__VA_ARGS__); }
 
 /****************************************************************************
  * Private data
@@ -84,6 +85,8 @@ static int g_lineCount = 2000;
 static int g_recordLen = 64;
 static int g_eraseCount = 32;
 static int g_totalRecords = 40000;
+
+static int g_verbose = 1;
 
 /****************************************************************************
  * Private Functions
@@ -137,7 +140,7 @@ static int smart_create_test_file(char *filename)
 			break;
 		}
 
-		printf("\r%d", x);
+		VERBOSE("\r%d", x);
 		fflush(stdout);
 	}
 
@@ -203,7 +206,7 @@ static int smart_seek_test(char *filename)
 			ret = -1;
 		}
 
-		printf("\r%d", x);
+		VERBOSE("\r%d", x);
 		fflush(stdout);
 	}
 
@@ -346,7 +349,7 @@ static int smart_seek_with_write_test(char *filename)
 			break;
 		}
 
-		printf("\r%d", x);
+		VERBOSE("\r%d", x);
 		fflush(stdout);
 
 		/* On to next line */
@@ -506,7 +509,7 @@ static int smart_circular_log_test(char *filename)
 			}
 		}
 
-		printf("\r%d", x);
+		VERBOSE("\r%d", x);
 		fflush(stdout);
 
 		/* Increment to the next record */
@@ -595,7 +598,7 @@ int smart_test_main(int argc, char *argv[])
 	/* Argument given? */
 
 	optind = -1;
-	while ((opt = getopt(argc, argv, "c:e:l:r:s:a:t:w:")) != -1) {
+	while ((opt = getopt(argc, argv, "c:e:l:r:s:a:t:w:v:")) != -1) {
 		switch (opt) {
 		case 'c':
 			g_circCount = atoi(optarg);
@@ -629,6 +632,9 @@ int smart_test_main(int argc, char *argv[])
 			g_appendCount = atoi(optarg);
 			break;
 
+		case 'v':
+			g_verbose = atoi(optarg);
+			break;
 		default:				/* '?' */
 			smart_usage();
 			exit(EXIT_FAILURE);
