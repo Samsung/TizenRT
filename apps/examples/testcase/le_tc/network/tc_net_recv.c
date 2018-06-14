@@ -36,7 +36,7 @@
 
 #define PORTNUM 1109
 #define MAXRCVLEN 20
-int mutex = 0;
+static int mutex = 0;
 /**
    * @fn                   :recv_wait
    * @brief                :function to wait on semaphore
@@ -289,6 +289,8 @@ int net_recv_main(void)
 {
 
 	pthread_t Server, Client;
+
+	mutex = 0;
 
 	pthread_create(&Server, NULL, recv_server, NULL);
 	pthread_create(&Client, NULL, recv_client, NULL);

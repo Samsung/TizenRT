@@ -36,7 +36,7 @@
 
 #define PORTNUM 1110
 #define MAXRCVLEN 20
-int s1 = 0;
+static int s1 = 0;
 /**
    * @fn                   :wait1
    * @brief                :function to wait on semaphore
@@ -46,7 +46,7 @@ int s1 = 0;
    * Postconditions        :
    * @return               :void
    */
-void wait1(void)
+static void wait1(void)
 {
 	while (s1 <= 0) {
 

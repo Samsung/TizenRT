@@ -38,7 +38,7 @@
 #define PORTNUM 7891
 #define TCPPORT 7890
 #define MAXRCVLEN 20
-int sp = 0;
+static int sp = 0;
 void tc_net_sendto_tcp_n(int ConnectFD);
 void tc_net_sendto_tcp_shutdown_n(int ConnectFD);
 
@@ -432,6 +432,8 @@ int net_sendto_main(void)
 {
 
 	pthread_t Server, Client, tcpserver, tcpclient;
+
+	sp = 0;
 
 	pthread_create(&Server, NULL, sendto_udpserver, NULL);
 	pthread_create(&Client, NULL, sendto_udpclient, NULL);

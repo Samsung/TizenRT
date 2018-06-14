@@ -293,6 +293,8 @@ int net_getpeername_main(void)
 {
 
 	pthread_t Server, Client;
+	g_sem = 0;
+	g_running_client = 0;
 
 	pthread_create(&Client, NULL, getpeername_client, NULL);
 	int ret = _wait_client();
