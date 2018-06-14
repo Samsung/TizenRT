@@ -1,0 +1,3 @@
+config ENTRY_AVS_TEST
+	bool "AVS Device SDK test example"
+	depends on EXAMPLES_AVS_TEST
