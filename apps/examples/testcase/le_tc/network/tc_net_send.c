@@ -36,7 +36,7 @@
 
 #define PORTNUM 1110
 #define MAXRCVLEN 20
-int s1 = 0;
+static int s1 = 0;
 /**
    * @fn                   :wait1
    * @brief                :function to wait on semaphore
@@ -46,7 +46,7 @@ int s1 = 0;
    * Postconditions        :
    * @return               :void
    */
-void wait1(void)
+static void wait1(void)
 {
 	while (s1 <= 0) {
 
@@ -106,11 +106,16 @@ void tc_net_send_p(int fd)
    */
 void *server(void *args)
 {
-
 	struct sockaddr_in sa;
 	int SocketFD = socket(PF_INET, SOCK_STREAM, IPPROTO_TCP);
 	if (SocketFD < 0) {
 		printf("socket fail %s:%d", __FUNCTION__, __LINE__);
+		return 0;
+	}
+
+	if (setsockopt(SocketFD, SOL_SOCKET, SO_REUSEADDR, &(int){ 1 }, sizeof(int)) < 0) {
+		printf("setsockopt(SO_REUSEADDR) failed %s:%d:%d\n", __FUNCTION__, __LINE__, errno);
+		close(SocketFD);
 		return 0;
 	}
 
@@ -195,7 +200,6 @@ int net_send_main(void)
 {
 
 	pthread_t Server, Client;
-
 	pthread_create(&Server, NULL, server, NULL);
 	pthread_create(&Client, NULL, client, NULL);
 

@@ -219,9 +219,9 @@ void *Client(void *args)
  ****************************************************************************/
 int net_accept_main(void)
 {
-
 	pthread_t server, client;
-
+	s = 0;
+	g_client_running = 0;
 	pthread_create(&client, NULL, Client, NULL);
 	int ret = _wait_client();
 	if (ret < 0) {

@@ -36,7 +36,7 @@
 
 #define PORTNUM 1109
 #define MAXRCVLEN 20
-int mutex = 0;
+static int mutex = 0;
 /**
    * @fn                   :recv_wait
    * @brief                :function to wait on semaphore
@@ -159,6 +159,17 @@ void *recv_server(void *args)
 	struct sockaddr_in sa;
 	int SocketFD = socket(PF_INET, SOCK_STREAM, IPPROTO_TCP);
 
+	if(SocketFD < 0) {
+		printf("error %s:%d\n", __FUNCTION__, __LINE__);
+		return 0;
+	}
+
+	if (setsockopt(SocketFD, SOL_SOCKET, SO_REUSEADDR, &(int){ 1 }, sizeof(int)) < 0) {
+		printf("setsockopt(SO_REUSEADDR) failed %s:%d:%d\n", __FUNCTION__, __LINE__, errno);
+		close(SocketFD);
+		return 0;
+	}
+
 	memset(&sa, 0, sizeof(sa));
 
 	sa.sin_family = PF_INET;
@@ -191,6 +202,20 @@ void *recv_server(void *args)
 		if (ret < 0) {
 			printf("error %s:%d\n", __FUNCTION__, __LINE__);
 		}
+	}
+
+	ConnectFD = accept(SocketFD, NULL, NULL);
+	if (ConnectFD < 0) {
+		printf("error %s:%d\n", __FUNCTION__, __LINE__);
+		close(SocketFD);
+		return 0;
+	}
+
+	ret = send(ConnectFD, msg, strlen(msg), 0);
+	if (ret == 0) {
+		printf("socket is closed. it's not error\n");
+	} else if (ret < 0) {
+		printf("error %s:%d %d\n", __FUNCTION__, __LINE__, errno);
 	}
 
 	close(ConnectFD);
@@ -237,16 +262,24 @@ void *recv_client(void *args)
 	tc_net_recv_p(mysocket);
 	tc_net_recv_n(mysocket);
 	tc_net_recv_shutdown_n(mysocket);
+
+	close(mysocket);
+
+	mysocket = socket(PF_INET, SOCK_STREAM, IPPROTO_TCP);
+	if (mysocket < 0) {
+		printf("Socket creation fail %s:%d\n", __FUNCTION__,  __LINE__);
+		return 0;
+	}
+
 	ret = connect(mysocket, (struct sockaddr *)&dest, sizeof(struct sockaddr));
 	if (ret < 0) {
 		close(mysocket);
-		printf("fail %s:%d\n", __FUNCTION__, __LINE__);
+		printf("fail %s:%d:%d\n", __FUNCTION__, __LINE__, errno);
 		return 0;
 	}
 	tc_net_recv_close_n(mysocket);
 
 	return 0;
-
 }
 
 /****************************************************************************
@@ -256,6 +289,8 @@ int net_recv_main(void)
 {
 
 	pthread_t Server, Client;
+
+	mutex = 0;
 
 	pthread_create(&Server, NULL, recv_server, NULL);
 	pthread_create(&Client, NULL, recv_client, NULL);

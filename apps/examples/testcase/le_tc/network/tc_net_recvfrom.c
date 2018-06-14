@@ -59,32 +59,6 @@ void tc_net_recvfrom_p(int fd)
 }
 
 /**
-   * @testcase		   :tc_net_recvfrom_sock_n
-   * @brief		   :negative testcase using udp
-   * @scenario		   :
-   * @apicovered	   :recvfrom()
-   * @precondition	   :
-   * @postcondition	   :
-   */
-void tc_net_recvfrom_sock_n(void)
-{
-	char buffer[MAXRCVLEN];
-	struct sockaddr_storage serverStorage;
-	socklen_t addr_size;
-	int fd = socket(AF_INET, SOCK_STREAM, IPPROTO_UDP);
-	if (fd < 0) {
-		printf("socket fail %s:%d", __FUNCTION__, __LINE__);
-		return;
-	}
-	int ret = recvfrom(fd, buffer, MAXRCVLEN, 0, (struct sockaddr *)&serverStorage, &addr_size);
-
-	TC_ASSERT_EQ_CLEANUP("recvfrom", ret, -1, close(fd));
-	TC_SUCCESS_RESULT();
-	close(fd);
-
-}
-
-/**
    * @testcase		   :tc_net_recvfrom_n
    * @brief		   :negative testcase using udp
    * @scenario		   :
@@ -113,7 +87,6 @@ void tc_net_recvfrom_n(int fd)
    * Postconditions        :
    * @return               :void *
    */
-
 void *recvfrom_udpserver(void *args)
 {
 	struct sockaddr_in sa;
@@ -137,7 +110,6 @@ void *recvfrom_udpserver(void *args)
 	}
 
 	tc_net_recvfrom_p(SocketFD);
-	tc_net_recvfrom_sock_n();
 	tc_net_recvfrom_n(SocketFD);
 	close(SocketFD);
 
@@ -309,6 +281,13 @@ void *recvfrom_tcpserver(void *args)
 		printf("Socket creation fail %s:%d\n", __FUNCTION__,  __LINE__);
 		return 0;
 	}
+
+	if (setsockopt(SocketFD, SOL_SOCKET, SO_REUSEADDR, &(int){ 1 }, sizeof(int)) < 0) {
+		printf("setsockopt(SO_REUSEADDR) failed %s:%d:%d\n", __FUNCTION__, __LINE__, errno);
+		close(SocketFD);
+		return 0;
+	}
+
 	memset(&sa, 0, sizeof(sa));
 
 	sa.sin_family = PF_INET;
