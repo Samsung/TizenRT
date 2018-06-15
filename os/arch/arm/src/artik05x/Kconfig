@@ -105,6 +105,8 @@ config ARTIK05X_AUTOMOUNT_USERFS_DEVNAME
 	---help---
 		Specifies the device name (/dev/smart0pX) of the partition
 		for user r/w file system.
+		when SMARTFS_MULTI_ROOT_DIRS is enabled the device name
+		will be appended by "d1" (/dev/smart0pxd1).
 
 config ARTIK05X_AUTOMOUNT_USERFS_MOUNTPOINT
 	string "Mountpoint of the partition for user r/w file system"
