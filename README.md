@@ -362,6 +362,8 @@ TASH>>
 Only in case that file system is available, it stores information as file `/mnt/wifi/slsiwifi.conf`. You need the following settings in menuconfig.
 > * Application Configuration > Network Utilities > SLSI Wi-Fi API > Enable "Support filesystem"
 
+NOTE: This feature is not available when onboard is enabled.
+
 ```
 TASH>> wifi startsta
 TASH>> wifi join <ssid> <key> <security>

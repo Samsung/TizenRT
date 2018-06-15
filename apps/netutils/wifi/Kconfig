@@ -37,6 +37,7 @@ config SLSI_WIFI_NO_AUTOCONNECT
 
 config SLSI_WIFI_FILESYSTEM_SUPPORT
 	bool "Support filesystem"
+	depends on !EXAMPLES_ARTIK_ONBOARDING
 	default n
 	---help---
 		The API can utilize the filesystem for configuration files and log files if needed.
