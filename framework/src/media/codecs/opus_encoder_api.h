@@ -42,7 +42,7 @@ struct opus_enc_external_s {
 	/*
 	 * INPUT:
 	 * Configures the frame size in the encoder. It will be used in opus_encode().
-	 * It supports value: 2.5(25), 5, 10, 20, 40, 60, 80, 100, 120. (in ms)
+	 * It supports value: 5, 10, 20, 40, 60, 80, 100, 120. (in ms)
 	 * Number of (inputChannels*inputSampleRate* frameSizeMS/1000) samples
 	 * will be encoded to one opus packet as a transporting frame.
 	 */

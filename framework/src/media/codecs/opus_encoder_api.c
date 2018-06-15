@@ -68,9 +68,6 @@ static void *opus_encoder_thread(void *param)
 		medvdbg("opus encoding...\n");
 		unsigned char *out_data = ((unsigned char *)opus_svr->ext->pOutputBuffer) + OPUS_PACKET_HEADER_LEN;
 		int analysis_frame_size = opus_svr->ext->inputSampleRate * opus_svr->ext->frameSizeMS / 1000;
-		if (opus_svr->ext->frameSizeMS == 25) {
-			analysis_frame_size /= 10;
-		}
 
 		opus_svr->payload_size = opus_encode(opus_svr->st, \
 									opus_svr->ext->pInputBuffer, \
@@ -217,11 +214,6 @@ int32_t opus_frameEncode(opus_enc_external_t *pExt, void *pMem)
 	OpusEncoder *st = getOpusEncoder(pMem);
 	unsigned char *out_data = ((unsigned char *)pExt->pOutputBuffer) + OPUS_PACKET_HEADER_LEN;
 	int analysis_frame_size = pExt->inputSampleRate * pExt->frameSizeMS / 1000;
-
-	if (pExt->frameSizeMS == 25) {
-		analysis_frame_size /= 10;
-	}
-
 	int32_t payload_size;
 
 #ifdef CONFIG_OPUS_CODEC_PTHREAD

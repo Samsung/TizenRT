@@ -163,14 +163,10 @@ int aud_encoder_getframe(aud_encoder_p encoder, void *data, size_t len)
 		opus_enc_external_t *opus_ext = (opus_enc_external_t *) encoder->enc_ext;
 
 		int analysis_frame_size = opus_ext->inputSampleRate * opus_ext->frameSizeMS / 1000;
-		if (opus_ext->frameSizeMS == 25)
-			analysis_frame_size /= 10;
-
 		size_t size = analysis_frame_size * opus_ext->inputChannels * sizeof(signed short);
 
 		int ret = rbs_seek(encoder->rbsp, priv->mCurrentPos, SEEK_SET);
 		RETURN_VAL_IF_FAIL((ret == OK), PV_FAILURE);
-
 
 		RETURN_VAL_IF_FAIL((size <= (size_t) opus_ext->inputBufferMaxLength), PV_FAILURE);
 		size_t rlen = rbs_read((void *) opus_ext->pInputBuffer, 1, size, encoder->rbsp);
