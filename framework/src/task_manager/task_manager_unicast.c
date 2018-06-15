@@ -48,31 +48,34 @@ int task_manager_unicast(int handle, void *msg, int msg_size, int timeout)
 			return TM_OUT_OF_MEMORY;
 		}
 		strncpy((char *)request_msg.data, msg, msg_size);
-	} else {
-		request_msg.data = NULL;
 	}
 
 	/* Set the request msg */
-	request_msg.cmd = TASKMGT_UNICAST;
+	request_msg.cmd = TASKMGR_UNICAST;
 	request_msg.handle = handle;
 	request_msg.caller_pid = getpid();
 	request_msg.timeout = timeout;
 
 	if (timeout != TM_NO_RESPONSE) {
 		asprintf(&request_msg.q_name, "%s%d", TM_PRIVATE_MQ, request_msg.caller_pid);
+		if (request_msg.q_name == NULL) {
+			TM_FREE(request_msg.data);
+			return TM_OUT_OF_MEMORY;
+		}
 	}
 
 	status = taskmgr_send_request(&request_msg);
 	if (status < 0) {
-		return TM_FAIL_REQ_TO_MGR;
+		TM_FREE(request_msg.data);
+		if (request_msg.q_name != NULL) {
+			TM_FREE(request_msg.q_name);
+		}
+		return status;
 	}
 
 	if (timeout != TM_NO_RESPONSE) {
 		status = taskmgr_receive_response(request_msg.q_name, &response_msg, timeout);
 		TM_FREE(request_msg.q_name);
-		if (status == OK) {
-			status = response_msg.status;
-		}
 	}
 
 	return status;

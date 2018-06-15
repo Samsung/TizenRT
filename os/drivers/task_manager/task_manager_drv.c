@@ -124,6 +124,7 @@ static int taskmgr_ioctl(FAR struct file *filep, int cmd, unsigned long arg)
 	case TMIOC_PAUSE:
 		tcb = sched_gettcb((int)arg);
 		if (tcb == NULL) {
+			tmdbg("Invalid pid\n");
 			return ERROR;
 		}
 		if (tcb->task_state == TSTATE_WAIT_SIG && tcb->waitdog != NULL) {
@@ -139,10 +140,12 @@ static int taskmgr_ioctl(FAR struct file *filep, int cmd, unsigned long arg)
 	case TMIOC_UNICAST:
 		tcb = sched_gettcb((int)arg);
 		if (tcb == NULL) {
+			tmdbg("Invalid pid\n");
 			return ERROR;
 		}
 		ret = (int)sig_is_handler_registered(tcb, SIGTM_UNICAST);
 		if ((bool)ret != true) {
+			tmdbg("handler is not registered for unicast\n");
 			ret = ERROR;
 		} else {
 			ret = OK;
@@ -153,10 +156,12 @@ static int taskmgr_ioctl(FAR struct file *filep, int cmd, unsigned long arg)
 	case TMIOC_BROADCAST:
 		tcb = sched_gettcb((int)arg);
 		if (tcb == NULL) {
+			tmdbg("Invalid pid\n");
 			return ERROR;
 		}
 		ret = (int)sig_is_handler_registered(tcb, SIGTM_BROADCAST);
 		if ((bool)ret != true) {
+			tmdbg("handler is not registered for broadcast\n");
 			ret = ERROR;
 		} else {
 			ret = OK;
@@ -165,6 +170,7 @@ static int taskmgr_ioctl(FAR struct file *filep, int cmd, unsigned long arg)
 	case TMIOC_CHECK_ALIVE:
 		tcb = sched_gettcb((int)arg);
 		if (tcb == NULL) {
+			tmdbg("Invalid pid\n");
 			return ERROR;
 		}
 		ret = OK;

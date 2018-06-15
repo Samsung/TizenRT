@@ -36,20 +36,19 @@ int task_manager_broadcast(int msg)
 	}
 
 	memset(&request_msg, 0, sizeof(tm_request_t));
+	/* Set the request msg */
+	request_msg.cmd = TASKMGR_BROADCAST;
+	request_msg.timeout = TM_NO_RESPONSE;
 	request_msg.data = (void *)TM_ALLOC(sizeof(int));
-	if (request_msg.data != NULL) {
-		*((int *)request_msg.data) = msg;
-	} else {
+	if (request_msg.data == NULL) {
 		return TM_OUT_OF_MEMORY;
 	}
-
-	/* Set the request msg */
-	request_msg.cmd = TASKMGT_BROADCAST;
-	request_msg.timeout = TM_NO_RESPONSE;
+	*((int *)request_msg.data) = msg;
 
 	status = taskmgr_send_request(&request_msg);
 	if (status < 0) {
-		return TM_FAIL_REQ_TO_MGR;
+		TM_FREE(request_msg.data);
 	}
-	return OK;
+
+	return status;
 }

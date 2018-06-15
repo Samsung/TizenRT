@@ -514,7 +514,7 @@ menu "Device Management"
 source Kconfig.devmng
 endmenu
 
-menu "Task management"
+menu "Task manager"
 source "$FRAMEWORK_DIR/src/task_manager/Kconfig"
 endmenu
 
