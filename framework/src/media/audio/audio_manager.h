@@ -96,7 +96,7 @@ audio_manager_result_t init_audio_stream_out(void);
  * Returned Value:
  *   On success, AUDIO_MANAGER_SUCCESS. Otherwise a negative value.
  ****************************************************************************/
-audio_manager_result_t set_audio_stream_in(uint8_t channels, uint32_t sample_rate, uint8_t format);
+audio_manager_result_t set_audio_stream_in(unsigned int channels, unsigned int sample_rate, int format);
 
 /****************************************************************************
  * Name: set_audio_stream_out
@@ -114,7 +114,7 @@ audio_manager_result_t set_audio_stream_in(uint8_t channels, uint32_t sample_rat
  * Returned Value:
  *   On success, AUDIO_MANAGER_SUCCESS. Otherwise, a negative value.
  ****************************************************************************/
-audio_manager_result_t set_audio_stream_out(uint8_t channels, uint32_t sample_rate, uint8_t format);
+audio_manager_result_t set_audio_stream_out(unsigned int channels, unsigned int sample_rate, int format);
 
 /****************************************************************************
  * Name: start_audio_stream_in
@@ -131,7 +131,7 @@ audio_manager_result_t set_audio_stream_out(uint8_t channels, uint32_t sample_ra
  * Returned Value:
  *   On success, the number of frames read. Otherwise, a negative value.
  ****************************************************************************/
-int start_audio_stream_in(void *data, uint32_t frames);
+int start_audio_stream_in(void *data, unsigned int frames);
 
 /****************************************************************************
  * Name: start_audio_stream_out
@@ -148,7 +148,7 @@ int start_audio_stream_in(void *data, uint32_t frames);
  * Returned Value:
  *   On success, the number of frames written. Otherwise, a negative value.
  ****************************************************************************/
-int start_audio_stream_out(void *data, uint32_t frames);
+int start_audio_stream_out(void *data, unsigned int frames);
 
 /****************************************************************************
  * Name: pause_audio_stream_in
@@ -239,10 +239,10 @@ audio_manager_result_t stop_audio_stream_out(void);
  * Returned Value:
  *   On success, the size of the pcm buffer for input streams. Otherwise, 0.
  ****************************************************************************/
-uint32_t get_input_frame_count(void);
+unsigned int get_input_frame_count(void);
 
 /****************************************************************************
- * Name: get_input_frames_byte_size
+ * Name: get_input_frames_to_byte
  *
  * Description:
  *   Get the byte size of the given frame value in input stream.
@@ -250,10 +250,10 @@ uint32_t get_input_frame_count(void);
  * Returned Value:
  *   On success, the byte size of the frame in input stream. Otherwise, 0.
  ****************************************************************************/
-uint32_t get_input_frames_byte_size(uint32_t frames);
+unsigned int get_input_frames_to_byte(unsigned int frames);
 
 /****************************************************************************
- * Name: get_input_bytes_frame_count
+ * Name: get_input_bytes_to_frame
  *
  * Description:
  *   Get the number of frames for the given byte size in input stream.
@@ -261,7 +261,7 @@ uint32_t get_input_frames_byte_size(uint32_t frames);
  * Returned Value:
  *   On success, the number of frames in input stream. Otherwise, 0.
  ****************************************************************************/
-uint32_t get_input_bytes_frame_count(uint32_t bytes);
+unsigned int get_input_bytes_to_frame(unsigned int bytes);
 
 /****************************************************************************
  * Name: get_output_frame_count
@@ -272,10 +272,10 @@ uint32_t get_input_bytes_frame_count(uint32_t bytes);
  * Returned Value:
  *   On success, the size of the pcm buffer for output streams. Otherwise, 0.
  ****************************************************************************/
-uint32_t get_output_frame_count(void);
+unsigned int get_output_frame_count(void);
 
 /****************************************************************************
- * Name: get_output_frames_byte_size
+ * Name: get_output_frames_to_byte
  *
  * Description:
  *   Get the byte size of the given frame value in output stream.
@@ -283,10 +283,10 @@ uint32_t get_output_frame_count(void);
  * Returned Value:
  *   On success, the byte size of the frame in output stream. Otherwise, 0.
  ****************************************************************************/
-uint32_t get_output_frames_byte_size(uint32_t frames);
+unsigned int get_output_frames_to_byte(unsigned int frames);
 
 /****************************************************************************
- * Name: get_output_bytes_frame_count
+ * Name: get_output_bytes_to_frame
  *
  * Description:
  *   Get the number of frames for the given byte size in output stream.
@@ -294,7 +294,7 @@ uint32_t get_output_frames_byte_size(uint32_t frames);
  * Returned Value:
  *   On success, the number of frames in output stream. Otherwise, 0.
  ****************************************************************************/
-uint32_t get_output_bytes_frame_count(uint32_t bytes);
+unsigned int get_output_bytes_to_frame(unsigned int bytes);
 
 /****************************************************************************
  * Name: get_audio_volume

@@ -25,9 +25,9 @@ using namespace std;
 using namespace media;
 using namespace media::stream;
 
-static unsigned char channels = 2;
+static unsigned int channels = 2;
 static unsigned int sampleRate = 16000;
-static int pcmFormat = AUDIO_FORMAT_TYPE_S16_LE;
+static audio_format_type_t pcmFormat = AUDIO_FORMAT_TYPE_S16_LE;
 static const char *filePath = "/ramfs/record";
 
 static void utc_media_MediaRecorder_create_p(void)

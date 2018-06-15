@@ -87,7 +87,7 @@ enum audio_card_type_e {
 };
 
 struct audio_config_s {
-	uint16_t volume;
+	uint8_t volume;
 	uint16_t max_volume;
 	char *manufacturer_name;
 	enum manufacturer_type_e manufacturer_type;
@@ -96,11 +96,11 @@ struct audio_config_s {
 
 struct audio_resample_s {
 	bool necessary;
-	uint32_t samprate_types;
-	uint32_t from;
-	uint32_t to;
+	uint8_t samprate_types;
+	unsigned int from;
+	unsigned int to;
 	void *buffer;
-	uint16_t buffer_size;
+	unsigned int buffer_size;
 	float ratio;
 	src_handle_t handle;
 };
@@ -116,8 +116,8 @@ struct audio_card_info_s {
 };
 
 struct audio_samprate_map_entry_s {
-	uint32_t samprate_types;
-	uint32_t samprate;
+	uint8_t samprate_types;
+	unsigned int samprate;
 };
 
 typedef enum audio_card_status_e audio_card_status_t;
@@ -150,10 +150,10 @@ static audio_manager_result_t find_audio_card(audio_card_type_t card_type);
 static int get_actual_audio_in_card_id(void);
 static int get_actual_audio_out_card_id(void);
 static void get_hardware_params(audio_card_info_t *card, audio_card_type_t card_type);
-static audio_manager_result_t get_supported_sample_rate(int fd, uint32_t *sample_type, audio_card_type_t type);
-static uint32_t get_closest_samprate(uint32_t origin_samprate, audio_card_type_t type);
-static int resample_stream_in(audio_card_info_t *cur_card, void *data, uint32_t frames);
-static int resample_stream_out(audio_card_info_t *cur_card, void *data, uint32_t frames);
+static audio_manager_result_t get_supported_sample_rate(int fd, uint8_t *sample_type, audio_card_type_t type);
+static uint32_t get_closest_samprate(unsigned origin_samprate, audio_card_type_t type);
+static unsigned int resample_stream_in(audio_card_info_t *cur_card, void *data, unsigned int frames);
+static unsigned int resample_stream_out(audio_card_info_t *cur_card, void *data, unsigned int frames);
 static audio_manager_result_t get_audio_volume(int fd, audio_config_t *config, audio_card_type_t card_type);
 static audio_manager_result_t set_audio_volume(audio_card_type_t type, uint8_t volume);
 
@@ -282,7 +282,7 @@ static void get_hardware_params(audio_card_info_t *card, audio_card_type_t card_
 	close(fd);
 }
 
-static audio_manager_result_t get_supported_sample_rate(int fd, uint32_t *sample_type, audio_card_type_t card_type)
+static audio_manager_result_t get_supported_sample_rate(int fd, uint8_t *sample_type, audio_card_type_t card_type)
 {
 	struct audio_caps_desc_s caps_desc;
 
@@ -330,7 +330,7 @@ static int get_actual_audio_out_card_id()
 	return AUDIO_MANAGER_NO_AVAIL_CARD;
 }
 
-static uint32_t get_closest_samprate(uint32_t origin_samprate, audio_card_type_t type)
+static uint32_t get_closest_samprate(unsigned int origin_samprate, audio_card_type_t type)
 {
 	int i;
 	uint32_t result;
@@ -360,10 +360,10 @@ static uint32_t get_closest_samprate(uint32_t origin_samprate, audio_card_type_t
 	return result;
 }
 
-static int resample_stream_in(audio_card_info_t *cur_card, void *data, uint32_t frames)
+static unsigned int resample_stream_in(audio_card_info_t *cur_card, void *data, unsigned int frames)
 {
-	int used_frames = 0;
-	int resampled_frames = 0;
+	unsigned int used_frames = 0;
+	unsigned int resampled_frames = 0;
 	src_data_t srcData = { 0, };
 
 	srcData.channels_num = 2;
@@ -376,10 +376,10 @@ static int resample_stream_in(audio_card_info_t *cur_card, void *data, uint32_t 
 	srcData.out_buf_length = cur_card->resample.buffer_size;
 
 	while (frames > used_frames) {
-		srcData.data_in = cur_card->resample.buffer + get_input_frames_byte_size(used_frames);
+		srcData.data_in = cur_card->resample.buffer + get_input_frames_to_byte(used_frames);
 		srcData.input_frames = frames - used_frames;
-		srcData.data_out = data + get_input_frames_byte_size(resampled_frames);
-		medvdbg("data_in addr = 0x%x + %d\t", srcData.data_in, get_input_frames_byte_size(used_frames));
+		srcData.data_out = data + get_input_frames_to_byte(resampled_frames);
+		medvdbg("data_in addr = 0x%x + %d\t", srcData.data_in, get_input_frames_to_byte(used_frames));
 		if (src_simple(cur_card->resample.handle, &srcData) != SRC_ERR_NO_ERROR) {
 			meddbg("Fail to resample in:%d/%d, out:%d, to %u from %u\n", used_frames, frames, srcData.desired_sample_rate, srcData.origin_sample_rate);
 			return AUDIO_MANAGER_RESAMPLE_FAIL;
@@ -398,10 +398,10 @@ static int resample_stream_in(audio_card_info_t *cur_card, void *data, uint32_t 
 	return resampled_frames;
 }
 
-static int resample_stream_out(audio_card_info_t *cur_card, void *data, uint32_t frames)
+static unsigned int resample_stream_out(audio_card_info_t *cur_card, void *data, unsigned int frames)
 {
-	int used_frames = 0;
-	int resampled_frames = 0;
+	unsigned int used_frames = 0;
+	unsigned int resampled_frames = 0;
 	src_data_t srcData = { 0, };
 
 	srcData.channels_num = 2;
@@ -415,9 +415,9 @@ static int resample_stream_out(audio_card_info_t *cur_card, void *data, uint32_t
 	medvdbg("resampler buffer_size = %d, buffer_addr = 0x%x\n", cur_card->resample.buffer_size, cur_card->resample.buffer);
 
 	while (frames > used_frames) {
-		srcData.data_in = data + get_output_frames_byte_size(used_frames);
+		srcData.data_in = data + get_output_frames_to_byte(used_frames);
 		srcData.input_frames = frames - used_frames;
-		srcData.data_out = cur_card->resample.buffer + get_output_frames_byte_size(resampled_frames);
+		srcData.data_out = cur_card->resample.buffer + get_output_frames_to_byte(resampled_frames);
 		medvdbg("buffer addr = 0x%x   data_out addr = 0x%x   ", cur_card->resample.buffer, srcData.data_out);
 		if (src_simple(cur_card->resample.handle, &srcData) != SRC_ERR_NO_ERROR) {
 			meddbg("Fail to resample in:%d/%d, out:%d, to %u from %u\n", used_frames, frames, srcData.desired_sample_rate, srcData.origin_sample_rate);
@@ -442,8 +442,8 @@ static audio_manager_result_t get_audio_volume(int fd, audio_config_t *config, a
 {
 	struct audio_caps_desc_s caps_desc;
 	int ret;
-	int max_volume;
-	int cur_volume;
+	uint16_t max_volume;
+	uint16_t cur_volume;
 
 	caps_desc.caps.ac_len = sizeof(struct audio_caps_s);
 	caps_desc.caps.ac_type = AUDIO_TYPE_FEATURE;
@@ -459,14 +459,14 @@ static audio_manager_result_t get_audio_volume(int fd, audio_config_t *config, a
 		return AUDIO_MANAGER_DEVICE_FAIL;
 	}
 
-	max_volume = caps_desc.caps.ac_controls.b[0];
-	cur_volume = caps_desc.caps.ac_controls.b[1];
+	max_volume = caps_desc.caps.ac_controls.hw[0];
+	cur_volume = caps_desc.caps.ac_controls.hw[1];
 
 	/* scale here */
 	cur_volume = cur_volume * AUDIO_DEVICE_MAX_VOLUME / (max_volume - (max_volume % AUDIO_DEVICE_MAX_VOLUME));
 
 	config->max_volume = max_volume;
-	config->volume = cur_volume;
+	config->volume = (uint8_t)cur_volume;
 
 	return AUDIO_MANAGER_SUCCESS;
 }
@@ -490,7 +490,7 @@ static audio_manager_result_t set_audio_volume(audio_card_type_t type, uint8_t v
 		card = &g_audio_out_cards[g_actual_audio_out_card_id];
 
 	}
-	caps_desc.caps.ac_controls.hw[0] = volume * (int)(card->config.max_volume / AUDIO_DEVICE_MAX_VOLUME);
+	caps_desc.caps.ac_controls.hw[0] = volume * (card->config.max_volume / AUDIO_DEVICE_MAX_VOLUME);
 	caps_desc.caps.ac_len = sizeof(struct audio_caps_s);
 	caps_desc.caps.ac_type = AUDIO_TYPE_FEATURE;
 
@@ -529,7 +529,7 @@ audio_manager_result_t init_audio_stream_out(void)
 	return init_audio_stream(OUTPUT);
 }
 
-audio_manager_result_t set_audio_stream_in(uint8_t channels, uint32_t sample_rate, uint8_t format)
+audio_manager_result_t set_audio_stream_in(unsigned int channels, unsigned int sample_rate, int format)
 {
 	struct pcm_config config;
 
@@ -573,7 +573,7 @@ audio_manager_result_t set_audio_stream_in(uint8_t channels, uint32_t sample_rat
 		g_audio_in_cards[g_actual_audio_in_card_id].resample.to = sample_rate;
 		g_audio_in_cards[g_actual_audio_in_card_id].resample.ratio = (float)sample_rate / (float)config.rate;
 		g_audio_in_cards[g_actual_audio_in_card_id].resample.handle = src_init(CONFIG_AUDIO_RESAMPLER_BUFSIZE);
-		g_audio_in_cards[g_actual_audio_in_card_id].resample.buffer = malloc((int)((float)get_input_frames_byte_size(get_input_frame_count()) / g_audio_in_cards[g_actual_audio_in_card_id].resample.ratio) + 1);	// +1 for floating point margin
+		g_audio_in_cards[g_actual_audio_in_card_id].resample.buffer = malloc((int)((float)get_input_frames_to_byte(get_input_frame_count()) / g_audio_in_cards[g_actual_audio_in_card_id].resample.ratio) + 1);	// +1 for floating point margin
 		if (!g_audio_in_cards[g_actual_audio_in_card_id].resample.buffer) {
 			meddbg("malloc for a resampling buffer(stream_in) is failed\n");
 			pcm_close(g_audio_in_cards[g_actual_audio_in_card_id].pcm);
@@ -586,7 +586,7 @@ audio_manager_result_t set_audio_stream_in(uint8_t channels, uint32_t sample_rat
 	return AUDIO_MANAGER_SUCCESS;
 }
 
-audio_manager_result_t set_audio_stream_out(uint8_t channels, uint32_t sample_rate, uint8_t format)
+audio_manager_result_t set_audio_stream_out(unsigned int channels, unsigned int sample_rate, int format)
 {
 	struct pcm_config config;
 
@@ -636,7 +636,7 @@ audio_manager_result_t set_audio_stream_out(uint8_t channels, uint32_t sample_ra
 
 	if (g_audio_out_cards[g_actual_audio_out_card_id].resample.necessary) {
 		g_audio_out_cards[g_actual_audio_out_card_id].resample.handle = src_init(CONFIG_AUDIO_RESAMPLER_BUFSIZE);
-		g_audio_out_cards[g_actual_audio_out_card_id].resample.buffer_size = (int)((float)get_output_frames_byte_size(get_output_frame_count()) * g_audio_out_cards[g_actual_audio_out_card_id].resample.ratio) + 1;	// +1 for floating point margin
+		g_audio_out_cards[g_actual_audio_out_card_id].resample.buffer_size = (int)((float)get_output_frames_to_byte(get_output_frame_count()) * g_audio_out_cards[g_actual_audio_out_card_id].resample.ratio) + 1;	// +1 for floating point margin
 		g_audio_out_cards[g_actual_audio_out_card_id].resample.buffer = malloc(g_audio_out_cards[g_actual_audio_out_card_id].resample.buffer_size);
 		if (!g_audio_out_cards[g_actual_audio_out_card_id].resample.buffer) {
 			meddbg("malloc for a resampling buffer(stream_out) is failed\n");
@@ -652,7 +652,7 @@ audio_manager_result_t set_audio_stream_out(uint8_t channels, uint32_t sample_ra
 	return AUDIO_MANAGER_SUCCESS;
 }
 
-int start_audio_stream_in(void *data, uint32_t frames)
+int start_audio_stream_in(void *data, unsigned int frames)
 {
 	int ret;
 	int prepare_retry = AUDIO_STREAM_RETRY_COUNT;
@@ -688,7 +688,7 @@ int start_audio_stream_in(void *data, uint32_t frames)
 				frames_to_read = (get_input_frame_count() / cur_card->resample.ratio);
 			}
 
-			cur_card->resample.buffer_size = get_input_frames_byte_size(frames);
+			cur_card->resample.buffer_size = get_input_frames_to_byte(frames);
 
 			ret = pcm_readi(cur_card->pcm, cur_card->resample.buffer, frames_to_read);
 			medvdbg("Read frames (%d/%u) for resample to %u\n", ret, frames_to_read, frames);
@@ -721,10 +721,10 @@ int start_audio_stream_in(void *data, uint32_t frames)
 	return ret;
 }
 
-int start_audio_stream_out(void *data, uint32_t frames)
+int start_audio_stream_out(void *data, unsigned int frames)
 {
 	int ret;
-	int resampled_frames = 0;
+	unsigned int resampled_frames = 0;
 	int prepare_retry = AUDIO_STREAM_RETRY_COUNT;
 	audio_card_info_t *cur_card;
 	medvdbg("start_audio_stream_out(%u)\n", frames);
@@ -936,7 +936,7 @@ audio_manager_result_t stop_audio_stream_out(void)
 	return AUDIO_MANAGER_SUCCESS;
 }
 
-uint32_t get_input_frame_count(void)
+unsigned int get_input_frame_count(void)
 {
 	if (g_actual_audio_in_card_id < 0) {
 		meddbg("No input audio card is active.\n");
@@ -946,7 +946,7 @@ uint32_t get_input_frame_count(void)
 	return pcm_get_buffer_size(g_audio_in_cards[g_actual_audio_in_card_id].pcm);
 }
 
-uint32_t get_input_frames_byte_size(uint32_t frames)
+unsigned int get_input_frames_to_byte(unsigned int frames)
 {
 	if ((g_actual_audio_in_card_id < 0) || (frames == 0)) {
 		return 0;
@@ -955,7 +955,7 @@ uint32_t get_input_frames_byte_size(uint32_t frames)
 	return pcm_frames_to_bytes(g_audio_in_cards[g_actual_audio_in_card_id].pcm, frames);
 }
 
-uint32_t get_input_bytes_frame_count(uint32_t bytes)
+unsigned int get_input_bytes_to_frame(unsigned int bytes)
 {
 	if ((g_actual_audio_in_card_id < 0) || (bytes == 0)) {
 		return 0;
@@ -964,7 +964,7 @@ uint32_t get_input_bytes_frame_count(uint32_t bytes)
 	return pcm_bytes_to_frames(g_audio_in_cards[g_actual_audio_in_card_id].pcm, bytes);
 }
 
-uint32_t get_output_frame_count(void)
+unsigned int get_output_frame_count(void)
 {
 	if (g_actual_audio_out_card_id < 0) {
 		meddbg("No output audio card is active.\n");
@@ -974,7 +974,7 @@ uint32_t get_output_frame_count(void)
 	return pcm_get_buffer_size(g_audio_out_cards[g_actual_audio_out_card_id].pcm);
 }
 
-uint32_t get_output_frames_byte_size(uint32_t frames)
+unsigned int get_output_frames_to_byte(unsigned int frames)
 {
 	if ((g_actual_audio_out_card_id < 0) || (frames == 0)) {
 		return 0;
@@ -983,7 +983,7 @@ uint32_t get_output_frames_byte_size(uint32_t frames)
 	return pcm_frames_to_bytes(g_audio_out_cards[g_actual_audio_out_card_id].pcm, frames);
 }
 
-uint32_t get_output_bytes_frame_count(uint32_t bytes)
+uint32_t get_output_bytes_to_frame(unsigned int bytes)
 {
 	if ((g_actual_audio_out_card_id < 0) || (bytes == 0)) {
 		return 0;
@@ -1020,7 +1020,7 @@ int get_input_audio_volume(void)
 
 	close(fd);
 
-	return g_audio_in_cards[g_actual_audio_in_card_id].config.volume;
+	return (int)g_audio_in_cards[g_actual_audio_in_card_id].config.volume;
 #endif
 	return 0;
 }
@@ -1048,7 +1048,7 @@ int get_output_audio_volume(void)
 
 	close(fd);
 
-	return g_audio_out_cards[g_actual_audio_out_card_id].config.volume;
+	return (int)g_audio_out_cards[g_actual_audio_out_card_id].config.volume;
 #endif
 	return 0;
 }

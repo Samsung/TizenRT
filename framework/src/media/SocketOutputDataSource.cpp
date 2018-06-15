@@ -34,7 +34,7 @@ SocketOutputDataSource::SocketOutputDataSource(const std::string& ipAddr, const 
 {
 }
 
-SocketOutputDataSource::SocketOutputDataSource(unsigned short channels, unsigned int sampleRate, int pcmFormat, const std::string& ipAddr, const uint16_t port)
+SocketOutputDataSource::SocketOutputDataSource(unsigned int channels, unsigned int sampleRate, audio_format_type_t pcmFormat, const std::string& ipAddr, const uint16_t port)
 	: OutputDataSource(channels, sampleRate, pcmFormat), mIpAddr(ipAddr), mPort(port), mSockFd(INVALID_SOCKET)
 {
 }

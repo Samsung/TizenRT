@@ -63,7 +63,7 @@ public:
 	 * param[in] pcmFormat  The pcmFormat that the pcm format of audio
 	 * @since TizenRT v2.0 PRE
 	 */
-	DataSource(unsigned short channels, unsigned int sampleRate, int pcmFormat);
+	DataSource(unsigned int channels, unsigned int sampleRate, audio_format_type_t pcmFormat);
 	/**
 	 * @brief Copy constructs for DataSource.
 	 * @details @b #include <media/DataSource.h>
@@ -103,7 +103,7 @@ public:
 	 * @return The channel count of the stream data.
 	 * @since TizenRT v2.0 PRE
 	 */
-	unsigned char getChannels();
+	unsigned int getChannels();
 	/**
 	 * @brief Gets the sample rate of the stream data.
 	 * @details @b #include <media/DataSource.h>
@@ -117,7 +117,7 @@ public:
 	 * @return The pcm format of the stream data.
 	 * @since TizenRT v2.0 PRE
 	 */
-	int getPcmFormat();
+	audio_format_type_t getPcmFormat();
 
 	/**
 	 * @brief Sets the channel count of the stream data.
@@ -125,7 +125,7 @@ public:
 	 * @param[in] channels The channels that the channel count of stream data
 	 * @since TizenRT v2.0 PRE
 	 */
-	void setChannels(unsigned char channels);
+	void setChannels(unsigned int channels);
 	/**
 	 * @brief Sets the sample rate of the stream data.
 	 * @details @b #include <media/DataSource.h>
@@ -139,12 +139,12 @@ public:
 	 * @param[in] pcmFormat The pcmFormat that the pcm format of stream data
 	 * @since TizenRT v2.0 PRE
 	 */
-	void setPcmFormat(int pcmFormat);
+	void setPcmFormat(audio_format_type_t pcmFormat);
 
 private:
 	unsigned char mChannels;
 	unsigned int mSampleRate;
-	int mPcmFormat;
+	audio_format_type_t mPcmFormat;
 };
 } // namespace media
 

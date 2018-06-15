@@ -56,7 +56,7 @@ public:
 	 * param[in] pcmFormat  The pcmFormat that the pcm format of audio
 	 * @since TizenRT v2.0 PRE
 	 */
-	OutputDataSource(unsigned short channels, unsigned int sampleRate, int pcmFormat);
+	OutputDataSource(unsigned int channels, unsigned int sampleRate, audio_format_type_t pcmFormat);
 
 	/**
 	 * @brief Copy constructs for OutputDataSource.

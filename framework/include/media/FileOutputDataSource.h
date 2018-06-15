@@ -65,7 +65,7 @@ public:
 	 * param[in] datapath   The datapath that the path of data
 	 * @since TizenRT v2.0 PRE
 	 */
-	FileOutputDataSource(unsigned short channels, unsigned int sampleRate, int pcmFormat, const std::string& dataPath);
+	FileOutputDataSource(unsigned int channels, unsigned int sampleRate, audio_format_type_t pcmFormat, const std::string& dataPath);
 	/**
 	 * @brief Copy constructs for FileOutputDataSource.
 	 * @details @b #include <media/FileOutputDataSource.h>

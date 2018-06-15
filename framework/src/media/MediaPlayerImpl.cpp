@@ -167,7 +167,7 @@ void MediaPlayerImpl::preparePlayer(player_result_t &ret)
 		goto errout;
 	}
 
-	mBufSize = get_output_frames_byte_size(get_output_frame_count());
+	mBufSize = get_output_frames_to_byte(get_output_frame_count());
 	if (mBufSize < 0) {
 		meddbg("MediaPlayer prepare fail : get_output_frames_byte_size fail\n");
 		goto errout;
@@ -365,14 +365,6 @@ void MediaPlayerImpl::getVolumePlayer(int &ret)
 {
 	medvdbg("MediaPlayer Worker : getVolume\n");
 
-	if (mCurState == PLAYER_STATE_NONE) {
-		meddbg("MediaPlayer getVolume fail : wrong state\n");
-		notifyObserver(PLAYER_OBSERVER_COMMAND_ERROR);
-		ret = -1;
-		mSyncCv.notify_one();
-		return;
-	}
-
 	ret = get_output_audio_volume();
 	mSyncCv.notify_one();
 }
@@ -401,18 +393,13 @@ void MediaPlayerImpl::setVolumePlayer(int vol, player_result_t &ret)
 	int vol_max = -1;
 	medvdbg("MediaPlayer Worker : setVolume\n");
 
-	if (mCurState == PLAYER_STATE_NONE) {
-		meddbg("MediaPlayer setVolume fail : wrong state\n");
-		goto errout;
-	}
-
 	vol_max = get_max_audio_volume();
 	if (vol < 0 || vol > vol_max) {
 		meddbg("MediaPlayer setVolume fail : invalid argument. volume level should be 0(Min) ~ %d(Max)\n", vol_max);
 		goto errout;
 	}
 
-	if (set_output_audio_volume(vol) != AUDIO_MANAGER_SUCCESS) {
+	if (set_output_audio_volume((uint8_t)vol) != AUDIO_MANAGER_SUCCESS) {
 		meddbg("MediaPlayer setVolume fail : audio manager failed\n");
 		goto errout;
 	}
@@ -542,7 +529,7 @@ void MediaPlayerImpl::playback()
 	ssize_t num_read = mInputDataSource->read(mBuffer,(int)mBufSize);
 	meddbg("num_read : %d\n", num_read);
 	if (num_read > 0) {
-		start_audio_stream_out(mBuffer, get_output_bytes_frame_count(num_read));
+		start_audio_stream_out(mBuffer, get_output_bytes_to_frame((unsigned int)num_read));
 	} else if (num_read == 0) {
 		notifyObserver(PLAYER_OBSERVER_COMMAND_FINISHIED);
 		stop();
