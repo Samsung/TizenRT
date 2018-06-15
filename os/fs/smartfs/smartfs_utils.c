@@ -590,7 +590,7 @@ int smartfs_mount(struct smartfs_mountpt_s *fs, bool writeable)
 	fs->fs_rootsector = SMARTFS_ROOT_DIR_SECTOR + fs->fs_llformat.rootdirnum;
 #endif							/* CONFIG_SMARTFS_MULTI_ROOT_DIRS */
 
-#if defined(CONFIG_FS_PROCFS) && !defined(CONFIG_FS_PROCFS_EXCLUDE_SMARTFS)
+#if defined(CONFIG_FS_PROCFS) && !defined(CONFIG_FS_PROCFS_EXCLUDE_SMARTFS) && !defined(CONFIG_SMARTFS_MULTI_ROOT_DIRS)
 	/* Now add ourselves to the linked list of SMART mounts */
 
 	fs->fs_next = g_mounthead;
