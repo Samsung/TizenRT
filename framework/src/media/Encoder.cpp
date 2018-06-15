@@ -64,9 +64,9 @@ Encoder::Encoder(audio_type_t audio_type, unsigned short channels, unsigned int 
 
 		// params for streaming
 		ext.pOutputBuffer = outputBuf;
-		ext.outputBufferMaxLength = sizeof(outputBuf);
+		ext.outputBufferMaxLength = sizeof(unsigned char) * MAX_PACKET_SIZE;
 		ext.pInputBuffer = inputBuf;
-		ext.inputBufferMaxLength = sizeof(inputBuf);
+		ext.inputBufferMaxLength = sizeof(signed short) * inSamples;
 
 		// params about PCM source
 		ext.inputChannels = channels;
