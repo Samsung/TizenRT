@@ -240,7 +240,7 @@ BIN = $(BIN_DIR)/$(BIN_EXE)
 memstat: $(BIN)
 
 all: memstat
-.PHONY: context clean_context check_context export subdir_clean clean subdir_distclean distclean apps_clean apps_distclean force_build applist appupdate
+.PHONY: context clean_context check_context config oldconfig menuconfig nconfig qconfig gconfig export subdir_clean clean subdir_distclean distclean apps_clean apps_distclean force_build applist appupdate
 
 # Target used to copy include/tinyara/math.h.  If CONFIG_ARCH_MATH_H is
 # defined, then there is an architecture specific math.h header file
@@ -437,8 +437,10 @@ clean_context:
 
 check_context:
 	$(Q) if [ ! -e ${TOPDIR}/.config -o ! -e ${TOPDIR}/Make.defs ]; then \
-		echo "" ; echo "TinyAra has not been configured:" ; \
-		echo "  cd tools; ./configure.sh <target>" ; echo "" ; \
+		echo "" ; \
+		echo "TizenRT has not been configured:" ; \
+		echo "  tools/configure.sh <target>" ; \
+		echo "" ; \
 		exit 1 ; \
 	fi
 
@@ -577,6 +579,11 @@ oldconfig: apps_preconfig
 
 menuconfig: apps_preconfig
 	$(Q) APPSDIR=${CONFIG_APPS_DIR} EXTERNALDIR=${CONFIG_EXTERNAL_DIR} LIBDIR=${LIB_DIR} kconfig-mconf Kconfig
+
+do_nconfig: apps_preconfig
+	$(Q) APPSDIR=${CONFIG_APPS_DIR} EXTERNALDIR=${CONFIG_EXTERNAL_DIR} LIBDIR=${LIB_DIR} kconfig-nconf Kconfig
+
+nconfig: do_nconfig clean_context
 
 qconfig: apps_preconfig
 	$(Q) APPSDIR=${CONFIG_APPS_DIR} EXTERNALDIR=${CONFIG_EXTERNAL_DIR} LIBDIR=${LIB_DIR} kconfig-qconf Kconfig
