@@ -174,6 +174,17 @@ define DOWNLOAD
        @$(TOPDIR)/../build/configs/artik05x/artik05x_download.sh --board=$(BOARD_NAME) $(1)
 endef
 
+ifeq ($(WINTOOL),y)
+# Windows-native toolchains
+define PACKAGE
+  ${shell cygpath -w $(TOPDIR)/../build/configs/artik05x/artik05x_user_binary.sh --topdir=$(TOPDIR) --board=$(BOARD_NAME)}
+endef
+else
+define PACKAGE
+  $(Q) $(TOPDIR)/../build/configs/artik05x/artik05x_user_binary.sh --topdir=$(TOPDIR) --board=$(BOARD_NAME)
+endef
+endif
+
 define MAKEIMAGE
 	$(Q) $(TOPDIR)/../build/configs/artik05x/artik05x_download.sh \
 		--board=$(BOARD_NAME) \

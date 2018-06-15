@@ -44,6 +44,8 @@ This project is forking [TizenRT 1.0](https://github.com/Samsung/TizenRT) from [
 > * Security
 >   * [ARTIK certificate uuid](#artik-certificate-uuid)
 >   * [ARTIK Secure Boot Guide](#artik-secure-boot-guide)
+> * Deploy
+>   * [Deploying TizenRT for ARTIK05x](#deploying-tizenrt-for-artik05x)
 > * Support Tool
 >   * [TRACE32](#trace32)
 >   * [J-Link](#j-link)
@@ -1026,6 +1028,24 @@ $ ./tools/attachns2-s.py ./u-boot.bin ./u-boot.head.bin ./rsa_public.key
 8. Build as guided below.
 
 > Reference: https://github.com/SamsungARTIK/TizenRT#how-to-build
+
+<!-- Deploy -->
+
+## Deploying TizenRT for ARTIK05x
+
+You can use the following command to distribute the finished build.
+```bash
+$ cd os
+$ make
+$ make package
+...
+archive file creation is complete image : ...
+```
+This `make package` command includes the `OpenOCD` for downloading the program to ARTIK05x and the completed binary files. There are also batch and script files available for Windows and Ubuntu.
+* For Windows: /user_binary/openocd/fusing_a05x.bat
+* For Ubuntu:  /user_binary/openocd/fusing_a05x.sh
+
+At the end of the command execution, a compressed file will be created. You can distribute it.
 
 <!-- Support Tool -->
 

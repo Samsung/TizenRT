@@ -231,7 +231,9 @@ __EOF__
 chmod +x user_binary/openocd/fusing_a05x.*
 
 # Archive
-zip -r $OUTPUT_PATH/bin/$(date '+%Y%m%d-%H%M')_tizenRT100_User.zip user_binary/boot_bin/* user_binary/openocd/*
+ARCHIVE_FILE=$OUTPUT_PATH/bin/$(date '+%Y%m%d-%H%M')_tizenRT100_User.zip
+zip -r $ARCHIVE_FILE user_binary/boot_bin/* user_binary/openocd/*
+echo "archive file creation is complete image : $ARCHIVE_FILE" >&2
 
 # clean
 rm -rf user_binary
