@@ -303,13 +303,14 @@ System.map  tinyara  tinyara.bin  tinyara_head.bin  tinyara.map  tinyara_memstat
 
 After building TizenRT, follow below steps at `TizenRT/os` folder.
 
-This makes complete set of binaries programmed. `make download ALL`
+This makes complete set of binaries programmed. `make download`
+In additional, the command 'make download' requires partition name which supports multiple parameter. The default is 'ALL'
 ```bash
 $ cd os
-$ make download ALL
+$ make download
 ```
 
-If you want to download only the necessary binaries, use `make download <partition_name>` as follows.
+If you want to download only the necessary binaries, use `make download <partition_name ...>` as follows:
 ```bash
 $ cd os
 $ make download os
@@ -322,20 +323,23 @@ You can refer to the [partition_map.cfg](build/configs/artik05x/scripts/partitio
 
 ## How to clear flashed content on a board
 
-You can also delete the binaries on the board. You can clean the board with the following command. `make download erase ALL`
+You can also delete the binaries on the board. You can clean the board with the following command. `make erase`
+In additional, the command 'make erase' requires partition name which supports multiple parameter. The default is 'ALL'
 ```bash
 $ cd os
-$ make download erase ALL
+$ make erase
 ```
 
-You can also erase only specific areas. This is especially useful for refreshing the user area (smartfs area). `make download erase <partition_name>`
+You can also erase only specific areas.
 ```bash
 $ cd os
-$ make download erase os
+$ make erase os
 ```
+
+This is especially useful for refreshing the user area (smartfs area). `make erase <partition_name ...>`
 ```bash
 $ cd os
-$ make download erase user
+$ make erase user
 ```
 
 ## How to use JTAG equiqments
@@ -1021,7 +1025,7 @@ $ ./tools/attachns2-s.py ./u-boot.bin ./u-boot.head.bin ./rsa_public.key
 
 > Reference: https://developer.artik.io/documentation/advanced-concepts/secure-os/kms.html
 
-7. Download signed image and copy it into below path as named `bl2.bin`. From now on, if you use `make download ALL` command, that `bl2.bin` will be used to fuse.
+7. Download signed image and copy it into below path as named `bl2.bin`. From now on, if you use `make download` command, that `bl2.bin` will be used to fuse.
 
 > tinyara/build/configs/artik053s/bin/bl2.bin
 

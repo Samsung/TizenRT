@@ -196,13 +196,39 @@ ifeq ($(V),2)
 MKEXPORT_ARGS += -d
 endif
 
+#
+# Rules provided by the manufacturer
+#
+# MANUFACTURES are rules provided by the manufacturer. Each
+#   rule is written in the Make.defs of the corresponding config.
+#
+
+define TARGET_template
+$(1) :
+	$(eval T := $(shell echo $(1) | tr a-z A-Z))
+	$(call $(T),$(TARGET_ARGS))
+endef
+
+MANUFACTURES := download image erase crashdump package
+
+ifneq (,$(filter $(firstword $(MAKECMDGOALS)),$(MANUFACTURES)))
+  # use the rest as arguments for manufacture targets
+  TARGET_ARGS := $(wordlist 2,$(words $(MAKECMDGOALS)),$(MAKECMDGOALS))
+  # Turn TARGET_ARGS into do-nothing targets
+  $(eval $(TARGET_ARGS):;@:)
+endif
+
+#
 # This is the name of the final target (relative to the top level directorty)
+#
 
 BIN_EXE = tinyara$(EXEEXT)
 BIN = $(BIN_DIR)\$(BIN_EXE)
 
 all: $(BIN)
-.PHONY: context clean_context check_context configenv config oldconfig menuconfig export subdir_clean clean subdir_distclean distclean apps_clean apps_distclean
+.PHONY: context clean_context check_context configenv config oldconfig menuconfig export subdir_clean clean subdir_distclean distclean apps_clean apps_distclean $(MANUFACTURES)
+
+$(foreach TAR, $(MANUFACTURES), $(eval $(call TARGET_template,$(TAR))))
 
 # Target used to copy include\tinyara\math.h.  If CONFIG_ARCH_MATH_H is
 # defined, then there is an architecture specific math.h header file
@@ -486,16 +512,6 @@ endif
 # in that case, execute 'make pass1 pass2' from the command line.
 
 $(BIN): pass1deps pass2deps pass1 pass2
-
-# download
-#
-# This is a helper target that will rebuild TinyAra and download it to the target
-# system in one step.  The operation of this target depends completely upon
-# implementation of the DOWNLOAD command in the user Make.defs file.  It will
-# generate an error an error if the DOWNLOAD command is not defined.
-
-download: $(BIN)
-	$(call DOWNLOAD, $<)
 
 # pass1dep: Create pass1 build dependencies
 # pass2dep: Create pass2 build dependencies
