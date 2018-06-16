@@ -28,28 +28,28 @@
 
 namespace media {
 
-struct aud_encoder_s;
-typedef struct aud_encoder_s aud_encoder_t;
-typedef struct aud_encoder_s *aud_encoder_p;
+struct audio_encoder_s;
+typedef struct audio_encoder_s audio_encoder_t;
+typedef struct audio_encoder_s *audio_encoder_p;
 
 /**
  * @brief  input callback routine type.
  *
- * @param  user_data: Pointer to user callback data register via aud_encoder_init()
+ * @param  user_data: Pointer to user callback data register via audio_encoder_init()
  * @param  encoder: Pointer to encoder object
- * @return size of audio data pushed to encoder via aud_encoder_pushdata().
+ * @return size of audio data pushed to encoder via audio_encoder_pushdata().
  *         in case of return 0, that means end of PCM stream, then encoding will be terminated.
  */
-typedef size_t(*input_func_f)(void *user_data, aud_encoder_p encoder);
+typedef size_t(*input_func_f)(void *user_data, audio_encoder_p encoder);
 
 /**
- * @struct  aud_encoder_s
+ * @struct  audio_encoder_s
  * @brief   Recorder structure, support encoding PCM stream to specified audio type, see enum audio_type_e.
  *          Currently, support encode type is OPUS. And might support other type in future.
  *          User should define and mantain encoder object in stack or heap, and give object pointer
- *          to aud_encoder_init(), and specify input callback.
+ *          to audio_encoder_init(), and specify input callback.
  */
-struct aud_encoder_s {
+struct audio_encoder_s {
 	int audio_type;             /* the format of output audio type desired, e.g. opus */
 
 	// encoder buffer
@@ -77,7 +77,7 @@ struct aud_encoder_s {
  * @param  enc_ext : Pointer to encoder external struct, ex: opus use opus_enc_external_t
  * @return 0 on success, otherwise, return -1.
  */
-int aud_encoder_init(aud_encoder_p encoder, size_t rbuf_size, audio_type_t audio_type, void *enc_ext);
+int audio_encoder_init(audio_encoder_p encoder, size_t rbuf_size, audio_type_t audio_type, void *enc_ext);
 
 /**
  * @brief  stream encoder register user data and user input callback.
@@ -87,7 +87,7 @@ int aud_encoder_init(aud_encoder_p encoder, size_t rbuf_size, audio_type_t audio
  * @param  input: audio data input callback routine
  * @return 0 on success, otherwise, return -1.
  */
-int aud_encoder_register_callbacks(aud_encoder_p encoder, void *data, input_func_f input);
+int audio_encoder_register_callbacks(audio_encoder_p encoder, void *data, input_func_f input);
 
 /**
  * @brief  stream encoder deinitialize.
@@ -95,11 +95,11 @@ int aud_encoder_register_callbacks(aud_encoder_p encoder, void *data, input_func
  * @param  encoder : Pointer to encoder object
  * @return 0 on success, otherwise, return -1.
  */
-int aud_encoder_finish(aud_encoder_p encoder);
+int audio_encoder_finish(audio_encoder_p encoder);
 
 /**
  * @brief  push audio source data to internal ring-buffer of encoder.
- *         It's possible to call this API to push data at any time during aud_encoder_run() running,
+ *         It's possible to call this API to push data at any time during audio_encoder_run() running,
  *         It's required to call this API to push data when user input callback called.
  *
  * @param  encoder : Pointer to encoder object
@@ -107,7 +107,7 @@ int aud_encoder_finish(aud_encoder_p encoder);
  * @param  len: size in bytes of audio source data contained in buffer.
  * @return size in bytes of data actually accepted by encoder.
  */
-size_t aud_encoder_pushdata(aud_encoder_p encoder, const void *data, size_t len);
+size_t audio_encoder_pushdata(audio_encoder_p encoder, const void *data, size_t len);
 
 /**
  * @brief  get free data space in encoder, which means the maximum of data to push.
@@ -115,7 +115,7 @@ size_t aud_encoder_pushdata(aud_encoder_p encoder, const void *data, size_t len)
  * @param  encoder : Pointer to encoder object
  * @return size in bytes of free space in internal ring-buffer of encoder.
  */
-size_t aud_encoder_dataspace(aud_encoder_p encoder);
+size_t audio_encoder_dataspace(audio_encoder_p encoder);
 
 /**
  * @brief  check data space is empty or not.
@@ -123,7 +123,7 @@ size_t aud_encoder_dataspace(aud_encoder_p encoder);
  * @param  encoder : Pointer to encoder object
  * @return true if data space is empty. Otherwise, false.
  */
-bool aud_encoder_dataspace_is_empty(aud_encoder_p encoder);
+bool audio_encoder_dataspace_is_empty(audio_encoder_p encoder);
 
 /**
  * @brief  get encoder output frame .
@@ -133,7 +133,7 @@ bool aud_encoder_dataspace_is_empty(aud_encoder_p encoder);
  * @param  len : max bytes of output buffer
  * @return size in bytes of audio data when success, or return -1.
  */
-int aud_encoder_getframe(aud_encoder_p encoder, void * data, size_t len);
+int audio_encoder_getframe(audio_encoder_p encoder, void * data, size_t len);
 
 } // namespace media
 

@@ -21,8 +21,8 @@
 #include "Decoder.h"
 #include <debug.h>
 
-#define PV_SUCCESS 0
-#define PV_FAILURE -1
+#define AUDIO_OK 0
+#define AUDIO_ERROR -1
 
 namespace media {
 
@@ -31,9 +31,9 @@ Decoder::Decoder(unsigned short channels, unsigned int sampleRate)
 	, mSampleRate(sampleRate)
 {
 #ifdef CONFIG_AUDIO_CODEC
-	memset(&mPlayer, 0, sizeof(pv_player_t));
-	if (pv_player_init(&mPlayer, CONFIG_AUDIO_CODEC_RINGBUFFER_SIZE) != PV_SUCCESS) {
-		meddbg("Error! pv_player_init failed!\n");
+	memset(&mDecoder, 0, sizeof(audio_decoder_t));
+	if (audio_decoder_init(&mDecoder, CONFIG_AUDIO_CODEC_RINGBUFFER_SIZE) != AUDIO_OK) {
+		meddbg("Error! audio_decoder_init failed!\n");
 	}
 #endif
 }
@@ -41,15 +41,15 @@ Decoder::Decoder(unsigned short channels, unsigned int sampleRate)
 Decoder::Decoder(const Decoder *source)
 {
 #ifdef CONFIG_AUDIO_CODEC
-	mPlayer = source->mPlayer;
+	mDecoder = source->mDecoder;
 #endif
 }
 
 Decoder::~Decoder()
 {
 #ifdef CONFIG_AUDIO_CODEC
-	if (pv_player_finish(&mPlayer) != PV_SUCCESS) {
-		meddbg("Error! pv_player_finish failed!\n");
+	if (audio_decoder_finish(&mDecoder) != AUDIO_OK) {
+		meddbg("Error! audio_decoder_finish failed!\n");
 	}
 #endif
 }
@@ -63,7 +63,7 @@ size_t Decoder::pushData(unsigned char *buf, size_t size)
 		size = rmax;
 	}
 
-	return pv_player_pushdata(&mPlayer, buf, size);
+	return audio_decoder_pushdata(&mDecoder, buf, size);
 #endif
 	return 0;
 }
@@ -87,16 +87,16 @@ bool Decoder::getFrame(unsigned char *buf, size_t *size, unsigned int *sampleRat
 	/*
 	 * Need to get the enough data to parse data format.
 	 */
-	if (mPlayer.audio_type == AUDIO_TYPE_UNKNOWN) {
-		mPlayer.audio_type = pv_player_get_audio_type(&mPlayer);
+	if (mDecoder.audio_type == AUDIO_TYPE_UNKNOWN) {
+		mDecoder.audio_type = audio_decoder_get_audio_type(&mDecoder);
 
-		if (!mConfig(mPlayer.audio_type)) {
+		if (!mConfig(mDecoder.audio_type)) {
 			meddbg("Error! mConfig() failed!\n");
 			return false;
 		}
 	}
 
-	*size = pv_player_get_frames(&mPlayer, buf, *size, sampleRate, channels);
+	*size = audio_decoder_get_frames(&mDecoder, buf, *size, sampleRate, channels);
 	if (*size == 0) {
 		return false;
 	}
@@ -109,7 +109,7 @@ bool Decoder::getFrame(unsigned char *buf, size_t *size, unsigned int *sampleRat
 bool Decoder::empty()
 {
 #ifdef CONFIG_AUDIO_CODEC
-	return pv_player_dataspace_is_empty(&mPlayer);
+	return audio_decoder_dataspace_is_empty(&mDecoder);
 #endif
 	return false;
 }
@@ -117,7 +117,7 @@ bool Decoder::empty()
 size_t Decoder::getAvailSpace()
 {
 #ifdef CONFIG_AUDIO_CODEC
-	return rb_avail(mPlayer.rbsp->rbp);
+	return rb_avail(mDecoder.rbsp->rbp);
 #endif
 	return 0;
 }
@@ -138,8 +138,8 @@ bool Decoder::mConfig(int audioType)
 		mp3_ext.pOutputBuffer = outputBuf;
 		mp3_ext.outputFrameSize = sizeof(outputBuf) / sizeof(int16_t);
 
-		if (pv_player_init_decoder(&mPlayer, audioType, &mp3_ext) != PV_SUCCESS) {
-			meddbg("Error! pv_player_init_decoder failed!\n");
+		if (audio_decoder_init_decoder(&mDecoder, audioType, &mp3_ext) != AUDIO_OK) {
+			meddbg("Error! audio_decoder_init_decoder failed!\n");
 			return false;
 		}
 		break;
@@ -153,8 +153,8 @@ bool Decoder::mConfig(int audioType)
 		aac_ext.pOutputBuffer = outputBuf;
 		aac_ext.aacPlusEnabled = 1;
 
-		if (pv_player_init_decoder(&mPlayer, audioType, &aac_ext) != PV_SUCCESS) {
-			meddbg("Error! pv_player_init_decoder failed!\n");
+		if (audio_decoder_init_decoder(&mDecoder, audioType, &aac_ext) != AUDIO_OK) {
+			meddbg("Error! audio_decoder_init_decoder failed!\n");
 			return false;
 		}
 		break;
@@ -170,8 +170,8 @@ bool Decoder::mConfig(int audioType)
 		opus_ext.desiredSampleRate = mSampleRate;
 		opus_ext.desiredChannels = mChannels;
 
-		if (pv_player_init_decoder(&mPlayer, audioType, &opus_ext) != PV_SUCCESS) {
-			meddbg("Error! pv_player_init_decoder failed!\n");
+		if (audio_decoder_init_decoder(&mDecoder, audioType, &opus_ext) != AUDIO_OK) {
+			meddbg("Error! audio_decoder_init_decoder failed!\n");
 			return false;
 		}
 		break;

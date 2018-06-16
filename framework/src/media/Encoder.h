@@ -21,7 +21,7 @@
 #include <media/MediaTypes.h>
 
 #ifdef CONFIG_AUDIO_CODEC
-#include "streaming/recorder.h"
+#include "streaming/audio_encoder.h"
 #endif
 
 namespace media {
@@ -42,7 +42,7 @@ public:
 private:
 	Encoder() {}
 #ifdef CONFIG_AUDIO_CODEC
-	aud_encoder_t mEncoder;
+	audio_encoder_t mEncoder;
 	signed short *inputBuf;
 	unsigned char *outputBuf;
 #endif

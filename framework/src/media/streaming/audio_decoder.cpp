@@ -25,7 +25,7 @@
 #include <assert.h>
 #include <pthread.h>
 #include <debug.h>
-#include "player.h"
+#include "audio_decoder.h"
 #include "../utils/internal_defs.h"
 
 namespace media {
@@ -33,8 +33,8 @@ namespace media {
 /****************************************************************************
  * Pre-processor Definitions
  ****************************************************************************/
-#define PV_SUCCESS OK
-#define PV_FAILURE ERROR
+#define AUDIO_OK OK
+#define AUDIO_ERROR ERROR
 
 // MP3 tag frame header len
 #define MP3_HEAD_ID3_TAG_LEN 10
@@ -780,38 +780,38 @@ int _get_audio_type(rbstream_p rbsp)
 	return AUDIO_TYPE_UNKNOWN;
 }
 
-bool _get_frame(pv_player_p player)
+bool _get_frame(audio_decoder_p decoder)
 {
-	priv_data_p priv = (priv_data_p) player->priv_data;
+	priv_data_p priv = (priv_data_p) decoder->priv_data;
 	assert(priv != NULL);
 
-	switch (player->audio_type) {
+	switch (decoder->audio_type) {
 	case AUDIO_TYPE_MP3: {
-		tPVMP3DecoderExternal *mp3_ext = (tPVMP3DecoderExternal *) player->dec_ext;
-		return mp3_get_frame(player->rbsp, &priv->mCurrentPos, priv->mFixedHeader, (void *)mp3_ext->pInputBuffer, (uint32_t *)&mp3_ext->inputBufferCurrentLength);
+		tPVMP3DecoderExternal *mp3_ext = (tPVMP3DecoderExternal *) decoder->dec_ext;
+		return mp3_get_frame(decoder->rbsp, &priv->mCurrentPos, priv->mFixedHeader, (void *)mp3_ext->pInputBuffer, (uint32_t *)&mp3_ext->inputBufferCurrentLength);
 	}
 
 	case AUDIO_TYPE_AAC: {
-		tPVMP4AudioDecoderExternal *aac_ext = (tPVMP4AudioDecoderExternal *) player->dec_ext;
-		return aac_get_frame(player->rbsp, &priv->mCurrentPos, (void *)aac_ext->pInputBuffer, (uint32_t *)&aac_ext->inputBufferCurrentLength);
+		tPVMP4AudioDecoderExternal *aac_ext = (tPVMP4AudioDecoderExternal *) decoder->dec_ext;
+		return aac_get_frame(decoder->rbsp, &priv->mCurrentPos, (void *)aac_ext->pInputBuffer, (uint32_t *)&aac_ext->inputBufferCurrentLength);
 	}
 
 #ifdef CONFIG_CODEC_LIBOPUS
 	case AUDIO_TYPE_OPUS: {
-		opus_dec_external_t *opus_ext = (opus_dec_external_t *) player->dec_ext;
-		return opus_get_frame(player->rbsp, &priv->mCurrentPos, (void *)opus_ext->pInputBuffer, (uint32_t *)&opus_ext->inputBufferCurrentLength);
+		opus_dec_external_t *opus_ext = (opus_dec_external_t *) decoder->dec_ext;
+		return opus_get_frame(decoder->rbsp, &priv->mCurrentPos, (void *)opus_ext->pInputBuffer, (uint32_t *)&opus_ext->inputBufferCurrentLength);
 	}
 #endif
 
 	default:
-		medwdbg("[%s] unsupported audio type: %d\n", __FUNCTION__, player->audio_type);
+		medwdbg("[%s] unsupported audio type: %d\n", __FUNCTION__, decoder->audio_type);
 		return false;
 	}
 }
 
-int _init_decoder(pv_player_p player, void *dec_ext)
+int _init_decoder(audio_decoder_p decoder, void *dec_ext)
 {
-	priv_data_p priv = (priv_data_p) player->priv_data;
+	priv_data_p priv = (priv_data_p) decoder->priv_data;
 	assert(priv != NULL);
 
 	// Init private data
@@ -819,83 +819,83 @@ int _init_decoder(pv_player_p player, void *dec_ext)
 	priv->mFixedHeader = 0;
 	memset(&(priv->pcm), 0, sizeof(pcm_data_t));
 
-	switch (player->audio_type) {
+	switch (decoder->audio_type) {
 	case AUDIO_TYPE_MP3: {
-		player->dec_ext = calloc(1, sizeof(tPVMP3DecoderExternal));
-		RETURN_VAL_IF_FAIL((player->dec_ext != NULL), PV_FAILURE);
+		decoder->dec_ext = calloc(1, sizeof(tPVMP3DecoderExternal));
+		RETURN_VAL_IF_FAIL((decoder->dec_ext != NULL), AUDIO_ERROR);
 
-		player->dec_mem = calloc(1, pvmp3_decoderMemRequirements());
-		RETURN_VAL_IF_FAIL((player->dec_mem != NULL), PV_FAILURE);
+		decoder->dec_mem = calloc(1, pvmp3_decoderMemRequirements());
+		RETURN_VAL_IF_FAIL((decoder->dec_mem != NULL), AUDIO_ERROR);
 
-		*((tPVMP3DecoderExternal *) player->dec_ext) = *((tPVMP3DecoderExternal *) dec_ext);
+		*((tPVMP3DecoderExternal *) decoder->dec_ext) = *((tPVMP3DecoderExternal *) dec_ext);
 
-		pvmp3_resetDecoder(player->dec_mem);
-		pvmp3_InitDecoder((tPVMP3DecoderExternal *) player->dec_ext, player->dec_mem);
+		pvmp3_resetDecoder(decoder->dec_mem);
+		pvmp3_InitDecoder((tPVMP3DecoderExternal *) decoder->dec_ext, decoder->dec_mem);
 
-		bool ret = mp3_init(player->rbsp, &priv->mCurrentPos, &priv->mFixedHeader);
-		RETURN_VAL_IF_FAIL((ret == true), PV_FAILURE);
+		bool ret = mp3_init(decoder->rbsp, &priv->mCurrentPos, &priv->mFixedHeader);
+		RETURN_VAL_IF_FAIL((ret == true), AUDIO_ERROR);
 		break;
 	}
 
 	case AUDIO_TYPE_AAC: {
-		player->dec_ext = calloc(1, sizeof(tPVMP4AudioDecoderExternal));
-		RETURN_VAL_IF_FAIL((player->dec_ext != NULL), PV_FAILURE);
+		decoder->dec_ext = calloc(1, sizeof(tPVMP4AudioDecoderExternal));
+		RETURN_VAL_IF_FAIL((decoder->dec_ext != NULL), AUDIO_ERROR);
 
-		player->dec_mem = calloc(1, PVMP4AudioDecoderGetMemRequirements());
-		RETURN_VAL_IF_FAIL((player->dec_mem != NULL), PV_FAILURE);
+		decoder->dec_mem = calloc(1, PVMP4AudioDecoderGetMemRequirements());
+		RETURN_VAL_IF_FAIL((decoder->dec_mem != NULL), AUDIO_ERROR);
 
-		*((tPVMP4AudioDecoderExternal *) player->dec_ext) = *((tPVMP4AudioDecoderExternal *) dec_ext);
+		*((tPVMP4AudioDecoderExternal *) decoder->dec_ext) = *((tPVMP4AudioDecoderExternal *) dec_ext);
 
-		PVMP4AudioDecoderResetBuffer(player->dec_mem);
-		Int err = PVMP4AudioDecoderInitLibrary((tPVMP4AudioDecoderExternal *) player->dec_ext, player->dec_mem);
-		RETURN_VAL_IF_FAIL((err == MP4AUDEC_SUCCESS), PV_FAILURE);
+		PVMP4AudioDecoderResetBuffer(decoder->dec_mem);
+		Int err = PVMP4AudioDecoderInitLibrary((tPVMP4AudioDecoderExternal *) decoder->dec_ext, decoder->dec_mem);
+		RETURN_VAL_IF_FAIL((err == MP4AUDEC_SUCCESS), AUDIO_ERROR);
 
-		bool ret = aac_init(player->rbsp, &priv->mCurrentPos);
-		RETURN_VAL_IF_FAIL((ret == true), PV_FAILURE);
+		bool ret = aac_init(decoder->rbsp, &priv->mCurrentPos);
+		RETURN_VAL_IF_FAIL((ret == true), AUDIO_ERROR);
 		break;
 	}
 
 #ifdef CONFIG_CODEC_LIBOPUS
 	case AUDIO_TYPE_OPUS: {
-		player->dec_ext = calloc(1, sizeof(opus_dec_external_t));
-		RETURN_VAL_IF_FAIL((player->dec_ext != NULL), PV_FAILURE);
+		decoder->dec_ext = calloc(1, sizeof(opus_dec_external_t));
+		RETURN_VAL_IF_FAIL((decoder->dec_ext != NULL), AUDIO_ERROR);
 
-		player->dec_mem = calloc(1, opus_decoderMemRequirements());
-		RETURN_VAL_IF_FAIL((player->dec_mem != NULL), PV_FAILURE);
+		decoder->dec_mem = calloc(1, opus_decoderMemRequirements());
+		RETURN_VAL_IF_FAIL((decoder->dec_mem != NULL), AUDIO_ERROR);
 
-		*((opus_dec_external_t *) player->dec_ext) = *((opus_dec_external_t *) dec_ext);
+		*((opus_dec_external_t *) decoder->dec_ext) = *((opus_dec_external_t *) dec_ext);
 
-		opus_resetDecoder(player->dec_mem);
-		int err = opus_initDecoder((opus_dec_external_t *) player->dec_ext, player->dec_mem);
-		RETURN_VAL_IF_FAIL((err == OPUS_OK), PV_FAILURE);
+		opus_resetDecoder(decoder->dec_mem);
+		int err = opus_initDecoder((opus_dec_external_t *) decoder->dec_ext, decoder->dec_mem);
+		RETURN_VAL_IF_FAIL((err == OPUS_OK), AUDIO_ERROR);
 
 		priv->mCurrentPos = 0;
-		bool ret = opus_init(player->rbsp, &priv->mCurrentPos);
-		RETURN_VAL_IF_FAIL((ret == true), PV_FAILURE);
+		bool ret = opus_init(decoder->rbsp, &priv->mCurrentPos);
+		RETURN_VAL_IF_FAIL((ret == true), AUDIO_ERROR);
 		break;
 	}
 #endif
 
 	default:
 		// Maybe do not need to init, return success.
-		return PV_SUCCESS;
+		return AUDIO_OK;
 	}
 
-	return PV_SUCCESS;
+	return AUDIO_OK;
 }
 
-int _frame_decoder(pv_player_p player, pcm_data_p pcm)
+int _frame_decoder(audio_decoder_p decoder, pcm_data_p pcm)
 {
-	switch (player->audio_type) {
+	switch (decoder->audio_type) {
 	case AUDIO_TYPE_MP3: {
-		tPVMP3DecoderExternal tmp_ext = *((tPVMP3DecoderExternal *) player->dec_ext);
+		tPVMP3DecoderExternal tmp_ext = *((tPVMP3DecoderExternal *) decoder->dec_ext);
 		tPVMP3DecoderExternal *mp3_ext = &tmp_ext;
 
 		mp3_ext->inputBufferUsedLength = 0;
 
-		ERROR_CODE errorCode = pvmp3_framedecoder(mp3_ext, player->dec_mem);
+		ERROR_CODE errorCode = pvmp3_framedecoder(mp3_ext, decoder->dec_mem);
 		medvdbg("[%s] Line %d, pvmp3_framedecoder, errorCode %d\n", __FUNCTION__, __LINE__, errorCode);
-		RETURN_VAL_IF_FAIL((errorCode == NO_DECODING_ERROR), PV_FAILURE);
+		RETURN_VAL_IF_FAIL((errorCode == NO_DECODING_ERROR), AUDIO_ERROR);
 
 		pcm->length = mp3_ext->outputFrameSize;
 		pcm->samples = mp3_ext->pOutputBuffer;
@@ -905,14 +905,14 @@ int _frame_decoder(pv_player_p player, pcm_data_p pcm)
 	}
 
 	case AUDIO_TYPE_AAC: {
-		tPVMP4AudioDecoderExternal *aac_ext = (tPVMP4AudioDecoderExternal *) player->dec_ext;
+		tPVMP4AudioDecoderExternal *aac_ext = (tPVMP4AudioDecoderExternal *) decoder->dec_ext;
 
 		aac_ext->inputBufferUsedLength = 0;
 		aac_ext->remainderBits = 0;
 
-		Int decoderErr = PVMP4AudioDecodeFrame(aac_ext, player->dec_mem);
+		Int decoderErr = PVMP4AudioDecodeFrame(aac_ext, decoder->dec_mem);
 		medvdbg("[%s] Line %d, PVMP4AudioDecodeFrame, decoderErr %d\n", __FUNCTION__, __LINE__, decoderErr);
-		RETURN_VAL_IF_FAIL((decoderErr == MP4AUDEC_SUCCESS), PV_FAILURE);
+		RETURN_VAL_IF_FAIL((decoderErr == MP4AUDEC_SUCCESS), AUDIO_ERROR);
 
 		pcm->length = aac_ext->frameLength * aac_ext->desiredChannels;
 		pcm->samples = aac_ext->pOutputBuffer;
@@ -923,11 +923,11 @@ int _frame_decoder(pv_player_p player, pcm_data_p pcm)
 
 #ifdef CONFIG_CODEC_LIBOPUS
 	case AUDIO_TYPE_OPUS: {
-		opus_dec_external_t *opus_ext = (opus_dec_external_t *) player->dec_ext;
+		opus_dec_external_t *opus_ext = (opus_dec_external_t *) decoder->dec_ext;
 
-		Int err = opus_frameDecode(opus_ext, player->dec_mem);
+		Int err = opus_frameDecode(opus_ext, decoder->dec_mem);
 		medvdbg("[%s] Line %d, opus_frameDecode, err %d\n", __FUNCTION__, __LINE__, err);
-		RETURN_VAL_IF_FAIL((err == OPUS_OK), PV_FAILURE);
+		RETURN_VAL_IF_FAIL((err == OPUS_OK), AUDIO_ERROR);
 
 		pcm->length = opus_ext->outputFrameSize * opus_ext->desiredChannels;
 		pcm->samples = opus_ext->pOutputBuffer;
@@ -939,20 +939,20 @@ int _frame_decoder(pv_player_p player, pcm_data_p pcm)
 
 	default:
 		// No decoding, return failure.
-		return PV_FAILURE;
+		return AUDIO_ERROR;
 	}
 
-	return PV_SUCCESS;
+	return AUDIO_OK;
 }
 
 static size_t _input_callback(void *data, rbstream_p rbsp)
 {
-	pv_player_p player = (pv_player_p) data;
-	assert(player != NULL);
+	audio_decoder_p decoder = (audio_decoder_p) data;
+	assert(decoder != NULL);
 
 	size_t wlen = 0;
-	RETURN_VAL_IF_FAIL((player->input_func != NULL), wlen);
-	wlen = player->input_func(player->cb_data, player);
+	RETURN_VAL_IF_FAIL((decoder->input_func != NULL), wlen);
+	wlen = decoder->input_func(decoder->cb_data, decoder);
 
 	return wlen;
 }
@@ -962,7 +962,7 @@ static size_t _input_callback(void *data, rbstream_p rbsp)
  ****************************************************************************/
 
 // check if the given auido type is supportted or not
-bool pv_player_check_audio_type(int audio_type)
+bool audio_decoder_check_audio_type(int audio_type)
 {
 	switch (audio_type) {
 	case AUDIO_TYPE_MP3:
@@ -979,62 +979,62 @@ bool pv_player_check_audio_type(int audio_type)
 	}
 }
 
-size_t pv_player_pushdata(pv_player_p player, const void *data, size_t len)
+size_t audio_decoder_pushdata(audio_decoder_p decoder, const void *data, size_t len)
 {
-	assert(player != NULL);
+	assert(decoder != NULL);
 	assert(data != NULL);
 
 	static pthread_mutex_t s_mutex = PTHREAD_MUTEX_INITIALIZER;
 
 	pthread_mutex_lock(&s_mutex);
-	len = rbs_write(data, 1, len, player->rbsp);
+	len = rbs_write(data, 1, len, decoder->rbsp);
 	pthread_mutex_unlock(&s_mutex);
 
 	return len;
 }
 
-size_t pv_player_dataspace(pv_player_p player)
+size_t audio_decoder_dataspace(audio_decoder_p decoder)
 {
-	assert(player != NULL);
+	assert(decoder != NULL);
 
-	return rb_avail(&player->ringbuffer);
+	return rb_avail(&decoder->ringbuffer);
 }
 
-bool pv_player_dataspace_is_empty(pv_player_p player)
+bool audio_decoder_dataspace_is_empty(audio_decoder_p decoder)
 {
-	assert(player != NULL);
+	assert(decoder != NULL);
 
-	return !rb_used(&player->ringbuffer);
+	return !rb_used(&decoder->ringbuffer);
 }
 
-int pv_player_get_audio_type(pv_player_p player)
+int audio_decoder_get_audio_type(audio_decoder_p decoder)
 {
-	assert(player != NULL);
+	assert(decoder != NULL);
 
-	if (!pv_player_check_audio_type(player->audio_type)) {
-		player->audio_type = _get_audio_type(player->rbsp);
-		medvdbg("audio_type %d\n", player->audio_type);
+	if (!audio_decoder_check_audio_type(decoder->audio_type)) {
+		decoder->audio_type = _get_audio_type(decoder->rbsp);
+		medvdbg("audio_type %d\n", decoder->audio_type);
 	}
 
-	return player->audio_type;
+	return decoder->audio_type;
 }
 
-int pv_player_init_decoder(pv_player_p player, int audio_type, void *dec_ext)
+int audio_decoder_init_decoder(audio_decoder_p decoder, int audio_type, void *dec_ext)
 {
-	assert(player != NULL);
+	assert(decoder != NULL);
 
 	// User may tell the audio type
-	player->audio_type = audio_type;
+	decoder->audio_type = audio_type;
 
 	// Try to get from stream (in case of given invalid type).
-	pv_player_get_audio_type(player);
+	audio_decoder_get_audio_type(decoder);
 
-	return _init_decoder(player, dec_ext);
+	return _init_decoder(decoder, dec_ext);
 }
 
-size_t pv_player_get_frames(pv_player_p player, unsigned char *buf, size_t max, unsigned int *sr, unsigned short *ch)
+size_t audio_decoder_get_frames(audio_decoder_p decoder, unsigned char *buf, size_t max, unsigned int *sr, unsigned short *ch)
 {
-	priv_data_p priv = (priv_data_p) player->priv_data;
+	priv_data_p priv = (priv_data_p) decoder->priv_data;
 	pcm_data_p pcm = &priv->pcm;
 
 	// Output size, in bytes
@@ -1067,14 +1067,14 @@ size_t pv_player_get_frames(pv_player_p player, unsigned char *buf, size_t max, 
 		}
 
 		// Decode more
-		if (!_get_frame(player)) {
+		if (!_get_frame(decoder)) {
 			// Need to push more data for further decoding.
 			// In this case, *size < max.
 			medvdbg("there's not enough data, need to push more.\n");
 			break;
 		}
 
-		if (_frame_decoder(player, pcm) != PV_SUCCESS) {
+		if (_frame_decoder(decoder, pcm) != AUDIO_OK) {
 			// Decoding failed
 			meddbg("frame decoding failed!\n");
 			break;
@@ -1095,75 +1095,75 @@ size_t pv_player_get_frames(pv_player_p player, unsigned char *buf, size_t max, 
 }
 
 
-int pv_player_init(pv_player_p player, size_t rbuf_size)
+int audio_decoder_init(audio_decoder_p decoder, size_t rbuf_size)
 {
-	assert(player != NULL);
+	assert(decoder != NULL);
 
 	priv_data_p priv = (priv_data_p) malloc(sizeof(priv_data_t));
-	RETURN_VAL_IF_FAIL((priv != NULL), PV_FAILURE);
+	RETURN_VAL_IF_FAIL((priv != NULL), AUDIO_ERROR);
 
 	// init private data
 	priv->mCurrentPos = 0;
 	priv->mFixedHeader = 0;
 
-	// init player data
-	player->cb_data = NULL;
-	player->input_func = NULL;
+	// init decoder data
+	decoder->cb_data = NULL;
+	decoder->input_func = NULL;
 
-	player->dec_ext = NULL;
-	player->dec_mem = NULL;
-	player->priv_data = priv;
+	decoder->dec_ext = NULL;
+	decoder->dec_mem = NULL;
+	decoder->priv_data = priv;
 
 	// init ring-buffer and open it as a stream
-	rb_init(&player->ringbuffer, rbuf_size);
-	player->rbsp = rbs_open(&player->ringbuffer, _input_callback, (void *)player);
-	RETURN_VAL_IF_FAIL((player->rbsp != NULL), PV_FAILURE);
+	rb_init(&decoder->ringbuffer, rbuf_size);
+	decoder->rbsp = rbs_open(&decoder->ringbuffer, _input_callback, (void *)decoder);
+	RETURN_VAL_IF_FAIL((decoder->rbsp != NULL), AUDIO_ERROR);
 
-	rbs_ctrl(player->rbsp, OPTION_ALLOW_TO_DEQUEUE, 1);
-	return PV_SUCCESS;
+	rbs_ctrl(decoder->rbsp, OPTION_ALLOW_TO_DEQUEUE, 1);
+	return AUDIO_OK;
 }
 
-int pv_player_register_callbacks(pv_player_p player, void *user_data, input_func_f input_func)
+int audio_decoder_register_callbacks(audio_decoder_p decoder, void *user_data, input_func_f input_func)
 {
-	player->cb_data = user_data;
-	player->input_func = input_func;
+	decoder->cb_data = user_data;
+	decoder->input_func = input_func;
 
-	return PV_SUCCESS;
+	return AUDIO_OK;
 }
 
-int pv_player_finish(pv_player_p player)
+int audio_decoder_finish(audio_decoder_p decoder)
 {
-	assert(player != NULL);
+	assert(decoder != NULL);
 
 	// close stream
-	rbs_close(player->rbsp);
-	player->rbsp = NULL;
+	rbs_close(decoder->rbsp);
+	decoder->rbsp = NULL;
 
 	// free ring-buffer instance
-	rb_free(&player->ringbuffer);
+	rb_free(&decoder->ringbuffer);
 
 	// free decoder external buffer
-	if (player->dec_ext != NULL) {
-		free(player->dec_ext);
-		player->dec_ext = NULL;
+	if (decoder->dec_ext != NULL) {
+		free(decoder->dec_ext);
+		decoder->dec_ext = NULL;
 	}
 
 	// free decoder buffer
-	if (player->dec_mem != NULL) {
+	if (decoder->dec_mem != NULL) {
 		#ifdef CONFIG_CODEC_LIBOPUS
-		opus_uninitDecoder(player->dec_mem);
+		opus_uninitDecoder(decoder->dec_mem);
 		#endif
-		free(player->dec_mem);
-		player->dec_mem = NULL;
+		free(decoder->dec_mem);
+		decoder->dec_mem = NULL;
 	}
 
 	// free private data buffer
-	if (player->priv_data != NULL) {
-		free(player->priv_data);
-		player->priv_data = NULL;
+	if (decoder->priv_data != NULL) {
+		free(decoder->priv_data);
+		decoder->priv_data = NULL;
 	}
 
-	return PV_SUCCESS;
+	return AUDIO_OK;
 }
 
 } // namespace media

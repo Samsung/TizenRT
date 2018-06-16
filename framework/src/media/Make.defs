@@ -22,7 +22,7 @@ VPATH += :src/media/audio
 CSRCS += samplerate.c
 DEPPATH += --dep-path src/media/audio/resample
 VPATH += :src/media/audio/resample
-CXXSRCS += player.cpp recorder.cpp
+CXXSRCS += audio_decoder.cpp audio_encoder.cpp
 DEPPATH += --dep-path src/media/streaming
 VPATH += :src/media/streaming
 endif

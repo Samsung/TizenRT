@@ -20,7 +20,7 @@
 #include <stdio.h>
 
 #ifdef CONFIG_AUDIO_CODEC
-#include "streaming/player.h"
+#include "streaming/audio_decoder.h"
 #endif
 
 namespace media {
@@ -42,7 +42,7 @@ private:
 #ifdef CONFIG_AUDIO_CODEC
 	//static int _configFunc(void *user_data, int audio_type, void *dec_ext);
 	bool mConfig(int audioType);
-	pv_player_t mPlayer;
+	audio_decoder_t mDecoder;
 	unsigned short mChannels;
 	unsigned int mSampleRate;
 #endif

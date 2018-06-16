@@ -21,8 +21,8 @@
 #include "Encoder.h"
 #include <debug.h>
 
-#define PV_SUCCESS 0
-#define PV_FAILURE -1
+#define AUDIO_OK 0
+#define AUDIO_ERROR -1
 
 #define MAX_PACKET_SIZE 1024
 #define MSEC_PER_SECOND 1000
@@ -38,7 +38,7 @@ Encoder::Encoder(audio_type_t audio_type, unsigned short channels, unsigned int 
 
 #ifdef CONFIG_CODEC_LIBOPUS
 	case AUDIO_TYPE_OPUS: {
-		memset(&mEncoder, 0, sizeof(aud_encoder_t));
+		memset(&mEncoder, 0, sizeof(audio_encoder_t));
 
 		opus_enc_external_t ext = {0};
 
@@ -73,8 +73,8 @@ Encoder::Encoder(audio_type_t audio_type, unsigned short channels, unsigned int 
 		ext.inputSampleRate = sampleRate;
 
 		// Initialize encoder
-		if (aud_encoder_init(&mEncoder, CONFIG_AUDIO_CODEC_RINGBUFFER_SIZE, AUDIO_TYPE_OPUS, &ext) != PV_SUCCESS) {
-			meddbg("Error! aud_encoder_init failed!\n");
+		if (audio_encoder_init(&mEncoder, CONFIG_AUDIO_CODEC_RINGBUFFER_SIZE, AUDIO_TYPE_OPUS, &ext) != AUDIO_OK) {
+			meddbg("Error! audio_encoder_init failed!\n");
 		}
 		break;
 	}
@@ -96,8 +96,8 @@ Encoder::Encoder(const Encoder *source)
 Encoder::~Encoder()
 {
 #ifdef CONFIG_AUDIO_CODEC
-	if (aud_encoder_finish(&mEncoder) != PV_SUCCESS) {
-		meddbg("Error! aud_encoder_finish failed!\n");
+	if (audio_encoder_finish(&mEncoder) != AUDIO_OK) {
+		meddbg("Error! audio_encoder_finish failed!\n");
 	}
 
 	delete[] inputBuf;
@@ -108,7 +108,7 @@ Encoder::~Encoder()
 size_t Encoder::pushData(unsigned char *buf, size_t size)
 {
 #ifdef CONFIG_AUDIO_CODEC
-	return aud_encoder_pushdata(&mEncoder, buf, size);
+	return audio_encoder_pushdata(&mEncoder, buf, size);
 #endif
 	return 0;
 }
@@ -117,10 +117,10 @@ bool Encoder::getFrame(unsigned char *buf, size_t *size)
 {
 #ifdef CONFIG_AUDIO_CODEC
 	int len = *size;
-	len = aud_encoder_getframe(&mEncoder, (void *) buf, len);
+	len = audio_encoder_getframe(&mEncoder, (void *) buf, len);
 
 	if (len <= 0) {
-		medvdbg("Error! aud_encoder_getframe failed!\n");
+		medvdbg("Error! audio_encoder_getframe failed!\n");
 		return false;
 	}
 
@@ -133,7 +133,7 @@ bool Encoder::getFrame(unsigned char *buf, size_t *size)
 bool Encoder::empty()
 {
 #ifdef CONFIG_AUDIO_CODEC
-	return aud_encoder_dataspace_is_empty(&mEncoder);
+	return audio_encoder_dataspace_is_empty(&mEncoder);
 #endif
 	return false;
 }
@@ -141,7 +141,7 @@ bool Encoder::empty()
 size_t Encoder::getAvailSpace()
 {
 #ifdef CONFIG_AUDIO_CODEC
-	return aud_encoder_dataspace(&mEncoder);
+	return audio_encoder_dataspace(&mEncoder);
 #endif
 	return 0;
 }
