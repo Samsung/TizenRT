@@ -639,7 +639,7 @@ outfile : /TizenRT/build/configs/artik05x/../../output/bin/ramdump_0x02020400--0
 
 ================make archive================
 outfile : /TizenRT/build/configs/artik05x/../../output/bin/crash_dump.zip
-include files :  ['tinyara', 'dump_info.txt', 'reg.cmm', 'ramdump_0x02020400--0x215FFFF.bin']
+include files :  ['tinyara', 'dump_info.txt', 'reg.cmm', 'ramdump_0x02020400--0x215FFFF.bin', 'System.map']
 ```
 
 #### Install Trace32 Simulator

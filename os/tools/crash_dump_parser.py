@@ -11,6 +11,7 @@ reg_file = "reg.cmm"
 ram_dump = "ramdump_0x02020400--0x215FFFF.bin"
 zip_file = "crash_dump.zip"
 elf_file = "tinyara"
+map_file = "System.map"
 
 task_state =  [ "invalid",
 				"pend",
@@ -359,6 +360,7 @@ def mk_zip():
 	file_list.append(dump_info)
 	file_list.append(reg_file)
 	file_list.append(ram_dump)
+	file_list.append(map_file)
 	print "include files : " , file_list
 	os.chdir(path)
 
