@@ -72,7 +72,7 @@
 #include "commandline.h"
 #include "connection.h"
 
-#if defined (__TINYARA__)
+#if defined (__TIZENRT__)
 #include <tinyara/ascii.h>
 #endif
 
@@ -83,7 +83,7 @@
 
 #define MAX_PACKET_SIZE 1024
 
-#if defined(__TINYARA__)
+#if defined(__TIZENRT__)
 
 /* Definitions*/
 #ifndef FD_SETSIZE
@@ -112,7 +112,7 @@ struct pthread_arg {
     char **argv;
 };
 
-#endif /* __TINYARA__ */
+#endif /* __TIZENRT__ */
 
 static int g_quit = 0;
 static char g_coap_protocol[COAP_PROTOCOL_MAX][COAP_MAX_URI_PREFIX_SIZE] = {
@@ -122,10 +122,10 @@ static char g_coap_protocol[COAP_PROTOCOL_MAX][COAP_MAX_URI_PREFIX_SIZE] = {
     "TCP+TLS"
 };
 
-#if defined (__TINYARA__)
+#if defined (__TIZENRT__)
 /* Private Functions */
 static int read_input_command_line(char *buf);
-#endif /*__TINYARA__*/
+#endif /*__TIZENRT__*/
 
 static void prv_print_error(uint8_t status)
 {
@@ -895,7 +895,7 @@ void print_usage(void)
     fprintf(stdout, "\r\n");
 }
 
-#ifdef __TINYARA__
+#ifdef __TIZENRT__
 int lwm2m_server_cb(void *args)
 {
     int argc;
@@ -906,7 +906,7 @@ int lwm2m_server_cb(void *args)
 #else
 int lwm2m_server_main(int argc, char *argv[])
 {
-#endif /* __TINYARA__ */
+#endif /* __TIZENRT__ */
     int sock, newsock;
     int reuse;
     fd_set readfds;
@@ -1240,7 +1240,7 @@ int lwm2m_server_main(int argc, char *argv[])
             }
             else if (FD_ISSET(STDIN_FILENO, &readfds))
             {
-#if defined (__TINYARA__)
+#if defined (__TIZENRT__)
                 numBytes = read_input_command_line((char *)buffer);
 #else
                 numBytes = read(STDIN_FILENO, buffer, MAX_PACKET_SIZE - 1);
@@ -1279,7 +1279,7 @@ int lwm2m_server_main(int argc, char *argv[])
     return 0;
 }
 
-#if defined (__TINYARA__)
+#if defined (__TIZENRT__)
 /* Private APIs */
 
 static int read_input_command_line(char *buf)
@@ -1389,4 +1389,4 @@ int lwm2m_server_main(int argc, char *argv[])
 
     return 0;
 }
-#endif /* __TINYARA__ */
+#endif /* __TIZENRT__ */

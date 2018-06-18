@@ -53,7 +53,7 @@ CSRCS += connectivity_interface.c
 CFLAGS+=-I$(TOPDIR)/../external/wakaama/core
 CFLAGS+=-I$(TOPDIR)/../external/wakaama/examples/shared
 
-CFLAGS+=-D__TINYARA__
+CFLAGS+=-D__TIZENRT__
 
 ifeq ($(CONFIG_LWM2M_SECURITY),y)
 CFLAGS+=-DWITH_MBEDTLS

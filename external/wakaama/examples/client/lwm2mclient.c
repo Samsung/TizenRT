@@ -76,7 +76,7 @@
 #include <errno.h>
 #include <signal.h>
 
-#if defined (__TINYARA__)
+#if defined (__TIZENRT__)
 #include <tinyara/ascii.h>
 #endif
 
@@ -94,7 +94,7 @@
  *   - definition and global variables
  *   - APIs used for dm frameworks
  ****************************************************************************/
-#if defined(__TINYARA__)
+#if defined(__TIZENRT__)
 
 /* Definitions*/
 #ifndef FD_SETSIZE
@@ -137,7 +137,7 @@ struct pthread_arg {
     char **argv;
 };
 
-#endif /* __TINYARA__ */
+#endif /* __TIZENRT__ */
 
 int g_reboot = 0;
 static int g_quit = 0;
@@ -173,7 +173,7 @@ typedef struct
 #endif
 } client_data_t;
 
-#if defined (__TINYARA__)
+#if defined (__TIZENRT__)
 /* Private Functions */
 static void clear_client_globals(void);
 static void prv_close_sock(void);
@@ -181,7 +181,7 @@ static void prv_update_server(client_data_t *dataP, uint16_t secObjInstID);
 static void process_udpconn(int sockfd, fd_set *readfds, client_data_t data);
 
 static int read_input_command_line(char *buf);
-#endif /*__TINYARA__*/
+#endif /*__TIZENRT__*/
 
 static void prv_quit(char * buffer,
                      void * user_data)
@@ -928,7 +928,7 @@ void print_usage(void)
     fprintf(stdout, "\r\n");
 }
 
-#ifdef __TINYARA__
+#ifdef __TIZENRT__
 int lwm2m_client_cb(void *args)
 {
 	int argc;
@@ -939,7 +939,7 @@ int lwm2m_client_cb(void *args)
 #else
 int lwm2m_client_main(int argc, char *argv[])
 {
-#endif /* __TINYARA__ */
+#endif /* __TIZENRT__ */
     client_data_t data;
     int result;
     lwm2mH = NULL;
@@ -1119,7 +1119,7 @@ int lwm2m_client_main(int argc, char *argv[])
         }
         opt += 1;
     }
-#if defined (__TINYARA__)
+#if defined (__TIZENRT__)
     if (argc == SET_PARAM_BY_GLOBAL_VALUE) {
         /* To handling parameters set through dm frameworks */
         name = DEFAULT_CLIENT_NAME;
@@ -1135,7 +1135,7 @@ int lwm2m_client_main(int argc, char *argv[])
             serverPort = g_serverPort;
         }
     }
-#endif /* __TINYARA__ */
+#endif /* __TIZENRT__ */
 
     if (!server)
     {
@@ -1452,7 +1452,7 @@ int lwm2m_client_main(int argc, char *argv[])
 
         FD_ZERO(&readfds);
         FD_SET(data.sock, &readfds);
-#if defined (__TINYARA__)
+#if defined (__TIZENRT__)
         FD_SET(STDIN_FILENO, &readfds);
 #else
         FD_SET(stdin, &readfds);
@@ -1537,13 +1537,13 @@ int lwm2m_client_main(int argc, char *argv[])
             /*
              * If the event happened on the SDTIN
              */
-#if defined (__TINYARA__)
+#if defined (__TIZENRT__)
             else if (FD_ISSET(STDIN_FILENO, &readfds))
 #else
             else if (FD_ISSET(stdin, &readfds))
 #endif
             {
-#if defined (__TINYARA__)
+#if defined (__TIZENRT__)
                 numBytes = read_input_command_line((char *)buffer);
 #else
                 numBytes = read(stdin, buffer, MAX_PACKET_SIZE - 1);
@@ -1613,7 +1613,7 @@ int lwm2m_client_main(int argc, char *argv[])
  * DM (Device Management) Frameworks supporting APIs
  ****************************************************************************/
 
-#if defined (__TINYARA__)
+#if defined (__TIZENRT__)
 
 /* Public APIs */
 
@@ -1943,4 +1943,4 @@ int lwm2m_client_main(int argc, char *argv[])
 
     return 0;
 }
-#endif /* __TINYARA__ */
+#endif /* __TIZENRT__ */
