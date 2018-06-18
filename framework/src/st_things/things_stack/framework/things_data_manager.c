@@ -222,24 +222,6 @@ static const  struct things_attribute_info_s const gstAttr_oic_r_firmware[] = {
 		.rw = 3
 	},
 	{
-		.key = "packagesize",
-		.type = 1,
-		.mandatory = false,
-		.rw = 3
-	},
-	{
-		.key = "packagemd5",
-		.type = 3,
-		.mandatory = false,
-		.rw = 3
-	},
-	{
-		.key = "activecheck",
-		.type = 1,
-		.mandatory = false,
-		.rw = 1
-	},
-	{
 		.key = "update",
 		.type = 3,
 		.mandatory = false,
@@ -264,12 +246,6 @@ static const  struct things_attribute_info_s const gstAttr_oic_r_firmware[] = {
 		.rw = 1
 	},
 	{
-		.key = "progress",
-		.type = 1,
-		.mandatory = false,
-		.rw = 1
-	},
-	{
 		.key = "result",
 		.type = 1,
 		.mandatory = false,
@@ -282,10 +258,10 @@ static const  struct things_attribute_info_s const gstAttr_oic_r_firmware[] = {
 		.rw = 3
 	},
 	{
-		.key = "description",
+		.key = "supportprotocols",
 		.type = 3,
 		.mandatory = false,
-		.rw = 3
+		.rw = 1
 	}
 };
 #endif
@@ -301,8 +277,8 @@ static const struct st_resource_type_s const gst_resource_types[] = {
 	}
 #ifdef CONFIG_ST_THINGS_FOTA
 	, {
-		.rt = "oic.r.firmware",
-		.prop_cnt = 14,
+		.rt = "x.com.samsung.firmware",
+		.prop_cnt = 10,
 		.prop[0] = &gstAttr_oic_r_firmware[0],
 		.prop[1] = &gstAttr_oic_r_firmware[1],
 		.prop[2] = &gstAttr_oic_r_firmware[2],
@@ -312,11 +288,7 @@ static const struct st_resource_type_s const gst_resource_types[] = {
 		.prop[6] = &gstAttr_oic_r_firmware[6],
 		.prop[7] = &gstAttr_oic_r_firmware[7],
 		.prop[8] = &gstAttr_oic_r_firmware[8],
-		.prop[9] = &gstAttr_oic_r_firmware[9],
-		.prop[10] = &gstAttr_oic_r_firmware[10],
-		.prop[11] = &gstAttr_oic_r_firmware[11],
-		.prop[12] = &gstAttr_oic_r_firmware[12],
-		.prop[13] = &gstAttr_oic_r_firmware[13]
+		.prop[9] = &gstAttr_oic_r_firmware[9]
 	}
 #endif
 };
@@ -334,7 +306,7 @@ static const struct things_resource_info_s const gstResources[] = {
 	, {
 		.uri = "/firmware",
 		.interface_types = {"oic.if.baseline"},
-		.resource_types = {"oic.r.firmware"},
+		.resource_types = {"x.com.samsung.firmware"},
 		.if_cnt = 1,
 		.rt_cnt = 1,
 		.policy = 3
@@ -2004,7 +1976,7 @@ int dm_del_things_cloud_data(void)
 		THINGS_LOG_E(TAG, "It's failed to delete Cloud-Data in cloud file.");
 		return 0;
 	}
-	THINGS_LOG_D( TAG, "Delete Success.");
+	THINGS_LOG_D(TAG, "Delete Success.");
 	esm_save_easysetup_state(ES_NOT_COMPLETE);
 	THINGS_LOG_V(TAG, THINGS_FUNC_EXIT);
 	return 1;

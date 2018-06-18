@@ -26,10 +26,8 @@
 /* save to key manager(ckmc) with update */
 #define FIRMWARE_PROPERTY_UPDATE                "update"
 #define FIRMWARE_PROPERTY_UPDATE_TIME           "updatetime"
-#define FIRMWARE_PROPERTY_DESCRIPTION           "description"
 #define FIRMWARE_PROPERTY_STATE                 "state"
 #define FIRMWARE_PROPERTY_RESULT                "result"
-#define FIRMWARE_PROPERTY_PROGRESS              "progress"
 
 /* save to key manager(ckmc) with pacakage */
 #define FIRMWARE_PROPERTY_NEW_VERSION           "newversion"
