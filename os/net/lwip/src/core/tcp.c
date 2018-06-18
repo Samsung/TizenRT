@@ -1027,11 +1027,11 @@ tcp_slowtmr_start:
 				}
 			} else {
 				/* Increase the retransmission timer if it is running */
-				if (pcb->rtime >= 0) {
+				if (pcb->rtime >= 0 && pcb->rtime < 0x7FFF) {
 					++pcb->rtime;
 				}
 
-				if (pcb->unacked != NULL && pcb->rtime >= pcb->rto) {
+				if (pcb->rtime >= pcb->rto) {
 					/* Time for a retransmission. */
 					LWIP_DEBUGF(TCP_RTO_DEBUG, ("tcp_slowtmr: rtime %" S16_F " pcb->rto %" S16_F "\n", pcb->rtime, pcb->rto));
 

@@ -1331,6 +1331,11 @@ void tcp_rexmit_rto(struct tcp_pcb *pcb)
 	struct tcp_seg *seg;
 
 	if (pcb->unacked == NULL) {
+		if (pcb->unsent != NULL && pcb->nrtx < 0xFF) {
+			/* Case of ERR_RTE,
+			 * unsent should be counted to nrtx */
+			++pcb->nrtx;
+		}
 		return;
 	}
 
