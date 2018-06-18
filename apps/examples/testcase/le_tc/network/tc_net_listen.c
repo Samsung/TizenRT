@@ -44,8 +44,8 @@
 static void tc_net_listen_p(void)
 {
 	struct sockaddr_in sa;
-	int SocketFD = socket(PF_INET, SOCK_STREAM, IPPROTO_TCP);
-	if (SocketFD < 0) {
+	int socket_fd = socket(PF_INET, SOCK_STREAM, IPPROTO_TCP);
+	if (socket_fd < 0) {
 		printf("Socket creation fail %s:%d\n", __FUNCTION__,  __LINE__);
 		return;
 	}
@@ -55,14 +55,14 @@ static void tc_net_listen_p(void)
 	sa.sin_port = htons(1100);
 	sa.sin_addr.s_addr = htonl(INADDR_ANY);
 
-	int ret = bind(SocketFD, (struct sockaddr *)&sa, sizeof(sa));
+	int ret = bind(socket_fd, (struct sockaddr *)&sa, sizeof(sa));
 	if (ret < 0) {
-		close(SocketFD);
+		close(socket_fd);
 		printf("fail %s:%d\n", __FUNCTION__, __LINE__);
 		return;
 	}
-	ret = (listen(SocketFD, 10));
-	close(SocketFD);
+	ret = (listen(socket_fd, 10));
+	close(socket_fd);
 
 	TC_ASSERT_NEQ("listen", ret, -1);
 	TC_SUCCESS_RESULT();
@@ -114,8 +114,8 @@ static void tc_net_listen_fd_n(void)
 static void tc_net_listen_backlog_p(void)
 {
 	struct sockaddr_in sa;
-	int SocketFD = socket(PF_INET, SOCK_STREAM, IPPROTO_TCP);
-	if (SocketFD < 0) {
+	int socket_fd = socket(PF_INET, SOCK_STREAM, IPPROTO_TCP);
+	if (socket_fd < 0) {
 		printf("Socket creation fail %s:%d\n", __FUNCTION__,  __LINE__);
 		return;
 	}
@@ -125,14 +125,14 @@ static void tc_net_listen_backlog_p(void)
 	sa.sin_port = htons(1100);
 	sa.sin_addr.s_addr = htonl(INADDR_ANY);
 
-	int ret = bind(SocketFD, (struct sockaddr *)&sa, sizeof(sa));
+	int ret = bind(socket_fd, (struct sockaddr *)&sa, sizeof(sa));
 	if (ret < 0) {
-		close(SocketFD);
+		close(socket_fd);
 		printf("fail %s:%d\n", __FUNCTION__, __LINE__);
 		return;
 	}
-	ret = (listen(SocketFD, -1));
-	close(SocketFD);
+	ret = (listen(socket_fd, -1));
+	close(socket_fd);
 
 	TC_ASSERT_NEQ("listen", ret, -1);
 	TC_SUCCESS_RESULT();
@@ -150,8 +150,8 @@ static void tc_net_listen_backlog_p(void)
 static void tc_net_listen_fd_backlog_n(void)
 {
 	struct sockaddr_in sa;
-	int SocketFD = socket(PF_INET, SOCK_STREAM, IPPROTO_TCP);
-	if (SocketFD < 0) {
+	int socket_fd = socket(PF_INET, SOCK_STREAM, IPPROTO_TCP);
+	if (socket_fd < 0) {
 		printf("Socket creation fail %s:%d\n", __FUNCTION__,  __LINE__);
 		return;
 	}
@@ -161,14 +161,14 @@ static void tc_net_listen_fd_backlog_n(void)
 	sa.sin_port = htons(1100);
 	sa.sin_addr.s_addr = htonl(INADDR_ANY);
 
-	int ret = bind(SocketFD, (struct sockaddr *)&sa, sizeof(sa));
+	int ret = bind(socket_fd, (struct sockaddr *)&sa, sizeof(sa));
 	if (ret < 0) {
-		close(SocketFD);
+		close(socket_fd);
 		printf("fail %s:%d\n", __FUNCTION__, __LINE__);
 		return;
 	}
 	ret = (listen(-1, -1));
-	close(SocketFD);
+	close(socket_fd);
 	TC_ASSERT_NEQ("listen", ret, 0);
 	TC_SUCCESS_RESULT();
 }

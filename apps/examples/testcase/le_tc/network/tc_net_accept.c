@@ -100,12 +100,12 @@ static int _wait_client(void)
 
 void tc_net_accept_p(int fd)
 {
-	int ConnectFD = accept(fd, NULL, NULL);
+	int connect_fd = accept(fd, NULL, NULL);
 
-	TC_ASSERT_GEQ("accept", ConnectFD, 0);
+	TC_ASSERT_GEQ("accept", connect_fd, 0);
 	TC_SUCCESS_RESULT();
 
-	close(ConnectFD);
+	close(connect_fd);
 }
 
 /**
@@ -119,9 +119,9 @@ void tc_net_accept_p(int fd)
 
 void tc_net_accept_socket_n(int fd)
 {
-	int ConnectFD = accept(-1, NULL, NULL);
+	int connect_fd = accept(-1, NULL, NULL);
 
-	TC_ASSERT_NEQ("accept", ConnectFD, 0);
+	TC_ASSERT_NEQ("accept", connect_fd, 0);
 	TC_SUCCESS_RESULT();
 }
 
@@ -138,8 +138,8 @@ void *Server(void *args)
 {
 
 	struct sockaddr_in sa;
-	int SocketFD = socket(PF_INET, SOCK_STREAM, IPPROTO_TCP);
-	if (SocketFD < 0) {
+	int socket_fd = socket(PF_INET, SOCK_STREAM, IPPROTO_TCP);
+	if (socket_fd < 0) {
 		nw_error();
 		return 0;
 	}
@@ -150,23 +150,23 @@ void *Server(void *args)
 	sa.sin_port = htons(PORTNUM);
 	sa.sin_addr.s_addr = inet_addr("127.0.0.1");
 
-	int ret = bind(SocketFD, (struct sockaddr *)&sa, sizeof(sa));
+	int ret = bind(socket_fd, (struct sockaddr *)&sa, sizeof(sa));
 	if (ret < 0) {
 		nw_error();
 		return 0;
 	}
 
-	ret = listen(SocketFD, 1);
+	ret = listen(socket_fd, 1);
 	if (ret < 0) {
 		nw_error();
 		return 0;
 	}
 
 	nw_signal();
-	tc_net_accept_p(SocketFD);
-	tc_net_accept_socket_n(SocketFD);
+	tc_net_accept_p(socket_fd);
+	tc_net_accept_socket_n(socket_fd);
 
-	close(SocketFD);
+	close(socket_fd);
 	return 0;
 }
 

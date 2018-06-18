@@ -157,16 +157,16 @@ void *recv_server(void *args)
 
 	char *msg = "Hello World !\n";
 	struct sockaddr_in sa;
-	int SocketFD = socket(PF_INET, SOCK_STREAM, IPPROTO_TCP);
+	int socket_fd = socket(PF_INET, SOCK_STREAM, IPPROTO_TCP);
 
-	if(SocketFD < 0) {
+	if(socket_fd < 0) {
 		printf("error %s:%d\n", __FUNCTION__, __LINE__);
 		return 0;
 	}
 
-	if (setsockopt(SocketFD, SOL_SOCKET, SO_REUSEADDR, &(int){ 1 }, sizeof(int)) < 0) {
+	if (setsockopt(socket_fd, SOL_SOCKET, SO_REUSEADDR, &(int){ 1 }, sizeof(int)) < 0) {
 		printf("setsockopt(SO_REUSEADDR) failed %s:%d:%d\n", __FUNCTION__, __LINE__, errno);
-		close(SocketFD);
+		close(socket_fd);
 		return 0;
 	}
 
@@ -176,51 +176,51 @@ void *recv_server(void *args)
 	sa.sin_port = htons(PORTNUM);
 	sa.sin_addr.s_addr = inet_addr("127.0.0.1");
 
-	int ret = bind(SocketFD, (struct sockaddr *)&sa, sizeof(sa));
+	int ret = bind(socket_fd, (struct sockaddr *)&sa, sizeof(sa));
 	if (ret < 0) {
 		printf("error %s:%d\n", __FUNCTION__, __LINE__);
-		close(SocketFD);
+		close(socket_fd);
 		return 0;
 	}
 
-	ret = listen(SocketFD, 2);
+	ret = listen(socket_fd, 2);
 	if (ret < 0) {
-		close(SocketFD);
+		close(socket_fd);
 		printf("error %s:%d\n", __FUNCTION__, __LINE__);
 		return 0;
 	}
 	recv_signal();
-	int ConnectFD = accept(SocketFD, NULL, NULL);
-	if (ConnectFD < 0) {
+	int connect_fd = accept(socket_fd, NULL, NULL);
+	if (connect_fd < 0) {
 		printf("error %s:%d\n", __FUNCTION__, __LINE__);
-		close(SocketFD);
+		close(socket_fd);
 		return 0;
 	}
 	int i;
 	for (i = 0; i < 6; i++) {
-		ret = send(ConnectFD, msg, strlen(msg), 0);
+		ret = send(connect_fd, msg, strlen(msg), 0);
 		if (ret < 0) {
 			printf("error %s:%d\n", __FUNCTION__, __LINE__);
 		}
 	}
 
-	ConnectFD = accept(SocketFD, NULL, NULL);
-	if (ConnectFD < 0) {
+	connect_fd = accept(socket_fd, NULL, NULL);
+	if (connect_fd < 0) {
 		printf("error %s:%d\n", __FUNCTION__, __LINE__);
-		close(SocketFD);
+		close(socket_fd);
 		return 0;
 	}
 
-	ret = send(ConnectFD, msg, strlen(msg), 0);
+	ret = send(connect_fd, msg, strlen(msg), 0);
 	if (ret == 0) {
 		printf("socket is closed. it's not error\n");
 	} else if (ret < 0) {
 		printf("error %s:%d %d\n", __FUNCTION__, __LINE__, errno);
 	}
 
-	close(ConnectFD);
+	close(connect_fd);
 
-	close(SocketFD);
+	close(socket_fd);
 	return 0;
 
 }
