@@ -152,7 +152,7 @@ void MediaRecorderImpl::prepareRecorder(recorder_result_t& ret)
 		return notifySync();
 	}
 
-	mBuffSize = get_input_frames_byte_size(get_input_frame_count());
+	mBuffSize = get_input_frames_to_byte(get_input_frame_count());
 
 	if (mBuffSize <= 0) {
 		meddbg("Buffer size is too small size : %d\n", mBuffSize);
@@ -385,7 +385,7 @@ void MediaRecorderImpl::setRecorderVolume(int vol, recorder_result_t& ret)
 		return notifySync();
 	}
 
-	audio_manager_result_t result = set_input_audio_volume(vol);
+	audio_manager_result_t result = set_input_audio_volume((uint8_t)vol);
 	if (result != AUDIO_MANAGER_SUCCESS) {
 		meddbg("set_input_audio_volume failed vol : %d ret : %d\n", vol, result);
 		return notifySync();
@@ -481,7 +481,7 @@ void MediaRecorderImpl::capture()
 	int frames = start_audio_stream_in(mBuffer, get_input_frame_count());
 
 	if (frames > 0) {
-		int size = get_input_frames_byte_size(frames);
+		int size = get_input_frames_to_byte(frames);
 
 		int ret = 0;
 		while (size > 0) {

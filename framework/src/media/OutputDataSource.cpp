@@ -25,7 +25,7 @@ OutputDataSource::OutputDataSource()
 {
 }
 
-OutputDataSource::OutputDataSource(unsigned short channels, unsigned int sampleRate, int pcmFormat)
+OutputDataSource::OutputDataSource(unsigned int channels, unsigned int sampleRate, audio_format_type_t pcmFormat)
 	: DataSource(channels, sampleRate, pcmFormat)
 {
 }

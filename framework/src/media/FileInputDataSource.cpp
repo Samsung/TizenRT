@@ -165,7 +165,7 @@ ssize_t FileInputDataSource::read(unsigned char *buf, size_t size)
 		return rlen;
 	}
 
-	return rlen;
+	return readRet;
 }
 
 int FileInputDataSource::readAt(long offset, int origin, unsigned char *buf, size_t size)

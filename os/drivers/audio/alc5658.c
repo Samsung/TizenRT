@@ -615,12 +615,12 @@ static int alc5658_getcaps(FAR struct audio_lowerhalf_s *dev, int type, FAR stru
 
 		switch (caps->ac_format.hw) {
 		case AUDIO_FU_VOLUME:
-			caps->ac_controls.b[0] = ALC5658_HP_VOL_MAX;
-			caps->ac_controls.b[1] = priv->volume;
+			caps->ac_controls.hw[0] = ALC5658_HP_VOL_MAX;
+			caps->ac_controls.hw[1] = priv->volume;
 			break;
 		case AUDIO_FU_INP_GAIN:
-			caps->ac_controls.b[0] = ALC5658_GAIN_MAX;
-			caps->ac_controls.b[1] = priv->gain;
+			caps->ac_controls.hw[0] = ALC5658_GAIN_MAX;
+			caps->ac_controls.hw[1] = priv->gain;
 			break;
 		default:
 			break;
@@ -1219,6 +1219,9 @@ static int alc5658_ioctl(FAR struct audio_lowerhalf_s *dev, int cmd, unsigned lo
 	case AUDIOIOC_GETBUFFERINFO: {
 		/* Report our preferred buffer size and quantity */
 		audvdbg("AUDIOIOC_GETBUFFERINFO:\n");
+		/* Take semaphore */
+		alc5658_takesem(&priv->devsem);
+		
 		bufinfo = (FAR struct ap_buffer_info_s *)arg;
 #ifdef CONFIG_AUDIO_DRIVER_SPECIFIC_BUFFERS
 		bufinfo->buffer_size = CONFIG_ALC5658_BUFFER_SIZE;
@@ -1234,6 +1237,9 @@ static int alc5658_ioctl(FAR struct audio_lowerhalf_s *dev, int cmd, unsigned lo
 			bufinfo->nbuffers = CONFIG_ALC5658_NUM_BUFFERS;
 		}
 		audvdbg("buffer_size : %d nbuffers : %d buf_size : %d\n", bufinfo->buffer_size, bufinfo->nbuffers, buf_size);
+
+		/* Give semaphore */
+		alc5658_givesem(&priv->devsem);
 #endif
 	}
 	break;

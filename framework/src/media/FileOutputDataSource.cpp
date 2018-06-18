@@ -28,7 +28,7 @@ FileOutputDataSource::FileOutputDataSource(const std::string& dataPath)
 {
 }
 
-FileOutputDataSource::FileOutputDataSource(unsigned short channels, unsigned int sampleRate, int pcmFormat, const std::string& dataPath)
+FileOutputDataSource::FileOutputDataSource(unsigned int channels, unsigned int sampleRate, audio_format_type_t pcmFormat, const std::string& dataPath)
 	: OutputDataSource(channels, sampleRate, pcmFormat), mDataPath(dataPath), mFp(nullptr)
 {
 }

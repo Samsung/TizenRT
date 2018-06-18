@@ -28,7 +28,7 @@ DataSource::DataSource()
 	medvdbg("DataSource::DataSource()\n");
 }
 
-DataSource::DataSource(unsigned short channels, unsigned int sampleRate, int pcmFormat)
+DataSource::DataSource(unsigned int channels, unsigned int sampleRate, audio_format_type_t pcmFormat)
 	: mChannels(channels)
 	, mSampleRate(sampleRate)
 	, mPcmFormat(pcmFormat)
@@ -51,7 +51,7 @@ DataSource& DataSource::operator=(const DataSource& source)
 	return *this;
 }
 
-unsigned char DataSource::getChannels()
+unsigned int DataSource::getChannels()
 {
 	return mChannels;
 }
@@ -61,12 +61,12 @@ unsigned int DataSource::getSampleRate()
 	return mSampleRate;
 }
 
-int DataSource::getPcmFormat()
+audio_format_type_t DataSource::getPcmFormat()
 {
 	return mPcmFormat;
 }
 
-void DataSource::setChannels(unsigned char channels)
+void DataSource::setChannels(unsigned int channels)
 {
 	mChannels = channels;
 }
@@ -76,7 +76,7 @@ void DataSource::setSampleRate(unsigned int sampleRate)
 	mSampleRate = sampleRate;
 }
 
-void DataSource::setPcmFormat(int pcmFormat)
+void DataSource::setPcmFormat(audio_format_type_t pcmFormat)
 {
 	mPcmFormat = pcmFormat;
 }

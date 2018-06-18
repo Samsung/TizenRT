@@ -24,9 +24,9 @@ using namespace std;
 using namespace media;
 using namespace media::stream;
 
-static unsigned char channels = 2;
+static unsigned int channels = 2;
 static unsigned int sampleRate = 16000;
-static int pcmFormat = AUDIO_FORMAT_TYPE_S16_LE;
+static audio_format_type_t pcmFormat = AUDIO_FORMAT_TYPE_S16_LE;
 static const char *filePath = "/ramfs/record";
 
 static void utc_media_FileOutputDataSource_getChannels_p(void)
@@ -53,7 +53,7 @@ static void utc_media_FileOutputDataSource_getPcmFormat_p(void)
 static void utc_media_FileOutputDataSource_setChannels_p(void)
 {
 	FileOutputDataSource dataSource(filePath);
-	unsigned short compare_channels = 3;
+	unsigned int compare_channels = 3;
 	dataSource.setChannels(compare_channels);
 	TC_ASSERT_EQ("utc_media_FileOutputDataSource_setChannels", dataSource.getChannels(), compare_channels);
 	TC_SUCCESS_RESULT();
@@ -71,7 +71,7 @@ static void utc_media_FileOutputDataSource_setSampleRate_p(void)
 static void utc_media_FileOutputDataSource_setPcmFormat_p(void)
 {
 	FileOutputDataSource dataSource(filePath);
-	int compare_pcmFormat = media::AUDIO_FORMAT_TYPE_S8;
+	media::audio_format_type_t compare_pcmFormat = media::AUDIO_FORMAT_TYPE_S8;
 	dataSource.setPcmFormat(media::AUDIO_FORMAT_TYPE_S8);
 	TC_ASSERT_EQ("utc_media_FileOutputDataSource_setPcmFormat", dataSource.getPcmFormat(), compare_pcmFormat);
 	TC_SUCCESS_RESULT();
@@ -156,7 +156,7 @@ static void utc_media_FileOutputDataSource_write_p(void)
 {
 	FileOutputDataSource dataSource(filePath);
 	unsigned char dummy[] = "dummy";
-	size_t dummySize = 6;
+	ssize_t dummySize = 6;
 
 	dataSource.open();
 	TC_ASSERT_EQ("utc_media_FileOutputDataSource_write", dataSource.write(dummy, dummySize), dummySize);
