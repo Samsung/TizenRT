@@ -40,7 +40,7 @@ Contributors:
 #include <mosquitto_internal.h>
 #include <net_mosq.h>
 
-#if defined(__TINYARA__)
+#if defined(__TIZENRT__)
 #define TINYARA_MQTT_PTHREAD_STACK_SIZE		(CONFIG_NETUTILS_MQTT_TASK_STACKSIZE)
 #endif
 
@@ -53,7 +53,7 @@ int mosquitto_loop_start(struct mosquitto *mosq)
 		return MOSQ_ERR_INVAL;
 	}
 
-#if defined(__TINYARA__)
+#if defined(__TIZENRT__)
 	char threadname[40];
 	pthread_attr_t attr;
 
@@ -145,7 +145,7 @@ void *_mosquitto_thread_main(void *obj)
 		mosquitto_loop_forever(mosq, mosq->keepalive * 1000, 1);
 	}
 
-#if defined(__TINYARA__)
+#if defined(__TIZENRT__)
 	mosq->threaded = mosq_ts_none;
 #endif
 

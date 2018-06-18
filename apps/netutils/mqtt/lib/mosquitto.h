@@ -98,7 +98,7 @@ enum mosq_err_t {
 	MOSQ_ERR_ERRNO = 14,
 	MOSQ_ERR_EAI = 15,
 	MOSQ_ERR_PROXY = 16
-#if defined(__TINYARA__)
+#if defined(__TIZENRT__)
 	, MOSQ_ERR_FORCE_EXIT = 255
 #endif
 };

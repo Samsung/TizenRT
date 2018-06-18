@@ -114,7 +114,6 @@ else
 CFLAGS += -DROUTING_GW
 endif
 
-CFLAGS += -D__TINYARA__
 CFLAGS += -D__TIZENRT__
 CFLAGS += -D__WITH_DTLS__
 

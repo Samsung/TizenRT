@@ -87,7 +87,7 @@
  * Pre-processor Definitions
  ****************************************************************************/
 
-#define __TINYARA__ 1			/* Flags some unusual TinyAra dependencies */
+#define __TIZENRT__ 1			/* Flags some unusual TizenRT dependencies */
 
 /****************************************************************************
  * Private Function Prototypes
@@ -1865,7 +1865,7 @@ static int ftpd_listbuffer(FAR struct ftpd_session_s *session, FAR char *path, F
 
 		offset += snprintf(&buffer[offset], buflen - offset, "%s", str);
 
-#ifdef __TINYARA__
+#ifdef __TIZENRT__
 		/* Fake nlink, user id, and group id */
 
 		offset += snprintf(&buffer[offset], buflen - offset, "%4u %8u %8u", 1, 1001, 512);
@@ -1904,7 +1904,7 @@ static int ftpd_listbuffer(FAR struct ftpd_session_s *session, FAR char *path, F
 
 		/* linkname */
 
-#ifndef __TINYARA__
+#ifndef __TIZENRT__
 		if (S_ISLNK(st->st_mode) != 0) {
 			FAR char *temp;
 			int namelen;

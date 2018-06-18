@@ -204,7 +204,7 @@ int _mosquitto_packet_queue(struct mosquitto *mosq, struct _mosquitto_packet *pa
 		if (write(mosq->sockpairW, &sockpair_data, 1)) {
 		}
 #else
-#if defined(__TINYARA__)
+#if defined(__TIZENRT__)
 		if (send(mosq->sockpairW, &sockpair_data, 1, 0) == -1) {
 			_mosquitto_log_printf(mosq, MOSQ_LOG_ERR, "Error: send() fail in %s in _mosquitto_packet_queue");
 		}
@@ -343,7 +343,7 @@ int _mosquitto_try_connect(struct mosquitto *mosq, const char *host, uint16_t po
 		errno = s;
 		return MOSQ_ERR_EAI;
 	}
-#if defined(__TINYARA__)
+#if defined(__TIZENRT__)
 	mosq->connect_ainfo = ainfo;
 #endif
 
@@ -351,13 +351,13 @@ int _mosquitto_try_connect(struct mosquitto *mosq, const char *host, uint16_t po
 		s = getaddrinfo(bind_address, NULL, &hints, &ainfo_bind);
 		if (s) {
 			freeaddrinfo(ainfo);
-#if defined(__TINYARA__)
+#if defined(__TIZENRT__)
 			mosq->connect_ainfo = ainfo = NULL;
 #endif
 			errno = s;
 			return MOSQ_ERR_EAI;
 		}
-#if defined(__TINYARA__)
+#if defined(__TIZENRT__)
 		mosq->connect_ainfo_bind = ainfo_bind;
 #endif
 	}
@@ -420,16 +420,16 @@ int _mosquitto_try_connect(struct mosquitto *mosq, const char *host, uint16_t po
 		*sock = INVALID_SOCKET;
 	}
 	freeaddrinfo(ainfo);
-#if defined(__TINYARA__)
+#if defined(__TIZENRT__)
 	mosq->connect_ainfo = ainfo = NULL;
 #endif
 	if (bind_address) {
 		freeaddrinfo(ainfo_bind);
-#if defined(__TINYARA__)
+#if defined(__TIZENRT__)
 		mosq->connect_ainfo_bind = ainfo_bind = NULL;
 #endif
 	}
-#if defined(__TINYARA__)
+#if defined(__TIZENRT__)
 	if (*sock == INVALID_SOCKET) {
 		return MOSQ_ERR_NO_CONN;
 	}
@@ -1257,7 +1257,7 @@ int _mosquitto_socket_nonblock(mosq_sock_t sock)
 #ifndef WIN32
 	int opt;
 
-#	if defined(__TINYARA__)
+#	if defined(__TIZENRT__)
 	if (sock == INVALID_SOCKET) {
 		return 1;
 	}
@@ -1266,14 +1266,14 @@ int _mosquitto_socket_nonblock(mosq_sock_t sock)
 	/* Set non-blocking */
 	opt = fcntl(sock, F_GETFL, 0);
 	if (opt == -1) {
-#	if ! defined(__TINYARA__)		/* caller will close sock */
+#	if ! defined(__TIZENRT__)		/* caller will close sock */
 		COMPAT_CLOSE(sock);
 #	endif
 		return 1;
 	}
 	if (fcntl(sock, F_SETFL, opt | O_NONBLOCK) == -1) {
 		/* If either fcntl fails, don't want to allow this client to connect. */
-#	if ! defined(__TINYARA__)		/* caller will close sock */
+#	if ! defined(__TIZENRT__)		/* caller will close sock */
 		COMPAT_CLOSE(sock);
 #	endif
 		return 1;
@@ -1281,7 +1281,7 @@ int _mosquitto_socket_nonblock(mosq_sock_t sock)
 #else
 	unsigned long opt = 1;
 	if (ioctlsocket(sock, FIONBIO, &opt)) {
-#	if ! defined(__TINYARA__)		/* caller will close sock */
+#	if ! defined(__TIZENRT__)		/* caller will close sock */
 		COMPAT_CLOSE(sock);
 #	endif
 		return 1;
@@ -1293,12 +1293,12 @@ int _mosquitto_socket_nonblock(mosq_sock_t sock)
 #ifndef WITH_BROKER
 int _mosquitto_socketpair(mosq_sock_t *pairR, mosq_sock_t *pairW)
 {
-#	if defined(WIN32) || defined(__TINYARA__)
+#	if defined(WIN32) || defined(__TIZENRT__)
 	int family[2] = { AF_INET, AF_INET6 };
 	int i;
 	struct sockaddr_storage ss;
 	struct sockaddr_in *sa = (struct sockaddr_in *)&ss;
-#		if ! defined(__TINYARA__)
+#		if ! defined(__TIZENRT__)
 	struct sockaddr_in6 *sa6 = (struct sockaddr_in6 *)&ss;
 #		endif
 	socklen_t ss_len;
@@ -1317,7 +1317,7 @@ int _mosquitto_socketpair(mosq_sock_t *pairR, mosq_sock_t *pairW)
 			sa->sin_port = 0;
 			ss_len = sizeof(struct sockaddr_in);
 		}
-#		if ! defined(__TINYARA__)
+#		if ! defined(__TIZENRT__)
 		else if (family[i] == AF_INET6) {
 			sa6->sin6_family = family[i];
 			sa6->sin6_addr = in6addr_loopback;
@@ -1355,7 +1355,7 @@ int _mosquitto_socketpair(mosq_sock_t *pairR, mosq_sock_t *pairW)
 			sa->sin_addr.s_addr = htonl(INADDR_LOOPBACK);
 			ss_len = sizeof(struct sockaddr_in);
 		}
-#		if ! defined(__TINYARA__)
+#		if ! defined(__TIZENRT__)
 		else if (family[i] == AF_INET6) {
 			sa6->sin6_family = family[i];
 			sa6->sin6_addr = in6addr_loopback;
@@ -1389,7 +1389,7 @@ int _mosquitto_socketpair(mosq_sock_t *pairR, mosq_sock_t *pairW)
 			errno = WSAGetLastError();
 #		endif
 
-#		if ! defined(__TINYARA__)
+#		if ! defined(__TIZENRT__)
 			if (errno != EINPROGRESS && errno != COMPAT_EWOULDBLOCK)
 #		endif
 			{

@@ -63,15 +63,15 @@ typedef int ssize_t;
 
 #include "config.h"
 
-#if defined(__TINYARA__)
+#if defined(__TIZENRT__)
 #include <netdb.h>
 #endif
 
-#if !defined(WIN32) && !defined(__SYMBIAN32__) && !defined(__TINYARA__)
+#if !defined(WIN32) && !defined(__SYMBIAN32__) && !defined(__TIZENRT__)
 #define HAVE_PSELECT
 #endif
 
-#if defined(__TINYARA__)
+#if defined(__TIZENRT__)
 #ifndef FD_SETSIZE
 #define FD_SETSIZE	(CONFIG_NFILE_DESCRIPTORS + CONFIG_NSOCKET_DESCRIPTORS)
 #endif
@@ -131,7 +131,7 @@ struct mosquitto *mosquitto_new(const char *id, bool clean_session, void *userda
 		errno = EINVAL;
 		return NULL;
 	}
-#if !defined(WIN32) && !defined(__TINYARA__)
+#if !defined(WIN32) && !defined(__TIZENRT__)
 	signal(SIGPIPE, SIG_IGN);
 #endif
 
@@ -264,7 +264,7 @@ int mosquitto_reinitialise(struct mosquitto *mosq, const char *id, bool clean_se
 	mosq->thread_id = pthread_self();
 #endif
 
-#if defined(__TINYARA__)
+#if defined(__TIZENRT__)
 	mosq->in_select = false;
 	mosq->connect_ainfo = NULL;
 	mosq->connect_ainfo_bind = NULL;
@@ -344,7 +344,7 @@ void _mosquitto_destroy(struct mosquitto *mosq)
 
 #ifdef WITH_THREADING
 	if (mosq->threaded == mosq_ts_self && !pthread_equal(mosq->thread_id, pthread_self())) {
-#if defined(__TINYARA__)
+#if defined(__TIZENRT__)
 		if ((mosq->sockpairW != INVALID_SOCKET) && mosq->in_select) {
 			char sockpair_data = 0xff;
 			if (send(mosq->sockpairW, &sockpair_data, 1, 0) == -1) {
@@ -504,7 +504,7 @@ void _mosquitto_destroy(struct mosquitto *mosq)
 		COMPAT_CLOSE(mosq->sockpairW);
 		mosq->sockpairW = INVALID_SOCKET;
 	}
-#if defined(__TINYARA__)
+#if defined(__TIZENRT__)
 	if (mosq->connect_ainfo) {
 		freeaddrinfo(mosq->connect_ainfo);
 		mosq->connect_ainfo = NULL;
@@ -1269,7 +1269,7 @@ int mosquitto_loop(struct mosquitto *mosq, int timeout, int max_packets)
 	local_timeout.tv_usec = (timeout - local_timeout.tv_sec * 1000) * 1000;
 #endif
 
-#if defined(__TINYARA__)
+#if defined(__TIZENRT__)
 	mosq->in_select = true;
 #endif
 
@@ -1279,7 +1279,7 @@ int mosquitto_loop(struct mosquitto *mosq, int timeout, int max_packets)
 	fdcount = select(maxfd + 1, &readfds, &writefds, NULL, &local_timeout);
 #endif
 
-#if defined(__TINYARA__)
+#if defined(__TIZENRT__)
 	mosq->in_select = false;
 #endif
 
@@ -1322,7 +1322,7 @@ int mosquitto_loop(struct mosquitto *mosq, int timeout, int max_packets)
 			}
 			if (mosq->sockpairR != INVALID_SOCKET && FD_ISSET(mosq->sockpairR, &readfds)) {
 #ifndef WIN32
-#if defined(__TINYARA__)
+#if defined(__TIZENRT__)
 				if (read(mosq->sockpairR, &pairbuf, 1) == 1) {
 					if (pairbuf == 0xff) {
 						return MOSQ_ERR_FORCE_EXIT;
@@ -1331,7 +1331,7 @@ int mosquitto_loop(struct mosquitto *mosq, int timeout, int max_packets)
 #else
 				if (read(mosq->sockpairR, &pairbuf, 1) == 0) {
 				}
-#endif							/* __TINYARA__ */
+#endif							/* __TIZENRT__ */
 #else
 				recv(mosq->sockpairR, &pairbuf, 1, 0);
 #endif
@@ -1410,7 +1410,7 @@ int mosquitto_loop_forever(struct mosquitto *mosq, int timeout, int max_packets)
 		case MOSQ_ERR_UNKNOWN:
 		case MOSQ_ERR_EAI:
 		case MOSQ_ERR_PROXY:
-#if defined(__TINYARA__)
+#if defined(__TIZENRT__)
 		case MOSQ_ERR_FORCE_EXIT:
 #endif
 			return rc;

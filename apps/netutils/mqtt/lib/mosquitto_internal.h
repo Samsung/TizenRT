@@ -73,7 +73,7 @@ typedef unsigned long long uint64_t;
 #else
 #	include <stdint.h>
 #endif
-#if defined(__TINYARA__)
+#if defined(__TIZENRT__)
 #	include <netdb.h>
 #endif
 
@@ -319,7 +319,7 @@ struct mosquitto {
 	struct mosquitto *for_free_next;
 #endif
 
-#if defined(__TINYARA__)
+#if defined(__TIZENRT__)
 	bool in_select;
 	struct addrinfo *connect_ainfo;
 	struct addrinfo *connect_ainfo_bind;
