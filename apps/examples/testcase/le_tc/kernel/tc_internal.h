@@ -72,7 +72,6 @@ int libc_queue_main(void);
 int libc_sched_main(void);
 int libc_semaphore_main(void);
 int libc_signal_main(void);
-int libc_spawn_main(void);
 int libc_stdio_main(void);
 int libc_stdlib_main(void);
 int libc_string_main(void);
@@ -98,7 +97,6 @@ int itc_libc_semaphore_main(void);
 int itc_semaphore_main(void);
 int itc_sched_main(void);
 int itc_timer_main(void);
-int itc_libc_spawn_main(void);
 int itc_pthread_main(void);
 
 

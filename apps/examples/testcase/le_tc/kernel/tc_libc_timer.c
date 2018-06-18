@@ -28,7 +28,6 @@
 #include <string.h>
 #include <errno.h>
 #include <signal.h>
-#include <spawn.h>
 #include <syslog.h>
 #include <time.h>
 #include <tinyara/time.h>
