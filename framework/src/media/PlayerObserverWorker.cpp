@@ -16,20 +16,27 @@
  *
  ******************************************************************/
 
+#include <tinyara/config.h>
 #include <functional>
 #include <debug.h>
 #include "PlayerObserverWorker.h"
 
+#ifndef CONFIG_MEDIA_PLAYER_OBSERVER_STACKSIZE
+#define CONFIG_MEDIA_PLAYER_OBSERVER_STACKSIZE 2048
+#endif
+
 namespace media {
 PlayerObserverWorker::PlayerObserverWorker()
 {
+	mThreadName = "PlayerObserverWorker";
+	mStacksize = CONFIG_MEDIA_PLAYER_OBSERVER_STACKSIZE;
 }
 
 PlayerObserverWorker::~PlayerObserverWorker()
 {
 }
 
-PlayerObserverWorker& PlayerObserverWorker::getWorker()
+PlayerObserverWorker &PlayerObserverWorker::getWorker()
 {
 	static PlayerObserverWorker worker;
 	return worker;
