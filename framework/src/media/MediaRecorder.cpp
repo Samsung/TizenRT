@@ -80,6 +80,11 @@ recorder_result_t MediaRecorder::setObserver(std::shared_ptr<MediaRecorderObserv
 	return mPMrImpl->setObserver(observer);
 }
 
+recorder_result_t MediaRecorder::setDuration(int second)
+{
+	return mPMrImpl->setDuration(second);
+}
+
 MediaRecorder::~MediaRecorder()
 {
 }

@@ -91,11 +91,17 @@ bool FileOutputDataSource::isPrepare()
 ssize_t FileOutputDataSource::write(unsigned char* buf, size_t size)
 {
 	if (!buf) {
-		meddbg("buf is nullptr, hence return 0\n");
-		return (size_t)0;
+		meddbg("buf is nullptr, hence return EOF\n");
+		return EOF;
 	}
-
-	return fwrite(buf, sizeof(unsigned char), size, mFp);
+	
+	size_t ret;
+	ret = fwrite(buf, sizeof(unsigned char), size, mFp);
+	if (ret == 0 && ferror(mFp)) {
+		meddbg("Error : %d\n", errno);
+		return EOF;
+	}
+	return ret;
 }
 
 FileOutputDataSource::~FileOutputDataSource()
