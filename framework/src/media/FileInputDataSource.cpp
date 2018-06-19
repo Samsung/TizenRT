@@ -16,9 +16,11 @@
  *
  ******************************************************************/
 
+#include <stdio.h>
+#include <debug.h>
+
 #include <media/FileInputDataSource.h>
 #include "utils/MediaUtils.h"
-#include <debug.h>
 #include "Decoder.h"
 
 namespace media {

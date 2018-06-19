@@ -73,7 +73,7 @@ bool SocketOutputDataSource::open()
 
 	if (connect(mSockFd, (struct sockaddr *)&serveraddr, addrlen) < 0) {
 		meddbg("Errro: Fail to connect socket (errno=%d)\n", errno);
-		closesocket(mSockFd);
+		::close(mSockFd);
 		return false;
 	}
 
@@ -84,7 +84,7 @@ bool SocketOutputDataSource::open()
 
 bool SocketOutputDataSource::close()
 {
-	if ((mSockFd != INVALID_SOCKET) && closesocket(mSockFd) != EOF) {
+	if ((mSockFd != INVALID_SOCKET) && ::close(mSockFd) != EOF) {
 		mSockFd = INVALID_SOCKET;
 		return true;
 	}
