@@ -15,4 +15,4 @@ source "$EXTERNALDIR/nghttp2/Kconfig"
 source "$EXTERNALDIR/protobuf/Kconfig"
 source "$EXTERNALDIR/wakaama/Kconfig"
 source "$EXTERNALDIR/WICED/Kconfig"
-
+source "$EXTERNALDIR/stress_tool/Kconfig"

@@ -32,7 +32,7 @@ ASRCS =
 
 MAINSRC = wm_test.c
 ifeq ($(CONFIG_EXAMPLES_WIFIMANAGER_STRESS_TEST),y)
-CSRCS = rt_perf.c wm_test_stress.c
+CSRCS = wm_test_stress.c
 endif
 
 AOBJS = $(ASRCS:.S=$(OBJEXT))
