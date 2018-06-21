@@ -16,6 +16,7 @@
  *
  ******************************************************************/
 
+#include <debug.h>
 #include <media/MediaRecorder.h>
 #include "RecorderWorker.h"
 #include "MediaRecorderImpl.h"
@@ -23,7 +24,8 @@
 
 namespace media {
 MediaRecorderImpl::MediaRecorderImpl()
-	: mCurState(RECORDER_STATE_NONE), mOutputDataSource(nullptr), mRecorderObserver(nullptr), mBuffer(nullptr), mBuffSize(0)
+	: mCurState(RECORDER_STATE_NONE), mOutputDataSource(nullptr), mRecorderObserver(nullptr), mBuffer(nullptr), mBuffSize(0),
+	mDuration(0), mTotalFrames(0), mCapturedFrames(0)
 {
 	medvdbg("MediaRecorderImpl::MediaRecorderImpl()\n");
 	static int recorderId = 1;
@@ -54,7 +56,13 @@ void MediaRecorderImpl::createRecorder(recorder_result_t& ret)
 	medvdbg("createRecorder mCurState : %d\n", (recorder_state_t)mCurState);
 
 	if (mCurState != RECORDER_STATE_NONE) {
-		meddbg("mCurState != RECORDER_STATE_NONE mCurState : \n", (recorder_state_t)mCurState);
+		meddbg("mCurState != RECORDER_STATE_NONE mCurState : %d\n", (recorder_state_t)mCurState);
+		return notifySync();
+	}
+
+	audio_manager_result_t result = init_audio_stream_in();
+	if (result != AUDIO_MANAGER_SUCCESS) {
+		meddbg("Fail to initialize input audio stream : %d\n", result);
 		return notifySync();
 	}
 
@@ -145,7 +153,7 @@ void MediaRecorderImpl::prepareRecorder(recorder_result_t& ret)
 		return notifySync();
 	}
 
-	mBuffSize = get_input_frames_byte_size(get_input_frame_count());
+	mBuffSize = get_input_frames_to_byte(get_input_frame_count());
 
 	if (mBuffSize <= 0) {
 		meddbg("Buffer size is too small size : %d\n", mBuffSize);
@@ -161,6 +169,10 @@ void MediaRecorderImpl::prepareRecorder(recorder_result_t& ret)
 		return notifySync();
 	}
 
+	if (mDuration > 0) {
+		mTotalFrames = mDuration * mOutputDataSource->getSampleRate();
+	}
+	
 	mCurState = RECORDER_STATE_READY;
 	ret = RECORDER_OK;
 	notifySync();
@@ -205,7 +217,10 @@ void MediaRecorderImpl::unprepareRecorder(recorder_result_t& ret)
 	}
 
 	mBuffSize = 0;
-
+	mDuration = 0;
+	mTotalFrames = 0;
+	mCapturedFrames = 0;
+	
 	mCurState = RECORDER_STATE_IDLE;
 	ret = RECORDER_OK;
 	notifySync();
@@ -378,7 +393,7 @@ void MediaRecorderImpl::setRecorderVolume(int vol, recorder_result_t& ret)
 		return notifySync();
 	}
 
-	audio_manager_result_t result = set_input_audio_volume(vol);
+	audio_manager_result_t result = set_input_audio_volume((uint8_t)vol);
 	if (result != AUDIO_MANAGER_SUCCESS) {
 		meddbg("set_input_audio_volume failed vol : %d ret : %d\n", vol, result);
 		return notifySync();
@@ -468,21 +483,82 @@ void MediaRecorderImpl::setRecorderObserver(std::shared_ptr<MediaRecorderObserve
 	notifySync();
 }
 
+recorder_result_t MediaRecorderImpl::setDuration(int second)
+{
+	std::unique_lock<std::mutex> lock(mCmdMtx);
+
+	medvdbg("MediaRecorderImpl::setDuration()\n");
+	RecorderWorker& mrw = RecorderWorker::getWorker();
+	if (!mrw.isAlive()) {
+		meddbg("Worker is not alive\n");
+		return RECORDER_ERROR;
+	}
+
+	recorder_result_t ret = RECORDER_ERROR;
+	mrw.enQueue(&MediaRecorderImpl::setRecorderDuration, shared_from_this(), second, std::ref(ret));
+	mSyncCv.wait(lock);
+
+	return ret;
+}
+
+void MediaRecorderImpl::setRecorderDuration(int second, recorder_result_t& ret)
+{
+	medvdbg("setRecorderDuration mCurState : %d\n", (recorder_state_t)mCurState);
+
+	if (mCurState != RECORDER_STATE_IDLE) {
+		meddbg("setRecorderDuration Failed mCurState: %d\n", (recorder_state_t)mCurState);
+		return notifySync();
+	}
+	if (second > 0) {
+		medvdbg("second is greater than zero, set limit : %d\n", second);
+		mDuration = second;
+	}
+
+	ret = RECORDER_OK;
+	notifySync();
+}
+
 void MediaRecorderImpl::capture()
 {
 	medvdbg("MediaRecorderImpl::capture()\n");
-	int frames = start_audio_stream_in(mBuffer, get_input_frame_count());
+	unsigned int frameSize = get_input_frame_count();
 
+	if (mTotalFrames > 0) {
+		int64_t remainFrames = mTotalFrames - mCapturedFrames;
+		/* almost reaches size limit, adjust frame size before request capture to audio_manager */
+		if (remainFrames < frameSize) {
+			frameSize = remainFrames;
+		}
+	}
+	
+	int frames = start_audio_stream_in(mBuffer, frameSize);
 	if (frames > 0) {
-		int size = get_input_frames_byte_size(frames);
-
+		mCapturedFrames += frames;
+		if (mCapturedFrames > INT_MAX) {
+			mCapturedFrames = 0;
+			meddbg("Too huge value : %d, set 0 to prevent overflow\n", mCapturedFrames);
+		}
+		
 		int ret = 0;
+		int size = get_input_frames_to_byte(frames);
+		
 		while (size > 0) {
 			int written = mOutputDataSource->write(mBuffer + ret, size);
-			if (written <= 0) {
+			medvdbg("written : %d size : %d frames : %d\n", written, size, frames);
+			medvdbg("mCapturedFrames : %ld totalduration : %d mTotalFrames : %ld\n", mCapturedFrames, mDuration, mTotalFrames);
+			/* For Error case, we stop Capture */
+			if (written == EOF) {
 				meddbg("MediaRecorderImpl::capture() failed : errno : %d written : %d\n", errno, written);
 				RecorderWorker& mrw = RecorderWorker::getWorker();
 				mrw.enQueue(&MediaRecorderImpl::stopRecorder, shared_from_this(), false);
+				break;
+			}
+
+			/* It finished Successfully refer to file size or frame numbers*/
+			if ((written == 0) || (mTotalFrames == mCapturedFrames)) {
+				medvdbg("File write Ended\n");
+				RecorderWorker& mrw = RecorderWorker::getWorker();
+				mrw.enQueue(&MediaRecorderImpl::stopRecorder, shared_from_this(), true);
 				break;
 			}
 			size -= written;

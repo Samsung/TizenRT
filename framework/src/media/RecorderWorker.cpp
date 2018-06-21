@@ -16,13 +16,21 @@
  *
  ******************************************************************/
 
+#include <tinyara/config.h>
+#include <debug.h>
 #include "RecorderWorker.h"
+
+#ifndef CONFIG_MEDIA_RECORDER_STACKSIZE
+#define CONFIG_MEDIA_RECORDER_STACKSIZE 4096
+#endif
 
 namespace media {
 
 RecorderWorker::RecorderWorker()
 {
 	medvdbg("RecorderWorker::RecorderWorker()\n");
+	mThreadName = "RecorderWorker";
+	mStacksize = CONFIG_MEDIA_RECORDER_STACKSIZE;
 }
 RecorderWorker::~RecorderWorker()
 {

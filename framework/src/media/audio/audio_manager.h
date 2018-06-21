@@ -39,10 +39,9 @@ extern "C" {
  * @brief Result types of Audio Manager APIs such as FAIL, SUCCESS, or INVALID ARGS
  */
 enum audio_manager_result_e {
-	AUDIO_MANAGER_RESAMPLE_FAIL = -9,
-	AUDIO_MANAGER_DEVICE_FAIL = -8,
-	AUDIO_MANAGER_CARD_NOT_READY = -7,
-	AUDIO_MANAGER_CARD_NOT_FOUND = -6,
+	AUDIO_MANAGER_RESAMPLE_FAIL = -8,
+	AUDIO_MANAGER_DEVICE_FAIL = -7,
+	AUDIO_MANAGER_CARD_NOT_READY = -6,
 	AUDIO_MANAGER_XRUN_STATE = -5,
 	AUDIO_MANAGER_INVALID_PARAM = -4,
 	AUDIO_MANAGER_INVALID_DEVICE_NAME = -3,
@@ -58,12 +57,36 @@ typedef enum audio_manager_result_e audio_manager_result_t;
  ****************************************************************************/
 
 /****************************************************************************
+ * Name: init_audio_stream_in
+ *
+ * Description:
+ *   Find all available audio cards for input stream and initialize the
+ *   mutexes of each card. The one of the audio cards is set as the active one.
+ *
+ * Returned Value:
+ *   On success, AUDIO_MANAGER_SUCCESS. Otherwise a negative value.
+ ****************************************************************************/
+audio_manager_result_t init_audio_stream_in(void);
+
+/****************************************************************************
+ * Name: init_audio_stream_out
+ *
+ * Description:
+ *   Find all available audio cards for output stream and initialize the
+ *   mutexes of the cards. The one of the audio cards is set as the active one.
+ *
+ * Returned Value:
+ *   On success, AUDIO_MANAGER_SUCCESS. Otherwise a negative value.
+ ****************************************************************************/
+audio_manager_result_t init_audio_stream_out(void);
+
+/****************************************************************************
  * Name: set_audio_stream_in
  *
  * Description:
- *   Find an available audio card for input stream and setup the configuration
- *   parameters and status of the card together with opening the pcm for the
- *   input stream.
+ *   Opening the pcm for the input stream and setup the status of the active
+ *   input card. If the target sample rate is out of range from the sample rates
+ *   supported by the active input audio card, a resampling flag is set.
  *
  * Input parameters:
  *   channels: number of channels
@@ -73,15 +96,15 @@ typedef enum audio_manager_result_e audio_manager_result_t;
  * Returned Value:
  *   On success, AUDIO_MANAGER_SUCCESS. Otherwise a negative value.
  ****************************************************************************/
-audio_manager_result_t set_audio_stream_in(uint8_t channels, uint32_t sample_rate, uint8_t format);
+audio_manager_result_t set_audio_stream_in(unsigned int channels, unsigned int sample_rate, int format);
 
 /****************************************************************************
  * Name: set_audio_stream_out
  *
  * Description:
- *   Find an available audio card for output stream and setup the configuration
- *   parameters and status of the card together with opening the pcm for the
- *   output stream.
+ *   Opening the pcm for the output stream and setup the status of the active
+ *   output card. If the target sample rate is out of range from the sample rates
+ *   supported by the active output audio card, a resampling flag is set.
  *
  * Input parameters:
  *   channels: number of channels
@@ -91,7 +114,7 @@ audio_manager_result_t set_audio_stream_in(uint8_t channels, uint32_t sample_rat
  * Returned Value:
  *   On success, AUDIO_MANAGER_SUCCESS. Otherwise, a negative value.
  ****************************************************************************/
-audio_manager_result_t set_audio_stream_out(uint8_t channels, uint32_t sample_rate, uint8_t format);
+audio_manager_result_t set_audio_stream_out(unsigned int channels, unsigned int sample_rate, int format);
 
 /****************************************************************************
  * Name: start_audio_stream_in
@@ -99,6 +122,7 @@ audio_manager_result_t set_audio_stream_out(uint8_t channels, uint32_t sample_ra
  * Description:
  *   Read the specified number of frames from the input stream.
  *   If the input audio device have been paused, resume and proceed the reading.
+ *   If the resampling flag is set, resamplings are performed for all taret frames.
  *
  * Input parameters:
  *   data: buffer to get the frame data
@@ -107,7 +131,7 @@ audio_manager_result_t set_audio_stream_out(uint8_t channels, uint32_t sample_ra
  * Returned Value:
  *   On success, the number of frames read. Otherwise, a negative value.
  ****************************************************************************/
-int start_audio_stream_in(void *data, uint32_t frames);
+int start_audio_stream_in(void *data, unsigned int frames);
 
 /****************************************************************************
  * Name: start_audio_stream_out
@@ -115,6 +139,7 @@ int start_audio_stream_in(void *data, uint32_t frames);
  * Description:
  *   Write the specified frame data to the output stream.
  *   If the output audio device have been paused, resume and proceed the writing.
+ *   If the resampling flag is set, resamplings are performed for all taret frames.
  *
  * Input parameters:
  *   data: buffer to transfer the frame data
@@ -123,7 +148,7 @@ int start_audio_stream_in(void *data, uint32_t frames);
  * Returned Value:
  *   On success, the number of frames written. Otherwise, a negative value.
  ****************************************************************************/
-int start_audio_stream_out(void *data, uint32_t frames);
+int start_audio_stream_out(void *data, unsigned int frames);
 
 /****************************************************************************
  * Name: pause_audio_stream_in
@@ -214,10 +239,10 @@ audio_manager_result_t stop_audio_stream_out(void);
  * Returned Value:
  *   On success, the size of the pcm buffer for input streams. Otherwise, 0.
  ****************************************************************************/
-uint32_t get_input_frame_count(void);
+unsigned int get_input_frame_count(void);
 
 /****************************************************************************
- * Name: get_input_frames_byte_size
+ * Name: get_input_frames_to_byte
  *
  * Description:
  *   Get the byte size of the given frame value in input stream.
@@ -225,10 +250,10 @@ uint32_t get_input_frame_count(void);
  * Returned Value:
  *   On success, the byte size of the frame in input stream. Otherwise, 0.
  ****************************************************************************/
-uint32_t get_input_frames_byte_size(uint32_t frames);
+unsigned int get_input_frames_to_byte(unsigned int frames);
 
 /****************************************************************************
- * Name: get_input_bytes_frame_count
+ * Name: get_input_bytes_to_frame
  *
  * Description:
  *   Get the number of frames for the given byte size in input stream.
@@ -236,7 +261,7 @@ uint32_t get_input_frames_byte_size(uint32_t frames);
  * Returned Value:
  *   On success, the number of frames in input stream. Otherwise, 0.
  ****************************************************************************/
-uint32_t get_input_bytes_frame_count(uint32_t bytes);
+unsigned int get_input_bytes_to_frame(unsigned int bytes);
 
 /****************************************************************************
  * Name: get_output_frame_count
@@ -247,10 +272,10 @@ uint32_t get_input_bytes_frame_count(uint32_t bytes);
  * Returned Value:
  *   On success, the size of the pcm buffer for output streams. Otherwise, 0.
  ****************************************************************************/
-uint32_t get_output_frame_count(void);
+unsigned int get_output_frame_count(void);
 
 /****************************************************************************
- * Name: get_output_frames_byte_size
+ * Name: get_output_frames_to_byte
  *
  * Description:
  *   Get the byte size of the given frame value in output stream.
@@ -258,10 +283,10 @@ uint32_t get_output_frame_count(void);
  * Returned Value:
  *   On success, the byte size of the frame in output stream. Otherwise, 0.
  ****************************************************************************/
-uint32_t get_output_frames_byte_size(uint32_t frames);
+unsigned int get_output_frames_to_byte(unsigned int frames);
 
 /****************************************************************************
- * Name: get_output_bytes_frame_count
+ * Name: get_output_bytes_to_frame
  *
  * Description:
  *   Get the number of frames for the given byte size in output stream.
@@ -269,7 +294,7 @@ uint32_t get_output_frames_byte_size(uint32_t frames);
  * Returned Value:
  *   On success, the number of frames in output stream. Otherwise, 0.
  ****************************************************************************/
-uint32_t get_output_bytes_frame_count(uint32_t bytes);
+unsigned int get_output_bytes_to_frame(unsigned int bytes);
 
 /****************************************************************************
  * Name: get_audio_volume

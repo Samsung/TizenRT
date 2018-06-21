@@ -22,7 +22,7 @@
 namespace media {
 	
 
-MediaWorker::MediaWorker() : mIsRunning(false), mRefCnt(0)
+MediaWorker::MediaWorker() : mStacksize(PTHREAD_STACK_DEFAULT), mThreadName("MediaWorker"), mIsRunning(false), mRefCnt(0)
 {
 	medvdbg("MediaWorker::MediaWorker()\n");
 }
@@ -37,8 +37,18 @@ void MediaWorker::startWorker()
 	++mRefCnt;
 	medvdbg("MediaWorker::startWorker() - increase RefCnt : %d\n", mRefCnt);
 	if (mRefCnt == 1) {
+		int ret;
+		pthread_attr_t attr;
+		pthread_attr_init(&attr);
+		pthread_attr_setstacksize(&attr, mStacksize);
 		mIsRunning = true;
-		mWorkerThread = std::thread(std::bind(&MediaWorker::mediaLooper, this));
+		ret = pthread_create(&mWorkerThread, &attr, (pthread_startroutine_t)&MediaWorker::mediaLooper, this);
+		if (ret != OK) {
+			medvdbg("Fail to create worker thread, return value : %d\n", ret);
+			--mRefCnt;
+			return;
+		}
+		pthread_setname_np(mWorkerThread, mThreadName);
 	}
 }
 
@@ -50,14 +60,12 @@ void MediaWorker::stopWorker()
 	}
 	medvdbg("MediaWorker::stopWorker() - decrease RefCnt : %d\n", mRefCnt);
 	if (mRefCnt <= 0) {
-		if (mWorkerThread.joinable()) {
-			std::atomic<bool> &refBool = mIsRunning;
-			mWorkerQueue.enQueue([&refBool]() {
-				refBool = false;
-			});
-			mWorkerThread.join();
-			medvdbg("MediaWorker::stopWorker() - mWorkerthread exited\n");
-		}
+		std::atomic<bool> &refBool = mIsRunning;
+		mWorkerQueue.enQueue([&refBool]() {
+			refBool = false;
+		});
+		pthread_join(mWorkerThread, NULL);
+		medvdbg("MediaWorker::stopWorker() - mWorkerthread exited\n");
 	}
 }
 
@@ -71,7 +79,7 @@ bool MediaWorker::processLoop()
 	return false;
 }
 
-int MediaWorker::mediaLooper()
+void *MediaWorker::mediaLooper()
 {
 	medvdbg("MediaWorker : mediaLooper\n");
 
@@ -84,7 +92,7 @@ int MediaWorker::mediaLooper()
 			run();
 		}
 	}
-	return 0;
+	return NULL;
 }
 
 bool MediaWorker::isAlive()

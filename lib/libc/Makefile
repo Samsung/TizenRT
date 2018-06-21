@@ -98,7 +98,6 @@ include libgen/Make.defs
 include locale/Make.defs
 include dirent/Make.defs
 include termios/Make.defs
-include spawn/Make.defs
 include queue/Make.defs
 include wchar/Make.defs
 include wctype/Make.defs

@@ -64,15 +64,19 @@
 #define MOUNT_DIR CONFIG_MOUNT_POINT
 
 #ifdef CONFIG_FS_SMARTFS
-
 #if defined(CONFIG_SIDK_S5JT200_AUTOMOUNT_USERFS)
-#define MOUNT_DEV_DIR CONFIG_SIDK_S5JT200_AUTOMOUNT_USERFS_DEVNAME
+#define TMP_MOUNT_DEV_DIR CONFIG_SIDK_S5JT200_AUTOMOUNT_USERFS_DEVNAME
 
 #elif defined(CONFIG_ARTIK05X_AUTOMOUNT_USERFS)
-#define MOUNT_DEV_DIR CONFIG_ARTIK05X_AUTOMOUNT_USERFS_DEVNAME
-
+#define TMP_MOUNT_DEV_DIR CONFIG_ARTIK05X_AUTOMOUNT_USERFS_DEVNAME
 #else
-#define MOUNT_DEV_DIR "/dev/smart1"
+#define TMP_MOUNT_DEV_DIR "/dev/smart1"
+#endif
+
+#ifdef CONFIG_SMARTFS_MULTI_ROOT_DIRS
+#define MOUNT_DEV_DIR TMP_MOUNT_DEV_DIR"d1"
+#else
+#define MOUNT_DEV_DIR TMP_MOUNT_DEV_DIR
 #endif
 
 #define TARGET_FS_NAME "smartfs"
@@ -92,8 +96,6 @@
 #define VFS_FOLDER_PATH MOUNT_DIR"folder"
 
 #define VFS_FILE1_PATH MOUNT_DIR"file1.txt"
-
-#define PROCFS_PATH "/proc"
 
 #define DEV_ZERO_PATH "/dev/zero"
 
@@ -126,8 +128,6 @@
 
 #define FIFO_DATA "FIFO DATA"
 #endif
-
-#define MTD_PROCFS_PATH "/proc/mtd"
 
 #ifndef STDIN_FILENO
 #define STDIN_FILENO 0
@@ -1153,9 +1153,6 @@ static void tc_fs_vfs_stat(void)
 	ret = stat("", &st);
 	TC_ASSERT_EQ("stat", ret, ERROR);
 
-	ret = stat(PROCFS_PATH, &st);
-	TC_ASSERT_EQ("stat", ret, OK);
-
 	TC_SUCCESS_RESULT();
 }
 
@@ -1328,6 +1325,7 @@ static void tc_fs_vfs_mkfifo(void)
 	TC_ASSERT_GEQ("unlink", ret, 0);
 
 	TC_SUCCESS_RESULT();
+	return;
 errout:
 	pthread_kill(tid, SIGUSR1);
 	close(fd);
@@ -1682,12 +1680,12 @@ static void tc_driver_mtd_ftl_ops(void)
 	ret = write(fd, buf, BUF_SIZE);
 	TC_ASSERT_EQ_CLEANUP("write", ret, BUF_SIZE, goto cleanup);
 #endif
-#ifdef FIXME	// This causes tc stuck. Temporarilly block.
 	free(buf);
-#endif
+	buf = NULL;
 	ret = close(fd);
 	TC_ASSERT_EQ("close", ret, OK);
 	TC_SUCCESS_RESULT();
+	return;
 cleanup:
 	free(buf);
 	close(fd);
@@ -3224,6 +3222,7 @@ static void tc_libc_stdio_tempnam(void)
 	umount(CONFIG_LIBC_TMPDIR);
 
 	TC_SUCCESS_RESULT();
+	return;
 
 errout2:
 	unlink(ret2);
@@ -3275,6 +3274,7 @@ static void tc_libc_stdio_tmpnam(void)
 	umount(CONFIG_LIBC_TMPDIR);
 
 	TC_SUCCESS_RESULT();
+	return;
 
 errout2:
 	unlink(ret2);
@@ -3306,33 +3306,7 @@ static void tc_libc_stdio_zeroinstream(void)
 
 	TC_SUCCESS_RESULT();
 }
-/**
-* @testcase         tc_fs_driver_mtd_procfs_ops
-* @brief            mtd procfs ops
-* @scenario         opens /proc/mtd and performs operations
-* @apicovered       mtdprocfs_operations (mtd_open, mtd_dup, mtd_stat, mtd_close)
-* @precondition     NA
-* @postcondition    NA
-*/
-#if !defined(CONFIG_FS_PROCFS_EXCLUDE_MTD)
-static void tc_driver_mtd_procfs_ops(void)
-{
-	int fd;
-	int ret;
-	struct stat st;
 
-	fd = open(MTD_PROCFS_PATH, O_RDONLY);
-	TC_ASSERT_GEQ("open", fd, 0);
-
-	ret = stat(MTD_PROCFS_PATH, &st);
-	TC_ASSERT_EQ_CLEANUP("stat", ret, OK, close(fd));
-
-	ret = close(fd);
-	TC_ASSERT_EQ("close", ret, OK);
-
-	TC_SUCCESS_RESULT();
-}
-#endif
 /**
 * @testcase         tc_fs_mqueue_ops
 * @brief            mqueue creation
@@ -3535,9 +3509,6 @@ int tc_filesystem_main(int argc, char *argv[])
 #ifdef CONFIG_TC_FS_PROCFS
 	tc_fs_procfs_main();
 #endif
-#if defined(CONFIG_TC_FS_PROCFS) && !defined(CONFIG_FS_PROCFS_EXCLUDE_SMARTFS)
-	tc_fs_smartfs_procfs_main();
-#endif
 #if defined(CONFIG_MTD_CONFIG)
 	tc_driver_mtd_config_ops();
 #endif
@@ -3578,9 +3549,6 @@ int tc_filesystem_main(int argc, char *argv[])
 #if CONFIG_STDIO_BUFFER_SIZE > 0
 	tc_libc_stdio_setbuf();
 	tc_libc_stdio_setvbuf();
-#endif
-#if !defined(CONFIG_FS_PROCFS_EXCLUDE_MTD)
-	tc_driver_mtd_procfs_ops();
 #endif
 	tc_fs_mqueue_ops();
 #ifdef CONFIG_BCH

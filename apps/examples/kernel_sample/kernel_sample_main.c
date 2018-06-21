@@ -464,13 +464,6 @@ static int user_main(int argc, char *argv[])
 		check_test_memory_usage();
 #endif /* CONFIG_PRIORITY_INHERITANCE && !CONFIG_DISABLE_SIGNALS && !CONFIG_DISABLE_PTHREAD */
 
-#if defined(CONFIG_ARCH_HAVE_VFORK) && defined(CONFIG_SCHED_WAITPID) && \
-	!defined(CONFIG_DISABLE_SIGNALS)
-		printf("\nuser_main: vfork() test\n");
-		vfork_test();
-		check_test_memory_usage();
-#endif
-
 #if defined(CONFIG_SCHED_WORKQUEUE) || defined(CONFIG_LIB_USRWORK)
 		printf("\nuser_main: workqueue() test\n");
 		workqueue_test();

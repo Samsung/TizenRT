@@ -334,23 +334,26 @@ FAR char *ctime_r(FAR const time_t *timep, FAR char *buf);
  * @endcond
  */
 
-#ifdef CONFIG_ENABLE_IOTIVITY
 /**
- * @cond
- * @internal
+ * @ingroup TIME_KERNEL
+ * @brief convert a time string to a time tm structure
+ * @details @b #include <time.h> \n
+ * POSIX API (refer to : http://pubs.opengroup.org/onlinepubs/9699919799/)
+ * @since TizenRT v2.0 PRE
  */
 char *strptime(const char *buf, const char *fmt, struct tm *tm);
+
 /**
- * @internal
+ * @ingroup TIME_KERNEL
+ * @brief calculate time difference
+ * @details @b #include <time.h> \n
+ * POSIX API (refer to : http://pubs.opengroup.org/onlinepubs/9699919799/)
+ * @since TizenRT v2.0 PRE
  */
 #ifdef CONFIG_HAVE_DOUBLE
 double difftime(time_t time1, time_t time0);
 #else
 float difftime(time_t time1, time_t time0);
-#endif
-/**
- * @endcond
- */
 #endif
 
 /**

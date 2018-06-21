@@ -34,7 +34,7 @@ SocketOutputDataSource::SocketOutputDataSource(const std::string& ipAddr, const 
 {
 }
 
-SocketOutputDataSource::SocketOutputDataSource(unsigned short channels, unsigned int sampleRate, int pcmFormat, const std::string& ipAddr, const uint16_t port)
+SocketOutputDataSource::SocketOutputDataSource(unsigned int channels, unsigned int sampleRate, audio_format_type_t pcmFormat, const std::string& ipAddr, const uint16_t port)
 	: OutputDataSource(channels, sampleRate, pcmFormat), mIpAddr(ipAddr), mPort(port), mSockFd(INVALID_SOCKET)
 {
 }
@@ -73,7 +73,7 @@ bool SocketOutputDataSource::open()
 
 	if (connect(mSockFd, (struct sockaddr *)&serveraddr, addrlen) < 0) {
 		meddbg("Errro: Fail to connect socket (errno=%d)\n", errno);
-		closesocket(mSockFd);
+		::close(mSockFd);
 		return false;
 	}
 
@@ -84,7 +84,7 @@ bool SocketOutputDataSource::open()
 
 bool SocketOutputDataSource::close()
 {
-	if ((mSockFd != INVALID_SOCKET) && closesocket(mSockFd) != EOF) {
+	if ((mSockFd != INVALID_SOCKET) && ::close(mSockFd) != EOF) {
 		mSockFd = INVALID_SOCKET;
 		return true;
 	}

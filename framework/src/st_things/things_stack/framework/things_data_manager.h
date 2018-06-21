@@ -113,9 +113,6 @@ const wifi_freq_e dm_get_wifi_property_freq();
 
 struct things_resource_s *dm_get_resource_instance(const char *uri, const int id);
 
-int dm_get_device_information(int *cnt, st_device_s ***list);
-
-long dm_get_num_of_dev_cnt(void);
 st_device_s *dm_get_info_of_dev(unsigned long number);
 bool dm_register_user_define_device_id(const int seq_thing_info, const char *dev_id);
 bool dm_register_device_id(void);

@@ -16,9 +16,11 @@
  *
  ******************************************************************/
 
+#include <stdio.h>
+#include <debug.h>
+
 #include <media/FileInputDataSource.h>
 #include "utils/MediaUtils.h"
-#include <debug.h>
 #include "Decoder.h"
 
 namespace media {
@@ -116,8 +118,8 @@ ssize_t FileInputDataSource::read(unsigned char *buf, size_t size)
 	std::shared_ptr<Decoder> decoder = getDecoder();
 
 	if (!buf) {
-		meddbg("buf is nullptr, hence return 0\n");
-		return 0;
+		meddbg("buf is nullptr, hence return EOF\n");
+		return EOF;
 	}
 
 	if (decoder) {
@@ -164,7 +166,7 @@ ssize_t FileInputDataSource::read(unsigned char *buf, size_t size)
 		return rlen;
 	}
 
-	return rlen;
+	return readRet;
 }
 
 int FileInputDataSource::readAt(long offset, int origin, unsigned char *buf, size_t size)

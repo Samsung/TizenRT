@@ -4,7 +4,7 @@
 #
 
 config TASK_MANAGER
-	bool "Task Manager"
+	bool "Enable Task Manager"
 	default n
 	select BUILTIN_APPS
 	select SCHED_ATEXIT

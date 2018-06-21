@@ -71,7 +71,7 @@ public:
 	 * param[in] port       The port number for connecting to the socket server
 	 * @since TizenRT v2.0 PRE
 	 */
-	SocketOutputDataSource(unsigned short channels, unsigned int sampleRate, int pcmFormat, const std::string& ipAddr, const uint16_t port);
+	SocketOutputDataSource(unsigned int channels, unsigned int sampleRate, audio_format_type_t pcmFormat, const std::string& ipAddr, const uint16_t port);
 	/**
 	 * @brief Copy constructs for SocketOutputDataSource.
 	 * @details @b #include <media/SocketOutputDataSource.h>

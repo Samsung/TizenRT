@@ -74,7 +74,7 @@
 #ifdef DEBUG_MEMFAULTS
 #define mfdbg(format, ...) lldbg(format, ##__VA_ARGS__)
 #else
-#define mfdbg(x...)
+#define mfdbg(...)
 #endif
 
 /****************************************************************************

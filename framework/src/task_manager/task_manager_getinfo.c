@@ -41,7 +41,7 @@ task_info_list_t *task_manager_getinfo_with_name(char *name, int timeout)
 	memset(&request_msg, 0, sizeof(tm_request_t));
 
 	/* Set the request msg */
-	request_msg.cmd = TASKMGT_SCAN_NAME;
+	request_msg.cmd = TASKMGR_SCAN_NAME;
 	request_msg.data = (void *)TM_ALLOC(strlen(name) + 1);
 	if (request_msg.data == NULL) {
 		return NULL;
@@ -50,9 +50,14 @@ task_info_list_t *task_manager_getinfo_with_name(char *name, int timeout)
 	request_msg.timeout = timeout;
 
 	asprintf(&request_msg.q_name, "%s%d", TM_PRIVATE_MQ, getpid());
+	if (request_msg.q_name == NULL) {
+		TM_FREE(request_msg.data);
+		return NULL;
+	}
 
 	status = taskmgr_send_request(&request_msg);
 	if (status < 0) {
+		TM_FREE(request_msg.data);
 		TM_FREE(request_msg.q_name);
 		return NULL;
 	}
@@ -83,11 +88,14 @@ task_info_t *task_manager_getinfo_with_handle(int handle, int timeout)
 	memset(&request_msg, 0, sizeof(tm_request_t));
 
 	/* Set the request msg */
-	request_msg.cmd = TASKMGT_SCAN_HANDLE;
+	request_msg.cmd = TASKMGR_SCAN_HANDLE;
 	request_msg.handle = handle;
 	request_msg.timeout = timeout;
 
 	asprintf(&request_msg.q_name, "%s%d", TM_PRIVATE_MQ, getpid());
+	if (request_msg.q_name == NULL) {
+		return NULL;
+	}
 
 	status = taskmgr_send_request(&request_msg);
 	if (status < 0) {
@@ -121,11 +129,14 @@ task_info_list_t *task_manager_getinfo_with_group(int group, int timeout)
 	memset(&request_msg, 0, sizeof(tm_request_t));
 
 	/* Set the request msg */
-	request_msg.cmd = TASKMGT_SCAN_GROUP;
+	request_msg.cmd = TASKMGR_SCAN_GROUP;
 	request_msg.handle = group;
 	request_msg.timeout = timeout;
 
 	asprintf(&request_msg.q_name, "%s%d", TM_PRIVATE_MQ, getpid());
+	if (request_msg.q_name == NULL) {
+		return NULL;
+	}
 
 	status = taskmgr_send_request(&request_msg);
 	if (status < 0) {

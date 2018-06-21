@@ -173,6 +173,13 @@ void *shutdown_server(void *args)
 		printf("socket error %s:%d\n", __FUNCTION__, __LINE__);
 		return 0;
 	}
+
+	if (setsockopt(SocketFD, SOL_SOCKET, SO_REUSEADDR, &(int){ 1 }, sizeof(int)) < 0) {
+		printf("socket error %s:%d:%d\n", __FUNCTION__, __LINE__, errno);
+		close(SocketFD);
+		return 0;
+	}
+
 	memset(&sa, 0, sizeof(sa));
 
 	sa.sin_family = PF_INET;

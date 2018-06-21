@@ -114,7 +114,7 @@
 #ifdef CONFIG_SYSTEM_HEX2BIN_DEBUG
 #define hex2bin_debug(format, ...) fprintf(stderr, format, ##__VA_ARGS__)
 #else
-#define hex2bin_debug(x...)
+#define hex2bin_debug(...)
 #endif
 #else
 #ifdef CONFIG_SYSTEM_HEX2BIN_DEBUG

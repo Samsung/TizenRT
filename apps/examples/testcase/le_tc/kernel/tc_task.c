@@ -170,66 +170,6 @@ static int getpid_task(int argc, char *argv[])
 	return OK;
 }
 
-#ifndef CONFIG_BUILD_PROTECTED
-/**
-* @fn                   :task_cnt_func
-* @brief                :handler of sched_foreach for counting the alive tasks and saving the pids
-* @return               :void
-*/
-static void task_cnt_func(struct tcb_s *tcb, void *arg)
-{
-	task_cnt++;
-}
-
-static int vfork_temp_task(int argc, char *argv[])
-{
-	int rc = 0;
-
-	waitpid(ppid, &rc, 0);
-	return OK;
-}
-
-/**
-* @fn                   :vfork_task function
-* @brief                :utility function for tc_task_vfork
-* @return               :void
-*/
-static int vfork_task(int argc, char *argv[])
-{
-	pid_t pid;
-	int vfork_cnt;
-
-	task_cnt = 0;
-
-	ppid = getpid();
-
-	sched_foreach(task_cnt_func, NULL);
-
-	pid = vfork();
-	if (pid == 0) {
-		exit(OK);
-	} else if (pid < 0) {
-		g_callback = ERROR;
-		return ERROR;
-	}
-
-	/* intentionally creates more than CONFIG_MAX_TASKS */
-	for (vfork_cnt = 0; vfork_cnt < CONFIG_MAX_TASKS - task_cnt; vfork_cnt++) {
-		task_create("tc_vfork_temp", SCHED_PRIORITY_MAX - 1, 1024, vfork_temp_task, (char * const *)NULL);
-	}
-
-	pid = vfork();
-	if (pid == 0) {
-		g_callback = ERROR;
-		exit(OK);
-	} else if (pid < 0) {
-		g_callback = OK;
-	}
-
-	return OK;
-}
-#endif
-
 /**
 * @fn                   :tc_task_task_create
 * @brief                :Creates a task with the arguments provided like taskname,Priority,stacksize and function name
@@ -472,28 +412,6 @@ static void tc_task_getpid(void)
 	TC_SUCCESS_RESULT();
 }
 
-#ifndef CONFIG_BUILD_PROTECTED
-/**
-* @fn                   :tc_task_vfork
-* @brief                :make children through vfork
-* @Scenario             :make children above CONFIG_MAX_TASKS through vfork, and check the return value
-*                       and check all pids are different of not
-* API's covered         :vfork
-* Preconditions         :N/A
-* Postconditions        :none
-* @return               :void
-*/
-static void tc_task_vfork(void)
-{
-	int pid;
-	g_callback = OK;
-	pid = task_create("tc_vfork", SCHED_PRIORITY_MAX - 1, 1024, vfork_task, (char * const *)NULL);
-	TC_ASSERT_GT("task_create", pid, 0);
-	TC_ASSERT_EQ("vfork", g_callback, OK);
-
-	TC_SUCCESS_RESULT();
-}
-#endif
 /****************************************************************************
  * Name: task
  ****************************************************************************/
@@ -511,8 +429,6 @@ int task_main(void)
 	tc_task_task_create();
 	tc_task_task_delete();
 	tc_task_task_restart();
-#if defined(CONFIG_ARCH_HAVE_VFORK) && defined(CONFIG_SCHED_WAITPID) && !defined(CONFIG_BUILD_PROTECTED)
-	tc_task_vfork();
-#endif
+
 	return 0;
 }

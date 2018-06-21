@@ -109,10 +109,6 @@ int tc_kernel_main(int argc, char *argv[])
 	libc_signal_main();
 #endif
 
-#ifdef CONFIG_TC_KERNEL_LIBC_SPAWN
-	libc_spawn_main();
-#endif
-
 #ifdef CONFIG_TC_KERNEL_LIBC_STDIO
 	libc_stdio_main();
 #endif
@@ -206,10 +202,6 @@ int tc_kernel_main(int argc, char *argv[])
 
 #ifdef CONFIG_ITC_KERNEL_TIMER
 	itc_timer_main();
-#endif
-
-#ifdef CONFIG_ITC_KERNEL_LIBC_SPAWN
-	itc_libc_spawn_main();
 #endif
 
 #ifdef CONFIG_ITC_KERNEL_PTHREAD

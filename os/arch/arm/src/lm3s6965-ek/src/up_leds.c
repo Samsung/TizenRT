@@ -80,8 +80,8 @@
 #define leddbg  lldbg
 #define ledvdbg llvdbg
 #else
-#define leddbg(x...)
-#define ledvdbg(x...)
+#define leddbg(...)
+#define ledvdbg(...)
 #endif
 
 /* Dump GPIO registers */

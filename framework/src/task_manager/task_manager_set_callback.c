@@ -31,8 +31,8 @@ void taskmgr_msg_cb(int signo, siginfo_t *data)
 {
 	int handle;
 	handle = taskmgr_get_handle_by_pid(getpid());
-	if (handle == TM_FAIL_UNREGISTERED_TASK) {
-		tmdbg("Fail to start the unicast callback\n");
+	if (handle == TM_UNREGISTERED_TASK) {
+		tmdbg("Fail to get handle by pid\n");
 		return;
 	}
 	if (signo == CONFIG_SIG_SIGTM_UNICAST) {
@@ -60,25 +60,27 @@ int task_manager_set_unicast_cb(void (*func)(void *data))
 
 	ret = sigaddset(&act.sa_mask, SIGTM_UNICAST);
 	if (ret < 0) {
-		return TM_FAIL_SET_CALLBACK;
+		tmdbg("Failed to add signal set\n");
+		return TM_OPERATION_FAIL;
 	}
 
 	ret = sigaction(SIGTM_UNICAST, &act, NULL);
 	if (ret == (int)SIG_ERR) {
-		return TM_FAIL_SET_CALLBACK;
+		tmdbg("sigaction Failed\n");
+		return TM_OPERATION_FAIL;
 	}
 
 	/* send user defined callback function to task manager */
 
 	memset(&request_msg, 0, sizeof(tm_request_t));
 	/* Set the request msg */
-	request_msg.cmd = TASKMGT_SET_UNICAST_CB;
+	request_msg.cmd = TASKMGR_SET_UNICAST_CB;
 	request_msg.caller_pid = getpid();
 	request_msg.data = (void *)func;
 	request_msg.timeout = TM_NO_RESPONSE;
 	ret = taskmgr_send_request(&request_msg);
 	if (ret < 0) {
-		return TM_FAIL_REQ_TO_MGR;
+		return ret;
 	}
 
 	return ret;
@@ -103,28 +105,31 @@ int task_manager_set_broadcast_cb(int msg_mask, void (*func)(int data))
 
 	ret = sigaddset(&act.sa_mask, SIGTM_BROADCAST);
 	if (ret < 0) {
-		return TM_FAIL_SET_CALLBACK;
+		tmdbg("Failed to add signal set\n");
+		return TM_OPERATION_FAIL;
 	}
 
 	ret = sigaction(SIGTM_BROADCAST, &act, NULL);
 	if (ret == (int)SIG_ERR) {
-		return TM_FAIL_SET_CALLBACK;
+		tmdbg("sigaction Failed\n");
+		return TM_OPERATION_FAIL;
 	}
 
 	memset(&request_msg, 0, sizeof(tm_request_t));
-	request_msg.cmd = TASKMGT_SET_BROADCAST_CB;
+	request_msg.cmd = TASKMGR_SET_BROADCAST_CB;
 	request_msg.caller_pid = getpid();
 	request_msg.timeout = TM_NO_RESPONSE;
 	request_msg.data = (void *)TM_ALLOC(sizeof(tm_broadcast_t));
-	if (request_msg.data != NULL) {
-		((tm_broadcast_t *)request_msg.data)->msg_mask = msg_mask;
-		((tm_broadcast_t *)request_msg.data)->cb = (_tm_broadcast_t)func;
-	} else {
+	if (request_msg.data == NULL) {
 		return TM_OUT_OF_MEMORY;
 	}
+	((tm_broadcast_t *)request_msg.data)->msg_mask = msg_mask;
+	((tm_broadcast_t *)request_msg.data)->cb = (_tm_broadcast_t)func;
+
 	ret = taskmgr_send_request(&request_msg);
 	if (ret < 0) {
-		return TM_FAIL_REQ_TO_MGR;
+		TM_FREE(request_msg.data);
+		return ret;
 	}
 	return OK;
 }
@@ -139,7 +144,8 @@ int task_manager_set_termination_cb(void (*func)(void))
 	}
 
 	if (atexit((void *)func) != OK) {
-		return TM_FAIL_SET_TERMINATION_CB;
+		tmdbg("Faile to register a function at exit\n");
+		return TM_OPERATION_FAIL;
 	}
 
 	return OK;

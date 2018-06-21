@@ -954,7 +954,7 @@ static void tc_net_socket_af_packet_sock_dgram_p(void)
 #endif
 
 /**
-* @testcase		tc_net_socket_af_inet_sock_raw_p
+* @testcase		tc_net_socket_af_inet_sock_raw_n
 * @brief
 * @scenario
 * @apicovered		socket()
@@ -972,7 +972,7 @@ static void tc_net_socket_af_inet_sock_raw_n(void)
 }
 
 /**
-* @testcase		tc_net_socket_af_inet_sock_raw_tcp_p
+* @testcase		tc_net_socket_af_inet_sock_raw_tcp_n
 * @brief
 * @scenario
 * @apicovered		socket()
@@ -997,11 +997,11 @@ static void tc_net_socket_af_inet_sock_raw_tcp_n(void)
 * @precondition
 * @postcondition
 */
-static void tc_net_socket_af_inet_sock_raw_udp_n(void)
+static void tc_net_socket_af_inet_sock_raw_udp_p(void)
 {
 	int fd = -1;
 	fd = socket(AF_INET, SOCK_RAW, IPPROTO_UDP);
-	TC_ASSERT_EQ_CLEANUP("socket", fd, -1, close(fd))
+	TC_ASSERT_GEQ("socket", fd, 0)
 	TC_SUCCESS_RESULT()
 
 	close(fd);
@@ -1076,6 +1076,7 @@ static void tc_net_socket_af_inet_sock_raw_icmpv6_p(void)
 	fd = socket(AF_INET, SOCK_RAW, IPPROTO_ICMPV6);
 	TC_ASSERT_GEQ("socket", fd, 0)
 	TC_SUCCESS_RESULT()
+	close(fd);
 }
 #endif
 
@@ -1249,7 +1250,7 @@ int net_socket_main(void)
 	tc_net_socket_af_unspec_sock_dgram_p();
 	tc_net_socket_af_inet_sock_raw_n();
 	tc_net_socket_af_inet_sock_raw_tcp_n();
-	tc_net_socket_af_inet_sock_raw_udp_n();
+	tc_net_socket_af_inet_sock_raw_udp_p();
 	tc_net_socket_af_inet_sock_raw_icmp_p();
 #ifdef CONFIG_NET_LWIP_IGMP
 	tc_net_socket_af_inet_sock_raw_igmp_p();

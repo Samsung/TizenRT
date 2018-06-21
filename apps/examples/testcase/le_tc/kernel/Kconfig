@@ -33,7 +33,6 @@ config TC_KN_ALL
 	select TC_KERNEL_LIBC_SCHED
 	select TC_KERNEL_LIBC_SEMAPHORE
 	select TC_KERNEL_LIBC_SIGNAL
-	select TC_KERNEL_LIBC_SPAWN
 	select TC_KERNEL_LIBC_STDIO
 	select TC_KERNEL_LIBC_STDLIB
 	select TC_KERNEL_LIBC_STRING
@@ -56,7 +55,6 @@ config TC_KN_ALL
 	select ITC_KERNEL_SEMAPHORE
 	select ITC_KERNEL_SCHED
 	select ITC_KERNEL_TIMER
-	select ITC_KERNEL_LIBC_SPAWN
 	select ITC_KERNEL_PTHREAD
 
 config TC_KERNEL_CLOCK
@@ -126,10 +124,6 @@ config TC_KERNEL_LIBC_SEMAPHORE
 
 config TC_KERNEL_LIBC_SIGNAL
 	bool "Libc Signal"
-	default n
-
-config TC_KERNEL_LIBC_SPAWN
-	bool "Libc Spawn"
 	default n
 
 config TC_KERNEL_LIBC_STDIO
@@ -252,10 +246,6 @@ config ITC_KERNEL_SCHED
 
 config ITC_KERNEL_TIMER
 	bool "ITC Timer"
-	default n
-
-config ITC_KERNEL_LIBC_SPAWN
-	bool "ITC Libc Spawn"
 	default n
 
 config ITC_KERNEL_PTHREAD

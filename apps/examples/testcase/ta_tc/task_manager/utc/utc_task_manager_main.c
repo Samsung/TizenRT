@@ -164,7 +164,7 @@ static void utc_task_manager_register_n(void)
 static void utc_task_manager_register_p(void)
 {
 	tm_sample_handle = task_manager_register("invalid", TM_TASK_PERMISSION_DEDICATE, TM_RESPONSE_WAIT_INF);
-	TC_ASSERT_EQ("task_manager_register", tm_sample_handle, TM_FAIL_REGISTER);
+	TC_ASSERT_EQ("task_manager_register", tm_sample_handle, TM_OPERATION_FAIL);
 
 	tm_sample_handle = task_manager_register(TM_SAMPLE_NAME, TM_TASK_PERMISSION_DEDICATE, TM_RESPONSE_WAIT_INF);
 	TC_ASSERT_GEQ("task_manager_register", tm_sample_handle, 0);
@@ -201,7 +201,7 @@ static void utc_task_manager_start_p(void)
 	TC_ASSERT_EQ("task_manager_start", ret, OK);
 
 	ret = task_manager_start(tm_sample_handle, TM_RESPONSE_WAIT_INF);
-	TC_ASSERT_EQ("task_manager_start", ret, TM_FAIL_ALREADY_STARTED_TASK);
+	TC_ASSERT_EQ("task_manager_start", ret, TM_ALREADY_STARTED_TASK);
 
 	ret = task_manager_start(tm_broadcast_handle1, TM_RESPONSE_WAIT_INF);
 	TC_ASSERT_EQ("task_manager_start", ret, OK);
@@ -513,7 +513,7 @@ static void utc_task_manager_terminate_p(void)
 	TC_ASSERT_EQ("task_manager_terminate", ret, OK);
 
 	ret = task_manager_terminate(tm_sample_handle, TM_RESPONSE_WAIT_INF);
-	TC_ASSERT_EQ("task_manager_terminate", ret, TM_FAIL_ALREADY_STOPPED_TASK);
+	TC_ASSERT_EQ("task_manager_terminate", ret, TM_ALREADY_STOPPED_TASK);
 
 	ret = task_manager_terminate(tm_broadcast_handle1, TM_RESPONSE_WAIT_INF);
 	TC_ASSERT_EQ("task_manager_terminate", ret, OK);
@@ -578,13 +578,13 @@ static void utc_task_manager_unregister_p(void)
 	TC_ASSERT_EQ("task_manager_unregister", ret, OK);
 
 	ret = task_manager_start(tm_sample_handle, 100);
-	TC_ASSERT_EQ("task_manager_start", ret, TM_FAIL_UNREGISTERED_TASK);
+	TC_ASSERT_EQ("task_manager_start", ret, TM_UNREGISTERED_TASK);
 
 	ret = task_manager_restart(tm_sample_handle, TM_RESPONSE_WAIT_INF);
-	TC_ASSERT_EQ("task_manager_restart", ret, TM_FAIL_UNREGISTERED_TASK);
+	TC_ASSERT_EQ("task_manager_restart", ret, TM_UNREGISTERED_TASK);
 
 	ret = task_manager_unregister(tm_sample_handle, TM_RESPONSE_WAIT_INF);
-	TC_ASSERT_EQ("task_manager_unregister", ret, TM_FAIL_UNREGISTERED_TASK);
+	TC_ASSERT_EQ("task_manager_unregister", ret, TM_UNREGISTERED_TASK);
 
 	TC_SUCCESS_RESULT();
 }

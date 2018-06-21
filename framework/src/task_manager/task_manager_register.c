@@ -39,7 +39,7 @@ int task_manager_register(char *name, int permission, int timeout)
 	}
 
 	memset(&request_msg, 0, sizeof(tm_request_t));
-	request_msg.cmd = TASKMGT_REGISTER_TASK;
+	request_msg.cmd = TASKMGR_REGISTER;
 	request_msg.caller_pid = getpid();
 	request_msg.handle = permission;
 	request_msg.data = (void *)TM_ALLOC(strlen(name) + 1);
@@ -51,19 +51,24 @@ int task_manager_register(char *name, int permission, int timeout)
 
 	if (timeout != TM_NO_RESPONSE) {
 		asprintf(&request_msg.q_name, "%s%d", TM_PRIVATE_MQ, request_msg.caller_pid);
+		if (request_msg.q_name == NULL) {
+			TM_FREE(request_msg.data);
+			return TM_OUT_OF_MEMORY;
+		}
 	}
 
 	status = taskmgr_send_request(&request_msg);
 	if (status < 0) {
-		return TM_FAIL_REQ_TO_MGR;
+		TM_FREE(request_msg.data);
+		if (request_msg.q_name != NULL) {
+			TM_FREE(request_msg.q_name);
+		}
+		return status;
 	}
 
 	if (timeout != TM_NO_RESPONSE) {
 		status = taskmgr_receive_response(request_msg.q_name, &response_msg, timeout);
 		TM_FREE(request_msg.q_name);
-		if (status == OK) {
-			status = response_msg.status;
-		}
 	}
 
 	return status;

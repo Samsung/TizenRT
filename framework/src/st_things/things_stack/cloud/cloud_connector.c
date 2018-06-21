@@ -453,7 +453,6 @@ OCStackResult things_cloud_dev_profile_publish(char *host, OCClientResponseHandl
 {
 	THINGS_LOG_D(TAG, "Device-profile Publish Start.");
 
-	long devCnt = 0;
 	st_device_s *dev_info = NULL;
 	int cntArrayPayload = 0;
 	OCRepPayload **arrayPayload = NULL;
@@ -464,11 +463,6 @@ OCStackResult things_cloud_dev_profile_publish(char *host, OCClientResponseHandl
 	char targetUri[MAX_URI_LENGTH * 2] = { 0, };
 	char *coreVer = NULL;
 	char *IoTivityVer = NULL;
-
-	if ((devCnt = dm_get_num_of_dev_cnt()) < 1) {
-		THINGS_LOG_E(TAG, "Not exist device to publish profile-Info of Device.");
-		return OC_STACK_ERROR;
-	}
 
 	snprintf(targetUri, MAX_URI_LENGTH * 2, "%s%s", host, OC_RSRVD_ACCOUNT_DEVPROFILE_URI);
 
@@ -484,25 +478,24 @@ OCStackResult things_cloud_dev_profile_publish(char *host, OCClientResponseHandl
 		goto no_memory;
 	}
 
-	if ((arrayPayload = (OCRepPayload **) things_malloc(sizeof(OCRepPayload *) * devCnt)) == NULL) {
+	if ((arrayPayload = (OCRepPayload **) things_malloc(sizeof(OCRepPayload *))) == NULL) {
 		THINGS_LOG_E(TAG, "[Error] memory allocation is failed.(arrayPayload)");
 		goto no_memory;
 	}
-	// Add All-device-info
-	for (unsigned long i = 0; i < devCnt; i++) {
-		if ((dev_info = dm_get_info_of_dev(i)) == NULL) {
-			THINGS_LOG_E(TAG, "[Error] device info structure is NULL.(seq=%d)", i);
+
+	if ((dev_info = dm_get_info_of_dev(0)) == NULL) {
+		THINGS_LOG_E(TAG, "[Error] device info structure is NULL");
+		goto no_memory;
+	}
+
+	if (dev_info->is_physical == 1) {
+		if ((arrayPayload[cntArrayPayload] = make_dev_profile_payload(dev_info)) == NULL) {
+			THINGS_LOG_E(TAG, "It's failed making payload of Device-Info.(seq=%d)", cntArrayPayload);
 			goto no_memory;
 		}
-
-		if (dev_info->is_physical == 1) {
-			if ((arrayPayload[cntArrayPayload] = make_dev_profile_payload(dev_info)) == NULL) {
-				THINGS_LOG_E(TAG, "It's failed making payload of Device-Info.(seq=%d)", cntArrayPayload);
-				goto no_memory;
-			}
-			cntArrayPayload++;
-		}
+		cntArrayPayload++;
 	}
+
 
 	if (cntArrayPayload < 1) {
 		THINGS_LOG_E(TAG, "[Error] pysical device is not exist. So, Can not Sending request for Device-Profile.");

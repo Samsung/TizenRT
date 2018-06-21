@@ -96,11 +96,11 @@
 #ifdef CONFIG_DEBUG_VERBOSE
 #define spivdbg lldbg
 #else
-#define spivdbg(x...)
+#define spivdbg(...)
 #endif
 #else
-#define spidbg(x...)
-#define spivdbg(x...)
+#define spidbg(...)
+#define spivdbg(...)
 #endif
 
 /****************************************************************************

@@ -79,7 +79,11 @@
 /****************************************************************************
  * Pre-processor Definitions
  ****************************************************************************/
-
+#ifdef CONFIG_SMARTFS_MULTI_ROOT_DIRS
+#define SIDK_S5JT200_AUTOMOUNT_USERFS_DEVNAME CONFIG_SIDK_S5JT200_AUTOMOUNT_USERFS_DEVNAME"d1"
+#else
+#define SIDK_S5JT200_AUTOMOUNT_USERFS_DEVNAME CONFIG_SIDK_S5JT200_AUTOMOUNT_USERFS_DEVNAME
+#endif
 /****************************************************************************
  * Private Variables
  ****************************************************************************/
@@ -315,20 +319,20 @@ int board_app_initialize(void)
 #ifdef CONFIG_SIDK_S5JT200_AUTOMOUNT_USERFS
 	/* Initialize and mount user partition (if we have) */
 #ifdef CONFIG_SMARTFS_MULTI_ROOT_DIRS
-	ret = mksmartfs(CONFIG_SIDK_S5JT200_AUTOMOUNT_USERFS_DEVNAME, 1, false);
+	ret = mksmartfs(SIDK_S5JT200_AUTOMOUNT_USERFS_DEVNAME, 1, false);
 #else
-	ret = mksmartfs(CONFIG_SIDK_S5JT200_AUTOMOUNT_USERFS_DEVNAME, false);
+	ret = mksmartfs(SIDK_S5JT200_AUTOMOUNT_USERFS_DEVNAME, false);
 #endif
 	if (ret != OK) {
 		lldbg("ERROR: mksmartfs on %s failed",
-				CONFIG_SIDK_S5JT200_AUTOMOUNT_USERFS_DEVNAME);
+				SIDK_S5JT200_AUTOMOUNT_USERFS_DEVNAME);
 	} else {
-		ret = mount(CONFIG_SIDK_S5JT200_AUTOMOUNT_USERFS_DEVNAME,
+		ret = mount(SIDK_S5JT200_AUTOMOUNT_USERFS_DEVNAME,
 				CONFIG_SIDK_S5JT200_AUTOMOUNT_USERFS_MOUNTPOINT,
 				"smartfs", 0, NULL);
 		if (ret != OK)
 			lldbg("ERROR: mounting '%s' failed\n",
-				CONFIG_SIDK_S5JT200_AUTOMOUNT_USERFS_DEVNAME);
+				SIDK_S5JT200_AUTOMOUNT_USERFS_DEVNAME);
 	}
 #endif /* CONFIG_SIDK_S5JT200_AUTOMOUNT_USERFS */
 

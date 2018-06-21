@@ -59,6 +59,7 @@ public:
 	void onRecordFinished(Id id)
 	{
 		std::cout << "onRecordFinished" << std::endl;
+		mr.unprepare();
 	}
 	void onRecordError(Id id)
 	{
@@ -88,7 +89,7 @@ public:
 							isPaused = false;
 						}
 					} else {
-						if (mr.prepare() == RECORDER_OK) {
+						if (mr.setDuration(2) == RECORDER_OK && mr.prepare() == RECORDER_OK) {
 							mr.start();
 							std::cout << "START IN NONE-PAUSE STATE SUCCESS" << std::endl;
 						} else {

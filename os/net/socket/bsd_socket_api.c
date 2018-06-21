@@ -176,7 +176,7 @@ static int socket_argument_validation(int domain, int type, int protocol)
 	switch (protocol) {
 		case IPPROTO_UDP:
 		case IPPROTO_UDPLITE:
-			if (type != SOCK_DGRAM) {
+			if (type != SOCK_DGRAM && type != SOCK_RAW) {
 				return -1;
 			}
 			break;

@@ -795,8 +795,6 @@ INPUT                  = . \
                          ../../../os/include/sched.h \
                          ../../../os/include/semaphore.h \
                          ../../../os/include/signal.h \
-                         ../../../os/include/spawn.h \
-                         ../../../os/include/tinyara/spawn.h \
                          ../../../os/include/stdio.h \
                          ../../../os/include/stdlib.h \
                          ../../../os/include/string.h \

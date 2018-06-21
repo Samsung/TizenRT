@@ -39,27 +39,29 @@ int task_manager_unregister(int handle, int timeout)
 	}
 
 	memset(&request_msg, 0, sizeof(tm_request_t));
-	request_msg.cmd = TASKMGT_UNREGISTER_TASK;
+	request_msg.cmd = TASKMGR_UNREGISTER;
 	request_msg.handle = handle;
 	request_msg.caller_pid = getpid();
 	request_msg.timeout = timeout;
-	request_msg.data = NULL;
 
 	if (timeout != TM_NO_RESPONSE) {
 		asprintf(&request_msg.q_name, "%s%d", TM_PRIVATE_MQ, request_msg.caller_pid);
+		if (request_msg.q_name == NULL) {
+			return TM_OUT_OF_MEMORY;
+		}
 	}
 
 	status = taskmgr_send_request(&request_msg);
 	if (status < 0) {
-		return TM_FAIL_REQ_TO_MGR;
+		if (request_msg.q_name != NULL) {
+			TM_FREE(request_msg.q_name);
+		}
+		return status;
 	}
 
 	if (timeout != TM_NO_RESPONSE) {
 		status = taskmgr_receive_response(request_msg.q_name, &response_msg, timeout);
 		TM_FREE(request_msg.q_name);
-		if (status == OK) {
-			status = response_msg.status;
-		}
 	}
 
 	return status;

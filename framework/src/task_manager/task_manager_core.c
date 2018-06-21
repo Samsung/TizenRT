@@ -110,8 +110,8 @@ static int taskmgr_assign_handle(void)
 	 */
 
 	(void)sched_unlock();
-	set_errno(EBUSY);
-	return ERROR;
+
+	return TM_BUSY;
 }
 
 static int taskmgr_register(char *name, int permission, int caller_pid)
@@ -123,32 +123,32 @@ static int taskmgr_register(char *name, int permission, int caller_pid)
 		return TM_INVALID_PARAM;
 	}
 
-	handle = ERROR;
+	handle = TM_OPERATION_FAIL;
 
 	/* Check that task is in builtin-list or not */
 	for (chk_idx = 0; chk_idx < builtin_cnt; chk_idx++) {
 		if (strncmp((char *)builtin_list[chk_idx].name, name, CONFIG_TASK_NAME_SIZE) == 0) {
 			/* Requested name is in builtin-list */
 			handle = taskmgr_assign_handle();
-			tmvdbg("Registered handle %d\n", handle);
+			if (handle < 0) {
+				tmdbg("Failed to assign handle\n");
+				return handle;
+			}
 			break;
 		}
 	}
-	/* In this case, there is no info in builtin with its name */
-	if (chk_idx >= builtin_cnt || handle < 0) {
-		tmdbg("Cannot find the task\n");
-		return TM_FAIL_REGISTER;
-	}
 
-	tm_task_list[handle].addr = (void *)TM_ALLOC(sizeof(task_list_data_t));
-	if (tm_task_list[handle].addr == NULL) {
-		return TM_OUT_OF_MEMORY;
+	if (handle >= 0) {
+		tm_task_list[handle].addr = (void *)TM_ALLOC(sizeof(task_list_data_t));
+		if (tm_task_list[handle].addr == NULL) {
+			return TM_OUT_OF_MEMORY;
+		}
+		TASK_BUILTIN_IDX(handle) = chk_idx;
+		TASK_TM_GID(handle) = caller_pid;
+		TASK_STATUS(handle) = TM_TASK_STATE_STOP;
+		TASK_PERMISSION(handle) = permission;
+		tmvdbg("Registered handle %d\n", handle);
 	}
-
-	TASK_BUILTIN_IDX(handle) = chk_idx;
-	TASK_TM_GID(handle) = caller_pid;
-	TASK_STATUS(handle) = TM_TASK_STATE_STOP;
-	TASK_PERMISSION(handle) = permission;
 
 	return handle;
 }
@@ -159,7 +159,7 @@ static int taskmgr_unregister(int handle)
 		return TM_INVALID_PARAM;
 	}
 	if (taskmgr_get_task_state(handle) == TM_TASK_STATE_UNREGISTERED) {
-		return TM_FAIL_UNREGISTERED_TASK;
+		return TM_UNREGISTERED_TASK;
 	}
 
 	TASK_PID(handle) = 0;
@@ -188,12 +188,12 @@ static int taskmgr_start(int handle, int caller_pid)
 
 	/* handle is for starting task, pid is for caller */
 	if (!taskmgr_is_permitted(handle, caller_pid)) {
-		return TM_FAIL_NOT_PERMITTED;
+		return TM_NO_PERMISSION;
 	}
 
 	fd = taskmgr_get_drvfd();
 	if (fd < 0) {
-		return TM_FAIL_START;
+		return TM_INVALID_DRVFD;
 	}
 
 	/* handle is in task_list */
@@ -201,13 +201,13 @@ static int taskmgr_start(int handle, int caller_pid)
 	pid = task_create(task_info->name, task_info->priority, task_info->stacksize, task_info->entry, (char * const *)NULL);
 	if (pid == ERROR) {
 		tmdbg("Fail to create new task\n");
-		return TM_FAIL_START;
+		return TM_OPERATION_FAIL;
 	}
 
 	ret = ioctl(fd, TMIOC_START, pid);
 	if (ret == ERROR) {
 		(void)task_delete(pid);
-		return TM_FAIL_START;
+		return TM_OPERATION_FAIL;
 	}
 
 	/* task created well */
@@ -231,14 +231,14 @@ static int taskmgr_terminate(int handle, int caller_pid)
 	}
 
 	if (!taskmgr_is_permitted(handle, caller_pid)) {
-		return TM_FAIL_NOT_PERMITTED;
+		return TM_NO_PERMISSION;
 	}
 
 	/* handle is in task_list */
 	ret = task_delete(TASK_PID(handle));
 	if (ret != OK) {
 		tmdbg("Fail to delete the task\n");
-		return TM_FAIL_TERMINATE;
+		return TM_OPERATION_FAIL;
 	}
 	/* task deleted well */
 	TASK_STATUS(handle) = TM_TASK_STATE_STOP;
@@ -261,13 +261,13 @@ static int taskmgr_restart(int handle, int caller_pid)
 	}
 
 	if (!taskmgr_is_permitted(handle, caller_pid)) {
-		return TM_FAIL_NOT_PERMITTED;
+		return TM_NO_PERMISSION;
 	}
 
 	ret = task_restart(TASK_PID(handle));
 	if (ret != OK) {
 		tmdbg("Fail to restart the task\n");
-		return TM_FAIL_RESTART;
+		return TM_OPERATION_FAIL;
 	}
 
 	TASK_STATUS(handle) = TM_TASK_STATE_RUNNING;
@@ -290,22 +290,23 @@ static int taskmgr_pause(int handle, int caller_pid)
 	}
 
 	if (!taskmgr_is_permitted(handle, caller_pid)) {
-		return TM_FAIL_NOT_PERMITTED;
+		return TM_NO_PERMISSION;
 	}
 
 	fd = taskmgr_get_drvfd();
 	if (fd < 0) {
-		return TM_FAIL_PAUSE;
+		return TM_INVALID_DRVFD;
 	}
 
 	ret = ioctl(fd, TMIOC_PAUSE, TASK_PID(handle));
 	if (ret != OK) {
-		return TM_FAIL_PAUSE;
+		return TM_OPERATION_FAIL;
 	}
 
 	ret = kill(TASK_PID(handle), SIGTM_PAUSE);
 	if (ret != OK) {
-		return TM_FAIL_PAUSE;
+		tmdbg("Fail to pause the task\n");
+		return TM_OPERATION_FAIL;
 	}
 
 	TASK_STATUS(handle) = TM_TASK_STATE_PAUSE;
@@ -327,12 +328,13 @@ static int taskmgr_resume(int handle, int caller_pid)
 	}
 
 	if (!taskmgr_is_permitted(handle, caller_pid)) {
-		return TM_FAIL_NOT_PERMITTED;
+		return TM_NO_PERMISSION;
 	}
 
 	ret = kill(TASK_PID(handle), SIGTM_RESUME);
 	if (ret != OK) {
-		return TM_FAIL_RESUME;
+		tmdbg("Fail to resume the task\n");
+		return TM_OPERATION_FAIL;
 	}
 
 	TASK_STATUS(handle) = TM_TASK_STATE_RUNNING;
@@ -356,17 +358,17 @@ static int taskmgr_unicast(int handle, int caller_pid, void *data)
 	}
 
 	if (!taskmgr_is_permitted(handle, caller_pid)) {
-		return TM_FAIL_NOT_PERMITTED;
+		return TM_NO_PERMISSION;
 	}
 
 	fd = taskmgr_get_drvfd();
 	if (fd < 0) {
-		return TM_FAIL_UNICAST;
+		return TM_INVALID_DRVFD;
 	}
 
 	ret = ioctl(fd, TMIOC_UNICAST, TASK_PID(handle));
 	if (ret < 0) {
-		return TM_FAIL_NO_HANDLER;
+		return TM_OPERATION_FAIL;
 	}
 
 	/* handle is in task_list */
@@ -374,7 +376,7 @@ static int taskmgr_unicast(int handle, int caller_pid, void *data)
 	ret = sigqueue(TASK_PID(handle), SIGTM_UNICAST, msg);
 	if (ret != OK) {
 		tmdbg("Fail to send signal, errno : %d\n", errno);
-		return TM_FAIL_UNICAST;
+		return TM_OPERATION_FAIL;
 	}
 
 	return OK;
@@ -419,7 +421,7 @@ static int taskmgr_getinfo_with_name(char *name, tm_response_t *response_msg)
 		return TM_INVALID_PARAM;
 	}
 
-	ret = TM_FAIL_UNREGISTERED_TASK;
+	ret = TM_UNREGISTERED_TASK;
 	response_msg->data = NULL;
 
 	for (chk_idx = 0; chk_idx < CONFIG_TASK_MANAGER_MAX_TASKS; chk_idx++) {
@@ -444,7 +446,7 @@ static int taskmgr_getinfo_with_group(int group, tm_response_t *response_msg)
 		return TM_INVALID_PARAM;
 	}
 
-	ret = TM_FAIL_UNREGISTERED_TASK;
+	ret = TM_UNREGISTERED_TASK;
 	response_msg->data = NULL;
 
 	for (chk_idx = 0; chk_idx < CONFIG_TASK_MANAGER_MAX_TASKS; chk_idx++) {
@@ -467,7 +469,7 @@ static int taskmgr_getinfo_with_handle(int handle, tm_response_t *response_msg)
 	}
 
 	if (TASK_LIST_ADDR(handle) == NULL) {
-		return TM_FAIL_UNREGISTERED_TASK;
+		return TM_UNREGISTERED_TASK;
 	}
 
 	return taskmgr_get_task_info(&response_msg->data, handle);
@@ -495,7 +497,7 @@ int taskmgr_get_handle_by_pid(int pid)
 			return handle;
 		}
 	}
-	return TM_FAIL_UNREGISTERED_TASK;
+	return TM_UNREGISTERED_TASK;
 }
 
 static void taskmgr_broadcast(int msg)
@@ -532,13 +534,14 @@ static void taskmgr_broadcast(int msg)
 static int taskmgr_set_msg_cb(int type, void *data, int pid)
 {
 	int handle;
-	handle = taskmgr_get_handle_by_pid(pid);
-	if (handle == TM_FAIL_UNREGISTERED_TASK) {
-		return handle;
-	}
 
 	if (data == NULL) {
-		return TM_FAIL_SET_CALLBACK;
+		return TM_INVALID_PARAM;
+	}
+
+	handle = taskmgr_get_handle_by_pid(pid);
+	if (handle == TM_UNREGISTERED_TASK) {
+		return handle;
 	}
 
 	if (type == TYPE_UNICAST) {
@@ -602,59 +605,59 @@ int task_manager(int argc, char *argv[])
 
 		tmvdbg("Recevied Request msg : cmd = %d\n", request_msg.cmd);
 		switch (request_msg.cmd) {
-		case TASKMGT_REGISTER_TASK:
+		case TASKMGR_REGISTER:
 			ret = taskmgr_register(request_msg.data, request_msg.handle, request_msg.caller_pid);
 			break;
 
-		case TASKMGT_UNREGISTER_TASK:
+		case TASKMGR_UNREGISTER:
 			ret = taskmgr_unregister(request_msg.handle);
 			break;
 
-		case TASKMGT_START:
+		case TASKMGR_START:
 			ret = taskmgr_start(request_msg.handle, request_msg.caller_pid);
 			break;
 
-		case TASKMGT_TERMINATE:
+		case TASKMGR_TERMINATE:
 			ret = taskmgr_terminate(request_msg.handle, request_msg.caller_pid);
 			break;
 
-		case TASKMGT_RESTART:
+		case TASKMGR_RESTART:
 			ret = taskmgr_restart(request_msg.handle, request_msg.caller_pid);
 			break;
 
-		case TASKMGT_PAUSE:
+		case TASKMGR_PAUSE:
 			ret = taskmgr_pause(request_msg.handle, request_msg.caller_pid);
 			break;
 
-		case TASKMGT_RESUME:
+		case TASKMGR_RESUME:
 			ret = taskmgr_resume(request_msg.handle, request_msg.caller_pid);
 			break;
 
-		case TASKMGT_SCAN_NAME:
+		case TASKMGR_SCAN_NAME:
 			ret = taskmgr_getinfo_with_name(request_msg.data, &response_msg);
 			break;
 
-		case TASKMGT_SCAN_GROUP:
+		case TASKMGR_SCAN_GROUP:
 			ret = taskmgr_getinfo_with_group(request_msg.handle, &response_msg);
 			break;
 
-		case TASKMGT_SCAN_HANDLE:
+		case TASKMGR_SCAN_HANDLE:
 			ret = taskmgr_getinfo_with_handle(request_msg.handle, &response_msg);
 			break;
 
-		case TASKMGT_UNICAST:
+		case TASKMGR_UNICAST:
 			ret = taskmgr_unicast(request_msg.handle, request_msg.caller_pid, request_msg.data);
 			break;
 
-		case TASKMGT_BROADCAST:
+		case TASKMGR_BROADCAST:
 			(void)taskmgr_broadcast(*((int *)request_msg.data));
 			break;
 
-		case TASKMGT_SET_BROADCAST_CB:
+		case TASKMGR_SET_BROADCAST_CB:
 			ret = taskmgr_set_msg_cb(TYPE_BROADCAST, request_msg.data, request_msg.caller_pid);
 			break;
 
-		case TASKMGT_SET_UNICAST_CB:
+		case TASKMGR_SET_UNICAST_CB:
 			ret = taskmgr_set_msg_cb(TYPE_UNICAST, request_msg.data, request_msg.caller_pid);
 			break;
 			
@@ -667,7 +670,7 @@ int task_manager(int argc, char *argv[])
 			taskmgr_send_response((char *)request_msg.q_name, &response_msg);
 		}
 
-		if (request_msg.data != NULL && request_msg.cmd != TASKMGT_SET_UNICAST_CB) {
+		if (request_msg.data != NULL && request_msg.cmd != TASKMGR_SET_UNICAST_CB) {
 			TM_FREE(request_msg.data);
 			request_msg.data = NULL;
 		}
