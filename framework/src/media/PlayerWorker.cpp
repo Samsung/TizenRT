@@ -16,16 +16,23 @@
  *
  ******************************************************************/
 
+#include <tinyara/config.h>
 #include <debug.h>
 
 #include "PlayerWorker.h"
 #include "MediaPlayerImpl.h"
+
+#ifndef CONFIG_MEDIA_PLAYER_STACKSIZE
+#define CONFIG_MEDIA_PLAYER_STACKSIZE 4096
+#endif
 
 using namespace std;
 
 namespace media {
 PlayerWorker::PlayerWorker() : mCurPlayer(nullptr)
 {
+	mThreadName = "PlayerWorker";
+	mStacksize = CONFIG_MEDIA_PLAYER_STACKSIZE;
 }
 
 PlayerWorker::~PlayerWorker()

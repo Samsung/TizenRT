@@ -16,12 +16,19 @@
  *
  ******************************************************************/
 
+#include <tinyara/config.h>
 #include "RecorderObserverWorker.h"
+
+#ifndef CONFIG_MEDIA_RECORDER_OBSERVER_STACKSIZE
+#define CONFIG_MEDIA_RECORDER_OBSERVER_STACKSIZE 2048
+#endif
 
 namespace media {
 
 RecorderObserverWorker::RecorderObserverWorker()
 {
+	mThreadName = "RecorderObserverWorker";
+	mStacksize = CONFIG_MEDIA_RECORDER_OBSERVER_STACKSIZE;
 }
 RecorderObserverWorker::~RecorderObserverWorker()
 {

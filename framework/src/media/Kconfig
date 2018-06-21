@@ -20,11 +20,39 @@ config MEDIA_PLAYER
 	---help---
 		Enable media player functions
 
+if MEDIA_PLAYER
+
+config MEDIA_PLAYER_STACKSIZE
+	int "Media Player thread stack size"
+	default 4096
+	---help---
+
+config MEDIA_PLAYER_OBSERVER_STACKSIZE
+	int "Media Player Observer thread stack size"
+	default 2048
+	---help---
+
+endif #MEDIA_PLAYER
+
 config MEDIA_RECORDER
 	bool "Support Media recorder"
 	default n
 	---help---
 		Enable media recoreder functions
+
+if MEDIA_RECORDER
+
+config MEDIA_RECORDER_STACKSIZE
+	int "Media Recorder thread stack size"
+	default 12288
+	---help---
+
+config MEDIA_RECORDER_OBSERVER_STACKSIZE
+	int "Media Recorder Observer thread stack size"
+	default 2048
+	---help---
+
+endif #MEDIA_RECORDER
 
 config AUDIO_RESAMPLER_BUFSIZE
 	int "Audio Resampler Buffer size"

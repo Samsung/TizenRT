@@ -20,8 +20,8 @@
 #define __MEDIA_MEDIAWORKER_HPP
 
 #include <atomic>
-#include <thread>
 #include <mutex>
+#include <pthread.h>
 #include "MediaQueue.h"
 
 namespace media {
@@ -42,15 +42,17 @@ public:
 	bool isAlive();
 
 protected:
+	long mStacksize;
+	const char *mThreadName;
 	virtual bool processLoop();
 
 private:
-	int mediaLooper();
+	void *mediaLooper();
 
 	MediaQueue mWorkerQueue;
 	std::atomic<bool> mIsRunning;
 	int mRefCnt;
-	std::thread mWorkerThread;
+	pthread_t mWorkerThread;
 	std::mutex mRefMtx;
 };
 } // namespace media
