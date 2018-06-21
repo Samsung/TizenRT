@@ -28,75 +28,10 @@
 // Support 2 channels (stereo) at most
 #define CHANNEL_NUM_MAX 2
 
-#ifdef CONFIG_OPUS_CODEC_PTHREAD
-struct opus_enc_service_s {
-	uint32_t magic;
-	pthread_t thread;
-	pthread_mutex_t invoke_mutex;
-	pthread_cond_t invoke_cond;
-
-	pthread_mutex_t respond_mutex;
-	pthread_cond_t respond_cond;
-
-	OpusEncoder *st;
-	opus_enc_external_t *ext;
-	int32_t payload_size;
-};
-
-typedef struct opus_enc_service_s opus_enc_service_t;
-typedef struct opus_enc_service_s *opus_enc_service_p;
-
-#define MAGIC_WORD 0x5a5aa5a5
-#define INVALID_THREAD_ID 0
-
-static void *opus_encoder_thread(void *param)
-{
-	opus_enc_service_p opus_svr = (opus_enc_service_p) param;
-
-	while (1) {
-		// Receive encoding request
-		pthread_mutex_lock(&opus_svr->invoke_mutex);
-		if (opus_svr->ext == NULL) {
-			pthread_cond_wait(&opus_svr->invoke_cond, &opus_svr->invoke_mutex);
-		}
-
-		if (opus_svr->ext == NULL) {
-			// Invalid pointer after condition wakeup, exit thread.
-			break;
-		}
-
-		medvdbg("opus encoding...\n");
-		unsigned char *out_data = ((unsigned char *)opus_svr->ext->pOutputBuffer) + OPUS_PACKET_HEADER_LEN;
-		int analysis_frame_size = opus_svr->ext->inputSampleRate * opus_svr->ext->frameSizeMS / 1000;
-
-		opus_svr->payload_size = opus_encode(opus_svr->st, \
-									opus_svr->ext->pInputBuffer, \
-									analysis_frame_size, \
-									out_data, \
-									opus_svr->ext->outputBufferMaxLength);
-		opus_svr->st = NULL;
-		opus_svr->ext = NULL;
-		medvdbg("opus encode end! payload_size %d\n", opus_svr->payload_size);
-
-		pthread_mutex_unlock(&opus_svr->invoke_mutex);
-
-		// Encoding finished, notify result.
-		pthread_mutex_lock(&opus_svr->respond_mutex);
-		pthread_cond_signal(&opus_svr->respond_cond);
-		pthread_mutex_unlock(&opus_svr->respond_mutex);
-	}
-
-	return NULL;
-}
-#endif  // CONFIG_OPUS_CODEC_PTHREAD
 
 static OpusEncoder *getOpusEncoder(void *pMem)
 {
-#ifdef CONFIG_OPUS_CODEC_PTHREAD
-	return ((OpusEncoder *) ((uint8_t *) (pMem) + sizeof(opus_enc_service_t)));
-#else
 	return ((OpusEncoder *) (pMem));
-#endif
 }
 
 static void int2char(opus_uint32 i, unsigned char ch[4])
@@ -109,14 +44,7 @@ static void int2char(opus_uint32 i, unsigned char ch[4])
 
 uint32_t opus_encoderMemRequirements(void)
 {
-	uint32_t size = 0;
-
-#ifdef CONFIG_OPUS_CODEC_PTHREAD
-	size += sizeof(opus_enc_service_t);
-#endif
-
-	size += opus_encoder_get_size(CHANNEL_NUM_MAX);
-	return size;
+	return opus_encoder_get_size(CHANNEL_NUM_MAX);
 }
 
 int32_t opus_initEncoder(opus_enc_external_t *pExt, void *pMem)
@@ -141,67 +69,11 @@ int32_t opus_initEncoder(opus_enc_external_t *pExt, void *pMem)
 	opus_encoder_ctl(st, OPUS_SET_LSB_DEPTH(16));
 	opus_encoder_ctl(st, OPUS_SET_EXPERT_FRAME_DURATION(OPUS_FRAMESIZE_ARG));
 
-#ifdef CONFIG_OPUS_CODEC_PTHREAD
-	opus_enc_service_p opus_svr = (opus_enc_service_p) pMem;
-
-	if (opus_svr->magic != MAGIC_WORD || opus_svr->thread == INVALID_THREAD_ID) {
-		opus_svr->magic = MAGIC_WORD;
-		opus_svr->st = NULL;
-		opus_svr->ext = NULL;
-		opus_svr->payload_size = 0;
-
-		pthread_mutex_init(&(opus_svr->invoke_mutex), NULL);
-		pthread_cond_init(&(opus_svr->invoke_cond), NULL);
-		pthread_mutex_init(&(opus_svr->respond_mutex), NULL);
-		pthread_cond_init(&(opus_svr->respond_cond), NULL);
-
-		pthread_attr_t attr;
-		int status;
-		status = pthread_attr_init(&attr);
-		if (status != 0) {
-			meddbg("thread : pthread_attr_init failed, status=%d\n", status);
-		}
-
-		/* Set the stacksize */
-		status = pthread_attr_setstacksize(&attr, CONFIG_OPUS_ENCODE_PTHREAD_STACKSIZE);
-		if (status != 0) {
-			meddbg("thread : pthread_attr_setstacksize failed, status=%d\n", status);
-		}
-
-		status = pthread_create(&opus_svr->thread, &attr, opus_encoder_thread, opus_svr);
-		if (status != 0) {
-			meddbg("thread: pthread_create failed, status=%d\n", status);
-			opus_svr->thread = INVALID_THREAD_ID;
-			return OPUS_INTERNAL_ERROR;
-		}
-	}
-#endif // CONFIG_OPUS_CODEC_PTHREAD
-
 	return OPUS_OK;
 }
 
 int32_t opus_uninitEncoder(void *pMem)
 {
-#ifdef CONFIG_OPUS_CODEC_PTHREAD
-	opus_enc_service_p opus_svr = (opus_enc_service_p) pMem;
-
-	if ((opus_svr->magic == MAGIC_WORD) && (opus_svr->thread != INVALID_THREAD_ID)) {
-		// Reset ext pointer and notify to exit thread.
-		pthread_mutex_lock(&opus_svr->invoke_mutex);
-		opus_svr->st = NULL;
-		opus_svr->ext = NULL;
-		pthread_cond_signal(&opus_svr->invoke_cond);
-		pthread_mutex_unlock(&opus_svr->invoke_mutex);
-
-		int status;
-		status = pthread_join(opus_svr->thread, NULL);
-		if (status != 0) {
-			meddbg("thread: pthread_join failed, status=%d\n", status);
-		} else {
-			opus_svr->thread = INVALID_THREAD_ID;
-		}
-	}
-#endif // CONFIG_OPUS_CODEC_PTHREAD
 	return OPUS_OK;
 }
 
@@ -216,33 +88,10 @@ int32_t opus_frameEncode(opus_enc_external_t *pExt, void *pMem)
 	int analysis_frame_size = pExt->inputSampleRate * pExt->frameSizeMS / 1000;
 	int32_t payload_size;
 
-#ifdef CONFIG_OPUS_CODEC_PTHREAD
-	opus_enc_service_p opus_svr = (opus_enc_service_p) pMem;
-
-	// Request to Encode
-	pthread_mutex_lock(&opus_svr->invoke_mutex);
-
-	opus_svr->st = st;
-	opus_svr->ext = pExt;
-	pthread_cond_signal(&opus_svr->invoke_cond);
-
-	// Lock respond-mutex before unlock invoke-mutex
-	pthread_mutex_lock(&opus_svr->respond_mutex);
-	pthread_mutex_unlock(&opus_svr->invoke_mutex);
-
-	// Start encoding
-	pthread_cond_wait(&opus_svr->respond_cond, &opus_svr->respond_mutex);
-
-	// Encoding finished
-	payload_size = opus_svr->payload_size;
-
-	pthread_mutex_unlock(&opus_svr->respond_mutex);
-#else
 	payload_size = opus_encode(st, pExt->pInputBuffer,
 							   analysis_frame_size,
 							   out_data,
 							   pExt->outputBufferMaxLength);
-#endif // CONFIG_OPUS_CODEC_PTHREAD
 
 	int nb_encoded = opus_packet_get_samples_per_frame(out_data, pExt->inputSampleRate)
 					 * opus_packet_get_nb_frames(out_data, payload_size);

@@ -67,25 +67,5 @@ config OPUS_ENCODE_BITRATE
 	---help---
 		Bitrate for encoding, bits per second, e.g. 16000
 
-config OPUS_CODEC_PTHREAD
-	bool "Enable opus codec threads"
-	default y
-	---help---
-		select to enable the opus codec threads
-
-config OPUS_DECODE_PTHREAD_STACKSIZE
-	int "Default pthread stack size for opus decoding thread"
-	default 49152
-	depends on OPUS_CODEC_PTHREAD
-	---help---
-		Default pthread stack size for opus decoding thread
-
-config OPUS_ENCODE_PTHREAD_STACKSIZE
-	int "Default pthread stack size for opus encoding thread"
-	default 49152
-	depends on OPUS_CODEC_PTHREAD
-	---help---
-		Default pthread stack size for opus encoding thread
-
 endif # CODEC_LIBOPUS
 
