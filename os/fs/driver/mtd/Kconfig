@@ -249,4 +249,33 @@ config MTD_SMART_ALLOC_DEBUG
 endmenu
 
 endif # MTD_SMART
+
+config MTD_W25
+	bool "SPI-based W25 FLASH"
+	default n
+	select SPI
+
+if MTD_W25
+
+config W25_SPIMODE
+	int "W25 SPI Mode"
+	default 0
+
+config W25_SPIFREQUENCY
+	int "W25 SPI Frequency"
+	default 20000000
+
+config W25_READONLY
+	bool "W25 Read-Only FLASH"
+	default n
+
+config W25_SECTOR512
+	bool "Simulate 512 byte Erase Blocks"
+	default n
+
+config W25_SLOWREAD
+	bool "W25 Slow Read"
+	default n
+
+endif # MTD_W25
 endif # MTD
