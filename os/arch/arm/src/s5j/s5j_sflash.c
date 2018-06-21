@@ -149,8 +149,8 @@ ssize_t up_progmem_ispageerased(size_t page)
 
 	bwritten = 0;
 	addr = up_progmem_getaddress(page);
-	for (count = up_progmem_pagesize(page); count; count--) {
-		if (getreg32(addr) != 0xffffff) {
+	for (count = (up_progmem_pagesize(page)/sizeof(int)); count; count--) {
+		if (getreg32(addr) != 0xffffffff) {
 			bwritten++;
 		}
 		addr += sizeof(int);
