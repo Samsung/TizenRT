@@ -79,13 +79,20 @@ CFLAGS := -DNULL=0 -DSOCKLEN_T=socklen_t -DLOCALE_NOT_USED \
           -Drestrict='' -D__EMX__ -DOPUS_BUILD \
     	  -DHAVE_LRINT -DHAVE_LRINTF -O1 -fno-math-errno
 CFLAGS += -DFIXED_POINT -DDISABLE_FLOAT_API
-CFLAGS += -DVAR_ARRAYS
+CFLAGS += -DUSE_SHAREDPTR
+
 CFLAGS += -I$(TOPDIR)/$(EXTDIR)/libopus
 CFLAGS += -I$(TOPDIR)/$(EXTDIR)/libopus/include
 CFLAGS += -I$(TOPDIR)/$(EXTDIR)/libopus/celt
 CFLAGS += -I$(TOPDIR)/$(EXTDIR)/libopus/silk
 CFLAGS += -I$(TOPDIR)/$(EXTDIR)/libopus/silk/fixed
 
+CXXFLAGS = $(CFLAGS)
+CXXFLAGS += -Wno-shadow -Wno-pedantic
+CXXFLAGS += -pipe -std=c++11
+CXXFLAGS += -fno-exceptions -fcheck-new -fno-rtti
+CXXFLAGS += -ffunction-sections -fdata-sections
+CXXFLAGS += -DCMAKE_EXE_LINKER_FLAGS='-static-libstdc++'
 
 AOBJS = $(ASRCS:.S=$(OBJEXT))
 COBJS = $(CSRCS:.c=$(OBJEXT))
@@ -109,15 +116,16 @@ all: .built
 $(AOBJS): %$(OBJEXT): %.S
 	$(call ASSEMBLE, $<, $@)
 
+# Use CXX compiler for .c to support smart pointer (std::shared_ptr)
 $(COBJS): %$(OBJEXT): %.c
-	$(call COMPILE, $<, $@)
+	$(call COMPILEXX, $<, $@)
 
 .built: $(OBJS)
 	$(call ARCHIVE, $(BIN), $(OBJS))
 	$(Q) touch .built
 
 .depend: Makefile $(SRCS)
-	$(Q) $(MKDEP) $(DEPPATH) "$(CC)" -- $(CFLAGS) -- $(SRCS) >Make.dep
+	$(Q) $(MKDEP) $(DEPPATH) "$(CXX)" -- $(CXXFLAGS) -- $(SRCS) >Make.dep
 	$(Q) touch $@
 
 depend: .depend

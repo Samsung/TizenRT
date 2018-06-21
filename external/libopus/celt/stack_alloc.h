@@ -35,8 +35,8 @@
 #include "opus_types.h"
 #include "opus_defines.h"
 
-#if (!defined (VAR_ARRAYS) && !defined (USE_ALLOCA) && !defined (NONTHREADSAFE_PSEUDOSTACK))
-#error "Opus requires one of VAR_ARRAYS, USE_ALLOCA, or NONTHREADSAFE_PSEUDOSTACK be defined to select the temporary allocation mode."
+#if (!defined (VAR_ARRAYS) && !defined (USE_ALLOCA) && !defined (NONTHREADSAFE_PSEUDOSTACK) && !defined (USE_SHAREDPTR))
+#error "Opus requires one of VAR_ARRAYS, USE_ALLOCA, NONTHREADSAFE_PSEUDOSTACK or USE_SHAREDPTR be defined to select the temporary allocation mode."
 #endif
 
 #ifdef USE_ALLOCA
@@ -112,6 +112,26 @@
 #define RESTORE_STACK
 #define ALLOC_STACK
 #define ALLOC_NONE 0
+
+#elif defined(USE_SHAREDPTR)
+
+#include <memory>
+using namespace std;
+
+#define VARDECL(type, var)      type *var; std::shared_ptr<type> sp_##var
+
+#if 0 // Set this to 1 to print 'new'/'delete[]' logs
+#define ALLOC(var, size, type)  var = new type[size], \
+								printf("%s = new %s[%d]\n", #var, #type, size), \
+								sp_##var = std::shared_ptr<type>(var, [](type *p){ printf("delete[] %s\n", #var); delete[] p;})
+#else
+#define ALLOC(var, size, type)  var = new type[size], sp_##var = std::shared_ptr<type>(var)
+#endif
+
+#define SAVE_STACK
+#define RESTORE_STACK
+#define ALLOC_STACK
+#define ALLOC_NONE 1
 
 #else
 
