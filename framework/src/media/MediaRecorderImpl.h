@@ -81,6 +81,7 @@ public:
 	recorder_result_t setDataSource(std::unique_ptr<stream::OutputDataSource> dataSource);
 	recorder_state_t getState();
 	recorder_result_t setObserver(std::shared_ptr<MediaRecorderObserverInterface> observer);
+	recorder_result_t setDuration(int second);
 	void notifySync();
 	void notifyObserver(observer_command_t cmd);
 	void capture();
@@ -97,6 +98,7 @@ private:
 	void setRecorderVolume(int vol, recorder_result_t& ret);
 	void setRecorderObserver(std::shared_ptr<MediaRecorderObserverInterface> observer);
 	void setRecorderDataSource(std::shared_ptr<stream::OutputDataSource> dataSource, recorder_result_t& ret);
+	void setRecorderDuration(int second, recorder_result_t& ret);
 
 private:
 	std::atomic<recorder_state_t> mCurState;
@@ -108,6 +110,9 @@ private:
 	mutex mCmdMtx; // command mutex
 	std::condition_variable mSyncCv;
 	int mId;
+	int mDuration;
+	uint32_t mTotalFrames;
+	uint32_t mCapturedFrames;
 };
 } // namespace media
 

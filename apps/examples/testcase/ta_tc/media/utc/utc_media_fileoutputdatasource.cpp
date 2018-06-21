@@ -170,7 +170,7 @@ static void utc_media_FileOutputDataSource_write_n(void)
 	FileOutputDataSource dataSource(filePath);
 
 	dataSource.open();
-	TC_ASSERT_EQ("utc_media_FileOutputDataSource_write", dataSource.write(nullptr, 1), 0);
+	TC_ASSERT_EQ("utc_media_FileOutputDataSource_write", dataSource.write(nullptr, 1), EOF);
 	dataSource.close();
 
 	TC_SUCCESS_RESULT();
