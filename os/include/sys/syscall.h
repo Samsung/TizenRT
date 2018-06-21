@@ -175,15 +175,13 @@
 #ifdef CONFIG_SCHED_HAVE_PARENT
 #define SYS_wait                       (__SYS_waitpid+1)
 #define SYS_waitid                     (__SYS_waitpid+2)
-#define __SYS_posix_spawn              (__SYS_waitpid+3)
+#define __SYS_signals                  (__SYS_waitpid+3)
 #else
-#define __SYS_posix_spawn              (__SYS_waitpid+1)
+#define __SYS_signals                  (__SYS_waitpid+1)
 #endif
 #else
-#define __SYS_posix_spawn              __SYS_waitpid
+#define __SYS_signals                   __SYS_waitpid
 #endif
-
-#define __SYS_signals                  __SYS_posix_spawn
 
 /* The following are only defined is signals are supported in the TinyAra
  * configuration.

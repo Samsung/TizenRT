@@ -124,18 +124,6 @@ uintptr_t STUB_wait(int nbr, uintptr_t parm1);
 uintptr_t STUB_waitid(int nbr, uintptr_t parm1, uintptr_t parm2,
 					  uintptr_t parm3, uintptr_t parm4);
 
-/* The following can only be defined if we are configured to execute
- * programs from a file system.
- */
-
-uintptr_t STUB_posix_spawn(int nbr, uintptr_t parm1, uintptr_t parm2,
-						   uintptr_t parm3, uintptr_t parm4, uintptr_t parm5,
-						   uintptr_t parm6);
-uintptr_t STUB_posix_spawnp(int nbr, uintptr_t parm1, uintptr_t parm2,
-							uintptr_t parm3, uintptr_t parm4, uintptr_t parm5,
-							uintptr_t parm6);
-uintptr_t STUB_execv(int nbr, uintptr_t parm1, uintptr_t parm2);
-
 /* The following are only defined is signals are supported in the TinyAra
  * configuration.
  */
