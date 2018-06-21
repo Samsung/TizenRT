@@ -157,6 +157,8 @@ EXTERN int optopt;				/* unrecognized option character */
 /* Task Control Interfaces */
 
 /**
+ * @cond
+ * @internal
  * @ingroup UNISTD_KERNEL
  * @brief The vfork() function has the same effect as fork(), except that the behavior is
  *   undefined if the process created by vfork() either modifies any data other than
@@ -192,6 +194,9 @@ EXTERN int optopt;				/* unrecognized option character */
  * @since TizenRT v1.0
  */
 pid_t vfork(void);
+/**
+ * @endcond
+ */
 /**
  * @ingroup UNISTD_KERNEL
  * @brief get the process ID
