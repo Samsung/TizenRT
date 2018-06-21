@@ -146,7 +146,9 @@ ifeq ($(CONFIG_EXAMPLES_TESTCASE_TASK_MANAGER_UTC),y)
 	$(Q) $(call REGISTER,tm_broadcast2,tm_broadcast2_main,TASH_EXECMD_ASYNC,101,1024)
 	$(Q) $(call REGISTER,tm_broadcast3,tm_broadcast3_main,TASH_EXECMD_ASYNC,101,1024)
 endif
-
+ifeq ($(CONFIG_EXAMPLES_TESTCASE_TASK_MANAGER_ITC),y)
+	$(Q) $(call REGISTER,itc_tm_sample,itc_sample_main,TASH_EXECMD_ASYNC,100,1024)
+endif
 context: $(BUILTIN_REGISTRY)$(DELIM)$(FUNCNAME).bdat
 
 else

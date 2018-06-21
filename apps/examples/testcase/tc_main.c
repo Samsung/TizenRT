@@ -66,7 +66,7 @@
 #if defined(CONFIG_EXAMPLES_TESTCASE_SYSTEMIO_UTC) || defined(CONFIG_EXAMPLES_TESTCASE_SYSTEMIO_ITC)
 #define TC_SYSTEMIO_STACK 2048
 #endif
-#if defined(CONFIG_EXAMPLES_TESTCASE_TASK_MANAGER_UTC)
+#if defined(CONFIG_EXAMPLES_TESTCASE_TASK_MANAGER_UTC) || defined(CONFIG_EXAMPLES_TESTCASE_TASK_MANAGER_ITC)
 #define TC_TASK_MANAGER_STACK  2048
 #endif
 #ifdef CONFIG_EXAMPLES_TESTCASE_TTRACE
@@ -102,6 +102,7 @@ extern int itc_mqtt_main(int argc, char *argv[]);
 extern int utc_sysio_main(int argc, char *argv[]);
 extern int itc_sysio_main(int argc, char *argv[]);
 extern int utc_task_manager_main(int argc, char *argv[]);
+extern int itc_task_manager_main(int argc, char *argv[]);
 extern int utc_wifi_manager_main(int argc, char *argv[]);
 extern int itc_wifi_manager_main(int argc, char *argv[]);
 
@@ -168,6 +169,9 @@ static const tash_cmdlist_t tc_cmds[] = {
 #endif
 #ifdef CONFIG_EXAMPLES_TESTCASE_TASK_MANAGER_UTC
 	{"taskmgr_utc", utc_task_manager_main, TASH_EXECMD_ASYNC},
+#endif
+#ifdef CONFIG_EXAMPLES_TESTCASE_TASK_MANAGER_ITC
+	{"taskmgr_itc", itc_task_manager_main, TASH_EXECMD_ASYNC},
 #endif
 #ifdef CONFIG_EXAMPLES_TESTCASE_TTRACE
 	{"ttrace_tc", tc_ttrace_main, TASH_EXECMD_ASYNC},
@@ -342,6 +346,12 @@ int tc_main(int argc, char *argv[])
 	pid = task_create("taskmgrutc", SCHED_PRIORITY_DEFAULT, TC_TASK_MANAGER_STACK, utc_task_manager_main, argv);
 	if (pid < 0) {
 		printf("Task Manager utc is not started, err = %d\n", pid);
+	}
+#endif
+#ifdef CONFIG_EXAMPLES_TESTCASE_TASK_MANAGER_ITC
+	pid = task_create("taskmgritc", SCHED_PRIORITY_DEFAULT, TC_TASK_MANAGER_STACK, itc_task_manager_main, argv);
+	if (pid < 0) {
+		printf("Task Manager itc is not started, err = %d\n", pid);
 	}
 #endif
 #ifdef CONFIG_EXAMPLES_TESTCASE_TTRACE
