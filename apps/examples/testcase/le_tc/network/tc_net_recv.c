@@ -159,7 +159,7 @@ void *recv_server(void *args)
 	struct sockaddr_in sa;
 	int socket_fd = socket(PF_INET, SOCK_STREAM, IPPROTO_TCP);
 
-	if(socket_fd < 0) {
+	if (socket_fd < 0) {
 		printf("error %s:%d\n", __FUNCTION__, __LINE__);
 		return 0;
 	}
