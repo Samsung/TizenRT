@@ -31,8 +31,8 @@ THREADEXEC = TASH_EXECMD_ASYNC
 ASRCS =
 
 MAINSRC = wm_test.c
-ifeq ($(CONFIG_EXAMPLES_WIFIMANAGER_STRESS_TEST),y)
-CSRCS = rt_perf.c wm_test_stress.c
+ifeq ($(CONFIG_EXAMPLES_WIFIMANAGER_STRESS_TOOL),y)
+CSRCS = wm_test_stress.c
 endif
 
 AOBJS = $(ASRCS:.S=$(OBJEXT))

@@ -16,8 +16,8 @@
  *
  ****************************************************************************/
 
-#ifndef __RT_PERF_H__
-#define __RT_PERF_H__
+#ifndef __ST_PERF_H__
+#define __ST_PERF_H__
 
 #include <sys/time.h>
 
@@ -28,73 +28,73 @@
 /*
  * Initializer Macro
  */
-#define RT_PERF_INITIALIZER {{0, 0}, {0, 0}, 0, 0, 0, 0, 0, WIFIMGR_STRESS_TC_PASS}
-#define RT_STAB_INITIALIZER {0, 0, 0, 0, WIFIMGR_STRESS_TC_PASS}
+#define ST_PERF_INITIALIZER {{0, 0}, {0, 0}, 0, 0, 0, 0, 0, STRESS_TC_PASS}
+#define ST_STAB_INITIALIZER {0, 0, 0, 0, STRESS_TC_PASS}
 
 /*
  * Test case Macro
  */
 #define TEST_SETUP(tc_name)								\
-	static rt_tc_result tc_##tc_name##_setup(void *arg)
+	static st_tc_result tc_##tc_name##_setup(void *arg)
 
 #define TEST_TEARDOWN(tc_name)								\
-	static rt_tc_result tc_##tc_name##_teardown(void *arg)
+	static st_tc_result tc_##tc_name##_teardown(void *arg)
 
 #define TEST_F(tc_name)							\
-	static rt_tc_result tc_##tc_name(void *arg)
+	static st_tc_result tc_##tc_name(void *arg)
 
-#define RT_SET_FUNC(tc_desc, tc_name)									\
-	static rt_func g_##tc_name = {tc_desc, tc_##tc_name##_setup, tc_##tc_name##_teardown, tc_##tc_name}
+#define ST_SET_FUNC(tc_desc, tc_name)									\
+	static st_func g_##tc_name = {tc_desc, tc_##tc_name##_setup, tc_##tc_name##_teardown, tc_##tc_name}
 
-#define RT_SET_PERF(expect, tc_name)									\
-	static rt_performance g_perf_##tc_name = {expect, RT_PERF_INITIALIZER}
+#define ST_SET_PERF(expect, tc_name)									\
+	static st_performance g_perf_##tc_name = {expect, ST_PERF_INITIALIZER}
 
-#define RT_SET_STAB(tc_name)										\
-	static rt_stability g_stab_##tc_name = {RT_STAB_INITIALIZER}
+#define ST_SET_STAB(tc_name)										\
+	static st_stability g_stab_##tc_name = {ST_STAB_INITIALIZER}
 
-#define RT_GET_SMOKE(tc_name) g_smoke_##tc_name
+#define ST_GET_SMOKE(tc_name) g_smoke_##tc_name
 
-#define RT_SET_SMOKE_UNIT(repeat, tc_name, tc_next)						\
-	static rt_smoke g_smoke_##tc_name = {repeat, &(g_perf_##tc_name), &(g_stab_##tc_name), &(g_##tc_name), &(g_smoke_##tc_next)}
+#define ST_SET_SMOKE_UNIT(repeat, tc_name, tc_next)						\
+	static st_smoke g_smoke_##tc_name = {repeat, &(g_perf_##tc_name), &(g_stab_##tc_name), &(g_##tc_name), &(g_smoke_##tc_next)}
 
-#define RT_SET_SMOKE_TAIL_UNIT(repeat, tc_name)							\
-	static rt_smoke g_smoke_##tc_name = {repeat, &(g_perf_##tc_name), &(g_stab_##tc_name), &(g_##tc_name), NULL}
+#define ST_SET_SMOKE_TAIL_UNIT(repeat, tc_name)							\
+	static st_smoke g_smoke_##tc_name = {repeat, &(g_perf_##tc_name), &(g_stab_##tc_name), &(g_##tc_name), NULL}
 
-#define RT_SET_SMOKE(repeat, expect, tc_desc, tc_name, tc_next)			\
-	RT_SET_FUNC(tc_desc, tc_name);										\
-	RT_SET_PERF(expect, tc_name);										\
-	RT_SET_STAB(tc_name);												\
-	static rt_smoke g_smoke_##tc_name = {repeat, &(g_perf_##tc_name), &(g_stab_##tc_name), &(g_##tc_name), &(g_smoke_##tc_next)}
+#define ST_SET_SMOKE(repeat, expect, tc_desc, tc_name, tc_next)			\
+	ST_SET_FUNC(tc_desc, tc_name);										\
+	ST_SET_PERF(expect, tc_name);										\
+	ST_SET_STAB(tc_name);												\
+	static st_smoke g_smoke_##tc_name = {repeat, &(g_perf_##tc_name), &(g_stab_##tc_name), &(g_##tc_name), &(g_smoke_##tc_next)}
 
-#define RT_SET_SMOKE_TAIL(repeat, expect, tc_desc, tc_name)				\
-	RT_SET_FUNC(tc_desc, tc_name);										\
-	RT_SET_PERF(expect, tc_name);										\
-	RT_SET_STAB(tc_name);												\
-	static rt_smoke g_smoke_##tc_name = {repeat, &(g_perf_##tc_name), &(g_stab_##tc_name), &(g_##tc_name), NULL}
+#define ST_SET_SMOKE_TAIL(repeat, expect, tc_desc, tc_name)				\
+	ST_SET_FUNC(tc_desc, tc_name);										\
+	ST_SET_PERF(expect, tc_name);										\
+	ST_SET_STAB(tc_name);												\
+	static st_smoke g_smoke_##tc_name = {repeat, &(g_perf_##tc_name), &(g_stab_##tc_name), &(g_##tc_name), NULL}
 
-#define RT_SET_PACK(fixture, entry)							\
-	static rt_pack g_pack_##fixture = {&g_smoke_##entry}
+#define ST_SET_PACK(fixture, entry)							\
+	static st_pack g_pack_##fixture = {&g_smoke_##entry}
 
-#define RT_GET_PACK(fixture) g_pack_##fixture
+#define ST_GET_PACK(fixture) g_pack_##fixture
 
-#define RT_RUN_TEST(fixture) perf_run(&g_pack_##fixture)
+#define ST_RUN_TEST(fixture) perf_run(&g_pack_##fixture)
 
-#define RT_RESULT_TEST(fixture) perf_print_result(&g_pack_##fixture)
+#define ST_RESULT_TEST(fixture) perf_print_result(&g_pack_##fixture)
 /*
  * Log
  */
-#define RT_ERROR														\
+#define ST_ERROR														\
 	do {																\
 		printf(COLOR_SMOKE "[ERROR] F:%s\tFile:%s:%d\n", __FUNCTION__, __FILE__, __LINE__); \
 		printf(COLOR_WHITE);											\
 	} while (0)
 
-#define RT_START_LOG													\
+#define ST_START_LOG													\
 	do {																\
 		printf(COLOR_WHITE "[INFO] Start F:%s\tFile:%s:%d\n", __FUNCTION__, __FILE__, __LINE__); \
 	} while (0)
 
-#define RT_END_LOG														\
+#define ST_END_LOG														\
 	do {																\
 		printf(COLOR_WHITE "[INFO] End F:%s\tFile:%s:%d\n\n", __FUNCTION__, __FILE__, __LINE__); \
 	} while (0)
@@ -102,58 +102,58 @@
 /*
  * Expect
  */
-#define RT_EXPECT(val, exp)						\
+#define ST_EXPECT(val, exp)						\
 	do {										\
 		if (exp != val) {						\
-			RT_ERROR;							\
-			res = WIFIMGR_STRESS_TC_FAIL;					\
+			ST_ERROR;							\
+			res = STRESS_TC_FAIL;					\
 		}										\
 	} while (0)
 
-#define RT_EXPECT_LT(val, exp)					\
+#define ST_EXPECT_LT(val, exp)					\
 	do {										\
 		if ((exp) >= val) {						\
-			RT_ERROR;							\
-			res = WIFIMGR_STRESS_TC_FAIL;					\
+			ST_ERROR;							\
+			res = STRESS_TC_FAIL;					\
 		}										\
 	} while (0)
 
-#define RT_EXPECT_LE(val, exp)					\
+#define ST_EXPECT_LE(val, exp)					\
 	do {										\
 		if (exp > val) {						\
-			RT_ERROR;							\
-			res = WIFIMGR_STRESS_TC_FAIL;					\
+			ST_ERROR;							\
+			res = STRESS_TC_FAIL;					\
 		}										\
 	} while (0)
 
-#define RT_EXPECT_GT(val, exp)					\
+#define ST_EXPECT_GT(val, exp)					\
 	do {										\
 		if (exp <= val) {						\
-			RT_ERROR;							\
-			res = WIFIMGR_STRESS_TC_FAIL;					\
+			ST_ERROR;							\
+			res = STRESS_TC_FAIL;					\
 		}										\
 	} while (0)
 
-#define RT_EXPECT_GE(val, exp)					\
+#define ST_EXPECT_GE(val, exp)					\
 	do {										\
 		if (exp < val) {						\
-			RT_ERROR;							\
-			res = WIFIMGR_STRESS_TC_FAIL;					\
+			ST_ERROR;							\
+			res = STRESS_TC_FAIL;					\
 		}										\
 	} while (0)
 
-#define RT_START_TEST									\
-	rt_tc_result res = WIFIMGR_STRESS_TC_PASS;						\
+#define ST_START_TEST									\
+	st_tc_result res = STRESS_TC_PASS;						\
 	struct timeval start, end;							\
-	rt_elapsed_time *timer = (rt_elapsed_time *)arg;	\
+	st_elapsed_time *timer = (st_elapsed_time *)arg;	\
 	do {												\
-		RT_START_LOG;									\
+		ST_START_LOG;									\
 		if (timer) {									\
 			gettimeofday(&start, NULL);					\
 		}												\
 	} while (0)
 
-#define RT_END_TEST								\
+#define ST_END_TEST								\
 	do {										\
 		if (timer) {							\
 			gettimeofday(&end, NULL);			\
@@ -162,7 +162,7 @@
 			timer->end.second = end.tv_sec;		\
 			timer->end.micro = end.tv_usec;		\
 		}										\
-		RT_END_LOG;								\
+		ST_END_LOG;								\
 		return res;								\
 	} while (0)
 
@@ -171,87 +171,87 @@
  * Structures
  */
 typedef enum {
-	WIFIMGR_STRESS_TC_PASS,
-	WIFIMGR_STRESS_TC_FAIL,
-	WIFIMGR_STRESS_TC_SKIP,
-	WIFIMGR_STRESS_TC_PERF_FAIL
-} rt_tc_result;
+	STRESS_TC_PASS,
+	STRESS_TC_FAIL,
+	STRESS_TC_SKIP,
+	STRESS_TC_PERF_FAIL
+} st_tc_result;
 
-typedef rt_tc_result(*rt_unit_tc)(void *arg);
+typedef st_tc_result(*st_unit_tc)(void *arg);
 
-typedef struct _rt_performance_time {
+typedef struct _st_performance_time {
 	unsigned int second;
 	unsigned int micro;
-} rt_performance_time;
+} st_performance_time;
 
-typedef struct _rt_elapsed_time {
-	rt_performance_time start;
-	rt_performance_time end;
-} rt_elapsed_time;
+typedef struct _st_elapsed_time {
+	st_performance_time start;
+	st_performance_time end;
+} st_elapsed_time;
 
 /*  developer are not supposed to modify it */
-typedef struct _rt_performance_stat {
-	rt_performance_time start;
-	rt_performance_time end;
+typedef struct _st_performance_stat {
+	st_performance_time start;
+	st_performance_time end;
 	unsigned int count;
 	unsigned int max;	// milli second
 	unsigned int min;	// milli second
 	unsigned int sum;	// milli second
 	unsigned int fail;  // the number of performance fails
-	rt_tc_result result;
-} rt_performance_stat;
+	st_tc_result result;
+} st_performance_stat;
 
 /*  developer are not supposed to modify it */
-typedef struct _rt_stability_stat {
+typedef struct _st_stability_stat {
 	int count;
 	int pass;
 	int fail;
 	int skip;
-	rt_tc_result result;
-} rt_stability_stat;
+	st_tc_result result;
+} st_stability_stat;
 
 
-typedef struct _rt_performance {
+typedef struct _st_performance {
 	unsigned int expect;	// performance limit: milli second
-	rt_performance_stat stat;
-} rt_performance;
+	st_performance_stat stat;
+} st_performance;
 
 
-typedef struct _rt_stability {
-	rt_stability_stat stat;
-} rt_stability;
+typedef struct _st_stability {
+	st_stability_stat stat;
+} st_stability;
 
 
 
-typedef struct _rt_func {
+typedef struct _st_func {
 	char *tc_name;
-	rt_unit_tc setup;
-	rt_unit_tc teardown;
-	rt_unit_tc tc;
+	st_unit_tc setup;
+	st_unit_tc teardown;
+	st_unit_tc tc;
 	void *arg;
-} rt_func;
+} st_func;
 
 
-typedef struct _rt_smoke {
+typedef struct _st_smoke {
 	int repeat_size;
-	rt_performance *performance;
-	rt_stability *stability;
-	rt_func *func;
-	struct _rt_smoke *next;
-} rt_smoke;
+	st_performance *performance;
+	st_stability *stability;
+	st_func *func;
+	struct _st_smoke *next;
+} st_smoke;
 
 
-typedef struct _rt_pack {
-	rt_smoke *head;
-//	rt_smoke *tail;
-} rt_pack;
+typedef struct _st_pack {
+	st_smoke *head;
+//	st_smoke *tail;
+} st_pack;
 
 
 /*
  * Functions
  */
-void perf_run(rt_pack *pack);
-void perf_print_result(rt_pack *pack);
-void perf_add_expect_performance(rt_smoke *smoke, unsigned int usec);
+void perf_run(st_pack *pack);
+void perf_print_result(st_pack *pack);
+void perf_add_expect_performance(st_smoke *smoke, unsigned int usec);
 
-#endif //__RT_PERF_H__
+#endif //__ST_PERF_H__
