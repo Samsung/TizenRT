@@ -19,3 +19,7 @@
 ifeq ($(CONFIG_LIBCXX_UTC),y)
 CONFIGURED_EXT += libcxx-test
 endif
+
+ifeq ($(CONFIG_LIBCXX_ITC),y)
+CONFIGURED_EXT += libcxx-test
+endif

@@ -24,6 +24,7 @@ CXXSRCS 	=
 
 #UTC Main Source
 CSRCS += utc_libcxx.c
+CSRCS += itc_libcxx.c
 
 #Add TC Common Header
 CFLAGS += -I ../../apps/examples/testcase/
@@ -923,6 +924,15 @@ endif
 
 #Containers TC Main
 CXXSRCS += std/containers/tc_containers.cpp
+endif
+
+ifeq ($(CONFIG_LIBCXX_ITC_ALGORITHMS),y)
+
+CXXSRCS += itc/algorithms/max_comp.pass.cpp
+CXXSRCS += itc/algorithms/max.pass.cpp
+CXXSRCS += itc/algorithms/max_init_list.pass.cpp
+
+CXXSRCS += itc/algorithms/itc_algorithms.cpp
 endif
 
 AOBJS		= $(ASRCS:.S=$(OBJEXT))
