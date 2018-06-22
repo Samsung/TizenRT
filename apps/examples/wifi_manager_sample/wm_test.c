@@ -104,7 +104,7 @@ static void wm_process(int argc, char *argv[]);
 
 static int wm_parse_commands(struct options *opt, int argc, char *argv[]);
 
-#ifdef CONFIG_EXAMPLES_WIFIMANAGER_STRESS_TEST
+#ifdef CONFIG_EXAMPLES_WIFIMANAGER_STRESS_TOOL
 extern void wm_run_stress_test(void *arg);
 #endif
 
@@ -1186,7 +1186,7 @@ int wm_parse_commands(struct options *opt, int argc, char *argv[])
 	} else if (strcmp(argv[2], "stop") == 0) {
 		opt->func = wm_stop;
 	} else if (strcmp(argv[2], "stress") == 0) {
-#ifdef CONFIG_EXAMPLES_WIFIMANAGER_STRESS_TEST
+#ifdef CONFIG_EXAMPLES_WIFIMANAGER_STRESS_TOOL
 		opt->func = wm_run_stress_test;
 #else
 		return -1;
