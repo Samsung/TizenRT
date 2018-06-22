@@ -206,8 +206,8 @@ static void tc_net_getpeername_n(int fd)
 void *getpeername_server(void *args)
 {
 	struct sockaddr_in sa;
-	int SocketFD = socket(PF_INET, SOCK_STREAM, IPPROTO_TCP);
-	if (SocketFD < 0) {
+	int socket_fd = socket(PF_INET, SOCK_STREAM, IPPROTO_TCP);
+	if (socket_fd < 0) {
 		printf("socket creation fail %s :%d", __FUNCTION__, __LINE__);
 		getpeername_error();
 		return 0;
@@ -218,26 +218,26 @@ void *getpeername_server(void *args)
 	sa.sin_port = htons(PORTNUM);
 	sa.sin_addr.s_addr = inet_addr("127.0.0.1");
 
-	int ret = bind(SocketFD, (struct sockaddr *)&sa, sizeof(sa));
+	int ret = bind(socket_fd, (struct sockaddr *)&sa, sizeof(sa));
 	if (ret < 0) {
 		printf("bind fail %s :%d", __FUNCTION__, __LINE__);
 		getpeername_error();
-		close(SocketFD);
+		close(socket_fd);
 		return 0;
 	}
 
-	ret = listen(SocketFD, 1);
+	ret = listen(socket_fd, 1);
 	if (ret < 0) {
 		printf("listen fail %s :%d", __FUNCTION__, __LINE__);
 		getpeername_error();
-		close(SocketFD);
+		close(socket_fd);
 		return 0;
 	}
 	getpeername_signal();
-	int ConnectFD = accept(SocketFD, NULL, NULL);
+	int connect_fd = accept(socket_fd, NULL, NULL);
 
-	close(ConnectFD);
-	close(SocketFD);
+	close(connect_fd);
+	close(socket_fd);
 	return 0;
 }
 
