@@ -21,9 +21,6 @@
 #include "Decoder.h"
 #include <debug.h>
 
-#define AUDIO_OK 0
-#define AUDIO_ERROR -1
-
 namespace media {
 
 Decoder::Decoder(unsigned short channels, unsigned int sampleRate)
@@ -32,7 +29,7 @@ Decoder::Decoder(unsigned short channels, unsigned int sampleRate)
 {
 #ifdef CONFIG_AUDIO_CODEC
 	memset(&mDecoder, 0, sizeof(audio_decoder_t));
-	if (audio_decoder_init(&mDecoder, CONFIG_AUDIO_CODEC_RINGBUFFER_SIZE) != AUDIO_OK) {
+	if (audio_decoder_init(&mDecoder, CONFIG_AUDIO_CODEC_RINGBUFFER_SIZE) != AUDIO_DECODER_OK) {
 		meddbg("Error! audio_decoder_init failed!\n");
 	}
 #endif
@@ -48,7 +45,7 @@ Decoder::Decoder(const Decoder *source)
 Decoder::~Decoder()
 {
 #ifdef CONFIG_AUDIO_CODEC
-	if (audio_decoder_finish(&mDecoder) != AUDIO_OK) {
+	if (audio_decoder_finish(&mDecoder) != AUDIO_DECODER_OK) {
 		meddbg("Error! audio_decoder_finish failed!\n");
 	}
 #endif
@@ -138,7 +135,7 @@ bool Decoder::mConfig(int audioType)
 		mp3_ext.pOutputBuffer = outputBuf;
 		mp3_ext.outputFrameSize = sizeof(outputBuf) / sizeof(int16_t);
 
-		if (audio_decoder_init_decoder(&mDecoder, audioType, &mp3_ext) != AUDIO_OK) {
+		if (audio_decoder_init_decoder(&mDecoder, audioType, &mp3_ext) != AUDIO_DECODER_OK) {
 			meddbg("Error! audio_decoder_init_decoder failed!\n");
 			return false;
 		}
@@ -153,7 +150,7 @@ bool Decoder::mConfig(int audioType)
 		aac_ext.pOutputBuffer = outputBuf;
 		aac_ext.aacPlusEnabled = 1;
 
-		if (audio_decoder_init_decoder(&mDecoder, audioType, &aac_ext) != AUDIO_OK) {
+		if (audio_decoder_init_decoder(&mDecoder, audioType, &aac_ext) != AUDIO_DECODER_OK) {
 			meddbg("Error! audio_decoder_init_decoder failed!\n");
 			return false;
 		}
@@ -170,7 +167,7 @@ bool Decoder::mConfig(int audioType)
 		opus_ext.desiredSampleRate = mSampleRate;
 		opus_ext.desiredChannels = mChannels;
 
-		if (audio_decoder_init_decoder(&mDecoder, audioType, &opus_ext) != AUDIO_OK) {
+		if (audio_decoder_init_decoder(&mDecoder, audioType, &opus_ext) != AUDIO_DECODER_OK) {
 			meddbg("Error! audio_decoder_init_decoder failed!\n");
 			return false;
 		}

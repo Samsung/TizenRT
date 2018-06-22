@@ -28,6 +28,9 @@
 #include "../codecs/opus_decoder_api.h"
 #endif
 
+#define AUDIO_DECODER_OK 0
+#define AUDIO_DECODER_ERROR -1
+
 namespace media {
 
 struct audio_decoder_s;

@@ -21,9 +21,6 @@
 #include "Encoder.h"
 #include <debug.h>
 
-#define AUDIO_OK 0
-#define AUDIO_ERROR -1
-
 #define MAX_PACKET_SIZE 1024
 #define MSEC_PER_SECOND 1000
 
@@ -73,7 +70,7 @@ Encoder::Encoder(audio_type_t audio_type, unsigned short channels, unsigned int 
 		ext.inputSampleRate = sampleRate;
 
 		// Initialize encoder
-		if (audio_encoder_init(&mEncoder, CONFIG_AUDIO_CODEC_RINGBUFFER_SIZE, AUDIO_TYPE_OPUS, &ext) != AUDIO_OK) {
+		if (audio_encoder_init(&mEncoder, CONFIG_AUDIO_CODEC_RINGBUFFER_SIZE, AUDIO_TYPE_OPUS, &ext) != AUDIO_ENCODER_OK) {
 			meddbg("Error! audio_encoder_init failed!\n");
 		}
 		break;
@@ -96,7 +93,7 @@ Encoder::Encoder(const Encoder *source)
 Encoder::~Encoder()
 {
 #ifdef CONFIG_AUDIO_CODEC
-	if (audio_encoder_finish(&mEncoder) != AUDIO_OK) {
+	if (audio_encoder_finish(&mEncoder) != AUDIO_ENCODER_OK) {
 		meddbg("Error! audio_encoder_finish failed!\n");
 	}
 
