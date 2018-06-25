@@ -21,8 +21,8 @@ This guide explains the steps and details for enabling SmartFS on a new board.
 
 ## SmartFS Code Layering
 
-Smart FS consists of two layers built on top of standard MTD Driver.  
-Below diagram shows the dependant layers part of Smart FS.
+SmartFS consists of two layers built on top of standard MTD Driver.  
+Below diagram shows the dependent layers part of Smart FS.
 
 ```
 +----------------------------------------------+

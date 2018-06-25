@@ -34,7 +34,7 @@ Other Configurations
  * Logm Buffer size  
    > If it is not sufficient, some messages would be dropped.
  * Interval for flushing logm buffer  
-   > It dedcides how frequently buffer is flushed (ms).
+   > It decides how frequently buffer is flushed (ms).
  * Logm Task priority  
    > If it is lower than other tasks, logm can not be operated properly.
  * Logm Task stack size
@@ -59,7 +59,7 @@ To avoid the loss of messages, some options should be set carefully for usage.
 There are 2 options, **buffer size** and **interval of flushing buffer**.  
 You can configure them in [build-time](#how-to-enable-and configure) or [run-time](#how-to-configure-logm-in-run-time).
 1. Buffer size  
-The size of buffer used for queueing messages. (default:10240)  
+The size of buffer used for queuing messages. (default:10240)  
 This value decides how many messages can be put at once.
 
 2. Interval for flushing  
