@@ -32,7 +32,7 @@
 
 #include <memory>
 #include <media/OutputDataSource.h>
-#include "MediaRecorderObserverInterface.h"
+#include <media/MediaRecorderObserverInterface.h>
 
 namespace media {
 
