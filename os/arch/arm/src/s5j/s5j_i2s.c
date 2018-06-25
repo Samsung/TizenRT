@@ -1651,6 +1651,7 @@ static int i2s_stop(struct i2s_dev_s *dev, i2s_ch_dir_t dir)
 	if (dir == I2S_TX) {
 		modifyreg32(priv->base + S5J_I2S_CON, I2S_CR_FTXURINTEN, 0);
 		modifyreg32(priv->base + S5J_I2S_CON, I2S_CR_TXDMACTIVE, 0);
+		modifyreg32(priv->base + S5J_I2S_CON, I2S_CR_TXCHPAUSE, 0);
 		s5j_dmastop(priv->txp.dma);
 
 		while (sq_peek(&priv->txp.pend) != NULL) {
@@ -1682,6 +1683,7 @@ static int i2s_stop(struct i2s_dev_s *dev, i2s_ch_dir_t dir)
 	if (dir == I2S_RX) {
 		modifyreg32(priv->base + S5J_I2S_CON, I2S_CR_RXDMACTIVE, 0);
 		modifyreg32(priv->base + S5J_I2S_CON, I2S_CR_RXDMACTIVE, 0);
+		modifyreg32(priv->base + S5J_I2S_CON, I2S_CR_RXCHPAUSE, 0);
 		s5j_dmastop(priv->rx.dma);
 
 		while (sq_peek(&priv->rx.pend) != NULL) {
