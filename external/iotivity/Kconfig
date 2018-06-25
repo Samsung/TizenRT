@@ -61,6 +61,7 @@ config IOTIVITY_RECEIVEHANDLER_PTHREAD_STACKSIZE
 config ENABLE_IOTIVITY_SECURED
 	bool "enable iotivity security"
 	default n
+	select NET_SECURITY_TLS
 	---help---
 		select to enable the security for iotivity stack in tinyara
 
