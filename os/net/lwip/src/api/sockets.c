@@ -94,6 +94,10 @@
 #include <net/lwip/inet_chksum.h>
 #endif
 
+#if LWIP_SELECT
+#include <tinyara/clock.h>
+#endif
+
 /* If the netconn API is not required publicly, then we include the necessary
    files here to get the implementation */
 #if !LWIP_NETCONN
@@ -275,11 +279,11 @@ struct lwip_select_cb {
 	pollevent_t events;
 	/** socket descriptor value */
 	int sfd;
+	/** semaphore to wake up a task waiting for select */
+	SELECT_SEM_T sem;
 #endif
 	/** don't signal the same semaphore twice: set to 1 when signalled */
 	int sem_signalled;
-	/** semaphore to wake up a task waiting for select */
-	SELECT_SEM_T sem;
 };
 
 /** A struct sockaddr replacement that has the same alignment as sockaddr_in/

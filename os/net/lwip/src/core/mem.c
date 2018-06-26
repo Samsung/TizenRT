@@ -15,6 +15,28 @@
  * language governing permissions and limitations under the License.
  *
  ****************************************************************************/
+/**
+ * @file
+ * Dynamic memory manager
+ *
+ * This is a lightweight replacement for the standard C library malloc().
+ *
+ * If you want to use the standard C library malloc() instead, define
+ * MEM_LIBC_MALLOC to 1 in your lwipopts.h
+ *
+ * To let mem_malloc() use pools (prevents fragmentation and is much faster than
+ * a heap but might waste some memory), define MEM_USE_POOLS to 1, define
+ * MEMP_USE_CUSTOM_POOLS to 1 and create a file "lwippools.h" that includes a list
+ * of pools like this (more pools can be added between _START and _END):
+ *
+ * Define three pools with sizes 256, 512, and 1512 bytes
+ * LWIP_MALLOC_MEMPOOL_START
+ * LWIP_MALLOC_MEMPOOL(20, 256)
+ * LWIP_MALLOC_MEMPOOL(10, 512)
+ * LWIP_MALLOC_MEMPOOL(5, 1512)
+ * LWIP_MALLOC_MEMPOOL_END
+ */
+
 /*
  * Copyright (c) 2001-2004 Swedish Institute of Computer Science.
  * All rights reserved.
@@ -58,7 +80,7 @@
 #include <string.h>
 
 #if MEM_LIBC_MALLOC
-#include <stdlib.h>				/* for malloc()/free() */
+#include <stdlib.h> /* for malloc()/free() */
 #endif
 
 #if MEM_LIBC_MALLOC || MEM_USE_POOLS
@@ -66,7 +88,8 @@
 /** mem_init is not used when using pools instead of a heap or using
  * C library malloc().
  */
-void mem_init(void)
+void
+mem_init(void)
 {
 }
 

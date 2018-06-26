@@ -92,8 +92,6 @@ config NET_SYS_STATS
 	---help---
 		Enable system stats (sem and mbox counts, etc).
 
-endif #NET_STATS
-
 config NET_IPv6_STATS
 	bool "Enable IPv6 Stats"
 	depends on NET_IPv6
@@ -130,4 +128,5 @@ config NET_IPv6_ND_STATS
 	---help---
 		Enable IPv6 ND stats.
 
+endif #NET_STATS
 endmenu #"Enable Statistics"

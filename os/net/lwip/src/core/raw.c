@@ -165,7 +165,7 @@ u8_t raw_input(struct pbuf *p, struct netif *inp)
 	/* loop through all raw pcbs until the packet is eaten by one */
 	/* this allows multiple pcbs to match against the packet by design */
 	while ((eaten == 0) && (pcb != NULL)) {
-		if ((pcb->protocol == proto) && raw_input_match(pcb, broadcast)) {
+		if (raw_input_match(pcb, broadcast)) {
 			/* receive callback function available? */
 			if (pcb->recv != NULL) {
 #ifndef LWIP_NOASSERT
