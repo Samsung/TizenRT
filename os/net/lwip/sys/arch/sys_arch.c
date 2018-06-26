@@ -51,7 +51,7 @@
 #define SYS_THREAD_MAX 6
 
 static u16_t s_nextthread = 0;
-static u32_t g_mbox_id = 0;
+
 /*---------------------------------------------------------------------------*
  * Routine:  sys_mbox_new
  *---------------------------------------------------------------------------*
@@ -67,7 +67,7 @@ err_t sys_mbox_new(sys_mbox_t *mbox, int queue_sz)
 {
 	err_t err = ERR_OK;
 	mbox->is_valid = 1;
-	mbox->id = g_mbox_id++;
+	mbox->id = lwip_stats.sys.mbox.used + 1;
 	mbox->queue_size = queue_sz;
 	mbox->wait_send = 0;
 	mbox->wait_fetch = 0;
@@ -423,8 +423,6 @@ err_t sys_sem_new(sys_sem_t *sem, u8_t count)
 #if SYS_STATS
 	SYS_STATS_INC_USED(sem);
 #endif							/* SYS_STATS */
-	if (count == 0)
-		sem_setprotocol(sem, SEM_PRIO_NONE);
 
 	sem_setprotocol(sem, SEM_PRIO_NONE);
 
@@ -490,8 +488,7 @@ u32_t sys_arch_sem_wait(sys_sem_t *sem, u32_t timeout)
 				/* calculate remaining timeout */
 				remaining_time -= TICK2MSEC(clock_systimer() - start);
 				if (remaining_time < MSEC_PER_TICK) {
-					status = -ETIMEDOUT;
-					break;
+					return SYS_ARCH_TIMEOUT;
 				}
 			}
 		}
