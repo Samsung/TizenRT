@@ -552,7 +552,7 @@ const static tash_cmdlist_t net_utilcmds[] = {
 	{"lwip_stats", stats_display, TASH_EXECMD_ASYNC},
 #endif
 #ifdef CONFIG_NET_PING_CMD
-	{"ping", cmd_ping, TASH_EXECMD_SYNC},
+	{"ping", cmd_ping, TASH_EXECMD_ASYNC},
 #endif
 #ifdef CONFIG_NETUTILS_TFTPC
 	{"tftpc", cmd_tftpc, TASH_EXECMD_SYNC},
