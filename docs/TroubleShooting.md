@@ -6,7 +6,7 @@
 
 ## Common
 ### Issues on Kconfig-frontend
-When ```make menuconfig``` excutes after installing Kconfig-frontend, someone meets below:
+When ```make menuconfig``` executes after installing Kconfig-frontend, someone meets below:
 ```
 kconfig-mconf: error while loading shared libraries: libkconfig-parser-x.xx.0.so: cannot open shared object file: No such file or directory
 Makefile.unix:579: recipe for target 'menuconfig' failed
@@ -38,7 +38,7 @@ make[1]: Leaving directory '/TizenRT/apps'
 LibTargets.mk:158: recipe for target '../apps/libapps.a' failed
 make: *** [../apps/libapps.a] Error 2
 ```
-This is comming from missing ```protoc``` installation.  
+This is coming from missing ```protoc``` installation.  
 Please find [Proto buffers' README](https://github.com/Samsung/TizenRT/blob/master/external/protobuf/README.md).
 
 ## Board-Specific

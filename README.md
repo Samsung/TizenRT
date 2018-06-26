@@ -66,7 +66,7 @@ See [Trouble Shooting](docs/TroubleShooting.md) to resolve any issue on TizenRT 
 
 ## Supported Board / Emulator
 Here are supported boards and emulator list.  
-Refer belows to know board-specifc environments, programming method and board information.
+Refer belows to know board-specific environments, programming method and board information.
 
 ARTIK053 [[details]](build/configs/artik053/README.md)
 

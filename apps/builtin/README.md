@@ -34,7 +34,7 @@ context: $(BUILTIN_REGISTRY)$(DELIM)$(APPNAME)_main.bdat
 include $(APPDIR)/Make.defs
 ```
 
-3. Set argumens, command name, callback function and execution type
+3. Set arguments, command name, callback function and execution type
 ```bash
 APPNAME =
 FUNCNAME =

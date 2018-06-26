@@ -1,4 +1,4 @@
-# How to manage SmartThings Things devcie model.  
+# How to manage SmartThings Things device model.  
 
 ## Importing and Exporting Device Models
 To import a device model:

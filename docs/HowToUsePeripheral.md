@@ -7,7 +7,7 @@ UART has two parts, setting early console and setting serial console driver, ser
 
 ### Setting of early console
 #### Add up_earlyserialinit function
-Boot code must call this before os starting, to provide low level debug messgaes during bootup.
+Boot code must call this before os starting, to provide low level debug messages during bootup.
 ```
 void up_earlyserialinit(void)
 {
@@ -93,7 +93,7 @@ The **xmit**, **recv**, **ops** and **priv** should be defined.
 > **xmit** : size and address of transmit buffer  
 > **recv** : size and address of receive buffer  
 > **ops**  : tables of operations like setup, send, receive and etc  
-> **priv** : private data of device like baudrate, interrupt number, parity and ect
+> **priv** : private data of device like baudrate, interrupt number, parity and etc
 
 Here is an example.
 ```
@@ -164,7 +164,7 @@ struct spi_dev_s *up_spiinitialize(int port)
 }
 ```
 
-Low level(hardware-specific) SPI device driver must create an instace of  
+Low level(hardware-specific) SPI device driver must create an instance of  
 *struct spi_dev_s* and returned to higher level device driver as shown above.  
 Also the SPI driver must create an instance of *struct spi_ops_s* and  
 hook it to the *ops* member of *struct spi_dev_s* instance
@@ -247,7 +247,7 @@ static void spi_select(struct spi_dev_s *dev, enum spi_dev_e devid, bool selecte
 
 Each board, shall;  
 
-Implement and expose an instanse of struct i2c_dev_s.     
+Implement and expose an instance of struct i2c_dev_s.     
 Implement the supported operations on i2c struct i2c_op_s.  
 
 
@@ -289,18 +289,18 @@ In addition to above, each board level logic shall implement the other functions
 3. EXTERN int up_i2creset(FAR struct i2c_dev_s *dev);
 ```  
 
-### I2C user level io
-If user level io is needed on i2c port, then board level logic should provide the following for registration and fs operations(read, write, writeread) as mentioned in i2c_ops above.  
+### I2C user level I/O
+If user level I/O is needed on i2c port, then board level logic should provide the following for registration and fs operations(read, write, writeread) as mentioned in i2c_ops above.  
 
 ```
 #ifdef CONFIG_I2C_USERIO
 int i2c_uioregister(FAR const char *path, FAR struct i2c_dev_s *dev);
 #endif
 ```
->NOTE:Be aware that i2c user io is at premature stage  
+>NOTE:Be aware that i2c user I/O is at premature stage  
 
 ### I2C Initialization  
-I2C is initialzed by invoking up_i2cinitialize.  
+I2C is initialized by invoking up_i2cinitialize.  
 Initialization takes one i2c port and returns a i2c device structure.  
 Initialization is done either as part of _up_intitialize()_ or as part of _board_initialize()_.  
 
@@ -315,7 +315,7 @@ I2S port for a board involves the following;
 ### I2S Device Structure and Operations
 Each board, shall;  
 
-Implement and expose an instanse of struct i2s_dev_s for each port.     
+Implement and expose an instance of struct i2s_dev_s for each port.     
 Implement the supported operations on i2s, ie struct i2s_op_s. 
 Data structures below; 
 
