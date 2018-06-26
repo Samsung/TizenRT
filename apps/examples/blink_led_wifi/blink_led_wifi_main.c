@@ -185,8 +185,7 @@ int blink_led_wifi_main(int argc, FAR char *argv[])
 	if (ret != 0 && ret != -EEXIST) {
 		printf("mkfifo error for %s: %s", CONFIG_WPA_CTRL_FIFO_DEV_CFM, strerror(errno));
 	}
-
-		ret = mkfifo(CONFIG_WPA_MONITOR_FIFO_DEV, CONFIG_WPA_CTRL_FIFO_MK_MODE);
+	ret = mkfifo(CONFIG_WPA_MONITOR_FIFO_DEV, CONFIG_WPA_CTRL_FIFO_MK_MODE);
 	if (ret != 0 && ret != -EEXIST){
 		printf("mkfifo error for %s: %s", CONFIG_WPA_MONITOR_FIFO_DEV, strerror(errno));
 	}
