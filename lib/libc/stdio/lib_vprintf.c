@@ -103,6 +103,9 @@
 int vprintf(FAR const char *fmt, va_list ap)
 {
 	/* vfprintf into stdout */
-
+#if defined(CONFIG_LOGM) && defined(CONFIG_PRINTF2LOGM)
+	return logm_internal(LOGM_DEF_PRIORITY, fmt, ap);
+#else
 	return vfprintf(stdout, fmt, ap);
+#endif
 }
