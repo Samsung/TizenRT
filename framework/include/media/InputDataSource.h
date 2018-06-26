@@ -75,7 +75,7 @@ public:
 	 * @details @b #include <media/InputDataSource.h>
 	 * @since TizenRT v2.0 PRE
 	 */
-	virtual ssize_t read(unsigned char* buf, size_t size) = 0;
+	virtual ssize_t read(unsigned char* buf, size_t size, bool sync = true) = 0;
 
   	/**
 	 * @brief Gets the stream data from offset

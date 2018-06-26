@@ -105,7 +105,7 @@ public:
 	 *         if error occurred, it returns -1, else readead size returns
 	 * @since TizenRT v2.0 PRE
 	 */
-	ssize_t read(unsigned char* buf, size_t size) override;
+	ssize_t read(unsigned char* buf, size_t size, bool sync = true) override;
 
 	/**
 	 * @brief Gets the file data
