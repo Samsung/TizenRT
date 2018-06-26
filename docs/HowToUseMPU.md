@@ -3,7 +3,7 @@
 * Each region should be programmed with a base address and size.
 
 ### MPU Initialization and Memory Region Setup
-Initialzation of MPU is done by setting up memory regions. Memory regions are set up by using the functions in below table and each function requires 2 arguments which are _Region Base Address_ and _Region Size_ to setup a memory region.
+Initialization of MPU is done by setting up memory regions. Memory regions are set up by using the functions in below table and each function requires 2 arguments which are _Region Base Address_ and _Region Size_ to setup a memory region.
 
 The functions with name ```_priv_``` are used to configure the _kernel_(Privileged) MPU regions whereas the ```_user_``` functions are called to configure the _user_(Un-Privileged) MPU regions.
 
@@ -16,7 +16,7 @@ MPU region setup related macros and functions are defined in **[mpu.h](../os/arc
 RNUM:	int32 - Region Number
 RBASE:	int32 - Region Base Address
 RSIZE:	int32 - Region Size
-RATTR:	int32 - Region Attirbute
+RATTR:	int32 - Region Attribute
 -----------------------------------
 ```
 
@@ -24,7 +24,7 @@ RATTR:	int32 - Region Attirbute
 ------------------------------------------------------------------
             MPU Init or Memory Region Setup Functions
 ------------------------------------------------------------------
-mpu_control() : This function is used to Enable or Diable the MPU.
+mpu_control() : This function is used to Enable or Disable the MPU.
 ------------------------------------------------------------------
                        Memory Region Access Permission Attributes
                              Privileged      Un-Privileged

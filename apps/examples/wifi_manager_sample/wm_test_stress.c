@@ -20,7 +20,7 @@
 
 #include <stdio.h>
 #include <wifi_manager/wifi_manager.h>
-#include "rt_perf.h"
+#include <stress_tool/st_perf.h>
 
 /*
  * Macro
@@ -150,30 +150,29 @@ static void wm_get_softapinfo(wifi_manager_softap_config_s *ap_config)
  */
 TEST_SETUP(sta_join)
 {
-	RT_START_TEST;
-	RT_EXPECT(WIFI_MANAGER_SUCCESS, wifi_manager_init(&g_wifi_callbacks));
-	RT_END_TEST;
+	ST_START_TEST;
+	ST_EXPECT(WIFI_MANAGER_SUCCESS, wifi_manager_init(&g_wifi_callbacks));
+	ST_END_TEST;
 }
 
 TEST_TEARDOWN(sta_join)
 {
-	RT_START_TEST;
-	RT_EXPECT(WIFI_MANAGER_SUCCESS, wifi_manager_disconnect_ap());
+	ST_START_TEST;
+	ST_EXPECT(WIFI_MANAGER_SUCCESS, wifi_manager_disconnect_ap());
 	WM_TEST_WAIT;
-	RT_EXPECT(WIFI_MANAGER_SUCCESS, wifi_manager_deinit());
-	RT_END_TEST;
+	ST_EXPECT(WIFI_MANAGER_SUCCESS, wifi_manager_deinit());
+	ST_END_TEST;
 }
 
 TEST_F(sta_join)
 {
-	RT_START_TEST;
+	ST_START_TEST;
 	wifi_manager_ap_config_s apconfig;
 	wm_get_apinfo(&apconfig);
-//print_wifi_ap_profile(&apconfig, "Connecting AP Info");
-	RT_EXPECT(WIFI_MANAGER_SUCCESS, wifi_manager_connect_ap(&apconfig));
+	ST_EXPECT(WIFI_MANAGER_SUCCESS, wifi_manager_connect_ap(&apconfig));
 	WM_TEST_WAIT;
 
-	RT_END_TEST;
+	ST_END_TEST;
 }
 
 
@@ -182,24 +181,24 @@ TEST_F(sta_join)
  */
 TEST_SETUP(sta_scan)
 {
-	RT_START_TEST;
-	RT_EXPECT(WIFI_MANAGER_SUCCESS, wifi_manager_init(&g_wifi_callbacks));
-	RT_END_TEST;
+	ST_START_TEST;
+	ST_EXPECT(WIFI_MANAGER_SUCCESS, wifi_manager_init(&g_wifi_callbacks));
+	ST_END_TEST;
 }
 
 TEST_TEARDOWN(sta_scan)
 {
-	RT_START_TEST;
-	RT_EXPECT(WIFI_MANAGER_SUCCESS, wifi_manager_deinit());
-	RT_END_TEST;
+	ST_START_TEST;
+	ST_EXPECT(WIFI_MANAGER_SUCCESS, wifi_manager_deinit());
+	ST_END_TEST;
 }
 
 TEST_F(sta_scan)
 {
-	RT_START_TEST;
-	RT_EXPECT(WIFI_MANAGER_SUCCESS, wifi_manager_scan_ap());
+	ST_START_TEST;
+	ST_EXPECT(WIFI_MANAGER_SUCCESS, wifi_manager_scan_ap());
 	WM_TEST_WAIT;
-	RT_END_TEST;
+	ST_END_TEST;
 }
 
 /*
@@ -207,31 +206,31 @@ TEST_F(sta_scan)
  */
 TEST_SETUP(sta_leave)
 {
-	RT_START_TEST;
+	ST_START_TEST;
 
-	RT_EXPECT(WIFI_MANAGER_SUCCESS, wifi_manager_init(&g_wifi_callbacks));
+	ST_EXPECT(WIFI_MANAGER_SUCCESS, wifi_manager_init(&g_wifi_callbacks));
 	wifi_manager_ap_config_s apconfig;
 	wm_get_apinfo(&apconfig);
-	RT_EXPECT(WIFI_MANAGER_SUCCESS, wifi_manager_connect_ap(&apconfig));
+	ST_EXPECT(WIFI_MANAGER_SUCCESS, wifi_manager_connect_ap(&apconfig));
 	WM_TEST_WAIT;
 
-	RT_END_TEST;
+	ST_END_TEST;
 }
 
 TEST_TEARDOWN(sta_leave)
 {
-	RT_START_TEST;
-	RT_EXPECT(WIFI_MANAGER_SUCCESS, wifi_manager_deinit());
-	RT_END_TEST;
+	ST_START_TEST;
+	ST_EXPECT(WIFI_MANAGER_SUCCESS, wifi_manager_deinit());
+	ST_END_TEST;
 }
 
 TEST_F(sta_leave)
 {
-	RT_START_TEST;
-	RT_EXPECT(WIFI_MANAGER_SUCCESS, wifi_manager_disconnect_ap());
+	ST_START_TEST;
+	ST_EXPECT(WIFI_MANAGER_SUCCESS, wifi_manager_disconnect_ap());
 	WM_TEST_WAIT;
 
-	RT_END_TEST;
+	ST_END_TEST;
 }
 
 /*
@@ -239,26 +238,26 @@ TEST_F(sta_leave)
  */
 TEST_SETUP(softap_start)
 {
-	RT_START_TEST;
-	RT_EXPECT(WIFI_MANAGER_SUCCESS, wifi_manager_init(&g_wifi_callbacks));
-	RT_END_TEST;
+	ST_START_TEST;
+	ST_EXPECT(WIFI_MANAGER_SUCCESS, wifi_manager_init(&g_wifi_callbacks));
+	ST_END_TEST;
 }
 
 
 TEST_TEARDOWN(softap_start)
 {
-	RT_START_TEST;
-	RT_EXPECT(WIFI_MANAGER_SUCCESS, wifi_manager_deinit());
-	RT_END_TEST;
+	ST_START_TEST;
+	ST_EXPECT(WIFI_MANAGER_SUCCESS, wifi_manager_deinit());
+	ST_END_TEST;
 }
 
 TEST_F(softap_start)
 {
-	RT_START_TEST;
+	ST_START_TEST;
 	wifi_manager_softap_config_s ap_config;
 	wm_get_softapinfo(&ap_config);
-	RT_EXPECT(WIFI_MANAGER_SUCCESS, wifi_manager_set_mode(SOFTAP_MODE, &ap_config));
-	RT_END_TEST;
+	ST_EXPECT(WIFI_MANAGER_SUCCESS, wifi_manager_set_mode(SOFTAP_MODE, &ap_config));
+	ST_END_TEST;
 }
 
 
@@ -267,28 +266,28 @@ TEST_F(softap_start)
  */
 TEST_SETUP(softap_scan)
 {
-	RT_START_TEST;
-	RT_EXPECT(WIFI_MANAGER_SUCCESS, wifi_manager_init(&g_wifi_callbacks));
+	ST_START_TEST;
+	ST_EXPECT(WIFI_MANAGER_SUCCESS, wifi_manager_init(&g_wifi_callbacks));
 	wifi_manager_softap_config_s ap_config;
 	wm_get_softapinfo(&ap_config);
-	RT_EXPECT(WIFI_MANAGER_SUCCESS, wifi_manager_set_mode(SOFTAP_MODE, &ap_config));
-	RT_END_TEST;
+	ST_EXPECT(WIFI_MANAGER_SUCCESS, wifi_manager_set_mode(SOFTAP_MODE, &ap_config));
+	ST_END_TEST;
 }
 
 
 TEST_TEARDOWN(softap_scan)
 {
-	RT_START_TEST;
-	RT_EXPECT(WIFI_MANAGER_SUCCESS, wifi_manager_deinit());
-	RT_END_TEST;
+	ST_START_TEST;
+	ST_EXPECT(WIFI_MANAGER_SUCCESS, wifi_manager_deinit());
+	ST_END_TEST;
 }
 
 TEST_F(softap_scan)
 {
-	RT_START_TEST;
-	RT_EXPECT(WIFI_MANAGER_SUCCESS, wifi_manager_scan_ap());
+	ST_START_TEST;
+	ST_EXPECT(WIFI_MANAGER_SUCCESS, wifi_manager_scan_ap());
 	WM_TEST_WAIT;
-	RT_END_TEST;
+	ST_END_TEST;
 }
 
 
@@ -297,37 +296,37 @@ TEST_F(softap_scan)
  */
 TEST_SETUP(softap_stop)
 {
-	RT_START_TEST;
-	RT_EXPECT(WIFI_MANAGER_SUCCESS, wifi_manager_init(&g_wifi_callbacks));
+	ST_START_TEST;
+	ST_EXPECT(WIFI_MANAGER_SUCCESS, wifi_manager_init(&g_wifi_callbacks));
 	wifi_manager_softap_config_s ap_config;
 	wm_get_softapinfo(&ap_config);
-	RT_EXPECT(WIFI_MANAGER_SUCCESS, wifi_manager_set_mode(SOFTAP_MODE, &ap_config));
-	RT_END_TEST;
+	ST_EXPECT(WIFI_MANAGER_SUCCESS, wifi_manager_set_mode(SOFTAP_MODE, &ap_config));
+	ST_END_TEST;
 }
 
 
 TEST_TEARDOWN(softap_stop)
 {
-	RT_START_TEST;
-	RT_END_TEST;
+	ST_START_TEST;
+	ST_END_TEST;
 }
 
 TEST_F(softap_stop)
 {
-	RT_START_TEST;
-	RT_EXPECT(WIFI_MANAGER_SUCCESS, wifi_manager_deinit());
-	RT_END_TEST;
+	ST_START_TEST;
+	ST_EXPECT(WIFI_MANAGER_SUCCESS, wifi_manager_deinit());
+	ST_END_TEST;
 }
 
-RT_SET_SMOKE_TAIL(WM_TEST_TRIAL, 8000000, "station join", sta_join);
-RT_SET_SMOKE(WM_TEST_TRIAL, 1000000, "station leave", sta_leave, sta_join);
-RT_SET_SMOKE(WM_TEST_TRIAL, 5000000, "station scan", sta_scan, sta_leave);
-RT_SET_SMOKE(WM_TEST_TRIAL, 5000000, "softap start", softap_start, sta_scan);
-RT_SET_SMOKE(WM_TEST_TRIAL, 2000000, "softap stop", softap_stop, softap_start);
-RT_SET_PACK(wifi, softap_stop);
+ST_SET_SMOKE_TAIL(WM_TEST_TRIAL, 8000000, "station join", sta_join);
+ST_SET_SMOKE(WM_TEST_TRIAL, 1000000, "station leave", sta_leave, sta_join);
+ST_SET_SMOKE(WM_TEST_TRIAL, 5000000, "station scan", sta_scan, sta_leave);
+ST_SET_SMOKE(WM_TEST_TRIAL, 5000000, "softap start", softap_start, sta_scan);
+ST_SET_SMOKE(WM_TEST_TRIAL, 2000000, "softap stop", softap_stop, softap_start);
+ST_SET_PACK(wifi, softap_stop);
 
 void wm_run_stress_test(void *arg)
 {
-	RT_RUN_TEST(wifi);
-	RT_RESULT_TEST(wifi);
+	ST_RUN_TEST(wifi);
+	ST_RESULT_TEST(wifi);
 }

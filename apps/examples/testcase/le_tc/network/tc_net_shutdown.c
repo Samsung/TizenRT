@@ -168,15 +168,15 @@ void *shutdown_server(void *args)
 	char *msg = "Hello World !\n";
 	char buf[64] = {0,};
 	struct sockaddr_in sa;
-	int SocketFD = socket(PF_INET, SOCK_STREAM, IPPROTO_TCP);
-	if (SocketFD < 0) {
+	int socket_fd = socket(PF_INET, SOCK_STREAM, IPPROTO_TCP);
+	if (socket_fd < 0) {
 		printf("socket error %s:%d\n", __FUNCTION__, __LINE__);
 		return 0;
 	}
 
-	if (setsockopt(SocketFD, SOL_SOCKET, SO_REUSEADDR, &(int){ 1 }, sizeof(int)) < 0) {
+	if (setsockopt(socket_fd, SOL_SOCKET, SO_REUSEADDR, &(int){ 1 }, sizeof(int)) < 0) {
 		printf("socket error %s:%d:%d\n", __FUNCTION__, __LINE__, errno);
-		close(SocketFD);
+		close(socket_fd);
 		return 0;
 	}
 
@@ -186,40 +186,40 @@ void *shutdown_server(void *args)
 	sa.sin_port = htons(PORTNUM);
 	sa.sin_addr.s_addr = inet_addr("127.0.0.1");
 
-	int ret = bind(SocketFD, (struct sockaddr *)&sa, sizeof(sa));
+	int ret = bind(socket_fd, (struct sockaddr *)&sa, sizeof(sa));
 	if (ret < 0) {
 		printf("bind fail %s:%d", __FUNCTION__, __LINE__);
-		close(SocketFD);
+		close(socket_fd);
 		return 0;
 	}
 
-	ret = listen(SocketFD, 1);
+	ret = listen(socket_fd, 1);
 	if (ret < 0) {
 		printf("listen fail %s:%d", __FUNCTION__, __LINE__);
-		close(SocketFD);
+		close(socket_fd);
 		return 0;
 	}
 
 	shutdown_signal();
 
-	int ConnectFD = accept(SocketFD, NULL, NULL);
-	if (ConnectFD < 0) {
+	int connect_fd = accept(socket_fd, NULL, NULL);
+	if (connect_fd < 0) {
 		printf("fail %s:%d", __FUNCTION__, __LINE__);
-		close(SocketFD);
+		close(socket_fd);
 		return 0;
 	}
-	tc_net_shutdown_send_p(ConnectFD);
-	int val = send(ConnectFD, msg, strlen(msg), 0);
+	tc_net_shutdown_send_p(connect_fd);
+	int val = send(connect_fd, msg, strlen(msg), 0);
 	if (val == -1)
 		printf("\nShutdown send successful %d\n", errno);
-	tc_net_shutdown_recv_p(ConnectFD);
-	val = recv(ConnectFD, buf, 64, 0);
+	tc_net_shutdown_recv_p(connect_fd);
+	val = recv(connect_fd, buf, 64, 0);
 	if (val == -1)
 		printf("\nShutdown recv successful %d\n", errno);
 	tc_net_shutdown_n();
-	tc_net_shutdown_sock_n(SocketFD);
-	close(ConnectFD);
-	close(SocketFD);
+	tc_net_shutdown_sock_n(socket_fd);
+	close(connect_fd);
+	close(socket_fd);
 
 	return 0;
 

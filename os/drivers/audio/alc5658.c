@@ -850,12 +850,21 @@ static int alc5658_shutdown(FAR struct audio_lowerhalf_s *dev)
 	ALC5658_DISABLE(priv->lower);
 
 	alc5658_takesem(&priv->devsem);
+	
+	if (priv->inout) {
+		I2S_STOP(priv->i2s, I2S_RX);
+	} else {
+		I2S_STOP(priv->i2s, I2S_TX);
+	}
+
 	sq_entry_t *tmp = NULL;
 	for (tmp = (sq_entry_t *)sq_peek(&priv->pendq); tmp; tmp = sq_next(tmp)) {
 		sq_rem(tmp, &priv->pendq);
 		audvdbg("(alcshutdown)removing tmp with addr 0x%x\n", tmp);
 	}
 	sq_init(&priv->pendq);
+	priv->paused = false;
+	priv->running = false;
 	alc5658_givesem(&priv->devsem);
 
 	/* Now issue a software reset.  This puts all ALC5658 registers back in
@@ -968,6 +977,7 @@ static int alc5658_stop(FAR struct audio_lowerhalf_s *dev)
 	alc5658_exec_i2c_script(priv, codec_stop_script, sizeof(codec_stop_script) / sizeof(t_codec_init_script_entry));
 
 	priv->running = false;
+	priv->paused = false;
 	alc5658_givesem(&priv->devsem);
 
 	/* Enter into a reduced power usage mode */

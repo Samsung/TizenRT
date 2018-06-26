@@ -44,15 +44,14 @@
 #include <tinyara/net/net.h>
 #include <net/lwip/netif.h>
 #include <net/lwip/dhcp.h>
+#include <net/lwip/mld6.h>
 #include <net/lwip/stats.h>
 #include <tinyara/net/ip.h>
-#include <protocols/dhcpc.h>
 
 #ifdef CONFIG_NETUTILS_NETLIB
 #include <netutils/netlib.h>
 #endif
 
-#include <netutils/netlib.h>
 #include <protocols/tftp.h>
 
 #ifdef CONFIG_HAVE_GETHOSTBYNAME
@@ -112,6 +111,11 @@ static void nic_display_state(void)
 	num_nic = ifcfg.ifc_len / sizeof(struct ifreq);
 	ifr = ifcfg.ifc_req;
 	int i = 0;
+#ifdef CONFIG_NET_IPv6_NUM_ADDRESSES
+	int j;
+	struct netif *netif;
+#endif
+
 	for (; i < num_nic; ifr++, i++) {
 		printf("%s\t", ifr->ifr_name);
 		sin = (struct sockaddr_in *)&ifr->ifr_addr;
@@ -149,8 +153,19 @@ static void nic_display_state(void)
 		if (ret < 0) {
 			ndbg("fail %s:%d\n", __FUNCTION__, __LINE__);
 		} else {
-			printf("MTU: %d\n\n", ifr->ifr_mtu);
+			printf("MTU: %d\n", ifr->ifr_mtu);
 		}
+#ifdef CONFIG_NET_IPv6_NUM_ADDRESSES
+		netif = netif_find(ifr->ifr_name);
+		for (j = 0; netif != NULL && j < CONFIG_NET_IPv6_NUM_ADDRESSES; j++) {
+			if (netif->ip6_addr_state[j] != 0) {
+				printf("\tinet6 addr: %s\n", ip6addr_ntoa(ip_2_ip6(&netif->ip6_addr[j])));
+			}
+		}
+#else
+		printf("\n");
+#endif /* CONFIG_NET_IPv6_NUM_ADDRESSES */
+		printf("\n");
 	}
 DONE:
 	free(ifcfg.ifc_buf);
@@ -299,14 +314,91 @@ int cmd_ifconfig(int argc, char **argv)
 
 			ndbg("DHCPC Mode\n");
 			gip = addr.s_addr = 0;
+			netlib_set_ipv4addr(intf, &addr);
+#ifdef CONFIG_NET_IPv6
+		} else if (!strcmp(hostip, "auto")) {
+			/* IPV6 auto configuration : Link-Local address */
+
+			ndbg("IPV6 link local address auto config\n");
+			netif = netif_find(intf);
+
+			if (netif) {
+#ifdef CONFIG_NET_IPv6_AUTOCONFIG
+				/* enable IPv6 address stateless autoconfiguration */
+				netif_set_ip6_autoconfig_enabled(netif, 1);
+#endif /* CONFIG_NET_IPv6_AUTOCONFIG */
+				/* To auto-config linklocal address, netif should have mac address already */
+				netif_create_ip6_linklocal_address(netif, 1);
+				ndbg("generated IPV6 linklocal address - %X : %X : %X : %X\n", PP_HTONL(ip_2_ip6(&netif->ip6_addr[0])->addr[0]), PP_HTONL(ip_2_ip6(&netif->ip6_addr[0])->addr[1]), PP_HTONL(ip_2_ip6(&netif->ip6_addr[0])->addr[2]), PP_HTONL(ip_2_ip6(&netif->ip6_addr[0])->addr[3]));
+#ifdef CONFIG_NET_IPv6_MLD
+				ip6_addr_t solicit_addr;
+
+				/* set MLD6 group to receive solicit multicast message */
+				ip6_addr_set_solicitednode(&solicit_addr, ip_2_ip6(&netif->ip6_addr[0])->addr[3]);
+				mld6_joingroup_netif(netif, &solicit_addr);
+				ndbg("MLD6 group added - %X : %X : %X : %X\n", PP_HTONL(solicit_addr.addr[0]), PP_HTONL(solicit_addr.addr[1]), PP_HTONL(solicit_addr.addr[2]), PP_HTONL(solicit_addr.addr[3]));
+#endif /* CONFIG_NET_IPv6_MLD */
+			}
+
+			return OK;
+#endif /* CONFIG_NET_IPv6 */
 		} else {
 			/* Set host IP address */
 			ndbg("Host IP: %s\n", hostip);
-			gip = addr.s_addr = inet_addr(hostip);
+
+			if (strstr(hostip, ".") != NULL) {
+				gip = addr.s_addr = inet_addr(hostip);
+				netlib_set_ipv4addr(intf, &addr);
+			}
+#ifdef CONFIG_NET_IPv6
+			else if (strstr(hostip, ":") != NULL) {
+				ip6_addr_t temp;
+				s8_t idx;
+				int result;
+
+				netif = netif_find(intf);
+				if (netif) {
+					inet_pton(AF_INET6, hostip, &temp);
+					idx = netif_get_ip6_addr_match(netif, &temp);
+					if (idx != -1) {
+#ifdef CONFIG_NET_IPv6_MLD
+						ip6_addr_t solicit_addr;
+
+						/* leaving MLD6 group */
+						ip6_addr_set_solicitednode(&solicit_addr, ip_2_ip6(&netif->ip6_addr[0])->addr[idx]);
+						mld6_leavegroup_netif(netif, &solicit_addr);
+						ndbg("MLD6 group left - %X : %X : %X : %X\n", PP_HTONL(solicit_addr.addr[0]), PP_HTONL(solicit_addr.addr[1]), PP_HTONL(solicit_addr.addr[2]), PP_HTONL(solicit_addr.addr[3]));
+#endif /* CONFIG_NET_IPv6_MLD */
+						/* delete static ipv6 address if the same ip address exists */
+						netif_ip6_addr_set_state(netif, idx, IP6_ADDR_INVALID);
+						return OK;
+					}
+#ifdef CONFIG_NET_IPv6_AUTOCONFIG
+					/* enable IPv6 address stateless autoconfiguration */
+					netif_set_ip6_autoconfig_enabled(netif, 1);
+#endif /* CONFIG_NET_IPv6_AUTOCONFIG */
+					/* add static ipv6 address */
+					result = netif_add_ip6_address(netif, &temp, &idx);
+
+#ifdef CONFIG_NET_IPv6_MLD
+					ip6_addr_t solicit_addr;
+
+					/* set MLD6 group to receive solicit multicast message */
+					ip6_addr_set_solicitednode(&solicit_addr, ip_2_ip6(&netif->ip6_addr[0])->addr[idx]);
+					mld6_joingroup_netif(netif, &solicit_addr);
+					ndbg("MLD6 group added - %X : %X : %X : %X\n", PP_HTONL(solicit_addr.addr[0]), PP_HTONL(solicit_addr.addr[1]), PP_HTONL(solicit_addr.addr[2]), PP_HTONL(solicit_addr.addr[3]));
+#endif /* CONFIG_NET_IPv6_MLD */
+				}
+
+				return OK;
+			}
+#endif /* CONFIG_NET_IPv6 */
+			else {
+				ndbg("hostip is not valid\n");
+
+				return ERROR;
+			}
 		}
-
-		netlib_set_ipv4addr(intf, &addr);
-
 	} else {
 		printf("hostip is not provided\n");
 		return ERROR;
@@ -460,7 +552,7 @@ const static tash_cmdlist_t net_utilcmds[] = {
 	{"lwip_stats", stats_display, TASH_EXECMD_ASYNC},
 #endif
 #ifdef CONFIG_NET_PING_CMD
-	{"ping", cmd_ping, TASH_EXECMD_SYNC},
+	{"ping", cmd_ping, TASH_EXECMD_ASYNC},
 #endif
 #ifdef CONFIG_NETUTILS_TFTPC
 	{"tftpc", cmd_tftpc, TASH_EXECMD_SYNC},

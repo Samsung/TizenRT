@@ -162,6 +162,8 @@ PACK_STRUCT_END
 #ifdef PACK_STRUCT_USE_INCLUDES
 #include "arch/epstruct.h"
 #endif
+#define ICMP6H_TYPE(hdr) ((hdr)->type)
+#define ICMP6H_CODE(hdr) ((hdr)->code)
 /** This is the ICMP6 header adapted for echo req/resp. */
 #ifdef PACK_STRUCT_USE_INCLUDES
 #include "arch/bpstruct.h"

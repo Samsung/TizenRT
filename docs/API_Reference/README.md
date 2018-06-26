@@ -7,7 +7,7 @@ tar -xvzf libs_env.tar.gz
 tar -xvzf public.tar.gz
 ```
 
-These two topics are splitted temporarilliy and will be reorganized.
+These two topics are splitted temporarily and will be reorganized.
 
 ## Libs & Env
 

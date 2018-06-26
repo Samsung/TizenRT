@@ -334,7 +334,7 @@ struct pbuf *ip6_reass(struct pbuf *p)
 		}
 
 		memset(ipr, 0, sizeof(struct ip6_reassdata));
-		ipr->timer = IP_REASS_MAXAGE;
+		ipr->timer = LWIP_IPV6_REASS_MAXAGE;
 
 		/* enqueue the new structure to the front of the list */
 		ipr->next = reassdatagrams;
@@ -679,6 +679,11 @@ err_t ip6_frag(struct pbuf *p, struct netif *netif, const ip6_addr_t *dest)
 	original_ip6hdr = (struct ip6_hdr *)p->payload;
 
 	mtu = nd6_get_destination_mtu(dest, netif);
+
+	/* do not reduce the size less than IPv6 minimum link MTU (1280) */
+	if (mtu < 1280) {
+		mtu = 1280;
+	}
 
 	/* @todo we assume there are no options in the unfragmentable part (IPv6 header). */
 	left = p->tot_len - IP6_HLEN;

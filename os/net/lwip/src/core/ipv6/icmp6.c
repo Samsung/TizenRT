@@ -127,7 +127,6 @@ void icmp6_input(struct pbuf *p, struct netif *inp)
 	case ICMP6_TYPE_PTB:		/* Packet too big */
 		nd6_input(p, inp);
 		return;
-		break;
 	case ICMP6_TYPE_RS:
 #if LWIP_IPV6_FORWARD
 		/* @todo implement router functionality */
@@ -139,10 +138,9 @@ void icmp6_input(struct pbuf *p, struct netif *inp)
 	case ICMP6_TYPE_MLD:
 		mld6_input(p, inp);
 		return;
-		break;
 #endif
 	case ICMP6_TYPE_EREQ:
-#if !LWIP_MULTICAST_PING
+#if !LWIP_MULTICAST_PING6
 		/* multicast destination address? */
 		if (ip6_addr_ismulticast(ip6_current_dest_addr())) {
 			/* drop */
@@ -150,7 +148,7 @@ void icmp6_input(struct pbuf *p, struct netif *inp)
 			ICMP6_STATS_INC(icmp6.drop);
 			return;
 		}
-#endif							/* LWIP_MULTICAST_PING */
+#endif							/* LWIP_MULTICAST_PING6 */
 
 		/* Allocate reply. */
 		r = pbuf_alloc(PBUF_IP, p->tot_len, PBUF_RAM);
@@ -171,7 +169,7 @@ void icmp6_input(struct pbuf *p, struct netif *inp)
 		}
 
 		/* Determine reply source IPv6 address. */
-#if LWIP_MULTICAST_PING
+#if LWIP_MULTICAST_PING6
 		if (ip6_addr_ismulticast(ip6_current_dest_addr())) {
 			reply_src = ip_2_ip6(ip6_select_source_address(inp, ip6_current_src_addr()));
 			if (reply_src == NULL) {
@@ -182,7 +180,7 @@ void icmp6_input(struct pbuf *p, struct netif *inp)
 				return;
 			}
 		} else
-#endif							/* LWIP_MULTICAST_PING */
+#endif							/* LWIP_MULTICAST_PING6 */
 		{
 			reply_src = ip6_current_dest_addr();
 		}
@@ -198,7 +196,7 @@ void icmp6_input(struct pbuf *p, struct netif *inp)
 
 		/* Send reply. */
 		ICMP6_STATS_INC(icmp6.xmit);
-		ip6_output_if(r, reply_src, ip6_current_src_addr(), LWIP_ICMP6_HL, 0, IP6_NEXTH_ICMP6, inp);
+		ip6_output_if(r, reply_src, ip6_current_src_addr(), ND6_CUR_HOPLIM(), 0, IP6_NEXTH_ICMP6, inp);
 		pbuf_free(r);
 
 		break;
@@ -291,7 +289,7 @@ static void icmp6_send_response(struct pbuf *p, u8_t code, u32_t data, u8_t type
 	icmp6hdr = (struct icmp6_hdr *)q->payload;
 	icmp6hdr->type = type;
 	icmp6hdr->code = code;
-	icmp6hdr->data = data;
+	icmp6hdr->data = lwip_htonl(data);
 
 	/* copy fields from original packet */
 	SMEMCPY((u8_t *) q->payload + sizeof(struct icmp6_hdr), (u8_t *) p->payload, IP6_HLEN + LWIP_ICMP6_DATASIZE);

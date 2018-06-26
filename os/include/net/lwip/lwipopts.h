@@ -159,6 +159,10 @@
 #define LWIP_ND6_MAX_UNICAST_SOLICIT	CONFIG_NET_IPv6_ND_MAX_UNICAST_SOLICIT
 #endif
 
+#ifdef CONFIG_NET_IPv6_ND_MAX_SOLICIT_INTERVAL
+#define LWIP_ND6_MAX_SOLICIT_INTERVAL CONFIG_NET_IPv6_ND_MAX_SOLICIT_INTERVAL
+#endif
+
 #ifdef CONFIG_NET_IPv6_ND_REACHABLE_TIME
 #define LWIP_ND6_MAX_ANYCAST_DELAY_TIME	CONFIG_NET_IPv6_ND_REACHABLE_TIME
 #endif
@@ -213,29 +217,40 @@
 /* ---------- IP options ---------- */
 
 #ifdef CONFIG_NET_IP_FORWARD
-#define IP_FORWARD                      CONFIG_NET_IP_FORWARD
+#define IP_FORWARD                      1
+#else
+#define IP_FORWARD                      0
 #endif
 
 #ifdef CONFIG_NET_IP_OPTIONS_ALLOWED
-#define IP_OPTIONS_ALLOWED              CONFIG_NET_IP_OPTIONS_ALLOWED
+#define IP_OPTIONS_ALLOWED              1
+#else
+#define IP_OPTIONS_ALLOWED              0
 #endif
 
 #ifdef CONFIG_NET_IP_FRAG
-#define IP_FRAG	                       CONFIG_NET_IP_FRAG
+#define IP_FRAG	                       1
+#else
+#define IP_FRAG	                       0
 #endif
 
 #ifdef CONFIG_NET_IP_REASSEMBLY
-#define IP_REASSEMBLY                  CONFIG_NET_IP_REASSEMBLY
+#define IP_REASSEMBLY                  1
+#else
+#define IP_REASSEMBLY                  0
 #endif
 
+/* if undefined, the value set in the lwip/opts.h */
 #ifdef CONFIG_NET_IPV4_REASS_MAX_PBUFS
 #define IP_REASS_MAX_PBUFS	           CONFIG_NET_IPV4_REASS_MAX_PBUFS
 #endif
 
+/* if undefined, the value set in the lwip/opts.h */
 #ifdef CONFIG_NET_IPV4_REASS_MAXAGE
 #define IP_REASS_MAXAGE	               CONFIG_NET_IPV4_REASS_MAXAGE
 #endif
 
+/* if undefined, the value set in the lwip/opts.h */
 #ifdef CONFIG_NET_IP_DEFAULT_TTL
 #define IP_DEFAULT_TTL                 CONFIG_NET_IP_DEFAULT_TTL
 #endif
@@ -271,6 +286,10 @@
 #define LWIP_IPV6_REASS			0
 #endif
 
+#ifdef CONFIG_NET_IPV6_REASS_MAXAGE
+#define LWIP_IPV6_REASS_MAXAGE	               CONFIG_NET_IPV6_REASS_MAXAGE
+#endif
+
 #ifdef CONFIG_NET_IPv6_SEND_ROUTER_SOLICIT
 #define LWIP_IPV6_SEND_ROUTER_SOLICIT	CONFIG_NET_IPv6_SEND_ROUTER_SOLICIT
 #else
@@ -283,9 +302,14 @@
 #define LWIP_IPV6_AUTOCONFIG		0
 #endif
 
-
 #ifdef CONFIG_NET_IPv6_DUP_DETECT_ATTEMPTS
 #define LWIP_IPV6_DUP_DETECT_ATTEMPTS	CONFIG_NET_IPv6_DUP_DETECT_ATTEMPTS
+#endif
+
+#ifdef CONFIG_NET_IPv6_PMTU_FOR_MULTICAST
+#define LWIP_IPV6_PMTU_FOR_MULTICAST		CONFIG_NET_IPv6_PMTU_FOR_MULTICAST
+#else
+#define LWIP_IPV6_PMTU_FOR_MULTICAST		0
 #endif
 
 /* ---------- IPv6 options ---------- */
@@ -299,8 +323,12 @@
 #define LWIP_BROADCAST_PING             CONFIG_NET_BROADCAST_PING
 #endif
 
-#ifdef CONFIG_NET_MULTICAST_PING
-#define LWIP_MULTICAST_PING             CONFIG_NET_MULTICAST_PING
+#ifdef CONFIG_NET_MULTICAST_PING4
+#define LWIP_MULTICAST_PING4		CONFIG_NET_MULTICAST_PING4
+#endif
+
+#ifdef CONFIG_NET_MULTICAST_PING6
+#define LWIP_MULTICAST_PING6		CONFIG_NET_MULTICAST_PING6
 #endif
 /* ---------- ICMP options ---------- */
 
@@ -977,6 +1005,12 @@
 #define IP6_DEBUG	LWIP_DBG_ON
 #else
 #define IP6_DEBUG	LWIP_DBG_OFF
+#endif
+
+#ifdef CONFIG_NET_ND6_DEBUG
+#define ND6_DEBUG	LWIP_DBG_ON
+#else
+#define ND6_DEBUG	LWIP_DBG_OFF
 #endif
 
 #endif /* CONFIG_NET_LWIP_DEBUG */

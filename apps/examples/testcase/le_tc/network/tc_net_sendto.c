@@ -39,8 +39,8 @@
 #define TCPPORT 7890
 #define MAXRCVLEN 20
 static int sp = 0;
-void tc_net_sendto_tcp_n(int ConnectFD);
-void tc_net_sendto_tcp_shutdown_n(int ConnectFD);
+void tc_net_sendto_tcp_n(int connect_fd);
+void tc_net_sendto_tcp_shutdown_n(int connect_fd);
 
 /**
    * @testcase		   :tc_net_sendto_p
@@ -161,8 +161,8 @@ void tc_net_sendto_shutdown_n(int fd)
 void *sendto_udpserver(void *args)
 {
 	struct sockaddr_in sa;
-	int SocketFD = socket(PF_INET, SOCK_DGRAM, IPPROTO_UDP);
-	if (SocketFD < 0) {
+	int socket_fd = socket(PF_INET, SOCK_DGRAM, IPPROTO_UDP);
+	if (socket_fd < 0) {
 		printf("socket fail %s:%d", __FUNCTION__, __LINE__);
 		return 0;
 	}
@@ -173,21 +173,21 @@ void *sendto_udpserver(void *args)
 	sa.sin_port = htons(PORTNUM);
 	sa.sin_addr.s_addr = inet_addr("127.0.0.1");
 
-	int ret = bind(SocketFD, (struct sockaddr *)&sa, sizeof(sa));
+	int ret = bind(socket_fd, (struct sockaddr *)&sa, sizeof(sa));
 	if (ret < 0) {
 		printf("bind fail %s:%d", __FUNCTION__, __LINE__);
-		close(SocketFD);
+		close(socket_fd);
 		return 0;
 	}
 	struct sockaddr_storage serverStorage;
 	socklen_t addr_size;
 
-	ret = recvfrom(SocketFD, buffer, MAXRCVLEN, 0, (struct sockaddr *)&serverStorage, &addr_size);
+	ret = recvfrom(socket_fd, buffer, MAXRCVLEN, 0, (struct sockaddr *)&serverStorage, &addr_size);
 	if (ret < 0) {
 		printf("recvfrom fail %s:%d", __FUNCTION__, __LINE__);
 	}
 
-	close(SocketFD);
+	close(socket_fd);
 
 	return 0;
 
@@ -267,18 +267,18 @@ void tc_net_sendto_tcp_p(int fd)
 
 	char *msg = "Hello World !\n";
 	socklen_t fromlen = 0;
-	int ConnectFD = accept(fd, NULL, NULL);
-	if (ConnectFD < 0) {
+	int connect_fd = accept(fd, NULL, NULL);
+	if (connect_fd < 0) {
 		printf("connect fail %s:%d", __FUNCTION__, __LINE__);
 		return;
 	}
-	int ret = sendto(ConnectFD, msg, strlen(msg), 0, NULL, fromlen);
+	int ret = sendto(connect_fd, msg, strlen(msg), 0, NULL, fromlen);
 
 	TC_ASSERT_NEQ("sendto", ret, -1);
 	TC_SUCCESS_RESULT();
 
-	tc_net_sendto_tcp_n(ConnectFD);
-	tc_net_sendto_tcp_shutdown_n(ConnectFD);
+	tc_net_sendto_tcp_n(connect_fd);
+	tc_net_sendto_tcp_shutdown_n(connect_fd);
 
 }
 
@@ -290,7 +290,7 @@ void tc_net_sendto_tcp_p(int fd)
    * @precondition	   :
    * @postcondition	   :
    */
-void tc_net_sendto_tcp_n(int ConnectFD)
+void tc_net_sendto_tcp_n(int connect_fd)
 {
 
 	char *msg = "Hello World !\n";
@@ -301,7 +301,7 @@ void tc_net_sendto_tcp_n(int ConnectFD)
 	TC_ASSERT_EQ("sendto", ret, -1);
 	TC_SUCCESS_RESULT();
 
-	close(ConnectFD);
+	close(connect_fd);
 
 }
 
@@ -313,18 +313,18 @@ void tc_net_sendto_tcp_n(int ConnectFD)
    * @precondition	   :
    * @postcondition	   :
    */
-void tc_net_sendto_tcp_shutdown_n(int ConnectFD)
+void tc_net_sendto_tcp_shutdown_n(int connect_fd)
 {
 
 	char *msg = "Hello World !\n";
 	socklen_t fromlen = 0;
-	shutdown(ConnectFD, SHUT_WR);
-	int ret = sendto(ConnectFD, msg, strlen(msg), 0, NULL, fromlen);
+	shutdown(connect_fd, SHUT_WR);
+	int ret = sendto(connect_fd, msg, strlen(msg), 0, NULL, fromlen);
 
 	TC_ASSERT_EQ("sendto", ret, -1);
 	TC_SUCCESS_RESULT();
 
-	close(ConnectFD);
+	close(connect_fd);
 
 }
 
@@ -341,15 +341,15 @@ void tc_net_sendto_tcp_shutdown_n(int ConnectFD)
 void *sendto_tcpserver(void *args)
 {
 	struct sockaddr_in sa;
-	int SocketFD = socket(PF_INET, SOCK_STREAM, IPPROTO_TCP);
-	if (SocketFD < 0) {
+	int socket_fd = socket(PF_INET, SOCK_STREAM, IPPROTO_TCP);
+	if (socket_fd < 0) {
 		printf("socket fail %s:%d", __FUNCTION__, __LINE__);
 		return 0;
 	}
 
-	if (setsockopt(SocketFD, SOL_SOCKET, SO_REUSEADDR, &(int){ 1 }, sizeof(int)) < 0) {
+	if (setsockopt(socket_fd, SOL_SOCKET, SO_REUSEADDR, &(int){ 1 }, sizeof(int)) < 0) {
 		printf("setsockopt(SO_REUSEADDR) failed %s:%d:%d\n", __FUNCTION__, __LINE__, errno);
-		close(SocketFD);
+		close(socket_fd);
 		return 0;
 	}
 
@@ -359,24 +359,24 @@ void *sendto_tcpserver(void *args)
 	sa.sin_port = htons(TCPPORT);
 	sa.sin_addr.s_addr = inet_addr("127.0.0.1");
 
-	int ret = bind(SocketFD, (struct sockaddr *)&sa, sizeof(sa));
+	int ret = bind(socket_fd, (struct sockaddr *)&sa, sizeof(sa));
 	if (ret < 0) {
 		printf("bind fail %s:%d", __FUNCTION__, __LINE__);
-		close(SocketFD);
+		close(socket_fd);
 		return 0;
 	}
 
-	ret = listen(SocketFD, 2);
+	ret = listen(socket_fd, 2);
 	if (ret < 0) {
 		printf("listen fail %s:%d", __FUNCTION__, __LINE__);
-		close(SocketFD);
+		close(socket_fd);
 		return 0;
 	}
 
 	sendto_signal();
-	tc_net_sendto_tcp_p(SocketFD);
+	tc_net_sendto_tcp_p(socket_fd);
 
-	close(SocketFD);
+	close(socket_fd);
 	pthread_exit(NULL);
 
 }

@@ -59,7 +59,11 @@ temp_output_file="temp_var_list.txt"
 ## find over-size global variables through nm
 nm -S --size-sort -l $path > $temp_output_file
 
-rm $output_file
+if [ -f ${output_file} ]
+then
+	rm $output_file
+fi
+
 echo "SIZE(bytes)	TYPE	VARIABLE		PATH" >> $output_file
 echo "------------------------------------------------------------" >> $output_file
 while read line 

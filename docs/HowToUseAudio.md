@@ -1,7 +1,7 @@
 
-# Tizen RT's Audio Framework
+# TizenRT's Audio Framework
 
-Tizen RT's audio framework has 4 components namely;
+TizenRT's audio framework has 4 components namely;
 
 **Audio Subsystem**  
 **Audio Codec Drivers**    
@@ -16,7 +16,7 @@ the lower half through POSIX like system APIs.
 
 
 ## Audio Codec Drivers
-[os/drivers/audio](../os/drivers/audio) is the place holder for different audio codec's BSP/drivers. At present only REALTEK's ALC5658 is supported. Tizen RT also supports NULL & char device drivers for audio devices.  
+[os/drivers/audio](../os/drivers/audio) is the place holder for different audio codec's BSP/drivers. At present only REALTEK's ALC5658 is supported. TizenRT also supports NULL & char device drivers for audio devices.  
 
 
 ##  Tinyalsa  
