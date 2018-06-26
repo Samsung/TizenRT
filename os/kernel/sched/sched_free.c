@@ -103,38 +103,22 @@ void sched_ufree(FAR void *address)
 {
 	irqstate_t flags;
 
-	/* Check if this is an attempt to deallocate memory from an exception
-	 * handler.  If this function is called from the IDLE task, then we
-	 * must have exclusive access to the memory manager to do this.
-	 */
-
-	if (up_interrupt_context() || kumm_trysemaphore() != 0) {
-		/* Yes.. Make sure that this is not a attempt to free kernel memory
-		 * using the user deallocator.
-		 */
-
-		flags = irqsave();
+	flags = irqsave();
 #if (defined(CONFIG_BUILD_PROTECTED) || defined(CONFIG_BUILD_KERNEL)) && \
-	 defined(CONFIG_MM_KERNEL_HEAP)
-		DEBUGASSERT(!kmm_heapmember(address));
+	defined(CONFIG_MM_KERNEL_HEAP)
+	DEBUGASSERT(!kmm_heapmember(address));
 #endif
 
-		/* Delay the deallocation until a more appropriate time. */
+	/* Delay the deallocation until a more appropriate time. */
 
-		sq_addlast((FAR sq_entry_t *)address, (sq_queue_t *)&g_delayed_kufree);
+	sq_addlast((FAR sq_entry_t *)address, (sq_queue_t *)&g_delayed_kufree);
 
-		/* Signal the worker thread that is has some clean up to do */
+	/* Signal the worker thread that is has some clean up to do */
 
 #ifdef CONFIG_SCHED_WORKQUEUE
-		work_signal(LPWORK);
+	work_signal(LPWORK);
 #endif
-		irqrestore(flags);
-	} else {
-		/* No.. just deallocate the memory now. */
-
-		kumm_free(address);
-		kumm_givesemaphore();
-	}
+	irqrestore(flags);
 }
 
 #ifdef CONFIG_MM_KERNEL_HEAP
