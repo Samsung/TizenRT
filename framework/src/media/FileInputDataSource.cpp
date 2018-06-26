@@ -112,7 +112,7 @@ bool FileInputDataSource::isPrepare()
 	return true;
 }
 
-ssize_t FileInputDataSource::read(unsigned char *buf, size_t size)
+ssize_t FileInputDataSource::read(unsigned char *buf, size_t size, bool sync)
 {
 	size_t rlen = 0;
 	size_t readSize = size;
