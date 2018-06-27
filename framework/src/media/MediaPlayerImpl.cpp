@@ -146,6 +146,7 @@ player_result_t MediaPlayerImpl::prepare()
 
 void MediaPlayerImpl::preparePlayer(player_result_t &ret)
 {
+	auto &mpw = PlayerWorker::getWorker();
 	medvdbg("MediaPlayer Worker : preparePlayer\n");
 	if (mCurState != PLAYER_STATE_IDLE) {
 		meddbg("MediaPlayer prepare fail : wrong state\n");
@@ -161,11 +162,7 @@ void MediaPlayerImpl::preparePlayer(player_result_t &ret)
 		goto errout;
 	}
 
-	if (set_audio_stream_out(mInputDataSource->getChannels(), mInputDataSource->getSampleRate(),
-							 mInputDataSource->getPcmFormat()) != AUDIO_MANAGER_SUCCESS) {
-		meddbg("MediaPlayer prepare fail : set_audio_stream_out fail\n");
-		goto errout;
-	}
+	mpw.requestFocus(shared_from_this());
 
 	mBufSize = get_output_frames_to_byte(get_output_frame_count());
 	if (mBufSize < 0) {
@@ -212,6 +209,7 @@ player_result_t MediaPlayerImpl::unprepare()
 
 void MediaPlayerImpl::unpreparePlayer(player_result_t &ret)
 {
+	auto &mpw = PlayerWorker::getWorker();
 	medvdbg("MediaPlayer Worker : destroyPlayer\n");
 
 	if (mCurState == PLAYER_STATE_NONE || mCurState == PLAYER_STATE_IDLE) {
@@ -225,11 +223,7 @@ void MediaPlayerImpl::unpreparePlayer(player_result_t &ret)
 	}
 	mBufSize = 0;
 
-	if (reset_audio_stream_out() != AUDIO_MANAGER_SUCCESS) {
-		meddbg("MediaPlayer unprepare fail : reset_audio_stream_out fail\n");
-		goto errout;
-	}
-
+	mpw.abandonFocus(shared_from_this());
 	mInputDataSource->close();
 
 	mCurState = PLAYER_STATE_IDLE;
@@ -260,23 +254,11 @@ player_result_t MediaPlayerImpl::start()
 
 void MediaPlayerImpl::startPlayer()
 {
-	PlayerWorker& mpw = PlayerWorker::getWorker();
-
 	medvdbg("PlayerWorker : startPlayer\n");
 	if (mCurState != PLAYER_STATE_READY && mCurState != PLAYER_STATE_PAUSED) {
 		meddbg("PlayerWorker : player is not ready or paused\n");
 		notifyObserver(PLAYER_OBSERVER_COMMAND_ERROR);
 		return;
-	}
-
-	auto prevPlayer = mpw.getPlayer();
-	auto curPlayer = shared_from_this();
-	if (prevPlayer != curPlayer) {
-		if (prevPlayer) {
-			/** TODO Should be considered Audiofocus later **/
-			prevPlayer->pausePlayer();
-		}
-		mpw.setPlayer(curPlayer);
 	}
 
 	mCurState = PLAYER_STATE_PLAYING;
@@ -301,8 +283,6 @@ player_result_t MediaPlayerImpl::stop()
 
 void MediaPlayerImpl::stopPlayer()
 {
-	PlayerWorker& mpw = PlayerWorker::getWorker();
-
 	medvdbg("MediaPlayer Worker : stopPlayer\n");
 	if (mCurState != PLAYER_STATE_PLAYING && mCurState != PLAYER_STATE_PAUSED) {
 		meddbg("PlayerWorker : player is not playing or paused\n");
@@ -310,7 +290,6 @@ void MediaPlayerImpl::stopPlayer()
 		return;
 	}
 
-	mpw.setPlayer(nullptr);
 	mCurState = PLAYER_STATE_READY;
 }
 
@@ -522,6 +501,27 @@ void MediaPlayerImpl::notifyObserver(player_observer_command_t cmd)
 			break;
 		}
 	}
+}
+
+bool MediaPlayerImpl::setAudioStream()
+{
+	if (set_audio_stream_out(mInputDataSource->getChannels(), mInputDataSource->getSampleRate(),
+							 mInputDataSource->getPcmFormat()) != AUDIO_MANAGER_SUCCESS) {
+		meddbg("set_audio_stream_out fail\n");
+		return false;
+	}
+
+	return true;
+}
+
+bool MediaPlayerImpl::resetAudioStream()
+{
+	if (reset_audio_stream_out() != AUDIO_MANAGER_SUCCESS) {
+		meddbg("reset_audio_stream_out fail\n");
+		return false;
+	}
+
+	return true;
 }
 
 void MediaPlayerImpl::playback()
