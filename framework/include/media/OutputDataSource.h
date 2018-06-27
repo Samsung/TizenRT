@@ -32,6 +32,7 @@
 #include <media/DataSource.h>
 
 namespace media {
+class Encoder;
 namespace stream {
 /**
  * @class
@@ -76,6 +77,16 @@ public:
 	 * @since TizenRT v2.0 PRE
 	 */
 	virtual ~OutputDataSource();
+
+protected:
+	const std::shared_ptr<Encoder> getEncoder();
+	void setEncoder(std::shared_ptr<Encoder> encoder);
+	void setAudioType(audio_type_t audioType);
+	audio_type_t getAudioType();
+
+private:
+	audio_type_t mAudioType;
+	std::shared_ptr<Encoder> mEncoder;
 
 public:
 	/**

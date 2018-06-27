@@ -19,6 +19,8 @@
 #include <stdio.h>
 #include <debug.h>
 #include <media/FileOutputDataSource.h>
+#include "utils/MediaUtils.h"
+#include "Encoder.h"
 
 namespace media {
 namespace stream {
@@ -47,7 +49,19 @@ FileOutputDataSource& FileOutputDataSource::operator=(const FileOutputDataSource
 bool FileOutputDataSource::open()
 {
 	if (!mFp) {
-		mFp = fopen(mDataPath.c_str(), "w");
+		setAudioType(utils::getAudioTypeFromPath(mDataPath));
+
+		switch (getAudioType()) {
+		case AUDIO_TYPE_OPUS:
+			setEncoder(std::make_shared<Encoder>(AUDIO_TYPE_OPUS, getChannels(), getSampleRate()));
+			break;
+
+		default:
+			/* Don't set any encoder for unsupported formats */
+			break;
+		}
+
+		mFp = fopen(mDataPath.c_str(), "wb");
 		if (mFp) {
 			medvdbg("file open success\n");
 			return true;
@@ -90,18 +104,55 @@ bool FileOutputDataSource::isPrepare()
 
 ssize_t FileOutputDataSource::write(unsigned char* buf, size_t size)
 {
+	if (!isPrepare()) {
+		return (ssize_t)0;
+	}
+
 	if (!buf) {
-		meddbg("buf is nullptr, hence return EOF\n");
-		return EOF;
+		meddbg("buf is nullptr, hence return 0\n");
+		return (ssize_t)0;
 	}
-	
-	size_t ret;
-	ret = fwrite(buf, sizeof(unsigned char), size, mFp);
-	if (ret == 0 && ferror(mFp)) {
-		meddbg("Error : %d\n", errno);
-		return EOF;
+
+	std::shared_ptr<Encoder> encoder = getEncoder();
+
+	size_t wlen = 0;
+	while (wlen < size) {
+		if (encoder) {
+			// Push data as much as possible
+			size_t pushed = encoder->pushData(buf + wlen, size - wlen);
+			if (pushed == 0) {
+				meddbg("Can not push data! Error occurred during encoding!\n");
+				break;
+			}
+
+			wlen += pushed;
+
+			// Encode data and write to file.
+			while (1) {
+				// Reuse 'wlen' bytes free space in 'buf'.
+				// Encoded data size is usually smaller than origin PCM data size.
+				size_t ret = wlen;
+				if (!encoder->getFrame(buf, &ret)) {
+					// Need push more data
+					break;
+				}
+
+				size_t written = fwrite(buf, sizeof(unsigned char), ret, mFp);
+				medvdbg("written size: %d\n", written);
+				if (written != ret) {
+					meddbg("Can not write all!\n");
+					break;
+				}
+			}
+		} else {
+			// Write origin data to file
+			wlen += fwrite(buf + wlen, sizeof(unsigned char), size - wlen, mFp);
+			medvdbg("written size : %d\n", wlen);
+			break;
+		}
 	}
-	return ret;
+
+	return wlen;
 }
 
 FileOutputDataSource::~FileOutputDataSource()
