@@ -203,6 +203,9 @@ static int tash_launch_cmdtask(TASH_CMD_CALLBACK cb, int argc, char **args)
 	int ret = 0;
 	int pri = TASH_CMDTASK_PRIORITY;
 	long stack_size = TASH_CMDTASK_STACKSIZE;
+#ifdef	CONFIG_EXAMPLES_TESTCASE_TCP_TLS_STRESS
+	stack_size = 8192;
+#endif
 #if defined(CONFIG_BUILTIN_APPS)
 	int cmd_idx;
 

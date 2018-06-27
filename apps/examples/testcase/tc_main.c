@@ -75,6 +75,9 @@
 #if defined(CONFIG_EXAMPLES_TESTCASE_WIFI_MANAGER_UTC) || defined(CONFIG_EXAMPLES_TESTCASE_WIFI_MANAGER_ITC)
 #define TC_WIFI_MANAGER_STACK  4096
 #endif
+#ifdef CONFIG_EXAMPLES_TESTCASE_TCP_TLS_STRESS
+#define TC_TCP_TLS_STACK 8192
+#endif
 #endif
 
 sem_t tc_sem;
@@ -88,6 +91,7 @@ extern int tc_filesystem_main(int argc, char *argv[]);
 extern int tc_kernel_main(int argc, char *argv[]);
 extern int tc_network_main(int argc, char *argv[]);
 extern int tc_ttrace_main(int argc, char *argv[]);
+extern int tc_tcp_tls_main(int agrc, char *agrv[]);
 
 /* TinyAra Public API Test Case as ta_tc */
 extern int utc_arastorage_main(int argc, char *argv[]);
@@ -178,6 +182,9 @@ static const tash_cmdlist_t tc_cmds[] = {
 #ifdef CONFIG_EXAMPLES_TESTCASE_WIFI_MANAGER_ITC
 	{"wifi_manager_itc", itc_wifi_manager_main, TASH_EXECMD_ASYNC},
 #endif
+#ifdef CONFIG_EXAMPLES_TESTCASE_TCP_TLS_STRESS
+	{"tcp_tls_stress", tc_tcp_tls_main, TASH_EXECMD_ASYNC},
+#endif
 	{NULL, NULL, 0}
 };
 #endif
@@ -206,8 +213,9 @@ int tc_handler(tc_op_type_t type, const char *tc_name)
 		printf("\n########## %s Start ##########\n", tc_name);
 		break;
 	case TC_END:
+#ifndef CONFIG_EXAMPLES_TESTCASE_TCP_TLS_STRESS
 		printf("\n########## %s End [PASS : %d, FAIL : %d] ##########\n", tc_name, total_pass, total_fail);
-
+#endif
 		working_tc--;
 		sem_post(&tc_sem);
 
@@ -360,6 +368,12 @@ int tc_main(int argc, char *argv[])
 	pid = task_create("wifimgritc", SCHED_PRIORITY_DEFAULT, TC_WIFI_MANAGER_STACK, itc_wifi_manager_main, argv);
 	if (pid < 0) {
 		printf("Wi-Fi Manager itc is not started, err = %d\n", pid);
+	}
+#endif
+#ifdef CONFIG_EXAMPLES_TESTCASE_TCP_TLS_STRESS
+	pid = task_create("tcptlstc", SCHED_PRIORITY_DEFAULT, TC_TCP_TLS_STACK, tc_tcp_tls_main, argv);
+	if (pid < 0) {
+		printf("TCP TLS STRESS testcase is not started, err %d\n", pid);
 	}
 #endif
 

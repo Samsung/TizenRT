@@ -4,7 +4,7 @@
 #
 
 config STRESS_TOOL
-	bool "STRESS TOOL API"
+	bool "Enable Stress Tool"
 	default n
 	---help---
 		Enable support for stress tool APIs.
