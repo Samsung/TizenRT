@@ -365,6 +365,9 @@ static void tc_libc_misc_lib_dumpbuffer(void)
 	unsigned char *buf = NULL;
 	int idx;
 
+	/* To guarantee flushing other printf messages before using lowsyslog */
+	usleep(10);
+
 	/**
 	 * As lib_dumpbuffer returns void, there in no way to check the success or failure case
 	 * we need to manually check the dump output
