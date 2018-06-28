@@ -98,6 +98,17 @@ struct fs_romfsdir_s {
 };
 #endif							/* CONFIG_FS_ROMFS */
 
+#ifdef CONFIG_FS_TMPFS
+/* For TMPFS, we need the directory object and an index into the directory
+ * entries.
+ */
+struct tmpfs_directory_s;             /* Forward reference */
+struct fs_tmpfsdir_s {
+	FAR struct tmpfs_directory_s *tf_tdo; /* Directory being enumerated */
+	unsigned int tf_index;               /* Directory index */
+};
+#endif /* CONFIG_FS_TMPFS */
+
 #ifdef CONFIG_FS_SMARTFS
 /* SMARTFS is the Sector Mapped Allocation for Really Tiny FLASH filesystem.
  * it is designed to use small sectors on small serial FLASH devices, using
@@ -150,6 +161,9 @@ struct fs_dirent_s {
 #ifndef CONFIG_DISABLE_MOUNTPOINT
 #ifdef CONFIG_FS_ROMFS
 		struct fs_romfsdir_s romfs;
+#endif
+#ifdef CONFIG_FS_TMPFS
+		struct fs_tmpfsdir_s tmpfs;
 #endif
 #ifdef CONFIG_FS_PROCFS
 		FAR void *procfs;

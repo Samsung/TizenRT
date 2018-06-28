@@ -3187,19 +3187,30 @@ static void tc_libc_stdio_stdsostream(void)
 * @precondition     NA
 * @postcondition    NA
 */
-
 static void tc_libc_stdio_tempnam(void)
 {
 	const char filename[] = "tempnam_tc_test";
 	char *ret1 = NULL;
 	char *ret2 = NULL;
-	int ret_check = 0;
 	FILE *fp;
-
 	/* TC 1 with valid prefix */
-
+#if defined(CONFIG_FS_SMARTFS) && !defined(CONFIG_FS_AUTOMOUNT_TMPFS)
+	int ret_check = 0;
+	bool tmpfs_mount_exist = false;
 	ret_check = mount(MOUNT_DEV_DIR, CONFIG_LIBC_TMPDIR, "smartfs", 0, NULL);
-	TC_ASSERT_EQ("mount", ret_check, OK);
+	if (ret_check < 0) {
+		TC_ASSERT_EQ("mount", errno, EEXIST);
+		tmpfs_mount_exist = true;
+	}
+#elif defined(CONFIG_FS_TMPFS) && !defined(CONFIG_FS_SMARTFS) && !defined(CONFIG_AUTOMOUNT_FS_TMPFS)
+	int ret_check = 0;
+	bool tmpfs_mount_exist = false;
+	ret_check = mount(NULL, CONFIG_LIBC_TMPDIR, "tmpfs", 0, NULL);
+	if (ret_check < 0) {
+		TC_ASSERT_EQ("mount", errno, EEXIST);
+		tmpfs_mount_exist = true;
+	}
+#endif
 
 	ret1 = tempnam(CONFIG_LIBC_TMPDIR, filename);
 	TC_ASSERT_NEQ_CLEANUP("tempnam", ret1, NULL, goto errout);
@@ -3219,8 +3230,11 @@ static void tc_libc_stdio_tempnam(void)
 
 	unlink(ret1);
 	unlink(ret2);
-	umount(CONFIG_LIBC_TMPDIR);
-
+#if (defined(CONFIG_FS_SMARTFS) || defined(CONFIG_FS_TMPFS)) && !defined(CONFIG_FS_AUTOMOUNT_TMPFS)
+	if (false == tmpfs_mount_exist) {
+		umount(CONFIG_LIBC_TMPDIR);
+	}
+#endif
 	TC_SUCCESS_RESULT();
 	return;
 
@@ -3229,7 +3243,12 @@ errout2:
 errout1:
 	unlink(ret1);
 errout:
-	umount(CONFIG_LIBC_TMPDIR);
+#if (defined(CONFIG_FS_SMARTFS) || defined(CONFIG_FS_TMPFS)) && !defined(CONFIG_FS_AUTOMOUNT_TMPFS)
+	if (false == tmpfs_mount_exist) {
+		umount(CONFIG_LIBC_TMPDIR);
+	}
+#endif
+	return;
 }
 
 /**
@@ -3245,14 +3264,25 @@ static void tc_libc_stdio_tmpnam(void)
 	char filename[] = "tmpnam_tc_test";
 	char *ret1 = NULL;
 	char *ret2 = NULL;
-	int ret_check;
 	FILE *fp;
-
 	/* TC 1 with NULL string */
-
+#if defined(CONFIG_FS_SMARTFS) && !defined(CONFIG_FS_AUTOMOUNT_TMPFS)
+	int ret_check = 0;
+	bool tmpfs_mount_exist = false;
 	ret_check = mount(MOUNT_DEV_DIR, CONFIG_LIBC_TMPDIR, "smartfs", 0, NULL);
-	TC_ASSERT_EQ("mount", ret_check, OK);
-
+	if (ret_check < 0) {
+		TC_ASSERT_EQ("mount", errno, EEXIST);
+		tmpfs_mount_exist = true;
+	}
+#elif defined(CONFIG_FS_TMPFS) && !defined(CONFIG_FS_SMARTFS) && !defined(CONFIG_AUTOMOUNT_FS_TMPFS)
+	int ret_check = 0;
+	bool tmpfs_mount_exist = false;
+	ret_check = mount(NULL, CONFIG_LIBC_TMPDIR, "tmpfs", 0, NULL);
+	if (ret_check < 0) {
+		TC_ASSERT_EQ("mount", errno, EEXIST);
+		tmpfs_mount_exist = true;
+	}
+#endif
 	ret1 = tmpnam(NULL);
 	TC_ASSERT_NEQ_CLEANUP("tmpnam", ret1, NULL, goto errout);
 
@@ -3271,8 +3301,12 @@ static void tc_libc_stdio_tmpnam(void)
 
 	unlink(ret1);
 	unlink(ret2);
-	umount(CONFIG_LIBC_TMPDIR);
 
+#if (defined(CONFIG_FS_SMARTFS) || defined(CONFIG_FS_TMPFS)) && !defined(CONFIG_FS_AUTOMOUNT_TMPFS)
+	if (false == tmpfs_mount_exist) {
+		umount(CONFIG_LIBC_TMPDIR);
+	}
+#endif
 	TC_SUCCESS_RESULT();
 	return;
 
@@ -3281,7 +3315,12 @@ errout2:
 errout1:
 	unlink(ret1);
 errout:
-	umount(CONFIG_LIBC_TMPDIR);
+#if (defined(CONFIG_FS_SMARTFS) || defined(CONFIG_FS_TMPFS)) && !defined(CONFIG_FS_AUTOMOUNT_TMPFS)
+	if (false == tmpfs_mount_exist) {
+		umount(CONFIG_LIBC_TMPDIR);
+	}
+#endif
+	return;
 }
 
 /**

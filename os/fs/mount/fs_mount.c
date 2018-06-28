@@ -90,7 +90,7 @@
 #define BDFS_SUPPORT 1
 #endif
 
-#if defined(CONFIG_FS_PROCFS)
+#if defined(CONFIG_FS_PROCFS) || defined(CONFIG_FS_TMPFS)
 #define NONBDFS_SUPPORT
 #endif
 
@@ -127,7 +127,6 @@ extern const struct mountpt_operations smartfs_operations;
 #ifdef CONFIG_FS_ROMFS
 extern const struct mountpt_operations romfs_operations;
 #endif
-
 static const struct fsmap_t g_bdfsmap[] = {
 	/*
 	 * For a new file system you have to add { "new_file_system", &operations }
@@ -148,10 +147,17 @@ static const struct fsmap_t g_bdfsmap[] = {
 #ifdef CONFIG_FS_PROCFS
 extern const struct mountpt_operations procfs_operations;
 #endif
+#ifdef CONFIG_FS_TMPFS
+extern const struct mountpt_operations tmpfs_operations;
+#endif
 
 static const struct fsmap_t g_nonbdfsmap[] = {
 #ifdef CONFIG_FS_PROCFS
 	{"procfs", &procfs_operations},
+#endif
+
+#ifdef CONFIG_FS_TMPFS
+	{TMPFS_FSTYPE, &tmpfs_operations},
 #endif
 	{NULL, NULL},
 };
