@@ -29,6 +29,7 @@
 #include <errno.h>
 #include <debug.h>
 #include <sys/types.h>
+#include <sys/ioctl.h>
 #include <apps/builtin.h>
 #include <tinyara/fs/ioctl.h>
 #include <tinyara/task_manager_drv.h>

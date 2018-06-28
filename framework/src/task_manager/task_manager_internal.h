@@ -19,6 +19,7 @@
 #ifndef __TASK_MANAGER_INTERNAL_H__
 #define __TASK_MANAGER_INTERNAL_H__
 
+#include <stdlib.h>
 #include <stdbool.h>
 #include <unistd.h>
 
