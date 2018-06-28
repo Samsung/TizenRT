@@ -18,8 +18,9 @@
 /****************************************************************************
  * Included Files
  ****************************************************************************/
-#include <sys/types.h>
 #include <stdio.h>
+#include <sys/types.h>
+#include <sys/ioctl.h>
 #include <tinyara/fs/ioctl.h>
 #include <task_manager/task_manager.h>
 #include "task_manager_internal.h"
