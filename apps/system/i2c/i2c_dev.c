@@ -170,7 +170,7 @@ int i2ccmd_dev(FAR struct i2ctool_s *i2ctool, int argc, char **argv)
 
 	/* Probe each address */
 
-	i2ctool_printf(i2ctool, "     0  1  2  3  4  5  6  7  8  9  a  b  c  d  e  f\n");
+	i2ctool_printf(i2ctool, "\n     0  1  2  3  4  5  6  7  8  9  a  b  c  d  e  f\n");
 	for (i = 0; i < 128; i += 16) {
 		i2ctool_printf(i2ctool, "%02x: ", i);
 		for (j = 0; j < 16; j++) {
@@ -207,14 +207,14 @@ int i2ccmd_dev(FAR struct i2ctool_s *i2ctool, int argc, char **argv)
 
 			if (i2ctool->start) {
 				ret = I2C_TRANSFER(dev, &msg[0], 1);
-				if (ret == OK) {
+				if (ret > 0) {
 					ret = I2C_TRANSFER(dev, &msg[1], 1);
 				}
 			} else {
 				ret = I2C_TRANSFER(dev, msg, 2);
 			}
 
-			if (ret == OK) {
+			if (ret > 0) {
 				i2ctool_printf(i2ctool, "%02x ", addr);
 			} else {
 				i2ctool_printf(i2ctool, "-- ");

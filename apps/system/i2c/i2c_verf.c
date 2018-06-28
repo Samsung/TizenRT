@@ -201,7 +201,7 @@ int i2ccmd_verf(FAR struct i2ctool_s *i2ctool, int argc, FAR char **argv)
 		/* Write to the I2C bus */
 
 		ret = i2ctool_set(i2ctool, dev, regaddr, (uint16_t)wrvalue);
-		if (ret == OK) {
+		if (ret > 0) {
 			/* Read the value back from the I2C bus */
 
 			ret = i2ctool_get(i2ctool, dev, regaddr, &rdvalue);
@@ -209,7 +209,7 @@ int i2ccmd_verf(FAR struct i2ctool_s *i2ctool, int argc, FAR char **argv)
 
 		/* Display the result */
 
-		if (ret == OK) {
+		if (ret > 0) {
 			i2ctool_printf(i2ctool, "VERIFY Bus: %d Addr: %02x Subaddr: %02x Wrote: ", i2ctool->bus, i2ctool->addr, i2ctool->regaddr);
 
 			if (i2ctool->width == 8) {

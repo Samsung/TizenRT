@@ -127,7 +127,7 @@ static int i2ccmd_help(FAR struct i2ctool_s *i2ctool, int argc, char **argv)
 {
 	const struct cmdmap_s *ptr;
 
-	i2ctool_printf(i2ctool, "Usage: i2c <cmd> [arguments]\n");
+	i2ctool_printf(i2ctool, "Usage: i2ctool <cmd> [arguments]\n");
 	i2ctool_printf(i2ctool, "Where <cmd> is one of:\n\n");
 	for (ptr = g_i2ccmds; ptr->cmd; ptr++) {
 		if (ptr->usage) {

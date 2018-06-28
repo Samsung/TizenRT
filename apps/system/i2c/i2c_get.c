@@ -171,7 +171,7 @@ int i2ccmd_get(FAR struct i2ctool_s *i2ctool, int argc, FAR char **argv)
 
 		/* Display the result */
 
-		if (ret == OK) {
+		if (ret > 0) {
 			i2ctool_printf(i2ctool, "READ Bus: %d Addr: %02x Subaddr: %02x Value: ", i2ctool->bus, i2ctool->addr, regaddr);
 
 			if (i2ctool->width == 8) {
@@ -228,7 +228,7 @@ int i2ctool_get(FAR struct i2ctool_s *i2ctool, FAR struct i2c_dev_s *dev, uint8_
 
 	if (i2ctool->start) {
 		ret = I2C_TRANSFER(dev, &msg[0], 1);
-		if (ret == OK) {
+		if (ret > 0) {
 			ret = I2C_TRANSFER(dev, &msg[1], 1);
 		}
 	} else {
@@ -237,7 +237,7 @@ int i2ctool_get(FAR struct i2ctool_s *i2ctool, FAR struct i2c_dev_s *dev, uint8_
 
 	/* Return the result of the read operation */
 
-	if (ret == OK) {
+	if (ret > 0) {
 		if (i2ctool->width == 8) {
 			*result = (uint16_t)u.data8;
 		} else {

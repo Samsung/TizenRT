@@ -41,12 +41,11 @@ must meet certain requirements:
    must simply return NULL if the device is not supported.
 3. The I2C driver must support the transfer method (CONFIG_I2C_TRANSFER=y).
 
-The I2C tool is designed to be implemented as a NuttShell (NSH) add-on.  Read
-the apps/nshlib/README.txt file for information about add-ons.
+The I2C tool is designed to be implemented as a Shell add-on.
 
 Configuration Options
 ---------------------
-CONFIG_NSH_BUILTIN_APPS - Build the tools as an NSH built-in command
+CONFIG_BUILTIN_APPS - Build the tools as a built-in command
 CONFIG_I2CTOOL_MINBUS - Smallest bus index supported by the hardware (default 0).
 CONFIG_I2CTOOL_MAXBUS - Largest bus index supported by the hardware (default 3)
 CONFIG_I2CTOOL_MINADDR - Minium device address (default: 0x03)
@@ -60,19 +59,19 @@ HELP
 First of all, the I2C tools supports a pretty extensive help output.  That
 help output can be view by entering either:
 
-  nsh> i2c help
+  TASH>> i2ctool help
 
 or
 
-  nsh> i2c ?
+  TASH>> i2ctool ?
 
 Here is an example of the help output.  I shows the general form of the
 command line, the various I2C commands supported with their unique command
 line options, and a more detailed summary of the command I2C command
 options.
 
-  nsh> i2c help
-  Usage: i2c <cmd> [arguments]
+  TASH>> i2ctool help
+  Usage: i2ctool <cmd> [arguments]
   Where <cmd> is one of:
 
     Show help     : ?
@@ -104,10 +103,10 @@ options.
 COMMAND LINE FORM
 =================
 
-The I2C is started from NSH by invoking the 'i2c' command from the NSH
+The I2C is started from TASH by invoking the 'i2c' command from the TASH
 command line. The general form of the 'i2c' command is:
 
-  i2c <cmd> [arguments]
+  i2ctool <cmd> [arguments]
 
 Where <cmd> is a "sub-command" and identifies one I2C operations supported
 by the tool.  [arguments] represents the list of arguments needed to perform
@@ -116,7 +115,7 @@ described below.  However, there is also a core set of common OPTIONS
 supported by all commands.  So perhaps a better representation of the
 general I2C command would be:
 
-  i2c <cmd> [OPTIONS] [arguments]
+  i2ctool <cmd> [OPTIONS] [arguments]
 
 Where [OPTIONS] represents the common options and and arguments represent
 the operation-specific arguments.
@@ -144,7 +143,7 @@ variables.  Environment variables must be preceded with the special
 character $.  For example, PWD is the variable that holds the current
 working directory and so $PWD could be used as a command line argument.  The
 use of environment variables on the I2C tools command is really only useful
-if you wish to write NSH scripts to execute a longer, more complex series of
+if you wish to write TASH scripts to execute a longer, more complex series of
 I2C commands.
 
 Common Option Summary
@@ -239,7 +238,7 @@ If the device at an address responds, then this command will display the
 address of the device.  If the device does not respond, this command will
 display "--".  The resulting display is like:
 
-nsh> i2c dev 03 77
+TASH>> i2ctool dev 03 77
      0  1  2  3  4  5  6  7  8  9  a  b  c  d  e  f
 00:          -- -- -- -- -- -- -- -- -- -- -- -- --
 10: -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- --
@@ -387,7 +386,7 @@ options in the NuttX configuration.  This configuration is the defconfig
 file in your configuration directory that is copied to the NuttX top-level
 directory as .config when NuttX is configured.
 
-  CONFIG_NSH_BUILTIN_APPS: Build the tools as an NSH built-in command
+  CONFIG_BUILTIN_APPS: Build the tools as a built-in command
   CONFIG_I2CTOOL_MINBUS: Smallest bus index supported by the hardware (default 0).
   CONFIG_I2CTOOL_MAXBUS: Largest bus index supported by the hardware (default 3)
   CONFIG_I2CTOOL_MINADDR: Minium device address (default: 0x03)
