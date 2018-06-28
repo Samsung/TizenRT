@@ -49,7 +49,7 @@ class MediaPlayerTest : public MediaPlayerObserverInterface, public enable_share
 	{
 		cout << "App start" << endl;
 	}
-	~MediaPlayerTest() 
+	~MediaPlayerTest()
 	{
 		cout << "App terminate" << endl;
 	}
@@ -99,7 +99,8 @@ void MediaPlayerTest::start(void)
 	 */
 #define TEST_MP3
 #undef TEST_AAC
-	
+#undef TEST_OPUS
+
 #if defined(TEST_MP3)
 	auto source = std::move(unique_ptr<FileInputDataSource>(new FileInputDataSource("/rom/over_16000.mp3")));
 	source->setSampleRate(16000);
@@ -107,6 +108,8 @@ void MediaPlayerTest::start(void)
 	source->setPcmFormat(AUDIO_FORMAT_TYPE_S16_LE);
 #elif defined(TEST_AAC)
 	auto source = std::move(unique_ptr<FileInputDataSource>(new FileInputDataSource("/rom/play.mp4")));
+#elif defined(TEST_OPUS)
+	auto source = std::move(unique_ptr<FileInputDataSource>(new FileInputDataSource("/rom/res_16k.mp3.pcm.opus")));
 #else
 	auto source = std::move(unique_ptr<FileInputDataSource>(new FileInputDataSource("/rom/44100.pcm")));
 	source->setSampleRate(44100);
