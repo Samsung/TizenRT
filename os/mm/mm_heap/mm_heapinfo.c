@@ -92,6 +92,7 @@ void heapinfo_parse(FAR struct mm_heap_s *heap, int mode, pid_t pid)
 	size_t mxordblk = 0;
 	int    ordblks  = 0;		/* Number of non-inuse chunks */
 	size_t fordblks = 0;		/* Total non-inuse space */
+	size_t heap_resource;
 	size_t stack_resource;
 	size_t nonsched_resource;
 	int nonsched_idx;
@@ -105,8 +106,9 @@ void heapinfo_parse(FAR struct mm_heap_s *heap, int mode, pid_t pid)
 #else
 #define region 0
 #endif
-	/* initialize the nonsched and stack resource */
+	/* initialize the heap, stack and nonsched resource */
 	nonsched_resource = 0;
+	heap_resource = 0;
 	stack_resource = 0;
 	for (nonsched_idx = 0; nonsched_idx < CONFIG_MAX_TASKS; nonsched_idx++) {
 		nonsched_list[nonsched_idx] = HEAPINFO_NONSCHED;
@@ -141,7 +143,7 @@ void heapinfo_parse(FAR struct mm_heap_s *heap, int mode, pid_t pid)
 		for (node = heap->mm_heapstart[region]; node < heap->mm_heapend[region]; node = (struct mm_allocnode_s *)((char *)node + node->size)) {
 
 			/* Check if the node corresponds to an allocated memory chunk */
-			if ((pid == HEAPINFO_PID_NOTNEEDED || node->pid == pid) && (node->preceding & MM_ALLOC_BIT) != 0) {
+			if ((pid == HEAPINFO_PID_ALL || node->pid == pid) && (node->preceding & MM_ALLOC_BIT) != 0) {
 				if (mode == HEAPINFO_DETAIL_ALL || mode == HEAPINFO_DETAIL_PID) {
 					if (node->pid >= 0) {
 						printf("0x%x | %8u |   %c    | 0x%8x | %3d   |\n", node, node->size, 'A', node->alloc_call_addr, node->pid);
@@ -159,6 +161,8 @@ void heapinfo_parse(FAR struct mm_heap_s *heap, int mode, pid_t pid)
 					nonsched_list[MM_PIDHASH(node->pid)] = node->pid;
 					nonsched_size[MM_PIDHASH(node->pid)] += node->size;
 					nonsched_resource += node->size;
+				} else {
+					heap_resource += node->size;
 				}
 #else
 				printf("\n");
@@ -183,18 +187,35 @@ void heapinfo_parse(FAR struct mm_heap_s *heap, int mode, pid_t pid)
 	}
 #undef region
 	printf("\n****************************************************************\n");
-	printf("Heap Allocation Summary(Size in Bytes)\n");
+	printf("     Summary of Heap Usages (Size in Bytes)\n");
 	printf("****************************************************************\n");
-	printf("Heap Size                      : %u\n", heap->mm_heapsize);
-	printf("Current Allocated Node Size    : %u\n", heap->total_alloc_size + SIZEOF_MM_ALLOCNODE * 2);
-	printf("Peak Allocated Node Size       : %u\n", heap->peak_alloc_size);
-	printf("Free Size                      : %u\n", fordblks);
-	printf("Largest Free Node Size         : %u\n", mxordblk);
-	printf("Number of Free Node            : %d\n", ordblks);
-	printf("\nStack Resources                : %u", stack_resource);
+	printf("Total                           : %u (100%%)\n", heap->mm_heapsize);
+	printf("  - Allocated (Current / Peak)  : %u (%d%%) / %u (%d%%)\n",\
+		heap->total_alloc_size, heap->total_alloc_size * 100 / heap->mm_heapsize,\
+		heap->peak_alloc_size,  heap->peak_alloc_size * 100 / heap->mm_heapsize);
+	printf("  - Free (Current)              : %u (%d%%)\n", fordblks, fordblks * 100 / heap->mm_heapsize);
+	printf("  - Reserved                    : %u\n", SIZEOF_MM_ALLOCNODE * 2);
 
-	printf("\nNon Scheduled Task Resources   : %u\n", nonsched_resource);
+	printf("\n****************************************************************\n");
+	printf("     Details of Heap Usages (Size in Bytes)\n");
+	printf("****************************************************************\n");
+	printf("< Free >\n");
+	printf("  - Number of Free Node               : %d\n", ordblks);
+	printf("  - Largest Free Node Size            : %u\n", mxordblk);
+	printf("\n< Allocation >\n");
+	printf("  - Current Size (Alive Allocation) = (1) + (2) + (3)\n");
+	printf("     . by Dead Threads (*) (1)        : %u\n", nonsched_resource);
+	printf("     . by Alive Threads\n");
+	printf("        - Sum of \"STACK\"(**) (2)      : %u\n", stack_resource);
+	printf("        - Sum of \"CURR_HEAP\" (3)      : %u\n", heap_resource - SIZEOF_MM_ALLOCNODE);	// Because of above for loop (node < heap->mm_heapend[region];),
+													// one of SIZEOF_MM_ALLOCNODE is subtracted.
+	printf("** NOTE **\n");
+	printf("(*)  Alive allocation by dead threads might be used by others or might be a leakage.\n");
+	printf("(**) Only Idle task has a separate stack region,\n");
+	printf("  rest are all allocated on the heap region.\n");
+
 	if (mode != HEAPINFO_SIMPLE) {
+		printf("\n< by Dead Threads >\n");
 		printf(" Pid | Size \n");
 		printf("-----|------\n");
 		for (nonsched_idx = 0; nonsched_idx < CONFIG_MAX_TASKS; nonsched_idx++) {
