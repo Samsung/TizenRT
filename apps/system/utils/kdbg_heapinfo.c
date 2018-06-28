@@ -123,7 +123,8 @@ int kdbg_heapinfo(int argc, char **args)
 	}
 	heapinfo_parse(user_heap, mode, pid);
 
-	printf("\n%3s | ", "PID");
+	printf("\n< by Alive Threads >\n");
+	printf("%3s | ", "PID");
 #if defined(CONFIG_SCHED_HAVE_PARENT) && !defined(HAVE_GROUP_MEMBERS)
 	printf("%5s | ", "PPID");
 #endif
@@ -134,10 +135,6 @@ int kdbg_heapinfo(int argc, char **args)
 #endif
 	printf("-------|-----------|-----------|----------\n");
 	sched_foreach(kdbg_heapinfo_task, NULL);
-
-	printf("\n** NOTED **\n");
-	printf("* Idle Task's stack is not allocated in heap region\n");
-	printf("* And another stack size is allocated stack size + alloc node size(task:32/pthread:20)\n\n");
 
 #ifdef CONFIG_HEAPINFO_USER_GROUP
 	if (show_group == true) {
