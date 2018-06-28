@@ -95,7 +95,7 @@ int s5j_i2c_transfer(struct i2c_dev_s *dev, struct i2c_msg_s *msgv, int msgc);
 int s5j_i2c_read(FAR struct i2c_dev_s *dev, FAR uint8_t *buffer, int buflen);
 int s5j_i2c_write(FAR struct i2c_dev_s *dev, FAR const uint8_t *buffer, int buflen);
 FAR struct i2c_dev_s *up_i2cinitialize(int port);
-int s5j_i2cbus_uninitialize(FAR struct i2c_dev_s *dev);
+int up_i2cuninitialize(FAR struct i2c_dev_s *dev);
 void s5j_i2c_register(int bus);
 
 #endif /* __ARCH_ARM_SRC_S5J_I2C_H */

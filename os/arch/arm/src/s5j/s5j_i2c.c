@@ -1012,7 +1012,7 @@ FAR struct i2c_dev_s *up_i2cinitialize(int port)
  * @note
  */
 
-int s5j_i2cbus_uninitialize(struct i2c_dev_s *dev)
+int up_i2cuninitialize(FAR struct i2c_dev_s *dev)
 {
 	struct s5j_i2c_priv_s *priv = (struct s5j_i2c_priv_s *)dev;
 	irqstate_t flags;
@@ -1057,7 +1057,7 @@ void s5j_i2c_register(int bus)
 	if (i2c != NULL) {
 		snprintf(path, 16, "/dev/i2c-%d", bus);
 		if (i2c_uioregister(path, i2c) < 0) {
-			s5j_i2cbus_uninitialize(i2c);
+			up_i2cuninitialize(i2c);
 		}
 	}
 }
