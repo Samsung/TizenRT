@@ -276,7 +276,7 @@ Kernel Features -> Disable TinyAra interfaces -> Disable environment variable su
 
 
 ## heapinfo
-This command shows heap memory usage per thread. This has arguments which configure the printing format.
+This command shows heap memory usages per thread. This has arguments which configure the printing information.
 ```bash
 TASH>>heapinfo --help
 
@@ -294,34 +294,44 @@ Options:
 TASH>>heapinfo
 
 ****************************************************************
-Heap Allocation Summary(Size in Bytes)
+     Summary of Heap Usages (Size in Bytes)
 ****************************************************************
-Heap Size                      : 959312
-Current Allocated Node Size    : 44144
-Peak Allocated Node Size       : 56416
-Free Size                      : 915168
-Largest Free Node Size         : 909296
-Number of Free Node            : 4
+Total                           : 960320 (100%)
+  - Allocated (Current / Peak)  : 44256 (4%) / 48624 (5%)
+  - Free (Current)              : 916032 (95%)
+  - Reserved                    : 32
 
-Stack Resources                : 6176
-Non Scheduled Task Resources   : 2192
+****************************************************************
+     Details of Heap Usages (Size in Bytes)
+****************************************************************
+< Free >
+  - Number of Free Node               : 2
+  - Largest Free Node Size            : 911840
 
+< Allocation >
+  - Current Size (Alive Allocation) = (1) + (2) + (3)
+     . by Dead Threads (*) (1)        : 2272
+     . by Alive Threads
+        - Sum of "STACK"(**) (2)      : 6176
+        - Sum of "CURR_HEAP" (3)      : 35808
+** NOTE **
+(*)  Alive allocation by dead threads might be used by others or might be a leakage.
+(**) Only Idle task has a separate stack region,
+  rest are all allocated on the heap region.
+
+< by Alive Threads >
 PID |  PPID | STACK | CURR_HEAP | PEAK_HEAP | NAME
 ----|-------|-------|-----------|-----------|----------
-  0 |     0 |  1024 |     35600 |     43952 | Idle Task()
+  0 |     0 |  1024 |     35664 |     40000 | Idle Task()
   1 |     0 |  2064 |         0 |         0 | hpwork()
   3 |     2 |  4112 |       144 |       176 | tash()
-
-** NOTED **
-* Idle Task's stack is not allocated in heap region
-* And another stack size is allocated stack size + alloc node size(task:32/pthread:20)
 ```
 
 #### Term
 - CURR_HEAP : The current allocated heap size until running this command(bytes)  
 - PEAK_HEAP : The peak allocated heap size until running this command(bytes)  
-- MemAddr : The address of allocation  
-- Owner : The holder who allocate the memory  
+- MemAddr   : The address of allocation  
+- Owner     : The holder who allocate the memory  
 
 ### How to Enable
 Enable *CONFIG_ENABLE_HEAPINFO* to use this command on menuconfig as shown below:
