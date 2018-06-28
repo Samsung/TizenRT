@@ -87,7 +87,7 @@ int kdbg_heapinfo(int argc, char **args)
 	int option;
 	bool show_group = false;
 	int mode = HEAPINFO_SIMPLE;
-	int pid = HEAPINFO_PID_NOTNEEDED;
+	int pid = HEAPINFO_PID_ALL;
 
 	if (argc >= 2 && !strncmp(args[1], "--help", strlen("--help") + 1)) {
 		goto usage;
@@ -102,7 +102,7 @@ int kdbg_heapinfo(int argc, char **args)
 			return OK;
 		case 'a':
 			mode = HEAPINFO_DETAIL_ALL;
-			pid = HEAPINFO_PID_NOTNEEDED;
+			pid = HEAPINFO_PID_ALL;
 			break;
 		case 'p':
 			mode = HEAPINFO_DETAIL_PID;
@@ -110,7 +110,7 @@ int kdbg_heapinfo(int argc, char **args)
 			break;
 		case 'f':
 			mode = HEAPINFO_DETAIL_FREE;
-			pid = HEAPINFO_PID_NOTNEEDED;
+			pid = HEAPINFO_PID_ALL;
 			break;
 		case 'g':
 			show_group = true;
