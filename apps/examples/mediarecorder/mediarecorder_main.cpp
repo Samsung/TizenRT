@@ -89,12 +89,23 @@ public:
 	{
 		std::cout << "onPlaybackFinished" << std::endl;
 		isPlaying = false;
+
+		if (mp.stop() == PLAYER_ERROR) {
+			std::cout << "Mediaplayer::stop failed" << std::endl;
+		}
+
+		if (mp.unprepare() == PLAYER_ERROR) {
+			std::cout << "Mediaplayer::unprepare failed" << std::endl;
+		}
+
+		if (mp.destroy() == PLAYER_ERROR) {
+			std::cout << "Mediaplayer::destroy failed" << std::endl;
+		}
 	}
 
 	void onPlaybackError(MediaPlayerObserverInterface::Id id)
 	{
 		std::cout << "onPlaybackError" << std::endl;
-		isPlaying = false;
 	}
 
 	void onPlaybackPaused(MediaPlayerObserverInterface::Id id)
@@ -206,6 +217,11 @@ public:
 
 	void play_data()
 	{
+		if (isPlaying) {
+			std::cout << "Already in playback" << std::endl;
+			return;
+		}
+
 		std::cout << "playback " << filePath << std::endl;
 
 		auto source = std::move(unique_ptr<FileInputDataSource>(new FileInputDataSource(filePath)));
@@ -213,44 +229,33 @@ public:
 		source->setChannels(2);
 		source->setPcmFormat(AUDIO_FORMAT_TYPE_S16_LE);
 
-		MediaPlayer mp;
 		if (mp.create() == PLAYER_ERROR) {
 			std::cout << "Mediaplayer::create failed" << std::endl;
 			return;
 		}
 
-		do {
+		mp.setObserver(shared_from_this());
+		mp.setDataSource(std::move(source));
+
+		if (mp.prepare() == PLAYER_OK) {
 			isPlaying = true;
-
-			mp.setObserver(shared_from_this());
-			mp.setDataSource(std::move(source));
-
-			if (mp.prepare() == PLAYER_ERROR) {
-				std::cout << "Mediaplayer::prepare failed" << std::endl;
-				break;
+			if (mp.start() == PLAYER_OK) {
+				// playback started
+				return;
 			}
 
-			if (mp.start() == PLAYER_ERROR) {
-				std::cout << "Mediaplayer::start failed" << std::endl;
-				break;
-			}
+			std::cout << "Mediaplayer::start failed" << std::endl;
+			isPlaying = false;
 
-			while (isPlaying) {
-				usleep(100*1000);
+			if (mp.unprepare() == PLAYER_ERROR) {
+				std::cout << "Mediaplayer::unprepare failed" << std::endl;
 			}
-
-			if (mp.stop() == PLAYER_OK) {
-				if (mp.unprepare() == PLAYER_ERROR) {
-					std::cout << "Mediaplayer::unprepare failed" << std::endl;
-				}
-			} else {
-				std::cout << "Mediaplayer::stop failed" << std::endl;
-			}
-		} while (0);
+		} else {
+			std::cout << "Mediaplayer::prepare failed" << std::endl;
+		}
 
 		if (mp.destroy() == PLAYER_ERROR) {
 			std::cout << "Mediaplayer::destroy failed" << std::endl;
-			return;
 		}
 	}
 
@@ -293,14 +298,15 @@ public:
 		return input;
 	}
 
-	MediaRecorderTest() : appRunning(false), isPaused(false) {}
+	MediaRecorderTest() : appRunning(false), isPaused(false), isPlaying(false) {}
 	~MediaRecorderTest() {}
 
 private:
 	bool appRunning;
 	bool isPaused;
-	bool isPlaying;
 	MediaRecorder mr;
+	bool isPlaying;
+	MediaPlayer mp;
 };
 
 extern "C"
