@@ -265,6 +265,7 @@ typedef struct _st_things_representation {
 	*/
 	bool (*get_double_array_value)(struct _st_things_representation *rep, const char *key, double **array, size_t *length);
 
+#ifdef CONFIG_ST_THINGS_COLLECTION
 	/**
 	* @brief API for getting the value of object array type property with a key.
 	*
@@ -279,6 +280,7 @@ typedef struct _st_things_representation {
 	* @since TizenRT v1.1
 	*/
 	bool (*get_object_array_value)(struct _st_things_representation *rep, const char *key, struct _st_things_representation ***array, size_t *length);
+#endif
 
 	/**
 	* @brief API for setting the value of string array type property with a key.
@@ -322,6 +324,7 @@ typedef struct _st_things_representation {
 	*/
 	bool (*set_double_array_value)(struct _st_things_representation *rep, const char *key, const double *array, size_t length);
 
+#ifdef CONFIG_ST_THINGS_COLLECTION
 	/**
 	* @brief API for setting the value of object array type property with a key.
 	*
@@ -335,6 +338,7 @@ typedef struct _st_things_representation {
 	* @since TizenRT v1.1
 	*/
 	bool (*set_object_array_value)(struct _st_things_representation *rep, const char *key, const struct _st_things_representation **array, size_t length);
+#endif
 
 } st_things_representation_s;
 

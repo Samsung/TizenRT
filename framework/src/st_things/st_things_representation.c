@@ -214,6 +214,7 @@ bool get_double_array_value(struct _st_things_representation *rep, const char *k
 	return ret;
 }
 
+#ifdef CONFIG_ST_THINGS_COLLECTION
 bool get_object_array_value(struct _st_things_representation *rep, const char *key, struct _st_things_representation ***array, size_t *length)
 {
 	RET_FALSE_IF_PARAM_IS_NULL(TAG, rep);
@@ -269,6 +270,7 @@ bool get_object_array_value(struct _st_things_representation *rep, const char *k
 	things_free(children);
 	return true;
 }
+#endif
 
 bool set_str_array_value(struct _st_things_representation *rep, const char *key, const char **array, size_t length)
 {
@@ -306,6 +308,7 @@ bool set_double_array_value(struct _st_things_representation *rep, const char *k
 	return OCRepPayloadSetDoubleArray(rep->payload, key, array, dimensions);
 }
 
+#ifdef CONFIG_ST_THINGS_COLLECTION
 bool set_object_array_value(struct _st_things_representation *rep, const char *key, const struct _st_things_representation **array, size_t length)
 {
 	RET_FALSE_IF_PARAM_IS_NULL(TAG, rep);
@@ -341,6 +344,7 @@ bool set_object_array_value(struct _st_things_representation *rep, const char *k
 
 	return res;
 }
+#endif
 
 st_things_representation_s *create_representation_inst_internal(OCRepPayload *payload)
 {
@@ -364,12 +368,16 @@ st_things_representation_s *create_representation_inst_internal(OCRepPayload *pa
 	rep->get_str_array_value = &get_str_array_value;
 	rep->get_int_array_value = &get_int_array_value;
 	rep->get_double_array_value = &get_double_array_value;
+#ifdef CONFIG_ST_THINGS_COLLECTION
 	rep->get_object_array_value = &get_object_array_value;
+#endif
 
 	rep->set_str_array_value = &set_str_array_value;
 	rep->set_int_array_value = &set_int_array_value;
 	rep->set_double_array_value = &set_double_array_value;
+#ifdef CONFIG_ST_THINGS_COLLECTION
 	rep->set_object_array_value = &set_object_array_value;
+#endif
 
 	if (NULL != payload) {
 		THINGS_LOG_D(TAG, "Setting the given payload in the representation.");
