@@ -878,16 +878,16 @@ int esm_save_easysetup_state(int state)
 {
 	THINGS_LOG_D(TAG, THINGS_FUNC_ENTRY);
 	if (state == ES_COMPLETE) { // Done
-		THINGS_LOG_D(TAG, "file open : %s", PATH_MNT FILE_ES_STATE);		
+		THINGS_LOG_D(TAG, "File open : %s", PATH_MNT FILE_ES_STATE);		
 		FILE *fp = fopen(PATH_MNT FILE_ES_STATE, "w+");
 		if (!fp) {
-			THINGS_LOG_E(TAG, "file open error(%d)", errno);
+			THINGS_LOG_E(TAG, "File open error(%d)", errno);
 			return 0;
 		}
 		unsigned char easysetup_completed = ES_COMPLETE;
 		int ret = fwrite(&easysetup_completed, 1, sizeof(unsigned char), fp);
 		if (ret <= 0) {
-			THINGS_LOG_E(TAG, "file write error(%d)", errno);
+			THINGS_LOG_E(TAG, "File write error(%d)", errno);
 			fclose(fp);
 			return 0;
 		}
@@ -903,16 +903,16 @@ int esm_save_easysetup_state(int state)
 
 int esm_read_easysetup_state(void)
 {
-	THINGS_LOG_D(TAG, "file open : %s", PATH_MNT FILE_ES_STATE);	
+	THINGS_LOG_D(TAG, "File open : %s", PATH_MNT FILE_ES_STATE);	
 	FILE *fp = fopen(PATH_MNT FILE_ES_STATE, "r");
 	if (!fp) {
-		THINGS_LOG_E(TAG, "file open error(%d)", errno);
+		THINGS_LOG_D(TAG, "File does not exist(%d)", errno);
 		return 0;
 	}
-	unsigned char easysetup_completed;
+	unsigned char easysetup_completed = ES_NOT_COMPLETE;
 	int ret = fread(&easysetup_completed, 1, sizeof(unsigned char), fp);
 	if (ret <= 0) {
-		THINGS_LOG_E(TAG, "file write error(%d)", errno);
+		THINGS_LOG_E(TAG, "File reed error(%d)", errno);
 		fclose(fp);
 		return 0;
 	}
