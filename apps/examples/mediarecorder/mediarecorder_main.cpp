@@ -206,7 +206,7 @@ public:
 
 	void play_data()
 	{
-		cout << "playback " << filePath << endl;
+		std::cout << "playback " << filePath << std::endl;
 
 		auto source = std::move(unique_ptr<FileInputDataSource>(new FileInputDataSource(filePath)));
 		source->setSampleRate(16000);
@@ -215,7 +215,7 @@ public:
 
 		MediaPlayer mp;
 		if (mp.create() == PLAYER_ERROR) {
-			cout << "Mediaplayer::create failed" << endl;
+			std::cout << "Mediaplayer::create failed" << std::endl;
 			return;
 		}
 
@@ -226,12 +226,12 @@ public:
 			mp.setDataSource(std::move(source));
 
 			if (mp.prepare() == PLAYER_ERROR) {
-				cout << "Mediaplayer::prepare failed" << endl;
+				std::cout << "Mediaplayer::prepare failed" << std::endl;
 				break;
 			}
 
 			if (mp.start() == PLAYER_ERROR) {
-				cout << "Mediaplayer::start failed" << endl;
+				std::cout << "Mediaplayer::start failed" << std::endl;
 				break;
 			}
 
@@ -241,15 +241,15 @@ public:
 
 			if (mp.stop() == PLAYER_OK) {
 				if (mp.unprepare() == PLAYER_ERROR) {
-					cout << "Mediaplayer::unprepare failed" << endl;
+					std::cout << "Mediaplayer::unprepare failed" << std::endl;
 				}
 			} else {
-				cout << "Mediaplayer::stop failed" << endl;
+				std::cout << "Mediaplayer::stop failed" << std::endl;
 			}
 		} while (0);
 
 		if (mp.destroy() == PLAYER_ERROR) {
-			cout << "Mediaplayer::destroy failed" << endl;
+			std::cout << "Mediaplayer::destroy failed" << std::endl;
 			return;
 		}
 	}
@@ -293,19 +293,10 @@ public:
 		return input;
 	}
 
-	MediaRecorderTest() : p_out(nullptr), appRunning(false), isPaused(false)
-	{
-		pcmConfig.channels = 2;
-		pcmConfig.rate = 16000;
-		pcmConfig.format = PCM_FORMAT_S16_LE;
-		pcmConfig.period_size = 1024;
-		pcmConfig.period_count = 2;
-	}
+	MediaRecorderTest() : appRunning(false), isPaused(false) {}
 	~MediaRecorderTest() {}
 
 private:
-	struct pcm_config pcmConfig;
-	struct pcm *p_out;
 	bool appRunning;
 	bool isPaused;
 	bool isPlaying;
