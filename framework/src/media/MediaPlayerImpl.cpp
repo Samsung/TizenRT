@@ -332,6 +332,7 @@ player_result_t MediaPlayerImpl::pause()
 
 void MediaPlayerImpl::pausePlayer()
 {
+	PlayerWorker& mpw = PlayerWorker::getWorker();
 	medvdbg("MediaPlayer Worker : pausePlayer\n");
 	if (mCurState != PLAYER_STATE_PLAYING) {
 		meddbg("PlayerWorker : player is not playing\n");
@@ -339,6 +340,18 @@ void MediaPlayerImpl::pausePlayer()
 		return;
 	}
 
+	audio_manager_result_t result = pause_audio_stream_out();
+	if (result != AUDIO_MANAGER_SUCCESS) {
+		meddbg("pause_audio_stream_in failed ret : %d\n", result);
+		notifyObserver(PLAYER_OBSERVER_COMMAND_ERROR);
+		return;
+	}
+
+	auto prevPlayer = mpw.getPlayer();
+	auto curPlayer = shared_from_this();
+	if (prevPlayer == curPlayer) {
+		mpw.setPlayer(nullptr);
+	}
 	mCurState = PLAYER_STATE_PAUSED;
 }
 
