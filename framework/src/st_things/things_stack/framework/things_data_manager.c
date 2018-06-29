@@ -33,6 +33,7 @@
 #include "utils/things_malloc.h"
 #include "utils/things_util.h"
 #include "utils/things_hashmap.h"
+#include "utils/things_string.h"
 #include "things_resource.h"
 #include "things_data_manager.h"
 #include "things_sss_manager.h"
@@ -41,6 +42,7 @@
 #include "cloud/cloud_connector.h"
 #include "things_types.h"
 #include <wifi_manager/wifi_manager.h>
+
 
 #define TAG "[things_datamgr]"
 
@@ -129,6 +131,15 @@
 #define MAX_CLOUD_SESSIONKEY            (128)	//   Need to match with the Cloud Spec.
 #define MAX_SOFTAP_SSID                 (32)
 #define MAX_SSID_DEVICE_NAME            (13)
+
+#ifdef CONFIG_ST_THINGS_SECURESTORAGE
+#define SECURESTOARGE_MAX_DATA_SIZE	       (208)
+#define SECURESTOARGE_MAX_CERT_SIZE	       (2048)
+#define SECURESTOARGE_CERT_INDEX           (1)
+#define SECURESTOARGE_EASYSETUP_INDEX      (2)
+#define SECURESTOARGE_CLOUD_DATA_INDEX_1   (3)
+#define SECURESTOARGE_CLOUD_DATA_INDEX_2   (4)
+#endif
 
 typedef int8_t INT8;
 
@@ -484,6 +495,129 @@ char *get_json_string_from_file(const char *filename)
 	return json_str;
 }
 
+#ifdef CONFIG_ST_THINGS_SECURESTORAGE
+char *get_json_string_from_securestorage(void)
+{
+	int ret = 1;
+	char *empty = "";
+	char *json_str = NULL;
+	unsigned char read_data[SECURESTOARGE_MAX_DATA_SIZE * 2];
+	unsigned int read_size[2] = {SECURESTOARGE_MAX_DATA_SIZE, SECURESTOARGE_MAX_DATA_SIZE};
+	int err;
+	if ((err = see_read_secure_storage(read_data, &read_size[0], SECURESTOARGE_CLOUD_DATA_INDEX_1)) != 0) {
+		THINGS_LOG_V(TAG, "see_read_secure_storage error (%d)", err);
+		read_size[0] = 0;
+		ret = 0;
+		goto GOTO_OUT;
+	}
+	if ((err = see_read_secure_storage(read_data + read_size[0], &read_size[1], SECURESTOARGE_CLOUD_DATA_INDEX_2)) != 0) {
+		THINGS_LOG_V(TAG, "see_read_secure_storage error (%d)", err);
+		read_size[1] = 0;
+		ret = 0;
+		goto GOTO_OUT;
+	}
+	int size = read_size[0] + read_size[1];
+	read_data[size + 1] = 0;
+
+	unsigned char cert_data[SECURESTOARGE_MAX_CERT_SIZE];
+	unsigned int cert_size = SECURESTOARGE_MAX_CERT_SIZE;
+	if ((err = see_get_certificate(cert_data, &cert_size, SECURESTOARGE_CERT_INDEX)) != 0) {
+		THINGS_LOG_E(TAG, "see_get_certificate error (%d)", err);
+		cert_size = 0;
+	}
+	cert_data[cert_size + 1] = 0;
+
+	cJSON *root = cJSON_Parse(read_data);
+	cJSON *cloud = cJSON_GetObjectItem(root, KEY_CLOUD);
+	if (cloud == NULL) {
+		THINGS_LOG_E(TAG, "cloud cJSON is NULL.");
+		ret = 0;
+		goto GOTO_OUT;
+	}
+	if (cert_size > 0) {
+		cJSON_AddStringToObject(cloud, KEY_CERTIFICATE_FILE, cert_data);
+	}
+	json_str = cJSON_Print(root);
+
+	THINGS_LOG_V(TAG, "get_json_string_from_securestorage success");
+	ret = 1;
+GOTO_OUT:
+	if (ret == 0) {
+		json_str = things_strdup(origin_cloud_json_str);		 
+	}
+
+	THINGS_LOG_V(TAG, "get_json_string_from_securestorage [%s]", json_str);
+
+	if (root != NULL) {
+		cJSON_Delete(root);
+	}
+	return json_str;
+}
+
+int set_json_string_into_securestorage(const char *json_str)
+{
+	int ret = 0;
+	cJSON *root = cJSON_Parse((const char *)json_str);
+	cJSON *cloud = cJSON_GetObjectItem(root, KEY_CLOUD);
+	if (cloud == NULL) {
+		THINGS_LOG_E(TAG, "cloud cJSON is NULL.");
+		goto GOTO_OUT;
+	}
+
+	cJSON *certificate = cJSON_GetObjectItem(cloud, KEY_CERTIFICATE_FILE);
+	int err;
+	if (certificate != NULL && certificate->valuestring != NULL) {
+		THINGS_LOG_V(TAG, "json_print:cert [%s] size : %d", certificate->valuestring, strlen(certificate->valuestring));
+		if ((err = see_set_certificate(certificate->valuestring, strlen(certificate->valuestring), SECURESTOARGE_CERT_INDEX, 0)) != 0) {
+			THINGS_LOG_E(TAG, "see_set_certificate error (%d)", err);
+			goto GOTO_OUT;
+		}
+	} else {
+		THINGS_LOG_D(TAG, "certificate == NULL || json->valuestring == NULL");
+		unsigned char *empty = "";
+		if ((err = see_set_certificate(empty, 1, SECURESTOARGE_CERT_INDEX, 0)) != 0) {
+			THINGS_LOG_V(TAG, "see_set_certificate error (%d)", err);
+			goto GOTO_OUT;
+		}
+	}
+	cJSON_DeleteItemFromObject(cloud, KEY_CERTIFICATE_FILE);
+
+	char* json_print = cJSON_Print(root);
+	if (json_print == NULL) {
+		THINGS_LOG_E(TAG, "json_print is NULL");
+		goto GOTO_OUT;
+	}	
+
+	int json_print_len = strlen(json_print);
+	THINGS_LOG_V(TAG, "json_print size : %d[%s] ", json_print, json_print_len);
+	int len = 0;
+	if (json_print_len > SECURESTOARGE_MAX_DATA_SIZE) {
+		len = SECURESTOARGE_MAX_DATA_SIZE;
+	} else {
+		len = json_print_len;
+	}
+
+	see_write_secure_storage(json_print, len, SECURESTOARGE_CLOUD_DATA_INDEX_1);	
+	if (len < SECURESTOARGE_MAX_DATA_SIZE) {
+		unsigned char *empty = "";
+		see_write_secure_storage(empty, 1, SECURESTOARGE_CLOUD_DATA_INDEX_2);
+	} else {
+		see_write_secure_storage(json_print + SECURESTOARGE_MAX_DATA_SIZE, json_print_len - SECURESTOARGE_MAX_DATA_SIZE, SECURESTOARGE_CLOUD_DATA_INDEX_2);
+	}
+	THINGS_LOG_V(TAG, "set_json_string_into_securestorage success");
+	ret = 1;
+GOTO_OUT:
+	if (root != NULL) {
+		cJSON_Delete(root);
+	}
+
+	if (json_print != NULL) {
+		things_free(json_print);
+	}
+	return ret;
+}
+#endif
+
 int set_json_string_into_file(const char *filename, const char *json_str)
 {
 	FILE *fp = NULL;
@@ -672,14 +806,26 @@ int parse_things_cloud_json(const char *filename)
 
 	int ret = 0;
 	char *json_str = NULL;
+#ifdef CONFIG_ST_THINGS_SECURESTORAGE
+	json_str = get_json_string_from_securestorage();
+#else
 	json_str = get_json_string_from_file(filename);
+#endif
+	
 
 	if (json_str == NULL) {
 		THINGS_LOG_V(TAG, "cloud file initialization.");
+#ifdef CONFIG_ST_THINGS_SECURESTORAGE
+		if (set_json_string_into_securestorage(origin_cloud_json_str) == 0) {
+			THINGS_LOG_V(TAG, "[Error] Creating cloud file is failed.");
+			return 0;
+		}
+#else
 		if (set_json_string_into_file(filename, origin_cloud_json_str) == 0) {
 			THINGS_LOG_V(TAG, "[Error] Creating cloud file is failed.");
 			return 0;
 		}
+#endif
 	}
 
 	if (strlen(json_str) > 0) {
@@ -1516,7 +1662,11 @@ static int get_signup_data_from_json(const char *filename, es_cloud_signup_s **c
 	THINGS_LOG_D(TAG, THINGS_FUNC_ENTRY);
 
 	int ret = 1;
+#ifdef CONFIG_ST_THINGS_SECURESTORAGE
+	char *json_str = get_json_string_from_securestorage();
+#else
 	char *json_str = get_json_string_from_file(filename);
+#endif
 	cJSON *root = NULL;
 	cJSON *cloud = NULL;
 
@@ -1554,7 +1704,11 @@ static int update_things_cloud_json_by_cloud_signup(const char *filename, es_clo
 	int ret = 0;
 	cJSON *root = NULL;
 	char *json_update = NULL;
+#ifdef CONFIG_ST_THINGS_SECURESTORAGE
+	char *json_str = get_json_string_from_securestorage();
+#else
 	char *json_str = get_json_string_from_file(filename);
+#endif
 
 	if (json_str != NULL && strlen(json_str) > 0) {
 		root = cJSON_Parse((const char *)json_str);
@@ -1619,10 +1773,17 @@ static int update_things_cloud_json_by_cloud_signup(const char *filename, es_clo
 			json_update = things_malloc(sizeof(char) * (strlen(origin_cloud_json_str) + 1));
 			strncpy(json_update, origin_cloud_json_str, strlen(origin_cloud_json_str) + 1);
 		}
+#ifdef CONFIG_ST_THINGS_SECURESTORAGE
+		if (set_json_string_into_securestorage(json_update) == 0) {
+			THINGS_LOG_V(TAG, "Fail : Store data to info securestorage.");
+			goto GOTO_OUT;
+		}
+#else
 		if (set_json_string_into_file(filename, json_update) == 0) {
 			THINGS_LOG_V(TAG, "Fail : Store data to info file.");
 			goto GOTO_OUT;
 		}
+#endif
 		ret = 1;
 	}
 	THINGS_LOG_D(TAG, "Update Success in \"%s\" file.", filename);
