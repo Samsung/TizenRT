@@ -363,6 +363,13 @@ class download(object):
 
 
 if __name__ == '__main__':
+    from signal import signal, SIGINT, SIGTERM
+
+    def sighandler(sig, frame):
+        from os import getpgrp, killpg, getpid
+        killpg(getpgrp(), SIGINT)
+
+    signal(SIGINT, sighandler)
 
     try:
         part = partition()
