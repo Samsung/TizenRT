@@ -24,6 +24,7 @@
 
 #include <tinyara/init.h>
 #include <apps/platform/cxxinitialize.h>
+#include <media/FocusManager.h>
 #include <media/MediaPlayer.h>
 #include <media/FileInputDataSource.h>
 
@@ -35,200 +36,252 @@ using namespace media::stream;
 // Name: mediaplayer_main
 //***************************************************************************/
 
-class MediaPlayerTest : public MediaPlayerObserverInterface, public enable_shared_from_this<MediaPlayerTest>
+static const int TEST_PCM = 0;
+static const int TEST_MP3 = 1;
+static const int TEST_AAC = 2;
+
+enum test_command_e { APP_OFF, PLAYER_START, PLAYER_PAUSE, PLAYER_RESUME, PLAYER_STOP, VOLUME_UP, VOLUME_DOWN };
+
+class MyMediaPlayer : public MediaPlayerObserverInterface,
+					  public FocusChangeListener,
+					  public enable_shared_from_this<MyMediaPlayer>
 {
-  public:
+public:
+	MyMediaPlayer() : volume(0){};
+	virtual ~MyMediaPlayer(){};
+	bool init(int test);
+	void doCommand(int command);
 	void onPlaybackStarted(Id id) override;
 	void onPlaybackFinished(Id id) override;
 	void onPlaybackError(Id id) override;
 	void onPlaybackPaused(Id id) override;
+	void onFocusChange(int focusChange) override;
 
-	void start();
-
-	MediaPlayerTest() : volume(0)
-	{
-		cout << "App start" << endl;
-	}
-	~MediaPlayerTest() 
-	{
-		cout << "App terminate" << endl;
-	}
-
-  private:
-	void printMenu();
-	void displayMediaPlayer();
-	int userInput(int, int);
+private:
 	MediaPlayer mp;
 	int volume;
-	enum test_command_e
-	{
-		APP_OFF,
-		PLAYER_START,
-		PLAYER_PAUSE,
-		PLAYER_RESUME,
-		PLAYER_STOP,
-		VOLUME_UP,
-		VOLUME_DOWN
-	};
+	std::shared_ptr<FocusRequest> mFocusRequest;
 };
 
-void MediaPlayerTest::onPlaybackStarted(Id id)
+bool MyMediaPlayer::init(int test)
+{
+	if (mp.create() == PLAYER_ERROR) {
+		cout << "Mediaplayer::create failed" << endl;
+		return false;
+	}
+	unique_ptr<FileInputDataSource> source;
+	switch (test) {
+	case TEST_MP3:
+		source = std::move(unique_ptr<FileInputDataSource>(new FileInputDataSource("/rom/over_16000.mp3")));
+		source->setSampleRate(16000);
+		source->setChannels(2);
+		source->setPcmFormat(AUDIO_FORMAT_TYPE_S16_LE);
+		break;
+	case TEST_AAC:
+		source = std::move(unique_ptr<FileInputDataSource>(new FileInputDataSource("/rom/play.mp4")));
+		break;
+	default:
+		source = std::move(unique_ptr<FileInputDataSource>(new FileInputDataSource("/rom/44100.pcm")));
+		source->setSampleRate(44100);
+		source->setChannels(2);
+		source->setPcmFormat(AUDIO_FORMAT_TYPE_S16_LE);
+	}
+	mp.setDataSource(std::move(source));
+	mp.setObserver(shared_from_this());
+
+	auto &focusManager = FocusManager::getFocusManager();
+	mFocusRequest = FocusRequest::Builder().setFocusChangeListener(shared_from_this()).build();
+	return true;
+}
+
+void MyMediaPlayer::doCommand(int command)
+{
+	auto &focusManager = FocusManager::getFocusManager();
+	switch (command) {
+	case PLAYER_START:
+		cout << "PLAYER_START is selected" << endl;
+		focusManager.requestFocus(mFocusRequest);
+		break;
+	case PLAYER_PAUSE:
+		cout << "PLAYER_PAUSE is selected" << endl;
+		if (mp.pause() == PLAYER_ERROR) {
+			cout << "Mediaplayer::pause failed" << endl;
+		}
+		break;
+	case PLAYER_RESUME:
+		cout << "PLAYER_RESUME is selected" << endl;
+		if (mp.start() == PLAYER_ERROR) {
+			cout << "Mediaplayer::start failed" << endl;
+		}
+		break;
+	case PLAYER_STOP:
+		cout << "PLAYER_STOP is selected" << endl;
+		focusManager.abandonFocus(mFocusRequest);
+		if (mp.stop() == PLAYER_ERROR) {
+			cout << "Mediaplayer::stop failed" << endl;
+		}
+
+		if (mp.unprepare() == PLAYER_ERROR) {
+			cout << "Mediaplayer::unprepare failed" << endl;
+		}
+		break;
+	case VOLUME_UP:
+		cout << "VOLUME_UP is selected" << endl;
+		volume = mp.getVolume();
+		cout << "Volume was " << volume << endl;
+		if (mp.setVolume(volume + 1) == PLAYER_ERROR) {
+			cout << "MediaPlayer::setVolume failed" << endl;
+		}
+		volume = mp.getVolume();
+		cout << "Now, Volume is " << volume << endl;
+		break;
+	case VOLUME_DOWN:
+		cout << "VOLUME_UP is selected" << endl;
+		volume = mp.getVolume();
+		cout << "Volume was " << volume << endl;
+		if (mp.setVolume(volume - 1) == PLAYER_ERROR) {
+			cout << "MediaPlayer::setVolume failed" << endl;
+		}
+		volume = mp.getVolume();
+		cout << "Now, Volume is " << volume << endl;
+		break;
+	default:
+		break;
+	}
+}
+
+void MyMediaPlayer::onPlaybackStarted(Id id)
 {
 	cout << "onPlaybackStarted" << endl;
 }
 
-void MediaPlayerTest::onPlaybackFinished(Id id)
+void MyMediaPlayer::onPlaybackFinished(Id id)
 {
 	cout << "onPlaybackFinished" << endl;
 }
 
-void MediaPlayerTest::onPlaybackError(Id id)
+void MyMediaPlayer::onPlaybackError(Id id)
 {
 	cout << "onPlaybackError" << endl;
 }
 
-void MediaPlayerTest::onPlaybackPaused(Id id)
+void MyMediaPlayer::onPlaybackPaused(Id id)
 {
 	cout << "onPlaybackPaused" << endl;
 }
 
-void MediaPlayerTest::start(void)
+void MyMediaPlayer::onFocusChange(int focusChange)
 {
-	/**
-	 * Turn on the feature to Test.
-	 */
-#define TEST_MP3
-#undef TEST_AAC
-	
-#if defined(TEST_MP3)
-	auto source = std::move(unique_ptr<FileInputDataSource>(new FileInputDataSource("/rom/over_16000.mp3")));
-	source->setSampleRate(16000);
-	source->setChannels(2);
-	source->setPcmFormat(AUDIO_FORMAT_TYPE_S16_LE);
-#elif defined(TEST_AAC)
-	auto source = std::move(unique_ptr<FileInputDataSource>(new FileInputDataSource("/rom/play.mp4")));
-#else
-	auto source = std::move(unique_ptr<FileInputDataSource>(new FileInputDataSource("/rom/44100.pcm")));
-	source->setSampleRate(44100);
-	source->setChannels(2);
-	source->setPcmFormat(AUDIO_FORMAT_TYPE_S16_LE);
-#endif
 
-	if (mp.create() == PLAYER_ERROR) {
-		cout << "Mediaplayer::create failed" << endl;
-	}
-	mp.setObserver(shared_from_this());
-	mp.setDataSource(std::move(source));
-
-	while (true) {
-		printMenu();
-		switch (userInput(APP_OFF, VOLUME_DOWN)) {
-		case APP_OFF:
-			cout << "APP_OFF is selected" << endl;
-			if (mp.destroy() == PLAYER_ERROR) {
-				cout << "Mediaplayer::destroy failed" << endl;
-			}
-			return;
-		case PLAYER_START:
-			cout << "PLAYER_START is selected" << endl;
-			if (mp.prepare() == PLAYER_ERROR) {
-				cout << "Mediaplayer::prepare failed" << endl;
-			}
-			if (mp.start() == PLAYER_ERROR) {
-				cout << "Mediaplayer::start failed" << endl;
-			}
-			break;
-		case PLAYER_PAUSE:
-			cout << "PLAYER_PAUSE is selected" << endl;
-			if (mp.pause() == PLAYER_ERROR) {
-				cout << "Mediaplayer::pause failed" << endl;
-			}
-			break;
-		case PLAYER_RESUME:
-			cout << "PLAYER_RESUME is selected" << endl;
-			if (mp.start() == PLAYER_ERROR) {
-				cout << "Mediaplayer::start failed" << endl;
-			}
-			break;
-		case PLAYER_STOP:
-			cout << "PLAYER_STOP is selected" << endl;
-			if (mp.stop() == PLAYER_ERROR) {
-				cout << "Mediaplayer::stop failed" << endl;
-			}
-
-			if (mp.unprepare() == PLAYER_ERROR) {
-				cout << "Mediaplayer::unprepare failed" << endl;
-			}
-			break;
-		case VOLUME_UP:
-			cout << "VOLUME_UP is selected" << endl;
-			volume = mp.getVolume();
-			cout << "Volume was " << volume << endl;
-			if (mp.setVolume(volume + 1) == PLAYER_ERROR) {
-				cout << "MediaPlayer::setVolume failed" << endl;
-			}
-			volume = mp.getVolume();
-			cout << "Now, Volume is " << volume << endl;
-			break;
-		case VOLUME_DOWN:
-			cout << "VOLUME_UP is selected" << endl;
-			volume = mp.getVolume();
-			cout << "Volume was " << volume << endl;
-			if (mp.setVolume(volume - 1) == PLAYER_ERROR) {
-				cout << "MediaPlayer::setVolume failed" << endl;
-			}
-			volume = mp.getVolume();
-			cout << "Now, Volume is " << volume << endl;
-			break;
-		default:
-			break;
+	switch (focusChange) {
+	case FOCUS_GAIN:
+		if (mp.prepare() == PLAYER_ERROR) {
+			cout << "Mediaplayer::prepare failed" << endl;
 		}
+		if (mp.start() == PLAYER_ERROR) {
+			cout << "Mediaplayer::start failed" << endl;
+		}
+		break;
+	case FOCUS_LOSS:
+		if (mp.pause() == PLAYER_ERROR) {
+			cout << "Mediaplayer::pause failed" << endl;
+		}
+		break;
+	default:
+		break;
 	}
 }
 
-void MediaPlayerTest::printMenu()
+class MediaPlayerController
 {
-	cout << "====================" << endl;
-	cout << " 0. APP_OFF         " << endl;
-	cout << " 1. PLAYER_START    " << endl;
-	cout << " 2. PLAYER_PAUSE    " << endl;
-	cout << " 3. PLAYER_RESUME   " << endl;
-	cout << " 4. PLAYER_STOP     " << endl;
-	cout << " 5. VOLUME_UP       " << endl;
-	cout << " 6. VOLUME_DOWN     " << endl;
-	cout << "====================" << endl;
-}
+public:
+	void start(const int test)
+	{
+		setUp(test);
 
-int MediaPlayerTest::userInput(int min, int max)
-{
-	assert(min <= max);
-	int input = 0;
+		while (true) {
+			auto player = selectPlayer();
+			if (player < 0) {
+				break;
+			}
+			auto command = selectCommand();
+			mPlayer[player]->doCommand(command);
+		}
 
-	cin >> input;
-	cout << endl;
+		tearDown();
+	}
 
-	if (!cin.fail()) {
-		if (min <= input && input <= max) {
-			cout << "return input" << endl;
-			return input;
+private:
+	void setUp(const int test)
+	{
+		mPlayer[0] = make_shared<MyMediaPlayer>();
+		mPlayer[0]->init(TEST_MP3);
+		mPlayer[1] = make_shared<MyMediaPlayer>();
+		mPlayer[1]->init(TEST_MP3);
+	}
+
+	void tearDown()
+	{
+		mPlayer[0].reset();
+		mPlayer[1].reset();
+	}
+
+	int userInput(int min, int max)
+	{
+		assert(min <= max);
+		int input;
+
+		while (true) {
+			cin >> input;
+			cout << endl;
+
+			if (!cin.fail()) {
+				if (min <= input && input <= max) {
+					cout << "return input" << endl;
+					return input;
+				}
+			}
+
+			cin.clear();
+			cin.ignore(numeric_limits<streamsize>::max(), '\n');
+
+			cout << "Invalid Input, please try again" << endl;
 		}
 	}
 
-	cin.clear();
-	cin.ignore(numeric_limits<streamsize>::max(), '\n');
+	int selectPlayer()
+	{
+		cout << "====================" << endl;
+		cout << " 0. Exit APP        " << endl;
+		cout << " 1. Select PLAYER A " << endl;
+		cout << " 2. Select PLAYER B " << endl;
+		cout << "====================" << endl;
+		return userInput(0, 2) - 1;
+	}
 
-	cout << "Invalid Input, please try again" << endl;
-
-	return input;
-}
+	int selectCommand()
+	{
+		cout << "====================" << endl;
+		cout << " 0. Do Nothing      " << endl;
+		cout << " 1. PLAYER_START    " << endl;
+		cout << " 2. PLAYER_PAUSE    " << endl;
+		cout << " 3. PLAYER_RESUME   " << endl;
+		cout << " 4. PLAYER_STOP     " << endl;
+		cout << " 5. VOLUME_UP       " << endl;
+		cout << " 6. VOLUME_DOWN     " << endl;
+		cout << "====================" << endl;
+		return userInput(0, 6);
+	}
+	shared_ptr<MyMediaPlayer> mPlayer[2];
+};
 
 extern "C" {
 int mediaplayer_main(int argc, char *argv[])
 {
 	up_cxxinitialize();
 
-	auto mediaPlayerTest = make_shared<MediaPlayerTest>();
-	mediaPlayerTest->start();
+	MediaPlayerController mediaPlayerController;
+	mediaPlayerController.start(TEST_MP3);
 	return 0;
 }
 }
