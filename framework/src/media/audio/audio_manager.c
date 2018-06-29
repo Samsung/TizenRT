@@ -543,6 +543,11 @@ audio_manager_result_t set_audio_stream_in(unsigned int channels, unsigned int s
 		return AUDIO_MANAGER_INVALID_PARAM;
 	}
 
+	if ((g_audio_in_cards[g_actual_audio_in_card_id].status == AUDIO_CARD_PAUSE)) {
+		medvdbg("reset previous preparing\n");
+		reset_audio_stream_out();
+	}
+
 	pthread_mutex_lock(&(g_audio_in_cards[g_actual_audio_in_card_id].card_mutex));
 
 	if (channels > AUDIO_STREAM_CHANNEL_MONO) {
@@ -603,6 +608,11 @@ audio_manager_result_t set_audio_stream_out(unsigned int channels, unsigned int 
 
 	if ((channels == 0) || (sample_rate == 0)) {
 		return AUDIO_MANAGER_INVALID_PARAM;
+	}
+
+	if ((g_audio_out_cards[g_actual_audio_out_card_id].status == AUDIO_CARD_PAUSE)) {
+		medvdbg("reset previous preparing\n");
+		reset_audio_stream_out();
 	}
 
 	pthread_mutex_lock(&(g_audio_out_cards[g_actual_audio_out_card_id].card_mutex));
