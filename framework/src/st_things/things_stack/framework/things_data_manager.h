@@ -69,7 +69,7 @@ typedef struct st_device_s {
 	int no;
 	char *type;
 	char *name;
-	char *manufacturer_name;
+	char *mnid;
 	char *manufacturer_url;
 	char *manufacturing_date;
 	char *model_num;
@@ -78,7 +78,7 @@ typedef struct st_device_s {
 	char *ver_hw;	// mnhw
 	char *ver_fw;	// mnfv
 	char *device_id;	// mnfv
-	char *vender_id;	// mnfv
+	char *vid;	// mnfv
 #ifdef CONFIG_ST_THINGS_COLLECTION
 	col_resource_s *collection;
 #endif

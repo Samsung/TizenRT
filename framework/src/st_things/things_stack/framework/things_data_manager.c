@@ -59,6 +59,7 @@
 
 /* oic.p */
 #define KEY_DEVICE_SPECIFICATION_PLATFORM                       "platform"
+#define KEY_DEVICE_SPECIFICATION_PLATFORM_MNID                  "MNID"
 #define KEY_DEVICE_SPECIFICATION_PLATFORM_MANUFACTURERNAME      "manufacturerName"
 #define KEY_DEVICE_SPECIFICATION_PLATFORM_MANUFACTURERURL       "manufacturerUrl"
 #define KEY_DEVICE_SPECIFICATION_PLATFORM_MANUFACTURINGDATE     "manufacturingDate"
@@ -68,6 +69,7 @@
 #define KEY_DEVICE_SPECIFICATION_PLATFORM_HARDWAREVERSION       "hardwareVersion"
 #define KEY_DEVICE_SPECIFICATION_PLATFORM_FIRMWAREVERSION       "firmwareVersion"
 #define KEY_DEVICE_SPECIFICATION_PLATFORM_VENDORID              "vendorId"
+#define KEY_DEVICE_SPECIFICATION_PLATFORM_VID                   "VID"
 
 /* resources */
 #define KEY_RESOURCES                                           "resources"
@@ -154,10 +156,9 @@ static char g_cloud_address[MAX_CLOUD_ADDRESS] = { 0 };
 
 static st_device_s *g_device;
 static char *g_firmware_version;
-static char *g_vendor_id;
+static char *g_vid;
 static char *g_model_number;
 
-static char *g_manufacturer_name;
 static char *g_setup_id;
 static bool is_artik;
 static char g_easysetup_softap_ssid[MAX_SOFTAP_SSID + 1];
@@ -377,7 +378,7 @@ static st_device_s *create_device()
 
 	device->type = NULL;
 	device->name = NULL;
-	device->manufacturer_name = NULL;
+	device->mnid = NULL;
 	device->manufacturer_url = NULL;
 	device->manufacturing_date = NULL;
 	device->model_num = NULL;
@@ -386,7 +387,7 @@ static st_device_s *create_device()
 	device->ver_hw = NULL;
 	device->ver_fw = NULL;
 	device->device_id = NULL;
-	device->vender_id = NULL;
+	device->vid = NULL;
 
 	device->no = -1;
 	device->capa_cnt = 0;
@@ -407,7 +408,7 @@ static void delete_device(st_device_s *device)
 	if (device != NULL) {
 		things_free(device->type);
 		things_free(device->name);
-		things_free(device->manufacturer_name);
+		things_free(device->mnid);
 		things_free(device->manufacturer_url);
 		things_free(device->manufacturing_date);
 		things_free(device->model_num);
@@ -416,7 +417,7 @@ static void delete_device(st_device_s *device)
 		things_free(device->ver_hw);
 		things_free(device->ver_fw);
 		things_free(device->device_id);
-		things_free(device->vender_id);
+		things_free(device->vid);
 #ifdef CONFIG_ST_THINGS_COLLECTION
 		for (int col_iter = 0; col_iter < device->col_cnt; ++col_iter) {
 			for (int link_iter = 0; link_iter < device->collection->link_cnt; ++link_iter) {
@@ -790,7 +791,7 @@ wifi_manager_softap_config_s *dm_get_softap_wifi_config(void)
 		snprintf(ext_value, sizeof(ext_value), "%02X%02X", st_wifi_info.mac_address[4], st_wifi_info.mac_address[5]);
 	}
 
-	snprintf(g_easysetup_softap_ssid, sizeof(g_easysetup_softap_ssid), "%s_%s%s%s%d%s", ssid_device_name, g_easysetup_tag, g_manufacturer_name, g_setup_id, ssid_type, ext_value);
+	snprintf(g_easysetup_softap_ssid, sizeof(g_easysetup_softap_ssid), "%s_%s%s%s%d%s", ssid_device_name, g_easysetup_tag, g_device->mnid, g_setup_id, ssid_type, ext_value);
 	THINGS_LOG_V(TAG, "SoftAP SSID : %s", g_easysetup_softap_ssid);
 
 	snprintf(ap_config.ssid, sizeof(ap_config.ssid), "%s", g_easysetup_softap_ssid);
@@ -906,9 +907,6 @@ static int parse_configuration_json(cJSON *configuration)
 		}
 
 		THINGS_LOG_V(TAG, "[configuration] setup_id : %s / artik : %d", setup_id->valuestring, is_artik);
-
-		g_manufacturer_name = things_malloc(sizeof(char) * strlen(g_device->manufacturer_name) + 1);
-		strncpy(g_manufacturer_name, g_device->manufacturer_name, strlen(g_device->manufacturer_name) + 1);
 
 		g_setup_id = things_malloc(sizeof(char) * strlen(setup_id->valuestring) + 1);
 		strncpy(g_setup_id, setup_id->valuestring, strlen(setup_id->valuestring) + 1);
@@ -1473,20 +1471,34 @@ static int parse_device_json(cJSON *device)
 
 		cJSON *spec_platform = cJSON_GetObjectItem(specification, KEY_DEVICE_SPECIFICATION_PLATFORM);
 		if (spec_platform != NULL) {
-			cJSON *manufacturer_name = cJSON_GetObjectItem(spec_platform, KEY_DEVICE_SPECIFICATION_PLATFORM_MANUFACTURERNAME);
+			cJSON *mnid = cJSON_GetObjectItem(spec_platform, KEY_DEVICE_SPECIFICATION_PLATFORM_MNID);
 			cJSON *manufacturer_url = cJSON_GetObjectItem(spec_platform, KEY_DEVICE_SPECIFICATION_PLATFORM_MANUFACTURERURL);
 			cJSON *manufacturing_date = cJSON_GetObjectItem(spec_platform, KEY_DEVICE_SPECIFICATION_PLATFORM_MANUFACTURINGDATE);
 			cJSON *model_number = cJSON_GetObjectItem(spec_platform, KEY_DEVICE_SPECIFICATION_PLATFORM_MODELNUMBER);
 			cJSON *firmware_version = cJSON_GetObjectItem(spec_platform, KEY_DEVICE_SPECIFICATION_PLATFORM_FIRMWAREVERSION);
-			cJSON *vendor_id = cJSON_GetObjectItem(spec_platform, KEY_DEVICE_SPECIFICATION_PLATFORM_VENDORID);
-
-			if (manufacturer_name != NULL) {
-				if (strlen(manufacturer_name->valuestring) != 4) {
-					THINGS_LOG_V(TAG, "manufacturer_name exceeds 4 bytes. please check (4 bytes are fixed sizes.)");
+			cJSON *vid = cJSON_GetObjectItem(spec_platform, KEY_DEVICE_SPECIFICATION_PLATFORM_VID);
+			
+			if (mnid == NULL) {
+				mnid = cJSON_GetObjectItem(spec_platform, KEY_DEVICE_SPECIFICATION_PLATFORM_MANUFACTURERNAME); // Backward compatibility for existing published IDEs
+				if (mnid == NULL) {
 					goto JSON_ERROR;
 				}
-				g_device->manufacturer_name = (char *) things_malloc(sizeof(char) * (strlen(manufacturer_name->valuestring) + 1));
-				strncpy(g_device->manufacturer_name, manufacturer_name->valuestring, strlen(manufacturer_name->valuestring) + 1);
+
+				if (strlen(mnid->valuestring) != 4) {
+					THINGS_LOG_V(TAG, "MNID exceeds 4 bytes. please check (4 bytes are fixed sizes.)");
+					goto JSON_ERROR;
+				}
+
+				g_device->mnid = (char *) things_malloc(sizeof(char) * (strlen(mnid->valuestring) + 1));
+				strncpy(g_device->mnid, mnid->valuestring, strlen(mnid->valuestring) + 1);
+			}			
+			if (vid == NULL) {
+				vid = cJSON_GetObjectItem(spec_platform, KEY_DEVICE_SPECIFICATION_PLATFORM_VENDORID); // Backward compatibility for existing published IDEs
+				if (vid == NULL) {
+					goto JSON_ERROR;
+				}
+				g_device->vid = (char *) things_malloc(sizeof(char) * (strlen(vid->valuestring) + 1));
+				strncpy(g_device->vid, vid->valuestring, strlen(vid->valuestring) + 1);
 			}
 			if (manufacturer_url != NULL) {
 				g_device->manufacturer_url = (char *) things_malloc(sizeof(char) * (strlen(manufacturer_url->valuestring) + 1));
@@ -1520,22 +1532,12 @@ static int parse_device_json(cJSON *device)
 				g_firmware_version = (char *) things_malloc(sizeof(char) * strlen(firmware_version->valuestring) + 1);
 				strncpy(g_firmware_version, firmware_version->valuestring, strlen(firmware_version->valuestring) + 1);
 			}
-			if (vendor_id != NULL) {
-				g_device->vender_id = (char *) things_malloc(sizeof(char) * (strlen(vendor_id->valuestring) + 1));
-				strncpy(g_device->vender_id, vendor_id->valuestring, strlen(vendor_id->valuestring) + 1);
-
-				g_vendor_id = (char *) things_malloc(sizeof(char) * strlen(vendor_id->valuestring) + 1);
-				strncpy(g_vendor_id, vendor_id->valuestring, strlen(vendor_id->valuestring) + 1);
-			} else {
-				THINGS_LOG_V(TAG, "vid is null");
-				goto JSON_ERROR;
-			}
 		}
 	}
 	THINGS_LOG_D(TAG, "[DEVICE] No. : %d", (g_device->no));
 	THINGS_LOG_D(TAG, "[DEVICE] type : %s", (g_device->type));
 	THINGS_LOG_D(TAG, "[DEVICE] name : %s", (g_device->name));
-	THINGS_LOG_D(TAG, "[DEVICE] mf_name : %s", (g_device->manufacturer_name));
+	THINGS_LOG_D(TAG, "[DEVICE] mf_name : %s", (g_device->mnid));
 	THINGS_LOG_D(TAG, "[DEVICE] mf_url : %s", (g_device->manufacturer_url));
 	THINGS_LOG_D(TAG, "[DEVICE] mf_date : %s", (g_device->manufacturing_date));
 	THINGS_LOG_D(TAG, "[DEVICE] model num : %s", (g_device->model_num));
@@ -1543,7 +1545,7 @@ static int parse_device_json(cJSON *device)
 	THINGS_LOG_D(TAG, "[DEVICE] os version : %s", (g_device->ver_os));
 	THINGS_LOG_D(TAG, "[DEVICE] hw version : %s", (g_device->ver_hw));
 	THINGS_LOG_D(TAG, "[DEVICE] fw version : %s", (g_device->ver_fw));
-	THINGS_LOG_D(TAG, "[DEVICE] vender id : %s", (g_device->vender_id));
+	THINGS_LOG_D(TAG, "[DEVICE] vender id : %s", (g_device->vid));
 
 	ret = parse_resource_json(device);
 JSON_ERROR:
@@ -1954,18 +1956,18 @@ static things_resource_s *register_platform_resource(things_server_builder_s *p_
 		ret->rep = things_create_representation_inst(NULL);
 		if (ret->rep) {
 			THINGS_LOG_D(TAG, "[/oic/p] platform ID :%s", device->device_id);
-			THINGS_LOG_D(TAG, "[/oic/p] Manufacturer :%s", device->manufacturer_name);
+			THINGS_LOG_D(TAG, "[/oic/p] Manufacturer :%s", device->mnid);
 			THINGS_LOG_D(TAG, "[/oic/p] Manufacturer_url :%s", device->manufacturer_url);
 			THINGS_LOG_D(TAG, "[/oic/p] Model Name :%s", device->model_num);
 			THINGS_LOG_D(TAG, "[/oic/p] Ver. Plaform :%s", device->ver_p);
 			THINGS_LOG_D(TAG, "[/oic/p] Ver. OS :%s", device->ver_os);
 			THINGS_LOG_D(TAG, "[/oic/p] Ver. HW :%s", device->ver_hw);
 			THINGS_LOG_D(TAG, "[/oic/p] Ver. FW :%s", device->ver_fw);
-			THINGS_LOG_D(TAG, "[/oic/p] Ver. vid :%s", device->vender_id);
+			THINGS_LOG_D(TAG, "[/oic/p] Ver. vid :%s", device->vid);
 
 			ret->rep->things_set_value(ret->rep, OC_RSRVD_PLATFORM_ID, device->device_id);
 
-			ret->rep->things_set_value(ret->rep, OC_RSRVD_MFG_NAME, device->manufacturer_name);
+			ret->rep->things_set_value(ret->rep, OC_RSRVD_MFG_NAME, device->mnid);
 
 			ret->rep->things_set_value(ret->rep, OC_RSRVD_MODEL_NUM, device->model_num);
 
@@ -1979,7 +1981,7 @@ static things_resource_s *register_platform_resource(things_server_builder_s *p_
 
 			ret->rep->things_set_value(ret->rep, OC_RSRVD_MFG_URL, device->manufacturer_url);
 
-			ret->rep->things_set_value(ret->rep, OC_RSRVD_VID, device->vender_id);
+			ret->rep->things_set_value(ret->rep, OC_RSRVD_VID, device->vid);
 		} else {
 			THINGS_LOG_V(TAG, "Not able to create representation");
 		}
@@ -2116,8 +2118,8 @@ int dm_register_resource(things_server_builder_s *p_builder)
 											device->ver_os,	// gOSVersion,
 											device->ver_hw,	// gHWVersions,
 											device->ver_fw,	// gFWVersions,
-											device->vender_id,	// gVenderId
-											device->manufacturer_name,	// manufacturer_name
+											device->vid,	// gVenderId
+											device->mnid,	// manufacturer_name
 											device->manufacturer_url);	// manufacturer_url
 		} 
 
@@ -2438,7 +2440,7 @@ bool dm_get_easy_setup_use_artik_crt()
 
 char *dm_get_mnid()
 {
-	return g_manufacturer_name;
+	return g_device->mnid;
 }
 
 char *dm_get_firmware_version()
@@ -2448,7 +2450,7 @@ char *dm_get_firmware_version()
 
 char *dm_get_vendor_id()
 {
-	return g_vendor_id;
+	return g_device->vid;
 }
 
 char *dm_get_model_number()
