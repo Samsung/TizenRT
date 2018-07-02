@@ -673,7 +673,7 @@ static OCRepPayload *make_dev_profile_payload(const st_device_s *dev_info)
 	OCRepPayloadSetPropString(payload, "mnos", dev_info->ver_os);
 	OCRepPayloadSetPropString(payload, "mnhw", dev_info->ver_hw);
 	OCRepPayloadSetPropString(payload, "mnfv", dev_info->ver_fw);
-	OCRepPayloadSetPropString(payload, "vid", dev_info->vender_id);
+	OCRepPayloadSetPropString(payload, "vid", dev_info->vid);
 
 	THINGS_LOG_D(TAG, "di   = %s", dev_info->device_id);
 	THINGS_LOG_D(TAG, "n    = %s", dev_info->name);
@@ -686,7 +686,7 @@ static OCRepPayload *make_dev_profile_payload(const st_device_s *dev_info)
 	THINGS_LOG_D(TAG, "mnos = %s", dev_info->ver_os);
 	THINGS_LOG_D(TAG, "mnhw = %s", dev_info->ver_hw);
 	THINGS_LOG_D(TAG, "mnfv = %s", dev_info->ver_fw);
-	THINGS_LOG_D(TAG, "vid  = %s", dev_info->vender_id);
+	THINGS_LOG_D(TAG, "vid  = %s", dev_info->vid);
 
 	res = true;
 
