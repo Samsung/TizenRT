@@ -253,6 +253,7 @@ config ARTIK_SDK
 	select TLS_WITH_SSS
 	select DM
 	select LWM2M_WAKAAMA_CLIENT
+	select LIBC_LOCALTIME
 	---help---
 		include the ARTIK SDK
 
