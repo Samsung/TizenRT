@@ -162,9 +162,9 @@ static char *g_model_number;
 static char *g_setup_id;
 static bool is_artik;
 static char g_easysetup_softap_ssid[MAX_SOFTAP_SSID + 1];
-static char *g_easysetup_softap_passphrase = "1111122222";
-static char *g_easysetup_tag = "E1";
-static int g_easysetup_softap_channel = 1;
+static const char *g_easysetup_softap_passphrase = "1111122222";
+static const char *g_easysetup_tag = "E1";
+static const int g_easysetup_softap_channel = 1;
 
 static int g_wifi_interface;
 static wifi_freq_e g_wifi_freq;
