@@ -267,7 +267,7 @@ BIN = $(BIN_DIR)/$(BIN_EXE)
 memstat: $(BIN)
 
 all: memstat
-.PHONY: context clean_context check_context export subdir_clean clean subdir_distclean distclean apps_clean apps_distclean force_build $(MANUFACTURES)
+.PHONY: context clean_context check_context export subdir_clean clean subdir_distclean distclean apps_clean apps_distclean force_build objcopy $(MANUFACTURES)
 
 $(foreach TAR, $(MANUFACTURES), $(eval $(call TARGET_template,$(TAR))))
 
@@ -505,6 +505,8 @@ pass2deps: pass2dep $(TINYARALIBS)
 
 pass2: pass2deps
 	$(Q) $(MAKE) -C $(ARCH_SRC) TOPDIR="$(TOPDIR)" BIN_DIR="$(BIN_DIR)" LIBRARIES_DIR="$(LIBRARIES_DIR)" EXTRA_OBJS="$(EXTRA_OBJS)" LINKLIBS="$(LINKLIBS)" EXTRADEFINES=$(KDEFINE) $(BIN)
+
+objcopy:
 	$(Q) if [ -w /tftpboot ] ; then \
 		cp -f $(BIN) /tftpboot/$(BIN_EXE).${CONFIG_ARCH}; \
 	fi
@@ -541,7 +543,7 @@ endif
 # pass1 dependencies and pass1 first, then build pass2 dependencies and pass2.
 # in that case, execute 'make pass1 pass2' from the command line.
 
-$(BIN): pass1deps pass2deps pass1 pass2
+$(BIN): pass1deps pass2deps pass1 pass2 objcopy
 
 # pass1dep: Create pass1 build dependencies
 # pass2dep: Create pass2 build dependencies
