@@ -2,7 +2,7 @@
 # For a description of the syntax of this configuration file,
 # see kconfig-language at https://www.kernel.org/doc/Documentation/kbuild/kconfig-language.txt
 #
-menuconfig EXAMPLES_ARTIK_SDK
+config EXAMPLES_ARTIK_SDK
 	bool "ARTIK SDK examples"
 	default n
 	depends on ARTIK_SDK
