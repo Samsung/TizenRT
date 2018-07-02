@@ -646,12 +646,12 @@ RESPONSE_ERROR:
 
 void init_handler()
 {
-	g_quit_flag = false;
+	g_quit_flag = 0;
 }
 
 void deinit_handler()
 {
-	g_quit_flag = true;
+	g_quit_flag = 1;
 
 	int iter = 0;
 	if (g_handle_res_list != NULL) {

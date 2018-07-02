@@ -58,7 +58,7 @@ int things_register_otm_event_handler(things_sec_otm_state_func_type otm_event_c
 int things_get_resource_type(const char *resource_uri, int *count, char ***resource_types);
 int things_get_attributes_by_resource_type(const char *res_type, int *count, things_attribute_info_s ***attributes);
 int things_get_child_resources(const char *col_res_uri, int *count, things_resource_info_s ***child_resurces);
-int things_is_things_module_inited(void);
+int things_is_things_module_initialized(void);
 #ifdef CONFIG_ST_THINGS_COLLECTION
 bool things_is_collection_resource(const char *res_uri);
 #endif
