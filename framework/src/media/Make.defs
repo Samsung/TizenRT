@@ -32,6 +32,7 @@ CFLAGS += -D__TINYARA__
 ifeq ($(CONFIG_MEDIA), y)
 CXXSRCS += MediaQueue.cpp DataSource.cpp MediaWorker.cpp
 CXXSRCS += MediaUtils.cpp
+CXXSRCS += FocusRequest.cpp FocusManager.cpp
 CSRCS += rb.c rbs.c
 DEPPATH += --dep-path src/media/utils
 VPATH += :src/media/utils

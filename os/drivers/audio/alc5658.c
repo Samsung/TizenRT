@@ -1012,7 +1012,9 @@ static int alc5658_pause(FAR struct audio_lowerhalf_s *dev)
 		/* Disable interrupts to prevent us from suppling any more data */
 
 		priv->paused = true;
-		priv->mute = true;
+
+		/* Need control priv->mute */
+
 		alc5658_setvolume(priv);
 
 		if (priv->inout) {
@@ -1054,7 +1056,9 @@ static int alc5658_resume(FAR struct audio_lowerhalf_s *dev)
 
 	if (priv->running && priv->paused) {
 		priv->paused = false;
-		priv->mute = false;
+
+		/* Need control priv->mute */
+
 		alc5658_setvolume(priv);
 
 		if (priv->inout) {

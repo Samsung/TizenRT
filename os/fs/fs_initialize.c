@@ -91,9 +91,12 @@ void fs_auto_mount(void)
 		const char *fs_mountpoint;
 	} fs_automount[] = {
 #ifdef CONFIG_FS_AUTOMOUNT_PROCFS
-		{ "procfs", "/proc" },
+		{"procfs", "/proc"},
 #endif
-		{ NULL, NULL }
+#ifdef CONFIG_FS_AUTOMOUNT_TMPFS
+		{TMPFS_FSTYPE, TMPFS_MOUNT_POINT},
+#endif
+		{NULL, NULL}
 	};
 	int mnt_idx;
 	int mnt_ret;

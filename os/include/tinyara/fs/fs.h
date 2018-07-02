@@ -86,6 +86,11 @@
 #define CONFIG_MOUNT_POINT "/mnt/"
 #endif
 
+#ifdef CONFIG_FS_TMPFS
+#define TMPFS_FSTYPE "tmpfs"
+#define TMPFS_MOUNT_POINT "/tmp"
+#endif
+
 /****************************************************************************
  * Public Type Definitions
  ****************************************************************************/

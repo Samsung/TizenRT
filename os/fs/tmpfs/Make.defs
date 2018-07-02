@@ -1,6 +1,6 @@
 ###########################################################################
 #
-# Copyright 2016-2017 Samsung Electronics All Rights Reserved.
+# Copyright 2018 Samsung Electronics All Rights Reserved.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -16,9 +16,9 @@
 #
 ###########################################################################
 ############################################################################
-# fs/Makefile
+# fs/tmpfs/Make.defs
 #
-#   Copyright (C) 2007, 2008, 2011-2014 Gregory Nutt. All rights reserved.
+#   Copyright (C) 2015 Gregory Nutt. All rights reserved.
 #   Author: Gregory Nutt <gnutt@nuttx.org>
 #
 # Redistribution and use in source and binary forms, with or without
@@ -31,7 +31,7 @@
 #    notice, this list of conditions and the following disclaimer in
 #    the documentation and/or other materials provided with the
 #    distribution.
-# 3. Neither the name NuttX nor the names of its contributors may be
+# 3. Neither the name Nuttx nor the names of its contributors may be
 #    used to endorse or promote products derived from this software
 #    without specific prior written permission.
 #
@@ -50,73 +50,15 @@
 #
 ############################################################################
 
--include $(TOPDIR)/Make.defs
+ifeq ($(CONFIG_FS_TMPFS),y)
+# Files required for TMPFS file system support
 
-ASRCS =
-AOBJS = $(ASRCS:.S=$(OBJEXT))
+ASRCS +=
+CSRCS += fs_tmpfs.c
 
-CSRCS = fs_initialize.c
+# Include TMPFS build support
 
-DEPPATH = --dep-path .
-VPATH = .
-
-include inode/Make.defs
-include vfs/Make.defs
-include driver/Make.defs
-include dirent/Make.defs
-include aio/Make.defs
-
-
-# OS resources
-
-include semaphore/Make.defs
-include mqueue/Make.defs
-
-# Additional files required is mount-able file systems are supported
-
-ifneq ($(CONFIG_NFILE_DESCRIPTORS),0)
-ifneq ($(CONFIG_DISABLE_MOUNTPOINT),y)
-
-include mount/Make.defs
-include smartfs/Make.defs
-include procfs/Make.defs
-include tmpfs/Make.defs
-include romfs/Make.defs
+DEPPATH += --dep-path tmpfs
+VPATH += :tmpfs
 
 endif
-endif
-
-COBJS = $(CSRCS:.c=$(OBJEXT))
-
-SRCS = $(ASRCS) $(CSRCS)
-OBJS = $(AOBJS) $(COBJS)
-
-BIN = libfs$(LIBEXT)
-
-
-all: $(BIN)
-
-$(AOBJS): %$(OBJEXT): %.S
-	$(call ASSEMBLE, $<, $@)
-
-$(COBJS): %$(OBJEXT): %.c
-	$(call COMPILE, $<, $@)
-
-$(BIN):	$(OBJS)
-	$(call ARCHIVE, $@, $(OBJS))
-
-.depend: Makefile $(SRCS)
-	$(Q) $(MKDEP) $(DEPPATH) "$(CC)" -- $(CFLAGS) -- $(SRCS) >Make.dep
-	$(Q) touch $@
-
-depend: .depend
-
-clean:
-	$(call DELFILE, $(BIN))
-	$(call CLEAN)
-
-distclean: clean
-	$(call DELFILE, Make.dep)
-	$(call DELFILE, .depend)
-
--include Make.dep
