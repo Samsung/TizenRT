@@ -66,6 +66,7 @@
 
 #include <stdio.h>
 #include <stddef.h>
+#include <sys/types.h>
 
 /****************************************************************************
  * Pre-processor Definitions
