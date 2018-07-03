@@ -1,4 +1,5 @@
 language: c
+compiler: gcc
 
 sudo: false
 dist: trusty
