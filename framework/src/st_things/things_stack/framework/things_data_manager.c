@@ -1477,29 +1477,32 @@ static int parse_device_json(cJSON *device)
 			cJSON *model_number = cJSON_GetObjectItem(spec_platform, KEY_DEVICE_SPECIFICATION_PLATFORM_MODELNUMBER);
 			cJSON *firmware_version = cJSON_GetObjectItem(spec_platform, KEY_DEVICE_SPECIFICATION_PLATFORM_FIRMWAREVERSION);
 			cJSON *vid = cJSON_GetObjectItem(spec_platform, KEY_DEVICE_SPECIFICATION_PLATFORM_VID);
-			
+
 			if (mnid == NULL) {
 				mnid = cJSON_GetObjectItem(spec_platform, KEY_DEVICE_SPECIFICATION_PLATFORM_MANUFACTURERNAME); // Backward compatibility for existing published IDEs
 				if (mnid == NULL) {
 					goto JSON_ERROR;
 				}
+			}
 
-				if (strlen(mnid->valuestring) != 4) {
-					THINGS_LOG_V(TAG, "MNID exceeds 4 bytes. please check (4 bytes are fixed sizes.)");
-					goto JSON_ERROR;
-				}
+			if (strlen(mnid->valuestring) != 4) {
+				THINGS_LOG_V(TAG, "MNID exceeds 4 bytes. please check (4 bytes are fixed sizes.)");
+				goto JSON_ERROR;
+			}
 
-				g_device->mnid = (char *) things_malloc(sizeof(char) * (strlen(mnid->valuestring) + 1));
-				strncpy(g_device->mnid, mnid->valuestring, strlen(mnid->valuestring) + 1);
-			}			
+			g_device->mnid = (char *) things_malloc(sizeof(char) * (strlen(mnid->valuestring) + 1));
+			strncpy(g_device->mnid, mnid->valuestring, strlen(mnid->valuestring) + 1);
+
 			if (vid == NULL) {
 				vid = cJSON_GetObjectItem(spec_platform, KEY_DEVICE_SPECIFICATION_PLATFORM_VENDORID); // Backward compatibility for existing published IDEs
 				if (vid == NULL) {
 					goto JSON_ERROR;
 				}
-				g_device->vid = (char *) things_malloc(sizeof(char) * (strlen(vid->valuestring) + 1));
-				strncpy(g_device->vid, vid->valuestring, strlen(vid->valuestring) + 1);
 			}
+
+			g_device->vid = (char *) things_malloc(sizeof(char) * (strlen(vid->valuestring) + 1));
+			strncpy(g_device->vid, vid->valuestring, strlen(vid->valuestring) + 1);
+
 			if (manufacturer_url != NULL) {
 				g_device->manufacturer_url = (char *) things_malloc(sizeof(char) * (strlen(manufacturer_url->valuestring) + 1));
 				strncpy(g_device->manufacturer_url, manufacturer_url->valuestring, strlen(manufacturer_url->valuestring) + 1);
