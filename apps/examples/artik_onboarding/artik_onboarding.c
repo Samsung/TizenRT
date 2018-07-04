@@ -35,6 +35,18 @@
 enum ServiceState current_service_state = STATE_IDLE;
 pid_t onboarding_service_pid = -1;
 
+static void show_usage(const char *program)
+{
+	printf("Usage:\n");
+	printf(" %s reset:         Reset Onboard Configuration\n", program);
+	printf(" %s dtid:          Set Device Type ID\n", program);
+	printf(" %s ota-sig-verif: OTA Signature Verification\n", program);
+	printf(" %s config:        Print Configuration\n", program);
+	printf(" %s manual:        Save Onboard Configuration\n", program);
+	printf(" %s ntp:           Set NTP Server\n", program);
+	printf(" %s stop:          Stop Onboard Service\n", program);
+}
+
 static void StopOnboardingService(void)
 {
 	StartWebServer(false, API_SET_WIFI | API_SET_CLOUD);
@@ -114,7 +126,7 @@ int artik_onboarding_main(int argc, char *argv[])
 		} else if (!strcmp(argv[1], "dtid")) {
 			if (argc < 3) {
 				printf("Missing parameter\n");
-				printf("Usage: onboard dtid <device type ID>\n");
+				printf("Usage: %s dtid <device type ID>\n", argv[0]);
 				goto exit;
 			}
 
@@ -125,7 +137,7 @@ int artik_onboarding_main(int argc, char *argv[])
 		} else if (!strcmp(argv[1], "ota-sig-verif")) {
 			if (argc < 3) {
 				printf("Missing parameter\n");
-				printf("Usage: onboard ota-sig-verif <enable|disable>\n");
+				printf("Usage: %s ota-sig-verif <enable|disable>\n", argv[0]);
 				goto exit;
 			}
 
@@ -137,7 +149,7 @@ int artik_onboarding_main(int argc, char *argv[])
 				lwm2m_config.ota_signature_verification = 0;
 			} else {
 				printf("Bad argument\n");
-				printf("Usage: onboard ota-sig-verif <enable|disable>\n");
+				printf("Usage: %s ota-sig-verif <enable|disable>\n", argv[0]);
 				goto exit;
 			}
 
@@ -150,7 +162,7 @@ int artik_onboarding_main(int argc, char *argv[])
 		}  else if (!strcmp(argv[1], "manual")) {
 			if (argc < 4) {
 				printf("Missing parameter\n");
-				printf("Usage: onboard manual <device ID> <device token>\n");
+				printf("Usage: %s manual <device ID> <device token>\n", argv[0]);
 				goto exit;
 			}
 
@@ -161,7 +173,7 @@ int artik_onboarding_main(int argc, char *argv[])
 		}  else if (!strcmp(argv[1], "ntp")) {
 			if (argc < 3) {
 				printf("Missing parameter\n");
-				printf("Usage: onboard ntp <NTP server URL>\n");
+				printf("Usage: %s ntp <NTP server URL>\n", argv[0]);
 				goto exit;
 			}
 
@@ -173,6 +185,9 @@ int artik_onboarding_main(int argc, char *argv[])
 				kill(onboarding_service_pid, SIGUSR1);
 			}
 
+			goto exit;
+		} else {
+			show_usage(argv[0]);
 			goto exit;
 		}
 	}
