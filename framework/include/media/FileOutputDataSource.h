@@ -113,7 +113,7 @@ public:
 	 * @param[in] buf The buf that buffer to be written to the file
 	 * @param[in] size The size that the size of the buffer
 	 * @return if there is nothing to write, it returns 0
-	 *         if error occurred, it returns -1, else written size returns
+	 *         if error occurred, it returns negative value, else written size returns
 	 * @since TizenRT v2.0 PRE
 	 */
 	ssize_t write(unsigned char* buf, size_t size) override;
