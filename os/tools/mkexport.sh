@@ -132,6 +132,12 @@ if [ ! -f "${TOPDIR}/.version" ]; then
 	exit 1
 fi
 
+# Check if the make environment variable has been defined
+
+if [ -z "${MAKE}" ]; then
+	MAKE=`which make`
+fi
+
 # Get the version string
 
 source "${TOPDIR}/.version"
@@ -271,7 +277,7 @@ cp -f "${ARCHDIR}"/*.h "${EXPORTDIR}"/arch/. 2>/dev/null
 # those directories into the EXPORTDIR
 
 if [ "X${USRONLY}" != "Xy" ]; then
-	ARCH_HDRDIRS="arm armv7-m avr avr32 board common chip mips32"
+	ARCH_HDRDIRS="armv7-r armv7-m board common chip"
 	for hdir in $ARCH_HDRDIRS; do
 
 		# Does the directory (or symbolic link) exist?
@@ -309,7 +315,7 @@ if [ "X${USRONLY}" != "Xy" ]; then
 
 	mkdir "${EXPORTDIR}/arch/os" || \
 		{ echo "MK: 'mkdir ${EXPORTDIR}/arch/os' failed"; exit 1; }
-	OSDIRS="clock environ errno group init irq mqueue paging pthread sched semaphore signal task timer wdog"
+	OSDIRS="clock environ errno group init irq mqueue paging pthread sched semaphore signal task timer wdog wqueue"
 
 	for dir in ${OSDIRS}; do
 		mkdir "${EXPORTDIR}/arch/os/${dir}" || \
