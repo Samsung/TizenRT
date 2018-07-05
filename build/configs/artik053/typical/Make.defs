@@ -54,7 +54,7 @@ include ${TOPDIR}/.config
 include ${TOPDIR}/tools/Config.mk
 include ${TOPDIR}/arch/arm/src/armv7-r/Toolchain.defs
 
-LDSCRIPT = flash.ld
+LDSCRIPT = $(TOPDIR)/../build/configs/$(CONFIG_ARCH_BOARD)/scripts/flash.ld
 
 ifeq ($(CONFIG_UCLIBCXX_HAVE_LIBSUPCXX),y)
 LIBSUPXX = ${shell $(CC) --print-file-name=libsupc++.a}
@@ -69,13 +69,13 @@ ifeq ($(WINTOOL),y)
   MKDEP = $(TOPDIR)/tools/mkwindeps.sh
   ARCHINCLUDES = -I. -isystem "${shell cygpath -w $(TOPDIR)/include}" -isystem "${shell cygpath -w $(TOPDIR)/../framework/include}"
   ARCHXXINCLUDES = -I. -isystem "${shell cygpath -w $(TOPDIR)/include}" -isystem "${shell cygpath -w $(TOPDIR)/include/cxx}" -isystem "${shell cygpath -w $(TOPDIR)/include/uClibc++}"
-  ARCHSCRIPT = -T "${shell cygpath -w $(TOPDIR)/../build/configs/artik053/scripts/$(LDSCRIPT)}"
+  ARCHSCRIPT = -T "${shell cygpath -w $(LDSCRIPT)}"
 else
   # Linux/Cygwin-native toolchain
   MKDEP = $(TOPDIR)/tools/mkdeps$(HOSTEXEEXT)
   ARCHINCLUDES = -I. -isystem $(TOPDIR)/include -isystem $(TOPDIR)/../framework/include
   ARCHXXINCLUDES = -I. -isystem $(TOPDIR)/include -isystem $(TOPDIR)/include/cxx -isystem $(TOPDIR)/include/uClibc++
-  ARCHSCRIPT = -T$(TOPDIR)/../build/configs/artik053/scripts/$(LDSCRIPT)
+  ARCHSCRIPT = -T$(LDSCRIPT)
 
 endif
 
@@ -173,19 +173,19 @@ BOARDBINDIR := $(TOPDIR)/../build/configs/$(BOARD_NAME)/bin
 ifeq ($(WINTOOL),y)
 # Windows-native toolchains
 define DOWNLOAD
-	$(Q) ${shell cygpath -w python $(TOPDIR)/../build/configs/artik05x/artik05x_download.py --board=$(BOARD_NAME) $(1)}
+	$(Q) ${shell cygpath -w python $(TOPDIR)/../build/configs/$(CONFIG_ARCH_BOARD)/artik05x_download.py --board=$(BOARD_NAME) $(1)}
 endef
 
 define PACKAGE
-	${shell cygpath -w $(TOPDIR)/../build/configs/artik05x/artik05x_user_binary.sh --topdir=$(TOPDIR) --board=$(BOARD_NAME)}
+	${shell cygpath -w $(TOPDIR)/../build/configs/$(CONFIG_ARCH_BOARD)/artik05x_user_binary.sh --topdir=$(TOPDIR) --board=$(BOARD_NAME)}
 endef
 else
 define DOWNLOAD
-	$(Q) python $(TOPDIR)/../build/configs/artik05x/artik05x_download.py --board=$(BOARD_NAME) $(1)
+	$(Q) python $(TOPDIR)/../build/configs/$(CONFIG_ARCH_BOARD)/artik05x_download.py --board=$(BOARD_NAME) $(1)
 endef
 
 define PACKAGE
-	$(Q) $(TOPDIR)/../build/configs/artik05x/artik05x_user_binary.sh --topdir=$(TOPDIR) --board=$(BOARD_NAME)
+	$(Q) $(TOPDIR)/../build/configs/$(CONFIG_ARCH_BOARD)/artik05x_user_binary.sh --topdir=$(TOPDIR) --board=$(BOARD_NAME)
 endef
 endif
 
@@ -198,5 +198,5 @@ define ERASE
 endef
 
 define CRASHDUMP
-	@$(TOPDIR)/../build/configs/artik05x/artik05x_crashdump.sh $(BOARD_NAME) $(1) $(2)
+	@$(TOPDIR)/../build/configs/$(CONFIG_ARCH_BOARD)/artik05x_crashdump.sh $(BOARD_NAME) $(1) $(2)
 endef
