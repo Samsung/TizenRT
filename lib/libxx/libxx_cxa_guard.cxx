@@ -54,30 +54,7 @@
 // Included Files
 //***************************************************************************
 
-#include <tinyara/compiler.h>
-
-//***************************************************************************
-// Pre-processor Definitions
-//***************************************************************************
-
-//***************************************************************************
-// Private Types
-//***************************************************************************
-
-#ifdef __ARM_EABI__
-// The 32-bit ARM C++ ABI specifies that the guard is a 32-bit
-// variable and the least significant bit contains 0 prior to
-// initialization, and 1 after.
-
-typedef int __guard;
-
-#else
-// The "standard" C++ ABI specifies that the guard is a 64-bit
-// variable and the first byte contains 0 prior to initialization, and
-// 1 after.
-
-__extension__ typedef int __guard __attribute__((mode(__DI__)));
-#endif
+#include "libxx_cxa_guard.hxx"
 
 //***************************************************************************
 // Private Data
