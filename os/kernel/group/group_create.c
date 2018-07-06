@@ -331,6 +331,17 @@ int group_initialize(FAR struct task_tcb_s *tcb)
 #if !defined(CONFIG_DISABLE_PTHREAD) && defined(CONFIG_SCHED_HAVE_PARENT)
 	group->tg_task = tcb->cmn.pid;
 #endif
+#if defined(CONFIG_SCHED_ATEXIT) && !defined(CONFIG_SCHED_ONEXIT)
+	/* atexit support *********************************************************** */
+
+	dq_init(&(group->tg_atexitfunc));
+#endif
+
+#ifdef CONFIG_SCHED_ONEXIT
+	/* on_exit support ********************************************************** */
+
+	dq_init(&(group->tg_onexitfunc));
+#endif
 
 	/* Mark that there is one member in the group, the main task */
 
