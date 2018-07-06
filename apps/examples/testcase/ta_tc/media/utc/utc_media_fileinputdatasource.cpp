@@ -158,7 +158,7 @@ static void utc_media_FileInputDataSource_read_p(void)
 	memset(buf, 0, 21);
 	source.open();
 
-	TC_ASSERT_EQ("utc_media_FileInputDataSource_read", source.read(buf, 100), strlen(testData));
+	TC_ASSERT_EQ("utc_media_FileInputDataSource_read", source.read(buf, 100), (ssize_t)strlen(testData));
 
 	source.close();
 	TC_SUCCESS_RESULT();

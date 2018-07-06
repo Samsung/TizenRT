@@ -89,7 +89,6 @@ bool MyMediaPlayer::init(int test)
 	mp.setDataSource(std::move(source));
 	mp.setObserver(shared_from_this());
 
-	auto &focusManager = FocusManager::getFocusManager();
 	mFocusRequest = FocusRequest::Builder().setFocusChangeListener(shared_from_this()).build();
 	return true;
 }
