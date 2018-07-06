@@ -52,6 +52,7 @@ private:
 	MediaQueue mWorkerQueue;
 	std::atomic<bool> mIsRunning;
 	int mRefCnt;
+	bool mOnce;
 	pthread_t mWorkerThread;
 	std::mutex mRefMtx;
 };
