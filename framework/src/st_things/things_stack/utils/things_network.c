@@ -119,26 +119,24 @@ bool things_network_connect_home_ap(void)
 {
 	wifi_manager_ap_config_s *connect_config = things_network_get_homeap_config();
 	
-	if (connect_config != NULL && connect_config->ssid != NULL) {
-		THINGS_LOG_V(TAG, "Try_connect_home_ap [ssid : %s]", connect_config->ssid);
+	if (connect_config == NULL || connect_config->ssid == NULL) {
+		THINGS_LOG_V(TAG, "connect_config is null or ssid is null");
+		return false;
 	}
 
-	wifi_manager_result_e result = WIFI_MANAGER_SUCCESS;
-	int retry_count = 0;
+	THINGS_LOG_V(TAG, "Try_connect_home_ap [ssid : %s]", connect_config->ssid);
+	unsigned int retry_count = 0;
 
-	for (; retry_count < 3; retry_count++) {
-		result = wifi_manager_connect_ap(connect_config);
+	while (1) {
+		wifi_manager_result_e result = wifi_manager_connect_ap(connect_config);
 
 		if (result == WIFI_MANAGER_SUCCESS) {
 			break;
 		} else {
-			THINGS_LOG_E(TAG, "Failed to connect WiFi [Error Code : %d, Retry count : %d]", result, retry_count);
+			THINGS_LOG_E(TAG, "Failed to connect WiFi [Error Code : %d, Retry count : %u]", result, retry_count);
+			retry_count++;
+			sleep(1);
 		}
-	}
-
-	if (retry_count == 3) {
-		THINGS_LOG_E(TAG, "Failed to connect WiFi 3 times");
-		return false;
 	}
 
 	return true;
