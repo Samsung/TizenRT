@@ -105,12 +105,12 @@ bool FileOutputDataSource::isPrepare()
 ssize_t FileOutputDataSource::write(unsigned char* buf, size_t size)
 {
 	if (!isPrepare()) {
-		return (ssize_t)0;
+		return (ssize_t)EOF;
 	}
 
 	if (!buf) {
-		meddbg("buf is nullptr, hence return 0\n");
-		return (ssize_t)0;
+		meddbg("buf is nullptr, hence return EOF\n");
+		return (ssize_t)EOF;
 	}
 
 	std::shared_ptr<Encoder> encoder = getEncoder();
