@@ -394,6 +394,23 @@ EXTERN struct mm_heap_s g_mmheap;
 EXTERN struct mm_heap_s g_kmmheap;
 #endif
 
+#if defined(CONFIG_ARCH_ADDRENV) && defined(CONFIG_BUILD_KERNEL)
+/* In the kernel build, there are multiple user heaps; one for each task
+ * group.  In this build configuration, the user heap structure lies
+ * in a reserved region at the beginning of the .bss/.data address
+ * space (CONFIG_ARCH_DATA_VBASE).  The size of that region is given by
+ * ARCH_DATA_RESERVE_SIZE
+ */
+
+#include <tinyara/addrenv.h>
+#define USR_HEAP (&ARCH_DATA_RESERVE->ar_usrheap)
+
+#else
+/* Otherwise, the user heap data structures are in common .bss */
+
+#define USR_HEAP &g_mmheap
+#endif
+
 /****************************************************************************
  * Public Function Prototypes
  ****************************************************************************/

@@ -55,9 +55,7 @@
  ****************************************************************************/
 
 #include <tinyara/config.h>
-
 #include <unistd.h>
-
 #include <tinyara/mm/mm.h>
 #include <tinyara/addrenv.h>
 #include <tinyara/pgalloc.h>
@@ -74,8 +72,6 @@
  * space (CONFIG_ARCH_DATA_VBASE).  The size of that region is given by
  * ARCH_DATA_RESERVE_SIZE
  */
-
-#define USR_HEAP (&ARCH_DATA_RESERVE->ar_usrheap)
 
 /****************************************************************************
  * Public Functions
