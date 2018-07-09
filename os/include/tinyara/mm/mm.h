@@ -639,10 +639,8 @@ void heapinfo_check_group_list(pid_t pid, char *name);
 #endif
 #endif
 
-#ifdef CONFIG_DEBUG_MM_HEAPINFO
 /* Functions to get heap information */
 struct mm_heap_s *mm_get_heap_info(void);
-#endif
 
 #undef EXTERN
 #ifdef __cplusplus
