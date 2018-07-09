@@ -39,6 +39,7 @@ using namespace media::stream;
 static const int TEST_PCM = 0;
 static const int TEST_MP3 = 1;
 static const int TEST_AAC = 2;
+static const int TEST_OPUS = 3;
 
 enum test_command_e { APP_OFF, PLAYER_START, PLAYER_PAUSE, PLAYER_RESUME, PLAYER_STOP, VOLUME_UP, VOLUME_DOWN };
 
@@ -79,6 +80,9 @@ bool MyMediaPlayer::init(int test)
 		break;
 	case TEST_AAC:
 		source = std::move(unique_ptr<FileInputDataSource>(new FileInputDataSource("/rom/play.mp4")));
+		break;
+	case TEST_OPUS:
+		source = std::move(unique_ptr<FileInputDataSource>(new FileInputDataSource("/rom/res_16k.opus")));
 		break;
 	default:
 		source = std::move(unique_ptr<FileInputDataSource>(new FileInputDataSource("/rom/44100.pcm")));

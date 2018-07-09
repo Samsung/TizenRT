@@ -24,7 +24,10 @@
 #include <errno.h>
 #include <media/MediaRecorder.h>
 #include <media/MediaRecorderObserverInterface.h>
+#include <media/MediaPlayer.h>
+#include <media/MediaPlayerObserverInterface.h>
 #include <media/FileOutputDataSource.h>
+#include <media/FileInputDataSource.h>
 #include <iostream>
 #include <memory>
 
@@ -43,34 +46,77 @@ using namespace std;
 using namespace media;
 using namespace media::stream;
 
-static const char *filePath = "/ramfs/record";
+/**
+ * Turn on the feature to Test.
+ */
+#define TEST_OPUS
 
-class MediaRecorderTest : public MediaRecorderObserverInterface, public enable_shared_from_this<MediaRecorderTest>
+#if defined(TEST_OPUS)
+static const char *filePath = "/ramfs/record.opus";
+#else
+static const char *filePath = "/ramfs/record";
+#endif
+
+class MediaRecorderTest : public MediaRecorderObserverInterface
+						, public MediaPlayerObserverInterface
+						, public enable_shared_from_this<MediaRecorderTest>
 {
 public:
-	void onRecordStarted(Id id)
+	void onRecordStarted(MediaRecorderObserverInterface::Id id)
 	{
-		std::cout << "onRecordStarted" << std::endl;		
+		std::cout << "onRecordStarted" << std::endl;
 	}
-	void onRecordPaused(Id id)
+	void onRecordPaused(MediaRecorderObserverInterface::Id id)
 	{
 		std::cout << "onRecordPaused" << std::endl;
 	}
-	void onRecordFinished(Id id)
+	void onRecordFinished(MediaRecorderObserverInterface::Id id)
 	{
 		std::cout << "onRecordFinished" << std::endl;
 		mr.unprepare();
 	}
-	void onRecordError(Id id)
+	void onRecordError(MediaRecorderObserverInterface::Id id)
 	{
 		std::cout << "onRecordError!! please select Stop!!" << std::endl;
+	}
 
+	void onPlaybackStarted(MediaPlayerObserverInterface::Id id)
+	{
+		std::cout << "onPlaybackStarted" << std::endl;
+	}
+
+	void onPlaybackFinished(MediaPlayerObserverInterface::Id id)
+	{
+		std::cout << "onPlaybackFinished" << std::endl;
+		isPlaying = false;
+
+		if (mp.stop() == PLAYER_ERROR) {
+			std::cout << "Mediaplayer::stop failed" << std::endl;
+		}
+
+		if (mp.unprepare() == PLAYER_ERROR) {
+			std::cout << "Mediaplayer::unprepare failed" << std::endl;
+		}
+
+		if (mp.destroy() == PLAYER_ERROR) {
+			std::cout << "Mediaplayer::destroy failed" << std::endl;
+		}
+	}
+
+	void onPlaybackError(MediaPlayerObserverInterface::Id id)
+	{
+		std::cout << "onPlaybackError" << std::endl;
+	}
+
+	void onPlaybackPaused(MediaPlayerObserverInterface::Id id)
+	{
+		std::cout << "onPlaybackPaused" << std::endl;
 	}
 
 	void start()
 	{
 		appRunning = true;
-	
+
 		while (appRunning) {
 			printRecorderMenu();
 			switch (userInput(APP_ON, DELETE_FILE))	{
@@ -164,61 +210,53 @@ public:
 					}
 				}
 				break;
-				
+
 			}
 		}
 	}
 
 	void play_data()
 	{
-		int fd;
-		char *buffer;
-		int num_read;
-		unsigned int size;
-
-		p_out = pcm_open(0, 0, PCM_OUT, &pcmConfig);
-
-		if (pcm_get_file_descriptor(p_out) < 0) {
-			printf("pcm open fail\n%s\n", pcm_get_error(p_out));
+		if (isPlaying) {
+			std::cout << "Already in playback" << std::endl;
 			return;
 		}
 
-		size = pcm_frames_to_bytes(p_out, pcm_get_buffer_size(p_out));
-		buffer = (char *)malloc(size);
+		std::cout << "playback " << filePath << std::endl;
 
-		fd = open(filePath, O_RDONLY);
+		auto source = std::move(unique_ptr<FileInputDataSource>(new FileInputDataSource(filePath)));
+		source->setSampleRate(16000);
+		source->setChannels(2);
+		source->setPcmFormat(AUDIO_FORMAT_TYPE_S16_LE);
 
-		if (fd < 0) {
-			printf("file open fail : %d\n", fd);
-			free(buffer);
-			buffer = NULL;
-			pcm_close(p_out);
-			p_out = NULL;
+		if (mp.create() == PLAYER_ERROR) {
+			std::cout << "Mediaplayer::create failed" << std::endl;
 			return;
 		}
 
-		printf("fd = %d\n", fd);
+		mp.setObserver(shared_from_this());
+		mp.setDataSource(std::move(source));
 
-		printf("Playback start!!\n");
-		do {
-			num_read = read(fd, buffer, size);
-			printf("num_read =%d\n", num_read);
-			if (num_read > 0) {
-				pcm_writei(p_out, buffer, pcm_bytes_to_frames(p_out, num_read));
+		if (mp.prepare() == PLAYER_OK) {
+			isPlaying = true;
+			if (mp.start() == PLAYER_OK) {
+				// playback started
+				return;
 			}
-		} while (num_read > 0);
 
-		if (buffer != NULL) {
-			free(buffer);
-			buffer = NULL;
-		}
-		if (fd > 0) {
-			close(fd);
+			std::cout << "Mediaplayer::start failed" << std::endl;
+			isPlaying = false;
+
+			if (mp.unprepare() == PLAYER_ERROR) {
+				std::cout << "Mediaplayer::unprepare failed" << std::endl;
+			}
+		} else {
+			std::cout << "Mediaplayer::prepare failed" << std::endl;
 		}
 
-		pcm_close(p_out);
-		
-		printf("Playback done.\n");
+		if (mp.destroy() == PLAYER_ERROR) {
+			std::cout << "Mediaplayer::destroy failed" << std::endl;
+		}
 	}
 
 	void printRecorderMenu()
@@ -239,10 +277,10 @@ public:
 
 	int userInput(int min, int max)
 	{
-		assert(min <= max);	
+		assert(min <= max);
 		int input = 0;
 
-		std::cin >> input;	
+		std::cin >> input;
 		std::cout << std::endl;
 
 		if (!std::cin.fail()) {
@@ -260,22 +298,15 @@ public:
 		return input;
 	}
 
-	MediaRecorderTest() : p_out(nullptr), appRunning(false), isPaused(false) 
-	{
-		pcmConfig.channels = 2;
-		pcmConfig.rate = 16000;
-		pcmConfig.format = PCM_FORMAT_S16_LE;
-		pcmConfig.period_size = 1024;
-		pcmConfig.period_count = 2;
-	}
+	MediaRecorderTest() : appRunning(false), isPaused(false), isPlaying(false) {}
 	~MediaRecorderTest() {}
 
 private:
-	struct pcm_config pcmConfig;
-	struct pcm *p_out;
 	bool appRunning;
 	bool isPaused;
 	MediaRecorder mr;
+	bool isPlaying;
+	MediaPlayer mp;
 };
 
 extern "C"
