@@ -56,6 +56,9 @@ config EXAMPLES_${SAMPLES_NAME_L}
 	---help---
 		Enable ${SAMPLES_NAME_S} example
 
+config USER_ENTRYPOINT
+	string
+	default "${SAMPLES_NAME_S}_main" if ENTRY_${SAMPLES_NAME_L}
 __EOF__
 
 # Kconfig_ENTRY
@@ -68,7 +71,6 @@ tee ${SAMPLES_PATH}/Kconfig_ENTRY << __EOF__
 config ENTRY_${SAMPLES_NAME_L}
 	bool "${SAMPLES_NAME_S} example"
 	depends on EXAMPLES_${SAMPLES_NAME_L}
-
 __EOF__
 
 # Make.defs
@@ -94,7 +96,6 @@ tee ${SAMPLES_PATH}/Make.defs << __EOF__
 ifeq (\$(CONFIG_EXAMPLES_${SAMPLES_NAME_L}),y)
 CONFIGURED_APPS += examples/${SAMPLES_NAME_S}
 endif
-
 __EOF__
 
 # Makefile
@@ -220,7 +221,6 @@ distclean: clean
 -include Make.dep
 .PHONY: preconfig
 preconfig:
-
 __EOF__
 
 # main file
@@ -255,5 +255,4 @@ int ${SAMPLES_NAME_S}_main(int argc, FAR char *argv[])
 
 	return 0;
 }
-
 __EOF__
