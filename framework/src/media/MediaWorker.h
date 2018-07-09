@@ -47,7 +47,7 @@ protected:
 	virtual bool processLoop();
 
 private:
-	void *mediaLooper();
+	static void *mediaLooper(void *);
 
 	MediaQueue mWorkerQueue;
 	std::atomic<bool> mIsRunning;

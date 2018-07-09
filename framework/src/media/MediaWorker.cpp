@@ -45,7 +45,7 @@ void MediaWorker::startWorker()
 			pthread_attr_init(&attr);
 			pthread_attr_setstacksize(&attr, mStacksize);
 			mIsRunning = true;
-			ret = pthread_create(&mWorkerThread, &attr, (pthread_startroutine_t)&MediaWorker::mediaLooper, this);
+			ret = pthread_create(&mWorkerThread, &attr, static_cast<pthread_startroutine_t>(MediaWorker::mediaLooper), this);
 			if (ret != OK) {
 				medvdbg("Fail to create worker thread, return value : %d\n", ret);
 				--mRefCnt;
@@ -86,14 +86,15 @@ bool MediaWorker::processLoop()
 	return false;
 }
 
-void *MediaWorker::mediaLooper()
+void *MediaWorker::mediaLooper(void *arg)
 {
+	auto worker = static_cast<MediaWorker *>(arg);
 	medvdbg("MediaWorker : mediaLooper\n");
 
-	while (mIsRunning) {
-		while (processLoop() && mWorkerQueue.isEmpty());
+	while (worker->mIsRunning) {
+		while (worker->processLoop() && worker->mWorkerQueue.isEmpty());
 
-		std::function<void()> run = deQueue();
+		std::function<void()> run = worker->deQueue();
 		medvdbg("MediaWorker : deQueue\n");
 		if (run != nullptr) {
 			run();
