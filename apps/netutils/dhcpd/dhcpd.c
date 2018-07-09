@@ -398,7 +398,7 @@ static time_t dhcpd_time(void)
 #ifdef HAVE_LEASE_TIME
 static inline bool dhcpd_leaseexpired(struct lease_s *lease)
 {
-	if (lease->expiry < dhcpd_time()) {
+	if (lease->expiry > dhcpd_time()) {
 		return false;
 	} else {
 		memset(lease, 0, sizeof(struct lease_s));
@@ -478,12 +478,12 @@ static struct lease_s *dhcpd_findbyipaddr(in_addr_t ipaddr)
 		ndbg("dhcpd_findbyipaddr lease index  = %d\n", ipaddr - CONFIG_NETUTILS_DHCPD_STARTIP);
 
 		if (lease->allocated > 0) {
-			ndbg("returen lease %d %d\n", ipaddr - CONFIG_NETUTILS_DHCPD_STARTIP, g_state.ds_leases[ipaddr - CONFIG_NETUTILS_DHCPD_STARTIP].allocated);
+			ndbg("return lease %d %d\n", ipaddr - CONFIG_NETUTILS_DHCPD_STARTIP, g_state.ds_leases[ipaddr - CONFIG_NETUTILS_DHCPD_STARTIP].allocated);
 			return lease;
 		}
 	}
 
-	ndbg("returen null\n");
+	ndbg("return null\n");
 
 	return NULL;
 }
@@ -509,7 +509,7 @@ static in_addr_t dhcpd_allocipaddr(void)
 
 		lease = dhcpd_findbyipaddr(ipaddr);
 		if ((lease == NULL || dhcpd_leaseexpired(lease))) {
-			ndbg("lease pass!!\n");
+			ndbg("lease pass, ipaddr=0x%x!!\n", ipaddr);
 #ifdef CONFIG_CPP_HAVE_WARNING
 /**
 #warning "FIXME: Should check if anything responds to an ARP request or ping"
@@ -517,7 +517,7 @@ static in_addr_t dhcpd_allocipaddr(void)
 **/
 #endif
 
-			ndbg("leases talbe = %d %d \n", ipaddr - CONFIG_NETUTILS_DHCPD_STARTIP, g_state.ds_leases[ipaddr - CONFIG_NETUTILS_DHCPD_STARTIP].allocated);
+			ndbg("leases table = %d %d \n", ipaddr - CONFIG_NETUTILS_DHCPD_STARTIP, g_state.ds_leases[ipaddr - CONFIG_NETUTILS_DHCPD_STARTIP].allocated);
 
 			memset(g_state.ds_leases[ipaddr - CONFIG_NETUTILS_DHCPD_STARTIP].mac, 0, DHCP_HLEN_ETHERNET);
 			g_state.ds_leases[ipaddr - CONFIG_NETUTILS_DHCPD_STARTIP].allocated = true;
@@ -527,7 +527,7 @@ static in_addr_t dhcpd_allocipaddr(void)
 #endif
 			/* Return the address in host order */
 
-			ndbg("return ipaddr\n");
+			ndbg("return ipaddr=0x%x\n", ipaddr);
 			return ipaddr;
 		}
 	}
