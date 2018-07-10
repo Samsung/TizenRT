@@ -101,6 +101,7 @@ extern int itc_audio_main(int argc, char *argv[]);
 extern int utc_dm_main(int argc, char *argv[]);
 extern int itc_dm_main(int argc, char *argv[]);
 extern int utc_media_main(int argc, char *argv[]);
+extern int itc_media_main(int argc, char *argv[]);
 extern int utc_mqtt_main(int argc, char *argv[]);
 extern int itc_mqtt_main(int argc, char *argv[]);
 extern int utc_sysio_main(int argc, char *argv[]);
@@ -151,6 +152,9 @@ static const tash_cmdlist_t tc_cmds[] = {
 #endif
 #ifdef CONFIG_EXAMPLES_TESTCASE_MEDIA_UTC	
 	{"media_utc", utc_media_main, TASH_EXECMD_ASYNC},	
+#endif
+#ifdef CONFIG_EXAMPLES_TESTCASE_MEDIA_ITC	
+	{"media_itc", itc_media_main, TASH_EXECMD_ASYNC},	
 #endif
 #ifdef CONFIG_EXAMPLES_TESTCASE_MPU
 	{"mpu_tc", tc_mpu_main, TASH_EXECMD_ASYNC},
@@ -308,6 +312,12 @@ int tc_main(int argc, char *argv[])
 	pid = task_create("mediautc", SCHED_PRIORITY_DEFAULT, TC_MEDIA_STACK, utc_media_main, argv);
 	if (pid < 0) {
 		printf("Media utc is not started, err = %d\n", pid);
+	}
+#endif
+#ifdef CONFIG_EXAMPLES_TESTCASE_MEDIA_ITC
+	pid = task_create("mediaitc", SCHED_PRIORITY_DEFAULT, TC_MEDIA_STACK, itc_media_main, argv);
+	if (pid < 0) {
+		printf("Media itc is not started, err = %d\n", pid);
 	}
 #endif
 #ifdef CONFIG_EXAMPLES_TESTCASE_MPU
