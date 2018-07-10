@@ -206,12 +206,14 @@ int things_initialize_stack(const char *json_path, bool *easysetup_completed)
 			fp = fopen(abs_json_path, "w+");
 			if (!fp) {
 				THINGS_LOG_E(TAG, "fopen() failed");
+				things_free(abs_json_path);
 				return -1;
 			}
 			ret = fwrite(deviceDef, size_d, 1, fp);
 			if (ret < 0) {
 				fclose(fp);
 				THINGS_LOG_E(TAG, "fwrite() failed");
+				things_free(abs_json_path);
 				return -1;
 			}
 			fclose(fp);
@@ -225,12 +227,14 @@ int things_initialize_stack(const char *json_path, bool *easysetup_completed)
 		fp = fopen(abs_json_path, "w+");
 		if (!fp) {
 			THINGS_LOG_E(TAG, "fopen() failed");
+			things_free(abs_json_path);
 			return -1;
 		}
 		ret = fwrite(deviceDef, size_d, 1, fp);
 		if (ret < 0) {
 			fclose(fp);
 			THINGS_LOG_E(TAG, "fwrite() failed");
+			things_free(abs_json_path);
 			return -1;
 		}
 		fclose(fp);
@@ -239,11 +243,13 @@ int things_initialize_stack(const char *json_path, bool *easysetup_completed)
 #endif
 	if (is_things_module_initialized) {
 		THINGS_LOG_E(TAG, "Stack already initialized");
+		things_free(abs_json_path);
 		return 0;
 	}
 
 	if (things_network_initialize() != 0) {
 		THINGS_LOG_E(TAG, "ERROR things_network initialize");
+		things_free(abs_json_path);
 		return 0;
 	}
 
@@ -252,6 +258,7 @@ int things_initialize_stack(const char *json_path, bool *easysetup_completed)
 
 	if (!dm_init_module(abs_json_path)) {
 		THINGS_LOG_E(TAG, "dm_init_module() failed");
+		things_free(abs_json_path);
 		return 0;
 	}
 	is_things_module_initialized = 1;
