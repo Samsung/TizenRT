@@ -149,6 +149,11 @@ if [ -z "${BUILD}" ]; then
 		if [ -z "${BUILD}" ]; then
 			echo "GIT build information not found"
 			BUILD=NA
+		else
+			DIRTY=`git diff-index --name-only HEAD`
+			if [ "${DIRTY}" ]; then
+				BUILD=`echo ${BUILD}-dirty`
+			fi
 		fi
 	fi
 fi
