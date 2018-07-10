@@ -63,10 +63,11 @@
 		pos += (strlen(conv) + DELI_LEN);					\
 	} while (0)
 
-#define DECODE_STRING(buf, data, pos)				\
+#define DECODE_STRING(buf, data, pos, len)			\
 	do {											\
-		sscanf(buf + pos, "%s", data);				\
-		pos += ((int)(strlen(data)) + DELI_LEN);	\
+		strncpy(data, buf + pos, len);				\
+		data[len] = '\0';				\
+		pos += ((int)(len) + DELI_LEN);	            \
 	} while (0)
 
 #define DECODE_INTEGER(buf, data, pos)			\
@@ -87,8 +88,8 @@ static int _wifi_profile_serialize(char *buf, uint32_t buf_size, wifi_manager_ap
 {
 	memset(buf, 0, buf_size);
 	int pos = 0;
-	ENCODE_STRING(buf, buf_size, config->ssid, pos);
 	ENCODE_INTEGER(buf, buf_size, config->ssid_length, pos);
+	ENCODE_STRING(buf, buf_size, config->ssid, pos);
 	int auth_type = (int)config->ap_auth_type;
 	ENCODE_INTEGER(buf, buf_size, auth_type, pos);
 
@@ -96,8 +97,8 @@ static int _wifi_profile_serialize(char *buf, uint32_t buf_size, wifi_manager_ap
 		return strlen(buf) + 1;
 	}
 
-	ENCODE_STRING(buf, buf_size, config->passphrase, pos);
 	ENCODE_INTEGER(buf, buf_size, config->passphrase_length, pos);
+	ENCODE_STRING(buf, buf_size, config->passphrase, pos);
 
 	int crypto_type = (int)config->ap_crypto_type;
 	ENCODE_INTEGER(buf, buf_size, crypto_type, pos);
@@ -108,16 +109,19 @@ static int _wifi_profile_serialize(char *buf, uint32_t buf_size, wifi_manager_ap
 static void _wifi_profile_deserialize(wifi_manager_ap_config_s *config, char *buf)
 {
 	int pos = 0;
-	DECODE_STRING(buf, config->ssid, pos);
 	DECODE_INTEGER(buf, config->ssid_length, pos);
+	DECODE_STRING(buf, config->ssid, pos, config->ssid_length);
+
 	int auth_type = 0;
 	DECODE_INTEGER(buf, auth_type, pos);
 	config->ap_auth_type = (wifi_manager_ap_auth_type_e)auth_type;
 	if (config->ap_auth_type == WIFI_MANAGER_AUTH_OPEN) {
 		return;
 	}
-	DECODE_STRING(buf, config->passphrase, pos);
+	
 	DECODE_INTEGER(buf, config->passphrase_length, pos);
+	DECODE_STRING(buf, config->passphrase, pos, config->passphrase_length);
+
 	int crypto_type = 0;
 	DECODE_INTEGER(buf, crypto_type, pos);
 	config->ap_crypto_type = (wifi_manager_ap_crypto_type_e)crypto_type;
