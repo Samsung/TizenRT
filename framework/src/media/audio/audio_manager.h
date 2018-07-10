@@ -51,6 +51,7 @@ enum audio_manager_result_e {
 };
 
 typedef enum audio_manager_result_e audio_manager_result_t;
+typedef struct audio_card_info_s audio_handler_t;
 
 /****************************************************************************
  * Public Function Prototypes
@@ -66,7 +67,7 @@ typedef enum audio_manager_result_e audio_manager_result_t;
  * Returned Value:
  *   On success, AUDIO_MANAGER_SUCCESS. Otherwise a negative value.
  ****************************************************************************/
-audio_manager_result_t init_audio_stream_in(void);
+audio_manager_result_t init_audio_stream_in(audio_handler_t **handler);
 
 /****************************************************************************
  * Name: init_audio_stream_out
@@ -78,7 +79,7 @@ audio_manager_result_t init_audio_stream_in(void);
  * Returned Value:
  *   On success, AUDIO_MANAGER_SUCCESS. Otherwise a negative value.
  ****************************************************************************/
-audio_manager_result_t init_audio_stream_out(void);
+audio_manager_result_t init_audio_stream_out(audio_handler_t **handler);
 
 /****************************************************************************
  * Name: set_audio_stream_in
@@ -96,7 +97,7 @@ audio_manager_result_t init_audio_stream_out(void);
  * Returned Value:
  *   On success, AUDIO_MANAGER_SUCCESS. Otherwise a negative value.
  ****************************************************************************/
-audio_manager_result_t set_audio_stream_in(unsigned int channels, unsigned int sample_rate, int format);
+audio_manager_result_t set_audio_stream_in(audio_handler_t *handler, unsigned int channels, unsigned int sample_rate, int format);
 
 /****************************************************************************
  * Name: set_audio_stream_out
@@ -114,7 +115,7 @@ audio_manager_result_t set_audio_stream_in(unsigned int channels, unsigned int s
  * Returned Value:
  *   On success, AUDIO_MANAGER_SUCCESS. Otherwise, a negative value.
  ****************************************************************************/
-audio_manager_result_t set_audio_stream_out(unsigned int channels, unsigned int sample_rate, int format);
+audio_manager_result_t set_audio_stream_out(audio_handler_t *card, unsigned int channels, unsigned int sample_rate, int format);
 
 /****************************************************************************
  * Name: start_audio_stream_in
@@ -122,7 +123,7 @@ audio_manager_result_t set_audio_stream_out(unsigned int channels, unsigned int 
  * Description:
  *   Read the specified number of frames from the input stream.
  *   If the input audio device have been paused, resume and proceed the reading.
- *   If the resampling flag is set, resamplings are performed for all taret frames.
+ *   If the resampling flag is set, resamplings are performed for all target frames.
  *
  * Input parameters:
  *   data: buffer to get the frame data
@@ -131,7 +132,7 @@ audio_manager_result_t set_audio_stream_out(unsigned int channels, unsigned int 
  * Returned Value:
  *   On success, the number of frames read. Otherwise, a negative value.
  ****************************************************************************/
-int start_audio_stream_in(void *data, unsigned int frames);
+int start_audio_stream_in(audio_handler_t *card, void *data, unsigned int frames);
 
 /****************************************************************************
  * Name: start_audio_stream_out
@@ -139,7 +140,7 @@ int start_audio_stream_in(void *data, unsigned int frames);
  * Description:
  *   Write the specified frame data to the output stream.
  *   If the output audio device have been paused, resume and proceed the writing.
- *   If the resampling flag is set, resamplings are performed for all taret frames.
+ *   If the resampling flag is set, resamplings are performed for all target frames.
  *
  * Input parameters:
  *   data: buffer to transfer the frame data
@@ -148,7 +149,7 @@ int start_audio_stream_in(void *data, unsigned int frames);
  * Returned Value:
  *   On success, the number of frames written. Otherwise, a negative value.
  ****************************************************************************/
-int start_audio_stream_out(void *data, unsigned int frames);
+int start_audio_stream_out(audio_handler_t *card, void *data, unsigned int frames);
 
 /****************************************************************************
  * Name: pause_audio_stream_in
@@ -161,7 +162,7 @@ int start_audio_stream_out(void *data, unsigned int frames);
  * Returned Value:
  *   On success, AUDIO_MANAGER_SUCCESS. Otherwise, a negative value.
  ****************************************************************************/
-audio_manager_result_t pause_audio_stream_in(void);
+audio_manager_result_t pause_audio_stream_in(audio_handler_t *card);
 
 /****************************************************************************
  * Name: pause_audio_stream_out
@@ -174,7 +175,7 @@ audio_manager_result_t pause_audio_stream_in(void);
  * Returned Value:
  *   On success, AUDIO_MANAGER_SUCCESS. Otherwise, a negative value.
  ****************************************************************************/
-audio_manager_result_t pause_audio_stream_out(void);
+audio_manager_result_t pause_audio_stream_out(audio_handler_t *card);
 
 /****************************************************************************
  * Name: reset_audio_stream_in
@@ -187,7 +188,7 @@ audio_manager_result_t pause_audio_stream_out(void);
  * Returned Value:
  *   On success, AUDIO_MANAGER_SUCCESS. Otherwise, a negative value.
  ****************************************************************************/
-audio_manager_result_t reset_audio_stream_in(void);
+audio_manager_result_t reset_audio_stream_in(audio_handler_t *card);
 
 /****************************************************************************
  * Name: reset_audio_stream_out
@@ -200,7 +201,7 @@ audio_manager_result_t reset_audio_stream_in(void);
  * Returned Value:
  *   On success, AUDIO_MANAGER_SUCCESS. Otherwise, a negative value.
  ****************************************************************************/
-audio_manager_result_t reset_audio_stream_out(void);
+audio_manager_result_t reset_audio_stream_out(audio_handler_t *card);
 
 /****************************************************************************
  * Name: stop_audio_stream_in
@@ -214,7 +215,7 @@ audio_manager_result_t reset_audio_stream_out(void);
  * Returned Value:
  *   On success, AUDIO_MANAGER_SUCCESS. Otherwise, a negative value.
  ****************************************************************************/
-audio_manager_result_t stop_audio_stream_in(void);
+audio_manager_result_t stop_audio_stream_in(audio_handler_t *card);
 
 /****************************************************************************
  * Name: stop_audio_stream_out
@@ -228,7 +229,7 @@ audio_manager_result_t stop_audio_stream_in(void);
  * Returned Value:
  *   On success, AUDIO_MANAGER_SUCCESS. Otherwise, a negative value.
  ****************************************************************************/
-audio_manager_result_t stop_audio_stream_out(void);
+audio_manager_result_t stop_audio_stream_out(audio_handler_t *card);
 
 /****************************************************************************
  * Name: get_input_frame_count
@@ -239,7 +240,7 @@ audio_manager_result_t stop_audio_stream_out(void);
  * Returned Value:
  *   On success, the size of the pcm buffer for input streams. Otherwise, 0.
  ****************************************************************************/
-unsigned int get_input_frame_count(void);
+unsigned int get_input_frame_count(audio_handler_t *card);
 
 /****************************************************************************
  * Name: get_input_frames_to_byte
@@ -250,7 +251,7 @@ unsigned int get_input_frame_count(void);
  * Returned Value:
  *   On success, the byte size of the frame in input stream. Otherwise, 0.
  ****************************************************************************/
-unsigned int get_input_frames_to_byte(unsigned int frames);
+unsigned int get_input_frames_to_byte(audio_handler_t *card, unsigned int frames);
 
 /****************************************************************************
  * Name: get_input_bytes_to_frame
@@ -261,7 +262,7 @@ unsigned int get_input_frames_to_byte(unsigned int frames);
  * Returned Value:
  *   On success, the number of frames in input stream. Otherwise, 0.
  ****************************************************************************/
-unsigned int get_input_bytes_to_frame(unsigned int bytes);
+unsigned int get_input_bytes_to_frame(audio_handler_t *card, unsigned int bytes);
 
 /****************************************************************************
  * Name: get_output_frame_count
@@ -272,7 +273,7 @@ unsigned int get_input_bytes_to_frame(unsigned int bytes);
  * Returned Value:
  *   On success, the size of the pcm buffer for output streams. Otherwise, 0.
  ****************************************************************************/
-unsigned int get_output_frame_count(void);
+unsigned int get_output_frame_count(audio_handler_t *card);
 
 /****************************************************************************
  * Name: get_output_frames_to_byte
@@ -283,7 +284,7 @@ unsigned int get_output_frame_count(void);
  * Returned Value:
  *   On success, the byte size of the frame in output stream. Otherwise, 0.
  ****************************************************************************/
-unsigned int get_output_frames_to_byte(unsigned int frames);
+unsigned int get_output_frames_to_byte(audio_handler_t *card, unsigned int frames);
 
 /****************************************************************************
  * Name: get_output_bytes_to_frame
@@ -294,7 +295,7 @@ unsigned int get_output_frames_to_byte(unsigned int frames);
  * Returned Value:
  *   On success, the number of frames in output stream. Otherwise, 0.
  ****************************************************************************/
-unsigned int get_output_bytes_to_frame(unsigned int bytes);
+unsigned int get_output_bytes_to_frame(audio_handler_t *card, unsigned int bytes);
 
 /****************************************************************************
  * Name: get_audio_volume
@@ -315,7 +316,7 @@ uint16_t get_max_audio_volume(void);
  * Returned Value:
  *   On success, the current input volume level. Otherwise, a negative value.
  ****************************************************************************/
-int get_input_audio_volume(void);
+int get_input_audio_volume(audio_handler_t *card);
 
 /****************************************************************************
  * Name: get_output_audio_volume
@@ -326,7 +327,7 @@ int get_input_audio_volume(void);
  * Returned Value:
  *   On success, the current output volume level. Otherwise, a negative value.
  ****************************************************************************/
-int get_output_audio_volume(void);
+int get_output_audio_volume(audio_handler_t *card);
 
 /****************************************************************************
  * Name: set_input_audio_volume
@@ -340,7 +341,7 @@ int get_output_audio_volume(void);
  * Returned Value:
  *   On success, AUDIO_MANAGER_SUCCESS. Otherwise, a negative value.
  ****************************************************************************/
-audio_manager_result_t set_input_audio_volume(uint8_t volume);
+audio_manager_result_t set_input_audio_volume(audio_handler_t *card, uint8_t volume);
 
 /****************************************************************************
  * Name: set_output_audio_volume
@@ -354,7 +355,7 @@ audio_manager_result_t set_input_audio_volume(uint8_t volume);
  * Returned Value:
  *   On success, AUDIO_MANAGER_SUCCESS. Otherwise, a negative value.
  ****************************************************************************/
-audio_manager_result_t set_output_audio_volume(uint8_t volume);
+audio_manager_result_t set_output_audio_volume(audio_handler_t *card, uint8_t volume);
 
 #if defined(__cplusplus)
 }								/* extern "C" */
