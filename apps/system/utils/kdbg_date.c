@@ -122,7 +122,7 @@ static inline int date_showtime(void)
 static inline int date_settime(int argc, char **args)
 {
 	struct timespec ts;
-	struct tm tm;
+	struct tm tm = {0};
 	FAR char *token;
 	FAR char *saveptr;
 	long result;
