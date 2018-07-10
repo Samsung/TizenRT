@@ -39,6 +39,9 @@
 
 #define TAG "[things_network]"
 
+#define MAX_WIFI_CONNECT_RETRY_COUNT 3
+unsigned short g_retry_connect_cnt = 0;
+
 typedef void *(*pthread_func_type)(void *);
 
 static int app_state = -1;
@@ -117,27 +120,18 @@ wifi_manager_ap_config_s *things_network_get_homeap_config(void)
 
 bool things_network_connect_home_ap(void)
 {
-	wifi_manager_ap_config_s *connect_config = things_network_get_homeap_config();
-	
-	if (connect_config != NULL && connect_config->ssid != NULL) {
-		THINGS_LOG_V(TAG, "Try_connect_home_ap [ssid : %s]", connect_config->ssid);
-	}
-
 	wifi_manager_result_e result = WIFI_MANAGER_SUCCESS;
-	int retry_count = 0;
+	wifi_manager_ap_config_s *connect_config = things_network_get_homeap_config();
 
-	for (; retry_count < 3; retry_count++) {
-		result = wifi_manager_connect_ap(connect_config);
-
-		if (result == WIFI_MANAGER_SUCCESS) {
-			break;
-		} else {
-			THINGS_LOG_E(TAG, "Failed to connect WiFi [Error Code : %d, Retry count : %d]", result, retry_count);
-		}
+	if (connect_config == NULL || connect_config->ssid == NULL) {
+		return false;
 	}
 
-	if (retry_count == 3) {
-		THINGS_LOG_E(TAG, "Failed to connect WiFi 3 times");
+	THINGS_LOG_V(TAG, "Try_connect_home_ap [ssid : %s]", connect_config->ssid);
+
+	result = wifi_manager_connect_ap(connect_config);
+	if (result != WIFI_MANAGER_SUCCESS) {
+		THINGS_LOG_E(TAG, "Failed to connect WiFi [Error Code : %d]", result);
 		return false;
 	}
 
@@ -176,20 +170,11 @@ bool things_handle_stop_soft_ap(wifi_manager_ap_config_s *connect_config)
 		usleep(100000);
 	}
 
-	int retry_count = 0;
+	g_retry_connect_cnt = 0;
 
-	for (; retry_count < 3; retry_count++) {
-		result = wifi_manager_connect_ap(connect_config);
-
-		if (result == WIFI_MANAGER_SUCCESS) {
-			break;
-		} else {
-			THINGS_LOG_E(TAG, "Failed to connect WiFi");
-		}
-	}
-
-	if (retry_count == 3) {
-		THINGS_LOG_E(TAG, "Failed to connect WiFi 3 times");
+	result = wifi_manager_connect_ap(connect_config);
+	if (result != WIFI_MANAGER_SUCCESS) {
+		THINGS_LOG_E(TAG, "Failed to connect WiFi");
 		return false;
 	}
 
@@ -259,31 +244,60 @@ int things_wifi_changed_call_func(int state, char *ap_name, char *ip_addr)
 
 static void *__attribute__((optimize("O0"))) t_things_wifi_join_loop(void *args)
 {
+	bool* is_wifi_retry_connect = (bool*)args;
+
+	if ((*is_wifi_retry_connect) == true) {
+		THINGS_LOG_E(TAG, "Retry to connect to home ap.");
+
+		if (things_network_connect_home_ap() == false) {
+			THINGS_LOG_E(TAG, "Failed to connect home ap.");
+		}
+	} else {
 #ifdef CONFIG_NETUTILS_NTPCLIENT
-	sync_time_from_ntp(10);
+		sync_time_from_ntp(10);
 #else
-	THINGS_LOG_V(TAG, "CONFIG_NETUTILS_NTPCLIENT is not set");
+		THINGS_LOG_V(TAG, "CONFIG_NETUTILS_NTPCLIENT is not set");
 #endif
+		wifi_manager_info_s wifi_info;
+		wifi_manager_get_info(&wifi_info);
 
-	wifi_manager_info_s wifi_info;
-	wifi_manager_get_info(&wifi_info);
-
-	things_wifi_changed_call_func(1, wifi_info.ssid, wifi_info.ip4_address);
+		things_wifi_changed_call_func(1, wifi_info.ssid, wifi_info.ip4_address);
+	}
 
 	return NULL;
 }
 
 void things_wifi_sta_connected(wifi_manager_result_e res)
 {
+	bool is_wifi_retry_connect = false;
+
 	if (res == WIFI_MANAGER_FAIL) {
 		THINGS_LOG_E(TAG, "Failed to connect to the AP");
-		return;
+
+		if (!dm_is_es_complete()) {
+			g_retry_connect_cnt++;
+
+			if (g_retry_connect_cnt <= MAX_WIFI_CONNECT_RETRY_COUNT) {
+				is_wifi_retry_connect = true;
+				THINGS_LOG_E(TAG, "(%d) Retry to connect ap during easy-setup.", g_retry_connect_cnt);
+			} else {
+				return;
+			}
+		} else {
+			is_wifi_retry_connect = true;
+			THINGS_LOG_V(TAG, "Retry to connect ap during normal time.");
+		}
+	} else {
+		is_wifi_retry_connect = false;
+		THINGS_LOG_V(TAG, "Stop retry to connect ap.");
 	}
 
 	THINGS_LOG_V(TAG, "T%d --> %s", getpid(), __FUNCTION__);
 
 	if (things_is_things_module_initialized() == 1) {
-		pthread_create_rtos(&h_thread_things_wifi_join, NULL, (pthread_func_type) t_things_wifi_join_loop, NULL, THINGS_STACK_WIFI_JOIN_THREAD);
+		pthread_create_rtos(&h_thread_things_wifi_join, NULL, (pthread_func_type)t_things_wifi_join_loop, (void *)&is_wifi_retry_connect, THINGS_STACK_WIFI_JOIN_THREAD);
+	} else {
+		THINGS_LOG_E(TAG, "things module was not initialized.");
 	}
 }
 
