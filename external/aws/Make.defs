@@ -1,0 +1,48 @@
+###########################################################################
+#
+# Copyright 2018 Samsung Electronics All Rights Reserved.
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+# http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing,
+# software distributed under the License is distributed on an
+# "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND,
+# either express or implied. See the License for the specific
+# language governing permissions and limitations under the License.
+#
+###########################################################################
+
+ifeq ($(CONFIG_AWS_SDK),y)
+
+# AWS MAIN
+AWS_DIR = $(TOPDIR)/../external/aws
+CFLAGS += -I$(AWS_DIR)/include
+
+# AWS CERTS
+AWS_CERT_DIR = $(AWS_DIR)/certs
+CFLAGS += -I$(AWS_CERT_DIR)
+CSRCS += $(notdir $(wildcard $(AWS_CERT_DIR)/*.c))
+
+# AWS EXTERNAL_LIBS
+AWS_EXTLIB_DIR = $(AWS_DIR)/external_libs
+CFLAGS += -I$(AWS_EXTLIB_DIR)/jsmn
+CSRCS += $(notdir $(wildcard $(AWS_EXTLIB_DIR)/jsmn/*.c))
+
+# AWS SRC
+AWS_SRC_DIR = $(AWS_DIR)/src
+CSRCS += $(notdir $(wildcard $(AWS_SRC_DIR)/*.c))
+
+DEPPATH += --dep-path aws
+DEPPATH += --dep-path aws/certs
+DEPPATH += --dep-path aws/external_libs/jsmn
+DEPPATH += --dep-path aws/src
+VPATH += :aws
+VPATH += :aws/certs
+VPATH += :aws/external_libs/jsmn
+VPATH += :aws/src
+
+endif
