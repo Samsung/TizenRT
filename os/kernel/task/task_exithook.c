@@ -106,6 +106,7 @@
 inline void task_atexit(FAR struct tcb_s *tcb)
 {
 	FAR struct task_group_s *group = tcb->group;
+	struct atexit_s *patexit;
 
 	/* Make sure that we have not already left the group.  Only the final
 	 * exiting thread in the task group should trigger the atexit()
@@ -113,37 +114,20 @@ inline void task_atexit(FAR struct tcb_s *tcb)
 	 */
 
 	if (group && group->tg_nmembers == 1) {
-#if defined(CONFIG_SCHED_ATEXIT_MAX) && CONFIG_SCHED_ATEXIT_MAX > 1
-		int index;
 
-		/* Call each atexit function in reverse order of registration atexit()
-		 * functions are registered from lower to higher array indices; they
-		 * must be called in the reverse order of registration when the task
-		 * group exits, i.e., from higher to lower indices.
-		 */
+		/* Call each atexit function in the reverse order of registration */
 
-		for (index = CONFIG_SCHED_ATEXIT_MAX - 1; index >= 0; index--) {
-			if (group->tg_atexitfunc[index]) {
-				/* Call the atexit function */
+		while(!(dq_empty(&(group->tg_atexitfunc)))) {
+			patexit = (struct atexit_s *)dq_remlast(&(group->tg_atexitfunc));
+			if (patexit) {
 
-				(*group->tg_atexitfunc[index])();
+				if (patexit->atexitfunc) {
+					(*patexit->atexitfunc)();
+				}
 
-				/* Nullify the atexit function to prevent its reuse. */
-
-				group->tg_atexitfunc[index] = NULL;
+				sched_kfree(patexit);
 			}
 		}
-#else
-		if (group->tg_atexitfunc) {
-			/* Call the atexit function */
-
-			(*group->tg_atexitfunc)();
-
-			/* Nullify the atexit function to prevent its reuse. */
-
-			group->tg_atexitfunc = NULL;
-		}
-#endif
 	}
 }
 #else
@@ -162,6 +146,7 @@ inline void task_atexit(FAR struct tcb_s *tcb)
 inline void task_onexit(FAR struct tcb_s *tcb, int status)
 {
 	FAR struct task_group_s *group = tcb->group;
+	struct onexit_s *ponexit;
 
 	/* Make sure that we have not already left the group.  Only the final
 	 * exiting thread in the task group should trigger the atexit()
@@ -169,37 +154,20 @@ inline void task_onexit(FAR struct tcb_s *tcb, int status)
 	 */
 
 	if (group && group->tg_nmembers == 1) {
-#if defined(CONFIG_SCHED_ONEXIT_MAX) && CONFIG_SCHED_ONEXIT_MAX > 1
-		int index;
 
-		/* Call each on_exit function in reverse order of registration.
-		 * on_exit() functions are registered from lower to higher array
-		 * indices; they must be called in the reverse order of registration
-		 * when the task group exits, i.e., from higher to lower indices.
-		 */
+		/* Call each on_exit function in the reverse order of registration */
 
-		for (index = CONFIG_SCHED_ONEXIT_MAX - 1; index >= 0; index--) {
-			if (group->tg_onexitfunc[index]) {
-				/* Call the on_exit function */
+		while(!(dq_empty(&(group->tg_onexitfunc)))) {
+			ponexit = (struct onexit_s *)dq_remlast(&(group->tg_onexitfunc));
+			if (ponexit) {
 
-				(*group->tg_onexitfunc[index])(status, group->tg_onexitarg[index]);
+				if (ponexit->onexitfunc) {
+					(*ponexit->onexitfunc)(status, ponexit->onexitarg);
+				}
 
-				/* Nullify the on_exit function to prevent its reuse. */
-
-				group->tg_onexitfunc[index] = NULL;
+				sched_kfree(ponexit);
 			}
 		}
-#else
-		if (group->tg_onexitfunc) {
-			/* Call the on_exit function */
-
-			(*group->tg_onexitfunc)(status, group->tg_onexitarg);
-
-			/* Nullify the on_exit function to prevent its reuse. */
-
-			group->tg_onexitfunc = NULL;
-		}
-#endif
 	}
 }
 #else

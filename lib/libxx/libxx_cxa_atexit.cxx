@@ -59,6 +59,7 @@
 #include <cassert>
 
 #include "libxx_internal.hxx"
+#include "libxx_cxa_guard.hxx"
 
 //***************************************************************************
 // Pre-processor Definitions
@@ -91,6 +92,24 @@ extern "C"
   //*************************************************************************
 
   //*************************************************************************
+  // Name: __cxa_guard_reset
+  // Description : This function is to support resetting the static object
+  // 	after destruction. So that Static object can be instantiated again
+  //*************************************************************************
+
+  static void __cxa_guard_reset(void *__pstatic)
+  {
+    // Get to the guard pointer:
+    // if __ARM_EABI__, then -32 bytes from the object otherwise -64 bytes
+    __guard *g = (__guard *)__pstatic - 1;
+#ifdef __ARM_EABI__
+    *g = 0;
+#else
+    *(char *)g = 0;
+#endif
+  }
+
+  //*************************************************************************
   // Name: __cxa_callback
   //
   // Description:
@@ -107,6 +126,7 @@ extern "C"
     DEBUGASSERT(alloc && alloc->func);
 
     alloc->func(alloc->arg);
+    __cxa_guard_reset(alloc->arg);
     lib_free(alloc);
   }
 #endif

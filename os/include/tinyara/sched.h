@@ -361,23 +361,12 @@ struct task_group_s {
 #if defined(CONFIG_SCHED_ATEXIT) && !defined(CONFIG_SCHED_ONEXIT)
 	/* atexit support *********************************************************** */
 
-#if defined(CONFIG_SCHED_ATEXIT_MAX) && CONFIG_SCHED_ATEXIT_MAX > 1
-	atexitfunc_t tg_atexitfunc[CONFIG_SCHED_ATEXIT_MAX];
-#else
-	atexitfunc_t tg_atexitfunc;	/* Called when exit is called.             */
-#endif
+	dq_queue_t tg_atexitfunc;
 #endif
 
 #ifdef CONFIG_SCHED_ONEXIT
 	/* on_exit support ********************************************************** */
-
-#if defined(CONFIG_SCHED_ONEXIT_MAX) && CONFIG_SCHED_ONEXIT_MAX > 1
-	onexitfunc_t tg_onexitfunc[CONFIG_SCHED_ONEXIT_MAX];
-	FAR void *tg_onexitarg[CONFIG_SCHED_ONEXIT_MAX];
-#else
-	onexitfunc_t tg_onexitfunc;	/* Called when exit is called.             */
-	FAR void *tg_onexitarg;		/* The argument passed to the function     */
-#endif
+	dq_queue_t tg_onexitfunc;
 #endif
 
 #if defined(CONFIG_SCHED_HAVE_PARENT) && defined(CONFIG_SCHED_CHILD_STATUS)
