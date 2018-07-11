@@ -332,6 +332,10 @@ int websocket_client_handshake(websocket_t *client, char *host, char *port, char
 	}
 
 	memset(accept_key, 0, WEBSOCKET_ACCEPT_KEY_LEN);
+	if (keyhdend - keyhdstart > WEBSOCKET_CLIENT_KEY_LEN) {
+		WEBSOCKET_DEBUG("error key length\n");
+		goto EXIT_WEBSOCKET_HANDSHAKE_ERROR;
+	}
 	memcpy(accept_key, keyhdstart, keyhdend - keyhdstart);
 	websocket_create_accept_key(dst, WEBSOCKET_ACCEPT_KEY_LEN, client_key, WEBSOCKET_CLIENT_KEY_LEN);
 	accept_key[WEBSOCKET_ACCEPT_KEY_LEN - 1] = '\0';
@@ -484,6 +488,10 @@ int websocket_server_handshake(websocket_t *server)
 	}
 
 	memset(client_key, 0, WEBSOCKET_CLIENT_KEY_LEN);
+	if (keyhdend - keyhdstart > WEBSOCKET_CLIENT_KEY_LEN) {
+		WEBSOCKET_DEBUG("error key length\n");
+		goto EXIT_WEBSOCKET_HANDSHAKE_ERROR;
+	}
 	memcpy(client_key, keyhdstart, keyhdend - keyhdstart);
 	memset(accept_key, 0, WEBSOCKET_ACCEPT_KEY_LEN);
 	websocket_create_accept_key(accept_key, WEBSOCKET_ACCEPT_KEY_LEN, client_key, WEBSOCKET_CLIENT_KEY_LEN);
