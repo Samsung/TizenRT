@@ -257,6 +257,8 @@ config ARTIK_SDK
 	---help---
 		include the ARTIK SDK
 
+source "$EXTERNALDIR/aws/Kconfig"
+
 source "$EXTERNALDIR/sysview/Kconfig"
 
 config ARTIK_IDE_INTERGRATE

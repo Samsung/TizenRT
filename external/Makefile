@@ -77,6 +77,10 @@ ifeq ($(CONFIG_DM),y)
 CFLAGS+=-I$(TOPDIR)/../framework/include/dm
 endif
 
+ifeq ($(CONFIG_AWS_SDK),y)
+include aws/Make.defs
+endif
+
 ifeq ($(CONFIG_SYSVIEW),y)
 include sysview/Make.defs
 endif
