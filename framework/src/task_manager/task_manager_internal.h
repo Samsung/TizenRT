@@ -22,6 +22,8 @@
 #include <stdlib.h>
 #include <stdbool.h>
 #include <unistd.h>
+#include <pthread.h>
+#include <sys/types.h>
 
 /* Command Types */
 #define TASKMGR_REGISTER                0
@@ -38,6 +40,13 @@
 #define TASKMGR_SCAN_NAME               11
 #define TASKMGR_SCAN_HANDLE             12
 #define TASKMGR_SCAN_GROUP              13
+#define TASKMGR_REGISTER_TASK           14
+#define TASKMGR_REGISTER_PTHREAD        15
+
+/* Task Type */
+#define TM_BUILTIN_TASK			0
+#define TM_TASK				1
+#define TM_PTHREAD			2
 
 /* Message Queue Values */
 #define TM_MQ_PRIO   50
@@ -58,7 +67,8 @@ struct task_list_s {
 typedef struct task_list_s task_list_t;
 
 struct task_list_data_s {
-	int builtin_idx;
+	int type;
+	int idx;
 	int pid;
 	int tm_gid;
 	int status;
@@ -91,11 +101,29 @@ struct tm_broadcast_s {
 };
 typedef struct tm_broadcast_s tm_broadcast_t;
 
+struct tm_task_info_s {
+	char name[CONFIG_TASK_NAME_SIZE];
+	int priority;
+	int stack_size;
+	main_t entry;
+	char **argv;
+};
+typedef struct tm_task_info_s tm_task_info_t;
+
+struct tm_pthread_info_s {
+	char name[CONFIG_TASK_NAME_SIZE];
+	pthread_attr_t *attr;
+	pthread_startroutine_t entry;
+	pthread_addr_t arg;
+};
+typedef struct tm_pthread_info_s tm_pthread_info_t;
+
 #define IS_INVALID_HANDLE(i) (i < 0 || i >= CONFIG_TASK_MANAGER_MAX_TASKS)
 
-#define TASK_LIST_ADDR(handle)       ((task_list_data_t *)tm_task_list[handle].addr)
-#define TASK_PID(handle)             tm_task_list[handle].pid
-#define TASK_BUILTIN_IDX(handle)     TASK_LIST_ADDR(handle)->builtin_idx
+#define TASK_LIST_ADDR(handle)       ((task_list_data_t *)tm_handle_list[handle].addr)
+#define TASK_PID(handle)             tm_handle_list[handle].pid
+#define TASK_TYPE(handle)            TASK_LIST_ADDR(handle)->type
+#define TASK_IDX(handle)             TASK_LIST_ADDR(handle)->idx
 #define TASK_TM_GID(handle)          TASK_LIST_ADDR(handle)->tm_gid
 #define TASK_STATUS(handle)          TASK_LIST_ADDR(handle)->status
 #define TASK_PERMISSION(handle)      TASK_LIST_ADDR(handle)->permission
@@ -103,7 +131,7 @@ typedef struct tm_broadcast_s tm_broadcast_t;
 #define TASK_UNICAST_CB(handle)      TASK_LIST_ADDR(handle)->unicast_cb
 #define TASK_BROADCAST_CB(handle)    TASK_LIST_ADDR(handle)->broadcast_cb
 
-extern task_list_t tm_task_list[CONFIG_TASK_MANAGER_MAX_TASKS];
+extern task_list_t tm_handle_list[CONFIG_TASK_MANAGER_MAX_TASKS];
 
 int taskmgr_send_request(tm_request_t *request_msg);
 int taskmgr_send_response(char *q_name, tm_response_t *response_msg);

@@ -29,6 +29,7 @@
 #define __TASK_MANAGER_H__
 
 #include <signal.h>
+#include <pthread.h>
 
 /**
  * @brief Task State which managed by Task Manager
@@ -74,6 +75,7 @@ enum tm_result_error_e {
 	TM_INVALID_DRVFD = -9,
 	TM_OUT_OF_MEMORY = -10,
 	TM_NO_PERMISSION = -11,
+	TM_NOT_SUPPORTED = -12,
 };
 
 /**
@@ -109,7 +111,7 @@ typedef struct task_info_list_s task_info_list_t;
 /**
  * @brief Request to register a task
  * @details @b #include <task_manager/task_manager.h>\n
- * Only builtin task can be managed by task manager.\n
+ * This API can request to register a builtin task.\n
  * Find apps/builtin/README.md to know how to use builtin task.
  * @param[in] name the name of task to be registered
  * @param[in] permission the permission of task to be registered
@@ -121,6 +123,40 @@ typedef struct task_info_list_s task_info_list_t;
  * @since TizenRT v2.0 PRE
  */
 int task_manager_register(char *name, int permission, int timeout);
+/**
+ * @brief Request to register a task which is not in builtin list
+ * @details @b #include <task_manager/task_manager.h>\n
+ * Find apps/builtin/README.md to know how to use builtin task.
+ * @param[in] name the name of task to be registered
+ * @param[in] priority the priority of task to be registered
+ * @param[in] stack_size the stack_size of task to be registered
+ * @param[in] entry the entry function pointer
+ * @param[in] argv the argument to pass when task creation
+ * @param[in] permission the permission of task to be registered
+ * @param[in] timeout returnable flag. It can be one of the below.\n
+ *			TM_NO_RESPONSE : Ignore the response of request from task manager\n
+ *			TM_RESPONSE_WAIT_INF : Blocked until get the response from task manager\n
+ *			integer value : Specifies an upper limit on the time for which will block in milliseconds
+ * @return On success, handle id is returned. On failure, defined negative value is returned.
+ * @since TizenRT v2.0 PRE
+ */
+int task_manager_register_task(char *name, int priority, int stack_size, main_t entry, char * argv[], int permission, int timeout);
+/**
+ * @brief Request to register a pthread which is not in builtin list
+ * @details @b #include <task_manager/task_manager.h>\n
+ * @param[in] name the name of pthread to be registered
+ * @param[in] attr the attribute of pthread to be registered
+ * @param[in] start_routine the entry function pointer
+ * @param[in] arg the argument to pass when task creation
+ * @param[in] permission the permission of task to be registered
+ * @param[in] timeout returnable flag. It can be one of the below.\n
+ *			TM_NO_RESPONSE : Ignore the response of request from task manager\n
+ *			TM_RESPONSE_WAIT_INF : Blocked until get the response from task manager\n
+ *			integer value : Specifies an upper limit on the time for which will block in milliseconds
+ * @return On success, handle id is returned. On failure, defined negative value is returned.
+ * @since TizenRT v2.0 PRE
+ */
+int task_manager_register_pthread(char *name, pthread_attr_t *attr, pthread_startroutine_t start_routine, pthread_addr_t arg, int permission, int timeout);
 /**
  * @brief Request to unregister a task
  * @details @b #include <task_manager/task_manager.h>

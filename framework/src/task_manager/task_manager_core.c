@@ -43,7 +43,12 @@ static int g_taskmgr_fd;
 static uint32_t g_lasthandle;
 static mqd_t g_tm_recv_mqfd;
 static int builtin_cnt;
-task_list_t tm_task_list[CONFIG_TASK_MANAGER_MAX_TASKS];
+static int handle_cnt;
+static int task_cnt;
+static int pthread_cnt;
+task_list_t tm_handle_list[CONFIG_TASK_MANAGER_MAX_TASKS];
+tm_task_info_t tm_task_list[CONFIG_TASK_MANAGER_MAX_TASKS];
+tm_pthread_info_t tm_pthread_list[CONFIG_TASK_MANAGER_MAX_TASKS];
 static bool g_handle_hash[CONFIG_TASK_MANAGER_MAX_TASKS];
 
 #define MAX_HANDLE_MASK (CONFIG_TASK_MANAGER_MAX_TASKS - 1)
@@ -124,6 +129,10 @@ static int taskmgr_register(char *name, int permission, int caller_pid)
 		return TM_INVALID_PARAM;
 	}
 
+	if (handle_cnt >= CONFIG_TASK_MANAGER_MAX_TASKS) {
+		return TM_OUT_OF_MEMORY;
+	}
+
 	handle = TM_OPERATION_FAIL;
 
 	/* Check that task is in builtin-list or not */
@@ -140,15 +149,17 @@ static int taskmgr_register(char *name, int permission, int caller_pid)
 	}
 
 	if (handle >= 0) {
-		tm_task_list[handle].addr = (void *)TM_ALLOC(sizeof(task_list_data_t));
-		if (tm_task_list[handle].addr == NULL) {
+		tm_handle_list[handle].addr = (void *)TM_ALLOC(sizeof(task_list_data_t));
+		if (tm_handle_list[handle].addr == NULL) {
 			return TM_OUT_OF_MEMORY;
 		}
-		TASK_BUILTIN_IDX(handle) = chk_idx;
+		TASK_TYPE(handle) = TM_BUILTIN_TASK;
+		TASK_IDX(handle) = chk_idx;
 		TASK_TM_GID(handle) = caller_pid;
 		TASK_STATUS(handle) = TM_TASK_STATE_STOP;
 		TASK_PERMISSION(handle) = permission;
 		tmvdbg("Registered handle %d\n", handle);
+		handle_cnt++;
 	}
 
 	return handle;
@@ -163,11 +174,25 @@ static int taskmgr_unregister(int handle)
 		return TM_UNREGISTERED_TASK;
 	}
 
+	/* If type is TM_TASK or TM_PTHREAD, remove the data in the list */
+	if (TASK_TYPE(handle) == TM_TASK) {
+		strncpy(tm_task_list[TASK_IDX(handle)].name, '\0', CONFIG_TASK_NAME_SIZE);
+		tm_task_list[TASK_IDX(handle)].priority = 0;
+		tm_task_list[TASK_IDX(handle)].stack_size = 0;
+		tm_task_list[TASK_IDX(handle)].entry = NULL;
+	} else if (TASK_TYPE(handle) == TM_PTHREAD) {
+		strncpy(tm_pthread_list[TASK_IDX(handle)].name, '\0', CONFIG_TASK_NAME_SIZE);
+		pthread_attr_destroy(tm_pthread_list[TASK_IDX(handle)].attr);
+		tm_pthread_list[TASK_IDX(handle)].entry = NULL;
+		tm_pthread_list[TASK_IDX(handle)].arg = NULL;
+	}
+
 	TASK_PID(handle) = 0;
-	TM_FREE(tm_task_list[handle].addr);
-	tm_task_list[handle].addr = NULL;
+	TM_FREE(tm_handle_list[handle].addr);
+	tm_handle_list[handle].addr = NULL;
 	g_handle_hash[handle] = false;
 	tmvdbg("Unregistered handle %d\n", handle);
+	handle_cnt--;
 
 	return OK;
 }
@@ -176,7 +201,7 @@ static int taskmgr_start(int handle, int caller_pid)
 {
 	int ret;
 	int fd;
-	int pid;
+	int pid = ERROR;
 
 	if (IS_INVALID_HANDLE(handle)) {
 		return TM_INVALID_PARAM;
@@ -197,9 +222,24 @@ static int taskmgr_start(int handle, int caller_pid)
 		return TM_INVALID_DRVFD;
 	}
 
-	/* handle is in task_list */
-	builtin_info_t *task_info = (builtin_info_t *)&builtin_list[TASK_BUILTIN_IDX(handle)];
-	pid = task_create(task_info->name, task_info->priority, task_info->stacksize, task_info->entry, (char * const *)NULL);
+	if (TASK_TYPE(handle) == TM_BUILTIN_TASK) {
+		builtin_info_t *task_info = (builtin_info_t *)&builtin_list[TASK_IDX(handle)];
+		pid = task_create(task_info->name, task_info->priority, task_info->stacksize, task_info->entry, (char * const *)NULL);
+	} else if (TASK_TYPE(handle) == TM_TASK) {
+		tm_task_info_t *task_info = (tm_task_info_t *)&tm_task_list[TASK_IDX(handle)];
+		pid = task_create(task_info->name, task_info->priority, task_info->stack_size, task_info->entry, task_info->argv);
+	} else {
+		tm_pthread_info_t *pthread_info = (tm_pthread_info_t *)&tm_pthread_list[TASK_IDX(handle)];
+		pthread_t thread = ERROR;
+		ret = pthread_create(&thread, pthread_info->attr, pthread_info->entry, pthread_info->arg);
+		if (ret != OK) {
+			tmdbg("Fail to create new pthread\n");
+			return TM_OPERATION_FAIL;
+		}
+		pthread_setname_np(thread, pthread_info->name);
+		pid = (int)thread;
+	}
+
 	if (pid == ERROR) {
 		tmdbg("Fail to create new task\n");
 		return TM_OPERATION_FAIL;
@@ -235,13 +275,17 @@ static int taskmgr_stop(int handle, int caller_pid)
 		return TM_NO_PERMISSION;
 	}
 
-	/* handle is in task_list */
-	ret = task_delete(TASK_PID(handle));
+	if (TASK_TYPE(handle) != TM_PTHREAD) {
+		ret = task_delete(TASK_PID(handle));
+	} else {
+		ret = pthread_cancel(TASK_PID(handle));
+	}
+
 	if (ret != OK) {
 		tmdbg("Fail to delete the task\n");
 		return TM_OPERATION_FAIL;
 	}
-	/* task deleted well */
+	/* task or pthread deleted well */
 	TASK_STATUS(handle) = TM_TASK_STATE_STOP;
 
 	return OK;
@@ -385,8 +429,9 @@ static int taskmgr_unicast(int handle, int caller_pid, void *data)
 
 static int taskmgr_get_task_info(task_info_list_t **data, int handle)
 {
-	int len;
+	int name_len = 0;
 	task_info_list_t *item;
+	const char *name;
 
 	item = (task_info_list_t *)TM_ALLOC(sizeof(task_info_list_t));
 	if (item == NULL) {
@@ -394,14 +439,25 @@ static int taskmgr_get_task_info(task_info_list_t **data, int handle)
 		return TM_OUT_OF_MEMORY;
 	}
 
-	len = strlen(builtin_list[TASK_BUILTIN_IDX(handle)].name);
-	item->task.name = (char *)TM_ALLOC(len + 1);
+	if (TASK_TYPE(handle) == TM_BUILTIN_TASK) {
+		name = builtin_list[TASK_IDX(handle)].name;
+	} else if (TASK_TYPE(handle) == TM_TASK) {
+		name = tm_task_list[TASK_IDX(handle)].name;
+	} else {
+		name = tm_pthread_list[TASK_IDX(handle)].name;
+	}
+
+	name_len = strlen(name);
+
+	item->task.name = (char *)TM_ALLOC(name_len + 1);
 	if (item->task.name == NULL) {
 		tmdbg("Memory allocation for name Failed\n");
 		TM_FREE(item);
 		return TM_OUT_OF_MEMORY;
 	}
-	strncpy(item->task.name, builtin_list[TASK_BUILTIN_IDX(handle)].name, len + 1);
+
+	strncpy(item->task.name, name, name_len + 1);	
+
 	item->task.tm_gid = TASK_TM_GID(handle);
 	item->task.handle = handle;
 	item->task.status = TASK_STATUS(handle);
@@ -426,7 +482,7 @@ static int taskmgr_getinfo_with_name(char *name, tm_response_t *response_msg)
 	response_msg->data = NULL;
 
 	for (chk_idx = 0; chk_idx < CONFIG_TASK_MANAGER_MAX_TASKS; chk_idx++) {
-		if (TASK_LIST_ADDR(chk_idx) && (strncmp(builtin_list[TASK_BUILTIN_IDX(chk_idx)].name, name, strlen(name)) == 0)) {
+		if (TASK_LIST_ADDR(chk_idx) && ((strncmp(builtin_list[TASK_IDX(chk_idx)].name, name, strlen(name)) == 0) || (strncmp(tm_task_list[TASK_IDX(chk_idx)].name, name, strlen(name)) == 0) || (strncmp(tm_pthread_list[TASK_IDX(chk_idx)].name, name, strlen(name)) == 0))) {
 			tmvdbg("found handle = %d\n", chk_idx);
 			ret = taskmgr_get_task_info(&response_msg->data, chk_idx);
 			if (ret != OK) {
@@ -554,6 +610,122 @@ static int taskmgr_set_msg_cb(int type, void *data, int pid)
 	return OK;
 }
 
+static int taskmgr_register_task(tm_task_info_t *task_info, int permission, int caller_pid)
+{
+	int chk_idx;
+	int handle;
+
+	if (permission < 0 || caller_pid < 0 || task_info == NULL) {
+		return TM_INVALID_PARAM;
+	}
+
+	if (handle_cnt >= CONFIG_TASK_MANAGER_MAX_TASKS) {
+		return TM_OUT_OF_MEMORY;
+	}
+
+	handle = TM_OPERATION_FAIL;
+
+	/* Check that this task is already registered or not */
+	for (chk_idx = 0; chk_idx < CONFIG_TASK_MANAGER_MAX_TASKS; chk_idx++) {
+		if (strcmp(tm_task_list[chk_idx].name, task_info->name) == 0) {
+			/* Already registered task */
+			return TM_OPERATION_FAIL;
+		}
+	}
+
+	/* Update the tm_task_list with new task information */
+	while (1) {
+		if (task_cnt >= CONFIG_TASK_MANAGER_MAX_TASKS) {
+			task_cnt = 0;
+		}
+
+		if (tm_task_list[task_cnt].name == NULL) {
+			strncpy(tm_task_list[task_cnt].name, task_info->name, strlen(task_info->name) + 1);
+			tm_task_list[task_cnt].priority = task_info->priority;
+			tm_task_list[task_cnt].stack_size = task_info->stack_size;
+			tm_task_list[task_cnt].entry = task_info->entry;
+			tm_task_list[task_cnt].argv = task_info->argv;
+			task_cnt++;
+			break;
+		}
+		task_cnt++;
+	}
+
+	handle = taskmgr_assign_handle();
+	if (handle >= 0) {
+		tm_handle_list[handle].addr = (void *)TM_ALLOC(sizeof(task_list_data_t));
+		if (tm_handle_list[handle].addr == NULL) {
+			return TM_OUT_OF_MEMORY;
+		}
+		TASK_TYPE(handle) = TM_TASK;
+		TASK_IDX(handle) = task_cnt - 1;
+		TASK_TM_GID(handle) = caller_pid;
+		TASK_STATUS(handle) = TM_TASK_STATE_STOP;
+		TASK_PERMISSION(handle) = permission;
+		tmvdbg("Registered handle %d\n", handle);
+		handle_cnt++;
+	}
+
+	return handle;
+}
+
+static int taskmgr_register_pthread(tm_pthread_info_t *pthread_info, int permission, int caller_pid)
+{
+	int chk_idx;
+	int handle;
+
+	if (permission < 0 || caller_pid < 0 || pthread_info == NULL) {
+		return TM_INVALID_PARAM;
+	}
+
+	if (handle_cnt > CONFIG_TASK_MANAGER_MAX_TASKS) {
+		return TM_OUT_OF_MEMORY;
+	}
+
+	handle = TM_OPERATION_FAIL;
+
+	/* Check that this task is already registered or not */
+	for (chk_idx = 0; chk_idx < CONFIG_TASK_MANAGER_MAX_TASKS; chk_idx++) {
+		if (strcmp(tm_pthread_list[chk_idx].name, pthread_info->name) == 0) {
+			/* Already registered task */
+			return TM_OPERATION_FAIL;
+		}
+	}
+
+	/* Update the tm_task_list with new task information */
+	while (1) {
+		if (pthread_cnt >= CONFIG_TASK_MANAGER_MAX_TASKS) {
+			pthread_cnt = 0;
+		}
+
+		if (tm_pthread_list[pthread_cnt].name == NULL) {
+			strncpy(tm_pthread_list[pthread_cnt].name, pthread_info->name, strlen(pthread_info->name) + 1);
+			tm_pthread_list[pthread_cnt].attr = pthread_info->attr;
+			tm_pthread_list[pthread_cnt].entry = pthread_info->entry;
+			tm_pthread_list[pthread_cnt].arg = pthread_info->arg;
+			pthread_cnt++;
+			break;
+		}
+		pthread_cnt++;
+	}
+
+	handle = taskmgr_assign_handle();
+	if (handle >= 0) {
+		tm_handle_list[handle].addr = (void *)TM_ALLOC(sizeof(task_list_data_t));
+		if (tm_handle_list[handle].addr == NULL) {
+			return TM_OUT_OF_MEMORY;
+		}
+		TASK_TYPE(handle) = TM_PTHREAD;
+		TASK_IDX(handle) = pthread_cnt - 1;
+		TASK_TM_GID(handle) = caller_pid;
+		TASK_STATUS(handle) = TM_TASK_STATE_STOP;
+		TASK_PERMISSION(handle) = permission;
+		tmvdbg("Registered handle %d\n", handle);
+		handle_cnt++;
+	}
+
+	return handle;
+}
 /****************************************************************************
  * Main Function
  ****************************************************************************/
@@ -623,6 +795,10 @@ int task_manager(int argc, char *argv[])
 			break;
 
 		case TASKMGR_RESTART:
+			if (TASK_TYPE(request_msg.handle) == TM_PTHREAD) {
+				ret = TM_NOT_SUPPORTED;
+				break;
+			}
 			ret = taskmgr_restart(request_msg.handle, request_msg.caller_pid);
 			break;
 
@@ -660,6 +836,13 @@ int task_manager(int argc, char *argv[])
 
 		case TASKMGR_SET_UNICAST_CB:
 			ret = taskmgr_set_msg_cb(TYPE_UNICAST, request_msg.data, request_msg.caller_pid);
+			break;
+		case TASKMGR_REGISTER_TASK:
+			ret = taskmgr_register_task((tm_task_info_t *)request_msg.data, request_msg.handle, request_msg.caller_pid);
+			break;
+
+		case TASKMGR_REGISTER_PTHREAD:
+			ret = taskmgr_register_pthread((tm_pthread_info_t *)request_msg.data, request_msg.handle, request_msg.caller_pid);
 			break;
 			
 		default:
