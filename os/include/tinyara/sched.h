@@ -361,12 +361,12 @@ struct task_group_s {
 #if defined(CONFIG_SCHED_ATEXIT) && !defined(CONFIG_SCHED_ONEXIT)
 	/* atexit support *********************************************************** */
 
-	dq_queue_t tg_atexitfunc;
+	sq_queue_t tg_atexitfunc;
 #endif
 
 #ifdef CONFIG_SCHED_ONEXIT
 	/* on_exit support ********************************************************** */
-	dq_queue_t tg_onexitfunc;
+	sq_queue_t tg_onexitfunc;
 #endif
 
 #if defined(CONFIG_SCHED_HAVE_PARENT) && defined(CONFIG_SCHED_CHILD_STATUS)

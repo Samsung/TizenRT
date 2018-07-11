@@ -117,16 +117,12 @@ inline void task_atexit(FAR struct tcb_s *tcb)
 
 		/* Call each atexit function in the reverse order of registration */
 
-		while(!(dq_empty(&(group->tg_atexitfunc)))) {
-			patexit = (struct atexit_s *)dq_remlast(&(group->tg_atexitfunc));
-			if (patexit) {
+		while (!(sq_empty(&(group->tg_atexitfunc)))) {
+			patexit = (struct atexit_s *)sq_remfirst(&(group->tg_atexitfunc));
 
-				if (patexit->atexitfunc) {
-					(*patexit->atexitfunc)();
-				}
+			(*patexit->atexitfunc)();
 
-				sched_kfree(patexit);
-			}
+			sched_kfree(patexit);
 		}
 	}
 }
@@ -157,16 +153,12 @@ inline void task_onexit(FAR struct tcb_s *tcb, int status)
 
 		/* Call each on_exit function in the reverse order of registration */
 
-		while(!(dq_empty(&(group->tg_onexitfunc)))) {
-			ponexit = (struct onexit_s *)dq_remlast(&(group->tg_onexitfunc));
-			if (ponexit) {
+		while (!(sq_empty(&(group->tg_onexitfunc)))) {
+			ponexit = (struct onexit_s *)sq_remfirst(&(group->tg_onexitfunc));
 
-				if (ponexit->onexitfunc) {
-					(*ponexit->onexitfunc)(status, ponexit->onexitarg);
-				}
+			(*ponexit->onexitfunc)(status, ponexit->onexitarg);
 
-				sched_kfree(ponexit);
-			}
+			sched_kfree(ponexit);
 		}
 	}
 }

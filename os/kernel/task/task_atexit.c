@@ -145,13 +145,13 @@ int atexit(void (*func)(void))
 		sched_lock();
 
 		/* Allocate an atexit_s structure, initialize with functions and arguments;
-	         * then add it to the dqueue at last. These must be called back in the
-                 * reverse order during task exit i.e, remove from last.
+		 * then add it to the head of single linked queue. These must be called back in the
+		 * reverse order during task exit i.e, remove from head.
 		 */
 		patexit = (struct atexit_s *)kmm_malloc(sizeof(struct atexit_s));
 		if (patexit) {
 			patexit->atexitfunc = func;
-			dq_addlast((dq_entry_t *)patexit, &(group->tg_atexitfunc));
+			sq_addfirst((sq_entry_t *)patexit, &(group->tg_atexitfunc));
 			ret = OK;
 		}
 
