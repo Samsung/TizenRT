@@ -145,14 +145,14 @@ int on_exit(CODE void (*func)(int, FAR void *), FAR void *arg)
 		sched_lock();
 
 		/* Allocate an onexit_s structure, initialize with functions and arguments;
-	         * then add it to the dqueue at last. These must be called back in the
-                 * reverse order during task exit i.e, remove from last.
+		 * then add it to the head of single linked queue. These must be called back in the
+		 * reverse order during task exit i.e, remove from head.
 		 */
 		ponexit = (struct onexit_s *)kmm_malloc(sizeof(struct onexit_s));
 		if (ponexit) {
 			ponexit->onexitfunc = func;
 			ponexit->onexitarg = arg;
-			dq_addlast((dq_entry_t *)ponexit, &(group->tg_onexitfunc));
+			sq_addfirst((sq_entry_t *)ponexit, &(group->tg_onexitfunc));
 			ret = OK;
 		}
 
