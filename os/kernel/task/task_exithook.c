@@ -70,6 +70,10 @@
 #include "signal/signal.h"
 #include "task/task.h"
 
+#ifdef CONFIG_TASK_MANAGER
+#include <task_manager/task_manager.h>
+#endif
+
 /****************************************************************************
  * Pre-processor Definitions
  ****************************************************************************/
@@ -565,6 +569,10 @@ void task_exithook(FAR struct tcb_s *tcb, int status, bool nonblocking)
 	if ((tcb->flags & TCB_FLAG_EXIT_PROCESSING) != 0) {
 		return;
 	}
+
+#ifdef CONFIG_TASK_MANAGER
+	task_manager_run_exit_cb(tcb->pid);
+#endif
 
 #ifdef CONFIG_CANCELLATION_POINTS
 	/* Mark the task as non-cancelable to avoid additional calls to exit()

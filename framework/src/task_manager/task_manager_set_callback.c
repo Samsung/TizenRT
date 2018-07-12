@@ -135,18 +135,55 @@ int task_manager_set_broadcast_cb(int msg_mask, void (*func)(int data))
 }
 
 /****************************************************************************
- * task_manager_set_termination_cb
+ * task_manager_set_exit_cb
  ****************************************************************************/
-int task_manager_set_termination_cb(void (*func)(void))
+int task_manager_set_exit_cb(void (*func)(void))
 {
+	int ret = OK;
+	tm_request_t request_msg;
+
 	if (func == NULL) {
 		return TM_INVALID_PARAM;
 	}
 
-	if (atexit((void *)func) != OK) {
-		tmdbg("Faile to register a function at exit\n");
-		return TM_OPERATION_FAIL;
+	/* send exit callback function to task manager */
+	memset(&request_msg, 0, sizeof(tm_request_t));
+	/* Set the request msg */
+	request_msg.cmd = TASKMGRCMD_SET_EXIT_CB;
+	request_msg.caller_pid = getpid();
+	request_msg.data = (void *)func;
+	request_msg.timeout = TM_NO_RESPONSE;
+	ret = taskmgr_send_request(&request_msg);
+	if (ret < 0) {
+		return ret;
 	}
 
-	return OK;
+	return ret;
+}
+
+/****************************************************************************
+ * task_manager_set_stop_cb
+ ****************************************************************************/
+int task_manager_set_stop_cb(void (*func)(void))
+{
+	int ret = OK;
+	tm_request_t request_msg;
+
+	if (func == NULL) {
+		return TM_INVALID_PARAM;
+	}
+
+	/* send stop callback function to task manager */
+	memset(&request_msg, 0, sizeof(tm_request_t));
+	/* Set the request msg */
+	request_msg.cmd = TASKMGRCMD_SET_STOP_CB;
+	request_msg.caller_pid = getpid();
+	request_msg.data = (void *)func;
+	request_msg.timeout = TM_NO_RESPONSE;
+	ret = taskmgr_send_request(&request_msg);
+	if (ret < 0) {
+		return ret;
+	}
+
+	return ret;
 }

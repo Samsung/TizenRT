@@ -42,6 +42,8 @@
 #define TASKMGRCMD_SCAN_GROUP              13
 #define TASKMGRCMD_REGISTER_TASK           14
 #define TASKMGRCMD_REGISTER_PTHREAD        15
+#define TASKMGRCMD_SET_STOP_CB             16
+#define TASKMGRCMD_SET_EXIT_CB             17
 
 /* Task Type */
 #define TM_BUILTIN_TASK			0
@@ -57,8 +59,12 @@
 #define TM_ALLOC(a)  malloc(a)
 #define TM_FREE(a)   free(a)
 
+/* Temporary State for Cancel */
+#define TM_APP_STATE_CANCELLING -1
+
 typedef void (*_tm_unicast_t)(void *);
 typedef void (*_tm_broadcast_t)(int);
+typedef void (*_tm_termination_t)(void);
 
 struct app_list_s {
 	int pid;
@@ -76,6 +82,8 @@ struct app_list_data_s {
 	int msg_mask;
 	_tm_unicast_t unicast_cb;
 	_tm_broadcast_t broadcast_cb;
+	_tm_termination_t stop_cb;
+	_tm_termination_t exit_cb;
 };
 typedef struct app_list_data_s app_list_data_t;
 
@@ -124,12 +132,14 @@ typedef struct tm_pthread_info_s tm_pthread_info_t;
 #define TM_PID(handle)             tm_app_list[handle].pid
 #define TM_TYPE(handle)            TM_LIST_ADDR(handle)->type
 #define TM_IDX(handle)             TM_LIST_ADDR(handle)->idx
-#define TM_GID(handle)          TM_LIST_ADDR(handle)->tm_gid
+#define TM_GID(handle)             TM_LIST_ADDR(handle)->tm_gid
 #define TM_STATUS(handle)          TM_LIST_ADDR(handle)->status
 #define TM_PERMISSION(handle)      TM_LIST_ADDR(handle)->permission
 #define TM_MSG_MASK(handle)        TM_LIST_ADDR(handle)->msg_mask
 #define TM_UNICAST_CB(handle)      TM_LIST_ADDR(handle)->unicast_cb
 #define TM_BROADCAST_CB(handle)    TM_LIST_ADDR(handle)->broadcast_cb
+#define TM_STOP_CB(handle)         TM_LIST_ADDR(handle)->stop_cb
+#define TM_EXIT_CB(handle)         TM_LIST_ADDR(handle)->exit_cb
 
 extern app_list_t tm_app_list[CONFIG_TASK_MANAGER_MAX_TASKS];
 
