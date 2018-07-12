@@ -218,7 +218,7 @@ static int taskmgr_start(int handle, int caller_pid)
 	return OK;
 }
 
-static int taskmgr_terminate(int handle, int caller_pid)
+static int taskmgr_stop(int handle, int caller_pid)
 {
 	int ret;
 
@@ -618,8 +618,8 @@ int task_manager(int argc, char *argv[])
 			ret = taskmgr_start(request_msg.handle, request_msg.caller_pid);
 			break;
 
-		case TASKMGR_TERMINATE:
-			ret = taskmgr_terminate(request_msg.handle, request_msg.caller_pid);
+		case TASKMGR_STOP:
+			ret = taskmgr_stop(request_msg.handle, request_msg.caller_pid);
 			break;
 
 		case TASKMGR_RESTART:

@@ -74,9 +74,9 @@ static void action(void *info)
 		}
 	} else if (strncmp(rec, "alarm_off", strlen("alarm_off") + 1) == 0) {
 		printf("\nAction Manager receives Alarm Off request\n");
-		ret = task_manager_terminate(handle_alarm, TM_RESPONSE_WAIT_INF);
+		ret = task_manager_stop(handle_alarm, TM_RESPONSE_WAIT_INF);
 		if (ret < 0) {
-			printf("FAIL TO TERMINATE ALARM ACTION, %d\n", ret);
+			printf("FAIL TO STOP ALARM ACTION, %d\n", ret);
 		} else if (ret == OK) {
 			printf("Alarm is successfully off\n");
 		}
