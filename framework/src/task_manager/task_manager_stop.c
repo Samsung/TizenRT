@@ -26,9 +26,9 @@
 #include "task_manager_internal.h"
 
 /****************************************************************************
- * task_manager_terminate
+ * task_manager_stop
  ****************************************************************************/
-int task_manager_terminate(int handle, int timeout)
+int task_manager_stop(int handle, int timeout)
 {
 	int status;
 	tm_request_t request_msg;
@@ -40,7 +40,7 @@ int task_manager_terminate(int handle, int timeout)
 
 	memset(&request_msg, 0, sizeof(tm_request_t));
 	/* Set the request msg */
-	request_msg.cmd = TASKMGR_TERMINATE;
+	request_msg.cmd = TASKMGR_STOP;
 	request_msg.handle = handle;
 	request_msg.caller_pid = getpid();
 	request_msg.timeout = timeout;

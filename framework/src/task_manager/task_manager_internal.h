@@ -27,7 +27,7 @@
 #define TASKMGR_REGISTER                0
 #define TASKMGR_UNREGISTER              1
 #define TASKMGR_START                   2
-#define TASKMGR_TERMINATE               3
+#define TASKMGR_STOP                    3
 #define TASKMGR_RESTART                 4
 #define TASKMGR_PAUSE                   5
 #define TASKMGR_RESUME                  6

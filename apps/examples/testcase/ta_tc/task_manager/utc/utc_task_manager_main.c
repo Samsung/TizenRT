@@ -100,7 +100,7 @@ int tm_sample_main(int argc, char *argv[])
 
 	while (1) {
 		usleep(1);
-	}	// This will be dead at utc_task_manager_terminate_p
+	}	// This will be dead at utc_task_manager_stop_p
 	return ret;
 }
 
@@ -114,7 +114,7 @@ int tm_broadcast1_main(int argc, char *argv[])
 	}
 	while (1) {
 		usleep(1);
-	}	// This will be dead at utc_task_manager_terminate_p
+	}	// This will be dead at utc_task_manager_stop_p
 	return ret;
 }
 
@@ -128,7 +128,7 @@ int tm_broadcast2_main(int argc, char *argv[])
 	}
 	while (1) {
 		usleep(1);
-	}	// This will be dead at utc_task_manager_terminate_p
+	}	// This will be dead at utc_task_manager_stop_p
 	return ret;
 }
 
@@ -142,7 +142,7 @@ int tm_broadcast3_main(int argc, char *argv[])
 	}
 	while (1) {
 		usleep(1);
-	}	// This will be dead at utc_task_manager_terminate_p
+	}	// This will be dead at utc_task_manager_stop_p
 	return ret;
 }
 
@@ -494,35 +494,35 @@ static void utc_task_manager_clean_info_p(void)
 	TC_SUCCESS_RESULT();
 }
 
-static void utc_task_manager_terminate_n(void)
+static void utc_task_manager_stop_n(void)
 {
 	int ret;
-	ret = task_manager_terminate(tm_sample_handle, TM_INVALID_TIMEOUT);
-	TC_ASSERT_EQ("task_manager_terminate", ret, TM_INVALID_PARAM);
+	ret = task_manager_stop(tm_sample_handle, TM_INVALID_TIMEOUT);
+	TC_ASSERT_EQ("task_manager_stop", ret, TM_INVALID_PARAM);
 
-	ret = task_manager_terminate(TM_INVALID_HANDLE, TM_NO_RESPONSE);
-	TC_ASSERT_EQ("task_manager_terminate", ret, TM_INVALID_PARAM);
+	ret = task_manager_stop(TM_INVALID_HANDLE, TM_NO_RESPONSE);
+	TC_ASSERT_EQ("task_manager_stop", ret, TM_INVALID_PARAM);
 
 	TC_SUCCESS_RESULT();
 }
 
-static void utc_task_manager_terminate_p(void)
+static void utc_task_manager_stop_p(void)
 {
 	int ret;
-	ret = task_manager_terminate(tm_sample_handle, TM_RESPONSE_WAIT_INF);
-	TC_ASSERT_EQ("task_manager_terminate", ret, OK);
+	ret = task_manager_stop(tm_sample_handle, TM_RESPONSE_WAIT_INF);
+	TC_ASSERT_EQ("task_manager_stop", ret, OK);
 
-	ret = task_manager_terminate(tm_sample_handle, TM_RESPONSE_WAIT_INF);
-	TC_ASSERT_EQ("task_manager_terminate", ret, TM_ALREADY_STOPPED_TASK);
+	ret = task_manager_stop(tm_sample_handle, TM_RESPONSE_WAIT_INF);
+	TC_ASSERT_EQ("task_manager_stop", ret, TM_ALREADY_STOPPED_TASK);
 
-	ret = task_manager_terminate(tm_broadcast_handle1, TM_RESPONSE_WAIT_INF);
-	TC_ASSERT_EQ("task_manager_terminate", ret, OK);
+	ret = task_manager_stop(tm_broadcast_handle1, TM_RESPONSE_WAIT_INF);
+	TC_ASSERT_EQ("task_manager_stop", ret, OK);
 
-	ret = task_manager_terminate(tm_broadcast_handle2, TM_RESPONSE_WAIT_INF);
-	TC_ASSERT_EQ("task_manager_terminate", ret, OK);
+	ret = task_manager_stop(tm_broadcast_handle2, TM_RESPONSE_WAIT_INF);
+	TC_ASSERT_EQ("task_manager_stop", ret, OK);
 
-	ret = task_manager_terminate(tm_broadcast_handle3, TM_RESPONSE_WAIT_INF);
-	TC_ASSERT_EQ("task_manager_terminate", ret, OK);
+	ret = task_manager_stop(tm_broadcast_handle3, TM_RESPONSE_WAIT_INF);
+	TC_ASSERT_EQ("task_manager_stop", ret, OK);
 
 	TC_SUCCESS_RESULT();
 }
@@ -641,8 +641,8 @@ int utc_task_manager_main(int argc, char *argv[])
 	utc_task_manager_restart_n();
 	utc_task_manager_restart_p();
 
-	utc_task_manager_terminate_n();
-	utc_task_manager_terminate_p();
+	utc_task_manager_stop_n();
+	utc_task_manager_stop_p();
 
 	utc_task_manager_unregister_n();
 	utc_task_manager_unregister_p();

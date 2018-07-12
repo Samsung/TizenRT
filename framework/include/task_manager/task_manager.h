@@ -146,9 +146,9 @@ int task_manager_unregister(int handle, int timeout);
  */
 int task_manager_start(int handle, int timeout);
 /**
- * @brief Request to terminate the task
+ * @brief Request to stop the task
  * @details @b #include <task_manager/task_manager.h>
- * @param[in] handle the handle id of task to be terminated.
+ * @param[in] handle the handle id of task to be stopped.
  * @param[in] timeout returnable flag. It can be one of the below.\n
  *			TM_NO_RESPONSE : Ignore the response of request from task manager\n
  *			TM_RESPONSE_WAIT_INF : Blocked until get the response from task manager\n
@@ -156,7 +156,7 @@ int task_manager_start(int handle, int timeout);
  * @return On success, OK is returned. On failure, defined negative value is returned.
  * @since TizenRT v2.0 PRE
  */
-int task_manager_terminate(int handle, int timeout);
+int task_manager_stop(int handle, int timeout);
 /**
  * @brief Request to pause the task
  * @details @b #include <task_manager/task_manager.h>
