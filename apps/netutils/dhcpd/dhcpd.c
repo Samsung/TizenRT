@@ -235,6 +235,8 @@
 #define HAVE_LEASE_TIME 1
 #endif
 
+#define MAC_STR(x) (x)[0], (x)[1], (x)[2], (x)[3], (x)[4], (x)[5]
+
 /****************************************************************************
  * Private Types
  ****************************************************************************/
@@ -1551,6 +1553,38 @@ static int dhcpd_netif_deinit(char *intf)
 int dhcpd_status(void)
 {
 	return g_dhcpd_running;
+}
+
+void dhcpd_show_leases(void)
+{
+	int i;
+	time_t now;
+
+	printf("-----------------------------------\n" \
+		"Lease Pool Information\n" \
+		"-----------------------------------\n" \
+		"This is for only debugging purpose.\n" \
+		"Please note that it doesn't guarantee thread-safe with dhcpd task.\n");
+
+	now = dhcpd_time();
+	printf("Current Time=%d\n", now);
+
+	for (i = 0; i < CONFIG_NETUTILS_DHCPD_MAXLEASES; i++) {
+		printf("%d | Alloc: %d", i, g_state.ds_leases[i].allocated);
+		if (g_state.ds_leases[i].allocated == 1) {
+			printf(" | IP=0x%08x | MAC=%02x:%02x:%02x:%02x:%02x:%02x | Expired at=%d",
+				CONFIG_NETUTILS_DHCPD_STARTIP + i, MAC_STR(g_state.ds_leases[i].mac), g_state.ds_leases[i].expiry);
+
+			if (g_state.ds_leases[i].expiry > now) {
+				printf(" (%d sec left)\n", g_state.ds_leases[i].expiry - now);
+			} else {
+				printf(" (expired)\n");
+			}
+		}
+		else {
+			printf("\n");
+		}
+	}
 }
 
 /****************************************************************************

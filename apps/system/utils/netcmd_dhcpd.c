@@ -163,6 +163,7 @@ int cmd_dhcpd(int argc, char *argv[])
 		printf("\ndhcpd status : ");
 		if (dhcpd_status()) {
 			printf("running\n");
+			dhcpd_show_leases();
 		} else {
 			printf("stopped\n");
 		}
