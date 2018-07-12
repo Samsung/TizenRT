@@ -31,7 +31,7 @@ $ make -C os download ALL
                    XGPIO16(gpio45) LED703 |_|_| LED702 XGPIO20(gpio49)
                                 ___________       [CON708]
                                |           |  |_| SCL XI2C0_SCL
-                               |           |  |_| SDA XI2C0_SDA
+    XGPIO14(gpio43) SW701 |_|  |           |  |_| SDA XI2C0_SDA
                                |           |  |_| AREF
                  [CON710]      |           |  |_| GND
                        NC |_|  |           |  |_| 13 XSPI1_CLK
