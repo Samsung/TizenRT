@@ -52,7 +52,7 @@ static void wifi_sta_connected(wifi_manager_result_e result) {
 	std::cout << __FUNCTION__ << std::endl;
 }
 
-static void wifi_sta_disconnected() {
+static void wifi_sta_disconnected(wifi_manager_disconnect_e disconn) {
 	std::cout << __FUNCTION__ << std::endl;
 }
 

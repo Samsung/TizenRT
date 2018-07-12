@@ -97,7 +97,7 @@ typedef enum {
  * Callbacks
  */
 static void wm_sta_connected(wifi_manager_result_e);
-static void wm_sta_disconnected(void);
+static void wm_sta_disconnected(wifi_manager_disconnect_e);
 
 /*
  * Global
@@ -129,7 +129,7 @@ void wm_sta_connected(wifi_manager_result_e res)
 	WM_TEST_SIGNAL;
 }
 
-void wm_sta_disconnected(void)
+void wm_sta_disconnected(wifi_manager_disconnect_e disconn)
 {
 	printf(" T%d --> %s\n", getpid(), __FUNCTION__);
 	WM_TEST_SIGNAL;

@@ -41,7 +41,7 @@ do {										\
 	pthread_mutex_unlock(&g_wifi_manager_test_mutex);			\
 } while (0)
 void wifi_sta_connected(wifi_manager_result_e result);		// in station mode, connected to ap
-void wifi_sta_disconnected(void);	// in station mode, disconnected from ap
+void wifi_sta_disconnected(wifi_manager_disconnect_e disconn);	// in station mode, disconnected from ap
 void wifi_softap_sta_joined(void);	// in softap mode, a station joined
 void wifi_softap_sta_left(void);		// in softap mode, a station left
 void wifi_scan_ap_done(wifi_manager_scan_info_s **scan_info, wifi_manager_scan_result_e res); // called when scanning ap is done
@@ -68,7 +68,7 @@ void wifi_sta_connected(wifi_manager_result_e result)
 	WIFITEST_SIGNAL;
 }
 
-void wifi_sta_disconnected(void)
+void wifi_sta_disconnected(wifi_manager_disconnect_e disconn)
 {
 	printf("wifi_sta_disconnected: send signal!!! \n");
 	WIFITEST_SIGNAL;

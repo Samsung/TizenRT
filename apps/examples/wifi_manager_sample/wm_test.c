@@ -82,7 +82,7 @@ int wm_signal_init(void);
  * callbacks
  */
 static void wm_sta_connected(wifi_manager_result_e);
-static void wm_sta_disconnected(void);
+static void wm_sta_disconnected(wifi_manager_disconnect_e);
 static void wm_softap_sta_join(void);
 static void wm_softap_sta_leave(void);
 static void wm_scan_done(wifi_manager_scan_info_s **scan_result, wifi_manager_scan_result_e res);
@@ -334,7 +334,7 @@ void wm_sta_connected(wifi_manager_result_e res)
 }
 
 
-void wm_sta_disconnected(void)
+void wm_sta_disconnected(wifi_manager_disconnect_e disconn)
 {
 	sleep(2);
 	printf(" T%d --> %s\n", getpid(), __FUNCTION__);
