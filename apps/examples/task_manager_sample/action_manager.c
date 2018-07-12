@@ -126,7 +126,7 @@ int action_manager_main(int argc, char *argv[])
 
 	exit_flag = 0;
 
-	handle_alarm = task_manager_register("alarm", TM_TASK_PERMISSION_ALL, TM_RESPONSE_WAIT_INF);
+	handle_alarm = task_manager_register("alarm", TM_APP_PERMISSION_ALL, TM_RESPONSE_WAIT_INF);
 	if (handle_alarm < 0) {
 		printf("FAIL TO REGISTER ALARM ACTION, %d\n", handle_alarm);
 	} else if (handle_alarm >= 0) {
@@ -135,7 +135,7 @@ int action_manager_main(int argc, char *argv[])
 
 	printf("\nRegister LED On Action\n");
 
-	handle_ledon = task_manager_register("led_on", TM_TASK_PERMISSION_ALL, TM_RESPONSE_WAIT_INF);
+	handle_ledon = task_manager_register("led_on", TM_APP_PERMISSION_ALL, TM_RESPONSE_WAIT_INF);
 	if (handle_ledon < 0) {
 		printf("FAIL TO REGISTER LED ON ACTION, %d\n", handle_ledon);
 	} else if (handle_ledon >= 0) {
@@ -144,7 +144,7 @@ int action_manager_main(int argc, char *argv[])
 
 	printf("\nRegister LED Off Action\n");
 
-	handle_ledoff = task_manager_register("led_off", TM_TASK_PERMISSION_ALL, TM_RESPONSE_WAIT_INF);
+	handle_ledoff = task_manager_register("led_off", TM_APP_PERMISSION_ALL, TM_RESPONSE_WAIT_INF);
 	if (handle_ledoff < 0) {
 		printf("FAIL TO REGISTER LED OFF ACTION, %d\n", handle_ledoff);
 	} else if (handle_ledoff >= 0) {

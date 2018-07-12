@@ -35,12 +35,12 @@ int task_manager_register(char *name, int permission, int timeout)
 	tm_request_t request_msg;
 	tm_response_t response_msg;
 
-	if (name == NULL || timeout < TM_RESPONSE_WAIT_INF || permission < TM_TASK_PERMISSION_ALL || permission > TM_TASK_PERMISSION_DEDICATE) {
+	if (name == NULL || timeout < TM_RESPONSE_WAIT_INF || permission < TM_APP_PERMISSION_ALL || permission > TM_APP_PERMISSION_DEDICATE) {
 		return TM_INVALID_PARAM;
 	}
 
 	memset(&request_msg, 0, sizeof(tm_request_t));
-	request_msg.cmd = TASKMGR_REGISTER;
+	request_msg.cmd = TASKMGRCMD_REGISTER;
 	request_msg.caller_pid = getpid();
 	request_msg.handle = permission;
 	request_msg.data = (void *)TM_ALLOC(strlen(name) + 1);
@@ -81,12 +81,12 @@ int task_manager_register_task(char *name, int priority, int stack_size, main_t 
 	tm_request_t request_msg;
 	tm_response_t response_msg;
 
-	if (name == NULL || timeout < TM_RESPONSE_WAIT_INF || permission < TM_TASK_PERMISSION_ALL || permission > TM_TASK_PERMISSION_DEDICATE || priority < SCHED_PRIORITY_MIN || priority > SCHED_PRIORITY_MAX || stack_size < 1 || entry == NULL) {
+	if (name == NULL || timeout < TM_RESPONSE_WAIT_INF || permission < TM_APP_PERMISSION_ALL || permission > TM_APP_PERMISSION_DEDICATE || priority < SCHED_PRIORITY_MIN || priority > SCHED_PRIORITY_MAX || stack_size < 1 || entry == NULL) {
 		return TM_INVALID_PARAM;
 	}
 
 	memset(&request_msg, 0, sizeof(tm_request_t));
-	request_msg.cmd = TASKMGR_REGISTER;
+	request_msg.cmd = TASKMGRCMD_REGISTER;
 	request_msg.caller_pid = getpid();
 	request_msg.handle = permission;
 	request_msg.data = (void *)TM_ALLOC(sizeof(tm_task_info_t));
@@ -131,12 +131,12 @@ int task_manager_register_pthread(char *name, pthread_attr_t *attr, pthread_star
 	tm_request_t request_msg;
 	tm_response_t response_msg;
 
-	if (name == NULL || timeout < TM_RESPONSE_WAIT_INF || permission < TM_TASK_PERMISSION_ALL || permission > TM_TASK_PERMISSION_DEDICATE || attr == NULL || start_routine == NULL) {
+	if (name == NULL || timeout < TM_RESPONSE_WAIT_INF || permission < TM_APP_PERMISSION_ALL || permission > TM_APP_PERMISSION_DEDICATE || attr == NULL || start_routine == NULL) {
 		return TM_INVALID_PARAM;
 	}
 
 	memset(&request_msg, 0, sizeof(tm_request_t));
-	request_msg.cmd = TASKMGR_REGISTER;
+	request_msg.cmd = TASKMGRCMD_REGISTER;
 	request_msg.caller_pid = getpid();
 	request_msg.handle = permission;
 	request_msg.data = (void *)TM_ALLOC(sizeof(tm_pthread_info_t));

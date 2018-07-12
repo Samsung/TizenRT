@@ -46,9 +46,9 @@ static int tm_broadcast_handle2;
 static int tm_broadcast_handle3;
 static int tm_noperm_handle;
 static bool flag;
-static task_info_t *sample_info;
-static task_info_list_t *group_list_info;
-static task_info_list_t *sample_list_info;
+static app_info_t *sample_info;
+static app_info_list_t *group_list_info;
+static app_info_list_t *sample_list_info;
 static int *addr;
 static int *addr2;
 static int broad_wifi_on_cnt;
@@ -91,7 +91,7 @@ int tm_sample_main(int argc, char *argv[])
 {
 	int ret;
 
-	tm_noperm_handle = task_manager_register(TM_NOPERM_NAME, TM_TASK_PERMISSION_DEDICATE, 100);
+	tm_noperm_handle = task_manager_register(TM_NOPERM_NAME, TM_APP_PERMISSION_DEDICATE, 100);
 
 	ret = task_manager_set_unicast_cb(test_unicast_handler);
 	if (ret != OK) {
@@ -149,13 +149,13 @@ int tm_broadcast3_main(int argc, char *argv[])
 static void utc_task_manager_register_n(void)
 {
 	int ret;
-	ret = task_manager_register(NULL, TM_TASK_PERMISSION_DEDICATE, TM_NO_RESPONSE);
+	ret = task_manager_register(NULL, TM_APP_PERMISSION_DEDICATE, TM_NO_RESPONSE);
 	TC_ASSERT_EQ("task_manager_register", ret, TM_INVALID_PARAM);
 
 	ret = task_manager_register(TM_SAMPLE_NAME, TM_INVALID_PERMISSION, TM_NO_RESPONSE);
 	TC_ASSERT_EQ("task_manager_register", ret, TM_INVALID_PARAM);
 
-	ret = task_manager_register(TM_SAMPLE_NAME, TM_TASK_PERMISSION_GROUP, TM_INVALID_TIMEOUT);
+	ret = task_manager_register(TM_SAMPLE_NAME, TM_APP_PERMISSION_GROUP, TM_INVALID_TIMEOUT);
 	TC_ASSERT_EQ("task_manager_register", ret, TM_INVALID_PARAM);
 
 	TC_SUCCESS_RESULT();
@@ -163,19 +163,19 @@ static void utc_task_manager_register_n(void)
 
 static void utc_task_manager_register_p(void)
 {
-	tm_sample_handle = task_manager_register("invalid", TM_TASK_PERMISSION_DEDICATE, TM_RESPONSE_WAIT_INF);
+	tm_sample_handle = task_manager_register("invalid", TM_APP_PERMISSION_DEDICATE, TM_RESPONSE_WAIT_INF);
 	TC_ASSERT_EQ("task_manager_register", tm_sample_handle, TM_OPERATION_FAIL);
 
-	tm_sample_handle = task_manager_register(TM_SAMPLE_NAME, TM_TASK_PERMISSION_DEDICATE, TM_RESPONSE_WAIT_INF);
+	tm_sample_handle = task_manager_register(TM_SAMPLE_NAME, TM_APP_PERMISSION_DEDICATE, TM_RESPONSE_WAIT_INF);
 	TC_ASSERT_GEQ("task_manager_register", tm_sample_handle, 0);
 
-	tm_broadcast_handle1 = task_manager_register(TM_BROADCAST1_NAME, TM_TASK_PERMISSION_DEDICATE, TM_RESPONSE_WAIT_INF);
+	tm_broadcast_handle1 = task_manager_register(TM_BROADCAST1_NAME, TM_APP_PERMISSION_DEDICATE, TM_RESPONSE_WAIT_INF);
 	TC_ASSERT_GEQ("task_manager_register", tm_broadcast_handle1, 0);
 
-	tm_broadcast_handle2 = task_manager_register(TM_BROADCAST2_NAME, TM_TASK_PERMISSION_DEDICATE, TM_RESPONSE_WAIT_INF);
+	tm_broadcast_handle2 = task_manager_register(TM_BROADCAST2_NAME, TM_APP_PERMISSION_DEDICATE, TM_RESPONSE_WAIT_INF);
 	TC_ASSERT_GEQ("task_manager_register", tm_broadcast_handle2, 0);
 
-	tm_broadcast_handle3 = task_manager_register(TM_BROADCAST3_NAME, TM_TASK_PERMISSION_DEDICATE, TM_RESPONSE_WAIT_INF);
+	tm_broadcast_handle3 = task_manager_register(TM_BROADCAST3_NAME, TM_APP_PERMISSION_DEDICATE, TM_RESPONSE_WAIT_INF);
 	TC_ASSERT_GEQ("task_manager_register", tm_broadcast_handle3, 0);
 
 	TC_SUCCESS_RESULT();
@@ -201,7 +201,7 @@ static void utc_task_manager_start_p(void)
 	TC_ASSERT_EQ("task_manager_start", ret, OK);
 
 	ret = task_manager_start(tm_sample_handle, TM_RESPONSE_WAIT_INF);
-	TC_ASSERT_EQ("task_manager_start", ret, TM_ALREADY_STARTED_TASK);
+	TC_ASSERT_EQ("task_manager_start", ret, TM_ALREADY_STARTED_APP);
 
 	ret = task_manager_start(tm_broadcast_handle1, TM_RESPONSE_WAIT_INF);
 	TC_ASSERT_EQ("task_manager_start", ret, OK);
@@ -399,14 +399,14 @@ static void utc_task_manager_resume_p(void)
 
 static void utc_task_manager_getinfo_with_name_n(void)
 {
-	task_info_list_t *ret;
-	ret = (task_info_list_t *)task_manager_getinfo_with_name(NULL, TM_NO_RESPONSE);
+	app_info_list_t *ret;
+	ret = (app_info_list_t *)task_manager_getinfo_with_name(NULL, TM_NO_RESPONSE);
 	TC_ASSERT_EQ("task_manager_getinfo_with_name", ret, NULL);
 
-	ret = (task_info_list_t *)task_manager_getinfo_with_name(TM_SAMPLE_NAME, TM_INVALID_TIMEOUT);
+	ret = (app_info_list_t *)task_manager_getinfo_with_name(TM_SAMPLE_NAME, TM_INVALID_TIMEOUT);
 	TC_ASSERT_EQ("task_manager_getinfo_with_name", ret, NULL);
 
-	ret = (task_info_list_t *)task_manager_getinfo_with_name(TM_SAMPLE_NAME, TM_NO_RESPONSE);
+	ret = (app_info_list_t *)task_manager_getinfo_with_name(TM_SAMPLE_NAME, TM_NO_RESPONSE);
 	TC_ASSERT_EQ("task_manager_getinfo_with_name", ret, NULL);
 
 	TC_SUCCESS_RESULT();
@@ -414,7 +414,7 @@ static void utc_task_manager_getinfo_with_name_n(void)
 
 static void utc_task_manager_getinfo_with_name_p(void)
 {
-	sample_list_info = (task_info_list_t *)task_manager_getinfo_with_name(TM_SAMPLE_NAME, TM_RESPONSE_WAIT_INF);
+	sample_list_info = (app_info_list_t *)task_manager_getinfo_with_name(TM_SAMPLE_NAME, TM_RESPONSE_WAIT_INF);
 	TC_ASSERT_NEQ("task_manager_getinfo_with_name", sample_list_info, NULL);
 
 	TC_SUCCESS_RESULT();
@@ -422,14 +422,14 @@ static void utc_task_manager_getinfo_with_name_p(void)
 
 static void utc_task_manager_getinfo_with_handle_n(void)
 {
-	task_info_t *ret;
-	ret = (task_info_t *)task_manager_getinfo_with_handle(TM_INVALID_HANDLE, TM_NO_RESPONSE);
+	app_info_t *ret;
+	ret = (app_info_t *)task_manager_getinfo_with_handle(TM_INVALID_HANDLE, TM_NO_RESPONSE);
 	TC_ASSERT_EQ("task_manager_getinfo_with_handle", ret, NULL);
 
-	ret = (task_info_t *)task_manager_getinfo_with_handle(tm_sample_handle, TM_INVALID_TIMEOUT);
+	ret = (app_info_t *)task_manager_getinfo_with_handle(tm_sample_handle, TM_INVALID_TIMEOUT);
 	TC_ASSERT_EQ("task_manager_getinfo_with_handle", ret, NULL);
 
-	ret = (task_info_t *)task_manager_getinfo_with_handle(tm_sample_handle, TM_NO_RESPONSE);
+	ret = (app_info_t *)task_manager_getinfo_with_handle(tm_sample_handle, TM_NO_RESPONSE);
 	TC_ASSERT_EQ("task_manager_getinfo_with_handle", ret, NULL);
 
 	TC_SUCCESS_RESULT();
@@ -437,7 +437,7 @@ static void utc_task_manager_getinfo_with_handle_n(void)
 
 static void utc_task_manager_getinfo_with_handle_p(void)
 {
-	sample_info = (task_info_t *)task_manager_getinfo_with_handle(tm_sample_handle, TM_RESPONSE_WAIT_INF);
+	sample_info = (app_info_t *)task_manager_getinfo_with_handle(tm_sample_handle, TM_RESPONSE_WAIT_INF);
 	TC_ASSERT_NEQ("task_manager_getinfo_with_handle", sample_info, NULL);
 
 	TC_SUCCESS_RESULT();
@@ -445,19 +445,19 @@ static void utc_task_manager_getinfo_with_handle_p(void)
 
 static void utc_task_manager_getinfo_with_group_n(void)
 {
-	task_info_list_t *ret;
-	ret = (task_info_list_t *)task_manager_getinfo_with_group(TM_INVALID_HANDLE, TM_NO_RESPONSE);
+	app_info_list_t *ret;
+	ret = (app_info_list_t *)task_manager_getinfo_with_group(TM_INVALID_HANDLE, TM_NO_RESPONSE);
 	TC_ASSERT_EQ("task_manager_getinfo_with_group", ret, NULL);
 
 	if (!sample_info) {
-		sample_info = (task_info_t *)task_manager_getinfo_with_handle(tm_sample_handle, TM_RESPONSE_WAIT_INF);
+		sample_info = (app_info_t *)task_manager_getinfo_with_handle(tm_sample_handle, TM_RESPONSE_WAIT_INF);
 		TC_ASSERT_NEQ("task_manager_getinfo_with_handle", sample_info, NULL);
 	}
 
-	ret = (task_info_list_t *)task_manager_getinfo_with_group(sample_info->tm_gid, TM_INVALID_TIMEOUT);
+	ret = (app_info_list_t *)task_manager_getinfo_with_group(sample_info->tm_gid, TM_INVALID_TIMEOUT);
 	TC_ASSERT_EQ("task_manager_getinfo_with_group", ret, NULL);
 
-	ret = (task_info_list_t *)task_manager_getinfo_with_group(sample_info->tm_gid, TM_NO_RESPONSE);
+	ret = (app_info_list_t *)task_manager_getinfo_with_group(sample_info->tm_gid, TM_NO_RESPONSE);
 	TC_ASSERT_EQ("task_manager_getinfo_with_group", ret, NULL);
 
 	TC_SUCCESS_RESULT();
@@ -466,11 +466,11 @@ static void utc_task_manager_getinfo_with_group_n(void)
 static void utc_task_manager_getinfo_with_group_p(void)
 {
 	if (!sample_info) {
-		sample_info = (task_info_t *)task_manager_getinfo_with_handle(tm_sample_handle, TM_RESPONSE_WAIT_INF);
+		sample_info = (app_info_t *)task_manager_getinfo_with_handle(tm_sample_handle, TM_RESPONSE_WAIT_INF);
 		TC_ASSERT_NEQ("task_manager_getinfo_with_handle", sample_info, NULL);
 	}
 
-	group_list_info = (task_info_list_t *)task_manager_getinfo_with_group(sample_info->tm_gid, TM_RESPONSE_WAIT_INF);
+	group_list_info = (app_info_list_t *)task_manager_getinfo_with_group(sample_info->tm_gid, TM_RESPONSE_WAIT_INF);
 	TC_ASSERT_NEQ("task_manager_getinfo_with_group", group_list_info, NULL);
 
 	task_manager_clean_infolist(&group_list_info);
@@ -481,7 +481,7 @@ static void utc_task_manager_getinfo_with_group_p(void)
 static void utc_task_manager_clean_infolist_p(void)
 {
 	task_manager_clean_infolist(&sample_list_info);
-	TC_ASSERT_NEQ("task_manager_clean_infolist", (task_info_list_t *)&sample_list_info, NULL);
+	TC_ASSERT_NEQ("task_manager_clean_infolist", (app_info_list_t *)&sample_list_info, NULL);
 
 	TC_SUCCESS_RESULT();
 }
@@ -489,7 +489,7 @@ static void utc_task_manager_clean_infolist_p(void)
 static void utc_task_manager_clean_info_p(void)
 {
 	task_manager_clean_info(&sample_info);
-	TC_ASSERT_NEQ("task_manager_clean_info", (task_info_t *)&sample_info, NULL);
+	TC_ASSERT_NEQ("task_manager_clean_info", (app_info_t *)&sample_info, NULL);
 
 	TC_SUCCESS_RESULT();
 }
@@ -513,7 +513,7 @@ static void utc_task_manager_stop_p(void)
 	TC_ASSERT_EQ("task_manager_stop", ret, OK);
 
 	ret = task_manager_stop(tm_sample_handle, TM_RESPONSE_WAIT_INF);
-	TC_ASSERT_EQ("task_manager_stop", ret, TM_ALREADY_STOPPED_TASK);
+	TC_ASSERT_EQ("task_manager_stop", ret, TM_ALREADY_STOPPED_APP);
 
 	ret = task_manager_stop(tm_broadcast_handle1, TM_RESPONSE_WAIT_INF);
 	TC_ASSERT_EQ("task_manager_stop", ret, OK);
@@ -578,13 +578,13 @@ static void utc_task_manager_unregister_p(void)
 	TC_ASSERT_EQ("task_manager_unregister", ret, OK);
 
 	ret = task_manager_start(tm_sample_handle, 100);
-	TC_ASSERT_EQ("task_manager_start", ret, TM_UNREGISTERED_TASK);
+	TC_ASSERT_EQ("task_manager_start", ret, TM_UNREGISTERED_APP);
 
 	ret = task_manager_restart(tm_sample_handle, TM_RESPONSE_WAIT_INF);
-	TC_ASSERT_EQ("task_manager_restart", ret, TM_UNREGISTERED_TASK);
+	TC_ASSERT_EQ("task_manager_restart", ret, TM_UNREGISTERED_APP);
 
 	ret = task_manager_unregister(tm_sample_handle, TM_RESPONSE_WAIT_INF);
-	TC_ASSERT_EQ("task_manager_unregister", ret, TM_UNREGISTERED_TASK);
+	TC_ASSERT_EQ("task_manager_unregister", ret, TM_UNREGISTERED_APP);
 
 	TC_SUCCESS_RESULT();
 }

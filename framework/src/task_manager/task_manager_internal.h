@@ -26,22 +26,22 @@
 #include <sys/types.h>
 
 /* Command Types */
-#define TASKMGR_REGISTER                0
-#define TASKMGR_UNREGISTER              1
-#define TASKMGR_START                   2
-#define TASKMGR_STOP                    3
-#define TASKMGR_RESTART                 4
-#define TASKMGR_PAUSE                   5
-#define TASKMGR_RESUME                  6
-#define TASKMGR_UNICAST                 7
-#define TASKMGR_BROADCAST               8
-#define TASKMGR_SET_UNICAST_CB          9
-#define TASKMGR_SET_BROADCAST_CB        10
-#define TASKMGR_SCAN_NAME               11
-#define TASKMGR_SCAN_HANDLE             12
-#define TASKMGR_SCAN_GROUP              13
-#define TASKMGR_REGISTER_TASK           14
-#define TASKMGR_REGISTER_PTHREAD        15
+#define TASKMGRCMD_REGISTER                0
+#define TASKMGRCMD_UNREGISTER              1
+#define TASKMGRCMD_START                   2
+#define TASKMGRCMD_STOP                    3
+#define TASKMGRCMD_RESTART                 4
+#define TASKMGRCMD_PAUSE                   5
+#define TASKMGRCMD_RESUME                  6
+#define TASKMGRCMD_UNICAST                 7
+#define TASKMGRCMD_BROADCAST               8
+#define TASKMGRCMD_SET_UNICAST_CB          9
+#define TASKMGRCMD_SET_BROADCAST_CB        10
+#define TASKMGRCMD_SCAN_NAME               11
+#define TASKMGRCMD_SCAN_HANDLE             12
+#define TASKMGRCMD_SCAN_GROUP              13
+#define TASKMGRCMD_REGISTER_TASK           14
+#define TASKMGRCMD_REGISTER_PTHREAD        15
 
 /* Task Type */
 #define TM_BUILTIN_TASK			0
@@ -60,13 +60,13 @@
 typedef void (*_tm_unicast_t)(void *);
 typedef void (*_tm_broadcast_t)(int);
 
-struct task_list_s {
+struct app_list_s {
 	int pid;
 	void *addr;
 };
-typedef struct task_list_s task_list_t;
+typedef struct app_list_s app_list_t;
 
-struct task_list_data_s {
+struct app_list_data_s {
 	int type;
 	int idx;
 	int pid;
@@ -77,7 +77,7 @@ struct task_list_data_s {
 	_tm_unicast_t unicast_cb;
 	_tm_broadcast_t broadcast_cb;
 };
-typedef struct task_list_data_s task_list_data_t;
+typedef struct app_list_data_s app_list_data_t;
 
 struct tm_request_s {
 	int cmd;
@@ -91,7 +91,7 @@ typedef struct tm_request_s tm_request_t;
 
 struct tm_response_s {
 	int status;
-	task_info_list_t *data;
+	app_info_list_t *data;
 };
 typedef struct tm_response_s tm_response_t;
 
@@ -120,18 +120,18 @@ typedef struct tm_pthread_info_s tm_pthread_info_t;
 
 #define IS_INVALID_HANDLE(i) (i < 0 || i >= CONFIG_TASK_MANAGER_MAX_TASKS)
 
-#define TASK_LIST_ADDR(handle)       ((task_list_data_t *)tm_handle_list[handle].addr)
-#define TASK_PID(handle)             tm_handle_list[handle].pid
-#define TASK_TYPE(handle)            TASK_LIST_ADDR(handle)->type
-#define TASK_IDX(handle)             TASK_LIST_ADDR(handle)->idx
-#define TASK_TM_GID(handle)          TASK_LIST_ADDR(handle)->tm_gid
-#define TASK_STATUS(handle)          TASK_LIST_ADDR(handle)->status
-#define TASK_PERMISSION(handle)      TASK_LIST_ADDR(handle)->permission
-#define TASK_MSG_MASK(handle)        TASK_LIST_ADDR(handle)->msg_mask
-#define TASK_UNICAST_CB(handle)      TASK_LIST_ADDR(handle)->unicast_cb
-#define TASK_BROADCAST_CB(handle)    TASK_LIST_ADDR(handle)->broadcast_cb
+#define TM_LIST_ADDR(handle)       ((app_list_data_t *)tm_app_list[handle].addr)
+#define TM_PID(handle)             tm_app_list[handle].pid
+#define TM_TYPE(handle)            TM_LIST_ADDR(handle)->type
+#define TM_IDX(handle)             TM_LIST_ADDR(handle)->idx
+#define TM_GID(handle)          TM_LIST_ADDR(handle)->tm_gid
+#define TM_STATUS(handle)          TM_LIST_ADDR(handle)->status
+#define TM_PERMISSION(handle)      TM_LIST_ADDR(handle)->permission
+#define TM_MSG_MASK(handle)        TM_LIST_ADDR(handle)->msg_mask
+#define TM_UNICAST_CB(handle)      TM_LIST_ADDR(handle)->unicast_cb
+#define TM_BROADCAST_CB(handle)    TM_LIST_ADDR(handle)->broadcast_cb
 
-extern task_list_t tm_handle_list[CONFIG_TASK_MANAGER_MAX_TASKS];
+extern app_list_t tm_app_list[CONFIG_TASK_MANAGER_MAX_TASKS];
 
 int taskmgr_send_request(tm_request_t *request_msg);
 int taskmgr_send_response(char *q_name, tm_response_t *response_msg);

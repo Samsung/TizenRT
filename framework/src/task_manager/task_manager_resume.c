@@ -40,7 +40,7 @@ int task_manager_resume(int handle, int timeout)
 
 	memset(&request_msg, 0, sizeof(tm_request_t));
 	/* Set the request msg */
-	request_msg.cmd = TASKMGR_RESUME;
+	request_msg.cmd = TASKMGRCMD_RESUME;
 	request_msg.handle = handle;
 	request_msg.caller_pid = getpid();
 	request_msg.timeout = timeout;

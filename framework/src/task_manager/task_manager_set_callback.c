@@ -31,14 +31,14 @@ void taskmgr_msg_cb(int signo, siginfo_t *data)
 {
 	int handle;
 	handle = taskmgr_get_handle_by_pid(getpid());
-	if (handle == TM_UNREGISTERED_TASK) {
+	if (handle == TM_UNREGISTERED_APP) {
 		tmdbg("Fail to get handle by pid\n");
 		return;
 	}
 	if (signo == CONFIG_SIG_SIGTM_UNICAST) {
-		(*TASK_UNICAST_CB(handle))((void *)data->si_value.sival_ptr);
+		(*TM_UNICAST_CB(handle))((void *)data->si_value.sival_ptr);
 	} else {
-		(*TASK_BROADCAST_CB(handle))(data->si_value.sival_int);
+		(*TM_BROADCAST_CB(handle))(data->si_value.sival_int);
 	}
 }
 /****************************************************************************
@@ -74,7 +74,7 @@ int task_manager_set_unicast_cb(void (*func)(void *data))
 
 	memset(&request_msg, 0, sizeof(tm_request_t));
 	/* Set the request msg */
-	request_msg.cmd = TASKMGR_SET_UNICAST_CB;
+	request_msg.cmd = TASKMGRCMD_SET_UNICAST_CB;
 	request_msg.caller_pid = getpid();
 	request_msg.data = (void *)func;
 	request_msg.timeout = TM_NO_RESPONSE;
@@ -116,7 +116,7 @@ int task_manager_set_broadcast_cb(int msg_mask, void (*func)(int data))
 	}
 
 	memset(&request_msg, 0, sizeof(tm_request_t));
-	request_msg.cmd = TASKMGR_SET_BROADCAST_CB;
+	request_msg.cmd = TASKMGRCMD_SET_BROADCAST_CB;
 	request_msg.caller_pid = getpid();
 	request_msg.timeout = TM_NO_RESPONSE;
 	request_msg.data = (void *)TM_ALLOC(sizeof(tm_broadcast_t));
