@@ -732,6 +732,7 @@ done:
 	sched_unlock();
 	return result;
 }
+#endif
 
 /****************************************************************************
  * Name: ntpc_get_status
@@ -796,4 +797,3 @@ int ntpc_get_link_status(void)
 	return status;
 }
 
-#endif
