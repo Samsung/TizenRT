@@ -77,6 +77,7 @@ enum _wifimgr_usr_cb_type {
 	CB_STA_CONNECTED,
 	CB_STA_CONNECT_FAILED,
 	CB_STA_DISCONNECTED,
+	CB_STA_RECONNECTED,
 	CB_STA_JOINED,
 	CB_STA_LEFT,
 	CB_SCAN_DONE,
@@ -638,9 +639,6 @@ wifi_manager_result_e _get_ipaddr_dhcp(void)
 			return wret;
 		}
 		WIFIMGR_SET_IP4ADDR(WIFIMGR_STA_IFNAME, state.ipaddr, state.netmask, state.default_router);
-#ifdef CONFIG_ENABLE_IOTIVITY
-		__tizenrt_manual_linkset("gen");
-#endif
 		nvdbg("[WM] IP address : %s ----\n", inet_ntoa(state.ipaddr));
 		dhcpc_close(dhcp_hnd);
 		wret = WIFI_MANAGER_SUCCESS;
@@ -704,10 +702,6 @@ wifi_manager_result_e _wifimgr_disconnect_ap(void)
 	WM_LOG_START;
 
 	WIFIMGR_CHECK_UTILRESULT(wifi_utils_disconnect_ap(NULL), "[WM] disconnect to ap fail\n", WIFI_MANAGER_FAIL);
-
-#ifdef CONFIG_ENABLE_IOTIVITY
-	__tizenrt_manual_linkset("del");
-#endif
 	return WIFI_MANAGER_SUCCESS;
 }
 
@@ -959,12 +953,12 @@ wifi_manager_result_e _handler_on_connected_state(_wifimgr_msg_s *msg)
 		WIFIMGR_CHECK_RESULT(_wifimgr_disconnect_ap(), "critical error", WIFI_MANAGER_FAIL);
 		WIFIMGR_SET_STATE(WIFIMGR_STA_DISCONNECTING);
 	} else if (msg->event == EVT_STA_DISCONNECTED) {
-		/* STA is disconnected from AP */
-		_handle_user_cb(CB_STA_DISCONNECTED, NULL);
 #if WIFIDRIVER_SUPPORT_AUTOCONNECT == 0
 		if (g_manager_info.conn_config.type == WIFI_RECONN_NONE) {
+			_handle_user_cb(CB_STA_DISCONNECTED, NULL);
 			WIFIMGR_SET_STATE(WIFIMGR_STA_DISCONNECTED);
 		} else {
+			_handle_user_cb(CB_STA_RECONNECTED, NULL);
 			_wifimgr_conn_info_msg_s *rmsg = (_wifimgr_conn_info_msg_s *)malloc(sizeof(_wifimgr_conn_info_msg_s));
 			if (!rmsg) {				// critical error
 				ndbg("[WM] allocate memory for reconn msg fail\n");
@@ -997,10 +991,12 @@ wifi_manager_result_e _handler_on_connected_state(_wifimgr_msg_s *msg)
 		}
 #else /* WIFIDRIVER_SUPPORT_AUTOCONNECT */
 		if (g_manager_info.conn_config.type == WIFI_RECONN_NONE) {
+			_handle_user_cb(CB_STA_DISCONNECTED, NULL);
 			WIFIMGR_CHECK_RESULT(_wifimgr_disconnect_ap(), "critical error", WIFI_MANAGER_FAIL);
 			WIFIMGR_SET_STATE(WIFIMGR_STA_DISCONNECTED);
 		} else {
 			ndbg("[WM] AUTOCONNECT: go to RECONNECT state\n");
+			_handle_user_cb(CB_STA_RECONNECTED, NULL);
 			WIFIMGR_SET_STATE(WIFIMGR_STA_RECONNECT);
 		}
 #endif /* WIFIDRIVER_SUPPORT_AUTOCONNECT */
@@ -1185,6 +1181,9 @@ void _handle_user_cb(_wifimgr_usr_cb_type_e evt, void *arg)
 	switch (evt) {
 	case CB_STA_CONNECTED:
 		nvdbg("[WM] call sta connect success event\n");
+#ifdef CONFIG_ENABLE_IOTIVITY
+		__tizenrt_manual_linkset("gen");
+#endif
 		cbk->sta_connected(WIFI_MANAGER_SUCCESS);
 		break;
 	case CB_STA_CONNECT_FAILED:
@@ -1193,7 +1192,17 @@ void _handle_user_cb(_wifimgr_usr_cb_type_e evt, void *arg)
 		break;
 	case CB_STA_DISCONNECTED:
 		nvdbg("[WM] call sta disconnect event\n");
-		cbk->sta_disconnected();
+#ifdef CONFIG_ENABLE_IOTIVITY
+		__tizenrt_manual_linkset("del");
+#endif
+		cbk->sta_disconnected(WIFI_MANAGER_DISCONNECT);
+		break;
+	case CB_STA_RECONNECTED:
+		nvdbg("[WM] call sta disconnect event\n");
+#ifdef CONFIG_ENABLE_IOTIVITY
+		__tizenrt_manual_linkset("del");
+#endif
+		cbk->sta_disconnected(WIFI_MANAGER_RECONNECT);
 		break;
 	case CB_STA_JOINED:
 		nvdbg("[WM] call sta join event\n");
