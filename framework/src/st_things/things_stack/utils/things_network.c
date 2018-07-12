@@ -304,6 +304,9 @@ void things_wifi_sta_connected(wifi_manager_result_e res)
 void things_wifi_sta_disconnected(void)
 {
 	THINGS_LOG_V(TAG, "T%d --> %s", getpid(), __FUNCTION__);
+#ifdef CONFIG_NETUTILS_NTPCLIENT
+	ntpc_stop();
+#endif
 	things_wifi_changed_call_func(0, NULL, NULL);
 }
 
