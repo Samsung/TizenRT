@@ -49,7 +49,6 @@
 #include "framework/things_security_manager.h"
 #include "utils/things_rtos_util.h"
 
-#define DEFAULT_CI_HOST         "52.40.216.160:5683"	//!< Non Security Cloud IPv4:Port. Not used in common.
 #define MAX_CI_ADDRESS          256
 #define RESOURCE_DISCOVERY_QUERY "/oic/res"
 #define RESOURCE_DISCOVERY_QUERY_DI "/oic/res?di="
@@ -1485,9 +1484,13 @@ static OCStackResult register_server_into_cloud(es_cloud_prov_data_s *event_data
 		signed_up_data = NULL;
 	}
 
+	if (g_cloud_ip[0] == NULL || g_cloud_port[0] == NULL) {
+		THINGS_LOG_E(TAG, "g_cloud_ip is NULL or g_cloud_port is NULL");
+		return res;
+	}
 	int port = atoi(g_cloud_port);
-	if (g_cloud_ip[0] == NULL || g_cloud_port[0] == NULL || 0 >= port || port > 65535) {
-		THINGS_LOG_E(TAG, "Cloud info is invalid.(g_cloud_ip=%s, g_cloud_port=%s, port=%d)", g_cloud_ip, g_cloud_port, port);
+	if (0 >= port || port > 0xffff) {
+		THINGS_LOG_E(TAG, "Cloud info is invalid.(port=%d)", port);
 		return res;
 	}
 
@@ -1553,7 +1556,6 @@ int push_notification_to_cloud(const char *uri, OCRepPayload *payload)
 
 static char *make_cloud_address(char *ip, char *port, const char *ci_addr)
 {
-	char *delmem = NULL;
 	char *ipport = (char *)ci_addr;
 	THINGS_LOG_D(TAG, "ip=%s, port=%s, ci_addr=%s", ip, port, ci_addr);
 
@@ -1562,32 +1564,20 @@ static char *make_cloud_address(char *ip, char *port, const char *ci_addr)
 		if (point) {
 			ipport = point + strlen(DEFAULT_COAP_TCP_HOST);
 		}
-	} else if ((ipport = make_ip_port(ip, port)) != NULL) {	// ip , port coupling.
-		delmem = ipport;
-	} else {					// ext case.
-		ipport = DEFAULT_CI_HOST;
+	} else if ((ipport = make_ip_port(ip, port)) == NULL) {	// ip , port coupling.
+		return NULL;
 	}
 
 	// Update Cloud Address.
 	memset(g_cloud_address, 0, MAX_CI_ADDRESS);
 	if (things_strcat(g_cloud_address, MAX_CI_ADDRESS, DEFAULT_COAP_TCP_HOST) == NULL) {
 		THINGS_LOG_E(TAG, "things_strcat() is failed.");
-		if (delmem) {
-			things_free(delmem);
-		}
 		return NULL;
 	}
 
 	if (things_strcat(g_cloud_address, MAX_CI_ADDRESS, ipport) == NULL) {
 		THINGS_LOG_E(TAG, "things_strcat() is failed.");
-		if (delmem) {
-			things_free(delmem);
-		}
 		return NULL;
-	}
-
-	if (delmem) {
-		things_free(delmem);
 	}
 
 	return g_cloud_address;
@@ -1683,6 +1673,7 @@ static void *ci_connection_init_loop(es_cloud_event_timeout_s *param)
 
 			if (ci_connection_pre_check(ci_host, &ci_ip) == 0) {
 				ci_ip_port = make_ip_port(ci_ip, event_data->port);
+
 				things_strncpy(g_cloud_ip, ci_ip, IP_PORT);
 				things_strncpy(g_cloud_port, event_data->port, IP_PORT);
 

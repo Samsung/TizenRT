@@ -54,7 +54,6 @@ static OCRepPayload *make_dev_profile_payload(const st_device_s *dev_info);
 
 int CICheckDomain(const char *DomainName, char **pIP)
 {
-
 	char ipbuffer[20];
 	memset(ipbuffer, 0, 20);
 	char bytes[4];
@@ -69,12 +68,10 @@ int CICheckDomain(const char *DomainName, char **pIP)
 			bytes[1] = (ip4_address >> 8) & 0XFF;
 			bytes[2] = (ip4_address >> 16) & 0XFF;
 			bytes[3] = (ip4_address >> 24) & 0XFF;
-			//54.85.39.78
-			//78.85.39.54
 
 			snprintf(ipbuffer, sizeof(ipbuffer), "%d.%d.%d.%d", bytes[0], bytes[1], bytes[2], bytes[3]);
 
-			THINGS_LOG_D(TAG, "DNS resolved IP for[%s] is =%s", DomainName, ipbuffer);
+			THINGS_LOG_D(TAG, "DNS resolved IP for[%s] is = %s", DomainName, ipbuffer);
 
 			if (pIP != NULL) {
 				*pIP = things_strdup(ipbuffer);
@@ -83,15 +80,9 @@ int CICheckDomain(const char *DomainName, char **pIP)
 		}
 	} 
 
-	THINGS_LOG_E(TAG, " Failed to get the IP, hard coding the ip");
-	snprintf(ipbuffer, sizeof(ipbuffer), "%s", "13.124.51.231");
+	THINGS_LOG_E(TAG, " Failed to get the IP");
 
-	usleep(500);
-	if (pIP != NULL) {
-		*pIP = things_strdup(ipbuffer);
-	}
-
-	return 0;
+	return -1;
 }
 
 /**
@@ -99,26 +90,24 @@ int CICheckDomain(const char *DomainName, char **pIP)
  * @param DomainName   wanted Domain-Name string to look-up IP address. (unit: const char*)
  * @param pIP          Variable pointer to store Founded IP address. (unit: char**)
  * @return             success : return 0 \n
- *                     failure : return > 0
+ *                     failure : return -1
  */
 int ci_connection_pre_check(const char *DomainName, char **pIP)
 {
-	int n_err = 0;				// Success return value
-
-	THINGS_LOG_D(TAG, "DomainName=%s, pIP=0x%X", DomainName, pIP);
-
-	if (CICheckDomain("samsung.com", NULL) != 0) {
-		if (DomainName == NULL) {
-			THINGS_LOG_E(TAG, "AP is Not Connected to Internet.");
-			return -1;
-		}
+	int n_err = -1;
+	n_err = CICheckDomain("samsung.com", NULL);
+	if (n_err != 0) {
+		THINGS_LOG_E(TAG, "AP is Not Connected to Internet");
+		return n_err;
 	}
-
-	if (DomainName != NULL) {
+	/** If AP Connected but DomainName is Null, do not check Domain return Success **/
+	if (DomainName == NULL) {
+		n_err = 0;
+		THINGS_LOG_V(TAG, "AP Connected but DomainName is Null\n");
+	} else {
 		n_err = CICheckDomain(DomainName, pIP);
 		THINGS_LOG_D(TAG, "Found IP = %s, n_err = %d", *pIP, n_err);
 	}
-
 	return n_err;
 }
 
