@@ -565,6 +565,14 @@ int dhcpc_request(void *handle, struct dhcpc_state *presult)
 			g_dhcpc_state = STATE_HAVE_OFFER;
 			break;
 		} else {
+			if (memcmp(pdhcpc->packet.chaddr, pdhcpc->ds_macaddr, pdhcpc->ds_maclen) != 0) {
+				/*
+				 * This is not to waste retry count(chance) when it receive any DHCP packets heading to other device.
+				 * If there are bunch of trying of DHCP in the same subnet,
+				 * DHCP will be failed as retry count might be reached to the max easily.
+				 */
+				--retries;
+			}
 			ndbg("Not for me (Received data recv_len=%d msg_type=%x)\n", result, msgtype);
 		}
 	} while (g_dhcpc_state == STATE_INITIAL);
@@ -642,6 +650,14 @@ int dhcpc_request(void *handle, struct dhcpc_state *presult)
 
 		/* Otherwise, it is something that we do not recognize */
 		else {
+			if (memcmp(pdhcpc->packet.chaddr, pdhcpc->ds_macaddr, pdhcpc->ds_maclen) != 0) {
+				/*
+				 * This is not to waste retry count(chance) when it receive any DHCP packets heading to other device.
+				 * If there are bunch of trying of DHCP in the same subnet,
+				 * DHCP will be failed as retry count might be reached to the max easily.
+				 */
+				--retries;
+			}
 			ndbg("Not for me. Ignore the packet. msg_type=%x\n", msgtype);
 		}
 		usleep(100000L);
