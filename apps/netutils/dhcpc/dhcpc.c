@@ -384,7 +384,7 @@ static uint8_t dhcpc_parsemsg(struct dhcpc_state_s *pdhcpc, int buflen, struct d
 		memcpy(&presult->ipaddr.s_addr, pdhcpc->packet.yiaddr, 4);
 		return dhcpc_parseoptions(presult, &pdhcpc->packet.options[4], remain);
 	} else {
-		nvdbg("dhcpc_parsemsg: op=%d, xid=0x%x, chaddr=%02x:%02x:%02x:%02x:%02x:%02x\n", pdhcpc->packet.op, ntohl(*(int32_t *)pdhcpc->packet.xid),
+		ndbg("dhcpc_parsemsg: op=%d, xid=0x%x, chaddr=%02x:%02x:%02x:%02x:%02x:%02x\n", pdhcpc->packet.op, ntohl(*(int32_t *)pdhcpc->packet.xid),
 			pdhcpc->packet.chaddr[0], pdhcpc->packet.chaddr[1], pdhcpc->packet.chaddr[2], pdhcpc->packet.chaddr[3], pdhcpc->packet.chaddr[4], pdhcpc->packet.chaddr[5]);
 	}
 	return 0;
@@ -642,7 +642,7 @@ int dhcpc_request(void *handle, struct dhcpc_state *presult)
 
 		/* Otherwise, it is something that we do not recognize */
 		else {
-			ndbg("Not for me. Ignore the packet\n");
+			ndbg("Not for me. Ignore the packet. msg_type=%x\n", msgtype);
 		}
 		usleep(100000L);
 
