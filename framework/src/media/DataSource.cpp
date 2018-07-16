@@ -33,7 +33,7 @@ DataSource::DataSource(unsigned int channels, unsigned int sampleRate, audio_for
 	, mSampleRate(sampleRate)
 	, mPcmFormat(pcmFormat)
 {
-	medvdbg("DataSource::DataSource(unsigned short channels, unsigned int sampleRate, int pcmFormat)\n");
+	medvdbg("DataSource::DataSource(unsigned int channels, unsigned int sampleRate, audio_format_type_t pcmFormat)\n");
 }
 
 DataSource::DataSource(const DataSource& source)

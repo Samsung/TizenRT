@@ -42,7 +42,7 @@ namespace media {
 typedef enum audio_type_e {
 	/** Audio type is invalid */
 	AUDIO_TYPE_INVALID = 0,
-	/** Audio type is unknwon */
+	/** Audio type is unknown */
 	AUDIO_TYPE_UNKNOWN = AUDIO_TYPE_INVALID,
 	/** Audio type is mp3 */
 	AUDIO_TYPE_MP3 = 1,

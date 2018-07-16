@@ -70,7 +70,7 @@ size_t InputDataSource::getDecodeFrames(unsigned char *buf, size_t *size)
 		/* TODO set configuration should be removed when we finish implement header parser */
 		setSampleRate(sampleRate);
 		setChannels(channels);
-		medvdbg("size : %d samplerate : %d channels : %d\n", size, sampleRate, channels);
+		medvdbg("size : %u samplerate : %d channels : %d\n", size, sampleRate, channels);
 		return *size;
 	}
 
