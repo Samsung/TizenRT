@@ -65,6 +65,13 @@
 #include <tinyara/net/net.h>
 #include <tinyara/net/ioctl.h>
 
+#ifdef CONFIG_LWIP_SOCKET_ERROR_REPORT
+#include <error_report/error_report.h>
+#define SOCKETADD_ERR_RECORD(reason_code)	ERR_DATA_CREATE(ERRMOD_LWIP_SOCKET, reason_code)
+#else
+#define SOCKETADD_ERR_RECORD(reason_code)
+#endif
+
 #if defined(CONFIG_ARCH_CHIP_S5JT200) || defined(CONFIG_ARCH_CHIP_LM3S6965) || defined(CONFIG_ARCH_CHIP_BCM4390X)
 #if LWIP_HAVE_LOOPIF
 #define NET_DEVNAME "wl1"
@@ -346,7 +353,10 @@ static volatile int select_cb_ctr;
 #define sock_set_errno(sk, e) do { \
 		const int sockerr = (e); \
 		sk->err = (u8_t)sockerr; \
-		set_errno(sockerr); \
+		set_errno(sockerr);                         \
+		if (sockerr < 0) {                          \
+			SOCKETADD_ERR_RECORD(sockerr);          \
+		}                                           \
 	} while (0)
 
 /* Forward delcaration of some functions */
