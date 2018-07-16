@@ -122,7 +122,7 @@ audio_manager_result_t set_audio_stream_out(unsigned int channels, unsigned int 
  * Description:
  *   Read the specified number of frames from the input stream.
  *   If the input audio device have been paused, resume and proceed the reading.
- *   If the resampling flag is set, resamplings are performed for all taret frames.
+ *   If the resampling flag is set, resamplings are performed for all target frames.
  *
  * Input parameters:
  *   data: buffer to get the frame data
@@ -139,7 +139,7 @@ int start_audio_stream_in(void *data, unsigned int frames);
  * Description:
  *   Write the specified frame data to the output stream.
  *   If the output audio device have been paused, resume and proceed the writing.
- *   If the resampling flag is set, resamplings are performed for all taret frames.
+ *   If the resampling flag is set, resamplings are performed for all target frames.
  *
  * Input parameters:
  *   data: buffer to transfer the frame data
@@ -177,32 +177,6 @@ audio_manager_result_t pause_audio_stream_in(void);
 audio_manager_result_t pause_audio_stream_out(void);
 
 /****************************************************************************
- * Name: reset_audio_stream_in
- *
- * Description:
- *   Close the active input audio stream.
- *   After the reset, the stream should be restarted from the beginning with
- *   calling set_audio_stream_in().
- *
- * Returned Value:
- *   On success, AUDIO_MANAGER_SUCCESS. Otherwise, a negative value.
- ****************************************************************************/
-audio_manager_result_t reset_audio_stream_in(void);
-
-/****************************************************************************
- * Name: reset_audio_stream_out
- *
- * Description:
- *   Close the active output audio stream.
- *   After the reset, the stream should be restarted from the beginning with
- *   calling set_audio_stream_out().
- *
- * Returned Value:
- *   On success, AUDIO_MANAGER_SUCCESS. Otherwise, a negative value.
- ****************************************************************************/
-audio_manager_result_t reset_audio_stream_out(void);
-
-/****************************************************************************
  * Name: stop_audio_stream_in
  *
  * Description:
@@ -231,6 +205,32 @@ audio_manager_result_t stop_audio_stream_in(void);
 audio_manager_result_t stop_audio_stream_out(void);
 
 /****************************************************************************
+ * Name: reset_audio_stream_in
+ *
+ * Description:
+ *   Close the active input audio stream.
+ *   After the reset, the stream should be restarted from the beginning with
+ *   calling set_audio_stream_in().
+ *
+ * Returned Value:
+ *   On success, AUDIO_MANAGER_SUCCESS. Otherwise, a negative value.
+ ****************************************************************************/
+audio_manager_result_t reset_audio_stream_in(void);
+
+/****************************************************************************
+ * Name: reset_audio_stream_out
+ *
+ * Description:
+ *   Close the active output audio stream.
+ *   After the reset, the stream should be restarted from the beginning with
+ *   calling set_audio_stream_out().
+ *
+ * Returned Value:
+ *   On success, AUDIO_MANAGER_SUCCESS. Otherwise, a negative value.
+ ****************************************************************************/
+audio_manager_result_t reset_audio_stream_out(void);
+
+/****************************************************************************
  * Name: get_input_frame_count
  *
  * Description:
@@ -247,6 +247,9 @@ unsigned int get_input_frame_count(void);
  * Description:
  *   Get the byte size of the given frame value in input stream.
  *
+ * Input parameters:
+ *   frames: the target of which byte size is returned.
+ *
  * Returned Value:
  *   On success, the byte size of the frame in input stream. Otherwise, 0.
  ****************************************************************************/
@@ -257,6 +260,9 @@ unsigned int get_input_frames_to_byte(unsigned int frames);
  *
  * Description:
  *   Get the number of frames for the given byte size in input stream.
+ *
+ * Input parameters:
+ *   bytes: the target of which frame count is returned.
  *
  * Returned Value:
  *   On success, the number of frames in input stream. Otherwise, 0.
@@ -280,6 +286,9 @@ unsigned int get_output_frame_count(void);
  * Description:
  *   Get the byte size of the given frame value in output stream.
  *
+ * Input parameters:
+ *   frames: the target of which byte size is returned.
+ *
  * Returned Value:
  *   On success, the byte size of the frame in output stream. Otherwise, 0.
  ****************************************************************************/
@@ -290,6 +299,9 @@ unsigned int get_output_frames_to_byte(unsigned int frames);
  *
  * Description:
  *   Get the number of frames for the given byte size in output stream.
+ *
+ * Input parameters:
+ *   bytes: the target of which frame count is returned.
  *
  * Returned Value:
  *   On success, the number of frames in output stream. Otherwise, 0.
@@ -335,7 +347,7 @@ int get_output_audio_volume(void);
  *   Adjust the volume level of the active input audio device.
  *
  * Input parameters:
- *   volume:   Volume level, 0(Min) ~ 10(Max)
+ *   volume:   volume level, 0(Min) ~ 10(Max)
  *
  * Returned Value:
  *   On success, AUDIO_MANAGER_SUCCESS. Otherwise, a negative value.
@@ -349,7 +361,7 @@ audio_manager_result_t set_input_audio_volume(uint8_t volume);
  *   Adjust the volume level of the active output audio device.
  *
  * Input parameters:
- *   volume:   Volume level, 0(Min) ~ 10(Max)
+ *   volume:   volume level, 0(Min) ~ 10(Max)
  *
  * Returned Value:
  *   On success, AUDIO_MANAGER_SUCCESS. Otherwise, a negative value.
