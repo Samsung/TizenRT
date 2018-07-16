@@ -3,7 +3,7 @@ Prerequisites
 
 1) Clone tinycbor library using following command from the path "iotivity/extlibs/tinycbor":
    git clone https://github.com/01org/tinycbor.git extlibs/tinycbor/tinycbor
-2) To build with SECURITY=1, download sqlite3 zip file and extract it. Copy the files 
+2) To build with SECURITY=1, download sqlite3 zip file and extract it. Copy the files
    sqlite3.c and sqlite3.h file to iotivity/extlibs/sqlite3/ folder.
    Download using http://www.sqlite.org/2015/sqlite-amalgamation-3081101.zip
 

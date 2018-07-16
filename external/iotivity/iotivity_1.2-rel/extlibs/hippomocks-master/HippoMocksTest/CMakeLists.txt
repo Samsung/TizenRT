@@ -2,7 +2,7 @@ cmake_minimum_required(VERSION 3.0)
 project(HippoMocksTests CXX)
 include_directories(../HippoMocks)
 
-set(test_SOURCES 
+set(test_SOURCES
 Framework.cpp
 is_virtual.cpp
 main.cpp

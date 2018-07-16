@@ -1,4 +1,4 @@
-Quick guide : How to make provisioning tool and servers. 
+Quick guide : How to make provisioning tool and servers.
 
 1. Provisioning Tool.
 
