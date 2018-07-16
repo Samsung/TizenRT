@@ -49,6 +49,7 @@ int utc_media_FileInputDataSource_main(void);
 #ifdef CONFIG_MEDIA_RECORDER
 int utc_media_mediarecorder_main(void);
 int utc_media_fileoutputdatasource_main(void);
+int utc_media_bufferoutputdatasource_main(void);
 #endif
 #endif
 
@@ -76,6 +77,7 @@ int utc_media_main(int argc, char *argv[])
 #ifdef CONFIG_MEDIA_RECORDER
 	utc_media_mediarecorder_main();
 	utc_media_fileoutputdatasource_main();
+	utc_media_bufferoutputdatasource_main();
 	unlink("/tmp/record");
 #endif
 #endif
