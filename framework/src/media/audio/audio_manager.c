@@ -70,7 +70,7 @@
  * Private Types
  ****************************************************************************/
 enum audio_card_status_e {
-	AUDIO_CARD_NONE = 0,	// card not found yet, shouldn't be assigned explicitly.
+	AUDIO_CARD_NONE = 0,		// card not found yet, shouldn't be assigned explicitly.
 	AUDIO_CARD_IDLE = 1,
 	AUDIO_CARD_READY,
 	AUDIO_CARD_RUNNING,
@@ -466,7 +466,7 @@ static audio_manager_result_t get_audio_volume(int fd, audio_config_t *config, a
 	cur_volume = cur_volume * AUDIO_DEVICE_MAX_VOLUME / (max_volume - (max_volume % AUDIO_DEVICE_MAX_VOLUME));
 
 	config->max_volume = max_volume;
-	config->volume = (uint8_t)cur_volume;
+	config->volume = (uint8_t) cur_volume;
 
 	return AUDIO_MANAGER_SUCCESS;
 }
@@ -533,7 +533,7 @@ audio_manager_result_t set_audio_stream_in(unsigned int channels, unsigned int s
 {
 	struct pcm_config config;
 	audio_manager_result_t ret = AUDIO_MANAGER_SUCCESS;
-	
+
 	if (g_actual_audio_in_card_id < 0) {
 		meddbg("Found no active input audio card\n");
 		return AUDIO_MANAGER_NO_AVAIL_CARD;
@@ -589,7 +589,7 @@ audio_manager_result_t set_audio_stream_in(unsigned int channels, unsigned int s
 
 	pthread_mutex_unlock(&(g_audio_in_cards[g_actual_audio_in_card_id].card_mutex));
 	return ret;
-	
+
 error_with_pcm:
 	pcm_close(g_audio_in_cards[g_actual_audio_in_card_id].pcm);
 	pthread_mutex_unlock(&(g_audio_in_cards[g_actual_audio_in_card_id].card_mutex));
@@ -600,7 +600,7 @@ audio_manager_result_t set_audio_stream_out(unsigned int channels, unsigned int 
 {
 	struct pcm_config config;
 	audio_manager_result_t ret = AUDIO_MANAGER_SUCCESS;
-	
+
 	if (g_actual_audio_out_card_id < 0) {
 		meddbg("Found no active output audio card\n");
 		return AUDIO_MANAGER_NO_AVAIL_CARD;
@@ -867,6 +867,56 @@ audio_manager_result_t pause_audio_stream_out(void)
 	return AUDIO_MANAGER_SUCCESS;
 }
 
+audio_manager_result_t stop_audio_stream_in(void)
+{
+	int ret;
+
+	if (g_actual_audio_in_card_id < 0) {
+		meddbg("Found no active input audio card\n");
+		return AUDIO_MANAGER_NO_AVAIL_CARD;
+	}
+
+	pthread_mutex_lock(&(g_audio_in_cards[g_actual_audio_in_card_id].card_mutex));
+
+	ret = pcm_drop(g_audio_in_cards[g_actual_audio_in_card_id].pcm);
+	if (ret < 0) {
+		pthread_mutex_unlock(&(g_audio_in_cards[g_actual_audio_in_card_id].card_mutex));
+		meddbg("pcm_drop Failed, ret = %d\n", ret);
+		return AUDIO_MANAGER_DEVICE_FAIL;
+	}
+
+	g_audio_in_cards[g_actual_audio_in_card_id].status = AUDIO_CARD_READY;
+
+	pthread_mutex_unlock(&(g_audio_in_cards[g_actual_audio_in_card_id].card_mutex));
+
+	return AUDIO_MANAGER_SUCCESS;
+}
+
+audio_manager_result_t stop_audio_stream_out(void)
+{
+	int ret;
+
+	if (g_actual_audio_out_card_id < 0) {
+		meddbg("Found no active output audio card\n");
+		return AUDIO_MANAGER_NO_AVAIL_CARD;
+	}
+
+	pthread_mutex_lock(&(g_audio_out_cards[g_actual_audio_out_card_id].card_mutex));
+
+	ret = pcm_drain(g_audio_out_cards[g_actual_audio_out_card_id].pcm);
+	if (ret < 0) {
+		pthread_mutex_unlock(&(g_audio_out_cards[g_actual_audio_out_card_id].card_mutex));
+		meddbg("pcm_drain failed ret = %d\n", ret);
+		return AUDIO_MANAGER_DEVICE_FAIL;
+	}
+
+	g_audio_out_cards[g_actual_audio_out_card_id].status = AUDIO_CARD_READY;
+
+	pthread_mutex_unlock(&(g_audio_out_cards[g_actual_audio_out_card_id].card_mutex));
+
+	return AUDIO_MANAGER_SUCCESS;
+}
+
 audio_manager_result_t reset_audio_stream_in(void)
 {
 	if (g_actual_audio_in_card_id < 0) {
@@ -913,56 +963,6 @@ audio_manager_result_t reset_audio_stream_out(void)
 	}
 
 	g_audio_out_cards[g_actual_audio_out_card_id].status = AUDIO_CARD_IDLE;
-
-	pthread_mutex_unlock(&(g_audio_out_cards[g_actual_audio_out_card_id].card_mutex));
-
-	return AUDIO_MANAGER_SUCCESS;
-}
-
-audio_manager_result_t stop_audio_stream_in(void)
-{
-	int ret;
-
-	if (g_actual_audio_in_card_id < 0) {
-		meddbg("Found no active input audio card\n");
-		return AUDIO_MANAGER_NO_AVAIL_CARD;
-	}
-
-	pthread_mutex_lock(&(g_audio_in_cards[g_actual_audio_in_card_id].card_mutex));
-
-	ret = pcm_drop(g_audio_in_cards[g_actual_audio_in_card_id].pcm);
-	if (ret < 0) {
-		meddbg("pcm_drop Failed, ret = %d\n", ret);
-		pthread_mutex_unlock(&(g_audio_in_cards[g_actual_audio_in_card_id].card_mutex));
-		return AUDIO_MANAGER_DEVICE_FAIL;
-	}
-
-	g_audio_in_cards[g_actual_audio_in_card_id].status = AUDIO_CARD_READY;
-
-	pthread_mutex_unlock(&(g_audio_in_cards[g_actual_audio_in_card_id].card_mutex));
-
-	return AUDIO_MANAGER_SUCCESS;
-}
-
-audio_manager_result_t stop_audio_stream_out(void)
-{
-	int ret;
-
-	if (g_actual_audio_out_card_id < 0) {
-		meddbg("Found no active output audio card\n");
-		return AUDIO_MANAGER_NO_AVAIL_CARD;
-	}
-
-	pthread_mutex_lock(&(g_audio_out_cards[g_actual_audio_out_card_id].card_mutex));
-
-	ret = pcm_drain(g_audio_out_cards[g_actual_audio_out_card_id].pcm);
-	if (ret < 0) {
-		meddbg("pcm_drain failed ret = %d\n", ret);
-		pthread_mutex_unlock(&(g_audio_out_cards[g_actual_audio_out_card_id].card_mutex));
-		return AUDIO_MANAGER_DEVICE_FAIL;
-	}
-
-	g_audio_out_cards[g_actual_audio_out_card_id].status = AUDIO_CARD_READY;
 
 	pthread_mutex_unlock(&(g_audio_out_cards[g_actual_audio_out_card_id].card_mutex));
 
@@ -1048,8 +1048,7 @@ int get_input_audio_volume(void)
 		close(fd);
 		return ret;
 	}
-	medvdbg("Max volume: %d, Current Volume : %d card path : %s\n",
-			g_audio_in_cards[g_actual_audio_in_card_id].config.max_volume, g_audio_in_cards[g_actual_audio_in_card_id].config.volume, g_audio_in_cards[g_actual_audio_in_card_id].card_path);
+	medvdbg("Max volume: %d, Current Volume : %d card path : %s\n", g_audio_in_cards[g_actual_audio_in_card_id].config.max_volume, g_audio_in_cards[g_actual_audio_in_card_id].config.volume, g_audio_in_cards[g_actual_audio_in_card_id].card_path);
 
 	close(fd);
 
@@ -1076,8 +1075,7 @@ int get_output_audio_volume(void)
 		close(fd);
 		return ret;
 	}
-	medvdbg("Max volume: %d, Current Volume : %d card path : %s\n",
-			g_audio_out_cards[g_actual_audio_out_card_id].config.max_volume, g_audio_out_cards[g_actual_audio_out_card_id].config.volume, g_audio_out_cards[g_actual_audio_out_card_id].card_path);
+	medvdbg("Max volume: %d, Current Volume : %d card path : %s\n", g_audio_out_cards[g_actual_audio_out_card_id].config.max_volume, g_audio_out_cards[g_actual_audio_out_card_id].config.volume, g_audio_out_cards[g_actual_audio_out_card_id].card_path);
 
 	close(fd);
 
