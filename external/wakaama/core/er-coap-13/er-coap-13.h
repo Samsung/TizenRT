@@ -92,8 +92,14 @@
 
 /* Bitmap for set options */
 enum { OPTION_MAP_SIZE = sizeof(uint8_t) * 8 };
-#define SET_OPTION(packet, opt) ((packet)->options[opt / OPTION_MAP_SIZE] |= 1 << (opt % OPTION_MAP_SIZE))
-#define IS_OPTION(packet, opt) ((packet)->options[opt / OPTION_MAP_SIZE] & (1 << (opt % OPTION_MAP_SIZE)))
+#define SET_OPTION(packet, opt)	\
+	do {	\
+		if (opt > COAP_OPTION_PROXY_URI) {	\
+			return 0;	\
+		}	\
+		((packet)->options[opt / OPTION_MAP_SIZE] |= 1 << (opt % OPTION_MAP_SIZE));	\
+	} while (0)
+#define IS_OPTION(packet, opt)	(opt > COAP_OPTION_PROXY_URI) ? 0 : ((packet)->options[opt / OPTION_MAP_SIZE] & (1 << (opt % OPTION_MAP_SIZE)))
 
 #ifndef MIN
 #define MIN(a, b) ((a) < (b)? (a) : (b))
