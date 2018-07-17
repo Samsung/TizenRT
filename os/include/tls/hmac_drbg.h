@@ -19,7 +19,8 @@
  * \file hmac_drbg.h
  *
  * \brief HMAC_DRBG (NIST SP 800-90A)
- *
+ */
+/*
  *  Copyright (C) 2006-2015, ARM Limited, All Rights Reserved
  *  SPDX-License-Identifier: Apache-2.0
  *

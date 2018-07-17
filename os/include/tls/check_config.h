@@ -19,7 +19,8 @@
  * \file check_config.h
  *
  * \brief Consistency checks for configuration options
- *
+ */
+/*
  *  Copyright (C) 2006-2016, ARM Limited, All Rights Reserved
  *  SPDX-License-Identifier: Apache-2.0
  *
@@ -92,6 +93,10 @@
 
 #if defined(MBEDTLS_DHM_C) && !defined(MBEDTLS_BIGNUM_C)
 #error "MBEDTLS_DHM_C defined, but not all prerequisites"
+#endif
+
+#if defined(MBEDTLS_SSL_TRUNCATED_HMAC_COMPAT) && !defined(MBEDTLS_SSL_TRUNCATED_HMAC)
+#error "MBEDTLS_SSL_TRUNCATED_HMAC_COMPAT defined, but not all prerequisites"
 #endif
 
 #if defined(MBEDTLS_CMAC_C) && \

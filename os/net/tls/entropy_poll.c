@@ -331,7 +331,7 @@ int mbedtls_hardware_poll(void *data, unsigned char *output, size_t len, size_t 
 
 	return 0;
 }
-#else
+#else /* CONFIG_HW_RNG */
 int mbedtls_hardware_poll(void *data, unsigned char *output, size_t len, size_t *olen)
 {
 	/* It should be changed to hardware random generator */

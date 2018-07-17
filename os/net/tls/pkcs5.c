@@ -56,9 +56,11 @@
 #if defined(MBEDTLS_PKCS5_C)
 
 #include "tls/pkcs5.h"
+#if defined(MBEDTLS_ASN1_PARSE_C)
 #include "tls/asn1.h"
 #include "tls/cipher.h"
 #include "tls/oid.h"
+#endif /* MBEDTLS_ASN1_PARSE_C */
 
 #include <string.h>
 
@@ -69,6 +71,22 @@
 #define mbedtls_printf printf
 #endif
 
+#if !defined(MBEDTLS_ASN1_PARSE_C)
+int mbedtls_pkcs5_pbes2( const mbedtls_asn1_buf *pbe_params, int mode,
+                 const unsigned char *pwd,  size_t pwdlen,
+                 const unsigned char *data, size_t datalen,
+                 unsigned char *output )
+{
+    ((void) pbe_params);
+    ((void) mode);
+    ((void) pwd);
+    ((void) pwdlen);
+    ((void) data);
+    ((void) datalen);
+    ((void) output);
+    return( MBEDTLS_ERR_PKCS5_FEATURE_UNAVAILABLE );
+}
+#else
 static int pkcs5_parse_pbkdf2_params( const mbedtls_asn1_buf *params,
                                       mbedtls_asn1_buf *salt, int *iterations,
                                       int *keylen, mbedtls_md_type_t *md_type )
@@ -114,10 +132,8 @@ static int pkcs5_parse_pbkdf2_params( const mbedtls_asn1_buf *params,
     if( ( ret = mbedtls_asn1_get_alg_null( &p, end, &prf_alg_oid ) ) != 0 )
         return( MBEDTLS_ERR_PKCS5_INVALID_FORMAT + ret );
 
-    if( MBEDTLS_OID_CMP( MBEDTLS_OID_HMAC_SHA1, &prf_alg_oid ) != 0 )
+    if( mbedtls_oid_get_md_hmac( &prf_alg_oid, md_type ) != 0 )
         return( MBEDTLS_ERR_PKCS5_FEATURE_UNAVAILABLE );
-
-    *md_type = MBEDTLS_MD_SHA1;
 
     if( p != end )
         return( MBEDTLS_ERR_PKCS5_INVALID_FORMAT +
@@ -231,6 +247,7 @@ exit:
 
     return( ret );
 }
+#endif /* MBEDTLS_ASN1_PARSE_C */
 
 int mbedtls_pkcs5_pbkdf2_hmac( mbedtls_md_context_t *ctx, const unsigned char *password,
                        size_t plen, const unsigned char *salt, size_t slen,
@@ -255,8 +272,10 @@ int mbedtls_pkcs5_pbkdf2_hmac( mbedtls_md_context_t *ctx, const unsigned char *p
     memset( counter, 0, 4 );
     counter[3] = 1;
 
+#if UINT_MAX > 0xFFFFFFFF
     if( iteration_count > 0xFFFFFFFF )
         return( MBEDTLS_ERR_PKCS5_BAD_INPUT_DATA );
+#endif
 
     while( key_length )
     {

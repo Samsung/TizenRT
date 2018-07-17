@@ -19,7 +19,8 @@
  * \file entropy.h
  *
  * \brief Entropy accumulator implementation
- *
+ */
+/*
  *  Copyright (C) 2006-2016, ARM Limited, All Rights Reserved
  *  SPDX-License-Identifier: Apache-2.0
  *
@@ -138,6 +139,7 @@ mbedtls_entropy_source_state;
  */
 typedef struct
 {
+    int accumulator_started;
 #if defined(MBEDTLS_ENTROPY_SHA512_ACCUMULATOR)
     mbedtls_sha512_context  accumulator;
 #else

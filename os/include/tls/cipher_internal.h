@@ -21,7 +21,8 @@
  * \brief Cipher wrappers.
  *
  * \author Adriaan de Jong <dejong@fox-it.com>
- *
+ */
+/*
  *  Copyright (C) 2006-2015, ARM Limited, All Rights Reserved
  *  SPDX-License-Identifier: Apache-2.0
  *

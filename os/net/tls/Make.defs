@@ -66,11 +66,10 @@ SRC_CRYPTO_CSRCS =    aes.c           aesni.c         arc4.c          \
                       padlock.c       pem.c           pk.c            \
                       pk_wrap.c       pkcs12.c        pkcs5.c         \
                       pkparse.c       pkwrite.c       platform.c      \
-                      ripemd160.c     rsa.c           sha1.c          \
-                      sha256.c        sha512.c        threading.c     \
-                      timing.c        version.c                       \
+                      ripemd160.c     rsa.c           rsa_internal.c  \
+                      sha1.c          sha256.c        sha512.c        \
+                      threading.c     timing.c        version.c       \
                       version_features.c              xtea.c          \
-                      dhm.c
 
 SRC_X509_CSRCS =      certs.c         pkcs11.c        x509.c          \
                       x509_create.c   x509_crl.c      x509_crt.c      \
@@ -79,7 +78,7 @@ SRC_X509_CSRCS =      certs.c         pkcs11.c        x509.c          \
 SRC_TLS_CSRCS =       debug.c         net_sockets.c   ssl_cache.c     \
                       ssl_ciphersuites.c              ssl_tls.c       \
                       ssl_cli.c       ssl_cookie.c    ssl_srv.c       \
-                      ssl_ticket.c    easy_tls.c
+                      ssl_ticket.c    easy_tls.c      dhm.c
 
 ifeq ($(CONFIG_FRAME_POINTER),y)
 ifeq ($(CONFIG_ARCH_THUMB),y)
