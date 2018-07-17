@@ -41,6 +41,8 @@
 #define TM_BROAD_TASK_NUM         2
 
 static int tm_sample_handle;
+static int tm_not_builtin_handle;
+static int tm_pthread_handle;
 static int tm_broadcast_handle1;
 static int tm_broadcast_handle2;
 static int tm_broadcast_handle3;
@@ -55,6 +57,16 @@ static int broad_wifi_on_cnt;
 static int broad_wifi_off_cnt;
 
 static sem_t tm_broad_sem;
+
+static int not_builtin_task(int argc, char *argv[])
+{
+	return OK;
+}
+
+static void *tm_pthread(void *param)
+{
+	return NULL;
+}
 
 static void test_unicast_handler(void *info)
 {
@@ -565,6 +577,12 @@ static void utc_task_manager_unregister_p(void)
 {
 	int ret;
 
+	ret = task_manager_unregister(tm_not_builtin_handle, TM_RESPONSE_WAIT_INF);
+	TC_ASSERT_EQ("task_manager_unregister", ret, OK);
+
+	ret = task_manager_unregister(tm_pthread_handle, TM_RESPONSE_WAIT_INF);
+	TC_ASSERT_EQ("task_manager_unregister", ret, OK);
+
 	ret = task_manager_unregister(tm_sample_handle, TM_RESPONSE_WAIT_INF);
 	TC_ASSERT_EQ("task_manager_unregister", ret, OK);
 
@@ -585,6 +603,59 @@ static void utc_task_manager_unregister_p(void)
 
 	ret = task_manager_unregister(tm_sample_handle, TM_RESPONSE_WAIT_INF);
 	TC_ASSERT_EQ("task_manager_unregister", ret, TM_UNREGISTERED_APP);
+
+	TC_SUCCESS_RESULT();
+}
+
+static void utc_task_manager_register_task_n(void)
+{
+	int ret;
+
+	ret = task_manager_register_task(NULL, 100, 1024, not_builtin_task, NULL, TM_APP_PERMISSION_DEDICATE, TM_RESPONSE_WAIT_INF);
+	TC_ASSERT_EQ("task_manager_register_task", ret, TM_INVALID_PARAM);
+
+	ret = task_manager_register_task("not_builtin", 100, 1024, not_builtin_task, NULL, TM_INVALID_PERMISSION, TM_RESPONSE_WAIT_INF);
+	TC_ASSERT_EQ("task_manager_register_task", ret, TM_INVALID_PARAM);
+
+	ret = task_manager_register_task("not_builtin", 100, 1024, not_builtin_task, NULL, TM_APP_PERMISSION_DEDICATE, TM_INVALID_PARAM);
+	TC_ASSERT_EQ("task_manager_register_task", ret, TM_INVALID_PARAM);
+
+	TC_SUCCESS_RESULT();
+}
+
+static void utc_task_manager_register_task_p(void)
+{
+	tm_not_builtin_handle = task_manager_register_task("not_builtin", 100, 1024, not_builtin_task, NULL, TM_APP_PERMISSION_DEDICATE, TM_RESPONSE_WAIT_INF);
+	TC_ASSERT_GEQ("task_manager_register_task", tm_not_builtin_handle, 0);
+
+	TC_SUCCESS_RESULT();
+}
+
+static void utc_task_manager_register_pthread_n(void)
+{
+	int ret;
+	pthread_attr_t attr;
+
+	pthread_attr_init(&attr);
+	ret = task_manager_register_pthread(NULL, &attr, tm_pthread, NULL, TM_APP_PERMISSION_DEDICATE, TM_RESPONSE_WAIT_INF);
+	TC_ASSERT_EQ("task_manager_register_pthread", ret, TM_INVALID_PARAM);
+
+	ret = task_manager_register_pthread("tm_pthread", &attr, tm_pthread, NULL, TM_INVALID_PERMISSION, TM_RESPONSE_WAIT_INF);
+	TC_ASSERT_EQ("task_manager_register_pthread", ret, TM_INVALID_PARAM);
+
+	ret = task_manager_register_pthread("tm_pthread", &attr, tm_pthread, NULL, TM_APP_PERMISSION_DEDICATE, TM_INVALID_PARAM);
+	TC_ASSERT_EQ("task_manager_register_pthread", ret, TM_INVALID_PARAM);
+
+	TC_SUCCESS_RESULT();
+}
+
+static void utc_task_manager_register_pthread_p(void)
+{
+	pthread_attr_t attr;
+
+	pthread_attr_init(&attr);
+	tm_pthread_handle = task_manager_register_pthread("tm_pthread", &attr, tm_pthread, NULL, TM_APP_PERMISSION_DEDICATE, TM_RESPONSE_WAIT_INF);
+	TC_ASSERT_GEQ("task_manager_register_pthread", tm_pthread_handle, 0);
 
 	TC_SUCCESS_RESULT();
 }
@@ -643,6 +714,12 @@ int utc_task_manager_main(int argc, char *argv[])
 
 	utc_task_manager_stop_n();
 	utc_task_manager_stop_p();
+
+	utc_task_manager_register_task_n();
+	utc_task_manager_register_task_p();
+
+	utc_task_manager_register_pthread_n();
+	utc_task_manager_register_pthread_p();
 
 	utc_task_manager_unregister_n();
 	utc_task_manager_unregister_p();
