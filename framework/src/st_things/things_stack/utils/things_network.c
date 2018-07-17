@@ -301,7 +301,7 @@ void things_wifi_sta_connected(wifi_manager_result_e res)
 	}
 }
 
-void things_wifi_sta_disconnected(void)
+void things_wifi_sta_disconnected(wifi_manager_disconnect_e disconn)
 {
 	THINGS_LOG_V(TAG, "T%d --> %s", getpid(), __FUNCTION__);
 	things_wifi_changed_call_func(0, NULL, NULL);

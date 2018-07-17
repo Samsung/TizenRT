@@ -68,6 +68,14 @@ typedef enum {
 } wifi_manager_result_e;
 
 /**
+ * @brief Wi-Fi disconnect event reason
+ */
+typedef enum {
+	WIFI_MANAGER_DISCONNECT,
+	WIFI_MANAGER_RECONNECT, //AUTOCONNECT
+} wifi_manager_disconnect_e;
+
+/**
  * @brief Mode of Wi-Fi interface such as station mode or ap mode
  */
 typedef enum {
@@ -116,7 +124,7 @@ typedef struct wifi_manager_scan_info_s wifi_manager_scan_info_s;
  */
 typedef struct {
 	void (*sta_connected)(wifi_manager_result_e);	// in station mode, connected to ap
-	void (*sta_disconnected)(void);		// in station mode, disconnected from ap
+	void (*sta_disconnected)(wifi_manager_disconnect_e);		// in station mode, disconnected from ap
 	void (*softap_sta_joined)(void);	// in softap mode, a station joined
 	void (*softap_sta_left)(void);		// in softap mode, a station left
 	void (*scan_ap_done)(wifi_manager_scan_info_s **, wifi_manager_scan_result_e); // scanning ap is done

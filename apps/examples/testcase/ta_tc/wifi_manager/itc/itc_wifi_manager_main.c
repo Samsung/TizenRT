@@ -53,7 +53,7 @@ static pthread_cond_t g_wifi_manager_test_cond;
 	} while (0)
 
 static void wifi_sta_connected_cb(wifi_manager_result_e res); // in station mode, connected to ap
-static void wifi_sta_disconnected_cb(void); // in station mode, disconnected from ap
+static void wifi_sta_disconnected_cb(wifi_manager_disconnect_e disconn); // in station mode, disconnected from ap
 static void wifi_scan_ap_done_cb(wifi_manager_scan_info_s **scan_info, wifi_manager_scan_result_e res); // called when scanning ap is done
 
 static wifi_manager_cb_s wifi_callbacks = {
@@ -70,7 +70,7 @@ static void wifi_sta_connected_cb(wifi_manager_result_e res)
 	WIFITEST_SIGNAL;
 }
 
-static void wifi_sta_disconnected_cb(void)
+static void wifi_sta_disconnected_cb(wifi_manager_disconnect_e disconn)
 {
 	printf("wifi_sta_disconnected: send signal!!! \n");
 	WIFITEST_SIGNAL;
