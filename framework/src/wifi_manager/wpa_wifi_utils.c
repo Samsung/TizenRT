@@ -314,13 +314,13 @@ wifi_utils_result_e wifi_utils_scan_ap(void *arg)
 		ndbg("[WU] [ERR] Register Scan Callback(%d)\n", ret);
 		return wuret;
 	} 
-	ndbg("[WU] Register Scan Callback(%d)\n", ret);
 	ret = WiFiScanNetwork();
-	if (ret == SLSI_STATUS_SUCCESS) {
-		ndbg("[WU] WiFi scan success(%d)\n", ret);
-		wuret = WIFI_UTILS_SUCCESS;
+	if (ret != SLSI_STATUS_SUCCESS) {
+		ndbg("[WU] [ERR] WiFi scan fail(%d)\n", ret);
+		return wuret;
 	} 
-	ndbg("[WU] WiFi scan fail(%d)\n", ret);
+	wuret = WIFI_UTILS_SUCCESS;
+	ndbg("[WU] WIFi Scan success\n");
 	return wuret;
 }
 
