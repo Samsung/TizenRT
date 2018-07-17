@@ -313,6 +313,12 @@ static int security_rand(int argc, char *argv[])
 	}
 
 	num_bytes = atoi(argv[3]);
+	if (num_bytes < 0) {
+		fprintf(stderr, "Uncountable number\n");
+		ret = -1;
+		goto exit;
+	}
+
 	rand_bytes = zalloc(num_bytes);
 	if (!rand_bytes) {
 		fprintf(stderr, "Failed to allocate memory for random bytes\n");
