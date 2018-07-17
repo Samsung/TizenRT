@@ -29,26 +29,27 @@
 #define __TASK_MANAGER_H__
 
 #include <signal.h>
+#include <pthread.h>
 
 /**
  * @brief Task State which managed by Task Manager
  */
-#define TM_TASK_STATE_RUNNING      (1)
-#define TM_TASK_STATE_PAUSE        (2)
-#define TM_TASK_STATE_STOP         (3)
-#define TM_TASK_STATE_UNREGISTERED (4)
+#define TM_APP_STATE_RUNNING      (1)
+#define TM_APP_STATE_PAUSE        (2)
+#define TM_APP_STATE_STOP         (3)
+#define TM_APP_STATE_UNREGISTERED (4)
 
 /**
  * @brief Task Permission
  * @details
- * TM_TASK_PERMISSION_ALL : Any Task can request the control to Task Manager
- * TM_TASK_PERMISSION_GROUP : Only same group task can request the control to Task Manager
+ * TM_APP_PERMISSION_ALL : Any Task can request the control to Task Manager
+ * TM_APP_PERMISSION_GROUP : Only same group task can request the control to Task Manager
  *                     -> group : Tasks set which registered from same parent task
- * TM_TASK_PERMISSION_DEDICATE : Only a task which requested to register that task can request the control to Task Manager
+ * TM_APP_PERMISSION_DEDICATE : Only a task which requested to register that task can request the control to Task Manager
  */
-#define TM_TASK_PERMISSION_ALL      (0)
-#define TM_TASK_PERMISSION_GROUP    (1)
-#define TM_TASK_PERMISSION_DEDICATE (2)
+#define TM_APP_PERMISSION_ALL      (0)
+#define TM_APP_PERMISSION_GROUP    (1)
+#define TM_APP_PERMISSION_DEDICATE (2)
 
 /**
  * @brief Returnable Flag from Task Manager
@@ -63,10 +64,10 @@
  * @details If operation is failed, these defined values will be returned.
  */
 enum tm_result_error_e {
-	TM_ALREADY_STARTED_TASK = -1,
-	TM_ALREADY_PAUSED_TASK = -2,
-	TM_ALREADY_STOPPED_TASK = -3,
-	TM_UNREGISTERED_TASK = -4,
+	TM_ALREADY_STARTED_APP = -1,
+	TM_ALREADY_PAUSED_APP = -2,
+	TM_ALREADY_STOPPED_APP = -3,
+	TM_UNREGISTERED_APP = -4,
 	TM_OPERATION_FAIL = -5,
 	TM_COMMUCATION_FAIL = -6,
 	TM_BUSY = -7,
@@ -74,6 +75,7 @@ enum tm_result_error_e {
 	TM_INVALID_DRVFD = -9,
 	TM_OUT_OF_MEMORY = -10,
 	TM_NO_PERMISSION = -11,
+	TM_NOT_SUPPORTED = -12,
 };
 
 /**
@@ -88,20 +90,20 @@ enum tm_result_error_e {
 /**
  * @brief Task Info Structure
  */
-struct task_info_s {
+struct app_info_s {
 	char *name;
 	int tm_gid;
 	int handle;
 	int status;
 	int permission;
 };
-typedef struct task_info_s task_info_t;
+typedef struct app_info_s app_info_t;
 
-struct task_info_list_s {
-	task_info_t task;
-	struct task_info_list_s *next;
+struct app_info_list_s {
+	app_info_t task;
+	struct app_info_list_s *next;
 };
-typedef struct task_info_list_s task_info_list_t;
+typedef struct app_info_list_s app_info_list_t;
 
 /****************************************************************************
  * Public Function Prototypes
@@ -109,7 +111,7 @@ typedef struct task_info_list_s task_info_list_t;
 /**
  * @brief Request to register a task
  * @details @b #include <task_manager/task_manager.h>\n
- * Only builtin task can be managed by task manager.\n
+ * This API can request to register a builtin task.\n
  * Find apps/builtin/README.md to know how to use builtin task.
  * @param[in] name the name of task to be registered
  * @param[in] permission the permission of task to be registered
@@ -121,6 +123,40 @@ typedef struct task_info_list_s task_info_list_t;
  * @since TizenRT v2.0 PRE
  */
 int task_manager_register(char *name, int permission, int timeout);
+/**
+ * @brief Request to register a task which is not in builtin list
+ * @details @b #include <task_manager/task_manager.h>\n
+ * Find apps/builtin/README.md to know how to use builtin task.
+ * @param[in] name the name of task to be registered
+ * @param[in] priority the priority of task to be registered
+ * @param[in] stack_size the stack_size of task to be registered
+ * @param[in] entry the entry function pointer
+ * @param[in] argv the argument to pass when task creation
+ * @param[in] permission the permission of task to be registered
+ * @param[in] timeout returnable flag. It can be one of the below.\n
+ *			TM_NO_RESPONSE : Ignore the response of request from task manager\n
+ *			TM_RESPONSE_WAIT_INF : Blocked until get the response from task manager\n
+ *			integer value : Specifies an upper limit on the time for which will block in milliseconds
+ * @return On success, handle id is returned. On failure, defined negative value is returned.
+ * @since TizenRT v2.0 PRE
+ */
+int task_manager_register_task(char *name, int priority, int stack_size, main_t entry, char * argv[], int permission, int timeout);
+/**
+ * @brief Request to register a pthread which is not in builtin list
+ * @details @b #include <task_manager/task_manager.h>\n
+ * @param[in] name the name of pthread to be registered
+ * @param[in] attr the attribute of pthread to be registered
+ * @param[in] start_routine the entry function pointer
+ * @param[in] arg the argument to pass when task creation
+ * @param[in] permission the permission of task to be registered
+ * @param[in] timeout returnable flag. It can be one of the below.\n
+ *			TM_NO_RESPONSE : Ignore the response of request from task manager\n
+ *			TM_RESPONSE_WAIT_INF : Blocked until get the response from task manager\n
+ *			integer value : Specifies an upper limit on the time for which will block in milliseconds
+ * @return On success, handle id is returned. On failure, defined negative value is returned.
+ * @since TizenRT v2.0 PRE
+ */
+int task_manager_register_pthread(char *name, pthread_attr_t *attr, pthread_startroutine_t start_routine, pthread_addr_t arg, int permission, int timeout);
 /**
  * @brief Request to unregister a task
  * @details @b #include <task_manager/task_manager.h>
@@ -257,7 +293,7 @@ int task_manager_set_termination_cb(void (*func)(void));
  * @return On success, the list of task information is returned(at the end of the list, NULL will be returned). On failure, NULL is returned.
  * @since TizenRT v2.0 PRE
  */
-task_info_list_t *task_manager_getinfo_with_name(char *name, int timeout);
+app_info_list_t *task_manager_getinfo_with_name(char *name, int timeout);
 /**
  * @brief Get task information through handle
  * @details @b #include <task_manager/task_manager.h>
@@ -270,7 +306,7 @@ task_info_list_t *task_manager_getinfo_with_name(char *name, int timeout);
  * @return On success, the task information is returned. On failure, NULL is returned.
  * @since TizenRT v2.0 PRE
  */
-task_info_t *task_manager_getinfo_with_handle(int handle, int timeout);
+app_info_t *task_manager_getinfo_with_handle(int handle, int timeout);
 /**
  * @brief Get task information list through group
  * @details @b #include <task_manager/task_manager.h>
@@ -283,7 +319,7 @@ task_info_t *task_manager_getinfo_with_handle(int handle, int timeout);
  * @return On success, the task information is returned. On failure, NULL is returned.
  * @since TizenRT v2.0 PRE
  */
-task_info_list_t *task_manager_getinfo_with_group(int group, int timeout);
+app_info_list_t *task_manager_getinfo_with_group(int group, int timeout);
 /**
  * @brief Clean task information
  * @details @b #include <task_manager/task_manager.h>
@@ -291,7 +327,7 @@ task_info_list_t *task_manager_getinfo_with_group(int group, int timeout);
  * @return none
  * @since TizenRT v2.0 PRE
  */
-void task_manager_clean_info(task_info_t **info);
+void task_manager_clean_info(app_info_t **info);
 /**
  * @brief Clean task information list
  * @details @b #include <task_manager/task_manager.h>
@@ -299,7 +335,7 @@ void task_manager_clean_info(task_info_t **info);
  * @return none
  * @since TizenRT v2.0 PRE
  */
-void task_manager_clean_infolist(task_info_list_t **info_list);
+void task_manager_clean_infolist(app_info_list_t **info_list);
 
 #endif
 /**

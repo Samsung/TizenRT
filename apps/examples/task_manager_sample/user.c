@@ -40,7 +40,7 @@ int user_main(int argc, char *argv[])
 {
 	int handle_actionmanager = 0;
 	int ret;
-	task_info_list_t *action_manager_info;
+	app_info_list_t *action_manager_info;
 
 	char *msg1 = (char *)malloc(sizeof(char) * 9);
 	char *msg2 = (char *)malloc(sizeof(char) * 12);
@@ -53,7 +53,7 @@ int user_main(int argc, char *argv[])
 	strcpy(msg4, "alarm_restart");
 	strcpy(msg5, "alarm_off");
 
-	action_manager_info = (task_info_list_t *)task_manager_getinfo_with_name("action_manager", TM_RESPONSE_WAIT_INF);
+	action_manager_info = (app_info_list_t *)task_manager_getinfo_with_name("action_manager", TM_RESPONSE_WAIT_INF);
 	if (action_manager_info != NULL) {
 		handle_actionmanager = action_manager_info->task.handle;
 	}

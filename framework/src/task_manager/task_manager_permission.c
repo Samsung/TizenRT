@@ -30,22 +30,22 @@ bool taskmgr_is_permitted(int handle, pid_t pid)
 {
 	int chk_idx;
 	int builtin_cnt;
-	int permission = TASK_PERMISSION(handle);
+	int permission = TM_PERMISSION(handle);
 
 	builtin_cnt = get_builtin_list_cnt();
 
-	if (permission == TM_TASK_PERMISSION_ALL \
-		|| (permission == TM_TASK_PERMISSION_DEDICATE && TASK_TM_GID(handle) == pid)) {
+	if (permission == TM_APP_PERMISSION_ALL \
+		|| (permission == TM_APP_PERMISSION_DEDICATE && TM_GID(handle) == pid)) {
 		return true;
 	}
 
-	if (permission == TM_TASK_PERMISSION_GROUP) {
-		if (pid == TASK_TM_GID(handle)) {
+	if (permission == TM_APP_PERMISSION_GROUP) {
+		if (pid == TM_GID(handle)) {
 			return true;
 		}
 		/* check pid's group id */
 		for (chk_idx = 0; chk_idx < builtin_cnt; chk_idx++) {
-			if (TASK_PID(chk_idx) == pid && TASK_TM_GID(chk_idx) == TASK_TM_GID(handle)) {
+			if (TM_PID(chk_idx) == pid && TM_GID(chk_idx) == TM_GID(handle)) {
 				return true;
 			}
 		}

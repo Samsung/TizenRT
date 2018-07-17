@@ -25,7 +25,7 @@
 /****************************************************************************
  * task_manager_clean_info
  ****************************************************************************/
-void task_manager_clean_info(task_info_t **info)
+void task_manager_clean_info(app_info_t **info)
 {
 	if (*info == NULL) {
 		return;
@@ -43,9 +43,9 @@ void task_manager_clean_info(task_info_t **info)
 /****************************************************************************
  * task_manager_clean_infolist
  ****************************************************************************/
-void task_manager_clean_infolist(task_info_list_t **info_list)
+void task_manager_clean_infolist(app_info_list_t **info_list)
 {
-	task_info_list_t *curr_info;
+	app_info_list_t *curr_info;
 
 	if (*info_list == NULL) {
 		return;

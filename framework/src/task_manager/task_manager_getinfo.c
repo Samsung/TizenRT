@@ -28,7 +28,7 @@
 /****************************************************************************
  * task_manager_getinfo_with_name
  ****************************************************************************/
-task_info_list_t *task_manager_getinfo_with_name(char *name, int timeout)
+app_info_list_t *task_manager_getinfo_with_name(char *name, int timeout)
 {
 	int status;
 	tm_request_t request_msg;
@@ -41,7 +41,7 @@ task_info_list_t *task_manager_getinfo_with_name(char *name, int timeout)
 	memset(&request_msg, 0, sizeof(tm_request_t));
 
 	/* Set the request msg */
-	request_msg.cmd = TASKMGR_SCAN_NAME;
+	request_msg.cmd = TASKMGRCMD_SCAN_NAME;
 	request_msg.data = (void *)TM_ALLOC(strlen(name) + 1);
 	if (request_msg.data == NULL) {
 		return NULL;
@@ -75,7 +75,7 @@ task_info_list_t *task_manager_getinfo_with_name(char *name, int timeout)
 /****************************************************************************
  * task_manager_getinfo_with_handle
  ****************************************************************************/
-task_info_t *task_manager_getinfo_with_handle(int handle, int timeout)
+app_info_t *task_manager_getinfo_with_handle(int handle, int timeout)
 {
 	int status;
 	tm_request_t request_msg;
@@ -88,7 +88,7 @@ task_info_t *task_manager_getinfo_with_handle(int handle, int timeout)
 	memset(&request_msg, 0, sizeof(tm_request_t));
 
 	/* Set the request msg */
-	request_msg.cmd = TASKMGR_SCAN_HANDLE;
+	request_msg.cmd = TASKMGRCMD_SCAN_HANDLE;
 	request_msg.handle = handle;
 	request_msg.timeout = timeout;
 
@@ -116,7 +116,7 @@ task_info_t *task_manager_getinfo_with_handle(int handle, int timeout)
 /****************************************************************************
  * task_manager_getinfo_with_group
  ****************************************************************************/
-task_info_list_t *task_manager_getinfo_with_group(int group, int timeout)
+app_info_list_t *task_manager_getinfo_with_group(int group, int timeout)
 {
 	int status;
 	tm_request_t request_msg;
@@ -129,7 +129,7 @@ task_info_list_t *task_manager_getinfo_with_group(int group, int timeout)
 	memset(&request_msg, 0, sizeof(tm_request_t));
 
 	/* Set the request msg */
-	request_msg.cmd = TASKMGR_SCAN_GROUP;
+	request_msg.cmd = TASKMGRCMD_SCAN_GROUP;
 	request_msg.handle = group;
 	request_msg.timeout = timeout;
 

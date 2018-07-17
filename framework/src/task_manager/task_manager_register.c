@@ -21,6 +21,7 @@
 #include <string.h>
 #include <stdio.h>
 #include <unistd.h>
+#include <pthread.h>
 #include <sys/types.h>
 #include <task_manager/task_manager.h>
 #include "task_manager_internal.h"
@@ -34,12 +35,12 @@ int task_manager_register(char *name, int permission, int timeout)
 	tm_request_t request_msg;
 	tm_response_t response_msg;
 
-	if (name == NULL || timeout < TM_RESPONSE_WAIT_INF || permission < TM_TASK_PERMISSION_ALL || permission > TM_TASK_PERMISSION_DEDICATE) {
+	if (name == NULL || timeout < TM_RESPONSE_WAIT_INF || permission < TM_APP_PERMISSION_ALL || permission > TM_APP_PERMISSION_DEDICATE) {
 		return TM_INVALID_PARAM;
 	}
 
 	memset(&request_msg, 0, sizeof(tm_request_t));
-	request_msg.cmd = TASKMGR_REGISTER;
+	request_msg.cmd = TASKMGRCMD_REGISTER;
 	request_msg.caller_pid = getpid();
 	request_msg.handle = permission;
 	request_msg.data = (void *)TM_ALLOC(strlen(name) + 1);
@@ -47,6 +48,105 @@ int task_manager_register(char *name, int permission, int timeout)
 		return TM_OUT_OF_MEMORY;
 	}
 	strncpy((char *)request_msg.data, name, strlen(name) + 1);
+	request_msg.timeout = timeout;
+
+	if (timeout != TM_NO_RESPONSE) {
+		asprintf(&request_msg.q_name, "%s%d", TM_PRIVATE_MQ, request_msg.caller_pid);
+		if (request_msg.q_name == NULL) {
+			TM_FREE(request_msg.data);
+			return TM_OUT_OF_MEMORY;
+		}
+	}
+
+	status = taskmgr_send_request(&request_msg);
+	if (status < 0) {
+		TM_FREE(request_msg.data);
+		if (request_msg.q_name != NULL) {
+			TM_FREE(request_msg.q_name);
+		}
+		return status;
+	}
+
+	if (timeout != TM_NO_RESPONSE) {
+		status = taskmgr_receive_response(request_msg.q_name, &response_msg, timeout);
+		TM_FREE(request_msg.q_name);
+	}
+
+	return status;
+}
+
+int task_manager_register_task(char *name, int priority, int stack_size, main_t entry, char * argv[], int permission, int timeout)
+{
+	int status;
+	tm_request_t request_msg;
+	tm_response_t response_msg;
+
+	if (name == NULL || timeout < TM_RESPONSE_WAIT_INF || permission < TM_APP_PERMISSION_ALL || permission > TM_APP_PERMISSION_DEDICATE || priority < SCHED_PRIORITY_MIN || priority > SCHED_PRIORITY_MAX || stack_size < 1 || entry == NULL) {
+		return TM_INVALID_PARAM;
+	}
+
+	memset(&request_msg, 0, sizeof(tm_request_t));
+	request_msg.cmd = TASKMGRCMD_REGISTER;
+	request_msg.caller_pid = getpid();
+	request_msg.handle = permission;
+	request_msg.data = (void *)TM_ALLOC(sizeof(tm_task_info_t));
+	if (request_msg.data == NULL) {
+		return TM_OUT_OF_MEMORY;
+	}
+	strncpy(((tm_task_info_t *)request_msg.data)->name, name, strlen(name) + 1);
+	((tm_task_info_t *)request_msg.data)->priority = priority;
+	((tm_task_info_t *)request_msg.data)->stack_size = stack_size;
+	((tm_task_info_t *)request_msg.data)->entry = entry;
+	((tm_task_info_t *)request_msg.data)->argv = argv;
+	request_msg.timeout = timeout;
+
+	if (timeout != TM_NO_RESPONSE) {
+		asprintf(&request_msg.q_name, "%s%d", TM_PRIVATE_MQ, request_msg.caller_pid);
+		if (request_msg.q_name == NULL) {
+			TM_FREE(request_msg.data);
+			return TM_OUT_OF_MEMORY;
+		}
+	}
+
+	status = taskmgr_send_request(&request_msg);
+	if (status < 0) {
+		TM_FREE(request_msg.data);
+		if (request_msg.q_name != NULL) {
+			TM_FREE(request_msg.q_name);
+		}
+		return status;
+	}
+
+	if (timeout != TM_NO_RESPONSE) {
+		status = taskmgr_receive_response(request_msg.q_name, &response_msg, timeout);
+		TM_FREE(request_msg.q_name);
+	}
+
+	return status;
+}
+
+int task_manager_register_pthread(char *name, pthread_attr_t *attr, pthread_startroutine_t start_routine, pthread_addr_t arg, int permission, int timeout)
+{
+	int status;
+	tm_request_t request_msg;
+	tm_response_t response_msg;
+
+	if (name == NULL || timeout < TM_RESPONSE_WAIT_INF || permission < TM_APP_PERMISSION_ALL || permission > TM_APP_PERMISSION_DEDICATE || attr == NULL || start_routine == NULL) {
+		return TM_INVALID_PARAM;
+	}
+
+	memset(&request_msg, 0, sizeof(tm_request_t));
+	request_msg.cmd = TASKMGRCMD_REGISTER;
+	request_msg.caller_pid = getpid();
+	request_msg.handle = permission;
+	request_msg.data = (void *)TM_ALLOC(sizeof(tm_pthread_info_t));
+	if (request_msg.data == NULL) {
+		return TM_OUT_OF_MEMORY;
+	}
+	strncpy(((tm_pthread_info_t *)request_msg.data)->name, name, strlen(name) + 1);
+	((tm_pthread_info_t *)request_msg.data)->attr = attr;
+	((tm_pthread_info_t *)request_msg.data)->entry = start_routine;
+	((tm_pthread_info_t *)request_msg.data)->arg = arg;
 	request_msg.timeout = timeout;
 
 	if (timeout != TM_NO_RESPONSE) {

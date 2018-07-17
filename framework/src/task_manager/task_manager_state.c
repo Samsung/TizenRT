@@ -38,9 +38,9 @@ static void taskmgr_update_task_state(int handle)
 		return;
 	}
 
-	ret = ioctl(fd, TMIOC_CHECK_ALIVE, TASK_PID(handle));
-	if (ret != OK && TASK_LIST_ADDR(handle) != NULL) {
-		TASK_STATUS(handle) = TM_TASK_STATE_STOP;
+	ret = ioctl(fd, TMIOC_CHECK_ALIVE, TM_PID(handle));
+	if (ret != OK && TM_LIST_ADDR(handle) != NULL) {
+		TM_STATUS(handle) = TM_APP_STATE_STOP;
 	}
 }
 
@@ -49,11 +49,11 @@ static void taskmgr_update_task_state(int handle)
  ****************************************************************************/
 int taskmgr_get_task_state(int handle)
 {
-	if (IS_INVALID_HANDLE(handle) || TASK_LIST_ADDR(handle) == NULL) {
-		return TM_TASK_STATE_UNREGISTERED;
+	if (IS_INVALID_HANDLE(handle) || TM_LIST_ADDR(handle) == NULL) {
+		return TM_APP_STATE_UNREGISTERED;
 	}
 
 	taskmgr_update_task_state(handle);
 
-	return (TASK_STATUS(handle));
+	return (TM_STATUS(handle));
 }

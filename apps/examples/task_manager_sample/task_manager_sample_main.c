@@ -49,7 +49,7 @@ int task_manager_sample_main(int argc, char *argv[])
 
 	printf("Task Manager Sample is started\nRegister Action Manager\n");
 
-	handle_actionmanager = task_manager_register("action_manager", TM_TASK_PERMISSION_ALL, TM_RESPONSE_WAIT_INF);
+	handle_actionmanager = task_manager_register("action_manager", TM_APP_PERMISSION_ALL, TM_RESPONSE_WAIT_INF);
 	if (handle_actionmanager < 0) {
 		printf("FAIL TO REGISTER ACTION MANAGER, %d\n", handle_actionmanager);
 	} else if (handle_actionmanager >= 0) {
@@ -57,7 +57,7 @@ int task_manager_sample_main(int argc, char *argv[])
 	}
 
 	printf("\nRegister User App\n");
-	handle_user = task_manager_register("user", TM_TASK_PERMISSION_ALL, TM_RESPONSE_WAIT_INF);
+	handle_user = task_manager_register("user", TM_APP_PERMISSION_ALL, TM_RESPONSE_WAIT_INF);
 	if (handle_user < 0) {
 		printf("FAIL TO REGISTER USER APP, %d\n", handle_user);
 	} else if (handle_user >= 0) {
