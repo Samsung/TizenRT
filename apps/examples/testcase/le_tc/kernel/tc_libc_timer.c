@@ -37,7 +37,6 @@
 #include "tc_internal.h"
 
 #define BUFF_SIZE 64
-#define YEAR_BASE 1900
 #define DAY_1 1
 #define DAY_2 2
 #define SEC_5 5
@@ -322,7 +321,7 @@ static void tc_libc_timer_strftime(void)
 	st_time.tm_hour = 18;
 	st_time.tm_mday = 19;
 	st_time.tm_mon = 5;
-	st_time.tm_year = 2017 - YEAR_BASE;
+	st_time.tm_year = 2017 - TM_YEAR_BASE;
 
 	/* Verifying year and month filled in time structure.
 	 * time structure has month in range 0-11,
@@ -400,7 +399,7 @@ static void tc_libc_timer_strftime(void)
 
 	/* Check the year as a decimal number including the century */
 	strftime(buffer, BUFF_SIZE, "%Y", &st_time);
-	TC_ASSERT_EQ("strftime", atoi(buffer), st_time.tm_year + YEAR_BASE);
+	TC_ASSERT_EQ("strftime", atoi(buffer), st_time.tm_year + TM_YEAR_BASE);
 
 	/* Check the year as a decimal number without a century (range 00 to 99) */
 	strftime(buffer, BUFF_SIZE, "%y", &st_time);
@@ -435,7 +434,7 @@ static void tc_libc_timer_strptime(void)
 	sf_tm.tm_hour = 12;
 	sf_tm.tm_mday = 5;
 	sf_tm.tm_mon  = 5;
-	sf_tm.tm_year = 2018 - YEAR_BASE;
+	sf_tm.tm_year = 2018 - TM_YEAR_BASE;
 
 	memset(&sp_tm, 0, sizeof(struct tm));
 

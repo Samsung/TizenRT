@@ -66,6 +66,7 @@
 
 #define MAX_TIME_STRING         80
 #define STR_LEN_OF_MONTH_WEEK   3
+#define MAX_EPOCH_YEAR_OF_UINT  2106
 
 /****************************************************************************
  * Private Data
@@ -169,10 +170,10 @@ static inline int date_settime(int argc, char **args)
 	}
 
 	result = strtol(token, NULL, 10);
-	if (result < 1900 || result > 2100) {
+	if (result < EPOCH_YEAR || result > MAX_EPOCH_YEAR_OF_UINT) {
 		goto errout_bad_parm;
 	}
-	tm.tm_year = (int)result - 1900;
+	tm.tm_year = (int)result - TM_YEAR_BASE;
 
 	/* Get the month abbreviation */
 
@@ -196,7 +197,7 @@ static inline int date_settime(int argc, char **args)
 	result = strtol(token, NULL, 10);
 	if (result < 1) {
 		goto errout_bad_parm;
-	} else if ((tm.tm_mon != 1) || !clock_isleapyear(tm.tm_year + 1900)) {
+	} else if ((tm.tm_mon != 1) || !clock_isleapyear(tm.tm_year + TM_YEAR_BASE)) {
 		if (result > g_dayofmonth[tm.tm_mon]) {
 			goto errout_bad_parm;
 		}

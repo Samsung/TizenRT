@@ -399,7 +399,7 @@ int board_app_initialize(void)
 
 		up_rtc_getdatetime(&tp);
 		lldbg("RTC getdatetime %d/%d/%d/%d/%d/%d\n",
-				tp.tm_year + 1900, tp.tm_mon + 1,
+				tp.tm_year + TM_YEAR_BASE, tp.tm_mon + 1,
 				tp.tm_mday, tp.tm_hour, tp.tm_min, tp.tm_sec);
 		lldbg("Version Info :\n");
 		lldbg("tinyARA %s\n", __TIMESTAMP__);
