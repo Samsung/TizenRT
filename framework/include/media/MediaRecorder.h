@@ -173,6 +173,7 @@ public:
 	 * @details @b #include <media/MediaRecorder.h>
 	 * This function is sync call apis
 	 * It sets the user's function
+	 * @param[in] observer The callback to be set for Media Recorder Observer.
 	 * @return The result of setting the observer
 	 * @since TizenRT v2.0 PRE
 	 */
