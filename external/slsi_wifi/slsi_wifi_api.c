@@ -507,11 +507,11 @@ static int8_t slsi_init_filesystem(void)
 
 				if (ret != 1) {
 					EPRINT("write_file: ERROR failed to write to %s, errno=%d, ret=%d\n", conffile, errno, ret);
-					fclose(fp);
 					ret = SLSI_STATUS_ERROR;
+				} else {
+					ret = SLSI_STATUS_SUCCESS;
 				}
 				fclose(fp);
-				ret = SLSI_STATUS_SUCCESS;
 			}
 		} else {
 			ret = SLSI_STATUS_SUCCESS;

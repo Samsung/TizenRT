@@ -190,6 +190,7 @@ wifi_utils_result_e wifi_profile_init(void)
 			return WIFI_UTILS_FILE_ERROR;
 		}
 	}
+	closedir(dir);
 #endif
 #endif
 	return WIFI_UTILS_SUCCESS;
