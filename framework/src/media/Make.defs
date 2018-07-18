@@ -22,7 +22,6 @@ VPATH += :src/media/audio
 CSRCS += samplerate.c
 DEPPATH += --dep-path src/media/audio/resample
 VPATH += :src/media/audio/resample
-CXXSRCS += audio_decoder.cpp audio_encoder.cpp
 DEPPATH += --dep-path src/media/streaming
 VPATH += :src/media/streaming
 endif
@@ -44,11 +43,13 @@ VPATH += :src/media/codecs
 endif
 
 ifeq ($(CONFIG_MEDIA_PLAYER), y)
-CXXSRCS += MediaPlayer.cpp InputDataSource.cpp FileInputDataSource.cpp PlayerWorker.cpp MediaPlayerImpl.cpp PlayerObserverWorker.cpp Decoder.cpp
+CXXSRCS += MediaPlayer.cpp InputDataSource.cpp FileInputDataSource.cpp PlayerWorker.cpp MediaPlayerImpl.cpp PlayerObserverWorker.cpp
+CXXSRCS += Decoder.cpp audio_decoder.cpp
 endif
 
 ifeq ($(CONFIG_MEDIA_RECORDER), y)
-CXXSRCS += MediaRecorder.cpp OutputDataSource.cpp FileOutputDataSource.cpp RecorderWorker.cpp MediaRecorderImpl.cpp BufferOutputDataSource.cpp RecorderObserverWorker.cpp Encoder.cpp
+CXXSRCS += MediaRecorder.cpp OutputDataSource.cpp FileOutputDataSource.cpp RecorderWorker.cpp MediaRecorderImpl.cpp BufferOutputDataSource.cpp RecorderObserverWorker.cpp
+CXXSRCS += Encoder.cpp audio_encoder.cpp
 ifeq ($(CONFIG_NET), y)
 CXXSRCS += SocketOutputDataSource.cpp
 endif
