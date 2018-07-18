@@ -130,20 +130,22 @@ def execute(*command):
 class system(object):
     def __init__(self):
         import platform
-        from os.path import abspath
+        import os
 
-        basepath = dirname(abspath(__file__))
+        basepath = dirname(os.path.abspath(__file__))
         configpath = path((basepath, 'scripts'))
         buildpath = realpath(path((basepath, '..', '..')))
         outputpath = path((buildpath, 'output', 'bin'))
         toolpath = path((basepath, 'tools'))
 
         _arch = '64' if platform.machine() == 'x86_64' else '32'
-        if platform.system() == "Windows":
+
+        ostype = os.environ.get('OS', platform.system())
+        if ostype == "Windows":
             _tools = 'win' + _arch
-        elif platform.system() == "Linux":
+        elif ostype == "Linux":
             _tools = 'linux' + _arch
-        elif platform.system() == "Darwin":
+        elif ostype == "Darwin":
             _tools = 'macos'
         else:
             raise NotImplementedError(
