@@ -725,6 +725,22 @@ Once LOGM is approved, each module should have its own index
 #define tmvdbg(...)
 #endif
 
+#ifdef CONFIG_DEBUG_PREFERENCE
+#ifdef CONFIG_DEBUG_PREFERENCE_ERROR
+#define prefdbg(format, ...)      dbg(format, ##__VA_ARGS__)
+#else
+#define prefdbg(...)
+#endif
+#ifdef CONFIG_DEBUG_PREFERENCE_INFO
+#define prefvdbg(format, ...)     vdbg(format, ##__VA_ARGS__)
+#else
+#define prefvdbg(...)
+#endif
+#else
+#define prefdbg(...)
+#define prefvdbg(...)
+#endif
+
 #else							/* CONFIG_CPP_HAVE_VARARGS */
 
 /* Variadic macros NOT supported */
@@ -1100,6 +1116,23 @@ Once LOGM is approved, each module should have its own index
 #define medllvdbg   (void)
 #define medllvdbg   (...)
 #endif
+
+#ifdef CONFIG_DEBUG_PREFERENCE_ERROR
+#define prefdbg      dbg
+#define preflldbg    lldbg
+#else
+#define prefdbg      (void)
+#define preflldbg    (void)
+#endif
+
+#ifdef CONFIG_DEBUG_PREFERENCE_INFO
+#define prefvdbg     vdbg
+#define prefllvdbg   llvdbg
+#else
+#define prefvdbg   (void)
+#define prefllvdbg   (...)
+#endif
+
 
 #endif							/* CONFIG_CPP_HAVE_VARARGS */
 

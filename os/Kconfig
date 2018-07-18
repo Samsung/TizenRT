@@ -518,6 +518,10 @@ menu "Task manager"
 source "$FRAMEWORK_DIR/src/task_manager/Kconfig"
 endmenu
 
+menu "Preference Support"
+source "$FRAMEWORK_DIR/src/preference/Kconfig"
+endmenu
+
 menu "Things Management"
 source Kconfig.things
 endmenu

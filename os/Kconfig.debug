@@ -430,6 +430,31 @@ config DEBUG_TASK_MANAGER_INFO
 
 endif #DEBUG_TASK_MANAGER
 
+config DEBUG_PREFERENCE
+	bool "Preference Debug Output"
+	default n
+	depends on PREFERENCE
+	---help---
+		Preference Debug Output.
+
+if DEBUG_PREFERENCE
+
+config DEBUG_PREFERENCE_ERROR
+	bool "Enable Preference Error Debug Output"
+	default n
+	depends on DEBUG_ERROR
+	---help---
+		Preference Error Debug Output.
+
+config DEBUG_PREFERENCE_INFO
+	bool "Enable Preference Informational Debug Output"
+	default n
+	depends on DEBUG_VERBOSE
+	---help---
+		Preference Informational Debug Output.
+
+endif #DEBUG_PREFERENCE
+
 config DEBUG_WLAN
 	bool "WLAN Debug Output"
 	default y

@@ -80,6 +80,14 @@
  *
  *      char myname[CONFIG_TASK_NAME_SIZE];
  *      prctl(PR_GET_NAME, myname, 0);
+ *
+ *  PR_GET_TGTASK
+ *    Return the main task id in the own group through arg2 (int *).
+ *    If parent-child relationship is not supported, the ID of its own
+ *    task/thread is returned. As an example:
+ *
+ *      int ppid;
+ *      prctl(PR_GET_TGTASK, &ppid);
  */
 
 /**
@@ -90,6 +98,10 @@
  * @ingroup SCHED_KERNEL
  */
 #define PR_GET_NAME 2
+/**
+ * @ingroup SCHED_KERNEL
+ */
+#define PR_GET_TGTASK 3
 
 /****************************************************************************
  * Public Type Definitions
@@ -115,8 +127,8 @@ extern "C" {
  *
  * @details @b #include <sys/prctl.h>
  * @param[in] option options for what to do
- * @return The returned value may depend on the specific commnand.  For PR_SET_NAME
- *   and PR_GET_NAME, the returned value of 0 indicates successful operation.
+ * @return The returned value may depend on the specific commnand.  For PR_SET_NAME,
+ *   PR_GET_NAME and PR_GET_TGTASK, the returned value of 0 indicates successful operation.
  *   On any failure, -1 is retruend and the errno value is set appropriately.
  *
  *     EINVAL The value of 'option' is not recognized.

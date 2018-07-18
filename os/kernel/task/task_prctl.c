@@ -59,6 +59,7 @@
 #include <sys/prctl.h>
 #include <stdarg.h>
 #include <string.h>
+#include <unistd.h>
 #include <errno.h>
 #include <debug.h>
 
@@ -85,8 +86,8 @@
  *   the specific command.
  *
  * Returned Value:
- *   The returned value may depend on the specific commnand.  For PR_SET_NAME
- *   and PR_GET_NAME, the returned value of 0 indicates successful operation.
+ *   The returned value may depend on the specific commnand.  For PR_SET_NAME,
+ *   PR_GET_NAME and PR_GET_TGTASK, the returned value of 0 indicates successful operation.
  *   On any failure, -1 is retruend and the errno value is set appropriately.
  *
  *     EINVAL The value of 'option' is not recognized.
@@ -165,7 +166,31 @@ int prctl(int option, ...)
 	err = ENOSYS;
 	goto errout;
 #endif
-
+	case PR_GET_TGTASK:
+	{
+		int *ppid = va_arg(ap, int *);
+#if !defined(CONFIG_DISABLE_PTHREAD) && defined(CONFIG_SCHED_HAVE_PARENT)
+		FAR struct tcb_s *tcb = this_task();
+		if (!tcb) {
+			sdbg("Invalied tcb");
+			err = ESRCH;
+			goto errout;
+		}
+		/* Get ID of the main task in the group */
+		FAR struct task_group_s *group = tcb->group;
+		if (!group) {
+			sdbg("Invalied group");
+			err = ESRCH;
+			goto errout;
+		}
+		*ppid = group->tg_task;
+		sdbg("Task group id = %d\n", group->tg_task);
+#else
+		/* Not Support parent-child relationship */
+		*ppid = getpid();
+#endif
+	}
+		break;
 	default:
 		sdbg("Unrecognized option: %d\n", option);
 		err = EINVAL;
