@@ -71,7 +71,7 @@
 /****************************************************************************
  * Definitions
  ****************************************************************************/
-#if defined(CONFIG_ARCH_BOARD_SIDK_S5JT200) || defined(CONFIG_ARCH_BOARD_ARTIK053)
+#if defined(CONFIG_ARCH_BOARD_SIDK_S5JT200) || defined(CONFIG_ARCH_BOARD_ARTIK05X_FAMILY)
 #define MDNS_NETIF_NAME         "wl1"
 #else
 #error "cannot set MDNS_NETIF_NAME"
