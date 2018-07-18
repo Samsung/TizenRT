@@ -92,13 +92,13 @@
 static void show_usage(void)
 {
 	printf("\n");
-	printf("Usage: dhcpd <command> [interface name]\n");
+	printf("Usage: dhcpd <command>\n");
 	printf("\nWhere:\n");
-	printf("	<command>		command string (start | stop | status ) \n");
-	printf("					 - start  : start dhcpd daemon \n");
-	printf("					 - stop   : terminate dhcpd daemon \n");
-	printf("					 - status : show dhcpd daemon's status \n");
-	printf("	[interface name] name of network interface used for running dhcpd  \n");
+	printf("   <command> command string (start | stop | status ) \n");
+	printf("                   - start [interface name] : start dhcpd daemon \n");
+	printf("                   - stop   : terminate dhcpd daemon \n");
+	printf("                   - status : show dhcpd daemon's status \n");
+	printf("   [interface name] name of network interface used for running dhcpd  \n");
 	printf("\n");
 
 }
