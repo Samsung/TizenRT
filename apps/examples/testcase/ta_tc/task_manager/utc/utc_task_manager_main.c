@@ -254,24 +254,24 @@ static void utc_task_manager_set_broadcast_cb_p(void)
 	TC_SUCCESS_RESULT();
 }
 
-static void utc_task_manager_set_termination_cb_n(void)
+static void utc_task_manager_set_exit_cb_n(void)
 {
 	int ret;
-	ret = task_manager_set_termination_cb(NULL);
-	TC_ASSERT_EQ("task_manager_set_termination_cb", ret, TM_INVALID_PARAM);
+	ret = task_manager_set_exit_cb(NULL);
+	TC_ASSERT_EQ("task_manager_set_exit_cb", ret, TM_INVALID_PARAM);
 
 	TC_SUCCESS_RESULT();
 }
 
-static void utc_task_manager_set_termination_cb_p(void)
+static void utc_task_manager_set_exit_cb_p(void)
 {
 	int ret;
 	/* No meaningful malloc for testing resource collection handler */
 	addr = (int *)malloc(123);
 	addr2 = (int *)malloc(456);
 
-	ret = task_manager_set_termination_cb(free_handler);
-	TC_ASSERT_EQ_CLEANUP("task_manager_set_termination_cb", ret, OK, free(addr); free(addr2));
+	ret = task_manager_set_exit_cb(free_handler);
+	TC_ASSERT_EQ_CLEANUP("task_manager_set_exit_cb", ret, OK, free(addr); free(addr2));
 
 	TC_SUCCESS_RESULT();
 }
@@ -611,8 +611,8 @@ int utc_task_manager_main(int argc, char *argv[])
 	utc_task_manager_set_broadcast_cb_n();
 	utc_task_manager_set_broadcast_cb_p();
 
-	utc_task_manager_set_termination_cb_n();
-	utc_task_manager_set_termination_cb_p();
+	utc_task_manager_set_exit_cb_n();
+	utc_task_manager_set_exit_cb_p();
 
 	utc_task_manager_unicast_n();
 	utc_task_manager_unicast_p();

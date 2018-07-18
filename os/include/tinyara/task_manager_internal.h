@@ -16,8 +16,8 @@
  *
  ****************************************************************************/
 
-#ifndef __INCLUDE_TINYARA_TASK_MANAGER_DRV_H
-#define __INCLUDE_TINYARA_TASK_MANAGER_DRV_H
+#ifndef __INCLUDE_TINYARA_TASK_MANAGER_INTERNAL_H
+#define __INCLUDE_TINYARA_TASK_MANAGER_INTERNAL_H
 
 /* This file will be used to provide definitions to support
  * task manager framework
@@ -36,6 +36,11 @@
 
 void task_manager_drv_register(void);
 
+/**
+ * @brief function for run exit callback when task is terminated.
+ */
+int task_manager_run_exit_cb(int pid);
+
 #ifdef __cplusplus
 #define EXTERN extern "C"
 extern "C" {
@@ -48,4 +53,4 @@ extern "C" {
 }
 #endif
 
-#endif /* __INCLUDE_TINYARA_TASK_MANAGER_DRV_H */
+#endif /* __INCLUDE_TINYARA_TASK_MANAGER_INTERNAL_H */

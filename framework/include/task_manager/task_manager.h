@@ -274,13 +274,21 @@ int task_manager_set_unicast_cb(void (*func)(void *data));
  */
 int task_manager_set_broadcast_cb(int msg_mask, void (*func)(int data));
 /**
- * @brief Set callback function for resource deallocation API. If you set the callback, it will works when task is terminated.
+ * @brief Set callback function for resource deallocation API. If you set the callback, it will works when task terminates.
  * @details @b #include <task_manager/task_manager.h>
  * @param[in] func the callback function which deallocate resources\n
  * @return On success, OK is returned. On failure, defined negative value is returned.
  * @since TizenRT v2.0 PRE
  */
-int task_manager_set_termination_cb(void (*func)(void));
+int task_manager_set_exit_cb(void (*func)(void));
+/**
+ * @brief Set callback function for resource deallocation API. If you set the callback, it will works when task is cancelled.
+ * @details @b #include <task_manager/task_manager.h>
+ * @param[in] func the callback function which deallocate resources\n
+ * @return On success, OK is returned. On failure, defined negative value is returned.
+ * @since TizenRT v2.0 PRE
+ */
+int task_manager_set_stop_cb(void (*func)(void));
 /**
  * @brief Get task information list through task name
  * @details @b #include <task_manager/task_manager.h>

@@ -32,7 +32,7 @@
 #include <sys/ioctl.h>
 #include <apps/builtin.h>
 #include <tinyara/fs/ioctl.h>
-#include <tinyara/task_manager_drv.h>
+#include <tinyara/task_manager_internal.h>
 #include <task_manager/task_manager.h>
 #include "task_manager_internal.h"
 
@@ -55,6 +55,8 @@ static bool g_handle_hash[CONFIG_TASK_MANAGER_MAX_TASKS];
 #define HANDLE_HASH(handle)  ((handle) & MAX_HANDLE_MASK)
 #define TYPE_UNICAST     1
 #define TYPE_BROADCAST   2
+#define TYPE_CANCEL      3
+#define TYPE_EXIT        4
 
 /****************************************************************************
  * Public Functions
@@ -274,6 +276,10 @@ static int taskmgr_stop(int handle, int caller_pid)
 		return TM_NO_PERMISSION;
 	}
 
+	/* Call stop callback */
+	TM_STATUS(handle) = TM_APP_STATE_CANCELLING;
+	(*TM_STOP_CB(handle))();
+
 	if (TM_TYPE(handle) != TM_PTHREAD) {
 		ret = task_delete(TM_PID(handle));
 	} else {
@@ -284,7 +290,7 @@ static int taskmgr_stop(int handle, int caller_pid)
 		tmdbg("Fail to delete the task\n");
 		return TM_OPERATION_FAIL;
 	}
-	/* task or pthread deleted well */
+	/* task or pthread terminated well */
 	TM_STATUS(handle) = TM_APP_STATE_STOP;
 
 	return OK;
@@ -725,6 +731,44 @@ static int taskmgr_register_pthread(tm_pthread_info_t *pthread_info, int permiss
 
 	return handle;
 }
+
+static int taskmgr_set_termination_cb(int type, void *data, int pid)
+{
+	int handle;
+
+	if (data == NULL) {
+		return TM_INVALID_PARAM;
+	}
+
+	handle = taskmgr_get_handle_by_pid(pid);
+	if (handle == TM_UNREGISTERED_APP) {
+		return handle;
+	}
+
+	if (type == TYPE_CANCEL) {
+		TM_STOP_CB(handle) = data;
+	} else {
+		TM_EXIT_CB(handle) = data;
+	}
+
+	return OK;
+}
+
+int task_manager_run_exit_cb(int pid)
+{
+	int handle;
+	handle = taskmgr_get_handle_by_pid(pid);
+	if (handle == TM_UNREGISTERED_APP) {
+		return handle;
+	}
+
+	/* Run exit callback when normally terminated. */
+	if (TM_STATUS(handle) != TM_APP_STATE_CANCELLING) {
+		(*TM_EXIT_CB(handle))();
+	}
+	return OK;
+}
+
 /****************************************************************************
  * Main Function
  ****************************************************************************/
@@ -836,12 +880,20 @@ int task_manager(int argc, char *argv[])
 		case TASKMGRCMD_SET_UNICAST_CB:
 			ret = taskmgr_set_msg_cb(TYPE_UNICAST, request_msg.data, request_msg.caller_pid);
 			break;
+
 		case TASKMGRCMD_REGISTER_TASK:
 			ret = taskmgr_register_task((tm_task_info_t *)request_msg.data, request_msg.handle, request_msg.caller_pid);
 			break;
 
 		case TASKMGRCMD_REGISTER_PTHREAD:
 			ret = taskmgr_register_pthread((tm_pthread_info_t *)request_msg.data, request_msg.handle, request_msg.caller_pid);
+
+		case TASKMGRCMD_SET_STOP_CB:
+			ret = taskmgr_set_termination_cb(TYPE_CANCEL, request_msg.data, request_msg.caller_pid);
+			break;
+
+		case TASKMGRCMD_SET_EXIT_CB:
+			ret = taskmgr_set_termination_cb(TYPE_EXIT, request_msg.data, request_msg.caller_pid);
 			break;
 			
 		default:
