@@ -655,6 +655,7 @@ void heapinfo_update_group_info(pid_t pid, int group, int type);
 void heapinfo_check_group_list(pid_t pid, char *name);
 #endif
 #endif
+void mm_is_sem_available(void);
 
 /* Functions to get heap information */
 struct mm_heap_s *mm_get_heap_info(void);
