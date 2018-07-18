@@ -226,3 +226,18 @@ void mm_givesemaphore(FAR struct mm_heap_s *heap)
 		ASSERT(sem_post(&heap->mm_semaphore) == 0);
 	}
 }
+
+/****************************************************************************
+ * Name: mm_is_sem_available
+ *
+ * Description:
+ *   Check availability of mm semaphore 
+ *
+ ****************************************************************************/
+void mm_is_sem_available(void)
+{
+	struct mm_heap_s *heap = mm_get_heap_info();
+
+	mm_takesemaphore(heap);
+	mm_givesemaphore(heap);
+}
