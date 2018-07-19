@@ -148,6 +148,13 @@
 
 /* The following are non-standard signal definitions */
 
+/* SIG_PREFERENCE is used for preference */
+#ifndef CONFIG_SIG_PREFERENCE
+#define SIG_PREFERENCE	14
+#else
+#define SIG_PREFERENCE	CONFIG_SIG_PREFERENCE
+#endif
+
 /* SIG_SIGBM_STATECB is used in binary Manager */
 #ifndef CONFIG_SIG_SIGBM_STATE
 #define SIGBM_STATE     15

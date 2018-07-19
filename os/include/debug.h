@@ -605,6 +605,22 @@ int get_errno(void);
 #define msglldbg(...)	
 #endif
 
+#ifdef CONFIG_DEBUG_PREFERENCE_ERROR
+#define prefdbg(format, ...)      dbg(format, ##__VA_ARGS__)
+#define preflldbg(format, ...)    lldbg(format, ##__VA_ARGS__)
+#else
+#define prefdbg(...)
+#define preflldbg(...)
+#endif
+
+#ifdef CONFIG_DEBUG_PREFERENCE_INFO
+#define prefvdbg(format, ...)     vdbg(format, ##__VA_ARGS__)
+#define prefllvdbg(format, ...)   llvdbg(format, ##__VA_ARGS__)
+#else
+#define prefvdbg(...)
+#define prefllvdbg(...)
+#endif
+
 #ifdef CONFIG_DEBUG_SECURITY_FRAMEWORK_ERROR
 #define sfdbg(format, ...)     dbg(format, ##__VA_ARGS__)
 #define sflldbg(format, ...)   lldbg(format, ##__VA_ARGS__)
@@ -1291,6 +1307,22 @@ int get_errno(void);
 #else	
 #define msgdbg       (void)	
 #define msglldbg     (void)	
+#endif
+
+#ifdef CONFIG_DEBUG_PREFERENCE_ERROR
+#define prefdbg      dbg
+#define preflldbg    lldbg
+#else
+#define prefdbg      (void)
+#define preflldbg    (void)
+#endif
+
+#ifdef CONFIG_DEBUG_PREFERENCE_INFO
+#define prefvdbg     vdbg
+#define prefllvdbg   llvdbg
+#else
+#define prefvdbg     (void)
+#define prefllvdbg   (void)
 #endif
 
 #ifdef CONFIG_DEBUG_SECURITY_FRAMEWORK_ERROR

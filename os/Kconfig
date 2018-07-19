@@ -624,6 +624,10 @@ menu "Messaging Framework"
 source "$FRAMEWORK_DIR/src/messaging/Kconfig"
 endmenu
 
+menu "Preference Support"
+source "$FRAMEWORK_DIR/src/preference/Kconfig"
+endmenu
+
 menu "Things Management"
 source Kconfig.things
 endmenu

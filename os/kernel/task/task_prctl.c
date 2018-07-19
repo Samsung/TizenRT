@@ -65,6 +65,11 @@
 #include <tinyara/sched.h>
 #include <tinyara/ttrace.h>
 
+#ifdef CONFIG_PREFERENCE
+#include <tinyara/preference.h>
+#include "preference/preference.h"
+#endif
+
 #ifdef CONFIG_MESSAGING_IPC
 #include <sys/types.h>
 #include <messaging/messaging.h>
@@ -267,6 +272,81 @@ int prctl(int option, ...)
 		tcb->is_active = true;
 	}
 	break;
+#endif
+#ifdef CONFIG_PREFERENCE
+	case PR_SET_PREFERENCE:
+	{
+		int ret;
+		preference_data_t *data;
+		data = va_arg(ap, preference_data_t *);
+		ret = preference_write_key(data);
+		va_end(ap);
+		return ret;
+	}
+	case PR_GET_PREFERENCE:
+	{
+		int ret;
+		preference_data_t *data;
+		data = va_arg(ap, preference_data_t *);
+		ret = preference_read_key(data);
+		va_end(ap);
+		return ret;
+	}
+	case PR_REMOVE_PREFERENCE:
+	{
+		int ret;
+		int type;
+		char *key;
+		type = va_arg(ap, int);
+		key = va_arg(ap, char *);
+		ret = preference_remove_key(type, key);
+		va_end(ap);
+		return ret;
+	}
+	case PR_REMOVEALL_PREFERENCE:
+	{
+		int ret;
+		int type;
+		char *path;
+		type = va_arg(ap, int);
+		path = va_arg(ap, char *);
+		ret = preference_remove_all_key(type, path);
+		va_end(ap);
+		return ret;
+	}
+	case PR_CHECK_PREFERENCE:
+	{
+		int ret;
+		int type;
+		char *key;
+		bool *result;
+		type = va_arg(ap, int);
+		key = va_arg(ap, char *);
+		result = va_arg(ap, bool *);
+		ret = preference_check_key(type, key, result);
+		va_end(ap);
+		return ret;
+	}
+	case PR_SET_PREFERENCE_CB:
+	{
+		int ret;
+		preference_callback_t *data;
+		data = va_arg(ap, preference_callback_t *);
+		ret = preference_register_callback(data);
+		va_end(ap);
+		return ret;
+	}
+	case PR_UNSET_PREFERENCE_CB:
+	{
+		int ret;
+		char *key;
+		int type;
+		type = va_arg(ap, int);
+		key = va_arg(ap, char *);
+		ret = preference_unregister_callback(key, type);
+		va_end(ap);
+		return ret;
+	}
 #endif
 	default:
 		sdbg("Unrecognized option: %d\n", option);

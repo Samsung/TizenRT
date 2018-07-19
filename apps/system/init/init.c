@@ -45,6 +45,9 @@
 #ifdef CONFIG_MEDIA
 #include <media/media_init.h>
 #endif
+#ifdef CONFIG_PREFERENCE
+#include <tinyara/preference.h>
+#endif
 #ifdef CONFIG_HAVE_CXXINITIALIZE
 #include <semaphore.h>
 #include <errno.h>
@@ -110,7 +113,7 @@ int preapp_start(int argc, char *argv[])
 #endif
 {
 #if defined(CONFIG_SCHED_USRWORK) || defined(CONFIG_TASH) || defined(CONFIG_EVENTLOOP) ||\
-	defined(CONFIG_TASK_MANAGER) || defined(CONFIG_MEDIA)
+	defined(CONFIG_TASK_MANAGER) || defined(CONFIG_MEDIA) || defined(CONFIG_PREFERENCE)
 	int ret;
 #endif
 
@@ -123,6 +126,13 @@ int preapp_start(int argc, char *argv[])
 
 #ifdef CONFIG_SYSTEM_INFORMATION
 	sysinfo();
+#endif
+
+#ifdef CONFIG_PREFERENCE
+	ret = preference_init();
+	if (ret < 0) {
+		printf("Preference initialization is failed, error %d\n", ret);
+	}
 #endif
 
 #ifdef CONFIG_SCHED_USRWORK
