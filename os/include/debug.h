@@ -404,6 +404,30 @@ Once LOGM is approved, each module should have its own index
 #define nllvdbg(...)
 #endif
 
+#ifdef CONFIG_DEBUG_ERR_REPORT_ERROR
+#define nwerrdbg(format, ...)    dbg(format, ##__VA_ARGS__)
+#define nwerrlldbg(format, ...)  lldbg(format, ##__VA_ARGS__)
+#else
+#define nwerrdbg(...)
+#define nwerrlldbg(...)
+#endif
+
+#ifdef CONFIG_DEBUG_ERR_REPORT_WARN
+#define nwerr_wdbg(format, ...)    wdbg(format, ##__VA_ARGS__)
+#define nwerr_llwdbg(format, ...)  llwdbg(format, ##__VA_ARGS__)
+#else
+#define nwerr_wdbg(...)
+#define nwerr_llwdbg(...)
+#endif
+
+#ifdef CONFIG_DEBUG_ERR_REPORT_INFO
+#define nwerr_vdbg(format, ...)   vdbg(format, ##__VA_ARGS__)
+#define nwerr_llvdbg(format, ...) llvdbg(format, ##__VA_ARGS__)
+#else
+#define nwerr_vdbg(...)
+#define nwerr_llvdbg(...)
+#endif
+
 #ifdef CONFIG_DEBUG_USB_ERROR
 #define udbg(format, ...)    dbg(format, ##__VA_ARGS__)
 #define ulldbg(format, ...)  lldbg(format, ##__VA_ARGS__)
@@ -884,6 +908,31 @@ Once LOGM is approved, each module should have its own index
 #define nvdbg       (void)
 #define nllvdbg     (void)
 #endif
+
+#ifdef CONFIG_DEBUG_ERR_REPORT_ERROR
+#define nwerrdbg    dbg
+#define nwerrlldbg  lldbg
+#else
+#define nwerrdbg	void
+#define nwerrlldbg	void
+#endif
+
+#ifdef CONFIG_DEBUG_ERR_REPORT_WARN
+#define nwerr_wdbg    wdbg
+#define nwerr_llwdbg  llwdbg
+#else
+#define nwerr_wdbg	(void)
+#define nwerr_llwdbg	(void)
+#endif
+
+#ifdef CONFIG_DEBUG_ERR_REPORT_INFO
+#define nwerr_vdbg   vdbg
+#define nwerr_llvdbg llvdbg
+#else
+#define nwerr_vdbg	(void)
+#define nwerr_llvdbg	(void)
+#endif
+
 
 #ifdef CONFIG_DEBUG_USB_ERROR
 #define udbg        dbg

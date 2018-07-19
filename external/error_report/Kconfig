@@ -1,0 +1,67 @@
+#
+# For a description of the syntax of this configuration file,
+# see kconfig-language at https://www.kernel.org/doc/Documentation/kbuild/kconfig-language.txt
+#
+
+config ERROR_REPORT
+	bool "Error Report Module"
+	default n
+	---help---
+		enable Error Reporting
+
+if ERROR_REPORT
+
+config ERROR_REPORT_NENTRIES
+	int "Number of Error Records"
+	default 6
+	---help---
+		Maximum number of error records to store in memory
+
+config DEBUG_ERR_REPORT_ERROR
+	bool "Debug Error Reporting for errors"
+	depends on DEBUG_ERROR
+	default n
+	---help---
+		Debug Error Reporting errors
+
+config DEBUG_ERR_REPORT_WARN
+	bool "Debug Error Reporting for warnings"
+	depends on DEBUG_WARN
+	default n
+	---help---
+		Debug Error Reporting warnings
+
+config DEBUG_ERR_REPORT_INFO
+	bool "Debug Error Reporting for Info"
+	depends on DEBUG_VERBOSE
+	default n
+	---help---
+		Debug Error Reporting info
+
+config WIFIMGR_ERROR_REPORT
+	bool "WiFi Manager Errors"
+	depends on WIFI_MANAGER
+	default n
+	---help---
+		Report errors in WiFi Manager
+
+config LWIP_SOCKET_ERROR_REPORT
+	bool "LWIP socket errors"
+	depends on NET_LWIP
+	default n
+	---help---
+		Report errors at LWIP socket layer
+		
+config EIPADDR_ERROR_REPORT
+	string "IPv4 address of endpoint"
+	default "127.0.0.1"
+	---help---
+		Enter IP address of endpoint server where error logs will be gathered
+		
+config EPORT_ERROR_REPORT
+	string "Port of endpoint"
+	default "5001"
+	---help---
+		Enter Port of endpoint server where error logs will be gathered
+	
+endif # ERROR_REPORT

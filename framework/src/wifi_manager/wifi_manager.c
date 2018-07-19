@@ -30,6 +30,13 @@
 #include "wifi_utils.h"
 #include "wifi_profile.h"
 
+#ifdef CONFIG_WIFIMGR_ERROR_REPORT
+#include <error_report/error_report.h>
+#define WIFIADD_ERR_RECORD(reason_code)	ERR_DATA_CREATE(ERRMOD_WIFI_MANAGER, reason_code)
+#else
+#define WIFIADD_ERR_RECORD(reason_code)
+#endif
+
 #undef ndbg
 #define ndbg printf
 #undef nvdbg
@@ -244,7 +251,8 @@ typedef struct _wifimgr_info _wifimgr_info_s;
 #define WIFIMGR_CHECK_RESULT_NORET(func, msg)					\
 	do {														\
 		wifi_manager_result_e wmres = func;						\
-		if (wmres != WIFI_MANAGER_SUCCESS) {					\
+		if (wmres != WIFI_MANAGER_SUCCESS) {                    \
+			WIFIADD_ERR_RECORD(ERR_WIFIMGR_API_FAIL);\
 			ndbg(msg);											\
 		}														\
 	} while (0)													\
@@ -254,7 +262,8 @@ typedef struct _wifimgr_info _wifimgr_info_s;
 		wifi_utils_result_e res = func;				\
 		if (res != WIFI_UTILS_SUCCESS) {			\
 			ndbg(msg);								\
-			ndbg("error code(%d)\n", res);\
+			ndbg("error code(%d)\n", res);          \
+			WIFIADD_ERR_RECORD(ERR_WIFIMGR_UTILS_FAIL);\
 			return ret;								\
 		}											\
 	} while (0)
@@ -266,7 +275,8 @@ typedef struct _wifimgr_info _wifimgr_info_s;
 			strlen(config->ssid) > 31 ||								\
 			strlen(config->passphrase) > 63) {							\
 			ndbg("[WM] AP configuration fails: too long ssid or passphrase\n");	\
-			ndbg("[WM] Make sure that length of SSID < 32 and length of passphrase < 64\n"); \
+			ndbg("[WM] Make sure that length of SSID < 32 and length of passphrase < 64\n");\
+			WIFIADD_ERR_RECORD(ERR_WIFIMGR_INVALID_ARGUMENTS);				\
 			return WIFI_MANAGER_INVALID_ARGS;							\
 		}																\
 	} while (0)
@@ -525,6 +535,7 @@ _convert_scan_info(wifi_manager_scan_info_s **wm_scan_list, wifi_utils_scan_list
 		cur = (wifi_manager_scan_info_s *)calloc(1, sizeof(wifi_manager_scan_info_s));
 		if (!cur) {
 			_free_scan_info(*wm_scan_list);
+			WIFIADD_ERR_RECORD(ERR_WIFIMGR_INTERNAL_FAIL);
 			return WIFI_MANAGER_FAIL;
 		}
 		cur->rssi = iter->ap_info.rssi;
@@ -605,6 +616,7 @@ wifi_manager_result_e _start_dhcpd(void)
 		wret = WIFI_MANAGER_SUCCESS;
 	} else {
 		ndbg("[WM] DHCP Server - started fail\n");
+		WIFIADD_ERR_RECORD(ERR_WIFIMGR_SOFTAP_DHCPD_FAIL);
 	}
 	return wret;
 }
@@ -636,6 +648,7 @@ wifi_manager_result_e _get_ipaddr_dhcp(void)
 		if (ret != OK) {
 			ndbg("[WM] get IP address fail\n");
 			dhcpc_close(dhcp_hnd);
+			WIFIADD_ERR_RECORD(ERR_WIFIMGR_CONNECT_DHCPC_FAIL);
 			return wret;
 		}
 		WIFIMGR_SET_IP4ADDR(WIFIMGR_STA_IFNAME, state.ipaddr, state.netmask, state.default_router);
@@ -644,6 +657,7 @@ wifi_manager_result_e _get_ipaddr_dhcp(void)
 		wret = WIFI_MANAGER_SUCCESS;
 	} else {
 		ndbg("[WM] Invalid dhcp handle\n");
+		WIFIADD_ERR_RECORD(ERR_WIFIMGR_CONNECT_DHCPC_FAIL);
 	}
 	return wret;
 }
@@ -658,6 +672,7 @@ wifi_manager_result_e _wifimgr_deinit(void)
 	int ret = mq_close(g_dw_nwevent_mqfd);
 	if (ret < 0) {
 		ndbg("[WM] close message queue fail\n");
+		WIFIADD_ERR_RECORD(ERR_WIFIMGR_MSGQ_FAIL);
 		return WIFI_MANAGER_FAIL;
 	}
 #endif
@@ -689,6 +704,7 @@ wifi_manager_result_e _wifimgr_connect_ap(wifi_manager_ap_config_s *config)
 	if (wres == WIFI_UTILS_ALREADY_CONNECTED) {
 		return WIFI_MANAGER_ALREADY_CONNECTED;
 	} else if (wres != WIFI_UTILS_SUCCESS) {
+		WIFIADD_ERR_RECORD(ERR_WIFIMGR_CONNECT_FAIL);
 		return WIFI_MANAGER_FAIL;
 	}
 	strncpy(g_manager_info.ssid, config->ssid, config->ssid_length + 1);
@@ -813,6 +829,7 @@ wifi_manager_result_e _handler_on_uninitialized_state(_wifimgr_msg_s *msg)
 	WM_LOG_HANDLER_START;
 	_wifimgr_evt_e evt = msg->event;
 	if (evt != EVT_INIT) {
+		WIFIADD_ERR_RECORD(ERR_WIFIMGR_INVALID_EVENT);
 		return WIFI_MANAGER_FAIL;
 	}
 
@@ -825,6 +842,7 @@ wifi_manager_result_e _handler_on_uninitialized_state(_wifimgr_msg_s *msg)
 
 	if (g_dw_nwevent_mqfd == (mqd_t)ERROR) {
 		ndbg("[WM] iotivity connect event message queue init fail");
+		WIFIADD_ERR_RECORD(ERR_WIFIMGR_MSGQ_FAIL);
 		return WIFI_MANAGER_FAIL;
 	}
 #endif
@@ -880,6 +898,7 @@ wifi_manager_result_e _handler_on_disconnected_state(_wifimgr_msg_s *msg)
 		WIFIMGR_STORE_PREV_STATE;
 		WIFIMGR_SET_STATE(WIFIMGR_SCANNING);
 	} else {
+		WIFIADD_ERR_RECORD(ERR_WIFIMGR_INVALID_EVENT);
 		return WIFI_MANAGER_FAIL;
 	}
 	return WIFI_MANAGER_SUCCESS;
@@ -897,6 +916,7 @@ wifi_manager_result_e _handler_on_disconnecting_state(_wifimgr_msg_s *msg)
 		}
 		WIFIMGR_SET_STATE(WIFIMGR_STA_DISCONNECTED);
 	} else {
+		WIFIADD_ERR_RECORD(ERR_WIFIMGR_INVALID_EVENT);
 		return WIFI_MANAGER_FAIL;
 	}
 	return WIFI_MANAGER_SUCCESS;
@@ -916,6 +936,7 @@ wifi_manager_result_e _handler_on_softap_disconnecting_state(_wifimgr_msg_s *msg
 		WIFIMGR_CHECK_RESULT(_wifimgr_run_softap(&g_manager_info.softap_config), "run_softap fail", WIFI_MANAGER_FAIL);
 		WIFIMGR_SET_STATE(WIFIMGR_SOFTAP);
 	} else {
+		WIFIADD_ERR_RECORD(ERR_WIFIMGR_INVALID_EVENT);
 		return WIFI_MANAGER_FAIL;
 	}
 	return WIFI_MANAGER_SUCCESS;
@@ -940,6 +961,7 @@ wifi_manager_result_e _handler_on_connecting_state(_wifimgr_msg_s *msg)
 		_handle_user_cb(CB_STA_CONNECT_FAILED, NULL);
 		WIFIMGR_SET_STATE(WIFIMGR_STA_DISCONNECTED);
 	} else {
+		WIFIADD_ERR_RECORD(ERR_WIFIMGR_INVALID_EVENT);
 		return WIFI_MANAGER_FAIL;
 	}
 	return WIFI_MANAGER_SUCCESS;
@@ -962,12 +984,14 @@ wifi_manager_result_e _handler_on_connected_state(_wifimgr_msg_s *msg)
 			_wifimgr_conn_info_msg_s *rmsg = (_wifimgr_conn_info_msg_s *)malloc(sizeof(_wifimgr_conn_info_msg_s));
 			if (!rmsg) {				// critical error
 				ndbg("[WM] allocate memory for reconn msg fail\n");
+				WIFIADD_ERR_RECORD(ERR_WIFIMGR_INTERNAL_FAIL);
 				return WIFI_MANAGER_FAIL;
 			}
 			rmsg->config = (wifi_manager_ap_config_s *)malloc(sizeof(wifi_manager_ap_config_s));
 			if (!rmsg->config) {				// critical error
 				free(rmsg);
 				ndbg("[WM] allocate memory for reconnmsg apconfig is fail\n");
+				WIFIADD_ERR_RECORD(ERR_WIFIMGR_INTERNAL_FAIL);
 				return WIFI_MANAGER_FAIL;
 			}
 
@@ -976,6 +1000,7 @@ wifi_manager_result_e _handler_on_connected_state(_wifimgr_msg_s *msg)
 				free(rmsg->config);
 				free(rmsg);
 				ndbg("[WM] allocate memory for reonnmsg conn_config is fail\n");
+				WIFIADD_ERR_RECORD(ERR_WIFIMGR_INTERNAL_FAIL);
 				return WIFI_MANAGER_FAIL;
 			}
 			WIFIMGR_COPY_AP_INFO(*(rmsg->config), g_manager_info.connected_ap);
@@ -986,6 +1011,7 @@ wifi_manager_result_e _handler_on_connected_state(_wifimgr_msg_s *msg)
 			int ret = pthread_create(&g_manager_info.reconn_id, NULL, _reconn_worker, (pthread_addr_t)rmsg);
 			if (ret != 0) {				// critical error
 				ndbg("[WM] [error] pthread_create fail\n");
+				WIFIADD_ERR_RECORD(ERR_WIFIMGR_INTERNAL_FAIL);
 			}
 			WIFIMGR_SET_STATE(WIFIMGR_STA_RECONNECT);
 		}
@@ -1013,6 +1039,7 @@ wifi_manager_result_e _handler_on_connected_state(_wifimgr_msg_s *msg)
 		WIFIMGR_STORE_PREV_STATE;
 		WIFIMGR_SET_STATE(WIFIMGR_SCANNING);
 	} else {
+		WIFIADD_ERR_RECORD(ERR_WIFIMGR_INVALID_EVENT);
 		return WIFI_MANAGER_FAIL;
 	}
 	return WIFI_MANAGER_SUCCESS;
@@ -1154,6 +1181,7 @@ wifi_manager_result_e _handler_on_softap_state(_wifimgr_msg_s *msg)
 		WIFIMGR_CHECK_RESULT(_wifimgr_deinit(), "critical error\n", WIFI_MANAGER_FAIL);
 		WIFIMGR_SET_STATE(WIFIMGR_UNINITIALIZED);
 	} else {
+		WIFIADD_ERR_RECORD(ERR_WIFIMGR_INVALID_EVENT);
 		return WIFI_MANAGER_FAIL;
 	}
 
@@ -1169,6 +1197,8 @@ wifi_manager_result_e _handler_on_scanning_state(_wifimgr_msg_s *msg)
 		_handle_user_cb(CB_SCAN_DONE, msg->param);
 		WIFIMGR_RESTORE_STATE;
 		wret = WIFI_MANAGER_SUCCESS;
+	} else {
+		WIFIADD_ERR_RECORD(ERR_WIFIMGR_INVALID_EVENT);
 	}
 	return wret;
 }
@@ -1188,6 +1218,7 @@ void _handle_user_cb(_wifimgr_usr_cb_type_e evt, void *arg)
 		break;
 	case CB_STA_CONNECT_FAILED:
 		nvdbg("[WM] call sta connect fail event\n");
+		WIFIADD_ERR_RECORD(ERR_WIFIMGR_CONNECT_FAIL);
 		cbk->sta_connected(WIFI_MANAGER_FAIL);
 		break;
 	case CB_STA_DISCONNECTED:
@@ -1222,10 +1253,12 @@ void _handle_user_cb(_wifimgr_usr_cb_type_e evt, void *arg)
 			cbk->scan_ap_done(&info, WIFI_SCAN_SUCCESS);
 			_free_scan_info(info);
 		} else {
+			WIFIADD_ERR_RECORD(ERR_WIFIMGR_SCAN_FAIL);
 			cbk->scan_ap_done(NULL, WIFI_SCAN_FAIL);
 		}
 		break;
 	default:
+		WIFIADD_ERR_RECORD(ERR_WIFIMGR_INVALID_EVENT);
 		ndbg("[WM] Invalid State\n");
 		break;
 	}
@@ -1239,9 +1272,39 @@ wifi_manager_result_e _handle_request(_wifimgr_msg_s *msg)
 	LOCK_WIFIMGR;
 	WM_LOG_HANDLER_START;
 	res = g_handler[WIFIMGR_GET_STATE](msg);
+#ifdef CONFIG_WIFIMGR_ERROR_REPORT
 	if (res != WIFI_MANAGER_SUCCESS) {
 		ndbg("[WM] Wi-Fi manager fail: state error\n");
+		error_code_wifi_manager_t wifi_err_code;
+		switch (msg->event) {
+		case EVT_INIT:
+			wifi_err_code = ERR_WIFIMGR_INIT_FAIL;
+			break;
+		case EVT_DEINIT:
+			wifi_err_code = ERR_WIFIMGR_DEINIT_FAIL;
+			break;
+		case EVT_SET_SOFTAP:
+			wifi_err_code = ERR_WIFIMGR_SOFTAP_FAIL;
+			break;
+		case EVT_SET_STA:
+			wifi_err_code = ERR_WIFIMGR_STA_FAIL;
+			break;
+		case EVT_CONNECT:
+			wifi_err_code = ERR_WIFIMGR_CONNECT_FAIL;
+			break;
+		case EVT_DISCONNECT:
+			wifi_err_code = ERR_WIFIMGR_DISCONNECT_FAIL;
+			break;
+		case EVT_SCAN:
+			wifi_err_code = ERR_WIFIMGR_SCAN_FAIL;
+			break;
+		default:
+			wifi_err_code = ERR_WIFIMGR_UTILS_FAIL;
+			break;
+		}
+		WIFIADD_ERR_RECORD(wifi_err_code);
 	}
+#endif
 	UNLOCK_WIFIMGR;
 	nvdbg("[WM] T%d <-- _handle_request\n", getpid());
 	return res;
@@ -1254,6 +1317,7 @@ wifi_manager_result_e _handle_request(_wifimgr_msg_s *msg)
 wifi_manager_result_e wifi_manager_init(wifi_manager_cb_s *wmcb)
 {
 	if (!wmcb) {
+		WIFIADD_ERR_RECORD(ERR_WIFIMGR_INVALID_ARGUMENTS);
 		return WIFI_MANAGER_INVALID_ARGS;
 	}
 	_wifimgr_msg_s msg = {EVT_INIT, (void *)wmcb};
@@ -1273,9 +1337,11 @@ wifi_manager_result_e wifi_manager_deinit(void)
 wifi_manager_result_e wifi_manager_set_mode(wifi_manager_mode_e mode, wifi_manager_softap_config_s *config)
 {
 	if (mode != STA_MODE && mode != SOFTAP_MODE) {
+		WIFIADD_ERR_RECORD(ERR_WIFIMGR_INVALID_ARGUMENTS);
 		return WIFI_MANAGER_INVALID_ARGS;
 	}
 	if (mode == SOFTAP_MODE && !config) {
+		WIFIADD_ERR_RECORD(ERR_WIFIMGR_INVALID_ARGUMENTS);
 		return WIFI_MANAGER_INVALID_ARGS;
 	}
 
@@ -1300,6 +1366,7 @@ wifi_manager_result_e wifi_manager_set_mode(wifi_manager_mode_e mode, wifi_manag
 wifi_manager_result_e wifi_manager_get_info(wifi_manager_info_s *info)
 {
 	if (info == NULL) {
+		WIFIADD_ERR_RECORD(ERR_WIFIMGR_INVALID_ARGUMENTS);
 		return WIFI_MANAGER_INVALID_ARGS;
 	}
 	LOCK_WIFIMGR;
@@ -1333,6 +1400,8 @@ wifi_manager_result_e wifi_manager_connect_ap_config(wifi_manager_ap_config_s *c
 		_wifimgr_conn_info_msg_s conninfo = {config, conn_config};
 		_wifimgr_msg_s msg = {EVT_CONNECT, &conninfo};
 		wret = _handle_request(&msg);
+	} else {
+		WIFIADD_ERR_RECORD(ERR_WIFIMGR_INVALID_ARGUMENTS);
 	}
 	return wret;
 }
@@ -1344,6 +1413,8 @@ wifi_manager_result_e wifi_manager_connect_ap(wifi_manager_ap_config_s *config)
 	if (config) {
 		wifi_manager_reconnect_config_s conn_config = WIFIMGR_DEFAULT_CONN_CONFIG;
 		wret = wifi_manager_connect_ap_config(config, &conn_config);
+	} else {
+		WIFIADD_ERR_RECORD(ERR_WIFIMGR_INVALID_ARGUMENTS);
 	}
 	return wret;
 }
@@ -1371,6 +1442,8 @@ wifi_manager_result_e wifi_manager_save_config(wifi_manager_ap_config_s *config)
 		WIFIMGR_CHECK_AP_CONFIG(config);
 		WIFIMGR_CHECK_UTILRESULT(wifi_profile_write(config), "wifimgr save config fail\n", WIFI_MANAGER_FAIL);
 		wret = WIFI_MANAGER_SUCCESS;
+	} else {
+		WIFIADD_ERR_RECORD(ERR_WIFIMGR_INVALID_ARGUMENTS);
 	}
 	return wret;
 }
@@ -1382,6 +1455,8 @@ wifi_manager_result_e wifi_manager_get_config(wifi_manager_ap_config_s *config)
 	if (config) {
 		WIFIMGR_CHECK_UTILRESULT(wifi_profile_read(config), "wifimgr get config fail\n", WIFI_MANAGER_FAIL);
 		wret = WIFI_MANAGER_SUCCESS;
+	} else {
+		WIFIADD_ERR_RECORD(ERR_WIFIMGR_INVALID_ARGUMENTS);
 	}
 	return wret;
 }
@@ -1399,6 +1474,8 @@ wifi_manager_result_e wifi_manager_mac_addr_to_mac_str(char mac_addr[6], char ma
 	if (mac_addr && mac_str) {
 		snprintf(mac_str, 18, "%02X:%02X:%02X:%02X:%02X:%02X", mac_addr[0], mac_addr[1], mac_addr[2], mac_addr[3], mac_addr[4], mac_addr[5]);
 		wret = WIFI_MANAGER_SUCCESS;
+	} else {
+		WIFIADD_ERR_RECORD(ERR_WIFIMGR_INVALID_ARGUMENTS);
 	}
 	return wret;
 }
@@ -1411,6 +1488,8 @@ wifi_manager_result_e wifi_manager_mac_str_to_mac_addr(char mac_str[20], char ma
 		if (ret == 6) {
 			wret = WIFI_MANAGER_SUCCESS;	
 		}
+	} else {
+		WIFIADD_ERR_RECORD(ERR_WIFIMGR_INVALID_ARGUMENTS);
 	}
 	return wret;
 }
