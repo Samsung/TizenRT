@@ -805,6 +805,15 @@ config SIG_POLL
 		The SIGPOLL signal is sent to a process when an asynchronous I/O
 		event occurs (meaning it has been polled).  Default: 5
 
+config SIG_PREFERENCE
+	int "SIG_PREFERENCE"
+	default 14
+	depends on PREFERENCE
+	---help---
+		SIG_PREFERENCE is a non-standard signal used to notify that value of key is changed.
+		This setting specifies the signal number that will be used for SIG_PREFERENCE.
+		Default: 14
+
 config SIG_SIGBM_STATE
 	int "SIGBM_STATE"
 	default 15

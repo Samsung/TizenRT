@@ -81,6 +81,9 @@
 #ifdef CONFIG_TASK_MONITOR
 #include "task_monitor/task_monitor_internal.h"
 #endif
+#ifdef CONFIG_PREFERENCE
+#include "preference/preference.h"
+#endif
 /****************************************************************************
  * Definitions
  ****************************************************************************/
@@ -200,6 +203,9 @@ int task_terminate(pid_t pid, bool nonblocking)
 #ifdef CONFIG_TASK_MONITOR
 	/* Unregister this pid from task monitor */
 	task_monitor_unregester_list(pid);
+#endif
+#ifdef CONFIG_PREFERENCE
+	preference_clear_callbacks(pid);
 #endif
 	irqrestore(saved_state);
 
