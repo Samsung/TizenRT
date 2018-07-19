@@ -34,10 +34,10 @@ CODESIGNER_PATH=${ARTIK05X_DIR_PATH}/tools/codesigner
 CODESIGNER_DIR_PATH=${ARTIK05X_DIR_PATH}/tools/codesigner
 OPENOCD_DIR_PATH=${BUILD_DIR_PATH}/tools/openocd
 
-if [[ $CONFIG_HOST_OSX == 'y' ]]; then
+if [[ $OSTYPE == "darwin"* ]]; then
 	OPENOCD_BIN_PATH=${OPENOCD_DIR_PATH}/macos
 	CODESIGNER_PATH=${CODESIGNER_DIR_PATH}/macos
-else
+elif [[ $OSTYPE == "linux"* ]]; then
 	SYSTEM_TYPE=`getconf LONG_BIT`
 	if [ "$SYSTEM_TYPE" = "64" ]; then
 		OPENOCD_BIN_PATH=${OPENOCD_DIR_PATH}/linux64
@@ -46,7 +46,11 @@ else
 		OPENOCD_BIN_PATH=${OPENOCD_DIR_PATH}/linux32
 		CODESIGNER_PATH=${CODESIGNER_DIR_PATH}/linux32
 	fi
+else
+    echo "Doesn’t support Host OS: $OSTYPE"
+    exit 1
 fi
+
 OPENOCD=${OPENOCD_BIN_PATH}/openocd
 
 signing() {
