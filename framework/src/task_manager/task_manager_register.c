@@ -86,11 +86,15 @@ int task_manager_register_task(char *name, int priority, int stack_size, main_t 
 	}
 
 	memset(&request_msg, 0, sizeof(tm_request_t));
-	request_msg.cmd = TASKMGRCMD_REGISTER;
+	request_msg.cmd = TASKMGRCMD_REGISTER_TASK;
 	request_msg.caller_pid = getpid();
 	request_msg.handle = permission;
 	request_msg.data = (void *)TM_ALLOC(sizeof(tm_task_info_t));
 	if (request_msg.data == NULL) {
+		return TM_OUT_OF_MEMORY;
+	}
+	((tm_task_info_t *)request_msg.data)->name = (char *)TM_ALLOC(strlen(name) + 1);
+	if (((tm_task_info_t *)request_msg.data)->name == NULL) {
 		return TM_OUT_OF_MEMORY;
 	}
 	strncpy(((tm_task_info_t *)request_msg.data)->name, name, strlen(name) + 1);
@@ -125,6 +129,7 @@ int task_manager_register_task(char *name, int priority, int stack_size, main_t 
 	return status;
 }
 
+#ifndef CONFIG_DISABLE_PTHREAD
 int task_manager_register_pthread(char *name, pthread_attr_t *attr, pthread_startroutine_t start_routine, pthread_addr_t arg, int permission, int timeout)
 {
 	int status;
@@ -136,11 +141,15 @@ int task_manager_register_pthread(char *name, pthread_attr_t *attr, pthread_star
 	}
 
 	memset(&request_msg, 0, sizeof(tm_request_t));
-	request_msg.cmd = TASKMGRCMD_REGISTER;
+	request_msg.cmd = TASKMGRCMD_REGISTER_PTHREAD;
 	request_msg.caller_pid = getpid();
 	request_msg.handle = permission;
 	request_msg.data = (void *)TM_ALLOC(sizeof(tm_pthread_info_t));
 	if (request_msg.data == NULL) {
+		return TM_OUT_OF_MEMORY;
+	}
+	((tm_pthread_info_t *)request_msg.data)->name = (char *)TM_ALLOC(strlen(name) + 1);
+	if (((tm_pthread_info_t *)request_msg.data)->name == NULL) {
 		return TM_OUT_OF_MEMORY;
 	}
 	strncpy(((tm_pthread_info_t *)request_msg.data)->name, name, strlen(name) + 1);
@@ -173,3 +182,4 @@ int task_manager_register_pthread(char *name, pthread_attr_t *attr, pthread_star
 
 	return status;
 }
+#endif

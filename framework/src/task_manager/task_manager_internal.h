@@ -22,7 +22,9 @@
 #include <stdlib.h>
 #include <stdbool.h>
 #include <unistd.h>
+#ifndef CONFIG_DISABLE_PTHREAD
 #include <pthread.h>
+#endif
 #include <sys/types.h>
 
 /* Command Types */
@@ -41,14 +43,18 @@
 #define TASKMGRCMD_SCAN_HANDLE             12
 #define TASKMGRCMD_SCAN_GROUP              13
 #define TASKMGRCMD_REGISTER_TASK           14
+#ifndef CONFIG_DISABLE_PTHREAD
 #define TASKMGRCMD_REGISTER_PTHREAD        15
+#endif
 #define TASKMGRCMD_SET_STOP_CB             16
 #define TASKMGRCMD_SET_EXIT_CB             17
 
 /* Task Type */
-#define TM_BUILTIN_TASK			0
-#define TM_TASK				1
-#define TM_PTHREAD			2
+#define TM_BUILTIN_TASK                    0
+#define TM_TASK                            1
+#ifndef CONFIG_DISABLE_PTHREAD
+#define TM_PTHREAD                         2
+#endif
 
 /* Message Queue Values */
 #define TM_MQ_PRIO   50
@@ -110,7 +116,7 @@ struct tm_broadcast_s {
 typedef struct tm_broadcast_s tm_broadcast_t;
 
 struct tm_task_info_s {
-	char name[CONFIG_TASK_NAME_SIZE];
+	char *name;
 	int priority;
 	int stack_size;
 	main_t entry;
@@ -118,13 +124,15 @@ struct tm_task_info_s {
 };
 typedef struct tm_task_info_s tm_task_info_t;
 
+#ifndef CONFIG_DISABLE_PTHREAD
 struct tm_pthread_info_s {
-	char name[CONFIG_TASK_NAME_SIZE];
+	char *name;
 	pthread_attr_t *attr;
 	pthread_startroutine_t entry;
 	pthread_addr_t arg;
 };
 typedef struct tm_pthread_info_s tm_pthread_info_t;
+#endif
 
 #define IS_INVALID_HANDLE(i) (i < 0 || i >= CONFIG_TASK_MANAGER_MAX_TASKS)
 

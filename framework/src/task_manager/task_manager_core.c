@@ -45,10 +45,12 @@ static mqd_t g_tm_recv_mqfd;
 static int builtin_cnt;
 static int handle_cnt;
 static int task_cnt;
+#ifndef CONFIG_DISABLE_PTHREAD
 static int pthread_cnt;
+tm_pthread_info_t tm_pthread_list[CONFIG_TASK_MANAGER_MAX_TASKS];
+#endif
 app_list_t tm_app_list[CONFIG_TASK_MANAGER_MAX_TASKS];
 tm_task_info_t tm_task_list[CONFIG_TASK_MANAGER_MAX_TASKS];
-tm_pthread_info_t tm_pthread_list[CONFIG_TASK_MANAGER_MAX_TASKS];
 static bool g_handle_hash[CONFIG_TASK_MANAGER_MAX_TASKS];
 
 #define MAX_HANDLE_MASK (CONFIG_TASK_MANAGER_MAX_TASKS - 1)
@@ -177,16 +179,21 @@ static int taskmgr_unregister(int handle)
 
 	/* If type is TM_TASK or TM_PTHREAD, remove the data in the list */
 	if (TM_TYPE(handle) == TM_TASK) {
-		strncpy(tm_task_list[TM_IDX(handle)].name, '\0', CONFIG_TASK_NAME_SIZE);
+		TM_FREE(tm_task_list[TM_IDX(handle)].name);
+		tm_task_list[TM_IDX(handle)].name = NULL;
 		tm_task_list[TM_IDX(handle)].priority = 0;
 		tm_task_list[TM_IDX(handle)].stack_size = 0;
 		tm_task_list[TM_IDX(handle)].entry = NULL;
-	} else if (TM_TYPE(handle) == TM_PTHREAD) {
-		strncpy(tm_pthread_list[TM_IDX(handle)].name, '\0', CONFIG_TASK_NAME_SIZE);
+	}
+#ifndef CONFIG_DISABLE_PTHREAD
+	else if (TM_TYPE(handle) == TM_PTHREAD) {
+		TM_FREE(tm_pthread_list[TM_IDX(handle)].name);
+		tm_pthread_list[TM_IDX(handle)].name = NULL;
 		pthread_attr_destroy(tm_pthread_list[TM_IDX(handle)].attr);
 		tm_pthread_list[TM_IDX(handle)].entry = NULL;
 		tm_pthread_list[TM_IDX(handle)].arg = NULL;
 	}
+#endif
 
 	TM_PID(handle) = 0;
 	TM_FREE(tm_app_list[handle].addr);
@@ -229,7 +236,9 @@ static int taskmgr_start(int handle, int caller_pid)
 	} else if (TM_TYPE(handle) == TM_TASK) {
 		tm_task_info_t *task_info = (tm_task_info_t *)&tm_task_list[TM_IDX(handle)];
 		pid = task_create(task_info->name, task_info->priority, task_info->stack_size, task_info->entry, task_info->argv);
-	} else {
+	}
+#ifndef CONFIG_DISABLE_PTHREAD
+	else {
 		tm_pthread_info_t *pthread_info = (tm_pthread_info_t *)&tm_pthread_list[TM_IDX(handle)];
 		pthread_t thread = ERROR;
 		ret = pthread_create(&thread, pthread_info->attr, pthread_info->entry, pthread_info->arg);
@@ -240,6 +249,7 @@ static int taskmgr_start(int handle, int caller_pid)
 		pthread_setname_np(thread, pthread_info->name);
 		pid = (int)thread;
 	}
+#endif
 
 	if (pid == ERROR) {
 		tmdbg("Fail to create new task\n");
@@ -280,11 +290,14 @@ static int taskmgr_stop(int handle, int caller_pid)
 	TM_STATUS(handle) = TM_APP_STATE_CANCELLING;
 	(*TM_STOP_CB(handle))();
 
-	if (TM_TYPE(handle) != TM_PTHREAD) {
+	if (TM_TYPE(handle) == TM_BUILTIN_TASK || TM_TYPE(handle) == TM_TASK) {
 		ret = task_delete(TM_PID(handle));
-	} else {
+	}
+#ifndef CONFIG_DISABLE_PTHREAD
+	else {
 		ret = pthread_cancel(TM_PID(handle));
 	}
+#endif
 
 	if (ret != OK) {
 		tmdbg("Fail to delete the task\n");
@@ -448,9 +461,12 @@ static int taskmgr_get_task_info(app_info_list_t **data, int handle)
 		name = builtin_list[TM_IDX(handle)].name;
 	} else if (TM_TYPE(handle) == TM_TASK) {
 		name = tm_task_list[TM_IDX(handle)].name;
-	} else {
+	}
+#ifndef CONFIG_DISABLE_PTHREAD
+	else {
 		name = tm_pthread_list[TM_IDX(handle)].name;
 	}
+#endif
 
 	name_len = strlen(name);
 
@@ -487,7 +503,13 @@ static int taskmgr_getinfo_with_name(char *name, tm_response_t *response_msg)
 	response_msg->data = NULL;
 
 	for (chk_idx = 0; chk_idx < CONFIG_TASK_MANAGER_MAX_TASKS; chk_idx++) {
-		if (TM_LIST_ADDR(chk_idx) && ((strncmp(builtin_list[TM_IDX(chk_idx)].name, name, strlen(name)) == 0) || (strncmp(tm_task_list[TM_IDX(chk_idx)].name, name, strlen(name)) == 0) || (strncmp(tm_pthread_list[TM_IDX(chk_idx)].name, name, strlen(name)) == 0))) {
+		if (TM_LIST_ADDR(chk_idx) && ((strncmp(builtin_list[TM_IDX(chk_idx)].name, name, strlen(name)) == 0)
+					   || (strncmp(tm_task_list[TM_IDX(chk_idx)].name, name, strlen(name)) == 0)
+#ifndef CONFIG_DISABLE_PTHREAD
+					   || (strncmp(tm_pthread_list[TM_IDX(chk_idx)].name, name, strlen(name)) == 0)
+#endif
+		)) {
+
 			tmvdbg("found handle = %d\n", chk_idx);
 			ret = taskmgr_get_task_info(&response_msg->data, chk_idx);
 			if (ret != OK) {
@@ -644,7 +666,11 @@ static int taskmgr_register_task(tm_task_info_t *task_info, int permission, int 
 			task_cnt = 0;
 		}
 
-		if (tm_task_list[task_cnt].name == NULL) {
+		if (tm_task_list[task_cnt].entry == NULL) {
+			tm_task_list[task_cnt].name = (char *)TM_ALLOC(strlen(task_info->name) + 1);
+			if (tm_task_list[task_cnt].name == NULL) {
+				return TM_OUT_OF_MEMORY;
+			}
 			strncpy(tm_task_list[task_cnt].name, task_info->name, strlen(task_info->name) + 1);
 			tm_task_list[task_cnt].priority = task_info->priority;
 			tm_task_list[task_cnt].stack_size = task_info->stack_size;
@@ -674,6 +700,7 @@ static int taskmgr_register_task(tm_task_info_t *task_info, int permission, int 
 	return handle;
 }
 
+#ifndef CONFIG_DISABLE_PTHREAD
 static int taskmgr_register_pthread(tm_pthread_info_t *pthread_info, int permission, int caller_pid)
 {
 	int chk_idx;
@@ -697,13 +724,17 @@ static int taskmgr_register_pthread(tm_pthread_info_t *pthread_info, int permiss
 		}
 	}
 
-	/* Update the tm_task_list with new task information */
+	/* Update the tm_pthread_list with new task information */
 	while (1) {
 		if (pthread_cnt >= CONFIG_TASK_MANAGER_MAX_TASKS) {
 			pthread_cnt = 0;
 		}
 
-		if (tm_pthread_list[pthread_cnt].name == NULL) {
+		if (tm_pthread_list[pthread_cnt].entry == NULL) {
+			tm_pthread_list[pthread_cnt].name = (char *)TM_ALLOC(strlen(pthread_info->name) + 1);
+			if (tm_pthread_list[pthread_cnt].name == NULL) {
+				return TM_OUT_OF_MEMORY;
+			}
 			strncpy(tm_pthread_list[pthread_cnt].name, pthread_info->name, strlen(pthread_info->name) + 1);
 			tm_pthread_list[pthread_cnt].attr = pthread_info->attr;
 			tm_pthread_list[pthread_cnt].entry = pthread_info->entry;
@@ -768,7 +799,7 @@ int task_manager_run_exit_cb(int pid)
 	}
 	return OK;
 }
-
+#endif
 /****************************************************************************
  * Main Function
  ****************************************************************************/
@@ -838,10 +869,12 @@ int task_manager(int argc, char *argv[])
 			break;
 
 		case TASKMGRCMD_RESTART:
+#ifndef CONFIG_DISABLE_PTHREAD
 			if (TM_TYPE(request_msg.handle) == TM_PTHREAD) {
 				ret = TM_NOT_SUPPORTED;
 				break;
 			}
+#endif
 			ret = taskmgr_restart(request_msg.handle, request_msg.caller_pid);
 			break;
 
@@ -883,17 +916,28 @@ int task_manager(int argc, char *argv[])
 
 		case TASKMGRCMD_REGISTER_TASK:
 			ret = taskmgr_register_task((tm_task_info_t *)request_msg.data, request_msg.handle, request_msg.caller_pid);
+			if (((tm_task_info_t *)request_msg.data)->name != NULL) {
+				TM_FREE(((tm_task_info_t *)request_msg.data)->name);
+				((tm_task_info_t *)request_msg.data)->name = NULL;
+			}
 			break;
-
+#ifndef CONFIG_DISABLE_PTHREAD
 		case TASKMGRCMD_REGISTER_PTHREAD:
 			ret = taskmgr_register_pthread((tm_pthread_info_t *)request_msg.data, request_msg.handle, request_msg.caller_pid);
-
+			break;
+#endif
 		case TASKMGRCMD_SET_STOP_CB:
 			ret = taskmgr_set_termination_cb(TYPE_CANCEL, request_msg.data, request_msg.caller_pid);
 			break;
 
 		case TASKMGRCMD_SET_EXIT_CB:
 			ret = taskmgr_set_termination_cb(TYPE_EXIT, request_msg.data, request_msg.caller_pid);
+#ifndef CONFIG_DISABLE_PTHREAD
+			if (((tm_pthread_info_t *)request_msg.data)->name != NULL) {
+				TM_FREE(((tm_pthread_info_t *)request_msg.data)->name);
+				((tm_pthread_info_t *)request_msg.data)->name = NULL;
+			}
+#endif
 			break;
 			
 		default:
