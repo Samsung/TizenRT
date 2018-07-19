@@ -325,30 +325,29 @@ int kdbg_date(int argc, char **args)
 #endif
 		ret = date_settime(argc, args);
 	} else {
-#if !(defined(CONFIG_LIBC_LOCALTIME) || defined(CONFIG_TIME_EXTENDED))
+
 		printf("\nUsage: date\n");
 		printf("   or: date [-s FORMAT]\n");
 		printf("Display, or Set system time and date information\n");
 		printf("\nOptions:\n");
 		printf(" -s FORMAT     Set system time in the given FORMAT\n");
+#if !(defined(CONFIG_LIBC_LOCALTIME) || defined(CONFIG_TIME_EXTENDED))
 		printf("               FORMAT: MMM DD HH:MM:SS YYYY\n");
 		printf("                'month', 'day', 'hour':'minute':'second' 'year'\n");
 		printf("                Example: Apr 21 10:35:22 1991\n");
-		ret = ERROR;
 #else
-		printf("\nUsage: date\n");
-		printf("   or: date [-s FORMAT]\n");
-		printf("Display, or Set system time and date information\n");
-		printf("\nOptions:\n");
-		printf(" -s FORMAT     Set system time in the given FORMAT\n");
 		printf("               FORMAT: MMM DD HH:MM:SS YYYY DWR DYR D\n");
+		printf("                'month', 'day', 'hour':'minute':'second' 'year' 'day_of_week' 'day_of_year' 'daylight_savings_flag'\n");
+		printf("                Example: Apr 21 10:35:22 1991 Sun 175 1\n");
+
 		printf("                Day of Week Range(DWR) = [Sunday = Sun, Monday = Mon, and so on...]\n");
 		printf("                Day of Year Range(DYR) = [0,365], \n");
 		printf("                daylight_savings_flag: +ve(in effect), 0(low), -ve(information unavailable)\n");
-		printf("                'month', 'day', 'hour':'minute':'second' 'year' 'day_of_week' 'day_of_year' 'daylight_savings_flag'\n");
-		printf("                Example: Apr 21 10:35:22 1991 Sun 175 1\n");
-		ret = ERROR;
 #endif
+		printf("                Year valid range = [1970,2106]\n");
+		printf("                Month and day of week allows only 3 abbreviation characters like Jan, Sun.\n");
+
+		ret = ERROR;
 	}
 	return ret;
 }
