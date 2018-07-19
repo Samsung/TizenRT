@@ -27,7 +27,7 @@ using namespace media::stream;
 static unsigned int channels = 2;
 static unsigned int sampleRate = 16000;
 static audio_format_type_t pcmFormat = AUDIO_FORMAT_TYPE_S16_LE;
-static const char *filePath = "/ramfs/record";
+static const char *filePath = "/tmp/record";
 
 static void utc_media_FileOutputDataSource_getChannels_p(void)
 {

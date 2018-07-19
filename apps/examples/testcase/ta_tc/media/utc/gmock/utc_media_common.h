@@ -32,6 +32,6 @@ using ::testing::_;
 unsigned char channels = 2;
 unsigned int sampleRate = 16000;
 int pcmFormat = 0;
-const char * filePath = "/ramfs/record";
+const char * filePath = "/tmp/record";
 
 #endif
