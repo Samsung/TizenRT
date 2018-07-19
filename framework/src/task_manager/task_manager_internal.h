@@ -105,7 +105,7 @@ typedef struct tm_request_s tm_request_t;
 
 struct tm_response_s {
 	int status;
-	app_info_list_t *data;
+	void *data;
 };
 typedef struct tm_response_s tm_response_t;
 

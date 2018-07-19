@@ -518,7 +518,7 @@ static int taskmgr_getinfo_with_name(char *name, tm_response_t *response_msg)
 		)) {
 
 			tmvdbg("found handle = %d\n", chk_idx);
-			ret = taskmgr_get_task_info(&response_msg->data, chk_idx);
+			ret = taskmgr_get_task_info((app_info_list_t **)&response_msg->data, chk_idx);
 			if (ret != OK) {
 				return ret;
 			}
@@ -543,7 +543,7 @@ static int taskmgr_getinfo_with_group(int group, tm_response_t *response_msg)
 	for (chk_idx = 0; chk_idx < CONFIG_TASK_MANAGER_MAX_TASKS; chk_idx++) {
 		if (TM_LIST_ADDR(chk_idx) && TM_GID(chk_idx) == group) {
 			tmvdbg("found handle = %d\n", chk_idx);
-			ret = taskmgr_get_task_info(&response_msg->data, chk_idx);
+			ret = taskmgr_get_task_info((app_info_list_t **)&response_msg->data, chk_idx);
 			if (ret != OK) {
 				return ret;
 			}
@@ -563,7 +563,7 @@ static int taskmgr_getinfo_with_handle(int handle, tm_response_t *response_msg)
 		return TM_UNREGISTERED_APP;
 	}
 
-	return taskmgr_get_task_info(&response_msg->data, handle);
+	return taskmgr_get_task_info((app_info_list_t **)&response_msg->data, handle);
 }
 
 static void taskmgr_termination_callback(void)
