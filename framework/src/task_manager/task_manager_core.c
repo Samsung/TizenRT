@@ -154,13 +154,16 @@ static int taskmgr_register(char *name, int permission, int caller_pid)
 
 	if (handle >= 0) {
 		tm_app_list[handle].addr = (void *)TM_ALLOC(sizeof(app_list_data_t));
-		if (tm_app_list[handle].addr == NULL) {			return TM_OUT_OF_MEMORY;
+		if (tm_app_list[handle].addr == NULL) {
+			return TM_OUT_OF_MEMORY;
 		}
 		TM_TYPE(handle) = TM_BUILTIN_TASK;
 		TM_IDX(handle) = chk_idx;
 		TM_GID(handle) = caller_pid;
 		TM_STATUS(handle) = TM_APP_STATE_STOP;
 		TM_PERMISSION(handle) = permission;
+		TM_STOP_CB(handle) = NULL;
+		TM_EXIT_CB(handle) = NULL;
 		tmvdbg("Registered handle %d\n", handle);
 		handle_cnt++;
 	}
@@ -196,6 +199,8 @@ static int taskmgr_unregister(int handle)
 #endif
 
 	TM_PID(handle) = 0;
+	TM_STOP_CB(handle) = NULL;
+	TM_EXIT_CB(handle) = NULL;
 	TM_FREE(tm_app_list[handle].addr);
 	tm_app_list[handle].addr = NULL;
 	g_handle_hash[handle] = false;
@@ -288,7 +293,9 @@ static int taskmgr_stop(int handle, int caller_pid)
 
 	/* Call stop callback */
 	TM_STATUS(handle) = TM_APP_STATE_CANCELLING;
-	(*TM_STOP_CB(handle))();
+	if (TM_STOP_CB(handle) != NULL) {
+		(*TM_STOP_CB(handle))();
+	}
 
 	if (TM_TYPE(handle) == TM_BUILTIN_TASK || TM_TYPE(handle) == TM_TASK) {
 		ret = task_delete(TM_PID(handle));
@@ -693,6 +700,8 @@ static int taskmgr_register_task(tm_task_info_t *task_info, int permission, int 
 		TM_GID(handle) = caller_pid;
 		TM_STATUS(handle) = TM_APP_STATE_STOP;
 		TM_PERMISSION(handle) = permission;
+		TM_STOP_CB(handle) = NULL;
+		TM_EXIT_CB(handle) = NULL;
 		tmvdbg("Registered handle %d\n", handle);
 		handle_cnt++;
 	}
@@ -710,7 +719,7 @@ static int taskmgr_register_pthread(tm_pthread_info_t *pthread_info, int permiss
 		return TM_INVALID_PARAM;
 	}
 
-	if (handle_cnt > CONFIG_TASK_MANAGER_MAX_TASKS) {
+	if (handle_cnt >= CONFIG_TASK_MANAGER_MAX_TASKS) {
 		return TM_OUT_OF_MEMORY;
 	}
 
@@ -756,6 +765,8 @@ static int taskmgr_register_pthread(tm_pthread_info_t *pthread_info, int permiss
 		TM_GID(handle) = caller_pid;
 		TM_STATUS(handle) = TM_APP_STATE_STOP;
 		TM_PERMISSION(handle) = permission;
+		TM_STOP_CB(handle) = NULL;
+		TM_EXIT_CB(handle) = NULL;
 		tmvdbg("Registered handle %d\n", handle);
 		handle_cnt++;
 	}
@@ -777,9 +788,9 @@ static int taskmgr_set_termination_cb(int type, void *data, int pid)
 	}
 
 	if (type == TYPE_CANCEL) {
-		TM_STOP_CB(handle) = data;
+		TM_STOP_CB(handle) = (_tm_termination_t)data;
 	} else {
-		TM_EXIT_CB(handle) = data;
+		TM_EXIT_CB(handle) = (_tm_termination_t)data;
 	}
 
 	return OK;
@@ -795,7 +806,9 @@ int task_manager_run_exit_cb(int pid)
 
 	/* Run exit callback when normally terminated. */
 	if (TM_STATUS(handle) != TM_APP_STATE_CANCELLING) {
-		(*TM_EXIT_CB(handle))();
+		if (TM_EXIT_CB(handle) != NULL) {
+			(*TM_EXIT_CB(handle))();
+		}
 	}
 	return OK;
 }
@@ -924,6 +937,10 @@ int task_manager(int argc, char *argv[])
 #ifndef CONFIG_DISABLE_PTHREAD
 		case TASKMGRCMD_REGISTER_PTHREAD:
 			ret = taskmgr_register_pthread((tm_pthread_info_t *)request_msg.data, request_msg.handle, request_msg.caller_pid);
+			if (((tm_pthread_info_t *)request_msg.data)->name != NULL) {
+				TM_FREE(((tm_pthread_info_t *)request_msg.data)->name);
+				((tm_pthread_info_t *)request_msg.data)->name = NULL;
+			}
 			break;
 #endif
 		case TASKMGRCMD_SET_STOP_CB:
@@ -932,12 +949,6 @@ int task_manager(int argc, char *argv[])
 
 		case TASKMGRCMD_SET_EXIT_CB:
 			ret = taskmgr_set_termination_cb(TYPE_EXIT, request_msg.data, request_msg.caller_pid);
-#ifndef CONFIG_DISABLE_PTHREAD
-			if (((tm_pthread_info_t *)request_msg.data)->name != NULL) {
-				TM_FREE(((tm_pthread_info_t *)request_msg.data)->name);
-				((tm_pthread_info_t *)request_msg.data)->name = NULL;
-			}
-#endif
 			break;
 			
 		default:
@@ -949,7 +960,7 @@ int task_manager(int argc, char *argv[])
 			taskmgr_send_response((char *)request_msg.q_name, &response_msg);
 		}
 
-		if (request_msg.data != NULL && request_msg.cmd != TASKMGRCMD_SET_UNICAST_CB) {
+		if (request_msg.data != NULL && request_msg.cmd != TASKMGRCMD_SET_UNICAST_CB && request_msg.cmd != TASKMGRCMD_SET_STOP_CB && request_msg.cmd != TASKMGRCMD_SET_EXIT_CB) {
 			TM_FREE(request_msg.data);
 			request_msg.data = NULL;
 		}
