@@ -76,7 +76,7 @@ int utc_media_main(int argc, char *argv[])
 #ifdef CONFIG_MEDIA_RECORDER
 	utc_media_mediarecorder_main();
 	utc_media_fileoutputdatasource_main();
-	unlink("/ramfs/record");
+	unlink("/tmp/record");
 #endif
 #endif
 

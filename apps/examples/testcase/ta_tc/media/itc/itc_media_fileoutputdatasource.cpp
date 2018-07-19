@@ -27,7 +27,7 @@ using namespace media::stream;
 /****************************************************************************
  * Definitions
  ****************************************************************************/
-#define MEDIA_TEST_FILE_PATH "/ramfs/record";
+#define MEDIA_TEST_FILE_PATH "/tmp/record";
 #define FILE_DEFAULT_RATE 16000
 #define CHANNELS 2
 #define NULL 0

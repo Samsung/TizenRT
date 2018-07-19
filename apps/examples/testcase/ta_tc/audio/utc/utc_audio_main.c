@@ -39,7 +39,7 @@
 /****************************************************************************
  * Definitions
  ****************************************************************************/
-#define AUDIO_TEST_FILE "/ramfs/pcm"
+#define AUDIO_TEST_FILE "/tmp/pcm"
 
 #define AUDIO_DEFAULT_CHANNELS 2
 

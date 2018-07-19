@@ -52,9 +52,9 @@ using namespace media::stream;
 #define TEST_OPUS
 
 #if defined(TEST_OPUS)
-static const char *filePath = "/ramfs/record.opus";
+static const char *filePath = "/tmp/record.opus";
 #else
-static const char *filePath = "/ramfs/record";
+static const char *filePath = "/tmp/record";
 #endif
 
 class MediaRecorderTest : public MediaRecorderObserverInterface
