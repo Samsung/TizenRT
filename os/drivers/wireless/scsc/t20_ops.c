@@ -608,12 +608,12 @@ int slsi_hw_scan(void *priv, struct wpa_driver_scan_params *request)
 	if (r != 0) {
 		if (r > 0) {
 			SLSI_NET_DBG2(dev, SLSI_T20_80211, "Nothing to be done\n");
-			slsi_scan_complete(ndev_vif);
 			r = 0;
 		} else {
 			SLSI_NET_DBG2(dev, SLSI_T20_80211, "add_scan_req error: %d\n", r);
 			r = -EIO;
 		}
+		slsi_scan_complete(ndev_vif);
 	} else {
 		ndev_vif->scan[SLSI_SCAN_HW_ID].scan_req = 1;
 		work_queue(SCSC_WORK, &ndev_vif->scan_timeout_work, slsi_scan_ind_timeout_handle, (FAR void *)drv_iface, MSEC2TICK(SLSI_FW_SCAN_DONE_TIMEOUT_MSEC));
