@@ -75,6 +75,8 @@
 #include <fcntl.h>
 #include <errno.h>
 
+#include <tinyara/time.h>
+
 /****************************************************************************
  * Pre-processor Definitions
  ****************************************************************************/
@@ -133,9 +135,6 @@
 #define TM_NOVEMBER         10
 #define TM_DECEMBER         11
 
-#define TM_YEAR_BASE        1900
-
-#define EPOCH_YEAR          1970
 #define EPOCH_WDAY          TM_THURSDAY
 
 #define isleap(y)           (((y) % 4) == 0 && (((y) % 100) != 0 || ((y) % 400) == 0))

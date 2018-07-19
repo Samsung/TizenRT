@@ -712,7 +712,7 @@ void dev_conf_prov_cb_in_app(es_dev_conf_prov_data_s *event_data)
 		ch_year[itr] = event_data->datetime[itr];
 	}
 	ch_year[itr] = '\0';
-	st_time.tm_year = (atoi(ch_year) - 1900);
+	st_time.tm_year = (atoi(ch_year) - TM_YEAR_BASE);
 
 	ch_month[0] = event_data->datetime[++itr];
 	ch_month[1] = event_data->datetime[++itr];

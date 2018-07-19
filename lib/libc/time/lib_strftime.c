@@ -386,7 +386,7 @@ size_t strftime(FAR char *s, size_t max, FAR const char *format, FAR const struc
 		/* %Y: The year as a decimal number including the century. */
 
 		case 'Y': {
-			len = snprintf(dest, chleft, "%04d", tm->tm_year + 1900);
+			len = snprintf(dest, chleft, "%04d", tm->tm_year + TM_YEAR_BASE);
 		}
 		break;
 

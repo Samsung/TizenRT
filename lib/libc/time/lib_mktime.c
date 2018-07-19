@@ -111,7 +111,7 @@ time_t mktime(FAR struct tm *tp)
 	 * month, and date
 	 */
 
-	jdn = clock_calendar2utc(tp->tm_year + 1900, tp->tm_mon + 1, tp->tm_mday);
+	jdn = clock_calendar2utc(tp->tm_year + TM_YEAR_BASE, tp->tm_mon + 1, tp->tm_mday);
 	svdbg("jdn=%d tm_year=%d tm_mon=%d tm_mday=%d\n", (int)jdn, tp->tm_year, tp->tm_mon, tp->tm_mday);
 
 	/* Return the seconds into the julian day. */
@@ -142,7 +142,7 @@ time_t mktime(FAR struct tm *tp)
 
 	/* Add in the days up to the beginning of this month. */
 
-	days += (time_t)clock_daysbeforemonth(tp->tm_mon, clock_isleapyear(tp->tm_year + 1900));
+	days += (time_t)clock_daysbeforemonth(tp->tm_mon, clock_isleapyear(tp->tm_year + TM_YEAR_BASE));
 
 	/* Add in the days since the beginning of this month (days are 1-based). */
 

@@ -217,7 +217,7 @@ static void clock_utc2calendar(time_t days, int *year, int *month, int *day)
 	for (;;) {
 		/* Is this year a leap year (we'll need this later too) */
 
-		leapyear = clock_isleapyear(value + 1970);
+		leapyear = clock_isleapyear(value + EPOCH_YEAR);
 
 		/* Get the number of days in the year */
 
@@ -239,7 +239,7 @@ static void clock_utc2calendar(time_t days, int *year, int *month, int *day)
 
 	/* At this point, value has the year and days has number days into this year */
 
-	*year = 1970 + value;
+	*year = EPOCH_YEAR + value;
 
 	/* Handle the month (zero based) */
 
@@ -356,7 +356,7 @@ FAR struct tm *gmtime_r(FAR const time_t *timer, FAR struct tm *result)
 
 	/* Then return the struct tm contents */
 
-	result->tm_year = (int)year - 1900;	/* Relative to 1900 */
+	result->tm_year = (int)year - TM_YEAR_BASE;	/* Relative to 1900 */
 	result->tm_mon = (int)month - 1;	/* zero-based */
 	result->tm_mday = (int)day;	/* one-based */
 	result->tm_hour = (int)hour;
