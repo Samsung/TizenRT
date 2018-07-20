@@ -33,6 +33,8 @@
 #define TM_BROADCAST3_NAME  "tm_broadcast3"
 #define TM_NOPERM_NAME      "tm_noperm"
 #define TM_SAMPLE_MSG       "test_msg"
+#define TM_SYNC_SEND_MSG    "send_sync"
+#define TM_SYNC_RECV_MSG    "recv_sync"
 #define TM_INVALID_HANDLE         -2
 #define TM_INVALID_TIMEOUT        -2
 #define TM_INVALID_PERMISSION     -2
@@ -58,8 +60,30 @@ static int broad_wifi_off_cnt;
 
 static sem_t tm_broad_sem;
 
+static void sync_test_cb(tm_unicast_msg_t *info)
+{
+	tm_unicast_msg_t reply_msg;
+
+	if (strncmp(info->msg, TM_SYNC_SEND_MSG, info->msg_size) == 0) {
+		reply_msg.msg = malloc(strlen(TM_SYNC_RECV_MSG));
+		if (reply_msg.msg != NULL) {
+			reply_msg.msg_size = strlen(TM_SYNC_RECV_MSG);
+			memcpy(reply_msg.msg, TM_SYNC_RECV_MSG, reply_msg.msg_size);
+			task_manager_reply_unicast(&reply_msg);
+		}
+	}
+	if (reply_msg.msg != NULL) {
+		free(reply_msg.msg);
+	}
+}
+
 static int not_builtin_task(int argc, char *argv[])
 {
+	(void)task_manager_set_unicast_cb(sync_test_cb);
+
+	while (1) {
+		usleep(1);
+	}	// This will be dead at utc_task_manager_stop_p
 	return OK;
 }
 
@@ -68,9 +92,9 @@ static void *tm_pthread(void *param)
 	return NULL;
 }
 
-static void test_unicast_handler(void *info)
+static void test_unicast_handler(tm_unicast_msg_t *info)
 {
-	flag = !strncmp(info, TM_SAMPLE_MSG, strlen(TM_SAMPLE_MSG));
+	flag = !strncmp((char *)info, TM_SAMPLE_MSG, strlen(TM_SAMPLE_MSG));
 }
 
 static void test_broadcast_handler(int info)
@@ -224,6 +248,9 @@ static void utc_task_manager_start_p(void)
 	ret = task_manager_start(tm_broadcast_handle3, TM_RESPONSE_WAIT_INF);
 	TC_ASSERT_EQ("task_manager_start", ret, OK);
 
+	ret = task_manager_start(tm_not_builtin_handle, TM_RESPONSE_WAIT_INF);
+	TC_ASSERT_EQ("task_manager_start", ret, OK);
+
 	TC_SUCCESS_RESULT();
 }
 
@@ -291,14 +318,24 @@ static void utc_task_manager_set_exit_cb_p(void)
 static void utc_task_manager_unicast_n(void)
 {
 	int ret;
-	ret = task_manager_unicast(tm_sample_handle, TM_SAMPLE_MSG, strlen(TM_SAMPLE_MSG), TM_INVALID_TIMEOUT);
-	TC_ASSERT_EQ("task_manager_unicast", ret, TM_INVALID_PARAM);
+	tm_unicast_msg_t send_msg;
+	send_msg.msg_size = strlen(TM_SAMPLE_MSG);
+	send_msg.msg = malloc(strlen(TM_SAMPLE_MSG));
+	TC_ASSERT_NEQ("task_manager_unicast", send_msg.msg, NULL);
 
-	ret = task_manager_unicast(TM_INVALID_HANDLE, TM_SAMPLE_MSG, strlen(TM_SAMPLE_MSG), TM_NO_RESPONSE);
-	TC_ASSERT_EQ("task_manager_unicast", ret, TM_INVALID_PARAM);
+	strncpy(send_msg.msg, TM_SAMPLE_MSG, send_msg.msg_size);
+	
+	ret = task_manager_unicast(tm_sample_handle, &send_msg, NULL, TM_INVALID_TIMEOUT);
+	TC_ASSERT_EQ_CLEANUP("task_manager_unicast", ret, TM_INVALID_PARAM, free(send_msg.msg));
 
-	ret = task_manager_unicast(tm_sample_handle, TM_SAMPLE_MSG, 0, TM_NO_RESPONSE);
-	TC_ASSERT_EQ("task_manager_unicast", ret, TM_INVALID_PARAM);
+	ret = task_manager_unicast(TM_INVALID_HANDLE, &send_msg, NULL, TM_NO_RESPONSE);
+	TC_ASSERT_EQ_CLEANUP("task_manager_unicast", ret, TM_INVALID_PARAM, free(send_msg.msg));
+
+	send_msg.msg_size = 0;
+	ret = task_manager_unicast(tm_sample_handle, &send_msg, NULL, TM_NO_RESPONSE);
+	TC_ASSERT_EQ_CLEANUP("task_manager_unicast", ret, TM_INVALID_PARAM, free(send_msg.msg));
+
+	free(send_msg.msg);
 
 	TC_SUCCESS_RESULT();
 }
@@ -307,17 +344,39 @@ static void utc_task_manager_unicast_p(void)
 {
 	int ret;
 	int sleep_cnt = 0;
-	ret = task_manager_unicast(tm_sample_handle, TM_SAMPLE_MSG, strlen(TM_SAMPLE_MSG), TM_NO_RESPONSE);
+	tm_unicast_msg_t reply_msg;
+	tm_unicast_msg_t send_msg;
+	send_msg.msg_size = strlen(TM_SAMPLE_MSG);
+	send_msg.msg = malloc(strlen(TM_SAMPLE_MSG));
+	TC_ASSERT_NEQ("task_manager_unicast", send_msg.msg, NULL);
+
+	strncpy(send_msg.msg, TM_SAMPLE_MSG, send_msg.msg_size);
+
+	ret = task_manager_unicast(tm_sample_handle, &send_msg, NULL, TM_NO_RESPONSE);
 	TC_ASSERT_EQ("task_manager_unicast", ret, OK);
 	while (1) {
 		sleep(1);
 		if (flag) {
 			break;
 		}
-		TC_ASSERT_LEQ("task_manager_unicast", sleep_cnt, 10);
+		TC_ASSERT_LEQ_CLEANUP("task_manager_unicast", sleep_cnt, 10, free(send_msg.msg));
 		sleep_cnt++;
 	}
 
+	free(send_msg.msg);
+
+	send_msg.msg = malloc(send_msg.msg_size);
+	TC_ASSERT_NEQ("task_manager_unicast", send_msg.msg, NULL);
+	send_msg.msg_size = strlen(TM_SYNC_SEND_MSG);
+
+	strncpy(send_msg.msg, TM_SYNC_SEND_MSG, send_msg.msg_size);
+
+	ret = task_manager_unicast(tm_not_builtin_handle, &send_msg, &reply_msg, TM_RESPONSE_WAIT_INF);
+	TC_ASSERT_EQ_CLEANUP("task_manager_unicast", ret, OK, free(send_msg.msg));
+	TC_ASSERT_EQ_CLEANUP("task_manager_unicast", strncmp((char *)reply_msg.msg, (char *)TM_SYNC_RECV_MSG, strlen(TM_SYNC_RECV_MSG)), 0, free(send_msg.msg));
+
+	free(send_msg.msg);
+	free(reply_msg.msg);
 	TC_SUCCESS_RESULT();
 }
 
@@ -521,6 +580,7 @@ static void utc_task_manager_stop_n(void)
 static void utc_task_manager_stop_p(void)
 {
 	int ret;
+
 	ret = task_manager_stop(tm_sample_handle, TM_RESPONSE_WAIT_INF);
 	TC_ASSERT_EQ("task_manager_stop", ret, OK);
 
@@ -534,6 +594,9 @@ static void utc_task_manager_stop_p(void)
 	TC_ASSERT_EQ("task_manager_stop", ret, OK);
 
 	ret = task_manager_stop(tm_broadcast_handle3, TM_RESPONSE_WAIT_INF);
+	TC_ASSERT_EQ("task_manager_stop", ret, OK);
+
+	ret = task_manager_stop(tm_not_builtin_handle, TM_NO_RESPONSE);
 	TC_ASSERT_EQ("task_manager_stop", ret, OK);
 
 	TC_SUCCESS_RESULT();
@@ -673,6 +736,12 @@ int utc_task_manager_main(int argc, char *argv[])
 	utc_task_manager_register_n();
 	utc_task_manager_register_p();
 
+	utc_task_manager_register_task_n();
+	utc_task_manager_register_task_p();
+
+	utc_task_manager_register_pthread_n();
+	utc_task_manager_register_pthread_p();
+
 	utc_task_manager_start_n();
 	utc_task_manager_start_p();
 
@@ -714,12 +783,6 @@ int utc_task_manager_main(int argc, char *argv[])
 
 	utc_task_manager_stop_n();
 	utc_task_manager_stop_p();
-
-	utc_task_manager_register_task_n();
-	utc_task_manager_register_task_p();
-
-	utc_task_manager_register_pthread_n();
-	utc_task_manager_register_pthread_p();
 
 	utc_task_manager_unregister_n();
 	utc_task_manager_unregister_p();

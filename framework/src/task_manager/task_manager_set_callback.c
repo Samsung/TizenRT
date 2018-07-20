@@ -36,7 +36,7 @@ void taskmgr_msg_cb(int signo, siginfo_t *data)
 		return;
 	}
 	if (signo == CONFIG_SIG_SIGTM_UNICAST) {
-		(*TM_UNICAST_CB(handle))((void *)data->si_value.sival_ptr);
+		(*TM_UNICAST_CB(handle))((tm_unicast_msg_t *)data->si_value.sival_ptr);
 	} else {
 		(*TM_BROADCAST_CB(handle))(data->si_value.sival_int);
 	}
@@ -44,7 +44,7 @@ void taskmgr_msg_cb(int signo, siginfo_t *data)
 /****************************************************************************
  * task_manager_set_unicast_cb
  ****************************************************************************/
-int task_manager_set_unicast_cb(void (*func)(void *data))
+int task_manager_set_unicast_cb(void (*func)(tm_unicast_msg_t *data))
 {
 	int ret = OK;
 	struct sigaction act;

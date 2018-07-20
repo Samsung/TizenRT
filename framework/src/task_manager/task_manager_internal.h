@@ -60,6 +60,7 @@
 #define TM_MQ_PRIO   50
 #define TM_PUBLIC_MQ "tm_public_mq"
 #define TM_PRIVATE_MQ "tm_priv_mq"
+#define TM_UNICAST_MQ "tm_unicast_mq"
 
 /* Wrapper of allocation APIs */
 #define TM_ALLOC(a)  malloc(a)
@@ -68,7 +69,12 @@
 /* Temporary State for Cancel */
 #define TM_APP_STATE_CANCELLING -1
 
-typedef void (*_tm_unicast_t)(void *);
+/**
+ * @brief Unicast Type
+ */
+#define TM_UNICAST_SYNC      (0)
+#define TM_UNICAST_ASYNC     (1)
+
 typedef void (*_tm_broadcast_t)(int);
 typedef void (*_tm_termination_t)(void);
 
@@ -133,6 +139,13 @@ struct tm_pthread_info_s {
 };
 typedef struct tm_pthread_info_s tm_pthread_info_t;
 #endif
+
+struct tm_unicast_internal_msg_s {
+	int msg_size;
+	void *msg;
+	int type;
+};
+typedef struct tm_unicast_internal_msg_s tm_unicast_internal_msg_t;
 
 #define IS_INVALID_HANDLE(i) (i < 0 || i >= CONFIG_TASK_MANAGER_MAX_TASKS)
 

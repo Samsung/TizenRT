@@ -105,6 +105,19 @@ struct app_info_list_s {
 };
 typedef struct app_info_list_s app_info_list_t;
 
+/**
+ * @brief Unicast message Structure
+ */
+struct tm_unicast_msg_s {
+	int msg_size;
+	void *msg;
+};
+typedef struct tm_unicast_msg_s tm_unicast_msg_t;
+/**
+ * @brief Unicast callback function type
+ */
+typedef void (*_tm_unicast_t)(tm_unicast_msg_t *);
+
 /****************************************************************************
  * Public Function Prototypes
  ****************************************************************************/
@@ -232,18 +245,21 @@ int task_manager_resume(int handle, int timeout);
 int task_manager_restart(int handle, int timeout);
 /**
  * @brief Request to send messages to the task
- * @details @b #include <task_manager/task_manager.h>
+ * @details @b #include <task_manager/task_manager.h>\n
+ * task_manager_unicast can be used with SYNC and ASYNC mode.\n
+ * With SYNC mode, reply msg can be sent through task_manager_reply_unicast API.
  * @param[in] handle the handle id of task to be sent
- * @param[in] msg message to be unicasted
- * @param[in] msg_size the size of message
+ * @param[in] send_msg message structure to be unicasted
+ * @param[out] reply_msg the reply msg structure for sync. If this is NULL, task_manager_unicast works asynchronously.
  * @param[in] timeout returnable flag. It can be one of the below.\n
  *			TM_NO_RESPONSE : Ignore the response of request from task manager\n
  *			TM_RESPONSE_WAIT_INF : Blocked until get the response from task manager\n
  *			integer value : Specifies an upper limit on the time for which will block in milliseconds
+ *            If reply is not NULL(=SYNC), timeout should not be set to TM_NO_RESPONSE.
  * @return On success, OK is returned. On failure, defined negative value is returned.
  * @since TizenRT v2.0 PRE
  */
-int task_manager_unicast(int handle, void *msg, int msg_size, int timeout);
+int task_manager_unicast(int handle, tm_unicast_msg_t *send_msg, tm_unicast_msg_t *reply_msg, int timeout);
 /**
  * @brief Request to send messages to the tasks
  * @details @b #include <task_manager/task_manager.h>
@@ -261,7 +277,7 @@ int task_manager_broadcast(int msg);
  * @return On success, OK is returned. On failure, defined negative value is returned.
  * @since TizenRT v2.0 PRE
  */
-int task_manager_set_unicast_cb(void (*func)(void *data));
+int task_manager_set_unicast_cb(void (*func)(tm_unicast_msg_t *data));
 /**
  * @brief Register callback function which will be used for processing received broadcast messages
  * @details @b #include <task_manager/task_manager.h>
@@ -344,6 +360,14 @@ void task_manager_clean_info(app_info_t **info);
  * @since TizenRT v2.0 PRE
  */
 void task_manager_clean_infolist(app_info_list_t **info_list);
+/**
+ * @brief Send unicast reply message
+ * @details @b #include <task_manager/task_manager.h>
+ * @param[in] reply_msg the pointer of msg for reply
+ * @return On success, OK is returned. On failure, defined negative value is returned.
+ * @since TizenRT v2.0 PRE
+ */
+int task_manager_reply_unicast(tm_unicast_msg_t *reply_msg);
 
 #endif
 /**
