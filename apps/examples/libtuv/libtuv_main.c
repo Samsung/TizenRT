@@ -18,7 +18,7 @@
 
 #include <stdio.h>
 #include <libtuvapi.h>
-#include <uv.h>
+#include <libtuv/uv.h>
 
 /****************************************************************************
  * Pre-processor Definitions

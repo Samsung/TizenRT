@@ -18,7 +18,7 @@
 
 #include <stdio.h>
 #include <libtuvapi.h>
-#include <uv.h>
+#include <libtuv/uv.h>
 
 struct _timeout {
 	timeout_callback func;

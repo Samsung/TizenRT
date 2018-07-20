@@ -68,9 +68,6 @@ ASRCS =
 CSRCS = libtuvapi.c
 MAINSRC = libtuv_main.c
 
-CFLAGS += -I$(TOPDIR)/../external/libtuv/include
-CFLAGS += -I$(TOPDIR)/../external/libtuv/source/tinyara
-
 AOBJS = $(ASRCS:.S=$(OBJEXT))
 COBJS = $(CSRCS:.c=$(OBJEXT))
 MAINOBJ = $(MAINSRC:.c=$(OBJEXT))
