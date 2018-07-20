@@ -51,10 +51,32 @@ enum audio_manager_result_e {
 };
 
 typedef enum audio_manager_result_e audio_manager_result_t;
+typedef struct audio_card_info_s audio_handler_t;
 
 /****************************************************************************
  * Public Function Prototypes
  ****************************************************************************/
+/****************************************************************************
+ * Name: init_audio_handler_in
+ *
+ * Description:
+ *   Create an audio handler that has all information of the input card to be used.
+ *
+ * Returned Value:
+ *   On success, AUDIO_MANAGER_SUCCESS. Otherwise a negative value.
+ ****************************************************************************/
+audio_manager_result_t init_audio_handler_in(void);
+
+/****************************************************************************
+ * Name: init_audio_handler_out
+ *
+ * Description:
+ *   Create an audio handler that has all information of the output card to be used.
+ *
+ * Returned Value:
+ *   On success, AUDIO_MANAGER_SUCCESS. Otherwise a negative value.
+ ****************************************************************************/
+audio_manager_result_t init_audio_handler_out(void);
 
 /****************************************************************************
  * Name: init_audio_stream_in
@@ -63,10 +85,13 @@ typedef enum audio_manager_result_e audio_manager_result_t;
  *   Find all available audio cards for input stream and initialize the
  *   mutexes of each card. The one of the audio cards is set as the active one.
  *
+ * Input parameters:
+ *   handler: the pointer of the input audio hander to be allocated.
+ *
  * Returned Value:
  *   On success, AUDIO_MANAGER_SUCCESS. Otherwise a negative value.
  ****************************************************************************/
-audio_manager_result_t init_audio_stream_in(void);
+audio_manager_result_t init_audio_stream_in(audio_handler_t **handler);
 
 /****************************************************************************
  * Name: init_audio_stream_out
@@ -75,10 +100,13 @@ audio_manager_result_t init_audio_stream_in(void);
  *   Find all available audio cards for output stream and initialize the
  *   mutexes of the cards. The one of the audio cards is set as the active one.
  *
+ * Input parameters:
+ *   handler: the pointer of the output audio hander to be allocated.
+ *
  * Returned Value:
  *   On success, AUDIO_MANAGER_SUCCESS. Otherwise a negative value.
  ****************************************************************************/
-audio_manager_result_t init_audio_stream_out(void);
+audio_manager_result_t init_audio_stream_out(audio_handler_t **handler);
 
 /****************************************************************************
  * Name: set_audio_stream_in
@@ -89,14 +117,15 @@ audio_manager_result_t init_audio_stream_out(void);
  *   supported by the active input audio card, a resampling flag is set.
  *
  * Input parameters:
- *   channels: number of channels
- *   sample_rate: sample rate with which the stream is operated
- *   format: audio file format to be streamed in
+ *   handler: the audio hander which has all information of the current audio card
+ *   channels: a number of channels
+ *   sample_rate: a sample rate with which the stream is operated
+ *   format: an audio file format with which the stream is operated
  *
  * Returned Value:
  *   On success, AUDIO_MANAGER_SUCCESS. Otherwise a negative value.
  ****************************************************************************/
-audio_manager_result_t set_audio_stream_in(unsigned int channels, unsigned int sample_rate, int format);
+audio_manager_result_t set_audio_stream_in(audio_handler_t *handler, unsigned int channels, unsigned int sample_rate, int format);
 
 /****************************************************************************
  * Name: set_audio_stream_out
@@ -107,14 +136,15 @@ audio_manager_result_t set_audio_stream_in(unsigned int channels, unsigned int s
  *   supported by the active output audio card, a resampling flag is set.
  *
  * Input parameters:
- *   channels: number of channels
- *   sample_rate: sample rate with which the stream is operated
- *   format: audio file format to be streamed out
+ *   handler: the audio hander which has all information of the current audio card
+ *   channels: a number of channels
+ *   sample_rate: a sample rate with which the stream is operated
+ *   format: an audio file format with which the stream is operated
  *
  * Returned Value:
  *   On success, AUDIO_MANAGER_SUCCESS. Otherwise, a negative value.
  ****************************************************************************/
-audio_manager_result_t set_audio_stream_out(unsigned int channels, unsigned int sample_rate, int format);
+audio_manager_result_t set_audio_stream_out(audio_handler_t *handler, unsigned int channels, unsigned int sample_rate, int format);
 
 /****************************************************************************
  * Name: start_audio_stream_in
@@ -125,13 +155,14 @@ audio_manager_result_t set_audio_stream_out(unsigned int channels, unsigned int 
  *   If the resampling flag is set, resamplings are performed for all target frames.
  *
  * Input parameters:
- *   data: buffer to get the frame data
- *   frames: number of frames to be read
+ *   handler: the audio hander which has all information of the current audio card
+ *   data: a buffer to get the frame data
+ *   frames: a number of frames to be read
  *
  * Returned Value:
  *   On success, the number of frames read. Otherwise, a negative value.
  ****************************************************************************/
-int start_audio_stream_in(void *data, unsigned int frames);
+int start_audio_stream_in(audio_handler_t *handler, void *data, unsigned int frames);
 
 /****************************************************************************
  * Name: start_audio_stream_out
@@ -142,13 +173,14 @@ int start_audio_stream_in(void *data, unsigned int frames);
  *   If the resampling flag is set, resamplings are performed for all target frames.
  *
  * Input parameters:
- *   data: buffer to transfer the frame data
- *   frames: number of frames to be written
+ *   handler: the audio hander which has all information of the current audio card
+ *   data: a buffer to transfer the frame data
+ *   frames: a number of frames to be written
  *
  * Returned Value:
  *   On success, the number of frames written. Otherwise, a negative value.
  ****************************************************************************/
-int start_audio_stream_out(void *data, unsigned int frames);
+int start_audio_stream_out(audio_handler_t *handler, void *data, unsigned int frames);
 
 /****************************************************************************
  * Name: pause_audio_stream_in
@@ -158,10 +190,13 @@ int start_audio_stream_out(void *data, unsigned int frames);
  *   Note that only the active audio device currently running can be paused.
  *   If the device is resumed, the paused stream is continued.
  *
+ * Input parameters:
+ *   handler: the audio hander which has all information of the current audio card
+ *
  * Returned Value:
  *   On success, AUDIO_MANAGER_SUCCESS. Otherwise, a negative value.
  ****************************************************************************/
-audio_manager_result_t pause_audio_stream_in(void);
+audio_manager_result_t pause_audio_stream_in(audio_handler_t *handler);
 
 /****************************************************************************
  * Name: pause_audio_stream_out
@@ -171,10 +206,13 @@ audio_manager_result_t pause_audio_stream_in(void);
  *	 Note that only the active audio device currently running can be paused.
  *	 If the device is resumed, the paused stream is continued.
  *
+ * Input parameters:
+ *   handler: the audio hander which has all information of the current audio card
+ *
  * Returned Value:
  *   On success, AUDIO_MANAGER_SUCCESS. Otherwise, a negative value.
  ****************************************************************************/
-audio_manager_result_t pause_audio_stream_out(void);
+audio_manager_result_t pause_audio_stream_out(audio_handler_t *handler);
 
 /****************************************************************************
  * Name: stop_audio_stream_in
@@ -185,10 +223,13 @@ audio_manager_result_t pause_audio_stream_out(void);
  *	 Once the device is stopped, the stream should be restarted from the beginning
  *	 with calling set_audio_stream_in().
  *
+ * Input parameters:
+ *   handler: the audio hander which has all information of the current audio card
+ *
  * Returned Value:
  *   On success, AUDIO_MANAGER_SUCCESS. Otherwise, a negative value.
  ****************************************************************************/
-audio_manager_result_t stop_audio_stream_in(void);
+audio_manager_result_t stop_audio_stream_in(audio_handler_t *handler);
 
 /****************************************************************************
  * Name: stop_audio_stream_out
@@ -199,10 +240,13 @@ audio_manager_result_t stop_audio_stream_in(void);
  *	 Once the device is stopped, the stream should be restarted from the beginning
  *	 with calling set_audio_stream_out().
  *
+ * Input parameters:
+ *   handler: the audio hander which has all information of the current audio card
+ *
  * Returned Value:
  *   On success, AUDIO_MANAGER_SUCCESS. Otherwise, a negative value.
  ****************************************************************************/
-audio_manager_result_t stop_audio_stream_out(void);
+audio_manager_result_t stop_audio_stream_out(audio_handler_t *handler);
 
 /****************************************************************************
  * Name: reset_audio_stream_in
@@ -212,10 +256,13 @@ audio_manager_result_t stop_audio_stream_out(void);
  *   After the reset, the stream should be restarted from the beginning with
  *   calling set_audio_stream_in().
  *
+ * Input parameters:
+ *   handler: the audio hander which has all information of the current audio card
+ *
  * Returned Value:
  *   On success, AUDIO_MANAGER_SUCCESS. Otherwise, a negative value.
  ****************************************************************************/
-audio_manager_result_t reset_audio_stream_in(void);
+audio_manager_result_t reset_audio_stream_in(audio_handler_t *handler);
 
 /****************************************************************************
  * Name: reset_audio_stream_out
@@ -225,10 +272,35 @@ audio_manager_result_t reset_audio_stream_in(void);
  *   After the reset, the stream should be restarted from the beginning with
  *   calling set_audio_stream_out().
  *
+ * Input parameters:
+ *   handler: the audio hander which has all information of the current audio card
+ *
  * Returned Value:
  *   On success, AUDIO_MANAGER_SUCCESS. Otherwise, a negative value.
  ****************************************************************************/
-audio_manager_result_t reset_audio_stream_out(void);
+audio_manager_result_t reset_audio_stream_out(audio_handler_t *handler);
+
+/****************************************************************************
+ * Name: destroy_audio_handler_in
+ *
+ * Description:
+ *   Destroy (Deallocate) the current input audio handler.
+ *
+ * Returned Value:
+ *   On success, AUDIO_MANAGER_SUCCESS. Otherwise a negative value.
+ ****************************************************************************/
+audio_manager_result_t destroy_audio_handler_in(void);
+
+/****************************************************************************
+ * Name: destroy_audio_handler_out
+ *
+ * Description:
+ *   Destroy (Deallocate) the current output audio handler.
+ *
+ * Returned Value:
+ *   On success, AUDIO_MANAGER_SUCCESS. Otherwise a negative value.
+ ****************************************************************************/
+audio_manager_result_t destroy_audio_handler_out(void);
 
 /****************************************************************************
  * Name: get_input_frame_count
@@ -236,10 +308,13 @@ audio_manager_result_t reset_audio_stream_out(void);
  * Description:
  *   Get the frame size of the pcm buffer in the active input audio device.
  *
+ * Input parameters:
+ *   handler: the audio hander which has all information of the current audio card
+ *
  * Returned Value:
  *   On success, the size of the pcm buffer for input streams. Otherwise, 0.
  ****************************************************************************/
-unsigned int get_input_frame_count(void);
+unsigned int get_input_frame_count(audio_handler_t *handler);
 
 /****************************************************************************
  * Name: get_input_frames_to_byte
@@ -248,12 +323,13 @@ unsigned int get_input_frame_count(void);
  *   Get the byte size of the given frame value in input stream.
  *
  * Input parameters:
- *   frames: the target of which byte size is returned.
+ *   handler: the audio hander which has all information of the current audio card
+ *   frames: a frame count of which byte size is returned.
  *
  * Returned Value:
  *   On success, the byte size of the frame in input stream. Otherwise, 0.
  ****************************************************************************/
-unsigned int get_input_frames_to_byte(unsigned int frames);
+unsigned int get_input_frames_to_byte(audio_handler_t *handler, unsigned int frames);
 
 /****************************************************************************
  * Name: get_input_bytes_to_frame
@@ -262,12 +338,13 @@ unsigned int get_input_frames_to_byte(unsigned int frames);
  *   Get the number of frames for the given byte size in input stream.
  *
  * Input parameters:
- *   bytes: the target of which frame count is returned.
+ *   handler: the audio hander which has all information of the current audio card
+ *   frames: a frame count of which byte size is returned.
  *
  * Returned Value:
  *   On success, the number of frames in input stream. Otherwise, 0.
  ****************************************************************************/
-unsigned int get_input_bytes_to_frame(unsigned int bytes);
+unsigned int get_input_bytes_to_frame(audio_handler_t *handler, unsigned int bytes);
 
 /****************************************************************************
  * Name: get_output_frame_count
@@ -275,10 +352,13 @@ unsigned int get_input_bytes_to_frame(unsigned int bytes);
  * Description:
  *   Get the frame size of the pcm buffer in the active output audio device.
  *
+ * Input parameters:
+ *   handler: the audio hander which has all information of the current audio card
+ *
  * Returned Value:
  *   On success, the size of the pcm buffer for output streams. Otherwise, 0.
  ****************************************************************************/
-unsigned int get_output_frame_count(void);
+unsigned int get_output_frame_count(audio_handler_t *handler);
 
 /****************************************************************************
  * Name: get_output_frames_to_byte
@@ -287,12 +367,13 @@ unsigned int get_output_frame_count(void);
  *   Get the byte size of the given frame value in output stream.
  *
  * Input parameters:
- *   frames: the target of which byte size is returned.
+ *   handler: the audio hander which has all information of the current audio card
+ *   frames: a frame count of which byte size is returned.
  *
  * Returned Value:
  *   On success, the byte size of the frame in output stream. Otherwise, 0.
  ****************************************************************************/
-unsigned int get_output_frames_to_byte(unsigned int frames);
+unsigned int get_output_frames_to_byte(audio_handler_t *handler, unsigned int frames);
 
 /****************************************************************************
  * Name: get_output_bytes_to_frame
@@ -301,12 +382,13 @@ unsigned int get_output_frames_to_byte(unsigned int frames);
  *   Get the number of frames for the given byte size in output stream.
  *
  * Input parameters:
- *   bytes: the target of which frame count is returned.
+ *   handler: the audio hander which has all information of the current audio card
+ *   bytes: a byte size of which frame count is returned.
  *
  * Returned Value:
  *   On success, the number of frames in output stream. Otherwise, 0.
  ****************************************************************************/
-unsigned int get_output_bytes_to_frame(unsigned int bytes);
+unsigned int get_output_bytes_to_frame(audio_handler_t *handler, unsigned int bytes);
 
 /****************************************************************************
  * Name: get_audio_volume
@@ -324,10 +406,13 @@ uint16_t get_max_audio_volume(void);
  * Description:
  *   Get the current volume level of the active input audio device.
  *
+ * Input parameters:
+ *   handler: the audio hander which has all information of the current audio card
+ *
  * Returned Value:
  *   On success, the current input volume level. Otherwise, a negative value.
  ****************************************************************************/
-int get_input_audio_volume(void);
+int get_input_audio_volume(audio_handler_t *handler);
 
 /****************************************************************************
  * Name: get_output_audio_volume
@@ -335,10 +420,13 @@ int get_input_audio_volume(void);
  * Description:
  *   Get the current volume level of the active output audio device.
  *
+ * Input parameters:
+ *   handler: the audio hander which has all information of the current audio card
+ *
  * Returned Value:
  *   On success, the current output volume level. Otherwise, a negative value.
  ****************************************************************************/
-int get_output_audio_volume(void);
+int get_output_audio_volume(audio_handler_t *handler);
 
 /****************************************************************************
  * Name: set_input_audio_volume
@@ -347,12 +435,13 @@ int get_output_audio_volume(void);
  *   Adjust the volume level of the active input audio device.
  *
  * Input parameters:
- *   volume:   volume level, 0(Min) ~ 10(Max)
+ *   handler: the audio hander which has all information of the current audio card
+ *   volume: a volume level, 0(Min) ~ 10(Max)
  *
  * Returned Value:
  *   On success, AUDIO_MANAGER_SUCCESS. Otherwise, a negative value.
  ****************************************************************************/
-audio_manager_result_t set_input_audio_volume(uint8_t volume);
+audio_manager_result_t set_input_audio_volume(audio_handler_t *handler, uint8_t volume);
 
 /****************************************************************************
  * Name: set_output_audio_volume
@@ -361,12 +450,13 @@ audio_manager_result_t set_input_audio_volume(uint8_t volume);
  *   Adjust the volume level of the active output audio device.
  *
  * Input parameters:
- *   volume:   volume level, 0(Min) ~ 10(Max)
+ *   handler: the audio hander which has all information of the current audio card
+ *   volume: a volume level, 0(Min) ~ 10(Max)
  *
  * Returned Value:
  *   On success, AUDIO_MANAGER_SUCCESS. Otherwise, a negative value.
  ****************************************************************************/
-audio_manager_result_t set_output_audio_volume(uint8_t volume);
+audio_manager_result_t set_output_audio_volume(audio_handler_t *handler, uint8_t volume);
 
 #if defined(__cplusplus)
 }								/* extern "C" */

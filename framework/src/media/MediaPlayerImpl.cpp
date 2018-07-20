@@ -25,6 +25,8 @@
 #include "audio/audio_manager.h"
 
 namespace media {
+//ToDo: This handler needs to be moved into MediaWorker.cpp
+audio_handler_t* mOutAudioHandler;
 MediaPlayerImpl::MediaPlayerImpl()
 {
 	mPlayerObserver = nullptr;
@@ -63,21 +65,19 @@ void MediaPlayerImpl::createPlayer(player_result_t &ret)
 	if (mCurState != PLAYER_STATE_NONE) {
 		meddbg("MediaPlayer create fail : wrong state\n");
 		ret = PLAYER_ERROR;
-		mSyncCv.notify_one();
-		return;
+		return notifySync();
 	}
 
-	audio_manager_result_t result = init_audio_stream_out();
+	audio_manager_result_t result = init_audio_stream_out(&mOutAudioHandler);
 	if (result != AUDIO_MANAGER_SUCCESS) {
 		meddbg("Fail to initialize output audio stream : %d\n", result);
 		ret = PLAYER_ERROR;
-		mSyncCv.notify_one();
-		return;
+		return notifySync();
 	}
 
 	mCurState = PLAYER_STATE_IDLE;
 	ret = PLAYER_OK;
-	mSyncCv.notify_one();
+	notifySync();
 }
 
 player_result_t MediaPlayerImpl::destroy()
@@ -116,13 +116,12 @@ void MediaPlayerImpl::destroyPlayer(player_result_t &ret)
 		meddbg("MediaPlayer destroy fail : wrong state\n");
 		ret = PLAYER_ERROR;
 		notifyObserver(PLAYER_OBSERVER_COMMAND_ERROR);
-		mSyncCv.notify_one();
-		return;
+		return notifySync();
 	}
 
 	mCurState = PLAYER_STATE_NONE;
 	ret = PLAYER_OK;
-	mSyncCv.notify_one();
+	notifySync();
 }
 
 player_result_t MediaPlayerImpl::prepare()
@@ -161,13 +160,13 @@ void MediaPlayerImpl::preparePlayer(player_result_t &ret)
 		goto errout;
 	}
 
-	if (set_audio_stream_out(mInputDataSource->getChannels(), mInputDataSource->getSampleRate(),
+	if (set_audio_stream_out(mOutAudioHandler, mInputDataSource->getChannels(), mInputDataSource->getSampleRate(),
 							 mInputDataSource->getPcmFormat()) != AUDIO_MANAGER_SUCCESS) {
 		meddbg("MediaPlayer prepare fail : set_audio_stream_out fail\n");
 		goto errout;
 	}
 
-	mBufSize = get_output_frames_to_byte(get_output_frame_count());
+	mBufSize = get_output_frames_to_byte(mOutAudioHandler, get_output_frame_count(mOutAudioHandler));
 	if (mBufSize < 0) {
 		meddbg("MediaPlayer prepare fail : get_output_frames_byte_size fail\n");
 		goto errout;
@@ -183,12 +182,12 @@ void MediaPlayerImpl::preparePlayer(player_result_t &ret)
 
 	mCurState = PLAYER_STATE_READY;
 	ret = PLAYER_OK;
-	mSyncCv.notify_one();
-	return;
+	return notifySync();
+
 errout:
 	ret = PLAYER_ERROR;
 	notifyObserver(PLAYER_OBSERVER_COMMAND_ERROR);
-	mSyncCv.notify_one();
+	notifySync();
 }
 
 player_result_t MediaPlayerImpl::unprepare()
@@ -225,7 +224,7 @@ void MediaPlayerImpl::unpreparePlayer(player_result_t &ret)
 	}
 	mBufSize = 0;
 
-	if (reset_audio_stream_out() != AUDIO_MANAGER_SUCCESS) {
+	if (reset_audio_stream_out(mOutAudioHandler) != AUDIO_MANAGER_SUCCESS) {
 		meddbg("MediaPlayer unprepare fail : reset_audio_stream_out fail\n");
 		goto errout;
 	}
@@ -234,12 +233,12 @@ void MediaPlayerImpl::unpreparePlayer(player_result_t &ret)
 
 	mCurState = PLAYER_STATE_IDLE;
 	ret = PLAYER_OK;
-	mSyncCv.notify_one();
-	return;
+	return notifySync();
+
 errout:
 	ret = PLAYER_ERROR;
 	notifyObserver(PLAYER_OBSERVER_COMMAND_ERROR);
-	mSyncCv.notify_one();
+	notifySync();
 }
 
 player_result_t MediaPlayerImpl::start()
@@ -340,7 +339,7 @@ void MediaPlayerImpl::pausePlayer()
 		return;
 	}
 
-	audio_manager_result_t result = pause_audio_stream_out();
+	audio_manager_result_t result = pause_audio_stream_out(mOutAudioHandler);
 	if (result != AUDIO_MANAGER_SUCCESS) {
 		meddbg("pause_audio_stream_in failed ret : %d\n", result);
 		notifyObserver(PLAYER_OBSERVER_COMMAND_ERROR);
@@ -379,7 +378,7 @@ void MediaPlayerImpl::getVolumePlayer(int &ret)
 	medvdbg("MediaPlayer Worker : getVolume\n");
 
 	ret = get_output_audio_volume();
-	mSyncCv.notify_one();
+	notifySync();
 }
 
 player_result_t MediaPlayerImpl::setVolume(int vol)
@@ -412,20 +411,19 @@ void MediaPlayerImpl::setVolumePlayer(int vol, player_result_t &ret)
 		goto errout;
 	}
 
-	if (set_output_audio_volume((uint8_t)vol) != AUDIO_MANAGER_SUCCESS) {
+	if (set_output_audio_volume(mOutAudioHandler, (uint8_t)vol) != AUDIO_MANAGER_SUCCESS) {
 		meddbg("MediaPlayer setVolume fail : audio manager failed\n");
 		goto errout;
 	}
 
 	medvdbg("MediaPlayer setVolume success\n");
 	ret = PLAYER_OK;
-	mSyncCv.notify_one();
-	return;
+	return notifySync();
 
 errout:
 	notifyObserver(PLAYER_OBSERVER_COMMAND_ERROR);
 	ret = PLAYER_ERROR;
-	mSyncCv.notify_one();
+	notifySync();
 }
 
 
@@ -463,12 +461,11 @@ void MediaPlayerImpl::setPlayerDataSource(std::shared_ptr<stream::InputDataSourc
 
 	mInputDataSource = source;
 	ret = PLAYER_OK;
-	mSyncCv.notify_one();
-	return;
+	return notifySync();
 
 errout:
 	ret = PLAYER_ERROR;
-	mSyncCv.notify_one();
+	notifySync();
 }
 
 player_result_t MediaPlayerImpl::setObserver(std::shared_ptr<MediaPlayerObserverInterface> observer)
@@ -501,7 +498,7 @@ void MediaPlayerImpl::setPlayerObserver(std::shared_ptr<MediaPlayerObserverInter
 	}
 
 	mPlayerObserver = observer;
-	mSyncCv.notify_one();
+	notifySync();
 }
 
 player_state_t MediaPlayerImpl::getState()
@@ -542,7 +539,7 @@ void MediaPlayerImpl::playback()
 	ssize_t num_read = mInputDataSource->read(mBuffer,(int)mBufSize);
 	meddbg("num_read : %d\n", num_read);
 	if (num_read > 0) {
-		start_audio_stream_out(mBuffer, get_output_bytes_to_frame((unsigned int)num_read));
+		start_audio_stream_out(mOutAudioHandler, mBuffer, get_output_bytes_to_frame(mOutAudioHandler, (unsigned int)num_read));
 	} else if (num_read == 0) {
 		notifyObserver(PLAYER_OBSERVER_COMMAND_FINISHIED);
 		stop();
