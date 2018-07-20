@@ -93,3 +93,17 @@ config LIBCXX_UTC_STRINGS_LARGESIZE
 	depends on LIBCXX_UTC_STRINGS
 	---help---
 		UTC for Libc++ Strings Large size tests
+
+config LIBCXX_ITC
+	bool "Unit Test for LLVM Libc++"
+	default n
+	depends on LIBCXX
+	---help---
+		Enables unit test for LLVM Libc++.
+
+config LIBCXX_ITC_ALGORITHMS
+	bool "ITC for Libc++ Algorithms"
+	default y
+	depends on LIBCXX_ITC
+	---help---
+		ITC for Libc++ Algorithms
