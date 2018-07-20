@@ -1,18 +1,30 @@
 language: c
 compiler: gcc
 
-sudo: false
+sudo: required
 dist: trusty
 
 env:
-  - BUILD_CONFIG=artik053/onboard
-  - BUILD_CONFIG=artik053s/onboard
-  - BUILD_CONFIG=artik055s/onboard
+  - BUILD_CONFIG=artik053/onboard BOARD_NAME=ARTIK053
+  - BUILD_CONFIG=artik053s/onboard BOARD_NAME=ARTIK053s
+  - BUILD_CONFIG=artik055s/onboard BOARD_NAME=ARTIK055s
 
 before_install:
-  - sudo apt-get -qq update
-  - sudo apt-get install -y build-essential git gcc-arm-none-eabi gdb-arm-none-eabi
+  - sudo apt-get install -y gcc-arm-none-eabi
 
 script:
   - cd os; ./config.sh ${BUILD_CONFIG}
   - make
+
+before_deploy:
+  - make package
+  - mv ../build/output/bin/*_User.zip ./${BOARD_NAME}.zip
+
+deploy:
+  provider: releases
+  api_key:
+    secure: ZtLVslaBCzClQwRC13OcCQ8KOx6dbcROil+EiVnFA98DvNmEOGik9+4mSZ20uvNxID+ALpLSNHCB3tbpUjT4MhRYgFkEE7K0kCyC37VdCmHm/WUchVinnvF8E8HpKRT6kb9gtAf1/HqiIgoeMxyGNw4xEc4m29dnYeVAdu9v5dwLnN3u5P4zRZajbb1zXyh6SyY70TJdWvy52CdotCV5zo3qqaesgaNtL1hX47Pv7T4m9bePiQ7yXWnvkcKEkp3B6Yyj9BTVvY8Tm/X8Va0qk/0MTKcD8ATKThj4yRcDOBHIBhlkg45JY6g0mcXQYvsHGdP+GdJFBeMxlsAZfuyXU9zmwJr9h7t4YUCunN9GvS9Zn+oWCWGsFV/6x3z9umuCc3hKK4Qj7A44I0v+XNW7mXNDtUFxH3soNlsp6+dwYGsGIeqO0fxH8/HW5YfPy9cJKKnx47iunUHNjjbQeWrFEjCfiIWyaYWKLyopWj9XSR6bPX8H90wjmDYvbrlPrdNkd4zIbNJ+4xPXVb9jRKpSV1o2EQNz3V9N3dMmcK3pOv/8ksMkU3UEGmFXlx2btQHINjGWhIlYOMMkEC8pWOEIfyiknVgHSbHrO1vSoyIeIRykE/cFnX1MEKRoLJ0qgd6mOTb3BplrXZ/H7YaSu7hloT5IP+npU3qW8Rr3rcZnfew=
+  file: "./${BOARD_NAME}.zip"
+  skip_cleanup: true
+  on:
+    tags: true
