@@ -64,7 +64,7 @@ include source/tinyara/Make.defs
 include source/unix/Make.defs
 
 CFLAGS += -D__TINYARA__
-CFLAGS += -I$(TOPDIR)/$(EXTDIR)/libtuv/include
+CFLAGS += -I$(TOPDIR)/$(EXTDIR)/include/libtuv
 CFLAGS += -I$(TOPDIR)/$(EXTDIR)/libtuv/source
 CFLAGS += -I$(TOPDIR)/$(EXTDIR)/libtuv/source/tinyara
 
