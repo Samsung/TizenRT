@@ -144,7 +144,7 @@ int pthread_cond_wait(FAR pthread_cond_t *cond, FAR pthread_mutex_t *mutex)
 
 			ret = status;
 		}
-		
+
 		/* Was all of the above successful? */
 
 		if (ret == OK) {

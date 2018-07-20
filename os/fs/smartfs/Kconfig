@@ -27,7 +27,7 @@ config SMARTFS_ERASEDSTATE
 config SMARTFS_MAXNAMLEN
 	int "Maximum file name length"
 	default 32
-	---help---	
+	---help---
 		The maximum size of a SMARTFS file name at a given
 		directory level.  Overall path name is not restricted
 		by this value, only individual segments in a path,
@@ -77,7 +77,7 @@ config SMARTFS_DYNAMIC_HEADER
 bool "Dynamic Header"
 	default n
 	---help---
-		Using Modified Used Byte Method to Reduce Sector Relocation 
+		Using Modified Used Byte Method to Reduce Sector Relocation
 
 config SMARTFS_JOURNALING
         bool "Enable filesystem journaling for smartfs"

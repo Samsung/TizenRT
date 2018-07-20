@@ -52,7 +52,7 @@ namespace OIC
                       *
                       * @return Null terminated string.
                       */
-                virtual const char *what() const noexcept                
+                virtual const char *what() const noexcept
                 {
                     return m_message.c_str();
                 }

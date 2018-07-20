@@ -6,7 +6,7 @@
  *
  * Description:
  *   Get the underlined interface name
- *   
+ *
  *
  * Returned Value:
  *
@@ -22,7 +22,7 @@ void get_interface_name(char *mac);
  *   Fetch IPv4/IPv6 address
  *
  * Returned Value:
- *   
+ *
  *
  ****************************************************************************/
 void get_ip_address(char *ipAddr);
@@ -34,7 +34,7 @@ void get_ip_address(char *ipAddr);
  *   Get the router IPv4/IPv6 address
  *
  * Returned Value:
- *   
+ *
  *
  ****************************************************************************/
  void get_router_ip_address(char *routerIPAddr);
@@ -43,7 +43,7 @@ void get_ip_address(char *ipAddr);
  * Name: get_signal_strength
  *
  * Description:
- *  Get Signal Strength value (RSSI in case of IEEE 802.15.4) 
+ *  Get Signal Strength value (RSSI in case of IEEE 802.15.4)
  *
  * Returned Value:
  *   Return the appropriate Callback flags
@@ -58,7 +58,7 @@ uint8_t get_signal_strength(void);
  *   Get link utilization statictics from MAC/PHY
  *
  * Returned Value:
- *   
+ *
  *
  ****************************************************************************/
  int get_link_utilization(void);
@@ -70,7 +70,7 @@ uint8_t get_signal_strength(void);
  *   Get link quality index value from MAC/PHY
  *
  * Returned Value:
- *   
+ *
  *
  ****************************************************************************/
 int get_lqi(void);
@@ -82,7 +82,7 @@ int get_lqi(void);
  *   Get tx data value from MAC/PHY
  *
  * Returned Value:
- *   
+ *
  *
  ****************************************************************************/
 int get_tx_data(void);
@@ -94,7 +94,7 @@ int get_tx_data(void);
  *   Get rx data value from MAC/PHY
  *
  * Returned Value:
- *   
+ *
  *
  ****************************************************************************/
 int get_rx_data(void);
@@ -106,7 +106,7 @@ int get_rx_data(void);
  *   Get maximum message size
  *
  * Returned Value:
- *   
+ *
  *
  ****************************************************************************/
  int get_max_message_size(void);

@@ -60,13 +60,13 @@ static void parseClientResponse(OCClientResponse * clientResponse)
 
     if (!clientResponse || !clientResponse->payload)
     {
-        OIC_LOG_V(WARNING, TAG, "OUT: %s: %s is NULL",__func__, 
+        OIC_LOG_V(WARNING, TAG, "OUT: %s: %s is NULL",__func__,
             !clientResponse ? "clientResponse" : "clientResponse->payload");
         return;
     }
 
     OCResourcePayload* res = ((OCDiscoveryPayload*)clientResponse->payload)->resources;
-    
+
     while (res)
     {
         char *uri = res->uri;

@@ -13,7 +13,7 @@
  * Contributors:
  *    David Navarro, Intel Corporation - initial API and implementation
  *    Toby Jaffey - Please refer to git log
- *    
+ *
  *******************************************************************************/
 
 /*
@@ -731,7 +731,7 @@ static size_t prv_getBase64Size(size_t dataLen)
 }
 
 size_t utils_base64Encode(uint8_t * dataP,
-                          size_t dataLen, 
+                          size_t dataLen,
                           uint8_t * bufferP,
                           size_t bufferLen)
 {
@@ -795,7 +795,7 @@ size_t utils_opaqueToBase64(uint8_t * dataP,
         lwm2m_free(*bufferP);
         *bufferP = NULL;
     }
- 
+
     return result_len;
 }
 

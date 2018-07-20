@@ -2051,7 +2051,7 @@ static OCStackResult PostOwnershipInformation(OTMContext_t* otmCtx)
     memset(propertiesToInclude, 0, sizeof(propertiesToInclude));
     propertiesToInclude[DOXM_OWNED] = true;
     //include rowner uuid
-    propertiesToInclude[DOXM_ROWNERUUID] = true; 
+    propertiesToInclude[DOXM_ROWNERUUID] = true;
     ///doxm.rowneruuid set to the provisioningclient's /doxm.deviceuuid.
     GetDoxmDeviceID(&otmCtx->selectedDeviceInfo->doxm->rownerID);
 

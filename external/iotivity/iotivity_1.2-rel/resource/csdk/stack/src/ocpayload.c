@@ -248,7 +248,7 @@ static void OCFreeRepPayloadValueContents(OCRepPayloadValue* val)
                 OICFree(val->arr.iArray);
                 break;
             case OCREP_PROP_STRING:
-                if (val->arr.strArray != NULL) 
+                if (val->arr.strArray != NULL)
                 {
                     for(size_t i = 0; i < dimTotal; ++i)
                     {

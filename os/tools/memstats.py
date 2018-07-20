@@ -117,7 +117,7 @@ def PLO(size , libObj, currSym, subSym):
 		else:
 			dotO_to_section_to_size_map[dotO][currSymParent] = size
 	else:
-		dotO_to_section_to_size_map[dotO] = {currSymParent:size} 
+		dotO_to_section_to_size_map[dotO] = {currSymParent:size}
 
 def prntLibrarySizes():
 	nfields = len(Required.keys())
@@ -146,11 +146,11 @@ def prntall():
 			for s in Required.keys():
 				if s in dotO_to_section_to_size_map[o].keys():
 					sizearr[Required.keys().index(s)] = dotO_to_section_to_size_map[o][s]
-			
+
 			for r in Required.keys():
 	                        print "\t"+str(sizearr[Required.keys().index(r)]),
 			print "\t" + str(objectSize[o]) + "\t" + o
-	
+
 def printTotalSize():
 	ksSize = [0] * len(Required)
 	for ks in level1.keys():

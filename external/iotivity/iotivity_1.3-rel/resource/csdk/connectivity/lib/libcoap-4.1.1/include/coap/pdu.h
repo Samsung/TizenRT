@@ -604,7 +604,7 @@ void coap_get_token2(const coap_hdr_transport_t *pdu_hdr, coap_transport_t trans
                      unsigned char **token, unsigned int *token_length);
 
 /**
- * Adds option of given type to pdu that is passed as first parameter. 
+ * Adds option of given type to pdu that is passed as first parameter.
  * coap_add_option() destroys the PDU's data, so coap_add_data() must be called
  * after all options have been added. As coap_add_token() destroys the options
  * following the token, the token must be added before coap_add_option() is

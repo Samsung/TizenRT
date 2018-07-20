@@ -80,7 +80,7 @@ CSRCS += src/ap/ieee802_11.c src/ap/dfs.c src/ap/hw_features.c src/ap/ap_list.c 
 CSRCS += src/eapol_auth/eapol_auth_sm.c
 
 #eap/server
-CSRCS += src/eap_server/eap_server.c src/eap_server/eap_server_identity.c src/eap_server/eap_server_methods.c 
+CSRCS += src/eap_server/eap_server.c src/eap_server/eap_server_identity.c src/eap_server/eap_server_methods.c
 CSRCS += src/eap_common/eap_common.c
 
 ifdef CONFIG_WPA_SUPPLICANT_P2P
@@ -112,7 +112,7 @@ CSRCS += src/crypto/sha256.c src/crypto/sha256-internal.c
 CSRCS += src/crypto/crypto_internal-modexp.c src/tls/bignum.c
 
 CSRCS += src/utils/uuid.c src/eap_peer/eap_wsc.c src/eap_common/eap_wsc_common.c src/wps/wps.c src/wps/wps_common.c src/wps/wps_attr_parse.c
-CSRCS += src/wps/wps_attr_build.c src/wps/wps_attr_process.c src/wps/wps_dev_attr.c src/wps/wps_enrollee.c src/wps/wps_registrar.c 
+CSRCS += src/wps/wps_attr_build.c src/wps/wps_attr_process.c src/wps/wps_dev_attr.c src/wps/wps_enrollee.c src/wps/wps_registrar.c
 CSRCS += src/eap_server/eap_server_wsc.c src/ap/wps_hostapd.c wpa_supplicant/wps_supplicant.c
 # src/p2p
 CSRCS += src/p2p/p2p.c src/p2p/p2p_build.c src/p2p/p2p_dev_disc.c src/p2p/p2p_go_neg.c src/p2p/p2p_group.c src/p2p/p2p_invitation.c

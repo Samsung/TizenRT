@@ -161,7 +161,7 @@ int wd_delete(WDOG_ID wdog)
 		DEBUGASSERT(g_wdnfree <= CONFIG_PREALLOC_WDOGS);
 		irqrestore(state);
 	} else {
-		/* There is no guarantee that, this API is not called for statically 
+		/* There is no guarantee that, this API is not called for statically
 		 * allocated timers as wd_delete is a global function. So restore the
 		 * irq properly so that it does not break the system */
 

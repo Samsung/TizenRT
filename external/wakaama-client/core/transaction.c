@@ -308,7 +308,7 @@ bool transaction_handleResponse(lwm2m_context_t * contextP,
 
 #ifdef LWM2M_CLIENT_MODE
         case ENDPOINT_SERVER:
-            if (NULL != transacP->peerP) 
+            if (NULL != transacP->peerP)
             {
                 targetSessionH = ((lwm2m_server_t *)transacP->peerP)->sessionH;
             }
@@ -347,14 +347,14 @@ bool transaction_handleResponse(lwm2m_context_t * contextP,
                         coap_init_message(response, message->protocol, COAP_TYPE_ACK, 0, message->mid);
                         message_send(contextP, response, fromSessionH);
                     }
-                
+
 	                if ((COAP_401_UNAUTHORIZED == message->code) && (COAP_MAX_RETRANSMIT > transacP->retrans_counter))
     	            {
         	            transacP->ack_received = false;
             	        transacP->retrans_time += COAP_RESPONSE_TIMEOUT;
                 	    return true;
                 	}
-				}       
+				}
                 if (transacP->callback != NULL)
                 {
                     transacP->callback(transacP, message);

@@ -41,14 +41,14 @@ typedef void(*OCAssertRolesCB)(void* ctx, bool hasError);
 /**
  * Assert all roles to a device. This POSTs all role certificates from the
  * local cred resource to /oic/sec/roles.
- * 
+ *
  * @param[in] ctx User context to be passed to resultCallback
  * @param[in] devAddr  The device to assert the roles to
  * @param[in] resultCallback Callback that is called with the response from the device
  * @return ::OC_STACK_OK in case of success and other value otherwise. If no role certificates
  *         are installed, the error code OC_STACK_INCONSISTENT_DB is returned.
  *
- * @note The port field of the devAddr parameter MUST contain the secure port of the peer. 
+ * @note The port field of the devAddr parameter MUST contain the secure port of the peer.
  *
  */
 OCStackResult OC_CALL OCAssertRoles(void *ctx, const OCDevAddr *devAddr, OCAssertRolesCB resultCallback);

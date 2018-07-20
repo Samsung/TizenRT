@@ -202,7 +202,7 @@ CC = gcc
 CCDEPMODE = depmode=gcc3
 CFLAGS = -g -O2
 CPP = gcc -E
-CPPFLAGS = 
+CPPFLAGS =
 CXX = g++
 CXXCPP = g++ -E
 CXXDEPMODE = depmode=gcc3
@@ -211,13 +211,13 @@ CYGPATH_W = echo
 DEFS = -DHAVE_CONFIG_H
 DEPDIR = .deps
 DLLTOOL = false
-DSYMUTIL = 
-DUMPBIN = 
-ECHO_C = 
+DSYMUTIL =
+DUMPBIN =
+ECHO_C =
 ECHO_N = -n
-ECHO_T = 
+ECHO_T =
 EGREP = /bin/grep -E
-EXEEXT = 
+EXEEXT =
 FGREP = /bin/grep -F
 GREP = /bin/grep
 INSTALL = /usr/bin/install -c
@@ -226,37 +226,37 @@ INSTALL_PROGRAM = ${INSTALL}
 INSTALL_SCRIPT = ${INSTALL}
 INSTALL_STRIP_PROGRAM = $(install_sh) -c -s
 LD = /usr/bin/ld -m elf_x86_64
-LDFLAGS = 
-LIBOBJS = 
-LIBS = 
+LDFLAGS =
+LIBOBJS =
+LIBS =
 LIBTOOL = $(SHELL) $(top_builddir)/libtool
-LIPO = 
+LIPO =
 LN_S = ln -s
-LTLIBOBJS = 
+LTLIBOBJS =
 MAKEINFO = ${SHELL} /home/jaehong/git/integ_rel/extlibs/gtest/gtest-1.7.0/build-aux/missing --run makeinfo
 MANIFEST_TOOL = :
 MKDIR_P = /bin/mkdir -p
 NM = /usr/bin/nm -B
-NMEDIT = 
+NMEDIT =
 OBJDUMP = objdump
 OBJEXT = o
-OTOOL = 
-OTOOL64 = 
+OTOOL =
+OTOOL64 =
 PACKAGE = gtest
 PACKAGE_BUGREPORT = googletestframework@googlegroups.com
 PACKAGE_NAME = Google C++ Testing Framework
 PACKAGE_STRING = Google C++ Testing Framework 1.7.0
 PACKAGE_TARNAME = gtest
-PACKAGE_URL = 
+PACKAGE_URL =
 PACKAGE_VERSION = 1.7.0
 PATH_SEPARATOR = :
 PTHREAD_CC = gcc
 PTHREAD_CFLAGS = -pthread
-PTHREAD_LIBS = 
+PTHREAD_LIBS =
 PYTHON = /usr/bin/python
 RANLIB = ranlib
 SED = /bin/sed
-SET_MAKE = 
+SET_MAKE =
 SHELL = /bin/bash
 STRIP = strip
 VERSION = 1.7.0
@@ -267,16 +267,16 @@ abs_top_srcdir = /home/jaehong/git/integ_rel/extlibs/gtest/gtest-1.7.0
 ac_ct_AR = ar
 ac_ct_CC = gcc
 ac_ct_CXX = g++
-ac_ct_DUMPBIN = 
-acx_pthread_config = 
+ac_ct_DUMPBIN =
+acx_pthread_config =
 am__include = include
 am__leading_dot = .
-am__quote = 
+am__quote =
 am__tar = $${TAR-tar} chof - "$$tardir"
 am__untar = $${TAR-tar} xf -
 bindir = ${exec_prefix}/bin
 build = x86_64-unknown-linux-gnu
-build_alias = 
+build_alias =
 build_cpu = x86_64
 build_os = linux-gnu
 build_vendor = unknown
@@ -287,7 +287,7 @@ docdir = ${datarootdir}/doc/${PACKAGE_TARNAME}
 dvidir = ${docdir}
 exec_prefix = ${prefix}
 host = x86_64-unknown-linux-gnu
-host_alias = 
+host_alias =
 host_cpu = x86_64
 host_os = linux-gnu
 host_vendor = unknown
@@ -310,8 +310,8 @@ sbindir = ${exec_prefix}/sbin
 sharedstatedir = ${prefix}/com
 srcdir = .
 sysconfdir = ${prefix}/etc
-target_alias = 
-top_build_prefix = 
+target_alias =
+top_build_prefix =
 top_builddir = .
 top_srcdir = .
 ACLOCAL_AMFLAGS = -I m4
@@ -429,7 +429,7 @@ AM_CPPFLAGS = -I$(srcdir) -I$(srcdir)/include
 
 # Modifies compiler and linker flags for pthreads compatibility.
 AM_CXXFLAGS = -pthread -DGTEST_HAS_PTHREAD=1
-AM_LIBS = 
+AM_LIBS =
 
 # Build rules for libraries.
 lib_LTLIBRARIES = lib/libgtest.la lib/libgtest_main.la
@@ -553,7 +553,7 @@ build-aux/config.h: build-aux/stamp-h1
 build-aux/stamp-h1: $(top_srcdir)/build-aux/config.h.in $(top_builddir)/config.status
 	@rm -f build-aux/stamp-h1
 	cd $(top_builddir) && $(SHELL) ./config.status build-aux/config.h
-$(top_srcdir)/build-aux/config.h.in:  $(am__configure_deps) 
+$(top_srcdir)/build-aux/config.h.in:  $(am__configure_deps)
 	($(am__cd) $(top_srcdir) && $(AUTOHEADER))
 	rm -f build-aux/stamp-h1
 	touch $@

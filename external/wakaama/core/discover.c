@@ -323,7 +323,7 @@ int discover_serialize(lwm2m_context_t * contextP,
 
         // get object level attributes
         objParamP = prv_findAttributes(contextP, &tempUri, serverP);
-        
+
         // get object instance level attributes
         tempUri.instanceId = uriP->instanceId;
         tempUri.flag = LWM2M_URI_FLAG_INSTANCE_ID;

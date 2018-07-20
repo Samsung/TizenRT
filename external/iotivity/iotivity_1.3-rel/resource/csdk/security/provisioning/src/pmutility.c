@@ -1465,7 +1465,7 @@ static OCStackApplicationResult MOTDeviceDiscoveryHandler(void *ctx, OCDoHandle 
  * @param[in]  timeoutSeconds  Maximum time, in seconds, this function will listen for responses from
  *                             servers before returning.
  * @param[in]  deviceID        deviceID of target device.
- * @param[out] ppFoundDevice   OCProvisionDev_t of found device. Caller should use PMDeleteDeviceList 
+ * @param[out] ppFoundDevice   OCProvisionDev_t of found device. Caller should use PMDeleteDeviceList
  *                             to delete the device.
  *
  * @return OC_STACK_OK on success otherwise error.
@@ -1638,7 +1638,7 @@ OCStackResult PMMultipleOwnerDeviceDiscovery(unsigned short waittime, bool isMul
  * @return OC_STACK_OK in case of success and other value otherwise.
  */
 OCStackResult PMIsSubownerOfDevice(OCProvisionDev_t *device, bool *isSubowner)
-{  
+{
     if ((NULL == device) || (NULL == isSubowner))
     {
         return OC_STACK_INVALID_PARAM;

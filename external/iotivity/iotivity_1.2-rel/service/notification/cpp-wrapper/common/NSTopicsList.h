@@ -99,7 +99,7 @@ namespace OIC
 
                 /**
                      * This method is for preventing for add/remove Topic from Topicslist.
-                     * Below method restricts the application from illegally modifying Topics when 
+                     * Below method restricts the application from illegally modifying Topics when
                      * Provider is in Invalid state. By calling the API, the service prevents and protects
                      * the integrity of TopicsList updation when the associated object is Invalid.
                      *

@@ -9,7 +9,7 @@ config NETDEV_PHY_IOCTL
 	bool "Enable PHY ioctl()"
 	default n
 	---help---
-		Enable support for ioctl() commands to access PHY registers"	
-		
+		Enable support for ioctl() commands to access PHY registers"
+
 
 endmenu # Network Device Operations

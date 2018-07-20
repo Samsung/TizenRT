@@ -526,7 +526,7 @@ namespace OC
         *         not observable.
         */
         bool isObservable() const;
-        
+
         OCDevAddr getDevAddr() const;
 
 #ifdef WITH_MQ

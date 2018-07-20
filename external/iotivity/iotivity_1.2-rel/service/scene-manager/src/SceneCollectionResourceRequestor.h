@@ -46,7 +46,7 @@ namespace OIC
                     ADD_SCENE, REMOVE_SCENE, EXECUTE_SCENE
                 };
 
-                typedef std::function< 
+                typedef std::function<
                     void(REQUEST_TYPE, const std::string &name, int eCode) >
                         InternalSceneRequestCallback;
 
@@ -112,7 +112,7 @@ namespace OIC
                 mutable std::mutex m_memberRequestorLock;
                 std::map< std::string, SceneMemberResourceRequestor::Ptr > m_memberRequestors;
         };
-        
+
     }
 }
 

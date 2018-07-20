@@ -55,8 +55,8 @@
 include $(APPDIR)/Make.defs
 
 CSRCS  = websocket.c
-CSRCS += wslay/wslay_net.c wslay/wslay_queue.c wslay/wslay_frame.c wslay/wslay_event.c 
-DEPPATH = --dep-path . 
+CSRCS += wslay/wslay_net.c wslay/wslay_queue.c wslay/wslay_frame.c wslay/wslay_event.c
+DEPPATH = --dep-path .
 VPATH = .
 
 AOBJS		= $(ASRCS:.S=$(OBJEXT))

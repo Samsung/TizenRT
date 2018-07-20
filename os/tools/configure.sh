@@ -183,7 +183,7 @@ if [ -z "${appdir}" ]; then
 
   if [ -d "${TOPDIR}/../apps" ]; then
     appdir="../apps"
-    
+
 
   else
     # Check for a versioned apps/ directory

@@ -59,7 +59,7 @@ namespace ElevatorClientUWP
 
     private:
         static Platform::String^ guidStr;
-        
+
         Platform::WeakReference* m_thisWeakRef;
         Windows::UI::Core::CoreDispatcher^ m_dispatcher;
 

@@ -58,11 +58,11 @@ bool NSInitScheduler()
 
 #ifdef __TIZENRT__
 
-static int 
-embos_pthread_create(pthread_t *thread, 
-					 pthread_attr_t *attr, 
-					 pthread_startroutine_t start_routine, 
-					 pthread_addr_t arg, 
+static int
+embos_pthread_create(pthread_t *thread,
+					 pthread_attr_t *attr,
+					 pthread_startroutine_t start_routine,
+					 pthread_addr_t arg,
 					 const char *task_name, int stack_size)
 {
    /* All callers have null attr, so ignore it for simple implementation*/

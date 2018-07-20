@@ -153,7 +153,7 @@ void pthread_exit(FAR void *exit_value)
 
 		exit(EXIT_FAILURE);
 	}
-	
+
 #ifndef CONFIG_PTHREAD_MUTEX_UNSAFE
 	/* Recover any mutexes still held by the canceled thread */
 	pthread_mutex_inconsistent((FAR struct pthread_tcb_s *)tcb);

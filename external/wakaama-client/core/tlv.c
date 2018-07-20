@@ -14,7 +14,7 @@
  *    David Navarro, Intel Corporation - initial API and implementation
  *    Fabien Fleutot - Please refer to git log
  *    Bosch Software Innovations GmbH - Please refer to git log
- *    
+ *
  *******************************************************************************/
 
 #include "internals.h"
@@ -377,7 +377,7 @@ static size_t prv_getLength(int size,
 }
 
 
-size_t tlv_serialize(bool isResourceInstance, 
+size_t tlv_serialize(bool isResourceInstance,
                      int size,
                      lwm2m_data_t * dataP,
                      uint8_t ** bufferP)

@@ -361,7 +361,7 @@ OCStackResult OC_CALL OCProvisionCredentials(void *ctx, OicSecCredType_t type, s
  * @param[in] type Type of credentials to be provisioned to the device.
  * @param[in] keySize size of key
  * @param[in] pDev1 Pointer to OCProvisionDev_t instance, representing the resource to be provisioned.
- * @param[in] pDev2 Pointer to OCProvisionDev_t instance, representing the resource to be provisioned. 
+ * @param[in] pDev2 Pointer to OCProvisionDev_t instance, representing the resource to be provisioned.
  *                  Use NULL to indicate the local device.
  * @param[in] role1 The role which the device indicated by pDev1 will have when communicating with pDev2.
  *                  Use NULL to associate no role with this credential.

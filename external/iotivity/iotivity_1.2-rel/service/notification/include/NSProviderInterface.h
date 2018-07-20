@@ -57,7 +57,7 @@ typedef struct
     NSSubscribeRequestCallback subRequestCallback;
     /* Invoked when the synchronization data, read and deleted, is sent by consumer is received */
     NSProviderSyncInfoCallback syncInfoCallback;
-    /* Set the policy for notification servcie which checks whether provider is capable of 
+    /* Set the policy for notification servcie which checks whether provider is capable of
      * denying the subscription of notification message from consumer
      * and getting controllabliity to set consumer topic list.
      * If true, provider is able to control subscription request and consumer topic list.

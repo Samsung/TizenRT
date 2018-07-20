@@ -223,8 +223,8 @@ int wifi_test_proc(int argc, char *argv[])
 	}
 
 	printf("[WiFi] APIs Test Done.\n");
-	
-	
+
+
 error_out:
 	if (g_aps) {
 		free(g_aps);

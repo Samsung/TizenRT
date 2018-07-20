@@ -28,7 +28,7 @@ extern "C"
 
 typedef enum
 {
-    /** No error.*/ 
+    /** No error.*/
     WIFI_NO_ERROR = 0,
     /** Tizen WiFi Init Error.*/
     WIFI_INIT_ERROR,

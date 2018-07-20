@@ -12,7 +12,7 @@
  *
  * Contributors:
  *    David Navarro, Intel Corporation - initial API and implementation
- *    
+ *
  *******************************************************************************/
 
 #ifndef CONNECTION_H_

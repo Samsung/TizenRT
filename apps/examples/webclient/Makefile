@@ -62,7 +62,7 @@ THREADEXEC = TASH_EXECMD_ASYNC
 # webclient example
 
 ASRCS =
-CSRCS = 
+CSRCS =
 MAINSRC = webclient_main.c
 
 AOBJS = $(ASRCS:.S=$(OBJEXT))

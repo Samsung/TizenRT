@@ -64,7 +64,7 @@ static bool g_CAIPNetworkMonitorSomeAddressWentAway = false;
 typedef struct CANewAddress_t {
     struct CANewAddress_t *next;
     struct CANewAddress_t *prev;
-    CAInterface_t *ipAddressInfo; 
+    CAInterface_t *ipAddressInfo;
 } CANewAddress_t;
 
 /**

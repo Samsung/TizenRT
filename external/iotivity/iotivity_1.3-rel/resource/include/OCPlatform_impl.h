@@ -218,7 +218,7 @@ namespace OC
         * @param resourceProperty indicates the property of the resource. Defined in octypes.h.
         * setting resourceProperty as OC_DISCOVERABLE will allow Discovery of this resource
         * setting resourceProperty as OC_OBSERVABLE will allow observation
-        * setting resourceProperty as OC_DISCOVERABLE | OC_OBSERVABLE will allow both discovery 
+        * setting resourceProperty as OC_DISCOVERABLE | OC_OBSERVABLE will allow both discovery
         * and observation
         *
         * @return Returns ::OC_STACK_OK if success.

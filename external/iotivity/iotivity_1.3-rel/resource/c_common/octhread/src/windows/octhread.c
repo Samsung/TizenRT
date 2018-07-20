@@ -352,7 +352,7 @@ OCWaitResult_t oc_cond_wait_for(oc_cond cond, oc_mutex mutex, uint64_t microseco
     mutexInfo->owner = OC_INVALID_THREAD_ID;
 #endif
 
-    // Wait for the given time        
+    // Wait for the given time
     if (!SleepConditionVariableCS(&eventInfo->cond, &mutexInfo->mutex, milli))
     {
         if (GetLastError() == ERROR_TIMEOUT)

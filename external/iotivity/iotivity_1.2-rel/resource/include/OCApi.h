@@ -230,7 +230,7 @@ namespace OC
                 ps(ps_),
                 psEnc(psEnc_),
                 psRescue(psRescue_)
- 
+
         {}
 
             PlatformConfig(const ServiceType serviceType_,

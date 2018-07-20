@@ -20,7 +20,7 @@ set -e
 [ ! -z ${EXEC_MODE} ] || EXEC_MODE=false
 
 
-# Right now this script assumes packageRevision is a tag; 
+# Right now this script assumes packageRevision is a tag;
 # comment out the second clause if packageRevision becomes a branch or a specific commit.
 package="mbedtls"
 packageRevision='mbedtls-2.4.2'

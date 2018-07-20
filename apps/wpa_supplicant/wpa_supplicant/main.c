@@ -302,7 +302,7 @@ int wpa_supplicant_task(int argc, char *argv[])
 
 	argv[argc] = NULL;
 
-	task = task_create("WPA Supplicant", CONFIG_WPA_SUPPLICANT_PRIORITY, CONFIG_WPA_SUPPLICANT_STACKSIZE, (main_t)CONFIG_WPA_SUPPLICANT_ENTRYPOINT, 
+	task = task_create("WPA Supplicant", CONFIG_WPA_SUPPLICANT_PRIORITY, CONFIG_WPA_SUPPLICANT_STACKSIZE, (main_t)CONFIG_WPA_SUPPLICANT_ENTRYPOINT,
 					   &argv[1]);
 
 	sleep(1);

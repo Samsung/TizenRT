@@ -23,7 +23,7 @@ config NET_IP_OPTIONS_ALLOWED
 	---help---
 		If disabled, all packets with IP options are dropped.
 		If enabled, IP options are allowed (but not parsed).
-		
+
 config NET_IP_FRAG
 	bool "IP fragment support"
 	default y

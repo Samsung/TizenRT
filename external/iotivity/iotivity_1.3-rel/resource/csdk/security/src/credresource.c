@@ -3917,7 +3917,7 @@ void GetPrimaryCertKey(ByteArray_t * key)
     OIC_LOG_V(DEBUG, TAG, "In %s", __func__);
 
     VERIFY_NOT_NULL(TAG, key, ERROR);
-    
+
     key->len = 0;
     OicSecCred_t * temp = NULL;
 

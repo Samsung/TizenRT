@@ -112,7 +112,7 @@ static coap_status_t handle_request(lwm2m_context_t * contextP,
     coap_status_t result = COAP_IGNORE;
 
     LOG("Entering");
-	
+
 #ifdef LWM2M_CLIENT_MODE
     uriP = uri_decode(contextP->altPath, message->uri_path);
 #else

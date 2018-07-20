@@ -144,7 +144,7 @@ static size_t GetDatabaseSize(const OCPersistentStorage *ps, const char *databas
 
 /**
  * Reads the database from PS
- * 
+ *
  * @note Caller of this method MUST use OICFree() method to release memory
  *       referenced by the data argument.
  *

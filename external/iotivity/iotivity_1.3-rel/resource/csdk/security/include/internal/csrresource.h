@@ -53,8 +53,8 @@ OCStackResult DeInitCSRResource();
  * @param[out] csrLen Length of csr
  * @param[out] encoding Encoding of CSR (OIC_ENCODING_PEM or OIC_ENCODING_DER)
  */
-OCStackResult CBORPayloadToCSR(const uint8_t *cborPayload, size_t size, 
-                               uint8_t **csr, size_t *csrLen, 
+OCStackResult CBORPayloadToCSR(const uint8_t *cborPayload, size_t size,
+                               uint8_t **csr, size_t *csrLen,
                                OicEncodingType_t *encoding);
 #ifdef __cplusplus
 }

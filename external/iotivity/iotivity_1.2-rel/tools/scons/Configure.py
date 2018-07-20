@@ -69,7 +69,7 @@ def __action( target, source, env ) :
 # Define the builder's emitter
 #
 # @param target target file on the local drive
-# @param source 
+# @param source
 # @param env environment object
 def __emitter( target, source, env ) :
     return target, source

@@ -18,12 +18,12 @@
  *
  * Description:
  *   Get the underlined interface name
- *   
+ *
  *
  * Returned Value:
  *
  ****************************************************************************/
- 
+
 void get_interface_name(char *mac)
 {
 #if defined(CONFIG_NET_ETHERNET)
@@ -41,10 +41,10 @@ void get_interface_name(char *mac)
  *   Fetch IPv4/IPv6 address
  *
  * Returned Value:
- *   
+ *
  *
  ****************************************************************************/
- 
+
 void get_ip_address(char *ipAddr)
 {
 	printf("Calling inet_ntop\n");
@@ -70,15 +70,15 @@ void get_ip_address(char *ipAddr)
  *   Get the router IPv4/IPv6 address
  *
  * Returned Value:
- *   
+ *
  *
  ****************************************************************************/
- 
+
 void get_router_ip_address(char *routerIPAddr)
 {
 	char mac[4];
 	get_interface_name(mac);
-#ifdef CONFIG_NET_IPv4	
+#ifdef CONFIG_NET_IPv4
 	struct in_addr addr;
 	netlib_get_dripv4addr(mac,addr);
 	inet_ntop(AF_INET, &addr, routerIPAddr, INET_ADDRSTRLEN);
@@ -87,20 +87,20 @@ void get_router_ip_address(char *routerIPAddr)
 	struct in6_addr addr;
 	netlib_get_dripv6addr(mac,addr);
 	inet_ntop(AF_INET6, &addr, routerIPAddr, INET6_ADDRSTRLEN);
-#endif		
+#endif
 }
 
 /****************************************************************************
  * Name: get_signal_strength
  *
  * Description:
- *  Get Signal Strength value (RSSI in case of IEEE 802.15.4) 
+ *  Get Signal Strength value (RSSI in case of IEEE 802.15.4)
  *
  * Returned Value:
  *   Return the appropriate Callback flags
  *
  ****************************************************************************/
- 
+
 uint8_t get_signal_strength(void)
 {
 #if defined(CONFIG_NET_802154)
@@ -116,7 +116,7 @@ uint8_t get_signal_strength(void)
  *   Get link quality index value from MAC/PHY
  *
  * Returned Value:
- *   
+ *
  *
  ****************************************************************************/
 
@@ -135,10 +135,10 @@ int get_lqi(void)
  *   Get link utilization statictics from MAC/PHY
  *
  * Returned Value:
- *   
+ *
  *
  ****************************************************************************/
- 
+
 int get_link_utilization(void)
 {
 	return 0;
@@ -152,10 +152,10 @@ int get_link_utilization(void)
  *   Get tx data value from MAC/PHY
  *
  * Returned Value:
- *   
+ *
  *
  ****************************************************************************/
- 
+
 int get_tx_data()
 {
 //TODO: Feature implementation
@@ -169,10 +169,10 @@ int get_tx_data()
  *   Get rx data value from MAC/PHY
  *
  * Returned Value:
- *   
+ *
  *
  ****************************************************************************/
- 
+
 int get_rx_data()
 {
 ///TODO: Feature implementation
@@ -186,7 +186,7 @@ int get_rx_data()
  *   Get maximum message size
  *
  * Returned Value:
- *   
+ *
  *
  ****************************************************************************/
 int get_max_message_size()

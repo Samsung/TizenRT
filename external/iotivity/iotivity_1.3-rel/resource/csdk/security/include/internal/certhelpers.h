@@ -40,7 +40,7 @@
  *
  * @return 0 on success, <0 on failure
  */
-int OCInternalCSRRequest(const char *subject, mbedtls_pk_context *keyPair, 
+int OCInternalCSRRequest(const char *subject, mbedtls_pk_context *keyPair,
                          OicEncodingType_t encoding, OCByteString *csr);
 
 /**
@@ -65,7 +65,7 @@ int OCInternalGenerateKeyPair(mbedtls_pk_context *keyPair);
  * 3. It contains at least one Subject Alternative Name extension that validly encodes a role.
  *
  * It does NOT validate the cryptographic signature nor check its time validity.
- * These checks should be done when the certificate is being used as part of an access control check, 
+ * These checks should be done when the certificate is being used as part of an access control check,
  * as that is when the time validity check should be made, and when trusted CAs are known.
  *
  * @param[in] buf           Buffer containing certificate as a PEM string
@@ -86,7 +86,7 @@ OCStackResult OCInternalIsValidRoleCertificate(const uint8_t *buf, size_t bufLen
 /**
  * Determine if a buffer contains a valid chain of certificates. This is intended to verify
  * one or more intermediate CA certificates are valid.
- * 
+ *
  * This only checks that they are valid X.509 structures; no verification of the cryptographic
  * signature of time-validity is performed. These should be done at point of use.
  *

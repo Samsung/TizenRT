@@ -125,7 +125,7 @@ int pthread_mutex_destroy(FAR pthread_mutex_t *mutex)
 
 		if (mutex->pid >= 0) {
 			DEBUGASSERT(mutex->pid != 0);	/* < 0: available, >0 owned, ==0 error */
-		
+
 
 			/* No.. Verify that the PID still exists.  We may be destroying
 			 * the mutex after cancelling a pthread and the mutex may have

@@ -583,7 +583,7 @@ OCRepPayload** BuildCollectionLinksPayloadArray(const char* resourceUri,
                 OIC_LOG(ERROR, TAG, "Failed setting rel property");
                 result = false;
                 goto exit;
-            } 
+            }
         }
         result = true;
     }

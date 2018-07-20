@@ -27,7 +27,7 @@
 
 
 /*
- * This is IoTivity's version of config.h, to customize the mbedtls build. 
+ * This is IoTivity's version of config.h, to customize the mbedtls build.
  * Mainly it reduces the features of the library, to only those that are
  * requied by IoTivity.
  */
@@ -1908,7 +1908,7 @@
 /**
  * \def MBEDTLS_HMAC_DRBG_C
  *
- * Enable the HMAC_DRBG random generator. 
+ * Enable the HMAC_DRBG random generator.
  * Required for deterministic ECDSA (MBEDTLS_ECDSA_DETERMINISTIC).
  *
  * Module:  library/hmac_drbg.c

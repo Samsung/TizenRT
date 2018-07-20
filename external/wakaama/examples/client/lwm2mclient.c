@@ -1327,7 +1327,7 @@ int lwm2m_client_main(int argc, char *argv[])
         fprintf(stderr, "lwm2m_init2() failed\r\n");
         return -1;
     }
-	
+
     /*
      * We configure the liblwm2m library with the name of the client - which shall be unique for each client -
      * the number of objects we will be passing through and the objects array
@@ -1387,12 +1387,12 @@ int lwm2m_client_main(int argc, char *argv[])
                 tv.tv_sec = reboot_time - tv_sec;
             }
         }
-        else if (batterylevelchanging) 
+        else if (batterylevelchanging)
         {
             update_battery_level(lwm2mH);
             tv.tv_sec = 5;
         }
-        else 
+        else
         {
             tv.tv_sec = 60;
         }

@@ -67,14 +67,14 @@ inline float GetAverageTemperatureRaw()
     {
         tmp_aio = mraa_aio_init(TEMPERATURE_AIO_PIN); // initialize pin 0
     }
-    
+
     uint16_t adc_value = 0;
     for (int i=0; i< SAMPLE_NUM; i++)
         adc_value += mraa_aio_read(tmp_aio);           // read the raw value
-    
+
     float average = (float)adc_value/SAMPLE_NUM;
     cout << "Temperature reading raw ..."  << average << endl;
-    
+
     return average;
 }
 
@@ -88,13 +88,13 @@ inline float GetTemperatureInC()
     //
     float beta = 4090.0;            //the beta of the thermistor, magic number
     float t_raw = GetAverageTemperatureRaw();
-    float R = 1023.0/t_raw -1;      // 
+    float R = 1023.0/t_raw -1;      //
     R = 10000.0/R;                  // 10K resistor divider circuit
-        
-    float T1 = log(R/10000.0)/beta; // natural log 
+
+    float T1 = log(R/10000.0)/beta; // natural log
     float T2 = T1 + 1.0/298.15;     // room temp 25C= 298.15K
     float ret = 1.0/T2 - 273.0;
- 
+
     return ret;
 }
 

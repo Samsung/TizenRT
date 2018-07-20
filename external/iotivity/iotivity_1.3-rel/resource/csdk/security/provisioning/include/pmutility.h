@@ -90,10 +90,10 @@ OCStackResult PMDeviceDiscovery(unsigned short waittime, bool isOwned, OCProvisi
  * The function will return when security information for device with deviceID has been obtained or the
  * timeout has been exceeded.
  *
- * @param[in]  timeoutSeconds  Maximum time, in seconds, this function will listen for responses from 
+ * @param[in]  timeoutSeconds  Maximum time, in seconds, this function will listen for responses from
  *                             servers before returning.
  * @param[in]  deviceID        deviceID of target device.
- * @param[out] ppFoundDevice   OCProvisionDev_t of found device. Caller should use PMDeleteDeviceList 
+ * @param[out] ppFoundDevice   OCProvisionDev_t of found device. Caller should use PMDeleteDeviceList
  *                             to delete the device.
  *
  * @return OC_STACK_OK on success otherwise error.

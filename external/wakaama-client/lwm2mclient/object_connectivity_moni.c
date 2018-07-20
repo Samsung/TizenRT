@@ -1,6 +1,6 @@
 /*******************************************************************************
  *
- * Copyright (c) 2014 Bosch Software Innovations GmbH Germany. 
+ * Copyright (c) 2014 Bosch Software Innovations GmbH Germany.
  * All rights reserved. This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License v1.0
  * and Eclipse Distribution License v1.0 which accompany this distribution.
@@ -13,12 +13,12 @@
  * Contributors:
  *    Bosch Software Innovations GmbH - Please refer to git log
  *    Pascal Rieux - Please refer to git log
- *    
+ *
  *******************************************************************************/
 
 /*
  *  This Connectivity Monitoring object is optional and has a single instance
- * 
+ *
  *  Resources:
  *
  *          Name             | ID | Oper. | Inst. | Mand.|  Type   | Range | Units |
@@ -244,7 +244,7 @@ lwm2m_object_t * get_object_conn_m(object_conn_monitoring_t *default_value)
          * It assigns his unique ID
          */
         connObj->objID = LWM2M_CONN_MONITOR_OBJECT_ID;
-        
+
         /*
          * and its unique instance
          *
@@ -259,7 +259,7 @@ lwm2m_object_t * get_object_conn_m(object_conn_monitoring_t *default_value)
             lwm2m_free(connObj);
             return NULL;
         }
-        
+
         /*
          * And the private function that will access the object.
          * Those function will be called when a read/write/execute query is made by the server. In fact the library don't need to

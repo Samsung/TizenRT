@@ -40,7 +40,7 @@ public:
 class Test {
 public:
     std::string name;
-    Test(std::string name) 
+    Test(std::string name)
     : name(name)
     {
     }

@@ -1185,7 +1185,7 @@ int virtual_function_index(unsigned char *func)
 		{ // mov ecx, this; jump [eax + v/Ib/Iw]
 		case 0x20ff018b: return 0;
 #ifdef _WIN32
-		case 0x0424448b: 
+		case 0x0424448b:
 			if (func[7] == 0x20)
 				return 0;
 			return *(unsigned char *)(func + 8) / sizeof(void*);

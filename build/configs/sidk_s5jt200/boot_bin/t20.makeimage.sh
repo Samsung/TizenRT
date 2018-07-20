@@ -39,7 +39,7 @@ case $arg1 in
 	sss )
 	echo "attach sss f/w version"
 	#sss f/w can be upto 32KB
-	#32768 - 12	
+	#32768 - 12
 	printf "DATE%s" $(date '+%Y%m%d')  | dd of=t20.sss.fw.bin bs=1 seek=32756 count=12
 	;;
     *)

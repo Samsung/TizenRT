@@ -33,7 +33,7 @@
 
 OCStackResult PMGeneratePairWiseCredentials(OicSecCredType_t type, size_t keySize,
         const OicUuid_t *firstDeviceId,
-        const OicUuid_t *secondDeviceId, 
+        const OicUuid_t *secondDeviceId,
         const OicSecRole_t *firstRole, const OicSecRole_t *secondRole,
         OicSecCred_t **firstCred, OicSecCred_t **secondCred)
 {

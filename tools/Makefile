@@ -57,7 +57,7 @@ DEPPATH = --dep-path .
 
 SUBDIRS =
 
-all: $(SUBDIRS) 
+all: $(SUBDIRS)
 .PHONY: $(SUBDIRS) context depend clean distclean
 
 context: $(SUBDIRS)
@@ -66,7 +66,7 @@ $(SUBDIRS):
 	@echo "make tools: $@"
 	$(Q) $(MAKE) -C $@
 
-.depend: 
+.depend:
 
 depend: .depend
 

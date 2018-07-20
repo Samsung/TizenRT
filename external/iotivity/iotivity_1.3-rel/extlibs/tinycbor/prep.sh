@@ -23,8 +23,8 @@ set -e
 topdir="${PWD}"
 
 # Keep packageRevision in sync with extlibs/tinycbor/SConscript's setting
-# Right now this script assumes packageRevision is a tag; 
-# comment out the second clause 
+# Right now this script assumes packageRevision is a tag;
+# comment out the second clause
 # if packageRevision becomes a branch or a specific commit.
 package="tinycbor"
 packageUrl="https://github.com/01org/tinycbor"

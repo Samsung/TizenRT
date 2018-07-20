@@ -113,7 +113,7 @@ int pthread_cancel(pthread_t thread)
 
 	tcb = (FAR struct pthread_tcb_s *)sched_gettcb((pid_t)thread);
 	if (!tcb) {
-	
+
 		/* The pid does not correspond to any known thread.  The thread
 		 * has probably already exited.
 		 */
