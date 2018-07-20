@@ -63,21 +63,19 @@ void MediaPlayerImpl::createPlayer(player_result_t &ret)
 	if (mCurState != PLAYER_STATE_NONE) {
 		meddbg("MediaPlayer create fail : wrong state\n");
 		ret = PLAYER_ERROR;
-		mSyncCv.notify_one();
-		return;
+		return notifySync();
 	}
 
 	audio_manager_result_t result = init_audio_stream_out();
 	if (result != AUDIO_MANAGER_SUCCESS) {
 		meddbg("Fail to initialize output audio stream : %d\n", result);
 		ret = PLAYER_ERROR;
-		mSyncCv.notify_one();
-		return;
+		return notifySync();
 	}
 
 	mCurState = PLAYER_STATE_IDLE;
 	ret = PLAYER_OK;
-	mSyncCv.notify_one();
+	notifySync();
 }
 
 player_result_t MediaPlayerImpl::destroy()
@@ -116,13 +114,12 @@ void MediaPlayerImpl::destroyPlayer(player_result_t &ret)
 		meddbg("MediaPlayer destroy fail : wrong state\n");
 		ret = PLAYER_ERROR;
 		notifyObserver(PLAYER_OBSERVER_COMMAND_ERROR);
-		mSyncCv.notify_one();
-		return;
+		return notifySync();
 	}
 
 	mCurState = PLAYER_STATE_NONE;
 	ret = PLAYER_OK;
-	mSyncCv.notify_one();
+	notifySync();
 }
 
 player_result_t MediaPlayerImpl::prepare()
@@ -183,12 +180,12 @@ void MediaPlayerImpl::preparePlayer(player_result_t &ret)
 
 	mCurState = PLAYER_STATE_READY;
 	ret = PLAYER_OK;
-	mSyncCv.notify_one();
-	return;
+	return notifySync();
+	
 errout:
 	ret = PLAYER_ERROR;
 	notifyObserver(PLAYER_OBSERVER_COMMAND_ERROR);
-	mSyncCv.notify_one();
+	notifySync();
 }
 
 player_result_t MediaPlayerImpl::unprepare()
@@ -234,12 +231,12 @@ void MediaPlayerImpl::unpreparePlayer(player_result_t &ret)
 
 	mCurState = PLAYER_STATE_IDLE;
 	ret = PLAYER_OK;
-	mSyncCv.notify_one();
-	return;
+	return notifySync();
+
 errout:
 	ret = PLAYER_ERROR;
 	notifyObserver(PLAYER_OBSERVER_COMMAND_ERROR);
-	mSyncCv.notify_one();
+	notifySync();
 }
 
 player_result_t MediaPlayerImpl::start()
@@ -379,7 +376,7 @@ void MediaPlayerImpl::getVolumePlayer(int &ret)
 	medvdbg("MediaPlayer Worker : getVolume\n");
 
 	ret = get_output_audio_volume();
-	mSyncCv.notify_one();
+	notifySync();
 }
 
 player_result_t MediaPlayerImpl::setVolume(int vol)
@@ -419,13 +416,12 @@ void MediaPlayerImpl::setVolumePlayer(int vol, player_result_t &ret)
 
 	medvdbg("MediaPlayer setVolume success\n");
 	ret = PLAYER_OK;
-	mSyncCv.notify_one();
-	return;
+	return notifySync();
 
 errout:
 	notifyObserver(PLAYER_OBSERVER_COMMAND_ERROR);
 	ret = PLAYER_ERROR;
-	mSyncCv.notify_one();
+	notifySync();
 }
 
 
@@ -463,12 +459,11 @@ void MediaPlayerImpl::setPlayerDataSource(std::shared_ptr<stream::InputDataSourc
 
 	mInputDataSource = source;
 	ret = PLAYER_OK;
-	mSyncCv.notify_one();
-	return;
+	return notifySync();
 
 errout:
 	ret = PLAYER_ERROR;
-	mSyncCv.notify_one();
+	notifySync();
 }
 
 player_result_t MediaPlayerImpl::setObserver(std::shared_ptr<MediaPlayerObserverInterface> observer)
@@ -501,7 +496,7 @@ void MediaPlayerImpl::setPlayerObserver(std::shared_ptr<MediaPlayerObserverInter
 	}
 
 	mPlayerObserver = observer;
-	mSyncCv.notify_one();
+	notifySync();
 }
 
 player_state_t MediaPlayerImpl::getState()
