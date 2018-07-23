@@ -137,7 +137,15 @@ public:
 	 * @since TizenRT v2.0 PRE
 	 */
 	player_result_t stop();
-	
+
+	/**
+	 * @brief Gets the player id
+	 * @details @b #include <media/MediaPlayer.h>
+	 * @return The value of current media player ID
+	 * @since TizenRT v2.0 PRE
+	 */
+	int getId();
+
 	/**
 	 * @brief Gets the current volume
 	 * @details @b #include <media/MediaPlayer.h>

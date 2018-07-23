@@ -60,6 +60,11 @@ player_result_t MediaPlayer::pause()
 	return mPMpImpl->pause();
 }
 
+int MediaPlayer::getId()
+{
+	return mPMpImpl->getId();
+}
+
 int MediaPlayer::getVolume()
 {
 	return mPMpImpl->getVolume();
