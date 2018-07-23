@@ -106,6 +106,31 @@ typedef enum {
 } wifi_manager_scan_result_e;
 
 /**
+ * @brief Wi-Fi authentication type such as WPA, WPA2, or WPS
+ */
+typedef enum {
+	WIFI_MANAGER_AUTH_OPEN,					   /**<  open mode                      */
+	WIFI_MANAGER_AUTH_WEP_SHARED,			   /**<  use shared key (wep key)       */
+	WIFI_MANAGER_AUTH_WPA_PSK,				   /**<  WPA_PSK mode                   */
+	WIFI_MANAGER_AUTH_WPA2_PSK,				   /**<  WPA2_PSK mode                  */
+	WIFI_MANAGER_AUTH_WPA_AND_WPA2_PSK,		   /**<  WPA_PSK and WPA_PSK mixed mode */
+	WIFI_MANAGER_AUTH_UNKNOWN,				   /**<  unknown type                   */
+} wifi_manager_ap_auth_type_e;
+
+/**
+ * @brief Wi-Fi encryption type such as WEP, AES, or TKIP
+ */
+typedef enum {
+	WIFI_MANAGER_CRYPTO_NONE,				   /**<  none encryption                */
+	WIFI_MANAGER_CRYPTO_WEP_64,				   /**<  WEP encryption wep-40          */
+	WIFI_MANAGER_CRYPTO_WEP_128,			   /**<  WEP encryption wep-104         */
+	WIFI_MANAGER_CRYPTO_AES,				   /**<  AES encryption                 */
+	WIFI_MANAGER_CRYPTO_TKIP,				   /**<  TKIP encryption                */
+	WIFI_MANAGER_CRYPTO_TKIP_AND_AES,		   /**<  TKIP and AES mixed encryption  */
+	WIFI_MANAGER_CRYPTO_UNKNOWN,			   /**<  unknown encryption             */
+} wifi_manager_ap_crypto_type_e;
+
+/**
  * @brief Keep information of nearby access points as scan results
  */
 struct wifi_manager_scan_info_s {
@@ -114,6 +139,8 @@ struct wifi_manager_scan_info_s {
 	int8_t rssi;		// received signal strength indication
 	uint8_t channel;	// channel/frequency
 	uint8_t phy_mode;	// 0:legacy 1: 11N HT
+	wifi_manager_ap_auth_type_e ap_auth_type;	  /**<  @ref wifi_utils_ap_auth_type   */
+	wifi_manager_ap_crypto_type_e ap_crypto_type;  /**<  @ref wifi_utils_ap_crypto_type */
 	struct wifi_manager_scan_info_s *next;
 };
 
@@ -163,31 +190,6 @@ typedef struct {
 	//             : it is not used if type is INTERVAL
 	int max_interval; // 
 } wifi_manager_reconnect_config_s;
-
-/**
- * @brief Wi-Fi authentication type such as WPA, WPA2, or WPS
- */
-typedef enum {
-	WIFI_MANAGER_AUTH_OPEN,					   /**<  open mode                      */
-	WIFI_MANAGER_AUTH_WEP_SHARED,			   /**<  use shared key (wep key)       */
-	WIFI_MANAGER_AUTH_WPA_PSK,				   /**<  WPA_PSK mode                   */
-	WIFI_MANAGER_AUTH_WPA2_PSK,				   /**<  WPA2_PSK mode                  */
-	WIFI_MANAGER_AUTH_WPA_AND_WPA2_PSK,		   /**<  WPA_PSK and WPA_PSK mixed mode */
-	WIFI_MANAGER_AUTH_UNKNOWN,				   /**<  unknown type                   */
-} wifi_manager_ap_auth_type_e;
-
-/**
- * @brief Wi-Fi encryption type such as WEP, AES, or TKIP
- */
-typedef enum {
-	WIFI_MANAGER_CRYPTO_NONE,				   /**<  none encryption                */
-	WIFI_MANAGER_CRYPTO_WEP_64,				   /**<  WEP encryption wep-40          */
-	WIFI_MANAGER_CRYPTO_WEP_128,			   /**<  WEP encryption wep-104         */
-	WIFI_MANAGER_CRYPTO_AES,				   /**<  AES encryption                 */
-	WIFI_MANAGER_CRYPTO_TKIP,				   /**<  TKIP encryption                */
-	WIFI_MANAGER_CRYPTO_TKIP_AND_AES,		   /**<  TKIP and AES mixed encryption  */
-	WIFI_MANAGER_CRYPTO_UNKNOWN,			   /**<  unknown encryption             */
-} wifi_manager_ap_crypto_type_e;
 
 /**
  * @brief Specify which access point (AP) a client connects to
