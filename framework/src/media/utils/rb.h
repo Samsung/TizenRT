@@ -81,7 +81,7 @@ size_t rb_write(rb_p rbp, const void *ptr, size_t len);
 /**
  * @brief  Read from the ring-buffer header
  * @param  rbp: Pointer to the ring-buffer object
- * @param  ptr: Pointer to the bufer saving read data
+ * @param  ptr: Pointer to the buffer saving read data
  *              in case of ptr NULL, just increase rd_idx.
  * @param  len: length of the data to be read
  * @return size of data be read(or rd_idx increased), range[0, len]
@@ -93,7 +93,7 @@ size_t rb_read(rb_p rbp, void *ptr, size_t len);
  * @brief  Read from the ring-buffer at an offset position,
  *         rd_idx will not be increased.
  * @param  rbp: Pointer to the ring-buffer object
- * @param  ptr: Pointer to the bufer saving read data
+ * @param  ptr: Pointer to the buffer saving read data
  *              in case of ptr NULL, do not really read data
  * @param  len: length of the data to be read
  * @param  offset: offset from rd_idx started to read.
