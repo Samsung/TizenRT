@@ -518,6 +518,10 @@ menu "Task manager"
 source "$FRAMEWORK_DIR/src/task_manager/Kconfig"
 endmenu
 
+menu "Event Loop Framework"
+source "$FRAMEWORK_DIR/src/eventloop/Kconfig"
+endmenu
+
 menu "Things Management"
 source Kconfig.things
 endmenu
