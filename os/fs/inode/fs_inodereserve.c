@@ -58,6 +58,7 @@
 
 #include <assert.h>
 #include <errno.h>
+#include <string.h>
 
 #include <tinyara/kmalloc.h>
 #include <tinyara/fs/fs.h>
@@ -153,6 +154,25 @@ static void inode_insert(FAR struct inode *node, FAR struct inode *peer, FAR str
 }
 
 /****************************************************************************
+ * Name: select_last_inode
+ ****************************************************************************/
+
+static void* select_last_inode(FAR const char *name)
+{
+	const char *tmp = name;
+	void *last = NULL;
+
+	while (*tmp && *tmp != '\0') {
+		if (*tmp == '/') {
+			last = (void*)tmp;
+		}
+		tmp++;
+	}
+
+	return ++last;
+}
+
+/****************************************************************************
  * Public Functions
  ****************************************************************************/
 
@@ -172,9 +192,10 @@ static void inode_insert(FAR struct inode *node, FAR struct inode *peer, FAR str
  *   Zero on success (with the inode point in 'inode'); A negated errno
  *   value is returned on failure:
  *
- *   EINVAL - 'path' is invalid for this operation
- *   EEXIST - An inode already exists at 'path'
- *   ENOMEM - Failed to allocate in-memory resources for the operation
+ *   EINVAL       - 'path' is invalid for this operation
+ *   EEXIST       - An inode already exists at 'path'
+ *   ENOMEM       - Failed to allocate in-memory resources for the operation
+ *   ENAMETOOLONG - File name too long
  *
  ****************************************************************************/
 
@@ -193,6 +214,12 @@ int inode_reserve(FAR const char *path, FAR struct inode **inode)
 
 	if (!*path || path[0] != '/') {
 		return -EINVAL;
+	}
+
+	/* Check file name length */
+
+	if (strlen(select_last_inode(name)) > CONFIG_NAME_MAX) {
+		return -ENAMETOOLONG;
 	}
 
 	/* Find the location to insert the new subtree */
