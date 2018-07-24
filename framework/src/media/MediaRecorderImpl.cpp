@@ -23,6 +23,8 @@
 #include "audio/audio_manager.h"
 
 namespace media {
+//ToDo: This handler needs to be moved into MediaWorker.cpp
+audio_handler_t* mInAudioHandler;
 MediaRecorderImpl::MediaRecorderImpl()
 	: mCurState(RECORDER_STATE_NONE), mOutputDataSource(nullptr), mRecorderObserver(nullptr), mBuffer(nullptr), mBuffSize(0),
 	mDuration(0), mTotalFrames(0), mCapturedFrames(0)
@@ -60,9 +62,16 @@ void MediaRecorderImpl::createRecorder(recorder_result_t& ret)
 		return notifySync();
 	}
 
-	audio_manager_result_t result = init_audio_stream_in();
+	audio_manager_result_t result = init_audio_handler_in();
 	if (result != AUDIO_MANAGER_SUCCESS) {
+		meddbg("Fail to initialize input audio handler : %d\n", result);
+		ret = RECORDER_ERROR;
+		return notifySync();
+	}
+
+	if ((result = init_audio_stream_in(&mInAudioHandler)) != AUDIO_MANAGER_SUCCESS) {
 		meddbg("Fail to initialize input audio stream : %d\n", result);
+		ret = RECORDER_ERROR;
 		return notifySync();
 	}
 
@@ -144,7 +153,7 @@ void MediaRecorderImpl::prepareRecorder(recorder_result_t& ret)
 		return notifySync();
 	}
 
-	audio_manager_result_t result = set_audio_stream_in(mOutputDataSource->getChannels(), mOutputDataSource->getSampleRate(),
+	audio_manager_result_t result = set_audio_stream_in(mInAudioHandler, mOutputDataSource->getChannels(), mOutputDataSource->getSampleRate(),
 		(pcm_format)mOutputDataSource->getPcmFormat());
 	if (result != AUDIO_MANAGER_SUCCESS) {
 		meddbg("set_audio_stream_in failed : result : %d channel %d sample rate : %d format : %d\n", result, \
@@ -153,7 +162,7 @@ void MediaRecorderImpl::prepareRecorder(recorder_result_t& ret)
 		return notifySync();
 	}
 
-	mBuffSize = get_input_frames_to_byte(get_input_frame_count());
+	mBuffSize = get_input_frames_to_byte(mInAudioHandler, get_input_frame_count(mInAudioHandler));
 
 	if (mBuffSize <= 0) {
 		meddbg("Buffer size is too small size : %d\n", mBuffSize);
@@ -172,7 +181,6 @@ void MediaRecorderImpl::prepareRecorder(recorder_result_t& ret)
 	if (mDuration > 0) {
 		mTotalFrames = mDuration * mOutputDataSource->getSampleRate();
 	}
-	
 	mCurState = RECORDER_STATE_READY;
 	ret = RECORDER_OK;
 	notifySync();
@@ -201,7 +209,7 @@ void MediaRecorderImpl::unprepareRecorder(recorder_result_t& ret)
 		meddbg("unprepare Failed : %d\n", (recorder_state_t)mCurState);
 		return notifySync();
 	}
-	audio_manager_result_t result = reset_audio_stream_in();
+	audio_manager_result_t result = reset_audio_stream_in(mInAudioHandler);
 	if (result != AUDIO_MANAGER_SUCCESS) {
 		meddbg("reset_audio_stream_in failed ret : %d\n", result);
 		return notifySync();
@@ -220,7 +228,6 @@ void MediaRecorderImpl::unprepareRecorder(recorder_result_t& ret)
 	mDuration = 0;
 	mTotalFrames = 0;
 	mCapturedFrames = 0;
-	
 	mCurState = RECORDER_STATE_IDLE;
 	ret = RECORDER_OK;
 	notifySync();
@@ -289,14 +296,14 @@ void MediaRecorderImpl::stopRecorder(bool completed)
 		meddbg("stopRecorder Failed mCurState : %d\n", (recorder_state_t)mCurState);
 		return;
 	}
-	
-	audio_manager_result_t result = stop_audio_stream_in();
+
+	audio_manager_result_t result = stop_audio_stream_in(mInAudioHandler);
 	if (result != AUDIO_MANAGER_SUCCESS) {
 		notifyObserver(OBSERVER_COMMAND_ERROR);
 		meddbg("stop_audio_stream_in failed ret : %d\n", result);
 		return;
 	}
-	
+
 	mCurState = RECORDER_STATE_READY;
 	if (completed) {
 		notifyObserver(OBSERVER_COMMAND_FINISHIED);
@@ -329,14 +336,14 @@ void MediaRecorderImpl::pauseRecorder()
 		meddbg("pause Failed mCurState : %d\n", (recorder_state_t)mCurState);
 		return;
 	}
-		
-	audio_manager_result_t result = pause_audio_stream_in();
+
+	audio_manager_result_t result = pause_audio_stream_in(mInAudioHandler);
 	if (result != AUDIO_MANAGER_SUCCESS) {
 		notifyObserver(OBSERVER_COMMAND_ERROR);
 		meddbg("pause_audio_stream_in failed ret : %d\n", result);
 		return;
 	}
-	
+
 	mCurState = RECORDER_STATE_PAUSED;
 	notifyObserver(OBSERVER_COMMAND_PAUSED);
 }
@@ -362,7 +369,7 @@ void MediaRecorderImpl::getRecorderVolume(int& ret)
 {
 	medvdbg("getRecorderVolume\n");
 
-	ret = get_input_audio_volume();
+	ret = get_input_audio_volume(mInAudioHandler);
 	notifySync();
 }
 
@@ -393,7 +400,7 @@ void MediaRecorderImpl::setRecorderVolume(int vol, recorder_result_t& ret)
 		return notifySync();
 	}
 
-	audio_manager_result_t result = set_input_audio_volume((uint8_t)vol);
+	audio_manager_result_t result = set_input_audio_volume(mInAudioHandler, (uint8_t)vol);
 	if (result != AUDIO_MANAGER_SUCCESS) {
 		meddbg("set_input_audio_volume failed vol : %d ret : %d\n", vol, result);
 		return notifySync();
@@ -521,7 +528,7 @@ void MediaRecorderImpl::setRecorderDuration(int second, recorder_result_t& ret)
 void MediaRecorderImpl::capture()
 {
 	medvdbg("MediaRecorderImpl::capture()\n");
-	unsigned int frameSize = get_input_frame_count();
+	unsigned int frameSize = get_input_frame_count(mInAudioHandler);
 
 	if (mTotalFrames > 0) {
 		int64_t remainFrames = mTotalFrames - mCapturedFrames;
@@ -530,18 +537,18 @@ void MediaRecorderImpl::capture()
 			frameSize = remainFrames;
 		}
 	}
-	
-	int frames = start_audio_stream_in(mBuffer, frameSize);
+
+	int frames = start_audio_stream_in(mInAudioHandler, mBuffer, frameSize);
 	if (frames > 0) {
 		mCapturedFrames += frames;
 		if (mCapturedFrames > INT_MAX) {
 			mCapturedFrames = 0;
 			meddbg("Too huge value : %d, set 0 to prevent overflow\n", mCapturedFrames);
 		}
-		
+
 		int ret = 0;
-		int size = get_input_frames_to_byte(frames);
-		
+		int size = get_input_frames_to_byte(mInAudioHandler, frames);
+
 		while (size > 0) {
 			int written = mOutputDataSource->write(mBuffer + ret, size);
 			medvdbg("written : %d size : %d frames : %d\n", written, size, frames);
