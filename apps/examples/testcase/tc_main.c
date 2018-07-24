@@ -27,7 +27,7 @@
 #include <semaphore.h>
 #include "tc_common.h"
 
-#ifdef CONFIG_TASH
+#if defined(CONFIG_TASH) && !defined(CONFIG_BUILTIN_APPS)
 #include <apps/shell/tash.h>
 #else
 #if defined(CONFIG_EXAMPLES_TESTCASE_ARASTORAGE_UTC) || defined(CONFIG_EXAMPLES_TESTCASE_ARASTORAGE_ITC)
@@ -118,7 +118,7 @@ extern int tc_mpu_main(int argc, char *argv[]);
 extern int utc_libcxx_main(int argc, char *argv[]);
 #endif
 
-#ifdef CONFIG_TASH
+#if defined(CONFIG_TASH) && !defined(CONFIG_BUILTIN_APPS)
 static const tash_cmdlist_t tc_cmds[] = {
 #ifdef CONFIG_EXAMPLES_TESTCASE_ARASTORAGE_UTC
 	{"arastorage_utc", utc_arastorage_main, TASH_EXECMD_ASYNC},
@@ -242,10 +242,12 @@ int main(int argc, FAR char *argv[])
 int tc_main(int argc, char *argv[])
 #endif
 {
-#ifdef CONFIG_TASH
+#if defined(CONFIG_TASH)
+#if !defined(CONFIG_BUILTIN_APPS)
 	tash_cmdlist_install(tc_cmds);
+#endif
 	printf("\nTestcase registers TASH commands named \"<MODULE_NAME>_tc\".\nPlease find them using \"help\" and execute them in TASH\n");
-#else
+#else // !CONFIG_TASH
 	int pid;
 
 #ifdef CONFIG_EXAMPLES_TESTCASE_ARASTORAGE_UTC
