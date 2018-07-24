@@ -43,4 +43,8 @@ void things_tcp_session_state_cb(const CAEndpoint_t *info, bool connected);
 
 int things_set_ap_connection(access_point_info_s *ap_info);
 
+int things_wifi_scan_ap(void);
+
+int things_get_ap_list(access_point_info_s** p_info, int* p_count);
+
 #endif							/* _THINGS_NETWORK_H_ */

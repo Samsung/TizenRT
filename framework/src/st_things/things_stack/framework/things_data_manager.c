@@ -193,6 +193,16 @@ static const char *internal_resource_json_str = "{\n\
 					\"interfaces\": [\n\
 						\"oic.if.a\"\n\
 					],\n\
+					\"policy\": 3\n\
+				},\n\
+				{\n\
+					\"uri\": \"/sec/accesspointlist\",\n\
+					\"types\": [\n\
+						\"x.com.samsung.accesspointlist\"\n\
+					],\n\
+					\"interfaces\": [\n\
+						\"oic.if.s\"\n\
+					],\n\
 					\"policy\": 3\n"
 #ifdef CONFIG_ST_THINGS_FOTA
 				"},\n\
@@ -311,7 +321,18 @@ static const char *internal_resource_json_str = "{\n\
 					}\n\
 				]\n"
 #endif
-			"}\n\
+			"},\n\
+			{\n\
+				\"type\": \"x.com.samsung.accesspointlist\",\n\
+				\"properties\": [\n\
+					{\n\
+						\"key\": \"x.com.samsung.accesspoint.items\",\n\
+						\"type\": 9,\n\
+						\"mandatory\": true,\n\
+						\"rw\": 1\n\
+					}\n\
+				]\n\
+			}\n\
 		]\n\
 	}";
 
