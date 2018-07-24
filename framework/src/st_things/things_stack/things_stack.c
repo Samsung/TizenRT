@@ -376,6 +376,10 @@ int things_start_stack(void)
 			if (!things_network_turn_on_soft_ap()) {
 				return 0;
 			}
+			if (!things_wifi_scan_ap()) {
+				// sleep(5);
+				return 0;
+			}
 		} else if (!things_network_connect_home_ap()) {
 			return 0;
 		}
@@ -456,7 +460,7 @@ GOTO_OUT:
 int things_stop_stack(void)
 {
 	THINGS_LOG_D(TAG, THINGS_FUNC_ENTRY);
-	pthread_mutex_lock(&g_things_stop_mutex);	
+	pthread_mutex_lock(&g_things_stop_mutex);
 	pthread_mutex_lock(&m_thread_oic_reset);
 
 	if (b_thread_things_reset == true) {

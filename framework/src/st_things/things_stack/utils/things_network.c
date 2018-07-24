@@ -51,7 +51,8 @@ volatile static bool is_connected_target_ap = false;
 extern bool b_reset_continue_flag;
 
 static wifi_manager_ap_config_s g_homeap_info;
-static wifi_manager_scan_info_s *g_wifi_scan_info;
+static access_point_info_s *g_wifi_scan_info;
+static int g_wifi_count = 0;
 
 static pthread_t h_thread_things_wifi_join = NULL;
 
@@ -237,6 +238,19 @@ int things_set_ap_connection(access_point_info_s *p_info)
 	return 1;
 }
 
+int things_get_ap_list(access_point_info_s** p_info, int* p_count)
+{
+	if (p_info == NULL || p_count == NULL) {
+		THINGS_LOG_E(TAG, "Can't Call GetAPSearchList(p_info=0x%X, p_count=0x%X).", p_info, p_count);
+		return 0;
+	}
+
+	*p_info = g_wifi_scan_info;
+	*p_count = g_wifi_count;
+
+	return 1;
+}
+
 int things_wifi_changed_call_func(int state, char *ap_name, char *ip_addr)
 {
 	return things_wifi_state_changed_cb(state, ap_name, ip_addr);;
@@ -318,13 +332,100 @@ void things_wifi_soft_ap_sta_left(void)
 	THINGS_LOG_V(TAG, "T%d --> %s", getpid(), __FUNCTION__);
 }
 
+void things_wifi_list_cleanup()
+{
+	if (g_wifi_scan_info != NULL) {
+		// free old wifi list
+
+		access_point_info_s* piter;
+		access_point_info_s* pdel;
+
+		piter = pdel = g_wifi_scan_info;
+
+		while (piter != NULL) {
+			pdel = piter;
+			piter = piter->next;
+
+			things_free(pdel);
+		}
+
+		g_wifi_scan_info = NULL;
+	}
+}
+
 void things_wifi_scan_done(wifi_manager_scan_info_s **scan_result, int res)
 {
 	THINGS_LOG_V(TAG, "T%d --> %s", getpid(), __FUNCTION__);
 	/* Make sure you copy the scan results onto a local data structure.
 	 * It will be deleted soon eventually as you exit this function.
 	 */
-//TO DO
+	if (scan_result == NULL) {
+		return;
+	}
+
+	things_wifi_list_cleanup();
+
+	g_wifi_count = 0;
+	wifi_manager_scan_info_s *wifi_scan_iter = *scan_result;
+	access_point_info_s* pinfo = NULL;
+	access_point_info_s* p_prev_info = NULL;
+
+	while (wifi_scan_iter != NULL) {
+		THINGS_LOG_V(TAG, "WiFi AP SSID: %-20s, WiFi AP BSSID: %-20s, WiFi Rssi: %d\n",
+			   wifi_scan_iter->ssid, wifi_scan_iter->bssid, wifi_scan_iter->rssi);
+
+		if (wifi_scan_iter->ssid != NULL) {
+			pinfo = (access_point_info_s*)things_malloc(sizeof(access_point_info_s));
+
+			if (g_wifi_scan_info == NULL) {
+				g_wifi_scan_info = pinfo;
+			}
+
+			if (p_prev_info == NULL) {
+				p_prev_info = pinfo;
+			}
+
+			pinfo->next = NULL;
+			p_prev_info->next = pinfo;
+
+			snprintf(pinfo->e_ssid, MAX_SSID_LEN, "%s", wifi_scan_iter->ssid);
+			snprintf(pinfo->bss_id, MAX_SSID_LEN, "%s", wifi_scan_iter->bssid);
+			snprintf(pinfo->signal_level, MAX_LEVEL_SIGNAL, "%d", wifi_scan_iter->rssi);
+			//strncpy(pinfo->security_key, wifi_scan_iter->ssid, MAX_SECUIRTYKEY_LEN);
+			//strncpy(pinfo->auth_type, wifi_scan_iter->ssid, MAX_TYPE_AUTH);
+			//strncpy(pinfo->enc_type, wifi_scan_iter->ssid, MAX_TYPE_ENC);
+
+			// THINGS_LOG_V(TAG, "Copied WiFi AP SSID: %-20s, WiFi AP BSSID: %-20s, WiFi Rssi: %d\n",
+			//		pinfo->e_ssid, pinfo->bss_id, pinfo->signal_level);
+
+			p_prev_info = pinfo;
+			g_wifi_count++;
+		}
+
+		wifi_scan_iter = wifi_scan_iter->next;
+	}
+
+
+	pinfo = g_wifi_scan_info;
+	while (pinfo != NULL) {
+		THINGS_LOG_V(TAG, "Copied WiFi AP SSID: %-20s, WiFi AP BSSID: %-20s, WiFi Rssi: %d\n",
+				   pinfo->e_ssid, pinfo->bss_id, pinfo->signal_level);
+
+		pinfo = pinfo->next;
+	}
+
+	THINGS_LOG_V(TAG, "WiFi List Count is (%d)", g_wifi_count);
+	// g_wifi_scan_info = scan_result;
+	return;
+}
+
+int things_wifi_scan_ap(void)
+{
+	if (wifi_manager_scan_ap() != WIFI_MANAGER_SUCCESS) {
+		return 0;
+	}
+
+	return 1;
 }
 
 static const wifi_manager_cb_s wifi_callbacks = {

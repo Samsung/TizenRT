@@ -193,6 +193,106 @@ OCEntityHandlerResult send_response(OCRequestHandle request_handle, OCResourceHa
 /**
  * This functions will replace the get_ap_scan_result(~~)
  */
+static OCEntityHandlerResult convert_ap_infor(things_resource_s *target_resource, access_point_info_s *p_list, int list_cnt)
+{
+	things_representation_s *rep = NULL;
+
+	if (list_cnt == 0 || p_list == NULL) {
+		THINGS_LOG_E(TAG, "Scaned AP list is NULL ");
+		return OC_EH_ERROR;
+	}
+
+	if (target_resource->rep == NULL) {
+		rep = things_create_representation_inst(NULL);
+		target_resource->things_set_representation(target_resource, rep);
+	} else {
+		rep = target_resource->rep;
+	}
+
+	things_representation_s **child_rep = (things_representation_s **) things_malloc(list_cnt * sizeof(things_representation_s *));
+
+	access_point_info_s *wifi_scan_iter = p_list;
+
+	for (int iter = 0; iter < list_cnt; ++iter) {
+		THINGS_LOG_V(TAG, "e_ssid : %s", wifi_scan_iter->e_ssid);
+		// THINGS_LOG_V(TAG, "security_key : %s", wifi_scan_iter->security_key);
+		// THINGS_LOG_V(TAG, "auth_type : %s", wifi_scan_iter->auth_type);
+		// THINGS_LOG_V(TAG, "enc_type : %s", wifi_scan_iter->enc_type);
+		// THINGS_LOG_V(TAG, "channel : %s", wifi_scan_iter->channel);
+		THINGS_LOG_V(TAG, "signal_level : %s", wifi_scan_iter->signal_level);
+		THINGS_LOG_V(TAG, "bss_id : %s", wifi_scan_iter->bss_id);
+
+		child_rep[iter] = things_create_representation_inst(NULL);
+		// child_rep[iter]->things_set_value(child_rep[iter], SEC_ATTRIBUTE_AP_CHANNAL, wifi_scan_iter->channel);
+		// child_rep[iter]->things_set_value(child_rep[iter], SEC_ATTRIBUTE_AP_ENCTYPE, wifi_scan_iter->enc_type);
+		child_rep[iter]->things_set_value(child_rep[iter], SEC_ATTRIBUTE_AP_MACADDR, wifi_scan_iter->bss_id);
+		child_rep[iter]->things_set_value(child_rep[iter], SEC_ATTRIBUTE_AP_MAXRATE, "MAX_RATE");
+		child_rep[iter]->things_set_value(child_rep[iter], SEC_ATTRIBUTE_AP_RSSI, wifi_scan_iter->signal_level);
+		// child_rep[iter]->things_set_value(child_rep[iter], SEC_ATTRIBUTE_AP_SECTYPE, wifi_scan_iter->auth_type);
+		child_rep[iter]->things_set_value(child_rep[iter], SEC_ATTRIBUTE_AP_SSID, wifi_scan_iter->e_ssid);
+
+		wifi_scan_iter = wifi_scan_iter->next;
+	}
+
+	rep->things_set_arrayvalue(rep, SEC_ATTRIBUTE_AP_ITEMS, list_cnt, child_rep);
+
+	for (int iter = 0; iter < list_cnt; iter++) {
+		/*! Changed by st_things for memory Leak fix
+		 */
+		things_release_representation_inst(child_rep[iter]);
+		child_rep[iter] = NULL;
+	}
+	things_free(child_rep);
+	child_rep = NULL;
+
+	return OC_EH_OK;
+}
+
+/**
+ * This functions will be deprecated~!!!
+ */
+static OCEntityHandlerResult get_ap_scan_result(things_resource_s *target_resource)
+{
+	THINGS_LOG_D(THINGS_DEBUG, TAG, THINGS_FUNC_ENTRY);
+
+	OCEntityHandlerResult eh_result = OC_EH_ERROR;
+
+	access_point_info_s *p_list = NULL;
+	int list_cnt = 0;
+	int result = 0;
+
+	// p_list = (access_point_info_s**)things_malloc(sizeof(access_point_info_s*) *MAX_NUM_AP);
+
+	result = things_get_ap_list(&p_list, &list_cnt);
+	if (result) {
+		THINGS_LOG_V(TAG, "Get Access points list!!! %d ", list_cnt);
+
+		if (list_cnt > 0) {
+			//eh_result = ConvertAPInfo(target_resource, p_list, list_cnt);
+			eh_result = convert_ap_infor(target_resource, p_list, list_cnt);
+		} else if (list_cnt == 0) {
+			THINGS_LOG_V(TAG, "0 Access points!!!! %d ", list_cnt);
+			eh_result = OC_EH_OK;
+		} else {
+			eh_result = OC_EH_ERROR;
+		}
+	} else {
+		THINGS_LOG_V(THINGS_ERROR, TAG, "GET AP Searching List FUNC Failed!!!!");
+	}
+
+	//if (p_list != NULL) {
+	//	for (int i = 0; i < list_cnt; i++) {
+	//	things_free(p_list[i]);
+	//	}
+	//	things_free(p_list);
+	//}
+
+	return eh_result;
+}
+
+/**
+ * This functions will replace the get_ap_scan_result(~~)
+ */
 static OCEntityHandlerResult get_provisioning_info(things_resource_s *target_resource)
 {
 	OCEntityHandlerResult eh_result = OC_EH_ERROR;
@@ -396,6 +496,9 @@ static OCEntityHandlerResult process_get_request(things_resource_s *target_resou
 	} else if (strstr(target_resource->uri, URI_FIRMWARE) != NULL) {
 		eh_result = fmwup_get_data(target_resource);
 #endif
+	} else if (strstr(target_resource->uri, URI_SEC) != NULL && strstr(target_resource->uri, URI_ACCESSPOINTLIST) != NULL) {
+		// X. Get request for the Access point list(Will be deprecated!!!!)
+		eh_result = get_ap_scan_result(target_resource);
 	} else {
 		if (g_handle_request_get_cb != NULL) {
 			int ret = g_handle_request_get_cb(target_resource);

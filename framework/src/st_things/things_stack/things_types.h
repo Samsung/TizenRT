@@ -260,6 +260,8 @@ typedef struct access_point_info_s {
 	char channel[MAX_CHANNEL];	// optional
 	char signal_level[MAX_LEVEL_SIGNAL];	// optional
 	char bss_id[MAX_SSID_LEN];		// optional
+
+	struct access_point_info_s* next;
 } access_point_info_s;
 
 #endif							/* _THINGS_TYPES_H_ */
