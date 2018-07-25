@@ -977,8 +977,8 @@ bool handle_post_req_helper(const char *res_uri, const char *query, OCRepPayload
 		}
 
 		if (!IS_WRITABLE(properties[index]->rw)) {
-			if (OCRepPayloadIsNull(req_payload, properties[index]->key)) {
-				THINGS_LOG_E(TAG, "(%s) is not present in the request.", properties[index]->key);
+			if (!OCRepPayloadIsNull(req_payload, properties[index]->key)) {
+				THINGS_LOG_E(TAG, "(%s) is present in the request.", properties[index]->key);
 				res = false;
 				break;
 			}
