@@ -156,7 +156,7 @@ ifeq ($(CONFIG_EXAMPLES_TESTCASE_FILESYSTEM),y)
 	$(Q) $(call REGISTER,filesystem_tc,tc_filesystem_main,TASH_EXECMD_ASYNC,100,4096)
 endif
 ifeq ($(CONFIG_EXAMPLES_TESTCASE_KERNEL),y)
-	$(Q) $(call REGISTER,kernel_tc,tc_kernel_main,TASH_EXECMD_ASYNC,100,2048)
+	$(Q) $(call REGISTER,kernel_tc,tc_kernel_main,TASH_EXECMD_ASYNC,180,2048)
 endif
 ifeq ($(CONFIG_LIBCXX_UTC),y)
 	$(Q) $(call REGISTER,libcxx_utc,utc_libcxx_main,TASH_EXECMD_ASYNC,100,4096)

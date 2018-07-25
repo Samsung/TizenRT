@@ -207,6 +207,11 @@ config TC_KERNEL_WORK_QUEUE
 	default n
 	depends on SCHED_WORKQUEUE || LIB_USRWORK
 
+config TC_KERNEL_MEMORY_SAFETY
+	bool "Memory Safety"
+	default n
+	depends on !DISABLE_MQUEUE
+
 config ITC_KERNEL_ENVIRON
 	bool "ITC Environ"
 	default n
