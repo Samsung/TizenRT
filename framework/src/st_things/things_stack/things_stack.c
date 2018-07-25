@@ -287,7 +287,7 @@ int things_deinitialize_stack(void)
 	THINGS_LOG_D(TAG, THINGS_FUNC_ENTRY);
 
 	dm_termiate_module();
-
+	things_log_shutdown();
 	is_things_module_initialized = 0;
 
 	return 1;
