@@ -456,7 +456,7 @@ GOTO_OUT:
 int things_stop_stack(void)
 {
 	THINGS_LOG_D(TAG, THINGS_FUNC_ENTRY);
-	pthread_mutex_lock(&g_things_stop_mutex);	
+	pthread_mutex_lock(&g_things_stop_mutex);
 	pthread_mutex_lock(&m_thread_oic_reset);
 
 	if (b_thread_things_reset == true) {
@@ -757,6 +757,7 @@ GOTO_OUT:
 	pthread_mutex_lock(&m_thread_oic_reset);
 	h_thread_things_reset = 0;
 	b_thread_things_reset = false;
+	b_reset_continue_flag = false;
 	pthread_mutex_unlock(&m_thread_oic_reset);
 	THINGS_LOG_D(TAG, "Exit.");
 	return NULL;
