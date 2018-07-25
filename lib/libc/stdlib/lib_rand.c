@@ -56,6 +56,7 @@
 
 #include <sys/types.h>
 #include <stdlib.h>
+#include <limits.h>
 
 /****************************************************************************
  * Pre-processor Definitions
@@ -283,5 +284,19 @@ void srand(unsigned int seed)
 
 int rand(void)
 {
-	return (int)nrand(32768);
+	return (int)nrand(INT_MAX);
+}
+
+/****************************************************************************
+ * Name:  random
+ *
+ * Description:
+ *   Generate a non-negative, integer random number in the range of 0 through
+ *   (LONG_MAX - 1)
+ *
+ ****************************************************************************/
+
+long random(void)
+{
+	return (long)nrand(LONG_MAX);
 }
