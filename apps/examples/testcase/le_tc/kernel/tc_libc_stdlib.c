@@ -244,6 +244,34 @@ static void tc_libc_stdlib_rand(void)
 }
 
 /**
+ * @fn                   :tc_libc_stdlib_random
+ * @brief                :random number generator
+ * @Scenario             :Returns a pseudo-random long integer number in the range between 0 and LONG_MAX.
+ * API's covered         :random
+ * Preconditions         :None
+ * Postconditions        :None
+ * @return               :void
+ */
+static void tc_libc_stdlib_random(void)
+{
+	long int ret_chk = ERROR;
+
+	ret_chk = random();
+	TC_ASSERT_GEQ("random", ret_chk, 0L);
+	TC_ASSERT_LT("random", ret_chk, LONG_MAX);
+
+	ret_chk = random();
+	TC_ASSERT_GEQ("random", ret_chk, 0L);
+	TC_ASSERT_LT("random", ret_chk, LONG_MAX);
+
+	ret_chk = random();
+	TC_ASSERT_GEQ("random", ret_chk, 0L);
+	TC_ASSERT_LT("random", ret_chk, LONG_MAX);
+
+	TC_SUCCESS_RESULT();
+}
+
+/**
  * @fn                   :tc_libc_stdlib_strtol
  * @brief                :converts the string to a long integer value
  * @Scenario             :The strtol() function converts the initial part of the string in nptr to a long integer value
@@ -537,6 +565,39 @@ static void tc_libc_stdlib_srand(void)
 	}
 
 	TC_SUCCESS_RESULT();
+
+}
+/**
+ * @fn                   :tc_libc_stdlib_sranddom
+ * @brief                :pseudo-random number generator
+ * @Scenario             :pseudo-random number generator
+ * API's covered         :srandom
+ * Preconditions         :None
+ * Postconditions        :None
+ * @return               :void
+ */
+static void tc_libc_stdlib_srandom(void)
+{
+	unsigned int test_num = 1234;
+	int first_result[3];
+	int second_result[3];
+	int result_iter;
+
+	srandom(test_num);
+	for (result_iter = 0; result_iter < 3; result_iter++) {
+		first_result[result_iter] = random();
+	}
+
+	srandom(test_num);
+	for (result_iter = 0; result_iter < 3; result_iter++) {
+		second_result[result_iter] = random();
+	}
+
+	for (result_iter = 0; result_iter < 3; result_iter++) {
+		TC_ASSERT_EQ("srandom", first_result[result_iter], second_result[result_iter]);
+	}
+
+	TC_SUCCESS_RESULT();
 }
 
 /**
@@ -661,12 +722,14 @@ int libc_stdlib_main(void)
 	tc_libc_stdlib_itoa();
 	tc_libc_stdlib_qsort();
 	tc_libc_stdlib_rand();
+	tc_libc_stdlib_random();
 	tc_libc_stdlib_strtol();
 	tc_libc_stdlib_strtoll();
 	tc_libc_stdlib_strtoull();
 	tc_libc_stdlib_strtoul();
 	tc_libc_stdlib_strtod();
 	tc_libc_stdlib_srand();
+	tc_libc_stdlib_srandom();
 
 	return 0;
 }
