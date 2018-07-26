@@ -25,7 +25,7 @@
 
 #include <artik_time.h>
 
-#define ONBOARDING_VERSION "1.8.2"
+#define ONBOARDING_VERSION "1.8.3"
 
 /*
  * Service states
