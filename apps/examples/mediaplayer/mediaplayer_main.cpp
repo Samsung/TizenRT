@@ -161,6 +161,7 @@ void MyMediaPlayer::onPlaybackStarted(Id id)
 void MyMediaPlayer::onPlaybackFinished(Id id)
 {
 	cout << "onPlaybackFinished" << endl;
+	this->mp.unprepare();
 }
 
 void MyMediaPlayer::onPlaybackError(Id id)
@@ -207,6 +208,7 @@ public:
 			if (player < 0) {
 				break;
 			}
+			cout << "PLAYER " << (char)('A' + player) << " is selected" << endl;
 			auto command = selectCommand();
 			mPlayer[player]->doCommand(command);
 		}
@@ -218,9 +220,9 @@ private:
 	void setUp(const int test)
 	{
 		mPlayer[0] = make_shared<MyMediaPlayer>();
-		mPlayer[0]->init(TEST_MP3);
+		mPlayer[0]->init(test);
 		mPlayer[1] = make_shared<MyMediaPlayer>();
-		mPlayer[1]->init(TEST_MP3);
+		mPlayer[1]->init(test);
 	}
 
 	void tearDown()
@@ -240,7 +242,7 @@ private:
 
 			if (!cin.fail()) {
 				if (min <= input && input <= max) {
-					cout << "return input" << endl;
+					cout << "return input " << input << endl;
 					return input;
 				}
 			}
