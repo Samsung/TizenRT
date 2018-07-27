@@ -412,7 +412,7 @@ static int taskmgr_resume(int handle, int caller_pid)
 	return OK;
 }
 
-static int taskmgr_unicast(int handle, int caller_pid, void *data)
+static int taskmgr_unicast_async(int handle, int caller_pid, void *data)
 {
 	int ret;
 	int fd;
@@ -448,6 +448,78 @@ static int taskmgr_unicast(int handle, int caller_pid, void *data)
 		tmdbg("Fail to send signal, errno : %d\n", errno);
 		return TM_OPERATION_FAIL;
 	}
+
+	return OK;
+}
+
+static int taskmgr_unicast_sync(int handle, int caller_pid, tm_unicast_internal_msg_t *data, tm_unicast_msg_t *response_msg)
+{
+	int ret;
+	int fd;
+	union sigval msg;
+	mqd_t unicast_mqfd;
+	struct mq_attr attr;
+	tm_unicast_msg_t recv_msg;
+
+	if (IS_INVALID_HANDLE(handle)) {
+		return TM_INVALID_PARAM;
+	}
+
+	ret = taskmgr_get_task_state(handle);
+	if (ret != TM_APP_STATE_RUNNING) {
+		return -ret;
+	}
+
+	if (!taskmgr_is_permitted(handle, caller_pid)) {
+		return TM_NO_PERMISSION;
+	}
+
+	fd = taskmgr_get_drvfd();
+	if (fd < 0) {
+		return TM_INVALID_DRVFD;
+	}
+
+	ret = ioctl(fd, TMIOC_UNICAST, TM_PID(handle));
+	if (ret < 0) {
+		return TM_OPERATION_FAIL;
+	}
+
+	/* handle is in app_list */
+	msg.sival_ptr = data;
+	ret = sigqueue(TM_PID(handle), SIGTM_UNICAST, msg);
+	if (ret != OK) {
+		tmdbg("Fail to send signal, errno : %d\n", errno);
+		return TM_OPERATION_FAIL;
+	}
+
+	/* For sync, wait a mq for receiving reply msg */
+	attr.mq_maxmsg = CONFIG_TASK_MANAGER_MAX_MSG;
+	attr.mq_msgsize = sizeof(tm_unicast_msg_t);
+	attr.mq_flags = 0;
+
+	unicast_mqfd = mq_open(TM_UNICAST_MQ, O_RDONLY | O_CREAT, 0666, &attr);
+	if (unicast_mqfd == (mqd_t)ERROR) {
+		tmdbg("mq_open failed!\n");
+		return TM_COMMUCATION_FAIL;
+	}
+
+	ret = mq_receive(unicast_mqfd, (char *)&recv_msg, sizeof(tm_unicast_msg_t), 0);
+	if (ret <= 0) {
+		mq_close(unicast_mqfd);
+		mq_unlink(TM_UNICAST_MQ);
+		tmdbg("mq_receive failed! %d\n", errno);
+		return TM_COMMUCATION_FAIL;
+	}
+
+	mq_close(unicast_mqfd);
+	mq_unlink(TM_UNICAST_MQ);
+
+	response_msg->msg_size = recv_msg.msg_size;
+	response_msg->msg = TM_ALLOC(recv_msg.msg_size);
+	if (response_msg->msg == NULL) {
+		return TM_OUT_OF_MEMORY;
+	}
+	memcpy(response_msg->msg, recv_msg.msg, recv_msg.msg_size);
 
 	return OK;
 }
@@ -518,7 +590,7 @@ static int taskmgr_getinfo_with_name(char *name, tm_response_t *response_msg)
 		)) {
 
 			tmvdbg("found handle = %d\n", chk_idx);
-			ret = taskmgr_get_task_info(&response_msg->data, chk_idx);
+			ret = taskmgr_get_task_info((app_info_list_t **)&response_msg->data, chk_idx);
 			if (ret != OK) {
 				return ret;
 			}
@@ -543,7 +615,7 @@ static int taskmgr_getinfo_with_group(int group, tm_response_t *response_msg)
 	for (chk_idx = 0; chk_idx < CONFIG_TASK_MANAGER_MAX_TASKS; chk_idx++) {
 		if (TM_LIST_ADDR(chk_idx) && TM_GID(chk_idx) == group) {
 			tmvdbg("found handle = %d\n", chk_idx);
-			ret = taskmgr_get_task_info(&response_msg->data, chk_idx);
+			ret = taskmgr_get_task_info((app_info_list_t **)&response_msg->data, chk_idx);
 			if (ret != OK) {
 				return ret;
 			}
@@ -563,7 +635,7 @@ static int taskmgr_getinfo_with_handle(int handle, tm_response_t *response_msg)
 		return TM_UNREGISTERED_APP;
 	}
 
-	return taskmgr_get_task_info(&response_msg->data, handle);
+	return taskmgr_get_task_info((app_info_list_t **)&response_msg->data, handle);
 }
 
 static void taskmgr_termination_callback(void)
@@ -912,7 +984,16 @@ int task_manager(int argc, char *argv[])
 			break;
 
 		case TASKMGRCMD_UNICAST:
-			ret = taskmgr_unicast(request_msg.handle, request_msg.caller_pid, request_msg.data);
+			if (((tm_unicast_internal_msg_t *)request_msg.data)->type == TM_UNICAST_SYNC) {
+				response_msg.data = TM_ALLOC(sizeof(tm_unicast_msg_t));
+				if (response_msg.data == NULL) {
+					response_msg.status = TM_OUT_OF_MEMORY;
+					break;
+				}
+				ret = taskmgr_unicast_sync(request_msg.handle, request_msg.caller_pid, (tm_unicast_internal_msg_t *)request_msg.data, response_msg.data);
+			} else {
+				ret = taskmgr_unicast_async(request_msg.handle, request_msg.caller_pid, ((tm_unicast_internal_msg_t *)request_msg.data)->msg);
+			}
 			break;
 
 		case TASKMGRCMD_BROADCAST:

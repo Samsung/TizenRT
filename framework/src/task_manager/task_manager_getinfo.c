@@ -110,7 +110,7 @@ app_info_t *task_manager_getinfo_with_handle(int handle, int timeout)
 		return NULL;
 	}
 
-	return &response_msg.data->task;
+	return &((app_info_list_t *)response_msg.data)->task;
 }
 
 /****************************************************************************
