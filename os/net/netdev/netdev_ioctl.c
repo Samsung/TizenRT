@@ -818,6 +818,47 @@ static FAR struct netif *netdev_imsfdev(FAR struct ip_msfilter *imsf)
 #endif							/* CONFIG_NET_IGMP */
 
 /****************************************************************************
+ * Name: netdev_nmioctl
+ *
+ * Description:
+ *   Perform network monitor specific operations.
+ *
+ * Parameters:
+ *   sock    Socket structure
+ *   cmd     The ioctl command
+ *   data    The argument of ioctl command
+ *
+ * Return:
+ *   >=0 on success (positive non-zero values are cmd-specific)
+ *   Negated errno returned on failure.
+ *
+ ****************************************************************************/
+
+#ifdef CONFIG_NET_NETMON
+static int netdev_nmioctl(FAR struct socket *sock, int cmd, void  *arg)
+{
+	int ret = -EINVAL;
+	int num_copy;
+	switch (cmd) {
+	case SIOCGETSOCK:
+		num_copy = copy_socket(arg);
+		/* num_copy shoud be larger than 0 (this socket) */
+		if (num_copy > 0) {
+			ret = OK;
+		} else {
+			ret = ERROR;
+		}
+		break;
+	default:
+		ret = -ENOTTY;
+		break;
+	}
+	return ret;
+}
+#endif                            /* CONFIG_NET_NETMON */
+
+
+/****************************************************************************
  * Name: netdev_imsfioctl
  *
  * Description:
@@ -1016,8 +1057,12 @@ int netdev_ioctl(int sockfd, int cmd, unsigned long arg)
 	}
 
 	/* Execute the command */
-
 	ret = netdev_ifrioctl(sock, cmd, (FAR struct ifreq *)((uintptr_t)arg));
+#ifdef CONFIG_NET_NETMON
+	if (ret == -ENOTTY) {
+		ret = netdev_nmioctl(sock, cmd, (void *)((uintptr_t)arg));
+	}
+#endif                          /* CONFIG_NET_NETMON */
 #ifdef CONFIG_NET_IGMP
 	if (ret == -ENOTTY) {
 		ret = netdev_imsfioctl(sock, cmd, (FAR struct ip_msfilter *)((uintptr_t)arg));

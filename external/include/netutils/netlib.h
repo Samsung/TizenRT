@@ -146,6 +146,11 @@ uint8_t netlib_ipv6netmask2prefix(FAR const uint16_t *mask);
 void netlib_prefix2ipv6netmask(uint8_t preflen, FAR struct in6_addr *netmask);
 #endif
 
+/* Network Monitor */
+
+#ifdef CONFIG_NET_NETMON
+int netlib_netmon_sock(void *arg);
+#endif
 
 /* HTTP support */
 

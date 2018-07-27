@@ -60,6 +60,7 @@
 #include <string.h>
 #include <time.h>
 #include <netinet/in.h>
+#include <net/if.h>
 #include <net/lwip/netif.h>
 #include <net/lwip/opt.h>
 #include <tinyara/net/net.h>
@@ -84,6 +85,10 @@
 
 #if LWIP_SOCKET					/* don't build if not configured for use in lwipopts.h */
 
+#ifdef CONFIG_NET_NETMON
+#include <queue.h>
+#endif
+
 #include <net/lwip/api.h>
 #include <net/lwip/igmp.h>
 #include <net/lwip/inet.h>
@@ -96,6 +101,7 @@
 #include <net/lwip/tcpip.h>
 #include <net/lwip/udp.h>
 #include <net/lwip/priv/tcpip_priv.h>
+#include <net/lwip/ip_addr.h>
 
 #if LWIP_CHECKSUM_ON_COPY
 #include <net/lwip/inet_chksum.h>
@@ -393,6 +399,82 @@ void lwip_socket_thread_cleanup(void)
 	netconn_thread_cleanup();
 }
 
+#ifdef CONFIG_NET_NETMON
+/**
+ * Copy the global socket contents to the input
+ *
+ * @param data is used to target
+ */
+int copy_socket(void *arg)
+{
+	int i;
+	int num_copy = 0;
+	const ip_addr_t ip6_addr_any = IPADDR6_INIT(0ul, 0ul, 0ul, 0ul);
+	const ip_addr_t ip_addr_any = IPADDR4_INIT(IPADDR_ANY);
+	sq_queue_t *q_sock = (sq_queue_t *) arg;
+	SYS_ARCH_DECL_PROTECT(lev);
+
+	/* copy socket identifier */
+	for (i = 0; i < NUM_SOCKETS; ++i) {
+		/* Protect socket array */
+		SYS_ARCH_PROTECT(lev);
+		if (sockets[i].conn) {
+			num_copy++;
+			if (sockets[i].conn->pcb.ip == NULL) {
+				LWIP_DEBUGF(SOCKETS_DEBUG, ("copy_socket: invalid IP info\n"));
+				set_errno(EBADF);
+				return -1;
+			}
+			struct netmon_sock *sock_info = (struct netmon_sock *) malloc(sizeof(struct netmon_sock));
+
+			sock_info->type = sockets[i].conn->type;
+			sock_info->state = sockets[i].conn->state;
+			sock_info->pid = sockets[i].conn->pid;
+
+			if (sockets[i].conn->type & NETCONN_TCP) {
+				if (netconn_getaddr(sockets[i].conn, &sock_info->local_ip, &sock_info->local_port, 1)) {
+					sock_info->local_port = 0;
+					sock_info->local_ip = sockets[i].conn->pcb.tcp->local_ip;
+				}
+				if (netconn_getaddr(sockets[i].conn, &sock_info->remote_ip, &sock_info->remote_port, 0)) {
+					sock_info->remote_port = 0;
+#ifdef LWIP_IPV6
+					if (sockets[i].conn->type & NETCONN_TYPE_IPV6) {
+						sock_info->remote_ip = ip6_addr_any;
+					} else {
+						sock_info->remote_ip = ip_addr_any;
+					}
+#else
+					sock_info->remote_ip = ip_addr_any;
+#endif
+				}
+			} else if ((sockets[i].conn->type & NETCONN_UDP) || (sockets[i].conn->type & NETCONN_UDPLITE) ||
+					(sockets[i].conn->type & NETCONN_UDPNOCHKSUM)) {
+				sock_info->local_ip = sockets[i].conn->pcb.ip->local_ip;
+				sock_info->remote_ip = sockets[i].conn->pcb.ip->remote_ip;
+				sock_info->local_port = sockets[i].conn->pcb.udp->local_port;
+				if (sockets[i].conn->pcb.udp->flags & UDP_FLAGS_CONNECTED) {
+					sock_info->remote_port = sockets[i].conn->pcb.udp->remote_port;
+				} else {
+					sock_info->remote_port = 0;
+				}
+			} else {
+				sock_info->local_ip = sockets[i].conn->pcb.ip->local_ip;
+				sock_info->remote_ip = sockets[i].conn->pcb.ip->remote_ip;
+				sock_info->local_port = (u16_t) sockets[i].conn->pcb.raw->protocol;
+				sock_info->remote_port = 0;
+			}
+			if (pthread_getname_np(sockets[i].conn->pid, sock_info->pid_name)) {
+				strcpy(sock_info->pid_name, "NONE");
+			}
+			sq_addlast((sq_entry_t *)sock_info, q_sock);
+		}
+		SYS_ARCH_UNPROTECT(lev);
+	}
+	return num_copy;
+}
+#endif
+
 /**
  * Map a externally used socket index to the internal socket representation.
  *
@@ -458,6 +540,7 @@ int alloc_socket(struct netconn *newconn, int accepted)
 		/* Protect socket array */
 		SYS_ARCH_PROTECT(lev);
 		if (!sockets[i].conn && (sockets[i].select_waiting == 0)) {
+			newconn->pid = getpid();
 			sockets[i].conn = newconn;
 			/* The socket is not yet known to anyone, so no need to protect
 			   after having marked it as used. */
