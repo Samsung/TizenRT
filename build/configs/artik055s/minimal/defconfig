@@ -450,6 +450,7 @@ CONFIG_FS_WRITABLE=y
 CONFIG_MM_REGIONS=1
 # CONFIG_ARCH_HAVE_HEAPx is not set
 # CONFIG_GRAN is not set
+CONFIG_BOOTMEM=y
 
 #
 # Power Management

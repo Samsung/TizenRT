@@ -111,6 +111,11 @@ void mm_free(FAR struct mm_heap_s *heap, FAR void *mem)
 		return;
 	}
 
+	if ((uint32_t)mem < (uint32_t)(heap->mm_heapstart)) {
+		dbg("Attempt to release memory outside heap (0x%x)\n", mem);
+		return;
+	}
+
 	/* We need to hold the MM semaphore while we muck with the
 	 * nodelist.
 	 */

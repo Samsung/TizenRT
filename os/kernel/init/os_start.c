@@ -252,6 +252,11 @@ static FAR const char g_idlename[] = "Idle Task";
 
 static FAR char *g_idleargv[2];
 
+#ifdef CONFIG_BOOTMEM
+extern void *g_bootmem;
+extern size_t g_heapsize;
+#endif
+
 /****************************************************************************
  * Private Function Prototypes
  ****************************************************************************/
@@ -384,7 +389,14 @@ void os_start(void)
 		 */
 
 		up_allocate_heap(&heap_start, &heap_size);
+#ifdef CONFIG_BOOTMEM
+		size_t diff = MM_ALIGN_UP((uintptr_t)heap_start) - (uint32_t)heap_start;
+		g_bootmem = heap_start + diff;
+		g_heapsize = heap_size - diff;
+		lldbg("Intialize bootmem at (0x%x)\n", g_bootmem);
+#else
 		kumm_initialize(heap_start, heap_size);
+#endif
 #endif
 
 #ifdef CONFIG_MM_KERNEL_HEAP
@@ -568,6 +580,20 @@ void os_start(void)
 
 	/* Bring Up the System ****************************************************/
 	/* Create initial tasks and bring-up the system */
+
+
+#ifdef CONFIG_BOOTMEM
+#ifdef MM_KERNEL_USRHEAP_INIT
+	/* Get the user-mode heap from the platform specific code and configure
+	 * the user-mode memory allocator.
+	 */
+	if (g_bootmem) {
+		lldbg("Initialize heap at 0x%x\n", g_bootmem);
+		kumm_initialize(g_bootmem, g_heapsize);
+		g_bootmem = NULL;
+	}
+#endif
+#endif
 
 	DEBUGVERIFY(os_bringup());
 

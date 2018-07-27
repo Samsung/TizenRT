@@ -146,3 +146,11 @@ config MM_SHM
 	---help---
 		Build in support for the shared memory interfaces shmget(), shmat(),
 		shmctl(), and shmdt().
+
+config BOOTMEM
+	bool "Direct memory allocation during boot up"
+	default y
+	---help---
+		Enabling this config will result in all memory alloactions during
+		system boot to be performed directly fromt the system RAM by bypassing
+		the memory allocator logic. Such memory cannot be freed.

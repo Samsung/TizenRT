@@ -83,6 +83,10 @@
 /****************************************************************************
  * Public Data
  ****************************************************************************/
+#ifdef CONFIG_BOOTMEM
+void *g_bootmem;
+size_t g_heapsize;
+#endif
 
 /****************************************************************************
  * Private Functions
@@ -108,6 +112,18 @@ FAR void *mm_malloc(FAR struct mm_heap_s *heap, size_t size, mmaddress_t caller_
 FAR void *mm_malloc(FAR struct mm_heap_s *heap, size_t size)
 #endif
 {
+#ifdef CONFIG_BOOTMEM
+	if (g_bootmem) {
+		void *ret = g_bootmem;
+		size = MM_ALIGN_UP(size);
+		g_bootmem += size;
+		g_heapsize -= size;
+
+		mvdbg("Allocate %d bytes from bootmem (0x%x)\n", size, g_bootmem);
+		return ret;
+	}
+#endif
+
 	FAR struct mm_freenode_s *node;
 	void *ret = NULL;
 	int ndx;
