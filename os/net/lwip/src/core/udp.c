@@ -95,7 +95,7 @@ static u16_t udp_port = UDP_LOCAL_PORT_RANGE_START;
 
 /* The list of UDP PCBs */
 /* exported in udp.h (was static) */
-struct udp_pcb *udp_pcbs;
+struct udp_pcb *udp_pcbs = NULL;
 
 /**
  * Initialize this module.
