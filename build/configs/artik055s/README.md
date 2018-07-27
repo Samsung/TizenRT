@@ -49,6 +49,9 @@ $ make -C os download ALL
              XADC0AIN3 A3 |_|                 |_|  2 XGPIO17(gpio46)
                     NC A4 |_|                 |_|  1 XUART0_TX
                     NC A5 |_|                 |_|  0 XUART0_RX
+                     [CON705]     [CON706]
+                        2 4 6     2
+                        1 3 5     1
 
                        [CON703]
                        2  4  6  8 10 12 14 16 18 20 22 24
@@ -87,6 +90,10 @@ $ make -C os download ALL
        XGPIO1(gpio30) / XI2C2_SDA 21 |_|_| 22 XGPIO7(gpio36) / XSPI2_MOSI
        XGPIO3(gpio32) / XI2C3_SDA 23 |_|_| 24 GND
 ```
+#### CON705
+ * VCC_USB5P0: Use USB Power Source, when **Pin 1 is connected to Pin 2** using a jumper.
+ * DC Jack: Use DC Jack Power Source, when **Pin 3 is connected to Pin 4** using a jumper.
+ * Battery: User Battery Power Source, when battery is connected to CON706 and **Pin 5 is connected to Pin 6** using a jumper.
 
 ## Pin Assign
 
