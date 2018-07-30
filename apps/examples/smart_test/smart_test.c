@@ -547,7 +547,7 @@ static void smart_usage(void)
 	fprintf(stderr, "          Performs a circular log style test where a fixed number of fixed\n");
 	fprintf(stderr, "          length records are written and then overwritten with new data.\n");
 	fprintf(stderr, "          Uses the -r, -e and -t options to specify the parameters of the\n");
-	fprintf(stderr, "          record geometry and update operation.  The COUNT parameter sets\n");
+	fprintf(stderr, "          recording geometry and update operation.  The COUNT parameter sets\n");
 	fprintf(stderr, "          the number of record updates to perform.\n\n");
 
 	fprintf(stderr, "    -s SEEKCOUNT\n");
@@ -558,7 +558,7 @@ static void smart_usage(void)
 
 	fprintf(stderr, "    -w WRITECOUNT\n");
 	fprintf(stderr, "          Performs a seek/write/seek/read test where to validate the SMARTFS\n");
-	fprintf(stderr, "          seek/write operation.  Uses the -l option to specifiy the number of\n");
+	fprintf(stderr, "          seek/write operation.  Uses the -l option to specify the number of\n");
 	fprintf(stderr, "          test lines to write to the test file.  The WRITECOUNT parameter sets\n");
 	fprintf(stderr, "          the number of seek/write operations to perform.\n\n");
 
