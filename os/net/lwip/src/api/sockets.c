@@ -409,7 +409,9 @@ int copy_socket(void *arg)
 {
 	int i;
 	int num_copy = 0;
+#if LWIP_IPV6
 	const ip_addr_t ip6_addr_any = IPADDR6_INIT(0ul, 0ul, 0ul, 0ul);
+#endif
 	const ip_addr_t ip_addr_any = IPADDR4_INIT(IPADDR_ANY);
 	sq_queue_t *q_sock = (sq_queue_t *) arg;
 	SYS_ARCH_DECL_PROTECT(lev);
@@ -438,7 +440,7 @@ int copy_socket(void *arg)
 				}
 				if (netconn_getaddr(sockets[i].conn, &sock_info->remote_ip, &sock_info->remote_port, 0)) {
 					sock_info->remote_port = 0;
-#ifdef LWIP_IPV6
+#if LWIP_IPV6
 					if (sockets[i].conn->type & NETCONN_TYPE_IPV6) {
 						sock_info->remote_ip = ip6_addr_any;
 					} else {
