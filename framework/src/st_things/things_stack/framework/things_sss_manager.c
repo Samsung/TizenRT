@@ -185,7 +185,8 @@ static int things_set_cert_chains(void)
 		return ret;
 	}
 
-	int cnt = 0, i = 0;
+	int cnt = 0;
+	int i = 0;
 	uint8_t *ptr = buf;
 	// Artik Certificate Order : rootCA -> subCA -> deviceCA
 	for (i = 0; i < buflen - 2; i++) {
