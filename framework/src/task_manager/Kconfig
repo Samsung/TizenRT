@@ -32,4 +32,13 @@ config TASK_MANAGER_USER_SPECIFIC_BROADCAST
 	default n
 	---help---
 		User defined broadcast messages are enabled to use at the Task Manager.
+
+config TASK_MANAGER_UNICAST_REPLY_TIMEOUT
+	int "Task Manager Unicast Reply Timeout(sec)"
+	default 0
+	---help---
+		If timeout argument in task_manager_unicast is TM_RESPONSE_WAIT_INF, 
+		Task Manager will wait for reply during this seconds.
+		But if this config is zero, Task Manager will wait forever until receiving reply.
+
 endif
