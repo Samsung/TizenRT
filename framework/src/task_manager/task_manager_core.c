@@ -990,6 +990,7 @@ static int taskmgr_register_pthread(tm_pthread_info_t *pthread_info, int permiss
 
 	return handle;
 }
+#endif
 
 static int taskmgr_set_termination_cb(int type, void *data, int pid)
 {
@@ -1029,7 +1030,6 @@ int task_manager_run_exit_cb(int pid)
 	}
 	return OK;
 }
-#endif
 
 static int taskmgr_dealloc_broadcast_msg(int msg)
 {
