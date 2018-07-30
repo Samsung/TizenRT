@@ -27,4 +27,9 @@ config TASK_MANAGER_MAX_MSG
 	---help---
 		Task Manager can receive under this value.
 
+config TASK_MANAGER_USER_SPECIFIC_BROADCAST
+	bool "Enable User Specific Broadcast Message"
+	default n
+	---help---
+		User defined broadcast messages are enabled to use at the Task Manager.
 endif

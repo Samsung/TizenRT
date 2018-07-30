@@ -191,6 +191,7 @@ ifeq ($(CONFIG_EXAMPLES_TESTCASE_TASK_MANAGER_UTC),y)
 	$(Q) $(call REGISTER,tm_broadcast1,tm_broadcast1_main,TASH_EXECMD_ASYNC,101,1024)
 	$(Q) $(call REGISTER,tm_broadcast2,tm_broadcast2_main,TASH_EXECMD_ASYNC,101,1024)
 	$(Q) $(call REGISTER,tm_broadcast3,tm_broadcast3_main,TASH_EXECMD_ASYNC,101,1024)
+	$(Q) $(call REGISTER,tm_utc,tm_utc_main,TASH_EXECMD_ASYNC,101,1024)
 endif
 ifeq ($(CONFIG_EXAMPLES_TESTCASE_TTRACE),y)
 	$(Q) $(call REGISTER,ttrace_tc,tc_ttrace_main,TASH_EXECMD_ASYNC,100,2048)

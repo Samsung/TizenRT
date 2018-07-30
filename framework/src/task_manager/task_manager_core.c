@@ -28,12 +28,16 @@
 #include <fcntl.h>
 #include <errno.h>
 #include <debug.h>
+#include <queue.h>
 #include <sys/types.h>
 #include <sys/ioctl.h>
 #include <apps/builtin.h>
 #include <tinyara/fs/ioctl.h>
 #include <tinyara/task_manager_internal.h>
 #include <task_manager/task_manager.h>
+#ifdef CONFIG_TASK_MANAGER_USER_SPECIFIC_BROADCAST
+#include <task_manager/task_manager_broadcast_list.h>
+#endif
 #include "task_manager_internal.h"
 
 /****************************************************************************
@@ -52,6 +56,7 @@ tm_pthread_info_t tm_pthread_list[CONFIG_TASK_MANAGER_MAX_TASKS];
 app_list_t tm_app_list[CONFIG_TASK_MANAGER_MAX_TASKS];
 tm_task_info_t tm_task_list[CONFIG_TASK_MANAGER_MAX_TASKS];
 static bool g_handle_hash[CONFIG_TASK_MANAGER_MAX_TASKS];
+int tm_broadcast_msg[TM_BROADCAST_MSG_MAX + CONFIG_TASK_MANAGER_MAX_TASKS];
 
 #define MAX_HANDLE_MASK (CONFIG_TASK_MANAGER_MAX_TASKS - 1)
 #define HANDLE_HASH(handle)  ((handle) & MAX_HANDLE_MASK)
@@ -164,11 +169,21 @@ static int taskmgr_register_builtin(char *name, int permission, int caller_pid)
 		TM_PERMISSION(handle) = permission;
 		TM_STOP_CB(handle) = NULL;
 		TM_EXIT_CB(handle) = NULL;
+		sq_init(&TM_BROADCAST_INFO_LIST(handle));
 		tmvdbg("Registered handle %d\n", handle);
 		handle_cnt++;
 	}
 
 	return handle;
+}
+
+static void taskmgr_clear_broadcast_info_list(int handle)
+{
+	tm_broadcast_info_t *curr;
+
+	while ((curr = (tm_broadcast_info_t *)sq_remfirst(&TM_BROADCAST_INFO_LIST(handle))) != NULL) {
+		TM_FREE(curr);
+	}
 }
 
 static int taskmgr_unregister(int handle)
@@ -201,6 +216,7 @@ static int taskmgr_unregister(int handle)
 	TM_PID(handle) = 0;
 	TM_STOP_CB(handle) = NULL;
 	TM_EXIT_CB(handle) = NULL;
+	taskmgr_clear_broadcast_info_list(handle);
 	TM_FREE(tm_app_list[handle].addr);
 	tm_app_list[handle].addr = NULL;
 	g_handle_hash[handle] = false;
@@ -290,6 +306,7 @@ static int taskmgr_stop(int handle, int caller_pid)
 	if (!taskmgr_is_permitted(handle, caller_pid)) {
 		return TM_NO_PERMISSION;
 	}
+
 
 	/* Call stop callback */
 	TM_STATUS(handle) = TM_APP_STATE_CANCELLING;
@@ -644,14 +661,6 @@ static void taskmgr_termination_callback(void)
 	mq_unlink(TM_PUBLIC_MQ);
 }
 
-static int taskmgr_check_msg_mask(int msg_mask, int handle)
-{
-	if (msg_mask & TM_MSG_MASK(handle)) {
-		return OK;
-	}
-	return ERROR;
-}
-
 int taskmgr_get_handle_by_pid(int pid)
 {
 	int handle;
@@ -663,56 +672,172 @@ int taskmgr_get_handle_by_pid(int pid)
 	return TM_UNREGISTERED_APP;
 }
 
+static int taskmgr_check_broad_msg(int msg)
+{
+	if (tm_broadcast_msg[msg - 1] == msg) {
+		return OK;
+	}
+	return TM_UNREGISTERED_MSG;
+}
+
+static tm_broadcast_info_t *taskmgr_search_broadcast_info(int msg, int handle)
+{
+	tm_broadcast_info_t *curr;
+
+	if (taskmgr_check_broad_msg(msg) != OK) {
+		tmdbg("Not regiseterd broadcast msg: %d\n", msg);
+		return NULL;
+	}
+	curr = (tm_broadcast_info_t *)sq_peek(&TM_BROADCAST_INFO_LIST(handle));
+	while (curr) {
+		if (curr->msg == msg) {
+			return curr;
+		}
+		curr = sq_next(curr);
+	}
+	return curr;
+}
+
 static void taskmgr_broadcast(int msg)
 {
 	int handle;
 	int fd;
 	int ret;
 	union sigval msg_broad;
+	tm_broadcast_info_t *broadcast_info;
 
 	fd = taskmgr_get_drvfd();
 	if (fd < 0) {
 		return;
 	}
-	msg_broad.sival_int = msg;
+
+	ret = taskmgr_check_broad_msg(msg);
+	if (ret == TM_UNREGISTERED_MSG) {
+		return;
+	}
+
 	for (handle = 0; handle < CONFIG_TASK_MANAGER_MAX_TASKS; handle++) {
 		if (TM_LIST_ADDR(handle) != NULL) {
 			ret = taskmgr_get_task_state(handle);
 			if (ret == TM_APP_STATE_STOP || ret == TM_APP_STATE_UNREGISTERED) {
 				continue;
 			}
-			ret = taskmgr_check_msg_mask(msg, handle);
-			if (ret != OK) {
-				continue;
-			}
 			ret = ioctl(fd, TMIOC_BROADCAST, TM_PID(handle));
 			if (ret != OK) {
 				continue;
 			}
+			broadcast_info = taskmgr_search_broadcast_info(msg, handle);
+			if (broadcast_info == NULL) {
+				continue;
+			}
+			msg_broad.sival_ptr = broadcast_info;
 			(void)sigqueue(TM_PID(handle), SIGTM_BROADCAST, msg_broad);
 		}
 	}
 }
 
+static void taskmgr_broadcast_msg_init(void)
+{
+	int chk_idx;
+	int msg_num;
+
+	for (chk_idx = 0; chk_idx < TM_BROADCAST_MSG_MAX + CONFIG_TASK_MANAGER_MAX_TASKS; chk_idx++) {
+		msg_num = chk_idx + 1;
+		if (chk_idx < (TM_BROADCAST_MSG_MAX - 1)) {
+			tm_broadcast_msg[chk_idx] = msg_num;
+		} else {
+			tm_broadcast_msg[chk_idx] = -1;
+		}
+	}
+}
+
+static int taskmgr_is_tm_broadcast_msg_init(void)
+{
+	if ((tm_broadcast_msg[0] != 1) && (tm_broadcast_msg[0] != -1)) {
+		 return 0;
+	}
+	return 1;
+}
+
 static int taskmgr_set_msg_cb(int type, void *data, int pid)
 {
 	int handle;
+	int ret;
+	tm_broadcast_info_t *broadcast_info;
 
 	if (data == NULL) {
 		return TM_INVALID_PARAM;
 	}
+	handle = taskmgr_get_handle_by_pid(pid);
+	if (handle == TM_UNREGISTERED_APP) {
+		return handle;
+	}
+	if (type == TYPE_UNICAST) {
+		TM_UNICAST_CB(handle) = (_tm_unicast_t)data;
+	} else {
+		if (!taskmgr_is_tm_broadcast_msg_init()) {
+			taskmgr_broadcast_msg_init();
+		}
+		ret = taskmgr_check_broad_msg(((tm_broadcast_info_t *)data)->msg);
+		if (ret == TM_UNREGISTERED_MSG) {
+			return ret;
+		}
+		broadcast_info = taskmgr_search_broadcast_info(((tm_broadcast_info_t *)data)->msg, handle);
+		if (broadcast_info == NULL) {
+			broadcast_info = (tm_broadcast_info_t *)TM_ALLOC(sizeof(tm_broadcast_info_t));
+			if (broadcast_info == NULL) {
+				return TM_OUT_OF_MEMORY;
+			}
+			((tm_broadcast_info_t *)broadcast_info)->flink = NULL;
+			((tm_broadcast_info_t *)broadcast_info)->msg = ((tm_broadcast_info_t *)data)->msg;
+			((tm_broadcast_info_t *)broadcast_info)->cb = ((tm_broadcast_info_t *)data)->cb;
+			((tm_broadcast_info_t *)broadcast_info)->cb_data = ((tm_broadcast_info_t *)data)->cb_data;
+			sq_addlast((FAR sq_entry_t *)broadcast_info, &TM_BROADCAST_INFO_LIST(handle));
+		} else {
+			if ((broadcast_info->cb == ((tm_broadcast_info_t *)data)->cb) && broadcast_info->cb_data == ((tm_broadcast_info_t *)data)->cb_data) {
+				return TM_ALREADY_REGISTERED_CB;
+			}
+			((tm_broadcast_info_t *)broadcast_info)->cb = ((tm_broadcast_info_t *)data)->cb;
+			((tm_broadcast_info_t *)broadcast_info)->cb_data = ((tm_broadcast_info_t *)data)->cb_data;
+		}
+		
+	}
+	return OK;
+}
+
+static int taskmgr_alloc_broadcast_msg(void)
+{
+	int chk_idx;
+	int msg_num;
+
+	if (!taskmgr_is_tm_broadcast_msg_init()) {
+		taskmgr_broadcast_msg_init();
+	}
+	for (chk_idx = 0; chk_idx < TM_BROADCAST_MSG_MAX + CONFIG_TASK_MANAGER_MAX_TASKS; chk_idx++) {
+		msg_num = chk_idx + 1;
+		if (tm_broadcast_msg[chk_idx] == -1) {
+			tm_broadcast_msg[chk_idx] = msg_num;
+			return msg_num;
+		}
+	}
+	return TM_OUT_OF_MEMORY;
+}
+
+static int taskmgr_unset_broadcast_cb(int msg, int pid)
+{
+	int handle;
+	tm_broadcast_info_t *broadcast_info;
 
 	handle = taskmgr_get_handle_by_pid(pid);
 	if (handle == TM_UNREGISTERED_APP) {
 		return handle;
 	}
-
-	if (type == TYPE_UNICAST) {
-		TM_UNICAST_CB(handle) = (_tm_unicast_t)data;
-	} else {
-		TM_MSG_MASK(handle) = ((tm_broadcast_t *)data)->msg_mask;
-		TM_BROADCAST_CB(handle) = ((tm_broadcast_t *)data)->cb;
+	broadcast_info = taskmgr_search_broadcast_info(msg, handle);
+	if (broadcast_info == NULL) {
+		return TM_UNREGISTERED_MSG;
 	}
+	sq_rem((FAR sq_entry_t *)broadcast_info, &TM_BROADCAST_INFO_LIST(handle));
+	TM_FREE(broadcast_info);
 	return OK;
 }
 
@@ -774,6 +899,7 @@ static int taskmgr_register_task(tm_task_info_t *task_info, int permission, int 
 		TM_PERMISSION(handle) = permission;
 		TM_STOP_CB(handle) = NULL;
 		TM_EXIT_CB(handle) = NULL;
+		sq_init(&TM_BROADCAST_INFO_LIST(handle));
 		tmvdbg("Registered handle %d\n", handle);
 		handle_cnt++;
 	}
@@ -839,6 +965,7 @@ static int taskmgr_register_pthread(tm_pthread_info_t *pthread_info, int permiss
 		TM_PERMISSION(handle) = permission;
 		TM_STOP_CB(handle) = NULL;
 		TM_EXIT_CB(handle) = NULL;
+		sq_init(&TM_BROADCAST_INFO_LIST(handle));
 		tmvdbg("Registered handle %d\n", handle);
 		handle_cnt++;
 	}
@@ -885,6 +1012,20 @@ int task_manager_run_exit_cb(int pid)
 	return OK;
 }
 #endif
+
+static int taskmgr_dealloc_broadcast_msg(int msg)
+{
+	int chk_idx;
+
+	for (chk_idx = 0; chk_idx < TM_BROADCAST_MSG_MAX + CONFIG_TASK_MANAGER_MAX_TASKS; chk_idx++) {
+		if (tm_broadcast_msg[chk_idx] == msg) {
+			tm_broadcast_msg[chk_idx] = -1;
+			return OK;
+		}
+	}
+	return TM_UNREGISTERED_MSG;
+}
+
 /****************************************************************************
  * Main Function
  ****************************************************************************/
@@ -1000,6 +1141,10 @@ int task_manager(int argc, char *argv[])
 			(void)taskmgr_broadcast(*((int *)request_msg.data));
 			break;
 
+		case TASKMGRCMD_ALLOC_BROADCAST_MSG:
+			ret = taskmgr_alloc_broadcast_msg();
+			break;
+
 		case TASKMGRCMD_SET_BROADCAST_CB:
 			ret = taskmgr_set_msg_cb(TYPE_BROADCAST, request_msg.data, request_msg.caller_pid);
 			break;
@@ -1031,6 +1176,14 @@ int task_manager(int argc, char *argv[])
 		case TASKMGRCMD_SET_EXIT_CB:
 			ret = taskmgr_set_termination_cb(TYPE_EXIT, request_msg.data, request_msg.caller_pid);
 			break;
+
+		case TASKMGRCMD_UNSET_BROADCAST_CB:
+			ret = taskmgr_unset_broadcast_cb(*((int *)request_msg.data), request_msg.caller_pid);
+			break;
+
+		case TASKMGRCMD_DEALLOC_BROADCAST_MSG:
+			ret = taskmgr_dealloc_broadcast_msg(*((int *)request_msg.data));
+			break;
 			
 		default:
 			break;
@@ -1041,7 +1194,7 @@ int task_manager(int argc, char *argv[])
 			taskmgr_send_response((char *)request_msg.q_name, &response_msg);
 		}
 
-		if (request_msg.data != NULL && request_msg.cmd != TASKMGRCMD_SET_UNICAST_CB && request_msg.cmd != TASKMGRCMD_SET_STOP_CB && request_msg.cmd != TASKMGRCMD_SET_EXIT_CB) {
+		if (request_msg.data != NULL && request_msg.cmd != TASKMGRCMD_SET_UNICAST_CB && request_msg.cmd != TASKMGRCMD_SET_STOP_CB && request_msg.cmd != TASKMGRCMD_SET_EXIT_CB && request_msg.cmd != TASKMGRCMD_ALLOC_BROADCAST_MSG) {
 			TM_FREE(request_msg.data);
 			request_msg.data = NULL;
 		}

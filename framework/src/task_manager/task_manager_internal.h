@@ -19,13 +19,16 @@
 #ifndef __TASK_MANAGER_INTERNAL_H__
 #define __TASK_MANAGER_INTERNAL_H__
 
+#include <tinyara/config.h>
 #include <stdlib.h>
 #include <stdbool.h>
 #include <unistd.h>
 #ifndef CONFIG_DISABLE_PTHREAD
 #include <pthread.h>
 #endif
+#include <queue.h>
 #include <sys/types.h>
+#include <task_manager/task_manager.h>
 
 /* Command Types */
 #define TASKMGRCMD_REGISTER_BUILTIN        0
@@ -48,6 +51,9 @@
 #endif
 #define TASKMGRCMD_SET_STOP_CB             16
 #define TASKMGRCMD_SET_EXIT_CB             17
+#define TASKMGRCMD_ALLOC_BROADCAST_MSG     18
+#define TASKMGRCMD_UNSET_BROADCAST_CB      19
+#define TASKMGRCMD_DEALLOC_BROADCAST_MSG   20
 
 /* Task Type */
 #define TM_BUILTIN_TASK                    0
@@ -75,7 +81,6 @@
 #define TM_UNICAST_SYNC      (0)
 #define TM_UNICAST_ASYNC     (1)
 
-typedef void (*_tm_broadcast_t)(int);
 typedef void (*_tm_termination_t)(void);
 
 struct app_list_s {
@@ -91,11 +96,10 @@ struct app_list_data_s {
 	int tm_gid;
 	int status;
 	int permission;
-	int msg_mask;
-	_tm_unicast_t unicast_cb;
-	_tm_broadcast_t broadcast_cb;
 	_tm_termination_t stop_cb;
 	_tm_termination_t exit_cb;
+	_tm_unicast_t unicast_cb;
+	sq_queue_t broadcast_info_list;
 };
 typedef struct app_list_data_s app_list_data_t;
 
@@ -115,11 +119,13 @@ struct tm_response_s {
 };
 typedef struct tm_response_s tm_response_t;
 
-struct tm_broadcast_s {
-	int msg_mask;
+struct tm_broadcast_info_s {
+	struct tm_broadcast_info_s *flink;
+	int msg;
 	_tm_broadcast_t cb;
+	void* cb_data;
 };
-typedef struct tm_broadcast_s tm_broadcast_t;
+typedef struct tm_broadcast_info_s tm_broadcast_info_t;
 
 struct tm_task_info_s {
 	char *name;
@@ -149,18 +155,17 @@ typedef struct tm_unicast_internal_msg_s tm_unicast_internal_msg_t;
 
 #define IS_INVALID_HANDLE(i) (i < 0 || i >= CONFIG_TASK_MANAGER_MAX_TASKS)
 
-#define TM_LIST_ADDR(handle)       ((app_list_data_t *)tm_app_list[handle].addr)
-#define TM_PID(handle)             tm_app_list[handle].pid
-#define TM_TYPE(handle)            TM_LIST_ADDR(handle)->type
-#define TM_IDX(handle)             TM_LIST_ADDR(handle)->idx
-#define TM_GID(handle)             TM_LIST_ADDR(handle)->tm_gid
-#define TM_STATUS(handle)          TM_LIST_ADDR(handle)->status
-#define TM_PERMISSION(handle)      TM_LIST_ADDR(handle)->permission
-#define TM_MSG_MASK(handle)        TM_LIST_ADDR(handle)->msg_mask
-#define TM_UNICAST_CB(handle)      TM_LIST_ADDR(handle)->unicast_cb
-#define TM_BROADCAST_CB(handle)    TM_LIST_ADDR(handle)->broadcast_cb
-#define TM_STOP_CB(handle)         TM_LIST_ADDR(handle)->stop_cb
-#define TM_EXIT_CB(handle)         TM_LIST_ADDR(handle)->exit_cb
+#define TM_LIST_ADDR(handle)            ((app_list_data_t *)tm_app_list[handle].addr)
+#define TM_PID(handle)                  tm_app_list[handle].pid
+#define TM_TYPE(handle)                 TM_LIST_ADDR(handle)->type
+#define TM_IDX(handle)                  TM_LIST_ADDR(handle)->idx
+#define TM_GID(handle)                  TM_LIST_ADDR(handle)->tm_gid
+#define TM_STATUS(handle)               TM_LIST_ADDR(handle)->status
+#define TM_PERMISSION(handle)           TM_LIST_ADDR(handle)->permission
+#define TM_UNICAST_CB(handle)           TM_LIST_ADDR(handle)->unicast_cb
+#define TM_STOP_CB(handle)              TM_LIST_ADDR(handle)->stop_cb
+#define TM_EXIT_CB(handle)              TM_LIST_ADDR(handle)->exit_cb
+#define TM_BROADCAST_INFO_LIST(handle)  TM_LIST_ADDR(handle)->broadcast_info_list
 
 extern app_list_t tm_app_list[CONFIG_TASK_MANAGER_MAX_TASKS];
 
