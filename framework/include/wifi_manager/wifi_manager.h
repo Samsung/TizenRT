@@ -82,6 +82,7 @@ typedef enum {
 	WIFI_MANAGER_TIMEOUT,
 	WIFI_MANAGER_BUSY,
 	WIFI_MANAGER_ALREADY_CONNECTED,
+	WIFI_MANAGER_CALLBACK_NOT_REGISTERED,
 } wifi_manager_result_e;
 
 /**
@@ -259,6 +260,27 @@ wifi_manager_result_e wifi_manager_init(wifi_manager_cb_s *wmcb);
  * @since TizenRT v1.1
  */
 wifi_manager_result_e wifi_manager_deinit(void);
+
+/**
+ * @brief Register the callback to receive wi-fi events
+ * @details @b #include <wifi_manager/wifi_manager.h>
+ *          if it fails to register the callbacks with result WIFI_MANAGER_DEINITIALIZED
+ *          then it have to call wifi_manager_init to run Wi-Fi
+ * @param[in] wmcb callback functions called when wi-fi events happen
+ * @return On success, WIFI_MANAGER_SUCCESS (i.e., 0) is returned. On failure, non-zero value is returned.
+ * @since TizenRT v2.0
+ */
+wifi_manager_result_e wifi_manager_register_cb(wifi_manager_cb_s *wmcb);
+
+/**
+ * @brief Unregister the callback to receive wi-fi events
+ * @details @b #include <wifi_manager/wifi_manager.h>
+ * @param[in] wmcb callback functions are used to find registered callback
+ * @return On success, WIFI_MANAGER_SUCCESS (i.e., 0) is returned. On failure, non-zero value is returned.
+ * @since TizenRT v2.0
+ */
+wifi_manager_result_e wifi_manager_unregister_cb(wifi_manager_cb_s *wmcb);
+
 
 /**
  * @brief Change the Wi-Fi mode to station or AP.
