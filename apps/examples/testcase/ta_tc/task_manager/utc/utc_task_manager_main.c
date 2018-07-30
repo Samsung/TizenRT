@@ -919,7 +919,7 @@ int utc_task_manager_main(int argc, char *argv[])
 		return ERROR;
 	}
 
-	handle_tm_utc = task_manager_register("tm_utc", TM_APP_PERMISSION_DEDICATE, TM_RESPONSE_WAIT_INF);
+	handle_tm_utc = task_manager_register_builtin("tm_utc", TM_APP_PERMISSION_DEDICATE, TM_RESPONSE_WAIT_INF);
 	(void)task_manager_start(handle_tm_utc, TM_NO_RESPONSE);
 	sleep(3);	//wait for starting tm_utc
 	

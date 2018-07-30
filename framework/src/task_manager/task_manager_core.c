@@ -29,10 +29,12 @@
 #include <errno.h>
 #include <debug.h>
 #include <queue.h>
+#include <time.h>
 #include <sys/types.h>
 #include <sys/ioctl.h>
 #include <apps/builtin.h>
 #include <tinyara/fs/ioctl.h>
+#include <tinyara/clock.h>
 #include <tinyara/task_manager_internal.h>
 #include <task_manager/task_manager.h>
 #ifdef CONFIG_TASK_MANAGER_USER_SPECIFIC_BROADCAST
@@ -469,7 +471,7 @@ static int taskmgr_unicast_async(int handle, int caller_pid, void *data)
 	return OK;
 }
 
-static int taskmgr_unicast_sync(int handle, int caller_pid, tm_unicast_internal_msg_t *data, tm_unicast_msg_t *response_msg)
+static int taskmgr_unicast_sync(int handle, int caller_pid, tm_unicast_internal_msg_t *data, tm_unicast_msg_t *response_msg, int timeout)
 {
 	int ret;
 	int fd;
@@ -477,6 +479,7 @@ static int taskmgr_unicast_sync(int handle, int caller_pid, tm_unicast_internal_
 	mqd_t unicast_mqfd;
 	struct mq_attr attr;
 	tm_unicast_msg_t recv_msg;
+	FAR struct timespec time;
 
 	if (IS_INVALID_HANDLE(handle)) {
 		return TM_INVALID_PARAM;
@@ -520,11 +523,26 @@ static int taskmgr_unicast_sync(int handle, int caller_pid, tm_unicast_internal_
 		return TM_COMMUCATION_FAIL;
 	}
 
-	ret = mq_receive(unicast_mqfd, (char *)&recv_msg, sizeof(tm_unicast_msg_t), 0);
+	if (timeout > 0) {
+		clock_gettime(CLOCK_REALTIME, &time);
+		time.tv_sec += timeout;
+		ret = mq_timedreceive(unicast_mqfd, (char *)&recv_msg, sizeof(tm_unicast_msg_t), 0, &time);
+	} else {
+#if CONFIG_TASK_MANAGER_UNICAST_REPLY_TIMEOUT > 0
+		clock_gettime(CLOCK_REALTIME, &time);
+		time.tv_sec += CONFIG_TASK_MANAGER_UNICAST_REPLY_TIMEOUT;
+		ret = mq_timedreceive(unicast_mqfd, (char *)&recv_msg, sizeof(tm_unicast_msg_t), 0, &time);
+#else
+		ret = mq_receive(unicast_mqfd, (char *)&recv_msg, sizeof(tm_unicast_msg_t), 0);
+#endif
+	}
 	if (ret <= 0) {
 		mq_close(unicast_mqfd);
 		mq_unlink(TM_UNICAST_MQ);
 		tmdbg("mq_receive failed! %d\n", errno);
+		if (errno == ETIMEDOUT) {
+			return TM_REPLY_TIMEOUT;
+		}
 		return TM_COMMUCATION_FAIL;
 	}
 
@@ -972,6 +990,7 @@ static int taskmgr_register_pthread(tm_pthread_info_t *pthread_info, int permiss
 
 	return handle;
 }
+#endif
 
 static int taskmgr_set_termination_cb(int type, void *data, int pid)
 {
@@ -1011,7 +1030,6 @@ int task_manager_run_exit_cb(int pid)
 	}
 	return OK;
 }
-#endif
 
 static int taskmgr_dealloc_broadcast_msg(int msg)
 {
@@ -1131,7 +1149,7 @@ int task_manager(int argc, char *argv[])
 					response_msg.status = TM_OUT_OF_MEMORY;
 					break;
 				}
-				ret = taskmgr_unicast_sync(request_msg.handle, request_msg.caller_pid, (tm_unicast_internal_msg_t *)request_msg.data, response_msg.data);
+				ret = taskmgr_unicast_sync(request_msg.handle, request_msg.caller_pid, (tm_unicast_internal_msg_t *)request_msg.data, response_msg.data, request_msg.timeout);
 			} else {
 				ret = taskmgr_unicast_async(request_msg.handle, request_msg.caller_pid, ((tm_unicast_internal_msg_t *)request_msg.data)->msg);
 			}

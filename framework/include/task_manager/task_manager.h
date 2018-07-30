@@ -79,6 +79,7 @@ enum tm_result_error_e {
 	TM_NOT_SUPPORTED = -12,
 	TM_UNREGISTERED_MSG = -13,
 	TM_ALREADY_REGISTERED_CB = -14,
+	TM_REPLY_TIMEOUT = -15,
 };
 
 /**
@@ -269,8 +270,11 @@ int task_manager_restart(int handle, int timeout);
  * @param[in] timeout returnable flag. It can be one of the below.\n
  *			TM_NO_RESPONSE : Ignore the response of request from task manager\n
  *			TM_RESPONSE_WAIT_INF : Blocked until get the response from task manager\n
- *			integer value : Specifies an upper limit on the time for which will block in milliseconds
- *            If reply is not NULL(=SYNC), timeout should not be set to TM_NO_RESPONSE.
+ *			integer value : Specifies an upper limit on the time for which will block in milliseconds\n
+ *            If reply is not NULL(=SYNC), timeout should not be set to TM_NO_RESPONSE.\n
+ *            When you enable CONFIG_TASK_MANAGER_UNICAST_REPLY_TIMEOUT with non-zero value, task manager waits the reply during\n
+ *            CONFIG_TASK_MANAGER_UNICAST_REPLY_TIMEOUT even if user calls this API with TM_RESPONSE_WAIT_INF.\n
+ *            When set to zero, task manager waits the reply forever, it can cause task manager hang.
  * @return On success, OK is returned. On failure, defined negative value is returned.
  * @since TizenRT v2.0 PRE
  */
