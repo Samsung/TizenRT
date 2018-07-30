@@ -28,7 +28,7 @@
 #include <sys/types.h>
 
 /* Command Types */
-#define TASKMGRCMD_REGISTER                0
+#define TASKMGRCMD_REGISTER_BUILTIN        0
 #define TASKMGRCMD_UNREGISTER              1
 #define TASKMGRCMD_START                   2
 #define TASKMGRCMD_STOP                    3

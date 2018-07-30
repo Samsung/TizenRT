@@ -124,7 +124,7 @@ static int taskmgr_assign_handle(void)
 	return TM_BUSY;
 }
 
-static int taskmgr_register(char *name, int permission, int caller_pid)
+static int taskmgr_register_builtin(char *name, int permission, int caller_pid)
 {
 	int chk_idx;
 	int handle;
@@ -937,8 +937,8 @@ int task_manager(int argc, char *argv[])
 
 		tmvdbg("Recevied Request msg : cmd = %d\n", request_msg.cmd);
 		switch (request_msg.cmd) {
-		case TASKMGRCMD_REGISTER:
-			ret = taskmgr_register(request_msg.data, request_msg.handle, request_msg.caller_pid);
+		case TASKMGRCMD_REGISTER_BUILTIN:
+			ret = taskmgr_register_builtin(request_msg.data, request_msg.handle, request_msg.caller_pid);
 			break;
 
 		case TASKMGRCMD_UNREGISTER:

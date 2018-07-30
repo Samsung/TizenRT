@@ -127,7 +127,7 @@ int tm_sample_main(int argc, char *argv[])
 {
 	int ret;
 
-	tm_noperm_handle = task_manager_register(TM_NOPERM_NAME, TM_APP_PERMISSION_DEDICATE, 100);
+	tm_noperm_handle = task_manager_register_builtin(TM_NOPERM_NAME, TM_APP_PERMISSION_DEDICATE, 100);
 
 	ret = task_manager_set_unicast_cb(test_unicast_handler);
 	if (ret != OK) {
@@ -185,13 +185,13 @@ int tm_broadcast3_main(int argc, char *argv[])
 static void utc_task_manager_register_n(void)
 {
 	int ret;
-	ret = task_manager_register(NULL, TM_APP_PERMISSION_DEDICATE, TM_NO_RESPONSE);
+	ret = task_manager_register_builtin(NULL, TM_APP_PERMISSION_DEDICATE, TM_NO_RESPONSE);
 	TC_ASSERT_EQ("task_manager_register", ret, TM_INVALID_PARAM);
 
-	ret = task_manager_register(TM_SAMPLE_NAME, TM_INVALID_PERMISSION, TM_NO_RESPONSE);
+	ret = task_manager_register_builtin(TM_SAMPLE_NAME, TM_INVALID_PERMISSION, TM_NO_RESPONSE);
 	TC_ASSERT_EQ("task_manager_register", ret, TM_INVALID_PARAM);
 
-	ret = task_manager_register(TM_SAMPLE_NAME, TM_APP_PERMISSION_GROUP, TM_INVALID_TIMEOUT);
+	ret = task_manager_register_builtin(TM_SAMPLE_NAME, TM_APP_PERMISSION_GROUP, TM_INVALID_TIMEOUT);
 	TC_ASSERT_EQ("task_manager_register", ret, TM_INVALID_PARAM);
 
 	TC_SUCCESS_RESULT();
@@ -199,19 +199,19 @@ static void utc_task_manager_register_n(void)
 
 static void utc_task_manager_register_p(void)
 {
-	tm_sample_handle = task_manager_register("invalid", TM_APP_PERMISSION_DEDICATE, TM_RESPONSE_WAIT_INF);
+	tm_sample_handle = task_manager_register_builtin("invalid", TM_APP_PERMISSION_DEDICATE, TM_RESPONSE_WAIT_INF);
 	TC_ASSERT_EQ("task_manager_register", tm_sample_handle, TM_OPERATION_FAIL);
 
-	tm_sample_handle = task_manager_register(TM_SAMPLE_NAME, TM_APP_PERMISSION_DEDICATE, TM_RESPONSE_WAIT_INF);
+	tm_sample_handle = task_manager_register_builtin(TM_SAMPLE_NAME, TM_APP_PERMISSION_DEDICATE, TM_RESPONSE_WAIT_INF);
 	TC_ASSERT_GEQ("task_manager_register", tm_sample_handle, 0);
 
-	tm_broadcast_handle1 = task_manager_register(TM_BROADCAST1_NAME, TM_APP_PERMISSION_DEDICATE, TM_RESPONSE_WAIT_INF);
+	tm_broadcast_handle1 = task_manager_register_builtin(TM_BROADCAST1_NAME, TM_APP_PERMISSION_DEDICATE, TM_RESPONSE_WAIT_INF);
 	TC_ASSERT_GEQ("task_manager_register", tm_broadcast_handle1, 0);
 
-	tm_broadcast_handle2 = task_manager_register(TM_BROADCAST2_NAME, TM_APP_PERMISSION_DEDICATE, TM_RESPONSE_WAIT_INF);
+	tm_broadcast_handle2 = task_manager_register_builtin(TM_BROADCAST2_NAME, TM_APP_PERMISSION_DEDICATE, TM_RESPONSE_WAIT_INF);
 	TC_ASSERT_GEQ("task_manager_register", tm_broadcast_handle2, 0);
 
-	tm_broadcast_handle3 = task_manager_register(TM_BROADCAST3_NAME, TM_APP_PERMISSION_DEDICATE, TM_RESPONSE_WAIT_INF);
+	tm_broadcast_handle3 = task_manager_register_builtin(TM_BROADCAST3_NAME, TM_APP_PERMISSION_DEDICATE, TM_RESPONSE_WAIT_INF);
 	TC_ASSERT_GEQ("task_manager_register", tm_broadcast_handle3, 0);
 
 	TC_SUCCESS_RESULT();
