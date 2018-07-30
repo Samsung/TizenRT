@@ -122,7 +122,7 @@ typedef void (*_tm_unicast_t)(tm_unicast_msg_t *);
  * Public Function Prototypes
  ****************************************************************************/
 /**
- * @brief Request to register a task
+ * @brief Request to register a builtin task
  * @details @b #include <task_manager/task_manager.h>\n
  * This API can request to register a builtin task.\n
  * Find apps/builtin/README.md to know how to use builtin task.
@@ -135,7 +135,7 @@ typedef void (*_tm_unicast_t)(tm_unicast_msg_t *);
  * @return On success, handle id is returned. On failure, defined negative value is returned.
  * @since TizenRT v2.0 PRE
  */
-int task_manager_register(char *name, int permission, int timeout);
+int task_manager_register_builtin(char *name, int permission, int timeout);
 /**
  * @brief Request to register a task which is not in builtin list
  * @details @b #include <task_manager/task_manager.h>\n
