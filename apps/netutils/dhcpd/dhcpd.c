@@ -1715,17 +1715,18 @@ int dhcpd_run(void *arg)
 			continue;
 		}
 
-		/* Parse the incoming message options */
-
-		if (!dhcpd_parseoptions()) {
-			/* Failed to parse the message options */
-			if (memcmp((uint8_t *)&g_state.ds_inpacket, DHCPD_STOP, strlen(DHCPD_STOP)) != 0) {
-				ndbg("No msg type\n");
-			} else {
-				ndbg("Got stop signal\n");
-			}
+		if (memcmp((uint8_t *)&g_state.ds_inpacket, DHCPD_STOP, strlen(DHCPD_STOP)) == 0) {
+			ndbg("Got stop signal\n");
 			continue;
 		}
+
+		/* Parse the incoming message options */
+		if (!dhcpd_parseoptions()) {
+			/* Failed to parse the message options */
+			ndbg("No msg type\n");
+			continue;
+		}
+
 #ifdef CONFIG_NETUTILS_DHCPD_HOST
 		/* Get the poor little uC a change to get its recvfrom in place */
 
