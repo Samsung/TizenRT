@@ -44,6 +44,7 @@
 #define TM_INVALID_PERMISSION           -2
 #define TM_INVALID_MSG_MASK             -2
 #define TM_INVALID_BROAD_MSG            -2
+#define TM_INVALID_PID                  -2
 #define TM_BROAD_TASK_NUM               2
 #define TM_BROAD_WIFI_ON_DATA           1
 #define TM_BROAD_WIFI_OFF_DATA          2
@@ -68,6 +69,7 @@ static int broad_wifi_on_cnt;
 static int broad_wifi_off_cnt;
 static int broad_undefined_cnt;
 static int pid_tm_utc;
+static int handle_tm_utc;
 
 static sem_t tm_broad_sem;
 
@@ -839,6 +841,31 @@ static void utc_task_manager_dealloc_broadcast_msg_p(void)
 	TC_SUCCESS_RESULT();
 }
 
+static void utc_task_manager_getinfo_with_pid_n(void)
+{
+	app_info_t *ret;
+
+	ret = task_manager_getinfo_with_pid(pid_tm_utc, TM_NO_RESPONSE);
+	TC_ASSERT_EQ("task_manager_getinfo_with_pid", ret, NULL);
+
+	ret = task_manager_getinfo_with_pid(TM_INVALID_PID, TM_RESPONSE_WAIT_INF);
+	TC_ASSERT_EQ("task_manager_getinfo_with_pid", ret, NULL);
+
+	TC_SUCCESS_RESULT();	
+}
+
+static void utc_task_manager_getinfo_with_pid_p(void)
+{
+	app_info_t *ret;
+
+	ret = task_manager_getinfo_with_pid(pid_tm_utc, TM_RESPONSE_WAIT_INF);
+	TC_ASSERT_NEQ_CLEANUP("task_manager_getinfo_with_pid", ret, NULL, task_manager_clean_info(&ret));
+	TC_ASSERT_EQ_CLEANUP("task_manager_getinfo_with_pid", ret->handle, handle_tm_utc, task_manager_clean_info(&ret));
+
+	(void)task_manager_clean_info(&ret);
+	TC_SUCCESS_RESULT();
+}
+
 void tm_utc_main(void)
 {
 	pid_tm_utc = getpid();
@@ -856,6 +883,9 @@ void tm_utc_main(void)
 
 	utc_task_manager_start_n();
 	utc_task_manager_start_p();
+
+	utc_task_manager_getinfo_with_pid_n();
+	utc_task_manager_getinfo_with_pid_p();
 
 	utc_task_manager_set_unicast_cb_n();
 	utc_task_manager_set_unicast_cb_p();
@@ -912,7 +942,6 @@ int main(int argc, FAR char *argv[])
 int utc_task_manager_main(int argc, char *argv[])
 #endif
 {
-	int handle_tm_utc;
 	int status;
 
 	if (tc_handler(TC_START, "TaskManager UTC") == ERROR) {

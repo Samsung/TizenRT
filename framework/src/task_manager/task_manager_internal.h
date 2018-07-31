@@ -54,6 +54,7 @@
 #define TASKMGRCMD_ALLOC_BROADCAST_MSG     18
 #define TASKMGRCMD_UNSET_BROADCAST_CB      19
 #define TASKMGRCMD_DEALLOC_BROADCAST_MSG   20
+#define TASKMGRCMD_SCAN_PID                21
 
 /* Task Type */
 #define TM_BUILTIN_TASK                    0

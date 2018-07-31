@@ -1142,6 +1142,14 @@ int task_manager(int argc, char *argv[])
 			ret = taskmgr_getinfo_with_handle(request_msg.handle, &response_msg);
 			break;
 
+		case TASKMGRCMD_SCAN_PID:
+			ret = taskmgr_get_handle_by_pid(request_msg.caller_pid);
+			if (ret == TM_UNREGISTERED_APP) {
+				break;
+			}
+			ret = taskmgr_getinfo_with_handle(ret, &response_msg);
+			break;
+
 		case TASKMGRCMD_UNICAST:
 			if (((tm_unicast_internal_msg_t *)request_msg.data)->type == TM_UNICAST_SYNC) {
 				response_msg.data = TM_ALLOC(sizeof(tm_unicast_msg_t));
