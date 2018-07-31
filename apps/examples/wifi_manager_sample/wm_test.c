@@ -412,13 +412,13 @@ void wm_set_info(void *arg)
 	WM_TEST_LOG_START;
 	struct options *ap_info = (struct options *)arg;
 	wifi_manager_ap_config_s apconfig;
-	strncpy(apconfig.ssid, ap_info->ssid, WIFIMGR_SSID_LEN-1);
+	strncpy(apconfig.ssid, ap_info->ssid, WIFIMGR_SSID_LEN);
 	apconfig.ssid_length = strlen(ap_info->ssid);
-	apconfig.ssid[WIFIMGR_SSID_LEN-1] = '\0';
+	apconfig.ssid[WIFIMGR_SSID_LEN] = '\0';
 	apconfig.ap_auth_type = ap_info->auth_type;
 	if (apconfig.ap_auth_type != WIFI_MANAGER_AUTH_OPEN) {
-		strncpy(apconfig.passphrase, ap_info->password, WIFIMGR_PASSPHRASE_LEN-1);
-		apconfig.passphrase[WIFIMGR_PASSPHRASE_LEN-1] = '\0';
+		strncpy(apconfig.passphrase, ap_info->password, WIFIMGR_PASSPHRASE_LEN);
+		apconfig.passphrase[WIFIMGR_PASSPHRASE_LEN] = '\0';
 		apconfig.passphrase_length = strlen(ap_info->password);
 		apconfig.ap_crypto_type = ap_info->crypto_type;
 	}
@@ -546,13 +546,13 @@ void wm_connect(void *arg)
 	WM_TEST_LOG_START;
 	struct options *ap_info = (struct options *)arg;
 	wifi_manager_ap_config_s apconfig;
-	strncpy(apconfig.ssid, ap_info->ssid, WIFIMGR_SSID_LEN-1);
+	strncpy(apconfig.ssid, ap_info->ssid, WIFIMGR_SSID_LEN);
 	apconfig.ssid_length = strlen(ap_info->ssid);
-	apconfig.ssid[WIFIMGR_SSID_LEN-1] = '\0';
+	apconfig.ssid[WIFIMGR_SSID_LEN] = '\0';
 	apconfig.ap_auth_type = ap_info->auth_type;
 	if (ap_info->auth_type != WIFI_MANAGER_AUTH_OPEN) {
-		strncpy(apconfig.passphrase, ap_info->password, WIFIMGR_PASSPHRASE_LEN-1);
-		apconfig.passphrase[WIFIMGR_PASSPHRASE_LEN-1] = '\0';
+		strncpy(apconfig.passphrase, ap_info->password, WIFIMGR_PASSPHRASE_LEN);
+		apconfig.passphrase[WIFIMGR_PASSPHRASE_LEN] = '\0';
 		apconfig.passphrase_length = strlen(ap_info->password);
 		apconfig.ap_crypto_type = ap_info->crypto_type;
 	}
@@ -612,10 +612,10 @@ void wm_softap_start(void *arg)
 		return;
 	}
 	wifi_manager_softap_config_s ap_config;
-	strncpy(ap_config.ssid, ap_info->ssid, WIFIMGR_SSID_LEN-1);
-	ap_config.ssid[WIFIMGR_SSID_LEN-1] = '\0';
-	strncpy(ap_config.passphrase, ap_info->password, WIFIMGR_PASSPHRASE_LEN-1);
-	ap_config.passphrase[WIFIMGR_PASSPHRASE_LEN-1] = '\0';
+	strncpy(ap_config.ssid, ap_info->ssid, WIFIMGR_SSID_LEN);
+	ap_config.ssid[WIFIMGR_SSID_LEN] = '\0';
+	strncpy(ap_config.passphrase, ap_info->password, WIFIMGR_PASSPHRASE_LEN);
+	ap_config.passphrase[WIFIMGR_PASSPHRASE_LEN] = '\0';
 	ap_config.channel = 1;
 
 	print_wifi_softap_profile(&ap_config, "AP INFO");
@@ -641,20 +641,20 @@ void wm_coverage(void *arg)
 
 	/* Set SoftAP Configuration */
 	wifi_manager_softap_config_s softap_config;
-	strncpy(softap_config.ssid, info->softap_ssid, WIFIMGR_SSID_LEN-1);
-	softap_config.ssid[WIFIMGR_SSID_LEN-1] = '\0';
-	strncpy(softap_config.passphrase, info->softap_password, WIFIMGR_PASSPHRASE_LEN-1);
-	softap_config.passphrase[WIFIMGR_PASSPHRASE_LEN-1] = '\0';
+	strncpy(softap_config.ssid, info->softap_ssid, WIFIMGR_SSID_LEN);
+	softap_config.ssid[WIFIMGR_SSID_LEN] = '\0';
+	strncpy(softap_config.passphrase, info->softap_password, WIFIMGR_PASSPHRASE_LEN);
+	softap_config.passphrase[WIFIMGR_PASSPHRASE_LEN] = '\0';
 	softap_config.channel = 1;
 
 	/* Set AP Configuration */
 	wifi_manager_ap_config_s ap_config;
-	strncpy(ap_config.ssid, info->ssid, WIFIMGR_SSID_LEN-1);
+	strncpy(ap_config.ssid, info->ssid, WIFIMGR_SSID_LEN);
 	ap_config.ssid_length = strlen(info->ssid);
-	ap_config.ssid[WIFIMGR_SSID_LEN-1] = '\0';
-	strncpy(ap_config.passphrase, info->password, WIFIMGR_PASSPHRASE_LEN-1);
+	ap_config.ssid[WIFIMGR_SSID_LEN] = '\0';
+	strncpy(ap_config.passphrase, info->password, WIFIMGR_PASSPHRASE_LEN);
 	ap_config.passphrase_length = strlen(info->password);
-	ap_config.passphrase[WIFIMGR_PASSPHRASE_LEN-1] = '\0';
+	ap_config.passphrase[WIFIMGR_PASSPHRASE_LEN] = '\0';
 	ap_config.ap_auth_type = info->auth_type;
 	ap_config.ap_crypto_type = info->crypto_type;
 
@@ -663,8 +663,8 @@ void wm_coverage(void *arg)
 	wifi_manager_ap_config_s ap_fake_config;
 	ap_fake_config.ssid_length = strlen(fake_long_ssid);
 	strncpy(ap_fake_config.ssid, fake_long_ssid, ap_fake_config.ssid_length + 1);
-	strncpy(ap_fake_config.passphrase, info->password, WIFIMGR_PASSPHRASE_LEN-1);
-	ap_fake_config.passphrase[WIFIMGR_PASSPHRASE_LEN-1] = '\0';
+	strncpy(ap_fake_config.passphrase, info->password, WIFIMGR_PASSPHRASE_LEN);
+	ap_fake_config.passphrase[WIFIMGR_PASSPHRASE_LEN] = '\0';
 	ap_fake_config.passphrase_length = strlen(info->password);
 	ap_fake_config.ap_auth_type = info->auth_type;
 	ap_fake_config.ap_crypto_type = info->crypto_type;
@@ -704,8 +704,8 @@ void wm_coverage(void *arg)
 	
 	/* Connect to fake AP */
 	printf("Connecting to AP (bad SSID)\n");
-	strncpy(ap_config.ssid, info->bad_ssid, WIFIMGR_SSID_LEN-1);
-	ap_config.ssid[WIFIMGR_SSID_LEN-1] = '\0';
+	strncpy(ap_config.ssid, info->bad_ssid, WIFIMGR_SSID_LEN);
+	ap_config.ssid[WIFIMGR_SSID_LEN] = '\0';
 	ap_config.ssid_length = strlen(info->bad_ssid);
 	print_wifi_ap_profile(&ap_config, "Connecting AP Info");
 	res = wifi_manager_connect_ap(&ap_config);
@@ -718,11 +718,11 @@ void wm_coverage(void *arg)
 
 	/* Connect to fake AP */
 	printf("Connecting to AP (wrong passphrase)\n");
-	strncpy(ap_config.ssid, info->ssid, WIFIMGR_SSID_LEN-1);
-	ap_config.ssid[WIFIMGR_SSID_LEN-1] = '\0';
+	strncpy(ap_config.ssid, info->ssid, WIFIMGR_SSID_LEN);
+	ap_config.ssid[WIFIMGR_SSID_LEN] = '\0';
 	ap_config.ssid_length = strlen(info->ssid);
-	strncpy(ap_config.passphrase, info->bad_password, WIFIMGR_PASSPHRASE_LEN-1);
-	ap_config.passphrase[WIFIMGR_PASSPHRASE_LEN-1] = '\0';
+	strncpy(ap_config.passphrase, info->bad_password, WIFIMGR_PASSPHRASE_LEN);
+	ap_config.passphrase[WIFIMGR_PASSPHRASE_LEN] = '\0';
 	ap_config.passphrase_length = strlen(info->bad_password);
 	print_wifi_ap_profile(&ap_config, "Connecting AP Info");
 	res = wifi_manager_connect_ap(&ap_config);
@@ -736,9 +736,9 @@ void wm_coverage(void *arg)
 	/* Connect to fake AP */
 	printf("Connecting to fake AP (Auth/Crypto type 1/3)\n");
 	ap_config.ap_auth_type = WIFI_MANAGER_AUTH_WEP_SHARED;
-	strncpy(ap_config.passphrase, info->password, WIFIMGR_PASSPHRASE_LEN-1);
+	strncpy(ap_config.passphrase, info->password, WIFIMGR_PASSPHRASE_LEN);
 	ap_config.passphrase_length = strlen(info->password);
-	ap_config.passphrase[WIFIMGR_PASSPHRASE_LEN-1] = '\0';
+	ap_config.passphrase[WIFIMGR_PASSPHRASE_LEN] = '\0';
 	print_wifi_ap_profile(&ap_config, "Connecting AP Info");
 	res = wifi_manager_connect_ap(&ap_config);
 	// Both WIFI_MANAGER_SUCCESS and WIFI_MANAGER_FAIL can be possible, depending on the device driver
@@ -1017,20 +1017,20 @@ void wm_auto_test(void *arg)
 	struct options *info = (struct options *)arg;
 	/* Set SoftAP Configuration */
 	wifi_manager_softap_config_s softap_config;
-	strncpy(softap_config.ssid, info->softap_ssid, WIFIMGR_SSID_LEN-1);
-	softap_config.ssid[WIFIMGR_SSID_LEN-1] = '\0';
-	strncpy(softap_config.passphrase, info->softap_password, WIFIMGR_PASSPHRASE_LEN-1);
-	softap_config.passphrase[WIFIMGR_PASSPHRASE_LEN-1] = '\0';
+	strncpy(softap_config.ssid, info->softap_ssid, WIFIMGR_SSID_LEN);
+	softap_config.ssid[WIFIMGR_SSID_LEN] = '\0';
+	strncpy(softap_config.passphrase, info->softap_password, WIFIMGR_PASSPHRASE_LEN);
+	softap_config.passphrase[WIFIMGR_PASSPHRASE_LEN] = '\0';
 	softap_config.channel = 1;
 
 	/* Set AP Configuration */
 	wifi_manager_ap_config_s ap_config;
-	strncpy(ap_config.ssid, info->ssid, WIFIMGR_SSID_LEN-1);
+	strncpy(ap_config.ssid, info->ssid, WIFIMGR_SSID_LEN);
 	ap_config.ssid_length = strlen(info->ssid);
-	ap_config.ssid[WIFIMGR_SSID_LEN-1] = '\0';
-	strncpy(ap_config.passphrase, info->password, WIFIMGR_PASSPHRASE_LEN-1);
+	ap_config.ssid[WIFIMGR_SSID_LEN] = '\0';
+	strncpy(ap_config.passphrase, info->password, WIFIMGR_PASSPHRASE_LEN);
 	ap_config.passphrase_length = strlen(info->password);
-	ap_config.passphrase[WIFIMGR_PASSPHRASE_LEN-1] = '\0';
+	ap_config.passphrase[WIFIMGR_PASSPHRASE_LEN] = '\0';
 	ap_config.ap_auth_type = info->auth_type;
 	ap_config.ap_crypto_type = info->crypto_type;
 

@@ -33,7 +33,7 @@
 
 /* Length defines */
 #define WIFIMGR_MACADDR_LEN        6
-#define WIFIMGR_MACADDR_STR_LEN    18
+#define WIFIMGR_MACADDR_STR_LEN    17
 #define WIFIMGR_SSID_LEN           32
 #define WIFIMGR_PASSPHRASE_LEN     64
 
@@ -134,8 +134,8 @@ typedef enum {
  * @brief Keep information of nearby access points as scan results
  */
 struct wifi_manager_scan_info_s {
-	char ssid[WIFIMGR_SSID_LEN];	// 802.11 spec defined unspecified or uint8
-	char bssid[WIFIMGR_MACADDR_STR_LEN];	// char string e.g. xx:xx:xx:xx:xx:xx
+	char ssid[WIFIMGR_SSID_LEN + 1];	// 802.11 spec defined unspecified or uint8
+	char bssid[WIFIMGR_MACADDR_STR_LEN + 1];	// char string e.g. xx:xx:xx:xx:xx:xx
 	int8_t rssi;		// received signal strength indication
 	uint8_t channel;	// channel/frequency
 	uint8_t phy_mode;	// 0:legacy 1: 11N HT
@@ -161,9 +161,9 @@ typedef struct {
  * @brief Keep Wi-Fi Manager information including ip/mac address, ssid, rssi, etc.
  */
 typedef struct {
-	char ip4_address[WIFIMGR_MACADDR_STR_LEN];
-	char ssid[WIFIMGR_SSID_LEN];
-	char mac_address[WIFIMGR_MACADDR_LEN];	   /**<  MAC address of wifi interface             */
+	char ip4_address[WIFIMGR_MACADDR_STR_LEN + 1];
+	char ssid[WIFIMGR_SSID_LEN + 1];
+	char mac_address[WIFIMGR_MACADDR_LEN + 1];	   /**<  MAC address of wifi interface             */
 	int rssi;
 	connect_status_e status;
 	wifi_manager_mode_e mode;
@@ -173,8 +173,8 @@ typedef struct {
  * @brief Specify information of soft access point (softAP) such as ssid and channel number
  */
 typedef struct {
-	char ssid[WIFIMGR_SSID_LEN];
-	char passphrase[64];
+	char ssid[WIFIMGR_SSID_LEN + 1];
+	char passphrase[WIFIMGR_PASSPHRASE_LEN + 1];
 	uint16_t channel;
 } wifi_manager_softap_config_s;
 
@@ -195,9 +195,9 @@ typedef struct {
  * @brief Specify which access point (AP) a client connects to
  */
 typedef struct {
-	char ssid[WIFIMGR_SSID_LEN];							 /**<  Service Set Identification         */
+	char ssid[WIFIMGR_SSID_LEN + 1];							 /**<  Service Set Identification         */
 	unsigned int ssid_length;				 /**<  Service Set Identification Length  */
-	char passphrase[WIFIMGR_PASSPHRASE_LEN];					 /**<  ap passphrase(password)            */
+	char passphrase[WIFIMGR_PASSPHRASE_LEN + 1];					 /**<  ap passphrase(password)            */
 	unsigned int passphrase_length;			 /**<  ap passphrase length               */
 	wifi_manager_ap_auth_type_e ap_auth_type;	  /**<  @ref wifi_utils_ap_auth_type   */
 	wifi_manager_ap_crypto_type_e ap_crypto_type;  /**<  @ref wifi_utils_ap_crypto_type */
