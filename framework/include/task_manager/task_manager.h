@@ -368,6 +368,18 @@ app_info_t *task_manager_getinfo_with_handle(int handle, int timeout);
  */
 app_info_list_t *task_manager_getinfo_with_group(int group, int timeout);
 /**
+ * @brief Get the handle through pid
+ * @details @b #include <task_manager/task_manager.h>
+ * @param[in] pid the pid which to get its task information\n
+ * @param[in] timeout returnable flag. It can be one of the below.\n
+ *			TM_RESPONSE_WAIT_INF : Blocked until get the response from task manager\n
+ *			integer value : Specifies an upper limit on the time for which will block in milliseconds\n
+ *            For this API, timeout cannot be set to TM_NO_RESPONSE.
+ * @return On success, the task information is returned. On failure, NULL is returned.
+ * @since TizenRT v2.0 PRE
+ */
+app_info_t *task_manager_getinfo_with_pid(int pid, int timeout);
+/**
  * @brief Clean task information
  * @details @b #include <task_manager/task_manager.h>
  * @param[in] info the task information
