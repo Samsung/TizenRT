@@ -57,6 +57,7 @@
 #include <stdlib.h>
 #include <unistd.h>
 #include <string.h>
+#include <errno.h>
 #include <fcntl.h>
 #include <dirent.h>
 #include <libgen.h>
@@ -89,6 +90,8 @@
 #define FSCMD_BUFFER_LEN      256
 #endif
 
+#define FSCMD_ECHO_USAGE "Usage: echo [-n] [input_text] [> or >>] [file]\n"
+
 /** Wrapper to prevent remove information by users **/
 #define FSCMD_OUTPUT(...) printf(__VA_ARGS__)
 
@@ -99,6 +102,7 @@
 #define CMD_FAILED      "%s : %s failed\n"
 #define OUT_OF_MEMORY   "%s : out of memory\n"
 #define OUT_OF_RANGE    "%s : value out of range\n"
+#define CMD_FAILED_ERRNO  "%s : %s failed: %d\n"
 
 /** Define FS Type **/
 #define NONEFS_TYPE     "None FS"
@@ -133,6 +137,110 @@ static void fscmd_free(FAR char *path)
 		free(path);
 	}
 }
+
+#ifndef CONFIG_DISABLE_ENVIRON
+/****************************************************************************
+ * Name: tash_echo
+ *
+ * Description:
+ *   Display input text or Redirects to a target file
+ *
+ * Usage:
+ *   echo [-n] [input_text] [> or >>] [target path]
+ ****************************************************************************/
+static int tash_echo(int argc, char **args)
+{
+	char *dest_fullpath = NULL;
+	redirection_t direction = { FSCMD_NONE, argc };
+	int i;
+	int fd = 1;
+	int flags;
+	int len;
+	int n_opt = 1;
+	int ret = ERROR;
+
+	if (!strncmp(args[1], "--help", 6)) {
+		FSCMD_OUTPUT(FSCMD_ECHO_USAGE);
+		return OK;
+	}
+
+	if (!strncmp(args[1], "-n", 2)) {
+		n_opt = 2;
+	}
+
+	for (i = n_opt; i < argc; i++) {
+		if (strcmp(args[i], ">") == 0) {
+			direction.mode = FSCMD_TRUNCATE;
+			direction.index = i;
+			break;
+		} else if (strcmp(args[i], ">>") == 0) {
+			direction.mode = FSCMD_APPEND;
+			direction.index = i;
+			break;
+		}
+	}
+
+	if (direction.mode != FSCMD_NONE && direction.index == argc - 2) {
+		/* Redirection case */
+		flags = O_WRONLY | O_CREAT;
+		if (direction.mode == FSCMD_TRUNCATE) {
+			flags |= O_TRUNC;
+		} else {
+			flags |= O_APPEND;
+		}
+
+		/* copy contents to target file
+		 * echo <input_text> <redirection> <filepath> */
+		dest_fullpath = get_fullpath(args[argc - 1]);
+		if (!dest_fullpath) {
+			FSCMD_OUTPUT(OUT_OF_MEMORY, args[argc - 1]);
+			return ret;
+		}
+
+		fd = open(dest_fullpath, flags);
+		if (fd < 0) {
+			FSCMD_OUTPUT(CMD_FAILED_ERRNO, "echo", "open", errno);
+			goto error;
+		}
+	 } else if (direction.mode != FSCMD_NONE && direction.index != argc - 2) {
+		FSCMD_OUTPUT(INVALID_ARGS FSCMD_ECHO_USAGE, args[0]);
+		return ret;
+	 }
+
+	for (i = n_opt; i < direction.index; i++) {
+		len = strlen(args[i]);
+		if (len > CONFIG_FSCMD_BUFFER_LEN) {
+			FSCMD_OUTPUT("%s : Too long input text\n", args[0]);
+			goto error_with_close;
+		}
+		if (i != n_opt && write(fd, " ", 1) < 0) {
+			FSCMD_OUTPUT(CMD_FAILED_ERRNO, args[0], "write", errno);
+			goto error_with_close;
+		}
+
+		if (write(fd, args[i], len) < 0) {
+			FSCMD_OUTPUT(CMD_FAILED_ERRNO, args[0], "write", errno);
+			goto error_with_close;
+		}
+	}
+
+	if (1 == n_opt && write(fd, "\n", 1) < 0) {
+		FSCMD_OUTPUT(CMD_FAILED_ERRNO, args[0], "write", errno);
+		goto error_with_close;
+	}
+
+	ret = OK;
+
+error_with_close:
+	if (fd > 2) {
+		close(fd);
+	}
+error:
+	fscmd_free(dest_fullpath);
+	return ret;
+}
+#endif
+
 #ifndef CONFIG_DISABLE_ENVIRON
 /****************************************************************************
  * Name: tash_cat
@@ -1222,6 +1330,9 @@ const static tash_cmdlist_t fs_utilcmds[] = {
 #endif
 #ifndef CONFIG_DISABLE_ENVIRON
 	{"cd",        tash_cd,        TASH_EXECMD_SYNC},
+#endif
+#ifndef CONFIG_DISABLE_ENVIRON
+	{"echo",       tash_echo,       TASH_EXECMD_SYNC},
 #endif
 #ifndef CONFIG_DISABLE_ENVIRON
 	{"ls",        tash_ls,        TASH_EXECMD_SYNC},
