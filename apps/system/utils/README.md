@@ -11,15 +11,16 @@ Most of the commands support *--help* option to show how to use.
 | [exit](#exit)  | [date](#date)         | [cat](#cat)         |
 | [help](#help)  | [dmesg](#dmesg)       | [cd](#cd)           |
 | [sh](#sh)      | [free](#free)         | [df](#df)           |
-| [sleep](#sleep)| [getenv/setenv/unsetenv](#getenvsetenvunsetenv) | [ls](#ls) |
-|                | [heapinfo](#heapinfo) | [mkdir](#mkdir)     |
-|                | [irqinfo](#irqinfo)   | [mkrd](#mkrd)       |
-|                | [kill/killall](#killkillall) | [mksmartfs](#mksmartfs) |
-|                | [ps](#ps)             | [mount](#mount)     |
-|                | [reboot](#reboot)     | [pwd](#pwd)         |
-|                | [stkmon](#stkmon)     | [rm](#rm)           |
-|                | [uptime](#uptime)     | [rmdir](#rmdir)     |
-|                |                       | [umount](#umount)   |
+| [sleep](#sleep)| [getenv/setenv/unsetenv](#getenvsetenvunsetenv) | [echo](#echo) |
+|                | [heapinfo](#heapinfo) | [ls](#ls)               |
+|                | [irqinfo](#irqinfo)   | [mkdir](#mkdir)         |
+|                | [kill/killall](#killkillall) | [mkrd](#mkrd)    |
+|                | [ps](#ps)             | [mksmartfs](#mksmartfs) |
+|                | [reboot](#reboot)     | [mount](#mount)         |
+|                | [stkmon](#stkmon)     | [pwd](#pwd)             |
+|                | [uptime](#uptime)     | [rm](#rm)               |
+|                |                       | [rmdir](#rmdir)         |
+|                |                       | [umount](#umount)       |
 
 
 ## exit
@@ -51,19 +52,25 @@ unsetenv         uptime           vi               wifi
 
 
 ## cat
-This makes new file with content or appends content or prints content of existed file.
+This command prints the contents of an existing file to standard output or writes it to the target file.
+`--help` - display the usage
 ```
 Usage:
-   cat < > or >> > [source path] [contents or target path]
+   cat [source_file_path] [> or >>] [target_file_path]
 ```
 ```bash
-TASH>>ls
+TASH>>echo -n "abc" > /mnt/test.txt
+TASH>>echo -n "123" > /mnt/test1.txt
+TASH>>ls /mnt
 /mnt:
-TASH>>cat > test.txt abc
-TASH>>cat test.txt
+test.txt
+test1.txt
+TASH>>cat /mnt/test.txt
 abc
-TASH>>cat >> test.txt 123
-TASH>>cat test.txt
+TASH>>cat /mnt/test1.txt
+123
+TASH>>cat /mnt/test1.txt >> /mnt/test.txt
+TASH>>cat /mnt/test.txt
 abc123
 ```
 ### How to Enable
@@ -209,6 +216,42 @@ File System -> Advanced SYSLOG features to y
 ```
 Device Drivers -> RAM log device support to y
 ```
+
+## echo
+This command prints the 'input_text' contents to standard output or writes/appends it to target file.
+`-n` - do not output the trailing newline
+`--help` - displays usage
+```
+Usage:
+   echo [-n] [input_text] [> or >>] [target_file_path]
+```
+```bash
+TASH>>ls /mnt
+/mnt:
+TASH>>echo "abc" > /mnt/test.txt
+TASH>>cat /mnt/test.txt
+abc
+
+TASH>>echo -n "abc" > /mnt/test.txt
+TASH>>cat /mnt/test.txt
+abc
+TASH>>echo -n "123" >> /mnt/test.txt
+TASH>>cat /mnt/test.txt
+abc123
+```
+### How to Enable
+Enable *CONFIG_FS_CMDS* on menuconfig.
+```
+Application Configuration -> System Libraries and Add-Ons -> FS shell commands to y
+```
+#### Dependancy
+- Disable CONFIG_DISABLE_ENVIRON.
+```
+Kernel Features -> Disable TinyAra interfaces -> Disable environment variable support to n
+```
+- Set a value which is greater than zero on CONFIG_NFILE_DESCRIPTORS.
+```
+Kernel Features -> Files and I/O -> Maximum number of file descriptors per task
 
 
 ## free
