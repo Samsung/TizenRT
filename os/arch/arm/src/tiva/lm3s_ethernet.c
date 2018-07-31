@@ -71,9 +71,15 @@
 #include <tinyara/irq.h>
 #include <tinyara/wqueue.h>
 #include <arch/board/board.h>
+
 #include <tinyara/net/netdev.h>
 #include <net/lwip/netif/etharp.h>
 #include <tinyara/net/ethernet.h>
+
+#include <net/if.h>
+#include <net/lwip/opt.h>
+#include <net/lwip/netif.h>
+#include <net/lwip/tcpip.h>
 
 #ifdef CONFIG_NET_PKT
 #include <tinyara/net/pkt.h>
@@ -1383,7 +1389,18 @@ static inline int tiva_ethinitialize(int intf)
 
 	/* Register the device with the OS so that socket IOCTLs can be performed */
 
-	netif_register_with_initial_ip(&priv->ld_dev, ethernetif_init);
+	struct ip4_addr ipaddr;
+	struct ip4_addr netmask;
+	struct ip4_addr gw;
+
+	/* Start LWIP network thread */
+	ipaddr.addr = inet_addr("0.0.0.0");
+	netmask.addr = inet_addr("255.255.255.255");
+	gw.addr = inet_addr("0.0.0.0");
+
+	netif_set_default(&priv->ld_dev);
+
+	netif_add(&priv->ld_dev, &ipaddr, &netmask, &gw, NULL, ethernetif_init, tcpip_input);
 	return OK;
 }
 
