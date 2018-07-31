@@ -90,8 +90,8 @@
 #define FSCMD_BUFFER_LEN      256
 #endif
 
-#define FSCMD_ECHO_USAGE "Usage: echo [-n] [input_text] [> or >>] [file]\n"
-#define FSCMD_CAT_USAGE "Usage: cat [source_file] [> or >>] [target_file]\n"
+#define FSCMD_ECHO_USAGE "Usage: echo [-n] [input_text] [> or >>] [target_file_path]\n"
+#define FSCMD_CAT_USAGE "Usage: cat [source_file_path] [> or >>] [target_file_path]\n"
 
 /** Wrapper to prevent remove information by users **/
 #define FSCMD_OUTPUT(...) printf(__VA_ARGS__)
@@ -160,7 +160,7 @@ static int tash_echo(int argc, char **args)
 	int n_opt = 1;
 	int ret = ERROR;
 
-	if (!strncmp(args[1], "--help", 6)) {
+	if (!strncmp(args[1], "--help", strlen("--help") + 1)) {
 		FSCMD_OUTPUT(FSCMD_ECHO_USAGE);
 		return OK;
 	}
@@ -282,6 +282,10 @@ static int tash_cat(int argc, char **args)
 		FSCMD_OUTPUT(MISSING_ARGS FSCMD_CAT_USAGE, args[0]);
 		return ERROR;
 	} else if (argc == 2) {
+		if (!strncmp(args[1], "--help", strlen("--help") + 1)){
+			FSCMD_OUTPUT(FSCMD_CAT_USAGE);
+			return OK;
+		}
 		/* Basic case, cat <filepath> */
 		if (direction.mode != FSCMD_NONE) {
 			FSCMD_OUTPUT(INVALID_ARGS FSCMD_CAT_USAGE, args[0]);
