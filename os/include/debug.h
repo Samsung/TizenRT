@@ -748,6 +748,22 @@ Once LOGM is approved, each module should have its own index
 #define tmllvdbg(...)
 #endif
 
+#ifdef CONFIG_DEBUG_EVENTLOOP_ERROR
+#define eldbg(format, ...)      dbg(format, ##__VA_ARGS__)
+#define ellldbg(format, ...)    lldbg(format, ##__VA_ARGS__)
+#else
+#define eldbg(...)
+#define ellldbg(...)
+#endif
+
+#ifdef CONFIG_DEBUG_EVENTLOOP_INFO
+#define elvdbg(format, ...)     vdbg(format, ##__VA_ARGS__)
+#define elllvdbg(format, ...)   llvdbg(format, ##__VA_ARGS__)
+#else
+#define elvdbg(...)
+#define elllvdbg(...)
+#endif
+
 #else							/* CONFIG_CPP_HAVE_VARARGS */
 
 /* Variadic macros NOT supported */
@@ -1163,6 +1179,22 @@ Once LOGM is approved, each module should have its own index
 #else
 #define tmvdbg      (void)
 #define tmllvdbg    (void)
+#endif
+
+#ifdef CONFIG_DEBUG_EVENTLOOP_ERROR
+#define eldbg      dbg
+#define ellldbg    lldbg
+#else
+#define eldbg      (void)
+#define ellldbg    (void)
+#endif
+
+#ifdef CONFIG_DEBUG_EVENTLOOP_INFO
+#define elvdbg     vdbg
+#define elllvdbg   llvdbg
+#else
+#define elvdbg     (void)
+#define elllvdbg   (void)
 #endif
 
 #endif							/* CONFIG_CPP_HAVE_VARARGS */
