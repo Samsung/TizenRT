@@ -83,6 +83,9 @@ CSRCS += netcmd.c
 ifeq ($(CONFIG_NET_PING_CMD),y)
 CSRCS += netcmd_ping.c
 endif
+ifeq ($(CONFIG_NET_NETMON),y)
+CSRCS += netcmd_netmon.c
+endif
 endif
 
 ifeq ($(CONFIG_NETUTILS_DHCPD),y)

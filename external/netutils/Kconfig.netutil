@@ -8,3 +8,11 @@ config NETUTILS_NETLIB
 	default n
 	---help---
 		Enable support for the network support library.
+
+if NETUTILS_NETLIB
+config NET_NETMON
+	bool "Enable network monitor"
+	default y
+	---help---
+		Enable support for the network monitor.
+endif

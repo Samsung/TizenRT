@@ -27,9 +27,9 @@
 #include "task_manager_internal.h"
 
 /****************************************************************************
- * task_manager_register
+ * task_manager_register_builtin
  ****************************************************************************/
-int task_manager_register(char *name, int permission, int timeout)
+int task_manager_register_builtin(char *name, int permission, int timeout)
 {
 	int status;
 	tm_request_t request_msg;
@@ -40,7 +40,7 @@ int task_manager_register(char *name, int permission, int timeout)
 	}
 
 	memset(&request_msg, 0, sizeof(tm_request_t));
-	request_msg.cmd = TASKMGRCMD_REGISTER;
+	request_msg.cmd = TASKMGRCMD_REGISTER_BUILTIN;
 	request_msg.caller_pid = getpid();
 	request_msg.handle = permission;
 	request_msg.data = (void *)TM_ALLOC(strlen(name) + 1);

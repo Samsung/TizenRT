@@ -28,7 +28,7 @@
             <param name="buildOption" value="${BOARD}/${BUILD_OPTION}"/>
         </command>
         <command name="build" command="make" path="${PROJECT_PATH}/os" shellcmd="true">
-            <param name="V" value="V=1"/>
+            <param name="V" value="V=3"/>
         </command>
         <command name="buildWithToolchain" command=". ./setenv.sh ${TOOLCHAIN_PATH};make V=1" path="${PROJECT_PATH}/os" shellcmd="true" shell="/bin/bash"/>
         <command name="clean" command="make clean" path="${PROJECT_PATH}/os" shellcmd="true">

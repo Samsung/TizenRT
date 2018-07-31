@@ -28,6 +28,7 @@
 #ifndef __TASK_MANAGER_H__
 #define __TASK_MANAGER_H__
 
+#include <tinyara/config.h>
 #include <signal.h>
 #include <pthread.h>
 
@@ -76,17 +77,26 @@ enum tm_result_error_e {
 	TM_OUT_OF_MEMORY = -10,
 	TM_NO_PERMISSION = -11,
 	TM_NOT_SUPPORTED = -12,
+	TM_UNREGISTERED_MSG = -13,
+	TM_ALREADY_REGISTERED_CB = -14,
+	TM_REPLY_TIMEOUT = -15,
 };
 
 /**
  * @brief Broadcast message list
- * @details These values can be used for broadcast messges.
- * If user wants to add some other types of broadcast message,
- * user can add their own broadcast messages at here.
+ * @details These values can be used for broadcast messges.\n
+ * If user wants to add some other types of broadcast message,\n
+ * user can add their own broadcast messages at <task_manager/task_manager_broadcast_list.h>.
  */
-#define TM_BROADCAST_WIFI_ON       (1 << 0)
-#define TM_BROADCAST_WIFI_OFF      (1 << 1)
 
+enum tm_defined_broadcast_msg {
+	TM_BROADCAST_WIFI_ON = 1,
+	TM_BROADCAST_WIFI_OFF = 2,
+	TM_BROADCAST_SYSTEM_MSG_MAX,
+#ifndef CONFIG_TASK_MANAGER_USER_SPECIFIC_BROADCAST
+	TM_BROADCAST_MSG_MAX = TM_BROADCAST_SYSTEM_MSG_MAX,
+#endif
+};
 /**
  * @brief Task Info Structure
  */
@@ -105,11 +115,30 @@ struct app_info_list_s {
 };
 typedef struct app_info_list_s app_info_list_t;
 
+/**
+ * @brief Unicast message Structure
+ */
+struct tm_unicast_msg_s {
+	int msg_size;
+	void *msg;
+};
+typedef struct tm_unicast_msg_s tm_unicast_msg_t;
+
+/**
+ * @brief Unicast callback function type
+ */
+typedef void (*_tm_unicast_t)(tm_unicast_msg_t *);
+
+/**
+ * @brief Broadcast callback function type
+ */
+typedef void (*_tm_broadcast_t)(void *);
+
 /****************************************************************************
  * Public Function Prototypes
  ****************************************************************************/
 /**
- * @brief Request to register a task
+ * @brief Request to register a builtin task
  * @details @b #include <task_manager/task_manager.h>\n
  * This API can request to register a builtin task.\n
  * Find apps/builtin/README.md to know how to use builtin task.
@@ -122,7 +151,7 @@ typedef struct app_info_list_s app_info_list_t;
  * @return On success, handle id is returned. On failure, defined negative value is returned.
  * @since TizenRT v2.0 PRE
  */
-int task_manager_register(char *name, int permission, int timeout);
+int task_manager_register_builtin(char *name, int permission, int timeout);
 /**
  * @brief Request to register a task which is not in builtin list
  * @details @b #include <task_manager/task_manager.h>\n
@@ -232,24 +261,30 @@ int task_manager_resume(int handle, int timeout);
 int task_manager_restart(int handle, int timeout);
 /**
  * @brief Request to send messages to the task
- * @details @b #include <task_manager/task_manager.h>
+ * @details @b #include <task_manager/task_manager.h>\n
+ * task_manager_unicast can be used with SYNC and ASYNC mode.\n
+ * With SYNC mode, reply msg can be sent through task_manager_reply_unicast API.
  * @param[in] handle the handle id of task to be sent
- * @param[in] msg message to be unicasted
- * @param[in] msg_size the size of message
+ * @param[in] send_msg message structure to be unicasted
+ * @param[out] reply_msg the reply msg structure for sync. If this is NULL, task_manager_unicast works asynchronously.
  * @param[in] timeout returnable flag. It can be one of the below.\n
  *			TM_NO_RESPONSE : Ignore the response of request from task manager\n
  *			TM_RESPONSE_WAIT_INF : Blocked until get the response from task manager\n
- *			integer value : Specifies an upper limit on the time for which will block in milliseconds
+ *			integer value : Specifies an upper limit on the time for which will block in milliseconds\n
+ *            If reply is not NULL(=SYNC), timeout should not be set to TM_NO_RESPONSE.\n
+ *            When you enable CONFIG_TASK_MANAGER_UNICAST_REPLY_TIMEOUT with non-zero value, task manager waits the reply during\n
+ *            CONFIG_TASK_MANAGER_UNICAST_REPLY_TIMEOUT even if user calls this API with TM_RESPONSE_WAIT_INF.\n
+ *            When set to zero, task manager waits the reply forever, it can cause task manager hang.
  * @return On success, OK is returned. On failure, defined negative value is returned.
  * @since TizenRT v2.0 PRE
  */
-int task_manager_unicast(int handle, void *msg, int msg_size, int timeout);
+int task_manager_unicast(int handle, tm_unicast_msg_t *send_msg, tm_unicast_msg_t *reply_msg, int timeout);
 /**
  * @brief Request to send messages to the tasks
  * @details @b #include <task_manager/task_manager.h>
  * @param[in] msg message to be broadcasted
- * @return On success, OK is returned. On failure, defined negative value is returned.
- *         (This return value only checks whether a broadcast message has been requested
+ * @return On success, OK is returned. On failure, defined negative value is returned.\n
+ *         (This return value only checks whether a broadcast message has been requested\n
  *          to the task manager to broadcast.)
  * @since TizenRT v2.0 PRE
  */
@@ -261,18 +296,22 @@ int task_manager_broadcast(int msg);
  * @return On success, OK is returned. On failure, defined negative value is returned.
  * @since TizenRT v2.0 PRE
  */
-int task_manager_set_unicast_cb(void (*func)(void *data));
+int task_manager_set_unicast_cb(void (*func)(tm_unicast_msg_t *data));
 /**
- * @brief Register callback function which will be used for processing received broadcast messages
+ * @brief Register callback function which will be used for processing a certain received broadcast message
  * @details @b #include <task_manager/task_manager.h>
- * @param[in] msg_mask the message mask for selecting specific broadcast msgs\n
- *            User can change the msg_mask by using task_manager_set_broadcast_cb
- *            with the changed msg_mask value.
- * @param[in] func the handler function which handle broadcast msgs\n
+ * @param[in] msg a certain broadcast message.\n
+ *            When this message is received, the callback function func is called.\n
+ *            Pre defined broadcast messages are presented at the top of <task_manager/task_manager.h>.\n
+ *            User can add pre defined broadcast messages at the <task_manager/task_manager_broadcast_list.h>\n
+ *            If this message is not pre defined at the <task_manager/task_manager.h> and <task_manager/task_manager_broadcast_list.h>,\n
+ *            user should use task_manager_alloc_broadcast_msg() API to get a new broadacast message.
+ * @param[in] func the callback function which will be called when a msg is received.
+ * @param[in] cb_data a data pointer to pass to the callback function func.
  * @return On success, OK is returned. On failure, defined negative value is returned.
  * @since TizenRT v2.0 PRE
  */
-int task_manager_set_broadcast_cb(int msg_mask, void (*func)(int data));
+int task_manager_set_broadcast_cb(int msg, void (*func)(void *data), void *cb_data);
 /**
  * @brief Set callback function for resource deallocation API. If you set the callback, it will works when task terminates.
  * @details @b #include <task_manager/task_manager.h>
@@ -344,7 +383,46 @@ void task_manager_clean_info(app_info_t **info);
  * @since TizenRT v2.0 PRE
  */
 void task_manager_clean_infolist(app_info_list_t **info_list);
-
+/**
+ * @brief Send unicast reply message
+ * @details @b #include <task_manager/task_manager.h>
+ * @param[in] reply_msg the pointer of msg for reply
+ * @return On success, OK is returned. On failure, defined negative value is returned.
+ * @since TizenRT v2.0 PRE
+ */
+int task_manager_reply_unicast(tm_unicast_msg_t *reply_msg);
+/**
+ * @brief Allocate a new broadcast message which is not defined in the <task_manager/task_manager.h>\n
+ *        and <task_manager/task_manager_broadcast_list.h>
+ * @details @b #include <task_manager/task_manager.h>
+ * @return On success, a newly allocated broadcast message value is returned. On failure, defined negative value is returned.
+ * @since TizenRT v2.0 PRE
+ */
+int task_manager_alloc_broadcast_msg(void);
+/**
+ * @brief Unregister callback function which was used for a certain broadcast message.
+ * @details @b #include <task_manager/task_manager.h>
+ * @param[in] msg the broadcast message corresponding to the callback function to be unregistered\n
+ * @param[in] timeout returnable flag. It can be one of the below.\n
+ *			TM_NO_RESPONSE : Ignore the response of request from task manager\n
+ *			TM_RESPONSE_WAIT_INF : Blocked until get the response from task manager\n
+ *			integer value : Specifies an upper limit on the time for which will block in milliseconds
+ * @return On success, OK is returned. On failure, defined negative value is returned.
+ * @since TizenRT v2.0 PRE
+ */
+int task_manager_unset_broadcast_cb(int msg, int timeout);
+/**
+ * @brief Remove the broadcast message which was allocated by using task_manager_alloc_broadcast_msg() API.
+ * @details @b #include <task_manager/task_manager.h>
+ * @param[in] msg the message which to be removed.\n
+ * @param[in] timeout returnable flag. It can be one of the below.\n
+ *			TM_NO_RESPONSE : Ignore the response of request from task manager\n
+ *			TM_RESPONSE_WAIT_INF : Blocked until get the response from task manager\n
+ *			integer value : Specifies an upper limit on the time for which will block in milliseconds
+ * @return On success, OK is returned. On failure, defined negative value is returned.
+ * @since TizenRT v2.0 PRE
+ */
+int task_manager_dealloc_broadcast_msg(int msg, int timeout);
 #endif
 /**
  * @}

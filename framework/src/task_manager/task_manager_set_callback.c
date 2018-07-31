@@ -18,6 +18,7 @@
 /****************************************************************************
  * Included Files
  ****************************************************************************/
+#include <tinyara/config.h>
 #include <stdio.h>
 #include <string.h>
 #include <signal.h>
@@ -25,6 +26,9 @@
 #include <unistd.h>
 #include <sys/types.h>
 #include <task_manager/task_manager.h>
+#ifdef CONFIG_TASK_MANAGER_USER_SPECIFIC_BROADCAST
+#include <task_manager/task_manager_broadcast_list.h>
+#endif
 #include "task_manager_internal.h"
 
 void taskmgr_msg_cb(int signo, siginfo_t *data)
@@ -36,15 +40,15 @@ void taskmgr_msg_cb(int signo, siginfo_t *data)
 		return;
 	}
 	if (signo == CONFIG_SIG_SIGTM_UNICAST) {
-		(*TM_UNICAST_CB(handle))((void *)data->si_value.sival_ptr);
+		(*TM_UNICAST_CB(handle))((tm_unicast_msg_t *)data->si_value.sival_ptr);
 	} else {
-		(*TM_BROADCAST_CB(handle))(data->si_value.sival_int);
+		(*((tm_broadcast_info_t *)data->si_value.sival_ptr)->cb)((void *)((tm_broadcast_info_t *)data->si_value.sival_ptr)->cb_data);
 	}
 }
 /****************************************************************************
  * task_manager_set_unicast_cb
  ****************************************************************************/
-int task_manager_set_unicast_cb(void (*func)(void *data))
+int task_manager_set_unicast_cb(void (*func)(tm_unicast_msg_t *data))
 {
 	int ret = OK;
 	struct sigaction act;
@@ -89,49 +93,57 @@ int task_manager_set_unicast_cb(void (*func)(void *data))
 /****************************************************************************
  * task_manager_set_broadcast_cb
  ****************************************************************************/
-int task_manager_set_broadcast_cb(int msg_mask, void (*func)(int data))
+int task_manager_set_broadcast_cb(int msg, void (*func)(void *data), void *cb_data)
 {
-	int ret;
+	int status;
 	tm_request_t request_msg;
+	tm_response_t response_msg;
 	struct sigaction act;
 
-	if (msg_mask < 0 || func == NULL) {
+	if (msg < 0 || func == NULL) {
 		return TM_INVALID_PARAM;
 	}
-
 	act.sa_sigaction = (_sa_sigaction_t)taskmgr_msg_cb;
 	act.sa_flags = 0;
 	(void)sigemptyset(&act.sa_mask);
-
-	ret = sigaddset(&act.sa_mask, SIGTM_BROADCAST);
-	if (ret < 0) {
+	status = sigaddset(&act.sa_mask, SIGTM_BROADCAST);
+	if (status < 0) {
 		tmdbg("Failed to add signal set\n");
 		return TM_OPERATION_FAIL;
 	}
-
-	ret = sigaction(SIGTM_BROADCAST, &act, NULL);
-	if (ret == (int)SIG_ERR) {
+	status = sigaction(SIGTM_BROADCAST, &act, NULL);
+	if (status == (int)SIG_ERR) {
 		tmdbg("sigaction Failed\n");
 		return TM_OPERATION_FAIL;
 	}
-
 	memset(&request_msg, 0, sizeof(tm_request_t));
 	request_msg.cmd = TASKMGRCMD_SET_BROADCAST_CB;
 	request_msg.caller_pid = getpid();
-	request_msg.timeout = TM_NO_RESPONSE;
-	request_msg.data = (void *)TM_ALLOC(sizeof(tm_broadcast_t));
+	request_msg.timeout = TM_RESPONSE_WAIT_INF;
+	request_msg.data = (void *)TM_ALLOC(sizeof(tm_broadcast_info_t));
 	if (request_msg.data == NULL) {
 		return TM_OUT_OF_MEMORY;
 	}
-	((tm_broadcast_t *)request_msg.data)->msg_mask = msg_mask;
-	((tm_broadcast_t *)request_msg.data)->cb = (_tm_broadcast_t)func;
-
-	ret = taskmgr_send_request(&request_msg);
-	if (ret < 0) {
+	((tm_broadcast_info_t *)request_msg.data)->msg = msg;
+	((tm_broadcast_info_t *)request_msg.data)->cb = (_tm_broadcast_t)func;
+	((tm_broadcast_info_t *)request_msg.data)->cb_data = cb_data;
+	asprintf(&request_msg.q_name, "%s%d", TM_PRIVATE_MQ, request_msg.caller_pid);
+	if (request_msg.q_name == NULL) {
 		TM_FREE(request_msg.data);
-		return ret;
+		return TM_OUT_OF_MEMORY;
 	}
-	return OK;
+	status = taskmgr_send_request(&request_msg);
+	if (status < 0) {
+		TM_FREE(request_msg.data);
+		if (request_msg.q_name != NULL) {
+			TM_FREE(request_msg.q_name);
+		}
+		return status;
+	}
+	status = taskmgr_receive_response(request_msg.q_name, &response_msg, TM_RESPONSE_WAIT_INF);
+	TM_FREE(request_msg.q_name);
+	
+	return status;
 }
 
 /****************************************************************************

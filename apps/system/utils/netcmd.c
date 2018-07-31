@@ -73,7 +73,9 @@
 #ifdef CONFIG_NETUTILS_TFTPC
 #include "netcmd_tftpc.h"
 #endif
-
+#ifdef CONFIG_NET_NETMON
+#include "netcmd_netmon.h"
+#endif
 #undef HAVE_PING
 #undef HAVE_PING6
 
@@ -550,6 +552,9 @@ const static tash_cmdlist_t net_utilcmds[] = {
 	{"ifup", cmd_ifup, TASH_EXECMD_SYNC},
 #ifdef NET_LWIP_STATS_DISPLAY
 	{"lwip_stats", stats_display, TASH_EXECMD_ASYNC},
+#endif
+#ifdef CONFIG_NET_NETMON
+	{"netmon", cmd_netmon, TASH_EXECMD_ASYNC},
 #endif
 #ifdef CONFIG_NET_PING_CMD
 	{"ping", cmd_ping, TASH_EXECMD_ASYNC},

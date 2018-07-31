@@ -83,35 +83,13 @@
 #include <sys/types.h>
 #include <math.h>
 
+#include "libm.h"
+
 #ifdef CONFIG_HAVE_DOUBLE
 
 /****************************************************************************
  * Pre-processor Definitions
  ****************************************************************************/
-
-#define FORCE_EVAL(x)                       \
-  do                                        \
-    {                                       \
-      if (sizeof(x) == sizeof(float))       \
-        {                                   \
-          volatile float __x;               \
-          UNUSED(__x);                      \
-          __x = (x);                        \
-        }                                   \
-      else if (sizeof(x) == sizeof(double)) \
-        {                                   \
-          volatile double __x;              \
-          UNUSED(__x);                      \
-          __x = (x);                        \
-        }                                   \
-      else                                  \
-        {                                   \
-          volatile long double __x;         \
-          UNUSED(__x);                      \
-          __x = (x);                        \
-        }                                   \
-    } \
-  while(0)
 
 #define N 12
 

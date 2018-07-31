@@ -733,20 +733,19 @@ Once LOGM is approved, each module should have its own index
 #define medllvdbg(...)
 #endif
 
-#ifdef CONFIG_DEBUG_TASK_MANAGER
 #ifdef CONFIG_DEBUG_TASK_MANAGER_ERROR
 #define tmdbg(format, ...)      dbg(format, ##__VA_ARGS__)
+#define tmlldbg(format, ...)    lldbg(format, ##__VA_ARGS__)
 #else
 #define tmdbg(...)
+#define tmlldbg(...)
 #endif
 #ifdef CONFIG_DEBUG_TASK_MANAGER_INFO
 #define tmvdbg(format, ...)     vdbg(format, ##__VA_ARGS__)
+#define tmllvdbg(format, ...)   llvdbg(format, ##__VA_ARGS__)
 #else
 #define tmvdbg(...)
-#endif
-#else
-#define tmdbg(...)
-#define tmvdbg(...)
+#define tmllvdbg(...)
 #endif
 
 #else							/* CONFIG_CPP_HAVE_VARARGS */
@@ -1148,6 +1147,22 @@ Once LOGM is approved, each module should have its own index
 #else
 #define medllvdbg   (void)
 #define medllvdbg   (...)
+#endif
+
+#ifdef CONFIG_DEBUG_TASK_MANAGER_ERROR
+#define tmdbg       dbg
+#define tmlldbg     lldbg
+#else
+#define tmdbg       (void)
+#define tmlldbg     (void)
+#endif
+
+#ifdef CONFIG_DEBUG_TASK_MANAGER_INFO
+#define tmvdbg      vdbg
+#define tmllvdbg    llvdbg
+#else
+#define tmvdbg      (void)
+#define tmllvdbg    (void)
 #endif
 
 #endif							/* CONFIG_CPP_HAVE_VARARGS */

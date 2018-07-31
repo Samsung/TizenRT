@@ -210,8 +210,13 @@ struct sigevent;
 /********************************************************************************
  * Public Data
  ********************************************************************************/
+#ifdef CONFIG_LIBC_LOCALTIME
+/* tzname[] - Timezone strings
+ * Setup by tzset()
+ */
 
-/* extern char *tznames[]; not supported */
+extern char *tznames[2];
+#endif
 
 /********************************************************************************
  * Public Function Prototypes
@@ -434,6 +439,20 @@ int timer_getoverrun(timer_t timerid);
  */
 int nanosleep(FAR const struct timespec *rqtp, FAR struct timespec *rmtp);
 
+/**
+ * @cond
+ * @internal
+ * @ingroup TIME_KERNEL
+ * @brief set time conversion information
+ * @details @b #include <time.h> \n
+ * POSIX API (refer to : http://pubs.opengroup.org/onlinepubs/9699919799/)
+ */
+#ifdef CONFIG_LIBC_LOCALTIME
+void tzset(void);
+#endif
+/**
+ * @endcond
+ */
 #undef EXTERN
 #if defined(__cplusplus)
 }

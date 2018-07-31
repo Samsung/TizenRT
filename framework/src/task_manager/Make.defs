@@ -20,7 +20,7 @@ ifeq ($(CONFIG_TASK_MANAGER),y)
 
 CSRCS += task_manager_register.c task_manager_unregister.c task_manager_start.c task_manager_stop.c task_manager_restart.c task_manager_pause.c task_manager_resume.c
 CSRCS += task_manager_getinfo.c task_manager_unicast.c task_manager_cleaninfo.c task_manager_set_callback.c task_manager_state.c task_manager_permission.c
-CSRCS += task_manager_core.c task_manager_interface.c task_manager_broadcast.c
+CSRCS += task_manager_core.c task_manager_interface.c task_manager_broadcast.c task_manager_alloc_broadcast_msg.c task_manager_unset_broadcast_cb.c task_manager_dealloc_broadcast_msg.c
 
 DEPPATH += --dep-path src/task_manager
 VPATH += :src/task_manager
