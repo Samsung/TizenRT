@@ -62,8 +62,6 @@ static bool flag;
 static app_info_t *sample_info;
 static app_info_list_t *group_list_info;
 static app_info_list_t *sample_list_info;
-static int *addr;
-static int *addr2;
 static int broad_wifi_on_cnt;
 static int broad_wifi_off_cnt;
 static int broad_undefined_cnt;
@@ -136,10 +134,9 @@ static void test_broadcast_handler(void *info)
 	}
 }
 
-void free_handler(void)
+void free_handler(void *info)
 {
-	free(addr);
-	free(addr2);
+	free(info);
 }
 
 int tm_sample_main(int argc, char *argv[])
@@ -163,15 +160,15 @@ int tm_broadcast1_main(int argc, char *argv[])
 {
 	int ret;
 
-	ret = task_manager_set_broadcast_cb(TM_BROADCAST_WIFI_ON, test_broadcast_handler, ((void *)TM_BROAD_WIFI_ON_DATA));
+	ret = task_manager_set_broadcast_cb(TM_BROADCAST_WIFI_ON, test_broadcast_handler, (void *)TM_BROAD_WIFI_ON_DATA);
 	if (ret != OK) {
 		printf("ERROR : fail to set callback ERR: %d\n", ret);
 	}
-	ret = task_manager_set_broadcast_cb(TM_BROADCAST_WIFI_OFF, test_broadcast_handler, ((void *)TM_BROAD_WIFI_OFF_DATA));
+	ret = task_manager_set_broadcast_cb(TM_BROADCAST_WIFI_OFF, test_broadcast_handler, (void *)TM_BROAD_WIFI_OFF_DATA);
 	if (ret != OK) {
 		printf("ERROR : fail to set callback ERR: %d\n", ret);
 	}
-	ret = task_manager_set_broadcast_cb(tm_broadcast_undefined_msg, test_broadcast_handler, ((void *)TM_BROAD_UNDEFINED_MSG_DATA));
+	ret = task_manager_set_broadcast_cb(tm_broadcast_undefined_msg, test_broadcast_handler, (void *)TM_BROAD_UNDEFINED_MSG_DATA);
 	if (ret != OK) {
 		printf("ERROR : fail to set callback ERR: %d\n", ret);
 	}
@@ -185,11 +182,11 @@ int tm_broadcast2_main(int argc, char *argv[])
 {
 	int ret;
 
-	ret = task_manager_set_broadcast_cb(TM_BROADCAST_WIFI_ON, test_broadcast_handler, ((void *)TM_BROAD_WIFI_ON_DATA));
+	ret = task_manager_set_broadcast_cb(TM_BROADCAST_WIFI_ON, test_broadcast_handler, (void *)TM_BROAD_WIFI_ON_DATA);
 	if (ret != OK) {
 		printf("ERROR : fail to set callback ERR: %d\n", ret);
 	}
-	ret = task_manager_set_broadcast_cb(TM_BROADCAST_WIFI_OFF, test_broadcast_handler, ((void *)TM_BROAD_WIFI_OFF_DATA));
+	ret = task_manager_set_broadcast_cb(TM_BROADCAST_WIFI_OFF, test_broadcast_handler, (void *)TM_BROAD_WIFI_OFF_DATA);
 	if (ret != OK) {
 		printf("ERROR : fail to set callback ERR: %d\n", ret);
 	}
@@ -203,7 +200,7 @@ int tm_broadcast3_main(int argc, char *argv[])
 {
 	int ret;
 
-	ret = task_manager_set_broadcast_cb(tm_broadcast_undefined_msg, test_broadcast_handler, ((void *)TM_BROAD_UNDEFINED_MSG_DATA));
+	ret = task_manager_set_broadcast_cb(tm_broadcast_undefined_msg, test_broadcast_handler, (void *)TM_BROAD_UNDEFINED_MSG_DATA);
 	if (ret != OK) {
 		printf("ERROR : fail to set callback ERR: %d\n", ret);
 	}
@@ -306,10 +303,10 @@ static void utc_task_manager_set_unicast_cb_p(void)
 static void utc_task_manager_set_broadcast_cb_n(void)
 {
 	int ret;
-	ret = task_manager_set_broadcast_cb(TM_INVALID_BROAD_MSG, test_broadcast_handler, ((void *)NULL));
+	ret = task_manager_set_broadcast_cb(TM_INVALID_BROAD_MSG, test_broadcast_handler, (void *)NULL);
 	TC_ASSERT_EQ("task_manager_set_broadcast_cb", ret, TM_INVALID_PARAM);
 
-	ret = task_manager_set_broadcast_cb(TM_BROADCAST_WIFI_ON, NULL, ((void *)NULL));
+	ret = task_manager_set_broadcast_cb(TM_BROADCAST_WIFI_ON, NULL, (void *)NULL);
 	TC_ASSERT_EQ("task_manager_set_broadcast_cb", ret, TM_INVALID_PARAM);
 
 	TC_SUCCESS_RESULT();
@@ -319,10 +316,10 @@ static void utc_task_manager_set_broadcast_cb_p(void)
 {
 	int ret;
 
-	ret = task_manager_set_broadcast_cb(TM_BROAD_UNDEFINED_MSG_NOT_USED, test_broadcast_handler, ((void *)NULL));
+	ret = task_manager_set_broadcast_cb(TM_BROAD_UNDEFINED_MSG_NOT_USED, test_broadcast_handler, (void *)NULL);
 	TC_ASSERT_EQ("task_manager_set_broadcast_cb", ret, TM_UNREGISTERED_MSG);
 
-	ret = task_manager_set_broadcast_cb(tm_broadcast_undefined_msg, test_broadcast_handler, ((void *)TM_BROAD_WIFI_ON_DATA));
+	ret = task_manager_set_broadcast_cb(tm_broadcast_undefined_msg, test_broadcast_handler, (void *)TM_BROAD_WIFI_ON_DATA);
 	TC_ASSERT_EQ("task_manager_set_broadcast_cb", ret, OK);
 
 	TC_SUCCESS_RESULT();
@@ -331,7 +328,7 @@ static void utc_task_manager_set_broadcast_cb_p(void)
 static void utc_task_manager_set_exit_cb_n(void)
 {
 	int ret;
-	ret = task_manager_set_exit_cb(NULL);
+	ret = task_manager_set_exit_cb(NULL, (void *)NULL);
 	TC_ASSERT_EQ("task_manager_set_exit_cb", ret, TM_INVALID_PARAM);
 
 	TC_SUCCESS_RESULT();
@@ -341,11 +338,10 @@ static void utc_task_manager_set_exit_cb_p(void)
 {
 	int ret;
 	/* No meaningful malloc for testing resource collection handler */
-	addr = (int *)malloc(123);
-	addr2 = (int *)malloc(456);
+	int *addr = (int *)malloc(123);
 
-	ret = task_manager_set_exit_cb(free_handler);
-	TC_ASSERT_EQ_CLEANUP("task_manager_set_exit_cb", ret, OK, free(addr); free(addr2));
+	ret = task_manager_set_exit_cb(free_handler, (void *)addr);
+	TC_ASSERT_EQ_CLEANUP("task_manager_set_exit_cb", ret, OK, free(addr));
 
 	TC_SUCCESS_RESULT();
 }

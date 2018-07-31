@@ -169,8 +169,8 @@ static int taskmgr_register_builtin(char *name, int permission, int caller_pid)
 		TM_GID(handle) = caller_pid;
 		TM_STATUS(handle) = TM_APP_STATE_STOP;
 		TM_PERMISSION(handle) = permission;
-		TM_STOP_CB(handle) = NULL;
-		TM_EXIT_CB(handle) = NULL;
+		TM_STOP_CB_INFO(handle) = NULL;
+		TM_EXIT_CB_INFO(handle) = NULL;
 		sq_init(&TM_BROADCAST_INFO_LIST(handle));
 		tmvdbg("Registered handle %d\n", handle);
 		handle_cnt++;
@@ -216,8 +216,10 @@ static int taskmgr_unregister(int handle)
 #endif
 
 	TM_PID(handle) = 0;
-	TM_STOP_CB(handle) = NULL;
-	TM_EXIT_CB(handle) = NULL;
+	TM_FREE(TM_STOP_CB_INFO(handle));
+	TM_STOP_CB_INFO(handle) = NULL;
+	TM_FREE(TM_EXIT_CB_INFO(handle));
+	TM_EXIT_CB_INFO(handle) = NULL;
 	taskmgr_clear_broadcast_info_list(handle);
 	TM_FREE(tm_app_list[handle].addr);
 	tm_app_list[handle].addr = NULL;
@@ -312,8 +314,8 @@ static int taskmgr_stop(int handle, int caller_pid)
 
 	/* Call stop callback */
 	TM_STATUS(handle) = TM_APP_STATE_CANCELLING;
-	if (TM_STOP_CB(handle) != NULL) {
-		(*TM_STOP_CB(handle))();
+	if (TM_STOP_CB_INFO(handle) != NULL) {
+		(*TM_STOP_CB_INFO(handle)->cb)((void *)TM_STOP_CB_INFO(handle)->cb_data);
 	}
 
 	if (TM_TYPE(handle) == TM_BUILTIN_TASK || TM_TYPE(handle) == TM_TASK) {
@@ -915,8 +917,8 @@ static int taskmgr_register_task(tm_task_info_t *task_info, int permission, int 
 		TM_GID(handle) = caller_pid;
 		TM_STATUS(handle) = TM_APP_STATE_STOP;
 		TM_PERMISSION(handle) = permission;
-		TM_STOP_CB(handle) = NULL;
-		TM_EXIT_CB(handle) = NULL;
+		TM_STOP_CB_INFO(handle) = NULL;
+		TM_EXIT_CB_INFO(handle) = NULL;
 		sq_init(&TM_BROADCAST_INFO_LIST(handle));
 		tmvdbg("Registered handle %d\n", handle);
 		handle_cnt++;
@@ -981,8 +983,8 @@ static int taskmgr_register_pthread(tm_pthread_info_t *pthread_info, int permiss
 		TM_GID(handle) = caller_pid;
 		TM_STATUS(handle) = TM_APP_STATE_STOP;
 		TM_PERMISSION(handle) = permission;
-		TM_STOP_CB(handle) = NULL;
-		TM_EXIT_CB(handle) = NULL;
+		TM_STOP_CB_INFO(handle) = NULL;
+		TM_EXIT_CB_INFO(handle) = NULL;
 		sq_init(&TM_BROADCAST_INFO_LIST(handle));
 		tmvdbg("Registered handle %d\n", handle);
 		handle_cnt++;
@@ -1006,9 +1008,19 @@ static int taskmgr_set_termination_cb(int type, void *data, int pid)
 	}
 
 	if (type == TYPE_CANCEL) {
-		TM_STOP_CB(handle) = (_tm_termination_t)data;
+		TM_STOP_CB_INFO(handle) = (tm_termination_info_t *)TM_ALLOC(sizeof(tm_termination_info_t));
+		if (TM_STOP_CB_INFO(handle) == NULL) {
+			return TM_OUT_OF_MEMORY;
+		}
+		TM_STOP_CB_INFO(handle)->cb = ((tm_termination_info_t *)data)->cb;
+		TM_STOP_CB_INFO(handle)->cb_data = ((tm_termination_info_t *)data)->cb_data;
 	} else {
-		TM_EXIT_CB(handle) = (_tm_termination_t)data;
+		TM_EXIT_CB_INFO(handle) = (tm_termination_info_t *)TM_ALLOC(sizeof(tm_termination_info_t));
+		if (TM_EXIT_CB_INFO(handle) == NULL) {
+			return TM_OUT_OF_MEMORY;
+		}
+		TM_EXIT_CB_INFO(handle)->cb = ((tm_termination_info_t *)data)->cb;
+		TM_EXIT_CB_INFO(handle)->cb_data = ((tm_termination_info_t *)data)->cb_data;
 	}
 
 	return OK;
@@ -1021,11 +1033,10 @@ int task_manager_run_exit_cb(int pid)
 	if (handle == TM_UNREGISTERED_APP) {
 		return handle;
 	}
-
 	/* Run exit callback when normally terminated. */
 	if (TM_STATUS(handle) != TM_APP_STATE_CANCELLING) {
-		if (TM_EXIT_CB(handle) != NULL) {
-			(*TM_EXIT_CB(handle))();
+		if (TM_EXIT_CB_INFO(handle) != NULL) {
+			(*TM_EXIT_CB_INFO(handle)->cb)((void *)TM_EXIT_CB_INFO(handle)->cb_data);
 		}
 	}
 	return OK;
@@ -1212,7 +1223,7 @@ int task_manager(int argc, char *argv[])
 			taskmgr_send_response((char *)request_msg.q_name, &response_msg);
 		}
 
-		if (request_msg.data != NULL && request_msg.cmd != TASKMGRCMD_SET_UNICAST_CB && request_msg.cmd != TASKMGRCMD_SET_STOP_CB && request_msg.cmd != TASKMGRCMD_SET_EXIT_CB && request_msg.cmd != TASKMGRCMD_ALLOC_BROADCAST_MSG) {
+		if (request_msg.data != NULL && request_msg.cmd != TASKMGRCMD_SET_UNICAST_CB && request_msg.cmd != TASKMGRCMD_ALLOC_BROADCAST_MSG) {
 			TM_FREE(request_msg.data);
 			request_msg.data = NULL;
 		}
