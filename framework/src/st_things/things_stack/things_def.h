@@ -45,11 +45,22 @@
 #define SEC_ATTRIBUTE_PROV_TARGET_RT        "x.com.samsung.targetRt"
 #define SEC_ATTRIBUTE_PROV_TARGET_PUBED     "x.com.samsung.published"
 
+/* Resource Attribute's names for AccessPoint List*/
+#define SEC_ATTRIBUTE_AP_ITEMS              "x.com.samsung.accesspoint.items"
+#define SEC_ATTRIBUTE_AP_CHANNAL            "x.com.samsung.channel"
+#define SEC_ATTRIBUTE_AP_ENCTYPE            "x.com.samsung.encryptionType"
+#define SEC_ATTRIBUTE_AP_MACADDR            "x.com.samsung.macAddress"
+#define SEC_ATTRIBUTE_AP_MAXRATE            "x.com.samsung.maxRate"
+#define SEC_ATTRIBUTE_AP_RSSI               "x.com.samsung.rssi"
+#define SEC_ATTRIBUTE_AP_SECTYPE            "x.com.samsung.securityType"
+#define SEC_ATTRIBUTE_AP_SSID               "x.com.samsung.ssid"
+
 /* Resource URI */
 #define URI_SEC                         "/sec"
 #define URI_PROVINFO                    "/provisioninginfo"
 #define URI_DEVICE_COL                  "/device"
 #define URI_FIRMWARE                    "/firmware"
+#define URI_ACCESSPOINTLIST             "/accesspointlist"
 
 #define DEVICE_OS_VERSION               "1.1"
 #define DEVICE_PLATFORM_VERSION         "1.1"
