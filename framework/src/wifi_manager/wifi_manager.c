@@ -105,8 +105,8 @@ struct _wifimgr_msg {
 typedef struct _wifimgr_msg _wifimgr_msg_s;
 
 struct _wifimgr_info {
-	char ssid[32];             // SSID of Connected AP if mode is a station, SoftAP SSID if mode is a soft ap
-	char mac_address[6];	   // MAC address of wifi interface
+	char ssid[WIFIMGR_SSID_LEN + 1];             // SSID of Connected AP if mode is a station, SoftAP SSID if mode is a soft ap
+	char mac_address[WIFIMGR_MACADDR_LEN];	   // MAC address of wifi interface
 	int rssi;                  // It is only used for a station mode
 	int num_sta;               // It is only used for a softap mode, it shows the number of stations connected
 	uint32_t ip4_address;
@@ -151,147 +151,152 @@ typedef struct _wifimgr_info _wifimgr_info_s;
 #define WIFIMGR_RESET_CBK_CHK (g_manager_info.chk_cbk = 0)
 #define WIFIMGR_CHECK_CBK (g_manager_info.chk_cbk == 0)
 
-#define WIFIMGR_SOFTAP_WAIT_CALLBACK												   \
-	do {																			   \
-		pthread_mutex_lock(&g_manager_info.softap_lock);							   \
-		pthread_cond_wait(&g_manager_info.softap_signal, &g_manager_info.softap_lock); \
-		pthread_mutex_unlock(&g_manager_info.softap_lock);	                           \
-		nvdbg("[WM] T%d wait disconnect callback\n", getpid());										   \
+#define WIFIMGR_SOFTAP_WAIT_CALLBACK                                                                    \
+	do {                                                                                            \
+		pthread_mutex_lock(&g_manager_info.softap_lock);					\
+		pthread_cond_wait(&g_manager_info.softap_signal, &g_manager_info.softap_lock);          \
+		pthread_mutex_unlock(&g_manager_info.softap_lock);	                                \
+		nvdbg("[WM] T%d wait disconnect callback\n", getpid());					\
 	} while (0)
 
-#define WIFIMGR_SOFTAP_CALLBACK_RECEIVED											   \
-	do {																			   \
-		pthread_mutex_lock(&g_manager_info.softap_lock);							   \
-		pthread_cond_signal(&g_manager_info.softap_signal);                            \
-		pthread_mutex_unlock(&g_manager_info.softap_lock);	                           \
-		nvdbg("[WM] T%d received disconnect callback\n", getpid());										   \
+#define WIFIMGR_SOFTAP_CALLBACK_RECEIVED					\
+	do {									\
+		pthread_mutex_lock(&g_manager_info.softap_lock);		\
+		pthread_cond_signal(&g_manager_info.softap_signal);             \
+		pthread_mutex_unlock(&g_manager_info.softap_lock);	        \
+		nvdbg("[WM] T%d received disconnect callback\n", getpid());	\
 	} while (0)
 
 #define WIFIMGR_GET_PREVSTATE g_manager_info.prev_state
 #define WIFIMGR_STORE_PREV_STATE (g_manager_info.prev_state = g_manager_info.state)
 #define WIFIMGR_RESTORE_STATE								\
-	do {													\
-		g_manager_info.state = g_manager_info.prev_state;	\
-		g_manager_info.prev_state = WIFIMGR_NONE;			\
+	do {										\
+		g_manager_info.state = g_manager_info.prev_state;	                \
+		g_manager_info.prev_state = WIFIMGR_NONE;			        \
 	} while (0)
 
-#define WIFIMGR_SET_SSID(s)							\
-	do {											\
+#define WIFIMGR_SET_SSID(s)					\
+	do {							\
 		strncpy(g_manager_info.ssid, s, strlen(s));	\
+		g_manager_info.ssid[strlen(s)] = '\0';          \
 	} while (0)
 
-#define WIFIMGR_COPY_SOFTAP_CONFIG(dest, src)													\
-	do {																				\
-		(dest).channel = (src)->channel;													\
-		strncpy((dest).ssid, (src)->ssid, strlen((src)->ssid) + 1);						\
-		strncpy((dest).passphrase, (src)->passphrase, strlen((src)->passphrase) + 1);	\
+#define WIFIMGR_COPY_SOFTAP_CONFIG(dest, src)							\
+	do {											\
+		(dest).channel = (src)->channel;						\
+		strncpy((dest).ssid, (src)->ssid, strlen((src)->ssid)); 			\
+                (dest).ssid[strlen((src)->ssid)] = '\0';                                        \
+		strncpy((dest).passphrase, (src)->passphrase, strlen((src)->passphrase));	\
+                (dest).passphrase[strlen((src)->passphrase)] = '\0';                            \
 	} while (0)
 
-#define WIFIMGR_COPY_AP_INFO(dest, src)									\
-	do {																\
-		(dest).ssid_length = (src).ssid_length;							\
+#define WIFIMGR_COPY_AP_INFO(dest, src)								\
+	do {											\
+		(dest).ssid_length = (src).ssid_length;						\
 		(dest).passphrase_length = (src).passphrase_length;				\
-		strncpy((dest).ssid, (src).ssid, (src).ssid_length + 1);		\
-		strncpy((dest).passphrase, (src).passphrase, (src).passphrase_length + 1); \
-		(dest).ap_auth_type = (src).ap_auth_type;						\
+		strncpy((dest).ssid, (src).ssid, (src).ssid_length);		                \
+                (dest).ssid[(src).ssid_length] = '\0';                                          \
+		strncpy((dest).passphrase, (src).passphrase, (src).passphrase_length);          \
+                (dest).passphrase[(src).passphrase_length] = '\0';                              \
+		(dest).ap_auth_type = (src).ap_auth_type;					\
 		(dest).ap_crypto_type = (src).ap_crypto_type;					\
 	} while (0)
 
 #define WIFIMGR_COPY_RECONN_INFO(dest, src)			\
-	do {											\
-		(dest).type = (src).type;					\
-		(dest).interval = (src).interval;			\
+	do {							\
+		(dest).type = (src).type;			\
+		(dest).interval = (src).interval;		\
 		(dest).max_interval = (src).max_interval;	\
 	} while (0)
 
-#define WIFIMGR_SET_IP4ADDR(intf, ip, netmask, gateway)	\
-	do {												\
-		int res = -1;									\
-		res = netlib_set_ipv4addr(intf, &ip);			\
-		if (res == -1) {								\
-			nvdbg("[WM] set ipv4 addr error\n");		\
-		}												\
+#define WIFIMGR_SET_IP4ADDR(intf, ip, netmask, gateway)	        \
+	do {							\
+		int res = -1;					\
+		res = netlib_set_ipv4addr(intf, &ip);		\
+		if (res == -1) {				\
+			nvdbg("[WM] set ipv4 addr error\n");	\
+		}						\
 		res = netlib_set_ipv4netmask(intf, &netmask);	\
-		if (res == -1) {								\
-			nvdbg("[WM] set netmask addr error\n");		\
-		}												\
+		if (res == -1) {				\
+			nvdbg("[WM] set netmask addr error\n");	\
+		}						\
 		res = netlib_set_dripv4addr(intf, &gateway);	\
-		if (res == -1) {								\
-			nvdbg("[WM] set route addr error\n");		\
-		}												\
-		g_manager_info.ip4_address = ip.s_addr;			\
+		if (res == -1) {				\
+			nvdbg("[WM] set route addr error\n");	\
+		}						\
+		g_manager_info.ip4_address = ip.s_addr;		\
 	} while (0)
 
-#define WIFIMGR_INC_NUM_CLIENT								\
-	do {													\
+#define WIFIMGR_INC_NUM_CLIENT						\
+	do {								\
 		pthread_mutex_lock(&g_manager_info.info_lock);		\
-		g_manager_info.num_sta++;							\
+		g_manager_info.num_sta++;				\
 		pthread_mutex_unlock(&g_manager_info.info_lock);	\
 	} while (0)
 
-#define WIFIMGR_DEC_NUM_CLIENT								\
-	do {													\
+#define WIFIMGR_DEC_NUM_CLIENT						\
+	do {								\
 		pthread_mutex_lock(&g_manager_info.info_lock);		\
-		g_manager_info.num_sta--;							\
+		g_manager_info.num_sta--;				\
 		pthread_mutex_unlock(&g_manager_info.info_lock);	\
 	} while (0)
 
 #define WIFIMGR_SPC // to pass the code check ruls
 #define WIFIMGR_CHECK_RESULT_CLEANUP(func, msg, ret, free_rsc)	\
-	do {														\
-		wifi_manager_result_e wmres = func;						\
-		if (wmres != WIFI_MANAGER_SUCCESS) {					\
-			ndbg(msg);											\
-			free_rsc;											\
-			return ret;											\
-		}														\
+	do {							\
+		wifi_manager_result_e wmres = func;		\
+		if (wmres != WIFI_MANAGER_SUCCESS) {		\
+			ndbg(msg);				\
+			free_rsc;				\
+			return ret;				\
+		}						\
 	} while (0)
 
 #define WIFIMGR_CHECK_RESULT(func, msg, ret) WIFIMGR_CHECK_RESULT_CLEANUP(func, msg, ret, WIFIMGR_SPC)
-#define WIFIMGR_CHECK_RESULT_NORET(func, msg)					\
-	do {														\
-		wifi_manager_result_e wmres = func;						\
+#define WIFIMGR_CHECK_RESULT_NORET(func, msg)				\
+	do {								\
+		wifi_manager_result_e wmres = func;			\
 		if (wmres != WIFI_MANAGER_SUCCESS) {                    \
-			WIFIADD_ERR_RECORD(ERR_WIFIMGR_API_FAIL);\
-			ndbg(msg);											\
-		}														\
+			WIFIADD_ERR_RECORD(ERR_WIFIMGR_API_FAIL);       \
+			ndbg(msg);					\
+		}							\
 	} while (0)													\
 
-#define WIFIMGR_CHECK_UTILRESULT(func, msg, ret)	\
-	do {											\
+#define WIFIMGR_CHECK_UTILRESULT(func, msg, ret)	                \
+	do {								\
 		wifi_utils_result_e res = func;				\
 		if (res != WIFI_UTILS_SUCCESS) {			\
-			ndbg(msg);								\
-			ndbg("error code(%d)\n", res);          \
-			WIFIADD_ERR_RECORD(ERR_WIFIMGR_UTILS_FAIL);\
-			return ret;								\
-		}											\
+			ndbg(msg);					\
+			ndbg("error code(%d)\n", res);                  \
+			WIFIADD_ERR_RECORD(ERR_WIFIMGR_UTILS_FAIL);     \
+			return ret;					\
+		}							\
 	} while (0)
 
-#define WIFIMGR_CHECK_AP_CONFIG(config)									\
-	do {																\
-		if (config->ssid_length > 31 ||									\
-			config->passphrase_length > 63 ||							\
-			strlen(config->ssid) > 31 ||								\
-			strlen(config->passphrase) > 63) {							\
-			ndbg("[WM] AP configuration fails: too long ssid or passphrase\n");	\
-			ndbg("[WM] Make sure that length of SSID < 32 and length of passphrase < 64\n");\
-			WIFIADD_ERR_RECORD(ERR_WIFIMGR_INVALID_ARGUMENTS);				\
-			return WIFI_MANAGER_INVALID_ARGS;							\
-		}																\
+#define WIFIMGR_CHECK_AP_CONFIG(config)									    \
+	do {												    \
+		if (config->ssid_length > WIFIMGR_SSID_LEN ||						    \
+			config->passphrase_length > WIFIMGR_PASSPHRASE_LEN ||				    \
+			strlen(config->ssid) > WIFIMGR_SSID_LEN ||					    \
+			strlen(config->passphrase) > WIFIMGR_PASSPHRASE_LEN) {				    \
+			ndbg("[WM] AP configuration fails: too long ssid or passphrase\n");	            \
+			ndbg("[WM] Make sure that length of SSID < 33 and length of passphrase < 65\n");    \
+			WIFIADD_ERR_RECORD(ERR_WIFIMGR_INVALID_ARGUMENTS);				    \
+			return WIFI_MANAGER_INVALID_ARGS;						    \
+		}											    \
 	} while (0)
 
 #define LOCK_WIFIMGR pthread_mutex_lock(&g_manager_info.state_lock)
 #define UNLOCK_WIFIMGR pthread_mutex_unlock(&g_manager_info.state_lock)
 
-#define WIFIMGR_FREE_CONNMSG(msg)				\
-	do {										\
-		free(msg->config);						\
-		msg->config = NULL;						\
-		free(msg->conn_config);					\
-		msg->conn_config = NULL;				\
-		close(msg->fd);							\
-		free(msg);								\
+#define WIFIMGR_FREE_CONNMSG(msg)		\
+	do {					\
+		free(msg->config);		\
+		msg->config = NULL;		\
+		free(msg->conn_config);		\
+		msg->conn_config = NULL;	\
+		close(msg->fd);			\
+		free(msg);			\
 	} while (0)
 
 /**
@@ -543,8 +548,8 @@ _convert_scan_info(wifi_manager_scan_info_s **wm_scan_list, wifi_utils_scan_list
 		cur->phy_mode = iter->ap_info.phy_mode;
 		cur->ap_auth_type = iter->ap_info.ap_auth_type;
 		cur->ap_crypto_type = iter->ap_info.ap_crypto_type;
-		strncpy(cur->ssid, (char *)iter->ap_info.ssid, 32);
-		strncpy(cur->bssid, (char *)iter->ap_info.bssid, 17);
+		strncpy(cur->ssid, (char *)iter->ap_info.ssid, WIFIMGR_SSID_LEN);
+		strncpy(cur->bssid, (char *)iter->ap_info.bssid, WIFIMGR_MACADDR_STR_LEN);
 
 		if (!prev) {
 			*wm_scan_list = cur;
@@ -695,9 +700,11 @@ wifi_manager_result_e _wifimgr_connect_ap(wifi_manager_ap_config_s *config)
 {
 	WM_LOG_START;
 	wifi_utils_ap_config_s util_config;
-	strncpy(util_config.ssid, config->ssid, config->ssid_length + 1);
+	strncpy(util_config.ssid, config->ssid, config->ssid_length);
+        util_config.ssid[config->ssid_length] = '\0';
 	util_config.ssid_length = config->ssid_length;
-	strncpy(util_config.passphrase, config->passphrase, config->passphrase_length + 1);
+	strncpy(util_config.passphrase, config->passphrase, config->passphrase_length);
+        util_config.passphrase[config->passphrase_length] = '\0';
 	util_config.passphrase_length = config->passphrase_length;
 	util_config.ap_auth_type = config->ap_auth_type;
 	util_config.ap_crypto_type = config->ap_crypto_type;
@@ -709,7 +716,7 @@ wifi_manager_result_e _wifimgr_connect_ap(wifi_manager_ap_config_s *config)
 		WIFIADD_ERR_RECORD(ERR_WIFIMGR_CONNECT_FAIL);
 		return WIFI_MANAGER_FAIL;
 	}
-	strncpy(g_manager_info.ssid, config->ssid, config->ssid_length + 1);
+        WIFIMGR_SET_SSID(config->ssid);
 
 	return WIFI_MANAGER_SUCCESS;
 }
@@ -734,15 +741,17 @@ wifi_manager_result_e _wifimgr_run_softap(wifi_manager_softap_config_s *config)
 	softap_config.ap_auth_type = WIFI_UTILS_AUTH_WPA2_PSK;
 	softap_config.ssid_length = strlen(config->ssid);
 	softap_config.passphrase_length = strlen(config->passphrase);
-	strncpy(softap_config.ssid, config->ssid, softap_config.ssid_length + 1);
-	strncpy(softap_config.passphrase, config->passphrase, softap_config.passphrase_length + 1);
+	strncpy(softap_config.ssid, config->ssid, softap_config.ssid_length);
+        softap_config.ssid[softap_config.ssid_length] = '\0';
+	strncpy(softap_config.passphrase, config->passphrase, softap_config.passphrase_length);
+        softap_config.passphrase[softap_config.passphrase_length] = '\0';
 
 	WIFIMGR_CHECK_UTILRESULT(wifi_utils_start_softap(&softap_config), "[WM] Starting softap mode failed.", WIFI_MANAGER_FAIL);
 	WIFIMGR_CHECK_RESULT(_start_dhcpd(), "[WM] Starting DHCP server failed.\n", WIFI_MANAGER_FAIL);
 
 	/* update wifi_manager_info */
-	strncpy(g_manager_info.ssid, config->ssid, softap_config.ssid_length + 1);
-	g_manager_info.num_sta = 0;
+	WIFIMGR_SET_SSID(config->ssid);
+        g_manager_info.num_sta = 0;
 
 	if (g_manager_info.state == WIFIMGR_SOFTAP_DISCONNECTING_STA) {
 		WIFIMGR_SOFTAP_CALLBACK_RECEIVED;	
@@ -868,7 +877,7 @@ wifi_manager_result_e _handler_on_uninitialized_state(_wifimgr_msg_s *msg)
 	}
 
 	g_manager_info.cb = *cb;
-	memcpy(g_manager_info.mac_address, info.mac_address, 6);
+	memcpy(g_manager_info.mac_address, info.mac_address, WIFIMGR_MACADDR_LEN);
 
 	WIFIMGR_SET_STATE(WIFIMGR_STA_DISCONNECTED);
 
@@ -1374,8 +1383,8 @@ wifi_manager_result_e wifi_manager_get_info(wifi_manager_info_s *info)
 	LOCK_WIFIMGR;
 	uint8_t *ip = (uint8_t *)&g_manager_info.ip4_address;
 	snprintf(info->ip4_address, 18, "%d.%d.%d.%d", ip[0], ip[1], ip[2], ip[3]);
-	memcpy(info->ssid, g_manager_info.ssid, 32);
-	memcpy(info->mac_address, g_manager_info.mac_address, 6);
+	memcpy(info->ssid, g_manager_info.ssid, WIFIMGR_SSID_LEN + 1);
+	memcpy(info->mac_address, g_manager_info.mac_address, WIFIMGR_MACADDR_LEN);
 	/* Get RSSI */
 	wifi_utils_info info_utils;
 	wifi_utils_result_e wres = wifi_utils_get_info(&info_utils);
@@ -1487,7 +1496,7 @@ wifi_manager_result_e wifi_manager_mac_str_to_mac_addr(char mac_str[20], char ma
 	wifi_manager_result_e wret = WIFI_MANAGER_INVALID_ARGS;
 	if (mac_addr && mac_str) {
 		int ret = sscanf(mac_str, "%hhx:%hhx:%hhx:%hhx:%hhx:%hhx%*c", &mac_addr[0], &mac_addr[1], &mac_addr[2], &mac_addr[3], &mac_addr[4], &mac_addr[5]);
-		if (ret == 6) {
+		if (ret == WIFIMGR_MACADDR_LEN) {
 			wret = WIFI_MANAGER_SUCCESS;	
 		}
 	} else {
