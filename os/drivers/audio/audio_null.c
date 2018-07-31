@@ -228,7 +228,7 @@ static int null_getcaps(FAR struct audio_lowerhalf_s *dev, int type, FAR struct 
 		break;
 
 	/* Provide capabilities of our INPUT & OUTPUT unit */
-	
+
 	case AUDIO_TYPE_INPUT:
 	case AUDIO_TYPE_OUTPUT:
 

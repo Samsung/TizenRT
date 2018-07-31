@@ -120,7 +120,7 @@ int sched_yield(void)
 	 * same priority
 	 */
 	if (rtcb->sched_priority <= ntcb->sched_priority) {
-		bool switch_needed = false;
+		bool switch_needed;
 		irqstate_t saved_state;
 
 		saved_state = irqsave();
