@@ -100,6 +100,10 @@ endif
 
 endif #CONFIG_TASH
 
+ifeq ($(CONFIG_ENABLE_CPULOAD_CMD),y)
+CSRCS += kdbg_cpuload.c
+endif
+
 ifeq ($(CONFIG_ENABLE_DATE),y)
 CSRCS += kdbg_date.c
 endif
