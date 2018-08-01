@@ -23,9 +23,6 @@
 #include <slsi_wifi/slsi_wifi_api.h>
 #include "wifi_utils.h"
 
-#define MACADDR_LENGTH			6
-#define SSID_LENGTH_MAX			32
-#define PASSPHRASE_LENGTH_MAX	64
 #define DHCP_RETRY_COUNT		1
 #define WIFI_UTILS_DEBUG        0
 
@@ -135,7 +132,8 @@ fetch_scan_results(wifi_utils_scan_list_s **scan_list, slsi_scan_info_t **slsi_s
 					&cur->ap_info.ap_auth_type, &cur->ap_info.ap_crypto_type);
 			strncpy(cur->ap_info.ssid, (char *)wifi_scan_iter->ssid, wifi_scan_iter->ssid_len);
 			cur->ap_info.ssid_length = (unsigned int)wifi_scan_iter->ssid_len;
-			strncpy(cur->ap_info.bssid, (char *)wifi_scan_iter->bssid, SLSI_MACADDR_STR_LEN);
+			strncpy(cur->ap_info.bssid, (char *)wifi_scan_iter->bssid, WIFI_UTILS_MACADDR_STR_LEN);
+                        cur->ap_info.bssid[WIFI_UTILS_MACADDR_STR_LEN] = '\0';
 
 			if (!prev) {
 				*scan_list = cur;
