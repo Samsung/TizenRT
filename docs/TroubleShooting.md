@@ -6,6 +6,40 @@
 
 ## Common
 ### Issues on Kconfig-frontend
+#### Build break on hconf
+If you are using gperf 3.1 and kconfig-frontends-4.11.0.1,
+you may meet below at Kconfig-frontend build(make) time:
+```
+~/kconfig-frontends-4.11.0.1$ make
+.
+.
+.
+In file included from libs/parser/yconf.c:252:0:
+libs/parser/hconf.gperf:153:1: error: conflicting types for ‘kconf_id_lookup’
+libs/parser/hconf.gperf:12:31: note: previous declaration of ‘kconf_id_lookup’ was here
+ static const struct kconf_id *kconf_id_lookup(register const char *str, register GPERF_LEN_TYPE len);
+                               ^~~~~~~~~~~~~~~
+Makefile:1404: recipe for target 'libs/parser/libs_parser_libkconfig_parser_la-yconf.lo' failed
+make[1]: *** [libs/parser/libs_parser_libkconfig_parser_la-yconf.lo] Error 1
+```
+
+To resolve:
+Modify `kconfig-frontends-4.11.0.1/libs/parser/hconf.c` like below
+```diff
+--- a/libs/parser/hconf.c
++++ b/libs/parser/hconf.c
+@@ -172,7 +172,7 @@ __attribute__ ((__gnu_inline__))
+ #endif
+ #endif
+ const struct kconf_id *
+-kconf_id_lookup (register const char *str, register unsigned int len)
++kconf_id_lookup (register const char *str, register GPERF_LEN_TYPE len)
+ {
+   enum
+     {
+```
+
+#### Execution error on mconf
 When ```make menuconfig``` executes after installing Kconfig-frontend, someone meets below:
 ```
 kconfig-mconf: error while loading shared libraries: libkconfig-parser-x.xx.0.so: cannot open shared object file: No such file or directory
