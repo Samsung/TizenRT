@@ -530,11 +530,34 @@ config SCHED_CPULOAD_TICKSPERSEC
 
 config SCHED_CPULOAD_TIMECONSTANT
 	int "CPU load time constant"
+	depends on !SCHED_MULTI_CPULOAD
 	default 2
 	---help---
 		The accumulated CPU count is divided by two when the accumulated
 		tick count exceeds this time constant.  This time constant is in
 		units of seconds.
+
+config SCHED_MULTI_CPULOAD
+	bool "Use multi interval for cpuload measurement"
+	default n
+	---help---
+		If this option is selected, user can measure CPU load with 3 types of interval : short-term, mid-term, long-term.
+		It can bring overhead on system because it is handled in timer interrupt handler.
+
+config SCHED_CPULOAD_TIMECONSTANT_SHORT
+	int "Time constant for short-term"
+	default 2
+	depends on SCHED_MULTI_CPULOAD
+
+config SCHED_CPULOAD_TIMECONSTANT_MID
+	int "Time constant for mid-term"
+	default 5
+	depends on SCHED_MULTI_CPULOAD
+
+config SCHED_CPULOAD_TIMECONSTANT_LONG
+	int "Time constant for long-term"
+	default 10
+	depends on SCHED_MULTI_CPULOAD
 
 endif # SCHED_CPULOAD
 

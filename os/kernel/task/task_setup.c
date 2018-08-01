@@ -65,6 +65,9 @@
 
 #include <tinyara/arch.h>
 #include <tinyara/ttrace.h>
+#ifdef CONFIG_SCHED_CPULOAD
+#include <tinyara/clock.h>
+#endif
 
 #include "sched/sched.h"
 #include "pthread/pthread.h"
@@ -169,7 +172,10 @@ static int task_assignpid(FAR struct tcb_s *tcb)
 			g_pidhash[hash_ndx].tcb = tcb;
 			g_pidhash[hash_ndx].pid = next_pid;
 #ifdef CONFIG_SCHED_CPULOAD
-			g_pidhash[hash_ndx].ticks = 0;
+			int cpuload_idx;
+			for (cpuload_idx = 0; cpuload_idx < SCHED_NCPULOAD; cpuload_idx++) {
+				g_pidhash[hash_ndx].ticks[cpuload_idx] = 0;
+			}
 #endif
 			tcb->pid = next_pid;
 
