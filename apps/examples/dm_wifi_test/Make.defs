@@ -15,6 +15,6 @@
 # language governing permissions and limitations under the License.
 #
 ###########################################################################
-ifeq ($(CONFIG_EXAMPLES_WIFI_TEST),y)
-CONFIGURED_APPS += examples/wifi_test
+ifeq ($(CONFIG_EXAMPLES_DM_WIFI_TEST),y)
+CONFIGURED_APPS += examples/dm_wifi_test
 endif

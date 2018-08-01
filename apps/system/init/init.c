@@ -51,10 +51,6 @@
 #undef CONFIG_LIB_USRWORK
 #endif
 
-#ifdef CONFIG_DM
-extern void dm_cb_register_init(void);
-#endif
-
 #ifdef CONFIG_ENABLE_IOTJS
 extern void iotjs_register_cmds(void);
 #endif
@@ -126,10 +122,6 @@ int preapp_start(int argc, char *argv[])
 		printf("user work queue is failed to start, error code is %d\n", pid);
 		goto error_out;
 	}
-#endif
-
-#ifdef CONFIG_DM
-	dm_cb_register_init();
 #endif
 
 #ifdef CONFIG_TASH

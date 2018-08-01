@@ -19,11 +19,11 @@
 -include $(TOPDIR)/Make.defs
 include $(APPDIR)/Make.defs
 
-# WIFI APIs Example
+# DM WIFI Example
 
 ASRCS =
 CSRCS =
-MAINSRC = wifi_test.c
+MAINSRC = dm_wifi_test.c
 
 AOBJS = $(ASRCS:.S=$(OBJEXT))
 COBJS = $(CSRCS:.c=$(OBJEXT))
@@ -52,8 +52,8 @@ else
   INSTALL_DIR = $(BIN_DIR)
 endif
 
-CONFIG_EXAMPLES_WIFI_TEST_PROGNAME ?= wifi_test$(EXEEXT)
-PROGNAME = $(CONFIG_EXAMPLES_WIFI_TEST_PROGNAME)
+CONFIG_EXAMPLES_DM_WIFI_TEST_PROGNAME ?= dm_wifi_test$(EXEEXT)
+PROGNAME = $(CONFIG_EXAMPLES_DM_WIFI_TEST_PROGNAME)
 
 ROOTDEPPATH = --dep-path .
 

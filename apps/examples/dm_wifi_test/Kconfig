@@ -3,8 +3,10 @@
 # see kconfig-language at https://www.kernel.org/doc/Documentation/kbuild/kconfig-language.txt
 #
 
-config EXAMPLES_WIFI_TEST
-	bool "WIFI APIs example"
+config EXAMPLES_DM_WIFI_TEST
+	bool "DM WIFI example"
+	depends on DM
+	depends on NETUTILS_WIFI
 	default n
 	---help---
 		Enable the WIFI APIs example. This application features a set
@@ -13,4 +15,4 @@ config EXAMPLES_WIFI_TEST
 
 config USER_ENTRYPOINT
 	string
-	default "wifi_test_main" if ENTRY_WIFI_TEST
+	default "wifi_test_main" if ENTRY_DM_WIFI_TEST
