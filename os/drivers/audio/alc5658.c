@@ -1424,7 +1424,7 @@ static int alc5658_interrupt(FAR const struct alc5658_lower_s *lower, FAR void *
 	ALC5658_DISABLE(priv->lower);
 
 	DEBUGASSERT(work_available(&priv->work));
-	ret = work_queue(LPWORK, &priv->work, alc5658_interrupt_work, priv, 0);
+	ret = work_queue(HPWORK, &priv->work, alc5658_interrupt_work, priv, 0);
 	if (ret < 0) {
 		auddbg("ERROR: Failed to schedule work\n");
 	}
