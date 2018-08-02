@@ -82,7 +82,11 @@
 #define TM_UNICAST_SYNC      (0)
 #define TM_UNICAST_ASYNC     (1)
 
-typedef void (*_tm_termination_t)(void);
+struct tm_termination_info_s {
+	_tm_termination_t cb;
+	void *cb_data;
+};
+typedef struct tm_termination_info_s tm_termination_info_t;
 
 struct app_list_s {
 	int pid;
@@ -97,10 +101,10 @@ struct app_list_data_s {
 	int tm_gid;
 	int status;
 	int permission;
-	_tm_termination_t stop_cb;
-	_tm_termination_t exit_cb;
 	_tm_unicast_t unicast_cb;
 	sq_queue_t broadcast_info_list;
+	tm_termination_info_t *stop_cb_info;
+	tm_termination_info_t *exit_cb_info;
 };
 typedef struct app_list_data_s app_list_data_t;
 
@@ -164,9 +168,9 @@ typedef struct tm_unicast_internal_msg_s tm_unicast_internal_msg_t;
 #define TM_STATUS(handle)               TM_LIST_ADDR(handle)->status
 #define TM_PERMISSION(handle)           TM_LIST_ADDR(handle)->permission
 #define TM_UNICAST_CB(handle)           TM_LIST_ADDR(handle)->unicast_cb
-#define TM_STOP_CB(handle)              TM_LIST_ADDR(handle)->stop_cb
-#define TM_EXIT_CB(handle)              TM_LIST_ADDR(handle)->exit_cb
 #define TM_BROADCAST_INFO_LIST(handle)  TM_LIST_ADDR(handle)->broadcast_info_list
+#define TM_STOP_CB_INFO(handle)         TM_LIST_ADDR(handle)->stop_cb_info
+#define TM_EXIT_CB_INFO(handle)         TM_LIST_ADDR(handle)->exit_cb_info
 
 extern app_list_t tm_app_list[CONFIG_TASK_MANAGER_MAX_TASKS];
 

@@ -134,6 +134,11 @@ typedef void (*_tm_unicast_t)(tm_unicast_msg_t *);
  */
 typedef void (*_tm_broadcast_t)(void *);
 
+/**
+ * @brief Termination callback function type
+ */
+typedef void (*_tm_termination_t)(void *);
+
 /****************************************************************************
  * Public Function Prototypes
  ****************************************************************************/
@@ -315,19 +320,21 @@ int task_manager_set_broadcast_cb(int msg, void (*func)(void *data), void *cb_da
 /**
  * @brief Set callback function for resource deallocation API. If you set the callback, it will works when task terminates.
  * @details @b #include <task_manager/task_manager.h>
- * @param[in] func the callback function which deallocate resources\n
+ * @param[in] func the callback function that is called when the task or thread terminates normally.
+ * @param[in] cb_data a data pointer to pass to the callback function func.
  * @return On success, OK is returned. On failure, defined negative value is returned.
  * @since TizenRT v2.0 PRE
  */
-int task_manager_set_exit_cb(void (*func)(void));
+int task_manager_set_exit_cb(void (*func)(void *data), void *cb_data);
 /**
  * @brief Set callback function for resource deallocation API. If you set the callback, it will works when task is cancelled.
  * @details @b #include <task_manager/task_manager.h>
- * @param[in] func the callback function which deallocate resources\n
+ * @param[in] func the callback function that is called when the task or thread is stopped by task manager.
+ * @param[in] cb_data a data pointer to pass to the callback function func.
  * @return On success, OK is returned. On failure, defined negative value is returned.
  * @since TizenRT v2.0 PRE
  */
-int task_manager_set_stop_cb(void (*func)(void));
+int task_manager_set_stop_cb(void (*func)(void *data), void *cb_data);
 /**
  * @brief Get task information list through task name
  * @details @b #include <task_manager/task_manager.h>

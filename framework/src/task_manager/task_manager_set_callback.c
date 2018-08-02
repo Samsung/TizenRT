@@ -149,7 +149,7 @@ int task_manager_set_broadcast_cb(int msg, void (*func)(void *data), void *cb_da
 /****************************************************************************
  * task_manager_set_exit_cb
  ****************************************************************************/
-int task_manager_set_exit_cb(void (*func)(void))
+int task_manager_set_exit_cb(void (*func)(void *data), void *cb_data)
 {
 	int ret = OK;
 	tm_request_t request_msg;
@@ -163,10 +163,16 @@ int task_manager_set_exit_cb(void (*func)(void))
 	/* Set the request msg */
 	request_msg.cmd = TASKMGRCMD_SET_EXIT_CB;
 	request_msg.caller_pid = getpid();
-	request_msg.data = (void *)func;
 	request_msg.timeout = TM_NO_RESPONSE;
+	request_msg.data = (void *)TM_ALLOC(sizeof(tm_termination_info_t));
+	if (request_msg.data == NULL) {
+		return TM_OUT_OF_MEMORY;
+	}
+	((tm_termination_info_t *)request_msg.data)->cb = (_tm_termination_t)func;
+	((tm_termination_info_t *)request_msg.data)->cb_data = cb_data;
 	ret = taskmgr_send_request(&request_msg);
 	if (ret < 0) {
+		TM_FREE(request_msg.data);
 		return ret;
 	}
 
@@ -176,7 +182,7 @@ int task_manager_set_exit_cb(void (*func)(void))
 /****************************************************************************
  * task_manager_set_stop_cb
  ****************************************************************************/
-int task_manager_set_stop_cb(void (*func)(void))
+int task_manager_set_stop_cb(void (*func)(void *data), void *cb_data)
 {
 	int ret = OK;
 	tm_request_t request_msg;
@@ -190,10 +196,16 @@ int task_manager_set_stop_cb(void (*func)(void))
 	/* Set the request msg */
 	request_msg.cmd = TASKMGRCMD_SET_STOP_CB;
 	request_msg.caller_pid = getpid();
-	request_msg.data = (void *)func;
 	request_msg.timeout = TM_NO_RESPONSE;
+	request_msg.data = (void *)TM_ALLOC(sizeof(tm_termination_info_t));
+	if (request_msg.data == NULL) {
+		return TM_OUT_OF_MEMORY;
+	}
+	((tm_termination_info_t *)request_msg.data)->cb = (_tm_termination_t)func;
+	((tm_termination_info_t *)request_msg.data)->cb_data = cb_data;
 	ret = taskmgr_send_request(&request_msg);
 	if (ret < 0) {
+		TM_FREE(request_msg.data);
 		return ret;
 	}
 
