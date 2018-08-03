@@ -57,8 +57,8 @@ NETDEV_CSRCS += netdev_findbyname.c
 NETDEV_CSRCS += netdev_count.c
 NETDEV_CSRCS += netdev_foreach.c
 NETDEV_CSRCS += netdev_sem.c
+NETDEV_CSRCS += netdev_getstats.c
 
 # Include netdev build support
-
 DEPPATH += --dep-path netdev
 VPATH += :netdev

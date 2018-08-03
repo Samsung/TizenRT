@@ -35,6 +35,8 @@
 #include <net/lwip/pbuf.h>
 #include <net/lwip/stats.h>
 #include <net/lwip/ip_addr.h>
+#include <net/lwip/snmp.h>
+
 
 #include <net/lwip/netif/etharp.h>
 #include <net/lwip/ethip6.h>
@@ -172,6 +174,7 @@ int ethernetif_input(struct netif *netif)
 			p = NULL;
 		} else {
 			LINK_STATS_INC(link.recv);
+
 		}
 	} else {
 		LWIP_DEBUGF(NETIF_DEBUG, ("mem error\n"));

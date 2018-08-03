@@ -40,6 +40,15 @@
 /****************************************************************************
  * Preprocessor Definitions
  ****************************************************************************/
+#define USAGE															\
+	"\n usage: netmon [options]\n"										\
+	"\n socket information:\n"											\
+    "       netmon sock\n"		                        				\
+	"\n WiFi Manager stats:\n"											\
+    "       netmon wifi\n"					                        	\
+	"\n Net device stats:\n"											\
+    "       netmon [devname]\n\n"
+
 #ifdef CONFIG_NET_IPv6
 #define PRINT_IPV(sock)										\
 	do {													\
@@ -101,6 +110,15 @@
 * Private Functions
 ****************************************************************************/
 /**
+ * Print the command list
+ */
+static void print_help(void)
+{
+    printf("%s", USAGE);
+    return ;
+}
+
+/**
  * Print a externally used socket information.
  */
 static void print_socket(sq_queue_t *q_sock)
@@ -147,6 +165,19 @@ static void print_socket(sq_queue_t *q_sock)
 	return ;
 }
 
+/**
+ * Print a externally used netdev information.
+ */
+static void print_devstats(struct netmon_netdev_stats *stats)
+{
+    printf("\n==============================================\n");
+    printf("IFNAME    RXbyte    RXPKT    TXbyte    TXPKT\n");
+    printf("----------------------------------------------\n");
+    printf("%-10s%-10d%-9d", stats->devname, stats->devinoctets, stats->devinpkts);
+    printf("%-10d%-9d\n", stats->devoutoctets, stats->devoutpkts);
+    printf("==============================================\n");
+    return ;
+}
 /****************************************************************************
  * Public Functions
  ****************************************************************************/
@@ -155,17 +186,13 @@ int cmd_netmon(int argc, char **argv)
 	sq_queue_t q_data;
 	sq_init(&q_data);
 	int ret;
-	if (argc > 2) {
+    char *intf = NULL;
+    struct netmon_netdev_stats stats = {0};
+
+    if (argc > 2) {
 		printf("Bad input\n");
-	} else if (argc == 1) {
-		/* Get default information: SIOCGETSOCK (default) */
-		ret = netlib_netmon_sock(&q_data);
-		if (!ret) {
-			/* Free sq_queue entry of netmon_sock in print_socket() */
-			print_socket(&q_data);
-		} else {
-			printf("Failed to fetch socket info.\n");
-		}
+    } else if (argc == 1) {
+        print_help();
 	} else if (!(strncmp(argv[1], "sock", strlen("sock")))) {
 		/* Get socket information: SIOCGETSOCK */
 		ret = netlib_netmon_sock(&q_data);
@@ -176,10 +203,19 @@ int cmd_netmon(int argc, char **argv)
 			printf("Failed to fetch socket info.\n");
 		}
 	} else if (!(strncmp(argv[1], "wifi", strlen("wifi")))) {
-		/* Get socket information: SIOCGETWIFI */
+		/* Get wifi information: SIOCGETWIFI */
 		printf("wifi option will be supported\n");
 	} else {
-		printf("No such an option\n");
+		/* Get network interface stats if exists: SIOCGDEVSTATS */
+        intf = argv[1];
+        strncpy(stats.devname, intf, IFNAMSIZ);
+        stats.devname[IFNAMSIZ] = '\0';
+        ret = netlib_netmon_devstats(&stats);
+        if(!ret) {
+            print_devstats(&stats);
+        } else {
+            printf("No such an option or device interface\n");
+        }
 	}
 
 	return OK;

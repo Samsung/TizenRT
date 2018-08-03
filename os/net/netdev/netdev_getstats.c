@@ -21,79 +21,71 @@
  ****************************************************************************/
 
 #include <tinyara/config.h>
-#if defined(CONFIG_NET) && (CONFIG_NSOCKET_DESCRIPTORS > 0)
-
-#include <sys/socket.h>
-#include <sys/ioctl.h>
+#if defined(CONFIG_NET) && CONFIG_NSOCKET_DESCRIPTORS > 0
 
 #include <string.h>
 #include <errno.h>
-#include <unistd.h>
-
-#include <netinet/in.h>
+#include <net/lwip/netif.h>
 #include <net/if.h>
-
-#include <netutils/netlib.h>
+#include "netdev/netdev.h"
 
 /****************************************************************************
  * Pre-processor Definitions
  ****************************************************************************/
-/****************************************************************************
- * Public Functions
- ****************************************************************************/
-/****************************************************************************
- * Name: netlib_netmon_sock
- *
- * Description:
- *   Get the socket info
 
- * Parameters:
- *   arg   Type of information to get
- *
- * Return:
- *   0 on success; -1 on failure
- *
+/****************************************************************************
+ * Private Types
  ****************************************************************************/
 
-int netlib_netmon_sock(void *arg)
-{
-	int ret = ERROR;
-	/* Get sockets */
-	int sockfd = socket(AF_INET, NETLIB_SOCK_IOCTL, 0);
-	if (sockfd >= 0) {
-		ret = ioctl(sockfd, SIOCGETSOCK, (unsigned long)arg);
-	    close(sockfd);
-	}
-	return ret;
-}
+/****************************************************************************
+ * Private Data
+ ****************************************************************************/
+
+/****************************************************************************
+ * Public Data
+ ****************************************************************************/
+
+/****************************************************************************
+ * Private Functions
+ ****************************************************************************/
 
 /****************************************************************************
  * Public Functions
  ****************************************************************************/
+
 /****************************************************************************
- * Name: netlib_netmon_devstats
+ * Function: netdev_getstats
  *
  * Description:
- *   Get the stats of a specific interface
-
- * Parameters:
- *   arg   Type of information to get
+ *   Return the specific interface stats
  *
- * Return:
- *   0 on success; -1 on failure
+ * Parameters:
+ *   arg Type of information to get
+ *
+ * Returned Value:
+ *   0:Success; negated errno on failure
  *
  ****************************************************************************/
 
-int netlib_netmon_devstats(void *arg)
+int netdev_getstats(void *arg)
 {
-    int ret = ERROR;
-    /* Get netdev stats */
-    int sockfd = socket(AF_INET, NETLIB_SOCK_IOCTL, 0);
-    if (sockfd >= 0) {
-        ret = ioctl(sockfd, SIOCGDSTATS, (unsigned long)arg);
-        close(sockfd);
+    int ret = -EINVAL;
+    struct netif *dev;
+    struct netmon_netdev_stats *stats = (struct netmon_netdev_stats *) arg;
+    char *intf = stats->devname;
+    dev = netdev_findbyname(intf);
+    if (dev) {
+#ifdef CONFIG_NET_STATS
+        netdev_semtake();
+        stats->devinpkts = dev->mib2_counters.ifinucastpkts + dev->mib2_counters.ifinnucastpkts + dev->mib2_counters.ifindiscards + dev->mib2_counters.ifinerrors + dev->mib2_counters.ifinunknwonprotos;
+        stats->devinoctets = dev->mib2_counters.ifinoctets;
+        stats->devoutpkts = dev->mib2_counters.ifoutucastpkts + dev->mib2_counters.ifoutnucastpkts + dev->mib2_counters.ifoutdiscards + dev->mib2_counters.ifouterrors + dev->mib2_counters.ifoutunknownprotos;
+        stats->devoutoctets = dev->mib2_counters.ifoutoctets;
+        netdev_semgive();
+#endif                                          /* CONFIG_NET_STATS */
+        ret = OK;
     }
-    return ret;
+	return ret;
 }
 
 #endif							/* CONFIG_NET && CONFIG_NSOCKET_DESCRIPTORS */
