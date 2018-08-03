@@ -67,7 +67,9 @@ err_t sys_mbox_new(sys_mbox_t *mbox, int queue_sz)
 {
 	err_t err = ERR_OK;
 	mbox->is_valid = 1;
+#if LWIP_STATS
 	mbox->id = lwip_stats.sys.mbox.used + 1;
+#endif
 	mbox->queue_size = queue_sz;
 	mbox->wait_send = 0;
 	mbox->wait_fetch = 0;
