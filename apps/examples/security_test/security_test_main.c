@@ -1062,12 +1062,16 @@ int print_crt(int debug_mode, unsigned char *buf, unsigned int buf_len)
 
 		while (pos < buf_len) {
 			p = (unsigned char *)buf + pos;
+			if (!p) {
+				ret = -1;
+				goto exit;
+			}
 			ret = mbedtls_asn1_get_tag(&p, buf + buf_len, &len,
 				MBEDTLS_ASN1_CONSTRUCTED | MBEDTLS_ASN1_SEQUENCE);
 			if (ret != 0) {
 				goto exit;
 			}
-			if (pos + len < buf_len) {
+			if ((pos + len) < buf_len) {
 				ret = mbedtls_x509_crt_parse(&crt, buf + pos, len + 4);
 				if (ret != 0) {
 					goto exit;
@@ -1503,7 +1507,10 @@ int security_test_main(int argc, char **argv)
 	}
 
 	/* Wait for the threads to stop */
-	pthread_join(tid, NULL);
+	r = pthread_join(tid, NULL);
+	if (r != 0) {
+		printf("%s: pthread_join failed, status=%d\n", __func__, r);
+	}
 
 	return 0;
 }

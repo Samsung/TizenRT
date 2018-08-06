@@ -2224,7 +2224,9 @@ int tls_server_main(int argc, char **argv)
 	}
 
 	/* Wait for the threads to stop */
-	pthread_join(tid, NULL);
+	if ((r = pthread_join(tid, NULL)) != 0) {
+		printf("%s: pthread_join failed, status=%d\n", __func__, r);
+	}
 
 	return 0;
 }

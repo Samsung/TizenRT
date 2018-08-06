@@ -30,15 +30,18 @@ int parse_crt_chain(mbedtls_x509_crt *crt, unsigned char *buf, unsigned int buf_
 	int r = 0;
 	int pos = 0;
 	size_t len = 0;
-	unsigned char *p;
+	unsigned char *p = NULL;
 	int buf_format = MBEDTLS_X509_FORMAT_DER;
+
+	if (!p || !buf) {
+		return SEE_ERROR;
+	}
 
 	if (strstr((const char *)buf, "-----BEGIN CERTIFICATE-----") != '\0') {
 		buf_format = MBEDTLS_X509_FORMAT_PEM;
 	}
 
 	if (buf_format == MBEDTLS_X509_FORMAT_DER) {
-
 		p = (unsigned char *)buf;
 
 		while (pos < buf_len) {
@@ -48,7 +51,7 @@ int parse_crt_chain(mbedtls_x509_crt *crt, unsigned char *buf, unsigned int buf_
 			if (r != 0) {
 				return r;
 			}
-			if (pos + len < buf_len) {
+			if ((pos + len) < buf_len) {
 				r = mbedtls_x509_crt_parse(crt, buf + pos, len + 4);
 				if (r != 0) {
 					return r;
