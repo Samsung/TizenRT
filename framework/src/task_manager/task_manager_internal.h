@@ -72,6 +72,11 @@
 /* Wrapper of allocation APIs */
 #define TM_ALLOC(a)  malloc(a)
 #define TM_FREE(a)   free(a)
+#ifdef CONFIG_CPP_HAVE_VARARGS
+#define TM_ASPRINTF(p, f, ...) asprintf(p, f, ##__VA_ARGS__)
+#else
+#define TM_ASPRINTF asprintf
+#endif
 
 /* Temporary State for Cancel */
 #define TM_APP_STATE_CANCELLING -1

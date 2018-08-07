@@ -127,7 +127,7 @@ int task_manager_set_broadcast_cb(int msg, void (*func)(void *data), void *cb_da
 	((tm_broadcast_info_t *)request_msg.data)->msg = msg;
 	((tm_broadcast_info_t *)request_msg.data)->cb = (_tm_broadcast_t)func;
 	((tm_broadcast_info_t *)request_msg.data)->cb_data = cb_data;
-	asprintf(&request_msg.q_name, "%s%d", TM_PRIVATE_MQ, request_msg.caller_pid);
+	TM_ASPRINTF(&request_msg.q_name, "%s%d", TM_PRIVATE_MQ, request_msg.caller_pid);
 	if (request_msg.q_name == NULL) {
 		TM_FREE(request_msg.data);
 		return TM_OUT_OF_MEMORY;

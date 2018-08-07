@@ -39,7 +39,7 @@ int task_manager_alloc_broadcast_msg(void)
 	request_msg.caller_pid = getpid();
 	request_msg.timeout = TM_RESPONSE_WAIT_INF;
 
-	asprintf(&request_msg.q_name, "%s%d", TM_PRIVATE_MQ, request_msg.caller_pid);
+	TM_ASPRINTF(&request_msg.q_name, "%s%d", TM_PRIVATE_MQ, request_msg.caller_pid);
 	if (request_msg.q_name == NULL) {
 		return TM_OUT_OF_MEMORY;
 	}
