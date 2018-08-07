@@ -54,8 +54,6 @@
  * Included Files
  ****************************************************************************/
 
-#include <tinyara/config.h>
-
 #include <unistd.h>
 #include <fcntl.h>
 #include <errno.h>
@@ -188,8 +186,6 @@ int ftruncate(int fd, off_t length)
 		fdbg("ERROR: Could no get file structure: %d\n", ret);
 		goto errout;
 	}
-
-	DEBUGASSERT(filep != NULL);
 
 	/* Perform the truncate operation */
 
