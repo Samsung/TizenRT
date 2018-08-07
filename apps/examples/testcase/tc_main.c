@@ -69,6 +69,9 @@
 #ifdef CONFIG_EXAMPLES_TESTCASE_NETWORK
 #define TC_NETWORK_STACK  2048
 #endif
+#ifdef CONFIG_EXAMPLES_TESTCASE_PREFERENCE_UTC
+#define TC_PREFERENCE_STACK  2048
+#endif
 #if defined(CONFIG_EXAMPLES_TESTCASE_SYSTEMIO_UTC) || defined(CONFIG_EXAMPLES_TESTCASE_SYSTEMIO_ITC)
 #define TC_SYSTEMIO_STACK 2048
 #endif
@@ -112,6 +115,7 @@ extern int itc_media_main(int argc, char *argv[]);
 extern int utc_messaging_main(int argc, char *argv[]);
 extern int utc_mqtt_main(int argc, char *argv[]);
 extern int itc_mqtt_main(int argc, char *argv[]);
+extern int utc_preference_main(int argc, char *argv[]);
 extern int utc_sysio_main(int argc, char *argv[]);
 extern int itc_sysio_main(int argc, char *argv[]);
 extern int utc_taskmanager_main(int argc, char *argv[]);
@@ -182,6 +186,9 @@ static const tash_cmdlist_t tc_cmds[] = {
 #endif
 #ifdef CONFIG_EXAMPLES_TESTCASE_NETWORK
 	{"network_tc", tc_network_main, TASH_EXECMD_ASYNC},
+#endif
+#ifdef CONFIG_EXAMPLES_TESTCASE_PREFERENCE_UTC
+	{"preference_utc", utc_preference_main, TASH_EXECMD_ASYNC},
 #endif
 #ifdef CONFIG_EXAMPLES_TESTCASE_SYSTEMIO_UTC
 	{"sysio_utc", utc_sysio_main, TASH_EXECMD_ASYNC},
@@ -374,6 +381,12 @@ int tc_main(int argc, char *argv[])
 	pid = task_create("nettc", SCHED_PRIORITY_DEFAULT, TC_NETWORK_STACK, tc_network_main, argv);
 	if (pid < 0) {
 		printf("Network tc is not started, err = %d\n", pid);
+	}
+#endif
+#ifdef CONFIG_EXAMPLES_TESTCASE_PREFERENCE_UTC
+	pid = task_create("preferenceutc", SCHED_PRIORITY_DEFAULT, TC_PREFERENCE_STACK, utc_preference_main, argv);
+	if (pid < 0) {
+		printf("Preference tc is not started, err = %d\n", pid);
 	}
 #endif
 #ifdef CONFIG_EXAMPLES_TESTCASE_SYSTEMIO_UTC
