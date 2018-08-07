@@ -90,6 +90,7 @@ typedef u8_t sys_mbox_t;
 #define sys_mbox_set_invalid_val(m)
 
 #define sys_thread_new(n, t, a, s, p)
+#define sys_kernel_thread_new(n, t, a, s, p)
 
 #define sys_msleep(t)
 
@@ -343,6 +344,8 @@ void sys_mbox_set_invalid(sys_mbox_t * mbox);
  * @param stacksize stack size in bytes for the new thread (may be ignored by ports)
  * @param prio priority of the new thread (may be ignored by ports) */
 sys_thread_t sys_thread_new(const char *name, lwip_thread_fn thread, void *arg, int stacksize, int prio);
+
+sys_thread_t sys_kernel_thread_new(const char *name, lwip_thread_fn entry_function, void *arg, int stacksize, int priority);
 
 #endif							/* NO_SYS */
 

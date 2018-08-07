@@ -136,12 +136,16 @@ static u8_t raw_input_match(struct raw_pcb *pcb, u8_t broadcast)
 u8_t raw_input(struct pbuf *p, struct netif *inp)
 {
 	struct raw_pcb *pcb, *prev;
-	s16_t proto;
+	/* s16_t proto; */
 	u8_t eaten = 0;
 	u8_t broadcast = ip_addr_isbroadcast(ip_current_dest_addr(), ip_current_netif());
 
 	LWIP_UNUSED_ARG(inp);
 
+	/* Below codes make a build error with option -Wunused-but-set-variable
+	 * I commented it because the value proto can show protocol information later.
+	 */
+#if 0
 #if LWIP_IPV6
 #if LWIP_IPV4
 	if (IP_HDR_GET_VERSION(p->payload) == 6)
@@ -159,6 +163,7 @@ u8_t raw_input(struct pbuf *p, struct netif *inp)
 		proto = IPH_PROTO((struct ip_hdr *)p->payload);
 	}
 #endif							/* LWIP_IPV4 */
+#endif
 
 	prev = NULL;
 	pcb = raw_pcbs;
