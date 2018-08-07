@@ -83,6 +83,7 @@ public:
 	void onPlaybackStarted(MediaPlayerObserverInterface::Id id)
 	{
 		std::cout << "onPlaybackStarted" << std::endl;
+		isPlaying = true;
 	}
 
 	void onPlaybackFinished(MediaPlayerObserverInterface::Id id)
@@ -234,28 +235,27 @@ public:
 			return;
 		}
 
-		mp.setObserver(shared_from_this());
-		mp.setDataSource(std::move(source));
+		if (mp.setObserver(shared_from_this()) == PLAYER_ERROR) {
+			std::cout << "Mediaplayer::setObserver failed" << std::endl;
+			return;
+		}
 
-		if (mp.prepare() == PLAYER_OK) {
-			isPlaying = true;
-			if (mp.start() == PLAYER_OK) {
-				// playback started
-				return;
-			}
+		if (mp.setDataSource(std::move(source)) == PLAYER_ERROR) {
+			std::cout << "Mediaplayer::setDataSource failed" << std::endl;
+			return;
+		}	
 
+		if (mp.prepare() == PLAYER_ERROR) {
+			std::cout << "Mediaplayer::prepare failed" << std::endl;
+			return;
+		}
+
+		if (mp.start() == PLAYER_ERROR) {
 			std::cout << "Mediaplayer::start failed" << std::endl;
-			isPlaying = false;
-
 			if (mp.unprepare() == PLAYER_ERROR) {
 				std::cout << "Mediaplayer::unprepare failed" << std::endl;
 			}
-		} else {
-			std::cout << "Mediaplayer::prepare failed" << std::endl;
-		}
-
-		if (mp.destroy() == PLAYER_ERROR) {
-			std::cout << "Mediaplayer::destroy failed" << std::endl;
+			return;
 		}
 	}
 
