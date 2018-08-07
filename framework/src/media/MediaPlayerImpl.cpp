@@ -307,6 +307,13 @@ void MediaPlayerImpl::stopPlayer()
 		return;
 	}
 
+	audio_manager_result_t result = stop_audio_stream_out();
+	if (result != AUDIO_MANAGER_SUCCESS) {
+		notifyObserver(PLAYER_OBSERVER_COMMAND_ERROR);
+		meddbg("stop_audio_stream_out failed ret : %d\n", result);
+		return;
+	}
+
 	mpw.setPlayer(nullptr);
 	mCurState = PLAYER_STATE_READY;
 }
