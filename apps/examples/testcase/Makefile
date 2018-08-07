@@ -185,6 +185,9 @@ endif
 ifeq ($(CONFIG_EXAMPLES_TESTCASE_NETWORK),y)
 	$(Q) $(call REGISTER,network_tc,tc_network_main,TASH_EXECMD_ASYNC,100,2048)
 endif
+ifeq ($(CONFIG_EXAMPLES_TESTCASE_PREFERENCE_UTC),y)
+	$(Q) $(call REGISTER,preference_utc,utc_preference_main,TASH_EXECMD_ASYNC,100,2048)
+endif
 ifeq ($(CONFIG_EXAMPLES_TESTCASE_SYSTEMIO_UTC),y)
 	$(Q) $(call REGISTER,sysio_utc,utc_sysio_main,TASH_EXECMD_ASYNC,100,2048)
 endif
