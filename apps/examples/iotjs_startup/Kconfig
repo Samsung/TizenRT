@@ -6,6 +6,7 @@
 config EXAMPLES_IOTJS_STARTUP
 	bool "IoT.js StartUp example"
 	default n
+	select ENABLE_IOTJS
 	---help---
 		Enable the IoT.js StartUp example,
 		that run a Javascript on start using IoT.js
@@ -23,8 +24,6 @@ config EXAMPLES_IOTJS_STARTUP_PROGNAME
 config EXAMPLES_IOTJS_STARTUP_JS_FILE
 	string "Main javascript file"
 	default "/rom/example/index.js"
-	select ENABLE_IOTJS
-	select ROMFS
 	---help---
 		This is the name of the javascript loaded by IoT.js runtime
 
