@@ -25,6 +25,9 @@
 
 #ifdef CONFIG_KERNEL_CMDS
 const static tash_cmdlist_t kdbg_cmds[] = {
+#if defined(CONFIG_ENABLE_CPULOAD_CMD)
+	{"cpuload",  kdbg_cpuload,      TASH_EXECMD_SYNC},
+#endif
 #if defined(CONFIG_ENABLE_DATE)
 	{"date",     kdbg_date,         TASH_EXECMD_SYNC},
 #endif

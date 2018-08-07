@@ -50,6 +50,39 @@ config NET_PING_CMD_ICOUNT
 
 endif #NET_CMDS
 
+config ENABLE_CPULOAD_CMD
+	bool "cpuload"
+	default y
+	depends on SCHED_CPULOAD
+	---help---
+		Display current cpuload or start/stop CPU load monitor.
+		CPU load monitor is a daemon that will periodically assess
+		CPU usage by all live tasks and threads in the system.
+
+config ENABLE_CPULOAD_MONITOR
+	bool "cpuload monitor"
+	default y
+	depends on ENABLE_CPULOAD_CMD && !CONFIG_DISABLE_PTHREAD && !CONFIG_DISABLE_SIGNALS
+	---help---
+		The CPU load monitor is a daemon that will periodically assess
+		CPU usage by all live tasks and threads in the system.
+		It is available if both signal and pthread are supported only, !DISABLE_SIGNALS && !DISABLE_PTHREAD.
+
+config CPULOADMONITOR_PRIORITY
+	int "CPU load monitor daemon priority"
+	default 100
+	depends on ENABLE_CPULOAD_MONITOR
+	---help---
+		The priority to use the the CPU load monitor daemon.  Default: 100
+
+config CPULOADMONITOR_INTERVAL
+	int "CPU load monitor frequency"
+	default 5
+	depends on ENABLE_CPULOAD_MONITOR
+	---help---
+		The rate in seconds that the CPU load monitor will wait before dumping
+		the next set CPU load usage information.  Default:  5 seconds.
+
 config ENABLE_DATE
 	bool "date"
 	default y

@@ -201,6 +201,12 @@ struct cpuload_s {
 	volatile uint32_t total;	/* Total number of clock ticks */
 	volatile uint32_t active;	/* Number of ticks while this thread was active */
 };
+
+#ifdef CONFIG_SCHED_MULTI_CPULOAD
+#define SCHED_NCPULOAD 3
+#else
+#define SCHED_NCPULOAD 1
+#endif
 #endif
 
 /* This type is the natural with of the system timer */
@@ -364,7 +370,7 @@ int clock_systimespec(FAR struct timespec *ts);
  * @cond
  * @internal
  */
-int clock_cpuload(int pid, FAR struct cpuload_s *cpuload);
+int clock_cpuload(int pid, int index, FAR struct cpuload_s *cpuload);
 /**
  * @endcond
  */

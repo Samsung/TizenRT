@@ -21,6 +21,10 @@
 
 #include <tinyara/config.h>
 
+#if defined(CONFIG_ENABLE_CPULOAD_CMD)
+int kdbg_cpuload(int argc, char **args);
+#endif
+
 #if defined(CONFIG_ENABLE_DATE)
 int kdbg_date(int argc, char **args);
 #endif
