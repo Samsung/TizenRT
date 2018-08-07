@@ -51,7 +51,7 @@ int task_manager_register_builtin(char *name, int permission, int timeout)
 	request_msg.timeout = timeout;
 
 	if (timeout != TM_NO_RESPONSE) {
-		asprintf(&request_msg.q_name, "%s%d", TM_PRIVATE_MQ, request_msg.caller_pid);
+		TM_ASPRINTF(&request_msg.q_name, "%s%d", TM_PRIVATE_MQ, request_msg.caller_pid);
 		if (request_msg.q_name == NULL) {
 			TM_FREE(request_msg.data);
 			return TM_OUT_OF_MEMORY;
@@ -105,7 +105,7 @@ int task_manager_register_task(char *name, int priority, int stack_size, main_t 
 	request_msg.timeout = timeout;
 
 	if (timeout != TM_NO_RESPONSE) {
-		asprintf(&request_msg.q_name, "%s%d", TM_PRIVATE_MQ, request_msg.caller_pid);
+		TM_ASPRINTF(&request_msg.q_name, "%s%d", TM_PRIVATE_MQ, request_msg.caller_pid);
 		if (request_msg.q_name == NULL) {
 			TM_FREE(request_msg.data);
 			return TM_OUT_OF_MEMORY;
@@ -159,7 +159,7 @@ int task_manager_register_pthread(char *name, pthread_attr_t *attr, pthread_star
 	request_msg.timeout = timeout;
 
 	if (timeout != TM_NO_RESPONSE) {
-		asprintf(&request_msg.q_name, "%s%d", TM_PRIVATE_MQ, request_msg.caller_pid);
+		TM_ASPRINTF(&request_msg.q_name, "%s%d", TM_PRIVATE_MQ, request_msg.caller_pid);
 		if (request_msg.q_name == NULL) {
 			TM_FREE(request_msg.data);
 			return TM_OUT_OF_MEMORY;

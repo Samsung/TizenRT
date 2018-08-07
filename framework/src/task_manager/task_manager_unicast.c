@@ -73,7 +73,7 @@ int task_manager_unicast(int handle, tm_unicast_msg_t *send_msg, tm_unicast_msg_
 	request_msg.timeout = timeout;
 
 	if (timeout != TM_NO_RESPONSE) {
-		asprintf(&request_msg.q_name, "%s%d", TM_PRIVATE_MQ, request_msg.caller_pid);
+		TM_ASPRINTF(&request_msg.q_name, "%s%d", TM_PRIVATE_MQ, request_msg.caller_pid);
 		if (request_msg.q_name == NULL) {
 			TM_FREE(((tm_unicast_internal_msg_t *)request_msg.data)->msg);
 			TM_FREE(request_msg.data);

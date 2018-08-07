@@ -49,7 +49,7 @@ app_info_list_t *task_manager_getinfo_with_name(char *name, int timeout)
 	strncpy((char *)request_msg.data, name, strlen(name) + 1);
 	request_msg.timeout = timeout;
 
-	asprintf(&request_msg.q_name, "%s%d", TM_PRIVATE_MQ, getpid());
+	TM_ASPRINTF(&request_msg.q_name, "%s%d", TM_PRIVATE_MQ, getpid());
 	if (request_msg.q_name == NULL) {
 		TM_FREE(request_msg.data);
 		return NULL;
@@ -92,7 +92,7 @@ app_info_t *task_manager_getinfo_with_handle(int handle, int timeout)
 	request_msg.handle = handle;
 	request_msg.timeout = timeout;
 
-	asprintf(&request_msg.q_name, "%s%d", TM_PRIVATE_MQ, getpid());
+	TM_ASPRINTF(&request_msg.q_name, "%s%d", TM_PRIVATE_MQ, getpid());
 	if (request_msg.q_name == NULL) {
 		return NULL;
 	}
@@ -133,7 +133,7 @@ app_info_list_t *task_manager_getinfo_with_group(int group, int timeout)
 	request_msg.handle = group;
 	request_msg.timeout = timeout;
 
-	asprintf(&request_msg.q_name, "%s%d", TM_PRIVATE_MQ, getpid());
+	TM_ASPRINTF(&request_msg.q_name, "%s%d", TM_PRIVATE_MQ, getpid());
 	if (request_msg.q_name == NULL) {
 		return NULL;
 	}
@@ -173,7 +173,7 @@ app_info_t *task_manager_getinfo_with_pid(int pid, int timeout)
 	request_msg.caller_pid = pid;
 	request_msg.timeout = timeout;
 
-	asprintf(&request_msg.q_name, "%s%d", TM_PRIVATE_MQ, getpid());
+	TM_ASPRINTF(&request_msg.q_name, "%s%d", TM_PRIVATE_MQ, getpid());
 	if (request_msg.q_name == NULL) {
 		return NULL;
 	}
