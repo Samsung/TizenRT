@@ -90,10 +90,6 @@ public:
 		std::cout << "onPlaybackFinished" << std::endl;
 		isPlaying = false;
 
-		if (mp.stop() == PLAYER_ERROR) {
-			std::cout << "Mediaplayer::stop failed" << std::endl;
-		}
-
 		if (mp.unprepare() == PLAYER_ERROR) {
 			std::cout << "Mediaplayer::unprepare failed" << std::endl;
 		}
