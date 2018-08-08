@@ -65,7 +65,7 @@ int MediaPlayer::getVolume()
 	return mPMpImpl->getVolume();
 }
 
-player_result_t MediaPlayer::setVolume(int vol)
+player_result_t MediaPlayer::setVolume(uint8_t vol)
 {
 	return mPMpImpl->setVolume(vol);
 }

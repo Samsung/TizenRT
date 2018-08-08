@@ -346,7 +346,7 @@ int MediaRecorderImpl::getVolume()
 	std::unique_lock<std::mutex> lock(mCmdMtx);
 	medvdbg("MediaRecorderImpl::getVolume()\n");
 
-	int ret = -1;
+	uint8_t ret = 0;
 	RecorderWorker& mrw = RecorderWorker::getWorker();
 	if (!mrw.isAlive()) {
 		return ret;
@@ -358,15 +358,15 @@ int MediaRecorderImpl::getVolume()
 	return ret;
 }
 
-void MediaRecorderImpl::getRecorderVolume(int& ret)
+void MediaRecorderImpl::getRecorderVolume(uint8_t& ret)
 {
 	medvdbg("getRecorderVolume\n");
-
-	ret = get_input_audio_volume();
+	//ToDo: Add error handling code
+	get_input_audio_gain(&ret);
 	notifySync();
 }
 
-recorder_result_t MediaRecorderImpl::setVolume(int vol)
+recorder_result_t MediaRecorderImpl::setVolume(uint8_t vol)
 {
 	std::unique_lock<std::mutex> lock(mCmdMtx);
 	medvdbg("setVolume\n");
@@ -383,18 +383,23 @@ recorder_result_t MediaRecorderImpl::setVolume(int vol)
 	return ret;
 }
 
-void MediaRecorderImpl::setRecorderVolume(int vol, recorder_result_t& ret)
+void MediaRecorderImpl::setRecorderVolume(uint8_t vol, recorder_result_t& ret)
 {
 	medvdbg("setRecorderVolume\n");
 
-	int maxVolume = get_max_audio_volume();
-	if (vol < 0 || vol > maxVolume) {
-		meddbg("Volume is out of range vol : %d (recorder ranage 0 ~ %d)\n", vol, maxVolume);
+	uint8_t maxGain;
+	audio_manager_result_t result = get_max_audio_gain(&maxGain);
+	if (result != AUDIO_MANAGER_SUCCESS) {
+		meddbg("To change input gain is not supported in the current audio device\n");
 		return notifySync();
 	}
 
-	audio_manager_result_t result = set_input_audio_volume((uint8_t)vol);
-	if (result != AUDIO_MANAGER_SUCCESS) {
+	if (vol < 0 || vol > maxGain) {
+		meddbg("Gain value to set is out of range vol : %d (recorder ranage 0 ~ %d)\n", vol, maxGain);
+		return notifySync();
+	}
+
+	if ((result = set_input_audio_gain(vol)) != AUDIO_MANAGER_SUCCESS) {
 		meddbg("set_input_audio_volume failed vol : %d ret : %d\n", vol, result);
 		return notifySync();
 	}

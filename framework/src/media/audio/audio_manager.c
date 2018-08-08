@@ -88,7 +88,7 @@ enum audio_card_type_e {
 
 struct audio_config_s {
 	uint8_t volume;
-	uint16_t max_volume;
+	int max_volume;
 	char *manufacturer_name;
 	enum manufacturer_type_e manufacturer_type;
 	int audio_card_type;
@@ -262,8 +262,8 @@ static void get_hardware_params(audio_card_info_t *card, audio_card_type_t card_
 	}
 
 	config = &card->config;
-#ifndef CONFIG_AUDIO_EXCLUDE_VOLUME
-	/* get volume of current card first */
+
+	/* get gain/volume of current card first */
 	ret = get_audio_volume(fd, config, card_type);
 
 	/* If it is failed, it doesn't return because we should get next h/w params */
@@ -272,7 +272,7 @@ static void get_hardware_params(audio_card_info_t *card, audio_card_type_t card_
 	}
 
 	medvdbg("Max volume: %d, Current Volume : %d card path : %s\n", card->config.max_volume, card->config.volume, card->card_path);
-#endif
+
 	/* get supported sample rate type */
 	ret = get_supported_sample_rate(fd, &card->resample.samprate_types, card_type);
 	if (ret != AUDIO_MANAGER_SUCCESS) {
@@ -442,8 +442,8 @@ static audio_manager_result_t get_audio_volume(int fd, audio_config_t *config, a
 {
 	struct audio_caps_desc_s caps_desc;
 	int ret;
-	uint16_t max_volume;
-	uint16_t cur_volume;
+	uint8_t max_volume;
+	uint8_t cur_volume;
 
 	caps_desc.caps.ac_len = sizeof(struct audio_caps_s);
 	caps_desc.caps.ac_type = AUDIO_TYPE_FEATURE;
@@ -456,6 +456,8 @@ static audio_manager_result_t get_audio_volume(int fd, audio_config_t *config, a
 	ret = ioctl(fd, AUDIOIOC_GETCAPS, (unsigned long *)&caps_desc.caps);
 	if (ret < 0) {
 		meddbg("Fail to ioctl AUDIOIOC_GETCAPS\n");
+		config->max_volume = AUDIO_MANAGER_DEVICE_NOT_SUPPORT;
+		printf("\n\n\tVolume not supported, max = %d\n", config->max_volume);
 		return AUDIO_MANAGER_DEVICE_FAIL;
 	}
 
@@ -463,6 +465,7 @@ static audio_manager_result_t get_audio_volume(int fd, audio_config_t *config, a
 	cur_volume = caps_desc.caps.ac_controls.hw[1];
 
 	/* scale here */
+	ASSERT(max_volume > 0);
 	cur_volume = cur_volume * AUDIO_DEVICE_MAX_VOLUME / (max_volume - (max_volume % AUDIO_DEVICE_MAX_VOLUME));
 
 	config->max_volume = max_volume;
@@ -1025,16 +1028,40 @@ uint32_t get_output_bytes_to_frame(unsigned int bytes)
 	return pcm_bytes_to_frames(g_audio_out_cards[g_actual_audio_out_card_id].pcm, bytes);
 }
 
-uint16_t get_max_audio_volume(void)
+audio_manager_result_t get_max_audio_gain(uint8_t *gain)
 {
-	return AUDIO_DEVICE_MAX_VOLUME;
+	if (gain == NULL) {
+		return AUDIO_MANAGER_INVALID_PARAM;
+	}
+
+	if ((*gain = g_audio_in_cards[g_actual_audio_in_card_id].config.max_volume) < 0) {
+		return AUDIO_MANAGER_DEVICE_NOT_SUPPORT;
+	}
+
+	return AUDIO_MANAGER_SUCCESS;
 }
 
-int get_input_audio_volume(void)
+audio_manager_result_t get_max_audio_volume(uint8_t *volume)
 {
-#ifndef CONFIG_AUDIO_EXCLUDE_VOLUME	//TODO consider about config for gain.
+	if (volume == NULL) {
+		return AUDIO_MANAGER_INVALID_PARAM;
+	}
+
+	if ((*volume = g_audio_out_cards[g_actual_audio_out_card_id].config.max_volume) < 0) {
+		return AUDIO_MANAGER_DEVICE_NOT_SUPPORT;
+	}
+
+	return AUDIO_MANAGER_SUCCESS;
+}
+
+audio_manager_result_t get_input_audio_gain(uint8_t *gain)
+{
 	int ret;
 	int fd;
+
+	if (gain == NULL) {
+		return AUDIO_MANAGER_INVALID_PARAM;
+	}
 
 	fd = open(g_audio_in_cards[g_actual_audio_in_card_id].card_path, O_RDONLY);
 	if (fd < 0) {
@@ -1048,20 +1075,23 @@ int get_input_audio_volume(void)
 		close(fd);
 		return ret;
 	}
-	medvdbg("Max volume: %d, Current Volume : %d card path : %s\n", g_audio_in_cards[g_actual_audio_in_card_id].config.max_volume, g_audio_in_cards[g_actual_audio_in_card_id].config.volume, g_audio_in_cards[g_actual_audio_in_card_id].card_path);
+	medvdbg("Max gain: %d, Current gain : %d card path : %s\n", g_audio_in_cards[g_actual_audio_in_card_id].config.max_volume, g_audio_in_cards[g_actual_audio_in_card_id].config.volume, g_audio_in_cards[g_actual_audio_in_card_id].card_path);
 
 	close(fd);
 
-	return (int)g_audio_in_cards[g_actual_audio_in_card_id].config.volume;
-#endif
-	return 0;
+	*gain = g_audio_in_cards[g_actual_audio_in_card_id].config.volume;
+
+	return AUDIO_MANAGER_SUCCESS;
 }
 
-int get_output_audio_volume(void)
+audio_manager_result_t get_output_audio_volume(uint8_t *volume)
 {
-#ifndef CONFIG_AUDIO_EXCLUDE_VOLUME
 	int ret;
 	int fd;
+
+	if (volume == NULL) {
+		return AUDIO_MANAGER_INVALID_PARAM;
+	}
 
 	fd = open(g_audio_out_cards[g_actual_audio_out_card_id].card_path, O_RDONLY);
 	if (fd < 0) {
@@ -1079,31 +1109,25 @@ int get_output_audio_volume(void)
 
 	close(fd);
 
-	return (int)g_audio_out_cards[g_actual_audio_out_card_id].config.volume;
-#endif
-	return 0;
+	*volume = g_audio_out_cards[g_actual_audio_out_card_id].config.volume;
+
+	return AUDIO_MANAGER_SUCCESS;
 }
 
-audio_manager_result_t set_input_audio_volume(uint8_t volume)
+audio_manager_result_t set_input_audio_gain(uint8_t gain)
 {
-#ifndef CONFIG_AUDIO_EXCLUDE_VOLUME
-	if (g_audio_in_cards[g_actual_audio_in_card_id].config.volume == volume) {
-		return AUDIO_MANAGER_SUCCESS;
+	if (g_audio_in_cards[g_actual_audio_in_card_id].config.max_volume < 0) {
+		return AUDIO_MANAGER_DEVICE_NOT_SUPPORT;
 	}
 
-	return set_audio_volume(INPUT, volume);
-#endif
-	return AUDIO_MANAGER_SUCCESS;
+	return set_audio_volume(INPUT, gain);
 }
 
 audio_manager_result_t set_output_audio_volume(uint8_t volume)
 {
-#ifndef CONFIG_AUDIO_EXCLUDE_VOLUME
-	if (g_audio_out_cards[g_actual_audio_out_card_id].config.volume == volume) {
-		return AUDIO_MANAGER_SUCCESS;
+	if (g_audio_out_cards[g_actual_audio_out_card_id].config.max_volume < 0) {
+		return AUDIO_MANAGER_DEVICE_NOT_SUPPORT;
 	}
 
 	return set_audio_volume(OUTPUT, volume);
-#endif
-	return AUDIO_MANAGER_SUCCESS;
 }

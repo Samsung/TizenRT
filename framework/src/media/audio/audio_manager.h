@@ -39,6 +39,7 @@ extern "C" {
  * @brief Result types of Audio Manager APIs such as FAIL, SUCCESS, or INVALID ARGS
  */
 enum audio_manager_result_e {
+	AUDIO_MANAGER_DEVICE_NOT_SUPPORT = -9,
 	AUDIO_MANAGER_RESAMPLE_FAIL = -8,
 	AUDIO_MANAGER_DEVICE_FAIL = -7,
 	AUDIO_MANAGER_CARD_NOT_READY = -6,
@@ -63,7 +64,7 @@ typedef enum audio_manager_result_e audio_manager_result_t;
  *   Find all available audio cards for input stream and initialize the
  *   mutexes of each card. The one of the audio cards is set as the active one.
  *
- * Returned Value:
+ * Return Value:
  *   On success, AUDIO_MANAGER_SUCCESS. Otherwise a negative value.
  ****************************************************************************/
 audio_manager_result_t init_audio_stream_in(void);
@@ -75,7 +76,7 @@ audio_manager_result_t init_audio_stream_in(void);
  *   Find all available audio cards for output stream and initialize the
  *   mutexes of the cards. The one of the audio cards is set as the active one.
  *
- * Returned Value:
+ * Return Value:
  *   On success, AUDIO_MANAGER_SUCCESS. Otherwise a negative value.
  ****************************************************************************/
 audio_manager_result_t init_audio_stream_out(void);
@@ -93,7 +94,7 @@ audio_manager_result_t init_audio_stream_out(void);
  *   sample_rate: sample rate with which the stream is operated
  *   format: audio file format to be streamed in
  *
- * Returned Value:
+ * Return Value:
  *   On success, AUDIO_MANAGER_SUCCESS. Otherwise a negative value.
  ****************************************************************************/
 audio_manager_result_t set_audio_stream_in(unsigned int channels, unsigned int sample_rate, int format);
@@ -111,7 +112,7 @@ audio_manager_result_t set_audio_stream_in(unsigned int channels, unsigned int s
  *   sample_rate: sample rate with which the stream is operated
  *   format: audio file format to be streamed out
  *
- * Returned Value:
+ * Return Value:
  *   On success, AUDIO_MANAGER_SUCCESS. Otherwise, a negative value.
  ****************************************************************************/
 audio_manager_result_t set_audio_stream_out(unsigned int channels, unsigned int sample_rate, int format);
@@ -128,7 +129,7 @@ audio_manager_result_t set_audio_stream_out(unsigned int channels, unsigned int 
  *   data: buffer to get the frame data
  *   frames: number of frames to be read
  *
- * Returned Value:
+ * Return Value:
  *   On success, the number of frames read. Otherwise, a negative value.
  ****************************************************************************/
 int start_audio_stream_in(void *data, unsigned int frames);
@@ -145,7 +146,7 @@ int start_audio_stream_in(void *data, unsigned int frames);
  *   data: buffer to transfer the frame data
  *   frames: number of frames to be written
  *
- * Returned Value:
+ * Return Value:
  *   On success, the number of frames written. Otherwise, a negative value.
  ****************************************************************************/
 int start_audio_stream_out(void *data, unsigned int frames);
@@ -158,7 +159,7 @@ int start_audio_stream_out(void *data, unsigned int frames);
  *   Note that only the active audio device currently running can be paused.
  *   If the device is resumed, the paused stream is continued.
  *
- * Returned Value:
+ * Return Value:
  *   On success, AUDIO_MANAGER_SUCCESS. Otherwise, a negative value.
  ****************************************************************************/
 audio_manager_result_t pause_audio_stream_in(void);
@@ -171,7 +172,7 @@ audio_manager_result_t pause_audio_stream_in(void);
  *	 Note that only the active audio device currently running can be paused.
  *	 If the device is resumed, the paused stream is continued.
  *
- * Returned Value:
+ * Return Value:
  *   On success, AUDIO_MANAGER_SUCCESS. Otherwise, a negative value.
  ****************************************************************************/
 audio_manager_result_t pause_audio_stream_out(void);
@@ -185,7 +186,7 @@ audio_manager_result_t pause_audio_stream_out(void);
  *	 Once the device is stopped, the stream should be restarted from the beginning
  *	 with calling set_audio_stream_in().
  *
- * Returned Value:
+ * Return Value:
  *   On success, AUDIO_MANAGER_SUCCESS. Otherwise, a negative value.
  ****************************************************************************/
 audio_manager_result_t stop_audio_stream_in(void);
@@ -199,7 +200,7 @@ audio_manager_result_t stop_audio_stream_in(void);
  *	 Once the device is stopped, the stream should be restarted from the beginning
  *	 with calling set_audio_stream_out().
  *
- * Returned Value:
+ * Return Value:
  *   On success, AUDIO_MANAGER_SUCCESS. Otherwise, a negative value.
  ****************************************************************************/
 audio_manager_result_t stop_audio_stream_out(void);
@@ -212,7 +213,7 @@ audio_manager_result_t stop_audio_stream_out(void);
  *   After the reset, the stream should be restarted from the beginning with
  *   calling set_audio_stream_in().
  *
- * Returned Value:
+ * Return Value:
  *   On success, AUDIO_MANAGER_SUCCESS. Otherwise, a negative value.
  ****************************************************************************/
 audio_manager_result_t reset_audio_stream_in(void);
@@ -225,7 +226,7 @@ audio_manager_result_t reset_audio_stream_in(void);
  *   After the reset, the stream should be restarted from the beginning with
  *   calling set_audio_stream_out().
  *
- * Returned Value:
+ * Return Value:
  *   On success, AUDIO_MANAGER_SUCCESS. Otherwise, a negative value.
  ****************************************************************************/
 audio_manager_result_t reset_audio_stream_out(void);
@@ -236,7 +237,7 @@ audio_manager_result_t reset_audio_stream_out(void);
  * Description:
  *   Get the frame size of the pcm buffer in the active input audio device.
  *
- * Returned Value:
+ * Return Value:
  *   On success, the size of the pcm buffer for input streams. Otherwise, 0.
  ****************************************************************************/
 unsigned int get_input_frame_count(void);
@@ -247,10 +248,10 @@ unsigned int get_input_frame_count(void);
  * Description:
  *   Get the byte size of the given frame value in input stream.
  *
- * Input parameters:
+ * Input parameter:
  *   frames: the target of which byte size is returned.
  *
- * Returned Value:
+ * Return Value:
  *   On success, the byte size of the frame in input stream. Otherwise, 0.
  ****************************************************************************/
 unsigned int get_input_frames_to_byte(unsigned int frames);
@@ -261,10 +262,10 @@ unsigned int get_input_frames_to_byte(unsigned int frames);
  * Description:
  *   Get the number of frames for the given byte size in input stream.
  *
- * Input parameters:
+ * Input parameter:
  *   bytes: the target of which frame count is returned.
  *
- * Returned Value:
+ * Return Value:
  *   On success, the number of frames in input stream. Otherwise, 0.
  ****************************************************************************/
 unsigned int get_input_bytes_to_frame(unsigned int bytes);
@@ -275,7 +276,7 @@ unsigned int get_input_bytes_to_frame(unsigned int bytes);
  * Description:
  *   Get the frame size of the pcm buffer in the active output audio device.
  *
- * Returned Value:
+ * Return Value:
  *   On success, the size of the pcm buffer for output streams. Otherwise, 0.
  ****************************************************************************/
 unsigned int get_output_frame_count(void);
@@ -286,10 +287,10 @@ unsigned int get_output_frame_count(void);
  * Description:
  *   Get the byte size of the given frame value in output stream.
  *
- * Input parameters:
+ * Input parameter:
  *   frames: the target of which byte size is returned.
  *
- * Returned Value:
+ * Return Value:
  *   On success, the byte size of the frame in output stream. Otherwise, 0.
  ****************************************************************************/
 unsigned int get_output_frames_to_byte(unsigned int frames);
@@ -300,59 +301,81 @@ unsigned int get_output_frames_to_byte(unsigned int frames);
  * Description:
  *   Get the number of frames for the given byte size in output stream.
  *
- * Input parameters:
+ * Input parameter:
  *   bytes: the target of which frame count is returned.
  *
- * Returned Value:
+ * Return Value:
  *   On success, the number of frames in output stream. Otherwise, 0.
  ****************************************************************************/
 unsigned int get_output_bytes_to_frame(unsigned int bytes);
 
 /****************************************************************************
- * Name: get_audio_volume
+ * Name: get_max_audio_gain
  *
  * Description:
- *   Get the maximum volume level of an audio device.
+ *   Get the maximum gain of the active input audio device.
  *
- * Returned Value: The maximum volume level.
+ * Input parameter:
+ *   gain: the pointer to get the maximum gain value
+ *
+ * Return Value:
+ *   AUDIO_MANAGER_SUCCESS only if the maximum gain is obtained successfully
+ *   from the current device. Otherwise, a negative value.
  ****************************************************************************/
-uint16_t get_max_audio_volume(void);
+audio_manager_result_t get_max_audio_gain(uint8_t *gain);
 
 /****************************************************************************
- * Name: get_input_audio_volume
+ * Name: get_max_audio_volume
  *
  * Description:
- *   Get the current volume level of the active input audio device.
+ *   Get the maximum volume of the active output audio device.
  *
- * Returned Value:
- *   On success, the current input volume level. Otherwise, a negative value.
+ * Input parameter:
+ *   volume: the pointer to get the maximum volume value
+ *
+ * Return Value:
+ *   AUDIO_MANAGER_SUCCESS only if the maximum volume is obtained successfully
+ *   from the current device. Otherwise, a negative value.
  ****************************************************************************/
-int get_input_audio_volume(void);
+audio_manager_result_t get_max_audio_volume(uint8_t *volume);
+
+/****************************************************************************
+ * Name: get_input_audio_gain
+ *
+ * Input parameter:
+ *   gain: the pointer to get the current gain value
+ *
+ * Return Value:
+ *   AUDIO_MANAGER_SUCCESS only if the gain is obtained successfully
+ *   from the current device. Otherwise, a negative value.
+ ****************************************************************************/
+audio_manager_result_t get_input_audio_gain(uint8_t *gain);
 
 /****************************************************************************
  * Name: get_output_audio_volume
  *
- * Description:
- *   Get the current volume level of the active output audio device.
+ * Input parameter:
+ *   volume: the pointer to get the current volume value
  *
- * Returned Value:
- *   On success, the current output volume level. Otherwise, a negative value.
+ * Return Value:
+ *   AUDIO_MANAGER_SUCCESS only if the volume is obtained successfully
+ *   from the current device. Otherwise, a negative value.
  ****************************************************************************/
-int get_output_audio_volume(void);
+audio_manager_result_t get_output_audio_volume(uint8_t *volume);
 
 /****************************************************************************
- * Name: set_input_audio_volume
+ * Name: set_input_audio_gain
  *
  * Description:
- *   Adjust the volume level of the active input audio device.
+ *   Adjust the gain level of the active input audio device.
  *
- * Input parameters:
- *   volume:   volume level, 0(Min) ~ 10(Max)
+ * Input parameter:
+ *   gain: gain value to set, Min = 0, Max = get_max_audio_gain()
  *
- * Returned Value:
+ * Return Value:
  *   On success, AUDIO_MANAGER_SUCCESS. Otherwise, a negative value.
  ****************************************************************************/
-audio_manager_result_t set_input_audio_volume(uint8_t volume);
+audio_manager_result_t set_input_audio_gain(uint8_t gain);
 
 /****************************************************************************
  * Name: set_output_audio_volume
@@ -360,10 +383,10 @@ audio_manager_result_t set_input_audio_volume(uint8_t volume);
  * Description:
  *   Adjust the volume level of the active output audio device.
  *
- * Input parameters:
- *   volume:   volume level, 0(Min) ~ 10(Max)
+ * Input parameter:
+ *   volume: volume value to set, Min = 0, Max = get_max_audio_volume()
  *
- * Returned Value:
+ * Return Value:
  *   On success, AUDIO_MANAGER_SUCCESS. Otherwise, a negative value.
  ****************************************************************************/
 audio_manager_result_t set_output_audio_volume(uint8_t volume);

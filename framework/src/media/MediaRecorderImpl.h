@@ -76,8 +76,8 @@ public:
 	recorder_result_t pause();
 	recorder_result_t stop();
 
-	int getVolume();
-	recorder_result_t setVolume(int vol);
+	int getVolume();	//ToDo: int -> uint8_t + get the volume through a pointer argument
+	recorder_result_t setVolume(uint8_t vol);
 	recorder_result_t setDataSource(std::unique_ptr<stream::OutputDataSource> dataSource);
 	recorder_state_t getState();
 	recorder_result_t setObserver(std::shared_ptr<MediaRecorderObserverInterface> observer);
@@ -94,8 +94,8 @@ private:
 	void startRecorder();
 	void pauseRecorder();
 	void stopRecorder(bool);
-	void getRecorderVolume(int& ret);
-	void setRecorderVolume(int vol, recorder_result_t& ret);
+	void getRecorderVolume(uint8_t& ret);
+	void setRecorderVolume(uint8_t vol, recorder_result_t& ret);
 	void setRecorderObserver(std::shared_ptr<MediaRecorderObserverInterface> observer);
 	void setRecorderDataSource(std::shared_ptr<stream::OutputDataSource> dataSource, recorder_result_t& ret);
 	void setRecorderDuration(int second, recorder_result_t& ret);

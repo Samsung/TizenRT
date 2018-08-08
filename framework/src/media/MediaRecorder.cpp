@@ -65,7 +65,7 @@ int MediaRecorder::getVolume()
 	return mPMrImpl->getVolume();
 }
 
-recorder_result_t MediaRecorder::setVolume(int vol)
+recorder_result_t MediaRecorder::setVolume(uint8_t vol)
 {
 	return mPMrImpl->setVolume(vol);
 }
