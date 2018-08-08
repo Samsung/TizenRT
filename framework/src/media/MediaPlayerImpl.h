@@ -62,8 +62,8 @@ public:
 	player_result_t pause();
 	player_result_t stop();
 
-	int getVolume();
-	player_result_t setVolume(int);
+	player_result_t getVolume(uint8_t *vol);
+	player_result_t setVolume(uint8_t vol);
 
 	player_result_t setDataSource(std::unique_ptr<stream::InputDataSource>);
 	player_result_t setObserver(std::shared_ptr<MediaPlayerObserverInterface>);
@@ -83,8 +83,8 @@ private:
 	void startPlayer();
 	void stopPlayer();
 	void pausePlayer();
-	void getVolumePlayer(int &ret);
-	void setVolumePlayer(int, player_result_t &ret);
+	void getVolumePlayer(uint8_t *vol, player_result_t &ret);
+	void setVolumePlayer(uint8_t vol, player_result_t &ret);
 	void setPlayerObserver(std::shared_ptr<MediaPlayerObserverInterface> observer);
 	void setPlayerDataSource(std::shared_ptr<stream::InputDataSource> dataSource, player_result_t& ret);
 

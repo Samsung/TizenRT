@@ -60,12 +60,12 @@ player_result_t MediaPlayer::pause()
 	return mPMpImpl->pause();
 }
 
-int MediaPlayer::getVolume()
+player_result_t MediaPlayer::getVolume(uint8_t *vol)
 {
-	return mPMpImpl->getVolume();
+	return mPMpImpl->getVolume(vol);
 }
 
-player_result_t MediaPlayer::setVolume(int vol)
+player_result_t MediaPlayer::setVolume(uint8_t vol)
 {
 	return mPMpImpl->setVolume(vol);
 }

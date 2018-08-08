@@ -60,12 +60,12 @@ recorder_result_t MediaRecorder::pause()
 	return mPMrImpl->pause();
 }
 
-int MediaRecorder::getVolume()
+recorder_result_t MediaRecorder::getVolume(uint8_t *vol)
 {
-	return mPMrImpl->getVolume();
+	return mPMrImpl->getVolume(vol);
 }
 
-recorder_result_t MediaRecorder::setVolume(int vol)
+recorder_result_t MediaRecorder::setVolume(uint8_t vol)
 {
 	return mPMrImpl->setVolume(vol);
 }
