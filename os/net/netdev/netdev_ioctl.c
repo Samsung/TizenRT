@@ -826,7 +826,7 @@ static FAR struct netif *netdev_imsfdev(FAR struct ip_msfilter *imsf)
  * Parameters:
  *   sock    Socket structure
  *   cmd     The ioctl command
- *   data    The argument of ioctl command
+ *   arg    The argument of ioctl command
  *
  * Return:
  *   >=0 on success (positive non-zero values are cmd-specific)
@@ -840,7 +840,7 @@ static int netdev_nmioctl(FAR struct socket *sock, int cmd, void  *arg)
 	int ret = -EINVAL;
 	int num_copy;
 	switch (cmd) {
-	case SIOCGETSOCK:
+	case SIOCGETSOCK:          /* Get socket info. */
 		num_copy = copy_socket(arg);
 		/* num_copy shoud be larger than 0 (this socket) */
 		if (num_copy > 0) {
@@ -848,12 +848,16 @@ static int netdev_nmioctl(FAR struct socket *sock, int cmd, void  *arg)
 		} else {
 			ret = ERROR;
 		}
-		break;
-	default:
-		ret = -ENOTTY;
-		break;
-	}
-	return ret;
+	    break;
+    case SIOCGDSTATS:          /* Get netdev info. */
+        ret = netdev_getstats(arg);
+        break;
+    default:
+        ret = -ENOTTY;
+        break;
+    } /* end switch */
+
+    return ret;
 }
 #endif                            /* CONFIG_NET_NETMON */
 
