@@ -291,17 +291,17 @@ player_result_t MediaPlayerImpl::stop()
 		return PLAYER_ERROR;
 	}
 
-	mpw.enQueue(&MediaPlayerImpl::stopPlayer, shared_from_this());
+	mpw.enQueue(&MediaPlayerImpl::stopPlayer, shared_from_this(), 0);
 
 	return PLAYER_OK;
 }
 
-void MediaPlayerImpl::stopPlayer()
+void MediaPlayerImpl::stopPlayer(int errcode)
 {
-	PlayerWorker& mpw = PlayerWorker::getWorker();
+	PlayerWorker &mpw = PlayerWorker::getWorker();
 
 	medvdbg("MediaPlayer Worker : stopPlayer\n");
-	if (mCurState != PLAYER_STATE_PLAYING && mCurState != PLAYER_STATE_PAUSED) {
+	if (errcode == 0 && mCurState != PLAYER_STATE_PLAYING && mCurState != PLAYER_STATE_PAUSED) {
 		meddbg("PlayerWorker : player is not playing or paused\n");
 		notifyObserver(PLAYER_OBSERVER_COMMAND_ERROR);
 		return;
@@ -309,13 +309,20 @@ void MediaPlayerImpl::stopPlayer()
 
 	audio_manager_result_t result = stop_audio_stream_out();
 	if (result != AUDIO_MANAGER_SUCCESS) {
-		notifyObserver(PLAYER_OBSERVER_COMMAND_ERROR);
 		meddbg("stop_audio_stream_out failed ret : %d\n", result);
-		return;
+		if (errcode == 0) {
+			/* TODO : inform device control fail */
+			notifyObserver(PLAYER_OBSERVER_COMMAND_ERROR);
+			return;
+		}
 	}
 
 	mpw.setPlayer(nullptr);
 	mCurState = PLAYER_STATE_READY;
+
+	if (errcode != 0) {
+		notifyObserver(PLAYER_OBSERVER_COMMAND_ERROR);
+	}
 }
 
 player_result_t MediaPlayerImpl::pause()
@@ -541,16 +548,30 @@ void MediaPlayerImpl::notifyObserver(player_observer_command_t cmd)
 
 void MediaPlayerImpl::playback()
 {
-	ssize_t num_read = mInputDataSource->read(mBuffer,(int)mBufSize);
+	ssize_t num_read = mInputDataSource->read(mBuffer, (int)mBufSize);
 	meddbg("num_read : %d\n", num_read);
 	if (num_read > 0) {
-		start_audio_stream_out(mBuffer, get_output_bytes_to_frame((unsigned int)num_read));
+		int ret = start_audio_stream_out(mBuffer, get_output_bytes_to_frame((unsigned int)num_read));
+		if (ret < 0) {
+			PlayerWorker &mpw = PlayerWorker::getWorker();
+			switch (ret) {
+			case AUDIO_MANAGER_XRUN_STATE:
+				meddbg("AUDIO_MANAGER_XRUN_STATE\n");
+				mpw.enQueue(&MediaPlayerImpl::stopPlayer, shared_from_this(), -1);
+				break;
+			default:
+				meddbg("audio manager error : %d\n", ret);
+				mpw.enQueue(&MediaPlayerImpl::stopPlayer, shared_from_this(), -1);
+				break;
+			}
+		}
 	} else if (num_read == 0) {
 		notifyObserver(PLAYER_OBSERVER_COMMAND_FINISHIED);
 		stop();
 	} else {
-		notifyObserver(PLAYER_OBSERVER_COMMAND_ERROR);
-		stop();
+		PlayerWorker &mpw = PlayerWorker::getWorker();
+		meddbg("InputDatasource read error\n");
+		mpw.enQueue(&MediaPlayerImpl::stopPlayer, shared_from_this(), -1);
 	}
 }
 
