@@ -58,6 +58,7 @@
 
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 #include <errno.h>
 
 /****************************************************************************
@@ -99,13 +100,13 @@
 FAR char *tmpnam(FAR char *s)
 {
 	static char path[L_tmpnam];
-	int ret;
+	char *ret;
 
 	if (s == NULL) {
 		s = path;
 	}
 
-	(void)snprintf(s, L_tmpnam, "%s/XXXXXX.tmp", P_tmpdir);
+	(void)snprintf(s, L_tmpnam, "%s/XXXXXX", P_tmpdir);
 	ret = mktemp(s);
-	return (ret == OK) ? s : NULL;
+	return (strncmp(ret, "", 1)) ? s : NULL;
 }
