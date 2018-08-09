@@ -157,6 +157,7 @@
 #define SMARTFS_TYPE    "smartfs"
 #define PROCFS_TYPE     "procfs"
 #define ROMFS_TYPE      "romfs"
+#define TMPFS_TYPE      "tmpfs"
 
 /****************************************************************************
  * Global Variables
@@ -258,6 +259,9 @@ static int handler(FAR const char *mountpoint, FAR struct statfs *statbuf, FAR v
 		break;
 	case PROCFS_MAGIC:
 		fstype = PROCFS_TYPE;
+		break;
+	case TMPFS_MAGIC:
+		fstype = TMPFS_TYPE;
 		break;
 	default:
 		fstype = NONEFS_TYPE;
