@@ -3180,6 +3180,155 @@ static void tc_libc_stdio_stdsostream(void)
 }
 
 /**
+* @testcase         tc_libc_stdio_mktemp
+* @brief            The mktemp() function generates a unique temporary filename from template.
+* @scenario         The mktemp() function generates a unique temporary filename from template.
+* @apicovered       mktemp()
+* @precondition     NA
+* @postcondition    NA
+*/
+static void tc_libc_stdio_mktemp(void)
+{
+	char test_template[16] = "test1XXXXXX";
+	char *ret = NULL;
+	FILE *fp = NULL;
+
+#if defined(CONFIG_FS_TMPFS) || defined(CONFIG_FS_SMARTFS)
+	int ret_check = 0;
+	bool tmpfs_mount_exist = false;
+#if defined(CONFIG_FS_TMPFS)
+	ret_check = mount(NULL, CONFIG_LIBC_TMPDIR, "tmpfs", 0, NULL);
+#elif defined(CONFIG_FS_SMARTFS)
+	ret_check = mount(MOUNT_DEV_DIR, CONFIG_LIBC_TMPDIR, "smartfs", 0, NULL);
+#endif
+	if (ret_check < 0) {
+		TC_ASSERT_EQ("mount", errno, EEXIST);
+		tmpfs_mount_exist = true;
+	}
+#endif
+	/* Test cases with valid input */
+
+	ret = mktemp(test_template);
+	TC_ASSERT_NEQ_CLEANUP("mktemp", strncmp(ret, "", 1), 0, goto errout);
+	printf("\nmktemp: %s\n", ret);
+	fp = fopen(ret, "r");
+	TC_ASSERT_EQ_CLEANUP("fopen", fp, NULL, goto errout);
+	TC_ASSERT_EQ_CLEANUP("fopen", errno, ENOENT, goto errout);
+	fclose(fp);
+
+	strncpy(test_template, "test12XXXXXX", strlen("test12XXXXXX"));
+	ret = mktemp(test_template);
+	TC_ASSERT_NEQ("mktemp", strncmp(ret, "", 1), 0);
+	printf("mktemp: %s\n", ret);
+	fp = fopen(ret, "r");
+	TC_ASSERT_EQ_CLEANUP("fopen", fp, NULL, goto errout);
+	TC_ASSERT_EQ_CLEANUP("fopen", errno, ENOENT, goto errout);
+	fclose(fp);
+
+	/* Test cases with invalid input */
+
+	strncpy(test_template, "test2", strlen("test2"));
+	ret = mktemp(test_template);
+	TC_ASSERT_EQ_CLEANUP("mktemp", strncmp(ret, "", 1), 0, goto errout);
+	TC_ASSERT_EQ_CLEANUP("mktemp", errno, EINVAL, goto errout);
+
+	strncpy(test_template, "test3XXXXX", strlen("test3XXXXX"));
+	ret = mktemp(test_template);
+	TC_ASSERT_EQ_CLEANUP("mktemp", strncmp(ret, "", 1), 0, goto errout);
+	TC_ASSERT_EQ_CLEANUP("mktemp", errno, EINVAL, goto errout);
+
+	ret = mktemp(NULL);
+	TC_ASSERT_EQ_CLEANUP("mktemp", ret, NULL, goto errout);
+	TC_ASSERT_EQ_CLEANUP("mktemp", errno, EINVAL, goto errout);
+
+	TC_SUCCESS_RESULT();
+errout:
+#if defined(CONFIG_FS_TMPFS) || defined(CONFIG_FS_SMARTFS)
+	if (false == tmpfs_mount_exist) {
+		umount(CONFIG_LIBC_TMPDIR);
+	}
+#endif
+	return;
+}
+
+/**
+* @testcase         tc_libc_stdio_mkstemp
+* @brief            The  mkstemp() function generates a unique temporary filename from template, creates and opens the file, and returns an open file descriptor for the file.
+* @scenario         The mkstemp() function replaces the contents of the string pointed to by path_template by a unique filename, and returns a file descriptor for the file open for reading and writing.
+* @apicovered       mkstemp()
+* @precondition     NA
+* @postcondition    NA
+*/
+static void tc_libc_stdio_mkstemp(void)
+{
+	char test_template[32] = "/tmp/test1XXXXXX";
+	int ret = 0;
+
+#if defined(CONFIG_FS_TMPFS) || defined(CONFIG_FS_SMARTFS)
+	int ret_check = 0;
+	bool tmpfs_mount_exist = false;
+#if defined(CONFIG_FS_TMPFS)
+	ret_check = mount(NULL, CONFIG_LIBC_TMPDIR, "tmpfs", 0, NULL);
+#elif defined(CONFIG_FS_SMARTFS)
+	ret_check = mount(MOUNT_DEV_DIR, CONFIG_LIBC_TMPDIR, "smartfs", 0, NULL);
+#endif
+	if (ret_check < 0) {
+		TC_ASSERT_EQ("mount", errno, EEXIST);
+		tmpfs_mount_exist = true;
+	}
+#endif
+	/* Test cases with valid input */
+
+	ret = mkstemp(test_template);
+	TC_ASSERT_GEQ_CLEANUP("mkstemp", ret, 0, goto errout);
+	printf("\nmkstemp: %s\n", test_template);
+	close(ret);
+	unlink(test_template);
+
+	strncpy(test_template, "/tmp/test12XXXXXX", strlen("/tmp/test12XXXXXX"));
+	ret = mkstemp(test_template);
+	TC_ASSERT_GEQ_CLEANUP("mkstemp", ret, 0, goto errout);
+	printf("mkstemp: %s\n", test_template);
+	close(ret);
+	unlink(test_template);
+
+	strncpy(test_template, "/tmp/test2mkstemp", strlen("/tmp/test2mkstemp"));
+	ret = mkstemp(test_template);
+	TC_ASSERT_GEQ_CLEANUP("mkstemp", ret, 0, goto errout);
+	printf("mkstemp: %s\n", test_template);
+	close(ret);
+	unlink(test_template);
+
+	strncpy(test_template, "/tmp/test3XXXXX", strlen("/tmp/test3XXXXX"));
+	ret = mkstemp(test_template);
+	TC_ASSERT_GEQ_CLEANUP("mkstemp", ret, 0, goto errout);
+	printf("mkstemp: %s\n", test_template);
+	close(ret);
+	unlink(test_template);
+
+	strncpy(test_template, "/tmp/test4XXXXXXXX", strlen("/tmp/test4XXXXXXXX"));
+	ret = mkstemp(test_template);
+	TC_ASSERT_GEQ_CLEANUP("mkstemp", ret, 0, goto errout);
+	printf("mkstemp: %s\n", test_template);
+	close(ret);
+	unlink(test_template);
+
+	/* Test cases with invalid input */
+
+	ret = mkstemp(NULL);
+	TC_ASSERT_EQ_CLEANUP("mkstemp", ret, ERROR, goto errout);
+
+	TC_SUCCESS_RESULT();
+errout:
+#if defined(CONFIG_FS_TMPFS) || defined(CONFIG_FS_SMARTFS)
+	if (false == tmpfs_mount_exist) {
+		umount(CONFIG_LIBC_TMPDIR);
+	}
+#endif
+	return;
+}
+
+/**
 * @testcase         tc_libc_stdio_tempnam
 * @brief            Returns a pointer to a string that is a valid filename
 * @scenario         The tempnam() function returns a pointer to a unique temporary filename, or NULL if a unique name cannot be generated.
@@ -3584,6 +3733,8 @@ int tc_filesystem_main(int argc, char *argv[])
 	tc_libc_stdio_lib_snoflush();
 #endif
 	tc_libc_stdio_lib_sprintf();
+	tc_libc_stdio_mktemp();
+	tc_libc_stdio_mkstemp();
 	tc_libc_stdio_remove();
 #if CONFIG_STDIO_BUFFER_SIZE > 0
 	tc_libc_stdio_setbuf();
