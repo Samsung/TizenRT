@@ -109,7 +109,6 @@ SRC_HAP_CSRCS += \
 					 hap/srp/srp6_server.c \
 					 hap/srp/t_conv.c \
 					 hap/srp/t_conf.c \
-					 hap/srp/t_truerand.c \
 					 hap/poly1305-opt-master/poly1305.c
 endif
 
