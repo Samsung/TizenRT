@@ -106,6 +106,7 @@ depend: .depend
 clean:
 	$(call DELFILE, .built)
 	$(call CLEAN)
+	find . -name "*.o" -exec rm -rf {} \;
 
 distclean: clean
 	$(call DELFILE, Make.dep)
