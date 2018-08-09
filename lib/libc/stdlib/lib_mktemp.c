@@ -16,51 +16,41 @@
  *
  ****************************************************************************/
 /****************************************************************************
- * libc/stdlib/lib_mktemp.c
  *
- *   Copyright (C) 2014 Gregory Nutt. All rights reserved.
- *   Author: Gregory Nutt <gnutt@nuttx.org>
+ * Copyright © 2005-2014 Rich Felker, et al.
  *
- * Redistribution and use in source and binary forms, with or without
- * modification, are permitted provided that the following conditions
- * are met:
+ * Permission is hereby granted, free of charge, to any person obtaining
+ * a copy of this software and associated documentation files (the
+ * "Software"), to deal in the Software without restriction, including
+ * without limitation the rights to use, copy, modify, merge, publish,
+ * distribute, sublicense, and/or sell copies of the Software, and to
+ * permit persons to whom the Software is furnished to do so, subject to
+ * the following conditions:
  *
- * 1. Redistributions of source code must retain the above copyright
- *    notice, this list of conditions and the following disclaimer.
- * 2. Redistributions in binary form must reproduce the above copyright
- *    notice, this list of conditions and the following disclaimer in
- *    the documentation and/or other materials provided with the
- *    distribution.
- * 3. Neither the name NuttX nor the names of its contributors may be
- *    used to endorse or promote products derived from this software
- *    without specific prior written permission.
+ * The above copyright notice and this permission notice shall be
+ * included in all copies or substantial portions of the Software.
  *
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
- * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
- * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS
- * FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE
- * COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT,
- * INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING,
- * BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS
- * OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED
- * AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT
- * LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN
- * ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
- * POSSIBILITY OF SUCH DAMAGE.
+ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,
+ * EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
+ * MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.
+ * IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY
+ * CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT,
+ * TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE
+ * SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  *
- ****************************************************************************/
+ ***************************************************************************/
 
 /****************************************************************************
  * Included Files
  ****************************************************************************/
 
-#include <tinyara/config.h>
-#include <tinyara/compiler.h>
-
-#include <unistd.h>
 #include <stdlib.h>
+#include <string.h>
+#include <stdint.h>
+#include <errno.h>
+#include <sys/stat.h>
 
-#ifdef CONFIG_FS_WRITABLE
+#include "lib_internal.h"
 
 /****************************************************************************
  * Pre-processor definitions
@@ -71,7 +61,7 @@
  ****************************************************************************/
 
 /****************************************************************************
- * Public Functions
+ * Public Function Prototypes
  ****************************************************************************/
 
 /****************************************************************************
@@ -79,18 +69,64 @@
  *
  * Description:
  *   The use of mktemp is dangerous; use mkstemp instead.
+ *   The mktemp() function generates a unique temporary filename from template.
+ *   The last six characters of template must be XXXXXX and these are replaced
+ *   with a  string  that  makes the filename unique.
+ *   Since it will be modified, template must not be a string constant,
+ *   but should be declared as a character array.
+ *
+ * Return Value:
+ *   The mktemp() function always returns template.
+ *   If a unique name was created,  the  last six  bytes  of template will have
+ *   been modified in such a way that the resulting name is unique
+ *   (i.e., does not exist already) If a unique name could not be created,
+ *   template is made an empty string, and errno is set to indicate the error.
  *
  ****************************************************************************/
 
-int mktemp(FAR char *path_template)
+FAR char *mktemp(FAR char *path_template)
 {
-	int fd = mkstemp(path_template);
-	if (fd < 0) {
-		return ERROR;
+	size_t len;
+	int retries = 100;
+	struct stat st;
+
+	if (!path_template) {
+		set_errno(EINVAL);
+		return NULL;
 	}
 
-	close(fd);
-	return OK;
-}
+	len = strlen(path_template);
 
-#endif							/* CONFIG_FS_WRITABLE */
+	/* Check the number of X's at the end of the template */
+
+	if (len < 6 || memcmp((path_template + len - 6), "XXXXXX", 6)) {
+		/* No Xs?  There should always really be 6 */
+		set_errno(EINVAL);
+		*path_template = '\0';
+		return path_template;
+	}
+
+	/* Then loop until we find a unique file name */
+
+	do {
+		/* Form the candidate file name */
+
+		__randname((path_template + len - 6), 6);
+
+		/* Check whether the file with name generated exist or not */
+
+		if (stat(path_template, &st)) {
+			if (get_errno() != ENOENT) {
+				*path_template = '\0';
+			}
+			return path_template;
+		}
+	} while (--retries);
+
+	/* We could not find an unique filename */
+
+	*path_template = '\0';
+	set_errno(EEXIST);
+
+	return path_template;
+}

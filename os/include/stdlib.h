@@ -551,17 +551,22 @@ lldiv_t lldiv(long long numer, long long denom);
  */
 
 /**
- * @cond
- * @internal
+ * @ingroup STDLIB_LIBC
+ * @brief generates a unique temporary filename from template.
+ * @details @b #include <stdlib.h> \n
+ * @return always returns template.
+ * @since TizenRT v2.0 PRE
  */
-int mktemp(FAR char *path_template);
+FAR char *mktemp(FAR char *path_template);
+
 /**
- * @internal
+ * @ingroup STDLIB_LIBC
+ * @brief create a regular file with a unique name derived from template and return a file descriptor for the file open for reading and writing.
+ * @details @b #include <stdlib.h> \n
+ * POSIX API (refer to : http://pubs.opengroup.org/onlinepubs/9699919799/)
+ * @since TizenRT v2.0 PRE
  */
 int mkstemp(FAR char *path_template);
-/**
- * @endcond
- */
 
 /* Sorting */
 /**
