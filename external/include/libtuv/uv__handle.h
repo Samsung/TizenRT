@@ -58,7 +58,8 @@ extern "C" {
   XX(TIMER, timer)                                                            \
   XX(TTY, tty)                                                                \
   XX(POLL, poll)                                                              \
- 
+  XX(SIGNAL, signal)                                                          \
+
 /*
   XX(ASYNC, async)                                                            \
   XX(CHECK, check)                                                            \

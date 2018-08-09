@@ -1,4 +1,4 @@
-/* Copyright 2015 Samsung Electronics Co., Ltd.
+/* Copyright 2018 Samsung Electronics Co., Ltd.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -34,70 +34,34 @@
  * IN THE SOFTWARE.
  */
 
+#ifndef __uv__signal_header__
+#define __uv__signal_header__
+
 #ifndef __uv_header__
-#define __uv_header__
+#error Please include with uv.h
+#endif
 
-#include <stdint.h>
-#include <stddef.h>
-#include <sys/types.h>
+#ifdef __cplusplus
+extern "C" {
+#endif
 
-#include "queue.h"
-#include "tree.h"
+//-----------------------------------------------------------------------------
+// uv_signal_s
+struct uv_signal_s {
+  UV_HANDLE_FIELDS
+  uv_signal_cb signal_cb;
+  int signum;
+  UV_SIGNAL_PRIVATE_FIELDS
+};
 
-#define ARRAY_SIZE(a) (sizeof(a) / sizeof((a)[0]))
+void uv__signal_global_once_init(void);
+void uv__signal_loop_cleanup(uv_loop_t* loop);
+int uv_signal_init(uv_loop_t* loop, uv_signal_t* handle);
+void uv__signal_close(uv_signal_t* handle);
+int uv_signal_start(uv_signal_t* handle, uv_signal_cb signal_cb, int signum);
+int uv_signal_stop(uv_signal_t* handle);
 
-#define container_of(ptr, type, member) \
-  ((type *) ((char *) (ptr) - offsetof(type, member)))
-
-#include "uv__types.h"			// types should be placed in the first
-#include "uv_platform.h"		// platform should be placed before extension
-#include "uv_extension.h"		// extension should be placed before others
-
-#include "uv__error.h"
-#include "uv__handle.h"
-#include "uv__loop.h"
-#include "uv__idle.h"
-#include "uv__timer.h"
-#include "uv__inet.h"
-
-#include "uv__poll.h"
-
-#include "uv__async.h"
-#include "uv__req.h"			// req should be placed before fs
-#include "uv__fs.h"
-#include "uv__fd.h"
-#include "uv__stream.h"
-#include "uv__tcp.h"
-#include "uv__pipe.h"
-#include "uv__thread.h"
-#include "uv__signal.h"
-
-#include "uv__threadpool.h"
-#include "uv__getaddrinfo.h"
-
-#include "uv__dir.h"
-#include "uv__util.h"
-
-#include "tuv_debuglog.h"
-
-#undef UV_HANDLE_PRIVATE_FIELDS
-#undef UV_ASYNC_PRIVATE_FIELDS
-#undef UV_LOOP_PRIVATE_FIELDS
-#undef UV_IDLE_PRIVATE_FIELDS
-#undef UV_TIMER_PRIVATE_FIELDS
-#undef UV_FS_PRIVATE_FIELDS
-#undef UV_REQ_TYPE_PRIVATE
-#undef UV_REQ_PRIVATE_FIELDS
-#undef UV_FS_REQ_PRIVATE_FIELDS
-#undef UV_WORK_PRIVATE_FIELDS
-#undef UV_IO_PRIVATE_PLATFORM_FIELDS
-#undef UV_TCP_PRIVATE_FIELDS
-#undef UV_STREAM_PRIVATE_FIELDS
-#undef UV_PIPE_PRIVATE_FIELDS
-#undef UV_CONNECT_PRIVATE_FIELDS
-#undef UV_WRITE_PRIVATE_FIELDS
-#undef UV_SHUTDOWN_PRIVATE_FIELDS
-#undef UV_GETADDRINFO_PRIVATE_FIELDS
-#undef UV_SIGNAL_PRIVATE_FIELDS
-
-#endif							// __uv_header__
+#ifdef __cplusplus
+}
+#endif
+#endif							// __uv__timer_header__
