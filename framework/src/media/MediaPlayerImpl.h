@@ -88,7 +88,7 @@ private:
 	void setPlayerObserver(std::shared_ptr<MediaPlayerObserverInterface> observer);
 	void setPlayerDataSource(std::shared_ptr<stream::InputDataSource> dataSource, player_result_t& ret);
 
-public:
+private:
 	std::atomic<player_state_t> mCurState;
 	unsigned char* mBuffer;
 	int mBufSize;
