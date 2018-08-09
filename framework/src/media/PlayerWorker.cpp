@@ -47,7 +47,7 @@ PlayerWorker& PlayerWorker::getWorker()
 
 bool PlayerWorker::processLoop()
 {
-	if (mCurPlayer && (mCurPlayer->mCurState == PLAYER_STATE_PLAYING)) {
+	if (mCurPlayer && (mCurPlayer->getState() == PLAYER_STATE_PLAYING)) {
 		mCurPlayer->playback();
 		return true;
 	}
