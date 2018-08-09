@@ -34,26 +34,25 @@ config EXAMPLES_IOTJS_STARTUP_WIFI
 	---help---
 		Enable WiFi on start
 
-if EXAMPLES_IOTJS_STARTUP_WIFI
-
 config EXAMPLES_IOTJS_STARTUP_WIFI_SSID
 	string "SSID of AP"
 	default "public"
+	depends on EXAMPLES_IOTJS_STARTUP_WIFI
 	---help---
 		Select SSID of AP which you want to connect to
 
 config EXAMPLES_IOTJS_STARTUP_WIFI_PASS
 	string "Passphrase of AP"
 	default ""
+	depends on EXAMPLES_IOTJS_STARTUP_WIFI
 	---help---
 		Passphrase of AP which you want to connect to
-endif
-
 
 config EXAMPLES_IOTJS_STARTUP_WIFI_AUTH
 	int "Authentication type"
 	range 0 5
 	default 0
+	depends on EXAMPLES_IOTJS_STARTUP_WIFI
 	---help---
 		0 : Open
 		1 : WEP Shared
@@ -66,6 +65,7 @@ config EXAMPLES_IOTJS_STARTUP_WIFI_CRYPTO
 	int "Encryption type"
 	range 0 5
 	default 0
+	depends on EXAMPLES_IOTJS_STARTUP_WIFI
 	---help---
 		0 : None
 		1 : WEP 64 bits
@@ -74,7 +74,8 @@ config EXAMPLES_IOTJS_STARTUP_WIFI_CRYPTO
 		4 : TKIP
 		5 : TIKP and AES
 		6 : Unknown
-endif # EXAMPLES_IOTJS_STARTUP_WIFI
+
+endif # EXAMPLES_IOTJS_STARTUP
 
 config USER_ENTRYPOINT
 	string
