@@ -45,6 +45,7 @@ void MediaWorker::startWorker()
 		if (ret != OK) {
 			medvdbg("Fail to create worker thread, return value : %d\n", ret);
 			--mRefCnt;
+			mIsRunning = false;
 			return;
 		}
 		pthread_setname_np(mWorkerThread, mThreadName);
