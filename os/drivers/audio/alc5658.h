@@ -95,13 +95,15 @@ struct alc5658_dev_s {
 	struct work_s work;			/* Interrupt work */
 #endif
 	uint16_t samprate;			/* Configured samprate (samples/sec) */
-#ifndef CONFIG_AUDIO_EXCLUDE_VOLUME
+#ifndef CONFIG_AUDIO_EXCLUDE_SPEAKER_VOLUME
 #ifndef CONFIG_AUDIO_EXCLUDE_BALANCE
 	uint16_t balance;			/* Current balance level (b16) */
 #endif							/* CONFIG_AUDIO_EXCLUDE_BALANCE */
 	uint16_t volume;			/* Current volume level {0..31} */
 #endif							/* CONFIG_AUDIO_EXCLUDE_VOLUME */
+#ifndef CONFIG_AUDIO_EXCLUDE_MIC_GAIN
 	uint16_t gain;				/* IN port gain */
+#endif
 	uint8_t nchannels;			/* Number of channels (1 or 2) */
 	uint8_t bpsamp;				/* Bits per sample (8 or 16) */
 	volatile uint8_t inflight;	/* Number of audio buffers in-flight */
@@ -135,7 +137,7 @@ static void alc5658_writereg(FAR struct alc5658_dev_s *priv, uint16_t regaddr, u
 static void alc5658_takesem(sem_t *sem);
 static uint16_t alc5658_modifyreg(FAR struct alc5658_dev_s *priv, uint16_t regaddr, uint16_t set, uint16_t clear);
 
-#ifndef CONFIG_AUDIO_EXCLUDE_VOLUME
+#ifndef CONFIG_AUDIO_EXCLUDE_SPEAKER_VOLUME
 static inline uint16_t alc5658_scalevolume(uint16_t volume, b16_t scale);
 static void alc5658_setvolume(FAR struct alc5658_dev_s *priv);
 #endif

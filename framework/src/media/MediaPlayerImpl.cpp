@@ -361,7 +361,7 @@ void MediaPlayerImpl::pausePlayer()
 
 int MediaPlayerImpl::getVolume()
 {
-	int ret = -1;
+	uint8_t ret = 0;
 
 	std::unique_lock<std::mutex> lock(mCmdMtx);
 	medvdbg("MediaPlayer getVolume\n");
@@ -378,15 +378,15 @@ int MediaPlayerImpl::getVolume()
 	return ret;
 }
 
-void MediaPlayerImpl::getVolumePlayer(int &ret)
+void MediaPlayerImpl::getVolumePlayer(uint8_t &ret)
 {
 	medvdbg("MediaPlayer Worker : getVolume\n");
-
-	ret = get_output_audio_volume();
+	//ToDo: Add error handling code
+	get_output_audio_volume(&ret);
 	notifySync();
 }
 
-player_result_t MediaPlayerImpl::setVolume(int vol)
+player_result_t MediaPlayerImpl::setVolume(uint8_t vol)
 {
 	player_result_t ret = PLAYER_ERROR;
 
@@ -405,18 +405,23 @@ player_result_t MediaPlayerImpl::setVolume(int vol)
 	return ret;
 }
 
-void MediaPlayerImpl::setVolumePlayer(int vol, player_result_t &ret)
+void MediaPlayerImpl::setVolumePlayer(uint8_t vol, player_result_t &ret)
 {
-	int vol_max = -1;
+	uint8_t vol_max;
 	medvdbg("MediaPlayer Worker : setVolume\n");
 
-	vol_max = get_max_audio_volume();
+	audio_manager_result_t result = get_max_audio_volume(&vol_max);
+	if (result != AUDIO_MANAGER_SUCCESS) {
+		meddbg("To change volume is not supported in the current audio device\n");
+		goto errout;
+	}
+
 	if (vol < 0 || vol > vol_max) {
 		meddbg("MediaPlayer setVolume fail : invalid argument. volume level should be 0(Min) ~ %d(Max)\n", vol_max);
 		goto errout;
 	}
 
-	if (set_output_audio_volume((uint8_t)vol) != AUDIO_MANAGER_SUCCESS) {
+	if (set_output_audio_volume(vol) != AUDIO_MANAGER_SUCCESS) {
 		meddbg("MediaPlayer setVolume fail : audio manager failed\n");
 		goto errout;
 	}

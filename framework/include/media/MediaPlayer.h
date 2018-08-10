@@ -154,7 +154,7 @@ public:
 	 * @param[in] vol The vol that the value of mic volume
 	 * @since TizenRT v2.0 PRE
 	 */
-	player_result_t setVolume(int);
+	player_result_t setVolume(uint8_t);
 	
 	/**
 	 * @brief Sets the DatSource of input data
