@@ -15,9 +15,31 @@
  * limitations under the License.
  *
  ******************************************************************/
+#ifndef FMWUP_UTIL_HTTP_H_
+#define FMWUP_UTIL_HTTP_H_
 
 #include <tinyara/config.h>
 #include <protocols/webserver/http_keyvalue_list.h>
 
+#define FOTA_CHECK_URL "https://apis.samsungiotcloud.com/v1/stdm/fota/target"
+#define KEY_URL "url"
+#define KEY_BIN_URL "binaryUrl"
+#define KEY_BIN_SIZE "binarySize"
+#define KEY_BIN_VERSION "version"
+#define REQUEST_URL_LEN 256
+#define TOKEN_URL_LEN 256
+#define DOWNLOAD_URL_LEN 512
+#define NEW_VERSION_LEN 16
+
+//char * g_token_URL = NULL;
+//char * g_download_url = NULL;
+static bool g_new_firmware = false;
+static bool g_new_download = false;
+
 int fmwup_http_download_file(const char *download_url);
 
+int fmwup_update(void);
+
+int fmwup_http_check_firmware(void);
+
+#endif

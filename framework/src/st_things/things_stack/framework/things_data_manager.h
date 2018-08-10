@@ -146,4 +146,7 @@ easysetup_connectivity_type_e dm_get_easysetup_connectivity_type(void);
 wifi_manager_softap_config_s *dm_get_softap_wifi_config(void);
 wifi_manager_ap_config_s *dm_get_homeap_wifi_config();
 
+char *dm_get_access_token();
+char *dm_get_uid();
+
 #endif							// _THINGS_DATA_MANAGER_H_

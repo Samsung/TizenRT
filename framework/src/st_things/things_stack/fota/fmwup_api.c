@@ -22,6 +22,7 @@
 #include "things_resource.h"
 #include "framework/things_data_manager.h"
 
+#include "fmwup_util_http.h"
 #include "fmwup_util_data.h"
 #include "fmwup_util_internal.h"
 
@@ -99,26 +100,15 @@ int fmwup_set_data(things_resource_s *target_res)
 	char *package_uri;
 
 	rep->things_get_value(rep, FIRMWARE_PROPERTY_UPDATE, &update_str);
-	rep->things_get_value(rep, FIRMWARE_PROPERTY_NEW_VERSION, &new_version);
-	rep->things_get_value(rep, FIRMWARE_PROPERTY_PACKAGE_URI, &package_uri);
-
 	update = fmwup_data_get_update_int64(update_str);
 
 	if (fmwup_data_set_property_int64(FIRMWARE_PROPERTY_UPDATE, update) != 0) {
 		THINGS_LOG_V(TAG, "fmwup_data_set_property [%s] failed", FIRMWARE_PROPERTY_UPDATE);
 	}
 
-	if (fmwup_data_set_property(FIRMWARE_PROPERTY_NEW_VERSION, new_version) != 0) {
-		THINGS_LOG_V(TAG, "fmwup_data_set_property [%s] failed", FIRMWARE_PROPERTY_NEW_VERSION);
-	}
-
-	if (fmwup_data_set_property(FIRMWARE_PROPERTY_PACKAGE_URI, package_uri) != 0) {
-		THINGS_LOG_V(TAG, "fmwup_data_set_property [%s] failed", FIRMWARE_PROPERTY_PACKAGE_URI);
-	}
-
-	THINGS_LOG_V(TAG, "update : %d, new_version : %s, package_uri : %s\n", update, new_version, package_uri);
-
+	THINGS_LOG_V(TAG, "update : %d\n", update);
 	fmwup_internal_update_command(update);
+
 
 	return OC_EH_OK;
 }
@@ -163,6 +153,42 @@ int fmwup_check_firmware_upgraded(void)
 	return FMWUP_ERROR_NONE;
 }
 
+int fmwup_check_firmware(void)
+{
+	THINGS_LOG_D(TAG, THINGS_FUNC_ENTRY);
+	int ret = fmwup_http_check_firmware();
+	if ( ret == FMWUP_CHECK_RESULT_UPDATE_AVAILABLE) {
+		THINGS_LOG_D(TAG,"Update available\n");
+	} else if (ret == FMWUP_CHECK_RESULT_ALREADY_CHECKED){
+		THINGS_LOG_D(TAG,"Update not available\n");
+	} else {
+		THINGS_LOG_D(TAG,"Update check failure\n");
+	}
+	return ret;
+}
+
+int fmwup_download_firmware(void)
+{
+	THINGS_LOG_D(TAG, THINGS_FUNC_ENTRY);
+	if (fmwup_update() > 0){
+		THINGS_LOG_D(TAG,"Update downloaded successful\n");
+		return 1;
+	}
+	else{
+		THINGS_LOG_E(TAG,"Update download unsuccessful\n");
+		return -1;
+	}
+
+	return -1;
+}
+
+int fmwup_update_firmware(void)
+{
+	if(fotahal_update() < 0) {
+		THINGS_LOG_E(TAG, "Error: Failed to trigger Update\n");
+	}
+	return -1;//should not come here
+}
 int fmwup_initialize(void)
 {
 	THINGS_LOG_D(TAG, THINGS_FUNC_ENTRY);
