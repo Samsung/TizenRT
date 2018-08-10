@@ -16,6 +16,7 @@
  *
  ******************************************************************/
 
+#include "fmwup_api.h"
 #include "fmwup_util_internal.h"
 #include "fmwup_util_http.h"
 #include "fmwup_util_data.h"
@@ -27,13 +28,14 @@
 
 #define TAG "[things_fota]"
 
-#define TIMEOUT_SEC 5
+#define TIMEOUT_SEC 2
 
 static int g_thread_running = 0;
 
 static pthread_mutex_t _lock = PTHREAD_MUTEX_INITIALIZER;
 static pthread_cond_t _cond = PTHREAD_COND_INITIALIZER;
-
+extern char * g_token_URL;
+extern char * g_new_version;
 void fmwup_internal_propagate_timed_wait()
 {
 	THINGS_LOG_D(TAG, THINGS_FUNC_ENTRY);
@@ -107,33 +109,54 @@ void _handle_update_command(int64_t update_type)
 
 	int result = FMWUP_RESULT_INIT;
 
-	char *package_uri = fmwup_data_get_property(FIRMWARE_PROPERTY_PACKAGE_URI);
-	char *new_version = fmwup_data_get_property(FIRMWARE_PROPERTY_NEW_VERSION);
-	char *current_version = fmwup_data_get_property(FIRMWARE_PROPERTY_CURRENT_VERSION);
 	char *temp_state = fmwup_data_get_property(FIRMWARE_PROPERTY_STATE);
 	int state = 0;
 
-	if (!package_uri || !new_version || !current_version || !temp_state) {
+	if ( !temp_state) {
 		THINGS_LOG_E(TAG, "failed get property");
 		result = FMWUP_RESULT_UPDATE_FAILED;
 		goto _END_OF_FUNC_;
 	}
-
 	state = atoi(temp_state);
-	if (strcmp(package_uri, "") == 0 || strcmp(new_version, "") == 0 || strcmp(current_version, new_version) == 0) {
-		THINGS_LOG_E(TAG, "Invalid value, package_uri[%s], new_version[%s], current_version[%s]", package_uri, new_version, current_version);
-		result = FMWUP_RESULT_UPDATE_FAILED;
-		goto _END_OF_FUNC_;
-	}
-
 	THINGS_LOG_D(TAG, "state : %d, update_type : %d", state, update_type);
 
+	if((state == FMWUP_STATE_IDLE) && (update_type == FMWUP_COMMAND_CHECK) ) {
+		if(g_token_URL == NULL) {
+			int ret = fmwup_check_firmware();
+			THINGS_LOG_V(TAG, "***CHECKING FOR FIRMWARE UPDATE ***");
+			if(ret == FMWUP_CHECK_RESULT_ERROR){
+				THINGS_LOG_E(TAG, "fmwup_check_firmware failed");
+				result = FMWUP_RESULT_CONNECTION_LOST;
+				goto _END_OF_FUNC_;
+			} else if (ret == FMWUP_CHECK_RESULT_ALREADY_CHECKED) {
+				THINGS_LOG_V(TAG, "***FIRMWARE ALREADY UPDATED***");
+				result = FMWUP_RESULT_INIT;
+				fmwup_internal_propagate_resource(FMWUP_STATE_IDLE, FMWUP_RESULT_INIT, false);
+			} else if(ret == FMWUP_CHECK_RESULT_UPDATE_AVAILABLE) {
+				fmwup_data_set_property(FIRMWARE_PROPERTY_NEW_VERSION, g_new_version);
+				fmwup_data_set_property(FIRMWARE_PROPERTY_PACKAGE_URI, g_token_URL);
+				fmwup_internal_propagate_resource(FMWUP_STATE_IDLE, FMWUP_RESULT_INIT, false);
+			}
+		} else {
+			THINGS_LOG_V(TAG, "***UPDATE ALREADY CHECKED***");
+			result = FMWUP_RESULT_INIT;
+			fmwup_internal_propagate_resource(FMWUP_STATE_IDLE, FMWUP_RESULT_INIT, true);
+		}
+		THINGS_LOG_V(TAG, "***FIRMWARE UPDATE CHECK COMPLETE***");
+
+	}
+
 	if ((state == FMWUP_STATE_IDLE) && (update_type == FMWUP_COMMAND_DOWNLOAD || update_type == FMWUP_COMMAND_DOWNLOADUPDATE)) {
-		THINGS_LOG_V(TAG, "***Downloading image from [%s] ***", package_uri);
+		if(!g_token_URL){
+			THINGS_LOG_E(TAG, "Wrong state, Please check function usage");
+			result = FMWUP_RESULT_UPDATE_UNSUPPORTED_PROTOCOL;
+			goto _END_OF_FUNC_;
+		}
+		THINGS_LOG_V(TAG, "***Downloading image***");
 		state = FMWUP_STATE_DOWNLOADING;
 		fmwup_internal_propagate_resource(FMWUP_STATE_DOWNLOADING, FMWUP_RESULT_INIT, true);
 
-		if (fmwup_http_download_file(package_uri) != 0) {
+		if (fmwup_download_firmware() < 0) {
 			THINGS_LOG_E(TAG, "fmwup_http_download_file failed");
 			result = FMWUP_RESULT_INVALID_URI;
 			goto _END_OF_FUNC_;
@@ -144,7 +167,7 @@ void _handle_update_command(int64_t update_type)
 		fmwup_internal_propagate_resource(FMWUP_STATE_DOWNLOADED, FMWUP_RESULT_INIT, true);
 	}
 
-	sleep(10);
+	sleep(2);
 
 	if ((state == FMWUP_STATE_DOWNLOADED) && (update_type == FMWUP_COMMAND_UPDATE || update_type == FMWUP_COMMAND_DOWNLOADUPDATE)) {
 		state = FMWUP_STATE_UPDATING;
@@ -152,7 +175,12 @@ void _handle_update_command(int64_t update_type)
 
 		key_manager_save_data();
 
-		fotahal_update();
+		if (fmwup_update_firmware() < 0){
+			THINGS_LOG_E(TAG, "fmwup_update_firmware failed");
+			result = FMWUP_RESULT_UPDATE_FAILED;
+			goto _END_OF_FUNC_;
+		}
+
 	}
 
 _END_OF_FUNC_:
@@ -212,3 +240,4 @@ int fmwup_internal_update_command(int64_t update_type)
 
 	return FMWUP_ERROR_NONE;
 }
+

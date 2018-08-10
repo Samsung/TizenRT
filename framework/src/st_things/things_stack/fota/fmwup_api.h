@@ -58,9 +58,10 @@ typedef enum {
  */
 typedef enum {
 	FMWUP_STATE_IDLE = 0,		/**< 0: Idle (before downloading or after successful updating) */
-	FMWUP_STATE_DOWNLOADING,	/**< 1: Downloading (The data sequence is on the way) */
-	FMWUP_STATE_DOWNLOADED,		/**< 2: Downloaded */
-	FMWUP_STATE_UPDATING		/**< 3: Updating */
+	FMWUP_STATE_PREPARE,		/**< 1: Currently not used, but required for sync with plugin and protocol */
+	FMWUP_STATE_DOWNLOADING,	/**< 2: Downloading (The data sequence is on the way) */
+	FMWUP_STATE_DOWNLOADED,		/**< 3: Downloaded */
+	FMWUP_STATE_UPDATING		/**< 4: Updating */
 } fmwup_state_e;
 
 /**
@@ -75,11 +76,22 @@ typedef enum {
 	FMWUP_COMMAND_UNKNOWN
 } fmwup_update_e;
 
+typedef enum {
+	FMWUP_CHECK_RESULT_ERROR = -1,
+	FMWUP_CHECK_RESULT_UPDATE_AVAILABLE = 1,
+	FMWUP_CHECK_RESULT_ALREADY_CHECKED
+} fmwup_check_update_result_e;
 int fmwup_get_data(things_resource_s *target_resource);
 
 int fmwup_set_data(things_resource_s *target_res);
 
 int fmwup_check_firmware_upgraded(void);
+
+int fmwup_check_firmware(void);
+
+int fmwup_download_firmware(void);
+
+int fmwup_update_firmware(void);
 
 int fmwup_initialize(void);
 
