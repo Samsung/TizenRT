@@ -51,7 +51,7 @@ struct opus_dec_external_s {
 
 	/*
 	 * INPUT:
-	  * Number of requested output audio channels.
+	 * Number of requested output audio channels.
 	 *  Opus lib can do stereo-to-mono or mono-to-stereo conversions internally.
 	 */
 	int32_t desiredChannels;
@@ -98,40 +98,39 @@ typedef struct opus_dec_external_s opus_dec_external_t;
 typedef struct opus_dec_external_s *opus_dec_external_p;
 
 /** Gets the size of internal OpusDecoder structure, which will be internally used.
-  * @retval returns The size in bytes.
-  */
+ * @retval returns The size in bytes.
+ */
 uint32_t opus_decoderMemRequirements(void);
 
 /** Initializes decoder context memory, as per configuration in opus_dec_external_t.
-  * The memory pointed to by pMem must be at least the size returned by opus_decoderMemRequirements().
-  * @param [in] pExt: Decoder external structure, which is user setting.
-  * @param [in] pMem: Decoder internal used memory, user allocated.
-  * @return OPUS_OK on success, otherwise, return error codes, see opus_errorcodes
-  */
+ * The memory pointed to by pMem must be at least the size returned by opus_decoderMemRequirements().
+ * @param [in] pExt: Decoder external structure, which is user setting.
+ * @param [in] pMem: Decoder internal used memory, user allocated.
+ * @return OPUS_OK on success, otherwise, return error codes, see opus_errorcodes
+ */
 int32_t opus_initDecoder(opus_dec_external_t *pExt, void *pMem);
 
 /** Uninitialize decoder resource.
-  * Thread resource is allocated during opus_initDecoder().
-  * @param [in] pMem: Decoder internal used memory.
-  * @return OPUS_OK on success, otherwise, return error codes, see opus_errorcodes
-  */
+ * Thread resource is allocated during opus_initDecoder().
+ * @param [in] pMem: Decoder internal used memory.
+ * @return OPUS_OK on success, otherwise, return error codes, see opus_errorcodes
+ */
 int32_t opus_uninitDecoder(void *pMem);
 
 /** Reset decoder context memory.
-  * The memory pointed to by pMem must be at least the size returned by opus_decoderMemRequirements().
-  * @param [in] pMem: Decoder internal used memory.
-  */
+ * The memory pointed to by pMem must be at least the size returned by opus_decoderMemRequirements().
+ * @param [in] pMem: Decoder internal used memory.
+ */
 void opus_resetDecoder(void *pMem);
 
 /** Decode one Opus frame to 16-bit PCM samples, stored in opus_enc_external_t struct.
-  * @param [in/out] pExt: Decoder external structure, input frame data and hold output data.
-  * @param [in] pMem: Decoder internal used memory.
-  * @return OPUS_OK on success, otherwise, return error codes, see opus_errorcodes
-  */
+ * @param [in/out] pExt: Decoder external structure, input frame data and hold output data.
+ * @param [in] pMem: Decoder internal used memory.
+ * @return OPUS_OK on success, otherwise, return error codes, see opus_errorcodes
+ */
 int32_t opus_frameDecode(opus_dec_external_t *pExt, void *pMem);
 
 #ifdef __cplusplus
 } /* extern "C" */
 #endif
 #endif /* OPUS_DECODER_API_H */
-

@@ -23,9 +23,7 @@
 
 namespace media {
 
-Decoder::Decoder(unsigned short channels, unsigned int sampleRate)
-	: mChannels(channels)
-	, mSampleRate(sampleRate)
+Decoder::Decoder(unsigned short channels, unsigned int sampleRate) : mChannels(channels), mSampleRate(sampleRate)
 {
 #ifdef CONFIG_AUDIO_CODEC
 	memset(&mDecoder, 0, sizeof(audio_decoder_t));

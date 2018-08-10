@@ -87,25 +87,25 @@ public:
 	void capture();
 
 private:
-	void createRecorder(recorder_result_t& ret);
-	void destroyRecorder(recorder_result_t& ret);
-	void prepareRecorder(recorder_result_t& ret);
-	void unprepareRecorder(recorder_result_t& ret);
+	void createRecorder(recorder_result_t &ret);
+	void destroyRecorder(recorder_result_t &ret);
+	void prepareRecorder(recorder_result_t &ret);
+	void unprepareRecorder(recorder_result_t &ret);
 	void startRecorder();
 	void pauseRecorder();
 	void stopRecorder(int errcode);
-	void getRecorderVolume(int& ret);
-	void setRecorderVolume(int vol, recorder_result_t& ret);
+	void getRecorderVolume(int &ret);
+	void setRecorderVolume(int vol, recorder_result_t &ret);
 	void setRecorderObserver(std::shared_ptr<MediaRecorderObserverInterface> observer);
-	void setRecorderDataSource(std::shared_ptr<stream::OutputDataSource> dataSource, recorder_result_t& ret);
-	void setRecorderDuration(int second, recorder_result_t& ret);
+	void setRecorderDataSource(std::shared_ptr<stream::OutputDataSource> dataSource, recorder_result_t &ret);
+	void setRecorderDuration(int second, recorder_result_t &ret);
 
 private:
 	std::atomic<recorder_state_t> mCurState;
 	std::shared_ptr<stream::OutputDataSource> mOutputDataSource;
 	std::shared_ptr<MediaRecorderObserverInterface> mRecorderObserver;
 
-	unsigned char* mBuffer;
+	unsigned char *mBuffer;
 	int mBuffSize;
 	mutex mCmdMtx; // command mutex
 	std::condition_variable mSyncCv;

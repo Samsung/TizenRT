@@ -40,7 +40,7 @@ namespace media {
 class RecorderWorker : public MediaWorker
 {
 public:
-	static RecorderWorker& getWorker();
+	static RecorderWorker &getWorker();
 
 	std::shared_ptr<MediaRecorderImpl> getCurrentRecorder();
 	void setCurrentRecorder(std::shared_ptr<MediaRecorderImpl> mr);

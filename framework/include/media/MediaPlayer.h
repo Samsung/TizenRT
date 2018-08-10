@@ -18,7 +18,7 @@
 
 /**
  * @defgroup MEDIA MEDIA
- * @brief Provides APIs for Media Framework 
+ * @brief Provides APIs for Media Framework
  * @{
  */
 
@@ -50,11 +50,11 @@ typedef enum player_result_e {
 class MediaPlayerImpl;
 
 /**
- * @class 
+ * @class
  * @brief This class implements the MediaPlayer capability agent.
  * @details @b #include <media/MediaPlayer.h>
  * @since TizenRT v2.0 PRE
-*/
+ */
 class MediaPlayer
 {
 public:
@@ -64,14 +64,14 @@ public:
 	 * @since TizenRT v2.0 PRE
 	 */
 	MediaPlayer();
-	
+
 	/**
 	 * @brief Deconstructs an empty MediaPlayer.
 	 * @details @b #include <media/MediaPlayer.h>
 	 * @since TizenRT v2.0 PRE
 	 */
 	~MediaPlayer();
-	
+
 	/**
 	 * @brief Create the MediaPlayer for playback
 	 * @details @b #include <media/MediaPlayer.h>
@@ -80,7 +80,7 @@ public:
 	 * @since TizenRT v2.0 PRE
 	 */
 	player_result_t create();
-	
+
 	/**
 	 * @brief Destroy MediaPlayer
 	 * @details @b #include <media/MediaPlayer.h>
@@ -89,7 +89,7 @@ public:
 	 * @since TizenRT v2.0 PRE
 	 */
 	player_result_t destroy();
-	
+
 	/**
 	 * @brief Allocate and prepare resources related to the player, it should be called before start
 	 * @details @b #include <media/MediaPlayer.h>
@@ -98,7 +98,7 @@ public:
 	 * @since TizenRT v2.0 PRE
 	 */
 	player_result_t prepare();
-	
+
 	/**
 	 * @brief Releases allocated resources related to the player.
 	 * @details @b #include <media/MediaPlayer.h>
@@ -107,7 +107,7 @@ public:
 	 * @since TizenRT v2.0 PRE
 	 */
 	player_result_t unprepare();
-	
+
 	/**
 	 * @brief Start playback.
 	 * @details @b #include <media/MediaPlayer.h>
@@ -117,7 +117,7 @@ public:
 	 * @since TizenRT v2.0 PRE
 	 */
 	player_result_t start();
-	
+
 	/**
 	 * @brief Pause playback.
 	 * @details @b #include <media/MediaPlayer.h>
@@ -127,7 +127,7 @@ public:
 	 * @since TizenRT v2.0 PRE
 	 */
 	player_result_t pause();
-	
+
 	/**
 	 * @brief Stop playback.
 	 * @details @b #include <media/MediaPlayer.h>
@@ -137,7 +137,7 @@ public:
 	 * @since TizenRT v2.0 PRE
 	 */
 	player_result_t stop();
-	
+
 	/**
 	 * @brief Gets the current volume
 	 * @details @b #include <media/MediaPlayer.h>
@@ -146,7 +146,7 @@ public:
 	 * @since TizenRT v2.0 PRE
 	 */
 	int getVolume();
-	
+
 	/**
 	 * @brief Sets the volume adjusted
 	 * @details @b #include <media/MediaPlayer.h>
@@ -155,7 +155,7 @@ public:
 	 * @since TizenRT v2.0 PRE
 	 */
 	player_result_t setVolume(int);
-	
+
 	/**
 	 * @brief Sets the DatSource of input data
 	 * @details @b #include <media/MediaPlayer.h>
@@ -165,7 +165,7 @@ public:
 	 * @since TizenRT v2.0 PRE
 	 */
 	player_result_t setDataSource(std::unique_ptr<stream::InputDataSource>);
-	
+
 	/**
 	 * @brief Sets the observer of MediaPlayer
 	 * @details @b #include <media/MediaPlayer.h>

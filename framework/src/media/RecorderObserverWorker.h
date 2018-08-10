@@ -38,7 +38,8 @@ namespace media {
 class RecorderObserverWorker : public MediaWorker
 {
 public:
-	static RecorderObserverWorker& getWorker();
+	static RecorderObserverWorker &getWorker();
+
 private:
 	RecorderObserverWorker();
 	virtual ~RecorderObserverWorker();

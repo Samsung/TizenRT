@@ -34,7 +34,7 @@ RecorderObserverWorker::~RecorderObserverWorker()
 {
 }
 
-RecorderObserverWorker& RecorderObserverWorker::getWorker()
+RecorderObserverWorker &RecorderObserverWorker::getWorker()
 {
 	static RecorderObserverWorker worker;
 	return worker;

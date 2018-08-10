@@ -43,7 +43,7 @@ typedef struct audio_encoder_s *audio_encoder_p;
  * @return size of audio data pushed to encoder via audio_encoder_pushdata().
  *         in case of return 0, that means end of PCM stream, then encoding will be terminated.
  */
-typedef size_t(*input_func_f)(void *user_data, audio_encoder_p encoder);
+typedef size_t (*input_func_f)(void *user_data, audio_encoder_p encoder);
 
 /**
  * @struct  audio_encoder_s
@@ -53,22 +53,22 @@ typedef size_t(*input_func_f)(void *user_data, audio_encoder_p encoder);
  *          to audio_encoder_init(), and specify input callback.
  */
 struct audio_encoder_s {
-	int audio_type;             /* the format of output audio type desired, e.g. opus */
+	int audio_type; /* the format of output audio type desired, e.g. opus */
 
 	// encoder buffer
-	void *enc_ext;              /* encoder external struct, user can pass configuration from it */
-	void *enc_mem;              /* encoder required memory, used internally */
+	void *enc_ext; /* encoder external struct, user can pass configuration from it */
+	void *enc_mem; /* encoder required memory, used internally */
 
 	// user callback func and data
-	void *cb_data;              /* data ptr user registered, be passed to callback function. */
-	input_func_f input_func;    /* input callback, be called when encoder request more data. */
+	void *cb_data;			 /* data ptr user registered, be passed to callback function. */
+	input_func_f input_func; /* input callback, be called when encoder request more data. */
 
 	// internal member used by encoder
-	rb_t ringbuffer;            /* ring-buffer object */
-	rbstream_p rbsp;            /* ring-buffer stream handle, co-work with above ring-buffer */
+	rb_t ringbuffer; /* ring-buffer object */
+	rbstream_p rbsp; /* ring-buffer stream handle, co-work with above ring-buffer */
 
 	// private data
-	void *priv_data;            /* pointer to private data */
+	void *priv_data; /* pointer to private data */
 };
 
 /**
@@ -136,9 +136,8 @@ bool audio_encoder_dataspace_is_empty(audio_encoder_p encoder);
  * @param  len : max bytes of output buffer
  * @return size in bytes of audio data when success, or return -1.
  */
-int audio_encoder_getframe(audio_encoder_p encoder, void * data, size_t len);
+int audio_encoder_getframe(audio_encoder_p encoder, void *data, size_t len);
 
 } // namespace media
 
 #endif /* STREAMING_ENCODER_H */
-

@@ -44,7 +44,7 @@ player_result_t MediaPlayerImpl::create()
 	std::unique_lock<std::mutex> lock(mCmdMtx);
 	medvdbg("MediaPlayer create\n");
 
-	PlayerWorker& mpw = PlayerWorker::getWorker();
+	PlayerWorker &mpw = PlayerWorker::getWorker();
 	mpw.startWorker();
 
 	mpw.enQueue(&MediaPlayerImpl::createPlayer, shared_from_this(), std::ref(ret));
@@ -85,7 +85,7 @@ player_result_t MediaPlayerImpl::destroy()
 	std::unique_lock<std::mutex> lock(mCmdMtx);
 	medvdbg("MediaPlayer destroy\n");
 
-	PlayerWorker& mpw = PlayerWorker::getWorker();
+	PlayerWorker &mpw = PlayerWorker::getWorker();
 	if (!mpw.isAlive()) {
 		meddbg("PlayerWorker is not alive\n");
 		return PLAYER_ERROR;
@@ -96,7 +96,7 @@ player_result_t MediaPlayerImpl::destroy()
 
 	if (ret == PLAYER_OK) {
 		if (mPlayerObserver) {
-			PlayerObserverWorker& pow = PlayerObserverWorker::getWorker();
+			PlayerObserverWorker &pow = PlayerObserverWorker::getWorker();
 			pow.stopWorker();
 			mPlayerObserver = nullptr;
 		}
@@ -129,7 +129,7 @@ player_result_t MediaPlayerImpl::prepare()
 	std::unique_lock<std::mutex> lock(mCmdMtx);
 	medvdbg("MediaPlayer prepare\n");
 
-	PlayerWorker& mpw = PlayerWorker::getWorker();
+	PlayerWorker &mpw = PlayerWorker::getWorker();
 	if (!mpw.isAlive()) {
 		meddbg("PlayerWorker is not alive\n");
 		return PLAYER_ERROR;
@@ -181,7 +181,7 @@ void MediaPlayerImpl::preparePlayer(player_result_t &ret)
 	mCurState = PLAYER_STATE_READY;
 	ret = PLAYER_OK;
 	return notifySync();
-	
+
 errout:
 	ret = PLAYER_ERROR;
 	notifyObserver(PLAYER_OBSERVER_COMMAND_ERROR);
@@ -195,7 +195,7 @@ player_result_t MediaPlayerImpl::unprepare()
 	std::unique_lock<std::mutex> lock(mCmdMtx);
 	medvdbg("MediaPlayer unprepare\n");
 
-	PlayerWorker& mpw = PlayerWorker::getWorker();
+	PlayerWorker &mpw = PlayerWorker::getWorker();
 	if (!mpw.isAlive()) {
 		meddbg("PlayerWorker is not alive\n");
 		return PLAYER_ERROR;
@@ -244,7 +244,7 @@ player_result_t MediaPlayerImpl::start()
 	std::lock_guard<std::mutex> lock(mCmdMtx);
 	medvdbg("MediaPlayer start\n");
 
-	PlayerWorker& mpw = PlayerWorker::getWorker();
+	PlayerWorker &mpw = PlayerWorker::getWorker();
 	if (!mpw.isAlive()) {
 		meddbg("PlayerWorker is not alive\n");
 		return PLAYER_ERROR;
@@ -257,7 +257,7 @@ player_result_t MediaPlayerImpl::start()
 
 void MediaPlayerImpl::startPlayer()
 {
-	PlayerWorker& mpw = PlayerWorker::getWorker();
+	PlayerWorker &mpw = PlayerWorker::getWorker();
 
 	medvdbg("PlayerWorker : startPlayer\n");
 	if (mCurState != PLAYER_STATE_READY && mCurState != PLAYER_STATE_PAUSED) {
@@ -285,7 +285,7 @@ player_result_t MediaPlayerImpl::stop()
 	std::lock_guard<std::mutex> lock(mCmdMtx);
 	medvdbg("MediaPlayer stop\n");
 
-	PlayerWorker& mpw = PlayerWorker::getWorker();
+	PlayerWorker &mpw = PlayerWorker::getWorker();
 	if (!mpw.isAlive()) {
 		meddbg("PlayerWorker is not alive\n");
 		return PLAYER_ERROR;
@@ -330,7 +330,7 @@ player_result_t MediaPlayerImpl::pause()
 	std::lock_guard<std::mutex> lock(mCmdMtx);
 	medvdbg("MediaPlayer pause\n");
 
-	PlayerWorker& mpw = PlayerWorker::getWorker();
+	PlayerWorker &mpw = PlayerWorker::getWorker();
 	if (!mpw.isAlive()) {
 		meddbg("PlayerWorker is not alive\n");
 		return PLAYER_ERROR;
@@ -343,7 +343,7 @@ player_result_t MediaPlayerImpl::pause()
 
 void MediaPlayerImpl::pausePlayer()
 {
-	PlayerWorker& mpw = PlayerWorker::getWorker();
+	PlayerWorker &mpw = PlayerWorker::getWorker();
 	medvdbg("MediaPlayer Worker : pausePlayer\n");
 	if (mCurState != PLAYER_STATE_PLAYING) {
 		meddbg("PlayerWorker : player is not playing\n");
@@ -373,7 +373,7 @@ int MediaPlayerImpl::getVolume()
 	std::unique_lock<std::mutex> lock(mCmdMtx);
 	medvdbg("MediaPlayer getVolume\n");
 
-	PlayerWorker& mpw = PlayerWorker::getWorker();
+	PlayerWorker &mpw = PlayerWorker::getWorker();
 	if (!mpw.isAlive()) {
 		meddbg("PlayerWorker is not alive\n");
 		return -1;
@@ -400,7 +400,7 @@ player_result_t MediaPlayerImpl::setVolume(int vol)
 	std::unique_lock<std::mutex> lock(mCmdMtx);
 	medvdbg("MediaPlayer setVolume\n");
 
-	PlayerWorker& mpw = PlayerWorker::getWorker();
+	PlayerWorker &mpw = PlayerWorker::getWorker();
 	if (!mpw.isAlive()) {
 		meddbg("PlayerWorker is not alive\n");
 		return PLAYER_ERROR;
@@ -438,7 +438,6 @@ errout:
 	notifySync();
 }
 
-
 player_result_t MediaPlayerImpl::setDataSource(std::unique_ptr<stream::InputDataSource> source)
 {
 	player_result_t ret = PLAYER_ERROR;
@@ -446,7 +445,7 @@ player_result_t MediaPlayerImpl::setDataSource(std::unique_ptr<stream::InputData
 	std::unique_lock<std::mutex> lock(mCmdMtx);
 	medvdbg("MediaPlayer setDataSource\n");
 
-	PlayerWorker& mpw = PlayerWorker::getWorker();
+	PlayerWorker &mpw = PlayerWorker::getWorker();
 	if (!mpw.isAlive()) {
 		meddbg("PlayerWorker is not alive\n");
 		return PLAYER_ERROR;
@@ -459,7 +458,7 @@ player_result_t MediaPlayerImpl::setDataSource(std::unique_ptr<stream::InputData
 	return ret;
 }
 
-void MediaPlayerImpl::setPlayerDataSource(std::shared_ptr<stream::InputDataSource> source, player_result_t& ret)
+void MediaPlayerImpl::setPlayerDataSource(std::shared_ptr<stream::InputDataSource> source, player_result_t &ret)
 {
 	if (mCurState != PLAYER_STATE_IDLE) {
 		meddbg("MediaPlayerImpl::setDataSource : mCurState != PLAYER_STATE_IDLE\n");
@@ -485,7 +484,7 @@ player_result_t MediaPlayerImpl::setObserver(std::shared_ptr<MediaPlayerObserver
 	std::unique_lock<std::mutex> lock(mCmdMtx);
 	medvdbg("MediaPlayer setObserver\n");
 
-	PlayerWorker& mpw = PlayerWorker::getWorker();
+	PlayerWorker &mpw = PlayerWorker::getWorker();
 	if (!mpw.isAlive()) {
 		meddbg("PlayerWorker is not alive\n");
 		return PLAYER_ERROR;
@@ -499,7 +498,7 @@ player_result_t MediaPlayerImpl::setObserver(std::shared_ptr<MediaPlayerObserver
 
 void MediaPlayerImpl::setPlayerObserver(std::shared_ptr<MediaPlayerObserverInterface> observer)
 {
-	PlayerObserverWorker& pow = PlayerObserverWorker::getWorker();
+	PlayerObserverWorker &pow = PlayerObserverWorker::getWorker();
 
 	if (mPlayerObserver) {
 		pow.stopWorker();
@@ -528,7 +527,7 @@ void MediaPlayerImpl::notifySync()
 void MediaPlayerImpl::notifyObserver(player_observer_command_t cmd)
 {
 	if (mPlayerObserver != nullptr) {
-		PlayerObserverWorker& pow = PlayerObserverWorker::getWorker();
+		PlayerObserverWorker &pow = PlayerObserverWorker::getWorker();
 		switch (cmd) {
 		case PLAYER_OBSERVER_COMMAND_STARTED:
 			pow.enQueue(&MediaPlayerObserverInterface::onPlaybackStarted, mPlayerObserver, mId);

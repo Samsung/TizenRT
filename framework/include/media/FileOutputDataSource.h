@@ -55,7 +55,7 @@ public:
 	 * param[in] dataPath The dataPath that the path of data
 	 * @since TizenRT v2.0 PRE
 	 */
-	FileOutputDataSource(const std::string& dataPath);
+	FileOutputDataSource(const std::string &dataPath);
 	/**
 	 * @brief Constructs a new object provide with audio configuration
 	 * @details @b #include <media/FileOutputDataSource.h>
@@ -65,19 +65,20 @@ public:
 	 * param[in] datapath   The datapath that the path of data
 	 * @since TizenRT v2.0 PRE
 	 */
-	FileOutputDataSource(unsigned int channels, unsigned int sampleRate, audio_format_type_t pcmFormat, const std::string& dataPath);
+	FileOutputDataSource(unsigned int channels, unsigned int sampleRate, audio_format_type_t pcmFormat,
+						 const std::string &dataPath);
 	/**
 	 * @brief Copy constructs for FileOutputDataSource.
 	 * @details @b #include <media/FileOutputDataSource.h>
 	 * @since TizenRT v2.0 PRE
 	 */
-	FileOutputDataSource(const FileOutputDataSource& source);
+	FileOutputDataSource(const FileOutputDataSource &source);
 	/**
 	 * @brief Operator= for FileOutputDataSource.
 	 * @details @b #include <media/FileOutputDataSource.h>
 	 * @since TizenRT v2.0 PRE
 	 */
-	FileOutputDataSource& operator=(const FileOutputDataSource& source);
+	FileOutputDataSource &operator=(const FileOutputDataSource &source);
 	/**
 	 * @brief Deconstructs an empty FileOutputDataSource.
 	 * @details @b #include <media/FileOutputDataSource.h>
@@ -116,11 +117,11 @@ public:
 	 *         if error occurred, it returns negative value, else written size returns
 	 * @since TizenRT v2.0 PRE
 	 */
-	ssize_t write(unsigned char* buf, size_t size) override;
+	ssize_t write(unsigned char *buf, size_t size) override;
 
 private:
 	std::string mDataPath;
-	FILE* mFp;
+	FILE *mFp;
 };
 } // namespace stream
 } // namespace media

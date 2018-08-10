@@ -60,7 +60,7 @@ public:
 	 * param[in] port       The port number for connecting to the socket server
 	 * @since TizenRT v2.0 PRE
 	 */
-	SocketOutputDataSource(const std::string& ipAddr, const uint16_t port);
+	SocketOutputDataSource(const std::string &ipAddr, const uint16_t port);
 	/**
 	 * @brief Constructs a new object provide with audio configuration
 	 * @details @b #include <media/SocketOutputDataSource.h>
@@ -71,19 +71,20 @@ public:
 	 * param[in] port       The port number for connecting to the socket server
 	 * @since TizenRT v2.0 PRE
 	 */
-	SocketOutputDataSource(unsigned int channels, unsigned int sampleRate, audio_format_type_t pcmFormat, const std::string& ipAddr, const uint16_t port);
+	SocketOutputDataSource(unsigned int channels, unsigned int sampleRate, audio_format_type_t pcmFormat,
+						   const std::string &ipAddr, const uint16_t port);
 	/**
 	 * @brief Copy constructs for SocketOutputDataSource.
 	 * @details @b #include <media/SocketOutputDataSource.h>
 	 * @since TizenRT v2.0 PRE
 	 */
-	SocketOutputDataSource(const SocketOutputDataSource& source);
+	SocketOutputDataSource(const SocketOutputDataSource &source);
 	/**
 	 * @brief Operator= for SocketOutputDataSource.
 	 * @details @b #include <media/SocketOutputDataSource.h>
 	 * @since TizenRT v2.0 PRE
 	 */
-	SocketOutputDataSource& operator=(const SocketOutputDataSource& source);
+	SocketOutputDataSource &operator=(const SocketOutputDataSource &source);
 	/**
 	 * @brief Deconstructs an empty SocketOutputDataSource.
 	 * @details @b #include <media/SocketOutputDataSource.h>
@@ -122,7 +123,7 @@ public:
 	 *         if error occurred, it returns -1, else written size returns
 	 * @since TizenRT v2.0 PRE
 	 */
-	ssize_t write(unsigned char* buf, size_t size) override;
+	ssize_t write(unsigned char *buf, size_t size) override;
 
 private:
 	std::string mIpAddr;

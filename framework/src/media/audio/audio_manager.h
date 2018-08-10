@@ -369,6 +369,6 @@ audio_manager_result_t set_input_audio_volume(uint8_t volume);
 audio_manager_result_t set_output_audio_volume(uint8_t volume);
 
 #if defined(__cplusplus)
-}								/* extern "C" */
+} /* extern "C" */
 #endif
 #endif

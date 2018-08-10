@@ -31,7 +31,7 @@
 
 static OpusDecoder *getOpusDecoder(void *pMem)
 {
-	return ((OpusDecoder *) (pMem));
+	return ((OpusDecoder *)(pMem));
 }
 
 uint32_t opus_decoderMemRequirements(void)
@@ -65,12 +65,9 @@ int32_t opus_frameDecode(opus_dec_external_t *pExt, void *pMem)
 	OpusDecoder *st = getOpusDecoder(pMem);
 	int32_t frame_size;
 
-	frame_size = opus_decode(st, \
-  							pExt->pInputBuffer + OPUS_PACKET_HEADER_LEN, \
-  							pExt->inputBufferCurrentLength - OPUS_PACKET_HEADER_LEN, \
-  							pExt->pOutputBuffer, \
-  							pExt->outputBufferMaxLength / sizeof(signed short), \
-  							0);
+	frame_size = opus_decode(st, pExt->pInputBuffer + OPUS_PACKET_HEADER_LEN,
+							 pExt->inputBufferCurrentLength - OPUS_PACKET_HEADER_LEN, pExt->pOutputBuffer,
+							 pExt->outputBufferMaxLength / sizeof(signed short), 0);
 
 	if (frame_size < 0) {
 		pExt->outputFrameSize = 0;
@@ -80,4 +77,3 @@ int32_t opus_frameDecode(opus_dec_external_t *pExt, void *pMem)
 	pExt->outputFrameSize = frame_size;
 	return OPUS_OK;
 }
-

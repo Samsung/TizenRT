@@ -31,8 +31,8 @@
 
 #include <media/OutputDataSource.h>
 
-typedef ssize_t(*OnBufferDataReached)(void* buffer, size_t size);
-//TODO - The Callback mechanism will be modified.
+typedef ssize_t (*OnBufferDataReached)(void *buffer, size_t size);
+// TODO - The Callback mechanism will be modified.
 
 namespace media {
 namespace stream {
@@ -68,19 +68,20 @@ public:
 	 * param[in] callback   The callback that the callback function
 	 * @since TizenRT v2.0 PRE
 	 */
-	BufferOutputDataSource(unsigned int channels, unsigned int sampleRate, audio_format_type_t pcmFormat, OnBufferDataReached callback);
+	BufferOutputDataSource(unsigned int channels, unsigned int sampleRate, audio_format_type_t pcmFormat,
+						   OnBufferDataReached callback);
 	/**
 	 * @brief Copy constructs for BufferOutputDataSource.
 	 * @details @b #include <media/BufferOutputDataSource.h>
 	 * @since TizenRT v2.0 PRE
 	 */
-	BufferOutputDataSource(const BufferOutputDataSource& source);
+	BufferOutputDataSource(const BufferOutputDataSource &source);
 	/**
 	 * @brief Operator= for BufferOutputDataSource.
 	 * @details @b #include <media/BufferOutputDataSource.h>
 	 * @since TizenRT v2.0 PRE
 	 */
-	BufferOutputDataSource& operator=(const BufferOutputDataSource& source);
+	BufferOutputDataSource &operator=(const BufferOutputDataSource &source);
 	/**
 	 * @brief Deconstructs an empty BufferOutputDataSource.
 	 * @details @b #include <media/BufferOutputDataSource.h>
@@ -119,7 +120,7 @@ public:
 	 *         if error occurred, it returns -1, else written size returns
 	 * @since TizenRT v2.0 PRE
 	 */
-	ssize_t write(unsigned char* buf, size_t size) override;
+	ssize_t write(unsigned char *buf, size_t size) override;
 
 private:
 	OnBufferDataReached mCallback;

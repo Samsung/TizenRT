@@ -41,14 +41,14 @@ namespace utils {
  * @param[out] str The str that lowercase string
  * @since TizenRT v2.0 PRE
  */
-void toLowerString(std::string& str);
+void toLowerString(std::string &str);
 /**
  * @brief Replace string with uppercase string.
  * @details @b #include <media/MediaUtils.h>
  * @param[out] str The str that uppercase string
  * @since TizenRT v2.0 PRE
  */
-void toUpperString(std::string& str);
+void toUpperString(std::string &str);
 /**
  * @brief Gets the audio type in path.
  * @details @b #include <media/MediaUtils.h>

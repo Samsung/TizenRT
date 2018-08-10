@@ -40,7 +40,7 @@ public:
 
 private:
 #ifdef CONFIG_AUDIO_CODEC
-	//static int _configFunc(void *user_data, int audio_type, void *dec_ext);
+	// static int _configFunc(void *user_data, int audio_type, void *dec_ext);
 	bool mConfig(int audioType);
 	audio_decoder_t mDecoder;
 	unsigned short mChannels;

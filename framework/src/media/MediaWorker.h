@@ -34,8 +34,8 @@ public:
 	void startWorker();
 	void stopWorker();
 
-	template <typename _Callable, typename... _Args>
-	void enQueue(_Callable &&__f, _Args &&... __args) {
+	template <typename _Callable, typename... _Args> void enQueue(_Callable &&__f, _Args &&... __args)
+	{
 		mWorkerQueue.enQueue(__f, __args...);
 	}
 	std::function<void()> deQueue();

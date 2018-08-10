@@ -21,8 +21,7 @@
 
 namespace media {
 namespace stream {
-OutputDataSource::OutputDataSource()
-	: DataSource(), mAudioType(AUDIO_TYPE_INVALID), mEncoder(nullptr)
+OutputDataSource::OutputDataSource() : DataSource(), mAudioType(AUDIO_TYPE_INVALID), mEncoder(nullptr)
 {
 }
 
@@ -31,12 +30,12 @@ OutputDataSource::OutputDataSource(unsigned int channels, unsigned int sampleRat
 {
 }
 
-OutputDataSource::OutputDataSource(const OutputDataSource& source)
+OutputDataSource::OutputDataSource(const OutputDataSource &source)
 	: DataSource(source), mAudioType(source.mAudioType), mEncoder(source.mEncoder)
 {
 }
 
-OutputDataSource& OutputDataSource::operator=(const OutputDataSource& source)
+OutputDataSource &OutputDataSource::operator=(const OutputDataSource &source)
 {
 	DataSource::operator=(source);
 	return *this;
@@ -65,8 +64,6 @@ audio_type_t OutputDataSource::getAudioType()
 {
 	return mAudioType;
 }
-
-
 
 } // namespace stream
 } // namespace media

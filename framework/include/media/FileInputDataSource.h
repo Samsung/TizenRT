@@ -60,19 +60,19 @@ public:
 	 * param[in] dataPath The dataPath that the path of data
 	 * @since TizenRT v2.0 PRE
 	 */
-	FileInputDataSource(const std::string& dataPath);
+	FileInputDataSource(const std::string &dataPath);
 	/**
 	 * @brief Copy constructs for FileInputDataSource.
 	 * @details @b #include <media/FileInputDataSource.h>
 	 * @since TizenRT v2.0 PRE
 	 */
-	FileInputDataSource(const FileInputDataSource& source);
+	FileInputDataSource(const FileInputDataSource &source);
 	/**
 	 * @brief Operator= for FileInputDataSource.
 	 * @details @b #include <media/FileInputDataSource.h>
 	 * @since TizenRT v2.0 PRE
 	 */
-	FileInputDataSource& operator=(const FileInputDataSource& source);
+	FileInputDataSource &operator=(const FileInputDataSource &source);
 
 	/**
 	 * @brief Whether file is ready to be read.
@@ -105,7 +105,7 @@ public:
 	 *         if error occurred, it returns -1, else readead size returns
 	 * @since TizenRT v2.0 PRE
 	 */
-	ssize_t read(unsigned char* buf, size_t size) override;
+	ssize_t read(unsigned char *buf, size_t size) override;
 
 	/**
 	 * @brief Gets the file data
@@ -117,11 +117,11 @@ public:
 	 * @return if failed, it returns -1, else readead size returns
 	 * @since TizenRT v2.0
 	 */
-	int readAt(long offset, int origin, unsigned char* buf, size_t size) override;
+	int readAt(long offset, int origin, unsigned char *buf, size_t size) override;
 
 private:
 	std::string mDataPath;
-	FILE* mFp;
+	FILE *mFp;
 };
 } // namespace stream
 } // namespace media

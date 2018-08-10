@@ -28,10 +28,9 @@
 // Support 2 channels (stereo) at most
 #define CHANNEL_NUM_MAX 2
 
-
 static OpusEncoder *getOpusEncoder(void *pMem)
 {
-	return ((OpusEncoder *) (pMem));
+	return ((OpusEncoder *)(pMem));
 }
 
 static void int2char(opus_uint32 i, unsigned char ch[4])
@@ -88,13 +87,10 @@ int32_t opus_frameEncode(opus_enc_external_t *pExt, void *pMem)
 	int analysis_frame_size = pExt->inputSampleRate * pExt->frameSizeMS / 1000;
 	int32_t payload_size;
 
-	payload_size = opus_encode(st, pExt->pInputBuffer,
-							   analysis_frame_size,
-							   out_data,
-							   pExt->outputBufferMaxLength);
+	payload_size = opus_encode(st, pExt->pInputBuffer, analysis_frame_size, out_data, pExt->outputBufferMaxLength);
 
-	int nb_encoded = opus_packet_get_samples_per_frame(out_data, pExt->inputSampleRate)
-					 * opus_packet_get_nb_frames(out_data, payload_size);
+	int nb_encoded = opus_packet_get_samples_per_frame(out_data, pExt->inputSampleRate) *
+					 opus_packet_get_nb_frames(out_data, payload_size);
 	int remaining = analysis_frame_size - nb_encoded;
 
 	medvdbg("opus_frameEncode payload_size %d, nb_encoded %d, remaining %d\n", payload_size, nb_encoded, remaining);
@@ -112,4 +108,3 @@ int32_t opus_frameEncode(opus_enc_external_t *pExt, void *pMem)
 	pExt->outputDataSize = OPUS_PACKET_HEADER_LEN + payload_size;
 	return OPUS_OK;
 }
-

@@ -33,7 +33,6 @@
 
 namespace media {
 
-
 /**
  * @brief Audio type.
  * @details
@@ -57,7 +56,7 @@ typedef enum audio_type_e {
 } audio_type_t;
 
 /**
- * @class 
+ * @class
  * @brief Audio format type, each value follows pcm_format in tinyalsa.
  * @details
  * @since TizenRT v2.0 PRE
