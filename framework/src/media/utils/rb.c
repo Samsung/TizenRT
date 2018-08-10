@@ -97,12 +97,12 @@ size_t rb_write(rb_p rbp, const void *ptr, size_t len)
 
 	if (len > len_part) {
 		// First, write part of data into empty space in ring buffer based on write index,
-		memcpy((void *)((uint8_t *) rbp->buf + wr_idx), ptr, len_part);
+		memcpy((void *)((uint8_t *)rbp->buf + wr_idx), ptr, len_part);
 		// and then write remained data at the start of ring buffer.
 		memcpy(rbp->buf, (const void *)((const uint8_t *)ptr + len_part), (len - len_part));
 	} else {
 		// If there is enough space just write all data based on write index.
-		memcpy((void *)((uint8_t *) rbp->buf + wr_idx), ptr, len);
+		memcpy((void *)((uint8_t *)rbp->buf + wr_idx), ptr, len);
 	}
 
 	_incr(rbp, &rbp->wr_idx, len);
@@ -141,12 +141,12 @@ size_t rb_read_ext(rb_p rbp, void *ptr, size_t len, size_t offset)
 		// Start to read(copy) data
 		if (len > len_part) {
 			// First, read part of data from ring buffer based on temp read index,
-			memcpy(ptr, (void *)((uint8_t *) rbp->buf + rd_idx), len_part);
+			memcpy(ptr, (void *)((uint8_t *)rbp->buf + rd_idx), len_part);
 			// and then read remained data at the start of buffer.
-			memcpy((void *)((uint8_t *) ptr + len_part), rbp->buf, (len - len_part));
+			memcpy((void *)((uint8_t *)ptr + len_part), rbp->buf, (len - len_part));
 		} else {
 			// If there is enough data just read all based on temp read index.
-			memcpy(ptr, (void *)((uint8_t *) rbp->buf + rd_idx), len);
+			memcpy(ptr, (void *)((uint8_t *)rbp->buf + rd_idx), len);
 		}
 	}
 
@@ -168,4 +168,3 @@ static void _incr(rb_p rbp, volatile size_t *p_idx, size_t len)
 
 	*p_idx = msb | idx;
 }
-

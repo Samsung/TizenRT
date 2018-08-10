@@ -46,20 +46,14 @@ using namespace std;
 using namespace media;
 using namespace media::stream;
 
-/**
- * Turn on the feature to Test.
- */
-#define TEST_OPUS
+static const int TEST_PCM = 0;
+static const int TEST_OPUS = 1;
 
-#if defined(TEST_OPUS)
-static const char *filePath = "/tmp/record.opus";
-#else
-static const char *filePath = "/tmp/record";
-#endif
+static const char *filePath = "";
 
-class MediaRecorderTest : public MediaRecorderObserverInterface
-						, public MediaPlayerObserverInterface
-						, public enable_shared_from_this<MediaRecorderTest>
+class MediaRecorderTest : public MediaRecorderObserverInterface,
+						  public MediaPlayerObserverInterface,
+						  public enable_shared_from_this<MediaRecorderTest>
 {
 public:
 	void onRecordStarted(MediaRecorderObserverInterface::Id id)
@@ -110,104 +104,101 @@ public:
 		std::cout << "onPlaybackPaused" << std::endl;
 	}
 
-	void start()
+	void start(const int test)
 	{
 		appRunning = true;
 
 		while (appRunning) {
 			printRecorderMenu();
-			switch (userInput(APP_ON, DELETE_FILE))	{
-				case APP_ON: {
-					std::cout << "SELECTED APP ON" << std::endl;
-					mr.create();
-					mr.setObserver(shared_from_this());
-					mr.setDataSource(unique_ptr<FileOutputDataSource>(new FileOutputDataSource(2, 16000, AUDIO_FORMAT_TYPE_S16_LE, filePath)));
+			switch (userInput(APP_ON, DELETE_FILE)) {
+			case APP_ON:
+				std::cout << "SELECTED APP ON" << std::endl;
+				mr.create();
+				mr.setObserver(shared_from_this());
+				if (test == TEST_PCM) {
+					filePath = "/ramfs/record.pcm";
+					mr.setDataSource(unique_ptr<FileOutputDataSource>(
+						new FileOutputDataSource(2, 16000, AUDIO_FORMAT_TYPE_S16_LE, filePath)));
+				} else if (test == TEST_OPUS) {
+					filePath = "/ramfs/record.opus";
+					mr.setDataSource(unique_ptr<FileOutputDataSource>(
+						new FileOutputDataSource(2, 16000, AUDIO_FORMAT_TYPE_S16_LE, filePath)));
 				}
 				break;
-				case RECORDER_START: {
-					std::cout << "SELECTED RECORDER_START" << std::endl;
-					if (isPaused) {
-						if (mr.start()) {
-							std::cout << "START IN PAUSE STATE SUCCESS" << std::endl;
-							isPaused = false;
-						}
-					} else {
-						if (mr.setDuration(2) == RECORDER_OK && mr.prepare() == RECORDER_OK) {
-							mr.start();
-							std::cout << "START IN NONE-PAUSE STATE SUCCESS" << std::endl;
-						} else {
-							std::cout << "PREPARE FAILED" << std::endl;
-						}
-					}
-				}
-				break;
-				case RECORDER_PAUSE: {
-					std::cout << "SELECTED RECORDER_PAUSE" << std::endl;
-					if (mr.pause()) {
-						isPaused = true;
-						std::cout << "PAUSE SUCCESS" << std::endl;
-					} else {
-						std::cout << "PAUSE FAILED" << std::endl;
-					}
-				}
-				break;
-				case RECORDER_RESUME: {
-					std::cout << "SELECTED RECORDER_RESUME" << std::endl;
+			case RECORDER_START:
+				std::cout << "SELECTED RECORDER_START" << std::endl;
+				if (isPaused) {
 					if (mr.start()) {
+						std::cout << "START IN PAUSE STATE SUCCESS" << std::endl;
 						isPaused = false;
-						std::cout << "RESUME SUCCESS" << std::endl;
+					}
+				} else {
+					if (mr.setDuration(2) == RECORDER_OK && mr.prepare() == RECORDER_OK) {
+						mr.start();
+						std::cout << "START IN NONE-PAUSE STATE SUCCESS" << std::endl;
 					} else {
-						std::cout << "RESUME FAILED" << std::endl;
+						std::cout << "PREPARE FAILED" << std::endl;
 					}
 				}
 				break;
-				case RECORDER_STOP: {
-					std::cout << "SELECTED RECORDER_STOP" << std::endl;
-					if (mr.stop() == RECORDER_OK) {
-						mr.unprepare();
-						isPaused = false;
-						std::cout << "STOP SUCCESS" << std::endl;
-					} else {
-						std::cout << "STOP FAILED" << std::endl;
-					}
+			case RECORDER_PAUSE:
+				std::cout << "SELECTED RECORDER_PAUSE" << std::endl;
+				if (mr.pause()) {
+					isPaused = true;
+					std::cout << "PAUSE SUCCESS" << std::endl;
+				} else {
+					std::cout << "PAUSE FAILED" << std::endl;
 				}
 				break;
-				case PLAY_DATA: {
-					std::cout << "PLAY_DATA" << std::endl;
-					play_data();
+			case RECORDER_RESUME:
+				std::cout << "SELECTED RECORDER_RESUME" << std::endl;
+				if (mr.start()) {
+					isPaused = false;
+					std::cout << "RESUME SUCCESS" << std::endl;
+				} else {
+					std::cout << "RESUME FAILED" << std::endl;
 				}
 				break;
-				case VOLUME_UP: {
-					std::cout << "VOLUME_UP" << std::endl;
-					if (mr.setVolume(mr.getVolume() + 1) == RECORDER_ERROR) {
-						cout << "setVolume failed" << endl;
-					}
-					std::cout << "Now, Volume is " << mr.getVolume() << std::endl;
+			case RECORDER_STOP:
+				std::cout << "SELECTED RECORDER_STOP" << std::endl;
+				if (mr.stop() == RECORDER_OK) {
+					mr.unprepare();
+					isPaused = false;
+					std::cout << "STOP SUCCESS" << std::endl;
+				} else {
+					std::cout << "STOP FAILED" << std::endl;
 				}
 				break;
-				case VOLUME_DOWN: {
-					std::cout << "VOLUME_DOWN" << std::endl;
-					if (mr.setVolume(mr.getVolume() - 1) == RECORDER_ERROR) {
-						cout << "setVolume failed" << endl;
-					}
-					std::cout << "Now, Volume is " << mr.getVolume() << std::endl;
+			case PLAY_DATA:
+				std::cout << "PLAY_DATA" << std::endl;
+				play_data();
+				break;
+			case VOLUME_UP:
+				std::cout << "VOLUME_UP" << std::endl;
+				if (mr.setVolume(mr.getVolume() + 1) == RECORDER_ERROR) {
+					cout << "setVolume failed" << endl;
+				}
+				std::cout << "Now, Volume is " << mr.getVolume() << std::endl;
+				break;
+			case VOLUME_DOWN:
+				std::cout << "VOLUME_DOWN" << std::endl;
+				if (mr.setVolume(mr.getVolume() - 1) == RECORDER_ERROR) {
+					cout << "setVolume failed" << endl;
+				}
+				std::cout << "Now, Volume is " << mr.getVolume() << std::endl;
+				break;
+			case APP_OFF:
+				std::cout << "SELECTED APP_OFF" << std::endl;
+				mr.destroy();
+				appRunning = false;
+				break;
+			case DELETE_FILE:
+				if (unlink(filePath) == OK) {
+					std::cout << "FILE DELETED" << std::endl;
+				} else {
+					std::cout << "DELETE FAILED ERRPR " << errno << std::endl;
 				}
 				break;
-				case APP_OFF: {
-					std::cout << "SELECTED APP_OFF" << std::endl;
-					mr.destroy();
-					appRunning = false;
-				}
-				break;
-				case DELETE_FILE : {
-					if (unlink(filePath) == OK) {
-						std::cout << "FILE DELETED" << std::endl;
-					} else {
-						std::cout << "DELETE FAILED ERRPR " << errno << std::endl;
-					}
-				}
-				break;
-
 			}
 		}
 	}
@@ -239,7 +230,7 @@ public:
 		if (mp.setDataSource(std::move(source)) == PLAYER_ERROR) {
 			std::cout << "Mediaplayer::setDataSource failed" << std::endl;
 			return;
-		}	
+		}
 
 		if (mp.prepare() == PLAYER_ERROR) {
 			std::cout << "Mediaplayer::prepare failed" << std::endl;
@@ -294,8 +285,12 @@ public:
 		return input;
 	}
 
-	MediaRecorderTest() : appRunning(false), isPaused(false), isPlaying(false) {}
-	~MediaRecorderTest() {}
+	MediaRecorderTest() : appRunning(false), isPaused(false), isPlaying(false)
+	{
+	}
+	~MediaRecorderTest()
+	{
+	}
 
 private:
 	bool appRunning;
@@ -305,15 +300,14 @@ private:
 	MediaPlayer mp;
 };
 
-extern "C"
+extern "C" {
+int mediarecorder_main(int argc, char *argv[])
 {
-	int mediarecorder_main(int argc, char *argv[])
-	{
-		up_cxxinitialize();
+	up_cxxinitialize();
 
-		auto mediaRecorderTest = make_shared<MediaRecorderTest>();
-		mediaRecorderTest->start();
+	auto mediaRecorderTest = make_shared<MediaRecorderTest>();
+	mediaRecorderTest->start(TEST_PCM);
 
-		return 0;
-	}
+	return 0;
+}
 }
