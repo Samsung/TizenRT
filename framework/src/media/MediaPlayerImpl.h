@@ -81,7 +81,7 @@ private:
 	void preparePlayer(player_result_t &ret);
 	void unpreparePlayer(player_result_t &ret);
 	void startPlayer();
-	void stopPlayer();
+	void stopPlayer(int errcode);
 	void pausePlayer();
 	void getVolumePlayer(int &ret);
 	void setVolumePlayer(int, player_result_t &ret);

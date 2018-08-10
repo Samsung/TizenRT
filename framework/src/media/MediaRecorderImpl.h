@@ -93,7 +93,7 @@ private:
 	void unprepareRecorder(recorder_result_t& ret);
 	void startRecorder();
 	void pauseRecorder();
-	void stopRecorder(bool);
+	void stopRecorder(int errcode);
 	void getRecorderVolume(int& ret);
 	void setRecorderVolume(int vol, recorder_result_t& ret);
 	void setRecorderObserver(std::shared_ptr<MediaRecorderObserverInterface> observer);
