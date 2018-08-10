@@ -25,6 +25,7 @@ endif
 ifeq ($(CONFIG_MEDIA_RECORDER),y)
 CXXSRCS += utc_media_mediarecorder.cpp
 CXXSRCS += utc_media_fileoutputdatasource.cpp
+CXXSRCS += utc_media_bufferoutputdatasource.cpp
 endif
 
 ifeq ($(CONFIG_GMOCK),y)

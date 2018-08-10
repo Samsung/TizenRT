@@ -22,6 +22,7 @@
 #include <media/MediaRecorder.h>
 #include <media/MediaRecorderObserverInterface.h>
 #include <media/FileOutputDataSource.h>
+#include <media/BufferOutputDataSource.h>
 
 using namespace std;
 using namespace media;
