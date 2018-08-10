@@ -1158,7 +1158,7 @@ OicSecAcl_t* CBORPayloadToCloudAcl(const uint8_t *cborPayload, const size_t size
                         if (name)
                         {
                             free(name);
-                            name = NULL:
+                            name = NULL;
                         }
 #else
                         char* name = NULL;
