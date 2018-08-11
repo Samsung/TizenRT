@@ -634,6 +634,55 @@ static void tc_pthread_pthread_create_exit_join(void)
 }
 
 /**
+* @fn                   :tc_pthread_pthread_tryjoin_np
+* @brief                :test the pthread_tryjoin_np function
+* @Scenario             :1. creates a new thread with infinite loop
+*                        2. call pthread_tryjoin_np
+*                        3. cancel thread
+*                        4. call pthread_tryjoin_np again
+* API's covered         :pthread_create, pthread_cancel, pthread_tryjoin_np
+* Preconditions         :none
+* Postconditions        :none
+* @return               :void
+*/
+static void tc_pthread_pthread_tryjoin_np(void)
+{
+	int ret_chk;
+	pthread_t pid;
+	void *pexit_value = 0;
+
+	ret_chk = pthread_create(&pid, NULL, setgetname_thread, NULL);
+	TC_ASSERT_EQ("pthread create", ret_chk, OK);
+
+	/* To make sure thread is running */
+	sleep(SEC_1);
+
+	ret_chk = pthread_tryjoin_np(pid, NULL);
+	TC_ASSERT_EQ("pthread_tryjoin_np", ret_chk, EBUSY);
+
+	ret_chk = pthread_cancel(pid);
+	TC_ASSERT_EQ("pthread_cancel", ret_chk, OK);
+
+	/* To make sure thread is terminated */
+	sleep(SEC_1);
+
+	ret_chk = pthread_tryjoin_np(pid, &pexit_value);
+	TC_ASSERT_EQ("pthread_tryjoin_np", ret_chk, ESRCH);
+
+	ret_chk = pthread_create(&pid, NULL, do_nothing_thread, NULL);
+	TC_ASSERT_EQ("pthread create", ret_chk, OK);
+
+	/* To make sure thread is started and terminated */
+	sleep(SEC_1);
+
+	ret_chk = pthread_tryjoin_np(pid, &pexit_value);
+	TC_ASSERT_EQ("pthread_tryjoin_np", ret_chk, OK);
+	TC_ASSERT_EQ("pthread_tryjoin_np", pexit_value, 0);
+
+	TC_SUCCESS_RESULT();
+}
+
+/**
 * @fn                   :tc_pthread_pthread_kill
 * @brief                :send a signal to a thread
 * @Scenario             :The pthread_kill() function sends the signal sig to thread, a thread
@@ -1477,6 +1526,7 @@ int pthread_main(void)
 {
 	tc_pthread_pthread_barrier_init_destroy_wait();
 	tc_pthread_pthread_create_exit_join();
+	tc_pthread_pthread_tryjoin_np();
 	tc_pthread_pthread_kill();
 	tc_pthread_pthread_cond_broadcast();
 	tc_pthread_pthread_cond_init_destroy();
