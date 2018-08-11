@@ -256,6 +256,7 @@ uintptr_t STUB_pthread_getschedparam(int nbr, uintptr_t parm1,
 									 uintptr_t parm2, uintptr_t parm3);
 uintptr_t STUB_pthread_getspecific(int nbr, uintptr_t parm1);
 uintptr_t STUB_pthread_join(int nbr, uintptr_t parm1, uintptr_t parm2);
+uintptr_t STUB_pthread_tryjoin_np(int nbr, uintptr_t parm1, uintptr_t parm2);
 uintptr_t STUB_pthread_key_create(int nbr, uintptr_t parm1,
 								  uintptr_t parm2);
 uintptr_t STUB_pthread_key_delete(int nbr, uintptr_t parm1);
