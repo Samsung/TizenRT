@@ -154,27 +154,27 @@ void weak_function sched_process_cpuload(void)
 	hash_index = PIDHASH(rtcb->pid);
 
 	for (cpuload_idx = 0; cpuload_idx < SCHED_NCPULOAD; cpuload_idx++) {
-			g_pidhash[hash_index].ticks[cpuload_idx]++;
+		g_pidhash[hash_index].ticks[cpuload_idx]++;
 
-			/* Increment tick count.  If the accumulated tick value exceed a time
-			 * constant, then shift the accumulators.
+		/* Increment tick count.  If the accumulated tick value exceed a time
+		 * constant, then shift the accumulators.
+		 */
+
+		if (++g_cpuload_total[cpuload_idx] > (g_cpuload_timeconstant[cpuload_idx] * CPULOAD_TICKSPERSEC)) {
+			uint32_t total = 0;
+
+			/* Divide the tick count for every task by two and recalculate the
+			 * total.
 			 */
-
-			if (++g_cpuload_total[cpuload_idx] > (g_cpuload_timeconstant[cpuload_idx] * CPULOAD_TICKSPERSEC)) {
-				uint32_t total = 0;
-
-				/* Divide the tick count for every task by two and recalculate the
-				 * total.
-				 */
-				for (i = 0; i < CONFIG_MAX_TASKS; i++) {
-					g_pidhash[i].ticks[cpuload_idx] >>= 1;
-					total += g_pidhash[i].ticks[cpuload_idx];
-				}
-
-				/* Save the new total. */
-
-				g_cpuload_total[cpuload_idx] = total;
+			for (i = 0; i < CONFIG_MAX_TASKS; i++) {
+				g_pidhash[i].ticks[cpuload_idx] >>= 1;
+				total += g_pidhash[i].ticks[cpuload_idx];
 			}
+
+			/* Save the new total. */
+
+			g_cpuload_total[cpuload_idx] = total;
+		}
 	}
 }
 
