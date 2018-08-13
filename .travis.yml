@@ -18,6 +18,7 @@ env:
     - BUILD_CONFIG=artik053/iotjs
     - BUILD_CONFIG=artik053/minimal
     - BUILD_CONFIG=qemu/tc_64k
+    - BUILD_CONFIG=qemu/build_test
 
 before_install:
 - docker pull tizenrt/tizenrt:${TIZENRT_IMG_VERSION}
