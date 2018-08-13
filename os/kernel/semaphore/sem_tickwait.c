@@ -119,11 +119,11 @@
  ****************************************************************************/
 
 
-int sem_tickwait(FAR sem_t *sem, systime_t start, uint32_t delay)
+int sem_tickwait(FAR sem_t *sem, clock_t start, uint32_t delay)
 {
 	FAR struct tcb_s *rtcb = this_task();
 	irqstate_t flags;
-	systime_t elapsed;
+	clock_t elapsed;
 	int errcode = OK;
 	int ret = ERROR;
 

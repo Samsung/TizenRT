@@ -427,7 +427,7 @@ static void tc_semaphore_sem_tickwait(void)
 	ret_chk = clock_gettime(CLOCK_REALTIME, &abstime);
 	TC_ASSERT_EQ("clock_gettime", ret_chk, OK);
 
-	ret_chk = sem_tickwait(&sem, (systime_t)clock(), SEC_2);
+	ret_chk = sem_tickwait(&sem, clock(), SEC_2);
 	TC_ASSERT_EQ("sem_tickwait", ret_chk, OK);
 
 	ret_chk = clock_gettime(CLOCK_REALTIME, &curtime);
@@ -447,13 +447,13 @@ static void tc_semaphore_sem_tickwait(void)
 
 	/* expired time test */
 
-	ret_chk = sem_tickwait(&sem, (systime_t)clock() - SEC_2, 0);
+	ret_chk = sem_tickwait(&sem, clock() - SEC_2, 0);
 	TC_ASSERT_EQ("sem_tickwait", ret_chk, ERROR);
 
-	ret_chk = sem_tickwait(&sem, (systime_t)clock() - SEC_2, 1);
+	ret_chk = sem_tickwait(&sem, clock() - SEC_2, 1);
 	TC_ASSERT_EQ("sem_tickwait", ret_chk, ERROR);
 
-	ret_chk = sem_tickwait(&sem, (systime_t)clock() - SEC_2, 3);
+	ret_chk = sem_tickwait(&sem, clock() - SEC_2, 3);
 	TC_ASSERT_EQ("sem_tickwait", ret_chk, ERROR);
 
 	ret_chk = sem_destroy(&sem);

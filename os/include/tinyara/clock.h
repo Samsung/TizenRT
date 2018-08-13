@@ -69,8 +69,10 @@
 
 #include <tinyara/config.h>
 
+#include <sys/types.h>
 #include <stdint.h>
 #include <time.h>
+
 #include <tinyara/compiler.h>
 
 /****************************************************************************
@@ -209,14 +211,6 @@ struct cpuload_s {
 #endif
 #endif
 
-/* This type is the natural with of the system timer */
-
-#ifdef CONFIG_SYSTEM_TIME64
-typedef uint64_t systime_t;
-#else
-typedef uint32_t systime_t;
-#endif
-
 /****************************************************************************
  * Public Data
  ****************************************************************************/
@@ -236,7 +230,7 @@ extern "C" {
  */
 
 #ifdef __HAVE_KERNEL_GLOBALS
-EXTERN volatile systime_t g_system_timer;
+EXTERN volatile clock_t g_system_timer;
 
 #ifndef CONFIG_SYSTEM_TIME64
 #define clock_systimer() g_system_timer
@@ -318,7 +312,7 @@ void clock_synchronize(void);
  * @return The current value of the system timer counter is returned.
  * @since TizenRT v1.0
  */
-systime_t clock_systimer(void);
+clock_t clock_systimer(void);
 #endif
 
 /****************************************************************************

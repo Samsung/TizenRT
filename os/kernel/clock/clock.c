@@ -16,7 +16,7 @@
  *
  ****************************************************************************/
 /****************************************************************************
- * libc/time/lib_clock.c
+ * kernel/clock/clock.c
  *
  *   Copyright (C) 2015 Gregory Nutt. All rights reserved.
  *   Author: Gregory Nutt <gnutt@nuttx.org>
@@ -85,5 +85,5 @@
 
 clock_t clock(void)
 {
-	return (clock_t)clock_systimer();
+	return clock_systimer();
 }

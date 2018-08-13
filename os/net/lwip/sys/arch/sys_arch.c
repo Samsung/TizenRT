@@ -455,7 +455,7 @@ err_t sys_sem_new(sys_sem_t *sem, u8_t count)
  *---------------------------------------------------------------------------*/
 u32_t sys_arch_sem_wait(sys_sem_t *sem, u32_t timeout)
 {
-	systime_t start = clock_systimer();
+	clock_t start = clock_systimer();
 	int status = OK;
 	int remaining_time;
 
@@ -495,7 +495,7 @@ u32_t sys_arch_sem_wait(sys_sem_t *sem, u32_t timeout)
 
 	}
 
-	systime_t end = clock_systimer();
+	clock_t end = clock_systimer();
 	return TICK2MSEC(end - start);
 }
 

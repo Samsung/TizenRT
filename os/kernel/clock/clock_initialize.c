@@ -99,7 +99,7 @@
  ****************************************************************************/
 
 #ifndef CONFIG_SCHED_TICKLESS
-volatile systime_t g_system_timer;
+volatile clock_t g_system_timer;
 #endif
 
 struct timespec g_basetime;

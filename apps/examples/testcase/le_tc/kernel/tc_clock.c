@@ -155,29 +155,6 @@ static void tc_clock_clock_gettimeofday(void)
 	TC_SUCCESS_RESULT();
 }
 
-#ifndef CONFIG_SCHED_TICKLESS
-/**
-* @fn                   :tc_clock_clock_timer
-* @brief                :This function must be called once every time the real time clock interrupt occurs
-*                        The interval of this clock interrupt must be USER_PER_TICK
-* @scenario             :called once every time the real time clock interrupt occurs
-* API's covered         :clock_timer
-* Preconditions         :none
-* Postconditions        :none
-* @return               :void
-*/
-
-static void tc_clock_clock_timer(void)
-{
-	systime_t itime = g_system_timer;
-	clock_timer();
-	itime++;
-	TC_ASSERT_EQ("clock_timer", itime, g_system_timer);
-
-	TC_SUCCESS_RESULT();
-}
-#endif
-
 /**
 * @fn                   :tc_clock_clock_abstime2ticks
 * @brief                :Convert an absolute timespec to ticks
@@ -217,9 +194,6 @@ static void tc_clock_clock_abstime2ticks(void)
 
 int clock_main(void)
 {
-#ifndef CONFIG_SCHED_TICKLESS
-	tc_clock_clock_timer();
-#endif
 	tc_clock_clock_gettimeofday();
 	tc_clock_clock_set_get_time();
 	tc_clock_clock_getres();

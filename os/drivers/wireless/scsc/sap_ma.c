@@ -213,7 +213,7 @@ static void slsi_rx_performance_test_timer(void *data)
 	struct slsi_dev *sdev = (struct slsi_dev *)data;
 	static int interval;
 	int actual_interval;
-	systime_t current_timestamp;
+	clock_t current_timestamp;
 
 	current_timestamp = clock_systimer();
 	actual_interval = TICK2MSEC(current_timestamp - sdev->rx_perf.last_timestamp);	/* Miliseconds */

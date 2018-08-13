@@ -146,6 +146,7 @@ uintptr_t STUB_nanosleep(int nbr, uintptr_t parm1, uintptr_t parm2);
  * TinyAra configuration.
  */
 
+uintptr_t STUB_clock(int nbr);
 uintptr_t STUB_clock_getres(int nbr, uintptr_t parm1, uintptr_t parm2);
 uintptr_t STUB_clock_gettime(int nbr, uintptr_t parm1, uintptr_t parm2);
 uintptr_t STUB_clock_settime(int nbr, uintptr_t parm1, uintptr_t parm2);
