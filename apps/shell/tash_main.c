@@ -363,7 +363,7 @@ static int tash_main(int argc, char *argv[])
 	}
 
 #if defined(CONFIG_TASH_PASSWORD)
-	int i;
+	int j;
 	int len = 0;
 	char chr[1];
 	unsigned char temp[2];
@@ -383,15 +383,15 @@ static int tash_main(int argc, char *argv[])
 
 		sprintf((char *)sha256, "%s", CONFIG_TASH_PASSWORD_SHA256);
 
-		for (i = 0; i < 64;) {
-			strncpy(chr, (char *)&sha256[i], 1);
-			temp[i % 2] = strtoul(chr, NULL, 16);
+		for (j = 0; j < 64;) {
+			strncpy(chr, (char *)&sha256[j], 1);
+			temp[j % 2] = strtoul(chr, NULL, 16);
 
-			if (i % 2) {
-				sha256_hex[i / 2] = (temp[0] << 4) | temp[1];
+			if (j % 2) {
+				sha256_hex[j / 2] = (temp[0] << 4) | temp[1];
 			}
 
-			i++;
+			j++;
 		}
 
 		mbedtls_sha256((unsigned char *)line_buff, len, result, 0);
