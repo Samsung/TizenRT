@@ -102,14 +102,6 @@ int preapp_start(int argc, char *argv[])
 	int pid;
 #endif
 
-#if defined(CONFIG_BUILD_PROTECTED) && defined(CONFIG_FS_PROCFS)
-	int ret;
-	ret = mount(NULL, "/proc", "procfs", 0, NULL);
-	if (ret < 0) {
-		printf("procfs mount is failed, error code is %d\n", get_errno());
-	}
-#endif
-
 #ifdef CONFIG_SYSTEM_INFORMATION
 	sysinfo();
 #endif
