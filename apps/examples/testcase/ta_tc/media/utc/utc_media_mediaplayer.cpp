@@ -356,13 +356,14 @@ static void utc_media_MediaPlayer_stop_n(void)
 
 static void utc_media_MediaPlayer_getVolume_p(void)
 {
+	uint8_t volume;
 	media::MediaPlayer mp;
 	std::unique_ptr<media::stream::FileInputDataSource> source = std::move(std::unique_ptr<media::stream::FileInputDataSource>(new media::stream::FileInputDataSource(dummyfilepath)));
 	mp.create();
 	mp.setDataSource(std::move(source));
 	mp.prepare();
 
-	TC_ASSERT_GEQ("utc_media_MediaPlayer_getVolume", mp.getVolume(), 0);
+	TC_ASSERT_EQ("utc_media_MediaPlayer_getVolume", mp.getVolume(&volume), media::PLAYER_OK);
 
 	mp.unprepare();
 	mp.destroy();
@@ -373,13 +374,14 @@ static void utc_media_MediaPlayer_getVolume_n(void)
 {
 	media::MediaPlayer mp;
 
-	TC_ASSERT_LT("utc_media_MediaPlayer_getVolume", mp.getVolume(), 0);
+	TC_ASSERT_EQ("utc_media_MediaPlayer_getVolume", mp.getVolume(nullptr), media::PLAYER_ERROR_INVALID_PARAM);
 
 	TC_SUCCESS_RESULT();
 }
 
 static void utc_media_MediaPlayer_setVolume_p(void)
 {
+	uint8_t volume;
 	media::MediaPlayer mp;
 	std::unique_ptr<media::stream::FileInputDataSource> source = std::move(std::unique_ptr<media::stream::FileInputDataSource>(new media::stream::FileInputDataSource(dummyfilepath)));
 	mp.create();
@@ -388,7 +390,8 @@ static void utc_media_MediaPlayer_setVolume_p(void)
 
 	auto ret =  mp.setVolume(0);
 	TC_ASSERT_EQ("utc_media_MediaPlayer_setVolume", ret, media::PLAYER_OK);
-	TC_ASSERT_EQ("utc_media_MediaPlayer_setVolume", mp.getVolume(), 0);
+	mp.getVolume(&volume);
+	TC_ASSERT_EQ("utc_media_MediaPlayer_setVolume", volume, 0);
 
 	mp.unprepare();
 	mp.destroy();
