@@ -72,21 +72,52 @@ bool FileInputDataSource::open()
 	}
 
 	if (!mFp) {
-		setAudioType(utils::getAudioTypeFromPath(mDataPath));
-		if (!registerDecoder(getAudioType(), getChannels(), getSampleRate())) {
-			meddbg("registerDecoder failed!\n");
+		unsigned int channel;
+		unsigned int sampleRate;
+		audio_format_type_t pcmFormat;
+		audio_type_t audioType;
+
+		mFp = fopen(mDataPath.c_str(), "rb");
+		if (!mFp) {
+			medvdbg("file open failed error : %d\n", errno);
 			return false;
 		}
 
-		mFp = fopen(mDataPath.c_str(), "rb");
-		if (mFp) {
-			medvdbg("file open success\n");
-			start();
-			return true;
-		} else {
-			meddbg("file open failed error : %d\n", errno);
+		audioType = utils::getAudioTypeFromPath(mDataPath);
+		setAudioType(audioType);
+		switch (audioType) {
+		case AUDIO_TYPE_MP3:
+		case AUDIO_TYPE_AAC:
+			if (!utils::header_parsing(mFp, audioType, &channel, &sampleRate, NULL)) {
+				medvdbg("header parsing failed\n");
+				return false;
+			}
+			setSampleRate(sampleRate);
+			setChannels(channel);
+			break;
+		case AUDIO_TYPE_WAVE:
+			if (!utils::header_parsing(mFp, audioType, &channel, &sampleRate, &pcmFormat)) {
+				medvdbg("header parsing failed\n");
+				return false;
+			}
+			setSampleRate(sampleRate);
+			setChannels(channel);
+			setPcmFormat(pcmFormat);
+			break;
+		case AUDIO_TYPE_FLAC:
+			/* To be supported */
+			break;
+		default:
+			/* Don't set any decoder for unsupported formats */
+			break;
+		}
+
+		if (!registerDecoder(audioType, channel, sampleRate)) {
+			meddbg("registerDecoder failed!\n");
 			return false;
 		}
+		start();
+		return true;
 	}
 
 	/** return true if mFp is not null, because it means it using now */
