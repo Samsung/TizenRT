@@ -116,11 +116,11 @@ public:
 				mr.create();
 				mr.setObserver(shared_from_this());
 				if (test == TEST_PCM) {
-					filePath = "/ramfs/record.pcm";
+					filePath = "/tmp/record.pcm";
 					mr.setDataSource(unique_ptr<FileOutputDataSource>(
 						new FileOutputDataSource(2, 16000, AUDIO_FORMAT_TYPE_S16_LE, filePath)));
 				} else if (test == TEST_OPUS) {
-					filePath = "/ramfs/record.opus";
+					filePath = "/tmp/record.opus";
 					mr.setDataSource(unique_ptr<FileOutputDataSource>(
 						new FileOutputDataSource(2, 16000, AUDIO_FORMAT_TYPE_S16_LE, filePath)));
 				}
