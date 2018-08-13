@@ -105,7 +105,7 @@ static int ping_try_counter = 0;
 #define PING_RESULT(ping_ok)
 
 static u16_t ping_seq_num;
-static systime_t ping_time;
+static clock_t ping_time;
 
 u16_t g_ping_counter = PING_MAX_TRY_COUNTER;
 

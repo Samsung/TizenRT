@@ -183,7 +183,7 @@ static int alc5658_modify(uint16_t addr, uint16_t set, uint16_t clear)
 
 static void delay(unsigned int mS)
 {
-	volatile systime_t start = clock_systimer();
+	volatile clock_t start = clock_systimer();
 
 	mS = mS / MSEC_PER_TICK + 1;
 

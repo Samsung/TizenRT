@@ -171,7 +171,7 @@ static const struct sample_rate_entry_s g_sample_entry[] = {
  ****************************************************************************/
 static void delay(unsigned int mS)
 {
-	volatile systime_t start = clock_systimer();
+	volatile clock_t start = clock_systimer();
 	mS = mS / MSEC_PER_TICK + 1;
 
 	while (1) {

@@ -94,7 +94,7 @@
  *
  ****************************************************************************/
 
-systime_t clock_systimer(void)
+clock_t clock_systimer(void)
 {
 #ifdef CONFIG_SCHED_TICKLESS
 #ifdef CONFIG_SYSTEM_TIME64
@@ -121,14 +121,14 @@ systime_t clock_systimer(void)
 	/* Convert to a 64- then a 32-bit value */
 
 	tmp = MSEC2TICK(1000 * (uint64_t)ts.tv_sec + (uint64_t)ts.tv_nsec / 1000000);
-	return (systime_t)(tmp & 0x00000000ffffffff);
+	return (clock_t)(tmp & 0x00000000ffffffff);
 
 #endif							/* CONFIG_SYSTEM_TIME64 */
 #else							/* CONFIG_SCHED_TICKLESS */
 #ifdef CONFIG_SYSTEM_TIME64
 
 	irqstate_t flags;
-	systime_t sample;
+	clock_t sample;
 
 	/* 64-bit accesses are not atomic on most architectures. */
 

@@ -137,7 +137,7 @@ extern "C" {
  *
  ****************************************************************************/
 
-int sem_tickwait(FAR sem_t *sem, systime_t start, uint32_t delay);
+int sem_tickwait(FAR sem_t *sem, clock_t start, uint32_t delay);
 
 /****************************************************************************
  * Name: sem_reset

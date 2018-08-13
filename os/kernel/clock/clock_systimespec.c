@@ -179,9 +179,9 @@ int clock_systimespec(FAR struct timespec *ts)
 #else
 		/* 32-bit millisecond calculations should be just fine. */
 
-		systime_t msecs;
-		systime_t secs;
-		systime_t nsecs;
+		clock_t msecs;
+		clock_t secs;
+		clock_t nsecs;
 
 		/* Get the time since power-on in seconds and milliseconds */
 

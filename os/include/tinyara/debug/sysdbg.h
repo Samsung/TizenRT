@@ -57,7 +57,7 @@ int sysdbg_init(void);
 
 /* Important data structures to save the task and irq history */
 struct sched_history_s {
-	systime_t time;
+	clock_t time;
 #if CONFIG_TASK_NAME_SIZE > 0
 	char task[TASK_NAME_SIZE + 1];
 #endif
@@ -69,7 +69,7 @@ struct sched_history_s {
 typedef struct sched_history_s sched_history_t;
 
 struct irq_history_s {
-	systime_t time;
+	clock_t time;
 	uint32_t irq;
 	void *fn;
 };
@@ -77,7 +77,7 @@ struct irq_history_s {
 typedef struct irq_history_s irq_history_t;
 
 struct sem_history_s {
-	systime_t time;
+	clock_t time;
 	char status[SEMAPHORE_STATUS_SIZE + 1];
 #if CONFIG_TASK_NAME_SIZE > 0
 	char task_name[TASK_NAME_SIZE + 1];

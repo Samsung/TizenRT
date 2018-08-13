@@ -169,7 +169,7 @@ static void tc_clock_clock_gettimeofday(void)
 
 static void tc_clock_clock_timer(void)
 {
-	systime_t itime = g_system_timer;
+	clock_t itime = g_system_timer;
 	clock_timer();
 	itime++;
 	TC_ASSERT_EQ("clock_timer", itime, g_system_timer);

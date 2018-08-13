@@ -85,5 +85,5 @@
 
 clock_t clock(void)
 {
-	return (clock_t)clock_systimer();
+	return clock_systimer();
 }
