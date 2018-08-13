@@ -56,40 +56,53 @@ class MediaRecorderTest : public MediaRecorderObserverInterface,
 						  public enable_shared_from_this<MediaRecorderTest>
 {
 public:
-	void onRecordStarted(MediaRecorderObserverInterface::Id id)
+	void onRecordStarted(MediaRecorder& mediaRecorder)
 	{
 		std::cout << "onRecordStarted" << std::endl;
 	}
-	void onRecordPaused(MediaRecorderObserverInterface::Id id)
+
+	void onRecordPaused(MediaRecorder& mediaRecorder)
 	{
 		std::cout << "onRecordPaused" << std::endl;
 	}
-	void onRecordFinished(MediaRecorderObserverInterface::Id id)
+
+	void onRecordFinished(MediaRecorder& mediaRecorder)
 	{
 		std::cout << "onRecordFinished" << std::endl;
-		mr.unprepare();
+		mediaRecorder.unprepare();
 	}
-	void onRecordError(MediaRecorderObserverInterface::Id id)
+
+	void onRecordStartError(MediaRecorder& mediaRecorder, int errCode)
 	{
-		std::cout << "onRecordError!! please select Stop!!" << std::endl;
+		std::cout << "onRecordStartError!! errCode : " << errCode << std::endl;
+	}
+
+	void onRecordPauseError(MediaRecorder& mediaRecorder, int errCode)
+	{
+		std::cout << "onRecordPauseError!! errCode : " << errCode << std::endl;
+	}
+
+	void onRecordStopError(MediaRecorder& mediaRecorder, int errCode)
+	{
+		std::cout << "onRecordStopError!! errCode : " << errCode << std::endl;
 	}
 
 	void onPlaybackStarted(MediaPlayer &mediaPlayer)
 	{
 		std::cout << "onPlaybackStarted" << std::endl;
-		isPlaying = true;
+		mIsPlaying = true;
 	}
 
 	void onPlaybackFinished(MediaPlayer &mediaPlayer)
 	{
 		std::cout << "onPlaybackFinished" << std::endl;
-		isPlaying = false;
+		mIsPlaying = false;
 
-		if (mp.unprepare() == PLAYER_ERROR) {
+		if (mMp.unprepare() == PLAYER_ERROR) {
 			std::cout << "Mediaplayer::unprepare failed" << std::endl;
 		}
 
-		if (mp.destroy() == PLAYER_ERROR) {
+		if (mMp.destroy() == PLAYER_ERROR) {
 			std::cout << "Mediaplayer::destroy failed" << std::endl;
 		}
 	}
@@ -107,35 +120,33 @@ public:
 	void start(const int test)
 	{
 		uint8_t volume;
-		appRunning = true;
+		mAppRunning = true;
 
-		while (appRunning) {
+		while (mAppRunning) {
 			printRecorderMenu();
 			switch (userInput(APP_ON, DELETE_FILE)) {
 			case APP_ON:
 				std::cout << "SELECTED APP ON" << std::endl;
-				mr.create();
-				mr.setObserver(shared_from_this());
+				mMr.create();
+				mMr.setObserver(shared_from_this());
 				if (test == TEST_PCM) {
 					filePath = "/tmp/record.pcm";
-					mr.setDataSource(unique_ptr<FileOutputDataSource>(
-						new FileOutputDataSource(2, 16000, AUDIO_FORMAT_TYPE_S16_LE, filePath)));
 				} else if (test == TEST_OPUS) {
 					filePath = "/tmp/record.opus";
-					mr.setDataSource(unique_ptr<FileOutputDataSource>(
-						new FileOutputDataSource(2, 16000, AUDIO_FORMAT_TYPE_S16_LE, filePath)));
 				}
+				mMr.setDataSource(unique_ptr<FileOutputDataSource>(
+					new FileOutputDataSource(2, 16000, AUDIO_FORMAT_TYPE_S16_LE, filePath)));
 				break;
 			case RECORDER_START:
 				std::cout << "SELECTED RECORDER_START" << std::endl;
-				if (isPaused) {
-					if (mr.start()) {
+				if (mIsPaused) {
+					if (mMr.start()) {
 						std::cout << "START IN PAUSE STATE SUCCESS" << std::endl;
-						isPaused = false;
+						mIsPaused = false;
 					}
 				} else {
-					if (mr.setDuration(2) == RECORDER_OK && mr.prepare() == RECORDER_OK) {
-						mr.start();
+					if (mMr.setDuration(3) == RECORDER_ERROR_NONE && mMr.prepare() == RECORDER_ERROR_NONE) {
+						mMr.start();
 						std::cout << "START IN NONE-PAUSE STATE SUCCESS" << std::endl;
 					} else {
 						std::cout << "PREPARE FAILED" << std::endl;
@@ -144,8 +155,8 @@ public:
 				break;
 			case RECORDER_PAUSE:
 				std::cout << "SELECTED RECORDER_PAUSE" << std::endl;
-				if (mr.pause()) {
-					isPaused = true;
+				if (mMr.pause()) {
+					mIsPaused = true;
 					std::cout << "PAUSE SUCCESS" << std::endl;
 				} else {
 					std::cout << "PAUSE FAILED" << std::endl;
@@ -153,8 +164,8 @@ public:
 				break;
 			case RECORDER_RESUME:
 				std::cout << "SELECTED RECORDER_RESUME" << std::endl;
-				if (mr.start()) {
-					isPaused = false;
+				if (mMr.start()) {
+					mIsPaused = false;
 					std::cout << "RESUME SUCCESS" << std::endl;
 				} else {
 					std::cout << "RESUME FAILED" << std::endl;
@@ -162,9 +173,9 @@ public:
 				break;
 			case RECORDER_STOP:
 				std::cout << "SELECTED RECORDER_STOP" << std::endl;
-				if (mr.stop() == RECORDER_OK) {
-					mr.unprepare();
-					isPaused = false;
+				if (mMr.stop() == RECORDER_ERROR_NONE) {
+					mMr.unprepare();
+					mIsPaused = false;
 					std::cout << "STOP SUCCESS" << std::endl;
 				} else {
 					std::cout << "STOP FAILED" << std::endl;
@@ -176,15 +187,15 @@ public:
 				break;
 			case VOLUME_UP:
 				cout << "VOLUME_UP is selected" << endl;
-				if (mr.getVolume(&volume) != RECORDER_OK) {
+				if (mMr.getVolume(&volume) != RECORDER_ERROR_NONE) {
 					cout << "MediaRecorder::getVolume failed" << endl;
 				} else {
 					cout << "Volume was " << (int)volume << endl;
 				}
-				if (mr.setVolume(volume + 1) != RECORDER_OK) {
+				if (mMr.setVolume(volume + 1) != RECORDER_ERROR_NONE) {
 					cout << "MediaRecorder::setVolume failed" << endl;
 				}
-				if (mr.getVolume(&volume) != RECORDER_OK) {
+				if (mMr.getVolume(&volume) != RECORDER_ERROR_NONE) {
 					cout << "MediaRecorder::getVolume failed" << endl;
 				} else {
 					cout << "Now, Volume is " << (int)volume << endl;
@@ -192,15 +203,15 @@ public:
 				break;
 			case VOLUME_DOWN:
 				cout << "VOLUME_DOWN is selected" << endl;
-				if (mr.getVolume(&volume) != RECORDER_OK) {
+				if (mMr.getVolume(&volume) != RECORDER_ERROR_NONE) {
 					cout << "MediaRecorder::getVolume failed" << endl;
 				} else {
 					cout << "Volume was " << (int)volume << endl;
 				}
-				if (mr.setVolume(volume - 1) != RECORDER_OK) {
+				if (mMr.setVolume(volume - 1) != RECORDER_ERROR_NONE) {
 					cout << "MediaRecorder::setVolume failed" << endl;
 				}
-				if (mr.getVolume(&volume) != RECORDER_OK) {
+				if (mMr.getVolume(&volume) != RECORDER_ERROR_NONE) {
 					cout << "MediaRecorder::getVolume failed" << endl;
 				} else {
 					cout << "Now, Volume is " << (int)volume << endl;
@@ -208,8 +219,8 @@ public:
 				break;
 			case APP_OFF:
 				std::cout << "SELECTED APP_OFF" << std::endl;
-				mr.destroy();
-				appRunning = false;
+				mMr.destroy();
+				mAppRunning = false;
 				break;
 			case DELETE_FILE:
 				if (unlink(filePath) == OK) {
@@ -224,7 +235,7 @@ public:
 
 	void play_data()
 	{
-		if (isPlaying) {
+		if (mIsPlaying) {
 			std::cout << "Already in playback" << std::endl;
 			return;
 		}
@@ -236,29 +247,29 @@ public:
 		source->setChannels(2);
 		source->setPcmFormat(AUDIO_FORMAT_TYPE_S16_LE);
 
-		if (mp.create() == PLAYER_ERROR) {
+		if (mMp.create() == PLAYER_ERROR) {
 			std::cout << "Mediaplayer::create failed" << std::endl;
 			return;
 		}
 
-		if (mp.setObserver(shared_from_this()) == PLAYER_ERROR) {
+		if (mMp.setObserver(shared_from_this()) == PLAYER_ERROR) {
 			std::cout << "Mediaplayer::setObserver failed" << std::endl;
 			return;
 		}
 
-		if (mp.setDataSource(std::move(source)) == PLAYER_ERROR) {
+		if (mMp.setDataSource(std::move(source)) == PLAYER_ERROR) {
 			std::cout << "Mediaplayer::setDataSource failed" << std::endl;
 			return;
 		}
 
-		if (mp.prepare() == PLAYER_ERROR) {
+		if (mMp.prepare() == PLAYER_ERROR) {
 			std::cout << "Mediaplayer::prepare failed" << std::endl;
 			return;
 		}
 
-		if (mp.start() == PLAYER_ERROR) {
+		if (mMp.start() == PLAYER_ERROR) {
 			std::cout << "Mediaplayer::start failed" << std::endl;
-			if (mp.unprepare() == PLAYER_ERROR) {
+			if (mMp.unprepare() == PLAYER_ERROR) {
 				std::cout << "Mediaplayer::unprepare failed" << std::endl;
 			}
 			return;
@@ -304,7 +315,7 @@ public:
 		return input;
 	}
 
-	MediaRecorderTest() : appRunning(false), isPaused(false), isPlaying(false)
+	MediaRecorderTest() : mAppRunning(false), mIsPaused(false), mIsPlaying(false)
 	{
 	}
 	~MediaRecorderTest()
@@ -312,11 +323,11 @@ public:
 	}
 
 private:
-	bool appRunning;
-	bool isPaused;
-	MediaRecorder mr;
-	bool isPlaying;
-	MediaPlayer mp;
+	bool mAppRunning;
+	bool mIsPaused;
+	MediaRecorder mMr;
+	bool mIsPlaying;
+	MediaPlayer mMp;
 };
 
 extern "C" {

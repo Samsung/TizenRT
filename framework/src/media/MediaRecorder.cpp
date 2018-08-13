@@ -21,66 +21,66 @@
 #include "RecorderWorker.h"
 
 namespace media {
-MediaRecorder::MediaRecorder() : mPMrImpl(new MediaRecorderImpl())
+MediaRecorder::MediaRecorder() : mPMrImpl(new MediaRecorderImpl(*this))
 {
 }
 
-recorder_result_t MediaRecorder::create()
+recorder_error_t MediaRecorder::create()
 {
 	return mPMrImpl->create();
 }
 
-recorder_result_t MediaRecorder::destroy() // sync call
+recorder_error_t MediaRecorder::destroy()
 {
 	return mPMrImpl->destroy();
 }
 
-recorder_result_t MediaRecorder::prepare()
+recorder_error_t MediaRecorder::prepare()
 {
 	return mPMrImpl->prepare();
 }
 
-recorder_result_t MediaRecorder::unprepare()
+recorder_error_t MediaRecorder::unprepare()
 {
 	return mPMrImpl->unprepare();
 }
 
-recorder_result_t MediaRecorder::start()
+recorder_error_t MediaRecorder::start()
 {
 	return mPMrImpl->start();
 }
 
-recorder_result_t MediaRecorder::stop()
+recorder_error_t MediaRecorder::stop()
 {
 	return mPMrImpl->stop();
 }
 
-recorder_result_t MediaRecorder::pause()
+recorder_error_t MediaRecorder::pause()
 {
 	return mPMrImpl->pause();
 }
 
-recorder_result_t MediaRecorder::getVolume(uint8_t *vol)
+recorder_error_t MediaRecorder::getVolume(uint8_t *vol)
 {
 	return mPMrImpl->getVolume(vol);
 }
 
-recorder_result_t MediaRecorder::setVolume(uint8_t vol)
+recorder_error_t MediaRecorder::setVolume(uint8_t vol)
 {
 	return mPMrImpl->setVolume(vol);
 }
 
-recorder_result_t MediaRecorder::setDataSource(std::unique_ptr<stream::OutputDataSource> dataSource)
+recorder_error_t MediaRecorder::setDataSource(std::unique_ptr<stream::OutputDataSource> dataSource)
 {
 	return mPMrImpl->setDataSource(std::move(dataSource));
 }
 
-recorder_result_t MediaRecorder::setObserver(std::shared_ptr<MediaRecorderObserverInterface> observer)
+recorder_error_t MediaRecorder::setObserver(std::shared_ptr<MediaRecorderObserverInterface> observer)
 {
 	return mPMrImpl->setObserver(observer);
 }
 
-recorder_result_t MediaRecorder::setDuration(int second)
+recorder_error_t MediaRecorder::setDuration(int second)
 {
 	return mPMrImpl->setDuration(second);
 }

@@ -33,7 +33,6 @@
 
 namespace media {
 
-
 /**
  * @brief Audio type.
  * @details
@@ -50,14 +49,14 @@ typedef enum audio_type_e {
 	AUDIO_TYPE_AAC = 2,
 	/** Audio type is PCM */
 	AUDIO_TYPE_PCM = 3,
-	/** Audio type is PCM */
+	/** Audio type is OPUS */
 	AUDIO_TYPE_OPUS = 4,
-	/** Audio type is PCM */
+	/** Audio type is FLAC */
 	AUDIO_TYPE_FLAC = 5
 } audio_type_t;
 
 /**
- * @class 
+ * @class
  * @brief Audio format type, each value follows pcm_format in tinyalsa.
  * @details
  * @since TizenRT v2.0 PRE
