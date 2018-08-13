@@ -161,9 +161,7 @@ int task_activate(FAR struct tcb_s *tcb);
  * @param[in] priority Priority of the new task
  * @param[in] stack_size size (in bytes) of the stack needed
  * @param[in] entry Entry point of a new task
- * @param[in] argv[] A pointer to an array of input parameters. Up to
- *                CONFIG_MAX_TASK_ARG parameters may be provided.  If fewer
- *                than CONFIG_MAX_TASK_ARG parameters are passed, the list
+ * @param[in] argv[] A pointer to an array of input parameters. The array
  *                should be terminated with a NULL argv[] value. If no
  *                parameters are required, argv may be NULL.
  * @return non-zero process ID of the new task or ERROR if memory is
