@@ -22,11 +22,13 @@
 #include <stdlib.h>
 #include <tinyara/config.h>
 #include <sys/socket.h>
+#include <arpa/inet.h>
 
 #include <dm/dm_connectivity.h>
 #include <dm/dm_error.h>
 
 #include <apps/shell/tash.h>
+
 /****************************************************************************
  * Definitions
  ****************************************************************************/

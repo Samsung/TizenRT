@@ -85,10 +85,10 @@
  ****************************************************************************/
 struct mm_heap_s *mm_get_heap_info(void)
 {
+#ifdef CONFIG_MM_KERNEL_HEAP
 	struct tcb_s *tcb;
 
 	tcb = sched_gettcb(getpid());
-#ifdef CONFIG_MM_KERNEL_HEAP
 	if (tcb->flags & TCB_FLAG_TTYPE_MASK == TCB_FLAG_TTYPE_KERNEL) {
 		return &g_kmmheap;
 	} else

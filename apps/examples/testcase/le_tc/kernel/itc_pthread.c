@@ -243,14 +243,12 @@ static void itc_pthread_setgetname_np_p_reset_name(void)
 {
 	int ret_chk;
 	int exec_index;
-	int len;
 	pthread_t name_th;
 	char thread_name[BUF_LEN];
 	char *thread_str = "NameThread";
 	char get_name[BUF_LEN];
 	g_exec_index = 0;
 
-	len = strlen(thread_name);
 	ret_chk = pthread_create(&name_th, NULL, thread_setgetname, NULL);
 	TC_ASSERT_EQ("pthread_create", ret_chk, OK);
 

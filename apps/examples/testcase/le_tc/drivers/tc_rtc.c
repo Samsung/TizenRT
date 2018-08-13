@@ -22,6 +22,7 @@
 #include <tinyara/rtc.h>
 #include <stdio.h>
 #include <fcntl.h>
+#include <sys/ioctl.h>
 #include "tc_internal.h"
 
 /**
@@ -101,7 +102,7 @@ static void tc_driver_rtc_ioctl(void)
 	rtctime_s.tm_min = 2;
 	rtctime_s.tm_sec = 3;
 
-	ret = ioctl(fd, RTC_SET_TIME, &rtctime_s);
+	ret = ioctl(fd, RTC_SET_TIME, (unsigned long)&rtctime_s);
 	TC_ASSERT_GEQ_CLEANUP("rtc_ioctl", ret, 0, close(fd));
 
 	ret = ioctl(fd, RTC_RD_TIME, &rtctime_r);

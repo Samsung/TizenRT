@@ -790,6 +790,7 @@ static void tc_net_socket_af_inet_sock_stream_p(void)
 	close(fd);
 }
 
+#ifdef CONFIG_NET_IPv6
 /**
 * @testcase		tc_net_socket_invalid_domain_sock_stream_n
 * @brief
@@ -805,6 +806,7 @@ static void tc_net_socket_invalid_domain_sock_stream_n(void)
 	TC_ASSERT_EQ_CLEANUP("socket", fd, -1, close(fd))
 	TC_SUCCESS_RESULT()
 }
+#endif
 
 #ifdef AF_UNIX
 #ifdef CONFIG_NET_IPv6

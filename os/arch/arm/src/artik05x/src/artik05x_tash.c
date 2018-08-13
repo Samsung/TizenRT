@@ -56,12 +56,21 @@
 #include <tinyara/config.h>
 
 #include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
 #include <syslog.h>
 #include <errno.h>
+#include <sys/mount.h>
+#include <sys/types.h>
+#include <sys/stat.h>
 
 #include <tinyara/board.h>
 #include <tinyara/fs/mtd.h>
 #include <tinyara/fs/ioctl.h>
+#include <tinyara/fs/mksmartfs.h>
+#include <tinyara/rtc.h>
+#include <tinyara/analog/adc.h>
+#include <tinyara/configdata.h>
 #include <chip.h>
 
 #include "s5j_adc.h"

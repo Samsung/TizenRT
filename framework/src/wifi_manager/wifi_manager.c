@@ -17,9 +17,11 @@
  ****************************************************************************/
 
 #include <tinyara/config.h>
+#include <stdlib.h>
 #include <pthread.h>
 #include <sys/select.h>
 #include <sys/socket.h>
+#include <arpa/inet.h>
 #include <wifi_manager/wifi_manager.h>
 #include <protocols/dhcpc.h>
 #include <protocols/dhcpd.h>

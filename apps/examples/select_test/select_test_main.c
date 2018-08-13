@@ -28,6 +28,7 @@
 #include <sys/stat.h>
 #include <fcntl.h>
 #include <debug.h>
+#include <arpa/inet.h>
 
 #ifndef CONFIG_NET_LWIP
 #include <arpa/inet.h>

@@ -22,8 +22,10 @@
 #include <tinyara/fs/ioctl.h>
 #include <stdio.h>
 #include <fcntl.h>
+#include <string.h>
 #include "tc_internal.h"
 #include <errno.h>
+#include <sys/ioctl.h>
 
 #define SECT_SIZE	512
 

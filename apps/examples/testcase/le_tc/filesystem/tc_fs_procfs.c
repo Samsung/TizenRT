@@ -30,10 +30,12 @@
 #include <fcntl.h>
 #include <limits.h>
 #include <errno.h>
+#include <sys/mount.h>
 #include <sys/types.h>
 #include <sys/stat.h>
 #include "tc_common.h"
 #include <stdbool.h>
+#include <tinyara/fs/mksmartfs.h>
 
 #define PROCFS_TEST_MOUNTPOINT "/proc_test"
 #define MTD_PROCFS_PATH PROCFS_TEST_MOUNTPOINT"/mtd"

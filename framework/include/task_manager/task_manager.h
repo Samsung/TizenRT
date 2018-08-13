@@ -32,6 +32,8 @@
 #include <signal.h>
 #include <pthread.h>
 
+#include <tinyara/task_manager_internal.h>
+
 /**
  * @brief Task State which managed by Task Manager
  */

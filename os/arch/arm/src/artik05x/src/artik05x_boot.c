@@ -60,9 +60,12 @@
 #include <assert.h>
 
 #include <tinyara/gpio.h>
+#include <tinyara/board.h>
 
 #include "up_arch.h"
 #include "s5j_gpio.h"
+#include "s5j_i2c.h"
+#include "s5j_watchdog.h"
 
 /****************************************************************************
  * Private Functions
