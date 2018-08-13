@@ -54,26 +54,6 @@ Options:
 EOF
 }
 
-make_romfs()
-{
-	for part in "$@"; do
-		case "${part}" in
-			rom)
-				# Make romfs.img
-				pushd ${OS_DIR_PATH} > /dev/null
-				sh ../tools/fs/mkromfsimg.sh
-				if [ ! -f "${OUTPUT_BINARY_PATH}/romfs.img" ]; then
-					echo "ROMFS image is not present"
-					exit 1
-				fi
-				popd > /dev/null
-				;;
-			*)
-				;;
-		esac
-	done
-}
-
 compute_fw_parts()
 {
 	bl1=0; bl2=0; sssfw=0; wlanfw=0; os=0; rom=0; ota=0;
@@ -170,12 +150,9 @@ download()
 	parts=$(compute_fw_parts $1)
 	echo "The \"${parts}\" partition(s) will be flashed"
 
-	# Generate ROMFS image
-	make_romfs ${parts}
-
 	# Make Openocd commands for parts
 	commands=$(compute_ocd_commands ${parts})
-    echo "ocd command to run: ${commands}"
+	echo "ocd command to run: ${commands}"
 
 	# Generate Partition Map
 	${SCRIPTS_PATH}/partition_gen.sh

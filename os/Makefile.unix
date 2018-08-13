@@ -237,7 +237,7 @@ endif
 BIN_EXE = tinyara$(EXEEXT)
 BIN = $(BIN_DIR)/$(BIN_EXE)
 
-memstat: $(BIN)
+memstat: $(BIN) romfs
 
 all: memstat
 .PHONY: context clean_context check_context config oldconfig menuconfig nconfig qconfig gconfig export subdir_clean clean subdir_distclean distclean apps_clean apps_distclean force_build applist appupdate
@@ -696,4 +696,14 @@ endif
 appupdate:
 ifneq ($(APPDIR),)
 	$(Q) $(MAKE) -C "$(TOPDIR)/$(APPDIR)" TOPDIR="$(TOPDIR)" appupdate
+endif
+
+# romfs
+#
+# The romfs target will make a romfs image by calling mkromfsimg.sh.
+# The content of romfs should be in $(TOPDIR)/../tools/fs/contents folder.
+
+romfs:
+ifeq ($(CONFIG_FS_ROMFS),y)
+	$(Q) ../tools/fs/mkromfsimg.sh
 endif
