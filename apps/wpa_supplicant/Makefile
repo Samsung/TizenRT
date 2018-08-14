@@ -103,7 +103,6 @@ CSRCS += src/crypto/sha1-pbkdf2.c src/crypto/rc4.c src/crypto/md5.c
 CSRCS += src/crypto/sha1-prf.c src/crypto/sha1-internal.c
 #CSRCS += src/crypto/random.c
 CSRCS += src/crypto/crypto_internal.c
-CSRCS += ../../lib/libc/termios/lib_tcsetattr.c ../../lib/libc/termios/lib_tcgetattr.c
 
 ifdef CONFIG_WPA_SUPPLICANT_P2P
 CSRCS+= src/crypto/tls_internal.c
