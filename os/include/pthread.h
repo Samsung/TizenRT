@@ -521,6 +521,15 @@ void pthread_cleanup_push(pthread_cleanup_t routine, FAR void *arg);
  */
 int pthread_join(pthread_t thread, FAR pthread_addr_t *value);
 
+/**
+ * @ingroup PTHREAD_KERNEL
+ * @brief performs a nonblocking join with the thread thread, returning the exit status of the thread in *pexit_value
+ * @details @b #include <pthread.h> \n
+ * SYSTEM CALL API
+ * @since TizenRT v2.0 PRE
+ */
+int pthread_tryjoin_np(pthread_t thread, FAR pthread_addr_t *pexit_value);
+
 /* A thread may tell the scheduler that its processor can be made available. */
 /**
  * @ingroup PTHREAD_KERNEL
