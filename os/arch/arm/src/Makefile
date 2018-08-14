@@ -189,7 +189,11 @@ $(UBIN): $(UOBJS)
 	$(call ARCHIVE, $@, $(UOBJS))
 
 board/libboard$(LIBEXT):
+ifeq ($(BOARDMAKE),y)
 	$(Q) $(MAKE) -C board TOPDIR="$(TOPDIR)" libboard$(LIBEXT) EXTRADEFINES=$(EXTRADEFINES)
+else
+	$(Q) touch board/libboard$(LIBEXT)
+endif
 
 $(BIN_DIR)/tinyara$(EXEEXT): $(HEAD_OBJ) board/libboard$(LIBEXT)
 	$(Q) echo "LD: tinyara"
@@ -206,18 +210,12 @@ endif
 # Note that there may not be a head object if layout is handled
 # by the linker configuration.
 
-export_startup: board/libboard$(LIBEXT) $(STARTUP_OBJS)
-ifneq ($(STARTUP_OBJS),)
-	$(Q) if [ -d "$(EXPORT_DIR)/startup" ]; then \
-		cp -f $(STARTUP_OBJS) "$(EXPORT_DIR)/startup/."; \
-	 else \
-		echo "$(EXPORT_DIR)/startup does not exist"; \
-	exit 1; \
-	fi
-endif
+export:
 
 context:
+ifeq ($(BOARDMAKE),y)
 	$(Q) $(MAKE) -C board $(@) TOPDIR="$(TOPDIR)"
+endif
 
 # Dependencies
 

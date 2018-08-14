@@ -166,18 +166,77 @@ rm -f "${EXPORTDIR}.tar.gz"
 # Create the export directory and some of its subdirectories
 
 mkdir "${EXPORTDIR}" || { echo "MK: 'mkdir ${EXPORTDIR}' failed"; exit 1; }
-mkdir "${EXPORTDIR}/startup" || { echo "MK: 'mkdir ${EXPORTDIR}/startup' failed"; exit 1; }
-mkdir "${EXPORTDIR}/libs" || { echo "MK: 'mkdir ${EXPORTDIR}/libs' failed"; exit 1; }
 mkdir "${EXPORTDIR}/build" || { echo "MK: 'mkdir ${EXPORTDIR}/build' failed"; exit 1; }
-
-if [ "X${USRONLY}" != "Xy" ]; then
-  mkdir "${EXPORTDIR}/arch" || { echo "MK: 'mkdir ${EXPORTDIR}/arch' failed"; exit 1; }
-fi
+mkdir -p "${EXPORTDIR}/build/output/bin" || { echo "MK: 'mkdir ${EXPORTDIR}/build/output/bin' failed"; exit 1; }
+mkdir "${EXPORTDIR}/build/output/libraries" || { echo "MK: 'mkdir ${EXPORTDIR}/build/output/libraries' failed"; exit 1; }
+mkdir "${EXPORTDIR}/os" || { echo "MK: 'mkdir ${EXPORTDIR}/os' failed"; exit 1; }
+mkdir "${EXPORTDIR}/os/arch" || { echo "MK: 'mkdir ${EXPORTDIR}/os/arch' failed"; exit 1; }
+mkdir "${EXPORTDIR}/os/tools" || { echo "MK: 'mkdir ${EXPORTDIR}/os/tools' failed"; exit 1; }
 
 # Copy the .config file
 
-cp -a "${TOPDIR}/.config" "${EXPORTDIR}/.config" ||
-  { echo "MK: Failed to copy ${TOPDIR}/.config to ${EXPORTDIR}/.config"; exit 1; }
+cp -a "${TOPDIR}/.config" "${EXPORTDIR}/os/.config" ||
+  { echo "MK: Failed to copy ${TOPDIR}/.config to ${EXPORTDIR}/os/.config"; exit 1; }
+
+begin=$(grep "Chip Selection" ${TOPDIR}/.config -n | cut -f1 -d:)
+end=$(grep "External Functions" ${TOPDIR}/.config -n | cut -f1 -d:)
+begin=$((begin-1))
+end=$((end-3))
+sed -n "${begin},${end}p" ${TOPDIR}/.config > ${EXPORTDIR}/os/.config.kernel
+
+echo "CONFIG_EXPORT=y" >> "${EXPORTDIR}/os/.config"
+echo "CONFIG_EXPORT=y" >> "${EXPORTDIR}/os/.config.kernel"
+
+grep '=y' ${EXPORTDIR}/os/.config.kernel > ${EXPORTDIR}/os/.config.kernel.tmp
+sed 's/CONFIG_//g' ${EXPORTDIR}/os/.config.kernel.tmp > ${EXPORTDIR}/os/.config.kernel.tmp2
+sed 's/=y//g' ${EXPORTDIR}/os/.config.kernel.tmp2 > ${EXPORTDIR}/os/.config.kernel.tmp
+
+exec < ${EXPORTDIR}/os/.config.kernel.tmp
+
+touch ${EXPORTDIR}/os/Kconfig.preconfig
+
+echo "config EXPORT" >> "${EXPORTDIR}/os/Kconfig.preconfig"
+echo "	bool" >> "${EXPORTDIR}/os/Kconfig.preconfig"
+echo "	default y" >> "${EXPORTDIR}/os/Kconfig.preconfig"
+echo "	select ARCH_HAVE_STACKCHECK" >> "${EXPORTDIR}/os/Kconfig.preconfig"
+echo "	select ARCH_HAVE_CUSTOMOPT" >>  "${EXPORTDIR}/os/Kconfig.preconfig"
+echo "" >> "${EXPORTDIR}/os/Kconfig.preconfig"
+
+while read line
+do
+	echo "config $line" >> ${EXPORTDIR}/os/Kconfig.preconfig
+	echo "	bool" >> ${EXPORTDIR}/os/Kconfig.preconfig
+	echo "	default y" >> ${EXPORTDIR}/os/Kconfig.preconfig
+	echo "" >> ${EXPORTDIR}/os/Kconfig.preconfig
+done
+
+rm -f ${EXPORTDIR}/os/.config.kernel.tmp
+rm -f ${EXPORTDIR}/os/.config.kernel.tmp2
+
+EXPORTTOOL="cfgdefine.c cfgdefine.h Config.mk csvparser.c define.sh incdir.sh link.sh Makefile.host memstats_gnueabil.py mkconfig.c mkdeps.c mkversion.c s5jchksum.py version.sh unlink.sh"
+
+for file in $EXPORTTOOL; do
+	cp -f "${TOPDIR}"/tools/${file} "${EXPORTDIR}"/os/tools/. 2>/dev/null
+done
+
+EXPORTTOOL="Makefile Makefile.unix Directories.mk FlatLibs.mk LibTargets.mk"
+
+for file in $EXPORTTOOL; do
+	cp -f "${TOPDIR}"/${file} "${EXPORTDIR}"/os/. 2>/dev/null
+done
+
+begin=$(grep "Chip Selection" ${TOPDIR}/Kconfig -n | cut -f1 -d:)
+end=$(grep "External Functions" ${TOPDIR}/Kconfig -n | cut -f1 -d:)
+end2=$(wc -l ${TOPDIR}/Kconfig | cut -f1 -d' ')
+begin=$((begin-1))
+end=$((end-1))
+sed -n "1,${begin}p" ${TOPDIR}/Kconfig > ${EXPORTDIR}/os/Kconfig
+sed -n "${end},${end2}p" ${TOPDIR}/Kconfig >> ${EXPORTDIR}/os/Kconfig
+echo "" >> ${EXPORTDIR}/os/Kconfig
+echo "source \"Kconfig.preconfig\"" >> ${EXPORTDIR}/os/Kconfig
+
+cp -a "${TOPDIR}/Make.defs" "${EXPORTDIR}/os/Make.defs" ||
+  { echo "MK: Failed to copy ${TOPDIR}/Make.defs to ${EXPORTDIR}/os/Make.defs"; exit 1; }
 
 # Copy the Make.defs files, but disable windows path conversions
 
@@ -199,6 +258,11 @@ fi
 
 # Is there a linker script in this configuration?
 
+mkdir -p "${EXPORTDIR}/build/configs/${BOARD_NAME}/scripts" || { echo "MK: 'mkdir ${EXPORTDIR}/build/configs/${BOARD_NAME}/scripts' failed"; exit 1; }
+mkdir -p "${EXPORTDIR}/build/configs/${ARCH_BOARD}/tools" || { echo "MK: 'mkdir ${EXPORTDIR}/build/configs/${ARCH_BOARD}/tools' failed"; exit 1; }
+mkdir -p "${EXPORTDIR}/build/configs/${ARCH_BOARD}/scripts" || { echo "MK: 'mkdir ${EXPORTDIR}/build/configs/${ARCH_BOARD}/scripts' failed"; exit 1; }
+mkdir -p "${EXPORTDIR}/build/configs/${BOARD_NAME}/bin" || { echo "MK: 'mkdir ${EXPORTDIR}/build/configs/${BOARD_NAME}' failed"; exit 1; }
+
 if [ "X${USRONLY}" != "Xy" ]; then
 	if [ ! -z "${LDPATH}" ]; then
 
@@ -211,56 +275,58 @@ if [ "X${USRONLY}" != "Xy" ]; then
 
 		# Copy the linker script
 
-		cp -p "${LDPATH}" "${EXPORTDIR}/build/." || \
+		cp -p "${LDPATH}" "${EXPORTDIR}/build/configs/${ARCH_BOARD}/scripts/." || \
 			{ echo "MK: cp ${LDPATH} failed"; exit 1; }
 	fi
 fi
 
-# Save the compilation options
+cp -prf "${TOPDIR}/../build/configs/${ARCH_BOARD}/tools/codesigner" "${EXPORTDIR}/build/configs/${ARCH_BOARD}/tools/." || \
+	{ echo "MK: 'cp ${TOPDIR}/../build/configs/${ARCH_BOARD}/tools/codesigner' failed"; exit 1; }
 
-if [ "X${USRONLY}" == "Xy" ]; then
-	echo "ARCHCFLAGS       = ${ARCHCFLAGS}" >"${EXPORTDIR}/build/Make.defs"
-	echo "ARCHCXXFLAGS     = ${ARCHCXXFLAGS}" >>"${EXPORTDIR}/build/Make.defs"
-	echo "ARCHPICFLAGS     = ${ARCHPICFLAGS}" >>"${EXPORTDIR}/build/Make.defs"
-	echo "ARCHWARNINGS     = ${ARCHWARNINGS}" >>"${EXPORTDIR}/build/Make.defs"
-	echo "ARCHWARNINGSXX   = ${ARCHWARNINGSXX}" >>"${EXPORTDIR}/build/Make.defs"
-	echo "ARCHOPTIMIZATION = ${ARCHOPTIMIZATION}" >>"${EXPORTDIR}/build/Make.defs"
-	echo "WINTOOL          = ${WINTOOL}" >>"${EXPORTDIR}/build/Make.defs"
-	echo "CROSSDEV         = ${CROSSDEV}" >>"${EXPORTDIR}/build/Make.defs"
-	echo "CC               = ${CC}" >>"${EXPORTDIR}/build/Make.defs"
-	echo "CXX              = ${CXX}" >>"${EXPORTDIR}/build/Make.defs"
-	echo "CPP              = ${CPP}" >>"${EXPORTDIR}/build/Make.defs"
-	echo "LD               = ${LD}" >>"${EXPORTDIR}/build/Make.defs"
-	echo "AR               = ${AR}" >>"${EXPORTDIR}/build/Make.defs"
-	echo "NM               = ${NM}" >>"${EXPORTDIR}/build/Make.defs"
-	echo "OBJCOPY          = ${OBJCOPY}" >>"${EXPORTDIR}/build/Make.defs"
-	echo "OBJDUMP          = ${OBJDUMP}" >>"${EXPORTDIR}/build/Make.defs"
-	echo "NXFLATLDFLAGS1   = ${NXFLATLDFLAGS1}" >>"${EXPORTDIR}/build/Make.defs"
-	echo "NXFLATLDFLAGS2   = ${NXFLATLDFLAGS2}" >>"${EXPORTDIR}/build/Make.defs"
-	echo "OBJEXT           = ${OBJEXT}" >>"${EXPORTDIR}/build/Make.defs"
-	echo "LIBEXT           = ${LIBEXT}" >>"${EXPORTDIR}/build/Make.defs"
-	echo "EXEEXT           = ${EXEEXT}" >>"${EXPORTDIR}/build/Make.defs"
-	echo "HOSTCC           = ${HOSTCC}" >>"${EXPORTDIR}/build/Make.defs"
-	echo "HOSTCFLAGS       = ${HOSTCFLAGS}" >>"${EXPORTDIR}/build/Make.defs"
-	echo "HOSTLDFLAGS      = ${HOSTLDFLAGS}" >>"${EXPORTDIR}/build/Make.defs"
-	echo "HOSTEXEEXT       = ${HOSTEXEEXT}" >>"${EXPORTDIR}/build/Make.defs"
-	echo "DIRLINK          = ${DIRLINK}" >>"${EXPORTDIR}/build/Make.defs"
-	echo "DIRUNLINK        = ${DIRUNLINK}" >>"${EXPORTDIR}/build/Make.defs"
-	echo "MKDEP            = ${MKDEP}" >>"${EXPORTDIR}/build/Make.defs"
-else
-	echo "ARCHCFLAGS   = ${ARCHCFLAGS}" >"${EXPORTDIR}/build/Make.defs"
-	echo "ARCHCXXFLAGS = ${ARCHCXXFLAGS}" >>"${EXPORTDIR}/build/Make.defs"
-fi
+cp -f "${TOPDIR}"/../build/configs/${ARCH_BOARD}/*.py "${EXPORTDIR}"/build/configs/${ARCH_BOARD}/. 2>/dev/null
+cp -f "${TOPDIR}"/../build/configs/${ARCH_BOARD}/*.sh "${EXPORTDIR}"/build/configs/${ARCH_BOARD}/. 2>/dev/null
 
+SCRIPTS="artik05x.cfg artik05x-usb-ftdi.cfg partition_map.cfg s5jt200.cfg"
+
+for file in $SCRIPTS; do
+	cp -f "${TOPDIR}"/../build/configs/${ARCH_BOARD}/scripts/${file} "${EXPORTDIR}"/build/configs/${ARCH_BOARD}/scripts/. 2>/dev/null
+done
+
+BINFILE="bl1.bin bl2.bin sssfw.bin wlanfw.bin"
+
+for file in $BINFILE; do
+	cp -f "${TOPDIR}"/../build/configs/${BOARD_NAME}/bin/${file} "${EXPORTDIR}"/build/configs/${BOARD_NAME}/bin/. 2>/dev/null
+done
+
+mkdir -p "${EXPORTDIR}/build/tools" || { echo "MK: 'mkdir ${EXPORTDIR}/build/tools' failed"; exit 1; }
+
+cp -prf "${TOPDIR}/../build/tools/openocd" "${EXPORTDIR}/build/tools/." || \
+	{ echo "MK: 'cp ${TOPDIR}/../build/tools/openocd' failed"; exit 1; }
 # Copy the TinyAra include directory (retaining attributes and following symbolic links)
 
-cp -LR -p "${TOPDIR}/include" "${EXPORTDIR}/." || \
+cp -R -p "${TOPDIR}/include" "${EXPORTDIR}/os/." || \
 	{ echo "MK: 'cp ${TOPDIR}/include' failed"; exit 1; }
 
-# Copy the startup object file(s)
+## Copy the startup object file(s)
+#
+mkdir -p "${EXPORTDIR}/${ARCHSUBDIR}" || { echo "MK: 'mkdir ${EXPORTDIR}/${ARCHSUBDIR}' failed"; exit 1; }
+mkdir -p "${EXPORTDIR}/${ARCHSUBDIR}/board" || { echo "MK: 'mkdir ${EXPORTDIR}/${ARCHSUBDIR}/board' failed"; exit 1; }
+mkdir -p "${EXPORTDIR}/${ARCHSUBDIR}/${ARCH_FAMILY}" || { echo "MK: 'mkdir ${EXPORTDIR}/${ARCHSUBDIR}/${ARCH_FAMILY}' failed"; exit 1; }
 
-${MAKE} -C ${ARCHDIR} export_startup TOPDIR=${TOPDIR} EXPORT_DIR="${EXPORTDIR}"
+cp -a "${TOPDIR}/../${ARCHSUBDIR}/${ARCH_FAMILY}/Toolchain.defs" "${EXPORTDIR}/${ARCHSUBDIR}/${ARCH_FAMILY}/Toolchain.defs" ||
+  { echo "MK: Failed to copy ${TOPDIR}/${ARCHSUBDIR}/${ARCH_FAMILY}/Toolchain.defs to ${EXPORTDIR}/os/Toolchain.defs"; exit 1; }
 
+cp -prf "${TOPDIR}/../${ARCHSUBDIR}/Makefile" "${EXPORTDIR}/${ARCHSUBDIR}/Makefile"
+# ${MAKE} -C ${ARCHDIR} export TOPDIR=${TOPDIR} EXPORT_DIR="${EXPORTDIR}/${ARCHSUBDIR}"
+# ${MAKE} -C ${ARCHDIR}/board export TOPDIR=${TOPDIR} EXPORT_DIR="${EXPORTDIR}/${ARCHSUBDIR}/board"
+
+cp -prf "${TOPDIR}/../apps" "${EXPORTDIR}/." || \
+	{ echo "MK: 'cp ${TOPDIR}/../apps' failed"; exit 1; }
+rm -rf ${EXPORTDIR}/apps/platform/board
+
+cp -prf "${TOPDIR}/../external" "${EXPORTDIR}/." || \
+	{ echo "MK: 'cp ${TOPDIR}/../external' failed"; exit 1; }
+#
 # Copy architecture-specific header files into the arch export sub-directory.
 # This is tricky because each architecture does things in a little different
 # way.
@@ -269,7 +335,7 @@ ${MAKE} -C ${ARCHDIR} export_startup TOPDIR=${TOPDIR} EXPORT_DIR="${EXPORTDIR}"
 # architectures keep all of the header files there, some a few, and others
 # none
 
-cp -f "${ARCHDIR}"/*.h "${EXPORTDIR}"/arch/. 2>/dev/null
+cp -prf "${ARCHDIR}"/*.h "${EXPORTDIR}"/os/arch/. 2>/dev/null
 
 # Then look a list of possible places where other architecture-specific
 # header files might be found.  If those places exist (as directories or
@@ -277,7 +343,7 @@ cp -f "${ARCHDIR}"/*.h "${EXPORTDIR}"/arch/. 2>/dev/null
 # those directories into the EXPORTDIR
 
 if [ "X${USRONLY}" != "Xy" ]; then
-	ARCH_HDRDIRS="armv7-r armv7-m board common chip"
+	ARCH_HDRDIRS="${ARCH_FAMILY} board common chip"
 	for hdir in $ARCH_HDRDIRS; do
 
 		# Does the directory (or symbolic link) exist?
@@ -286,12 +352,12 @@ if [ "X${USRONLY}" != "Xy" ]; then
 
 			# Yes.. create a export sub-directory of the same name
 
-			mkdir "${EXPORTDIR}/arch/${hdir}" || \
-				{ echo "MK: 'mkdir ${EXPORTDIR}/arch/${hdir}' failed"; exit 1; }
+			mkdir "${EXPORTDIR}/os/arch/${hdir}" || \
+				{ echo "MK: 'mkdir ${EXPORTDIR}/os/arch/${hdir}' failed"; exit 1; }
 
 			# Then copy the header files (only) into the new directory
 
-			cp -f "${ARCHDIR}"/${hdir}/*.h "${EXPORTDIR}"/arch/${hdir}/. 2>/dev/null
+			cp -f "${ARCHDIR}"/${hdir}/*.h "${EXPORTDIR}"/os/arch/${hdir}/. 2>/dev/null
 
 			# One architecture has low directory called "chip" that holds the
 			# header files
@@ -300,12 +366,14 @@ if [ "X${USRONLY}" != "Xy" ]; then
 
 				# Yes.. create a export sub-directory of the same name
 
-				mkdir "${EXPORTDIR}/arch/${hdir}/chip" || \
-					{ echo "MK: 'mkdir ${EXPORTDIR}/arch/${hdir}/chip' failed"; exit 1; }
+				mkdir "${EXPORTDIR}/os/arch/${hdir}/chip" || \
+					{ echo "MK: 'mkdir ${EXPORTDIR}/os/arch/${hdir}/chip' failed"; exit 1; }
 
 				# Then copy the header files (only) into the new directory
 
-				cp -f "${ARCHDIR}"/${hdir}/chip/*.h "${EXPORTDIR}"/arch/${hdir}/chip/. 2>/dev/null
+				cp -f "${ARCHDIR}"/${hdir}/chip/*.h "${EXPORTDIR}"/os/arch/${hdir}/chip/. 2>/dev/null
+
+				cp -f "${ARCHDIR}"/${hdir}/chip/sss "${EXPORTDIR}"/os/arch/${hdir}/chip/sss 2>/dev/null
 			fi
 		fi
 	done
@@ -313,20 +381,26 @@ if [ "X${USRONLY}" != "Xy" ]; then
 	# Copy OS internal header files as well.  They are used by some architecture-
 	# specific header files.
 
-	mkdir "${EXPORTDIR}/arch/os" || \
-		{ echo "MK: 'mkdir ${EXPORTDIR}/arch/os' failed"; exit 1; }
+	mkdir "${EXPORTDIR}/os/arch/kernel" || \
+		{ echo "MK: 'mkdir ${EXPORTDIR}/os/arch/os' failed"; exit 1; }
 	OSDIRS="clock environ errno group init irq mqueue paging pthread sched semaphore signal task timer wdog wqueue"
 
 	for dir in ${OSDIRS}; do
-		mkdir "${EXPORTDIR}/arch/os/${dir}" || \
-			{ echo "MK: 'mkdir ${EXPORTDIR}/arch/os/${dir}' failed"; exit 1; }
-		cp -f "${TOPDIR}"/kernel/${dir}/*.h "${EXPORTDIR}"/arch/os/${dir}/. 2>/dev/null
+		mkdir "${EXPORTDIR}/os/arch/kernel/${dir}" || \
+			{ echo "MK: 'mkdir ${EXPORTDIR}/os/arch/kernel/${dir}' failed"; exit 1; }
+		cp -f "${TOPDIR}"/kernel/${dir}/*.h "${EXPORTDIR}"/os/arch/kernel/${dir}/. 2>/dev/null
 	done
 
 	# Add the board library to the list of libraries
 
 	if [ -f "${ARCHDIR}/board/libboard${LIBEXT}" ]; then
-		LIBLIST="${LIBLIST} ${ARCHSUBDIR}/board/libboard${LIBEXT}"
+		LIBLIST="${LIBLIST} ../${ARCHSUBDIR}/board/libboard${LIBEXT}"
+	fi
+
+	# Add the SSS library to the list of libraries
+
+	if [ -f "${ARCHDIR}/chip/sss/libispdriver${LIBEXT}" ]; then
+		LIBLIST="${LIBLIST} ../${ARCHSUBDIR}/chip/sss/libispdriver${LIBEXT}"
 	fi
 fi
 
@@ -347,7 +421,7 @@ for lib in ${LIBLIST}; do
 	# Copy the application library unmodified
 
 	if [ "X${libname}" = "Xlibapps" ]; then
-		cp -p "${TOPDIR}/${lib}" "${EXPORTDIR}/libs/." || \
+		cp -p "${TOPDIR}/${lib}" "${EXPORTDIR}/build/output/libraries/." || \
 			{ echo "MK: cp ${TOPDIR}/${lib} failed"; exit 1; }
 	else
 
@@ -370,12 +444,7 @@ for lib in ${LIBLIST}; do
 
 		for file in `ls`; do
 			mv "${file}" "${shortname}-${file}"
-			if [ "X${WINTOOL}" = "Xy" ]; then
-				WLIB=`cygpath -w "${EXPORTDIR}/libs/libtizenrt${LIBEXT}"`
-				${AR} rcs "${WLIB}" "${shortname}-${file}"
-			else
-				${AR} rcs "${EXPORTDIR}/libs/libtizenrt${LIBEXT}" "${shortname}-${file}"
-			fi
+				${AR} rcs "${EXPORTDIR}/build/output/libtizenrt${LIBEXT}" "${shortname}-${file}"
 		done
 
 		cd "${TOPDIR}" || \
@@ -384,7 +453,14 @@ for lib in ${LIBLIST}; do
 	fi
 done
 
+${AR} rcs "${EXPORTDIR}/build/output/libtizenrt${LIBEXT}" "../${ARCHSUBDIR}/arm_vectortab.o"
+
+rm -rf "${EXPORTDIR}/os/include/apps"
+
 # Now tar up the whole export directory
+
+cd "${EXPORTDIR}/os"
+make distclean 2> /dev/null
 
 cd "${TOPDIR}" || \
 	{ echo "MK: 'cd ${TOPDIR}' failed"; exit 1; }
@@ -393,7 +469,7 @@ if [ "X${TGZ}" = "Xy" ]; then
 	tar cvf "${EXPORTSUBDIR}.tar" "${EXPORTSUBDIR}" 1>/dev/null 2>&1
 	gzip -f "${EXPORTSUBDIR}.tar"
 else
-	zip -r "${EXPORTSUBDIR}.zip" "${EXPORTSUBDIR}" 1>/dev/null 2>&1
+	zip --symlinks -r "${EXPORTSUBDIR}.zip" "${EXPORTSUBDIR}" 1>/dev/null 2>&1
 fi
 
 # Clean up after ourselves

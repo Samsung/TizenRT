@@ -355,10 +355,12 @@ include/tinyara/config.h: $(TOPDIR)/.config tools/mkconfig$(HOSTEXEEXT)
 	$(Q) tools/mkconfig $(TOPDIR) > include/tinyara/config.h
 
 submodules_check:
+ifneq ($(CONFIG_EXPORT),y)
 ifeq ($(NO_SUBMODULES_UPDATE),)
 ifeq ($(CONFIG_ARTIK_SDK),y)
 	$(Q) if [ ! -f $(ARTIKSDKDIR)/.git ]; then git submodule init; fi
 	$(Q) git submodule update $(ARTIKSDKDIR)
+endif
 endif
 endif
 
@@ -417,7 +419,11 @@ ifneq ($(CONFIG_ARCH_CHIP),)
 	$(Q) $(DIRLINK) $(TOPDIR)/$(ARCH_INC)/$(CONFIG_ARCH_CHIP) include/arch/chip
 endif
 
+ifeq ($(CONFIG_EXPORT),y)
+dirlinks: include/apps
+else
 dirlinks: include/arch include/arch/board include/arch/chip $(ARCH_SRC)/board $(ARCH_SRC)/chip include/apps
+endif
 
 # context
 #
@@ -426,7 +432,7 @@ dirlinks: include/arch include/arch/board include/arch/chip $(ARCH_SRC)/board $(
 # the config.h and version.h header files in the include/tinyara directory and
 # the establishment of symbolic links to configured directories.
 
-context: check_context submodules_check include/tinyara/config.h include/tinyara/version.h include/math.h include/float.h include/stdarg.h dirlinks
+context: check_context submodules_check include/tinyara/config.h include/tinyara/version.h include/math.h include/float.h include/stdarg.h dirlinks libtizenrt
 	$(Q)if [ -e ${BIN} ]; then \
 		echo "Previous Build Outputs - $(BIN_DIR) - are deleted"; \
 		rm -rf ${BIN_DIR}/*; \
@@ -446,12 +452,14 @@ clean_context:
 	$(call DELFILE, include/tinyara/version.h)
 	$(call DELFILE, include/math.h)
 	$(call DELFILE, include/stdarg.h)
+ifneq ($(CONFIG_EXPORT),y)
 	$(Q) $(DIRUNLINK) include/arch/board
 	$(Q) $(DIRUNLINK) include/arch/chip
 	$(Q) $(DIRUNLINK) include/arch
 	$(Q) $(DIRUNLINK) $(ARCH_SRC)/board
 	$(Q) $(DIRUNLINK) $(ARCH_SRC)/chip
 	$(Q) $(DIRUNLINK) include/apps
+endif
 
 # check_context
 #
@@ -563,7 +571,13 @@ pass2dep: context tools/mkdeps$(HOSTEXEEXT)
 # These targets depend on the kconfig-frontends packages.  To use these, you
 # must first download and install the kconfig-frontends package from this
 # location: http://ymorin.is-a-geek.org/projects/kconfig-frontends.
-
+ifeq ($(CONFIG_EXPORT),y)
+menuconfig: apps_preconfig
+	$(Q) APPSDIR=${CONFIG_APPS_DIR} EXTERNALDIR=${CONFIG_EXTERNAL_DIR} LIBDIR=${LIB_DIR} kconfig-mconf Kconfig
+	$(Q) cp .config .config.user
+	$(Q) kconfig-merge -m .config.user .config.kernel
+	$(Q) rm -f .config.user
+else
 config: apps_preconfig
 	$(Q) APPSDIR=${CONFIG_APPS_DIR} EXTERNALDIR=${CONFIG_EXTERNAL_DIR} LIBDIR=${LIB_DIR} kconfig-conf Kconfig
 
@@ -578,6 +592,7 @@ qconfig: apps_preconfig
 
 gconfig: apps_preconfig
 	$(Q) APPSDIR=${CONFIG_APPS_DIR} EXTERNALDIR=${CONFIG_EXTERNAL_DIR} LIBDIR=${LIB_DIR} kconfig-gconf Kconfig
+endif
 
 # export
 #
@@ -587,7 +602,7 @@ gconfig: apps_preconfig
 # in tools/mkexport.sh only supports GCC and, for example, explicitly assumes
 # that the archiver is 'ar'
 
-export: pass2deps
+export: $(BIN)
 	$(Q) MAKE=${MAKE} $(MKEXPORT) $(MKEXPORT_ARGS) -l "$(EXPORTLIBS)"
 
 # General housekeeping targets:  dependencies, cleaning, etc.
@@ -629,18 +644,20 @@ subdir_distclean:
 
 memstat:
 ifneq ($(MEMSTATS),)
-	$(Q) python ./tools/memstats_$(MEMSTATS).py -l -f ../build/output/bin/tinyara.map
-	$(Q) python ./tools/memstats_$(MEMSTATS).py -a -f ../build/output/bin/tinyara.map -o ../build/output/bin/tinyara_memstats.txt
+	$(Q) python ./tools/memstats_$(MEMSTATS).py -l -f $(BIN_DIR)/tinyara.map
+	$(Q) python ./tools/memstats_$(MEMSTATS).py -a -f $(BIN_DIR)/tinyara.map -o $(BIN_DIR)/tinyara_memstats.txt
 endif
 
 distclean: clean subdir_distclean clean_context
 ifeq ($(CONFIG_BUILD_2PASS),y)
 	$(Q) $(MAKE) -C $(PASS1_BUILDIR) TOPDIR="$(TOPDIR)" distclean
 endif
-	$(call DELFILE, Make.defs)
 	$(call DELFILE, setenv.sh)
 	$(call DELFILE, setenv.bat)
+ifneq ($(CONFIG_EXPORT),y)
+	$(call DELFILE, Make.defs)
 	$(call DELFILE, .config)
+endif
 	$(call DELFILE, .config.old)
 	$(call DELFILE, .version)
 
@@ -673,3 +690,9 @@ ifneq ($(APPDIR),)
 	$(Q) $(MAKE) -C "$(TOPDIR)/$(APPDIR)" TOPDIR="$(TOPDIR)" distclean
 endif
 
+libtizenrt:
+ifeq ($(CONFIG_EXPORT),y)
+	$(Q) if [ ! -e ${BIN_DIR}/../libraries/libtizenrt.a ]; then \
+		cp -f ${BIN_DIR}/../libtizenrt.a ${BIN_DIR}/../libraries/.; \
+	fi
+endif

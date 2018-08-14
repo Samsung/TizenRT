@@ -68,8 +68,8 @@ LDNAME = ${notdir ${LDPATH}}
 LDDIR = ${dir ${LDPATH}}
 endif
 
-ARCHSUBDIR = "arch/$(CONFIG_ARCH)/src"
-ARCHDIR ="$(TOPDIR)/$(ARCHSUBDIR)"
+ARCHSUBDIR = "os/arch/$(CONFIG_ARCH)/src"
+ARCHDIR ="$(TOPDIR)/arch/$(CONFIG_ARCH)/src"
 
 all: $(EXPORTDIR)/makeinfo.sh
 default: all
@@ -114,6 +114,9 @@ endif
 	@echo "DIRLINK=\"$(DIRLINK)\"" >> $(EXPORTDIR)/makeinfo.sh
 	@echo "DIRUNLINK=\"$(DIRUNLINK)\"" >> $(EXPORTDIR)/makeinfo.sh
 	@echo "MKDEP=\"$(MKDEP)\"" >> $(EXPORTDIR)/makeinfo.sh
+	@echo "BOARD_NAME=\"$(BOARD_NAME)\"" >> $(EXPORTDIR)/makeinfo.sh
+	@echo "ARCH_BOARD=\"$(CONFIG_ARCH_BOARD)\"" >> $(EXPORTDIR)/makeinfo.sh
+	@echo "ARCH_FAMILY=\"$(CONFIG_ARCH_FAMILY)\"" >> $(EXPORTDIR)/makeinfo.sh
 	$(Q) chmod 755 $(EXPORTDIR)/makeinfo.sh
 
 clean:

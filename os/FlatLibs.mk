@@ -82,34 +82,10 @@ endif
 
 TINYARALIBS += $(LIBRARIES_DIR)$(DELIM)libexternal$(LIBEXT)
 
-# Add library for ARTIK Security API
-
-ifeq ($(CONFIG_ARTIK_SDK),y)
-TINYARALIBS += $(LIBRARIES_DIR)$(DELIM)libsecurity-api$(LIBEXT)
-endif
-
 # Add libraries for network support
 
 ifeq ($(CONFIG_NET),y)
 TINYARALIBS += $(LIBRARIES_DIR)$(DELIM)libnet$(LIBEXT)
-endif
-
-# Add libraries for iotivity support
-
-ifeq ($(CONFIG_ENABLE_IOTIVITY),y)
-TINYARALIBS += $(LIBRARIES_DIR)$(DELIM)liboctbstack$(LIBEXT)
-TINYARALIBS += $(LIBRARIES_DIR)$(DELIM)libc_common$(LIBEXT)
-TINYARALIBS += $(LIBRARIES_DIR)$(DELIM)libconnectivity_abstraction$(LIBEXT)
-TINYARALIBS += $(LIBRARIES_DIR)$(DELIM)libcoap$(LIBEXT)
-TINYARALIBS += $(LIBRARIES_DIR)$(DELIM)liblogger$(LIBEXT)
-TINYARALIBS += $(LIBRARIES_DIR)$(DELIM)libocsrm$(LIBEXT)
-TINYARALIBS += $(LIBRARIES_DIR)$(DELIM)libroutingmanager$(LIBEXT)
-ifeq ($(CONFIG_ENABLE_IOTIVITY_CLOUD),y)
-TINYARALIBS += $(LIBRARIES_DIR)$(DELIM)libresource_directory$(LIBEXT)
-endif
-ifneq ($(CONFIG_IOTIVITY_RELEASE_VERSION_1_2),y)
-TINYARALIBS += $(LIBRARIES_DIR)$(DELIM)libtizenrt_compat$(LIBEXT)
-endif
 endif
 
 # Add libraries for power management module
@@ -147,12 +123,42 @@ endif
 
 TINYARALIBS += $(LIBRARIES_DIR)$(DELIM)libframework$(LIBEXT)
 
+# Export all libraries
+
+EXPORTLIBS := $(TINYARALIBS)
+
+# if export mode is on
+
+ifeq ($(CONFIG_EXPORT),y)
+TINYARALIBS = $(LIBRARIES_DIR)$(DELIM)libtizenrt$(LIBEXT)
+endif
+
+# Add library for ARTIK Security API
+
+ifeq ($(CONFIG_ARTIK_SDK),y)
+TINYARALIBS += $(LIBRARIES_DIR)$(DELIM)libsecurity-api$(LIBEXT)
+endif
+
+# Add libraries for iotivity support
+
+ifeq ($(CONFIG_ENABLE_IOTIVITY),y)
+TINYARALIBS += $(LIBRARIES_DIR)$(DELIM)liboctbstack$(LIBEXT)
+TINYARALIBS += $(LIBRARIES_DIR)$(DELIM)libc_common$(LIBEXT)
+TINYARALIBS += $(LIBRARIES_DIR)$(DELIM)libconnectivity_abstraction$(LIBEXT)
+TINYARALIBS += $(LIBRARIES_DIR)$(DELIM)libcoap$(LIBEXT)
+TINYARALIBS += $(LIBRARIES_DIR)$(DELIM)liblogger$(LIBEXT)
+TINYARALIBS += $(LIBRARIES_DIR)$(DELIM)libocsrm$(LIBEXT)
+TINYARALIBS += $(LIBRARIES_DIR)$(DELIM)libroutingmanager$(LIBEXT)
+ifeq ($(CONFIG_ENABLE_IOTIVITY_CLOUD),y)
+TINYARALIBS += $(LIBRARIES_DIR)$(DELIM)libresource_directory$(LIBEXT)
+endif
+ifneq ($(CONFIG_IOTIVITY_RELEASE_VERSION_1_2),y)
+TINYARALIBS += $(LIBRARIES_DIR)$(DELIM)libtizenrt_compat$(LIBEXT)
+endif
+endif
+
 # Add library for application support.
 
 ifneq ($(APPDIR),)
 TINYARALIBS += $(LIBRARIES_DIR)$(DELIM)libapps$(LIBEXT)
 endif
-
-# Export all libraries
-
-EXPORTLIBS = $(TINYARALIBS)
