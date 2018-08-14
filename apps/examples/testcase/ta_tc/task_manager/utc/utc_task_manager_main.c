@@ -78,7 +78,8 @@ static void sync_test_cb(tm_unicast_msg_t *info)
 	if (strncmp(info->msg, TM_SYNC_SEND_MSG, info->msg_size) == 0) {
 		reply_msg.msg = malloc(strlen(TM_SYNC_RECV_MSG));
 		if (reply_msg.msg != NULL) {
-			reply_msg.msg_size = strlen(TM_SYNC_RECV_MSG);
+			free(info->msg);
+			reply_msg.msg_size = strlen(TM_SYNC_RECV_MSG) + 1;
 			memcpy(reply_msg.msg, TM_SYNC_RECV_MSG, reply_msg.msg_size);
 			task_manager_reply_unicast(&reply_msg);
 		}
@@ -105,7 +106,8 @@ static void *tm_pthread(void *param)
 
 static void test_unicast_handler(tm_unicast_msg_t *info)
 {
-	flag = !strncmp((char *)info, TM_SAMPLE_MSG, strlen(TM_SAMPLE_MSG));
+	flag = !strncmp((char *)info->msg, TM_SAMPLE_MSG, strlen(TM_SAMPLE_MSG));
+	free(info->msg);
 }
 
 static void test_broadcast_handler(void *info)
@@ -387,7 +389,7 @@ static void utc_task_manager_unicast_p(void)
 	int sleep_cnt = 0;
 	tm_unicast_msg_t reply_msg;
 	tm_unicast_msg_t send_msg;
-	send_msg.msg_size = strlen(TM_SAMPLE_MSG);
+	send_msg.msg_size = strlen(TM_SAMPLE_MSG) + 1;
 	send_msg.msg = malloc(strlen(TM_SAMPLE_MSG));
 	TC_ASSERT_NEQ("task_manager_unicast", send_msg.msg, NULL);
 
@@ -406,9 +408,9 @@ static void utc_task_manager_unicast_p(void)
 
 	free(send_msg.msg);
 
+	send_msg.msg_size = strlen(TM_SYNC_SEND_MSG) + 1;
 	send_msg.msg = malloc(send_msg.msg_size);
 	TC_ASSERT_NEQ("task_manager_unicast", send_msg.msg, NULL);
-	send_msg.msg_size = strlen(TM_SYNC_SEND_MSG);
 
 	strncpy(send_msg.msg, TM_SYNC_SEND_MSG, send_msg.msg_size);
 

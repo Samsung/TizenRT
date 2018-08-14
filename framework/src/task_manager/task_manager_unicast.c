@@ -108,7 +108,6 @@ int task_manager_unicast(int handle, tm_unicast_msg_t *send_msg, tm_unicast_msg_
 		}
 	}
 
-	TM_FREE(((tm_unicast_internal_msg_t *)request_msg.data)->msg);
 	return status;
 }
 
@@ -120,7 +119,6 @@ int task_manager_reply_unicast(tm_unicast_msg_t *reply_msg)
 	int ret = ERROR;
 	mqd_t reply_mqfd;
 	struct mq_attr attr;
-	int handle;
 	tm_unicast_msg_t *data;
 
 	if (reply_msg == NULL) {
@@ -137,8 +135,6 @@ int task_manager_reply_unicast(tm_unicast_msg_t *reply_msg)
 	}
 	data->msg_size = reply_msg->msg_size;
 	memcpy(data->msg, reply_msg->msg, reply_msg->msg_size);
-
-	handle = taskmgr_get_handle_by_pid(getpid());
 
 	attr.mq_maxmsg = CONFIG_TASK_MANAGER_MAX_MSG;
 	attr.mq_msgsize = sizeof(tm_unicast_msg_t);

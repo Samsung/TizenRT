@@ -1170,7 +1170,7 @@ int task_manager(int argc, char *argv[])
 				}
 				ret = taskmgr_unicast_sync(request_msg.handle, request_msg.caller_pid, (tm_unicast_internal_msg_t *)request_msg.data, response_msg.data, request_msg.timeout);
 			} else {
-				ret = taskmgr_unicast_async(request_msg.handle, request_msg.caller_pid, ((tm_unicast_internal_msg_t *)request_msg.data)->msg);
+				ret = taskmgr_unicast_async(request_msg.handle, request_msg.caller_pid, (tm_unicast_msg_t *)request_msg.data);
 			}
 			break;
 
