@@ -83,28 +83,9 @@ void sysinfo(void)
 	printf("System Information:\n");
 
 	/* Print OS version and Build information */
-#ifdef CONFIG_BUILD_PROTECTED
-	/* When Protected build, get values from reading version entry in procfs */
-	int fd;
-	ssize_t nread;
-
-	fd = open(PROC_VERSION_PATH, O_RDONLY);
-	if (fd > 0) {
-		do {
-			nread = read(fd, sysinfo_str, MAX_BUF_SIZE);
-			sysinfo_str[nread] = '\0';
-			printf("\t%s", sysinfo_str);
-		} while (nread == MAX_BUF_SIZE);
-		close(fd);
-		printf("\n");
-	} else {
-		printf("Procfs is not mounted so that we can not printf sysinfo\n");
-	}
-#else
-	/* When flat build, just get values defined in version.h */
+	/* just get values defined in version.h */
 	printf("\tVersion: " CONFIG_VERSION_STRING "\n\tCommit Hash: %s\n", CONFIG_VERSION_BUILD);
 	printf("\tBuild User: " CONFIG_VERSION_BUILD_USER "\n\tBuild Time: %s\n", CONFIG_VERSION_BUILD_TIME);
-#endif
 
 	/* Get the current time as specific format in the buffer */
 	now = time(NULL);
