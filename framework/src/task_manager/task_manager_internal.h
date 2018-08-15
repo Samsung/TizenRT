@@ -156,12 +156,19 @@ struct tm_pthread_info_s {
 typedef struct tm_pthread_info_s tm_pthread_info_t;
 #endif
 
-struct tm_unicast_internal_msg_s {
+struct tm_internal_msg_s {
 	int msg_size;
 	void *msg;
 	int type;
 };
-typedef struct tm_unicast_internal_msg_s tm_unicast_internal_msg_t;
+typedef struct tm_internal_msg_s tm_internal_msg_t;
+
+struct tm_broadcast_internal_msg_s {
+	int size;
+	void *user_data;
+	tm_broadcast_info_t *info;
+};
+typedef struct tm_broadcast_internal_msg_s tm_broadcast_internal_msg_t;
 
 #define IS_INVALID_HANDLE(i) (i < 0 || i >= CONFIG_TASK_MANAGER_MAX_TASKS)
 

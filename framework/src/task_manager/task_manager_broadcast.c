@@ -26,7 +26,7 @@
 /****************************************************************************
  * task_manager_broadcast
  ****************************************************************************/
-int task_manager_broadcast(int msg)
+int task_manager_broadcast(int msg, tm_msg_t *data)
 {
 	int status;
 	tm_request_t request_msg;
@@ -39,14 +39,27 @@ int task_manager_broadcast(int msg)
 	/* Set the request msg */
 	request_msg.cmd = TASKMGRCMD_BROADCAST;
 	request_msg.timeout = TM_NO_RESPONSE;
-	request_msg.data = (void *)TM_ALLOC(sizeof(int));
+	request_msg.data = (void *)TM_ALLOC(sizeof(tm_internal_msg_t));
 	if (request_msg.data == NULL) {
 		return TM_OUT_OF_MEMORY;
 	}
-	*((int *)request_msg.data) = msg;
+	if (data != NULL) {
+		((tm_internal_msg_t *)request_msg.data)->msg = (void *)TM_ALLOC(data->msg_size);
+		if (((tm_internal_msg_t *)request_msg.data)->msg == NULL) {
+			TM_FREE(request_msg.data);
+			return TM_OUT_OF_MEMORY;
+		}
+		memcpy(((tm_internal_msg_t *)request_msg.data)->msg, data->msg, data->msg_size);
+		((tm_internal_msg_t *)request_msg.data)->msg_size = data->msg_size;
+	} else {
+		((tm_internal_msg_t *)request_msg.data)->msg_size = 0;
+		((tm_internal_msg_t *)request_msg.data)->msg = NULL;
+	}
+	((tm_internal_msg_t *)request_msg.data)->type = msg;
 
 	status = taskmgr_send_request(&request_msg);
 	if (status < 0) {
+		TM_FREE(((tm_internal_msg_t *)request_msg.data)->msg);
 		TM_FREE(request_msg.data);
 	}
 

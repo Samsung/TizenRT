@@ -34,21 +34,42 @@
 void taskmgr_msg_cb(int signo, siginfo_t *data)
 {
 	int handle;
+	void *broadcast_param = NULL;
+	void *user_data;
+	void *cb_data;
+	int user_data_size;
+
 	handle = taskmgr_get_handle_by_pid(getpid());
 	if (handle == TM_UNREGISTERED_APP) {
 		tmdbg("Fail to get handle by pid\n");
 		return;
 	}
 	if (signo == CONFIG_SIG_SIGTM_UNICAST) {
-		(*TM_UNICAST_CB(handle))((tm_unicast_msg_t *)data->si_value.sival_ptr);
+		(*TM_UNICAST_CB(handle))((tm_msg_t *)data->si_value.sival_ptr);
 	} else {
-		(*((tm_broadcast_info_t *)data->si_value.sival_ptr)->cb)((void *)((tm_broadcast_info_t *)data->si_value.sival_ptr)->cb_data);
+		user_data = ((tm_broadcast_internal_msg_t *)data->si_value.sival_ptr)->user_data;
+		user_data_size = ((tm_broadcast_internal_msg_t *)data->si_value.sival_ptr)->size;
+		cb_data = ((tm_broadcast_info_t *)((tm_broadcast_internal_msg_t *)data->si_value.sival_ptr)->info)->cb_data;
+
+		if (user_data_size != 0) {
+			broadcast_param = TM_ALLOC(((tm_broadcast_internal_msg_t *)data->si_value.sival_ptr)->size);
+			if (broadcast_param == NULL) {
+				tmdbg("Fail to alloc user data\n");
+				return;
+			}
+			memcpy(broadcast_param, user_data, user_data_size);
+		}
+
+		(*((tm_broadcast_info_t *)((tm_broadcast_internal_msg_t *)data->si_value.sival_ptr)->info)->cb)(broadcast_param, cb_data);
+
+		TM_FREE(broadcast_param);
+		broadcast_param = NULL;
 	}
 }
 /****************************************************************************
  * task_manager_set_unicast_cb
  ****************************************************************************/
-int task_manager_set_unicast_cb(void (*func)(tm_unicast_msg_t *data))
+int task_manager_set_unicast_cb(void (*func)(tm_msg_t *data))
 {
 	int ret = OK;
 	struct sigaction act;
@@ -93,7 +114,7 @@ int task_manager_set_unicast_cb(void (*func)(tm_unicast_msg_t *data))
 /****************************************************************************
  * task_manager_set_broadcast_cb
  ****************************************************************************/
-int task_manager_set_broadcast_cb(int msg, void (*func)(void *data), void *cb_data)
+int task_manager_set_broadcast_cb(int msg, void (*func)(void *user_data, void *data), void *cb_data)
 {
 	int status;
 	tm_request_t request_msg;
