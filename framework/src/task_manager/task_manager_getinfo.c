@@ -28,7 +28,7 @@
 /****************************************************************************
  * task_manager_getinfo_with_name
  ****************************************************************************/
-app_info_list_t *task_manager_getinfo_with_name(char *name, int timeout)
+tm_appinfo_list_t *task_manager_getinfo_with_name(char *name, int timeout)
 {
 	int status;
 	tm_request_t request_msg;
@@ -75,7 +75,7 @@ app_info_list_t *task_manager_getinfo_with_name(char *name, int timeout)
 /****************************************************************************
  * task_manager_getinfo_with_handle
  ****************************************************************************/
-app_info_t *task_manager_getinfo_with_handle(int handle, int timeout)
+tm_appinfo_t *task_manager_getinfo_with_handle(int handle, int timeout)
 {
 	int status;
 	tm_request_t request_msg;
@@ -110,13 +110,13 @@ app_info_t *task_manager_getinfo_with_handle(int handle, int timeout)
 		return NULL;
 	}
 
-	return &((app_info_list_t *)response_msg.data)->task;
+	return &((tm_appinfo_list_t *)response_msg.data)->task;
 }
 
 /****************************************************************************
  * task_manager_getinfo_with_group
  ****************************************************************************/
-app_info_list_t *task_manager_getinfo_with_group(int group, int timeout)
+tm_appinfo_list_t *task_manager_getinfo_with_group(int group, int timeout)
 {
 	int status;
 	tm_request_t request_msg;
@@ -157,7 +157,7 @@ app_info_list_t *task_manager_getinfo_with_group(int group, int timeout)
 /****************************************************************************
  * task_manager_getinfo_with_pid
  ****************************************************************************/
-app_info_t *task_manager_getinfo_with_pid(int pid, int timeout)
+tm_appinfo_t *task_manager_getinfo_with_pid(int pid, int timeout)
 {
 	int status;
 	tm_request_t request_msg;
@@ -191,5 +191,5 @@ app_info_t *task_manager_getinfo_with_pid(int pid, int timeout)
 		return NULL;
 	}
 
-	return &((app_info_list_t *)response_msg.data)->task;
+	return &((tm_appinfo_list_t *)response_msg.data)->task;
 }

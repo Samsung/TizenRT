@@ -98,22 +98,22 @@ enum tm_defined_broadcast_msg {
 #endif
 };
 /**
- * @brief Task Info Structure
+ * @brief Application Info Structure
  */
-struct app_info_s {
+struct tm_appinfo_s {
 	char *name;
 	int tm_gid;
 	int handle;
 	int status;
 	int permission;
 };
-typedef struct app_info_s app_info_t;
+typedef struct tm_appinfo_s tm_appinfo_t;
 
-struct app_info_list_s {
-	app_info_t task;
-	struct app_info_list_s *next;
+struct tm_appinfo_list_s {
+	tm_appinfo_t task;
+	struct tm_appinfo_list_s *next;
 };
-typedef struct app_info_list_s app_info_list_t;
+typedef struct tm_appinfo_list_s tm_appinfo_list_t;
 
 /**
  * @brief Unicast message Structure
@@ -349,7 +349,7 @@ int task_manager_set_stop_cb(void (*func)(void *data), void *cb_data);
  * @return On success, the list of task information is returned(at the end of the list, NULL will be returned). On failure, NULL is returned.
  * @since TizenRT v2.0 PRE
  */
-app_info_list_t *task_manager_getinfo_with_name(char *name, int timeout);
+tm_appinfo_list_t *task_manager_getinfo_with_name(char *name, int timeout);
 /**
  * @brief Get task information through handle
  * @details @b #include <task_manager/task_manager.h>
@@ -362,7 +362,7 @@ app_info_list_t *task_manager_getinfo_with_name(char *name, int timeout);
  * @return On success, the task information is returned. On failure, NULL is returned.
  * @since TizenRT v2.0 PRE
  */
-app_info_t *task_manager_getinfo_with_handle(int handle, int timeout);
+tm_appinfo_t *task_manager_getinfo_with_handle(int handle, int timeout);
 /**
  * @brief Get task information list through group
  * @details @b #include <task_manager/task_manager.h>
@@ -375,7 +375,7 @@ app_info_t *task_manager_getinfo_with_handle(int handle, int timeout);
  * @return On success, the task information is returned. On failure, NULL is returned.
  * @since TizenRT v2.0 PRE
  */
-app_info_list_t *task_manager_getinfo_with_group(int group, int timeout);
+tm_appinfo_list_t *task_manager_getinfo_with_group(int group, int timeout);
 /**
  * @brief Get the handle through pid
  * @details @b #include <task_manager/task_manager.h>
@@ -387,7 +387,7 @@ app_info_list_t *task_manager_getinfo_with_group(int group, int timeout);
  * @return On success, the task information is returned. On failure, NULL is returned.
  * @since TizenRT v2.0 PRE
  */
-app_info_t *task_manager_getinfo_with_pid(int pid, int timeout);
+tm_appinfo_t *task_manager_getinfo_with_pid(int pid, int timeout);
 /**
  * @brief Clean task information
  * @details @b #include <task_manager/task_manager.h>
@@ -395,7 +395,7 @@ app_info_t *task_manager_getinfo_with_pid(int pid, int timeout);
  * @return none
  * @since TizenRT v2.0 PRE
  */
-void task_manager_clean_info(app_info_t **info);
+void task_manager_clean_info(tm_appinfo_t **info);
 /**
  * @brief Clean task information list
  * @details @b #include <task_manager/task_manager.h>
@@ -403,7 +403,7 @@ void task_manager_clean_info(app_info_t **info);
  * @return none
  * @since TizenRT v2.0 PRE
  */
-void task_manager_clean_infolist(app_info_list_t **info_list);
+void task_manager_clean_infolist(tm_appinfo_list_t **info_list);
 /**
  * @brief Send unicast reply message
  * @details @b #include <task_manager/task_manager.h>
