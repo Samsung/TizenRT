@@ -36,10 +36,6 @@
 #ifdef CONFIG_SYSTEM_INFORMATION
 #include <apps/system/sysinfo.h>
 #endif
-#if defined(CONFIG_BUILD_PROTECTED) && defined(CONFIG_FS_PROCFS)
-#include <errno.h>
-#include <sys/mount.h>
-#endif
 
 /****************************************************************************
  * Pre-processor Definitions
