@@ -38,12 +38,19 @@ enum el_result_error_e {
 	EVENTLOOP_INVALID_PARAM = -1,
 	EVENTLOOP_BUSY = -2,
 	EVENTLOOP_OUT_OF_MEMORY = -3,
+	EVENTLOOP_LOOP_FAIL = -4,
+	EVENTLOOP_NOT_FINISHED = -5,
 };
 
 /**
  * @brief EventLoop Timer structure
  */
 typedef uv_timer_t el_timer_t;
+
+/**
+ * @brief EventLoop Loop structure
+ */
+typedef uv_loop_t el_loop_t;
 
 /**
  * @brief EventLoop Timeout Callback
@@ -57,16 +64,17 @@ typedef void (*timeout_callback)(void *);
 /**
  * @brief Create timer to call the function in the given period of time
  * @details @b #include <eventloop/eventloop.h> \n
- * This API can create timer which is called once or repeated according to repeat flag
+ * This API can create timer which is called once or repeated according to repeat flag. \n
+ * The timer event is handled in the loop of its own task by calling eventloop_loop_run
  * @param[in] timeout interval in milliseconds from the current time of loop for calling callback function
  * @param[in] repeat the value which represents whether timer runs repeatly or not. \n
  *            You can stop the periodic timer by calling eventloop_delete_timer
  * @param[in] func the callback function to be called
  * @param[in] data data to pass to func when func is called
  * @return On success, A pointer of created timer is returned if 'repeat' is true. \n
-           You should free used timer resources after using timer by calling eventloop_delete_timer with returned pointer. \n
-           On the other hand, NULL is returned if 'repeat' is false. \n
-           So you don't have to do anything because all resources are freed internally after callback execution. \n
+ *         You should free used timer resources after using timer by calling eventloop_delete_timer with returned pointer. \n
+ *         On the other hand, NULL is returned if 'repeat' is false. \n
+ *         So you don't have to do anything because all resources are freed internally after callback execution. \n
  *         On failure, NULL is returned
  * @since TizenRT v2.0 PRE
  */
@@ -82,16 +90,17 @@ el_timer_t *eventloop_add_timer(unsigned int timeout, bool repeat, timeout_callb
 int eventloop_delete_timer(el_timer_t *timer);
 
 /**
- * @brief Run default loop
+ * @brief Run the loop of its own task
  * @details @b #include <eventloop/eventloop.h>
  * @param[in] None
- * @return None
+ * @return On success, OK is returned. On failure, defined negative value is returned. \n
+ *         If eventloop_loop_stop() was called and there are still active works, EVENTLOOP_NOT_FINISHED is returned
  * @since TizenRT v2.0 PRE
  */
-void eventloop_loop_run(void);
+int eventloop_loop_run(void);
 
 /**
- * @brief Stop default loop
+ * @brief Stop the loop of its own task
  * @details @b #include <eventloop/eventloop.h>
  * @param[in] None
  * @return On success, OK is returned. On failure, defined negative value is returned

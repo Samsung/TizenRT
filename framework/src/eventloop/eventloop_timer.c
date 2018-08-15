@@ -59,10 +59,14 @@ static void timeout_callback_func(el_timer_t *timer)
 	}
 }
 
-el_timer_t *eventloop_add_timer(unsigned int timeout, bool repeat, timeout_callback func, void *data)
+static el_timer_t *add_timer(el_loop_t *loop, unsigned int timeout, bool repeat, timeout_callback func, void *data)
 {
-	el_timer_t *timer = NULL;
-	timer_cb_t *callback = NULL;
+	el_timer_t *timer;
+	timer_cb_t *callback;
+
+	if (loop == NULL || func == NULL) {
+		return NULL;
+	}
 
 	timer = (el_timer_t *)EL_ALLOC(sizeof(el_timer_t));
 	if (timer == NULL) {
@@ -80,17 +84,38 @@ el_timer_t *eventloop_add_timer(unsigned int timeout, bool repeat, timeout_callb
 	callback->cb_data = data;
 	timer->data = (void *)callback;
 
-	uv_update_time(uv_default_loop());
-	uv_timer_init(uv_default_loop(), timer);
+	uv_update_time(loop);
+	uv_timer_init(loop, timer);
 
 	if (!repeat) {
 		/* Add timer to be called once after timeout */
 		uv_timer_start(timer, (uv_timer_cb)timeout_callback_func, timeout, 0);
+	} else {
+		/* Add timer to be called every timeout repeatly */
+		uv_timer_start(timer, (uv_timer_cb)timeout_callback_func, timeout, timeout);
+	}
+
+	return timer;
+}
+
+el_timer_t *eventloop_add_timer(unsigned int timeout, bool repeat, timeout_callback func, void *data)
+{
+	el_loop_t *loop;
+	el_timer_t *timer;
+
+	loop = (el_loop_t *)get_app_loop();
+	if (loop == NULL) {
+		eldbg("Failed to get loop\n");
 		return NULL;
 	}
 
-	/* Add timer to be called every timeout repeatly */
-	uv_timer_start(timer, (uv_timer_cb)timeout_callback_func, timeout, timeout);
+	timer = add_timer(loop, timeout, repeat, func, data);
+
+	/* Return NULL always when repeat is false. */
+	if (!repeat) {
+		return NULL;
+	}
+
 	return timer;
 }
 
