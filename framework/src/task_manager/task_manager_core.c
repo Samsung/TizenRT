@@ -473,14 +473,14 @@ static int taskmgr_unicast_async(int handle, int caller_pid, void *data)
 	return OK;
 }
 
-static int taskmgr_unicast_sync(int handle, int caller_pid, tm_unicast_internal_msg_t *data, tm_unicast_msg_t *response_msg, int timeout)
+static int taskmgr_unicast_sync(int handle, int caller_pid, tm_internal_msg_t *data, tm_msg_t *response_msg, int timeout)
 {
 	int ret;
 	int fd;
 	union sigval msg;
 	mqd_t unicast_mqfd;
 	struct mq_attr attr;
-	tm_unicast_msg_t recv_msg;
+	tm_msg_t recv_msg;
 	FAR struct timespec time;
 
 	if (IS_INVALID_HANDLE(handle)) {
@@ -516,7 +516,7 @@ static int taskmgr_unicast_sync(int handle, int caller_pid, tm_unicast_internal_
 
 	/* For sync, wait a mq for receiving reply msg */
 	attr.mq_maxmsg = CONFIG_TASK_MANAGER_MAX_MSG;
-	attr.mq_msgsize = sizeof(tm_unicast_msg_t);
+	attr.mq_msgsize = sizeof(tm_msg_t);
 	attr.mq_flags = 0;
 
 	unicast_mqfd = mq_open(TM_UNICAST_MQ, O_RDONLY | O_CREAT, 0666, &attr);
@@ -528,14 +528,14 @@ static int taskmgr_unicast_sync(int handle, int caller_pid, tm_unicast_internal_
 	if (timeout > 0) {
 		clock_gettime(CLOCK_REALTIME, &time);
 		time.tv_sec += timeout;
-		ret = mq_timedreceive(unicast_mqfd, (char *)&recv_msg, sizeof(tm_unicast_msg_t), 0, &time);
+		ret = mq_timedreceive(unicast_mqfd, (char *)&recv_msg, sizeof(tm_msg_t), 0, &time);
 	} else {
 #if CONFIG_TASK_MANAGER_UNICAST_REPLY_TIMEOUT > 0
 		clock_gettime(CLOCK_REALTIME, &time);
 		time.tv_sec += CONFIG_TASK_MANAGER_UNICAST_REPLY_TIMEOUT;
-		ret = mq_timedreceive(unicast_mqfd, (char *)&recv_msg, sizeof(tm_unicast_msg_t), 0, &time);
+		ret = mq_timedreceive(unicast_mqfd, (char *)&recv_msg, sizeof(tm_msg_t), 0, &time);
 #else
-		ret = mq_receive(unicast_mqfd, (char *)&recv_msg, sizeof(tm_unicast_msg_t), 0);
+		ret = mq_receive(unicast_mqfd, (char *)&recv_msg, sizeof(tm_msg_t), 0);
 #endif
 	}
 	if (ret <= 0) {
@@ -718,22 +718,34 @@ static tm_broadcast_info_t *taskmgr_search_broadcast_info(int msg, int handle)
 	return curr;
 }
 
-static void taskmgr_broadcast(int msg)
+static void taskmgr_broadcast(tm_internal_msg_t *arg)
 {
 	int handle;
 	int fd;
 	int ret;
 	union sigval msg_broad;
 	tm_broadcast_info_t *broadcast_info;
+	tm_broadcast_internal_msg_t bm;
 
 	fd = taskmgr_get_drvfd();
 	if (fd < 0) {
 		return;
 	}
 
-	ret = taskmgr_check_broad_msg(msg);
+	ret = taskmgr_check_broad_msg(arg->type);
 	if (ret == TM_UNREGISTERED_MSG) {
 		return;
+	}
+
+	if (arg->msg_size != 0) {
+		bm.user_data = TM_ALLOC(arg->msg_size);
+		if (bm.user_data == NULL) {
+			return;
+		}
+		bm.size = arg->msg_size;
+		memcpy(bm.user_data, arg->msg, arg->msg_size);
+	} else {
+		bm.user_data = NULL;
 	}
 
 	for (handle = 0; handle < CONFIG_TASK_MANAGER_MAX_TASKS; handle++) {
@@ -746,14 +758,17 @@ static void taskmgr_broadcast(int msg)
 			if (ret != OK) {
 				continue;
 			}
-			broadcast_info = taskmgr_search_broadcast_info(msg, handle);
+			broadcast_info = taskmgr_search_broadcast_info(arg->type, handle);
 			if (broadcast_info == NULL) {
 				continue;
 			}
-			msg_broad.sival_ptr = broadcast_info;
+			bm.info = broadcast_info;
+			msg_broad.sival_ptr = (void *)&bm;
 			(void)sigqueue(TM_PID(handle), SIGTM_BROADCAST, msg_broad);
 		}
 	}
+	TM_FREE(bm.user_data);
+	bm.user_data = NULL;
 }
 
 static void taskmgr_broadcast_msg_init(void)
@@ -1162,20 +1177,20 @@ int task_manager(int argc, char *argv[])
 			break;
 
 		case TASKMGRCMD_UNICAST:
-			if (((tm_unicast_internal_msg_t *)request_msg.data)->type == TM_UNICAST_SYNC) {
-				response_msg.data = TM_ALLOC(sizeof(tm_unicast_msg_t));
+			if (((tm_internal_msg_t *)request_msg.data)->type == TM_UNICAST_SYNC) {
+				response_msg.data = TM_ALLOC(sizeof(tm_msg_t));
 				if (response_msg.data == NULL) {
 					response_msg.status = TM_OUT_OF_MEMORY;
 					break;
 				}
-				ret = taskmgr_unicast_sync(request_msg.handle, request_msg.caller_pid, (tm_unicast_internal_msg_t *)request_msg.data, response_msg.data, request_msg.timeout);
+				ret = taskmgr_unicast_sync(request_msg.handle, request_msg.caller_pid, (tm_internal_msg_t *)request_msg.data, response_msg.data, request_msg.timeout);
 			} else {
-				ret = taskmgr_unicast_async(request_msg.handle, request_msg.caller_pid, (tm_unicast_msg_t *)request_msg.data);
+				ret = taskmgr_unicast_async(request_msg.handle, request_msg.caller_pid, (tm_msg_t *)request_msg.data);
 			}
 			break;
 
 		case TASKMGRCMD_BROADCAST:
-			(void)taskmgr_broadcast(*((int *)request_msg.data));
+			(void)taskmgr_broadcast((tm_internal_msg_t *)request_msg.data);
 			break;
 
 		case TASKMGRCMD_ALLOC_BROADCAST_MSG:
@@ -1232,6 +1247,9 @@ int task_manager(int argc, char *argv[])
 		}
 
 		if (request_msg.data != NULL && request_msg.cmd != TASKMGRCMD_SET_UNICAST_CB && request_msg.cmd != TASKMGRCMD_ALLOC_BROADCAST_MSG) {
+			if (request_msg.cmd == TASKMGRCMD_BROADCAST && ((tm_internal_msg_t *)request_msg.data)->msg != NULL) {
+				TM_FREE(((tm_internal_msg_t *)request_msg.data)->msg);
+			}
 			TM_FREE(request_msg.data);
 			request_msg.data = NULL;
 		}

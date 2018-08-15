@@ -68,12 +68,13 @@ static int broad_wifi_off_cnt;
 static int broad_undefined_cnt;
 static int pid_tm_utc;
 static int handle_tm_utc;
+static int broadcast_data_flag;
 
 static sem_t tm_broad_sem;
 
-static void sync_test_cb(tm_unicast_msg_t *info)
+static void sync_test_cb(tm_msg_t *info)
 {
-	tm_unicast_msg_t reply_msg;
+	tm_msg_t reply_msg;
 
 	if (strncmp(info->msg, TM_SYNC_SEND_MSG, info->msg_size) == 0) {
 		reply_msg.msg = malloc(strlen(TM_SYNC_RECV_MSG));
@@ -104,18 +105,19 @@ static void *tm_pthread(void *param)
 	return NULL;
 }
 
-static void test_unicast_handler(tm_unicast_msg_t *info)
+static void test_unicast_handler(tm_msg_t *info)
 {
 	flag = !strncmp((char *)info->msg, TM_SAMPLE_MSG, strlen(TM_SAMPLE_MSG));
 	free(info->msg);
 }
 
-static void test_broadcast_handler(void *info)
+static void test_broadcast_handler(void *user_data, void *info)
 {
 	int rec = (int)info;
 
 	switch (rec) {
 	case TM_BROAD_WIFI_ON_DATA:
+		broadcast_data_flag = strncmp((char *)user_data, "WIFI_ON", strlen("WIFI_ON") + 1);
 		sem_wait(&tm_broad_sem);
 		broad_wifi_on_cnt++;
 		sem_post(&tm_broad_sem);
@@ -361,7 +363,7 @@ static void utc_task_manager_alloc_broadcast_msg_p(void)
 static void utc_task_manager_unicast_n(void)
 {
 	int ret;
-	tm_unicast_msg_t send_msg;
+	tm_msg_t send_msg;
 	send_msg.msg_size = strlen(TM_SAMPLE_MSG);
 	send_msg.msg = malloc(strlen(TM_SAMPLE_MSG));
 	TC_ASSERT_NEQ("task_manager_unicast", send_msg.msg, NULL);
@@ -387,8 +389,8 @@ static void utc_task_manager_unicast_p(void)
 {
 	int ret;
 	int sleep_cnt = 0;
-	tm_unicast_msg_t reply_msg;
-	tm_unicast_msg_t send_msg;
+	tm_msg_t reply_msg;
+	tm_msg_t send_msg;
 	send_msg.msg_size = strlen(TM_SAMPLE_MSG) + 1;
 	send_msg.msg = malloc(strlen(TM_SAMPLE_MSG));
 	TC_ASSERT_NEQ("task_manager_unicast", send_msg.msg, NULL);
@@ -426,7 +428,7 @@ static void utc_task_manager_unicast_p(void)
 static void utc_task_manager_broadcast_n(void)
 {
 	int ret;
-	ret = task_manager_broadcast(TM_INVALID_BROAD_MSG);
+	ret = task_manager_broadcast(TM_INVALID_BROAD_MSG, NULL);
 	TC_ASSERT_EQ("task_manager_broadcast", ret, TM_INVALID_PARAM);
 
 	TC_SUCCESS_RESULT();
@@ -435,11 +437,19 @@ static void utc_task_manager_broadcast_n(void)
 static void utc_task_manager_broadcast_p(void)
 {
 	int sleep_cnt = 0;
+	tm_msg_t user_data;
+
 	sem_init(&tm_broad_sem, 0, 1);
 	broad_wifi_on_cnt = 0;
 	broad_wifi_off_cnt = 0;
 	broad_undefined_cnt = 0;
-	(void)task_manager_broadcast(TM_BROADCAST_WIFI_ON);
+	broadcast_data_flag = -1;
+
+	user_data.msg = malloc(strlen("WIFI_ON"));
+	user_data.msg_size = strlen("WIFI_ON") + 1;
+	strncpy(user_data.msg, "WIFI_ON", user_data.msg_size);
+
+	(void)task_manager_broadcast(TM_BROADCAST_WIFI_ON, &user_data);
 	while (1) {
 		sleep(1);
 		if (broad_wifi_on_cnt == TM_BROAD_TASK_NUM) {
@@ -448,15 +458,17 @@ static void utc_task_manager_broadcast_p(void)
 		TC_ASSERT_LEQ_CLEANUP("task_manager_broadcast", sleep_cnt, 10, sem_destroy(&tm_broad_sem));
 		sleep_cnt++;
 	}
-	TC_ASSERT_EQ_CLEANUP("task_manager_broadcast", broad_wifi_on_cnt, TM_BROAD_TASK_NUM, sem_destroy(&tm_broad_sem));
-	TC_ASSERT_EQ_CLEANUP("task_manager_broadcast", broad_wifi_off_cnt, 0, sem_destroy(&tm_broad_sem));
-	TC_ASSERT_EQ_CLEANUP("task_manager_broadcast", broad_undefined_cnt, 0, sem_destroy(&tm_broad_sem));
+	TC_ASSERT_EQ_CLEANUP("task_manager_broadcast", broad_wifi_on_cnt, TM_BROAD_TASK_NUM, sem_destroy(&tm_broad_sem); free(user_data.msg));
+	TC_ASSERT_EQ_CLEANUP("task_manager_broadcast", broad_wifi_off_cnt, 0, sem_destroy(&tm_broad_sem); free(user_data.msg));
+	TC_ASSERT_EQ_CLEANUP("task_manager_broadcast", broad_undefined_cnt, 0, sem_destroy(&tm_broad_sem); free(user_data.msg));
+	TC_ASSERT_EQ_CLEANUP("task_manager_broadcast", broadcast_data_flag, 0, sem_destroy(&tm_broad_sem); free(user_data.msg));
+	free(user_data.msg);
 
 	broad_wifi_on_cnt = 0;
 	broad_wifi_off_cnt = 0;
 	broad_undefined_cnt = 0;
 	sleep_cnt = 0;
-	(void)task_manager_broadcast(TM_BROADCAST_WIFI_OFF);
+	(void)task_manager_broadcast(TM_BROADCAST_WIFI_OFF, NULL);
 	while (1) {
 		usleep(500);
 		if (broad_wifi_off_cnt == TM_BROAD_TASK_NUM) {
@@ -473,7 +485,7 @@ static void utc_task_manager_broadcast_p(void)
 	broad_wifi_off_cnt = 0;
 	broad_undefined_cnt = 0;
 	sleep_cnt = 0;
-	(void)task_manager_broadcast(tm_broadcast_undefined_msg);
+	(void)task_manager_broadcast(tm_broadcast_undefined_msg, NULL);
 	while (1) {
 		usleep(500);
 		if (broad_undefined_cnt == TM_BROAD_TASK_NUM) {

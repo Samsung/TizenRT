@@ -118,21 +118,21 @@ typedef struct app_info_list_s app_info_list_t;
 /**
  * @brief Unicast message Structure
  */
-struct tm_unicast_msg_s {
+struct tm_msg_s {
 	int msg_size;
 	void *msg;
 };
-typedef struct tm_unicast_msg_s tm_unicast_msg_t;
+typedef struct tm_msg_s tm_msg_t;
 
 /**
  * @brief Unicast callback function type
  */
-typedef void (*_tm_unicast_t)(tm_unicast_msg_t *);
+typedef void (*_tm_unicast_t)(tm_msg_t *);
 
 /**
  * @brief Broadcast callback function type
  */
-typedef void (*_tm_broadcast_t)(void *);
+typedef void (*_tm_broadcast_t)(void *, void *);
 
 /**
  * @brief Termination callback function type
@@ -284,17 +284,18 @@ int task_manager_restart(int handle, int timeout);
  * @return On success, OK is returned. On failure, defined negative value is returned.
  * @since TizenRT v2.0 PRE
  */
-int task_manager_unicast(int handle, tm_unicast_msg_t *send_msg, tm_unicast_msg_t *reply_msg, int timeout);
+int task_manager_unicast(int handle, tm_msg_t *send_msg, tm_msg_t *reply_msg, int timeout);
 /**
  * @brief Request to send messages to the tasks
  * @details @b #include <task_manager/task_manager.h>
- * @param[in] msg message to be broadcasted
+ * @param[in] msg message structure to be unicasted
+ * @param[in] data data and its size to be broadcasted
  * @return On success, OK is returned. On failure, defined negative value is returned.\n
  *         (This return value only checks whether a broadcast message has been requested\n
  *          to the task manager to broadcast.)
  * @since TizenRT v2.0 PRE
  */
-int task_manager_broadcast(int msg);
+int task_manager_broadcast(int msg, tm_msg_t *data);
 /**
  * @brief Set unicast callback function API
  * @details @b #include <task_manager/task_manager.h>
@@ -302,7 +303,7 @@ int task_manager_broadcast(int msg);
  * @return On success, OK is returned. On failure, defined negative value is returned.
  * @since TizenRT v2.0 PRE
  */
-int task_manager_set_unicast_cb(void (*func)(tm_unicast_msg_t *data));
+int task_manager_set_unicast_cb(void (*func)(tm_msg_t *data));
 /**
  * @brief Register callback function which will be used for processing a certain received broadcast message
  * @details @b #include <task_manager/task_manager.h>
@@ -317,7 +318,7 @@ int task_manager_set_unicast_cb(void (*func)(tm_unicast_msg_t *data));
  * @return On success, OK is returned. On failure, defined negative value is returned.
  * @since TizenRT v2.0 PRE
  */
-int task_manager_set_broadcast_cb(int msg, void (*func)(void *data), void *cb_data);
+int task_manager_set_broadcast_cb(int msg, void (*func)(void *user_data, void *data), void *cb_data);
 /**
  * @brief Set callback function for resource deallocation API. If you set the callback, it will works when task terminates.
  * @details @b #include <task_manager/task_manager.h>
@@ -410,7 +411,7 @@ void task_manager_clean_infolist(app_info_list_t **info_list);
  * @return On success, OK is returned. On failure, defined negative value is returned.
  * @since TizenRT v2.0 PRE
  */
-int task_manager_reply_unicast(tm_unicast_msg_t *reply_msg);
+int task_manager_reply_unicast(tm_msg_t *reply_msg);
 /**
  * @brief Allocate a new broadcast message which is not defined in the <task_manager/task_manager.h>\n
  *        and <task_manager/task_manager_broadcast_list.h>

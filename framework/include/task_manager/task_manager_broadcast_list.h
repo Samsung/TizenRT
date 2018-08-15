@@ -53,9 +53,9 @@
 
 enum tm_user_specific_broadcast_msg {
 	TM_BROADCAST_USER_SPECIFIC_MIN = TM_BROADCAST_SYSTEM_MSG_MAX,
-		
+
 /* Please Add User Specific Broadcast Message at HERE */
-	
+
 	TM_BROADCAST_MSG_MAX,
 };
 #endif
