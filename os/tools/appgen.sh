@@ -7,6 +7,8 @@ cd ${TIZENRT_ROOT}
 TIZENRT_ROOT=$(pwd)
 cd -
 
+CUR_YEAR=$(date +"%Y")
+
 read -p "Enter application name: " APP_NAME
 
 APP_NAME_UPPER=${APP_NAME^^}
@@ -16,10 +18,13 @@ APP_NAME_LOWER="${APP_NAME_LOWER// /_}"
 ENTRY_FUNC="${APP_NAME_LOWER}_main"
 
 echo "[Summary]"
+echo "-------------------------------"
 echo "* Application Name: ${APP_NAME}"
 echo "* Configuration Key: CONFIG_APP_${APP_NAME_UPPER}"
 echo "* Entry Function: ${ENTRY_FUNC}"
-
+echo "* Location: ${TIZENRT_ROOT}/apps/examples/${APP_NAME_LOWER}"
+echo "* This year: ${CUR_YEAR}"
+echo "-------------------------------"
 read -p "Continue? (y/N): " confirm && [[ $confirm == [yY] || $confirm == [yY][eE][sS] ]] || exit 1
 
 echo "Generating..."
@@ -36,6 +41,12 @@ cp ${TIZENRT_ROOT}/apps/appgen/template_Kconfig_ENTRY ${KCONFIG_ENTRY_FILENAME}
 cp ${TIZENRT_ROOT}/apps/appgen/template_main.c_source ${MAIN_FILENAME}
 cp ${TIZENRT_ROOT}/apps/appgen/template_Make.defs ${MAKE_DEFS_FILENAME}
 cp ${TIZENRT_ROOT}/apps/appgen/template_Makefile ${MAKEFILE_FILENAME}
+
+sed -i -e "s/##YEAR##/${CUR_YEAR}/g" ${KCONFIG_FILENAME}
+sed -i -e "s/##YEAR##/${CUR_YEAR}/g" ${KCONFIG_ENTRY_FILENAME}
+sed -i -e "s/##YEAR##/${CUR_YEAR}/g" ${MAIN_FILENAME}
+sed -i -e "s/##YEAR##/${CUR_YEAR}/g" ${MAKE_DEFS_FILENAME}
+sed -i -e "s/##YEAR##/${CUR_YEAR}/g" ${MAKEFILE_FILENAME}
 
 sed -i -e "s/##APP_NAME_UPPER##/${APP_NAME_UPPER}/g" ${KCONFIG_FILENAME}
 sed -i -e "s/##APP_NAME_UPPER##/${APP_NAME_UPPER}/g" ${KCONFIG_ENTRY_FILENAME}
@@ -61,6 +72,11 @@ sed -i -e "s/##ENTRY_FUNC##/${ENTRY_FUNC}/g" ${MAIN_FILENAME}
 sed -i -e "s/##ENTRY_FUNC##/${ENTRY_FUNC}/g" ${MAKE_DEFS_FILENAME}
 sed -i -e "s/##ENTRY_FUNC##/${ENTRY_FUNC}/g" ${MAKEFILE_FILENAME}
 
-echo "Your application is located at ${TIZENRT_ROOT}/apps/examples/${APP_NAME_LOWER}"
-echo "Done.."
+echo ""
+echo "* How to setup your application"
+echo "Run) TizenRT/os\$ make menuconfig"
+echo "1. Turn on your application in Application Configuration/Examples menu"
+echo "2. Set the entry point to your application in Application Configuration menu"
+echo "------------------------------"
+echo "Done!!"
 

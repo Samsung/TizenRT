@@ -16,12 +16,16 @@ TizenRT Application Generator
 ======================= v 1.0
 Enter application name: test application
 [Summary]
+-------------------------------
 Application Name: test application
 Configuration Key: CONFIG_APP_TEST_APPLICATION
 Entry Function: test_application_main
+Location: /home/gcjjyy/workspace/github.com/gcjjyy/TizenRT/apps/examples/test_application
+This year: 2018
+-------------------------------
 Continue? (y/N): y
 Generating...
-Your application is located at /home/gcjjyy/workspace/github.com/gcjjyy/TizenRT/apps/examples/test_application
+
 Done..
 ```
 
