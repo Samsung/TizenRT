@@ -366,6 +366,11 @@ void MediaPlayerImpl::pausePlayer()
 	mCurState = PLAYER_STATE_PAUSED;
 }
 
+int MediaPlayerImpl::getId()
+{
+	return mId;
+}
+
 int MediaPlayerImpl::getVolume()
 {
 	int ret = -1;

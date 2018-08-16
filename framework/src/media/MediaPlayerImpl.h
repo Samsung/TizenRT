@@ -62,6 +62,7 @@ public:
 	player_result_t pause();
 	player_result_t stop();
 
+	int getId();
 	int getVolume();
 	player_result_t setVolume(int);
 
