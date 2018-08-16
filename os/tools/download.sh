@@ -20,6 +20,27 @@
 TOOLPATH=`test -d ${0%/*} && cd ${0%/*}; pwd`
 OSPATH="${TOOLPATH}/.."
 
+usages() {
+	cat <<EOF
+USAGE: `basename $0` [OPTIONS]
+Program binaries into flash
+
+OPTIONS:
+	ALL	write all of binaries, os, bootloader, romfs and etc into flash
+	OS      write os binary into flash
+	ROMFS   write romfs image into flash
+
+Each board has additional options.
+For example, ARTIK05X has BL1, BL2, SSSFW, WLANFW, so on.
+
+EOF
+}
+
+if [ $1 == "--help" ]; then
+	usages 1>&2
+	exit 0
+fi
+
 cd ${OSPATH}
 
 if test $# -eq 0; then
