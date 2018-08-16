@@ -116,14 +116,16 @@ write_serial() {
 vendor_id=0x$vid            # Vendor ID
 product_id=0x$pid           # Product ID
 
+eeprom_type=0x46
+
 max_power=500               # Max. power consumption: value * 2 mA. Use 0 if self_powered = true.
 
 ###########
 # Strings #
 ###########
 manufacturer="SAMSUNG"      # Manufacturer
-product="ARTIK05X"          # Product
-serial="$_dev"              # Serial
+product="ARTIK IoT Device"  # Product
+serial="ARTIK05X-$_dev"     # Serial
 
 ###########
 # Options #
@@ -135,9 +137,11 @@ use_serial=true             # Use the serial number string
 # Normally out don't have to change one of these flags
 in_is_isochronous=false     # In Endpoint is Isochronous
 out_is_isochronous=false    # Out Endpoint is Isochronous
-suspend_pull_downs=false    # Enable suspend pull downs for lower power
-change_usb_version=false    # Change USB Version
-usb_version=0               # Only used when change_usb_version is enabled
+suspend_pull_downs=true     # Enable suspend pull downs for lower power
+change_usb_version=true     # Change USB Version
+usb_version=0x0200          # Only used when change_usb_version is enabled
+
+cha_type=OPTO
 
 ########
 # Misc #
