@@ -37,7 +37,7 @@ static const int FOCUS_LOSS = -1;
 class FocusChangeListener
 {
 public:
-	virtual void onFocusChange(int focusChange) {};
+	virtual void onFocusChange(int focusChange){};
 };
 } // namespace media
 

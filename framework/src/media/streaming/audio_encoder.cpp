@@ -39,7 +39,7 @@ namespace media {
  * @brief   Player private data structure define.
  */
 struct priv_data_s {
-	ssize_t mCurrentPos;        /* read position when encoding */
+	ssize_t mCurrentPos; /* read position when encoding */
 };
 
 typedef struct priv_data_s priv_data_t;
@@ -51,7 +51,7 @@ typedef struct priv_data_s *priv_data_p;
 
 static size_t _input_callback(void *data, rbstream_p rbsp)
 {
-	audio_encoder_p encoder = (audio_encoder_p) data;
+	audio_encoder_p encoder = (audio_encoder_p)data;
 	assert(encoder != NULL);
 
 	size_t wlen = 0;
@@ -63,7 +63,7 @@ static size_t _input_callback(void *data, rbstream_p rbsp)
 
 static int _init_encoder(audio_encoder_p encoder, void *enc_ext)
 {
-	priv_data_p priv = (priv_data_p) encoder->priv_data;
+	priv_data_p priv = (priv_data_p)encoder->priv_data;
 	assert(priv != NULL);
 
 	switch (encoder->audio_type) {
@@ -75,15 +75,15 @@ static int _init_encoder(audio_encoder_p encoder, void *enc_ext)
 		encoder->enc_mem = calloc(1, opus_encoderMemRequirements());
 		RETURN_VAL_IF_FAIL((encoder->enc_mem != NULL), AUDIO_ENCODER_ERROR);
 
-		opus_enc_external_t *opus_ext = (opus_enc_external_t *) encoder->enc_ext;
-		*opus_ext = * ((opus_enc_external_t *) enc_ext);
+		opus_enc_external_t *opus_ext = (opus_enc_external_t *)encoder->enc_ext;
+		*opus_ext = *((opus_enc_external_t *)enc_ext);
 
 		// TODO: check opus_ext-> param validation
 		RETURN_VAL_IF_FAIL((opus_ext->pInputBuffer != NULL), AUDIO_ENCODER_ERROR);
 		RETURN_VAL_IF_FAIL((opus_ext->pOutputBuffer != NULL), AUDIO_ENCODER_ERROR);
 
 		opus_resetEncoder(encoder->enc_mem);
-		int err = opus_initEncoder((opus_enc_external_t *) encoder->enc_ext, encoder->enc_mem);
+		int err = opus_initEncoder((opus_enc_external_t *)encoder->enc_ext, encoder->enc_mem);
 		RETURN_VAL_IF_FAIL((err == OPUS_OK), AUDIO_ENCODER_ERROR);
 
 		priv->mCurrentPos = 0;
@@ -148,13 +148,13 @@ int audio_encoder_getframe(audio_encoder_p encoder, void *data, size_t len)
 {
 	assert(encoder != NULL);
 
-	priv_data_p priv = (priv_data_p) encoder->priv_data;
+	priv_data_p priv = (priv_data_p)encoder->priv_data;
 	assert(priv != NULL);
 
 	switch (encoder->audio_type) {
 #ifdef CONFIG_CODEC_LIBOPUS
 	case AUDIO_TYPE_OPUS: {
-		opus_enc_external_t *opus_ext = (opus_enc_external_t *) encoder->enc_ext;
+		opus_enc_external_t *opus_ext = (opus_enc_external_t *)encoder->enc_ext;
 
 		int analysis_frame_size = opus_ext->inputSampleRate * opus_ext->frameSizeMS / 1000;
 		size_t size = analysis_frame_size * opus_ext->inputChannels * sizeof(signed short);
@@ -162,8 +162,8 @@ int audio_encoder_getframe(audio_encoder_p encoder, void *data, size_t len)
 		int ret = rbs_seek(encoder->rbsp, priv->mCurrentPos, SEEK_SET);
 		RETURN_VAL_IF_FAIL((ret == OK), AUDIO_ENCODER_ERROR);
 
-		RETURN_VAL_IF_FAIL((size <= (size_t) opus_ext->inputBufferMaxLength), AUDIO_ENCODER_ERROR);
-		size_t rlen = rbs_read((void *) opus_ext->pInputBuffer, 1, size, encoder->rbsp);
+		RETURN_VAL_IF_FAIL((size <= (size_t)opus_ext->inputBufferMaxLength), AUDIO_ENCODER_ERROR);
+		size_t rlen = rbs_read((void *)opus_ext->pInputBuffer, 1, size, encoder->rbsp);
 		RETURN_VAL_IF_FAIL((rlen == size), AUDIO_ENCODER_ERROR);
 		opus_ext->inputBufferCurrentLength = rlen;
 
@@ -173,7 +173,7 @@ int audio_encoder_getframe(audio_encoder_p encoder, void *data, size_t len)
 		ret = opus_frameEncode(opus_ext, encoder->enc_mem);
 		RETURN_VAL_IF_FAIL((ret == OK), AUDIO_ENCODER_ERROR);
 
-		RETURN_VAL_IF_FAIL(((int32_t) len >= opus_ext->outputDataSize), AUDIO_ENCODER_ERROR);
+		RETURN_VAL_IF_FAIL(((int32_t)len >= opus_ext->outputDataSize), AUDIO_ENCODER_ERROR);
 		// TODO: get part of data
 
 		memcpy(data, opus_ext->pOutputBuffer, opus_ext->outputDataSize);
@@ -197,7 +197,7 @@ int audio_encoder_init(audio_encoder_p encoder, size_t rbuf_size, audio_type_t a
 	encoder->input_func = NULL;
 
 	// init private data
-	priv_data_p priv = (priv_data_p) malloc(sizeof(priv_data_t));
+	priv_data_p priv = (priv_data_p)malloc(sizeof(priv_data_t));
 	RETURN_VAL_IF_FAIL((priv != NULL), AUDIO_ENCODER_ERROR);
 	priv->mCurrentPos = 0;
 	encoder->priv_data = priv;
@@ -242,9 +242,9 @@ int audio_encoder_finish(audio_encoder_p encoder)
 
 	// free encoder buffer
 	if (encoder->enc_mem != NULL) {
-		#ifdef CONFIG_CODEC_LIBOPUS
+#ifdef CONFIG_CODEC_LIBOPUS
 		opus_uninitEncoder(encoder->enc_mem);
-		#endif
+#endif
 		free(encoder->enc_mem);
 		encoder->enc_mem = NULL;
 	}
@@ -259,4 +259,3 @@ int audio_encoder_finish(audio_encoder_p encoder)
 }
 
 } // namespace media
-

@@ -23,22 +23,22 @@
 namespace media {
 namespace stream {
 
-BufferOutputDataSource::BufferOutputDataSource(OnBufferDataReached callback)
-	: OutputDataSource(), mCallback(callback)
+BufferOutputDataSource::BufferOutputDataSource(OnBufferDataReached callback) : OutputDataSource(), mCallback(callback)
 {
 }
 
-BufferOutputDataSource::BufferOutputDataSource(unsigned int channels, unsigned int sampleRate, audio_format_type_t pcmFormat, OnBufferDataReached callback)
+BufferOutputDataSource::BufferOutputDataSource(unsigned int channels, unsigned int sampleRate,
+											   audio_format_type_t pcmFormat, OnBufferDataReached callback)
 	: OutputDataSource(channels, sampleRate, pcmFormat), mCallback(callback)
 {
 }
 
-BufferOutputDataSource::BufferOutputDataSource(const BufferOutputDataSource& source) :
-	OutputDataSource(source), mCallback(source.mCallback)
+BufferOutputDataSource::BufferOutputDataSource(const BufferOutputDataSource &source)
+	: OutputDataSource(source), mCallback(source.mCallback)
 {
 }
 
-BufferOutputDataSource& BufferOutputDataSource::operator=(const BufferOutputDataSource& source)
+BufferOutputDataSource &BufferOutputDataSource::operator=(const BufferOutputDataSource &source)
 {
 	OutputDataSource::operator=(source);
 	return *this;
@@ -59,7 +59,7 @@ bool BufferOutputDataSource::isPrepare()
 	return true;
 }
 
-ssize_t BufferOutputDataSource::write(unsigned char* buf, size_t size)
+ssize_t BufferOutputDataSource::write(unsigned char *buf, size_t size)
 {
 	if (!buf) {
 		meddbg("buf is nullptr, hence return EOF\n");
@@ -71,7 +71,7 @@ ssize_t BufferOutputDataSource::write(unsigned char* buf, size_t size)
 	}
 	ssize_t ret;
 	ret = mCallback(buf, size);
-	//TODO - The return value of Callback will be modified.
+	// TODO - The return value of Callback will be modified.
 	return ret;
 }
 

@@ -21,7 +21,8 @@
 
 namespace media {
 
-MediaWorker::MediaWorker() : mStacksize(PTHREAD_STACK_DEFAULT), mThreadName("MediaWorker"), mIsRunning(false), mRefCnt(0)
+MediaWorker::MediaWorker()
+	: mStacksize(PTHREAD_STACK_DEFAULT), mThreadName("MediaWorker"), mIsRunning(false), mRefCnt(0)
 {
 	medvdbg("MediaWorker::MediaWorker()\n");
 }
@@ -41,7 +42,8 @@ void MediaWorker::startWorker()
 		pthread_attr_init(&attr);
 		pthread_attr_setstacksize(&attr, mStacksize);
 		mIsRunning = true;
-		ret = pthread_create(&mWorkerThread, &attr, static_cast<pthread_startroutine_t>(MediaWorker::mediaLooper), this);
+		ret =
+			pthread_create(&mWorkerThread, &attr, static_cast<pthread_startroutine_t>(MediaWorker::mediaLooper), this);
 		if (ret != OK) {
 			medvdbg("Fail to create worker thread, return value : %d\n", ret);
 			--mRefCnt;
@@ -61,9 +63,7 @@ void MediaWorker::stopWorker()
 	medvdbg("MediaWorker::stopWorker() - decrease RefCnt : %d\n", mRefCnt);
 	if (mRefCnt <= 0) {
 		std::atomic<bool> &refBool = mIsRunning;
-		mWorkerQueue.enQueue([&refBool]() {
-			refBool = false;
-		});
+		mWorkerQueue.enQueue([&refBool]() { refBool = false; });
 		pthread_join(mWorkerThread, NULL);
 		medvdbg("MediaWorker::stopWorker() - mWorkerthread exited\n");
 	}
@@ -85,7 +85,8 @@ void *MediaWorker::mediaLooper(void *arg)
 	medvdbg("MediaWorker : mediaLooper\n");
 
 	while (worker->mIsRunning) {
-		while (worker->processLoop() && worker->mWorkerQueue.isEmpty());
+		while (worker->processLoop() && worker->mWorkerQueue.isEmpty())
+			;
 
 		std::function<void()> run = worker->deQueue();
 		medvdbg("MediaWorker : deQueue\n");

@@ -27,18 +27,18 @@
 extern "C" {
 #endif
 
-#define IDX_MASK (SIZE_MAX>>1)
-#define MSB_MASK (~IDX_MASK)    /* also the maximum value of the buffer depth */
+#define IDX_MASK (SIZE_MAX >> 1)
+#define MSB_MASK (~IDX_MASK) /* also the maximum value of the buffer depth */
 
 /* ring buffer structure */
 struct rb_s {
-	void *buf;                  /* pointer to the buffer allocated   */
-	size_t depth;               /* maximum size of the ring buffer   */
-	volatile size_t rd_idx;     /* MSB is used for the 'mirror' flag */
-	volatile size_t wr_idx;     /* MSB is used for the 'mirror' flag */
+	void *buf;				/* pointer to the buffer allocated   */
+	size_t depth;			/* maximum size of the ring buffer   */
+	volatile size_t rd_idx; /* MSB is used for the 'mirror' flag */
+	volatile size_t wr_idx; /* MSB is used for the 'mirror' flag */
 };
 
-typedef struct rb_s  rb_t;
+typedef struct rb_s rb_t;
 typedef struct rb_s *rb_p;
 
 /**
@@ -106,4 +106,3 @@ size_t rb_read_ext(rb_p rbp, void *ptr, size_t len, size_t offset);
 }
 #endif
 #endif
-

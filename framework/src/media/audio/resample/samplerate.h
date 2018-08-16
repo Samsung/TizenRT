@@ -36,7 +36,7 @@
 #define SAMPLERATE_H
 #ifdef __cplusplus
 extern "C" {
-#endif	/* __cplusplus */
+#endif /* __cplusplus */
 
 /****************************************************************************
  * Public Data
@@ -84,26 +84,25 @@ typedef void *src_handle_t;
  */
 struct src_data_s {
 	/* input params */
-	const void *data_in;        // pointer to input sample frames buffer (user buffer)
-	int input_frames;           // number of input frames
-	int channels_num;           // number of channels (1: mono, 2: stereo)
-	int origin_sample_rate;     // original sample rate
-	int origin_sample_width;    // original sample width (bits per sample), only support SAMPLE_WIDTH_16BITS now.
-	void *data_out;             // pointer to output sample buffer (user buffer)
-	int out_buf_length;         // length of data_out buffer (bytes)
+	const void *data_in;	 // pointer to input sample frames buffer (user buffer)
+	int input_frames;		 // number of input frames
+	int channels_num;		 // number of channels (1: mono, 2: stereo)
+	int origin_sample_rate;  // original sample rate
+	int origin_sample_width; // original sample width (bits per sample), only support SAMPLE_WIDTH_16BITS now.
+	void *data_out;			 // pointer to output sample buffer (user buffer)
+	int out_buf_length;		 // length of data_out buffer (bytes)
 
 	/* input params - specify desired output */
-	int desired_sample_rate;    // target sample rate
-	int desired_sample_width;   // target sample width (bits per sample), only support SAMPLE_WIDTH_16BITS now.
+	int desired_sample_rate;  // target sample rate
+	int desired_sample_width; // target sample width (bits per sample), only support SAMPLE_WIDTH_16BITS now.
 
 	/* output */
-	int output_frames_gen;      // number of output frames generated
-	int input_frames_used;      // number of frames used from input frames buffer
-	float src_ratio;            // desired_sample_rate/origin_sample_rate;
+	int output_frames_gen; // number of output frames generated
+	int input_frames_used; // number of frames used from input frames buffer
+	float src_ratio;	   // desired_sample_rate/origin_sample_rate;
 };
 
 typedef struct src_data_s src_data_t;
-
 
 /****************************************************************************
  * Public Function Prototypes
@@ -173,8 +172,7 @@ int src_MonoToStereo(short *samples, int size);
 bool src_is_valid_ratio(float ratio);
 
 #ifdef __cplusplus
-}		/* extern "C" */
-#endif	/* __cplusplus */
+} /* extern "C" */
+#endif /* __cplusplus */
 
-#endif	/* SAMPLERATE_H */
-
+#endif /* SAMPLERATE_H */

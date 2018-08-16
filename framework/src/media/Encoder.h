@@ -40,7 +40,9 @@ public:
 	size_t getAvailSpace();
 
 private:
-	Encoder() {}
+	Encoder()
+	{
+	}
 #ifdef CONFIG_AUDIO_CODEC
 	audio_encoder_t mEncoder;
 	signed short *inputBuf;

@@ -24,7 +24,7 @@ namespace utils {
 
 void toLowerString(std::string &str)
 {
-	for (char& c : str) {
+	for (char &c : str) {
 		if ('A' <= c && c <= 'Z') {
 			c += ('a' - 'A');
 		}
@@ -33,7 +33,7 @@ void toLowerString(std::string &str)
 
 void toUpperString(std::string &str)
 {
-	for (char& c : str) {
+	for (char &c : str) {
 		if ('a' <= c && c <= 'z') {
 			c -= ('a' - 'A');
 		}
@@ -73,5 +73,5 @@ audio_type_t getAudioTypeFromPath(std::string datapath)
 		return AUDIO_TYPE_INVALID;
 	}
 }
-} // namespace util
+} // namespace utils
 } // namespace media

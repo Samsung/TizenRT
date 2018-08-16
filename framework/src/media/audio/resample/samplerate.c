@@ -24,70 +24,68 @@
 ** file at : https://github.com/erikd/libsamplerate/blob/master/COPYING
 */
 
-#include	<stdio.h>
-#include	<stdint.h>
-#include	<stdlib.h>
-#include	<string.h>
-#include	<math.h>
-#include	"samplerate.h"
-
+#include <stdio.h>
+#include <stdint.h>
+#include <stdlib.h>
+#include <string.h>
+#include <math.h>
+#include "samplerate.h"
 
 /****************************************************************************
  * Pre-processor Definitions
  ****************************************************************************/
 // Range of ratio supported for sample rate conversion
-#define SRC_MAX_RATIO   ((float)3)
-#define SRC_MIN_RATIO   ((float)1 / SRC_MAX_RATIO)
+#define SRC_MAX_RATIO ((float)3)
+#define SRC_MIN_RATIO ((float)1 / SRC_MAX_RATIO)
 
-#define MAXIMUM(a, b)   (((a) > (b)) ? (a) : (b))
-#define MINIMUM(a, b)   (((a) < (b)) ? (a) : (b))
+#define MAXIMUM(a, b) (((a) > (b)) ? (a) : (b))
+#define MINIMUM(a, b) (((a) < (b)) ? (a) : (b))
 
 // Fraction part bits
-#define FRACBITS            (16)
+#define FRACBITS (16)
 
 // Convert to 16.16 fixed point value
-#define TO_16_16_FIXED(x)   ((uint32_t)((float)(x) * (float)(1 << FRACBITS) + 0.5f))
+#define TO_16_16_FIXED(x) ((uint32_t)((float)(x) * (float)(1 << FRACBITS) + 0.5f))
 
 // Int part value: 16.0 fixed point
-#define INTPART_VALUE(x)    ((x) >> FRACBITS)
+#define INTPART_VALUE(x) ((x) >> FRACBITS)
 
 // Fraction part value: 0.16 fixed point
-#define FRACPART_VALUE(x)   ((x) & 0xffff)
+#define FRACPART_VALUE(x) ((x)&0xffff)
 
 // Calculate new sample data
 #define CALC_NEW_SAMPLE(s1, s2, part) ((s1) + ((((s2) - (s1)) * (int32_t)(part)) >> 16))
 
 // Convert sample width in bytes
-#define BYTES_PER_SAMPLE(bits_per_sample)   ((bits_per_sample) >> 3)
+#define BYTES_PER_SAMPLE(bits_per_sample) ((bits_per_sample) >> 3)
 
 // Round the given positive float number to the nearest integer
 #define LRINTPF(pf) ((long)((float)(pf) + 0.5f))
 
 // Max channel num supported for SRC
-#define SRC_MAX_CH  (2)
+#define SRC_MAX_CH (2)
 
 // Down resample ratio for 44.1k->32k, 22.05k->16k and 11.025k->8k
 #define DOWN_RESAMPLE_441_320_RATIO ((float)441 / (float)320)
 
-#define FLOAT_ACCURACY      (0.000001f)
-#define FLOAT_EQUAL(a, b)   (fabsf((a)-(b)) < FLOAT_ACCURACY)
+#define FLOAT_ACCURACY (0.000001f)
+#define FLOAT_EQUAL(a, b) (fabsf((a) - (b)) < FLOAT_ACCURACY)
 
 #define NUM_COEFF_16KHZ (sizeof(filter_16khz_coeff) / sizeof(filter_16khz_coeff[0]))
-#define OVERLAP_16KHZ   (NUM_COEFF_16KHZ - 1)
+#define OVERLAP_16KHZ (NUM_COEFF_16KHZ - 1)
 
 #define NUM_COEFF_22KHZ (sizeof(filter_22khz_coeff) / sizeof(filter_22khz_coeff[0]))
-#define OVERLAP_22KHZ   (NUM_COEFF_22KHZ - 2)
+#define OVERLAP_22KHZ (NUM_COEFF_22KHZ - 2)
 
 // At least remain one frame (one sample for each channel)
 #define OVERLAP_DEFAULT (1)
 
-#define RETURN_VAL_IF_FAIL(condition, val) \
-	do { \
-		if (!(condition)) { \
-			return val; \
-		} \
+#define RETURN_VAL_IF_FAIL(condition, val)                                                                             \
+	do {                                                                                                               \
+		if (!(condition)) {                                                                                            \
+			return val;                                                                                                \
+		}                                                                                                              \
 	} while (0)
-
 
 /****************************************************************************
  * Private Declarations
@@ -98,17 +96,17 @@
  * @brief It's internal structure, user can only get the handler via src_init().
  */
 struct resampler_s {
-	int16_t *in_buffer;     // internal input buffer
-	int16_t *out_buffer;    // pointer of the external output buffer
-	int size_in_bytes;      // input buffer size in bytes
-	int size_in_frames;     // input buffer size in frames
-	int outsize_in_frames;  // output buffer size in frames
-	int left_frames;        // number of frames remained in input buffer
-	int used_frames;        // number of frames used at last time src_simple()
-	int channels_num;       // number of channels of input PCM samples
-	float lastratio;        // memorize last sample rate coversion ratio
-	int lastoldformat;      // memorize last origin sample width(format)
-	int lastnewformat;      // memorize last desired sample width(format)
+	int16_t *in_buffer;	// internal input buffer
+	int16_t *out_buffer;   // pointer of the external output buffer
+	int size_in_bytes;	 // input buffer size in bytes
+	int size_in_frames;	// input buffer size in frames
+	int outsize_in_frames; // output buffer size in frames
+	int left_frames;	   // number of frames remained in input buffer
+	int used_frames;	   // number of frames used at last time src_simple()
+	int channels_num;	  // number of channels of input PCM samples
+	float lastratio;	   // memorize last sample rate coversion ratio
+	int lastoldformat;	 // memorize last origin sample width(format)
+	int lastnewformat;	 // memorize last desired sample width(format)
 };
 
 typedef struct resampler_s resampler_t;
@@ -118,12 +116,9 @@ typedef struct resampler_s resampler_t;
  * 22050 -> 16000, or 11025 -> 8000.
  */
 static const int32_t filter_16khz_coeff[] = {
-	2057290, -2973608, 1880478, 4362037,
-	-14639744, 18523609, -1609189, -38502470,
-	78073125, -68353935, -59103896, 617555440,
-	617555440, -59103896, -68353935, 78073125,
-	-38502470, -1609189, 18523609, -14639744,
-	4362037, 1880478, -2973608, 2057290,
+	2057290,   -2973608,  1880478,   4362037,   -14639744, 18523609,  -1609189,  -38502470,
+	78073125,  -68353935, -59103896, 617555440, 617555440, -59103896, -68353935, 78073125,
+	-38502470, -1609189,  18523609,  -14639744, 4362037,   1880478,   -2973608,  2057290,
 };
 
 /**
@@ -131,13 +126,9 @@ static const int32_t filter_16khz_coeff[] = {
  * (Works equivalently for 22010 -> 11025 or any other halving, of course.)
  */
 static const int32_t filter_22khz_coeff[] = {
-	2089257, 2898328, -5820678, -10484531,
-	19038724, 30542725, -50469415, -81505260,
-	152544464, 478517512, 478517512, 152544464,
-	-81505260, -50469415, 30542725, 19038724,
-	-10484531, -5820678, 2898328, 2089257,
+	2089257,   2898328,   -5820678,  -10484531, 19038724, 30542725, -50469415, -81505260, 152544464, 478517512,
+	478517512, 152544464, -81505260, -50469415, 30542725, 19038724, -10484531, -5820678,  2898328,   2089257,
 };
-
 
 /****************************************************************************
  * Private Functions
@@ -195,7 +186,7 @@ static void upresample_int(resampler_t *src, int32_t num_frames_out, int32_t quo
 	int32_t channels_num = src->channels_num;
 	float step_float = (float)1 / (float)quoti;
 	uint32_t step = TO_16_16_FIXED(step_float);
-	uint32_t fp_index = 0;   // 16.16 fixed point value
+	uint32_t fp_index = 0; // 16.16 fixed point value
 
 	int32_t j;
 	for (j = 0; j < num_frames_out; ++j, fp_index += step) {
@@ -226,7 +217,7 @@ static void upresample_frac(resampler_t *src, int32_t num_frames_out, int32_t qu
 	int32_t channels_num = src->channels_num;
 	float step_float = frac;
 	uint32_t step = TO_16_16_FIXED(step_float);
-	uint32_t fp_index = 0;   // 16.16 fixed point value
+	uint32_t fp_index = 0; // 16.16 fixed point value
 
 	int32_t j;
 	for (j = 0; j < num_frames_out; ++j, fp_index += step) {
@@ -257,7 +248,7 @@ static void downresample_frac(resampler_t *src, int32_t num_frames_out, float fr
 	int32_t channels_num = src->channels_num;
 	float step_float = frac;
 	uint32_t step = TO_16_16_FIXED(step_float);
-	uint32_t fp_index = 0;   // 16.16 fixed point value
+	uint32_t fp_index = 0; // 16.16 fixed point value
 
 	int32_t j;
 	for (j = 0; j < num_frames_out; ++j, fp_index += step) {
@@ -311,7 +302,7 @@ static void downresample_441_320(resampler_t *src, int32_t num_frames_in, int32_
 	int32_t num_samples_in = num_frames_in * channels_num;
 	float step_float = DOWN_RESAMPLE_441_320_RATIO;
 	uint32_t step = TO_16_16_FIXED(step_float);
-	uint32_t fp_index = 0;   // 16.16 fixed point value
+	uint32_t fp_index = 0; // 16.16 fixed point value
 
 	int32_t i;
 	for (i = 0; i < num_samples_in; ++i) {
@@ -348,7 +339,7 @@ static void downresample_2_1_filter_frac(resampler_t *src, int32_t num_frames_in
 	int32_t num_samples_in = num_frames_in * channels_num;
 	float step_float = frac;
 	uint32_t step = TO_16_16_FIXED(step_float);
-	uint32_t fp_index = 0;   // 16.16 fixed point value
+	uint32_t fp_index = 0; // 16.16 fixed point value
 
 	int32_t i;
 	for (i = 0; i < num_samples_in; ++i) {
@@ -438,7 +429,8 @@ int src_simple(src_handle_t handle, src_data_t *src_data)
 
 	// PCM format conversion isn't supported currently, and shall be supported in future.
 	// Support SAMPLE_WIDTH_16BITS  currenty, and other format shall be supported in future.
-	RETURN_VAL_IF_FAIL((old_sample_width == new_sample_width && old_sample_width == SAMPLE_WIDTH_16BITS), SRC_ERR_NOT_SUPPORT);
+	RETURN_VAL_IF_FAIL((old_sample_width == new_sample_width && old_sample_width == SAMPLE_WIDTH_16BITS),
+					   SRC_ERR_NOT_SUPPORT);
 
 	src->outsize_in_frames = src_data->out_buf_length / (BYTES_PER_SAMPLE(new_sample_width) * channels_num);
 	RETURN_VAL_IF_FAIL((src_data->out_buf_length > 0 && src->outsize_in_frames > src->left_frames), SRC_ERR_BAD_PARAMS);
@@ -469,32 +461,28 @@ int src_simple(src_handle_t handle, src_data_t *src_data)
 		// same rate, just copy data
 		input_frames_used = MINIMUM(src_data->input_frames, src->outsize_in_frames);
 		output_frames_gen = input_frames_used;
-		memcpy((void *)src->out_buffer,\
-			   src_data->data_in,\
-			   output_frames_gen * channels_num * bytes_per_sample);
+		memcpy((void *)src->out_buffer, src_data->data_in, output_frames_gen * channels_num * bytes_per_sample);
 	} else {
 		int frames_num = 0; // frames count in internal fin buffer
 
-#define FRAMES_TO_BYTES(frames) ((frames) * channels_num * bytes_per_sample)
+#define FRAMES_TO_BYTES(frames) ((frames)*channels_num * bytes_per_sample)
 		// move remaining frames
-		memcpy((void *)src->in_buffer,\
-			   (const void *)((int8_t *)src->in_buffer + FRAMES_TO_BYTES(src->used_frames)),\
+		memcpy((void *)src->in_buffer, (const void *)((int8_t *)src->in_buffer + FRAMES_TO_BYTES(src->used_frames)),
 			   FRAMES_TO_BYTES(src->left_frames));
 		frames_num += src->left_frames;
 
-		//according to the outsize_in_frames, to calculate the adjust_size_in_frames
+		// according to the outsize_in_frames, to calculate the adjust_size_in_frames
 		int ratio = new_sample_rate / old_sample_rate;
 		if ((new_sample_rate % old_sample_rate) != 0) {
 			ratio += 1;
 		}
-		int adjust_size_in_frames = MINIMUM(src->size_in_frames, src->outsize_in_frames/ratio);
-		
+		int adjust_size_in_frames = MINIMUM(src->size_in_frames, src->outsize_in_frames / ratio);
+
 		// accept input frames as much as possible
 		input_frames_used = MINIMUM(src_data->input_frames, (adjust_size_in_frames - frames_num));
 
 		// append new input frames
-		memcpy((void *)(int8_t *)src->in_buffer + FRAMES_TO_BYTES(frames_num),\
-			   (const void *)src_data->data_in,\
+		memcpy((void *)(int8_t *)src->in_buffer + FRAMES_TO_BYTES(frames_num), (const void *)src_data->data_in,
 			   FRAMES_TO_BYTES(input_frames_used));
 		frames_num += input_frames_used;
 #undef FRAMES_TO_BYTES
@@ -552,7 +540,7 @@ int src_simple(src_handle_t handle, src_data_t *src_data)
 				upresample_int(src, output_frames_gen, quotient);
 			} else {
 				// ratio 1.*/2.* :: 8K->11.025K, 16K->44.1K, 11.025K->12K, ...
-				float frac = (float)((quotient + 1) * old_sample_rate) / (float) new_sample_rate;
+				float frac = (float)((quotient + 1) * old_sample_rate) / (float)new_sample_rate;
 				output_frames_gen = LRINTPF((float)(src->used_frames * (quotient + 1)) / frac);
 				upresample_frac(src, output_frames_gen, quotient + 1, frac);
 			}
@@ -592,4 +580,3 @@ int src_MonoToStereo(short *data, int len)
 
 	return len << 1;
 }
-

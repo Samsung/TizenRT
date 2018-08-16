@@ -86,11 +86,11 @@ private:
 	void getVolumePlayer(int &ret);
 	void setVolumePlayer(int, player_result_t &ret);
 	void setPlayerObserver(std::shared_ptr<MediaPlayerObserverInterface> observer);
-	void setPlayerDataSource(std::shared_ptr<stream::InputDataSource> dataSource, player_result_t& ret);
+	void setPlayerDataSource(std::shared_ptr<stream::InputDataSource> dataSource, player_result_t &ret);
 
 private:
 	std::atomic<player_state_t> mCurState;
-	unsigned char* mBuffer;
+	unsigned char *mBuffer;
 	int mBufSize;
 	std::mutex mCmdMtx;
 	std::condition_variable mSyncCv;

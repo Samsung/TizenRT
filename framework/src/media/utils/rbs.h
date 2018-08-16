@@ -34,7 +34,7 @@ extern "C" {
    rbs_seek  -> fseek
    rbs_tell  -> ftell
    rbs_seek_ext -> if user seek_ext at pos1, then it's IMPOSSIBLE to seek(_ext) at
-                   a forward pos2 (pos2 < pos1).
+				   a forward pos2 (pos2 < pos1).
    rbs_tell_ext -> tell available minimum position to seek, not current read position).
 
    There's some limitations:
@@ -44,15 +44,15 @@ extern "C" {
    It's thread safe for multi-threaded writing and one thread reading at same time,
    user can try to push data at any time as long as there is free space in ring-buffer.
 
-                 [   RING             ~            BUFFER  ]
-                 0         rd_idx          wr_idx
-                 |           |                |
-                  ------------------------------------------
- 	             |...........#################.............|
-                  ------------------------------------------
+				 [   RING             ~            BUFFER  ]
+				 0         rd_idx          wr_idx
+				 |           |                |
+				  ------------------------------------------
+				 |...........#################.............|
+				  ------------------------------------------
 
-     ~~~~~~~~~~~~~~~~~~~~~~~~#################,,,,,,,,,,,,,,,,,,,,,,,
-     |                       |       |        |                     |
+	 ~~~~~~~~~~~~~~~~~~~~~~~~#################,,,,,,,,,,,,,,,,,,,,,,,
+	 |                       |       |        |                     |
 POS: 0                     rd_size cur_pos wr_size              end of stream
 
 '#' -- Valid Data in ring-buffer
@@ -63,23 +63,23 @@ POS: 0                     rd_size cur_pos wr_size              end of stream
 */
 
 enum {
-	OPTION_ALLOW_TO_DEQUEUE = 0x0001,    /* Allow to dequeue data form ring-buffer */
+	OPTION_ALLOW_TO_DEQUEUE = 0x0001, /* Allow to dequeue data form ring-buffer */
 	OPTION_MAX,
 };
 
-typedef struct rbstream_s  rbstream_t;
+typedef struct rbstream_s rbstream_t;
 typedef struct rbstream_s *rbstream_p;
 
-typedef size_t(*rbstream_input_f)(void *data, rbstream_p stream);
+typedef size_t (*rbstream_input_f)(void *data, rbstream_p stream);
 
 struct rbstream_s {
-	rb_p rbp;                       /* pointer to the ring-buffer object */
-	volatile size_t wr_size;        /* total size written to ring-buffer */
-	volatile size_t rd_size;        /* total size read from ring-buffer  */
-	volatile size_t cur_pos;        /* current read position, range[rd_size,wr_size] */
-	void *data;                     /* callback data for user */
-	rbstream_input_f input_func;    /* callback function to request more data */
-	int options;                    /*  */
+	rb_p rbp;					 /* pointer to the ring-buffer object */
+	volatile size_t wr_size;	 /* total size written to ring-buffer */
+	volatile size_t rd_size;	 /* total size read from ring-buffer  */
+	volatile size_t cur_pos;	 /* current read position, range[rd_size,wr_size] */
+	void *data;					 /* callback data for user */
+	rbstream_input_f input_func; /* callback function to request more data */
+	int options;				 /*  */
 };
 
 /**
@@ -163,4 +163,3 @@ int rbs_ctrl(rbstream_p stream, int option, int value);
 }
 #endif
 #endif
-

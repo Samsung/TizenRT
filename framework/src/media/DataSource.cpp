@@ -20,30 +20,23 @@
 #include <debug.h>
 
 namespace media {
-DataSource::DataSource()
-	: mChannels(2)
-	, mSampleRate(16000)
-	, mPcmFormat(AUDIO_FORMAT_TYPE_S16_LE)
+DataSource::DataSource() : mChannels(2), mSampleRate(16000), mPcmFormat(AUDIO_FORMAT_TYPE_S16_LE)
 {
 	medvdbg("DataSource::DataSource()\n");
 }
 
 DataSource::DataSource(unsigned int channels, unsigned int sampleRate, audio_format_type_t pcmFormat)
-	: mChannels(channels)
-	, mSampleRate(sampleRate)
-	, mPcmFormat(pcmFormat)
+	: mChannels(channels), mSampleRate(sampleRate), mPcmFormat(pcmFormat)
 {
 	medvdbg("DataSource::DataSource(unsigned int channels, unsigned int sampleRate, audio_format_type_t pcmFormat)\n");
 }
 
-DataSource::DataSource(const DataSource& source)
-	: mChannels(source.mChannels)
-	, mSampleRate(source.mSampleRate)
-	, mPcmFormat(source.mPcmFormat)
+DataSource::DataSource(const DataSource &source)
+	: mChannels(source.mChannels), mSampleRate(source.mSampleRate), mPcmFormat(source.mPcmFormat)
 {
 }
 
-DataSource& DataSource::operator=(const DataSource& source)
+DataSource &DataSource::operator=(const DataSource &source)
 {
 	mChannels = source.mChannels;
 	mSampleRate = source.mSampleRate;

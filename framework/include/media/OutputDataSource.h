@@ -64,13 +64,13 @@ public:
 	 * @details @b #include <media/OutputDataSource.h>
 	 * @since TizenRT v2.0 PRE
 	 */
-	OutputDataSource(const OutputDataSource& source);
+	OutputDataSource(const OutputDataSource &source);
 	/**
 	 * @brief Operator= for OutputDataSource.
 	 * @details @b #include <media/OutputDataSource.h>
 	 * @since TizenRT v2.0 PRE
 	 */
-	OutputDataSource& operator=(const OutputDataSource& source);
+	OutputDataSource &operator=(const OutputDataSource &source);
 	/**
 	 * @brief Deconstructs an empty OutputDataSource.
 	 * @details @b #include <media/OutputDataSource.h>
@@ -94,7 +94,7 @@ public:
 	 * @details @b #include <media/OutputDataSource.h>
 	 * @since TizenRT v2.0 PRE
 	 */
-	virtual ssize_t write(unsigned char* buf, size_t size) = 0;
+	virtual ssize_t write(unsigned char *buf, size_t size) = 0;
 };
 } // namespace stream
 } // namespace media

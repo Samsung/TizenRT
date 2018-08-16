@@ -25,22 +25,23 @@
 namespace media {
 namespace stream {
 
-FileOutputDataSource::FileOutputDataSource(const std::string& dataPath)
+FileOutputDataSource::FileOutputDataSource(const std::string &dataPath)
 	: OutputDataSource(), mDataPath(dataPath), mFp(nullptr)
 {
 }
 
-FileOutputDataSource::FileOutputDataSource(unsigned int channels, unsigned int sampleRate, audio_format_type_t pcmFormat, const std::string& dataPath)
+FileOutputDataSource::FileOutputDataSource(unsigned int channels, unsigned int sampleRate,
+										   audio_format_type_t pcmFormat, const std::string &dataPath)
 	: OutputDataSource(channels, sampleRate, pcmFormat), mDataPath(dataPath), mFp(nullptr)
 {
 }
 
-FileOutputDataSource::FileOutputDataSource(const FileOutputDataSource& source) :
-	OutputDataSource(source), mDataPath(source.mDataPath), mFp(source.mFp)
+FileOutputDataSource::FileOutputDataSource(const FileOutputDataSource &source)
+	: OutputDataSource(source), mDataPath(source.mDataPath), mFp(source.mFp)
 {
 }
 
-FileOutputDataSource& FileOutputDataSource::operator=(const FileOutputDataSource& source)
+FileOutputDataSource &FileOutputDataSource::operator=(const FileOutputDataSource &source)
 {
 	OutputDataSource::operator=(source);
 	return *this;
@@ -102,7 +103,7 @@ bool FileOutputDataSource::isPrepare()
 	return true;
 }
 
-ssize_t FileOutputDataSource::write(unsigned char* buf, size_t size)
+ssize_t FileOutputDataSource::write(unsigned char *buf, size_t size)
 {
 	if (!isPrepare()) {
 		return EOF;

@@ -45,7 +45,7 @@ typedef struct audio_decoder_s *audio_decoder_p;
  * @return size of audio data pushed to decoder via audio_decoder_pushdata().
  *         in case of return 0, that means end of stream, then decoding will be terminated.
  */
-typedef size_t(*input_func_f)(void *user_data, audio_decoder_p decoder);
+typedef size_t (*input_func_f)(void *user_data, audio_decoder_p decoder);
 
 /**
  * @struct  audio_decoder_s
@@ -54,22 +54,22 @@ typedef size_t(*input_func_f)(void *user_data, audio_decoder_p decoder);
  *          to audio_decoder_init(), and specify ring-buffer size at the same time.
  */
 struct audio_decoder_s {
-	int audio_type;             /* indicates the format of current audio stream, see enum audio_type_e */
+	int audio_type; /* indicates the format of current audio stream, see enum audio_type_e */
 
 	// decoder buffer
-	void *dec_ext;              /* decoder external struct, configured by user according to audio_type */
-	void *dec_mem;              /* decoder required memory, used internally */
+	void *dec_ext; /* decoder external struct, configured by user according to audio_type */
+	void *dec_mem; /* decoder required memory, used internally */
 
 	// user callback func and data
-	void *cb_data;              /* data ptr user registered, be passed to callback function. */
-	input_func_f input_func;    /* input callback, be called when decoder request more data. */
+	void *cb_data;			 /* data ptr user registered, be passed to callback function. */
+	input_func_f input_func; /* input callback, be called when decoder request more data. */
 
 	// internal member used by decoder
-	rb_t ringbuffer;            /* ring-buffer object */
-	rbstream_p rbsp;            /* ring-buffer stream handle, co-work with above ring-buffer */
+	rb_t ringbuffer; /* ring-buffer object */
+	rbstream_p rbsp; /* ring-buffer stream handle, co-work with above ring-buffer */
 
 	// private data
-	void *priv_data;            /* pointer to private data */
+	void *priv_data; /* pointer to private data */
 };
 
 /**
@@ -160,9 +160,9 @@ int audio_decoder_init_decoder(audio_decoder_p decoder, int audio_type, void *de
  * @return bytes of PCM data saved in 'buf', usually it's same as 'max'.
  *         it may be less than 'max' when there's no more data to decode.
  */
-size_t audio_decoder_get_frames(audio_decoder_p decoder, unsigned char *buf, size_t max, unsigned int *sr, unsigned short *ch);
+size_t audio_decoder_get_frames(audio_decoder_p decoder, unsigned char *buf, size_t max, unsigned int *sr,
+								unsigned short *ch);
 
 } // namespace media
 
 #endif /* STREAMING_DECODER_H */
-

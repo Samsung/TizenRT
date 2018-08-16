@@ -35,7 +35,7 @@
 namespace media {
 
 /**
- * @class 
+ * @class
  * @brief This class is audio data structure
  * @details @b #include <media/DataSource.h>
  * @since TizenRT v2.0 PRE
@@ -69,13 +69,13 @@ public:
 	 * @details @b #include <media/DataSource.h>
 	 * @since TizenRT v2.0 PRE
 	 */
-	DataSource(const DataSource&);
+	DataSource(const DataSource &);
 	/**
 	 * @brief Operator= for DataSource.
 	 * @details @b #include <media/DataSource.h>
 	 * @since TizenRT v2.0 PRE
 	 */
-	DataSource& operator=(const DataSource&);
+	DataSource &operator=(const DataSource &);
 
 public:
 	/**

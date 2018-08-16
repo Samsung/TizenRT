@@ -29,22 +29,24 @@
 namespace media {
 namespace stream {
 
-SocketOutputDataSource::SocketOutputDataSource(const std::string& ipAddr, const uint16_t port)
+SocketOutputDataSource::SocketOutputDataSource(const std::string &ipAddr, const uint16_t port)
 	: OutputDataSource(), mIpAddr(ipAddr), mPort(port), mSockFd(INVALID_SOCKET)
 {
 }
 
-SocketOutputDataSource::SocketOutputDataSource(unsigned int channels, unsigned int sampleRate, audio_format_type_t pcmFormat, const std::string& ipAddr, const uint16_t port)
+SocketOutputDataSource::SocketOutputDataSource(unsigned int channels, unsigned int sampleRate,
+											   audio_format_type_t pcmFormat, const std::string &ipAddr,
+											   const uint16_t port)
 	: OutputDataSource(channels, sampleRate, pcmFormat), mIpAddr(ipAddr), mPort(port), mSockFd(INVALID_SOCKET)
 {
 }
 
-SocketOutputDataSource::SocketOutputDataSource(const SocketOutputDataSource& source) :
-	OutputDataSource(source), mIpAddr(source.mIpAddr), mPort(source.mPort), mSockFd(source.mSockFd)
+SocketOutputDataSource::SocketOutputDataSource(const SocketOutputDataSource &source)
+	: OutputDataSource(source), mIpAddr(source.mIpAddr), mPort(source.mPort), mSockFd(source.mSockFd)
 {
 }
 
-SocketOutputDataSource& SocketOutputDataSource::operator=(const SocketOutputDataSource& source)
+SocketOutputDataSource &SocketOutputDataSource::operator=(const SocketOutputDataSource &source)
 {
 	OutputDataSource::operator=(source);
 	return *this;
@@ -97,7 +99,7 @@ bool SocketOutputDataSource::isPrepare()
 	return (mSockFd != INVALID_SOCKET);
 }
 
-ssize_t SocketOutputDataSource::write(unsigned char* buf, size_t size)
+ssize_t SocketOutputDataSource::write(unsigned char *buf, size_t size)
 {
 	if (!buf) {
 		return EOF;

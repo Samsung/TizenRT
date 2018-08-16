@@ -133,40 +133,39 @@ typedef struct opus_enc_external_s opus_enc_external_t;
 typedef struct opus_enc_external_s *opus_enc_external_p;
 
 /** Gets the size of internal OpusEncoder structure,which will be internally used.
-  * @retval returns The size in bytes.
-  */
+ * @retval returns The size in bytes.
+ */
 uint32_t opus_encoderMemRequirements(void);
 
 /** Initializes encoder context memory, as per configuration in opus_enc_external_t.
-  * The memory pointed to by pMem must be at least the size returned by opus_encoderMemRequirements().
-  * @param [in] pExt: Encoder external structure, which is user setting.
-  * @param [in] pMem: Encoder internal used memory, user allocated.
-  * @return OPUS_OK on success, otherwise, return error codes, see opus_errorcodes
-  */
+ * The memory pointed to by pMem must be at least the size returned by opus_encoderMemRequirements().
+ * @param [in] pExt: Encoder external structure, which is user setting.
+ * @param [in] pMem: Encoder internal used memory, user allocated.
+ * @return OPUS_OK on success, otherwise, return error codes, see opus_errorcodes
+ */
 int32_t opus_initEncoder(opus_enc_external_t *pExt, void *pMem);
 
 /** Uninitialize encoder resource.
-  * Thread resource is allocated during opus_initEncoder().
-  * @param [in] pMem: Encoder internal used memory.
-  * @return OPUS_OK on success, otherwise, return error codes, see opus_errorcodes
-  */
+ * Thread resource is allocated during opus_initEncoder().
+ * @param [in] pMem: Encoder internal used memory.
+ * @return OPUS_OK on success, otherwise, return error codes, see opus_errorcodes
+ */
 int32_t opus_uninitEncoder(void *pMem);
 
 /** Reset encoder context memory.
-  * The memory pointed to by pMem must be at least the size returned by opus_encoderMemRequirements().
-  * @param [in] pMem: Encoder internal used memory.
-  */
+ * The memory pointed to by pMem must be at least the size returned by opus_encoderMemRequirements().
+ * @param [in] pMem: Encoder internal used memory.
+ */
 void opus_resetEncoder(void *pMem);
 
 /** Encode the 16-bit PCM data to Opus frame data, stored in opus_enc_external_t struct.
-  * @param [in/out] pExt: Decoder external structure, input frame data and hold output data.
-  * @param [in] pMem: Encoder internal used memory, saving encoder context info.
-  * @return OPUS_OK on success, otherwise, return error codes, see opus_errorcodes
-  */
+ * @param [in/out] pExt: Decoder external structure, input frame data and hold output data.
+ * @param [in] pMem: Encoder internal used memory, saving encoder context info.
+ * @return OPUS_OK on success, otherwise, return error codes, see opus_errorcodes
+ */
 int32_t opus_frameEncode(opus_enc_external_t *pExt, void *pMem);
 
 #ifdef __cplusplus
 } /* extern "C" */
 #endif
 #endif /* OPUS_ENCODER_API_H */
-

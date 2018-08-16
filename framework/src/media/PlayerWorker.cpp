@@ -39,7 +39,7 @@ PlayerWorker::~PlayerWorker()
 {
 }
 
-PlayerWorker& PlayerWorker::getWorker()
+PlayerWorker &PlayerWorker::getWorker()
 {
 	static PlayerWorker worker;
 	return worker;

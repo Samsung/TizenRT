@@ -23,25 +23,25 @@
 extern "C" {
 #endif /* __cplusplus */
 
-#define RETURN_IF_FAIL(condition) \
-	do { \
-		if (!(condition)) { \
-			return; \
-		} \
+#define RETURN_IF_FAIL(condition)                                                                                      \
+	do {                                                                                                               \
+		if (!(condition)) {                                                                                            \
+			return;                                                                                                    \
+		}                                                                                                              \
 	} while (0)
 
-#define RETURN_VAL_IF_FAIL(condition, val) \
-	do { \
-		if (!(condition)) { \
-			return val; \
-		} \
+#define RETURN_VAL_IF_FAIL(condition, val)                                                                             \
+	do {                                                                                                               \
+		if (!(condition)) {                                                                                            \
+			return val;                                                                                                \
+		}                                                                                                              \
 	} while (0)
 
-#define GOTO_IF_FAIL(condition, tag) \
-	do { \
-		if (!(condition)) { \
-			goto tag; \
-		} \
+#define GOTO_IF_FAIL(condition, tag)                                                                                   \
+	do {                                                                                                               \
+		if (!(condition)) {                                                                                            \
+			goto tag;                                                                                                  \
+		}                                                                                                              \
 	} while (0)
 
 #ifndef MINIMUM
@@ -63,4 +63,3 @@ extern "C" {
 }
 #endif /* __cplusplus */
 #endif /* DEFS_H */
-

@@ -36,7 +36,7 @@ typedef enum player_observer_command_e {
 class PlayerObserverWorker : public MediaWorker
 {
 public:
-	static PlayerObserverWorker& getWorker();
+	static PlayerObserverWorker &getWorker();
 
 private:
 	PlayerObserverWorker();

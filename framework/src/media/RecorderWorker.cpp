@@ -37,7 +37,7 @@ RecorderWorker::~RecorderWorker()
 	medvdbg("RecorderWorker::~RecorderWorker()\n");
 }
 
-RecorderWorker& RecorderWorker::getWorker()
+RecorderWorker &RecorderWorker::getWorker()
 {
 	static RecorderWorker worker;
 	return worker;
