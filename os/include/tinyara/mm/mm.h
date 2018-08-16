@@ -222,14 +222,14 @@ typedef size_t mmsize_t;
 #ifdef CONFIG_DEBUG_MM_HEAPINFO
 typedef size_t mmaddress_t;		/* 32 bit address space */
 
-#if (CONFIG_ARCH_MIPS)
+#if defined(CONFIG_ARCH_MIPS)
 /* Macro gets return address of malloc API */
 #define ARCH_GET_RET_ADDRESS \
 	mmaddress_t retaddr = 0; \
 	do { \
 		asm volatile ("sw $ra, %0" : "=m" (retaddr)); \
 	} while (0);
-#elif (CONFIG_ARCH_ARM)
+#elif defined(CONFIG_ARCH_ARM)
 #define ARCH_GET_RET_ADDRESS \
 	mmaddress_t retaddr = 0; \
 	do { \
