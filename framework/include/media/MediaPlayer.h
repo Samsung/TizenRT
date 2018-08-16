@@ -42,6 +42,8 @@ namespace media {
  */
 typedef enum player_result_e {
 	/** MediaPlayer Error case */
+	PLAYER_ERROR_INVALID_OPERATION = -2,
+	PLAYER_ERROR_INVALID_PARAM = -1,
 	PLAYER_ERROR,
 	/** MediaPlayer Success case */
 	PLAYER_OK
@@ -145,7 +147,7 @@ public:
 	 * @return The value of current volume
 	 * @since TizenRT v2.0 PRE
 	 */
-	int getVolume();
+	player_result_t getVolume(uint8_t*);
 	
 	/**
 	 * @brief Sets the volume adjusted
@@ -154,7 +156,7 @@ public:
 	 * @param[in] vol The vol that the value of mic volume
 	 * @since TizenRT v2.0 PRE
 	 */
-	player_result_t setVolume(int);
+	player_result_t setVolume(uint8_t);
 	
 	/**
 	 * @brief Sets the DatSource of input data

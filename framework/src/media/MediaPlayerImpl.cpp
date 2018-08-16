@@ -366,34 +366,42 @@ void MediaPlayerImpl::pausePlayer()
 	mCurState = PLAYER_STATE_PAUSED;
 }
 
-int MediaPlayerImpl::getVolume()
+player_result_t MediaPlayerImpl::getVolume(uint8_t *vol)
 {
-	int ret = -1;
+	player_result_t ret = PLAYER_OK;
 
 	std::unique_lock<std::mutex> lock(mCmdMtx);
 	medvdbg("MediaPlayer getVolume\n");
 
+	if (vol == nullptr) {
+		meddbg("The given argument is invalid.\n");
+		return PLAYER_ERROR_INVALID_PARAM;
+	}
+
 	PlayerWorker& mpw = PlayerWorker::getWorker();
 	if (!mpw.isAlive()) {
 		meddbg("PlayerWorker is not alive\n");
-		return -1;
+		return PLAYER_ERROR;
 	}
 
-	mpw.enQueue(&MediaPlayerImpl::getVolumePlayer, shared_from_this(), std::ref(ret));
+	mpw.enQueue(&MediaPlayerImpl::getVolumePlayer, shared_from_this(), vol, std::ref(ret));
 	mSyncCv.wait(lock);
 
 	return ret;
 }
 
-void MediaPlayerImpl::getVolumePlayer(int &ret)
+void MediaPlayerImpl::getVolumePlayer(uint8_t *vol, player_result_t &ret)
 {
 	medvdbg("MediaPlayer Worker : getVolume\n");
+	if (get_output_audio_volume(vol) != AUDIO_MANAGER_SUCCESS) {
+		meddbg("get_output_audio_volume() is failed, ret = %d\n", ret);
+		ret = PLAYER_ERROR;
+	}
 
-	ret = get_output_audio_volume();
 	notifySync();
 }
 
-player_result_t MediaPlayerImpl::setVolume(int vol)
+player_result_t MediaPlayerImpl::setVolume(uint8_t vol)
 {
 	player_result_t ret = PLAYER_ERROR;
 
@@ -412,20 +420,19 @@ player_result_t MediaPlayerImpl::setVolume(int vol)
 	return ret;
 }
 
-void MediaPlayerImpl::setVolumePlayer(int vol, player_result_t &ret)
+void MediaPlayerImpl::setVolumePlayer(uint8_t vol, player_result_t &ret)
 {
-	int vol_max = -1;
-	medvdbg("MediaPlayer Worker : setVolume\n");
+	medvdbg("MediaPlayer Worker : setVolume %d\n", vol);
 
-	vol_max = get_max_audio_volume();
-	if (vol < 0 || vol > vol_max) {
-		meddbg("MediaPlayer setVolume fail : invalid argument. volume level should be 0(Min) ~ %d(Max)\n", vol_max);
-		goto errout;
-	}
-
-	if (set_output_audio_volume((uint8_t)vol) != AUDIO_MANAGER_SUCCESS) {
-		meddbg("MediaPlayer setVolume fail : audio manager failed\n");
-		goto errout;
+	audio_manager_result_t result = set_output_audio_volume(vol);
+	if (result != AUDIO_MANAGER_SUCCESS) {
+		meddbg("set_input_audio_volume failed vol : %d ret : %d\n", vol, result);
+		if (result == AUDIO_MANAGER_DEVICE_NOT_SUPPORT) {
+			ret = PLAYER_ERROR_INVALID_OPERATION;
+		} else {
+			ret = PLAYER_ERROR;
+		}
+		return notifySync();
 	}
 
 	medvdbg("MediaPlayer setVolume success\n");

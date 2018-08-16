@@ -43,6 +43,8 @@ namespace media {
  */
 typedef enum recorder_result_e {
 	/** MediaRecorder Error case */
+	RECORDER_ERROR_INVALID_OPERATION = -2,
+	RECORDER_ERROR_INVALID_PARAM = -1,
 	RECORDER_ERROR,
 	/** MediaRecorder Success case */
 	RECORDER_OK
@@ -146,7 +148,7 @@ public:
 	 * @return The value of current mic volume
 	 * @since TizenRT v2.0 PRE
 	 */
-	int getVolume();
+	recorder_result_t getVolume(uint8_t *vol);
 	
 	/**
 	 * @brief Sets the volume adjusted
@@ -156,7 +158,7 @@ public:
 	 * @return The result of setting the mic volume
 	 * @since TizenRT v2.0 PRE
 	 */
-	recorder_result_t setVolume(int vol);
+	recorder_result_t setVolume(uint8_t vol);
 	
 	/**
 	 * @brief Sets the DatSource of output data

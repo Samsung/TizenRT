@@ -345,32 +345,40 @@ void MediaRecorderImpl::pauseRecorder()
 	notifyObserver(OBSERVER_COMMAND_PAUSED);
 }
 
-int MediaRecorderImpl::getVolume()
+recorder_result_t MediaRecorderImpl::getVolume(uint8_t *vol)
 {
+	recorder_result_t ret = RECORDER_OK;
+
 	std::unique_lock<std::mutex> lock(mCmdMtx);
 	medvdbg("MediaRecorderImpl::getVolume()\n");
 
-	int ret = -1;
-	RecorderWorker& mrw = RecorderWorker::getWorker();
-	if (!mrw.isAlive()) {
-		return ret;
+	if (vol == nullptr) {
+		meddbg("The given argument is invalid.\n");
+		return RECORDER_ERROR_INVALID_PARAM;
 	}
 
-	mrw.enQueue(&MediaRecorderImpl::getRecorderVolume, shared_from_this(), std::ref(ret));
+	RecorderWorker& mrw = RecorderWorker::getWorker();
+	if (!mrw.isAlive()) {
+		return RECORDER_ERROR;
+	}
+
+	mrw.enQueue(&MediaRecorderImpl::getRecorderVolume, shared_from_this(), vol, std::ref(ret));
 	mSyncCv.wait(lock);
 
 	return ret;
 }
 
-void MediaRecorderImpl::getRecorderVolume(int& ret)
+void MediaRecorderImpl::getRecorderVolume(uint8_t *vol, recorder_result_t &ret)
 {
 	medvdbg("getRecorderVolume\n");
-
-	ret = get_input_audio_volume();
+	if (get_input_audio_gain(vol) != AUDIO_MANAGER_SUCCESS) {
+		meddbg("get_output_audio_volume() is failed, ret = %d\n", ret);
+		ret = RECORDER_ERROR;
+	}
 	notifySync();
 }
 
-recorder_result_t MediaRecorderImpl::setVolume(int vol)
+recorder_result_t MediaRecorderImpl::setVolume(uint8_t vol)
 {
 	std::unique_lock<std::mutex> lock(mCmdMtx);
 	medvdbg("setVolume\n");
@@ -387,19 +395,18 @@ recorder_result_t MediaRecorderImpl::setVolume(int vol)
 	return ret;
 }
 
-void MediaRecorderImpl::setRecorderVolume(int vol, recorder_result_t& ret)
+void MediaRecorderImpl::setRecorderVolume(uint8_t vol, recorder_result_t& ret)
 {
 	medvdbg("setRecorderVolume\n");
 
-	int maxVolume = get_max_audio_volume();
-	if (vol < 0 || vol > maxVolume) {
-		meddbg("Volume is out of range vol : %d (recorder ranage 0 ~ %d)\n", vol, maxVolume);
-		return notifySync();
-	}
-
-	audio_manager_result_t result = set_input_audio_volume((uint8_t)vol);
+	audio_manager_result_t result = set_input_audio_gain(vol);
 	if (result != AUDIO_MANAGER_SUCCESS) {
 		meddbg("set_input_audio_volume failed vol : %d ret : %d\n", vol, result);
+		if (result == AUDIO_MANAGER_DEVICE_NOT_SUPPORT) {
+			ret = RECORDER_ERROR_INVALID_OPERATION;
+		} else {
+			ret = RECORDER_ERROR;
+		}
 		return notifySync();
 	}
 

@@ -106,6 +106,7 @@ public:
 
 	void start(const int test)
 	{
+		uint8_t volume;
 		appRunning = true;
 
 		while (appRunning) {
@@ -174,18 +175,36 @@ public:
 				play_data();
 				break;
 			case VOLUME_UP:
-				std::cout << "VOLUME_UP" << std::endl;
-				if (mr.setVolume(mr.getVolume() + 1) == RECORDER_ERROR) {
-					cout << "setVolume failed" << endl;
+				cout << "VOLUME_UP is selected" << endl;
+				if (mr.getVolume(&volume) != RECORDER_OK) {
+					cout << "MediaRecorder::getVolume failed" << endl;
+				} else {
+					cout << "Volume was " << (int)volume << endl;
 				}
-				std::cout << "Now, Volume is " << mr.getVolume() << std::endl;
+				if (mr.setVolume(volume + 1) != RECORDER_OK) {
+					cout << "MediaRecorder::setVolume failed" << endl;
+				}
+				if (mr.getVolume(&volume) != RECORDER_OK) {
+					cout << "MediaRecorder::getVolume failed" << endl;
+				} else {
+					cout << "Now, Volume is " << (int)volume << endl;
+				}
 				break;
 			case VOLUME_DOWN:
-				std::cout << "VOLUME_DOWN" << std::endl;
-				if (mr.setVolume(mr.getVolume() - 1) == RECORDER_ERROR) {
-					cout << "setVolume failed" << endl;
+				cout << "VOLUME_DOWN is selected" << endl;
+				if (mr.getVolume(&volume) != RECORDER_OK) {
+					cout << "MediaRecorder::getVolume failed" << endl;
+				} else {
+					cout << "Volume was " << (int)volume << endl;
 				}
-				std::cout << "Now, Volume is " << mr.getVolume() << std::endl;
+				if (mr.setVolume(volume - 1) != RECORDER_OK) {
+					cout << "MediaRecorder::setVolume failed" << endl;
+				}
+				if (mr.getVolume(&volume) != RECORDER_OK) {
+					cout << "MediaRecorder::getVolume failed" << endl;
+				} else {
+					cout << "Now, Volume is " << (int)volume << endl;
+				}
 				break;
 			case APP_OFF:
 				std::cout << "SELECTED APP_OFF" << std::endl;

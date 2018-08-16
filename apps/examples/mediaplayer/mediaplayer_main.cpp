@@ -60,7 +60,7 @@ public:
 
 private:
 	MediaPlayer mp;
-	int volume;
+	uint8_t volume;
 	std::shared_ptr<FocusRequest> mFocusRequest;
 };
 
@@ -130,23 +130,35 @@ void MyMediaPlayer::doCommand(int command)
 		break;
 	case VOLUME_UP:
 		cout << "VOLUME_UP is selected" << endl;
-		volume = mp.getVolume();
-		cout << "Volume was " << volume << endl;
-		if (mp.setVolume(volume + 1) == PLAYER_ERROR) {
+		if (mp.getVolume(&volume) != PLAYER_OK) {
+			cout << "MediaPlayer::getVolume failed" << endl;
+		} else {
+			cout << "Volume was " << (int)volume << endl;
+		}
+		if (mp.setVolume(volume + 1) != PLAYER_OK) {
 			cout << "MediaPlayer::setVolume failed" << endl;
 		}
-		volume = mp.getVolume();
-		cout << "Now, Volume is " << volume << endl;
+		if (mp.getVolume(&volume) != PLAYER_OK) {
+			cout << "MediaPlayer::getVolume failed" << endl;
+		} else {
+			cout << "Now, Volume is " << (int)volume << endl;
+		}
 		break;
 	case VOLUME_DOWN:
 		cout << "VOLUME_UP is selected" << endl;
-		volume = mp.getVolume();
-		cout << "Volume was " << volume << endl;
-		if (mp.setVolume(volume - 1) == PLAYER_ERROR) {
+		if (mp.getVolume(&volume) != PLAYER_OK) {
+			cout << "MediaPlayer::getVolume failed" << endl;
+		} else {
+			cout << "Volume was " << (int)volume << endl;
+		}
+		if (mp.setVolume(volume - 1) != PLAYER_OK) {
 			cout << "MediaPlayer::setVolume failed" << endl;
 		}
-		volume = mp.getVolume();
-		cout << "Now, Volume is " << volume << endl;
+		if (mp.getVolume(&volume) != PLAYER_OK) {
+			cout << "MediaPlayer::getVolume failed" << endl;
+		} else {
+			cout << "Now, Volume is " << (int)volume << endl;
+		}
 		break;
 	default:
 		break;
