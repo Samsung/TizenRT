@@ -438,11 +438,6 @@ void MediaPlayerImpl::setVolumePlayer(uint8_t vol, player_result_t &ret)
 	medvdbg("MediaPlayer setVolume success\n");
 	ret = PLAYER_OK;
 	return notifySync();
-
-errout:
-	notifyObserver(PLAYER_OBSERVER_COMMAND_ERROR);
-	ret = PLAYER_ERROR;
-	notifySync();
 }
 
 
