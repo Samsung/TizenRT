@@ -52,10 +52,10 @@ public:
 	virtual ~MyMediaPlayer(){};
 	bool init(int test);
 	void doCommand(int command);
-	void onPlaybackStarted(Id id) override;
-	void onPlaybackFinished(Id id) override;
-	void onPlaybackError(Id id) override;
-	void onPlaybackPaused(Id id) override;
+	void onPlaybackStarted(MediaPlayer &mediaPlayer) override;
+	void onPlaybackFinished(MediaPlayer &mediaPlayer) override;
+	void onPlaybackError(MediaPlayer &mediaPlayer) override;
+	void onPlaybackPaused(MediaPlayer &mediaPlayer) override;
 	void onFocusChange(int focusChange) override;
 
 private:
@@ -165,23 +165,23 @@ void MyMediaPlayer::doCommand(int command)
 	}
 }
 
-void MyMediaPlayer::onPlaybackStarted(Id id)
+void MyMediaPlayer::onPlaybackStarted(MediaPlayer &mediaPlayer)
 {
 	cout << "onPlaybackStarted" << endl;
 }
 
-void MyMediaPlayer::onPlaybackFinished(Id id)
+void MyMediaPlayer::onPlaybackFinished(MediaPlayer &mediaPlayer)
 {
 	cout << "onPlaybackFinished" << endl;
 	this->mp.unprepare();
 }
 
-void MyMediaPlayer::onPlaybackError(Id id)
+void MyMediaPlayer::onPlaybackError(MediaPlayer &mediaPlayer)
 {
 	cout << "onPlaybackError" << endl;
 }
 
-void MyMediaPlayer::onPlaybackPaused(Id id)
+void MyMediaPlayer::onPlaybackPaused(MediaPlayer &mediaPlayer)
 {
 	cout << "onPlaybackPaused" << endl;
 }

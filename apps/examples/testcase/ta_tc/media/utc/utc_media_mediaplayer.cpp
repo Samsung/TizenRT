@@ -26,25 +26,25 @@ static const char *dummyfilepath = "/mnt/fileinputdatasource.raw";
 class EmptyObserver : public media::MediaPlayerObserverInterface
 {
 public:
-	void onPlaybackStarted(Id id) override;
-	void onPlaybackFinished(Id id) override;
-	void onPlaybackError(Id id) override;
-	void onPlaybackPaused(Id id) override;
+	void onPlaybackStarted(media::MediaPlayer &mediaPlayer) override;
+	void onPlaybackFinished(media::MediaPlayer &mediaPlayer) override;
+	void onPlaybackError(media::MediaPlayer &mediaPlayer) override;
+	void onPlaybackPaused(media::MediaPlayer &mediaPlayer) override;
 };
 
-void EmptyObserver::onPlaybackStarted(Id id)
+void EmptyObserver::onPlaybackStarted(media::MediaPlayer &mediaPlayer)
 {
 }
 
-void EmptyObserver::onPlaybackFinished(Id id)
+void EmptyObserver::onPlaybackFinished(media::MediaPlayer &mediaPlayer)
 {
 }
 
-void EmptyObserver::onPlaybackError(Id id)
+void EmptyObserver::onPlaybackError(media::MediaPlayer &mediaPlayer)
 {
 }
 
-void EmptyObserver::onPlaybackPaused(Id id)
+void EmptyObserver::onPlaybackPaused(media::MediaPlayer &mediaPlayer)
 {
 }
 
@@ -388,7 +388,7 @@ static void utc_media_MediaPlayer_setVolume_p(void)
 	mp.setDataSource(std::move(source));
 	mp.prepare();
 
-	auto ret =  mp.setVolume(0);
+	auto ret = mp.setVolume(0);
 	TC_ASSERT_EQ("utc_media_MediaPlayer_setVolume", ret, media::PLAYER_OK);
 	mp.getVolume(&volume);
 	TC_ASSERT_EQ("utc_media_MediaPlayer_setVolume", volume, 0);

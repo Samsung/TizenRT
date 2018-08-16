@@ -74,13 +74,13 @@ public:
 		std::cout << "onRecordError!! please select Stop!!" << std::endl;
 	}
 
-	void onPlaybackStarted(MediaPlayerObserverInterface::Id id)
+	void onPlaybackStarted(MediaPlayer &mediaPlayer)
 	{
 		std::cout << "onPlaybackStarted" << std::endl;
 		isPlaying = true;
 	}
 
-	void onPlaybackFinished(MediaPlayerObserverInterface::Id id)
+	void onPlaybackFinished(MediaPlayer &mediaPlayer)
 	{
 		std::cout << "onPlaybackFinished" << std::endl;
 		isPlaying = false;
@@ -94,12 +94,12 @@ public:
 		}
 	}
 
-	void onPlaybackError(MediaPlayerObserverInterface::Id id)
+	void onPlaybackError(MediaPlayer &mediaPlayer)
 	{
 		std::cout << "onPlaybackError" << std::endl;
 	}
 
-	void onPlaybackPaused(MediaPlayerObserverInterface::Id id)
+	void onPlaybackPaused(MediaPlayer &mediaPlayer)
 	{
 		std::cout << "onPlaybackPaused" << std::endl;
 	}

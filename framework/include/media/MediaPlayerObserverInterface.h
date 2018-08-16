@@ -30,6 +30,8 @@
 #define __MEDIA_MEDIAPLAYEROBSERVERINTERFACE_H
 
 namespace media {
+class MediaPlayer;
+
 /**
  * @class
  * @brief This class provides an interface to the user.
@@ -42,36 +44,29 @@ class MediaPlayerObserverInterface
 {
 public:
 	/**
-	 * @brief Id means unique id of MediaPlayer.
-	 * @details @b #include <media/MediaPlayerObserverInterface.h>
-	 * support multi-recorders according to device specifications
-	 * @since TizenRT v2.0 PRE
-	 */
-	using Id = uint64_t;
-	/**
 	 * @brief informs the user of the playback has begun.
 	 * @details @b #include <media/MediaPlayerObserverInterface.h>
 	 * @since TizenRT v2.0 PRE
 	 */
-	virtual void onPlaybackStarted(Id id) = 0;
+	virtual void onPlaybackStarted(MediaPlayer &mediaPlayer) = 0;
 	/**
 	 * @brief informs the user of the playback has finished.
 	 * @details @b #include <media/MediaPlayerObserverInterface.h>
 	 * @since TizenRT v2.0 PRE
 	 */
-	virtual void onPlaybackFinished(Id id) = 0;
+	virtual void onPlaybackFinished(MediaPlayer &mediaPlayer) = 0;
 	/**
 	 * @brief informs the user of the error state of player operation
 	 * @details @b #include <media/MediaPlayerObserverInterface.h>
 	 * @since TizenRT v2.0 PRE
 	 */
-	virtual void onPlaybackError(Id id) = 0;
+	virtual void onPlaybackError(MediaPlayer &mediaPlayer) = 0;
 	/**
 	 * @brief informs the user of the playback has paused.
 	 * @details @b #include <media/MediaPlayerObserverInterface.h>
 	 * @since TizenRT v2.0 PRE
 	 */
-	virtual void onPlaybackPaused(Id id) = 0;
+	virtual void onPlaybackPaused(MediaPlayer &mediaPlayer) = 0;
 };
 } // namespace media
 
