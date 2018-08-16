@@ -1,13 +1,15 @@
 #! /bin/bash
-echo "TizenRT Application Generator"
-echo "======================= v 1.0"
 
+BOLD=$(tput bold)
+NORMAL=$(tput sgr0)
+CUR_YEAR=$(date +"%Y")
 TIZENRT_ROOT="$(dirname $0)/../.."
 cd ${TIZENRT_ROOT}
-TIZENRT_ROOT=$(pwd)
-cd -
+TIZENRT_ROOT="$(pwd)"
+cd - > /dev/null
 
-CUR_YEAR=$(date +"%Y")
+echo "${BOLD}TizenRT Application Generator${NORMAL}"
+echo "======================= v 1.0"
 
 read -p "Enter application name: " APP_NAME
 
@@ -17,13 +19,13 @@ APP_NAME_LOWER=${APP_NAME,,}
 APP_NAME_LOWER="${APP_NAME_LOWER// /_}"
 ENTRY_FUNC="${APP_NAME_LOWER}_main"
 
-echo "[Summary]"
+echo "${BOLD}[Summary]${NORMAL}"
 echo "-------------------------------"
-echo "* Application Name: ${APP_NAME}"
-echo "* Configuration Key: CONFIG_APP_${APP_NAME_UPPER}"
-echo "* Entry Function: ${ENTRY_FUNC}"
-echo "* Location: ${TIZENRT_ROOT}/apps/examples/${APP_NAME_LOWER}"
-echo "* This year: ${CUR_YEAR}"
+echo "* Application Name: ${BOLD}${APP_NAME}${NORMAL}"
+echo "* Configuration Key: ${BOLD}CONFIG_APP_${APP_NAME_UPPER}${NORMAL}"
+echo "* Entry Function: ${BOLD}${ENTRY_FUNC}${NORMAL}"
+echo "* Location: ${BOLD}${TIZENRT_ROOT}/apps/examples/${APP_NAME_LOWER}${NORMAL}"
+echo "* This year: ${BOLD}${CUR_YEAR}${NORMAL}"
 echo "-------------------------------"
 read -p "Continue? (y/N): " confirm && [[ $confirm == [yY] || $confirm == [yY][eE][sS] ]] || exit 1
 
@@ -74,9 +76,10 @@ sed -i -e "s/##ENTRY_FUNC##/${ENTRY_FUNC}/g" ${MAKEFILE_FILENAME}
 
 echo ""
 echo "* How to setup your application"
-echo "Run) TizenRT/os\$ make menuconfig"
-echo "1. Turn on your application in Application Configuration/Examples menu"
-echo "2. Set the entry point to your application in Application Configuration menu"
+echo "Run) ${BOLD}TizenRT/os/tools\$${NORMAL} ./configure.sh <BOARD>/<CONFIG>"
+echo "Run) ${BOLD}TizenRT/os\$${NORMAL} make menuconfig"
+echo "1. Turn on your application in ${BOLD}Application Configuration/Examples${NORMAL} menu"
+echo "2. Set the entry point to your application in ${BOLD}Application Configuration${NORMAL} menu"
 echo "------------------------------"
 echo "Done!!"
 

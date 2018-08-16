@@ -17,16 +17,23 @@ TizenRT Application Generator
 Enter application name: test application
 [Summary]
 -------------------------------
-Application Name: test application
-Configuration Key: CONFIG_APP_TEST_APPLICATION
-Entry Function: test_application_main
-Location: /home/gcjjyy/workspace/github.com/gcjjyy/TizenRT/apps/examples/test_application
-This year: 2018
+* Application Name: test application
+* Configuration Key: CONFIG_APP_TEST_APPLICATION
+* Entry Function: test_application_main
+* Location: /home/gcjjyy/workspace/github.com/gcjjyy/TizenRT/apps/examples/test_application
+* This year: 2018
 -------------------------------
 Continue? (y/N): y
 Generating...
 
-Done..
+* How to setup your application
+Run) TizenRT/os/tools$ ./configure.sh <BOARD>/<CONFIG>
+Run) TizenRT/os$ make menuconfig
+1. Turn on your application in Application Configuration/Examples menu
+2. Set the entry point to your application in Application Configuration menu
+------------------------------
+Done!!
+
 ```
 
 ### After generated
