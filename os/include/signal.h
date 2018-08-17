@@ -190,6 +190,13 @@
 #define SIGTM_BROADCAST       CONFIG_SIG_SIGTM_BROADCAST
 #endif
 
+/* SIG_SIGEL_WAKEUP is used in Event Loop */
+#ifndef CONFIG_SIG_SIGEL_WAKEUP
+#define SIGEL_WAKEUP       22			/* Eventloop signal */
+#else
+#define SIGEL_WAKEUP       CONFIG_SIG_SIGEL_WAKEUP
+#endif
+
 /* sigprocmask() "how" definitions. Only one of the following can be specified: */
 
 #define SIG_BLOCK       1		/* Block the given signals */

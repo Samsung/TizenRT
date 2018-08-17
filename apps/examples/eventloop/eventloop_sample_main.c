@@ -84,10 +84,10 @@ int eventloop_sample_main(int argc, FAR char *argv[])
 	el_timer_t *timer_2s;
 
 	/* Add timer to be called every 2 seconds */
-	timer_2s = eventloop_add_timer(2000, true, timer_callback_2s, NULL);
+	timer_2s = eventloop_add_timer_async(2000, true, timer_callback_2s, NULL);
 
 	/* Add timer to be called every 10 seconds */
-	timer_10s = eventloop_add_timer(10000, true, timer_callback_10s, "10s Timeout");
+	timer_10s = eventloop_add_timer_async(10000, true, timer_callback_10s, "10s Timeout");
 
 	/* Add timer to be called once after 20s */
 	eventloop_add_timer(20000, false, timer_callback_20s, timer_2s);
