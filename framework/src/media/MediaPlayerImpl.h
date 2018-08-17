@@ -51,7 +51,7 @@ typedef enum player_state_e {
 class MediaPlayerImpl : public std::enable_shared_from_this<MediaPlayerImpl>
 {
 public:
-	MediaPlayerImpl();
+	MediaPlayerImpl(MediaPlayer &player);
 	~MediaPlayerImpl();
 
 	player_result_t create();
@@ -86,17 +86,17 @@ private:
 	void getVolumePlayer(uint8_t *vol, player_result_t &ret);
 	void setVolumePlayer(uint8_t vol, player_result_t &ret);
 	void setPlayerObserver(std::shared_ptr<MediaPlayerObserverInterface> observer);
-	void setPlayerDataSource(std::shared_ptr<stream::InputDataSource> dataSource, player_result_t& ret);
+	void setPlayerDataSource(std::shared_ptr<stream::InputDataSource> dataSource, player_result_t &ret);
 
 private:
+	MediaPlayer &mPlayer;
 	std::atomic<player_state_t> mCurState;
-	unsigned char* mBuffer;
+	unsigned char *mBuffer;
 	int mBufSize;
 	std::mutex mCmdMtx;
 	std::condition_variable mSyncCv;
 	std::shared_ptr<MediaPlayerObserverInterface> mPlayerObserver;
 	std::shared_ptr<stream::InputDataSource> mInputDataSource;
-	int mId;
 };
 } // namespace media
 #endif

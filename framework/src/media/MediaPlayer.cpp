@@ -21,7 +21,7 @@
 #include "PlayerWorker.h"
 
 namespace media {
-MediaPlayer::MediaPlayer() : mPMpImpl(new MediaPlayerImpl())
+MediaPlayer::MediaPlayer() : mPMpImpl(new MediaPlayerImpl(*this))
 {
 }
 
