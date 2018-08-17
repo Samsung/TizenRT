@@ -157,7 +157,9 @@ ssize_t FileOutputDataSource::write(unsigned char* buf, size_t size)
 
 FileOutputDataSource::~FileOutputDataSource()
 {
-	close();
+	if (mFp) {
+		close();
+	}
 }
 } // namespace stream
 } // namespace media
