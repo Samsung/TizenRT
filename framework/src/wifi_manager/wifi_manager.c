@@ -1545,30 +1545,3 @@ wifi_manager_result_e wifi_manager_get_stats(wifi_manager_stats_s *stats)
 	}
 	return wret;
 }
-
-wifi_manager_result_e wifi_manager_mac_addr_to_mac_str(char mac_addr[6], char mac_str[20])
-{
-	wifi_manager_result_e wret = WIFI_MANAGER_INVALID_ARGS;
-	if (mac_addr && mac_str) {
-		snprintf(mac_str, 18, "%02X:%02X:%02X:%02X:%02X:%02X", mac_addr[0], mac_addr[1], mac_addr[2], mac_addr[3], mac_addr[4], mac_addr[5]);
-		wret = WIFI_MANAGER_SUCCESS;
-	} else {
-		WIFIADD_ERR_RECORD(ERR_WIFIMGR_INVALID_ARGUMENTS);
-	}
-	return wret;
-}
-
-wifi_manager_result_e wifi_manager_mac_str_to_mac_addr(char mac_str[20], char mac_addr[6])
-{
-	wifi_manager_result_e wret = WIFI_MANAGER_INVALID_ARGS;
-	if (mac_addr && mac_str) {
-		int ret = sscanf(mac_str, "%hhx:%hhx:%hhx:%hhx:%hhx:%hhx%*c", &mac_addr[0], &mac_addr[1], &mac_addr[2], &mac_addr[3], &mac_addr[4], &mac_addr[5]);
-		if (ret == WIFIMGR_MACADDR_LEN) {
-			wret = WIFI_MANAGER_SUCCESS;	
-		}
-	} else {
-		WIFIADD_ERR_RECORD(ERR_WIFIMGR_INVALID_ARGUMENTS);
-	}
-	return wret;
-}
-

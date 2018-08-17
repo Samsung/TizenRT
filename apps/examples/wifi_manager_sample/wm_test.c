@@ -75,6 +75,11 @@ struct options {
 /**
  * Functions
  */
+/**
+ * Internal functions
+ */
+static int wm_mac_addr_to_mac_str(char mac_addr[6], char mac_str[20]);
+static int wm_mac_str_to_mac_addr(char mac_str[20], char mac_addr[6]);
 /*
  * Signal
  */
@@ -88,7 +93,6 @@ static void wm_sta_disconnected(wifi_manager_disconnect_e);
 static void wm_softap_sta_join(void);
 static void wm_softap_sta_leave(void);
 static void wm_scan_done(wifi_manager_scan_info_s **scan_result, wifi_manager_scan_result_e res);
-
 /*
  * handler
  */
@@ -207,7 +211,6 @@ static const char *wifi_test_auth_method[] = {
 	"wpa2_mixed",
 };
 
-
 static const wifi_manager_ap_auth_type_e auth_type_table[] = {
 	WIFI_MANAGER_AUTH_OPEN,                    /**<  open mode                      */
 	WIFI_MANAGER_AUTH_WEP_SHARED,              /**<  use shared key (wep key)       */
@@ -216,7 +219,6 @@ static const wifi_manager_ap_auth_type_e auth_type_table[] = {
 	WIFI_MANAGER_AUTH_WPA_AND_WPA2_PSK,        /**<  WPA_PSK and WPA_PSK mixed mode */
 	WIFI_MANAGER_AUTH_UNKNOWN,                 /**<  unknown type                   */
 };
-
 
 static const wifi_manager_ap_crypto_type_e crypto_type_table[] = {
 	WIFI_MANAGER_CRYPTO_NONE,                  /**<  none encryption                */
@@ -268,7 +270,6 @@ wifi_manager_ap_auth_type_e get_auth_type(const char *method)
 	return WIFI_MANAGER_AUTH_UNKNOWN;
 }
 
-
 wifi_manager_ap_crypto_type_e get_crypto_type(const char *method)
 {
 	int i = 0;
@@ -281,7 +282,34 @@ wifi_manager_ap_crypto_type_e get_crypto_type(const char *method)
 	return WIFI_MANAGER_CRYPTO_UNKNOWN;
 }
 
+/*
+ * Internal functions
+ */
+static int wm_mac_addr_to_mac_str(char mac_addr[6], char mac_str[20])
+{
+	int wret = -1;
+	if (mac_addr && mac_str) {
+		snprintf(mac_str, 18, "%02X:%02X:%02X:%02X:%02X:%02X", mac_addr[0], mac_addr[1], mac_addr[2], mac_addr[3], mac_addr[4], mac_addr[5]);
+		wret = OK;
+	}
+	return wret;
+}
 
+static int wm_mac_str_to_mac_addr(char mac_str[20], char mac_addr[6])
+{
+	int wret = -1;
+	if (mac_addr && mac_str) {
+		int ret = sscanf(mac_str, "%hhx:%hhx:%hhx:%hhx:%hhx:%hhx%*c", &mac_addr[0], &mac_addr[1], &mac_addr[2], &mac_addr[3], &mac_addr[4], &mac_addr[5]);
+		if (ret == WIFIMGR_MACADDR_LEN) {
+			wret = OK;
+		}
+	}
+	return wret;
+}
+
+/*
+ * Signal
+ */
 int wm_signal_init(void)
 {
 	if (g_mode != 0) {
@@ -315,7 +343,6 @@ int wm_signal_init(void)
 	return 0;
 }
 
-
 void wm_signal_deinit(void)
 {
 	pthread_mutex_destroy(&g_wm_func_mutex);
@@ -324,7 +351,6 @@ void wm_signal_deinit(void)
 	pthread_cond_destroy(&g_wm_cond);
 	g_mode = 0;
 }
-
 
 /*
  * Callback
@@ -335,7 +361,6 @@ void wm_sta_connected(wifi_manager_result_e res)
 	WM_TEST_SIGNAL;
 }
 
-
 void wm_sta_disconnected(wifi_manager_disconnect_e disconn)
 {
 	sleep(2);
@@ -343,20 +368,17 @@ void wm_sta_disconnected(wifi_manager_disconnect_e disconn)
 	WM_TEST_SIGNAL;
 }
 
-
 void wm_softap_sta_join(void)
 {
 	printf(" T%d --> %s\n", getpid(), __FUNCTION__);
 	WM_TEST_SIGNAL;
 }
 
-
 void wm_softap_sta_leave(void)
 {
 	printf(" T%d --> %s\n", getpid(), __FUNCTION__);
 	WM_TEST_SIGNAL;
 }
-
 
 void wm_scan_done(wifi_manager_scan_info_s **scan_result, wifi_manager_scan_result_e res)
 {
@@ -377,7 +399,6 @@ void wm_scan_done(wifi_manager_scan_info_s **scan_result, wifi_manager_scan_resu
 	}
 	WM_TEST_SIGNAL;
 }
-
 
 /*
  * Control Functions
@@ -463,7 +484,6 @@ void wm_start(void *arg)
 	WM_TEST_LOG_END;
 }
 
-
 void wm_stop(void *arg)
 {
 	WM_TEST_LOG_START;
@@ -473,7 +493,6 @@ void wm_stop(void *arg)
 	}
 	WM_TEST_LOG_END;
 }
-
 
 void wm_scan(void *arg)
 {
@@ -488,7 +507,6 @@ void wm_scan(void *arg)
 	WM_TEST_WAIT; // wait the scan result
 	WM_TEST_LOG_END;
 }
-
 
 void wm_display_state(void *arg)
 {
@@ -508,13 +526,11 @@ void wm_display_state(void *arg)
 		}
 		printf("IP: %s\n", info.ip4_address);
 		printf("SSID: %s\n", info.ssid);
-		res = wifi_manager_mac_addr_to_mac_str(info.mac_address, mac_str);
-		if (res != WIFI_MANAGER_SUCCESS) {
+		if (wm_mac_addr_to_mac_str(info.mac_address, mac_str) < 0) {
 			goto exit;
 		}
 		printf("MAC: %s\n", mac_str);
-		res = wifi_manager_mac_str_to_mac_addr(mac_str, mac_char);
-		if (res != WIFI_MANAGER_SUCCESS) {
+		if (wm_mac_str_to_mac_addr(mac_str, mac_char) < 0) {
 			goto exit;
 		}
 	} else if (info.mode == STA_MODE) {
@@ -526,13 +542,11 @@ void wm_display_state(void *arg)
 		} else if (info.status == AP_DISCONNECTED) {
 			printf("MODE: station (disconnected)\n");
 		}
-		res = wifi_manager_mac_addr_to_mac_str(info.mac_address, mac_str);	
-		if (res != WIFI_MANAGER_SUCCESS) {
+		if (wm_mac_addr_to_mac_str(info.mac_address, mac_str) < 0) {
 			goto exit;
 		}
 		printf("MAC: %s\n", mac_str);
-		res = wifi_manager_mac_str_to_mac_addr(mac_str, mac_char);
-		if (res != WIFI_MANAGER_SUCCESS) {
+		if (wm_mac_str_to_mac_addr(mac_str, mac_char) < 0) {
 			goto exit;
 		}
 	} else {
@@ -542,7 +556,6 @@ exit:
 	WM_TEST_LOG_END;
 	return ;
 }
-
 
 void wm_sta_start(void *arg)
 {
@@ -557,7 +570,6 @@ void wm_sta_start(void *arg)
 	printf(" Connecting to AP\n");
 	WM_TEST_LOG_END;
 }
-
 
 void wm_connect(void *arg)
 {
@@ -589,7 +601,6 @@ void wm_connect(void *arg)
 	WM_TEST_LOG_END;
 }
 
-
 void wm_disconnect(void *arg)
 {
 	WM_TEST_LOG_START;
@@ -604,7 +615,6 @@ void wm_disconnect(void *arg)
 	WM_TEST_LOG_END;;
 }
 
-
 void wm_cancel(void *arg)
 {
 	WM_TEST_LOG_START;
@@ -617,7 +627,6 @@ void wm_cancel(void *arg)
 	}
 	WM_TEST_LOG_END;
 }
-
 
 void wm_softap_start(void *arg)
 {
@@ -644,8 +653,6 @@ void wm_softap_start(void *arg)
 	}
 	WM_TEST_LOG_END;
 }
-
-
 
 /****************************************************************************
  * ocf_wifi_test
@@ -1029,6 +1036,7 @@ void wm_coverage(void *arg)
 
 	return ;
 }
+
 void wm_auto_test(void *arg)
 {
 	wifi_manager_result_e res = WIFI_MANAGER_SUCCESS;
@@ -1194,7 +1202,6 @@ void wm_auto_test(void *arg)
 	return ;
 }
 
-
 int wm_parse_commands(struct options *opt, int argc, char *argv[])
 {
 	if (argc < 3) {
@@ -1303,7 +1310,6 @@ int wm_parse_commands(struct options *opt, int argc, char *argv[])
 	return 0;
 }
 
-
 void wm_process(int argc, char *argv[])
 {
 	struct options opt;
@@ -1316,7 +1322,6 @@ void wm_process(int argc, char *argv[])
 exit:
 	WM_TEST_FUNC_SIGNAL;
 }
-
 
 #ifdef CONFIG_BUILD_KERNEL
 int main(int argc, FAR char *argv[])
