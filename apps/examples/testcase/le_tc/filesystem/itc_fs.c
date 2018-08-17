@@ -1147,6 +1147,7 @@ static void itc_libc_stdio_fseek_n(void)
 	TC_SUCCESS_RESULT();
 }
 
+#if 0
 /**
 * @testcase         itc_libc_stdio_fseek_n_invalid_fp
 * @brief            Move file position to specific position
@@ -1172,6 +1173,7 @@ static void itc_libc_stdio_fseek_n_invalid_fp(void)
 
 	TC_SUCCESS_RESULT();
 }
+#endif
 
 /**
 * @testcase         itc_libc_stdio_ftell_n

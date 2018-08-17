@@ -21,6 +21,7 @@
 #include <tinyara/watchdog.h>
 #include <stdio.h>
 #include <fcntl.h>
+#include <sys/ioctl.h>
 #include "tc_internal.h"
 #include <errno.h>
 
@@ -122,30 +123,30 @@ static void tc_driver_watchdog_ioctl(void)
 	TC_ASSERT_EQ_CLEANUP("watchdog_ioctl", ret, OK, close(fd));
 
 	FAR struct watchdog_status_s status;
-	ret = ioctl(fd, WDIOC_GETSTATUS, &status);
+	ret = ioctl(fd, WDIOC_GETSTATUS, (unsigned long)&status);
 	TC_ASSERT_EQ_CLEANUP("watchdog_ioctl", ret, OK, close(fd));
 	TC_ASSERT_EQ_CLEANUP("watchdog_ioctl", status.flags & WDFLAGS_ACTIVE, WDFLAGS_ACTIVE, close(fd));
 	TC_ASSERT_EQ_CLEANUP("watchdog_ioctl", status.timeout, 1000, close(fd));
 
 	/* Negative testcase for WDIOC_GETSTATUS */
-	ret = ioctl(fd, WDIOC_GETSTATUS, NULL);
+	ret = ioctl(fd, WDIOC_GETSTATUS, 0UL);
 	TC_ASSERT_LT_CLEANUP("watchdog_ioctl", ret, 0, close(fd));
 
 	FAR struct watchdog_capture_s cap;
-	ret = ioctl(fd, WDIOC_CAPTURE, &cap);
+	ret = ioctl(fd, WDIOC_CAPTURE, (unsigned long)&cap);
 	TC_ASSERT_EQ_CLEANUP("watchdog_ioctl", ret, OK, close(fd));
 
 	/* Negative testcase for WDIOC_CAPTURE */
-	ret = ioctl(fd, WDIOC_CAPTURE, NULL);
+	ret = ioctl(fd, WDIOC_CAPTURE, 0UL);
 	TC_ASSERT_LT_CLEANUP("watchdog_ioctl", ret, 0, close(fd));
 
-	ret = ioctl(fd, WDIOC_KEEPALIVE, 0);
+	ret = ioctl(fd, WDIOC_KEEPALIVE, 0UL);
 	TC_ASSERT_EQ_CLEANUP("watchdog_ioctl", ret, OK, close(fd));
 
-	ret = ioctl(fd, WDIOC_STOP, 0);
+	ret = ioctl(fd, WDIOC_STOP, 0UL);
 	TC_ASSERT_EQ_CLEANUP("watchdog_ioctl", ret, OK, close(fd));
 
-	ret = ioctl(fd, -1, 0);
+	ret = ioctl(fd, -1, 0UL);
 	TC_ASSERT_EQ_CLEANUP("watchdog_ioctl", ret, OK, close(fd));
 
 	close(fd);

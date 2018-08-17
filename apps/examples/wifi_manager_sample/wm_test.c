@@ -21,6 +21,7 @@
 
 #include <tinyara/config.h>
 #include <stdio.h>
+#include <string.h>
 #include <pthread.h>
 #include <sys/time.h>
 #include <errno.h>

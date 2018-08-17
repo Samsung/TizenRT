@@ -24,6 +24,8 @@
 #include <unistd.h>
 #include <pthread.h>
 #include <sys/types.h>
+#include <arpa/inet.h>
+
 #include "tc_internal.h"
 
 #define SERVER_MSG "Hello from server"

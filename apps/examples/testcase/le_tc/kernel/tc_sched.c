@@ -321,7 +321,6 @@ static void tc_sched_waitid(void)
 {
 	int ret_chk;
 	pid_t child_pid;
-	pid_t child_ppid;
 	siginfo_t info;
 
 	/* Check for The TCB corresponding to this PID is not our child. */
@@ -366,7 +365,7 @@ static void tc_sched_waitid(void)
 
 	/* Check for The TCB corresponding to this PID is not our child. */
 
-	child_ppid = task_create("tc_waitid_2", SCHED_PRIORITY_DEFAULT, TASK_STACKSIZE, function_waitid_2, (char * const *)NULL);
+	child_pid = task_create("tc_waitid_2", SCHED_PRIORITY_DEFAULT, TASK_STACKSIZE, function_waitid_2, (char * const *)NULL);
 	TC_ASSERT_GT("task_create", child_pid, 0);
 
 	ret_chk = waitid(P_PID, child_pid, &info, WEXITED);
@@ -677,7 +676,7 @@ static void tc_sched_task_setcanceltype(void)
 	int defferred_flag;
 	int origintype;
 	int oldtype;
-	struct tcb_s *tcb = this_task();
+	struct tcb_s *tcb = sched_self();
 	int ret_chk;
 
 	defferred_flag = tcb->flags & TCB_FLAG_CANCEL_DEFERRED;

@@ -22,6 +22,7 @@
 #include <tinyara/analog/ioctl.h>
 #include <stdio.h>
 #include <fcntl.h>
+#include <sys/ioctl.h>
 #include "tc_internal.h"
 #include <errno.h>
 

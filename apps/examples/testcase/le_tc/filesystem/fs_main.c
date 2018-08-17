@@ -267,6 +267,7 @@ static int handler(FAR const char *mountpoint, FAR struct statfs *statbuf, FAR v
 		fstype = NONEFS_TYPE;
 		break;
 	}
+	UNUSED(fstype);
 	return OK;
 
 }
@@ -1483,6 +1484,7 @@ static void tc_fs_vfs_poll(void)
 	TC_SUCCESS_RESULT();
 }
 
+#ifndef CONFIG_DISABLE_MANUAL_TESTCASE
 /**
 * @testcase         tc_fs_vfs_select
 * @brief            To monitor multiple I/O
@@ -1529,6 +1531,7 @@ static void tc_fs_vfs_select(void)
 	TC_ASSERT_NEQ_CLEANUP("select", errcnt, VFS_LOOP_COUNT, FD_CLR(STDIN_FILENO, &readfds));
 	TC_SUCCESS_RESULT();
 }
+#endif
 #endif
 
 /**
@@ -2277,6 +2280,7 @@ static void tc_libc_stdio_clearerr(void)
 	TC_SUCCESS_RESULT();
 }
 
+#ifndef CONFIG_DISABLE_MANUAL_TESTCASE
 /**
 * @testcase         tc_libc_stdio_gets
 * @brief            get string by user input
@@ -2312,6 +2316,7 @@ static void tc_libc_stdio_gets_s(void)
 	TC_ASSERT_NEQ("gets_s", gets_s(input_str, sizeof(input_str)), NULL);
 	TC_SUCCESS_RESULT();
 }
+#endif
 
 /**
 * @testcase         tc_libc_stdio_fileno
@@ -3597,7 +3602,7 @@ static void tc_fs_driver_ramdisk_ops(void)
 	fd = open(DEV_RAMDISK_PATH, O_RDWR);
 	TC_ASSERT_GEQ_CLEANUP("open", fd, 0, free(buffer));
 
-	ret = ioctl(fd, BIOC_XIPBASE, &size);
+	ret = ioctl(fd, BIOC_XIPBASE, (unsigned long)&size);
 	TC_ASSERT_EQ_CLEANUP("ioctl", ret, OK, free(buffer); close(fd));
 
 	ret = read(fd, buf, sizeof(buf));

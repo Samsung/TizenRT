@@ -112,9 +112,7 @@
  *   priority   - Priority of the new task
  *   stack_size - size (in bytes) of the stack needed
  *   entry      - Entry point of a new task
- *   arg        - A pointer to an array of input parameters. Up to
- *                CONFIG_MAX_TASK_ARG parameters may be provided.  If fewer
- *                than CONFIG_MAX_TASK_ARG parameters are passed, the list
+ *   arg        - A pointer to an array of input parameters. The array
  *                should be terminated with a NULL argv[] value. If no
  *                parameters are required, argv may be NULL.
  *
@@ -262,9 +260,7 @@ errout:
  *   priority   - Priority of the new task
  *   stack_size - size (in bytes) of the stack needed
  *   entry      - Entry point of a new task
- *   arg        - A pointer to an array of input parameters. Up to
- *                CONFIG_MAX_TASK_ARG parameters may be provided.  If fewer
- *                than CONFIG_MAX_TASK_ARG parameters are passed, the list
+ *   arg        - A pointer to an array of input parameters. The array
  *                should be terminated with a NULL argv[] value. If no
  *                parameters are required, argv may be NULL.
  *

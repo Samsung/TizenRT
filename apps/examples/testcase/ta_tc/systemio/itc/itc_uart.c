@@ -27,6 +27,7 @@
 #include <iotbus_uart.h>
 #include "itc_internal.h"
 #include "iotbus_error.h"
+#include <string.h>
 
 #define MICROSECOND 1000000
 #define BUF_LEN 32
@@ -400,6 +401,7 @@ static void itc_systemio_iotbus_uart_write_read_flush_p_multi_handle(void)
 	TC_SUCCESS_RESULT();
 }
 
+#if 0
 /**
 * @testcase         itc_systemio_iotbus_uart_write_read_flush_read_p
 * @brief            perform write, read, flush, and read data operations over uart bus
@@ -437,6 +439,7 @@ static void itc_systemio_iotbus_uart_write_read_flush_read_p(void)
 
 	TC_SUCCESS_RESULT();
 }
+#endif
 
 /**
 * @testcase         itc_systemio_iotbus_uart_set_flow_write_read_p

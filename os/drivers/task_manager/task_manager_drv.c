@@ -31,6 +31,9 @@
 #include <tinyara/fs/ioctl.h>
 #include <tinyara/wdog.h>
 #include <tinyara/task_manager_internal.h>
+#include <string.h>
+
+#include "sched/sched.h"
 
 /****************************************************************************
  * Private Function Prototypes

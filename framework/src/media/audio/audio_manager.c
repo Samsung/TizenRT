@@ -24,6 +24,7 @@
 #include <errno.h>
 #include <fcntl.h>
 #include <pthread.h>
+#include <sys/ioctl.h>
 #include <sys/time.h>
 #include <tinyara/audio/audio.h>
 #include <tinyalsa/tinyalsa.h>
@@ -293,7 +294,7 @@ static audio_manager_result_t get_supported_sample_rate(int fd, uint8_t *sample_
 	}
 	caps_desc.caps.ac_subtype = AUDIO_TYPE_QUERY;
 
-	if (ioctl(fd, AUDIOIOC_GETCAPS, (unsigned long *)&caps_desc.caps) < 0) {
+	if (ioctl(fd, AUDIOIOC_GETCAPS, (unsigned long)&caps_desc.caps) < 0) {
 		meddbg("Fail to ioctl AUDIOIOC_GETCAPS\n");
 		return AUDIO_MANAGER_DEVICE_FAIL;
 	}
@@ -464,8 +465,9 @@ static audio_manager_result_t get_audio_volume(int fd, audio_config_t *config, a
 	cur_volume = cur_volume * AUDIO_DEVICE_MAX_VOLUME / (max_volume - (max_volume % AUDIO_DEVICE_MAX_VOLUME));
 
 	config->max_volume = max_volume;
-	config->volume = cur_volume;
+	config->volume = (uint8_t)cur_volume;
 	medvdbg("Max_vol = %d,  cur_vol = %d\n", config->max_volume, config->volume);
+
 	return AUDIO_MANAGER_SUCCESS;
 }
 
@@ -689,7 +691,7 @@ int start_audio_stream_in(void *data, unsigned int frames)
 	pthread_mutex_lock(&(cur_card->card_mutex));
 
 	if (cur_card->status == AUDIO_CARD_PAUSE) {
-		ret = ioctl(pcm_get_file_descriptor(cur_card->pcm), AUDIOIOC_RESUME, NULL);
+		ret = ioctl(pcm_get_file_descriptor(cur_card->pcm), AUDIOIOC_RESUME, 0UL);
 		if (ret < 0) {
 			meddbg("Fail to ioctl AUDIOIOC_RESUME, ret = %d\n", ret);
 			ret = AUDIO_MANAGER_DEVICE_FAIL;
@@ -764,7 +766,7 @@ int start_audio_stream_out(void *data, unsigned int frames)
 	pthread_mutex_lock(&(cur_card->card_mutex));
 
 	if (cur_card->status == AUDIO_CARD_PAUSE) {
-		ret = ioctl(pcm_get_file_descriptor(cur_card->pcm), AUDIOIOC_RESUME, NULL);
+		ret = ioctl(pcm_get_file_descriptor(cur_card->pcm), AUDIOIOC_RESUME, 0UL);
 		if (ret < 0) {
 			meddbg("Fail to ioctl AUDIOIOC_RESUME, ret = %d\n", ret);
 			ret = AUDIO_MANAGER_DEVICE_FAIL;
@@ -829,7 +831,7 @@ audio_manager_result_t pause_audio_stream_in(void)
 
 	pthread_mutex_lock(&(g_audio_in_cards[g_actual_audio_in_card_id].card_mutex));
 
-	ret = ioctl(pcm_get_file_descriptor(g_audio_in_cards[g_actual_audio_in_card_id].pcm), AUDIOIOC_PAUSE, NULL);
+	ret = ioctl(pcm_get_file_descriptor(g_audio_in_cards[g_actual_audio_in_card_id].pcm), AUDIOIOC_PAUSE, 0UL);
 	if (ret < 0) {
 		meddbg("Fail to ioctl AUDIOIOC_PAUSE, ret = %d\n", ret);
 		pthread_mutex_unlock(&(g_audio_in_cards[g_actual_audio_in_card_id].card_mutex));
@@ -854,7 +856,7 @@ audio_manager_result_t pause_audio_stream_out(void)
 
 	pthread_mutex_lock(&(g_audio_out_cards[g_actual_audio_out_card_id].card_mutex));
 
-	ret = ioctl(pcm_get_file_descriptor(g_audio_out_cards[g_actual_audio_out_card_id].pcm), AUDIOIOC_PAUSE, NULL);
+	ret = ioctl(pcm_get_file_descriptor(g_audio_out_cards[g_actual_audio_out_card_id].pcm), AUDIOIOC_PAUSE, 0UL);
 	if (ret < 0) {
 		meddbg("Fail to ioctl AUDIOIOC_PAUSE, ret = %d\n", ret);
 		pthread_mutex_unlock(&(g_audio_out_cards[g_actual_audio_out_card_id].card_mutex));
