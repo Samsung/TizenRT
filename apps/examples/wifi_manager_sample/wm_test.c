@@ -33,6 +33,7 @@
 	"\n run Wi-Fi Manager:\n"											\
 	"	 wm_test start(default: station mode)\n"						\
 	"	 wm_test stop\n"												\
+	"	 wm_test stats\n"                                               \
 	"\n softap mode options:\n"											\
 	"	 wm_test softap [ssid] [password]\n"							\
 	"\n station mode options:\n"										\
@@ -392,6 +393,22 @@ void wm_reset_info(void *arg)
 	WM_TEST_LOG_END;
 }
 
+void wm_get_stats(void *arg)
+{
+	WM_TEST_LOG_START;
+	wifi_manager_stats_s stats;
+	wifi_manager_result_e res = wifi_manager_get_stats(&stats);
+	if (res != WIFI_MANAGER_SUCCESS) {
+		printf("Get WiFi Manager stats failed\n");
+	} else {
+		printf("=======================================================================\n");
+		printf("CONN    CONNFAIL    DISCONN    RECONN    SCAN    SOFTAP    JOIN    LEFT\n");
+		printf("%-8d%-12d%-11d%-10d", stats.connect, stats.connectfail, stats.disconnect, stats.reconnect);
+		printf("%-8d%-10d%-8d%-8d\n", stats.scan, stats.softap, stats.joined, stats.left);
+		printf("=======================================================================\n");
+	}
+	WM_TEST_LOG_END;
+}
 
 void wm_get_info(void *arg)
 {
@@ -1229,6 +1246,8 @@ int wm_parse_commands(struct options *opt, int argc, char *argv[])
 		}
 		opt->crypto_type = get_crypto_type(argv[4]);
 		opt->password = argv[5];
+	} else if (strcmp(argv[2], "stats") == 0) {
+		opt->func = wm_get_stats;
 	} else if (strcmp(argv[2], "get") == 0) {
 		opt->func = wm_get_info;
 	} else if (strcmp(argv[2], "reset") == 0) {
