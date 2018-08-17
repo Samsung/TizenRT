@@ -1,6 +1,6 @@
 ---
 Language:        Cpp
-ColumnLimit: 120
+ColumnLimit: 0
 # BasedOnStyle:  LLVM
 AccessModifierOffset: -4
 AllowShortFunctionsOnASingleLine: false
