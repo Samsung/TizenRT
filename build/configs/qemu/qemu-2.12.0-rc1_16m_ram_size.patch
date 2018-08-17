@@ -1,29 +1,29 @@
-From 56d2f3a419cd7304ec7a14c2031f233645229e3b Mon Sep 17 00:00:00 2001
-From: "pradeep.ns" <pradeep.ns@samsung.com>
-Date: Mon, 2 Apr 2018 21:57:32 +0530
-Subject: [PATCH] qemu/hw/arm: stellaris: Increase sram and flash size and
- support sdram
+From ce82e5ad2fa1dbd6be2f69c7a894356807283d53 Mon Sep 17 00:00:00 2001
+From: Manohara HK <manohara.hk@samsung.com>
+Date: Thu, 16 Aug 2018 22:55:46 +0530
+Subject: [PATCH] hw/arm : stellaris : Increase sram and flash size and support
+ sdram
 
 This patch increases the sram and flash size of stellaris lm3s6965 board.
 It also adds a sdram of 512MB to the board.
 
+Signed-off-by: Manohara HK <manohara.hk@samsung.com>
 Signed-off-by: pradeep.ns <pradeep.ns@samsung.com>
-Signed-off-by: manohara.hk <manohara.hk@samsung.com>
 ---
- hw/arm/stellaris.c | 32 ++++++++++++++++++++++++++++++++
- 1 file changed, 32 insertions(+)
+ hw/arm/stellaris.c | 35 +++++++++++++++++++++++++++++++++--
+ 1 file changed, 33 insertions(+), 2 deletions(-)
 
 diff --git a/hw/arm/stellaris.c b/hw/arm/stellaris.c
-index de7c0fc..3a0f928 100644
+index de7c0fc..01783ba 100644
 --- a/hw/arm/stellaris.c
 +++ b/hw/arm/stellaris.c
 @@ -56,6 +56,16 @@ typedef const struct {
  #define STELLARIS_GPTM(obj) \
      OBJECT_CHECK(gptm_state, (obj), TYPE_STELLARIS_GPTM)
  
-+#define SRAM_16M_FLASH_128M	1 /*Increase the SRAM and FLASH to 16M and 128M*/
-+#define SRAM_1M_FLASH_32M	0 /*Increase the SRAM and FLASH to 1M and 32M*/
-+#define SUPPORT_SDARAM		1 /*Add a sdram @cortexm3 default extranal RAM map */
++#define SRAM_16M_FLASH_128M    1 /*Increase the SRAM and FLASH to 16M and 128M*/
++#define SRAM_1M_FLASH_32M      0 /*Increase the SRAM and FLASH to 1M and 32M*/
++#define SUPPORT_SDARAM         1 /*Add a sdram @cortexm3 default extranal RAM map */
 +
 +
 +#if SUPPORT_SDARAM
@@ -48,7 +48,7 @@ index de7c0fc..3a0f928 100644
      0x001133ff,
      0x030f5317,
      0x0f0f87ff,
-@@ -1282,6 +1298,9 @@ static void stellaris_init(MachineState *ms, stellaris_board_info *board)
+@@ -1282,21 +1298,36 @@ static void stellaris_init(MachineState *ms, stellaris_board_info *board)
  
      MemoryRegion *sram = g_new(MemoryRegion, 1);
      MemoryRegion *flash = g_new(MemoryRegion, 1);
@@ -58,7 +58,16 @@ index de7c0fc..3a0f928 100644
      MemoryRegion *system_memory = get_system_memory();
  
      flash_size = (((board->dc0 & 0xffff) + 1) << 1) * 1024;
-@@ -1297,6 +1316,19 @@ static void stellaris_init(MachineState *ms, stellaris_board_info *board)
+     sram_size = ((board->dc0 >> 18) + 1) * 1024;
+ 
+-    /* Flash programming is done via the SCU, so pretend it is ROM.  */
++    /* Flash is read/writable */
+     memory_region_init_ram(flash, NULL, "stellaris.flash", flash_size,
+                            &error_fatal);
+-    memory_region_set_readonly(flash, true);
+     memory_region_add_subregion(system_memory, 0, flash);
+ 
+     memory_region_init_ram(sram, NULL, "stellaris.sram", sram_size,
                             &error_fatal);
      memory_region_add_subregion(system_memory, 0x20000000, sram);
  
