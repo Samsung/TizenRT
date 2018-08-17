@@ -321,6 +321,16 @@ wifi_manager_result_e wifi_manager_get_config(wifi_manager_ap_config_s *config);
 wifi_manager_result_e wifi_manager_remove_config(void);
 
 /**
+ * @brief Get the most recently connected AP configuration which was saved by Wi-Fi Manager
+ * @details @b #include <wifi_manager/wifi_manager.h>
+ * @param[in] config The pointer of AP configuration infomation which will be filled
+ * @return On success, WIFI_MANAGER_SUCCESS (i.e., 0) is returned. On failure, non-zero value is returned.
+ * @since TizenRT v2.0 PRE
+ */
+
+wifi_manager_result_e wifi_manager_get_connected_config(wifi_manager_ap_config_s *config);
+
+/**
  * @brief Obtain WiFi Manager state stats
  * @details @b #include <wifi_manager/wifi_manager.h>
  * @param[in] The pointer of WiFi Manager stats information which will be filled

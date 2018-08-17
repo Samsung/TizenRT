@@ -398,6 +398,7 @@ static wifi_manager_result_e _get_ipaddr_dhcp(void);
 static wifi_manager_result_e _wifimgr_deinit(void);
 static wifi_manager_result_e _wifimgr_run_sta(void);
 static wifi_manager_result_e _wifimgr_connect_ap(wifi_manager_ap_config_s *config);
+static void _wifimgr_save_connected_config(wifi_manager_ap_config_s *config);
 static wifi_manager_result_e _wifimgr_disconnect_ap(void);
 static wifi_manager_result_e _wifimgr_run_softap(wifi_manager_softap_config_s *config);
 static wifi_manager_result_e _wifimgr_stop_softap(void);
@@ -708,6 +709,17 @@ wifi_manager_result_e _wifimgr_run_sta(void)
 }
 
 
+void _wifimgr_save_connected_config(wifi_manager_ap_config_s *config)
+{
+	WM_LOG_START;
+	wifi_utils_result_e ret = wifi_profile_write(config, 1);
+	if (ret != WIFI_UTILS_SUCCESS) {
+		ndbg("[WM] Failed to save the connected AP configuration in file system\n");
+	}
+	return;
+}
+
+
 wifi_manager_result_e _wifimgr_connect_ap(wifi_manager_ap_config_s *config)
 {
 	WM_LOG_START;
@@ -729,6 +741,8 @@ wifi_manager_result_e _wifimgr_connect_ap(wifi_manager_ap_config_s *config)
 		return WIFI_MANAGER_FAIL;
 	}
 	WIFIMGR_SET_SSID(config->ssid);
+
+	_wifimgr_save_connected_config(config);
 
 	return WIFI_MANAGER_SUCCESS;
 }
@@ -766,7 +780,7 @@ wifi_manager_result_e _wifimgr_run_softap(wifi_manager_softap_config_s *config)
 	g_manager_info.num_sta = 0;
 
 	if (g_manager_info.state == WIFIMGR_SOFTAP_DISCONNECTING_STA) {
-		WIFIMGR_SOFTAP_CALLBACK_RECEIVED;	
+		WIFIMGR_SOFTAP_CALLBACK_RECEIVED;
 	}
 	/* For tracking softap stats, the LAST value is used */
 	WIFIMGR_STATS_INC(CB_SOFTAP_DONE);
@@ -1466,7 +1480,7 @@ wifi_manager_result_e wifi_manager_save_config(wifi_manager_ap_config_s *config)
 	wifi_manager_result_e wret = WIFI_MANAGER_INVALID_ARGS;
 	if (config) {
 		WIFIMGR_CHECK_AP_CONFIG(config);
-		WIFIMGR_CHECK_UTILRESULT(wifi_profile_write(config), "wifimgr save config fail\n", WIFI_MANAGER_FAIL);
+		WIFIMGR_CHECK_UTILRESULT(wifi_profile_write(config, 0), "wifimgr save config fail\n", WIFI_MANAGER_FAIL);
 		wret = WIFI_MANAGER_SUCCESS;
 	} else {
 		WIFIADD_ERR_RECORD(ERR_WIFIMGR_INVALID_ARGUMENTS);
@@ -1479,7 +1493,7 @@ wifi_manager_result_e wifi_manager_get_config(wifi_manager_ap_config_s *config)
 {
 	wifi_manager_result_e wret = WIFI_MANAGER_INVALID_ARGS;
 	if (config) {
-		WIFIMGR_CHECK_UTILRESULT(wifi_profile_read(config), "wifimgr get config fail\n", WIFI_MANAGER_FAIL);
+		WIFIMGR_CHECK_UTILRESULT(wifi_profile_read(config, 0), "wifimgr get config fail\n", WIFI_MANAGER_FAIL);
 		wret = WIFI_MANAGER_SUCCESS;
 	} else {
 		WIFIADD_ERR_RECORD(ERR_WIFIMGR_INVALID_ARGUMENTS);
@@ -1490,8 +1504,21 @@ wifi_manager_result_e wifi_manager_get_config(wifi_manager_ap_config_s *config)
 
 wifi_manager_result_e wifi_manager_remove_config(void)
 {
-	WIFIMGR_CHECK_UTILRESULT(wifi_profile_reset(), "wifimgr remove config fail\n", WIFI_MANAGER_FAIL);
+	WIFIMGR_CHECK_UTILRESULT(wifi_profile_reset(0), "wifimgr remove config fail\n", WIFI_MANAGER_FAIL);
 	return WIFI_MANAGER_SUCCESS;
+}
+
+
+wifi_manager_result_e wifi_manager_get_connected_config(wifi_manager_ap_config_s *config)
+{
+	wifi_manager_result_e wret = WIFI_MANAGER_INVALID_ARGS;
+	if (config) {
+		WIFIMGR_CHECK_UTILRESULT(wifi_profile_read(config, 1), "wifimgr get config fail\n", WIFI_MANAGER_FAIL);
+		wret = WIFI_MANAGER_SUCCESS;
+	} else {
+		WIFIADD_ERR_RECORD(ERR_WIFIMGR_INVALID_ARGUMENTS);
+	}
+	return wret;
 }
 
 
