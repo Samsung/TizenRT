@@ -441,12 +441,18 @@ config ARCH_STACKDUMP
 	bool "Dump stack on assertions"
 	default n
 	---help---
-		Enable to do stack dumps after assertions
+		Enable to do stack dumps after assertions.
+		To see symbols on call stack dump, please enable DEBUG_DISPLAY_SYMBOL.
+		It is possible to enable it when FS_ROMFS is enabled.
+		
 
 config DEBUG_DISPLAY_SYMBOL
 	bool "Display symbols on call stack dump"
 	default n
-	depends on DEBUG_SYMBOLS && FRAME_POINTER && FS_ROMFS
+	select DEBUG_SYMBOLS
+	select FRAME_POINTER
+	depends on ARCH_STACKDUMP
+	depends on FS_ROMFS
 	---help---
 		Enable to show symbol on call stack dump
 
