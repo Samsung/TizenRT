@@ -48,7 +48,9 @@ FileInputDataSource &FileInputDataSource::operator=(const FileInputDataSource &s
 
 FileInputDataSource::~FileInputDataSource()
 {
-	close();
+	if (mFp) {
+		close();
+	}
 }
 
 bool FileInputDataSource::open()
