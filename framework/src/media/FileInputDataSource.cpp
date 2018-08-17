@@ -169,14 +169,9 @@ ssize_t FileInputDataSource::read(unsigned char *buf, size_t size)
 	return readRet;
 }
 
-int FileInputDataSource::readAt(long offset, int origin, unsigned char *buf, size_t size)
+int FileInputDataSource::seek(long offset, int origin)
 {
-	if (fseek(mFp, offset, origin) != 0) {
-		meddbg("FileInputDataSource::readAt : fail to seek\n");
-		return -1;
-	}
-
-	return fread(buf, sizeof(unsigned char), size, mFp);
+	return fseek(mFp, offset, origin);
 }
 
 } // namespace stream
