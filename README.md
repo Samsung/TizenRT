@@ -25,6 +25,8 @@ export PATH=<Your Toolchain PATH>:$PATH
 ```
 Be aware that recommanded toolchain is fully working on 64bits machine.
 
+NOTE: See [Additional Requirements](docs/InstallAdReq.md) for gRPC, ROMFS, OCF and IoT.js.
+
 ### Getting the sources
 
 ```bash
