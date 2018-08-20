@@ -26,39 +26,32 @@ using namespace media::stream;
 
 static unsigned int channels = 2;
 static unsigned int sampleRate = 16000;
-static unsigned int g_recv_size = 0;
 static audio_format_type_t pcmFormat = AUDIO_FORMAT_TYPE_S16_LE;
-
-static ssize_t callback(unsigned char* buf, size_t size)
-{
-	g_recv_size += size;
-	return size;
-}
 
 static void utc_media_BufferOutputDataSource_getChannels_p(void)
 {
-	BufferOutputDataSource dataSource(channels, sampleRate, pcmFormat, (OnBufferDataReached)callback);
+	BufferOutputDataSource dataSource(channels, sampleRate, pcmFormat);
 	TC_ASSERT_EQ("utc_media_BufferOutputDataSource_getChannels", dataSource.getChannels(), channels);
 	TC_SUCCESS_RESULT();
 }
 
 static void utc_media_BufferOutputDataSource_getSampleRate_p(void)
 {
-	BufferOutputDataSource dataSource(channels, sampleRate, pcmFormat, (OnBufferDataReached)callback);
+	BufferOutputDataSource dataSource(channels, sampleRate, pcmFormat);
 	TC_ASSERT_EQ("utc_media_BufferOutputDataSource_getSampleRate", dataSource.getSampleRate(), sampleRate);
 	TC_SUCCESS_RESULT();
 }
 
 static void utc_media_BufferOutputDataSource_getPcmFormat_p(void)
 {
-	BufferOutputDataSource dataSource(channels, sampleRate, pcmFormat, (OnBufferDataReached)callback);
+	BufferOutputDataSource dataSource(channels, sampleRate, pcmFormat);
 	TC_ASSERT_EQ("utc_media_BufferOutputDataSource_getPcmFormat", dataSource.getPcmFormat(), pcmFormat);
 	TC_SUCCESS_RESULT();
 }
 
 static void utc_media_BufferOutputDataSource_setChannels_p(void)
 {
-	BufferOutputDataSource dataSource((OnBufferDataReached)callback);
+	BufferOutputDataSource dataSource;
 	unsigned int compare_channels = 3;
 	dataSource.setChannels(compare_channels);
 	TC_ASSERT_EQ("utc_media_BufferOutputDataSource_setChannels", dataSource.getChannels(), compare_channels);
@@ -67,7 +60,7 @@ static void utc_media_BufferOutputDataSource_setChannels_p(void)
 
 static void utc_media_BufferOutputDataSource_setSampleRate_p(void)
 {
-	BufferOutputDataSource dataSource((OnBufferDataReached)callback);
+	BufferOutputDataSource dataSource;
 	unsigned int compare_sampleRate = 32000;
 	dataSource.setSampleRate(compare_sampleRate);
 	TC_ASSERT_EQ("utc_media_BufferOutputDataSource_setSampleRate", dataSource.getSampleRate(), compare_sampleRate);
@@ -76,7 +69,7 @@ static void utc_media_BufferOutputDataSource_setSampleRate_p(void)
 
 static void utc_media_BufferOutputDataSource_setPcmFormat_p(void)
 {
-	BufferOutputDataSource dataSource((OnBufferDataReached)callback);
+	BufferOutputDataSource dataSource;
 	media::audio_format_type_t compare_pcmFormat = media::AUDIO_FORMAT_TYPE_S8;
 	dataSource.setPcmFormat(media::AUDIO_FORMAT_TYPE_S8);
 	TC_ASSERT_EQ("utc_media_BufferOutputDataSource_setPcmFormat", dataSource.getPcmFormat(), compare_pcmFormat);
@@ -85,7 +78,7 @@ static void utc_media_BufferOutputDataSource_setPcmFormat_p(void)
 
 static void utc_media_BufferOutputDataSource_CopyConstructor_p(void)
 {
-	BufferOutputDataSource dummy((OnBufferDataReached)callback);
+	BufferOutputDataSource dummy;
 	BufferOutputDataSource dataSource(dummy);
 
 	TC_ASSERT_EQ("utc_media_BufferOutputDataSource_CopyConstructor", dataSource.getChannels(), dummy.getChannels());
@@ -96,7 +89,7 @@ static void utc_media_BufferOutputDataSource_CopyConstructor_p(void)
 
 static void utc_media_BufferOutputDataSource_EqualOperator_p(void)
 {
-	BufferOutputDataSource dummy((OnBufferDataReached)callback);
+	BufferOutputDataSource dummy;
 	BufferOutputDataSource dataSource = dummy;
 
 	TC_ASSERT_EQ("utc_media_BufferOutputDataSource_EqualOperator", dataSource.getChannels(), dummy.getChannels());
@@ -107,16 +100,17 @@ static void utc_media_BufferOutputDataSource_EqualOperator_p(void)
 
 static void utc_media_BufferOutputDataSource_open_p(void)
 {
-	BufferOutputDataSource dataSource((OnBufferDataReached)callback);
+	BufferOutputDataSource dataSource;
 
 	TC_ASSERT_EQ("utc_media_BufferOutputDataSource_open", dataSource.open(), true);
+	dataSource.close();
 
 	TC_SUCCESS_RESULT();
 }
 
 static void utc_media_BufferOutputDataSource_close_p(void)
 {
-	BufferOutputDataSource dataSource((OnBufferDataReached)callback);
+	BufferOutputDataSource dataSource;
 
 	TC_ASSERT_EQ("utc_media_BufferOutputDataSource_close", dataSource.close(), true);
 
@@ -125,35 +119,44 @@ static void utc_media_BufferOutputDataSource_close_p(void)
 
 static void utc_media_BufferOutputDataSource_isPrepare_p(void)
 {
-	BufferOutputDataSource dataSource((OnBufferDataReached)callback);
+	BufferOutputDataSource dataSource;
 
+	dataSource.open();
 	TC_ASSERT_EQ("utc_media_BufferOutputDataSource_isPrepare", dataSource.isPrepare(), true);
+	dataSource.close();
 	TC_SUCCESS_RESULT();
 }
 
+static void utc_media_BufferOutputDataSource_isPrepare_n(void)
+{
+	BufferOutputDataSource dataSource;
+	TC_ASSERT_EQ("utc_media_BufferOutputDataSource_isPrepare", dataSource.isPrepare(), false);
+	TC_SUCCESS_RESULT();
+}
 
 static void utc_media_BufferOutputDataSource_write_p(void)
 {
-	BufferOutputDataSource dataSource((OnBufferDataReached)callback);
+	BufferOutputDataSource dataSource;
 	unsigned char dummy[] = "dummy";
 	ssize_t dummySize = 6;
 	int count = 5;
 	int i;
+	dataSource.open();
 	for (i = 0; i < count; i++) {
 		TC_ASSERT_EQ("utc_media_BufferOutputDataSource_write", dataSource.write(dummy, (size_t)dummySize), dummySize);
 	}
-	TC_ASSERT_EQ("utc_media_BufferOutputDataSource_write", g_recv_size, dummySize * count);
+	dataSource.close();
 
 	TC_SUCCESS_RESULT();
 }
 
 static void utc_media_BufferOutputDataSource_write_n(void)
 {
-	BufferOutputDataSource dataSource((OnBufferDataReached)callback);
-	unsigned char dummy[] = "dummy";
+	BufferOutputDataSource dataSource;
 
-	TC_ASSERT_EQ("utc_media_BufferOutputDataSource_write", dataSource.write(dummy, 0), EOF);
+	dataSource.open();
 	TC_ASSERT_EQ("utc_media_BufferOutputDataSource_write", dataSource.write(nullptr, 1), EOF);
+	dataSource.close();
 
 	TC_SUCCESS_RESULT();
 }
@@ -176,6 +179,7 @@ int utc_media_bufferoutputdatasource_main(void)
 	utc_media_BufferOutputDataSource_close_p();
 
 	utc_media_BufferOutputDataSource_isPrepare_p();
+	utc_media_BufferOutputDataSource_isPrepare_n();
 
 	utc_media_BufferOutputDataSource_write_p();
 	utc_media_BufferOutputDataSource_write_n();
