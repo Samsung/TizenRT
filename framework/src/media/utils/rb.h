@@ -102,6 +102,13 @@ size_t rb_read(rb_p rbp, void *ptr, size_t len);
  */
 size_t rb_read_ext(rb_p rbp, void *ptr, size_t len, size_t offset);
 
+/**
+ * @brief  Reset ring-buffer, data in ring-buffer will be dropped.
+ * @param  rbp: Pointer to the ring-buffer object
+ * @return true on success, otherwise false.
+ */
+bool rb_reset(rb_p rbp);
+
 #ifdef __cplusplus
 }
 #endif
