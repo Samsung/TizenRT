@@ -31,9 +31,6 @@
 
 #include <media/OutputDataSource.h>
 
-typedef ssize_t(*OnBufferDataReached)(void* buffer, size_t size);
-//TODO - The Callback mechanism will be modified.
-
 namespace media {
 namespace stream {
 /**
@@ -51,14 +48,7 @@ public:
 	 * Delete the default construct
 	 * @since TizenRT v2.0 PRE
 	 */
-	BufferOutputDataSource() = delete;
-	/**
-	 * @brief Constructs an empty BufferOutputDataSource.
-	 * @details @b #include <media/BufferOutputDataSource.h>
-	 * param[in] callback The callback that the callback function
-	 * @since TizenRT v2.0 PRE
-	 */
-	BufferOutputDataSource(OnBufferDataReached callback);
+	BufferOutputDataSource();
 	/**
 	 * @brief Constructs a new object provide with audio configuration
 	 * @details @b #include <media/BufferOutputDataSource.h>
@@ -68,7 +58,7 @@ public:
 	 * param[in] callback   The callback that the callback function
 	 * @since TizenRT v2.0 PRE
 	 */
-	BufferOutputDataSource(unsigned int channels, unsigned int sampleRate, audio_format_type_t pcmFormat, OnBufferDataReached callback);
+	BufferOutputDataSource(unsigned int channels, unsigned int sampleRate, audio_format_type_t pcmFormat);
 	/**
 	 * @brief Copy constructs for BufferOutputDataSource.
 	 * @details @b #include <media/BufferOutputDataSource.h>
@@ -110,20 +100,10 @@ public:
 	 */
 	bool close() override;
 
-	/**
-	 * @brief Puts the file data
-	 * @details @b #include <media/BufferOutputDataSource.h>
-	 * @param[in] buf The buf that buffer to be written to the file
-	 * @param[in] size The size that the size of the buffer
-	 * @return if there is nothing to write, it returns 0
-	 *         if error occurred, it returns -1, else written size returns
-	 * @since TizenRT v2.0 PRE
-	 */
-	ssize_t write(unsigned char* buf, size_t size) override;
-
-private:
-	OnBufferDataReached mCallback;
+protected:
+	ssize_t onStreamBufferReadable(bool isFlush) override;
 };
+
 } // namespace stream
 } // namespace media
 

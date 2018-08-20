@@ -92,6 +92,27 @@ public:
 	 * @since TizenRT v2.0 PRE
 	 */
 	virtual void onRecordStopError(MediaRecorder& mediaRecorder, recorder_error_t errCode) = 0;
+	/**
+	 * @brief informs the user that data in the output-buffer reach the
+	 * threshold, and it's possible to fetch data now.
+	 * @remark user need to override this method when the recorder working
+	 * with a BufferOutputDataSource.
+	 * @details @b #include <media/MediaRecorderObserverInterface.h>
+	 * @since TizenRT v2.0 PRE
+	 */
+	virtual void onRecordBufferDataReached(MediaRecorder& mediaRecorder, unsigned char *data, size_t size) {}
+	/**
+	 * @brief informs the user the recorder buffer state: overrun.
+	 * @details @b #include <media/MediaRecorderObserverInterface.h>
+	 * @since TizenRT v2.0 PRE
+	 */
+	virtual void onRecordBufferOverrun(MediaRecorder& mediaRecorder) {}
+	/**
+	 * @brief informs the user the recorder buffer state: underrun.
+	 * @details @b #include <media/MediaRecorderObserverInterface.h>
+	 * @since TizenRT v2.0 PRE
+	 */
+	virtual void onRecordBufferUnderrun(MediaRecorder& mediaRecorder) {}
 };
 } // namespace media
 

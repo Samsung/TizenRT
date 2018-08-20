@@ -177,7 +177,7 @@ void MediaRecorderImpl::prepareRecorder(recorder_result_t& ret)
 	if (mDuration > 0) {
 		mTotalFrames = mDuration * mOutputDataSource->getSampleRate();
 	}
-	
+
 	mCurState = RECORDER_STATE_READY;
 	notifySync();
 }
@@ -226,7 +226,7 @@ void MediaRecorderImpl::unprepareRecorder(recorder_result_t& ret)
 	mDuration = 0;
 	mTotalFrames = 0;
 	mCapturedFrames = 0;
-	
+
 	mCurState = RECORDER_STATE_IDLE;
 	notifySync();
 }
@@ -337,14 +337,14 @@ void MediaRecorderImpl::pauseRecorder()
 		meddbg("pause Failed mCurState : %d\n", (recorder_state_t)mCurState);
 		return;
 	}
-		
+
 	audio_manager_result_t result = pause_audio_stream_in();
 	if (result != AUDIO_MANAGER_SUCCESS) {
 		notifyObserver(OBSERVER_COMMAND_PAUSE_ERROR, RECORDER_ERROR_INTERNAL_OPERATION_FAILED);
 		meddbg("pause_audio_stream_in failed ret : %d\n", result);
 		return;
 	}
-	
+
 	mCurState = RECORDER_STATE_PAUSED;
 	notifyObserver(OBSERVER_COMMAND_PAUSED);
 }
@@ -456,6 +456,8 @@ void MediaRecorderImpl::setRecorderDataSource(std::shared_ptr<stream::OutputData
 	}
 
 	mOutputDataSource = dataSource;
+	mOutputDataSource->setRecorder(shared_from_this());
+
 	notifySync();
 }
 
@@ -549,7 +551,7 @@ void MediaRecorderImpl::capture()
 			frameSize = remainFrames;
 		}
 	}
-	
+
 	int frames = start_audio_stream_in(mBuffer, frameSize);
 	if (frames > 0) {
 		mCapturedFrames += frames;
@@ -557,10 +559,10 @@ void MediaRecorderImpl::capture()
 			mCapturedFrames = 0;
 			meddbg("Too huge value : %d, set 0 to prevent overflow\n", mCapturedFrames);
 		}
-		
+
 		int ret = 0;
 		int size = get_input_frames_to_byte(frames);
-		
+
 		while (size > 0) {
 			int written = mOutputDataSource->write(mBuffer + ret, size);
 			medvdbg("written : %d size : %d frames : %d\n", written, size, frames);
@@ -597,10 +599,13 @@ void MediaRecorderImpl::notifySync()
 	mSyncCv.notify_one();
 }
 
-void MediaRecorderImpl::notifyObserver(observer_command_t cmd, recorder_error_t errCode)
+void MediaRecorderImpl::notifyObserver(observer_command_t cmd, ...)
 {
 	medvdbg("notifyObserver cmd : %d\n", cmd);
 	if (mRecorderObserver) {
+		va_list ap;
+		va_start(ap, cmd);
+
 		RecorderObserverWorker& row = RecorderObserverWorker::getWorker();
 		switch (cmd) {
 		case OBSERVER_COMMAND_STARTED: {
@@ -617,17 +622,38 @@ void MediaRecorderImpl::notifyObserver(observer_command_t cmd, recorder_error_t 
 		} break;
 		case OBSERVER_COMMAND_START_ERROR: {
 			medvdbg("OBSERVER_COMMAND_START_ERROR\n");
+			recorder_error_t errCode = (recorder_error_t)va_arg(ap, int);
 			row.enQueue(&MediaRecorderObserverInterface::onRecordStartError, mRecorderObserver, mRecorder, errCode);
 		} break;
 		case OBSERVER_COMMAND_PAUSE_ERROR: {
 			medvdbg("OBSERVER_COMMAND_PAUSE_ERROR\n");
+			recorder_error_t errCode = (recorder_error_t)va_arg(ap, int);
 			row.enQueue(&MediaRecorderObserverInterface::onRecordPauseError, mRecorderObserver, mRecorder, errCode);
 		} break;
 		case OBSERVER_COMMAND_STOP_ERROR: {
 			medvdbg("OBSERVER_COMMAND_STOP_ERROR\n");
+			recorder_error_t errCode = (recorder_error_t)va_arg(ap, int);
 			row.enQueue(&MediaRecorderObserverInterface::onRecordStopError, mRecorderObserver, mRecorder, errCode);
 		} break;
+		case OBSERVER_COMMAND_BUFFER_OVERRUN: {
+			medvdbg("OBSERVER_COMMAND_BUFFER_OVERRUN\n");
+			row.enQueue(&MediaRecorderObserverInterface::onRecordBufferOverrun, mRecorderObserver, mRecorder);
+		} break;
+		case OBSERVER_COMMAND_BUFFER_UNDERRUN: {
+			medvdbg("OBSERVER_COMMAND_BUFFER_UNDERRUN\n");
+			row.enQueue(&MediaRecorderObserverInterface::onRecordBufferUnderrun, mRecorderObserver, mRecorder);
+		} break;
+		case OBSERVER_COMMAND_BUFFER_DATAREACHED: {
+			medvdbg("OBSERVER_COMMAND_BUFFER_DATAREACHED\n");
+			unsigned char *data = va_arg(ap, unsigned char *);
+			size_t size = va_arg(ap, size_t);
+			// Call observer directly, not via RecorderWorker.
+			// Because data buffer would be released after this function returned.
+			mRecorderObserver->onRecordBufferDataReached(mRecorder, data, size);
+		} break;
 		}
+
+		va_end(ap);
 	}
 }
 

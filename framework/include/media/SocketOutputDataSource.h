@@ -124,6 +124,9 @@ public:
 	 */
 	ssize_t write(unsigned char* buf, size_t size) override;
 
+protected:
+	ssize_t onStreamBufferReadable(bool isFlush) override;
+
 private:
 	std::string mIpAddr;
 	uint16_t mPort;
