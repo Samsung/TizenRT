@@ -74,7 +74,6 @@ static void timer_callback_40s(void *data)
 /****************************************************************************
  * Public Functions
  ****************************************************************************/
-
 #ifdef CONFIG_BUILD_KERNEL
 int main(int argc, FAR char *argv[])
 #else
@@ -82,21 +81,28 @@ int eventloop_sample_main(int argc, FAR char *argv[])
 #endif
 {
 	el_timer_t *timer_2s;
+	el_timer_t *timer_20s;
+	el_timer_t *timer_40s;
 
 	/* Add timer to be called every 2 seconds */
-	timer_2s = eventloop_add_timer(2000, true, timer_callback_2s, NULL);
+	timer_2s = eventloop_add_timer_async(2000, true, timer_callback_2s, NULL);
 
 	/* Add timer to be called every 10 seconds */
-	timer_10s = eventloop_add_timer(10000, true, timer_callback_10s, "10s Timeout");
+	timer_10s = eventloop_add_timer_async(10000, true, timer_callback_10s, "10s Timeout");
 
-	/* Add timer to be called once after 20s */
-	eventloop_add_timer(20000, false, timer_callback_20s, timer_2s);
+	/* Add timer to be called once after 20s. It deletes the timer with 2s interval through passing the pointer */
+	timer_20s = eventloop_add_timer(20000, false, timer_callback_20s, timer_2s);
 
-	/* Add timer to be called once after 40s */
-	eventloop_add_timer(40000, false, timer_callback_40s, NULL);
+	/* Add timer to be called once after 40s. It deletes the timer with 10s interval declared as global variable */
+	timer_40s = eventloop_add_timer(40000, false, timer_callback_40s, NULL);
 
 	/* Run loop */
 	eventloop_loop_run();
+
+	/* Delete created timers */
+	eventloop_delete_timer(timer_20s);
+	eventloop_delete_timer(timer_40s);
+	/* Other timers with 2s and 10s interval are already deleted in callback functions, timer_callback_20s and timer_callback_40s */
 
 	return 0;
 }

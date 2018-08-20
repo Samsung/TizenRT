@@ -16,19 +16,35 @@
  *
  ****************************************************************************/
 
-#ifndef __EVENTLOOP_INTERNAL_H__
-#define __EVENTLOOP_INTERNAL_H__
+#ifndef __INCLUDE_TINYARA_EVENTLOOP_H
+#define __INCLUDE_TINYARA_EVENTLOOP_H
 
-#include <stdlib.h>
+/* This file will be used to provide definitions to support
+ * eventloop framework
+ */
 
-/* Wrapper of allocation APIs */
-#define EL_ALLOC(a)  malloc(a)
-#define EL_FREE(a)   free(a)
+/****************************************************************************
+ * Included Files
+ ****************************************************************************/
+#include <tinyara/config.h>
 
-/* A value for the state of async loop */
-#define ASYNCLOOP_RUNNING 0
-
-el_loop_t *get_app_loop(void);
-int get_async_task(void);
-
+/****************************************************************************
+ * Public Function Prototypes
+ ****************************************************************************/
+#ifdef CONFIG_EVENTLOOP
+int eventloop_task_start(void);
 #endif
+
+#ifdef __cplusplus
+#define EXTERN extern "C"
+extern "C" {
+#else
+#define EXTERN extern
+#endif
+
+#undef EXTERN
+#ifdef __cplusplus
+}
+#endif
+
+#endif /* __INCLUDE_TINYARA_EVENTLOOP_H */

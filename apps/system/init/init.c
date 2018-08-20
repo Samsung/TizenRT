@@ -36,6 +36,9 @@
 #ifdef CONFIG_SYSTEM_INFORMATION
 #include <apps/system/sysinfo.h>
 #endif
+#ifdef CONFIG_EVENTLOOP
+#include <tinyara/eventloop.h>
+#endif
 
 /****************************************************************************
  * Pre-processor Definitions
@@ -94,7 +97,7 @@ int main(int argc, FAR char *argv[])
 int preapp_start(int argc, char *argv[])
 #endif
 {
-#if defined(CONFIG_LIB_USRWORK) || defined(CONFIG_TASH)
+#if defined(CONFIG_LIB_USRWORK) || defined(CONFIG_TASH) || defined(CONFIG_EVENTLOOP)
 	int pid;
 #endif
 
@@ -122,7 +125,16 @@ int preapp_start(int argc, char *argv[])
 	tash_register_cmds();
 #endif
 
-#if defined(CONFIG_LIB_USRWORK) || defined(CONFIG_TASH)
+#ifdef CONFIG_EVENTLOOP
+	pid = eventloop_task_start();
+	if (pid <= 0) {
+		printf("eventloop is failed to start, error code is %d\n", pid);
+		goto error_out;
+	}
+#endif
+
+
+#if defined(CONFIG_LIB_USRWORK) || defined(CONFIG_TASH) || defined(CONFIG_EVENTLOOP)
 error_out:
 	return pid;
 #else
