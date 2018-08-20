@@ -18,21 +18,20 @@
 
 #include <debug.h>
 #include <media/MediaRecorder.h>
+#include <media/MediaTypes.h>
 #include "RecorderWorker.h"
 #include "MediaRecorderImpl.h"
 #include "audio/audio_manager.h"
 
 namespace media {
-MediaRecorderImpl::MediaRecorderImpl()
-	: mCurState(RECORDER_STATE_NONE), mOutputDataSource(nullptr), mRecorderObserver(nullptr), mBuffer(nullptr), mBuffSize(0),
-	mDuration(0), mTotalFrames(0), mCapturedFrames(0)
+MediaRecorderImpl::MediaRecorderImpl(MediaRecorder& recorder)
+	: mCurState(RECORDER_STATE_NONE), mOutputDataSource(nullptr), mRecorderObserver(nullptr),
+	mRecorder(recorder), mBuffer(nullptr), mBuffSize(0), mDuration(0), mTotalFrames(0), mCapturedFrames(0)
 {
 	medvdbg("MediaRecorderImpl::MediaRecorderImpl()\n");
-	static int recorderId = 1;
-	mId = recorderId++;
 }
 
-recorder_result_t MediaRecorderImpl::create()
+recorder_error_t MediaRecorderImpl::create()
 {
 	std::unique_lock<std::mutex> lock(mCmdMtx);
 	medvdbg("MediaRecorderImpl::create()\n");
@@ -40,52 +39,53 @@ recorder_result_t MediaRecorderImpl::create()
 	RecorderWorker& mrw = RecorderWorker::getWorker();
 	mrw.startWorker();
 
-	recorder_result_t ret = RECORDER_ERROR;
+	recorder_error_t ret = RECORDER_ERROR_NONE;
 	mrw.enQueue(&MediaRecorderImpl::createRecorder, shared_from_this(), std::ref(ret));
 	mSyncCv.wait(lock);
 
-	if (ret == RECORDER_ERROR) {
+	if (ret != RECORDER_ERROR_NONE) {
 		mrw.stopWorker();
 	}
 
 	return ret;
 }
 
-void MediaRecorderImpl::createRecorder(recorder_result_t& ret)
+void MediaRecorderImpl::createRecorder(recorder_error_t& ret)
 {
 	medvdbg("createRecorder mCurState : %d\n", (recorder_state_t)mCurState);
 
 	if (mCurState != RECORDER_STATE_NONE) {
 		meddbg("mCurState != RECORDER_STATE_NONE mCurState : %d\n", (recorder_state_t)mCurState);
+		ret = RECORDER_ERROR_INVALID_STATE;
 		return notifySync();
 	}
 
 	audio_manager_result_t result = init_audio_stream_in();
 	if (result != AUDIO_MANAGER_SUCCESS) {
 		meddbg("Fail to initialize input audio stream : %d\n", result);
+		ret = RECORDER_ERROR_INIT_AUDIO_FAILED;
 		return notifySync();
 	}
 
 	mCurState = RECORDER_STATE_IDLE;
-	ret = RECORDER_OK;
 	notifySync();
 }
 
-recorder_result_t MediaRecorderImpl::destroy()
+recorder_error_t MediaRecorderImpl::destroy()
 {
 	std::unique_lock<std::mutex> lock(mCmdMtx);
 	medvdbg("MediaRecorderImpl::destroy()\n");
 	RecorderWorker& mrw = RecorderWorker::getWorker();
 	if (!mrw.isAlive()) {
 		meddbg("Worker is not alive\n");
-		return RECORDER_ERROR;
+		return RECORDER_ERROR_NOT_ALIVE;
 	}
 
-	recorder_result_t ret = RECORDER_ERROR;
+	recorder_error_t ret = RECORDER_ERROR_NONE;
 	mrw.enQueue(&MediaRecorderImpl::destroyRecorder, shared_from_this(), std::ref(ret));
 	mSyncCv.wait(lock);
 
-	if (ret == RECORDER_OK) {
+	if (ret == RECORDER_ERROR_NONE) {
 		if (mRecorderObserver) {
 			RecorderObserverWorker& row = RecorderObserverWorker::getWorker();
 			row.stopWorker();
@@ -98,21 +98,21 @@ recorder_result_t MediaRecorderImpl::destroy()
 	return ret;
 }
 
-void MediaRecorderImpl::destroyRecorder(recorder_result_t& ret)
+void MediaRecorderImpl::destroyRecorder(recorder_error_t& ret)
 {
 	medvdbg("destroyRecorder mCurState : %d\n", (recorder_state_t)mCurState);
 
 	if (mCurState != RECORDER_STATE_IDLE) {
 		meddbg("mCurState != RECORDER_STATE_IDLE mCurState : %d\n", (recorder_state_t)mCurState);
+		ret = RECORDER_ERROR_INVALID_STATE;
 		return notifySync();
 	}
 
 	mCurState = RECORDER_STATE_NONE;
-	ret = RECORDER_OK;
 	notifySync();
 }
 
-recorder_result_t MediaRecorderImpl::prepare()
+recorder_error_t MediaRecorderImpl::prepare()
 {
 	std::unique_lock<std::mutex> lock(mCmdMtx);
 
@@ -120,27 +120,29 @@ recorder_result_t MediaRecorderImpl::prepare()
 	RecorderWorker& mrw = RecorderWorker::getWorker();
 	if (!mrw.isAlive()) {
 		meddbg("Worker is not alive\n");
-		return RECORDER_ERROR;
+		return RECORDER_ERROR_NOT_ALIVE;
 	}
-	recorder_result_t ret = RECORDER_ERROR;
+	recorder_error_t ret = RECORDER_ERROR_NONE;
 	mrw.enQueue(&MediaRecorderImpl::prepareRecorder, shared_from_this(), std::ref(ret));
 	mSyncCv.wait(lock);
 
 	return ret;
 }
 
-void MediaRecorderImpl::prepareRecorder(recorder_result_t& ret)
+void MediaRecorderImpl::prepareRecorder(recorder_error_t& ret)
 {
 	medvdbg("prepareRecorder mCurState : %d\n", (recorder_state_t)mCurState);
 
 	if (mCurState != RECORDER_STATE_IDLE || mOutputDataSource == nullptr) {
 		meddbg("prepare Failed mCurState: %d mOutputDataSource : %s\n", (recorder_state_t)mCurState, \
 			(mOutputDataSource == nullptr ? "nullptr" : "not null"));
+		ret = (mOutputDataSource == nullptr) ? RECORDER_ERROR_INVALID_DATASOURCE : RECORDER_ERROR_INVALID_STATE;
 		return notifySync();
 	}
 
 	if (!mOutputDataSource->open()) {
 		meddbg("open() failed\n");
+		ret = RECORDER_ERROR_FILE_OPEN_FAILED;
 		return notifySync();
 	}
 
@@ -150,14 +152,16 @@ void MediaRecorderImpl::prepareRecorder(recorder_result_t& ret)
 		meddbg("set_audio_stream_in failed : result : %d channel %d sample rate : %d format : %d\n", result, \
 			mOutputDataSource->getChannels(), mOutputDataSource->getSampleRate(), (pcm_format)mOutputDataSource->getPcmFormat());
 		mOutputDataSource->close();
+		ret = RECORDER_ERROR_SET_AUDIO_FAILED;
 		return notifySync();
 	}
 
 	mBuffSize = get_input_frames_to_byte(get_input_frame_count());
 
-	if (mBuffSize <= 0) {
+	if (mBuffSize == 0) {
 		meddbg("Buffer size is too small size : %d\n", mBuffSize);
 		mOutputDataSource->close();
+		ret = RECORDER_ERROR_INVALID_FRAME;
 		return notifySync();
 	}
 	medvdbg("mBuffer size : %d\n", mBuffSize);
@@ -165,6 +169,7 @@ void MediaRecorderImpl::prepareRecorder(recorder_result_t& ret)
 	mBuffer = new unsigned char[mBuffSize];
 	if (!mBuffer) {
 		meddbg("mBuffer alloc failed\n");
+		ret = RECORDER_ERROR_OUT_OF_MEMORY;
 		mOutputDataSource->close();
 		return notifySync();
 	}
@@ -174,36 +179,37 @@ void MediaRecorderImpl::prepareRecorder(recorder_result_t& ret)
 	}
 	
 	mCurState = RECORDER_STATE_READY;
-	ret = RECORDER_OK;
 	notifySync();
 }
 
-recorder_result_t MediaRecorderImpl::unprepare()
+recorder_error_t MediaRecorderImpl::unprepare()
 {
 	std::unique_lock<std::mutex> lock(mCmdMtx);
 
 	RecorderWorker& mrw = RecorderWorker::getWorker();
 	if (!mrw.isAlive()) {
-		return RECORDER_ERROR;
+		return RECORDER_ERROR_NOT_ALIVE;
 	}
-	recorder_result_t ret = RECORDER_ERROR;
+	recorder_error_t ret = RECORDER_ERROR_NONE;
 	mrw.enQueue(&MediaRecorderImpl::unprepareRecorder, shared_from_this(), std::ref(ret));
 	mSyncCv.wait(lock);
 
 	return ret;
 }
 
-void MediaRecorderImpl::unprepareRecorder(recorder_result_t& ret)
+void MediaRecorderImpl::unprepareRecorder(recorder_error_t& ret)
 {
 	medvdbg("unprepareRecorder mCurState : %d\n", (recorder_state_t)mCurState);
 
 	if (mCurState == RECORDER_STATE_NONE || mCurState == RECORDER_STATE_IDLE) {
 		meddbg("unprepare Failed : %d\n", (recorder_state_t)mCurState);
+		ret = RECORDER_ERROR_INVALID_STATE;
 		return notifySync();
 	}
 	audio_manager_result_t result = reset_audio_stream_in();
 	if (result != AUDIO_MANAGER_SUCCESS) {
 		meddbg("reset_audio_stream_in failed ret : %d\n", result);
+		ret = RECORDER_ERROR_RESET_AUDIO_FAILED;
 		return notifySync();
 	}
 
@@ -222,21 +228,20 @@ void MediaRecorderImpl::unprepareRecorder(recorder_result_t& ret)
 	mCapturedFrames = 0;
 	
 	mCurState = RECORDER_STATE_IDLE;
-	ret = RECORDER_OK;
 	notifySync();
 }
 
-recorder_result_t MediaRecorderImpl::start()
+recorder_error_t MediaRecorderImpl::start()
 {
 	std::lock_guard<std::mutex> lock(mCmdMtx);
 	medvdbg("MediaRecorderImpl::start()\n");
 	RecorderWorker& mrw = RecorderWorker::getWorker();
 	if (!mrw.isAlive()) {
-		return RECORDER_ERROR;
+		return RECORDER_ERROR_NOT_ALIVE;
 	}
 	mrw.enQueue(&MediaRecorderImpl::startRecorder, shared_from_this());
 
-	return RECORDER_OK;
+	return RECORDER_ERROR_NONE;
 }
 
 void MediaRecorderImpl::startRecorder()
@@ -244,7 +249,7 @@ void MediaRecorderImpl::startRecorder()
 	medvdbg("startRecorder() mCurState : %d\n", (recorder_state_t)mCurState);
 
 	if (mCurState != RECORDER_STATE_READY && mCurState != RECORDER_STATE_PAUSED) {
-		notifyObserver(OBSERVER_COMMAND_ERROR);
+		notifyObserver(OBSERVER_COMMAND_START_ERROR, RECORDER_ERROR_INVALID_STATE);
 		meddbg("startRecorder Failed mCurState : %d\n", (recorder_state_t)mCurState);
 		return;
 	}
@@ -267,25 +272,25 @@ void MediaRecorderImpl::startRecorder()
 	notifyObserver(OBSERVER_COMMAND_STARTED);
 }
 
-recorder_result_t MediaRecorderImpl::stop()
+recorder_error_t MediaRecorderImpl::stop()
 {
 	std::lock_guard<std::mutex> lock(mCmdMtx);
 	medvdbg("MediaRecorderImpl::stop()\n");
 	RecorderWorker& mrw = RecorderWorker::getWorker();
 	if (!mrw.isAlive()) {
-		return RECORDER_ERROR;
+		return RECORDER_ERROR_NOT_ALIVE;
 	}
-	mrw.enQueue(&MediaRecorderImpl::stopRecorder, shared_from_this(), 0);
 
-	return RECORDER_OK;
+	mrw.enQueue(&MediaRecorderImpl::stopRecorder, shared_from_this(), RECORDER_ERROR_NONE);
+	return RECORDER_ERROR_NONE;
 }
 
-void MediaRecorderImpl::stopRecorder(int errcode)
+void MediaRecorderImpl::stopRecorder(recorder_error_t ret)
 {
 	medvdbg("stopRecorder mCurState : %d\n", (recorder_state_t)mCurState);
 
-	if (errcode == 0 && mCurState != RECORDER_STATE_RECORDING && mCurState != RECORDER_STATE_PAUSED) {
-		notifyObserver(OBSERVER_COMMAND_ERROR);
+	if (ret == RECORDER_ERROR_NONE && mCurState != RECORDER_STATE_RECORDING && mCurState != RECORDER_STATE_PAUSED) {
+		notifyObserver(OBSERVER_COMMAND_STOP_ERROR, RECORDER_ERROR_INVALID_STATE);
 		meddbg("stopRecorder Failed mCurState : %d\n", (recorder_state_t)mCurState);
 		return;
 	}
@@ -293,35 +298,34 @@ void MediaRecorderImpl::stopRecorder(int errcode)
 	audio_manager_result_t result = stop_audio_stream_in();
 	if (result != AUDIO_MANAGER_SUCCESS) {
 		meddbg("stop_audio_stream_in failed ret : %d\n", result);
-		if (errcode == 0) {
-			/* TODO : inform device control fail */
-			notifyObserver(OBSERVER_COMMAND_ERROR);
-			return;
+		if (ret == RECORDER_ERROR_NONE) {
+			notifyObserver(OBSERVER_COMMAND_STOP_ERROR, RECORDER_ERROR_STOP_AUDIO_FAILED);
 		}
+		return;
 	}
 
 	mCurState = RECORDER_STATE_READY;
 	RecorderWorker &mrw = RecorderWorker::getWorker();
 	mrw.setCurrentRecorder(nullptr);
 
-	if (errcode == 0) {
+	if (ret == RECORDER_ERROR_NONE) {
 		notifyObserver(OBSERVER_COMMAND_FINISHIED);
 	} else {
-		notifyObserver(OBSERVER_COMMAND_ERROR);
+		notifyObserver(OBSERVER_COMMAND_STOP_ERROR, ret);
 	}
 }
 
-recorder_result_t MediaRecorderImpl::pause()
+recorder_error_t MediaRecorderImpl::pause()
 {
 	std::lock_guard<std::mutex> lock(mCmdMtx);
 	medvdbg("MediaRecorderImpl::pause()\n");
 	RecorderWorker& mrw = RecorderWorker::getWorker();
 	if (!mrw.isAlive()) {
-		return RECORDER_ERROR;
+		return RECORDER_ERROR_NOT_ALIVE;
 	}
 	mrw.enQueue(&MediaRecorderImpl::pauseRecorder, shared_from_this());
 
-	return RECORDER_OK;
+	return RECORDER_ERROR_NONE;
 }
 
 void MediaRecorderImpl::pauseRecorder()
@@ -329,14 +333,14 @@ void MediaRecorderImpl::pauseRecorder()
 	medvdbg("pauseRecorder() mCurState : %d\n", (recorder_state_t)mCurState);
 
 	if (mCurState != RECORDER_STATE_RECORDING) {
-		notifyObserver(OBSERVER_COMMAND_ERROR);
+		notifyObserver(OBSERVER_COMMAND_PAUSE_ERROR, RECORDER_ERROR_INVALID_STATE);
 		meddbg("pause Failed mCurState : %d\n", (recorder_state_t)mCurState);
 		return;
 	}
 		
 	audio_manager_result_t result = pause_audio_stream_in();
 	if (result != AUDIO_MANAGER_SUCCESS) {
-		notifyObserver(OBSERVER_COMMAND_ERROR);
+		notifyObserver(OBSERVER_COMMAND_PAUSE_ERROR, RECORDER_ERROR_PAUSE_AUDIO_FAILED);
 		meddbg("pause_audio_stream_in failed ret : %d\n", result);
 		return;
 	}
@@ -345,21 +349,16 @@ void MediaRecorderImpl::pauseRecorder()
 	notifyObserver(OBSERVER_COMMAND_PAUSED);
 }
 
-recorder_result_t MediaRecorderImpl::getVolume(uint8_t *vol)
+recorder_error_t MediaRecorderImpl::getVolume(uint8_t *vol)
 {
-	recorder_result_t ret = RECORDER_OK;
-
 	std::unique_lock<std::mutex> lock(mCmdMtx);
 	medvdbg("MediaRecorderImpl::getVolume()\n");
 
-	if (vol == nullptr) {
-		meddbg("The given argument is invalid.\n");
-		return RECORDER_ERROR_INVALID_PARAM;
-	}
-
+	recorder_error_t ret = RECORDER_ERROR_NONE;
 	RecorderWorker& mrw = RecorderWorker::getWorker();
 	if (!mrw.isAlive()) {
-		return RECORDER_ERROR;
+		ret = RECORDER_ERROR_NOT_ALIVE;
+		return ret;
 	}
 
 	mrw.enQueue(&MediaRecorderImpl::getRecorderVolume, shared_from_this(), vol, std::ref(ret));
@@ -368,34 +367,43 @@ recorder_result_t MediaRecorderImpl::getVolume(uint8_t *vol)
 	return ret;
 }
 
-void MediaRecorderImpl::getRecorderVolume(uint8_t *vol, recorder_result_t &ret)
+void MediaRecorderImpl::getRecorderVolume(uint8_t *vol, recorder_error_t &ret)
 {
 	medvdbg("getRecorderVolume\n");
+
+	if (vol == nullptr) {
+		meddbg("The given argument is invalid.\n");
+		ret = RECORDER_ERROR_INVALID_PARAM;
+		return notifySync();
+	}
+
 	if (get_input_audio_gain(vol) != AUDIO_MANAGER_SUCCESS) {
 		meddbg("get_output_audio_volume() is failed, ret = %d\n", ret);
-		ret = RECORDER_ERROR;
+		ret = RECORDER_ERROR_GET_VOLUME_AUDIO_FAILED;
+		return notifySync();
 	}
+
 	notifySync();
 }
 
-recorder_result_t MediaRecorderImpl::setVolume(uint8_t vol)
+recorder_error_t MediaRecorderImpl::setVolume(uint8_t vol)
 {
 	std::unique_lock<std::mutex> lock(mCmdMtx);
 	medvdbg("setVolume\n");
 
 	RecorderWorker& mrw = RecorderWorker::getWorker();
 	if (!mrw.isAlive()) {
-		return RECORDER_ERROR;
+		return RECORDER_ERROR_NOT_ALIVE;
 	}
 
-	recorder_result_t ret = RECORDER_ERROR;
+	recorder_error_t ret = RECORDER_ERROR_NONE;
 	mrw.enQueue(&MediaRecorderImpl::setRecorderVolume, shared_from_this(), vol, std::ref(ret));
 	mSyncCv.wait(lock);
 
 	return ret;
 }
 
-void MediaRecorderImpl::setRecorderVolume(uint8_t vol, recorder_result_t& ret)
+void MediaRecorderImpl::setRecorderVolume(uint8_t vol, recorder_error_t& ret)
 {
 	medvdbg("setRecorderVolume\n");
 
@@ -405,17 +413,16 @@ void MediaRecorderImpl::setRecorderVolume(uint8_t vol, recorder_result_t& ret)
 		if (result == AUDIO_MANAGER_DEVICE_NOT_SUPPORT) {
 			ret = RECORDER_ERROR_INVALID_OPERATION;
 		} else {
-			ret = RECORDER_ERROR;
+			ret = RECORDER_ERROR_SET_AUDIO_FAILED;
 		}
 		return notifySync();
 	}
 
 	medvdbg("setVolume is success vol : %d\n", vol);
-	ret = RECORDER_OK;
 	notifySync();
 }
 
-recorder_result_t MediaRecorderImpl::setDataSource(std::unique_ptr<stream::OutputDataSource> dataSource)
+recorder_error_t MediaRecorderImpl::setDataSource(std::unique_ptr<stream::OutputDataSource> dataSource)
 {
 	std::unique_lock<std::mutex> lock(mCmdMtx);
 	medvdbg("setDataSource\n");
@@ -423,10 +430,10 @@ recorder_result_t MediaRecorderImpl::setDataSource(std::unique_ptr<stream::Outpu
 	RecorderWorker& mrw = RecorderWorker::getWorker();
 	if (!mrw.isAlive()) {
 		meddbg("Worker is not alive\n");
-		return RECORDER_ERROR;
+		return RECORDER_ERROR_NOT_ALIVE;
 	}
 
-	recorder_result_t ret = RECORDER_ERROR;
+	recorder_error_t ret = RECORDER_ERROR_NONE;
 	std::shared_ptr<stream::OutputDataSource> sharedDataSource = std::move(dataSource);
 	mrw.enQueue(&MediaRecorderImpl::setRecorderDataSource, shared_from_this(), sharedDataSource, std::ref(ret));
 	mSyncCv.wait(lock);
@@ -434,20 +441,21 @@ recorder_result_t MediaRecorderImpl::setDataSource(std::unique_ptr<stream::Outpu
 	return ret;
 }
 
-void MediaRecorderImpl::setRecorderDataSource(std::shared_ptr<stream::OutputDataSource> dataSource, recorder_result_t& ret)
+void MediaRecorderImpl::setRecorderDataSource(std::shared_ptr<stream::OutputDataSource> dataSource, recorder_error_t& ret)
 {
 	if (mCurState != RECORDER_STATE_IDLE) {
 		meddbg("setDataSource failed mCurState : %d\n", (recorder_state_t)mCurState);
+		ret = RECORDER_ERROR_INVALID_STATE;
 		return notifySync();
 	}
 
 	if (!dataSource) {
 		meddbg("DataSource is nullptr\n");
+		ret = RECORDER_ERROR_INVALID_DATASOURCE;
 		return notifySync();
 	}
 
 	mOutputDataSource = dataSource;
-	ret = RECORDER_OK;
 	notifySync();
 }
 
@@ -457,7 +465,7 @@ recorder_state_t MediaRecorderImpl::getState()
 	return mCurState;
 }
 
-recorder_result_t MediaRecorderImpl::setObserver(std::shared_ptr<MediaRecorderObserverInterface> observer)
+recorder_error_t MediaRecorderImpl::setObserver(std::shared_ptr<MediaRecorderObserverInterface> observer)
 {
 	std::unique_lock<std::mutex> lock(mCmdMtx);
 	medvdbg("setObserver\n");
@@ -465,13 +473,13 @@ recorder_result_t MediaRecorderImpl::setObserver(std::shared_ptr<MediaRecorderOb
 	RecorderWorker& mrw = RecorderWorker::getWorker();
 	if (!mrw.isAlive()) {
 		meddbg("Worker is not alive");
-		return RECORDER_ERROR;
+		return RECORDER_ERROR_NOT_ALIVE;
 	}
 
 	mrw.enQueue(&MediaRecorderImpl::setRecorderObserver, shared_from_this(), observer);
 	mSyncCv.wait(lock);
 
-	return RECORDER_OK;
+	return RECORDER_ERROR_NONE;
 }
 
 void MediaRecorderImpl::setRecorderObserver(std::shared_ptr<MediaRecorderObserverInterface> observer)
@@ -494,7 +502,7 @@ void MediaRecorderImpl::setRecorderObserver(std::shared_ptr<MediaRecorderObserve
 	notifySync();
 }
 
-recorder_result_t MediaRecorderImpl::setDuration(int second)
+recorder_error_t MediaRecorderImpl::setDuration(int second)
 {
 	std::unique_lock<std::mutex> lock(mCmdMtx);
 
@@ -502,22 +510,23 @@ recorder_result_t MediaRecorderImpl::setDuration(int second)
 	RecorderWorker& mrw = RecorderWorker::getWorker();
 	if (!mrw.isAlive()) {
 		meddbg("Worker is not alive\n");
-		return RECORDER_ERROR;
+		return RECORDER_ERROR_NOT_ALIVE;
 	}
 
-	recorder_result_t ret = RECORDER_ERROR;
+	recorder_error_t ret = RECORDER_ERROR_NONE;
 	mrw.enQueue(&MediaRecorderImpl::setRecorderDuration, shared_from_this(), second, std::ref(ret));
 	mSyncCv.wait(lock);
 
 	return ret;
 }
 
-void MediaRecorderImpl::setRecorderDuration(int second, recorder_result_t& ret)
+void MediaRecorderImpl::setRecorderDuration(int second, recorder_error_t& ret)
 {
 	medvdbg("setRecorderDuration mCurState : %d\n", (recorder_state_t)mCurState);
 
 	if (mCurState != RECORDER_STATE_IDLE) {
 		meddbg("setRecorderDuration Failed mCurState: %d\n", (recorder_state_t)mCurState);
+		ret = RECORDER_ERROR_INVALID_STATE;
 		return notifySync();
 	}
 	if (second > 0) {
@@ -525,7 +534,6 @@ void MediaRecorderImpl::setRecorderDuration(int second, recorder_result_t& ret)
 		mDuration = second;
 	}
 
-	ret = RECORDER_OK;
 	notifySync();
 }
 
@@ -561,7 +569,7 @@ void MediaRecorderImpl::capture()
 			if (written == EOF) {
 				meddbg("MediaRecorderImpl::capture() failed : errno : %d written : %d\n", errno, written);
 				RecorderWorker& mrw = RecorderWorker::getWorker();
-				mrw.enQueue(&MediaRecorderImpl::stopRecorder, shared_from_this(), -1);
+				mrw.enQueue(&MediaRecorderImpl::stopRecorder, shared_from_this(), RECORDER_ERROR_CAPTURE_AUDIO_FAILED);
 				break;
 			}
 
@@ -569,7 +577,7 @@ void MediaRecorderImpl::capture()
 			if ((written == 0) || (mTotalFrames == mCapturedFrames)) {
 				medvdbg("File write Ended\n");
 				RecorderWorker& mrw = RecorderWorker::getWorker();
-				mrw.enQueue(&MediaRecorderImpl::stopRecorder, shared_from_this(), 0);
+				mrw.enQueue(&MediaRecorderImpl::stopRecorder, shared_from_this(), RECORDER_ERROR_NONE);
 				break;
 			}
 			size -= written;
@@ -579,7 +587,7 @@ void MediaRecorderImpl::capture()
 		std::lock_guard<std::mutex> lock(mCmdMtx);
 		meddbg("Too small frames : %d\n", frames);
 		RecorderWorker& mrw = RecorderWorker::getWorker();
-		mrw.enQueue(&MediaRecorderImpl::stopRecorder, shared_from_this(), -1);
+		mrw.enQueue(&MediaRecorderImpl::stopRecorder, shared_from_this(), RECORDER_ERROR_INVALID_FRAME);
 	}
 }
 
@@ -589,7 +597,7 @@ void MediaRecorderImpl::notifySync()
 	mSyncCv.notify_one();
 }
 
-void MediaRecorderImpl::notifyObserver(observer_command_t cmd)
+void MediaRecorderImpl::notifyObserver(observer_command_t cmd, recorder_error_t errCode)
 {
 	medvdbg("notifyObserver cmd : %d\n", cmd);
 	if (mRecorderObserver) {
@@ -597,19 +605,27 @@ void MediaRecorderImpl::notifyObserver(observer_command_t cmd)
 		switch (cmd) {
 		case OBSERVER_COMMAND_STARTED: {
 			medvdbg("OBSERVER_COMMAND_STARTED\n");
-			row.enQueue(&MediaRecorderObserverInterface::onRecordStarted, mRecorderObserver, mId);
+			row.enQueue(&MediaRecorderObserverInterface::onRecordStarted, mRecorderObserver, mRecorder);
 		} break;
 		case OBSERVER_COMMAND_PAUSED: {
 			medvdbg("OBSERVER_COMMAND_PAUSED\n");
-			row.enQueue(&MediaRecorderObserverInterface::onRecordPaused, mRecorderObserver, mId);
+			row.enQueue(&MediaRecorderObserverInterface::onRecordPaused, mRecorderObserver, mRecorder);
 		} break;
 		case OBSERVER_COMMAND_FINISHIED: {
 			medvdbg("OBSERVER_COMMAND_FINISHIED\n");
-			row.enQueue(&MediaRecorderObserverInterface::onRecordFinished, mRecorderObserver, mId);
+			row.enQueue(&MediaRecorderObserverInterface::onRecordFinished, mRecorderObserver, mRecorder);
 		} break;
-		case OBSERVER_COMMAND_ERROR: {
-			medvdbg("OBSERVER_COMMAND_ERROR\n");
-			row.enQueue(&MediaRecorderObserverInterface::onRecordError, mRecorderObserver, mId);
+		case OBSERVER_COMMAND_START_ERROR: {
+			medvdbg("OBSERVER_COMMAND_START_ERROR\n");
+			row.enQueue(&MediaRecorderObserverInterface::onRecordStartError, mRecorderObserver, mRecorder, errCode);
+		} break;
+		case OBSERVER_COMMAND_PAUSE_ERROR: {
+			medvdbg("OBSERVER_COMMAND_PAUSE_ERROR\n");
+			row.enQueue(&MediaRecorderObserverInterface::onRecordPauseError, mRecorderObserver, mRecorder, errCode);
+		} break;
+		case OBSERVER_COMMAND_STOP_ERROR: {
+			medvdbg("OBSERVER_COMMAND_STOP_ERROR\n");
+			row.enQueue(&MediaRecorderObserverInterface::onRecordStopError, mRecorderObserver, mRecorder, errCode);
 		} break;
 		}
 	}
@@ -619,13 +635,13 @@ MediaRecorderImpl::~MediaRecorderImpl()
 {
 	medvdbg("MediaRecorderImpl::~MediaRecorderImpl()\n");
 	if (mCurState > RECORDER_STATE_IDLE) {
-		if (unprepare() != RECORDER_OK) {
+		if (unprepare() != RECORDER_ERROR_NONE) {
 			meddbg("unprepare failed\n");
 		}
 	}
 
 	if (mCurState == RECORDER_STATE_IDLE) {
-		if (destroy() != RECORDER_OK) {
+		if (destroy() != RECORDER_ERROR_NONE) {
 			meddbg("destroy failed\n");
 		}
 	}

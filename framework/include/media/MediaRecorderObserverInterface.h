@@ -29,7 +29,12 @@
 #ifndef __MEDIA_MEDIARECOREROBSERVERINTERFACE_H
 #define __MEDIA_MEDIARECOREROBSERVERINTERFACE_H
 
+#include <media/MediaRecorder.h>
+#include <media/MediaTypes.h>
+
 namespace media {
+
+class MediaRecorder;
 /**
  * @class
  * @brief This class provides an interface to the user.
@@ -38,6 +43,7 @@ namespace media {
  * This class informs the user of the error state of MediaRecorder
  * @since TizenRT v2.0 PRE
  */
+
 class MediaRecorderObserverInterface
 {
 public:
@@ -53,25 +59,37 @@ public:
 	 * @details @b #include <media/MediaRecorderObserverInterface.h>
 	 * @since TizenRT v2.0 PRE
 	 */
-	virtual void onRecordStarted(Id id) = 0;
+	virtual void onRecordStarted(MediaRecorder& mediaRecorder) = 0;
 	/**
 	 * @brief informs the user of the recording has paused.
 	 * @details @b #include <media/MediaRecorderObserverInterface.h>
 	 * @since TizenRT v2.0 PRE
 	 */
-	virtual void onRecordPaused(Id id) = 0;
+	virtual void onRecordPaused(MediaRecorder& mediaRecorder) = 0;
 	/**
 	 * @brief informs the user of the recording has finished.
 	 * @details @b #include <media/MediaRecorderObserverInterface.h>
 	 * @since TizenRT v2.0 PRE
 	 */
-	virtual void onRecordFinished(Id id) = 0;
+	virtual void onRecordFinished(MediaRecorder& mediaRecorder) = 0;
 	/**
-	 * @brief informs the user of the error state of recorder operation
+	 * @brief informs the user of the error state of recorder start operation
 	 * @details @b #include <media/MediaRecorderObserverInterface.h>
 	 * @since TizenRT v2.0 PRE
 	 */
-	virtual void onRecordError(Id id) = 0;
+	virtual void onRecordStartError(MediaRecorder& mediaRecorder, int errCode) = 0;
+	/**
+	 * @brief informs the user of the error state of recorder pause operation
+	 * @details @b #include <media/MediaRecorderObserverInterface.h>
+	 * @since TizenRT v2.0 PRE
+	 */
+	virtual void onRecordPauseError(MediaRecorder& mediaRecorder, int errCode) = 0;
+	/**
+	 * @brief informs the user of the error state of recorder stop operation
+	 * @details @b #include <media/MediaRecorderObserverInterface.h>
+	 * @since TizenRT v2.0 PRE
+	 */
+	virtual void onRecordStopError(MediaRecorder& mediaRecorder, int errCode) = 0;
 };
 } // namespace media
 
