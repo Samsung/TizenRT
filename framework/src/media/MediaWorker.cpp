@@ -34,7 +34,7 @@ void MediaWorker::startWorker()
 {
 	std::unique_lock<std::mutex> lock(mRefMtx);
 	++mRefCnt;
-	medvdbg("MediaWorker::startWorker() - increase RefCnt : %d\n", mRefCnt);
+	medvdbg("%s::startWorker() - increase RefCnt : %d\n", mThreadName, mRefCnt);
 	if (mRefCnt == 1) {
 		int ret;
 		pthread_attr_t attr;
@@ -58,14 +58,14 @@ void MediaWorker::stopWorker()
 	if (mRefCnt > 0) {
 		--mRefCnt;
 	}
-	medvdbg("MediaWorker::stopWorker() - decrease RefCnt : %d\n", mRefCnt);
+	medvdbg("%s::stopWorker() - decrease RefCnt : %d\n", mThreadName, mRefCnt);
 	if (mRefCnt <= 0) {
 		std::atomic<bool> &refBool = mIsRunning;
 		mWorkerQueue.enQueue([&refBool]() {
 			refBool = false;
 		});
 		pthread_join(mWorkerThread, NULL);
-		medvdbg("MediaWorker::stopWorker() - mWorkerthread exited\n");
+		medvdbg("%s::stopWorker() - mWorkerthread exited\n", mThreadName);
 	}
 }
 

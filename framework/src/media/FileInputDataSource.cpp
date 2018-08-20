@@ -16,12 +16,22 @@
  *
  ******************************************************************/
 
+#include <tinyara/config.h>
 #include <stdio.h>
 #include <debug.h>
 
 #include <media/FileInputDataSource.h>
 #include "utils/MediaUtils.h"
 #include "Decoder.h"
+#include "InputStreamBuffer.h"
+
+#ifndef CONFIG_FILE_DATASOURCE_STREAM_BUFFER_SIZE
+#define CONFIG_FILE_DATASOURCE_STREAM_BUFFER_SIZE 4096
+#endif
+
+#ifndef CONFIG_FILE_DATASOURCE_STREAM_BUFFER_THRESHOLD
+#define CONFIG_FILE_DATASOURCE_STREAM_BUFFER_THRESHOLD 2048
+#endif
 
 namespace media {
 namespace stream {
@@ -46,15 +56,21 @@ FileInputDataSource &FileInputDataSource::operator=(const FileInputDataSource &s
 	return *this;
 }
 
-FileInputDataSource::~FileInputDataSource()
-{
-	if (mFp) {
-		close();
-	}
-}
-
 bool FileInputDataSource::open()
 {
+	if (!getStreamBuffer()) {
+		auto streamBuffer = InputStreamBuffer::create( \
+			CONFIG_FILE_DATASOURCE_STREAM_BUFFER_SIZE, \
+			CONFIG_FILE_DATASOURCE_STREAM_BUFFER_THRESHOLD);
+
+		if (!streamBuffer) {
+			meddbg("streamBuffer is nullptr!\n");
+			return false;
+		}
+
+		setStreamBuffer(streamBuffer);
+	}
+
 	if (!mFp) {
 		setAudioType(utils::getAudioTypeFromPath(mDataPath));
 
@@ -75,6 +91,7 @@ bool FileInputDataSource::open()
 		mFp = fopen(mDataPath.c_str(), "rb");
 		if (mFp) {
 			medvdbg("file open success\n");
+			start();
 			return true;
 		} else {
 			meddbg("file open failed error : %d\n", errno);
@@ -89,6 +106,8 @@ bool FileInputDataSource::open()
 bool FileInputDataSource::close()
 {
 	if (mFp) {
+		stop();
+
 		int ret = fclose(mFp);
 		if (ret == OK) {
 			mFp = nullptr;
@@ -113,67 +132,34 @@ bool FileInputDataSource::isPrepare()
 	return true;
 }
 
-ssize_t FileInputDataSource::read(unsigned char *buf, size_t size)
+ssize_t FileInputDataSource::onStreamBufferWritable()
 {
-	size_t rlen = 0;
-	size_t readSize = size;
-	std::shared_ptr<Decoder> decoder = getDecoder();
+	unsigned char buf[1024];
 
-	if (!buf) {
-		meddbg("buf is nullptr, hence return EOF\n");
-		return EOF;
-	}
-
-	if (decoder) {
-		size_t frames = size;
-		rlen = getDecodeFrames(buf, &frames);
-		medvdbg("decode frame : %d/%d\n", rlen, size);
-		if (rlen == size) {
-			return rlen;
-		}
-
-		/* Set buf offset */
-		buf += rlen;
-		/* Calculate available space in 'buf' */
-		readSize -= rlen;
-
-		if (readSize > decoder->getAvailSpace()) {
-			readSize = decoder->getAvailSpace();
-		}
-	}
-
-	size_t readRet = fread(buf, sizeof(unsigned char), readSize, mFp);
-	medvdbg("read size : %d\n", readRet);
-	if (readRet == 0) {
-		/* fread returned 0 */
-		/* If file position reaches end of file, it's a normal case, we returns rlen */
+	size_t rlen = fread(buf, sizeof(unsigned char), sizeof(buf), mFp);
+	medvdbg("read size : %d\n", rlen);
+	if (rlen == 0) {
+		/* If file position reaches end of file, it's a normal case, we returns 0 */
 		if (feof(mFp)) {
-			medvdbg("eof!! stop!\n");
-			return rlen;
+			medvdbg("eof!!!\n");
+			return 0;
 		}
 
 		/* Otherwise, an error occurred, we also returns error */
 		return EOF;
 	}
 
-	if (decoder) {
-		if (!decoder->pushData(buf, readRet)) {
-			meddbg("decode push data failed!\n");
-			return EOF;
-		}
-
-		size_t frames = size - rlen;
-		rlen += getDecodeFrames(buf, &frames);
-		medvdbg("decode frame ; %d/%d\n", rlen, size);
-		return rlen;
-	}
-
-	return readRet;
+	return writeToStreamBuffer(buf, rlen);
 }
 
 int FileInputDataSource::seek(long offset, int origin)
 {
 	return fseek(mFp, offset, origin);
+}
+
+FileInputDataSource::~FileInputDataSource()
+{
+	close();
 }
 
 } // namespace stream

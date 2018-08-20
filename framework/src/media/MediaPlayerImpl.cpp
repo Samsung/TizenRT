@@ -471,6 +471,8 @@ void MediaPlayerImpl::setPlayerDataSource(std::shared_ptr<stream::InputDataSourc
 	}
 
 	mInputDataSource = source;
+	mInputDataSource->setPlayer(shared_from_this());
+
 	ret = PLAYER_OK;
 	return notifySync();
 
@@ -524,7 +526,7 @@ void MediaPlayerImpl::notifySync()
 	mSyncCv.notify_one();
 }
 
-void MediaPlayerImpl::notifyObserver(player_observer_command_t cmd)
+void MediaPlayerImpl::notifyObserver(player_observer_command_t cmd, ...)
 {
 	if (mPlayerObserver != nullptr) {
 		PlayerObserverWorker &pow = PlayerObserverWorker::getWorker();
@@ -541,6 +543,28 @@ void MediaPlayerImpl::notifyObserver(player_observer_command_t cmd)
 		case PLAYER_OBSERVER_COMMAND_PAUSED:
 			pow.enQueue(&MediaPlayerObserverInterface::onPlaybackPaused, mPlayerObserver, mPlayer);
 			break;
+        case PLAYER_OBSERVER_COMMAND_BUFFER_OVERRUN:
+			pow.enQueue(&MediaPlayerObserverInterface::onPlaybackBufferOverrun, mPlayerObserver, mPlayer);
+        	break;
+        case PLAYER_OBSERVER_COMMAND_BUFFER_UNDERRUN:
+			pow.enQueue(&MediaPlayerObserverInterface::onPlaybackBufferUnderrun, mPlayerObserver, mPlayer);
+        	break;
+        case PLAYER_OBSERVER_COMMAND_BUFFER_UPDATED: {
+			va_list ap;
+			va_start(ap, cmd);
+			size_t bytes = va_arg(ap, size_t);
+			va_end(ap);
+			pow.enQueue(&MediaPlayerObserverInterface::onPlaybackBufferUpdated, mPlayerObserver, mPlayer, bytes);
+			break;
+        }
+        case PLAYER_OBSERVER_COMMAND_BUFFER_STATECHANGED: {
+			va_list ap;
+			va_start(ap, cmd);
+			buffer_state_t state = (buffer_state_t)va_arg(ap, int);
+			va_end(ap);
+			pow.enQueue(&MediaPlayerObserverInterface::onPlaybackBufferStateChanged, mPlayerObserver, mPlayer, state);
+			break;
+        }
 		}
 	}
 }
