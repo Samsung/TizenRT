@@ -234,7 +234,11 @@ unsigned long ZEXPORT crc32_z(crc, buf, len)
 }
 
 /* ========================================================================= */
+#ifdef __TizenRT__
+unsigned long ZEXPORT grpc_crc32(crc, buf, len)
+#else
 unsigned long ZEXPORT crc32(crc, buf, len)
+#endif
     unsigned long crc;
     const unsigned char FAR *buf;
     uInt len;
