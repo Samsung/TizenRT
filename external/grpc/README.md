@@ -30,7 +30,18 @@ $ git submodule update --init
 $ make
 $ [sudo] make install
 ```
-At this stage, you have successfully installed the grpc libraries, including cpp plugin on your host environment. The above steps are described in detail in [Installing gRPC from source](https://github.com/grpc/grpc/blob/master/BUILDING.md) In the following, we cover two main aspects of porting gRPC to TizenRT, mainly details on how to build gRPC library, and how to develop, build and run applications that use gRPC.
+5. Build `Protocol Buffers` from within grpc folder. Assuming that you are on grpc folder, do the following:
+```
+$ cd third_party/protobuf
+$ git submodule update --init --recursive
+$ ./autogen.sh
+$ ./configure
+$ make
+$ make check
+$ [sudo] make install
+```
+As a reference, please consult [C++ Installation Instructions](https://github.com/google/protobuf/blob/master/src/README.md) for details on how to install `Protobuf` from source.
+After executing the steps above, you will have successfully installed the grpc and protocol buffer libraries, including cpp plugin and the protoc compiler on your host environment. The above steps are described in detail in [Installing gRPC from source](https://github.com/grpc/grpc/blob/master/BUILDING.md) In the following, we cover two main aspects of porting gRPC to TizenRT, mainly details on how to build gRPC library, and how to develop, build and run applications that use gRPC.
 
 ## Build gRPC in TizenRT
 The source files for gRPC are located at `external/grpc`, and the associated header files are located at 
