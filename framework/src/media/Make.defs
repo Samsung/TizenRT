@@ -43,7 +43,8 @@ VPATH += :src/media/codecs
 endif
 
 ifeq ($(CONFIG_MEDIA_PLAYER), y)
-CXXSRCS += MediaPlayer.cpp InputDataSource.cpp FileInputDataSource.cpp PlayerWorker.cpp MediaPlayerImpl.cpp PlayerObserverWorker.cpp
+CXXSRCS += MediaPlayer.cpp MediaPlayerImpl.cpp PlayerWorker.cpp PlayerObserverWorker.cpp
+CXXSRCS += InputDataSource.cpp FileInputDataSource.cpp BufferInputDataSource.cpp
 CXXSRCS += Decoder.cpp audio_decoder.cpp
 endif
 
