@@ -52,15 +52,6 @@ static void timeout_callback_func(el_timer_t *timer)
 	if (callback->func) {
 		callback->func(callback->cb_data);
 	}
-
-	if (timer->repeat == 0) {
-		/* Free the timer resource allocated for timeout once */
-		EL_FREE(timer->data);
-		timer->data = NULL;
-		EL_FREE(timer);
-		timer = NULL;
-		elvdbg("Cleaning timer resources Success\n");
-	}
 }
 
 static el_timer_t *add_timer(el_loop_t *loop, unsigned int timeout, bool repeat, timeout_callback func, void *data)
@@ -105,7 +96,6 @@ static el_timer_t *add_timer(el_loop_t *loop, unsigned int timeout, bool repeat,
 el_timer_t *eventloop_add_timer(unsigned int timeout, bool repeat, timeout_callback func, void *data)
 {
 	el_loop_t *loop;
-	el_timer_t *timer;
 
 	loop = get_app_loop();
 	if (loop == NULL) {
@@ -113,14 +103,7 @@ el_timer_t *eventloop_add_timer(unsigned int timeout, bool repeat, timeout_callb
 		return NULL;
 	}
 
-	timer = (el_timer_t *)add_timer(loop, timeout, repeat, func, data);
-
-	/* Return NULL always when repeat is false. */
-	if (!repeat) {
-		return NULL;
-	}
-
-	return timer;
+	return (el_timer_t *)add_timer(loop, timeout, repeat, func, data);
 }
 
 int eventloop_delete_timer(el_timer_t *timer)
@@ -176,11 +159,6 @@ el_timer_t *eventloop_add_timer_async(unsigned int timeout, bool repeat, timeout
 			eventloop_delete_timer(timer);
 			return NULL;
 		}
-	}
-
-	/* Return NULL always when repeat is false. */
-	if (!repeat) {
-		return NULL;
 	}
 
 	return timer;
