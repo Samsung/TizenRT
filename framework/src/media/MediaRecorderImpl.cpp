@@ -354,6 +354,11 @@ recorder_result_t MediaRecorderImpl::getVolume(uint8_t *vol)
 	std::unique_lock<std::mutex> lock(mCmdMtx);
 	medvdbg("MediaRecorderImpl::getVolume()\n");
 
+	if (vol == nullptr) {
+		meddbg("The given argument is invalid.\n");
+		return RECORDER_ERROR_INVALID_PARAM;
+	}
+
 	recorder_result_t ret = RECORDER_OK;
 	RecorderWorker& mrw = RecorderWorker::getWorker();
 	if (!mrw.isAlive()) {
@@ -370,12 +375,6 @@ recorder_result_t MediaRecorderImpl::getVolume(uint8_t *vol)
 void MediaRecorderImpl::getRecorderVolume(uint8_t *vol, recorder_result_t &ret)
 {
 	medvdbg("getRecorderVolume\n");
-
-	if (vol == nullptr) {
-		meddbg("The given argument is invalid.\n");
-		ret = RECORDER_ERROR_INVALID_PARAM;
-		return notifySync();
-	}
 
 	if (get_input_audio_gain(vol) != AUDIO_MANAGER_SUCCESS) {
 		meddbg("get_output_audio_volume() is failed, ret = %d\n", ret);
