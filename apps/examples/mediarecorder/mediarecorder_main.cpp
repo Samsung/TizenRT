@@ -72,17 +72,17 @@ public:
 		mediaRecorder.unprepare();
 	}
 
-	void onRecordStartError(MediaRecorder& mediaRecorder, int errCode)
+	void onRecordStartError(MediaRecorder& mediaRecorder, recorder_error_t errCode)
 	{
 		std::cout << "onRecordStartError!! errCode : " << errCode << std::endl;
 	}
 
-	void onRecordPauseError(MediaRecorder& mediaRecorder, int errCode)
+	void onRecordPauseError(MediaRecorder& mediaRecorder, recorder_error_t errCode)
 	{
 		std::cout << "onRecordPauseError!! errCode : " << errCode << std::endl;
 	}
 
-	void onRecordStopError(MediaRecorder& mediaRecorder, int errCode)
+	void onRecordStopError(MediaRecorder& mediaRecorder, recorder_error_t errCode)
 	{
 		std::cout << "onRecordStopError!! errCode : " << errCode << std::endl;
 	}

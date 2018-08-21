@@ -43,27 +43,22 @@ class MediaRecorderImpl;
  * @details @b #include <media/MediaRecorder.h>
  * @since TizenRT v2.0 PRE
  */
-typedef enum recorder_error_e : int {
+enum recorder_error_e : int {
 	/** MediaRecorder Error case */
-	RECORDER_ERROR_NOT_ALIVE = -16,
+	RECORDER_ERROR_NOT_ALIVE = INT32_MIN,
 	RECORDER_ERROR_INVALID_STATE,
-	RECORDER_ERROR_INVALID_FRAME,
 	RECORDER_ERROR_INVALID_OPERATION,
 	RECORDER_ERROR_INVALID_PARAM,
-	RECORDER_ERROR_INVALID_DATASOURCE,
-	RECORDER_ERROR_INIT_AUDIO_FAILED,
+	RECORDER_ERROR_INTERNAL_OPERATION_FAILED,
 	RECORDER_ERROR_FILE_OPEN_FAILED,
-	RECORDER_ERROR_SET_AUDIO_FAILED,
-	RECORDER_ERROR_RESET_AUDIO_FAILED,
-	RECORDER_ERROR_CAPTURE_AUDIO_FAILED,
-	RECORDER_ERROR_PAUSE_AUDIO_FAILED,
-	RECORDER_ERROR_STOP_AUDIO_FAILED,
 	RECORDER_ERROR_OUT_OF_MEMORY,
-	RECORDER_ERROR_SET_VOLUME_AUDIO_FAILED,
-	RECORDER_ERROR_GET_VOLUME_AUDIO_FAILED,
 	/** MediaRecorder Success case */
 	RECORDER_ERROR_NONE = 0
-} recorder_error_t;
+};
+
+typedef enum recorder_error_e recorder_error_t;
+const int RECORDER_OK = RECORDER_ERROR_NONE;
+typedef int recorder_result_t;
 
 /**
  * @class 
@@ -95,7 +90,7 @@ public:
 	 * @return The result of the create operation
 	 * @since TizenRT v2.0 PRE
 	 */
-	recorder_error_t create();
+	recorder_result_t create();
 	
 	/**
 	 * @brief Destroy MediaRecorder
@@ -104,7 +99,7 @@ public:
 	 * @return The result of the destroy operation
 	 * @since TizenRT v2.0 PRE
 	 */
-	recorder_error_t destroy();
+	recorder_result_t destroy();
 	
 	/**
 	 * @brief Allocate and prepare resources related to the recorder, it should be called before start
@@ -113,7 +108,7 @@ public:
 	 * @return The result of the prepare operation
 	 * @since TizenRT v2.0 PRE
 	 */
-	recorder_error_t prepare();
+	recorder_result_t prepare();
 	
 	/**
 	 * @brief Releases allocated resources related to the recorder.
@@ -122,7 +117,7 @@ public:
 	 * @return The result of the unpreapre operation
 	 * @since TizenRT v2.0 PRE
 	 */
-	recorder_error_t unprepare();
+	recorder_result_t unprepare();
 	
 	/**
 	 * @brief Start recording.
@@ -132,7 +127,7 @@ public:
 	 * @return The result of the unpreapre operation
 	 * @since TizenRT v2.0 PRE
 	 */
-	recorder_error_t start();
+	recorder_result_t start();
 	
 	/**
 	 * @brief Pause recording.
@@ -142,7 +137,7 @@ public:
 	 * @return The result of the pause operation
 	 * @since TizenRT v2.0 PRE
 	 */
-	recorder_error_t pause();
+	recorder_result_t pause();
 	
 	/**
 	 * @brief Stop recording.
@@ -152,7 +147,7 @@ public:
 	 * @return The result of the stop operation
 	 * @since TizenRT v2.0 PRE
 	 */
-	recorder_error_t stop();
+	recorder_result_t stop();
 	
 	/**
 	 * @brief Gets the current volume
@@ -161,7 +156,7 @@ public:
 	 * @return The value of current mic volume
 	 * @since TizenRT v2.0 PRE
 	 */
-	recorder_error_t getVolume(uint8_t *vol);
+	recorder_result_t getVolume(uint8_t *vol);
 	
 	/**
 	 * @brief Sets the volume adjusted
@@ -171,7 +166,7 @@ public:
 	 * @return The result of setting the mic volume
 	 * @since TizenRT v2.0 PRE
 	 */
-	recorder_error_t setVolume(uint8_t vol);
+	recorder_result_t setVolume(uint8_t vol);
 	
 	/**
 	 * @brief Sets the DatSource of output data
@@ -181,7 +176,7 @@ public:
 	 * @return The result of setting the datasource
 	 * @since TizenRT v2.0 PRE
 	 */
-	recorder_error_t setDataSource(std::unique_ptr<stream::OutputDataSource> dataSource);
+	recorder_result_t setDataSource(std::unique_ptr<stream::OutputDataSource> dataSource);
 	
 	/**
 	 * @brief Sets the observer of MediaRecorder
@@ -192,7 +187,7 @@ public:
 	 * @return The result of setting the observer
 	 * @since TizenRT v2.0 PRE
 	 */
-	recorder_error_t setObserver(std::shared_ptr<MediaRecorderObserverInterface> observer);
+	recorder_result_t setObserver(std::shared_ptr<MediaRecorderObserverInterface> observer);
 
 	/**
 	 * @brief Set limitation of recording time by given value(second), will be stopped when it reaches that.
@@ -204,7 +199,7 @@ public:
 	 * @return The result of setting the duration
 	 * @since TizenRT v2.0 PRE
 	 */
-	recorder_error_t setDuration(int second);
+	recorder_result_t setDuration(int second);
 
 private:
 	std::shared_ptr<MediaRecorderImpl> mPMrImpl;
