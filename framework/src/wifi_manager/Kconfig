@@ -66,5 +66,9 @@ config WIFIMGR_STA_IFNAME
 	string "interface name of station mode"
 	default "wl1"
 
+config WIFIMGR_DISABLE_IPV4_DHCPC
+	bool "disable dhcpc after association"
+	default n
+
 endif #WIFI_MANAGER
 
