@@ -94,16 +94,16 @@ union ldshape {
 #define FORCE_EVAL(x)                             \
 	do {                                          \
 		if (sizeof(x) == sizeof(float)) {         \
-			volatile float __x;                   \
+			volatile float __x = 0;               \
 			UNUSED(__x);                          \
 			__x = (x);                            \
 		} else if (sizeof(x) == sizeof(double)) { \
-			volatile double __x;                  \
+			volatile double __x = 0;              \
 			UNUSED(__x);                          \
 			__x = (x);                            \
 		}                                         \
 		else {                                    \
-			volatile long double __x;             \
+			volatile long double __x = 0;         \
 			UNUSED(__x);                          \
 			__x = (x);                            \
 		}                                         \
