@@ -285,7 +285,7 @@ void OutputDataSource::sleepWorker()
 	size_t spaces = mBufferWriter->sizeOfSpace();
 	std::unique_lock<std::mutex> lock(mMutex);
 	// In case of flushing or overrun, DO NOT sleep worker.
-	if (!(mIsFlushing || (spaces == 0))) {
+	if (mIsWorkerAlive && !mIsFlushing && (spaces > 0)) {
 		mCondv.wait(lock);
 	}
 }

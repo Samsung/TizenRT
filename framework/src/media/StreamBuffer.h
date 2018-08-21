@@ -28,15 +28,10 @@ struct rb_s;
 namespace media {
 namespace stream {
 
-class StreamBufferReader;
-class StreamBufferWriter;
 class BufferObserverInterface;
 
 class StreamBuffer : public std::enable_shared_from_this<StreamBuffer>
 {
-	friend class StreamBufferReader;
-	friend class StreamBufferWriter;
-
 public:
 	StreamBuffer();
 	virtual ~StreamBuffer();
@@ -47,7 +42,7 @@ public:
 	std::condition_variable &getCondv() { return mCondv; }
 	void setObserver(BufferObserverInterface *observer);
 
-protected:
+public:
 	enum class State {
 		OVERRUN,
 		UNDERRUN,

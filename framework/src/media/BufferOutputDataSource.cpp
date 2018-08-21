@@ -87,25 +87,22 @@ bool BufferOutputDataSource::isPrepare()
 
 ssize_t BufferOutputDataSource::onStreamBufferReadable(bool isFlush)
 {
-	auto recorder = getRecorder();
-	if (recorder) {
-		auto reader = getBufferReader();
-		assert(reader->sizeOfData() > 0);
-		size_t size = reader->sizeOfData();
-		unsigned char *buffer = new unsigned char[size];
-		if (buffer) {
-			reader->read(buffer, size);
+	auto reader = getBufferReader();
+	assert(reader->sizeOfData() > 0);
+	size_t size = reader->sizeOfData();
+	unsigned char *buffer = new unsigned char[size];
+	if (buffer) {
+		reader->read(buffer, size);
+		auto recorder = getRecorder();
+		if (recorder) {
 			recorder->notifyObserver(OBSERVER_COMMAND_BUFFER_DATAREACHED, buffer, size);
-			delete[] buffer;
-			return size;
 		}
-
-		meddbg("buffer alloc failed\n");
-		return -1;
+		delete[] buffer;
+		return size;
 	}
 
-	meddbg("Not register recorder, return 0\n");
-	return 0;
+	meddbg("buffer alloc failed\n");
+	return -1;
 }
 
 BufferOutputDataSource::~BufferOutputDataSource()

@@ -95,6 +95,8 @@ size_t InputDataSource::getDecodeFrames(unsigned char *buf, size_t *size)
 
 int InputDataSource::readAt(long offset, int origin, unsigned char *buf, size_t size)
 {
+	stop(); // Stop before seeking, then restart in read()
+
 	if (seek(offset, origin) != 0) {
 		meddbg("InputDataSource::readAt : fail to seek\n");
 		return -1;
@@ -124,8 +126,6 @@ ssize_t InputDataSource::writeToStreamBuffer(unsigned char *buf, size_t size)
 {
 	assert(buf != NULL);
 
-	medvdbg("InputDataSource::writeToStreamBuffer() enter\n");
-
 	size_t written = 0;
 	std::shared_ptr<Decoder> decoder = getDecoder();
 
@@ -154,15 +154,15 @@ ssize_t InputDataSource::writeToStreamBuffer(unsigned char *buf, size_t size)
 		written = mBufferWriter->write(buf, size);
 	}
 
-	medvdbg("InputDataSource::writeToStreamBuffer() written %u\n", written);
-
 	return (ssize_t) written;
 }
 
 ssize_t InputDataSource::read(unsigned char *buf, size_t size)
 {
-	medvdbg("size %u\n", size);
 	size_t rlen = 0;
+
+	start(); // Auto start
+
 	if (mBufferReader) {
 		rlen = mBufferReader->read(buf, size);
 	}
@@ -172,7 +172,6 @@ ssize_t InputDataSource::read(unsigned char *buf, size_t size)
 
 bool InputDataSource::start()
 {
-	medvdbg("enter\n");
 	if (!isPrepare()) {
 		return false;
 	}
@@ -183,7 +182,6 @@ bool InputDataSource::start()
 
 bool InputDataSource::stop()
 {
-	medvdbg("enter\n");
 	destoryWorker();
 	return true;
 }
@@ -261,7 +259,7 @@ void InputDataSource::sleepWorker()
 
 	std::unique_lock<std::mutex> lock(mMutex);
 	// In case of EOS or overrun, sleep worker.
-	if (bEOS || (spaces == 0)) {
+	if (mIsWorkerAlive && (bEOS || (spaces == 0))) {
 		mCondv.wait(lock);
 	}
 }
