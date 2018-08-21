@@ -96,7 +96,7 @@ TEST_F(SimpleMediaPlayerTest, createTwice)
 {
 	mp->create();
 
-	EXPECT_EQ(mp->create(), media::PLAYER_ERROR);
+	EXPECT_NE(mp->create(), media::PLAYER_OK);
 
 	mp->destroy();
 }
@@ -113,7 +113,7 @@ TEST_F(SimpleMediaPlayerTest, destroyTwice)
 	mp->create();
 	mp->destroy();
 
-	EXPECT_EQ(mp->destroy(), media::PLAYER_ERROR);
+	EXPECT_NE(mp->destroy(), media::PLAYER_OK);
 }
 
 TEST_F(SimpleMediaPlayerTest, setDataSource)
@@ -129,7 +129,7 @@ TEST_F(SimpleMediaPlayerTest, setDataSourceWithNullptr)
 {
 	mp->create();
 
-	EXPECT_EQ(mp->setDataSource(nullptr), media::PLAYER_ERROR);
+	EXPECT_NE(mp->setDataSource(nullptr), media::PLAYER_OK);
 
 	mp->destroy();
 }
@@ -181,7 +181,7 @@ TEST_F(SimpleMediaPlayerTest, prepareTwice)
 	mp->setDataSource(std::move(source));
 	mp->prepare();
 
-	EXPECT_EQ(mp->prepare(), media::PLAYER_ERROR);
+	EXPECT_NE(mp->prepare(), media::PLAYER_OK);
 
 	mp->unprepare();
 	mp->destroy();
@@ -191,7 +191,7 @@ TEST_F(SimpleMediaPlayerTest, prepareWithoutDataSource)
 {
 	mp->create();
 
-	EXPECT_EQ(mp->prepare(), media::PLAYER_ERROR);
+	EXPECT_NE(mp->prepare(), media::PLAYER_OK);
 
 	mp->unprepare();
 	mp->destroy();
@@ -215,7 +215,7 @@ TEST_F(SimpleMediaPlayerTest, unprepareTwice)
 	mp->prepare();
 	mp->unprepare();
 
-	EXPECT_EQ(mp->unprepare(), media::PLAYER_ERROR);
+	EXPECT_NE(mp->unprepare(), media::PLAYER_OK);
 
 	mp->destroy();
 }
@@ -237,7 +237,7 @@ TEST_F(SimpleMediaPlayerTest, startWithoutPrepare)
 	mp->create();
 	mp->setDataSource(std::move(source));
 
-	EXPECT_EQ(mp->start(), media::PLAYER_ERROR);
+	EXPECT_NE(mp->start(), media::PLAYER_OK);
 
 	mp->destroy();
 }
@@ -260,7 +260,7 @@ TEST_F(SimpleMediaPlayerTest, pauseWithoutPrepare)
 	mp->create();
 	mp->setDataSource(std::move(source));
 
-	EXPECT_EQ(mp->pause(), media::PLAYER_ERROR);
+	EXPECT_NE(mp->pause(), media::PLAYER_OK);
 
 	mp->unprepare();
 	mp->destroy();
@@ -284,7 +284,7 @@ TEST_F(SimpleMediaPlayerTest, stopWithoutPrepare)
 	mp->create();
 	mp->setDataSource(std::move(source));
 
-	EXPECT_EQ(mp->stop(), media::PLAYER_ERROR);
+	EXPECT_NE(mp->stop(), media::PLAYER_OK);
 
 	mp->unprepare();
 	mp->destroy();
@@ -310,8 +310,8 @@ TEST_F(SimpleMediaPlayerTest, setVolumeWithOutOfRangeValue)
 	mp->setDataSource(std::move(source));
 	mp->prepare();
 
-	EXPECT_EQ(mp->setVolume(-1), media::PLAYER_ERROR);
-	EXPECT_EQ(mp->setVolume(MEDIAPLAYER_MAX_VOLUME + 1), media::PLAYER_ERROR);
+	EXPECT_NE(mp->setVolume(-1), media::PLAYER_OK);
+	EXPECT_NE(mp->setVolume(MEDIAPLAYER_MAX_VOLUME + 1), media::PLAYER_OK);
 
 	mp->unprepare();
 	mp->destroy();
