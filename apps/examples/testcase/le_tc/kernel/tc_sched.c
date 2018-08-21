@@ -31,10 +31,7 @@
 #include <sys/types.h>
 #include "tc_internal.h"
 
-#define USECVAL         1000000
 #define SCHED_PRIORITY  13
-#define SLEEPVAL        10000
-#define SEC_2           2
 #define LOOPCOUNT       2
 #define ARRLEN          2
 #define VAL_3           3
@@ -63,51 +60,17 @@ static void sched_foreach_callback(struct tcb_s *tcb, void *arg)
 	}
 }
 
-/**
-* @fn                   :function_wait
-* @description          :Function for tc_sched_wait
-* @return               :int
-*/
-static int function_wait(int argc, char *argv[])
+static int sleep1sec_taskdel(int argc, char *argv[])
 {
-	usleep(USECVAL);
+	sleep(1);
 	task_delete(0);
 	return 0;
 }
 
-#if defined(CONFIG_SCHED_WAITPID) && defined(CONFIG_SCHED_HAVE_PARENT)
-/**
-* @fn                   :function_waitlong
-* @description          :Function for tc_sched_wait
-* @return               :int
-*/
-static int function_waitlong(int argc, char *argv[])
+#if defined(CONFIG_SCHED_WAITPID) && defined(CONFIG_SCHED_HAVE_PARENT) // Currently this is used in only this conditional
+static int sleep2sec_taskdel(int argc, char *argv[])
 {
-	sleep(SEC_2);
-	task_delete(0);
-	return 0;
-}
-
-/**
-* @fn                   :function_waitid
-* @description          :Function for tc_sched_waitid
-* @return               :int
-*/
-static int function_waitid(int argc, char *argv[])
-{
-	usleep(SLEEPVAL);
-	task_delete(0);
-	return 0;
-}
-
-/**
-* @fn                   :function_waitid_2
-* @description          :Function for tc_sched_waitid
-* @return               :int
-*/
-static int function_waitid_2(int argc, char *argv[])
-{
-	usleep(SLEEPVAL);
+	sleep(2);
 	task_delete(0);
 	return 0;
 }
@@ -288,14 +251,14 @@ static void tc_sched_wait(void)
 	int status;
 
 	/* creating new process */
-	child1_pid = task_create("sched1", SCHED_PRIORITY_DEFAULT, TASK_STACKSIZE, function_wait, (char * const *)NULL);
+	child1_pid = task_create("sched1", SCHED_PRIORITY_DEFAULT, TASK_STACKSIZE, sleep1sec_taskdel, (char * const *)NULL);
 	TC_ASSERT_GT("task_create", child1_pid, 0);
 
-	child2_pid = task_create("sched2", SCHED_PRIORITY_DEFAULT, TASK_STACKSIZE, function_waitlong, (char * const *)NULL);
+	child2_pid = task_create("sched2", SCHED_PRIORITY_DEFAULT, TASK_STACKSIZE, sleep2sec_taskdel, (char * const *)NULL);
 	TC_ASSERT_GT("task_create", child2_pid, 0);
 
 	/* child which exits first is handled by wait, here child1_pid exits earlier. */
-	usleep(SLEEPVAL);
+	sleep(1);
 
 	/* wait for child to exit, and store child's exit status */
 	ret_chk = wait(&status);
@@ -303,7 +266,7 @@ static void tc_sched_wait(void)
 	TC_ASSERT_EQ("wait", (child1_pid == (pid_t)ret_chk || child2_pid == (pid_t)ret_chk), true);
 
 	/* wait for second child to exit */
-	sleep(SEC_2);
+	sleep(2);
 	TC_SUCCESS_RESULT();
 }
 
@@ -329,7 +292,7 @@ static void tc_sched_waitid(void)
 	TC_ASSERT_EQ("waitid", ret_chk, ERROR);
 	TC_ASSERT_EQ("waitid", errno, ECHILD);
 
-	child_pid = task_create("tc_waitid", SCHED_PRIORITY_DEFAULT, TASK_STACKSIZE, function_waitid, (char * const *)NULL);
+	child_pid = task_create("tc_waitid", SCHED_PRIORITY_DEFAULT, TASK_STACKSIZE, sleep1sec_taskdel, (char * const *)NULL);
 	TC_ASSERT_GT("task_create", child_pid, 0);
 
 	/* Check for P_PID type */
@@ -340,7 +303,7 @@ static void tc_sched_waitid(void)
 
 	/* Check for P_ALL ID type */
 
-	child_pid = task_create("tc_waitid", SCHED_PRIORITY_DEFAULT, TASK_STACKSIZE, function_waitid, (char * const *)NULL);
+	child_pid = task_create("tc_waitid", SCHED_PRIORITY_DEFAULT, TASK_STACKSIZE, sleep1sec_taskdel, (char * const *)NULL);
 	TC_ASSERT_GT("task_create", child_pid, 0);
 
 	ret_chk = waitid(P_ALL, child_pid, &info, WEXITED);
@@ -349,7 +312,7 @@ static void tc_sched_waitid(void)
 
 	/* Check for other ID types that are not supported  */
 
-	child_pid = task_create("tc_waitid", SCHED_PRIORITY_DEFAULT, TASK_STACKSIZE, function_waitid, (char * const *)NULL);
+	child_pid = task_create("tc_waitid", SCHED_PRIORITY_DEFAULT, TASK_STACKSIZE, sleep1sec_taskdel, (char * const *)NULL);
 	TC_ASSERT_GT("task_create", child_pid, 0);
 
 	ret_chk = waitid(P_GID, child_pid, &info, WEXITED);
@@ -362,15 +325,6 @@ static void tc_sched_waitid(void)
 	TC_ASSERT_EQ("waitid", ret_chk, ERROR);
 	TC_ASSERT_EQ("waitid", errno, ENOSYS);
 #endif
-
-	/* Check for The TCB corresponding to this PID is not our child. */
-
-	child_pid = task_create("tc_waitid_2", SCHED_PRIORITY_DEFAULT, TASK_STACKSIZE, function_waitid_2, (char * const *)NULL);
-	TC_ASSERT_GT("task_create", child_pid, 0);
-
-	ret_chk = waitid(P_PID, child_pid, &info, WEXITED);
-	TC_ASSERT_EQ("waitid", ret_chk, ERROR);
-	TC_ASSERT_EQ("waitid", errno, ECHILD);
 
 	TC_SUCCESS_RESULT();
 }
@@ -399,7 +353,7 @@ static void tc_sched_waitpid(void)
 	TC_ASSERT_EQ("waitpid", ret_chk, ERROR);
 	TC_ASSERT_EQ("waitpid", errno, ECHILD);
 
-	child_pid = task_create("tc_waitpid", SCHED_PRIORITY_DEFAULT, TASK_STACKSIZE, function_wait, (char * const *)NULL);
+	child_pid = task_create("tc_waitpid", SCHED_PRIORITY_DEFAULT, TASK_STACKSIZE, sleep1sec_taskdel, (char * const *)NULL);
 	TC_ASSERT_GT("task_create", child_pid, 0);
 
 	ret_chk = waitpid(child_pid, &status, 0);
