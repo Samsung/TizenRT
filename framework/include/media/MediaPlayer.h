@@ -40,14 +40,22 @@ namespace media {
  * @details @b #include <media/MediaPlayer.h>
  * @since TizenRT v2.0 PRE
  */
-typedef enum player_result_e {
+enum player_error_e : int {
 	/** MediaPlayer Error case */
-	PLAYER_ERROR_INVALID_OPERATION = -2,
-	PLAYER_ERROR_INVALID_PARAM = -1,
-	PLAYER_ERROR,
+	PLAYER_ERROR_NOT_ALIVE = INT32_MIN,
+	PLAYER_ERROR_INVALID_STATE,
+	PLAYER_ERROR_INVALID_OPERATION,
+	PLAYER_ERROR_INVALID_PARAMETER,
+	PLAYER_ERROR_INTERNAL_OPERATION_FAILED,
+	PLAYER_ERROR_FILE_OPEN_FAILED,
+	PLAYER_ERROR_OUT_OF_MEMORY,
 	/** MediaPlayer Success case */
-	PLAYER_OK
-} player_result_t;
+	PLAYER_ERROR_NONE = 0
+};
+
+typedef enum player_error_e player_error_t;
+const int PLAYER_OK = PLAYER_ERROR_NONE;
+typedef int player_result_t;
 
 class MediaPlayerImpl;
 
