@@ -29,12 +29,14 @@
 #ifndef __MEDIA_MEDIARECOREROBSERVERINTERFACE_H
 #define __MEDIA_MEDIARECOREROBSERVERINTERFACE_H
 
-#include <media/MediaRecorder.h>
 #include <media/MediaTypes.h>
 
 namespace media {
 
 class MediaRecorder;
+enum recorder_error_e : int;
+typedef enum recorder_error_e recorder_error_t;
+
 /**
  * @class
  * @brief This class provides an interface to the user.
@@ -77,19 +79,19 @@ public:
 	 * @details @b #include <media/MediaRecorderObserverInterface.h>
 	 * @since TizenRT v2.0 PRE
 	 */
-	virtual void onRecordStartError(MediaRecorder& mediaRecorder, int errCode) = 0;
+	virtual void onRecordStartError(MediaRecorder& mediaRecorder, recorder_error_t errCode) = 0;
 	/**
 	 * @brief informs the user of the error state of recorder pause operation
 	 * @details @b #include <media/MediaRecorderObserverInterface.h>
 	 * @since TizenRT v2.0 PRE
 	 */
-	virtual void onRecordPauseError(MediaRecorder& mediaRecorder, int errCode) = 0;
+	virtual void onRecordPauseError(MediaRecorder& mediaRecorder, recorder_error_t errCode) = 0;
 	/**
 	 * @brief informs the user of the error state of recorder stop operation
 	 * @details @b #include <media/MediaRecorderObserverInterface.h>
 	 * @since TizenRT v2.0 PRE
 	 */
-	virtual void onRecordStopError(MediaRecorder& mediaRecorder, int errCode) = 0;
+	virtual void onRecordStopError(MediaRecorder& mediaRecorder, recorder_error_t errCode) = 0;
 };
 } // namespace media
 
