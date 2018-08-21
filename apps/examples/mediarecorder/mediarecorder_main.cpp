@@ -98,11 +98,11 @@ public:
 		std::cout << "onPlaybackFinished" << std::endl;
 		mIsPlaying = false;
 
-		if (mMp.unprepare() == PLAYER_ERROR) {
+		if (mMp.unprepare() != PLAYER_OK) {
 			std::cout << "Mediaplayer::unprepare failed" << std::endl;
 		}
 
-		if (mMp.destroy() == PLAYER_ERROR) {
+		if (mMp.destroy() != PLAYER_OK) {
 			std::cout << "Mediaplayer::destroy failed" << std::endl;
 		}
 	}
@@ -247,29 +247,29 @@ public:
 		source->setChannels(2);
 		source->setPcmFormat(AUDIO_FORMAT_TYPE_S16_LE);
 
-		if (mMp.create() == PLAYER_ERROR) {
+		if (mMp.create() != PLAYER_OK) {
 			std::cout << "Mediaplayer::create failed" << std::endl;
 			return;
 		}
 
-		if (mMp.setObserver(shared_from_this()) == PLAYER_ERROR) {
+		if (mMp.setObserver(shared_from_this()) != PLAYER_OK) {
 			std::cout << "Mediaplayer::setObserver failed" << std::endl;
 			return;
 		}
 
-		if (mMp.setDataSource(std::move(source)) == PLAYER_ERROR) {
+		if (mMp.setDataSource(std::move(source)) != PLAYER_OK) {
 			std::cout << "Mediaplayer::setDataSource failed" << std::endl;
 			return;
 		}
 
-		if (mMp.prepare() == PLAYER_ERROR) {
+		if (mMp.prepare() != PLAYER_OK) {
 			std::cout << "Mediaplayer::prepare failed" << std::endl;
 			return;
 		}
 
-		if (mMp.start() == PLAYER_ERROR) {
+		if (mMp.start() != PLAYER_OK) {
 			std::cout << "Mediaplayer::start failed" << std::endl;
-			if (mMp.unprepare() == PLAYER_ERROR) {
+			if (mMp.unprepare() != PLAYER_OK) {
 				std::cout << "Mediaplayer::unprepare failed" << std::endl;
 			}
 			return;

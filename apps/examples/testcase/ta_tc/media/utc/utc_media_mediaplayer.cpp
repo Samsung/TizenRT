@@ -74,7 +74,7 @@ static void utc_media_MediaPlayer_create_n(void)
 	media::MediaPlayer mp;
 	mp.create();
 
-	TC_ASSERT_EQ("utc_media_MediaPlayer_create", mp.create(), media::PLAYER_ERROR);
+	TC_ASSERT_NEQ("utc_media_MediaPlayer_create", mp.create(), media::PLAYER_OK);
 
 	mp.destroy();
 	TC_SUCCESS_RESULT();
@@ -98,7 +98,7 @@ static void utc_media_MediaPlayer_destroy_n(void)
 	{
 		media::MediaPlayer mp;
 
-		TC_ASSERT_EQ("utc_media_MediaPlayer_destroy", mp.destroy(), media::PLAYER_ERROR);
+		TC_ASSERT_NEQ("utc_media_MediaPlayer_destroy", mp.destroy(), media::PLAYER_OK);
 	}
 
 	/* destroy At invalid time */
@@ -109,7 +109,7 @@ static void utc_media_MediaPlayer_destroy_n(void)
 		mp.setDataSource(std::move(source));
 		mp.prepare();
 
-		TC_ASSERT_EQ("utc_media_MediaPlayer_destroy", mp.destroy(), media::PLAYER_ERROR);
+		TC_ASSERT_NEQ("utc_media_MediaPlayer_destroy", mp.destroy(), media::PLAYER_OK);
 
 		mp.unprepare();
 		mp.destroy();
@@ -141,7 +141,7 @@ static void utc_media_MediaPlayer_setDataSource_n(void)
 		source->setSampleRate(20000);
 		source->setChannels(2);
 
-		TC_ASSERT_EQ("setDataSource", mp.setDataSource(std::move(source)), media::PLAYER_ERROR);
+		TC_ASSERT_NEQ("setDataSource", mp.setDataSource(std::move(source)), media::PLAYER_OK);
 	}
 
 	/* setDataSource with nullptr */
@@ -149,7 +149,7 @@ static void utc_media_MediaPlayer_setDataSource_n(void)
 		media::MediaPlayer mp;
 		mp.create();
 
-		TC_ASSERT_EQ("utc_media_MediaPlayer_setDataSource", mp.setDataSource(nullptr), media::PLAYER_ERROR);
+		TC_ASSERT_NEQ("utc_media_MediaPlayer_setDataSource", mp.setDataSource(nullptr), media::PLAYER_OK);
 
 		mp.destroy();
 	}
@@ -173,7 +173,7 @@ static void utc_media_MediaPlayer_setObserver_n(void)
 {
 	media::MediaPlayer mp;
 
-	TC_ASSERT_EQ("utc_media_MediaPlayer_setObserver", mp.setObserver(nullptr), media::PLAYER_ERROR);
+	TC_ASSERT_NEQ("utc_media_MediaPlayer_setObserver", mp.setObserver(nullptr), media::PLAYER_OK);
 
 	TC_SUCCESS_RESULT();
 }
@@ -198,7 +198,7 @@ static void utc_media_MediaPlayer_prepare_n(void)
 	{
 		media::MediaPlayer mp;
 
-		TC_ASSERT_EQ("utc_media_MediaPlayer_prepare", mp.prepare(), media::PLAYER_ERROR);
+		TC_ASSERT_NEQ("utc_media_MediaPlayer_prepare", mp.prepare(), media::PLAYER_OK);
 	}
 
 	/* prepare twice */
@@ -209,7 +209,7 @@ static void utc_media_MediaPlayer_prepare_n(void)
 		mp.setDataSource(std::move(source));
 		mp.prepare();
 
-		TC_ASSERT_EQ("utc_media_MediaPlayer_prepare", mp.prepare(), media::PLAYER_ERROR);
+		TC_ASSERT_NEQ("utc_media_MediaPlayer_prepare", mp.prepare(), media::PLAYER_OK);
 
 		mp.unprepare();
 		mp.destroy();
@@ -220,7 +220,7 @@ static void utc_media_MediaPlayer_prepare_n(void)
 		media::MediaPlayer mp;
 		mp.create();
 
-		TC_ASSERT_EQ("utc_media_MediaPlayer_prepare", mp.prepare(), media::PLAYER_ERROR);
+		TC_ASSERT_NEQ("utc_media_MediaPlayer_prepare", mp.prepare(), media::PLAYER_OK);
 
 		mp.destroy();
 	}
@@ -232,7 +232,7 @@ static void utc_media_MediaPlayer_prepare_n(void)
 		mp.create();
 		mp.setDataSource(std::move(source));
 
-		TC_ASSERT_EQ("utc_media_MediaPlayer_prepare", mp.prepare(), media::PLAYER_ERROR);
+		TC_ASSERT_NEQ("utc_media_MediaPlayer_prepare", mp.prepare(), media::PLAYER_OK);
 
 		mp.destroy();
 	}
@@ -260,7 +260,7 @@ static void utc_media_MediaPlayer_unprepare_n(void)
 	{
 		media::MediaPlayer mp;
 
-		TC_ASSERT_EQ("utc_media_MediaPlayer_unprepare", mp.unprepare(), media::PLAYER_ERROR);
+		TC_ASSERT_NEQ("utc_media_MediaPlayer_unprepare", mp.unprepare(), media::PLAYER_OK);
 	}
 
 	/* unprepare twice */
@@ -271,7 +271,7 @@ static void utc_media_MediaPlayer_unprepare_n(void)
 		mp.setDataSource(std::move(source));
 		mp.unprepare();
 
-		TC_ASSERT_EQ("utc_media_MediaPlayer_unprepare", mp.unprepare(), media::PLAYER_ERROR);
+		TC_ASSERT_NEQ("utc_media_MediaPlayer_unprepare", mp.unprepare(), media::PLAYER_OK);
 
 		mp.unprepare();
 		mp.destroy();
@@ -299,7 +299,7 @@ static void utc_media_MediaPlayer_start_n(void)
 {
 	media::MediaPlayer mp;
 
-	TC_ASSERT_EQ("utc_media_MediaPlayer_start", mp.start(), media::PLAYER_ERROR);
+	TC_ASSERT_NEQ("utc_media_MediaPlayer_start", mp.start(), media::PLAYER_OK);
 
 	TC_SUCCESS_RESULT();
 }
@@ -324,7 +324,7 @@ static void utc_media_MediaPlayer_pause_n(void)
 {
 	media::MediaPlayer mp;
 
-	TC_ASSERT_EQ("utc_media_MediaPlayer_pause", mp.pause(), media::PLAYER_ERROR);
+	TC_ASSERT_NEQ("utc_media_MediaPlayer_pause", mp.pause(), media::PLAYER_OK);
 
 	TC_SUCCESS_RESULT();
 }
@@ -349,7 +349,7 @@ static void utc_media_MediaPlayer_stop_n(void)
 {
 	media::MediaPlayer mp;
 
-	TC_ASSERT_EQ("utc_media_MediaPlayer_stop", mp.stop(), media::PLAYER_ERROR);
+	TC_ASSERT_NEQ("utc_media_MediaPlayer_stop", mp.stop(), media::PLAYER_OK);
 
 	TC_SUCCESS_RESULT();
 }
@@ -402,7 +402,7 @@ static void utc_media_MediaPlayer_setVolume_n(void)
 {
 	media::MediaPlayer mp;
 
-	TC_ASSERT_EQ("utc_media_MediaPlayer_setVolume", mp.setVolume(0), media::PLAYER_ERROR);
+	TC_ASSERT_NEQ("utc_media_MediaPlayer_setVolume", mp.setVolume(0), media::PLAYER_OK);
 
 	TC_SUCCESS_RESULT();
 }

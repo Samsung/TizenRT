@@ -66,7 +66,7 @@ private:
 
 bool MyMediaPlayer::init(int test)
 {
-	if (mp.create() == PLAYER_ERROR) {
+	if (mp.create() != PLAYER_OK) {
 		cout << "Mediaplayer::create failed" << endl;
 		return false;
 	}
@@ -107,24 +107,24 @@ void MyMediaPlayer::doCommand(int command)
 		break;
 	case PLAYER_PAUSE:
 		cout << "PLAYER_PAUSE is selected" << endl;
-		if (mp.pause() == PLAYER_ERROR) {
+		if (mp.pause() != PLAYER_OK) {
 			cout << "Mediaplayer::pause failed" << endl;
 		}
 		break;
 	case PLAYER_RESUME:
 		cout << "PLAYER_RESUME is selected" << endl;
-		if (mp.start() == PLAYER_ERROR) {
+		if (mp.start() != PLAYER_OK) {
 			cout << "Mediaplayer::start failed" << endl;
 		}
 		break;
 	case PLAYER_STOP:
 		cout << "PLAYER_STOP is selected" << endl;
 		focusManager.abandonFocus(mFocusRequest);
-		if (mp.stop() == PLAYER_ERROR) {
+		if (mp.stop() != PLAYER_OK) {
 			cout << "Mediaplayer::stop failed" << endl;
 		}
 
-		if (mp.unprepare() == PLAYER_ERROR) {
+		if (mp.unprepare() != PLAYER_OK) {
 			cout << "Mediaplayer::unprepare failed" << endl;
 		}
 		break;
@@ -191,15 +191,15 @@ void MyMediaPlayer::onFocusChange(int focusChange)
 
 	switch (focusChange) {
 	case FOCUS_GAIN:
-		if (mp.prepare() == PLAYER_ERROR) {
+		if (mp.prepare() != PLAYER_OK) {
 			cout << "Mediaplayer::prepare failed" << endl;
 		}
-		if (mp.start() == PLAYER_ERROR) {
+		if (mp.start() != PLAYER_OK) {
 			cout << "Mediaplayer::start failed" << endl;
 		}
 		break;
 	case FOCUS_LOSS:
-		if (mp.pause() == PLAYER_ERROR) {
+		if (mp.pause() != PLAYER_OK) {
 			cout << "Mediaplayer::pause failed" << endl;
 		}
 		break;

@@ -77,14 +77,14 @@ static void itc_media_MediaPlayer_create_destroy_p(void)
 static void itc_media_MediaPlayer_create_destroy_n(void)
 {
 	media::MediaPlayer mp;
-	TC_ASSERT_EQ("destroy", mp.destroy(), media::PLAYER_ERROR);
+	TC_ASSERT_NEQ("destroy", mp.destroy(), media::PLAYER_OK);
 	TC_ASSERT_EQ("create", mp.create(), media::PLAYER_OK);
 	for(int i=0; i<COUNT; i++){
-		TC_ASSERT_EQ("recreate", mp.create(), media::PLAYER_ERROR);
+		TC_ASSERT_NEQ("recreate", mp.create(), media::PLAYER_OK);
 	}
 	TC_ASSERT_EQ("destroy", mp.destroy(), media::PLAYER_OK);
 	for(int i=0; i<COUNT; i++){
-		TC_ASSERT_EQ("recreate", mp.destroy(), media::PLAYER_ERROR);
+		TC_ASSERT_NEQ("recreate", mp.destroy(), media::PLAYER_OK);
 	}
 	TC_SUCCESS_RESULT();
 }
