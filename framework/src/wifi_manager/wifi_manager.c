@@ -988,7 +988,11 @@ wifi_manager_result_e _handler_on_connecting_state(_wifimgr_msg_s *msg)
 	WM_LOG_HANDLER_START;
 	wifi_manager_result_e wret;
 	if (msg->event == EVT_STA_CONNECTED) {
+#ifndef CONFIG_WIFIMGR_DISABLE_IPV4_DHCPC
 		wret = _get_ipaddr_dhcp();
+#else
+		wret = WIFI_MANAGER_SUCCESS;
+#endif
 		if (wret != WIFI_MANAGER_SUCCESS) {
 			_handle_user_cb(CB_STA_CONNECT_FAILED, NULL);
 			WIFIMGR_CHECK_RESULT(_wifimgr_disconnect_ap(), "critical error\n", WIFI_MANAGER_FAIL);
