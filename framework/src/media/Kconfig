@@ -76,10 +76,18 @@ config FILE_DATASOURCE_STREAM_BUFFER_SIZE
 	default 4096
 	---help---
 
+config FILE_DATASOURCE_STREAM_BUFFER_THRESHOLD
+	int "File DataSource stream buffer threshold"
+	default 2048
+
 config BUFFER_DATASOURCE_STREAM_BUFFER_SIZE
 	int "Buffer DataSource stream buffer size"
 	default 4096
 	---help---
+
+config BUFFER_DATASOURCE_STREAM_BUFFER_THRESHOLD
+	int "Buffer DataSource stream buffer threshold"
+	default 1
 
 endif #MEDIA
 
