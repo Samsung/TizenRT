@@ -126,7 +126,7 @@ bool FileInputDataSource::close()
 bool FileInputDataSource::isPrepare()
 {
 	if (mFp == nullptr) {
-		meddbg("mFp is null\n");
+		medvdbg("mFp is nullptr\n");
 		return false;
 	}
 	return true;
@@ -159,7 +159,6 @@ int FileInputDataSource::seek(long offset, int origin)
 
 FileInputDataSource::~FileInputDataSource()
 {
-	close();
 }
 
 } // namespace stream

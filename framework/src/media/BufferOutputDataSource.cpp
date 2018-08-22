@@ -107,7 +107,6 @@ ssize_t BufferOutputDataSource::onStreamBufferReadable(bool isFlush)
 
 BufferOutputDataSource::~BufferOutputDataSource()
 {
-	close();
 }
 
 } // namespace stream

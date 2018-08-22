@@ -84,5 +84,8 @@ void DataSource::setPcmFormat(audio_format_type_t pcmFormat)
 DataSource::~DataSource()
 {
 	medvdbg("DataSource::~DataSource()\n");
+	if (isPrepare()) {
+		close();
+	}
 }
 } // namespace media

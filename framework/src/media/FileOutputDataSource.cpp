@@ -123,7 +123,7 @@ bool FileOutputDataSource::close()
 bool FileOutputDataSource::isPrepare()
 {
 	if (mFp == nullptr) {
-		meddbg("mFp is null\n");
+		medvdbg("mFp is nullptr\n");
 		return false;
 	}
 	return true;
@@ -157,9 +157,6 @@ ssize_t FileOutputDataSource::onStreamBufferReadable(bool isFlush)
 
 FileOutputDataSource::~FileOutputDataSource()
 {
-	if (mFp) {
-		close();
-	}
 }
 
 } // namespace stream
