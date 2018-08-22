@@ -746,6 +746,7 @@ static void taskmgr_broadcast(tm_internal_msg_t *arg)
 		memcpy(bm.user_data, arg->msg, arg->msg_size);
 	} else {
 		bm.user_data = NULL;
+		bm.size = 0;
 	}
 
 	for (handle = 0; handle < CONFIG_TASK_MANAGER_MAX_TASKS; handle++) {
