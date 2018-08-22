@@ -27,6 +27,7 @@
 #include <media/MediaPlayer.h>
 #include <media/MediaPlayerObserverInterface.h>
 #include <media/FileOutputDataSource.h>
+#include <media/BufferOutputDataSource.h>
 #include <media/FileInputDataSource.h>
 #include <iostream>
 #include <memory>
@@ -48,6 +49,7 @@ using namespace media::stream;
 
 static const int TEST_PCM = 0;
 static const int TEST_OPUS = 1;
+static const int TEST_BUFFER = 2;
 
 static const char *filePath = "";
 
@@ -85,6 +87,11 @@ public:
 	void onRecordStopError(MediaRecorder& mediaRecorder, recorder_error_t errCode)
 	{
 		std::cout << "onRecordStopError!! errCode : " << errCode << std::endl;
+	}
+
+	void onRecordBufferDataReached(MediaRecorder& mediaRecorder, unsigned char *data, size_t size)
+	{
+		std::cout << "onRecordBufferDataReached, data size : " << size << std::endl;
 	}
 
 	void onPlaybackStarted(MediaPlayer &mediaPlayer)
@@ -133,6 +140,10 @@ public:
 					filePath = "/tmp/record.pcm";
 				} else if (test == TEST_OPUS) {
 					filePath = "/tmp/record.opus";
+				} else if (test == TEST_BUFFER) {
+					filePath = "";
+					mMr.setDataSource(unique_ptr<BufferOutputDataSource>(new BufferOutputDataSource()));
+					break;
 				}
 				mMr.setDataSource(unique_ptr<FileOutputDataSource>(
 					new FileOutputDataSource(2, 16000, AUDIO_FORMAT_TYPE_S16_LE, filePath)));

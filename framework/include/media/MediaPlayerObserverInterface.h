@@ -67,6 +67,30 @@ public:
 	 * @since TizenRT v2.0 PRE
 	 */
 	virtual void onPlaybackPaused(MediaPlayer &mediaPlayer) = 0;
+	/**
+	 * @brief informs the user the playback buffer state: overrun.
+	 * @details @b #include <media/MediaPlayerObserverInterface.h>
+	 * @since TizenRT v2.0 PRE
+	 */
+	virtual void onPlaybackBufferOverrun(MediaPlayer &mediaPlayer) {}
+	/**
+	 * @brief informs the user the playback buffer state: underrun.
+	 * @details @b #include <media/MediaPlayerObserverInterface.h>
+	 * @since TizenRT v2.0 PRE
+	 */
+	virtual void onPlaybackBufferUnderrun(MediaPlayer &mediaPlayer) {}
+	/**
+	 * @brief informs the user the playback buffer updated.
+	 * @details @b #include <media/MediaPlayerObserverInterface.h>
+	 * @since TizenRT v2.0 PRE
+	 */
+	virtual void onPlaybackBufferUpdated(MediaPlayer &mediaPlayer, size_t bytes) {}
+	/**
+	 * @brief informs the user the playback buffer state changed
+	 * @details @b #include <media/MediaPlayerObserverInterface.h>
+	 * @since TizenRT v2.0 PRE
+	 */
+	virtual void onPlaybackBufferStateChanged(MediaPlayer &mediaPlayer, buffer_state_t state) {}
 };
 } // namespace media
 

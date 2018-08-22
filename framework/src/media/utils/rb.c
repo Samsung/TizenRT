@@ -155,6 +155,16 @@ size_t rb_read_ext(rb_p rbp, void *ptr, size_t len, size_t offset)
 	return len;
 }
 
+bool rb_reset(rb_p rbp)
+{
+	RETURN_VAL_IF_FAIL(rbp != NULL, false);
+
+	rbp->rd_idx = 0;
+	rbp->wr_idx = 0;
+
+	return true;
+}
+
 static void _incr(rb_p rbp, volatile size_t *p_idx, size_t len)
 {
 	size_t idx = *p_idx & IDX_MASK;

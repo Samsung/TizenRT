@@ -107,16 +107,8 @@ public:
 	 */
 	bool close() override;
 
-	/**
-	 * @brief Puts the file data
-	 * @details @b #include <media/FileOutputDataSource.h>
-	 * @param[in] buf The buf that buffer to be written to the file
-	 * @param[in] size The size that the size of the buffer
-	 * @return if there is nothing to write, it returns 0
-	 *         if error occurred, it returns negative value, else written size returns
-	 * @since TizenRT v2.0 PRE
-	 */
-	ssize_t write(unsigned char* buf, size_t size) override;
+protected:
+	ssize_t onStreamBufferReadable(bool isFlush) override;
 
 private:
 	std::string mDataPath;

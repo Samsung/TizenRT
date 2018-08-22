@@ -97,17 +97,6 @@ public:
 	bool close() override;
 
 	/**
-	 * @brief Gets the file data
-	 * @details @b #include <media/FileInputDataSource.h>
-	 * @param[out] buf The buf that read the data and fill it into the buffer
-	 * @param[in] size The size that the size of the buffer
-	 * @return if there is nothing to read, it returns 0
-	 *         if error occurred, it returns -1, else readead size returns
-	 * @since TizenRT v2.0 PRE
-	 */
-	ssize_t read(unsigned char *buf, size_t size) override;
-
-	/**
 	 * @brief set the file offset
 	 * @details @b #include <media/FileInputDataSource.h>
 	 * @param[in] offset The offset from origin
@@ -116,6 +105,9 @@ public:
 	 * @since TizenRT v2.0
 	 */
 	int seek(long offset, int origin) override;
+
+protected:
+	ssize_t onStreamBufferWritable() override;
 
 private:
 	std::string mDataPath;

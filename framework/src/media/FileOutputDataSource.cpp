@@ -16,11 +16,22 @@
  *
  ******************************************************************/
 
+#include <tinyara/config.h>
 #include <stdio.h>
 #include <debug.h>
 #include <media/FileOutputDataSource.h>
 #include "utils/MediaUtils.h"
 #include "Encoder.h"
+#include "OutputStreamBuffer.h"
+#include "StreamBufferReader.h"
+
+#ifndef CONFIG_FILE_DATASOURCE_STREAM_BUFFER_SIZE
+#define CONFIG_FILE_DATASOURCE_STREAM_BUFFER_SIZE 4096
+#endif
+
+#ifndef CONFIG_FILE_DATASOURCE_STREAM_BUFFER_THRESHOLD
+#define CONFIG_FILE_DATASOURCE_STREAM_BUFFER_THRESHOLD 2048
+#endif
 
 namespace media {
 namespace stream {
@@ -48,6 +59,19 @@ FileOutputDataSource& FileOutputDataSource::operator=(const FileOutputDataSource
 
 bool FileOutputDataSource::open()
 {
+	if (!getStreamBuffer()) {
+		auto streamBuffer = OutputStreamBuffer::create( \
+			CONFIG_FILE_DATASOURCE_STREAM_BUFFER_SIZE, \
+			CONFIG_FILE_DATASOURCE_STREAM_BUFFER_THRESHOLD);
+
+		if (!streamBuffer) {
+			meddbg("streamBuffer is nullptr!\n");
+			return false;
+		}
+
+		setStreamBuffer(streamBuffer);
+	}
+
 	if (!mFp) {
 		setAudioType(utils::getAudioTypeFromPath(mDataPath));
 
@@ -64,6 +88,7 @@ bool FileOutputDataSource::open()
 		mFp = fopen(mDataPath.c_str(), "wb");
 		if (mFp) {
 			medvdbg("file open success\n");
+			start();
 			return true;
 		} else {
 			meddbg("file open failed error : %d\n", errno);
@@ -79,6 +104,8 @@ bool FileOutputDataSource::open()
 bool FileOutputDataSource::close()
 {
 	if (mFp) {
+		stop();
+
 		int ret = fclose(mFp);
 		if (ret == OK) {
 			mFp = nullptr;
@@ -102,57 +129,30 @@ bool FileOutputDataSource::isPrepare()
 	return true;
 }
 
-ssize_t FileOutputDataSource::write(unsigned char* buf, size_t size)
+ssize_t FileOutputDataSource::onStreamBufferReadable(bool isFlush)
 {
-	if (!isPrepare()) {
-		return EOF;
-	}
+	size_t total = 0;
+	unsigned char buf[1024];
+	auto reader = getBufferReader();
 
-	if (!buf) {
-		meddbg("buf is nullptr, hence return EOF\n");
-		return EOF;
-	}
-
-	std::shared_ptr<Encoder> encoder = getEncoder();
-
-	size_t wlen = 0;
-	while (wlen < size) {
-		if (encoder) {
-			// Push data as much as possible
-			size_t pushed = encoder->pushData(buf + wlen, size - wlen);
-			if (pushed == 0) {
-				meddbg("Can not push data! Error occurred during encoding!\n");
-				break;
+	do {
+		size_t size = sizeof(buf);
+		size = reader->read(buf, size);
+		size_t wlen = 0;
+		while (wlen < size) {
+			size_t temp = fwrite(buf + wlen, sizeof(unsigned char), size - wlen, mFp);
+			if (!temp) {
+				// Can not write data, error occurred.
+				meddbg("fwrite failed!\n");
+				return EOF;
 			}
-
-			wlen += pushed;
-
-			// Encode data and write to file.
-			while (1) {
-				// Reuse 'wlen' bytes free space in 'buf'.
-				// Encoded data size is usually smaller than origin PCM data size.
-				size_t ret = wlen;
-				if (!encoder->getFrame(buf, &ret)) {
-					// Need push more data
-					break;
-				}
-
-				size_t written = fwrite(buf, sizeof(unsigned char), ret, mFp);
-				medvdbg("written size: %d\n", written);
-				if (written != ret) {
-					meddbg("Can not write all!\n");
-					break;
-				}
-			}
-		} else {
-			// Write origin data to file
-			wlen += fwrite(buf + wlen, sizeof(unsigned char), size - wlen, mFp);
-			medvdbg("written size : %d\n", wlen);
-			break;
+			wlen += temp;
 		}
-	}
 
-	return wlen;
+		total += wlen;
+	} while (isFlush && (reader->sizeOfData() > 0));
+
+	return (ssize_t) total;
 }
 
 FileOutputDataSource::~FileOutputDataSource()
@@ -161,5 +161,6 @@ FileOutputDataSource::~FileOutputDataSource()
 		close();
 	}
 }
+
 } // namespace stream
 } // namespace media

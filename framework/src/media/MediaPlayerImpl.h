@@ -48,6 +48,17 @@ typedef enum player_state_e {
 	PLAYER_STATE_PAUSED
 } player_state_t;
 
+typedef enum player_observer_command_e {
+	PLAYER_OBSERVER_COMMAND_STARTED,
+	PLAYER_OBSERVER_COMMAND_FINISHIED,
+	PLAYER_OBSERVER_COMMAND_ERROR,
+	PLAYER_OBSERVER_COMMAND_PAUSED,
+	PLAYER_OBSERVER_COMMAND_BUFFER_OVERRUN,
+	PLAYER_OBSERVER_COMMAND_BUFFER_UNDERRUN,
+	PLAYER_OBSERVER_COMMAND_BUFFER_UPDATED,
+	PLAYER_OBSERVER_COMMAND_BUFFER_STATECHANGED,
+} player_observer_command_t;
+
 class MediaPlayerImpl : public std::enable_shared_from_this<MediaPlayerImpl>
 {
 public:
@@ -71,7 +82,7 @@ public:
 	player_state_t getState();
 
 	void notifySync();
-	void notifyObserver(player_observer_command_t cmd);
+	void notifyObserver(player_observer_command_t cmd, ...);
 
 	void playback();
 

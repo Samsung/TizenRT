@@ -1,4 +1,4 @@
-/* ****************************************************************
+/******************************************************************
  *
  * Copyright 2018 Samsung Electronics All Rights Reserved.
  *
@@ -16,26 +16,35 @@
  *
  ******************************************************************/
 
-#ifndef __MEDIA_PLAYEROBSERVERWORKER_HPP
-#define __MEDIA_PLAYEROBSERVERWORKER_HPP
+#ifndef __MEDIA_STREAMBUFFERWRITER_H
+#define __MEDIA_STREAMBUFFERWRITER_H
 
-#include <thread>
 #include <memory>
-#include <mutex>
-#include <media/MediaPlayer.h>
-#include "MediaWorker.h"
+#include <media/BufferWriterInterface.h>
 
 namespace media {
+namespace stream {
+class StreamBuffer;
 
-class PlayerObserverWorker : public MediaWorker
+class StreamBufferWriter
+	: public BufferWriterInterface
 {
 public:
-	static PlayerObserverWorker& getWorker();
+	StreamBufferWriter() = delete;
+	StreamBufferWriter(std::shared_ptr<StreamBuffer> stream);
+
+public:
+	virtual size_t write(unsigned char *buf, size_t size, bool sync = true) override;
+	virtual size_t sizeOfSpace() override;
+
+public:
+	void setEndOfStream();
 
 private:
-	PlayerObserverWorker();
-	virtual ~PlayerObserverWorker();
+	std::shared_ptr<StreamBuffer> mStream;
 };
+
+} // namespace stream
 } // namespace media
 
 #endif

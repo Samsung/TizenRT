@@ -60,7 +60,10 @@ typedef enum observer_command_e {
 	OBSERVER_COMMAND_FINISHIED,
 	OBSERVER_COMMAND_START_ERROR,
 	OBSERVER_COMMAND_PAUSE_ERROR,
-	OBSERVER_COMMAND_STOP_ERROR
+	OBSERVER_COMMAND_STOP_ERROR,
+	OBSERVER_COMMAND_BUFFER_OVERRUN,
+	OBSERVER_COMMAND_BUFFER_UNDERRUN,
+	OBSERVER_COMMAND_BUFFER_DATAREACHED,
 } observer_command_t;
 
 class MediaRecorderImpl : public enable_shared_from_this<MediaRecorderImpl>
@@ -85,7 +88,7 @@ public:
 	recorder_result_t setObserver(std::shared_ptr<MediaRecorderObserverInterface> observer);
 	recorder_result_t setDuration(int second);
 	void notifySync();
-	void notifyObserver(observer_command_t cmd, recorder_error_t errCode = RECORDER_ERROR_NONE);
+	void notifyObserver(observer_command_t cmd, ...);
 	void capture();
 
 private:

@@ -30,6 +30,7 @@ CFLAGS += -D__TINYARA__
 
 ifeq ($(CONFIG_MEDIA), y)
 CXXSRCS += MediaQueue.cpp DataSource.cpp MediaWorker.cpp
+CXXSRCS += StreamBuffer.cpp StreamBufferReader.cpp StreamBufferWriter.cpp
 CXXSRCS += MediaUtils.cpp
 CXXSRCS += FocusRequest.cpp FocusManager.cpp
 CSRCS += rb.c rbs.c
@@ -43,12 +44,12 @@ VPATH += :src/media/codecs
 endif
 
 ifeq ($(CONFIG_MEDIA_PLAYER), y)
-CXXSRCS += MediaPlayer.cpp InputDataSource.cpp FileInputDataSource.cpp PlayerWorker.cpp MediaPlayerImpl.cpp PlayerObserverWorker.cpp
+CXXSRCS += MediaPlayer.cpp InputDataSource.cpp FileInputDataSource.cpp PlayerWorker.cpp MediaPlayerImpl.cpp PlayerObserverWorker.cpp InputStreamBuffer.cpp
 CXXSRCS += Decoder.cpp audio_decoder.cpp
 endif
 
 ifeq ($(CONFIG_MEDIA_RECORDER), y)
-CXXSRCS += MediaRecorder.cpp OutputDataSource.cpp FileOutputDataSource.cpp RecorderWorker.cpp MediaRecorderImpl.cpp BufferOutputDataSource.cpp RecorderObserverWorker.cpp
+CXXSRCS += MediaRecorder.cpp OutputDataSource.cpp FileOutputDataSource.cpp RecorderWorker.cpp MediaRecorderImpl.cpp BufferOutputDataSource.cpp RecorderObserverWorker.cpp OutputStreamBuffer.cpp
 CXXSRCS += Encoder.cpp audio_encoder.cpp
 ifeq ($(CONFIG_NET), y)
 CXXSRCS += SocketOutputDataSource.cpp

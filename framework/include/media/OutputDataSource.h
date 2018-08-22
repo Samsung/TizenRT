@@ -29,18 +29,27 @@
 #ifndef __MEDIA_OUTPUTDATASOURCE_H
 #define __MEDIA_OUTPUTDATASOURCE_H
 
+#include <pthread.h>
 #include <media/DataSource.h>
+#include <media/BufferObserverInterface.h>
 
 namespace media {
 class Encoder;
+class MediaRecorderImpl;
 namespace stream {
+class OutputStreamBuffer;
+class StreamBufferReader;
+class StreamBufferWriter;
+
 /**
  * @class
  * @brief This class is output data structure
  * @details @b #include <media/OutputDataSource.h>
  * @since TizenRT v2.0 PRE
  */
-class OutputDataSource : public DataSource
+class OutputDataSource
+	: public DataSource
+	, public BufferObserverInterface
 {
 public:
 	/**
@@ -78,23 +87,66 @@ public:
 	 */
 	virtual ~OutputDataSource();
 
-protected:
-	const std::shared_ptr<Encoder> getEncoder();
-	void setEncoder(std::shared_ptr<Encoder> encoder);
-	void setAudioType(audio_type_t audioType);
-	audio_type_t getAudioType();
-
-private:
-	audio_type_t mAudioType;
-	std::shared_ptr<Encoder> mEncoder;
-
 public:
 	/**
 	 * @brief Puts the stream data
 	 * @details @b #include <media/OutputDataSource.h>
 	 * @since TizenRT v2.0 PRE
 	 */
-	virtual ssize_t write(unsigned char* buf, size_t size) = 0;
+	virtual ssize_t write(unsigned char *buf, size_t size);
+
+	/**
+	 * @brief Register current recorder to get data souce state and other infomations.
+	 * @details @b #include <media/OutputDataSource.h>
+	 * @since TizenRT v2.0 PRE
+	 */
+	void setRecorder(std::shared_ptr<MediaRecorderImpl> mr) { mRecorder = mr; }
+
+public:
+	/* BufferObserverInterface
+	 * Override these methods in derived class if needed.
+	 */
+	virtual void onBufferOverrun() override;
+	virtual void onBufferUnderrun() override;
+	virtual void onBufferUpdated(ssize_t change, size_t current) override;
+
+protected:
+	bool start();
+	bool stop();
+	void flush();
+	virtual ssize_t onStreamBufferReadable(bool isFlush) = 0;
+
+protected:
+	const std::shared_ptr<Encoder> getEncoder();
+	void setEncoder(std::shared_ptr<Encoder> encoder);
+	void setAudioType(audio_type_t audioType);
+	audio_type_t getAudioType();
+
+	void setStreamBuffer(std::shared_ptr<OutputStreamBuffer>);
+	std::shared_ptr<OutputStreamBuffer> getStreamBuffer() { return mStreamBuffer; }
+	std::shared_ptr<StreamBufferReader> getBufferReader() { return mBufferReader; }
+	std::shared_ptr<MediaRecorderImpl> getRecorder() { return mRecorder.lock(); }
+	void createWorker();
+	void destoryWorker();
+	ssize_t writeToStreamBuffer(unsigned char *buf, size_t size);
+
+private:
+	audio_type_t mAudioType;
+	std::shared_ptr<Encoder> mEncoder;
+	std::shared_ptr<OutputStreamBuffer> mStreamBuffer;
+	std::shared_ptr<StreamBufferReader> mBufferReader;
+	std::shared_ptr<StreamBufferWriter> mBufferWriter;
+	std::weak_ptr<MediaRecorderImpl> mRecorder;
+
+	bool mIsFlushing;
+	bool mIsWorkerAlive;
+	pthread_t mWorker;
+	std::mutex mMutex;
+	std::condition_variable mCondv;
+
+	void sleepWorker();
+	void wakenWorker();
+	static void *workerMain(void *arg);
 };
 } // namespace stream
 } // namespace media

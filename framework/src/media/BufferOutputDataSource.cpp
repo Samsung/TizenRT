@@ -16,25 +16,36 @@
  *
  ******************************************************************/
 
+#include <tinyara/config.h>
 #include <stdio.h>
 #include <debug.h>
 #include <media/BufferOutputDataSource.h>
+#include "MediaRecorderImpl.h"
+#include "OutputStreamBuffer.h"
+#include "StreamBufferReader.h"
+
+#ifndef CONFIG_BUFFER_DATASOURCE_STREAM_BUFFER_SIZE
+#define CONFIG_BUFFER_DATASOURCE_STREAM_BUFFER_SIZE 4096
+#endif
+
+#ifndef CONFIG_BUFFER_DATASOURCE_STREAM_BUFFER_THRESHOLD
+#define CONFIG_BUFFER_DATASOURCE_STREAM_BUFFER_THRESHOLD 1
+#endif
 
 namespace media {
 namespace stream {
-
-BufferOutputDataSource::BufferOutputDataSource(OnBufferDataReached callback)
-	: OutputDataSource(), mCallback(callback)
+BufferOutputDataSource::BufferOutputDataSource()
+	: OutputDataSource()
 {
 }
 
-BufferOutputDataSource::BufferOutputDataSource(unsigned int channels, unsigned int sampleRate, audio_format_type_t pcmFormat, OnBufferDataReached callback)
-	: OutputDataSource(channels, sampleRate, pcmFormat), mCallback(callback)
+BufferOutputDataSource::BufferOutputDataSource(unsigned int channels, unsigned int sampleRate, audio_format_type_t pcmFormat)
+	: OutputDataSource(channels, sampleRate, pcmFormat)
 {
 }
 
-BufferOutputDataSource::BufferOutputDataSource(const BufferOutputDataSource& source) :
-	OutputDataSource(source), mCallback(source.mCallback)
+BufferOutputDataSource::BufferOutputDataSource(const BufferOutputDataSource& source)
+	: OutputDataSource(source)
 {
 }
 
@@ -46,38 +57,58 @@ BufferOutputDataSource& BufferOutputDataSource::operator=(const BufferOutputData
 
 bool BufferOutputDataSource::open()
 {
+	if (!getStreamBuffer()) {
+		auto streamBuffer = OutputStreamBuffer::create( \
+			CONFIG_BUFFER_DATASOURCE_STREAM_BUFFER_SIZE, \
+			CONFIG_BUFFER_DATASOURCE_STREAM_BUFFER_THRESHOLD);
+
+		if (!streamBuffer) {
+			medvdbg("streamBuffer is nullptr!\n");
+			return false;
+		}
+
+		setStreamBuffer(streamBuffer);
+	}
+
+	start();
 	return true;
 }
 
 bool BufferOutputDataSource::close()
 {
+	stop();
 	return true;
 }
 
 bool BufferOutputDataSource::isPrepare()
 {
-	return true;
+	return (getStreamBuffer() != nullptr);
 }
 
-ssize_t BufferOutputDataSource::write(unsigned char* buf, size_t size)
+ssize_t BufferOutputDataSource::onStreamBufferReadable(bool isFlush)
 {
-	if (!buf) {
-		meddbg("buf is nullptr, hence return EOF\n");
-		return EOF;
+	auto reader = getBufferReader();
+	assert(reader->sizeOfData() > 0);
+	size_t size = reader->sizeOfData();
+	unsigned char *buffer = new unsigned char[size];
+	if (buffer) {
+		reader->read(buffer, size);
+		auto recorder = getRecorder();
+		if (recorder) {
+			recorder->notifyObserver(OBSERVER_COMMAND_BUFFER_DATAREACHED, buffer, size);
+		}
+		delete[] buffer;
+		return size;
 	}
-	if (size <= 0) {
-		meddbg("size is 0 or less, hence return EOF\n");
-		return EOF;
-	}
-	ssize_t ret;
-	ret = mCallback(buf, size);
-	//TODO - The return value of Callback will be modified.
-	return ret;
+
+	meddbg("buffer alloc failed\n");
+	return -1;
 }
 
 BufferOutputDataSource::~BufferOutputDataSource()
 {
 	close();
 }
+
 } // namespace stream
 } // namespace media
