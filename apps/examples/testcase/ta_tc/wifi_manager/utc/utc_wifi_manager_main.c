@@ -440,6 +440,37 @@ static void utc_wifi_manager_remove_config_p(void)
 	TC_SUCCESS_RESULT();
 }
 
+static void utc_wifi_manager_get_connected_config_n(void)
+{
+	wifi_manager_result_e ret = WIFI_MANAGER_FAIL;
+	wifi_manager_ap_config_s apconfig;
+	ret = wifi_manager_get_connected_config(&apconfig);
+	if (ret == WIFI_MANAGER_SUCCESS) {
+		printf("====================================\n");
+		printf("SSID: %s\n", apconfig.ssid);
+		printf("SECURITY TYPE: %d\n", apconfig.ap_auth_type);
+		printf("CYPTO TYPE: %d\n", apconfig.ap_crypto_type);
+		printf("====================================\n");
+	}
+	TC_ASSERT_EQ("wifi_manager_get_connected_config_n", ret, WIFI_MANAGER_FAIL);
+	TC_SUCCESS_RESULT();
+}
+
+static void utc_wifi_manager_get_connected_config_p(void)
+{
+	wifi_manager_result_e ret = WIFI_MANAGER_FAIL;
+	wifi_manager_ap_config_s apconfig;
+	ret = wifi_manager_get_connected_config(&apconfig);
+	if (ret == WIFI_MANAGER_SUCCESS) {
+		printf("====================================\n");
+		printf("SSID: %s\n", apconfig.ssid);
+		printf("SECURITY TYPE: %d\n", apconfig.ap_auth_type);
+		printf("CYPTO TYPE: %d\n", apconfig.ap_crypto_type);
+		printf("====================================\n");
+	}
+	TC_ASSERT_EQ("wifi_manager_get_connected_config_p", ret, WIFI_MANAGER_SUCCESS);
+	TC_SUCCESS_RESULT();
+}
 
 int wifi_manager_utc(int argc, FAR char *argv[])
 {
@@ -462,11 +493,13 @@ int wifi_manager_utc(int argc, FAR char *argv[])
 	 */
 	 
 	utc_wifi_manager_connect_ap_n();	// try to connect to ap in softap mode
+	utc_wifi_manager_get_connected_config_n();
 	utc_wifi_manager_connect_ap_p();	// change to station mode and try to connect to ap
 
 	WIFITEST_WAIT;
 
 	sleep(5);
+	utc_wifi_manager_get_connected_config_p();
 	
 	utc_wifi_manager_save_config_n();   
 	utc_wifi_manager_get_config_n();	
