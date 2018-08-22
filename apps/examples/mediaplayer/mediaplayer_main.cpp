@@ -54,7 +54,10 @@ public:
 	void doCommand(int command);
 	void onPlaybackStarted(MediaPlayer &mediaPlayer) override;
 	void onPlaybackFinished(MediaPlayer &mediaPlayer) override;
-	void onPlaybackError(MediaPlayer &mediaPlayer) override;
+	void onPlaybackError(MediaPlayer &mediaPlayer, player_error_t error) override;
+	void onStartError(MediaPlayer &mediaPlayer, player_error_t error) override;
+	void onStopError(MediaPlayer &mediaPlayer, player_error_t error) override;
+	void onPauseError(MediaPlayer &mediaPlayer, player_error_t error) override;
 	void onPlaybackPaused(MediaPlayer &mediaPlayer) override;
 	void onFocusChange(int focusChange) override;
 
@@ -176,9 +179,24 @@ void MyMediaPlayer::onPlaybackFinished(MediaPlayer &mediaPlayer)
 	this->mp.unprepare();
 }
 
-void MyMediaPlayer::onPlaybackError(MediaPlayer &mediaPlayer)
+void MyMediaPlayer::onPlaybackError(MediaPlayer &mediaPlayer, player_error_t error)
 {
 	cout << "onPlaybackError" << endl;
+}
+
+void MyMediaPlayer::onStartError(MediaPlayer &mediaPlayer, player_error_t error)
+{
+	cout << "onStartError" << endl;
+}
+
+void MyMediaPlayer::onPauseError(MediaPlayer &mediaPlayer, player_error_t error)
+{
+	cout << "onPauseError" << endl;
+}
+
+void MyMediaPlayer::onStopError(MediaPlayer &mediaPlayer, player_error_t error)
+{
+	cout << "onStopError" << endl;
 }
 
 void MyMediaPlayer::onPlaybackPaused(MediaPlayer &mediaPlayer)

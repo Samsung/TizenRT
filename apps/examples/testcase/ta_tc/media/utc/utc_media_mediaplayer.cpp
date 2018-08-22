@@ -29,7 +29,10 @@ class EmptyObserver : public media::MediaPlayerObserverInterface
 public:
 	void onPlaybackStarted(media::MediaPlayer &mediaPlayer) override;
 	void onPlaybackFinished(media::MediaPlayer &mediaPlayer) override;
-	void onPlaybackError(media::MediaPlayer &mediaPlayer) override;
+	void onPlaybackError(media::MediaPlayer &mediaPlayer, media::player_error_t error) override;
+	void onStartError(media::MediaPlayer &mediaPlayer, media::player_error_t error) override;
+	void onStopError(media::MediaPlayer &mediaPlayer, media::player_error_t error) override;
+	void onPauseError(media::MediaPlayer &mediaPlayer, media::player_error_t error) override;
 	void onPlaybackPaused(media::MediaPlayer &mediaPlayer) override;
 };
 
@@ -41,7 +44,19 @@ void EmptyObserver::onPlaybackFinished(media::MediaPlayer &mediaPlayer)
 {
 }
 
-void EmptyObserver::onPlaybackError(media::MediaPlayer &mediaPlayer)
+void EmptyObserver::onPlaybackError(media::MediaPlayer &mediaPlayer, media::player_error_t error)
+{
+}
+
+void EmptyObserver::onStartError(media::MediaPlayer &mediaPlayer, media::player_error_t error)
+{
+}
+
+void EmptyObserver::onStopError(media::MediaPlayer &mediaPlayer, media::player_error_t error)
+{
+}
+
+void EmptyObserver::onPauseError(media::MediaPlayer &mediaPlayer, media::player_error_t error)
 {
 }
 
