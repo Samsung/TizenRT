@@ -109,7 +109,8 @@ struct _wifimgr_msg {
 typedef struct _wifimgr_msg _wifimgr_msg_s;
 
 struct _wifimgr_info {
-	char ssid[WIFIMGR_SSID_LEN + 1];             // SSID of Connected AP if mode is a station, SoftAP SSID if mode is a soft ap
+	char ssid[WIFIMGR_SSID_LEN + 1];             // SSID of Connected AP if mode is a station
+	char softap_ssid[WIFIMGR_SSID_LEN + 1];      // SoftAP SSID if mode is a soft ap
 	char mac_address[WIFIMGR_MACADDR_LEN];	   // MAC address of wifi interface
 	int rssi;                  // It is only used for a station mode
 	int num_sta;               // It is only used for a softap mode, it shows the number of stations connected
@@ -192,6 +193,12 @@ typedef struct _wifimgr_info _wifimgr_info_s;
 	do {							\
 		strncpy(g_manager_info.ssid, s, strlen(s));	\
 		g_manager_info.ssid[strlen(s)] = '\0';          \
+	} while (0)
+
+#define WIFIMGR_SET_SOFTAP_SSID(s)					\
+	do {							\
+		strncpy(g_manager_info.softap_ssid, s, strlen(s));	\
+		g_manager_info.softap_ssid[strlen(s)] = '\0';          \
 	} while (0)
 
 #define WIFIMGR_COPY_SOFTAP_CONFIG(dest, src)							\
@@ -325,7 +332,7 @@ typedef struct _wifimgr_info _wifimgr_info_s;
 /**
  * global variables
  */
-static _wifimgr_info_s g_manager_info = {{0}, {0}, 0, 0, 0,
+static _wifimgr_info_s g_manager_info = {{0}, {0}, {0}, 0, 0, 0,
 										 WIFIMGR_UNINITIALIZED, WIFIMGR_UNINITIALIZED, 0,
 										 PTHREAD_MUTEX_INITIALIZER,
 										 PTHREAD_MUTEX_INITIALIZER,
@@ -400,7 +407,7 @@ static wifi_manager_result_e _get_ipaddr_dhcp(void);
 static wifi_manager_result_e _wifimgr_deinit(void);
 static wifi_manager_result_e _wifimgr_run_sta(void);
 static wifi_manager_result_e _wifimgr_connect_ap(wifi_manager_ap_config_s *config);
-static void _wifimgr_save_connected_config(wifi_manager_ap_config_s *config);
+static wifi_manager_result_e _wifimgr_save_connected_config(wifi_manager_ap_config_s *config);
 static wifi_manager_result_e _wifimgr_disconnect_ap(void);
 static wifi_manager_result_e _wifimgr_run_softap(wifi_manager_softap_config_s *config);
 static wifi_manager_result_e _wifimgr_stop_softap(void);
@@ -711,14 +718,15 @@ wifi_manager_result_e _wifimgr_run_sta(void)
 }
 
 
-void _wifimgr_save_connected_config(wifi_manager_ap_config_s *config)
+wifi_manager_result_e _wifimgr_save_connected_config(wifi_manager_ap_config_s *config)
 {
 	WM_LOG_START;
 	wifi_utils_result_e ret = wifi_profile_write(config, 1);
 	if (ret != WIFI_UTILS_SUCCESS) {
 		ndbg("[WM] Failed to save the connected AP configuration in file system\n");
+		return WIFI_MANAGER_FAIL;
 	}
-	return;
+	return WIFI_MANAGER_SUCCESS;
 }
 
 
@@ -743,9 +751,11 @@ wifi_manager_result_e _wifimgr_connect_ap(wifi_manager_ap_config_s *config)
 		return WIFI_MANAGER_FAIL;
 	}
 	WIFIMGR_SET_SSID(config->ssid);
-
-	_wifimgr_save_connected_config(config);
-
+	wifi_manager_result_e wret = _wifimgr_save_connected_config(config);
+	if (wret != WIFI_MANAGER_SUCCESS) {
+		WIFIADD_ERR_RECORD(ERR_WIFIMGR_INTERNAL_FAIL);
+		return wret;
+	}
 	return WIFI_MANAGER_SUCCESS;
 }
 
@@ -778,7 +788,7 @@ wifi_manager_result_e _wifimgr_run_softap(wifi_manager_softap_config_s *config)
 	WIFIMGR_CHECK_RESULT(_start_dhcpd(), "[WM] Starting DHCP server failed.\n", WIFI_MANAGER_FAIL);
 
 	/* update wifi_manager_info */
-	WIFIMGR_SET_SSID(config->ssid);
+	WIFIMGR_SET_SOFTAP_SSID(config->ssid);
 	g_manager_info.num_sta = 0;
 
 	if (g_manager_info.state == WIFIMGR_SOFTAP_DISCONNECTING_STA) {
@@ -991,7 +1001,7 @@ wifi_manager_result_e _handler_on_connecting_state(_wifimgr_msg_s *msg)
 		wret = _get_ipaddr_dhcp();
 		if (wret != WIFI_MANAGER_SUCCESS) {
 			_handle_user_cb(CB_STA_CONNECT_FAILED, NULL);
-			WIFIMGR_CHECK_RESULT(_wifimgr_disconnect_ap(), "critical error\n", WIFI_MANAGER_FAIL);
+			WIFIMGR_CHECK_RESULT(_wifimgr_disconnect_ap(), "[WM] critical error: DHCP failure\n", WIFI_MANAGER_FAIL);
 			WIFIMGR_SET_NO_CBK;
 			WIFIMGR_SET_STATE(WIFIMGR_STA_DISCONNECTING);
 			return wret;
@@ -1414,7 +1424,6 @@ wifi_manager_result_e wifi_manager_get_info(wifi_manager_info_s *info)
 	LOCK_WIFIMGR;
 	uint8_t *ip = (uint8_t *)&g_manager_info.ip4_address;
 	snprintf(info->ip4_address, 18, "%d.%d.%d.%d", ip[0], ip[1], ip[2], ip[3]);
-	memcpy(info->ssid, g_manager_info.ssid, WIFIMGR_SSID_LEN + 1);
 	memcpy(info->mac_address, g_manager_info.mac_address, WIFIMGR_MACADDR_LEN);
 	/* Get RSSI */
 	wifi_utils_info info_utils;
@@ -1427,6 +1436,11 @@ wifi_manager_result_e wifi_manager_get_info(wifi_manager_info_s *info)
 		_convert_state_to_info(&info->status, &info->mode, WIFIMGR_GET_PREVSTATE);
 	} else {
 		_convert_state_to_info(&info->status, &info->mode, WIFIMGR_GET_STATE);
+	}
+	if (info->mode == SOFTAP_MODE) {
+		memcpy(info->ssid, g_manager_info.softap_ssid, WIFIMGR_SSID_LEN + 1);
+	} else {
+		memcpy(info->ssid, g_manager_info.ssid, WIFIMGR_SSID_LEN + 1);
 	}
 	UNLOCK_WIFIMGR;
 	return WIFI_MANAGER_SUCCESS;
