@@ -212,4 +212,4 @@ FAR const char *usbhost_trformat2(uint16_t id);
 }
 #endif
 
-#endif							/* __INCLUDE_NUTTX_USB_USBHOST_TRACE_H */
+#endif							/* __INCLUDE_TINYARA_USB_USBHOST_TRACE_H */

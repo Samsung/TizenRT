@@ -355,7 +355,7 @@ The I2C tools requires the following in your NuttX configuration:
    I2C interface and the platform-specific function up_i2cuninitialize()
    to discard instances of the I2C interface.
 
-   NOTE 1: The I2C interface is defined in include/nuttx/i2c.h.
+   NOTE 1: The I2C interface is defined in include/tinyara/i2c.h.
 
    NOTE 2: This I2C tool uses direct I2C device interfaces.  As such, it
    relies on internal OS interfaces that are not normally available to a

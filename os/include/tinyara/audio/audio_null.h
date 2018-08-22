@@ -139,7 +139,7 @@ extern "C" {
  *
  ****************************************************************************/
 
-struct audio_lowerhalf_s;		/* Forward reference. Defined in nuttx/audio/audio.h */
+struct audio_lowerhalf_s;		/* Forward reference. Defined in tinyara/audio/audio.h */
 
 FAR struct audio_lowerhalf_s *audio_null_initialize(void);
 

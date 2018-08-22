@@ -42,9 +42,6 @@
 #include <netinet/in.h>
 #include <arpa/inet.h>
 #ifndef __vxworks
-#ifdef CONFIG_OS_NUTTX
-#include <sys/uio.h>
-#endif
 #include <sys/time.h>
 #endif							/* __vxworks */
 #endif							/* CONFIG_TI_COMPILER */

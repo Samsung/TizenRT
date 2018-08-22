@@ -15,8 +15,8 @@
  * language governing permissions and limitations under the License.
  *
  ****************************************************************************/
-#ifndef __NUTTX_WRAPPER_H__
-#define __NUTTX_WRAPPER_H__
+#ifndef __TINYARA_WRAPPER_H__
+#define __TINYARA_WRAPPER_H__
 
 #include <tinyara/wqueue.h>
 

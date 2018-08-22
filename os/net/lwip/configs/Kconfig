@@ -29,7 +29,7 @@ menuconfig NET_ARP
 	default y
 	depends on NET_ETHERNET && NET_IPv4
 	---help---
-		This setting is currently overridden by logic in include/nuttx/net
+		This setting is currently overridden by logic in include/tinyara/net
 
 source "net/lwip/configs/arp/Kconfig"
 

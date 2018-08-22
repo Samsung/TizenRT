@@ -1,5 +1,5 @@
 /*
- * OS specific functions for NUTTX
+ * OS specific functions for TizenRT
  * Copyright (c) 2016, Samsung Electronics Co., Ltd.
  */
 

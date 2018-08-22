@@ -50,8 +50,8 @@
  *
  ****************************************************************************/
 
-#ifndef __INCLUDE_NUTTX_NET_TELNET_H
-#define __INCLUDE_NUTTX_NET_TELNET_H
+#ifndef __INCLUDE_TINYARA_NET_TELNET_H
+#define __INCLUDE_TINYARA_NET_TELNET_H
 
 /****************************************************************************
  * Included Files
@@ -109,4 +109,4 @@ struct telnet_session_s {
 int telnet_initialize(void);
 
 #endif							/* CONFIG_NETDEV_TELNET */
-#endif							/* __INCLUDE_NUTTX_NET_TELNET_H */
+#endif							/* __INCLUDE_TINYARA_NET_TELNET_H */

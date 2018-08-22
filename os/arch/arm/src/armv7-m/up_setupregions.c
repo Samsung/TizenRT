@@ -108,7 +108,7 @@
  *   - stack_size:  The requested stack size.  At least this much
  *     must be allocated.
  *   - ttype:  The thread type.  This may be one of following (defined in
- *     include/nuttx/sched.h):
+ *     include/tinyara/sched.h):
  *
  *       TCB_FLAG_TTYPE_TASK     Normal user task
  *       TCB_FLAG_TTYPE_PTHREAD  User pthread

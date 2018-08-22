@@ -72,7 +72,7 @@
  *
  *   1. A RAM SYSLOGing device that will log data into a circular buffer
  *      that can be dumped using the TASH dmesg command.  This device is
- *      described in the include/nuttx/syslog/ramlog.h header file.
+ *      described in the include/tinyara/syslog/ramlog.h header file.
  *
  *   2. And a generic character device that may be used as the SYSLOG.  The
  *      generic device interfaces are described in this file.  A disadvantage

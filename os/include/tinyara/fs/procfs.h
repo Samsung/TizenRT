@@ -195,4 +195,4 @@ size_t procfs_memcpy(FAR const char *src, size_t srclen, FAR char *dest, size_t 
 }
 #endif
 
-#endif							/* __INCLUDE_NUTTX_FS_PROCFS_H */
+#endif							/* __INCLUDE_TINYARA_FS_PROCFS_H */

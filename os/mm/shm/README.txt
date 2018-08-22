@@ -110,8 +110,8 @@ Relevant header files:
   include/sys/shm.h - Shared memory interface declarations
   include/sys/ipc.h - Provides additional definitions used by the shared
     memory interfaces
-  include/nuttx/addrenv.h - Defines the virtual address space of the
+  include/tinyara/addrenv.h - Defines the virtual address space of the
     process.
-  include/nuttx/pgalloc.h - Page allocator interfaces
+  include/tinyara/pgalloc.h - Page allocator interfaces
   mm/shm/shm.h - Internal shared memory definitions.  This includes the
     definitions of the internal shared memory data structures.
