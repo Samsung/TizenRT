@@ -313,6 +313,12 @@ static int security_rand(int argc, char *argv[])
 	}
 
 	num_bytes = atoi(argv[3]);
+	if (num_bytes > 64) {
+		fprintf(stderr, "Num size should be less than or equal to 64\n");
+		ret = -1;
+		goto exit;
+	}
+
 	if (num_bytes < 0) {
 		fprintf(stderr, "Uncountable number\n");
 		ret = -1;

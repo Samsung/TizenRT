@@ -33,7 +33,7 @@ int parse_crt_chain(mbedtls_x509_crt *crt, unsigned char *buf, unsigned int buf_
 	unsigned char *p = NULL;
 	int buf_format = MBEDTLS_X509_FORMAT_DER;
 
-	if (!p || !buf) {
+	if (!buf) {
 		return SEE_ERROR;
 	}
 

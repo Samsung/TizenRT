@@ -1040,11 +1040,16 @@ int print_crt(int debug_mode, unsigned char *buf, unsigned int buf_len)
 	int ret;
 	int pos = 0;
 	size_t len = 0;
-	unsigned char *p;
+	unsigned char *p = NULL;
 	int buf_format = MBEDTLS_X509_FORMAT_DER;
 
 	if (debug_mode != 1) {
 		return 0;
+	}
+
+	if (!buf) {
+		ret = -1;
+		goto exit;
 	}
 
 	mbedtls_x509_crt crt;
@@ -1062,10 +1067,6 @@ int print_crt(int debug_mode, unsigned char *buf, unsigned int buf_len)
 
 		while (pos < buf_len) {
 			p = (unsigned char *)buf + pos;
-			if (!p) {
-				ret = -1;
-				goto exit;
-			}
 			ret = mbedtls_asn1_get_tag(&p, buf + buf_len, &len,
 				MBEDTLS_ASN1_CONSTRUCTED | MBEDTLS_ASN1_SEQUENCE);
 			if (ret != 0) {
