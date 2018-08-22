@@ -94,8 +94,8 @@ private:
 	void startPlayer();
 	void stopPlayer(player_result_t ret);
 	void pausePlayer();
-	void getVolumePlayer(uint8_t *vol, player_result_t &ret);
-	void setVolumePlayer(uint8_t vol, player_result_t &ret);
+	void getPlayerVolume(uint8_t *vol, player_result_t &ret);
+	void setPlayerVolume(uint8_t vol, player_result_t &ret);
 	void setPlayerObserver(std::shared_ptr<MediaPlayerObserverInterface> observer);
 	void setPlayerDataSource(std::shared_ptr<stream::InputDataSource> dataSource, player_result_t &ret);
 
