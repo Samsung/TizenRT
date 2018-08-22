@@ -17,6 +17,7 @@
  ****************************************************************************/
 
 #include <memory>
+#include <string.h>
 #include <media/MediaPlayer.h>
 #include <media/FileInputDataSource.h>
 #include "tc_common.h"
@@ -51,8 +52,14 @@ void EmptyObserver::onPlaybackPaused(media::MediaPlayer &mediaPlayer)
 static void SetUp(void)
 {
 	FILE *fp = fopen(dummyfilepath, "w");
-	fputs("dummydata", fp);
-	fclose(fp);
+
+	if (fp != nullptr) {
+		int ret = fputs("dummydata", fp);
+		if (ret != (int)strlen("dummydata")) {
+			printf("MediaPlayer SetUp Failed\n");
+		}
+		fclose(fp);
+	}
 }
 
 static void TearDown()
