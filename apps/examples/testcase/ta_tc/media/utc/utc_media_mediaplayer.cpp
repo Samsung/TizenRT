@@ -374,7 +374,7 @@ static void utc_media_MediaPlayer_getVolume_n(void)
 {
 	media::MediaPlayer mp;
 
-	TC_ASSERT_EQ("utc_media_MediaPlayer_getVolume", mp.getVolume(nullptr), media::PLAYER_ERROR_INVALID_PARAM);
+	TC_ASSERT_EQ("utc_media_MediaPlayer_getVolume", mp.getVolume(nullptr), media::PLAYER_ERROR_INVALID_PARAMETER);
 
 	TC_SUCCESS_RESULT();
 }
