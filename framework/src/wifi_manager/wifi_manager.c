@@ -986,8 +986,9 @@ wifi_manager_result_e _handler_on_softap_disconnecting_state(_wifimgr_msg_s *msg
 wifi_manager_result_e _handler_on_connecting_state(_wifimgr_msg_s *msg)
 {
 	WM_LOG_HANDLER_START;
-	wifi_manager_result_e wret;
 	if (msg->event == EVT_STA_CONNECTED) {
+#ifndef CONFIG_WIFIMGR_DISABLE_AUTO_GET_IP
+		wifi_manager_result_e wret;
 		wret = _get_ipaddr_dhcp();
 		if (wret != WIFI_MANAGER_SUCCESS) {
 			_handle_user_cb(CB_STA_CONNECT_FAILED, NULL);
@@ -996,6 +997,7 @@ wifi_manager_result_e _handler_on_connecting_state(_wifimgr_msg_s *msg)
 			WIFIMGR_SET_STATE(WIFIMGR_STA_DISCONNECTING);
 			return wret;
 		}
+#endif
 		_handle_user_cb(CB_STA_CONNECTED, NULL);
 		WIFIMGR_SET_STATE(WIFIMGR_STA_CONNECTED);
 	} else if (msg->event == EVT_STA_CONNECT_FAILED) {
