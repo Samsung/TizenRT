@@ -380,13 +380,13 @@ player_result_t MediaPlayerImpl::getVolume(uint8_t *vol)
 		return PLAYER_ERROR_NOT_ALIVE;
 	}
 
-	mpw.enQueue(&MediaPlayerImpl::getVolumePlayer, shared_from_this(), vol, std::ref(ret));
+	mpw.enQueue(&MediaPlayerImpl::getPlayerVolume, shared_from_this(), vol, std::ref(ret));
 	mSyncCv.wait(lock);
 
 	return ret;
 }
 
-void MediaPlayerImpl::getVolumePlayer(uint8_t *vol, player_result_t &ret)
+void MediaPlayerImpl::getPlayerVolume(uint8_t *vol, player_result_t &ret)
 {
 	medvdbg("MediaPlayer Worker : getVolume\n");
 	if (get_output_audio_volume(vol) != AUDIO_MANAGER_SUCCESS) {
@@ -410,13 +410,13 @@ player_result_t MediaPlayerImpl::setVolume(uint8_t vol)
 		return PLAYER_ERROR_NOT_ALIVE;
 	}
 
-	mpw.enQueue(&MediaPlayerImpl::setVolumePlayer, shared_from_this(), vol, std::ref(ret));
+	mpw.enQueue(&MediaPlayerImpl::setPlayerVolume, shared_from_this(), vol, std::ref(ret));
 	mSyncCv.wait(lock);
 
 	return ret;
 }
 
-void MediaPlayerImpl::setVolumePlayer(uint8_t vol, player_result_t &ret)
+void MediaPlayerImpl::setPlayerVolume(uint8_t vol, player_result_t &ret)
 {
 	medvdbg("MediaPlayer Worker : setVolume %d\n", vol);
 
