@@ -31,6 +31,10 @@
 #ifndef WIFI_MANAGER_H
 #define WIFI_MANAGER_H
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 /* Length defines */
 #define WIFIMGR_MACADDR_LEN        6
 #define WIFIMGR_MACADDR_STR_LEN    17
@@ -339,6 +343,9 @@ wifi_manager_result_e wifi_manager_get_connected_config(wifi_manager_ap_config_s
  */
 wifi_manager_result_e wifi_manager_get_stats(wifi_manager_stats_s *stats);
 
+#ifdef __cplusplus
+}
+#endif
 #endif
 /**
  *@}
