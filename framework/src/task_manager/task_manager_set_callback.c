@@ -63,6 +63,8 @@ void taskmgr_msg_cb(int signo, siginfo_t *data)
 		(*((tm_broadcast_info_t *)((tm_broadcast_internal_msg_t *)data->si_value.sival_ptr)->info)->cb)(broadcast_param, cb_data);
 
 		TM_FREE(broadcast_param);
+		TM_FREE(user_data);
+		TM_FREE(data->si_value.sival_ptr);
 		broadcast_param = NULL;
 	}
 }

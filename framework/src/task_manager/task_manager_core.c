@@ -725,7 +725,7 @@ static void taskmgr_broadcast(tm_internal_msg_t *arg)
 	int ret;
 	union sigval msg_broad;
 	tm_broadcast_info_t *broadcast_info;
-	tm_broadcast_internal_msg_t bm;
+	tm_broadcast_internal_msg_t *bm;
 
 	fd = taskmgr_get_drvfd();
 	if (fd < 0) {
@@ -735,18 +735,6 @@ static void taskmgr_broadcast(tm_internal_msg_t *arg)
 	ret = taskmgr_check_broad_msg(arg->type);
 	if (ret == TM_UNREGISTERED_MSG) {
 		return;
-	}
-
-	if (arg->msg_size != 0) {
-		bm.user_data = TM_ALLOC(arg->msg_size);
-		if (bm.user_data == NULL) {
-			return;
-		}
-		bm.size = arg->msg_size;
-		memcpy(bm.user_data, arg->msg, arg->msg_size);
-	} else {
-		bm.user_data = NULL;
-		bm.size = 0;
 	}
 
 	for (handle = 0; handle < CONFIG_TASK_MANAGER_MAX_TASKS; handle++) {
@@ -763,13 +751,29 @@ static void taskmgr_broadcast(tm_internal_msg_t *arg)
 			if (broadcast_info == NULL) {
 				continue;
 			}
-			bm.info = broadcast_info;
-			msg_broad.sival_ptr = (void *)&bm;
+
+			bm = (tm_broadcast_internal_msg_t *)TM_ALLOC(sizeof(tm_broadcast_internal_msg_t));
+			if (bm == NULL) {
+				return;
+			}
+			if (arg->msg_size != 0) {
+				bm->user_data = TM_ALLOC(arg->msg_size);
+				if (bm->user_data == NULL) {
+					TM_FREE(bm);
+					return;
+				}
+				bm->size = arg->msg_size;
+				memcpy(bm->user_data, arg->msg, arg->msg_size);
+			} else {
+				bm->user_data = NULL;
+				bm->size = 0;
+			}
+
+			bm->info = broadcast_info;
+			msg_broad.sival_ptr = (void *)bm;
 			(void)sigqueue(TM_PID(handle), SIGTM_BROADCAST, msg_broad);
 		}
 	}
-	TM_FREE(bm.user_data);
-	bm.user_data = NULL;
 }
 
 static void taskmgr_broadcast_msg_init(void)
