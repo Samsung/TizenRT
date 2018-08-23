@@ -50,13 +50,6 @@ class MediaRecorderObserverInterface
 {
 public:
 	/**
-	 * @brief Id means unique id of MediaRecorder.
-	 * @details @b #include <media/MediaRecorderObserverInterface.h>
-	 * support multi-recorders according to device specifications
-	 * @since TizenRT v2.0 PRE
-	 */
-	using Id = uint64_t;
-	/**
 	 * @brief informs the user of the recording has begun.
 	 * @details @b #include <media/MediaRecorderObserverInterface.h>
 	 * @since TizenRT v2.0 PRE
