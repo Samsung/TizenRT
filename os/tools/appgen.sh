@@ -13,9 +13,9 @@ echo "======================= v 1.0"
 
 read -p "Enter application name: " APP_NAME
 
-APP_NAME_UPPER=${APP_NAME^^}
+APP_NAME_UPPER=$(echo "$APP_NAME" | tr '[:lower:]' '[:upper:]')
 APP_NAME_UPPER="${APP_NAME_UPPER// /_}"
-APP_NAME_LOWER=${APP_NAME,,}
+APP_NAME_LOWER=$(echo "$APP_NAME" | tr '[:upper:]' '[:lower:]')
 APP_NAME_LOWER="${APP_NAME_LOWER// /_}"
 ENTRY_FUNC="${APP_NAME_LOWER}_main"
 
