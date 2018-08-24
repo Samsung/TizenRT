@@ -524,6 +524,27 @@ struct socket *tryget_socket(int s)
 	return &sockets[s];
 }
 
+ /**
+  * Check closed socket which has non-zero select_waiting value
+  *
+  * @param s externally used socket index
+  * @return struct lwip_sock for the socket with non-zero select_waiting value,
+  *         or NULL if not found
+  */
+struct socket *trycheck_selwait_socket(int s)
+{
+	s -= LWIP_SOCKET_OFFSET;
+	if ((s < 0) || (s >= NUM_SOCKETS)) {
+		return NULL;
+	}
+
+	if (!sockets[s].conn && sockets[s].select_waiting > 0) {
+		return &sockets[s];
+	}
+
+	return NULL;
+}
+
 /**
  * Allocate a new socket for a given netconn.
  *
@@ -1835,7 +1856,17 @@ int lwip_poll(int fd, struct pollfd *fds, bool setup)
 
 	sock = tryget_socket(fd);
 	if (!sock) {
-		return -EBADF;
+		/* Need to check select_waiting counter on socket ... */
+		sock = trycheck_selwait_socket(fd);
+		if (!sock) {
+			return -EBADF;
+		}
+		/* Suspisious case, try to make poll setup with invalid socket */
+		LWIP_ASSERT("setup = true", (setup == false));
+
+		/* Set to zero for send/rcv event to prevent setting abnormal value */
+		sock->sendevent = 0;
+		sock->rcvevent = 0;
 	}
 
 	/* Check if we are setting up or tearing down the poll */
