@@ -23,6 +23,8 @@
 namespace media {
 MediaRecorder::MediaRecorder() : mPMrImpl(new MediaRecorderImpl(*this))
 {
+	mId = (uint64_t)this << 32;
+	mId = mId | (uint64_t)mPMrImpl.get();
 }
 
 recorder_result_t MediaRecorder::create()
@@ -83,6 +85,11 @@ recorder_result_t MediaRecorder::setObserver(std::shared_ptr<MediaRecorderObserv
 recorder_result_t MediaRecorder::setDuration(int second)
 {
 	return mPMrImpl->setDuration(second);
+}
+
+bool MediaRecorder::operator==(const MediaRecorder& rhs)
+{
+	return this->mId == rhs.mId;
 }
 
 MediaRecorder::~MediaRecorder()

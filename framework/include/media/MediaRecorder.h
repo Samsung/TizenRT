@@ -201,8 +201,19 @@ public:
 	 */
 	recorder_result_t setDuration(int second);
 
+	/**
+	 * @brief MediaRecorder operator==
+	 * @details @b #include <media/MediaRecorder.h>
+	 * This function is sync call apis
+	 * Compares the MediaRecorder objects for equality
+	 * @return The result of the compare operation for MediaRecorder object
+	 * @since TizenRT v2.0 PRE
+	 */
+	bool operator==(const MediaRecorder& rhs);
+
 private:
 	std::shared_ptr<MediaRecorderImpl> mPMrImpl;
+	uint64_t mId;
 };
 } // namespace media
 
