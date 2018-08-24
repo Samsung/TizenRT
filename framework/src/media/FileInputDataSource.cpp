@@ -23,7 +23,7 @@
 #include <media/FileInputDataSource.h>
 #include "utils/MediaUtils.h"
 #include "Decoder.h"
-#include "InputStreamBuffer.h"
+#include "StreamBuffer.h"
 
 #ifndef CONFIG_FILE_DATASOURCE_STREAM_BUFFER_SIZE
 #define CONFIG_FILE_DATASOURCE_STREAM_BUFFER_SIZE 4096
@@ -59,9 +59,10 @@ FileInputDataSource &FileInputDataSource::operator=(const FileInputDataSource &s
 bool FileInputDataSource::open()
 {
 	if (!getStreamBuffer()) {
-		auto streamBuffer = InputStreamBuffer::create( \
-			CONFIG_FILE_DATASOURCE_STREAM_BUFFER_SIZE, \
-			CONFIG_FILE_DATASOURCE_STREAM_BUFFER_THRESHOLD);
+		auto streamBuffer = StreamBuffer::Builder()
+								.setBufferSize(CONFIG_FILE_DATASOURCE_STREAM_BUFFER_SIZE)
+								.setThreshold(CONFIG_FILE_DATASOURCE_STREAM_BUFFER_THRESHOLD)
+								.build();
 
 		if (!streamBuffer) {
 			meddbg("streamBuffer is nullptr!\n");

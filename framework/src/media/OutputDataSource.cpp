@@ -23,7 +23,7 @@
 #include <media/OutputDataSource.h>
 #include "Encoder.h"
 #include "MediaRecorderImpl.h"
-#include "OutputStreamBuffer.h"
+#include "StreamBuffer.h"
 #include "StreamBufferReader.h"
 #include "StreamBufferWriter.h"
 
@@ -86,7 +86,7 @@ audio_type_t OutputDataSource::getAudioType()
 	return mAudioType;
 }
 
-void OutputDataSource::setStreamBuffer(std::shared_ptr<OutputStreamBuffer> streamBuffer)
+void OutputDataSource::setStreamBuffer(std::shared_ptr<StreamBuffer> streamBuffer)
 {
 	if (mStreamBuffer) {
 		mStreamBuffer->setObserver(nullptr);

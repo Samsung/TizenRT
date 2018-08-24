@@ -21,7 +21,7 @@
 #include <debug.h>
 #include <media/BufferOutputDataSource.h>
 #include "MediaRecorderImpl.h"
-#include "OutputStreamBuffer.h"
+#include "StreamBuffer.h"
 #include "StreamBufferReader.h"
 
 #ifndef CONFIG_BUFFER_DATASOURCE_STREAM_BUFFER_SIZE
@@ -58,10 +58,10 @@ BufferOutputDataSource &BufferOutputDataSource::operator=(const BufferOutputData
 bool BufferOutputDataSource::open()
 {
 	if (!getStreamBuffer()) {
-		auto streamBuffer = OutputStreamBuffer::create(
-			CONFIG_BUFFER_DATASOURCE_STREAM_BUFFER_SIZE,
-			CONFIG_BUFFER_DATASOURCE_STREAM_BUFFER_THRESHOLD);
-
+		auto streamBuffer = StreamBuffer::Builder()
+								.setBufferSize(CONFIG_BUFFER_DATASOURCE_STREAM_BUFFER_SIZE)
+								.setThreshold(CONFIG_BUFFER_DATASOURCE_STREAM_BUFFER_THRESHOLD)
+								.build();
 		if (!streamBuffer) {
 			medvdbg("streamBuffer is nullptr!\n");
 			return false;
