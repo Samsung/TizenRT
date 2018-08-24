@@ -32,6 +32,13 @@ AWS_EXTLIB_DIR = $(AWS_DIR)/external_libs
 CFLAGS += -I$(AWS_EXTLIB_DIR)/jsmn
 CSRCS += $(notdir $(wildcard $(AWS_EXTLIB_DIR)/jsmn/*.c))
 
+# AWS PLATFORM
+AWS_PLATFORM_DIR = $(AWS_DIR)/platform/tizenrt
+CFLAGS += -I$(AWS_PLATFORM_DIR)/common
+CFLAGS += -I$(AWS_PLATFORM_DIR)/mbedtls
+CSRCS += $(notdir $(wildcard $(AWS_PLATFORM_DIR)/common/*.c))
+CSRCS += $(notdir $(wildcard $(AWS_PLATFORM_DIR)/mbedtls/*.c))
+
 # AWS SRC
 AWS_SRC_DIR = $(AWS_DIR)/src
 CSRCS += $(notdir $(wildcard $(AWS_SRC_DIR)/*.c))
@@ -39,10 +46,14 @@ CSRCS += $(notdir $(wildcard $(AWS_SRC_DIR)/*.c))
 DEPPATH += --dep-path aws
 DEPPATH += --dep-path aws/certs
 DEPPATH += --dep-path aws/external_libs/jsmn
+DEPPATH += --dep-path aws/platform/tizenrt/common
+DEPPATH += --dep-path aws/platform/tizenrt/mbedtls
 DEPPATH += --dep-path aws/src
 VPATH += :aws
 VPATH += :aws/certs
 VPATH += :aws/external_libs/jsmn
+VPATH += :aws/platform/tizenrt/common
+VPATH += :aws/platform/tizenrt/mbedtls
 VPATH += :aws/src
 
 endif
