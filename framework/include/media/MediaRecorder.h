@@ -169,7 +169,7 @@ public:
 	recorder_result_t setVolume(uint8_t vol);
 	
 	/**
-	 * @brief Sets the DatSource of output data
+	 * @brief Sets the DataSource of output data
 	 * @details @b #include <media/MediaRecorder.h>
 	 * This function is a synchronous api
 	 * @param[in] dataSource The dataSource that the config of output data
