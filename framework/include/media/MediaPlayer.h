@@ -85,7 +85,7 @@ public:
 	/**
 	 * @brief Create the MediaPlayer for playback
 	 * @details @b #include <media/MediaPlayer.h>
-	 * This function is sync call apis
+	 * This function is a synchronous api
 	 * @return The result of the create operation
 	 * @since TizenRT v2.0 PRE
 	 */
@@ -94,7 +94,7 @@ public:
 	/**
 	 * @brief Destroy MediaPlayer
 	 * @details @b #include <media/MediaPlayer.h>
-	 * This function is sync call apis
+	 * This function is a synchronous api
 	 * @return The result of the destroy operation
 	 * @since TizenRT v2.0 PRE
 	 */
@@ -103,7 +103,7 @@ public:
 	/**
 	 * @brief Allocate and prepare resources related to the player, it should be called before start
 	 * @details @b #include <media/MediaPlayer.h>
-	 * This function is sync call apis
+	 * This function is a synchronous api
 	 * @return The result of the prepare operation
 	 * @since TizenRT v2.0 PRE
 	 */
@@ -112,7 +112,7 @@ public:
 	/**
 	 * @brief Releases allocated resources related to the player.
 	 * @details @b #include <media/MediaPlayer.h>
-	 * This function is sync call apis
+	 * This function is a synchronous api
 	 * @return The result of the unpreapre operation
 	 * @since TizenRT v2.0 PRE
 	 */
@@ -121,7 +121,7 @@ public:
 	/**
 	 * @brief Start playback.
 	 * @details @b #include <media/MediaPlayer.h>
-	 * This function is async call apis
+	 * This function is a asynchronous api
 	 * Order to MediaPlayerWorker begin playback through the queue
 	 * @return The result of the unpreapre operation
 	 * @since TizenRT v2.0 PRE
@@ -131,7 +131,7 @@ public:
 	/**
 	 * @brief Pause playback.
 	 * @details @b #include <media/MediaPlayer.h>
-	 * This function is async call apis
+	 * This function is a asynchronous api
 	 * Order to MediaPlayerWorker pause playback through the queue
 	 * @return The result of the pause operation
 	 * @since TizenRT v2.0 PRE
@@ -141,7 +141,7 @@ public:
 	/**
 	 * @brief Stop playback.
 	 * @details @b #include <media/MediaPlayer.h>
-	 * This function is async call apis
+	 * This function is a asynchronous api
 	 * Order to MediaPlayerWorker stop playback through the queue
 	 * @return The result of the stop operation
 	 * @since TizenRT v2.0 PRE
@@ -151,7 +151,7 @@ public:
 	/**
 	 * @brief Gets the current volume
 	 * @details @b #include <media/MediaPlayer.h>
-	 * This function is sync call apis
+	 * This function is a synchronous api
 	 * @return The value of current volume
 	 * @since TizenRT v2.0 PRE
 	 */
@@ -160,16 +160,16 @@ public:
 	/**
 	 * @brief Sets the volume adjusted
 	 * @details @b #include <media/MediaPlayer.h>
-	 * This function is sync call apis
+	 * This function is a synchronous api
 	 * @param[in] vol The vol that the value of mic volume
 	 * @since TizenRT v2.0 PRE
 	 */
 	player_result_t setVolume(uint8_t);
 
 	/**
-	 * @brief Sets the DatSource of input data
+	 * @brief Sets the DataSource of input data
 	 * @details @b #include <media/MediaPlayer.h>
-	 * This function is sync call apis
+	 * This function is a synchronous api
 	 * @param[in] dataSource The dataSource that the config of input data
 	 * @return The result of the setDataSource operation
 	 * @since TizenRT v2.0 PRE
@@ -179,7 +179,7 @@ public:
 	/**
 	 * @brief Sets the observer of MediaPlayer
 	 * @details @b #include <media/MediaPlayer.h>
-	 * This function is sync call apis
+	 * This function is a synchronous api
 	 * It sets the user's function
 	 * @param[in] observer The callback to be set for Media Player Observer.
 	 * @return The result of the setObserver operation
