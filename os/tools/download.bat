@@ -22,20 +22,21 @@ set BUILDPATH=%BATPATH%..\..\build
 set BINPATH=%BUILDPATH%\output\bin
 reg Query "HKLM\Hardware\Description\System\CentralProc>essor\0" | find /i "x86" > NUL && set OSBIT=win32 || set OSBIT=win64
 
-if "%1"=="" goto :NoBoard
-if "%1"=="-b" goto :SetBoard
-if "%1"=="--help" goto :ShowUsage
-if "%1"=="/?" goto :ShowUsage
+call %BATPATH%board.bat
 
-:SetBoard
-shift
-set BOARD=%1
-
-if "%BOARD%"=="artik053" goto :DownloadARTIK
-if "%BOARD%"=="artik053s" goto :DownloadARTIK
-if "%BOARD%"=="artik055s" goto :DownloadARTIK
+if "%BOARD%"=="artik053" goto :DownloadARTIK_NONSECURE
+if "%BOARD%"=="artik053s" goto :DownloadARTIK_SECURE
+if "%BOARD%"=="artik055s" goto :DownloadARTIK_SECURE
 if "%BOARD%"=="cy4390x" goto :DownloadCypress
 goto :NoBoard
+
+:DownloadARTIK_SECURE
+set RTBIN=tinyara_head.bin-signed
+goto DownloadARTIK
+
+:DownloadARTIK_NONSECURE
+set RTBIN=tinyara_head.bin
+goto DownloadARTIK
 
 :DownloadARTIK
 set OPENOCDPATH=%BUILDPATH%\tools\openocd\%OSBIT%
@@ -44,7 +45,7 @@ set PREBUILTBINPATH=%BUILDPATH%\configs\%BOARD%\bin
 set PREBUILTCOMMANDS="flash_protect off; flash_write bl1 bl1.bin; flash_protect on; flash_write bl2 bl2.bin; flash_write sssfw sssfw.bin; flash_write wlanfw wlanfw.bin; "
 if exist %BINPATH%\romfs.img set ROMFS=flash_write rom romfs.img;
 if exist %BINPATH%\ota.bin set OTA=flash_write ota ota.bin;
-set OSCOMMANDS="flash_write os tinyara_head.bin; %ROMFS% %OTA% "
+set OSCOMMANDS="flash_write os %RTBIN%; %ROMFS% %OTA% "
 
 cd %PREBUILTBINPATH%
 %OPENOCDPATH%\openocd.exe -f artik05x.cfg -s %SCRIPTPATH% -c %PREBUILTCOMMANDS% -c "init; reset; exit; "
