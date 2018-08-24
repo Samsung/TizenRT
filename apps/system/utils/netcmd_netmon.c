@@ -205,7 +205,7 @@ int cmd_netmon(int argc, char **argv)
 		printf("wifi option will be supported\n");
 	} else {
 #ifdef CONFIG_NET_STATS
-		struct netmon_netdev_stats stats = {0};
+		struct netmon_netdev_stats stats;
 		char *intf = NULL;
 		/* Get network interface stats if exists: SIOCGDEVSTATS */
 		intf = argv[1];
