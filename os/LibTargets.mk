@@ -174,6 +174,9 @@ $(LIBRARIES_DIR)$(DELIM)libframework$(LIBEXT): $(FRAMEWORK_LIB_DIR)$(DELIM)libfr
 
 $(EXTDIR)$(DELIM)libexternal$(LIBEXT): context
 	$(Q) $(MAKE) -C $(EXTDIR) TOPDIR="$(TOPDIR)" EXTDIR="$(EXTDIR)" libexternal$(LIBEXT) KERNEL=n
+ifeq ($(CONFIG_ENABLE_IOTIVITY),y)
+	$(Q) $(MAKE) -C $(EXTDIR)/iotivity TOPDIR="$(TOPDIR)" EXTDIR="$(EXTDIR)" KERNEL=n
+endif
 
 $(LIBRARIES_DIR)$(DELIM)libexternal$(LIBEXT): $(EXTDIR)$(DELIM)libexternal$(LIBEXT)
 	$(Q) install $(EXTDIR)$(DELIM)libexternal$(LIBEXT) $(LIBRARIES_DIR)$(DELIM)libexternal$(LIBEXT)
@@ -181,43 +184,36 @@ $(LIBRARIES_DIR)$(DELIM)libexternal$(LIBEXT): $(EXTDIR)$(DELIM)libexternal$(LIBE
 #Iotivity Libs
 
 ifeq ($(CONFIG_ENABLE_IOTIVITY),y)
+$(LIBRARIES_DIR)$(DELIM)liboctbstack$(LIBEXT): $(EXTDIR)$(DELIM)iotivity$(DELIM)liboctbstack$(LIBEXT)
+	$(Q) install $(EXTDIR)$(DELIM)iotivity$(DELIM)liboctbstack$(LIBEXT) $(LIBRARIES_DIR)$(DELIM)liboctbstack$(LIBEXT)
 
-$(LIBRARIES_DIR)$(DELIM)liboctbstack$(LIBEXT): $(IOTIVITY_LIBS_DIR)$(DELIM)liboctbstack$(LIBEXT)
-	$(Q) install $(IOTIVITY_LIBS_DIR)$(DELIM)liboctbstack$(LIBEXT) $(LIBRARIES_DIR)$(DELIM)liboctbstack$(LIBEXT)
+$(LIBRARIES_DIR)$(DELIM)libc_common$(LIBEXT): $(EXTDIR)$(DELIM)iotivity$(DELIM)libc_common$(LIBEXT)
+	$(Q) install $(EXTDIR)$(DELIM)iotivity$(DELIM)libc_common$(LIBEXT) $(LIBRARIES_DIR)$(DELIM)libc_common$(LIBEXT)
 
-$(LIBRARIES_DIR)$(DELIM)libc_common$(LIBEXT): $(IOTIVITY_LIBS_DIR)$(DELIM)libc_common$(LIBEXT)
-	$(Q) install $(IOTIVITY_LIBS_DIR)$(DELIM)libc_common$(LIBEXT) $(LIBRARIES_DIR)$(DELIM)libc_common$(LIBEXT)
+$(LIBRARIES_DIR)$(DELIM)libcoap$(LIBEXT): $(EXTDIR)$(DELIM)iotivity$(DELIM)libcoap$(LIBEXT)
+	$(Q) install $(EXTDIR)$(DELIM)iotivity$(DELIM)libcoap$(LIBEXT) $(LIBRARIES_DIR)$(DELIM)libcoap$(LIBEXT)
 
-$(LIBRARIES_DIR)$(DELIM)libcoap$(LIBEXT): $(IOTIVITY_LIBS_DIR)$(DELIM)libcoap$(LIBEXT)
-	$(Q) install $(IOTIVITY_LIBS_DIR)$(DELIM)libcoap$(LIBEXT) $(LIBRARIES_DIR)$(DELIM)libcoap$(LIBEXT)
+$(LIBRARIES_DIR)$(DELIM)libconnectivity_abstraction$(LIBEXT): $(EXTDIR)$(DELIM)iotivity$(DELIM)libconnectivity_abstraction$(LIBEXT)
+	$(Q) install $(EXTDIR)$(DELIM)iotivity$(DELIM)libconnectivity_abstraction$(LIBEXT) $(LIBRARIES_DIR)$(DELIM)libconnectivity_abstraction$(LIBEXT)
 
-$(LIBRARIES_DIR)$(DELIM)libconnectivity_abstraction$(LIBEXT): $(IOTIVITY_LIBS_DIR)$(DELIM)libconnectivity_abstraction$(LIBEXT)
-	$(Q) install $(IOTIVITY_LIBS_DIR)$(DELIM)libconnectivity_abstraction$(LIBEXT) $(LIBRARIES_DIR)$(DELIM)libconnectivity_abstraction$(LIBEXT)
+$(LIBRARIES_DIR)$(DELIM)liblogger$(LIBEXT): $(EXTDIR)$(DELIM)iotivity$(DELIM)liblogger$(LIBEXT)
+	$(Q) install $(EXTDIR)$(DELIM)iotivity$(DELIM)liblogger$(LIBEXT) $(LIBRARIES_DIR)$(DELIM)liblogger$(LIBEXT)
 
-$(LIBRARIES_DIR)$(DELIM)liblogger$(LIBEXT): $(IOTIVITY_LIBS_DIR)$(DELIM)liblogger$(LIBEXT)
-	$(Q) install $(IOTIVITY_LIBS_DIR)$(DELIM)liblogger$(LIBEXT) $(LIBRARIES_DIR)$(DELIM)liblogger$(LIBEXT)
+$(LIBRARIES_DIR)$(DELIM)libocsrm$(LIBEXT): $(EXTDIR)$(DELIM)iotivity$(DELIM)libocsrm$(LIBEXT)
+	$(Q) install $(EXTDIR)$(DELIM)iotivity$(DELIM)libocsrm$(LIBEXT) $(LIBRARIES_DIR)$(DELIM)libocsrm$(LIBEXT)
 
-$(LIBRARIES_DIR)$(DELIM)libocsrm$(LIBEXT): $(IOTIVITY_LIBS_DIR)$(DELIM)libocsrm$(LIBEXT)
-	$(Q) install $(IOTIVITY_LIBS_DIR)$(DELIM)libocsrm$(LIBEXT) $(LIBRARIES_DIR)$(DELIM)libocsrm$(LIBEXT)
-
-$(LIBRARIES_DIR)$(DELIM)libroutingmanager$(LIBEXT): $(IOTIVITY_LIBS_DIR)$(DELIM)libroutingmanager$(LIBEXT)
-	$(Q) install $(IOTIVITY_LIBS_DIR)$(DELIM)libroutingmanager$(LIBEXT) $(LIBRARIES_DIR)$(DELIM)libroutingmanager$(LIBEXT)
+$(LIBRARIES_DIR)$(DELIM)libroutingmanager$(LIBEXT): $(EXTDIR)$(DELIM)iotivity$(DELIM)libroutingmanager$(LIBEXT)
+	$(Q) install $(EXTDIR)$(DELIM)iotivity$(DELIM)libroutingmanager$(LIBEXT) $(LIBRARIES_DIR)$(DELIM)libroutingmanager$(LIBEXT)
 
 ifeq ($(CONFIG_ENABLE_IOTIVITY_CLOUD),y)
-
-$(LIBRARIES_DIR)$(DELIM)libresource_directory$(LIBEXT): $(IOTIVITY_LIBS_DIR)$(DELIM)libresource_directory$(LIBEXT)
-	$(Q) install $(IOTIVITY_LIBS_DIR)$(DELIM)libresource_directory$(LIBEXT) $(LIBRARIES_DIR)$(DELIM)libresource_directory$(LIBEXT)
-
+$(LIBRARIES_DIR)$(DELIM)libresource_directory$(LIBEXT): $(EXTDIR)$(DELIM)iotivity$(DELIM)libresource_directory$(LIBEXT)
+	$(Q) install $(EXTDIR)$(DELIM)iotivity$(DELIM)libresource_directory$(LIBEXT) $(LIBRARIES_DIR)$(DELIM)libresource_directory$(LIBEXT)
 endif
-
 ifeq ($(CONFIG_ENABLE_IOTIVITY_SECURED),y)
-
-#$(LIBRARIES_DIR)$(DELIM)libtinydtls$(LIBEXT): $(IOTIVITY_LIBS_DIR)$(DELIM)libtinydtls$(LIBEXT)
-#	$(Q) install $(IOTIVITY_LIBS_DIR)$(DELIM)libtinydtls$(LIBEXT) $(LIBRARIES_DIR)$(DELIM)libtinydtls$(LIBEXT)
-
-
+#$(LIBRARIES_DIR)$(DELIM)libtinydtls$(LIBEXT): $(EXTDIR)$(DELIM)iotivity$(DELIM)libtinydtls$(LIBEXT)
+#	$(Q) install $(EXTDIR)$(DELIM)iotivity$(DELIM)libtinydtls$(LIBEXT) $(LIBRARIES_DIR)$(DELIM)libtinydtls$(LIBEXT)
 endif
-endif
+endif # CONFIG_ENABLE_IOTIVITY
 
 #IoTjs Libs
 

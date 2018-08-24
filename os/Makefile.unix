@@ -126,18 +126,6 @@ LIBRARIES_DIR = $(OUTPUT_DIR)/libraries
 BIN_DIR = $(OUTPUT_DIR)/bin
 LIB_DIR = ../lib
 
-ifeq ($(CONFIG_ENABLE_IOTIVITY),y)
-ifeq ($(CONFIG_IOTIVITY_RELEASE),y)
-IOTIVITY_LIBS=release
-else
-IOTIVITY_LIBS=debug
-endif
-IOTIVITY_RELEASE=${shell echo $(CONFIG_IOTIVITY_RELEASE_VERSION) | sed 's/"//g'}
-IOTIVITY_TARGET_ARCH := ${shell echo $(CONFIG_ARCH_FAMILY) | sed 's/"//g'}
-IOTIVITY_LIBS_DIR=$(EXTDIR)/iotivity/iotivity_$(IOTIVITY_RELEASE)/out/tizenrt/$(IOTIVITY_TARGET_ARCH)/$(IOTIVITY_LIBS)
-IOTIVITY_CONFIG_DIR=$(EXTDIR)/iotivity/iotivity_$(IOTIVITY_RELEASE)/resource/c_common
-endif
-
 ifeq ($(CONFIG_ENABLE_IOTJS),y)
 IOTJS_ROOT_DIR ?= $(EXTDIR)/iotjs
 ifeq ($(CONFIG_DEBUG),y)
@@ -325,17 +313,6 @@ tools/mkconfig$(HOSTEXEEXT):
 include/tinyara/config.h: $(TOPDIR)/.config tools/mkconfig$(HOSTEXEEXT)
 	$(Q) tools/mkconfig $(TOPDIR) > include/tinyara/config.h
 
-ifeq ($(CONFIG_ENABLE_IOTIVITY),y)
-# Temporariry workaround for build error "iotivity_config.h" not found
-# The error is due to build sequence (apps being built before external)
-# Workaround is creating an empty file "iotivity_config.h" which will be
-# later replced by proper file by scons build for iotivity.
-iotivity_context:
-	$(Q) touch $(IOTIVITY_CONFIG_DIR)/iotivity_config.h
-else
-iotivity_context:
-endif
-
 # Targets used to create dependencies
 
 tools/mkdeps$(HOSTEXEEXT):
@@ -400,13 +377,13 @@ dirlinks: include/arch include/arch/board include/arch/chip $(ARCH_SRC)/board $(
 # the config.h and version.h header files in the include/tinyara directory and
 # the establishment of symbolic links to configured directories.
 
-context: check_context iotivity_context include/tinyara/config.h include/tinyara/version.h include/math.h include/float.h include/stdarg.h dirlinks
+context: check_context include/tinyara/config.h include/tinyara/version.h include/math.h include/float.h include/stdarg.h dirlinks
 	$(Q)if [ -e ${BIN} ]; then \
 		echo "Previous Build Outputs - $(BIN_DIR) - are deleted"; \
 		rm -rf ${BIN_DIR}/*; \
 	fi
 	$(Q) for dir in $(CONTEXTDIRS) ; do \
-		$(MAKE) -C $$dir TOPDIR="$(TOPDIR)" context; \
+		$(MAKE) -C $$dir TOPDIR="$(TOPDIR)" EXTDIR="$(EXTDIR)" context; \
 	done
 	$(call DELFILE, $(APPDIR)/builtin/registry/*.?dat)
 
@@ -416,7 +393,6 @@ context: check_context iotivity_context include/tinyara/config.h include/tinyara
 # and symbolic links created by the context target.
 
 clean_context:
-	$(call DELFILE, $(IOTIVITY_CONFIG_DIR)/iotivity_config.h)
 	$(call DELFILE, include/tinyara/config.h)
 	$(call DELFILE, include/tinyara/version.h)
 	$(call DELFILE, include/math.h)
@@ -617,12 +593,12 @@ depend: pass1dep pass2dep
 subdir_clean:
 	$(Q) for dir in $(CLEANDIRS) ; do \
 		if [ -e $$dir/Makefile ]; then \
-			$(MAKE) -C $$dir TOPDIR="$(TOPDIR)" clean ; \
+			$(MAKE) -C $$dir TOPDIR="$(TOPDIR)" EXTDIR="$(EXTDIR)" clean ; \
 		fi \
 	done
 	$(Q) $(MAKE) -C tools -f Makefile.host TOPDIR="$(TOPDIR)" clean
 ifeq ($(CONFIG_BUILD_2PASS),y)
-	$(Q) $(MAKE) -C $(PASS1_BUILDIR) TOPDIR="$(TOPDIR)" clean
+	$(Q) $(MAKE) -C $(PASS1_BUILDIR) TOPDIR="$(TOPDIR)" EXTDIR="$(EXTDIR)" clean
 endif
 
 clean: subdir_clean
@@ -635,7 +611,7 @@ clean: subdir_clean
 subdir_distclean:
 	$(Q) for dir in $(CLEANDIRS) ; do \
 		if [ -e $$dir/Makefile ]; then \
-			$(MAKE) -C $$dir TOPDIR="$(TOPDIR)" distclean ; \
+			$(MAKE) -C $$dir TOPDIR="$(TOPDIR)" EXTDIR="$(EXTDIR)" distclean ; \
 		fi \
 	done
 
@@ -647,7 +623,7 @@ endif
 
 distclean: clean subdir_distclean clean_context
 ifeq ($(CONFIG_BUILD_2PASS),y)
-	$(Q) $(MAKE) -C $(PASS1_BUILDIR) TOPDIR="$(TOPDIR)" distclean
+	$(Q) $(MAKE) -C $(PASS1_BUILDIR) TOPDIR="$(TOPDIR)" EXTDIR="$(EXTDIR)" distclean
 endif
 	$(call DELFILE, Make.defs)
 	$(call DELFILE, setenv.sh)

@@ -113,7 +113,7 @@ $(foreach SDIR, $(CONFIGURED_EXT), $(eval $(call SDIR_template,$(SDIR),depend)))
 $(foreach SDIR, $(BUILDIRS), $(eval $(call SDIR_template,$(SDIR),clean)))
 $(foreach SDIR, $(BUILDIRS), $(eval $(call SDIR_template,$(SDIR),distclean)))
 
-$(BIN): $(OBJS) $(foreach SDIR, $(CONFIGURED_EXT), $(SDIR)_all) iotivity_build iotjs_build
+$(BIN): $(OBJS) $(foreach SDIR, $(CONFIGURED_EXT), $(SDIR)_all) iotjs_build
 	$(call ARCHIVE, $@, $(OBJS))
 
 .depdirs: $(foreach SDIR, $(CONFIGURED_EXT), $(SDIR)_depend)
@@ -126,7 +126,7 @@ $(BIN): $(OBJS) $(foreach SDIR, $(CONFIGURED_EXT), $(SDIR)_all) iotivity_build i
 
 depend: .depend
 
-clean: $(foreach SDIR, $(BUILDIRS), $(SDIR)_clean) iotivity_clean iotjs_clean
+clean: $(foreach SDIR, $(BUILDIRS), $(SDIR)_clean) iotjs_clean
 	$(call DELFILE, $(BIN))
 	$(call CLEAN)
 
@@ -135,36 +135,6 @@ distclean: $(foreach SDIR, $(BUILDIRS), $(SDIR)_distclean)
 	$(call DELFILE, Make.dep)
 	$(call DELFILE, $(BIN))
 	$(call CLEAN)
-
-ifeq ($(CONFIG_ENABLE_IOTIVITY),y)
-IOTIVITY_RELEASE=${shell echo $(CONFIG_IOTIVITY_RELEASE_VERSION) | sed 's/"//g'}
-IOTIVITY_BASE_DIR=$(EXTDIR)/iotivity/iotivity_$(IOTIVITY_RELEASE)
-endif
-
-iotivity_build:
-ifeq ($(CONFIG_ENABLE_IOTIVITY),y)
-	touch $(IOTIVITY_BASE_DIR)/iotivity.built
-	$(Q) rm -rf $(IOTIVITY_BASE_DIR)/out
-	$(Q) rm -rf $(IOTIVITY_BASE_DIR)/.sconsign.dblite
-	$(Q) rm -rf $(IOTIVITY_BASE_DIR)/.sconf_temp
-	$(call DELFILE, $(IOTIVITY_BASE_DIR)/config.log)
-	$(Q) echo "Launching IoTivity Build"
-	$(Q) TOPDIR="$(TOPDIR)" $(TOPDIR)/../external/iotivity/build_iotivity.sh
-endif
-
-iotivity_clean:
-ifeq ($(CONFIG_ENABLE_IOTIVITY),y)
-ifneq ("$(wildcard $(IOTIVITY_BASE_DIR)/iotivity.built)","")
-	$(Q) rm -rf $(IOTIVITY_BASE_DIR)/iotivity.built
-	$(Q) echo "Cleaning IoTivity Build"
-	$(Q) TOPDIR="$(TOPDIR)" $(TOPDIR)/../external/iotivity/clean_iotivity.sh
-	$(Q) rm -rf $(IOTIVITY_BASE_DIR)/out
-	$(Q) rm -rf $(IOTIVITY_BASE_DIR)/extlibs/mbedtls/mbedtls
-	$(Q) rm -rf $(IOTIVITY_BASE_DIR)/resource/csdk/connectivity/lib/libcoap-4.1.1/*.o
-	$(Q) rm -rf $(IOTIVITY_BASE_DIR)/.sconsign.dblite
-	$(Q) rm -rf $(IOTIVITY_BASE_DIR)/.sconf_temp
-endif
-endif
 
 ifeq ($(CONFIG_ENABLE_IOTJS),y)
 IOTJS_ROOT_DIR ?= $(EXTDIR)/iotjs
