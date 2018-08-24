@@ -33,6 +33,10 @@
 
 #include <tinyara/config.h>
 
+#ifdef __cplusplus
+extern "C" {
+#endif /* __cplusplus */
+
 #ifdef CONFIG_LWM2M_WAKAAMA
 #include <protocols/liblwm2m.h>
 #include "er-coap-13/er-coap-13.h"
@@ -156,6 +160,10 @@ int dm_lwm2m_get_client_state(dm_lwm2m_client_state_e *state);
  * @since TizenRT v1.0
  */
 int dm_lwm2m_display_client_resource(char *buffer);
+
+#ifdef __cplusplus
+}
+#endif /* __cplusplus */
 
 #endif
 

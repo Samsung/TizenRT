@@ -30,6 +30,10 @@
 #include <libtuv/uv.h>
 #include <stdbool.h>
 
+#ifdef __cplusplus
+extern "C" {
+#endif /* __cplusplus */
+
 /**
  * @brief Error Type of Result Value returned from Event Loop
  * @details If operation is failed, these defined values will be returned.
@@ -125,6 +129,11 @@ int eventloop_loop_run(void);
  * @since TizenRT v2.0 PRE
  */
 int eventloop_loop_stop(void);
+
+#ifdef __cplusplus
+}
+#endif /* __cplusplus */
+
 #endif
 /**
  * @}

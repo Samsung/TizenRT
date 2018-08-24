@@ -141,6 +141,10 @@ typedef void (*_tm_broadcast_t)(void *, void *);
  */
 typedef void (*_tm_termination_t)(void *);
 
+#ifdef __cplusplus
+extern "C" {
+#endif /* __cplusplus */
+
 /****************************************************************************
  * Public Function Prototypes
  ****************************************************************************/
@@ -446,6 +450,11 @@ int task_manager_unset_broadcast_cb(int msg, int timeout);
  * @since TizenRT v2.0 PRE
  */
 int task_manager_dealloc_broadcast_msg(int msg, int timeout);
+
+#ifdef __cplusplus
+}
+#endif /* __cplusplus */
+
 #endif
 /**
  * @}
