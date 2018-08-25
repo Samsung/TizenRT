@@ -113,7 +113,7 @@ $(foreach SDIR, $(CONFIGURED_EXT), $(eval $(call SDIR_template,$(SDIR),depend)))
 $(foreach SDIR, $(BUILDIRS), $(eval $(call SDIR_template,$(SDIR),clean)))
 $(foreach SDIR, $(BUILDIRS), $(eval $(call SDIR_template,$(SDIR),distclean)))
 
-$(BIN): $(OBJS) $(foreach SDIR, $(CONFIGURED_EXT), $(SDIR)_all) iotjs_build
+$(BIN): $(OBJS) $(foreach SDIR, $(CONFIGURED_EXT), $(SDIR)_all)
 	$(call ARCHIVE, $@, $(OBJS))
 
 .depdirs: $(foreach SDIR, $(CONFIGURED_EXT), $(SDIR)_depend)
@@ -126,7 +126,7 @@ $(BIN): $(OBJS) $(foreach SDIR, $(CONFIGURED_EXT), $(SDIR)_all) iotjs_build
 
 depend: .depend
 
-clean: $(foreach SDIR, $(BUILDIRS), $(SDIR)_clean) iotjs_clean
+clean: $(foreach SDIR, $(BUILDIRS), $(SDIR)_clean)
 	$(call DELFILE, $(BIN))
 	$(call CLEAN)
 
@@ -135,29 +135,5 @@ distclean: $(foreach SDIR, $(BUILDIRS), $(SDIR)_distclean)
 	$(call DELFILE, Make.dep)
 	$(call DELFILE, $(BIN))
 	$(call CLEAN)
-
-ifeq ($(CONFIG_ENABLE_IOTJS),y)
-IOTJS_ROOT_DIR ?= $(EXTDIR)/iotjs
-IOTJS_BUILD_OPTION ?=
-ifeq ($(CONFIG_DEBUG),y)
-  IOTJS_BUILDTYPE = debug
-  IOTJS_LIB_DIR = $(IOTJS_ROOT_DIR)/build/arm-tizenrt/debug/lib
-else
-  IOTJS_BUILDTYPE = release
-  IOTJS_LIB_DIR = $(IOTJS_ROOT_DIR)/build/arm-tizenrt/release/lib
-endif
-endif
-
-iotjs_build:
-ifeq ($(CONFIG_ENABLE_IOTJS),y)
-	python $(IOTJS_ROOT_DIR)/tools/build.py --target-arch=$(CONFIG_ARCH) --target-os=tizenrt \
-	--sysroot=$(TOPDIR) --target-board=$(CONFIG_ARCH_BOARD) --jerry-heaplimit=$(CONFIG_IOTJS_JERRY_HEAP) \
-	--buildtype=$(IOTJS_BUILDTYPE) --no-init-submodule $(IOTJS_BUILD_OPTION)
-endif
-
-iotjs_clean:
-ifeq ($(CONFIG_ENABLE_IOTJS),y)
-	$(Q) rm -rf $(IOTJS_ROOT_DIR)/build
-endif
 
 -include Make.dep

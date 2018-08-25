@@ -84,6 +84,9 @@ endif
 ifeq ($(CONFIG_ENABLE_IOTIVITY),y)
 USER_ADDONS += $(EXTDIR)$(DELIM)iotivity
 endif
+ifeq ($(CONFIG_ENABLE_IOTJS),y)
+USER_ADDONS += $(EXTDIR)$(DELIM)iotjs$(DELIM)config$(DELIM)tizenrt
+endif
 
 else
 
@@ -95,6 +98,9 @@ TINYARA_ADDONS += $(EXTDIR)$(DELIM)libcxx
 endif
 ifeq ($(CONFIG_ENABLE_IOTIVITY),y)
 TINYARA_ADDONS += $(EXTDIR)$(DELIM)iotivity
+endif
+ifeq ($(CONFIG_ENABLE_IOTJS),y)
+TINYARA_ADDONS += $(EXTDIR)$(DELIM)iotjs$(DELIM)config$(DELIM)tizenrt
 endif
 endif # CONFIG_BUILD_KERNEL
 

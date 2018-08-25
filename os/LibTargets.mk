@@ -177,6 +177,9 @@ $(EXTDIR)$(DELIM)libexternal$(LIBEXT): context
 ifeq ($(CONFIG_ENABLE_IOTIVITY),y)
 	$(Q) $(MAKE) -C $(EXTDIR)/iotivity TOPDIR="$(TOPDIR)" EXTDIR="$(EXTDIR)" KERNEL=n
 endif
+ifeq ($(CONFIG_ENABLE_IOTJS),y)
+	$(Q) $(MAKE) -C $(EXTDIR)/iotjs/config/tizenrt TOPDIR="$(TOPDIR)" EXTDIR="$(EXTDIR)" KERNEL=n
+endif
 
 $(LIBRARIES_DIR)$(DELIM)libexternal$(LIBEXT): $(EXTDIR)$(DELIM)libexternal$(LIBEXT)
 	$(Q) install $(EXTDIR)$(DELIM)libexternal$(LIBEXT) $(LIBRARIES_DIR)$(DELIM)libexternal$(LIBEXT)
@@ -218,20 +221,20 @@ endif # CONFIG_ENABLE_IOTIVITY
 #IoTjs Libs
 
 ifeq ($(CONFIG_ENABLE_IOTJS),y)
-$(LIBRARIES_DIR)$(DELIM)libhttpparser$(LIBEXT): $(IOTJS_LIB_DIR)$(DELIM)libhttpparser$(LIBEXT)
-	$(Q) install $(IOTJS_LIB_DIR)$(DELIM)libhttpparser$(LIBEXT) $(LIBRARIES_DIR)$(DELIM)libhttpparser$(LIBEXT)
+$(LIBRARIES_DIR)$(DELIM)libhttpparser$(LIBEXT): $(EXTDIR)$(DELIM)iotjs$(DELIM)libhttpparser$(LIBEXT)
+	$(Q) install $(EXTDIR)$(DELIM)iotjs$(DELIM)libhttpparser$(LIBEXT) $(LIBRARIES_DIR)$(DELIM)libhttpparser$(LIBEXT)
 
-$(LIBRARIES_DIR)$(DELIM)libiotjs$(LIBEXT): $(IOTJS_LIB_DIR)$(DELIM)libiotjs$(LIBEXT)
-	$(Q) install $(IOTJS_LIB_DIR)$(DELIM)libiotjs$(LIBEXT) $(LIBRARIES_DIR)$(DELIM)libiotjs$(LIBEXT)
+$(LIBRARIES_DIR)$(DELIM)libiotjs$(LIBEXT): $(EXTDIR)$(DELIM)iotjs$(DELIM)libiotjs$(LIBEXT)
+	$(Q) install $(EXTDIR)$(DELIM)iotjs$(DELIM)libiotjs$(LIBEXT) $(LIBRARIES_DIR)$(DELIM)libiotjs$(LIBEXT)
 
-$(LIBRARIES_DIR)$(DELIM)libjerry-core$(LIBEXT): $(IOTJS_LIB_DIR)$(DELIM)libjerry-core$(LIBEXT)
-	$(Q) install $(IOTJS_LIB_DIR)$(DELIM)libjerry-core$(LIBEXT) $(LIBRARIES_DIR)$(DELIM)libjerry-core$(LIBEXT)
+$(LIBRARIES_DIR)$(DELIM)libjerry-core$(LIBEXT): $(EXTDIR)$(DELIM)iotjs$(DELIM)libjerry-core$(LIBEXT)
+	$(Q) install $(EXTDIR)$(DELIM)iotjs$(DELIM)libjerry-core$(LIBEXT) $(LIBRARIES_DIR)$(DELIM)libjerry-core$(LIBEXT)
 
-$(LIBRARIES_DIR)$(DELIM)libtuv$(LIBEXT): $(IOTJS_LIB_DIR)$(DELIM)libtuv$(LIBEXT)
-	$(Q) install $(IOTJS_LIB_DIR)$(DELIM)libtuv$(LIBEXT) $(LIBRARIES_DIR)$(DELIM)libtuv$(LIBEXT)
+$(LIBRARIES_DIR)$(DELIM)libtuv$(LIBEXT): $(EXTDIR)$(DELIM)iotjs$(DELIM)libtuv$(LIBEXT)
+	$(Q) install $(EXTDIR)$(DELIM)iotjs$(DELIM)libtuv$(LIBEXT) $(LIBRARIES_DIR)$(DELIM)libtuv$(LIBEXT)
 
-$(LIBRARIES_DIR)$(DELIM)libjerry-libm$(LIBEXT): $(IOTJS_LIB_DIR)$(DELIM)libjerry-libm$(LIBEXT)
-	$(Q) install $(IOTJS_LIB_DIR)$(DELIM)libjerry-libm$(LIBEXT) $(LIBRARIES_DIR)$(DELIM)libjerry-libm$(LIBEXT)
+$(LIBRARIES_DIR)$(DELIM)libjerry-libm$(LIBEXT): $(EXTDIR)$(DELIM)iotjs$(DELIM)libjerry-libm$(LIBEXT)
+	$(Q) install $(EXTDIR)$(DELIM)iotjs$(DELIM)libjerry-libm$(LIBEXT) $(LIBRARIES_DIR)$(DELIM)libjerry-libm$(LIBEXT)
 endif
 
 # Possible non-kernel builds

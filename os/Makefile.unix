@@ -126,15 +126,6 @@ LIBRARIES_DIR = $(OUTPUT_DIR)/libraries
 BIN_DIR = $(OUTPUT_DIR)/bin
 LIB_DIR = ../lib
 
-ifeq ($(CONFIG_ENABLE_IOTJS),y)
-IOTJS_ROOT_DIR ?= $(EXTDIR)/iotjs
-ifeq ($(CONFIG_DEBUG),y)
-IOTJS_LIB_DIR = $(IOTJS_ROOT_DIR)/build/arm-tizenrt/debug/lib
-else
-IOTJS_LIB_DIR = $(IOTJS_ROOT_DIR)/build/arm-tizenrt/release/lib
-endif
-endif
-
 # Add-on directories.  These may or may not be in place in the
 # TinyAra source tree (they must be specifically installed)
 #
