@@ -31,6 +31,10 @@ IOTIVITY_BASE_DIR=$(IOTIVITYDIR)/iotivity_$(IOTIVITY_RELEASE)
 IOTIVITY_CONFIG_DIR=$(IOTIVITY_BASE_DIR)/resource/c_common
 IOTIVITY_LIBS_DIR=$(IOTIVITY_BASE_DIR)/out/tizenrt/$(IOTIVITY_TARGET_ARCH)/$(IOTIVITY_LIBS)
 
+ifeq ($(Q),)
+DEBUG=1
+endif
+
 all: build
 .PHONY: depend clean distclean
 
@@ -41,7 +45,7 @@ build:
 	$(Q) $(call DELFILE, $(IOTIVITY_BASE_DIR)/.sconsign.dblite)
 	$(Q) $(call DELFILE, $(IOTIVITY_BASE_DIR)/config.log)
 	$(Q) echo "Launching IoTivity Build"
-	$(Q) TOPDIR="$(TOPDIR)" $(IOTIVITYDIR)/build_iotivity.sh
+	$(Q) TOPDIR="$(TOPDIR)" DEBUG="${DEBUG}" $(IOTIVITYDIR)/build_iotivity.sh
 	$(Q) cp $(IOTIVITY_LIBS_DIR)/*.a $(IOTIVITYDIR)
 
 depend:
@@ -52,7 +56,7 @@ context:
 clean:
 	$(Q) $(call DELFILE, $(IOTIVITY_BASE_DIR)/iotivity.built)
 	$(Q) echo "Cleaning IoTivity Build"
-	$(Q) TOPDIR="$(TOPDIR)" $(IOTIVITYDIR)/clean_iotivity.sh
+	$(Q) TOPDIR="$(TOPDIR)" DEBUG="${DEBUG}" $(IOTIVITYDIR)/clean_iotivity.sh
 	$(Q) $(call DELDIR, $(IOTIVITY_BASE_DIR)/out)
 	$(Q) $(call DELDIR, $(IOTIVITY_BASE_DIR)/.sconf_temp)
 	$(Q) $(call DELDIR, $(IOTIVITY_BASE_DIR)/extlibs/mbedtls/mbedtls)

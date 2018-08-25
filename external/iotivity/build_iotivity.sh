@@ -4,7 +4,9 @@
 #   2. Patch the code using the additional changes
 #   3. Build the code with the necessary flags
 
-set -x
+if [ ! -z "${DEBUG}" ]; then
+	set -x
+fi
 
 extract_flags() {
 	if [ -e ${TOPDIR}/include/tinyara/config.h ]; then
