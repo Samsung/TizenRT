@@ -10,66 +10,91 @@ Please find project details at [Wiki](https://github.com/Samsung/TizenRT/wiki) e
 
 > [Quick Start](#quick-start)  
 > [Supported Board / Emulator](#supported-board--emulator)  
-> [Configuration Sets](#configuration-sets)
 
 ## Quick Start
-### Getting the toolchain
 
-Install the OS specific toolchain. Supported OS Type's are "linux" and "mac".  
-Get the build in binaries and libraries, [gcc-arm-none-eabi-6-2017-q1-update-*OS Type*.tar.bz2](https://developer.arm.com/open-source/gnu-toolchain/gnu-rm/downloads/6-2017-q1-update)  
-Untar the gcc-arm-none-eabi-6-2017-q1-update-*OS Type*.tar.bz2 and export the path like
+TizenRT provides the easiest way to build with the use of [Docker](https://www.docker.com/).  
+There is no need to install the required libraries and toolchains since the provided Docker container already includes everything required for TizenRT development.  
+However, if your development systems are not eligible for running the Docker container, all libraries and toolchains should be manually installed.  
+Please refer to [Manual Setup Build Environment](docs/HowToSetEnv.md).
 
-```bash
-tar xvjf gcc-arm-none-eabi-6-2017-q1-update-[OS Type].tar.bz2
-export PATH=<Your Toolchain PATH>:$PATH
-```
-Be aware that recommanded toolchain is fully working on 64bits machine.
+For more infomation of libraries in the TizenRT Docker Image, see https://hub.Docker.com/r/tizenrt/tizenrt/.
 
-NOTE: See [Additional Requirements](docs/InstallAdReq.md) for gRPC, ROMFS, OCF and IoT.js.
+### 1. Install Docker
 
-### Getting the sources
+To install OS specific Docker engines, see https://docs.docker.com/install/linux/docker-ce/ubuntu/.  
+If you already have a Docker engine, please skip this step.
+
+### 2. Getting TizenRT source code
 
 ```bash
 git clone https://github.com/Samsung/TizenRT.git
 cd TizenRT
 TIZENRT_BASEDIR="$PWD"
 ```
+**Note**: To contribute in this community, fork this project first into own github repository and do git cloning from your repository. 
+> git clone https://github.com/your_github_id/TizenRT.git
 
-### How to Build
 
-Configure the build from *$TIZENRT_BASEDIR/os/tools* directory
+### 3. Build
+
+#### 3.1 Configuration
+
 ```bash
-cd os/tools
-./configure.sh <board>/<configuration_set>
+cd os
+./tools/configure.sh <board>/<configuration_set>
 ```
-The configuration file is named *defconfig*,  
-and resides under the relative path \<board\>/\<configuration_set\> rooted at *build/configs*.  
-To check the different \<board\>/\<configuration_set\> combinations supported, type below:
+
+This command retrieves the specific pre-configured file named defconfig according to
+ \<board\>/\<configuration_set\>.  
+You can see collection of all configuration files at
+ *$TIZENRT_BASEDIR/build/configs*.  
+To check all pre-defined configurations, type as follows:
+
 ```bash
 ./configure.sh --help
 ```
 
-After configuring above, configuration can be modified through *make menuconfig* from *$TIZENRT_BASEDIR/os*.
+#### 3.2 Additional Configuration
+
+After the configuration is done, further modification can be done with menuconfig from
+ *$TIZENRT_BASEDIR/os*.  
+This command requires ```sudo``` for root permission.  
+To run Docker without ```sudo```, refer to
+ https://docs.docker.com/install/linux/linux-postinstall/.
+
 ```bash
 cd ..
-make menuconfig
+./dbuild.sh menuconfig
 ```
 
-Refer [kconfig-frontend installation](docs/HowtoInstallKconfigFrontend.md) to use *menuconfig*.
+#### 3.3 Compile
 
-Finally, initiate build by make from *$TIZENRT_BASEDIR/os*.
 ```bash
-make
+./dbuild.sh
 ```
 
-Built binaries are in *$TIZENRT_BASEDIR/build/output/bin*.
+Built binaries are located in *$TIZENRT_BASEDIR/build/output/bin*.
 
-See [Clean commands](docs/HowtoClean.md) to clean built files.  
-See [Trouble Shooting](docs/TroubleShooting.md) to resolve any issue on TizenRT usages.
+#### 3.4 Clean
+
+```bash
+./dbuild.sh clean
+```
+This command removes built files including objects, libraries, .depend, Make.dep, etc.  
+To modify configuration with menuconfig, this command is required.  
+
+Before changing configuration with ```./configure.sh``` command, deletion of previous configuration files must be done using the follwoing command.
+
+```bash
+./dbuild.sh distclean
+```
+This command removes configured files including .config and Make.defs.
 
 ## Supported Board / Emulator
-Here are supported boards and emulator list.  
-Refer belows to know board-specific environments, programming method and board information.
+
+TizenRT supports multiple boards as well as QEMU.  
+The linked page for each board includs board-specific environments, programming method, and board information.
 
 ARTIK053 [[details]](build/configs/artik053/README.md)
 
@@ -82,12 +107,3 @@ CY4390X [[details]](build/configs/cy4390x/README.txt)
 SIDK_S5JT200 [[details]](build/configs/sidk_s5jt200/README.md)
 
 QEMU [[details]](build/configs/qemu/README.md)
-
-## Configuration Sets
-
-To build a TizenRT application, use the default configuration files named *defconfig* under *build/configs/\<board\>/\<configuration_set\>* folder.  
-To customize your application with specific configuration settings, using the menuconfig tool is recommended at *os* folder as shown:
-```bash
-make menuconfig
-```
-Please keep in mind that we are actively working on board configurations, and will be posting our updates on the README files under each config.

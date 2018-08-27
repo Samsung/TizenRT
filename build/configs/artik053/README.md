@@ -108,12 +108,12 @@ After building TizenRT, execute below command at $TIZENRT_BASEDIR/os folder.
 See [[Getting the sources]](https://github.com/Samsung/TizenRT#getting-the-sources) for how to set *TIZENRT_BASEDIR*.
 
 ```bash
-make download [Programming Option]
+./dbuild.sh download [Programming Option]
 ```
 
 For example, *ALL* option makes complete set of binaries programmed.
 ```bash
-make download ALL
+./dbuild.sh download ALL
 ```
 See programming options list which is pre-defined at [.flashSpec.xml](.flashSpec.xml).
 
