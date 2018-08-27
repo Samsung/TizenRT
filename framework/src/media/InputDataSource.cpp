@@ -23,7 +23,7 @@
 #include <media/InputDataSource.h>
 #include "Decoder.h"
 #include "MediaPlayerImpl.h"
-#include "InputStreamBuffer.h"
+#include "StreamBuffer.h"
 #include "StreamBufferReader.h"
 #include "StreamBufferWriter.h"
 
@@ -105,7 +105,7 @@ int InputDataSource::readAt(long offset, int origin, unsigned char *buf, size_t 
 	return read(buf, size);
 }
 
-void InputDataSource::setStreamBuffer(std::shared_ptr<InputStreamBuffer> streamBuffer)
+void InputDataSource::setStreamBuffer(std::shared_ptr<StreamBuffer> streamBuffer)
 {
 	if (mStreamBuffer) {
 		mStreamBuffer->setObserver(nullptr);

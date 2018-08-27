@@ -16,6 +16,7 @@
  *
  ******************************************************************/
 
+#include <tinyara/config.h>
 #include <iostream>
 #include <cstring>
 #include <stdio.h>
@@ -30,13 +31,23 @@
 #include "StreamBufferWriter.h"
 #include "utils/rb.h"
 
+#ifndef CONFIG_STREAM_BUFFER_SIZE_DEFAULT
+#define CONFIG_STREAM_BUFFER_SIZE_DEFAULT 4096
+#endif
+
+#ifndef CONFIG_STREAM_BUFFER_THRESHOLD_DEFAULT
+#define CONFIG_STREAM_BUFFER_THRESHOLD_DEFAULT CONFIG_STREAM_BUFFER_SIZE_DEFAULT
+#endif
+
+#if (CONFIG_STREAM_BUFFER_THRESHOLD_DEFAULT == 0)
+#error "CONFIG_STREAM_BUFFER_THRESHOLD_DEFAULT should be nonzero!"
+#endif
+
 namespace media {
 namespace stream {
 
-StreamBuffer::StreamBuffer()
-	: mObserver(nullptr)
-	, mRingBuf(nullptr)
-	, mEOS(false)
+StreamBuffer::StreamBuffer(size_t bufferSize, size_t threshold)
+	: mObserver(nullptr), mRingBuf(nullptr), mEOS(false), mBufferSize(bufferSize), mThreshold(threshold)
 {
 }
 
@@ -130,6 +141,51 @@ void StreamBuffer::notifyObserver(State st, ...)
 	}
 }
 
+StreamBuffer::Builder::Builder()
+	: mBufferSize(CONFIG_STREAM_BUFFER_SIZE_DEFAULT), mThreshold(CONFIG_STREAM_BUFFER_THRESHOLD_DEFAULT)
+{
+}
+
+StreamBuffer::Builder::~Builder()
+{
+}
+
+StreamBuffer::Builder &StreamBuffer::Builder::setBufferSize(size_t bufferSize)
+{
+	if (bufferSize == 0) {
+		mBufferSize = CONFIG_STREAM_BUFFER_SIZE_DEFAULT;
+	} else {
+		mBufferSize = bufferSize;
+	}
+
+	return *this;
+}
+
+StreamBuffer::Builder &StreamBuffer::Builder::setThreshold(size_t threshold)
+{
+	if (threshold == 0) {
+		mThreshold = CONFIG_STREAM_BUFFER_THRESHOLD_DEFAULT;
+	} else {
+		mThreshold = threshold;
+	}
+
+	return *this;
+}
+
+std::shared_ptr<StreamBuffer> StreamBuffer::Builder::build()
+{
+	if (mThreshold > mBufferSize) {
+		mThreshold = mBufferSize;
+	}
+
+	auto instance = std::make_shared<StreamBuffer>(mBufferSize, mThreshold);
+	if (instance->init(mBufferSize)) {
+		return instance;
+	}
+
+	meddbg("init failed! mBufferSize %u, mThreshold:%u\n", mBufferSize, mThreshold);
+	return nullptr;
+}
+
 } // namespace stream
 } // namespace media
-

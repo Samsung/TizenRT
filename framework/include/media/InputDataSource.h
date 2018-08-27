@@ -47,7 +47,7 @@ typedef enum buffer_state_e {
 } buffer_state_t;
 
 namespace stream {
-class InputStreamBuffer;
+class StreamBuffer;
 class StreamBufferReader;
 class StreamBufferWriter;
 
@@ -139,8 +139,8 @@ protected:
 	audio_type_t getAudioType();
 	size_t getDecodeFrames(unsigned char *buf, size_t *size);
 
-	void setStreamBuffer(std::shared_ptr<InputStreamBuffer>);
-	std::shared_ptr<InputStreamBuffer> getStreamBuffer() { return mStreamBuffer; }
+	void setStreamBuffer(std::shared_ptr<StreamBuffer>);
+	std::shared_ptr<StreamBuffer> getStreamBuffer() { return mStreamBuffer; }
 	void setBufferState(buffer_state_t state);
 	std::shared_ptr<MediaPlayerImpl> getPlayer() { return mPlayer.lock(); }
 	void createWorker();
@@ -150,7 +150,7 @@ protected:
 private:
 	audio_type_t mAudioType;
 	std::shared_ptr<Decoder> mDecoder;
-	std::shared_ptr<InputStreamBuffer> mStreamBuffer;
+	std::shared_ptr<StreamBuffer> mStreamBuffer;
 	std::shared_ptr<StreamBufferReader> mBufferReader;
 	std::shared_ptr<StreamBufferWriter> mBufferWriter;
 	std::weak_ptr<MediaPlayerImpl> mPlayer;

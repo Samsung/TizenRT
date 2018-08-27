@@ -37,7 +37,7 @@ namespace media {
 class Encoder;
 class MediaRecorderImpl;
 namespace stream {
-class OutputStreamBuffer;
+class StreamBuffer;
 class StreamBufferReader;
 class StreamBufferWriter;
 
@@ -122,8 +122,8 @@ protected:
 	void setAudioType(audio_type_t audioType);
 	audio_type_t getAudioType();
 
-	void setStreamBuffer(std::shared_ptr<OutputStreamBuffer>);
-	std::shared_ptr<OutputStreamBuffer> getStreamBuffer() { return mStreamBuffer; }
+	void setStreamBuffer(std::shared_ptr<StreamBuffer>);
+	std::shared_ptr<StreamBuffer> getStreamBuffer() { return mStreamBuffer; }
 	std::shared_ptr<StreamBufferReader> getBufferReader() { return mBufferReader; }
 	std::shared_ptr<MediaRecorderImpl> getRecorder() { return mRecorder.lock(); }
 	void createWorker();
@@ -133,7 +133,7 @@ protected:
 private:
 	audio_type_t mAudioType;
 	std::shared_ptr<Encoder> mEncoder;
-	std::shared_ptr<OutputStreamBuffer> mStreamBuffer;
+	std::shared_ptr<StreamBuffer> mStreamBuffer;
 	std::shared_ptr<StreamBufferReader> mBufferReader;
 	std::shared_ptr<StreamBufferWriter> mBufferWriter;
 	std::weak_ptr<MediaRecorderImpl> mRecorder;

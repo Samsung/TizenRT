@@ -22,7 +22,7 @@
 #include <media/FileOutputDataSource.h>
 #include "utils/MediaUtils.h"
 #include "Encoder.h"
-#include "OutputStreamBuffer.h"
+#include "StreamBuffer.h"
 #include "StreamBufferReader.h"
 
 #ifndef CONFIG_FILE_DATASOURCE_STREAM_BUFFER_SIZE
@@ -60,9 +60,10 @@ FileOutputDataSource& FileOutputDataSource::operator=(const FileOutputDataSource
 bool FileOutputDataSource::open()
 {
 	if (!getStreamBuffer()) {
-		auto streamBuffer = OutputStreamBuffer::create( \
-			CONFIG_FILE_DATASOURCE_STREAM_BUFFER_SIZE, \
-			CONFIG_FILE_DATASOURCE_STREAM_BUFFER_THRESHOLD);
+		auto streamBuffer = StreamBuffer::Builder()
+								.setBufferSize(CONFIG_FILE_DATASOURCE_STREAM_BUFFER_SIZE)
+								.setThreshold(CONFIG_FILE_DATASOURCE_STREAM_BUFFER_THRESHOLD)
+								.build();
 
 		if (!streamBuffer) {
 			meddbg("streamBuffer is nullptr!\n");

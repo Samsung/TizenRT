@@ -33,7 +33,21 @@ class BufferObserverInterface;
 class StreamBuffer : public std::enable_shared_from_this<StreamBuffer>
 {
 public:
-	StreamBuffer();
+	class Builder
+	{
+	public:
+		Builder();
+		virtual ~Builder();
+		Builder &setBufferSize(size_t bufferSize);
+		Builder &setThreshold(size_t threshold);
+		std::shared_ptr<StreamBuffer> build();
+
+	private:
+		size_t mBufferSize;
+		size_t mThreshold;
+	};
+
+	StreamBuffer(size_t bufferSize, size_t threshold);
 	virtual ~StreamBuffer();
 
 	bool init(size_t size);
@@ -55,6 +69,8 @@ public:
 	size_t sizeOfSpace();
 	void setEndOfStream();
 	bool isEndOfStream();
+	size_t getBufferSize() { return mBufferSize; }
+	size_t getThreshold() { return mThreshold; }
 
 private:
 	std::mutex mMutex;
@@ -62,6 +78,8 @@ private:
 	BufferObserverInterface *mObserver;
 	struct rb_s *mRingBuf;
 	bool mEOS;
+	size_t mBufferSize;
+	size_t mThreshold;
 };
 
 } // namespace stream
