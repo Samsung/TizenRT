@@ -103,15 +103,6 @@ int avs_test_main(int argc, char **argv)
 	wifi_manager_result_e ret = WIFI_MANAGER_FAIL;
 	wifi_manager_ap_config_s config;
 
-	/**
-	 * Need to sleep for WiFi initialized.
-	 */
-	int i = 0;
-	for (i = 0; i < 3; i++) {
-		printf("Wait (%d/3) sec...\n", i + 1);
-		sleep(1);
-	}	
-
 	printf("wifi_manager_init()...\n");
 	ret = wifi_manager_init(&wifi_callbacks);
 	SAY_OK_OR_ERROR(WIFI_MANAGER_SUCCESS);
