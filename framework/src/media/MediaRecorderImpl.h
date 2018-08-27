@@ -46,6 +46,8 @@ typedef enum recorder_state_e {
 	RECORDER_STATE_NONE,
 	/** MediaRecorder worker object was created */
 	RECORDER_STATE_IDLE,
+	/** MediaRecorder datasource configured */
+	RECORDER_STATE_CONFIGURED,
 	/** MediaRecorder ready to record */
 	RECORDER_STATE_READY,
 	/** MediaRecorder do recording */

@@ -102,7 +102,7 @@ void MediaRecorderImpl::destroyRecorder(recorder_result_t& ret)
 {
 	medvdbg("destroyRecorder mCurState : %d\n", (recorder_state_t)mCurState);
 
-	if (mCurState != RECORDER_STATE_IDLE) {
+	if (mCurState != RECORDER_STATE_IDLE && mCurState != RECORDER_STATE_CONFIGURED) {
 		meddbg("mCurState != RECORDER_STATE_IDLE mCurState : %d\n", (recorder_state_t)mCurState);
 		ret = RECORDER_ERROR_INVALID_STATE;
 		return notifySync();
@@ -133,10 +133,9 @@ void MediaRecorderImpl::prepareRecorder(recorder_result_t& ret)
 {
 	medvdbg("prepareRecorder mCurState : %d\n", (recorder_state_t)mCurState);
 
-	if (mCurState != RECORDER_STATE_IDLE || mOutputDataSource == nullptr) {
-		meddbg("prepare Failed mCurState: %d mOutputDataSource : %s\n", (recorder_state_t)mCurState, \
-			(mOutputDataSource == nullptr ? "nullptr" : "not null"));
-		ret = (mOutputDataSource == nullptr) ? RECORDER_ERROR_INVALID_PARAM : RECORDER_ERROR_INVALID_STATE;
+	if (mCurState != RECORDER_STATE_CONFIGURED) {
+		meddbg("prepare Failed mCurState: %d\n", (recorder_state_t)mCurState);
+		ret = RECORDER_ERROR_INVALID_STATE;
 		return notifySync();
 	}
 
@@ -201,7 +200,7 @@ void MediaRecorderImpl::unprepareRecorder(recorder_result_t& ret)
 {
 	medvdbg("unprepareRecorder mCurState : %d\n", (recorder_state_t)mCurState);
 
-	if (mCurState == RECORDER_STATE_NONE || mCurState == RECORDER_STATE_IDLE) {
+	if (mCurState == RECORDER_STATE_NONE || mCurState == RECORDER_STATE_IDLE || mCurState == RECORDER_STATE_CONFIGURED) {
 		meddbg("unprepare Failed : %d\n", (recorder_state_t)mCurState);
 		ret = RECORDER_ERROR_INVALID_STATE;
 		return notifySync();
@@ -456,6 +455,7 @@ void MediaRecorderImpl::setRecorderDataSource(std::shared_ptr<stream::OutputData
 
 	mOutputDataSource = dataSource;
 	mOutputDataSource->setRecorder(shared_from_this());
+	mCurState = RECORDER_STATE_CONFIGURED;
 
 	notifySync();
 }
@@ -525,7 +525,7 @@ void MediaRecorderImpl::setRecorderDuration(int second, recorder_result_t& ret)
 {
 	medvdbg("setRecorderDuration mCurState : %d\n", (recorder_state_t)mCurState);
 
-	if (mCurState != RECORDER_STATE_IDLE) {
+	if (mCurState != RECORDER_STATE_CONFIGURED) {
 		meddbg("setRecorderDuration Failed mCurState: %d\n", (recorder_state_t)mCurState);
 		ret = RECORDER_ERROR_INVALID_STATE;
 		return notifySync();

@@ -191,7 +191,7 @@ public:
 
 	/**
 	 * @brief Set limitation of recording time by given value(second), will be stopped when it reaches that.
-	 * This should be called after create but before prepare
+	 * This should be called after setDataSource but before prepare
 	 * @details @b #include <media/MediaRecorder.h>
 	 * This function is a synchronous api
 	 * It sets the user's function

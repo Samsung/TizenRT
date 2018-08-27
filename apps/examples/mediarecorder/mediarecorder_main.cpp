@@ -136,17 +136,6 @@ public:
 				std::cout << "SELECTED APP ON" << std::endl;
 				mMr.create();
 				mMr.setObserver(shared_from_this());
-				if (test == TEST_PCM) {
-					filePath = "/tmp/record.pcm";
-				} else if (test == TEST_OPUS) {
-					filePath = "/tmp/record.opus";
-				} else if (test == TEST_BUFFER) {
-					filePath = "";
-					mMr.setDataSource(unique_ptr<BufferOutputDataSource>(new BufferOutputDataSource()));
-					break;
-				}
-				mMr.setDataSource(unique_ptr<FileOutputDataSource>(
-					new FileOutputDataSource(2, 16000, AUDIO_FORMAT_TYPE_S16_LE, filePath)));
 				break;
 			case RECORDER_START:
 				std::cout << "SELECTED RECORDER_START" << std::endl;
@@ -156,6 +145,19 @@ public:
 						mIsPaused = false;
 					}
 				} else {
+					if (test == TEST_PCM) {
+						filePath = "/tmp/record.pcm";
+						mMr.setDataSource(unique_ptr<FileOutputDataSource>(
+							new FileOutputDataSource(2, 16000, AUDIO_FORMAT_TYPE_S16_LE, filePath)));
+					} else if (test == TEST_OPUS) {
+						filePath = "/tmp/record.opus";
+						mMr.setDataSource(unique_ptr<FileOutputDataSource>(
+							new FileOutputDataSource(2, 16000, AUDIO_FORMAT_TYPE_S16_LE, filePath)));
+					} else if (test == TEST_BUFFER) {
+						filePath = "";
+						mMr.setDataSource(unique_ptr<BufferOutputDataSource>(new BufferOutputDataSource()));
+					}
+
 					if (mMr.setDuration(3) == RECORDER_ERROR_NONE && mMr.prepare() == RECORDER_ERROR_NONE) {
 						mMr.start();
 						std::cout << "START IN NONE-PAUSE STATE SUCCESS" << std::endl;
@@ -185,7 +187,6 @@ public:
 			case RECORDER_STOP:
 				std::cout << "SELECTED RECORDER_STOP" << std::endl;
 				if (mMr.stop() == RECORDER_ERROR_NONE) {
-					mMr.unprepare();
 					mIsPaused = false;
 					std::cout << "STOP SUCCESS" << std::endl;
 				} else {
