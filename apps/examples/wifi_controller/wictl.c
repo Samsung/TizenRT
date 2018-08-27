@@ -109,7 +109,7 @@ static void wictl_process(int argc, char *argv[]);
 
 static int wictl_parse_commands(struct options *opt, int argc, char *argv[]);
 
-#ifdef CONFIG_EXAMPLES_WIFI_CONTROLLER_STRESS_TOOL
+#ifdef CONFIG_EXAMPLES_WICTL_STRESS_TOOL
 extern void wictl_run_stress_test(void *arg);
 #endif
 
@@ -1211,7 +1211,7 @@ int wictl_parse_commands(struct options *opt, int argc, char *argv[])
 	} else if (strcmp(argv[2], "stop") == 0) {
 		opt->func = wictl_stop;
 	} else if (strcmp(argv[2], "stress") == 0) {
-#ifdef CONFIG_EXAMPLES_WIFI_CONTROLLER_STRESS_TOOL
+#ifdef CONFIG_EXAMPLES_WICTL_STRESS_TOOL
 		opt->func = wictl_run_stress_test;
 #else
 		return -1;

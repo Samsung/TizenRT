@@ -316,11 +316,11 @@ TEST_F(softap_stop)
 	ST_END_TEST;
 }
 
-ST_SET_SMOKE_TAIL(WICTL_TEST_TRIAL, 8000000, "station join", sta_join);
-ST_SET_SMOKE(WICTL_TEST_TRIAL, 1000000, "station leave", sta_leave, sta_join);
-ST_SET_SMOKE(WICTL_TEST_TRIAL, 5000000, "station scan", sta_scan, sta_leave);
+ST_SET_SMOKE_TAIL(WICTL_TEST_TRIAL, 10000000, "station join", sta_join);
+ST_SET_SMOKE(WICTL_TEST_TRIAL, 2000000, "station leave", sta_leave, sta_join);
+ST_SET_SMOKE(WICTL_TEST_TRIAL, 10000000, "station scan", sta_scan, sta_leave);
 ST_SET_SMOKE(WICTL_TEST_TRIAL, 5000000, "softap start", softap_start, sta_scan);
-ST_SET_SMOKE(WICTL_TEST_TRIAL, 2000000, "softap stop", softap_stop, softap_start);
+ST_SET_SMOKE(WICTL_TEST_TRIAL, 5000000, "softap stop", softap_stop, softap_start);
 ST_SET_PACK(wifi, softap_stop);
 
 void wictl_run_stress_test(void *arg)
