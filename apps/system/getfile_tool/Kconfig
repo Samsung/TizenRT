@@ -1,0 +1,10 @@
+#
+# For a description of the syntax of this configuration file,
+# see kconfig-language at https://www.kernel.org/doc/Documentation/kbuild/kconfig-language.txt
+#
+
+config SYSTEM_ENABLE_GETFILE
+	bool "getfile via UART"
+	default n
+	---help---
+		Enable getfile support via UART
