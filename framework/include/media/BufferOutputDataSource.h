@@ -64,13 +64,13 @@ public:
 	 * @details @b #include <media/BufferOutputDataSource.h>
 	 * @since TizenRT v2.0 PRE
 	 */
-	BufferOutputDataSource(const BufferOutputDataSource& source);
+	BufferOutputDataSource(const BufferOutputDataSource &source);
 	/**
 	 * @brief Operator= for BufferOutputDataSource.
 	 * @details @b #include <media/BufferOutputDataSource.h>
 	 * @since TizenRT v2.0 PRE
 	 */
-	BufferOutputDataSource& operator=(const BufferOutputDataSource& source);
+	BufferOutputDataSource &operator=(const BufferOutputDataSource &source);
 	/**
 	 * @brief Deconstructs an empty BufferOutputDataSource.
 	 * @details @b #include <media/BufferOutputDataSource.h>

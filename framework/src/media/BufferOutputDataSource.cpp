@@ -44,12 +44,12 @@ BufferOutputDataSource::BufferOutputDataSource(unsigned int channels, unsigned i
 {
 }
 
-BufferOutputDataSource::BufferOutputDataSource(const BufferOutputDataSource& source)
+BufferOutputDataSource::BufferOutputDataSource(const BufferOutputDataSource &source)
 	: OutputDataSource(source)
 {
 }
 
-BufferOutputDataSource& BufferOutputDataSource::operator=(const BufferOutputDataSource& source)
+BufferOutputDataSource &BufferOutputDataSource::operator=(const BufferOutputDataSource &source)
 {
 	OutputDataSource::operator=(source);
 	return *this;
@@ -58,8 +58,8 @@ BufferOutputDataSource& BufferOutputDataSource::operator=(const BufferOutputData
 bool BufferOutputDataSource::open()
 {
 	if (!getStreamBuffer()) {
-		auto streamBuffer = OutputStreamBuffer::create( \
-			CONFIG_BUFFER_DATASOURCE_STREAM_BUFFER_SIZE, \
+		auto streamBuffer = OutputStreamBuffer::create(
+			CONFIG_BUFFER_DATASOURCE_STREAM_BUFFER_SIZE,
 			CONFIG_BUFFER_DATASOURCE_STREAM_BUFFER_THRESHOLD);
 
 		if (!streamBuffer) {
