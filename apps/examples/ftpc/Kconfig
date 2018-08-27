@@ -7,6 +7,9 @@ config EXAMPLES_FTPC
 	bool "FTP client example"
 	depends on NETUTILS_FTPC
 	default n
+	select FS_READABLE
+	select FS_WRITABLE
+	select FS_TMPFS
 	---help---
 		Enable the FTP client example
 
