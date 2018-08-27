@@ -155,7 +155,7 @@ public:
 	 * @return The value of current volume
 	 * @since TizenRT v2.0 PRE
 	 */
-	player_result_t getVolume(uint8_t*);
+	player_result_t getVolume(uint8_t *volume);
 
 	/**
 	 * @brief Sets the volume adjusted
@@ -187,8 +187,19 @@ public:
 	 */
 	player_result_t setObserver(std::shared_ptr<MediaPlayerObserverInterface>);
 
+	/**
+	 * @brief MediaPlayer operator==
+	 * @details @b #include <media/MediaPlayer.h>
+	 * This function is a synchronous api
+	 * Compares the MediaPlayer objects for equality
+	 * @return The result of the compare operation for MediaPlayer object
+	 * @since TizenRT v2.0 PRE
+	 */
+	bool operator==(const MediaPlayer &rhs);
+
 private:
 	std::shared_ptr<MediaPlayerImpl> mPMpImpl;
+	uint64_t mId;
 };
 } // namespace media
 #endif
