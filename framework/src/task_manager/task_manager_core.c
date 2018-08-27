@@ -210,6 +210,7 @@ static int taskmgr_unregister(int handle)
 		TM_FREE(tm_pthread_list[TM_IDX(handle)].name);
 		tm_pthread_list[TM_IDX(handle)].name = NULL;
 		pthread_attr_destroy(tm_pthread_list[TM_IDX(handle)].attr);
+		TM_FREE(tm_pthread_list[TM_IDX(handle)].attr);
 		tm_pthread_list[TM_IDX(handle)].entry = NULL;
 		tm_pthread_list[TM_IDX(handle)].arg = NULL;
 	}
