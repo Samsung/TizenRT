@@ -153,7 +153,8 @@ int task_manager_register_pthread(char *name, pthread_attr_t *attr, pthread_star
 		return TM_OUT_OF_MEMORY;
 	}
 	strncpy(((tm_pthread_info_t *)request_msg.data)->name, name, strlen(name) + 1);
-	((tm_pthread_info_t *)request_msg.data)->attr = attr;
+	((tm_pthread_info_t *)request_msg.data)->attr = (pthread_attr_t *)TM_ALLOC(sizeof(pthread_attr_t));
+	memcpy(((tm_pthread_info_t *)request_msg.data)->attr, attr, sizeof(pthread_attr_t));
 	((tm_pthread_info_t *)request_msg.data)->entry = start_routine;
 	((tm_pthread_info_t *)request_msg.data)->arg = arg;
 	request_msg.timeout = timeout;
