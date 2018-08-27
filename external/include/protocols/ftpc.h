@@ -88,7 +88,7 @@
 #endif
 
 #ifndef CONFIG_FTP_TMPDIR
-#define CONFIG_FTP_TMPDIR "/tmp"
+#define CONFIG_FTP_TMPDIR "/mnt"
 #endif
 
 #ifndef CONFIG_FTP_BUFSIZE
