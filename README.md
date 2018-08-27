@@ -18,7 +18,7 @@ There is no need to install the required libraries and toolchains since the prov
 However, if your development systems are not eligible for running the Docker container, all libraries and toolchains should be manually installed.  
 Please refer to [Manual Setup Build Environment](docs/HowToSetEnv.md).
 
-For more infomation of libraries in the TizenRT Docker Image, see https://hub.Docker.com/r/tizenrt/tizenrt/.
+For more infomation of libraries in the TizenRT Docker Image, see https://hub.docker.com/r/tizenrt/tizenrt/.
 
 ### 1. Install Docker
 
@@ -35,7 +35,7 @@ TIZENRT_BASEDIR="$PWD"
 **Note**: To contribute in this community, you need to clone your forked private repository instead.  
           Github guides this by [working-with-forks](https://help.github.com/articles/working-with-forks).
 
-### 3 Configuration
+### 3. Configuration
 
 ```bash
 cd os
@@ -52,7 +52,7 @@ To check all pre-defined configurations, type as follows:
 
 #### 3.1 Additional Configuration
 
-After basic configuration by [3 Configuration](#3-configuration), you can customize configurations optionally with **menuconfig**.
+After basic configuration by [3. Configuration](#3-configuration), you can customize configurations optionally with **menuconfig**.
 
 ```bash
 ./dbuild.sh menuconfig
@@ -61,7 +61,7 @@ After basic configuration by [3 Configuration](#3-configuration), you can custom
 This command might require ```sudo``` for root permission.  
 To run Docker without ```sudo```, refer to https://docs.docker.com/install/linux/linux-postinstall/.
 
-### 4 Compilation
+### 4. Compilation
 
 ```bash
 ./dbuild.sh
@@ -87,7 +87,7 @@ After modifying configuration with menuconfig, this command is required.
 This command includes the *clean* option and additionally removes configured files including .config, Make.defs and linked folders / files.  
 Before changing basic configuration with ```./configure.sh``` command, this command is required to delete pre-set configurations.
 
-### 5 Programming
+### 5. Programming
 
 ```bash
 ./dbuild.sh download [OPTION]
