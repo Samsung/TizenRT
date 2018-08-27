@@ -1,9 +1,9 @@
 examples/wifi_manager_sample
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-  This is an example to control Wi-Fi by wifi manager APIs
+  This is an example of Wi-Fi controller application using Wi-Fi Manager APIs
   
   Configs (see the details on Kconfig):
-  * CONFIG_EXAMPLES_WIFIMANAGER_TEST
+  * CONFIG_EXAMPLES_WIFI_CONTROLLER
 
   Depends on: WIFI_MANAGER

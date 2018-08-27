@@ -1,0 +1,3 @@
+config ENTRY_WICTL
+	bool "Wi-Fi Manager control application; Wi-Fi controller"
+	depends on EXAMPLES_WICTL
