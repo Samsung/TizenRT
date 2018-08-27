@@ -114,9 +114,24 @@ public:
 		}
 	}
 
-	void onPlaybackError(MediaPlayer &mediaPlayer)
+	void onPlaybackError(MediaPlayer &mediaPlayer, player_error_t error)
 	{
 		std::cout << "onPlaybackError" << std::endl;
+	}
+
+	void onStartError(MediaPlayer &mediaPlayer, player_error_t error)
+	{
+		std::cout << "onStartError" << std::endl;
+	}
+
+	void onStopError(MediaPlayer &mediaPlayer, player_error_t error)
+	{
+		std::cout << "onStopError" << std::endl;
+	}
+
+	void onPauseError(MediaPlayer &mediaPlayer, player_error_t error)
+	{
+		std::cout << "onPauseError" << std::endl;
 	}
 
 	void onPlaybackPaused(MediaPlayer &mediaPlayer)

@@ -257,7 +257,7 @@ void MediaPlayerImpl::startPlayer()
 	medvdbg("PlayerWorker : startPlayer\n");
 	if (mCurState != PLAYER_STATE_READY && mCurState != PLAYER_STATE_PAUSED) {
 		meddbg("PlayerWorker : player is not ready or paused\n");
-		notifyObserver(PLAYER_OBSERVER_COMMAND_ERROR);
+		notifyObserver(PLAYER_OBSERVER_COMMAND_START_ERROR, PLAYER_ERROR_INVALID_STATE);
 		return;
 	}
 
@@ -298,7 +298,7 @@ void MediaPlayerImpl::stopPlayer(player_result_t ret)
 	medvdbg("MediaPlayer Worker : stopPlayer\n");
 	if (ret == PLAYER_OK && mCurState != PLAYER_STATE_PLAYING && mCurState != PLAYER_STATE_PAUSED) {
 		meddbg("PlayerWorker : player is not playing or paused\n");
-		notifyObserver(PLAYER_OBSERVER_COMMAND_ERROR);
+		notifyObserver(PLAYER_OBSERVER_COMMAND_STOP_ERROR, PLAYER_ERROR_INVALID_STATE);
 		return;
 	}
 
@@ -307,17 +307,13 @@ void MediaPlayerImpl::stopPlayer(player_result_t ret)
 		meddbg("stop_audio_stream_out failed ret : %d\n", result);
 		if (ret == PLAYER_OK) {
 			/* TODO : inform device control fail */
-			notifyObserver(PLAYER_OBSERVER_COMMAND_ERROR);
+			notifyObserver(PLAYER_OBSERVER_COMMAND_STOP_ERROR, PLAYER_ERROR_INTERNAL_OPERATION_FAILED);
 			return;
 		}
 	}
 
 	mpw.setPlayer(nullptr);
 	mCurState = PLAYER_STATE_READY;
-
-	if (ret != PLAYER_OK) {
-		notifyObserver(PLAYER_OBSERVER_COMMAND_ERROR);
-	}
 }
 
 player_result_t MediaPlayerImpl::pause()
@@ -342,14 +338,14 @@ void MediaPlayerImpl::pausePlayer()
 	medvdbg("MediaPlayer Worker : pausePlayer\n");
 	if (mCurState != PLAYER_STATE_PLAYING) {
 		meddbg("PlayerWorker : player is not playing\n");
-		notifyObserver(PLAYER_OBSERVER_COMMAND_ERROR);
+		notifyObserver(PLAYER_OBSERVER_COMMAND_PAUSE_ERROR, PLAYER_ERROR_INVALID_STATE);
 		return;
 	}
 
 	audio_manager_result_t result = pause_audio_stream_out();
 	if (result != AUDIO_MANAGER_SUCCESS) {
 		meddbg("pause_audio_stream_in failed ret : %d\n", result);
-		notifyObserver(PLAYER_OBSERVER_COMMAND_ERROR);
+		notifyObserver(PLAYER_OBSERVER_COMMAND_PAUSE_ERROR, PLAYER_ERROR_INTERNAL_OPERATION_FAILED);
 		return;
 	}
 
@@ -519,6 +515,9 @@ void MediaPlayerImpl::notifySync()
 
 void MediaPlayerImpl::notifyObserver(player_observer_command_t cmd, ...)
 {
+	va_list ap;
+	va_start(ap, cmd);
+
 	if (mPlayerObserver != nullptr) {
 		PlayerObserverWorker &pow = PlayerObserverWorker::getWorker();
 		switch (cmd) {
@@ -528,8 +527,17 @@ void MediaPlayerImpl::notifyObserver(player_observer_command_t cmd, ...)
 		case PLAYER_OBSERVER_COMMAND_FINISHIED:
 			pow.enQueue(&MediaPlayerObserverInterface::onPlaybackFinished, mPlayerObserver, mPlayer);
 			break;
-		case PLAYER_OBSERVER_COMMAND_ERROR:
-			pow.enQueue(&MediaPlayerObserverInterface::onPlaybackError, mPlayerObserver, mPlayer);
+		case PLAYER_OBSERVER_COMMAND_PLAYBACK_ERROR:
+			pow.enQueue(&MediaPlayerObserverInterface::onPlaybackError, mPlayerObserver, mPlayer, (player_error_t)va_arg(ap, int));
+			break;
+		case PLAYER_OBSERVER_COMMAND_START_ERROR:
+			pow.enQueue(&MediaPlayerObserverInterface::onStartError, mPlayerObserver, mPlayer, (player_error_t)va_arg(ap, int));
+			break;
+		case PLAYER_OBSERVER_COMMAND_STOP_ERROR:
+			pow.enQueue(&MediaPlayerObserverInterface::onStopError, mPlayerObserver, mPlayer, (player_error_t)va_arg(ap, int));
+			break;
+		case PLAYER_OBSERVER_COMMAND_PAUSE_ERROR:
+			pow.enQueue(&MediaPlayerObserverInterface::onPauseError, mPlayerObserver, mPlayer, (player_error_t)va_arg(ap, int));
 			break;
 		case PLAYER_OBSERVER_COMMAND_PAUSED:
 			pow.enQueue(&MediaPlayerObserverInterface::onPlaybackPaused, mPlayerObserver, mPlayer);
@@ -540,24 +548,16 @@ void MediaPlayerImpl::notifyObserver(player_observer_command_t cmd, ...)
         case PLAYER_OBSERVER_COMMAND_BUFFER_UNDERRUN:
 			pow.enQueue(&MediaPlayerObserverInterface::onPlaybackBufferUnderrun, mPlayerObserver, mPlayer);
         	break;
-        case PLAYER_OBSERVER_COMMAND_BUFFER_UPDATED: {
-			va_list ap;
-			va_start(ap, cmd);
-			size_t bytes = va_arg(ap, size_t);
-			va_end(ap);
-			pow.enQueue(&MediaPlayerObserverInterface::onPlaybackBufferUpdated, mPlayerObserver, mPlayer, bytes);
+        case PLAYER_OBSERVER_COMMAND_BUFFER_UPDATED:
+			pow.enQueue(&MediaPlayerObserverInterface::onPlaybackBufferUpdated, mPlayerObserver, mPlayer, (size_t)va_arg(ap, size_t));
 			break;
-        }
-        case PLAYER_OBSERVER_COMMAND_BUFFER_STATECHANGED: {
-			va_list ap;
-			va_start(ap, cmd);
-			buffer_state_t state = (buffer_state_t)va_arg(ap, int);
-			va_end(ap);
-			pow.enQueue(&MediaPlayerObserverInterface::onPlaybackBufferStateChanged, mPlayerObserver, mPlayer, state);
+        case PLAYER_OBSERVER_COMMAND_BUFFER_STATECHANGED:
+			pow.enQueue(&MediaPlayerObserverInterface::onPlaybackBufferStateChanged, mPlayerObserver, mPlayer, (buffer_state_t)va_arg(ap, int));
 			break;
-        }
 		}
 	}
+
+	va_end(ap);
 }
 
 void MediaPlayerImpl::playback()
@@ -567,6 +567,7 @@ void MediaPlayerImpl::playback()
 	if (num_read > 0) {
 		int ret = start_audio_stream_out(mBuffer, get_output_bytes_to_frame((unsigned int)num_read));
 		if (ret < 0) {
+			notifyObserver(PLAYER_OBSERVER_COMMAND_PLAYBACK_ERROR, PLAYER_ERROR_INTERNAL_OPERATION_FAILED);
 			PlayerWorker &mpw = PlayerWorker::getWorker();
 			switch (ret) {
 			case AUDIO_MANAGER_XRUN_STATE:
@@ -583,8 +584,9 @@ void MediaPlayerImpl::playback()
 		notifyObserver(PLAYER_OBSERVER_COMMAND_FINISHIED);
 		stop();
 	} else {
-		PlayerWorker &mpw = PlayerWorker::getWorker();
 		meddbg("InputDatasource read error\n");
+		notifyObserver(PLAYER_OBSERVER_COMMAND_PLAYBACK_ERROR, PLAYER_ERROR_INTERNAL_OPERATION_FAILED);
+		PlayerWorker &mpw = PlayerWorker::getWorker();
 		mpw.enQueue(&MediaPlayerImpl::stopPlayer, shared_from_this(), PLAYER_ERROR_INVALID_OPERATION);
 	}
 }

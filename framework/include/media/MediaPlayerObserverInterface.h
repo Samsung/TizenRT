@@ -31,6 +31,8 @@
 
 namespace media {
 class MediaPlayer;
+enum player_error_e : int;
+typedef enum player_error_e player_error_t;
 
 /**
  * @class
@@ -60,7 +62,25 @@ public:
 	 * @details @b #include <media/MediaPlayerObserverInterface.h>
 	 * @since TizenRT v2.0 PRE
 	 */
-	virtual void onPlaybackError(MediaPlayer &mediaPlayer) = 0;
+	virtual void onPlaybackError(MediaPlayer &mediaPlayer, player_error_t error) = 0;
+	/**
+	 * @brief informs the user of the error state of player operation
+	 * @details @b #include <media/MediaPlayerObserverInterface.h>
+	 * @since TizenRT v2.0 PRE
+	 */
+	virtual void onStartError(MediaPlayer &mediaPlayer, player_error_t error) = 0;
+	/**
+	 * @brief informs the user of the error state of player operation
+	 * @details @b #include <media/MediaPlayerObserverInterface.h>
+	 * @since TizenRT v2.0 PRE
+	 */
+	virtual void onStopError(MediaPlayer &mediaPlayer, player_error_t error) = 0;
+	/**
+	 * @brief informs the user of the error state of player operation
+	 * @details @b #include <media/MediaPlayerObserverInterface.h>
+	 * @since TizenRT v2.0 PRE
+	 */
+	virtual void onPauseError(MediaPlayer &mediaPlayer, player_error_t error) = 0;
 	/**
 	 * @brief informs the user of the playback has paused.
 	 * @details @b #include <media/MediaPlayerObserverInterface.h>
