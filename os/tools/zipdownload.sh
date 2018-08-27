@@ -105,7 +105,6 @@ fi
 # Get configuration
 
 source ${CONFIG}
-
 BOARD=${CONFIG_ARCH_BOARD}
 
 # Get file according to .config
@@ -135,14 +134,29 @@ fi
 # Board specific
 
 unset FLASHTOOLDIR
+BOARDBAT=${OSDIR}/tools/board.bat
 
 if [ "${BOARD}" == "artik05x" ]; then
 	FLASHTOOLDIR="${BUILDDIR}/tools/openocd"
-	BOARDBIN="${BUILDDIR}/configs/artik053 ${BUILDDIR}/configs/artik053s ${BUILDDIR}/configs/artik055s ${BINDIR}/tinyara_head.bin"
-fi
-
-if [ "${BOARD}" == "cy4390x" ]; then
+	if [ "${CONFIG_ARCH_BOARD_ARTIK053S}" == "y" ]; then
+		pushd ${OSDIR} > /dev/null
+		make download
+		popd > /dev/null
+		BOARDBIN="${BUILDDIR}/configs/artik053s ${BINDIR}/tinyara_head.bin-signed"
+		echo "set BOARD=artik053s" > ${BOARDBAT}
+	elif [ "${CONFIG_ARCH_BOARD_ARTIK055S}" == "y" ]; then
+		pushd ${OSDIR} > /dev/null
+		make download
+		popd > /dev/null
+		BOARDBIN="${BUILDDIR}/configs/artik055s ${BINDIR}/tinyara_head.bin-signed"
+		echo "set BOARD=artik055s" > ${BOARDBAT}
+	else
+		BOARDBIN="${BUILDDIR}/configs/artik053 ${BINDIR}/tinyara_head.bin"
+		echo "set BOARD=artik053" > ${BOARDBAT}
+	fi
+elif [ "${BOARD}" == "cy4390x" ]; then
 	BOARDBIN="${BINDIR}/tinyara_master_strip"
+	echo "set BOARD=cy4390x" > ${BOARDBAT}
 fi
 
 # Execute
@@ -152,7 +166,8 @@ DEBUGFILES="${ELF} ${MAP}"
 TINYARAFILES="${CONFIG} ${MAKEFILES} ${DOWNLOADSCRIPTS} ${TOOLCHAINDEFS}"
 BOARDSPECIFIC="${BOARDSCRIPT} ${BOARDBIN}"
 
-${TAR} ${TAROPT} ${FILENAME} ${TINYARAFILES} ${BINARIES} ${DEBUGFILES} ${FLASHTOOLDIR} ${BOARDSPECIFIC} || exit 1
+${TAR} ${TAROPT} ${FILENAME} ${TINYARAFILES} ${BINARIES} ${DEBUGFILES} ${FLASHTOOLDIR} ${BOARDSPECIFIC} ${BOARDBAT} || exit 1
 
+rm ${BOARDBAT}
 echo "${FILENAME} zipped!"
 exit 0
