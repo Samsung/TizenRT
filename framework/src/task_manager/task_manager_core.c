@@ -324,6 +324,7 @@ static int taskmgr_stop(int handle, int caller_pid)
 	}
 #ifndef CONFIG_DISABLE_PTHREAD
 	else {
+		(void)pthread_detach(TM_PID(handle));
 		ret = pthread_cancel(TM_PID(handle));
 	}
 #endif
