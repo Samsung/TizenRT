@@ -4,7 +4,9 @@
 #   2. Patch the code using the additional changes
 #   3. Build the code with the necessary flags
 
-set -x
+if [ ! -z "${DEBUG}" ]; then
+	set -x
+fi
 
 extract_flags() {
 	if [ -e ${TOPDIR}/include/tinyara/config.h ]; then
@@ -63,7 +65,7 @@ CONFIG_EXAMPLES_IOTIVITY=`extract_flags "CONFIG_EXAMPLES_IOTIVITY"`
 if [ -z ${CONFIG_EXAMPLES_IOTIVITY} ]; then CONFIG_EXAMPLES_IOTIVITY=0; fi
 
 CONFIG_DEBUG_SYMBOLS=`extract_flags "CONFIG_DEBUG_SYMBOLS"`
-if [-z ${CONFIG_DEBUG_SYMBOLS} ]; then CONFIG_DEBUG_SYMBOLS=0; fi
+if [ -z ${CONFIG_DEBUG_SYMBOLS} ]; then CONFIG_DEBUG_SYMBOLS=0; fi
 
 CONFIG_IOTIVITY_NS_PROVIDER=`extract_flags "CONFIG_IOTIVITY_NS_PROVIDER"`
 if [ -z ${CONFIG_IOTIVITY_NS_PROVIDER} ]; then CONFIG_IOTIVITY_NS_PROVIDER=0; fi
