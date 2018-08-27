@@ -32,43 +32,36 @@ git clone https://github.com/Samsung/TizenRT.git
 cd TizenRT
 TIZENRT_BASEDIR="$PWD"
 ```
-**Note**: To contribute in this community, fork this project first into own github repository and do git cloning from your repository. 
-> git clone https://github.com/your_github_id/TizenRT.git
+**Note**: To contribute in this community, you need to clone your forked private repository instead.  
+          Github guides this by [working-with-forks](https://help.github.com/articles/working-with-forks).
 
-
-### 3. Build
-
-#### 3.1 Configuration
+### 3 Configuration
 
 ```bash
 cd os
 ./tools/configure.sh <board>/<configuration_set>
 ```
 
-This command retrieves the specific pre-configured file named defconfig according to
- \<board\>/\<configuration_set\>.  
-You can see collection of all configuration files at
- *$TIZENRT_BASEDIR/build/configs*.  
+This command retrieves the specific pre-configured file named defconfig and Make.defs according to \<board\>/\<configuration_set\>.  
+You can see collection of all configuration files at *$TIZENRT_BASEDIR/build/configs*.  
 To check all pre-defined configurations, type as follows:
 
 ```bash
 ./configure.sh --help
 ```
 
-#### 3.2 Additional Configuration
+#### 3.1 Additional Configuration
 
-After the configuration is done, further modification can be done with menuconfig from
- *$TIZENRT_BASEDIR/os*.  
-This command requires ```sudo``` for root permission.  
-To run Docker without ```sudo```, refer to
- https://docs.docker.com/install/linux/linux-postinstall/.
+After basic configuration by [3 Configuration](#3-configuration), you can customize configurations optionally with **menuconfig**.
 
 ```bash
-cd ..
 ./dbuild.sh menuconfig
 ```
 
-#### 3.3 Compile
+This command might require ```sudo``` for root permission.  
+To run Docker without ```sudo```, refer to https://docs.docker.com/install/linux/linux-postinstall/.
+
+### 4 Compilation
 
 ```bash
 ./dbuild.sh
@@ -76,20 +69,35 @@ cd ..
 
 Built binaries are located in *$TIZENRT_BASEDIR/build/output/bin*.
 
-#### 3.4 Clean
+#### 4.1 Clean
+
+There are two types of clean commands, clean and distclean.
 
 ```bash
 ./dbuild.sh clean
 ```
-This command removes built files including objects, libraries, .depend, Make.dep, etc.  
-To modify configuration with menuconfig, this command is required.  
 
-Before changing configuration with ```./configure.sh``` command, deletion of previous configuration files must be done using the follwoing command.
+This command removes built files including objects, libraries, .depend, Make.dep, etc.  
+After modifying configuration with menuconfig, this command is required.
 
 ```bash
 ./dbuild.sh distclean
 ```
-This command removes configured files including .config and Make.defs.
+
+This command includes the *clean* option and additionally removes configured files including .config, Make.defs and linked folders / files.  
+Before changing basic configuration with ```./configure.sh``` command, this command is required to delete pre-set configurations.
+
+### 5 Programming
+
+```bash
+./dbuild.sh download [OPTION]
+```
+
+TizenRT supports *download* command to program a binary into a board.  
+You might be required to set up usb driver. For more information, please refer to [Supported board / Emulator](#supported-board--emulator).
+
+```OPTION``` designates which flash partitions are flashed.  
+For example, ```ALL``` means programming all of binaries. This also depends on each board.
 
 ## Supported Board / Emulator
 
