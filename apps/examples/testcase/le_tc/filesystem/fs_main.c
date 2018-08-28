@@ -66,9 +66,10 @@
 #ifdef CONFIG_FS_SMARTFS
 #if defined(CONFIG_SIDK_S5JT200_AUTOMOUNT_USERFS)
 #define TMP_MOUNT_DEV_DIR CONFIG_SIDK_S5JT200_AUTOMOUNT_USERFS_DEVNAME
-
 #elif defined(CONFIG_ARTIK05X_AUTOMOUNT_USERFS)
 #define TMP_MOUNT_DEV_DIR CONFIG_ARTIK05X_AUTOMOUNT_USERFS_DEVNAME
+#elif defined(CONFIG_ARCH_BOARD_LM3S6965EK)
+#define TMP_MOUNT_DEV_DIR "/dev/smart0p0"
 #else
 #define TMP_MOUNT_DEV_DIR "/dev/smart1"
 #endif
@@ -1240,12 +1241,14 @@ static void tc_fs_vfs_fstatfs(void)
 #endif
 	close(fd);
 
+#ifdef CONFIG_DEV_ZERO
 	fd = open(DEV_ZERO_PATH, O_RDWR);
 	TC_ASSERT_GEQ("open", fd, 0);
 	/*root pseudo file system */
 	ret = fstatfs(fd, &fs);
 	TC_ASSERT_EQ_CLEANUP("fstatfs", ret, OK, close(fd));
 	close(fd);
+#endif
 
 	TC_SUCCESS_RESULT();
 }
