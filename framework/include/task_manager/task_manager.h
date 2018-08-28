@@ -276,8 +276,7 @@ int task_manager_restart(int handle, int timeout);
  * task_manager_unicast can be used with SYNC and ASYNC mode.\n
  * With SYNC mode, reply msg can be sent through task_manager_reply_unicast API.
  * @param[in] handle the handle id of task to be sent
- * @param[in] send_msg message structure to be unicasted\n
- *             @remarks The @send_msg value must be released with free() by you in unicast callback function.
+ * @param[in] send_msg message structure to be unicasted
  * @param[out] reply_msg the reply msg structure for sync. If this is NULL, task_manager_unicast works asynchronously.
  * @param[in] timeout returnable flag. It can be one of the below.\n
  *			TM_NO_RESPONSE : Ignore the response of request from task manager\n
