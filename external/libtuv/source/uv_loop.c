@@ -70,6 +70,9 @@ int uv_loop_init(uv_loop_t *loop)
 	loop->backend_fd = -1;
 	loop->emfile_fd = -1;
 
+	loop->signal_pipefd[0] = -1;
+	loop->signal_pipefd[1] = -1;
+
 	loop->timer_counter = 0;
 	loop->stop_flag = 0;
 
@@ -77,6 +80,8 @@ int uv_loop_init(uv_loop_t *loop)
 	if (err) {
 		return err;
 	}
+
+	uv__signal_global_once_init();
 
 	if (uv_rwlock_init(&loop->cloexec_lock)) {
 		TDLOG("uv_loop_init rwlock abort");
