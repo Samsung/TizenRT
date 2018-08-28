@@ -52,11 +52,12 @@ unsetenv         uptime           vi               wifi
 
 
 ## cat
-This command prints the contents of an existing file to standard output or writes it to the target file.
-`--help` - display the usage
+This command prints the contents of an existing file to standard output or writes it to the target file.  
+
 ```
 Usage:
-   cat [source_file_path] [> or >>] [target_file_path]
+   cat [OPTIONS] [source_file_path] [> or >>] [target_file_path]  
+   OPTIONS: `--help` - display the usage.  
 ```
 ```bash
 TASH>>echo -n "abc" > /mnt/test.txt
@@ -218,12 +219,13 @@ Device Drivers -> RAM log device support to y
 ```
 
 ## echo
-This command prints the 'input_text' contents to standard output or writes/appends it to target file.
-`-n` - do not output the trailing newline
-`--help` - displays usage
+This command prints the 'input_text' contents to standard output or writes/appends it to target file.  
+
 ```
 Usage:
-   echo [-n] [input_text] [> or >>] [target_file_path]
+   echo [OPTIONS] [input_text] [> or >>] [target_file_path]  
+   OPTIONS: `-n` - do not output the trailing newline.  
+            `--help` - displays usage.  
 ```
 ```bash
 TASH>>ls /mnt
