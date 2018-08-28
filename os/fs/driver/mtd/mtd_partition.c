@@ -107,7 +107,7 @@ struct mtd_partition_s {
 	uint16_t tagnumber;			/* Number of tag to classify each MTD driver */
 	struct mtd_partition_s *pnext;	/* Pointer to next partition struct */
 #ifdef CONFIG_MTD_PARTITION_NAMES
-	FAR const char *name;		/* Name of the partition */
+	char name[11];                /* Name of the partition */
 #endif
 };
 
@@ -522,11 +522,6 @@ static ssize_t part_procfs_read(FAR struct file *filep, FAR char *buffer, size_t
 	ssize_t total = 0;
 	ssize_t blkpererase;
 	ssize_t ret;
-#ifdef CONFIG_MTD_PARTITION_NAMES
-	char partname[MTD_PARTNAME_LEN];
-	FAR const char *ptr;
-	uint8_t x;
-#endif
 
 	fvdbg("buffer=%p buflen=%d\n", buffer, (int)buflen);
 
@@ -572,30 +567,7 @@ static ssize_t part_procfs_read(FAR struct file *filep, FAR char *buffer, size_t
 		/* Copy data from the next known partition */
 
 #ifdef CONFIG_MTD_PARTITION_NAMES
-		if (attr->nextpart->name == NULL) {
-			strncpy(partname, "(noname)  ", MTD_PARTNAME_LEN);
-		} else {
-			ptr = attr->nextpart->name;
-			for (x = 0; x < sizeof(partname) - 1; x++) {
-				/* Test for end of partition name */
-
-				if (*ptr == ',' || *ptr == '\0') {
-					/* Perform space fill for alignment */
-
-					partname[x] = ' ';
-				} else {
-					/* Copy next byte of partition name */
-
-					partname[x] = *ptr++;
-				}
-			}
-
-			partname[x] = '\0';
-		}
-
-		/* Terminate the partition name and add to output buffer */
-
-		ret = snprintf(&buffer[total], buflen - total, "%s%7d %7d", partname, attr->nextpart->firstblock / blkpererase, attr->nextpart->neraseblocks);
+		ret = snprintf(&buffer[total], buflen - total, "%s%7d %7d", attr->nextpart->name, attr->nextpart->firstblock / blkpererase, attr->nextpart->neraseblocks);
 #else
 		ret = snprintf(&buffer[total], buflen - total, "%7d %7d", attr->nextpart->firstblock / blkpererase, attr->nextpart->neraseblocks);
 #endif
@@ -795,7 +767,7 @@ FAR struct mtd_dev_s *mtd_partition(FAR struct mtd_dev_s *mtd, off_t firstblock,
 	part->tagnumber = tagno;
 
 #ifdef CONFIG_MTD_PARTITION_NAMES
-	part->name = NULL;
+	strncpy(part->name, "(noname)", MTD_PARTNAME_LEN);
 #endif
 
 	/* Add this partition to the list of known partitions */
@@ -861,11 +833,12 @@ int mtd_setpartitionname(FAR struct mtd_dev_s *mtd, FAR const char *name)
 {
 	FAR struct mtd_partition_s *priv = (FAR struct mtd_partition_s *)mtd;
 
-	DEBUGASSERT(mtd);
-	DEBUGASSERT(name);
+	if (priv == NULL || name == NULL) {
+		return -EINVAL;
+	}
 
 	/* Allocate space for the name */
-	priv->name = name;
+	strncpy(priv->name, name, MTD_PARTNAME_LEN);
 	return OK;
 }
 #endif
