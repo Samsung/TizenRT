@@ -79,7 +79,6 @@ static void sync_test_cb(tm_msg_t *info)
 	if (strncmp(info->msg, TM_SYNC_SEND_MSG, info->msg_size) == 0) {
 		reply_msg.msg = malloc(strlen(TM_SYNC_RECV_MSG));
 		if (reply_msg.msg != NULL) {
-			free(info->msg);
 			reply_msg.msg_size = strlen(TM_SYNC_RECV_MSG) + 1;
 			memcpy(reply_msg.msg, TM_SYNC_RECV_MSG, reply_msg.msg_size);
 			task_manager_reply_unicast(&reply_msg);
@@ -108,7 +107,6 @@ static void *tm_pthread(void *param)
 static void test_unicast_handler(tm_msg_t *info)
 {
 	flag = !strncmp((char *)info->msg, TM_SAMPLE_MSG, strlen(TM_SAMPLE_MSG));
-	free(info->msg);
 }
 
 static void test_broadcast_handler(void *user_data, void *info)
