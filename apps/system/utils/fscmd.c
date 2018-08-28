@@ -90,8 +90,8 @@
 #define FSCMD_BUFFER_LEN      256
 #endif
 
-#define FSCMD_ECHO_USAGE "Usage: echo [-n] [input_text] [> or >>] [target_file_path]\n"
-#define FSCMD_CAT_USAGE "Usage: cat [source_file_path] [> or >>] [target_file_path]\n"
+#define FSCMD_ECHO_USAGE "Usage:  echo [OPTIONS] [input_text] [> or >>] > [target_file_path]\n\tOPTIONS: '-n' - do not output the trailing newline.\n\t\t '--help' - displays usage.\n"
+#define FSCMD_CAT_USAGE "Usage:  cat [OPTIONS] [source_file_path] [> or >>] [target_file_path]\n\tOPTIONS: '--help' - displays usage.\n"
 
 /** Wrapper to prevent remove information by users **/
 #define FSCMD_OUTPUT(...) printf(__VA_ARGS__)
@@ -148,16 +148,20 @@ static void fscmd_free(FAR char *path)
  *   Display input text or Redirects to a target file
  *
  * Usage:
- *   echo [-n] [input_text] [> or >>] [target path]
+ *   echo [OPTIONS] [input_text] [> or >>] [target_file_path]
+ *   OPTIONS: '-n' - do not output the trailing newline.
+ *            '--help' - displays usage.
  ****************************************************************************/
 static int tash_echo(int argc, char **args)
 {
 	char *dest_fullpath = NULL;
 	redirection_t direction = { FSCMD_NONE, argc };
+	char fscmd_buffer[FSCMD_BUFFER_LEN];
 	int i;
 	int fd = 1;
 	int flags;
-	int len;
+	int len = 0;
+	int arg_len = 0;
 	int n_opt = 1;
 	int ret = ERROR;
 
@@ -210,23 +214,26 @@ static int tash_echo(int argc, char **args)
 	 }
 
 	for (i = n_opt; i < direction.index; i++) {
-		len = strlen(args[i]);
-		if (len > CONFIG_FSCMD_BUFFER_LEN) {
+		if (i != n_opt) {
+			memcpy(fscmd_buffer + len, " ", 1);
+			len += 1;
+		}
+
+		arg_len = strlen(args[i]);
+		if ((len + arg_len) > FSCMD_BUFFER_LEN) {
 			FSCMD_OUTPUT("%s : Too long input text\n", args[0]);
 			goto error_with_close;
 		}
-		if (i != n_opt && write(fd, " ", 1) < 0) {
-			FSCMD_OUTPUT(CMD_FAILED_ERRNO, args[0], "write", errno);
-			goto error_with_close;
-		}
-
-		if (write(fd, args[i], len) < 0) {
-			FSCMD_OUTPUT(CMD_FAILED_ERRNO, args[0], "write", errno);
-			goto error_with_close;
-		}
+		memcpy(fscmd_buffer + len, args[i], arg_len);
+		len += arg_len;
 	}
 
-	if (1 == n_opt && write(fd, "\n", 1) < 0) {
+	if (1 == n_opt) {
+		memcpy(fscmd_buffer + len, "\n", 1);
+		len += 1;
+	}
+
+	if (write(fd, fscmd_buffer, len) < 0) {
 		FSCMD_OUTPUT(CMD_FAILED_ERRNO, args[0], "write", errno);
 		goto error_with_close;
 	}
@@ -251,7 +258,8 @@ error:
  *   copies and concatenates file or redirect file to another file
  *
  * Usage:
- *   cat [source_path] [> or >>] [target_path]
+ *   cat [OPTIONS] [source_file_path] [> or >>] [target_file_path]
+ *   OPTIONS: '--help' - display the usage.
  ****************************************************************************/
 static int tash_cat(int argc, char **args)
 {
@@ -1315,7 +1323,7 @@ const static tash_cmdlist_t fs_utilcmds[] = {
 	{"cd",        tash_cd,        TASH_EXECMD_SYNC},
 #endif
 #ifndef CONFIG_DISABLE_ENVIRON
-	{"echo",       tash_echo,       TASH_EXECMD_SYNC},
+	{"echo",      tash_echo,      TASH_EXECMD_SYNC},
 #endif
 #ifndef CONFIG_DISABLE_ENVIRON
 	{"ls",        tash_ls,        TASH_EXECMD_SYNC},
