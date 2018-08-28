@@ -38,6 +38,7 @@ void taskmgr_msg_cb(int signo, siginfo_t *data)
 	void *user_data;
 	void *cb_data;
 	int user_data_size;
+	tm_msg_t unicast_param;
 
 	handle = taskmgr_get_handle_by_pid(getpid());
 	if (handle == TM_UNREGISTERED_APP) {
@@ -45,7 +46,17 @@ void taskmgr_msg_cb(int signo, siginfo_t *data)
 		return;
 	}
 	if (signo == CONFIG_SIG_SIGTM_UNICAST) {
-		(*TM_UNICAST_CB(handle))((tm_msg_t *)data->si_value.sival_ptr);
+		unicast_param.msg_size = ((tm_msg_t *)data->si_value.sival_ptr)->msg_size;
+		unicast_param.msg = TM_ALLOC(unicast_param.msg_size);
+		if (unicast_param.msg == NULL) {
+			tmdbg("Fail to alloc user data\n");
+			return;
+		}
+		memcpy(unicast_param.msg, ((tm_msg_t *)data->si_value.sival_ptr)->msg, unicast_param.msg_size);
+		TM_FREE(((tm_msg_t *)data->si_value.sival_ptr)->msg);
+
+		(*TM_UNICAST_CB(handle))(&unicast_param);
+		TM_FREE(unicast_param.msg);
 	} else {
 		user_data = ((tm_broadcast_internal_msg_t *)data->si_value.sival_ptr)->user_data;
 		user_data_size = ((tm_broadcast_internal_msg_t *)data->si_value.sival_ptr)->size;
@@ -64,9 +75,9 @@ void taskmgr_msg_cb(int signo, siginfo_t *data)
 
 		TM_FREE(broadcast_param);
 		TM_FREE(user_data);
-		TM_FREE(data->si_value.sival_ptr);
 		broadcast_param = NULL;
 	}
+	TM_FREE(data->si_value.sival_ptr);
 }
 /****************************************************************************
  * task_manager_set_unicast_cb
