@@ -42,6 +42,9 @@
 #include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
+#if defined(__TINYARA__)
+#include <semaphore.h>
+#endif
 
 #include <uv.h>
 
@@ -62,7 +65,11 @@ static void uv__signal_stop(uv_signal_t* handle);
 static uv_once_t uv__signal_global_init_guard = UV_ONCE_INIT;
 static struct uv__signal_tree_s uv__signal_tree =
     RB_INITIALIZER(uv__signal_tree);
+#if defined(__TINYARA__)
+static sem_t uv_sig_sem;
+#else
 static int uv__signal_lock_pipefd[2];
+#endif
 
 
 RB_GENERATE_STATIC(uv__signal_tree_s,
@@ -71,8 +78,12 @@ RB_GENERATE_STATIC(uv__signal_tree_s,
 
 
 static void uv__signal_global_init(void) {
+#if defined(__TINYARA__)
+  sem_init(&uv_sig_sem, 0, 1);
+#else
   if (uv__make_pipe(uv__signal_lock_pipefd, 0))
     abort();
+#endif
 
   if (uv__signal_unlock())
     abort();
@@ -87,11 +98,15 @@ void uv__signal_global_once_init(void) {
 
 static int uv__signal_lock(void) {
   int r;
+#if defined(__TINYARA__)
+  r = sem_wait(&uv_sig_sem);
+#else
   char data;
 
   do {
     r = read(uv__signal_lock_pipefd[0], &data, sizeof data);
   } while (r < 0 && errno == EINTR);
+#endif
 
   return (r < 0) ? -1 : 0;
 }
@@ -99,11 +114,15 @@ static int uv__signal_lock(void) {
 
 static int uv__signal_unlock(void) {
   int r;
+#if defined(__TINYARA__)
+  r = sem_post(&uv_sig_sem);
+#else
   char data = 42;
 
   do {
     r = write(uv__signal_lock_pipefd[1], &data, sizeof data);
   } while (r < 0 && errno == EINTR);
+#endif
 
   return (r < 0) ? -1 : 0;
 }
