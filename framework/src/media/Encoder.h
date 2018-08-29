@@ -19,6 +19,7 @@
 #include <tinyara/config.h>
 #include <stdio.h>
 #include <media/MediaTypes.h>
+#include <memory>
 
 #ifdef CONFIG_AUDIO_CODEC
 #include "streaming/audio_encoder.h"
@@ -34,6 +35,8 @@ public:
 	~Encoder();
 
 public:
+	static std::shared_ptr<Encoder> create(audio_type_t audioType, unsigned short channels, unsigned int sampleRate);
+	bool init(void);
 	size_t pushData(unsigned char *buf, size_t size);
 	bool getFrame(unsigned char *buf, size_t *size);
 	bool empty();
@@ -43,6 +46,9 @@ private:
 	Encoder() {}
 #ifdef CONFIG_AUDIO_CODEC
 	audio_encoder_t mEncoder;
+	audio_type_t mAudioType;
+	unsigned short mChannels;
+	unsigned int mSampleRate;
 	signed short *inputBuf;
 	unsigned char *outputBuf;
 #endif

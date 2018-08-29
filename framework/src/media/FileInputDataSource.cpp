@@ -78,9 +78,15 @@ bool FileInputDataSource::open()
 		switch (getAudioType()) {
 		case AUDIO_TYPE_MP3:
 		case AUDIO_TYPE_AAC:
-		case AUDIO_TYPE_OPUS:
-			setDecoder(std::make_shared<Decoder>(getChannels(), getSampleRate()));
+		case AUDIO_TYPE_OPUS: {
+			auto decoder = Decoder::create(getAudioType(), getChannels(), getSampleRate());
+			if (!decoder) {
+				meddbg("decoder is nullptr!\n");
+			    return false;
+			}
+			setDecoder(decoder);
 			break;
+		}
 		case AUDIO_TYPE_FLAC:
 			/* To be supported */
 			break;

@@ -27,11 +27,55 @@
 namespace media {
 
 Encoder::Encoder(audio_type_t audio_type, unsigned short channels, unsigned int sampleRate)
-	: inputBuf(nullptr)
+	: mAudioType(audio_type)
+	, mChannels(channels)
+	, mSampleRate(sampleRate)
+	, inputBuf(nullptr)
 	, outputBuf(nullptr)
 {
+}
+
+Encoder::Encoder(const Encoder *source)
+{
 #ifdef CONFIG_AUDIO_CODEC
-	switch (audio_type) {
+	mEncoder = source->mEncoder;
+#endif
+}
+
+Encoder::~Encoder()
+{
+#ifdef CONFIG_AUDIO_CODEC
+	if (audio_encoder_finish(&mEncoder) != AUDIO_ENCODER_OK) {
+		meddbg("Error! audio_encoder_finish failed!\n");
+	}
+
+	delete[] inputBuf;
+	delete[] outputBuf;
+#endif
+}
+
+std::shared_ptr<Encoder> Encoder::create(audio_type_t audioType, unsigned short channels, unsigned int sampleRate)
+{
+#ifdef CONFIG_AUDIO_CODEC
+	medvdbg("Encoder::create(%d,%d,%d)\n", audioType, channels, sampleRate);
+	
+	std::shared_ptr<Encoder> instance(new Encoder(audioType, channels, sampleRate));
+	if (instance) {
+		if (instance->init()) {
+			return instance;
+		}
+	}
+
+	meddbg("Encoder::create(%d,%d,%d), init failed!\n", audioType, channels, sampleRate);
+	return nullptr;
+#endif
+	return nullptr;
+}
+
+bool Encoder::init(void)
+{
+#ifdef CONFIG_AUDIO_CODEC
+	switch (mAudioType) {
 
 #ifdef CONFIG_CODEC_LIBOPUS
 	case AUDIO_TYPE_OPUS: {
@@ -55,7 +99,7 @@ Encoder::Encoder(audio_type_t audio_type, unsigned short channels, unsigned int 
 		ext.bandWidth = OPUS_AUTO;
 
 		// allocate memory resource
-		size_t inSamples = sampleRate * channels * ext.frameSizeMS / MSEC_PER_SECOND;
+		size_t inSamples = mSampleRate * mChannels * ext.frameSizeMS / MSEC_PER_SECOND;
 		inputBuf = new signed short[inSamples];
 		outputBuf = new unsigned char[MAX_PACKET_SIZE];
 
@@ -66,12 +110,13 @@ Encoder::Encoder(audio_type_t audio_type, unsigned short channels, unsigned int 
 		ext.inputBufferMaxLength = sizeof(signed short) * inSamples;
 
 		// params about PCM source
-		ext.inputChannels = channels;
-		ext.inputSampleRate = sampleRate;
+		ext.inputChannels = mChannels;
+		ext.inputSampleRate = mSampleRate;
 
 		// Initialize encoder
 		if (audio_encoder_init(&mEncoder, CONFIG_AUDIO_CODEC_RINGBUFFER_SIZE, AUDIO_TYPE_OPUS, &ext) != AUDIO_ENCODER_OK) {
 			meddbg("Error! audio_encoder_init failed!\n");
+			return false;
 		}
 		break;
 	}
@@ -80,26 +125,9 @@ Encoder::Encoder(audio_type_t audio_type, unsigned short channels, unsigned int 
 	default:
 		break;
 	}
-#endif
-}
-
-Encoder::Encoder(const Encoder *source)
-{
-#ifdef CONFIG_AUDIO_CODEC
-	mEncoder = source->mEncoder;
-#endif
-}
-
-Encoder::~Encoder()
-{
-#ifdef CONFIG_AUDIO_CODEC
-	if (audio_encoder_finish(&mEncoder) != AUDIO_ENCODER_OK) {
-		meddbg("Error! audio_encoder_finish failed!\n");
-	}
-
-	delete[] inputBuf;
-	delete[] outputBuf;
-#endif
+	return true;
+#endif	
+	return false;
 }
 
 size_t Encoder::pushData(unsigned char *buf, size_t size)

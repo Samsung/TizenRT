@@ -77,10 +77,15 @@ bool FileOutputDataSource::open()
 		setAudioType(utils::getAudioTypeFromPath(mDataPath));
 
 		switch (getAudioType()) {
-		case AUDIO_TYPE_OPUS:
-			setEncoder(std::make_shared<Encoder>(AUDIO_TYPE_OPUS, getChannels(), getSampleRate()));
+		case AUDIO_TYPE_OPUS: {
+			auto encoder = Encoder::create(AUDIO_TYPE_OPUS, getChannels(), getSampleRate());
+			if (!encoder) {
+				meddbg("encoder is nullptr!\n");
+			    return false;
+			}
+			setEncoder(encoder);
 			break;
-
+		}
 		default:
 			/* Don't set any encoder for unsupported formats */
 			break;
