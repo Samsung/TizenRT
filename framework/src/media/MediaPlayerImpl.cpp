@@ -22,7 +22,6 @@
 
 #include <debug.h>
 #include <errno.h>
-#include "Decoder.h"
 #include "audio/audio_manager.h"
 
 namespace media {

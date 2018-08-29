@@ -22,7 +22,6 @@
 
 #include <media/FileInputDataSource.h>
 #include "utils/MediaUtils.h"
-#include "Decoder.h"
 #include "StreamBuffer.h"
 
 #ifndef CONFIG_FILE_DATASOURCE_STREAM_BUFFER_SIZE
@@ -74,20 +73,7 @@ bool FileInputDataSource::open()
 
 	if (!mFp) {
 		setAudioType(utils::getAudioTypeFromPath(mDataPath));
-
-		switch (getAudioType()) {
-		case AUDIO_TYPE_MP3:
-		case AUDIO_TYPE_AAC:
-		case AUDIO_TYPE_OPUS:
-			setDecoder(std::make_shared<Decoder>(getChannels(), getSampleRate()));
-			break;
-		case AUDIO_TYPE_FLAC:
-			/* To be supported */
-			break;
-		default:
-			/* Don't set any decoder for unsupported formats */
-			break;
-		}
+		registerDecoder(getAudioType(), getChannels(), getSampleRate());
 
 		mFp = fopen(mDataPath.c_str(), "rb");
 		if (mFp) {
@@ -106,22 +92,25 @@ bool FileInputDataSource::open()
 
 bool FileInputDataSource::close()
 {
+	bool ret = true;
 	if (mFp) {
 		stop();
 
-		int ret = fclose(mFp);
-		if (ret == OK) {
+		if (fclose(mFp) == OK) {
 			mFp = nullptr;
 			medvdbg("close success!!\n");
-			return true;
 		} else {
 			meddbg("close failed ret : %d error : %d\n", ret, errno);
-			return false;
+			ret = false;
 		}
+
+		unregisterDecoder();
+	} else {
+		meddbg("close failed, mFp is nullptr!!\n");
+		ret = false;
 	}
 
-	meddbg("close failed, mFp is nullptr!!\n");
-	return false;
+	return ret;
 }
 
 bool FileInputDataSource::isPrepare()

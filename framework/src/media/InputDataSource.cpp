@@ -35,11 +35,7 @@ namespace media {
 namespace stream {
 
 InputDataSource::InputDataSource()
-	: DataSource()
-	, mAudioType(AUDIO_TYPE_INVALID)
-	, mState(BUFFER_STATE_EMPTY)
-	, mTotalBytes(0)
-	, mIsWorkerAlive(false)
+	: DataSource(), mAudioType(AUDIO_TYPE_INVALID), mDecoder(nullptr), mState(BUFFER_STATE_EMPTY), mTotalBytes(0), mIsWorkerAlive(false)
 {
 }
 
@@ -57,14 +53,34 @@ InputDataSource::~InputDataSource()
 {
 }
 
-void InputDataSource::setDecoder(std::shared_ptr<Decoder> decoder)
+void InputDataSource::registerDecoder(audio_type_t audioType, unsigned int channels, unsigned int sampleRate)
 {
+	std::shared_ptr<Decoder> decoder = nullptr;
+	switch (audioType) {
+	case AUDIO_TYPE_MP3:
+	case AUDIO_TYPE_AAC:
+	case AUDIO_TYPE_OPUS:
+		decoder = std::make_shared<Decoder>(channels, sampleRate);
+		break;
+	case AUDIO_TYPE_FLAC:
+		/* To be supported */
+		meddbg("AUDIO_TYPE_FLAC is not supported now\n");
+		break;
+	case AUDIO_TYPE_PCM:
+		medvdbg("AUDIO_TYPE_PCM does not need the decoder\n");
+		break;
+	default:
+		/* Don't set any decoder for unsupported formats */
+		meddbg("Decoder is not set\n");
+		break;
+	}
+
 	mDecoder = decoder;
 }
 
-const std::shared_ptr<Decoder> InputDataSource::getDecoder()
+void InputDataSource::unregisterDecoder()
 {
-	return mDecoder;
+	mDecoder = nullptr;
 }
 
 void InputDataSource::setAudioType(audio_type_t audioType)
@@ -127,12 +143,11 @@ ssize_t InputDataSource::writeToStreamBuffer(unsigned char *buf, size_t size)
 	assert(buf != NULL);
 
 	size_t written = 0;
-	std::shared_ptr<Decoder> decoder = getDecoder();
 
-	if (decoder) {
+	if (mDecoder) {
 		size_t push = 0;
 		while (push < size) {
-			size_t temp = decoder->pushData(buf + push, size - push);
+			size_t temp = mDecoder->pushData(buf + push, size - push);
 			if (!temp) {
 				meddbg("decode push data failed!\n");
 				return EOF;
