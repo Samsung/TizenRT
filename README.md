@@ -58,6 +58,9 @@ After basic configuration by [3. Configuration](#3-configuration), you can custo
 ./dbuild.sh menuconfig
 ```
 
+**Note**: In Docker environment, ```make menuconfig``` command from other README files should be replaced with this command.  
+          It applies only in manual setup build environment.
+
 This command might require ```sudo``` for root permission.  
 To run Docker without ```sudo```, refer to https://docs.docker.com/install/linux/linux-postinstall/.
 
