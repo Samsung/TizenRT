@@ -53,14 +53,14 @@ InputDataSource::~InputDataSource()
 {
 }
 
-void InputDataSource::registerDecoder(audio_type_t audioType, unsigned int channels, unsigned int sampleRate)
+bool InputDataSource::registerDecoder(audio_type_t audioType, unsigned int channels, unsigned int sampleRate)
 {
 	std::shared_ptr<Decoder> decoder = nullptr;
 	switch (audioType) {
 	case AUDIO_TYPE_MP3:
 	case AUDIO_TYPE_AAC:
 	case AUDIO_TYPE_OPUS:
-		decoder = std::make_shared<Decoder>(channels, sampleRate);
+		decoder = Decoder::create(getAudioType(), getChannels(), getSampleRate());
 		break;
 	case AUDIO_TYPE_FLAC:
 		/* To be supported */
@@ -68,7 +68,7 @@ void InputDataSource::registerDecoder(audio_type_t audioType, unsigned int chann
 		break;
 	case AUDIO_TYPE_PCM:
 		medvdbg("AUDIO_TYPE_PCM does not need the decoder\n");
-		break;
+		return true;
 	default:
 		/* Don't set any decoder for unsupported formats */
 		meddbg("Decoder is not set\n");
@@ -76,6 +76,12 @@ void InputDataSource::registerDecoder(audio_type_t audioType, unsigned int chann
 	}
 
 	mDecoder = decoder;
+	if (!mDecoder) {
+		meddbg("mDecoder is nullptr!\n");
+	    return false;
+	}
+	
+	return true;
 }
 
 void InputDataSource::unregisterDecoder()

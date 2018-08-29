@@ -73,7 +73,10 @@ bool FileInputDataSource::open()
 
 	if (!mFp) {
 		setAudioType(utils::getAudioTypeFromPath(mDataPath));
-		registerDecoder(getAudioType(), getChannels(), getSampleRate());
+		if (!registerDecoder(getAudioType(), getChannels(), getSampleRate())) {
+			meddbg("registerDecoder failed!\n");
+			return false;
+		}
 
 		mFp = fopen(mDataPath.c_str(), "rb");
 		if (mFp) {

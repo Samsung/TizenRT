@@ -23,17 +23,13 @@
 
 namespace media {
 
-Decoder::Decoder(unsigned short channels, unsigned int sampleRate)
-	: mChannels(channels)
+Decoder::Decoder(audio_type_t audioType, unsigned short channels, unsigned int sampleRate)
+	: mAudioType(audioType)
+	, mChannels(channels)
 	, mSampleRate(sampleRate)
 {
-#ifdef CONFIG_AUDIO_CODEC
-	memset(&mDecoder, 0, sizeof(audio_decoder_t));
-	if (audio_decoder_init(&mDecoder, CONFIG_AUDIO_CODEC_RINGBUFFER_SIZE) != AUDIO_DECODER_OK) {
-		meddbg("Error! audio_decoder_init failed!\n");
-	}
-#endif
 }
+
 
 Decoder::Decoder(const Decoder *source)
 {
@@ -49,6 +45,48 @@ Decoder::~Decoder()
 		meddbg("Error! audio_decoder_finish failed!\n");
 	}
 #endif
+}
+
+std::shared_ptr<Decoder> Decoder::create(audio_type_t audioType, unsigned short channels, unsigned int sampleRate)
+{
+#ifdef CONFIG_AUDIO_CODEC
+	medvdbg("(%d,%d,%d)\n", audioType, channels, sampleRate);
+	
+	std::shared_ptr<Decoder> instance(new Decoder(audioType, channels, sampleRate));
+	if (instance) {
+		if (instance->init()) {
+			return instance;
+		}
+	}
+
+	meddbg("Error! (%d,%d,%d), failed!\n", audioType, channels, sampleRate);
+	return nullptr;
+#endif
+	return nullptr;
+}
+
+bool Decoder::init(void)
+{
+#ifdef CONFIG_AUDIO_CODEC
+	memset(&mDecoder, 0, sizeof(audio_decoder_t));
+	if (audio_decoder_init(&mDecoder, CONFIG_AUDIO_CODEC_RINGBUFFER_SIZE) != AUDIO_DECODER_OK) {
+		meddbg("Error! audio_decoder_init failed!\n");
+		return false;
+	}
+
+	mDecoder.audio_type = mAudioType;
+	if (mDecoder.audio_type != AUDIO_TYPE_UNKNOWN) {
+		if (!mConfig(mDecoder.audio_type)) {
+			meddbg("Error! mConfig() failed!\n");
+			return false;
+		}
+	} else {
+		/*If the unknown audio type, will get audio type and config in the getFrame function*/
+	}
+
+	return true;
+#endif	
+	return false;
 }
 
 size_t Decoder::pushData(unsigned char *buf, size_t size)
@@ -135,8 +173,8 @@ bool Decoder::mConfig(int audioType)
 		mp3_ext.pOutputBuffer = outputBuf;
 		mp3_ext.outputFrameSize = sizeof(outputBuf) / sizeof(int16_t);
 
-		if (audio_decoder_init_decoder(&mDecoder, audioType, &mp3_ext) != AUDIO_DECODER_OK) {
-			meddbg("Error! audio_decoder_init_decoder failed!\n");
+		if (audio_decoder_config_decoder(&mDecoder, audioType, &mp3_ext) != AUDIO_DECODER_OK) {
+			meddbg("Error! audio_decoder_config_decoder failed!\n");
 			return false;
 		}
 		break;
@@ -150,8 +188,8 @@ bool Decoder::mConfig(int audioType)
 		aac_ext.pOutputBuffer = outputBuf;
 		aac_ext.aacPlusEnabled = 1;
 
-		if (audio_decoder_init_decoder(&mDecoder, audioType, &aac_ext) != AUDIO_DECODER_OK) {
-			meddbg("Error! audio_decoder_init_decoder failed!\n");
+		if (audio_decoder_config_decoder(&mDecoder, audioType, &aac_ext) != AUDIO_DECODER_OK) {
+			meddbg("Error! audio_decoder_config_decoder failed!\n");
 			return false;
 		}
 		break;
@@ -167,8 +205,8 @@ bool Decoder::mConfig(int audioType)
 		opus_ext.desiredSampleRate = mSampleRate;
 		opus_ext.desiredChannels = mChannels;
 
-		if (audio_decoder_init_decoder(&mDecoder, audioType, &opus_ext) != AUDIO_DECODER_OK) {
-			meddbg("Error! audio_decoder_init_decoder failed!\n");
+		if (audio_decoder_config_decoder(&mDecoder, audioType, &opus_ext) != AUDIO_DECODER_OK) {
+			meddbg("Error! audio_decoder_config_decoder failed!\n");
 			return false;
 		}
 		break;
