@@ -52,7 +52,27 @@
 ############################################################################
 
 ifeq ($(CONFIG_EXAMPLES_TESTCASE_SYSTEMIO_ITC),y)
-CSRCS += itc_sysio_main.c itc_uart.c itc_spi.c itc_i2c.c itc_pwm.c itc_gpio.c
+CSRCS += itc_sysio_main.c 
+
+ifeq ($(CONFIG_SYSIO_ITC_UART),y)
+CSRCS += itc_uart.c 
+endif
+
+ifeq ($(CONFIG_SYSIO_ITC_SPI),y)
+CSRCS += itc_spi.c 
+endif
+
+ifeq ($(CONFIG_SYSIO_ITC_I2C),y)
+CSRCS += itc_i2c.c 
+endif
+
+ifeq ($(CONFIG_SYSIO_ITC_PWM),y)
+CSRCS += itc_pwm.c 
+endif
+
+ifeq ($(CONFIG_SYSIO_ITC_GPIO),y)
+CSRCS += itc_gpio.c 
+endif
 
 CFLAGS += -I$(TOPDIR)/../framework/include/iotbus
 
