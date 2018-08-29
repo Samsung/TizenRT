@@ -992,7 +992,7 @@ int audio_decoder_get_audio_type(audio_decoder_p decoder)
 	return decoder->audio_type;
 }
 
-int audio_decoder_init_decoder(audio_decoder_p decoder, int audio_type, void *dec_ext)
+int audio_decoder_config_decoder(audio_decoder_p decoder, int audio_type, void *dec_ext)
 {
 	assert(decoder != NULL);
 
