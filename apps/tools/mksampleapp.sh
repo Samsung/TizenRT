@@ -39,9 +39,11 @@ SAMPLES_NAME_L=`echo $1 | tr '[a-z]' '[A-Z]'`
 SAMPLES_NAME_S=`echo $1 | tr '[A-Z]' '[a-z]'`
 SAMPLES_PATH=${WD}/../examples/${SAMPLES_NAME_S}
 SAMPLES_YEAR=$(date +%Y)
+SAMPLES_SUB_SRC=src
+SAMPLES_SUB_INC=inc
 
 # make directory
-mkdir -p ${SAMPLES_PATH}
+mkdir -p ${SAMPLES_PATH}/${SAMPLES_SUB_SRC} ${SAMPLES_PATH}/${SAMPLES_SUB_INC}
 
 # Kconfig
 tee ${SAMPLES_PATH}/Kconfig << __EOF__
@@ -130,6 +132,9 @@ THREADEXEC = TASH_EXECMD_SYNC
 ASRCS =
 CSRCS =
 MAINSRC = ${SAMPLES_NAME_S}_main.c
+CSRCS += \$(wildcard ${SAMPLES_SUB_SRC}/*.c)
+CFLAGS += -I${SAMPLES_SUB_SRC}
+CFLAGS += -I${SAMPLES_SUB_INC}
 
 AOBJS = \$(ASRCS:.S=\$(OBJEXT))
 COBJS = \$(CSRCS:.c=\$(OBJEXT))
