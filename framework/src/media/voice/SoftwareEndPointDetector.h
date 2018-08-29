@@ -46,11 +46,7 @@ public:
 	bool processEPDFrame(short *sample, int numSample) override;
 
 private:
-	MediaRecorder mRecorder;
-
 	SpeexPreprocessState *mState;
-	short mInBuf[CONFIG_VOICE_SOFTWARE_EPD_FRAMESIZE];
-	short mOutBuf[CONFIG_VOICE_SOFTWARE_EPD_FRAMESIZE];
 	int mPreviousVAD;
 	int mVAD;
 };
