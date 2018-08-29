@@ -135,7 +135,7 @@ protected:
 protected:
 	void setAudioType(audio_type_t audioType);
 	audio_type_t getAudioType();
-	void registerDecoder(audio_type_t audioType, unsigned int channels, unsigned int sampleRate);
+	bool registerDecoder(audio_type_t audioType, unsigned int channels, unsigned int sampleRate);
 	void unregisterDecoder();
 	size_t getDecodeFrames(unsigned char *buf, size_t *size);
 

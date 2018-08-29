@@ -23,17 +23,13 @@
 
 namespace media {
 
-Decoder::Decoder(unsigned short channels, unsigned int sampleRate)
-	: mChannels(channels)
+Decoder::Decoder(audio_type_t audioType, unsigned short channels, unsigned int sampleRate)
+	: mAudioType(audioType)
+	, mChannels(channels)
 	, mSampleRate(sampleRate)
 {
-#ifdef CONFIG_AUDIO_CODEC
-	memset(&mDecoder, 0, sizeof(audio_decoder_t));
-	if (audio_decoder_init(&mDecoder, CONFIG_AUDIO_CODEC_RINGBUFFER_SIZE) != AUDIO_DECODER_OK) {
-		meddbg("Error! audio_decoder_init failed!\n");
-	}
-#endif
 }
+
 
 Decoder::Decoder(const Decoder *source)
 {
@@ -48,6 +44,51 @@ Decoder::~Decoder()
 	if (audio_decoder_finish(&mDecoder) != AUDIO_DECODER_OK) {
 		meddbg("Error! audio_decoder_finish failed!\n");
 	}
+#endif
+}
+
+std::shared_ptr<Decoder> Decoder::create(audio_type_t audioType, unsigned short channels, unsigned int sampleRate)
+{
+#ifdef CONFIG_AUDIO_CODEC
+	medvdbg("(%d,%d,%d)\n", audioType, channels, sampleRate);
+	
+	std::shared_ptr<Decoder> instance(new Decoder(audioType, channels, sampleRate));
+	if (instance) {
+		if (instance->init()) {
+			return instance;
+		}
+	}
+
+	meddbg("Error! (%d,%d,%d), failed!\n", audioType, channels, sampleRate);
+	return nullptr;
+#else
+	return nullptr;
+#endif
+}
+
+bool Decoder::init(void)
+{
+#ifdef CONFIG_AUDIO_CODEC
+	if (mAudioType == AUDIO_TYPE_UNKNOWN) {
+		meddbg("Error! unknown audio type!\n");
+		return false;
+	}
+	
+	memset(&mDecoder, 0, sizeof(audio_decoder_t));
+	if (audio_decoder_init(&mDecoder, CONFIG_AUDIO_CODEC_RINGBUFFER_SIZE) != AUDIO_DECODER_OK) {
+		meddbg("Error! audio_decoder_init failed!\n");
+		return false;
+	}
+
+	mDecoder.audio_type = mAudioType;
+	if (!mConfig(mDecoder.audio_type)) {
+		meddbg("Error! mConfig() failed!\n");
+		return false;
+	}
+
+	return true;
+#else
+	return false;
 #endif
 }
 
