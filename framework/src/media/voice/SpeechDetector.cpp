@@ -29,15 +29,10 @@
 namespace media {
 namespace voice {
 
-static SpeechDetector *g_instance = nullptr;
-
 SpeechDetectorInterface *SpeechDetectorInterface::instance()
 {
-	if (!g_instance) {
-		g_instance = new SpeechDetector();
-	}
-
-	return g_instance;
+	static SpeechDetector inst;
+	return &inst;
 }
 
 bool SpeechDetector::initKeywordDetect(uint32_t samprate, uint8_t channels)
