@@ -295,12 +295,16 @@ int task_manager_unicast(int handle, tm_msg_t *send_msg, tm_msg_t *reply_msg, in
  * @details @b #include <task_manager/task_manager.h>
  * @param[in] msg message structure to be unicasted
  * @param[in] data data and its size to be broadcasted
+ * @param[in] timeout returnable flag. It can be one of the below.\n
+ *			TM_NO_RESPONSE : Ignore the response of request from task manager\n
+ *			TM_RESPONSE_WAIT_INF : Blocked until get the response from task manager\n
+ *			integer value : Specifies an upper limit on the time for which will block in milliseconds
  * @return On success, OK is returned. On failure, defined negative value is returned.\n
  *         (This return value only checks whether a broadcast message has been requested\n
  *          to the task manager to broadcast.)
  * @since TizenRT v2.0 PRE
  */
-int task_manager_broadcast(int msg, tm_msg_t *data);
+int task_manager_broadcast(int msg, tm_msg_t *data, int timeout);
 /**
  * @brief Set unicast callback function API
  * @details @b #include <task_manager/task_manager.h>

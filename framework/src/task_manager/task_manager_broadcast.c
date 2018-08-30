@@ -19,6 +19,7 @@
  * Included Files
  ****************************************************************************/
 #include <string.h>
+#include <unistd.h>
 #include <sys/types.h>
 #include <task_manager/task_manager.h>
 #include "task_manager_internal.h"
@@ -26,12 +27,13 @@
 /****************************************************************************
  * task_manager_broadcast
  ****************************************************************************/
-int task_manager_broadcast(int msg, tm_msg_t *data)
+int task_manager_broadcast(int msg, tm_msg_t *data, int timeout)
 {
 	int status;
 	tm_request_t request_msg;
+	tm_response_t response_msg;
 
-	if (msg < 0) {
+	if (msg < 0 || timeout < TM_RESPONSE_WAIT_INF) {
 		return TM_INVALID_PARAM;
 	}
 
@@ -39,6 +41,7 @@ int task_manager_broadcast(int msg, tm_msg_t *data)
 	/* Set the request msg */
 	request_msg.cmd = TASKMGRCMD_BROADCAST;
 	request_msg.timeout = TM_NO_RESPONSE;
+	request_msg.caller_pid = getpid();
 	request_msg.data = (void *)TM_ALLOC(sizeof(tm_internal_msg_t));
 	if (request_msg.data == NULL) {
 		return TM_OUT_OF_MEMORY;
@@ -57,10 +60,25 @@ int task_manager_broadcast(int msg, tm_msg_t *data)
 	}
 	((tm_internal_msg_t *)request_msg.data)->type = msg;
 
+	if (timeout != TM_NO_RESPONSE) {
+		TM_ASPRINTF(&request_msg.q_name, "%s%d", TM_PRIVATE_MQ, request_msg.caller_pid);
+		if (request_msg.q_name == NULL) {
+			TM_FREE(((tm_internal_msg_t *)request_msg.data)->msg);
+			TM_FREE(request_msg.data);
+			return TM_OUT_OF_MEMORY;
+		}
+	}
+
 	status = taskmgr_send_request(&request_msg);
 	if (status < 0) {
 		TM_FREE(((tm_internal_msg_t *)request_msg.data)->msg);
+		TM_FREE(request_msg.q_name);
 		TM_FREE(request_msg.data);
+	}
+
+	if (timeout != TM_NO_RESPONSE) {
+		status = taskmgr_receive_response(request_msg.q_name, &response_msg, timeout);
+		TM_FREE(request_msg.q_name);
 	}
 
 	return status;
