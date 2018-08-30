@@ -135,8 +135,8 @@ bool Decoder::mConfig(int audioType)
 		mp3_ext.pOutputBuffer = outputBuf;
 		mp3_ext.outputFrameSize = sizeof(outputBuf) / sizeof(int16_t);
 
-		if (audio_decoder_init_decoder(&mDecoder, audioType, &mp3_ext) != AUDIO_DECODER_OK) {
-			meddbg("Error! audio_decoder_init_decoder failed!\n");
+		if (audio_decoder_configure(&mDecoder, audioType, &mp3_ext) != AUDIO_DECODER_OK) {
+			meddbg("Error! audio_decoder_configure failed!\n");
 			return false;
 		}
 		break;
@@ -150,8 +150,8 @@ bool Decoder::mConfig(int audioType)
 		aac_ext.pOutputBuffer = outputBuf;
 		aac_ext.aacPlusEnabled = 1;
 
-		if (audio_decoder_init_decoder(&mDecoder, audioType, &aac_ext) != AUDIO_DECODER_OK) {
-			meddbg("Error! audio_decoder_init_decoder failed!\n");
+		if (audio_decoder_configure(&mDecoder, audioType, &aac_ext) != AUDIO_DECODER_OK) {
+			meddbg("Error! audio_decoder_configure failed!\n");
 			return false;
 		}
 		break;
@@ -167,8 +167,8 @@ bool Decoder::mConfig(int audioType)
 		opus_ext.desiredSampleRate = mSampleRate;
 		opus_ext.desiredChannels = mChannels;
 
-		if (audio_decoder_init_decoder(&mDecoder, audioType, &opus_ext) != AUDIO_DECODER_OK) {
-			meddbg("Error! audio_decoder_init_decoder failed!\n");
+		if (audio_decoder_configure(&mDecoder, audioType, &opus_ext) != AUDIO_DECODER_OK) {
+			meddbg("Error! audio_decoder_configure failed!\n");
 			return false;
 		}
 		break;
