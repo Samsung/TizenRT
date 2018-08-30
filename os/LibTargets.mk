@@ -214,13 +214,6 @@ $(LIBRARIES_DIR)$(DELIM)libresource_directory$(LIBEXT): $(IOTIVITY_LIBS_DIR)$(DE
 
 endif
 
-ifeq ($(CONFIG_ENABLE_IOTIVITY_SECURED),y)
-
-#$(LIBRARIES_DIR)$(DELIM)libtinydtls$(LIBEXT): $(IOTIVITY_LIBS_DIR)$(DELIM)libtinydtls$(LIBEXT)
-#	$(Q) install $(IOTIVITY_LIBS_DIR)$(DELIM)libtinydtls$(LIBEXT) $(LIBRARIES_DIR)$(DELIM)libtinydtls$(LIBEXT)
-
-endif
-
 ifneq ($(CONFIG_IOTIVITY_RELEASE_VERSION_1_2),y)
 $(LIBRARIES_DIR)$(DELIM)libtizenrt_compat$(LIBEXT): $(IOTIVITY_LIBS_DIR)$(DELIM)libtizenrt_compat$(LIBEXT)
 	$(Q) install $(IOTIVITY_LIBS_DIR)$(DELIM)libtizenrt_compat$(LIBEXT) $(LIBRARIES_DIR)$(DELIM)libtizenrt_compat$(LIBEXT)
