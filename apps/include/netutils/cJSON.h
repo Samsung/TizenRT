@@ -124,6 +124,8 @@ typedef struct cJSON_Hooks {
 	void (*free_fn)(void *ptr);
 } cJSON_Hooks;
 
+typedef int cJSON_bool;
+
 /****************************************************************************
  * Public Functions
  ****************************************************************************/
@@ -166,7 +168,7 @@ cJSON *cJSON_GetArrayItem(cJSON *array, int item);
 
 /* Get item "string" from object. Case insensitive. */
 
-cJSON *cJSON_GetObjectItem(cJSON *object, const char *string);
+cJSON *cJSON_GetObjectItem(const cJSON *object, const char * const string);
 
 /* For analysing failed parses. This returns a pointer to the parse error.
  * You'll probably need to look a few chars back to make sense of it.
@@ -217,6 +219,12 @@ void cJSON_DeleteItemFromObject(cJSON *object, const char *string);
 
 void cJSON_ReplaceItemInArray(cJSON *array, int which, cJSON *newitem);
 void cJSON_ReplaceItemInObject(cJSON *object, const char *string, cJSON *newitem);
+
+/* Recursively compare two cJSON items for equality. If either a or b is NULL or invalid, they will be considered unequal */
+cJSON_bool cJSON_Compare(const cJSON * const a, const cJSON * const b);
+
+/* Macro for iterating over an array or object */
+#define cJSON_ArrayForEach(element, array) for (element = (array != NULL) ? (array)->child : NULL; element != NULL; element = element->next)
 
 #ifdef __cplusplus
 // *INDENT-OFF*
