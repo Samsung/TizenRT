@@ -56,6 +56,15 @@ typedef enum recorder_state_e {
 	RECORDER_STATE_PAUSED
 } recorder_state_t;
 
+const char *const recorder_state_names[] = {
+	"RECORDER_STATE_NONE",
+	"RECORDER_STATE_IDLE",
+	"RECORDER_STATE_CONFIGURED",
+	"RECORDER_STATE_READY",
+	"RECORDER_STATE_RECORDING",
+	"RECORDER_STATE_PAUSED",
+};
+
 typedef enum observer_command_e {
 	OBSERVER_COMMAND_STARTED,
 	OBSERVER_COMMAND_PAUSED,

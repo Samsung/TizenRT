@@ -25,6 +25,10 @@
 #include "audio/audio_manager.h"
 
 namespace media {
+
+#define LOG_STATE_INFO(state) medvdbg("state at %s[line : %d] : %s\n", __func__, __LINE__, player_state_names[(state)])
+#define LOG_STATE_DEBUG(state) meddbg("state at %s[line : %d] : %s\n", __func__, __LINE__, player_state_names[(state)])
+
 MediaPlayerImpl::MediaPlayerImpl(MediaPlayer &player) : mPlayer(player)
 {
 	mPlayerObserver = nullptr;
@@ -56,9 +60,11 @@ player_result_t MediaPlayerImpl::create()
 
 void MediaPlayerImpl::createPlayer(player_result_t &ret)
 {
-	medvdbg("MediaPlayer Worker : createPlayer\n");
+	LOG_STATE_INFO(mCurState);
+
 	if (mCurState != PLAYER_STATE_NONE) {
-		meddbg("MediaPlayer create fail : wrong state\n");
+		meddbg("%s Fail : invalid state\n", __func__);
+		LOG_STATE_DEBUG(mCurState);
 		ret = PLAYER_ERROR_INVALID_STATE;
 		return notifySync();
 	}
@@ -105,9 +111,11 @@ player_result_t MediaPlayerImpl::destroy()
 
 void MediaPlayerImpl::destroyPlayer(player_result_t &ret)
 {
-	medvdbg("MediaPlayer Worker : destroyPlayer\n");
+	LOG_STATE_INFO(mCurState);
+
 	if (mCurState != PLAYER_STATE_IDLE && mCurState != PLAYER_STATE_CONFIGURED) {
-		meddbg("MediaPlayer destroy fail : wrong state\n");
+		meddbg("%s Fail : invalid state\n", __func__);
+		LOG_STATE_DEBUG(mCurState);
 		ret = PLAYER_ERROR_INVALID_STATE;
 		return notifySync();
 	}
@@ -137,9 +145,11 @@ player_result_t MediaPlayerImpl::prepare()
 
 void MediaPlayerImpl::preparePlayer(player_result_t &ret)
 {
-	medvdbg("MediaPlayer Worker : preparePlayer\n");
+	LOG_STATE_INFO(mCurState);
+
 	if (mCurState != PLAYER_STATE_CONFIGURED) {
-		meddbg("MediaPlayer prepare fail : wrong state\n");
+		meddbg("%s Fail : invalid state\n", __func__);
+		LOG_STATE_DEBUG(mCurState);
 		ret = PLAYER_ERROR_INVALID_STATE;
 		return notifySync();
 	}
@@ -202,10 +212,11 @@ player_result_t MediaPlayerImpl::unprepare()
 
 void MediaPlayerImpl::unpreparePlayer(player_result_t &ret)
 {
-	medvdbg("MediaPlayer Worker : destroyPlayer\n");
+	LOG_STATE_INFO(mCurState);
 
 	if (mCurState == PLAYER_STATE_NONE || mCurState == PLAYER_STATE_IDLE || mCurState == PLAYER_STATE_CONFIGURED) {
-		meddbg("MediaPlayer unprepare fail : wrong state\n");
+		meddbg("%s Fail : invalid state\n", __func__);
+		LOG_STATE_DEBUG(mCurState);
 		ret = PLAYER_ERROR_INVALID_STATE;
 		return notifySync();
 	}
@@ -246,11 +257,12 @@ player_result_t MediaPlayerImpl::start()
 
 void MediaPlayerImpl::startPlayer()
 {
-	PlayerWorker &mpw = PlayerWorker::getWorker();
+	LOG_STATE_INFO(mCurState);
 
-	medvdbg("PlayerWorker : startPlayer\n");
+	PlayerWorker &mpw = PlayerWorker::getWorker();
 	if (mCurState != PLAYER_STATE_READY && mCurState != PLAYER_STATE_PAUSED) {
-		meddbg("PlayerWorker : player is not ready or paused\n");
+		meddbg("%s Fail : invalid state\n", __func__);
+		LOG_STATE_DEBUG(mCurState);
 		notifyObserver(PLAYER_OBSERVER_COMMAND_START_ERROR, PLAYER_ERROR_INVALID_STATE);
 		return;
 	}
@@ -287,11 +299,12 @@ player_result_t MediaPlayerImpl::stop()
 
 void MediaPlayerImpl::stopPlayer(player_result_t ret)
 {
-	PlayerWorker &mpw = PlayerWorker::getWorker();
+	LOG_STATE_INFO(mCurState);
 
-	medvdbg("MediaPlayer Worker : stopPlayer\n");
+	PlayerWorker &mpw = PlayerWorker::getWorker();
 	if (ret == PLAYER_OK && mCurState != PLAYER_STATE_PLAYING && mCurState != PLAYER_STATE_PAUSED) {
-		meddbg("PlayerWorker : player is not playing or paused\n");
+		meddbg("%s Fail : invalid state\n", __func__);
+		LOG_STATE_DEBUG(mCurState);
 		notifyObserver(PLAYER_OBSERVER_COMMAND_STOP_ERROR, PLAYER_ERROR_INVALID_STATE);
 		return;
 	}
@@ -328,10 +341,12 @@ player_result_t MediaPlayerImpl::pause()
 
 void MediaPlayerImpl::pausePlayer()
 {
+	LOG_STATE_INFO(mCurState);
+
 	PlayerWorker &mpw = PlayerWorker::getWorker();
-	medvdbg("MediaPlayer Worker : pausePlayer\n");
 	if (mCurState != PLAYER_STATE_PLAYING) {
-		meddbg("PlayerWorker : player is not playing\n");
+		meddbg("%s Fail : invalid state\n", __func__);
+		LOG_STATE_DEBUG(mCurState);
 		notifyObserver(PLAYER_OBSERVER_COMMAND_PAUSE_ERROR, PLAYER_ERROR_INVALID_STATE);
 		return;
 	}
