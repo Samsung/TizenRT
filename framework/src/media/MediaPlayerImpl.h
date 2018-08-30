@@ -40,6 +40,8 @@ typedef enum player_state_e {
 	PLAYER_STATE_NONE,
 	/** MediaPlayer worker object was created */
 	PLAYER_STATE_IDLE,
+	/** MediaPlayer datasource configured */
+	PLAYER_STATE_CONFIGURED,
 	/** MediaPlayer ready to play */
 	PLAYER_STATE_READY,
 	/** MediaPlayer do playing */

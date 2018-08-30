@@ -106,7 +106,7 @@ player_result_t MediaPlayerImpl::destroy()
 void MediaPlayerImpl::destroyPlayer(player_result_t &ret)
 {
 	medvdbg("MediaPlayer Worker : destroyPlayer\n");
-	if (mCurState != PLAYER_STATE_IDLE) {
+	if (mCurState != PLAYER_STATE_IDLE && mCurState != PLAYER_STATE_CONFIGURED) {
 		meddbg("MediaPlayer destroy fail : wrong state\n");
 		ret = PLAYER_ERROR_INVALID_STATE;
 		return notifySync();
@@ -138,14 +138,9 @@ player_result_t MediaPlayerImpl::prepare()
 void MediaPlayerImpl::preparePlayer(player_result_t &ret)
 {
 	medvdbg("MediaPlayer Worker : preparePlayer\n");
-	if (mCurState != PLAYER_STATE_IDLE) {
+	if (mCurState != PLAYER_STATE_CONFIGURED) {
 		meddbg("MediaPlayer prepare fail : wrong state\n");
 		ret = PLAYER_ERROR_INVALID_STATE;
-		return notifySync();
-	}
-	if (mInputDataSource == nullptr) {
-		meddbg("MediaPlayer prepare fail : mInputDataSource is not set\n");
-		ret = PLAYER_ERROR_INVALID_PARAMETER;
 		return notifySync();
 	}
 
@@ -209,7 +204,7 @@ void MediaPlayerImpl::unpreparePlayer(player_result_t &ret)
 {
 	medvdbg("MediaPlayer Worker : destroyPlayer\n");
 
-	if (mCurState == PLAYER_STATE_NONE || mCurState == PLAYER_STATE_IDLE) {
+	if (mCurState == PLAYER_STATE_NONE || mCurState == PLAYER_STATE_IDLE || mCurState == PLAYER_STATE_CONFIGURED) {
 		meddbg("MediaPlayer unprepare fail : wrong state\n");
 		ret = PLAYER_ERROR_INVALID_STATE;
 		return notifySync();
@@ -463,6 +458,7 @@ void MediaPlayerImpl::setPlayerDataSource(std::shared_ptr<stream::InputDataSourc
 
 	mInputDataSource = source;
 	mInputDataSource->setPlayer(shared_from_this());
+	mCurState = PLAYER_STATE_CONFIGURED;
 
 	return notifySync();
 }
