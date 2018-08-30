@@ -35,7 +35,7 @@ build:
 	$(Q) python $(IOTJS_ROOT_DIR)/tools/build.py --target-arch=$(CONFIG_ARCH) --target-os=tizenrt \
 	--sysroot=$(TOPDIR) --target-board=$(CONFIG_ARCH_BOARD) --jerry-heaplimit=$(CONFIG_IOTJS_JERRY_HEAP) \
 	--buildtype=$(IOTJS_BUILDTYPE) --no-init-submodule $(IOTJS_BUILD_OPTION)
-	$(Q) cp $(IOTJS_LIB_DIR)/*.a $(IOTJS_ROOT_DIR)
+	$(Q) cp $(IOTJS_LIB_DIR)/*.a $(TOPDIR)/$(EXTDIR)/iotjs
 
 depend:
 
