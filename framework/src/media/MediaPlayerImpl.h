@@ -50,6 +50,15 @@ typedef enum player_state_e {
 	PLAYER_STATE_PAUSED
 } player_state_t;
 
+const char *const player_state_names[] = {
+	"PLAYER_STATE_NONE",
+	"PLAYER_STATE_IDLE",
+	"PLAYER_STATE_CONFIGURED",
+	"PLAYER_STATE_READY",
+	"PLAYER_STATE_PLAYING",
+	"PLAYER_STATE_PAUSED",
+};
+
 typedef enum player_observer_command_e {
 	PLAYER_OBSERVER_COMMAND_STARTED,
 	PLAYER_OBSERVER_COMMAND_FINISHIED,

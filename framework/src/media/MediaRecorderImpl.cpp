@@ -24,6 +24,10 @@
 #include "audio/audio_manager.h"
 
 namespace media {
+
+#define LOG_STATE_INFO(state) medvdbg("state at %s[line : %d] : %s\n", __func__, __LINE__, recorder_state_names[(state)])
+#define LOG_STATE_DEBUG(state) meddbg("state at %s[line : %d] : %s\n", __func__, __LINE__, recorder_state_names[(state)])
+
 MediaRecorderImpl::MediaRecorderImpl(MediaRecorder& recorder)
 	: mCurState(RECORDER_STATE_NONE), mOutputDataSource(nullptr), mRecorderObserver(nullptr),
 	mRecorder(recorder), mBuffer(nullptr), mBuffSize(0), mDuration(0), mTotalFrames(0), mCapturedFrames(0)
@@ -52,10 +56,11 @@ recorder_result_t MediaRecorderImpl::create()
 
 void MediaRecorderImpl::createRecorder(recorder_result_t& ret)
 {
-	medvdbg("createRecorder mCurState : %d\n", (recorder_state_t)mCurState);
+	LOG_STATE_INFO(mCurState);
 
 	if (mCurState != RECORDER_STATE_NONE) {
-		meddbg("mCurState != RECORDER_STATE_NONE mCurState : %d\n", (recorder_state_t)mCurState);
+		meddbg("%s Fail : invalid state\n", __func__);
+		LOG_STATE_DEBUG(mCurState);
 		ret = RECORDER_ERROR_INVALID_STATE;
 		return notifySync();
 	}
@@ -100,10 +105,11 @@ recorder_result_t MediaRecorderImpl::destroy()
 
 void MediaRecorderImpl::destroyRecorder(recorder_result_t& ret)
 {
-	medvdbg("destroyRecorder mCurState : %d\n", (recorder_state_t)mCurState);
+	LOG_STATE_INFO(mCurState);
 
 	if (mCurState != RECORDER_STATE_IDLE && mCurState != RECORDER_STATE_CONFIGURED) {
-		meddbg("mCurState != RECORDER_STATE_IDLE mCurState : %d\n", (recorder_state_t)mCurState);
+		meddbg("%s Fail : invalid state\n", __func__);
+		LOG_STATE_DEBUG(mCurState);
 		ret = RECORDER_ERROR_INVALID_STATE;
 		return notifySync();
 	}
@@ -131,10 +137,11 @@ recorder_result_t MediaRecorderImpl::prepare()
 
 void MediaRecorderImpl::prepareRecorder(recorder_result_t& ret)
 {
-	medvdbg("prepareRecorder mCurState : %d\n", (recorder_state_t)mCurState);
+	LOG_STATE_INFO(mCurState);
 
 	if (mCurState != RECORDER_STATE_CONFIGURED) {
-		meddbg("prepare Failed mCurState: %d\n", (recorder_state_t)mCurState);
+		meddbg("%s Fail : invalid state\n", __func__);
+		LOG_STATE_DEBUG(mCurState);
 		ret = RECORDER_ERROR_INVALID_STATE;
 		return notifySync();
 	}
@@ -198,10 +205,11 @@ recorder_result_t MediaRecorderImpl::unprepare()
 
 void MediaRecorderImpl::unprepareRecorder(recorder_result_t& ret)
 {
-	medvdbg("unprepareRecorder mCurState : %d\n", (recorder_state_t)mCurState);
+	LOG_STATE_INFO(mCurState);
 
 	if (mCurState == RECORDER_STATE_NONE || mCurState == RECORDER_STATE_IDLE || mCurState == RECORDER_STATE_CONFIGURED) {
-		meddbg("unprepare Failed : %d\n", (recorder_state_t)mCurState);
+		meddbg("%s Fail : invalid state\n", __func__);
+		LOG_STATE_DEBUG(mCurState);
 		ret = RECORDER_ERROR_INVALID_STATE;
 		return notifySync();
 	}
@@ -245,11 +253,12 @@ recorder_result_t MediaRecorderImpl::start()
 
 void MediaRecorderImpl::startRecorder()
 {
-	medvdbg("startRecorder() mCurState : %d\n", (recorder_state_t)mCurState);
+	LOG_STATE_INFO(mCurState);
 
 	if (mCurState != RECORDER_STATE_READY && mCurState != RECORDER_STATE_PAUSED) {
+		meddbg("%s Fail : invalid state\n", __func__);
+		LOG_STATE_DEBUG(mCurState);
 		notifyObserver(OBSERVER_COMMAND_START_ERROR, RECORDER_ERROR_INVALID_STATE);
-		meddbg("startRecorder Failed mCurState : %d\n", (recorder_state_t)mCurState);
 		return;
 	}
 
@@ -286,11 +295,12 @@ recorder_result_t MediaRecorderImpl::stop()
 
 void MediaRecorderImpl::stopRecorder(recorder_result_t ret)
 {
-	medvdbg("stopRecorder mCurState : %d\n", (recorder_state_t)mCurState);
+	LOG_STATE_INFO(mCurState);
 
 	if (ret == RECORDER_OK && mCurState != RECORDER_STATE_RECORDING && mCurState != RECORDER_STATE_PAUSED) {
+		meddbg("%s Fail : invalid state\n", __func__);
+		LOG_STATE_DEBUG(mCurState);
 		notifyObserver(OBSERVER_COMMAND_STOP_ERROR, RECORDER_ERROR_INVALID_STATE);
-		meddbg("stopRecorder Failed mCurState : %d\n", (recorder_state_t)mCurState);
 		return;
 	}
 
@@ -329,11 +339,12 @@ recorder_result_t MediaRecorderImpl::pause()
 
 void MediaRecorderImpl::pauseRecorder()
 {
-	medvdbg("pauseRecorder() mCurState : %d\n", (recorder_state_t)mCurState);
+	LOG_STATE_INFO(mCurState);
 
 	if (mCurState != RECORDER_STATE_RECORDING) {
+		meddbg("%s Fail : invalid state\n", __func__);
+		LOG_STATE_DEBUG(mCurState);
 		notifyObserver(OBSERVER_COMMAND_PAUSE_ERROR, RECORDER_ERROR_INVALID_STATE);
-		meddbg("pause Failed mCurState : %d\n", (recorder_state_t)mCurState);
 		return;
 	}
 
