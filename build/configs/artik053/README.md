@@ -173,7 +173,7 @@ Before executing below board-specific steps, execute [generic steps](../../../to
         ```
     4. Enable the audomount config for romfs
         ```bash
-        Hardware Configuration -> Board Selection -> Automount partitions -> Automount romfs partiton to y
+        Hardware Configuration -> Board Selection -> Automount partitions -> [*] Automount romfs partiton
         ```
 4. Build TizenRT and flash a binary.  
     Refer [How to program a binary](#how-to-program-a-binary).

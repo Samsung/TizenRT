@@ -47,7 +47,7 @@ Please find below how to move each state by APIs.
 
 ## Prerequisites
 ### Configuration
-Enable configuration of task manager through menuconfig
+Enable configuration of task manager with menuconfig
 ```bash
 cd $TIZENRT_BASEDIR
 cd os
