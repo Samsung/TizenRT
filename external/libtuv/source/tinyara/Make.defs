@@ -37,6 +37,7 @@ CSRCS += uv_tinyara.c
 CSRCS += uv_tinyara_clock.c
 CSRCS += uv_tinyara_io.c
 CSRCS += uv_tinyara_loop.c
+CSRCS += uv_tinyara_signal.c
 CSRCS += uv_tinyara_thread.c
 
 DEPPATH += --dep-path source/tinyara
