@@ -121,21 +121,30 @@ int InputDataSource::readAt(long offset, int origin, unsigned char *buf, size_t 
 	return read(buf, size);
 }
 
-void InputDataSource::setStreamBuffer(std::shared_ptr<StreamBuffer> streamBuffer)
+bool InputDataSource::registerStream(std::shared_ptr<StreamBuffer> streamBuffer)
+{
+	mStreamBuffer = streamBuffer;
+	if (mStreamBuffer == nullptr) {
+		meddbg("%s[Line : %d] Fail : invalid paramter\n", __func__, __LINE__);
+		mBufferReader = nullptr;
+		mBufferWriter = nullptr;
+		return false;
+	}
+
+	mStreamBuffer->setObserver(this);
+	mBufferReader = std::make_shared<StreamBufferReader>(mStreamBuffer);
+	mBufferWriter = std::make_shared<StreamBufferWriter>(mStreamBuffer);
+	return true;
+}
+
+void InputDataSource::unregisterStream()
 {
 	if (mStreamBuffer) {
 		mStreamBuffer->setObserver(nullptr);
-		mBufferReader = nullptr;
-		mBufferWriter = nullptr;
 	}
-
-	mStreamBuffer = streamBuffer;
-
-	if (mStreamBuffer) {
-		mStreamBuffer->setObserver(this);
-		mBufferReader = std::make_shared<StreamBufferReader>(mStreamBuffer);
-		mBufferWriter = std::make_shared<StreamBufferWriter>(mStreamBuffer);
-	}
+	mStreamBuffer = nullptr;
+	mBufferReader = nullptr;
+	mBufferWriter = nullptr;
 }
 
 ssize_t InputDataSource::writeToStreamBuffer(unsigned char *buf, size_t size)

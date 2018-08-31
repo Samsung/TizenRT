@@ -139,8 +139,9 @@ protected:
 	void unregisterDecoder();
 	size_t getDecodeFrames(unsigned char *buf, size_t *size);
 
-	void setStreamBuffer(std::shared_ptr<StreamBuffer>);
-	std::shared_ptr<StreamBuffer> getStreamBuffer() { return mStreamBuffer; }
+	bool registerStream(std::shared_ptr<StreamBuffer> streamBuffer);
+	void unregisterStream();
+	bool isStreamReady() { return mStreamBuffer != nullptr ? true : false; }
 	std::shared_ptr<StreamBufferWriter> getBufferWriter() { return mBufferWriter; }
 	void setBufferState(buffer_state_t state);
 	std::shared_ptr<MediaPlayerImpl> getPlayer() { return mPlayer.lock(); }

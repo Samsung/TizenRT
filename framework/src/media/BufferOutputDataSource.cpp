@@ -57,17 +57,13 @@ BufferOutputDataSource &BufferOutputDataSource::operator=(const BufferOutputData
 
 bool BufferOutputDataSource::open()
 {
-	if (!getStreamBuffer()) {
-		auto streamBuffer = StreamBuffer::Builder()
-								.setBufferSize(CONFIG_BUFFER_DATASOURCE_STREAM_BUFFER_SIZE)
-								.setThreshold(CONFIG_BUFFER_DATASOURCE_STREAM_BUFFER_THRESHOLD)
-								.build();
-		if (!streamBuffer) {
-			medvdbg("streamBuffer is nullptr!\n");
-			return false;
-		}
-
-		setStreamBuffer(streamBuffer);
+	auto streamBuffer = StreamBuffer::Builder()
+							.setBufferSize(CONFIG_BUFFER_DATASOURCE_STREAM_BUFFER_SIZE)
+							.setThreshold(CONFIG_BUFFER_DATASOURCE_STREAM_BUFFER_THRESHOLD)
+							.build();
+	if (registerStream(streamBuffer) == false) {
+		meddbg("%s[Line : %d] Fail : registerStream() failed\n", __func__, __LINE__);
+		return false;
 	}
 
 	start();
@@ -77,12 +73,13 @@ bool BufferOutputDataSource::open()
 bool BufferOutputDataSource::close()
 {
 	stop();
+	unregisterStream();
 	return true;
 }
 
 bool BufferOutputDataSource::isPrepare()
 {
-	return (getStreamBuffer() != nullptr);
+	return isStreamReady();
 }
 
 ssize_t BufferOutputDataSource::onStreamBufferReadable(bool isFlush)
