@@ -33,6 +33,8 @@ namespace media {
 class MediaPlayer;
 enum player_error_e : int;
 typedef enum player_error_e player_error_t;
+enum buffer_state_e : int;
+typedef enum buffer_state_e buffer_state_t;
 
 /**
  * @class

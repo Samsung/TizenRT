@@ -28,6 +28,8 @@
 #include <media/FocusManager.h>
 #include <media/MediaPlayer.h>
 #include <media/FileInputDataSource.h>
+#include "BufferInputDataSource.h"
+#include <string.h>
 
 using namespace std;
 using namespace media;
@@ -41,6 +43,7 @@ static const int TEST_PCM = 0;
 static const int TEST_MP3 = 1;
 static const int TEST_AAC = 2;
 static const int TEST_OPUS = 3;
+static const int TEST_BUFFER = 4;
 
 enum test_command_e { APP_OFF, PLAYER_START, PLAYER_PAUSE, PLAYER_RESUME, PLAYER_STOP, VOLUME_UP, VOLUME_DOWN };
 
@@ -50,7 +53,7 @@ class MyMediaPlayer : public MediaPlayerObserverInterface,
 {
 public:
 	MyMediaPlayer() : volume(0), isSourceSet(false) {};
-	virtual ~MyMediaPlayer(){};
+	virtual ~MyMediaPlayer() = default;
 	bool init(int test);
 	void doCommand(int command);
 	void onPlaybackStarted(MediaPlayer &mediaPlayer) override;
@@ -94,6 +97,12 @@ bool MyMediaPlayer::init(int test)
 	case TEST_OPUS:
 		makeSource = []() {
 			auto source = std::move(unique_ptr<FileInputDataSource>(new FileInputDataSource("/rom/res_16k.opus")));
+			return std::move(source);
+		};
+		break;
+	case TEST_BUFFER:
+		makeSource = []() {
+			auto source = std::move(unique_ptr<BufferInputDataSource>(new BufferInputDataSource()));
 			return std::move(source);
 		};
 		break;
@@ -334,7 +343,7 @@ int mediaplayer_main(int argc, char *argv[])
 	up_cxxinitialize();
 
 	MediaPlayerController mediaPlayerController;
-	mediaPlayerController.start(TEST_MP3);
+	mediaPlayerController.start(TEST_BUFFER);
 	return 0;
 }
 }
