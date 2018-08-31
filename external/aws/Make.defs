@@ -20,6 +20,7 @@ ifeq ($(CONFIG_AWS_SDK),y)
 
 # AWS MAIN
 AWS_DIR = $(TOPDIR)/../external/aws
+CFLAGS += -I$(AWS_DIR)/config
 CFLAGS += -I$(AWS_DIR)/include
 
 # AWS CERTS
