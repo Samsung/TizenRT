@@ -36,6 +36,7 @@
  * IN THE SOFTWARE.
  */
 
+#include <tinyara/config.h>
 #include <assert.h>
 #include <errno.h>
 #include <signal.h>
@@ -61,9 +62,12 @@ static void uv__signal_stop(uv_signal_t* handle);
 
 
 static uv_once_t uv__signal_global_init_guard = UV_ONCE_INIT;
-static struct uv__signal_tree_s uv__signal_tree =
-    RB_INITIALIZER(uv__signal_tree);
+static struct uv__signal_tree_s uv__signal_tree[CONFIG_MAX_TASKS] =
+    {RB_INITIALIZER(uv__signal_tree), };
 static sem_t uv_sig_sem;
+
+#define MAX_PID_MASK   (CONFIG_MAX_TASKS - 1)
+#define PID_HASH(pid)  ((pid) & MAX_PID_MASK)
 
 
 RB_GENERATE_STATIC(uv__signal_tree_s,
@@ -122,11 +126,17 @@ static uv_signal_t* uv__signal_first_handle(int signum) {
   /* This function must be called with the signal lock held. */
   uv_signal_t lookup;
   uv_signal_t* handle;
+  int index;
 
   lookup.signum = signum;
   lookup.loop = NULL;
 
-  handle = RB_NFIND(uv__signal_tree_s, &uv__signal_tree, &lookup);
+  index = PID_HASH(getpid());
+  if (index < 0 || index >= CONFIG_MAX_TASKS) {
+	  return NULL;
+  }
+
+  handle = RB_NFIND(uv__signal_tree_s, &uv__signal_tree[index], &lookup);
 
   if (handle != NULL && handle->signum == signum)
     return handle;
@@ -139,9 +149,16 @@ static void uv__signal_handler(int signum) {
   uv__signal_msg_t msg;
   uv_signal_t* handle;
   int saved_errno;
+  int index;
 
   saved_errno = errno;
   memset(&msg, 0, sizeof msg);
+
+  index = PID_HASH(getpid());
+  if (index < 0 || index >= CONFIG_MAX_TASKS) {
+    errno = saved_errno;
+    return;
+  }
 
   if (uv__signal_lock()) {
     errno = saved_errno;
@@ -150,7 +167,7 @@ static void uv__signal_handler(int signum) {
 
   for (handle = uv__signal_first_handle(signum);
        handle != NULL && handle->signum == signum;
-       handle = RB_NEXT(uv__signal_tree_s, &uv__signal_tree, handle)) {
+       handle = RB_NEXT(uv__signal_tree_s, &uv__signal_tree[index], handle)) {
     int r;
 
     msg.signum = signum;
@@ -291,6 +308,7 @@ void uv__signal_close(uv_signal_t* handle) {
 int uv_signal_start(uv_signal_t* handle, uv_signal_cb signal_cb, int signum) {
   sigset_t saved_sigmask;
   int err;
+  int index;
 
   assert(!uv__is_closing(handle));
 
@@ -300,6 +318,12 @@ int uv_signal_start(uv_signal_t* handle, uv_signal_cb signal_cb, int signum) {
    */
   if (signum == 0)
     return -EINVAL;
+
+  /* If index is invalid, processing signal would be failed. */
+  index = PID_HASH(getpid());
+  if (index < 0 || index >= CONFIG_MAX_TASKS) {
+	  return -EINVAL;
+  }
 
   /* Short circuit: if the signal watcher is already watching {signum} don't
    * go through the process of deregistering and registering the handler.
@@ -331,7 +355,7 @@ int uv_signal_start(uv_signal_t* handle, uv_signal_cb signal_cb, int signum) {
   }
 
   handle->signum = signum;
-  RB_INSERT(uv__signal_tree_s, &uv__signal_tree, handle);
+  RB_INSERT(uv__signal_tree_s, &uv__signal_tree[index], handle);
 
   uv__signal_unlock_and_unblock(&saved_sigmask);
 
@@ -445,14 +469,20 @@ int uv_signal_stop(uv_signal_t* handle) {
 static void uv__signal_stop(uv_signal_t* handle) {
   uv_signal_t* removed_handle;
   sigset_t saved_sigmask;
+  int index;
 
   /* If the watcher wasn't started, this is a no-op. */
   if (handle->signum == 0)
     return;
 
+  index = PID_HASH(getpid());
+  if (index < 0 || index >= CONFIG_MAX_TASKS) {
+	  return;
+  }
+
   uv__signal_block_and_lock(&saved_sigmask);
 
-  removed_handle = RB_REMOVE(uv__signal_tree_s, &uv__signal_tree, handle);
+  removed_handle = RB_REMOVE(uv__signal_tree_s, &uv__signal_tree[index], handle);
   assert(removed_handle == handle);
   (void) removed_handle;
 
