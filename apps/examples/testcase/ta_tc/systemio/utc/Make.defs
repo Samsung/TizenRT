@@ -52,7 +52,27 @@
 ############################################################################
 
 ifeq ($(CONFIG_EXAMPLES_TESTCASE_SYSTEMIO_UTC),y)
-CSRCS += utc_sysio_main.c utc_gpio.c utc_i2c.c utc_pwm.c utc_spi.c utc_uart.c
+CSRCS += utc_sysio_main.c 
+
+ifeq ($(CONFIG_SYSIO_UTC_UART),y)
+CSRCS += utc_uart.c 
+endif
+
+ifeq ($(CONFIG_SYSIO_UTC_SPI),y)
+CSRCS += utc_spi.c 
+endif
+
+ifeq ($(CONFIG_SYSIO_UTC_I2C),y)
+CSRCS += utc_i2c.c 
+endif
+
+ifeq ($(CONFIG_SYSIO_UTC_PWM),y)
+CSRCS += utc_pwm.c 
+endif
+
+ifeq ($(CONFIG_SYSIO_UTC_GPIO),y)
+CSRCS += utc_gpio.c 
+endif
 
 # Include system io build support
 
