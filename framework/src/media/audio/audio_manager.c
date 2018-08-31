@@ -915,9 +915,6 @@ audio_manager_result_t stop_audio_stream_out(void)
 		if ((ret = pcm_drain(g_audio_out_cards[g_actual_audio_out_card_id].pcm)) < 0) {
 			meddbg("pcm_drain faled, ret = %d\n", ret);
 		}
-		if ((ret = pcm_close(g_audio_out_cards[g_actual_audio_out_card_id].pcm)) < 0) {
-			meddbg("pcm_close faled, ret = %d\n", ret);
-		}
 	}
 	g_audio_out_cards[g_actual_audio_out_card_id].status = AUDIO_CARD_READY;
 
