@@ -89,7 +89,7 @@ public:
 		std::cout << "onRecordStopError!! errCode : " << errCode << std::endl;
 	}
 
-	void onRecordBufferDataReached(MediaRecorder& mediaRecorder, unsigned char *data, size_t size)
+	void onRecordBufferDataReached(MediaRecorder& mediaRecorder, std::shared_ptr<unsigned char> data, size_t size)
 	{
 		std::cout << "onRecordBufferDataReached, data size : " << size << std::endl;
 	}

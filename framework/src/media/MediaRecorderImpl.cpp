@@ -657,9 +657,8 @@ void MediaRecorderImpl::notifyObserver(observer_command_t cmd, ...)
 			medvdbg("OBSERVER_COMMAND_BUFFER_DATAREACHED\n");
 			unsigned char *data = va_arg(ap, unsigned char *);
 			size_t size = va_arg(ap, size_t);
-			// Call observer directly, not via RecorderWorker.
-			// Because data buffer would be released after this function returned.
-			mRecorderObserver->onRecordBufferDataReached(mRecorder, data, size);
+			std::shared_ptr<unsigned char> autodata(data, [](unsigned char *p){ delete[] p; });
+			row.enQueue(&MediaRecorderObserverInterface::onRecordBufferDataReached, mRecorderObserver, mRecorder, autodata, size);
 		} break;
 		}
 

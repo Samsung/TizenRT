@@ -97,7 +97,7 @@ ssize_t BufferOutputDataSource::onStreamBufferReadable(bool isFlush)
 		if (recorder) {
 			recorder->notifyObserver(OBSERVER_COMMAND_BUFFER_DATAREACHED, buffer, size);
 		}
-		delete[] buffer;
+		// DO NOT `delete[]`, `buffer` will be managed in std::shared_ptr<> and released automatically!
 		return size;
 	}
 
