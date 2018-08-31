@@ -88,6 +88,15 @@ public:
 	 */
 	virtual void onPlaybackPaused(MediaPlayer &mediaPlayer) = 0;
 	/**
+	 * @brief informs the user that data in the input-buffer reach the
+	 * threshold, and it's possible to fetch data now.
+	 * @remark user need to override this method when the player working
+	 * with a BufferInputDataSource.
+	 * @details @b #include <media/MediaPlayerObserverInterface.h>
+	 * @since TizenRT v2.0 PRE
+	 */
+	virtual void onPlaybackBufferDataReached(MediaPlayer& mediaPlayer, unsigned char *data, size_t size) {}
+	/**
 	 * @brief informs the user the playback buffer state: overrun.
 	 * @details @b #include <media/MediaPlayerObserverInterface.h>
 	 * @since TizenRT v2.0 PRE

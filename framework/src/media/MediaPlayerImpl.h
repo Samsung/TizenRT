@@ -71,6 +71,7 @@ typedef enum player_observer_command_e {
 	PLAYER_OBSERVER_COMMAND_BUFFER_UNDERRUN,
 	PLAYER_OBSERVER_COMMAND_BUFFER_UPDATED,
 	PLAYER_OBSERVER_COMMAND_BUFFER_STATECHANGED,
+	PLAYER_OBSERVER_COMMAND_BUFFER_DATAREACHED,
 } player_observer_command_t;
 
 class MediaPlayerImpl : public std::enable_shared_from_this<MediaPlayerImpl>

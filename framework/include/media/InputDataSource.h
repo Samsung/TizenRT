@@ -141,6 +141,7 @@ protected:
 
 	void setStreamBuffer(std::shared_ptr<StreamBuffer>);
 	std::shared_ptr<StreamBuffer> getStreamBuffer() { return mStreamBuffer; }
+	std::shared_ptr<StreamBufferWriter> getBufferWriter() { return mBufferWriter; }
 	void setBufferState(buffer_state_t state);
 	std::shared_ptr<MediaPlayerImpl> getPlayer() { return mPlayer.lock(); }
 	void createWorker();

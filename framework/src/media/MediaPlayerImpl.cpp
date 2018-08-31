@@ -552,18 +552,26 @@ void MediaPlayerImpl::notifyObserver(player_observer_command_t cmd, ...)
 		case PLAYER_OBSERVER_COMMAND_PAUSED:
 			pow.enQueue(&MediaPlayerObserverInterface::onPlaybackPaused, mPlayerObserver, mPlayer);
 			break;
-        case PLAYER_OBSERVER_COMMAND_BUFFER_OVERRUN:
+		case PLAYER_OBSERVER_COMMAND_BUFFER_OVERRUN:
 			pow.enQueue(&MediaPlayerObserverInterface::onPlaybackBufferOverrun, mPlayerObserver, mPlayer);
-        	break;
-        case PLAYER_OBSERVER_COMMAND_BUFFER_UNDERRUN:
+			break;
+		case PLAYER_OBSERVER_COMMAND_BUFFER_UNDERRUN:
 			pow.enQueue(&MediaPlayerObserverInterface::onPlaybackBufferUnderrun, mPlayerObserver, mPlayer);
-        	break;
-        case PLAYER_OBSERVER_COMMAND_BUFFER_UPDATED:
+			break;
+		case PLAYER_OBSERVER_COMMAND_BUFFER_UPDATED:
 			pow.enQueue(&MediaPlayerObserverInterface::onPlaybackBufferUpdated, mPlayerObserver, mPlayer, (size_t)va_arg(ap, size_t));
 			break;
-        case PLAYER_OBSERVER_COMMAND_BUFFER_STATECHANGED:
+		case PLAYER_OBSERVER_COMMAND_BUFFER_STATECHANGED:
 			pow.enQueue(&MediaPlayerObserverInterface::onPlaybackBufferStateChanged, mPlayerObserver, mPlayer, (buffer_state_t)va_arg(ap, int));
 			break;
+		case PLAYER_OBSERVER_COMMAND_BUFFER_DATAREACHED: {
+			medvdbg("OBSERVER_COMMAND_BUFFER_DATAREACHED\n");
+			unsigned char *data = va_arg(ap, unsigned char *);
+			size_t size = va_arg(ap, size_t);
+			// Call observer directly, not via PlayerWorker.
+			// Because data buffer would be released after this function returned.
+			mPlayerObserver->onPlaybackBufferDataReached(mPlayer, data, size);
+		} break;
 		}
 	}
 
