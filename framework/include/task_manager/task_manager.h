@@ -323,11 +323,11 @@ int task_manager_set_unicast_cb(void (*func)(tm_msg_t *data));
  *            If this message is not pre defined at the <task_manager/task_manager.h> and <task_manager/task_manager_broadcast_list.h>,\n
  *            user should use task_manager_alloc_broadcast_msg() API to get a new broadacast message.
  * @param[in] func the callback function which will be called when a msg is received.
- * @param[in] cb_data a data pointer to pass to the callback function func.
+ * @param[in] cb_data a message structure to pass to the callback function func.
  * @return On success, OK is returned. On failure, defined negative value is returned.
  * @since TizenRT v2.0 PRE
  */
-int task_manager_set_broadcast_cb(int msg, void (*func)(void *user_data, void *data), void *cb_data);
+int task_manager_set_broadcast_cb(int msg, void (*func)(void *user_data, void *data), tm_msg_t *cb_data);
 /**
  * @brief Set callback function for resource deallocation API. If you set the callback, it will works when task terminates.
  * @details @b #include <task_manager/task_manager.h>

@@ -46,9 +46,13 @@
 #define TM_INVALID_BROAD_MSG            -2
 #define TM_INVALID_PID                  -2
 #define TM_BROAD_TASK_NUM               2
-#define TM_BROAD_WIFI_ON_DATA           1
-#define TM_BROAD_WIFI_OFF_DATA          2
-#define TM_BROAD_UNDEFINED_MSG_DATA     20
+#define TM_BROAD_UNDEF_NUM              3
+//#define TM_BROAD_WIFI_ON_DATA           1
+//#define TM_BROAD_WIFI_OFF_DATA          2
+//#define TM_BROAD_UNDEFINED_MSG_DATA     20
+#define TM_BROAD_WIFI_ON_DATA           "BROAD_WIFI_ON"
+#define TM_BROAD_WIFI_OFF_DATA          "BROAD_WIFI_OFF"
+#define TM_BROAD_UNDEFINED_MSG_DATA     "BROAD_UNDEFINED"
 #define TM_BROAD_UNDEFINED_MSG_NOT_USED (TM_BROADCAST_MSG_MAX + 2)
 
 static int tm_sample_handle;
@@ -111,30 +115,22 @@ static void test_unicast_handler(tm_msg_t *info)
 
 static void test_broadcast_handler(void *user_data, void *info)
 {
-	int rec = (int)info;
-
-	switch (rec) {
-	case TM_BROAD_WIFI_ON_DATA:
+	if (strncmp((char *)info, TM_BROAD_WIFI_ON_DATA, strlen(TM_BROAD_WIFI_ON_DATA) + 1) == 0) {
 		broadcast_data_flag = strncmp((char *)user_data, "WIFI_ON", strlen("WIFI_ON") + 1);
 		sem_wait(&tm_broad_sem);
 		broad_wifi_on_cnt++;
 		sem_post(&tm_broad_sem);
-		break;
-
-	case TM_BROAD_WIFI_OFF_DATA:
+		(void)task_manager_unset_broadcast_cb(TM_BROADCAST_WIFI_ON, TM_NO_RESPONSE);
+	} else if (strncmp((char *)info, TM_BROAD_WIFI_OFF_DATA, strlen(TM_BROAD_WIFI_OFF_DATA) + 1) == 0) {
 		sem_wait(&tm_broad_sem);
 		broad_wifi_off_cnt++;
 		sem_post(&tm_broad_sem);
-		break;
-
-	case TM_BROAD_UNDEFINED_MSG_DATA:
+		(void)task_manager_unset_broadcast_cb(TM_BROADCAST_WIFI_OFF, TM_NO_RESPONSE);
+	} else if (strncmp((char *)info, TM_BROAD_UNDEFINED_MSG_DATA, strlen(TM_BROAD_UNDEFINED_MSG_DATA) + 1) == 0) {
 		sem_wait(&tm_broad_sem);
 		broad_undefined_cnt++;
 		sem_post(&tm_broad_sem);
-		break;
-
-	default:
-		break;
+		(void)task_manager_unset_broadcast_cb(tm_broadcast_undefined_msg, TM_NO_RESPONSE);
 	}
 }
 
@@ -163,16 +159,31 @@ int tm_sample_main(int argc, char *argv[])
 int tm_broadcast1_main(int argc, char *argv[])
 {
 	int ret;
+	tm_msg_t data;
 
-	ret = task_manager_set_broadcast_cb(TM_BROADCAST_WIFI_ON, test_broadcast_handler, (void *)TM_BROAD_WIFI_ON_DATA);
+	data.msg_size = strlen(TM_BROAD_WIFI_ON_DATA) + 1;
+	data.msg = malloc(data.msg_size);
+	memcpy(data.msg, TM_BROAD_WIFI_ON_DATA, data.msg_size);
+	ret = task_manager_set_broadcast_cb(TM_BROADCAST_WIFI_ON, test_broadcast_handler, &data);
+	free(data.msg);
 	if (ret != OK) {
 		printf("ERROR : fail to set callback ERR: %d\n", ret);
 	}
-	ret = task_manager_set_broadcast_cb(TM_BROADCAST_WIFI_OFF, test_broadcast_handler, (void *)TM_BROAD_WIFI_OFF_DATA);
+
+	data.msg_size = strlen(TM_BROAD_WIFI_OFF_DATA) + 1;
+	data.msg = malloc(data.msg_size);
+	memcpy(data.msg, TM_BROAD_WIFI_OFF_DATA, data.msg_size);
+	ret = task_manager_set_broadcast_cb(TM_BROADCAST_WIFI_OFF, test_broadcast_handler, &data);
+	free(data.msg);
 	if (ret != OK) {
 		printf("ERROR : fail to set callback ERR: %d\n", ret);
 	}
-	ret = task_manager_set_broadcast_cb(tm_broadcast_undefined_msg, test_broadcast_handler, (void *)TM_BROAD_UNDEFINED_MSG_DATA);
+
+	data.msg_size = strlen(TM_BROAD_UNDEFINED_MSG_DATA) + 1;
+	data.msg = malloc(data.msg_size);
+	memcpy(data.msg, TM_BROAD_UNDEFINED_MSG_DATA, data.msg_size);
+	ret = task_manager_set_broadcast_cb(tm_broadcast_undefined_msg, test_broadcast_handler, &data);
+	free(data.msg);
 	if (ret != OK) {
 		printf("ERROR : fail to set callback ERR: %d\n", ret);
 	}
@@ -185,12 +196,22 @@ int tm_broadcast1_main(int argc, char *argv[])
 int tm_broadcast2_main(int argc, char *argv[])
 {
 	int ret;
+	tm_msg_t data;
 
-	ret = task_manager_set_broadcast_cb(TM_BROADCAST_WIFI_ON, test_broadcast_handler, (void *)TM_BROAD_WIFI_ON_DATA);
+	data.msg_size = strlen(TM_BROAD_WIFI_ON_DATA) + 1;
+	data.msg = malloc(data.msg_size);
+	memcpy(data.msg, TM_BROAD_WIFI_ON_DATA, data.msg_size);
+	ret = task_manager_set_broadcast_cb(TM_BROADCAST_WIFI_ON, test_broadcast_handler, &data);
+	free(data.msg);
 	if (ret != OK) {
 		printf("ERROR : fail to set callback ERR: %d\n", ret);
 	}
-	ret = task_manager_set_broadcast_cb(TM_BROADCAST_WIFI_OFF, test_broadcast_handler, (void *)TM_BROAD_WIFI_OFF_DATA);
+
+	data.msg_size = strlen(TM_BROAD_WIFI_OFF_DATA) + 1;
+	data.msg = malloc(data.msg_size);
+	memcpy(data.msg, TM_BROAD_WIFI_OFF_DATA, data.msg_size);
+	ret = task_manager_set_broadcast_cb(TM_BROADCAST_WIFI_OFF, test_broadcast_handler, &data);
+	free(data.msg);
 	if (ret != OK) {
 		printf("ERROR : fail to set callback ERR: %d\n", ret);
 	}
@@ -203,14 +224,19 @@ int tm_broadcast2_main(int argc, char *argv[])
 int tm_broadcast3_main(int argc, char *argv[])
 {
 	int ret;
+	tm_msg_t data;
 
-	ret = task_manager_set_broadcast_cb(tm_broadcast_undefined_msg, test_broadcast_handler, (void *)TM_BROAD_UNDEFINED_MSG_DATA);
+	data.msg_size = strlen(TM_BROAD_UNDEFINED_MSG_DATA) + 1;
+	data.msg = malloc(data.msg_size);
+	memcpy(data.msg, TM_BROAD_UNDEFINED_MSG_DATA, data.msg_size);
+	ret = task_manager_set_broadcast_cb(tm_broadcast_undefined_msg, test_broadcast_handler, &data);
+	free(data.msg);
 	if (ret != OK) {
 		printf("ERROR : fail to set callback ERR: %d\n", ret);
 	}
 	while (1) {
 		usleep(1);
-	}	// This will be dead at utc_task_manager_stop_p
+	}	// This will be dead at utc_task_manager_stop_p	
 	return ret;
 }
 
@@ -319,13 +345,18 @@ static void utc_task_manager_set_broadcast_cb_n(void)
 static void utc_task_manager_set_broadcast_cb_p(void)
 {
 	int ret;
+	tm_msg_t data;
 
 	ret = task_manager_set_broadcast_cb(TM_BROAD_UNDEFINED_MSG_NOT_USED, test_broadcast_handler, (void *)NULL);
 	TC_ASSERT_EQ("task_manager_set_broadcast_cb", ret, TM_UNREGISTERED_MSG);
 
-	ret = task_manager_set_broadcast_cb(tm_broadcast_undefined_msg, test_broadcast_handler, (void *)TM_BROAD_WIFI_ON_DATA);
-	TC_ASSERT_EQ("task_manager_set_broadcast_cb", ret, OK);
+	data.msg_size = strlen(TM_BROAD_UNDEFINED_MSG_DATA) + 1;
+	data.msg = malloc(data.msg_size);
+	memcpy(data.msg, TM_BROAD_UNDEFINED_MSG_DATA, data.msg_size);
+	ret = task_manager_set_broadcast_cb(tm_broadcast_undefined_msg, test_broadcast_handler, &data);
+	TC_ASSERT_EQ_CLEANUP("task_manager_set_broadcast_cb", ret, OK, free(data.msg));
 
+	free(data.msg);
 	TC_SUCCESS_RESULT();
 }
 
@@ -486,7 +517,7 @@ static void utc_task_manager_broadcast_p(void)
 	(void)task_manager_broadcast(tm_broadcast_undefined_msg, NULL, TM_NO_RESPONSE);
 	while (1) {
 		usleep(500);
-		if (broad_undefined_cnt == TM_BROAD_TASK_NUM) {
+		if (broad_undefined_cnt == TM_BROAD_UNDEF_NUM) {
 			break;
 		}
 		TC_ASSERT_LEQ_CLEANUP("task_manager_broadcast", sleep_cnt, 10, sem_destroy(&tm_broad_sem));
@@ -494,7 +525,7 @@ static void utc_task_manager_broadcast_p(void)
 	}
 	TC_ASSERT_EQ_CLEANUP("task_manager_broadcast", broad_wifi_on_cnt, 0, sem_destroy(&tm_broad_sem));
 	TC_ASSERT_EQ_CLEANUP("task_manager_broadcast", broad_wifi_off_cnt, 0, sem_destroy(&tm_broad_sem));
-	TC_ASSERT_EQ_CLEANUP("task_manager_broadcast", broad_undefined_cnt, TM_BROAD_TASK_NUM, sem_destroy(&tm_broad_sem));
+	TC_ASSERT_EQ_CLEANUP("task_manager_broadcast", broad_undefined_cnt, TM_BROAD_UNDEF_NUM, sem_destroy(&tm_broad_sem));
 
 	sem_destroy(&tm_broad_sem);
 	TC_SUCCESS_RESULT();
@@ -521,7 +552,7 @@ static void utc_task_manager_unset_broadcast_cb_p(void)
 	TC_ASSERT_EQ("task_manager_unset_broadcast_cb", ret, TM_UNREGISTERED_MSG);
 
 	ret = task_manager_unset_broadcast_cb(tm_broadcast_undefined_msg, TM_RESPONSE_WAIT_INF);
-	TC_ASSERT_EQ("task_manager_unset_broadcast_cb", ret, OK);
+	TC_ASSERT_EQ("task_manager_unset_broadcast_cb", ret, TM_UNREGISTERED_MSG);
 
 	TC_SUCCESS_RESULT();
 }
@@ -907,9 +938,6 @@ void tm_utc_main(void)
 	utc_task_manager_unicast_n();
 	utc_task_manager_unicast_p();
 
-	utc_task_manager_unset_broadcast_cb_n();
-	utc_task_manager_unset_broadcast_cb_p();
-
 	utc_task_manager_broadcast_n();
 	utc_task_manager_broadcast_p();
 
@@ -918,6 +946,9 @@ void tm_utc_main(void)
 
 	utc_task_manager_resume_n();
 	utc_task_manager_resume_p();
+
+	utc_task_manager_unset_broadcast_cb_n();
+	utc_task_manager_unset_broadcast_cb_p();
 
 	utc_task_manager_getinfo_with_name_n();
 	utc_task_manager_getinfo_with_name_p();

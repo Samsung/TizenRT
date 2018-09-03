@@ -1,0 +1,3 @@
+config ENTRY_TM
+	bool "\"tm\" Application"
+	depends on APP_TM

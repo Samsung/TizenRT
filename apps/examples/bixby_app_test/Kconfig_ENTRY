@@ -1,0 +1,3 @@
+config ENTRY_APPCONTROL
+	bool "\"appcontrol\" example"
+	depends on EXAMPLES_APPCONTROL
