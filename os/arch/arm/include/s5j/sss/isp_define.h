@@ -79,5 +79,8 @@
 
 #define RSP_FAIL						(0xF1)
 #define RSP_SUCCESS						(0xA1)
+#define SSSR_SUCCESS					(0x0)
+#define SSSR_FAIL						(0x1)
+
 
 #endif							/*ISP_DEFINE_H_ */

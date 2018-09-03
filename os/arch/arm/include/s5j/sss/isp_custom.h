@@ -15,7 +15,7 @@
 #define SECURE_STORAGE_TYPE_FACTORYKEY_DATA			(0x01)
 
 #define SECURE_STORAGE_TYPE_KEY_AES				(0x0A)
-#define SECURE_STORAGE_TYPE_KEY_HMAC				(0x0B)
+#define SECURE_STORAGE_TYPE_KEY_HMAC			(0x0B)
 #define SECURE_STORAGE_TYPE_KEY_RSA				(0x0C)
 #define SECURE_STORAGE_TYPE_KEY_DH				(0x0D)
 #define SECURE_STORAGE_TYPE_KEY_ECC				(0x0E)
@@ -26,6 +26,17 @@
 #define FACTORYKEY_ARTIK_DEVICE					(0x00010120)
 #define FACTORYKEY_ARTIK_CERT					(0x00010122)
 
+#define ARTIK_FKEY_ALG_AES						(0x00)
+#define ARTIK_FKEY_ALG_HMAC						(0x50)
+#define ARTIK_FKEY_ALG_RSA						(0x10)
+#define ARTIK_FKEY_ALG_DH						(0x32)
+#define ARTIK_FKEY_ALG_ECDSA_NIST				(0x20)
+#define ARTIK_FKEY_ALG_ECDSA_BP					(0x23)
+#define ARTIK_FKEY_ALG_ECDSA_ED					(0x26)
+#define ARTIK_FKEY_ALG_ECDH						(0x40)
+#define ARTIK_FKEY_ALG_DATA						(0x90)
+#define ARTIK_FKEY_ALG_DATA_ENC					(0x91)
+
 // AES Mode
 #define AES_ECB_MODE		(0x0008)
 #define AES_CBC_MODE		(0x0108)
@@ -33,7 +44,7 @@
 #define AES_XTS_MODE		(0x0308)
 #define AES_CCM_MODE		(0x1008)
 #define AES_GCM_MODE		(0x1108)
-#define AES_KW_MODE		(0x1208)
+#define AES_KW_MODE			(0x1208)
 
 #define SSTORAGE_DATA_SLOT_INDEX_MAX		(32)
 
@@ -140,494 +151,658 @@ struct sDH_PARAM {
 // Function
 // ======================================
 
-/*! @fn         isp_get_status()
- *	@ingroup	SECURITY_ISP
- *	@brief		status function
- *  @version    v0.50 : 2016.8.13 Init. release version
- *	@retval		SUCCESS
- *	@retval		ERROR_SYSTEM_MAILBOX_BUSY
+/*!	@fn         isp_get_status()
+ *	@ingroup    SECURITY_ISP
+ *	@brief      status function
+ *	@version    v0.50 : 2016.8.13 Init. release version
+ *	@retval     SUCCESS
+ *	@retval     ERROR_SYSTEM_MAILBOX_BUSY
  */
 int isp_get_status(void);
 
 
-/*! @fn         isp_clear(unsigned int type)
- *	@ingroup	SECURITY_ISP
- *	@brief		clear function
- *  @version    v0.50 : 2016.8.13 Init. release version
- *  @param		type                    clear type
- *	@retval		SUCCESS
- *	@retval		Others(!=0)	fail - error from sub-function
+/*!	@fn         isp_clear(unsigned int type)
+ *	@ingroup    SECURITY_ISP
+ *	@brief      clear function
+ *	@version    v0.50 : 2016.8.13 Init. release version
+ *	@param      type                    clear type
+ *	@retval     SUCCESS
+ *	@retval     Others(!=0)	fail - error from sub-function
  */
 int isp_clear(unsigned int type);
 
-/*! @fn         isp_read_cert(unsigned char *data, unsigned int *data_byte_len, unsigned int index)
+/*!	@fn         isp_read_cert(unsigned char *data, unsigned int *data_byte_len, unsigned int index)
  *	@ingroup    SECURITY_ISP
  *	@brief      read cert function for secure storage
- *  @version    v0.50 : 2016.8.13 Init. release version
- *  @version    v0.51 : 2016.12.29 Use Pre-Defined Variable for the readability
- *  @param[out] data             : array of data
- *  @param[out] data_byte_len    : length of data
- *  @param[in]  index            : slot index of secure storage
- *	@retval		SUCCESS		: Success
- *	@retval		Others(!=0)	: fail - error from sub-function
+ *	@version    v0.50 : 2016.8.13 Init. release version
+ *	@version    v0.51 : 2016.12.29 Use Pre-Defined Variable for the readability
+ *	@param[out] data             : array of data
+ *	@param[out] data_byte_len    : length of data
+ *	@param[in]  index            : slot index of secure storage
+ *	@retval     SUCCESS	    : Success
+ *	@retval     Others(!=0) : fail - error from sub-function
  */
 int isp_read_cert(unsigned char *data, unsigned int *data_byte_len, unsigned int index);
 
-/*! @fn         isp_set_factorykey_data(unsigned char *data, unsigned int data_byte_len, unsigned int data_id)
+/*!	@fn         isp_get_factorykey_data(unsigned char *data, unsigned int data_byte_len, unsigned int data_id)
  *	@ingroup    SECURITY_ISP
- *	@brief      write data function for secure storage
- *  @version    v0.50 : 2016.12.29 Init. release version
- *  @param[in]  data             : array of data
- *  @param[in]  data_byte_len    : length of data
- *  @param[in]  data_id          : id of data
- *	@retval		SUCCESS		: Success
- *	@retval		Others(!=0)	: fail - error from sub-function
+ *	@brief      read data function for secure storage
+ *	@version    v0.50 : 2016.12.29 Init. release version
+ *	@param[out] data            : array of data
+ *	@param[out] data_byte_len   : length of data
+ *	@param[in]  data_id         : id of data
+ *	@retval     SUCCESS     : Success
+ *	@retval     Others(!=0) : fail - error from sub-function
  */
 int isp_get_factorykey_data(unsigned char *data, unsigned int *data_byte_len, unsigned int data_id);
 
-/*! @fn			isp_generate_random(unsigned int *random, unsigned int wlen)
- *	@ingroup	SECURITY_ISP
- *	@brief		rng function
- *  @version    v0.50 : 2016.8.13 Init. release version
- *  @param[out] random             : array of random number
- *  @param[in]  wlen               : word length of random number to be generated
- *	@retval		SUCCESS            : Success
- *	@retval		Others(!=0)        : fail - error from sub-function
+/*!	@fn         isp_generate_random(unsigned int *random, unsigned int wlen)
+ *	@ingroup    SECURITY_ISP
+ *	@brief      rng function
+ *	@version    v0.50 : 2016.8.13 Init. release version
+ *	@param[out] random             : array of random number
+ *	@param[in]  wlen               : word length of random number to be generated
+ *	@retval     SUCCESS            : Success
+ *	@retval     Others(!=0)        : fail - error from sub-function
  */
 int isp_generate_random(unsigned int *random, unsigned int wlen);
 
-/*! @fn         isp_ecdsa_sign_md_securekey(struct sECC_SIGN * ecc_sign, unsigned char *msg_digest, unsigned int msg_digest_byte_len, unsigned int key_index)
+/*!	@fn         isp_ecdsa_sign_md_securekey(struct sECC_SIGN * ecc_sign, unsigned char *msg_digest, unsigned int msg_digest_byte_len, unsigned int key_index)
  *	@ingroup    SECURITY_ISP
  *	@brief      ecdsa function for generating signature
- *  @version    v0.10 : 2016.12.23 Init. release version
- *  @param[out] ecc_sign     : struct of signature
- *  @param[in]  msg_digest           : array of hashed_message
- *  @param[in]  msg_digest_byte_len  : length of hashed_message with byte unit
- *  @param[in]  key_index     : slot # in secure storage
+ *	@version    v0.10 : 2016.12.23 Init. release version
+ *	@param[out] ecc_sign     : struct of signature
+ *	@param[in]  msg_digest           : array of hashed_message
+ *	@param[in]  msg_digest_byte_len  : length of hashed_message with byte unit
+ *	@param[in]  key_index     : slot # in secure storage
  *	@retval     SUCCESS       : Success
  *	@retval     Others(!=0)   : fail - error from sub-function
  */
 int isp_ecdsa_sign_md_securekey(struct sECC_SIGN *ecc_sign, unsigned char *msg_digest, unsigned int msg_digest_byte_len, unsigned int key_index);
 
-/*!
+/*!	@fn         isp_compute_ecdh_securekey(unsigned char *shared_secret, unsigned int *shared_secret_byte_len, struct sECC_KEY ecc_publickey, unsigned int key_index)
  *	@ingroup    SECURITY_ISP
  *	@brief      ecdh function for computing shared secret using secure key storage
- *  @version    v0.50 : 2016.8.13 Init. release version
- *  @version    v0.60 : 2016.12.27 Change factorykey id parameter, Set Null input for object_id
- *  @param[out] shared_secret : array of shared secret
- *  @param[out] shared_secret_byte_len : length of shared_secret_byte_len
- *  @param[in]  ecc_publickey : struct of ecc key
- *  @param[in]  key_index     : slot # in secure storage
+ *	@version    v0.50 : 2016.8.13 Init. release version
+ *	@version    v0.60 : 2016.12.27 Change factorykey id parameter, Set Null input for object_id
+ *	@param[out] shared_secret : array of shared secret
+ *	@param[out] shared_secret_byte_len : length of shared_secret_byte_len
+ *	@param[in]  ecc_publickey : struct of ecc key
+ *	@param[in]  key_index     : slot # in secure storage
  *	@retval     SUCCESS       : Success
  *	@retval     Others(!=0)   : fail - error from sub-function
  */
 int isp_compute_ecdh_securekey(unsigned char *shared_secret, unsigned int *shared_secret_byte_len, struct sECC_KEY ecc_publickey, unsigned int key_index);
 
-/*! @fn         isp_write_cert(unsigned char *data, unsigned int data_byte_len, unsigned int index)
+/*!	@fn         isp_write_storage(unsigned char *data, unsigned int data_byte_len, unsigned int index)
  *	@ingroup    SECURITY_ISP
- *	@brief      write cert function for secure storage
- *  @version    v0.50 : 2016.8.13 Init. release version
- *  @version    v0.51 : 2016.12.29 Use Pre-Defined Variable for the readability
- *  @param[in]  data             : array of data
- *  @param[in]  data_byte_len    : length of data
- *  @param[in]  index            : slot index of secure storage
- *	@retval		SUCCESS		: Success
- *	@retval		Others(!=0)	: fail - error from sub-function
+ *	@brief      write data function for secure storage
+ *	@version    v0.50 : 2016.8.13 Init. release version
+ *	@version    v0.51 : 2016.12.29 Use Pre-Defined Variable for the readability
+ *	@param[in]  data             : array of data
+ *	@param[in]  data_byte_len    : length of data
+ *	@param[in]  index            : slot index of secure storage
+ *	@retval     SUCCESS          : Success
+ *	@retval     Others(!=0)      : fail - error from sub-function
  */
 int isp_write_storage(unsigned char *data, unsigned int data_byte_len, unsigned int index);
 
-/*! @fn         isp_read_cert(unsigned char *data, unsigned int *data_byte_len, unsigned int index)
+/*!	@fn         isp_read_storage(unsigned char *data, unsigned int *data_byte_len, unsigned int index)
  *	@ingroup    SECURITY_ISP
- *	@brief      read cert function for secure storage
- *  @version    v0.50 : 2016.8.13 Init. release version
- *  @version    v0.51 : 2016.12.29 Use Pre-Defined Variable for the readability
- *  @param[out] data             : array of data
- *  @param[out] data_byte_len    : length of data
- *  @param[in]  index            : slot index of secure storage
- *	@retval		SUCCESS		: Success
- *	@retval		Others(!=0)	: fail - error from sub-function
+ *	@brief      read data function for secure storage
+ *	@version    v0.50 : 2016.8.13 Init. release version
+ *	@version    v0.51 : 2016.12.29 Use Pre-Defined Variable for the readability
+ *	@param[out] data            : array of data
+ *	@param[out] data_byte_len   : length of data
+ *	@param[in]  index           : slot index of secure storage
+ *	@retval     SUCCESS         : Success
+ *	@retval     Others(!=0)     : fail - error from sub-function
  */
 int isp_read_storage(unsigned char *data, unsigned int *data_byte_len, unsigned int index);
 
-/*! @fn         int isp_get_factorykey_data(unsigned char *data, unsigned int *data_byte_len, unsigned int data_id)
+/*!	@fn         isp_get_factorykey_data(unsigned char *data, unsigned int *data_byte_len, unsigned int data_id)
  *	@ingroup    SECURITY_ISP
  *	@brief      read data function for secure storage
- *  @version    v0.50 : 2016.12.29 Init. release version
- *  @param[out] data             : array of data
- *  @param[out] data_byte_len    : length of data
- *  @param[in]  data_id          : id of data
- *	@retval		SUCCESS		: Success
- *	@retval		Others(!=0)	: fail - error from sub-function
+ *	@version    v0.50 : 2016.12.29 Init. release version
+ *	@param[out] data             : array of data
+ *	@param[out] data_byte_len    : length of data
+ *	@param[in]  data_id          : id of data
+ *	@retval     SUCCESS		: Success
+ *	@retval     Others(!=0)	: fail - error from sub-function
  */
 int isp_get_factorykey_data(unsigned char *data, unsigned int *data_byte_len, unsigned int data_id);
 
-/*! @fn         isp_ecdsa_get_publickey_securekey(struct sECC_KEY *ecc_publickey, unsigned int key_index, unsigned int object_id)
+/*!	@fn         isp_ecdsa_get_publickey_securekey(struct sECC_KEY *ecc_publickey, unsigned int key_index, unsigned int object_id)
  *	@ingroup    SECURITY_ISP
  *	@brief      ecc function for get publickey to secure storage
- *  @version    v0.50 : 2016.8.13 Init. release version
- *  @version    v0.60 : 2016.12.23 Change factorykey id parameter, Set Null input for object_id
- *  @param[out] ecc_publickey : public key from slot # in secure storage
- *  @param[in]  key_index     : slot # in secure storage
- *  @param[in]  object_id     : selection of algorithm
+ *	@version    v0.50 : 2016.8.13 Init. release version
+ *	@version    v0.60 : 2016.12.23 Change factorykey id parameter, Set Null input for object_id
+ *	@param[out] ecc_publickey : public key from slot # in secure storage
+ *	@param[in]  key_index     : slot # in secure storage
+ *	@param[in]  object_id     : selection of algorithm
  *	@retval     SUCCESS       : Success
  *	@retval     Others(!=0)   : fail - error from sub-function
  */
 int isp_ecdsa_get_publickey_securekey(struct sECC_KEY *ecc_publickey, unsigned int key_index, unsigned int object_id);
 
-/*! @fn         isp_aes_generate_key_securekey(unsigned int key_byte_len, unsigned int key_index)
+/*!	@fn         isp_aes_generate_key_securekey(unsigned int key_byte_len, unsigned int key_index)
  *	@ingroup	SECURITY_ISP
  *	@brief		aes key generation function to store in secure storage
- *  @version	v0.10 : 2016.7.29
- *  @version    v0.50 : 2016.8.13 Init. release version
- *  @param[in]  key_byte_len  : byte length of key
- *  @param[in]  key_index : slot index of secure storage
+ *	@version	v0.10 : 2016.7.29
+ *	@version    v0.50 : 2016.8.13 Init. release version
+ *	@param[in]  key_byte_len  : byte length of key
+ *	@param[in]  key_index : slot index of secure storage
  *	@retval		SUCCESS		: Success
  *	@retval		Others(!=0)	: fail - error from sub-function
  */
 int isp_aes_generate_key_securekey(unsigned int key_byte_len, unsigned int key_index);
 
-/*! @fn         isp_hmac_generate_key_securekey(unsigned int key_byte_len, unsigned int key_index)
+/*!	@fn         isp_aes_generate_key_encryptedkey(unsigned int key_byte_len, unsigned char *encryptedkey)
+ *	@ingroup    SECURITY_ISP
+ *	@brief      aes key generation function to store in secure storage
+ *	@version    v0.10 : 2016.7.29
+ *	@version    v0.50 : 2016.8.13 Init. release version
+ *	@param[in]  key_byte_len    : byte length of key
+ *	@param[out] encryptedkey    : encrypted key data
+ *	@retval     SUCCESS         : Success
+ *	@retval     Others(!=0)     : fail - error from sub-function
+ */
+int isp_aes_generate_key_encryptedkey(unsigned int key_byte_len, unsigned char *encryptedkey);
+
+/*!	@fn         isp_hmac_generate_key_securekey(unsigned int key_byte_len, unsigned int key_index)
  *	@ingroup	SECURITY_ISP
  *	@brief		hmac key generation function to store in secure storage
- *  @version    v0.50 : 2016.8.13 Init. release version
- *  @param[in]  key_byte_len  : byte length of key
- *  @param[in]  key_index : slot index of secure storage
- *	@retval		SUCCESS		: Success
- *	@retval		Others(!=0)	: fail - error from sub-function
+ *	@version    v0.50 : 2016.8.13 Init. release version
+ *	@param[in]  key_byte_len  : byte length of key
+ *	@param[in]  key_index     : slot index of secure storage
+ *	@retval     SUCCESS       : Success
+ *	@retval     Others(!=0)   : fail - error from sub-function
  */
 int isp_hmac_generate_key_securekey(unsigned int key_byte_len, unsigned int key_index);
 
-/*! @fn         isp_rsa_generate_key_securekey(unsigned key_index, unsigned object_id, unsigned int pukey_e)
+/*!	@fn         isp_hmac_generate_key_encryptedkey(unsigned int key_byte_len, unsigned char *encryptedkey)
+ *	@ingroup    SECURITY_ISP
+ *	@brief      hmac key generation function to store in secure storage
+ *	@version    v0.50 : 2016.8.13 Init. release version
+ *	@param[in]  key_byte_len    : byte length of key
+ *	@param[out] encryptedkey    : encrypted key data
+ *	@retval     SUCCESS         : Success
+ *	@retval     Others(!=0)     : fail - error from sub-function
+ */
+int isp_hmac_generate_key_encryptedkey(unsigned int key_byte_len, unsigned char *encryptedkey);
+
+/*!	@fn         isp_rsa_generate_key_securekey(unsigned key_index, unsigned object_id, unsigned int pukey_e)
  *	@ingroup    SECURITY_ISP
  *	@brief      rsa function for verfication of signature
- *  @version    v0.50 : 2016.8.13 Init. release version
- *  @param[in]  key_index          : secure storage index
- *  @param[in]  object_id          : algorithm selection
- *  @param[in]  pukey_e            : input pukey under 32bits-length (if 0, pukey will be randomly generated)
+ *	@version    v0.50 : 2016.8.13 Init. release version
+ *	@param[in]  key_index          : secure storage index
+ *	@param[in]  object_id          : algorithm selection
+ *	@param[in]  pukey_e            : input pukey under 32bits-length (if 0, pukey will be randomly generated)
  *	@retval     SUCCESS            : Success
  *	@retval     Others(!=0)        : fail - error from sub-function
  */
 int isp_rsa_generate_key_securekey(unsigned key_index, unsigned object_id, unsigned int pukey_e);
 
-/*! @fn         isp_ecdsa_generate_key_securekey(unsigned int key_index, unsigned int object_id)
+/*!	@fn         isp_ecdsa_generate_key_securekey(unsigned int key_index, unsigned int object_id)
  *	@ingroup    SECURITY_ISP
  *	@brief      ecdsa function for generating key to secure storage
- *  @version    v0.50 : 2016.8.13 Init. release version
- *  @param[in]  key_index     : slot # in secure storage
- *  @param[in]  object_id     : selection of algorithm
+ *	@version    v0.50 : 2016.8.13 Init. release version
+ *	@param[in]  key_index     : slot # in secure storage
+ *	@param[in]  object_id     : selection of algorithm
  *	@retval     SUCCESS       : Success
  *	@retval     Others(!=0)   : fail - error from sub-function
  */
 int isp_ecdsa_generate_key_securekey(unsigned int key_index, unsigned int object_id);
 
-/*! @fn         isp_set_securekey( unsigned char *data, unsigned int data_byte_len, unsigned int key_type, unsigned int index)
+/*!	@fn         isp_set_securekey( unsigned char *data, unsigned int data_byte_len, unsigned int key_type, unsigned int index)
  *	@ingroup    SECURITY_ISP
  *	@brief      set securekey function
- *  @version    v0.50 : 2016.8.13 Init. release version
- *  @version    v0.51 : 2016.12.29 Use Pre-Defined Variable for the readability
- *  @param[in]  data                 : array of data
- *  @param[in]  data_byte_len        : length of data
- *  @param[in]  key_type             : type of key
- *  @param[in]  index                : slot index of secure storage
+ *	@version    v0.50 : 2016.8.13 Init. release version
+ *	@version    v0.51 : 2016.12.29 Use Pre-Defined Variable for the readability
+ *	@param[in]  data                 : array of data
+ *	@param[in]  data_byte_len        : length of data
+ *	@param[in]  key_type             : type of key
+ *	@param[in]  index                : slot index of secure storage
  *	@retval		SUCCESS              : Success
  *	@retval		Others(!=0)          : fail - error from sub-function
  */
 int isp_set_securekey(unsigned char *data, unsigned int data_byte_len, unsigned int key_type, unsigned int index);
 
-/*! @fn         isp_remove_key(unsigned int key_type, unsigned int key_index)
+/*!	@fn         isp_remove_key(unsigned int key_type, unsigned int key_index)
  *	@ingroup    SECURITY_ISP
  *	@brief      delete securekey function
- *  @version    v0.50 : 2016.8.13 Init. release version
- *  @version    v0.60 : 2016.12.29 Use Pre-Defined Variable for the readability, Secure Storage Map
- *  @param[in]  key_type : type of key
- *  @param[in]  key_index: slot index of secure storage
- *	@retval		SUCCESS		: Success
- *	@retval		Others(!=0)	: fail - error from sub-function
+ *	@version    v0.50 : 2016.8.13 Init. release version
+ *	@version    v0.60 : 2016.12.29 Use Pre-Defined Variable for the readability, Secure Storage Map
+ *	@param[in]  key_type    : type of key
+ *	@param[in]  key_index   : slot index of secure storage
+ *	@retval     SUCCESS		: Success
+ *	@retval     Others(!=0)	: fail - error from sub-function
  */
 int isp_remove_key(unsigned int key_type, unsigned int index);
 
-/*! @fn         isp_aes_encrypt_securekey(struct sAES_PARAM * aes_param, unsigned int key_index)
+/*!	@fn         isp_aes_encrypt_securekey(struct sAES_PARAM * aes_param, unsigned int key_index)
  *	@ingroup    SECURITY_ISP
  *	@brief      aes encryption function using securekey
- *  @version    v0.10 : 2016.7.29
- *  @version    v0.50 : 2016.8.13 Init. release version
- *  @version    v0.51 : 2016.12.29 Use Pre-Defined Variable for the readability
- *  @param[in]  aes_param               : struct of aes parameters
- *  @param[in]  key_index               : slot index of secure storage
- *	@retval		SUCCESS		: Success
- *	@retval		Others(!=0)	: fail - error from sub-function
+ *	@version    v0.10 : 2016.7.29
+ *	@version    v0.50 : 2016.8.13 Init. release version
+ *	@version    v0.51 : 2016.12.29 Use Pre-Defined Variable for the readability
+ *	@param[in]  aes_param   : struct of aes parameters
+ *	@param[in]  key_index   : slot index of secure storage
+ *	@retval     SUCCESS     : Success
+ *	@retval     Others(!=0)	: fail - error from sub-function
  */
 int isp_aes_encrypt_securekey(struct sAES_PARAM *aes_param, unsigned int key_index);
 
-/*! @fn         isp_aes_decrypt_securekey(struct sAES_PARAM * aes_param, unsigned int key_index)
+/*!	@fn         isp_aes_decrypt_securekey(struct sAES_PARAM * aes_param, unsigned int key_index)
  *	@ingroup    SECURITY_ISP
  *	@brief      aes decryption function using securekey
- *  @version    v0.10 : 2016.7.29
- *  @version    v0.50 : 2016.8.13 Init. release version
- *  @version    v0.51 : 2016.12.29 Use Pre-Defined Variable for the readability
- *  @param[in]  aes_param               : struct of aes parameters
- *  @param[in]  key_index               : slot index of secure storage
- *	@retval		SUCCESS		: Success
- *	@retval		Others(!=0)	: fail - error from sub-function
+ *	@version    v0.10 : 2016.7.29
+ *	@version    v0.50 : 2016.8.13 Init. release version
+ *	@version    v0.51 : 2016.12.29 Use Pre-Defined Variable for the readability
+ *	@param[in]  aes_param   : struct of aes parameters
+ *	@param[in]  key_index   : slot index of secure storage
+ *	@retval     SUCCESS     : Success
+ *	@retval     Others(!=0)	: fail - error from sub-function
  */
 int isp_aes_decrypt_securekey(struct sAES_PARAM *aes_param, unsigned int key_index);
 
-/*! @fn			isp_hmac_securekey(unsigned char * mac, struct sHMAC_MSG * hmac_msg, unsigned int object_id, unsigned int key_index)
- *	@ingroup	SECURITY_ISP
- *	@brief		hmac function for key stored in secure storage slot
- *  @version    v0.50 : 2016.8.13 Init. release version
- *  @version    v0.60 : 2016.12.27 Set Null input for object_id
- *  @param[out] mac                 : mac output
- *  @param[in]  hmac_msg            : struct sHMAC_MSG
- *  @param[in]  object_id           : algorithm selection
- *  @param[in]  key_index           : key index
- *	@retval		SUCCESS             : Success
- *	@retval		Others(!=0)         : fail - error from sub-function
+/*!	@fn         isp_aes_encrypt_encryptedkey(struct sAES_PARAM * aes_param, unsigned char *encryptedkey)
+ *	@ingroup    SECURITY_ISP
+ *	@brief      aes encryption function using securekey
+ *	@version    v0.10 : 2016.7.29
+ *	@version    v0.50 : 2016.8.13 Init. release version
+ *	@version    v0.51 : 2016.12.29 Use Pre-Defined Variable for the readability
+ *	@param[in]  aes_param       : struct of aes parameters
+ *	@param[in]  encryptedkey    : encrypted key data
+ *	@retval     SUCCESS         : Success
+ *	@retval     Others(!=0)     : fail - error from sub-function
+ */
+int isp_aes_encrypt_encryptedkey(struct sAES_PARAM *aes_param, unsigned char *encryptedkey);
+
+/*!	@fn         isp_aes_decrypt_encryptedkey(struct sAES_PARAM * aes_param, unsigned char *encryptedkey)
+ *	@ingroup    SECURITY_ISP
+ *	@brief      aes decryption function using securekey
+ *	@version    v0.10 : 2016.7.29
+ *	@version    v0.50 : 2016.8.13 Init. release version
+ *	@version    v0.51 : 2016.12.29 Use Pre-Defined Variable for the readability
+ *	@param[in]  aes_param       : struct of aes parameters
+ *	@param[in]  encryptedkey    : encrypted key data
+ *	@retval     SUCCESS         : Success
+ *	@retval     Others(!=0)     : fail - error from sub-function
+ */
+int isp_aes_decrypt_encryptedkey(struct sAES_PARAM *aes_param, unsigned char *encryptedkey);
+
+/*!	@fn         isp_hmac_securekey(unsigned char * mac, struct sHMAC_MSG * hmac_msg, unsigned int object_id, unsigned int key_index)
+ *	@ingroup    SECURITY_ISP
+ *	@brief      hmac function for key stored in secure storage slot
+ *	@version    v0.50 : 2016.8.13 Init. release version
+ *	@version    v0.60 : 2016.12.27 Set Null input for object_id
+ *	@param[out] mac                 : mac output
+ *	@param[in]  hmac_msg            : struct sHMAC_MSG
+ *	@param[in]  object_id           : algorithm selection
+ *	@param[in]  key_index           : key index
+ *	@retval	    SUCCESS             : Success
+ *	@retval     Others(!=0)         : fail - error from sub-function
  */
 int isp_hmac_securekey(unsigned char *mac, struct sHMAC_MSG *hmac_msg, unsigned int object_id, unsigned int key_index);
 
-/*! @fn         isp_hash(unsigned char * hash, struct sHASH_MSG * hash_msg, unsigned int object_id)
- *	@ingroup	SECURITY_ISP
- *	@brief		hash function
- *  @version    v0.50 : 2016.8.13 Init. release version
- *  @param[out] hash          : hash output
- *  @param[in]  hash_msg      : struct of message
- *  @param[in]  object_id     : algorithm selection
- *	@retval		SUCCESS       : Success
- *	@retval		Others(!=0)   : fail - error from sub-function
+/*!	@fn         isp_hmac_encryptedkey(unsigned char * mac, struct sHMAC_MSG * hmac_msg, unsigned int object_id, unsigned char *encryptedkey)
+ *	@ingroup    SECURITY_ISP
+ *	@brief      hmac function for key stored in secure storage slot
+ *	@version    v0.50 : 2016.8.13 Init. release version
+ *	@version    v0.60 : 2016.12.27 Set Null input for object_id
+ *	@param[out] mac             : mac output
+ *	@param[in]  hmac_msg        : struct sHMAC_MSG
+ *	@param[in]  object_id       : algorithm selection
+ *	@param[in]  encryptedkey    : encrypted key data
+ *	@retval     SUCCESS         : Success
+ *	@retval     Others(!=0)     : fail - error from sub-function
+ */
+int isp_hmac_encryptedkey(unsigned char *mac, struct sHMAC_MSG *hmac_msg, unsigned int object_id, unsigned char *encryptedkey);
+
+/*!	@fn         isp_hash(unsigned char * hash, struct sHASH_MSG * hash_msg, unsigned int object_id)
+ *	@ingroup    SECURITY_ISP
+ *	@brief      hash function
+ *	@version    v0.50 : 2016.8.13 Init. release version
+ *	@param[out] hash          : hash output
+ *	@param[in]  hash_msg      : struct of message
+ *	@param[in]  object_id     : algorithm selection
+ *	@retval     SUCCESS       : Success
+ *	@retval     Others(!=0)   : fail - error from sub-function
  */
 int isp_hash(unsigned char *hash, struct sHASH_MSG *hash_msg, unsigned int object_id);
 
-/*! @fn		isp_dh_generate_keypair_userparam_securestorage(struct sDH_PARAM *i_dh_param, unsigned int dh_param_index)
+/*!	@fn         isp_dh_generate_keypair_userparam_securestorage(struct sDH_PARAM *i_dh_param, unsigned int dh_param_index)
  *	@ingroup    SECURITY_ISP
  *	@brief      dh function for generate pvkey & pukey pair from user input parameter p & g
- *  @version    v0.50 : 2016.8.13 Init. release version
- *  @param[out] i_dh_param        : struct of DH param = {p, g, pukey}
- *  @param[in]  dh_param_index: slot # in secure storage for p, g, pvkey
+ *	@version    v0.50 : 2016.8.13 Init. release version
+ *	@param[out] i_dh_param    : struct of DH param = {p, g, pukey}
+ *	@param[in]  dh_param_index: slot # in secure storage for p, g, pvkey
  *	@retval     SUCCESS       : Success
  *	@retval     Others(!=0)   : fail - error from sub-function
  */
 int isp_dh_generate_keypair_userparam_securestorage(struct sDH_PARAM *i_dh_param, unsigned int dh_param_index);
 
-/*! @fn         isp_dh_compute_shared_secret_securekey(unsigned char *shared_secret, struct sDH_KEY* dh_publickey, unsigned int key_index)
+/*!	@fn         isp_dh_compute_shared_secret_securekey(unsigned char *shared_secret, struct sDH_KEY* dh_publickey, unsigned int key_index)
  *	@ingroup    SECURITY_ISP
  *	@brief      dh function for compute shared secret
- *  @version    v0.50 : 2016.8.13 Init. release version
- *  @version    v0.60 : 2016.12.27 Set Null input for object_id
- *  @param[out] shared_secret : array of shared secret
- *  @param[in]  dh_publickey  : struct of DH publickey
- *  @param[in]  key_index     : slot # in secure storage
+ *	@version    v0.50 : 2016.8.13 Init. release version
+ *	@version    v0.60 : 2016.12.27 Set Null input for object_id
+ *	@param[out] shared_secret : array of shared secret
+ *	@param[in]  dh_publickey  : struct of DH publickey
+ *	@param[in]  key_index     : slot # in secure storage
  *	@retval     SUCCESS       : Success
  *	@retval     Others(!=0)   : fail - error from sub-function
  */
 int isp_dh_compute_shared_secret_securekey(unsigned char *shared_secret, unsigned int *shared_secret_byte_len, struct sDH_PARAM dh_publickey, unsigned int key_index);
 
-/*! @fn         isp_rsa_decrypt_securekey(unsigned char *output, unsigned int *output_byte_len, unsigned char *input, unsigned int input_byte_len, unsigned int key_index)
+/*!	@fn         isp_rsa_decrypt_securekey(unsigned char *output, unsigned int *output_byte_len, unsigned char *input, unsigned int input_byte_len, unsigned int key_index)
  *	@ingroup    SECURITY_ISP
  *	@brief      rsa function for decryption using securekey
- *  @version    v0.50 : 2016.8.13 Init. release version
- *  @version    v0.60 : 2016.12.27 Change factorykey id parameter, Set Null input for object_id
- *  @param[out] output            : array of output message
- *  @param[out] output_byte_len   : length of output message
- *  @param[in]  input             : array of input message
- *  @param[in]  input_byte_len    : length of input message
- *  @param[in]  key_index         : slot # in secure storage
+ *	@version    v0.50 : 2016.8.13 Init. release version
+ *	@version    v0.60 : 2016.12.27 Change factorykey id parameter, Set Null input for object_id
+ *	@param[out] output            : array of output message
+ *	@param[out] output_byte_len   : length of output message
+ *	@param[in]  input             : array of input message
+ *	@param[in]  input_byte_len    : length of input message
+ *	@param[in]  key_index         : slot # in secure storage
  *	@retval     SUCCESS           : Success
  *	@retval     Others(!=0)       : fail - error from sub-function
  */
 int isp_rsa_decrypt_securekey(unsigned char *output, unsigned int *output_byte_len, unsigned char *input, unsigned int input_byte_len, unsigned int key_index);
 
-/*! @fn         isp_rsa_encrypt_securekey(unsigned char *output, unsigned char *input, unsigned int input_byte_len, unsigned int key_index)
+/*!	@fn         isp_rsa_encrypt_securekey(unsigned char *output, unsigned char *input, unsigned int input_byte_len, unsigned int key_index)
  *	@ingroup    SECURITY_ISP
  *	@brief      rsa function for encryption using securekey
- *  @version    v0.50 : 2016.8.13 Init. release version
- *  @version    v0.60 : 2016.12.27 Change factorykey id parameter, Set Null input for object_id
- *  @param[out] output            : array of output message
- *  @param[in]  input             : array of input message
- *  @param[in]  input_byte_len    : length of input message
- *  @param[in]  key_index         : slot # in secure storage
+ *	@version    v0.50 : 2016.8.13 Init. release version
+ *	@version    v0.60 : 2016.12.27 Change factorykey id parameter, Set Null input for object_id
+ *	@param[out] output            : array of output message
+ *	@param[in]  input             : array of input message
+ *	@param[in]  input_byte_len    : length of input message
+ *	@param[in]  key_index         : slot # in secure storage
  *	@retval     SUCCESS           : Success
  *	@retval     Others(!=0)       : fail - error from sub-function
  */
 int isp_rsa_encrypt_securekey(unsigned char *output, unsigned int *output_byte_len, unsigned char *input, unsigned int input_byte_len, unsigned int key_index);
 
-/*! @fn         isp_rsa_sign_md_securekey(struct sRSA_SIGN *rsa_sign, unsigned char *msg_digest, unsigned int msg_digest_byte_len, unsigned int key_index)
+/*!	@fn         isp_rsa_sign_md_securekey(struct sRSA_SIGN *rsa_sign, unsigned char *msg_digest, unsigned int msg_digest_byte_len, unsigned int key_index)
  *	@ingroup    SECURITY_ISP
  *	@brief      rsa function for generating signature using securekey
- *  @version    v0.10 : 2016.12.23 Init. release version
- *  @param[in]  rsa_sign          : struct of rsa signature
- *  @param[in]  msg_digest               : array of hashed_message
- *  @param[in]  msg_digest_byte_len      : byte length of hashed_message
- *  @param[in]  key_index         : slot # in secure storage
+ *	@version    v0.10 : 2016.12.23 Init. release version
+ *	@param[in]  rsa_sign          : struct of rsa signature
+ *	@param[in]  msg_digest               : array of hashed_message
+ *	@param[in]  msg_digest_byte_len      : byte length of hashed_message
+ *	@param[in]  key_index         : slot # in secure storage
  *	@retval     SUCCESS           : Success
  *	@retval     Others(!=0)       : fail - error from sub-function
  */
 int isp_rsa_sign_md_securekey(struct sRSA_SIGN *rsa_sign, unsigned char *msg_digest, unsigned int msg_digest_byte_len, unsigned int key_index);
 
-/*! @fn         isp_rsa_verify_md_securekey(struct sRSA_SIGN *rsa_sign, unsigned char *msg_digest, unsigned int msg_digest_byte_len, unsigned int key_index)
+/*!	@fn         isp_rsa_verify_md_securekey(struct sRSA_SIGN *rsa_sign, unsigned char *msg_digest, unsigned int msg_digest_byte_len, unsigned int key_index)
  *	@ingroup    SECURITY_ISP
  *	@brief      rsa function for verification of signature using securekey
- *  @version    v0.10 : 2016.12.23 Init. release version
- *  @param[in]  rsa_sign          : struct of rsa signature
- *  @param[in]  msg_digest               : array of hashed_message
- *  @param[in]  msg_digest_byte_len      : byte length of hashed_message
- *  @param[in]  key_index         : slot # in secure storage
+ *	@version    v0.10 : 2016.12.23 Init. release version
+ *	@param[in]  rsa_sign          : struct of rsa signature
+ *	@param[in]  msg_digest               : array of hashed_message
+ *	@param[in]  msg_digest_byte_len      : byte length of hashed_message
+ *	@param[in]  key_index         : slot # in secure storage
  *	@retval     SUCCESS           : Success
  *	@retval     Others(!=0)       : fail - error from sub-function
  */
 int isp_rsa_verify_md_securekey(struct sRSA_SIGN *rsa_sign, unsigned char *msg_digest, unsigned int msg_digest_byte_len, unsigned int key_index);
 
-/*! @fn         isp_ecdsa_verify_md_securekey(struct sECC_SIGN * ecc_sign, unsigned char *msg_digest, unsigned int msg_digest_byte_len, unsigned int key_index)
+/*!	@fn         isp_ecdsa_verify_md_securekey(struct sECC_SIGN * ecc_sign, unsigned char *msg_digest, unsigned int msg_digest_byte_len, unsigned int key_index)
  *	@ingroup    SECURITY_ISP
  *	@brief      ecdsa function for generating signature
- *  @version    v0.10 : 2016.12.23 Init. release version
- *  @param[out] ecc_sign     : struct of signature
- *  @param[in]  msg_digest           : array of hashed_message
- *  @param[in]  msg_digest_byte_len      : length of hashed_message with byte unit
- *  @param[in]  key_index     : slot # in secure storage
+ *	@version    v0.10 : 2016.12.23 Init. release version
+ *	@param[out] ecc_sign      : struct of signature
+ *	@param[in]  msg_digest    : array of hashed_message
+ *	@param[in]  msg_digest_byte_len      : length of hashed_message with byte unit
+ *	@param[in]  key_index     : slot # in secure storage
  *	@retval     SUCCESS       : Success
  *	@retval     Others(!=0)   : fail - error from sub-function
  */
 int isp_ecdsa_verify_md_securekey(struct sECC_SIGN *ecc_sign, unsigned char *msg_digest, unsigned int msg_digest_byte_len, unsigned int key_index);
 
-/*! @fn         isp_write_cert(unsigned char *data, unsigned int data_byte_len, unsigned int index)
+/*!	@fn         isp_write_cert(unsigned char *data, unsigned int data_byte_len, unsigned int index)
  *	@ingroup    SECURITY_ISP
  *	@brief      write cert function for secure storage
- *  @version    v0.50 : 2016.8.13 Init. release version
- *  @version    v0.51 : 2016.12.29 Use Pre-Defined Variable for the readability
- *  @param[in]  data             : array of data
- *  @param[in]  data_byte_len    : length of data
- *  @param[in]  index            : slot index of secure storage
- *	@retval		SUCCESS		: Success
- *	@retval		Others(!=0)	: fail - error from sub-function
+ *	@version    v0.50 : 2016.8.13 Init. release version
+ *	@version    v0.51 : 2016.12.29 Use Pre-Defined Variable for the readability
+ *	@param[in]  data             : array of data
+ *	@param[in]  data_byte_len    : length of data
+ *	@param[in]  index            : slot index of secure storage
+ *	@retval     SUCCESS     : Success
+ *	@retval     Others(!=0) : fail - error from sub-function
  */
 int isp_write_cert(unsigned char *data, unsigned int data_byte_len, unsigned int index);
 
-/*! @fn         isp_read_cert(unsigned char *data, unsigned int *data_byte_len, unsigned int index)
+/*!	@fn         isp_read_cert(unsigned char *data, unsigned int *data_byte_len, unsigned int index)
  *	@ingroup    SECURITY_ISP
  *	@brief      read cert function for secure storage
- *  @version    v0.50 : 2016.8.13 Init. release version
- *  @version    v0.51 : 2016.12.29 Use Pre-Defined Variable for the readability
- *  @param[out] data             : array of data
- *  @param[out] data_byte_len    : length of data
- *  @param[in]  index            : slot index of secure storage
- *	@retval		SUCCESS		: Success
- *	@retval		Others(!=0)	: fail - error from sub-function
+ *	@version    v0.50 : 2016.8.13 Init. release version
+ *	@version    v0.51 : 2016.12.29 Use Pre-Defined Variable for the readability
+ *	@param[out] data             : array of data
+ *	@param[out] data_byte_len    : length of data
+ *	@param[in]  index            : slot index of secure storage
+ *	@retval     SUCCESS     : Success
+ *	@retval     Others(!=0) : fail - error from sub-function
  */
 int isp_read_cert(unsigned char *data, unsigned int *data_byte_len, unsigned int index);
 
-/*!
+/*!	@fn         isp_ecdsa_generate_key_encryptedkey(unsigned int object_id, unsigned char *encryptedkey)
  *	@ingroup    SECURITY_ISP
  *	@brief      ecdsa function for generating key to secure storage
- *  @version    v0.50 : 2016.8.13 Init. release version
- *  @param[in]  object_id     : selection of algorithm
- *  @param[out] encryptedkey  : encrypted key data
+ *	@version    v0.50 : 2016.8.13 Init. release version
+ *	@param[in]  object_id     : selection of algorithm
+ *	@param[out] encryptedkey  : encrypted key data
  *	@retval     SUCCESS       : Success
  *	@retval     Others(!=0)   : fail - error from sub-function
  */
 int isp_ecdsa_generate_key_encryptedkey(unsigned int object_id, unsigned char *encryptedkey);
 
-/*!
+/*!	@fn         isp_ecdsa_get_publickey_encryptedkey(struct sECC_KEY *ecc_publickey, unsigned int object_id, unsigned char *encryptedkey)
  *	@ingroup    SECURITY_ISP
  *	@brief      ecc function for get publickey to secure storage
- *  @version    v0.50 : 2016.8.13 Init. release version
- *  @version    v0.60 : 2016.12.23 Change factorykey id parameter, Set Null input for object_id
- *  @param[out] ecc_publickey : public key from slot # in secure storage
- *  @param[in]  object_id     : selection of algorithm
- *  @param[in]  encryptedkey  : encrypted key data
+ *	@version    v0.50 : 2016.8.13 Init. release version
+ *	@version    v0.60 : 2016.12.23 Change factorykey id parameter, Set Null input for object_id
+ *	@param[out] ecc_publickey : public key from slot # in secure storage
+ *	@param[in]  object_id     : selection of algorithm
+ *	@param[in]  encryptedkey  : encrypted key data
  *	@retval     SUCCESS       : Success
  *	@retval     Others(!=0)   : fail - error from sub-function
  */
 int isp_ecdsa_get_publickey_encryptedkey(struct sECC_KEY *ecc_publickey, unsigned int object_id, unsigned char *encryptedkey);
 
-/*!
+/*!	@fn         isp_compute_ecdh_encryptedkey(unsigned char *shared_secret, unsigned int *shared_secret_byte_len, struct sECC_KEY ecc_publickey, unsigned char *encryptedkey)
  *	@ingroup    SECURITY_ISP
  *	@brief      ecdh function for computing shared secret using userkey input
- *  @version    v0.00 : 2017.1.19 Init. release version
- *  @param[out] shared_secret : array of shared secret
- *  @param[out] shared_secret_byte_len : length of shared_secret_byte_len
- *  @param[in]  ecc_publickey : struct of ecc key
- *  @param[in]  encryptedkey  : encrypted key data
+ *	@version    v0.00 : 2017.1.19 Init. release version
+ *	@param[out] shared_secret : array of shared secret
+ *	@param[out] shared_secret_byte_len : length of shared_secret_byte_len
+ *	@param[in]  ecc_publickey : struct of ecc key
+ *	@param[in]  encryptedkey  : encrypted key data
  *	@retval     SUCCESS       : Success
  *	@retval     Others(!=0)   : fail - error from sub-function
  */
 int isp_compute_ecdh_encryptedkey(unsigned char *shared_secret, unsigned int *shared_secret_byte_len, struct sECC_KEY ecc_publickey, unsigned char *encryptedkey);
 
-/*!
+/*!	@fn         isp_dh_generate_keypair_userparam_encryptedkey(struct sDH_PARAM *i_dh_param, unsigned char *encryptedkey)
  *	@ingroup    SECURITY_ISP
  *	@brief      dh function for generate pvkey & pukey pair from user input parameter p & g
- *  @version    v0.50 : 2016.8.13 Init. release version
- *  @param[out] i_dh_param        : struct of DH param = {p, g, pukey}
- *  @param[out]  encryptedkey     : encrypted key for p, g, pvkey
+ *	@version    v0.50 : 2016.8.13 Init. release version
+ *	@param[out] i_dh_param    : struct of DH param = {p, g, pukey}
+ *	@param[out] encryptedkey  : encrypted key for p, g, pvkey
  *	@retval     SUCCESS       : Success
  *	@retval     Others(!=0)   : fail - error from sub-function
  */
 int isp_dh_generate_keypair_userparam_encryptedkey(struct sDH_PARAM *i_dh_param, unsigned char *encryptedkey);
 
-/*!
+/*!	@fn         isp_dh_compute_shared_secret_encryptedkey(unsigned char *shared_secret, unsigned int *shared_secret_byte_len, struct sDH_PARAM dh_publickey, unsigned char *encryptedkey);
  *	@ingroup    SECURITY_ISP
  *	@brief      dh function for compute shared secret
- *  @version    v0.50 : 2016.8.13 Init. release version
- *  @version    v0.60 : 2016.12.27 Set Null input for object_id
- *  @param[out] shared_secret : array of shared secret
- *  @param[in]  dh_publickey  : struct of DH publickey
- *  @param[in]  encryptedkey  : encrypted key data
+ *	@version    v0.50 : 2016.8.13 Init. release version
+ *	@version    v0.60 : 2016.12.27 Set Null input for object_id
+ *	@param[out] shared_secret : array of shared secret
+ *	@param[in]  dh_publickey  : struct of DH publickey
+ *	@param[in]  encryptedkey  : encrypted key data
  *	@retval     SUCCESS       : Success
  *	@retval     Others(!=0)   : fail - error from sub-function
  */
 int isp_dh_compute_shared_secret_encryptedkey(unsigned char *shared_secret, unsigned int *shared_secret_byte_len, struct sDH_PARAM dh_publickey, unsigned char *encryptedkey);
 
-/*!
+/*!	@fn         isp_set_encryptedkey(unsigned char *key, unsigned int key_byte_len, unsigned int key_type, unsigned char *encryptedkey)
  *	@ingroup    SECURITY_ISP
  *	@brief      set securekey function
- *  @version    v0.50 : 2016.8.13 Init. release version
- *  @version    v0.51 : 2016.12.29 Use Pre-Defined Variable for the readability
- *  @param[in]  data                 : array of data
- *  @param[in]  data_byte_len        : length of data
- *  @param[in]  key_type             : type of key
- *  @param[out] encryptedkey         : encrypted key data
- *	@retval		SUCCESS              : Success
- *	@retval		Others(!=0)          : fail - error from sub-function
+ *	@version    v0.50 : 2016.8.13 Init. release version
+ *	@version    v0.51 : 2016.12.29 Use Pre-Defined Variable for the readability
+ *	@param[in]  data                 : array of data
+ *	@param[in]  data_byte_len        : length of data
+ *	@param[in]  key_type             : type of key
+ *	@param[out] encryptedkey         : encrypted key data
+ *	@retval     SUCCESS              : Success
+ *	@retval     Others(!=0)          : fail - error from sub-function
  */
 int isp_set_encryptedkey(unsigned char *key, unsigned int key_byte_len, unsigned int key_type, unsigned char *encryptedkey);
 
-/*! @fn         isp_ecdsa_verify_md_securekey(struct sECC_SIGN * ecc_sign, unsigned char *msg_digest, unsigned int msg_digest_byte_len, unsigned int key_index)
+/*!	@fn         isp_ecdsa_verify_md_encryptedkey(struct sECC_SIGN *ecc_sign, unsigned char *msg_digest, unsigned int msg_digest_byte_len, unsigned char *encryptedkey)
  *	@ingroup    SECURITY_ISP
  *	@brief      ecdsa function for generating signature
- *  @version    v0.10 : 2016.12.23 Init. release version
- *  @param[out] ecc_sign     : struct of signature
- *  @param[in]  msg_digest           : array of hashed_message
- *  @param[in]  msg_digest_byte_len      : length of hashed_message with byte unit
- *  @param[in]  encryptedkey     : encrypted key data
+ *	@version    v0.10 : 2016.12.23 Init. release version
+ *	@param[out] ecc_sign     : struct of signature
+ *	@param[in]  msg_digest           : array of hashed_message
+ *	@param[in]  msg_digest_byte_len      : length of hashed_message with byte unit
+ *	@param[in]  encryptedkey     : encrypted key data
  *	@retval     SUCCESS       : Success
  *	@retval     Others(!=0)   : fail - error from sub-function
  */
 int isp_ecdsa_verify_md_encryptedkey(struct sECC_SIGN *ecc_sign, unsigned char *msg_digest, unsigned int msg_digest_byte_len, unsigned char *encryptedkey);
 
-/*! @fn         isp_rsa_verify_md_encryptedkey(struct sRSA_SIGN *rsa_sign, unsigned char *msg_digest, unsigned int msg_digest_byte_len, unsigned char *encryptedkey)
+/*!	@fn         isp_rsa_sign_md_encryptedkey(struct sRSA_SIGN *rsa_sign, unsigned char *msg_digest, unsigned int msg_digest_byte_len, unsigned char *encryptedkey)
+ *	@ingroup    SECURITY_ISP
+ *	@brief      rsa function for generating signature using securekey
+ *	@version    v0.10 : 2016.12.23 Init. release version
+ *	@param[in]  rsa_sign             : struct of rsa signature
+ *	@param[in]  msg_digest           : array of hashed_message
+ *	@param[in]  msg_digest_byte_len  : byte length of hashed_message
+ *	@param[in]  encryptedkey         : encrypted key data
+ *	@retval     SUCCESS              : Success
+ *	@retval     Others(!=0)          : fail - error from sub-function
+ */
+int isp_rsa_sign_md_encryptedkey(struct sRSA_SIGN *rsa_sign, unsigned char *msg_digest, unsigned int msg_digest_byte_len, unsigned char *encryptedkey);
+
+/*!	@fn         isp_rsa_verify_md_encryptedkey(struct sRSA_SIGN *rsa_sign, unsigned char *msg_digest, unsigned int msg_digest_byte_len, unsigned char *encryptedkey)
  *	@ingroup    SECURITY_ISP
  *	@brief      rsa function for verification of signature using securekey
- *  @version    v0.10 : 2016.12.23 Init. release version
- *  @param[in]  rsa_sign          : struct of rsa signature
- *  @param[in]  msg_digest               : array of hashed_message
- *  @param[in]  msg_digest_byte_len      : byte length of hashed_message
- *  @param[in]  encryptedkey          : encrypted key data
+ *	@version    v0.10 : 2016.12.23 Init. release version
+ *	@param[in]  rsa_sign          : struct of rsa signature
+ *	@param[in]  msg_digest               : array of hashed_message
+ *	@param[in]  msg_digest_byte_len      : byte length of hashed_message
+ *	@param[in]  encryptedkey          : encrypted key data
  *	@retval     SUCCESS           : Success
  *	@retval     Others(!=0)       : fail - error from sub-function
  */
 int isp_rsa_verify_md_encryptedkey(struct sRSA_SIGN *rsa_sign, unsigned char *msg_digest, unsigned int msg_digest_byte_len, unsigned char *encryptedkey);
 
-/*! @fn         isp_rsa_encrypt_encryptedkey(unsigned char *output, unsigned char *input, unsigned int input_byte_len, unsigned int key_index)
+/*!	@fn         isp_rsa_encrypt_encryptedkey(unsigned char *output, unsigned char *input, unsigned int input_byte_len, unsigned int key_index)
  *	@ingroup    SECURITY_ISP
  *	@brief      rsa function for encryption using securekey
- *  @version    v0.50 : 2016.8.13 Init. release version
- *  @version    v0.60 : 2016.12.27 Change factorykey id parameter, Set Null input for object_id
- *  @param[out] output            : array of output message
- *  @param[in]  input             : array of input message
- *  @param[in]  input_byte_len    : length of input message
- *  @param[in]  encryptedkey      : encrypted key data
+ *	@version    v0.50 : 2016.8.13 Init. release version
+ *	@version    v0.60 : 2016.12.27 Change factorykey id parameter, Set Null input for object_id
+ *	@param[out] output            : array of output message
+ *	@param[in]  input             : array of input message
+ *	@param[in]  input_byte_len    : length of input message
+ *	@param[in]  encryptedkey      : encrypted key data
  *	@retval     SUCCESS           : Success
  *	@retval     Others(!=0)       : fail - error from sub-function
  */
 int isp_rsa_encrypt_encryptedkey(unsigned char *output, unsigned int *output_byte_len, unsigned char *input, unsigned int input_byte_len, unsigned char *encryptedkey);
+
+/*!	@fn         isp_rsa_decrypt_encryptedkey(unsigned char *output, unsigned int *output_byte_len, unsigned char *input, unsigned int input_byte_len, unsigned char *encryptedkey)
+ *	@ingroup    SECURITY_ISP
+ *	@brief      rsa function for decryption using securekey
+ *	@version    v0.50 : 2016.8.13 Init. release version
+ *	@version    v0.60 : 2016.12.27 Change factorykey id parameter, Set Null input for object_id
+ *	@param[out] output            : array of output message
+ *	@param[out] output_byte_len   : length of output message
+ *	@param[in]  input             : array of input message
+ *	@param[in]  input_byte_len    : length of input message
+ *	@param[in]  encryptedkey      : encrypted key data
+ *	@retval     SUCCESS           : Success
+ *	@retval     Others(!=0)       : fail - error from sub-function
+ */
+int isp_rsa_decrypt_encryptedkey(unsigned char *output, unsigned int *output_byte_len, unsigned char *input, unsigned int input_byte_len, unsigned char *encryptedkey);
+
+/*!	@fn         isp_rsa_get_pukey_securekey(unsigned char* modulus, unsigned int* modulus_byte_len, unsigned int* pukey_e, unsigned object_id, unsigned key_index)
+ *	@ingroup    SECURITY_ISP
+ *	@brief      read pukey(modulus n, pukey e) from secure storage
+ *	@version    v0.50 : 2016.8.13 Init. release version
+ *	@param[out] modulus x          : RSA public key @ secure storage
+ *	@param[out] modulus_byte_len   : modulus byte length = RSA key length
+ *	@param[out] pukey_e            : RSA public key @ secure storage
+ *	@param[in]  object_id          : algorithm selection
+ *	@param[in]  key_index          : input index of RSA key @ secure storage
+ *	@retval     SUCCESS            : Success
+ *	@retval     Others(!=0)        : fail - error from sub-function
+ */
+int isp_rsa_get_pukey_securekey(struct sRSA_KEY *rsa_key, unsigned object_id, unsigned key_index);
+
+/*!	@fn         isp_rsa_get_pukey_encryptedkey(unsigned char* modulus, unsigned int* modulus_byte_len, unsigned int* pukey_e, unsigned object_id, unsigned key_index)
+ *	@ingroup    SECURITY_ISP
+ *	@brief      read pukey(modulus n, pukey e) from secure storage
+ *	@version    v0.50 : 2016.8.13 Init. release version
+ *	@param[out] modulus	x          : RSA public key @ secure storage
+ *	@param[out] modulus_byte_len   : modulus byte length = RSA key length
+ *	@param[out] pukey_e		       : RSA public key @ secure storage
+ *	@param[in]  object_id          : algorithm selection
+ *	@param[in]  encryptedkey       : encrypted key data
+ *	@retval     SUCCESS            : Success
+ *	@retval     Others(!=0)        : fail - error from sub-function
+ */
+int isp_rsa_get_pukey_encryptedkey(struct sRSA_KEY *rsa_key, unsigned object_id, unsigned char *encryptedkey);
+
+/*!	@fn         isp_rsa_generate_key_encryptedkey(unsigned object_id, unsigned char *encryptedkey, unsigned int pukey_e)
+ *	@ingroup    SECURITY_ISP
+ *	@brief      rsa function for verfication of signature
+ *	@version    v0.50 : 2016.8.13 Init. release version
+ *	@param[in]  object_id          : algorithm selection
+ *	@param[out] encryptedkey       : encrypted key data
+ *	@param[in]  pukey_e            : input pukey under 32bits-length (if 0, pukey will be randomly generated)
+ *	@retval     SUCCESS            : Success
+ *	@retval     Others(!=0)        : fail - error from sub-function
+ */
+int isp_rsa_generate_key_encryptedkey(unsigned int object_id, unsigned char *encryptedkey, unsigned int pukey_e);
+
+/*!	@fn         isp_get_factorykey2_data(unsigned char *data, unsigned int *data_byte_len, unsigned int data_id)
+ *	@ingroup    SECURITY_ISP
+ *	@brief      read factory data function for secure storage
+ *	@param[out] data             : array of data
+ *	@param[out] data_byte_len    : length of data
+ *	@param[in]  data_id          : id of data
+ *	@retval     SUCCESS          : Success
+ *	@retval     Others(!=0)      : fail - error from sub-function
+ */
+int isp_get_factorykey2_data(unsigned char *data, unsigned int *data_byte_len, unsigned int key_id);
+
+/*!	@fn         isp_kdf(unsigned int *pu32derivedkey_bytelen, unsigned char *pu08derivedkey, unsigned int u32userinput_bytelen, unsigned char *pu08userinput)
+ *	@ingroup    SECURITY_ISP
+ *	@brief      kdf function
+ *	@version    v0.01 : 2018.2.18 Init. release version
+ *	@param[out] pu32derivedkey_bytelen   : byte length of derived key (32 bytes)
+ *	@param[out] pu08derivedkey           : array of derived key
+ *	@param[in]  u32userinput_bytelen     : byte length of user input (1 ~ 55 bytes)
+ *	@param[in]  pu08userinput            : array of user input
+ *	@retval     SUCCESS                  : Success
+ *	@retval     Others(!=0)              : fail - error from sub-function
+ */
+int isp_kdf(unsigned int *pu32derivedkey_bytelen, unsigned char *pu08derivedkey, unsigned int u32userinput_bytelen, unsigned char *pu08userinput);
+
+/*!	@fn         isp_lock(void)
+ *	@ingroup    SECURITY_ISP
+ *	@brief      lock function
+ *	@version    v0.10 : 2018.7.10 Init. release version
+ *	@retval     SUCCESS
+ *	@retval     Others(!=0)     fail - error from sub-function
+ */
+int isp_lock(void);
 #endif							/* ISP_CUSTOM_H_ */
