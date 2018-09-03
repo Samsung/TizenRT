@@ -114,6 +114,7 @@ typedef struct fd_set {
 	uint8_t fd_bits[__SELECT_NUINT32 * 4];
 } fd_set;
 
+#define FD_SETSIZE __SELECT_NDESCRIPTORS
 /****************************************************************************
  * Integration with LWIP
  *
