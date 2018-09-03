@@ -38,9 +38,6 @@ el_loop_t *get_app_loop(void)
 
 	/* Get a loop assigned to own task */
 	index = PID_HASH(getpid());
-	if (index < 0 || index >= CONFIG_MAX_TASKS) {
-		return NULL;
-	}
 
 	if (g_loop_list[index] == NULL) {
 		g_loop_list[index] = (el_loop_t *)EL_ALLOC(sizeof(el_loop_t));
@@ -52,25 +49,28 @@ el_loop_t *get_app_loop(void)
 	return g_loop_list[index];
 }
 
-static void release_app_loop(void)
+static int release_app_loop(void)
 {
 	int index;
 
 	index = PID_HASH(getpid());
-	if (index < 0 || index >= CONFIG_MAX_TASKS) {
-		return;
-	}
 
 	if (g_loop_list[index] != NULL) {
+		if (uv_loop_close(g_loop_list[index]) < 0) {
+			eldbg("Failed to close loop\n");
+			return EVENTLOOP_BUSY;
+		}
 		EL_FREE(g_loop_list[index]);
+		g_loop_list[index] = NULL;
 	}
 
-	g_loop_list[index] = NULL;
+	return OK;
 }
 
 /* It runs until there is no event to process or eventloop_loop_stop is called. */
 int eventloop_loop_run(void)
 {
+	int ret;
 	el_loop_t *loop;
 
 	loop = get_app_loop();
@@ -83,25 +83,24 @@ int eventloop_loop_run(void)
 		/* there are still events to process */
 		return EVENTLOOP_NOT_FINISHED;
 	}
-	release_app_loop();
 
-	return OK;
+	ret = release_app_loop();
+	if (ret != OK) {
+		eldbg("Running loop is done, but failed to close loop\n");
+	}
+
+	return ret;
 }
 
 int eventloop_loop_stop(void)
 {
-	el_loop_t *loop;
+	int index;
 
-	loop = get_app_loop();
-	if (loop == NULL) {
+	index = PID_HASH(getpid());
+	/* If app loop is already finished or not exist, EVENTLOOP_LOOP_FAIL is returned. */
+	if (g_loop_list[index] == NULL) {
 		return EVENTLOOP_LOOP_FAIL;
 	}
 
-	if (uv_loop_close(loop) < 0) {
-		eldbg("Failed to cloase loop\n");
-		return EVENTLOOP_BUSY;
-	}
-	release_app_loop();
-
-	return OK;
+	return release_app_loop();
 }
