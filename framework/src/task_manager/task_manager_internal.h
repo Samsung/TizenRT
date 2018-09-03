@@ -195,5 +195,6 @@ bool taskmgr_is_permitted(int handle, pid_t pid);
 int taskmgr_get_task_state(int handle);
 int taskmgr_get_drvfd(void);
 int taskmgr_get_handle_by_pid(int pid);
+int taskmgr_calc_time(struct timespec *time, int timeout);
 
 #endif

@@ -22,6 +22,7 @@
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
+#include <stdint.h>
 #include <sched.h>
 #include <signal.h>
 #include <mqueue.h>
@@ -475,6 +476,28 @@ static int taskmgr_unicast_async(int handle, int caller_pid, void *data)
 	return OK;
 }
 
+int taskmgr_calc_time(struct timespec *result_time, int offset)
+{
+	int ret;
+	time_t sec;
+	uint32_t nsec;
+
+	sec = offset / MSEC_PER_SEC;
+	nsec = (offset - MSEC_PER_SEC * sec) * NSEC_PER_MSEC;
+
+	ret = clock_gettime(CLOCK_REALTIME, result_time);
+	if (ret != 0) {
+		return ERROR;
+	}
+	result_time->tv_sec += sec;
+	result_time->tv_nsec += nsec;
+	if (result_time->tv_nsec >= NSEC_PER_SEC) {
+		result_time->tv_sec++;
+		result_time->tv_nsec -= NSEC_PER_SEC;
+	}
+	return OK;
+}
+
 static int taskmgr_unicast_sync(int handle, int caller_pid, tm_internal_msg_t *data, tm_msg_t *response_msg, int timeout)
 {
 	int ret;
@@ -528,13 +551,17 @@ static int taskmgr_unicast_sync(int handle, int caller_pid, tm_internal_msg_t *d
 	}
 
 	if (timeout > 0) {
-		clock_gettime(CLOCK_REALTIME, &time);
-		time.tv_sec += timeout;
+		ret = taskmgr_calc_time(&time, timeout);
+		if (ret != OK) {
+			return TM_OPERATION_FAIL;
+		}
 		ret = mq_timedreceive(unicast_mqfd, (char *)&recv_msg, sizeof(tm_msg_t), 0, &time);
 	} else {
 #if CONFIG_TASK_MANAGER_UNICAST_REPLY_TIMEOUT > 0
-		clock_gettime(CLOCK_REALTIME, &time);
-		time.tv_sec += CONFIG_TASK_MANAGER_UNICAST_REPLY_TIMEOUT;
+		ret = taskmgr_calc_time(&time, CONFIG_TASK_MANAGER_UNICAST_REPLY_TIMEOUT);
+		if (ret != OK) {
+			return TM_OPERATION_FAIL;
+		}
 		ret = mq_timedreceive(unicast_mqfd, (char *)&recv_msg, sizeof(tm_msg_t), 0, &time);
 #else
 		ret = mq_receive(unicast_mqfd, (char *)&recv_msg, sizeof(tm_msg_t), 0);
