@@ -786,7 +786,7 @@ static void utc_task_manager_unregister_p(void)
 	ret = task_manager_unregister(tm_broadcast_handle3, TM_RESPONSE_WAIT_INF);
 	TC_ASSERT_EQ("task_manager_unregister", ret, OK);
 
-	ret = task_manager_start(tm_sample_handle, 100);
+	ret = task_manager_start(tm_sample_handle, TM_RESPONSE_WAIT_INF);
 	TC_ASSERT_EQ("task_manager_start", ret, TM_UNREGISTERED_APP);
 
 	ret = task_manager_restart(tm_sample_handle, TM_RESPONSE_WAIT_INF);
