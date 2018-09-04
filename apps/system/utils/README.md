@@ -132,19 +132,19 @@ This command prints the date. This has an argument which sets system time and da
 TASH>>date --help
 
 Usage: date
-   or: date [-s FORMAT]
+   or: date [-s "FORMAT"]
 Display, or Set system time and date information
 
 Options:
  -s FORMAT     Set system time in the given FORMAT
-               FORMAT: MMM DD HH:MM:SS YYYY
+               FORMAT: "MMM DD HH:MM:SS YYYY"
                 'month', 'day', 'hour':'minute':'second' 'year'
-                Example: Apr 21 10:35:22 1991
+                Example: "Apr 21 10:35:22 1991"
 
 TASH>>date
 Jan 01 00:00:09 2010
 
-TASH>>date -s Feb 27 14:41:05 2018
+TASH>>date -s "February 27 14:41:05 2018"
 TASH>>date
 Feb 27 14:41:06 2018
 ```

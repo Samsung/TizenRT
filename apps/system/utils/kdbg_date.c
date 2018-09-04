@@ -67,6 +67,9 @@
 #define MAX_TIME_STRING         80
 #define STR_LEN_OF_MONTH_WEEK   3
 #define MAX_EPOCH_YEAR_OF_UINT  2106
+#define EPOCH_YEAR_CONST		(EPOCH_YEAR - TM_YEAR_BASE)
+
+#define DATE_ERROUT(errmsg) printf("date: cannot set date: %s\n", errmsg); goto errout;
 
 /****************************************************************************
  * Private Data
@@ -123,7 +126,7 @@ static inline int day_of_week(FAR const char *abbrev)
 static inline int date_showtime(void)
 {
 #if defined(CONFIG_LIBC_LOCALTIME) || defined(CONFIG_TIME_EXTENDED)
-	static const char format[] = "%b %d %H:%M:%S %Y %a";
+	static const char format[] = "%b %d %H:%M:%S %Y %a %j";
 #else
 	static const char format[] = "%b %d %H:%M:%S %Y";
 #endif
@@ -137,7 +140,6 @@ static inline int date_showtime(void)
 	ret = clock_gettime(CLOCK_REALTIME, &ts);
 	if (ret < 0) {
 		printf("clock_gettime failed\n");
-
 		return ERROR;
 	}
 
@@ -153,156 +155,56 @@ static inline int date_showtime(void)
 	return OK;
 }
 
-static inline int date_settime(int argc, char **args)
+static inline int date_settime(const char *tbuf)
 {
+#if defined(CONFIG_LIBC_LOCALTIME) || defined(CONFIG_TIME_EXTENDED)
+	const char format[] = "%b %d %H:%M:%S %Y %a %j";
+#else
+	const char format[] = "%b %d %H:%M:%S %Y";
+#endif
 	struct timespec ts;
 	struct tm tm = {0};
-	FAR char *token;
-	FAR char *saveptr;
-	long result;
-	int ret = OK;
+	char *res = NULL;
 
-	/* Get the year */
-
-	token = args[5];
-	if (token == NULL) {
-		goto errout_bad_parm;
+	res = strptime(tbuf, format, &tm);
+	if (NULL == res) {
+		DATE_ERROUT("Invalid date-time argument!\n");
+	} else if (tm.tm_year < EPOCH_YEAR_CONST || tm.tm_year > MAX_EPOCH_YEAR_OF_UINT) {
+		DATE_ERROUT("Invalid year in the argument!\n");
+	} else if ((tm.tm_mon != 1) ?
+	(tm.tm_mday > g_dayofmonth[tm.tm_mon]) :
+	(clock_isleapyear(tm.tm_year + TM_YEAR_BASE) ?
+	tm.tm_mday > (g_dayofmonth[tm.tm_mon] + 1) :
+	tm.tm_mday > g_dayofmonth[tm.tm_mon])) {
+		DATE_ERROUT("Invalid day of the month in the argument!\n");
 	}
-
-	result = strtol(token, NULL, 10);
-	if (result < EPOCH_YEAR || result > MAX_EPOCH_YEAR_OF_UINT) {
-		goto errout_bad_parm;
-	}
-	tm.tm_year = (int)result - TM_YEAR_BASE;
-
-	/* Get the month abbreviation */
-
-	token = args[2];
-	if (token == NULL || strlen(token) != STR_LEN_OF_MONTH_WEEK) {
-		goto errout_bad_parm;
-	}
-
-	tm.tm_mon = date_month(token);
-	if (tm.tm_mon < 0) {
-		goto errout_bad_parm;
-	}
-
-	/* Get the day of the month. */
-
-	token = args[3];
-	if (token == NULL) {
-		goto errout_bad_parm;
-	}
-
-	result = strtol(token, NULL, 10);
-	if (result < 1) {
-		goto errout_bad_parm;
-	} else if ((tm.tm_mon != 1) || !clock_isleapyear(tm.tm_year + TM_YEAR_BASE)) {
-		if (result > g_dayofmonth[tm.tm_mon]) {
-			goto errout_bad_parm;
-		}
-	} else if (result > g_dayofmonth[tm.tm_mon] + 1) {
-		goto errout_bad_parm;
-	}
-	tm.tm_mday = (int)result;
-
-	/* Get the hours */
-
-	token = strtok_r(args[4], ":", &saveptr);
-	if (token == NULL) {
-		goto errout_bad_parm;
-	}
-
-	result = strtol(token, NULL, 10);
-	if (result < 0 || result > 23) {
-		goto errout_bad_parm;
-	}
-	tm.tm_hour = (int)result;
-
-	/* Get the minutes */
-
-	token = strtok_r(NULL, ":", &saveptr);
-	if (token == NULL) {
-		goto errout_bad_parm;
-	}
-
-	result = strtol(token, NULL, 10);
-	if (result < 0 || result > 59) {
-		goto errout_bad_parm;
-	}
-	tm.tm_min = (int)result;
-
-	/* Get the seconds */
-
-	token = strtok_r(NULL, ":", &saveptr);
-	if (token == NULL) {
-		goto errout_bad_parm;
-	}
-
-	result = strtol(token, NULL, 10);
-	if (result < 0 || result > 61) {
-		goto errout_bad_parm;
-	}
-	tm.tm_sec = (int)result;
-
 #if defined(CONFIG_LIBC_LOCALTIME) || defined(CONFIG_TIME_EXTENDED)
-	/* Get the day of the week.  NOTE: Accepts day-of-week from sunday to saturday */
-
-	token = args[6];
-	if (token == NULL || strlen(token) != STR_LEN_OF_MONTH_WEEK) {
-		goto errout_bad_parm;
+	int dst_val = 0;
+	char *dst = (char *)tbuf;
+	while ((dst_val < 6) && (dst = strchr((const char*)dst, ' '))) {
+		dst++;
+		dst_val++;
 	}
 
-	tm.tm_wday = day_of_week(token);
-	if (tm.tm_wday < 0) {
-		goto errout_bad_parm;
-	}
-
-	/* Get the day of the year.  NOTE: Accepts day-of-year from 0 to 365 */
-
-	token = args[7];
-	if (token == NULL) {
-		tm.tm_yday = 0;
-	} else {
-		result = strtol(token, NULL, 10);
-
-		if (result < 0 || result > 365) {
-			goto errout_bad_parm;
+	if (NULL != dst) {
+		dst_val = (int)strtol(dst, NULL, 10);
+		if (dst_val < 0 || dst_val > 1) {
+			DATE_ERROUT("Invalid day light savings flag in the argument!\n");
 		}
-		tm.tm_yday = (int)result;
+		tm.tm_isdst = dst_val;
 	}
-
-	/* Set the daylight savings flag value */
-
-	token = args[8];
-	if (token == NULL) {
-		tm.tm_isdst = 0;
-	} else {
-		result = strtol(token, NULL, 10);
-
-		if (result < 0 || result > 1) {
-			goto errout_bad_parm;
-		}
-		tm.tm_isdst = (int)result;
-	}
-
 #endif
-
-	/* Convert this to the right form, then set the timer */
 
 	ts.tv_sec = mktime(&tm);
 	ts.tv_nsec = 0;
 
-	ret = clock_settime(CLOCK_REALTIME, &ts);
-	if (ret < 0) {
-		printf("clock_settime failed\n");
-		ret = ERROR;
+	if (clock_settime(CLOCK_REALTIME, &ts) < 0) {
+		DATE_ERROUT("clock_settime failed\n");
 	}
 
-	return ret;
+	return OK;
 
-errout_bad_parm:
-	printf("bad parameter\n");
+errout:
 	return ERROR;
 }
 
@@ -314,38 +216,33 @@ int kdbg_date(int argc, char **args)
 {
 	int ret;
 
-	/* Get the date options:  date [-s MMM DD HH:MM:SS YYYY] */
+	/* Get the date options:  date [-s "MMM DD HH:MM:SS YYYY"] */
 
 	if (argc == 1) {
 		ret = date_showtime();
-#if !(defined(CONFIG_LIBC_LOCALTIME) || defined(CONFIG_TIME_EXTENDED))
-	} else if (!strncmp(args[1], "-s", strlen("-s") + 1) && argc == 6) {
-#else
-	} else if (!strncmp(args[1], "-s", strlen("-s") + 1) && (argc >= 7 && argc <= 9)) {
-#endif
-		ret = date_settime(argc, args);
+	} else if (!strncmp(args[1], "-s", strlen("-s") + 1) && argc == 3) {
+		ret = date_settime(args[2]);
 	} else {
 
 		printf("\nUsage: date\n");
-		printf("   or: date [-s FORMAT]\n");
+		printf("   or: date [-s \"FORMAT\"]\n");
 		printf("Display, or Set system time and date information\n");
 		printf("\nOptions:\n");
-		printf(" -s FORMAT     Set system time in the given FORMAT\n");
+		printf(" -s \"FORMAT\"     Set system time in the given \"FORMAT\"\n");
 #if !(defined(CONFIG_LIBC_LOCALTIME) || defined(CONFIG_TIME_EXTENDED))
-		printf("               FORMAT: MMM DD HH:MM:SS YYYY\n");
+		printf("               FORMAT: \"MMM DD HH:MM:SS YYYY\"\n");
 		printf("                'month', 'day', 'hour':'minute':'second' 'year'\n");
-		printf("                Example: Apr 21 10:35:22 1991\n");
+		printf("                Example: \"Apr 21 10:35:22 1991\"\n");
 #else
-		printf("               FORMAT: MMM DD HH:MM:SS YYYY DWR DYR D\n");
+		printf("               FORMAT: \"MMM DD HH:MM:SS YYYY DWR DYR D\"\n");
 		printf("                'month', 'day', 'hour':'minute':'second' 'year' 'day_of_week' 'day_of_year' 'daylight_savings_flag'\n");
-		printf("                Example: Apr 21 10:35:22 1991 Sun 175 1\n");
+		printf("                Example: \"Apr 21 10:35:22 1991 Sun 175 1\"\n");
 
 		printf("                Day of Week Range(DWR) = [Sunday = Sun, Monday = Mon, and so on...]\n");
 		printf("                Day of Year Range(DYR) = [0,365], \n");
 		printf("                daylight_savings_flag: +ve(in effect), 0(low), -ve(information unavailable)\n");
 #endif
 		printf("                Year valid range = [1970,2106]\n");
-		printf("                Month and day of week allows only 3 abbreviation characters like Jan, Sun.\n");
 
 		ret = ERROR;
 	}
