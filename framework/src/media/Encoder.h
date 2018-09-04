@@ -16,6 +16,9 @@
  *
  ******************************************************************/
 
+#ifndef __MEDIA_ENCODER_H
+#define __MEDIA_ENCODER_H
+
 #include <tinyara/config.h>
 #include <stdio.h>
 #include <media/MediaTypes.h>
@@ -48,3 +51,5 @@ private:
 #endif
 };
 } // namespace media
+
+#endif
