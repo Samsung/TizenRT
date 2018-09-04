@@ -662,6 +662,13 @@ static int alc5658_getcaps(FAR struct audio_lowerhalf_s *dev, int type, FAR stru
 			caps->ac_controls.b[0] = AUDIO_STEXT_ENABLE | AUDIO_STEXT_WIDTH;
 			break;
 
+		case AUDIO_PU_SPEECH_DETECT:
+
+			/* alc5658 doesn't provide speech detect processing */
+			
+			caps->ac_controls.b[0] = AUDIO_SD_UNDEF;
+			break;
+
 		default:
 
 			/* Other types of processing uint we don't support */
