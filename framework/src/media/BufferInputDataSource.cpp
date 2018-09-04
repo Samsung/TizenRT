@@ -59,18 +59,14 @@ BufferInputDataSource &BufferInputDataSource::operator=(const BufferInputDataSou
 
 bool BufferInputDataSource::open()
 {
-	if (!getStreamBuffer()) {
-		auto streamBuffer = StreamBuffer::Builder()
-								.setBufferSize(CONFIG_BUFFER_DATASOURCE_STREAM_BUFFER_SIZE)
-								.setThreshold(CONFIG_BUFFER_DATASOURCE_STREAM_BUFFER_THRESHOLD)
-								.build();
 
-		if (!streamBuffer) {
-			medvdbg("streamBuffer is nullptr!\n");
-			return false;
-		}
-
-		setStreamBuffer(streamBuffer);
+	auto streamBuffer = StreamBuffer::Builder()
+							.setBufferSize(CONFIG_BUFFER_DATASOURCE_STREAM_BUFFER_SIZE)
+							.setThreshold(CONFIG_BUFFER_DATASOURCE_STREAM_BUFFER_THRESHOLD)
+							.build();
+	if (registerStream(streamBuffer) == false) {
+		meddbg("%s[line : %d] Fail : registerStream() failed\n", __func__, __LINE__);
+		return false;
 	}
 
 	registerDecoder(getAudioType(), getChannels(), getSampleRate());
@@ -82,12 +78,13 @@ bool BufferInputDataSource::close()
 {
 	unregisterDecoder();
 	stop();
+	unregisterStream();
 	return true;
 }
 
 bool BufferInputDataSource::isPrepare()
 {
-	return (getStreamBuffer() != nullptr);
+	return isStreamReady();
 }
 
 ssize_t BufferInputDataSource::onStreamBufferWritable()

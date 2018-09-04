@@ -86,21 +86,30 @@ audio_type_t OutputDataSource::getAudioType()
 	return mAudioType;
 }
 
-void OutputDataSource::setStreamBuffer(std::shared_ptr<StreamBuffer> streamBuffer)
+bool OutputDataSource::registerStream(std::shared_ptr<StreamBuffer> streamBuffer)
+{
+	mStreamBuffer = streamBuffer;
+	if (mStreamBuffer == nullptr) {
+		meddbg("%s[Line : %d] Fail : invalid paramter\n", __func__, __LINE__);
+		mBufferReader = nullptr;
+		mBufferWriter = nullptr;
+		return false;
+	}
+
+	mStreamBuffer->setObserver(this);
+	mBufferReader = std::make_shared<StreamBufferReader>(mStreamBuffer);
+	mBufferWriter = std::make_shared<StreamBufferWriter>(mStreamBuffer);
+	return true;
+}
+
+void OutputDataSource::unregisterStream()
 {
 	if (mStreamBuffer) {
 		mStreamBuffer->setObserver(nullptr);
-		mBufferReader = nullptr;
-		mBufferWriter = nullptr;
 	}
-
-	mStreamBuffer = streamBuffer;
-
-	if (mStreamBuffer) {
-		mStreamBuffer->setObserver(this);
-		mBufferReader = std::make_shared<StreamBufferReader>(mStreamBuffer);
-		mBufferWriter = std::make_shared<StreamBufferWriter>(mStreamBuffer);
-	}
+	mStreamBuffer = nullptr;
+	mBufferReader = nullptr;
+	mBufferWriter = nullptr;
 }
 
 ssize_t OutputDataSource::writeToStreamBuffer(unsigned char *buf, size_t size)

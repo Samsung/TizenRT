@@ -57,18 +57,13 @@ FileInputDataSource &FileInputDataSource::operator=(const FileInputDataSource &s
 
 bool FileInputDataSource::open()
 {
-	if (!getStreamBuffer()) {
-		auto streamBuffer = StreamBuffer::Builder()
-								.setBufferSize(CONFIG_FILE_DATASOURCE_STREAM_BUFFER_SIZE)
-								.setThreshold(CONFIG_FILE_DATASOURCE_STREAM_BUFFER_THRESHOLD)
-								.build();
-
-		if (!streamBuffer) {
-			meddbg("streamBuffer is nullptr!\n");
-			return false;
-		}
-
-		setStreamBuffer(streamBuffer);
+	auto streamBuffer = StreamBuffer::Builder()
+							.setBufferSize(CONFIG_FILE_DATASOURCE_STREAM_BUFFER_SIZE)
+							.setThreshold(CONFIG_FILE_DATASOURCE_STREAM_BUFFER_THRESHOLD)
+							.build();
+	if (registerStream(streamBuffer) == false) {
+		meddbg("%s[line : %d] Fail : registerStream() failed\n", __func__, __LINE__);
+		return false;
 	}
 
 	if (!mFp) {
@@ -100,26 +95,26 @@ bool FileInputDataSource::close()
 			mFp = nullptr;
 			medvdbg("close success!!\n");
 		} else {
-			meddbg("close failed ret : %d error : %d\n", ret, errno);
+			meddbg("%s[line : %d] Fail : fclose() failed, errno = %d\n", __func__, __LINE__, errno);
 			ret = false;
 		}
 
 		unregisterDecoder();
 	} else {
-		meddbg("close failed, mFp is nullptr!!\n");
+		meddbg("%s[line : %d] Fail : mFp is nullptr", __func__, __LINE__);
 		ret = false;
 	}
 
+	unregisterStream();
 	return ret;
 }
 
 bool FileInputDataSource::isPrepare()
 {
 	if (mFp == nullptr) {
-		meddbg("mFp is null\n");
 		return false;
 	}
-	return true;
+	return isStreamReady();
 }
 
 ssize_t FileInputDataSource::onStreamBufferWritable()

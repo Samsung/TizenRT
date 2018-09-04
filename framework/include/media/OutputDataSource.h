@@ -122,8 +122,9 @@ protected:
 	void setAudioType(audio_type_t audioType);
 	audio_type_t getAudioType();
 
-	void setStreamBuffer(std::shared_ptr<StreamBuffer>);
-	std::shared_ptr<StreamBuffer> getStreamBuffer() { return mStreamBuffer; }
+	bool registerStream(std::shared_ptr<StreamBuffer> streamBuffer);
+	void unregisterStream();
+	bool isStreamReady() { return mStreamBuffer != nullptr ? true : false; }
 	std::shared_ptr<StreamBufferReader> getBufferReader() { return mBufferReader; }
 	std::shared_ptr<MediaRecorderImpl> getRecorder() { return mRecorder.lock(); }
 	void createWorker();
