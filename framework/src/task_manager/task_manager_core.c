@@ -717,7 +717,7 @@ static tm_broadcast_info_t *taskmgr_search_broadcast_info(int msg, int handle)
 		}
 		curr = sq_next(curr);
 	}
-	return curr;
+	return NULL;
 }
 
 static int taskmgr_broadcast(tm_internal_msg_t *arg)
@@ -753,7 +753,6 @@ static int taskmgr_broadcast(tm_internal_msg_t *arg)
 			if (broadcast_info == NULL) {
 				continue;
 			}
-
 			bm = (tm_broadcast_internal_msg_t *)TM_ALLOC(sizeof(tm_broadcast_internal_msg_t));
 			if (bm == NULL) {
 				return TM_OUT_OF_MEMORY;
@@ -831,18 +830,37 @@ static int taskmgr_set_msg_cb(int type, void *data, int pid)
 			if (broadcast_info == NULL) {
 				return TM_OUT_OF_MEMORY;
 			}
-			((tm_broadcast_info_t *)broadcast_info)->flink = NULL;
-			((tm_broadcast_info_t *)broadcast_info)->msg = ((tm_broadcast_info_t *)data)->msg;
-			((tm_broadcast_info_t *)broadcast_info)->cb = ((tm_broadcast_info_t *)data)->cb;
-			((tm_broadcast_info_t *)broadcast_info)->cb_data = ((tm_broadcast_info_t *)data)->cb_data;
+			broadcast_info->flink = NULL;
+			broadcast_info->msg = ((tm_broadcast_info_t *)data)->msg;
+			broadcast_info->cb = ((tm_broadcast_info_t *)data)->cb;
+			if (((tm_broadcast_info_t *)data)->cb_data != NULL) {
+				broadcast_info->cb_data = TM_ALLOC(((tm_msg_t *)((tm_broadcast_info_t *)data)->cb_data)->msg_size);
+				if (broadcast_info->cb_data == NULL) {
+					TM_FREE(broadcast_info);
+					return TM_OUT_OF_MEMORY;
+				}
+				memcpy(broadcast_info->cb_data, ((tm_msg_t *)((tm_broadcast_info_t *)data)->cb_data)->msg, ((tm_msg_t *)((tm_broadcast_info_t *)data)->cb_data)->msg_size);
+			} else {
+				broadcast_info->cb_data = NULL;
+			}
 			sq_addlast((FAR sq_entry_t *)broadcast_info, &TM_BROADCAST_INFO_LIST(handle));
 		} else {
 			if ((broadcast_info->cb == ((tm_broadcast_info_t *)data)->cb) && broadcast_info->cb_data == ((tm_broadcast_info_t *)data)->cb_data) {
 				return TM_ALREADY_REGISTERED_CB;
 			}
-			((tm_broadcast_info_t *)broadcast_info)->cb = ((tm_broadcast_info_t *)data)->cb;
-			((tm_broadcast_info_t *)broadcast_info)->cb_data = ((tm_broadcast_info_t *)data)->cb_data;
+			broadcast_info->cb = ((tm_broadcast_info_t *)data)->cb;
+			if (((tm_broadcast_info_t *)data)->cb_data != NULL) {
+				broadcast_info->cb_data = TM_ALLOC(((tm_msg_t *)((tm_broadcast_info_t *)data)->cb_data)->msg_size);
+				if (broadcast_info->cb_data == NULL) {
+					return TM_OUT_OF_MEMORY;
+				}
+				memcpy(broadcast_info->cb_data, ((tm_msg_t *)((tm_broadcast_info_t *)data)->cb_data)->msg, ((tm_msg_t *)((tm_broadcast_info_t *)data)->cb_data)->msg_size);
+			} else {
+				broadcast_info->cb_data = NULL;
+			}
 		}
+		TM_FREE(((tm_msg_t *)((tm_broadcast_info_t *)data)->cb_data)->msg);
+		TM_FREE(((tm_broadcast_info_t *)data)->cb_data);
 		
 	}
 	return OK;
@@ -880,6 +898,10 @@ static int taskmgr_unset_broadcast_cb(int msg, int pid)
 		return TM_UNREGISTERED_MSG;
 	}
 	sq_rem((FAR sq_entry_t *)broadcast_info, &TM_BROADCAST_INFO_LIST(handle));
+	if (broadcast_info->cb_data != NULL) {
+		TM_FREE(broadcast_info->cb_data);
+		broadcast_info->cb_data = NULL;
+	}
 	TM_FREE(broadcast_info);
 	return OK;
 }
