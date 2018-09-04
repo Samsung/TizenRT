@@ -377,6 +377,11 @@ TASH>> wifi startsta                          # restore wifi connect
 TASH>>
 ```
 
+NOTE: If there is **spaces** in your ssid, add quotes around ssid.
+```
+TASH>> wifi join "Test SSID" 1q2w3e4r wpa2_aes
+```
+
 ## How to enable the ARTIK SDK
 
 ![ARTIK SDK](./external/docs/media/artiksdk.png)
