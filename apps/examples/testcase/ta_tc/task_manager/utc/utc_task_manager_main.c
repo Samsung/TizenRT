@@ -51,6 +51,7 @@
 #define TM_BROAD_WIFI_OFF_DATA          "BROAD_WIFI_OFF"
 #define TM_BROAD_UNDEFINED_MSG_DATA     "BROAD_UNDEFINED"
 #define TM_BROAD_UNDEFINED_MSG_NOT_USED (TM_BROADCAST_MSG_MAX + 2)
+#define EXIT_CB_CHECK_STR               "exit_cb_chk"
 
 static int tm_sample_handle;
 static int tm_not_builtin_handle;
@@ -131,9 +132,11 @@ static void test_broadcast_handler(void *user_data, void *info)
 	}
 }
 
-void free_handler(void *info)
+void exit_handler(void *info)
 {
-	free(info);
+	if (strncmp((char *)info, EXIT_CB_CHECK_STR, strlen(EXIT_CB_CHECK_STR) + 1) != 0) {
+		TC_ASSERT("task_manager_set_exit_cb", false);
+	}
 }
 
 int tm_sample_main(int argc, char *argv[])
@@ -369,12 +372,16 @@ static void utc_task_manager_set_exit_cb_n(void)
 static void utc_task_manager_set_exit_cb_p(void)
 {
 	int ret;
-	/* No meaningful malloc for testing resource collection handler */
-	int *addr = (int *)malloc(123);
+	tm_msg_t data;
 
-	ret = task_manager_set_exit_cb(free_handler, (void *)addr);
-	TC_ASSERT_EQ_CLEANUP("task_manager_set_exit_cb", ret, OK, free(addr));
+	data.msg_size = strlen(EXIT_CB_CHECK_STR) + 1;
+	data.msg = malloc(data.msg_size);
+	memcpy(data.msg, EXIT_CB_CHECK_STR, data.msg_size);
 
+	ret = task_manager_set_exit_cb(exit_handler, &data);
+	TC_ASSERT_EQ_CLEANUP("task_manager_set_exit_cb", ret, OK, free(data.msg));
+
+	free(data.msg);
 	TC_SUCCESS_RESULT();
 }
 
@@ -989,6 +996,7 @@ int utc_task_manager_main(int argc, char *argv[])
 	sleep(3);	//wait for starting tm_utc
 	
 	waitpid(pid_tm_utc, &status, 0);
+
 	(void)task_manager_unregister(handle_tm_utc, TM_NO_RESPONSE);
 
 	(void)tc_handler(TC_END, "TaskManager UTC");
