@@ -68,6 +68,26 @@ int tm_broadcast_msg[TM_BROADCAST_MSG_MAX + CONFIG_TASK_MANAGER_MAX_TASKS];
 #define TYPE_CANCEL      3
 #define TYPE_EXIT        4
 
+#define CB_FUNC_OF(X)             (X)->cb
+#define CB_DATA_OF(X)             (X)->cb_data
+#define CB_MSG_OF(X)              ((tm_msg_t *)CB_DATA_OF(X))->msg
+#define CB_MSGSIZE_OF(X)          ((tm_msg_t *)CB_DATA_OF(X))->msg_size
+
+#define STOP_CBFUNC(X)            CB_FUNC_OF(TM_STOP_CB_INFO(X))
+#define STOP_CBDATA(X)            CB_DATA_OF(TM_STOP_CB_INFO(X))
+#define STOP_CBDATA_MSG(X)        CB_MSG_OF(TM_STOP_CB_INFO(X))
+#define STOP_CBDATA_MSG_SIZE(X)   CB_MSGSIZE_OF(TM_STOP_CB_INFO(X))
+
+#define EXIT_CBFUNC(X)            CB_FUNC_OF(TM_EXIT_CB_INFO(X))
+#define EXIT_CBDATA(X)            CB_DATA_OF(TM_EXIT_CB_INFO(X))
+#define EXIT_CBDATA_MSG(X)        CB_MSG_OF(TM_EXIT_CB_INFO(X))
+#define EXIT_CBDATA_MSG_SIZE(X)   CB_MSGSIZE_OF(TM_EXIT_CB_INFO(X))
+
+#define INPUT_CBFUNC(X)        ((tm_termination_info_t *)X)->cb
+#define INPUT_DATA(X)          ((tm_termination_info_t *)X)->cb_data
+#define INPUT_DATA_MSG(X)      ((tm_msg_t *)((tm_termination_info_t *)X)->cb_data)->msg
+#define INPUT_DATA_MSG_SIZE(X) ((tm_msg_t *)((tm_termination_info_t *)X)->cb_data)->msg_size
+
 /****************************************************************************
  * Public Functions
  ****************************************************************************/
@@ -317,7 +337,13 @@ static int taskmgr_stop(int handle, int caller_pid)
 	/* Call stop callback */
 	TM_STATUS(handle) = TM_APP_STATE_CANCELLING;
 	if (TM_STOP_CB_INFO(handle) != NULL) {
-		(*TM_STOP_CB_INFO(handle)->cb)((void *)TM_STOP_CB_INFO(handle)->cb_data);
+		if (STOP_CBDATA(handle) != NULL) {
+			(*STOP_CBFUNC(handle))(STOP_CBDATA_MSG(handle));
+			TM_FREE(STOP_CBDATA_MSG(handle));
+			TM_FREE(STOP_CBDATA(handle));
+		} else {
+			(*STOP_CBFUNC(handle))(NULL);
+		}
 	}
 
 	if (TM_TYPE(handle) == TM_BUILTIN_TASK || TM_TYPE(handle) == TM_TASK) {
@@ -1084,15 +1110,51 @@ static int taskmgr_set_termination_cb(int type, void *data, int pid)
 		if (TM_STOP_CB_INFO(handle) == NULL) {
 			return TM_OUT_OF_MEMORY;
 		}
-		TM_STOP_CB_INFO(handle)->cb = ((tm_termination_info_t *)data)->cb;
-		TM_STOP_CB_INFO(handle)->cb_data = ((tm_termination_info_t *)data)->cb_data;
+		STOP_CBFUNC(handle) = INPUT_CBFUNC(data);
+		if (INPUT_DATA(data) != NULL) {
+			STOP_CBDATA(handle) = (tm_msg_t *)TM_ALLOC(sizeof(tm_msg_t));
+			if (STOP_CBDATA(handle) == NULL) {
+				TM_FREE(TM_STOP_CB_INFO(handle));
+				return TM_OUT_OF_MEMORY;
+			}
+			STOP_CBDATA_MSG_SIZE(handle) = INPUT_DATA_MSG_SIZE(data);
+			STOP_CBDATA_MSG(handle) = TM_ALLOC(INPUT_DATA_MSG_SIZE(data));
+			if (STOP_CBDATA_MSG(handle) == NULL) {
+				TM_FREE(STOP_CBDATA(handle));
+				TM_FREE(TM_STOP_CB_INFO(handle));
+				return TM_OUT_OF_MEMORY;
+			}
+			memcpy(STOP_CBDATA_MSG(handle), INPUT_DATA_MSG(data), INPUT_DATA_MSG_SIZE(data));
+			TM_FREE(INPUT_DATA_MSG(data));
+			TM_FREE(INPUT_DATA(data));
+		} else {
+			STOP_CBDATA(handle) = NULL;
+		}
 	} else {
 		TM_EXIT_CB_INFO(handle) = (tm_termination_info_t *)TM_ALLOC(sizeof(tm_termination_info_t));
 		if (TM_EXIT_CB_INFO(handle) == NULL) {
 			return TM_OUT_OF_MEMORY;
 		}
-		TM_EXIT_CB_INFO(handle)->cb = ((tm_termination_info_t *)data)->cb;
-		TM_EXIT_CB_INFO(handle)->cb_data = ((tm_termination_info_t *)data)->cb_data;
+		EXIT_CBFUNC(handle) = INPUT_CBFUNC(data);
+		if (INPUT_DATA(data) != NULL) {
+			EXIT_CBDATA(handle) = (tm_msg_t *)TM_ALLOC(sizeof(tm_msg_t));
+			if (EXIT_CBDATA(handle) == NULL) {
+				TM_FREE(TM_EXIT_CB_INFO(handle));
+				return TM_OUT_OF_MEMORY;
+			}
+			EXIT_CBDATA_MSG_SIZE(handle) = INPUT_DATA_MSG_SIZE(data);
+			EXIT_CBDATA_MSG(handle) = TM_ALLOC(INPUT_DATA_MSG_SIZE(data));
+			if (EXIT_CBDATA_MSG(handle) == NULL) {
+				TM_FREE(EXIT_CBDATA(handle));
+				TM_FREE(TM_EXIT_CB_INFO(handle));
+				return TM_OUT_OF_MEMORY;
+			}
+			memcpy(EXIT_CBDATA_MSG(handle), INPUT_DATA_MSG(data), INPUT_DATA_MSG_SIZE(data));
+			TM_FREE(INPUT_DATA_MSG(data));
+			TM_FREE(INPUT_DATA(data));
+		} else {
+			EXIT_CBDATA(handle) = NULL;
+		}
 	}
 
 	return OK;
@@ -1108,7 +1170,13 @@ int task_manager_run_exit_cb(int pid)
 	/* Run exit callback when normally terminated. */
 	if (TM_STATUS(handle) != TM_APP_STATE_CANCELLING) {
 		if (TM_EXIT_CB_INFO(handle) != NULL) {
-			(*TM_EXIT_CB_INFO(handle)->cb)((void *)TM_EXIT_CB_INFO(handle)->cb_data);
+			if (EXIT_CBDATA(handle) != NULL) {
+				(*EXIT_CBFUNC(handle))(EXIT_CBDATA_MSG(handle));
+				TM_FREE(EXIT_CBDATA_MSG(handle));
+				TM_FREE(EXIT_CBDATA(handle));
+			} else {
+				(*EXIT_CBFUNC(handle))(NULL);
+			}
 		}
 	}
 	return OK;
