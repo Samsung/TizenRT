@@ -171,4 +171,4 @@ echo "CONFIG_VERSION_BUILD=\"${BUILD}\"" >>${OUTFILE}
 [ -n "${BOARD}" ] && \
 	echo "CONFIG_VERSION_BOARD=\"${BOARD}\"" >>${OUTFILE}
 echo "CONFIG_VERSION_BUILD_USER=\"`whoami`@`hostname`\"" >>${OUTFILE}
-echo "CONFIG_VERSION_BUILD_TIME=\"`date '+%Y-%m-%d %T'`\"" >>${OUTFILE}
+echo "CONFIG_VERSION_BUILD_TIME=\"`date '+%Y-%m-%d %T %Z'`\"" >>${OUTFILE}
