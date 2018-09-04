@@ -63,6 +63,10 @@ ifeq ($(CONFIG_AWS_SDK),y)
 include aws/Make.defs
 endif
 
+ifeq ($(CONFIG_ARTIK_SDK),y)
+include artik-sdk/Make.defs
+endif
+
 ifeq ($(CONFIG_SYSVIEW),y)
 include sysview/Make.defs
 endif
@@ -111,15 +115,10 @@ ifeq ($(CONFIG_ENABLE_IOTIVITY),y)
 	$(Q) rm -rf $(IOTIVITY_BASE_DIR)/resource/csdk/connectivity/lib/libcoap-4.1.1/*.o
 endif
 
-artiksdk_clean:
-ifeq ($(CONFIG_ARTIK_SDK),y)
-	$(Q) $(MAKE) -C artik-sdk clean
-endif
-
 custom_clean:
 	$(foreach OBJFILE, $(OBJS), rm -f $(OBJFILE))
 
-clean: custom_clean iotivity_clean artiksdk_clean
+clean: custom_clean iotivity_clean
 	$(call DELFILE, $(BIN))
 	$(call CLEAN, $(OBJS))
 	$(call CLEAN)
