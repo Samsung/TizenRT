@@ -32,7 +32,7 @@
 
 #include <tinyara/irq.h>
 
-#include <arch/s5j/dma.h>
+#include <arch/chip/dma.h>
 
 /****************************************************************************
  * Pre-processor Definitions
