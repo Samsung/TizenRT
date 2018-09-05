@@ -21,6 +21,7 @@
 
 #include <tinyara/config.h>
 #include <iostream>
+#include <functional>
 
 #include <tinyara/init.h>
 #include <apps/platform/cxxinitialize.h>
@@ -65,6 +66,8 @@ private:
 	MediaPlayer mp;
 	uint8_t volume;
 	std::shared_ptr<FocusRequest> mFocusRequest;
+	std::function<std::unique_ptr<InputDataSource>()> makeSource;
+	bool isSourceSet;
 };
 
 bool MyMediaPlayer::init(int test)
@@ -73,27 +76,39 @@ bool MyMediaPlayer::init(int test)
 		cout << "Mediaplayer::create failed" << endl;
 		return false;
 	}
-	unique_ptr<FileInputDataSource> source;
+
 	switch (test) {
 	case TEST_MP3:
-		source = std::move(unique_ptr<FileInputDataSource>(new FileInputDataSource("/rom/over_16000.mp3")));
-		source->setSampleRate(16000);
-		source->setChannels(2);
-		source->setPcmFormat(AUDIO_FORMAT_TYPE_S16_LE);
+		makeSource = []() {
+			auto source = std::move(unique_ptr<FileInputDataSource>(new FileInputDataSource("/rom/over_16000.mp3")));
+			source->setSampleRate(16000);
+			source->setChannels(2);
+			source->setPcmFormat(AUDIO_FORMAT_TYPE_S16_LE);
+			return std::move(source);
+		};
 		break;
 	case TEST_AAC:
-		source = std::move(unique_ptr<FileInputDataSource>(new FileInputDataSource("/rom/play.mp4")));
+		makeSource = []() {
+			auto source = std::move(unique_ptr<FileInputDataSource>(new FileInputDataSource("/rom/play.mp4")));
+			return std::move(source);
+		};
 		break;
 	case TEST_OPUS:
-		source = std::move(unique_ptr<FileInputDataSource>(new FileInputDataSource("/rom/res_16k.opus")));
+		makeSource = []() {
+			auto source = std::move(unique_ptr<FileInputDataSource>(new FileInputDataSource("/rom/res_16k.opus")));
+			return std::move(source);
+		};
 		break;
 	default:
-		source = std::move(unique_ptr<FileInputDataSource>(new FileInputDataSource("/rom/44100.pcm")));
-		source->setSampleRate(44100);
-		source->setChannels(2);
-		source->setPcmFormat(AUDIO_FORMAT_TYPE_S16_LE);
+		makeSource = []() {
+			auto source = std::move(unique_ptr<FileInputDataSource>(new FileInputDataSource("/rom/44100.pcm")));
+			source->setSampleRate(44100);
+			source->setChannels(2);
+			source->setPcmFormat(AUDIO_FORMAT_TYPE_S16_LE);
+			return std::move(source);
+		};
 	}
-	mp.setDataSource(std::move(source));
+	isSourceSet = false;
 	mp.setObserver(shared_from_this());
 
 	mFocusRequest = FocusRequest::Builder().setFocusChangeListener(shared_from_this()).build();
@@ -106,6 +121,10 @@ void MyMediaPlayer::doCommand(int command)
 	switch (command) {
 	case PLAYER_START:
 		cout << "PLAYER_START is selected" << endl;
+		if (isSourceSet == false) {
+			mp.setDataSource(makeSource());
+			isSourceSet = true;
+		}
 		focusManager.requestFocus(mFocusRequest);
 		break;
 	case PLAYER_PAUSE:
@@ -130,6 +149,7 @@ void MyMediaPlayer::doCommand(int command)
 		if (mp.unprepare() != PLAYER_OK) {
 			cout << "Mediaplayer::unprepare failed" << endl;
 		}
+		isSourceSet = false;
 		break;
 	case VOLUME_UP:
 		cout << "VOLUME_UP is selected" << endl;
