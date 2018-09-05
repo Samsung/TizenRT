@@ -44,6 +44,7 @@ enum el_result_error_e {
 	EVENTLOOP_OUT_OF_MEMORY = -3,
 	EVENTLOOP_LOOP_FAIL = -4,
 	EVENTLOOP_NOT_FINISHED = -5,
+	EVENTLOOP_OPERATION_FAIL = -6,
 };
 
 /**
@@ -60,6 +61,11 @@ typedef uv_loop_t el_loop_t;
  * @brief EventLoop Timeout Callback
  */
 typedef void (*timeout_callback)(void *);
+
+/**
+ * @brief EventLoop Thread Safe Callback
+ */
+typedef void (*thread_safe_callback)(void *data);
 
 /****************************************************************************
  * Public Function Prototypes
@@ -129,6 +135,17 @@ int eventloop_loop_run(void);
  * @since TizenRT v2.0 PRE
  */
 int eventloop_loop_stop(void);
+
+/**
+ * @brief Callback is added at the each eventloop to be called thread safely.\n
+ * @details @b #include <eventloop/eventloop.h>
+ * @param[in] func the callback function to be called
+ * @param[in] cb_data data to pass to func when func is called
+ * @param[in] data_size size of data
+ * @return On success, OK is returned. On failure, defined negative value is returned
+ * @since TizenRT v2.0 PRE
+ */
+int eventloop_thread_safe_function_call(thread_safe_callback func, void *cb_data, int data_size);
 
 #ifdef __cplusplus
 }
