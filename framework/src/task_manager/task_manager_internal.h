@@ -90,7 +90,7 @@
 
 struct tm_termination_info_s {
 	_tm_termination_t cb;
-	void *cb_data;
+	tm_msg_t *cb_data;
 };
 typedef struct tm_termination_info_s tm_termination_info_t;
 
