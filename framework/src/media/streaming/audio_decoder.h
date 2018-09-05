@@ -147,7 +147,7 @@ int audio_decoder_get_audio_type(audio_decoder_p decoder);
  * @return 0 on success, -1 on failure.
  * @see audio_decoder_get_audio_type()
  */
-int audio_decoder_init_decoder(audio_decoder_p decoder, int audio_type, void *dec_ext);
+int audio_decoder_configure(audio_decoder_p decoder, int audio_type, void *dec_ext);
 
 /**
  * @brief  Get sample frames in 16bit-PCM format.
