@@ -45,6 +45,8 @@
 #include <tls/certs.h>
 #endif
 
+#include "lwm2mclient.h"
+
 #define LWM2M_STANDARD_PORT_STR "5683"
 #define LWM2M_STANDARD_PORT      5683
 #define LWM2M_DTLS_PORT_STR     "5684"
@@ -52,9 +54,9 @@
 #define LWM2M_BSSERVER_PORT_STR "5685"
 #define LWM2M_BSSERVER_PORT      5685
 
-#ifdef WITH_MBEDTLS
 typedef struct
 {
+#ifdef WITH_MBEDTLS
     mbedtls_ssl_config config;
     mbedtls_entropy_context entropy;
     mbedtls_ctr_drbg_context ctr_drbg;
@@ -64,8 +66,12 @@ typedef struct
     mbedtls_x509_crt *clicert;
     mbedtls_x509_crt *device_cert;
     mbedtls_pk_context *pkey;
-} context_ssl_t;
+#else
+    SSL_CTX               * ssl_ctx;
+    SSL                   * ssl;
 #endif
+} context_ssl_t;
+
 
 typedef struct _connection_t
 {
@@ -74,12 +80,7 @@ typedef struct _connection_t
     struct sockaddr_in6     addr;
     size_t                  addrLen;
     coap_protocol_t         protocol;
-#ifndef WITH_MBEDTLS
-    SSL_CTX               * ssl_ctx;
-    SSL                   * ssl;
-#else
-    context_ssl_t          * ssl;
-#endif
+    context_ssl_t           ssl;
     char                  * host;
     char                  * root_ca;
     bool                    verify_cert;
@@ -88,7 +89,8 @@ typedef struct _connection_t
     int                     address_family;
     lwm2m_object_t        * sec_obj;
     int                     sec_inst;
-    bool                    use_se;
+    ssl_configure_callback_t   ssl_callback;
+    void                     * ssl_user_data;
     int                     timeout;
 } connection_t;
 
@@ -109,7 +111,8 @@ connection_t *connection_find(connection_t *connList, struct sockaddr_storage *a
         size_t addrLen);
 
 connection_t *connection_create(coap_protocol_t protocol, char *root_ca, bool verify_cert,
-        bool use_se, int sock, char *host, char *local_port, char *remote_port, int addressFamily,
+        ssl_configure_callback_t ssl_config_callback, void *ssl_user_data,
+        int sock, char *host, char *local_port, char *remote_port, int addressFamily,
         lwm2m_object_t * obj, int instanceId, int timeout);
 
 void connection_free(connection_t * connList);

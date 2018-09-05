@@ -560,6 +560,20 @@ static void dm_on_error(void *data, void *user_data)
 	g_dm_client = NULL;
 }
 
+static void dm_on_connect(void *data, void *user_data)
+{
+	artik_error err = (artik_error)(intptr_t)data;
+
+	fprintf(stderr, "Connection status: %s \r\n", error_msg(err));
+}
+
+static void dm_on_disconnect(void *data, void *user_data)
+{
+	artik_error err = (artik_error)(intptr_t)data;
+
+	fprintf(stderr, "Disconnection status: %s \r\n", error_msg(err));
+}
+
 static pthread_addr_t delayed_reboot(pthread_addr_t arg)
 {
 	sleep(3);
@@ -891,6 +905,10 @@ static int dm_command(int argc, char *argv[])
 
 		lwm2m->set_callback(g_dm_client, ARTIK_LWM2M_EVENT_ERROR,
 				    dm_on_error, (void *)g_dm_client);
+		lwm2m->set_callback(g_dm_client, ARTIK_LWM2M_EVENT_CONNECT,
+				    dm_on_connect, (void *)g_dm_client);
+		lwm2m->set_callback(g_dm_client, ARTIK_LWM2M_EVENT_DISCONNECT,
+				    dm_on_disconnect, (void *)g_dm_client);
 		lwm2m->set_callback(g_dm_client, ARTIK_LWM2M_EVENT_RESOURCE_EXECUTE,
 				    dm_on_execute_resource, (void *)g_dm_client);
 		lwm2m->set_callback(g_dm_client, ARTIK_LWM2M_EVENT_RESOURCE_CHANGED,

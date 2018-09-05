@@ -42,18 +42,8 @@
 typedef struct {
     int transport;
     int auth_mode;
-    int fd;
     int *ciphersuites;
-    unsigned char *psk;
-    int psk_len;
-    unsigned char *psk_identity;
-    int psk_identity_len;
     char *root_ca;
-    unsigned char *device_cert;
-    int device_cert_len;
-    unsigned char *device_private_key;
-    int device_private_key_len;
-    bool use_se;
 } lwm2m_config_ssl_t;
 
 // from commandline.c
@@ -141,6 +131,222 @@ static void lwm2m_tls_debug(void *ctx, int level, const char *file, int line, co
 #endif
 }
 
+static bool ssl_parse_client_key(connection_t *conn)
+{
+    bool ret = false;
+    int device_private_key_pem_len = 0;
+    unsigned char *device_private_key_pem = NULL;
+    int device_private_key_der_len = 0;
+    unsigned char *device_private_key_der =
+        (unsigned char *)security_get_secret_key(
+            conn->sec_obj, conn->sec_inst, &device_private_key_der_len);
+
+    if (!device_private_key_der) {
+#ifdef WITH_LOGS
+        fprintf(stderr, "Failed to get private key\r\n");
+#endif
+        return false;
+    }
+
+    if (mbedtls_pem_write_buffer("-----BEGIN EC PRIVATE KEY-----\n",
+                                 "-----END EC PRIVATE KEY-----\n",
+                                 device_private_key_der,
+                                 device_private_key_der_len,
+                                 NULL,
+                                 0,
+                                 &device_private_key_pem_len)
+        != MBEDTLS_ERR_BASE64_BUFFER_TOO_SMALL) {
+#ifdef WITH_LOGS
+        fprintf(stderr, "Failed to parse private key\r\n");
+#endif
+        return false;
+    }
+
+    device_private_key_pem = lwm2m_malloc(device_private_key_pem_len);
+    if (!device_private_key_pem) {
+#ifdef WITH_LOGS
+        fprintf(stderr, "Failed to allocate private key\r\n");
+#endif
+        return false;
+    }
+
+    if (mbedtls_pem_write_buffer("-----BEGIN EC PRIVATE KEY-----\n",
+                                 "-----END EC PRIVATE KEY-----\n",
+                                 device_private_key_der,
+                                 device_private_key_der_len,
+                                 device_private_key_pem,
+                                 device_private_key_pem_len,
+                                 &device_private_key_pem_len)
+        != 0) {
+#ifdef WITH_LOGS
+        fprintf(stderr, "Failed to parse DER private key\r\n");
+#endif
+        goto cleanup;
+    }
+
+    conn->ssl.pkey = lwm2m_malloc(sizeof(mbedtls_pk_context));
+    if (!conn->ssl.pkey) {
+#ifdef WITH_LOGS
+        fprintf(stderr, "Failed to allocate pkey");
+#endif
+        goto cleanup;
+    }
+    mbedtls_pk_init(conn->ssl.pkey);
+
+    int err = mbedtls_pk_parse_key(conn->ssl.pkey,
+                               device_private_key_pem,
+                               device_private_key_pem_len,
+                               NULL, 0);
+    if (err != 0) {
+#ifdef WITH_LOGS
+        fprintf(stderr, "Failed to parse device private key (err %d).\r\n", ret);
+#endif
+        goto cleanup;
+    }
+
+    ret = true;
+
+cleanup:
+    free(device_private_key_pem);
+
+    return ret;
+}
+
+static bool ssl_parse_client_certificate(connection_t *conn)
+{
+    int device_cert_der_len = 0;
+    unsigned char *device_cert_der = (unsigned char *)security_get_public_id(
+        conn->sec_obj, conn->sec_inst, &device_cert_der_len);
+
+    if (!device_cert_der) {
+#ifdef WITH_LOGS
+        fprintf(stderr, "Failed to get Public ID\r\n");
+#endif
+        return false;
+    }
+
+    conn->ssl.device_cert = lwm2m_malloc(sizeof(mbedtls_x509_crt));
+    if (!conn->ssl.device_cert) {
+#ifdef WITH_LOGS
+        fprintf(stderr, "Failed to allocate device_cert");
+#endif
+        return false;
+    }
+    mbedtls_x509_crt_init(conn->ssl.device_cert);
+
+    if (mbedtls_x509_crt_parse(conn->ssl.device_cert,
+                               device_cert_der,
+                               device_cert_der_len) != 0) {
+#ifdef WITH_LOGS
+        fprintf(stderr, "Failed to parse device certificate.\r\n");
+#endif
+        return false;
+    }
+
+    return true;
+}
+
+static bool ssl_certificate_mode_configure(connection_t *conn)
+{
+    if (!ssl_parse_client_certificate(conn))
+        goto error;
+
+    if (!ssl_parse_client_key(conn))
+        goto error;
+
+    if (mbedtls_ssl_conf_own_cert(&conn->ssl.config, conn->ssl.device_cert, conn->ssl.pkey) != 0) {
+#ifdef WITH_LOGS
+        fprintf(stderr, "Failed to configure device cert/key.\r\n");
+#endif
+        goto error;
+    }
+
+    return true;
+
+error:
+    context_ssl_free(&conn->ssl);
+    return false;
+}
+
+static bool ssl_psk_mode_configure(connection_t *conn)
+{
+    int psk_identity_len = 0;
+    int psk_len = 0;
+    unsigned char *psk = NULL;
+    unsigned char *psk_identity =
+            (unsigned char*)security_get_public_id(conn->sec_obj, conn->sec_inst, &psk_identity_len);
+
+    if (!psk_identity) {
+#ifdef WITH_LOGS
+        fprintf(stderr, "Failed to get Public ID\r\n");
+#endif
+        goto error;
+    }
+
+    if (psk_identity_len > MAX_DTLS_INFO_LEN) {
+#ifdef WITH_LOGS
+        fprintf(stderr, "Public ID is too long %d\n", psk_identity_len);
+#endif
+        goto error;
+    }
+
+    psk =
+        (unsigned char *)security_get_secret_key(conn->sec_obj, conn->sec_inst, &psk_len);
+    if (!psk) {
+#ifdef WITH_LOGS
+        fprintf(stderr, "Failed to get PSK\r\n");
+#endif
+        goto error;
+    }
+
+    if (psk_len > MAX_DTLS_INFO_LEN) {
+#ifdef WITH_LOGS
+        fprintf(stderr, "PSK is too long\r\n");
+#endif
+        goto error;
+    }
+
+
+    if (mbedtls_ssl_conf_psk(&conn->ssl.config, psk, psk_len, psk_identity, psk_identity_len) != 0)
+    {
+#ifdef WITH_LOGS
+        fprintf(stderr, "mbedtls_ssl_conf_psk failed.\r\n");
+#endif
+        goto error;
+    }
+
+    return true;
+
+error:
+    context_ssl_free(&conn->ssl);
+    return false;
+}
+
+static bool ssl_setup(context_ssl_t *ssl, int transport, int fd)
+{
+    ssl->net.fd = fd;
+    if (mbedtls_ssl_setup(&ssl->session, &ssl->config) != 0)
+    {
+#ifdef WITH_LOGS
+        fprintf(stderr, "mbedtls_ssl_setup failed");
+#endif
+        goto error;
+    }
+
+    if (transport == MBEDTLS_SSL_TRANSPORT_DATAGRAM) {
+        ssl->timer = lwm2m_malloc(sizeof(mbedtls_timing_delay_context));
+        mbedtls_ssl_set_timer_cb(&ssl->session, ssl->timer, mbedtls_timing_set_delay, mbedtls_timing_get_delay);
+        mbedtls_ssl_set_bio(&ssl->session, &ssl->net, mbedtls_net_send, mbedtls_net_recv, mbedtls_net_recv_timeout);
+    } else {
+        mbedtls_ssl_set_bio(&ssl->session, &ssl->net, mbedtls_net_send, mbedtls_net_recv, NULL);
+    }
+
+    return true;
+error:
+    context_ssl_free(ssl);
+    return false;
+}
+
 static bool ssl_mbedtls_init(context_ssl_t *ssl, lwm2m_config_ssl_t *lwm2m_ssl_config)
 {
     char *start = NULL, *end = NULL, *copy = NULL;
@@ -162,26 +368,6 @@ static bool ssl_mbedtls_init(context_ssl_t *ssl, lwm2m_config_ssl_t *lwm2m_ssl_c
         mbedtls_x509_crt_init(ssl->clicert);
     }
 
-    if ((lwm2m_ssl_config->device_private_key || lwm2m_ssl_config->use_se)
-        && lwm2m_ssl_config->device_cert) {
-        ssl->device_cert = lwm2m_malloc(sizeof(mbedtls_x509_crt));
-        if (!ssl->device_cert) {
-#ifdef WITH_LOGS
-            fprintf(stderr, "Failed to allocate device_cert");
-#endif
-            goto error;
-        }
-        mbedtls_x509_crt_init(ssl->device_cert);
-        ssl->pkey = lwm2m_malloc(sizeof(mbedtls_pk_context));
-        if (!ssl->pkey) {
-#ifdef WITH_LOGS
-            fprintf(stderr, "Failed to allocate pkey");
-#endif
-            goto error;
-        }
-        mbedtls_pk_init(ssl->pkey);
-    }
-
     if (mbedtls_ssl_config_defaults(&ssl->config,
                                     MBEDTLS_SSL_IS_CLIENT,
                                     lwm2m_ssl_config->transport,
@@ -196,72 +382,6 @@ static bool ssl_mbedtls_init(context_ssl_t *ssl, lwm2m_config_ssl_t *lwm2m_ssl_c
 
     if (lwm2m_ssl_config->ciphersuites)
         mbedtls_ssl_conf_ciphersuites(&ssl->config, lwm2m_ssl_config->ciphersuites);
-
-    if (lwm2m_ssl_config->psk && lwm2m_ssl_config->psk_identity) {
-        if (mbedtls_ssl_conf_psk(&ssl->config, lwm2m_ssl_config->psk, lwm2m_ssl_config->psk_len,
-                                 lwm2m_ssl_config->psk_identity, lwm2m_ssl_config->psk_identity_len) != 0)
-        {
-#ifdef WITH_LOGS
-            fprintf(stderr, "mbedtls_ssl_conf_psk failed.\r\n");
-#endif
-            goto error;
-        }
-    } else if (lwm2m_ssl_config->device_cert && lwm2m_ssl_config->device_private_key) {
-        if (mbedtls_x509_crt_parse(ssl->device_cert,
-                                   lwm2m_ssl_config->device_cert,
-                                   lwm2m_ssl_config->device_cert_len) != 0) {
-#ifdef WITH_LOGS
-            fprintf(stderr, "Failed to parse device certificate.\r\n");
-#endif
-            goto error;
-        }
-
-        ret = mbedtls_pk_parse_key(ssl->pkey,
-                                       lwm2m_ssl_config->device_private_key,
-                                       lwm2m_ssl_config->device_private_key_len,
-                                       NULL, 0);
-        if (ret != 0) {
-#ifdef WITH_LOGS
-            fprintf(stderr, "Failed to parse device private key (err %d).\r\n", ret);
-#endif
-            goto error;
-        }
-
-        if (mbedtls_ssl_conf_own_cert(&ssl->config, ssl->device_cert, ssl->pkey) != 0) {
-#ifdef WITH_LOGS
-            fprintf(stderr, "Failed to configure device cert/key.\r\n");
-#endif
-            goto error;
-        }
-    } else if (lwm2m_ssl_config->device_cert && lwm2m_ssl_config->use_se) {
-        if (mbedtls_x509_crt_parse(ssl->device_cert,
-                                   lwm2m_ssl_config->device_cert,
-                                   lwm2m_ssl_config->device_cert_len) != 0) {
-#ifdef WITH_LOGS
-            fprintf(stderr, "Failed to parse device certificate.\r\n");
-#endif
-            goto error;
-        }
-
-        if (mbedtls_pk_setup(ssl->pkey, mbedtls_pk_info_from_type(MBEDTLS_PK_ECKEY)) != 0) {
-#ifdef WITH_LOGS
-            fprintf(stderr, "Failed to setup private key info.\r\n");
-#endif
-            goto error;
-        }
-
-        ((mbedtls_ecdsa_context *)(ssl->pkey->pk_ctx))->grp.id =
-            MBEDTLS_ECP_DP_SECP256R1;
-        ((mbedtls_ecdsa_context *)(ssl->pkey->pk_ctx))->key_index =
-            FACTORYKEY_ARTIK_DEVICE;
-
-        if (mbedtls_ssl_conf_own_cert(&ssl->config, ssl->device_cert, ssl->pkey) != 0) {
-#ifdef WITH_LOGS
-            fprintf(stderr, "Failed to configure device cert/key.\r\n");
-#endif
-            goto error;
-        }
-    }
 
     if (lwm2m_ssl_config->root_ca) {
         /* CA certs may come as a bundle, parse them all */
@@ -308,23 +428,6 @@ static bool ssl_mbedtls_init(context_ssl_t *ssl, lwm2m_config_ssl_t *lwm2m_ssl_c
 
     mbedtls_ssl_conf_rng(&ssl->config, mbedtls_ctr_drbg_random, &ssl->ctr_drbg);
     mbedtls_ssl_conf_dbg(&ssl->config, lwm2m_tls_debug, stderr);
-    ssl->net.fd = lwm2m_ssl_config->fd;
-
-    if (mbedtls_ssl_setup(&ssl->session, &ssl->config) != 0)
-    {
-#ifdef WITH_LOGS
-        fprintf(stderr, "mbedtls_ssl_setup failed");
-#endif
-        goto error;
-    }
-
-    if (lwm2m_ssl_config->transport == MBEDTLS_SSL_TRANSPORT_DATAGRAM) {
-        ssl->timer = lwm2m_malloc(sizeof(mbedtls_timing_delay_context));
-        mbedtls_ssl_set_timer_cb(&ssl->session, ssl->timer, mbedtls_timing_set_delay, mbedtls_timing_get_delay);
-        mbedtls_ssl_set_bio(&ssl->session, &ssl->net, mbedtls_net_send, mbedtls_net_recv, mbedtls_net_recv_timeout);
-    } else {
-        mbedtls_ssl_set_bio(&ssl->session, &ssl->net, mbedtls_net_send, mbedtls_net_recv, NULL);
-    }
 
 #ifdef MBEDTLS_DEBUG_C
     mbedtls_debug_set_threshold(0);
@@ -345,16 +448,8 @@ static bool ssl_configure_certificate_mode(connection_t *conn)
     if (!conn->sec_obj)
         return false;
 
-    conn->ssl = lwm2m_malloc(sizeof(context_ssl_t));
-    if (!conn->ssl) {
-#ifdef WITH_LOGS
-        fprintf(stderr, "Failed to allocate memory for ssl context\r\n");
-#endif
-        return false;
-    }
-
     memset(&lwm2m_ssl_config, 0, sizeof(lwm2m_config_ssl_t));
-    memset(conn->ssl, 0, sizeof(context_ssl_t));
+    memset(&conn->ssl, 0, sizeof(context_ssl_t));
 
     if (conn->protocol == COAP_UDP_DTLS) {
         lwm2m_ssl_config.transport = MBEDTLS_SSL_TRANSPORT_DATAGRAM;
@@ -366,145 +461,49 @@ static bool ssl_configure_certificate_mode(connection_t *conn)
         lwm2m_ssl_config.auth_mode = conn->verify_cert ? MBEDTLS_SSL_VERIFY_REQUIRED : MBEDTLS_SSL_VERIFY_NONE;
 
         if (conn->root_ca) {
-            lwm2m_ssl_config.root_ca = lwm2m_strdup(conn->root_ca);
+            lwm2m_ssl_config.root_ca = conn->root_ca;
         }
     }
 
-    lwm2m_ssl_config.device_cert =
-        (unsigned char *)security_get_public_id(conn->sec_obj, conn->sec_inst, &lwm2m_ssl_config.device_cert_len);
-    if (!lwm2m_ssl_config.device_cert) {
-#ifdef WITH_LOGS
-        fprintf(stderr, "Failed to get Public ID\r\n");
-#endif
+    if (!ssl_mbedtls_init(&conn->ssl, &lwm2m_ssl_config)) {
         ret = false;
         goto cleanup;
     }
 
-    if (!conn->use_se) {
-        int device_private_key_der_len = 0;
-        unsigned char *device_private_key_der =
-            (unsigned char *)security_get_secret_key(conn->sec_obj, conn->sec_inst,
-                                                     &device_private_key_der_len);
-        if (!device_private_key_der) {
-#ifdef WITH_LOGS
-            fprintf(stderr, "Failed to get private key\r\n");
-#endif
+    if (conn->ssl_callback) {
+        if (!conn->ssl_callback(&conn->ssl.config, conn->ssl_user_data)) {
             ret = false;
+            context_ssl_free(&conn->ssl);
             goto cleanup;
         }
-
-        if (mbedtls_pem_write_buffer("-----BEGIN EC PRIVATE KEY-----\n",
-                                     "-----END EC PRIVATE KEY-----\n",
-                                     device_private_key_der,
-                                     device_private_key_der_len,
-                                     NULL,
-                                     0,
-                                     &lwm2m_ssl_config.device_private_key_len)
-            != MBEDTLS_ERR_BASE64_BUFFER_TOO_SMALL) {
-#ifdef WITH_LOGS
-            fprintf(stderr, "Failed to parse private key\r\n");
-#endif
-            ret = false;
-            goto cleanup;
-        }
-
-        lwm2m_ssl_config.device_private_key = lwm2m_malloc(lwm2m_ssl_config.device_private_key_len);
-        if (!lwm2m_ssl_config.device_private_key) {
-#ifdef WITH_LOGS
-            fprintf(stderr, "Failed to allocate private key\r\n");
-#endif
-            ret = false;
-            goto cleanup;
-        }
-
-        if (mbedtls_pem_write_buffer("-----BEGIN EC PRIVATE KEY-----\n",
-                                     "-----END EC PRIVATE KEY-----\n",
-                                     device_private_key_der,
-                                     device_private_key_der_len,
-                                     lwm2m_ssl_config.device_private_key,
-                                     lwm2m_ssl_config.device_private_key_len,
-                                     &lwm2m_ssl_config.device_private_key_len)
-            != 0) {
-#ifdef WITH_LOGS
-            fprintf(stderr, "Failed to parse DER private key\r\n");
-#endif
+    } else {
+        if (!ssl_certificate_mode_configure(conn)) {
             ret = false;
             goto cleanup;
         }
     }
 
-    lwm2m_ssl_config.use_se = conn->use_se;
-
-    lwm2m_ssl_config.fd = conn->sock;
-    if (!ssl_mbedtls_init(conn->ssl, &lwm2m_ssl_config)) {
+    if (!ssl_setup(&conn->ssl, lwm2m_ssl_config.transport, conn->sock)) {
         ret = false;
         goto cleanup;
     }
 
 cleanup:
-    if (lwm2m_ssl_config.root_ca)
-        lwm2m_free(lwm2m_ssl_config.root_ca);
-
-    if (lwm2m_ssl_config.device_private_key)
-        lwm2m_free(lwm2m_ssl_config.device_private_key);
-
-    if (!ret)
-        lwm2m_free(conn->ssl);
-
     return ret;
 }
 
 static bool ssl_configure_pre_shared_key(connection_t *conn)
 {
     lwm2m_config_ssl_t lwm2m_ssl_config;
+    bool ret = false;
     int ciphersuites[2];
     ciphersuites[0] = MBEDTLS_TLS_PSK_WITH_AES_128_CCM_8;
     ciphersuites[1] = 0;
 
-    conn->ssl = lwm2m_malloc(sizeof(context_ssl_t));
-    if (!conn->ssl) {
-#ifdef WITH_LOGS
-        fprintf(stderr, "Failed to allocate memory for ssl context\r\n");
-#endif
-        return false;
-    }
-
     memset(&lwm2m_ssl_config, 0, sizeof(lwm2m_config_ssl_t));
-    memset(conn->ssl, 0, sizeof(context_ssl_t));
+    memset(&conn->ssl, 0, sizeof(context_ssl_t));
 
     if (conn->protocol == COAP_UDP_DTLS && conn->sec_obj) {
-        lwm2m_ssl_config.psk_identity =
-            (unsigned char*)security_get_public_id(conn->sec_obj, conn->sec_inst, &lwm2m_ssl_config.psk_identity_len);
-        if (!lwm2m_ssl_config.psk_identity) {
-#ifdef WITH_LOGS
-            fprintf(stderr, "Failed to get Public ID\r\n");
-#endif
-            goto error;
-        }
-
-        if (lwm2m_ssl_config.psk_identity_len > MAX_DTLS_INFO_LEN) {
-#ifdef WITH_LOGS
-            fprintf(stderr, "Public ID is too long %d\n", lwm2m_ssl_config.psk_identity_len);
-#endif
-            goto error;
-        }
-
-        lwm2m_ssl_config.psk =
-            (unsigned char *)security_get_secret_key(conn->sec_obj, conn->sec_inst, &lwm2m_ssl_config.psk_len);
-        if (!lwm2m_ssl_config.psk) {
-#ifdef WITH_LOGS
-            fprintf(stderr, "Failed to get PSK\r\n");
-#endif
-            goto error;
-        }
-
-        if (lwm2m_ssl_config.psk_len > MAX_DTLS_INFO_LEN) {
-#ifdef WITH_LOGS
-            fprintf(stderr, "PSK is too long\r\n");
-#endif
-            goto error;
-        }
-
         lwm2m_ssl_config.transport = MBEDTLS_SSL_TRANSPORT_DATAGRAM;
         lwm2m_ssl_config.ciphersuites = ciphersuites;
         lwm2m_ssl_config.auth_mode = MBEDTLS_SSL_VERIFY_NONE;
@@ -515,17 +514,22 @@ static bool ssl_configure_pre_shared_key(connection_t *conn)
         lwm2m_ssl_config.root_ca = conn->root_ca;
     }
 
-    lwm2m_ssl_config.fd = conn->sock;
-    if (!ssl_mbedtls_init(conn->ssl, &lwm2m_ssl_config)) {
-        goto error;
+    if (!ssl_mbedtls_init(&conn->ssl, &lwm2m_ssl_config))
+        goto exit;
+
+    if (conn->protocol == COAP_UDP_DTLS && conn->sec_obj) {
+        if (!ssl_psk_mode_configure(conn))
+            goto exit;
     }
 
-    return true;
+    if (!ssl_setup(&conn->ssl, lwm2m_ssl_config.transport, conn->sock))
+        goto exit;
 
-error:
-    lwm2m_free(conn->ssl);
+    ret = true;
 
-    return false;
+exit:
+    return ret;
+
 }
 
 static bool ssl_init(connection_t * conn)
@@ -545,7 +549,7 @@ static bool ssl_init(connection_t * conn)
     }
 
     int ret;
-    while ((ret = mbedtls_ssl_handshake(&conn->ssl->session)) != 0) {
+    while ((ret = mbedtls_ssl_handshake(&conn->ssl.session)) != 0) {
     if (ret != MBEDTLS_ERR_SSL_WANT_READ && ret != MBEDTLS_ERR_SSL_WANT_WRITE) {
 #ifdef WITH_LOGS
         fprintf(stderr, "Handshake failed  (err %04X) !!\n", -ret);
@@ -555,7 +559,7 @@ static bool ssl_init(connection_t * conn)
     }
 
     if (securityMode == LWM2M_SECURITY_MODE_CERTIFICATE && conn->protocol == COAP_UDP_DTLS) {
-        const mbedtls_x509_crt *peer_cert = mbedtls_ssl_get_peer_cert(&conn->ssl->session);
+        const mbedtls_x509_crt *peer_cert = mbedtls_ssl_get_peer_cert(&conn->ssl.session);
         int len = 0;
         cert = security_get_server_public(conn->sec_obj, conn->sec_inst, &len);
 
@@ -577,8 +581,8 @@ static bool ssl_init(connection_t * conn)
     return true;
 
 error:
-    context_ssl_free(conn->ssl);
-    lwm2m_free(conn->ssl);
+    context_ssl_free(&conn->ssl);
+
     if (cert)
         lwm2m_free(cert);
     return false;
@@ -699,7 +703,8 @@ connection_t * connection_find(connection_t * connList,
 connection_t * connection_create(coap_protocol_t protocol,
                                  char *root_ca,
                                  bool verify_cert,
-                                 bool use_se,
+                                 ssl_configure_callback_t ssl_callback,
+                                 void *ssl_user_data,
                                  int sock,
                                  char *host,
                                  char *local_port,
@@ -841,7 +846,8 @@ fail:
         connP->address_family = addressFamily;
         connP->sec_obj = sec_obj;
         connP->sec_inst = sec_inst;
-        connP->use_se = use_se;
+        connP->ssl_callback = ssl_callback;
+        connP->ssl_user_data = ssl_user_data;
         connP->timeout = timeout;
 
         if ((protocol == COAP_TCP_TLS) ||
@@ -900,10 +906,7 @@ void connection_free(connection_t * connList)
         if (connList->root_ca)
             lwm2m_free(connList->root_ca);
 
-        if (connList->ssl) {
-            context_ssl_free(connList->ssl);
-            lwm2m_free(connList->ssl);
-        }
+        context_ssl_free(&connList->ssl);
 
         lwm2m_free(connList);
 
@@ -949,7 +952,7 @@ int connection_send(connection_t *connP,
         {
         case COAP_UDP_DTLS:
         case COAP_TCP_TLS:
-            nbSent = mbedtls_ssl_write(&connP->ssl->session, buffer + offset, length - offset);
+            nbSent = mbedtls_ssl_write(&connP->ssl.session, buffer + offset, length - offset);
             if (nbSent < 1) {
 #ifdef WITH_LOGS
                 fprintf(stderr, "SSL Send error: %d\n", nbSent);
@@ -1045,7 +1048,7 @@ int connection_read(connection_t *connP, uint8_t * buffer, size_t size) {
             break;
         case COAP_UDP_DTLS:
         case COAP_TCP_TLS:
-            numBytes = mbedtls_ssl_read(&connP->ssl->session, buffer, size);
+            numBytes = mbedtls_ssl_read(&connP->ssl.session, buffer, size);
             if (numBytes < 1)
             {
                 return 0;

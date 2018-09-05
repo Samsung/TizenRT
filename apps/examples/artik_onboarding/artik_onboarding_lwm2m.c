@@ -625,6 +625,8 @@ static pthread_addr_t lwm2m_start_cb(void *arg)
 
 	lwm2m->set_callback(g_lwm2m_handle, ARTIK_LWM2M_EVENT_ERROR,
 			on_error, (void *)g_lwm2m_handle);
+	lwm2m->set_callback(g_lwm2m_handle, ARTIK_LWM2M_EVENT_DISCONNECT,
+			on_error, (void *)g_lwm2m_handle);
 	lwm2m->set_callback(g_lwm2m_handle, ARTIK_LWM2M_EVENT_RESOURCE_EXECUTE,
 			on_execute_resource, (void *)g_lwm2m_handle);
 	lwm2m->set_callback(g_lwm2m_handle, ARTIK_LWM2M_EVENT_RESOURCE_CHANGED,

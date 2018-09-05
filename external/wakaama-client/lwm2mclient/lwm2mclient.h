@@ -150,9 +150,12 @@ typedef struct {
     int length;
 } lwm2m_resource_t;
 
-#define LWM2M_CLIENT_OK     ( 0)
-#define LWM2M_CLIENT_ERROR  (-1)
-#define LWM2M_CLIENT_QUIT   (-2)
+typedef bool (*ssl_configure_callback_t)(void *ssl_ctx, void *user_data);
+
+#define LWM2M_CLIENT_OK           ( 0)
+#define LWM2M_CLIENT_ERROR        (-1)
+#define LWM2M_CLIENT_QUIT         (-2)
+#define LWM2M_CLIENT_DISCONNECTED (-3)
 
 /*
  * Object: Device
@@ -257,13 +260,13 @@ typedef struct {
  *
  * \param[in] root_ca If not null, use it as trusted root CA for verifying the
  *                    server's certificate.
- * \param[in] use_se If true the private key stored in the SE is used
- *                  (only usefull in certificate mode and only implemented for TizenRT).
+ * \param[in] ssl_configure_callback_t
+ * \param[in] user_data
  *
  *  \return handle to the client connection, or NULL if an error
  *  occured
  */
-client_handle_t* lwm2m_client_start(object_container_t *init_val, char *root_ca, bool use_se);
+client_handle_t* lwm2m_client_start(object_container_t *init_val, char *root_ca, ssl_configure_callback_t, void *user_data);
 
 /*!
  *  \brief Process current tasks

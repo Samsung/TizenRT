@@ -85,7 +85,6 @@
 #define CLIENT_PORT_RANGE_END      64999
 
 #define MAX_PACKET_SIZE            1024
-#define MAX_CONNECTION_RETRIES     5
 #define MAX_NUMBER_CLIENTS         128
 
 typedef struct {
@@ -109,9 +108,9 @@ typedef struct
     lwm2m_object_t * objArray[LWM2M_OBJ_COUNT];
     coap_protocol_t proto;
     char local_port[16];
-    int connection_retries;
     char *root_ca;
-    bool use_se;
+    ssl_configure_callback_t ssl_config_callback;
+    void *ssl_user_data;
     int connect_timeout;
     bool is_random_local_port;
 } client_data_t;
@@ -124,8 +123,10 @@ static coap_uri_protocol protocols[] = {
 };
 
 extern lwm2m_object_t *get_server_object(int serverId, const char *binding, int lifetime, bool storing);
-extern lwm2m_object_t *get_security_object(int serverId, const char *serverUri, uint8_t securityMode,
-        char *serverCertificate, char *clientCertificateOrPskId, char *psk, uint16_t pskLen, bool isBootstrap);
+extern lwm2m_object_t *get_security_object(int serverId, const char *serverUri,
+                                           uint8_t securityMode, char *serverCertificate,
+                                           char *clientCertificateOrPskId, char *psk,
+                                           uint16_t pskLen, bool isBootstrap, bool externalKey);
 extern lwm2m_object_t *get_object_device(object_device_t *default_value);
 extern lwm2m_object_t *get_object_firmware(object_firmware_t *default_value);
 extern lwm2m_object_t *get_object_location(object_location_t *default_value);
@@ -185,9 +186,6 @@ void * lwm2m_connect_server(uint16_t secObjInstID, void * userData, int timeout)
         }
     }
 
-    if (!host)
-        goto exit;
-
     port = strrchr(host, ':');
     if (port == NULL) goto exit;
     // remove brackets
@@ -219,14 +217,16 @@ void * lwm2m_connect_server(uint16_t secObjInstID, void * userData, int timeout)
     dataP->sock = create_socket(dataP->proto, dataP->local_port, dataP->addressFamily);
     if (dataP->sock < 0)
     {
+#ifdef WITH_LOGS
         fprintf(stderr, "Failed to open socket: %d %s\r\n", errno, strerror(errno));
+#endif
         goto exit;
     }
 
     conn = connection_create(protocol, dataP->root_ca, dataP->verify_cert,
-            dataP->use_se, dataP->sock, host, dataP->local_port, port,
-            dataP->addressFamily, securityObj, instance->id,
-            dataP->connect_timeout);
+            dataP->ssl_config_callback, dataP->ssl_user_data, dataP->sock,
+            host, dataP->local_port, port, dataP->addressFamily, securityObj,
+            instance->id, dataP->connect_timeout);
     if (!conn)
     {
 #ifdef WITH_LOGS
@@ -374,7 +374,7 @@ static void poll_lwm2m_sockets(client_data_t **clients, int number_clients, int 
     lwm2m_free(pfds);
 }
 
-client_handle_t* lwm2m_client_start(object_container_t *init_val, char *root_ca, bool use_se)
+client_handle_t* lwm2m_client_start(object_container_t *init_val, char *root_ca, ssl_configure_callback_t ssl_config_callback, void *ssl_user_data)
 {
     int result;
     int i;
@@ -396,17 +396,10 @@ client_handle_t* lwm2m_client_start(object_container_t *init_val, char *root_ca,
     serverId = init_val->server->serverId;
 
     data = lwm2m_malloc(sizeof(client_data_t));
-    if (!data) {
-#ifdef WITH_LOGS
-        fprintf(stderr, "Failed to allocate memory for client data\r\n");
-#endif
-        goto error;
-    }
-
     handle = lwm2m_malloc(sizeof(client_handle_t));
-    if (!handle) {
+    if (!data || !handle) {
 #ifdef WITH_LOGS
-        fprintf(stderr, "Failed to allocate memory for client handle\r\n");
+        fprintf(stderr, "Failed to allocate memory for client data or handle\r\n");
 #endif
         goto error;
     }
@@ -414,6 +407,7 @@ client_handle_t* lwm2m_client_start(object_container_t *init_val, char *root_ca,
     memset(data, 0, sizeof(client_data_t));
     memset(handle, 0, sizeof(client_handle_t));
     handle->client = data;
+    handle->error = LWM2M_CLIENT_DISCONNECTED;
 
     /* Figure out protocol from the URI prefix */
     for (i=0; i<sizeof(protocols)/sizeof(coap_uri_protocol); i++)
@@ -466,7 +460,8 @@ client_handle_t* lwm2m_client_start(object_container_t *init_val, char *root_ca,
 
     data->lwm2mH = ctx;
     data->root_ca = root_ca;
-    data->use_se = use_se;
+    data->ssl_config_callback = ssl_config_callback;
+    data->ssl_user_data = ssl_user_data;
     data->connect_timeout = init_val->server->connect_timeout;
 
     /*
@@ -534,18 +529,21 @@ client_handle_t* lwm2m_client_start(object_container_t *init_val, char *root_ca,
 
     if (init_val->server)
     {
-        if (pskBuffer)
+        if (pskBuffer || ssl_config_callback)
         {
             data->objArray[LWM2M_OBJ_SECURITY] =
                 get_security_object(serverId, uri, init_val->server->securityMode,
                                     init_val->server->serverCertificate,
                                     init_val->server->clientCertificateOrPskId,
-                                    pskBuffer, pskLen, false);
+                                    pskBuffer, pskLen, false, ssl_config_callback != NULL);
             if (NULL == data->objArray[LWM2M_OBJ_SECURITY])
             {
 #ifdef WITH_LOGS
                 fprintf(stderr, "Failed to create security object\r\n");
 #endif
+                if (init_val->server->securityMode == LWM2M_SEC_MODE_PSK)
+                    lwm2m_free(pskBuffer);
+
                 goto error;
             }
 
@@ -811,31 +809,15 @@ int lwm2m_clients_service(client_handle_t **handles, int number_handles, int tim
         client_data_t *data =  (client_data_t *)handles[i]->client;
         result = lwm2m_step(data->lwm2mH, &timeout);
         min_timeout = min_timeout > timeout ? timeout : min_timeout;
-        handles[i]->error = 0;
-
-        if ((result != 0) || (registration_getStatus(data->lwm2mH) == STATE_REG_FAILED))
-        {
-            /* Try reconnecting */
-            if (data->conn)
-                continue;
-
+        if ((result != 0) || (registration_getStatus(data->lwm2mH) == STATE_REG_FAILED)) {
             data->lwm2mH->state = STATE_REGISTER_REQUIRED;
+            handles[i]->error = LWM2M_CLIENT_DISCONNECTED;
 #ifdef WITH_LOGS
-            fprintf(stderr, "Try reconnection %d/%d\r\n", data->connection_retries, MAX_CONNECTION_RETRIES);
+            fprintf(stdout, "LWM2M_CLIENT_DISCONNECTED\n");
 #endif
-            if (data->connection_retries > MAX_CONNECTION_RETRIES)
-            {
-#ifdef WITH_LOGS
-                fprintf(stderr, "Failed to reconnect %d times, exiting...\r\n", MAX_CONNECTION_RETRIES);
-#endif
-                handles[i]->error = LWM2M_CLIENT_ERROR;
-                continue;
-            }
             min_timeout = 0;
-            data->connection_retries++;
-            continue;
         } else if (registration_getStatus(data->lwm2mH) == STATE_REGISTERED) {
-            data->connection_retries = 0;
+            handles[i]->error = LWM2M_CLIENT_OK;
         }
 
         clients[number_clients] = data;
@@ -845,15 +827,6 @@ int lwm2m_clients_service(client_handle_t **handles, int number_handles, int tim
     min_timeout = min_timeout * 1000 < timeout_ms || timeout_ms == 0 ? min_timeout * 1000 : timeout_ms;
     poll_lwm2m_sockets(clients, number_clients, min_timeout);
 
-    /* Check if some connections got closed, set error accordingly */
-    for (i = 0; i < number_handles; i++)
-    {
-        client_data_t *data =  (client_data_t *)handles[i]->client;
-
-        if (data->sock <= 0 && data->connection_retries > MAX_CONNECTION_RETRIES) {
-            handles[i]->error = LWM2M_CLIENT_ERROR;
-        }
-    }
     return min_timeout;
 }
 
@@ -890,6 +863,9 @@ void lwm2m_register_callback(client_handle_t* handle, enum lwm2m_execute_callbac
                 callback, param);
         break;
     default:
+#ifdef WITH_LOGS
+        fprintf(stderr, "lwm2m_register_callback: unsupported callback\r\n");
+#endif
         break;
     }
 }
@@ -922,6 +898,9 @@ void lwm2m_unregister_callback(client_handle_t* handle, enum lwm2m_execute_callb
         prv_firmware_register_callback(data->objArray[LWM2M_OBJ_FIRMWARE], type, NULL, NULL);
         break;
     default:
+#ifdef WITH_LOGS
+        fprintf(stderr, "lwm2m_register_callback: unsupported callback\r\n");
+#endif
         break;
     }
 }
@@ -1026,7 +1005,7 @@ static int encode_data(lwm2m_data_t *data, uint8_t **buffer)
     case LWM2M_TYPE_STRING:
         size = data[0].value.asBuffer.length;
         *buffer = (uint8_t *)lwm2m_malloc(size);
-        if (!*buffer)
+        if (!buffer)
         {
 #ifdef WITH_LOGS
             fprintf(stderr, "encode_data: failed to allocate memory\r\n");
@@ -1055,7 +1034,6 @@ static int encode_data(lwm2m_data_t *data, uint8_t **buffer)
 #ifdef WITH_LOGS
         fprintf(stderr, "encode_data: unsupported type (%d)\r\n", data[0].type);
 #endif
-        lwm2m_free(*buffer);
         size = LWM2M_CLIENT_ERROR;
         break;
     }
@@ -1238,11 +1216,8 @@ int lwm2m_serialize_tlv_string(int num, char **strs, lwm2m_resource_t* res)
 #ifdef WITH_LOGS
         fprintf(stderr, "lwm2m_serialize_tlv_string: failed to serialize TLV\r\n");
 #endif
-        lwm2m_free(array);
         return LWM2M_CLIENT_ERROR;
     }
-
-    lwm2m_free(array);
 
     return LWM2M_CLIENT_OK;
 }
@@ -1273,11 +1248,9 @@ int lwm2m_serialize_tlv_int(int num, int *ints, lwm2m_resource_t* res)
 #ifdef WITH_LOGS
         fprintf(stderr, "lwm2m_tlv_string: failed to serialize TLV\r\n");
 #endif
-        lwm2m_free(array);
         return LWM2M_CLIENT_ERROR;
     }
 
-    lwm2m_free(array);
     return LWM2M_CLIENT_OK;
 }
 
