@@ -112,6 +112,8 @@ int gpr_thd_new(gpr_thd_id* t, const char* thd_name,
     /* don't use gpr_free, as this was allocated using malloc (see above) */
     free(a);
     dec_thd_count();
+  } else {
+    pthread_setname_np(thread_started, a->name);
   }
   *t = (gpr_thd_id)p;
   return thread_started;
