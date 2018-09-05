@@ -64,6 +64,13 @@ config OUTPUT_DATASOURCE_STACKSIZE
 
 endif #MEDIA_RECORDER
 
+config MEDIA_VOICE_SPEECH_DETECTOR
+	bool "Support Media/Voice Speech Detector"
+	default n
+	select VOICE_SOFTWARE_EPD
+	---help---
+		Enable Media/Voice Speech Detector functions
+
 config AUDIO_RESAMPLER_BUFSIZE
 	int "Audio Resampler Buffer size"
 	default 4096
