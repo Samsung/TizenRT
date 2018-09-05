@@ -47,9 +47,11 @@ using namespace std;
 using namespace media;
 using namespace media::stream;
 
-static const int TEST_PCM = 0;
-static const int TEST_OPUS = 1;
-static const int TEST_BUFFER = 2;
+static const int TEST_MEDIATYPE_PCM = 0;
+static const int TEST_MEDIATYPE_OPUS = 1;
+
+static const int TEST_DATASOURCE_TYPE_FILE = 0;
+static const int TEST_DATASOURCE_TYPE_BUFFER = 1;
 
 static const char *filePath = "";
 
@@ -61,6 +63,13 @@ public:
 	void onRecordStarted(MediaRecorder& mediaRecorder)
 	{
 		std::cout << "onRecordStarted" << std::endl;
+		if (mDataSourceType == TEST_DATASOURCE_TYPE_BUFFER) {
+			mfp = fopen(filePath, "w");
+			if (mfp == NULL) {
+				std::cout << "FILE OPEN FAILED" << std::endl;
+				return;
+			}
+		}
 	}
 
 	void onRecordPaused(MediaRecorder& mediaRecorder)
@@ -71,6 +80,9 @@ public:
 	void onRecordFinished(MediaRecorder& mediaRecorder)
 	{
 		std::cout << "onRecordFinished" << std::endl;
+		if (mDataSourceType == TEST_DATASOURCE_TYPE_BUFFER && mfp != NULL) {
+			fclose(mfp);
+		}
 		mediaRecorder.unprepare();
 	}
 
@@ -91,6 +103,9 @@ public:
 
 	void onRecordBufferDataReached(MediaRecorder& mediaRecorder, unsigned char *data, size_t size)
 	{
+		if (mfp != NULL) {
+			fwrite(data, sizeof(unsigned char), size, mfp);
+		}
 		std::cout << "onRecordBufferDataReached, data size : " << size << std::endl;
 	}
 
@@ -139,8 +154,10 @@ public:
 		std::cout << "onPlaybackPaused" << std::endl;
 	}
 
-	void start(const int test)
+	void start(const int mediaType, const int dataSourceType)
 	{
+		mMediaType = mediaType;
+		mDataSourceType = dataSourceType;
 		uint8_t volume;
 		mAppRunning = true;
 
@@ -160,16 +177,16 @@ public:
 						mIsPaused = false;
 					}
 				} else {
-					if (test == TEST_PCM) {
+					if (mMediaType == TEST_MEDIATYPE_PCM) {
 						filePath = "/tmp/record.pcm";
-						mMr.setDataSource(unique_ptr<FileOutputDataSource>(
-							new FileOutputDataSource(2, 16000, AUDIO_FORMAT_TYPE_S16_LE, filePath)));
-					} else if (test == TEST_OPUS) {
+					} else if (mMediaType == TEST_MEDIATYPE_OPUS) {
 						filePath = "/tmp/record.opus";
+					}
+
+					if (mDataSourceType == TEST_DATASOURCE_TYPE_FILE) {
 						mMr.setDataSource(unique_ptr<FileOutputDataSource>(
 							new FileOutputDataSource(2, 16000, AUDIO_FORMAT_TYPE_S16_LE, filePath)));
-					} else if (test == TEST_BUFFER) {
-						filePath = "";
+					} else if (mDataSourceType == TEST_DATASOURCE_TYPE_BUFFER) {
 						mMr.setDataSource(unique_ptr<BufferOutputDataSource>(new BufferOutputDataSource()));
 					}
 
@@ -355,6 +372,9 @@ private:
 	MediaRecorder mMr;
 	bool mIsPlaying;
 	MediaPlayer mMp;
+	FILE *mfp;
+	int mMediaType;
+	int mDataSourceType;
 };
 
 extern "C" {
@@ -363,7 +383,7 @@ int mediarecorder_main(int argc, char *argv[])
 	up_cxxinitialize();
 
 	auto mediaRecorderTest = make_shared<MediaRecorderTest>();
-	mediaRecorderTest->start(TEST_PCM);
+	mediaRecorderTest->start(TEST_MEDIATYPE_PCM, TEST_DATASOURCE_TYPE_FILE);
 
 	return 0;
 }
