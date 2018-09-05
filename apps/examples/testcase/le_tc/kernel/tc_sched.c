@@ -26,9 +26,14 @@
 #include <tinyara/config.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <sched.h>
+#include <pthread.h>
 #include <errno.h>
 #include <sys/wait.h>
 #include <sys/types.h>
+
+#include <tinyara/sched.h>
+
 #include "tc_internal.h"
 
 #define SCHED_PRIORITY  13
@@ -36,8 +41,8 @@
 #define ARRLEN          2
 #define VAL_3           3
 #define VAL_5           5
-#define TASK_STACKSIZE 2048
-#define INVALID_PID       -2
+#define TASK_STACKSIZE  2048
+#define INVALID_PID     -2
 #define PID_IDLE        0
 #define TASK_CANCEL_INVALID  -1
 
@@ -60,6 +65,7 @@ static void sched_foreach_callback(struct tcb_s *tcb, void *arg)
 	}
 }
 
+#ifdef CONFIG_SCHED_WAITPID
 static int sleep1sec_taskdel(int argc, char *argv[])
 {
 	sleep(1);
@@ -67,14 +73,15 @@ static int sleep1sec_taskdel(int argc, char *argv[])
 	return 0;
 }
 
-#if defined(CONFIG_SCHED_WAITPID) && defined(CONFIG_SCHED_HAVE_PARENT) // Currently this is used in only this conditional
+#ifdef CONFIG_SCHED_HAVE_PARENT
 static int sleep2sec_taskdel(int argc, char *argv[])
 {
 	sleep(2);
 	task_delete(0);
 	return 0;
 }
-#endif
+#endif /* CONFIG_SCHED_HAVE_PARENT */
+#endif /* CONFIG_SCHED_WAITPID */
 
 /**
 * @fn                   :threadfunc_callback
@@ -538,6 +545,7 @@ static void tc_sched_sched_lockcount(void)
 	TC_SUCCESS_RESULT();
 }
 
+#if CONFIG_NFILE_STREAMS > 0
 /**
 * @fn                   :tc_sched_sched_getstreams
 * @brief                :return a pointer to the streams list for this thread
@@ -557,6 +565,7 @@ static void tc_sched_sched_getstreams(void)
 
 	TC_SUCCESS_RESULT();
 }
+#endif
 
 #if !defined(CONFIG_BUILD_PROTECTED)
 /**
@@ -704,7 +713,9 @@ int sched_main(void)
 	tc_sched_sched_self();
 	tc_sched_sched_foreach();
 	tc_sched_sched_lockcount();
+#if CONFIG_NFILE_STREAMS > 0
 	tc_sched_sched_getstreams();
+#endif
 #ifndef CONFIG_BUILD_PROTECTED
 	tc_sched_task_setcancelstate();
 #ifdef CONFIG_CANCELLATION_POINTS

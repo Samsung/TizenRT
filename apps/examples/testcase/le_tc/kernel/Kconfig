@@ -163,6 +163,7 @@ config TC_KERNEL_PTHREAD
 config TC_KERNEL_ROUNDROBIN
 	bool "RoundRobin"
 	default n
+	depends on RR_INTERVAL != 0
 
 config TC_KERNEL_SCHED
 	bool "Sched"
