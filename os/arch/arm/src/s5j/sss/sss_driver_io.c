@@ -25,8 +25,8 @@
 #include <tinyara/fs/mtd.h>
 #include <tinyara/fs/ioctl.h>
 
-#include "isp_driver_error.h"
-#include "sss_driver_io.h"
+#include <arch/chip/sss/isp_driver_error.h>
+#include <arch/chip/sss/sss_driver_io.h>
 
 #define S5J_SSS_RO_DEVICE_NAME "/dev/mtdblock1"
 

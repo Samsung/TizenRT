@@ -88,7 +88,7 @@ endif
 
 ifeq ($(CONFIG_TLS_WITH_SSS),y)
 SRC_SEE_CSRCS += see_api.c	see_internal.c	see_misc.c
-CFLAGS+=-I$(TOPDIR)/arch/arm/src/s5j/sss
+CFLAGS+=-I$(TOPDIR)/arch/arm/include/chip/sss
 endif
 
 ifeq ($(CONFIG_HAP_CRYPTO),y)

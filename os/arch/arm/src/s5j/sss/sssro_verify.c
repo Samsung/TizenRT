@@ -30,7 +30,7 @@
 #include <tinyara/fs/mtd.h>
 #include <tinyara/fs/ioctl.h>
 
-#include "isp_custom.h"
+#include <arch/chip/sss/isp_custom.h>
 /*
  * Definition for handling pthread
  */

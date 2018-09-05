@@ -27,7 +27,7 @@
 
 #include <stdio.h>
 
-#include "../../arch/arm/src/s5j/sss/isp_custom.h"
+#include <arch/chip/sss/isp_custom.h>
 #include "see_cert.h"
 
 /****************************************************************************
