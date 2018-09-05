@@ -119,6 +119,10 @@ static void up_idlepm(void)
 			break;
 
 		case PM_SLEEP:
+#ifdef CONFIG_SCHED_TICKSUPPRESS
+			/* Enable tick suppression */
+			up_start_ticksuppress();
+#endif
 			s5j_pmstandby();
 			break;
 
@@ -160,6 +164,11 @@ void up_idle(void)
 #else
 	/* Perform IDLE mode power management */
 	up_idlepm();
+
+#if !defined CONFIG_PM && defined CONFIG_SCHED_TICKSUPPRESS
+	/* Enable tick suppression */
+	up_start_ticksuppress();
+#endif
 
 	/* Sleep until an interrupt occurs to save power. */
 	asm("WFI");

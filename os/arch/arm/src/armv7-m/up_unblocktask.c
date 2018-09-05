@@ -132,6 +132,11 @@ void up_unblock_task(struct tcb_s *tcb)
 		 */
 
 		if (current_regs) {
+#ifdef CONFIG_SCHED_TICKSUPPRESS
+			/* Disable tick suppression */
+			up_stop_ticksuppress();
+#endif
+
 			/* Yes, then we have to do things differently.
 			 * Just copy the current_regs into the OLD rtcb.
 			 */

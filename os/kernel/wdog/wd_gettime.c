@@ -129,3 +129,53 @@ int wd_gettime(WDOG_ID wdog)
 	irqrestore(flags);
 	return 0;
 }
+
+#ifdef CONFIG_SCHED_TICKSUPPRESS
+/********************************************************************************
+ * Name: wd_getdelay
+ *
+ * Description:
+ *  This function returns delay (in system ticks) from head of wdog active list.
+ *  This function is provided by RTOS and called from platform-specific code.
+ *
+ * Parameters:
+ *	None
+ *
+ * Return Value:
+ *  wdog delay in system ticks
+ *
+ * Assumptions:
+ *
+ ********************************************************************************/
+
+int wd_getdelay(void)
+{
+	return (g_wdactivelist.head) ? ((FAR struct wdog_s *)g_wdactivelist.head)->lag : 0;
+}
+
+/********************************************************************************
+ * Name: wd_updatedelay
+ *
+ * Description:
+ *	This function updates delay in head of wdog active list
+ *	using elapsed time in system ticks.
+ *	This function is provided by RTOS and called from platform-specific code.
+ *
+ * Parameters:
+ *   elapsed = elapsed time in system ticks
+ *
+ * Return Value:
+ *	None
+ *
+ * Assumptions:
+ *
+ ********************************************************************************/
+
+void wd_updatedelay(int elapsed)
+{
+	if (g_wdactivelist.head) {
+		/* Update  wdog lag (delay) */
+		((FAR struct wdog_s *)g_wdactivelist.head)->lag -= elapsed;
+	}
+}
+#endif

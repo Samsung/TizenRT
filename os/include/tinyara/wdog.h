@@ -180,6 +180,11 @@ int wd_start(WDOG_ID wdog, int delay, wdentry_t wdentry, int argc, ...);
 int wd_cancel(WDOG_ID wdog);
 int wd_gettime(WDOG_ID wdog);
 
+#ifdef CONFIG_SCHED_TICKSUPPRESS
+int wd_getdelay(void);
+void wd_updatedelay(int elapsed);
+#endif
+
 #undef EXTERN
 #ifdef __cplusplus
 }
