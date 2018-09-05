@@ -70,6 +70,7 @@ static int broad_undefined_cnt;
 static int pid_tm_utc;
 static int handle_tm_utc;
 static int broadcast_data_flag;
+static bool cb_flag;
 
 static sem_t tm_broad_sem;
 
@@ -136,12 +137,21 @@ void free_handler(void *info)
 	free(info);
 }
 
+static void test_stop_cb(void *data)
+{
+	cb_flag = true;
+}
+
 int tm_sample_main(int argc, char *argv[])
 {
 	int ret;
 
 	tm_noperm_handle = task_manager_register_builtin(TM_NOPERM_NAME, TM_APP_PERMISSION_DEDICATE, 100);
 
+	ret = task_manager_set_stop_cb(test_stop_cb, NULL);
+	if (ret != OK) {
+		cb_flag = false;
+	}
 	ret = task_manager_set_unicast_cb(test_unicast_handler);
 	if (ret != OK) {
 		printf("ERROR : fail to set handler\n");
@@ -417,6 +427,9 @@ static void utc_task_manager_unicast_p(void)
 	int sleep_cnt = 0;
 	tm_msg_t reply_msg;
 	tm_msg_t send_msg;
+
+	cb_flag = false;
+
 	send_msg.msg_size = strlen(TM_SAMPLE_MSG) + 1;
 	send_msg.msg = malloc(strlen(TM_SAMPLE_MSG));
 	TC_ASSERT_NEQ("task_manager_unicast", send_msg.msg, NULL);
@@ -444,7 +457,11 @@ static void utc_task_manager_unicast_p(void)
 
 	ret = task_manager_unicast(tm_not_builtin_handle, &send_msg, &reply_msg, TM_RESPONSE_WAIT_INF);
 	TC_ASSERT_EQ_CLEANUP("task_manager_unicast", ret, OK, free(send_msg.msg));
-	TC_ASSERT_EQ_CLEANUP("task_manager_unicast", strncmp((char *)reply_msg.msg, (char *)TM_SYNC_RECV_MSG, strlen(TM_SYNC_RECV_MSG)), 0, free(send_msg.msg));
+	if (strncmp((char *)reply_msg.msg, (char *)TM_SYNC_RECV_MSG, strlen(TM_SYNC_RECV_MSG)) == 0) {
+		cb_flag = true;
+	} else {
+		cb_flag = false;
+	}
 
 	free(send_msg.msg);
 	free(reply_msg.msg);
@@ -709,6 +726,7 @@ static void utc_task_manager_stop_p(void)
 {
 	int ret;
 
+	cb_flag = false;
 	ret = task_manager_stop(tm_sample_handle, TM_RESPONSE_WAIT_INF);
 	TC_ASSERT_EQ("task_manager_stop", ret, OK);
 
@@ -902,9 +920,42 @@ static void utc_task_manager_getinfo_with_pid_p(void)
 	TC_SUCCESS_RESULT();
 }
 
+static void utc_task_manager_set_stop_cb_n(void)
+{
+	int ret;
+	ret = task_manager_set_stop_cb(NULL, NULL);
+	TC_ASSERT_EQ("task_manager_set_stop_cb", ret, TM_INVALID_PARAM);
+
+	TC_SUCCESS_RESULT();	
+}
+
+static void utc_task_manager_set_stop_cb_p(void)
+{
+	TC_ASSERT_EQ("task_manager_set_stop_cb", cb_flag, true);
+
+	TC_SUCCESS_RESULT();	
+}
+
+static void utc_task_manager_reply_unicast_n(void)
+{
+	int ret;
+	ret = task_manager_reply_unicast(NULL);
+	TC_ASSERT_EQ("task_manager_reply_unicast", ret, TM_INVALID_PARAM);
+
+	TC_SUCCESS_RESULT();	
+}
+
+static void utc_task_manager_reply_unicast_p(void)
+{
+	TC_ASSERT_EQ("task_manager_reply_unicast", cb_flag, true);
+
+	TC_SUCCESS_RESULT();	
+}
+
 void tm_utc_main(void)
 {
 	pid_tm_utc = getpid();
+	cb_flag = false;
 	
 	utc_task_manager_alloc_broadcast_msg_p();
 
@@ -935,6 +986,9 @@ void tm_utc_main(void)
 	utc_task_manager_unicast_n();
 	utc_task_manager_unicast_p();
 
+	utc_task_manager_reply_unicast_n();
+	utc_task_manager_reply_unicast_p();
+
 	utc_task_manager_broadcast_n();
 	utc_task_manager_broadcast_p();
 
@@ -964,6 +1018,9 @@ void tm_utc_main(void)
 
 	utc_task_manager_stop_n();
 	utc_task_manager_stop_p();
+
+	utc_task_manager_set_stop_cb_n();
+	utc_task_manager_set_stop_cb_p();
 
 	utc_task_manager_unregister_n();
 	utc_task_manager_unregister_p();
