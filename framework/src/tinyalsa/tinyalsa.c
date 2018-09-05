@@ -1173,8 +1173,8 @@ int pcm_drain(struct pcm *pcm)
 			if (msg.msgId == AUDIO_MSG_DEQUEUE) {
 				pcm->buf_idx--;
 			} else if (msg.msgId == AUDIO_MSG_XRUN) {
-				/* Underrun to be handled by client */
-				return -EPIPE;
+				/* Ignore Underrun since we are trying to flush and close */
+				continue;
 			}
 		}
 
