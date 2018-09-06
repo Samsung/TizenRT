@@ -23,6 +23,7 @@
 #include <debug.h>
 #include <unistd.h>
 #include <libtuv/uv.h>
+#include <libtuv/uv__types.h>
 #include <eventloop/eventloop.h>
 
 #include "eventloop_internal.h"
@@ -92,15 +93,31 @@ int eventloop_loop_run(void)
 	return ret;
 }
 
+/* A function for closing each handle in loop called by iteration in uv_walk. */
+static void eventloop_close_handle(uv_handle_t *handle, void *data)
+{
+	if (!uv__is_closing(handle)) {
+		uv_close(handle, data);
+	}
+}
+
+/* It is called from callback function registered in loop.
+ * So uv_run in eventloop_loop_run will exit and loop is released after executing this function.
+ */
 int eventloop_loop_stop(void)
 {
 	int index;
 
 	index = PID_HASH(getpid());
+
 	/* If app loop is already finished or not exist, EVENTLOOP_LOOP_FAIL is returned. */
 	if (g_loop_list[index] == NULL) {
 		return EVENTLOOP_LOOP_FAIL;
 	}
 
-	return release_app_loop();
+	/* Stop loop and close all handles in loop */
+	uv_stop(g_loop_list[index]);
+	uv_walk(g_loop_list[index], (uv_walk_cb)eventloop_close_handle, NULL);
+
+	return OK;
 }
