@@ -197,6 +197,13 @@
 #define SIGEL_WAKEUP       CONFIG_SIG_SIGEL_WAKEUP
 #endif
 
+/* SIG_SIGTM_TERMINATION is used in Task Manager */
+#ifndef CONFIG_SIG_SIGTM_TERMINATION
+#define SIGTM_TERMINATION       23			/* Taskmgt signal */
+#else
+#define SIGTM_TERMINATION       CONFIG_SIG_SIGTM_TERMINATION
+#endif
+
 /* sigprocmask() "how" definitions. Only one of the following can be specified: */
 
 #define SIG_BLOCK       1		/* Block the given signals */

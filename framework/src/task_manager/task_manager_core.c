@@ -42,7 +42,6 @@
 #include <task_manager/task_manager_broadcast_list.h>
 #endif
 #include "task_manager_internal.h"
-
 /****************************************************************************
  * Private Definitions
  ****************************************************************************/
@@ -60,6 +59,7 @@ app_list_t tm_app_list[CONFIG_TASK_MANAGER_MAX_TASKS];
 tm_task_info_t tm_task_list[CONFIG_TASK_MANAGER_MAX_TASKS];
 static bool g_handle_hash[CONFIG_TASK_MANAGER_MAX_TASKS];
 int tm_broadcast_msg[TM_BROADCAST_MSG_MAX + CONFIG_TASK_MANAGER_MAX_TASKS];
+static int task_manager_pid;
 
 #define MAX_HANDLE_MASK (CONFIG_TASK_MANAGER_MAX_TASKS - 1)
 #define HANDLE_HASH(handle)  ((handle) & MAX_HANDLE_MASK)
@@ -238,10 +238,32 @@ static int taskmgr_unregister(int handle)
 #endif
 
 	TM_PID(handle) = 0;
-	TM_FREE(TM_STOP_CB_INFO(handle));
-	TM_STOP_CB_INFO(handle) = NULL;
-	TM_FREE(TM_EXIT_CB_INFO(handle));
-	TM_EXIT_CB_INFO(handle) = NULL;
+	if (TM_STOP_CB_INFO(handle) != NULL) {
+		if (STOP_CBDATA(handle) != NULL) {
+			if (STOP_CBDATA_MSG(handle) != NULL) {
+				TM_FREE(STOP_CBDATA_MSG(handle));
+				STOP_CBDATA_MSG(handle) = NULL;
+			}
+			TM_FREE(STOP_CBDATA(handle));
+			STOP_CBDATA(handle) = NULL;
+		}
+		TM_FREE(TM_STOP_CB_INFO(handle));
+		TM_STOP_CB_INFO(handle) = NULL;
+	}
+
+	if (TM_EXIT_CB_INFO(handle) != NULL) {
+		if (EXIT_CBDATA(handle) != NULL) {
+			if (EXIT_CBDATA_MSG(handle) != NULL) {
+				TM_FREE(EXIT_CBDATA_MSG(handle));
+				EXIT_CBDATA_MSG(handle) = NULL;
+			}
+			TM_FREE(EXIT_CBDATA(handle));
+			EXIT_CBDATA(handle) = NULL;
+		}
+		TM_FREE(TM_EXIT_CB_INFO(handle));
+		TM_EXIT_CB_INFO(handle) = NULL;
+	}
+
 	taskmgr_clear_broadcast_info_list(handle);
 	TM_FREE(tm_app_list[handle].addr);
 	tm_app_list[handle].addr = NULL;
@@ -316,16 +338,43 @@ static int taskmgr_start(int handle, int caller_pid)
 	return OK;
 }
 
+void taskmgr_update_stop_status(int signo, siginfo_t *data)
+{
+	int fd;
+	int ret;
+	int handle;
+	handle = taskmgr_get_handle_by_pid(data->si_value.sival_int);
+
+	/* Terminate based on task type */
+	fd = taskmgr_get_drvfd();
+	if (fd < 0) {
+		tmdbg("Invalid driver fd\n");
+	}
+
+	ret = ioctl(fd, TMIOC_TERMINATE, TM_PID(handle));
+	if (ret == ERROR) {
+		tmdbg("Fail to terminate the task\n");
+	}
+
+	/* task or pthread terminated well */
+	TM_STATUS(handle) = TM_APP_STATE_STOP;
+
+	TM_FREE(TM_STOP_CB_INFO(handle));
+	TM_STOP_CB_INFO(handle) = NULL;
+}
+
 static int taskmgr_stop(int handle, int caller_pid)
 {
 	int ret;
+	union sigval msg;
+	tm_termination_info_t info;
 
 	if (IS_INVALID_HANDLE(handle)) {
 		return TM_INVALID_PARAM;
 	}
 
 	ret = taskmgr_get_task_state(handle);
-	if (ret == TM_APP_STATE_UNREGISTERED || ret == TM_APP_STATE_STOP) {
+	if (ret == TM_APP_STATE_UNREGISTERED || ret == TM_APP_STATE_STOP || ret == TM_APP_STATE_CANCELLING) {
 		return -ret;
 	}
 
@@ -333,35 +382,36 @@ static int taskmgr_stop(int handle, int caller_pid)
 		return TM_NO_PERMISSION;
 	}
 
-
 	/* Call stop callback */
 	TM_STATUS(handle) = TM_APP_STATE_CANCELLING;
+
 	if (TM_STOP_CB_INFO(handle) != NULL) {
-		if (STOP_CBDATA(handle) != NULL) {
-			(*STOP_CBFUNC(handle))(STOP_CBDATA_MSG(handle));
-			TM_FREE(STOP_CBDATA_MSG(handle));
-			TM_FREE(STOP_CBDATA(handle));
-		} else {
-			(*STOP_CBFUNC(handle))(NULL);
+		info.cb = STOP_CBFUNC(handle);
+		info.cb_data = STOP_CBDATA(handle);
+		msg.sival_ptr = &info;
+
+		ret = sigqueue(TM_PID(handle), SIGTM_TERMINATION, msg);
+		if (ret != OK) {
+			tmdbg("Fail to send signal, errno : %d\n", errno);
+			return TM_OPERATION_FAIL;
 		}
-	}
-
-	if (TM_TYPE(handle) == TM_BUILTIN_TASK || TM_TYPE(handle) == TM_TASK) {
-		ret = task_delete(TM_PID(handle));
-	}
+	} else {
+		if (TM_TYPE(handle) == TM_BUILTIN_TASK || TM_TYPE(handle) == TM_TASK) {
+			ret = task_delete(TM_PID(handle));
+		}
 #ifndef CONFIG_DISABLE_PTHREAD
-	else {
-		(void)pthread_detach(TM_PID(handle));
-		ret = pthread_cancel(TM_PID(handle));
-	}
+		else {
+			(void)pthread_detach(TM_PID(handle));
+			ret = pthread_cancel(TM_PID(handle));
+		}
 #endif
-
-	if (ret != OK) {
-		tmdbg("Fail to delete the task\n");
-		return TM_OPERATION_FAIL;
+		if (ret != OK) {
+			tmdbg("Fail to delete the task\n");
+			return TM_OPERATION_FAIL;
+		}
+		/* task or pthread terminated well */
+		TM_STATUS(handle) = TM_APP_STATE_STOP;
 	}
-	/* task or pthread terminated well */
-	TM_STATUS(handle) = TM_APP_STATE_STOP;
 
 	return OK;
 }
@@ -732,6 +782,7 @@ static int taskmgr_getinfo_with_handle(int handle, tm_response_t *response_msg)
 
 static void taskmgr_termination_callback(void)
 {
+	task_manager_pid = TM_TASK_MGR_NOT_ALIVE;
 	mq_close(g_tm_recv_mqfd);
 	mq_unlink(TM_PUBLIC_MQ);
 }
@@ -1106,24 +1157,33 @@ static int taskmgr_set_termination_cb(int type, void *data, int pid)
 	}
 
 	if (type == TYPE_CANCEL) {
-		TM_STOP_CB_INFO(handle) = (tm_termination_info_t *)TM_ALLOC(sizeof(tm_termination_info_t));
 		if (TM_STOP_CB_INFO(handle) == NULL) {
-			return TM_OUT_OF_MEMORY;
+			TM_STOP_CB_INFO(handle) = (tm_termination_info_t *)TM_ZALLOC(sizeof(tm_termination_info_t));
+			if (TM_STOP_CB_INFO(handle) == NULL) {
+				return TM_OUT_OF_MEMORY;
+			}
 		}
 		STOP_CBFUNC(handle) = INPUT_CBFUNC(data);
 		if (INPUT_DATA(data) != NULL) {
-			STOP_CBDATA(handle) = (tm_msg_t *)TM_ALLOC(sizeof(tm_msg_t));
 			if (STOP_CBDATA(handle) == NULL) {
-				TM_FREE(TM_STOP_CB_INFO(handle));
-				return TM_OUT_OF_MEMORY;
+				STOP_CBDATA(handle) = (tm_msg_t *)TM_ALLOC(sizeof(tm_msg_t));
+				if (STOP_CBDATA(handle) == NULL) {
+					TM_FREE(TM_STOP_CB_INFO(handle));
+					return TM_OUT_OF_MEMORY;
+				}
 			}
-			STOP_CBDATA_MSG_SIZE(handle) = INPUT_DATA_MSG_SIZE(data);
-			STOP_CBDATA_MSG(handle) = TM_ALLOC(INPUT_DATA_MSG_SIZE(data));
-			if (STOP_CBDATA_MSG(handle) == NULL) {
-				TM_FREE(STOP_CBDATA(handle));
-				TM_FREE(TM_STOP_CB_INFO(handle));
-				return TM_OUT_OF_MEMORY;
+
+			if (STOP_CBDATA_MSG_SIZE(handle) != INPUT_DATA_MSG_SIZE(data)) {
+				TM_FREE(STOP_CBDATA_MSG(handle));
+				STOP_CBDATA_MSG(handle) = TM_ALLOC(INPUT_DATA_MSG_SIZE(data));
+				if (STOP_CBDATA_MSG(handle) == NULL) {
+					TM_FREE(STOP_CBDATA(handle));
+					TM_FREE(TM_STOP_CB_INFO(handle));
+					return TM_OUT_OF_MEMORY;
+				}
+				STOP_CBDATA_MSG_SIZE(handle) = INPUT_DATA_MSG_SIZE(data);
 			}
+
 			memcpy(STOP_CBDATA_MSG(handle), INPUT_DATA_MSG(data), INPUT_DATA_MSG_SIZE(data));
 			TM_FREE(INPUT_DATA_MSG(data));
 			TM_FREE(INPUT_DATA(data));
@@ -1131,24 +1191,33 @@ static int taskmgr_set_termination_cb(int type, void *data, int pid)
 			STOP_CBDATA(handle) = NULL;
 		}
 	} else {
-		TM_EXIT_CB_INFO(handle) = (tm_termination_info_t *)TM_ALLOC(sizeof(tm_termination_info_t));
 		if (TM_EXIT_CB_INFO(handle) == NULL) {
-			return TM_OUT_OF_MEMORY;
+			TM_EXIT_CB_INFO(handle) = (tm_termination_info_t *)TM_ZALLOC(sizeof(tm_termination_info_t));
+			if (TM_EXIT_CB_INFO(handle) == NULL) {
+				return TM_OUT_OF_MEMORY;
+			}
 		}
 		EXIT_CBFUNC(handle) = INPUT_CBFUNC(data);
 		if (INPUT_DATA(data) != NULL) {
-			EXIT_CBDATA(handle) = (tm_msg_t *)TM_ALLOC(sizeof(tm_msg_t));
 			if (EXIT_CBDATA(handle) == NULL) {
-				TM_FREE(TM_EXIT_CB_INFO(handle));
-				return TM_OUT_OF_MEMORY;
+				EXIT_CBDATA(handle) = (tm_msg_t *)TM_ALLOC(sizeof(tm_msg_t));
+				if (EXIT_CBDATA(handle) == NULL) {
+					TM_FREE(TM_EXIT_CB_INFO(handle));
+					return TM_OUT_OF_MEMORY;
+				}
 			}
-			EXIT_CBDATA_MSG_SIZE(handle) = INPUT_DATA_MSG_SIZE(data);
-			EXIT_CBDATA_MSG(handle) = TM_ALLOC(INPUT_DATA_MSG_SIZE(data));
-			if (EXIT_CBDATA_MSG(handle) == NULL) {
-				TM_FREE(EXIT_CBDATA(handle));
-				TM_FREE(TM_EXIT_CB_INFO(handle));
-				return TM_OUT_OF_MEMORY;
+
+			if (EXIT_CBDATA_MSG_SIZE(handle) != INPUT_DATA_MSG_SIZE(data)) {
+				TM_FREE(EXIT_CBDATA_MSG(handle));
+				EXIT_CBDATA_MSG(handle) = TM_ALLOC(INPUT_DATA_MSG_SIZE(data));
+				if (EXIT_CBDATA_MSG(handle) == NULL) {
+					TM_FREE(EXIT_CBDATA(handle));
+					TM_FREE(TM_EXIT_CB_INFO(handle));
+					return TM_OUT_OF_MEMORY;
+				}
+				EXIT_CBDATA_MSG_SIZE(handle) = INPUT_DATA_MSG_SIZE(data);
 			}
+
 			memcpy(EXIT_CBDATA_MSG(handle), INPUT_DATA_MSG(data), INPUT_DATA_MSG_SIZE(data));
 			TM_FREE(INPUT_DATA_MSG(data));
 			TM_FREE(INPUT_DATA(data));
@@ -1195,6 +1264,13 @@ static int taskmgr_dealloc_broadcast_msg(int msg)
 	return TM_UNREGISTERED_MSG;
 }
 
+int taskmgr_get_task_manager_pid(void)
+{
+	if (task_manager_pid > 0) {
+		return task_manager_pid;
+	}
+	return TM_TASK_MGR_NOT_ALIVE;
+}
 /****************************************************************************
  * Main Function
  ****************************************************************************/
@@ -1205,12 +1281,15 @@ int task_manager(int argc, char *argv[])
 	tm_request_t request_msg;
 	tm_response_t response_msg;
 	struct mq_attr attr;
+	struct sigaction act;
 #ifdef CONFIG_SCHED_HAVE_PARENT
 	sigignore(SIGCHLD);
 #endif
 	attr.mq_maxmsg = CONFIG_TASK_MANAGER_MAX_MSG;
 	attr.mq_msgsize = sizeof(tm_request_t);
 	attr.mq_flags = 0;
+
+	task_manager_pid = getpid();
 
 	builtin_cnt = get_builtin_list_cnt();
 
@@ -1233,6 +1312,22 @@ int task_manager(int argc, char *argv[])
 	/* Register callback when termination */
 	if (atexit((void *)taskmgr_termination_callback) != OK) {
 		return 0;
+	}
+
+	act.sa_sigaction = (_sa_sigaction_t)taskmgr_update_stop_status;
+	act.sa_flags = 0;
+	(void)sigemptyset(&act.sa_mask);
+
+	ret = sigaddset(&act.sa_mask, SIGTM_TERMINATION);
+	if (ret < 0) {
+		tmdbg("Failed to add signal set\n");
+		return TM_OPERATION_FAIL;
+	}
+
+	ret = sigaction(SIGTM_TERMINATION, &act, NULL);
+	if (ret == (int)SIG_ERR) {
+		tmdbg("sigaction Failed\n");
+		return TM_OPERATION_FAIL;
 	}
 
 	while (1) {

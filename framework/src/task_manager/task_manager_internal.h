@@ -73,14 +73,12 @@
 /* Wrapper of allocation APIs */
 #define TM_ALLOC(a)  malloc(a)
 #define TM_FREE(a)   free(a)
+#define TM_ZALLOC(a) zalloc(a)
 #ifdef CONFIG_CPP_HAVE_VARARGS
 #define TM_ASPRINTF(p, f, ...) asprintf(p, f, ##__VA_ARGS__)
 #else
 #define TM_ASPRINTF asprintf
 #endif
-
-/* Temporary State for Cancel */
-#define TM_APP_STATE_CANCELLING -1
 
 /**
  * @brief Unicast Type
@@ -196,5 +194,6 @@ int taskmgr_get_task_state(int handle);
 int taskmgr_get_drvfd(void);
 int taskmgr_get_handle_by_pid(int pid);
 int taskmgr_calc_time(struct timespec *time, int timeout);
+int taskmgr_get_task_manager_pid(void);
 
 #endif

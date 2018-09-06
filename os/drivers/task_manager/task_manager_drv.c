@@ -178,6 +178,27 @@ static int taskmgr_ioctl(FAR struct file *filep, int cmd, unsigned long arg)
 		}
 		ret = OK;
 		break;
+	case TMIOC_TERMINATE:
+		tcb = sched_gettcb((int)arg);
+		if (tcb == NULL) {
+			tmdbg("Invalid pid\n");
+			return ERROR;
+		}
+		if ((tcb->flags & TCB_FLAG_TTYPE_MASK) >> TCB_FLAG_TTYPE_SHIFT == TCB_FLAG_TTYPE_TASK) {
+			ret = task_delete(tcb->pid);
+			if (ret != OK) {
+				return ERROR;
+			}
+		}
+#ifndef CONFIG_DISABLE_PTHREAD
+		else {
+			(void)pthread_detach(tcb->pid);
+			ret = pthread_cancel(tcb->pid);
+			if (ret != OK) {
+				return ERROR;
+			}
+		}
+#endif
 	default:
 		tmdbg("Unrecognized cmd: %d arg: %ld\n", cmd, arg);
 		break;

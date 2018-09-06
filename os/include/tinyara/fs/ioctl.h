@@ -365,6 +365,7 @@
 #define TMIOC_UNICAST              _TMIOC(0x0005)
 #define TMIOC_BROADCAST            _TMIOC(0x0006)
 #define TMIOC_CHECK_ALIVE          _TMIOC(0x0007)
+#define TMIOC_TERMINATE            _TMIOC(0x0008)
 
 /****************************************************************************
  * Public Type Definitions
