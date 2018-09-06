@@ -180,7 +180,7 @@ static const struct audio_ops_s g_audioops = {
 
 static int null_getcaps(FAR struct audio_lowerhalf_s *dev, int type, FAR struct audio_caps_s *caps)
 {
-	audinfo("type=%d\n", type);
+	audvdbg("type=%d\n", type);
 
 	/* Validate the structure */
 
@@ -280,8 +280,11 @@ static int null_getcaps(FAR struct audio_lowerhalf_s *dev, int type, FAR struct 
 		case AUDIO_PU_UNDEF:
 
 			/* Provide the type of Processing Units we support */
-
 			caps->ac_controls.b[0] = AUDIO_PU_STEREO_EXTENDER;
+
+#ifdef CONFIG_AUDIO_SPEECH_DETECT_FEATURES			
+			caps->ac_controls.b[0] |= AUDIO_PU_SPEECH_DETECT;
+#endif
 			break;
 
 		case AUDIO_PU_STEREO_EXTENDER:
@@ -290,6 +293,24 @@ static int null_getcaps(FAR struct audio_lowerhalf_s *dev, int type, FAR struct 
 
 			caps->ac_controls.b[0] = AUDIO_STEXT_ENABLE | AUDIO_STEXT_WIDTH;
 			break;
+			
+		case AUDIO_PU_SPEECH_DETECT:
+
+			/* Provide capabilities of our Speech Detect */
+#ifdef CONFIG_AUDIO_SPEECH_DETECT_FEATURES
+
+#ifdef CONFIG_AUDIO_KEYWORD_DETECT	
+			caps->ac_controls.b[0] = AUDIO_SD_ENDPOINT_DETECT;
+#endif
+
+#ifdef CONFIG_AUDIO_ENDPOINT_DETECT
+			caps->ac_controls.b[0] |= AUDIO_SD_KEYWORD_DETECT;
+#endif
+
+#else
+			caps->ac_controls.b[0] = AUDIO_SD_UNDEF;
+#endif
+		break;
 
 		default:
 
@@ -316,7 +337,7 @@ static int null_getcaps(FAR struct audio_lowerhalf_s *dev, int type, FAR struct 
 	 * proper Audio device type.
 	 */
 
-	audinfo("Return %d\n", caps->ac_len);
+	audvdbg("Return %d\n", caps->ac_len);
 	return caps->ac_len;
 }
 
@@ -334,46 +355,46 @@ static int null_configure(FAR struct audio_lowerhalf_s *dev, FAR void *session, 
 static int null_configure(FAR struct audio_lowerhalf_s *dev, FAR const struct audio_caps_s *caps)
 #endif
 {
-	audinfo("ac_type: %d\n", caps->ac_type);
+	audvdbg("ac_type: %d\n", caps->ac_type);
 
 	/* Process the configure operation */
 
 	switch (caps->ac_type) {
 	case AUDIO_TYPE_FEATURE:
-		audinfo("  AUDIO_TYPE_FEATURE\n");
+		audvdbg("  AUDIO_TYPE_FEATURE\n");
 
 		/* Process based on Feature Unit */
 
 		switch (caps->ac_format.hw) {
 #ifndef CONFIG_AUDIO_EXCLUDE_TONE
 		case AUDIO_FU_BASS:
-			audinfo("    Bass: %d\n", caps->ac_controls.b[0]);
+			audvdbg("    Bass: %d\n", caps->ac_controls.b[0]);
 			break;
 
 		case AUDIO_FU_TREBLE:
-			audinfo("    Treble: %d\n", caps->ac_controls.b[0]);
+			audvdbg("    Treble: %d\n", caps->ac_controls.b[0]);
 			break;
 #endif							/* CONFIG_AUDIO_EXCLUDE_TONE */
 
 		default:
-			auderr("    ERROR: Unrecognized feature unit\n");
+			auddbg("    ERROR: Unrecognized feature unit\n");
 			break;
 		}
 		break;
 
 	case AUDIO_TYPE_OUTPUT:
-		audinfo("  AUDIO_TYPE_OUTPUT:\n");
-		audinfo("    Number of channels: %u\n", caps->ac_channels);
-		audinfo("    Sample rate:        %u\n", caps->ac_controls.hw[0]);
-		audinfo("    Sample width:       %u\n", caps->ac_controls.b[2]);
+		audvdbg("  AUDIO_TYPE_OUTPUT:\n");
+		audvdbg("    Number of channels: %u\n", caps->ac_channels);
+		audvdbg("    Sample rate:        %u\n", caps->ac_controls.hw[0]);
+		audvdbg("    Sample width:       %u\n", caps->ac_controls.b[2]);
 		break;
 
 	case AUDIO_TYPE_PROCESSING:
-		audinfo("  AUDIO_TYPE_PROCESSING:\n");
+		audvdbg("  AUDIO_TYPE_PROCESSING:\n");
 		break;
 	}
 
-	audinfo("Return OK\n");
+	audvdbg("Return OK\n");
 	return OK;
 }
 
@@ -387,7 +408,7 @@ static int null_configure(FAR struct audio_lowerhalf_s *dev, FAR const struct au
 
 static int null_shutdown(FAR struct audio_lowerhalf_s *dev)
 {
-	audinfo("Return OK\n");
+	audvdbg("Return OK\n");
 	return OK;
 }
 
@@ -406,7 +427,7 @@ static void *null_workerthread(pthread_addr_t pvarg)
 	int msglen;
 	int prio;
 
-	audinfo("Entry\n");
+	audvdbg("Entry\n");
 
 	/* Loop as long as we are supposed to be running */
 
@@ -423,7 +444,7 @@ static void *null_workerthread(pthread_addr_t pvarg)
 		/* Handle the case when we return with no message */
 
 		if (msglen < sizeof(struct audio_msg_s)) {
-			auderr("ERROR: Message too small: %d\n", msglen);
+			auddbg("ERROR: Message too small: %d\n", msglen);
 			continue;
 		}
 
@@ -446,7 +467,7 @@ static void *null_workerthread(pthread_addr_t pvarg)
 			break;
 
 		default:
-			auderr("ERROR: Ignoring message ID %d\n", msg.msgId);
+			audvdbg("ERROR: Ignoring message ID %d\n", msg.msgId);
 			break;
 		}
 	}
@@ -465,7 +486,7 @@ static void *null_workerthread(pthread_addr_t pvarg)
 	priv->dev.upper(priv->dev.priv, AUDIO_CALLBACK_COMPLETE, NULL, OK);
 #endif
 
-	audinfo("Exit\n");
+	audvdbg("Exit\n");
 	return NULL;
 }
 
@@ -490,7 +511,7 @@ static int null_start(FAR struct audio_lowerhalf_s *dev)
 	FAR void *value;
 	int ret;
 
-	audinfo("Entry\n");
+	auddbg("Entry\n");
 
 	/* Create a message queue for the worker thread */
 
@@ -505,14 +526,14 @@ static int null_start(FAR struct audio_lowerhalf_s *dev)
 	if (priv->mq == NULL) {
 		/* Error creating message queue! */
 
-		auderr("ERROR: Couldn't allocate message queue\n");
+		audvdbg("ERROR: Couldn't allocate message queue\n");
 		return -ENOMEM;
 	}
 
 	/* Join any old worker thread we had created to prevent a memory leak */
 
 	if (priv->threadid != 0) {
-		audinfo("Joining old thread\n");
+		audvdbg("Joining old thread\n");
 		pthread_join(priv->threadid, &value);
 	}
 
@@ -523,16 +544,16 @@ static int null_start(FAR struct audio_lowerhalf_s *dev)
 	(void)pthread_attr_setschedparam(&tattr, &sparam);
 	(void)pthread_attr_setstacksize(&tattr, CONFIG_AUDIO_NULL_WORKER_STACKSIZE);
 
-	audinfo("Starting worker thread\n");
+	audvdbg("Starting worker thread\n");
 	ret = pthread_create(&priv->threadid, &tattr, null_workerthread, (pthread_addr_t) priv);
 	if (ret != OK) {
-		auderr("ERROR: pthread_create failed: %d\n", ret);
+		auddbg("ERROR: pthread_create failed: %d\n", ret);
 	} else {
 		pthread_setname_np(priv->threadid, "null audio");
-		audinfo("Created worker thread\n");
+		auddbg("Created worker thread\n");
 	}
 
-	audinfo("Return %d\n", ret);
+	audvdbg("Return %d\n", ret);
 	return ret;
 }
 
@@ -569,7 +590,7 @@ static int null_stop(FAR struct audio_lowerhalf_s *dev)
 	pthread_join(priv->threadid, &value);
 	priv->threadid = 0;
 
-	audinfo("Return OK\n");
+	audvdbg("Return OK\n");
 	return OK;
 }
 #endif
@@ -588,7 +609,7 @@ static int null_pause(FAR struct audio_lowerhalf_s *dev, FAR void *session)
 static int null_pause(FAR struct audio_lowerhalf_s *dev)
 #endif
 {
-	audinfo("Return OK\n");
+	audvdbg("Return OK\n");
 	return OK;
 }
 #endif							/* CONFIG_AUDIO_EXCLUDE_PAUSE_RESUME */
@@ -607,7 +628,7 @@ static int null_resume(FAR struct audio_lowerhalf_s *dev, FAR void *session)
 static int null_resume(FAR struct audio_lowerhalf_s *dev)
 #endif
 {
-	audinfo("Return OK\n");
+	audvdbg("Return OK\n");
 	return OK;
 }
 #endif							/* CONFIG_AUDIO_EXCLUDE_PAUSE_RESUME */
@@ -624,7 +645,7 @@ static int null_enqueuebuffer(FAR struct audio_lowerhalf_s *dev, FAR struct ap_b
 	FAR struct null_dev_s *priv = (FAR struct null_dev_s *)dev;
 	bool done;
 
-	audinfo("apb=%p curbyte=%d nbytes=%d\n", apb, apb->curbyte, apb->nbytes);
+	audvdbg("apb=%p curbyte=%d nbytes=%d\n", apb, apb->curbyte, apb->nbytes);
 
 	/* Say that we consumed all of the data */
 
@@ -658,7 +679,7 @@ static int null_enqueuebuffer(FAR struct audio_lowerhalf_s *dev, FAR struct ap_b
 #endif
 	}
 
-	audinfo("Return OK\n");
+	audvdbg("Return OK\n");
 	return OK;
 }
 
@@ -671,7 +692,7 @@ static int null_enqueuebuffer(FAR struct audio_lowerhalf_s *dev, FAR struct ap_b
 
 static int null_cancelbuffer(FAR struct audio_lowerhalf_s *dev, FAR struct ap_buffer_s *apb)
 {
-	audinfo("apb=%p curbyte=%d nbytes=%d, return OK\n", apb, apb->curbyte, apb->nbytes);
+	audvdbg("apb=%p curbyte=%d nbytes=%d, return OK\n", apb, apb->curbyte, apb->nbytes);
 
 	return OK;
 }
@@ -689,7 +710,7 @@ static int null_ioctl(FAR struct audio_lowerhalf_s *dev, int cmd, unsigned long 
 	FAR struct ap_buffer_info_s *bufinfo;
 #endif
 
-	audinfo("cmd=%d arg=%ld\n");
+	audvdbg("cmd=%d arg=%ld\n");
 
 	/* Deal with ioctls passed from the upper-half driver */
 
@@ -698,14 +719,14 @@ static int null_ioctl(FAR struct audio_lowerhalf_s *dev, int cmd, unsigned long 
 	 * through from the upper-half audio driver.
 	 */
 	case AUDIOIOC_HWRESET: {
-		audinfo("AUDIOIOC_HWRESET:\n");
+		audvdbg("AUDIOIOC_HWRESET:\n");
 	}
 	break;
 		/* Report our preferred buffer size and quantity */
 
 #ifdef CONFIG_AUDIO_DRIVER_SPECIFIC_BUFFERS
 	case AUDIOIOC_GETBUFFERINFO: {
-		audinfo("AUDIOIOC_GETBUFFERINFO:\n");
+		audvdbg("AUDIOIOC_GETBUFFERINFO:\n");
 		bufinfo = (FAR struct ap_buffer_info_s *)arg;
 		bufinfo->buffer_size = CONFIG_AUDIO_NULL_BUFFER_SIZE;
 		bufinfo->nbuffers = CONFIG_AUDIO_NULL_NUM_BUFFERS;
@@ -717,7 +738,7 @@ static int null_ioctl(FAR struct audio_lowerhalf_s *dev, int cmd, unsigned long 
 		break;
 	}
 
-	audinfo("Return OK\n");
+	audvdbg("Return OK\n");
 	return OK;
 }
 
@@ -734,7 +755,7 @@ static int null_reserve(FAR struct audio_lowerhalf_s *dev, FAR void **session)
 static int null_reserve(FAR struct audio_lowerhalf_s *dev)
 #endif
 {
-	audinfo("Return OK\n");
+	audvdbg("Return OK\n");
 	return OK;
 }
 
@@ -801,6 +822,6 @@ FAR struct audio_lowerhalf_s *audio_null_initialize(void)
 		return &priv->dev;
 	}
 
-	auderr("ERROR: Failed to allocate null audio device\n");
+	auddbg("ERROR: Failed to allocate null audio device\n");
 	return NULL;
 }

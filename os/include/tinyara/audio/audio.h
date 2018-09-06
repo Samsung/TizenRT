@@ -135,16 +135,18 @@
 #define AUDIOIOC_ALLOCBUFFER        _AUDIOIOC(11)
 #define AUDIOIOC_FREEBUFFER         _AUDIOIOC(12)
 #define AUDIOIOC_ENQUEUEBUFFER      _AUDIOIOC(13)
-#define AUDIOIOC_REGISTERMQ         _AUDIOIOC(14)
+#define AUDIOIOC_REGISTERMQ         _AUDIOIOC(14) /* For Audio Operation (Enqueue, Dequeue, XRUN...) */
 #define AUDIOIOC_UNREGISTERMQ       _AUDIOIOC(15)
-#define AUDIOIOC_HWRESET            _AUDIOIOC(16)
-#define AUDIOIOC_DEQUEUEBUFFER      _AUDIOIOC(17)
-#define AUDIOIOC_PREPARE            _AUDIOIOC(18)
-#define AUDIOIOC_SETVOLUME          _AUDIOIOC(19)
-#define AUDIOIOC_GETVOLUME          _AUDIOIOC(20)
+#define AUDIOIOC_REGISTEREVENTMQ    _AUDIOIOC(16) /* For Audio DSP Event (EPD, Keyword Detect...) */
+#define AUDIOIOC_UNREGISTEREVENTMQ  _AUDIOIOC(17)
+#define AUDIOIOC_HWRESET            _AUDIOIOC(18)
+#define AUDIOIOC_DEQUEUEBUFFER      _AUDIOIOC(19)
+#define AUDIOIOC_PREPARE            _AUDIOIOC(20)
+#define AUDIOIOC_SETVOLUME          _AUDIOIOC(21)
+#define AUDIOIOC_GETVOLUME          _AUDIOIOC(22)
 
 /* Audio Device Types *******************************************************/
-/* The NuttX audio interface support different types of audio devices for
+/* The audio interface support different types of audio devices for
  * input, output, synthesis, and manipulation of audio data.  A given driver/
  * device could support a combination of these device type.  The following
  * is a list of bit-field definitions for defining the device type.
@@ -161,7 +163,7 @@
 #define AUDIO_TYPE_EXTENSION        0x80
 
 /* Audio Format Types *******************************************************/
-/* The following defines the audio data format types in NuttX.  During a
+/* The following defines the audio data format types in TizenRT.  During a
  * format query, these will be converted to bit positions within the
  * ac_format field, meaning we currently only support up to 16 formats. To
  * support more than that, we will use the FMT_OTHER entry, and the
@@ -266,28 +268,43 @@
 
 /* Processing Unit controls *************************************************/
 
-#define AUDIO_PU_UNDEF              0x00
-#define AUDIO_PU_UPDOWNMIX          0x01
-#define AUDIO_PU_DOLBY_PROLOGIC     0x02
-#define AUDIO_PU_STEREO_EXTENDER    0x03
-#define AUDIO_PU_SUBSAMPLE_FORWARD  0x04
-#define AUDIO_PU_SUBSAMPLE_REWIND   0x05
+#define AUDIO_PU_UNDEF              0x0000
+#define AUDIO_PU_UPDOWNMIX          0x0001
+#define AUDIO_PU_DOLBY_PROLOGIC     0x0002
+#define AUDIO_PU_STEREO_EXTENDER    0x0004
+#define AUDIO_PU_SUBSAMPLE_FORWARD  0x0008
+#define AUDIO_PU_SUBSAMPLE_REWIND   0x0010
+#define AUDIO_PU_SPEECH_DETECT      0x0020
 
 /* Stereo Extender PU Controls **********************************************/
 
-#define AUDIO_STEXT_UNDEF           0x00
-#define AUDIO_STEXT_ENABLE          0x01
-#define AUDIO_STEXT_WIDTH           0x02
-#define AUDIO_STEXT_UNDERFLOW       0x03
-#define AUDIO_STEXT_OVERFLOW        0x04
-#define AUDIO_STEXT_LATENCY         0x05
+#define AUDIO_STEXT_UNDEF           0x0000
+#define AUDIO_STEXT_ENABLE          0x0001
+#define AUDIO_STEXT_WIDTH           0x0002
+#define AUDIO_STEXT_UNDERFLOW       0x0004
+#define AUDIO_STEXT_OVERFLOW        0x0008
+#define AUDIO_STEXT_LATENCY         0x0010
 
-/* Audio Callback Reasons ***************************************************/
+/* Speech Detect PU controls **************************************************/
+
+#define AUDIO_SD_UNDEF              0x0020
+#define AUDIO_SD_ENDPOINT_DETECT    0x0040
+#define AUDIO_SD_KEYWORD_DETECT     0x0080
+#define AUDIO_SD_NS                 0x0100
+#define AUDIO_SD_CLEAR              0x0200
+
+/* Audio Operation Callback Reasons ***************************************************/
 
 #define AUDIO_CALLBACK_UNDEF        0x00
 #define AUDIO_CALLBACK_DEQUEUE      0x01
 #define AUDIO_CALLBACK_IOERR        0x02
 #define AUDIO_CALLBACK_COMPLETE     0x03
+
+/* Audio Event Callback Reasons ***************************************************/
+
+#define AUDIO_CALLBACK_KEYWORD      0x04
+#define AUDIO_CALLBACK_ENDPOINT     0x05
+#define AUDIO_CALLBACK_NS           0x06
 
 /* Audio Pipeline Buffer (AP Buffer) flags **********************************/
 
@@ -314,7 +331,7 @@
 #define AUDIO_MSG_DATA_REQUEST      6
 #define AUDIO_MSG_ENQUEUE           7
 #define AUDIO_MSG_COMPLETE          8
-#define AUDIO_MSG_XRUN		    9
+#define AUDIO_MSG_XRUN		        9
 #define AUDIO_MSG_USER             64
 
 /* Audio Pipeline Buffer flags */
@@ -640,6 +657,12 @@ struct audio_lowerhalf_s {
 	/* The private opaque pointer to be passed to upper-layer during callbacks */
 
 	FAR void *priv;
+	
+#ifdef DSP_PROCESSING_EVENT
+	/* Message queue to handle dsp event(EPD, Keyword Detect, etc) */
+	
+	mqd_t eventmq;
+#endif
 
 	/* The custom Audio device state structure may include additional fields
 	 * after the pointer to the Audio callback structure.
@@ -677,7 +700,7 @@ extern "C" {
  *
  * Input parameters:
  *   name - The name of the audio device.  This name will be used to generate
- *     a full path to the driver in the format "/dev/audio/[name]" in the NuttX
+ *     a full path to the driver in the format "/dev/audio/[name]" in the TizenRT
  *     filesystem (i.e. the path "/dev/audio" will be prepended to the supplied
  *     device name.  The recommended convention is to name Audio drivers
  *     based on the type of functionality they provide, such as "/dev/audio/pcm0",

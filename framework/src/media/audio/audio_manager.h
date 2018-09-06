@@ -27,6 +27,7 @@
 #include <sys/time.h>
 #include <stddef.h>
 #include <stdint.h>
+#include <tinyara/audio/audio.h>
 
 #if defined(__cplusplus)
 extern "C" {
@@ -39,6 +40,8 @@ extern "C" {
  * @brief Result types of Audio Manager APIs such as FAIL, SUCCESS, or INVALID ARGS
  */
 enum audio_manager_result_e {
+	AUDIO_MANAGER_SET_STREAM_POLICY_NOT_ALLOWED = -11,
+	AUDIO_MANAGER_SET_STREAM_POLICY_FAIL = -10,
 	AUDIO_MANAGER_DEVICE_NOT_SUPPORT = -9,
 	AUDIO_MANAGER_RESAMPLE_FAIL = -8,
 	AUDIO_MANAGER_DEVICE_FAIL = -7,
@@ -52,6 +55,63 @@ enum audio_manager_result_e {
 };
 
 typedef enum audio_manager_result_e audio_manager_result_t;
+
+/**
+ * @brief Stream Policy of Audio Manager, high value means higher priority
+ */
+enum audio_manager_stream_policy_e {
+	AUDIO_MANAGER_STREAM_TYPE_MEDIA = 0,
+	AUDIO_MANAGER_STREAM_TYPE_VOIP = 1,
+	AUDIO_MANAGER_STREAM_TYPE_NOTIFY = 2,
+	AUDIO_MANAGER_STREAM_TYPE_VOICE_RECOGNITION = 3,
+	AUDIO_MANAGER_STREAM_TYPE_EMERGENCY = 4
+};
+
+typedef enum audio_manager_stream_policy_e audio_manager_stream_policy_t;
+
+/**
+ * @brief Type of device
+ */
+enum audio_device_type_e {
+	AUDIO_DEVICE_TYPE_SPEAKER = 0,
+	AUDIO_DEVICE_TYPE_MIC = 1,
+	AUDIO_DEVICE_TYPE_BT = 2,
+	AUDIO_DEVICE_TYPE_AUDIO_JACK = 3
+};
+
+typedef enum audio_device_type_e audio_device_type_t;
+
+/* TODO below constant of AUDIO should be encapsulated */
+
+/**
+ * @brief Defined values for handling process of voice recognition on device, provides as a interface.
+ */
+enum audio_device_process_unit_type_e {
+	AUDIO_DEVICE_PROCESS_TYPE_NONE = AUDIO_PU_UNDEF,
+	AUDIO_DEVICE_PROCESS_TYPE_STEREO_EXTENDER = AUDIO_PU_STEREO_EXTENDER,
+	AUDIO_DEVICE_PROCESS_TYPE_SPEECH_DETECTOR = AUDIO_PU_SPEECH_DETECT,
+};
+
+typedef enum audio_device_process_unit_type_e device_process_type_t;
+
+enum audio_device_process_unit_subtype_e {
+	/* For Stream Out */
+	AUDIO_DEVICE_STEREO_EXTENDER_NONE = AUDIO_STEXT_UNDEF,
+	AUDIO_DEVICE_STEREO_EXTENDER_ENABLE = AUDIO_STEXT_ENABLE,
+	AUDIO_DEVICE_STEREO_EXTENDER_WIDTH = AUDIO_STEXT_WIDTH,
+	AUDIO_DEVICE_STEREO_EXTENDER_UNDERFLOW = AUDIO_STEXT_UNDERFLOW,
+	AUDIO_DEVICE_STEREO_EXTENDER_OVERFLOW = AUDIO_STEXT_OVERFLOW,
+	AUDIO_DEVICE_STEREO_EXTENDER_LATENCY = AUDIO_STEXT_LATENCY,
+
+	/* For Stream In */
+	AUDIO_DEVICE_SPEECH_DETECT_NONE = AUDIO_SD_UNDEF,
+	AUDIO_DEVICE_SPEECH_DETECT_EPD = AUDIO_SD_ENDPOINT_DETECT,
+	AUDIO_DEVICE_SPEECH_DETECT_KD = AUDIO_SD_KEYWORD_DETECT,
+	AUDIO_DEVICE_SPEECH_DETECT_NS = AUDIO_SD_NS,
+	AUDIO_DEVICE_SPEECH_DETECT_CLEAR = AUDIO_SD_CLEAR
+};
+
+typedef enum audio_device_process_unit_subtype_e device_process_subtype_t;
 
 /****************************************************************************
  * Public Function Prototypes
@@ -375,6 +435,151 @@ audio_manager_result_t set_input_audio_gain(uint8_t gain);
  *   On success, AUDIO_MANAGER_SUCCESS. Otherwise, a negative value.
  ****************************************************************************/
 audio_manager_result_t set_output_audio_volume(uint8_t volume);
+
+/****************************************************************************
+ * Name: find_stream_in_device_with_process_type
+ *
+ * Description:
+ *   Find stream in device that supports specific process on dsp
+ *
+ * Input parameter:
+ *   type : supported type of processing, subtype : supported sub type of processing
+ *   card_id : founded card id to be returned, device_id : founded device id to be returned
+ *
+ * Return Value:
+ *   On success, AUDIO_MANAGER_SUCCESS. Otherwise, a negative value.
+ ****************************************************************************/
+audio_manager_result_t find_stream_in_device_with_process_type(device_process_type_t type, device_process_subtype_t subtype, int *card_id, int *device_id);
+
+/****************************************************************************
+ * Name: set_stream_in_policy
+ *
+ * Description:
+ *   Set policy to prevent the current stream in from being stopped by another operation 
+ *   when the current operation is more important.
+ *   The policy follows priority based on audio_manager_stream_policy_e
+ *
+ * Input parameter:
+ *   policy : policy to set as a current stream's policy
+ *
+ * Return Value:
+ *   On success, AUDIO_MANAGER_SUCCESS. Otherwise, a negative value.
+ ****************************************************************************/
+audio_manager_result_t set_stream_in_policy(audio_manager_stream_policy_t policy);
+
+/****************************************************************************
+ * Name: set_stream_out_policy
+ *
+ * Description:
+ *   Set policy to prevent the current stream out from being stopped by another operation 
+ *   when the current operation is more important.
+ *   The policy follows priority based on audio_manager_stream_policy_e
+ *
+ * Input parameter:
+ *   policy : policy to set as a current stream's policy
+ *
+ * Return Value:
+ *   On success, AUDIO_MANAGER_SUCCESS. Otherwise, a negative value.
+ ****************************************************************************/
+audio_manager_result_t set_stream_out_policy(audio_manager_stream_policy_t policy);
+
+/****************************************************************************
+ * Name: get_stream_in_policy
+ *
+ * Description:
+ *   Get policy of actual stream in
+ *
+ * Input parameter:
+ *   policy : current policy to be returned
+ *
+ * Return Value:
+ *   On success, AUDIO_MANAGER_SUCCESS. Otherwise, a negative value.
+ ****************************************************************************/
+audio_manager_result_t get_stream_in_policy(audio_manager_stream_policy_t *policy);
+
+/****************************************************************************
+ * Name: get_stream_out_policy
+ *
+ * Description:
+ *   Get policy of actual stream out
+ *
+ * Input parameter:
+ *   policy : current policy to be returned
+ *
+ * Return Value:
+ *   On success, AUDIO_MANAGER_SUCCESS. Otherwise, a negative value.
+ ****************************************************************************/
+audio_manager_result_t get_stream_out_policy(audio_manager_stream_policy_t *policy);
+
+/****************************************************************************
+ * Name: change_stream_in_device
+ *
+ * Description:
+ *   Change actual stream in device with given values
+ *
+ * Input parameter:
+ *   card_id : id of sound card, device_id : id of device
+ *
+ * Return Value:
+ *   On success, AUDIO_MANAGER_SUCCESS. Otherwise, a negative value.
+ ****************************************************************************/
+audio_manager_result_t change_stream_in_device(int card_id, int device_id);
+
+/****************************************************************************
+ * Name: change_stream_out_device
+ *
+ * Description:
+ *   Change actual stream out device with given values
+ *
+ * Input parameter:
+ *   card_id : id of sound card, device_id : id of device
+ *
+ * Return Value:
+ *   On success, AUDIO_MANAGER_SUCCESS. Otherwise, a negative value.
+ ****************************************************************************/
+audio_manager_result_t change_stream_out_device(int card_id, int device_id);
+
+/****************************************************************************
+ * Name: get_stream_in_id
+ *
+ * Description:
+ *   Get card & device id of actual stream in device
+ *
+ * Input parameter:
+ *   card_id : id of sound card to be revealed , device_id : id of device to be revealed
+ *
+ * Return Value:
+ *   On success, AUDIO_MANAGER_SUCCESS. Otherwise, a negative value.
+ ****************************************************************************/
+audio_manager_result_t get_stream_in_id(int *card_id, int *device_id);
+
+/****************************************************************************
+ * Name: get_stream_out_id
+ *
+ * Description:
+ *   Get card & device id of actual stream out device
+ *
+ * Input parameter:
+ *   card_id : id of sound card to be revealed , device_id : id of device to be revealed
+ *
+ * Return Value:
+ *   On success, AUDIO_MANAGER_SUCCESS. Otherwise, a negative value.
+ ****************************************************************************/
+audio_manager_result_t get_stream_out_id(int *card_id, int *device_id);
+
+/****************************************************************************
+ * Name: dump_audio_card_info
+ *
+ * Description:
+ *   Print out information of all stream out devices . It will be properly executed only when media debug is enabled.
+ *
+ * Input parameter:
+ *   None
+ *
+ * Return Value:
+ *   None
+ ****************************************************************************/
+void dump_audio_card_info(void);
 
 #if defined(__cplusplus)
 }								/* extern "C" */

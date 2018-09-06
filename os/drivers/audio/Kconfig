@@ -9,7 +9,38 @@ config AUDIO_MAX_INPUT_CARD_NUM
 config AUDIO_MAX_OUTPUT_CARD_NUM
 	int "Max # of Output Audio Card"
 	default 2
+
+config AUDIO_MAX_DEVICE_NUM
+	int "Max # of device of each card"
+	default 3
 	
+config AUDIO_SPEECH_DETECT_FEATURES
+	bool "Processing speech detection features on dsp"
+	default n
+	---help---
+		Enable control processing on dsp.
+		Some devices process Keyword Detect, EPD, buffering, Dolby, etc on device level.
+		Send event message to user layer regarding this kind of process.
+		
+if AUDIO_SPEECH_DETECT_FEATURES
+menu "Speech Detect Features"
+
+config AUDIO_KEYWORD_DETECT
+	bool "Provides keyword detect"
+	default n
+	---help---
+		Keyword detect may be supported by some audio devices, but not the typical
+		device doesn't have this in dsp chip.
+
+config AUDIO_ENDPOINT_DETECT
+	bool "Provides endpoint detect"
+	default n
+	---help---
+		End Point detect may be supported by some audio devices, but not the typical
+		device doesn't have this in dsp chip.		
+endmenu
+endif
+
 config AUDIO_I2SCHAR
 	bool "I2S character driver (for testing only)"
 	default n
