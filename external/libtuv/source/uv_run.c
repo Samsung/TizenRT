@@ -57,6 +57,7 @@ static void uv__finish_close(uv_handle_t *handle)
 	case UV_ASYNC:
 	case UV_TIMER:
 	case UV_POLL:
+	case UV_SIGNAL:
 		break;
 
 	case UV_NAMED_PIPE:
