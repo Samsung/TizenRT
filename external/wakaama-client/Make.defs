@@ -16,7 +16,7 @@
 #
 ###########################################################################
 
-ifeq ($(CONFIG_DM),y)
+ifeq ($(CONFIG_LWM2M_WAKAAMA_CLIENT),y)
 
 CSRCS += er-coap-13.c
 CSRCS += bootstrap.c

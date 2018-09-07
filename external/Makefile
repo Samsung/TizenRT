@@ -44,7 +44,6 @@ ASRCS =
 CSRCS =
 VPATH = .
 
-
 ifeq ($(CONFIG_DM),y)
 ifeq ($(CONFIG_LWM2M_WAKAAMA),y)
 include wakaama/core/Make.defs
@@ -56,9 +55,6 @@ include wakaama/examples/client/Make.defs
 endif
 ifeq ($(CONFIG_LWM2M_SERVER_MODE),y)
 include wakaama/examples/server/Make.defs
-endif
-ifeq ($(CONFIG_LWM2M_WAKAAMA_CLIENT),y)
-include wakaama-client/Make.defs
 endif
 endif
 
@@ -75,6 +71,10 @@ endif
 
 ifeq ($(CONFIG_DM),y)
 CFLAGS+=-I$(TOPDIR)/../framework/include/dm
+endif
+
+ifeq ($(CONFIG_LWM2M_WAKAAMA_CLIENT),y)
+include wakaama-client/Make.defs
 endif
 
 ifeq ($(CONFIG_AWS_SDK),y)

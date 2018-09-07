@@ -8,16 +8,12 @@ config DM
 if DM
 choice
 	prompt "Choose the default implementation of LWM2M"
-	default LWM2M_WAKAAMA_CLIENT
+	default LWM2M_WAKAAMA
 config LWM2M_WAKAAMA
 	bool "LWM2M_WAKAAMA"
 	---help---
 		enable LWM2M WAKAAMA external feature
 
-config LWM2M_WAKAAMA_CLIENT
-	bool "LWM2M_WAKAAMA_CLIENT"
-	---help---
-		enable LWM2M Artik Cloud client
 endchoice
 
 if LWM2M_WAKAAMA
@@ -72,11 +68,11 @@ config DM_AP_SECURITY
 	string "wifi join security"
 	default "wpa2_aes"
 
-endif #DM_WIFI
+endif # DM_WIFI
 
+endif # LWM2M_WAKAAMA
 
-endif
-endif
+endif # DM
 
 menu "IOTIVITY Config Parameters"
 
@@ -251,11 +247,15 @@ config ARTIK_SDK
 	select NETUTILS_MQTT
 	select NETUTILS_MQTT_SECURITY
 	select TLS_WITH_SSS
-	select DM
 	select LWM2M_WAKAAMA_CLIENT
 	select LIBC_LOCALTIME
 	---help---
 		include the ARTIK SDK
+
+config LWM2M_WAKAAMA_CLIENT
+	bool "LWM2M_WAKAAMA_CLIENT"
+	---help---
+		enable LWM2M Artik Cloud client
 
 source "$EXTERNALDIR/aws/Kconfig"
 
