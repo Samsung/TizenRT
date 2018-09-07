@@ -1151,6 +1151,91 @@ resetting ...
 
 You can use the OTA feature when updating the OS binaries externally.
 
+#### OTA Area
+
+This figure shows when the `ota.bin` binary is written to the OTA area.
+
+```
+             ADDRESS      CONTENTS       NOTE
+           0x04620000 +---------------+
+                            NULL
+            +SIZE+0x4 +---------------+
+                      |   End MAGIC   |  'NRTA'
+                      |   (4bytes)    |
+                +SIZE +---------------+
+                      |   Compressed  |
+                      |   OTA Binary  |
+                      |               |
+                      |               |
+                      |               |
+           0x044A000C +---------------+
+                      |      CRC      |  Error check information using CRC32.
+                      |   (4bytes)    |
+           0x044A0008 +---------------+
+                      |   Image size  |  The original binary size, excluding header information.
+                      |   (4bytes)    |
+           0x044A0004 +---------------+
+                      |  Start MAGIC  |  'TIZE'
+                      |   (4bytes)    |
+           0x044A0000 +---------------+
+```
+
+#### OTA Flow
+
+The OTA proceeds at the bootloader stage and proceeds through several stages of binary verification. If the wrong binary exists in the OTA area, it is automatically deleted.
+
+```
+    +-------------------+
+    |  BootLoader Boot  |   <-----------------------------------+
+    +-------------------+                                       |
+              |                                                 |
+              v                                                 |
+    +-------------------+               +-------------------+   |
+    |Check OTA Partition|   (Empty) >   |      OS Boot      |   |
+    +-------------------+               +-------------------+   |
+              | (OTA Binary?)                                   |
+              v                                                 |
+    +-------------------+                                       |
+    | Check Start MAGIC |   (NG) ---------------+               |
+    +-------------------+                       |               |
+              | (OK)                            |               |
+              v                                 |               |
+    +-------------------+                       |               |
+    |  OTA Binary Size  |                       |               |
+    |< OTA PartitionSize|   (NG) ---------------+               |
+    +-------------------+                       |               |
+              | (OK)                            |               |
+              v                                 |               |
+    +-------------------+                       |               |
+    |  Check End MAGIC  |   (NG) ---------------+               |
+    +-------------------+                       |               |
+              | (OK)                            |               |
+              v                                 |               |
+    +-------------------+                       |               |
+    |     Check CRC     |   (NG) ---------------+               |
+    +-------------------+                       |               |
+              | (OK)                            |               |
+              v                                 |               |
+    +-------------------+                       |               |
+    |Erase OS Partition |                       |               |
+    +-------------------+                       |               |
+              |                                 |               |
+              v                                 |               |
+    +-------------------+                       |               |
+    | Extract OTA to OS |                       |               |
+    +-------------------+                       |               |
+              |                                 |               |
+              v                                 |               |
+    +-------------------+                       |               |
+    |Erase OTA Partition|   <-------------------+               |
+    +-------------------+                                       |
+              |                                                 |
+              v                                                 |
+    +-------------------+                                       |
+    |      Reboot       |   ------------------------------------+
+    +-------------------+
+```
+
 #### How to create an OTA binary
 
 Compress the compiled firmware and add the CRC information for the OTA.
