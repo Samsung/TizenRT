@@ -104,7 +104,7 @@ public:
 	void onRecordBufferDataReached(MediaRecorder& mediaRecorder, std::shared_ptr<unsigned char> data, size_t size)
 	{
 		if (mfp != NULL) {
-			fwrite(data, sizeof(unsigned char), size, mfp);
+			fwrite((const void *)data.get(), sizeof(unsigned char), size, mfp);
 		}
 		std::cout << "onRecordBufferDataReached, data size : " << size << std::endl;
 	}
