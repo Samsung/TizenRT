@@ -49,7 +49,8 @@ public:
 		std::shared_ptr<FocusChangeListener> mListener;
 	};
 
-	FocusRequest(std::string id, std::shared_ptr<FocusChangeListener> listener);
+	FocusRequest() = default;
+	virtual ~FocusRequest() = default;
 	std::string getId();
 	std::shared_ptr<FocusChangeListener> getListener();
 

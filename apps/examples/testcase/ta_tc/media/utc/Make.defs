@@ -18,6 +18,8 @@
 
 ifeq ($(CONFIG_EXAMPLES_TESTCASE_MEDIA_UTC),y)
 CXXSRCS += utc_media_main.cpp
+CXXSRCS += utc_media_focusrequest.cpp
+CXXSRCS += utc_media_focusmanager.cpp
 ifeq ($(CONFIG_MEDIA_PLAYER),y)
 CXXSRCS += utc_media_mediaplayer.cpp
 CXXSRCS += utc_media_fileinputdatasource.cpp
