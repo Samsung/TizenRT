@@ -44,20 +44,6 @@ ASRCS =
 CSRCS =
 VPATH = .
 
-ifeq ($(CONFIG_DM),y)
-ifeq ($(CONFIG_LWM2M_WAKAAMA),y)
-include wakaama/core/Make.defs
-include wakaama/core/er-coap-13/Make.defs
-include wakaama/examples/shared/Make.defs
-endif
-ifeq ($(CONFIG_LWM2M_CLIENT_MODE),y)
-include wakaama/examples/client/Make.defs
-endif
-ifeq ($(CONFIG_LWM2M_SERVER_MODE),y)
-include wakaama/examples/server/Make.defs
-endif
-endif
-
 ifeq ($(CONFIG_ENABLE_IOTIVITY),y)
 ifeq ($(CONFIG_IOTIVITY_RELEASE_VERSION_1_2),y)
 IOTIVITY_RELEASE=1.2-rel
@@ -67,10 +53,6 @@ IOTIVITY_RELEASE=1.3-rel
 endif
 endif
 IOTIVITY_BASE_DIR=$(EXTDIR)/iotivity/iotivity_$(IOTIVITY_RELEASE)
-endif
-
-ifeq ($(CONFIG_DM),y)
-CFLAGS+=-I$(TOPDIR)/../framework/include/dm
 endif
 
 ifeq ($(CONFIG_LWM2M_WAKAAMA_CLIENT),y)

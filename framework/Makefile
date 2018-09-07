@@ -26,11 +26,6 @@ ASRCS =
 CSRCS =
 VPATH = .
 
-ifeq ($(CONFIG_DM)$(CONFIG_LWM2M_WAKAAMA), yy)
-CFLAGS += -I$(TOPDIR)/../framework/include/dm
-include src$(DELIM)dm$(DELIM)Make.defs
-endif
-
 AOBJS = $(ASRCS:.S=$(OBJEXT))
 COBJS = $(CSRCS:.c=$(OBJEXT))
 

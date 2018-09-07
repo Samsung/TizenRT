@@ -49,10 +49,6 @@
 #undef CONFIG_LIB_USRWORK
 #endif
 
-#ifdef CONFIG_LWM2M_WAKAAMA
-extern void dm_cb_register_init(void);
-#endif
-
 /****************************************************************************
  * Pravite Functions
  ****************************************************************************/
@@ -114,10 +110,6 @@ int preapp_start(int argc, char *argv[])
 		printf("user work queue is failed to start, error code is %d\n", pid);
 		goto error_out;
 	}
-#endif
-
-#ifdef CONFIG_LWM2M_WAKAAMA
-	dm_cb_register_init();
 #endif
 
 #ifdef CONFIG_TASH
