@@ -29,6 +29,7 @@
 #ifndef __MEDIA_MEDIARECOREROBSERVERINTERFACE_H
 #define __MEDIA_MEDIARECOREROBSERVERINTERFACE_H
 
+#include <memory>
 #include <media/MediaTypes.h>
 
 namespace media {
@@ -93,7 +94,7 @@ public:
 	 * @details @b #include <media/MediaRecorderObserverInterface.h>
 	 * @since TizenRT v2.0 PRE
 	 */
-	virtual void onRecordBufferDataReached(MediaRecorder& mediaRecorder, unsigned char *data, size_t size) {}
+	virtual void onRecordBufferDataReached(MediaRecorder& mediaRecorder, std::shared_ptr<unsigned char> data, size_t size) {}
 	/**
 	 * @brief informs the user the recorder buffer state: overrun.
 	 * @details @b #include <media/MediaRecorderObserverInterface.h>
