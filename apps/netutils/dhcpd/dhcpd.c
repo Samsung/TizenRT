@@ -1681,7 +1681,7 @@ int dhcpd_run(void *arg)
 		g_sockfd = sockfd;
 
 		sched_lock();
-		if (sem_getvalue(&g_sem_daemon_started, &sval) == 0 && sval < 0) {
+		if (sem_getvalue(&g_sem_daemon_started, &sval) == 0 && sval <= 0) {
 			sem_post(&g_sem_daemon_started);
 		}
 		ret = select(sockfd+1, &sockfd_set, NULL, NULL, &g_select_timeout);
@@ -1812,6 +1812,11 @@ int dhcpd_start(char *intf)
 	pthread_attr_t attr;
 	int status;
 	struct sched_param sparam;
+
+	if (g_dhcpd_running == 1) {
+		ndbg("failed to start dhcpd. it's already running\n");
+		goto err_exit;
+	}
 
 	/* Set network interface name for DHCPD */
 	if (intf) {
