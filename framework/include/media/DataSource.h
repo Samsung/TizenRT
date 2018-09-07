@@ -140,11 +140,26 @@ public:
 	 * @since TizenRT v2.0 PRE
 	 */
 	void setPcmFormat(audio_format_type_t pcmFormat);
+	/**
+	 * @brief Sets the audio type of the stream data.
+	 * @details @b #include <media/DataSource.h>
+	 * @param[in] audioType The audioType that the audio type of stream data
+	 * @since TizenRT v2.0 PRE
+	 */
+	void setAudioType(audio_type_t audioType);
+	/**
+	 * @brief Gets the audio type of the stream data.
+	 * @details @b #include <media/DataSource.h>
+	 * @return The audio type of the stream data.
+	 * @since TizenRT v2.0 PRE
+	 */
+	audio_type_t getAudioType();
 
 private:
 	unsigned char mChannels;
 	unsigned int mSampleRate;
 	audio_format_type_t mPcmFormat;
+	audio_type_t mAudioType;
 };
 } // namespace media
 

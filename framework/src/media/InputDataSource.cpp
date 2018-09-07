@@ -35,37 +35,24 @@ namespace media {
 namespace stream {
 
 InputDataSource::InputDataSource() :
-	DataSource(),
-	mAudioType(AUDIO_TYPE_INVALID)
+	DataSource()
 {
 }
 
 InputDataSource::InputDataSource(const InputDataSource &source) :
-	DataSource(source),
-	mAudioType(source.mAudioType)
+	DataSource(source)
 {
 }
 
 InputDataSource &InputDataSource::operator=(const InputDataSource &source)
 {
 	DataSource::operator=(source);
-	this->mAudioType = source.mAudioType;
 
 	return *this;
 }
 
 InputDataSource::~InputDataSource()
 {
-}
-
-void InputDataSource::setAudioType(audio_type_t audioType)
-{
-	mAudioType = audioType;
-}
-
-audio_type_t InputDataSource::getAudioType()
-{
-	return mAudioType;
 }
 
 int InputDataSource::readAt(long offset, int origin, unsigned char *buf, size_t size)
@@ -80,3 +67,4 @@ int InputDataSource::readAt(long offset, int origin, unsigned char *buf, size_t 
 
 } // namespace stream
 } // namespace media
+

@@ -119,8 +119,6 @@ protected:
 protected:
 	const std::shared_ptr<Encoder> getEncoder();
 	void setEncoder(std::shared_ptr<Encoder> encoder);
-	void setAudioType(audio_type_t audioType);
-	audio_type_t getAudioType();
 
 	void setStreamBuffer(std::shared_ptr<StreamBuffer>);
 	std::shared_ptr<StreamBuffer> getStreamBuffer() { return mStreamBuffer; }
@@ -131,7 +129,6 @@ protected:
 	ssize_t writeToStreamBuffer(unsigned char *buf, size_t size);
 
 private:
-	audio_type_t mAudioType;
 	std::shared_ptr<Encoder> mEncoder;
 	std::shared_ptr<StreamBuffer> mStreamBuffer;
 	std::shared_ptr<StreamBufferReader> mBufferReader;
