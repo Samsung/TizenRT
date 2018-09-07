@@ -43,6 +43,12 @@ config RESET_BUTTON
 	depends on EXAMPLES_ST_THINGS_LIGHT
 	---help---
 		Decide whether to use the button to reset the connection on your board.
+config LIGHT_SWITCH_BUTTON
+	bool "Light_Switch_Button"
+	default y
+	depends on EXAMPLES_ST_THINGS_LIGHT
+	---help---
+		Decide whether to use the button to trigger the light switch on your board.
 
 config RESET_BUTTON_PIN_NUMBER
 	int "Pin Number"
@@ -52,6 +58,13 @@ config RESET_BUTTON_PIN_NUMBER
 		The default is the reset button pin number 44 for the ARTIK 053.
 		If you use another board, you can set the pin number for the board.
 
+config LIGHT_SWITCH_BUTTON_PIN_NUMBER
+	int "GPIO Number of handle notify switch resource observers manually"
+	default 42
+	depends on LIGHT_SWITCH_BUTTON
+	---help---
+		The default value of switch SW702 for the ARTIK 053 is 42 gpio number.
+		If you use another board, you can set the pin number for the board.
 
 config EXAMPLES_ST_THINGS_RED_LED_GPIO_NUM
 	int "GPIO number of RED LED"

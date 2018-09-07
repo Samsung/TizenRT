@@ -32,8 +32,9 @@ static const char *PROPERTY_VALUE_RANGE = "range";
 static const char *PROPERTY_VALUE_STEP = "step";
 static const char *PROPERTY_VALUE_COLOR_TEMPERATURE = "ct";
 
-static char *power_status[] = { "off", "on" };
+static char *g_power_status[] = { "off", "on" };
 
+static char *g_power;
 static int g_switch_value = 0;
 static int64_t g_dimming_setting = 50;
 static int64_t g_dimming_step = 5;
@@ -47,7 +48,7 @@ bool handle_get_request_on_switch(st_things_get_request_message_s *req_msg, st_t
 
 	if (req_msg->has_property_key(req_msg, PROPERTY_VALUE_SWITCH)) {
 		printf("[%s]current switch value: %d\n", TAG, g_switch_value);
-		resp_rep->set_str_value(resp_rep, PROPERTY_VALUE_SWITCH, power_status[g_switch_value]);
+		resp_rep->set_str_value(resp_rep, PROPERTY_VALUE_SWITCH, g_power_status[g_switch_value]);
 	}
 
 	printf("[%s]OUT-handle_get_request_on_switch() called..\n", TAG);
@@ -57,21 +58,32 @@ bool handle_get_request_on_switch(st_things_get_request_message_s *req_msg, st_t
 bool handle_set_request_on_switch(st_things_set_request_message_s *req_msg, st_things_representation_s *resp_rep)
 {
 	printf("[%s]IN-handle_set_request_on_switch() called..\n", TAG);
-
-	char *power;
-	if (req_msg->rep->get_str_value(req_msg->rep, PROPERTY_VALUE_SWITCH, &power)) {
-		printf("[%s] power : %s\n", TAG, power);
-		if (strncmp(power, "off", sizeof("off")) == 0) {
+	if (req_msg->rep->get_str_value(req_msg->rep, PROPERTY_VALUE_SWITCH, &g_power)) {
+		printf("[%s] power : %s\n", TAG, g_power);
+		if (strncmp(g_power, "off", sizeof("off")) == 0) {
 			g_switch_value = 0;
 		} else {
 			g_switch_value = 1;
 		}
-		resp_rep->set_str_value(resp_rep, PROPERTY_VALUE_SWITCH, power_status[g_switch_value]);
+		resp_rep->set_str_value(resp_rep, PROPERTY_VALUE_SWITCH, g_power_status[g_switch_value]);
 		st_things_notify_observers(req_msg->resource_uri);
 	}
 
 	printf("[%s]OUT-handle_set_request_on_switch() called..\n", TAG);
 	return true;
+}
+
+// Change value of switch using switch(702) at artik board
+void change_switch_value(void)
+{
+	printf("[%s] current power value: %s\n", TAG, g_power); 
+	if (g_switch_value == 0) {
+		g_switch_value = 1;
+	} else {
+		g_switch_value = 0;
+	}
+	g_power = g_power_status[g_switch_value];
+	printf("[%s] new power value : %s\n", TAG, g_power);
 }
 
 bool handle_get_request_on_dimming(st_things_get_request_message_s *req_msg, st_things_representation_s *resp_rep)
