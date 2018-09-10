@@ -30,9 +30,16 @@
 
 #define S5J_SSS_RO_DEVICE_NAME "/dev/mtdblock1"
 
+static sss_ro_write_callback g_sss_ro_write_callback;
+
 char *sss_get_flash_device_name(void)
 {
 	return S5J_SSS_RO_DEVICE_NAME;
+}
+
+void sss_ro_write_callback_set(sss_ro_write_callback callback)
+{
+	g_sss_ro_write_callback = callback;
 }
 
 int sss_ro_read(unsigned int start_offset, unsigned char *buf, unsigned int byte_size)
@@ -110,6 +117,16 @@ read_out:
 
 int sss_ro_write(unsigned int start_offset, unsigned char *buf, unsigned int byte_size)
 {
-	// Do not support yet.
-	return OK;
+	int ret;
+
+	if (!g_sss_ro_write_callback) {
+		return ERROR_SSTORAGE_INVALID_ADDR;
+	}
+
+	ret = g_sss_ro_write_callback(start_offset, buf, byte_size);
+	if (ret) {
+		ret = ERROR_SSTORAGE_SFS_FWRITE;
+	}
+
+	return ret;
 }

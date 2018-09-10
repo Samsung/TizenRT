@@ -25,6 +25,9 @@
 
 char *sss_get_flash_device_name(void);
 
+typedef int (*sss_ro_write_callback)(unsigned int start_offset, unsigned char *buf, unsigned int byte_size);
+void sss_ro_write_callback_set(sss_ro_write_callback callback);
+
 int sss_ro_read(unsigned int start_offset, unsigned char *buf, unsigned int byte_size);
 int sss_ro_write(unsigned int start_offset, unsigned char *buf, unsigned int byte_size);
 
