@@ -163,9 +163,18 @@ static void on_execute_resource(void *data, void *user_data)
 			(unsigned char *)ARTIK_LWM2M_FIRMWARE_STATE_UPDATING,
 			strlen(ARTIK_LWM2M_FIRMWARE_STATE_UPDATING));
 
-		int fd =  open("/dev/mtdblock7", O_RDWR);
+		int fd = open("/dev/mtdblock7", O_RDWR);
 
-		write(fd, g_ota_info->header.data, OTA_FIRMWARE_HEADER_SIZE);
+		if (fd < 0) {
+			fprintf(stderr, "Open failed\n");
+			return;
+		}
+
+		if (write(fd, g_ota_info->header.data, OTA_FIRMWARE_HEADER_SIZE) < 0) {
+			fprintf(stderr, "Write failed\n");
+			close(fd);
+			return;
+		}
 		close(fd);
 
 		lwm2m_config.is_ota_update = 1;
@@ -237,9 +246,14 @@ static int write_firmware(char *data, size_t len, void *user_data)
 			g_ota_info->sig.data[g_ota_info->sig.offset + sig_size] = '\0';
 			security->request(&handle);
 			security->get_ca_chain(handle, CERT_ID_ARTIK, &a053_root_ca);
+			if (a053_root_ca == NULL) {
+				return -1;
+			}
 			end_ca_cert = strstr(a053_root_ca, END_CERT);
 			end_ca_cert += strlen(END_CERT);
-			*end_ca_cert = '\0';
+			if (end_ca_cert != NULL) {
+				*end_ca_cert = '\0';
+			}
 
 			if (lwm2m_config.signing_time.month == 0 && lwm2m_config.signing_time.year == 0 &&
 				lwm2m_config.signing_time.day == 0 && lwm2m_config.signing_time.minute == 0 &&
@@ -291,7 +305,10 @@ static int write_firmware(char *data, size_t len, void *user_data)
 	}
 
 	if (len > 0) {
-		write(g_ota_info->fd, data + sig_size + header_size, len);
+		if (write(g_ota_info->fd, data + sig_size + header_size, len) < 0) {
+			fprintf(stderr, "Write failed\n");
+			return -1;
+		}
 
 		if (lwm2m_config.ota_signature_verification) {
 			artik_error err;
@@ -358,7 +375,16 @@ static int download_firmware(int argc, char *argv[])
 	memset(&ssl_conf, 0, sizeof(artik_ssl_config));
 	ssl_conf.verify_cert = ARTIK_SSL_VERIFY_NONE;
 	g_ota_info->fd = open("/dev/mtdblock7", O_RDWR);
-	lseek(g_ota_info->fd, 4096, SEEK_SET);
+	if (g_ota_info->fd < 0) {
+		fprintf(stderr, "Open failed\n");
+		return 1;
+	}
+	if (lseek(g_ota_info->fd, 4096, SEEK_SET) < 0) {
+		fprintf(stderr, "Seek failed\n");
+		close(g_ota_info->fd);
+		free(g_ota_info);
+		return 1;
+	}
 	ret = http->get_stream(argv[1], &headers, &status, write_firmware, NULL, &ssl_conf);
 	if (ret != S_OK) {
 		lwm2m->client_write_resource(

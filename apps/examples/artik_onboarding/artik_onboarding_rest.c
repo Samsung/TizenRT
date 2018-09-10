@@ -85,6 +85,9 @@ static void get_akc_callback(struct http_client_t *client, struct http_req_messa
 	cJSON_AddStringToObject(resp, "dtid", cloud_config.device_type_id);
 	cJSON_AddStringToObject(resp, "did", cloud_config.device_id);
 	body = cJSON_PrintUnformatted(resp);
+	if (body == NULL) {
+		return;
+	}
 	itoa(strlen(body), length, 10);
 
 	http_keyvalue_list_init(&headers);
@@ -365,6 +368,9 @@ static void get_akc_registration_callback(struct http_client_t *client, struct h
 
 	/* Call start registration Cloud API and get the response */
 	status = StartSDRRegistration(&resp);
+	if (status == 0) {
+		return;
+	}
 
 	itoa(strlen(resp), length, 10);
 	http_keyvalue_list_init(&headers);
@@ -392,6 +398,9 @@ static void put_akc_registration_callback(struct http_client_t *client, struct h
 
 	/* Call complete registration Cloud API and get the response */
 	status = CompleteSDRRegistration(&resp);
+	if (status == 0) {
+		return;
+	}
 
 	itoa(strlen(resp), length, 10);
 	http_keyvalue_list_init(&headers);

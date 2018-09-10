@@ -470,7 +470,7 @@ static pthread_addr_t start_sdr_registration_cb(void *arg)
 	ret = security->get_certificate_sn(handle, CERT_ID_ARTIK, serial_num,
 			&sn_len);
 	if ((ret != S_OK) || !sn_len) {
-		strcpy(vdid, "vdid_default1234");
+		strncpy(vdid, "vdid_default1234", AKC_VDID_LEN + 1);
 	} else {
 		for (i = 0; i < sn_len; i++) {
 			char tmp[3];

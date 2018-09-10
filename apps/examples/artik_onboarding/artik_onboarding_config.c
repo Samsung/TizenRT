@@ -59,33 +59,44 @@ artik_error InitConfiguration(void)
 {
 	struct stat st;
 	int fd = 0;
-	artik_error err = S_OK;
 
-	stat(config_file, &st);
+	if (stat(config_file, &st) < 0) {
+		printf("Stat failed\n");
+		return E_ACCESS_DENIED;
+	}
 
 	if (st.st_size != (sizeof(wifi_config) + sizeof(cloud_config) + sizeof(lwm2m_config))) {
 		printf("Invalid configuration, creating default one\n");
 
-		err = ResetConfiguration(true);
-	} else {
-
-		fd = open(config_file, O_RDONLY);
-		if (fd == -1) {
-			printf("Unable to open configuration file (errno=%d)\n", errno);
-			err = E_ACCESS_DENIED;
-			goto exit;
-		}
-
-		lseek(fd, 0, SEEK_SET);
-		read(fd, (void *)&wifi_config, sizeof(wifi_config));
-		read(fd, (void *)&cloud_config, sizeof(cloud_config));
-		read(fd, (void *)&lwm2m_config, sizeof(lwm2m_config));
-
-		close(fd);
+		return ResetConfiguration(true);
 	}
 
-exit:
-	return err;
+	fd = open(config_file, O_RDONLY);
+	if (fd == -1) {
+		printf("Unable to open configuration file (errno=%d)\n", errno);
+		return E_ACCESS_DENIED;
+	}
+
+	if (lseek(fd, 0, SEEK_SET) < 0) {
+		printf("Seek failed\n");
+		close(fd);
+		return E_ACCESS_DENIED;
+	}
+	if (read(fd, (void *)&wifi_config, sizeof(wifi_config)) < 0) {
+		printf("Read failed\n");
+		close(fd);
+		return E_ACCESS_DENIED;
+	}
+	if (read(fd, (void *)&cloud_config, sizeof(cloud_config)) < 0) {
+		printf("Read failed\n");
+		close(fd);
+		return E_ACCESS_DENIED;
+	}
+	if (read(fd, (void *)&lwm2m_config, sizeof(lwm2m_config)) < 0) {
+		printf("Read failed\n");
+		close(fd);
+		return E_ACCESS_DENIED;
+	}
 }
 
 artik_error SaveConfiguration(void)
@@ -99,7 +110,11 @@ artik_error SaveConfiguration(void)
 		return E_ACCESS_DENIED;
 	}
 
-	lseek(fd, 0, SEEK_SET);
+	if (lseek(fd, 0, SEEK_SET) < 0) {
+		printf("Seek failed\n");
+		close(fd);
+		return E_ACCESS_DENIED;
+	}
 	ret = write(fd, (const void *)&wifi_config, sizeof(wifi_config));
 	if (ret != sizeof(wifi_config))
 		printf("Failed to write wifi config (%d - errno=%d)\n", ret, errno);
