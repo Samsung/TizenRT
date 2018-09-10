@@ -95,16 +95,17 @@ public:
 	 * @since TizenRT v2.0 PRE
 	 */
 	bool close() override;
-
 	/**
-	 * @brief set the file offset
+	 * @brief Gets the data start from offset
 	 * @details @b #include <media/FileInputDataSource.h>
 	 * @param[in] offset The offset from origin
 	 * @param[in] origin Position used as reference
-	 * @return if failed, it returns a minus value, else 0 returns
+	 * @param[out] buf The buf that read the data and fill it into the buffer
+	 * @param[in] size The size that the size of the buffer
+	 * @return if failed, it returns -1, else readead size returns
 	 * @since TizenRT v2.0
 	 */
-	int seek(long offset, int origin) override;
+	int readAt(long offset, int origin, unsigned char* buf, size_t size) override;
 
 protected:
 	ssize_t onStreamBufferWritable() override;

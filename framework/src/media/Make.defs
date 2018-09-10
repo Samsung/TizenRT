@@ -44,16 +44,13 @@ VPATH += :src/media/codecs
 endif
 
 ifeq ($(CONFIG_MEDIA_PLAYER), y)
-CXXSRCS += MediaPlayer.cpp InputDataSource.cpp FileInputDataSource.cpp PlayerWorker.cpp MediaPlayerImpl.cpp BufferInputDataSource.cpp PlayerObserverWorker.cpp
+CXXSRCS += MediaPlayer.cpp InputDataSource.cpp FileInputDataSource.cpp PlayerWorker.cpp MediaPlayerImpl.cpp PlayerObserverWorker.cpp
 CXXSRCS += Decoder.cpp audio_decoder.cpp
 endif
 
 ifeq ($(CONFIG_MEDIA_RECORDER), y)
 CXXSRCS += MediaRecorder.cpp OutputDataSource.cpp FileOutputDataSource.cpp RecorderWorker.cpp MediaRecorderImpl.cpp BufferOutputDataSource.cpp RecorderObserverWorker.cpp
 CXXSRCS += Encoder.cpp audio_encoder.cpp
-ifeq ($(CONFIG_NET), y)
-CXXSRCS += SocketOutputDataSource.cpp
-endif
 endif
 
 ifeq ($(CONFIG_MEDIA_VOICE_SPEECH_DETECTOR), y)
