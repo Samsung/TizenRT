@@ -33,30 +33,37 @@
 
 namespace media {
 namespace stream {
-OutputDataSource::OutputDataSource()
-	: DataSource()
-	, mAudioType(AUDIO_TYPE_INVALID)
-	, mEncoder(nullptr)
-	, mIsFlushing(false)
-	, mIsWorkerAlive(false)
+OutputDataSource::OutputDataSource() :
+	DataSource(),
+	mAudioType(AUDIO_TYPE_INVALID),
+	mEncoder(nullptr),
+	mIsFlushing(false),
+	mIsWorkerAlive(false),
+	mWorker(0)
 {
 }
 
-OutputDataSource::OutputDataSource(unsigned int channels, unsigned int sampleRate, audio_format_type_t pcmFormat)
-	: DataSource(channels, sampleRate, pcmFormat)
-	, mAudioType(AUDIO_TYPE_INVALID)
-	, mEncoder(nullptr)
-	, mIsFlushing(false)
-	, mIsWorkerAlive(false)
+OutputDataSource::OutputDataSource(unsigned int channels, unsigned int sampleRate, audio_format_type_t pcmFormat) :
+	DataSource(channels, sampleRate, pcmFormat),
+	mAudioType(AUDIO_TYPE_INVALID),
+	mEncoder(nullptr),
+	mIsFlushing(false),
+	mIsWorkerAlive(false),
+	mWorker(0)
 {
 }
 
-OutputDataSource::OutputDataSource(const OutputDataSource& source)
-	: DataSource(source), mAudioType(source.mAudioType), mEncoder(source.mEncoder)
+OutputDataSource::OutputDataSource(const OutputDataSource &source) :
+	DataSource(source),
+	mAudioType(source.mAudioType),
+	mEncoder(source.mEncoder),
+	mIsFlushing(false),
+	mIsWorkerAlive(false),
+	mWorker(0)
 {
 }
 
-OutputDataSource& OutputDataSource::operator=(const OutputDataSource& source)
+OutputDataSource &OutputDataSource::operator=(const OutputDataSource &source)
 {
 	DataSource::operator=(source);
 	return *this;
@@ -111,7 +118,7 @@ ssize_t OutputDataSource::writeToStreamBuffer(unsigned char *buf, size_t size)
 		written = mBufferWriter->write(buf, size);
 	}
 
-	return (ssize_t) written;
+	return (ssize_t)written;
 }
 
 ssize_t OutputDataSource::write(unsigned char *buf, size_t size)
@@ -169,7 +176,7 @@ ssize_t OutputDataSource::write(unsigned char *buf, size_t size)
 	}
 
 	medvdbg("OutputDataSource::write(), written %u\n", size);
-	return (ssize_t) wlen;
+	return (ssize_t)wlen;
 }
 
 bool OutputDataSource::start()
@@ -206,7 +213,7 @@ void OutputDataSource::flush()
 			break;
 		}
 
-		usleep(20*1000);
+		usleep(20 * 1000);
 	}
 
 	mIsFlushing = false;

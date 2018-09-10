@@ -21,7 +21,12 @@
 
 namespace media {
 
-MediaWorker::MediaWorker() : mStacksize(PTHREAD_STACK_DEFAULT), mThreadName("MediaWorker"), mIsRunning(false), mRefCnt(0)
+MediaWorker::MediaWorker() :
+	mStacksize(PTHREAD_STACK_DEFAULT),
+	mThreadName("MediaWorker"),
+	mIsRunning(false),
+	mRefCnt(0),
+	mWorkerThread(0)
 {
 	medvdbg("MediaWorker::MediaWorker()\n");
 }
