@@ -49,7 +49,7 @@ class MyMediaPlayer : public MediaPlayerObserverInterface,
 					  public enable_shared_from_this<MyMediaPlayer>
 {
 public:
-	MyMediaPlayer() : volume(0){};
+	MyMediaPlayer() : volume(0), isSourceSet(false) {};
 	virtual ~MyMediaPlayer(){};
 	bool init(int test);
 	void doCommand(int command);

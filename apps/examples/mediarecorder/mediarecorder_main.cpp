@@ -359,7 +359,7 @@ public:
 		return input;
 	}
 
-	MediaRecorderTest() : mAppRunning(false), mIsPaused(false), mIsPlaying(false)
+	MediaRecorderTest() : mAppRunning(false), mIsPaused(false), mIsPlaying(false), mfp(nullptr), mMediaType(TEST_MEDIATYPE_PCM), mDataSourceType(TEST_DATASOURCE_TYPE_FILE)
 	{
 	}
 	~MediaRecorderTest()
