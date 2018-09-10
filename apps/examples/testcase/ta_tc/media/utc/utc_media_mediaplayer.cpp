@@ -68,18 +68,23 @@ static void SetUp(void)
 {
 	FILE *fp = fopen(dummyfilepath, "w");
 
-	if (fp != nullptr) {
+	if (fp != NULL) {
 		int ret = fputs("dummydata", fp);
 		if (ret != (int)strlen("dummydata")) {
-			printf("MediaPlayer SetUp Failed\n");
+			printf("fail to fputs\n");
 		}
 		fclose(fp);
+	} else {
+		printf("fail to open %s, errno : %d\n", dummyfilepath, get_errno());
 	}
 }
 
 static void TearDown()
 {
-	remove(dummyfilepath);
+	int ret = remove(dummyfilepath);
+	if (ret != 0) {
+		printf("fail to remove %s, errno : %d\n", dummyfilepath, get_errno());
+	}
 }
 
 static void utc_media_MediaPlayer_create_p(void)

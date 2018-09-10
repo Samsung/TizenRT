@@ -16,6 +16,8 @@
  *
  ****************************************************************************/
 
+#include <stdio.h>
+#include <string.h>
 #include <media/FileInputDataSource.h>
 #include "tc_common.h"
 
@@ -25,16 +27,29 @@ static unsigned char *buf;
 
 static void SetUp(void)
 {
-	FILE *fp = fopen(dummyfilepath, "w");
-	fputs(testData, fp);
-	fclose(fp);
-
 	buf = new unsigned char[21];
+	if (buf == nullptr) {
+		printf("fail to allocate buffer\n");
+	}
+
+	FILE *fp = fopen(dummyfilepath, "w");
+	if (fp != NULL) {
+		int ret = fputs(testData, fp);
+		if (ret != (int)strlen(testData)) {
+			printf("fail to fputs\n");
+		}
+		fclose(fp);
+	} else {
+		printf("fail to open %s, errno : %d\n", dummyfilepath, get_errno());
+	}
 }
 
 static void TearDown()
 {
-	remove(dummyfilepath);
+	int ret = remove(dummyfilepath);
+	if (ret != 0) {
+		printf("fail to remove %s, errno : %d\n", dummyfilepath, get_errno());
+	}
 
 	delete[] buf;
 }
