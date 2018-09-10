@@ -318,7 +318,10 @@ static int get_file_size()
 		meddbg("file open failed error : %d\n", errno);
 		return -1;
 	}
-	fseek(fp, 0, SEEK_END);
+	if (fseek(fp, 0, SEEK_END) != 0) {
+		meddbg("fseek failed error : %d\n", errno);
+		return -1;
+	}
 	ret = ftell(fp);
 	fclose(fp);
 	return ret;
