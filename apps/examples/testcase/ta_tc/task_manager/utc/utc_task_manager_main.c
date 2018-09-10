@@ -80,7 +80,7 @@ static void sync_test_cb(tm_msg_t *info)
 	tm_msg_t reply_msg;
 
 	if (strncmp(info->msg, TM_SYNC_SEND_MSG, info->msg_size) == 0) {
-		reply_msg.msg = malloc(strlen(TM_SYNC_RECV_MSG));
+		reply_msg.msg = malloc(strlen(TM_SYNC_RECV_MSG) + 1);
 		if (reply_msg.msg != NULL) {
 			reply_msg.msg_size = strlen(TM_SYNC_RECV_MSG) + 1;
 			memcpy(reply_msg.msg, TM_SYNC_RECV_MSG, reply_msg.msg_size);
@@ -407,8 +407,8 @@ static void utc_task_manager_unicast_n(void)
 {
 	int ret;
 	tm_msg_t send_msg;
-	send_msg.msg_size = strlen(TM_SAMPLE_MSG);
-	send_msg.msg = malloc(strlen(TM_SAMPLE_MSG));
+	send_msg.msg_size = strlen(TM_SAMPLE_MSG) + 1;
+	send_msg.msg = malloc(send_msg.msg_size);
 	TC_ASSERT_NEQ("task_manager_unicast", send_msg.msg, NULL);
 
 	strncpy(send_msg.msg, TM_SAMPLE_MSG, send_msg.msg_size);
@@ -438,7 +438,7 @@ static void utc_task_manager_unicast_p(void)
 	cb_flag = false;
 
 	send_msg.msg_size = strlen(TM_SAMPLE_MSG) + 1;
-	send_msg.msg = malloc(strlen(TM_SAMPLE_MSG));
+	send_msg.msg = malloc(send_msg.msg_size);
 	TC_ASSERT_NEQ("task_manager_unicast", send_msg.msg, NULL);
 
 	strncpy(send_msg.msg, TM_SAMPLE_MSG, send_msg.msg_size);
@@ -495,8 +495,8 @@ static void utc_task_manager_broadcast_p(void)
 	broad_undefined_cnt = 0;
 	broadcast_data_flag = -1;
 
-	user_data.msg = malloc(strlen("WIFI_ON"));
 	user_data.msg_size = strlen("WIFI_ON") + 1;
+	user_data.msg = malloc(user_data.msg_size);
 	strncpy(user_data.msg, "WIFI_ON", user_data.msg_size);
 
 	(void)task_manager_broadcast(TM_BROADCAST_WIFI_ON, &user_data, TM_NO_RESPONSE);
