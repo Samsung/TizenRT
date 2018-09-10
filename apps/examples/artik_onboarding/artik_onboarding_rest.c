@@ -145,7 +145,9 @@ static void set_akc_callback(struct http_client_t *client, struct http_req_messa
 	/* Start connection to ARTIK Cloud */
 	pthread_t tid;
 
-	pthread_create(&tid, NULL, start_websocket, NULL);
+	if (pthread_create(&tid, NULL, start_websocket, NULL) != 0) {
+		return;
+	}
 	pthread_detach(tid);
 
 	strncpy(resp, RESP_ERROR_OK, sizeof(resp)-1);
@@ -340,7 +342,9 @@ exit:
 		pthread_attr_init(&attr);
 		pthread_attr_setschedpolicy(&attr, SCHED_RR);
 		pthread_attr_setstacksize(&attr, 8 * 1024);
-		pthread_create(&tid, &attr, cloud_onboarding_start, NULL);
+		if (pthread_create(&tid, &attr, cloud_onboarding_start, NULL) != 0) {
+			return;
+		}
 		pthread_detach(tid);
 	}
 
@@ -418,7 +422,9 @@ static void put_akc_registration_callback(struct http_client_t *client, struct h
 
 		pthread_t tid;
 
-		pthread_create(&tid, NULL, start_websocket, NULL);
+		if (pthread_create(&tid, NULL, start_websocket, NULL) != 0) {
+			return;
+		}
 		pthread_detach(tid);
 	}
 }

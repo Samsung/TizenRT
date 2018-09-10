@@ -217,7 +217,9 @@ int artik_onboarding_main(int argc, char *argv[])
 	pthread_attr_init(&attr);
 	pthread_attr_setschedpolicy(&attr, SCHED_RR);
 	pthread_attr_setstacksize(&attr, 16 * 1024);
-	pthread_create(&tid, &attr, start_onboarding, NULL);
+	if (pthread_create(&tid, &attr, start_onboarding, NULL) != 0) {
+		return -1;
+	}
 	pthread_setname_np(tid, "onboarding start");
 	pthread_join(tid, NULL);
 	onboarding_service_pid = getpid();

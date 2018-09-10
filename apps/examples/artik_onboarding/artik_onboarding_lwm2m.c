@@ -126,8 +126,11 @@ static void reboot(void)
 {
 	pthread_t tid;
 
-	pthread_create(&tid, NULL, delayed_reboot, NULL);
+	if (pthread_create(&tid, NULL, delayed_reboot, NULL) != 0) {
+		return;
+	}
 	pthread_detach(tid);
+
 	fprintf(stderr, "Rebooting in 3 seconds\n");
 }
 

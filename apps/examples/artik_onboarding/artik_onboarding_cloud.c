@@ -263,8 +263,8 @@ static pthread_addr_t websocket_start_cb(void *arg)
 		callback();
 
 exit:
-	pthread_exit((void *)ret);
 	artik_release_api_module(cloud);
+	pthread_exit((void *)ret);
 	return NULL;
 }
 
@@ -571,8 +571,6 @@ fail_parse:
 
 exit:
 
-	pthread_exit((void *)status);
-
 	if (jresp)
 		cJSON_Delete(jresp);
 
@@ -581,6 +579,8 @@ exit:
 
 	if (cloud)
 		artik_release_api_module(cloud);
+
+	pthread_exit((void *)status);
 
 	return NULL;
 }
@@ -702,8 +702,6 @@ fail_parse:
 
 exit:
 
-	pthread_exit((void *)status);
-
 	if (jresp)
 		cJSON_Delete(jresp);
 
@@ -712,6 +710,8 @@ exit:
 
 	if (cloud)
 		artik_release_api_module(cloud);
+
+	pthread_exit((void *)status);
 
 	return NULL;
 }
