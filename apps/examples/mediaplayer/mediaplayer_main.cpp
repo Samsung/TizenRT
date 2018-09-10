@@ -81,8 +81,6 @@ bool MyMediaPlayer::init(int test)
 	case TEST_MP3:
 		makeSource = []() {
 			auto source = std::move(unique_ptr<FileInputDataSource>(new FileInputDataSource("/rom/over_16000.mp3")));
-			source->setSampleRate(16000);
-			source->setChannels(2);
 			source->setPcmFormat(AUDIO_FORMAT_TYPE_S16_LE);
 			return std::move(source);
 		};

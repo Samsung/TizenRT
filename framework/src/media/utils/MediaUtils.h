@@ -57,6 +57,22 @@ void toUpperString(std::string& str);
  * @since TizenRT v2.0 PRE
  */
 audio_type_t getAudioTypeFromPath(std::string path);
+/**
+ * @brief Parsing the audio type in file.
+ * @details @b #include <media/MediaUtils.h>
+ * @param[in] audio file point, Audio type and channel, sample rate, pcm format adderss to receive.
+ * @return ture - parsing success. false - parsing fail.
+ * @since TizenRT v2.0 PRE
+ */
+bool header_parsing(FILE *fp, audio_type_t AudioType, unsigned int *channel, unsigned int *sample_rate, audio_format_type_t *pcmFormat);
+/**
+ * @brief Parsing the audio type in buffer.
+ * @details @b #include <media/MediaUtils.h>
+ * @param[in] audio file buffer, buffer size, Audio type and channel, sample rate, pcm format adderss to receive.
+ * @return ture - parsing success. false - parsing fail.
+ * @since TizenRT v2.0 PRE
+ */
+bool header_parsing(unsigned char *buffer, unsigned int bufferSize, audio_type_t audioType, unsigned int *channel, unsigned int *sampleRate, audio_format_type_t *pcmFormat);
 } // namespace utils
 } // namespace media
 
