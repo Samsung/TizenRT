@@ -33,7 +33,6 @@ class Decoder
 {
 public:
 	Decoder(audio_type_t audioType, unsigned short channels, unsigned int sampleRate);
-	Decoder(const Decoder *source);
 	~Decoder();
 
 public:

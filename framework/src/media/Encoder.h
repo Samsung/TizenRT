@@ -33,7 +33,6 @@ class Encoder
 {
 public:
 	Encoder(audio_type_t audio_type, unsigned short channels, unsigned int sampleRate);
-	Encoder(const Encoder *source);
 	~Encoder();
 
 public:
@@ -43,7 +42,6 @@ public:
 	size_t getAvailSpace();
 
 private:
-	Encoder() {}
 #ifdef CONFIG_AUDIO_CODEC
 	audio_encoder_t mEncoder;
 	signed short *inputBuf;

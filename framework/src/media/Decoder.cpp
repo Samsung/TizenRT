@@ -24,17 +24,12 @@
 namespace media {
 
 Decoder::Decoder(audio_type_t audioType, unsigned short channels, unsigned int sampleRate)
-	: mAudioType(audioType)
-	, mChannels(channels)
-	, mSampleRate(sampleRate)
-{
-}
-
-
-Decoder::Decoder(const Decoder *source)
+#ifdef CONFIG_AUDIO_CODEC
+	: mAudioType(audioType), mChannels(channels), mSampleRate(sampleRate)
+#endif
 {
 #ifdef CONFIG_AUDIO_CODEC
-	mDecoder = source->mDecoder;
+	memset(&mDecoder, 0, sizeof(audio_decoder_t));
 #endif
 }
 
@@ -51,7 +46,7 @@ std::shared_ptr<Decoder> Decoder::create(audio_type_t audioType, unsigned short 
 {
 #ifdef CONFIG_AUDIO_CODEC
 	medvdbg("(%d,%d,%d)\n", audioType, channels, sampleRate);
-	
+
 	std::shared_ptr<Decoder> instance(new Decoder(audioType, channels, sampleRate));
 	if (instance) {
 		if (instance->init()) {
@@ -73,8 +68,7 @@ bool Decoder::init(void)
 		meddbg("Error! unknown audio type!\n");
 		return false;
 	}
-	
-	memset(&mDecoder, 0, sizeof(audio_decoder_t));
+
 	if (audio_decoder_init(&mDecoder, CONFIG_AUDIO_CODEC_RINGBUFFER_SIZE) != AUDIO_DECODER_OK) {
 		meddbg("Error! audio_decoder_init failed!\n");
 		return false;
@@ -102,8 +96,9 @@ size_t Decoder::pushData(unsigned char *buf, size_t size)
 	}
 
 	return audio_decoder_pushdata(&mDecoder, buf, size);
-#endif
+#else
 	return 0;
+#endif
 }
 
 /**
@@ -140,24 +135,27 @@ bool Decoder::getFrame(unsigned char *buf, size_t *size, unsigned int *sampleRat
 	}
 
 	return true;
-#endif
+#else
 	return false;
+#endif
 }
 
 bool Decoder::empty()
 {
 #ifdef CONFIG_AUDIO_CODEC
 	return audio_decoder_dataspace_is_empty(&mDecoder);
-#endif
+#else
 	return false;
+#endif
 }
 
 size_t Decoder::getAvailSpace()
 {
 #ifdef CONFIG_AUDIO_CODEC
 	return rb_avail(mDecoder.rbsp->rbp);
-#endif
+#else
 	return 0;
+#endif
 }
 
 #ifdef CONFIG_AUDIO_CODEC

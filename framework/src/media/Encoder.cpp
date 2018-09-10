@@ -27,8 +27,9 @@
 namespace media {
 
 Encoder::Encoder(audio_type_t audio_type, unsigned short channels, unsigned int sampleRate)
-	: inputBuf(nullptr)
-	, outputBuf(nullptr)
+#ifdef CONFIG_AUDIO_CODEC
+	: inputBuf(nullptr), outputBuf(nullptr)
+#endif
 {
 #ifdef CONFIG_AUDIO_CODEC
 	switch (audio_type) {
@@ -39,16 +40,16 @@ Encoder::Encoder(audio_type_t audio_type, unsigned short channels, unsigned int 
 
 		opus_enc_external_t ext = {0};
 
-		// params for opus encoding
-		#if defined(CONFIG_OPUS_APPLICATION_VOIP)
+// params for opus encoding
+#if defined(CONFIG_OPUS_APPLICATION_VOIP)
 		ext.applicationMode = OPUS_APPLICATION_VOIP;
-		#elif defined(CONFIG_OPUS_APPLICATION_AUDIO)
+#elif defined(CONFIG_OPUS_APPLICATION_AUDIO)
 		ext.applicationMode = OPUS_APPLICATION_AUDIO;
-		#elif defined(CONFIG_OPUS_APPLICATION_RESTRICTED_LOWDELAY)
+#elif defined(CONFIG_OPUS_APPLICATION_RESTRICTED_LOWDELAY)
 		ext.applicationMode = OPUS_APPLICATION_RESTRICTED_LOWDELAY;
-		#else
+#else
 		ext.applicationMode = OPUS_APPLICATION_AUDIO;
-		#endif
+#endif
 		ext.complexity = CONFIG_OPUS_ENCODE_COMPLEXITY;
 		ext.frameSizeMS = CONFIG_OPUS_ENCODE_FRAMESIZE;
 		ext.bitrate = CONFIG_OPUS_ENCODE_BITRATE;
@@ -83,13 +84,6 @@ Encoder::Encoder(audio_type_t audio_type, unsigned short channels, unsigned int 
 #endif
 }
 
-Encoder::Encoder(const Encoder *source)
-{
-#ifdef CONFIG_AUDIO_CODEC
-	mEncoder = source->mEncoder;
-#endif
-}
-
 Encoder::~Encoder()
 {
 #ifdef CONFIG_AUDIO_CODEC
@@ -106,15 +100,16 @@ size_t Encoder::pushData(unsigned char *buf, size_t size)
 {
 #ifdef CONFIG_AUDIO_CODEC
 	return audio_encoder_pushdata(&mEncoder, buf, size);
-#endif
+#else
 	return 0;
+#endif
 }
 
 bool Encoder::getFrame(unsigned char *buf, size_t *size)
 {
 #ifdef CONFIG_AUDIO_CODEC
 	int len = *size;
-	len = audio_encoder_getframe(&mEncoder, (void *) buf, len);
+	len = audio_encoder_getframe(&mEncoder, (void *)buf, len);
 
 	if (len <= 0) {
 		medvdbg("Error! audio_encoder_getframe failed!\n");
@@ -123,24 +118,27 @@ bool Encoder::getFrame(unsigned char *buf, size_t *size)
 
 	*size = len;
 	return true;
-#endif
+#else
 	return false;
+#endif
 }
 
 bool Encoder::empty()
 {
 #ifdef CONFIG_AUDIO_CODEC
 	return audio_encoder_dataspace_is_empty(&mEncoder);
-#endif
+#else
 	return false;
+#endif
 }
 
 size_t Encoder::getAvailSpace()
 {
 #ifdef CONFIG_AUDIO_CODEC
 	return audio_encoder_dataspace(&mEncoder);
-#endif
+#else
 	return 0;
+#endif
 }
 
 } // namespace media
