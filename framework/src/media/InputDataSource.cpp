@@ -34,12 +34,24 @@
 namespace media {
 namespace stream {
 
-InputDataSource::InputDataSource()
-	: DataSource(), mAudioType(AUDIO_TYPE_INVALID), mDecoder(nullptr), mState(BUFFER_STATE_EMPTY), mTotalBytes(0), mIsWorkerAlive(false)
+InputDataSource::InputDataSource() :
+	DataSource(),
+	mAudioType(AUDIO_TYPE_INVALID),
+	mDecoder(nullptr),
+	mState(BUFFER_STATE_EMPTY),
+	mTotalBytes(0),
+	mIsWorkerAlive(false),
+	mWorker(0)
 {
 }
 
-InputDataSource::InputDataSource(const InputDataSource &source) : DataSource(source), mAudioType(source.mAudioType)
+InputDataSource::InputDataSource(const InputDataSource &source) :
+	DataSource(source),
+	mAudioType(source.mAudioType),
+	mState(BUFFER_STATE_EMPTY),
+	mTotalBytes(0),
+	mIsWorkerAlive(false),
+	mWorker(0)
 {
 }
 
