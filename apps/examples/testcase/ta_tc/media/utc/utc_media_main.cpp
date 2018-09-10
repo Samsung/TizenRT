@@ -42,6 +42,8 @@ int gtest_run(int *argc, char **argv)
 }
 
 #else
+int utc_media_FocusRequest_main(void);
+int utc_media_FocusManager_main(void);
 #ifdef CONFIG_MEDIA_PLAYER
 int utc_media_MediaPlayer_main(void);
 int utc_media_FileInputDataSource_main(void);
@@ -70,6 +72,8 @@ int utc_media_main(int argc, char *argv[])
 #ifdef CONFIG_GMOCK
 	gtest_run(&argc, argv);
 #else
+	utc_media_FocusRequest_main();
+	utc_media_FocusManager_main();
 #ifdef CONFIG_MEDIA_PLAYER
 	utc_media_MediaPlayer_main();
 	utc_media_FileInputDataSource_main();
