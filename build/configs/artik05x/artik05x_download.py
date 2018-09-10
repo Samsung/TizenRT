@@ -141,7 +141,7 @@ class system(object):
         _arch = '64' if platform.machine() == 'x86_64' else '32'
 
         ostype = os.environ.get('OS', platform.system())
-        if ostype == "Windows":
+        if "Windows" in ostype:
             _tools = 'win' + _arch
         elif ostype == "Linux":
             _tools = 'linux' + _arch
