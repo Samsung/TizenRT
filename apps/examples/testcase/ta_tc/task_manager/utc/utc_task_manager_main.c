@@ -733,6 +733,7 @@ static void utc_task_manager_stop_p(void)
 {
 	int ret;
 
+	sleep(1);
 	cb_flag = false;
 	ret = task_manager_stop(tm_sample_handle, TM_RESPONSE_WAIT_INF);
 	TC_ASSERT_EQ("task_manager_stop", ret, OK);
@@ -1050,9 +1051,9 @@ int utc_task_manager_main(int argc, char *argv[])
 
 	handle_tm_utc = task_manager_register_builtin("tm_utc", TM_APP_PERMISSION_DEDICATE, TM_RESPONSE_WAIT_INF);
 	(void)task_manager_start(handle_tm_utc, TM_NO_RESPONSE);
-	sleep(3);	//wait for starting tm_utc
-	
-	waitpid(pid_tm_utc, &status, 0);
+	sleep(5);	//wait for starting tm_utc
+
+	(void)waitpid(pid_tm_utc, &status, 0);
 
 	(void)task_manager_unregister(handle_tm_utc, TM_NO_RESPONSE);
 
