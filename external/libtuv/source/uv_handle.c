@@ -82,6 +82,13 @@ void uv_close(uv_handle_t *handle, uv_close_cb close_cb)
 
 	case UV_POLL:
 		uv__poll_close((uv_poll_t *) handle);
+		break;
+
+	case UV_SIGNAL:
+		uv__signal_close((uv_signal_t*) handle);
+		/* Signal handles may not be closed immediately. The signal code will */
+		/* itself close uv__make_close_pending whenever appropriate. */
+		return;
 
 	default:
 		assert(0);
