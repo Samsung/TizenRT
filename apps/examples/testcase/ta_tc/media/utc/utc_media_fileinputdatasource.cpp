@@ -36,7 +36,7 @@ static void TearDown()
 {
 	remove(dummyfilepath);
 
-	delete buf;
+	delete[] buf;
 }
 
 static void utc_media_FileInputDataSource_getChannels_p(void)
