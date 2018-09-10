@@ -142,6 +142,9 @@ HOSTCFLAGS = -Wall -Wstrict-prototypes -Wshadow -Wundef -g -pipe
 HOSTLDFLAGS =
 
 define DOWNLOAD
-       @$(TOPDIR)/../build/configs/sidk_s5jt200/sidk_s5jt200_download.sh $(1)
+  $(TOPDIR)/../build/configs/sidk_s5jt200/sidk_s5jt200_download.sh $(1)
 endef
 
+define MAKE_BOARD_SPECIFIC_BIN
+  $(TOPDIR)/../build/configs/sidk_s5jt200/sidk_s5jt200_make_bin.sh --bin $(1) --ext $(2)
+endef

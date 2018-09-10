@@ -196,7 +196,7 @@ LINKLIBS = $(patsubst $(LIBRARIES_DIR)/%,%,$(TINYARALIBS))
 
 # Export tool definitions
 
-MKEXPORT= tools/mkexport.sh
+MKEXPORT = tools/mkexport.sh
 MKEXPORT_ARGS = -w$(WINTOOL) -t "$(TOPDIR)"
 
 ifeq ($(CONFIG_BUILD_PROTECTED),y)
@@ -209,6 +209,19 @@ endif
 
 ifeq ($(V),2)
 MKEXPORT_ARGS += -d
+endif
+
+ifeq ($(CONFIG_INTELHEX_BINARY),y)
+BIN_EXT = hex
+OBJ_OPT = ihex
+endif
+ifeq ($(CONFIG_MOTOROLA_SREC),y)
+BIN_EXT = srec
+OBJ_OPT = srec
+endif
+ifeq ($(CONFIG_RAW_BINARY),y)
+BIN_EXT = bin
+OBJ_OPT = binary
 endif
 
 # This is the name of the final target (relative to the top level directorty)
@@ -452,22 +465,13 @@ pass2: pass2deps
 	$(Q) if [ -w /tftpboot ] ; then \
 		cp -f $(BIN) /tftpboot/$(BIN_EXE).${CONFIG_ARCH}; \
 	fi
-ifeq ($(CONFIG_INTELHEX_BINARY),y)
-	@echo "CP: $(BIN_EXE).hex"
-	$(Q) $(OBJCOPY) $(OBJCOPYARGS) -O ihex $(BIN) $(BIN).hex
-endif
-ifeq ($(CONFIG_MOTOROLA_SREC),y)
-	@echo "CP: $(BIN_EXE).srec"
-	$(Q) $(OBJCOPY) $(OBJCOPYARGS) -O srec $(BIN) $(BIN).srec
-endif
-ifeq ($(CONFIG_RAW_BINARY),y)
-	@echo "CP: $(BIN_EXE).bin"
-	$(Q) $(OBJCOPY) $(OBJCOPYARGS) -O binary $(BIN) $(BIN).bin
-endif
-ifeq ($(CONFIG_SAMSUNG_NS2),y)
-	@echo "ATTACHNS2: $(BIN).bin --> $(BIN)_head.bin"
-	$(Q) tools/s5jchksum.py $(BIN).bin $(BIN)_head.bin
-endif
+
+	$(Q) echo "CP: $(BIN_EXE).$(BIN_EXT)"
+	$(Q) $(OBJCOPY) $(OBJCOPYARGS) -O $(OBJ_OPT) $(BIN) $(BIN).$(BIN_EXT)
+
+	$(Q) echo "Start the Board Specific Work for Binary"
+	$(Q) $(call MAKE_BOARD_SPECIFIC_BIN, $(BIN_EXE), $(BIN_EXT))
+
 ifeq ($(CONFIG_UBOOT_UIMAGE),y)
 	@echo "MKIMAGE: uImage"
 	$(Q) mkimage -A arm -O linux -C none -T kernel -a $(CONFIG_UIMAGE_LOAD_ADDRESS) \
@@ -514,10 +518,10 @@ ifeq (download,$(firstword $(MAKECMDGOALS)))
 endif
 
 download:
-	$(call DOWNLOAD, $(DOWNLOAD_ARGS))
+	$(Q) $(call DOWNLOAD, $(DOWNLOAD_ARGS))
 
 ota_img:
-	$(call OTA_IMG)
+	$(Q) $(call OTA_IMG)
 
 # pass1dep: Create pass1 build dependencies
 # pass2dep: Create pass2 build dependencies
