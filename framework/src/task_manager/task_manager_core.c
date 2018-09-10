@@ -384,6 +384,32 @@ static int taskmgr_restart(int handle, int caller_pid)
 		return TM_NO_PERMISSION;
 	}
 
+	if (TM_STOP_CB_INFO(handle) != NULL) {
+		if (STOP_CBDATA(handle) != NULL) {
+			if (STOP_CBDATA_MSG(handle) != NULL) {
+				TM_FREE(STOP_CBDATA_MSG(handle));
+				STOP_CBDATA_MSG(handle) = NULL;
+			}
+			TM_FREE(STOP_CBDATA(handle));
+			STOP_CBDATA(handle) = NULL;
+		}
+		TM_FREE(TM_STOP_CB_INFO(handle));
+		TM_STOP_CB_INFO(handle) = NULL;
+	}
+
+	if (TM_EXIT_CB_INFO(handle) != NULL) {
+		if (EXIT_CBDATA(handle) != NULL) {
+			if (EXIT_CBDATA_MSG(handle) != NULL) {
+				TM_FREE(EXIT_CBDATA_MSG(handle));
+				EXIT_CBDATA_MSG(handle) = NULL;
+			}
+			TM_FREE(EXIT_CBDATA(handle));
+			EXIT_CBDATA(handle) = NULL;
+		}
+		TM_FREE(TM_EXIT_CB_INFO(handle));
+		TM_EXIT_CB_INFO(handle) = NULL;
+	}
+
 	ret = task_restart(TM_PID(handle));
 	if (ret != OK) {
 		tmdbg("Fail to restart the task\n");
