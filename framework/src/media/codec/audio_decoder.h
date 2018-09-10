@@ -25,7 +25,7 @@
 #include <audiocodec/aacdec/pvmp4audiodecoder_api.h>
 #include <media/MediaTypes.h>
 #ifdef CONFIG_CODEC_LIBOPUS
-#include "../codecs/opus_decoder_api.h"
+#include "../codec/opus_api/opus_decoder_api.h"
 #endif
 
 #define AUDIO_DECODER_OK 0

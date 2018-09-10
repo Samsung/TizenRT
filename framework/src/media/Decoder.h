@@ -24,7 +24,7 @@
 #include <memory>
 
 #ifdef CONFIG_AUDIO_CODEC
-#include "streaming/audio_decoder.h"
+#include "codec/audio_decoder.h"
 #endif
 
 namespace media {

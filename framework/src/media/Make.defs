@@ -22,8 +22,8 @@ VPATH += :src/media/audio
 CSRCS += samplerate.c
 DEPPATH += --dep-path src/media/audio/resample
 VPATH += :src/media/audio/resample
-DEPPATH += --dep-path src/media/streaming
-VPATH += :src/media/streaming
+DEPPATH += --dep-path src/media/codec
+VPATH += :src/media/codec
 endif
 
 CFLAGS += -D__TINYARA__
@@ -39,8 +39,8 @@ VPATH += :src/media/utils
 
 ifeq ($(CONFIG_CODEC_LIBOPUS), y)
 CSRCS += opus_encoder_api.c opus_decoder_api.c
-DEPPATH += --dep-path src/media/codecs
-VPATH += :src/media/codecs
+DEPPATH += --dep-path src/media/codec/opus_api
+VPATH += :src/media/codec/opus_api
 endif
 
 ifeq ($(CONFIG_MEDIA_PLAYER), y)
