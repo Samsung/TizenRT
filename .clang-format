@@ -21,4 +21,5 @@ TabWidth:        4 #[M08]
 UseTab:          Always #[M08]
 PointerAlignment: Right
 SortIncludes: false
+BreakConstructorInitializers: AfterColon
 ...
