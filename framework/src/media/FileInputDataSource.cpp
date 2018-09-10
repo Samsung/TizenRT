@@ -125,6 +125,16 @@ bool FileInputDataSource::isPrepare()
 	return true;
 }
 
+int FileInputDataSource::readAt(long offset, int origin, unsigned char *buf, size_t size)
+{
+	if (fseek(mFp, offset, origin) != 0) {
+		meddbg("FileInputDataSource::readAt : fail to seek\n");
+		return -1;
+	}
+
+	return fread(buf, sizeof(unsigned char), size, mFp);
+}
+
 ssize_t FileInputDataSource::onStreamBufferWritable()
 {
 	unsigned char buf[1024];
@@ -143,11 +153,6 @@ ssize_t FileInputDataSource::onStreamBufferWritable()
 	}
 
 	return writeToStreamBuffer(buf, rlen);
-}
-
-int FileInputDataSource::seek(long offset, int origin)
-{
-	return fseek(mFp, offset, origin);
 }
 
 FileInputDataSource::~FileInputDataSource()

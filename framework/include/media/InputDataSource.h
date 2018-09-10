@@ -95,13 +95,6 @@ public:
 	virtual ssize_t read(unsigned char *buf, size_t size);
 
 	/**
-	 * @brief Set the offset
-	 * @details @b #include <media/InputDataSource.h>
-	 * @since TizenRT v2.0
-	 */
-	virtual int seek(long offset, int origin) = 0;
-
-	/**
 	 * @brief Gets the data start from offset
 	 * @details @b #include <media/InputDataSource.h>
 	 * @param[in] offset The offset from origin
@@ -111,7 +104,7 @@ public:
 	 * @return if failed, it returns -1, else readead size returns
 	 * @since TizenRT v2.0
 	 */
-	virtual int readAt(long offset, int origin, unsigned char *buf, size_t size);
+	virtual int readAt(long offset, int origin, unsigned char *buf, size_t size) = 0;
 
 	/**
 	 * @brief Register current player to get data souce state and other informations.

@@ -121,18 +121,6 @@ size_t InputDataSource::getDecodeFrames(unsigned char *buf, size_t *size)
 	return 0;
 }
 
-int InputDataSource::readAt(long offset, int origin, unsigned char *buf, size_t size)
-{
-	stop(); // Stop before seeking, then restart in read()
-
-	if (seek(offset, origin) != 0) {
-		meddbg("InputDataSource::readAt : fail to seek\n");
-		return -1;
-	}
-
-	return read(buf, size);
-}
-
 void InputDataSource::setStreamBuffer(std::shared_ptr<StreamBuffer> streamBuffer)
 {
 	if (mStreamBuffer) {
