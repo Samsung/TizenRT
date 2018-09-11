@@ -859,6 +859,15 @@ config SIG_SIGEL_WAKEUP
 		This setting specifies the signal number that will be used for SIG_SIGEL_WAKEUP.
 		Default: 22
 
+config SIG_SIGTM_TERMINATION
+	int "SIGTM_TERMINATION"
+	default 23
+	depends on TASK_MANAGER
+	---help---
+		SIGTM_TERMINATION is a non-standard signal used to send termination info to
+		the TinyAra task managed by task manager. This setting specifies the signal number
+		that will be used for SIGTM_TERMINATION. Default: 23
+
 endmenu # Signal Numbers
 
 menu "POSIX Message Queue Options"

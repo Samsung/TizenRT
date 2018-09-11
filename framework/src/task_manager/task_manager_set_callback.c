@@ -84,6 +84,33 @@ void taskmgr_msg_cb(int signo, siginfo_t *data)
 	}
 	TM_FREE(data->si_value.sival_ptr);
 }
+
+void taskmgr_stop_cb(int signo, siginfo_t *data)
+{
+	int taskmgr_pid;
+	union sigval msg;
+	tm_termination_info_t *info;
+	info = (tm_termination_info_t *)data->si_value.sival_ptr;
+
+	/* Call callback function with callback data */
+	if (info != NULL && info->cb_data != NULL) {
+		(*info->cb)(info->cb_data->msg);
+		TM_FREE(info->cb_data->msg);
+		TM_FREE(info->cb_data);
+	} else {
+		(*info->cb)(NULL);
+	}
+
+	taskmgr_pid = taskmgr_get_task_manager_pid();
+	if (taskmgr_pid == TM_TASK_MGR_NOT_ALIVE) {
+		tmdbg("Task Manager is not alive\n");
+		return;
+	}
+	msg.sival_int = getpid();
+
+	(void)sigqueue(taskmgr_pid, SIGTM_TERMINATION, msg);
+}
+
 /****************************************************************************
  * task_manager_set_unicast_cb
  ****************************************************************************/
@@ -266,10 +293,27 @@ int task_manager_set_exit_cb(void (*func)(void *data), tm_msg_t *cb_data)
 int task_manager_set_stop_cb(void (*func)(void *data), tm_msg_t *cb_data)
 {
 	int ret = OK;
+	struct sigaction act;
 	tm_request_t request_msg;
 
 	if (func == NULL) {
 		return TM_INVALID_PARAM;
+	}
+
+	act.sa_sigaction = (_sa_sigaction_t)taskmgr_stop_cb;
+	act.sa_flags = 0;
+	(void)sigemptyset(&act.sa_mask);
+
+	ret = sigaddset(&act.sa_mask, SIGTM_TERMINATION);
+	if (ret < 0) {
+		tmdbg("Failed to add signal set\n");
+		return TM_OPERATION_FAIL;
+	}
+
+	ret = sigaction(SIGTM_TERMINATION, &act, NULL);
+	if (ret == (int)SIG_ERR) {
+		tmdbg("sigaction Failed\n");
+		return TM_OPERATION_FAIL;
 	}
 
 	/* send stop callback function to task manager */
