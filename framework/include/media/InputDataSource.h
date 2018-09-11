@@ -96,11 +96,6 @@ public:
 	 */
 	virtual int readAt(long offset, int origin, unsigned char *buf, size_t size);
 
-	void setAudioType(audio_type_t audioType);
-	audio_type_t getAudioType();
-
-private:
-	audio_type_t mAudioType;
 };
 
 } // namespace stream

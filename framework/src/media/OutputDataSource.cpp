@@ -35,7 +35,6 @@ namespace media {
 namespace stream {
 OutputDataSource::OutputDataSource() :
 	DataSource(),
-	mAudioType(AUDIO_TYPE_INVALID),
 	mEncoder(nullptr),
 	mIsFlushing(false),
 	mIsWorkerAlive(false),
@@ -45,7 +44,6 @@ OutputDataSource::OutputDataSource() :
 
 OutputDataSource::OutputDataSource(unsigned int channels, unsigned int sampleRate, audio_format_type_t pcmFormat) :
 	DataSource(channels, sampleRate, pcmFormat),
-	mAudioType(AUDIO_TYPE_INVALID),
 	mEncoder(nullptr),
 	mIsFlushing(false),
 	mIsWorkerAlive(false),
@@ -55,7 +53,6 @@ OutputDataSource::OutputDataSource(unsigned int channels, unsigned int sampleRat
 
 OutputDataSource::OutputDataSource(const OutputDataSource &source) :
 	DataSource(source),
-	mAudioType(source.mAudioType),
 	mEncoder(source.mEncoder),
 	mIsFlushing(false),
 	mIsWorkerAlive(false),
@@ -81,16 +78,6 @@ void OutputDataSource::setEncoder(std::shared_ptr<Encoder> encoder)
 const std::shared_ptr<Encoder> OutputDataSource::getEncoder()
 {
 	return mEncoder;
-}
-
-void OutputDataSource::setAudioType(audio_type_t audioType)
-{
-	mAudioType = audioType;
-}
-
-audio_type_t OutputDataSource::getAudioType()
-{
-	return mAudioType;
 }
 
 void OutputDataSource::setStreamBuffer(std::shared_ptr<StreamBuffer> streamBuffer)
@@ -330,3 +317,4 @@ void OutputDataSource::onBufferUpdated(ssize_t change, size_t current)
 
 } // namespace stream
 } // namespace media
+
