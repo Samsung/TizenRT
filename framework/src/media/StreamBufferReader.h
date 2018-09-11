@@ -20,22 +20,19 @@
 #define __MEDIA_STREAMBUFFERREADER_H
 
 #include <memory>
-#include <media/BufferReaderInterface.h>
 
 namespace media {
 namespace stream {
 class StreamBuffer;
 
 class StreamBufferReader
-	: public BufferReaderInterface
 {
 public:
-	StreamBufferReader() = delete;
 	StreamBufferReader(std::shared_ptr<StreamBuffer> stream);
 
 public:
-	virtual size_t read(unsigned char *buf, size_t size, bool sync = true) override;
-	virtual size_t sizeOfData() override;
+	virtual size_t read(unsigned char *buf, size_t size, bool sync = true);
+	virtual size_t sizeOfData();
 
 public:
 	bool isEndOfStream();

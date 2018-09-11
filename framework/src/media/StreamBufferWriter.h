@@ -20,22 +20,19 @@
 #define __MEDIA_STREAMBUFFERWRITER_H
 
 #include <memory>
-#include <media/BufferWriterInterface.h>
 
 namespace media {
 namespace stream {
 class StreamBuffer;
 
 class StreamBufferWriter
-	: public BufferWriterInterface
 {
 public:
-	StreamBufferWriter() = delete;
 	StreamBufferWriter(std::shared_ptr<StreamBuffer> stream);
 
 public:
-	virtual size_t write(unsigned char *buf, size_t size, bool sync = true) override;
-	virtual size_t sizeOfSpace() override;
+	virtual size_t write(unsigned char *buf, size_t size, bool sync = true);
+	virtual size_t sizeOfSpace();
 
 public:
 	void setEndOfStream();
