@@ -35,7 +35,6 @@ MediaPlayerImpl::MediaPlayerImpl(MediaPlayer &player) : mPlayer(player)
 	mCurState = PLAYER_STATE_NONE;
 	mBuffer = nullptr;
 	mBufSize = 0;
-	mInputDataSource = nullptr;
 }
 
 player_result_t MediaPlayerImpl::create()
@@ -154,14 +153,15 @@ void MediaPlayerImpl::preparePlayer(player_result_t &ret)
 		return notifySync();
 	}
 
-	if (!mInputDataSource->open()) {
+	if (!mInputHandler.open()) {
 		meddbg("MediaPlayer prepare fail : open fail\n");
 		ret = PLAYER_ERROR_FILE_OPEN_FAILED;
 		return notifySync();
 	}
 
-	if (set_audio_stream_out(mInputDataSource->getChannels(), mInputDataSource->getSampleRate(),
-							 mInputDataSource->getPcmFormat()) != AUDIO_MANAGER_SUCCESS) {
+	auto source = mInputHandler.getInputDataSource();
+	if (set_audio_stream_out(source->getChannels(), source->getSampleRate(),
+							 source->getPcmFormat()) != AUDIO_MANAGER_SUCCESS) {
 		meddbg("MediaPlayer prepare fail : set_audio_stream_out fail\n");
 		ret = PLAYER_ERROR_INTERNAL_OPERATION_FAILED;
 		return notifySync();
@@ -233,7 +233,7 @@ void MediaPlayerImpl::unpreparePlayer(player_result_t &ret)
 		return notifySync();
 	}
 
-	mInputDataSource->close();
+	mInputHandler.close();
 
 	mCurState = PLAYER_STATE_IDLE;
 	return notifySync();
@@ -471,8 +471,8 @@ void MediaPlayerImpl::setPlayerDataSource(std::shared_ptr<stream::InputDataSourc
 		return notifySync();
 	}
 
-	mInputDataSource = source;
-	mInputDataSource->setPlayer(shared_from_this());
+	mInputHandler.setPlayer(shared_from_this());
+	mInputHandler.setInputDataSource(source);
 	mCurState = PLAYER_STATE_CONFIGURED;
 
 	return notifySync();
@@ -580,7 +580,7 @@ void MediaPlayerImpl::notifyObserver(player_observer_command_t cmd, ...)
 
 void MediaPlayerImpl::playback()
 {
-	ssize_t num_read = mInputDataSource->read(mBuffer, (int)mBufSize);
+	ssize_t num_read = mInputHandler.read(mBuffer, (int)mBufSize);
 	meddbg("num_read : %d\n", num_read);
 	if (num_read > 0) {
 		int ret = start_audio_stream_out(mBuffer, get_output_bytes_to_frame((unsigned int)num_read));

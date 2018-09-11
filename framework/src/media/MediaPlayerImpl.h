@@ -28,6 +28,7 @@
 #include <media/MediaPlayerObserverInterface.h>
 
 #include "PlayerObserverWorker.h"
+#include "InputHandler.h"
 
 namespace media {
 /**
@@ -122,7 +123,7 @@ private:
 	std::mutex mCmdMtx;
 	std::condition_variable mSyncCv;
 	std::shared_ptr<MediaPlayerObserverInterface> mPlayerObserver;
-	std::shared_ptr<stream::InputDataSource> mInputDataSource;
+	stream::InputHandler mInputHandler;
 };
 } // namespace media
 #endif

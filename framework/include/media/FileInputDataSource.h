@@ -106,8 +106,7 @@ public:
 	 */
 	int seek(long offset, int origin) override;
 
-protected:
-	ssize_t onStreamBufferWritable() override;
+	ssize_t read(unsigned char *buf, size_t size) override;
 
 private:
 	std::string mDataPath;

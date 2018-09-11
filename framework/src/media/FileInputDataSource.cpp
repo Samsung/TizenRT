@@ -22,30 +22,28 @@
 
 #include <media/FileInputDataSource.h>
 #include "utils/MediaUtils.h"
-#include "StreamBuffer.h"
-
-#ifndef CONFIG_FILE_DATASOURCE_STREAM_BUFFER_SIZE
-#define CONFIG_FILE_DATASOURCE_STREAM_BUFFER_SIZE 4096
-#endif
-
-#ifndef CONFIG_FILE_DATASOURCE_STREAM_BUFFER_THRESHOLD
-#define CONFIG_FILE_DATASOURCE_STREAM_BUFFER_THRESHOLD 2048
-#endif
 
 namespace media {
 namespace stream {
 
-FileInputDataSource::FileInputDataSource() : InputDataSource(), mDataPath(""), mFp(nullptr)
+FileInputDataSource::FileInputDataSource() :
+	InputDataSource(),
+	mDataPath(""),
+	mFp(nullptr)
 {
 }
 
-FileInputDataSource::FileInputDataSource(const std::string &dataPath)
-	: InputDataSource(), mDataPath(dataPath), mFp(nullptr)
+FileInputDataSource::FileInputDataSource(const std::string &dataPath) :
+	InputDataSource(),
+	mDataPath(dataPath),
+	mFp(nullptr)
 {
 }
 
-FileInputDataSource::FileInputDataSource(const FileInputDataSource &source)
-	: InputDataSource(source), mDataPath(source.mDataPath), mFp(source.mFp)
+FileInputDataSource::FileInputDataSource(const FileInputDataSource &source) :
+	InputDataSource(source),
+	mDataPath(source.mDataPath),
+	mFp(source.mFp)
 {
 }
 
@@ -57,20 +55,6 @@ FileInputDataSource &FileInputDataSource::operator=(const FileInputDataSource &s
 
 bool FileInputDataSource::open()
 {
-	if (!getStreamBuffer()) {
-		auto streamBuffer = StreamBuffer::Builder()
-								.setBufferSize(CONFIG_FILE_DATASOURCE_STREAM_BUFFER_SIZE)
-								.setThreshold(CONFIG_FILE_DATASOURCE_STREAM_BUFFER_THRESHOLD)
-								.build();
-
-		if (!streamBuffer) {
-			meddbg("streamBuffer is nullptr!\n");
-			return false;
-		}
-
-		setStreamBuffer(streamBuffer);
-	}
-
 	if (!mFp) {
 		unsigned int channel;
 		unsigned int sampleRate;
@@ -112,11 +96,6 @@ bool FileInputDataSource::open()
 			break;
 		}
 
-		if (!registerDecoder(audioType, channel, sampleRate)) {
-			meddbg("registerDecoder failed!\n");
-			return false;
-		}
-		start();
 		return true;
 	}
 
@@ -128,8 +107,6 @@ bool FileInputDataSource::close()
 {
 	bool ret = true;
 	if (mFp) {
-		stop();
-
 		if (fclose(mFp) == OK) {
 			mFp = nullptr;
 			medvdbg("close success!!\n");
@@ -137,8 +114,6 @@ bool FileInputDataSource::close()
 			meddbg("close failed ret : %d error : %d\n", ret, errno);
 			ret = false;
 		}
-
-		unregisterDecoder();
 	} else {
 		meddbg("close failed, mFp is nullptr!!\n");
 		ret = false;
@@ -150,17 +125,14 @@ bool FileInputDataSource::close()
 bool FileInputDataSource::isPrepare()
 {
 	if (mFp == nullptr) {
-		meddbg("mFp is null\n");
 		return false;
 	}
 	return true;
 }
 
-ssize_t FileInputDataSource::onStreamBufferWritable()
+ssize_t FileInputDataSource::read(unsigned char *buf, size_t size)
 {
-	unsigned char buf[1024];
-
-	size_t rlen = fread(buf, sizeof(unsigned char), sizeof(buf), mFp);
+	size_t rlen = fread(buf, sizeof(unsigned char), size, mFp);
 	medvdbg("read size : %d\n", rlen);
 	if (rlen == 0) {
 		/* If file position reaches end of file, it's a normal case, we returns 0 */
@@ -173,7 +145,7 @@ ssize_t FileInputDataSource::onStreamBufferWritable()
 		return EOF;
 	}
 
-	return writeToStreamBuffer(buf, rlen);
+	return rlen;
 }
 
 int FileInputDataSource::seek(long offset, int origin)
@@ -183,7 +155,9 @@ int FileInputDataSource::seek(long offset, int origin)
 
 FileInputDataSource::~FileInputDataSource()
 {
-	close();
+	if (isPrepare()) {
+		close();
+	}
 }
 
 } // namespace stream
