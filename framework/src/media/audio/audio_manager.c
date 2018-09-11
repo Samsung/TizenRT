@@ -403,7 +403,7 @@ static audio_manager_result_t get_actual_audio_out_card_id()
 static uint32_t get_closest_samprate(unsigned int origin_samprate, audio_io_direction_t direct)
 {
 	int i;
-	uint32_t result;
+	uint32_t result = 0;
 	uint32_t samprate_types;
 	int count = sizeof(g_audio_samprate_entry) / sizeof(struct audio_samprate_map_entry_s);
 
@@ -417,12 +417,11 @@ static uint32_t get_closest_samprate(unsigned int origin_samprate, audio_io_dire
 		samprate_types = g_audio_out_cards[g_actual_audio_out_card_id].resample.samprate_types;
 	}
 
-	result = g_audio_samprate_entry[count - 1].samprate;
-
-	for (i = count - 1; i >= 0; i--) {
+	for (i = 0; i < count; i++) {
 		if (g_audio_samprate_entry[i].samprate_types & samprate_types) {
+			result = g_audio_samprate_entry[i].samprate;
 			if (g_audio_samprate_entry[i].samprate >= origin_samprate) {
-				result = g_audio_samprate_entry[i].samprate;
+				break;
 			}
 		}
 	}
@@ -1277,10 +1276,10 @@ audio_manager_result_t find_stream_in_device_with_process_type(device_process_ty
 	caps_desc.caps.ac_type = AUDIO_TYPE_PROCESSING;
 	caps_desc.caps.ac_subtype = type;
 
-	for (j= 0; j< CONFIG_AUDIO_MAX_DEVICE_NUM; j++) {
+	for (j = 0; j < CONFIG_AUDIO_MAX_DEVICE_NUM; j++) {
 		for (i = 0; i < CONFIG_AUDIO_MAX_INPUT_CARD_NUM; i++) {
 			card = &g_audio_in_cards[i];
-			
+
 			/* If process type is matched */
 			if ((card->config[j].device_process_type & type) != 0) {
 				get_card_path(path, i, j, INPUT);
@@ -1288,7 +1287,7 @@ audio_manager_result_t find_stream_in_device_with_process_type(device_process_ty
 				fd = open(path, O_RDONLY);
 				if (fd < 0) {
 					meddbg("open failed, path : %s process type : 0x%x\n", path, type);
-					/* open failed but check next one anyway*/
+					/* open failed but check next one anyway */
 					pthread_mutex_unlock(&(card->card_mutex));
 					continue;
 				}
@@ -1300,7 +1299,7 @@ audio_manager_result_t find_stream_in_device_with_process_type(device_process_ty
 					pthread_mutex_unlock(&(card->card_mutex));
 					continue;
 				}
-				/* Now we get subtype from h/w, compare it and subtype(param) */ 
+				/* Now we get subtype from h/w, compare it and subtype(param) */
 				if ((subtype & caps_desc.caps.ac_controls.b[0]) != 0) {
 					*card_id = i;
 					*device_id = j;
@@ -1380,12 +1379,12 @@ audio_manager_result_t change_stream_in_device(int card_id, int device_id)
 		meddbg("invalid card id : %d\n", card_id);
 		return AUDIO_MANAGER_INVALID_PARAM;
 	}
-	
+
 	if (device_id >= CONFIG_AUDIO_MAX_DEVICE_NUM) {
 		meddbg("invalid device id : %d\n", device_id);
 		return AUDIO_MANAGER_INVALID_PARAM;
 	}
-	
+
 	return change_stream_device(card_id, device_id, INPUT);
 }
 
@@ -1395,7 +1394,7 @@ audio_manager_result_t change_stream_out_device(int card_id, int device_id)
 		meddbg("invalid card id : %d\n", card_id);
 		return AUDIO_MANAGER_INVALID_PARAM;
 	}
-	
+
 	if (device_id >= CONFIG_AUDIO_MAX_DEVICE_NUM) {
 		meddbg("invalid device id : %d\n", device_id);
 		return AUDIO_MANAGER_INVALID_PARAM;
