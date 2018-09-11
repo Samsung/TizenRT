@@ -244,6 +244,7 @@ function SELECT_CONFIG()
 	CONFIGURE ${BOARD}/${CONFIG} || exit 1
 }
 
+# This function should be replaced to parse and to show the partition map.
 function SELECT_DL
 {
 	unset DL_ARG
@@ -263,10 +264,10 @@ function SELECT_DL
 
 	case ${SELECTED_DL} in
 	1|all)
-		DL_ARG=all
+		DL_ARG=ALL
 		;;
 	2|os)
-		DL_ARG=os
+		DL_ARG=OS
 		;;
 	x|exit)
 		exit 1
@@ -358,7 +359,11 @@ elif [ "$1" == "menu" ]; then
 	MENU
 else
 	while test $# -gt 0; do
-		ARG=$(echo $1 | tr '[:upper:]' '[:lower:]')
+		if [ "${STATUS}" == "PREPARE_DL" ]; then
+			ARG=$(echo $1 | tr '[:lower:]' '[:upper:]')
+		else
+			ARG=$(echo $1 | tr '[:upper:]' '[:lower:]')
+		fi
 		case ${STATUS} in
 		NOT_CONFIGURED)
 			SELECT_BOARD ${ARG}
