@@ -143,7 +143,13 @@
 #define INV_FD -3
 
 #define MTD_CONFIG_PATH "/dev/config"
+
+#if defined(CONFIG_ARCH_BOARD_CY4390x)
+#define MTD_FTL_PATH "/dev/smart1p1"
+#else
 #define MTD_FTL_PATH "/dev/mtdblock1"
+#endif
+
 #define BUF_SIZE 4096
 
 #define DEV_PATH "/dev"
