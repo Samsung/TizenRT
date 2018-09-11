@@ -4,7 +4,7 @@
 IoT.js is an open source software platform
 for Internet of Things with JavaScript.
 
-More mode detailed information, please check:
+For more mode detailed information, please check:
 http://www.iotjs.net
 
 Or shipped [README](..//external/iotjs/README.md) in sources.
@@ -37,7 +37,7 @@ Using menuconfig an example can be used to selected needed feature.
 ## How to load scripts
 
 File can be loaded for different locations,
-but it is convenient to use add a ROM partition as explained in
+For convinence, it is recommended to use the approach of adding a ROM partition as explained in
 [HowToUseROMFS.md](HowToUseROMFS.md)
 
 Then place your script(s) in tools/fs/contents, for instance:
@@ -51,8 +51,24 @@ Then place your script(s) in tools/fs/contents, for instance:
 WiFi can be also enabled on boot if you want to join a network 
 before running the script.
 
-You need to run menuconfig again and edit credentials,
-(typically for WPA2: Auth=5 and Enc=4)
+You need to run "make menuconfig" again and edit credentials.
+
+    make menuconfig  
+    # Application Configuration  --->  
+    #  Examples  --->  
+    #   [*] IoT.js StartUp example  
+    #     (/rom/example/index.js) Main javascript file  
+    #     [*]   Connect WiFi
+    #     ("APSSID") SSID of AP
+    #     ("APPassword") Passphrase of AP    
+    #     (4)   Authentication type  
+    #     (4)   Encryption type  
+    # Application entry point (...) --->  
+    #   (X) IoT.js StartUp example  
+
+Edit "SSID of AP" and "Passphrase of AP" with your WiFi SSID and password.
+For values of "Authentication type" and "Encryption type", use <Help> menu to find values that match
+your WiFi configurations. For example, 4 for Authentication type of "WPA and WPA2 PSK", and 4 for "Encryption type of "TKIP".
 
 
 ## Resources:
