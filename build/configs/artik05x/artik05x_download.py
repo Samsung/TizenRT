@@ -290,7 +290,7 @@ class ota(object):
         crc = binascii.crc32(_bytes) & 0xFFFFFFFF
 
         with open(binpath, 'wb') as f:
-            f.write(bytearray(4096))
+            f.write(bytearray(12))
             f.write(_bytes)
             f.write("NRTA")
             f.seek(0)
