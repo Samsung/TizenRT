@@ -66,7 +66,7 @@
 #include <fcntl.h>
 #include <string.h>
 #include <errno.h>
-#include <queue.h>
+#include <mqueue.h>
 #include <debug.h>
 
 #include <tinyara/kmalloc.h>
@@ -83,13 +83,48 @@
  * Private Types
  ****************************************************************************/
 
+#ifdef CONFIG_AUDIO_SPEECH_DETECT_FEATURES
+/* Below are for testing, we will send message to upper layer if frames reaches below */
+#define AUDIO_NULL_KEYWORD_DETECT_THRESHOLD 10
+
+#define AUDIO_NULL_ENDPOINT_DETECT_THRESHOLD 45
+
+enum speech_state_e {
+	AUDIO_NULL_SPEECH_STATE_NONE = 0,
+	AUDIO_NULL_SPEECH_STATE_IDLE = 1,
+#ifdef CONFIG_AUDIO_KEYWORD_DETECT
+	AUDIO_NULL_SPEECH_STATE_KD = 2,
+#endif
+#ifdef CONFIG_AUDIO_ENDPOINT_DETECT
+	AUDIO_NULL_SPEECH_STATE_EPD = 3,
+#endif
+	AUDIO_NULL_SPEECH_STATE_CLEAR = 4,
+};
+
+typedef enum speech_state_e speech_state_t;
+#endif
+
 struct null_dev_s {
 	struct audio_lowerhalf_s dev;	/* Audio lower half (this device) */
 	mqd_t mq;					/* Message queue for receiving messages */
 	char mqname[16];			/* Our message queue name */
-	pthread_t threadid;			/* ID of our thread */
+	pthread_t worker_threadid;	/* ID of our worker thread */
+	volatile uint32_t frames;	/* Total frames */
+#ifdef CONFIG_AUDIO_PROCESSING_FEATURES
+	pthread_t process_threadid;	/* ID of our process thread */
+	volatile bool process_terminate;	/* True : request to terminate processing */
+#endif
 #ifndef CONFIG_AUDIO_EXCLUDE_STOP
-	volatile bool terminate;	/* True: request to terminate */
+	volatile bool terminate;	/* True: request to terminate audio operation */
+#endif
+#ifdef CONFIG_AUDIO_SPEECH_DETECT_FEATURES
+	volatile speech_state_t speech_state;
+#ifdef CONFIG_AUDIO_KEYWORD_DETECT
+	volatile bool keyword_detect;
+#endif
+#ifdef CONFIG_AUDIO_ENDPOINT_DETECT
+	volatile bool endpoint_detect;
+#endif
 #endif
 };
 
@@ -105,6 +140,8 @@ static int null_configure(FAR struct audio_lowerhalf_s *dev, FAR const struct au
 #endif
 static int null_shutdown(FAR struct audio_lowerhalf_s *dev);
 static void *null_workerthread(pthread_addr_t pvarg);
+static void *null_processthread(pthread_addr_t pvarg);
+
 #ifdef CONFIG_AUDIO_MULTI_SESSION
 static int null_start(FAR struct audio_lowerhalf_s *dev, FAR void *session);
 #else
@@ -192,7 +229,7 @@ static int null_getcaps(FAR struct audio_lowerhalf_s *dev, int type, FAR struct 
 	caps->ac_controls.w = 0;
 
 	switch (caps->ac_type) {
-	/* Caller is querying for the types of units we support */
+		/* Caller is querying for the types of units we support */
 
 	case AUDIO_TYPE_QUERY:
 
@@ -219,6 +256,7 @@ static int null_getcaps(FAR struct audio_lowerhalf_s *dev, int type, FAR struct 
 
 			caps->ac_controls.b[0] = AUDIO_SUBFMT_END;
 			break;
+		case AUDIO_FMT_OTHER:
 
 		default:
 			caps->ac_controls.b[0] = AUDIO_SUBFMT_END;
@@ -227,7 +265,7 @@ static int null_getcaps(FAR struct audio_lowerhalf_s *dev, int type, FAR struct 
 
 		break;
 
-	/* Provide capabilities of our INPUT & OUTPUT unit */
+		/* Provide capabilities of our INPUT & OUTPUT unit */
 
 	case AUDIO_TYPE_INPUT:
 	case AUDIO_TYPE_OUTPUT:
@@ -239,7 +277,7 @@ static int null_getcaps(FAR struct audio_lowerhalf_s *dev, int type, FAR struct 
 
 			/* Report the Sample rates we support */
 
-			caps->ac_controls.b[0] = AUDIO_SAMP_RATE_TYPE_8K | AUDIO_SAMP_RATE_TYPE_11K | AUDIO_SAMP_RATE_TYPE_16K | AUDIO_SAMP_RATE_TYPE_22K |	AUDIO_SAMP_RATE_TYPE_32K | AUDIO_SAMP_RATE_TYPE_44K | AUDIO_SAMP_RATE_TYPE_48K;
+			caps->ac_controls.b[0] = AUDIO_SAMP_RATE_TYPE_16K;
 			break;
 
 		case AUDIO_FMT_MP3:
@@ -253,7 +291,7 @@ static int null_getcaps(FAR struct audio_lowerhalf_s *dev, int type, FAR struct 
 
 		break;
 
-	/* Provide capabilities of our FEATURE units */
+		/* Provide capabilities of our FEATURE units */
 
 	case AUDIO_TYPE_FEATURE:
 
@@ -272,7 +310,7 @@ static int null_getcaps(FAR struct audio_lowerhalf_s *dev, int type, FAR struct 
 
 		break;
 
-	/* Provide capabilities of our PROCESSING unit */
+		/* Provide capabilities of our PROCESSING unit */
 
 	case AUDIO_TYPE_PROCESSING:
 
@@ -282,7 +320,7 @@ static int null_getcaps(FAR struct audio_lowerhalf_s *dev, int type, FAR struct 
 			/* Provide the type of Processing Units we support */
 			caps->ac_controls.b[0] = AUDIO_PU_STEREO_EXTENDER;
 
-#ifdef CONFIG_AUDIO_SPEECH_DETECT_FEATURES			
+#ifdef CONFIG_AUDIO_SPEECH_DETECT_FEATURES
 			caps->ac_controls.b[0] |= AUDIO_PU_SPEECH_DETECT;
 #endif
 			break;
@@ -293,13 +331,13 @@ static int null_getcaps(FAR struct audio_lowerhalf_s *dev, int type, FAR struct 
 
 			caps->ac_controls.b[0] = AUDIO_STEXT_ENABLE | AUDIO_STEXT_WIDTH;
 			break;
-			
+
 		case AUDIO_PU_SPEECH_DETECT:
 
 			/* Provide capabilities of our Speech Detect */
 #ifdef CONFIG_AUDIO_SPEECH_DETECT_FEATURES
 
-#ifdef CONFIG_AUDIO_KEYWORD_DETECT	
+#ifdef CONFIG_AUDIO_KEYWORD_DETECT
 			caps->ac_controls.b[0] = AUDIO_SD_ENDPOINT_DETECT;
 #endif
 
@@ -310,18 +348,17 @@ static int null_getcaps(FAR struct audio_lowerhalf_s *dev, int type, FAR struct 
 #else
 			caps->ac_controls.b[0] = AUDIO_SD_UNDEF;
 #endif
-		break;
+			break;
 
 		default:
 
 			/* Other types of processing uint we don't support */
-
 			break;
 		}
 
 		break;
 
-	/* All others we don't support */
+		/* All others we don't support */
 
 	default:
 
@@ -355,6 +392,10 @@ static int null_configure(FAR struct audio_lowerhalf_s *dev, FAR void *session, 
 static int null_configure(FAR struct audio_lowerhalf_s *dev, FAR const struct audio_caps_s *caps)
 #endif
 {
+	int ret = OK;
+#if defined(CONFIG_AUDIO_KEYWORD_DETECT) || defined(CONFIG_AUDIO_ENDPOINT_DETECT)
+	FAR struct null_dev_s *priv = (FAR struct null_dev_s *)dev;
+#endif
 	audvdbg("ac_type: %d\n", caps->ac_type);
 
 	/* Process the configure operation */
@@ -389,13 +430,35 @@ static int null_configure(FAR struct audio_lowerhalf_s *dev, FAR const struct au
 		audvdbg("    Sample width:       %u\n", caps->ac_controls.b[2]);
 		break;
 
-	case AUDIO_TYPE_PROCESSING:
+	case AUDIO_PU_SPEECH_DETECT:
+		switch (caps->ac_subtype) {
+#ifdef CONFIG_AUDIO_SPEECH_DETECT_FEATURES
+		case AUDIO_SD_ENDPOINT_DETECT:
+#ifdef CONFIG_AUDIO_KEYWORD_DETECT
+			priv->endpoint_detect = true;
+#else
+			ret = -EINVAL;
+#endif
+			break;
+		case AUDIO_SD_KEYWORD_DETECT:
+#ifdef CONFIG_AUDIO_ENDPOINT_DETECT
+			priv->keyword_detect = true;
+#else
+			ret = -EINVAL;
+#endif
+			break;
+#endif
+		default:
+			auddbg("	ERROR: Unrecognized feature unit\n");
+			ret = -EINVAL;
+			break;
+		}
 		audvdbg("  AUDIO_TYPE_PROCESSING:\n");
 		break;
 	}
 
 	audvdbg("Return OK\n");
-	return OK;
+	return ret;
 }
 
 /****************************************************************************
@@ -419,13 +482,71 @@ static int null_shutdown(FAR struct audio_lowerhalf_s *dev)
  *  stream going.
  *
  ****************************************************************************/
+#ifdef CONFIG_AUDIO_ENDPOINT_DETECT
+#define AUDIO_MSG_EPD              10
+#endif
+
+#ifdef CONFIG_AUDIO_KEYWORD_DETECT
+#define AUDIO_MSG_KD               11
+#endif
+
+static void *null_processthread(pthread_addr_t pvarg)
+{
+	FAR struct null_dev_s *priv = (struct null_dev_s *)pvarg;
+	struct audio_msg_s msg;
+	while (!priv->process_terminate) {
+		audvdbg("count : %d state : %d\n", priv->frames, priv->speech_state);
+		if (priv->speech_state == AUDIO_NULL_SPEECH_STATE_NONE) {
+			continue;
+		}
+#ifdef CONFIG_AUDIO_KEYWORD_DETECT
+		if ((priv->keyword_detect) && (priv->speech_state == AUDIO_NULL_SPEECH_STATE_IDLE)) {
+			if (priv->frames == AUDIO_NULL_KEYWORD_DETECT_THRESHOLD) {
+				audvdbg("Keyword Detected!!\n");
+				priv->speech_state = AUDIO_NULL_SPEECH_STATE_KD;
+				msg.msgId = AUDIO_MSG_KD;
+				msg.u.pPtr = NULL;
+				mq_send(priv->dev.process_mq, (FAR const char *)&msg, sizeof(msg), CONFIG_AUDIO_NULL_MSG_PRIO);
+			}
+		}
+#endif
+
+#ifdef CONFIG_AUDIO_ENDPOINT_DETECT
+		if ((priv->endpoint_detect) && (priv->speech_state == AUDIO_NULL_SPEECH_STATE_KD)) {
+			if (priv->frames == AUDIO_NULL_ENDPOINT_DETECT_THRESHOLD) {
+				audvdbg("EndPoint Detected!!\n");
+				priv->speech_state = AUDIO_NULL_SPEECH_STATE_EPD;
+				msg.msgId = AUDIO_MSG_EPD;
+				msg.u.pPtr = NULL;
+				mq_send(priv->dev.process_mq, (FAR const char *)&msg, sizeof(msg), CONFIG_AUDIO_NULL_MSG_PRIO);
+			}
+		}
+#endif
+		if (priv->speech_state == AUDIO_NULL_SPEECH_STATE_CLEAR) {
+			priv->speech_state = AUDIO_NULL_SPEECH_STATE_IDLE;
+			audvdbg("clear detect\n");
+		}
+		usleep(10 * 1000);
+	}
+	return NULL;
+}
+
+/****************************************************************************
+ * Name: null_workerthread
+ *
+ *  This is the thread that feeds data to the chip and keeps the audio
+ *  stream going.
+ *
+ ****************************************************************************/
 
 static void *null_workerthread(pthread_addr_t pvarg)
 {
 	FAR struct null_dev_s *priv = (struct null_dev_s *)pvarg;
+
 	struct audio_msg_s msg;
 	int msglen;
 	int prio;
+	struct timespec st_time;
 
 	audvdbg("Entry\n");
 
@@ -438,9 +559,8 @@ static void *null_workerthread(pthread_addr_t pvarg)
 #endif
 	{
 		/* Wait for messages from our message queue */
-
-		msglen = mq_receive(priv->mq, (FAR char *)&msg, sizeof(msg), &prio);
-
+		clock_gettime(CLOCK_REALTIME, &st_time);
+		msglen = mq_timedreceive(priv->mq, (FAR char *)&msg, sizeof(msg), &prio, &st_time);
 		/* Handle the case when we return with no message */
 
 		if (msglen < sizeof(struct audio_msg_s)) {
@@ -457,6 +577,7 @@ static void *null_workerthread(pthread_addr_t pvarg)
 #ifndef CONFIG_AUDIO_EXCLUDE_STOP
 		case AUDIO_MSG_STOP:
 			priv->terminate = true;
+			audvdbg("stop loop in thread\n");
 			break;
 #endif
 
@@ -470,6 +591,7 @@ static void *null_workerthread(pthread_addr_t pvarg)
 			audvdbg("ERROR: Ignoring message ID %d\n", msg.msgId);
 			break;
 		}
+		usleep(10 * 1000);
 	}
 
 	/* Close the message queue */
@@ -491,6 +613,95 @@ static void *null_workerthread(pthread_addr_t pvarg)
 }
 
 /****************************************************************************
+ * Name: null_unregisterprocess
+ *
+ * Description: Register the process (epd, wakeup etc.).
+ *
+ ****************************************************************************/
+static int null_unregisterprocess(FAR struct audio_lowerhalf_s *dev)
+{
+	FAR struct null_dev_s *priv = (FAR struct null_dev_s *)dev;
+	void *value;
+	int ret;
+	/* Join any old worker thread we had created to prevent a memory leak */
+	ret = OK;
+	if (priv->worker_threadid != 0) {
+		ret = pthread_join(priv->process_threadid, &value);
+		if (ret != OK) {
+			auddbg("join failed!! ret : %d\n", ret);
+			return ret;
+		}
+		priv->worker_threadid = 0;
+	}
+
+	if (priv->dev.process_mq != NULL) {
+		mq_close(priv->dev.process_mq);
+		priv->dev.process_mq = NULL;
+	} else {
+		auddbg("mq is null\n");
+		return -ENOENT;
+	}
+#ifdef CONFIG_AUDIO_SPEECH_DETECT_FEATURES
+	priv->speech_state = AUDIO_NULL_SPEECH_STATE_NONE;
+#ifdef CONFIG_AUDIO_KEYWORD_DETECT
+	priv->keyword_detect = false;
+#endif
+#ifdef CONFIG_AUDIO_ENDPOINT_DETECT
+	priv->endpoint_detect = false;
+#endif
+
+#endif
+	return ret;
+}
+
+/****************************************************************************
+ * Name: null_processstart
+ *
+ * Description:
+ *   Register the process (epd, wakeup etc.).
+ *
+ ****************************************************************************/
+static int null_registerprocess(FAR struct audio_lowerhalf_s *dev, mqd_t mq)
+{
+	FAR struct null_dev_s *priv = (FAR struct null_dev_s *)dev;
+	pthread_attr_t tattr;
+	FAR void *value;
+	int ret;
+
+	audvdbg("Entry\n");
+	if (priv->dev.process_mq == NULL) {
+		priv->dev.process_mq = mq;
+	} else {
+		auddbg("already registered!!\n");
+		return -EBUSY;
+	}
+
+	/* Join any old worker thread we had created to prevent a memory leak */
+
+	if (priv->process_threadid != 0) {
+		audvdbg("Joining old thread\n");
+		pthread_join(priv->process_threadid, &value);
+	}
+
+	/* Start our thread for sending data to the device */
+
+	pthread_attr_init(&tattr);
+	(void)pthread_attr_setstacksize(&tattr, CONFIG_AUDIO_NULL_WORKER_STACKSIZE);
+
+	audvdbg("Starting worker thread\n");
+	ret = pthread_create(&priv->process_threadid, &tattr, null_processthread, (pthread_addr_t) priv);
+	if (ret != OK) {
+		auddbg("ERROR: pthread_create failed: %d\n", ret);
+	} else {
+		pthread_setname_np(priv->process_threadid, "null audio process");
+		auddbg("Created worker thread\n");
+	}
+	priv->process_terminate = false;
+	audvdbg("Return %d\n", ret);
+	return ret;
+}
+
+/****************************************************************************
  * Name: null_start
  *
  * Description:
@@ -505,13 +716,12 @@ static int null_start(FAR struct audio_lowerhalf_s *dev)
 #endif
 {
 	FAR struct null_dev_s *priv = (FAR struct null_dev_s *)dev;
-	struct sched_param sparam;
 	struct mq_attr attr;
 	pthread_attr_t tattr;
 	FAR void *value;
 	int ret;
 
-	auddbg("Entry\n");
+	audvdbg("Entry\n");
 
 	/* Create a message queue for the worker thread */
 
@@ -532,24 +742,22 @@ static int null_start(FAR struct audio_lowerhalf_s *dev)
 
 	/* Join any old worker thread we had created to prevent a memory leak */
 
-	if (priv->threadid != 0) {
+	if (priv->worker_threadid != 0) {
 		audvdbg("Joining old thread\n");
-		pthread_join(priv->threadid, &value);
+		pthread_join(priv->worker_threadid, &value);
 	}
 
 	/* Start our thread for sending data to the device */
 
 	pthread_attr_init(&tattr);
-	sparam.sched_priority = sched_get_priority_max(SCHED_FIFO) - 3;
-	(void)pthread_attr_setschedparam(&tattr, &sparam);
 	(void)pthread_attr_setstacksize(&tattr, CONFIG_AUDIO_NULL_WORKER_STACKSIZE);
 
 	audvdbg("Starting worker thread\n");
-	ret = pthread_create(&priv->threadid, &tattr, null_workerthread, (pthread_addr_t) priv);
+	ret = pthread_create(&priv->worker_threadid, &tattr, null_workerthread, (pthread_addr_t) priv);
 	if (ret != OK) {
 		auddbg("ERROR: pthread_create failed: %d\n", ret);
 	} else {
-		pthread_setname_np(priv->threadid, "null audio");
+		pthread_setname_np(priv->worker_threadid, "null audio");
 		auddbg("Created worker thread\n");
 	}
 
@@ -587,9 +795,9 @@ static int null_stop(FAR struct audio_lowerhalf_s *dev)
 
 	/* Join the worker thread */
 
-	pthread_join(priv->threadid, &value);
-	priv->threadid = 0;
-
+	pthread_join(priv->worker_threadid, &value);
+	priv->worker_threadid = 0;
+	priv->frames = 0;
 	audvdbg("Return OK\n");
 	return OK;
 }
@@ -645,29 +853,30 @@ static int null_enqueuebuffer(FAR struct audio_lowerhalf_s *dev, FAR struct ap_b
 	FAR struct null_dev_s *priv = (FAR struct null_dev_s *)dev;
 	bool done;
 
-	audvdbg("apb=%p curbyte=%d nbytes=%d\n", apb, apb->curbyte, apb->nbytes);
+    audvdbg("apb=%p curbyte=%d nbytes=%d nmaxbytes %d\n", apb, apb->curbyte, apb->nbytes, apb->nmaxbytes);
 
 	/* Say that we consumed all of the data */
 
 	apb->curbyte = apb->nbytes;
-
+	apb->nbytes = apb->nmaxbytes;
 	/* Check if this was the last buffer in the stream */
-
 	done = ((apb->flags & AUDIO_APB_FINAL) != 0);
 
 	/* And return the buffer to the upper level */
 
 	DEBUGASSERT(priv && apb && priv->dev.upper);
 
+	priv->frames++;
+
 	/* The buffer belongs to to an upper level.  Just forward the event to
 	 * the next level up.
 	 */
-
 #ifdef CONFIG_AUDIO_MULTI_SESSION
 	priv->dev.upper(priv->dev.priv, AUDIO_CALLBACK_DEQUEUE, apb, OK, NULL);
 #else
 	priv->dev.upper(priv->dev.priv, AUDIO_CALLBACK_DEQUEUE, apb, OK);
 #endif
+	usleep(20 * 1000); //20ms as a delay, assuming that i2s operations
 
 	/* Say we are done playing if this was the last buffer in the stream */
 
@@ -706,23 +915,26 @@ static int null_cancelbuffer(FAR struct audio_lowerhalf_s *dev, FAR struct ap_bu
 
 static int null_ioctl(FAR struct audio_lowerhalf_s *dev, int cmd, unsigned long arg)
 {
+	FAR struct null_dev_s *priv = (FAR struct null_dev_s *)dev;
+	int ret = OK;
+
 #ifdef CONFIG_AUDIO_DRIVER_SPECIFIC_BUFFERS
 	FAR struct ap_buffer_info_s *bufinfo;
 #endif
 
-	audvdbg("cmd=%d arg=%ld\n");
+	auddbg("cmd=%d arg=%ld\n");
 
 	/* Deal with ioctls passed from the upper-half driver */
 
 	switch (cmd) {
-	/* Check for AUDIOIOC_HWRESET ioctl.  This ioctl is passed straight
-	 * through from the upper-half audio driver.
-	 */
+		/* Check for AUDIOIOC_HWRESET ioctl.  This ioctl is passed straight
+		 * through from the upper-half audio driver.
+		 */
 	case AUDIOIOC_HWRESET: {
 		audvdbg("AUDIOIOC_HWRESET:\n");
 	}
 	break;
-		/* Report our preferred buffer size and quantity */
+	/* Report our preferred buffer size and quantity */
 
 #ifdef CONFIG_AUDIO_DRIVER_SPECIFIC_BUFFERS
 	case AUDIOIOC_GETBUFFERINFO: {
@@ -733,13 +945,71 @@ static int null_ioctl(FAR struct audio_lowerhalf_s *dev, int cmd, unsigned long 
 	}
 	break;
 #endif
+	case AUDIOIOC_REGISTERPROCESS: {
+#ifdef CONFIG_AUDIO_PROCESSING_FEATURES
+#ifdef CONFIG_AUDIO_SPEECH_DETECT_FEATURES
+		priv->speech_state = AUDIO_NULL_SPEECH_STATE_NONE;
+#endif
+		ret = null_registerprocess(dev, (mqd_t) arg);
+		if (ret != OK) {
+			auddbg("Process Start Failed ret : %d\n", ret);
+			return ret;
+		}
+		ret = OK;
+#else
+		auddbg("Register Process Failed - Device Doesn't support\n");
+		ret = -EINVAL;
+#endif
+	}
+	break;
+	case AUDIOIOC_UNREGISTERPROCESS: {
+#ifdef CONFIG_AUDIO_PROCESSING_FEATURES
+		ret = null_unregisterprocess(dev);
+		if (ret != OK) {
+			auddbg("Process Start Failed ret : %d\n", ret);
+			return ret;
+		}
+		ret = OK;
+
+#else
+		auddbg("UnRegister Process Failed - Device Doesn't support\n");
+		ret = -EINVAL;
+#endif
+	}
+	break;
+
+	case AUDIOIOC_STARTPROCESS: {
+		auddbg("set start process!!\n");
+#ifdef CONFIG_AUDIO_PROCESSING_FEATURES
+		priv->process_terminate = false;
+		priv->speech_state = AUDIO_NULL_SPEECH_STATE_IDLE;
+		ret = OK;
+#else
+		auddbg("start Process Failed - Device Doesn't support\n");
+		ret = -EINVAL;
+#endif
+	}
+	break;
+
+	case AUDIOIOC_STOPPROCESS: {
+		auddbg("set stop process!!\n");
+#ifdef CONFIG_AUDIO_PROCESSING_FEATURES
+		priv->speech_state = AUDIO_NULL_SPEECH_STATE_NONE;
+		priv->process_terminate = true;
+		ret = OK;
+#else
+		auddbg("start Process Failed - Device Doesn't support\n");
+		ret = -EINVAL;
+#endif
+	}
+	break;
 
 	default:
 		break;
 	}
 
 	audvdbg("Return OK\n");
-	return OK;
+	return ret;
 }
 
 /****************************************************************************
@@ -777,9 +1047,9 @@ static int null_release(FAR struct audio_lowerhalf_s *dev)
 
 	/* Join any old worker thread we had created to prevent a memory leak */
 
-	if (priv->threadid != 0) {
-		pthread_join(priv->threadid, &value);
-		priv->threadid = 0;
+	if (priv->worker_threadid != 0) {
+		pthread_join(priv->worker_threadid, &value);
+		priv->worker_threadid = 0;
 	}
 
 	return OK;
@@ -819,6 +1089,16 @@ FAR struct audio_lowerhalf_s *audio_null_initialize(void)
 		 */
 
 		priv->dev.ops = &g_audioops;
+#ifdef CONFIG_AUDIO_PROCESSING_FEATURES
+		priv->process_terminate = false;
+#ifdef CONFIG_AUDIO_KEYWORD_DETECT
+		priv->keyword_detect = false;
+#endif
+#ifdef CONFIG_AUDIO_ENDPOINT_DETECT
+		priv->endpoint_detect = false;
+#endif
+#endif
+
 		return &priv->dev;
 	}
 

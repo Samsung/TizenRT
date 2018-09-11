@@ -27,7 +27,6 @@
 #include <sys/time.h>
 #include <stddef.h>
 #include <stdint.h>
-#include <tinyara/audio/audio.h>
 
 #if defined(__cplusplus)
 extern "C" {
@@ -40,6 +39,7 @@ extern "C" {
  * @brief Result types of Audio Manager APIs such as FAIL, SUCCESS, or INVALID ARGS
  */
 enum audio_manager_result_e {
+	AUDIO_MANAGER_DEVICE_ALREADY_IN_USE = -12,
 	AUDIO_MANAGER_SET_STREAM_POLICY_NOT_ALLOWED = -11,
 	AUDIO_MANAGER_SET_STREAM_POLICY_FAIL = -10,
 	AUDIO_MANAGER_DEVICE_NOT_SUPPORT = -9,
@@ -48,9 +48,9 @@ enum audio_manager_result_e {
 	AUDIO_MANAGER_CARD_NOT_READY = -6,
 	AUDIO_MANAGER_XRUN_STATE = -5,
 	AUDIO_MANAGER_INVALID_PARAM = -4,
-	AUDIO_MANAGER_INVALID_DEVICE_NAME = -3,
+	AUDIO_MANAGER_INVALID_DEVICE = -3,
 	AUDIO_MANAGER_NO_AVAIL_CARD = -2,
-	AUDIO_MANAGER_FAIL = -1,
+	AUDIO_MANAGER_OPERATION_FAIL = -1,
 	AUDIO_MANAGER_SUCCESS = 0
 };
 
@@ -87,28 +87,28 @@ typedef enum audio_device_type_e audio_device_type_t;
  * @brief Defined values for handling process of voice recognition on device, provides as a interface.
  */
 enum audio_device_process_unit_type_e {
-	AUDIO_DEVICE_PROCESS_TYPE_NONE = AUDIO_PU_UNDEF,
-	AUDIO_DEVICE_PROCESS_TYPE_STEREO_EXTENDER = AUDIO_PU_STEREO_EXTENDER,
-	AUDIO_DEVICE_PROCESS_TYPE_SPEECH_DETECTOR = AUDIO_PU_SPEECH_DETECT,
+	AUDIO_DEVICE_PROCESS_TYPE_NONE = 0,
+	AUDIO_DEVICE_PROCESS_TYPE_STEREO_EXTENDER = 1,
+	AUDIO_DEVICE_PROCESS_TYPE_SPEECH_DETECTOR = 2,
 };
 
 typedef enum audio_device_process_unit_type_e device_process_type_t;
 
 enum audio_device_process_unit_subtype_e {
 	/* For Stream Out */
-	AUDIO_DEVICE_STEREO_EXTENDER_NONE = AUDIO_STEXT_UNDEF,
-	AUDIO_DEVICE_STEREO_EXTENDER_ENABLE = AUDIO_STEXT_ENABLE,
-	AUDIO_DEVICE_STEREO_EXTENDER_WIDTH = AUDIO_STEXT_WIDTH,
-	AUDIO_DEVICE_STEREO_EXTENDER_UNDERFLOW = AUDIO_STEXT_UNDERFLOW,
-	AUDIO_DEVICE_STEREO_EXTENDER_OVERFLOW = AUDIO_STEXT_OVERFLOW,
-	AUDIO_DEVICE_STEREO_EXTENDER_LATENCY = AUDIO_STEXT_LATENCY,
+	AUDIO_DEVICE_STEREO_EXTENDER_NONE = 0,
+	AUDIO_DEVICE_STEREO_EXTENDER_ENABLE = 1,
+	AUDIO_DEVICE_STEREO_EXTENDER_WIDTH = 2,
+	AUDIO_DEVICE_STEREO_EXTENDER_UNDERFLOW = 3,
+	AUDIO_DEVICE_STEREO_EXTENDER_OVERFLOW = 4,
+	AUDIO_DEVICE_STEREO_EXTENDER_LATENCY = 5,
 
 	/* For Stream In */
-	AUDIO_DEVICE_SPEECH_DETECT_NONE = AUDIO_SD_UNDEF,
-	AUDIO_DEVICE_SPEECH_DETECT_EPD = AUDIO_SD_ENDPOINT_DETECT,
-	AUDIO_DEVICE_SPEECH_DETECT_KD = AUDIO_SD_KEYWORD_DETECT,
-	AUDIO_DEVICE_SPEECH_DETECT_NS = AUDIO_SD_NS,
-	AUDIO_DEVICE_SPEECH_DETECT_CLEAR = AUDIO_SD_CLEAR
+	AUDIO_DEVICE_SPEECH_DETECT_NONE = 6,
+	AUDIO_DEVICE_SPEECH_DETECT_EPD = 7,
+	AUDIO_DEVICE_SPEECH_DETECT_KD = 8,
+	AUDIO_DEVICE_SPEECH_DETECT_NS = 9,
+	AUDIO_DEVICE_SPEECH_DETECT_CLEAR = 10
 };
 
 typedef enum audio_device_process_unit_subtype_e device_process_subtype_t;
@@ -452,10 +452,97 @@ audio_manager_result_t set_output_audio_volume(uint8_t volume);
 audio_manager_result_t find_stream_in_device_with_process_type(device_process_type_t type, device_process_subtype_t subtype, int *card_id, int *device_id);
 
 /****************************************************************************
+ * Name: register_stream_in_device_process_handler
+ *
+ * Description:
+ *   Regsiter process handler to handle event messages from the target stream of the device
+ *
+ * Input parameter:
+ *   card_id : Target card id , device_id : Target device id
+ *   type : Process Type
+ *
+ * Return Value:
+ *   On success, AUDIO_MANAGER_SUCCESS. Otherwise, a negative value.
+ ****************************************************************************/
+audio_manager_result_t register_stream_in_device_process_handler(int card_id, int device_id, device_process_type_t type);
+
+/****************************************************************************
+ * Name: register_stream_in_device_process_type
+ *
+ * Description:
+ *   Regsiter processtype based on given type & subtype of process
+ *
+ * Input parameter:
+ *   card_id : Target card id , device_id : Target device id
+ *   type : Process Type, subtype : Process Subtype
+ *
+ * Return Value:
+ *   On success, AUDIO_MANAGER_SUCCESS. Otherwise, a negative value.
+ ****************************************************************************/
+audio_manager_result_t register_stream_in_device_process_type(int card_id, int device_id, device_process_type_t type, device_process_subtype_t subtype);
+
+/****************************************************************************
+ * Name: start_stream_in_device_process
+ *
+ * Description:
+ *   Stop registered process
+ *
+ * Input parameter:
+ *   card_id : Target card id , device_id : Target device id
+ *
+ * Return Value:
+ *   On success, AUDIO_MANAGER_SUCCESS. Otherwise, a negative value.
+ ****************************************************************************/
+audio_manager_result_t start_stream_in_device_process(int card_id, int device_id);
+
+/****************************************************************************
+ * Name: stop_stream_in_device_process
+ *
+ * Description:
+ *   Stop registered process
+ *
+ * Input parameter:
+ *   card_id : Target card id , device_id : Target device id
+ *
+ * Return Value:
+ *   On success, AUDIO_MANAGER_SUCCESS. Otherwise, a negative value.
+ ****************************************************************************/
+audio_manager_result_t stop_stream_in_device_process(int card_id, int device_id);
+
+/****************************************************************************
+ * Name: unregister_stream_in_device_process
+ *
+ * Description:
+ *   Release device process and unregister it
+ *
+ * Input parameter:
+ *   card_id : Target card id , device_id : Target device id
+ *
+ * Return Value:
+ *   On success, AUDIO_MANAGER_SUCCESS. Otherwise, a negative value.
+ ****************************************************************************/
+audio_manager_result_t unregister_stream_in_device_process(int card_id, int device_id);
+
+/****************************************************************************
+ * Name: get_device_process_handler_message
+ *
+ * Description:
+ *   Get message from registered process handler
+ *
+ * Input parameter:
+ *   card_id : Target card id , device_id : Target device id
+ *   msgId : Message ID to be returned
+ *
+ * Return Value:
+ *   On success, AUDIO_MANAGER_SUCCESS. Otherwise, a negative value.
+ ****************************************************************************/
+audio_manager_result_t get_device_process_handler_message(int card_id, int device_id, uint16_t *msgId);
+
+/****************************************************************************
  * Name: set_stream_in_policy
  *
  * Description:
- *   Set policy to prevent the current stream in from being stopped by another operation 
+ *   Set policy to prevent the current stream in from being stopped by another operation
  *   when the current operation is more important.
  *   The policy follows priority based on audio_manager_stream_policy_e
  *
@@ -471,7 +558,7 @@ audio_manager_result_t set_stream_in_policy(audio_manager_stream_policy_t policy
  * Name: set_stream_out_policy
  *
  * Description:
- *   Set policy to prevent the current stream out from being stopped by another operation 
+ *   Set policy to prevent the current stream out from being stopped by another operation
  *   when the current operation is more important.
  *   The policy follows priority based on audio_manager_stream_policy_e
  *
