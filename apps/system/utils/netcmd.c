@@ -356,7 +356,6 @@ int cmd_ifconfig(int argc, char **argv)
 			else if (strstr(hostip, ":") != NULL) {
 				ip6_addr_t temp;
 				s8_t idx;
-				int result;
 
 				netif = netif_find(intf);
 				if (netif) {
@@ -380,7 +379,7 @@ int cmd_ifconfig(int argc, char **argv)
 					netif_set_ip6_autoconfig_enabled(netif, 1);
 #endif /* CONFIG_NET_IPv6_AUTOCONFIG */
 					/* add static ipv6 address */
-					result = netif_add_ip6_address(netif, &temp, &idx);
+					(void)netif_add_ip6_address(netif, &temp, &idx);
 
 #ifdef CONFIG_NET_IPv6_MLD
 					ip6_addr_t solicit_addr;

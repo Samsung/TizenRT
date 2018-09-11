@@ -72,6 +72,7 @@
 #include <errno.h>
 #include <debug.h>
 #include <netinet/in.h>
+#include <arpa/inet.h>
 #include <protocols/ntpclient.h>
 #include <netdb.h>
 #include "ntpv3.h"
