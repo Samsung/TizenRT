@@ -25,7 +25,10 @@ namespace media {
 
 Decoder::Decoder(audio_type_t audioType, unsigned short channels, unsigned int sampleRate)
 #ifdef CONFIG_AUDIO_CODEC
-	: mAudioType(audioType), mChannels(channels), mSampleRate(sampleRate)
+	:
+	mAudioType(audioType),
+	mChannels(channels),
+	mSampleRate(sampleRate)
 #endif
 {
 #ifdef CONFIG_AUDIO_CODEC
@@ -47,15 +50,19 @@ std::shared_ptr<Decoder> Decoder::create(audio_type_t audioType, unsigned short 
 #ifdef CONFIG_AUDIO_CODEC
 	medvdbg("(%d,%d,%d)\n", audioType, channels, sampleRate);
 
-	std::shared_ptr<Decoder> instance(new Decoder(audioType, channels, sampleRate));
-	if (instance) {
-		if (instance->init()) {
-			return instance;
-		}
+	if (audioType == AUDIO_TYPE_UNKNOWN) {
+		meddbg("%s[line : %d] Fail : audio type is unknown\n", __func__, __LINE__);
+		return nullptr;
 	}
 
-	meddbg("Error! (%d,%d,%d), failed!\n", audioType, channels, sampleRate);
-	return nullptr;
+	auto instance = std::make_shared<Decoder>(audioType, channels, sampleRate);
+	if (instance && instance->init()) {
+		return instance;
+	} else {
+		meddbg("%s[line : %d] Fail : init is failed\n", __func__, __LINE__);
+		meddbg("audioType : %d, channels : %d, sampleRate : %d\n", audioType, channels, sampleRate);
+		return nullptr;
+	}
 #else
 	return nullptr;
 #endif
@@ -64,19 +71,14 @@ std::shared_ptr<Decoder> Decoder::create(audio_type_t audioType, unsigned short 
 bool Decoder::init(void)
 {
 #ifdef CONFIG_AUDIO_CODEC
-	if (mAudioType == AUDIO_TYPE_UNKNOWN) {
-		meddbg("Error! unknown audio type!\n");
-		return false;
-	}
-
 	if (audio_decoder_init(&mDecoder, CONFIG_AUDIO_CODEC_RINGBUFFER_SIZE) != AUDIO_DECODER_OK) {
-		meddbg("Error! audio_decoder_init failed!\n");
+		meddbg("%s[line : %d] Fail : audio_decoder_init is failed\n", __func__, __LINE__);
 		return false;
 	}
 
 	mDecoder.audio_type = mAudioType;
 	if (!mConfig(mDecoder.audio_type)) {
-		meddbg("Error! mConfig() failed!\n");
+		meddbg("%s[line : %d] Fail : mConfig is failed\n", __func__, __LINE__);
 		return false;
 	}
 
