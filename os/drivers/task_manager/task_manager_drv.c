@@ -161,6 +161,7 @@ static int taskmgr_ioctl(FAR struct file *filep, int cmd, unsigned long arg)
 			return ERROR;
 		}
 		(void)sigprocmask(SIG_SETMASK, NULL, &tcb->sigprocmask);
+		ret = OK;
 		break;
 	case TMIOC_BROADCAST:
 		tcb = sched_gettcb((int)arg);
@@ -205,6 +206,7 @@ static int taskmgr_ioctl(FAR struct file *filep, int cmd, unsigned long arg)
 			}
 		}
 #endif
+		break;
 	default:
 		tmdbg("Unrecognized cmd: %d arg: %ld\n", cmd, arg);
 		break;
