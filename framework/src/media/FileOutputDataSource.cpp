@@ -78,7 +78,7 @@ bool FileOutputDataSource::open()
 
 		switch (getAudioType()) {
 		case AUDIO_TYPE_OPUS:
-			setEncoder(std::make_shared<Encoder>(AUDIO_TYPE_OPUS, getChannels(), getSampleRate()));
+			setEncoder(Encoder::create(AUDIO_TYPE_OPUS, getChannels(), getSampleRate()));
 			break;
 
 		default:

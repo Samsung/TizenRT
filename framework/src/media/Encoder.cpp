@@ -26,18 +26,50 @@
 
 namespace media {
 
-Encoder::Encoder(audio_type_t audio_type, unsigned short channels, unsigned int sampleRate)
+Encoder::Encoder(audio_type_t audioType, unsigned short channels, unsigned int sampleRate)
 #ifdef CONFIG_AUDIO_CODEC
-	: inputBuf(nullptr), outputBuf(nullptr)
+	:
+	mAudioType(audioType),
+	mChannels(channels),
+	mSampleRate(sampleRate),
+	inputBuf(nullptr),
+	outputBuf(nullptr)
 #endif
 {
 #ifdef CONFIG_AUDIO_CODEC
-	switch (audio_type) {
+	memset(&mEncoder, 0, sizeof(audio_encoder_t));
+#endif
+}
 
+std::shared_ptr<Encoder> Encoder::create(audio_type_t audioType, unsigned short channels, unsigned int sampleRate)
+{
+#ifdef CONFIG_AUDIO_CODEC
+	medvdbg("(%d,%d,%d)\n", audioType, channels, sampleRate);
+
+	if (audioType == AUDIO_TYPE_UNKNOWN) {
+		meddbg("%s[line : %d] Fail : audio type is unknown\n", __func__, __LINE__);
+		return nullptr;
+	}
+
+	auto instance = std::make_shared<Encoder>(audioType, channels, sampleRate);
+	if (instance && instance->init()) {
+		return instance;
+	} else {
+		meddbg("%s[line : %d] Fail : init is failed\n", __func__, __LINE__);
+		meddbg("audioType : %d, channels : %d, sampleRate : %d\n", audioType, channels, sampleRate);
+		return nullptr;
+	}
+#else
+	return nullptr;
+#endif
+}
+
+bool Encoder::init(void)
+{
+#ifdef CONFIG_AUDIO_CODEC
+	switch (mAudioType) {
 #ifdef CONFIG_CODEC_LIBOPUS
 	case AUDIO_TYPE_OPUS: {
-		memset(&mEncoder, 0, sizeof(audio_encoder_t));
-
 		opus_enc_external_t ext = {0};
 
 // params for opus encoding
@@ -56,7 +88,7 @@ Encoder::Encoder(audio_type_t audio_type, unsigned short channels, unsigned int 
 		ext.bandWidth = OPUS_AUTO;
 
 		// allocate memory resource
-		size_t inSamples = sampleRate * channels * ext.frameSizeMS / MSEC_PER_SECOND;
+		size_t inSamples = mSampleRate * mChannels * ext.frameSizeMS / MSEC_PER_SECOND;
 		inputBuf = new signed short[inSamples];
 		outputBuf = new unsigned char[MAX_PACKET_SIZE];
 
@@ -67,20 +99,22 @@ Encoder::Encoder(audio_type_t audio_type, unsigned short channels, unsigned int 
 		ext.inputBufferMaxLength = sizeof(signed short) * inSamples;
 
 		// params about PCM source
-		ext.inputChannels = channels;
-		ext.inputSampleRate = sampleRate;
+		ext.inputChannels = mChannels;
+		ext.inputSampleRate = mSampleRate;
 
 		// Initialize encoder
 		if (audio_encoder_init(&mEncoder, CONFIG_AUDIO_CODEC_RINGBUFFER_SIZE, AUDIO_TYPE_OPUS, &ext) != AUDIO_ENCODER_OK) {
 			meddbg("Error! audio_encoder_init failed!\n");
+			return false;
 		}
-		break;
+		return true;
 	}
 #endif
-
 	default:
-		break;
+		return false;
 	}
+#else
+	return false;
 #endif
 }
 
@@ -91,8 +125,12 @@ Encoder::~Encoder()
 		meddbg("Error! audio_encoder_finish failed!\n");
 	}
 
-	delete[] inputBuf;
-	delete[] outputBuf;
+	if (inputBuf) {
+		delete[] inputBuf;
+	}
+	if (outputBuf) {
+		delete[] outputBuf;
+	}
 #endif
 }
 
