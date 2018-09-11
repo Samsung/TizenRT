@@ -244,7 +244,7 @@ static OCStackResult seckey_setup(const char *filename, OicSecKey_t *key, OicEnc
 			file_ext--;
 		}
 
-		if (strncmp(file_ext + 1, "PEM", 3) == 0 || strncmp(file_ext + 1, "pem", 3) == 0) {
+		if (strncmp(file_ext + 1, "PEM", sizeof("PEM")) == 0 || strncmp(file_ext + 1, "pem", sizeof("pem")) == 0) {
 			key->encoding = OIC_ENCODING_PEM;
 		} else {
 			key->encoding = OIC_ENCODING_DER;

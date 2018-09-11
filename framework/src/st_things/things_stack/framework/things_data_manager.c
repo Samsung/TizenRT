@@ -2219,7 +2219,7 @@ struct things_resource_s *dm_get_resource_instance(const char *uri, const int id
 			if (device->pchild_resources[index] == NULL) {
 				THINGS_LOG_V(TAG, "Resource with URI : %s not exist !!!!", uri);
 				break;
-			} else if (strncmp(device->pchild_resources[index]->uri, uri, strlen(uri)) == 0) {
+			} else if (strncmp(device->pchild_resources[index]->uri, uri, MAX_URI_LEN) == 0) {
 				THINGS_LOG_D(TAG, "Found %s from device[%d] : %s!!!!", uri, id, device->device_id);
 
 				char *sValue = NULL;
@@ -2329,8 +2329,8 @@ int dm_validate_attribute_in_request(char *rt, const void *payload)
 			}
 #ifdef CONFIG_ST_THINGS_COLLECTION
 			//    c. Make it pass if it's collection resource
-			if (0 == strncmp(rt, OC_RSRVD_RESOURCE_TYPE_COLLECTION, strlen(OC_RSRVD_RESOURCE_TYPE_COLLECTION))
-				|| 0 == strncmp(rt, SEC_RTYPE_THINGS_DEVICE, strlen(SEC_RTYPE_THINGS_DEVICE))) {
+			if (0 == strncmp(rt, OC_RSRVD_RESOURCE_TYPE_COLLECTION, sizeof(OC_RSRVD_RESOURCE_TYPE_COLLECTION))
+				|| 0 == strncmp(rt, SEC_RTYPE_THINGS_DEVICE, sizeof(SEC_RTYPE_THINGS_DEVICE))) {
 				// TODO : Need to check whether there an array delivered or not..
 				THINGS_LOG_D(TAG, "\t==> Child %s", (r_payload->next != NULL ? "EXIST" : "NOT EXIST"));
 				THINGS_LOG_D(TAG, "\t==> Request On Collection Resource. Making it PASS");
@@ -2360,7 +2360,7 @@ int things_get_resource_type(const char *resource_uri, int *count, char ***resou
 	if (device != NULL) {
 		if (device->sig_cnt > 0) {
 			for (int index = 0; index < device->sig_cnt; index++) {
-				if (strncmp(device->single[index].uri, resource_uri, strlen(resource_uri)) == 0) {
+				if (strncmp(device->single[index].uri, resource_uri, MAX_URI_LEN) == 0) {
 					(*count) = device->single[index].rt_cnt;
 					(*resource_types) = device->single[index].resource_types;
 					return 1;
@@ -2370,7 +2370,7 @@ int things_get_resource_type(const char *resource_uri, int *count, char ***resou
 #ifdef CONFIG_ST_THINGS_COLLECTION
 		if (device->col_cnt > 0) {
 			for (int index = 0; index < device->col_cnt; index++) {
-				if (strncmp(device->collection[index].uri, resource_uri, strlen(resource_uri)) == 0) {
+				if (strncmp(device->collection[index].uri, resource_uri, MAX_URI_LEN) == 0) {
 					(*count) = device->collection[index].rt_cnt;
 					(*resource_types) = device->collection[index].resource_types;
 					return 1;
@@ -2442,7 +2442,7 @@ bool things_is_collection_resource(const char *res_uri)
 
 	if (device->col_cnt > 0) {
 		for (int index = 0; index < device->col_cnt; index++) {
-			if (strncmp(device->collection[index].uri, res_uri, strlen(res_uri)) == 0) {
+			if (strncmp(device->collection[index].uri, res_uri, MAX_URI_LEN) == 0) {
 				return true;
 			}
 		}
@@ -2461,7 +2461,7 @@ int things_get_child_resources(const char *col_res_uri, int *count, things_resou
 
 	if (device->col_cnt > 0) {
 		for (int index = 0; index < device->col_cnt; index++) {
-			if (strncmp(device->collection[index].uri, col_res_uri, strlen(col_res_uri)) == 0) {
+			if (strncmp(device->collection[index].uri, col_res_uri, MAX_URI_LEN) == 0) {
 				(*count) = device->collection[index].link_cnt;
 				(*child_resources) = device->collection[index].links;
 				return 1;

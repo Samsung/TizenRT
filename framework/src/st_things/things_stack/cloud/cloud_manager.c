@@ -2080,7 +2080,7 @@ static int es_cloud_state_set_and_notify(things_cloud_status_e state, es_error_c
 {
 	const char *strState = get_prov_status(state);
 
-	if (strState == NULL || strncmp(strState, "UNKNOWN", strlen("UNKNOWN")) == 0 || state == ES_STATE_INIT || state == ES_STATE_CONNECTED_TO_ENROLLER) {
+	if (strState == NULL || strncmp(strState, "UNKNOWN", sizeof("UNKNOWN")) == 0 || state == ES_STATE_INIT || state == ES_STATE_CONNECTED_TO_ENROLLER) {
 		THINGS_LOG_D(TAG, "state is invalid value(%d)", state);
 		return -1;
 	}
@@ -2294,7 +2294,7 @@ static int get_cloud_code(OCClientResponse *response, OCMethod method, ci_error_
 	val = ((OCRepPayload *) response->payload)->values;
 
 	while (val != NULL) {
-		if (strncmp(val->name, CLOUD_ERROR_CODE, strlen(CLOUD_ERROR_CODE)) == 0) {
+		if (strncmp(val->name, CLOUD_ERROR_CODE, sizeof(CLOUD_ERROR_CODE)) == 0) {
 			if (val->type != OCREP_PROP_INT) {
 				THINGS_LOG_E(TAG, "DataType of Cloud-Err-Code is not Integer.");
 			} else {

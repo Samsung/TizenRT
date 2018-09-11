@@ -527,7 +527,7 @@ int esm_wifi_prov_check_cb(int enabled, char *ssid, char *addr)
 	}
 
 	pthread_mutex_lock(&g_es_mutex);
-	if (strncmp(ssid, g_wifi_prov_data->ssid, strlen(g_wifi_prov_data->ssid)) == 0) {
+	if (strncmp(ssid, g_wifi_prov_data->ssid, MAX_SSID_LEN) == 0) {
 		THINGS_LOG_D(TAG, "CONNECTED TO TARGET AP  %s ", ssid);
 		THINGS_LOG_D(TAG, "GET IP ADDR  : %s ", addr);
 		ret = 1;

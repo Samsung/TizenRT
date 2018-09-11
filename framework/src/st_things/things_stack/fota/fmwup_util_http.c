@@ -148,11 +148,11 @@ int webclient_init_request(char *url, struct http_client_request_t *request)
 	request->url[strlen(url)] = '\0';
 
 #ifdef CONFIG_NET_SECURITY_TLS
-	if (!strncmp(request->url, "https", 5)) {
+	if (!strncmp(request->url, "https", sizeof("https"))) {
 		g_https = 1;
 	} else
 #endif
-	if (!strncmp(request->url, "http", 4)) {
+	if (!strncmp(request->url, "http", sizeof("http"))) {
 		g_https = 0;
 	} else {
 		return ret;

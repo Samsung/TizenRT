@@ -86,7 +86,7 @@ bool get_query_value_internal(const char *query, const char *key, char **value, 
 
 	bool res = false;
 	while (p_ptr != NULL) {
-		if (strncmp(p_ptr, key, key_len) == 0) {
+		if (strncmp(p_ptr, key, MAX_KEY_LENGTH) == 0) {
 			THINGS_LOG_D(TAG, "Key(%s) exists in query parameter(%s).", key, query);
 			if (NULL != found) {
 				*found = true;
@@ -398,7 +398,7 @@ static bool get_supported_properties(const char *res_type, const char *res_uri, 
 				// If this prop is already added, then ignore it and decrement the total count by 1.
 				bool exist = false;
 				for (int i = 0; i < cur_index; i++) {
-					if (0 == strncmp(((*properties)[i])->key, prop->key, strlen(prop->key))) {
+					if (0 == strncmp(((*properties)[i])->key, prop->key, MAX_KEY_LENGTH)) {
 						THINGS_LOG_D(TAG, "Property(%s) is already added in the request message.", prop->key);
 						exist = true;
 						break;
@@ -803,7 +803,7 @@ bool handle_get_req_helper(const char *res_uri, const char *query, OCRepPayload 
 	bool handled = false;
 	if (NULL != if_type && strlen(if_type) > 0) {
 		THINGS_LOG_D(TAG, "Interface type is (%s).", if_type);
-		if (0 == strncmp(if_type, OC_RSRVD_INTERFACE_READ, strlen(OC_RSRVD_INTERFACE_READ))) {
+		if (0 == strncmp(if_type, OC_RSRVD_INTERFACE_READ, sizeof(OC_RSRVD_INTERFACE_READ))) {
 			// Add all the attributes which are readable.
 			for (int index = 0; index < count; index++) {
 				if (NULL != properties[index] && IS_READABLE(properties[index]->rw)) {
@@ -811,7 +811,7 @@ bool handle_get_req_helper(const char *res_uri, const char *query, OCRepPayload 
 				}
 			}
 			handled = true;
-		} else if (0 == strncmp(if_type, ST_THINGS_RSRVD_INTERFACE_READWRITE, strlen(ST_THINGS_RSRVD_INTERFACE_READWRITE))) {
+		} else if (0 == strncmp(if_type, ST_THINGS_RSRVD_INTERFACE_READWRITE, sizeof(ST_THINGS_RSRVD_INTERFACE_READWRITE))) {
 			// Add all the attributes which are readable and writable.
 			for (int index = 0; index < count; index++) {
 				if (NULL != properties[index] && IS_READABLE(properties[index]->rw) && IS_WRITABLE(properties[index]->rw)) {
@@ -888,7 +888,7 @@ static int handle_get_req_on_single_rsrc(things_resource_s *single_rsrc)
 		}
 	}
 
-	if (NULL == if_type || strlen(if_type) < 1 || !strncmp(if_type, OC_RSRVD_INTERFACE_DEFAULT, strlen(OC_RSRVD_INTERFACE_DEFAULT))) {
+	if (NULL == if_type || strlen(if_type) < 1 || !strncmp(if_type, OC_RSRVD_INTERFACE_DEFAULT, sizeof(OC_RSRVD_INTERFACE_DEFAULT))) {
 		if (!add_common_props(single_rsrc, false, resp_rep->payload)) {
 			THINGS_LOG_E(TAG, "Failed to add the common properties in response payload.");
 			things_release_representation_inst(resp_rep);
@@ -1067,7 +1067,7 @@ static int handle_post_req_on_single_rsrc(things_resource_s *single_rsrc)
 	}
 	// Set the common properties in the payload (Only for baseline interface).
 	// The payload which is passed as a parameter will be updated with the common properties.
-	if (NULL == if_type || !strncmp(if_type, OC_RSRVD_INTERFACE_DEFAULT, strlen(OC_RSRVD_INTERFACE_DEFAULT))) {
+	if (NULL == if_type || !strncmp(if_type, OC_RSRVD_INTERFACE_DEFAULT, sizeof(OC_RSRVD_INTERFACE_DEFAULT))) {
 		if (!add_common_props(single_rsrc, false, resp_rep->payload)) {
 			THINGS_LOG_E(TAG, "Failed to add the common properties in response payload.");
 			things_release_representation_inst(resp_rep);
