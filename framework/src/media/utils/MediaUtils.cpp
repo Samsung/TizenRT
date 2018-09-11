@@ -357,7 +357,7 @@ bool header_parsing(FILE *fp, audio_type_t audioType, unsigned int *channel, uns
 
 bool header_parsing(unsigned char *buffer, unsigned int bufferSize, audio_type_t audioType, unsigned int *channel, unsigned int *sampleRate, audio_format_type_t *pcmFormat)
 {
-	int headPoint;
+	unsigned int headPoint;
 	unsigned char *header;
 	bool isHeader;
 	switch (audioType) {
