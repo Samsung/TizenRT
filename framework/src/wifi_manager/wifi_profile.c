@@ -120,7 +120,6 @@ static void _wifi_profile_deserialize(wifi_manager_ap_config_s *config, char *bu
 	if (config->ap_auth_type == WIFI_MANAGER_AUTH_OPEN) {
 		return;
 	}
-	
 	DECODE_INTEGER(buf, config->passphrase_length, pos);
 	DECODE_STRING(buf, config->passphrase, pos, config->passphrase_length);
 
@@ -291,14 +290,13 @@ wifi_utils_result_e wifi_profile_read(wifi_manager_ap_config_s *config, int inte
 	if (ret != SEE_OK) {
 		return WIFI_UTILS_FILE_ERROR;
 	}
+	nvdbg("read data len(%u)\n", readlen);
 #else
 	ret = _wifi_profile_read_file(buf, WIFI_PROFILE_BUFSIZE, internal);
 	if (ret < 0) {
 		return WIFI_UTILS_FILE_ERROR;
 	}
 #endif
-	nvdbg("readed data len(%d)\n", readlen);
-
 	_wifi_profile_deserialize(config, buf);
 
 	return WIFI_UTILS_SUCCESS;
