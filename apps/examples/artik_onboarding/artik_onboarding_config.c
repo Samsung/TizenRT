@@ -97,6 +97,8 @@ artik_error InitConfiguration(void)
 		close(fd);
 		return E_ACCESS_DENIED;
 	}
+
+	return S_OK;
 }
 
 artik_error SaveConfiguration(void)
