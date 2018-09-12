@@ -276,6 +276,7 @@ void *getpeername_client(void *args)
 	ret = connect(mysocket, (struct sockaddr *)&dest, sizeof(struct sockaddr));
 	if (ret < 0) {
 		printf("connect fail %s %d\n", __FUNCTION__, __LINE__);
+		close(mysocket);
 		return 0;
 	}
 
