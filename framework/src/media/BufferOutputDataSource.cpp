@@ -18,6 +18,7 @@
 
 #include <tinyara/config.h>
 #include <stdio.h>
+#include <string.h>
 #include <debug.h>
 #include <media/BufferOutputDataSource.h>
 #include "MediaRecorderImpl.h"
@@ -34,18 +35,21 @@
 
 namespace media {
 namespace stream {
-BufferOutputDataSource::BufferOutputDataSource()
-	: OutputDataSource()
+BufferOutputDataSource::BufferOutputDataSource() :
+	OutputDataSource(),
+	mIsPrepare(false)
 {
 }
 
-BufferOutputDataSource::BufferOutputDataSource(unsigned int channels, unsigned int sampleRate, audio_format_type_t pcmFormat)
-	: OutputDataSource(channels, sampleRate, pcmFormat)
+BufferOutputDataSource::BufferOutputDataSource(unsigned int channels, unsigned int sampleRate, audio_format_type_t pcmFormat) :
+	OutputDataSource(channels, sampleRate, pcmFormat),
+	mIsPrepare(false)
 {
 }
 
-BufferOutputDataSource::BufferOutputDataSource(const BufferOutputDataSource &source)
-	: OutputDataSource(source)
+BufferOutputDataSource::BufferOutputDataSource(const BufferOutputDataSource &source) :
+	OutputDataSource(source),
+	mIsPrepare(false)
 {
 }
 
@@ -57,57 +61,47 @@ BufferOutputDataSource &BufferOutputDataSource::operator=(const BufferOutputData
 
 bool BufferOutputDataSource::open()
 {
-	if (!getStreamBuffer()) {
-		auto streamBuffer = StreamBuffer::Builder()
-								.setBufferSize(CONFIG_BUFFER_DATASOURCE_STREAM_BUFFER_SIZE)
-								.setThreshold(CONFIG_BUFFER_DATASOURCE_STREAM_BUFFER_THRESHOLD)
-								.build();
-		if (!streamBuffer) {
-			medvdbg("streamBuffer is nullptr!\n");
-			return false;
-		}
-
-		setStreamBuffer(streamBuffer);
-	}
-
-	start();
+	mIsPrepare = true;
 	return true;
 }
 
 bool BufferOutputDataSource::close()
 {
-	stop();
+	mIsPrepare = false;
 	return true;
 }
 
 bool BufferOutputDataSource::isPrepare()
 {
-	return (getStreamBuffer() != nullptr);
+	return mIsPrepare;
 }
 
-ssize_t BufferOutputDataSource::onStreamBufferReadable(bool isFlush)
+ssize_t BufferOutputDataSource::write(unsigned char *buf, size_t size)
 {
-	auto reader = getBufferReader();
-	assert(reader->sizeOfData() > 0);
-	size_t size = reader->sizeOfData();
-	unsigned char *buffer = new unsigned char[size];
-	if (buffer) {
-		reader->read(buffer, size);
-		auto recorder = getRecorder();
-		if (recorder) {
-			recorder->notifyObserver(OBSERVER_COMMAND_BUFFER_DATAREACHED, buffer, size);
-		}
-		// DO NOT `delete[]`, `buffer` will be managed in std::shared_ptr<> and released automatically!
-		return size;
+	if (!isPrepare()) {
+		return EOF;
 	}
 
-	meddbg("buffer alloc failed\n");
-	return -1;
+	if (buf == nullptr) {
+		return EOF;
+	}
+
+	auto buffer = new unsigned char[size];
+	memcpy(buffer, buf, size);
+	auto recorder = getRecorder();
+	if (recorder) {
+		recorder->notifyObserver(OBSERVER_COMMAND_BUFFER_DATAREACHED, buffer, size);
+	}
+	// DO NOT `delete[]`, `buffer` will be managed in std::shared_ptr<> and released automatically!
+
+	return size;
 }
 
 BufferOutputDataSource::~BufferOutputDataSource()
 {
-	close();
+	if (isPrepare()) {
+		close();
+	}
 }
 
 } // namespace stream

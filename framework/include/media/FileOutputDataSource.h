@@ -106,9 +106,15 @@ public:
 	 * @since TizenRT v2.0 PRE
 	 */
 	bool close() override;
-
-protected:
-	ssize_t onStreamBufferReadable(bool isFlush) override;
+	/**
+	 * @brief Write the file
+	 * @details @b #include <media/FileOutputDataSource.h>
+	 * param[in] buf poiter to a buffer
+	 * param[in] size Number of size to write
+	 * @return Data size written to buf.
+	 * @since TizenRT v2.0
+	 */
+	ssize_t write(unsigned char *buf, size_t size) override;
 
 private:
 	std::string mDataPath;
