@@ -20,18 +20,18 @@
  ****************************************************************************/
 #include <tinyara/config.h>
 #include <stdint.h>
-#include <errno.h>
+#include <string.h>
 #include <debug.h>
 #include <signal.h>
-#include <apps/builtin.h>
 #include <sys/types.h>
+
+#include <apps/builtin.h>
 #include <tinyara/sched.h>
 #include <tinyara/signal.h>
 #include <tinyara/fs/fs.h>
 #include <tinyara/fs/ioctl.h>
 #include <tinyara/wdog.h>
 #include <tinyara/task_manager_internal.h>
-#include <string.h>
 
 #include "sched/sched.h"
 
@@ -110,7 +110,7 @@ static ssize_t taskmgr_write(FAR struct file *filep, FAR const char *buffer, siz
  ************************************************************************************/
 static int taskmgr_ioctl(FAR struct file *filep, int cmd, unsigned long arg)
 {
-	int ret = -EINVAL;
+	int ret = ERROR;
 	struct tcb_s *tcb;
 
 	tmvdbg("cmd: %d arg: %ld\n", cmd, arg);
