@@ -320,6 +320,7 @@ static int get_file_size()
 	}
 	if (fseek(fp, 0, SEEK_END) != 0) {
 		meddbg("fseek failed error : %d\n", errno);
+		fclose(fp);
 		return -1;
 	}
 	ret = ftell(fp);

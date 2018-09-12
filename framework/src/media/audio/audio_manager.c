@@ -264,11 +264,11 @@ static audio_manager_result_t find_audio_card(audio_io_direction_t direct)
 	/* TODO update an actual card here, but mutex needed?? */
 	if (direct == INPUT) {
 		if (get_actual_audio_in_card_id() != AUDIO_MANAGER_SUCCESS) {
-			return AUDIO_MANAGER_NO_AVAIL_CARD;
+			ret = AUDIO_MANAGER_NO_AVAIL_CARD;
 		}
 	} else {
 		if (get_actual_audio_out_card_id() != AUDIO_MANAGER_SUCCESS) {
-			return AUDIO_MANAGER_NO_AVAIL_CARD;
+			ret = AUDIO_MANAGER_NO_AVAIL_CARD;
 		}
 	}
 
@@ -1307,6 +1307,8 @@ audio_manager_result_t find_stream_in_device_with_process_type(device_process_ty
 					pthread_mutex_unlock(&(card->card_mutex));
 					return AUDIO_MANAGER_SUCCESS;
 				}
+				close(fd);
+				pthread_mutex_unlock(&(card->card_mutex));
 			}
 		}
 	}
