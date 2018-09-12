@@ -601,6 +601,7 @@ clean: subdir_clean
 	$(call DELFILE, _SAVED_APPS_config)
 	$(call DELFILE, tinyara-export*)
 	$(call DELFILE, tinyara_user*)
+	$(call DELFILE, build.log*)
 	$(call CLEAN)
 
 subdir_distclean:
