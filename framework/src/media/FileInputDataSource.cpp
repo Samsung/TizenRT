@@ -132,6 +132,16 @@ bool FileInputDataSource::isPrepare()
 
 ssize_t FileInputDataSource::read(unsigned char *buf, size_t size)
 {
+	if (!isPrepare()) {
+		meddbg("%s[line : %d] Fail : FileInputDataSource is not prepared\n", __func__, __LINE__);
+		return EOF;
+	}
+
+	if (buf == nullptr) {
+		meddbg("%s[line : %d] Fail : buf is nullptr\n", __func__, __LINE__);
+		return EOF;
+	}
+
 	size_t rlen = fread(buf, sizeof(unsigned char), size, mFp);
 	medvdbg("read size : %d\n", rlen);
 	if (rlen == 0) {
