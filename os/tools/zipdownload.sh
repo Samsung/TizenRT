@@ -79,20 +79,9 @@ fi
 MAKEFILES="${OSDIR}/Makefile ${OSDIR}/Makefile.unix ${OSDIR}/Makefile.win ${OSDIR}/Directories.mk ${OSDIR}/FlatLibs.mk ${OSDIR}/LibTargets.mk ${OSDIR}/Make.defs ${OSDIR}/tools/Config.mk"
 DOWNLOADSCRIPTS="${OSDIR}/tools/download.sh ${OSDIR}/tools/download.bat"
 
-TINYARABIN=${BINDIR}/tinyara.bin
-if [ ! -f "${TINYARABIN}" ]; then
-	echo "No binary file"
-	exit 1
-fi
-
 unset ROMFSIMG
 if [ -f "${BINDIR}/romfs.img" ]; then
 	ROMFSIMG="${BINDIR}/romfs.img"
-fi
-
-unset OTABIN
-if [ -f "${BINDIR}/ota.bin" ]; then
-	OTABIN="${BINDIR}/ota.bin"
 fi
 
 unset ELF
@@ -139,32 +128,42 @@ BOARDBAT=${OSDIR}/tools/board.bat
 if [ "${BOARD}" == "artik05x" ]; then
 	FLASHTOOLDIR="${BUILDDIR}/tools/openocd"
 	if [ "${CONFIG_ARCH_BOARD_ARTIK053S}" == "y" ]; then
-		pushd ${OSDIR} > /dev/null
-		make download
-		popd > /dev/null
-		BOARDBIN="${BUILDDIR}/configs/artik053s ${BINDIR}/tinyara_head.bin-signed"
+		BOARDSCRIPT+=" ${BUILDDIR}/configs/artik053s"
+		BOARDBIN="${BINDIR}/tinyara_head.bin-signed"
 		echo "set BOARD=artik053s" > ${BOARDBAT}
 	elif [ "${CONFIG_ARCH_BOARD_ARTIK055S}" == "y" ]; then
-		pushd ${OSDIR} > /dev/null
-		make download
-		popd > /dev/null
-		BOARDBIN="${BUILDDIR}/configs/artik055s ${BINDIR}/tinyara_head.bin-signed"
+		BOARDSCRIPT+=" ${BUILDDIR}/configs/artik055s"
+		BOARDBIN="${BINDIR}/tinyara_head.bin-signed"
 		echo "set BOARD=artik055s" > ${BOARDBAT}
 	else
-		BOARDBIN="${BUILDDIR}/configs/artik053 ${BINDIR}/tinyara_head.bin"
+		BOARDSCRIPT+=" ${BUILDDIR}/configs/artik053"
+		BOARDBIN="${BINDIR}/tinyara_head.bin"
 		echo "set BOARD=artik053" > ${BOARDBAT}
 	fi
+
+	# make partition_map.cfg
+	${BUILDDIR}/configs/${BOARD}/scripts/partition_gen.sh
 elif [ "${BOARD}" == "cy4390x" ]; then
 	BOARDBIN="${BINDIR}/tinyara_master_strip"
 	echo "set BOARD=cy4390x" > ${BOARDBAT}
 fi
 
+if [ ! -f "${BOARDBIN}" ]; then
+	echo "Fail!! ${BOARDBIN} is not existed"
+	exit 1
+fi
+
+unset OTABIN
+if [ -f "${BINDIR}/ota.bin" ]; then
+	OTABIN="${BINDIR}/ota.bin"
+fi
+
 # Execute
 
-BINARIES="${TINYARABIN} ${ROMFSIMG} ${OTABIN}"
+BINARIES="${BOARDBIN} ${ROMFSIMG} ${OTABIN}"
 DEBUGFILES="${ELF} ${MAP}"
 TINYARAFILES="${CONFIG} ${MAKEFILES} ${DOWNLOADSCRIPTS} ${TOOLCHAINDEFS}"
-BOARDSPECIFIC="${BOARDSCRIPT} ${BOARDBIN}"
+BOARDSPECIFIC="${BOARDSCRIPT}"
 
 ${TAR} ${TAROPT} ${FILENAME} ${TINYARAFILES} ${BINARIES} ${DEBUGFILES} ${FLASHTOOLDIR} ${BOARDSPECIFIC} ${BOARDBAT} || exit 1
 
