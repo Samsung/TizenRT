@@ -30,7 +30,6 @@ public:
 	bool isPrepare() override;
 	bool open() override;
 	bool close() override;
-	int seek(long offset, int origin) override;
 	ssize_t read(unsigned char *buf, size_t size) override;
 
 private:

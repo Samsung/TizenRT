@@ -54,17 +54,6 @@ InputDataSource &InputDataSource::operator=(const InputDataSource &source)
 InputDataSource::~InputDataSource()
 {
 }
-
-int InputDataSource::readAt(long offset, int origin, unsigned char *buf, size_t size)
-{
-	if (seek(offset, origin) != 0) {
-		meddbg("InputDataSource::readAt : fail to seek\n");
-		return -1;
-	}
-
-	return read(buf, size);
-}
-
 } // namespace stream
 } // namespace media
 

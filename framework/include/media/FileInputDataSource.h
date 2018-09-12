@@ -96,16 +96,6 @@ public:
 	 */
 	bool close() override;
 
-	/**
-	 * @brief set the file offset
-	 * @details @b #include <media/FileInputDataSource.h>
-	 * @param[in] offset The offset from origin
-	 * @param[in] origin Position used as reference
-	 * @return if failed, it returns a minus value, else 0 returns
-	 * @since TizenRT v2.0
-	 */
-	int seek(long offset, int origin) override;
-
 	ssize_t read(unsigned char *buf, size_t size) override;
 
 private:

@@ -198,28 +198,6 @@ static void utc_media_FileInputDataSource_read_n(void)
 	TC_SUCCESS_RESULT();
 }
 
-static void utc_media_FileInputDataSource_readAt_p(void)
-{
-	media::stream::FileInputDataSource source(dummyfilepath);
-	memset(buf, 0, 21);
-	source.open();
-
-	TC_ASSERT_EQ("utc_media_FileInputDataSource_readAt", source.readAt(1, 0, buf, 100), (int)strlen(testData + 1));
-
-	source.close();
-	TC_SUCCESS_RESULT();
-}
-
-static void utc_media_FileInputDataSource_readAt_n(void)
-{
-	media::stream::FileInputDataSource source(dummyfilepath);
-	memset(buf, 0, 21);
-
-	TC_ASSERT_LEQ("utc_media_FileInputDataSource_readAt", source.readAt(1, 0, buf, 100), 0);
-
-	TC_SUCCESS_RESULT();
-}
-
 int utc_media_FileInputDataSource_main(void)
 {
 	SetUp();
@@ -237,8 +215,6 @@ int utc_media_FileInputDataSource_main(void)
 	utc_media_FileInputDataSource_isPrepare_n();
 	utc_media_FileInputDataSource_read_p();
 	utc_media_FileInputDataSource_read_n();
-	utc_media_FileInputDataSource_readAt_p();
-	utc_media_FileInputDataSource_readAt_n();
 	TearDown();
 	return 0;
 }
