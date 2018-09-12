@@ -73,6 +73,7 @@ static int handle_tm_utc;
 static int broadcast_data_flag;
 static bool cb_flag;
 
+static sem_t tm_terminate_sem;
 static sem_t tm_broad_sem;
 
 static void sync_test_cb(tm_msg_t *info)
@@ -143,6 +144,7 @@ void exit_handler(void *info)
 static void test_stop_cb(void *data)
 {
 	cb_flag = true;
+	(void)sem_post(&tm_terminate_sem);
 }
 
 int tm_sample_main(int argc, char *argv[])
@@ -739,7 +741,7 @@ static void utc_task_manager_stop_p(void)
 	TC_ASSERT_EQ("task_manager_stop", ret, OK);
 
 	ret = task_manager_stop(tm_sample_handle, TM_RESPONSE_WAIT_INF);
-	TC_ASSERT_EQ("task_manager_stop", ret, TM_ALREADY_STOPPED_APP);
+	TC_ASSERT_LEQ("task_manager_stop", ret, 0);
 
 	ret = task_manager_stop(tm_broadcast_handle1, TM_RESPONSE_WAIT_INF);
 	TC_ASSERT_EQ("task_manager_stop", ret, OK);
@@ -939,8 +941,10 @@ static void utc_task_manager_set_stop_cb_n(void)
 
 static void utc_task_manager_set_stop_cb_p(void)
 {
-	TC_ASSERT_EQ("task_manager_set_stop_cb", cb_flag, true);
+	(void)sem_wait(&tm_terminate_sem);
+	TC_ASSERT_EQ_CLEANUP("task_manager_set_stop_cb", cb_flag, true, sem_destroy(&tm_terminate_sem));
 
+	(void)sem_destroy(&tm_terminate_sem);
 	TC_SUCCESS_RESULT();	
 }
 
@@ -964,6 +968,7 @@ void tm_utc_main(void)
 {
 	pid_tm_utc = getpid();
 	cb_flag = false;
+	sem_init(&tm_terminate_sem, 0, 0);
 	
 	utc_task_manager_alloc_broadcast_msg_p();
 
