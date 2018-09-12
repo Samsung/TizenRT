@@ -852,6 +852,9 @@ static int alc5658_configure(FAR struct audio_lowerhalf_s *dev, FAR const struct
 
 	case AUDIO_TYPE_PROCESSING:
 		break;
+	default :
+		ret = -EINVAL;
+		break;
 	}
 	return ret;
 }

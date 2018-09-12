@@ -14,16 +14,25 @@ config AUDIO_MAX_DEVICE_NUM
 	int "Max # of device of each card"
 	default 3
 	
-config AUDIO_SPEECH_DETECT_FEATURES
-	bool "Processing speech detection features on dsp"
+config AUDIO_PROCESSING_FEATURES
+	bool "Audio Specific Processing features on dsp"
 	default n
 	---help---
 		Enable control processing on dsp.
 		Some devices process Keyword Detect, EPD, buffering, Dolby, etc on device level.
 		Send event message to user layer regarding this kind of process.
 		
-if AUDIO_SPEECH_DETECT_FEATURES
-menu "Speech Detect Features"
+if AUDIO_PROCESSING_FEATURES
+menu "Audio Processing Features"
+
+config AUDIO_SPEECH_DETECT_FEATURES
+	bool "Speech Detect Features"
+	default n
+	---help---
+		Speech Detect Features including End Point Detect(EPD), Keyword Detect(KD) for
+		wake up recognition.
+
+if AUDIO_SPEECH_DETECT_FEATURES	
 
 config AUDIO_KEYWORD_DETECT
 	bool "Provides keyword detect"
@@ -38,6 +47,8 @@ config AUDIO_ENDPOINT_DETECT
 	---help---
 		End Point detect may be supported by some audio devices, but not the typical
 		device doesn't have this in dsp chip.		
+
+endif
 endmenu
 endif
 
@@ -72,14 +83,6 @@ config AUDIO_I2SCHAR_TXTIMEOUT
 		The special value of zero disables RX timeouts.  Default: 0
 
 endif # AUDIO_I2SCHAR
-
-config AUDIO_NULL
-	bool "NULL audio device"
-	default n
-	depends on AUDIO
-	---help---
-		A do-nothinig audio device driver to simplify testing of audio
-		decoders.
 
 config AUDIO_ALC5658
 	bool "ALC5658 audio chip"
@@ -125,6 +128,13 @@ config ALC5658_CLKDEBUG
 
 endif # AUDIO_ALC5658
 
+config AUDIO_NULL
+	bool "NULL audio device"
+	default n
+	depends on AUDIO
+	---help---
+		A do-nothinig audio device driver to simplify testing of audio
+		decoders.
 if AUDIO_NULL
 
 config AUDIO_NULL_MSG_PRIO

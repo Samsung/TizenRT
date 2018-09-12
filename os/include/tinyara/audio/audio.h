@@ -71,7 +71,6 @@
 
 #include <tinyara/config.h>
 #include <tinyara/compiler.h>
-
 #include <tinyara/fs/ioctl.h>
 #include <tinyara/spi/spi.h>
 #include <queue.h>
@@ -135,15 +134,17 @@
 #define AUDIOIOC_ALLOCBUFFER        _AUDIOIOC(11)
 #define AUDIOIOC_FREEBUFFER         _AUDIOIOC(12)
 #define AUDIOIOC_ENQUEUEBUFFER      _AUDIOIOC(13)
-#define AUDIOIOC_REGISTERMQ         _AUDIOIOC(14) /* For Audio Operation (Enqueue, Dequeue, XRUN...) */
+#define AUDIOIOC_REGISTERMQ         _AUDIOIOC(14)	/* For Audio Operation (Enqueue, Dequeue, XRUN...) */
 #define AUDIOIOC_UNREGISTERMQ       _AUDIOIOC(15)
-#define AUDIOIOC_REGISTEREVENTMQ    _AUDIOIOC(16) /* For Audio DSP Event (EPD, Keyword Detect...) */
-#define AUDIOIOC_UNREGISTEREVENTMQ  _AUDIOIOC(17)
-#define AUDIOIOC_HWRESET            _AUDIOIOC(18)
-#define AUDIOIOC_DEQUEUEBUFFER      _AUDIOIOC(19)
-#define AUDIOIOC_PREPARE            _AUDIOIOC(20)
-#define AUDIOIOC_SETVOLUME          _AUDIOIOC(21)
-#define AUDIOIOC_GETVOLUME          _AUDIOIOC(22)
+#define AUDIOIOC_HWRESET            _AUDIOIOC(16)
+#define AUDIOIOC_DEQUEUEBUFFER      _AUDIOIOC(17)
+#define AUDIOIOC_PREPARE            _AUDIOIOC(18)
+#define AUDIOIOC_SETVOLUME          _AUDIOIOC(19)
+#define AUDIOIOC_GETVOLUME          _AUDIOIOC(20)
+#define AUDIOIOC_REGISTERPROCESS    _AUDIOIOC(21)	/* For Audio DSP Process (EPD, Keyword Detect...) */
+#define AUDIOIOC_UNREGISTERPROCESS  _AUDIOIOC(22)
+#define AUDIOIOC_STARTPROCESS       _AUDIOIOC(23)
+#define AUDIOIOC_STOPPROCESS        _AUDIOIOC(24)
 
 /* Audio Device Types *******************************************************/
 /* The audio interface support different types of audio devices for
@@ -170,18 +171,18 @@
  * interfacing software can perform a second query to get the other formats.
  */
 
-#define AUDIO_FMT_UNDEF             0x00
-#define AUDIO_FMT_OTHER             0x01
-#define AUDIO_FMT_MPEG              0x02
-#define AUDIO_FMT_AC3               0x03
-#define AUDIO_FMT_WMA               0x04
-#define AUDIO_FMT_DTS               0x05
-#define AUDIO_FMT_PCM               0x06
-#define AUDIO_FMT_WAV               0x07
-#define AUDIO_FMT_MP3               0x08
-#define AUDIO_FMT_MIDI              0x09
-#define AUDIO_FMT_OGG_VORBIS        0x0a
-#define AUDIO_FMT_FLAC              0x0b
+#define AUDIO_FMT_UNDEF             0x0000
+#define AUDIO_FMT_OTHER             0x0001
+#define AUDIO_FMT_MPEG              0x0002
+#define AUDIO_FMT_AC3               0x0004
+#define AUDIO_FMT_WMA               0x0008
+#define AUDIO_FMT_DTS               0x0010
+#define AUDIO_FMT_PCM               0x0020
+#define AUDIO_FMT_WAV               0x0040
+#define AUDIO_FMT_MP3               0x0080
+#define AUDIO_FMT_MIDI              0x0100
+#define AUDIO_FMT_OGG_VORBIS        0x0200
+#define AUDIO_FMT_FLAC              0x0400
 
 /* Audio Sub-Format Types ***************************************************/
 
@@ -287,11 +288,11 @@
 
 /* Speech Detect PU controls **************************************************/
 
-#define AUDIO_SD_UNDEF              0x0020
-#define AUDIO_SD_ENDPOINT_DETECT    0x0040
-#define AUDIO_SD_KEYWORD_DETECT     0x0080
-#define AUDIO_SD_NS                 0x0100
-#define AUDIO_SD_CLEAR              0x0200
+#define AUDIO_SD_UNDEF              0x0000
+#define AUDIO_SD_ENDPOINT_DETECT    0x0001
+#define AUDIO_SD_KEYWORD_DETECT     0x0002
+#define AUDIO_SD_NS                 0x0004
+#define AUDIO_SD_CLEAR              0x0008
 
 /* Audio Operation Callback Reasons ***************************************************/
 
@@ -300,7 +301,7 @@
 #define AUDIO_CALLBACK_IOERR        0x02
 #define AUDIO_CALLBACK_COMPLETE     0x03
 
-/* Audio Event Callback Reasons ***************************************************/
+/* Audio Process Callback Reasons ***************************************************/
 
 #define AUDIO_CALLBACK_KEYWORD      0x04
 #define AUDIO_CALLBACK_ENDPOINT     0x05
@@ -332,6 +333,8 @@
 #define AUDIO_MSG_ENQUEUE           7
 #define AUDIO_MSG_COMPLETE          8
 #define AUDIO_MSG_XRUN		        9
+#define AUDIO_MSG_EPD              10
+#define AUDIO_MSG_KD               11
 #define AUDIO_MSG_USER             64
 
 /* Audio Pipeline Buffer flags */
@@ -360,10 +363,10 @@ typedef uint16_t apb_samp_t;
 /* This structure is used to describe the audio device capabilities */
 
 struct audio_caps_s {
-	uint8_t ac_len;				/* Length of the structure */
-	uint8_t ac_type;			/* Capabilities (device) type */
-	uint8_t ac_subtype;			/* Capabilities sub-type, if needed */
-	uint8_t ac_channels;		/* Number of channels (1, 2, 5, 7) */
+	uint16_t ac_len;			/* Length of the structure */
+	uint16_t ac_type;			/* Capabilities (device) type */
+	uint16_t ac_subtype;		/* Capabilities sub-type, if needed */
+	uint16_t ac_channels;		/* Number of channels (1, 2, 5, 7) */
 
 	union {						/* Audio data format(s) for this device */
 		uint8_t b[2];
@@ -657,11 +660,11 @@ struct audio_lowerhalf_s {
 	/* The private opaque pointer to be passed to upper-layer during callbacks */
 
 	FAR void *priv;
-	
-#ifdef DSP_PROCESSING_EVENT
-	/* Message queue to handle dsp event(EPD, Keyword Detect, etc) */
-	
-	mqd_t eventmq;
+
+#ifdef CONFIG_AUDIO_PROCESSING_FEATURES
+	/* Message queue to handle dsp process(EPD, Keyword Detect, another process) */
+
+	mqd_t process_mq;
 #endif
 
 	/* The custom Audio device state structure may include additional fields
