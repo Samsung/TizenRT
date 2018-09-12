@@ -45,7 +45,38 @@ enum el_result_error_e {
 	EVENTLOOP_LOOP_FAIL = -4,
 	EVENTLOOP_NOT_FINISHED = -5,
 	EVENTLOOP_OPERATION_FAIL = -6,
+	EVENTLOOP_INVALID_HANDLE = -7,
 };
+
+/**
+ * @brief Event type used in Event Loop
+ * @details Event loop uses these values as event types. \n
+ * If user wants to use new events, those should be defined ahead.\n
+ * An example of a pre-defined events are shown below.\n
+ * \n
+ * enum el_event_type_e {\n
+ *		EL_EVENT_WIFI_ON = 1,\n
+ *		EL_EVENT_WIFI_OFF = 2,\n
+ *		EL_EVENT_PRE_DEFINE = 3,\n
+ *		EL_EVENT_MAX,\n
+ * };
+ */
+enum el_event_type_e {
+	EL_EVENT_WIFI_ON = 1,
+	EL_EVENT_WIFI_OFF = 2,
+	EL_EVENT_MAX,
+};
+
+/**
+ * @brief Return value of callback function for event
+ * @details The callback function should return EVENTLOOP_CALLBACK_STOP(false) or EVENTLOOP_CALLBACK_CONTINUE(true).\n
+ * It decides whether continuing to execute callback function for the event or not.\n
+ * If it returns EVENTLOOP_CALLBACK_STOP, receving registered events is stopped.\n
+ * The registered handler won't be executed from now on although receving the event.\n
+ * Otherwise, a callback funtion is called continuously.
+ */
+#define EVENTLOOP_CALLBACK_STOP 0
+#define EVENTLOOP_CALLBACK_CONTINUE 1
 
 /**
  * @brief EventLoop Timer structure
@@ -58,6 +89,11 @@ typedef uv_timer_t el_timer_t;
 typedef uv_loop_t el_loop_t;
 
 /**
+ * @brief EventLoop Event structure
+ */
+typedef uv_signal_t el_event_t;
+
+/**
  * @brief EventLoop Timeout Callback
  */
 typedef void (*timeout_callback)(void *);
@@ -66,6 +102,15 @@ typedef void (*timeout_callback)(void *);
  * @brief EventLoop Thread Safe Callback
  */
 typedef void (*thread_safe_callback)(void *data);
+
+/**
+ * @brief EventLoop Event Callback
+ * This is specific type for callback function used in eventloop_add_event_handler. \n
+ * When some tasks send event, registered callback fuctions are called with some data. \n
+ * The first parameter, registered_cb_data is function data registered in eventloop_add_event_handler. \n
+ * The second parameter, received_event_data is data received from event sender. \n
+ */
+typedef bool (*event_callback)(void *registered_cb_data, void *received_event_data);
 
 /****************************************************************************
  * Public Function Prototypes
@@ -116,6 +161,53 @@ int eventloop_delete_timer(el_timer_t *timer);
  * @since TizenRT v2.0 PRE
  */
 el_timer_t *eventloop_add_timer_async(unsigned int timeout, bool repeat, timeout_callback func, void *data);
+
+/**
+ * @brief Set event callback which will be called a certain event occur
+ * @details @b #include <eventloop/eventloop.h> \n
+ * This API is almost similar to task_manager_set_broadcast_cb. The difference between them is a context when callback function is executed. \n
+ * In case of task manager, the callback function is executed by task manager if someone sends some events. \n
+ * On the other hands, the callback functions of eventloop are called by polling the events in loop by itself. \n
+ * So you should run loop by calling eventloop_loop_run to receive event after calling this API. \n
+ * And you can continue or stop to execution of callback function depending on return value of callback function. \n
+ * Please refer to a description of EVENTLOOP_CALLBACK_STOP and EVENTLOOP_CALLBACK_CONTINUE. \n
+ * Finally when returned handle is not needed anymore or all works you want are done, you should call eventloop_del_event_handler. \n
+ * Because some resources for event handler are allocated internally, you should free them.
+ * @param[in] type a value of event type
+ * @param[in] func the callback function to be called \n
+ *            It has specific type, event_callback which has two types of data as parameter. \n
+ *            The first parameter is data registered in this call and the second parameter is data received from sender. \n
+ *            And, it should return EVENTLOOP_CALLBACK_STOP(false) or EVENTLOOP_CALLBACK_CONTINUE(true).
+ * @param[in] data data to pass to func when func is called
+ * @param[in] data_size size of data
+ * @return On success,  A pointer of created event handle is returned. On failure, NULL is returned
+ * @since TizenRT v2.0 PRE
+ */
+el_event_t *eventloop_add_event_handler(int type, event_callback func, void *cb_data, int data_size);
+
+/**
+ * @brief Delete registered handler for event
+ * @details @b #include <eventloop/eventloop.h> \n
+ * The registed event handler is deleted and all used resources for event handler are freed.
+ * @param[in] handle a pointer of event handle to be deleted
+ * @return On success, OK is returned. On failure, defined negative value is returned
+ * @since TizenRT v2.0 PRE
+ */
+int eventloop_del_event_handler(el_event_t *handle);
+
+/**
+ * @brief Send an event
+ * @details @b #include <eventloop/eventloop.h> \n
+ * This API is almost similar to task_manager_broadcast.\n
+ * The event will be sent with some data to tasks which registed handler for this event.\n
+ * And then registered callback functions will be executed when they are polling events.
+ * @param[in] type a value of event type
+ * @param[in] data data to be passed to registered handler together
+ * @param[in] data_size size of data
+ * @return On success, OK is returned. On failure, defined negative value is returned
+ * @since TizenRT v2.0 PRE
+ */
+int eventloop_send_event(int type, void *event_data, int data_size);
 
 /**
  * @brief Run the loop of its own task

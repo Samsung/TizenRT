@@ -868,6 +868,15 @@ config SIG_SIGTM_TERMINATION
 		the TinyAra task managed by task manager. This setting specifies the signal number
 		that will be used for SIGTM_TERMINATION. Default: 23
 
+config SIG_SIGEL_EVENT
+	int "SIGEL_EVENT"
+	default 24
+	depends on EVENTLOOP
+	---help---
+		SIG_SIGEL_EVENT is a non-standard signal used to wake eventloop task up.
+		This setting specifies the signal number that will be used for SIG_SIGEL_EVENT.
+		Default: 24
+
 endmenu # Signal Numbers
 
 menu "POSIX Message Queue Options"
