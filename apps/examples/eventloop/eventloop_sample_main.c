@@ -23,7 +23,10 @@
 
 #include <eventloop/eventloop.h>
 
+#define CALLBACK_DATA "EVENTLOOP_TIMER_CALLBACK"
+
 el_timer_t *timer_10s;
+el_timer_t *timer_2s;
 
 /****************************************************************************
  * Private Functions
@@ -52,11 +55,7 @@ static void timer_callback_20s(void *data)
 	(void)gettimeofday(&now, NULL);
 	printf("%s timeout %d %d\n", __func__, now.tv_sec, now.tv_usec);
 
-	if (data != NULL) {
-		el_timer_t *timer = (el_timer_t *)data;
-		printf("Stop timer with interval 2s\n");
-		eventloop_delete_timer(timer);
-	}
+	eventloop_delete_timer(timer_2s);
 }
 
 static void timer_callback_40s(void *data)
@@ -80,21 +79,20 @@ int main(int argc, FAR char *argv[])
 int eventloop_sample_main(int argc, FAR char *argv[])
 #endif
 {
-	el_timer_t *timer_2s;
 	el_timer_t *timer_20s;
 	el_timer_t *timer_40s;
 
 	/* Add timer to be called every 2 seconds */
-	timer_2s = eventloop_add_timer_async(2000, true, timer_callback_2s, NULL);
+	timer_2s = eventloop_add_timer_async(2000, true, timer_callback_2s, NULL, 0);
 
 	/* Add timer to be called every 10 seconds */
-	timer_10s = eventloop_add_timer_async(10000, true, timer_callback_10s, "10s Timeout");
+	timer_10s = eventloop_add_timer_async(10000, true, timer_callback_10s, CALLBACK_DATA, sizeof(CALLBACK_DATA));
 
 	/* Add timer to be called once after 20s. It deletes the timer with 2s interval through passing the pointer */
-	timer_20s = eventloop_add_timer(20000, false, timer_callback_20s, timer_2s);
+	timer_20s = eventloop_add_timer(20000, false, timer_callback_20s, NULL, 0);
 
 	/* Add timer to be called once after 40s. It deletes the timer with 10s interval declared as global variable */
-	timer_40s = eventloop_add_timer(40000, false, timer_callback_40s, NULL);
+	timer_40s = eventloop_add_timer(40000, false, timer_callback_40s, NULL, 0);
 
 	/* Run loop */
 	eventloop_loop_run();

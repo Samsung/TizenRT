@@ -54,7 +54,7 @@ static void timeout_callback_func(el_timer_t *timer)
 	}
 }
 
-static el_timer_t *add_timer(el_loop_t *loop, unsigned int timeout, bool repeat, timeout_callback func, void *data)
+static el_timer_t *add_timer(el_loop_t *loop, unsigned int timeout, bool repeat, timeout_callback func, void *data, int data_size)
 {
 	el_timer_t *timer;
 	timer_cb_t *callback;
@@ -76,7 +76,18 @@ static el_timer_t *add_timer(el_loop_t *loop, unsigned int timeout, bool repeat,
 		return NULL;
 	}
 	callback->func = func;
-	callback->cb_data = data;
+	if (data_size == 0) {
+		callback->cb_data = NULL;
+	} else {
+		callback->cb_data = EL_ALLOC(data_size);
+		if (callback->cb_data == NULL) {
+			eldbg("Failed to allocate callback data\n");
+			EL_FREE(callback);
+			EL_FREE(timer);
+			return NULL;
+		}
+		memcpy(callback->cb_data, data, data_size);
+	}
 	timer->data = (void *)callback;
 
 	uv_update_time(loop);
@@ -93,7 +104,7 @@ static el_timer_t *add_timer(el_loop_t *loop, unsigned int timeout, bool repeat,
 	return timer;
 }
 
-el_timer_t *eventloop_add_timer(unsigned int timeout, bool repeat, timeout_callback func, void *data)
+el_timer_t *eventloop_add_timer(unsigned int timeout, bool repeat, timeout_callback func, void *data, int data_size)
 {
 	el_loop_t *loop;
 
@@ -103,28 +114,35 @@ el_timer_t *eventloop_add_timer(unsigned int timeout, bool repeat, timeout_callb
 		return NULL;
 	}
 
-	return (el_timer_t *)add_timer(loop, timeout, repeat, func, data);
+	return (el_timer_t *)add_timer(loop, timeout, repeat, func, data, data_size);
 }
 
 int eventloop_delete_timer(el_timer_t *timer)
 {
-	if (timer == NULL) {
+	timer_cb_t *callback = NULL;
+
+	if (timer == NULL || timer->data == NULL) {
 		eldbg("Invalid parameter\n");
 		return EVENTLOOP_INVALID_PARAM;
 	}
 
+	callback = (timer_cb_t *)timer->data;
+
 	/* Stop the timer */
 	uv_timer_stop(timer);
 
-	EL_FREE(timer->data);
-	timer->data = NULL;
+	if (callback->cb_data != NULL) {
+		EL_FREE(callback->cb_data);
+	}
+	EL_FREE(callback);
+	callback = NULL;
 	EL_FREE(timer);
 	timer = NULL;
 
 	return OK;
 }
 
-el_timer_t *eventloop_add_timer_async(unsigned int timeout, bool repeat, timeout_callback func, void *data)
+el_timer_t *eventloop_add_timer_async(unsigned int timeout, bool repeat, timeout_callback func, void *data, int data_size)
 {
 	int ret;
 	int async_pid;
@@ -145,7 +163,7 @@ el_timer_t *eventloop_add_timer_async(unsigned int timeout, bool repeat, timeout
 		return NULL;
 	}
 
-	timer = add_timer(loop, timeout, repeat, func, data);
+	timer = add_timer(loop, timeout, repeat, func, data, data_size);
 	if (timer == NULL) {
 		eldbg("Failed to add timer\n");
 		return NULL;

@@ -128,10 +128,11 @@ typedef bool (*event_callback)(void *registered_cb_data, void *received_event_da
  *            You can stop the periodic timer by calling eventloop_delete_timer
  * @param[in] func the callback function to be called
  * @param[in] data data to pass to func when func is called
+ * @param[in] data_size size of data
  * @return On success, A pointer of created timer is returned. On failure, NULL is returned
  * @since TizenRT v2.0 PRE
  */
-el_timer_t *eventloop_add_timer(unsigned int timeout, bool repeat, timeout_callback func, void *data);
+el_timer_t *eventloop_add_timer(unsigned int timeout, bool repeat, timeout_callback func, void *data, int data_size);
 
 /**
  * @brief Delete specific timer
@@ -157,10 +158,11 @@ int eventloop_delete_timer(el_timer_t *timer);
  *            You can stop the periodic timer by calling eventloop_delete_timer
  * @param[in] func the callback function to be called
  * @param[in] data data to pass to func when func is called
+ * @param[in] data_size size of data
  * @return On success, A pointer of created timer is returned. On failure, NULL is returned
  * @since TizenRT v2.0 PRE
  */
-el_timer_t *eventloop_add_timer_async(unsigned int timeout, bool repeat, timeout_callback func, void *data);
+el_timer_t *eventloop_add_timer_async(unsigned int timeout, bool repeat, timeout_callback func, void *data, int data_size);
 
 /**
  * @brief Set event callback which will be called a certain event occur
