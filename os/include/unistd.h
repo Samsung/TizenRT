@@ -314,6 +314,21 @@ ssize_t pread(int fd, FAR void *buf, size_t nbytes, off_t offset);
  * @since TizenRT v1.0
  */
 ssize_t pwrite(int fd, FAR const void *buf, size_t nbytes, off_t offset);
+/**
+ * @cond
+ * @internal
+ */
+/**
+ * @brief truncate a file to a specified length
+ * @details @b #include <unistd.h> \n
+ * SYSTEM CALL API \n
+ * POSIX API (refer to : http://pubs.opengroup.org/onlinepubs/9699919799/)
+ * @since TizenRT v2.0 PRE
+ */
+int ftruncate(int fd, off_t length);
+/**
+ * @endcond
+ */
 
 /**
  * @}
@@ -390,6 +405,21 @@ int rmdir(FAR const char *pathname);
  * @since TizenRT v1.0
  */
 int unlink(FAR const char *pathname);
+/**
+ * @cond
+ * @internal
+ */
+/**
+ * @ingroup UNISTD_KERNEL
+ * @brief truncate a file to a specified length
+ * @details @b #include <unistd.h> \n
+ * POSIX API (refer to : http://pubs.opengroup.org/onlinepubs/9699919799/)
+ * @since TizenRT v2.0 PRE
+ */
+int truncate(FAR const char *path, off_t length);
+/**
+ * @endcond
+ */
 
 /* Execution of programs from files */
 

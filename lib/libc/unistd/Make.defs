@@ -65,6 +65,10 @@ CSRCS += lib_execl.c
 endif
 endif
 
+ifneq ($(CONFIG_DISABLE_MOUNTPOINT),y)
+CSRCS += lib_truncate.c
+endif
+
 ifneq ($(CONFIG_DISABLE_SIGNALS),y)
 CSRCS += lib_sleep.c lib_usleep.c
 endif
