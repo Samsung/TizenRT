@@ -13,7 +13,7 @@ host_target_map = {
     'linux': ['linux', 'android', 'arduino', 'yocto', 'tizen', 'tizenrt'],
     'windows': ['windows', 'android', 'arduino'],
     'darwin': ['darwin', 'ios', 'android', 'arduino'],
-    'msys_nt': ['msys_nt'],
+    'msys_nt': ['msys_nt', 'tizenrt'],
 }
 
 # Map of target os to possible target architecture
