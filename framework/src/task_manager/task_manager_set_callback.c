@@ -265,8 +265,8 @@ int task_manager_set_exit_cb(void (*func)(void *data), tm_msg_t *cb_data)
 		REQ_CBDATA_MSG_SIZE(request_msg) = cb_data->msg_size;
 		REQ_CBDATA_MSG(request_msg) = TM_ALLOC(cb_data->msg_size);
 		if (REQ_CBDATA_MSG(request_msg) == NULL) {
-			TM_FREE(request_msg.data);
 			TM_FREE(REQ_CBDATA(request_msg));
+			TM_FREE(request_msg.data);
 			return TM_OUT_OF_MEMORY;
 		}
 		memcpy(REQ_CBDATA_MSG(request_msg), cb_data->msg, cb_data->msg_size);

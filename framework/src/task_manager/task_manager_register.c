@@ -161,6 +161,7 @@ int task_manager_register_pthread(char *name, pthread_attr_t *attr, pthread_star
 	if (((tm_pthread_info_t *)request_msg.data)->attr == NULL) {
 		TM_FREE(((tm_pthread_info_t *)request_msg.data)->name);
 		TM_FREE(request_msg.data);
+		return TM_OUT_OF_MEMORY;
 	}
 	memcpy(((tm_pthread_info_t *)request_msg.data)->attr, attr, sizeof(pthread_attr_t));
 	((tm_pthread_info_t *)request_msg.data)->entry = start_routine;
