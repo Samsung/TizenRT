@@ -47,6 +47,11 @@ if exist %BINPATH%\romfs.img set ROMFS=flash_write rom romfs.img;
 if exist %BINPATH%\ota.bin set OTA=flash_write ota ota.bin;
 set OSCOMMANDS="flash_write os %RTBIN%; %ROMFS% %OTA% "
 
+if not exist %OPENOCDPATH%\openocd.exe (
+	echo "The openocd tool is not in %OPENOCDPATH%"
+	exit 1
+)
+
 cd %PREBUILTBINPATH%
 %OPENOCDPATH%\openocd.exe -f artik05x.cfg -s %SCRIPTPATH% -c %PREBUILTCOMMANDS% -c "init; reset; exit; "
 
@@ -71,11 +76,16 @@ set BLCOMMAND="sflash_write_file %BLFILE% 0x00000000 BCM943909WCD1_3-P320-SoC.43
 if exist %BINPATH%\romfs.img set ROMCOMMAND="sflash_write_file %ROMFSFILE% 0x00408000 BCM943909WCD1_3-P320-SoC.43909 0 43909; "
 set OSCOMMAND="sflash_write_file %STRIPFILE%  0x0008D000 BCM943909WCD1_3-P320-SoC.43909 0 43909; %ROMCOMMAND% "
 
+if not exist %OPENOCDPATH%\openocd-all-brcm-libftdi.exe (
+	echo "The openocd tool is not in %OPENOCDPATH%"
+	exit 1
+)
+
 cd %PREBUILTBINPATH%
-%OPENOCDPATH%\openocd.exe -f %CFGFILE1% -f %CFGFILE2% -f %CFGFILE3% -c %BLCOMMAND% -c shutdown
+%OPENOCDPATH%\openocd-all-brcm-libftdi.exe -f %CFGFILE1% -f %CFGFILE2% -f %CFGFILE3% -c %BLCOMMAND% -c shutdown
 
 cd %BINPATH%
-%OPENOCDPATH%\openocd.exe -f %CFGFILE1% -f %CFGFILE2% -f %CFGFILE3% -c %OSCOMMAND% -c shutdown
+%OPENOCDPATH%\openocd-all-brcm-libftdi.exe -f %CFGFILE1% -f %CFGFILE2% -f %CFGFILE3% -c %OSCOMMAND% -c shutdown
 
 goto End
 
@@ -90,4 +100,4 @@ echo 	--help        Show this text and exit
 
 :End
 cd %CURPATH%
-
+echo %BOARD% Download Done
