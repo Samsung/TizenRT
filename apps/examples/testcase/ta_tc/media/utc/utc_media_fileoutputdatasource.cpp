@@ -50,6 +50,13 @@ static void utc_media_FileOutputDataSource_getPcmFormat_p(void)
 	TC_SUCCESS_RESULT();
 }
 
+static void utc_media_FileOutputDataSource_getAudioType_p(void)
+{
+	FileOutputDataSource dataSource(channels, sampleRate, pcmFormat, filePath);
+	TC_ASSERT_EQ("utc_media_FileOutputDataSource_getAudioType", dataSource.getAudioType(), media::AUDIO_TYPE_INVALID);
+	TC_SUCCESS_RESULT();
+}
+
 static void utc_media_FileOutputDataSource_setChannels_p(void)
 {
 	FileOutputDataSource dataSource(filePath);
@@ -74,6 +81,15 @@ static void utc_media_FileOutputDataSource_setPcmFormat_p(void)
 	media::audio_format_type_t compare_pcmFormat = media::AUDIO_FORMAT_TYPE_S8;
 	dataSource.setPcmFormat(media::AUDIO_FORMAT_TYPE_S8);
 	TC_ASSERT_EQ("utc_media_FileOutputDataSource_setPcmFormat", dataSource.getPcmFormat(), compare_pcmFormat);
+	TC_SUCCESS_RESULT();
+}
+
+static void utc_media_FileOutputDataSource_setAudioType_p(void)
+{
+	FileOutputDataSource dataSource(filePath);
+	media::audio_type_t compare_audioType = media::AUDIO_TYPE_MP3;
+	dataSource.setAudioType(media::AUDIO_TYPE_MP3);
+	TC_ASSERT_EQ("utc_media_FileOutputDataSource_setAudioType", dataSource.getAudioType(), compare_audioType);
 	TC_SUCCESS_RESULT();
 }
 
@@ -181,10 +197,12 @@ int utc_media_fileoutputdatasource_main(void)
 	utc_media_FileOutputDataSource_getChannels_p();
 	utc_media_FileOutputDataSource_getSampleRate_p();
 	utc_media_FileOutputDataSource_getPcmFormat_p();
+	utc_media_FileOutputDataSource_getAudioType_p();
 
 	utc_media_FileOutputDataSource_setChannels_p();
 	utc_media_FileOutputDataSource_setSampleRate_p();
 	utc_media_FileOutputDataSource_setPcmFormat_p();
+	utc_media_FileOutputDataSource_setAudioType_p();
 
 	utc_media_FileOutputDataSource_CopyConstructor_p();
 	utc_media_FileOutputDataSource_EqualOperator_p();
