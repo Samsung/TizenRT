@@ -288,8 +288,8 @@ function BUILD()
 	fi
 
 	docker rm -f tizenrt > /dev/null 2>&1
-	docker run --rm -it -d -v ${TOPDIR}:/root/tizenrt --name tizenrt -w /root/tizenrt/os tizenrt/tizenrt /bin/bash
-	docker exec -it tizenrt ${BUILD_CMD} $1 2>&1 | tee build.log
+	docker run --rm -i -d -v ${TOPDIR}:/root/tizenrt --name tizenrt -w /root/tizenrt/os tizenrt/tizenrt /bin/bash
+	docker exec -i tizenrt ${BUILD_CMD} $1 2>&1 | tee build.log
 	docker stop tizenrt > /dev/null 2>&1
 
 	if [ "$1" == "distclean" ]; then
