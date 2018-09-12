@@ -65,6 +65,7 @@
 #include <net/if.h>
 
 #include <protocols/dhcpd.h>
+#include <netutils/netlib.h>
 
 /****************************************************************************
  * Preprocessor Definitions
