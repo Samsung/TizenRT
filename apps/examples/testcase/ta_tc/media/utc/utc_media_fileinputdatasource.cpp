@@ -181,10 +181,19 @@ static void utc_media_FileInputDataSource_read_p(void)
 
 static void utc_media_FileInputDataSource_read_n(void)
 {
-	media::stream::FileInputDataSource source(dummyfilepath);
-	memset(buf, 0, 21);
+	/* read without open */
+	{
+		media::stream::FileInputDataSource source(dummyfilepath);
+		memset(buf, 0, 21);
 
-	TC_ASSERT_EQ("utc_media_FileInputDataSource_read", source.read(buf, 100), 0);
+		TC_ASSERT_EQ("utc_media_FileInputDataSource_read", source.read(buf, 100), EOF);
+	}
+	/* read nullptr buffer */
+	{
+		media::stream::FileInputDataSource source(dummyfilepath);
+
+		TC_ASSERT_EQ("utc_media_FileInputDataSource_read", source.read(nullptr, 100), EOF);
+	}
 
 	TC_SUCCESS_RESULT();
 }
