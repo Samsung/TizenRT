@@ -158,11 +158,6 @@ ssize_t FileInputDataSource::read(unsigned char *buf, size_t size)
 	return rlen;
 }
 
-int FileInputDataSource::seek(long offset, int origin)
-{
-	return fseek(mFp, offset, origin);
-}
-
 FileInputDataSource::~FileInputDataSource()
 {
 	if (isPrepare()) {

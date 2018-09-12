@@ -44,12 +44,6 @@ bool BufferInputDataSource::close()
 	return fclose(mFp);
 }
 
-int BufferInputDataSource::seek(long offset, int origin)
-{
-	/* Not Used */
-	return -1;
-}
-
 ssize_t BufferInputDataSource::read(unsigned char *buf, size_t size)
 {
 	if (mSrcSize >= size) {
