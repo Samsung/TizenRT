@@ -427,7 +427,13 @@ int copy_socket(void *arg)
 				set_errno(EBADF);
 				return -1;
 			}
+
 			struct netmon_sock *sock_info = (struct netmon_sock *) malloc(sizeof(struct netmon_sock));
+			if (!sock_info) {
+				LWIP_DEBUGF(SOCKETS_DEBUG, ("copy_socket: invalid IP info\n"));
+				set_errno(ENOMEM);
+				return -1;
+			}
 
 			sock_info->type = sockets[i].conn->type;
 			sock_info->state = sockets[i].conn->state;

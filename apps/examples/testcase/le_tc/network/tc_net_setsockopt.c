@@ -668,7 +668,7 @@ static void tc_net_setsockopt_invalid_opt_name_n(int s)
  * Name: setsockopt()
  ****************************************************************************/
 
-int net_setsockopt_main(void)
+void net_setsockopt_main(void)
 {
 	int fd = -1;
 	//char *mip = "239.255.255.255";
@@ -677,7 +677,7 @@ int net_setsockopt_main(void)
 	fd = socket(AF_INET, SOCK_STREAM, 0);
 	if (fd < 0) {
 		printf("socket creation error (%s) line:%d\n", __FUNCTION__, __LINE__);
-		return -1;
+		return;
 	}
 	//tc_net_setsockopt_invalid_opt_name_n(fd);
 	tc_net_setsockopt_invalid_level_n(fd);
@@ -708,5 +708,5 @@ int net_setsockopt_main(void)
 	//tc_net_setsockopt_multicast_ttl_p(fd);
 
 	close(fd);
-	return 0;
+	return;
 }
