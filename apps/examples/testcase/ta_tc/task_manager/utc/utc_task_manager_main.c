@@ -144,7 +144,7 @@ void exit_handler(void *info)
 static void test_stop_cb(void *data)
 {
 	cb_flag = true;
-	sem_post(&tm_terminate_sem);
+	(void)sem_post(&tm_terminate_sem);
 }
 
 int tm_sample_main(int argc, char *argv[])
@@ -941,9 +941,10 @@ static void utc_task_manager_set_stop_cb_n(void)
 
 static void utc_task_manager_set_stop_cb_p(void)
 {
-	sem_wait(&tm_terminate_sem);
-	TC_ASSERT_EQ("task_manager_set_stop_cb", cb_flag, true);
+	(void)sem_wait(&tm_terminate_sem);
+	TC_ASSERT_EQ_CLEANUP("task_manager_set_stop_cb", cb_flag, true, sem_destroy(&tm_terminate_sem));
 
+	(void)sem_destroy(&tm_terminate_sem);
 	TC_SUCCESS_RESULT();	
 }
 
