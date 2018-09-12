@@ -1279,7 +1279,9 @@ int task_manager_run_exit_cb(int pid)
 			if (EXIT_CBDATA(handle) != NULL) {
 				(*EXIT_CBFUNC(handle))(EXIT_CBDATA_MSG(handle));
 				TM_FREE(EXIT_CBDATA_MSG(handle));
+				EXIT_CBDATA_MSG(handle) = NULL;
 				TM_FREE(EXIT_CBDATA(handle));
+				EXIT_CBDATA(handle) = NULL;
 			} else {
 				(*EXIT_CBFUNC(handle))(NULL);
 			}
