@@ -29,6 +29,7 @@ class HardwareKeywordDetector : public KeywordDetector
 {
 public:
 	bool init(uint32_t samprate, uint8_t channels) override;
+	void deinit() override;
 	bool startKeywordDetect(uint32_t timeout) override;
 };
 

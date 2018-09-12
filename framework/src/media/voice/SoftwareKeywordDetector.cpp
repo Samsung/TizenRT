@@ -25,6 +25,11 @@ bool SoftwareKeywordDetector::init(uint32_t samprate, uint8_t channels)
 	return true;
 }
 
+void SoftwareKeywordDetector::deinit()
+{
+	
+}
+
 bool SoftwareKeywordDetector::startKeywordDetect(uint32_t timeout)
 {
 	return false;
