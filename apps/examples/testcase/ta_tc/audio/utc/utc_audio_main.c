@@ -1528,7 +1528,7 @@ int utc_audio_main(int argc, char *argv[])
 	utc_audio_pcm_mmap_read_p();
 	utc_audio_pcm_mmap_write_p();
 #endif
-
+	clean_all_data(0, NULL);
 	/* after test, unlink the file */
 	unlink(AUDIO_TEST_FILE);
 
