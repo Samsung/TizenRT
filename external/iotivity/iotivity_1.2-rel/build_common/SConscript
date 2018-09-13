@@ -34,7 +34,7 @@ host = platform.system().lower()
 
 # the host string contains version of windows. 6.3, 6.4, 10.0 which is 8.0, 8.1, and 10 respectively.
 # Let's canonicalize the msys_nt-XX.X system name by stripping version off.
-if 'msys_nt' in host:
+if 'msys_nt' or 'mingw' in host:
 	host = 'msys_nt'
 
 if not host_target_map.has_key(host):
