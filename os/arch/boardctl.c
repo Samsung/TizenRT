@@ -92,7 +92,7 @@
  *
  * Returned Value:
  *   On success zero (OK) is returned; -1 (ERROR) is returned on failure
- *   with the errno variable to to indicate the nature of the failure.
+ *   with the errno variable to indicate the nature of the failure.
  *
  ****************************************************************************/
 int boardctl(unsigned int cmd, uintptr_t arg)
